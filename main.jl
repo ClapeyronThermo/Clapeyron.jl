@@ -1,14 +1,14 @@
 #### Some arbitrary conditions ####
 temperature = 120
 volume = 0.005
-components = ["PMMA" "PB"]
+components = ["PMMA" "PS"]
 compositions = [0.6 0.4]
 
 
 #### Struct that contains all conditons ####
 struct Conditions
-    temperature
-    volume
+    temperature::Float64
+    volume::Float64
     components::Dict # contains components and compositons
 end
 
@@ -20,6 +20,7 @@ struct PcSaftParam
     segments::Dict
     sigmas::Dict
     epsilons::Dict
+    ks::Dict # keys are tuples of every pair
 end
 
 
@@ -40,7 +41,7 @@ import JSON
 all_data = Dict()
 open("all_data.json", "r") do f
     global all_data
-    all_data=JSON.parse(f)  # parse and transform data
+    all_data = JSON.parse(f)  # parse and transform data
 end
 
 
@@ -48,15 +49,18 @@ end
 segments = Dict()
 sigmas = Dict()
 epsilons = Dict()
+ks = Dict()
 
 for k in components
     segments[k] = all_data["SEGMENT"][k]
     sigmas[k] = all_data["SIGMA"][k]
     epsilons[k] = all_data["EPSILON"][k]
+    #= for kk in intersect(keys(all_data["Binary_k"][k]), components) =#
+    for kk in components
+            ks[(k,kk)] = k != kk ? all_data["Binary_k"][k][kk] : 0
+    end
 end
-
-model = PcSaft(components, PcSaftParam(segments, sigmas, epsilons))
-
+model = PcSaft(components, PcSaftParam(segments, sigmas, epsilons, ks))
 
 #### Functions relevant to PCSAFT ####
 include("PcSaft.jl")
@@ -64,8 +68,8 @@ include("PcSaft.jl")
 
 
 #### Calculation of a ####
-function ares(model::Saft, conditons)
-    return ahc(model, conditions) + adisp(model, conditions)
+function a_res(model::Saft, conditons)
+    return a_hc(model, conditions) + a_disp(model, conditions)
 end
 
-println(ares(model, conditions))
+println(a_res(model, conditions))
