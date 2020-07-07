@@ -1,7 +1,7 @@
 #### Some arbitrary conditions ####
-temperature = 120
-volume = 0.005
-components = ["PMMA" "PS"]
+temperature = 298
+volume = 1e-3
+components = ["H2O" "CH4"]
 compositions = [0.6 0.4]
 
 
@@ -23,16 +23,27 @@ struct PcSaftParam
     ks::Dict # keys are tuples of every pair
 end
 
+struct SAFTVRMieParam
+    segment::Dict
+    sigma::Dict
+    epsilon::Dict
+    ShapeFactor::Dict
+    lambdaA::Dict
+    lambdaR::Dict
+end
+
 
 #### Types for SAFT models ####
 abstract type Saft end
 
 abstract type PcSaftFamily <: Saft end
 abstract type SaftGammaMieFamily <: Saft end
+abstract type SAFTVRMieFamily <: Saft end
 
 struct PcSaft <: PcSaftFamily; components; parameters::PcSaftParam end
 struct SPcSaft <: PcSaftFamily; components; parameters end
 struct SaftGammaMie <: SaftGammaMieFamily; components; parameters end
+struct SAFTVRMie <: SAFTVRMieFamily; components; parameters::SAFTVRMieParam end
 
 
 #### Data from Pierre's script ####
@@ -43,33 +54,33 @@ open("all_data.json", "r") do f
     global all_data
     all_data = JSON.parse(f)  # parse and transform data
 end
-
-
 #### Some random test parameters ####
-segments = Dict()
-sigmas = Dict()
-epsilons = Dict()
-ks = Dict()
+segment = Dict()
+sigma = Dict()
+epsilon = Dict()
+ShapeFactor = Dict()
+lambdaA = Dict()
+lambdaR = Dict()
 
 for k in components
-    segments[k] = all_data["SEGMENT"][k]
-    sigmas[k] = all_data["SIGMA"][k]
-    epsilons[k] = all_data["EPSILON"][k]
+    segment[k] = all_data["SEGMENT"][k]
+    ShapeFactor[k] = all_data["SHAPEFACTOR"][k]
+
     #= for kk in intersect(keys(all_data["Binary_k"][k]), components) =#
     for kk in components
-            ks[(k,kk)] = k != kk ? all_data["Binary_k"][k][kk] : 0
+        sigma[(k,kk)] = all_data["SIGMA"][k][kk]*1e-10
+        epsilon[(k,kk)] = all_data["EPSILON"][k][kk]
+        lambdaA[(k,kk)] = all_data["LAMBDAA"][k][kk]
+        lambdaR[(k,kk)] = all_data["LAMBDAR"][k][kk]
     end
 end
-model = PcSaft(components, PcSaftParam(segments, sigmas, epsilons, ks))
+model = SAFTVRMie(components, SAFTVRMieParam(segment, sigma, epsilon, ShapeFactor,lambdaA,lambdaR))
 
 #### Functions relevant to PCSAFT ####
-include("PcSaft.jl")
+include("SAFTVRMie.jl")
 #= include("SaftGammaMie.jl") =#
 
 
 #### Calculation of a ####
-function a_res(model::Saft, conditons)
-    return a_hc(model, conditions) + a_disp(model, conditions)
-end
 
-println(a_res(model, conditions))
+println(a_mono(model, conditions))
