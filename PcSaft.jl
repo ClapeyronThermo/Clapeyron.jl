@@ -1,15 +1,18 @@
-k_B = 1.38064852E-23 # m2 kg s-2 K-1
+function a_res(model::PcSaftFamily, conditions)
+    return a_hc(model, conditions) + a_disp(model, conditions)
+end
 
 function a_hc(model::PcSaftFamily, conditions)
-    x = conditions.components 
+    x = conditions.compositions
     m = model.parameters.segments
     m̄ = sum(x[i]*m[i] for i in model.components)
-    return m̄*a_hs(model,conditions) - sum(x[i]*(m[i]-1)*log(g_hsij(model, conditions, i, i)) for i in model.components)
+    return m̄*a_hs(model, conditions) - sum(x[i]*(m[i]-1)*log(g_hsij(model, conditions, i, i)) for i in model.components)
 end
 
 function a_disp(model::PcSaftFamily, conditions)
     v = conditions.volume
-    return -2*π/v*I(model, conditions, 1)*m2ϵσ3(model, conditions, 1) - π/v*C1(model, conditions)*I(model, conditions, 2)*m2ϵσ3(model, conditions, 2)
+    pai = 3.1415
+    return -2*pai/v*I(model, conditions, 1)*m2ϵσ3(model, conditions, 1) - pai/v*C1(model, conditions)*I(model, conditions, 2)*m2ϵσ3(model, conditions, 2)
 end
 
 function d(model::PcSaftFamily, conditions, component)
@@ -21,9 +24,10 @@ end
     
 function ζn(model::PcSaftFamily, conditions, n)
     v = conditions.volume
-    x = conditions.components
+    x = conditions.compositions
     m = model.parameters.segments
-    return π/6/v * sum(x[i]*m[i]*d(model, conditions, i)^n for i in model.components)
+    pai = 3.1415
+    return pai/6/v * sum(x[i]*m[i]*d(model, conditions, i)^n for i in model.components)
 end
 
 function g_hsij(model::PcSaftFamily, conditions, i, j)    
@@ -43,16 +47,16 @@ function a_hs(model::PcSaftFamily, conditions)
 end
 
 function C1(model::PcSaftFamily, conditions)
-    x = conditions.components
+    x = conditions.compositions
     η = ζn(model, conditions, 3)
     m = model.parameters.segments
     m̄ = sum(x[i]*m[i] for i in model.components)
-    return 1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2
+    return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
 end
 
 function m2ϵσ3(model::PcSaftFamily, conditions, ϵ_power = 1)
-    T = conditions.temperature 
-    x = conditions.components 
+    T = conditions.temperature
+    x = conditions.compositions
     m = model.parameters.segments
     σ = model.parameters.sigmas
     ϵ = model.parameters.epsilons
@@ -61,7 +65,7 @@ function m2ϵσ3(model::PcSaftFamily, conditions, ϵ_power = 1)
 end
 
 function I(model::PcSaftFamily, conditions, n)
-    x = conditions.components 
+    x = conditions.compositions
     m = model.parameters.segments
     m̄ = sum(x[i]*m[i] for i in model.components)
     η = ζn(model, conditions, 3)
