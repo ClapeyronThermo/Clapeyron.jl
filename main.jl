@@ -51,16 +51,27 @@ struct PcSaftParam
     ks::Dict # keys are tuples of every pair
 end
 
+struct SAFTVRMieParam
+    segment::Dict
+    sigma::Dict
+    epsilon::Dict
+    ShapeFactor::Dict
+    lambdaA::Dict
+    lambdaR::Dict
+end
+
 
 #### Types for SAFT models ####
 abstract type Saft end
 
 abstract type PcSaftFamily <: Saft end
 abstract type SaftGammaMieFamily <: Saft end
+abstract type SAFTVRMieFamily <: Saft end
 
 struct PcSaft <: PcSaftFamily; components; parameters::PcSaftParam end
 struct SPcSaft <: PcSaftFamily; components; parameters end
 struct SaftGammaMie <: SaftGammaMieFamily; components; parameters end
+struct SAFTVRMie <: SAFTVRMieFamily; components; parameters::SAFTVRMieParam end
 
 
 #### Data from Pierre's script ####
@@ -71,13 +82,13 @@ open("all_data.json", "r") do f
     global all_data
     all_data = JSON.parse(f)  # parse and transform data
 end
-
-
 #### Some random test parameters ####
-segments = Dict()
-sigmas = Dict()
-epsilons = Dict()
-ks = Dict()
+segment = Dict()
+sigma = Dict()
+epsilon = Dict()
+ShapeFactor = Dict()
+lambdaA = Dict()
+lambdaR = Dict()
 
 #= for k in components =#
 #=     segments[k] = all_data["SEGMENT"][k] =#
