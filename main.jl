@@ -5,15 +5,18 @@
 #= Pkg.instantiate() =#
 
 @info("Loading Zygote...")
-using Zygote
+# using Zygote
+@info("Loading Optim...")
+using Optim,LinearAlgebra,Plots
 
 include("constants.jl")
 
 #### Some arbitrary conditions ####
-temperature = 120
+temperature = 250
 volume = 0.005
-components = ["PMMA" "PS"]
-compositions = [0.6 0.4]
+pressure = 1e6
+components = ["CO2"]
+compositions = [1]
 
 
 #### Struct that contains all conditons ####
@@ -106,7 +109,7 @@ for k_ in components
     end
 end
 
-model = PcSaft([1, 2], PcSaftParam(segments, sigmas, epsilons, ks)) # changed comp to [1, 2]
+model = PcSaft([1], PcSaftParam(segments, sigmas, epsilons, ks)) # changed comp to [1, 2]
 #= model = PcSaft(components, PcSaftParam(segments, sigmas, epsilons, ks)) =#
 
 include("CombiningRules.jl")
@@ -123,19 +126,117 @@ end
 reduced_conditions = normal_to_reduced(model, conditions)
 
 #### Functions relevant to PCSAFT ####
+include("Ideal.jl")
 include("PcSaft.jl")
+include("Methods.jl")
 #= include("SaftGammaMie.jl") =#
 
 #### Getting the gradiont ###
-println(a_res(model, conditions))
-function dif(conditions)
-    global model
-    return a_res(model, conditions)
-end
-
-
-gradients = gradient(dif, conditions)
-
-println(gradients)
-
-
+EoS(z,v,T)    = a_ideal(model,z,v,T)+a_res(model,z,v,T)
+# f(x) = (1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2
+# x0 = [0.0, 0.0]
+# println(a_res(model, conditions))
+#
+# function g!(G,v)
+#     global f
+#     G[1] = gradient(f,v)[1]
+# end
+# function h!(H,v)
+#     global f
+#     H[1] = gradient(gradient(f,v))[1]
+# end
+# println(a_res(model,compositions,v0[1],temperature))
+# println(gradient(f,v0)[1]*8.314*temperature)
+pressure = range(1e6,5e6,length=100)
+temperature  = ones(size(pressure))*250
+z  = ones(size(pressure))
+Vol = Volume(EoS,model,z,pressure,temperature)
+plt = plot(Vol,pressure,xaxis=:log,yaxis=:log,fmt=:png)
+P_exp=[1
+1.1
+1.2
+1.3
+1.4
+1.5
+1.6
+1.7
+1.785
+1.785
+1.8
+1.9
+2
+2.1
+2.2
+2.3
+2.4
+2.5
+2.6
+2.7
+2.8
+2.9
+3
+3.1
+3.2
+3.3
+3.4
+3.5
+3.6
+3.7
+3.8
+3.9
+4
+4.1
+4.2
+4.3
+4.4
+4.5
+4.6
+4.7
+4.8
+4.9
+5]
+V_exp = [0.0018779
+0.0016869
+0.0015272
+0.0013916
+0.0012749
+0.0011733
+0.0010839
+0.0010045
+0.00094353
+4.21E-05
+4.21E-05
+4.21E-05
+4.20E-05
+4.20E-05
+4.20E-05
+4.20E-05
+4.20E-05
+4.20E-05
+4.19E-05
+4.19E-05
+4.19E-05
+4.19E-05
+4.19E-05
+4.19E-05
+4.18E-05
+4.18E-05
+4.18E-05
+4.18E-05
+4.18E-05
+4.18E-05
+4.17E-05
+4.17E-05
+4.17E-05
+4.17E-05
+4.17E-05
+4.17E-05
+4.17E-05
+4.16E-05
+4.16E-05
+4.16E-05
+4.16E-05
+4.16E-05
+4.16E-05]
+plt = plot!(V_exp,P_exp*1e6,xaxis=:log,yaxis=:log,fmt=:png,seriestype = :scatter)
+display(plt)
