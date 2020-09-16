@@ -4,14 +4,14 @@ Welcome to JuliaSAFT! This module intends to provide the variants of the SAFT eq
 
 SAFT equations of state currently available:
 
-| EoS         | $A_\mathrm{seg.}$/$A_\mathrm{mono.}$? | $A_\mathrm{chain}$? | $A_\mathrm{assoc.}$? | Parameters? |
-| ----------- | ------------------------------------- | ------------------- | -------------------- | ----------- |
-| SAFT        |                                       |                     |                      |             |
-| PC-SAFT     | :heavy_check_mark:                    | :heavy_check_mark:  |                      |             |
-| sPC-SAFT    |                                       |                     |                      |             |
-| SAFT-VR SW  |                                       |                     |                      |             |
-| soft-SAFT   |                                       |                     |                      |             |
-| SAFT-VR Mie | :heavy_check_mark:                    |                     |                      |             |
+| EoS         | Seg./Mono.?        | Chain?             | Assoc.? | Parameters? |
+| ----------- | ------------------ | ------------------ | ------- | ----------- |
+| SAFT        |                    |                    |         |             |
+| PC-SAFT     | :heavy_check_mark: | :heavy_check_mark: |         |             |
+| sPC-SAFT    |                    |                    |         |             |
+| SAFT-VR SW  |                    |                    |         |             |
+| soft-SAFT   |                    |                    |         |             |
+| SAFT-VR Mie | :heavy_check_mark: | :heavy_check_mark: |         |             |
 
 For group contribution approaches, we provide:
 
@@ -52,5 +52,13 @@ Properties available:
 | Bubble temperature        |                    |
 | Dew temperature           |                    |
 | Enthalpy of vapourisation | :heavy_check_mark: |
+
+- Critical properties (pure components only):
+
+| Property             | Available?         |
+| :------------------- | ------------------ |
+| Critical temperature | :heavy_check_mark: |
+| Critical pressure    | :heavy_check_mark: |
+| Critical volume      | :heavy_check_mark: |
 
 We will also provide a Tp-flash algorithm (HELD alogrithm).
