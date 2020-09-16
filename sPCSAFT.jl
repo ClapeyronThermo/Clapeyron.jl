@@ -1,54 +1,45 @@
-function a_res(model::PcSaftFamily,z,v,T)
+N_A = 6.02214086e23
+function a_res(model::sPcSaftFamily,z,v,T)
     return a_hc(model,z,v,T) + a_disp(model,z,v,T)
 end
 
-function a_hc(model::PcSaftFamily,z,v,T)
+function a_hc(model::sPcSaftFamily,z,v,T)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
-    return m̄*a_hs(model,z,v,T) - sum(x[i]*(m[i]-1)*log(g_hsij(model,z,v,T, i, i)) for i in model.components)
+    return m̄*a_hs(model,z,v,T) - (m̄-1)*log(g_hs(model,z,v,T))
 end
 
-function a_disp(model::PcSaftFamily,z,v,T)
-    pai = 3.14159265359
-    N_A = 6.02214086e23
+function a_disp(model::sPcSaftFamily,z,v,T)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
-    return -2*pai*N_A*sum(z[i] for i in model.components)/v*I_n(model,z,v,T, 1)*m2ϵσ3(model,z,v,T, 1) - pai*m̄*N_A*sum(z[i] for i in model.components)/v*C1(model,z,v,T)*I_n(model,z,v,T, 2)*m2ϵσ3(model,z,v,T, 2)
+    return -2*π*N_A*sum(z[i] for i in model.components)/v*I_n(model,z,v,T, 1)*m2ϵσ3(model,z,v,T, 1) - π*m̄*N_A*sum(z[i] for i in model.components)/v*C1(model,z,v,T)*I_n(model,z,v,T, 2)*m2ϵσ3(model,z,v,T, 2)
 end
 
-function d(model::PcSaftFamily,z,v,T, component)
+function d(model::sPcSaftFamily,z,v,T, component)
     ϵ = model.parameters.epsilon[component,component]
     σ = model.parameters.sigma[component,component]
     return σ * (1 - 0.12exp(-3ϵ/T))
 end
 
-function ζn(model::PcSaftFamily,z,v,T, n)
+function ζn(model::sPcSaftFamily,z,v,T, n)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
-    pai = 3.14159265359
-    N_A = 6.02214086e23
-    return N_A*sum(z[i] for i in model.components)*pai/6/v * sum(x[i]*m[i]*d(model,z,v,T, i)^n for i in model.components)
+    return N_A*sum(z[i] for i in model.components)*π/6/v * sum(x[i]*m[i]*d(model,z,v,T, i)^n for i in model.components)
 end
 
-function g_hsij(model::PcSaftFamily,z,v,T, i, j)
-    di = d(model,z,v,T, i)
-    dj = d(model,z,v,T, j)
-    ζ2 = ζn(model,z,v,T, 2)
-    ζ3 = ζn(model,z,v,T, 3)
-    return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
+function g_hs(model::sPcSaftFamily,z,v,T)
+    η = ζn(model,z,v,T, 3)
+    return (1-η/2)/(1-η)^3
 end
 
-function a_hs(model::PcSaftFamily,z,v,T)
-    ζ0 = ζn(model,z,v,T, 0)
-    ζ1 = ζn(model,z,v,T, 1)
-    ζ2 = ζn(model,z,v,T, 2)
-    ζ3 = ζn(model,z,v,T, 3)
-    return 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
+function a_hs(model::sPcSaftFamily,z,v,T)
+    η = ζn(model,z,v,T, 3)
+    return (4η-3η^2)/(1-η)^2
 end
 
-function C1(model::PcSaftFamily,z,v,T)
+function C1(model::sPcSaftFamily,z,v,T)
     x = z/sum(z[i] for i in model.components)
     η = ζn(model,z,v,T, 3)
     m = model.parameters.segment
@@ -56,7 +47,7 @@ function C1(model::PcSaftFamily,z,v,T)
     return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
 end
 
-function m2ϵσ3(model::PcSaftFamily,z,v,T, ϵ_power = 1)
+function m2ϵσ3(model::sPcSaftFamily,z,v,T, ϵ_power = 1)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     σ = model.parameters.sigma
@@ -65,7 +56,7 @@ function m2ϵσ3(model::PcSaftFamily,z,v,T, ϵ_power = 1)
     return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[i,i]*ϵ[j,j])*(1-k[(i,j)])/T)^ϵ_power * (0.5*(σ[i,i]+σ[j,j]))^3 for i in model.components, j in model.components)
 end
 
-function I_n(model::PcSaftFamily,z,v,T, n)
+function I_n(model::sPcSaftFamily,z,v,T, n)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     m̄ = sum(x[i]*m[i] for i in model.components)

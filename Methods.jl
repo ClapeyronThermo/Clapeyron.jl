@@ -5,12 +5,12 @@ function Volume(EoS,model,z,p,T,phase="unknown")
     N = length(p)
 
     ub = [Inf]
-    lb = [log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1]^3/1)]
+    lb = [log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/1)]
 
     if phase == "unknown" || phase == "liquid"
-        x0 = [log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1]^3/0.9)]
+        x0 = [log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/0.9)]
     elseif phase == "vapour"
-        x0 = [log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1]^3/1e-2)]
+        x0 = [log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/1e-2)]
     end
 
     Vol = []
@@ -110,7 +110,7 @@ end
 
 function Psat(EoS,model,T)
 
-    v0    = [log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1]^3/0.4),log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1]^3/1e-2)]
+    v0    = [log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/0.4),log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/1e-2)]
     v_l   = []
     v_v   = []
     P_sat = []
@@ -132,9 +132,8 @@ function Obj_Sat(F,EoS,model,T,v_l,v_v)
     df(x)  = ForwardDiff.gradient(fun,x)
     df_l = df([1,v_l[1]])
     df_v = df([1,v_v[1]])
-    F[1] = (df_l[2]-df_v[2])*model.parameters.sigma[1]^3*N_A/8.314/model.parameters.epsilon[1]
-    F[2] = (df_l[1]-df_v[1])/8.314/model.parameters.epsilon[1]
-    println(v_l,v_v)
+    F[1] = (df_l[2]-df_v[2])*model.parameters.sigma[1,1]^3*N_A/8.314/model.parameters.epsilon[1,1]
+    F[2] = (df_l[1]-df_v[1])/8.314/model.parameters.epsilon[1,1]
 end
 
 function Jac_Sat(J,EoS,model,T,v_l,v_v)
@@ -143,11 +142,42 @@ function Jac_Sat(J,EoS,model,T,v_l,v_v)
     d2f(x) = ForwardDiff.hessian(fun,x)
     d2f_l = d2f([1,v_l[1]])
     d2f_v = d2f([1,v_v[1]])
-    J[1] =  v_l[1]*d2f_l[2,2]*model.parameters.sigma[1]^3*N_A*log(10)/8.314/model.parameters.epsilon[1]
-    J[1,2] = -v_v[1]*d2f_v[2,2]*model.parameters.sigma[1]^3*N_A*log(10)/8.314/model.parameters.epsilon[1]
-    J[2,1] =  v_l[1]*d2f_l[1,2]*log(10)/8.314/model.parameters.epsilon[1]
-    J[2,2] = -v_v[1]*d2f_v[1,2]*log(10)/8.314/model.parameters.epsilon[1]
+    J[1] =  v_l[1]*d2f_l[2,2]*model.parameters.sigma[1,1]^3*N_A*log(10)/8.314/model.parameters.epsilon[1,1]
+    J[1,2] = -v_v[1]*d2f_v[2,2]*model.parameters.sigma[1,1]^3*N_A*log(10)/8.314/model.parameters.epsilon[1,1]
+    J[2,1] =  v_l[1]*d2f_l[1,2]*log(10)/8.314/model.parameters.epsilon[1,1]
+    J[2,2] = -v_v[1]*d2f_v[1,2]*log(10)/8.314/model.parameters.epsilon[1,1]
 end
+
+function Pcrit(EoS,model)
+    f! = (F,x) -> Obj_Crit(F,EoS,model,x[1]*model.parameters.epsilon[(1, 1)],10^x[2])
+    # j! = (J,x) -> Jac_Crit(J,EoS,model,x[1]*model.parameters.epsilon[(1, 1)],10^x[2])
+    x0 = [1.5,log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/0.3)]
+    r  =nlsolve(f!,x0)
+    T_c = r.zero[1]*model.parameters.epsilon[1,1]
+    v_c = 10^r.zero[2]
+    p_c = Pressure(EoS,model,[1],v_c,T_c)
+    return (T_c,p_c,v_c)
+end
+
+function Obj_Crit(F,EoS,model,T_c,v_c)
+    fun(x)  = EoS([1],x[1],T_c)
+    df(x)   = ForwardDiff.derivative(fun,x)
+    d2f(x)  = ForwardDiff.derivative(df,x)
+    d3f(x)  = ForwardDiff.derivative(d2f,x)
+    F[1] = d2f(v_c)
+    F[2] = d3f(v_c)
+end
+
+# function Jac_Crit(F,EoS,model,T_c,v_c)
+#     fun(x)  = EoS([1],x[1],x[2])
+#     df(x)   = ForwardDiff.gradient(fun,x)
+#     d2f(x)  = ForwardDiff.gradient(df,x)
+#     d3f(x)  = ForwardDiff.gradient(d2f,x)
+#     d4f(x)  = ForwardDiff.gradient(d3f,x)
+#
+#     F[1] = d2f(v_c)
+#     F[2] = d3f(v_c)
+# end
 
 function Enthalpy_of_vapourisation(EoS,model,T)
     (P_sat,v_l,v_v) = Psat(EoS,model,T)
@@ -162,8 +192,7 @@ function Enthalpy_of_vapourisation(EoS,model,T)
     return H_vap
 end
 
-function Pressure(EoS,model,z,p,T,phase="unknown")
-    v      = Volume(EoS,model,z,p,T,phase)
+function Pressure(EoS,model,z,v,T,phase="unknown")
     fun(x) = EoS(z,x[1],T)
     df(x)  = ForwardDiff.derivative(fun,x[1])
     return -df(v)
