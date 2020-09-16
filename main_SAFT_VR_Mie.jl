@@ -2,7 +2,7 @@
 # @info("Loading Zygote...")
 # using Zygote
 @info("Loading Optim...")
-# using Plots
+using Plots
 @info("Loading Zygote...")
 #### Struct that contains paramaters for PCSAFT ####
 struct SAFTVRMieParam
@@ -59,9 +59,14 @@ include("Methods.jl")
 #### Getting the gradiont ###
 EoS(z,v,T)    = 8.314*z[1]*T*(a_ideal(model,z,v,T)+a_res(model,z,v,T))
 
-temperature  = range(220,310,length=100)
-z  = ones(size(temperature))
-pressure = 101325*ones(size(temperature))
-# (P_sat,v_v,v_l) = Psat(EoS,model,temperature)
-H_vap=Enthalpy_of_vapourisation(EoS,model,temperature)
-plt = plot(temperature,H_vap)
+(T_c,p_c,v_c) = Pcrit(EoS,model)
+temperature  = range(220,T_c,length=100)
+(P_sat,v_v,v_l) = Psat(EoS,model,temperature)
+# H_vap=Enthalpy_of_vapourisation(EoS,model,temperature)
+T_exp = [220,230,240,250,260,270,280,290,300]
+P_exp = [0.59913,0.89291,1.2825,1.785,2.4188,3.2033,4.1607,5.3177,6.7131]*1e6
+plt = plot(1 ./temperature,P_sat,yaxis=:log)
+plt = plot!([1 ./T_c],[p_c],yaxis=:log,seriestype = :scatter)
+plt = plot!(1 ./T_exp,P_exp,yaxis=:log,seriestype = :scatter)
+
+# plt = plot(temperature,H_vap)
