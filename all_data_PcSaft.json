@@ -1,4 +1,4 @@
 {"EPSILON": {"CO2": 169.21},
  "SIGMA": {"CO2": 2.7852e-10},
  "SEGMENT": {"CO2": 2.0729},
- "Binary_k": {"PMMA": {"PS": 0.00497}, "PS": {"PMMA": 0.00497}}}
+ "Binary_k": {}}
