@@ -1,6 +1,8 @@
 using NLopt,NLsolve,DiffResults,ForwardDiff,LinearAlgebra
 pai = 3.14159265359
 N_A = 6.02214086e23
+
+## Standard pressure solver
 function Volume(EoS,model,z,p,T,phase="unknown")
     N = length(p)
 
@@ -108,9 +110,11 @@ function NLopt_obj(f,x,g)
         end
 end
 
+
+## Saturation conditions solver
 function Psat(EoS,model,T)
 
-    v0    = [log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/0.4),log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/1e-2)]
+    v0    = [log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/0.4),log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/1e-3)]
     v_l   = []
     v_v   = []
     P_sat = []
@@ -148,6 +152,7 @@ function Jac_Sat(J,EoS,model,T,v_l,v_v)
     J[2,2] = -v_v[1]*d2f_v[1,2]*log(10)/8.314/model.parameters.epsilon[1,1]
 end
 
+## Critical point solver
 function Pcrit(EoS,model)
     f! = (F,x) -> Obj_Crit(F,EoS,model,x[1]*model.parameters.epsilon[(1, 1)],10^x[2])
     # j! = (J,x) -> Jac_Crit(J,EoS,model,x[1]*model.parameters.epsilon[(1, 1)],10^x[2])
@@ -192,6 +197,7 @@ function Enthalpy_of_vapourisation(EoS,model,T)
     return H_vap
 end
 
+## Derivative properties
 function Pressure(EoS,model,z,v,T,phase="unknown")
     fun(x) = EoS(z,x[1],T)
     df(x)  = ForwardDiff.derivative(fun,x[1])
@@ -274,7 +280,7 @@ function Speed_of_sound(EoS,model,z,p,T,phase="unknown")
     Mr      = sum(z[i]*model.parameters.Mr[i] for i in model.components)
     v       = Volume(EoS,model,z,p,T,phase)[1]
     fun(x)  = EoS(z,x[1],x[2])
-    d2f(x)   = ForwardDiff.hessian(fun,x)
+    d2f(x)  = ForwardDiff.hessian(fun,x)
     return v*sqrt((d2f([v,T])[1]-d2f([v,T])[1,2]^2/d2f([v,T])[2,2])/Mr)
 end
 

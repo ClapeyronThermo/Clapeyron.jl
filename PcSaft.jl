@@ -1,3 +1,4 @@
+N_A = 6.02214086e23
 function a_res(model::PcSaftFamily,z,v,T)
     return a_hc(model,z,v,T) + a_disp(model,z,v,T)
 end
@@ -10,12 +11,10 @@ function a_hc(model::PcSaftFamily,z,v,T)
 end
 
 function a_disp(model::PcSaftFamily,z,v,T)
-    pai = 3.14159265359
-    N_A = 6.02214086e23
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
-    return -2*pai*N_A*sum(z[i] for i in model.components)/v*I_n(model,z,v,T, 1)*m2ϵσ3(model,z,v,T, 1) - pai*m̄*N_A*sum(z[i] for i in model.components)/v*C1(model,z,v,T)*I_n(model,z,v,T, 2)*m2ϵσ3(model,z,v,T, 2)
+    return -2*π*N_A*sum(z[i] for i in model.components)/v*I_n(model,z,v,T, 1)*m2ϵσ3(model,z,v,T, 1) - π*m̄*N_A*sum(z[i] for i in model.components)/v*C1(model,z,v,T)*I_n(model,z,v,T, 2)*m2ϵσ3(model,z,v,T, 2)
 end
 
 function d(model::PcSaftFamily,z,v,T, component)
@@ -27,9 +26,7 @@ end
 function ζn(model::PcSaftFamily,z,v,T, n)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
-    pai = 3.14159265359
-    N_A = 6.02214086e23
-    return N_A*sum(z[i] for i in model.components)*pai/6/v * sum(x[i]*m[i]*d(model,z,v,T, i)^n for i in model.components)
+    return N_A*sum(z[i] for i in model.components)*π/6/v * sum(x[i]*m[i]*d(model,z,v,T, i)^n for i in model.components)
 end
 
 function g_hsij(model::PcSaftFamily,z,v,T, i, j)

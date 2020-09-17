@@ -66,8 +66,8 @@ pressure = 101325*ones(size(temperature))
 # plt = plot!(V_exp[1:2:end],P_exp[1:2:end]*1e6,xaxis=:log,fmt=:png,seriestype = :scatter)
 T_exp = [220,230,240,250,260,270,280,290,300]
 P_exp = [0.59913,0.89291,1.2825,1.785,2.4188,3.2033,4.1607,5.3177,6.7131]*1e6
-plt = plot(1 ./temperature,P_sat,yaxis=:log)
-plt = plot!([1 ./T_c],[p_c],yaxis=:log,seriestype = :scatter)
-plt = plot!(1 ./T_exp,P_exp,yaxis=:log,seriestype = :scatter)
+plt = plot(1 ./temperature,P_sat,yaxis=:log,color=:black)
+plt = plot!([1 ./T_c],[p_c],yaxis=:log,seriestype = :scatter,color=:black)
+plt = plot!(1 ./T_exp,P_exp,yaxis=:log,seriestype = :scatter,color=:red)
 
 display(plt)

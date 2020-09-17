@@ -1,25 +1,29 @@
-![106277775_782656558933856_3832671477006550609_n](/Users/pierrewalker/Downloads/106277775_782656558933856_3832671477006550609_n.jpg)
+![JuliaSAFT_logo](./docs/JuliaSAFT_logo.jpg)
 
 Welcome to JuliaSAFT! This module intends to provide the variants of the SAFT equation of state, along with the relevant parameters and solvers required to use these equations.
 
 SAFT equations of state currently available:
 
-| EoS         | Seg./Mono.?        | Chain?             | Assoc.? | Parameters? |
-| ----------- | ------------------ | ------------------ | ------- | ----------- |
-| SAFT        |                    |                    |         |             |
-| PC-SAFT     | :heavy_check_mark: | :heavy_check_mark: |         |             |
-| sPC-SAFT    |                    |                    |         |             |
-| SAFT-VR SW  |                    |                    |         |             |
-| soft-SAFT   |                    |                    |         |             |
-| SAFT-VR Mie | :heavy_check_mark: | :heavy_check_mark: |         |             |
+| EoS           | Seg./Mono.?        | Chain?             | Assoc.? | Parameters? |
+| ------------- | ------------------ | ------------------ | ------- | ----------- |
+| SAFT          | :heavy_check_mark: | :heavy_check_mark: |         |             |
+| CK-SAFT       |                    |                    |         |             |
+| sSAFT         |                    |                    |         |             |
+| LJ-SAFT       |                    |                    |         |             |
+| PC-SAFT       | :heavy_check_mark: | :heavy_check_mark: |         |             |
+| sPC-SAFT      | :heavy_check_mark: | :heavy_check_mark: |         |             |
+| SAFT-VR SW    |                    |                    |         |             |
+| soft-SAFT     |                    |                    |         |             |
+| SAFT-VR Mie   | :heavy_check_mark: | :heavy_check_mark: |         |             |
+| SAFT-VR Morse |                    |                    |         |             |
 
 For group contribution approaches, we provide:
 
-| EoS               | $A_\mathrm{seg.}$/$A_\mathrm{mono.}$? | $A_\mathrm{chain}$? | $A_\mathrm{assoc.}$? | Parameters? |
-| ----------------- | ------------------------------------- | ------------------- | -------------------- | ----------- |
-| sPC-SAFT          |                                       |                     |                      |             |
-| SAFT-$\gamma$ SW  |                                       |                     |                      |             |
-| SAFT-$\gamma$ Mie |                                       |                     |                      |             |
+| EoS               | Seg./Mono.? | Chain? | Assoc.? | Parameters? |
+| ----------------- | ----------- | ------ | ------- | ----------- |
+| sPC-SAFT          |             |        |         |             |
+| SAFT-$\gamma$ SW  |             |        |         |             |
+| SAFT-$\gamma$ Mie |             |        |         |             |
 
 Properties available:
 
