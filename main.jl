@@ -2,6 +2,7 @@
 # using Zygote
 @info("Loading Optim...")
 using Plots
+using CSV, DataFrames
 @info("Loading Zygote...")
 #### Struct that contains paramaters for PCSAFT ####
 struct sPcSaftParam
@@ -19,29 +20,45 @@ abstract type sPcSaftFamily <: Saft end
 
 struct sPcSaft <: sPcSaftFamily; components; parameters::sPcSaftParam end
 
-#### Data from Pierre's script ####
-import JSON
-
-all_data = Dict()
-open("all_data_PcSaft.json", "r") do f
-    global all_data
-    all_data = JSON.parse(f)  # parse and transform data
-end
 #### Some random test parameters ####
 segment = Dict()
 sigma = Dict()
 epsilon = Dict()
 k = Dict()
-components = ["CO2"]
+components = ["Cyclohexene"]
+
+#### Database lookup ####
+method = "sPCSAFT"
+include("Database.jl")
 for k_ in components
+    _, dF = lookup(k_, method)
     i = 1
-    segment[i] = all_data["SEGMENT"][k_]
-    sigma[i,i] = all_data["SIGMA"][k_]
-    epsilon[i,i] = all_data["EPSILON"][k_]
+    segment[i] = dF[1,"m"]
+    sigma[i,i] = dF[1,"sigma"]
+    epsilon[i,i] = dF[1,"epsilon"]
     #= for kk in intersect(keys(all_data["Binary_k"][k]), components) =#
 
     k[(i,i)] = 0
 end
+
+#### Data from Pierre's script ####
+#= import JSON =#
+
+#= all_data = Dict() =#
+#= open("all_data_PcSaft.json", "r") do f =#
+#=     global all_data =#
+#=     all_data = JSON.parse(f)  # parse and transform data =#
+#= end =#
+
+#= for k_ in components =#
+#=     i = 1 =#
+#=     segment[i] = all_data["SEGMENT"][k_] =#
+#=     sigma[i,i] = all_data["SIGMA"][k_] =#
+#=     epsilon[i,i] = all_data["EPSILON"][k_] =#
+#=     #1= for kk in intersect(keys(all_data["Binary_k"][k]), components) =1# =#
+
+#=     k[(i,i)] = 0 =#
+#= end =#
 
 model = sPcSaft([1], sPcSaftParam(segment, sigma, epsilon, k)) # changed comp to [1, 2]
 #= model = PcSaft(components, PcSaftParam(segments, sigmas, epsilons, ks)) =#
