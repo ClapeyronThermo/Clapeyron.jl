@@ -4,18 +4,18 @@ Welcome to JuliaSAFT! This module intends to provide the variants of the SAFT eq
 
 SAFT equations of state currently available:
 
-| EoS           | Seg./Mono.?        | Chain?             | Assoc.? | Parameters? |
-| ------------- | ------------------ | ------------------ | ------- | ----------- |
-| SAFT          | :heavy_check_mark: | :heavy_check_mark: |         |             |
-| CK-SAFT       |                    |                    |         |             |
-| sSAFT         |                    |                    |         |             |
-| LJ-SAFT       |                    |                    |         |             |
-| PC-SAFT       | :heavy_check_mark: | :heavy_check_mark: |         |             |
-| sPC-SAFT      | :heavy_check_mark: | :heavy_check_mark: |         |             |
-| SAFT-VR SW    |                    |                    |         |             |
-| soft-SAFT     |                    |                    |         |             |
-| SAFT-VR Mie   | :heavy_check_mark: | :heavy_check_mark: |         |             |
-| SAFT-VR Morse |                    |                    |         |             |
+| EoS           | Seg./Mono.?        | Chain?             | Assoc.?                       | Parameters?                         |
+| ------------- | ------------------ | ------------------ | ----------------------------- | ----------------------------------- |
+| SAFT          | :heavy_check_mark: | :heavy_check_mark: |                               | :heavy_check_mark: (non-assoc only) |
+| CK-SAFT       |                    |                    |                               |                                     |
+| sSAFT         |                    |                    |                               |                                     |
+| LJ-SAFT       |                    |                    |                               |                                     |
+| PC-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:(pure only) | :heavy_check_mark: (non-assoc only) |
+| sPC-SAFT      | :heavy_check_mark: | :heavy_check_mark: |                               | :heavy_check_mark: (non-assoc only) |
+| SAFT-VR SW    |                    |                    |                               |                                     |
+| soft-SAFT     |                    |                    |                               |                                     |
+| SAFT-VR Mie   | :heavy_check_mark: | :heavy_check_mark: |                               | :heavy_check_mark: (non-assoc only) |
+| SAFT-VR Morse |                    |                    |                               |                                     |
 
 For group contribution approaches, we provide:
 

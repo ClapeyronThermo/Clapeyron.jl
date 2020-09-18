@@ -52,12 +52,12 @@ include("Methods.jl")
 
 #### Getting the gradiont ###
 EoS(z,v,T)    = 8.314*z[1]*T*(a_ideal(model,z,v,T)+a_res(model,z,v,T))
+# println(a_seg(model,[1],1e-3,298))
 # println(d(model,[1],1e-3,298,1))
 (T_c,p_c,v_c) = Pcrit(EoS,model)
-# println(T_c)
-temperature  = range(220,T_c,length=100)
+println(T_c)
+temperature  = range(220,430,length=100)
 (P_sat,v_v,v_l) = Psat(EoS,model,temperature)
-# H_vap=Enthalpy_of_vapourisation(EoS,model,temperature)
 T_exp = [220
 245
 270
@@ -79,5 +79,3 @@ P_exp = [0.0078045
 plt = plot(1e4 ./temperature,P_sat/1e3,yaxis=:log,colour=:black)
 plt = plot!([1e4 ./T_c],[p_c]/1e3,seriestype = :scatter,colour=:black)
 plt = plot!(1e4 ./T_exp,P_exp*1e3,yaxis=:log,seriestype = :scatter,colour=:red)
-
-# plt = plot(temperature,H_vap)

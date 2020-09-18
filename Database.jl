@@ -29,7 +29,7 @@ function lookup(component::String, method="None")
     println("Using method: " * found_methods[1])
 
 
-    dF = CSV.read("database/data_" * method * ".csv", DataFrame; header=3, datarow=row+3, limit=1)
+    dF = CSV.read("database/data_" * method * ".csv"; header=3, datarow=row+3, limit=1)
 
     return method, dF
 end
