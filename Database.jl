@@ -1,3 +1,4 @@
+
 function lookup(component::String, method="None")
     methods = ["ogSAFT", "PCSAFT", "sPCSAFT", "SAFTVRSW", "softSAFT", "SAFTVRMie"]
     found_methods = Array{String, 1}()

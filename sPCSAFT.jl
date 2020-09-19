@@ -1,45 +1,47 @@
 N_A = 6.02214086e23
-function a_res(model::sPcSaftFamily,z,v,T)
+k_B = 1.38064852e-23
+R   = N_A*k_B
+function a_res(model::SAFTFamily,z,v,T)
     return a_hc(model,z,v,T) + a_disp(model,z,v,T)
 end
 
-function a_hc(model::sPcSaftFamily,z,v,T)
+function a_hc(model::SAFTFamily,z,v,T)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
     return m̄*a_hs(model,z,v,T) - (m̄-1)*log(g_hs(model,z,v,T))
 end
 
-function a_disp(model::sPcSaftFamily,z,v,T)
+function a_disp(model::SAFTFamily,z,v,T)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
     return -2*π*N_A*sum(z[i] for i in model.components)/v*I_n(model,z,v,T, 1)*m2ϵσ3(model,z,v,T, 1) - π*m̄*N_A*sum(z[i] for i in model.components)/v*C1(model,z,v,T)*I_n(model,z,v,T, 2)*m2ϵσ3(model,z,v,T, 2)
 end
 
-function d(model::sPcSaftFamily,z,v,T, component)
+function d(model::SAFTFamily,z,v,T, component)
     ϵ = model.parameters.epsilon[component,component]
     σ = model.parameters.sigma[component,component]
     return σ * (1 - 0.12exp(-3ϵ/T))
 end
 
-function ζn(model::sPcSaftFamily,z,v,T, n)
+function ζn(model::SAFTFamily,z,v,T, n)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     return N_A*sum(z[i] for i in model.components)*π/6/v * sum(x[i]*m[i]*d(model,z,v,T, i)^n for i in model.components)
 end
 
-function g_hs(model::sPcSaftFamily,z,v,T)
+function g_hs(model::SAFTFamily,z,v,T)
     η = ζn(model,z,v,T, 3)
     return (1-η/2)/(1-η)^3
 end
 
-function a_hs(model::sPcSaftFamily,z,v,T)
+function a_hs(model::SAFTFamily,z,v,T)
     η = ζn(model,z,v,T, 3)
     return (4η-3η^2)/(1-η)^2
 end
 
-function C1(model::sPcSaftFamily,z,v,T)
+function C1(model::SAFTFamily,z,v,T)
     x = z/sum(z[i] for i in model.components)
     η = ζn(model,z,v,T, 3)
     m = model.parameters.segment
@@ -47,7 +49,7 @@ function C1(model::sPcSaftFamily,z,v,T)
     return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
 end
 
-function m2ϵσ3(model::sPcSaftFamily,z,v,T, ϵ_power = 1)
+function m2ϵσ3(model::SAFTFamily,z,v,T, ϵ_power = 1)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     σ = model.parameters.sigma
@@ -56,7 +58,7 @@ function m2ϵσ3(model::sPcSaftFamily,z,v,T, ϵ_power = 1)
     return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[i,i]*ϵ[j,j])*(1-k[(i,j)])/T)^ϵ_power * (0.5*(σ[i,i]+σ[j,j]))^3 for i in model.components, j in model.components)
 end
 
-function I_n(model::sPcSaftFamily,z,v,T, n)
+function I_n(model::SAFTFamily,z,v,T, n)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
