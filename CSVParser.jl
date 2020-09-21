@@ -22,7 +22,7 @@ function read_line(filename::AbstractString, selected_line::Int64)
     end
 end
 
-function find_match(filename::AbstractString, match_string::String, selected_col::Int64 = 1)
+function find_matches(filename::AbstractString, match_string::String, selected_col::Int64 = 1)
     # Function to search for a string in the specified column in a CSV
     if !isfile(filename)
         error("File does not exist")
@@ -40,7 +40,7 @@ function find_match(filename::AbstractString, match_string::String, selected_col
     end
 end
 
-function find_match(filename::AbstractString, match_string::String, selected_col::String; header_row::Int64 = 1)
+function find_matches(filename::AbstractString, match_string::String, selected_col::String; header_row::Int64 = 1)
     if !isfile(filename)
         error("File does not exist")
     end
@@ -50,10 +50,10 @@ function find_match(filename::AbstractString, match_string::String, selected_col
     elseif length(selected_col_numbers) > 1
         error("Header " * selected_col * " is not unique")
     end
-    return find_match(filename, match_string, selected_col_numbers[1])
+    return find_matches(filename, match_string, selected_col_numbers[1])
 end
 
-function find_match_pair(filename::AbstractString, match_string1::String, match_string2::String,selected_col1::Int64 = 1, selected_col2::Int64 = 2)
+function find_matches_pair(filename::AbstractString, match_string1::String, match_string2::String,selected_col1::Int64 = 1, selected_col2::Int64 = 2)
     # Function to search for pairs of strings in two specified columns
     if !isfile(filename)
         error("File does not exist")
@@ -73,7 +73,7 @@ function find_match_pair(filename::AbstractString, match_string1::String, match_
     end
 end
 
-function find_match_pair(filename::AbstractString, match_string1::String, match_string2::String, selected_col1::String, selected_col2::String; header_row::Int64 = 1)
+function find_matches_pair(filename::AbstractString, match_string1::String, match_string2::String, selected_col1::String, selected_col2::String; header_row::Int64 = 1)
     if !isfile(filename)
         error("File does not exist")
     end
@@ -89,5 +89,11 @@ function find_match_pair(filename::AbstractString, match_string1::String, match_
     elseif length(selected_col_numbers2) > 1
         error("Header " * selected_col2 * " is not unique")
     end
-    return find_match_pair(filename, match_string1, match_string2, selected_col_numbers1[1], selected_col_numbers2[1])
+    return find_matches_pair(filename, match_string1, match_string2, selected_col_numbers1[1], selected_col_numbers2[1])
 end
+
+function tryparse_fallback(list)
+    parsed = [tryparse(Float64, i) for i in list]
+    return [parsed[i] == nothing ? list[i] : parsed[i] for i in 1:length(list)]
+end
+
