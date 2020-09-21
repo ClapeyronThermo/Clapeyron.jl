@@ -1,0 +1,9 @@
+JuliaSAFT Database File;;;;;;
+ogSAFT Like Parameters;;;;;;
+species;DIPPR Number;Mw;m;sigma;epsilon;source
+Methane;;16.04;1;3.739;152.2;10.1021/ie00104a021
+Ethane;;30.07;2;3.2918;158.3;10.1021/ie00104a022
+Propane;;44.1;3;3.1514;152.3;10.1021/ie00104a023
+n-butane;;58.12;4;3.0775;150.6;10.1021/ie00104a024
+n-octane;;114.23;8;2.9766;148.1;10.1021/ie00104a025
+benzene;;78.11;4.25;3.019;193.5;10.1021/ie00104a026
