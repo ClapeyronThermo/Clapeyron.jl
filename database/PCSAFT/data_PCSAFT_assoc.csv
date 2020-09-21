@@ -1,6 +1,6 @@
 JuliaSAFT Database File;;;;;;;;
 PC-SAFT Interaction Parameters;;;;;;;;
-Species1;SMILES1;Sites1;Species2;SMILES2;Sites2;epsilon_assoc;bond_vol;Source
+species1;SMILES1;site1;species2;SMILES2;site2;epsilon_assoc;bond_vol;source
 methanol;CO;H;methanol;CO;e;2899.5;0.035176;10.1021/ie010954d
 ethanol;CCO;H;ethanol;CCO;e;2653.4;0.032384;10.1021/ie010954d
 1-propanol;CCCO;H;1-propanol;CCCO;e;2276.8;0.015268;10.1021/ie010954d
@@ -19,3 +19,7 @@ ethylamine;CCN;H;ethylamine;CCN;e;854.7;0.017275;10.1021/ie010954d
 2-propylamine;CC(N)C;H;2-propylamine;CC(N)C;e;932.2;0.02134;10.1021/ie010954d
 aniline;;H;aniline;;e;1351.6;0.074883;10.1021/ie010954d
 acetic acid;CC(=O)O;H;acetic acid;CC(=O)O;e;3044.4;0.07555;10.1021/ie010954d
+junk_data_below_for_testing;;;;;
+methanol;CO;H;ethanol;CO;e;2899.5;0.035176;10.1021/ie010954d
+methanol;CO;H;ethanol;CO;H;2899.5;0.035176;10.1021/ie010954d
+methanol;CO;H;methanol;CO;H;2899.5;0.035176;10.1021/ie010954d
