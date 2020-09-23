@@ -132,7 +132,6 @@ function retrieve_parameters(components::Array{String, 1}, selected_method, user
     parameters_like = retrieve_parameters_like(components, selected_method)
     parameters_unlike = retrieve_parameters_unlike(components, selected_method)
     parameters_assoc = retrieve_parameters_assoc(components, selected_method)
-
     pairs = union(Set(keys(parameters_like)), Set(keys(parameters_unlike)), Set(keys(parameters_assoc)))
     parameters = Dict{Set{String}, Any}()
     for pair in pairs

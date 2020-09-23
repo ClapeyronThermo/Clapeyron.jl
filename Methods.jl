@@ -113,7 +113,6 @@ end
 
 ## Saturation conditions solver
 function Psat(EoS,model,T)
-
     v0    = [log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/0.4),log10(pai/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/1e-3)]
     v_l   = []
     v_v   = []
