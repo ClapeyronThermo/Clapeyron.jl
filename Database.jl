@@ -92,12 +92,11 @@ function retrieve_parameters_assoc(components::Array{String, 1}, selected_method
     header = read_line(filepath, 3)
     found_method = search_database_assoc(components, selected_method)
     found_parameters = Dict{Set{String}, Dict{String, Dict{Set{String}, Dict{String, Any}}}}() 
-    #= found_parameters = Dict{Set{String}, Dict{String, Any}}() =# 
     if !isempty(found_method)
         for pair in keys(found_method)
             found_parameters[pair] = Dict("Assoc" => Dict())
             for line_number in found_method[pair][selected_method]
-                retrieved = Dict(zip(header, tryparse_fallback(read_line(filepath, line_number))))
+                retrieved = Dict(zip(header, read_line(filepath, line_number)))
                 assoc_pair = Set([retrieved["site1"], retrieved["site2"]])
                 found_parameters[pair]["Assoc"][assoc_pair] = Dict()
                 found_parameters[pair]["Assoc"][assoc_pair] = retrieved 
@@ -113,8 +112,7 @@ function retrieve_parameters_like(components::Array{String, 1}, selected_method,
     found_method = search_database_like(components, selected_method)
     found_parameters = Dict{Set{String}, Dict{String, Any}}() 
     for component in keys(found_method)
-        #= found_parameters[component] = Dict() =#
-        found_parameters[component] = Dict(zip(header, tryparse_fallback(read_line(filepath, found_method[component][selected_method]))))
+        found_parameters[component] = Dict(zip(header, read_line(filepath, found_method[component][selected_method])))
     end
     return found_parameters
 end
@@ -125,7 +123,7 @@ function retrieve_parameters_unlike(components::Array{String, 1}, selected_metho
     found_method = search_database_unlike(components, selected_method)
     found_parameters = Dict{Set{String}, Dict{String, Any}}() 
     for pair in keys(found_method)
-        found_parameters[pair] = Dict(zip(header, tryparse_fallback(read_line(filepath, found_method[pair][selected_method]))))
+        found_parameters[pair] = Dict(zip(header, read_line(filepath, found_method[pair][selected_method])))
     end
     return found_parameters
 end
@@ -134,8 +132,7 @@ function retrieve_parameters(components::Array{String, 1}, selected_method, user
     parameters_like = retrieve_parameters_like(components, selected_method)
     parameters_unlike = retrieve_parameters_unlike(components, selected_method)
     parameters_assoc = retrieve_parameters_assoc(components, selected_method)
-
-    pairs = vcat([Set([i]) for i in components], [Set(i) for i in collect(Combinatorics.combinations(components, 2))])
+    pairs = union(Set(keys(parameters_like)), Set(keys(parameters_unlike)), Set(keys(parameters_assoc)))
     parameters = Dict{Set{String}, Any}()
     for pair in pairs
         parameters[pair] = Dict()

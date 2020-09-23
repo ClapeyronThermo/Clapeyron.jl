@@ -14,7 +14,7 @@ function read_line(filename::AbstractString, selected_line::Int64)
         linecount = 1
         for line in eachline(file)
             if linecount == selected_line
-                return split(line, ';')
+                return tryparse_fallback(split(line, ';'))
             end
             linecount += 1
         end
