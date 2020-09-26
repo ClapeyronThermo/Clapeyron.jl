@@ -62,7 +62,8 @@ function m2ϵσ3(model::PCSAFTFamily, z, v, T, ϵ_power = 1)
     σ = model.parameters.sigma
     ϵ = model.parameters.epsilon
     k = model.parameters.k
-    return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[i,i]*ϵ[j,j])*(1-k[(i,j)])/T)^ϵ_power * (0.5*(σ[i,i]+σ[j,j]))^3 for i in model.components, j in model.components)
+    #= return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[i]*ϵ[j])*(1-k[union(i,j)])/T)^ϵ_power * (0.5*(σ[i]+σ[j]))^3 for i in model.components, j in model.components) =#
+    return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[i]*ϵ[j])*(1)/T)^ϵ_power * (0.5*(σ[i]+σ[j]))^3 for i in model.components, j in model.components)
 end
 
 function I_n(model::PCSAFTFamily, z, v, T, n)

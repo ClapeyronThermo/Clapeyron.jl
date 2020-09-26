@@ -1,6 +1,5 @@
 module JuliaSAFT
 
-
 using NLopt, NLsolve, DiffResults, ForwardDiff, LinearAlgebra
 include("solvers/Solvers.jl")
 using .Solvers
