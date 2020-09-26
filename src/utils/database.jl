@@ -1,7 +1,9 @@
 include("csv_parser.jl")
 import Combinatorics
 
-function methods_return(selected_method)
+function methods_return(selected_method::String = "None")
+    # Returns an Array of all methods in the database directory if input is "None"
+    # If input is any other string, it will return an Array of just that string
     if selected_method == "None"
         return filter(x-> isdir(joinpath(dirname(pathof(JuliaSAFT)), "../database",x)), readdir(joinpath(dirname(pathof(JuliaSAFT)), "../database")))
     else
@@ -14,6 +16,9 @@ function methods_return(selected_method)
 end
 
 function searchdatabase_like(components::Array{String, 1}, selected_method="None", user_input::AbstractString="None")
+    # Returns a dictionary of components containing another dictionary
+    # where the key is a method in which its database contains that parameter,
+    # with the found line number as value
     methods = methods_return(selected_method)
     found_methods = Dict(Set([component]) => Dict{String, Int64}() for component in components)
     for component in components
@@ -40,6 +45,9 @@ function searchdatabase_like(components::Array{String, 1}, selected_method="None
 end
 
 function searchdatabase_unlike(components::Array{String, 1}, selected_method="None", user_input::AbstractString="None")
+    # Returns a dictionary of pairs (no same pair) containing another dictionary
+    # where the key is a method in which its database contains that parameter,
+    # with the found line number as value
     methods = methods_return(selected_method)
     pairs = [Set(i) for i in collect(Combinatorics.combinations(components, 2))]
     found_methods = Dict{Set{String}, Dict{String, Int64}}() 
@@ -63,6 +71,9 @@ function searchdatabase_unlike(components::Array{String, 1}, selected_method="No
 end
 
 function searchdatabase_assoc(components::Array{String, 1}, selected_method="None", user_input::AbstractString="None")
+    # Returns a dictionary of pairs (same pair allowed) containing another dictionary
+    # where the key is a method in which its database contains that parameter,
+    # with the found line number as value
     methods = methods_return(selected_method)
     pairs = vcat([Set([i]) for i in components], [Set(i) for i in collect(Combinatorics.combinations(components, 2))])
     found_methods = Dict{Set{String}, Dict{String, Array{Int64,1}}}() 
@@ -86,27 +97,10 @@ function searchdatabase_assoc(components::Array{String, 1}, selected_method="Non
     end
     return found_methods
 end
-    
-function retrieveparams_assoc(components::Array{String, 1}, selected_method, user_input::AbstractString="None")
-    filepath = joinpath(dirname(pathof(JuliaSAFT)), "../database", selected_method, "data_" * selected_method * "_assoc" * ".csv")
-    header = parseline(filepath, 3)
-    found_method = searchdatabase_assoc(components, selected_method)
-    found_params = Dict{Set{String}, Dict{String, Dict{Set{String}, Dict{String, Any}}}}() 
-    if !isempty(found_method)
-        for pair in keys(found_method)
-            found_params[pair] = Dict("assoc" => Dict())
-            for line_number in found_method[pair][selected_method]
-                retrieved = Dict(zip(header, parseline(filepath, line_number)))
-                assoc_pair = Set([retrieved["site1"], retrieved["site2"]])
-                found_params[pair]["assoc"][assoc_pair] = Dict()
-                found_params[pair]["assoc"][assoc_pair] = retrieved 
-            end
-        end
-    end
-    return found_params
-end
 
 function retrieveparams_like(components::Array{String, 1}, selected_method, user_input::AbstractString="None")
+    # Returns a dictionary of all columns in the like database for a selected method
+    # for each component
     filepath = joinpath(dirname(pathof(JuliaSAFT)), "../database", selected_method, "data_" * selected_method * "_like" * ".csv")
     header = parseline(filepath, 3)
     found_method = searchdatabase_like(components, selected_method)
@@ -118,6 +112,8 @@ function retrieveparams_like(components::Array{String, 1}, selected_method, user
 end
 
 function retrieveparams_unlike(components::Array{String, 1}, selected_method, user_input::AbstractString="None")
+    # Returns a dictionary of all columns in the unlike database for a selected method
+    # for each pair
     filepath = joinpath(dirname(pathof(JuliaSAFT)), "../database", selected_method, "data_" * selected_method * "_unlike" * ".csv")
     header = parseline(filepath, 3)
     found_method = searchdatabase_unlike(components, selected_method)
@@ -128,7 +124,29 @@ function retrieveparams_unlike(components::Array{String, 1}, selected_method, us
     return found_params
 end
 
+function retrieveparams_assoc(components::Array{String, 1}, selected_method, user_input::AbstractString="None")
+    # Returns a dictionary of all columns in the assoc database for a selected method
+    # for each pair (same pair allowed)
+    filepath = joinpath(dirname(pathof(JuliaSAFT)), "../database", selected_method, "data_" * selected_method * "_assoc" * ".csv")
+    header = parseline(filepath, 3)
+    found_method = searchdatabase_assoc(components, selected_method)
+    found_params = Dict{Set{String}, Dict{String, Dict{Set{String}, Dict{String, Any}}}}() 
+    if !isempty(found_method)
+        for pair in keys(found_method)
+            found_params[pair] = Dict("assoc" => Dict())
+            for line_number in found_method[pair][selected_method]
+                retrieved = Dict(zip(header, parseline(filepath, line_number)))
+                assoc_pair = Set([retrieved["site1"], retrieved["site2"]])
+                found_params[pair]["assoc"][assoc_pair] = retrieved 
+            end
+        end
+    end
+    return found_params
+end
+
 function retrieveparams(components::Array{String, 1}, selected_method, user_input::AbstractString="None")
+    # Combines all retrieved parameters into a single dictionary
+    # The keys will be sets of single and paired components
     params_like = retrieveparams_like(components, selected_method)
     params_unlike = retrieveparams_unlike(components, selected_method)
     params_assoc = retrieveparams_assoc(components, selected_method)
@@ -150,6 +168,9 @@ function retrieveparams(components::Array{String, 1}, selected_method, user_inpu
 end
 
 function filterparams(raw_params::Dict{Set{String}}, pure_params::T; pair_params::T=Array{String,1}([]), assoc_params::T=Array{String,1}([])) where T<:Array{String,1}
+    # Filters the raw parametrs from retrieveparameters into selected headers
+    # Returns dictionaries where the keys are the header of teh selected columns
+    # One dictionary for each like, unlike, and assoc
     components = filter(x -> length(x)==1, keys(raw_params))
     pairs = filter(x -> length(x)==2, keys(raw_params))
     pure_params_dict = Dict{String, Dict{Set{String}, Float64}}()
@@ -183,14 +204,30 @@ function filterparams(raw_params::Dict{Set{String}}, pure_params::T; pair_params
                     param_value = raw_params[component]["assoc"][assoc_pair][assoc_param]
                     if !ismissing(param_value)
                         if !haskey(assoc_params_dict[assoc_param], component)
-                            assoc_params_dict[assoc_param][component] = Dict()
+                            assoc_params_dict[assoc_param][assoc_pair] = Dict()
                         end
-                        push!(assoc_params_dict[assoc_param][component], assoc_pair => param_value)
+                        push!(assoc_params_dict[assoc_param][assoc_pair], component => param_value)
                     end
                 end
             end
         end
     end
+    #= for assoc_param in assoc_params =#
+    #=     assoc_params_dict[assoc_param] = Dict() =#
+    #=     for component in union(components, pairs) =#
+    #=         if haskey(raw_params[component], "assoc") =#
+    #=             for assoc_pair in keys(raw_params[component]["assoc"]) =#
+    #=                 param_value = raw_params[component]["assoc"][assoc_pair][assoc_param] =#
+    #=                 if !ismissing(param_value) =#
+    #=                     if !haskey(assoc_params_dict[assoc_param], component) =#
+    #=                         assoc_params_dict[assoc_param][component] = Dict() =#
+    #=                     end =#
+    #=                     push!(assoc_params_dict[assoc_param][component], assoc_pair => param_value) =#
+    #=                 end =#
+    #=             end =#
+    #=         end =#
+    #=     end =#
+    #= end =#
     return pure_params_dict, pair_params_dict, assoc_params_dict
 end
     
