@@ -8,7 +8,7 @@ function get_volume(model::SAFT, z, p, T, phase="unknown")
     lb = [log10(π/6*N_A*model.parameters.segment[components[1]]*model.parameters.sigma[components[1]]^3/1)]
 
     if phase == "unknown" || phase == "liquid"
-        x0 = [log10(π/6*N_A*model.parameters.segment[components[1]]*model.parameters.sigma[components[1]]^3/0.9)]
+        x0 = [log10(π/6*N_A*model.parameters.segment[components[1]]*model.parameters.sigma[components[1]]^3/0.6)]
     elseif phase == "vapour"
         x0 = [log10(π/6*N_A*model.parameters.segment[components[1]]*model.parameters.sigma[components[1]]^3/1e-2)]
     end
@@ -40,7 +40,9 @@ end
 
 ## Saturation conditions solver
 function get_Psat(model::SAFT, T)
-    v0    = [log10(π/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/0.4),log10(π/6*N_A*model.parameters.segment[1]*model.parameters.sigma[1,1]^3/1e-3)]
+    components = model.components
+    v0    = [log10(π/6*N_A*model.parameters.segment[components[1]]*model.parameters.sigma[components[1]]^3/0.4),
+             log10(π/6*N_A*model.parameters.segment[components[1]]*model.parameters.sigma[components[1]]^3/1e-3)]
     v_l   = []
     v_v   = []
     P_sat = []
@@ -50,7 +52,7 @@ function get_Psat(model::SAFT, T)
         r  =nlsolve(f!,j!,v0)
         append!(v_l,10^r.zero[1])
         append!(v_v,10^r.zero[2])
-        append!(P_sat,Pressure(model,[1],v_v[i],T[i]))
+        append!(P_sat,get_pressure(model,create_z(model, [1.0]),v_v[i],T[i]))
         v0 = r.zero
     end
     return (P_sat,v_l,v_v)
@@ -58,24 +60,26 @@ end
 
 function Obj_Sat(model::SAFT, F, T, v_l, v_v)
     N_A = 6.02214086e23
-    fun(x) = eos(model, [x[1]], x[2], T)
+    components = model.components
+    fun(x) = eos(model, create_z(model, [x[1]]), x[2], T)
     df(x)  = ForwardDiff.gradient(fun,x)
     df_l = df([1,v_l[1]])
     df_v = df([1,v_v[1]])
-    F[1] = (df_l[2]-df_v[2])*model.parameters.sigma[1,1]^3*N_A/8.314/model.parameters.epsilon[1,1]
-    F[2] = (df_l[1]-df_v[1])/8.314/model.parameters.epsilon[1,1]
+    F[1] = (df_l[2]-df_v[2])*model.parameters.sigma[components[1]]^3*N_A/8.314/model.parameters.epsilon[components[1]]
+    F[2] = (df_l[1]-df_v[1])/8.314/model.parameters.epsilon[components[1]]
 end
 
 function Jac_Sat(model::SAFT, J, T, v_l, v_v)
+    components = model.components
     N_A = 6.02214086e23
-    fun(x) = eos(model, [x[1]], x[2], T)
+    fun(x) = eos(model, create_z(model, [x[1]]), x[2], T)
     d2f(x) = ForwardDiff.hessian(fun,x)
     d2f_l = d2f([1,v_l[1]])
     d2f_v = d2f([1,v_v[1]])
-    J[1] =  v_l[1]*d2f_l[2,2]*model.parameters.sigma[1,1]^3*N_A*log(10)/8.314/model.parameters.epsilon[1,1]
-    J[1,2] = -v_v[1]*d2f_v[2,2]*model.parameters.sigma[1,1]^3*N_A*log(10)/8.314/model.parameters.epsilon[1,1]
-    J[2,1] =  v_l[1]*d2f_l[1,2]*log(10)/8.314/model.parameters.epsilon[1,1]
-    J[2,2] = -v_v[1]*d2f_v[1,2]*log(10)/8.314/model.parameters.epsilon[1,1]
+    J[1] =  v_l[1]*d2f_l[2,2]*model.parameters.sigma[components[1]]^3*N_A*log(10)/8.314/model.parameters.epsilon[components[1]]
+    J[1,2] = -v_v[1]*d2f_v[2,2]*model.parameters.sigma[components[1]]^3*N_A*log(10)/8.314/model.parameters.epsilon[components[1]]
+    J[2,1] =  v_l[1]*d2f_l[1,2]*log(10)/8.314/model.parameters.epsilon[components[1]]
+    J[2,2] = -v_v[1]*d2f_v[1,2]*log(10)/8.314/model.parameters.epsilon[components[1]]
 end
 
 ## Critical point solver
@@ -87,12 +91,12 @@ function get_Pcrit(model::SAFT)
     r  = nlsolve(f!,x0)
     T_c = r.zero[1]*model.parameters.epsilon[components[1]]
     v_c = 10^r.zero[2]
-    p_c = Pressure(model, [1], v_c, T_c)
+    p_c = get_pressure(model, create_z(model, [1.0]), v_c, T_c)
     return (T_c, p_c, v_c)
 end
 
 function Obj_Crit(model::SAFT, F, T_c, v_c)
-    fun(x)  = eos(model, [1], x[1], T_c)
+    fun(x)  = eos(model, create_z(model, [1]), x[1], T_c)
     df(x)   = ForwardDiff.derivative(fun,x)
     d2f(x)  = ForwardDiff.derivative(df,x)
     d3f(x)  = ForwardDiff.derivative(d2f,x)

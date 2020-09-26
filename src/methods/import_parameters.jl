@@ -6,30 +6,32 @@ function create_PCSAFTParams(raw_params; combiningrule_ϵ = "Berth")
     sigma = pure_params_dict["sigma"]
     map!(x->x*1E-10, values(sigma))
     # We can also add binary parameters using push!(sigma, Set([x1, x2]) => value) later
-    # using a combining rule. 
+    # using a combining rule.
     epsilon = pure_params_dict["epsilon"]
     epsilon_assoc = assoc_params_dict["epsilon_assoc"]
     bond_vol = assoc_params_dict["bond_vol"]
     k = pair_params_dict["k"]
     return PCSAFTParams(segment, sigma, epsilon, epsilon_assoc, bond_vol, k)
 end
-    
+
 function create_SAFTVRMieParams(raw_params)
     pure_params_dict, pair_params_dict, assoc_params_dict =
         filterparams(raw_params, ["m", "sigma", "epsilon", "lambdaA", "lambdaR"])
     segment = pure_params_dict["m"]
     sigma = pure_params_dict["sigma"]
+    map!(x->x*1E-10, values(sigma))
     epsilon = pure_params_dict["epsilon"]
     lambdaA = pure_params_dict["lambdaA"]
     lambdaR = pure_params_dict["lambdaR"]
     return SAFTVRMieParams(segment, sigma, epsilon, lambdaA, lambdaR)
 end
-    
+
 function create_ogSAFTParams(raw_params)
     pure_params_dict, pair_params_dict, assoc_params_dict =
         filterparams(raw_params, ["m", "sigma", "epsilon"])
     segment = pure_params_dict["m"]
     sigma = pure_params_dict["sigma"]
+    map!(x->x*1E-10, values(sigma))
     epsilon = pure_params_dict["epsilon"]
     return ogSAFTParams(segment, sigma, epsilon)
 end
