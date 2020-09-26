@@ -1,28 +1,28 @@
 #= using Plots =#
 using JuliaSAFT
 
-method = "PCSAFT"
-model = system(["butane"], method)
+method = "ogSAFT"
+model = system(["n-butane"], method)
 
 p = 1e5
-T = 500
+T = 300
 z = create_z(model, [1.0])
 
 a = JuliaSAFT.eos(model, z, p, T)
 println(a)
 
 #= (T_c, p_c, v_c) = get_Pcrit(model) =#
-cp = get_isobaric_heat_capacity(model, z, p, T)
+cp = get_isobaric_heat_capacity(model, z, p, T,"liquid")
 println(cp)
 
-
-μ = get_chemical_potential(model, z, p, T)
+μ = get_chemical_potential(model, z, p, T,"liquid")
 println(μ)
-g = get_Gibbs_free_energy(model, z, p, T)
+g = get_Gibbs_free_energy(model, z, p, T,"liquid")
 println(g)
-#= println(T_c) =#
-#= temperature  = range(0.65*T_c,T_c,length=100) =#
-#= (P_sat,v_l,v_v) = Psat(EoS,model,temperature) =#
+(P_sat,v_l,v_v) = get_Psat(model,T)
+println(P_sat)
+(T_c, p_c, v_c) = get_Pcrit(model)
+println(T_c)
 #= plt = plot(1 ./v_l,temperature,color=:red) =#
 #= plt = plot!(1 ./v_v,temperature,color=:red) =#
 #= plt = plot!(1 ./[v_c],[T_c],color=:red,seriestype = :scatter) =#
