@@ -204,30 +204,14 @@ function filterparams(raw_params::Dict{Set{String}}, pure_params::T; pair_params
                     param_value = raw_params[component]["assoc"][assoc_pair][assoc_param]
                     if !ismissing(param_value)
                         if !haskey(assoc_params_dict[assoc_param], component)
-                            assoc_params_dict[assoc_param][assoc_pair] = Dict()
+                            assoc_params_dict[assoc_param][component] = Dict()
                         end
-                        push!(assoc_params_dict[assoc_param][assoc_pair], component => param_value)
+                        push!(assoc_params_dict[assoc_param][component], assoc_pair => param_value)
                     end
                 end
             end
         end
     end
-    #= for assoc_param in assoc_params =#
-    #=     assoc_params_dict[assoc_param] = Dict() =#
-    #=     for component in union(components, pairs) =#
-    #=         if haskey(raw_params[component], "assoc") =#
-    #=             for assoc_pair in keys(raw_params[component]["assoc"]) =#
-    #=                 param_value = raw_params[component]["assoc"][assoc_pair][assoc_param] =#
-    #=                 if !ismissing(param_value) =#
-    #=                     if !haskey(assoc_params_dict[assoc_param], component) =#
-    #=                         assoc_params_dict[assoc_param][component] = Dict() =#
-    #=                     end =#
-    #=                     push!(assoc_params_dict[assoc_param][component], assoc_pair => param_value) =#
-    #=                 end =#
-    #=             end =#
-    #=         end =#
-    #=     end =#
-    #= end =#
     return pure_params_dict, pair_params_dict, assoc_params_dict
 end
     
