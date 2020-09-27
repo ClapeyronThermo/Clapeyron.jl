@@ -3,7 +3,7 @@ const k_B = 1.38064852e-23
 const R   = N_A*k_B
 
 function a_res(model::PCSAFTFamily, z, v, T)
-    return a_hc(model,z,v,T) + a_disp(model,z,v,T) #+ a_assoc(model,z,v,T)
+    return a_hc(model,z,v,T) + a_disp(model,z,v,T) + a_assoc(model,z,v,T)
 end
 
 function a_hc(model::PCSAFTFamily, z, v, T)
@@ -93,33 +93,59 @@ end
 
 function a_assoc(model::PCSAFTFamily, z, v, T)
     x = z/sum(z[i] for i in model.components)
-    M = model.sites
     X_iA = X_assoc(model,z,v,T)
-    return sum(x[i]*sum(log(X_iA[i,a])-X_iA[i,a]/2 for a in 1:length(model.sites))+length(model.sites)/2 for i in model.components)
+    return sum(x[i]*sum(log(X_iA[i,a])-X_iA[i,a]/2 + model.parameters.n_sites[i][a]/2 for a in keys(model.parameters.n_sites[i])) for i in model.components)
 end
 
-function X_assoc(model, z, v, T)
+function X_assoc(model::PCSAFTFamily, z, v, T)
     x = z/sum(z[i] for i in model.components)
     ρ = N_A*sum(z[i] for i in model.components)/v
-    X_iA = Matrix(undef,length(model.components),length(model.sites))
-    X_iA_old = ones(length(model.components),length(model.sites))
+    X_iA = Dict()
+    X_iA_old = Dict()
     tol = 1.
-    while tol > 1e-12
+    iter = 1
+    while tol > 1e-12 && iter < 100
         for i in model.components
-            for a in 1:length(model.sites)
-                X_iA[i,a] =0.5*X_iA_old[i,a]+0.5*(1+sum(ρ*x[j]*sum(X_iA_old[j,b]*Δ(model,z,v,T,i,j,a,b) for b in 1:length(model.sites)) for j in model.components))^-1
+            for a in keys(model.parameters.n_sites[i])
+                A = 0.
+                for j in model.components
+                    if haskey(model.parameters.epsilon_assoc,union(i,j))
+                        B = 0
+                        for b in keys(model.parameters.n_sites[i])
+                            if haskey(model.parameters.epsilon_assoc[union(i,j)],union(a,b))
+                                if iter!=1
+                                    B+=X_iA_old[j,b]*Δ(model,z,v,T,i,j,a,b)
+                                else
+                                    B+=Δ(model,z,v,T,i,j,a,b)
+                                end
+                            end
+                        end
+                        A += ρ*x[j]*B
+                    end
+                end
+                if iter == 1
+                    X_iA[i,a] =0.5+0.5*(1+A)^-1
+                else
+                    X_iA[i,a] =0.5*X_iA_old[i,a]+0.5*(1+A)^-1
+                end
             end
         end
-        tol = norm(X_iA_old-X_iA)
+        if iter == 1
+            tol = sqrt(sum(sum((1. -X_iA[i,a])^2 for a in keys(model.parameters.n_sites[i])) for i in model.components))
+        else
+            tol = sqrt(sum(sum((X_iA_old[i,a] -X_iA[i,a])^2 for a in keys(model.parameters.n_sites[i])) for i in model.components))
+        end
         X_iA_old = deepcopy(X_iA)
+        iter += 1
     end
+
     return X_iA
 end
 
-function Δ(model, z, v, T, i, j, a, b)
-    ϵ_assoc = model.parameters.epsilon_assoc[i,j,a,b]
-    κ = model.parameters.Bond_vol[i,j,a,b]
-    σ = model.parameters.sigma[i,j]
+function Δ(model::PCSAFTFamily, z, v, T, i, j, a, b)
+    ϵ_assoc = model.parameters.epsilon_assoc[union(i,j)][union(a,b)]
+    κ = model.parameters.bond_vol[union(i,j)][union(a,b)]
+    σ = model.parameters.sigma[union(i,j)]
     g = g_hsij(model,z,v,T,i,j)
     return g*σ^3*(exp(ϵ_assoc/T)-1)*κ
 end
