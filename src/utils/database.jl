@@ -49,7 +49,7 @@ function searchdatabase_unlike(components::Array{String, 1}, selected_method="No
     # with the found line number as value
     methods = methods_return(selected_method)
     pairs = [Set(i) for i in collect(combinations(components, 2))]
-    found_methods = Dict{Set{String}, Dict{String, Int64}}() 
+    found_methods = Dict{Set{String}, Dict{String, Int64}}()
     for pair in pairs
         for method in methods
             filepath = joinpath(dirname(pathof(JuliaSAFT)), "../database", method, "data_" * method * "_unlike" * ".csv")
@@ -75,7 +75,7 @@ function searchdatabase_assoc(components::Array{String, 1}, selected_method="Non
     # with the found line number as value
     methods = methods_return(selected_method)
     pairs = vcat([Tuple([i, i]) for i in components], [Tuple(i) for i in collect(Combinatorics.permutations(components, 2))])
-    found_methods = Dict{Tuple{String, String}, Dict{String, Array{Int64,1}}}() 
+    found_methods = Dict{Tuple{String, String}, Dict{String, Array{Int64,1}}}()
     for pair in pairs
         for method in methods
             filepath = joinpath(dirname(pathof(JuliaSAFT)), "../database", method, "data_" * method * "_assoc" * ".csv")
@@ -97,7 +97,7 @@ function retrieveparams_like(components::Array{String, 1}, selected_method, user
     filepath = joinpath(dirname(pathof(JuliaSAFT)), "../database", selected_method, "data_" * selected_method * "_like" * ".csv")
     header = parseline(filepath, 3)
     found_method = searchdatabase_like(components, selected_method)
-    found_params = Dict{Set{String}, Dict{String, Any}}() 
+    found_params = Dict{Set{String}, Dict{String, Any}}()
     for component in keys(found_method)
         found_params[component] = Dict(zip(header, parseline(filepath, found_method[component][selected_method])))
     end
@@ -110,7 +110,7 @@ function retrieveparams_unlike(components::Array{String, 1}, selected_method, us
     filepath = joinpath(dirname(pathof(JuliaSAFT)), "../database", selected_method, "data_" * selected_method * "_unlike" * ".csv")
     header = parseline(filepath, 3)
     found_method = searchdatabase_unlike(components, selected_method)
-    found_params = Dict{Set{String}, Dict{String, Any}}() 
+    found_params = Dict{Set{String}, Dict{String, Any}}()
     for pair in keys(found_method)
         found_params[pair] = Dict(zip(header, parseline(filepath, found_method[pair][selected_method])))
     end
@@ -124,14 +124,14 @@ function retrieveparams_assoc(components::Array{String, 1}, selected_method, use
     header = parseline(filepath, 3)
     found_method = searchdatabase_assoc(components, selected_method)
     pairs = keys(found_method)
-    found_params = Dict{Tuple{String, String}, Dict{Tuple{String, String}, Dict{String, Any}}}() 
+    found_params = Dict{Tuple{String, String}, Dict{Tuple{String, String}, Dict{String, Any}}}()
     if !isempty(found_method)
         for pair in pairs
             found_params[pair] = Dict()
             for line_number in found_method[pair][selected_method]
                 retrieved = Dict(zip(header, parseline(filepath, line_number)))
                 assoc_pair = (retrieved["site1"], retrieved["site2"])
-                found_params[pair][assoc_pair] = retrieved 
+                found_params[pair][assoc_pair] = retrieved
             end
         end
         # Check if reverse pair exists; if not, make create reverse pair equal to original pair
@@ -184,7 +184,7 @@ function filterparams(raw_params::Array{Dict,1}, pure_params::T; pair_params::T=
     assoc_params_dict = Dict{String, Dict{Tuple{String, String}, Dict{Tuple{String, String},Float64}}}()
     for pure_param in pure_params
         like_params_dict[pure_param] = Dict()
-        for component in components 
+        for component in components
             param_value = raw_params_like[component][pure_param]
             if !ismissing(param_value)
                 push!(like_params_dict[pure_param], component => param_value)

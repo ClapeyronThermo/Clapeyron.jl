@@ -8,7 +8,7 @@ function get_volume(model::SAFT, z, p, T, phase="unknown")
     lb = [log10(π/6*N_A*sum(z[i]*model.parameters.segment[i]*model.parameters.sigma[i]^3 for i in model.components)/1)]
 
     if phase == "unknown" || phase == "liquid"
-        x0 = [log10(π/6*N_A*sum(z[i]*model.parameters.segment[i]*model.parameters.sigma[i]^3 for i in model.components)/0.6)]
+        x0 = [log10(π/6*N_A*sum(z[i]*model.parameters.segment[i]*model.parameters.sigma[i]^3 for i in model.components)/0.5)]
     elseif phase == "vapour"
         x0 = [log10(π/6*N_A*sum(z[i]*model.parameters.segment[i]*model.parameters.sigma[i]^3 for i in model.components)/1e-2)]
     end
@@ -16,7 +16,7 @@ function get_volume(model::SAFT, z, p, T, phase="unknown")
     Vol = []
     if phase == "unknown"
         for i in 1:N
-            f(v) = eos(model, z[i,:], 10^v[1], T[i]) + 10^v[1]*p[i]
+            f(v) = eos(model, z, 10^v[1], T[i]) + 10^v[1]*p[i]
             (f_best,v_best) = Solvers.tunneling(f,lb,ub,x0)
             append!(Vol,10^v_best[1])
         end
@@ -24,12 +24,12 @@ function get_volume(model::SAFT, z, p, T, phase="unknown")
         opt_min = NLopt.Opt(:LD_MMA, length(ub))
         opt_min.lower_bounds = lb
         opt_min.upper_bounds = ub
-        opt_min.xtol_rel = 1e-8
-        obj_f0 = x -> f(x)
-        obj_f = (x,g) -> NLopt_obj(obj_f0,x,g)
-        opt_min.min_objective =  obj_f
+        opt_min.xtol_rel     = 1e-8
         for i in 1:N
-            f(v) = eos(model, z[i,:], 10^v[1], T[i]) + 10^v[1]*p[i]/T[i]/8.314
+            f(v)   = eos(model, z, 10^v[1], T[i]) + 10^v[1]*p[i]
+            obj_f0 = x -> f(x)
+            obj_f  = (x,g) -> Solvers.NLopt_obj(obj_f0,x,g)
+            opt_min.min_objective =  obj_f
             (f_min,v_min) = NLopt.optimize(opt_min, x0)
             append!(Vol, 10^v_min[1])
         end
