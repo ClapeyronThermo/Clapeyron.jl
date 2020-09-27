@@ -3,7 +3,7 @@ const k_B = 1.38064852e-23
 const R   = N_A*k_B
 
 function a_res(model::SAFTVRMieFamily, z,Vol,Temp)
-    return a_mono(model,z,Vol,Temp)+a_chain(model,z,Vol,Temp)
+    return a_mono(model,z,Vol,Temp)+a_chain(model,z,Vol,Temp)+a_assoc(model,z,Vol,Temp)
 end
 
 function a_mono(model::SAFTVRMieFamily, z,Vol,Temp)
@@ -285,6 +285,83 @@ function da2(model::SAFTVRMieFamily,z,Vol,Temp,i)
            x_0^(2*λR)*(da1s(model,z,Vol,Temp,2*λR)+dB(model,z,Vol,Temp,2*λR,x_0))))
 end
 
-function a_assoc(model::SAFTVRMieFamily, z,Vol,Temp)
-    0
+function a_assoc(model::SAFTVRMieFamily, z, v, T)
+    x = z/sum(z[i] for i in model.components)
+    n_sites = model.parameters.n_sites
+    X_iA = X_assoc(model,z,v,T)
+    return sum(x[i]*sum(n_sites[i][a]*(log(X_iA[i,a])+(1-X_iA[i,a])/2) for a in keys(model.parameters.n_sites[i])) for i in model.components)
+end
+
+function X_assoc(model::SAFTVRMieFamily, z, v, T)
+    x = z/sum(z[i] for i in model.components)
+    ρ = N_A*sum(z[i] for i in model.components)/v
+    n_sites = model.parameters.n_sites
+    X_iA = Dict()
+    X_iA_old = Dict()
+    tol = 1.
+    iter = 1
+
+    while tol > 1e-12 && iter < 100
+        for i in model.components
+            for a in keys(model.parameters.n_sites[i])
+                A = 0.
+                for j in model.components
+                    if haskey(model.parameters.epsilon_assoc,union(i,j))
+                        B = 0
+                        for b in keys(model.parameters.n_sites[i])
+                            if haskey(model.parameters.epsilon_assoc[union(i,j)],union(a,b))
+                                if iter!=1
+                                    B+=n_sites[j][b]*X_iA_old[j,b]*Δ(model,z,v,T,i,j,a,b)
+                                else
+                                    B+=n_sites[j][b]*Δ(model,z,v,T,i,j,a,b)
+                                end
+                            end
+                        end
+                        A += ρ*x[j]*B
+                    end
+                end
+                if iter == 1
+                    X_iA[i,a] =0.5+0.5*(1+A)^-1
+                else
+                    X_iA[i,a] =0.5*X_iA_old[i,a]+0.5*(1+A)^-1
+                end
+            end
+        end
+        if iter == 1
+            tol = sqrt(sum(sum((1. -X_iA[i,a])^2 for a in keys(model.parameters.n_sites[i])) for i in model.components))
+        else
+            tol = sqrt(sum(sum((X_iA_old[i,a] -X_iA[i,a])^2 for a in keys(model.parameters.n_sites[i])) for i in model.components))
+        end
+        X_iA_old = deepcopy(X_iA)
+        iter += 1
+    end
+
+    return X_iA
+end
+
+function Δ(model::SAFTVRMieFamily, z, v, T, i, j, a, b)
+    ρR = ρs(model,z,v,T)*σx3(model,z,v,T)
+    TR = T/model.parameters.epsilon[union(i,j)]
+
+    c  = [0.0756425183020431	-0.128667137050961	 0.128350632316055	-0.0725321780970292	   0.0257782547511452  -0.00601170055221687	  0.000933363147191978  -9.55607377143667e-05  6.19576039900837e-06 -2.30466608213628e-07 3.74605718435540e-09
+          0.134228218276565	    -0.182682168504886 	 0.0771662412959262	-0.000717458641164565 -0.00872427344283170	0.00297971836051287	 -0.000484863997651451	 4.35262491516424e-05 -2.07789181640066e-06	4.13749349344802e-08 0
+         -0.565116428942893	     1.00930692226792   -0.660166945915607	 0.214492212294301	  -0.0388462990166792	0.00406016982985030	 -0.000239515566373142	 7.25488368831468e-06 -8.58904640281928e-08	0	                 0
+         -0.387336382687019	    -0.211614570109503	 0.450442894490509	-0.176931752538907	   0.0317171522104923  -0.00291368915845693	  0.000130193710011706  -2.14505500786531e-06  0	                0	                 0
+          2.13713180911797	    -2.02798460133021 	 0.336709255682693	 0.00118106507393722  -0.00600058423301506	0.000626343952584415 -2.03636395699819e-05	 0	                   0	                0	                 0
+         -0.300527494795524	     2.89920714512243   -0.567134839686498	 0.0518085125423494	  -0.00239326776760414	4.15107362643844e-05  0	                     0	                   0	                0                    0
+         -6.21028065719194	    -1.92883360342573	 0.284109761066570	-0.0157606767372364	   0.000368599073256615	0 	                  0	                     0	                   0	                0	                 0
+          11.6083532818029	     0.742215544511197  -0.0823976531246117	 0.00186167650098254   0	                0	                  0	                     0	                   0	                0	                 0
+         -10.2632535542427	    -0.125035689035085	 0.0114299144831867	 0	                   0	                0	                  0	                     0	                   0	                0	                 0
+          4.65297446837297	    -0.00192518067137033 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0
+         -0.867296219639940	     0	                 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0]
+    I = sum(sum(c[n+1,m+1]*ρR^n*TR^m for m in 0:(10-n)) for n in 0:10)
+    ϵ_assoc = model.parameters.epsilon_assoc[union(i,j)][union(a,b)]
+    F = (exp(ϵ_assoc/T)-1)
+    K = model.parameters.bond_vol[union(i,j)][union(a,b)]
+    return F*K*I
+end
+
+function σx3(model::SAFTVRMieFamily, z, v, T)
+    σ = model.parameters.sigma
+    return sum(sum(xS(model,z,v,T,i)*xS(model,z,v,T,j)*σ[union(i,j)]^3 for j in model.components) for i in model.components)
 end
