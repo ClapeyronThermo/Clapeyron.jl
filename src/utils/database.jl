@@ -70,23 +70,17 @@ function searchdatabase_unlike(components::Array{String, 1}, selected_method="No
 end
 
 function searchdatabase_assoc(components::Array{String, 1}, selected_method="None", user_input::AbstractString="None")
-    # Returns a dictionary of pairs (same pair allowed) containing another dictionary
+    # Returns a dictionary of Tuples (same pair allowed) containing another dictionary
     # where the key is a method in which its database contains that parameter,
     # with the found line number as value
     methods = methods_return(selected_method)
-    pairs = vcat([Set([i]) for i in components], [Set(i) for i in collect(Combinatorics.combinations(components, 2))])
-    found_methods = Dict{Set{String}, Dict{String, Array{Int64,1}}}() 
+    pairs = vcat([Tuple([i, i]) for i in components], [Tuple(i) for i in collect(Combinatorics.permutations(components, 2))])
+    found_methods = Dict{Tuple{String, String}, Dict{String, Array{Int64,1}}}() 
     for pair in pairs
         for method in methods
             filepath = joinpath(dirname(pathof(JuliaSAFT)), "../database", method, "data_" * method * "_assoc" * ".csv")
             if isfile(filepath)
-                if length(pair) == 1
-                    component = [i for i in pair]
-                    components = [component component]
-                else
-                    components = [i for i in pair]
-                end
-                found_lines = findmatches_pair(filepath, components[1], components[2], "species1", "species2"; header_row=3)
+                found_lines = findmatches_pair(filepath, pair[1], pair[2], "species1", "species2"; header_row=3, ordered = true)
                 if length(found_lines) > 0
                     found_methods[pair] = Dict()
                     found_methods[pair][method] = found_lines
@@ -130,23 +124,37 @@ function retrieveparams_assoc(components::Array{String, 1}, selected_method, use
     header = parseline(filepath, 3)
     found_method = searchdatabase_assoc(components, selected_method)
     pairs = keys(found_method)
-    found_params = Dict{Set{String}, Dict{String, Dict{Tuple{String, String}, Dict{String, Any}}}}() 
+    found_params = Dict{Tuple{String, String}, Dict{Tuple{String, String}, Dict{String, Any}}}() 
     if !isempty(found_method)
         for pair in pairs
-            found_params[pair] = Dict("assoc" => Dict())
+            found_params[pair] = Dict()
             for line_number in found_method[pair][selected_method]
                 retrieved = Dict(zip(header, parseline(filepath, line_number)))
                 assoc_pair = (retrieved["site1"], retrieved["site2"])
-                found_params[pair]["assoc"][assoc_pair] = retrieved 
+                found_params[pair][assoc_pair] = retrieved 
             end
         end
         # Check if reverse pair exists; if not, make create reverse pair equal to original pair
         for pair in pairs
-            for assoc_pair in keys(found_params[pair]["assoc"])
+            for assoc_pair in keys(found_params[pair])
                 reverse_assoc_pair = (assoc_pair[2], assoc_pair[1])
-                if !haskey(found_params[pair]["assoc"], reverse_assoc_pair)
-                    found_params[pair]["assoc"][reverse_assoc_pair] =
-                        found_params[pair]["assoc"][assoc_pair]
+                if !haskey(found_params[pair], reverse_assoc_pair)
+                    found_params[pair][reverse_assoc_pair] =
+                        found_params[pair][assoc_pair]
+                end
+            end
+        end
+        # Clone data for pair
+        for pair in pairs
+            reverse_pair = (pair[2], pair[1])
+            if !haskey(found_params, reverse_pair)
+                found_params[reverse_pair] = Dict()
+            end
+            for assoc_pair in keys(found_params[pair])
+                reverse_assoc_pair = (assoc_pair[2], assoc_pair[1])
+                if !haskey(found_params[reverse_pair], reverse_assoc_pair)
+                    found_params[reverse_pair][reverse_assoc_pair] =
+                        found_params[pair][assoc_pair]
                 end
             end
         end
@@ -155,41 +163,29 @@ function retrieveparams_assoc(components::Array{String, 1}, selected_method, use
 end
 
 function retrieveparams(components::Array{String, 1}, selected_method, user_input::AbstractString="None")
-    # Combines all retrieved parameters into a single dictionary
-    # The keys will be sets of single and paired components
     params_like = retrieveparams_like(components, selected_method)
     params_unlike = retrieveparams_unlike(components, selected_method)
     params_assoc = retrieveparams_assoc(components, selected_method)
-    pairs = union(Set(keys(params_like)), Set(keys(params_unlike)), Set(keys(params_assoc)))
-    params = Dict{Set{String}, Any}()
-    for pair in pairs
-        params[pair] = Dict()
-        if haskey(params_like, pair)
-            merge!(params[pair], params_like[pair])
-        end
-        if haskey(params_unlike, pair)
-            merge!(params[pair], params_unlike[pair])
-        end
-        if haskey(params_assoc, pair)
-            merge!(params[pair], params_assoc[pair])
-        end
-    end
-    return params
+    return [params_like, params_unlike, params_assoc]
 end
 
-function filterparams(raw_params::Dict{Set{String}}, pure_params::T; pair_params::T=Array{String,1}([]), assoc_params::T=Array{String,1}([])) where T<:Array{String,1}
+function filterparams(raw_params::Array{Dict,1}, pure_params::T; pair_params::T=Array{String,1}([]), assoc_params::T=Array{String,1}([])) where T<:Array{String,1}
     # Filters the raw parametrs from retrieveparameters into selected headers
     # Returns dictionaries where the keys are the header of teh selected columns
     # One dictionary for each like, unlike, and assoc
-    components = filter(x -> length(x)==1, keys(raw_params))
-    pairs = filter(x -> length(x)==2, keys(raw_params))
+    raw_params_like = raw_params[1]
+    raw_params_unlike = raw_params[2]
+    raw_params_assoc = raw_params[3]
+    components = keys(raw_params_like)
+    pairs = keys(raw_params_unlike)
+    pair_tuples = keys(raw_params_assoc)
     like_params_dict = Dict{String, Dict{Set{String}, Float64}}()
     unlike_params_dict = Dict{String, Dict{Set{String}, Float64}}()
-    assoc_params_dict = Dict{String, Dict{Set{String}, Dict{Tuple{String, String},Float64}}}()
+    assoc_params_dict = Dict{String, Dict{Tuple{String, String}, Dict{Tuple{String, String},Float64}}}()
     for pure_param in pure_params
         like_params_dict[pure_param] = Dict()
         for component in components 
-            param_value = raw_params[component][pure_param]
+            param_value = raw_params_like[component][pure_param]
             if !ismissing(param_value)
                 push!(like_params_dict[pure_param], component => param_value)
             end
@@ -198,8 +194,8 @@ function filterparams(raw_params::Dict{Set{String}}, pure_params::T; pair_params
     for pair_param in pair_params
         unlike_params_dict[pair_param] = Dict()
         for pair in pairs
-            if haskey(raw_params[pair], pair_param)
-                param_value = raw_params[pair][pair_param]
+            if haskey(raw_params_unlike[pair], pair_param)
+                param_value = raw_params_unlike[pair][pair_param]
                 if !ismissing(param_value)
                     push!(unlike_params_dict[pair_param], pair => param_value)
                 end
@@ -208,16 +204,14 @@ function filterparams(raw_params::Dict{Set{String}}, pure_params::T; pair_params
     end
     for assoc_param in assoc_params
         assoc_params_dict[assoc_param] = Dict()
-        for component in union(components, pairs)
-            if haskey(raw_params[component], "assoc")
-                for assoc_pair in keys(raw_params[component]["assoc"])
-                    param_value = raw_params[component]["assoc"][assoc_pair][assoc_param]
-                    if !ismissing(param_value)
-                        if !haskey(assoc_params_dict[assoc_param], component)
-                            assoc_params_dict[assoc_param][component] = Dict()
-                        end
-                        push!(assoc_params_dict[assoc_param][component], assoc_pair => param_value)
+        for pair_tuple in pair_tuples
+            for assoc_pair in keys(raw_params_assoc[pair_tuple])
+                param_value = raw_params_assoc[pair_tuple][assoc_pair][assoc_param]
+                if !ismissing(param_value)
+                    if !haskey(assoc_params_dict[assoc_param], pair_tuple)
+                        assoc_params_dict[assoc_param][pair_tuple] = Dict()
                     end
+                    push!(assoc_params_dict[assoc_param][pair_tuple], assoc_pair => param_value)
                 end
             end
         end
