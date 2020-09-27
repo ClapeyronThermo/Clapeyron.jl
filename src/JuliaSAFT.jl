@@ -4,9 +4,12 @@ using NLopt, NLsolve, DiffResults, ForwardDiff, LinearAlgebra
 include("solvers/Solvers.jl")
 using .Solvers
 
+using Combinatorics
+
 include("utils/database.jl")
 include("methods/param_structs.jl")
 include("methods/model_structs.jl")
+include("methods/eos/combining_rules.jl")
 include("methods/import_parameters.jl")
 include("utils/misc.jl")
 include("methods/eos/ideal.jl")

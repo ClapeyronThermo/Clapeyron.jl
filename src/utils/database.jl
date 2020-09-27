@@ -1,5 +1,4 @@
 include("csv_parser.jl")
-import Combinatorics
 
 function methods_return(selected_method::String = "None")
     # Returns an Array of all methods in the database directory if input is "None"
@@ -49,7 +48,7 @@ function searchdatabase_unlike(components::Array{String, 1}, selected_method="No
     # where the key is a method in which its database contains that parameter,
     # with the found line number as value
     methods = methods_return(selected_method)
-    pairs = [Set(i) for i in collect(Combinatorics.combinations(components, 2))]
+    pairs = [Set(i) for i in collect(combinations(components, 2))]
     found_methods = Dict{Set{String}, Dict{String, Int64}}() 
     for pair in pairs
         for method in methods
