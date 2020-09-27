@@ -129,14 +129,25 @@ function retrieveparams_assoc(components::Array{String, 1}, selected_method, use
     filepath = joinpath(dirname(pathof(JuliaSAFT)), "../database", selected_method, "data_" * selected_method * "_assoc" * ".csv")
     header = parseline(filepath, 3)
     found_method = searchdatabase_assoc(components, selected_method)
-    found_params = Dict{Set{String}, Dict{String, Dict{Set{String}, Dict{String, Any}}}}() 
+    pairs = keys(found_method)
+    found_params = Dict{Set{String}, Dict{String, Dict{Tuple{String, String}, Dict{String, Any}}}}() 
     if !isempty(found_method)
-        for pair in keys(found_method)
+        for pair in pairs
             found_params[pair] = Dict("assoc" => Dict())
             for line_number in found_method[pair][selected_method]
                 retrieved = Dict(zip(header, parseline(filepath, line_number)))
-                assoc_pair = Set([retrieved["site1"], retrieved["site2"]])
+                assoc_pair = (retrieved["site1"], retrieved["site2"])
                 found_params[pair]["assoc"][assoc_pair] = retrieved 
+            end
+        end
+        # Check if reverse pair exists; if not, make create reverse pair equal to original pair
+        for pair in pairs
+            for assoc_pair in keys(found_params[pair]["assoc"])
+                reverse_assoc_pair = (assoc_pair[2], assoc_pair[1])
+                if !haskey(found_params[pair]["assoc"], reverse_assoc_pair)
+                    found_params[pair]["assoc"][reverse_assoc_pair] =
+                        found_params[pair]["assoc"][assoc_pair]
+                end
             end
         end
     end
@@ -174,7 +185,7 @@ function filterparams(raw_params::Dict{Set{String}}, pure_params::T; pair_params
     pairs = filter(x -> length(x)==2, keys(raw_params))
     pure_params_dict = Dict{String, Dict{Set{String}, Float64}}()
     pair_params_dict = Dict{String, Dict{Set{String}, Float64}}()
-    assoc_params_dict = Dict{String, Dict{Set{String}, Dict{Set{String},Float64}}}()
+    assoc_params_dict = Dict{String, Dict{Set{String}, Dict{Tuple{String, String},Float64}}}()
     for pure_param in pure_params
         pure_params_dict[pure_param] = Dict()
         for component in components 

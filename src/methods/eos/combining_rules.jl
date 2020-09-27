@@ -5,8 +5,8 @@ function combining_sigma(sigma::Dict; rules="Lorentz-Berthelot")
     for pair in pairs 
         if rules == "Lorentz-Berthelot"
             combined_sigma = (sum(sigma[Set([i])] for i in pair))/2
-            push!(combined_sigmas, pair => combined_sigma) 
         end
+        push!(combined_sigmas, pair => combined_sigma) 
     end
     return combined_sigmas
 end
@@ -19,14 +19,13 @@ function combining_epsilon(epsilon::Dict, k::Dict; rules_k="Hudsen-McCoubrey", r
         if haskey(k, pair)
             if rules_k == "Hudsen-McCoubrey"
                 combined_epsilon = (1-k[pair])*sqrt(prod(epsilon[Set([i])] for i in pair))
-                push!(combined_epsilons, pair => combined_epsilon) 
             end
         else
             if rules_no_k == "Lorentz-Berthelot"
                 combined_epsilon = sqrt(prod(epsilon[Set([i])] for i in pair))
-                push!(combined_epsilons, pair => combined_epsilon) 
             end
         end
+        push!(combined_epsilons, pair => combined_epsilon) 
     end
     return combined_epsilons
 end
