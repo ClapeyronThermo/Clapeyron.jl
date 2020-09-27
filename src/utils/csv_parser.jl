@@ -53,7 +53,7 @@ function findmatches(filepath::AbstractString, match_string::String, selected_co
     return findmatches(filepath, match_string, selected_col_numbers[1])
 end
 
-function findmatches_pair(filepath::AbstractString, match_string1::String, match_string2::String,selected_col1::Int64 = 1, selected_col2::Int64 = 2)
+function findmatches_pair(filepath::AbstractString, match_string1::String, match_string2::String,selected_col1::Int64 = 1, selected_col2::Int64 = 2; ordered = false)
     # Function to search for pairs of strings in two specified columns
     # Returns an array of line numbers for where string is found
     if !isfile(filepath)
@@ -65,8 +65,14 @@ function findmatches_pair(filepath::AbstractString, match_string1::String, match
         linecount = 1
         for line in eachline(file)
             row_entries = split(line, ';')
-            if match_set == Set([row_entries[selected_col1], row_entries[selected_col2]])
-                push!(found_lines, linecount)
+            if ordered
+                if match_string1 == row_entries[selected_col1] && match_string2 == row_entries[selected_col2]
+                    push!(found_lines, linecount)
+                end
+            else
+                if match_set == Set([row_entries[selected_col1], row_entries[selected_col2]])
+                    push!(found_lines, linecount)
+                end
             end
             linecount += 1
         end
@@ -74,7 +80,7 @@ function findmatches_pair(filepath::AbstractString, match_string1::String, match
     end
 end
 
-function findmatches_pair(filepath::AbstractString, match_string1::String, match_string2::String, selected_col1::String, selected_col2::String; header_row::Int64 = 1)
+function findmatches_pair(filepath::AbstractString, match_string1::String, match_string2::String, selected_col1::String, selected_col2::String; header_row::Int64 = 1, ordered = false)
     if !isfile(filepath)
         error("File does not exist")
     end
@@ -90,7 +96,7 @@ function findmatches_pair(filepath::AbstractString, match_string1::String, match
     elseif length(selected_col_numbers2) > 1
         error("Header " * selected_col2 * " is not unique")
     end
-    return findmatches_pair(filepath, match_string1, match_string2, selected_col_numbers1[1], selected_col_numbers2[1])
+    return findmatches_pair(filepath, match_string1, match_string2, selected_col_numbers1[1], selected_col_numbers2[1]; ordered = ordered)
 end
 
 function tryparse_fallback(list)
