@@ -28,7 +28,7 @@ function combining_epsilon(epsilon::Dict, k::Dict; rules_k="Hudsen-McCoubrey", r
                     combined_epsilon = sqrt(prod(epsilon[Set([i])] for i in pair))
                 end
             end
-            push!(combined_epsilons, pair => combined_epsilon)
+            push!(combined_epsilons, pair => combined_epsilon) 
         end
     end
     return combined_epsilons
