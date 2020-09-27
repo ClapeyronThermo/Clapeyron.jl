@@ -6,15 +6,15 @@ SAFT equations of state currently available:
 
 | EoS           | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
 | ------------- | ------------------ | ------------------ | ------------------ | ------------------ |
-| SAFT          | :heavy_check_mark: | :heavy_check_mark: |                    | :heavy_check_mark: |
+| SAFT          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | CK-SAFT       |                    |                    |                    |                    |
 | sSAFT         |                    |                    |                    |                    |
 | LJ-SAFT       |                    |                    |                    |                    |
 | PC-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| sPC-SAFT      | :heavy_check_mark: | :heavy_check_mark: |                    | :heavy_check_mark: |
+| sPC-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | SAFT-VR SW    |                    |                    |                    |                    |
 | soft-SAFT     |                    |                    |                    |                    |
-| SAFT-VR Mie   | :heavy_check_mark: | :heavy_check_mark: |                    | :heavy_check_mark: |
+| SAFT-VR Mie   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | SAFT-VR Morse |                    |                    |                    |                    |
 
 For group contribution approaches, we provide:

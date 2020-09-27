@@ -1,47 +1,48 @@
-N_A = 6.02214086e23
-k_B = 1.38064852e-23
-R   = N_A*k_B
-function a_res(model::SAFTFamily,z,v,T)
-    return a_hc(model,z,v,T) + a_disp(model,z,v,T)
+const N_A = 6.02214086e23
+const k_B = 1.38064852e-23
+const R   = N_A*k_B
+
+function a_res(model::sPCSAFTFamily, z, v, T)
+    return a_hc(model,z,v,T) + a_disp(model,z,v,T) + a_assoc(model,z,v,T)
 end
 
-function a_hc(model::SAFTFamily,z,v,T)
+function a_hc(model::sPCSAFTFamily,z,v,T)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
     return m̄*a_hs(model,z,v,T) - (m̄-1)*log(g_hs(model,z,v,T))
 end
 
-function a_disp(model::SAFTFamily,z,v,T)
+function a_disp(model::sPCSAFTFamily,z,v,T)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
     return -2*π*N_A*sum(z[i] for i in model.components)/v*I_n(model,z,v,T, 1)*m2ϵσ3(model,z,v,T, 1) - π*m̄*N_A*sum(z[i] for i in model.components)/v*C1(model,z,v,T)*I_n(model,z,v,T, 2)*m2ϵσ3(model,z,v,T, 2)
 end
 
-function d(model::SAFTFamily,z,v,T, component)
-    ϵ = model.parameters.epsilon[component,component]
-    σ = model.parameters.sigma[component,component]
+function d(model::sPCSAFTFamily,z,v,T, component)
+    ϵ = model.parameters.epsilon[union(component,component)]
+    σ = model.parameters.sigma[union(component,component)]
     return σ * (1 - 0.12exp(-3ϵ/T))
 end
 
-function ζn(model::SAFTFamily,z,v,T, n)
+function ζn(model::sPCSAFTFamily,z,v,T, n)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     return N_A*sum(z[i] for i in model.components)*π/6/v * sum(x[i]*m[i]*d(model,z,v,T, i)^n for i in model.components)
 end
 
-function g_hs(model::SAFTFamily,z,v,T)
+function g_hs(model::sPCSAFTFamily,z,v,T)
     η = ζn(model,z,v,T, 3)
     return (1-η/2)/(1-η)^3
 end
 
-function a_hs(model::SAFTFamily,z,v,T)
+function a_hs(model::sPCSAFTFamily,z,v,T)
     η = ζn(model,z,v,T, 3)
     return (4η-3η^2)/(1-η)^2
 end
 
-function C1(model::SAFTFamily,z,v,T)
+function C1(model::sPCSAFTFamily,z,v,T)
     x = z/sum(z[i] for i in model.components)
     η = ζn(model,z,v,T, 3)
     m = model.parameters.segment
@@ -49,16 +50,17 @@ function C1(model::SAFTFamily,z,v,T)
     return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
 end
 
-function m2ϵσ3(model::SAFTFamily,z,v,T, ϵ_power = 1)
+function m2ϵσ3(model::sPCSAFTFamily,z,v,T, ϵ_power = 1)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     σ = model.parameters.sigma
     ϵ = model.parameters.epsilon
     k = model.parameters.k
-    return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[i,i]*ϵ[j,j])*(1-k[(i,j)])/T)^ϵ_power * (0.5*(σ[i,i]+σ[j,j]))^3 for i in model.components, j in model.components)
+    # return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[union(i,i)]*ϵ[union(j,j)])*(1-k[union(i,j)])/T)^ϵ_power * (0.5*(σ[union(i,i)]+σ[union(j,j)]))^3 for i in model.components, j in model.components)
+    return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[union(i,i)]*ϵ[union(j,j)])/T)^ϵ_power * (0.5*(σ[union(i,i)]+σ[union(j,j)]))^3 for i in model.components, j in model.components)
 end
 
-function I_n(model::SAFTFamily,z,v,T, n)
+function I_n(model::sPCSAFTFamily,z,v,T, n)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
@@ -81,4 +83,63 @@ function I_n(model::SAFTFamily,z,v,T, n)
                 -355.60235612 -165.20769346 -29.666905585]
     end
     return sum((corr[i+1,1] + (m̄-1)/m̄*corr[i+1,2] + (m̄-1)/m̄*(m̄-2)/m̄*corr[i+1,3]) * η^i for i = 0:6)
+end
+
+function a_assoc(model::sPCSAFTFamily, z, v, T)
+    x = z/sum(z[i] for i in model.components)
+    X_iA = X_assoc(model,z,v,T)
+    return sum(x[i]*sum(log(X_iA[i,a])-X_iA[i,a]/2 + model.parameters.n_sites[i][a]/2 for a in keys(model.parameters.n_sites[i])) for i in model.components)
+end
+
+function X_assoc(model::sPCSAFTFamily, z, v, T)
+    x = z/sum(z[i] for i in model.components)
+    ρ = N_A*sum(z[i] for i in model.components)/v
+    X_iA = Dict()
+    X_iA_old = Dict()
+    tol = 1.
+    iter = 1
+    while tol > 1e-12 && iter < 100
+        for i in model.components
+            for a in keys(model.parameters.n_sites[i])
+                A = 0.
+                for j in model.components
+                    if haskey(model.parameters.epsilon_assoc,union(i,j))
+                        B = 0
+                        for b in keys(model.parameters.n_sites[i])
+                            if haskey(model.parameters.epsilon_assoc[union(i,j)],union(a,b))
+                                if iter!=1
+                                    B+=X_iA_old[j,b]*Δ(model,z,v,T,i,j,a,b)
+                                else
+                                    B+=Δ(model,z,v,T,i,j,a,b)
+                                end
+                            end
+                        end
+                        A += ρ*x[j]*B
+                    end
+                end
+                if iter == 1
+                    X_iA[i,a] =0.5+0.5*(1+A)^-1
+                else
+                    X_iA[i,a] =0.5*X_iA_old[i,a]+0.5*(1+A)^-1
+                end
+            end
+        end
+        if iter == 1
+            tol = sqrt(sum(sum((1. -X_iA[i,a])^2 for a in keys(model.parameters.n_sites[i])) for i in model.components))
+        else
+            tol = sqrt(sum(sum((X_iA_old[i,a] -X_iA[i,a])^2 for a in keys(model.parameters.n_sites[i])) for i in model.components))
+        end
+        X_iA_old = deepcopy(X_iA)
+        iter += 1
+    end
+
+    return X_iA
+end
+
+function Δ(model::sPCSAFTFamily, z, v, T, i, j, a, b)
+    ϵ_assoc = model.parameters.epsilon_assoc[union(i,j)][union(a,b)]
+    κ = model.parameters.bond_vol[union(i,j)][union(a,b)]
+    σ = model.parameters.sigma[union(i,j)]
+    g = g_hs(model,z,v,T)
+    return g*σ^3*(exp(ϵ_assoc/T)-1)*κ
 end
