@@ -5,7 +5,6 @@ struct PCSAFTParams
     epsilon_assoc::Dict
     bond_vol::Dict
     n_sites::Dict
-    k::Dict
 end
 
 struct sPCSAFTParams

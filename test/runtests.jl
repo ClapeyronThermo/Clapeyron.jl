@@ -2,42 +2,57 @@
 using JuliaSAFT,Plots
 
 method = "ogSAFT"
-model_1 = system(["methanol"], "ogSAFT")
-model_2 = system(["methanol"], "PCSAFT")
-model_3 = system(["methanol"], "sPCSAFT")
-model_4 = system(["methanol"], "SAFTVRMie")
+model = system(["methanol","butane"], "PCSAFT")
 
-(T_c, p_c, v_c) = get_Pcrit(model_1)
-println(T_c)
-Temp  = range(0.7*T_c,stop = T_c,length = 50)
-(P_sat,v_l,v_v) = get_Psat(model_1,Temp)
-println(P_sat)
-plt = plot(1e-3 ./v_l, Temp,color=:purple)
-plt = plot!(1e-3 ./v_v, Temp,color=:purple)
+println(model)
+p = 1e5
+T = 300
+z = create_z(model, [0.9,0.1])
 
-(T_c, p_c, v_c) = get_Pcrit(model_2)
-println(T_c)
-Temp  = range(0.7*T_c,stop = T_c,length = 50)
-(P_sat,v_l,v_v) = get_Psat(model_2,Temp)
-println(P_sat)
-plt = plot!(1e-3 ./v_l, Temp,color=:red)
-plt = plot!(1e-3 ./v_v, Temp,color=:red)
+a = JuliaSAFT.eos(model, z, 1e-3, T)
+println(a)
 
-(T_c, p_c, v_c) = get_Pcrit(model_3)
-println(T_c)
-Temp  = range(0.7*T_c,stop = T_c,length = 50)
-(P_sat,v_l,v_v) = get_Psat(model_3,Temp)
-println(P_sat)
-plt = plot!(1e-3 ./v_l, Temp,color=:orange)
-plt = plot!(1e-3 ./v_v, Temp,color=:orange)
+cp = get_isobaric_heat_capacity(model, z, p, T,"liquid")
+println(cp)
+#
+μ = get_chemical_potential(model, z, p, T,"liquid")
+println(μ)
+g = get_Gibbs_free_energy(model, z, p, T,"liquid")
+println(g)
 
-(T_c, p_c, v_c) = get_Pcrit(model_4)
-println(T_c)
-Temp  = range(0.7*T_c,stop = T_c,length = 50)
-(P_sat,v_l,v_v) = get_Psat(model_4,Temp)
-println(P_sat)
-plt = plot!(1e-3 ./v_l, Temp,color=:blue)
-plt = plot!(1e-3 ./v_v, Temp,color=:blue)
+println(sum(z[i]*μ[i] for i in model.components))
+#
+# (T_c, p_c, v_c) = get_Pcrit(model_1)
+# println(T_c)
+# Temp  = range(0.7*T_c,stop = T_c,length = 100)
+# (P_sat,v_l,v_v) = get_Psat(model_1,Temp)
+# println(P_sat)
+# plt = plot(1e-3 ./v_l, Temp,color=:purple)
+# plt = plot!(1e-3 ./v_v, Temp,color=:purple)
+
+# (T_c, p_c, v_c) = get_Pcrit(model_2)
+# println(T_c)
+# Temp  = range(0.7*T_c,stop = T_c,length = 100)
+# (P_sat,v_l,v_v) = get_Psat(model_2,Temp)
+# println(P_sat)
+# plt = plot!(1e-3 ./v_l, Temp,color=:red)
+# plt = plot!(1e-3 ./v_v, Temp,color=:red)
+#
+# (T_c, p_c, v_c) = get_Pcrit(model_3)
+# println(T_c)
+# Temp  = range(0.7*T_c,stop = T_c,length = 100)
+# (P_sat,v_l,v_v) = get_Psat(model_3,Temp)
+# println(P_sat)
+# plt = plot!(1e-3 ./v_l, Temp,color=:orange)
+# plt = plot!(1e-3 ./v_v, Temp,color=:orange)
+#
+# (T_c, p_c, v_c) = get_Pcrit(model_4)
+# println(T_c)
+# Temp  = range(0.7*T_c,stop = T_c,length = 100)
+# (P_sat,v_l,v_v) = get_Psat(model_4,Temp)
+# println(P_sat)
+# plt = plot!(1e-3 ./v_l, Temp,color=:blue)
+# plt = plot!(1e-3 ./v_v, Temp,color=:blue)
 #= plt = plot(1 ./v_l,temperature,color=:red) =#
 #= plt = plot!(1 ./v_v,temperature,color=:red) =#
 #= plt = plot!(1 ./[v_c],[T_c],color=:red,seriestype = :scatter) =#
@@ -59,19 +74,3 @@ plt = plot!(1e-3 ./v_v, Temp,color=:blue)
 #= plt = plot!(1 ./v_l,temperature,color=:green) =#
 #= plt = plot!(1 ./v_v,temperature,color=:green) =#
 #= plt = plot!(1 ./[v_c],[T_c],color=:green,seriestype = :scatter) =#
-# println(model)
-# p = 1e5
-# T = 350
-# z = create_z(model, [1.0])
-#
-# a = JuliaSAFT.eos(model, z, 1e-3, T)
-# println(a)
-# #
-# # #= (T_c, p_c, v_c) = get_Pcrit(model) =#
-# cp = get_isobaric_heat_capacity(model, z, p, T,"liquid")
-# println(cp)
-# #
-# μ = get_chemical_potential(model, z, p, T,"liquid")
-# println(μ)
-# g = get_Gibbs_free_energy(model, z, p, T,"liquid")
-# println(g)

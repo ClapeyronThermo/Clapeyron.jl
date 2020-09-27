@@ -50,14 +50,13 @@ function C1(model::sPCSAFTFamily,z,v,T)
     return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
 end
 
-function m2ϵσ3(model::sPCSAFTFamily,z,v,T, ϵ_power = 1)
+function m2ϵσ3(model::sPCSAFTFamily, z, v, T, ϵ_power = 1)
     x = z/sum(z[i] for i in model.components)
     m = model.parameters.segment
     σ = model.parameters.sigma
     ϵ = model.parameters.epsilon
-    k = model.parameters.k
-    # return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[union(i,i)]*ϵ[union(j,j)])*(1-k[union(i,j)])/T)^ϵ_power * (0.5*(σ[union(i,i)]+σ[union(j,j)]))^3 for i in model.components, j in model.components)
-    return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[union(i,i)]*ϵ[union(j,j)])/T)^ϵ_power * (0.5*(σ[union(i,i)]+σ[union(j,j)]))^3 for i in model.components, j in model.components)
+    #= return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[i]*ϵ[j])*(1-k[union(i,j)])/T)^ϵ_power * (0.5*(σ[i]+σ[j]))^3 for i in model.components, j in model.components) =#
+    return sum(x[i]*x[j]*m[i]*m[j] * (ϵ[union(i,j)]*(1)/T)^ϵ_power * σ[union(i,j)]^3 for i in model.components, j in model.components)
 end
 
 function I_n(model::sPCSAFTFamily,z,v,T, n)
