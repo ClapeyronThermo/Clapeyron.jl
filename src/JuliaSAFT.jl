@@ -12,6 +12,7 @@ include("utils/misc.jl")
 include("methods/eos/ideal.jl")
 
 include("methods/eos/SAFT/PCSAFT.jl")
+include("methods/eos/SAFT/sPCSAFT.jl")
 include("methods/eos/SAFT/SAFTVRMie.jl")
 include("methods/eos/SAFT/ogSAFT.jl")
 
@@ -26,11 +27,13 @@ function system(components::Array{String,1}, method::String)
     raw_params = retrieveparams(components, method)
     set_components = [Set([components[i]]) for i in 1:length(components)]
     if method == "PCSAFT"
-        model = PCSAFT(set_components, [1,2], create_PCSAFTParams(raw_params))
+        model = PCSAFT(set_components, create_PCSAFTParams(raw_params))
     elseif method == "SAFTVRMie"
         model = SAFTVRMie(set_components, create_SAFTVRMieParams(raw_params))
     elseif method == "ogSAFT"
         model = ogSAFT(set_components, create_ogSAFTParams(raw_params))
+    elseif method == "sPCSAFT"
+        model = sPCSAFT(set_components, create_sPCSAFTParams(raw_params))
     end
     return model
 end
