@@ -183,25 +183,25 @@ function filterparams(raw_params::Dict{Set{String}}, pure_params::T; pair_params
     # One dictionary for each like, unlike, and assoc
     components = filter(x -> length(x)==1, keys(raw_params))
     pairs = filter(x -> length(x)==2, keys(raw_params))
-    pure_params_dict = Dict{String, Dict{Set{String}, Float64}}()
-    pair_params_dict = Dict{String, Dict{Set{String}, Float64}}()
+    like_params_dict = Dict{String, Dict{Set{String}, Float64}}()
+    unlike_params_dict = Dict{String, Dict{Set{String}, Float64}}()
     assoc_params_dict = Dict{String, Dict{Set{String}, Dict{Tuple{String, String},Float64}}}()
     for pure_param in pure_params
-        pure_params_dict[pure_param] = Dict()
+        like_params_dict[pure_param] = Dict()
         for component in components 
             param_value = raw_params[component][pure_param]
             if !ismissing(param_value)
-                push!(pure_params_dict[pure_param], component => param_value)
+                push!(like_params_dict[pure_param], component => param_value)
             end
         end
     end
     for pair_param in pair_params
-        pair_params_dict[pair_param] = Dict()
+        unlike_params_dict[pair_param] = Dict()
         for pair in pairs
             if haskey(raw_params[pair], pair_param)
                 param_value = raw_params[pair][pair_param]
                 if !ismissing(param_value)
-                    push!(pair_params_dict[pair_param], pair => param_value)
+                    push!(unlike_params_dict[pair_param], pair => param_value)
                 end
             end
         end
@@ -222,6 +222,5 @@ function filterparams(raw_params::Dict{Set{String}}, pure_params::T; pair_params
             end
         end
     end
-    return pure_params_dict, pair_params_dict, assoc_params_dict
+    return like_params_dict, unlike_params_dict, assoc_params_dict
 end
-    
