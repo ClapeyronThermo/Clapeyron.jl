@@ -1,27 +1,43 @@
 #= using Plots =#
 using JuliaSAFT,Plots
 
-method = "ogSAFT"
-model = system(["methanol","butane"], "PCSAFT")
+model = system(["1-chlorobutane","hexane"], "PCSAFT")
 
-println(model)
-p = 1e5
-T = 300
-z = create_z(model, [0.9,0.1])
+# (T_c, p_c, v_c) = get_Pcrit(model)
+# println(T_c)
+# Temp  = range(0.7*T_c,stop = T_c,length = 100)
+# (P_sat,v_l,v_v) = get_Psat(model,Temp)
+# println(P_sat)
+# plt = plot(1e-3 ./v_l, Temp,color=:purple)
+# plt = plot!(1e-3 ./v_v, Temp,color=:purple)
+p = 1.01e5
+T = 298.15
+# z = create_z(model, [0.9,0.1])
 
-a = JuliaSAFT.eos(model, z, 1e-3, T)
-println(a)
-
-cp = get_isobaric_heat_capacity(model, z, p, T,"liquid")
-println(cp)
+z = range(0.000001,stop=0.999999,length=100)
+h = []
+h_E = []
+h_1 = get_enthalpy(model,create_z(model,[0.999999,0.000001]),p,T,"liquid")
+h_2 = get_enthalpy(model,create_z(model,[0.000001,0.999999]),p,T,"liquid")
+for i in 1:length(z)
+    append!(h,get_enthalpy(model,create_z(model,[z[i],1-z[i]]),p,T,"liquid"))
+    append!(h_E,h[i]-z[i]*h_1-(1-z[i])*h_2)
+end
+# print(h_E)
+plt = plot(z,h_E/1e3)
+# a = JuliaSAFT.eos(model, z, 1e-3, T)
+# println(a)
+# #
+# cp = get_isobaric_heat_capacity(model, z, p, T,"liquid")
+# println(cp)
 #
-μ = get_chemical_potential(model, z, p, T,"liquid")
-println(μ)
-g = get_Gibbs_free_energy(model, z, p, T,"liquid")
-println(g)
-
-println(sum(z[i]*μ[i] for i in model.components))
+# μ = get_chemical_potential(model, z, p, T,"liquid")
+# println(μ)
+# g = get_Gibbs_free_energy(model, z, p, T,"liquid")
+# println(g)
 #
+# println(sum(z[i]*μ[i] for i in model.components))
+
 # (T_c, p_c, v_c) = get_Pcrit(model_1)
 # println(T_c)
 # Temp  = range(0.7*T_c,stop = T_c,length = 100)
