@@ -5,12 +5,12 @@ function get_volume(model::SAFT, z, p, T, phase="unknown")
     N = length(p)
 
     ub = [Inf]
-    lb = [log10(π/6*N_A*model.parameters.segment[components[1]]*model.parameters.sigma[components[1]]^3/1)]
+    lb = [log10(π/6*N_A*sum(z[i]*model.parameters.segment[i]*model.parameters.sigma[i]^3 for i in model.components)/1)]
 
     if phase == "unknown" || phase == "liquid"
-        x0 = [log10(π/6*N_A*model.parameters.segment[components[1]]*model.parameters.sigma[components[1]]^3/0.6)]
+        x0 = [log10(π/6*N_A*sum(z[i]*model.parameters.segment[i]*model.parameters.sigma[i]^3 for i in model.components)/0.6)]
     elseif phase == "vapour"
-        x0 = [log10(π/6*N_A*model.parameters.segment[components[1]]*model.parameters.sigma[components[1]]^3/1e-2)]
+        x0 = [log10(π/6*N_A*sum(z[i]*model.parameters.segment[i]*model.parameters.sigma[i]^3 for i in model.components)/1e-2)]
     end
 
     Vol = []
