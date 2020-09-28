@@ -104,19 +104,17 @@ function X_assoc(model::PCSAFTFamily, z, v, T)
             for a in keys(model.params.n_sites[i])
                 A = 0.
                 for j in model.components
-                    if haskey(model.params.epsilon_assoc,union(i,j))
-                        B = 0
-                        for b in keys(model.params.n_sites[i])
-                            if haskey(model.params.epsilon_assoc[union(i,j)],union(a,b))
-                                if iter!=1
-                                    B+=X_iA_old[j,b]*Δ(model,z,v,T,i,j,a,b)
-                                else
-                                    B+=Δ(model,z,v,T,i,j,a,b)
-                                end
+                    B = 0
+                    for b in keys(model.params.n_sites[j])
+                        if haskey(model.params.epsilon_assoc,Set([(i,a),(j,b)]))
+                            if iter!=1
+                                B+=X_iA_old[j,b]*Δ(model,z,v,T,i,j,a,b)
+                            else
+                                B+=Δ(model,z,v,T,i,j,a,b)
                             end
                         end
-                        A += ρ*x[j]*B
                     end
+                    A += ρ*x[j]*B
                 end
                 if iter == 1
                     X_iA[i,a] =0.5+0.5*(1+A)^-1
@@ -138,8 +136,8 @@ function X_assoc(model::PCSAFTFamily, z, v, T)
 end
 
 function Δ(model::PCSAFTFamily, z, v, T, i, j, a, b)
-    ϵ_assoc = model.params.epsilon_assoc[union(i,j)][union(a,b)]
-    κ = model.params.bond_vol[union(i,j)][union(a,b)]
+    ϵ_assoc = model.params.epsilon_assoc[Set([(i,a),(j,b)])]
+    κ = model.params.bond_vol[Set([(i,a),(j,b)])]
     σ = model.params.sigma[union(i,j)]
     g = g_hsij(model,z,v,T,i,j)
     return g*σ^3*(exp(ϵ_assoc/T)-1)*κ

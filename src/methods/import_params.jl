@@ -18,8 +18,8 @@ function create_PCSAFTParams(raw_params; combiningrule_ϵ = "Berth")
     n_sites = Dict()
     for i in keys(like_params_dict["n_e"])
         n_sites[i] = Dict()
-        n_sites[i][Set(["e"])] = like_params_dict["n_e"][i]
-        n_sites[i][Set(["H"])] = like_params_dict["n_H"][i]
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
     end
 
     return PCSAFTParams(segment, sigma, epsilon, epsilon_assoc, bond_vol, n_sites)
@@ -45,8 +45,8 @@ function create_sPCSAFTParams(raw_params; combiningrule_ϵ = "Berth")
     n_sites = Dict()
     for i in keys(like_params_dict["n_e"])
         n_sites[i] = Dict()
-        n_sites[i][Set(["e"])] = like_params_dict["n_e"][i]
-        n_sites[i][Set(["H"])] = like_params_dict["n_H"][i]
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
     end
 
     return sPCSAFTParams(segment, sigma, epsilon, epsilon_assoc, bond_vol, n_sites, k)
@@ -78,8 +78,8 @@ function create_SAFTVRMieParams(raw_params)
     n_sites = Dict()
     for i in keys(like_params_dict["n_H"])
         n_sites[i] = Dict()
-        n_sites[i][Set(["e"])] = like_params_dict["n_e"][i]
-        n_sites[i][Set(["H"])] = like_params_dict["n_H"][i]
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
     end
     return SAFTVRMieParams(segment, sigma, epsilon, lambdaA, lambdaR, epsilon_assoc, bond_vol, n_sites)
 end
@@ -99,8 +99,8 @@ function create_ogSAFTParams(raw_params)
     n_sites = Dict()
     for i in keys(like_params_dict["n_H"])
         n_sites[i] = Dict()
-        n_sites[i][Set(["e"])] = like_params_dict["n_e"][i]
-        n_sites[i][Set(["H"])] = like_params_dict["n_H"][i]
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
     end
     return ogSAFTParams(segment, sigma, epsilon, epsilon_assoc, bond_vol, n_sites)
 end
