@@ -77,7 +77,7 @@ plt = plot!(1e-3 ./v_v, Temp,color=:blue)
 #= (model,EoS) = System(["n-butane"],"ogSAFT") =#
 #= (T_c,p_c,v_c)=Pcrit(EoS,model) =#
 #= println(T_c) =#
-#= temperature  = range(0.65*T_c,T_c,length=100) =#
+#= temperature  = range(0.65*T_c,T_c,length=100) =#³
 #= (P_sat,v_l,v_v) = Psat(EoS,model,temperature) =#
 #= plt = plot!(1 ./v_l,temperature,color=:green) =#
 #= plt = plot!(1 ./v_v,temperature,color=:green) =#
