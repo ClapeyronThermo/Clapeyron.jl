@@ -7,10 +7,11 @@ using .Solvers
 using Combinatorics
 
 include("utils/database.jl")
+include("methods/constants.jl")
 include("methods/param_structs.jl")
 include("methods/model_structs.jl")
 include("methods/eos/combining_rules.jl")
-include("methods/import_parameters.jl")
+include("methods/import_params.jl")
 include("utils/misc.jl")
 include("methods/eos/ideal.jl")
 
@@ -40,8 +41,6 @@ function system(components::Array{String,1}, method::String)
     end
     return model
 end
-
-const N_A = 6.02214086e23
 
 include("methods/getproperties_SAFT.jl")
 
