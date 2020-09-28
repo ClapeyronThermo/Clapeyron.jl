@@ -19,11 +19,11 @@ SAFT equations of state currently available:
 
 For group contribution approaches, we provide:
 
-| EoS               | Seg./Mono.? | Chain? | Assoc.? | Parameters? |
-| ----------------- | ----------- | ------ | ------- | ----------- |
-| sPC-SAFT          |             |        |         |             |
-| SAFT-$\gamma$ SW  |             |        |         |             |
-| SAFT-$\gamma$ Mie |             |        |         |             |
+| EoS          | Seg./Mono.? | Chain? | Assoc.? | Parameters? |
+| ------------ | ----------- | ------ | ------- | ----------- |
+| sPC-SAFT     |             |        |         |             |
+| SAFT-*ɣ* SW  |             |        |         |             |
+| SAFT-*ɣ* Mie |             |        |         |             |
 
 Properties available:
 
@@ -65,4 +65,4 @@ Properties available:
 | Critical pressure    | :heavy_check_mark: |
 | Critical volume      | :heavy_check_mark: |
 
-We will also provide a Tp-flash algorithm (HELD alogrithm).
+We will also provide a Tp-flash algorithm (Rachford-Rice and HELD alogrithm).
