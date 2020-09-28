@@ -30,16 +30,19 @@ export get_volume, get_Psat, get_Pcrit, get_enthalpy_vap, get_pressure, get_entr
 function system(components::Array{String,1}, method::String; kwargs...)
     # possible kwargs... are filepaths for
     # customdatabase_like, customdatabase_unlike, customdatabase_assoc
-    raw_params = retrieveparams(components, method)
     set_components = [Set([components[i]]) for i in 1:length(components)]
     if method == "PCSAFT"
-        model = PCSAFT(set_components, create_PCSAFTParams(raw_params; kwargs...))
+        raw_params = retrieveparams(components, method; kwargs...)
+        model = PCSAFT(set_components, create_PCSAFTParams(raw_params))
     elseif method == "SAFTVRMie"
-        model = SAFTVRMie(set_components, create_SAFTVRMieParams(raw_params; kwargs...))
+        raw_params = retrieveparams(components, method; kwargs...)
+        model = SAFTVRMie(set_components, create_SAFTVRMieParams(raw_params))
     elseif method == "ogSAFT"
-        model = ogSAFT(set_components, create_ogSAFTParams(raw_params; kwargs...))
+        raw_params = retrieveparams(components, method; kwargs...)
+        model = ogSAFT(set_components, create_ogSAFTParams(raw_params))
     elseif method == "sPCSAFT"
-        model = sPCSAFT(set_components, create_sPCSAFTParams(raw_params; kwargs...))
+        raw_params = retrieveparams(components, method; kwargs...)
+        model = sPCSAFT(set_components, create_sPCSAFTParams(raw_params))
     end
     return model
 end
