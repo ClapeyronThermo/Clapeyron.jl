@@ -167,12 +167,12 @@ function retrieveparams_assoc(components::Array{String, 1}, selected_method; cus
     header = parseline(filepath, 3)
     found_method = searchdatabase_assoc(components, selected_method; customdatabase_filepath=customdatabase_filepath, variant=variant)
     pairs = keys(found_method)
-    found_params = Dict{Set{Tuple{String, String}}, Dict{String, Any}}()
+    found_params = Dict{Set{Tuple{Set{String}, String}}, Dict{String, Any}}()
     if !isempty(found_method)
         for pair in pairs
             for line_number in found_method[pair][selected_method]
                 retrieved = Dict(zip(header, parseline(filepath, line_number)))
-                assoc_pair = Set([(retrieved["species1"], retrieved["site1"]), (retrieved["species2"], retrieved["site2"])])
+                assoc_pair = Set([(Set([retrieved["species1"]]), retrieved["site1"]), (Set([retrieved["species2"]]), retrieved["site2"])])
                 found_params[assoc_pair] = retrieved
             end
         end
@@ -213,7 +213,7 @@ function filterparams(raw_params, like_params::T; unlike_params::T=Array{String,
     assoc_pairs = keys(raw_params_assoc)
     like_params_dict = Dict{String, Dict{Set{String}, Float64}}()
     unlike_params_dict = Dict{String, Dict{Set{String}, Float64}}()
-    assoc_params_dict = Dict{String, Dict{Set{Tuple{String, String}}, Float64}}()
+    assoc_params_dict = Dict{String, Dict{Set{Tuple{Set{String}, String}}, Float64}}()
     for like_param in like_params
         like_params_dict[like_param] = Dict()
         for component in components
