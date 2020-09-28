@@ -167,26 +167,23 @@ function retrieveparams_assoc(components::Array{String, 1}, selected_method; cus
     header = parseline(filepath, 3)
     found_method = searchdatabase_assoc(components, selected_method; customdatabase_filepath=customdatabase_filepath, variant=variant)
     pairs = keys(found_method)
-    found_params = Dict{Set{String}, Dict{Set{Tuple{String, String}}, Dict{String, Any}}}()
+    found_params = Dict{Set{Tuple{String, String}}, Dict{String, Any}}()
     if !isempty(found_method)
         for pair in pairs
-            found_params[pair] = Dict()
             for line_number in found_method[pair][selected_method]
                 retrieved = Dict(zip(header, parseline(filepath, line_number)))
                 assoc_pair = Set([(retrieved["species1"], retrieved["site1"]), (retrieved["species2"], retrieved["site2"])])
-                found_params[pair][assoc_pair] = retrieved
+                found_params[assoc_pair] = retrieved
             end
         end
         # Check if reverse pair exists; if not, make create reverse pair equal to original pair
-        for pair in pairs
-            for assoc_pair in keys(found_params[Set(pair)])
-                if length(assoc_pair) == 2
-                    pair_tuples = collect(assoc_pair)
-                    reverse_assoc_pair = Set([(pair_tuples[1][1], pair_tuples[2][2]), (pair_tuples[2][1], pair_tuples[1][2])])
-                    if !haskey(found_params[Set(pair)], reverse_assoc_pair)
-                        found_params[Set(pair)][reverse_assoc_pair] =
-                            found_params[Set(pair)][assoc_pair]
-                    end
+        for assoc_pair in keys(found_params)
+            if length(assoc_pair) == 2
+                pair_tuples = collect(assoc_pair)
+                reverse_assoc_pair = Set([(pair_tuples[1][1], pair_tuples[2][2]), (pair_tuples[2][1], pair_tuples[1][2])])
+                if !haskey(found_params, reverse_assoc_pair)
+                    found_params[reverse_assoc_pair] =
+                        found_params[assoc_pair]
                 end
             end
         end
@@ -213,41 +210,36 @@ function filterparams(raw_params, like_params::T; unlike_params::T=Array{String,
     raw_params_assoc = raw_params[3]
     components = keys(raw_params_like)
     pairs = keys(raw_params_unlike)
-    pair_tuples = keys(raw_params_assoc)
+    assoc_pairs = keys(raw_params_assoc)
     like_params_dict = Dict{String, Dict{Set{String}, Float64}}()
     unlike_params_dict = Dict{String, Dict{Set{String}, Float64}}()
-    assoc_params_dict = Dict{String, Dict{Set{String}, Dict{Set{Tuple{String, String}}, Float64}}}()
-    for pure_param in like_params
-        like_params_dict[pure_param] = Dict()
+    assoc_params_dict = Dict{String, Dict{Set{Tuple{String, String}}, Float64}}()
+    for like_param in like_params
+        like_params_dict[like_param] = Dict()
         for component in components
-            param_value = raw_params_like[component][pure_param]
+            param_value = raw_params_like[component][like_param]
             if !ismissing(param_value)
-                push!(like_params_dict[pure_param], component => param_value)
+                push!(like_params_dict[like_param], component => param_value)
             end
         end
     end
-    for pair_param in unlike_params
-        unlike_params_dict[pair_param] = Dict()
+    for unlike_param in unlike_params
+        unlike_params_dict[unlike_param] = Dict()
         for pair in pairs
-            if haskey(raw_params_unlike[pair], pair_param)
-                param_value = raw_params_unlike[pair][pair_param]
+            if haskey(raw_params_unlike[pair], unlike_param)
+                param_value = raw_params_unlike[pair][unlike_param]
                 if !ismissing(param_value)
-                    push!(unlike_params_dict[pair_param], pair => param_value)
+                    push!(unlike_params_dict[unlike_param], pair => param_value)
                 end
             end
         end
     end
     for assoc_param in assoc_params
         assoc_params_dict[assoc_param] = Dict()
-        for pair_tuple in pair_tuples
-            for assoc_pair in keys(raw_params_assoc[pair_tuple])
-                param_value = raw_params_assoc[pair_tuple][assoc_pair][assoc_param]
-                if !ismissing(param_value)
-                    if !haskey(assoc_params_dict[assoc_param], pair_tuple)
-                        assoc_params_dict[assoc_param][pair_tuple] = Dict()
-                    end
-                    push!(assoc_params_dict[assoc_param][pair_tuple], assoc_pair => param_value)
-                end
+        for assoc_pair in assoc_pairs
+            param_value = raw_params_assoc[assoc_pair][assoc_param]
+            if !ismissing(param_value)
+                push!(assoc_params_dict[assoc_param], assoc_pair => param_value)
             end
         end
     end
