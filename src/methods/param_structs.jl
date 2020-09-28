@@ -1,4 +1,6 @@
-struct PCSAFTParams
+abstract type Params end
+
+struct PCSAFTParams <: Params
     segment::Dict
     sigma::Dict
     epsilon::Dict
@@ -7,7 +9,7 @@ struct PCSAFTParams
     n_sites::Dict
 end
 
-struct sPCSAFTParams
+struct sPCSAFTParams <: Params
     segment::Dict
     sigma::Dict
     epsilon::Dict
@@ -17,7 +19,7 @@ struct sPCSAFTParams
     k::Dict
 end
 
-struct SAFTVRMieParams
+struct SAFTVRMieParams <: Params
     segment::Dict
     sigma::Dict
     epsilon::Dict
@@ -28,7 +30,7 @@ struct SAFTVRMieParams
     n_sites::Dict
 end
 
-struct ogSAFTParams
+struct ogSAFTParams <: Params
     segment::Dict
     sigma::Dict
     epsilon::Dict

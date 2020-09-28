@@ -169,9 +169,9 @@ function retrieveparams(components::Array{String, 1}, selected_method, user_inpu
     return [params_like, params_unlike, params_assoc]
 end
 
-function filterparams(raw_params::Array{Dict,1}, pure_params::T; pair_params::T=Array{String,1}([]), assoc_params::T=Array{String,1}([])) where T<:Array{String,1}
+function filterparams(raw_params::Array{Dict,1}, like_params::T; unlike_params::T=Array{String,1}([]), assoc_params::T=Array{String,1}([])) where T<:Array{String,1}
     # Filters the raw parametrs from retrieveparameters into selected headers
-    # Returns dictionaries where the keys are the header of teh selected columns
+    # Returns dictionaries where the keys are the header of the selected columns
     # One dictionary for each like, unlike, and assoc
     raw_params_like = raw_params[1]
     raw_params_unlike = raw_params[2]
@@ -182,7 +182,7 @@ function filterparams(raw_params::Array{Dict,1}, pure_params::T; pair_params::T=
     like_params_dict = Dict{String, Dict{Set{String}, Float64}}()
     unlike_params_dict = Dict{String, Dict{Set{String}, Float64}}()
     assoc_params_dict = Dict{String, Dict{Tuple{String, String}, Dict{Tuple{String, String},Float64}}}()
-    for pure_param in pure_params
+    for pure_param in like_params
         like_params_dict[pure_param] = Dict()
         for component in components
             param_value = raw_params_like[component][pure_param]
@@ -191,7 +191,7 @@ function filterparams(raw_params::Array{Dict,1}, pure_params::T; pair_params::T=
             end
         end
     end
-    for pair_param in pair_params
+    for pair_param in unlike_params
         unlike_params_dict[pair_param] = Dict()
         for pair in pairs
             if haskey(raw_params_unlike[pair], pair_param)

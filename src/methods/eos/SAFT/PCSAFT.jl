@@ -1,34 +1,30 @@
-const N_A = 6.02214086e23
-const k_B = 1.38064852e-23
-const R   = N_A*k_B
-
 function a_res(model::PCSAFTFamily, z, v, T)
     return a_hc(model,z,v,T) + a_disp(model,z,v,T) + a_assoc(model,z,v,T)
 end
 
 function a_hc(model::PCSAFTFamily, z, v, T)
     x = z/sum(z[i] for i in model.components)
-    m = model.parameters.segment
+    m = model.params.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
     return m̄*a_hs(model,z,v,T) - sum(x[i]*(m[i]-1)*log(g_hsij(model,z,v,T, i, i)) for i in model.components)
 end
 
 function a_disp(model::PCSAFTFamily, z, v, T)
     x = z/sum(z[i] for i in model.components)
-    m = model.parameters.segment
+    m = model.params.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
     return -2*π*N_A*sum(z[i] for i in model.components)/v*I_n(model,z,v,T, 1)*m2ϵσ3(model,z,v,T, 1) - π*m̄*N_A*sum(z[i] for i in model.components)/v*C1(model,z,v,T)*I_n(model,z,v,T, 2)*m2ϵσ3(model,z,v,T, 2)
 end
 
 function d(model::PCSAFTFamily, z, v, T, component)
-    ϵ = model.parameters.epsilon[component]
-    σ = model.parameters.sigma[component]
+    ϵ = model.params.epsilon[component]
+    σ = model.params.sigma[component]
     return σ * (1 - 0.12exp(-3ϵ/T))
 end
 
 function ζn(model::PCSAFTFamily, z, v, T, n)
     x = z/sum(z[i] for i in model.components)
-    m = model.parameters.segment
+    m = model.params.segment
     return N_A*sum(z[i] for i in model.components)*π/6/v * sum(x[i]*m[i]*d(model,z,v,T, i)^n for i in model.components)
 end
 
@@ -51,23 +47,23 @@ end
 function C1(model::PCSAFTFamily, z, v, T)
     x = z/sum(z[i] for i in model.components)
     η = ζn(model,z,v,T, 3)
-    m = model.parameters.segment
+    m = model.params.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
     return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
 end
 
 function m2ϵσ3(model::PCSAFTFamily, z, v, T, ϵ_power = 1)
     x = z/sum(z[i] for i in model.components)
-    m = model.parameters.segment
-    σ = model.parameters.sigma
-    ϵ = model.parameters.epsilon
+    m = model.params.segment
+    σ = model.params.sigma
+    ϵ = model.params.epsilon
     #= return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[i]*ϵ[j])*(1-k[union(i,j)])/T)^ϵ_power * (0.5*(σ[i]+σ[j]))^3 for i in model.components, j in model.components) =#
     return sum(x[i]*x[j]*m[i]*m[j] * (ϵ[union(i,j)]*(1)/T)^ϵ_power * σ[union(i,j)]^3 for i in model.components, j in model.components)
 end
 
 function I_n(model::PCSAFTFamily, z, v, T, n)
     x = z/sum(z[i] for i in model.components)
-    m = model.parameters.segment
+    m = model.params.segment
     m̄ = sum(x[i]*m[i] for i in model.components)
     η = ζn(model,z,v,T, 3)
     if n == 1
@@ -93,7 +89,7 @@ end
 function a_assoc(model::PCSAFTFamily, z, v, T)
     x = z/sum(z[i] for i in model.components)
     X_iA = X_assoc(model,z,v,T)
-    return sum(x[i]*sum(log(X_iA[i,a])-X_iA[i,a]/2 + model.parameters.n_sites[i][a]/2 for a in keys(model.parameters.n_sites[i])) for i in model.components)
+    return sum(x[i]*sum(log(X_iA[i,a])-X_iA[i,a]/2 + model.params.n_sites[i][a]/2 for a in keys(model.params.n_sites[i])) for i in model.components)
 end
 
 function X_assoc(model::PCSAFTFamily, z, v, T)
@@ -105,13 +101,13 @@ function X_assoc(model::PCSAFTFamily, z, v, T)
     iter = 1
     while tol > 1e-12 && iter < 100
         for i in model.components
-            for a in keys(model.parameters.n_sites[i])
+            for a in keys(model.params.n_sites[i])
                 A = 0.
                 for j in model.components
-                    if haskey(model.parameters.epsilon_assoc,union(i,j))
+                    if haskey(model.params.epsilon_assoc,union(i,j))
                         B = 0
-                        for b in keys(model.parameters.n_sites[i])
-                            if haskey(model.parameters.epsilon_assoc[union(i,j)],union(a,b))
+                        for b in keys(model.params.n_sites[i])
+                            if haskey(model.params.epsilon_assoc[union(i,j)],union(a,b))
                                 if iter!=1
                                     B+=X_iA_old[j,b]*Δ(model,z,v,T,i,j,a,b)
                                 else
@@ -130,9 +126,9 @@ function X_assoc(model::PCSAFTFamily, z, v, T)
             end
         end
         if iter == 1
-            tol = sqrt(sum(sum((1. -X_iA[i,a])^2 for a in keys(model.parameters.n_sites[i])) for i in model.components))
+            tol = sqrt(sum(sum((1. -X_iA[i,a])^2 for a in keys(model.params.n_sites[i])) for i in model.components))
         else
-            tol = sqrt(sum(sum((X_iA_old[i,a] -X_iA[i,a])^2 for a in keys(model.parameters.n_sites[i])) for i in model.components))
+            tol = sqrt(sum(sum((X_iA_old[i,a] -X_iA[i,a])^2 for a in keys(model.params.n_sites[i])) for i in model.components))
         end
         X_iA_old = deepcopy(X_iA)
         iter += 1
@@ -142,9 +138,9 @@ function X_assoc(model::PCSAFTFamily, z, v, T)
 end
 
 function Δ(model::PCSAFTFamily, z, v, T, i, j, a, b)
-    ϵ_assoc = model.parameters.epsilon_assoc[union(i,j)][union(a,b)]
-    κ = model.parameters.bond_vol[union(i,j)][union(a,b)]
-    σ = model.parameters.sigma[union(i,j)]
+    ϵ_assoc = model.params.epsilon_assoc[union(i,j)][union(a,b)]
+    κ = model.params.bond_vol[union(i,j)][union(a,b)]
+    σ = model.params.sigma[union(i,j)]
     g = g_hsij(model,z,v,T,i,j)
     return g*σ^3*(exp(ϵ_assoc/T)-1)*κ
 end

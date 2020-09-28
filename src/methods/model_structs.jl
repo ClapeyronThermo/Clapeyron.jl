@@ -6,7 +6,7 @@ abstract type sPCSAFTFamily <: SAFT end
 abstract type ogSAFTFamily <: SAFT end
 abstract type SAFTVRMieFamily <: SAFT end
 
-struct SAFTVRMie <: SAFTVRMieFamily; components; parameters::SAFTVRMieParams end
-struct PCSAFT <: PCSAFTFamily; components; parameters::PCSAFTParams end
-struct sPCSAFT <: sPCSAFTFamily; components; parameters::sPCSAFTParams end
-struct ogSAFT <: ogSAFTFamily; components; parameters::ogSAFTParams end
+struct SAFTVRMie <: SAFTVRMieFamily; components; params::SAFTVRMieParams end
+struct PCSAFT <: PCSAFTFamily; components; params::PCSAFTParams end
+struct sPCSAFT <: sPCSAFTFamily; components; params::sPCSAFTParams end
+struct ogSAFT <: ogSAFTFamily; components; params::ogSAFTParams end

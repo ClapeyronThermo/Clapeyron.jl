@@ -1,12 +1,9 @@
-N_A = 6.02214086e23
-k_B = 1.38064852e-23
-R   = N_A*k_B
 function a_res(model::ogSAFTFamily,z,v,T)
     return a_seg(model,z,v,T) + a_chain(model,z,v,T) + a_assoc(model,z,v,T)
 end
 
 function a_seg(model::ogSAFTFamily,z,v,T)
-    m = model.parameters.segment
+    m = model.params.segment
     x = z/sum(z[i] for i in model.components)
     m̄ = sum(x[i]*m[i] for i in model.components)
 
@@ -15,14 +12,14 @@ end
 
 function a_chain(model::ogSAFTFamily,z,v,T)
     x = z/sum(z[i] for i in model.components)
-    m = model.parameters.segment
+    m = model.params.segment
     return sum(x[i]*(1-m[i])*log(g_hsij(model,z,v,T, i, i)) for i in model.components)
 end
 
 function d(model::ogSAFTFamily,z,v,T, component)
-    ϵ = model.parameters.epsilon[union(component,component)]
-    σ = model.parameters.sigma[union(component,component)]
-    m = model.parameters.segment[component]
+    ϵ = model.params.epsilon[union(component,component)]
+    σ = model.params.sigma[union(component,component)]
+    m = model.params.segment[component]
     fm = 0.0010477+0.025337*(m-1)/m
     f = (1+0.2977T/ϵ)/(1+0.33163T/ϵ+fm*(T/ϵ)^2)
     return σ * f
@@ -30,9 +27,9 @@ end
 
 function dx(model::ogSAFTFamily,z,v,T)
     x = z/sum(z[i] for i in model.components)
-    m = model.parameters.segment
-    σ = model.parameters.sigma
-    ϵ = model.parameters.epsilon
+    m = model.params.segment
+    σ = model.params.sigma
+    ϵ = model.params.epsilon
 
     mx = sum(x[i]*m[i] for i in model.components)
     σx = (sum(x[i]*x[j]*m[i]*m[j]*σ[union(i,j)]^3 for i in model.components for j in model.components)/mx^2)^(1/3)
@@ -45,12 +42,12 @@ end
 
 function ζn(model::ogSAFTFamily,z,v,T, n)
     x = z/sum(z[i] for i in model.components)
-    m = model.parameters.segment
+    m = model.params.segment
     return N_A*sum(z[i] for i in model.components)*π/6/v * sum(x[i]*m[i]*d(model,z,v,T, i)^n for i in model.components)
 end
 
 function η(model::ogSAFTFamily,z,v,T)
-    m = model.parameters.segment
+    m = model.params.segment
     x = z/sum(z[i] for i in model.components)
     m̄ = sum(x[i]*m[i] for i in model.components)
     return N_A*sum(z[i] for i in model.components)*π/6/v*dx(model,z,v,T)^3*m̄
@@ -70,9 +67,9 @@ function a_hs(model::ogSAFTFamily,z,v,T)
 end
 
 function a_disp(model::ogSAFTFamily,z,v,T)
-    m = model.parameters.segment
-    σ = model.parameters.sigma
-    ϵ = model.parameters.epsilon
+    m = model.params.segment
+    σ = model.params.sigma
+    ϵ = model.params.epsilon
     x = z/sum(z[i] for i in model.components)
     ϵx = sum(x[i]*x[j]*m[i]*m[j]*σ[union(i,j)]^3*ϵ[union(i,j)] for i in model.components for j in model.components)/sum(x[i]*x[j]*m[i]*m[j]*σ[union(i,j)]^3 for i in model.components for j in model.components)
     ηx = η(model,z,v,T)
@@ -92,9 +89,9 @@ end
 #     for i in 1:16
 #         append!(A,Bo[i]+ω*Ba[i])
 #     end
-#     m = model.parameters.segment
-#     σ = model.parameters.sigma
-#     ϵ = model.parameters.epsilon
+#     m = model.params.segment
+#     σ = model.params.sigma
+#     ϵ = model.params.epsilon
 #     x = z/sum(z[i] for i in model.components)
 #     mx = sum(x[i]*m[i] for i in model.components)
 #     σx = (sum(x[i]*x[j]*m[i]*m[j]*σ[union(i,j)]^3 for i in model.components for j in model.components)/mx^2)^(1/3)
@@ -121,7 +118,7 @@ end
 function a_assoc(model::ogSAFTFamily, z, v, T)
     x = z/sum(z[i] for i in model.components)
     X_iA = X_assoc(model,z,v,T)
-    return sum(x[i]*sum(log(X_iA[i,a])-X_iA[i,a]/2 + model.parameters.n_sites[i][a]/2 for a in keys(model.parameters.n_sites[i])) for i in model.components)
+    return sum(x[i]*sum(log(X_iA[i,a])-X_iA[i,a]/2 + model.params.n_sites[i][a]/2 for a in keys(model.params.n_sites[i])) for i in model.components)
 end
 
 function X_assoc(model::ogSAFTFamily, z, v, T)
@@ -133,13 +130,13 @@ function X_assoc(model::ogSAFTFamily, z, v, T)
     iter = 1
     while tol > 1e-12 && iter < 100
         for i in model.components
-            for a in keys(model.parameters.n_sites[i])
+            for a in keys(model.params.n_sites[i])
                 A = 0.
                 for j in model.components
-                    if haskey(model.parameters.epsilon_assoc,union(i,j))
+                    if haskey(model.params.epsilon_assoc,union(i,j))
                         B = 0
-                        for b in keys(model.parameters.n_sites[i])
-                            if haskey(model.parameters.epsilon_assoc[union(i,j)],union(a,b))
+                        for b in keys(model.params.n_sites[i])
+                            if haskey(model.params.epsilon_assoc[union(i,j)],union(a,b))
                                 if iter!=1
                                     B+=X_iA_old[j,b]*Δ(model,z,v,T,i,j,a,b)
                                 else
@@ -158,9 +155,9 @@ function X_assoc(model::ogSAFTFamily, z, v, T)
             end
         end
         if iter == 1
-            tol = sqrt(sum(sum((1. -X_iA[i,a])^2 for a in keys(model.parameters.n_sites[i])) for i in model.components))
+            tol = sqrt(sum(sum((1. -X_iA[i,a])^2 for a in keys(model.params.n_sites[i])) for i in model.components))
         else
-            tol = sqrt(sum(sum((X_iA_old[i,a] -X_iA[i,a])^2 for a in keys(model.parameters.n_sites[i])) for i in model.components))
+            tol = sqrt(sum(sum((X_iA_old[i,a] -X_iA[i,a])^2 for a in keys(model.params.n_sites[i])) for i in model.components))
         end
         X_iA_old = deepcopy(X_iA)
         iter += 1
@@ -170,8 +167,8 @@ function X_assoc(model::ogSAFTFamily, z, v, T)
 end
 
 function Δ(model::ogSAFTFamily, z, v, T, i, j, a, b)
-    ϵ_assoc = model.parameters.epsilon_assoc[union(i,j)][union(a,b)]
-    κ = model.parameters.bond_vol[union(i,j)][union(a,b)]
+    ϵ_assoc = model.params.epsilon_assoc[union(i,j)][union(a,b)]
+    κ = model.params.bond_vol[union(i,j)][union(a,b)]
     g = g_hsij(model,z,v,T,i,j)
     return (d(model, z, v, T, i)+d(model, z, v, T, j))^3/2^3*g*(exp(ϵ_assoc/T)-1)*κ
 end
