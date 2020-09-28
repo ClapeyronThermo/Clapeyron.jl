@@ -115,7 +115,7 @@ end
 
 function get_enthalpy_vap(model::SAFT, T)
     (P_sat,v_l,v_v) = get_Psat(model,T)
-    fun(x) = eos(model, z, x[1], x[2])
+    fun(x) = eos(model, create_z(model,[1.0]), x[1], x[2])
     df(x)  = ForwardDiff.gradient(fun,x)
     H_vap = []
     for i in 1:length(T)
