@@ -12,20 +12,20 @@ We may create a model using the ```system(components, method; kwargs)``` functio
 
     model = system(["methanol", "ethanol"], "PCSAFT")
 
-If you would like to use a custom database, copy the relevant files (in this case, PCSAFT) from the ```database``` directory in the package root directory to use as a template, and place it wherever you want, then load them using
+OpenSAFT provides a database for a lot of paramaters that are currently publised in the literature. If you would like to use a custom database, copy the relevant files (in this case, PCSAFT) from the ```database``` directory in the package root directory to use as a template, and place it wherever you want, then create the model using
 
     model = system(["methanol", "ethanol", "PCSAFT";
         customdatabase_like = "{PATH}",
         customdatabase_unlike = "{PATH}",
         customdatabase_assoc = "{PATH}")
 
-You may now use find physical properties for this system!
+You may now find physical properties for this system!
 
 Note that the composition has to be defined using the NamedArray type. We currently have a function called ```create_z(model, composition)``` to do this for you, but this will be converted into a macro later.
 
 For example, to find the isobaric heat capacity at equal mole fractions at a pressure of 1 bar and a temperature of 300 K, we just write
 
-    Cp = get_isobaric_heat_capacity(model, create_z([0.5, 0.5], 10e5, 300)
+    Cp = get_isobaric_heat_capacity(model, create_z(model, [0.5, 0.5]), 10e5, 300)
 
 The functions for the physical properties that we currently support are as follows:
 

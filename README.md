@@ -89,4 +89,4 @@ Hit the ```]``` key to enter Pkg mode, then run
 
 If you wish to add this module to ```environments``` in ```~/.julia``` (so that you don't have to activate it every time you launch Julia), run
 
-    Pkg > dev .
+    Pkg> dev .
