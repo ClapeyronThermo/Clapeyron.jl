@@ -1,5 +1,5 @@
-JuliaSAFT Database File;;;;;
-PC-SAFT Unlike Parameters;;;;;
+OpenSAFT Database File;;;;;
+SAFTVRMie Unlike Parameters;;;;;
 species1;SMILES1;species2;SMILES2;epsilon;lambdaR;source
 water;O;methanol;CO;278.45;;10.1021/je500248h
 water;O;carbon dioxide;O=C(=O);226.38;;10.1016/j.fluid.2015.12.044

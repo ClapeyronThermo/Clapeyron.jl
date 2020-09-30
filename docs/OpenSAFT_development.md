@@ -8,7 +8,7 @@ There are three components to the implementation of an equation of state (EoS):
 3. generating physical properties out of the EoS.
 
 ## 1. Importing parameters
-OpenSAFT is designed such that raw data files can systematically extracted so that the developer will be able to focus on writing the EoS. The database extraction is handled by the functions in ```utils/extractdatabase.jl```.  
+OpenSAFT is designed such that raw data files can systematically extracted so that the developer will be able to focus on writing the EoS. The database extraction is handled by the functions in ```utils/extractdatabase.jl```.  A full documentation of how this is set up will be written in the near future, but the details of the implementation are not necessary for the EoS developer.
 
 Currently, the raw data files are formatted as CSVs with a semicolon delimiter (techinically DSVs), with the headers on the third row. We currently support three parameter data files for each EoS:
 
@@ -45,7 +45,7 @@ OpenSAFT makes use of Julia's multiple dispatch to reduce function duplication f
 
     {SAFT_model} <: {SAFT_family} <: SAFT <: EoS
 
-In the future, if we ever wish to provide support for non-SAFT EoS (cubics, activity coefficient based, etc), we may add an abstract type under EoS.
+In the future, if we ever wish to provide support for non-SAFT EoS (cubics, activity coefficient based, etc), we may add a new abstract type under EoS.
 
 Parameters that are used by the model are defined in ```models/param_structs.jl```. 
 
@@ -54,7 +54,7 @@ The user will call the ```system(components, method; kwargs)``` function in ```m
 The EoS for SAFT is expressed in terms of the Helmholtz free energy, and this is defined in ```models/eos/eos.jl```. This calls the relevant functions to generate, for example ```a_ideal``` and ```a_res```. For SAFT, these functions will reside in the ```models/eos/SAFT``` directory.
 
 ## 3. Generating physical properties out of the EoS
-All methods are stored in the ```methods``` directory. Currently, we have support for getting pure properties for SAFT. Additional methods to support mixtures, etc, will be written here.
+All methods are stored in the ```methods``` directory. Currently, we have support for getting pure properties for SAFT. Additional methods to support mixtures, etc, will be written here. We may make use of Julia's multiple dispatch to create model-specific methods if that is necessary.
 
 # Solvers
-There may be a few solvers that are typically used in thermodynamics but are not currently readily available in the Julia community, so they will be put together here in the ```solvers``` directory.
+There may be a few solvers that are typically used in thermodynamics but are not currently readily available in the Julia community, so they will be set up ande put together here in the ```solvers``` directory in a module called Solvers.
