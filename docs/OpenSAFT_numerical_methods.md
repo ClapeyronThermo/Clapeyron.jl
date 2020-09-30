@@ -1,4 +1,4 @@
-![JuliaSAFT_logo](./JuliaSAFT_logo.jpg)
+![OpenSAFT_logo](OpenSAFT_logo.svg)
 
 # Methods
 
@@ -8,7 +8,7 @@ This document aims to outline all of the various tools used to obtain the releva
 $$
 A=A(\mathbf{z},V,T)
 $$
- Taking derivatives of this function (within the JuliaSAFT module, this is done using automatic differentiation) can give us a wide range of properties which are given in the appendix. However, it is more common that we are interested in the state of a system at certain conditions ($\mathbf{z}_0$, $p_0$ , $T_0$). The answer to this can be determined from the following, deceptively simple, minimisation of the Gibbs free energy:
+ Taking derivatives of this function (within the OpenSAFT module, this is done using automatic differentiation) can give us a wide range of properties which are given in the appendix. However, it is more common that we are interested in the state of a system at certain conditions ($\mathbf{z}_0$, $p_0$ , $T_0$). The answer to this can be determined from the following, deceptively simple, minimisation of the Gibbs free energy:
 $$
 \min G(\mathbf{z}_0,p_0,T_0)
 $$
@@ -44,7 +44,7 @@ Effectively, we can re-word this as a root-finding problem. When using the van d
 
 However, there will be a range of pressures below the critical temperature where there will be more than one candidate phase (corresponding to the vapour, liquid and unstable phases). Treating this as a root-finding problem has the added difficulty of there being an additional, unstable solution. Treating this as an optimisation problem means we never need to worry about this unstable phase (it corresponds to a local maxima).
 
-Actually determining the values of $V$ that minimise this equation is quite straightforward, although, with a few subtleties. Within JuliaSAFT, we have used the local, derivative-based method of moving assymptotes (MMA) algorithm as implemented in `NLopt.jl` module. The reason for selecting this method is because, as a local derivative-based algorithm, it will be faster than other methods. This algorithm in particular also allows us to add inequality constraints; this is particularly important as there are certain values of $V$ which will are unphysical. These can be identified through the packing fraction:
+Actually determining the values of $V$ that minimise this equation is quite straightforward, although, with a few subtleties. Within OpenSAFT, we have used the local, derivative-based method of moving assymptotes (MMA) algorithm as implemented in `NLopt.jl` module. The reason for selecting this method is because, as a local derivative-based algorithm, it will be faster than other methods. This algorithm in particular also allows us to add inequality constraints; this is particularly important as there are certain values of $V$ which will are unphysical. These can be identified through the packing fraction:
 $$
 \eta=\frac{N_\mathrm{A}\pi}{6V}\sum_ix_im_id_i^3
 $$
@@ -74,4 +74,4 @@ One other issue to consider when solving this problem is that, within the liquid
    $$
    This somewhat reduces the magnitude of the gradients in the liquid phase.
 
-Using the above tricks, one should be able to obtain the value of $V$ that minimises the Gibbs free energy. The only question to answer now is: if there is more than one local minima, how do we identify the stable phase? In this case, we need to use a global optimisation algorithm. In the case of JuliaSAFT, a tunneling algorithm has been implemented although any other such algorithms can be used; the tunneling algorithm was selected as it still relies on gradient-based methods and is generally the recommended algorithm for such problems. 
+Using the above tricks, one should be able to obtain the value of $V$ that minimises the Gibbs free energy. The only question to answer now is: if there is more than one local minima, how do we identify the stable phase? In this case, we need to use a global optimisation algorithm. In the case of OpenSAFT, a tunneling algorithm has been implemented although any other such algorithms can be used; the tunneling algorithm was selected as it still relies on gradient-based methods and is generally the recommended algorithm for such problems. 

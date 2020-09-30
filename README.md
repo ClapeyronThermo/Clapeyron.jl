@@ -1,6 +1,8 @@
-![JuliaSAFT_logo](./docs/JuliaSAFT_logo.jpg)
+![OpenSAFT_logo](docs/OpenSAFT_logo.svg)
 
-Welcome to JuliaSAFT! This module intends to provide the variants of the SAFT equation of state, along with the relevant parameters and solvers required to use these equations.
+Welcome to OpenSAFT! This module intends to provide the variants of the SAFT equation of state, along with the relevant parameters and solvers required to use these equations.
+
+Check out the Jupyter notebooks in the ```examples``` directory to see how to set up your model.
 
 SAFT equations of state currently available:
 
@@ -66,3 +68,25 @@ Properties available:
 | Critical volume      | :heavy_check_mark: |
 
 We will also provide a Tp-flash algorithm (Rachford-Rice and HELD alogrithm).
+
+Note that at its current stage, OpenSAFT is still in the very early stages of development, and things may be moving around or changing rapidly, but we are very excited to see where this project may go!
+
+# Installing OpenSAFT
+
+OpenSAFT is not yet in the JuliaHub (but it will be soon!).
+
+You may load OpenSAFT manually for now by cloning this repository using
+
+    > git clone git@github.com:ypaul21/OpenSAFT.jl.git
+
+Navigate into this directory, and run Julia
+
+    > julia
+
+Hit the ```]``` key to enter Pkg mode, then run
+
+    Pkg> activate .
+
+If you wish to add this module to ```environments``` in ```~/.julia``` (so that you don't have to activate it every time you launch Julia), run
+
+    Pkg > dev .

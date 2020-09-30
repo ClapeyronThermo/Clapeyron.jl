@@ -1,6 +1,6 @@
-name = "JuliaSAFT"
-uuid = "ad2bf161-b011-4a42-8437-67ec766fa70d"
-authors = ["Paul Yew <yewhonwa@gmail.com>", "Pierre Walker <pwalker@mit.edu>"]
+name = "OpenSAFT"
+uuid = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
+authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pwalker@mit.edu>"]
 version = "0.1.0"
 
 [deps]

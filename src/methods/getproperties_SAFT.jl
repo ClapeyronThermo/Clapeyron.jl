@@ -39,7 +39,7 @@ end
 
 
 ## Saturation conditions solver
-function get_Psat(model::SAFT, T)
+function get_sat_pure(model::SAFT, T)
     components = model.components
     v0    = [log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/0.4),
              log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/1e-3)]
@@ -81,7 +81,7 @@ function Jac_Sat(model::SAFT, J, T, v_l, v_v)
 end
 
 ## Critical point solver
-function get_Pcrit(model::SAFT)
+function get_crit_pure(model::SAFT)
     components = model.components
     f! = (F,x) -> Obj_Crit(model, F, x[1]*model.params.epsilon[components[1]], 10^x[2])
     # j! = (J,x) -> Jac_Crit(J,eos,model,x[1]*model.params.epsilon[(1, 1)],10^x[2])
@@ -114,7 +114,7 @@ end
 # end
 
 function get_enthalpy_vap(model::SAFT, T)
-    (P_sat,v_l,v_v) = get_Psat(model,T)
+    (P_sat,v_l,v_v) = get_sat_pure(model,T)
     fun(x) = eos(model, create_z(model,[1.0]), x[1], x[2])
     df(x)  = ForwardDiff.gradient(fun,x)
     H_vap = []
