@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
+
 ![OpenSAFT_logo](docs/OpenSAFT_logo.svg)
 
 Welcome to OpenSAFT! This module intends to provide the variants of the SAFT equation of state, along with the relevant parameters and solvers required to use these equations.
