@@ -4,9 +4,9 @@ function methods_return(selected_method::String = "None")
     # Returns an Array of all methods in the database directory if input is "None"
     # If input is any other string, it will return an Array of just that string
     if selected_method == "None"
-        return filter(x-> isdir(joinpath(dirname(pathof(JuliaSAFT)), "../database", x)), readdir(joinpath(dirname(pathof(JuliaSAFT)), "../database")))
+        return filter(x-> isdir(joinpath(dirname(pathof(OpenSAFT)), "../database", x)), readdir(joinpath(dirname(pathof(OpenSAFT)), "../database")))
     else
-        if selected_method in filter(x-> isdir(joinpath(dirname(pathof(JuliaSAFT)), "../database",x)), readdir(joinpath(dirname(pathof(JuliaSAFT)), "../database")))
+        if selected_method in filter(x-> isdir(joinpath(dirname(pathof(OpenSAFT)), "../database",x)), readdir(joinpath(dirname(pathof(OpenSAFT)), "../database")))
             return [selected_method]
         else
             error("Database for selected method $selected_method not found.")
@@ -15,7 +15,7 @@ function methods_return(selected_method::String = "None")
 end
 
 function createfilepath(selected_method, database_type; variant="None")
-    return joinpath(dirname(pathof(JuliaSAFT)), "../database", selected_method, variant=="None" ? "data_$(selected_method)_$(database_type).csv" : "$variant/data_$(selected_method)_$(variant)_$(database_type).csv")
+    return joinpath(dirname(pathof(OpenSAFT)), "../database", selected_method, variant=="None" ? "data_$(selected_method)_$(database_type).csv" : "$variant/data_$(selected_method)_$(variant)_$(database_type).csv")
 end
 
 function customdatabase_check(selected_method, database_type, customdatabase_filepath; variant="None")
