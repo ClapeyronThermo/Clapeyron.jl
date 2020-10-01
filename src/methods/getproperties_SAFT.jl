@@ -55,7 +55,7 @@ function get_sat_pure(model::SAFT, T)
         append!(P_sat,get_pressure(model,create_z(model, [1.0]),v_v[i],T[i]))
         v0 = r.zero
     end
-    return (P_sat,v_l,v_v)
+    return (P_sat, v_l, v_v)
 end
 
 function Obj_Sat(model::SAFT, F, T, v_l, v_v)
@@ -81,7 +81,7 @@ function Jac_Sat(model::SAFT, J, T, v_l, v_v)
 end
 
 ## Critical point solver
-function get_crit_pure(model::SAFT)
+function get_crit_pure(model::SAFT; units = false)
     components = model.components
     f! = (F,x) -> Obj_Crit(model, F, x[1]*model.params.epsilon[components[1]], 10^x[2])
     # j! = (J,x) -> Jac_Crit(J,eos,model,x[1]*model.params.epsilon[(1, 1)],10^x[2])
@@ -90,7 +90,11 @@ function get_crit_pure(model::SAFT)
     T_c = r.zero[1]*model.params.epsilon[components[1]]
     v_c = 10^r.zero[2]
     p_c = get_pressure(model, create_z(model, [1.0]), v_c, T_c)
-    return (T_c, p_c, v_c)
+    if units
+        return (T_c*u"K", p_c*u"Pa", v_c*u"m^3/mol")
+    else
+        return (T_c, p_c, v_c)
+    end
 end
 
 function Obj_Crit(model::SAFT, F, T_c, v_c)
