@@ -1,5 +1,5 @@
 OpenSAFT Database File
-CKSAFT Like Parameters
+sPCSAFT Like Parameters
 species;DIPPR Number;Mw;m;sigma;epsilon;n_H;n_e;source
 methane;1;16.04;1;3.7039;150.03;0;0;10.1021/ie0003887
 ethane;2;30.07;1.6069;3.5206;191.42;0;0;10.1021/ie0003887
@@ -546,3 +546,4 @@ ethylamine;;45.09;2.7046;3.1343;221.53;1;1;10.1021/ie010954d
 2-propylamine;;59.11;2.5908;3.4777;231.8;1;1;10.1021/ie010954d
 aniline;;93.13;2.6607;3.7021;335.47;1;1;10.1021/ie010954d
 acetic acid;;60.053;1.3403;3.8582;211.59;1;1;10.1021/ie010954d
+hd;;;;;;;;

@@ -1,5 +1,5 @@
-JuliaSAFT Database File;;;;;
-PC-SAFT Unlike Parameters;;;;;
+OpenSAFT Database File;;;;;
+CKSAFT Unlike Parameters;;;;;
 species1;SMILES1;species2;SMILES2;k;source
 methane;C;n-butane;CCCC;0.022;10.1021/ie0003887
 methane;C;n-pentane;CCCCC;0.024;10.1021/ie0003887
