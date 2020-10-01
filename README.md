@@ -1,29 +1,33 @@
-![JuliaSAFT_logo](./docs/JuliaSAFT_logo.jpg)
+[![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
 
-Welcome to JuliaSAFT! This module intends to provide the variants of the SAFT equation of state, along with the relevant parameters and solvers required to use these equations.
+![OpenSAFT_logo](docs/OpenSAFT_logo.svg)
+
+Welcome to OpenSAFT! This module intends to provide the variants of the Statistical Associating Fluid Theory (SAFT) thermodynamic equation of state, along with the relevant parameters and solvers required to use these equations.
+
+Check out the Jupyter notebooks in the ```examples``` directory to see how to set up your model.
 
 SAFT equations of state currently available:
 
-| EoS           | Seg./Mono.?        | Chain?             | Assoc.?                       | Parameters?                         |
-| ------------- | ------------------ | ------------------ | ----------------------------- | ----------------------------------- |
-| SAFT          | :heavy_check_mark: | :heavy_check_mark: |                               | :heavy_check_mark: (non-assoc only) |
-| CK-SAFT       |                    |                    |                               |                                     |
-| sSAFT         |                    |                    |                               |                                     |
-| LJ-SAFT       |                    |                    |                               |                                     |
-| PC-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:(pure only) | :heavy_check_mark: (non-assoc only) |
-| sPC-SAFT      | :heavy_check_mark: | :heavy_check_mark: |                               | :heavy_check_mark: (non-assoc only) |
-| SAFT-VR SW    |                    |                    |                               |                                     |
-| soft-SAFT     |                    |                    |                               |                                     |
-| SAFT-VR Mie   | :heavy_check_mark: | :heavy_check_mark: |                               | :heavy_check_mark: (non-assoc only) |
-| SAFT-VR Morse |                    |                    |                               |                                     |
+| EoS           | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
+| ------------- | ------------------ | ------------------ | ------------------ | ------------------ |
+| SAFT          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| CK-SAFT       |                    |                    |                    |                    |
+| sSAFT         |                    |                    |                    |                    |
+| LJ-SAFT       |                    |                    |                    |                    |
+| PC-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| sPC-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| SAFT-VR SW    |                    |                    |                    |                    |
+| soft-SAFT     |                    |                    |                    |                    |
+| SAFT-VR Mie   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| SAFT-VR Morse |                    |                    |                    |                    |
 
 For group contribution approaches, we provide:
 
-| EoS               | Seg./Mono.? | Chain? | Assoc.? | Parameters? |
-| ----------------- | ----------- | ------ | ------- | ----------- |
-| sPC-SAFT          |             |        |         |             |
-| SAFT-$\gamma$ SW  |             |        |         |             |
-| SAFT-$\gamma$ Mie |             |        |         |             |
+| EoS          | Seg./Mono.? | Chain? | Assoc.? | Parameters? |
+| ------------ | ----------- | ------ | ------- | ----------- |
+| sPC-SAFT     |             |        |         |             |
+| SAFT-*ɣ* SW  |             |        |         |             |
+| SAFT-*ɣ* Mie |             |        |         |             |
 
 Properties available:
 
@@ -65,4 +69,18 @@ Properties available:
 | Critical pressure    | :heavy_check_mark: |
 | Critical volume      | :heavy_check_mark: |
 
-We will also provide a Tp-flash algorithm (HELD alogrithm).
+We will also provide a Tp-flash algorithm (Rachford-Rice and HELD alogrithm).
+
+Note that at its current stage, OpenSAFT is still in the very early stages of development, and things may be moving around or changing rapidly, but we are very excited to see where this project may go!
+
+# Installing OpenSAFT
+
+OpenSAFT is not yet in the JuliaHub (but it will be soon!).
+
+To load OpenSAFT, launch Julia with
+
+    > julia
+
+Hit the ```]``` key to enter Pkg mode, then type
+
+    Pkg> add git@github.com:ypaul21/OpenSAFT.jl.git
