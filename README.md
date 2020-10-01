@@ -2,7 +2,7 @@
 
 ![OpenSAFT_logo](docs/OpenSAFT_logo.svg)
 
-Welcome to OpenSAFT! This module intends to provide the variants of the SAFT equation of state, along with the relevant parameters and solvers required to use these equations.
+Welcome to OpenSAFT! This module intends to provide the variants of the Statistical Associating Fluid Theory (SAFT) thermodynamic equation of state, along with the relevant parameters and solvers required to use these equations.
 
 Check out the Jupyter notebooks in the ```examples``` directory to see how to set up your model.
 
@@ -77,18 +77,10 @@ Note that at its current stage, OpenSAFT is still in the very early stages of de
 
 OpenSAFT is not yet in the JuliaHub (but it will be soon!).
 
-You may load OpenSAFT manually for now by cloning this repository using
-
-    > git clone git@github.com:ypaul21/OpenSAFT.jl.git
-
-Navigate into this directory, and run Julia
+To load OpenSAFT, launch Julia with
 
     > julia
 
-Hit the ```]``` key to enter Pkg mode, then run
+Hit the ```]``` key to enter Pkg mode, then type
 
-    Pkg> activate .
-
-If you wish to add this module to ```environments``` in ```~/.julia``` (so that you don't have to activate it every time you launch Julia), run
-
-    Pkg> dev .
+    Pkg> add git@github.com:ypaul21/OpenSAFT.jl.git
