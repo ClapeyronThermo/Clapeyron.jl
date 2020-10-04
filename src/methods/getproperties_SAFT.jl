@@ -1,5 +1,6 @@
 ## Standard pressure solver
-function get_volume(model::SAFT, z, p, T, phase="unknown")
+function get_volume(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
     components = model.components
 
     N = length(p)
@@ -81,7 +82,7 @@ function Jac_Sat(model::SAFT, J, T, v_l, v_v)
 end
 
 ## Critical point solver
-function get_crit_pure(model::SAFT; units = false)
+function get_crit_pure(model::SAFT; units = false, output=[u"K", u"Pa", u"m^3"])
     components = model.components
     f! = (F,x) -> Obj_Crit(model, F, x[1]*model.params.epsilon[components[1]], 10^x[2])
     # j! = (J,x) -> Jac_Crit(J,eos,model,x[1]*model.params.epsilon[(1, 1)],10^x[2])
@@ -91,7 +92,7 @@ function get_crit_pure(model::SAFT; units = false)
     v_c = 10^r.zero[2]
     p_c = get_pressure(model, create_z(model, [1.0]), v_c, T_c)
     if units
-        return (T_c*u"K", p_c*u"Pa", v_c*u"m^3/mol")
+        return (uconvert(output[1], T_c*u"K"), uconvert(output[2], p_c*u"Pa"), uconvert(output[2], v_c*u"m^3"))
     else
         return (T_c, p_c, v_c)
     end
@@ -131,101 +132,115 @@ function get_enthalpy_vap(model::SAFT, T)
 end
 
 ## Derivative properties
-function get_pressure(model::SAFT, z, v, T, phase="unknown")
+function get_pressure(model::SAFT, v, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
     fun(x) = eos(model, z, x[1], T)
     df(x)  = ForwardDiff.derivative(fun,x[1])
     return -df(v)
 end
 
-function get_entropy(model::SAFT, z, p, T, phase="unknown")
-    v      = get_volume(model, z, p, T, phase)[1]
+function get_entropy(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
+    v      = get_volume(model, p, T, z; phase=phase)[1]
     fun(x) = eos(model, z, v, x[1])
     df(x)  = ForwardDiff.derivative(fun,x[1])
     return -df(T)
 end
 
-function get_chemical_potential(model::SAFT, z, p, T, phase="unknown")
-    v      = get_volume(model, z, p, T, phase)[1]
+function get_chemical_potential(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
+    v      = get_volume(model, p, T, z; phase=phase)[1]
     fun(x) = eos(model, x, v, T)
     df(x)  = ForwardDiff.gradient(fun,x)
     return df(z)
 end
 
-function get_internal_energy(model::SAFT, z, p, T, phase="unknown")
-    v      = get_volume(model, z, p, T, phase)[1]
+function get_internal_energy(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
+    v      = get_volume(model, p, T, z; phase=phase)[1]
     fun(x) = eos(model, z, v, x)
     df(x)  = ForwardDiff.derivative(fun,x)
     return fun(T)-df(T)*T
 end
 
-function get_enthalpy(model::SAFT, z, p, T, phase="unknown")
-    v      = get_volume(model, z, p, T, phase)[1]
+function get_enthalpy(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
+    v      = get_volume(model, p, T, z; phase=phase)[1]
     fun(x) = eos(model, z, x[1], x[2])
     df(x)  = ForwardDiff.gradient(fun,x)
     return fun([v,T])-df([v,T])[2]*T-df([v,T])[1]*v
 end
 
-function get_Gibbs_free_energy(model::SAFT, z, p, T, phase="unknown")
-    v      = get_volume(model, z, p, T, phase)[1]
+function get_Gibbs_free_energy(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
+    v      = get_volume(model, p, T, z; phase=phase)[1]
     fun(x) = eos(model, z, x[1], T)
     df(x)  = ForwardDiff.derivative(fun,x)
     return fun(v)-df(v)[1]*v
 end
 
-function get_Helmholtz_free_energy(model::SAFT, z, p, T, phase="unknown")
-    v      = get_volume(model, z, p, T, phase)[1]
+function get_Helmholtz_free_energy(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
+    v      = get_volume(model, p, T, z; phase=phase)[1]
     fun(x) = eos(model, z, x[1], T)
     df(x)  = ForwardDiff.derivative(fun,x)
     return fun(T)-df(v)[1]*v
 end
 
-function get_isochoric_heat_capacity(model::SAFT, z, p, T, phase="unknown")
-    v       = get_volume(model, z, p, T, phase)[1]
+function get_isochoric_heat_capacity(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
+    v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, v, x)
     df(x)   = ForwardDiff.derivative(fun,x)
     d2f(x)  = ForwardDiff.derivative(df,x)
     return -T*d2f(T)
 end
 
-function get_isobaric_heat_capacity(model::SAFT, z, p, T, phase="unknown")
-    v       = get_volume(model, z, p, T, phase)[1]
+function get_isobaric_heat_capacity(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
+    v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
     d2f(x)  = ForwardDiff.hessian(fun,x)
     return T*(d2f([v,T])[1,2]^2/d2f([v,T])[1]-d2f([v,T])[2,2])
 end
 
-function get_isothermal_compressibility(model::SAFT, z, p, T, phase="unknown")
-    v       = get_volume(model, z, p, T, phase)[1]
+function get_isothermal_compressibility(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
+    v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, x, T)
     df(x)   = ForwardDiff.derivative(fun,x)
     d2f(x)  = ForwardDiff.derivative(df,x)
     return 1/v*d2f(v)^-1
 end
 
-function get_isentropic_compressibility(model::SAFT, z, p, T, phase="unknown")
-    v       = get_volume(model, z, p, T, phase)[1]
+function get_isentropic_compressibility(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
+    v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
     d2f(x)  = ForwardDiff.hessian(fun,x)
     return 1/v*(d2f([v,T])[1]-d2f([v,T])[1,2]^2/d2f([v,T])[2,2])^-1
 end
 
-function get_speed_of_sound(model::SAFT, z, p, T, phase="unknown")
+function get_speed_of_sound(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
     Mr      = sum(z[i]*model.params.Mr[i] for i in model.components)
-    v       = get_volume(model, z, p, T, phase)[1]
+    v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
     d2f(x)  = ForwardDiff.hessian(fun,x)
     return v*sqrt((d2f([v,T])[1]-d2f([v,T])[1,2]^2/d2f([v,T])[2,2])/Mr)
 end
 
-function get_isobaric_expansivity(model::SAFT, z, p, T, phase="unknown")
-    v       = get_volume(model, z, p, T, phase)[1]
+function get_isobaric_expansivity(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
+    v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
     d2f(x)   = ForwardDiff.hessian(fun,x)
     return d2f([v,T])[1,2]/(v*d2f([v,T])[1])
 end
 
-function get_Joule_Thomson_coefficient(model::SAFT, z, p, T, phase="unknown")
-    v       = get_volume(model, z, p, T, phase)[1]
+function get_Joule_Thomson_coefficient(model::SAFT, p, T, z=[1.]; phase = "unknown")
+    z = create_z(model, z)
+    v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
     d2f(x)  = ForwardDiff.hessian(fun,x)
     return -(d2f([v,T])[1,2]-d2f([v,T])[1]*((T*d2f([v,T])[2,2]+v*d2f([v,T])[1,2])/(T*d2f([v,T])[1,2]+v*d2f([v,T])[1])))^-1

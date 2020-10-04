@@ -17,3 +17,7 @@ function system(components::Array{String,1}, method::String; kwargs...)
     end
     return model
 end
+
+function system(component::String, method::String; kwargs...)
+    return system([component], method; kwargs...)
+end
