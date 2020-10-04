@@ -8,7 +8,7 @@ function get_volume(model::SAFT, z, p, T, phase="unknown")
     lb = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/1)]
 
     if phase == "unknown" || phase == "liquid"
-        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/0.5)]
+        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/0.8)]
     elseif phase == "vapour"
         x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/1e-2)]
     end
@@ -41,7 +41,7 @@ end
 ## Saturation conditions solver
 function get_sat_pure(model::SAFT, T)
     components = model.components
-    v0    = [log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/0.4),
+    v0    = [log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/0.45),
              log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/1e-3)]
     v_l   = []
     v_v   = []

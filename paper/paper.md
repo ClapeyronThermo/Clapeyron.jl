@@ -1,4 +1,3 @@
-~~~markdown
 ---
 title: 'OpenSAFT: A Julia implementation of SAFT-type equations of state'
 tags:
@@ -21,10 +20,6 @@ date: 01 October 2020
 bibliography: paper.bib
 
 $^{\ddagger}$ Authors contributed equally to this work
-# Optional fields if submitting to a AAS journal too, see this blog post:
-# https://blog.joss.theoj.org/2018/12/a-new-collaboration-with-aas-publishing
-aas-doi: 10.3847/xxxxx <- update this with the DOI from AAS once you know it.
-aas-journal: Astrophysical Journal <- The name of the AAS journal.
 ---
 
 # Summary
@@ -59,5 +54,4 @@ For a quick reference, the following citation commands can be used:
 The authors thank doctors Andrew J. Haslam, Spiros Kornoupoulous, Felipe, Sara Febra and professors Amparo Galindo, Georgios M. Kontogeorgis, Xiaodong Liang and George Jackson for introducing us the topic of thermodynamic equations of state and their continued help in the development of this package.
 
 # References
-~~~
 
