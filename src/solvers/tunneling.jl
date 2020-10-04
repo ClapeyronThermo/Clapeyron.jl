@@ -28,7 +28,7 @@ function tunneling(f,lb,ub,x0)
     opt_tun.stopval = -1e-6
 
     for i in 1:10*N
-        T0 = x -> (f(x)-f_best)*prod(exp(1e-2/sqrt(sum((x[i]-x_opt[j][i])^2 for i in 1:N))) for j in 1:k)
+        T0 = x -> (f(x)-f_best)*prod(exp(1e-1/sqrt(sum((x[i]-x_opt[j][i])^2 for i in 1:N))) for j in 1:k)
         T  = (x,g) -> NLopt_obj(T0,x,g)
         opt_tun.min_objective =  T
 
@@ -68,4 +68,3 @@ function NLopt_obj(f,x,g)
             return f(x)
         end
 end
-
