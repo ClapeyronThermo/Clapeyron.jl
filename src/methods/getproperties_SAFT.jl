@@ -263,9 +263,10 @@ function get_Joule_Thomson_coefficient(model::SAFT, p, T, z=[1.]; phase = "unkno
 end
 
 function get_second_virial_coeff(model::SAFT, T, z=[1.])
+    V = [1e10]
     z = create_z(model, z)
     fun(x) = eos(model, z, x[1], T)
     df(x)  = ForwardDiff.derivative(fun,x[1])
     d2f(x) = ForwardDiff.derivative(df,x[1])
-    return -df(v)
+    return V[1]^2/(R̄*T)*(df(V)+V[1]*d2f(V))
 end
