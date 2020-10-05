@@ -1,0 +1,6 @@
+OpenSAFT Database File;;;;;
+Test Unlike Parameters;;;;;
+species1;SMILES1;species2;SMILES2;k;source
+sp1;;sp2;;0.02;testsource1
+sp3;;sp4;;0.05;testsource2
+sp4;;sp2;;0.03;testsource3
