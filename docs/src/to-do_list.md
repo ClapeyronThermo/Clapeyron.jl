@@ -1,8 +1,6 @@
-![OpenSAFT_logo](OpenSAFT_logo.svg)
-
 # OpenSAFT to-do list
 
-The current plans of OpenSAFT are 
+The current plans of OpenSAFT are
 
 * Support for group contribution (GC) models like SAFT-γ Mie.
 * Support for other ideal terms (Reid, Joback, etc).
