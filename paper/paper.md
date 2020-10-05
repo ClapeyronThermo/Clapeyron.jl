@@ -9,7 +9,7 @@ tags:
 authors:
   - name: Hon-Wa Yew^[Corresponding author]
     affiliation: 1
-  - name: Pierre J. Walkers
+  - name: Pierre J. Walker
     affiliation: 2
 affiliations:
  - name: Independent researcher
@@ -21,17 +21,8 @@ date: 01 October 2020
 
 # Summary
 
-
 # Statement of need
-
-
-# Examples
-
-# Figures
-
 
 # Acknowledgements
 
-The authors thank doctors Andrew J. Haslam, Spiros Kornoupoulous, Felipe, Sara Febra and professors Amparo Galindo, Georgios M. Kontogeorgis, Xiaodong Liang and George Jackson for introducing us the topic of thermodynamic equations of state and their continued help in the development of this package.
-
-# References
+The authors thank doctors Andrew J. Haslam, Spiros Kornoupoulous, Felipe A. Hurtado, Sara Febra and professors Amparo Galindo, Georgios M. Kontogeorgis, Xiaodong Liang and George Jackson for introducing us the topic of thermodynamic equations of state and their continued help in the development of this package.
