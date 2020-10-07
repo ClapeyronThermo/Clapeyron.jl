@@ -1,7 +1,7 @@
 OpenSAFT Database File;;;;;;;;
 sPCSAFT Assoc Parameters;;;;;;;;
 species1;SMILES1;site1;species2;SMILES2;site2;epsilon_assoc;bond_vol;source
-methanol;CO;H;methanol;CO;e;2899.5;0.035176;10.1021/ie010954d
+methanol;CO;H;methanol;CO;e;2090.2;0.1460;10.1021/ie020753p
 ethanol;CCO;H;ethanol;CCO;e;2653.4;0.032384;10.1021/ie010954d
 1-propanol;CCCO;H;1-propanol;CCCO;e;2276.8;0.015268;10.1021/ie010954d
 1-butanol;CCCCO;H;1-butanol;CCCCO;e;2544.6;0.006692;10.1021/ie010954d
