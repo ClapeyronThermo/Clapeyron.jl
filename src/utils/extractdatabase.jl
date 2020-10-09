@@ -18,33 +18,33 @@ function createfilepath(selected_model, database_type; variant="None")
     return joinpath(dirname(pathof(OpenSAFT)), "../database", selected_model, variant=="None" ? "data_$(selected_model)_$(database_type).csv" : "$variant/data_$(selected_model)_$(variant)_$(database_type).csv")
 end
 
-function customdatabase_check(selected_model, database_type, customdatabase_filepath; variant="None")
-    if !isfile(customdatabase_filepath)
-        error("Custom database $customdatabase_filepath not found.")
+function customdatabase_check(selected_model, database_type, customdatabase; variant="None")
+    if !isfile(customdatabase)
+        error("Custom database $customdatabase not found.")
     elseif selected_model == "None"
         error("Method has to be specified for custom databases.")
     end
     database_filepath = createfilepath(selected_model, database_type; variant=variant)
     database_header = parseline(database_filepath, 3)
-    customdatabase_header = parseline(customdatabase_filepath, 3)
+    customdatabase_header = parseline(customdatabase, 3)
     if Set(database_header) != Set(customdatabase_header)
-        error("Custom database $customdatabase_filepath header not consistent with format in $selected_model (variant: $variant) for type $database_type.")
+        error("Custom database $customdatabase header not consistent with format in $selected_model (variant: $variant) for type $database_type.")
     end
 end
 
 
-function searchdatabase_like(components::Array{String, 1}, selected_model="None"; customdatabase_filepath="None", variant="None")
+function searchdatabase_like(components::Array{String, 1}, selected_model="None"; customdatabase="None", variant="None")
     # Returns a dictionary of components containing another dictionary
     # where the key is a model in which its database contains that parameter,
     # with the found line number as value
-    if customdatabase_filepath != "None"
-        customdatabase_check(selected_model, "like", customdatabase_filepath, variant=variant)
+    if customdatabase != "None"
+        customdatabase_check(selected_model, "like", customdatabase, variant=variant)
     end
     models = models_return(selected_model)
     found_models = Dict(Set([component]) => Dict{String, Int64}() for component in components)
     for component in components
         for model in models
-            filepath = customdatabase_filepath == "None" ? createfilepath(model, "like"; variant=variant) : customdatabase_filepath
+            filepath = customdatabase == "None" ? createfilepath(model, "like"; variant=variant) : customdatabase
             if isfile(filepath)
                 found_lines = findmatches(filepath, component, "species"; header_row=3)
                 if length(found_lines) > 1
@@ -63,19 +63,19 @@ function searchdatabase_like(components::Array{String, 1}, selected_model="None"
     return found_models
 end
 
-function searchdatabase_unlike(components::Array{String, 1}, selected_model="None"; customdatabase_filepath="None", variant="None")
+function searchdatabase_unlike(components::Array{String, 1}, selected_model="None"; customdatabase="None", variant="None")
     # Returns a dictionary of pairs (no same pair) containing another dictionary
     # where the key is a model in which its database contains that parameter,
     # with the found line number as value
-    if customdatabase_filepath != "None"
-        customdatabase_check(selected_model, "unlike", customdatabase_filepath, variant=variant)
+    if customdatabase != "None"
+        customdatabase_check(selected_model, "unlike", customdatabase, variant=variant)
     end
     models = models_return(selected_model)
     pairs = [Set(i) for i in collect(combinations(components, 2))]
     found_models = Dict{Set{String}, Dict{String, Int64}}()
     for pair in pairs
         for model in models
-            filepath = customdatabase_filepath == "None" ? createfilepath(model, "unlike"; variant=variant) : customdatabase_filepath
+            filepath = customdatabase == "None" ? createfilepath(model, "unlike"; variant=variant) : customdatabase
             if isfile(filepath)
                 components = [i for i in pair]
                 found_lines = findmatches_pair(filepath, components[1], components[2], "species1", "species2"; header_row=3)
@@ -93,19 +93,19 @@ function searchdatabase_unlike(components::Array{String, 1}, selected_model="Non
     return found_models
 end
 
-function searchdatabase_assoc(components::Array{String, 1}, selected_model="None"; customdatabase_filepath="None", variant="None")
+function searchdatabase_assoc(components::Array{String, 1}, selected_model="None"; customdatabase="None", variant="None")
     # Returns a dictionary of pairs (same pair allowed) containing another dictionary
     # where the key is a model in which its database contains that parameter,
     # with the found line number as value
-    if customdatabase_filepath != "None"
-        customdatabase_check(selected_model, "assoc", customdatabase_filepath, variant=variant)
+    if customdatabase != "None"
+        customdatabase_check(selected_model, "assoc", customdatabase, variant=variant)
     end
     models = models_return(selected_model)
     pairs = vcat([Set([i]) for i in components], [Set(i) for i in collect(Combinatorics.combinations(components, 2))])
     found_models = Dict{Set{String}, Dict{String, Array{Int64,1}}}()
     for pair in pairs
         for model in models
-            filepath = customdatabase_filepath == "None" ? createfilepath(selected_model, "assoc"; variant=variant) : customdatabase_filepath
+            filepath = customdatabase == "None" ? createfilepath(model, "assoc"; variant=variant) : customdatabase
             if isfile(filepath)
                 if length(pair) == 1
                     component = [i for i in pair]
@@ -115,7 +115,9 @@ function searchdatabase_assoc(components::Array{String, 1}, selected_model="None
                 end
                 found_lines = findmatches_pair(filepath, components[1], components[2], "species1", "species2"; header_row=3)
                 if length(found_lines) > 0
-                    found_models[pair] = Dict()
+                    if !haskey(found_models, pair)
+                        found_models[pair] = Dict()
+                    end
                     found_models[pair][model] = found_lines
                 end
             end
@@ -124,15 +126,15 @@ function searchdatabase_assoc(components::Array{String, 1}, selected_model="None
     return found_models
 end
 
-function retrieveparams_like(components::Array{String, 1}, selected_model; customdatabase_filepath="None", variant="None", redirect="None")
+function retrieveparams_like(components::Array{String, 1}, selected_model; customdatabase="None", variant="None", redirect="None")
     # Returns a dictionary of all columns in the like database for a selected model
     # for each component
-    filepath = customdatabase_filepath == "None" ? createfilepath(selected_model, "like"; variant=variant) : customdatabase_filepath
+    filepath = customdatabase == "None" ? createfilepath(selected_model, "like"; variant=variant) : customdatabase
     if redirect != "None"
         selected_model = redirect
     end
     header = parseline(filepath, 3)
-    found_model = searchdatabase_like(components, selected_model; customdatabase_filepath=customdatabase_filepath, variant=variant)
+    found_model = searchdatabase_like(components, selected_model; customdatabase=customdatabase, variant=variant)
     found_params = Dict{Set{String}, Dict{String, Any}}()
     for component in keys(found_model)
         found_params[component] = Dict(zip(header, parseline(filepath, found_model[component][selected_model])))
@@ -140,15 +142,15 @@ function retrieveparams_like(components::Array{String, 1}, selected_model; custo
     return found_params
 end
 
-function retrieveparams_unlike(components::Array{String, 1}, selected_model; customdatabase_filepath="None", variant="None", redirect="None")
+function retrieveparams_unlike(components::Array{String, 1}, selected_model; customdatabase="None", variant="None", redirect="None")
     # Returns a dictionary of all columns in the unlike database for a selected model
     # for each pair
-    filepath = customdatabase_filepath == "None" ? createfilepath(selected_model, "unlike"; variant=variant) : customdatabase_filepath
+    filepath = customdatabase == "None" ? createfilepath(selected_model, "unlike"; variant=variant) : customdatabase
     if redirect != "None"
         selected_model = redirect
     end
     header = parseline(filepath, 3)
-    found_model = searchdatabase_unlike(components, selected_model; customdatabase_filepath=customdatabase_filepath, variant=variant)
+    found_model = searchdatabase_unlike(components, selected_model; customdatabase=customdatabase, variant=variant)
     found_params = Dict{Set{String}, Dict{String, Any}}()
     for pair in keys(found_model)
         found_params[pair] = Dict(zip(header, parseline(filepath, found_model[pair][selected_model])))
@@ -156,15 +158,15 @@ function retrieveparams_unlike(components::Array{String, 1}, selected_model; cus
     return found_params
 end
 
-function retrieveparams_assoc(components::Array{String, 1}, selected_model; customdatabase_filepath="None", variant="None", redirect="None")
+function retrieveparams_assoc(components::Array{String, 1}, selected_model; customdatabase="None", variant="None", redirect="None")
     # Returns a dictionary of all columns in the assoc database for a selected model
     # for each pair (same pair allowed)
-    filepath = customdatabase_filepath == "None" ? createfilepath(selected_model, "assoc"; variant=variant) : customdatabase_filepath
+    filepath = customdatabase == "None" ? createfilepath(selected_model, "assoc"; variant=variant) : customdatabase
     if redirect != "None"
         selected_model = redirect
     end
     header = parseline(filepath, 3)
-    found_model = searchdatabase_assoc(components, selected_model; customdatabase_filepath=customdatabase_filepath, variant=variant)
+    found_model = searchdatabase_assoc(components, selected_model; customdatabase=customdatabase, variant=variant)
     pairs = keys(found_model)
     found_params = Dict{Set{Tuple{Set{String}, String}}, Dict{String, Any}}()
     if !isempty(found_model)
@@ -172,20 +174,20 @@ function retrieveparams_assoc(components::Array{String, 1}, selected_model; cust
             for line_number in found_model[pair][selected_model]
                 retrieved = Dict(zip(header, parseline(filepath, line_number)))
                 assoc_pair = Set([(Set([retrieved["species1"]]), retrieved["site1"]), (Set([retrieved["species2"]]), retrieved["site2"])])
-                found_params[assoc_pair] = retrieved
+                found_params[assoc_pair] = retrieved # replace if already present
             end
         end
-        # Check if reverse pair exists; if not, make create reverse pair equal to original pair
-        for assoc_pair in keys(found_params)
-            if length(assoc_pair) == 2
-                pair_tuples = collect(assoc_pair)
-                reverse_assoc_pair = Set([(pair_tuples[1][1], pair_tuples[2][2]), (pair_tuples[2][1], pair_tuples[1][2])])
-                if !haskey(found_params, reverse_assoc_pair)
-                    found_params[reverse_assoc_pair] =
-                        found_params[assoc_pair]
-                end
-            end
-        end
+        #= # Check if reverse pair exists; if not, make create reverse pair equal to original pair =#
+        #= for assoc_pair in keys(found_params) =#
+        #=     if length(assoc_pair) == 2 =#
+        #=         pair_tuples = collect(assoc_pair) =#
+        #=         reverse_assoc_pair = Set([(pair_tuples[1][1], pair_tuples[2][2]), (pair_tuples[2][1], pair_tuples[1][2])]) =#
+        #=         if !haskey(found_params, reverse_assoc_pair) =#
+        #=             found_params[reverse_assoc_pair] = =#
+        #=                 found_params[assoc_pair] =#
+        #=         end =#
+        #=     end =#
+        #= end =#
     end
     return found_params
 end
@@ -194,9 +196,9 @@ function retrieveparams(components::Array{String, 1}, selected_model;
         customdatabase_like = "None", variant_like = "None", redirect_like = "None",
         customdatabase_unlike = "None", variant_unlike = "None", redirect_unlike = "None",
         customdatabase_assoc = "None", variant_assoc = "None", redirect_assoc = "None")
-    params_like = retrieveparams_like(components, selected_model; customdatabase_filepath = customdatabase_like, variant = variant_like, redirect = redirect_like)
-    params_unlike = retrieveparams_unlike(components, selected_model; customdatabase_filepath = customdatabase_unlike, variant = variant_unlike, redirect = redirect_unlike)
-    params_assoc = retrieveparams_assoc(components, selected_model; customdatabase_filepath = customdatabase_assoc, variant = variant_assoc, redirect = redirect_assoc)
+    params_like = retrieveparams_like(components, selected_model; customdatabase = customdatabase_like, variant = variant_like, redirect = redirect_like)
+    params_unlike = retrieveparams_unlike(components, selected_model; customdatabase = customdatabase_unlike, variant = variant_unlike, redirect = redirect_unlike)
+    params_assoc = retrieveparams_assoc(components, selected_model; customdatabase = customdatabase_assoc, variant = variant_assoc, redirect = redirect_assoc)
     return [params_like, params_unlike, params_assoc]
 end
 
