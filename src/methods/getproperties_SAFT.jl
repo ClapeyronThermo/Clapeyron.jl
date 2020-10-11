@@ -44,7 +44,7 @@ end
 ## Pure saturation conditions solver
 function get_sat_pure(model::SAFT, T)
     components = model.components
-    v0    = [log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/0.45),
+    v0    = [log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/0.6),
              log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/1e-3)]
     v_l   = []
     v_v   = []
