@@ -14,6 +14,9 @@ function system(components::Array{String,1}, method::String; kwargs...)
     elseif method == "sPCSAFT"
         raw_params = retrieveparams(components, method; kwargs...)
         model = sPCSAFT(set_components, create_sPCSAFTParams(raw_params))
+    elseif method == "SAFTgammaMie"
+        raw_params = retrieveparams(components, method; kwargs...)
+        model = SAFTgammaMie(set_components, create_SAFTgammaMie(raw_params))
     end
     return model
 end

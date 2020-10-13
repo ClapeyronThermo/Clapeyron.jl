@@ -7,6 +7,7 @@ using .Solvers
 using Combinatorics
 
 include("constants.jl")
+include("utils/macros.jl")
 include("utils/extractdatabase.jl")
 include("models/param_structs.jl")
 include("models/model_structs.jl")

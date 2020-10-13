@@ -38,3 +38,15 @@ struct ogSAFTParams <: Params
     bond_vol::Dict
     n_sites::Dict
 end
+
+struct SAFTgammaMieParams <: Params
+    segment::Dict
+    shapefactor::Dict
+    lambdaA::Dict
+    lambdaR::Dict
+    sigma::Dict
+    epsilon::Dict
+    #= epsilon_assoc::Dict =#
+    #= bond_vol::Dict =#
+    #= n_sites::Dict =#
+end
