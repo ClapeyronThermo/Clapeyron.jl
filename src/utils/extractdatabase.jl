@@ -33,7 +33,7 @@ function customdatabase_check(selected_model, database_type, customdatabase; var
 end
 
 
-function searchdatabase_like(components::Array{String, 1}, selected_model="None"; customdatabase="None", variant="None")
+function searchdatabase_like(components::Array, selected_model="None"; customdatabase="None", variant="None")
     # Returns a dictionary of components containing another dictionary
     # where the key is a model in which its database contains that parameter,
     # with the found line number as value
@@ -63,7 +63,7 @@ function searchdatabase_like(components::Array{String, 1}, selected_model="None"
     return found_models
 end
 
-function searchdatabase_unlike(components::Array{String, 1}, selected_model="None"; customdatabase="None", variant="None")
+function searchdatabase_unlike(components::Array, selected_model="None"; customdatabase="None", variant="None")
     # Returns a dictionary of pairs (no same pair) containing another dictionary
     # where the key is a model in which its database contains that parameter,
     # with the found line number as value
@@ -93,7 +93,7 @@ function searchdatabase_unlike(components::Array{String, 1}, selected_model="Non
     return found_models
 end
 
-function searchdatabase_assoc(components::Array{String, 1}, selected_model="None"; customdatabase="None", variant="None")
+function searchdatabase_assoc(components::Array, selected_model="None"; customdatabase="None", variant="None")
     # Returns a dictionary of pairs (same pair allowed) containing another dictionary
     # where the key is a model in which its database contains that parameter,
     # with the found line number as value
@@ -126,7 +126,7 @@ function searchdatabase_assoc(components::Array{String, 1}, selected_model="None
     return found_models
 end
 
-function retrieveparams_like(components::Array{String, 1}, selected_model; customdatabase="None", variant="None", redirect="None")
+function retrieveparams_like(components::Array, selected_model; customdatabase="None", variant="None", redirect="None")
     # Returns a dictionary of all columns in the like database for a selected model
     # for each component
     filepath = customdatabase == "None" ? createfilepath(selected_model, "like"; variant=variant) : customdatabase
@@ -142,7 +142,7 @@ function retrieveparams_like(components::Array{String, 1}, selected_model; custo
     return found_params
 end
 
-function retrieveparams_unlike(components::Array{String, 1}, selected_model; customdatabase="None", variant="None", redirect="None")
+function retrieveparams_unlike(components::Array, selected_model; customdatabase="None", variant="None", redirect="None")
     # Returns a dictionary of all columns in the unlike database for a selected model
     # for each pair
     filepath = customdatabase == "None" ? createfilepath(selected_model, "unlike"; variant=variant) : customdatabase
@@ -158,7 +158,7 @@ function retrieveparams_unlike(components::Array{String, 1}, selected_model; cus
     return found_params
 end
 
-function retrieveparams_assoc(components::Array{String, 1}, selected_model; customdatabase="None", variant="None", redirect="None")
+function retrieveparams_assoc(components::Array, selected_model; customdatabase="None", variant="None", redirect="None")
     # Returns a dictionary of all columns in the assoc database for a selected model
     # for each pair (same pair allowed)
     filepath = customdatabase == "None" ? createfilepath(selected_model, "assoc"; variant=variant) : customdatabase
@@ -192,7 +192,7 @@ function retrieveparams_assoc(components::Array{String, 1}, selected_model; cust
     return found_params
 end
 
-function retrieveparams(components::Array{String, 1}, selected_model;
+function retrieveparams(components::Array, selected_model;
         customdatabase_like = "None", variant_like = "None", redirect_like = "None",
         customdatabase_unlike = "None", variant_unlike = "None", redirect_unlike = "None",
         customdatabase_assoc = "None", variant_assoc = "None", redirect_assoc = "None")
