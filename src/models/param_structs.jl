@@ -42,11 +42,11 @@ end
 struct SAFTgammaMieParams <: Params
     segment::Dict
     shapefactor::Dict
-    lambdaA::Dict
-    lambdaR::Dict
+    lambda_a::Dict
+    lambda_r::Dict
     sigma::Dict
     epsilon::Dict
-    #= epsilon_assoc::Dict =#
-    #= bond_vol::Dict =#
-    #= n_sites::Dict =#
+    epsilon_assoc::Dict
+    bond_vol::Dict
+    n_sites::Dict
 end

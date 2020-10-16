@@ -1,7 +1,7 @@
 function system(components::Array{String,1}, method::String; kwargs...)
     # possible kwargs... are filepaths for
     # customdatabase_like, customdatabase_unlike, customdatabase_assoc
-    set_components = [Set([components[i]]) for i in 1:length(components)]
+    set_components = [Set([i]) for i in components]
     if method == "PCSAFT"
         raw_params = retrieveparams(components, method; kwargs...)
         model = PCSAFT(set_components, create_PCSAFTParams(raw_params))
@@ -14,13 +14,27 @@ function system(components::Array{String,1}, method::String; kwargs...)
     elseif method == "sPCSAFT"
         raw_params = retrieveparams(components, method; kwargs...)
         model = sPCSAFT(set_components, create_sPCSAFTParams(raw_params))
-    elseif method == "SAFTgammaMie"
-        raw_params = retrieveparams(components, method; kwargs...)
-        model = SAFTgammaMie(set_components, create_SAFTgammaMie(raw_params))
+    else
+        error("Method definition incorrect.")
     end
     return model
 end
 
 function system(component::String, method::String; kwargs...)
     return system([component], method; kwargs...)
+end
+
+function system(group_multiplicities::Dict, method::String; kwargs...)
+    # possible kwargs... are filepaths for
+    # customdatabase_like, customdatabase_unlike, customdatabase_assoc
+    components = collect(keys(group_multiplicities))
+    groups = union(vcat([collect(keys(i)) for i in values(group_multiplicities)]...))
+    string_groups = [collect(j)[1] for j in groups]
+    if method == "SAFTgammaMie"
+        raw_params = retrieveparams(string_groups, method; kwargs...)
+        model = SAFTgammaMie(components, groups, group_multiplicities, create_SAFTgammaMie(raw_params))
+    else
+        error("Method definition incorrect.")
+    end
+    return model
 end

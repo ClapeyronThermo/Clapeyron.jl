@@ -5,6 +5,8 @@ include("solvers/Solvers.jl")
 using .Solvers
 
 using Combinatorics
+using NamedArrays
+using DataStructures: DefaultDict
 
 include("constants.jl")
 include("utils/macros.jl")
@@ -20,6 +22,7 @@ include("models/eos/SAFT/PCSAFT.jl")
 include("models/eos/SAFT/sPCSAFT.jl")
 include("models/eos/SAFT/SAFTVRMie.jl")
 include("models/eos/SAFT/ogSAFT.jl")
+include("models/eos/SAFT/SAFTgammaMie.jl")
 
 include("models/eos/eos.jl")
 
@@ -28,7 +31,6 @@ include("models/system.jl")
 export system
 
 using Unitful
-using Unitful.DefaultSymbols
 
 include("methods/getproperties_SAFT.jl")
 include("methods/getproperties_SAFT_Unitful.jl")

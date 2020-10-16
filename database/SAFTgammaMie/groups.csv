@@ -1,0 +1,9 @@
+OpenSAFT Database File;
+Groups;
+species;groups
+ethane;["CH3" => 2]
+propane;["CH3" => 2, "CH2" => 1]
+butane;["CH3" => 2, "CH2" => 1]
+pentane;["CH3" => 2, "CH2" => 1]
+hexane;["CH3" => 2, "CH2" => 1]
+cyclohexane;["cCH2" => 6]
