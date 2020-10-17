@@ -29,6 +29,7 @@ include("models/eos/eos.jl")
 include("models/system.jl")
 
 export system
+export eos,ideal
 
 using Unitful
 
