@@ -77,8 +77,8 @@ end
 
 function â1(model::SAFTgammaMieFamily, z, V, T, k, l)
     σ = model.params.sigma[union(k,l)]
-    λ_a = model.params.lambda_r[union(k,l)]
-    λ_r = model.params.lambda_a[union(k,l)]
+    λ_a = model.params.lambda_a[union(k,l)]
+    λ_r = model.params.lambda_r[union(k,l)]
 
     x0 = σ/@f(d,k,l)
     return @f(C,k,l) * (x0^λ_a*(@f(â1_S,k,l,λ_a)+@f(B,k,l,λ_a)) - x0^λ_r*(@f(â1_S,k,l,λ_r)+@f(B,k,l,λ_r)))
@@ -86,11 +86,11 @@ end
 function â2(model::SAFTgammaMieFamily, z, V, T, k, l)
     σ = model.params.sigma[union(k,l)]
     ϵ = model.params.epsilon[union(k,l)]
-    λ_a = model.params.lambda_r[union(k,l)]
-    λ_r = model.params.lambda_a[union(k,l)]
+    λ_a = model.params.lambda_a[union(k,l)]
+    λ_r = model.params.lambda_r[union(k,l)]
 
     x0 = σ/@f(d,k,l)
-    return 1/2*@f(K_hs)*(1+@f(𝜒,k,l))*@f(C,k,l)^2 * (
+    return 1/2*@f(K_hs)*(1+@f(𝜒,k,l))*ϵ*@f(C,k,l)^2 * (
            x0^(2λ_a)*(@f(â1_S,k,l,2λ_a) + @f(B,k,l,2λ_a))
          - 2x0^(λ_a+λ_r)*(@f(â1_S,k,l,λ_a+λ_r) + @f(B,k,l,λ_a+λ_r))
          + x0^(2λ_r)*(@f(â1_S,k,l,2λ_r) + @f(B,k,l,2λ_r)) )
@@ -162,8 +162,8 @@ function f(model::SAFTgammaMieFamily, z, V, T, k, l, m)
          [-2.4679820,- 0.82376, -2.7171,  20.52142,  1103.7420,  1390.2, -8.00],
          [-0.5027200, -3.19350,  2.0883, -56.63770, -3264.6100, -4518.2,   NaN],
          [8.0956883,  3.70900,  0.0000,  40.53683,  2556.1810,  4241.6,   NaN]];
-    λ_a = model.params.lambda_r[union(k,l)]
-    λ_r = model.params.lambda_a[union(k,l)]
+    λ_a = model.params.lambda_a[union(k,l)]
+    λ_r = model.params.lambda_r[union(k,l)]
 
     α = @f(C,k,l)*(1/(λ_a-3)-1/(λ_r-3))
     return sum(ϕ[i+1][m]*α^i for i in 0:3)/(1+sum(ϕ[i+1][m]*α^(i-3) for i in 4:6))
