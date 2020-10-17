@@ -12,7 +12,7 @@ end
 
 macro f(func, args...)
     args = [esc(arg) for arg in args]
-    return :($(func)($(esc(:model)),$(esc(:N)),$(esc(:V)),$(esc(:T)),$(args...)))
+    return :($(func)($(esc(:model)),$(esc(:z)),$(esc(:V)),$(esc(:T)),$(args...)))
 end
 
 
