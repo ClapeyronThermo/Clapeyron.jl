@@ -50,3 +50,8 @@ struct SAFTgammaMieParams <: Params
     bond_vol::Dict
     n_sites::Dict
 end
+
+struct vdWParams <: Params
+    a_vdW::Dict
+    b_vdW::Dict
+end

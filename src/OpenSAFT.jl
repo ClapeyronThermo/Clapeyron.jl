@@ -24,6 +24,8 @@ include("models/eos/SAFT/SAFTVRMie.jl")
 include("models/eos/SAFT/ogSAFT.jl")
 include("models/eos/SAFT/SAFTgammaMie.jl")
 
+include("models/eos/Cubic/vdW.jl")
+
 include("models/eos/eos.jl")
 
 include("models/system.jl")
