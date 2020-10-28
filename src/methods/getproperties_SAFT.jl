@@ -6,14 +6,14 @@ function get_volume(model::SAFT, p, T, z=[1.]; phase = "unknown")
     N = length(p)
 
     ub = [Inf]
-    lb = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/1)]
+    lb = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/1)]
 
     if phase == "unknown" || phase == "liquid"
-        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/0.8)]
+        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/0.8)]
     elseif phase == "vapour"
-        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/1e-2)]
+        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/1e-2)]
     elseif phase == "supercritical"
-        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/0.5)]
+        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/0.5)]
     end
 
     Vol = []
@@ -44,7 +44,7 @@ end
 ## Pure saturation conditions solver
 function get_sat_pure(model::SAFT, T)
     components = model.components
-    v0    = [log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/0.6),
+    v0    = [log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/0.45),
              log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/1e-3)]
     v_l   = []
     v_v   = []
@@ -121,7 +121,7 @@ function Obj_Crit(model::SAFT, F, T_c, v_c)
     F[2] = d3f(v_c)
 end
 ## Mixture saturation solver
-function get_sat_mix_Tx(model, T, x)
+function get_bubble_pressure(model, T, x)
     components = model.components
     y0    = 10 .*x[1,:]./(1 .+x[1,:].*(10-1))
     y0    = y0 ./sum(y0[i] for i in 1:length(components))
@@ -135,8 +135,8 @@ function get_sat_mix_Tx(model, T, x)
     y     = deepcopy(x)
     P_sat = []
     for i in 1:size(x)[1]
-        f! = (F,z) -> Obj_Sat_mix_Tx(model, F, T, 10^z[1], 10^z[2], x[i,:], z[3:end])
-        j! = (J,z) -> Jac_Sat_mix_Tx(model, J, T, 10^z[1], 10^z[2], x[i,:], z[3:end])
+        f! = (F,z) -> Obj_bubble_pressure(model, F, T, 10^z[1], 10^z[2], x[i,:], z[3:end])
+        j! = (J,z) -> Jac_bubble_pressure(model, J, T, 10^z[1], 10^z[2], x[i,:], z[3:end])
         r  =nlsolve(f!,j!,v0)
         append!(v_l,10^r.zero[1])
         append!(v_v,10^r.zero[2])
@@ -148,7 +148,7 @@ function get_sat_mix_Tx(model, T, x)
     return (P_sat, v_l, v_v, y)
 end
 
-function Obj_Sat_mix_Tx(model, F, T, v_l, v_v, x, y)
+function Obj_bubble_pressure(model, F, T, v_l, v_v, x, y)
     components = model.components
     append!(y,1-sum(y[i] for i in 1:(length(components)-1)))
 
@@ -164,7 +164,7 @@ function Obj_Sat_mix_Tx(model, F, T, v_l, v_v, x, y)
     F[end] = (df_l[end]-df_v[end])*model.params.sigma[components[1]]^3*N_A/R̄/model.params.epsilon[components[1]]
 end
 
-function Jac_Sat_mix_Tx(model, J, T, v_l, v_v, x, y)
+function Jac_bubble_pressure(model, J, T, v_l, v_v, x, y)
     components = model.components
     append!(y,1-sum(y[i] for i in 1:(length(components)-1)))
 
