@@ -14,6 +14,9 @@ function system(components::Array{String,1}, method::String; kwargs...)
     elseif method == "sPCSAFT"
         raw_params = retrieveparams(components, method; kwargs...)
         model = sPCSAFT(set_components, create_sPCSAFTParams(raw_params))
+    elseif method == "vdW"
+        raw_params = retrieveparams(components, method; kwargs...)
+        model = vdW(set_components, create_vdWParams(raw_params))
     else
         error("Method definition incorrect.")
     end

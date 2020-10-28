@@ -139,3 +139,19 @@ function create_SAFTgammaMie(raw_params)
     end
     return SAFTgammaMieParams(segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bond_vol, n_sites)
 end
+
+function create_vdWParams(raw_params)
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["a_vdW", "b_vdW"];
+                     unlike_params = ["k"])
+
+    b_vdW = like_params_dict["b_vdW"]
+
+    merge!(b_vdW, combining_sigma(b_vdW))
+
+    a_vdW = like_params_dict["a_vdW"]
+    k = unlike_params_dict["k"]
+    merge!(epsilon, combining_epsilon(a_vdW, b_vdW, k))
+
+    return vdWParams(a_vdW,b_vdW)
+end
