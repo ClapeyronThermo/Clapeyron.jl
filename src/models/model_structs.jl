@@ -9,6 +9,9 @@ abstract type SAFTVRMieFamily <: SAFT end
 abstract type SAFTgammaMieFamily <: SAFT end
 
 abstract type vdWFamily <: Cubic end
+abstract type RKFamily <: Cubic end
+abstract type SRKFamily <: Cubic end
+abstract type PRFamily <: Cubic end
 
 struct SAFTVRMie <: SAFTVRMieFamily
     components::Array{Set{String},1}
@@ -39,5 +42,20 @@ end
 
 struct vdW <: vdWFamily
     components::Array{Set{String},1}
-    params::SAFTVRMieParams
+    params::vdWParams
+end
+
+struct RK <: RKFamily
+    components::Array{Set{String},1}
+    params::RKParams
+end
+
+struct SRK <: SRKFamily
+    components::Array{Set{String},1}
+    params::SRKParams
+end
+
+struct PR <: PRFamily
+    components::Array{Set{String},1}
+    params::PRParams
 end

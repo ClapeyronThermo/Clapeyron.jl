@@ -17,6 +17,15 @@ function system(components::Array{String,1}, method::String; kwargs...)
     elseif method == "vdW"
         raw_params = retrieveparams(components, method; kwargs...)
         model = vdW(set_components, create_vdWParams(raw_params))
+    elseif method == "RK"
+        raw_params = retrieveparams(components, method; kwargs...)
+        model = RK(set_components, create_RKParams(raw_params))
+    elseif method == "SRK"
+        raw_params = retrieveparams(components, method; kwargs...)
+        model = SRK(set_components, create_SRKParams(raw_params))
+    elseif method == "PR"
+        raw_params = retrieveparams(components, method; kwargs...)
+        model = PR(set_components, create_PRParams(raw_params))
     else
         error("Method definition incorrect.")
     end

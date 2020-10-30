@@ -142,16 +142,75 @@ end
 
 function create_vdWParams(raw_params)
     like_params_dict, unlike_params_dict, assoc_params_dict =
-        filterparams(raw_params, ["a_vdW", "b_vdW"];
+        filterparams(raw_params, ["Tc", "pc"];
                      unlike_params = ["k"])
+    k  = unlike_params_dict["k"]
+    pc = like_params_dict["pc"]
+    Tc = like_params_dict["Tc"]
+    a  = Dict()
+    b  = Dict()
+    for i in keys(like_params_dict["Tc"])
+        a[i] = 27/64*R̄^2*Tc[i]^2/pc[i]/1e6
+        b[i] = 1/8*R̄*Tc[i]/pc[i]/1e6
+    end
+    merge!(b, combining_sigma(b))
+    merge!(a, combining_epsilon(a, b, k))
+    return vdWParams(a,b)
+end
 
-    b_vdW = like_params_dict["b_vdW"]
+function create_RKParams(raw_params)
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["Tc", "pc"];
+                     unlike_params = ["k"])
+    k  = unlike_params_dict["k"]
+    pc = like_params_dict["pc"]
+    Tc = like_params_dict["Tc"]
+    a  = Dict()
+    b  = Dict()
+    T̄c = sum(sum(sqrt(Tc[i]*Tc[j]) for j in keys(like_params_dict["Tc"])) for i in keys(like_params_dict["Tc"]))
+    for i in keys(like_params_dict["Tc"])
+        a[i] = 1/(9*(2^(1/3)-1))*R̄^2*Tc[i]^2.5/pc[i]/1e6/√(T̄c)
+        b[i] = (2^(1/3)-1)/3*R̄*Tc[i]/pc[i]/1e6
+    end
+    merge!(b, combining_sigma(b))
+    merge!(a, combining_epsilon(a, b, k))
+    return RKParams(a,b,T̄c)
+end
 
-    merge!(b_vdW, combining_sigma(b_vdW))
+function create_SRKParams(raw_params)
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["Tc", "pc","w"];
+                     unlike_params = ["k"])
+    k  = unlike_params_dict["k"]
+    pc = like_params_dict["pc"]
+    Tc = like_params_dict["Tc"]
+    acentric_fac = like_params_dict["w"]
+    a  = Dict()
+    b  = Dict()
+    for i in keys(like_params_dict["Tc"])
+        a[i] = 1/(9*(2^(1/3)-1))*R̄^2*Tc[i]^2/pc[i]/1e6
+        b[i] = (2^(1/3)-1)/3*R̄*Tc[i]/pc[i]/1e6
+    end
+    merge!(b, combining_sigma(b))
+    merge!(a, combining_epsilon(a, b, k))
+    return SRKParams(a,b,Tc,acentric_fac)
+end
 
-    a_vdW = like_params_dict["a_vdW"]
-    k = unlike_params_dict["k"]
-    merge!(epsilon, combining_epsilon(a_vdW, b_vdW, k))
-
-    return vdWParams(a_vdW,b_vdW)
+function create_PRParams(raw_params)
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["Tc", "pc","w"];
+                     unlike_params = ["k"])
+    k  = unlike_params_dict["k"]
+    pc = like_params_dict["pc"]
+    Tc = like_params_dict["Tc"]
+    acentric_fac = like_params_dict["w"]
+    a  = Dict()
+    b  = Dict()
+    for i in keys(like_params_dict["Tc"])
+        a[i] = 0.457235*R̄^2*Tc[i]^2/pc[i]/1e6
+        b[i] = 0.077796*R̄*Tc[i]/pc[i]/1e6
+    end
+    merge!(b, combining_sigma(b))
+    merge!(a, combining_epsilon(a, b, k))
+    return PRParams(a,b,Tc,acentric_fac)
 end
