@@ -52,6 +52,26 @@ struct SAFTgammaMieParams <: Params
 end
 
 struct vdWParams <: Params
-    a_vdW::Dict
-    b_vdW::Dict
+    a::Dict
+    b::Dict
+end
+
+struct RKParams <: Params
+    a::Dict
+    b::Dict
+    Tc::Float64
+end
+
+struct SRKParams <: Params
+    a::Dict
+    b::Dict
+    Tc::Dict
+    acentric_fac::Dict
+end
+
+struct PRParams <: Params
+    a::Dict
+    b::Dict
+    Tc::Dict
+    acentric_fac::Dict
 end

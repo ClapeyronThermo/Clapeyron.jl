@@ -120,6 +120,7 @@ function Obj_Crit(model::SAFT, F, T_c, v_c)
     F[1] = d2f(v_c)
     F[2] = d3f(v_c)
 end
+
 ## Mixture saturation solver
 function get_sat_mix_Tx(model, T, x)
     components = model.components
@@ -219,14 +220,14 @@ end
 #     println(T_c)
 # end
 ## Derivative properties
-function get_pressure(model::SAFT, v, T, z=[1.]; phase = "unknown")
+function get_pressure(model::EoS, v, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     fun(x) = eos(model, z, x[1], T)
     df(x)  = ForwardDiff.derivative(fun,x[1])
     return -df(v)
 end
 
-function get_entropy(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_entropy(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v      = get_volume(model, p, T, z; phase=phase)[1]
     fun(x) = eos(model, z, v, x[1])
@@ -234,7 +235,7 @@ function get_entropy(model::SAFT, p, T, z=[1.]; phase = "unknown")
     return -df(T)
 end
 
-function get_chemical_potential(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_chemical_potential(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v      = get_volume(model, p, T, z; phase=phase)[1]
     fun(x) = eos(model, x, v, T)
@@ -242,7 +243,7 @@ function get_chemical_potential(model::SAFT, p, T, z=[1.]; phase = "unknown")
     return df(z)
 end
 
-function get_internal_energy(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_internal_energy(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v      = get_volume(model, p, T, z; phase=phase)[1]
     fun(x) = eos(model, z, v, x)
@@ -250,7 +251,7 @@ function get_internal_energy(model::SAFT, p, T, z=[1.]; phase = "unknown")
     return fun(T)-df(T)*T
 end
 
-function get_enthalpy(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_enthalpy(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v      = get_volume(model, p, T, z; phase=phase)[1]
     fun(x) = eos(model, z, x[1], x[2])
@@ -258,7 +259,7 @@ function get_enthalpy(model::SAFT, p, T, z=[1.]; phase = "unknown")
     return fun([v,T])-df([v,T])[2]*T-df([v,T])[1]*v
 end
 
-function get_Gibbs_free_energy(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_Gibbs_free_energy(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v      = get_volume(model, p, T, z; phase=phase)[1]
     fun(x) = eos(model, z, x[1], T)
@@ -266,7 +267,7 @@ function get_Gibbs_free_energy(model::SAFT, p, T, z=[1.]; phase = "unknown")
     return fun(v)-df(v)[1]*v
 end
 
-function get_Helmholtz_free_energy(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_Helmholtz_free_energy(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v      = get_volume(model, p, T, z; phase=phase)[1]
     fun(x) = eos(model, z, x[1], T)
@@ -274,7 +275,7 @@ function get_Helmholtz_free_energy(model::SAFT, p, T, z=[1.]; phase = "unknown")
     return fun(T)
 end
 
-function get_isochoric_heat_capacity(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_isochoric_heat_capacity(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, v, x)
@@ -283,7 +284,7 @@ function get_isochoric_heat_capacity(model::SAFT, p, T, z=[1.]; phase = "unknown
     return -T*d2f(T)
 end
 
-function get_isobaric_heat_capacity(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_isobaric_heat_capacity(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
@@ -291,7 +292,7 @@ function get_isobaric_heat_capacity(model::SAFT, p, T, z=[1.]; phase = "unknown"
     return T*(d2f([v,T])[1,2]^2/d2f([v,T])[1]-d2f([v,T])[2,2])
 end
 
-function get_isothermal_compressibility(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_isothermal_compressibility(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, x, T)
@@ -300,7 +301,7 @@ function get_isothermal_compressibility(model::SAFT, p, T, z=[1.]; phase = "unkn
     return 1/v*d2f(v)^-1
 end
 
-function get_isentropic_compressibility(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_isentropic_compressibility(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
@@ -308,7 +309,7 @@ function get_isentropic_compressibility(model::SAFT, p, T, z=[1.]; phase = "unkn
     return 1/v*(d2f([v,T])[1]-d2f([v,T])[1,2]^2/d2f([v,T])[2,2])^-1
 end
 
-function get_speed_of_sound(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_speed_of_sound(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     Mr      = sum(z[i]*model.params.Mr[i] for i in model.components)
     v       = get_volume(model, p, T, z; phase=phase)[1]
@@ -317,7 +318,7 @@ function get_speed_of_sound(model::SAFT, p, T, z=[1.]; phase = "unknown")
     return v*sqrt((d2f([v,T])[1]-d2f([v,T])[1,2]^2/d2f([v,T])[2,2])/Mr)
 end
 
-function get_isobaric_expansivity(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_isobaric_expansivity(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
@@ -325,7 +326,7 @@ function get_isobaric_expansivity(model::SAFT, p, T, z=[1.]; phase = "unknown")
     return d2f([v,T])[1,2]/(v*d2f([v,T])[1])
 end
 
-function get_Joule_Thomson_coefficient(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_Joule_Thomson_coefficient(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v       = get_volume(model, p, T, z; phase=phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
@@ -333,7 +334,7 @@ function get_Joule_Thomson_coefficient(model::SAFT, p, T, z=[1.]; phase = "unkno
     return -(d2f([v,T])[1,2]-d2f([v,T])[1]*((T*d2f([v,T])[2,2]+v*d2f([v,T])[1,2])/(T*d2f([v,T])[1,2]+v*d2f([v,T])[1])))^-1
 end
 
-function get_second_virial_coeff(model::SAFT, T, z=[1.])
+function get_second_virial_coeff(model::EoS, T, z=[1.])
     V = [1e10]
     z = create_z(model, z)
     fun(x) = eos(model, z, x[1], T)
