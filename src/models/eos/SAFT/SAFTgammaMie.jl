@@ -11,7 +11,7 @@ function Âchain(model::SAFTgammaMieFamily, z, V, T)
     v = model.group_multiplicities
     vst = model.params.segment
     S = model.params.shapefactor
-    return -sum(x[i] * sum((v[i][k]*vst[k]*S[k]-1) for k in @groups(i)) * log(@f(gMie,@f(σ̃,i),ζ_X)) for i in @comps)
+    return -sum(x[i] * sum((v[i][k]*vst[k]*S[k]-1) for k in @groups(i)) * log(@f(g_Mie,i)) for i in @comps)
 end
 
 function Âassoc(model::SAFTgammaMieFamily, z, V, T)
@@ -219,13 +219,13 @@ function ẑ(model::SAFTgammaMieFamily, z, V, T, i, k)
     return v[i][k]*vst[k]*S[k] / sum(v[i][l]*vst[l]*S[l] for l in @groups(i))
 end
 
-function σ̃(model::SAFTgammaMieFamily, z, V, T, i)
+function σ̄(model::SAFTgammaMieFamily, z, V, T, i)
     σ = model.params.sigma
-    return cbrt(sum(sum(@f(ẑ,i,k)*@f(ẑ,l,i)*σ[union(k,l)]^3 for l in @groups) for k in @groups))
+    return cbrt(sum(sum(@f(ẑ,i,k)*@f(ẑ,i,l)*σ[union(k,l)]^3 for l in @groups) for k in @groups))
 end
 
-function d̃(model::SAFTgammaMieFamily, z, V, T, i)
-    return cbrt(sum(sum(@f(ẑ,i,k)*@f(ẑ,l,i)*@f(d,k,l)^3 for l in @groups) for k in @groups))
+function d̄(model::SAFTgammaMieFamily, z, V, T, i)
+    return cbrt(sum(sum(@f(ẑ,i,k)*@f(ẑ,i,l)*@f(d,k,l)^3 for l in @groups) for k in @groups))
 end
 
 function ϵ̄(model::SAFTgammaMieFamily, z, V, T, i)
@@ -243,19 +243,19 @@ function λ̄r(model::SAFTgammaMieFamily, z, V, T, i)
     return sum(sum(@f(ẑ,i,k)*@f(ẑ,i,l)*λr[union(k,l)] for l in @groups) for k in @groups)
 end
 
-function gMie(model::SAFTgammaMieFamily, z, V, T, σ̄, ζ_X)
-    λr = model.params.lambda_r
-    return gHS_d(σ̄)*exp(ϵ̄/k_B/T*@f(g_1,σ̂)/gHS_d_)
+function g_Mie(model::SAFTgammaMieFamily, z, V, T, i)
+    ϵ̄_=@f(ϵ̄,i)
+    return @f(g_HS,i)*exp(ϵ̄_/T*@f(g_1,i)/@f(g_HS,i)+(ϵ̄_/T)^2*@f(g_2,i)/@f(g_HS,i))
 end
 
-function gHS_d(model::SAFTgammaMieFamily, z, V, T, σ̄)
-    x̄_0 = σ̄/@f(d̄,i)
+function g_HS(model::SAFTgammaMieFamily, z, V, T, i)
+    x̄_0 = @f(σ̄,i)/@f(d̄,i)
     ζ_X_ = @f(ζ_X)
-    k_0 = -ln(1-ζ_X_) + (42ζ_X_-31ζ_X_^2+9ζ_X_^3-2ζ_X_^4)/(6*(1-ζ_X_)^3)
+    k_0 = -log(1-ζ_X_) + (42ζ_X_-39ζ_X_^2+9ζ_X_^3-2ζ_X_^4)/(6*(1-ζ_X_)^3)
     k_1 = (ζ_X_^4+6ζ_X_^2-12ζ_X_)/(2*(1-ζ_X_)^3)
     k_2 = -3ζ_X_^2/(8(1-ζ_X_)^2)
     k_3 = (-ζ_X_^4+3ζ_X_^2+3ζ_X_)/(6(1-ζ_X_)^3)
-    return exp(k_0+k_1*x̄+k_2*x̄^2+k_3*x̄^3)
+    return exp(k_0+k_1*x̄_0+k_2*x̄_0^2+k_3*x̄_0^3)
 end
 
 function g_1(model::SAFTgammaMieFamily, z, V, T, i)
@@ -266,8 +266,8 @@ function g_1(model::SAFTgammaMieFamily, z, V, T, i)
     d̄_ = @f(d̄,i)
     ρ_S_ = @f(ρ_S)
     x̄_0 = σ̄_/@f(d̄,i)
-    C̄_ = @f(C,λ̄a,λ̄r)
-    return 1/(2π*ϵ̄_*d̄_^3)*(3*@f(∂ā_1∂ρ_S,i) - C̄_*λ̄a_*x̄_0^λ̄a_*(@f(āS_1,i,λ̄_a)+@f(B̄,i,λ̄_a)/ρ_S_) + C̄_*λ̄r_*x̄_0^λ̄r_*(@f(āS_1,i,λ̄_r)+@f(B̄,i,λ̄_r)/ρ_S_))
+    C̄_ = @f(C,λ̄a_,λ̄r_)
+    return 1/(2π*ϵ̄_*d̄_^3)*(3*@f(∂ā_1∂ρ_S,i) - C̄_*λ̄a_*x̄_0^λ̄a_*(@f(āS_1,i,λ̄a_)+@f(B̄,i,λ̄a_)/ρ_S_) + C̄_*λ̄r_*x̄_0^λ̄r_*(@f(āS_1,i,λ̄r_)+@f(B̄,i,λ̄r_)/ρ_S_))
 end
 
 function g_2(model::SAFTgammaMieFamily, z, V, T, i)
@@ -291,9 +291,10 @@ function ∂B∂ρ_S(model::SAFTgammaMieFamily, z, V, T, i, λ̄)
     d̄_ = @f(d̄,i)
     x̄_0 = σ̄_/d̄_
     ζ_X_ = @f(ζ_X)
-    Ī = (1-x̄_0^(3-λ̄))/(λ̄-3)
-    J̄ = (1-x̄_0^(4-λ̄)*(λ̄-3)+x̄_0^(3-λ̄)*(λ̄-4))/((λ̄-3)*(λ̄-4))
-    return @f(B̄,i,λ̄) + 2π*d̄_*ϵ̄*(@f(ρ_S)*(3*(1-ζ_X_/2)*(1-ζ_X_)^2-1/2*(1-ζ_X_)^3)/(1-ζ_X_)^6*Ī - 9/2*((1+2ζ_X_)*(1-ζ_X_)^3+3ζ_X_*(1+ζ_X_)(1-ζ_X_)^2)/(1-ζ_X_)^6*J̄*ζ_X_)
+    I = (1-x̄_0^(3-λ̄))/(λ̄-3)
+    J = (1-x̄_0^(4-λ̄)*(λ̄-3)+x̄_0^(3-λ̄)*(λ̄-4))/((λ̄-3)*(λ̄-4))
+    return @f(B̄,i,λ̄) + 2π*d̄_^3*ϵ̄_ * ζ_X_*((3*(1-ζ_X_/2)*(1-ζ_X_)^2
+            -0.5*(1-ζ_X_)^3)*I/(1-ζ_X_)^6-9*J*((1+2*ζ_X_)*(1-ζ_X_)^3+ζ_X_*(1+ζ_X_)*3*(1-ζ_X_)^2)/(2*(1-ζ_X_)^6))
 end
 
 function ā_1(model::SAFTgammaMieFamily, z, V, T, i)
@@ -307,7 +308,7 @@ function ∂ā_1∂ρ_S(model::SAFTgammaMieFamily, z, V, T, i)
     λ̄a_ = @f(λ̄a,i)
     λ̄r_ = @f(λ̄r,i)
     x̄_0 = @f(σ̄,i)/@f(d̄,i)
-    return @f(C,λ̄a_,λ̄r_)*(x̄_0^λ̄a_*(@f(∂āS_1∂ρ_S,λ̄a_)+@f(∂B∂ρ_S,λ̄a_))-x̄_0^λ̄r_*(@f(∂āS_1∂ρ_S,λ̄r_)+@f(∂B∂ρ_S,λ̄r_)))
+    return @f(C,λ̄a_,λ̄r_)*(x̄_0^λ̄a_*(@f(∂āS_1∂ρ_S,i,λ̄a_)+@f(∂B∂ρ_S,i,λ̄a_))-x̄_0^λ̄r_*(@f(∂āS_1∂ρ_S,i,λ̄r_)+@f(∂B∂ρ_S,i,λ̄r_)))
 end
 
 function āS_1(model::SAFTgammaMieFamily, z, V, T, i, λ̄)
@@ -329,15 +330,15 @@ function ∂āS_1∂ρ_S(model::SAFTgammaMieFamily, z, V, T, i, λ̄)
           1.08850   -6.1962   106.98  -677.64  ]
     ζ_X_ = @f(ζ_X)
     ∂ζ̄eff∂ρ_S = A * [1; 1/λ̄; 1/λ̄^2; 1/λ̄^3] ⋅ [1; 2ζ_X_; 3ζ_X_^2; 4ζ_X_^3]
-    return @f(āS_1,i,λ̄) - 2π*(ϵ̄_*d̄_^3)/(λ̄-3) * ((3*(1-ζ̄eff_/2)*(1-ζ̄eff_)^2-1/2*(1-ζ̄eff_)^3)/(1-ζ̄eff_)^6 * ∂ζ̄eff∂ρ_S*ζ_X)
+    return @f(āS_1,i,λ̄) - 2π*(ϵ̄_*d̄_^3)/(λ̄-3) * ((3*(1-ζ̄eff_/2)*(1-ζ̄eff_)^2-1/2*(1-ζ̄eff_)^3)/(1-ζ̄eff_)^6 * ∂ζ̄eff∂ρ_S*ζ_X_)
 end
 
 function γ_c(model::SAFTgammaMieFamily, z, V, T, i)
     λ̄a_ = @f(λ̄a,i)
     λ̄r_ = @f(λ̄r,i)
     ϵ̄_ = @f(ϵ̄,i)
-    ᾱ = @f(C,λ̄a,λr)*(1/(λ̄a-3)-1/(λ̄r-3))
-    θ = exp(ϵ̄_/k_B/T)-1
+    ᾱ = @f(C,λ̄a_,λ̄r_)*(1/(λ̄a_-3)-1/(λ̄r_-3))
+    θ = exp(ϵ̄_/T)-1
     ζst_X_ = @f(ζst_X)
     return 10 * (tanh(10*(0.57-ᾱ))+1) * ζst_X_*θ*exp(-6.7*ζst_X_-8ζst_X_)
 end
@@ -350,12 +351,12 @@ function gMCA_2(model::SAFTgammaMieFamily, z, V, T, i)
     λ̄a_ = @f(λ̄a,i)
     λ̄r_ = @f(λ̄r,i)
     ρ_S_ = @f(ρ_S)
-    C̄_ = @f(C,λ̄a,λ̄r)
+    C̄_ = @f(C,λ̄a_,λ̄r_)
     KHS_ = @f(KHS)
-    return 1/(2π*ϵ̄_*d̄_^3)*(3*@f(∂ā_2∂_S,i)
-        -ϵ̄_*KHS_*C̄_^2*λ̄r_*x̄_0^(2λ̄r)*(@f(āS_1,i,2λ̄r)+@f(B̄,i,2λ̄r))/ρ_S_
-        +ϵ̄_*KHS_*C̄_^2*(λ̄a+λ̄r)*x̄_0^(λ̄a+λ̄r)*(@f(āS_1,i,λ̄a+λ̄R)+@f(B̄,i,λ̄a+λ̄R))
-        -ϵ̄_*KHS_*C̄_^2*λ̄a_*x̄_0^(2λ̄a)*(@f(āS_1,i,2λ̄a)+@f(B̄,i,2λ̄a))/ρ_S_)
+    return 1/(2π*ϵ̄_*d̄_^3)*(3*@f(∂ā_2∂ρ_S,i)-
+        ϵ̄_*KHS_*C̄_^2*λ̄r_*x̄_0^(2λ̄r_)*(@f(āS_1,i,2λ̄r_)+@f(B̄,i,2λ̄r_))/ρ_S_+
+        ϵ̄_*KHS_*C̄_^2*(λ̄a_+λ̄r_)*x̄_0^(λ̄a_+λ̄r_)*(@f(āS_1,i,λ̄a_+λ̄r_)+@f(B̄,i,λ̄a_+λ̄r_))-
+        ϵ̄_*KHS_*C̄_^2*λ̄a_*x̄_0^(2λ̄a_)*(@f(āS_1,i,2λ̄a_)+@f(B̄,i,2λ̄a_))/ρ_S_)
 end
 
 function ∂ā_2∂ρ_S(model::SAFTgammaMieFamily, z, V, T, i)
@@ -367,10 +368,10 @@ function ∂ā_2∂ρ_S(model::SAFTgammaMieFamily, z, V, T, i)
     ∂KHS∂ρ_S = -(4*(1-ζ_X_)^3*(1+4ζ_X_+4ζ_X_^2-4ζ_X_^3+ζ_X_^4) + (1-ζ_X_)^4*(4+8ζ_X_-12ζ_X_^2+4ζ_X_^3))/(1+4ζ_X_+4ζ_X_^2-4ζ_X_^3+ζ_X_^4)^2*ζ_X_/@f(ρ_S)
     λ̄a_ = @f(λ̄a,i)
     λ̄r_ = @f(λ̄r,i)
-    return 1/2*ϵ̄_*@f(C,λ̄a_,λ̄r_)*(∂KHS∂ρ_S*(x̄_0^(2λ̄a)*(@f(āS_1,i,2λ̄a)+@f(B̄,i,2λ̄a))
-        -2x̄_0^(λ̄a+λ̄r)*(@f(āS_1,i,λ̄a+λ̄R)+@f(B̄,i,λ̄a+λ̄R))
-        +x̄_0^(2λ̄r)*(@f(āS_1,i,2λ̄r)+@f(B̄,i,2λ̄r)))
-        +@f(KHS)*(x̄_0^(2λ̄a)*(@f(∂āS_1∂ρ_S,i,2λ̄a)+@f(∂B̄∂ρ_S,i,2λ̄a))
-        -2x̄_0^(λ̄a+λ̄r)*(@f(∂āS_1∂ρ_S,i,λ̄a+λ̄R)+@f(∂B̄∂ρ_S,i,λ̄a+λ̄R))
-        +x̄_0^(2λ̄r)*(@f(∂āS_1∂ρ_S,i,2λ̄r)+@f(∂B̄∂ρ_S,i,2λ̄r))))
+    return 1/2*ϵ̄_*@f(C,λ̄a_,λ̄r_)*(∂KHS∂ρ_S*(x̄_0^(2λ̄a_)*(@f(āS_1,i,2λ̄a_)+@f(B̄,i,2λ̄a_))
+        -2x̄_0^(λ̄a_+λ̄r_)*(@f(āS_1,i,λ̄a_+λ̄r_)+@f(B̄,i,λ̄a_+λ̄r_))
+        +x̄_0^(2λ̄r_)*(@f(āS_1,i,2λ̄r_)+@f(B̄,i,2λ̄r_)))
+        +@f(KHS)*(x̄_0^(2λ̄a_)*(@f(∂āS_1∂ρ_S,i,2λ̄a_)+@f(∂B∂ρ_S,i,2λ̄a_))
+        -2x̄_0^(λ̄a_+λ̄r_)*(@f(∂āS_1∂ρ_S,i,λ̄a_+λ̄r_)+@f(∂B∂ρ_S,i,λ̄a_+λ̄r_))
+        +x̄_0^(2λ̄r_)*(@f(∂āS_1∂ρ_S,i,2λ̄r_)+@f(∂B∂ρ_S,i,2λ̄r_))))
 end
