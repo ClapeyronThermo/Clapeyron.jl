@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
 
-![OpenSAFT_logo](docs/src/assets/logo.svg)
+![OpenSAFT_logo](docs/OpenSAFT_logo.svg)
 
 Welcome to OpenSAFT! This module intends to provide the variants of the Statistical Associating Fluid Theory (SAFT) thermodynamic equation of state, along with the relevant parameters and solvers required to use these equations.
 
@@ -23,11 +23,11 @@ SAFT equations of state currently available:
 
 For group contribution approaches, we provide:
 
-| EoS          | Seg./Mono.?        | Chain? | Assoc.? | Parameters? |
-| ------------ | ------------------ | ------ | ------- | ----------- |
-| sPC-SAFT     |                    |        |         |             |
-| SAFT-*ɣ* SW  |                    |        |         |             |
-| SAFT-*ɣ* Mie | :heavy_check_mark: |        |         |             |
+| EoS          | Seg./Mono.?        | Chain?             | Assoc.? | Parameters? |
+| ------------ | ------------------ | ------------------ | ------- | ----------- |
+| sPC-SAFT     |                    |                    |         |             |
+| SAFT-*ɣ* SW  |                    |                    |         |             |
+| SAFT-*ɣ* Mie | :heavy_check_mark: | :heavy_check_mark: |         |             |
 
 We also provide some engineering cubic equations of state for comparison:
 
