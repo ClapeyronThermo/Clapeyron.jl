@@ -1,20 +1,14 @@
 ## Standard pressure solver
-function get_volume(model::SAFT, p, T, z=[1.]; phase = "unknown")
+function get_volume(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     components = model.components
 
     N = length(p)
 
     ub = [Inf]
-    lb = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/1)]
+    lb = lb_volume(model,z; phase = phase)
 
-    if phase == "unknown" || phase == "liquid"
-        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/0.8)]
-    elseif phase == "vapour"
-        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/1e-2)]
-    elseif phase == "supercritical"
-        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/0.5)]
-    end
+    x0 = x0_volume(model,z; phase = phase)
 
     Vol = []
     if phase == "unknown"
@@ -42,10 +36,9 @@ end
 
 
 ## Pure saturation conditions solver
-function get_sat_pure(model::SAFT, T)
+function get_sat_pure(model::EoS, T)
     components = model.components
-    v0    = [log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/0.45),
-             log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/1e-3)]
+    v0    = x0_sat_pure(model)
     v_l   = []
     v_v   = []
     P_sat = []
@@ -61,29 +54,31 @@ function get_sat_pure(model::SAFT, T)
     return (P_sat, v_l, v_v)
 end
 
-function Obj_Sat(model::SAFT, F, T, v_l, v_v)
+function Obj_Sat(model::EoS, F, T, v_l, v_v)
     components = model.components
     fun(x) = eos(model, create_z(model, [x[1]]), x[2], T)
     df(x)  = ForwardDiff.gradient(fun,x)
     df_l = df([1,v_l[1]])
     df_v = df([1,v_v[1]])
-    F[1] = (df_l[2]-df_v[2])*model.params.sigma[components[1]]^3*N_A/R̄/model.params.epsilon[components[1]]
-    F[2] = (df_l[1]-df_v[1])/R̄/model.params.epsilon[components[1]]
+    (p_scale,μ_scale) = scale_sat_pure(model)
+    F[1] = (df_l[2]-df_v[2])*p_scale
+    F[2] = (df_l[1]-df_v[1])*μ_scale
 end
 
-function Jac_Sat(model::SAFT, J, T, v_l, v_v)
+function Jac_Sat(model::EoS, J, T, v_l, v_v)
     components = model.components
     fun(x) = eos(model, create_z(model, [x[1]]), x[2], T)
     d2f(x) = ForwardDiff.hessian(fun,x)
     d2f_l = d2f([1,v_l[1]])
     d2f_v = d2f([1,v_v[1]])
-    J[1] =  v_l[1]*d2f_l[2,2]*model.params.sigma[components[1]]^3*N_A*log(10)/R̄/model.params.epsilon[components[1]]
-    J[1,2] = -v_v[1]*d2f_v[2,2]*model.params.sigma[components[1]]^3*N_A*log(10)/R̄/model.params.epsilon[components[1]]
-    J[2,1] =  v_l[1]*d2f_l[1,2]*log(10)/R̄/model.params.epsilon[components[1]]
-    J[2,2] = -v_v[1]*d2f_v[1,2]*log(10)/R̄/model.params.epsilon[components[1]]
+    (p_scale,μ_scale) = scale_sat_pure(model)
+    J[1,1] =  v_l[1]*d2f_l[2,2]*log(10)*p_scale
+    J[1,2] = -v_v[1]*d2f_v[2,2]*log(10)*p_scale
+    J[2,1] =  v_l[1]*d2f_l[1,2]*log(10)*μ_scale
+    J[2,2] = -v_v[1]*d2f_v[1,2]*log(10)*μ_scale
 end
 
-function get_enthalpy_vap(model::SAFT, T)
+function get_enthalpy_vap(model::EoS, T)
     (P_sat,v_l,v_v) = get_sat_pure(model,T)
     fun(x) = eos(model, create_z(model,[1.0]), x[1], x[2])
     df(x)  = ForwardDiff.gradient(fun,x)
@@ -96,13 +91,14 @@ function get_enthalpy_vap(model::SAFT, T)
     return H_vap
 end
 ## Pure critical point solver
-function get_crit_pure(model::SAFT; units = false, output=[u"K", u"Pa", u"m^3"])
+function get_crit_pure(model::EoS; units = false, output=[u"K", u"Pa", u"m^3"])
     components = model.components
-    f! = (F,x) -> Obj_Crit(model, F, x[1]*model.params.epsilon[components[1]], 10^x[2])
+    T̄  = T_crit_pure(model)
+    f! = (F,x) -> Obj_Crit(model, F, x[1]*T̄, 10^x[2])
     # j! = (J,x) -> Jac_Crit(J,eos,model,x[1]*model.params.epsilon[(1, 1)],10^x[2])
-    x0 = [1.5, log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/0.3)]
+    x0 = x0_crit_pure(model)
     r  = nlsolve(f!,x0)
-    T_c = r.zero[1]*model.params.epsilon[components[1]]
+    T_c = r.zero[1]*T̄
     v_c = 10^r.zero[2]
     p_c = get_pressure(model, v_c, T_c)
     if units
@@ -112,7 +108,7 @@ function get_crit_pure(model::SAFT; units = false, output=[u"K", u"Pa", u"m^3"])
     end
 end
 
-function Obj_Crit(model::SAFT, F, T_c, v_c)
+function Obj_Crit(model::EoS, F, T_c, v_c)
     fun(x)  = eos(model, create_z(model, [1]), x[1], T_c)
     df(x)   = ForwardDiff.derivative(fun,x)
     d2f(x)  = ForwardDiff.derivative(df,x)
