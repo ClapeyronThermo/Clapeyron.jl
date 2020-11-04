@@ -38,9 +38,9 @@ export eos,ideal
 
 using Unitful
 
-include("methods/getproperties_SAFT.jl")
+include("methods/getproperties.jl")
 include("methods/getproperties_SAFT_Unitful.jl")
-include("methods/getproperties_Cubic.jl")
+include("methods/initial_guess_properties.jl")
 
 export get_volume, get_sat_pure, get_sat_mix_Tx, get_crit_pure, get_enthalpy_vap, get_pressure, get_entropy, get_chemical_potential, get_internal_energy, get_enthalpy, get_Gibbs_free_energy, get_Helmholtz_free_energy, get_isochoric_heat_capacity, get_isobaric_heat_capacity, get_isothermal_compressibility, get_isentropic_compressibility, get_speed_of_sound, get_isobaric_expansivity, get_Joule_Thomson_coefficient, get_second_virial_coeff
 end # module
