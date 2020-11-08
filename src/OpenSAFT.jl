@@ -3,7 +3,7 @@ module OpenSAFT
 using NLopt, NLsolve, DiffResults, ForwardDiff, LinearAlgebra
 include("solvers/Solvers.jl")
 using .Solvers
-
+import Unitful
 using Combinatorics
 
 include("constants.jl")

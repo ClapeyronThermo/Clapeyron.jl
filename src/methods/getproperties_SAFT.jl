@@ -1,5 +1,7 @@
 ## Standard pressure solver
 function get_volume(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     components = model.components
 
     N = length(p)
@@ -40,6 +42,7 @@ end
 
 ## Saturation conditions solver
 function get_sat_pure(model::SAFT, T)
+    T = normalize_units(T)  
     components = model.components
     v0    = [log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/0.4),
              log10(π/6*N_A*model.params.segment[components[1]]*model.params.sigma[components[1]]^3/1e-3)]
@@ -114,6 +117,7 @@ end
 # end
 
 function get_enthalpy_vap(model::SAFT, T)
+    T = normalize_units(T)  
     (P_sat,v_l,v_v) = get_sat_pure(model,T)
     fun(x) = eos(model, create_z(model,[1.0]), x[1], x[2])
     df(x)  = ForwardDiff.gradient(fun,x)
@@ -128,12 +132,16 @@ end
 
 ## Derivative properties
 function get_pressure(model::SAFT, z, v, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     fun(x) = eos(model, z, x[1], T)
     df(x)  = ForwardDiff.derivative(fun,x[1])
     return -df(v)
 end
 
 function get_entropy(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     v      = get_volume(model, z, p, T, phase)[1]
     fun(x) = eos(model, z, v, x[1])
     df(x)  = ForwardDiff.derivative(fun,x[1])
@@ -141,6 +149,8 @@ function get_entropy(model::SAFT, z, p, T, phase="unknown")
 end
 
 function get_chemical_potential(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     v      = get_volume(model, z, p, T, phase)[1]
     fun(x) = eos(model, x, v, T)
     df(x)  = ForwardDiff.gradient(fun,x)
@@ -148,6 +158,8 @@ function get_chemical_potential(model::SAFT, z, p, T, phase="unknown")
 end
 
 function get_internal_energy(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     v      = get_volume(model, z, p, T, phase)[1]
     fun(x) = eos(model, z, v, x)
     df(x)  = ForwardDiff.derivative(fun,x)
@@ -155,6 +167,8 @@ function get_internal_energy(model::SAFT, z, p, T, phase="unknown")
 end
 
 function get_enthalpy(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     v      = get_volume(model, z, p, T, phase)[1]
     fun(x) = eos(model, z, x[1], x[2])
     df(x)  = ForwardDiff.gradient(fun,x)
@@ -162,6 +176,8 @@ function get_enthalpy(model::SAFT, z, p, T, phase="unknown")
 end
 
 function get_Gibbs_free_energy(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     v      = get_volume(model, z, p, T, phase)[1]
     fun(x) = eos(model, z, x[1], T)
     df(x)  = ForwardDiff.derivative(fun,x)
@@ -169,6 +185,8 @@ function get_Gibbs_free_energy(model::SAFT, z, p, T, phase="unknown")
 end
 
 function get_Helmholtz_free_energy(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     v      = get_volume(model, z, p, T, phase)[1]
     fun(x) = eos(model, z, x[1], T)
     df(x)  = ForwardDiff.derivative(fun,x)
@@ -176,6 +194,8 @@ function get_Helmholtz_free_energy(model::SAFT, z, p, T, phase="unknown")
 end
 
 function get_isochoric_heat_capacity(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     v       = get_volume(model, z, p, T, phase)[1]
     fun(x)  = eos(model, z, v, x)
     df(x)   = ForwardDiff.derivative(fun,x)
@@ -184,6 +204,8 @@ function get_isochoric_heat_capacity(model::SAFT, z, p, T, phase="unknown")
 end
 
 function get_isobaric_heat_capacity(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     v       = get_volume(model, z, p, T, phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
     d2f(x)  = ForwardDiff.hessian(fun,x)
@@ -191,6 +213,8 @@ function get_isobaric_heat_capacity(model::SAFT, z, p, T, phase="unknown")
 end
 
 function get_isothermal_compressibility(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     v       = get_volume(model, z, p, T, phase)[1]
     fun(x)  = eos(model, z, x, T)
     df(x)   = ForwardDiff.derivative(fun,x)
@@ -199,6 +223,8 @@ function get_isothermal_compressibility(model::SAFT, z, p, T, phase="unknown")
 end
 
 function get_isentropic_compressibility(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     v       = get_volume(model, z, p, T, phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
     d2f(x)  = ForwardDiff.hessian(fun,x)
@@ -206,6 +232,8 @@ function get_isentropic_compressibility(model::SAFT, z, p, T, phase="unknown")
 end
 
 function get_speed_of_sound(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     Mr      = sum(z[i]*model.params.Mr[i] for i in model.components)
     v       = get_volume(model, z, p, T, phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
@@ -214,6 +242,8 @@ function get_speed_of_sound(model::SAFT, z, p, T, phase="unknown")
 end
 
 function get_isobaric_expansivity(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)  
     v       = get_volume(model, z, p, T, phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
     d2f(x)   = ForwardDiff.hessian(fun,x)
@@ -221,8 +251,11 @@ function get_isobaric_expansivity(model::SAFT, z, p, T, phase="unknown")
 end
 
 function get_Joule_Thomson_coefficient(model::SAFT, z, p, T, phase="unknown")
+    p = normalize_units(p)
+    T = normalize_units(T)
     v       = get_volume(model, z, p, T, phase)[1]
     fun(x)  = eos(model, z, x[1], x[2])
     d2f(x)  = ForwardDiff.hessian(fun,x)
     return -(d2f([v,T])[1,2]-d2f([v,T])[1]*((T*d2f([v,T])[2,2]+v*d2f([v,T])[1,2])/(T*d2f([v,T])[1,2]+v*d2f([v,T])[1])))^-1
 end
+
