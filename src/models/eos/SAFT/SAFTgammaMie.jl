@@ -15,7 +15,11 @@ function a_chain(model::SAFTgammaMieFamily, z, V, T)
 end
 
 function a_assoc(model::SAFTgammaMieFamily, z, V, T)
-    return 0
+    x = z/sum(z)
+    v = model.group_multiplicities
+    n = model.params.n_sites
+    X_ = @f(X)
+    return sum(x[i] * sum(v[i][k] * sum(Float64[n[k][a] * (log(X_[i,k,a])+(1+X_[i,k,a])/2) for a in @sites(k)]) for k in @groups(i)) for i in @comps)
 end
 
 function ÂHS(model::SAFTgammaMieFamily, z, V, T)
@@ -224,6 +228,14 @@ function σ̄(model::SAFTgammaMieFamily, z, V, T, i)
     return cbrt(sum(sum(@f(ẑ,i,k)*@f(ẑ,i,l)*σ[union(k,l)]^3 for l in @groups) for k in @groups))
 end
 
+function σ̄(model::SAFTgammaMieFamily, z, V, T, i, j)
+    if i == j
+        return @f(σ̄, i)
+    else
+        return (@f(σ̄, i) + @f(σ̄, j))/2
+    end
+end
+
 function d̄(model::SAFTgammaMieFamily, z, V, T, i)
     return cbrt(sum(sum(@f(ẑ,i,k)*@f(ẑ,i,l)*@f(d,k,l)^3 for l in @groups) for k in @groups))
 end
@@ -231,6 +243,14 @@ end
 function ϵ̄(model::SAFTgammaMieFamily, z, V, T, i)
     ϵ = model.params.epsilon
     return sum(sum(@f(ẑ,i,k)*@f(ẑ,i,l)*ϵ[union(k,l)] for l in @groups) for k in @groups)
+end
+
+function ϵ̄(model::SAFTgammaMieFamily, z, V, T, i, j)
+    if i == j
+        return @f(ϵ̄, i)
+    else
+        return sqrt(@f(σ̄,i)*@f(σ̄,j))/@f(σ̄,i,j) * sqrt(@f(ϵ̄,i)*@f(ϵ̄,i))
+    end
 end
 
 function λ̄a(model::SAFTgammaMieFamily, z, V, T, i)
@@ -375,4 +395,57 @@ function ∂ā_2∂ρ_S(model::SAFTgammaMieFamily, z, V, T, i)
         +@f(KHS)*(x̄_0^(2λ̄a_)*(@f(∂āS_1∂ρ_S,i,2λ̄a_)+@f(∂B∂ρ_S,i,2λ̄a_))
         -2x̄_0^(λ̄a_+λ̄r_)*(@f(∂āS_1∂ρ_S,i,λ̄a_+λ̄r_)+@f(∂B∂ρ_S,i,λ̄a_+λ̄r_))
         +x̄_0^(2λ̄r_)*(@f(∂āS_1∂ρ_S,i,2λ̄r_)+@f(∂B∂ρ_S,i,2λ̄r_))))
+end
+
+function X(model::SAFTgammaMieFamily, z, V, T)
+    x = z/sum(z)
+    ρ = sum(z)*N_A/V
+    v = model.group_multiplicities
+    n = model.params.n_sites
+    tol = 1.
+    iter = 1
+    damping_factor = 0.7 # 0 < value <= 1
+    itermax = 100
+
+    XDict = DefaultDict(1, Dict())
+    XDict_old = DefaultDict(1, Dict())
+    while tol > 1e-12
+        for i in @comps, k in @groups(i), a in @sites(k)
+            rhs = (1+ρ*sum(x[j] * sum(v[j][l] * sum(Float64[n[l][b] * XDict[j,l,b] * @f(Δ,i,j,k,l,a,b) for b in @sites(l)]) for l in @groups(j)) for j in @comps))^-1
+            XDict[i,k,a] = (1-damping_factor)*XDict_old[i,k,a] + damping_factor*rhs
+        end
+        tol = sqrt(sum(sum(sum(Float64[(XDict[i,k,a]-XDict_old[i,k,a])^2 for a in @sites(k)]) for k in @groups(i)) for i in @comps))
+        XDict_old = deepcopy(XDict)
+
+        if iter >= itermax
+            error("X has failed to converge after $itermax iterations")
+        end
+        iter += 1
+    end
+    return XDict
+end
+
+function Δ(model::SAFTgammaMieFamily, z, V, T, i, j, k, l, a, b)
+    σ = model.params.sigma
+    σ3_x = sum(sum(@f(x_S,k)*@f(x_S,l)*σ[union(k,l)]^3 for k in @groups) for l in @groups)
+    ρ = sum(z)*N_A/V
+
+    c  = [0.0756425183020431	-0.128667137050961	 0.128350632316055	-0.0725321780970292	   0.0257782547511452  -0.00601170055221687	  0.000933363147191978  -9.55607377143667e-05  6.19576039900837e-06 -2.30466608213628e-07 3.74605718435540e-09
+          0.134228218276565	    -0.182682168504886 	 0.0771662412959262	-0.000717458641164565 -0.00872427344283170	0.00297971836051287	 -0.000484863997651451	 4.35262491516424e-05 -2.07789181640066e-06	4.13749349344802e-08 0
+         -0.565116428942893	     1.00930692226792   -0.660166945915607	 0.214492212294301	  -0.0388462990166792	0.00406016982985030	 -0.000239515566373142	 7.25488368831468e-06 -8.58904640281928e-08	0	                 0
+         -0.387336382687019	    -0.211614570109503	 0.450442894490509	-0.176931752538907	   0.0317171522104923  -0.00291368915845693	  0.000130193710011706  -2.14505500786531e-06  0	                0	                 0
+          2.13713180911797	    -2.02798460133021 	 0.336709255682693	 0.00118106507393722  -0.00600058423301506	0.000626343952584415 -2.03636395699819e-05	 0	                   0	                0	                 0
+         -0.300527494795524	     2.89920714512243   -0.567134839686498	 0.0518085125423494	  -0.00239326776760414	4.15107362643844e-05  0	                     0	                   0	                0                    0
+         -6.21028065719194	    -1.92883360342573	 0.284109761066570	-0.0157606767372364	   0.000368599073256615	0 	                  0	                     0	                   0	                0	                 0
+          11.6083532818029	     0.742215544511197  -0.0823976531246117	 0.00186167650098254   0	                0	                  0	                     0	                   0	                0	                 0
+         -10.2632535542427	    -0.125035689035085	 0.0114299144831867	 0	                   0	                0	                  0	                     0	                   0	                0	                 0
+          4.65297446837297	    -0.00192518067137033 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0
+         -0.867296219639940	     0	                 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0]
+
+    I = sum(sum(c[p+1,q+1]*(ρ*σ3_x)^p*(T/@f(ϵ̄,i,j))^q for q in 0:(10-p)) for p in 0:10)
+
+    ϵHB = model.params.epsilon_assoc[Set([(k,a),(l,b)])]
+    K = model.params.bond_vol[Set([(k,a),(l,b)])]
+    F = (exp(ϵHB/T)-1)
+    return F*K*I
 end

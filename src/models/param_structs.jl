@@ -46,9 +46,9 @@ struct SAFTgammaMieParams <: Params
     lambda_r::Dict
     sigma::Dict
     epsilon::Dict
-    epsilon_assoc::Dict
-    bond_vol::Dict
-    n_sites::Dict
+    epsilon_assoc::DefaultDict
+    bond_vol::DefaultDict
+    n_sites::DefaultDict
 end
 
 struct vdWParams <: Params
