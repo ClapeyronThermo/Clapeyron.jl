@@ -1,3 +1,4 @@
+#### PCSAFT ####
 function create_PCSAFTParams(raw_params; combiningrule_ϵ = "Berth")
     like_params_dict, unlike_params_dict, assoc_params_dict =
         filterparams(raw_params, ["m", "sigma", "epsilon", "n_H", "n_e"];
@@ -25,6 +26,7 @@ function create_PCSAFTParams(raw_params; combiningrule_ϵ = "Berth")
     return PCSAFTParams(segment, sigma, epsilon, epsilon_assoc, bond_vol, n_sites)
 end
 
+#### sPCSAFT ####
 function create_sPCSAFTParams(raw_params; combiningrule_ϵ = "Berth")
     like_params_dict, unlike_params_dict, assoc_params_dict =
         filterparams(raw_params, ["m", "sigma", "epsilon", "n_H", "n_e"];
@@ -52,6 +54,7 @@ function create_sPCSAFTParams(raw_params; combiningrule_ϵ = "Berth")
     return sPCSAFTParams(segment, sigma, epsilon, epsilon_assoc, bond_vol, n_sites, k)
 end
 
+#### SAFTVRMie ####
 function create_SAFTVRMieParams(raw_params)
     like_params_dict, unlike_params_dict, assoc_params_dict =
         filterparams(raw_params, ["m", "sigma", "epsilon", "lambdaA", "lambdaR","n_H","n_e"];
@@ -84,6 +87,7 @@ function create_SAFTVRMieParams(raw_params)
     return SAFTVRMieParams(segment, sigma, epsilon, lambdaA, lambdaR, epsilon_assoc, bond_vol, n_sites)
 end
 
+#### ogSAFT ####
 function create_ogSAFTParams(raw_params)
     like_params_dict, unlike_params_dict, assoc_params_dict =
         filterparams(raw_params, ["m", "sigma", "epsilon","n_H","n_e"];
@@ -105,6 +109,7 @@ function create_ogSAFTParams(raw_params)
     return ogSAFTParams(segment, sigma, epsilon, epsilon_assoc, bond_vol, n_sites)
 end
 
+#### SAFTgammaMie ####
 function create_SAFTgammaMie(raw_params)
     like_params_dict, unlike_params_dict, assoc_params_dict =
         filterparams(raw_params, ["vst", "S", "sigma", "epsilon", "lambda_a", "lambda_r","n_H","n_e1", "n_e2"];
@@ -119,7 +124,7 @@ function create_SAFTgammaMie(raw_params)
     epsilon = like_params_dict["epsilon"]
     merge!(epsilon, unlike_params_dict["epsilon"])
     # may need modifications
-    merge!(epsilon, combining_epsilon(epsilon, sigma, Dict();rules_no_k = "Hudson-McCoubrey"))
+    merge!(epsilon, combining_epsilon(epsilon, sigma, Dict(); rules_no_k = "Hudson-McCoubrey"))
 
     lambda_a = like_params_dict["lambda_a"]
     merge!(lambda_a, combining_lambda(lambda_a))
@@ -128,9 +133,9 @@ function create_SAFTgammaMie(raw_params)
     merge!(lambda_r, unlike_params_dict["lambda_r"])
     merge!(lambda_r, combining_lambda(lambda_r))
 
-    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
-    bond_vol = assoc_params_dict["bond_vol"]
-    n_sites = Dict()
+    epsilon_assoc = DefaultDict(0, assoc_params_dict["epsilon_assoc"])
+    bond_vol = DefaultDict(0, assoc_params_dict["bond_vol"])
+    n_sites = DefaultDict(Dict(), Dict())
     for i in keys(like_params_dict["n_H"])
         n_sites[i] = Dict()
         n_sites[i]["e1"] = like_params_dict["n_e1"][i]
@@ -140,6 +145,7 @@ function create_SAFTgammaMie(raw_params)
     return SAFTgammaMieParams(segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bond_vol, n_sites)
 end
 
+#### vdW ####
 function create_vdWParams(raw_params)
     like_params_dict, unlike_params_dict, assoc_params_dict =
         filterparams(raw_params, ["Tc", "pc"];
@@ -158,6 +164,7 @@ function create_vdWParams(raw_params)
     return vdWParams(a,b)
 end
 
+#### RK ####
 function create_RKParams(raw_params)
     like_params_dict, unlike_params_dict, assoc_params_dict =
         filterparams(raw_params, ["Tc", "pc"];
@@ -177,6 +184,7 @@ function create_RKParams(raw_params)
     return RKParams(a,b,T̄c)
 end
 
+#### SRK ####
 function create_SRKParams(raw_params)
     like_params_dict, unlike_params_dict, assoc_params_dict =
         filterparams(raw_params, ["Tc", "pc","w"];
@@ -196,6 +204,7 @@ function create_SRKParams(raw_params)
     return SRKParams(a,b,Tc,acentric_fac)
 end
 
+#### PR ####
 function create_PRParams(raw_params)
     like_params_dict, unlike_params_dict, assoc_params_dict =
         filterparams(raw_params, ["Tc", "pc","w"];
