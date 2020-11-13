@@ -32,3 +32,9 @@ function gc(args::Union{Tuple{String, Array{Pair{String, Int64},1}}, String, Tup
     end
     return species
 end
+
+# extract all sites
+export extractsites
+function extractsites(n_sites)
+    return union([([collect(keys(n_sites[x])) for x in keys(n_sites)]...)...])
+end

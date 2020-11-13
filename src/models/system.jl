@@ -4,7 +4,9 @@ function system(components::Array{String,1}, method::String; kwargs...)
     set_components = [Set([i]) for i in components]
     if method == "PCSAFT"
         raw_params = retrieveparams(components, method; kwargs...)
-        model = PCSAFT(set_components, create_PCSAFTParams(raw_params))
+        params = create_PCSAFTParams(raw_params)
+        sites = extractsites(params.n_sites)
+        model = PCSAFT(set_components, sites, params)
     elseif method == "SAFTVRMie"
         raw_params = retrieveparams(components, method; kwargs...)
         model = SAFTVRMie(set_components, create_SAFTVRMieParams(raw_params))
@@ -13,22 +15,28 @@ function system(components::Array{String,1}, method::String; kwargs...)
         model = SAFTVRQMie(set_components, create_SAFTVRQMieParams(raw_params))
     elseif method == "ogSAFT"
         raw_params = retrieveparams(components, method; kwargs...)
-        model = ogSAFT(set_components, create_ogSAFTParams(raw_params))
+        params = create_ogSAFTParams(raw_params)
+        model = ogSAFT(set_components, params)
     elseif method == "sPCSAFT"
         raw_params = retrieveparams(components, method; kwargs...)
-        model = sPCSAFT(set_components, create_sPCSAFTParams(raw_params))
+        params = create_sPCSAFTParams(raw_params)
+        model = sPCSAFT(set_components, params)
     elseif method == "vdW"
         raw_params = retrieveparams(components, method; kwargs...)
-        model = vdW(set_components, create_vdWParams(raw_params))
+        params = create_vdWParams(raw_params)
+        model = vdW(set_components, params)
     elseif method == "RK"
         raw_params = retrieveparams(components, method; kwargs...)
-        model = RK(set_components, create_RKParams(raw_params))
+        params = create_RKParams(raw_params)
+        model = RK(set_components, params)
     elseif method == "SRK"
         raw_params = retrieveparams(components, method; kwargs...)
-        model = SRK(set_components, create_SRKParams(raw_params))
+        params = create_SRKParams(raw_params)
+        model = SRK(set_components, params)
     elseif method == "PR"
         raw_params = retrieveparams(components, method; kwargs...)
-        model = PR(set_components, create_PRParams(raw_params))
+        params = create_PRParams(raw_params)
+        model = PR(set_components, params)
     else
         error("Method definition incorrect.")
     end
@@ -47,7 +55,8 @@ function system(group_multiplicities::Dict, method::String; kwargs...)
     string_groups = [collect(j)[1] for j in groups]
     if method == "SAFTgammaMie"
         raw_params = retrieveparams(string_groups, method; kwargs...)
-        model = SAFTgammaMie(components, groups, group_multiplicities, create_SAFTgammaMie(raw_params))
+        params = create_SAFTgammaMie(raw_params)
+        model = SAFTgammaMie(components, groups, group_multiplicities, params)
     else
         error("Method definition incorrect.")
     end
