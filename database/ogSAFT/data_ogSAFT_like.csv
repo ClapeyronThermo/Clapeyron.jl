@@ -1,6 +1,6 @@
 OpenSAFT Database File;;;;;;
 ogSAFT Like Parameters;;;;;;
-species;DIPPR Number;Mw;m;sigma;epsilon;n_H;n_e;source
+species;DIPPR Number;Mw;m;sigma;epsilon;n_e;n_H;source
 methane;;16.04;1;3.739;152.2;0;0;10.1021/ie00104a021
 ethane;;30.07;2;3.2918;158.3;0;0;10.1021/ie00104a022
 Propane;;44.1;3;3.1514;152.3;0;0;10.1021/ie00104a023

@@ -8,26 +8,36 @@ Check out the Jupyter notebooks in the ```examples``` directory to see how to se
 
 SAFT equations of state currently available:
 
-| EoS           | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
-| ------------- | ------------------ | ------------------ | ------------------ | ------------------ |
-| SAFT          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| CK-SAFT       |                    |                    |                    |                    |
-| sSAFT         |                    |                    |                    |                    |
-| LJ-SAFT       |                    |                    |                    |                    |
-| PC-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| sPC-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| SAFT-VR SW    |                    |                    |                    |                    |
-| soft-SAFT     |                    |                    |                    |                    |
-| SAFT-VR Mie   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| SAFT-VR Morse |                    |                    |                    |                    |
+| EoS          | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
+| ------------ | ------------------ | ------------------ | ------------------ | ------------------ |
+| SAFT         | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| CK-SAFT      |                    |                    |                    |                    |
+| sSAFT        |                    |                    |                    |                    |
+| LJ-SAFT      |                    |                    |                    |                    |
+| PC-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| sPC-SAFT     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| SAFT-VR SW   |                    |                    |                    |                    |
+| soft-SAFT    |                    |                    |                    |                    |
+| SAFT-VR Mie  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| SAFT-VRQ Mie | :heavy_check_mark: | N/A                | N/A                |                    |
 
 For group contribution approaches, we provide:
 
-| EoS          | Seg./Mono.? | Chain? | Assoc.? | Parameters? |
-| ------------ | ----------- | ------ | ------- | ----------- |
-| sPC-SAFT     |             |        |         |             |
-| SAFT-*ɣ* SW  |             |        |         |             |
-| SAFT-*ɣ* Mie |             |        |         |             |
+| EoS          | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
+| ------------ | ------------------ | ------------------ | ------------------ | ------------------ |
+| sPC-SAFT     |                    |                    |                    |                    |
+| SAFT-*ɣ* SW  |                    |                    |                    |                    |
+| SAFT-*ɣ* Mie | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+
+We also provide some engineering cubic equations of state for comparison:
+
+| EoS                    | Available?         | Parameters?        |
+| ---------------------- | ------------------ | ------------------ |
+| van der Waals          | :heavy_check_mark: | :heavy_check_mark: |
+| Redlich-Kwong          | :heavy_check_mark: | :heavy_check_mark: |
+| Soave-Redlich-Kwong    | :heavy_check_mark: | :heavy_check_mark: |
+| Peng-Robinson          | :heavy_check_mark: | :heavy_check_mark: |
+| Cubic-Plus-Association | :heavy_check_mark: | :heavy_check_mark: |
 
 Properties available:
 
@@ -52,6 +62,16 @@ Properties available:
 
 - Two-phase properties:
 
+<<<<<<< HEAD
+| Property                  | Available?                         |
+| ------------------------- | ---------------------------------- |
+| Saturation pressure       | :heavy_check_mark:                 |
+| Bubble pressure           | :heavy_check_mark: (SAFT EOS only)​ |
+| Dew pressure              |                                    |
+| Bubble temperature        |                                    |
+| Dew temperature           |                                    |
+| Enthalpy of vapourisation | :heavy_check_mark:                 |
+=======
 | Property                  | Available?         |
 | ------------------------- | ------------------ |
 | Saturation pressure       | :heavy_check_mark: |
@@ -60,6 +80,7 @@ Properties available:
 | Bubble temperature        |                    |
 | Dew temperature           |                    |
 | Enthalpy of vapourisation | :heavy_check_mark: |
+>>>>>>> development
 
 - Critical properties (pure components only):
 
