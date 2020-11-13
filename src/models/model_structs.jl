@@ -26,6 +26,7 @@ end
 
 struct PCSAFT <: PCSAFTFamily
     components::Array{Set{String},1}
+    sites::Array{String,1}
     params::PCSAFTParams
 end
 
