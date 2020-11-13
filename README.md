@@ -23,11 +23,11 @@ SAFT equations of state currently available:
 
 For group contribution approaches, we provide:
 
-| EoS          | Seg./Mono.?        | Chain?             | Assoc.? | Parameters? |
-| ------------ | ------------------ | ------------------ | ------- | ----------- |
-| sPC-SAFT     |                    |                    |         |             |
-| SAFT-*ɣ* SW  |                    |                    |         |             |
-| SAFT-*ɣ* Mie | :heavy_check_mark: | :heavy_check_mark: |         |             |
+| EoS          | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
+| ------------ | ------------------ | ------------------ | ------------------ | ------------------ |
+| sPC-SAFT     |                    |                    |                    |                    |
+| SAFT-*ɣ* SW  |                    |                    |                    |                    |
+| SAFT-*ɣ* Mie | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 
 We also provide some engineering cubic equations of state for comparison:
 
@@ -37,7 +37,7 @@ We also provide some engineering cubic equations of state for comparison:
 | Redlich-Kwong          | :heavy_check_mark: | :heavy_check_mark: |
 | Soave-Redlich-Kwong    | :heavy_check_mark: | :heavy_check_mark: |
 | Peng-Robinson          | :heavy_check_mark: | :heavy_check_mark: |
-| Cubic-Plus-Association |                    |                    |
+| Cubic-Plus-Association | :heavy_check_mark: | :heavy_check_mark: |
 
 Properties available:
 

@@ -51,7 +51,7 @@ function x0_sat_pure(model::EoS)
                  log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/1e-3)]
     elseif typeof(model)<:Cubic
         x0    = [log10(model.params.b[model.components[1]]/0.9),
-                 log10(model.params.b[model.components[1]]/1e-3)]
+                 log10(model.params.b[model.components[1]]/1e-4)]
     end
     return x0
 end
@@ -85,7 +85,7 @@ function x0_crit_pure(model::EoS)
     elseif typeof(model)<:SAFT
         x0 = [1.5, log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.3)]
     elseif typeof(model)<:Cubic
-        x0 = [1, log10(model.params.b[model.components[1]]/0.3)]
+        x0 = [1., log10(model.params.b[model.components[1]]/0.3)]
     end
     return x0
 end
@@ -100,6 +100,6 @@ function T_scale(model::EoS)
     elseif typeof(model)<:SAFT
         return model.params.epsilon[model.components[1]]
     elseif typeof(model)<:Cubic
-        return model.params.a[model.components[1]]/model.params.b[model.components[1]]/8.314*8/27
+        return model.params.Tc[model.components[1]]
     end
 end

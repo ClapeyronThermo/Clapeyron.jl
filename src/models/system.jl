@@ -37,6 +37,10 @@ function system(components::Array{String,1}, method::String; kwargs...)
         raw_params = retrieveparams(components, method; kwargs...)
         params = create_PRParams(raw_params)
         model = PR(set_components, params)
+    elseif method == "CPA"
+        raw_params = retrieveparams(components, method; kwargs...)
+        params = create_CPAParams(raw_params)
+        model = CPA(set_components, params)
     else
         error("Method definition incorrect.")
     end

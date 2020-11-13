@@ -66,6 +66,7 @@ end
 struct vdWParams <: Params
     a::Dict
     b::Dict
+    Tc::Dict
 end
 
 struct RKParams <: Params
@@ -86,4 +87,14 @@ struct PRParams <: Params
     b::Dict
     Tc::Dict
     acentric_fac::Dict
+end
+
+struct CPAParams <: Params
+    a::Dict
+    b::Dict
+    c1::Dict
+    Tc::Dict
+    epsilon_assoc::Dict
+    bond_vol::Dict
+    n_sites::Dict
 end
