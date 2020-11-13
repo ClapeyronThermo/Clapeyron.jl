@@ -1,0 +1,5 @@
+OpenSAFT Database File;;;;;;;;
+SAFTVRMie Like Parameters;;;;;;;;
+species;DIPPR Number;Mw;m;sigma;epsilon;lambdaR;lambdaA;n_H;n_e;source
+helium;;4.002602;1;2.5490;10.952;13;6;0;0;
+neon;;20.1797;1;2.7760;37.716;13;6;0;0;

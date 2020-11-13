@@ -30,7 +30,7 @@ end
 
 function lb_volume(model::EoS,z; phase = "unknown")
         if typeof(model)<:SAFTgammaMie
-            x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/1)]
+            lb = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/1)]
         elseif typeof(model)<:SAFT
             lb = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/1)]
         elseif typeof(model)<:Cubic
@@ -43,6 +43,9 @@ function x0_sat_pure(model::EoS)
     if typeof(model)<:SAFTgammaMie
         x0    = [log10(π/6*N_A*sum(model.group_multiplicities[model.components[1]][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(model.components[1]))/0.45),
                  log10(π/6*N_A*sum(model.group_multiplicities[model.components[1]][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(model.components[1]))/1e-3)]
+    elseif typeof(model)<:SAFTVRQMie
+        x0    = [log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.2),
+                 log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/1e-3)]
     elseif typeof(model)<:SAFT
         x0    = [log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.45),
                  log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/1e-3)]
@@ -77,6 +80,8 @@ end
 function x0_crit_pure(model::EoS)
     if typeof(model)<:SAFTgammaMie
         x0 = [1.5, log10(π/6*N_A*sum(model.group_multiplicities[model.components[1]][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(model.components[1]))/0.3)]
+    elseif typeof(model)<:SAFTVRQMie
+        x0 = [0.5, log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.15)]
     elseif typeof(model)<:SAFT
         x0 = [1.5, log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.3)]
     elseif typeof(model)<:Cubic
@@ -85,7 +90,7 @@ function x0_crit_pure(model::EoS)
     return x0
 end
 
-function T_crit_pure(model::EoS)
+function T_scale(model::EoS)
     if typeof(model)<:SAFTgammaMie
         m̄ = sum(model.group_multiplicities[model.components[1]][k]*model.params.segment[k]*model.params.shapefactor[k] for k in @groups(model.components[1]))
         return sum(model.group_multiplicities[model.components[1]][k]*model.group_multiplicities[model.components[1]][l]*

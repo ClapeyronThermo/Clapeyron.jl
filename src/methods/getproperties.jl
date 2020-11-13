@@ -93,7 +93,7 @@ end
 ## Pure critical point solver
 function get_crit_pure(model::EoS; units = false, output=[u"K", u"Pa", u"m^3"])
     components = model.components
-    T̄  = T_crit_pure(model)
+    T̄  = T_scale(model)
     f! = (F,x) -> Obj_Crit(model, F, x[1]*T̄, 10^x[2])
     # j! = (J,x) -> Jac_Crit(J,eos,model,x[1]*model.params.epsilon[(1, 1)],10^x[2])
     x0 = x0_crit_pure(model)
