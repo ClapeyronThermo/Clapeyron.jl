@@ -21,16 +21,16 @@ end
 function findmatches(filepath::AbstractString, match_string::String, selected_col::Int64 = 1)
     # Function to search for a string in the specified column in a CSV
     # Returns an array of line numbers for where string is found
-    found_lines = Array{Int64, 1}()
+    foundlines = Array{Int64, 1}()
     open(filepath) do file
         linecount = 1
         for line in eachline(file)
             if match_string == split(line, ';'; limit = selected_col+1)[selected_col]
-                push!(found_lines, linecount)
+                push!(foundlines, linecount)
             end
             linecount += 1
         end
-        return found_lines
+        return foundlines
     end
 end
 
@@ -47,7 +47,7 @@ end
 function findmatches_pair(filepath::AbstractString, match_string1::String, match_string2::String,selected_col1::Int64 = 1, selected_col2::Int64 = 2; ordered = false)
     # Function to search for pairs of strings in two specified columns
     # Returns an array of line numbers for where string is found
-    found_lines = Array{Int64, 1}()
+    foundlines = Array{Int64, 1}()
     match_set = Set([match_string1, match_string2])
     open(filepath) do file
         linecount = 1
@@ -55,16 +55,16 @@ function findmatches_pair(filepath::AbstractString, match_string1::String, match
             row_entries = split(line, ';')
             if ordered
                 if match_string1 == row_entries[selected_col1] && match_string2 == row_entries[selected_col2]
-                    push!(found_lines, linecount)
+                    push!(foundlines, linecount)
                 end
             else
                 if match_set == Set([row_entries[selected_col1], row_entries[selected_col2]])
-                    push!(found_lines, linecount)
+                    push!(foundlines, linecount)
                 end
             end
             linecount += 1
         end
-        return found_lines
+        return foundlines
     end
 end
 
