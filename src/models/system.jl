@@ -8,6 +8,9 @@ function system(components::Array{String,1}, method::String; kwargs...)
     elseif method == "SAFTVRMie"
         raw_params = retrieveparams(components, method; kwargs...)
         model = SAFTVRMie(set_components, create_SAFTVRMieParams(raw_params))
+    elseif method == "SAFTVRQMie"
+        raw_params = retrieveparams(components, method; kwargs...)
+        model = SAFTVRQMie(set_components, create_SAFTVRQMieParams(raw_params))
     elseif method == "ogSAFT"
         raw_params = retrieveparams(components, method; kwargs...)
         model = ogSAFT(set_components, create_ogSAFTParams(raw_params))
