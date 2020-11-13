@@ -1,6 +1,6 @@
 module OpenSAFT
 
-using NLopt, NLsolve, DiffResults, ForwardDiff, LinearAlgebra
+using NLopt, NLsolve, DiffResults, ForwardDiff, LinearAlgebra, StaticArrays
 include("solvers/Solvers.jl")
 using .Solvers
 
