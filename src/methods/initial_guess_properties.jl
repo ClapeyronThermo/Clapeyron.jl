@@ -64,9 +64,9 @@ function x0_volume(model::SAFTgammaMie,z; phase = "unknown")
 end
 
 #=lb_volume=#
-lb_volume(model::SAFTgammaMie) = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/1)]
-lb_volume(model::SAFT) = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/1)]
-lb_volume(model::Cubic) = [log10(sum(z[i]*z[j]*model.params.b[union(i,j)] for i in model.components for j in model.components))]
+lb_volume(model::SAFTgammaMie,z; phase = "unknown") = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/1)]
+lb_volume(model::SAFT,z; phase = "unknown") = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/1)]
+lb_volume(model::Cubic,z; phase = "unknown") = [log10(sum(z[i]*z[j]*model.params.b[union(i,j)] for i in model.components for j in model.components))]
 
 
 
