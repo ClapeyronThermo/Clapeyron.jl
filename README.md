@@ -62,6 +62,7 @@ Properties available:
 
 - Two-phase properties:
 
+<<<<<<< HEAD
 | Property                  | Available?                         |
 | ------------------------- | ---------------------------------- |
 | Saturation pressure       | :heavy_check_mark:                 |
@@ -70,6 +71,16 @@ Properties available:
 | Bubble temperature        |                                    |
 | Dew temperature           |                                    |
 | Enthalpy of vapourisation | :heavy_check_mark:                 |
+=======
+| Property                  | Available?         |
+| ------------------------- | ------------------ |
+| Saturation pressure       | :heavy_check_mark: |
+| Bubble pressure           | :heavy_check_mark: |
+| Dew pressure              |                    |
+| Bubble temperature        |                    |
+| Dew temperature           |                    |
+| Enthalpy of vapourisation | :heavy_check_mark: |
+>>>>>>> development
 
 - Critical properties (pure components only):
 
@@ -89,8 +100,12 @@ OpenSAFT is not yet in the JuliaHub (but it will be soon!).
 
 To load OpenSAFT, launch Julia with
 
-    > julia
+```julia
+> julia
+```
 
 Hit the ```]``` key to enter Pkg mode, then type
 
-    Pkg> add git@github.com:ypaul21/OpenSAFT.jl.git
+```julia
+Pkg> add https://github.com/ypaul21/OpenSAFT.jl.git
+```
