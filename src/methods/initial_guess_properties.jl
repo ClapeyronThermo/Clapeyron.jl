@@ -52,13 +52,19 @@ function x0_volume(model::Cubic,z; phase = "unknown")
     return x0
 end
 
-function x0_volume(model::SAFTgammaMie,z; phase = "unknown")
-    if phase == "unknown" || is_liquid(phase)
-        x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/0.8)]
-    elseif is_vapour(phase)
-        x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/1e-2)]
-    elseif is_supercritical(phase)
-        x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/0.5)]
+function x0_sat_pure(model::EoS)
+    if typeof(model)<:SAFTgammaMie
+        x0    = [log10(π/6*N_A*sum(model.group_multiplicities[model.components[1]][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(model.components[1]))/0.45),
+                 log10(π/6*N_A*sum(model.group_multiplicities[model.components[1]][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(model.components[1]))/1e-3)]
+    elseif typeof(model)<:SAFTVRQMie
+        x0    = [log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.2),
+                 log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/1e-3)]
+    elseif typeof(model)<:SAFT
+        x0    = [log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.45),
+                 log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/1e-3)]
+    elseif typeof(model)<:Cubic
+        x0    = [log10(model.params.b[model.components[1]]/0.9),
+                 log10(model.params.b[model.components[1]]/1e-4)]
     end
     return x0
 end

@@ -9,8 +9,10 @@ function system(components::Array{String,1}, method::String; kwargs...)
         model = PCSAFT(set_components, sites, params)
     elseif method == "SAFTVRMie"
         raw_params = retrieveparams(components, method; kwargs...)
-        params = create_SAFTVRMieParams(raw_params)
-        model = SAFTVRMie(set_components, params)
+        model = SAFTVRMie(set_components, create_SAFTVRMieParams(raw_params))
+    elseif method == "SAFTVRQMie"
+        raw_params = retrieveparams(components, method; kwargs...)
+        model = SAFTVRQMie(set_components, create_SAFTVRQMieParams(raw_params))
     elseif method == "ogSAFT"
         raw_params = retrieveparams(components, method; kwargs...)
         params = create_ogSAFTParams(raw_params)
@@ -35,6 +37,10 @@ function system(components::Array{String,1}, method::String; kwargs...)
         raw_params = retrieveparams(components, method; kwargs...)
         params = create_PRParams(raw_params)
         model = PR(set_components, params)
+    elseif method == "CPA"
+        raw_params = retrieveparams(components, method; kwargs...)
+        params = create_CPAParams(raw_params)
+        model = CPA(set_components, params)
     else
         error("Method definition incorrect.")
     end

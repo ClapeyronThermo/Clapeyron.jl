@@ -8,26 +8,26 @@ Check out the Jupyter notebooks in the ```examples``` directory to see how to se
 
 SAFT equations of state currently available:
 
-| EoS           | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
-| ------------- | ------------------ | ------------------ | ------------------ | ------------------ |
-| SAFT          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| CK-SAFT       |                    |                    |                    |                    |
-| sSAFT         |                    |                    |                    |                    |
-| LJ-SAFT       |                    |                    |                    |                    |
-| PC-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| sPC-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| SAFT-VR SW    |                    |                    |                    |                    |
-| soft-SAFT     |                    |                    |                    |                    |
-| SAFT-VR Mie   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| SAFT-VR Morse |                    |                    |                    |                    |
+| EoS          | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
+| ------------ | ------------------ | ------------------ | ------------------ | ------------------ |
+| SAFT         | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| CK-SAFT      |                    |                    |                    |                    |
+| sSAFT        |                    |                    |                    |                    |
+| LJ-SAFT      |                    |                    |                    |                    |
+| PC-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| sPC-SAFT     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| SAFT-VR SW   |                    |                    |                    |                    |
+| soft-SAFT    |                    |                    |                    |                    |
+| SAFT-VR Mie  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| SAFT-VRQ Mie | :heavy_check_mark: | N/A                | N/A                |                    |
 
 For group contribution approaches, we provide:
 
-| EoS          | Seg./Mono.?        | Chain?             | Assoc.? | Parameters? |
-| ------------ | ------------------ | ------------------ | ------- | ----------- |
-| sPC-SAFT     |                    |                    |         |             |
-| SAFT-*ɣ* SW  |                    |                    |         |             |
-| SAFT-*ɣ* Mie | :heavy_check_mark: | :heavy_check_mark: |         |             |
+| EoS          | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
+| ------------ | ------------------ | ------------------ | ------------------ | ------------------ |
+| sPC-SAFT     |                    |                    |                    |                    |
+| SAFT-*ɣ* SW  |                    |                    |                    |                    |
+| SAFT-*ɣ* Mie | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 
 We also provide some engineering cubic equations of state for comparison:
 
@@ -37,7 +37,7 @@ We also provide some engineering cubic equations of state for comparison:
 | Redlich-Kwong          | :heavy_check_mark: | :heavy_check_mark: |
 | Soave-Redlich-Kwong    | :heavy_check_mark: | :heavy_check_mark: |
 | Peng-Robinson          | :heavy_check_mark: | :heavy_check_mark: |
-| Cubic-Plus-Association |                    |                    |
+| Cubic-Plus-Association | :heavy_check_mark: | :heavy_check_mark: |
 
 Properties available:
 
@@ -89,8 +89,12 @@ OpenSAFT is not yet in the JuliaHub (but it will be soon!).
 
 To load OpenSAFT, launch Julia with
 
-    > julia
+```julia
+> julia
+```
 
 Hit the ```]``` key to enter Pkg mode, then type
 
-    Pkg> add git@github.com:ypaul21/OpenSAFT.jl.git
+```julia
+Pkg> add https://github.com/ypaul21/OpenSAFT.jl.git
+```
