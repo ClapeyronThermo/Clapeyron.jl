@@ -321,10 +321,8 @@ end
 function get_isothermal_compressibility(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v       = get_volume(model, p, T, z; phase=phase)
-    fun(x)  = eos(model, z, x, T)
-    df(x)   = ForwardDiff.derivative(fun,x)
-    d2f(x)  = ForwardDiff.derivative(df,x)
-    return 1/v*d2f(v)^-1
+    d2f = f_hess(model,v,T,z)
+    return 1/v*d2f[1,1]^-1
 end
 
 function get_isentropic_compressibility(model::EoS, p, T, z=[1.]; phase = "unknown")
@@ -344,14 +342,14 @@ end
 
 function get_isobaric_expansivity(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    v       = get_volume(model, p, T, z; phase=phase)
+    v = get_volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return d2f[1,2]/(v*d2f[1])
 end
 
 function get_Joule_Thomson_coefficient(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    v       = get_volume(model, p, T, z; phase=phase)
+    v  = get_volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return -(d2f[1,2]-d2f[1]*((T*d2f[2,2]+v*d2f[1,2])/(T*d2f[1,2]+v*d2f[1])))^-1
 end
@@ -359,8 +357,7 @@ end
 function get_second_virial_coeff(model::EoS, T, z=[1.])
     V = 1e10
     z = create_z(model, z)
-    fun(x) = eos(model, z, x[1], T)
-    df(x)  = ForwardDiff.derivative(fun,x[1])
-    d2f(x) = ForwardDiff.derivative(df,x[1])
-    return V^2/(R̄*T)*(df(V)+V*d2f(V))
+    _∂2f = ∂2f(model,V,T,z)
+    hessf,gradf,f = _∂2f
+    return V^2/(R̄*T)*(gradf[1]+V*hessf[1])
 end
