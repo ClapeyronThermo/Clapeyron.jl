@@ -7,19 +7,19 @@ function a_mono(model::SAFTgammaMieFamily, z, V, T)
 end
 
 function a_chain(model::SAFTgammaMieFamily, z, V, T)
-    x = z/sum(z)
+    x = z/∑(z)
     v = model.group_multiplicities
     vst = model.params.segment
     S = model.params.shapefactor
-    return -sum(x[i] * (sum(v[i][k]*vst[k]*S[k] for k in @groups(i))-1) * log(@f(g_Mie,i)) for i in @comps)
+    return -∑(x[i] * (∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i))-1) * log(@f(g_Mie,i)) for i ∈ @comps)
 end
 
 function a_assoc(model::SAFTgammaMieFamily, z, V, T)
-    x = z/sum(z)
+    x = z/∑(z)
     v = model.group_multiplicities
     n = model.params.n_sites
     X_ = @f(X)
-    return sum(x[i] * sum(v[i][k] * sum(Float64[n[k][a] * (log(X_[i,k,a])+(1+X_[i,k,a])/2) for a in @sites(k)]) for k in @groups(i)) for i in @comps)
+    return ∑(x[i] * ∑(v[i][k] * ∑(n[k][a] * (log(X_[i,k,a])+(1+X_[i,k,a])/2) for a ∈ @sites(k)) for k ∈ @groups(i)) for i ∈ @comps)
 end
 
 function ÂHS(model::SAFTgammaMieFamily, z, V, T)
@@ -27,60 +27,60 @@ function ÂHS(model::SAFTgammaMieFamily, z, V, T)
     ζ_1   = @f(ζ,1)
     ζ_2   = @f(ζ,2)
     ζ_3   = @f(ζ,3)
-    ρ = sum(z)*N_A/V
+    ρ = ∑(z)*N_A/V
     return 6/π/ρ * (3ζ_1*ζ_2/(1-ζ_3) + ζ_2^3/(ζ_3*(1-ζ_3)^2) + (ζ_2^3/ζ_3^2-ζ_0)*log(1-ζ_3))
 end
 
-#= for n in 1:3 =#
+#= for n ∈ 1:3 =#
 #=     @eval   function $(Symbol(:a,Symbol(n)))(model::SAFTgammaMieFamily, z, V, T) =#
-#=                 x = z/sum(z) =#
+#=                 x = z/∑(z) =#
 #=                 v = model.group_multiplicities =#
 #=                 vst = model.params.segment =#
 #=                 S = model.params.shapefactor =#
 
-#=                 return 1/(kB*T)^n * sum(x[i] * sum(v[i][k]*vst[k]*S[k] for k in @groups(i)) for i in @comps) * @eval $(@f(Symbol(:â,Symbol(n)))) =#
+#=                 return 1/(kB*T)^n * ∑(x[i] * ∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps) * @eval $(@f(Symbol(:â,Symbol(n)))) =#
 #=             end =#
 
 #=     @eval   function $(Symbol(:â,Symbol(n)))(model::SAFTgammaMieFamily, z, V, T) =#
-#=                 return sum(@f(x_S,k)*@f(x_S,l) * @eval $(@f(Symbol(:â,Symbol(n)),k,l)) for k in @groups for l in @groups) =#
+#=                 return ∑(@f(x_S,k)*@f(x_S,l) * @eval $(@f(Symbol(:â,Symbol(n)),k,l)) for k ∈ @groups for l ∈ @groups) =#
 #=             end =#
 #= end =#
 #
 #= function â(model::SAFTgammaMieFamily, z, V, T) =#
 
 function Â_1(model::SAFTgammaMieFamily, z, V, T)
-    x = z/sum(z)
+    x = z/∑(z)
     v = model.group_multiplicities
     vst = model.params.segment
     S = model.params.shapefactor
 
-    return 1/T * sum(x[i]*sum(v[i][k]*vst[k]*S[k] for k in @groups(i)) for i in @comps) * @f(a_1)
+    return 1/T * ∑(x[i]*∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps) * @f(a_1)
 end
 function Â_2(model::SAFTgammaMieFamily, z, V, T)
-    x = z/sum(z)
+    x = z/∑(z)
     v = model.group_multiplicities
     vst = model.params.segment
     S = model.params.shapefactor
 
-    return 1/T^2 * sum(x[i]*sum(v[i][k]*vst[k]*S[k] for k in @groups(i)) for i in @comps) * @f(a_2)
+    return 1/T^2 * ∑(x[i]*∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps) * @f(a_2)
 end
 function Â_3(model::SAFTgammaMieFamily, z, V, T)
-    x = z/sum(z)
+    x = z/∑(z)
     v = model.group_multiplicities
     vst = model.params.segment
     S = model.params.shapefactor
 
-    return 1/T^3 * sum(x[i]*sum(v[i][k]*vst[k]*S[k] for k in @groups(i)) for i in @comps) * @f(a_3)
+    return 1/T^3 * ∑(x[i]*∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps) * @f(a_3)
 end
 
 function a_1(model::SAFTgammaMieFamily, z, V, T)
-    return sum(@f(x_S,k)*@f(x_S,l)*@f(a_1,k,l) for k in @groups for l in @groups)
+    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_1,k,l) for k ∈ @groups for l ∈ @groups)
 end
 function a_2(model::SAFTgammaMieFamily, z, V, T)
-    return sum(@f(x_S,k)*@f(x_S,l)*@f(a_2,k,l) for k in @groups for l in @groups)
+    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_2,k,l) for k ∈ @groups for l ∈ @groups)
 end
 function a_3(model::SAFTgammaMieFamily, z, V, T)
-    return sum(@f(x_S,k)*@f(x_S,l)*@f(a_3,k,l) for k in @groups for l in @groups)
+    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_3,k,l) for k ∈ @groups for l ∈ @groups)
 end
 
 function a_1(model::SAFTgammaMieFamily, z, V, T, k, l)
@@ -127,12 +127,12 @@ function aS_1(model::SAFTgammaMieFamily, z, V, T, k, l, λ)
 end
 
 function ζ_X(model::SAFTgammaMieFamily, z, V, T)
-    return π*@f(ρ_S)/6 * sum(@f(x_S,k)*@f(x_S,l)*@f(d,k,l)^3 for k in @groups for l in @groups)
+    return π*@f(ρ_S)/6 * ∑(@f(x_S,k)*@f(x_S,l)*@f(d,k,l)^3 for k ∈ @groups for l ∈ @groups)
 end
 
 function ζst_X(model::SAFTgammaMieFamily, z, V, T)
     σ = model.params.sigma
-    return π*@f(ρ_S)/6 * sum(@f(x_S,k)*@f(x_S,l)*σ[union(k,l)]^3 for k in @groups for l in @groups)
+    return π*@f(ρ_S)/6 * ∑(@f(x_S,k)*@f(x_S,l)*σ[union(k,l)]^3 for k ∈ @groups for l ∈ @groups)
 end
 
 function ζeff(model::SAFTgammaMieFamily, z, V, T, λ)
@@ -166,30 +166,30 @@ function f(model::SAFTgammaMieFamily, z, V, T, k, l, m)
     λr = model.params.lambda_r[union(k,l)]
 
     α = @f(C,λa,λr)*(1/(λa-3)-1/(λr-3))
-    return sum(ϕ[i+1][m]*α^i for i in 0:3)/(1+sum(ϕ[i+1][m]*α^(i-3) for i in 4:6))
+    return ∑(ϕ[i+1][m]*α^i for i ∈ 0:3)/(1+∑(ϕ[i+1][m]*α^(i-3) for i ∈ 4:6))
 end
 
 function ζ(model::SAFTgammaMieFamily, z, V, T, m)
-    return π/6*@f(ρ_S)*sum(@f(x_S,k)*@f(d,k)^m for k in @groups)
+    return π/6*@f(ρ_S)*∑(@f(x_S,k)*@f(d,k)^m for k ∈ @groups)
 end
 
 function ρ_S(model::SAFTgammaMieFamily, z, V, T)
-    x = z/sum(z)
+    x = z/∑(z)
     v = model.group_multiplicities
     vst = model.params.segment
     S = model.params.shapefactor
 
-    ρ = sum(z)*N_A/V
-    return ρ * sum(x[i] * sum(v[i][k]*vst[k]*S[k] for k in @groups(i)) for i in @comps)
+    ρ = ∑(z)*N_A/V
+    return ρ * ∑(x[i] * ∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps)
 end
 
 function x_S(model::SAFTgammaMieFamily, z, V, T, k)
-    x = z/sum(z)
+    x = z/∑(z)
     v = model.group_multiplicities
     vst = model.params.segment
     S = model.params.shapefactor
 
-    return sum(x[i]*v[i][k]*vst[k]*S[k] for i in @comps) / sum(x[i] * sum(v[i][l]*vst[l]*S[l] for l in @groups(i)) for i in @comps)
+    return ∑(x[i]*v[i][k]*vst[k]*S[k] for i ∈ @comps) / ∑(x[i] * ∑(v[i][l]*vst[l]*S[l] for l ∈ @groups(i)) for i ∈ @comps)
 end
 
 function d(model::SAFTgammaMieFamily, z, V, T, k)
@@ -200,7 +200,7 @@ function d(model::SAFTgammaMieFamily, z, V, T, k)
     u = [0.26356031971814109102031,1.41340305910651679221800,3.59642577104072208122300,7.08581000585883755692200,12.6408008442757826594300]
     w = [0.5217556105828086524759,0.3986668110831759274500,7.5942449681707595390e-2,3.6117586799220484545e-3,2.3369972385776227891e-5]
     θ = @f(C,λa,λr)*ϵ/T
-    return σ*(1-sum(w[j]*(θ./(θ+u[j]))^(1/λr)*(exp(θ*(1/(θ./(θ+u[j]))^(λa/λr)-1))/(u[j]+θ)/λr) for j in 1:5))
+    return σ*(1-∑(w[j]*(θ./(θ+u[j]))^(1/λr)*(exp(θ*(1/(θ./(θ+u[j]))^(λa/λr)-1))/(u[j]+θ)/λr) for j ∈ 1:5))
 end
 
 function d(model::SAFTgammaMieFamily, z, V, T, k, l)
@@ -220,12 +220,12 @@ function ẑ(model::SAFTgammaMieFamily, z, V, T, i, k)
     v = model.group_multiplicities
     vst = model.params.segment
     S = model.params.shapefactor
-    return v[i][k]*vst[k]*S[k] / sum(v[i][l]*vst[l]*S[l] for l in @groups(i))
+    return v[i][k]*vst[k]*S[k] / ∑(v[i][l]*vst[l]*S[l] for l ∈ @groups(i))
 end
 
 function σ̄(model::SAFTgammaMieFamily, z, V, T, i)
     σ = model.params.sigma
-    return cbrt(sum(sum(@f(ẑ,i,k)*@f(ẑ,i,l)*σ[union(k,l)]^3 for l in @groups) for k in @groups))
+    return cbrt(∑(∑(@f(ẑ,i,k)*@f(ẑ,i,l)*σ[union(k,l)]^3 for l ∈ @groups) for k ∈ @groups))
 end
 
 function σ̄(model::SAFTgammaMieFamily, z, V, T, i, j)
@@ -237,12 +237,12 @@ function σ̄(model::SAFTgammaMieFamily, z, V, T, i, j)
 end
 
 function d̄(model::SAFTgammaMieFamily, z, V, T, i)
-    return cbrt(sum(sum(@f(ẑ,i,k)*@f(ẑ,i,l)*@f(d,k,l)^3 for l in @groups) for k in @groups))
+    return cbrt(∑(∑(@f(ẑ,i,k)*@f(ẑ,i,l)*@f(d,k,l)^3 for l ∈ @groups) for k ∈ @groups))
 end
 
 function ϵ̄(model::SAFTgammaMieFamily, z, V, T, i)
     ϵ = model.params.epsilon
-    return sum(sum(@f(ẑ,i,k)*@f(ẑ,i,l)*ϵ[union(k,l)] for l in @groups) for k in @groups)
+    return ∑(∑(@f(ẑ,i,k)*@f(ẑ,i,l)*ϵ[union(k,l)] for l ∈ @groups) for k ∈ @groups)
 end
 
 function ϵ̄(model::SAFTgammaMieFamily, z, V, T, i, j)
@@ -255,12 +255,12 @@ end
 
 function λ̄a(model::SAFTgammaMieFamily, z, V, T, i)
     λa = model.params.lambda_a
-    return sum(sum(@f(ẑ,i,k)*@f(ẑ,i,l)*λa[union(k,l)] for l in @groups) for k in @groups)
+    return ∑(∑(@f(ẑ,i,k)*@f(ẑ,i,l)*λa[union(k,l)] for l ∈ @groups) for k ∈ @groups)
 end
 
 function λ̄r(model::SAFTgammaMieFamily, z, V, T, i)
     λr = model.params.lambda_r
-    return sum(sum(@f(ẑ,i,k)*@f(ẑ,i,l)*λr[union(k,l)] for l in @groups) for k in @groups)
+    return ∑(∑(@f(ẑ,i,k)*@f(ẑ,i,l)*λr[union(k,l)] for l ∈ @groups) for k ∈ @groups)
 end
 
 function g_Mie(model::SAFTgammaMieFamily, z, V, T, i)
@@ -398,8 +398,8 @@ function ∂ā_2∂ρ_S(model::SAFTgammaMieFamily, z, V, T, i)
 end
 
 function X(model::SAFTgammaMieFamily, z, V, T)
-    x = z/sum(z)
-    ρ = sum(z)*N_A/V
+    x = z/∑(z)
+    ρ = ∑(z)*N_A/V
     v = model.group_multiplicities
     n = model.params.n_sites
     tol = 1.
@@ -410,11 +410,11 @@ function X(model::SAFTgammaMieFamily, z, V, T)
     XDict = DefaultDict(1, Dict())
     XDict_old = DefaultDict(1, Dict())
     while tol > 1e-12
-        for i in @comps, k in @groups(i), a in @sites(k)
-            rhs = (1+ρ*sum(x[j] * sum(v[j][l] * sum(Float64[n[l][b] * XDict[j,l,b] * @f(Δ,i,j,k,l,a,b) for b in @sites(l)]) for l in @groups(j)) for j in @comps))^-1
+        for i ∈ @comps, k ∈ @groups(i), a ∈ @sites(k)
+            rhs = (1+ρ*∑(x[j] * ∑(v[j][l] * ∑(n[l][b] * XDict[j,l,b] * @f(Δ,i,j,k,l,a,b) for b ∈ @sites(l)) for l ∈ @groups(j)) for j ∈ @comps))^-1
             XDict[i,k,a] = (1-damping_factor)*XDict_old[i,k,a] + damping_factor*rhs
         end
-        tol = sqrt(sum(sum(sum(Float64[(XDict[i,k,a]-XDict_old[i,k,a])^2 for a in @sites(k)]) for k in @groups(i)) for i in @comps))
+        tol = sqrt(∑(∑(∑((XDict[i,k,a]-XDict_old[i,k,a])^2 for a ∈ @sites(k)) for k ∈ @groups(i)) for i ∈ @comps))
         XDict_old = deepcopy(XDict)
 
         if iter >= itermax
@@ -427,8 +427,8 @@ end
 
 function Δ(model::SAFTgammaMieFamily, z, V, T, i, j, k, l, a, b)
     σ = model.params.sigma
-    σ3_x = sum(sum(@f(x_S,k)*@f(x_S,l)*σ[union(k,l)]^3 for k in @groups) for l in @groups)
-    ρ = sum(z)*N_A/V
+    σ3_x = ∑(∑(@f(x_S,k)*@f(x_S,l)*σ[union(k,l)]^3 for k ∈ @groups) for l ∈ @groups)
+    ρ = ∑(z)*N_A/V
 
     c  = [0.0756425183020431	-0.128667137050961	 0.128350632316055	-0.0725321780970292	   0.0257782547511452  -0.00601170055221687	  0.000933363147191978  -9.55607377143667e-05  6.19576039900837e-06 -2.30466608213628e-07 3.74605718435540e-09
           0.134228218276565	    -0.182682168504886 	 0.0771662412959262	-0.000717458641164565 -0.00872427344283170	0.00297971836051287	 -0.000484863997651451	 4.35262491516424e-05 -2.07789181640066e-06	4.13749349344802e-08 0
@@ -442,7 +442,7 @@ function Δ(model::SAFTgammaMieFamily, z, V, T, i, j, k, l, a, b)
           4.65297446837297	    -0.00192518067137033 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0
          -0.867296219639940	     0	                 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0]
 
-    I = sum(sum(c[p+1,q+1]*(ρ*σ3_x)^p*(T/@f(ϵ̄,i,j))^q for q in 0:(10-p)) for p in 0:10)
+    I = ∑(∑(c[p+1,q+1]*(ρ*σ3_x)^p*(T/@f(ϵ̄,i,j))^q for q ∈ 0:(10-p)) for p ∈ 0:10)
 
     ϵHB = model.params.epsilon_assoc[Set([(k,a),(l,b)])]
     K = model.params.bond_vol[Set([(k,a),(l,b)])]
