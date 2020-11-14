@@ -6,16 +6,23 @@ abstract type PCSAFTFamily <: SAFT end
 abstract type sPCSAFTFamily <: SAFT end
 abstract type ogSAFTFamily <: SAFT end
 abstract type SAFTVRMieFamily <: SAFT end
+abstract type SAFTVRQMieFamily <: SAFT end
 abstract type SAFTgammaMieFamily <: SAFT end
 
 abstract type vdWFamily <: Cubic end
 abstract type RKFamily <: Cubic end
 abstract type SRKFamily <: Cubic end
 abstract type PRFamily <: Cubic end
+abstract type CPAFamily <: Cubic end
 
 struct SAFTVRMie <: SAFTVRMieFamily
     components::Array{Set{String},1}
     params::SAFTVRMieParams
+end
+
+struct SAFTVRQMie <: SAFTVRQMieFamily
+    components::Array{Set{String},1}
+    params::SAFTVRQMieParams
 end
 
 struct PCSAFT <: PCSAFTFamily
@@ -59,4 +66,9 @@ end
 struct PR <: PRFamily
     components::Array{Set{String},1}
     params::PRParams
+end
+
+struct CPA <: CPAFamily
+    components::Array{Set{String},1}
+    params::CPAParams
 end
