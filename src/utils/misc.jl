@@ -40,8 +40,8 @@ function extractsites(n_sites)
 end
 
 function ∑(iterator)
-    # wrapper for sum operator that returns 0. if iterator is empty
-    if typeof(iterator) <: Base.Generator{Array{Any,1}}
+    # wrapper for sum function that returns 0. if iterator is empty
+    if isempty(collect(iterator))
         return 0.
     end 
     return sum(iterator)
