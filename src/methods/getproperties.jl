@@ -1,4 +1,52 @@
+#derivative logic
+
+#ForwardDiff compiles one method per function, so separating the
+#differentiation logic from the property logic allows the differentials
+#to be compiled only once
+
+function ∂f∂t(model,v,t,z)
+    return ForwardDiff.derivative(∂t -> eos(model,z,v,∂t),t)
+end
+
+function ∂f∂v(model,v,t,z)
+    return ForwardDiff.derivative(∂v -> eos(model,z,∂v,t),v)
+end
+
+#returns a tuple of the form ([∂f∂v,∂f∂t],f),using the least amount of computation
+function ∂f(model,v,t,z)
+    f(w) = eos(model,z,first(w),last(w))
+    v,t = promote(v,t)
+    vt_vec = SVector(v,t)
+    ∂result = DiffResults.GradientResult(vt_vec)  
+    res_∂f =  ForwardDiff.gradient!(∂result, f,vt_vec)
+    _f =  DiffResults.value(res_∂f)
+    _∂f = DiffResults.gradient(res_∂f)
+    return (_∂f,_f)
+end
+
+#returns a tuple, of the form (hess_vt(f),grad_vt(f),f), it does one allocation because of a bug
+function ∂2f(model,v,t,z)
+    f(w) = eos(model,z,first(w),last(w))
+    v,t = promote(v,t)
+    vt_vec =   SVector(_v,_t)
+    ∂result = DiffResults.HessianResult(vt_vec)
+    res_∂f =  ForwardDiff.hessian!(∂result, f,vt_vec)
+    _f =  DiffResults.value(res_∂f)
+    _∂f = DiffResults.gradient(res_∂f)
+    _∂2f = DiffResults.hessian(res_∂f)
+    return (_∂2f,_∂f,_f)
+end
+
+#returns hess_vt of helmholtz energy
+function f_hess(model,v,t,z)
+    f(w) = eos(model,z,first(w),last(w))
+    v,t = promote(v,t)
+    vt_vec = SVector(v,t)
+    return ForwardDiff.hessian(a,vt_vec)
+end
+
 ## Standard pressure solver
+
 function get_volume(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     components = model.components
@@ -10,28 +58,22 @@ function get_volume(model::EoS, p, T, z=[1.]; phase = "unknown")
 
     x0 = x0_volume(model,z; phase = phase)
 
-    Vol = []
     if phase == "unknown"
-        for i in 1:N
-            f(v) = eos(model, z, 10^v[1], T[i]) + 10^v[1]*p[i]
+            f(v) = eos(model, z, exp10(v), T) + exp10(v)*p
             (f_best,v_best) = Solvers.tunneling(f,lb,ub,x0)
-            append!(Vol,10^v_best[1])
-        end
+            return exp10(v)_best[1]
     else
         opt_min = NLopt.Opt(:LD_MMA, length(ub))
         opt_min.lower_bounds = lb
         opt_min.upper_bounds = ub
         opt_min.xtol_rel     = 1e-8
-        for i in 1:N
-            f(v)   = eos(model, z, 10^v[1], T[i]) + 10^v[1]*p[i]
+            f(v)   = eos(model, z, exp10(v), T) + exp10(v)*p
             obj_f0 = x -> f(x)
             obj_f  = (x,g) -> Solvers.NLopt_obj(obj_f0,x,g)
             opt_min.min_objective =  obj_f
             (f_min,v_min) = NLopt.optimize(opt_min, x0)
-            append!(Vol, 10^v_min[1])
-        end
+            return exp10(v)_min
     end
-    return Vol
 end
 
 
@@ -39,18 +81,13 @@ end
 function get_sat_pure(model::EoS, T)
     components = model.components
     v0    = x0_sat_pure(model)
-    v_l   = []
-    v_v   = []
-    P_sat = []
-    for i in 1:length(T)
-        f! = (F,x) -> Obj_Sat(model, F, T[i], 10^x[1], 10^x[2])
-        j! = (J,x) -> Jac_Sat(model, J, T[i], 10^x[1], 10^x[2])
+        f! = (F,x) -> Obj_Sat(model, F, T[i], exp10(x[1]), exp10(x[2]))
+        j! = (J,x) -> Jac_Sat(model, J, T[i], exp10(x[1]), exp10(x[2]))
         r  =nlsolve(f!,j!,v0)
-        append!(v_l,10^r.zero[1])
-        append!(v_v,10^r.zero[2])
-        append!(P_sat,get_pressure(model,v_v[i],T[i]))
+        v_l = exp10(r.zero[1])
+        v_v = exp10(r.zero[2])
+        P_sat = get_pressure(model,v_v,T)
         v0 = r.zero
-    end
     return (P_sat, v_l, v_v)
 end
 
@@ -94,12 +131,12 @@ end
 function get_crit_pure(model::EoS; units = false, output=[u"K", u"Pa", u"m^3"])
     components = model.components
     T̄  = T_scale(model)
-    f! = (F,x) -> Obj_Crit(model, F, x[1]*T̄, 10^x[2])
-    # j! = (J,x) -> Jac_Crit(J,eos,model,x[1]*model.params.epsilon[(1, 1)],10^x[2])
+    f! = (F,x) -> Obj_Crit(model, F, x[1]*T̄, exp10(x[2]))
+    # j! = (J,x) -> Jac_Crit(J,eos,model,x[1]*model.params.epsilon[(1, 1)],exp10(x[2]))
     x0 = x0_crit_pure(model)
     r  = nlsolve(f!,x0)
     T_c = r.zero[1]*T̄
-    v_c = 10^r.zero[2]
+    v_c = exp10(r.zero[2])
     p_c = get_pressure(model, v_c, T_c)
     if units
         return (uconvert(output[1], T_c*u"K"), uconvert(output[2], p_c*u"Pa"), uconvert(output[2], v_c*u"m^3"))
@@ -132,11 +169,11 @@ function get_bubble_pressure(model, T, x)
     y     = deepcopy(x)
     P_sat = []
     for i in 1:size(x)[1]
-        f! = (F,z) -> Obj_bubble_pressure(model, F, T, 10^z[1], 10^z[2], x[i,:], z[3:end])
-        j! = (J,z) -> Jac_bubble_pressure(model, J, T, 10^z[1], 10^z[2], x[i,:], z[3:end])
+        f! = (F,z) -> Obj_bubble_pressure(model, F, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
+        j! = (J,z) -> Jac_bubble_pressure(model, J, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
         r  =nlsolve(f!,j!,v0)
-        append!(v_l,10^r.zero[1])
-        append!(v_v,10^r.zero[2])
+        append!(v_l,exp10(r.zero[1]))
+        append!(v_v,exp10(r.zero[2]))
         append!(P_sat,get_pressure(model,v_l[i],T,x[i,:]))
         y[i,1:end-1] = r.zero[3:end]
         y[i,end] = 1-sum(r.zero[3:end])
@@ -195,11 +232,11 @@ end
 # function get_crit_mix(model::SAFT,x_c)
 #     components = model.components
 #     z  = create_z(model,x_c)
-#     f! = (F,x) -> Obj_Crit_mix(model, F, 10^x[2], x[1]*prod(model.params.epsilon[i]^z[i] for i in components), x_c)
+#     f! = (F,x) -> Obj_Crit_mix(model, F, exp10(x[2]), x[1]*prod(model.params.epsilon[i]^z[i] for i in components), x_c)
 #     x0 = [1.5,log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/0.15)]
 #     r  = nlsolve(f!,x0)
 #     T_c = r.zero[1]*prod(model.params.epsilon[i]^z[i] for i in components)
-#     v_c = 10^r.zero[2]
+#     v_c = exp10(r.zero[2])
 #     p_c = get_pressure(model, v_c, T_c, x_c)
 #     return (T_c, p_c, v_c)
 # end
@@ -218,62 +255,56 @@ end
 ## Derivative properties
 function get_pressure(model::EoS, v, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    fun(x) = eos(model, z, x[1], T)
-    df(x)  = ForwardDiff.derivative(fun,x[1])
-    return -df(v)
+    return -∂f∂v(model,v,T,z)
 end
 
 function get_entropy(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v      = get_volume(model, p, T, z; phase=phase)[1]
-    fun(x) = eos(model, z, v, x[1])
-    df(x)  = ForwardDiff.derivative(fun,x[1])
-    return -df(T)
+    return -∂f∂t(model,v,T,z)
 end
 
 function get_chemical_potential(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    v      = get_volume(model, p, T, z; phase=phase)[1]
+    v      = get_volume(model, p, T, z; phase=phase)
     fun(x) = eos(model, x, v, T)
-    df(x)  = ForwardDiff.gradient(fun,x)
-    return df(z)
+    return ForwardDiff.gradient(fun,z)
 end
 
 function get_internal_energy(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     v      = get_volume(model, p, T, z; phase=phase)[1]
-    fun(x) = eos(model, z, v, x)
-    df(x)  = ForwardDiff.derivative(fun,x)
-    return fun(T)-df(T)*T
+    _df,f =  ∂f(model,v,T,z)
+    dv,dt = _df
+    return f  - dt*T
 end
 
 function get_enthalpy(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    v      = get_volume(model, p, T, z; phase=phase)[1]
-    fun(x) = eos(model, z, x[1], x[2])
-    df(x)  = ForwardDiff.gradient(fun,x)
-    return fun([v,T])-df([v,T])[2]*T-df([v,T])[1]*v
+    v      = get_volume(model, p, T, z; phase=phase)
+    _df,f =  ∂f(model,v,T,z)
+    dv,dt = _df
+    return f  - dv*v - dt*T
 end
 
 function get_Gibbs_free_energy(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    v      = get_volume(model, p, T, z; phase=phase)[1]
-    fun(x) = eos(model, z, x[1], T)
-    df(x)  = ForwardDiff.derivative(fun,x)
-    return fun(v)-df(v)[1]*v
+    v      = get_volume(model, p, T, z; phase=phase)
+    _df,f =  ∂f(model,v,T,z)
+    dv,dt = _df
+    return f  - dv*v
 end
 
 function get_Helmholtz_free_energy(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    v      = get_volume(model, p, T, z; phase=phase)[1]
-    fun(x) = eos(model, z, x[1], T)
-    df(x)  = ForwardDiff.derivative(fun,x)
-    return fun(T)
+    v      = get_volume(model, p, T, z; phase=phase)
+    return eos(model, z, v, T)
+
 end
 
 function get_isochoric_heat_capacity(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    v       = get_volume(model, p, T, z; phase=phase)[1]
+    v       = get_volume(model, p, T, z; phase=phase)
     fun(x)  = eos(model, z, v, x)
     df(x)   = ForwardDiff.derivative(fun,x)
     d2f(x)  = ForwardDiff.derivative(df,x)
@@ -282,15 +313,14 @@ end
 
 function get_isobaric_heat_capacity(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    v       = get_volume(model, p, T, z; phase=phase)[1]
-    fun(x)  = eos(model, z, x[1], x[2])
-    d2f(x)  = ForwardDiff.hessian(fun,x)
-    return T*(d2f([v,T])[1,2]^2/d2f([v,T])[1]-d2f([v,T])[2,2])
+    v       = get_volume(model, p, T, z; phase=phase)
+    d2f = f_hess(model,v,T,z)
+    return T*(d2f[1,2]^2/d2f[1]-d2f[2,2])
 end
 
 function get_isothermal_compressibility(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    v       = get_volume(model, p, T, z; phase=phase)[1]
+    v       = get_volume(model, p, T, z; phase=phase)
     fun(x)  = eos(model, z, x, T)
     df(x)   = ForwardDiff.derivative(fun,x)
     d2f(x)  = ForwardDiff.derivative(df,x)
@@ -299,42 +329,38 @@ end
 
 function get_isentropic_compressibility(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    v       = get_volume(model, p, T, z; phase=phase)[1]
-    fun(x)  = eos(model, z, x[1], x[2])
-    d2f(x)  = ForwardDiff.hessian(fun,x)
-    return 1/v*(d2f([v,T])[1]-d2f([v,T])[1,2]^2/d2f([v,T])[2,2])^-1
+    v       = get_volume(model, p, T, z; phase=phase)
+    d2f = f_hess(model,v,T,z)
+    return 1/v*(d2f[1]-d2f[1,2]^2/d2f[2,2])^-1
 end
 
 function get_speed_of_sound(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
     Mr      = sum(z[i]*model.params.Mr[i] for i in model.components)
     v       = get_volume(model, p, T, z; phase=phase)[1]
-    fun(x)  = eos(model, z, x[1], x[2])
-    d2f(x)  = ForwardDiff.hessian(fun,x)
-    return v*sqrt((d2f([v,T])[1]-d2f([v,T])[1,2]^2/d2f([v,T])[2,2])/Mr)
+    d2f = f_hess(model,v,T,z)
+    return v*sqrt((d2f[1]-d2f[1,2]^2/d2f[2,2])/Mr)
 end
 
 function get_isobaric_expansivity(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    v       = get_volume(model, p, T, z; phase=phase)[1]
-    fun(x)  = eos(model, z, x[1], x[2])
-    d2f(x)   = ForwardDiff.hessian(fun,x)
-    return d2f([v,T])[1,2]/(v*d2f([v,T])[1])
+    v       = get_volume(model, p, T, z; phase=phase)
+    d2f = f_hess(model,v,T,z)
+    return d2f[1,2]/(v*d2f[1])
 end
 
 function get_Joule_Thomson_coefficient(model::EoS, p, T, z=[1.]; phase = "unknown")
     z = create_z(model, z)
-    v       = get_volume(model, p, T, z; phase=phase)[1]
-    fun(x)  = eos(model, z, x[1], x[2])
-    d2f(x)  = ForwardDiff.hessian(fun,x)
-    return -(d2f([v,T])[1,2]-d2f([v,T])[1]*((T*d2f([v,T])[2,2]+v*d2f([v,T])[1,2])/(T*d2f([v,T])[1,2]+v*d2f([v,T])[1])))^-1
+    v       = get_volume(model, p, T, z; phase=phase)
+    d2f = f_hess(model,v,T,z)
+    return -(d2f[1,2]-d2f[1]*((T*d2f[2,2]+v*d2f[1,2])/(T*d2f[1,2]+v*d2f[1])))^-1
 end
 
 function get_second_virial_coeff(model::EoS, T, z=[1.])
-    V = [1e10]
+    V = 1e10
     z = create_z(model, z)
     fun(x) = eos(model, z, x[1], T)
     df(x)  = ForwardDiff.derivative(fun,x[1])
     d2f(x) = ForwardDiff.derivative(df,x[1])
-    return V[1]^2/(R̄*T)*(df(V)+V[1]*d2f(V))
+    return V^2/(R̄*T)*(df(V)+V*d2f(V))
 end
