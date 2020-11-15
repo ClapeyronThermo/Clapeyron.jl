@@ -149,7 +149,7 @@ function KHS(model::SAFTgammaMieFamily, z, V, T)
     return (1-ζ_X_)^4/(1+4ζ_X_+4ζ_X_^2-4ζ_X_^3+ζ_X_^4)
 end
 
-function χ(model::SAFTgammaMieFamily, z, V, T, k, L)
+function χ(model::SAFTgammaMieFamily, z, V, T, k, l)
     ζst_X_ = @f(ζst_X)
     return @f(f,k,l,1)*ζst_X_ + @f(f,k,l,2)*ζst_X_^5 + @f(f,k,l,3)*ζst_X_^8
 end
@@ -407,8 +407,8 @@ function X(model::SAFTgammaMieFamily, z, V, T)
     damping_factor = 0.7
     itermax = 100
 
-    XDict = DefaultDict(1, Dict())
-    XDict_old = DefaultDict(1, Dict())
+    XDict = DefaultDict(1., Dict())
+    XDict_old = DefaultDict(1., Dict())
     while tol > 1e-12
         if iter > itermax
             error("X has failed to converge after $itermax iterations")
@@ -429,6 +429,7 @@ function Δ(model::SAFTgammaMieFamily, z, V, T, i, j, k, l, a, b)
     σ = model.params.sigma
     σ3_x = ∑(∑(@f(x_S,k)*@f(x_S,l)*σ[union(k,l)]^3 for k ∈ @groups) for l ∈ @groups)
     ρ = ∑(z)*N_A/V
+    ϵ̄_ = @f(ϵ̄,i,j)
 
     c  = [ 0.0756425183020431 -0.128667137050961   0.128350632316055  -0.0725321780970292    0.0257782547511452  -0.00601170055221687   0.000933363147191978 -9.55607377143667e-0   6.19576039900837e-06 -2.30466608213628e-07 3.74605718435540e-09
            0.134228218276565  -0.182682168504886   0.0771662412959262 -0.000717458641164565 -0.00872427344283170  0.00297971836051287  -0.000484863997651451  4.35262491516424e-05 -2.07789181640066e-06  4.13749349344802e-08 0
@@ -440,9 +441,9 @@ function Δ(model::SAFTgammaMieFamily, z, V, T, i, j, k, l, a, b)
           11.6083532818029     0.742215544511197  -0.0823976531246117  0.00186167650098254   0                    0                     0                     0                     0                     0                    0
          -10.2632535542427    -0.125035689035085   0.0114299144831867  0                     0                    0                     0                     0                     0                     0                    0
            4.65297446837297   -0.00192518067137033 0                   0                     0                    0                     0                     0                     0                     0                    0
-          -0.867296219639940   0                   0                   0                     0                    0                     0                     0                     0                     0                    0]
+           -0.867296219639940   0                   0                   0                     0                    0                     0                     0                     0                     0                    0]
 
-    I = ∑(∑(c[p+1,q+1]*(ρ*σ3_x)^p*(T/@f(ϵ̄,i,j))^q for q ∈ 0:(10-p)) for p ∈ 0:10)
+    I = ∑(∑(c[p+1,q+1]*(ρ*σ3_x)^p*(T/ϵ̄_)^q for q ∈ 0:(10-p)) for p ∈ 0:10)
 
     ϵHB = model.params.epsilon_assoc[Set([(k,a),(l,b)])]
     K = model.params.bond_vol[Set([(k,a),(l,b)])]
