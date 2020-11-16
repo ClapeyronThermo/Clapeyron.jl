@@ -15,6 +15,10 @@ abstract type SRKFamily <: Cubic end
 abstract type PRFamily <: Cubic end
 abstract type CPAFamily <: Cubic end
 
+#to allow broadcasting without problems
+Base.broadcastable(model::EoS) = Ref(model)
+
+
 struct SAFTVRMie <: SAFTVRMieFamily
     components::Array{Set{String},1}
     params::SAFTVRMieParams

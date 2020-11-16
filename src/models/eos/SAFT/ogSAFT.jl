@@ -6,7 +6,6 @@ function a_seg(model::ogSAFTFamily,z,v,T)
     m = model.params.segment
     x = z/sum(z[i] for i in model.components)
     m̄ = sum(x[i]*m[i] for i in model.components)
-
     return m̄*(a_hs(model,z,v,T)+a_disp(model,z,v,T))
 end
 
@@ -75,8 +74,8 @@ function a_disp(model::ogSAFTFamily,z,v,T)
     ηx = η(model,z,v,T)
     ρR = (6/sqrt(2)/π)*ηx
     TR = T/ϵx
-    a_seg1 = ρR*(-8.5959-4.5424ρR-2.1268ρR^2+10.285ρR^3)
-    a_seg2 = ρR*(-1.9075+9.9724ρR-22.216ρR^2+15.904ρR^3)
+    a_seg1 = ρR*evalpoly(ρR,(-8.5959,-4.5424,-2.1268,10.285))
+    a_seg2 = ρR*evalpoly(ρR,(-1.9075,9.9724,-22.216,+15.904))
     return 1/TR*(a_seg1+a_seg2/TR)
 end
 
