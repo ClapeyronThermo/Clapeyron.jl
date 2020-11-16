@@ -57,10 +57,10 @@ function get_volume(model::EoS, p, T, z=[1.]; phase = "unknown")
     lb = lb_volume(model,z; phase = phase)
 
     x0 = x0_volume(model,z; phase = phase)
-    f = v-> eos(model, z, exp10(v), T) + exp10(v)*p
+    f = v -> eos(model, z, exp10(v), T) + exp10(v)*p
     if phase == "unknown"
         (f_best,v_best) = Solvers.tunneling(f,lb,ub,x0)
-        return exp10(v)_best[1]
+        return exp10(v_best[1])
     else
         opt_min = NLopt.Opt(:LD_MMA, length(ub))
         opt_min.lower_bounds = lb
