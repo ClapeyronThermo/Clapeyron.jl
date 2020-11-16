@@ -1,5 +1,5 @@
 [![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
-
+[![Build Status](https://github.com/ypaul21/OpenSAFT.jl/workflows/CI/badge.svg)](https://github.com/ypaul21/OpenSAFT.jl/actions)
 ![OpenSAFT_logo](docs/OpenSAFT_logo.svg)
 
 Welcome to OpenSAFT! This module intends to provide the variants of the Statistical Associating Fluid Theory (SAFT) thermodynamic equation of state, along with the relevant parameters and solvers required to use these equations.
