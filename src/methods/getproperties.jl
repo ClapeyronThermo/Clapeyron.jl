@@ -70,7 +70,7 @@ function get_volume(model::EoS, p, T, z=[1.]; phase = "unknown")
         obj_f  = (x,g) -> Solvers.NLopt_obj(obj_f0,x,g)
         opt_min.min_objective =  obj_f
         (f_min,v_min) = NLopt.optimize(opt_min, x0)
-        return exp10(v)_min
+        return exp10(v_min[1])
     end
 end
 

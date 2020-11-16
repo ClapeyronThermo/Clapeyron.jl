@@ -443,7 +443,6 @@ function X(model::SAFTgammaMieFamily, z, V, T)
         end
         tol = sqrt(∑(∑(∑((XDict[i,k,a]-XDict_old[i,k,a])^2 for a ∈ @sites(k)) for k ∈ @groups(i)) for i ∈ @comps))
         XDict_old = deepcopy(XDict)
-
         iter += 1
     end
     return XDict
