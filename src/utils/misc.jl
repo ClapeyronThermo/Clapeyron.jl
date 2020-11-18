@@ -61,5 +61,5 @@ end
 
 returns the name of the equation of state.
 """
-eos_name(eos::EoS)::String = string(typeof(eos))
+eos_name(eos::EoS)::String = string(nameof(typeof(eos)))
 
