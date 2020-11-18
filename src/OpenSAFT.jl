@@ -34,8 +34,9 @@ include("models/eos/Cubic/CPA.jl")
 include("models/eos/eos.jl")
 
 include("models/system.jl")
+include("models/system2.jl")
 
-export system
+export system,System
 export eos,ideal
 
 using Unitful

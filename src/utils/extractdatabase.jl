@@ -15,7 +15,11 @@ function models_return(selected_model::String = "None")
 end
 
 function createfilepath(selected_model, database_type; variant="None")
-    return joinpath(dirname(pathof(OpenSAFT)), "../database", selected_model, variant=="None" ? "data_$(selected_model)_$(database_type).csv" : "$variant/data_$(selected_model)_$(variant)_$(database_type).csv")
+    p1 = splitpath(pathof(OpenSAFT))
+    p2 = joinpath(p1[1:end-2]...,"database")
+    res =  joinpath(p2, selected_model, variant=="None" ? "data_$(selected_model)_$(database_type).csv" : "$variant/data_$(selected_model)_$(variant)_$(database_type).csv")
+    #println(res)
+    return res
 end
 
 function customdatabase_check(selected_model, database_type, customdatabase; variant="None")

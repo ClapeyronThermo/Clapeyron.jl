@@ -56,3 +56,10 @@ function ∑(iterator)
     return sum(iterator)
 end
 
+"""
+    eos_name(eos::EoS)::String
+
+returns the name of the equation of state.
+"""
+eos_name(eos::EoS)::String = string(nameof(typeof(eos)))
+
