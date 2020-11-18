@@ -118,7 +118,7 @@ function CreateModel(method::Type{CPA},components;kwargs...)
 end
 
 #here, instead of a collection of strings, a key=> value collection is passed (Dict,NamedTuple).
-function CreateModel(method::Type{SAFTgammaMie},components;kwargs...)
+function CreateModel(method::Type{SAFTgammaMie},group_multiplicities;kwargs...)
     # possible kwargs... are filepaths for
     # customdatabase_like, customdatabase_unlike, customdatabase_assoc
     components = collect(keys(group_multiplicities))
