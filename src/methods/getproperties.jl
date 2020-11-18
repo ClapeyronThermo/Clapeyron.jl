@@ -28,7 +28,7 @@ end
 function ∂2f(model,v,t,z)
     f(w) = eos(model,z,first(w),last(w))
     v,t = promote(v,t)
-    vt_vec =   SVector(_v,_t)
+    vt_vec =   SVector(v,t)
     ∂result = DiffResults.HessianResult(vt_vec)
     res_∂f =  ForwardDiff.hessian!(∂result, f,vt_vec)
     _f =  DiffResults.value(res_∂f)
@@ -42,7 +42,7 @@ function f_hess(model,v,t,z)
     f(w) = eos(model,z,first(w),last(w))
     v,t = promote(v,t)
     vt_vec = SVector(v,t)
-    return ForwardDiff.hessian(a,vt_vec)
+    return ForwardDiff.hessian(f,vt_vec)
 end
 
 ## Standard pressure solver
@@ -79,8 +79,8 @@ end
 function get_sat_pure(model::EoS, T)
     components = model.components
     v0    = x0_sat_pure(model)
-        f! = (F,x) -> Obj_Sat(model, F, T[i], exp10(x[1]), exp10(x[2]))
-        j! = (J,x) -> Jac_Sat(model, J, T[i], exp10(x[1]), exp10(x[2]))
+        f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
+        j! = (J,x) -> Jac_Sat(model, J, T, exp10(x[1]), exp10(x[2]))
         r  =nlsolve(f!,j!,v0)
         v_l = exp10(r.zero[1])
         v_v = exp10(r.zero[2])
