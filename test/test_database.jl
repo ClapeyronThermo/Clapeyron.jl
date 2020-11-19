@@ -41,8 +41,8 @@ end
         @testset "createfilepath" begin
             filepath = OpenSAFT.createfilepath("PCSAFT", "like") # use a variant when supported
             p1 = splitpath(pathof(OpenSAFT))
-            p2 = joinpath(p1[1:end-2]...,"database")
-            @test filepath == p2 * "\\PCSAFT\\data_PCSAFT_like.csv"
+            p2 = joinpath(p1[1:end-2]...,"database","PCSAFT","data_PCSAFT_like.csv")
+            @test filepath == p2
         end
         @testset "customdatabase_check" begin
             @test_throws ErrorException OpenSAFT.customdatabase_check("None", "like", filepath_like)
