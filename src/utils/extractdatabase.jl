@@ -17,7 +17,13 @@ end
 function createfilepath(selected_model, database_type; variant="None")
     p1 = splitpath(pathof(OpenSAFT))
     p2 = joinpath(p1[1:end-2]...,"database")
-    res =  joinpath(p2, selected_model, variant=="None" ? "data_$(selected_model)_$(database_type).csv" : "$variant/data_$(selected_model)_$(variant)_$(database_type).csv")
+
+    if variant=="None"
+        p3 = ("data_$(selected_model)_$(database_type).csv",)
+    else
+        p3 = (variant,"data_$(selected_model)_$(variant)_$(database_type).csv")
+    end
+        res =  joinpath(p2, selected_model,p3...)
     #println(res)
     return res
 end
