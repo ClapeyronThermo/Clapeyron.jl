@@ -22,7 +22,6 @@ function create_PCSAFTParams(raw_params; combiningrule_ϵ = "Berth")
         n_sites[i]["e"] = like_params_dict["n_e"][i]
         n_sites[i]["H"] = like_params_dict["n_H"][i]
     end
-
     return PCSAFTParams(segment, sigma, epsilon, epsilon_assoc, bond_vol, n_sites)
 end
 

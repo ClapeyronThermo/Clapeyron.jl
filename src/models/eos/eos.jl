@@ -1,5 +1,5 @@
 function eos(model::SAFT, z, v, T)
-    return N_A*k_B*sum(z) * T*(a_ideal(model,z,v,T)+a_res(model,z,v,T))
+    return N_A*k_B*sum(z) * T*(a_ideal(model.ideal,z,v,T)+a_res(model,z,v,T))
 end
 
 function eos(model::Cubic, z, v, T)
@@ -22,7 +22,7 @@ Then create some get_properties functions for other equations.
     quadratic_mixing_rule(op, x)
 
 returns a quadratic mixing rule, given a function `op(i,j)` and a vector of molar fractions `x`, it does a simplification of:
-    
+
     ∑(op(i,j)*x[i]*x[j]) ,i = 1:N, j = 1:N
 
 considering `op(i,j) == op(j,i)` this can be simplified to:
@@ -44,4 +44,3 @@ function quadratic_mixing_rule(op, x)
     end
     return res1
 end
-
