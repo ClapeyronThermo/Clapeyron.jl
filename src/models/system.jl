@@ -1,26 +1,31 @@
-function system(components::Array{String,1}, method::String; kwargs...)
+function system(components::Array{String,1}, method::String, ideal="Monomer"; kwargs...)
     # possible kwargs... are filepaths for
     # customdatabase_like, customdatabase_unlike, customdatabase_assoc
     set_components = [Set([i]) for i in components]
     if method == "PCSAFT"
-        raw_params = retrieveparams(components, method; kwargs...)
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
         params = create_PCSAFTParams(raw_params)
         sites = extractsites(params.n_sites)
-        model = PCSAFT(set_components, sites, params)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
+        model = PCSAFT(set_components, sites, params, ideal_model)
     elseif method == "SAFTVRMie"
-        raw_params = retrieveparams(components, method; kwargs...)
-        model = SAFTVRMie(set_components, create_SAFTVRMieParams(raw_params))
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
+        model = SAFTVRMie(set_components, create_SAFTVRMieParams(raw_params),ideal_model)
     elseif method == "SAFTVRQMie"
-        raw_params = retrieveparams(components, method; kwargs...)
-        model = SAFTVRQMie(set_components, create_SAFTVRQMieParams(raw_params))
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
+        model = SAFTVRQMie(set_components, create_SAFTVRQMieParams(raw_params),ideal_model)
     elseif method == "ogSAFT"
-        raw_params = retrieveparams(components, method; kwargs...)
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
         params = create_ogSAFTParams(raw_params)
-        model = ogSAFT(set_components, params)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
+        model = ogSAFT(set_components, params,ideal_model)
     elseif method == "sPCSAFT"
-        raw_params = retrieveparams(components, method; kwargs...)
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
         params = create_sPCSAFTParams(raw_params)
-        model = sPCSAFT(set_components, params)
+        model = sPCSAFT(set_components, params,ideal_model)
     elseif method == "vdW"
         raw_params = retrieveparams(components, method; kwargs...)
         params = create_vdWParams(raw_params)
@@ -47,7 +52,7 @@ function system(components::Array{String,1}, method::String; kwargs...)
     return model
 end
 
-function system(component::String, method::String; kwargs...)
+function system(component::String, method::String,ideal="Monomer"; kwargs...)
     return system([component], method; kwargs...)
 end
 

@@ -136,6 +136,36 @@ function searchdatabase_assoc(components::Array, selected_model="None"; customda
     return found_models
 end
 
+function searchdatabase_ideal(components::Array, selected_ideal_model="None"; customdatabase="None", variant="None")
+    # Returns a dictionary of components containing another dictionary
+    # where the key is a model in which its database contains that parameter,
+    # with the found line number as value
+    if customdatabase != "None"
+        customdatabase_check(selected_ideal_model, customdatabase, variant=variant)
+    end
+    models = models_return(selected_ideal_model)
+    found_models = Dict(Set([component]) => Dict{String, Int64}() for component in components)
+    for component in components
+        for model in models
+            filepath = customdatabase == "None" ? createfilepath(model, "ideal"; variant=variant) : customdatabase
+            if isfile(filepath)
+                found_lines = findmatches(filepath, component, "species"; header_row=3)
+                if length(found_lines) > 1
+                    # OpenSAFT takes entry with the highest line number if there are duplicates.
+                    #= println("The species $component is not unique in database for model $model. Selecting most recent entry.") =#
+                elseif isempty(found_lines)
+                    if selected_ideal_model != "None"
+                        error("The species $component cannot be found in database for model $model.")
+                    end
+                    continue
+                end
+                found_models[Set([component])][model] = found_lines[end]
+            end
+        end
+    end
+    return found_models
+end
+
 function retrieveparams_like(components::Array, selected_model; customdatabase="None", variant="None", redirect="None")
     # Returns a dictionary of all columns in the like database for a selected model
     # for each component
@@ -202,14 +232,32 @@ function retrieveparams_assoc(components::Array, selected_model; customdatabase=
     return found_params
 end
 
-function retrieveparams(components::Array, selected_model;
+function retrieveparams_ideal(components::Array, selected_ideal_model; customdatabase="None", variant="None", redirect="None")
+    # Returns a dictionary of all columns in the like database for a selected model
+    # for each component
+    filepath = customdatabase == "None" ? createfilepath(selected_ideal_model, "ideal"; variant=variant) : customdatabase
+    if redirect != "None"
+        selected_ideal_model = redirect
+    end
+    header = parseline(filepath, 3)
+    found_model = searchdatabase_ideal(components, selected_ideal_model; customdatabase=customdatabase, variant=variant)
+    found_params = Dict{Set{String}, Dict{String, Any}}()
+    for component in keys(found_model)
+        found_params[component] = Dict(zip(header, parseline(filepath, found_model[component][selected_ideal_model])))
+    end
+    return found_params
+end
+
+function retrieveparams(components::Array, selected_model, selected_ideal_model;
         customdatabase_like = "None", variant_like = "None", redirect_like = "None",
         customdatabase_unlike = "None", variant_unlike = "None", redirect_unlike = "None",
-        customdatabase_assoc = "None", variant_assoc = "None", redirect_assoc = "None")
+        customdatabase_assoc = "None", variant_assoc = "None", redirect_assoc = "None",
+        customdatabase_ideal = "None", variant_ideal = "None", redirect_ideal = "None")
     params_like = retrieveparams_like(components, selected_model; customdatabase = customdatabase_like, variant = variant_like, redirect = redirect_like)
     params_unlike = retrieveparams_unlike(components, selected_model; customdatabase = customdatabase_unlike, variant = variant_unlike, redirect = redirect_unlike)
     params_assoc = retrieveparams_assoc(components, selected_model; customdatabase = customdatabase_assoc, variant = variant_assoc, redirect = redirect_assoc)
-    return [params_like, params_unlike, params_assoc]
+    params_ideal = retrieveparams_ideal(components, selected_ideal_model; customdatabase = customdatabase_ideal, variant = variant_ideal, redirect = redirect_ideal)
+    return [params_like, params_unlike, params_assoc, params_ideal]
 end
 
 function filterparams(raw_params, like_params::T; unlike_params::T=Array{String,1}([]), assoc_params::T=Array{String,1}([])) where T<:Array{String,1}
@@ -255,4 +303,24 @@ function filterparams(raw_params, like_params::T; unlike_params::T=Array{String,
         end
     end
     return like_params_dict, unlike_params_dict, assoc_params_dict
+end
+
+function filterparams_ideal(raw_params, ideal_params::T) where T<:Array{String,1}
+    # Filters the raw parametrs from retrieveparameters into selected headers
+    # Returns dictionaries where the keys are the header of the selected columns
+    # One dictionary for each like, unlike, and assoc
+    raw_params_ideal = raw_params[4]
+    components = keys(raw_params_ideal)
+
+    ideal_params_dict = Dict{String, Dict{Set{String}, Float64}}()
+    for ideal_param in ideal_params
+        ideal_params_dict[ideal_param] = Dict()
+        for component in components
+            param_value = raw_params_ideal[component][ideal_param]
+            if !ismissing(param_value)
+                push!(ideal_params_dict[ideal_param], component => param_value)
+            end
+        end
+    end
+    return ideal_params_dict
 end

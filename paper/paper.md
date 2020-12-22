@@ -9,6 +9,8 @@ tags:
 authors:
   - name: Hon-Wa Yew^[Corresponding author]
     affiliation: 1
+  - name: Andrés Riedemann
+	affiliation: 3
   - name: Pierre J. Walker
     affiliation: 2
 affiliations:
@@ -16,6 +18,8 @@ affiliations:
    index: 1
  - name: Imperial College London, Department of Chemical Engineering, South Kensington Campus, SW7 2AZ, London, U.K.
    index: 2
+ - name: University of Concepción, Department of Chemical Engineering, Concepción, Región del Bio Bio, Chile
+   index: 3
 date: 01 October 2020
 ---
 
@@ -33,4 +37,4 @@ probably make a nice VLE figure comparing all of the available EoS.
 
 # Acknowledgements
 
-The authors thank doctors Andrew J. Haslam, Spiros Kornopoulos, Felipe A. Hurtado, Sara Febra and professors Amparo Galindo, Georgios M. Kontogeorgis, Xiaodong Liang and George Jackson for introducing us the topic of thermodynamic equations of state and their continued help in the development of this package.
+The authors thank doctors Andrew J. Haslam, Spiros Kornopoulos, Felipe A. Hurtado, Sara Febra and professors Amparo Galindo, Georgios M. Kontogeorgis, Xiaodong Liang and George Jackson for introducing us to the topic of thermodynamic equations of state and their continued help in the development of this package.
