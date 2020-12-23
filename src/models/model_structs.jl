@@ -4,8 +4,10 @@ abstract type Cubic <: EoS end
 abstract type Ideal <: EoS end
 
 abstract type PCSAFTFamily <: SAFT end
+abstract type CKSAFTFamily <: SAFT end
 abstract type sPCSAFTFamily <: SAFT end
 abstract type ogSAFTFamily <: SAFT end
+abstract type SAFTVRSWFamily <: SAFT end
 abstract type SAFTVRMieFamily <: SAFT end
 abstract type SAFTVRQMieFamily <: SAFT end
 abstract type SAFTgammaMieFamily <: SAFT end
@@ -29,6 +31,18 @@ end
 struct SAFTVRQMie <: SAFTVRQMieFamily
     components::Array{Set{String},1}
     params::SAFTVRQMieParams
+    ideal::Ideal
+end
+
+struct SAFTVRSW <: SAFTVRSWFamily
+    components::Array{Set{String},1}
+    params::SAFTVRSWParams
+    ideal::Ideal
+end
+
+struct CKSAFT <: CKSAFTFamily
+    components::Array{Set{String},1}
+    params::CKSAFTParams
     ideal::Ideal
 end
 

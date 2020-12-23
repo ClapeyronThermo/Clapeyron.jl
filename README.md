@@ -11,12 +11,12 @@ SAFT equations of state currently available:
 | EoS          | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
 | ------------ | ------------------ | ------------------ | ------------------ | ------------------ |
 | SAFT         | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| CK-SAFT      |                    |                    |                    |                    |
+| CK-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | sSAFT        |                    |                    |                    |                    |
 | LJ-SAFT      |                    |                    |                    |                    |
 | PC-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | sPC-SAFT     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| SAFT-VR SW   |                    |                    |                    |                    |
+| SAFT-VR SW   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | soft-SAFT    |                    |                    |                    |                    |
 | SAFT-VR Mie  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | SAFT-VRQ Mie | :heavy_check_mark: | N/A                | N/A                |                    |
@@ -38,6 +38,19 @@ We also provide some engineering cubic equations of state for comparison:
 | Soave-Redlich-Kwong    | :heavy_check_mark: | :heavy_check_mark: |
 | Peng-Robinson          | :heavy_check_mark: | :heavy_check_mark: |
 | Cubic-Plus-Association | :heavy_check_mark: | :heavy_check_mark: |
+
+To provide the ideal contribution to any of the above equations of state, we have a few different options:
+
+| Ideal term            | Available?         | Parameters?        |
+| --------------------- | ------------------ | ------------------ |
+| Monomer               | :heavy_check_mark: | :heavy_check_mark: |
+| Reid                  | :heavy_check_mark: |                    |
+| Walker                | :heavy_check_mark: | :heavy_check_mark: |
+| Wilhoit               |                    |                    |
+| NASA                  |                    |                    |
+| Joback                |                    |                    |
+| Constantinou and Gani |                    |                    |
+| Coniglio              |                    |                    |
 
 Properties available:
 
@@ -79,7 +92,7 @@ Properties available:
 | Critical pressure    | :heavy_check_mark: |
 | Critical volume      | :heavy_check_mark: |
 
-We will also provide a Tp-flash algorithm (Rachford-Rice and HELD alogrithm).
+We will also provide Tp-flash algorithms (Rachford-Rice and HELD alogrithm).
 
 Note that at its current stage, OpenSAFT is still in the very early stages of development, and things may be moving around or changing rapidly, but we are very excited to see where this project may go!
 

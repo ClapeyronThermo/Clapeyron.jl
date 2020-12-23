@@ -1,0 +1,4 @@
+OpenSAFT Database File;;;;;;;;
+SAFTVRSW Assoc Parameters;;;;;;;;
+species1;SMILES1;site1;species2;SMILES2;site2;epsilon_assoc;bond_vol;source
+water;O;H;water;O;e;1366;1.028e-30;

@@ -30,6 +30,26 @@ struct SAFTVRMieParams <: Params
     n_sites::Dict
 end
 
+struct CKSAFTParams <: Params
+    segment::Dict
+    sigma::Dict
+    epsilon::Dict
+    c::Dict
+    epsilon_assoc::Dict
+    bond_vol::Dict
+    n_sites::Dict
+end
+
+struct SAFTVRSWParams <: Params
+    segment::Dict
+    sigma::Dict
+    epsilon::Dict
+    lambda::Dict
+    epsilon_assoc::Dict
+    bond_vol::Dict
+    n_sites::Dict
+end
+
 struct SAFTVRQMieParams <: Params
     MolarMass::Dict
     segment::Dict

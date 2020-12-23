@@ -1,37 +1,60 @@
 OpenSAFT Database File;;;;;
-CKSAFT Unlike Parameters;;;;;
+PCSAFT Unlike Parameters;;;;;
 species1;SMILES1;species2;SMILES2;k;source
-methane;C;n-butane;CCCC;0.022;10.1021/ie0003887
-methane;C;n-pentane;CCCCC;0.024;10.1021/ie0003887
-methane;C;n-hexane;CCCCCC;0.021;10.1021/ie0003887
-methane;C;n-heptane;CCCCCCC;0.016;10.1021/ie0003887
-methane;C;n-decane;CCCCCCCCCC;0.056;10.1021/ie0003887
-methane;C;isobutane;;0.028;10.1021/ie0003887
-methane;C;cyclohexane;;0.045;10.1021/ie0003887
-methane;C;benzene;;0.037;10.1021/ie0003887
-methane;C;toluene;;0.052;10.1021/ie0003887
-methane;C;m-xylene;;0.045;10.1021/ie0003887
-methane;C;tetralin;;0.075;10.1021/ie0003887
-nitrogen;N#N;ethylene;C=C;0.075;10.1021/ie0003887
-nitrogen;N#N;n-hexane;CCCCCC;0.119;10.1021/ie0003887
-ethylene;C=C;n-heptane;CCCCCCC;0.018;10.1021/ie0003887
-ethylene;C=C;propylene;C=CC;-0.001;10.1021/ie0003887
-propane;CCC;n-butane;CCCC;0.003;10.1021/ie0003887
-propylene;C=CC;isobutane;;-0.006;10.1021/ie0003887
-pentane;CCCCC;n-heptane;CCCCCCC;0.011;10.1021/ie0003887
-carbon dioxide;(O=)C=O;methane;C;0.065;10.1021/ie0003887
-carbon dioxide;(O=)C=O;propane;CCC;0.109;10.1021/ie0003887
-carbon dioxide;(O=)C=O;n-butane;CCCC;0.12;10.1021/ie0003887
-carbon dioxide;(O=)C=O;n-pentane;CCCCC;0.143;10.1021/ie0003887
-carbon dioxide;(O=)C=O;n-heptane;CCCCCCC;0.129;10.1021/ie0003887
-carbon dioxide;(O=)C=O;methylcyclohexane;;0.144;10.1021/ie0003887
-methanol;CO;isobutanol;;0.05;10.1021/ie010954d
-methanol;CO;cyclohexane;C1CCCCC1;0.051;10.1021/ie010954d
-methanol;CO;1-octanol;CCCCCCCCO;0.02;10.1021/ie010954d
-ethanol;CCO;n-butane;CCCC;0.028;10.1021/ie010954d
-1-propanol;CCCO;benzene;c1ccccc1;0.02;10.1021/ie010954d
-1-propanol;CCCO;ethylbenzene;c1ccccc1(CC);0.023;10.1021/ie010954d
-2-propanol;CC(O)C;benzene;c1ccccc1;0.021;10.1021/ie010954d
-1-butanol;CCCCO;n-butane;CCCC;0.015;10.1021/ie010954d
-1-pentanol;CCCCCO;benzene;c1ccccc1;0.0135;10.1021/ie010954d
-water;O;1-pentanol;CCCCCO;0.016;10.1021/ie010954d
+hexane;CCCCCC;butane;CCCC;-0.010;
+hexane;CCCCCC;pentane;CCCCC;-0.007;
+hexane;CCCCCC;heptane;CCCCCCC;-0.005;
+methanol;CO;pentane;CCCCC;0.048;
+methanol;CO;hexane;CCCCCC;0.044;
+methanol;CO;benzene;c1ccccc1;0.012;
+methanol;CO;tetrachloromethane;C(Cl)(Cl)(Cl)Cl;0.024;
+ethanol;CCO;hexane;CCCCCC;0.024;
+ethanol;CCO;heptane;CCCCCCC;0.030;
+ethanol;CCO;cyclohexane;C1CCCCC1;0.032;
+ethanol;CCO;benzene;c1ccccc1;0.006;
+ethanol;CCO;ethyl benzene;c1ccccc1CC;0.018;
+ethanol;CCO;tetrachloromethane;C(Cl)(Cl)(Cl)Cl;0.014;
+1-propanol;CCCO;hexane;CCCCCC;0.000;
+1-propanol;CCCO;heptane;CCCCCCC;0.018;
+1-propanol;CCCO;decane;CCCCCCCCCC;0.015;
+1-propanol;CCCO;cyclohexane;C1CCCCC1;0.018;
+1-propanol;CCCO;methyl cyclohexane;C1CCCCC1C;0.025;
+1-propanol;CCCO;benzene;c1ccccc1;0.004;
+1-propanol;CCCO;toluene;c1ccccc1C;0.010;
+1-propanol;CCCO;ethyl benzene;c1ccccc1CC;0.010;
+1-propanol;CCCO;tetrachloromethane;C(Cl)(Cl)(Cl)Cl;0.014;
+methanoic acid;C(=O)O;benzene;c1ccccc1;0.132;
+methanoic acid;C(=O)O;toluene;c1ccccc1C;0.118;
+acetic acid;CC(=O)O;octane;CCCCCCCC;0.070;
+acetic acid;CC(=O)O;cyclohexane;C1CCCCC1;0.058;
+acetic acid;CC(=O)O;benzene;c1ccccc1;0.038;
+acetic acid;CC(=O)O;tetrachloromethane;C(Cl)(Cl)(Cl)Cl;0.050;
+propanoic acid;CCC(=O)O;heptane;CCCCCCC;0.010;
+propanoic acid;CCC(=O)O;octane;CCCCCCCC;0.015;
+propanoic acid;CCC(=O)O;cyclohexane;C1CCCCC1;0.030;
+propanoic acid;CCC(=O)O;benzene;c1ccccc1;0.012;
+propanoic acid;CCC(=O)O;tetrachloromethane;C(Cl)(Cl)(Cl)Cl;0.010;
+dimethylamine;CNC;tetrachloromethane;C(Cl)(Cl)(Cl)Cl;-0.045;
+diethylamine;CCNCC;tetrachloromethane;C(Cl)(Cl)(Cl)Cl;-0.026;
+methanamine;CN;tetrachloromethane;C(Cl)(Cl)(Cl)Cl;-0.031;
+decane;CCCCCCCCCC;methane;C;0.085;
+decane;CCCCCCCCCC;ethane;CC;0.030;
+decane;CCCCCCCCCC;propane;CCC;0.012;
+decane;CCCCCCCCCC;carbon dioxide;C(=O)=O;0.150;
+hexadecane;CCCCCCCCCCCCCCCC;methane;C;0.118;
+eicosane;CCCCCCCCCCCCCCCCCCCC;ethane;CC;0.030;
+eicosane;CCCCCCCCCCCCCCCCCCCC;ethene;C=C;0.076;
+tetracontane;CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC;ethene;C=C;0.101;
+1-methyl naphthalene;c1cccc2cccc(c12)C;methane;C;0.073;
+1-methyl naphthalene;c1cccc2cccc(c12)C;carbon dioxide;C(=O)=O;0.145;
+carbon dioxide;C(=O)=O;methanol;CO;0.032;
+carbon dioxide;C(=O)=O;ethanol;CCO;0.062;
+carbon dioxide;C(=O)=O;1-propanol;CCCO;0.062;
+carbon dioxide;C(=O)=O;2-propanol;CC(O)C;0.052;
+methane;C;ethanol;CCO;0.050;
+methane;C;1-propanol;CCCO;0.025;
+methane;C;water;CC(O)C;0.250;
+ethane;CC;ethanol;CCO;0.014;
+ethane;CC;1-propanol;CCCO;0.005;
+ethane;CC;water;O;0.297;
+propane;CCC;ethanol;CCO;-0.070;

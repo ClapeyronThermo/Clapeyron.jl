@@ -36,7 +36,7 @@ function combining_epsilon(epsilon::Dict, sigma::Dict, k::Dict; rules_k="Lorentz
     return combined_epsilons
 end
 
-function combining_lambda(lambda::Dict; rules="Lorentz-Berthelot")
+function combining_lambda_Mie(lambda::Dict; rules="Lorentz-Berthelot")
     components = [collect(i)[1] for i in keys(lambda)]
     pairs = vcat([Set([i]) for i in components], [Set(i) for i in collect(combinations(components, 2))])
     combined_lambdas = Dict{Set{String},Float64}()
@@ -45,6 +45,19 @@ function combining_lambda(lambda::Dict; rules="Lorentz-Berthelot")
             if rules == "Lorentz-Berthelot"
                 combined_lambda = 3+sqrt(prod(lambda[Set([i])]-3 for i in pair))
             end
+            push!(combined_lambdas, pair => combined_lambda)
+        end
+    end
+    return combined_lambdas
+end
+
+function combining_lambda_SW(lambda::Dict,sigma::Dict)
+    components = [collect(i)[1] for i in keys(lambda)]
+    pairs = vcat([Set([i]) for i in components], [Set(i) for i in collect(combinations(components, 2))])
+    combined_lambdas = Dict{Set{String},Float64}()
+    for pair in pairs
+        if !haskey(lambda, pair)
+            combined_lambda = sum(lambda[Set([i])]*sigma[Set([i])] for i in pair)/sum(sigma[Set([i])] for i in pair)
             push!(combined_lambdas, pair => combined_lambda)
         end
     end
