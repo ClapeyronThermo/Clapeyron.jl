@@ -16,6 +16,14 @@ function system(components::Array{String,1}, method::String, ideal="Monomer"; kw
         raw_params = retrieveparams(components, method, ideal; kwargs...)
         ideal_model = create_IdealParams(set_components, raw_params,ideal)
         model = SAFTVRQMie(set_components, create_SAFTVRQMieParams(raw_params),ideal_model)
+    elseif method == "SAFTVRSW"
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
+        model = SAFTVRSW(set_components, create_SAFTVRSWParams(raw_params),ideal_model)
+    elseif method == "CKSAFT"
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
+        model = CKSAFT(set_components, create_CKSAFTParams(raw_params),ideal_model)
     elseif method == "ogSAFT"
         raw_params = retrieveparams(components, method, ideal; kwargs...)
         params = create_ogSAFTParams(raw_params)

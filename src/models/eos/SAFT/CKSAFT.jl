@@ -5,7 +5,7 @@ end
 function a_seg(model::CKSAFTFamily, z, v, T)
     x = z/sum(z[i] for i in model.components)
     m = model.params.segment
-    m̄ = sum(x[i]*m[i] for i in model.components)
+    m̄ = sum(x[i]*x[j]*(m[i]+m[j])/2 for i in model.components for j in model.components)
     return m̄*(a_hs(model,z,v,T) + a_disp(model,z,v,T))
 end
 
@@ -19,9 +19,19 @@ end
 
 function a_disp(model::CKSAFTFamily, z, v, T)
     x = z/sum(z[i] for i in model.components)
-    m = model.params.segment
-    m̄ = sum(x[i]*m[i] for i in model.components)
-    return -2*π*N_A*sum(z[i] for i in model.components)/v*I_n(model,z,v,T, 1)*m2ϵσ3(model,z,v,T, 1) - π*m̄*N_A*sum(z[i] for i in model.components)/v*C1(model,z,v,T)*I_n(model,z,v,T, 2)*m2ϵσ3(model,z,v,T, 2)
+    ϵ̄ = ū(model,z,v,T)
+    η = ζn(model,z,v,T,3)
+    τ = 0.74048
+    D1 = [-8.8043,4.164627,-48.203555,140.4362,-195.23339,113.515]
+    D2 = [2.9396,-6.0865383,40.137956,-76.230797,-133.70055,860.25349,-1535.3224,1221.4261,-409.10539]
+    D3 = [-2.8225,4.7600148,11.257177,-66.382743,69.248785]
+    D4 = [0.34,-3.1875014,12.231796,-12.110681]
+
+    A1 = sum(D1[j]*(ϵ̄/T)*(η/τ)^j for j in 1:6)
+    A2 = sum(D2[j]*(ϵ̄/T)^2*(η/τ)^j for j in 1:9)
+    A3 = sum(D3[j]*(ϵ̄/T)^3*(η/τ)^j for j in 1:5)
+    A4 = sum(D4[j]*(ϵ̄/T)^4*(η/τ)^j for j in 1:4)
+    return A1+A2+A3+A4
 end
 
 function d(model::CKSAFTFamily, z, v, T, component)
@@ -30,10 +40,33 @@ function d(model::CKSAFTFamily, z, v, T, component)
     return σ * (1 - 0.12exp(-3ϵ/T))
 end
 
+function d(model::CKSAFTFamily, z, v, T, i,j)
+    return (d(model::CKSAFTFamily, z, v, T, i)+d(model::CKSAFTFamily, z, v, T, j))/2
+end
+
+function u(model::CKSAFTFamily, z, v, T, i,j)
+    ϵ0 = model.params.epsilon[union(i,j)]
+    c1 = model.params.c[i]
+    c2 = model.params.c[j]
+    return ϵ0*sqrt((1+c1/T)*(1+c2/T))
+end
+
+function ū(model::CKSAFTFamily, z, v, T)
+    x = z/sum(z[i] for i in model.components)
+    m = model.params.segment
+    return sum(x[i]*x[j]*m[i]*m[j]*u(model,z,v,T,i,j)*d(model,z,v,T,i,j)^3 for i in model.components for j in model.components)/sum(x[i]*x[j]*m[i]*m[j]*d(model,z,v,T,i,j)^3 for i in model.components for j in model.components)
+end
+
 function ζn(model::CKSAFTFamily, z, v, T, n)
     x = z/sum(z[i] for i in model.components)
     m = model.params.segment
     return N_A*sum(z[i] for i in model.components)*π/6/v * sum(x[i]*m[i]*d(model,z,v,T, i)^n for i in model.components)
+end
+
+function a_chain(model::CKSAFTFamily, z, v, T)
+    x = z/sum(z[i] for i in model.components)
+    m = model.params.segment
+    return sum(x[i]*(1-m[i])*log(g_hsij(model,z,v,T,i,i)) for i in model.components)
 end
 
 function g_hsij(model::CKSAFTFamily, z, v, T, i, j)
@@ -44,28 +77,9 @@ function g_hsij(model::CKSAFTFamily, z, v, T, i, j)
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 end
 
-
-
-function C1(model::CKSAFTFamily, z, v, T)
-    x = z/sum(z[i] for i in model.components)
-    η = ζn(model,z,v,T, 3)
-    m = model.params.segment
-    m̄ = sum(x[i]*m[i] for i in model.components)
-    return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
-end
-
-function m2ϵσ3(model::CKSAFTFamily, z, v, T, ϵ_power = 1)
-    x = z/sum(z[i] for i in model.components)
-    m = model.params.segment
-    σ = model.params.sigma
-    ϵ = model.params.epsilon
-    #= return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[i]*ϵ[j])*(1-k[union(i,j)])/T)^ϵ_power * (0.5*(σ[i]+σ[j]))^3 for i in model.components, j in model.components) =#
-    return sum(x[i]*x[j]*m[i]*m[j] * (ϵ[union(i,j)]*(1)/T)^ϵ_power * σ[union(i,j)]^3 for i in model.components, j in model.components)
-end
-
 #constants should be allocated outside the function
 const CKSAFTconsts = (
-    corr₁ =
+    D =
     [0.9105631445 -0.3084016918 -0.0906148351;
     0.6361281449 0.1860531159 0.4527842806;
     2.6861347891 -2.5030047259 0.5962700728;
@@ -73,29 +87,8 @@ const CKSAFTconsts = (
     97.759208784 -65.255885330 -4.1302112531;
     -159.59154087 83.318680481 13.776631870;
     91.297774084 -33.746922930 -8.6728470368]
-
-    ,corr₂ =
-    [0.7240946941 -0.5755498075 0.0976883116;
-    2.2382791861 0.6995095521 -0.2557574982;
-    -4.0025849485 3.8925673390 -9.1558561530;
-    -21.003576815 -17.215471648 20.642075974;
-    26.855641363 192.67226447 -38.804430052;
-    206.55133841 -161.82646165 93.626774077;
-    -355.60235612 -165.20769346 -29.666905585]
 )
 
-function I_n(model::CKSAFTFamily, z, v, T, n)
-    x = z/sum(z[i] for i in model.components)
-    m = model.params.segment
-    m̄ = sum(x[i]*m[i] for i in model.components)
-    η = ζn(model,z,v,T, 3)
-    if n == 1
-        corr = CKSAFTconsts.corr₁
-    elseif n == 2
-        corr = CKSAFTconsts.corr₂
-    end
-    return sum((corr[i+1,1] + (m̄-1)/m̄*corr[i+1,2] + (m̄-1)/m̄*(m̄-2)/m̄*corr[i+1,3]) * η^i for i = 0:6)
-end
 
 function a_assoc(model::CKSAFTFamily, z, v, T)
     x = z/sum(z[i] for i in model.components)

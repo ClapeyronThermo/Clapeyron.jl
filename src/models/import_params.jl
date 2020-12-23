@@ -53,6 +53,35 @@ function create_sPCSAFTParams(raw_params; combiningrule_ϵ = "Berth")
     return sPCSAFTParams(segment, sigma, epsilon, epsilon_assoc, bond_vol, n_sites, k)
 end
 
+#### CKSAFTFamily ####
+function create_CKSAFTParams(raw_params; combiningrule_ϵ = "Berth")
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["m", "c", "vol", "epsilon", "n_H", "n_e"];
+                     unlike_params = ["k"], assoc_params = ["epsilon_assoc", "bond_vol"])
+
+    segment = like_params_dict["m"]
+
+    sigma = like_params_dict["vol"]
+    map!(x->(6*0.74048*x/N_A/1e6/π)^(1/3), values(sigma))
+    merge!(sigma, combining_sigma(sigma))
+
+    epsilon = like_params_dict["epsilon"]
+    k = unlike_params_dict["k"]
+    merge!(epsilon, combining_epsilon(epsilon, sigma, k))
+
+    c = like_params_dict["c"]
+
+    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
+    bond_vol = assoc_params_dict["bond_vol"]
+    n_sites = Dict()
+    for i in keys(like_params_dict["n_e"])
+        n_sites[i] = Dict()
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
+    end
+    return CKSAFTParams(segment, sigma, epsilon, c, epsilon_assoc, bond_vol, n_sites)
+end
+
 #### SAFTVRMie ####
 function create_SAFTVRMieParams(raw_params)
     like_params_dict, unlike_params_dict, assoc_params_dict =
@@ -69,11 +98,11 @@ function create_SAFTVRMieParams(raw_params)
     merge!(epsilon, combining_epsilon(epsilon, sigma, Dict();rules_no_k = "Hudson-McCoubrey"))
 
     lambdaA = like_params_dict["lambdaA"]
-    merge!(lambdaA, combining_lambda(lambdaA))
+    merge!(lambdaA, combining_lambda_Mie(lambdaA))
 
     lambdaR = like_params_dict["lambdaR"]
     merge!(lambdaR, unlike_params_dict["lambdaR"])
-    merge!(lambdaR, combining_lambda(lambdaR))
+    merge!(lambdaR, combining_lambda_Mie(lambdaR))
 
     epsilon_assoc = assoc_params_dict["epsilon_assoc"]
     bond_vol = assoc_params_dict["bond_vol"]
@@ -84,6 +113,35 @@ function create_SAFTVRMieParams(raw_params)
         n_sites[i]["H"] = like_params_dict["n_H"][i]
     end
     return SAFTVRMieParams(segment, sigma, epsilon, lambdaA, lambdaR, epsilon_assoc, bond_vol, n_sites)
+end
+
+#### SAFTVRSW ####
+function create_SAFTVRSWParams(raw_params)
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["m", "sigma", "epsilon", "lambda","n_H","n_e"];
+                     unlike_params=["k"],assoc_params = ["epsilon_assoc", "bond_vol"])
+    segment = like_params_dict["m"]
+    k = unlike_params_dict["k"]
+
+    sigma = like_params_dict["sigma"]
+    merge!(sigma, combining_sigma(sigma))
+    map!(x->x*1E-10, values(sigma))
+
+    epsilon = like_params_dict["epsilon"]
+    merge!(epsilon, combining_epsilon(epsilon, sigma, k))
+    lambda = like_params_dict["lambda"]
+    merge!(lambda, combining_lambda_SW(lambda,sigma))
+
+    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
+    bond_vol = assoc_params_dict["bond_vol"]
+    n_sites = Dict()
+    for i in keys(like_params_dict["n_H"])
+        n_sites[i] = Dict()
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
+    end
+
+    return SAFTVRSWParams(segment, sigma, epsilon, lambda, epsilon_assoc,bond_vol,n_sites)
 end
 
 function create_SAFTVRQMieParams(raw_params)
@@ -103,11 +161,11 @@ function create_SAFTVRQMieParams(raw_params)
     merge!(epsilon, combining_epsilon(epsilon, sigma, Dict();rules_no_k = "Hudson-McCoubrey"))
 
     lambdaA = like_params_dict["lambdaA"]
-    merge!(lambdaA, combining_lambda(lambdaA))
+    merge!(lambdaA, combining_lambda_Mie(lambdaA))
 
     lambdaR = like_params_dict["lambdaR"]
     merge!(lambdaR, unlike_params_dict["lambdaR"])
-    merge!(lambdaR, combining_lambda(lambdaR))
+    merge!(lambdaR, combining_lambda_Mie(lambdaR))
 
     epsilon_assoc = assoc_params_dict["epsilon_assoc"]
     bond_vol = assoc_params_dict["bond_vol"]
@@ -159,11 +217,11 @@ function create_SAFTgammaMie(raw_params)
     merge!(epsilon, combining_epsilon(epsilon, sigma, Dict(); rules_no_k = "Hudson-McCoubrey"))
 
     lambda_a = like_params_dict["lambda_a"]
-    merge!(lambda_a, combining_lambda(lambda_a))
+    merge!(lambda_a, combining_lambda_Mie(lambda_a))
 
     lambda_r = like_params_dict["lambda_r"]
     merge!(lambda_r, unlike_params_dict["lambda_r"])
-    merge!(lambda_r, combining_lambda(lambda_r))
+    merge!(lambda_r, combining_lambda_Mie(lambda_r))
 
     epsilon_assoc = DefaultDict(0, assoc_params_dict["epsilon_assoc"])
     bond_vol = DefaultDict(0, assoc_params_dict["bond_vol"])

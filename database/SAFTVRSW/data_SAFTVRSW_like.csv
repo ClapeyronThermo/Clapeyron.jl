@@ -1,0 +1,16 @@
+OpenSAFT database;;;;;;
+SAFTVRSW Like Parameters;;;;;;
+species;DIPPR Number;Mw;m;sigma;epsilon;lambda;n_e;n_H;source
+methane;;;1;4.069;157.4;1.444;0;0;
+ethane;;;1.33;4.233;224.8;1.449;0;0;
+propane;;;1.67;4.363;249.3;1.452;0;0;
+butane;;;2.0;4.395;243.1;1.501;0;0;
+pentane;;;2.33;4.475;252.7;1.505;0;0;
+hexane;;;2.67;4.479;236.6;1.552;0;0;
+heptane;;;3.0;4.529;237.3;1.563;0;0;
+octane;;;3.33;4.564;236.5;1.574;0;0;
+perfluoromethane;;;1.00;5.237;254.0;1.287;0;0;
+perfluoroethane;;;1.37;5.133;268.6;1.339;0;0;
+perfluoropropane;;;1.74;5.092;281.7;1.359;0;0;
+perfluorobutane;;;2.11;5.056;267.9;1.406;0;0;
+water;;18;1;3.036;253.3;1.8;2;2;

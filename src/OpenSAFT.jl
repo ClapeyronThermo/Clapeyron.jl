@@ -24,9 +24,11 @@ include("models/eos/Ideal/Walker.jl")
 include("models/eos/Ideal/Reid.jl")
 
 include("models/eos/SAFT/PCSAFT.jl")
+include("models/eos/SAFT/CKSAFT.jl")
 include("models/eos/SAFT/sPCSAFT.jl")
 include("models/eos/SAFT/SAFTVRMie.jl")
 include("models/eos/SAFT/SAFTVRQMie.jl")
+include("models/eos/SAFT/SAFTVRSW.jl")
 include("models/eos/SAFT/ogSAFT.jl")
 include("models/eos/SAFT/SAFTgammaMie.jl")
 

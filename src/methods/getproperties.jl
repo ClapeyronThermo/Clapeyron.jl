@@ -17,7 +17,7 @@ function ∂f(model,v,t,z)
     f(w) = eos(model,z,first(w),last(w))
     v,t = promote(v,t)
     vt_vec = SVector(v,t)
-    ∂result = DiffResults.GradientResult(vt_vec)  
+    ∂result = DiffResults.GradientResult(vt_vec)
     res_∂f =  ForwardDiff.gradient!(∂result, f,vt_vec)
     _f =  DiffResults.value(res_∂f)
     _∂f = DiffResults.gradient(res_∂f)
@@ -128,7 +128,7 @@ end
 ## Pure critical point solver
 function get_crit_pure(model::EoS; units = false, output=[u"K", u"Pa", u"m^3"])
     components = model.components
-    T̄  = T_scale(model)
+    T̄  = T_crit_pure(model)
     f! = (F,x) -> Obj_Crit(model, F, x[1]*T̄, exp10(x[2]))
     # j! = (J,x) -> Jac_Crit(J,eos,model,x[1]*model.params.epsilon[(1, 1)],exp10(x[2]))
     x0 = x0_crit_pure(model)
