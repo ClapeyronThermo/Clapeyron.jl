@@ -1,4 +1,4 @@
-function system(components::Array{String,1}, method::String, ideal="Monomer"; kwargs...)
+function system(components::Array{String,1}, method::String, ideal="Basic"; kwargs...)
     # possible kwargs... are filepaths for
     # customdatabase_like, customdatabase_unlike, customdatabase_assoc
     set_components = [Set([i]) for i in components]
@@ -60,20 +60,22 @@ function system(components::Array{String,1}, method::String, ideal="Monomer"; kw
     return model
 end
 
-function system(component::String, method::String,ideal="Monomer"; kwargs...)
+function system(component::String, method::String,ideal="Basic"; kwargs...)
     return system([component], method; kwargs...)
 end
 
-function system(group_multiplicities::Dict, method::String; kwargs...)
+function system(group_multiplicities::Dict, method::String, ideal="Basic"; kwargs...)
     # possible kwargs... are filepaths for
     # customdatabase_like, customdatabase_unlike, customdatabase_assoc
     components = collect(keys(group_multiplicities))
+    set_components = [i for i in components]
     groups = union(vcat([collect(keys(i)) for i in values(group_multiplicities)]...))
     string_groups = [collect(j)[1] for j in groups]
     if method == "SAFTgammaMie"
-        raw_params = retrieveparams(string_groups, method; kwargs...)
+        raw_params = retrieveparams(string_groups, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
         params = create_SAFTgammaMie(raw_params)
-        model = SAFTgammaMie(components, groups, group_multiplicities, params)
+        model = SAFTgammaMie(components, groups, group_multiplicities, params, ideal_model)
     else
         error("Method definition incorrect.")
     end

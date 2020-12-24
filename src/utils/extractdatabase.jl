@@ -256,7 +256,11 @@ function retrieveparams(components::Array, selected_model, selected_ideal_model;
     params_like = retrieveparams_like(components, selected_model; customdatabase = customdatabase_like, variant = variant_like, redirect = redirect_like)
     params_unlike = retrieveparams_unlike(components, selected_model; customdatabase = customdatabase_unlike, variant = variant_unlike, redirect = redirect_unlike)
     params_assoc = retrieveparams_assoc(components, selected_model; customdatabase = customdatabase_assoc, variant = variant_assoc, redirect = redirect_assoc)
-    params_ideal = retrieveparams_ideal(components, selected_ideal_model; customdatabase = customdatabase_ideal, variant = variant_ideal, redirect = redirect_ideal)
+    if selected_ideal_model != "Basic"
+        params_ideal = retrieveparams_ideal(components, selected_ideal_model; customdatabase = customdatabase_ideal, variant = variant_ideal, redirect = redirect_ideal)
+    else
+        params_ideal = []
+    end
     return [params_like, params_unlike, params_assoc, params_ideal]
 end
 

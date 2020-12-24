@@ -33,5 +33,7 @@ function create_IdealParams(components, raw_params, ideal_model)
                       ideal_params_dict["d"][i]]
     end
     return Reid(components,ReidParams(poly_coef))
+  elseif  ideal_model == "Basic"
+    return Basic(components)
   end
 end
