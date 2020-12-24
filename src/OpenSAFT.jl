@@ -19,6 +19,7 @@ include("models/import_params.jl")
 include("models/import_ideal_params.jl")
 include("utils/misc.jl")
 
+include("models/eos/Ideal/Basic.jl")
 include("models/eos/Ideal/Monomer.jl")
 include("models/eos/Ideal/Walker.jl")
 include("models/eos/Ideal/Reid.jl")

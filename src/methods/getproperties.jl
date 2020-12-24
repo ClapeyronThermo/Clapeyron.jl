@@ -55,9 +55,8 @@ function get_volume(model::EoS, p, T, z=[1.]; phase = "unknown")
 
     ub = [Inf]
     lb = lb_volume(model,z; phase = phase)
-
     x0 = x0_volume(model,z; phase = phase)
-    f = v -> eos(model, z, exp10(v), T) + exp10(v)*p
+    f = v -> eos(model, z, exp10(v[1]), T) + exp10(v[1])*p
     if phase == "unknown"
         (f_best,v_best) = Solvers.tunneling(f,lb,ub,x0)
         return exp10(v_best[1])
@@ -79,13 +78,18 @@ end
 function get_sat_pure(model::EoS, T)
     components = model.components
     v0    = x0_sat_pure(model)
-        f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
-        j! = (J,x) -> Jac_Sat(model, J, T, exp10(x[1]), exp10(x[2]))
+    v_l   = []
+    v_v   = []
+    P_sat = []
+    for t in T
+        f! = (F,x) -> Obj_Sat(model, F, t, exp10(x[1]), exp10(x[2]))
+        j! = (J,x) -> Jac_Sat(model, J, t, exp10(x[1]), exp10(x[2]))
         r  =nlsolve(f!,j!,v0)
-        v_l = exp10(r.zero[1])
-        v_v = exp10(r.zero[2])
-        P_sat = get_pressure(model,v_v,T)
+        append!(v_l,exp10(r.zero[1]))
+        append!(v_v,exp10(r.zero[2]))
+        append!(P_sat,get_pressure(model,exp10(r.zero[2]),t))
         v0 = r.zero
+    end
     return (P_sat, v_l, v_v)
 end
 

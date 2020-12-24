@@ -70,6 +70,7 @@ struct SAFTgammaMie <: SAFTgammaMieFamily
     groups::Array{Set{String},1}
     group_multiplicities::Dict{Set{String},DefaultDict{Set{String},Int64,Int64}}
     params::SAFTgammaMieParams
+    ideal::Ideal
 end
 
 struct vdW <: vdWFamily
@@ -120,4 +121,8 @@ end
 struct Reid <: Ideal
     components::Array{Set{String},1}
     params::ReidParams
+end
+
+struct Basic <: Ideal
+    components::Array{Set{String},1}
 end

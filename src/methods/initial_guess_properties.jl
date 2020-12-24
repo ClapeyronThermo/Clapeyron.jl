@@ -30,6 +30,17 @@ function x0_volume(model::EoS,z; phase = "unknown")
 end
 =#
 #=x0_volume=#
+function x0_volume(model::SAFTgammaMie,z; phase = "unknown")
+    if phase == "unknown" || is_liquid(phase)
+            x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/0.8)]
+    elseif is_vapour(phase)
+            x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/1e-2)]
+    elseif is_supercritical(phase)
+            x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/0.5)]
+    end
+    return x0
+end
+
 function x0_volume(model::SAFT,z; phase = "unknown")
     if phase == "unknown" || is_liquid(phase)
         x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/0.8)]
