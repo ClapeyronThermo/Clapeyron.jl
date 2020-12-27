@@ -1,6 +1,6 @@
 module Solvers
 
-using NLopt, NLsolve, DiffResults, ForwardDiff, LinearAlgebra
+using NLopt, NLsolve, DiffResults, ForwardDiff, LinearAlgebra, NLSolvers
 
 include("tunneling.jl")
 

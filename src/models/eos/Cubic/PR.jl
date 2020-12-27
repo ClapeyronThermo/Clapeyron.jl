@@ -1,9 +1,9 @@
-function a_tot(model::PRFamily,z,v,T)
+function a_res(model::PRFamily,z,v,T)
     x = z/sum(z[i] for i in model.components)
     n = sum(z)
     āᾱ = sum(sum(model.params.a[union(i,j)]*√(α(model,T,i)*α(model,T,j))*x[i]*x[j] for j in model.components) for i in model.components)
     b̄  = sum(sum(model.params.b[union(i,j)]*x[i]*x[j] for j in model.components) for i in model.components)
-    return -log(v-n*b̄)+āᾱ/(R̄*T*b̄*2^(3/2))*log((2*v-2^(3/2)*b̄*n+2*b̄*n)/(2*v+2^(3/2)*b̄*n+2*b̄*n))
+    return -log(1-n*b̄/v)+āᾱ/(R̄*T*b̄*2^(3/2))*log((2*v-2^(3/2)*b̄*n+2*b̄*n)/(2*v+2^(3/2)*b̄*n+2*b̄*n))
 end
 
 function α(model::PRFamily,T,i)
@@ -14,7 +14,7 @@ end
 
 #=
 function cubic_α(model::PRFamily,t,i,j)
-    
+
     m_poly = (0.37464,1.54226,0.26992)
     _1 = one(t)
     aᵢ =model._a[i]
@@ -53,7 +53,7 @@ function cubic_abp(mt::SingleVT,model::PengRobinson{SINGLE},v,t)
     a,b = cubic_ab(QuickStates.pt(),model,v,t) #v is ignored
     _1 = one(b)
     denom = evalpoly(v,(-b*b,2*b,_1))
-    p = RGAS*t/(v-b) - a/denom   
+    p = RGAS*t/(v-b) - a/denom
     return a,b,p
 end
 
@@ -61,7 +61,7 @@ function cubic_abp(mt::MultiVT,model::PengRobinson{MULTI},v,t,x)
     a,b = cubic_ab(QuickStates.ptx(),model,v,t,x) #v is ignored
     _1 = one(b)
     denom = evalpoly(v,(-b*b,2*b,_1))
-    p = RGAS*t/(v-b) - a/denom   
+    p = RGAS*t/(v-b) - a/denom
     return a,b,p
 end
 
@@ -75,7 +75,7 @@ function fugacity_coeff_impl(mt::SingleVT,model::PengRobinson{SINGLE},v,t)
      logϕ = z - _1 - log(z-B) - A/z
 end
 
-const PRΔ1 = 1+√2 
+const PRΔ1 = 1+√2
 const PRΔ2 = 1-√2
 const ΔPRΔ = 2*√2
 

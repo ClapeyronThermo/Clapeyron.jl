@@ -71,6 +71,15 @@ struct ogSAFTParams <: Params
     n_sites::Dict
 end
 
+struct softSAFTParams <: Params
+    segment::Dict #type: Dict{String,Float64}, can be changed to vector
+    sigma::Dict #matrix of values
+    epsilon::Dict #matrix of values
+    epsilon_assoc::Dict #look on how to port this
+    bond_vol::Dict #look on how to port this Dict{Set{Tuple{Set{String},String}},Float64}
+    n_sites::Dict #dict of dicts
+end
+
 struct SAFTgammaMieParams <: Params
     segment::Dict
     shapefactor::Dict
