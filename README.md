@@ -17,9 +17,9 @@ SAFT equations of state currently available:
 | PC-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | sPC-SAFT     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | SAFT-VR SW   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| soft-SAFT    |                    |                    |                    |                    |
+| soft-SAFT    | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | SAFT-VR Mie  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| SAFT-VRQ Mie | :heavy_check_mark: | N/A                | N/A                |                    |
+| SAFT-VRQ Mie | :heavy_check_mark: | N/A                | N/A                | :heavy_check_mark: |
 
 For group contribution approaches, we provide:
 

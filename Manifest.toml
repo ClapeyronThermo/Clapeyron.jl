@@ -217,6 +217,12 @@ git-tree-sha1 = "7631203bddc2424717fa42ecda2a5fed9ff36af0"
 uuid = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
 version = "0.2.12"
 
+[[NLSolvers]]
+deps = ["LinearAlgebra", "Printf", "Statistics"]
+git-tree-sha1 = "18ddb92d39144b1fb19f7057a255bc325f5db6fb"
+uuid = "337daf1e-9722-11e9-073e-8b9effe078ba"
+version = "0.1.0"
+
 [[NLSolversBase]]
 deps = ["DiffResults", "Distributed", "FiniteDiff", "ForwardDiff"]
 git-tree-sha1 = "39d6bc45e99c96e6995cbddac02877f9b61a1dd1"

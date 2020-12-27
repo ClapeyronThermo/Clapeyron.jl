@@ -29,31 +29,41 @@ function system(components::Array{String,1}, method::String, ideal="Basic"; kwar
         params = create_ogSAFTParams(raw_params)
         ideal_model = create_IdealParams(set_components, raw_params,ideal)
         model = ogSAFT(set_components, params,ideal_model)
+    elseif method == "softSAFT"
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        params = create_softSAFTParams(raw_params)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
+        model = softSAFT(set_components, params,ideal_model)
     elseif method == "sPCSAFT"
         raw_params = retrieveparams(components, method, ideal; kwargs...)
         ideal_model = create_IdealParams(set_components, raw_params,ideal)
         params = create_sPCSAFTParams(raw_params)
         model = sPCSAFT(set_components, params,ideal_model)
     elseif method == "vdW"
-        raw_params = retrieveparams(components, method; kwargs...)
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
         params = create_vdWParams(raw_params)
-        model = vdW(set_components, params)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
+        model = vdW(set_components, params, ideal_model)
     elseif method == "RK"
-        raw_params = retrieveparams(components, method; kwargs...)
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
         params = create_RKParams(raw_params)
-        model = RK(set_components, params)
+        model = RK(set_components, params, ideal_model)
     elseif method == "SRK"
-        raw_params = retrieveparams(components, method; kwargs...)
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
         params = create_SRKParams(raw_params)
-        model = SRK(set_components, params)
+        model = SRK(set_components, params, ideal_model)
     elseif method == "PR"
-        raw_params = retrieveparams(components, method; kwargs...)
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
         params = create_PRParams(raw_params)
-        model = PR(set_components, params)
+        model = PR(set_components, params, ideal_model)
     elseif method == "CPA"
-        raw_params = retrieveparams(components, method; kwargs...)
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
         params = create_CPAParams(raw_params)
-        model = CPA(set_components, params)
+        model = CPA(set_components, params, ideal_model)
     else
         error("Method definition incorrect.")
     end

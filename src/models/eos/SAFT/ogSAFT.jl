@@ -83,7 +83,7 @@ end
 # function a_seg(model::ogSAFTFamily,z,v,T)
 #     Bo = [1.31024,-3.80636,-2.37238,-0.798872,0.198761,1.47014,-0.786367,2.19465,5.75429,6.7822,-9.94904,-15.6162,86.643,18.527,9.04755,8.68282]
 #     Ba = [3.79621,-6.14518,-1.84061,-2.77584,-0.420751,-5.66128,19.2144,-3.33443,33.0305,-5.90766,9.55619,-197.883,-61.2535,77.1802,-6.57983,0.0]
-#     ω = 0.199
+#     ω = 0.011
 #     A = []
 #     for i in 1:16
 #         append!(A,Bo[i]+ω*Ba[i])
@@ -96,21 +96,20 @@ end
 #     σx = (sum(x[i]*x[j]*m[i]*m[j]*σ[union(i,j)]^3 for i in model.components for j in model.components)/mx^2)^(1/3)
 #     ϵx = (sum(x[i]*x[j]*m[i]*m[j]*σ[union(i,j)]^3*ϵ[union(i,j)] for i in model.components for j in model.components)/mx^2)/σx^3
 #
-#     ρ  = N_A*sum(z[i] for i in model.components)/v
-#     ρR = ρ*σx^3
+#     ρ  = sum(z)*N_A/v
+#     # ρR = ρ*mx*σx^3
+#     ηx = η(model,z,v,T)
+#     ρR = (6/π)*ηx
 #     TR = T/ϵx
 #
 #     u_res = (A[2]/TR+2A[3]/TR^2+3A[4]/TR^3+5A[5]/TR^5)*ρR+1/2*A[7]/TR*ρR^2+
 #             1/(2*A[16])*(3A[9]/TR^3+4A[10]/TR^4+5A[11]/TR^5)*(1-exp(-A[16]*ρR^2))+
 #             1/(2*A[16]^2)*(3A[12]/TR^3+4A[13]/TR^4+5A[14]/TR^5)*(1-(1+A[16]*ρR^2)*exp(-A[16]*ρR^2))+
 #             1/5*A[15]/TR*ρR^5
-#     s_res = -log(ρ*R*T)-(A[1]-A[3]/TR^2-2A[4]/TR^3-4A[5]/TR^5)*ρR-1/2*A[6]*ρR^2-1/3*A[8]*ρR^3+
+#     s_res = -log(ρ*R̄*T)-(A[1]-A[3]/TR^2-2A[4]/TR^3-4A[5]/TR^5)*ρR-1/2*A[6]*ρR^2-1/3*A[8]*ρR^3+
 #             1/(2*A[16])*(2A[9]/TR^3+3A[10]/TR^4+4A[11]/TR^5)*(1-exp(-A[16]*ρR^2))+
 #             1/(2*A[16]^2)*(2A[12]/TR^3+3A[13]/TR^4+4A[14]/TR^5)*(1-(1+A[16]*ρR^2)*exp(-A[16]*ρR^2))
 #     a_res = u_res-s_res
-#     println(A)
-#     println(u_res)
-#     println(s_res)
 #     return mx*(a_res)
 # end
 

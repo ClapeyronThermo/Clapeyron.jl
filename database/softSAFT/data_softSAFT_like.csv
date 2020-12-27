@@ -1,0 +1,14 @@
+OpenSAFT Database File
+sPCSAFT Like Parameters
+species;DIPPR Number;Mw;m;sigma;epsilon;n_H;n_e;source
+methane;;16;1;3.728;147.2;0;0;
+ethane;;30;1.392;3.756;202.5;0;0;
+propane;;45;1.776;3.811;219.5;0;0;
+butane;;;2.134;3.871;237.7;0;0;
+pentane;;;2.497;3.901;246.6;0;0;
+hexane;;;2.832;3.929;254.4;0;0;
+heptane;;;3.169;3.960;260.3;0;0;
+octane;;;3.522;3.970;264.4;0;0;
+methanol;;32;1.491;3.375;220.4;1;1;
+ethanol;;;1.740;3.635;234.8;1;1;
+water;;18;1;3.154;365;2;2;

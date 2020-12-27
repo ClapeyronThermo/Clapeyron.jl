@@ -11,6 +11,7 @@ abstract type SAFTVRSWFamily <: SAFT end
 abstract type SAFTVRMieFamily <: SAFT end
 abstract type SAFTVRQMieFamily <: SAFT end
 abstract type SAFTgammaMieFamily <: SAFT end
+abstract type softSAFTFamily <: SAFT end
 
 abstract type vdWFamily <: Cubic end
 abstract type RKFamily <: Cubic end
@@ -65,6 +66,12 @@ struct ogSAFT <: ogSAFTFamily
     ideal::Ideal
 end
 
+struct softSAFT <: softSAFTFamily
+    components::Array{Set{String},1}
+    params::softSAFTParams
+    ideal::Ideal
+end
+
 struct SAFTgammaMie <: SAFTgammaMieFamily
     components::Array{Set{String},1}
     groups::Array{Set{String},1}
@@ -76,26 +83,31 @@ end
 struct vdW <: vdWFamily
     components::Array{Set{String},1}
     params::vdWParams
+    ideal::Ideal
 end
 
 struct RK <: RKFamily
     components::Array{Set{String},1}
     params::RKParams
+    ideal::Ideal
 end
 
 struct SRK <: SRKFamily
     components::Array{Set{String},1}
     params::SRKParams
+    ideal::Ideal
 end
 
 struct PR <: PRFamily
     components::Array{Set{String},1}
     params::PRParams
+    ideal::Ideal
 end
 
 struct CPA <: CPAFamily
     components::Array{Set{String},1}
     params::CPAParams
+    ideal::Ideal
 end
 
 # Ideal #

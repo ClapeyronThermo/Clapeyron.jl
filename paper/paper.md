@@ -10,7 +10,7 @@ authors:
   - name: Hon-Wa Yew^[Corresponding author]
     affiliation: 1
   - name: Andrés Riedemann
-	affiliation: 3
+    affiliation: 3
   - name: Pierre J. Walker
     affiliation: 2
 affiliations:

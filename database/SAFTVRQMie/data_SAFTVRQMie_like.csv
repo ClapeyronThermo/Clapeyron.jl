@@ -1,5 +1,9 @@
 OpenSAFT Database File;;;;;;;;
 SAFTVRMie Like Parameters;;;;;;;;
 species;DIPPR Number;Mw;m;sigma;epsilon;lambdaR;lambdaA;n_H;n_e;source
+hydrogen;;2.01588;1;2.9195;55.729;20;6;0;0;
+deuterium;;4.0282035556;1;2.9897;36.913;12;6;0;0;
 helium;;4.002602;1;2.5490;10.952;13;6;0;0;
 neon;;20.1797;1;2.7760;37.716;13;6;0;0;
+ortho-hydrogen;;2.01588;2.9191;55.749;20;6;0;0;
+para-hydrogen;;2.01588;2.9785;55.519;20;6;0;0;
