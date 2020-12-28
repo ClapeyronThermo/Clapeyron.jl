@@ -119,7 +119,7 @@ end
 
 #=x0_crit_pure=#
 
-x0_crit_pure(model::SAFTgammaMie) = [1.5, log10(π/6*N_A*sum(model.group_multiplicities[model.components[1]][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(model.components[1]))/0.3)]
+x0_crit_pure(model::SAFTgammaMie) = [2, log10(π/6*N_A*sum(model.group_multiplicities[model.components[1]][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(model.components[1]))/0.3)]
 x0_crit_pure(model::SAFT) = [1.5, log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.3)]
 x0_crit_pure(model::Cubic) = [1.0, log10(model.params.b[model.components[1]]/0.3)]
 x0_crit_pure(model::CPA) = [2, log10(model.params.b[model.components[1]]/0.3)]

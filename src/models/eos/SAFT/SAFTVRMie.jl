@@ -357,7 +357,6 @@ end
 function Δ(model::SAFTVRMieFamily, z, v, T, i, j, a, b)
     ρR = ρs(model,z,v,T)*σx3(model,z,v,T)
     TR = T/model.params.epsilon[union(i,j)]
-
     c  = SAFTVRMieconsts.c
     I = sum(sum(c[n+1,m+1]*ρR^n*TR^m for m in 0:(10-n)) for n in 0:10)
     ϵ_assoc = model.params.epsilon_assoc[Set([(i,a),(j,b)])]
