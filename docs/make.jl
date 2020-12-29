@@ -13,4 +13,5 @@ format = Documenter.HTML(
                             "Bulk properties"=>"user_guide/bulk_props.md",
                             "VLE properties"=>"user_guide/vle_props.md"],
         "To-do list" => "to-do_list.md",
-        "Theory"=>Any["theory/methods.md"]])
+        "Theory"=>Any["Methods"=>"theory/methods.md",
+                      "Models"=>"theory/models.md"]])
