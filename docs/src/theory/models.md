@@ -123,7 +123,7 @@ Surprisingly, the monomer term is one of the aspects that most distinguishes the
 
 `` \frac{A_\mathrm{mono.}}{Nk_\mathrm{B}T}=\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}+\frac{A_\mathrm{2}}{(Nk_\mathrm{B}T)^3}+\frac{A_\mathrm{3}}{(Nk_\mathrm{B}T)^4}+...``
 
-This is known as a Barker-Henderson perturbative expansion; the higher order terms account for interactions between $n$ segments. Most SAFT equations truncate this sum at just the second order term. These terms generally account for the dispersive interactions between segments.
+This is known as a Barker-Henderson perturbative expansion; the $N^\mathrm{th}$ order terms account for interactions between $N$ segments. Most SAFT equations truncate this sum at just the second order term. These terms generally account for the dispersive interactions between segments.
 
 #### Parameters
 

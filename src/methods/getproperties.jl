@@ -75,7 +75,7 @@ end
 
 
 ## Pure saturation conditions solver
-function get_sat_pure(model::EoS, T)
+function get_sat_pure(model::EoS, T; v0 = nothing)
     components = model.components
 
     f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
@@ -84,57 +84,62 @@ function get_sat_pure(model::EoS, T)
     jv! = (x) -> Jvop_sat(x, model, T)
     vectorobj = NLSolvers.VectorObjective(f!,j!,fj!,jv!)
     vectorprob = NEqProblem(vectorobj)
-    try
-        v0    = x0_sat_pure(model)
-        (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
-        if abs(v_l-v_v)/v_l<1e-2
+    if v0 == nothing
+        try
             v0    = x0_sat_pure(model)
-            v0[1] = v0[1]+log10(0.5/0.52)
             (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
             if abs(v_l-v_v)/v_l<1e-2
                 v0    = x0_sat_pure(model)
-                v0[1] = v0[1]+log10(0.5/0.48)
+                v0[1] = v0[1]+log10(0.5/0.52)
                 (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                if abs(v_l-v_v)/v_l<1e-2
+                    v0    = x0_sat_pure(model)
+                    v0[1] = v0[1]+log10(0.5/0.48)
+                    (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                end
+                return (P_sat,v_l,v_v)
+
             end
             return (P_sat,v_l,v_v)
+        catch y
+            if isa(y, DomainError)
+                try
+                    v0    = x0_sat_pure(model)
+                    v0[1] = v0[1]+log10(0.5/0.3)
+                    (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                    if abs(v_l-v_v)/v_l<1e-2
+                        v0    = x0_sat_pure(model)
+                        v0[1] = v0[1]+log10(0.5/0.32)
+                        (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                        if abs(v_l-v_v)/v_l<1e-2
+                            v0    = x0_sat_pure(model)
+                            v0[1] = v0[1]+log10(0.5/0.28)
+                            (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                        end
+                    end
+                    return (P_sat,v_l,v_v)
+                catch y
+                    v0    = x0_sat_pure(model)
+                    v0[1] = v0[1]+log10(0.5/0.4)
+                    (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                    if abs(v_l-v_v)/v_l<1e-2
+                        v0    = x0_sat_pure(model)
+                        v0[1] = v0[1]+log10(0.5/0.42)
+                        (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                        if abs(v_l-v_v)/v_l<1e-2
+                            v0    = x0_sat_pure(model)
+                            v0[1] = v0[1]+log10(0.5/0.38)
+                            (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                        end
+                    end
+                    return (P_sat,v_l,v_v)
+                end
 
-        end
-        return (P_sat,v_l,v_v)
-    catch y
-        if isa(y, DomainError)
-            try
-                v0    = x0_sat_pure(model)
-                v0[1] = v0[1]+log10(0.5/0.3)
-                (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
-                if abs(v_l-v_v)/v_l<1e-2
-                    v0    = x0_sat_pure(model)
-                    v0[1] = v0[1]+log10(0.5/0.32)
-                    (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
-                    if abs(v_l-v_v)/v_l<1e-2
-                        v0    = x0_sat_pure(model)
-                        v0[1] = v0[1]+log10(0.5/0.28)
-                        (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
-                    end
-                end
-                return (P_sat,v_l,v_v)
-            catch y
-                v0    = x0_sat_pure(model)
-                v0[1] = v0[1]+log10(0.5/0.4)
-                (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
-                if abs(v_l-v_v)/v_l<1e-2
-                    v0    = x0_sat_pure(model)
-                    v0[1] = v0[1]+log10(0.5/0.42)
-                    (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
-                    if abs(v_l-v_v)/v_l<1e-2
-                        v0    = x0_sat_pure(model)
-                        v0[1] = v0[1]+log10(0.5/0.38)
-                        (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
-                    end
-                end
-                return (P_sat,v_l,v_v)
             end
-
         end
+    else
+        (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+        return (P_sat,v_l,v_v)
     end
 
 end
@@ -228,15 +233,17 @@ function Obj_Crit(model::EoS, F, T_c, v_c)
 end
 
 ## Mixture saturation solver
-function get_bubble_pressure(model, T, x)
+function get_bubble_pressure(model, T, x; v0 =nothing)
     components = model.components
-    y0    = 10 .*x[1,:]./(1 .+x[1,:].*(10-1))
-    y0    = y0 ./sum(y0[i] for i in 1:length(components))
-    X     = create_z(model,x[1,:])
-    Y0    = create_z(model,y0)
-    v0    = [log10(π/6*N_A*sum(X[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/0.45),
-             log10(π/6*N_A*sum(Y0[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/1e-4)]
-    append!(v0,y0[1:end-1])
+    if v0 == nothing
+        y0    = 10 .*x[1,:]./(1 .+x[1,:].*(10-1))
+        y0    = y0 ./sum(y0[i] for i in 1:length(components))
+        X     = create_z(model,x[1,:])
+        Y0    = create_z(model,y0)
+        v0    = [log10(π/6*N_A*sum(X[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/0.45),
+                 log10(π/6*N_A*sum(Y0[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/1e-4)]
+        append!(v0,y0[1:end-1])
+    end
     v_l   = []
     v_v   = []
     y     = deepcopy(x)

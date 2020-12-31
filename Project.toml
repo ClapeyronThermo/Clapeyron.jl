@@ -13,6 +13,7 @@ NLSolvers = "337daf1e-9722-11e9-073e-8b9effe078ba"
 NLopt = "76087f3c-5699-56af-9a33-bf431cd00edd"
 NLsolve = "2774e3e8-f4cf-5e23-947b-6d7e65073b56"
 NamedArrays = "86f7a689-2022-50b4-a561-43c23ac3c673"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
