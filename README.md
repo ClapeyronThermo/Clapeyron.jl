@@ -8,18 +8,20 @@ Check out the Jupyter notebooks in the ```examples``` directory to see how to se
 
 SAFT equations of state currently available:
 
-| EoS          | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
-| ------------ | ------------------ | ------------------ | ------------------ | ------------------ |
-| SAFT         | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| CK-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| sSAFT        |                    |                    |                    |                    |
-| LJ-SAFT      |                    |                    |                    |                    |
-| PC-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| sPC-SAFT     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| SAFT-VR SW   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| soft-SAFT    | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| SAFT-VR Mie  | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| SAFT-VRQ Mie | :heavy_check_mark: | N/A                | N/A                | :heavy_check_mark: |
+| EoS           | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
+| ------------- | ------------------ | ------------------ | ------------------ | ------------------ |
+| SAFT          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| CK-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| sSAFT         |                    |                    |                    |                    |
+| LJ-SAFT       |                    |                    |                    |                    |
+| BACK-SAFT     |                    |                    |                    |                    |
+| PC-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| sPC-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| SAFT-VR SW    | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| soft-SAFT     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| SAFT-VR Mie   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| SAFT-VRQ Mie  | :heavy_check_mark: | N/A                | N/A                | :heavy_check_mark: |
+| SAFT-VR Morse |                    |                    |                    |                    |
 
 For group contribution approaches, we provide:
 

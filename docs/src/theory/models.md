@@ -139,19 +139,93 @@ We will next go through each of the variants of the SAFT equation available in O
 
 ### Original SAFT
 
+Derived by Chapman _et al._ (1990), this is the first variant of the SAFT equation of state. This equation can be seen as a `proof of concept' as not many parameters are available (none for mixtures). Nevertheless, some noteworthy features of this equation is its use of a semi-empirical equation to obtain the hard-sphere diameter that depends on the number of segments of a species (no other SAFT variant does this). The chain term uses the hard-sphere pair-distribution function, which has a much-simpler analytical form than what some other SAFT equations choose to use. The association strength, $\Delta$ is evaluated in a unique way as well:
+
+``\Delta_{ij,ab}=d_{ij}^3g_{ij}^\mathrm{HS}F_{ij,ab}\kappa_{ij,ab}``
+
+where $\kappa_{ij,ab}$ is dimensionless. Unfortunately, the implementation of `ogSAFT` in `OpenSAFT` cannot yet replicate the figures from the original paper. The reason for this is that the monomer / segment term presented in the paper is not the one used to generate the results. The actual term used is developed by Twu _et al._ (1980) and we are currently attempting to implement this within `OpenSAFT` but it is not clear, as of yet, how it was implemented within the original equation.
+
 ### CK-SAFT
+
+If the SAFT equation derived by Chapman _et al._ was the prototype, the variant developed by Huang and Radosz (1990) was the first usable SAFT equation, with over a 100 pure-component parameters and many unlike parameters available. `CKSAFT` effectively simplifies many of the computationally-intensive parts of `ogSAFT`, using a simpler equation to obtain the hard-sphere diameter and actually providing the correct monomer term within the paper. The chain term between the two equations is identical. Similarly, the association strength only has a minor change:
+
+``\Delta_{ij,ab}=\sigma_{ij}^3g_{ij}^\mathrm{HS}F_{ij,ab}\kappa_{ij,ab}``
+
+which slightly reduces the computational cost. However, the most-noteworthy simplification came with the association term. As mentioned earlier, the association fraction needs to be solved for iteratively. However, Huang and Radosz proposed approximations of the association fraction that could be used to solve for the association term explicitly, greatly reducing the computational intensity of these calculations. These approximations have not been implemented within `OpenSAFT` as of yet, but these only impact calculations for species other than alcohols and carboxylic acids. We also point out that Huang and Radosz introduced the concept of association schemes which helps classify species based on how they interaction through association.
 
 ### SAFT-VR SW
 
+Gil-Villegas _et al._ (1997) developed a new class of SAFT equations known as SAFT variable range. Here, more emphasis was placed on the potentials used to characterise dispersion interactions where a new parameter was introduced through the potential shape. Whilst many versions of SAFT-VR are proposed, each using different underlying potentials, the one that was chosen as the default was SAFT-VR square-well (SW) with the potential shape parameter $\lambda$ (characterising the width of the potential well). Within this framework, novel expressions for the monomer and chain terms were proposed, both being based on the SW potential. The association term remained largely unchanged, with the association term having the most-noteworthy modification:
+
+``\Delta_{ij,ab}=g_{ij}^\mathrm{SW}F_{ij,ab}\kappa_{ij,ab}``
+
+Here, $\kappa_{ij,ab}$ now carries units of volume. Not many parameters are available for this equation of state, primarily being use to model alkanes and perfluoro-alkanes. However, compared to most other SAFT variants, SAFT-VR SW has possibly seen the most extensions, having a group-contribution alternative (SAFT-$\gamma$ SW), electrolyte (SAFT-VRE SW) and cross-over theory (SAFT-VRX SW). 
+
 ### soft-SAFT
+
+Developed by Blas and Vega (2001), whereas SAFT equations up until now have used a hard-sphere reference from which to build the equation of state, soft-SAFT chooses to use a Lennard-Jones reference instead. Because of this, compared to all other SAFT equations, soft-SAFT relies heavily on correlations obtained from molecular-dynamic simulations to obtain the monomer term, pair-distribution function and association strength. Like SAFT-VR SW, soft-SAFT does not have an extensive database of parameters, but has been extended multiple times (cross over theory being the more-noteworthy extension).
 
 ### PC-SAFT
 
+Possibly the most-popular variant of the SAFT equation, Perturbed-Chain (not polymer-chain) SAFT was developed by Gross and Sadowski (2001) and, like soft-SAFT, chooses a different reference state than previous SAFT equations. This time, we start from the hard-chain (HC), not hard-sphere, expressing the SAFT equation as:
+
+`` \frac{A}{Nk_\mathrm{B}T} = \frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{HC}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{disp.}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{assoc.}}{Nk_\mathrm{B}T}``
+
+This isn't as significant a change as one might initially think as, effectively, the hard-sphere and chain terms (which uses a hard-sphere pair distribution function like CK-SAFT) are combined into the hard chain term. The dispersion term is then simply another correlation, only this time depends on the number of segments as well. It carries many similarities with CK-SAFT, using the same expression for the hard-sphere diameter, pair-distribution function and association term.
+
+The primary reason behind PC-SAFT's popularity is three-fold. For one, the code for PC-SAFT is available open-source. Secondly, there is an abundance of parameters available (over 250), including unlike parameters. Finally, many variants of the PC-SAFT equation have been developed. These include:
+
+* Polar PC-SAFT (PPC-SAFT)
+* PC-Polar SAFT (PCP-SAFT); yes, these are distinct equations
+* Electrolyte PC-SAFT (ePC-SAFT)
+* Electrolyte PPC-SAFT (ePPC-SAFT)
+* Critical-point based PC-SAFT (CP-PC-SAFT)
+* Critical-point based PPC-SAFT (CP-PPC-SAFT)
+* Group-contribution PC-SAFT (GC-PC-SAFT)
+* Group contribution PPC-SAFT (GC-PPC-SAFT)
+
+We will aim to provide some of these variants at a later date.
+
 #### sPC-SAFT
+
+Nevertheless, we do provide one of these variants, being the simplified PC-SAFT equation (developed by Von Solms _et al._ (2003)). Here, the only modifications are to the hard-chain and association terms where, instead of using the generalised expressions for the hard-sphere term and hard-sphere pair-distribution function, by averaging the hard-sphere diameter (effectively treating mixtures as being made-up of identically-sized segments), the pure-component versions of these properties are used instead. The benefit of this is that pure-component parameters determined for PC-SAFT can still be used here, and only the unlike parameters need to be modified.
+
+Similar to PC-SAFT, variants of the sPC-SAFT equation also exist, although no-where near as extensive. Most notably, a significant group-contribution method is available.
 
 ### SAFT-VR Mie
 
+One of the most-novel SAFT equation of state, derived by Lafitte _et al._ (2013), this equation is effectively an extension of the SAFT-VR framework developed by Gil-Villegas _et al._ (1997), with further improvements. First of these is extending the Barker-Henderson perturbative expansion to third order instead of second order:
+
+`` \frac{A_\mathrm{mono.}}{Nk_\mathrm{B}T}=\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}+\frac{A_\mathrm{2}}{(Nk_\mathrm{B}T)^3}+\frac{A_\mathrm{3}}{(Nk_\mathrm{B}T)^4}``
+
+We do point out that, whilst the first two terms are developed following the SAFT-VR framework, the third order term is more akin to a correlation regressed using molecular dynamic simulations of Mie fluids. This third order term resulted in significant improvements in the modelling of properties near the critical point (without using cross-over theory). The chain term also received further improvements as a result. This is also the only SAFT equation which evaluates the hard-sphere diameter analytically, although numerical approximations are needed (we note that the original SAFT-VR Mie equation used 10-point Gauss-Legendre quadrature, whilst the newer version uses 5-point Gauss-Laguerre quadrature).
+
+However, three different versions of the association strength have been developed:
+
+* Hard-sphere kernel:
+
+  ``\Delta_{ij,ab}=\sigma_{ij}^3g_{ij}^\mathrm{HS}F_{ij,ab}K_{ij,ab}``
+
+* Lennard-Jones kernel:
+
+  ``\Delta_{ij,ab}=F_{ij,ab}K_{ij,ab}I_{ij,ab}(\epsilon_{ij},\sigma_{ij})``
+
+* Mie kernel:
+
+  ``\Delta_{ij,ab}=F_{ij,ab}K_{ij,ab}I_{ij,ab}(\epsilon_{ij},\sigma_{ij},\lambda_{ij})``
+
+Unfortunately, it seems that there have been inconsistencies between which of these kernels is used in different publications. The current 'default' SAFT-VR Mie equation uses the Lennard-Jones kernel, as such, this is the one used in `OpenSAFT`. We do intend to provide the option to switch between these kernels.
+
+As it uses a Mie potential is characterised by two shape parameters, $\lambda_\mathrm{a}$ (characterising the attractive part) and $\lambda_\mathrm{r}$ (characterising the repulsive part), both of these have become parameters for each species (although $\lambda_\mathrm{a}$ is usually set to 6). An interesting aesthetic change is with the number of segments where this is now separated into the shape factor, $S$, and the number of segments $v^*$. The latter must now be an integer and the former is a direct measure of how 'fused' the segments are. As we have different association terms, we also have different sets of parameters where the only difference is the length-scale. In the Lennard-Jones and Mie kernels, $K_{ij,ab}$ is the 'bonding volume', whereas, in the hard-sphere kernel, it is a 'bonding length', $r_{ij,ab}^c$.
+
+The SAFT-VR Mie does not have a significantly large repository of parameters (compensated by its group-contribution variant) and has only been extended to electrolytes (SAFT-VRE Mie and eSAFT-VR Mie). 
+
 #### SAFT-VRQ Mie
+
+A very recent extension of the SAFT-VR Mie equation is the SAFT-VRQ Mie equation developed by Aasen _et al._ (2019) which modifies the underlying Mie potential using a Feynman-Hibbs potential, which means that a single species is represented by a sum of three Mie potentials. This method attempts to classically account for quantum effects present in small species such as helium, hydrogen and neon. Unfortunately, this equation is limited to just the monomer term and, even then, it is very computationally intensive. We do note that the current implementation in `OpenSAFT` can only model pure-component properties, but we will extend this to mixture in future versions.
 
 ### SAFT-$\gamma$ Mie
 
+The group-contribution version of SAFT-VR Mie, developed by Papaioannou _et al._ (2014), the SAFT-$\gamma$ Mie equation uses the same general framework as SAFT-VR Mie, although, as it is a group-contribution method, we are able to model heterogenous chains (in previous SAFT equations, all segments in a chain were the same size). The group-contribution methodology is based on that developed by Lymperiadis _et al._ (2008). 37 groups are currently available for this equation. A noteworthy advantage of using groups is that unlike parameters between groups can be estimated from pure-component data; these can then be readily extended to mixtures without further regression. 
+
+This equation has also been extended to electrolytes through SAFT-$\gamma$E Mie.
