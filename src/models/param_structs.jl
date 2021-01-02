@@ -30,16 +30,6 @@ struct SAFTVRMieParams <: Params
     n_sites::Dict
 end
 
-struct SAFTVRMorseParams <: Params
-    segment::Dict
-    sigma::Dict
-    epsilon::Dict
-    lambda::Dict
-    epsilon_assoc::Dict
-    bond_vol::Dict
-    n_sites::Dict
-end
-
 struct CKSAFTParams <: Params
     segment::Dict
     sigma::Dict
