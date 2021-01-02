@@ -12,7 +12,6 @@ abstract type ogSAFTFamily <: SAFT end
 abstract type SAFTVRSWFamily <: SAFT end
 abstract type SAFTVRMieFamily <: SAFT end
 abstract type SAFTVRQMieFamily <: SAFT end
-abstract type SAFTVRMorseFamily <: SAFT end
 abstract type SAFTgammaMieFamily <: SAFT end
 abstract type LJSAFTFamily <: SAFT end
 abstract type softSAFTFamily <: SAFT end
@@ -36,12 +35,6 @@ end
 struct SAFTVRQMie <: SAFTVRQMieFamily
     components::Array{Set{String},1}
     params::SAFTVRQMieParams
-    ideal::Ideal
-end
-
-struct SAFTVRMorse <: SAFTVRMorseFamily
-    components::Array{Set{String},1}
-    params::SAFTVRMorseParams
     ideal::Ideal
 end
 

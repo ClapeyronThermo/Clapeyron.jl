@@ -164,35 +164,6 @@ function create_SAFTVRMieParams(raw_params)
     return SAFTVRMieParams(segment, sigma, epsilon, lambdaA, lambdaR, epsilon_assoc, bond_vol, n_sites)
 end
 
-#### SAFTVRMie ####
-function create_SAFTVRMorseParams(raw_params)
-    like_params_dict, unlike_params_dict, assoc_params_dict =
-        filterparams(raw_params, ["m", "sigma", "epsilon", "lambda","n_H","n_e"];
-                     unlike_params=["epsilon"],assoc_params = ["epsilon_assoc", "bond_vol"])
-    segment = like_params_dict["m"]
-
-    sigma = like_params_dict["sigma"]
-    merge!(sigma, combining_sigma(sigma))
-    map!(x->x*1E-10, values(sigma))
-
-    epsilon = like_params_dict["epsilon"]
-    merge!(epsilon, unlike_params_dict["epsilon"])
-    merge!(epsilon, combining_epsilon(epsilon, sigma, Dict();rules_no_k = "Hudson-McCoubrey"))
-
-    lambda = like_params_dict["lambda"]
-    merge!(lambda, combining_lambda_Mie(lambda))
-
-    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
-    bond_vol = assoc_params_dict["bond_vol"]
-    n_sites = Dict()
-    for i in keys(like_params_dict["n_H"])
-        n_sites[i] = Dict()
-        n_sites[i]["e"] = like_params_dict["n_e"][i]
-        n_sites[i]["H"] = like_params_dict["n_H"][i]
-    end
-    return SAFTVRMorseParams(segment, sigma, epsilon, lambda, epsilon_assoc, bond_vol, n_sites)
-end
-
 #### SAFTVRSW ####
 function create_SAFTVRSWParams(raw_params)
     like_params_dict, unlike_params_dict, assoc_params_dict =

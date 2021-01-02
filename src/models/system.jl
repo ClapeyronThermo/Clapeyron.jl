@@ -16,10 +16,6 @@ function system(components::Array{String,1}, method::String, ideal="Basic"; kwar
         raw_params = retrieveparams(components, method, ideal; kwargs...)
         ideal_model = create_IdealParams(set_components, raw_params,ideal)
         model = SAFTVRQMie(set_components, create_SAFTVRQMieParams(raw_params),ideal_model)
-    elseif method == "SAFTVRMorse"
-        raw_params = retrieveparams(components, method, ideal; kwargs...)
-        ideal_model = create_IdealParams(set_components, raw_params,ideal)
-        model = SAFTVRMorse(set_components, create_SAFTVRMorseParams(raw_params),ideal_model)
     elseif method == "SAFTVRSW"
         raw_params = retrieveparams(components, method, ideal; kwargs...)
         ideal_model = create_IdealParams(set_components, raw_params,ideal)
