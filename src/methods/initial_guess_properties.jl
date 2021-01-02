@@ -52,6 +52,17 @@ function x0_volume(model::SAFT,z; phase = "unknown")
     return x0
 end
 
+function x0_volume(model::LJSAFT,z; phase = "unknown")
+    if phase == "unknown" || is_liquid(phase)
+        x0 = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/0.8)]
+    elseif is_vapour(phase)
+        x0 = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1e-2)]
+    elseif is_supercritical(phase)
+        x0 = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/0.5)]
+    end
+    return x0
+end
+
 function x0_volume(model::Cubic,z; phase = "unknown")
     if phase == "unknown" || is_liquid(phase)
         x0 = [log10(sum(z[i]*z[j]*model.params.b[union(i,j)] for i in model.components for j in model.components)/0.8)]
@@ -74,6 +85,11 @@ function x0_sat_pure(model::SAFTVRQMie)
     log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/1e-3)]
 end
 
+function x0_sat_pure(model::LJSAFT)
+    x0    = [log10(π/6*model.params.segment[model.components[1]]*model.params.b[model.components[1]]/0.5),
+    log10(π/6*model.params.segment[model.components[1]]*model.params.b[model.components[1]]/1e-3)]
+end
+
 function x0_sat_pure(model::SAFT)
     x0    = [log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.5),
     log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/1e-3)]
@@ -86,6 +102,7 @@ end
 
 #=lb_volume=#
 lb_volume(model::SAFTgammaMie,z; phase = "unknown") = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/1)]
+lb_volume(model::LJSAFT,z; phase = "unknown") = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1)]
 lb_volume(model::SAFT,z; phase = "unknown") = [log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in model.components)/1)]
 lb_volume(model::Cubic,z; phase = "unknown") = [log10(sum(z[i]*z[j]*model.params.b[union(i,j)] for i in model.components for j in model.components))]
 
@@ -105,6 +122,12 @@ function scale_sat_pure(model::SAFTgammaMie)
     return p_scale,μ_scale
 end
 
+function scale_sat_pure(model::LJSAFT)
+    p_scale    = model.params.b[model.components[1]]/N_A/R̄/model.params.T[model.components[1]]
+    μ_scale    = 1/R̄/model.params.T[model.components[1]]
+    return p_scale,μ_scale
+end
+
 function scale_sat_pure(model::SAFT)
     p_scale    = model.params.sigma[model.components[1]]^3*N_A/R̄/model.params.epsilon[model.components[1]]
     μ_scale    = 1/R̄/model.params.epsilon[model.components[1]]
@@ -120,6 +143,7 @@ end
 #=x0_crit_pure=#
 
 x0_crit_pure(model::SAFTgammaMie) = [2, log10(π/6*N_A*sum(model.group_multiplicities[model.components[1]][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(model.components[1]))/0.3)]
+x0_crit_pure(model::LJSAFT) = [1.5, log10(π/6*model.params.segment[model.components[1]]*model.params.b[model.components[1]]/0.3)]
 x0_crit_pure(model::SAFT) = [1.5, log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.3)]
 x0_crit_pure(model::Cubic) = [1.0, log10(model.params.b[model.components[1]]/0.3)]
 x0_crit_pure(model::CPA) = [2, log10(model.params.b[model.components[1]]/0.3)]
@@ -134,5 +158,6 @@ function T_crit_pure(model::SAFTgammaMie)
                model.params.shapefactor[k]*model.params.shapefactor[l]*
                model.params.epsilon[union(k,l)] for k in @groups(model.components[1]) for l in @groups(model.components[1]))/m̄^2
 end
+T_crit_pure(model::LJSAFT) = model.params.T[model.components[1]]
 T_crit_pure(model::SAFT) = model.params.epsilon[model.components[1]]
 T_crit_pure(model::Cubic) = model.params.a[model.components[1]]/model.params.b[model.components[1]]/8.314*8/27
