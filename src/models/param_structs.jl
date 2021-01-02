@@ -30,6 +30,16 @@ struct SAFTVRMieParams <: Params
     n_sites::Dict
 end
 
+struct SAFTVRMorseParams <: Params
+    segment::Dict
+    sigma::Dict
+    epsilon::Dict
+    lambda::Dict
+    epsilon_assoc::Dict
+    bond_vol::Dict
+    n_sites::Dict
+end
+
 struct CKSAFTParams <: Params
     segment::Dict
     sigma::Dict
@@ -38,6 +48,23 @@ struct CKSAFTParams <: Params
     epsilon_assoc::Dict
     bond_vol::Dict
     n_sites::Dict
+end
+
+struct sCKSAFTParams <: Params
+    segment::Dict
+    sigma::Dict
+    epsilon::Dict
+    epsilon_assoc::Dict
+    bond_vol::Dict
+    n_sites::Dict
+end
+
+struct BACKSAFTParams <: Params
+    segment::Dict
+    sigma::Dict
+    epsilon::Dict
+    c::Dict
+    alpha::Dict
 end
 
 struct SAFTVRSWParams <: Params
@@ -75,6 +102,15 @@ struct softSAFTParams <: Params
     segment::Dict #type: Dict{String,Float64}, can be changed to vector
     sigma::Dict #matrix of values
     epsilon::Dict #matrix of values
+    epsilon_assoc::Dict #look on how to port this
+    bond_vol::Dict #look on how to port this Dict{Set{Tuple{Set{String},String}},Float64}
+    n_sites::Dict #dict of dicts
+end
+
+struct LJSAFTParams <: Params
+    segment::Dict #type: Dict{String,Float64}, can be changed to vector
+    b::Dict #matrix of values
+    T::Dict #matrix of values
     epsilon_assoc::Dict #look on how to port this
     bond_vol::Dict #look on how to port this Dict{Set{Tuple{Set{String},String}},Float64}
     n_sites::Dict #dict of dicts

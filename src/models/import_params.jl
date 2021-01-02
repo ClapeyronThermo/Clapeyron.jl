@@ -82,6 +82,55 @@ function create_CKSAFTParams(raw_params; combiningrule_ϵ = "Berth")
     return CKSAFTParams(segment, sigma, epsilon, c, epsilon_assoc, bond_vol, n_sites)
 end
 
+#### CKSAFTFamily ####
+function create_sCKSAFTParams(raw_params; combiningrule_ϵ = "Berth")
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["m", "vol", "epsilon", "n_H", "n_e"];
+                     unlike_params = ["k"], assoc_params = ["epsilon_assoc", "bond_vol"])
+
+    segment = like_params_dict["m"]
+
+    sigma = like_params_dict["vol"]
+    map!(x->(6*0.74048*x/N_A/1e6/π)^(1/3), values(sigma))
+    merge!(sigma, combining_sigma(sigma))
+
+    epsilon = like_params_dict["epsilon"]
+    k = unlike_params_dict["k"]
+    merge!(epsilon, combining_epsilon(epsilon, sigma, k))
+
+    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
+    bond_vol = assoc_params_dict["bond_vol"]
+    n_sites = Dict()
+    for i in keys(like_params_dict["n_e"])
+        n_sites[i] = Dict()
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
+    end
+    return sCKSAFTParams(segment, sigma, epsilon, epsilon_assoc, bond_vol, n_sites)
+end
+
+#### BACKSAFTFamily ####
+function create_BACKSAFTParams(raw_params; combiningrule_ϵ = "Berth")
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["m", "c", "vol", "epsilon", "alpha"];
+                     unlike_params = ["k"])
+
+    segment = like_params_dict["m"]
+
+    sigma = like_params_dict["vol"]
+    map!(x->(6*x/N_A/1e6/π)^(1/3), values(sigma))
+    merge!(sigma, combining_sigma(sigma))
+
+    epsilon = like_params_dict["epsilon"]
+    k = unlike_params_dict["k"]
+    merge!(epsilon, combining_epsilon(epsilon, sigma, k))
+
+    c = like_params_dict["c"]
+
+    alpha = like_params_dict["alpha"]
+    return BACKSAFTParams(segment, sigma, epsilon, c, alpha)
+end
+
 #### SAFTVRMie ####
 function create_SAFTVRMieParams(raw_params)
     like_params_dict, unlike_params_dict, assoc_params_dict =
@@ -113,6 +162,35 @@ function create_SAFTVRMieParams(raw_params)
         n_sites[i]["H"] = like_params_dict["n_H"][i]
     end
     return SAFTVRMieParams(segment, sigma, epsilon, lambdaA, lambdaR, epsilon_assoc, bond_vol, n_sites)
+end
+
+#### SAFTVRMie ####
+function create_SAFTVRMorseParams(raw_params)
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["m", "sigma", "epsilon", "lambda","n_H","n_e"];
+                     unlike_params=["epsilon"],assoc_params = ["epsilon_assoc", "bond_vol"])
+    segment = like_params_dict["m"]
+
+    sigma = like_params_dict["sigma"]
+    merge!(sigma, combining_sigma(sigma))
+    map!(x->x*1E-10, values(sigma))
+
+    epsilon = like_params_dict["epsilon"]
+    merge!(epsilon, unlike_params_dict["epsilon"])
+    merge!(epsilon, combining_epsilon(epsilon, sigma, Dict();rules_no_k = "Hudson-McCoubrey"))
+
+    lambda = like_params_dict["lambda"]
+    merge!(lambda, combining_lambda_Mie(lambda))
+
+    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
+    bond_vol = assoc_params_dict["bond_vol"]
+    n_sites = Dict()
+    for i in keys(like_params_dict["n_H"])
+        n_sites[i] = Dict()
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
+    end
+    return SAFTVRMorseParams(segment, sigma, epsilon, lambda, epsilon_assoc, bond_vol, n_sites)
 end
 
 #### SAFTVRSW ####
@@ -224,6 +302,33 @@ function create_softSAFTParams(raw_params; combiningrule_ϵ = "Berth")
         n_sites[i]["H"] = like_params_dict["n_H"][i]
     end
     return softSAFTParams(segment, sigma, epsilon, epsilon_assoc, bond_vol, n_sites)
+end
+
+#### softSAFT ####
+function create_LJSAFTParams(raw_params; combiningrule_ϵ = "Berth")
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["m", "b", "T", "n_H", "n_e"];
+                     unlike_params = ["k"], assoc_params = ["epsilon_assoc", "bond_vol"])
+
+    segment = like_params_dict["m"]
+
+    b = like_params_dict["b"]
+    map!(x->x*1E-3, values(b))
+    merge!(b, combining_sigma(b))
+
+    T = like_params_dict["T"]
+    k = unlike_params_dict["k"]
+    merge!(T, combining_epsilon(T, b, k))
+
+    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
+    bond_vol = assoc_params_dict["bond_vol"]
+    n_sites = Dict()
+    for i in keys(like_params_dict["n_e"])
+        n_sites[i] = Dict()
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
+    end
+    return LJSAFTParams(segment, b, T, epsilon_assoc, bond_vol, n_sites)
 end
 
 #### SAFTgammaMie ####

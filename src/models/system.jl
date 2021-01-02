@@ -16,6 +16,10 @@ function system(components::Array{String,1}, method::String, ideal="Basic"; kwar
         raw_params = retrieveparams(components, method, ideal; kwargs...)
         ideal_model = create_IdealParams(set_components, raw_params,ideal)
         model = SAFTVRQMie(set_components, create_SAFTVRQMieParams(raw_params),ideal_model)
+    elseif method == "SAFTVRMorse"
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
+        model = SAFTVRMorse(set_components, create_SAFTVRMorseParams(raw_params),ideal_model)
     elseif method == "SAFTVRSW"
         raw_params = retrieveparams(components, method, ideal; kwargs...)
         ideal_model = create_IdealParams(set_components, raw_params,ideal)
@@ -24,6 +28,14 @@ function system(components::Array{String,1}, method::String, ideal="Basic"; kwar
         raw_params = retrieveparams(components, method, ideal; kwargs...)
         ideal_model = create_IdealParams(set_components, raw_params,ideal)
         model = CKSAFT(set_components, create_CKSAFTParams(raw_params),ideal_model)
+    elseif method == "sCKSAFT"
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
+        model = sCKSAFT(set_components, create_sCKSAFTParams(raw_params),ideal_model)
+    elseif method == "BACKSAFT"
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
+        model = BACKSAFT(set_components, create_BACKSAFTParams(raw_params),ideal_model)
     elseif method == "ogSAFT"
         raw_params = retrieveparams(components, method, ideal; kwargs...)
         params = create_ogSAFTParams(raw_params)
@@ -34,6 +46,11 @@ function system(components::Array{String,1}, method::String, ideal="Basic"; kwar
         params = create_softSAFTParams(raw_params)
         ideal_model = create_IdealParams(set_components, raw_params,ideal)
         model = softSAFT(set_components, params,ideal_model)
+    elseif method == "LJSAFT"
+        raw_params = retrieveparams(components, method, ideal; kwargs...)
+        params = create_LJSAFTParams(raw_params)
+        ideal_model = create_IdealParams(set_components, raw_params,ideal)
+        model = LJSAFT(set_components, params,ideal_model)
     elseif method == "sPCSAFT"
         raw_params = retrieveparams(components, method, ideal; kwargs...)
         ideal_model = create_IdealParams(set_components, raw_params,ideal)

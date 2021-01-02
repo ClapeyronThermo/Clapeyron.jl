@@ -26,11 +26,15 @@ include("models/eos/Ideal/Reid.jl")
 
 include("models/eos/SAFT/PCSAFT.jl")
 include("models/eos/SAFT/CKSAFT.jl")
+include("models/eos/SAFT/sCKSAFT.jl")
+include("models/eos/SAFT/BACKSAFT.jl")
 include("models/eos/SAFT/sPCSAFT.jl")
 include("models/eos/SAFT/SAFTVRMie.jl")
 include("models/eos/SAFT/SAFTVRQMie.jl")
+include("models/eos/SAFT/SAFTVRMorse.jl")
 include("models/eos/SAFT/SAFTVRSW.jl")
 include("models/eos/SAFT/ogSAFT.jl")
+include("models/eos/SAFT/LJSAFT.jl")
 include("models/eos/SAFT/softSAFT.jl")
 include("models/eos/SAFT/SAFTgammaMie.jl")
 
@@ -56,5 +60,5 @@ include("methods/initial_guess_properties.jl")
 
 export get_volume, get_sat_pure, get_bubble_pressure, get_crit_pure, get_enthalpy_vap, get_pressure, get_entropy, get_chemical_potential, get_internal_energy, get_enthalpy, get_Gibbs_free_energy, get_Helmholtz_free_energy, get_isochoric_heat_capacity, get_isobaric_heat_capacity, get_isothermal_compressibility, get_isentropic_compressibility, get_speed_of_sound, get_isobaric_expansivity, get_Joule_Thomson_coefficient, get_second_virial_coeff
 export eos
-export create_z
+export create_z, a_1, a_2, a_hs, a_3
 end # module

@@ -5,12 +5,16 @@ abstract type Ideal <: EoS end
 
 abstract type PCSAFTFamily <: SAFT end
 abstract type CKSAFTFamily <: SAFT end
+abstract type sCKSAFTFamily <: SAFT end
+abstract type BACKSAFTFamily <: SAFT end
 abstract type sPCSAFTFamily <: SAFT end
 abstract type ogSAFTFamily <: SAFT end
 abstract type SAFTVRSWFamily <: SAFT end
 abstract type SAFTVRMieFamily <: SAFT end
 abstract type SAFTVRQMieFamily <: SAFT end
+abstract type SAFTVRMorseFamily <: SAFT end
 abstract type SAFTgammaMieFamily <: SAFT end
+abstract type LJSAFTFamily <: SAFT end
 abstract type softSAFTFamily <: SAFT end
 
 abstract type vdWFamily <: Cubic end
@@ -35,6 +39,12 @@ struct SAFTVRQMie <: SAFTVRQMieFamily
     ideal::Ideal
 end
 
+struct SAFTVRMorse <: SAFTVRMorseFamily
+    components::Array{Set{String},1}
+    params::SAFTVRMorseParams
+    ideal::Ideal
+end
+
 struct SAFTVRSW <: SAFTVRSWFamily
     components::Array{Set{String},1}
     params::SAFTVRSWParams
@@ -44,6 +54,18 @@ end
 struct CKSAFT <: CKSAFTFamily
     components::Array{Set{String},1}
     params::CKSAFTParams
+    ideal::Ideal
+end
+
+struct sCKSAFT <: sCKSAFTFamily
+    components::Array{Set{String},1}
+    params::sCKSAFTParams
+    ideal::Ideal
+end
+
+struct BACKSAFT <: BACKSAFTFamily
+    components::Array{Set{String},1}
+    params::BACKSAFTParams
     ideal::Ideal
 end
 
@@ -63,6 +85,12 @@ end
 struct ogSAFT <: ogSAFTFamily
     components::Array{Set{String},1}
     params::ogSAFTParams
+    ideal::Ideal
+end
+
+struct LJSAFT <: LJSAFTFamily
+    components::Array{Set{String},1}
+    params::LJSAFTParams
     ideal::Ideal
 end
 
