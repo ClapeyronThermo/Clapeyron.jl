@@ -12,16 +12,15 @@ SAFT equations of state currently available:
 | ------------- | ------------------ | ------------------ | ------------------ | ------------------ |
 | SAFT          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | CK-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| sSAFT         |                    |                    |                    |                    |
-| LJ-SAFT       |                    |                    |                    |                    |
-| BACK-SAFT     |                    |                    |                    |                    |
+| sSAFT         | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:  |                    |
+| LJ-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |                    |
+| BACK-SAFT     | :heavy_check_mark: | :heavy_check_mark: | N/A                   |                    |
 | PC-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | sPC-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | SAFT-VR SW    | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | soft-SAFT     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | SAFT-VR Mie   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | SAFT-VRQ Mie  | :heavy_check_mark: | N/A                | N/A                | :heavy_check_mark: |
-| SAFT-VR Morse |                    |                    |                    |                    |
 
 For group contribution approaches, we provide:
 
