@@ -10,7 +10,8 @@ using DataStructures: DefaultDict
 
 include("constants.jl")
 include("utils/macros.jl")
-include("utils/extractdatabase.jl")
+# include("utils/extractdatabase.jl")
+include("utils/extractdatabase2.jl")
 include("models/param_structs.jl")
 include("models/ideal_param_structs.jl")
 include("models/model_structs.jl")
