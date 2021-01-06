@@ -1,60 +1,9 @@
 using CSV, Tables
+include("OpenSAFTParams.jl")
+include("checks.jl")
+include("visualisation.jl")
 
 @enum ParameterType singledata pairdata assocdata groupdata
-
-abstract type OpenSAFTParams end
-
-struct SingleParams{T} <: OpenSAFTParams
-    name::String
-    values::Array{T,1}
-    components::Array{String,1}
-    model::String
-    sources::Array{String,1}
-end
-
-struct PairParams{T} <: OpenSAFTParams
-    name::String
-    values::Array{T,2}
-    components::Array{String,1}
-    model::String
-    sources::Array{String,1}
-end
-
-struct AssocParams{T} <: OpenSAFTParams
-    name::String
-    values::Array{Array{T,2},2}
-    components::Array{String,1}
-    sites::Array{Array{String,1},1}
-    model::String
-    sources::Array{String,1}
-end
-
-struct GroupParams <: OpenSAFTParams
-    components::Array{String,1}
-    groups::Array{Array{String,1},1}
-    groupmultiplicities::Array{Array{Int64,1},1}
-    model::String
-end
-
-function checkfor_clashingheaders(filepaths::Array{String,1})
-    # Raises an error if the header of any assoc parameter clashes with a non-assoc parameter
-    headerparams = []
-    headerparams_assoc = []
-    for filepath in filepaths
-        type = readtype(filepath)
-        if type == singledata || type == pairdata
-            append!(headerparams, readheader(filepath))
-        elseif type == assocdata
-            append!(headerparams_assoc, readheader(filepath))
-        end
-    end
-    clashingheaders = intersect(headerparams, headerparams_assoc)
-    !isempty(clashingheaders) && error("Headers ", clashingheaders, " appear in both loaded asssoc and non-assoc files.")
-end
-
-function checkfor_singlecompleteness(filepaths::Array{String,1}, components::Array{String,1})
-    # Raises an error if any component is not present in any single databases.
-end
 
 function getfileextension(filepath::String)
     # Quick helper function to get the file extension of any given path.
@@ -75,7 +24,7 @@ function getdatabasepaths(model::String)
     return files[isfile.(files) .& (getfileextension.(files) .== "csv")]
 end
 
-function getuserpath(model::String)
+function getuserpaths(model::String)
     # If path is a file, then return an Array containing a single path to that file.
     # If path is a directory, then return an Array containing paths to all csv files in that directory.
     path = model
@@ -87,6 +36,8 @@ function getuserpath(model::String)
 end
 
 function getmodelname(models::Array{String,1}, usermodels::Array{String,1})
+    # Try to guess the name of the model.
+    # It will take the name of the first given directory, checking models before usermodels.
     if !isempty(models)
         for model in models
             path = joinpath(dirname(pathof(OpenSAFT)), "../database", model)
@@ -102,39 +53,43 @@ function getmodelname(models::Array{String,1}, usermodels::Array{String,1})
     return "unnamed"
 end
 
-
-
-function getparams(components::Array{String,1}, models::Array{String,1}=String[]; usermodels::Array{String,1}=String[], modelname="unnamed", asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams=false)
+function getparams(components::Array{String,1}, models::Array{String,1}=String[]; usermodels::Array{String,1}=String[], modelname="", asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams=false, verbose=false)
     # Gets all parameters from database.
     # models is a list of paths relative to the OpenSAFT database directory.
-    # filepaths is a list of paths input by the user.
+    # usermodels is a list of paths input by the user.
     # If parameters exist in multiple files, OpenSAFT gives priority to files in later paths.
-    # asymmetric_pairparams is a list of parameters with array reflection turned off.
-    # error_onmissingparams gives users the option to disable component existence check in single params.
-    filepaths = string.(vcat([(getdatabasepaths.(models)...)...], [(getuserpath.(usermodels)...)...]))
-    ignore_missingsingleparams && checkfor_singlecompleteness(filepaths, components)
+    # asymmetric_pairparams is a list of parameters for which matrix reflection is disabled.
+    # ignore_missingsingleparams gives users the option to disable component existence check in single params.
+    filepaths = string.(vcat([(getdatabasepaths.(models)...)...], [(getuserpaths.(usermodels)...)...]))
+    !ignore_missingsingleparams && checkfor_singlecompleteness(filepaths, components)
     sites = findsites(filepaths, components)
-    allparams = findparams(filepaths, components, sites)
-    if modelname == "unnamed"
+    allparams, paramsources = findparams(filepaths, components, sites; verbose=verbose)
+    if modelname == ""
         modelname = getmodelname(models, usermodels)
     end
-    finaldict = packageparams(allparams, components, sites, modelname, asymmetric_pairparams)
+    finaldict = packageparams(allparams, components, sites, paramsources, modelname; asymmetric_pairparams=asymmetric_pairparams, ignore_missingsingleparams=ignore_missingsingleparams)
     return finaldict
 end
 
-function packageparams(allparams, components, sites, modelname, asymmetric_pairparams)
+function packageparams(allparams::Dict, components::Array{String,1}, sites::Array{Array{String,1},1}, paramsources::Dict{String,Set{String}}, modelname::String; asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams=false)
+    # Package params into their respective Structs.
     output = Dict()
     for (param, value) in allparams
         if typeof(value) <: Array{<:Any,1}
-            output[param] = SingleParams(param, value, components, modelname, String[])
-        elseif typeof(value) <: Array{<:Array,2}
-                output[param] = AssocParams(param, value, components, sites, modelname, String[])
-        elseif typeof(value) <: Array{<:Any, 2}
-            if param in asymmetric_pairparams
-                output[param] = PairParams(param, value, components, modelname, String[])
-            else
-                output[param] = PairParams(param, mirrormatrix!(value), components, modelname, String[])
+            try
+                newvalue = convert(Array{nonmissingtype(eltype(value))}, value)
+            catch e
+                !ignore_missingsingleparams && error("Missing values exist in single parameter ", param, ".")
+                newvalue = defaultmissing!(value)
             end
+            output[param] = SingleParams(param, newvalue, components, modelname, collect(paramsources[param]))
+        elseif typeof(value) <: Array{<:Array,2}
+            newvalue = defaultmissing!.(value)
+            output[param] = AssocParams(param, newvalue, components, sites, modelname, collect(paramsources[param]))
+        elseif typeof(value) <: Array{<:Any, 2}
+            param in asymmetric_pairparams && mirrormatrix!(value)
+            newvalue = defaultmissing!(value)
+            output[param] = PairParams(param, newvalue, components, modelname, collect(paramsources[param]))
         else
             error("Format for ", param, "is incorrect.")
         end
@@ -142,32 +97,35 @@ function packageparams(allparams, components, sites, modelname, asymmetric_pairp
     return output
 end
 
-function findparams(filepaths::Array{String,1}, components::Array{String,1}, sites::Array{Array{String,1},1})
-    # Returns dictionary with all parameters in their respective arrays.
+function findparams(filepaths::Array{String,1}, components::Array{String,1}, sites::Array{Array{String,1},1}; verbose=false)
+    # Returns Dict with all parameters in their respective arrays.
     checkfor_clashingheaders(filepaths)
-    allparams = Dict()
+    allparams = Dict{String,Any}()
+    paramsources = Dict{String,Set{String}}()
     for filepath in filepaths
         type = readtype(filepath)
         headerparams = readheader(filepath)
-        foundparams = searchfor(filepath,components,headerparams)
-        foundcomponents = collect(keys(foundparams))
+        foundparams, paramtypes, sources = searchfor(filepath, components, headerparams; verbose=verbose)
         isempty(foundparams) && continue
+        foundcomponents = collect(keys(foundparams))
         foundparams = swapdictorder(foundparams)
         for headerparam in headerparams
             if !haskey(allparams, headerparam)
-                allparams[headerparam] = createemptyparamsarray(typeof(foundparams[headerparam][foundcomponents[1]]), type, components, sites)
+                allparams[headerparam] = createemptyparamsarray(paramtypes[headerparam], type, components, sites)
             end
             if type == singledata
                 for (component, value) in foundparams[headerparam]
-                    if typeof(allparams[headerparam]) <: Array{Int,N} where N && typeof(value) <: Float64
+                    if typeof(allparams[headerparam]) <: Array{Union{Missing,Int},N} where N && typeof(value) <: Float64
                         allparams[headerparam] = float(allparams[headerparam])
                     end
                     idx = findfirst(isequal(component), components)
                     if typeof(allparams[headerparam]) <: Array{<:Any,2}
-                        allparams[headerparam][idx][idx] = value
+                        allparams[headerparam][idx,idx] = value
                     else
                         allparams[headerparam][idx] = value
                     end
+                    !haskey(paramsources, headerparam) && (paramsources[headerparam] = Set())
+                    push!(paramsources[headerparam], sources[component])
                 end
             end
             if type == pairdata
@@ -181,6 +139,8 @@ function findparams(filepaths::Array{String,1}, components::Array{String,1}, sit
                     idx1 = findfirst(isequal(componentpair[1]), components)
                     idx2 = findfirst(isequal(componentpair[2]), components)
                     allparams[headerparam][idx1,idx2] = value
+                    !haskey(paramsources, headerparam) && (paramsources[headerparam] = Set())
+                    push!(paramsources[headerparam], sources[componentpair])
                 end
             end
             if type == assocdata
@@ -193,14 +153,30 @@ function findparams(filepaths::Array{String,1}, components::Array{String,1}, sit
                     idx21 = findfirst(isequal(assocpair[2][1]), sites[idx1])
                     idx22 = findfirst(isequal(assocpair[2][2]), sites[idx2])
                     allparams[headerparam][idx1,idx2][idx21,idx22] = value
+                    !haskey(paramsources, headerparam) && (paramsources[headerparam] = Set())
+                    push!(paramsources[headerparam], sources[assocpair])
                 end
             end
         end
     end
-    return allparams
+    return allparams, paramsources
 end
 
-# function swapdictorder(dict::Dict{T1,T2}) where {T1,T2<:Dict}
+function defaultmissing!(array::Array)
+    # Changes missing values to default values of Strings or Numbers.
+    # It will also return a non-missing array type.
+    type = nonmissingtype(eltype(array))
+    if type <: AbstractString
+        array[ismissing.(array)] .= ""
+    elseif type <: Number
+        array[ismissing.(array)] .= 0
+    else
+        error("Unsupported type.")
+    end
+    output = convert(Array{type}, array)
+    return output
+end
+
 function swapdictorder(dict::Dict)
     # Swap the first two level in a nested dictionary.
     # Note that there is no checking done to ensure that Dict format is correct
@@ -210,62 +186,74 @@ function swapdictorder(dict::Dict)
     innerkeys = keys(dict[collect(outerkeys)[1]])
     for innerkey in innerkeys, outerkey in outerkeys
         if !haskey(output, innerkey)
-            output[innerkey] = Dict(outerkey => dict[outerkey][innerkey])
+            output[innerkey] = Dict{Any,Any}(outerkey => dict[outerkey][innerkey])
         end
         push!(output[innerkey], outerkey => dict[outerkey][innerkey])
     end
     return output
 end
 
-function searchfor(filepath::String, components::Array{String,1}, headerparams::Array{String,1}; columnreference="species", sitecolumnreference="site", verbose=false, ignore_missingsingleparams=false)
-    # Returns dictionary with all matches in a particular file for one parameter.
+function searchfor(filepath::String, components::Array{String,1}, headerparams::Array{String,1}; columnreference="species", sitecolumnreference="site", sourcecolumnreference="source", verbose=false, ignore_missingsingleparams=false)
+    # Returns a Dict with all matches in a particular file for one parameter.
     normalised_columnreference = lowercase(replace(columnreference, ' ' => ""))
     type = readtype(filepath)
     verbose && println("Searching for ", string(type), " headers ", headerparams, " for components ", components, " at ", filepath, "...")
     df = CSV.File(filepath; header=3)
     csvheaders = replace.(lowercase.(String.(Tables.columnnames(df))), ' ' => "")
     foundvalues = Dict()
+    paramtypes = Dict(headerparams .=> [Tables.columntype(df, Symbol(x)) for x in headerparams])
+    sources = Dict()
+    getsources = false
+    normalised_sourcecolumnreference = lowercase(replace(sourcecolumnreference, ' ' => ""))
+    sourcecolumn = Symbol(csvheaders[findfirst(isequal(normalised_sourcecolumnreference), csvheaders)])
+    if "source" in csvheaders
+        getsources = true
+    end
     if type == singledata
-        lookupcolumn = csvheaders[findfirst(isequal(normalised_columnreference), csvheaders)]
+        lookupcolumn = Symbol(csvheaders[findfirst(isequal(normalised_columnreference), csvheaders)])
         for row in Tables.rows(df)
-            component = row[Symbol(lookupcolumn)]
+            component = row[lookupcolumn]
             if component in components
-                verbose && println("Found component: ", component)
+                verbose && print("Found component: ", component)
                 foundvalues[component] = Dict()
                 for headerparam in headerparams
                     foundvalues[component][headerparam] = row[Symbol(headerparam)]
                 end
                 verbose && println(" with values ", foundvalues[component])
+                source = row[sourcecolumn]
+                !ismissing(source) && (sources[component] = source)
             end
         end
     elseif type == pairdata
-        lookupcolumn1 = csvheaders[findfirst(x -> x[1:end-1] == normalised_columnreference && x[end] == '1', csvheaders)]
-        lookupcolumn2 = csvheaders[findfirst(x -> x[1:end-1] == normalised_columnreference && x[end] == '2', csvheaders)]
+        lookupcolumn1 = Symbol(csvheaders[findfirst(x -> x[1:end-1] == normalised_columnreference && x[end] == '1', csvheaders)])
+        lookupcolumn2 = Symbol(csvheaders[findfirst(x -> x[1:end-1] == normalised_columnreference && x[end] == '2', csvheaders)])
         for row in Tables.rows(df)
-            component1 = row[Symbol(lookupcolumn1)]
-            component2 = row[Symbol(lookupcolumn2)]
+            component1 = row[lookupcolumn1]
+            component2 = row[lookupcolumn2]
             if component1 in components && component2 in components
                 componentpair = (component1, component2)
-                verbose && println("Found component pair: ", componentpair)
+                verbose && print("Found component pair: ", componentpair)
                 foundvalues[componentpair] = Dict()
                 for headerparam in headerparams
                     foundvalues[componentpair][headerparam] = row[Symbol(headerparam)]
                 end
                 verbose && println(" with values ", foundvalues[componentpair])
+                source = row[sourcecolumn]
+                !ismissing(source) && (sources[componentpair] = source)
             end
         end
     elseif type == assocdata
         normalised_sitecolumnreference = lowercase(replace(sitecolumnreference, ' ' => ""))
-        lookupcolumn1 = csvheaders[findfirst(x -> x[1:end-1] == normalised_columnreference && x[end] == '1', csvheaders)]
-        lookupcolumn2 = csvheaders[findfirst(x -> x[1:end-1] == normalised_columnreference && x[end] == '2', csvheaders)]
-        lookupsitecolumn1 = csvheaders[findfirst(x -> x[1:end-1] == normalised_sitecolumnreference && x[end] == '1', csvheaders)]
-        lookupsitecolumn2 = csvheaders[findfirst(x -> x[1:end-1] == normalised_sitecolumnreference && x[end] == '2', csvheaders)]
+        lookupcolumn1 = Symbol(csvheaders[findfirst(x -> x[1:end-1] == normalised_columnreference && x[end] == '1', csvheaders)])
+        lookupcolumn2 = Symbol(csvheaders[findfirst(x -> x[1:end-1] == normalised_columnreference && x[end] == '2', csvheaders)])
+        lookupsitecolumn1 = Symbol(csvheaders[findfirst(x -> x[1:end-1] == normalised_sitecolumnreference && x[end] == '1', csvheaders)])
+        lookupsitecolumn2 = Symbol(csvheaders[findfirst(x -> x[1:end-1] == normalised_sitecolumnreference && x[end] == '2', csvheaders)])
         for row in Tables.rows(df)
-            component1 = row[Symbol(lookupcolumn1)]
-            component2 = row[Symbol(lookupcolumn2)]
+            component1 = row[lookupcolumn1]
+            component2 = row[lookupcolumn2]
             if component1 in components && component2 in components
-                site1 = row[Symbol(lookupsitecolumn1)]
-                site2 = row[Symbol(lookupsitecolumn2)]
+                site1 = row[lookupsitecolumn1]
+                site2 = row[lookupsitecolumn2]
                 assocpair = ((component1, component2), (site1, site2))
                 verbose && print("Found assoc pair: ", assocpair)
                 foundvalues[assocpair] = Dict()
@@ -273,12 +261,14 @@ function searchfor(filepath::String, components::Array{String,1}, headerparams::
                     foundvalues[assocpair][headerparam] = row[Symbol(headerparam)]
                 end
                 verbose && println(" with values ", foundvalues[assocpair])
+                source = row[sourcecolumn]
+                !ismissing(source) && (sources[assocpair] = source)
             end
         end
     else
         error("File is of type ", String(type), " and cannot be read with this function.")
     end
-    return foundvalues
+    return foundvalues, paramtypes, sources
 end
 
 function readtype(filepath::String)
@@ -294,6 +284,7 @@ function readtype(filepath::String)
 end
 
 function getline(filepath::String, selectedline::Int)
+    # Simple function to return text from filepath at selectedline.
     open(filepath) do file
         linecount = 1
         for line in eachline(file)
@@ -347,36 +338,22 @@ function findsites(filepaths::Array{String,1}, components::Array{String,1}; colu
     return output
 end
 
-function createemptyparamsarray(datatype::DataType, type::ParameterType, components::Array{String,1}, sites::Array{Array{String,1},1})
-    # Creates an zero or empty array of the appropriate size.
+function createemptyparamsarray(datatype::Type, type::ParameterType, components::Array{String,1}, sites::Array{Array{String,1},1})
+    # Creates a missing array of the appropriate size.
     componentslength = length(components)
-    if datatype <: AbstractString
-        type == singledata && return (Array{datatype}(undef, componentslength) .= "")
-        type == pairdata && return (Array{datatype}(undef, componentslength, componentslength) .= "")
-        if type == assocdata
-            output = Array{Array{datatype,2},2}(undef, componentslength, componentslength)
-            for i in 1:componentslength, j in 1:componentslength
-                output[i,j] = (Array{datatype}(undef, length(sites[i]), length(sites[j])) .= "")
-            end
-            return output
+    type == singledata && return (Array{Union{Missing,datatype}}(undef, componentslength) .= missing)
+    type == pairdata && return (Array{Union{Missing,datatype}}(undef, componentslength, componentslength) .= missing)
+    if type == assocdata
+        output = Array{Array{Union{Missing,datatype},2},2}(undef, componentslength, componentslength)
+        for i in 1:componentslength, j in 1:componentslength
+            output[i,j] = (Array{Union{Missing,datatype}}(undef, length(sites[i]), length(sites[j])) .= missing)
         end
-    elseif datatype <: Number
-        type == singledata && return zeros(datatype, componentslength)
-        type == pairdata && return zeros(datatype, componentslength, componentslength)
-        if type == assocdata
-            output = Array{Array{datatype,2},2}(undef, componentslength, componentslength)
-            for i in 1:componentslength, j in 1:componentslength
-                output[i,j] = zeros(datatype, length(sites[i]), length(sites[j]))
-            end
-            return output
-        end
-    else
-        error("Data type ", datatype, " not supported.")
+        return output
     end
 end
 
 function createemptyparamsarray(type::ParameterType, components::Array{String,1}, sites::Array{Array{String,1},1})
-    return createemptyparamsarray(Float64, type, components, sites)
+    return createemptyparamsarray(Any, type, components, sites)
 end
 
 function convertsingletopair(params::Array{T,1}) where T
@@ -396,11 +373,11 @@ function mirrormatrix!(matrix::Array{<:Any,2})
     for i in 2:matrixsize[1], j in 1:i-1
         lowervalue = matrix[i,j]
         uppervalue = matrix[j,i]
-        if lowervalue != 0 && uppervalue != 0 && lowervalue != uppervalue
+        if !ismissing(lowervalue) && !ismissing(uppervalue) && lowervalue != uppervalue
             error("Dissimilar non-zero entries exist across diagonal.")
         end
-        lowervalue != 0 && (matrix[j,i] = lowervalue)
-        uppervalue != 0 && (matrix[i,j] = uppervalue)
+        !ismissing(lowervalue) && (matrix[j,i] = lowervalue)
+        !ismissing(uppervalue) && (matrix[i,j] = uppervalue)
     end
     return matrix
 end

@@ -1,9 +1,9 @@
 OpenSAFT Database File,,,,,,,,,,
 Test Like Parameters,,,,,,,,,,
-species,DIPPR Number,Mw,m,sigma,epsilon,n_H,n_e,k,str,source
-sp1,,16,1,3.7,150,0,0,5,5,testsource1
+species,DIPPR Number,Mw,m,sigma,epsilon,n_H,n_e,k,st,source
+sp1,,16,1,3.7,150,0,0,5,hcr,testsource1
 sp2,,30,1.6,3.5,191,0,0,4,rcuh,testsource2
-sp3,,32,1.5,3.2,190,1,1,3,oeruch,testsource3
-sp4,,46,2.4,3.1,198,1,1,5,oeucrh,testsource4
-sp5,,18,1.1,3,367,1,1,6,4,testsource5
-sp1,,16,1,4,170,0,0,7,5,testsource1
+sp3,,32,1.5,3.2,190,1,1,3,42,testsource3
+sp4,,46,2.4,3.1,198,1,1,,oeucrh,testsource4
+sp5,,18,1.1,3,367,1,1,6,",.",testsource5
+sp1,,6,1,,170,0,0,7,ur,testsource1
