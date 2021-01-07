@@ -296,14 +296,17 @@ end
 
 function readtype(filepath::String)
     # Searches for type from second line of CSV.
+    keywords = ["like", "single", "unlike", "pair", "assoc", "group"]
     words = split(lowercase(rstrip(getline(filepath, 2), ',')), ' ')
-    "like" in words && return singledata
-    "single" in words && return singledata
-    "unlike" in words && return pairdata
-    "pair" in words && return pairdata
-    "assoc" in words && return assocdata
-    "group" in words && return groupdata
-    error("Unable to determine type of database", filepath, ". Check that keyword is present on Line 2.")
+    foundkeywords = intersect(words, keywords)
+    length(foundkeywords) > 1 && error("Multiple keywords found in database ", filepath, ": ", foundkeywords)
+    isempty(foundkeywords) && error("Unable to determine type of database", filepath, ". Check that keyword is present on Line 2.")
+    foundkeywords[1] == "single" && return singledata
+    foundkeywords[1] == "like" && return singledata
+    foundkeywords[1] == "pair" && return pairdata
+    foundkeywords[1] == "unlike" && return pairdata
+    foundkeywords[1] == "assoc" && return assocdata
+    foundkeywords[1] == "group" && return groupdata
 end
 
 function getline(filepath::String, selectedline::Int)
