@@ -29,8 +29,8 @@ struct AssocParams{T} <: OpenSAFTParams
 end
 
 struct GroupParams <: OpenSAFTParams
-    components::Array{String,1}
-    groups::Array{Array{String,1},1}
-    groupmultiplicities::Array{Array{Int64,1},1}
+    components::String
+    groups::Array{String,1}
+    groupmultiplicities::Array{Int,1}
     model::String
 end
