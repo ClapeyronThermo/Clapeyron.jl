@@ -119,8 +119,9 @@ function findparams(filepaths::Array{String,1}, components::Array{String,1}, sit
             end
             if type == singledata
                 for (component, value) in foundparams[headerparam]
-                    if typeof(allparams[headerparam]) <: Array{Union{Missing,Int},N} where N && typeof(value) <: Float64
-                        allparams[headerparam] = float(allparams[headerparam])
+                    currenttype = nonmissingtype(eltype(allparams[headerparam]))
+                    if !(currenttype <: paramtypes[headerparam])
+                        allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
                     end
                     idx = findfirst(isequal(component), components)
                     if typeof(allparams[headerparam]) <: Array{<:Any,2}
@@ -137,8 +138,9 @@ function findparams(filepaths::Array{String,1}, components::Array{String,1}, sit
                     allparams[headerparam] = convertsingletopair(allparams[headerparam])
                 end
                 for (componentpair, value) in foundparams[headerparam]
-                    if typeof(allparams[headerparam]) <: Array{Union{Missing,Int},N} where N && typeof(value) <: Float64
-                        allparams[headerparam] = float(allparams[headerparam])
+                    currenttype = nonmissingtype(eltype(allparams[headerparam]))
+                    if !(currenttype <: paramtypes[headerparam])
+                        allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
                     end
                     idx1 = findfirst(isequal(componentpair[1]), components)
                     idx2 = findfirst(isequal(componentpair[2]), components)
@@ -149,8 +151,9 @@ function findparams(filepaths::Array{String,1}, components::Array{String,1}, sit
             end
             if type == assocdata
                 for (assocpair, value) in foundparams[headerparam]
-                    if typeof(allparams[headerparam]) <: Array{Array{Int,2},2} && typeof(value) <: Float64
-                        allparams[headerparam] = float.(allparams[headerparam])
+                    currenttype = nonmissingtype(eltype(allparams[headerparam][1,1]))
+                    if !(currenttype <: paramtypes[headerparam])
+                        allparams[headerparam] = convert(Array{Array{Union{Missing,paramtypes[headerparam]}}}, allparams[headerparam])
                     end
                     idx1 = findfirst(isequal(assocpair[1][1]), components)
                     idx2 = findfirst(isequal(assocpair[1][2]), components)
