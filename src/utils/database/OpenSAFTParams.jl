@@ -3,6 +3,7 @@ abstract type OpenSAFTParams end
 struct SingleParams{T} <: OpenSAFTParams
     name::String
     values::Array{T,1}
+    ismissingvalues::Array{Bool,1}
     components::Array{String,1}
     model::String
     sources::Array{String,1}
@@ -11,6 +12,7 @@ end
 struct PairParams{T} <: OpenSAFTParams
     name::String
     values::Array{T,2}
+    ismissingvalues::Array{Bool,2}
     components::Array{String,1}
     model::String
     sources::Array{String,1}
@@ -19,6 +21,7 @@ end
 struct AssocParams{T} <: OpenSAFTParams
     name::String
     values::Array{Array{T,2},2}
+    ismissingvalues::Array{Array{Bool,2},2}
     components::Array{String,1}
     sites::Array{Array{String,1},1}
     model::String

@@ -61,7 +61,6 @@ function getparams(components::Array{String,1}, models::Array{String,1}=String[]
     # asymmetric_pairparams is a list of parameters for which matrix reflection is disabled.
     # ignore_missingsingleparams gives users the option to disable component existence check in single params.
     filepaths = string.(vcat([(getdatabasepaths.(models)...)...], [(getuserpaths.(usermodels)...)...]))
-    !ignore_missingsingleparams && checkfor_singlecompleteness(filepaths, components)
     sites = findsites(filepaths, components)
     allparams, paramsources = findparams(filepaths, components, sites; verbose=verbose)
     if modelname == ""
@@ -76,22 +75,27 @@ function packageparams(allparams::Dict, components::Array{String,1}, sites::Arra
     output = Dict()
     for (param, value) in allparams
         if typeof(value) <: Array{<:Any,1}
-            try
-                newvalue = convert(Array{nonmissingtype(eltype(value))}, value)
-            catch e
-                !ignore_missingsingleparams && error("Missing values exist in single parameter ", param, ".")
-                newvalue = defaultmissing!(value)
+            newvalue, ismissingvalues = defaultmissing(value)
+            if !ignore_missingsingleparams && any(ismissingvalues)
+                error("Missing values exist in single parameter ", param, ": ", value, ".")
             end
-            output[param] = SingleParams(param, newvalue, components, modelname, collect(paramsources[param]))
+            output[param] = SingleParams(param, newvalue, ismissingvalues, components, modelname, collect(paramsources[param]))
         elseif typeof(value) <: Array{<:Array,2}
-            newvalue = defaultmissing!.(value)
-            output[param] = AssocParams(param, newvalue, components, sites, modelname, collect(paramsources[param]))
+            newvalue_ismissingvalues = defaultmissing.(value)
+            newvalue = getindex.(newvalue_ismissingvalues, 1)
+            ismissingvalues = getindex.(newvalue_ismissingvalues, 2)
+            output[param] = AssocParams(param, newvalue, ismissingvalues, components, sites, modelname, collect(paramsources[param]))
         elseif typeof(value) <: Array{<:Any, 2}
             param in asymmetric_pairparams && mirrormatrix!(value)
-            newvalue = defaultmissing!(value)
-            output[param] = PairParams(param, newvalue, components, modelname, collect(paramsources[param]))
+            newvalue, ismissingvalues = defaultmissing(value)
+            if (!ignore_missingsingleparams 
+                && !all([ismissingvalues[x,x] for x in 1:size(ismissingvalues,1)])
+                && any([ismissingvalues[x,x] for x in 1:size(ismissingvalues,1)]))
+                error("Partial missing values exist in diagonal of pair parameter ", param, ": ", [value[x,x] for x in 1:size(ismissingvalues,1)], ".")
+            end
+            output[param] = PairParams(param, newvalue, ismissingvalues, components, modelname, collect(paramsources[param]))
         else
-            error("Format for ", param, "is incorrect.")
+            error("Format for ", param, " is incorrect.")
         end
     end
     return output
@@ -125,7 +129,7 @@ function findparams(filepaths::Array{String,1}, components::Array{String,1}, sit
                         allparams[headerparam][idx] = value
                     end
                     !haskey(paramsources, headerparam) && (paramsources[headerparam] = Set())
-                    push!(paramsources[headerparam], sources[component])
+                    !ismissing(sources[component]) && push!(paramsources[headerparam], sources[component])
                 end
             end
             if type == pairdata
@@ -133,14 +137,14 @@ function findparams(filepaths::Array{String,1}, components::Array{String,1}, sit
                     allparams[headerparam] = convertsingletopair(allparams[headerparam])
                 end
                 for (componentpair, value) in foundparams[headerparam]
-                    if typeof(allparams[headerparam]) <: Array{Int,N} where N && typeof(value) <: Float64
+                    if typeof(allparams[headerparam]) <: Array{Union{Missing,Int},N} where N && typeof(value) <: Float64
                         allparams[headerparam] = float(allparams[headerparam])
                     end
                     idx1 = findfirst(isequal(componentpair[1]), components)
                     idx2 = findfirst(isequal(componentpair[2]), components)
                     allparams[headerparam][idx1,idx2] = value
                     !haskey(paramsources, headerparam) && (paramsources[headerparam] = Set())
-                    push!(paramsources[headerparam], sources[componentpair])
+                    !ismissing(sources[componentpair]) && push!(paramsources[headerparam], sources[componentpair])
                 end
             end
             if type == assocdata
@@ -154,7 +158,7 @@ function findparams(filepaths::Array{String,1}, components::Array{String,1}, sit
                     idx22 = findfirst(isequal(assocpair[2][2]), sites[idx2])
                     allparams[headerparam][idx1,idx2][idx21,idx22] = value
                     !haskey(paramsources, headerparam) && (paramsources[headerparam] = Set())
-                    push!(paramsources[headerparam], sources[assocpair])
+                    !ismissing(sources[assocpair]) && push!(paramsources[headerparam], sources[assocpair])
                 end
             end
         end
@@ -162,19 +166,20 @@ function findparams(filepaths::Array{String,1}, components::Array{String,1}, sit
     return allparams, paramsources
 end
 
-function defaultmissing!(array::Array)
-    # Changes missing values to default values of Strings or Numbers.
-    # It will also return a non-missing array type.
+function defaultmissing(array::Array)
+    # Returns a non-missing Array with missing values replaced by default values.
+    # Also returns an Array of Bools to retain overridden information.
+    arraycopy = deepcopy(array)
     type = nonmissingtype(eltype(array))
+    ismissingvalues = ismissing.(array)
     if type <: AbstractString
-        array[ismissing.(array)] .= ""
+        arraycopy[ismissingvalues] .= ""
     elseif type <: Number
-        array[ismissing.(array)] .= 0
+        arraycopy[ismissingvalues] .= 0
     else
         error("Unsupported type.")
     end
-    output = convert(Array{type}, array)
-    return output
+    return convert(Array{type}, arraycopy), convert(Array{Bool}, ismissingvalues)
 end
 
 function swapdictorder(dict::Dict)
@@ -200,15 +205,18 @@ function searchfor(filepath::String, components::Array{String,1}, headerparams::
     verbose && println("Searching for ", string(type), " headers ", headerparams, " for components ", components, " at ", filepath, "...")
     df = CSV.File(filepath; header=3)
     csvheaders = replace.(lowercase.(String.(Tables.columnnames(df))), ' ' => "")
+
     foundvalues = Dict()
     paramtypes = Dict(headerparams .=> [Tables.columntype(df, Symbol(x)) for x in headerparams])
     sources = Dict()
-    getsources = false
+
     normalised_sourcecolumnreference = lowercase(replace(sourcecolumnreference, ' ' => ""))
-    sourcecolumn = Symbol(csvheaders[findfirst(isequal(normalised_sourcecolumnreference), csvheaders)])
-    if "source" in csvheaders
+    getsources = false
+    if normalised_sourcecolumnreference in csvheaders
         getsources = true
+        sourcecolumn = Symbol(csvheaders[findfirst(isequal(normalised_sourcecolumnreference), csvheaders)])
     end
+
     if type == singledata
         lookupcolumn = Symbol(csvheaders[findfirst(isequal(normalised_columnreference), csvheaders)])
         for row in Tables.rows(df)
@@ -220,8 +228,12 @@ function searchfor(filepath::String, components::Array{String,1}, headerparams::
                     foundvalues[component][headerparam] = row[Symbol(headerparam)]
                 end
                 verbose && println(" with values ", foundvalues[component])
-                source = row[sourcecolumn]
-                !ismissing(source) && (sources[component] = source)
+                if getsources
+                    source = row[sourcecolumn]
+                    sources[component] = source
+                else
+                    sources[component] = missing
+                end
             end
         end
     elseif type == pairdata
@@ -238,8 +250,12 @@ function searchfor(filepath::String, components::Array{String,1}, headerparams::
                     foundvalues[componentpair][headerparam] = row[Symbol(headerparam)]
                 end
                 verbose && println(" with values ", foundvalues[componentpair])
-                source = row[sourcecolumn]
-                !ismissing(source) && (sources[componentpair] = source)
+                if getsources
+                    source = row[sourcecolumn]
+                    sources[componentpair] = source
+                else
+                    sources[componentpair] = missing
+                end
             end
         end
     elseif type == assocdata
@@ -261,8 +277,12 @@ function searchfor(filepath::String, components::Array{String,1}, headerparams::
                     foundvalues[assocpair][headerparam] = row[Symbol(headerparam)]
                 end
                 verbose && println(" with values ", foundvalues[assocpair])
-                source = row[sourcecolumn]
-                !ismissing(source) && (sources[assocpair] = source)
+                if getsources
+                    source = row[sourcecolumn]
+                    sources[assocpair] = source
+                else
+                    sources[assocpair] = missing
+                end
             end
         end
     else
@@ -302,9 +322,6 @@ function readheader(filepath::String; headerline = 3)
     return String.(filter(x -> replace.(lowercase(x), r"[ \d]" => "") ∉ ignorelist, headers))
 end
 
-function retrievesources(filepaths::Array{String,1}, components::Array{String,1})
-end
-
 function findsites(filepaths::Array{String,1}, components::Array{String,1}; columnreference="species", sitecolumnreference="site", verbose=false)
     normalised_columnreference = lowercase(replace(columnreference, ' ' => ""))
     normalised_sitecolumnreference = lowercase(replace(sitecolumnreference, ' ' => ""))
@@ -314,7 +331,6 @@ function findsites(filepaths::Array{String,1}, components::Array{String,1}; colu
         type != assocdata && continue
         df = CSV.File(filepath; header=3)
         csvheaders = replace.(lowercase.(String.(Tables.columnnames(df))), ' ' => "")
-        headerparams = readheader(filepath)
         lookupcolumn1 = csvheaders[findfirst(x -> x[1:end-1] == normalised_columnreference && x[end] == '1', csvheaders)]
         lookupcolumn2 = csvheaders[findfirst(x -> x[1:end-1] == normalised_columnreference && x[end] == '2', csvheaders)]
         lookupsitecolumn1 = csvheaders[findfirst(x -> x[1:end-1] == normalised_sitecolumnreference && x[end] == '1', csvheaders)]
@@ -323,10 +339,8 @@ function findsites(filepaths::Array{String,1}, components::Array{String,1}; colu
             component1 = row[Symbol(lookupcolumn1)]
             component2 = row[Symbol(lookupcolumn2)]
             if component1 in components && component2 in components
-                site1 = row[Symbol(lookupsitecolumn1)]
-                site2 = row[Symbol(lookupsitecolumn2)]
-                push!(sites[component1], site1)
-                push!(sites[component2], site2)
+                push!(sites[component1], row[Symbol(lookupsitecolumn1)])
+                push!(sites[component2], row[Symbol(lookupsitecolumn2)])
             end
         end
     end
@@ -359,7 +373,7 @@ end
 function convertsingletopair(params::Array{T,1}) where T
     # Returns a diagonal matrix with the given parameters. 
     paramslength = length(params)
-    output = zeros(T, paramslength, paramslength)
+    output = Array{Union{Missing,T}}(undef, paramslength, paramslength) .= missing
     for i = 1:paramslength
         output[i,i] = params[i]
     end
