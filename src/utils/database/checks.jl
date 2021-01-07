@@ -13,7 +13,3 @@ function checkfor_clashingheaders(filepaths::Array{String,1})
     clashingheaders = intersect(headerparams, headerparams_assoc)
     !isempty(clashingheaders) && error("Headers ", clashingheaders, " appear in both loaded assoc and non-assoc files.")
 end
-
-function checkfor_singlecompleteness(filepaths::Array{String,1}, components::Array{String,1})
-    # Raises an error if any component is not present in any single databases.
-end
