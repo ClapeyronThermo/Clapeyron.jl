@@ -1,7 +1,7 @@
 function combining_sigma(sigma::OpenSAFTParam; rules="Lorentz-Berthelot")
     sigma = PairParam(sigma)
     σ = sigma.values
-    for i in 1:length(sigma.components), j in 1:length(sigma.components)
+    for i ∈ 1:length(sigma.components), j ∈ 1:length(sigma.components)
         if sigma.ismissingvalues[i,j]
             if rules == "Lorentz-Berthelot"
                 σ[i,j] = (σ[i,i] + σ[j,j]) / 2
@@ -21,7 +21,7 @@ function combining_epsilon(epsilon::OpenSAFTParam, combiningparam::PairParam; ru
         sigma = combiningparam
         σ = sigma.values
     end
-    for i in 1:length(epsilon.components), j in 1:length(epsilon.components)
+    for i ∈ 1:length(epsilon.components), j ∈ 1:length(epsilon.components)
         if epsilon.ismissingvalues[i,j]
             if rules == "Lorentz-Berthelot"
                 ϵ[i,j] = (1 - k_[i,j]) * sqrt(ϵ[i,i] * ϵ[j,j])
@@ -36,8 +36,8 @@ end
 function combining_lambda(lambda::OpenSAFTParam; rules="Lorentz-Berthelot")
     lambda = PairParam(lambda)
     λ = lambda.values
-    for i in 1:length(lambda.components), j in 1:length(lamba.components)
-        if lambda.ismissigvalues[i,j]
+    for i ∈ 1:length(lambda.components), j ∈ 1:length(lambda.components)
+        if lambda.ismissingvalues[i,j]
             if rules == "Lorentz-Berthelot"
                 λ[i,j] = 3 + sqrt((λ[i,i] - 3) * (λ[j,j] - 3))
             end
@@ -47,12 +47,12 @@ function combining_lambda(lambda::OpenSAFTParam; rules="Lorentz-Berthelot")
 end
 
 function combining_lambda(lambda::OpenSAFTParam, combiningparam::PairParam; rules="Square-Well")
-    lamda = PairParam(lambda)
+    lambda = PairParam(lambda)
     sigma = combiningparam
     λ = lambda.values
     σ = sigma.values
-    for i in 1:length(lambda.components), j in 1:length(lamba.components)
-        if lambda.ismissigvalues[i,j]
+    for i ∈ 1:length(lambda.components), j ∈ 1:length(lambda.components)
+        if lambda.ismissingvalues[i,j]
             if rules == "Square-Well"
                 λ[i,j] = (λ[i,i]*σ[i,i] + λ[j,j]*σ[j,j]) / (σ[i,i] + σ[j,j])
             end
