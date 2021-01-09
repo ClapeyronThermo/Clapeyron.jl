@@ -35,5 +35,5 @@ function SAFTgammaMie(components::Array{<:Any,1}; idealmodels::Array{String,1}=S
 
     packagedparams = SAFTgammaMieParam(segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol)
 
-    return SAFTgammaMie(packagedparams, groups)
+    return SAFTgammaMie(packagedparams, groups, sites)
 end
