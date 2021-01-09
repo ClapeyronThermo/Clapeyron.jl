@@ -26,6 +26,6 @@ function PCSAFT(components::Array{String,1}; idealmodels::Array{String,1}=String
 
     packagedparams = PCSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
 
-    return PCSAFT(packagedparams)
+    return PCSAFT(packagedparams, sites)
 end
 
