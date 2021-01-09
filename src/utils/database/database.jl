@@ -4,17 +4,41 @@ include("visualisation.jl")
 
 @enum CSVType singledata pairdata assocdata groupdata
 
+"""
+    getfileextension(filepoth)
+
+A quick helper to get the file extension of any given path (without the dot).
+
+# Examples
+```julia-repl
+julia> getfileextension("~/Desktop/text.txt")
+"txt"
+```
+"""
 function getfileextension(filepath::String)
-    # Quick helper function to get the file extension of any given path.
     dotpos = findlast(isequal('.'), filepath)
     isnothing(dotpos) && return ""
     return filepath[dotpos+1:end]
 end
 
+"""
+    getdatabasepaths(model)
+
+Returns database paths relative to OpenSAFT.jl directory.
+If path is a file, then return an Array containing a single path to that file.
+If path is a directory, then return an Array containing paths to all csv files in that directory.
+
+# Examples
+```julia-repl
+julia> getdatabasepaths("SAFT/PCSAFT")
+3-element Array{String,1}:
+ "/home/user/.julia/packages/OpenSAFT.jl/xxxxx/src/../database/SAFT/PCSAFT/data_PCSAFT_assoc.csv"
+ "/home/user/.julia/packages/OpenSAFT.jl/xxxxx/src/../database/SAFT/PCSAFT/data_PCSAFT_like.csv"
+ "/home/user/.julia/packages/OpenSAFT.jl/xxxxx/src/../database/SAFT/PCSAFT/data_PCSAFT_unlike.csv"
+
+```
+"""
 function getdatabasepaths(model::String)
-    # Returns database paths relative to OpenSAFT.jl directory.
-    # If path is a file, then return an Array containing a single path to that file.
-    # If path is a directory, then return an Array containing paths to all csv files in that directory.
     filepath = joinpath(dirname(pathof(OpenSAFT)), "../database", model)
     isfile(filepath) && return [filepath]
     isfile(filepath * ".csv") && return [filepath * ".csv"]
@@ -23,9 +47,13 @@ function getdatabasepaths(model::String)
     return files[isfile.(files) .& (getfileextension.(files) .== "csv")]
 end
 
+"""
+    getuserpaths(model)
+
+Same as the above, but it directly takes the (relative) path that is given as input.
+```
+"""
 function getuserpaths(model::String)
-    # If path is a file, then return an Array containing a single path to that file.
-    # If path is a directory, then return an Array containing paths to all csv files in that directory.
     filepath = model
     isfile(filepath) && return [filepath]
     isfile(filepath * ".csv") && return [filepath * ".csv"]
@@ -61,31 +89,36 @@ function getparams(components::Array{String,1}, models::Array{String,1}=String[]
     # asymmetric_pairparams is a list of parameters for which matrix reflection is disabled.
     # ignore_missingsingleparams gives users the option to disable component existence check in single params.
     filepaths = string.(vcat([(getdatabasepaths.(models)...)...], [(getuserpaths.(usermodels)...)...]))
-    sites = findsitesincsvs(filepaths, components)
-    allparams, paramsources = createparamarrays(filepaths, components, sites; verbose=verbose)
+    allcomponentsites = findsitesincsvs(filepaths, components)
+    allparams, paramsources = createparamarrays(filepaths, components, allcomponentsites; verbose=verbose)
     if modelname == ""
         modelname = getmodelname(models, usermodels)
     end
-    finaldict = packageparams(allparams, components, sites, paramsources, modelname; asymmetric_pairparams=asymmetric_pairparams, ignore_missingsingleparams=ignore_missingsingleparams)
-    return finaldict, sites
+    finaldict = packageparams(allparams, components, allcomponentsites, paramsources, modelname; asymmetric_pairparams=asymmetric_pairparams, ignore_missingsingleparams=ignore_missingsingleparams)
+    return finaldict
 end
 
-function packageparams(allparams::Dict, components::Array{String,1}, sites::Array{Array{String,1},1}, paramsources::Dict{String,Set{String}}, modelname::String; asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams=false)
+function getparams(groups::GCParam, models::Array{String,1}=String[]; usermodels::Array{String,1}=String[], modelname="", asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams=false, verbose=false)
+    # For GC.
+    return getparams(groups.flattenedgroups, models; usermodels=usermodels, modelname=modelname, asymmetric_pairparams=asymmetric_pairparams, ignore_missingsingleparams=ignore_missingsingleparams, verbose=verbose)
+end
+
+function packageparams(allparams::Dict, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, paramsources::Dict{String,Set{String}}, modelname::String; asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams=false)
     # Package params into their respective Structs.
     output = Dict{String,OpenSAFTParam}()
     for (param, value) ∈ allparams
-        if typeof(value) <: Array{<:Any,1}
+        if value isa Array{<:Any,1}
             newvalue, ismissingvalues = defaultmissing(value)
             if !ignore_missingsingleparams && any(ismissingvalues)
                 error("Missing values exist in single parameter ", param, ": ", value, ".")
             end
-            output[param] = SingleParam(param, newvalue, ismissingvalues, components, modelname, collect(paramsources[param]))
-        elseif typeof(value) <: Array{<:Array,2}
+            output[param] = SingleParam(param, newvalue, ismissingvalues, components, allcomponentsites, modelname, collect(paramsources[param]))
+        elseif value isa Array{<:Array,2}
             newvalue_ismissingvalues = defaultmissing.(value)
             newvalue = getindex.(newvalue_ismissingvalues, 1)
             ismissingvalues = getindex.(newvalue_ismissingvalues, 2)
-            output[param] = AssocParam(param, newvalue, ismissingvalues, components, sites, modelname, collect(paramsources[param]))
-        elseif typeof(value) <: Array{<:Any, 2}
+            output[param] = AssocParam(param, newvalue, ismissingvalues, components, allcomponentsites, modelname, collect(paramsources[param]))
+        elseif value isa Array{<:Any, 2}
             param ∈ asymmetric_pairparams && mirrormatrix!(value)
             newvalue, ismissingvalues = defaultmissing(value)
             if (!ignore_missingsingleparams 
@@ -93,7 +126,7 @@ function packageparams(allparams::Dict, components::Array{String,1}, sites::Arra
                 && any([ismissingvalues[x,x] for x ∈ 1:size(ismissingvalues,1)]))
                 error("Partial missing values exist in diagonal of pair parameter ", param, ": ", [value[x,x] for x ∈ 1:size(ismissingvalues,1)], ".")
             end
-            output[param] = PairParam(param, newvalue, ismissingvalues, components, modelname, collect(paramsources[param]))
+            output[param] = PairParam(param, newvalue, ismissingvalues, components, allcomponentsites, modelname, collect(paramsources[param]))
         else
             error("Format for ", param, " is incorrect.")
         end
@@ -101,7 +134,7 @@ function packageparams(allparams::Dict, components::Array{String,1}, sites::Arra
     return output
 end
 
-function createparamarrays(filepaths::Array{String,1}, components::Array{String,1}, sites::Array{Array{String,1},1}; verbose=false)
+function createparamarrays(filepaths::Array{String,1}, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}; verbose=false)
     # Returns Dict with all parameters in their respective arrays.
     checkfor_clashingheaders(filepaths)
     allparams = Dict{String,Any}()
@@ -119,7 +152,7 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
         foundcomponents = collect(keys(foundparams))
         foundparams = swapdictorder(foundparams)
         for headerparam ∈ headerparams
-            !haskey(allparams, headerparam) && (allparams[headerparam] = createemptyparamsarray(paramtypes[headerparam], csvtype, components, sites))
+            !haskey(allparams, headerparam) && (allparams[headerparam] = createemptyparamsarray(paramtypes[headerparam], csvtype, components, allcomponentsites))
             !haskey(paramsources, headerparam) && (paramsources[headerparam] = Set{String}())
             if csvtype == singledata
                 isempty(foundparams) && continue
@@ -129,7 +162,7 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
                         allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
                     end
                     idx = findfirst(isequal(component), components)
-                    if typeof(allparams[headerparam]) <: Array{<:Any,2}
+                    if allparams[headerparam] isa Array{<:Any,2}
                         !ismissing(allparams[headerparam][idx,idx]) && continue
                         allparams[headerparam][idx,idx] = value
                     else
@@ -140,7 +173,7 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
                 end
             end
             if csvtype == pairdata
-                if typeof(allparams[headerparam]) <: Array{<:Any,1}
+                if allparams[headerparam] isa Array{<:Any,1}
                     allparams[headerparam] = convertsingletopair(allparams[headerparam], outputmissing=true)
                 end
                 isempty(foundparams) && continue
@@ -165,8 +198,8 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
                     end
                     idx1 = findfirst(isequal(assocpair[1][1]), components)
                     idx2 = findfirst(isequal(assocpair[1][2]), components)
-                    idx21 = findfirst(isequal(assocpair[2][1]), sites[idx1])
-                    idx22 = findfirst(isequal(assocpair[2][2]), sites[idx2])
+                    idx21 = findfirst(isequal(assocpair[2][1]), allcomponentsites[idx1])
+                    idx22 = findfirst(isequal(assocpair[2][2]), allcomponentsites[idx2])
                     !ismissing(allparams[headerparam][idx1,idx2][idx21,idx22]) && continue
                     allparams[headerparam][idx1,idx2][idx21,idx22] = value
                     !ismissing(sources[assocpair]) && push!(paramsources[headerparam], sources[assocpair])
@@ -199,7 +232,7 @@ function swapdictorder(dict::Dict)
     output = Dict()
     outerkeys = keys(dict)
     try
-        innerkeys = keys(dict[first(collect(outerkeys))])
+        innerkeys = keys(first(values(dict)))
         for innerkey ∈ innerkeys, outerkey ∈ outerkeys
             if !haskey(output, innerkey)
                 output[innerkey] = Dict{Any,Any}(outerkey => dict[outerkey][innerkey])
@@ -413,7 +446,7 @@ function findsitesincsvs(filepaths::Array{String,1}, components::Array{String,1}
     # Note that this might not necessarily include all sites associated with a component.
     normalised_columnreference = normalisestring(columnreference)
     normalised_sitecolumnreference = normalisestring(sitecolumnreference)
-    sites = Dict(components .=> [Set{String}() for x ∈ 1:length(components)])
+    sites = Dict(components .=> [Set{String}() for _ ∈ 1:length(components)])
     for filepath ∈ filepaths
         csvtype = readcsvtype(filepath)
         csvtype != assocdata && continue
@@ -455,11 +488,11 @@ function findsitesincsvs(filepaths::Array{String,1}, components::Array{String,1}
 end
 
 function createemptyparamsarray(datatype::Type, csvtype::CSVType, components::Array{String,1})
-    sites = [String[] for x in 1:length(components)]
-    return createemptyparamsarray(datatype, csvtype, components, sites)
+    allcomponentsites = [String[] for _ in 1:length(components)]
+    return createemptyparamsarray(datatype, csvtype, components, allcomponentsites)
 end
 
-function createemptyparamsarray(datatype::Type, csvtype::CSVType, components::Array{String,1}, sites::Array{Array{String,1},1})
+function createemptyparamsarray(datatype::Type, csvtype::CSVType, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1})
     # Creates a missing array of the appropriate size.
     componentslength = length(components)
     csvtype == singledata && return (Array{Union{Missing,datatype}}(undef, componentslength) .= missing)
@@ -467,19 +500,19 @@ function createemptyparamsarray(datatype::Type, csvtype::CSVType, components::Ar
     if csvtype == assocdata
         output = Array{Array{Union{Missing,datatype},2},2}(undef, componentslength, componentslength)
         for i ∈ 1:componentslength, j ∈ 1:componentslength
-            output[i,j] = (Array{Union{Missing,datatype}}(undef, length(sites[i]), length(sites[j])) .= missing)
+            output[i,j] = (Array{Union{Missing,datatype}}(undef, length(allcomponentsites[i]), length(allcomponentsites[j])) .= missing)
         end
         return output
     end
 end
 
 function createemptyparamsarray(csvtype::CSVType, components::Array{String,1})
-    sites = [String[] for x in 1:length(components)]
-    return createemptyparamsarray(Any, csvtype, components, sites)
+    allcomponentsites = [String[] for _ in 1:length(components)]
+    return createemptyparamsarray(Any, csvtype, components, allcomponentsites)
 end
 
-function createemptyparamsarray(csvtype::CSVType, components::Array{String,1}, sites::Array{Array{String,1},1})
-    return createemptyparamsarray(Any, csvtype, components, sites)
+function createemptyparamsarray(csvtype::CSVType, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1})
+    return createemptyparamsarray(Any, csvtype, components, allcomponentsites)
 end
 
 function convertsingletopair(params::Array{T,1}; outputmissing=false) where T
@@ -527,15 +560,15 @@ function buildspecies(gccomponents::Array{<:Any,1}, models::Array{String,1}=Stri
     #                ("hexane", ["CH3" => 2, "CH2" => 4]),
     #                ("octane", ["CH3" => 2, "CH2" => 6])]
     BuildSpeciesType = Union{Tuple{String, Array{Pair{String, Int64},1}}, String, Tuple{String}}
-    any(.!(typeof.(gccomponents) .<: BuildSpeciesType)) && error("The format of the components is incorrect.")
+    any(.!(isa.(gccomponents, BuildSpeciesType))) && error("The format of the components is incorrect.")
     filepaths = string.(vcat([(getdatabasepaths.(models)...)...], [(getuserpaths.(usermodels)...)...]))
     components = String[]
-    allgroups = Array{Array{String,1},1}(undef, 0)
-    allgroupmultiplicities = Array{Array{Int,1},1}(undef, 0)
+    allcomponentgroups = Array{Array{String,1},1}(undef, 0)
+    allncomponentgroups = Array{Array{Int,1},1}(undef, 0)
     componentstolookup = String[]
-    append!(componentstolookup, [x for x ∈ gccomponents[typeof.(gccomponents) .<: String]])
-    append!(componentstolookup, [first(x) for x ∈ gccomponents[typeof.(gccomponents) .<: Tuple{String}]])
-    allfoundgroups = Dict{String,String}()
+    append!(componentstolookup, [x for x ∈ gccomponents[isa.(gccomponents, String)]])
+    append!(componentstolookup, [first(x) for x ∈ gccomponents[isa.(gccomponents, Tuple{String})]])
+    allfoundcomponentgroups = Dict{String,String}()
     for filepath in filepaths
         csvtype = readcsvtype(filepath)
         if csvtype != groupdata
@@ -543,41 +576,33 @@ function buildspecies(gccomponents::Array{<:Any,1}, models::Array{String,1}=Stri
             continue
         end
         verbose && println("Searching for groups for components ", componentstolookup, " at ", filepath, "...")
-        merge!(allfoundgroups, findgroupsincsv(filepath, componentstolookup; verbose=verbose))
+        merge!(allfoundcomponentgroups, findgroupsincsv(filepath, componentstolookup; verbose=verbose))
     end
     for gccomponent ∈ gccomponents
-        if typeof(gccomponent) <: Tuple{String, Array{Pair{String, Int64},1}}
+        if gccomponent isa Tuple{String, Array{Pair{String, Int64},1}}
             append!(components, [gccomponent[1]])
-            groupandmultiplicities = gccomponent[2]
-        elseif typeof(gccomponent) <: String
-            !haskey(allfoundgroups, gccomponent) && error(gccomponent, " not found in any input csvs.")
+            groupsandngroups = gccomponent[2]
+        elseif gccomponent isa String
+            !haskey(allfoundcomponentgroups, gccomponent) && error(gccomponent, " not found in any input csvs.")
             append!(components, [gccomponent])
-            groupandmultiplicities = eval(Meta.parse(allfoundgroups[gccomponent]))
-        elseif typeof(gccomponent) <: Union{String, Tuple{String}}
-            !haskey(allfoundgroups, first(gccomponent)) && error(gccomponent, " not found in any input csvs.")
+            groupsandngroups = eval(Meta.parse(allfoundcomponentgroups[gccomponent]))
+        elseif gccomponent isa Union{String, Tuple{String}}
+            !haskey(allfoundcomponentgroups, first(gccomponent)) && error(gccomponent, " not found in any input csvs.")
             append!(components, [first(gccomponent)])
-            groupandmultiplicities = eval(Meta.parse(allfoundgroups[first(gccomponent)]))
+            groupsandngroups = eval(Meta.parse(allfoundcomponentgroups[first(gccomponent)]))
         end
-        groups = String[]
-        groupmultiplicities = Int[]
-        for (group, groupmultiplicity) ∈ groupandmultiplicities
-            append!(groups, [group])
-            append!(groupmultiplicities, [groupmultiplicity])
+        componentgroups = String[]
+        ncomponentgroups = Int[]
+        for (componentgroup, ncomponentgroup) ∈ groupsandngroups
+            append!(componentgroups, [componentgroup])
+            append!(ncomponentgroups, [ncomponentgroup])
         end
-        append!(allgroups, [groups])
-        append!(allgroupmultiplicities, [groupmultiplicities])
+        append!(allcomponentgroups, [componentgroups])
+        append!(allncomponentgroups, [ncomponentgroups])
     end
     if modelname == ""
         modelname = getmodelname(models, usermodels)
     end
-    return packagegroupparams(components, allgroups, allgroupmultiplicities, modelname)
-end
-
-function packagegroupparams(components::Array{String,1}, groups::Array{Array{String,1},1}, groupmultiplicities::Array{Array{Int,1},1}, modelname::String)
-    # Package params into their respective Structs.
-    output = Dict{String,GroupParam}()
-    for (index, component) ∈ enumerate(components)
-        output[component] = GroupParam(component, groups[index], groupmultiplicities[index], modelname)
-    end
-    return output
+    flattenedgroups = unique([(allcomponentgroups...)...])
+    return GCParam(components, allcomponentgroups, allncomponentgroups, flattenedgroups, modelname)
 end
