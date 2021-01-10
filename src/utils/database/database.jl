@@ -387,7 +387,7 @@ function normalisestring(str::String)
     return lowercase(replace(str, ' ' => ""))
 end
 
-function findgroupsincsv(filepath::String, components::Array{String,1}; columnreference::String="species", groupcolumnreference::String="groups", verbose::String=false)
+function findgroupsincsv(filepath::String, components::Array{String,1}; columnreference::String="species", groupcolumnreference::String="groups", verbose::Bool=false)
     # Returns a Dict with the group string that will be parsed in buildspecies.
     csvtype = readcsvtype(filepath)
     csvtype != groupdata && return Dict{String,String}()
@@ -654,7 +654,7 @@ function buildspecies(gccomponents::Array{<:Any,1}, grouplocations::Array{String
         append!(allncomponentgroups, [ncomponentgroups])
     end
     if modelname == ""
-        modelname = getmodelname(grouplocations, groupuserlocations)
+        modelname = getmodelname(grouplocations, usergrouplocations)
     end
     flattenedgroups = unique([(allcomponentgroups...)...])
     return GCParam(components, allcomponentgroups, allncomponentgroups, flattenedgroups, modelname)

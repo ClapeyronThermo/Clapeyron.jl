@@ -15,8 +15,9 @@ function sPCSAFT(components::Array{String,1}; idealmodels::Array{String,1}=Strin
     sites = getsites(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
     packagedparams = PCSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
+    references = ["10.1021/ie020753p"]
 
-    return sPCSAFT(packagedparams, sites)
+    return sPCSAFT(packagedparams, sites; references=references)
 end
 
 function a_hc(model::sPCSAFTModel, z, V, T)

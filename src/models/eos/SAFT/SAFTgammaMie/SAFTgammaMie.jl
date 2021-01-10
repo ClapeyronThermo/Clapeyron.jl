@@ -32,8 +32,9 @@ function SAFTgammaMie(components::Array{<:Any,1}; idealmodels::Array{String,1}=S
     sites = getsites(Dict("e1" => params["n_e1"], "e2" => params["n_e2"], "H" => params["n_H"]))
 
     packagedparams = SAFTgammaMieParam(segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol)
+    references = ["10.1063/1.4851455", "10.1021/je500248h"]
 
-    return SAFTgammaMie(packagedparams, groups, sites)
+    return SAFTgammaMie(packagedparams, groups, sites; references=references)
 end
 
 # include("equations.jl")
