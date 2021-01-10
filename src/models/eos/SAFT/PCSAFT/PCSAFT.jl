@@ -23,8 +23,9 @@ function PCSAFT(components::Array{String,1}; idealmodels::Array{String,1}=String
     sites = getsites(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
     packagedparams = PCSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
+    references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
-    return PCSAFT(packagedparams, sites)
+    return PCSAFT(packagedparams, sites; references=references)
 end
 
 include("equations.jl")
