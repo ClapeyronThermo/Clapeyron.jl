@@ -1,69 +1,118 @@
-function a_res(model::PCSAFTFamily, z, v, T)
-    return a_hc(model,z,v,T) + a_disp(model,z,v,T) + a_assoc(model,z,v,T)
+function a_res(model::PCSAFTModel, z, V, T)
+    return @f(a_hc) + @f(a_disp) + @f(a_assoc)
 end
 
-function a_hc(model::PCSAFTFamily, z, v, T)
-    x = z/sum(z[i] for i in model.components)
-    m = model.params.segment
-    m̄ = sum(x[i]*m[i] for i in model.components)
-    return m̄*a_hs(model,z,v,T) - sum(x[i]*(m[i]-1)*log(g_hsij(model,z,v,T, i, i)) for i in model.components)
+function a_hc(model::PCSAFTModel, z, V, T)
+    x = z/∑(z)
+    m = model.params.segment.values
+    m̄ = ∑(x .* m)
+    return m̄*@f(a_hs) - ∑(x[i]*(m[i]-1)*log(@f(g_hs,i,i)) for i ∈ @comps)
 end
 
-function a_disp(model::PCSAFTFamily, z, v, T)
-    x = z/sum(z[i] for i in model.components)
-    m = model.params.segment
-    m̄ = sum(x[i]*m[i] for i in model.components)
-    return -2*π*N_A*sum(z[i] for i in model.components)/v*I_n(model,z,v,T, 1)*m2ϵσ3(model,z,v,T, 1) - π*m̄*N_A*sum(z[i] for i in model.components)/v*C1(model,z,v,T)*I_n(model,z,v,T, 2)*m2ϵσ3(model,z,v,T, 2)
+function a_disp(model::PCSAFTModel, z, V, T)
+    x = z/∑(z)
+    m = model.params.segment.values
+    m̄ = ∑(x .* m)
+    return -2*π*N_A*∑(z)/V*@f(I,1)*@f(m2ϵσ3, 1) - π*m̄*N_A*∑(z)/V*@f(C1)*@f(I,2)*@f(m2ϵσ3,2)
 end
 
-function d(model::PCSAFTFamily, z, v, T, component)
-    ϵ = model.params.epsilon[component]
-    σ = model.params.sigma[component]
-    return σ * (1 - 0.12exp(-3ϵ/T))
+function d(model::PCSAFTModel, z, V, T, i)
+    ϵii = model.params.epsilon.values[i,i]
+    σii = model.params.sigma.values[i,i]
+    return σii * (1 - 0.12exp(-3ϵii/T))
 end
 
-function ζn(model::PCSAFTFamily, z, v, T, n)
-    x = z/sum(z[i] for i in model.components)
-    m = model.params.segment
-    return N_A*sum(z[i] for i in model.components)*π/6/v * sum(x[i]*m[i]*d(model,z,v,T, i)^n for i in model.components)
+function ζ(model::PCSAFTModel, z, V, T, n)
+    x = z/∑(z)
+    m = model.params.segment.values
+    return N_A*∑(z)*π/6/V * ∑(x[i]*m[i]*@f(d,i)^n for i ∈ @comps)
 end
 
-function g_hsij(model::PCSAFTFamily, z, v, T, i, j)
-    di = d(model,z,v,T, i)
-    dj = d(model,z,v,T, j)
-    ζ2 = ζn(model,z,v,T, 2)
-    ζ3 = ζn(model,z,v,T, 3)
+function g_hs(model::PCSAFTModel, z, V, T, i, j)
+    di = @f(d,i)
+    dj = @f(d,j)
+    ζ2 = @f(ζ,2)
+    ζ3 = @f(ζ,3)
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 end
 
-function a_hs(model::PCSAFTFamily, z, v, T)
-    ζ0 = ζn(model,z,v,T, 0)
-    ζ1 = ζn(model,z,v,T, 1)
-    ζ2 = ζn(model,z,v,T, 2)
-    ζ3 = ζn(model,z,v,T, 3)
+function a_hs(model::PCSAFTModel, z, V, T)
+    ζ0 = @f(ζ,0)
+    ζ1 = @f(ζ,1)
+    ζ2 = @f(ζ,2)
+    ζ3 = @f(ζ,3)
     return 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
 end
 
-function C1(model::PCSAFTFamily, z, v, T)
-    x = z/sum(z[i] for i in model.components)
-    η = ζn(model,z,v,T, 3)
-    m = model.params.segment
-    m̄ = sum(x[i]*m[i] for i in model.components)
+function C1(model::PCSAFTModel, z, V, T)
+    x = z/∑(z)
+    m = model.params.segment.values
+    m̄ = ∑(x .* m)
+    η = @f(ζ,3)
     return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
 end
 
-function m2ϵσ3(model::PCSAFTFamily, z, v, T, ϵ_power = 1)
-    x = z/sum(z[i] for i in model.components)
-    m = model.params.segment
-    σ = model.params.sigma
-    ϵ = model.params.epsilon
-    #= return sum(x[i]*x[j]*m[i]*m[j] * (sqrt(ϵ[i]*ϵ[j])*(1-k[union(i,j)])/T)^ϵ_power * (0.5*(σ[i]+σ[j]))^3 for i in model.components, j in model.components) =#
-    return sum(x[i]*x[j]*m[i]*m[j] * (ϵ[union(i,j)]*(1)/T)^ϵ_power * σ[union(i,j)]^3 for i in model.components, j in model.components)
+function m2ϵσ3(model::PCSAFTModel, z, V, T, n = 1)
+    x = z/∑(z)
+    m = model.params.segment.values
+    σ = model.params.sigma.values
+    ϵ = model.params.epsilon.values
+    return ∑(x[i]*x[j]*m[i]*m[j] * (ϵ[i,j]*(1)/T)^n * σ[i,j]^3 for i ∈ @comps, j ∈ @comps)
 end
 
-#constants should be allocated outside the function
+function I(model::PCSAFTModel, z, V, T, n)
+    x = z/∑(z)
+    m = model.params.segment.values
+    m̄ = ∑(x .* m)
+    σ = model.params.sigma.values
+    η = @f(ζ,3)
+    if n == 1
+        corr = PCSAFTconsts.corr1
+    elseif n == 2
+        corr = PCSAFTconsts.corr2
+    end
+    return ∑((corr[i+1,1] + (m̄-1)/m̄*corr[i+1,2] + (m̄-1)/m̄*(m̄-2)/m̄*corr[i+1,3]) * η^i for i = 0:6)
+end
+
+function a_assoc(model::PCSAFTModel, z, V, T)
+    x = z/∑(z)
+    X_ = @f(X)
+    n = model.allncomponentsites
+    return ∑(x[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)
+end
+
+function X(model::PCSAFTModel, z, V, T)::Array{Array{Float64,1},1}
+    x = z/∑(z)
+    ρ = N_A*∑(z)/V
+    itermax = 100
+    tol = 1.
+    iter = 1
+    dampingfactor = 0.5
+    X_ = [[1. for a ∈ @sites(i)] for i ∈ @comps]
+    X_old = deepcopy(X_)
+    while tol > 1e-12
+        iter > itermax && error("X has failed to converge after $itermax iterations")
+        for i ∈ @comps, a ∈ @sites(i)
+            rhs = (1+∑(ρ*x[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))^-1
+            X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
+        end
+        tol = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
+        X_old = deepcopy(X_)
+        iter += 1
+    end
+    return X_
+end
+
+function Δ(model::PCSAFTModel, z, V, T, i, j, a, b)
+    ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
+    κijab = model.params.bondvol.values[i,j][a,b]
+    σij = model.params.sigma.values[i,j]
+    gij = @f(g_hs,i,j)
+    return gij*σij^3*(exp(ϵ_associjab/T)-1)*κijab
+end
+
 const PCSAFTconsts = (
-    corr₁ =    
+    corr1 =    
     [0.9105631445 -0.3084016918 -0.0906148351;
     0.6361281449 0.1860531159 0.4527842806;
     2.6861347891 -2.5030047259 0.5962700728;
@@ -72,7 +121,7 @@ const PCSAFTconsts = (
     -159.59154087 83.318680481 13.776631870;
     91.297774084 -33.746922930 -8.6728470368]
 
-    ,corr₂ = 
+    ,corr2 = 
     [0.7240946941 -0.5755498075 0.0976883116;
     2.2382791861 0.6995095521 -0.2557574982;
     -4.0025849485 3.8925673390 -9.1558561530;
@@ -81,73 +130,3 @@ const PCSAFTconsts = (
     206.55133841 -161.82646165 93.626774077;
     -355.60235612 -165.20769346 -29.666905585]
 )
-
-function I_n(model::PCSAFTFamily, z, v, T, n)
-    x = z/sum(z[i] for i in model.components)
-    m = model.params.segment
-    m̄ = sum(x[i]*m[i] for i in model.components)
-    η = ζn(model,z,v,T, 3)
-    if n == 1
-        corr = PCSAFTconsts.corr₁
-    elseif n == 2
-        corr = PCSAFTconsts.corr₂
-    end
-    return sum((corr[i+1,1] + (m̄-1)/m̄*corr[i+1,2] + (m̄-1)/m̄*(m̄-2)/m̄*corr[i+1,3]) * η^i for i = 0:6)
-end
-
-function a_assoc(model::PCSAFTFamily, z, v, T)
-    x = z/sum(z[i] for i in model.components)
-    X_iA = X_assoc(model,z,v,T)
-    return sum(x[i]*sum(log(X_iA[i,a])-X_iA[i,a]/2 + model.params.n_sites[i][a]/2 for a in keys(model.params.n_sites[i])) for i in model.components)
-end
-
-function X_assoc(model::PCSAFTFamily, z, v, T)
-    x = z/sum(z[i] for i in model.components)
-    ρ = N_A*sum(z[i] for i in model.components)/v
-    X_iA = Dict()
-    X_iA_old = Dict()
-    tol = 1.
-    iter = 1
-    while tol > 1e-12 && iter < 100
-        for i in model.components
-            for a in keys(model.params.n_sites[i])
-                A = 0.
-                for j in model.components
-                    B = 0
-                    for b in keys(model.params.n_sites[j])
-                        if haskey(model.params.epsilon_assoc,Set([(i,a),(j,b)]))
-                            if iter!=1
-                                B+=X_iA_old[j,b]*Δ(model,z,v,T,i,j,a,b)
-                            else
-                                B+=Δ(model,z,v,T,i,j,a,b)
-                            end
-                        end
-                    end
-                    A += ρ*x[j]*B
-                end
-                if iter == 1
-                    X_iA[i,a] =0.5+0.5*(1+A)^-1
-                else
-                    X_iA[i,a] =0.5*X_iA_old[i,a]+0.5*(1+A)^-1
-                end
-            end
-        end
-        if iter == 1
-            tol = sqrt(sum(sum((1. -X_iA[i,a])^2 for a in keys(model.params.n_sites[i])) for i in model.components))
-        else
-            tol = sqrt(sum(sum((X_iA_old[i,a] -X_iA[i,a])^2 for a in keys(model.params.n_sites[i])) for i in model.components))
-        end
-        X_iA_old = deepcopy(X_iA)
-        iter += 1
-    end
-
-    return X_iA
-end
-
-function Δ(model::PCSAFTFamily, z, v, T, i, j, a, b)
-    ϵ_assoc = model.params.epsilon_assoc[Set([(i,a),(j,b)])]
-    κ = model.params.bond_vol[Set([(i,a),(j,b)])]
-    σ = model.params.sigma[union(i,j)]
-    g = g_hsij(model,z,v,T,i,j)
-    return g*σ^3*(exp(ϵ_assoc/T)-1)*κ
-end

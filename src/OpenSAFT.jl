@@ -11,11 +11,13 @@ using DataStructures: DefaultDict
 include("constants.jl")
 include("utils/macros.jl")
 include("utils/database/database.jl")
-# include("utils/misc.jl")
+include("utils/misc.jl")
 
 include("models/basetools.jl")
 include("models/combiningrules.jl")
+include("models/eos.jl")
 include("models/eos/SAFT/PCSAFT/PCSAFT.jl")
+include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
 include("models/eos/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
 # include("models/param_structs.jl")
 # include("models/ideal_param_structs.jl")
@@ -56,11 +58,11 @@ include("models/eos/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
 # export system,System
 # export eos,ideal
 
-# using Unitful
+using Unitful
 
-# include("methods/getproperties.jl")
+include("methods/getproperties.jl")
 # include("methods/getproperties_SAFT_Unitful.jl")
-# include("methods/initial_guess_properties.jl")
+include("methods/initial_guess_properties.jl")
 
 # export get_volume, get_sat_pure, get_bubble_pressure, get_crit_pure, get_enthalpy_vap, get_pressure, get_entropy, get_chemical_potential, get_internal_energy, get_enthalpy, get_Gibbs_free_energy, get_Helmholtz_free_energy, get_isochoric_heat_capacity, get_isobaric_heat_capacity, get_isothermal_compressibility, get_isentropic_compressibility, get_speed_of_sound, get_isobaric_expansivity, get_Joule_Thomson_coefficient, get_second_virial_coeff
 # export eos
