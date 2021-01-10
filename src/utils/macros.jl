@@ -12,7 +12,7 @@ end
 
 macro f(func, args...)
     args = [esc(arg) for arg ∈ args]
-    return :($(func)($(esc(:model)),$(esc(:z)),$(esc(:V)),$(esc(:T)),$(args...)))
+    return :($(func)($(esc(:model)),$(esc(:V)),$(esc(:T)),$(esc(:z)),$(args...)))
 end
 
 macro newmodel(name, parent, paramstype)

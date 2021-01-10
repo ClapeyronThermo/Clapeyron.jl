@@ -20,24 +20,24 @@ function sPCSAFT(components::Array{String,1}; idealmodels::Array{String,1}=Strin
     return sPCSAFT(packagedparams, sites; references=references)
 end
 
-function a_hc(model::sPCSAFTModel, z, V, T)
+function a_hc(model::sPCSAFTModel, V, T, z)
     x = z/sum(z)
     m = model.params.segment.values
     m̄ = ∑(x .* m)
     return m̄*@f(a_hs) - (m̄-1)*log(@f(g_hs))
 end
 
-function g_hs(model::sPCSAFTModel, z, V, T)
+function g_hs(model::sPCSAFTModel, V, T, z)
     η = @f(ζ,3)
     return (1-η/2)/(1-η)^3
 end
 
-function a_hs(model::sPCSAFTModel, z, V, T)
+function a_hs(model::sPCSAFTModel, V, T, z)
     η = @f(ζ,3)
     return (4η-3η^2)/(1-η)^2
 end
 
-function Δ(model::sPCSAFTModel, z, V, T, i, j, a, b)
+function Δ(model::sPCSAFTModel, V, T, z, i, j, a, b)
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
     κijab = model.params.bondvol.values[i,j][a,b]
     σij = model.params.sigma.values[i,j]
