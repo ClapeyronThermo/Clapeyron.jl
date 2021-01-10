@@ -69,12 +69,13 @@ function getmodelname(locations::Array{String,1}, userlocations::Array{String,1}
     return "unnamed"
 end
 
-function getparams(components::Array{String,1}, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], modelname::String="", asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
+export getparams
+function getparams(components::Array{String,1}, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], modelname::String="", asymmetricparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
     # Gets all parameters from database.
     # locations is a list of paths relative to the OpenSAFT database directory.
     # userlocations is a list of paths input by the user.
     # If parameters exist in multiple files, OpenSAFT gives priority to files in later paths.
-    # asymmetric_pairparams is a list of parameters for which matrix reflection is disabled.
+    # asymmetricparams is a list of parameters for which matrix reflection is disabled.
     # ignore_missingsingleparams gives users the option to disable component existence check in single params.
     filepaths = string.(vcat([(getpaths.(locations; relativetodatabase=true)...)...], [(getpaths.(userlocations)...)...]))
     allcomponentsites = findsitesincsvs(filepaths, components)
@@ -82,15 +83,15 @@ function getparams(components::Array{String,1}, locations::Array{String,1}=Strin
     if modelname == ""
         modelname = getmodelname(locations, userlocations)
     end
-    return packageparams(allparams, components, allcomponentsites, paramsources, modelname; asymmetric_pairparams=asymmetric_pairparams, ignore_missingsingleparams=ignore_missingsingleparams)
+    return packageparams(allparams, components, allcomponentsites, paramsources, modelname; asymmetricparams=asymmetricparams, ignore_missingsingleparams=ignore_missingsingleparams)
 end
 
-function getparams(groups::GCParam, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], modelname="", asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
+function getparams(groups::GCParam, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], modelname="", asymmetricparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
     # For GC.
-    return getparams(groups.flattenedgroups, locations; userlocations=userlocations, modelname=modelname, asymmetric_pairparams=asymmetric_pairparams, ignore_missingsingleparams=ignore_missingsingleparams, verbose=verbose)
+    return getparams(groups.flattenedgroups, locations; userlocations=userlocations, modelname=modelname, asymmetricparams=asymmetricparams, ignore_missingsingleparams=ignore_missingsingleparams, verbose=verbose)
 end
 
-function packageparams(allparams::Dict, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, paramsources::Dict{String,Set{String}}, modelname::String; asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false)
+function packageparams(allparams::Dict, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, paramsources::Dict{String,Set{String}}, modelname::String; asymmetricparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false)
     # Package params into their respective Structs.
     output = Dict{String,OpenSAFTParam}()
     for (param, value) ∈ allparams
@@ -101,13 +102,13 @@ function packageparams(allparams::Dict, components::Array{String,1}, allcomponen
             end
             output[param] = SingleParam(param, newvalue, ismissingvalues, components, allcomponentsites, modelname, collect(paramsources[param]))
         elseif value isa Array{<:Array,2}
-            [mirrormatrix!(value[i,i]) for i ∈ length(components)]
+            param ∉ asymmetricparams && mirrormatrix!(value)
             newvalue_ismissingvalues = defaultmissing.(value)
             newvalue = getindex.(newvalue_ismissingvalues, 1)
             ismissingvalues = getindex.(newvalue_ismissingvalues, 2)
             output[param] = AssocParam(param, newvalue, ismissingvalues, components, allcomponentsites, modelname, collect(paramsources[param]))
         elseif value isa Array{<:Any, 2}
-            param ∉ asymmetric_pairparams && mirrormatrix!(value)
+            param ∉ asymmetricparams && mirrormatrix!(value)
             newvalue, ismissingvalues = defaultmissing(value)
             if (!ignore_missingsingleparams 
                 && !all([ismissingvalues[x,x] for x ∈ 1:size(ismissingvalues,1)])
@@ -143,9 +144,9 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
         for headerparam ∈ headerparams
             if !haskey(allparams, headerparam)
                 if ismissing(paramtypes[headerparam])
-                    allparams[headerparam] = createemptyparamsarray(paramtypes[headerparam], csvtype, components, allcomponentsites)
-                else
                     allparams[headerparam] = createemptyparamsarray(Any, csvtype, components, allcomponentsites)
+                else
+                    allparams[headerparam] = createemptyparamsarray(paramtypes[headerparam], csvtype, components, allcomponentsites)
                 end
             end
             !haskey(paramsources, headerparam) && (paramsources[headerparam] = Set{String}())
@@ -153,8 +154,18 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
                 isempty(foundparams) && continue
                 for (component, value) ∈ foundparams[headerparam]
                     currenttype = nonmissingtype(eltype(allparams[headerparam]))
-                    if !(currenttype <: paramtypes[headerparam])
-                        allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
+                    if !(paramtypes[headerparam] <: currenttype) # Either Any or not compatible
+                        println("$headerparam: $currenttype : $(paramtypes[headerparam]) = $(allparams[headerparam])")
+                        if currenttype == Any
+                            if !(paramtypes[headerparam] <: currenttype) && all(allparams[headerparam] <: paramtypes[headerparam])
+                                allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
+                            end
+                        else
+                            try
+                                allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
+                            catch e
+                            end
+                        end
                     end
                     idx = findfirst(isequal(component), components)
                     if allparams[headerparam] isa Array{<:Any,2}
@@ -174,8 +185,17 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
                 isempty(foundparams) && continue
                 for (componentpair, value) ∈ foundparams[headerparam]
                     currenttype = nonmissingtype(eltype(allparams[headerparam]))
-                    if !(currenttype <: paramtypes[headerparam])
-                        allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
+                    if !(paramtypes[headerparam] <: currenttype) # Either Any or not compatible
+                        if currenttype == Array{Any}
+                            if !(paramtypes[headerparam] <: currenttype) && all(allparams[headerparam] <: paramtypes[headerparam])
+                                allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
+                            end
+                        else
+                            try
+                                allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
+                            catch e 
+                            end
+                        end
                     end
                     idx1 = findfirst(isequal(componentpair[1]), components)
                     idx2 = findfirst(isequal(componentpair[2]), components)
@@ -188,8 +208,17 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
                 isempty(foundparams) && continue
                 for (assocpair, value) ∈ foundparams[headerparam]
                     currenttype = nonmissingtype(eltype(first(allparams[headerparam])))
-                    if !(currenttype <: paramtypes[headerparam])
-                        allparams[headerparam] = convert(Array{Array{Union{Missing,paramtypes[headerparam]}}}, allparams[headerparam])
+                    if !(currenttype <: paramtypes[headerparam]) # Either Any or not compatible
+                        if currenttype == Any
+                            if !(paramtypes[headerparam] <: currenttype) && all(allparams[headerparam] <: paramtypes[headerparam])
+                                allparams[headerparam] = convert(Array{Array{Union{Missing,paramtypes[headerparam]}}}, allparams[headerparam])
+                            end
+                        else
+                            try
+                                allparams[headerparam] = convert(Array{Array{Union{Missing,paramtypes[headerparam]}}}, allparams[headerparam])
+                            catch e
+                            end
+                        end
                     end
                     idx1 = findfirst(isequal(assocpair[1][1]), components)
                     idx2 = findfirst(isequal(assocpair[1][2]), components)
@@ -522,10 +551,12 @@ function convertsingletopair(params::Array{T,1}; outputmissing::Bool=false) wher
     if outputmissing
         output = Array{Union{Missing,T}}(undef, paramslength, paramslength) .= missing
     else
-        if T <: AbstractString
-            output = Array{T}(undef, paramslength, paramslength) .= ""
+        if T == Any
+            output = Array{T}(undef, paramslength, paramslength) .= 0
         elseif T <: Number
             output = Array{T}(undef, paramslength, paramslength) .= 0
+        elseif T <: AbstractString
+            output = Array{T}(undef, paramslength, paramslength) .= ""
         else
             error("Data type ", T, " not supported.")
         end
@@ -536,7 +567,7 @@ function convertsingletopair(params::Array{T,1}; outputmissing::Bool=false) wher
     return output
 end
 
-function mirrormatrix!(matrix::Array{<:Any,2})
+function mirrormatrix!(matrix::Array{T,2}) where T
     # Mirrors a square matrix.
     matrixsize = size(matrix)
     matrixsize[1] != matrixsize[2] && error("Matrix is not square.")
@@ -544,10 +575,31 @@ function mirrormatrix!(matrix::Array{<:Any,2})
         lowervalue = matrix[i,j]
         uppervalue = matrix[j,i]
         if !ismissing(lowervalue) && !ismissing(uppervalue) && lowervalue != uppervalue
+            println(matrix)
             error("Dissimilar non-zero entries exist across diagonal.")
         end
         !ismissing(lowervalue) && (matrix[j,i] = lowervalue)
         !ismissing(uppervalue) && (matrix[i,j] = uppervalue)
+    end
+    return matrix
+end
+
+function mirrormatrix!(matrix::Array{Array{T,2},2}) where T
+    # Mirrors a square matrix.
+    matrixsize = size(matrix)
+    matrixsize[1] != matrixsize[2] && error("Matrix is not square.")
+    [mirrormatrix!(matrix[i,i]) for i ∈ 1:matrixsize[1]]
+    for i ∈ 2:matrixsize[1], j ∈ 1:i-1
+        matrixsize2 = size(matrix[i,j])
+        for a ∈ 1:matrixsize2[1], b ∈ 1:matrixsize2[2]
+            lowervalue = matrix[i,j][a,b]
+            uppervalue = matrix[j,i][b,a]
+            if !ismissing(lowervalue) && !ismissing(uppervalue) && lowervalue != uppervalue
+                error("Dissimilar non-zero entries exist across diagonal.")
+            end
+            !ismissing(lowervalue) && (matrix[j,i][b,a] = lowervalue)
+            !ismissing(uppervalue) && (matrix[i,j][a,b] = uppervalue)
+        end
     end
     return matrix
 end

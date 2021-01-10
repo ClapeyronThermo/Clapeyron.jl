@@ -15,7 +15,7 @@ abstract type SAFTgammaMieModel <: SAFTModel end
 export SAFTgammaMie
 function SAFTgammaMie(components::Array{<:Any,1}; idealmodels::Array{String,1}=String[], userlocations::Array{String,1}=String[], verbose=false)
     groups = buildspecies(components, ["SAFT/SAFTgammaMie/groups.csv"]; verbose=verbose)
-    params = getparams(groups, ["SAFT/SAFTgammaMie"]; userlocations=userlocations, modelname="SAFTgammaMie", ignore_missingsingleparams=true, verbose=verbose)
+    params = getparams(groups, ["SAFT/SAFTgammaMie"]; userlocations=userlocations, modelname="SAFTgammaMie", verbose=verbose)
 
     segment = params["vst"]
     shapefactor = params["S"]
