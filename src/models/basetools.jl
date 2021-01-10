@@ -1,7 +1,7 @@
-abstract type EoS end
+abstract type EoSModel end
 
-abstract type SAFTModel <: EoS end
-abstract type CubicModel <: EoS end
+abstract type SAFTModel <: EoSModel end
+abstract type CubicModel <: EoSModel end
 
 abstract type EoSParam end
 

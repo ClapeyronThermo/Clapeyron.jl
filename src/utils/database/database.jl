@@ -22,9 +22,9 @@ function getfileextension(filepath::String)
 end
 
 """
-    getdatabasepaths(model)
+    getdatabasepaths(location; relativetodatabase=false)
 
-Returns database paths relative to OpenSAFT.jl directory.
+Returns database paths that is optionally relative to OpenSAFT.jl directory.
 If path is a file, then return an Array containing a single path to that file.
 If path is a directory, then return an Array containing paths to all csv files in that directory.
 
@@ -38,42 +38,30 @@ julia> getdatabasepaths("SAFT/PCSAFT")
 
 ```
 """
-function getdatabasepaths(model::String)
-    filepath = joinpath(dirname(pathof(OpenSAFT)), "../database", model)
+function getpaths(location::String; relativetodatabase::Bool=false)
+    filepath = relativetodatabase ? joinpath(dirname(pathof(OpenSAFT)), "../database", location) : location
     isfile(filepath) && return [filepath]
     isfile(filepath * ".csv") && return [filepath * ".csv"]
-    !isdir(filepath) && error("The directory ", model, " does not exist in the OpenSAFT database.")
+    if !isdir(filepath)
+        relativetodatabase ? error("The path ", location, " does not exist in the OpenSAFT database.") :
+            error("The path ", location, " does not exist.")
+    end
     files = joinpath.(filepath, readdir(filepath))
     return files[isfile.(files) .& (getfileextension.(files) .== "csv")]
 end
 
-"""
-    getuserpaths(model)
-
-Same as the above, but it directly takes the (relative) path that is given as input.
-```
-"""
-function getuserpaths(model::String)
-    filepath = model
-    isfile(filepath) && return [filepath]
-    isfile(filepath * ".csv") && return [filepath * ".csv"]
-    !isdir(filepath) && error("The directory ", filepath, " does not exist.")
-    files = joinpath.(filepath, readdir(filepath))
-    return files[isfile.(files) .& (getfileextension.(files) .== "csv")]
-end
-
-function getmodelname(models::Array{String,1}, usermodels::Array{String,1})
+function getmodelname(locations::Array{String,1}, userlocations::Array{String,1})
     # Try to guess the name of the model.
-    # It will take the name of the last given directory, checking models before usermodels.
+    # It will take the name of the last given directory, checking database locations before user locations.
     # It's not foolproof, so it is highly recommended that you name your model.
-    if !isempty(models)
-        for model ∈ reverse(models)
+    if !isempty(locations)
+        for model ∈ reverse(locations)
             filepath = joinpath(dirname(pathof(OpenSAFT)), "../database", model)
             isdir(filepath) && return basename(filepath)
         end
     end
-    if !isempty(usermodels)
-        for usermodel ∈ reverse(usermodels)
+    if !isempty(userlocations)
+        for usermodel ∈ reverse(userlocations)
             filepath = usermodel
             isdir(filepath) && return basename(filepath)
         end
@@ -81,29 +69,28 @@ function getmodelname(models::Array{String,1}, usermodels::Array{String,1})
     return "unnamed"
 end
 
-function getparams(components::Array{String,1}, models::Array{String,1}=String[]; usermodels::Array{String,1}=String[], modelname="", asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams=false, verbose=false)
+function getparams(components::Array{String,1}, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], modelname::String="", asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
     # Gets all parameters from database.
-    # models is a list of paths relative to the OpenSAFT database directory.
-    # usermodels is a list of paths input by the user.
+    # locations is a list of paths relative to the OpenSAFT database directory.
+    # userlocations is a list of paths input by the user.
     # If parameters exist in multiple files, OpenSAFT gives priority to files in later paths.
     # asymmetric_pairparams is a list of parameters for which matrix reflection is disabled.
     # ignore_missingsingleparams gives users the option to disable component existence check in single params.
-    filepaths = string.(vcat([(getdatabasepaths.(models)...)...], [(getuserpaths.(usermodels)...)...]))
+    filepaths = string.(vcat([(getpaths.(locations; relativetodatabase=true)...)...], [(getpaths.(userlocations)...)...]))
     allcomponentsites = findsitesincsvs(filepaths, components)
     allparams, paramsources = createparamarrays(filepaths, components, allcomponentsites; verbose=verbose)
     if modelname == ""
-        modelname = getmodelname(models, usermodels)
+        modelname = getmodelname(locations, userlocations)
     end
-    finaldict = packageparams(allparams, components, allcomponentsites, paramsources, modelname; asymmetric_pairparams=asymmetric_pairparams, ignore_missingsingleparams=ignore_missingsingleparams)
-    return finaldict
+    return packageparams(allparams, components, allcomponentsites, paramsources, modelname; asymmetric_pairparams=asymmetric_pairparams, ignore_missingsingleparams=ignore_missingsingleparams)
 end
 
-function getparams(groups::GCParam, models::Array{String,1}=String[]; usermodels::Array{String,1}=String[], modelname="", asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams=false, verbose=false)
+function getparams(groups::GCParam, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], modelname="", asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
     # For GC.
-    return getparams(groups.flattenedgroups, models; usermodels=usermodels, modelname=modelname, asymmetric_pairparams=asymmetric_pairparams, ignore_missingsingleparams=ignore_missingsingleparams, verbose=verbose)
+    return getparams(groups.flattenedgroups, locations; userlocations=userlocations, modelname=modelname, asymmetric_pairparams=asymmetric_pairparams, ignore_missingsingleparams=ignore_missingsingleparams, verbose=verbose)
 end
 
-function packageparams(allparams::Dict, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, paramsources::Dict{String,Set{String}}, modelname::String; asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams=false)
+function packageparams(allparams::Dict, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, paramsources::Dict{String,Set{String}}, modelname::String; asymmetric_pairparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false)
     # Package params into their respective Structs.
     output = Dict{String,OpenSAFTParam}()
     for (param, value) ∈ allparams
@@ -114,12 +101,13 @@ function packageparams(allparams::Dict, components::Array{String,1}, allcomponen
             end
             output[param] = SingleParam(param, newvalue, ismissingvalues, components, allcomponentsites, modelname, collect(paramsources[param]))
         elseif value isa Array{<:Array,2}
+            [mirrormatrix!(value[i,i]) for i ∈ length(components)]
             newvalue_ismissingvalues = defaultmissing.(value)
             newvalue = getindex.(newvalue_ismissingvalues, 1)
             ismissingvalues = getindex.(newvalue_ismissingvalues, 2)
             output[param] = AssocParam(param, newvalue, ismissingvalues, components, allcomponentsites, modelname, collect(paramsources[param]))
         elseif value isa Array{<:Any, 2}
-            param ∈ asymmetric_pairparams && mirrormatrix!(value)
+            param ∉ asymmetric_pairparams && mirrormatrix!(value)
             newvalue, ismissingvalues = defaultmissing(value)
             if (!ignore_missingsingleparams 
                 && !all([ismissingvalues[x,x] for x ∈ 1:size(ismissingvalues,1)])
@@ -134,7 +122,7 @@ function packageparams(allparams::Dict, components::Array{String,1}, allcomponen
     return output
 end
 
-function createparamarrays(filepaths::Array{String,1}, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}; verbose=false)
+function createparamarrays(filepaths::Array{String,1}, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}; verbose::Bool=false)
     # Returns Dict with all parameters in their respective arrays.
     checkfor_clashingheaders(filepaths)
     allparams = Dict{String,Any}()
@@ -149,10 +137,17 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
         headerparams = readcsvheader(filepath)
         verbose && println("Searching for ", string(csvtype), " headers ", headerparams, " for components ", components, " at ", filepath, "...")
         foundparams, paramtypes, sources = findparamsincsv(filepath, components, headerparams; verbose=verbose)
+        println(paramtypes)
         foundcomponents = collect(keys(foundparams))
         foundparams = swapdictorder(foundparams)
         for headerparam ∈ headerparams
-            !haskey(allparams, headerparam) && (allparams[headerparam] = createemptyparamsarray(paramtypes[headerparam], csvtype, components, allcomponentsites))
+            if !haskey(allparams, headerparam)
+                if ismissing(paramtypes[headerparam])
+                    allparams[headerparam] = createemptyparamsarray(paramtypes[headerparam], csvtype, components, allcomponentsites)
+                else
+                    allparams[headerparam] = createemptyparamsarray(Any, csvtype, components, allcomponentsites)
+                end
+            end
             !haskey(paramsources, headerparam) && (paramsources[headerparam] = Set{String}())
             if csvtype == singledata
                 isempty(foundparams) && continue
@@ -210,18 +205,24 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
     return allparams, paramsources
 end
 
-function defaultmissing(array::Array)
+function defaultmissing(array::Array; defaultvalue=nothing)
     # Returns a non-missing Array with missing values replaced by default values.
     # Also returns an Array of Bools to retain overridden information.
     arraycopy = deepcopy(array)
     type = nonmissingtype(eltype(array))
     ismissingvalues = ismissing.(array)
-    if type <: AbstractString
-        arraycopy[ismissingvalues] .= ""
-    elseif type <: Number
-        arraycopy[ismissingvalues] .= 0
+    if isnothing(defaultvalue)
+        if type == Any
+            arraycopy[ismissingvalues] .= 0
+        elseif type <: Number
+            arraycopy[ismissingvalues] .= 0
+        elseif type <: AbstractString
+            arraycopy[ismissingvalues] .= ""
+        else
+            error("Unsupported type.")
+        end
     else
-        error("Unsupported type.")
+        arraycopy[ismissingvalues] .= defaultvalue
     end
     return convert(Array{type}, arraycopy), convert(Array{Bool}, ismissingvalues)
 end
@@ -245,7 +246,7 @@ function swapdictorder(dict::Dict)
     return output
 end
 
-function findparamsincsv(filepath::String, components::Array{String,1}, headerparams::Array{String,1}; columnreference="species", sitecolumnreference="site", sourcecolumnreference="source", verbose=false, ignore_missingsingleparams=false)
+function findparamsincsv(filepath::String, components::Array{String,1}, headerparams::Array{String,1}; columnreference::String="species", sitecolumnreference::String="site", sourcecolumnreference::String="source", verbose::Bool=false, ignore_missingsingleparams::Bool=false)
     # Returns a Dict with all matches in a particular file for one parameter.
     normalised_columnreference = normalisestring(columnreference)
     csvtype = readcsvtype(filepath)
@@ -357,7 +358,7 @@ function normalisestring(str::String)
     return lowercase(replace(str, ' ' => ""))
 end
 
-function findgroupsincsv(filepath::String, components::Array{String,1}; columnreference="species", groupcolumnreference="groups", verbose=false)
+function findgroupsincsv(filepath::String, components::Array{String,1}; columnreference::String="species", groupcolumnreference::String="groups", verbose::String=false)
     # Returns a Dict with the group string that will be parsed in buildspecies.
     csvtype = readcsvtype(filepath)
     csvtype != groupdata && return Dict{String,String}()
@@ -418,7 +419,7 @@ function getline(filepath::String, selectedline::Int)
     end
 end
             
-function readcsvheader(filepath::String; headerline = 3)
+function readcsvheader(filepath::String; headerline::Int = 3)
     # Returns array of filtered header strings at line 3.
     headers = split(getline(filepath, headerline), ',')
     ignorelist = ["source", "species", "dipprnumber", "smiles", "site"]
@@ -426,7 +427,7 @@ function readcsvheader(filepath::String; headerline = 3)
 end
 
 function checkfor_clashingheaders(filepaths::Array{String,1})
-    # Raises an error if the header of any assoc parameter clashes with a non-assoc parameter
+    # Raises an error if the header of any assoc parameter clashes with a non-assoc parameter.
     headerparams = []
     headerparams_assoc = []
     for filepath in filepaths
@@ -441,7 +442,7 @@ function checkfor_clashingheaders(filepaths::Array{String,1})
     !isempty(clashingheaders) && error("Headers ", clashingheaders, " appear in both loaded assoc and non-assoc files.")
 end
 
-function findsitesincsvs(filepaths::Array{String,1}, components::Array{String,1}; columnreference="species", sitecolumnreference="site", verbose=false)
+function findsitesincsvs(filepaths::Array{String,1}, components::Array{String,1}; columnreference::String="species", sitecolumnreference::String="site", verbose::Bool=false)
     # Look for all relevant sites in the database.
     # Note that this might not necessarily include all sites associated with a component.
     normalised_columnreference = normalisestring(columnreference)
@@ -515,7 +516,7 @@ function createemptyparamsarray(csvtype::CSVType, components::Array{String,1}, a
     return createemptyparamsarray(Any, csvtype, components, allcomponentsites)
 end
 
-function convertsingletopair(params::Array{T,1}; outputmissing=false) where T
+function convertsingletopair(params::Array{T,1}; outputmissing::Bool=false) where T
     # Returns a missing square matrix with its diagonal matrix replaced by the given parameters. 
     paramslength = length(params)
     if outputmissing
@@ -552,7 +553,7 @@ function mirrormatrix!(matrix::Array{<:Any,2})
 end
 
 
-function buildspecies(gccomponents::Array{<:Any,1}, models::Array{String,1}=String[]; usermodels::Array{String,1}=String[], modelname="", verbose=false)
+function buildspecies(gccomponents::Array{<:Any,1}, grouplocations::Array{String,1}=String[]; usergrouplocations::Array{String,1}=String[], modelname::String="", verbose::Bool=false)
     # The format for gccomponents is an arary of either the species name (if it
     # available in the OpenSAFT database, or a tuple consisting of the species
     # name, followed by a list of group => multiplicity pairs.  For example:
@@ -561,7 +562,7 @@ function buildspecies(gccomponents::Array{<:Any,1}, models::Array{String,1}=Stri
     #                ("octane", ["CH3" => 2, "CH2" => 6])]
     BuildSpeciesType = Union{Tuple{String, Array{Pair{String, Int64},1}}, String, Tuple{String}}
     any(.!(isa.(gccomponents, BuildSpeciesType))) && error("The format of the components is incorrect.")
-    filepaths = string.(vcat([(getdatabasepaths.(models)...)...], [(getuserpaths.(usermodels)...)...]))
+    filepaths = string.(vcat([(getpaths.(grouplocations; relativetodatabase=true)...)...], [(getpaths.(usergrouplocations)...)...]))
     components = String[]
     allcomponentgroups = Array{Array{String,1},1}(undef, 0)
     allncomponentgroups = Array{Array{Int,1},1}(undef, 0)
@@ -601,7 +602,7 @@ function buildspecies(gccomponents::Array{<:Any,1}, models::Array{String,1}=Stri
         append!(allncomponentgroups, [ncomponentgroups])
     end
     if modelname == ""
-        modelname = getmodelname(models, usermodels)
+        modelname = getmodelname(grouplocations, groupuserlocations)
     end
     flattenedgroups = unique([(allcomponentgroups...)...])
     return GCParam(components, allcomponentgroups, allncomponentgroups, flattenedgroups, modelname)

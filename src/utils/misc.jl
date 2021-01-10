@@ -1,14 +1,4 @@
-export create_z
-function create_z(model::EoS, z::AbstractArray)
-    return NamedArray(z, model.components)
-end
-
 # extract all sites
-export extractsites
-function extractsites(n_sites)
-    return union([([collect(keys(n_sites[x])) for x in keys(n_sites)]...)...])
-end
-
 const LIQUID_STR = ("liquid","LIQUID","L","l")
 is_liquid(str::String) = str in LIQUID_STR
 
@@ -25,11 +15,3 @@ function ∑(iterator)
     end 
     return sum(iterator)
 end
-
-"""
-    eos_name(eos::EoS)::String
-
-returns the name of the equation of state.
-"""
-eos_name(eos::EoS)::String = string(nameof(typeof(eos)))
-

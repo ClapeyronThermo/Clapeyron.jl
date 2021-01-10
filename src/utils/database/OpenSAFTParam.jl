@@ -63,7 +63,7 @@ end
 struct GCParam <: OpenSAFTParam
     components::Array{String,1}
     allcomponentgroups::Array{Array{String,1},1}
-    allncomponentgroups::Array{Array{Int,1},1}
+    allcomponentngroups::Array{Array{Int,1},1}
     flattenedgroups::Array{String,1}
     modelname::String
 end
@@ -71,6 +71,6 @@ end
 struct SiteParam <: OpenSAFTParam
     components::Array{String,1}
     allcomponentsites::Array{Array{String,1},1}
-    allncomponentsites::Array{Array{Int,1},1}
+    allcomponentnsites::Array{Array{Int,1},1}
     modelname::String
 end

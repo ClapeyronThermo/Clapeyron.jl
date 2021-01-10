@@ -1,5 +1,3 @@
-# include("equations")
-
 struct SAFTgammaMieParam <: EoSParam
     segment::SingleParam{Int}
     shapefactor::SingleParam{Float64}
@@ -15,9 +13,9 @@ abstract type SAFTgammaMieModel <: SAFTModel end
 @newmodelgc SAFTgammaMie SAFTgammaMieModel SAFTgammaMieParam
 
 export SAFTgammaMie
-function SAFTgammaMie(components::Array{<:Any,1}; idealmodels::Array{String,1}=String[], usermodels::Array{String,1}=String[], verbose=false)
+function SAFTgammaMie(components::Array{<:Any,1}; idealmodels::Array{String,1}=String[], userlocations::Array{String,1}=String[], verbose=false)
     groups = buildspecies(components, ["SAFT/SAFTgammaMie/groups.csv"]; verbose=verbose)
-    params = getparams(groups, ["SAFT/SAFTgammaMie"]; usermodels=usermodels, modelname="SAFTgammaMie", ignore_missingsingleparams=true, verbose=verbose)
+    params = getparams(groups, ["SAFT/SAFTgammaMie"]; userlocations=userlocations, modelname="SAFTgammaMie", ignore_missingsingleparams=true, verbose=verbose)
 
     segment = params["vst"]
     shapefactor = params["S"]
@@ -37,3 +35,5 @@ function SAFTgammaMie(components::Array{<:Any,1}; idealmodels::Array{String,1}=S
 
     return SAFTgammaMie(packagedparams, groups, sites)
 end
+
+# include("equations.jl")

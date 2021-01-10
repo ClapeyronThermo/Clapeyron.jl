@@ -1,22 +1,14 @@
 macro comps()
-    return :($(esc(:(model.components))))
+    return :($(esc(:(model.icomponents))))
 end
 
 macro groups(component)
-    return :($(esc(:(keys(model.group_multiplicities[$(component)])))))
-end
-
-macro groups()
-    return :($(esc(:(model.groups))))
+    return :($(esc(:(model.igroups[$(component)]))))
 end
 
 macro sites(component)
-    return :($(esc(:(keys(model.params.n_sites[$(component)])))))
+    return :($(esc(:(model.isites[$(component)]))))
 end
-
-# macro sites()
-#     return :($(esc(:(model.sites))))
-# end
 
 macro f(func, args...)
     args = [esc(arg) for arg ∈ args]
@@ -28,7 +20,7 @@ macro newmodel(name, parent, paramstype)
         modelname::String
         components::Array{String,1}
         allcomponentsites::Array{Array{String,1},1}
-        allncomponentsites::Array{Array{Int,1},1}
+        allcomponentnsites::Array{Array{Int,1},1}
         params::$paramstype
         icomponents::UnitRange{Int}
         isites::Array{UnitRange{Int},1}
@@ -37,10 +29,10 @@ macro newmodel(name, parent, paramstype)
             modelname = arbitraryparam.modelname
             components = arbitraryparam.components
             allcomponentsites = sites.allcomponentsites
-            allncomponentsites = sites.allncomponentsites
+            allcomponentnsites = sites.allcomponentnsites
             icomponents = 1:length(components)
             isites = [1:length(componentsites) for componentsites ∈ allcomponentsites]
-            return new(modelname, components, allcomponentsites, allncomponentsites, params, icomponents,isites)
+            return new(modelname, components, allcomponentsites, allcomponentnsites, params, icomponents, isites)
         end
         function $name(params::$paramstype)
             arbitraryparam = getfield(params, first(fieldnames($paramstype)))
@@ -56,26 +48,26 @@ macro newmodelgc(name, parent, paramstype)
         modelname::String
         components::Array{String,1}
         allcomponentgroups::Array{Array{String,1},1}
-        allncomponentgroups::Array{Array{Int,1},1}
+        allcomponentngroups::Array{Array{Int,1},1}
         flattenedgroups::Array{String,1}
         allcomponentsites::Array{Array{String,1},1}
-        allncomponentsites::Array{Array{Int,1},1}
+        allcomponentnsites::Array{Array{Int,1},1}
         params::$paramstype
         icomponents::UnitRange{Int}
-        icomponentgroups::Array{Array{Int,1},1}
+        igroups::Array{Array{Int,1},1}
         isites::Array{UnitRange{Int},1}
         function $name(params::$paramstype, groups::GCParam, sites::SiteParam)
             modelname = groups.modelname
             components = groups.components
             allcomponentgroups = groups.allcomponentgroups
-            allncomponentgroups = groups.allncomponentgroups
+            allcomponentngroups = groups.allcomponentngroups
             flattenedgroups = groups.flattenedgroups
             allcomponentsites = sites.allcomponentsites
-            allncomponentsites = sites.allncomponentsites
+            allcomponentnsites = sites.allcomponentnsites
             icomponents = 1:length(components)
-            icomponentgroups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ allcomponentgroups]
+            igroups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ allcomponentgroups]
             isites = [1:length(componentsites) for componentsites ∈ allcomponentsites]
-            return new(modelname, components, allcomponentgroups, allncomponentgroups, flattenedgroups, allcomponentsites, allncomponentsites, params, icomponents, icomponentgroups, isites)
+            return new(modelname, components, allcomponentgroups, allcomponentngroups, flattenedgroups, allcomponentsites, allcomponentnsites, params, icomponents, igroups, isites)
         end
         function $name(params::$paramstype, groups::GCParam)
             sites = SiteParam(groups.components, [String[] for _ ∈ 1:length(groups.components)], [Int[] for _ ∈ 1:length(groups.components)], groups.modelname)

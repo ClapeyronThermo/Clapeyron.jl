@@ -1,5 +1,3 @@
-# include("equations")
-
 struct PCSAFTParam <: EoSParam
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
@@ -12,8 +10,8 @@ abstract type PCSAFTModel <: SAFTModel end
 @newmodel PCSAFT PCSAFTModel PCSAFTParam
 
 export PCSAFT
-function PCSAFT(components::Array{String,1}; idealmodels::Array{String,1}=String[], usermodels::Array{String,1}=String[], combiningrule_epsilon="Berth", verbose=false)
-    params = getparams(components, ["SAFT/PCSAFT"]; usermodels=usermodels, modelname="PCSAFT", verbose=verbose)
+function PCSAFT(components::Array{String,1}; idealmodels::Array{String,1}=String[], userlocations::Array{String,1}=String[], combiningrule_epsilon="Berth", verbose=false)
+    params = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, modelname="PCSAFT", verbose=verbose)
     # ideal = getideal(components, idealmodels)
     segment = params["m"]
     k = params["k"]
@@ -29,3 +27,4 @@ function PCSAFT(components::Array{String,1}; idealmodels::Array{String,1}=String
     return PCSAFT(packagedparams, sites)
 end
 
+include("equations.jl")
