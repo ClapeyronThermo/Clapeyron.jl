@@ -40,19 +40,19 @@ macro newmodel(name, parent, paramstype)
             isites = [1:length(componentsites) for componentsites ∈ allcomponentsites]
             return new{T}(modelname, components, allcomponentsites, allcomponentnsites, params, icomponents, isites, idealmodel, references)
         end
-        function $name(params::$paramstype, idealmodel::IdealModel; references::Array{String,1}=String[]) where {T <: IdealModel}
+        function $name(params::$paramstype, idealmodel::T; references::Array{String,1}=String[]) where {T <: IdealModel}
             arbitraryparam = getfield(params, first(fieldnames($paramstype)))
             components = arbitraryparam.components
             sites = SiteParam(components, [String[] for _ ∈ 1:length(arbitraryparam.components)], [Int[] for _ ∈ 1:length(arbitraryparam.components)], arbitraryparam.modelname)
             return $name(params, sites, idealmodel; references=references)
         end
-        function $name(params::$paramstype, sites::SiteParam; references::Array{String,1}=String[]) where {T <: IdealModel}
+        function $name(params::$paramstype, sites::SiteParam; references::Array{String,1}=String[])
             arbitraryparam = getfield(params, first(fieldnames($paramstype)))
             components = arbitraryparam.components
             idealmodel = BasicIdeal(components)
             return $name(params, sites, idealmodel; references=references)
         end
-        function $name(params::$paramstype; references::Array{String,1}=String[]) where {T <: IdealModel}
+        function $name(params::$paramstype; references::Array{String,1}=String[])
             arbitraryparam = getfield(params, first(fieldnames($paramstype)))
             components = arbitraryparam.components
             println(components)
@@ -81,7 +81,7 @@ macro newmodelgc(name, parent, paramstype)
         isites::Array{UnitRange{Int},1}
         idealmodel::T
         references::Array{String,1}
-        function $name(params::$paramstype, groups::GCParam, sites::SiteParam, idealmodel::IdealModel; references::Array{String,1}=String[]) where {T <: IdealModel}
+        function $name(params::$paramstype, groups::GCParam, sites::SiteParam, idealmodel::T; references::Array{String,1}=String[]) where {T <: IdealModel}
             modelname = groups.modelname
             components = groups.components
             allcomponentgroups = groups.allcomponentgroups
@@ -96,19 +96,19 @@ macro newmodelgc(name, parent, paramstype)
             isites = [1:length(groupsites) for groupsites ∈ allgroupsites]
             return new{T}(modelname, components, allcomponentgroups, allcomponentngroups, flattenedgroups, allcomponentnflattenedgroups, allgroupsites, allgroupnsites, params, icomponents, igroups, iflattenedgroups, isites, idealmodel, references)
         end
-        function $name(params::$paramstype, groups::GCParam, idealmodel::IdealModel; references::Array{String,1}=String[]) where {T <: IdealModel}
+        function $name(params::$paramstype, groups::GCParam, idealmodel::T; references::Array{String,1}=String[]) where {T <: IdealModel}
             modelname = groups.modelname
             components = groups.components
             sites = SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], modelname)
             return $name(params, groups, sites, idealmodel; references=references)
         end
-        function $name(params::$paramstype, groups::GCParam, sites::SiteParam; references::Array{String,1}=String[]) where {T <: IdealModel}
+        function $name(params::$paramstype, groups::GCParam, sites::SiteParam; references::Array{String,1}=String[])
             modelname = groups.modelname
-            components = arbitraryparam.components
+            components = groups.components
             idealmodel = BasicIdeal(components)
             return $name(params, groups, sites, idealmodel; references=references)
         end
-        function $name(params::$paramstype, groups::GCParam; references::Array{String,1}=String[]) where {T <: IdealModel}
+        function $name(params::$paramstype, groups::GCParam; references::Array{String,1}=String[])
             modelname = groups.modelname
             components = groups.components
             idealmodel = BasicIdeal(components)
