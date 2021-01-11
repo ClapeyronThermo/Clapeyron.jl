@@ -70,6 +70,7 @@ struct GCParam <: OpenSAFTParam
     allcomponentgroups::Array{Array{String,1},1}
     allcomponentngroups::Array{Array{Int,1},1}
     flattenedgroups::Array{String,1}
+    allcomponentnflattenedgroups::Array{Array{Int,1},1}
     modelname::String
 end
 

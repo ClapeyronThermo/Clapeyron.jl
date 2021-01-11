@@ -37,4 +37,4 @@ function SAFTgammaMie(components::Array{<:Any,1}; idealmodels::Array{String,1}=S
     return SAFTgammaMie(packagedparams, groups, sites; references=references)
 end
 
-# include("equations.jl")
+include("equations.jl")

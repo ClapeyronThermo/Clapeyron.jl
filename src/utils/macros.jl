@@ -2,6 +2,10 @@ macro comps()
     return :($(esc(:(model.icomponents))))
 end
 
+macro groups()
+    return :($(esc(:(model.iflattenedgroups))))
+end
+
 macro groups(component)
     return :($(esc(:(model.igroups[$(component)]))))
 end
@@ -51,11 +55,13 @@ macro newmodelgc(name, parent, paramstype)
         allcomponentgroups::Array{Array{String,1},1}
         allcomponentngroups::Array{Array{Int,1},1}
         flattenedgroups::Array{String,1}
-        allcomponentsites::Array{Array{String,1},1}
-        allcomponentnsites::Array{Array{Int,1},1}
+        allcomponentnflattenedgroups::Array{Array{Int,1},1}
+        allgroupsites::Array{Array{String,1},1}
+        allgroupnsites::Array{Array{Int,1},1}
         params::$paramstype
         icomponents::UnitRange{Int}
         igroups::Array{Array{Int,1},1}
+        iflattenedgroups::UnitRange{Int}
         isites::Array{UnitRange{Int},1}
         references::Array{String,1}
         function $name(params::$paramstype, groups::GCParam, sites::SiteParam; references::Array{String,1}=String[])
@@ -64,12 +70,14 @@ macro newmodelgc(name, parent, paramstype)
             allcomponentgroups = groups.allcomponentgroups
             allcomponentngroups = groups.allcomponentngroups
             flattenedgroups = groups.flattenedgroups
-            allcomponentsites = sites.allcomponentsites
-            allcomponentnsites = sites.allcomponentnsites
+            allcomponentnflattenedgroups = groups.allcomponentnflattenedgroups
+            allgroupsites = sites.allcomponentsites
+            allgroupnsites = sites.allcomponentnsites
             icomponents = 1:length(components)
             igroups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ allcomponentgroups]
-            isites = [1:length(componentsites) for componentsites ∈ allcomponentsites]
-            return new(modelname, components, allcomponentgroups, allcomponentngroups, flattenedgroups, allcomponentsites, allcomponentnsites, params, icomponents, igroups, isites, references)
+            iflattenedgroups = 1:length(flattenedgroups)
+            isites = [1:length(groupsites) for groupsites ∈ allgroupsites]
+            return new(modelname, components, allcomponentgroups, allcomponentngroups, flattenedgroups, allcomponentnflattenedgroups, allgroupsites, allgroupnsites, params, icomponents, igroups, iflattenedgroups, isites, references)
         end
         function $name(params::$paramstype, groups::GCParam; references::Array{String,1}=String[])
             sites = SiteParam(groups.components, [String[] for _ ∈ 1:length(groups.components)], [Int[] for _ ∈ 1:length(groups.components)], groups.modelname)

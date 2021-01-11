@@ -598,7 +598,7 @@ function buildspecies(gccomponents::Array{<:Any,1}, grouplocations::Array{String
     filepaths = string.(vcat([(getpaths.(grouplocations; relativetodatabase=true)...)...], [(getpaths.(usergrouplocations)...)...]))
     components = String[]
     allcomponentgroups = Array{Array{String,1},1}(undef, 0)
-    allncomponentgroups = Array{Array{Int,1},1}(undef, 0)
+    allcomponentngroups = Array{Array{Int,1},1}(undef, 0)
     componentstolookup = String[]
     append!(componentstolookup, [x for x ∈ gccomponents[isa.(gccomponents, String)]])
     append!(componentstolookup, [first(x) for x ∈ gccomponents[isa.(gccomponents, Tuple{String})]])
@@ -626,17 +626,27 @@ function buildspecies(gccomponents::Array{<:Any,1}, grouplocations::Array{String
             groupsandngroups = eval(Meta.parse(allfoundcomponentgroups[first(gccomponent)]))
         end
         componentgroups = String[]
-        ncomponentgroups = Int[]
+        componentngroups = Int[]
         for (componentgroup, ncomponentgroup) ∈ groupsandngroups
             append!(componentgroups, [componentgroup])
-            append!(ncomponentgroups, [ncomponentgroup])
+            append!(componentngroups, [ncomponentgroup])
         end
         append!(allcomponentgroups, [componentgroups])
-        append!(allncomponentgroups, [ncomponentgroups])
+        append!(allcomponentngroups, [componentngroups])
     end
     if modelname == ""
         modelname = getmodelname(grouplocations, usergrouplocations)
     end
     flattenedgroups = unique([(allcomponentgroups...)...])
-    return GCParam(components, allcomponentgroups, allncomponentgroups, flattenedgroups, modelname)
+    allcomponentnflattenedgroups = [zeros(Int, length(flattenedgroups)) for _ in 1:length(components)]
+    for i in 1:length(components)
+        for (k, group) in enumerate(flattenedgroups)
+            if group in allcomponentgroups[i]
+                allcomponentnflattenedgroups[i][k] = allcomponentngroups[i][findfirst(isequal(group), allcomponentgroups[i])]
+            else
+                allcomponentnflattenedgroups[i][k] = 0
+            end
+        end
+    end
+    return GCParam(components, allcomponentgroups, allcomponentngroups, flattenedgroups, allcomponentnflattenedgroups, modelname)
 end
