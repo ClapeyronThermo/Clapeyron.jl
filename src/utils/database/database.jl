@@ -154,17 +154,10 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
                 isempty(foundparams) && continue
                 for (component, value) ∈ foundparams[headerparam]
                     currenttype = nonmissingtype(eltype(allparams[headerparam]))
-                    if !(paramtypes[headerparam] <: currenttype) # Either Any or not compatible
-                        println("$headerparam: $currenttype : $(paramtypes[headerparam]) = $(allparams[headerparam])")
-                        if currenttype == Any
-                            if !(paramtypes[headerparam] <: currenttype) && all(allparams[headerparam] <: paramtypes[headerparam])
-                                allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
-                            end
-                        else
-                            try
-                                allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
-                            catch e
-                            end
+                    if paramtypes[headerparam] != currenttype
+                        try
+                            allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
+                        catch e
                         end
                     end
                     idx = findfirst(isequal(component), components)
@@ -185,16 +178,10 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
                 isempty(foundparams) && continue
                 for (componentpair, value) ∈ foundparams[headerparam]
                     currenttype = nonmissingtype(eltype(allparams[headerparam]))
-                    if !(paramtypes[headerparam] <: currenttype) # Either Any or not compatible
-                        if currenttype == Array{Any}
-                            if !(paramtypes[headerparam] <: currenttype) && all(allparams[headerparam] <: paramtypes[headerparam])
-                                allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
-                            end
-                        else
-                            try
-                                allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
-                            catch e 
-                            end
+                    if paramtypes[headerparam] != currenttype
+                        try
+                            allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
+                        catch e 
                         end
                     end
                     idx1 = findfirst(isequal(componentpair[1]), components)
@@ -208,16 +195,10 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
                 isempty(foundparams) && continue
                 for (assocpair, value) ∈ foundparams[headerparam]
                     currenttype = nonmissingtype(eltype(first(allparams[headerparam])))
-                    if !(currenttype <: paramtypes[headerparam]) # Either Any or not compatible
-                        if currenttype == Any
-                            if !(paramtypes[headerparam] <: currenttype) && all(allparams[headerparam] <: paramtypes[headerparam])
-                                allparams[headerparam] = convert(Array{Array{Union{Missing,paramtypes[headerparam]}}}, allparams[headerparam])
-                            end
-                        else
-                            try
-                                allparams[headerparam] = convert(Array{Array{Union{Missing,paramtypes[headerparam]}}}, allparams[headerparam])
-                            catch e
-                            end
+                    if currenttype != paramtypes[headerparam]
+                        try
+                            allparams[headerparam] = convert(Array{Array{Union{Missing,paramtypes[headerparam]}}}, allparams[headerparam])
+                        catch e
                         end
                     end
                     idx1 = findfirst(isequal(assocpair[1][1]), components)
@@ -384,7 +365,7 @@ function findparamsincsv(filepath::String, components::Array{String,1}, headerpa
 end
 
 function normalisestring(str::String)
-    return lowercase(replace(str, ' ' => ""))
+    return lowercase(replace(str, r"[ \-\_]" => ""))
 end
 
 function findgroupsincsv(filepath::String, components::Array{String,1}; columnreference::String="species", groupcolumnreference::String="groups", verbose::Bool=false)
@@ -452,7 +433,7 @@ function readcsvheader(filepath::String; headerline::Int = 3)
     # Returns array of filtered header strings at line 3.
     headers = split(getline(filepath, headerline), ',')
     ignorelist = ["source", "species", "dipprnumber", "smiles", "site"]
-    return String.(filter(x -> replace.(lowercase(x), r"[ \d]" => "") ∉ ignorelist, headers))
+    return String.(filter(x -> replace.(lowercase(x), r"[ \-\_\d]" => "") ∉ ignorelist, headers))
 end
 
 function checkfor_clashingheaders(filepaths::Array{String,1})

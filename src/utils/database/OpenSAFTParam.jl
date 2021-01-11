@@ -11,36 +11,41 @@ struct SingleParam{T} <: OpenSAFTParam
 end
 
 function SingleParam(x::SingleParam{T}) where T
-    return SingleParam{T}(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
+    return SingleParam(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
 end
 function SingleParam(x::SingleParam{T}, v::Array{T,1}) where T
-    return SingleParam{T}(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
+    return SingleParam(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
 end
 
 struct PairParam{T} <: OpenSAFTParam
     name::String
     values::Array{T,2}
+    diagvalues::SubArray{T,1,Array{T,1},Tuple{Array{Int64,1}},false}
     ismissingvalues::Array{Bool,2}
     components::Array{String,1}
     allcomponentsites::Array{Array{String,1},1}
     modelname::String
     sources::Array{String,1}
+    function PairParam(name::String, values::Array{T,2}, ismissingvalues::Array{Bool,2}, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, modelname::String, sources::Array{String,1}) where T
+        diagvalues = view(values, [1+(length(components)+1)*x for x in 0:length(components)-1])
+        return new{T}(name, values, diagvalues, ismissingvalues, components, allcomponentsites, modelname, sources)
+    end
 end
 
 function PairParam(x::PairParam{T}) where T
-    return PairParam{T}(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
+    return PairParam(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
 end
 function PairParam(x::PairParam{T}, v::Array{T,2}) where T
-    return PairParam{T}(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
+    return PairParam(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
 end
 function PairParam(x::SingleParam{T}) where T
-    return PairParam{T}(x.name, convertsingletopair(x.values), convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
+    return PairParam(x.name, convertsingletopair(x.values), convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
 end
 function PairParam(x::SingleParam{T}, v::Array{T,1}) where T
-    return PairParam{T}(x.name, convertsingletopair(v), convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
+    return PairParam(x.name, convertsingletopair(v), convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
 end
 function PairParam(x::SingleParam{T}, v::Array{T,2}) where T
-    return PairParam{T}(x.name, v, convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
+    return PairParam(x.name, v, convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, x.modelname, deepcopy(x.sources))
 end
 
 struct AssocParam{T} <: OpenSAFTParam
