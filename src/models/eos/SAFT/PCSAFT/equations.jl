@@ -17,8 +17,8 @@ function a_disp(model::PCSAFTModel, V, T, z)
 end
 
 function d(model::PCSAFTModel, V, T, z, i)
-    ϵii = model.params.epsilon.values[i,i]
-    σii = model.params.sigma.values[i,i]
+    ϵii = model.params.epsilon.diagvalues[i]
+    σii = model.params.sigma.diagvalues[i]
     return σii * (1 - 0.12exp(-3ϵii/T))
 end
 
@@ -85,18 +85,18 @@ function X(model::PCSAFTModel, V, T, z)::Array{Array{Float64,1},1}
     x = z/∑(z)
     ρ = N_A*∑(z)/V
     itermax = 100
-    tol = 1.
-    iter = 1
     dampingfactor = 0.5
+    error = 1.
+    iter = 1
     X_ = [[1. for a ∈ @sites(i)] for i ∈ @comps]
     X_old = deepcopy(X_)
-    while tol > 1e-12
+    while error > 1e-12
         iter > itermax && error("X has failed to converge after $itermax iterations")
         for i ∈ @comps, a ∈ @sites(i)
             rhs = (1+∑(ρ*x[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))^-1
             X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
         end
-        tol = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
+        error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
         X_old = deepcopy(X_)
         iter += 1
     end
@@ -119,9 +119,9 @@ const PCSAFTconsts = (
     -26.547362491 21.419793629 -1.7241829131;
     97.759208784 -65.255885330 -4.1302112531;
     -159.59154087 83.318680481 13.776631870;
-    91.297774084 -33.746922930 -8.6728470368]
+    91.297774084 -33.746922930 -8.6728470368],
 
-    ,corr2 = 
+    corr2 = 
     [0.7240946941 -0.5755498075 0.0976883116;
     2.2382791861 0.6995095521 -0.2557574982;
     -4.0025849485 3.8925673390 -9.1558561530;

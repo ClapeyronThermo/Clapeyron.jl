@@ -10,6 +10,6 @@ function getsites(pairs::Dict{String,SingleParam{Int}})
     components = arbitraryparam.components
     allcomponentsites = arbitraryparam.allcomponentsites
     modelname = arbitraryparam.modelname
-    allcomponentnsites = [[pairs[allcomponentsites[i][j]].values[i] for j ∈ 1:length(allcomponentsites[i])] for i ∈ 1:length(components)]
+    allcomponentnsites = [[pairs[allcomponentsites[i][j]].values[i] for j ∈ 1:length(allcomponentsites[i])] for i ∈ 1:length(components)]  # or groupsites
     return SiteParam(components, allcomponentsites, allcomponentnsites, modelname)
 end
