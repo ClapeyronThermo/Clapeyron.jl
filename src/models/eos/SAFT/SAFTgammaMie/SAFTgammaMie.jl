@@ -35,7 +35,7 @@ function SAFTgammaMie(components::Array{<:Any,1}; idealmodel::String="", userloc
     idealmodel = idealmodelselector(idealmodel, components)
     references = ["10.1063/1.4851455", "10.1021/je500248h"]
 
-    return SAFTgammaMie(packagedparams, groups, sites; references=references)
+    return SAFTgammaMie(packagedparams, groups, sites, idealmodel; references=references)
 end
 
 include("equations.jl")

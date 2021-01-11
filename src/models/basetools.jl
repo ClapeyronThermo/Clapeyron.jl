@@ -15,16 +15,16 @@ function getsites(pairs::Dict{String,SingleParam{Int}})
     return SiteParam(components, allcomponentsites, allcomponentnsites, modelname)
 end
 
-function idealmodelselector(idealmodelstring::String, components::Array{String,1})
+function idealmodelselector(idealmodelstring::String, components::Array{String,1}; verbose::Bool=false)
     normalisedidealmodelstring = normalisestring(idealmodelstring)
     if normalisedidealmodelstring == "monomer"
-        return MonomerIdeal(components)
+        return MonomerIdeal(components; verbose=verbose)
     elseif normalisedidealmodelstring == "reid"
-        return ReidIdeal(components)
+        return ReidIdeal(components; verbose=verbose)
     elseif normalisedidealmodelstring == "walker"
-        return WalkerIdeal(components)
+        return WalkerIdeal(components; verbose=verbose)
     elseif normalisedidealmodelstring == "basic" || normalisedidealmodelstring == ""
-        return BasicIdeal(components)
+        return BasicIdeal(components; verbose=verbose)
     else
         error("Your selected ideal model ", idealmodelstring, " is not recognised.")
     end
