@@ -15,7 +15,14 @@ include("utils/misc.jl")
 
 include("models/basetools.jl")
 include("models/combiningrules.jl")
+
 include("models/eos.jl")
+
+include("models/eos/ideal/BasicIdeal.jl")
+include("models/eos/ideal/MonomerIdeal.jl")
+include("models/eos/ideal/ReidIdeal.jl")
+include("models/eos/ideal/WalkerIdeal.jl")
+
 include("models/eos/SAFT/PCSAFT/PCSAFT.jl")
 include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
 include("models/eos/SAFT/SAFTgammaMie/SAFTgammaMie.jl")

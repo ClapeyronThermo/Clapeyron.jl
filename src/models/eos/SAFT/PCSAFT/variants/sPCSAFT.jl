@@ -2,22 +2,22 @@ abstract type sPCSAFTModel <: PCSAFTModel end
 @newmodel sPCSAFT sPCSAFTModel PCSAFTParam
 
 export sPCSAFT
-function sPCSAFT(components::Array{String,1}; idealmodels::Array{String,1}=String[], userlocations::Array{String,1}=String[], combiningrule_epsilon="Berth", verbose=false)
-    params = getparams(components, ["SAFT/PCSAFT", "SAFT/sPCSAFT"]; userlocations=userlocations, modelname="sPCSAFT", verbose=verbose)
-    # ideal = getideal(components, idealmodels)
+function sPCSAFT(components::Array{String,1}; idealmodel::String="", userlocations::Array{String,1}=String[], verbose=false)
+    params = getparams(components, ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]; userlocations=userlocations, modelname="sPCSAFT", verbose=verbose)
     segment = params["m"]
     k = params["k"]
     params["sigma"].values .*= 1E-10
     sigma = combining_sigma(params["sigma"])
     epsilon = combining_epsilon(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bond_vol"]
+    bondvol = params["bondvol"]
     sites = getsites(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
     packagedparams = PCSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
+    idealmodel = idealmodelselector(idealmodel, components)
     references = ["10.1021/ie020753p"]
 
-    return sPCSAFT(packagedparams, sites; references=references)
+    return sPCSAFT(packagedparams, sites, idealmodel; references=references)
 end
 
 function a_hc(model::sPCSAFTModel, V, T, z)

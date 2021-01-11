@@ -1,5 +1,5 @@
 OpenSAFT Database File,,,,,
-PCSAFT Unlike Parameters,,,,,
+sCKSAFT Unlike Parameters,,,,,
 species1,SMILES1,species2,SMILES2,k,source
 hexane,CCCCCC,butane,CCCC,-0.01,
 hexane,CCCCCC,pentane,CCCCC,-0.007,

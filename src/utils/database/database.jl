@@ -88,6 +88,7 @@ end
 
 function getparams(groups::GCParam, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], modelname="", asymmetricparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
     # For GC.
+    groups.modelname != "unnamed" && (modelname = groups.modelname)
     return getparams(groups.flattenedgroups, locations; userlocations=userlocations, modelname=modelname, asymmetricparams=asymmetricparams, ignore_missingsingleparams=ignore_missingsingleparams, verbose=verbose)
 end
 

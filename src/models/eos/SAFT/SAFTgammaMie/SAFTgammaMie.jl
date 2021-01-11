@@ -13,8 +13,8 @@ abstract type SAFTgammaMieModel <: SAFTModel end
 @newmodelgc SAFTgammaMie SAFTgammaMieModel SAFTgammaMieParam
 
 export SAFTgammaMie
-function SAFTgammaMie(components::Array{<:Any,1}; idealmodels::Array{String,1}=String[], userlocations::Array{String,1}=String[], verbose=false)
-    groups = buildspecies(components, ["SAFT/SAFTgammaMie/groups.csv"]; verbose=verbose)
+function SAFTgammaMie(components::Array{<:Any,1}; idealmodel::String="", userlocations::Array{String,1}=String[], verbose=false)
+    groups = buildspecies(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; modelname="SAFTgammaMie", verbose=verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie"]; userlocations=userlocations, modelname="SAFTgammaMie", verbose=verbose)
 
     segment = params["vst"]
@@ -27,11 +27,12 @@ function SAFTgammaMie(components::Array{<:Any,1}; idealmodels::Array{String,1}=S
     lambda_r = combining_lambda(params["lambda_r"])
 
     epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bond_vol"]
+    bondvol = params["bondvol"]
 
     sites = getsites(Dict("e1" => params["n_e1"], "e2" => params["n_e2"], "H" => params["n_H"]))
 
     packagedparams = SAFTgammaMieParam(segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol)
+    idealmodel = idealmodelselector(idealmodel, components)
     references = ["10.1063/1.4851455", "10.1021/je500248h"]
 
     return SAFTgammaMie(packagedparams, groups, sites; references=references)
