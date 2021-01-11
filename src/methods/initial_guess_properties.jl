@@ -48,11 +48,11 @@ end
 
 function x0_volume(model::SAFTModel,z; phase = "unknown")
     if phase == "unknown" || is_liquid(phase)
-        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment.values[i]*model.params.sigma.values[i,i]^3 for i in @comps)/0.8)]
+        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment.values[i]*model.params.sigma.diagvalues[i]^3 for i in @comps)/0.8)]
     elseif is_vapour(phase)
-        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment.values[i]*model.params.sigma.values[i,i]^3 for i in @comps)/1e-2)]
+        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment.values[i]*model.params.sigma.diagvalues[i]^3 for i in @comps)/1e-2)]
     elseif is_supercritical(phase)
-        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment.values[i]*model.params.sigma.values[i,i]^3 for i in @comps)/0.5)]
+        x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment.values[i]*model.params.sigma.diagvalues[i]^3 for i in @comps)/0.5)]
     end
     return x0
 end
@@ -112,7 +112,7 @@ end
 #lb_volume(model::SAFTgammaMie,z; phase = "unknown") = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/1)]
 #lb_volume(model::LJSAFT,z; phase = "unknown") = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1)]
 
-lb_volume(model::SAFTModel, z; phase = "unknown") = [log10(π/6*N_A*sum(z[i]*model.params.segment.values[i]*model.params.sigma.values[i,i]^3 for i in @comps)/1)]
+lb_volume(model::SAFTModel, z; phase = "unknown") = [log10(π/6*N_A*sum(z[i]*model.params.segment.values[i]*model.params.sigma.diagvalues[i]^3 for i in @comps)/1)]
 # lb_volume(model::Cubic,z; phase = "unknown") = [log10(sum(z[i]*z[j]*model.params.b[union(i,j)] for i in model.components for j in model.components))]
 
 

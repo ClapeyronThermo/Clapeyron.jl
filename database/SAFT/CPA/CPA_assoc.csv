@@ -1,6 +1,6 @@
 OpenSAFT Database File,,,,,,,
 CPA Assoc Parameters,,,,,,,
-species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bond_vol
+species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol
 methanol,CO,e,methanol,CO,H,245.91,16.1
 ethanol,CCO,e,ethanol,CCO,H,215.32,8
 propanol,CCCO,e,propanol,CCCO,H,210,8.1

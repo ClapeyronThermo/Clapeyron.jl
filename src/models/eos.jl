@@ -1,7 +1,5 @@
-function eos(model::EoSModel, z, V, T)
-    # return N_A*k_B*sum(z) * T*(a_ideal(model.ideal,z,v,T)+a_res(model,z,v,T))
-    x = z/∑(z)
-    return ∑(x .* log.(z/V)) - 1
+function eos(model::EoSModel, V, T, z)
+    return N_A*k_B*sum(z) * T*(a_ideal(model.idealmodel,V,T,z)+a_res(model,V,T,z))
 end
 
 # function eos(model::Cubic, z, v, T)
