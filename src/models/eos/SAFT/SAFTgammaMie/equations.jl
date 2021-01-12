@@ -370,10 +370,11 @@ function X(model::SAFTgammaMieModel, V, T, z)
     itermax = 1000
     damping_factor = 0.5
     error = 1.
+    tol = model.absolutetolerance
     iter = 1
     X_ = [[[1. for a ∈ @sites(k)] for k ∈ @groups] for i ∈ @comps]
     X_old = deepcopy(X_)
-    while error > 1e-12
+    while error > tol
         if iter > itermax
             error("X has failed to converge after $itermax iterations")
         end

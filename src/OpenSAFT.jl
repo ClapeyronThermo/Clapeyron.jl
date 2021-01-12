@@ -10,13 +10,17 @@ using DataStructures: DefaultDict
 
 include("constants.jl")
 include("utils/macros.jl")
-include("utils/database/database.jl")
+include("utils/OpenSAFTParam.jl")
+using CSV, Tables
+include("utils/database.jl")
 include("utils/misc.jl")
 
 include("models/basetools.jl")
 include("models/combiningrules.jl")
 
 include("models/eos.jl")
+include("utils/visualisation.jl")
+
 
 include("models/eos/ideal/BasicIdeal.jl")
 include("models/eos/ideal/MonomerIdeal.jl")
@@ -26,6 +30,7 @@ include("models/eos/ideal/WalkerIdeal.jl")
 include("models/eos/SAFT/PCSAFT/PCSAFT.jl")
 include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
 include("models/eos/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
+
 # include("models/param_structs.jl")
 # include("models/ideal_param_structs.jl")
 # include("models/model_structs.jl")

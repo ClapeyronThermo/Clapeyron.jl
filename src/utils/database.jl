@@ -1,7 +1,3 @@
-using CSV, Tables
-include("OpenSAFTParam.jl")
-include("visualisation.jl")
-
 @enum CSVType singledata pairdata assocdata groupdata
 
 """
@@ -139,7 +135,6 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
         headerparams = readcsvheader(filepath)
         verbose && println("Searching for ", string(csvtype), " headers ", headerparams, " for components ", components, " at ", filepath, "...")
         foundparams, paramtypes, sources = findparamsincsv(filepath, components, headerparams; verbose=verbose)
-        println(paramtypes)
         foundcomponents = collect(keys(foundparams))
         foundparams = swapdictorder(foundparams)
         for headerparam ∈ headerparams
