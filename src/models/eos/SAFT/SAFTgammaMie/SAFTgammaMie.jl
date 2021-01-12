@@ -9,7 +9,7 @@ struct SAFTgammaMieParam <: EoSParam
     bondvol::AssocParam{Float64}
 end
 
-abstract type SAFTgammaMieModel <: SAFTModel end
+abstract type SAFTgammaMieModel <: GCSAFTModel end
 @newmodelgc SAFTgammaMie SAFTgammaMieModel SAFTgammaMieParam
 
 export SAFTgammaMie

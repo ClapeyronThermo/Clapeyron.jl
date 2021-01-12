@@ -1,6 +1,8 @@
 abstract type EoSModel end
 
 abstract type SAFTModel <: EoSModel end
+abstract type GCSAFTModel <: SAFTModel end
+abstract type NonGCSAFTModel <: SAFTModel end
 abstract type CubicModel <: EoSModel end
 abstract type IdealModel <: EoSModel end
 

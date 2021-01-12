@@ -6,7 +6,7 @@ struct PCSAFTParam <: EoSParam
     bondvol::AssocParam{Float64}
 end
 
-abstract type PCSAFTModel <: SAFTModel end
+abstract type PCSAFTModel <: NonGCSAFTModel end
 @newmodel PCSAFT PCSAFTModel PCSAFTParam
 
 export PCSAFT

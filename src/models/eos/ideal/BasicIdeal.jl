@@ -3,7 +3,9 @@ end
 
 abstract type BasicIdealModel <: IdealModel end
 struct BasicIdeal <: BasicIdealModel
+    modelname::String
     params::BasicIdealParam
+    BasicIdeal(params::BasicIdealParam) = new("BasicIdeal", params)
 end
 
 function BasicIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)

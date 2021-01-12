@@ -87,10 +87,11 @@ function X(model::PCSAFTModel, V, T, z)::Array{Array{Float64,1},1}
     itermax = 100
     dampingfactor = 0.5
     error = 1.
+    tol = model.absolutetolerance
     iter = 1
     X_ = [[1. for a ∈ @sites(i)] for i ∈ @comps]
     X_old = deepcopy(X_)
-    while error > 1e-12
+    while error > tol
         iter > itermax && error("X has failed to converge after $itermax iterations")
         for i ∈ @comps, a ∈ @sites(i)
             rhs = (1+∑(ρ*x[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))^-1
