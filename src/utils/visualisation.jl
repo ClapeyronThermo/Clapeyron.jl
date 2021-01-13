@@ -1,4 +1,4 @@
-function Base.show(io::IO, ::MIME"text/plain", model::NonGCSAFTModel)
+function Base.show(io::IO, ::MIME"text/plain", model::EoSModel)
     print(io, typeof(model))
     model.lengthcomponents == 1 && println(io, " with 1 component:")
     model.lengthcomponents > 1 && println(io, " with ", model.lengthcomponents, " components:")

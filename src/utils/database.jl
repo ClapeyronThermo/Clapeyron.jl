@@ -55,8 +55,8 @@ function getparams(components::Array{String,1}, locations::Array{String,1}=Strin
     # asymmetricparams is a list of parameters for which matrix reflection is disabled.
     # ignore_missingsingleparams gives users the option to disable component existence check in single params.
     filepaths = string.(vcat([(getpaths.(locations; relativetodatabase=true)...)...], [(getpaths.(userlocations)...)...]))
-    allcomponentsites = findsitesincsvs(filepaths, components)
-    allparams, paramsourcecsvs, paramsources = createparamarrays(filepaths, components, allcomponentsites; verbose=verbose)
+    allcomponentsites = findsitesincsvs(components, filepaths)
+    allparams, paramsourcecsvs, paramsources = createparamarrays(components, filepaths, allcomponentsites; verbose=verbose)
     return packageparams(allparams, components, allcomponentsites, paramsourcecsvs, paramsources; asymmetricparams=asymmetricparams, ignore_missingsingleparams=ignore_missingsingleparams)
 end
 
@@ -97,7 +97,7 @@ function packageparams(allparams::Dict, components::Array{String,1}, allcomponen
     return output
 end
 
-function createparamarrays(filepaths::Array{String,1}, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}; verbose::Bool=false)
+function createparamarrays(components::Array{String,1}, filepaths::Array{String,1}, allcomponentsites::Array{Array{String,1},1}; verbose::Bool=false)
     # Returns Dict with all parameters in their respective arrays.
     checkfor_clashingheaders(filepaths)
     allparams = Dict{String,Any}()
@@ -112,7 +112,7 @@ function createparamarrays(filepaths::Array{String,1}, components::Array{String,
         end
         headerparams = readcsvheader(filepath)
         verbose && println("Searching for ", string(csvtype), " headers ", headerparams, " for components ", components, " at ", filepath, "...")
-        foundparams, paramtypes, sources = findparamsincsv(filepath, components, headerparams; verbose=verbose)
+        foundparams, paramtypes, sources = findparamsincsv(components, filepath, headerparams; verbose=verbose)
         foundcomponents = collect(keys(foundparams))
         foundparams = swapdictorder(foundparams)
         for headerparam ∈ headerparams
@@ -198,8 +198,13 @@ end
 function defaultmissing(array::Array; defaultvalue=nothing)
     # Returns a non-missing Array with missing values replaced by default values.
     # Also returns an Array of Bools to retain overridden information.
-    arraycopy = deepcopy(array)
     type = nonmissingtype(eltype(array))
+    if type == Union{}
+        arraycopy = convert(Array{Any}, array)
+        type = Any
+    else
+        arraycopy = deepcopy(array)
+    end
     ismissingvalues = ismissing.(array)
     if isnothing(defaultvalue)
         if type == Any
@@ -236,11 +241,11 @@ function swapdictorder(dict::Dict)
     return output
 end
 
-function findparamsincsv(filepath::String, components::Array{String,1}, headerparams::Array{String,1}; columnreference::String="species", sitecolumnreference::String="site", sourcecolumnreference::String="source", verbose::Bool=false, ignore_missingsingleparams::Bool=false)
+function findparamsincsv(components::Array{String,1}, filepath::String, headerparams::Array{String,1}; columnreference::String="species", sitecolumnreference::String="site", sourcecolumnreference::String="source", verbose::Bool=false, ignore_missingsingleparams::Bool=false)
     # Returns a Dict with all matches in a particular file for one parameter.
     normalised_columnreference = normalisestring(columnreference)
     csvtype = readcsvtype(filepath)
-    df = CSV.File(filepath; header=3)
+    df = CSV.File(filepath; header=3, pool=0)
     csvheaders = String.(Tables.columnnames(df))
     normalised_csvheaders = normalisestring.(csvheaders)
     normalised_headerparams = normalisestring.(headerparams)
@@ -348,7 +353,7 @@ function normalisestring(str::String)
     return lowercase(replace(str, r"[ \-\_]" => ""))
 end
 
-function findgroupsincsv(filepath::String, components::Array{String,1}; columnreference::String="species", groupcolumnreference::String="groups", verbose::Bool=false)
+function findgroupsincsv(components::Array{String,1}, filepath::String; columnreference::String="species", groupcolumnreference::String="groups", verbose::Bool=false)
     # Returns a Dict with the group string that will be parsed in buildspecies.
     csvtype = readcsvtype(filepath)
     csvtype != groupdata && return Dict{String,String}()
@@ -432,7 +437,7 @@ function checkfor_clashingheaders(filepaths::Array{String,1})
     !isempty(clashingheaders) && error("Headers ", clashingheaders, " appear in both loaded assoc and non-assoc files.")
 end
 
-function findsitesincsvs(filepaths::Array{String,1}, components::Array{String,1}; columnreference::String="species", sitecolumnreference::String="site", verbose::Bool=false)
+function findsitesincsvs(components::Array{String,1}, filepaths::Array{String,1}; columnreference::String="species", sitecolumnreference::String="site", verbose::Bool=false)
     # Look for all relevant sites in the database.
     # Note that this might not necessarily include all sites associated with a component.
     normalised_columnreference = normalisestring(columnreference)
@@ -591,7 +596,7 @@ function buildspecies(gccomponents::Array{<:Any,1}, grouplocations::Array{String
             continue
         end
         verbose && println("Searching for groups for components ", componentstolookup, " at ", filepath, "...")
-        merge!(allfoundcomponentgroups, findgroupsincsv(filepath, componentstolookup; verbose=verbose))
+        merge!(allfoundcomponentgroups, findgroupsincsv(componentstolookup, filepath; verbose=verbose))
         append!(groupsourcecsvs, [filepath])
     end
     for gccomponent ∈ gccomponents

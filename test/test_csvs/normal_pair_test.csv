@@ -1,0 +1,7 @@
+OpenSAFT Database File,,,,
+test pair parameters,,,,
+species1,species2,binaryparam,overrideparam,source
+sp1,sp2,0.01,1.1,testsource7
+sp3,sp4,0.02,1.2,testsource8
+sp4,sp2,0.03,1.3,testsource9
+sp1,sp2,0.04,1.4,testsource10
