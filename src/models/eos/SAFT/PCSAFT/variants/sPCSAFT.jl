@@ -3,7 +3,7 @@ abstract type sPCSAFTModel <: PCSAFTModel end
 
 export sPCSAFT
 function sPCSAFT(components::Array{String,1}; idealmodel::String="", userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]; userlocations=userlocations, modelname="sPCSAFT", verbose=verbose)
+    params = getparams(components, ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = params["k"]
     params["sigma"].values .*= 1E-10

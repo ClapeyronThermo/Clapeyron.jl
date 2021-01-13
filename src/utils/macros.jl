@@ -1,96 +1,125 @@
+"""
+    @comps
+
+This macro is an alias to
+
+    model.icomponents
+
+The caveat is that `model` has to exist in the local namespace.
+`model` is expected to be an EoSModel type that contains the `icomponents` field.
+`icomponents` is an iterator that goes through all component indices.
+"""
 macro comps()
     return :($(esc(:(model.icomponents))))
 end
 
+"""
+    @groups
+
+This macro is an alias to
+
+    model.iflattenedgroups
+
+`iflattenedgroups` is an iterator that goes through all groups in flattenedgroups.
+"""
 macro groups()
     return :($(esc(:(model.iflattenedgroups))))
 end
 
+"""
+    @groups(component)
+
+This macro is an alias to
+
+    model.igroups[component]
+
+`igroups[component]` is an iterator that goes through all groups in relevent to a given component.
+"""
 macro groups(component)
     return :($(esc(:(model.igroups[$(component)]))))
 end
 
+"""
+    @sites(component)
+
+This macro is an alias to
+
+    model.isites[component]
+
+`isites[component]` is an iterator that goes through all sites relevant to
+each group in a GC model, and te each main component in a non-GC model.
+"""
 macro sites(component)
     return :($(esc(:(model.isites[$(component)]))))
 end
 
+"""
+    @f(func,a,b,c,...)
+
+This macro is an alias to
+    
+    func(model, V, T, z, a, b, c, ...)
+
+where `func` is the name of the function, `model` is the model struct,
+`V` is the volume, `T` is the absolute temperature, `z` is an array of number
+of moles of each component, and `a`, `b`, `c`, ... are arbitrary parameters
+that get passed to ^func^.
+
+It is very common for functions that are involved in the models to contain the
+`model`, `V`, `T` and `z` parameters, so this macro helps reduce code repetition
+as long as the first four parameters in the function are written exactly as above.
+
+"""
 macro f(func, args...)
     args = [esc(arg) for arg ∈ args]
     return :($(func)($(esc(:model)),$(esc(:V)),$(esc(:T)),$(esc(:z)),$(args...)))
 end
 
-macro newmodel(name, parent, paramstype)
-    esc(quote struct $name{T <: IdealModel} <: $parent
-        modelname::String
+"""
+    @newmodelgc name parent paramstype
 
-        components::Array{String,1}
-        lengthcomponents::Int
-        icomponents::UnitRange{Int}
+This is a data type that contains all the information needed to use an EoS model.
+It also functions as an identifier to ensure that the right functions are called.
 
-        allcomponentsites::Array{Array{String,1},1}
-        lengthallcomponentsites::Array{Int,1}
-        allcomponentnsites::Array{Array{Int,1},1}
-        isites::Array{UnitRange{Int},1}
+The user is expected to create an outter constructor that takes this signature
 
-        params::$paramstype
-        idealmodel::T
-        absolutetolerance::Float64
-        references::Array{String,1}
+    function name(components::Array{String,1})
 
-        function $name(params::$paramstype, sites::SiteParam, idealmodel::T;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12) where {T <: IdealModel}
-            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
-            modelname = arbitraryparam.modelname
+It should then return name(params::paramtype, groups::GroupParam, sites::SiteParam, idealmodel::IdealModel)
 
-            components = arbitraryparam.components
-            lengthcomponents = length(components)
-            icomponents = 1:lengthcomponents
+= Fields =
+The Struct consists of the following fields:
 
-            allcomponentsites = sites.allcomponentsites
-            lengthallcomponentsites = [length(componentsites) for componentsites ∈ allcomponentsites]
-            allcomponentnsites = sites.allcomponentnsites
-            isites = [1:lengthallcomponentsites[i] for i ∈ icomponents]
+* components: a string lists of components
+* longthcomponents: the number of components
+* icomponents: an iterator that goes through the indices corresponding to each component
 
-            return new{T}(modelname, components, lengthcomponents, icomponents,
-                          allcomponentsites, lengthallcomponentsites, allcomponentnsites, isites,
-                          params, idealmodel, absolutetolerance, references)
-        end
-        function $name(params::$paramstype, idealmodel::T;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12) where {T <: IdealModel}
-            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
-            components = arbitraryparam.components
-            sites = SiteParam(components, [String[] for _ ∈ 1:length(arbitraryparam.components)],
-                [Int[] for _ ∈ 1:length(arbitraryparam.components)], arbitraryparam.modelname)
-            return $name(params, sites, idealmodel; references=references)
-        end
-        function $name(params::$paramstype, sites::SiteParam;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12)
-            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
-            components = arbitraryparam.components
-            idealmodel = BasicIdeal(components)
-            return $name(params, sites, idealmodel; references=references)
-        end
-        function $name(params::$paramstype;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12)
-            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
-            components = arbitraryparam.components
-            idealmodel = BasicIdeal(components)
-            sites = SiteParam(components, [String[] for _ ∈ 1:length(arbitraryparam.components)],
-                [Int[] for _ ∈ 1:length(arbitraryparam.components)], arbitraryparam.modelname)
-            return $name(params, sites, idealmodel; references=references)
-        end
-    end
-    end)
-end
+* allcomponentgroups: a list of groups for each component
+* lengthallcomponentgroups: a list containing the number of groups for each component
+* allcomponentngroups: a list of the group multiplicity of each group corresponding to each group in allcomponentsgroup
+* igroups: an iterable that contains a list of group indices corresponding to flattenedgroups for each component
+
+* flattenedgroups: a list of all unique groups--the parameters correspond to this list
+* lengthflattenedgroups: the number of unique groups
+* allcomponentnflattenedgroups: the group multiplicities corresponding to each group in flattenedgroups
+* iflattenedgroups: an iterator that goes through the indices for each flattenedgroup
+
+* allgroupsites: a list containing a list of all sites corresponding to each group in flattenedgroups
+* lengthallgroupsites: a list containing the number of unique sites for each group in flattenedgroups
+* allgroupnsites: a list of the site multiplicities corresponding to each group in flattenedgroups
+* isites: an iterator that goes through the indices corresponding to each group in flattenedgroups
+
+* params: the Struct paramstype that contains all parameters in the model
+* idealmodel: the IdealModel struct that determines which ideal model to use
+* absolutetolerance: the absolute tolerance for solvers; the default value is 1E-12
+* references: reference for this EoS
+
+See the tutorial or browse the implementations to see how this is used.
+
+"""
 
 macro newmodelgc(name, parent, paramstype)
     esc(quote struct $name{T <: IdealModel} <: $parent
-        modelname::String
-
         components::Array{String,1}
         lengthcomponents::Int
         icomponents::UnitRange{Int}
@@ -118,8 +147,6 @@ macro newmodelgc(name, parent, paramstype)
         function $name(params::$paramstype, groups::GCParam, sites::SiteParam, idealmodel::T;
                        references::Array{String,1}=String[],
                        absolutetolerance::Float64=1E-12) where {T <: IdealModel}
-            modelname = groups.modelname
-
             components = groups.components
             lengthcomponents = length(components)
             icomponents = 1:lengthcomponents
@@ -139,7 +166,7 @@ macro newmodelgc(name, parent, paramstype)
             allgroupnsites = sites.allcomponentnsites
             isites = [1:lengthallgroupsites[k] for k ∈ iflattenedgroups]
 
-            return new{T}(modelname, components, lengthcomponents, icomponents,
+            return new{T}(components, lengthcomponents, icomponents,
                           allcomponentgroups, lengthallcomponentgroups, allcomponentngroups, igroups,
                           flattenedgroups, lengthflattenedgroups, allcomponentnflattenedgroups, iflattenedgroups,
                           allgroupsites, lengthallgroupsites, allgroupnsites, isites,
@@ -148,15 +175,13 @@ macro newmodelgc(name, parent, paramstype)
         function $name(params::$paramstype, groups::GCParam, idealmodel::T;
                        references::Array{String,1}=String[],
                        absolutetolerance::Float64=1E-12) where {T <: IdealModel}
-            modelname = groups.modelname
             components = groups.components
-            sites = SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], modelname)
+            sites = SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], String[])
             return $name(params, groups, sites, idealmodel; references=references, absolutetolerance=absolutetolerance)
         end
         function $name(params::$paramstype, groups::GCParam, sites::SiteParam;
                        references::Array{String,1}=String[],
                        absolutetolerance::Float64=1E-12) 
-            modelname = groups.modelname
             components = groups.components
             idealmodel = BasicIdeal(components)
             return $name(params, groups, sites, idealmodel; references=references, absolutetolerance=absolutetolerance)
@@ -164,13 +189,81 @@ macro newmodelgc(name, parent, paramstype)
         function $name(params::$paramstype, groups::GCParam;
                        references::Array{String,1}=String[],
                        absolutetolerance::Float64=1E-12) 
-            modelname = groups.modelname
             components = groups.components
             idealmodel = BasicIdeal(components)
-            sites = SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], modelname)
+            sites = SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], String[])
             return $name(params, groups, sites, idealmodel; references=references, absolutetolerance=absolutetolerance)
         end
     end
     end)
 end
 
+"""
+This is exactly the same as the above but for non-GC models.
+All group parameters are absent in this struct.
+The sites are associated to the main component rather than the groups,
+and the respective fieldnames are named correspondingly.
+"""
+macro newmodel(name, parent, paramstype)
+    esc(quote struct $name{T <: IdealModel} <: $parent
+        components::Array{String,1}
+        lengthcomponents::Int
+        icomponents::UnitRange{Int}
+
+        allcomponentsites::Array{Array{String,1},1}
+        lengthallcomponentsites::Array{Int,1}
+        allcomponentnsites::Array{Array{Int,1},1}
+        isites::Array{UnitRange{Int},1}
+
+        params::$paramstype
+        idealmodel::T
+        absolutetolerance::Float64
+        references::Array{String,1}
+
+        function $name(params::$paramstype, sites::SiteParam, idealmodel::T;
+                       references::Array{String,1}=String[],
+                       absolutetolerance::Float64=1E-12) where {T <: IdealModel}
+            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
+            components = arbitraryparam.components
+            lengthcomponents = length(components)
+            icomponents = 1:lengthcomponents
+
+            allcomponentsites = sites.allcomponentsites
+            lengthallcomponentsites = [length(componentsites) for componentsites ∈ allcomponentsites]
+            allcomponentnsites = sites.allcomponentnsites
+            isites = [1:lengthallcomponentsites[i] for i ∈ icomponents]
+
+            return new{T}(components, lengthcomponents, icomponents,
+                          allcomponentsites, lengthallcomponentsites, allcomponentnsites, isites,
+                          params, idealmodel, absolutetolerance, references)
+        end
+        function $name(params::$paramstype, idealmodel::T;
+                       references::Array{String,1}=String[],
+                       absolutetolerance::Float64=1E-12) where {T <: IdealModel}
+            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
+            components = arbitraryparam.components
+            sites = SiteParam(components, [String[] for _ ∈ 1:length(arbitraryparam.components)],
+                [Int[] for _ ∈ 1:length(arbitraryparam.components)], String[])
+            return $name(params, sites, idealmodel; references=references)
+        end
+        function $name(params::$paramstype, sites::SiteParam;
+                       references::Array{String,1}=String[],
+                       absolutetolerance::Float64=1E-12)
+            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
+            components = arbitraryparam.components
+            idealmodel = BasicIdeal(components)
+            return $name(params, sites, idealmodel; references=references)
+        end
+        function $name(params::$paramstype;
+                       references::Array{String,1}=String[],
+                       absolutetolerance::Float64=1E-12)
+            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
+            components = arbitraryparam.components
+            idealmodel = BasicIdeal(components)
+            sites = SiteParam(components, [String[] for _ ∈ 1:length(arbitraryparam.components)],
+                [Int[] for _ ∈ 1:length(arbitraryparam.components)], String[])
+            return $name(params, sites, idealmodel; references=references)
+        end
+    end
+    end)
+end

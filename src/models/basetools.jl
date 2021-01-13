@@ -12,9 +12,9 @@ function getsites(pairs::Dict{String,SingleParam{Int}})
     arbitraryparam = first(values(pairs))
     components = arbitraryparam.components
     allcomponentsites = arbitraryparam.allcomponentsites
-    modelname = arbitraryparam.modelname
+    sourcecsvs = unique([([x.sourcecsvs for x in values(pairs)]...)...])
     allcomponentnsites = [[pairs[allcomponentsites[i][j]].values[i] for j ∈ 1:length(allcomponentsites[i])] for i ∈ 1:length(components)]  # or groupsites
-    return SiteParam(components, allcomponentsites, allcomponentnsites, modelname)
+    return SiteParam(components, allcomponentsites, allcomponentnsites, sourcecsvs)
 end
 
 function idealmodelselector(idealmodelstring::String, components::Array{String,1}; verbose::Bool=false)

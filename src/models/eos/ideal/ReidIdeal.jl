@@ -9,7 +9,7 @@ abstract type ReidIdealModel <: IdealModel end
 @newmodel ReidIdeal ReidIdealModel ReidIdealParam
 
 function ReidIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["ideal/ReidIdeal.csv"]; userlocations=userlocations, modelname="ReidIdeal", verbose=verbose)
+    params = getparams(components, ["ideal/ReidIdeal.csv"]; userlocations=userlocations, verbose=verbose)
     a = params["a"]
     b = params["b"]
     c = params["c"]

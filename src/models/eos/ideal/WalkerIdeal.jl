@@ -15,7 +15,7 @@ abstract type WalkerIdealModel <: IdealModel end
 @newmodel WalkerIdeal WalkerIdealModel WalkerIdealParam
 
 function WalkerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["ideal/WalkerIdeal.csv"]; modelname="WalkerIdeal", userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["ideal/WalkerIdeal.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     Nrot = params["Nrot"]
     theta1 = params["theta_1"]
