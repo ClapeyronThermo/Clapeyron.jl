@@ -6,7 +6,7 @@ abstract type MonomerIdealModel <: IdealModel end
 @newmodel MonomerIdeal MonomerIdealModel MonomerIdealParam
 
 function MonomerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["properties/molarmass"]; modelname="MonomerIdeal", userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["properties/molarmass"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     packagedparams = MonomerIdealParam(Mw)
     return MonomerIdeal(packagedparams)

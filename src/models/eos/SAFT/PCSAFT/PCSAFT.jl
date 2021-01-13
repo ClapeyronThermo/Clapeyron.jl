@@ -11,7 +11,7 @@ abstract type PCSAFTModel <: NonGCSAFTModel end
 
 export PCSAFT
 function PCSAFT(components::Array{String,1}; idealmodel::String="", userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, modelname="PCSAFT", verbose=verbose)
+    params = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = params["k"]
     params["sigma"].values .*= 1E-10
