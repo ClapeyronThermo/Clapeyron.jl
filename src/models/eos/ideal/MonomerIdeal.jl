@@ -3,7 +3,7 @@ struct MonomerIdealParam <: EoSParam
 end
 
 abstract type MonomerIdealModel <: IdealModel end
-@newmodel MonomerIdeal MonomerIdealModel MonomerIdealParam
+@newmodelsimple MonomerIdeal MonomerIdealModel MonomerIdealParam
 
 function MonomerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
     params = getparams(components, ["properties/molarmass"]; userlocations=userlocations, verbose=verbose)

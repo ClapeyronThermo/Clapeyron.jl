@@ -47,7 +47,7 @@ This macro is an alias to
     model.isites[component]
 
 `isites[component]` is an iterator that goes through all sites relevant to
-each group in a GC model, and te each main component in a non-GC model.
+each group in a GC model, and to each main component in a non-GC model.
 """
 macro sites(component)
     return :($(esc(:(model.isites[$(component)]))))
@@ -63,7 +63,7 @@ This macro is an alias to
 where `func` is the name of the function, `model` is the model struct,
 `V` is the volume, `T` is the absolute temperature, `z` is an array of number
 of moles of each component, and `a`, `b`, `c`, ... are arbitrary parameters
-that get passed to ^func^.
+that get passed to `func`.
 
 It is very common for functions that are involved in the models to contain the
 `model`, `V`, `T` and `z` parameters, so this macro helps reduce code repetition
@@ -263,6 +263,35 @@ macro newmodel(name, parent, paramstype)
             sites = SiteParam(components, [String[] for _ ∈ 1:length(arbitraryparam.components)],
                 [Int[] for _ ∈ 1:length(arbitraryparam.components)], String[])
             return $name(params, sites, idealmodel; references=references)
+        end
+    end
+    end)
+end
+
+"""
+Even simpler model, primarily for the ideal models.
+Contains neither sites nor ideal models.
+"""
+macro newmodelsimple(name, parent, paramstype)
+    esc(quote struct $name <: $parent
+        components::Array{String,1}
+        lengthcomponents::Int
+        icomponents::UnitRange{Int}
+
+        params::$paramstype
+        absolutetolerance::Float64
+        references::Array{String,1}
+
+        function $name(params::$paramstype;
+                       references::Array{String,1}=String[],
+                       absolutetolerance::Float64=1E-12)
+            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
+            components = arbitraryparam.components
+            lengthcomponents = length(components)
+            icomponents = 1:lengthcomponents
+
+            return new(components, lengthcomponents, icomponents,
+                          params, absolutetolerance, references)
         end
     end
     end)
