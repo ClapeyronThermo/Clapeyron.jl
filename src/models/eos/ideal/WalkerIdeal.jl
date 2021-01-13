@@ -12,7 +12,7 @@ struct WalkerIdealParam <: EoSParam
 end
 
 abstract type WalkerIdealModel <: IdealModel end
-@newmodel WalkerIdeal WalkerIdealModel WalkerIdealParam
+@newmodelsimple WalkerIdeal WalkerIdealModel WalkerIdealParam
 
 function WalkerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
     params = getparams(components, ["ideal/WalkerIdeal.csv"]; userlocations=userlocations, verbose=verbose)

@@ -6,7 +6,7 @@ struct ReidIdealParam <: EoSParam
 end
 
 abstract type ReidIdealModel <: IdealModel end
-@newmodel ReidIdeal ReidIdealModel ReidIdealParam
+@newmodelsimple ReidIdeal ReidIdealModel ReidIdealParam
 
 function ReidIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
     params = getparams(components, ["ideal/ReidIdeal.csv"]; userlocations=userlocations, verbose=verbose)
