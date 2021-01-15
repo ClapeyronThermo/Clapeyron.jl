@@ -18,7 +18,7 @@ function getfileextension(filepath::String)
 end
 
 """
-    getdatabasepaths(location; relativetodatabase=false)
+    getpaths(location; relativetodatabase=false)
 
 Returns database paths that is optionally relative to OpenSAFT.jl directory.
 If path is a file, then return an Array containing a single path to that file.
@@ -26,24 +26,25 @@ If path is a directory, then return an Array containing paths to all csv files i
 
 # Examples
 ```julia-repl
-julia> getdatabasepaths("SAFT/PCSAFT")
+julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
 3-element Array{String,1}:
- "/home/user/.julia/packages/OpenSAFT.jl/xxxxx/src/../database/SAFT/PCSAFT/data_PCSAFT_assoc.csv"
- "/home/user/.julia/packages/OpenSAFT.jl/xxxxx/src/../database/SAFT/PCSAFT/data_PCSAFT_like.csv"
- "/home/user/.julia/packages/OpenSAFT.jl/xxxxx/src/../database/SAFT/PCSAFT/data_PCSAFT_unlike.csv"
+ "/home/user/.julia/packages/OpenSAFT.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_assoc.csv"
+ "/home/user/.julia/packages/OpenSAFT.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_like.csv"
+ "/home/user/.julia/packages/OpenSAFT.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_unlike.csv"
 
 ```
 """
 function getpaths(location::String; relativetodatabase::Bool=false)
-    filepath = relativetodatabase ? normpath(joinpath(dirname(pathof(OpenSAFT)), "..", "database", location)) : location
-    isfile(filepath) && return [filepath]
-    isfile(filepath * ".csv") && return [filepath * ".csv"]
+    # We do not use realpath here directly because we want to make the .csv suffix optional.
+    filepath = relativetodatabase ? normpath(dirname(pathof(OpenSAFT)), "..", "database", location) : location
+    isfile(filepath) && return [realpath(filepath)]
+    isfile(filepath * ".csv") && return [realpath(filepath * ".csv")]
     if !isdir(filepath)
         relativetodatabase ? error("The path ", location, " does not exist in the OpenSAFT database.") :
             error("The path ", location, " does not exist.")
     end
     files = joinpath.(filepath, readdir(filepath))
-    return files[isfile.(files) .& (getfileextension.(files) .== "csv")]
+    return realpath.(files[isfile.(files) .& (getfileextension.(files) .== "csv")])
 end
 
 export getparams
@@ -132,9 +133,13 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
                 for (component, value) ∈ foundparams[headerparam]
                     currenttype = nonmissingtype(eltype(allparams[headerparam]))
                     if paramtypes[headerparam] != currenttype
-                        try
-                            allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
-                        catch e
+                        if currenttype <: Number && paramtypes[headerparam] <: String || currenttype <: String && paramtypes[headerparam] <: Number 
+                            allparams[headerparam] = convert(Array{Any}, allparams[headerparam])
+                        else
+                            try
+                                allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
+                            catch e
+                            end
                         end
                     end
                     idx = findfirst(isequal(component), components)
@@ -157,9 +162,13 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
                 for (componentpair, value) ∈ foundparams[headerparam]
                     currenttype = nonmissingtype(eltype(allparams[headerparam]))
                     if paramtypes[headerparam] != currenttype
-                        try
-                            allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
-                        catch e 
+                        if currenttype <: Number && paramtypes[headerparam] <: String || currenttype <: String && paramtypes[headerparam] <: Number 
+                            allparams[headerparam] = convert(Array{Any}, allparams[headerparam])
+                        else
+                            try
+                                allparams[headerparam] = convert(Array{Union{Missing,paramtypes[headerparam]}}, allparams[headerparam])
+                            catch e 
+                            end
                         end
                     end
                     idx1 = findfirst(isequal(componentpair[1]), components)
@@ -175,9 +184,13 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
                 for (assocpair, value) ∈ foundparams[headerparam]
                     currenttype = nonmissingtype(eltype(first(allparams[headerparam])))
                     if currenttype != paramtypes[headerparam]
-                        try
-                            allparams[headerparam] = convert(Array{Array{Union{Missing,paramtypes[headerparam]}}}, allparams[headerparam])
-                        catch e
+                        if currenttype <: Number && paramtypes[headerparam] <: String || currenttype <: String && paramtypes[headerparam] <: Number 
+                            allparams[headerparam] = convert(Array{Array{Any,2},2}, allparams[headerparam])
+                        else
+                            try
+                                allparams[headerparam] = convert(Array{Array{Union{Missing,paramtypes[headerparam]},2},2}, allparams[headerparam])
+                            catch e
+                            end
                         end
                     end
                     idx1 = findfirst(isequal(assocpair[1][1]), components)
@@ -197,18 +210,19 @@ end
 
 function defaultmissing(array::Array; defaultvalue=nothing)
     # Returns a non-missing Array with missing values replaced by default values.
-    # Also returns an Array of Bools to retain overridden information.
+    # Also returns an Array of Bools to retain overwritten information.
+    arraycopy = deepcopy(array)
     type = nonmissingtype(eltype(array))
-    if type == Union{}
-        arraycopy = convert(Array{Any}, array)
-        type = Any
-    else
-        arraycopy = deepcopy(array)
-    end
     ismissingvalues = ismissing.(array)
     if isnothing(defaultvalue)
-        if type == Any
-            arraycopy[ismissingvalues] .= 0
+        if type == Union{} #  If it only contains missing
+            type = Any
+        elseif type == Any
+            # This means that it has a mix of Number and String types.
+            # If that was the case, convert it all to String.
+            arraycopy[ismissingvalues] .= ""
+            arraycopy = string.(arraycopy)
+            type = String
         elseif type <: Number
             arraycopy[ismissingvalues] .= 0
         elseif type <: AbstractString
@@ -541,8 +555,7 @@ function mirrormatrix!(matrix::Array{T,2}) where T
         lowervalue = matrix[i,j]
         uppervalue = matrix[j,i]
         if !ismissing(lowervalue) && !ismissing(uppervalue) && lowervalue != uppervalue
-            println(matrix)
-            error("Dissimilar non-zero entries exist across diagonal.")
+            error("Dissimilar non-zero entries exist across diagonal:", lowervalue, ", ", uppervalue)
         end
         !ismissing(lowervalue) && (matrix[j,i] = lowervalue)
         !ismissing(uppervalue) && (matrix[i,j] = uppervalue)
@@ -561,7 +574,7 @@ function mirrormatrix!(matrix::Array{Array{T,2},2}) where T
             lowervalue = matrix[i,j][a,b]
             uppervalue = matrix[j,i][b,a]
             if !ismissing(lowervalue) && !ismissing(uppervalue) && lowervalue != uppervalue
-                error("Dissimilar non-zero entries exist across diagonal.")
+                error("Dissimilar non-zero entries exist across diagonal:", lowervalue, ", ", uppervalue)
             end
             !ismissing(lowervalue) && (matrix[j,i][b,a] = lowervalue)
             !ismissing(uppervalue) && (matrix[i,j][a,b] = uppervalue)
