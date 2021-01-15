@@ -1,5 +1,8 @@
 using OpenSAFT, Test
 
+x = 4+4
+
+
 @testset "database_lookup" begin
     # Quick test to show that lookups in the OpenSAFT database works.
     @test haskey(OpenSAFT.getparams(["water", "methanol"], ["SAFT/PCSAFT"]), "sigma")
@@ -10,7 +13,8 @@ using OpenSAFT, Test
     filepath_normal = [joinpath("test_csvs", "normal_single_test.csv"),
                        joinpath("test_csvs", "normal_pair_test.csv"),
                        joinpath("test_csvs", "normal_assoc_test.csv"),
-                       joinpath("test_csvs", "normal_single2_test.csv")]
+                       joinpath("test_csvs", "normal_single2_test.csv"),
+                       joinpath("test_csvs", "normal_assoc2_test.csv")]
 
     filepath_clashingheaders = [joinpath("test_csvs", "headercollision_single_test"),
                                 joinpath("test_csvs", "headercollision_assoc_test")]
@@ -35,14 +39,22 @@ using OpenSAFT, Test
     @test typeof(params["doubleparam"]) <: OpenSAFT.SingleParam{Float64}
     @test typeof(params["boolparam"]) <: OpenSAFT.SingleParam{Bool}
     @test typeof(params["stringparam"]) <: OpenSAFT.SingleParam{String}
+    # If column has both strings and numbers, they should all be strings.
     @test typeof(params["mixedparam"]) <: OpenSAFT.SingleParam{String}
+    # Contains missing values
     @test typeof(params["missingparam"]) <: OpenSAFT.SingleParam{Int}
+    # All missing values
     @test typeof(params["emptyparam"]) <: OpenSAFT.SingleParam{Any}
-    @test typeof(params["overrideparam"]) <: OpenSAFT.PairParam{Float64}
-    @test typeof(params["assocparam1"]) <: OpenSAFT.AssocParam{Int}
-    @test typeof(params["assocparam2"]) <: OpenSAFT.AssocParam{String}
+    # Overwrite Int with Float, and also an upgrade from single to pair param
+    @test typeof(params["overwriteparam"]) <: OpenSAFT.PairParam{Float64}
+    # Overwrite Int with String
+    @test typeof(params["overwritestringparam"]) <: OpenSAFT.SingleParam{String}
+    # Overwrite String with Int
+    @test typeof(params["overwriteassocparam"]) <: OpenSAFT.AssocParam{String}
 
     # Check that values of "sp1" and "sp3" has been correctly overwritten.
+    # "sp1" was overwritten from the same file
+    # "sp3" was overwritten from a separate file, "normal_single2_test.csv"
     @test params["intparam"].values == [6, 2, 7, 4, 5]
     # Also check that "testsource1" and "testsource3" are not present, and in their place
     # we have "testsource6" and "testsource19".
@@ -56,15 +68,15 @@ using OpenSAFT, Test
     @test params["missingparam"].ismissingvalues == Bool[1, 0, 0, 1, 1]
 
     # Check that the promotion form 1D to 2D array is succesful, with non-diagonal values present and symmetrical.
-    @test params["overrideparam"].values == [ 6.0  1.4  0.0  0.0  0.0
+    @test params["overwriteparam"].values == [ 6.0  1.4  0.0  0.0  0.0
                                               1.4  2.0  0.0  1.3  0.0
                                               0.0  0.0  3.0  1.2  0.0
                                               0.0  1.3  1.2  4.0  0.0
                                               0.0  0.0  0.0  0.0  5.0]
-    @test params["overrideparam"].diagvalues == [6.0, 2.0, 3.0, 4.0, 5.0]
+    @test params["overwriteparam"].diagvalues == [6.0, 2.0, 3.0, 4.0, 5.0]
 
     # Now check that assoc param is correct.
-    @test params["assocparam1"].values ==
+    @test params["assocparam"].values ==
     [[Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,3)          ]  [Array{Int64}(undef,0,2)]  [Array{Int64}(undef,0,3)       ]
      [Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,3)          ]  [Array{Int64}(undef,0,2)]  [Array{Int64}(undef,0,3)       ]
      [Array{Int64}(undef,3,0)]  [Array{Int64}(undef,3,0)]  [[0 0 2000; 0 0 2700; 2000 2700 0]]  [[0 0; 0 0; 2400 2300]  ]  [[0 0 0; 0 0 0; 0 0 0]         ]
