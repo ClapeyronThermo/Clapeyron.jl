@@ -10,11 +10,11 @@ function Base.show(io::IO, ::MIME"text/plain", model::EoSModel)
     firstloop = true
     for fieldname in fieldnames(typeof(model.params))
         firstloop == false && print(io, ", ")
-        print(io, getfield(model.params, fieldname).name)
+        print(io, fieldname)
         firstloop = false
     end
 end
-function Base.show(io::IO, model::NonGCSAFTModel)
+function Base.show(io::IO, model::EoSModel)
     print(io, typeof(model))
     firstloop = true
     for i in model.icomponents
@@ -43,7 +43,7 @@ function Base.show(io::IO, ::MIME"text/plain", model::GCSAFTModel)
     firstloop = true
     for fieldname in fieldnames(typeof(model.params))
         firstloop == false && print(io, ", ")
-        print(io, getfield(model.params, fieldname).name)
+        print(io, fieldname)
         firstloop = false
     end
 end

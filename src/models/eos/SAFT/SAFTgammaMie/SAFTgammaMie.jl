@@ -21,10 +21,10 @@ function SAFTgammaMie(components::Array{<:Any,1}; idealmodel::String="", userloc
     shapefactor = params["S"]
 
     params["sigma"].values .*= 1E-10
-    sigma = combining_sigma(params["sigma"])
-    epsilon = combining_epsilon(params["epsilon"], sigma; rules="Hudson-McCoubrey")
-    lambda_a = combining_lambda(params["lambda_a"])
-    lambda_r = combining_lambda(params["lambda_r"])
+    sigma = sigma_LorentzBerthelot(params["sigma"])
+    epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
+    lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
+    lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
 
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
