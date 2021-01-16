@@ -31,6 +31,12 @@ include("models/eos/SAFT/PCSAFT/PCSAFT.jl")
 include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
 include("models/eos/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
 
+include("models/eos/cubic/vdW.jl")
+include("models/eos/cubic/RK.jl")
+include("models/eos/cubic/SRK.jl")
+include("models/eos/cubic/PR.jl")
+include("models/eos/cubic/CPA.jl")
+
 # include("models/param_structs.jl")
 # include("models/ideal_param_structs.jl")
 # include("models/model_structs.jl")

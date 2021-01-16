@@ -11,7 +11,11 @@ struct SingleParam{T} <: OpenSAFTParam
 end
 
 function SingleParam(x::SingleParam{T}) where T
-    return SingleParam(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.sourcecsvs, deepcopy(x.sources))
+    return SingleParam(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
+end
+
+function SingleParam(x::SingleParam, v::Array{T,1}) where T
+    return SingleParam(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources),)
 end
 
 struct PairParam{T} <: OpenSAFTParam
@@ -30,10 +34,20 @@ struct PairParam{T} <: OpenSAFTParam
 end
 
 function PairParam(x::PairParam{T}) where T
-    return PairParam(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.sourcecsvs, deepcopy(x.sources))
+    return PairParam(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
 function PairParam(x::SingleParam{T}) where T
-    return PairParam(x.name, convertsingletopair(x.values), convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, x.sourcecsvs, deepcopy(x.sources))
+    return PairParam(x.name, convertsingletopair(x.values), convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
+end
+
+function PairParam(x::PairParam, v::Array{T,2}) where T
+    return PairParam(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
+end
+function PairParam(x::SingleParam, v::Array{T,1}) where T
+    return PairParam(x.name, convertsingletopair(v), convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
+end
+function PairParam(x::SingleParam, v::Array{T,2}) where T
+    return PairParam(x.name, v, convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
 
 struct AssocParam{T} <: OpenSAFTParam
@@ -47,7 +61,11 @@ struct AssocParam{T} <: OpenSAFTParam
 end
 
 function AssocParam(x::AssocParam{T}) where T
-    return PairParam{T}(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.sourcecsvs, deepcopy(x.sources))
+    return PairParam{T}(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
+end
+
+function AssocParam{T}(x::AssocParam, v::Array{Array{T,2},2}) where T
+    return AssocParam{T}(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
 
 struct GCParam <: OpenSAFTParam

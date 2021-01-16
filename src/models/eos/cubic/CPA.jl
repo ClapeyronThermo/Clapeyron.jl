@@ -1,81 +1,95 @@
-function a_res(model::CPAFamily,z,v,T)
-    return a_SRK(model,z,v,T)+a_assoc(model,z,v,T)
+struct CPAParam <: EoSParam
+    a::PairParam{Float64}
+    b::PairParam{Float64}
+    c1::SingleParam{Float64}
+    Tc::SingleParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
 end
 
-function a_SRK(model::CPAFamily,z,v,T)
-    x = z/sum(z[i] for i in model.components)
-    n = sum(z)
+abstract type CPAModel <: EoSModel end
+@newmodel CPA CPAModel CPAParam
 
-    āᾱ = sum(sum(model.params.a[union(i,j)]*√(α(model,T,i)*α(model,T,j))*x[i]*x[j] for j in model.components) for i in model.components)
-    b̄  = sum(sum(model.params.b[union(i,j)]*x[i]*x[j] for j in model.components) for i in model.components)
-    return -log(1-n*b̄/v)-āᾱ/(R̄*T*b̄)*log(1+n*b̄/v)
+export CPA
+function CPA(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
+    params = getparams(components, ["SAFT/CPA", "SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+
+    k  = params["k"]
+    Tc = params["Tc"]
+    c1 = params["c1"]
+    params["a"].values .*= 1E-1
+    params["b"].values .*= 1E-3
+    a  = epsilon_LorentzBerthelot(params["a"], k)
+    b  = sigma_LorentzBerthelot(params["b"])
+    epsilon_assoc = params["epsilon_assoc"]
+    bondvol = params["bondvol"]
+    sites = getsites(Dict("e" => params["n_e"], "H" => params["n_H"]))
+
+    packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol)
+    references = ["10.1021/ie051305v"]
+
+    return CPA(packagedparams, sites; references=references)
 end
 
-function α(model::CPAFamily,T,i)
-    Tc = model.params.Tc[i]
-    c1  = model.params.c1[i]
-    return (1+c1*(1-√(T/Tc)))^2
+function a_res(model::CPAModel, V, T, z)
+    return @f(a_SRK) + @f(a_assoc) + log(V)  # + f(x)
 end
 
-function a_assoc(model::CPAFamily, z, v, T)
-    x = z/sum(z[i] for i in model.components)
-    n_sites = model.params.n_sites
+function a_SRK(model::CPAModel, V, T, z)
+    x = z/∑(z)
+    n = ∑(z)
+    a = model.params.a.values
+    b = model.params.b.values
+    Tc = model.params.Tc.values
+    c1 = model.params.c1.values
 
-    X_iA = X_assoc(model,z,v,T)
-    return sum(x[i]*sum(n_sites[i][a]*(log(X_iA[i,a])+(1-X_iA[i,a])/2) for a in keys(model.params.n_sites[i])) for i in model.components)
+    α = @. (1+c1*(1-√(T/Tc)))^2
+
+    āᾱ = ∑(a .* .√(α * α') .* (x * x'))
+    b̄ = ∑(b .* (x * x'))
+
+    return -log(V-n*b̄) - āᾱ/(R̄*T*b̄)*log(1+n*b̄/V)
 end
 
-function X_assoc(model::CPAFamily, z, v, T)
-    x = z/sum(z[i] for i in model.components)
-    ρ = sum(z[i] for i in model.components)/v
-    n_sites = model.params.n_sites
-    X_iA = Dict()
-    X_iA_old = Dict()
-    tol = 1.
+function a_assoc(model::CPAModel, V, T, z)
+    x = z/∑(z)
+    n_sites = model.allcomponentnsites
+    X_ = @f(X)
+    return ∑(x[i]*∑(n_sites[i][a] * (log(X_[i][a])+(1-X_[i][a])/2) for a in @sites(i)) for i in @comps)
+end
+
+function X(model::CPAModel, V, T, z)::Array{Array{Float64,1},1}
+    x = z/∑(z)
+    ρ = ∑(z)/V
+    n_sites = model.allcomponentnsites
+    itermax = 100
+    dampingfactor = 0.5
+    error = 1.
+    tol = model.absolutetolerance
     iter = 1
-    while tol > 1e-12 && iter < 100
-        for i in model.components
-            for a in keys(model.params.n_sites[i])
-                A = 0.
-                for j in model.components
-                    B = 0
-                    for b in keys(model.params.n_sites[j])
-                        if haskey(model.params.epsilon_assoc,Set([(i,a),(j,b)]))
-                            if iter!=1
-                                B+=n_sites[j][b]*X_iA_old[j,b]*Δ(model,z,v,T,i,j,a,b)
-                            else
-                                B+=n_sites[j][b]*Δ(model,z,v,T,i,j,a,b)
-                            end
-                        end
-                    end
-                    A += ρ*x[j]*B
-                end
-                if iter == 1
-                    X_iA[i,a] =0.5+0.5*(1+A)^-1
-                else
-                    X_iA[i,a] =0.5*X_iA_old[i,a]+0.5*(1+A)^-1
-                end
-            end
+    X_ = [[1. for a ∈ @sites(i)] for i ∈ @comps]
+    X_old = deepcopy(X_)
+    while error > tol
+        iter > itermax && error("X has failed to converge after $itermax iterations")
+        for i ∈ @comps, a ∈ @sites(i)
+            rhs = 1/(1+∑(ρ*x[j]*∑(n_sites[j][b]*X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
+            X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
         end
-        if iter == 1
-            tol = sqrt(sum(sum((1. -X_iA[i,a])^2 for a in keys(model.params.n_sites[i])) for i in model.components))
-        else
-            tol = sqrt(sum(sum((X_iA_old[i,a] -X_iA[i,a])^2 for a in keys(model.params.n_sites[i])) for i in model.components))
-        end
-        X_iA_old = deepcopy(X_iA)
+        error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
+        X_old = deepcopy(X_)
         iter += 1
     end
-
-    return X_iA
+    return X_
 end
 
-function Δ(model::CPAFamily, z, v, T, i, j, a, b)
-    ϵ_assoc = model.params.epsilon_assoc[Set([(i,a),(j,b)])]*1e2/R̄
-    β = model.params.bond_vol[Set([(i,a),(j,b)])]*1e-3
-    x = z/sum(z[i] for i in model.components)
-    b̄  = sum(sum(model.params.b[union(i,j)]*x[i]*x[j] for j in model.components) for i in model.components)
-    η = b̄*sum(z[i] for i in model.components)/(4*v)
-    g = (1-1.9η)^-1
-    b_ij = (model.params.b[i]+model.params.b[j])/2
-    return g*(exp(ϵ_assoc/T)-1)*β*b_ij
+function Δ(model::CPAModel, V, T, z, i, j, a, b)
+    ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b] * 1e2/R̄
+    βijab = model.params.bondvol.values[i,j][a,b] * 1e-3
+    x = z/∑(z)
+    b = model.params.b.values
+    b̄ = ∑(b .* (x * x'))
+    η = b̄*∑(z)/(4*V)
+    g = 1/(1-1.9η)
+    bij = (b[i,i]+b[j,j])/2
+    return g*(exp(ϵ_associjab/T)-1)*βijab*bij
 end

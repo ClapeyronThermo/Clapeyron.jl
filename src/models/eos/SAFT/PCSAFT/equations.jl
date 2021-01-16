@@ -94,7 +94,7 @@ function X(model::PCSAFTModel, V, T, z)::Array{Array{Float64,1},1}
     while error > tol
         iter > itermax && error("X has failed to converge after $itermax iterations")
         for i ∈ @comps, a ∈ @sites(i)
-            rhs = (1+∑(ρ*x[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))^-1
+            rhs = 1/(1+∑(ρ*x[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
             X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
         end
         error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))

@@ -1,10 +1,15 @@
 function eos(model::EoSModel, V, T, z)
-    return N_A*k_B*sum(z) * T*(a_ideal(model.idealmodel,V,T,z)+a_res(model,V,T,z))
+    return N_A*k_B*sum(z)*T * (a_ideal(model.idealmodel,V,T,z)+a_res(model,V,T,z))
 end
 
-# function eos(model::Cubic, z, v, T)
-#     return N_A*k_B*sum(z) * T*a_tot(model,z,v,T)
+function eos(model::IdealModel, V, T, z)
+    return N_A*k_B*sum(z)*T * a_ideal(model,V,T,z)
+end
+
+# function eos(model::CubicModel, V, T, z)
+#     return N_A*k_B*sum(z)*T * a_tot(model,V,T,z)
 # end
+
 """
 The EoS is extensible to other types of equations.
 

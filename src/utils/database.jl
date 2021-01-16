@@ -56,7 +56,7 @@ function getparams(components::Array{String,1}, locations::Array{String,1}=Strin
     # asymmetricparams is a list of parameters for which matrix reflection is disabled.
     # ignore_missingsingleparams gives users the option to disable component existence check in single params.
     filepaths = string.(vcat([(getpaths.(locations; relativetodatabase=true)...)...], [(getpaths.(userlocations)...)...]))
-    allcomponentsites = findsitesincsvs(components, filepaths)
+    allcomponentsites = findsitesincsvs(components, filepaths; verbose=verbose)
     allparams, paramsourcecsvs, paramsources = createparamarrays(components, filepaths, allcomponentsites; verbose=verbose)
     return packageparams(allparams, components, allcomponentsites, paramsourcecsvs, paramsources; asymmetricparams=asymmetricparams, ignore_missingsingleparams=ignore_missingsingleparams)
 end
@@ -255,12 +255,13 @@ function swapdictorder(dict::Dict)
     return output
 end
 
-function findparamsincsv(components::Array{String,1}, filepath::String, headerparams::Array{String,1}; columnreference::String="species", sitecolumnreference::String="site", sourcecolumnreference::String="source", verbose::Bool=false, ignore_missingsingleparams::Bool=false)
+function findparamsincsv(components::Array{String,1}, filepath::String, headerparams::Array{String,1}; columnreference::String="species", sitecolumnreference::String="site", sourcecolumnreference::String="source", verbose::Bool=false, normalisecomponents::Bool=true)
     # Returns a Dict with all matches in a particular file for one parameter.
     normalised_columnreference = normalisestring(columnreference)
     csvtype = readcsvtype(filepath)
     df = CSV.File(filepath; header=3, pool=0)
     csvheaders = String.(Tables.columnnames(df))
+    normalised_components = normalisestring.(components; isactivated=normalisecomponents)
     normalised_csvheaders = normalisestring.(csvheaders)
     normalised_headerparams = normalisestring.(headerparams)
     normalised_headerparams ⊈ normalised_csvheaders && error("Headers ", setdiff(normalised_headerparams, normalised_csvheaders), " not present in csv header.")
@@ -282,8 +283,10 @@ function findparamsincsv(components::Array{String,1}, filepath::String, headerpa
         lookupcolumn = Symbol(csvheaders[lookupcolumnindex])
         for row ∈ Tables.rows(df)
             component = row[lookupcolumn]
-            component ∉ components && continue
+            foundcomponentidx = findfirst(isequal(normalisestring(component; isactivated=normalisecomponents)), normalised_components)
+            isnothing(foundcomponentidx) && continue
             verbose && print("Found component: ", component)
+            component = components[foundcomponentidx]
             foundvalues[component] = Dict()
             for headerparam ∈ headerparams
                 foundvalues[component][headerparam] = row[Symbol(headerparam)]
@@ -306,9 +309,11 @@ function findparamsincsv(components::Array{String,1}, filepath::String, headerpa
         for row ∈ Tables.rows(df)
             component1 = row[lookupcolumn1]
             component2 = row[lookupcolumn2]
-            (component1 ∉ components || component2 ∉ components) && continue
-            componentpair = (component1, component2)
-            verbose && print("Found component pair: ", componentpair)
+            foundcomponentidx1 = findfirst(isequal(normalisestring(component1; isactivated=normalisecomponents)), normalised_components)
+            foundcomponentidx2 = findfirst(isequal(normalisestring(component2; isactivated=normalisecomponents)), normalised_components)
+            (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
+            verbose && print("Found component pair: ", (component1, component2))
+            componentpair = (components[foundcomponentidx1], components[foundcomponentidx2])
             foundvalues[componentpair] = Dict()
             for headerparam ∈ headerparams
                 foundvalues[componentpair][headerparam] = row[Symbol(headerparam)]
@@ -340,11 +345,13 @@ function findparamsincsv(components::Array{String,1}, filepath::String, headerpa
         for row ∈ Tables.rows(df)
             component1 = row[lookupcolumn1]
             component2 = row[lookupcolumn2]
-            (component1 ∉ components || component2 ∉ components) && continue
+            foundcomponentidx1 = findfirst(isequal(normalisestring(component1; isactivated=normalisecomponents)), normalised_components)
+            foundcomponentidx2 = findfirst(isequal(normalisestring(component2; isactivated=normalisecomponents)), normalised_components)
+            (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
             site1 = row[lookupsitecolumn1]
             site2 = row[lookupsitecolumn2]
-            assocpair = ((component1, component2), (site1, site2))
-            verbose && print("Found assoc pair: ", assocpair)
+            verbose && print("Found assoc pair: ", ((component1, component2),(site1, site2)))
+            assocpair = ((components[foundcomponentidx1], components[foundcomponentidx2]), (site1, site2))
             foundvalues[assocpair] = Dict()
             for headerparam ∈ headerparams
                 foundvalues[assocpair][headerparam] = row[Symbol(headerparam)]
@@ -363,14 +370,18 @@ function findparamsincsv(components::Array{String,1}, filepath::String, headerpa
     return foundvalues, paramtypes, sources
 end
 
-function normalisestring(str::String)
-    return lowercase(replace(str, r"[ \-\_]" => ""))
+function normalisestring(str::String; isactivated::Bool=true, tofilter::Regex=r"[ \-\_]", changecase::Bool=true)
+    !isactivated && return str
+    normalisedstring = replace(str, tofilter => "")
+    changecase && (normalisedstring = lowercase(normalisedstring))
+    return normalisedstring
 end
 
-function findgroupsincsv(components::Array{String,1}, filepath::String; columnreference::String="species", groupcolumnreference::String="groups", verbose::Bool=false)
+function findgroupsincsv(components::Array{String,1}, filepath::String; columnreference::String="species", groupcolumnreference::String="groups", verbose::Bool=false, normalisecomponents=true)
     # Returns a Dict with the group string that will be parsed in buildspecies.
     csvtype = readcsvtype(filepath)
     csvtype != groupdata && return Dict{String,String}()
+    normalised_components = normalisestring.(components; isactivated=normalisecomponents)
     normalised_columnreference = normalisestring(columnreference)
     normalised_groupcolumnreference = normalisestring(groupcolumnreference)
     csvtype = readcsvtype(filepath)
@@ -392,8 +403,10 @@ function findgroupsincsv(components::Array{String,1}, filepath::String; columnre
     lookupgroupcolumn = Symbol(csvheaders[lookupgroupcolumnindex])
     for row ∈ Tables.rows(df)
         component = row[lookupcolumn]
-        component ∉ components && continue
+        foundcomponentidx = findfirst(isequal(normalisestring(component; isactivated=normalisecomponents)), normalised_components)
+        isnothing(foundcomponentidx) && continue
         verbose && print("Found component: ", component)
+        component = components[foundcomponentidx]
         foundgroups[component] = row[lookupgroupcolumn]
         verbose && println(" with groups ", foundgroups[component])
     end
@@ -451,9 +464,10 @@ function checkfor_clashingheaders(filepaths::Array{String,1})
     !isempty(clashingheaders) && error("Headers ", clashingheaders, " appear in both loaded assoc and non-assoc files.")
 end
 
-function findsitesincsvs(components::Array{String,1}, filepaths::Array{String,1}; columnreference::String="species", sitecolumnreference::String="site", verbose::Bool=false)
+function findsitesincsvs(components::Array{String,1}, filepaths::Array{String,1}; columnreference::String="species", sitecolumnreference::String="site", verbose::Bool=false, normalisecomponents::Bool=true)
     # Look for all relevant sites in the database.
     # Note that this might not necessarily include all sites associated with a component.
+    normalised_components = normalisestring.(components; isactivated=normalisecomponents)
     normalised_columnreference = normalisestring(columnreference)
     normalised_sitecolumnreference = normalisestring(sitecolumnreference)
     sites = Dict(components .=> [Set{String}() for _ ∈ 1:length(components)])
@@ -483,10 +497,11 @@ function findsitesincsvs(components::Array{String,1}, filepaths::Array{String,1}
         for row ∈ Tables.rows(df)
             component1 = row[Symbol(lookupcolumn1)]
             component2 = row[Symbol(lookupcolumn2)]
-            if component1 ∈ components && component2 ∈ components
-                push!(sites[component1], row[Symbol(lookupsitecolumn1)])
-                push!(sites[component2], row[Symbol(lookupsitecolumn2)])
-            end
+            foundcomponentidx1 = findfirst(isequal(normalisestring(component1; isactivated=normalisecomponents)), normalised_components)
+            foundcomponentidx2 = findfirst(isequal(normalisestring(component2; isactivated=normalisecomponents)), normalised_components)
+            (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
+            push!(sites[components[foundcomponentidx1]], row[Symbol(lookupsitecolumn1)])
+            push!(sites[components[foundcomponentidx2]], row[Symbol(lookupsitecolumn2)])
         end
     end
     output = Array{Array{String,1}}(undef, 0)

@@ -223,7 +223,7 @@ macro newmodel(name, parent, paramstype)
         function $name(params::$paramstype, sites::SiteParam, idealmodel::T;
                        references::Array{String,1}=String[],
                        absolutetolerance::Float64=1E-12) where {T <: IdealModel}
-            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
+            arbitraryparam = getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
             components = arbitraryparam.components
             lengthcomponents = length(components)
             icomponents = 1:lengthcomponents
@@ -240,7 +240,7 @@ macro newmodel(name, parent, paramstype)
         function $name(params::$paramstype, idealmodel::T;
                        references::Array{String,1}=String[],
                        absolutetolerance::Float64=1E-12) where {T <: IdealModel}
-            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
+            arbitraryparam = getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
             components = arbitraryparam.components
             sites = SiteParam(components, [String[] for _ ∈ 1:length(arbitraryparam.components)],
                 [Int[] for _ ∈ 1:length(arbitraryparam.components)], String[])
@@ -249,7 +249,7 @@ macro newmodel(name, parent, paramstype)
         function $name(params::$paramstype, sites::SiteParam;
                        references::Array{String,1}=String[],
                        absolutetolerance::Float64=1E-12)
-            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
+            arbitraryparam = getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
             components = arbitraryparam.components
             idealmodel = BasicIdeal(components)
             return $name(params, sites, idealmodel; references=references)
@@ -257,7 +257,7 @@ macro newmodel(name, parent, paramstype)
         function $name(params::$paramstype;
                        references::Array{String,1}=String[],
                        absolutetolerance::Float64=1E-12)
-            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
+            arbitraryparam = getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
             components = arbitraryparam.components
             idealmodel = BasicIdeal(components)
             sites = SiteParam(components, [String[] for _ ∈ 1:length(arbitraryparam.components)],
@@ -285,7 +285,7 @@ macro newmodelsimple(name, parent, paramstype)
         function $name(params::$paramstype;
                        references::Array{String,1}=String[],
                        absolutetolerance::Float64=1E-12)
-            arbitraryparam = getfield(params, first(fieldnames($paramstype)))
+            arbitraryparam = getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
             components = arbitraryparam.components
             lengthcomponents = length(components)
             icomponents = 1:lengthcomponents

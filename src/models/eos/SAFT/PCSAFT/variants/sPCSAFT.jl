@@ -7,8 +7,8 @@ function sPCSAFT(components::Array{String,1}; idealmodel::String="", userlocatio
     segment = params["m"]
     k = params["k"]
     params["sigma"].values .*= 1E-10
-    sigma = combining_sigma(params["sigma"])
-    epsilon = combining_epsilon(params["epsilon"], k)
+    sigma = sigma_LorentzBerthelot(params["sigma"])
+    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
     sites = getsites(Dict("e" => params["n_e"], "H" => params["n_H"]))
