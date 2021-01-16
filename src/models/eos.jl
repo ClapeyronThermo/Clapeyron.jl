@@ -6,6 +6,10 @@ function eos(model::IdealModel, V, T, z)
     return N_A*k_B*sum(z)*T * a_ideal(model,V,T,z)
 end
 
+function a_res(model::CubicModel, V, T, z)
+    return @f(a_tot) + log(V)  # + f(x)
+end
+
 # function eos(model::CubicModel, V, T, z)
 #     return N_A*k_B*sum(z)*T * a_tot(model,V,T,z)
 # end

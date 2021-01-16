@@ -38,9 +38,6 @@ function a_tot(model::PRModel, V, T, z)
     return -log(V-n*b̄) + āᾱ/(R̄*T*b̄*2^(3/2)) * log((2*V-2^(3/2)*b̄*n+2*b̄*n)/(2*V+2^(3/2)*b̄*n+2*b̄*n))
 end
 
-function a_res(model::vdWModel, V, T, z)
-    return @f(a_tot) + log(V)  # + f(x)
-end
 
 #=
 function cubic_α(model::PRFamily,t,i,j)

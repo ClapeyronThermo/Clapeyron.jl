@@ -30,7 +30,3 @@ function a_tot(model::vdWModel, V, T, z)
     b̄ = sum(b .* (x * x'))
     return -log(V-n*b̄) - ā*n/(R̄*T*V)
 end
-
-function a_res(model::vdWModel, V, T, z)
-    return @f(a_tot) + log(V)  # + f(x)
-end
