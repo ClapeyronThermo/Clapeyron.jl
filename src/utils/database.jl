@@ -11,7 +11,7 @@ julia> getfileextension("~/Desktop/text.txt")
 "txt"
 ```
 """
-function getfileextension(filepath::String)
+function getfileextension(filepath::AbstractString)
     dotpos = findlast(isequal('.'), filepath)
     isnothing(dotpos) && return ""
     return filepath[dotpos+1:end]
@@ -34,7 +34,7 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
 
 ```
 """
-function getpaths(location::String; relativetodatabase::Bool=false)
+function getpaths(location::AbstractString; relativetodatabase::Bool=false)
     # We do not use realpath here directly because we want to make the .csv suffix optional.
     filepath = relativetodatabase ? normpath(dirname(pathof(OpenSAFT)), "..", "database", location) : location
     isfile(filepath) && return [realpath(filepath)]
@@ -111,7 +111,7 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
             verbose && println("Skipping groupdata csv ", filepath)
             continue
         end
-        headerparams = readcsvheader(filepath)
+        headerparams = readheaderparams(filepath)
         verbose && println("Searching for ", string(csvtype), " headers ", headerparams, " for components ", components, " at ", filepath, "...")
         foundparams, paramtypes, sources = findparamsincsv(components, filepath, headerparams; verbose=verbose)
         foundcomponents = collect(keys(foundparams))
@@ -255,7 +255,7 @@ function swapdictorder(dict::Dict)
     return output
 end
 
-function findparamsincsv(components::Array{String,1}, filepath::String, headerparams::Array{String,1}; columnreference::String="species", sitecolumnreference::String="site", sourcecolumnreference::String="source", verbose::Bool=false, normalisecomponents::Bool=true)
+function findparamsincsv(components::Array{String,1}, filepath::AbstractString, headerparams::Array{String,1}; columnreference::AbstractString="species", sitecolumnreference::AbstractString="site", sourcecolumnreference::AbstractString="source", verbose::Bool=false, normalisecomponents::Bool=true)
     # Returns a Dict with all matches in a particular file for one parameter.
     normalised_columnreference = normalisestring(columnreference)
     csvtype = readcsvtype(filepath)
@@ -370,14 +370,14 @@ function findparamsincsv(components::Array{String,1}, filepath::String, headerpa
     return foundvalues, paramtypes, sources
 end
 
-function normalisestring(str::String; isactivated::Bool=true, tofilter::Regex=r"[ \-\_]", changecase::Bool=true)
+function normalisestring(str::AbstractString; isactivated::Bool=true, tofilter::Regex=r"[ \-\_]", changecase::Bool=true)
     !isactivated && return str
     normalisedstring = replace(str, tofilter => "")
     changecase && (normalisedstring = lowercase(normalisedstring))
     return normalisedstring
 end
 
-function findgroupsincsv(components::Array{String,1}, filepath::String; columnreference::String="species", groupcolumnreference::String="groups", verbose::Bool=false, normalisecomponents=true)
+function findgroupsincsv(components::Array{String,1}, filepath::AbstractString; columnreference::AbstractString="species", groupcolumnreference::AbstractString="groups", verbose::Bool=false, normalisecomponents=true)
     # Returns a Dict with the group string that will be parsed in buildspecies.
     csvtype = readcsvtype(filepath)
     csvtype != groupdata && return Dict{String,String}()
@@ -413,7 +413,7 @@ function findgroupsincsv(components::Array{String,1}, filepath::String; columnre
     return foundgroups
 end
 
-function readcsvtype(filepath::String)
+function readcsvtype(filepath::AbstractString)
     # Searches for type from second line of CSV.
     keywords = ["like", "single", "unlike", "pair", "assoc", "group", "groups"]
     words = split(lowercase(rstrip(getline(filepath, 2), ',')), ' ')
@@ -429,7 +429,7 @@ function readcsvtype(filepath::String)
     first(foundkeywords) == "groups" && return groupdata
 end
 
-function getline(filepath::String, selectedline::Int)
+function getline(filepath::AbstractString, selectedline::Int)
     # Simple function to return text from filepath at selectedline.
     open(filepath) do file
         linecount = 1
@@ -441,11 +441,11 @@ function getline(filepath::String, selectedline::Int)
     end
 end
             
-function readcsvheader(filepath::String; headerline::Int = 3)
+function readheaderparams(filepath::AbstractString; headerline::Int = 3)
     # Returns array of filtered header strings at line 3.
     headers = split(getline(filepath, headerline), ',')
     ignorelist = ["source", "species", "dipprnumber", "smiles", "site"]
-    return String.(filter(x -> replace.(lowercase(x), r"[ \-\_\d]" => "") ∉ ignorelist, headers))
+    return String.(filter(x -> normalisestring(x; tofilter=r"[ \-\_\d]") ∉ ignorelist, headers))
 end
 
 function checkfor_clashingheaders(filepaths::Array{String,1})
@@ -455,16 +455,16 @@ function checkfor_clashingheaders(filepaths::Array{String,1})
     for filepath in filepaths
         csvtype = readcsvtype(filepath)
         if csvtype == singledata || csvtype == pairdata
-            append!(headerparams, readcsvheader(filepath))
+            append!(headerparams, readheaderparams(filepath))
         elseif csvtype == assocdata
-            append!(headerparams_assoc, readcsvheader(filepath))
+            append!(headerparams_assoc, readheaderparams(filepath))
         end
     end
     clashingheaders = intersect(headerparams, headerparams_assoc)
     !isempty(clashingheaders) && error("Headers ", clashingheaders, " appear in both loaded assoc and non-assoc files.")
 end
 
-function findsitesincsvs(components::Array{String,1}, filepaths::Array{String,1}; columnreference::String="species", sitecolumnreference::String="site", verbose::Bool=false, normalisecomponents::Bool=true)
+function findsitesincsvs(components::Array{String,1}, filepaths::Array{String,1}; columnreference::AbstractString="species", sitecolumnreference::AbstractString="site", verbose::Bool=false, normalisecomponents::Bool=true)
     # Look for all relevant sites in the database.
     # Note that this might not necessarily include all sites associated with a component.
     normalised_components = normalisestring.(components; isactivated=normalisecomponents)

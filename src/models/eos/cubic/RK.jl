@@ -32,7 +32,3 @@ function a_tot(model::RKModel, V, T, z)
     b̄ = sum(b .* (x * x'))
     return -log(V-n*b̄) - ā/(R̄*T*b̄*√(T/T̄c))*log(1+n*b̄/V)
 end
-
-function a_res(model::vdWModel, V, T, z)
-    return @f(a_tot) + log(V)  # + f(x)
-end
