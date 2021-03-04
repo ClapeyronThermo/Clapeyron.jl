@@ -12,7 +12,7 @@ function MonomerIdeal(components::Array{String,1}; userlocations::Array{String,1
     return MonomerIdeal(packagedparams)
 end
 
-function a_ideal(model::MonomerIdealModel, z, v, T)
+function a_ideal(model::MonomerIdealModel, v, T, z)
     x = z/sum(z)
     Mw = model.params.Mw.values
     Λ = @. h/√(k_B*T*Mw/N_A)

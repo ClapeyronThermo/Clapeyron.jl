@@ -38,7 +38,6 @@ function idealmodelselector(idealmodelstring::String, components::Array{String,1
     end
 
     return idealmodelselector(Val{modelsym},components,verbose=verbose)
-
 end
 
 function idealmodelselector(::Type{Val{:monomer}},components;verbose=false)
