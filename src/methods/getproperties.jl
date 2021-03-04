@@ -5,11 +5,11 @@
 #to be compiled only once
 
 function ∂f∂t(model,v,t,z)
-    return ForwardDiff.derivative(∂t -> eos(model,z,v,∂t),t)
+    return ForwardDiff.derivative(∂t -> eos(model,v,∂t,z),t)
 end
 
 function ∂f∂v(model,v,t,z)
-    return ForwardDiff.derivative(∂v -> eos(model,z,∂v,t),v)
+    return ForwardDiff.derivative(∂v -> eos(model,∂v,t,z),v)
 end
 
 #returns a tuple of the form ([∂f∂v,∂f∂t],f),using the least amount of computation
@@ -74,14 +74,13 @@ end
 ## Pure saturation conditions solver
 function get_sat_pure(model::EoSModel, T; v0 = nothing)
     components = model.components
-
     f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
     j! = (J,x) -> Jac_Sat(model, J, T, exp10(x[1]), exp10(x[2]))
     fj! = (F,J,x) -> Obj_Jac_sat(model,F,J,T,exp10(x[1]), exp10(x[2]))
     jv! = (x) -> Jvop_sat(x, model, T)
     vectorobj = NLSolvers.VectorObjective(f!,j!,fj!,jv!)
     vectorprob = NEqProblem(vectorobj)
-    if v0 == nothing
+    if v0 === nothing
         try
             v0    = x0_sat_pure(model)
             (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
@@ -231,8 +230,10 @@ end
 
 ## Mixture saturation solver
 function get_bubble_pressure(model, T, x; v0 =nothing)
+    TYPE = promote_type(eltpype(T),eltype(x))
+    
     components = model.components
-    if v0 == nothing
+    if v0 === nothing
         y0    = 10 .*x[1,:]./(1 .+x[1,:].*(10-1))
         y0    = y0 ./sum(y0[i] for i in 1:length(components))
         X     = x[1,:]
@@ -240,11 +241,11 @@ function get_bubble_pressure(model, T, x; v0 =nothing)
                  log10(π/6*N_A*sum(Y0[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/1e-4)]
         append!(v0,y0[1:end-1])
     end
-    v_l   = []
-    v_v   = []
+    v_l   = TYPE[]
+    v_v   = TYPE[]
     y     = deepcopy(x)
-    P_sat = []
-    for i in 1:size(x)[1]
+    P_sat = TYPE[]
+    for i in 1:first(size(x))
         f! = (F,z) -> Obj_bubble_pressure(model, F, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
         j! = (J,z) -> Jac_bubble_pressure(model, J, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
         r  =nlsolve(f!,j!,v0)

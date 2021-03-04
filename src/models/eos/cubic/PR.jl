@@ -30,9 +30,7 @@ function a_tot(model::PRModel, V, T, z)
     b = model.params.b.values
     ω = model.params.acentricfactor.values
     Tc = model.params.Tc.values
-
     α = @. (1+(0.37464+1.54226*ω-0.26992*ω^2)*(1-√(T/Tc)))^2
-
     āᾱ = sum(a .* .√(α * α') .* (x * x'))
     b̄ = sum(b .* (x * x'))
     return -log(V-n*b̄) + āᾱ/(R̄*T*b̄*2^(3/2)) * log((2*V-2^(3/2)*b̄*n+2*b̄*n)/(2*V+2^(3/2)*b̄*n+2*b̄*n))
