@@ -1,7 +1,7 @@
 @enum CSVType singledata pairdata assocdata groupdata
 
 """
-    getfileextension(filepoth)
+    getfileextension(filepath)
 
 A quick helper to get the file extension of any given path (without the dot).
 
@@ -12,9 +12,7 @@ julia> getfileextension("~/Desktop/text.txt")
 ```
 """
 function getfileextension(filepath::AbstractString)
-    dotpos = findlast(isequal('.'), filepath)
-    isnothing(dotpos) && return ""
-    return filepath[dotpos+1:end]
+   return last(splitext(filepath))
 end
 
 """
