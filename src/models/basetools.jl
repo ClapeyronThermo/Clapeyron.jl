@@ -17,7 +17,7 @@ function getsites(pairs::Dict{String,SingleParam{Int}})
 end
 
 function idealmodelselector(idealmodelstring::String, components::Array{String,1}; verbose::Bool=false)
-    normalisedidealmodelstring = normalisestring(idealmodelstring)
+    #=normalisedidealmodelstring = normalisestring(idealmodelstring)
     if normalisedidealmodelstring == "monomer"
         return MonomerIdeal(components; verbose=verbose)
     elseif normalisedidealmodelstring == "reid"
@@ -29,4 +29,30 @@ function idealmodelselector(idealmodelstring::String, components::Array{String,1
     else
         error("Your selected ideal model ", idealmodelstring, " is not recognised.")
     end
+    =#
+    if idealmodelstring == "" 
+        modelsym = :basic
+    else
+        modelsym = Symbol(idealmodelstring)
+    end
+
+    return idealmodelselector(Val{modelsym},components,verbose=verbose)
+
 end
+
+function idealmodelselector(::Type{Val{:monomer}},components;verbose=false)
+    return MonomerIdeal(components; verbose=verbose)
+end
+
+function idealmodelselector(::Type{Val{:reid}},components;verbose=false)
+    return MonomerIdeal(components; verbose=verbose)
+end
+
+function idealmodelselector(::Type{Val{:walker}},components;verbose=false)
+    return MonomerIdeal(components; verbose=verbose)
+end
+
+function idealmodelselector(::Type{Val{:basic}},components;verbose=false)
+    return MonomerIdeal(components; verbose=verbose)
+end
+
