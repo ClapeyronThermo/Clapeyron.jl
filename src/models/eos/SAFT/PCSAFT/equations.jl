@@ -23,9 +23,10 @@ function d(model::PCSAFTModel, V, T, z, i)
 end
 
 function ζ(model::PCSAFTModel, V, T, z, n)
-    x = z/∑(z)
+    ∑z = ∑(z)
+    x = z * (one(∑z)/∑z)
     m = model.params.segment.values
-    return N_A*∑(z)*π/6/V * ∑(x[i]*m[i]*@f(d,i)^n for i ∈ @comps)
+    res = N_A*∑z*π/6/V * ∑((x[i]*m[i]*@f(d,i)^n for i ∈ @comps))
 end
 
 function g_hs(model::PCSAFTModel, V, T, z, i, j)
@@ -81,15 +82,17 @@ function a_assoc(model::PCSAFTModel, V, T, z)
     return ∑(x[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)
 end
 
-function X(model::PCSAFTModel, V, T, z)::Array{Array{Float64,1},1}
-    x = z/∑(z)
-    ρ = N_A*∑(z)/V
+function X(model::PCSAFTModel, V, T, z)
+    zerox = zero(V+T+first(z))
+    Σz = ∑(z)
+    x = z/ Σz
+    ρ = N_A* Σz/V
     itermax = 100
     dampingfactor = 0.5
     error = 1.
     tol = model.absolutetolerance
-    iter = 1
-    X_ = [[1. for a ∈ @sites(i)] for i ∈ @comps]
+    iter = 20
+    X_ = [[one(zerox) for a ∈ @sites(i)] for i ∈ @comps]
     X_old = deepcopy(X_)
     while error > tol
         iter > itermax && error("X has failed to converge after $itermax iterations")
@@ -98,7 +101,7 @@ function X(model::PCSAFTModel, V, T, z)::Array{Array{Float64,1},1}
             X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
         end
         error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
-        X_old = deepcopy(X_)
+        X_old .= X_
         iter += 1
     end
     return X_

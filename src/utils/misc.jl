@@ -8,10 +8,6 @@ is_vapour(str::String) = str in VAPOUR_STR
 const SUPERCRITICAL_STR = ("sc","SC","supercritical","SUPERCRITICAL")
 is_supercritical(str::String) = str in SUPERCRITICAL_STR
 
-function ∑(iterator)
-    # wrapper for sum function that returns 0. if iterator is empty
-    if isempty(collect(iterator))
-        return 0.
-    end 
-    return sum(iterator)
+function ∑(iterator) #not collecting is faster
+    return reduce(Base.add_sum,iterator,init=0.0)
 end

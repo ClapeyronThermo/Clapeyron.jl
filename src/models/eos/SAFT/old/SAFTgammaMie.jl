@@ -91,6 +91,7 @@ function Â_1(model::SAFTgammaMieFamily, z, V, T)
 
     return 1/T * ∑(x[i]*∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps) * @f(a_1)
 end
+
 function Â_2(model::SAFTgammaMieFamily, z, V, T)
     x = z/∑(z)
     v = model.group_multiplicities
@@ -109,11 +110,13 @@ function Â_3(model::SAFTgammaMieFamily, z, V, T)
 end
 
 function a_1(model::SAFTgammaMieFamily, z, V, T)
-    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_1,k,l) for k ∈ @groups for l ∈ @groups)
+    return ∑(@f(x_S,k) * @f(x_S,l) * @f(a_1,k,l) for k ∈ @groups for l ∈ @groups)
 end
+
 function a_2(model::SAFTgammaMieFamily, z, V, T)
-    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_2,k,l) for k ∈ @groups for l ∈ @groups)
+    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_2,k,l) for k ∈ @groups  l ∈ @groups)
 end
+
 function a_3(model::SAFTgammaMieFamily, z, V, T)
     return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_3,k,l) for k ∈ @groups for l ∈ @groups)
 end

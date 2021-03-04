@@ -4,7 +4,7 @@ abstract type SAFTModel <: EoSModel end
 abstract type GCSAFTModel <: SAFTModel end
 abstract type CubicModel <: EoSModel end
 abstract type IdealModel <: EoSModel end
-
+abstract type EmpiricHelmholtzModel <: EoSModel end
 abstract type EoSParam end
 
 function getsites(pairs::Dict{String,SingleParam{Int}})
