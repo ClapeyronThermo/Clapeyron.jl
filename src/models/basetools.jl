@@ -30,10 +30,11 @@ function idealmodelselector(idealmodelstring::String, components::Array{String,1
         error("Your selected ideal model ", idealmodelstring, " is not recognised.")
     end
     =#
-    if idealmodelstring == "" 
+    normalisedidealmodelstring = normalisestring(idealmodelstring)
+    if normalisedidealmodelstring == "" 
         modelsym = :basic
     else
-        modelsym = Symbol(idealmodelstring)
+        modelsym = Symbol(normalisedidealmodelstring)
     end
 
     return idealmodelselector(Val{modelsym},components,verbose=verbose)
@@ -45,14 +46,14 @@ function idealmodelselector(::Type{Val{:monomer}},components;verbose=false)
 end
 
 function idealmodelselector(::Type{Val{:reid}},components;verbose=false)
-    return MonomerIdeal(components; verbose=verbose)
+    return ReidIdeal(components; verbose=verbose)
 end
 
 function idealmodelselector(::Type{Val{:walker}},components;verbose=false)
-    return MonomerIdeal(components; verbose=verbose)
+    return WalkerIdeal(components; verbose=verbose)
 end
 
 function idealmodelselector(::Type{Val{:basic}},components;verbose=false)
-    return MonomerIdeal(components; verbose=verbose)
+    return BasicIdeal(components; verbose=verbose)
 end
 
