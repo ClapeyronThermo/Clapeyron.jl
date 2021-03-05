@@ -31,7 +31,7 @@ function WalkerIdeal(components::Array{String,1}; userlocations::Array{String,1}
     return WalkerIdeal(packagedparams; references=references)
 end
 
-function a_ideal(model::WalkerIdealModel, z,V,T)
+function a_ideal(model::WalkerIdealModel,V,T,z)
     x = z/sum(z)
     Mw = model.params.Mw.values
     Λ = @. h/√(k_B*T*Mw/N_A)
