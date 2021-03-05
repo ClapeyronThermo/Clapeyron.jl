@@ -43,6 +43,10 @@ function idealmodelselector(::Type{Val{:basic}},components;verbose=false)
     return BasicIdeal(components; verbose=verbose)
 end
 
+function idealmodelselector(idealmodel::Type{T}, components::Array{String,1}; verbose::Bool=false) where T <: IdealModel
+    return idealmodel(components,verbose=verbose)
+end
+
 function getsites(pairs::Dict{String,SingleParam{Int}})
     arbitraryparam = first(values(pairs))
     components = arbitraryparam.components
@@ -52,34 +56,5 @@ function getsites(pairs::Dict{String,SingleParam{Int}})
     return SiteParam(components, allcomponentsites, allcomponentnsites, sourcecsvs)
 end
 
-function idealmodelselector(idealmodelstring::String, components::Array{String,1}; verbose::Bool=false)
-    #=normalisedidealmodelstring = normalisestring(idealmodelstring)
-    if normalisedidealmodelstring == "monomer"
-        return MonomerIdeal(components; verbose=verbose)
-    elseif normalisedidealmodelstring == "reid"
-        return ReidIdeal(components; verbose=verbose)
-    elseif normalisedidealmodelstring == "walker"
-        return WalkerIdeal(components; verbose=verbose)
-    elseif normalisedidealmodelstring == "basic" || normalisedidealmodelstring == ""
-        return BasicIdeal(components; verbose=verbose)
-    else
-        error("Your selected ideal model ", idealmodelstring, " is not recognised.")
-    end
-    =#
-    normalisedidealmodelstring = normalisestring(idealmodelstring)
-    if normalisedidealmodelstring == "" 
-        modelsym = :basic
-    else
-        modelsym = Symbol(normalisedidealmodelstring)
-    end
 
-    return idealmodelselector(Val{modelsym},components,verbose=verbose)
-end
 
-function idealmodelselector(::Type{Val{:monomer}},components;verbose=false)
-    return MonomerIdeal(components; verbose=verbose)
-end
-
-function idealmodelselector(idealmodel::Type{T}, components::Array{String,1}; verbose::Bool=false) where T <: IdealModel
-    return idealmodel(components,verbose=verbose)
-end
