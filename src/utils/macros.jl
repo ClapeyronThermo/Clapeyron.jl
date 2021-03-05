@@ -265,6 +265,13 @@ macro newmodel(name, parent, paramstype)
             return $name(params, sites, idealmodel; references=references)
         end
     end
+    function Base.show(io::IO, mime::MIME"text/plain", model::$name)
+        return eosshow(io, mime, model)
+    end
+
+    function Base.show(io::IO, model::$name)
+        return eosshow(io, model)
+    end
     end)
 end
 
@@ -293,6 +300,13 @@ macro newmodelsimple(name, parent, paramstype)
             return new(components, lengthcomponents, icomponents,
                           params, absolutetolerance, references)
         end
+    end
+
+    function Base.show(io::IO, mime::MIME"text/plain", model::$name)
+        return eosshow(io, mime, model)
+    end
+    function Base.show(io::IO, model::$name)
+        return eosshow(io, model)
     end
     end)
 end
