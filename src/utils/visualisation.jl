@@ -1,4 +1,6 @@
-function Base.show(io::IO, ::MIME"text/plain", model::EoSModel)
+
+
+function eosshow(io::IO, ::MIME"text/plain", model::EoSModel)
     print(io, typeof(model))
     model.lengthcomponents == 1 && println(io, " with 1 component:")
     model.lengthcomponents > 1 && println(io, " with ", model.lengthcomponents, " components:")
@@ -14,7 +16,7 @@ function Base.show(io::IO, ::MIME"text/plain", model::EoSModel)
         firstloop = false
     end
 end
-function Base.show(io::IO, model::EoSModel)
+function eosshow(io::IO, model::EoSModel)
     print(io, typeof(model))
     firstloop = true
     for i in model.icomponents
