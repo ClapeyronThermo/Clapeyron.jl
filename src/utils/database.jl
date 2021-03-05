@@ -11,9 +11,13 @@ julia> getfileextension("~/Desktop/text.txt")
 "txt"
 ```
 """
+   
 function getfileextension(filepath::AbstractString)
-   return last(splitext(filepath))
+    dotpos = findlast(isequal('.'), filepath)
+    isnothing(dotpos) && return ""
+    return filepath[dotpos+1:end]
 end
+
 
 """
     getpaths(location; relativetodatabase=false)
@@ -42,6 +46,7 @@ function getpaths(location::AbstractString; relativetodatabase::Bool=false)
             error("The path ", location, " does not exist.")
     end
     files = joinpath.(filepath, readdir(filepath))
+    typeof(files)
     return realpath.(files[isfile.(files) .& (getfileextension.(files) .== "csv")])
 end
 
@@ -53,7 +58,7 @@ function getparams(components::Array{String,1}, locations::Array{String,1}=Strin
     # If parameters exist in multiple files, OpenSAFT gives priority to files in later paths.
     # asymmetricparams is a list of parameters for which matrix reflection is disabled.
     # ignore_missingsingleparams gives users the option to disable component existence check in single params.
-    filepaths = string.(vcat([(getpaths.(locations; relativetodatabase=true)...)...], [(getpaths.(userlocations)...)...]))
+    @show filepaths = string.(vcat([(getpaths.(locations; relativetodatabase=true)...)...], [(getpaths.(userlocations)...)...]))
     allcomponentsites = findsitesincsvs(components, filepaths; verbose=verbose)
     allparams, paramsourcecsvs, paramsources = createparamarrays(components, filepaths, allcomponentsites; verbose=verbose)
     return packageparams(allparams, components, allcomponentsites, paramsourcecsvs, paramsources; asymmetricparams=asymmetricparams, ignore_missingsingleparams=ignore_missingsingleparams)
