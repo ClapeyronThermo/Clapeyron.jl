@@ -424,7 +424,7 @@ function isobaric_expansivity(model::EoSModel, p, T, z=[1.]; phase = "unknown")
     return d2f[1,2]/(v*d2f[1])
 end
 
-function joule_Thomson_coefficient(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+function joule_thomson_coefficient(model::EoSModel, p, T, z=[1.]; phase = "unknown")
     v  = volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return -(d2f[1,2]-d2f[1]*((T*d2f[2,2]+v*d2f[1,2])/(T*d2f[1,2]+v*d2f[1])))^-1
