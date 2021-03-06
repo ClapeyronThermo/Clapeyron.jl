@@ -1,6 +1,9 @@
 function eos(model::EoSModel, V, T, z)
-    return N_A*k_B*sum(z)*T * (a_ideal(model.idealmodel,V,T,z)+a_res(model,V,T,z))
+    return N_A*k_B*sum(z)*T * (a_ideal(idealmodel(model),V,T,z)+a_res(model,V,T,z))
 end
+
+idealmodel(model::EoSModel) = model.idealmodel
+idealmodel(model::IAPWS95) = IAPWS95Ideal()
 
 function eos(model::IdealModel, V, T, z)
     return N_A*k_B*sum(z)*T * a_ideal(model,V,T,z)
