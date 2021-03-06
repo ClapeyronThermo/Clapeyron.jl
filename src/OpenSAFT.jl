@@ -3,7 +3,7 @@ module OpenSAFT
 using NLopt, NLsolve, DiffResults, ForwardDiff, LinearAlgebra, StaticArrays, NLSolvers
 include("solvers/Solvers.jl")
 using .Solvers
-
+using Roots
 using Combinatorics
 using NamedArrays
 using DataStructures: DefaultDict
