@@ -112,7 +112,6 @@ function sat_pure(model::EoSModel, T; v0 = nothing)
             end
             return (P_sat,v_l,v_v)
         catch y
-            rethrow(y)
             if isa(y, DomainError)
                 try
                     v0    = x0_sat_pure(model)
@@ -146,6 +145,8 @@ function sat_pure(model::EoSModel, T; v0 = nothing)
                     return (P_sat,v_l,v_v)
                 end
 
+            else
+                rethrow(y)
             end
         end
     else
