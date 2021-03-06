@@ -49,12 +49,15 @@ end
 function x0_volume(model::SAFTModel,z; phase = "unknown")
     if phase == "unknown" || is_liquid(phase)
         x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment.values[i]*model.params.sigma.diagvalues[i]^3 for i in @comps)/0.8)]
+        return x0
     elseif is_vapour(phase)
         x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment.values[i]*model.params.sigma.diagvalues[i]^3 for i in @comps)/1e-2)]
+        return x0
     elseif is_supercritical(phase)
         x0 = [log10(π/6*N_A*sum(z[i]*model.params.segment.values[i]*model.params.sigma.diagvalues[i]^3 for i in @comps)/0.5)]
+        return x0
     end
-    return x0
+    
 end
 
 # function x0_volume(model::LJSAFT,z; phase = "unknown")
@@ -115,7 +118,7 @@ end
 lb_volume(model::SAFTModel, z; phase = "unknown") = [log10(π/6*N_A*sum(z[i]*model.params.segment.values[i]*model.params.sigma.diagvalues[i]^3 for i in @comps))]
 # lb_volume(model::Cubic,z; phase = "unknown") = [log10(sum(z[i]*z[j]*model.params.b[union(i,j)] for i in model.components for j in model.components))]
 
-
+lb_volume(model::IAPWS95, z; phase = "unknown") = [-5.0]
 
 #=scale_sat_pure=#
 
