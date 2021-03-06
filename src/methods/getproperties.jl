@@ -97,49 +97,50 @@ function sat_pure(model::EoSModel, T; v0 = nothing)
     if v0 === nothing
         try
             v0    = x0_sat_pure(model)
-            (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+            (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
             if abs(v_l-v_v)/v_l<1e-2
                 v0    = x0_sat_pure(model)
                 v0[1] = v0[1]+log10(0.5/0.52)
-                (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                 if abs(v_l-v_v)/v_l<1e-2
                     v0    = x0_sat_pure(model)
                     v0[1] = v0[1]+log10(0.5/0.48)
-                    (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                    (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                 end
                 return (P_sat,v_l,v_v)
 
             end
             return (P_sat,v_l,v_v)
         catch y
+            rethrow(y)
             if isa(y, DomainError)
                 try
                     v0    = x0_sat_pure(model)
                     v0[1] = v0[1]+log10(0.5/0.3)
-                    (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                    (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                     if abs(v_l-v_v)/v_l<1e-2
                         v0    = x0_sat_pure(model)
                         v0[1] = v0[1]+log10(0.5/0.32)
-                        (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                        (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                         if abs(v_l-v_v)/v_l<1e-2
                             v0    = x0_sat_pure(model)
                             v0[1] = v0[1]+log10(0.5/0.28)
-                            (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                            (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                         end
                     end
                     return (P_sat,v_l,v_v)
                 catch y
                     v0    = x0_sat_pure(model)
                     v0[1] = v0[1]+log10(0.5/0.4)
-                    (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                    (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                     if abs(v_l-v_v)/v_l<1e-2
                         v0    = x0_sat_pure(model)
                         v0[1] = v0[1]+log10(0.5/0.42)
-                        (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                        (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                         if abs(v_l-v_v)/v_l<1e-2
                             v0    = x0_sat_pure(model)
                             v0[1] = v0[1]+log10(0.5/0.38)
-                            (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+                            (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                         end
                     end
                     return (P_sat,v_l,v_v)
@@ -148,7 +149,7 @@ function sat_pure(model::EoSModel, T; v0 = nothing)
             end
         end
     else
-        (P_sat,v_l,v_v) = solve_sat_pure(model,v0,vectorprob,T)
+        (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
         return (P_sat,v_l,v_v)
     end
 
