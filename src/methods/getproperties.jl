@@ -47,15 +47,19 @@ end
 
 ## Standard pressure solver
 
-function get_volume(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+function volume(model::EoSModel, p, T, z=[1.]; phase = "unknown")
     N = length(p)
 
     ub = [Inf]
     lb = lb_volume(model,z; phase = phase)
+    
     x0 = x0_volume(model,z; phase = phase)
-    f = v -> eos(model, z, exp10(v[1]), T) + exp10(v[1])*p
+    f = v -> eos(model, exp10(v[1]), T,z) + exp10(v[1])*p
+    #looking at best phase using tunneling
     if phase == "unknown"
         (f_best,v_best) = Solvers.tunneling(f,lb,ub,x0)
+        @show eos.(Ref(model),exp10.(v_best),T,Ref(z)) .- p.*exp10.(v_best)
+
         return exp10(v_best[1])
     else
         opt_min = NLopt.Opt(:LD_MMA, length(ub))
@@ -66,13 +70,23 @@ function get_volume(model::EoSModel, p, T, z=[1.]; phase = "unknown")
         obj_f  = (x,g) -> Solvers.NLopt_obj(obj_f0,x,g)
         opt_min.min_objective =  obj_f
         (f_min,v_min) = NLopt.optimize(opt_min, x0)
+        #@show eos.(Ref(model),exp10.(v_min),T,Ref(z)) .- p.*exp10.(v_min)
         return exp10(v_min[1])
     end
 end
 
+function volume2(model,p,t,z=[1.0];phase="unknown")
+    f = v-> pressure(model,v,t,z)- p
+    min_v = exp10(first(lb_volume(model,z; phase = phase)))
+    max_v = 100*t/p
+    vv = Roots.find_zeros(f, min_v, max_v, no_pts = 21)
+    #@show eos.(Ref(model),vv,t,Ref(z)) .- p.*vv
+    return vv
+end
+
 
 ## Pure saturation conditions solver
-function get_sat_pure(model::EoSModel, T; v0 = nothing)
+function sat_pure(model::EoSModel, T; v0 = nothing)
     components = model.components
     f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
     j! = (J,x) -> Jac_Sat(model, J, T, exp10(x[1]), exp10(x[2]))
@@ -140,17 +154,17 @@ function get_sat_pure(model::EoSModel, T; v0 = nothing)
 
 end
 
-function solve_sat_pure(model::EoSModel,v0,vectorprob,T)
+function sat_pure(model::EoSModel,v0,vectorprob,T)
     r = solve(vectorprob, v0, LineSearch(Newton()), NEqOptions())
     v_l = exp10(r.info.solution[1])
     v_v = exp10(r.info.solution[2])
-    P_sat = get_pressure(model,exp10(r.info.solution[2]),T)
+    P_sat = pressure(model,exp10(r.info.solution[2]),T)
     return (P_sat,v_l,v_v)
 end
 
 function Obj_Sat(model::EoSModel, F, T, v_l, v_v)
     components = model.components
-    fun(x) = eos(model, [x[1]], x[2], T)
+    fun(x) = eos(model, x[2], T,[x[1]])
     df(x)  = ForwardDiff.gradient(fun,x)
     df_l = df([1,v_l[1]])
     df_v = df([1,v_v[1]])
@@ -161,7 +175,7 @@ end
 
 function Jac_Sat(model::EoSModel, J, T, v_l, v_v)
     components = model.components
-    fun(x) = eos(model, [x[1]], x[2], T)
+    fun(x) = eos(model, x[2], T,[x[1]])
     d2f(x) = ForwardDiff.hessian(fun,x)
     d2f_l = d2f([1,v_l[1]])
     d2f_v = d2f([1,v_v[1]])
@@ -181,7 +195,7 @@ end
 function Jvop_sat(x,model::EoSModel,T)
     function Jac_satV(Fv, v)
         components = model.components
-        fun(z) = eos(model, [z[1]], z[2], T)
+        fun(x) = eos(model, x[2], T,[x[1]])
         d2f(z) = ForwardDiff.hessian(fun,z)
         d2f_l = d2f([1,x[1]])
         d2f_v = d2f([1,x[2]])
@@ -192,8 +206,8 @@ function Jvop_sat(x,model::EoSModel,T)
     LinearMap(Jac_satV, length(x))
 end
 
-function get_enthalpy_vap(model::EoSModel, T)
-    (P_sat,v_l,v_v) = get_sat_pure(model,T)
+function enthalpy_vap(model::EoSModel, T)
+    (P_sat,v_l,v_v) = sat_pure(model,T)
     fun(x) = eos(model, [1.0], x[1], x[2])
     df(x)  = ForwardDiff.gradient(fun,x)
     H_l = fun([v_l,T])-df([v_l,T])[2]*T-df([v_l,T])[1]*v_l
@@ -202,7 +216,7 @@ function get_enthalpy_vap(model::EoSModel, T)
     return H_vap
 end
 ## Pure critical point solver
-function get_crit_pure(model::EoSModel; units = false, output=[u"K", u"Pa", u"m^3"])
+function crit_pure(model::EoSModel; units = false, output=[u"K", u"Pa", u"m^3"])
     components = model.components
     T̄  = T_crit_pure(model)
     f! = (F,x) -> Obj_Crit(model, F, x[1]*T̄, exp10(x[2]))
@@ -211,7 +225,7 @@ function get_crit_pure(model::EoSModel; units = false, output=[u"K", u"Pa", u"m^
     r  = nlsolve(f!,x0)
     T_c = r.zero[1]*T̄
     v_c = exp10(r.zero[2])
-    p_c = get_pressure(model, v_c, T_c)
+    p_c = pressure(model, v_c, T_c)
     if units
         return (uconvert(output[1], T_c*u"K"), uconvert(output[2], p_c*u"Pa"), uconvert(output[2], v_c*u"m^3"))
     else
@@ -229,7 +243,7 @@ function Obj_Crit(model::EoSModel, F, T_c, v_c)
 end
 
 ## Mixture saturation solver
-function get_bubble_pressure(model, T, x; v0 =nothing)
+function bubble_pressure(model, T, x; v0 =nothing)
     TYPE = promote_type(eltpype(T),eltype(x))
     
     components = model.components
@@ -251,7 +265,7 @@ function get_bubble_pressure(model, T, x; v0 =nothing)
         r  =nlsolve(f!,j!,v0)
         append!(v_l,exp10(r.zero[1]))
         append!(v_v,exp10(r.zero[2]))
-        append!(P_sat,get_pressure(model,v_l[i],T,x[i,:]))
+        append!(P_sat,pressure(model,v_l[i],T,x[i,:]))
         y[i,1:end-1] = r.zero[3:end]
         y[i,end] = 1-sum(r.zero[3:end])
         v0 = r.zero
@@ -306,7 +320,7 @@ end
 
 
 ## Mixture critical point solver
-# function get_crit_mix(model::SAFT,x_c)
+# function crit_mix(model::SAFT,x_c)
 #     components = model.components
 #     z  = create_z(model,x_c)
 #     f! = (F,x) -> Obj_Crit_mix(model, F, exp10(x[2]), x[1]*prod(model.params.epsilon[i]^z[i] for i in components), x_c)
@@ -314,7 +328,7 @@ end
 #     r  = nlsolve(f!,x0)
 #     T_c = r.zero[1]*prod(model.params.epsilon[i]^z[i] for i in components)
 #     v_c = exp10(r.zero[2])
-#     p_c = get_pressure(model, v_c, T_c, x_c)
+#     p_c = pressure(model, v_c, T_c, x_c)
 #     return (T_c, p_c, v_c)
 # end
 # #
@@ -330,94 +344,93 @@ end
 #     println(T_c)
 # end
 ## Derivative properties
-function get_pressure(model::EoSModel, v, T, z=[1.]; phase = "unknown")
+function pressure(model::EoSModel, v, T, z=[1.]; phase = "unknown")
     return -∂f∂v(model,v,T,z)
 end
 
-function get_entropy(model::EoSModel, p, T, z=[1.]; phase = "unknown")
-    v      = get_volume(model, p, T, z; phase=phase)[1]
+function entropy(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+    v      = volume(model, p, T, z; phase=phase)[1]
     return -∂f∂t(model,v,T,z)
 end
 
-function get_chemical_potential(model::EoSModel, p, T, z=[1.]; phase = "unknown")
-    v      = get_volume(model, p, T, z; phase=phase)
+function chemical_potential(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+    v      = volume(model, p, T, z; phase=phase)
     fun(x) = eos(model, x, v, T)
     return ForwardDiff.gradient(fun,z)
 end
 
-function get_internal_energy(model::EoSModel, p, T, z=[1.]; phase = "unknown")
-    v      = get_volume(model, p, T, z; phase=phase)[1]
+function internal_energy(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+    v      = volume(model, p, T, z; phase=phase)[1]
     _df,f =  ∂f(model,v,T,z)
     dv,dt = _df
     return f  - dt*T
 end
 
-function get_enthalpy(model::EoSModel, p, T, z=[1.]; phase = "unknown")
-    v      = get_volume(model, p, T, z; phase=phase)
+function enthalpy(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+    v      = volume(model, p, T, z; phase=phase)
     _df,f =  ∂f(model,v,T,z)
     dv,dt = _df
     return f  - dv*v - dt*T
 end
 
-function get_Gibbs_free_energy(model::EoSModel, p, T, z=[1.]; phase = "unknown")
-    v      = get_volume(model, p, T, z; phase=phase)
+function gibbs_free_energy(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+    v      = volume(model, p, T, z; phase=phase)
     _df,f =  ∂f(model,v,T,z)
     dv,dt = _df
     return f  - dv*v
 end
 
-function get_Helmholtz_free_energy(model::EoSModel, p, T, z=[1.]; phase = "unknown")
-    v      = get_volume(model, p, T, z; phase=phase)
+function helmholtz_free_energy(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+    v      = volume(model, p, T, z; phase=phase)
     return eos(model, z, v, T)
-
 end
 
-function get_isochoric_heat_capacity(model::EoSModel, p, T, z=[1.]; phase = "unknown")
-    v       = get_volume(model, p, T, z; phase=phase)
+function isochoric_heat_capacity(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+    v       = volume(model, p, T, z; phase=phase)
     fun(x)  = eos(model, z, v, x)
     df(x)   = ForwardDiff.derivative(fun,x)
     d2f(x)  = ForwardDiff.derivative(df,x)
     return -T*d2f(T)
 end
 
-function get_isobaric_heat_capacity(model::EoSModel, p, T, z=[1.]; phase = "unknown")
-    v       = get_volume(model, p, T, z; phase=phase)
+function isobaric_heat_capacity(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+    v       = volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return T*(d2f[1,2]^2/d2f[1]-d2f[2,2])
 end
 
-function get_isothermal_compressibility(model::EoSModel, p, T, z=[1.]; phase = "unknown")
-    v       = get_volume(model, p, T, z; phase=phase)
+function isothermal_compressibility(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+    v       = volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return 1/v*d2f[1,1]^-1
 end
 
-function get_isentropic_compressibility(model::EoSModel, p, T, z=[1.]; phase = "unknown")
-    v       = get_volume(model, p, T, z; phase=phase)
+function isentropic_compressibility(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+    v       = volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return 1/v*(d2f[1]-d2f[1,2]^2/d2f[2,2])^-1
 end
 
-function get_speed_of_sound(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+function speed_of_sound(model::EoSModel, p, T, z=[1.]; phase = "unknown")
     Mr      = sum(z[i]*model.params.Mr[i] for i in model.components)
-    v       = get_volume(model, p, T, z; phase=phase)[1]
+    v       = volume(model, p, T, z; phase=phase)[1]
     d2f = f_hess(model,v,T,z)
     return v*sqrt((d2f[1]-d2f[1,2]^2/d2f[2,2])/Mr)
 end
 
-function get_isobaric_expansivity(model::EoSModel, p, T, z=[1.]; phase = "unknown")
-    v = get_volume(model, p, T, z; phase=phase)
+function isobaric_expansivity(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+    v = volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return d2f[1,2]/(v*d2f[1])
 end
 
-function get_Joule_Thomson_coefficient(model::EoSModel, p, T, z=[1.]; phase = "unknown")
-    v  = get_volume(model, p, T, z; phase=phase)
+function Joule_Thomson_coefficient(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+    v  = volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return -(d2f[1,2]-d2f[1]*((T*d2f[2,2]+v*d2f[1,2])/(T*d2f[1,2]+v*d2f[1])))^-1
 end
 
-function get_second_virial_coeff(model::EoSModel, T, z=[1.])
+function second_virial_coeff(model::EoSModel, T, z=[1.])
     V = 1e10
     _∂2f = ∂2f(model,V,T,z)
     hessf,gradf,f = _∂2f
