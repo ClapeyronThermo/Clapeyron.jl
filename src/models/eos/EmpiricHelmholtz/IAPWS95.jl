@@ -93,7 +93,7 @@ end
 
 const IAPWS_R_corr = 8.3143713575874/R̄
 
-function a_ideal(model::IAPWS95,V,T,z=(one(V),)) 
+function a_ideal(model::IAPWS95,V,T,z=@SVector [1.0]) 
     Σz = only(z) #single component
     v = V/Σz
     #R value calculated from molecular weight and specific gas constant
