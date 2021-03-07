@@ -14,6 +14,7 @@ end
 abstract type WalkerIdealModel <: IdealModel end
 @newmodelsimple WalkerIdeal WalkerIdealModel WalkerIdealParam
 
+export WalkerIdeal
 function WalkerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
     params = getparams(components, ["ideal/WalkerIdeal.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
