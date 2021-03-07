@@ -278,7 +278,7 @@ function ϵ̄(model::SAFTgammaMieFamily, z, V, T, i, j)
     if i == j
         return @f(ϵ̄, i)
     else
-        return sqrt(@f(σ̄,i)*@f(σ̄,j))/@f(σ̄,i,j) * sqrt(@f(ϵ̄,i)*@f(ϵ̄,i))
+        return sqrt(@f(σ̄,i)*@f(σ̄,j))/@f(σ̄,i,j) * sqrt(@f(ϵ̄,i)*@f(ϵ̄,j))
     end
 end
 
@@ -439,7 +439,7 @@ function X(model::SAFTgammaMieFamily, z, V, T)
             error("X has failed to converge after $itermax iterations")
         end
         for i ∈ @comps, k ∈ @groups(i), a ∈ @sites(k)
-            rhs = (1+ρ*∑(x[j] * ∑(v[j][l] * ∑(n[l][b] * XDict[j,l,b] * @f(Δ,i,j,k,l,a,b) for b ∈ @sites(l)) for l ∈ @groups(j)) for j ∈ @comps))^-1
+            rhs = (1+ρ*∑(x[j] * ∑(v[j][l] * ∑(n[l][b] * XDict_old[j,l,b] * @f(Δ,i,j,k,l,a,b) for b ∈ @sites(l)) for l ∈ @groups(j)) for j ∈ @comps))^-1
             XDict[i,k,a] = (1-damping_factor)*XDict_old[i,k,a] + damping_factor*rhs
         end
         tol = sqrt(∑(∑(∑((XDict[i,k,a]-XDict_old[i,k,a])^2 for a ∈ @sites(k)) for k ∈ @groups(i)) for i ∈ @comps))

@@ -129,10 +129,6 @@ function a_ideal(model::IAPWS95Ideal,V,T,z=one(V))
     return a_ideal(IAPWS95(),V, T, z)
 end
 
-function idealmodelselector(::Type{Val{:iapws95ideal}},components;verbose=false)
-    return IAPWS95Ideal(components; verbose=verbose)
-end
-
 idealmodel(model::IAPWS95) = IAPWS95Ideal()
 
 export IAPWS95,IAPWS95Ideal

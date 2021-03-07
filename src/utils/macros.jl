@@ -144,9 +144,10 @@ macro newmodelgc(name, parent, paramstype)
         absolutetolerance::Float64
         references::Array{String,1}
 
-        function $name(params::$paramstype, groups::GCParam, sites::SiteParam, idealmodel::T;
+        function $name(params::$paramstype, groups::GCParam, sites::SiteParam, idealmodel::Type=BasicIdeal;
                        references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12) where {T <: IdealModel}
+                       absolutetolerance::Float64=1E-12, verbose::Bool=false)
+            !(idealmodel <: IdealModel) && error("idealmodel ", idealmodel, " has to be a concrete subtype of IdealModel.")
             components = groups.components
             lengthcomponents = length(components)
             icomponents = 1:lengthcomponents
@@ -166,34 +167,31 @@ macro newmodelgc(name, parent, paramstype)
             allgroupnsites = sites.allcomponentnsites
             isites = [1:lengthallgroupsites[k] for k ∈ iflattenedgroups]
 
-            return new{T}(components, lengthcomponents, icomponents,
+            verbose && idealmodel != BasicIdeal && println("Now creating ideal model ", idealmodel, ".")
+            idealmodelstruct = idealmodel(components; verbose=verbose)
+
+            return new{idealmodel}(components, lengthcomponents, icomponents,
                           allcomponentgroups, lengthallcomponentgroups, allcomponentngroups, igroups,
                           flattenedgroups, lengthflattenedgroups, allcomponentnflattenedgroups, iflattenedgroups,
                           allgroupsites, lengthallgroupsites, allgroupnsites, isites,
-                          params, idealmodel, absolutetolerance, references)
+                          params, idealmodelstruct, absolutetolerance, references)
         end
-        function $name(params::$paramstype, groups::GCParam, idealmodel::T;
+        function $name(params::$paramstype, groups::GCParam, idealmodel::Type=BasicIdeal;
                        references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12) where {T <: IdealModel}
+                       absolutetolerance::Float64=1E-12, verbose::Bool=false)
             components = groups.components
             sites = SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], String[])
-            return $name(params, groups, sites, idealmodel; references=references, absolutetolerance=absolutetolerance)
+
+            return $name(params, groups, sites, idealmodel; references=references, absolutetolerance=absolutetolerance, verbose=verbose)
         end
-        function $name(params::$paramstype, groups::GCParam, sites::SiteParam;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12) 
-            components = groups.components
-            idealmodel = BasicIdeal(components)
-            return $name(params, groups, sites, idealmodel; references=references, absolutetolerance=absolutetolerance)
-        end
-        function $name(params::$paramstype, groups::GCParam;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12) 
-            components = groups.components
-            idealmodel = BasicIdeal(components)
-            sites = SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], String[])
-            return $name(params, groups, sites, idealmodel; references=references, absolutetolerance=absolutetolerance)
-        end
+    end
+
+    function Base.show(io::IO, mime::MIME"text/plain", model::$name)
+        return eosshow(io, mime, model)
+    end
+
+    function Base.show(io::IO, model::$name)
+        return eosshow(io, model)
     end
     end)
 end
@@ -220,10 +218,15 @@ macro newmodel(name, parent, paramstype)
         absolutetolerance::Float64
         references::Array{String,1}
 
-        function $name(params::$paramstype, sites::SiteParam, idealmodel::T;
+        function $name(params::$paramstype, sites::SiteParam, idealmodel::Type=BasicIdeal;
                        references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12) where {T <: IdealModel}
-            arbitraryparam = getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
+                       absolutetolerance::Float64=1E-12, verbose::Bool=false)
+            !(idealmodel <: IdealModel) && error("idealmodel ", idealmodel, " has to be a concrete subtype of IdealModel.")
+            arbitraryparam = try
+                getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
+            catch e
+                error("The paramater struct ", $paramstype, " must contain at least one OpenSAFTParam")
+            end
             components = arbitraryparam.components
             lengthcomponents = length(components)
             icomponents = 1:lengthcomponents
@@ -233,38 +236,29 @@ macro newmodel(name, parent, paramstype)
             allcomponentnsites = sites.allcomponentnsites
             isites = [1:lengthallcomponentsites[i] for i ∈ icomponents]
 
-            return new{T}(components, lengthcomponents, icomponents,
+            verbose && idealmodel != BasicIdeal && println("Now creating ideal model ", idealmodel, ".")
+            idealmodelstruct = idealmodel(components; verbose=verbose)
+
+            return new{idealmodel}(components, lengthcomponents, icomponents,
                           allcomponentsites, lengthallcomponentsites, allcomponentnsites, isites,
-                          params, idealmodel, absolutetolerance, references)
+                          params, idealmodelstruct, absolutetolerance, references)
         end
-        function $name(params::$paramstype, idealmodel::T;
+        function $name(params::$paramstype, idealmodel::Type=BasicIdeal;
                        references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12) where {T <: IdealModel}
-            arbitraryparam = getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
+                       absolutetolerance::Float64=1E-12, verbose::Bool=false)
+            arbitraryparam = try
+                getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
+            catch e
+                error("The paramater struct ", $paramstype, " must contain at least one OpenSAFTParam")
+            end
             components = arbitraryparam.components
             sites = SiteParam(components, [String[] for _ ∈ 1:length(arbitraryparam.components)],
                 [Int[] for _ ∈ 1:length(arbitraryparam.components)], String[])
-            return $name(params, sites, idealmodel; references=references)
-        end
-        function $name(params::$paramstype, sites::SiteParam;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12)
-            arbitraryparam = getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
-            components = arbitraryparam.components
-            idealmodel = BasicIdeal(components)
-            return $name(params, sites, idealmodel; references=references)
-        end
-        function $name(params::$paramstype;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12)
-            arbitraryparam = getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
-            components = arbitraryparam.components
-            idealmodel = BasicIdeal(components)
-            sites = SiteParam(components, [String[] for _ ∈ 1:length(arbitraryparam.components)],
-                [Int[] for _ ∈ 1:length(arbitraryparam.components)], String[])
-            return $name(params, sites, idealmodel; references=references)
+
+            return $name(params, sites, idealmodel; references=references, absolutetolerance=absolutetolerance)
         end
     end
+
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
     end
@@ -291,8 +285,12 @@ macro newmodelsimple(name, parent, paramstype)
 
         function $name(params::$paramstype;
                        references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12)
-            arbitraryparam = getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
+                       absolutetolerance::Float64=1E-12, verbose::Bool=false)
+            arbitraryparam = try
+                getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
+            catch e
+                error("The paramater struct ", $paramstype, " must contain at least one OpenSAFTParam")
+            end
             components = arbitraryparam.components
             lengthcomponents = length(components)
             icomponents = 1:lengthcomponents
