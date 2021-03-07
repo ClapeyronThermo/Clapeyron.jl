@@ -47,7 +47,7 @@ end
 
 ## Standard pressure solver
 
-function volume(model::EoSModel, p, T, z=[1.]; phase = "unknown")
+function volume(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
     N = length(p)
 
     ub = [Inf]
@@ -152,7 +152,6 @@ function sat_pure(model::EoSModel, T; v0 = nothing)
         (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
         return (P_sat,v_l,v_v)
     end
-
 end
 
 function sat_pure(model::EoSModel,v0,vectorprob,T)
@@ -356,7 +355,7 @@ end
 
 function chemical_potential(model::EoSModel, p, T, z= @SVector [1.]; phase = "unknown")
     v      = volume(model, p, T, z; phase=phase)
-    fun(x) = eos(model, x, v, T)
+    fun(x) = eos(model, v, T,z)
     return ForwardDiff.gradient(fun,z)
 end
 
@@ -383,12 +382,12 @@ end
 
 function helmholtz_free_energy(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
     v      = volume(model, p, T, z; phase=phase)
-    return eos(model, z, v, T)
+    return eos(model, v, T,z)
 end
 
 function isochoric_heat_capacity(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
     v       = volume(model, p, T, z; phase=phase)
-    fun(x)  = eos(model, z, v, x)
+    fun(x)  = eos(model, v, x,z)
     df(x)   = ForwardDiff.derivative(fun,x)
     d2f(x)  = ForwardDiff.derivative(df,x)
     return -T*d2f(T)
