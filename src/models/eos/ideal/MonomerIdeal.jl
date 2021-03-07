@@ -5,6 +5,7 @@ end
 abstract type MonomerIdealModel <: IdealModel end
 @newmodelsimple MonomerIdeal MonomerIdealModel MonomerIdealParam
 
+export MonomerIdeal
 function MonomerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
     params = getparams(components, ["properties/molarmass"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
