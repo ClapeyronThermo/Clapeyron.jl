@@ -69,15 +69,16 @@ end
 # end
 
 function x0_volume(model::CubicModel,z; phase = "unknown")
+    x = z * (1/sum(z))
     b = model.params.b.values
-    val = mapreduce(+,*,b,z)
+    b̄ = sum(b .* (x * x'))
     
     if phase == "unknown" || is_liquid(phase)
-        x0val = val/0.8
+        x0val = b̄/0.8
     elseif is_vapour(phase)
-        x0val = val/1e-2
+        x0val = b̄/1e-2
     elseif is_supercritical(phase)
-        x0val = val/0.5
+        x0val = b̄/0.5
     end
     return [log10(x0val)]
 end
@@ -127,9 +128,10 @@ function lb_volume(model::SAFTModel, z; phase = "unknown")
     return [log10(val)]
 end
 function lb_volume(model::CubicModel,z; phase = "unknown") 
+    x = z * (1/sum(z))
     b = model.params.b.values
-    val = mapreduce(+,*,b,z)
-    return [log10(val)]
+    b̄ = sum(b .* (x * x'))
+    return [log10(b̄)]
 
 end
 
