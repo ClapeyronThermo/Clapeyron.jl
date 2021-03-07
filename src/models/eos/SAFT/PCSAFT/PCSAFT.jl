@@ -19,7 +19,7 @@ function PCSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocation
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    sites = getsites(Dict("e" => params["n_e"], "H" => params["n_H"]))
+    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
     packagedparams = PCSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]

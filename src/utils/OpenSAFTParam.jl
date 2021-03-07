@@ -83,3 +83,12 @@ struct SiteParam <: OpenSAFTParam
     allcomponentnsites::Array{Array{Int,1},1}
     sourcecsvs::Array{String,1}
 end
+
+function SiteParam(pairs::Dict{String,SingleParam{Int}})
+    arbitraryparam = first(values(pairs))
+    components = arbitraryparam.components
+    allcomponentsites = arbitraryparam.allcomponentsites
+    sourcecsvs = unique([([x.sourcecsvs for x in values(pairs)]...)...])
+    allcomponentnsites = [[pairs[allcomponentsites[i][j]].values[i] for j ∈ 1:length(allcomponentsites[i])] for i ∈ 1:length(components)]  # or groupsites
+    return SiteParam(components, allcomponentsites, allcomponentnsites, sourcecsvs)
+end
