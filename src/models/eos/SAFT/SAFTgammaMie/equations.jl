@@ -217,7 +217,7 @@ function ϵ̄(model::SAFTgammaMieModel, V, T, z, i, j)
     if i == j
         return @f(ϵ̄, i)
     else
-        return sqrt(@f(σ̄,i)*@f(σ̄,j))/@f(σ̄,i,j) * sqrt(@f(ϵ̄,i)*@f(ϵ̄,i))
+        return sqrt(@f(σ̄,i)*@f(σ̄,j))/@f(σ̄,i,j) * sqrt(@f(ϵ̄,i)*@f(ϵ̄,j))
     end
 end
 
