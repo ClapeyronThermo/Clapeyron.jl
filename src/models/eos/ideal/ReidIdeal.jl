@@ -8,6 +8,7 @@ end
 abstract type ReidIdealModel <: IdealModel end
 @newmodelsimple ReidIdeal ReidIdealModel ReidIdealParam
 
+export ReidIdeal
 function ReidIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
     params = getparams(components, ["ideal/ReidIdeal.csv"]; userlocations=userlocations, verbose=verbose)
     a = params["a"]
