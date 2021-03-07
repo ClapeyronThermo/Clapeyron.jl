@@ -22,7 +22,7 @@ function PCSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocation
     sites = getsites(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
     packagedparams = PCSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
-    idealmodel = idealmodelselector(idealmodel, components)
+    idealmodel = idealmodelselector(idealmodel, components,verbose=verbose)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
     return PCSAFT(packagedparams, sites, idealmodel; references=references)

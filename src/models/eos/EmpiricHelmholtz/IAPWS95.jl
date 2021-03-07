@@ -1,6 +1,5 @@
 struct IAPWS95 <: EmpiricHelmholtzModel end
 
-export IAPWS95
 const IAPWS95_params = (
     n00= [-8.3204464837497, 6.6832105275932, 3.00632,0.012436, 0.97315, 1.2795, 0.96956, 0.24873]
     ,gamma00 = [0, 0, 0, 1.28728967, 3.53734222, 7.74073708, 9.24437796,27.5075105]
@@ -116,7 +115,6 @@ function a_res(model::IAPWS95,V,T,z=(one(V),))
      return IAPWS_R_corr*_fr(model,rho,T)
 end
 
-
 struct IAPWS95Ideal <:IdealModel end
 
 function IAPWS95Ideal(components; verbose=false)
@@ -134,3 +132,7 @@ end
 function idealmodelselector(::Type{Val{:iapws95ideal}},components;verbose=false)
     return IAPWS95Ideal(components; verbose=verbose)
 end
+
+idealmodel(model::IAPWS95) = IAPWS95Ideal()
+
+export IAPWS95,IAPWS95Ideal
