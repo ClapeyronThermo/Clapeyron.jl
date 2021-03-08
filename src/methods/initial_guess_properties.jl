@@ -42,7 +42,7 @@ end
 #     return x0
 # end
 
-function x0_volume(model::SAFTModel,z=[1.0]; phase = "unknown")
+function x0_volume(model::SAFTModel,p,T,z=[1.0]; phase = "unknown")
     seg = model.params.segment.values
     σᵢᵢ = model.params.sigma.diagvalues
     val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i]^3 for i in @comps)
@@ -57,6 +57,10 @@ function x0_volume(model::SAFTModel,z=[1.0]; phase = "unknown")
     return [log10(x0val)]
 end
 
+
+
+
+
 # function x0_volume(model::LJSAFT,z; phase = "unknown")
 #     if phase == "unknown" || is_liquid(phase)
 #         x0 = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/0.8)]
@@ -68,7 +72,7 @@ end
 #     return x0
 # end
 
-function x0_volume(model::CubicModel,z; phase = "unknown")
+function x0_volume(model::CubicModel,p,T,z; phase = "unknown")
     x = z * (1/sum(z))
     b = model.params.b.values
     b̄ = sum(b .* (x * x'))
@@ -101,7 +105,7 @@ end
 #     log10(π/6*model.params.segment[model.components[1]]*model.params.b[model.components[1]]/1e-3)]
 # end
 
-function x0_sat_pure(model::SAFTModel)
+function x0_sat_pure(model::SAFTModel,T)
     seg = only(model.params.segment.values)
     σ = only(model.params.sigma.values)
     val = π/6*N_A*seg*σ^3
@@ -110,7 +114,7 @@ function x0_sat_pure(model::SAFTModel)
     return log10.(x0)
 end
 
-function x0_sat_pure(model::CubicModel)
+function x0_sat_pure(model::CubicModel,T)
     b = only(model.params.b.values)
     x0 = [b/0.9,b/1e-4]
     return log10.(x0)
@@ -135,7 +139,7 @@ function lb_volume(model::CubicModel,z; phase = "unknown")
 
 end
 
-lb_volume(model::IAPWS95, z; phase = "unknown") = [-5.0]
+lb_volume(model::IAPWS95, z; phase = "unknown") = [log10(1.4696978063543022e-5)]
 
 #=scale_sat_pure=#
 
@@ -173,6 +177,8 @@ function scale_sat_pure(model::CubicModel)
     μ_scale    = 27*b/8/a
     return p_scale,μ_scale
 end
+
+
 
 #=x0_crit_pure=#
 
