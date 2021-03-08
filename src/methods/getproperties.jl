@@ -53,7 +53,7 @@ function volume(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
     ub = [Inf]
     lb = lb_volume(model,z; phase = phase)
     
-    x0 = x0_volume(model,z; phase = phase)
+    x0 = x0_volume(model,p,T,z; phase = phase)
     f = v -> eos(model, exp10(v[1]), T,z) + exp10(v[1])*p
     #looking at best phase using tunneling
     if phase == "unknown"
@@ -87,7 +87,7 @@ end
 
 ## Pure saturation conditions solver
 function sat_pure(model::EoSModel, T; v0 = nothing)
-    components = model.components
+    #components = model.components
     f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
     j! = (J,x) -> Jac_Sat(model, J, T, exp10(x[1]), exp10(x[2]))
     fj! = (F,J,x) -> Obj_Jac_sat(model,F,J,T,exp10(x[1]), exp10(x[2]))
@@ -96,14 +96,14 @@ function sat_pure(model::EoSModel, T; v0 = nothing)
     vectorprob = NEqProblem(vectorobj)
     if v0 === nothing
         try
-            v0    = x0_sat_pure(model)
+            v0    = x0_sat_pure(model,T)
             (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
             if abs(v_l-v_v)/v_l<1e-2
-                v0    = x0_sat_pure(model)
+                v0    = x0_sat_pure(model,T)
                 v0[1] = v0[1]+log10(0.5/0.52)
                 (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                 if abs(v_l-v_v)/v_l<1e-2
-                    v0    = x0_sat_pure(model)
+                    v0    = x0_sat_pure(model,T)
                     v0[1] = v0[1]+log10(0.5/0.48)
                     (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                 end
@@ -114,30 +114,30 @@ function sat_pure(model::EoSModel, T; v0 = nothing)
         catch y
             if isa(y, DomainError)
                 try
-                    v0    = x0_sat_pure(model)
+                    v0    = x0_sat_pure(model,T)
                     v0[1] = v0[1]+log10(0.5/0.3)
                     (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                     if abs(v_l-v_v)/v_l<1e-2
-                        v0    = x0_sat_pure(model)
+                        v0    = x0_sat_pure(model,T)
                         v0[1] = v0[1]+log10(0.5/0.32)
                         (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                         if abs(v_l-v_v)/v_l<1e-2
-                            v0    = x0_sat_pure(model)
+                            v0    = x0_sat_pure(model,T)
                             v0[1] = v0[1]+log10(0.5/0.28)
                             (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                         end
                     end
                     return (P_sat,v_l,v_v)
                 catch y
-                    v0    = x0_sat_pure(model)
+                    v0    = x0_sat_pure(model,T)
                     v0[1] = v0[1]+log10(0.5/0.4)
                     (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                     if abs(v_l-v_v)/v_l<1e-2
-                        v0    = x0_sat_pure(model)
+                        v0    = x0_sat_pure(model,T)
                         v0[1] = v0[1]+log10(0.5/0.42)
                         (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                         if abs(v_l-v_v)/v_l<1e-2
-                            v0    = x0_sat_pure(model)
+                            v0    = x0_sat_pure(model,T)
                             v0[1] = v0[1]+log10(0.5/0.38)
                             (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
                         end
@@ -163,7 +163,7 @@ function sat_pure(model::EoSModel,v0,vectorprob,T)
 end
 
 function Obj_Sat(model::EoSModel, F, T, v_l, v_v)
-    components = model.components
+    #components = model.components
     fun(x) = eos(model, x[2], T,[x[1]])
     df(x)  = ForwardDiff.gradient(fun,x)
     df_l = df([1,v_l[1]])
@@ -174,7 +174,7 @@ function Obj_Sat(model::EoSModel, F, T, v_l, v_v)
 end
 
 function Jac_Sat(model::EoSModel, J, T, v_l, v_v)
-    components = model.components
+    #components = model.components
     fun(x) = eos(model, x[2], T,[x[1]])
     d2f(x) = ForwardDiff.hessian(fun,x)
     d2f_l = d2f([1,v_l[1]])
@@ -194,7 +194,7 @@ end
 
 function Jvop_sat(x,model::EoSModel,T)
     function Jac_satV(Fv, v)
-        components = model.components
+        #components = model.components
         fun(x) = eos(model, x[2], T,[x[1]])
         d2f(z) = ForwardDiff.hessian(fun,z)
         d2f_l = d2f([1,x[1]])
@@ -412,7 +412,7 @@ function isentropic_compressibility(model::EoSModel, p, T,  z=@SVector[1.]; phas
 end
 
 function speed_of_sound(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
-    Mr      = sum(z[i]*model.params.Mr[i] for i in model.components)
+    Mr      = molecular_weight(model,z)
     v       = volume(model, p, T, z; phase=phase)[1]
     d2f = f_hess(model,v,T,z)
     return v*sqrt((d2f[1]-d2f[1,2]^2/d2f[2,2])/Mr)
