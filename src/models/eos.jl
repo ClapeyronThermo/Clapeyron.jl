@@ -46,3 +46,17 @@ function a_res(model::ABCubicModel, V, T, z=@SVector [1.0])
     v = V/n
     return a_resx(model,v,T,x)
 end
+
+molecular_weight(model::CubicModel,z = @SVector [1.]) = 0.001*mapreduce(+,*,paramvals(model.params.Mw),z)
+
+
+function v_rackett(model,T)
+    tc = only(paramvals(model.params.Tc))
+    pc = only(paramvals(model.params.Pc))
+    vc = only(paramvals(model.params.Vc))
+    TT = promote_type(typeof(tc),typeof(T))
+    zc = pc*vc/(R̄*tc)
+    _2_7 = TT(2//7)
+    _1 = TT(1.0)
+    R̄*tc/pc*zc^(_1 + (_1 - T/tc)^(_2_7))
+end
