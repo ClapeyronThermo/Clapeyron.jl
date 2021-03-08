@@ -24,6 +24,11 @@ function ∂f(model,v,t,z)
     return (_∂f,_f)
 end
 
+
+function ∂p∂v(model,v,t,z)
+    return ForwardDiff.derivative(∂v -> pressure(model,∂v,t,z),v)
+end
+
 #returns a tuple, of the form (hess_vt(f),grad_vt(f),f), it does one allocation because of a bug
 function ∂2f(model,v,t,z)
     f(w) = eos(model,first(w),last(w),z)
@@ -62,6 +67,18 @@ function volume(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
 
         return exp10(v_best[1])
     else
+        _ub = 100*T/p
+        _lb = exp10(only(lb))
+        f0(vx) = pressure(model,vx,T,z,phase=phase) - p        
+        _v0 = exp10(only(x0))
+        #try direct newton solving
+        vobj = Solvers.ad_newton(f0,_v0)
+        if (_lb <= vobj <= _ub)
+            return vobj
+        else
+            vobj = Roots.find_zero(f0,(_lb,_ub),FalsePosition())
+        end
+        #=
         opt_min = NLopt.Opt(:LD_MMA, length(ub))
         opt_min.lower_bounds = lb
         opt_min.upper_bounds = ub
@@ -72,6 +89,7 @@ function volume(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
         (f_min,v_min) = NLopt.optimize(opt_min, x0)
         #@show eos.(Ref(model),exp10.(v_min),T,Ref(z)) .- p.*exp10.(v_min)
         return exp10(v_min[1])
+        =#
     end
 end
 
@@ -430,9 +448,31 @@ function joule_thomson_coefficient(model::EoSModel, p, T, z=@SVector [1.]; phase
     return -(d2f[1,2]-d2f[1]*((T*d2f[2,2]+v*d2f[1,2])/(T*d2f[1,2]+v*d2f[1])))^-1
 end
 
-function second_virial_coeff(model::EoSModel, T, z=@SVector [1.])
-    V = 1e10
+function second_virial_coeff(model::EoSModel, T,z=@SVector [1.])
+    TT = promote_type(eltype(z),typeof(T))
+    ρ0 = sqrt(eps(TT))
+    Zρ(ρ) = pressure(model,1/ρ,T,z)/(ρ*R̄*T)
+    return ForwardDiff.derivative(Zρ,ρ0)
+end
+
+function third_virial_coeff(model::EoSModel, T, z=@SVector [1.])
+    TT = promote_type(eltype(z),typeof(T))
+    V = 1/sqrt(eps(TT))
     _∂2f = ∂2f(model,V,T,z)
     hessf,gradf,f = _∂2f
     return V^2/(R̄*T)*(gradf[1]+V*hessf[1])
 end
+
+function compressibility_factor(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+    v  = volume(model, p, T, z; phase=phase)
+    return p*v/(R̄*T)
+end
+
+function volume_virial(model,p,T,z=@SVector [1.] )
+    B = second_virial_coeff(model,T,z)
+    a = p/(R̄*T)
+    b = -1
+    c = -B
+    return (-b + sqrt(b*b-4*a*c))/(2*a)
+end
+

@@ -50,7 +50,7 @@ function x0_volume(model::SAFTModel,p,T,z=[1.0]; phase = "unknown")
     if phase == "unknown" || is_liquid(phase)
         x0val = val/0.8
     elseif is_vapour(phase)
-        x0val = val/1e-2
+        x0val = volume_virial(model,p,T,z)
     elseif is_supercritical(phase)
         x0val = val/0.5
     end
@@ -80,7 +80,7 @@ function x0_volume(model::CubicModel,p,T,z; phase = "unknown")
     if phase == "unknown" || is_liquid(phase)
         x0val = b̄/0.8
     elseif is_vapour(phase)
-        x0val = b̄/1e-2
+        x0val = volume_virial(model,p,T,z)
     elseif is_supercritical(phase)
         x0val = b̄/0.5
     end
@@ -125,13 +125,13 @@ end
 #lb_volume(model::SAFTgammaMie,z; phase = "unknown") = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/1)]
 #lb_volume(model::LJSAFT,z; phase = "unknown") = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1)]
 
-function lb_volume(model::SAFTModel, z; phase = "unknown")
+function lb_volume(model::SAFTModel, z = SA[1.0]; phase = "unknown")
     seg = model.params.segment.values
     σᵢᵢ = model.params.sigma.diagvalues
     val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i]^3 for i in @comps)
     return [log10(val)]
 end
-function lb_volume(model::CubicModel,z; phase = "unknown") 
+function lb_volume(model::CubicModel,z = SA[1.0]; phase = "unknown") 
     x = z * (1/sum(z))
     b = model.params.b.values
     b̄ = sum(b .* (x * x'))
