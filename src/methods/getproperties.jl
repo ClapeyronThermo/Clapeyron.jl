@@ -14,7 +14,7 @@ end
 
 #returns a tuple of the form ([∂f∂v,∂f∂t],f),using the least amount of computation
 function ∂f(model,v,t,z)
-    f(w) = eos(model,z,first(w),last(w))
+    f(w) = eos(model,first(w),last(w),z)
     v,t = promote(v,t)
     vt_vec = SVector(v,t)
     ∂result = DiffResults.GradientResult(vt_vec)
@@ -26,7 +26,7 @@ end
 
 #returns a tuple, of the form (hess_vt(f),grad_vt(f),f), it does one allocation because of a bug
 function ∂2f(model,v,t,z)
-    f(w) = eos(model,z,first(w),last(w))
+    f(w) = eos(model,first(w),last(w),z)
     v,t = promote(v,t)
     vt_vec =   SVector(v,t)
     ∂result = DiffResults.HessianResult(vt_vec)
