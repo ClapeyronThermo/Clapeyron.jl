@@ -3,6 +3,7 @@ struct PRParam <: EoSParam
     b::PairParam{Float64}
     acentricfactor::SingleParam{Float64}
     Tc::SingleParam{Float64}
+    Mw::SingleParam{Float64}
 end
 
 abstract type PRModel <: ABCubicModel end
@@ -10,17 +11,17 @@ abstract type PRModel <: ABCubicModel end
 
 export PR
 function PR(components::Array{String,1}; userlocations::Array{String,1}=String[], idealmodel = BasicIdeal,verbose=false)
-    params = getparams(components, ["properties/critical.csv", "SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    Mw = params["Mw"]
     k  = params["k"]
     pc = params["pc"].values
     Tc = params["Tc"]
     Tc_ = Tc.values
     acentricfactor = params["w"]
-    idealmodel = idealmodelselector(idealmodel, components,verbose=verbose)
     a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 0.457235*R̄^2*Tc_^2/pc/1e6), k)
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. 0.077796*R̄*Tc_/pc/1e6))
 
-    packagedparams = PRParam(a, b, acentricfactor, Tc)
+    packagedparams = PRParam(a, b, acentricfactor, Tc,Mw)
     return PR(packagedparams,idealmodel)
 end
 
