@@ -5,15 +5,16 @@ struct CPAParam <: EoSParam
     Tc::SingleParam{Float64}
     epsilon_assoc::AssocParam{Float64}
     bondvol::AssocParam{Float64}
+    Mw::SingleParam{Float64}
 end
 
 abstract type CPAModel <: EoSModel end
 @newmodel CPA CPAModel CPAParam
 
 export CPA
-function CPA(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["SAFT/CPA", "SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-
+function CPA(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false,idealmodel=BasicIdeal)
+    params = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    Mw  = params["Mw"]
     k  = params["k"]
     Tc = params["Tc"]
     c1 = params["c1"]
@@ -23,12 +24,12 @@ function CPA(components::Array{String,1}; userlocations::Array{String,1}=String[
     b  = sigma_LorentzBerthelot(params["b"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    sites = getsites(Dict("e" => params["n_e"], "H" => params["n_H"]))
+    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
-    packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol)
+    packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
     references = ["10.1021/ie051305v"]
 
-    return CPA(packagedparams, sites; references=references)
+    return CPA(packagedparams, sites,idealmodel; references=references)
 end
 
 function a_res(model::CPAModel, V, T, z)

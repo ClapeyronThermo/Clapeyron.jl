@@ -1,6 +1,7 @@
 struct vdWParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}
+    Mw::SingleParam{Float64}
 end
 
 abstract type vdWModel <: ABCubicModel end
@@ -8,17 +9,16 @@ abstract type vdWModel <: ABCubicModel end
 
 export vdW
 function vdW(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false,idealmodel=BasicIdeal)
-    params = getparams(components, ["properties/critical.csv", "SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-
+    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    Mw = params["Mw"]
     k = params["k"]
     pc = params["pc"].values
     Tc = params["Tc"].values
-    idealmodel = idealmodelselector(idealmodel, components,verbose=verbose)
 
     a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 27/64*R̄^2*Tc^2/pc/1e6), k)
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. 1/8*R̄*Tc/pc/1e6))
 
-    packagedparams = vdWParam(a, b)
+    packagedparams = vdWParam(a, b,Mw)
     return vdW(packagedparams,idealmodel)
 end
 

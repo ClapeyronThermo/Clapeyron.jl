@@ -3,6 +3,7 @@ struct SRKParam <: EoSParam
     b::PairParam{Float64}
     acentricfactor::SingleParam{Float64}
     Tc::SingleParam{Float64}
+    Mw::SingleParam{Float64}
 end
 
 abstract type SRKModel <: ABCubicModel end
@@ -10,17 +11,17 @@ abstract type SRKModel <: ABCubicModel end
 
 export SRK
 function SRK(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false,idealmodel=BasicIdeal)
-    params = getparams(components, ["properties/critical.csv", "SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    Mw = params["Mw"]
     k  = params["k"]
     pc = params["pc"].values
     Tc = params["Tc"]
     Tc_ = Tc.values
     acentricfactor = params["w"]
-    idealmodel = idealmodelselector(idealmodel, components,verbose=verbose)
     a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 1/(9*(2^(1/3)-1))*R̄^2*Tc_^2/pc/1e6), k)
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. (2^(1/3)-1)/3*R̄*Tc_/pc/1e6))
 
-    packagedparams = SRKParam(a, b, acentricfactor, Tc)
+    packagedparams = SRKParam(a, b, acentricfactor, Tc,Mw)
     return SRK(packagedparams,idealmodel)
 end
 
