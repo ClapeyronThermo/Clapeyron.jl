@@ -92,3 +92,6 @@ function SiteParam(pairs::Dict{String,SingleParam{Int}})
     allcomponentnsites = [[pairs[allcomponentsites[i][j]].values[i] for j ∈ 1:length(allcomponentsites[i])] for i ∈ 1:length(components)]  # or groupsites
     return SiteParam(components, allcomponentsites, allcomponentnsites, sourcecsvs)
 end
+
+paramvals(param::OpenSAFTParam) = param.values
+paramvals(x) = x

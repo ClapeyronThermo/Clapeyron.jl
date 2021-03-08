@@ -83,7 +83,7 @@ function a_assoc(model::PCSAFTModel, V, T, z)
 end
 
 function X(model::PCSAFTModel, V, T, z)
-    zerox = zero(V+T+first(z))
+    _1 = one(V+T+first(z))
     Σz = ∑(z)
     x = z/ Σz
     ρ = N_A* Σz/V
@@ -92,7 +92,7 @@ function X(model::PCSAFTModel, V, T, z)
     error = 1.
     tol = model.absolutetolerance
     iter = 20
-    X_ = [[one(zerox) for a ∈ @sites(i)] for i ∈ @comps]
+    X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
     X_old = deepcopy(X_)
     while error > tol
         iter > itermax && error("X has failed to converge after $itermax iterations")
@@ -101,7 +101,9 @@ function X(model::PCSAFTModel, V, T, z)
             X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
         end
         error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
-        X_old .= X_
+        for i = 1:length(X_)
+            X_old[i] .= X_[i]
+        end
         iter += 1
     end
     return X_
