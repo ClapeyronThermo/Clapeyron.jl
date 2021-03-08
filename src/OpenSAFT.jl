@@ -1,13 +1,13 @@
 module OpenSAFT
-
-using NLopt, NLsolve, DiffResults, ForwardDiff, LinearAlgebra, StaticArrays, NLSolvers
+using StaticArrays
+using LinearAlgebra
+using NLopt, NLsolve, NLSolvers,Roots
+using  DiffResults, ForwardDiff
 include("solvers/Solvers.jl")
 using .Solvers
-using Roots
 using Combinatorics
 using NamedArrays
 using DataStructures: DefaultDict
-
 include("constants.jl")
 include("utils/macros.jl")
 include("utils/OpenSAFTParam.jl")
