@@ -56,3 +56,5 @@ function a_resx(model::RKModel, v, T, x)
     return -log(1-b̄*ρ) - ā*RT⁻¹*log(b̄*ρ+1)/b̄
     #return -log(V-n*b̄) - ā/(R̄*T*b̄*√(T/T̄c))*log(1+n*b̄/V)
 end
+
+cubic_zc(::RKModel) = 1/3

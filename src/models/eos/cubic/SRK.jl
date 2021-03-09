@@ -72,3 +72,5 @@ function a_resx(model::SRKModel, v, T, x)
     return -log(V-n*b̄) - āᾱ/(R̄*T*b̄)*log(1+n*b̄/V)
     =#
 end
+
+cubic_zc(::SRKModel) = 1/3
