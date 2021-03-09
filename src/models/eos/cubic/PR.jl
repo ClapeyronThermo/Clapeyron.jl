@@ -72,3 +72,5 @@ function a_resx(model::PRModel, v, T, x)
     
     #return -log(V-n*b̄) + āᾱ/(R̄*T*b̄*2^(3/2)) * log((2*V-2^(3/2)*b̄*n+2*b̄*n)/(2*V+2^(3/2)*b̄*n+2*b̄*n))
 end
+
+cubic_zc(::PRModel) = 0.3074

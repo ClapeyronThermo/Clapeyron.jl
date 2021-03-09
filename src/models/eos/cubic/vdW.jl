@@ -57,3 +57,5 @@ function a_resx(model::vdWModel, v, T, x)
     -log(1-b*ρ) - a*ρ*RT⁻¹
     #return -log(V-n*b̄) - ā*n/(R̄*T*V)
 end
+
+cubic_zc(::vdWModel) = 3/8
