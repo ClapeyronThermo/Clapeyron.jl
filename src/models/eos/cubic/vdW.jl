@@ -40,12 +40,13 @@ function cubic_abp(model::vdWModel, V, T, z=@SVector [1.0])
     return a,b,p
 end
 
-function cubic_poly(model::vdWModel,p,t,x)
+function cubic_poly(model::vdWModel,p,T,z)
+    x = z/sum(z)
     a,b = cubic_ab(model,t,x)
     RT⁻¹ = 1/(R̄*T)
     A = a*p*RT⁻¹*RT⁻¹
     B = b*p*RT⁻¹
-    return (-A*B, A, -B-_1, _1)
+    return [-A*B, A, -B-_1, _1]
 end
 
 
