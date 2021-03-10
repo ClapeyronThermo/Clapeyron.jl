@@ -52,7 +52,7 @@ end
 
 ## Standard pressure solver
 
-function volume(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+function volume(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     N = length(p)
 
     ub = [Inf]
@@ -93,7 +93,7 @@ function volume(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
     end
 end
 
-function volume2(model,p,t,z=[1.0];phase="unknown")
+function volume2(model,p,t,z=SA[1.0];phase="unknown")
     f = v-> pressure(model,v,t,z)- p
     min_v = exp10(first(lb_volume(model,z; phase = phase)))
     max_v = 100*t/p
@@ -362,48 +362,48 @@ end
 #     println(T_c)
 # end
 ## Derivative properties
-function pressure(model::EoSModel, v, T, z=@SVector [1.]; phase = "unknown")
+function pressure(model::EoSModel, v, T,  z=SA[1.]; phase = "unknown")
     return -∂f∂v(model,v,T,z)
 end
 
-function entropy(model::EoSModel, p, T,  z=@SVector [1.]; phase = "unknown")
+function entropy(model::EoSModel, p, T,   z=SA[1.]; phase = "unknown")
     v      = volume(model, p, T, z; phase=phase)[1]
     return -∂f∂t(model,v,T,z)
 end
 
-function chemical_potential(model::EoSModel, p, T, z= @SVector [1.]; phase = "unknown")
+function chemical_potential(model::EoSModel, p, T, z= SA[1.]; phase = "unknown")
     v      = volume(model, p, T, z; phase=phase)
     fun(x) = eos(model, v, T,z)
     return ForwardDiff.gradient(fun,z)
 end
 
-function internal_energy(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+function internal_energy(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v      = volume(model, p, T, z; phase=phase)[1]
     _df,f =  ∂f(model,v,T,z)
     dv,dt = _df
     return f  - dt*T
 end
 
-function enthalpy(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+function enthalpy(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v      = volume(model, p, T, z; phase=phase)
     _df,f =  ∂f(model,v,T,z)
     dv,dt = _df
     return f  - dv*v - dt*T
 end
 
-function gibbs_free_energy(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+function gibbs_free_energy(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v      = volume(model, p, T, z; phase=phase)
     _df,f =  ∂f(model,v,T,z)
     dv,dt = _df
     return f  - dv*v
 end
 
-function helmholtz_free_energy(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+function helmholtz_free_energy(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v      = volume(model, p, T, z; phase=phase)
     return eos(model, v, T,z)
 end
 
-function isochoric_heat_capacity(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+function isochoric_heat_capacity(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v       = volume(model, p, T, z; phase=phase)
     fun(x)  = eos(model, v, x,z)
     df(x)   = ForwardDiff.derivative(fun,x)
@@ -411,51 +411,51 @@ function isochoric_heat_capacity(model::EoSModel, p, T, z=@SVector [1.]; phase =
     return -T*d2f(T)
 end
 
-function isobaric_heat_capacity(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+function isobaric_heat_capacity(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v       = volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return T*(d2f[1,2]^2/d2f[1]-d2f[2,2])
 end
 
-function isothermal_compressibility(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+function isothermal_compressibility(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v       = volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return 1/v*d2f[1,1]^-1
 end
 
-function isentropic_compressibility(model::EoSModel, p, T,  z=@SVector[1.]; phase = "unknown")
+function isentropic_compressibility(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v       = volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return 1/v*(d2f[1]-d2f[1,2]^2/d2f[2,2])^-1
 end
 
-function speed_of_sound(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+function speed_of_sound(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     Mr      = molecular_weight(model,z)
     v       = volume(model, p, T, z; phase=phase)[1]
     d2f = f_hess(model,v,T,z)
     return v*sqrt((d2f[1]-d2f[1,2]^2/d2f[2,2])/Mr)
 end
 
-function isobaric_expansivity(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+function isobaric_expansivity(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v = volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return d2f[1,2]/(v*d2f[1])
 end
 
-function joule_thomson_coefficient(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+function joule_thomson_coefficient(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v  = volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return -(d2f[1,2]-d2f[1]*((T*d2f[2,2]+v*d2f[1,2])/(T*d2f[1,2]+v*d2f[1])))^-1
 end
 
-function second_virial_coeff(model::EoSModel, T,z=@SVector [1.])
+function second_virial_coeff(model::EoSModel, T, z=SA[1.])
     TT = promote_type(eltype(z),typeof(T))
     ρ0 = sqrt(eps(TT))
     Zρ(ρ) = pressure(model,1/ρ,T,z)/(ρ*R̄*T)
     return ForwardDiff.derivative(Zρ,ρ0)
 end
 
-function third_virial_coeff(model::EoSModel, T, z=@SVector [1.])
+function third_virial_coeff(model::EoSModel, T,  z=SA[1.])
     TT = promote_type(eltype(z),typeof(T))
     V = 1/sqrt(eps(TT))
     _∂2f = ∂2f(model,V,T,z)
@@ -463,12 +463,12 @@ function third_virial_coeff(model::EoSModel, T, z=@SVector [1.])
     return V^2/(R̄*T)*(gradf[1]+V*hessf[1])
 end
 
-function compressibility_factor(model::EoSModel, p, T, z=@SVector [1.]; phase = "unknown")
+function compressibility_factor(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v  = volume(model, p, T, z; phase=phase)
     return p*v/(R̄*T)
 end
 
-function volume_virial(model,p,T,z=@SVector [1.] )
+function volume_virial(model,p,T, z=SA[1.] )
     B = second_virial_coeff(model,T,z)
     a = p/(R̄*T)
     b = -1
