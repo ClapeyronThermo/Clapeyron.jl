@@ -40,13 +40,14 @@ function cubic_abp(model::RKModel, V, T, x)
     return a,b,p
 end
 
-function cubic_poly(model::RKModel,p,t,x)
+function cubic_poly(model::RKModel,p,T,z)
+    x = z/sum(z)
     a,b = cubic_ab(model,T,x)
     RT⁻¹ = 1/(R̄*T)
     A = a*p* RT⁻¹* RT⁻¹
     B = b*p* RT⁻¹
     _1 = one(a)
-    return (-A*B, -B*(B+_1) + A, -_1, _1)
+    return [-A*B, -B*(B+_1) + A, -_1, _1]
 end
 
 function a_resx(model::RKModel, v, T, x)

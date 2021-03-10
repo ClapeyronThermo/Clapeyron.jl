@@ -36,7 +36,7 @@ function cubic_ab(model::PRModel,T,x)
     return āᾱ ,b̄
 end
 
-function cubic_abp(model::PRModel, V, T, x)
+function cubic_abp(model::PRModel, V, T, z)
     x = z/sum(z)
     n = sum(z)
     v = V/n
@@ -47,18 +47,24 @@ function cubic_abp(model::PRModel, V, T, x)
     return a,b,p
 end
 
-function cubic_poly(model::PRModel,p,t,x)
-    a,b = cubic_ab(model,t,x)
+function cubic_poly(model::PRModel,p,T,z)
+    x = z/sum(z)
+    a,b = cubic_ab(model,T,x)
     RT⁻¹ = 1/(R̄*T)
     A = a*p*RT⁻¹*RT⁻¹
     B = b*p*RT⁻¹
     k₀ = B*(B*(B+1.0)-A)
-    k₁ = -B*(2*B+1.0) + A
-    k₂ = -1.0
+    k₁ = -B*(3*B+2.0) + A
+    k₂ = B-1.0
     k₃ = 1.0
-    return (k₀,k₁,k₂,k₃)
+    return [k₀,k₁,k₂,k₃]
 end
 
+#=
+ (-B2-2(B2+B)+A)
+ (-B2-2B2-2B+A)
+ (-3B2-2B+A)
+=#
 function a_resx(model::PRModel, v, T, x)
 
     a,b = cubic_ab(model,T,x)

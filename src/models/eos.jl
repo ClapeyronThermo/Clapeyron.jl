@@ -24,13 +24,8 @@ julia > function Eos(model::SRK, p, T, z)
 Then create some get_properties functions for other equations.
 """
 
-#=fast shortcut to evaluate cubics, pressure is known
-function ∂f∂v(model::ABCubicModel,v,t,z)
-    @info "fast shortcut"
-    a,b,p = cubic_abp(model,v,t,z)
-    return -p
-end
-=#
+
+
 
 
 function v_rackett(model,T)
