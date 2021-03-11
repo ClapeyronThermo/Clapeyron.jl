@@ -14,6 +14,23 @@ function SingleParam(x::SingleParam{T}) where T
     return SingleParam(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
 
+#a barebones constructor, in case we dont build from csv
+function SingleParam(
+    name::String,
+    components::Vector{String},
+    values::Vector{T},
+    ismissingvalues::Vector{Bool} = [ismissing for i = 1:length(value)],
+    allcomponentsites = Array{Array{String,1},1}(undef,0),
+    sourcecsvs = String[],
+    sources = String[]
+    ) where T<:Union{ <: Real,Missing}
+    
+    _values,_ismissingvalues = nondefaultmissing(values; defaultvalue=nothing)
+    TT = eltype(_values)
+    return  SingleParam{TT}(names, _values, _ismissingvalues, components, allcomponentsites, sourcecsvs, sources)
+end
+
+
 function SingleParam(x::SingleParam, v::Array{T,1}) where T
     return SingleParam(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources),)
 end
