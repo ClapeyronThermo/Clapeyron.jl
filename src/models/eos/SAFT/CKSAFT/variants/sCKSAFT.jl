@@ -25,7 +25,7 @@ function sCKSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocatio
     return sCKSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
 end
 
-function a_disp(model::sCKSAFTFamily, V, T, z)
+function a_disp(model::sCKSAFTModel, V, T, z)
     ∑z = ∑(z)
     x = z.*(1/∑z)
     m = model.params.segment.values
@@ -36,20 +36,20 @@ function a_disp(model::sCKSAFTFamily, V, T, z)
     return 36*log(vs/(vs+v̄Ȳ))
 end
 
-function d(model::sCKSAFTFamily, V, T, z, component)
+function d(model::sCKSAFTModel, V, T, z, component)
     ϵ = model.params.epsilon.values[component]
     σ = model.params.sigma.values[component]
     return σ * (1 - 0.333exp(-3ϵ/T))
 end
 
-function u(model::sCKSAFTFamily, V, T, z, i,j)
+function u(model::sCKSAFTModel, V, T, z, i,j)
     ϵ0 = model.params.epsilon.values[i,j]
     return ϵ0*(1-10/T)
 end
 
-function Δ(model::sCKSAFTFamily, V, T, z, i, j, a, b)
+function Δ(model::sCKSAFTModel, V, T, z, i, j, a, b)
     ϵ_assoc = model.params.epsilon_assoc.values[i,j][a,b]
     κ = model.params.bondvol.values[i,j][a,b]
     g = @f(g_hsij,i,j)
-    return g*d(model,z,v,T,i,j)^3*(exp(ϵ_assoc/T)-1)*κ
+    return g*@f(d,i,j)^3*(exp(ϵ_assoc/T)-1)*κ
 end
