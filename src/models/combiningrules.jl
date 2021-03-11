@@ -55,3 +55,27 @@ function lambda_squarewell(lambda::OpenSAFTParam, sigma::PairParam)
     end
     return lambda
 end
+
+"""
+    mixing_rule_quad(op, x, p)
+
+
+returns an efficient implementation of:
+sum(x[i]*x[j]*op(p[i],p[j]) for i in @comps for j in @comps)`
+where op(p[i],p[i]) = p[i]
+
+"""
+function mixing_rule_quad(op, x,p)
+    N = length(x)
+    @boundscheck checkbounds(x, N)
+    @inbounds begin
+        res1 = zero(eltype(x))
+        for i = 1:N
+            res1 += p[i] * x[i]^2
+            for j = 1:i - 1
+                res1 += 2 * x[i] * x[j] * op(p[i], p[j])
+            end
+        end
+    end
+    return res1
+end

@@ -30,6 +30,7 @@ include("models/eos/ideal/WalkerIdeal.jl")
 include("models/eos/SAFT/PCSAFT/PCSAFT.jl")
 include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
 include("models/eos/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
+include("models/eos/SAFT/CKSAFT/CKSAFT.jl")
 
 include("models/eos/cubic/vdW.jl")
 include("models/eos/cubic/RK.jl")
