@@ -2,9 +2,9 @@
 
 [[ArrayInterface]]
 deps = ["IfElse", "LinearAlgebra", "Requires", "SparseArrays", "Static"]
-git-tree-sha1 = "e7edcc1ac140cce87b7442ff0fa88b5f19fb71fa"
+git-tree-sha1 = "da557609446152beb6ee134683d7b79ece129eae"
 uuid = "4fba245c-0d91-5ea0-9b3e-6abc04ee57a9"
-version = "3.1.3"
+version = "3.1.5"
 
 [[Artifacts]]
 deps = ["Pkg"]
@@ -88,9 +88,9 @@ version = "0.3.4+0"
 
 [[Conda]]
 deps = ["JSON", "VersionParsing"]
-git-tree-sha1 = "c0647249d785f1d5139c0cc96db8f6b32f7ec416"
+git-tree-sha1 = "6231e40619c15148bcb80aa19d731e629877d762"
 uuid = "8f4d0f93-b110-5947-807f-2305c1781a2d"
-version = "1.5.0"
+version = "1.5.1"
 
 [[ConstructionBase]]
 deps = ["LinearAlgebra"]
@@ -398,9 +398,9 @@ version = "1.0.0"
 
 [[Requires]]
 deps = ["UUIDs"]
-git-tree-sha1 = "cfbac6c1ed70c002ec6361e7fd334f02820d6419"
+git-tree-sha1 = "4036a3bd08ac7e968e27c203d45f5fff15020621"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
-version = "1.1.2"
+version = "1.1.3"
 
 [[Roots]]
 deps = ["Printf"]
@@ -439,9 +439,9 @@ version = "1.3.0"
 
 [[Static]]
 deps = ["IfElse"]
-git-tree-sha1 = "98ace568bf638e89eac33c99337f3c8c6e2227b8"
+git-tree-sha1 = "e59fea643e12d4fa39098c833bd07cd0cd950297"
 uuid = "aedffcd0-7271-4cad-89d0-dc628f76c6d3"
-version = "0.2.0"
+version = "0.2.3"
 
 [[StaticArrays]]
 deps = ["LinearAlgebra", "Random", "Statistics"]
@@ -461,9 +461,9 @@ version = "1.0.0"
 
 [[Tables]]
 deps = ["DataAPI", "DataValueInterfaces", "IteratorInterfaceExtensions", "LinearAlgebra", "TableTraits", "Test"]
-git-tree-sha1 = "a716dde43d57fa537a19058d044b495301ba6565"
+git-tree-sha1 = "f03fc113290ee7726b173fc7ea661260d204b3f2"
 uuid = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-version = "1.3.2"
+version = "1.4.0"
 
 [[Test]]
 deps = ["Distributed", "InteractiveUtils", "Logging", "Random"]
