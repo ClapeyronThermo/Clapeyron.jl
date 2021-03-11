@@ -2,7 +2,7 @@
 abstract type sCKSAFTModel <: CKSAFTModel end
 
 
-@newmodel sCKSAFT CKSAFTModel CKSAFTParam
+@newmodel sCKSAFT sCKSAFTModel CKSAFTParam
 
 export sCKSAFT
 function sCKSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
