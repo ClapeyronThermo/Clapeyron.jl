@@ -35,6 +35,9 @@ include("models/eos/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
 include("models/eos/SAFT/CKSAFT/CKSAFT.jl")
 include("models/eos/SAFT/CKSAFT/variants/sCKSAFT.jl")
 
+include("models/eos/SAFT/BACKSAFT/BACKSAFT.jl")
+
+
 include("models/eos/cubic/vdW.jl")
 include("models/eos/cubic/RK.jl")
 include("models/eos/cubic/SRK.jl")
