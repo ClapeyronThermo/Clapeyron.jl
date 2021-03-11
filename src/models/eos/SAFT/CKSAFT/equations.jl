@@ -71,14 +71,15 @@ end
 function ū(model::CKSAFTModel, V, T, z)
     Σz = sum(z)
     x = z.*(1/Σz)
+    it = @comps #only to stop vscode from recognizing this as an error
     m = model.params.segment.values
     num = ∑(
             x[i]*x[j]*m[i]*m[j]*@f(u,i,j)*@f(d,i,j)^3 
-            for i in @comps for j in @comps)
+            for i in it for j in it)
 
     denom = ∑(
             x[i]*x[j]*m[i]*m[j]*@f(d,i,j)^3 
-            for i in @comps for j in @comps)
+            for i in it for j in it)
     return num/denom
 end
 
