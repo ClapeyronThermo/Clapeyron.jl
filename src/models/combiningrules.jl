@@ -62,10 +62,19 @@ end
 
 returns an efficient implementation of:
 sum(x[i]*x[j]*op(p[i],p[j]) for i in @comps for j in @comps)`
-where op(p[i],p[i]) = p[i]
+where `op` is a function of two arguments that satisfies op(p[i],p[i]) = p[i]
 
+# example
+```julia-repl
+julia> prop = [200,600];
+julia> x0 = [0.3,0.7];
+julia> propmix1 = OpenSAFT.mixing_rule_quad((x,y)->0.5*(x+y),x0,prop);
+julia> propmix2 = sum(x0[i]*x0[j]*(prop[i]+prop[j])*0.5 for i in 1:2 for j in 1:2);
+julia> propmix1 ≈ propmix2;
+true
+```
 """
-function mixing_rule_quad(op, x,p)
+function mixing_rule_quad(op, x, p)
     N = length(x)
     @boundscheck checkbounds(x, N)
     @inbounds begin
