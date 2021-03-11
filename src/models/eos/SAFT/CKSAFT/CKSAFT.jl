@@ -8,8 +8,8 @@ struct CKSAFTParam <: EoSParam
 end
 
 
-abstract type sCKSAFTModel <: CKSAFTModel end
-@newmodel CKSAFT sCKSAFTModel CKSAFTParam
+abstract type CKSAFTModel <: SAFTModel end
+@newmodel CKSAFT CKSAFTModel CKSAFTParam
 
 export CKSAFT
 function CKSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)

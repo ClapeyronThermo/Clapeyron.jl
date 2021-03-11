@@ -1,3 +1,7 @@
+
+abstract type sCKSAFTModel <: CKSAFTModel end
+
+
 @newmodel sCKSAFT CKSAFTModel CKSAFTParam
 
 export sCKSAFT
@@ -18,7 +22,7 @@ function sCKSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocatio
     packagedparams = CKSAFTParam(segment, sigma, epsilon,c, epsilon_assoc, bondvol)
     references = ["TODO sCKSAFT", "sTODO CKSAFT"]
 
-    return CKSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    return sCKSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
 end
 
 function a_disp(model::sCKSAFTFamily, V, T, z)
