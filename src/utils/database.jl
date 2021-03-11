@@ -216,11 +216,14 @@ function defaultmissing(array::Array; defaultvalue=nothing)
     # Also returns an Array of Bools to retain overwritten information.
     arraycopy = deepcopy(array)
     type = nonmissingtype(eltype(array))
-    ismissingvalues = ismissing.(array)
+    ismissingvalues = [ismissing(ai) for ai in arraycopy]
     if isnothing(defaultvalue)
-        if type == Union{} #  If it only contains missing
+        if type === eltype(array)
+            #fast path
+            return arraycopy,ismissingvalues
+        elseif type === Union{} #  If it only contains missing
             type = Any
-        elseif type == Any
+        elseif type === Any
             # This means that it has a mix of Number and String types.
             # If that was the case, convert it all to String.
             arraycopy[ismissingvalues] .= ""
@@ -236,7 +239,7 @@ function defaultmissing(array::Array; defaultvalue=nothing)
     else
         arraycopy[ismissingvalues] .= defaultvalue
     end
-    return convert(Array{type}, arraycopy), convert(Array{Bool}, ismissingvalues)
+    return convert(Array{type}, arraycopy), ismissingvalues
 end
 
 function swapdictorder(dict::Dict)
