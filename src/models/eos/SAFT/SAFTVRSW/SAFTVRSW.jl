@@ -1,4 +1,40 @@
+struct SAFTVRSWParams <: Params
+    segment::Dict
+    sigma::Dict
+    epsilon::Dict
+    lambda::Dict
+    epsilon_assoc::Dict
+    bond_vol::Dict
+    n_sites::Dict
+end
 
+function create_SAFTVRSWParams(raw_params)
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["m", "sigma", "epsilon", "lambda","n_H","n_e"];
+                     unlike_params=["k"],assoc_params = ["epsilon_assoc", "bond_vol"])
+    segment = like_params_dict["m"]
+    k = unlike_params_dict["k"]
+
+    sigma = like_params_dict["sigma"]
+    merge!(sigma, combining_sigma(sigma))
+    map!(x->x*1E-10, values(sigma))
+
+    epsilon = like_params_dict["epsilon"]
+    merge!(epsilon, combining_epsilon(epsilon, sigma, k))
+    lambda = like_params_dict["lambda"]
+    merge!(lambda, combining_lambda_SW(lambda,sigma))
+
+    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
+    bond_vol = assoc_params_dict["bond_vol"]
+    n_sites = Dict()
+    for i in keys(like_params_dict["n_H"])
+        n_sites[i] = Dict()
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
+    end
+
+    return SAFTVRSWParams(segment, sigma, epsilon, lambda, epsilon_assoc,bond_vol,n_sites)
+end
 
 function a_res(model::SAFTVRSWFamily, z,Vol,Temp)
     return a_mono(model,z,Vol,Temp)+a_chain(model,z,Vol,Temp)+a_assoc(model,z,Vol,Temp)

@@ -1,3 +1,38 @@
+struct LJSAFTParams <: Params
+    segment::Dict #type: Dict{String,Float64}, can be changed to vector
+    b::Dict #matrix of values
+    T::Dict #matrix of values
+    epsilon_assoc::Dict #look on how to port this
+    bond_vol::Dict #look on how to port this Dict{Set{Tuple{Set{String},String}},Float64}
+    n_sites::Dict #dict of dicts
+end
+
+function create_LJSAFTParams(raw_params; combiningrule_ϵ = "Berth")
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["m", "b", "T", "n_H", "n_e"];
+                     unlike_params = ["k"], assoc_params = ["epsilon_assoc", "bond_vol"])
+
+    segment = like_params_dict["m"]
+
+    b = like_params_dict["b"]
+    map!(x->x*1E-3, values(b))
+    merge!(b, combining_sigma(b))
+
+    T = like_params_dict["T"]
+    k = unlike_params_dict["k"]
+    merge!(T, combining_epsilon(T, b, k))
+
+    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
+    bond_vol = assoc_params_dict["bond_vol"]
+    n_sites = Dict()
+    for i in keys(like_params_dict["n_e"])
+        n_sites[i] = Dict()
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
+    end
+    return LJSAFTParams(segment, b, T, epsilon_assoc, bond_vol, n_sites)
+end
+
 function a_res(model::LJSAFTFamily, z,Vol,Temp)
     return a_LJ(model,z,Vol,Temp)+a_chain(model,z,Vol,Temp)+a_assoc(model,z,Vol,Temp)
 end
