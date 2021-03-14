@@ -1,3 +1,38 @@
+struct softSAFTParams <: Params
+    segment::Dict #type: Dict{String,Float64}, can be changed to vector
+    sigma::Dict #matrix of values
+    epsilon::Dict #matrix of values
+    epsilon_assoc::Dict #look on how to port this
+    bond_vol::Dict #look on how to port this Dict{Set{Tuple{Set{String},String}},Float64}
+    n_sites::Dict #dict of dicts
+end
+
+function create_softSAFTParams(raw_params; combiningrule_ϵ = "Berth")
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["m", "sigma", "epsilon", "n_H", "n_e"];
+                     unlike_params = ["k"], assoc_params = ["epsilon_assoc", "bond_vol"])
+
+    segment = like_params_dict["m"]
+
+    sigma = like_params_dict["sigma"]
+    map!(x->x*1E-10, values(sigma))
+    merge!(sigma, combining_sigma(sigma))
+
+    epsilon = like_params_dict["epsilon"]
+    k = unlike_params_dict["k"]
+    merge!(epsilon, combining_epsilon(epsilon, sigma, k))
+
+    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
+    bond_vol = assoc_params_dict["bond_vol"]
+    n_sites = Dict()
+    for i in keys(like_params_dict["n_e"])
+        n_sites[i] = Dict()
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
+    end
+    return softSAFTParams(segment, sigma, epsilon, epsilon_assoc, bond_vol, n_sites)
+end
+
 function a_res(model::softSAFTFamily, z,Vol,Temp)
     return a_LJ(model,z,Vol,Temp)+a_chain(model,z,Vol,Temp)+a_assoc(model,z,Vol,Temp)
 end

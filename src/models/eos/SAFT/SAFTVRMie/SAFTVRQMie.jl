@@ -1,3 +1,49 @@
+struct SAFTVRQMieParams <: Params
+    MolarMass::Dict
+    segment::Dict
+    sigma::Dict
+    epsilon::Dict
+    lambdaA::Dict
+    lambdaR::Dict
+    epsilon_assoc::Dict
+    bond_vol::Dict
+    n_sites::Dict
+end
+
+function create_SAFTVRQMieParams(raw_params)
+    like_params_dict, unlike_params_dict, assoc_params_dict =
+        filterparams(raw_params, ["m", "Mw", "sigma", "epsilon", "lambdaA", "lambdaR","n_H","n_e"];
+                     unlike_params=["epsilon","lambdaR"],assoc_params = ["epsilon_assoc", "bond_vol"])
+    segment = like_params_dict["m"]
+    MolarMass = like_params_dict["Mw"]
+    map!(x->x*1E-3, values(MolarMass))
+
+    sigma = like_params_dict["sigma"]
+    merge!(sigma, combining_sigma(sigma))
+    map!(x->x*1E-10, values(sigma))
+
+    epsilon = like_params_dict["epsilon"]
+    merge!(epsilon, unlike_params_dict["epsilon"])
+    merge!(epsilon, combining_epsilon(epsilon, sigma, Dict();rules_no_k = "Hudson-McCoubrey"))
+
+    lambdaA = like_params_dict["lambdaA"]
+    merge!(lambdaA, combining_lambda_Mie(lambdaA))
+
+    lambdaR = like_params_dict["lambdaR"]
+    merge!(lambdaR, unlike_params_dict["lambdaR"])
+    merge!(lambdaR, combining_lambda_Mie(lambdaR))
+
+    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
+    bond_vol = assoc_params_dict["bond_vol"]
+    n_sites = Dict()
+    for i in keys(like_params_dict["n_H"])
+        n_sites[i] = Dict()
+        n_sites[i]["e"] = like_params_dict["n_e"][i]
+        n_sites[i]["H"] = like_params_dict["n_H"][i]
+    end
+    return SAFTVRQMieParams(MolarMass, segment, sigma, epsilon, lambdaA, lambdaR, epsilon_assoc, bond_vol, n_sites)
+end
+
 const SAFTVRQMieconsts = (
 
     x = [-0.9956571630258080807355,-0.973906528517171720078,-0.9301574913557082260012,-0.8650633666889845107321,-0.7808177265864168970637,-0.6794095682990244062343,-0.562757134668604683339,
