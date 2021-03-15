@@ -305,7 +305,6 @@ function a_assoc(model::SAFTVRMieModel, V, T, z)
     x = z/∑(z)
     X_ = @f(X)
     n = model.allcomponentnsites
-    S = 0
     return ∑(x[i]*∑(n[i][a]*(log(X_[i][a])+(1-X_[i][a])/2) for a ∈ @sites(i)) for i ∈ @comps)
 end
 

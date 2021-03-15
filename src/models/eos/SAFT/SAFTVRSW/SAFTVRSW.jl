@@ -1,256 +1,223 @@
-struct SAFTVRSWParams <: Params
-    segment::Dict
-    sigma::Dict
-    epsilon::Dict
-    lambda::Dict
-    epsilon_assoc::Dict
-    bond_vol::Dict
-    n_sites::Dict
+struct SAFTVRSWParam <: EoSParam
+    segment::SingleParam{Float64}
+    sigma::PairParam{Float64}
+    lambda::PairParam{Float64}
+    epsilon::PairParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
 end
 
-function create_SAFTVRSWParams(raw_params)
-    like_params_dict, unlike_params_dict, assoc_params_dict =
-        filterparams(raw_params, ["m", "sigma", "epsilon", "lambda","n_H","n_e"];
-                     unlike_params=["k"],assoc_params = ["epsilon_assoc", "bond_vol"])
-    segment = like_params_dict["m"]
-    k = unlike_params_dict["k"]
+abstract type SAFTVRSWModel <: SAFTModel end
+@newmodel SAFTVRSW SAFTVRSWModel SAFTVRSWParam
 
-    sigma = like_params_dict["sigma"]
-    merge!(sigma, combining_sigma(sigma))
-    map!(x->x*1E-10, values(sigma))
+export SAFTVRSW
+function SAFTVRSW(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
+    params = getparams(components, ["SAFT/SAFTVRSW"]; userlocations=userlocations, verbose=verbose)
 
-    epsilon = like_params_dict["epsilon"]
-    merge!(epsilon, combining_epsilon(epsilon, sigma, k))
-    lambda = like_params_dict["lambda"]
-    merge!(lambda, combining_lambda_SW(lambda,sigma))
+    segment = params["m"]
+    k = params["k"]
+    params["sigma"].values .*= 1E-10
+    sigma = sigma_LorentzBerthelot(params["sigma"])
+    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
+    lambda = lambda_squarewell(params["lambda"], sigma)
 
-    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
-    bond_vol = assoc_params_dict["bond_vol"]
-    n_sites = Dict()
-    for i in keys(like_params_dict["n_H"])
-        n_sites[i] = Dict()
-        n_sites[i]["e"] = like_params_dict["n_e"][i]
-        n_sites[i]["H"] = like_params_dict["n_H"][i]
-    end
+    epsilon_assoc = params["epsilon_assoc"]
+    bondvol = params["bondvol"]
+    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
-    return SAFTVRSWParams(segment, sigma, epsilon, lambda, epsilon_assoc,bond_vol,n_sites)
+    packagedparams = SAFTVRSWParam(segment, sigma, lambda, epsilon, epsilon_assoc, bondvol)
+    references = ["todo"]
+
+    return SAFTVRSW(packagedparams, sites, idealmodel; references=references, verbose=verbose)
 end
 
-function a_res(model::SAFTVRSWFamily, z,Vol,Temp)
-    return a_mono(model,z,Vol,Temp)+a_chain(model,z,Vol,Temp)+a_assoc(model,z,Vol,Temp)
+function a_res(model::SAFTVRSWModel, V, T, z)
+    return @f(a_mono) + @f(a_chain) + @f(a_assoc)
 end
 
-function a_mono(model::SAFTVRSWFamily, z,Vol,Temp)
-    return a_hs(model,z,Vol,Temp)+a_disp(model,z,Vol,Temp)
-end
-function a_disp(model::SAFTVRSWFamily, z,Vol,Temp)
-    return a_1(model,z,Vol,Temp)+a_2(model,z,Vol,Temp)
+function a_mono(model::SAFTVRSWModel, V, T, z)
+    return @f(a_hs) + @f(a_disp)
 end
 
-function a_hs(model::SAFTVRSWFamily, z,Vol,Temp)
-    ζ0   = ζn(model, z,Vol,Temp, 0)
-    ζ1   = ζn(model, z,Vol,Temp, 1)
-    ζ2   = ζn(model, z,Vol,Temp, 2)
-    ζ3   = ζn(model, z,Vol,Temp, 3)
-    NParticles = N_A*sum(z[i] for i in model.components)
-    x   = z/sum(z[i] for i in model.components)
-    m   = model.params.segment
-    m̄   = sum(x[i]*m[i] for i in model.components)
-    return m̄*6/π/ρs(model,z,Vol,Temp)*(3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
+function a_disp(model::SAFTVRSWModel, V, T, z)
+    return @f(a_1) + @f(a_2)
 end
 
-function ζn(model::SAFTVRSWFamily, z,Vol,Temp,n)
-    σ = model.params.sigma
-    return π/6*ρs(model,z,Vol,Temp)*sum(xS(model,z,Vol,Temp,i)*σ[i]^n for i in model.components)
+function a_hs(model::SAFTVRSWModel, V, T, z)
+    ζ0 = @f(ζn,0)
+    ζ1 = @f(ζn,1)
+    ζ2 = @f(ζn,2)
+    ζ3 = @f(ζn,3)
+    x = z/∑(z)
+    m = model.params.segment.values
+    m̄ = ∑(x .* m) 
+    return m̄*6/π/@f(ρ_S)*(3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
 end
 
-function ρs(model::SAFTVRSWFamily, z,Vol,Temp)
-    NParticles = N_A*sum(z[i] for i in model.components)
-    x   = z/sum(z[i] for i in model.components)
-    m   = model.params.segment
-    m̄   = sum(x[i]*m[i] for i in model.components)
-    return NParticles/Vol*m̄
+function ζn(model::SAFTVRSWModel, V, T, z, n)
+    σ = model.params.sigma.diagvalues
+    return π/6*@f(ρ_S)*∑(@f(x_S,i)*σ[i]^n for i ∈ @comps)
 end
 
-function xS(model::SAFTVRSWFamily, z,Vol,Temp,i)
-    x   = z/sum(z[i] for i in model.components)
-    m   = model.params.segment
-    m̄   = sum(x[j]*m[j] for j in model.components)
+function ρ_S(model::SAFTVRSWModel, V, T, z)
+    ∑z = ∑(z)
+    N = N_A*∑z
+    x = z/∑z
+    m = model.params.segment.values
+    m̄ = ∑(x .* m) 
+    return N/V*m̄
+end
+
+function x_S(model::SAFTVRSWModel, V, T, z, i)
+    z, i
+    x = z/∑(z)
+    m = model.params.segment.values
+    m̄ = ∑(x .* m) 
     return x[i]*m[i]/m̄
 end
 
-function ζ_x(model::SAFTVRSWFamily, z,Vol,Temp)
-    σ = model.params.sigma
-    return pi/6*ρs(model,z,Vol,Temp)*sum(xS(model,z,Vol,Temp,i)*xS(model,z,Vol,Temp,j)*(σ[union(i,j)])^3 for i in model.components for j in model.components)
+function ζ_X(model::SAFTVRSWModel, V, T, z)
+    σ = model.params.sigma.values
+    return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*σ[i,j]^3 for i ∈ @comps for j ∈ @comps)
 end
 
-function a_1(model::SAFTVRSWFamily, z,Vol,Temp)
-    x    = z/sum(z[i] for i in model.components)
-
-    m    = model.params.segment
-    m̄    = sum(x[j]*m[j] for j in model.components)
-    return -m̄/Temp*ρs(model,z,Vol,Temp)*sum(xS(model,z,Vol,Temp,i)*xS(model,z,Vol,Temp,j)*a_1ij(model,z,Vol,Temp,i,j) for i in model.components for j in model.components)
+function a_1(model::SAFTVRSWModel, V, T, z)
+    x = z/∑(z)
+    m = model.params.segment.values
+    m̄ = ∑(x .* m) 
+    return -m̄/T*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*@f(a_1,i,j) for i ∈ @comps for j ∈ @comps)
 end
 
-function a_1ij(model::SAFTVRSWFamily, z,Vol,Temp,i,j)
-    ϵ           = model.params.epsilon[union(i,j)]
-    λ           = model.params.lambda[union(i,j)]
-    σ           = model.params.sigma[union(i,j)]
-
-    α           = 2π*ϵ*σ^3*(λ^3-1)/3
-    gHS0        = g_HS0(model,z,Vol,Temp,i,j)
-    return α*gHS0
+function a_1(model::SAFTVRSWModel, V, T, z, i, j)
+    ϵ = model.params.epsilon.values
+    λ = model.params.lambda.values
+    σ = model.params.sigma.values
+    αVDWij = 2π*ϵ[i,j]*σ[i,j]^3*(λ[i,j]^3-1)/3
+    return αVDWij * @f(gHS_0,i,j)
 end
 
-function ζ_eff(model::SAFTVRSWFamily, z,Vol,Temp,λ)
-    ζx = ζ_x(model,z,Vol,Temp)
-    return sum(c(model,z,Vol,Temp,λ,n)*ζx^n for n in 1:3)
+function ζeff_X(model::SAFTVRSWModel, V, T, z, λ)
+    A = SAFTVRSWconsts.A
+    ζ_X_ = @f(ζ_X)
+    return A * [1; λ; λ^2] ⋅ [ζ_X_; ζ_X_^2; ζ_X_^3]
 end
 
-function c(model::SAFTVRSWFamily, z,Vol,Temp,λ,n)
-    A = [[2.25855   -1.50349  0.249434],
-    [-0.66927  1.40049   -0.827739],
-    [10.1576   -15.0427   5.30827]]
-    return sum(A[n][m]*λ^(m-1) for m in 1:3)
+function gHS_0(model::SAFTVRSWModel,V, T, z, i, j)
+    λ = model.params.lambda.values
+    ζeff_X_ = @f(ζeff_X,λ[i,j])
+    return (1-ζeff_X_/2)/(1-ζeff_X_)^3
 end
 
-function g_HS0(model::SAFTVRSWFamily,z,Vol,Temp,i,j)
-    λ = model.params.lambda[union(i,j)]
-    ζeff = ζ_eff(model,z,Vol,Temp,λ)
-    return (1-ζeff/2)/(1-ζeff)^3
+function a_2(model::SAFTVRSWModel, V, T, z)
+    x = z/∑(z)
+    m = model.params.segment.values
+    m̄ = ∑(x .* m) 
+    return m̄/T^2*∑(@f(x_S,i)*@f(x_S,j)*@f(a_2,i,j) for i ∈ @comps for j ∈ @comps)
 end
 
-function a_2(model::SAFTVRSWFamily, z,Vol,Temp)
-    x    = z/sum(z[i] for i in model.components)
-
-    m    = model.params.segment
-    m̄    = sum(x[j]*m[j] for j in model.components)
-    return m̄/Temp^2*sum(xS(model,z,Vol,Temp,i)*xS(model,z,Vol,Temp,j)*a_2ij(model,z,Vol,Temp,i,j) for i in model.components for j in model.components)
+function a_2(model::SAFTVRSWModel, V, T, z, i, j)
+    ϵ = model.params.epsilon.values
+    ζ0 = @f(ζn,0)
+    ζ1 = @f(ζn,1)
+    ζ2 = @f(ζn,2)
+    ζ3 = @f(ζn,3)
+    KHS = ζ0*(1-ζ3)^4/(ζ0*(1-ζ3)^2+6*ζ1*ζ2*(1-ζ3)+9*ζ2^3)
+    return 1/2*KHS*ϵ[i,j]*@f(ρ_S)*@f(∂a_1∂ρ_S,i,j)
 end
 
-function a_2ij(model::SAFTVRSWFamily, z,Vol,Temp,i,j)
-    ϵ           = model.params.epsilon[union(i,j)]
-
-    ζ0          = ζn(model, z,Vol,Temp, 0)
-    ζ1          = ζn(model, z,Vol,Temp, 1)
-    ζ2          = ζn(model, z,Vol,Temp, 2)
-    ζ3          = ζn(model, z,Vol,Temp, 3)
-    KHS         = ζ0*(1-ζ3)^4/(ζ0*(1-ζ3)^2+6*ζ1*ζ2*(1-ζ3)+9*ζ2^3)
-    return 1/2*KHS*ϵ*ρs(model,z,Vol,Temp)*∂a1∂ρs(model,z,Vol,Temp,i,j)
+function ∂a_1∂ρ_S(model::SAFTVRSWModel, V, T, z, i, j)
+    ϵ = model.params.epsilon.values
+    λ = model.params.lambda.values
+    σ = model.params.sigma.values
+    αij = 2π*ϵ[i,j]*σ[i,j]^3*(λ[i,j]^3-1)/3
+    ζ_X_ = @f(ζ_X)
+    ζeff_X_ = @f(ζeff_X,λ[i,j])
+    A = SAFTVRSWconsts.A
+    # This seems like an error in the original code.
+    # It is retained for benchmarking purposes for now.
+    # The correct version is commented out below.
+    ∂ζeff_X∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [ζ_X_; 2ζ_X_^2; 3ζ_X_^3] 
+    # ∂ζeff_X∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
+    return -αij*(@f(gHS_0,i,j)+(5/2-ζeff_X_)/(1-ζeff_X_)^4*∂ζeff_X∂ζ_X)
 end
 
-function ∂a1∂ρs(model::SAFTVRSWFamily, z, Vol, Temp, i, j)
-    ϵ           = model.params.epsilon[union(i,j)]
-    λ           = model.params.lambda[union(i,j)]
-    σ           = model.params.sigma[union(i,j)]
-
-    α           = 2π*ϵ*σ^3*(λ^3-1)/3
-    gHS0        = g_HS0(model,z,Vol,Temp,i,j)
-    ρ_s         = ρs(model,z,Vol,Temp)
-    ζeff        = ζ_eff(model,z,Vol,Temp,λ)
-    ζx          = ζ_x(model,z,Vol,Temp)
-    ∂ζeff∂ζx    = sum(n*c(model,z,Vol,Temp,λ,n)*ζx^n for n in 1:3)
-    return -α*(gHS0+(5/2-ζeff)/(1-ζeff)^4*∂ζeff∂ζx)
+function a_chain(model::SAFTVRSWModel, V, T, z)
+    x = z/∑(z)
+    m = model.params.segment.values
+    return -∑(x[i]*(log(@f(γSW,i))*(m[i]-1)) for i ∈ @comps)
 end
 
-function a_chain(model::SAFTVRSWFamily, z,Vol,Temp)
-    x       = z/sum(z[i] for i in model.components)
-    m       = model.params.segment
-    return -sum(x[i]*(log(y_SW(model,z,Vol,Temp,i))*(m[i]-1)) for i in model.components)
+function γSW(model::SAFTVRSWModel,V, T, z, i)
+    ϵ = model.params.epsilon.diagvalues
+    return @f(gSW,i,i)*exp(-ϵ[i]/T)
 end
 
-function y_SW(model::SAFTVRSWFamily,z,Vol,Temp,i)
-    ϵ    = model.params.epsilon[i]
-    gSW  = g_SW(model,z,Vol,Temp,i,i)
-    return gSW*exp(-ϵ/Temp)
+function gSW(model::SAFTVRSWModel,V, T, z, i, j)
+    ϵ = model.params.epsilon.values
+    return @f(gHS,i,j)+ϵ[i,j]/T*@f(g_1,i,j)
 end
 
-function g_SW(model::SAFTVRSWFamily,z,Vol,Temp,i,j)
-    ϵ    = model.params.epsilon[union(i,j)]
-    gHS  = g_HS(model,z,Vol,Temp,i,j)
-    g1   = g_1(model,z,Vol,Temp,i,j)
-    return gHS+ϵ/Temp*g1
-end
-
-function g_HS(model::SAFTVRSWFamily,z,Vol,Temp,i,j)
-    σ   = model.params.sigma
-    ζ3  = ζn(model,z,Vol,Temp,3)
-    D   = σ[i]*σ[j]/(σ[i]+σ[j])*sum(xS(model,z,Vol,Temp,k)*σ[k]^2 for k in model.components)/sum(xS(model,z,Vol,Temp,k)*σ[k]^3 for k in model.components)
+function gHS(model::SAFTVRSWModel,V, T, z, i, j)
+    σ = model.params.sigma.values
+    ζ3 = @f(ζn,3)
+    D = σ[i]*σ[j]/(σ[i]+σ[j])*∑(@f(x_S,k)*σ[k]^2 for k ∈ @comps)/∑(@f(x_S,k)*σ[k]^3 for k ∈ @comps)
     return 1/(1-ζ3)+3*D*ζ3/(1-ζ3)^2+2*(D*ζ3)^2/(1-ζ3)^3
 end
 
-function g_1(model::SAFTVRSWFamily,z,Vol,Temp,i,j)
-    λ     = model.params.lambda[union(i,j)]
-    gHS0  = g_HS0(model,z,Vol,Temp,i,j)
-    ζx = ζ_x(model,z,Vol,Temp)
-    ζeff = ζ_eff(model,z,Vol,Temp,λ)
-    ∂ζeff∂ζx = sum(n*c(model,z,Vol,Temp,λ,n)*ζx^(n-1) for n in 1:3)
-    ∂ζeff∂λ  = sum(∂c∂λ(model,z,Vol,Temp,λ,n)*ζx^n for n in 1:3)
-    return gHS0+(λ^3-1)*(5/2-ζeff)/(1-ζeff)^4*(λ/3*∂ζeff∂λ-ζx*∂ζeff∂ζx)
+function g_1(model::SAFTVRSWModel,V, T, z, i, j)
+    λ = model.params.lambda.values
+    ζ_X_ = @f(ζ_X)
+    ζeff_X_ = @f(ζeff_X,λ[i,j])
+    A = SAFTVRSWconsts.A
+    ∂ζeff_X∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
+    ∂ζeff_X∂λ = A * [0; 1; -2λ[i,j]] ⋅ [ζ_X_; ζ_X_^2; ζ_X_^3] 
+    return @f(gHS_0,i,j)+(λ[i,j]^3-1)*(5/2-ζeff_X_)/(1-ζeff_X_)^4*(λ[i,j]/3*∂ζeff_X∂λ-ζ_X_*∂ζeff_X∂ζ_X)
 end
 
-function ∂c∂λ(model::SAFTVRSWFamily, z,Vol,Temp,λ,n)
-    A = [[2.25855   -1.50349  0.249434],
-    [-0.66927  1.40049   -0.827739],
-    [10.1576   -15.0427   5.30827]]
-    return sum((m-1)*A[n][m]*λ^(m-2) for m in 2:3)
+function a_assoc(model::SAFTVRSWModel, V, T, z)
+    x = z/∑(z)
+    n = model.allcomponentnsites
+    X_ = @f(X)
+    return ∑(x[i]*∑(n[i][a]*(log(X_[i][a])+(1-X_[i][a])/2) for a ∈ @sites(i)) for i ∈ @comps)
 end
 
-function a_assoc(model::SAFTVRSWFamily, z, v, T)
-    x = z/sum(z[i] for i in model.components)
-    n_sites = model.params.n_sites
-    X_iA = X_assoc(model,z,v,T)
-    return sum(x[i]*sum(n_sites[i][a]*(log(X_iA[i,a])+(1-X_iA[i,a])/2) for a in keys(model.params.n_sites[i])) for i in model.components)
-end
-
-function X_assoc(model::SAFTVRSWFamily, z, v, T)
-    x = z/sum(z[i] for i in model.components)
-    ρ = N_A*sum(z[i] for i in model.components)/v
-    n_sites = model.params.n_sites
-    X_iA = Dict()
-    X_iA_old = Dict()
-    tol = 1.
+function X(model::SAFTVRSWModel, V, T, z)
+    _1 = one(V+T+first(z))
+    ∑z = ∑(z)
+    x = z/∑z
+    ρ = N_A*∑z/V
+    n = model.allcomponentnsites
+    itermax = 500
+    dampingfactor = 0.5
+    error = 1.
+    tol = model.absolutetolerance
     iter = 1
-
-    while tol > 1e-12 && iter < 100
-        for i in model.components
-            for a in keys(model.params.n_sites[i])
-                A = 0.
-                for j in model.components
-                    B = 0
-                    for b in keys(model.params.n_sites[j])
-                        if haskey(model.params.epsilon_assoc,Set([(i,a),(j,b)]))
-                            if iter!=1
-                                B+=n_sites[j][b]*X_iA_old[j,b]*Δ(model,z,v,T,i,j,a,b)
-                            else
-                                B+=n_sites[j][b]*Δ(model,z,v,T,i,j,a,b)
-                            end
-                        end
-                    end
-                    A += ρ*x[j]*B
-                end
-                if iter == 1
-                    X_iA[i,a] =0.5+0.5*(1+A)^-1
-                else
-                    X_iA[i,a] =0.5*X_iA_old[i,a]+0.5*(1+A)^-1
-                end
-            end
+    X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
+    X_old = deepcopy(X_)
+    while error > tol
+        iter > itermax && error("X has failed to converge after $itermax iterations")
+        for i ∈ @comps, a ∈ @sites(i)
+            rhs = 1/(1+∑(ρ*x[j]*∑(n[j][b]*X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
+            X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
         end
-        if iter == 1
-            tol = sqrt(sum(sum((1. -X_iA[i,a])^2 for a in keys(model.params.n_sites[i])) for i in model.components))
-        else
-            tol = sqrt(sum(sum((X_iA_old[i,a] -X_iA[i,a])^2 for a in keys(model.params.n_sites[i])) for i in model.components))
+        error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
+        for i = 1:length(X_)
+            X_old[i] .= X_[i]
         end
-        X_iA_old = deepcopy(X_iA)
         iter += 1
     end
-
-    return X_iA
+    return X_
 end
 
-function Δ(model::SAFTVRSWFamily, z, v, T, i, j, a, b)
-    ϵ_assoc = model.params.epsilon_assoc[Set([(i,a),(j,b)])]
-    κ = model.params.bond_vol[Set([(i,a),(j,b)])]
-    g = g_SW(model,z,v,T,i,j)
-    return g*(exp(ϵ_assoc/T)-1)*κ
+function Δ(model::SAFTVRSWModel, V, T, z, i, j, a, b)
+    ϵ_assoc = model.params.epsilon_assoc.values
+    κ = model.params.bondvol.values
+    g = @f(gSW,i,j)
+    return g*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
 end
+
+const SAFTVRSWconsts = (
+    A = [2.25855   -1.50349  0.249434;
+    -0.66927  1.40049   -0.827739;
+    10.1576   -15.0427   5.30827],
+)
