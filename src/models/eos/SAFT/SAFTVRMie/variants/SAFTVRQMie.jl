@@ -1,179 +1,114 @@
-struct SAFTVRQMieParams <: Params
-    MolarMass::Dict
-    segment::Dict
-    sigma::Dict
-    epsilon::Dict
-    lambdaA::Dict
-    lambdaR::Dict
-    epsilon_assoc::Dict
-    bond_vol::Dict
-    n_sites::Dict
+struct SAFTVRQMieParam <: EoSParam
+    segment::SingleParam{Float64}
+    sigma::PairParam{Float64}
+    lambda_a::PairParam{Float64}
+    lambda_r::PairParam{Float64}
+    epsilon::PairParam{Float64}
+    Mw::SingleParam{Float64}
 end
 
-function create_SAFTVRQMieParams(raw_params)
-    like_params_dict, unlike_params_dict, assoc_params_dict =
-        filterparams(raw_params, ["m", "Mw", "sigma", "epsilon", "lambdaA", "lambdaR","n_H","n_e"];
-                     unlike_params=["epsilon","lambdaR"],assoc_params = ["epsilon_assoc", "bond_vol"])
-    segment = like_params_dict["m"]
-    MolarMass = like_params_dict["Mw"]
-    map!(x->x*1E-3, values(MolarMass))
+abstract type SAFTVRQMieModel <: SAFTVRMieModel end
+@newmodel SAFTVRQMie SAFTVRQMieModel SAFTVRQMieParam
 
-    sigma = like_params_dict["sigma"]
-    merge!(sigma, combining_sigma(sigma))
-    map!(x->x*1E-10, values(sigma))
+export SAFTVRQMie
+function SAFTVRQMie(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
+    params = getparams(components, ["SAFT/SAFTVRQMie"]; userlocations=userlocations, verbose=verbose)
 
-    epsilon = like_params_dict["epsilon"]
-    merge!(epsilon, unlike_params_dict["epsilon"])
-    merge!(epsilon, combining_epsilon(epsilon, sigma, Dict();rules_no_k = "Hudson-McCoubrey"))
+    params["Mw"].values .*= 1E-3
+    Mw = params["Mw"]
+    segment = params["m"]
+    params["sigma"].values .*= 1E-10
+    sigma = sigma_LorentzBerthelot(params["sigma"])
+    epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
+    lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
+    lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
 
-    lambdaA = like_params_dict["lambdaA"]
-    merge!(lambdaA, combining_lambda_Mie(lambdaA))
+    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
-    lambdaR = like_params_dict["lambdaR"]
-    merge!(lambdaR, unlike_params_dict["lambdaR"])
-    merge!(lambdaR, combining_lambda_Mie(lambdaR))
+    packagedparams = SAFTVRQMieParam(segment, sigma, lambda_a, lambda_r, epsilon, Mw)
+    references = ["todo"]
 
-    epsilon_assoc = assoc_params_dict["epsilon_assoc"]
-    bond_vol = assoc_params_dict["bond_vol"]
-    n_sites = Dict()
-    for i in keys(like_params_dict["n_H"])
-        n_sites[i] = Dict()
-        n_sites[i]["e"] = like_params_dict["n_e"][i]
-        n_sites[i]["H"] = like_params_dict["n_H"][i]
-    end
-    return SAFTVRQMieParams(MolarMass, segment, sigma, epsilon, lambdaA, lambdaR, epsilon_assoc, bond_vol, n_sites)
+    return SAFTVRQMie(packagedparams, sites, idealmodel; references=references, verbose=verbose)
 end
 
-const SAFTVRQMieconsts = (
 
-    x = [-0.9956571630258080807355,-0.973906528517171720078,-0.9301574913557082260012,-0.8650633666889845107321,-0.7808177265864168970637,-0.6794095682990244062343,-0.562757134668604683339,
-        -0.4333953941292471907993,-0.294392862701460198131,-0.1488743389816312108848,0,0.1488743389816312108848,0.2943928627014601981311,0.4333953941292471907993,
-        0.562757134668604683339,0.6794095682990244062343,0.7808177265864168970637,0.865063366688984510732,0.9301574913557082260012,0.973906528517171720078,0.9956571630258080807355]
-    ,w = [0.0116946388673718742781,0.0325581623079647274788,0.0547558965743519960314,0.075039674810919952767,0.093125454583697605535,0.1093871588022976418992,0.123491976262065851078,
-        0.134709217311473325928,0.142775938577060080797,0.1477391049013384913748,0.149445554002916905665,0.1477391049013384913748,0.1427759385770600807971,0.134709217311473325928,
-        0.123491976262065851078,0.109387158802297641899,0.093125454583697605535,0.075039674810919952767,0.05475589657435199603138,0.032558162307964727479,0.0116946388673718742781]
-
-    ,A = [[0.81096   1.7888  -37.578   92.284],
-        [1.02050  -19.341   151.26  -463.50],
-        [-1.90570   22.845  -228.14   973.92],
-        [1.08850  -6.1962   106.98  -677.64]]
-)
-
-function a_res(model::SAFTVRQMieFamily, z,Vol,Temp)
-    return a_mono(model,z,Vol,Temp)
+function a_res(model::SAFTVRQMieModel, V, T, z)
+    return @f(a_mono)
 end
 
-function a_mono(model::SAFTVRQMieFamily, z,Vol,Temp)
-    return a_hs(model,z,Vol,Temp)+a_disp(model,z,Vol,Temp)
-end
-function a_disp(model::SAFTVRQMieFamily, z,Vol,Temp)
-    return a_1(model,z,Vol,Temp)+a_2(model,z,Vol,Temp)+a_3(model,z,Vol,Temp)
-end
+function d(model::SAFTVRQMieModel, V, T, z, i)
+    ϵ = model.params.epsilon.diagvalues
+    σ = model.params.sigma.diagvalues
+    λr = model.params.lambda_r.diagvalues
+    λa = model.params.lambda_a.diagvalues
+    Mw = model.params.Mw.values
 
-function a_hs(model::SAFTVRQMieFamily, z,Vol,Temp)
-    ζ0   = ζn(model, z,Vol,Temp, 0)
-    ζ1   = ζn(model, z,Vol,Temp, 1)
-    ζ2   = ζn(model, z,Vol,Temp, 2)
-    ζ3   = ζn(model, z,Vol,Temp, 3)
-    NParticles = N_A*sum(z[i] for i in model.components)
-    return 6*Vol/π/NParticles*(3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
-end
+    Di = ħ^2/(12*k_B*T*Mw[i]/N_A*σ[i]^2)
+    βi = ϵ[i]/T
+    u(x) = @f(C,i,i)*((x^-λr[i]-x^-λa[i])+
+              Di*(@f(Q1,λr[i])*x^-(λr[i]+2)-@f(Q1,λa[i])*x^-(λa[i]+2))+
+              Di^2*(@f(Q2,λr[i])*x^-(λr[i]+4)-@f(Q2,λa[i])*x^-(λa[i]+4)))
+    du(x) = -@f(C,i,i)*((λr[i]*x^-(λr[i]+1)-λa[i]*x^-(λa[i]+1))+
+                Di*(@f(Q1,λr[i])*(λr[i]+2)*x^-(λr[i]+3)-@f(Q1,λa[i])*(λa[i]+2)*x^-(λa[i]+3))+
+                Di^2*(@f(Q2,λr[i])*(λr[i]+4)*x^-(λr[i]+5)-@f(Q2,λa[i])*(λa[i]+4)*x^-(λa[i]+5)))
+    d2u(x) = @f(C,i,i)*((λr[i]*(λr[i]+1)*x^-(λr[i]+2)-λa[i]*(λa[i]+1)*x^-(λa[i]+2))+
+                Di*(@f(Q1,λr[i])*(λr[i]+2)*(λr[i]+3)*x^-(λr[i]+4)-@f(Q1,λa[i])*(λa[i]+2)*(λa[i]+3)*x^-(λa[i]+4))+
+                Di^2*(@f(Q2,λr[i])*(λr[i]+4)*(λr[i]+5)*x^-(λr[i]+6)-@f(Q2,λa[i])*(λa[i]+4)*(λa[i]+5)*x^-(λa[i]+6)))
 
-function ζn(model::SAFTVRQMieFamily, z,Vol,Temp,n)
-    return π/6*ρs(model,z,Vol,Temp)*sum(xS(model,z,Vol,Temp,i)*d(model,z,Vol,Temp,i)^n for i in model.components)
-end
-
-function ρs(model::SAFTVRQMieFamily, z,Vol,Temp)
-    NParticles = N_A*sum(z[i] for i in model.components)
-    x   = z/sum(z[i] for i in model.components)
-    m   = model.params.segment
-    m̄   = sum(x[i]*m[i] for i in model.components)
-    return NParticles/Vol*m̄
-end
-
-function xS(model::SAFTVRQMieFamily, z,Vol,Temp,i)
-    x   = z/sum(z[i] for i in model.components)
-    m   = model.params.segment
-    m̄   = sum(x[j]*m[j] for j in model.components)
-    return x[i]*m[i]/m̄
+    f(x) = exp(-βi*u(x))
+    g(x) = -βi*exp(-βi*u(x))*du(x)
+    h(x) = βi*exp(-βi*u(x))*(βi*du(x)^2-d2u(x))
+    x_min = @f(Halley,f,g,h,1.)
+    σ_effi = @f(σeff,i,i)/σ[i]
+    x = SAFTVRQMieconsts.x
+    w = SAFTVRQMieconsts.w
+    return σ[i]*(σ_effi-(σ_effi-x_min)/2*∑(w[i]*f((σ_effi-x_min)/2*x[i]+(σ_effi+x_min)/2) for i in 1:21))
 end
 
-function d(model::SAFTVRQMieFamily, z,Vol,Temp,i)
-    ϵ           = model.params.epsilon[union(i,i)]
-    σ           = model.params.sigma[union(i,i)]
-    λR          = model.params.lambdaR[union(i,i)]
-    λA          = model.params.lambdaA[union(i,i)]
-    Mr          = model.params.MolarMass[i]/N_A
+function σeff(model::SAFTVRQMieModel, V, T, z, i, j)
+    σ = model.params.sigma.values
+    λr = model.params.lambda_r.values
+    λa = model.params.lambda_a.values
+    Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
+    Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
 
-    D           = ħ^2/(12*k_B*Temp*Mr*σ^2)
-    β           = ϵ/Temp
-    u(x)        = CMie(model, z,Vol,Temp,i,i)*((x^-λR-x^-λA)+
-                                        D*(Q1(λR)*x^-(λR+2)-Q1(λA)*x^-(λA+2))+
-                                        D^2*(Q2(λR)*x^-(λR+4)-Q2(λA)*x^-(λA+4)))
-    du(x)       = -CMie(model, z,Vol,Temp,i,i)*((λR*x^-(λR+1)-λA*x^-(λA+1))+
-                                        D*(Q1(λR)*(λR+2)*x^-(λR+3)-Q1(λA)*(λA+2)*x^-(λA+3))+
-                                        D^2*(Q2(λR)*(λR+4)*x^-(λR+5)-Q2(λA)*(λA+4)*x^-(λA+5)))
-    d2u(x)      = CMie(model, z,Vol,Temp,i,i)*((λR*(λR+1)*x^-(λR+2)-λA*(λA+1)*x^-(λA+2))+
-                                        D*(Q1(λR)*(λR+2)*(λR+3)*x^-(λR+4)-Q1(λA)*(λA+2)*(λA+3)*x^-(λA+4))+
-                                        D^2*(Q2(λR)*(λR+4)*(λR+5)*x^-(λR+6)-Q2(λA)*(λA+4)*(λA+5)*x^-(λA+6)))
+    f(x) = Dij^2*@f(Q2,λr[i,j])+Dij*@f(Q1,λr[i,j])*x^2+x^4-x^(λr[i,j]-λa[i,j])*(Dij^2*@f(Q2,λa[i,j])+Dij*@f(Q1,λa[i,j])*x^2+x^4)
+    g(x) = 2*Dij*@f(Q1,λr[i,j])*x+4x^3-x^(λr[i,j]-λa[i,j]-1)*((λr[i,j]-λa[i,j])*Dij^2*@f(Q2,λa[i,j])+(λr[i,j]-λa[i,j]+2)*Dij*@f(Q1,λa[i,j])*x^2+(λr[i,j]-λa[i,j]+4)*x^4)
+    h(x) = 2*Dij*@f(Q1,λr[i,j])+12x^2-x^(λr[i,j]-λa[i,j]-2)*((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j])*Dij^2*@f(Q2,λa[i,j])+((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j]+2)+2*(λr[i,j]-λa[i,j]+2))*Dij*@f(Q1,λa[i,j])*x^2+((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j]+4)+4*(λr[i,j]-λa[i,j]+4))*x^4)
 
-
-    f(x)        = exp(-β*u(x))
-    g(x)        = -β*exp(-β*u(x))*du(x)
-    h(x)        = β*exp(-β*u(x))*(β*du(x)^2-d2u(x))
-    x_min       = Halley(f,g,h,1.)
-    σ_eff       = σeff(model::SAFTVRQMieFamily,z,Vol,Temp,i,i)/σ
-    x           = SAFTVRQMieconsts.x
-    w           = SAFTVRQMieconsts.w
-    return σ*(σ_eff-(σ_eff-x_min)/2*sum(w[i]*f((σ_eff-x_min)/2*x[i]+(σ_eff+x_min)/2) for i in 1:length(x)))
+    return σ[i,j]*@f(Halley,f,g,h,1.)
 end
 
-function σeff(model::SAFTVRQMieFamily,z,Vol,Temp,i,j)
-    σ           = model.params.sigma[union(i,j)]
-    λR          = model.params.lambdaR[union(i,j)]
-    λA          = model.params.lambdaA[union(i,j)]
-    Mr          = model.params.MolarMass[union(i,j)]/N_A
+function ϵeff(model::SAFTVRQMieModel, V, T, z, i, j)
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    λr = model.params.lambda_r.values
+    λa = model.params.lambda_a.values
+    Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
+    Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
 
-    D           = ħ^2/(12*k_B*Temp*Mr*σ^2)
+    u(x) = @f(C,i,j)*((x^-λr[i,j]-x^-λa[i,j])+
+            Dij*(@f(Q1,λr[i,j])*x^-(λr[i,j]+2)-@f(Q1,λa[i,j])*x^-(λa[i,j]+2))+
+            Dij^2*(@f(Q2,λr[i,j])*x^-(λr[i,j]+4)-@f(Q2,λa[i,j])*x^-(λa[i,j]+4)))
+    f(x) = (λr[i,j]+4)*Dij^2*@f(Q2,λr[i,j])+(λr[i,j]+2)*Dij*@f(Q1,λr[i,j])*x^2+λr[i,j]*x^4-x^(λr[i,j]-λa[i,j])*((λa[i,j]+4)*Dij^2*@f(Q2,λa[i,j])+(λa[i,j]+2)*Dij*@f(Q1,λa[i,j])*x^2+λa[i,j]*x^4)
+    g(x) = 2*(λr[i,j]+2)*Dij*@f(Q1,λr[i,j])*x+4λr[i,j]*x^3-x^(λr[i,j]-λa[i,j]-1)*((λa[i,j]+4)*(λr[i,j]-λa[i,j])*Dij^2*@f(Q2,λa[i,j])+(λa[i,j]+2)*(λr[i,j]-λa[i,j]+2)*Dij*@f(Q1,λa[i,j])*x^2+λa[i,j]*(λr[i,j]-λa[i,j]+4)*x^4)
+    h(x) = 2*(λr[i,j]+2)*Dij*@f(Q1,λr[i,j])+12λr[i,j]*x^2-x^(λr[i,j]-λa[i,j]-2)*((λa[i,j]+4)*(λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j])*Dij^2*@f(Q2,λa[i,j])+(λa[i,j]+2)*((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j]+2)+2*(λr[i,j]-λa[i,j]+2))*Dij*@f(Q1,λa[i,j])*x^2+λa[i,j]*((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j]+4)+4*(λr[i,j]-λa[i,j]+4))*x^4)
 
-    f(x) = D^2*Q2(λR)+D*Q1(λR)*x^2+x^4-x^(λR-λA)*(D^2*Q2(λA)+D*Q1(λA)*x^2+x^4)
-    g(x) = 2*D*Q1(λR)*x+4x^3-x^(λR-λA-1)*((λR-λA)*D^2*Q2(λA)+(λR-λA+2)*D*Q1(λA)*x^2+(λR-λA+4)*x^4)
-    h(x) = 2*D*Q1(λR)+12x^2-x^(λR-λA-2)*((λR-λA-1)*(λR-λA)*D^2*Q2(λA)+((λR-λA-1)*(λR-λA+2)+2*(λR-λA+2))*D*Q1(λA)*x^2+((λR-λA-1)*(λR-λA+4)+4*(λR-λA+4))*x^4)
-
-    return σ*Halley(f,g,h,1.)
+    σ_min = @f(Halley,f,g,h,(λr[i,j]/λa[i,j])^(1/(λr[i,j]-λa[i,j])))
+    return -ϵ[i,j]*u(σ_min)
 end
 
-function ϵeff(model::SAFTVRQMieFamily,z,Vol,Temp,i,j)
-    ϵ           = model.params.epsilon[union(i,j)]
-    σ           = model.params.sigma[union(i,j)]
-    λR          = model.params.lambdaR[union(i,j)]
-    λA          = model.params.lambdaA[union(i,j)]
-    Mr          = model.params.MolarMass[union(i,j)]/N_A
-
-    D           = ħ^2/(12*k_B*Temp*Mr*σ^2)
-
-    u(x) = CMie(model, z,Vol,Temp,i,j)*((x^-λR-x^-λA)+
-                                        D*(Q1(λR)*x^-(λR+2)-Q1(λA)*x^-(λA+2))+
-                                        D^2*(Q2(λR)*x^-(λR+4)-Q2(λA)*x^-(λA+4)))
-    f(x) = (λR+4)*D^2*Q2(λR)+(λR+2)*D*Q1(λR)*x^2+λR*x^4-x^(λR-λA)*((λA+4)*D^2*Q2(λA)+(λA+2)*D*Q1(λA)*x^2+λA*x^4)
-    g(x) = 2*(λR+2)*D*Q1(λR)*x+4λR*x^3-x^(λR-λA-1)*((λA+4)*(λR-λA)*D^2*Q2(λA)+(λA+2)*(λR-λA+2)*D*Q1(λA)*x^2+λA*(λR-λA+4)*x^4)
-    h(x) = 2*(λR+2)*D*Q1(λR)+12λR*x^2-x^(λR-λA-2)*((λA+4)*(λR-λA-1)*(λR-λA)*D^2*Q2(λA)+(λA+2)*((λR-λA-1)*(λR-λA+2)+2*(λR-λA+2))*D*Q1(λA)*x^2+λA*((λR-λA-1)*(λR-λA+4)+4*(λR-λA+4))*x^4)
-
-    σ_min = Halley(f,g,h,(λR/λA)^(1/(λR-λA)))
-    return -ϵ*u(σ_min)
-end
-
-function Halley(f,g,h,x0)
+function Halley(model::SAFTVRQMieModel, V, T, z, f_, g_, h_, x0)
     tolx = 1.
     tolf = 1.
-    f0 = f(x0)
-    if f0<1e-16
+    f0 = f_(x0)
+    if f0 < 1e-16
         return x0
     else
-        while tolf>1e-16 && tolx>1e-15
-            d = f(x0)/g(x0)*(1-f(x0)*h(x0)/(2*g(x0)^2))^-1
+        while tolf > 1e-16 && tolx > 1e-15
+            d = f_(x0)/g_(x0)*(1-f_(x0)*h_(x0)/(2*g_(x0)^2))^-1
             x0=x0-d
-            f0 = f(x0)
+            f0 = f_(x0)
             tolf = abs(f0)
             tolx = abs(d)
         end
@@ -181,154 +116,103 @@ function Halley(f,g,h,x0)
     end
 end
 
-function CMie(model::SAFTVRQMieFamily, z,Vol,Temp,i,j)
-    λR          = model.params.lambdaR
-    λA          = model.params.lambdaA
-    return (λR[union(i,j)]/(λR[union(i,j)]-λA[union(i,j)]))*(λR[union(i,j)]/λA[union(i,j)])^(λA[union(i,j)]/(λR[union(i,j)]-λA[union(i,j)]))
+function ζ_x(model::SAFTVRQMieModel, V, T, z)
+    return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i,j))^3 for i in @comps for j in @comps)
 end
 
-function ζ_x(model::SAFTVRQMieFamily, z,Vol,Temp)
-    return pi/6*ρs(model,z,Vol,Temp)*sum(xS(model,z,Vol,Temp,i)*xS(model,z,Vol,Temp,j)*(d(model,z,Vol,Temp,i)+d(model,z,Vol,Temp,j))^3/8 for i in model.components for j in model.components)
+function a_1(model::SAFTVRQMieModel, V, T, z, i, j)
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    λr = model.params.lambda_r.values
+    λa = model.params.lambda_a.values
+    Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
+    Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
+    x_0ij = @f(x_0,i,j)
+    x_0effij = @f(x_0eff,i,j)
+    return 2*π*ϵ[i,j]*@f(d,i,j)^3*@f(C,i,j)*@f(ρ_S)*
+    ( (x_0ij^λa[i,j]*(@f(aS_1,λa[i,j])+@f(B,λa[i,j],x_0effij))-
+        x_0ij^λr[i,j]*(@f(aS_1,λr[i,j])+@f(B,λr[i,j],x_0effij)))+
+        (x_0ij^(λa[i,j]+2)*@f(Q1,λa[i,j])*(@f(aS_1,λa[i,j]+2)+@f(B,λa[i,j]+2,x_0effij))-
+         x_0ij^(λr[i,j]+2)*@f(Q1,λr[i,j])*(@f(aS_1,λr[i,j]+2)+@f(B,λr[i,j]+2,x_0effij)))*Dij+
+        (x_0ij^(λa[i,j]+4)*@f(Q2,λa[i,j])*(@f(aS_1,λa[i,j]+4)+@f(B,λa[i,j]+4,x_0effij))-
+         x_0ij^(λr[i,j]+4)*@f(Q2,λr[i,j])*(@f(aS_1,λr[i,j]+4)+@f(B,λr[i,j]+4,x_0effij)))*Dij^2 )
 end
 
-function a_1(model::SAFTVRQMieFamily, z,Vol,Temp)
-    x    = z/sum(z[i] for i in model.components)
-
-    m    = model.params.segment
-    m̄    = sum(x[j]*m[j] for j in model.components)
-    return m̄/Temp*sum(xS(model,z,Vol,Temp,i)*xS(model,z,Vol,Temp,j)*a_1ij(model,z,Vol,Temp,i,j) for i in model.components for j in model.components)
-end
-
-function a_1ij(model::SAFTVRQMieFamily, z,Vol,Temp,i,j)
-    ϵ           = model.params.epsilon[union(i,j)]
-    σ           = model.params.sigma[union(i,j)]
-    λR          = model.params.lambdaR[union(i,j)]
-    λA          = model.params.lambdaA[union(i,j)]
-    Mr          = model.params.MolarMass[union(i,j)]/N_A
-
-    D           = ħ^2/(12*k_B*Temp*Mr*σ^2)
-    HSd         = (d(model,z,Vol,Temp,i)+d(model,z,Vol,Temp,j))/2
-    x_0eff      = x0eff(model,z,Vol,Temp,i,j)
-    x_0         = x0(model,z,Vol,Temp,i,j)
-    C           = CMie(model,z,Vol,Temp,i,j)
-    return 2*π*ϵ*HSd^3*C*ρs(model,z,Vol,Temp)*((x_0^λA*(a1s(model,z,Vol,Temp,λA)+B(model,z,Vol,Temp,λA,x_0eff))-x_0^λR*(a1s(model,z,Vol,Temp,λR)+B(model,z,Vol,Temp,λR,x_0eff)))+
-                                               (x_0^(λA+2)*Q1(λA)*(a1s(model,z,Vol,Temp,λA+2)+B(model,z,Vol,Temp,λA+2,x_0eff))-x_0^(λR+2)*Q1(λR)*(a1s(model,z,Vol,Temp,λR+2)+B(model,z,Vol,Temp,λR+2,x_0eff)))*D+
-                                               (x_0^(λA+4)*Q2(λA)*(a1s(model,z,Vol,Temp,λA+4)+B(model,z,Vol,Temp,λA+4,x_0eff))-x_0^(λR+4)*Q2(λR)*(a1s(model,z,Vol,Temp,λR+4)+B(model,z,Vol,Temp,λR+4,x_0eff)))*D^2)
-end
-
-function Q1(λ)
+function Q1(model::SAFTVRQMieModel, V, T, z, λ)
     return λ*(λ-1)
 end
 
-function Q2(λ)
+function Q2(model::SAFTVRQMieModel, V, T, z, λ)
     return 1/2*(λ+2)*(λ+1)*λ*(λ-1)
 end
 
-function a1s(model::SAFTVRQMieFamily, z,Vol,Temp,λ)
-    ζeff = ζ_eff(model,z,Vol,Temp,λ)
-    return -1/(λ-3)*(1-ζeff/2)/(1-ζeff)^3
+function x_0eff(model::SAFTVRQMieModel, V, T, z, i, j)
+    return @f(σeff,i,j)/@f(d,i,j)
 end
 
-function ζ_eff(model::SAFTVRQMieFamily, z,Vol,Temp,λ)
-    ζx = ζ_x(model,z,Vol,Temp)
-    return sum(c(model,z,Vol,Temp,λ,n)*ζx^n for n in 1:4)
+function a_2(model::SAFTVRQMieModel, V, T, z, i, j)
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    λr = model.params.lambda_r.values
+    λa = model.params.lambda_a.values
+    Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
+    Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
+
+    x_0ij = @f(x_0,i,j)
+    x_0effij = @f(x_0eff,i,j)
+    return π*@f(KHS)*(1+@f(χ,i,j))*@f(ρ_S)*ϵ[i,j]^2*@f(d,i,j)^3*@f(C,i,j)^2*(x_0ij^(2*λa[i,j])*(@f(aS_1,2*λa[i,j])+@f(B,2*λa[i,j],x_0effij))-
+        x_0ij^(λa[i,j]+λr[i,j]+8)*(2*@f(Q2,λa[i,j])*@f(Q2,λr[i,j]))*(@f(aS_1,λa[i,j]+λr[i,j]+8)+@f(B,λa[i,j]+λr[i,j]+8,x_0effij))*Dij^4)
 end
 
-function c(model::SAFTVRQMieFamily, z,Vol,Temp,λ,n)
-    A           = SAFTVRQMieconsts.A
-    return sum(A[n][m]/λ^(m-1) for m in 1:4)
+function χ(model::SAFTVRQMieModel, V, T, z,i,j)
+    λr = model.params.lambda_r.values
+    λa = model.params.lambda_a.values
+    σ = model.params.sigma.values
+    ϵ = model.params.epsilon.values
+    σeffij = @f(σeff,i,j)
+    ϵeffij = @f(ϵeff,i,j)
+    Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
+    Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
+
+    ζst_ = ζst(model, V, T, z)
+    α = @f(C,i,j)*ϵ[i,j]/ϵeffij*
+    (((σ[i,j]/σeffij)^λa[i,j]/(λa[i,j]-3)-(σ[i,j]/σeffij)^λr[i,j]/(λr[i,j]-3))+
+        Dij*((σ[i,j]/σeffij)^(2+λa[i,j])*@f(Q1,λa[i,j])/(λa[i,j]-1)-
+             (σ[i,j]/σeffij)^(2+λr[i,j])*@f(Q1,λr[i,j])/(λr[i,j]-1))+
+        Dij^2*((σ[i,j]/σeffij)^(4+λa[i,j])*@f(Q2,λa[i,j])/(λa[i,j]+1)-
+               (σ[i,j]/σeffij)^(4+λr[i,j])*@f(Q2,λr[i,j])/(λr[i,j]+1)))
+    return @f(f,α,1)*ζst_+@f(f,α,2)*ζst_^5+@f(f,α,3)*ζst_^8
 end
 
-function B(model::SAFTVRQMieFamily, z,Vol,Temp,λ,x0)
-    I  = (1-x0^(3-λ))/(λ-3)
-    J  = (1-(λ-3)*x0^(4-λ)+(λ-4)*x0^(3-λ))/((λ-3)*(λ-4))
-    ζx = ζ_x(model,z,Vol,Temp)
-    return I*(1-ζx/2)/(1-ζx)^3-9*J*ζx*(ζx+1)/(2*(1-ζx)^3)
+function ζst(model::SAFTVRQMieModel, V, T, z)
+    return @f(ρ_S)*π/6*∑(@f(x_S,i)*@f(x_S,j)*(@f(σeff,i,j))^3 for i in @comps for j in @comps)
 end
 
-function x0(model::SAFTVRQMieFamily, z,Vol,Temp,i,j)
-    σ           = model.params.sigma[union(i,j)]
-    HSd         = (d(model,z,Vol,Temp,i)+d(model,z,Vol,Temp,j))/2
-    return σ/HSd
+function a_3(model::SAFTVRQMieModel, V, T, z, i, j)
+    λr = model.params.lambda_r.values
+    λa = model.params.lambda_a.values
+    σ = model.params.sigma.values
+    ϵ = model.params.epsilon.values
+    σeffij = @f(σeff,i,j)
+    ϵeffij = @f(ϵeff,i,j)
+    Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
+    Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
+
+    ζst_ = ζst(model, V, T, z)
+    α = @f(C,i,j)*ϵ[i,j]/ϵeffij*
+    (((σ[i,j]/σeffij)^λa[i,j]/(λa[i,j]-3)-(σ[i,j]/σeffij)^λr[i,j]/(λr[i,j]-3))+
+        Dij*((σ[i,j]/σeffij)^(2+λa[i,j])*@f(Q1,λa[i,j])/(λa[i,j]-1)-
+             (σ[i,j]/σeffij)^(2+λr[i,j])*@f(Q1,λr[i,j])/(λr[i,j]-1))+
+        Dij^2*((σ[i,j]/σeffij)^(4+λa[i,j])*@f(Q2,λa[i,j])/(λa[i,j]+1)-
+               (σ[i,j]/σeffij)^(4+λr[i,j])*@f(Q2,λr[i,j])/(λr[i,j]+1)))
+    return -ϵeffij^3*@f(f,α,4)*ζst_*exp(@f(f,α,5)*ζst_+@f(f,α,6)*ζst_^2)
 end
 
-function x0eff(model::SAFTVRQMieFamily, z,Vol,Temp,i,j)
-    σ_eff       = σeff(model,z,Vol,Temp,i,j)
-    HSd         = (d(model,z,Vol,Temp,i)+d(model,z,Vol,Temp,j))/2
-    return σ_eff/HSd
-end
-
-function a_2(model::SAFTVRQMieFamily, z,Vol,Temp)
-    x    = z/sum(z[i] for i in model.components)
-
-    m    = model.params.segment
-    m̄    = sum(x[j]*m[j] for j in model.components)
-    return m̄/Temp^2*sum(xS(model,z,Vol,Temp,i)*xS(model,z,Vol,Temp,j)*a_2ij(model,z,Vol,Temp,i,j) for i in model.components for j in model.components)
-end
-
-function a_2ij(model::SAFTVRQMieFamily, z,Vol,Temp,i,j)
-    ϵ           = model.params.epsilon[union(i,j)]
-    σ           = model.params.sigma[union(i,j)]
-    λR          = model.params.lambdaR[union(i,j)]
-    λA          = model.params.lambdaA[union(i,j)]
-    Mr          = model.params.MolarMass[union(i,j)]/N_A
-
-    D           = ħ^2/(12*k_B*Temp*Mr*σ^2)
-
-    HSd         = (d(model,z,Vol,Temp,i)+d(model,z,Vol,Temp,j))/2
-    x_0eff      = x0eff(model,z,Vol,Temp,i,j)
-    x_0         = x0(model,z,Vol,Temp,i,j)
-    C           = CMie(model,z,Vol,Temp,i,j)
-    ζx          = ζ_x(model,z,Vol,Temp)
-    KHS         = (1-ζx)^4/(1+4*ζx+4*ζx^2-4*ζx^3+ζx^4)
-    return π*KHS*(1+χ(model,z,Vol,Temp,i,j))*ρs(model,z,Vol,Temp)*ϵ^2*HSd^3*C^2*(x_0^(2*λA)*(a1s(model,z,Vol,Temp,2*λA)+B(model,z,Vol,Temp,2*λA,x_0eff))-
-                                                           x_0^(λA+λR+8)*(2*Q2(λA)*Q2(λR))*(a1s(model,z,Vol,Temp,λA+λR+8)+B(model,z,Vol,Temp,λA+λR+8,x_0eff))*D^4)
-end
-
-function χ(model::SAFTVRQMieFamily, z,Vol,Temp,i,j)
-    λR          = model.params.lambdaR[union(i,j)]
-    λA          = model.params.lambdaA[union(i,j)]
-    σ           = model.params.sigma[union(i,j)]
-    σ_eff       = σeff(model,z,Vol,Temp,i,j)
-    ϵ           = model.params.epsilon[union(i,j)]
-    ϵ_eff       = ϵeff(model,z,Vol,Temp,i,j)
-    Mr          = model.params.MolarMass[union(i,j)]/N_A
-
-    D           = ħ^2/(12*k_B*Temp*Mr*σ^2)
-
-    ζstar = ζ_star(model, z,Vol,Temp)
-    α     = CMie(model,z,Vol,Temp,i,j)*ϵ/ϵ_eff*(((σ/σ_eff)^λA/(λA-3)-(σ/σ_eff)^λR/(λR-3))+
-                                              D*((σ/σ_eff)^(2+λA)*Q1(λA)/(λA-1)-(σ/σ_eff)^(2+λR)*Q1(λR)/(λR-1))+
-                                            D^2*((σ/σ_eff)^(4+λA)*Q2(λA)/(λA+1)-(σ/σ_eff)^(4+λR)*Q2(λR)/(λR+1)))
-    return f(α,1)*ζstar+f(α,2)*ζstar^5+f(α,3)*ζstar^8
-end
-
-function ζ_star(model::SAFTVRQMieFamily, z,Vol,Temp)
-    return ρs(model,z,Vol,Temp)*π/6*sum(xS(model,z,Vol,Temp,i)*xS(model,z,Vol,Temp,j)*(σeff(model,z,Vol,Temp,i,j))^3 for i in model.components for j in model.components)
-end
-
-function a_3(model::SAFTVRQMieFamily, z,Vol,Temp)
-    x    = z/sum(z[i] for i in model.components)
-
-    m    = model.params.segment
-    m̄    = sum(x[j]*m[j] for j in model.components)
-    return m̄/Temp^3*sum(xS(model,z,Vol,Temp,i)*xS(model,z,Vol,Temp,j)*a_3ij(model,z,Vol,Temp,i,j) for i in model.components for j in model.components)
-end
-
-function a_3ij(model::SAFTVRQMieFamily, z,Vol,Temp,i,j)
-    λR          = model.params.lambdaR[union(i,j)]
-    λA          = model.params.lambdaA[union(i,j)]
-    σ           = model.params.sigma[union(i,j)]
-    σ_eff       = σeff(model,z,Vol,Temp,i,j)
-    ϵ           = model.params.epsilon[union(i,j)]
-    ϵ_eff       = ϵeff(model,z,Vol,Temp,i,j)
-    Mr          = model.params.MolarMass[union(i,j)]/N_A
-
-    D           = ħ^2/(12*k_B*Temp*Mr*σ^2)
-
-    ζstar = ζ_star(model, z,Vol,Temp)
-    α     = CMie(model,z,Vol,Temp,i,j)*ϵ/ϵ_eff*(((σ/σ_eff)^λA/(λA-3)-(σ/σ_eff)^λR/(λR-3))+
-                                              D*((σ/σ_eff)^(2+λA)*Q1(λA)/(λA-1)-(σ/σ_eff)^(2+λR)*Q1(λR)/(λR-1))+
-                                            D^2*((σ/σ_eff)^(4+λA)*Q2(λA)/(λA+1)-(σ/σ_eff)^(4+λR)*Q2(λR)/(λR+1)))
-    return -ϵ_eff^3*f(α,4)*ζstar*exp(f(α,5)*ζstar+f(α,6)*ζstar^2)
-end
+const SAFTVRQMieconsts = (
+    x = [-0.9956571630258080807355,-0.973906528517171720078,-0.9301574913557082260012,-0.8650633666889845107321,-0.7808177265864168970637,-0.6794095682990244062343,-0.562757134668604683339,
+        -0.4333953941292471907993,-0.294392862701460198131,-0.1488743389816312108848,0,0.1488743389816312108848,0.2943928627014601981311,0.4333953941292471907993,
+        0.562757134668604683339,0.6794095682990244062343,0.7808177265864168970637,0.865063366688984510732,0.9301574913557082260012,0.973906528517171720078,0.9956571630258080807355],
+    w = [0.0116946388673718742781,0.0325581623079647274788,0.0547558965743519960314,0.075039674810919952767,0.093125454583697605535,0.1093871588022976418992,0.123491976262065851078,
+        0.134709217311473325928,0.142775938577060080797,0.1477391049013384913748,0.149445554002916905665,0.1477391049013384913748,0.1427759385770600807971,0.134709217311473325928,
+        0.123491976262065851078,0.109387158802297641899,0.093125454583697605535,0.075039674810919952767,0.05475589657435199603138,0.032558162307964727479,0.0116946388673718742781],
+)

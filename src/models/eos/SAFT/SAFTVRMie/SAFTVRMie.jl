@@ -6,6 +6,7 @@ struct SAFTVRMieParam <: EoSParam
     epsilon::PairParam{Float64}
     epsilon_assoc::AssocParam{Float64}
     bondvol::AssocParam{Float64}
+    Mw::SingleParam{Float64}
 end
 
 abstract type SAFTVRMieModel <: SAFTModel end
@@ -13,8 +14,10 @@ abstract type SAFTVRMieModel <: SAFTModel end
 
 export SAFTVRMie
 function SAFTVRMie(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["SAFT/SAFTVRMie"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
+    params["Mw"].values .*= 1E-3
+    Mw = params["Mw"]
     segment = params["m"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
@@ -26,7 +29,7 @@ function SAFTVRMie(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, user
     bondvol = params["bondvol"]
     sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
-    packagedparams = SAFTVRMieParam(segment, sigma, lambda_a, lambda_r, epsilon, epsilon_assoc, bondvol)
+    packagedparams = SAFTVRMieParam(segment, sigma, lambda_a, lambda_r, epsilon, epsilon_assoc, bondvol, Mw)
     references = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
 
     return SAFTVRMie(packagedparams, sites, idealmodel; references=references, verbose=verbose)
@@ -274,8 +277,7 @@ function gMCA_2(model::SAFTVRMieModel, V, T, z, i)
     λa  = model.params.lambda_a.diagvalues
     x_0ij = @f(x_0,i,i)
     ζ_X_  = @f(ζ_X)
-    KHS = (1-ζ_X_)^4/(1+4*ζ_X_+4*ζ_X_^2-4*ζ_X_^3+ζ_X_^4)
-    return 3*@f(∂a_2∂ρ_S,i)-KHS*@f(C,i,i)^2 *
+    return 3*@f(∂a_2∂ρ_S,i)-@f(KHS)*@f(C,i,i)^2 *
     ( λr[i]*x_0ij^(2*λr[i])*(@f(aS_1,2*λr[i])+@f(B,2*λr[i],x_0ij))-
         (λa[i]+λr[i])*x_0ij^(λa[i]+λr[i])*(@f(aS_1,λa[i]+λr[i])+@f(B,λa[i]+λr[i],x_0ij))+
         λa[i]*x_0ij^(2*λa[i])*(@f(aS_1,2*λa[i])+@f(B,2*λa[i],x_0ij)))
@@ -287,7 +289,6 @@ function ∂a_2∂ρ_S(model::SAFTVRMieModel,V, T, z, i)
     x_0ij = @f(x_0,i,i)
     ζ_X_ = @f(ζ_X)
     ρ_S_ = @f(ρ_S)
-    KHS  = (1-ζ_X_)^4/(1+4*ζ_X_+4*ζ_X_^2-4*ζ_X_^3+ζ_X_^4)
     ∂KHS∂ρ_S = -ζ_X_/ρ_S_ *
     ( (4*(1-ζ_X_)^3*(1+4*ζ_X_+4*ζ_X_^2-4*ζ_X_^3+ζ_X_^4)
         + (1-ζ_X_)^4*(4+8*ζ_X_-12*ζ_X_^2+4*ζ_X_^3))/(1+4*ζ_X_+4*ζ_X_^2-4*ζ_X_^3+ζ_X_^4)^2 )
@@ -295,7 +296,7 @@ function ∂a_2∂ρ_S(model::SAFTVRMieModel,V, T, z, i)
     (@f(ρ_S)*∂KHS∂ρ_S*(x_0ij^(2*λa[i])*(@f(aS_1,2*λa[i])+@f(B,2*λa[i],x_0ij))
                          - 2*x_0ij^(λa[i]+λr[i])*(@f(aS_1,λa[i]+λr[i])+@f(B,λa[i]+λr[i],x_0ij))
                          + x_0ij^(2*λr[i])*(@f(aS_1,2*λr[i])+@f(B,2*λr[i],x_0ij)))
-       + KHS*(x_0ij^(2*λa[i])*(@f(∂aS_1∂ρ_S,2*λa[i])+@f(∂B∂ρ_S,2*λa[i],x_0ij))
+        + @f(KHS)*(x_0ij^(2*λa[i])*(@f(∂aS_1∂ρ_S,2*λa[i])+@f(∂B∂ρ_S,2*λa[i],x_0ij))
               - 2*x_0ij^(λa[i]+λr[i])*(@f(∂aS_1∂ρ_S,λa[i]+λr[i])+@f(∂B∂ρ_S,λa[i]+λr[i],x_0ij))
               + x_0ij^(2*λr[i])*(@f(∂aS_1∂ρ_S,2*λr[i])+@f(∂B∂ρ_S,2*λr[i],x_0ij))))
 end
