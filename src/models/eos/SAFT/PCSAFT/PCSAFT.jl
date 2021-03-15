@@ -120,7 +120,7 @@ function X(model::PCSAFTModel, V, T, z)
     dampingfactor = 0.5
     error = 1.
     tol = model.absolutetolerance
-    iter = 20
+    iter = 1
     X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
     X_old = deepcopy(X_)
     while error > tol
@@ -139,11 +139,11 @@ function X(model::PCSAFTModel, V, T, z)
 end
 
 function Δ(model::PCSAFTModel, V, T, z, i, j, a, b)
-    ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
-    κijab = model.params.bondvol.values[i,j][a,b]
-    σij = model.params.sigma.values[i,j]
+    ϵ_associjab = model.params.epsilon_assoc.values
+    κijab = model.params.bondvol.values
+    σij = model.params.sigma.values
     gij = @f(g_hs,i,j)
-    return gij*σij^3*(exp(ϵ_associjab/T)-1)*κijab
+    return gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
 end
 
 const PCSAFTconsts = (
