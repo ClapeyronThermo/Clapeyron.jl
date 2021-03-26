@@ -139,9 +139,9 @@ function X(model::PCSAFTModel, V, T, z)
 end
 
 function Δ(model::PCSAFTModel, V, T, z, i, j, a, b)
-    ϵ_associjab = model.params.epsilon_assoc.values
-    κijab = model.params.bondvol.values
-    σij = model.params.sigma.values
+    ϵ_assoc = model.params.epsilon_assoc.values
+    κ = model.params.bondvol.values
+    σ = model.params.sigma.values
     gij = @f(g_hs,i,j)
     return gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
 end
