@@ -235,3 +235,16 @@ function scale_sat_pure(model::IAPWS95)
 end
 
 export IAPWS95,IAPWS95Ideal
+
+function vcompress_v0(model::IAPWS95,p,T,z=SA[1.0])
+    #lb_v   = exp10(only(lb_volume(model,z,phase=:l)))
+    #psat = p_sat(WaterSat(),T)
+    #α = 1 + (p-psat)/p
+    if IAPWS95.params.Pc > p
+        return sat_v = saturated_water_liquid(T)
+    else
+        return volume_virial(model,p,t,z)
+    end
+    #@show α
+    #return (1-α)*lb_v + α*sat_v
+end

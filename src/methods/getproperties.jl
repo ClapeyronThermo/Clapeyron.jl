@@ -24,9 +24,17 @@ function ∂f(model,v,t,z)
     return (_∂f,_f)
 end
 
-
-function ∂p∂v(model,v,t,z)
-    return ForwardDiff.derivative(∂v -> pressure(model,∂v,t,z),v)
+#returns p and ∂p∂v at constant t
+#it doesnt do a pass over temperature, so its
+#faster that d2f when only requiring d2fdv2
+function p∂p∂v(model,v,t,z=SA[1.0])
+    v_vec =   SVector(v)
+    f(∂v) = pressure(model,only(∂v),t,z)
+    ∂result = DiffResults.GradientResult(v_vec)
+    res_∂f =  ForwardDiff.gradient!(∂result, f,v_vec)
+    _p =  DiffResults.value(res_∂f)
+    _∂p∂v = only(DiffResults.gradient(res_∂f))
+    return _p,_∂p∂v
 end
 
 #returns a tuple, of the form (hess_vt(f),grad_vt(f),f), it does one allocation because of a bug
@@ -419,8 +427,8 @@ end
 
 function isothermal_compressibility(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v       = volume(model, p, T, z; phase=phase)
-    d2f = f_hess(model,v,T,z)
-    return 1/v*d2f[1,1]^-1
+    p0,dpdv = p∂p∂v(model,v,T,z)
+    return -1/v*dpdv^-1
 end
 
 function isentropic_compressibility(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
@@ -449,6 +457,7 @@ function joule_thomson_coefficient(model::EoSModel, p, T,  z=SA[1.]; phase = "un
 end
 
 function second_virial_coeff(model::EoSModel, T, z=SA[1.])
+    #express on terms of p∂p∂v
     TT = promote_type(eltype(z),typeof(T))
     ρ0 = sqrt(eps(TT))
     Zρ(ρ) = pressure(model,1/ρ,T,z)/(ρ*R̄*T)
@@ -456,6 +465,7 @@ function second_virial_coeff(model::EoSModel, T, z=SA[1.])
 end
 
 function third_virial_coeff(model::EoSModel, T,  z=SA[1.])
+    #check for  p0,dpdv = p∂p∂v(model,v0,T,z)
     TT = promote_type(eltype(z),typeof(T))
     V = 1/sqrt(eps(TT))
     _∂2f = ∂2f(model,V,T,z)
@@ -474,5 +484,28 @@ function volume_virial(model,p,T, z=SA[1.] )
     b = -1
     c = -B
     return (-b + sqrt(b*b-4*a*c))/(2*a)
+end
+#aproximates liquid volume at a known pressure and t,
+#by using isothermal compressibility
+function volume_compress(model,p,T,z=SA[1.0])
+    v0 = vcompress_v0(model,p,T,z)
+    function f_fixpoint(_v)
+        _p,dpdv = p∂p∂v(model,_v,T,z)
+        β = -1/_v*dpdv^-1
+        Δ =  -(p-_p)*β
+
+
+        vv = _v*exp(sign(Δ)*abs(Δ)^(1-Δ))#^((1+Δ)^4)
+        #@show vv
+        return vv
+    end
+    return Solvers.fixpoint(f_fixpoint,v0,Solvers.SimpleFixPoint())
+    #return Roots.find_zero(f_fixpoint,v0)
+end
+
+function vcompress_v0(model,p,T,z=SA[1.0])
+    lb_v   = exp10(only(lb_volume(model,z,phase=:l)))
+    v0 = 1.1*lb_v
+    return v0
 end
 

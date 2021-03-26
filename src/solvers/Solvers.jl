@@ -7,7 +7,7 @@ using StaticArrays
 using PolynomialRoots
 include("tunneling.jl")
 include("ADNewton.jl")
-#include("polyroots.jl")
+include("fixpoint.jl")
 
 polyroots(x) = PolynomialRoots.roots(x,polish=true)
 
