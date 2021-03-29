@@ -69,7 +69,6 @@ function ρ_S(model::SAFTVRSWModel, V, T, z)
 end
 
 function x_S(model::SAFTVRSWModel, V, T, z, i)
-    z, i
     x = z/∑(z)
     m = model.params.segment.values
     m̄ = ∑(x .* m) 

@@ -31,6 +31,7 @@ include("models/eos/SAFT/PCSAFT/PCSAFT.jl")
 include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
 
 include("models/eos/SAFT/SAFTVRSW/SAFTVRSW.jl")
+include("models/eos/SAFT/LJSAFT/LJSAFT.jl")
 include("models/eos/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/eos/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
 include("models/eos/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
