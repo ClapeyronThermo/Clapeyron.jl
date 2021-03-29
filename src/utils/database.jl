@@ -217,11 +217,15 @@ function defaultmissing(array::Array; defaultvalue=nothing)
     arraycopy = deepcopy(array)
     type = nonmissingtype(eltype(array))
     ismissingvalues = [ismissing(ai) for ai in arraycopy]
+    if type != Any && type === eltype(array)
+        return arraycopy, ismissingvalues
+    end
     if isnothing(defaultvalue)
-        if type === eltype(array)
-            #fast path
-            return arraycopy,ismissingvalues
-        elseif type === Union{} #  If it only contains missing
+        if type === Union{} # If it only contains missing
+            # Default to 0. unless specified with defaultvalue parameter
+            # but make type Any.
+            arraycopy = convert(Array{Any}, arraycopy)
+            arraycopy[ismissingvalues] .= 0.
             type = Any
         elseif type === Any
             # This means that it has a mix of Number and String types.
@@ -237,7 +241,9 @@ function defaultmissing(array::Array; defaultvalue=nothing)
             error("Unsupported type.")
         end
     else
+        arraycopy = convert(Array{Any}, arraycopy)
         arraycopy[ismissingvalues] .= defaultvalue
+        type = typeof(defaultvalue)
     end
     return convert(Array{type}, arraycopy), ismissingvalues
 end
