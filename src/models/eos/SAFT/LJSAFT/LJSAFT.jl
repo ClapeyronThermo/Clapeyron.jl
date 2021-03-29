@@ -150,7 +150,7 @@ function Δ(model::LJSAFTModel, V, T, z, i, j, a, b)
     ρ̄ = m̄*b̄*ρ
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
-    b_ = LJSAFTconst.b
+    b_ = LJSAFTconsts.b
     I = ∑(b_[i+1,j+1]*ρ̄^i*Tst^j for i ∈ 0:4 for j ∈ 0:4)/3.84/1e4
     return 4π*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]*I*b̄
 end
