@@ -295,7 +295,7 @@ function g_1(model::SAFTgammaMieModel, V, T, z, i)
     ρ_S_ = @f(ρ_S)
     x̄_0 = σ̄_/@f(d̄,i)
     C̄_ = @f(C,λ̄a_,λ̄r_)
-    return 1/(2π*ϵ̄_*d̄_^3*ρ_S_)*(3*@f(∂ā_1∂ρ_S,i) - C̄_*λ̄a_*x̄_0^λ̄a_*(@f(āS_1,i,λ̄a_)+@f(B̄,i,λ̄a_)) + C̄_*λ̄r_*x̄_0^λ̄r_*(@f(āS_1,i,λ̄r_)+@f(B̄,i,λ̄r_)))
+    return 1/(2π*ϵ̄_*d̄_^3*ρ_S_)*(3*@f(∂ā_1╱∂ρ_S,i) - C̄_*λ̄a_*x̄_0^λ̄a_*(@f(āS_1,i,λ̄a_)+@f(B̄,i,λ̄a_)) + C̄_*λ̄r_*x̄_0^λ̄r_*(@f(āS_1,i,λ̄r_)+@f(B̄,i,λ̄r_)))
 end
 
 function g_2(model::SAFTgammaMieModel, V, T, z, i)
@@ -322,7 +322,7 @@ function gMCA_2(model::SAFTgammaMieModel, V, T, z, i)
     ρ_S_ = @f(ρ_S)
     C̄_ = @f(C,λ̄a_,λ̄r_)
     KHS_ = @f(KHS)
-    return 1/(2π*ϵ̄_^2*d̄_^3*ρ_S_)*(3*@f(∂ā_2∂ρ_S,i)-
+    return 1/(2π*ϵ̄_^2*d̄_^3*ρ_S_)*(3*@f(∂ā_2╱∂ρ_S,i)-
         ϵ̄_*KHS_*C̄_^2*λ̄r_*x̄_0^(2λ̄r_)*(@f(āS_1,i,2λ̄r_)+@f(B̄,i,2λ̄r_))+
         ϵ̄_*KHS_*C̄_^2*(λ̄a_+λ̄r_)*x̄_0^(λ̄a_+λ̄r_)*(@f(āS_1,i,λ̄a_+λ̄r_)+@f(B̄,i,λ̄a_+λ̄r_))-
         ϵ̄_*KHS_*C̄_^2*λ̄a_*x̄_0^(2λ̄a_)*(@f(āS_1,i,2λ̄a_)+@f(B̄,i,2λ̄a_)))
@@ -339,7 +339,7 @@ function B̄(model::SAFTgammaMieModel, V, T, z, i, λ̄)
     return 2π*@f(ρ_S)*d̄_^3*ϵ̄_ * ((1-ζ_X_/2)/(1-ζ_X_)^3*I-9ζ_X_*(1+ζ_X_)/(2(1-ζ_X_)^3)*J)
 end
 
-function ∂B∂ρ_S(model::SAFTgammaMieModel, V, T, z, i, λ̄)
+function ∂B╱∂ρ_S(model::SAFTgammaMieModel, V, T, z, i, λ̄)
     ϵ̄_ = @f(ϵ̄,i)
     σ̄_ = @f(σ̄,i)
     d̄_ = @f(d̄,i)
@@ -358,12 +358,12 @@ function ā_1(model::SAFTgammaMieModel, V, T, z, i)
     return @f(C,λ̄a_,λ̄r_)*(x̄_0^λ̄a_*(@f(āS_1,i,λ̄a_)+@f(B̄,i,λ̄a_))-x̄_0^λ̄r_*(@f(āS_1,i,λ̄r_)+@f(B̄,i,λ̄r_)))
 end
 
-function ∂ā_1∂ρ_S(model::SAFTgammaMieModel, V, T, z, i)
+function ∂ā_1╱∂ρ_S(model::SAFTgammaMieModel, V, T, z, i)
     λ̄a_ = @f(λ̄a,i)
     λ̄r_ = @f(λ̄r,i)
     x̄_0 = @f(σ̄,i)/@f(d̄,i)
-    return @f(C,λ̄a_,λ̄r_)*(x̄_0^λ̄a_*(@f(∂āS_1∂ρ_S,i,λ̄a_)+@f(∂B∂ρ_S,i,λ̄a_))
-                          - x̄_0^λ̄r_*(@f(∂āS_1∂ρ_S,i,λ̄r_)+@f(∂B∂ρ_S,i,λ̄r_)))
+    return @f(C,λ̄a_,λ̄r_)*(x̄_0^λ̄a_*(@f(∂āS_1╱∂ρ_S,i,λ̄a_)+@f(∂B╱∂ρ_S,i,λ̄a_))
+                          - x̄_0^λ̄r_*(@f(∂āS_1╱∂ρ_S,i,λ̄r_)+@f(∂B╱∂ρ_S,i,λ̄r_)))
 end
 
 function āS_1(model::SAFTgammaMieModel, V, T, z, i, λ̄)
@@ -374,34 +374,34 @@ function āS_1(model::SAFTgammaMieModel, V, T, z, i, λ̄)
     return -2π*@f(ρ_S) * ϵ̄_*d̄_^3/(λ̄-3) * (1-ζ̄eff_/2)/(1-ζ̄eff_)^3
 end
 
-function ∂āS_1∂ρ_S(model::SAFTgammaMieModel, V, T, z, i, λ̄)
+function ∂āS_1╱∂ρ_S(model::SAFTgammaMieModel, V, T, z, i, λ̄)
     ϵ̄_ = @f(ϵ̄,i)
     σ̄_ = @f(σ̄,i)
     d̄_ = @f(d̄,i)
     ζ̄eff_ = @f(ζeff, λ̄)
     A = SAFTγMieconsts.A
     ζ_X_ = @f(ζ_X)
-    ∂ζ̄eff∂ρ_S = A * [1; 1/λ̄; 1/λ̄^2; 1/λ̄^3] ⋅ [1; 2ζ_X_; 3ζ_X_^2; 4ζ_X_^3]
-    return @f(āS_1,i,λ̄) - 2π*(ϵ̄_*d̄_^3)/(λ̄-3) *@f(ρ_S)* ((3*(1-ζ̄eff_/2)*(1-ζ̄eff_)^2-1/2*(1-ζ̄eff_)^3)/(1-ζ̄eff_)^6 * ∂ζ̄eff∂ρ_S*ζ_X_)
+    ∂ζ̄eff╱∂ρ_S = A * [1; 1/λ̄; 1/λ̄^2; 1/λ̄^3] ⋅ [1; 2ζ_X_; 3ζ_X_^2; 4ζ_X_^3]
+    return @f(āS_1,i,λ̄) - 2π*(ϵ̄_*d̄_^3)/(λ̄-3) *@f(ρ_S)* ((3*(1-ζ̄eff_/2)*(1-ζ̄eff_)^2-1/2*(1-ζ̄eff_)^3)/(1-ζ̄eff_)^6 * ∂ζ̄eff╱∂ρ_S*ζ_X_)
 end
 
 
-function ∂ā_2∂ρ_S(model::SAFTgammaMieModel, V, T, z, i)
+function ∂ā_2╱∂ρ_S(model::SAFTgammaMieModel, V, T, z, i)
     ϵ̄_ = @f(ϵ̄,i)
     σ̄_ = @f(σ̄,i)
     d̄_ = @f(d̄,i)
     x̄_0 = σ̄_/d̄_
     ζ_X_ = @f(ζ_X)
     ρ_S_ = @f(ρ_S)
-    ∂KHS∂ρ_S = -(4*(1-ζ_X_)^3*(1+4ζ_X_+4ζ_X_^2-4ζ_X_^3+ζ_X_^4)+(1-ζ_X_)^4*(4+8ζ_X_-12ζ_X_^2+4ζ_X_^3))/(1+4ζ_X_+4ζ_X_^2-4ζ_X_^3+ζ_X_^4)^2*ζ_X_
+    ∂KHS╱∂ρ_S = -(4*(1-ζ_X_)^3*(1+4ζ_X_+4ζ_X_^2-4ζ_X_^3+ζ_X_^4)+(1-ζ_X_)^4*(4+8ζ_X_-12ζ_X_^2+4ζ_X_^3))/(1+4ζ_X_+4ζ_X_^2-4ζ_X_^3+ζ_X_^4)^2*ζ_X_
     λ̄a_ = @f(λ̄a,i)
     λ̄r_ = @f(λ̄r,i)
-    return 1/2*ϵ̄_*@f(C,λ̄a_,λ̄r_)^2*(∂KHS∂ρ_S*(x̄_0^(2λ̄a_)*(@f(āS_1,i,2λ̄a_)+@f(B̄,i,2λ̄a_))
+    return 1/2*ϵ̄_*@f(C,λ̄a_,λ̄r_)^2*(∂KHS╱∂ρ_S*(x̄_0^(2λ̄a_)*(@f(āS_1,i,2λ̄a_)+@f(B̄,i,2λ̄a_))
         -2x̄_0^(λ̄a_+λ̄r_)*(@f(āS_1,i,λ̄a_+λ̄r_)+@f(B̄,i,λ̄a_+λ̄r_))
         +x̄_0^(2λ̄r_)*(@f(āS_1,i,2λ̄r_)+@f(B̄,i,2λ̄r_)))
-        +@f(KHS)*(x̄_0^(2λ̄a_)*(@f(∂āS_1∂ρ_S,i,2λ̄a_)+@f(∂B∂ρ_S,i,2λ̄a_))
-        -2x̄_0^(λ̄a_+λ̄r_)*(@f(∂āS_1∂ρ_S,i,λ̄a_+λ̄r_)+@f(∂B∂ρ_S,i,λ̄a_+λ̄r_))
-        +x̄_0^(2λ̄r_)*(@f(∂āS_1∂ρ_S,i,2λ̄r_)+@f(∂B∂ρ_S,i,2λ̄r_))))
+        +@f(KHS)*(x̄_0^(2λ̄a_)*(@f(∂āS_1╱∂ρ_S,i,2λ̄a_)+@f(∂B╱∂ρ_S,i,2λ̄a_))
+        -2x̄_0^(λ̄a_+λ̄r_)*(@f(∂āS_1╱∂ρ_S,i,λ̄a_+λ̄r_)+@f(∂B╱∂ρ_S,i,λ̄a_+λ̄r_))
+        +x̄_0^(2λ̄r_)*(@f(∂āS_1╱∂ρ_S,i,2λ̄r_)+@f(∂B╱∂ρ_S,i,2λ̄r_))))
 end
 
 function X(model::SAFTgammaMieModel, V, T, z)
