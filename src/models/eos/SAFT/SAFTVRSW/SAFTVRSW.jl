@@ -69,7 +69,6 @@ function ρ_S(model::SAFTVRSWModel, V, T, z)
 end
 
 function x_S(model::SAFTVRSWModel, V, T, z, i)
-    z, i
     x = z/∑(z)
     m = model.params.segment.values
     m̄ = ∑(x .* m) 
@@ -125,7 +124,7 @@ function a_2(model::SAFTVRSWModel, V, T, z, i, j)
     return 1/2*KHS*ϵ[i,j]*@f(ρ_S)*@f(∂a_1∂ρ_S,i,j)
 end
 
-function ∂a_1∂ρ_S(model::SAFTVRSWModel, V, T, z, i, j)
+function ∂a_1╱∂ρ_S(model::SAFTVRSWModel, V, T, z, i, j)
     ϵ = model.params.epsilon.values
     λ = model.params.lambda.values
     σ = model.params.sigma.values
@@ -136,8 +135,8 @@ function ∂a_1∂ρ_S(model::SAFTVRSWModel, V, T, z, i, j)
     # This seems like an error in the original code.
     # It is retained for benchmarking purposes for now.
     # The correct version is commented out below.
-    ∂ζeff_X∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [ζ_X_; 2ζ_X_^2; 3ζ_X_^3] 
-    # ∂ζeff_X∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
+    ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [ζ_X_; 2ζ_X_^2; 3ζ_X_^3] 
+    # ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
     return -αij*(@f(gHS_0,i,j)+(5/2-ζeff_X_)/(1-ζeff_X_)^4*∂ζeff_X∂ζ_X)
 end
 
@@ -169,9 +168,9 @@ function g_1(model::SAFTVRSWModel,V, T, z, i, j)
     ζ_X_ = @f(ζ_X)
     ζeff_X_ = @f(ζeff_X,λ[i,j])
     A = SAFTVRSWconsts.A
-    ∂ζeff_X∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
-    ∂ζeff_X∂λ = A * [0; 1; -2λ[i,j]] ⋅ [ζ_X_; ζ_X_^2; ζ_X_^3] 
-    return @f(gHS_0,i,j)+(λ[i,j]^3-1)*(5/2-ζeff_X_)/(1-ζeff_X_)^4*(λ[i,j]/3*∂ζeff_X∂λ-ζ_X_*∂ζeff_X∂ζ_X)
+    ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
+    ∂ζeff_X╱∂λ = A * [0; 1; -2λ[i,j]] ⋅ [ζ_X_; ζ_X_^2; ζ_X_^3] 
+    return @f(gHS_0,i,j)+(λ[i,j]^3-1)*(5/2-ζeff_X_)/(1-ζeff_X_)^4*(λ[i,j]/3*∂ζeff_X╱∂λ-ζ_X_*∂ζeff_X╱∂ζ_X)
 end
 
 function a_assoc(model::SAFTVRSWModel, V, T, z)
