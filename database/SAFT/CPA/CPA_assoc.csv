@@ -1,0 +1,21 @@
+OpenSAFT Database File,,,,,,,
+CPA Assoc Parameters,,,,,,,
+species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol
+methanol,CO,e,methanol,CO,H,245.91,16.1
+ethanol,CCO,e,ethanol,CCO,H,215.32,8
+propanol,CCCO,e,propanol,CCCO,H,210,8.1
+2-propanol,CC(O)C,e,2-propanol,CC(O)C,H,210,9.1
+butanol,CCCCO,e,butanol,CCCCO,H,210,8.2
+pentanol,CCCCCO,e,pentanol,CCCCCO,H,210,3.6
+octanol,CCCCCCCCO,e,octanol,CCCCCCCCO,H,267.59,0.14
+formic acid,C(=O)O,e,formic acid,C(=O)O,H,419.17,15.5
+acetic acid,CC(=O)O,e,acetic acid,CC(=O)O,H,403.23,4.5
+propanoic acid,CCC(=O)O,e,propanoic acid,CCC(=O)O,H,399.75,2.1
+MEG,OCCO,e,MEG,OCCO,H,197.52,14.1
+DEG,OCCOCCO,e,DEG,OCCOCCO,H,196.84,6.4
+TEG,C(COCCOCCO)O,e,TEG,C(COCCOCCO)O,H,143.37,18.8
+PG,CC(O)CO,e,PG,CC(O)CO,H,174.42,19
+methylamine,CN,e,methylamine,CN,H,114.66,33.7
+ethylamine,CCN,e,ethylamine,CCN,H,93.175,43
+diethylamine,CCNCC,e,diethylamine,CCNCC,H,37.008,110.8
+water,O,e,water,O,H,166.55,69.2

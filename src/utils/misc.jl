@@ -1,65 +1,49 @@
-export create_z
-function create_z(model::EoS, z::AbstractArray)
-    return NamedArray(z, model.components)
-end
-
-export gc
-function gc(args::Union{Tuple{String, Array{Pair{String, Int64},1}}, String, Tuple{String}}...)
-    """
-    The format for arguments is either the species name (if it available in the OpenSAFT database,
-    or a tuple consisting of the species name, followed by a list of group => multiplicity pairs.
-    For example:
-    @GC( "sp1",
-        ("sp2", ["CH3" => 2, "CH2" => 4]),
-        ("sp3", ["CH3" => 2, "CH2" => 6]))
-    """
-    # This will be generalised soon
-    species = Dict()
-    for arg in args
-        if typeof(arg) <: Tuple{String, Array{Pair{String, Int64},1}}
-            string_key_dict = Dict(arg[2])
-            species[Set([arg[1]])] = DefaultDict(0, Dict(Set([key]) => value for (key, value) in string_key_dict))
-        elseif typeof(arg) <: Union{String, Tuple{String}}
-            filepath = joinpath(dirname(pathof(OpenSAFT)), "../database", "SAFTgammaMie", "groups.csv")
-            foundlines = findmatches(filepath, arg)
-            if isempty(foundlines)
-                error(arg * " not found.")
-            end
-            string = parseline(filepath, foundlines[end])[2]
-            string_key_dict = Dict(eval(Meta.parse(string)))
-            species[Set([arg])] = DefaultDict(0, Dict(Set([key]) => value for (key, value) in string_key_dict))
-        end
-    end
-    return species
-end
-
 # extract all sites
-export extractsites
-function extractsites(n_sites)
-    return union([([collect(keys(n_sites[x])) for x in keys(n_sites)]...)...])
-end
+const LIQUID_STR = (:liquid,:LIQUID,:L,:l)
 
-const LIQUID_STR = ("liquid","LIQUID","L","l")
-is_liquid(str::String) = str in LIQUID_STR
-
-const VAPOUR_STR = ("vapor","VAPOR","VAPOUR","vapour","g","G","v","V")
-is_vapour(str::String) = str in VAPOUR_STR
-
-const SUPERCRITICAL_STR = ("sc","SC","supercritical","SUPERCRITICAL")
-is_supercritical(str::String) = str in SUPERCRITICAL_STR
-
-function ∑(iterator)
-    # wrapper for sum function that returns 0. if iterator is empty
-    if isempty(collect(iterator))
-        return 0.
-    end 
-    return sum(iterator)
-end
 
 """
-    eos_name(eos::EoS)::String
+    is_liquid(x::Union{Symbol,String})   
 
-returns the name of the equation of state.
+Returns `true` if the symbol is in `(:liquid,:LIQUID,:L,:l)`.
+
+If a string is passed, it is converted to symbol.
 """
-eos_name(eos::EoS)::String = string(nameof(typeof(eos)))
+is_liquid(sym::Symbol) = sym in LIQUID_STR
+is_liquid(str::String) = is_liquid(Symbol(str)) 
 
+const VAPOUR_STR = (:vapor,:VAPOR,:VAPOUR,:vapour,:g,:G,:v,:V,:gas,:GAS)
+
+"""
+    is_vapour(x::Union{Symbol,String})   
+
+Returns `true` if the symbol is in `(:vapor,:VAPOR,:VAPOUR,:vapour,:g,:G,:v,:V,:gas,:GAS)`.
+
+If a string is passed, it is converted to symbol.
+"""
+is_vapour(sym::Symbol) = sym in VAPOUR_STR
+is_vapour(str::String) = is_vapour(Symbol(str))
+
+const SUPERCRITICAL_STR = (:sc,:SC,:supercritical,:SUPERCRITICAL)
+
+
+"""
+    is_supercritical(x::Union{Symbol,String})   
+
+Returns `true` if the symbol is in `(:sc,:SC,:supercritical,:SUPERCRITICAL)`.
+
+If a string is passed, it is converted to symbol.
+"""
+is_supercritical(sym::Symbol) = sym in SUPERCRITICAL_STR
+is_supercritical(str::String) = is_vapour(Symbol(str))
+
+
+"""
+    ∑(iterator)
+
+equivalent to `sum(iterator,init=0.0)`. 
+
+"""
+function ∑(iterator) #not collecting is faster
+    return reduce(Base.add_sum,iterator,init=0.0)
+end
