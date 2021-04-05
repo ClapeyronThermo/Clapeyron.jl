@@ -19,6 +19,7 @@ end
 function eosshow(io::IO, model::EoSModel)
     print(io, typeof(model))
     firstloop = true
+    print(io, "(")
     for i in model.icomponents
         firstloop == false && print(io, ", ")
         print(io, "\"", model.components[i], "\"")

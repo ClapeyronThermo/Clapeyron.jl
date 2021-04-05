@@ -1,4 +1,5 @@
 struct PCSAFTParam <: EoSParam
+    Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     epsilon::PairParam{Float64}
@@ -11,9 +12,10 @@ abstract type PCSAFTModel <: SAFTModel end
 
 export PCSAFT
 function PCSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = params["k"]
+    Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
@@ -21,7 +23,7 @@ function PCSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocation
     bondvol = params["bondvol"]
     sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
-    packagedparams = PCSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
+    packagedparams = PCSAFTParam(Mw,segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
     return PCSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
@@ -139,9 +141,9 @@ function X(model::PCSAFTModel, V, T, z)
 end
 
 function Δ(model::PCSAFTModel, V, T, z, i, j, a, b)
-    ϵ_associjab = model.params.epsilon_assoc.values
-    κijab = model.params.bondvol.values
-    σij = model.params.sigma.values
+    ϵ_assoc = model.params.epsilon_assoc.values
+    κ = model.params.bondvol.values
+    σ = model.params.sigma.values
     gij = @f(g_hs,i,j)
     return gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
 end

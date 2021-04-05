@@ -3,6 +3,7 @@
 #ForwardDiff compiles one method per function, so separating the
 #differentiation logic from the property logic allows the differentials
 #to be compiled only once
+molecular_weight(model::EoSModel,z = @SVector [1.]) = 0.001*mapreduce(+,*,paramvals(model.params.Mw),z)
 
 function ∂f∂t(model,v,t,z)
     return ForwardDiff.derivative(∂t -> eos(model,v,∂t,z),t)
@@ -24,9 +25,17 @@ function ∂f(model,v,t,z)
     return (_∂f,_f)
 end
 
-
-function ∂p∂v(model,v,t,z)
-    return ForwardDiff.derivative(∂v -> pressure(model,∂v,t,z),v)
+#returns p and ∂p∂v at constant t
+#it doesnt do a pass over temperature, so its
+#faster that d2f when only requiring d2fdv2
+function p∂p∂v(model,v,t,z=SA[1.0])
+    v_vec =   SVector(v)
+    f(∂v) = pressure(model,only(∂v),t,z)
+    ∂result = DiffResults.GradientResult(v_vec)
+    res_∂f =  ForwardDiff.gradient!(∂result, f,v_vec)
+    _p =  DiffResults.value(res_∂f)
+    _∂p∂v = only(DiffResults.gradient(res_∂f))
+    return _p,_∂p∂v
 end
 
 #returns a tuple, of the form (hess_vt(f),grad_vt(f),f), it does one allocation because of a bug
@@ -52,6 +61,7 @@ end
 
 ## Standard pressure solver
 
+#=
 function volume(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     N = length(p)
 
@@ -92,15 +102,61 @@ function volume(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
         =#
     end
 end
+=#
 
-function volume2(model,p,t,z=SA[1.0];phase="unknown")
-    f = v-> pressure(model,v,t,z)- p
-    min_v = exp10(first(lb_volume(model,z; phase = phase)))
-    max_v = 100*t/p
-    vv = Roots.find_zeros(f, min_v, max_v, no_pts = 21)
-    #@show eos.(Ref(model),vv,t,Ref(z)) .- p.*vv
-    return vv
+function volume(model::EoSModel,p,T,z=SA[1.0];phase="unknown")
+
+    fp(_v) = pressure(model,_v,T,z) - p
+
+#Threaded version
+
+    if is_liquid(phase)
+        return volume_compress(model,p,T,z)
+    elseif is_vapour(phase) | is_supercritical(phase)
+        vg0 = volume_virial(model,p,T,z)
+        return Solvers.ad_newton(fp,vg0,rtol=1e-08)
+    else #unknown handled here
+    end
+    
+    _vg = Threads.@spawn begin
+        vg0 = volume_virial(model,$p,$T,$z)
+        Solvers.ad_newton(fp,vg0,rtol=1e-08)
+    end
+        
+    _vl = Threads.@spawn volume_compress(model,$p,$T,$z)
+    #fp(_v) = pressure(model,_v,T,z) - p
+    vg = fetch(_vg)
+    vl = fetch(_vl)
+
+
+# Serial version
+#=
+    vg0 = volume_virial(model,p,T,z)
+    vg =Solvers.ad_newton(fp,vg0,rtol=1e-08)
+
+    vl =  volume_compress(model,p,T,z)
+=#
+    function gibbs(v)
+        _df,f =  ∂f(model,v,T,z)
+        dv,dt = _df
+        if abs((p+dv)/p) > 0.03
+            return Inf
+        else
+            return f  +p*v
+        end
+    end
+    #this catches the supercritical phase as well
+    if vl ≈ vg
+        return vl
+    end  
+        gg = gibbs(vg)
+        gl = gibbs(vl)
+        #@show vg,vl
+        #@show gg,gl
+        return ifelse(gg<gl,vg,vl)
+    
 end
+
 
 
 ## Pure saturation conditions solver
@@ -226,10 +282,12 @@ end
 
 function enthalpy_vap(model::EoSModel, T)
     (P_sat,v_l,v_v) = sat_pure(model,T)
-    fun(x) = eos(model, [1.0], x[1], x[2])
-    df(x)  = ForwardDiff.gradient(fun,x)
-    H_l = fun([v_l,T])-df([v_l,T])[2]*T-df([v_l,T])[1]*v_l
-    H_v = fun([v_v,T])-df([v_v,T])[2]*T-df([v_v,T])[1]*v_v
+    _dfl,fl =  ∂f(model,v_l,T,SA[1.0])
+    _dfv,fv =  ∂f(model,v_v,T,SA[1.0])
+    dvl,dtl = _dfl
+    dvv,dtv = _dfv
+    H_l = fl  - dvl*v_l - dtl*T
+    H_v = fv  - dvv*v_v - dtv*T
     H_vap=H_v-H_l
     return H_vap
 end
@@ -419,8 +477,8 @@ end
 
 function isothermal_compressibility(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v       = volume(model, p, T, z; phase=phase)
-    d2f = f_hess(model,v,T,z)
-    return 1/v*d2f[1,1]^-1
+    p0,dpdv = p∂p∂v(model,v,T,z)
+    return -1/v*dpdv^-1
 end
 
 function isentropic_compressibility(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
@@ -448,19 +506,14 @@ function joule_thomson_coefficient(model::EoSModel, p, T,  z=SA[1.]; phase = "un
     return -(d2f[1,2]-d2f[1]*((T*d2f[2,2]+v*d2f[1,2])/(T*d2f[1,2]+v*d2f[1])))^-1
 end
 
-function second_virial_coeff(model::EoSModel, T, z=SA[1.])
-    TT = promote_type(eltype(z),typeof(T))
-    ρ0 = sqrt(eps(TT))
-    Zρ(ρ) = pressure(model,1/ρ,T,z)/(ρ*R̄*T)
-    return ForwardDiff.derivative(Zρ,ρ0)
-end
 
-function third_virial_coeff(model::EoSModel, T,  z=SA[1.])
-    TT = promote_type(eltype(z),typeof(T))
+function second_virial_coeff(model::EoSModel, T,  z=SA[1.])
+    TT = promote_type(eltype(z),typeof(T))  
     V = 1/sqrt(eps(TT))
     _∂2f = ∂2f(model,V,T,z)
     hessf,gradf,f = _∂2f
-    return V^2/(R̄*T)*(gradf[1]+V*hessf[1])
+    _p,dpdv = p∂p∂v(model,V,T,z)
+    return -V^2/(R̄*T)*(_p+V*dpdv)
 end
 
 function compressibility_factor(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
@@ -474,5 +527,27 @@ function volume_virial(model,p,T, z=SA[1.] )
     b = -1
     c = -B
     return (-b + sqrt(b*b-4*a*c))/(2*a)
+end
+#aproximates liquid volume at a known pressure and t,
+#by using isothermal compressibility
+function volume_compress(model,p,T,z=SA[1.0])
+    v0 = vcompress_v0(model,p,T,z)
+    function f_fixpoint(_v)
+        _p,dpdv = p∂p∂v(model,_v,T,z)
+        β = -1/_v*dpdv^-1
+        _Δ =  -(p-_p)*β
+        sign_Δ = sign(_Δ)
+        Δ = abs(_Δ)
+        vv = _v*exp(sign_Δ*Δ^(1-_Δ))#^((1+Δ)^4)
+        return vv
+    end
+    return Solvers.fixpoint(f_fixpoint,v0,Solvers.SimpleFixPoint(),rtol = 1e-12)
+    #return Roots.find_zero(f_fixpoint,v0)
+end
+
+function vcompress_v0(model,p,T,z=SA[1.0])
+    lb_v   = exp10(only(lb_volume(model,z,phase=:l)))
+    v0 = 1.1*lb_v
+    return v0
 end
 
