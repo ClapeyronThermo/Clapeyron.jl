@@ -7,6 +7,9 @@ struct IAPWS95Params <: OpenSAFTParam
 end
 
 struct IAPWS95 <: EmpiricHelmholtzModel
+    components::Array{String,1}
+    lengthcomponents::Int
+    icomponents::UnitRange{Int}
     params::IAPWS95Params
 end
 
@@ -14,7 +17,7 @@ end
 
 function IAPWS95()
     params = IAPWS95Params(647.096,2.2064e7,5.594803726708074e-5,18.015268,0.344861)
-    return IAPWS95(params)
+    return IAPWS95(["water"],1,1:1,params)
 end
 
 const IAPWS95_params = (
@@ -235,3 +238,24 @@ function scale_sat_pure(model::IAPWS95)
 end
 
 export IAPWS95,IAPWS95Ideal
+
+function Base.show(io::IO,model::IAPWS95)
+    return eosshow(io,model)
+end
+
+function Base.show(io::IO,mime::MIME"text/plain",model::IAPWS95)
+    return eosshow(io,mime,model)
+end
+
+function vcompress_v0(model::IAPWS95,p,T,z=SA[1.0])
+    #lb_v   = exp10(only(lb_volume(model,z,phase=:l)))
+    #psat = p_sat(WaterSat(),T)
+    #α = 1 + (p-psat)/p
+    if model.params.Pc > p
+        return sat_v = saturated_water_liquid(T)
+    else
+        return volume_virial(model,p,t,z)
+    end
+    #@show α
+    #return (1-α)*lb_v + α*sat_v
+end
