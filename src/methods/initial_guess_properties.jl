@@ -107,7 +107,7 @@ function x0_sat_pure(model::SAFTModel,T)
     return log10.(x0)
 end
 
-function x0_sat_pure(model::CubicModel,T)
+function x0_sat_pure(model::CubicModel,T, z = SA[1.0])
     b = only(model.params.b.values)
     x0 = [b/0.9,b/1e-4]
     return log10.(x0)
@@ -130,6 +130,13 @@ function lb_volume(model::CubicModel,z = SA[1.0]; phase = "unknown")
     b = model.params.b.values
     b̄ = sum(b .* (x * x'))
     return [log10(b̄)]
+end
+
+function lb_volumes(model::CubicModel,z = SA[1.0]; phase = "unknown") 
+    x = z * (1/sum(z))
+    b = model.params.b.values
+    #b̄ = sum(b .* (x * x'))
+    #return [log10(b̄)]
 end
 
 lb_volume(model::IAPWS95, z; phase = "unknown") = [log10(1.4696978063543022e-5)]
