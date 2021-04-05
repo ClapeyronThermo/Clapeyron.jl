@@ -6,15 +6,11 @@ struct sCKSAFTParam <: EoSParam
     bondvol::AssocParam{Float64}
 end
 
-
 abstract type sCKSAFTModel <: CKSAFTModel end
-
-
 @newmodel sCKSAFT sCKSAFTModel sCKSAFTParam
-
 export sCKSAFT
 function sCKSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["SAFT/sCKSAFT","SAFT/CKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/sCKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = params["k"]
     sigma = params["vol"]
@@ -23,7 +19,7 @@ function sCKSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocatio
     sigma = sigma_LorentzBerthelot(sigma)
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bond_vol"]
+    bondvol = params["bondvol"]
     sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
     packagedparams = sCKSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
@@ -36,20 +32,20 @@ function a_disp(model::sCKSAFTModel, V, T, z)
     ∑z = ∑(z)
     x = z.*(1/∑z)
     m = model.params.segment.values
-    m̄ = ∑(x[i]*m[i] for i in @comps)
+    m̄ = ∑(x .* m)
     vs = V/(N_A*∑z*m̄)
     it = @comps
-    v̄Ȳ = sum(x[i]*x[j]*m[i]*m[j]*(@f(d,i,j)^3/√(2))*(exp(@f(u,i,j)/T/2)-1) for i in it for j in it)/sum(x[i]*x[j]*m[i]*m[j] for i in it for j in it)
+    v̄Ȳ = ∑(x[i]*x[j]*m[i]*m[j]*(@f(d,i,j)^3/√(2))*(exp(@f(u,i,j)/T/2)-1) for i ∈ it for j ∈ it)/∑(x[i]*x[j]*m[i]*m[j] for i ∈ it for j ∈ it)
     return 36*log(vs/(vs+v̄Ȳ))
 end
 
-function d(model::sCKSAFTModel, V, T, z, component)
-    ϵ = model.params.epsilon.values[component]
-    σ = model.params.sigma.values[component]
-    return σ * (1 - 0.333exp(-3ϵ/T))
+function d(model::sCKSAFTModel, V, T, z, i)
+    ϵ = model.params.epsilon.diagvalues
+    σ = model.params.sigma.diagvalues
+    return σ[i] * (1 - 0.333exp(-3ϵ[i]/T))
 end
 
-function u(model::sCKSAFTModel, V, T, z, i,j)
+function u(model::sCKSAFTModel, V, T, z, i, j)
     ϵ0 = model.params.epsilon.values[i,j]
     return ϵ0*(1-10/T)
 end
