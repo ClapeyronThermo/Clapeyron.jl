@@ -1,7 +1,14 @@
 module Solvers
 
-using NLopt, NLsolve, DiffResults, ForwardDiff, LinearAlgebra, NLSolvers
-
+using LinearAlgebra
+using NLopt, NLsolve, NLSolvers,Roots
+using  DiffResults, ForwardDiff
+using StaticArrays
+using PolynomialRoots
 include("tunneling.jl")
+include("ADNewton.jl")
+#include("polyroots.jl")
+
+polyroots(x) = PolynomialRoots.roots(x,polish=true)
 
 end # module
