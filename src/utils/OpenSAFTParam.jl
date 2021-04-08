@@ -10,6 +10,39 @@ struct SingleParam{T} <: OpenSAFTParam
     sources::Array{String,1}
 end
 
+function Base.show(io::IO,param::SingleParam)
+    print(io,"SingleParam(")
+    print(io,"\"",param.name,"\"",")[")
+    for (name,val,miss,i) in zip(param.components,param.values,param.ismissingvalues,1:length(param.values))
+        i != 1 && print(io,",")
+        if miss == false
+            print(io,name,"=",val)
+        else
+            print(io,name,"=","-")
+        end
+    end
+    print(io,"]")
+end
+
+function Base.show(io::IO,::MIME"text/plain",param::SingleParam)
+    len = length(param.values)
+    println(io,"SingleParam(", "\"",param.name,"\")"," with ",len," component",ifelse(len==1,":","s:"))
+    i = 0
+    for (name,val,miss) in zip(param.components,param.values,param.ismissingvalues)
+        i += 1
+        if i > 1
+            println(io)
+        end
+        if miss == false
+            print(io," ",name," = ",val)
+        else
+            print(io," ",name," = ","-")
+        end
+    end
+end
+
+
+
 function SingleParam(x::SingleParam{T}) where T
     return SingleParam(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
