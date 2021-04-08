@@ -671,7 +671,7 @@ Calculated as:
 ```
 
 
-1.  G. Venkatarathnama, L.R. Oellrich, _Identification of the phase of a fluid using partial derivatives of pressure, volume,and temperature without reference to saturation properties: Applications in phase equilibria calculations_, Fluid Phase Equilibria 301 (2011) 225–233
+1.  G. Venkatarathnama, L.R. Oellrich, Identification of the phase of a fluid using partial derivatives of pressure, volume,and temperature without reference to saturation properties: Applications in phase equilibria calculations, Fluid Phase Equilibria 301 (2011) 225–233
 
 
 """
@@ -681,3 +681,8 @@ function pip(model::EoSModel,v,T,z=SA[1.0])
     Π = v*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1]) 
 end
     
+
+function inversion_temperature(model::EoSModel,p,z=SA[1.0];T0=300)
+    μⱼₜ(T) = joule_thomson_coefficient(model,p,T,z)
+    return Roots.find_zero(μⱼₜ,T0)
+end
