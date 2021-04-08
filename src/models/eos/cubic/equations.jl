@@ -21,7 +21,6 @@ function ∂f∂v(model::ABCubicModel,v,t,z)
     return -p
 end
 
-molecular_weight(model::Nothing,z = @SVector [1.]) = 0.001*mapreduce(+,*,paramvals(model.params.Mw),z)
 
 function x0_volume_sc(model::ABCubicModel,p,T,z)
     Zc = cubic_zc(model)
@@ -40,20 +39,24 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase="unknown")
     #with this, real sol is first
     function imagfilter(x)
         absx = abs(imag(x)) 
-        return absx <eps(absx)
+        return absx <8*eps(typeof(absx))
     end
     
     isreal = map(imagfilter,sols)
+    #@show sum(isreal)
     if sum(isreal) == 3 #3 roots
         sols = sort(real.(sols))
         vl = first(sols)*RTp
         vg = last(sols)*RTp
-    else #one root
+    elseif  sum(isreal) == 1
         i = findfirst(imagfilter,sols)
         vl = real(sols[i])*RTp
         vg = real(sols[i])*RTp
+    elseif  sum(isreal) == 0
+        @show sols
+        error("weird")
     end
-
+ 
     #fp(_v) = pressure(model,_v,T,z) - p
     
     function gibbs(v)
