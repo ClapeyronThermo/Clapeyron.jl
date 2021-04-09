@@ -1,215 +1,3 @@
-#derivative logic
-
-#ForwardDiff compiles one method per function, so separating the
-#differentiation logic from the property logic allows the differentials
-#to be compiled only once
-molecular_weight(model::EoSModel,z = @SVector [1.]) = 0.001*mapreduce(+,*,paramvals(model.params.Mw),z)
-
-
-"""
-    ∂f∂t(model,v,t,z=SA[1.0])
-
-returns `f` and `∂f/∂T` at constant total volume and composition, where f is the total helmholtz energy, given by `eos(model,v,T,z)`
-
-"""
-function ∂f∂t(model,v,t,z=SA[1.0])
-    return ForwardDiff.derivative(∂t -> eos(model,v,∂t,z),t)
-end
-
-"""
-    ∂f∂v(model,v,t,z=SA[1.0])
-
-returns `f` and `∂f/∂v` at constant temperature and composition, where f is the total helmholtz energy, given by `eos(model,v,T,z)`, and v is the total volume
-
-"""
-function ∂f∂v(model,v,t,z)
-    return ForwardDiff.derivative(∂v -> eos(model,∂v,t,z),v)
-end
-
-#returns a tuple of the form ([∂f∂v,∂f∂t],f),using the least amount of computation
-"""
-    ∂f(model,v,t,z)
-
-returns zeroth order (value) and first order derivative information of the total helmholtz energy (given by `eos(model,v,T,z)`).
-the result is given in two values:
-
-```
-grad_f,fval = ∂2f(model,v,t,z)
-```
-
-where:
-```
-fval   = f(v,T) = eos(model,v,T,z)
-
-grad_f = [ ∂f/∂v; ∂f/∂T]
-
- ```
-
-Where `v` is the total volume, `T` is the temperature and `f` is the total helmholtz energy.
-"""
-function ∂f(model,v,t,z)
-    f(w) = eos(model,first(w),last(w),z)
-    v,t = promote(v,t)
-    vt_vec = SVector(v,t)
-    ∂result = DiffResults.GradientResult(vt_vec)
-    res_∂f =  ForwardDiff.gradient!(∂result, f,vt_vec)
-    _f =  DiffResults.value(res_∂f)
-    _∂f = DiffResults.gradient(res_∂f)
-    return (_∂f,_f)
-end
-
-#returns p and ∂p∂v at constant t
-#it doesnt do a pass over temperature, so its
-#faster that d2f when only requiring d2fdv2
-
-"""
-    p∂p∂v(model,v,t,z=SA[1.0])
-
-returns `p` and `∂p/∂v` at constant temperature, where p is the pressure = `pressure(model,v,T,z)` and `v` is the total volume.
-
-"""
-function p∂p∂v(model,v,t,z=SA[1.0])
-    v_vec =   SVector(v)
-    f(∂v) = pressure(model,only(∂v),t,z)
-    ∂result = DiffResults.GradientResult(v_vec)
-    res_∂f =  ForwardDiff.gradient!(∂result, f,v_vec)
-    _p =  DiffResults.value(res_∂f)
-    _∂p∂v = only(DiffResults.gradient(res_∂f))
-    return _p,_∂p∂v
-end
-
-"""
-    ∂2f(model,v,t,z)
-
-returns zeroth order (value), first order and second order derivative information of the total helmholtz energy (given by `eos(model,v,T,z)`).
-the result is given in three values:
-
-```
-hess_f,grad_f,fval = ∂2f(model,v,t,z)
-```
-
-where:
-```
-fval   = f(v,T) = eos(model,v,T,z)
-
-grad_f = [ ∂f/∂v; ∂f/∂T]
-
-hess_f = [ ∂²f/∂v²; ∂²f/∂v∂T
-          ∂²f/∂v∂T; ∂²f/∂v²]
- ```
-
-Where `v` is the total volume, `T` is the temperature and `f` is the total helmholtz energy.
-"""
-function ∂2f(model,v,t,z)
-    f(w) = eos(model,first(w),last(w),z)
-    v,t = promote(v,t)
-    vt_vec =   SVector(v,t)
-    ∂result = DiffResults.HessianResult(vt_vec)
-    res_∂f =  ForwardDiff.hessian!(∂result, f,vt_vec)
-    _f =  DiffResults.value(res_∂f)
-    _∂f = DiffResults.gradient(res_∂f)
-    _∂2f = DiffResults.hessian(res_∂f)
-    return (_∂2f,_∂f,_f)
-end
-
-"""
-    ∂2p(model,v,t,z)
-
-returns zeroth order (value), first order and second order derivative information of the pressure.
-the result is given in three values:
-
-```
-hess_p,grad_p,pval = ∂2p(model,v,t,z)
-```
-
-where:
-```
-pval   = p(v,T) = pressure(model,v,T,z)
-
-grad_p = [ ∂p/∂v; ∂p/∂T]
-
-hess_p = [ ∂²p/∂v²; ∂²p/∂v∂T
-          ∂²p/∂v∂T; ∂²p/∂v²]
- ```
-
-Where `v` is the total volume, `T` is the temperature and `p` is the pressure.
-"""
-function ∂2p(model,v,t,z)
-    f(w) = pressure(model,first(w),last(w),z)
-    v,t = promote(v,t)
-    vt_vec =   SVector(v,t)
-    ∂result = DiffResults.HessianResult(vt_vec)
-    res_∂f =  ForwardDiff.hessian!(∂result, f,vt_vec)
-    _f =  DiffResults.value(res_∂f)
-    _∂f = DiffResults.gradient(res_∂f)
-    _∂2f = DiffResults.hessian(res_∂f)
-    return (_∂2f,_∂f,_f)
-end
-
-
-"""
-    f_hess(model,v,t,z)
-
-returns the second order volume (`v`) and temperature (`T`) derivatives of the total helmholtz energy (given by `eos(model,v,T,z)`). the result is given in a 2x2 `SMatrix`, in the form:
-
-```
-[ ∂²f/∂v²  ∂²f/∂v∂T
- ∂²f/∂v∂T  ∂²f/∂v²]
- ```
-
-use this instead of the ∂2f if you only need second order information. ∂2f also gives zeroth and first order derivative information, but due to a bug in the used AD, it allocates more than necessary.
-"""
-function f_hess(model,v,t,z)
-    f(w) = eos(model,first(w),last(w),z)
-    v,t = promote(v,t)
-    vt_vec = SVector(v,t)
-    return ForwardDiff.hessian(f,vt_vec)
-end
-
-## Standard pressure solver
-
-#=
-function volume(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    N = length(p)
-
-    ub = [Inf]
-    lb = lb_volume(model,z; phase = phase)
-    
-    x0 = x0_volume(model,p,T,z; phase = phase)
-    f = v -> eos(model, exp10(v[1]), T,z) + exp10(v[1])*p
-    #looking at best phase using tunneling
-    if phase == "unknown"
-        (f_best,v_best) = Solvers.tunneling(f,lb,ub,x0)
-        #@show eos.(Ref(model),exp10.(v_best),T,Ref(z)) .- p.*exp10.(v_best)
-
-        return exp10(v_best[1])
-    else
-        _ub = 100*T/p
-        _lb = exp10(only(lb))
-        f0(vx) = pressure(model,vx,T,z,phase=phase) - p        
-        _v0 = exp10(only(x0))
-        #try direct newton solving
-        vobj = Solvers.ad_newton(f0,_v0)
-        if (_lb <= vobj <= _ub)
-            return vobj
-        else
-            vobj = Roots.find_zero(f0,(_lb,_ub),FalsePosition())
-        end
-        #=
-        opt_min = NLopt.Opt(:LD_MMA, length(ub))
-        opt_min.lower_bounds = lb
-        opt_min.upper_bounds = ub
-        opt_min.xtol_rel     = 1e-8
-        obj_f0 = x -> f(x)
-        obj_f  = (x,g) -> Solvers.NLopt_obj(obj_f0,x,g)
-        opt_min.min_objective =  obj_f
-        (f_min,v_min) = NLopt.optimize(opt_min, x0)
-        #@show eos.(Ref(model),exp10.(v_min),T,Ref(z)) .- p.*exp10.(v_min)
-        return exp10(v_min[1])
-        =#
-    end
-end
-=#
 
 function volume(model::EoSModel,p,T,z=SA[1.0];phase="unknown")
 
@@ -264,6 +52,50 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase="unknown")
     
 end
 
+## Old pressure solver
+
+#=
+function volume(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
+    N = length(p)
+
+    ub = [Inf]
+    lb = lb_volume(model,z; phase = phase)
+    
+    x0 = x0_volume(model,p,T,z; phase = phase)
+    f = v -> eos(model, exp10(v[1]), T,z) + exp10(v[1])*p
+    #looking at best phase using tunneling
+    if phase == "unknown"
+        (f_best,v_best) = Solvers.tunneling(f,lb,ub,x0)
+        #@show eos.(Ref(model),exp10.(v_best),T,Ref(z)) .- p.*exp10.(v_best)
+
+        return exp10(v_best[1])
+    else
+        _ub = 100*T/p
+        _lb = exp10(only(lb))
+        f0(vx) = pressure(model,vx,T,z,phase=phase) - p        
+        _v0 = exp10(only(x0))
+        #try direct newton solving
+        vobj = Solvers.ad_newton(f0,_v0)
+        if (_lb <= vobj <= _ub)
+            return vobj
+        else
+            vobj = Roots.find_zero(f0,(_lb,_ub),FalsePosition())
+        end
+        #=
+        opt_min = NLopt.Opt(:LD_MMA, length(ub))
+        opt_min.lower_bounds = lb
+        opt_min.upper_bounds = ub
+        opt_min.xtol_rel     = 1e-8
+        obj_f0 = x -> f(x)
+        obj_f  = (x,g) -> Solvers.NLopt_obj(obj_f0,x,g)
+        opt_min.min_objective =  obj_f
+        (f_min,v_min) = NLopt.optimize(opt_min, x0)
+        #@show eos.(Ref(model),exp10.(v_min),T,Ref(z)) .- p.*exp10.(v_min)
+        return exp10(v_min[1])
+        =#
+    end
+end
+=#
 
 
 ## Pure saturation conditions solver
@@ -389,12 +221,14 @@ end
 
 function enthalpy_vap(model::EoSModel, T)
     (P_sat,v_l,v_v) = sat_pure(model,T)
-    _dfl,fl =  ∂f(model,v_l,T,SA[1.0])
+   #= _dfl,fl =  ∂f(model,v_l,T,SA[1.0])
     _dfv,fv =  ∂f(model,v_v,T,SA[1.0])
     dvl,dtl = _dfl
     dvv,dtv = _dfv
     H_l = fl  - dvl*v_l - dtl*T
-    H_v = fv  - dvv*v_v - dtv*T
+    H_v = fv  - dvv*v_v - dtv*T =#
+    H_v = vt_enthalpy(model,v_v,T)
+    H_l = vt_enthalpy(model,v_l,T)
     H_vap=H_v-H_l
     return H_vap
 end
@@ -526,115 +360,7 @@ end
 #     println(v_c)
 #     println(T_c)
 # end
-## Derivative properties
-function pressure(model::EoSModel, v, T,  z=SA[1.]; phase = "unknown")
-    return -∂f∂v(model,v,T,z)
-end
 
-function entropy(model::EoSModel, p, T,   z=SA[1.]; phase = "unknown")
-    v      = volume(model, p, T, z; phase=phase)[1]
-    return -∂f∂t(model,v,T,z)
-end
-
-function chemical_potential(model::EoSModel, p, T, z= SA[1.]; phase = "unknown")
-    v      = volume(model, p, T, z; phase=phase)
-    fun(x) = eos(model, v, T,z)
-    return ForwardDiff.gradient(fun,z)
-end
-
-function internal_energy(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    v      = volume(model, p, T, z; phase=phase)[1]
-    _df,f =  ∂f(model,v,T,z)
-    dv,dt = _df
-    return f  - dt*T
-end
-
-function enthalpy(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    v      = volume(model, p, T, z; phase=phase)
-    _df,f =  ∂f(model,v,T,z)
-    dv,dt = _df
-    return f  - dv*v - dt*T
-end
-
-function gibbs_free_energy(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    v      = volume(model, p, T, z; phase=phase)
-    _df,f =  ∂f(model,v,T,z)
-    dv,dt = _df
-    return f  - dv*v
-end
-
-function helmholtz_free_energy(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    v      = volume(model, p, T, z; phase=phase)
-    return eos(model, v, T,z)
-end
-
-function isochoric_heat_capacity(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    v       = volume(model, p, T, z; phase=phase)
-    fun(x)  = eos(model, v, x,z)
-    df(x)   = ForwardDiff.derivative(fun,x)
-    d2f(x)  = ForwardDiff.derivative(df,x)
-    return -T*d2f(T)
-end
-
-function isobaric_heat_capacity(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    v       = volume(model, p, T, z; phase=phase)
-    d2f = f_hess(model,v,T,z)
-    return T*(d2f[1,2]^2/d2f[1]-d2f[2,2])
-end
-
-function isothermal_compressibility(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    v       = volume(model, p, T, z; phase=phase)
-    p0,dpdv = p∂p∂v(model,v,T,z)
-    return -1/v*dpdv^-1
-end
-
-function isentropic_compressibility(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    v       = volume(model, p, T, z; phase=phase)
-    d2f = f_hess(model,v,T,z)
-    return 1/v*(d2f[1]-d2f[1,2]^2/d2f[2,2])^-1
-end
-
-function speed_of_sound(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    Mr      = molecular_weight(model,z)
-    v       = volume(model, p, T, z; phase=phase)[1]
-    d2f = f_hess(model,v,T,z)
-    return v*sqrt((d2f[1]-d2f[1,2]^2/d2f[2,2])/Mr)
-end
-
-function isobaric_expansivity(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    v = volume(model, p, T, z; phase=phase)
-    d2f = f_hess(model,v,T,z)
-    return d2f[1,2]/(v*d2f[1])
-end
-
-function joule_thomson_coefficient(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    v  = volume(model, p, T, z; phase=phase)
-    d2f = f_hess(model,v,T,z)
-    return -(d2f[1,2]-d2f[1]*((T*d2f[2,2]+v*d2f[1,2])/(T*d2f[1,2]+v*d2f[1])))^-1
-end
-
-
-function second_virial_coeff(model::EoSModel, T,  z=SA[1.])
-    TT = promote_type(eltype(z),typeof(T))  
-    V = 1/sqrt(eps(TT))
-    _∂2f = ∂2f(model,V,T,z)
-    hessf,gradf,f = _∂2f
-    _p,dpdv = p∂p∂v(model,V,T,z)
-    return -V^2/(R̄*T)*(_p+V*dpdv)
-end
-
-function compressibility_factor(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
-    v  = volume(model, p, T, z; phase=phase)
-    return p*v/(R̄*T)
-end
-
-function volume_virial(model,p,T, z=SA[1.] )
-    B = second_virial_coeff(model,T,z)
-    a = p/(R̄*T)
-    b = -1
-    c = -B
-    return (-b + sqrt(b*b-4*a*c))/(2*a)
-end
 #aproximates liquid volume at a known pressure and t,
 #by using isothermal compressibility
 function volume_compress(model,p,T,z=SA[1.0])
@@ -658,31 +384,10 @@ function vcompress_v0(model,p,T,z=SA[1.0])
     return v0
 end
 
-"""
-    pip(model::EoSModel,v,T,z=[1.0])
-
-Phase identification parameter `Π`. as described in _1_. If `Π > 1`, then the phase is clasified as a liquid or a liquid-like vapor, being a vapor or vapor-like liquid otherwise. 
-
-This identification parameter fails at temperatures and pressures well above the critical point.
-
-Calculated as:
-```
-Π = v*((∂²p/∂v∂T)/(∂p/∂T) - (∂²p/∂v²)/(∂p/∂v)) 
-```
-
-
-1.  G. Venkatarathnama, L.R. Oellrich, Identification of the phase of a fluid using partial derivatives of pressure, volume,and temperature without reference to saturation properties: Applications in phase equilibria calculations, Fluid Phase Equilibria 301 (2011) 225–233
-
-
-"""
-function pip(model::EoSModel,v,T,z=SA[1.0])
-    _∂2p = ∂2p(model,v,T,z)
-    hess_p, grad_p, _ = _∂2p
-    Π = v*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1]) 
-end
-    
-
-function inversion_temperature(model::EoSModel,p,z=SA[1.0];T0=300)
-    μⱼₜ(T) = joule_thomson_coefficient(model,p,T,z)
-    return Roots.find_zero(μⱼₜ,T0)
+function volume_virial(model,p,T, z=SA[1.] )
+    B = second_virial_coeff(model,T,z)
+    a = p/(R̄*T)
+    b = -1
+    c = -B
+    return (-b + sqrt(b*b-4*a*c))/(2*a)
 end
