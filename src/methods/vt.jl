@@ -67,7 +67,6 @@ function vt_isobaric_expansivity(model::EoSModel, v, T,  z=SA[1.])
 end
 
 function vt_joule_thomson_coefficient(model::EoSModel, v, T,  z=SA[1.])
-    v  = volume(model, p, T, z; phase=phase)
     d2f = f_hess(model,v,T,z)
     return -(d2f[1,2]-d2f[1]*((T*d2f[2,2]+v*d2f[1,2])/(T*d2f[1,2]+v*d2f[1])))^-1
 end
