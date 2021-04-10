@@ -44,7 +44,7 @@ function cubic_abp(model::PRModel, V, T, z)
     _1 = one(b̄)
     denom = evalpoly(v,(-b̄*b̄,2*b̄,_1))
     p = R̄*T/(v-b̄) - āᾱ /denom
-    return a,b,p
+    return āᾱ, b̄,p
 end
 
 function cubic_poly(model::PRModel,p,T,z)

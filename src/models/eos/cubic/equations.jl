@@ -28,6 +28,7 @@ function x0_volume_sc(model::ABCubicModel,p,T,z)
 end
 
 function volume(model::ABCubicModel,p,T,z=SA[1.0];phase="unknown")
+    lb_v   = exp10(only(lb_volume(model,z)))
     xx = z/sum(z)
     RTp = R̄*T/p
     _poly = cubic_poly(model,p,T,z)
@@ -43,11 +44,16 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase="unknown")
     end
     
     isreal = map(imagfilter,sols)
+    _sols = sort(real.(sols)) .* RTp
+    
+    #@show _sols[isreal]
+    #@show model.params.b.values
     #@show sum(isreal)
     if sum(isreal) == 3 #3 roots
         sols = sort(real.(sols))
-        vl = first(sols)*RTp
         vg = last(sols)*RTp
+        _vl = first(sols)*RTp
+        vl = ifelse(_vl>lb_v,_vl,vg)
     elseif  sum(isreal) == 1
         i = findfirst(imagfilter,sols)
         vl = real(sols[i])*RTp
@@ -58,7 +64,8 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase="unknown")
     end
  
     #fp(_v) = pressure(model,_v,T,z) - p
-    
+    #@show vl
+    #@show vg
     function gibbs(v)
         _df,f =  ∂f(model,v,T,z)
         dv,dt = _df
