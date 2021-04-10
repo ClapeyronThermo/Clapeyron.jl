@@ -233,8 +233,7 @@ function enthalpy_vap(model::EoSModel, T)
     return H_vap
 end
 ## Pure critical point solver
-function crit_pure(model::EoSModel; units = false, output=[u"K", u"Pa", u"m^3"])
-    components = model.components
+function crit_pure(model::EoSModel)
     T̄  = T_crit_pure(model)
     f! = (F,x) -> Obj_Crit(model, F, x[1]*T̄, exp10(x[2]))
     # j! = (J,x) -> Jac_Crit(J,eos,model,x[1]*model.params.epsilon[(1, 1)],exp10(x[2]))
@@ -243,15 +242,11 @@ function crit_pure(model::EoSModel; units = false, output=[u"K", u"Pa", u"m^3"])
     T_c = r.zero[1]*T̄
     v_c = exp10(r.zero[2])
     p_c = pressure(model, v_c, T_c)
-    if units
-        return (uconvert(output[1], T_c*u"K"), uconvert(output[2], p_c*u"Pa"), uconvert(output[2], v_c*u"m^3"))
-    else
-        return (T_c, p_c, v_c)
-    end
+    return (T_c, p_c, v_c)
 end
 
 function Obj_Crit(model::EoSModel, F, T_c, v_c)
-    fun(x)  = eos(model, [1], x[1], T_c)
+    fun(x)  = eos(model, x, T_c,SA[1.0])
     df(x)   = ForwardDiff.derivative(fun,x)
     d2f(x)  = ForwardDiff.derivative(df,x)
     d3f(x)  = ForwardDiff.derivative(d2f,x)
@@ -263,10 +258,9 @@ end
 function bubble_pressure(model, T, x; v0 =nothing)
     TYPE = promote_type(eltpype(T),eltype(x))
     
-    components = model.components
     if v0 === nothing
         y0    = 10 .*x[1,:]./(1 .+x[1,:].*(10-1))
-        y0    = y0 ./sum(y0[i] for i in 1:length(components))
+        y0    = y0 ./sum(y0[i] for i in 1:length(x))
         X     = x[1,:]
         v0    = [log10(π/6*N_A*sum(X[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/0.45),
                  log10(π/6*N_A*sum(Y0[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/1e-4)]
@@ -274,7 +268,7 @@ function bubble_pressure(model, T, x; v0 =nothing)
     end
     v_l   = TYPE[]
     v_v   = TYPE[]
-    y     = deepcopy(x)
+    y     = deepcopy(x) 
     P_sat = TYPE[]
     for i in 1:first(size(x))
         f! = (F,z) -> Obj_bubble_pressure(model, F, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
