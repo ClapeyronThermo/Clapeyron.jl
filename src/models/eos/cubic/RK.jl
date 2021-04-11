@@ -2,6 +2,7 @@ struct RKParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}
     Tc::SingleParam{Float64}
+    Pc::SingleParam{Float64}
     Mw::SingleParam{Float64}
     Tbarc::Float64 # Not sure if we want to allow this
 end
@@ -13,14 +14,16 @@ export RK
 function RK(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false,idealmodel=BasicIdeal)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
-    pc = params["pc"].values
+    _pc = params["pc"]
+    pc = _pc.values
     Mw = params["Mw"]
-    Tc = params["Tc"].values
+    _Tc = params["Tc"]
+    Tc = _Tc.values
     T̄c = sum(sqrt(Tc*Tc'))
     a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 1/(9*(2^(1/3)-1))*R̄^2*Tc^2.5/pc/1e6/√(T̄c)), k)
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. (2^(1/3)-1)/3*R̄*Tc/pc/1e6))
 
-    packagedparams = RKParam(a, b, params["Tc"],Mw,T̄c)
+    packagedparams = RKParam(a, b, params["Tc"],_pc,Mw,T̄c)
     return RK(packagedparams,idealmodel)
 end
 
