@@ -3,6 +3,7 @@ struct PRParam <: EoSParam
     b::PairParam{Float64}
     acentricfactor::SingleParam{Float64}
     Tc::SingleParam{Float64}
+    Pc::SingleParam{Float64}
     Mw::SingleParam{Float64}
 end
 
@@ -14,14 +15,15 @@ function PR(components::Array{String,1}; userlocations::Array{String,1}=String[]
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     k  = params["k"]
-    pc = params["pc"].values
+    _pc = params["pc"]
+    pc = _pc.values
     Tc = params["Tc"]
     Tc_ = Tc.values
     acentricfactor = params["w"]
     a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 0.457235*R̄^2*Tc_^2/pc/1e6), k)
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. 0.077796*R̄*Tc_/pc/1e6))
 
-    packagedparams = PRParam(a, b, acentricfactor, Tc,Mw)
+    packagedparams = PRParam(a, b, acentricfactor, Tc,_pc,Mw)
     return PR(packagedparams,idealmodel)
 end
 
