@@ -28,7 +28,7 @@ function x0_volume_sc(model::ABCubicModel,p,T,z)
 end
 
 function volume(model::ABCubicModel,p,T,z=SA[1.0];phase="unknown")
-    lb_v   = exp10(only(lb_volume(model,z)))
+    lb_v   =lb_volume(model,z)
     xx = z/sum(z)
     RTp = R̄*T/p
     _poly = cubic_poly(model,p,T,z)

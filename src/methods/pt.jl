@@ -70,7 +70,7 @@ function compressibility_factor(model::EoSModel, p, T,  z=SA[1.]; phase = "unkno
     return p*v/(R̄*T)
 end
 
-function inversion_temperature(model::EoSModel,p,z=SA[1.0];T0=300)
+function inversion_temperature(model::EoSModel,p,z=SA[1.0];T0=6.75*T_scale(model,z))
     μⱼₜ(T) = joule_thomson_coefficient(model,p,T,z)
     return Roots.find_zero(μⱼₜ,T0)
 end
