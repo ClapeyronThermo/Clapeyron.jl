@@ -98,6 +98,11 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase="unknown")
     end
 end
 
+function ab_consts(model::CubicModel)
+    return ab_consts(typeof(model))
+end
+
+
     
 
 
