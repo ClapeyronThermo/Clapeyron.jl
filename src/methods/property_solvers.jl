@@ -125,9 +125,10 @@ end
 
 function sat_pure(model::EoSModel,v0,f!,T)
     r = Solvers.nlsolve(f!, v0)
-    v_l = exp10(r.info.solution[1])
-    v_v = exp10(r.info.solution[2])
-    P_sat = pressure(model,exp10(r.info.solution[2]),T)
+    #@show fieldnames(typeof(r.info))
+    v_l = exp10(r.info.zero[1])
+    v_v = exp10(r.info.zero[2])
+    P_sat = pressure(model,exp10(r.info.zero[2]),T)
     return (P_sat,v_l,v_v)
 end
 
@@ -150,9 +151,9 @@ function crit_pure(model::EoSModel)
     f! = (F,x) -> Obj_Crit(model, F, x[1]*T̄, exp10(x[2]))
     # j! = (J,x) -> Jac_Crit(J,eos,model,x[1]*model.params.epsilon[(1, 1)],exp10(x[2]))
     x0 = x0_crit_pure(model)
-    r  = nlsolve(f!,x0)
-    T_c = r.zero[1]*T̄
-    v_c = exp10(r.zero[2])
+    r  = Solvers.nlsolve(f!,x0)
+    T_c = r.info.zero[1]*T̄
+    v_c = exp10(r.info.zero[2])
     p_c = pressure(model, v_c, T_c)
     return (T_c, p_c, v_c)
 end
@@ -165,30 +166,7 @@ function Obj_Crit(model::EoSModel, F, T_c, v_c)
     F[1] = d2f(v_c)
     F[2] = d3f(v_c)
 end
-## Mixture critical point solver
-# function crit_mix(model::SAFT,x_c)
-#     components = model.components
-#     z  = create_z(model,x_c)
-#     f! = (F,x) -> Obj_Crit_mix(model, F, exp10(x[2]), x[1]*prod(model.params.epsilon[i]^z[i] for i in components), x_c)
-#     x0 = [1.5,log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/0.15)]
-#     r  = Solvers.nlsolve(f!,x0)
-#     T_c = r.zero[1]*prod(model.params.epsilon[i]^z[i] for i in components)
-#     v_c = exp10(r.zero[2])
-#     p_c = pressure(model, v_c, T_c, x_c)
-#     return (T_c, p_c, v_c)
-# end
-# #
-# function Obj_Crit_mix(model::SAFT, F, v_c,T_c,x_c)
-#     fun(x)  = eos(model, create_z(model, [x[1],1-x[1]]), v_c, T_c)
-#     df(x)   = ForwardDiff.derivative(fun,x)
-#     d2f(x)  = ForwardDiff.derivative(df,x)
-#     d3f(x)  = ForwardDiff.derivative(d2f,x)
-#     F[1] = d2f(x_c[1])
-#     F[2] = d3f(x_c[1])
-#     println(F)
-#     println(v_c)
-#     println(T_c)
-# end
+
 
 function crit(model,z=SA[1.0])
     if length(z) == 1
@@ -200,25 +178,26 @@ end
 ## Mixture saturation solver
 function bubble_pressure(model, T, x; v0 =nothing)
     TYPE = promote_type(eltpype(T),eltype(x))
-    
+    lb_v = lb_volume(model,x)
+
     if v0 === nothing
-        y0    = 10 .*x[1,:]./(1 .+x[1,:].*(10-1))
-        y0    = y0 ./sum(y0[i] for i in 1:length(x))
-        X     = x[1,:]
-        v0    = [log10(π/6*N_A*sum(X[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/0.45),
-                 log10(π/6*N_A*sum(Y0[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/1e-4)]
+        y0    = 10 .*x./(1 .+x.*(10-1))
+        y0    = y0 ./sum(y)
+        X     = x
+        v0    = [log10(lb_v/0.45),
+                 log10(lb_v/1e-4)]
         append!(v0,y0[1:end-1])
     end
     v_l   = TYPE[]
     v_v   = TYPE[]
     y     = deepcopy(x) 
     P_sat = TYPE[]
-    for i in 1:first(size(x))
+    for i in 1:length(x)
         f! = (F,z) -> Obj_bubble_pressure(model, F, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
-        j! = (J,z) -> Jac_bubble_pressure(model, J, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
-        r  =nlsolve(f!,j!,v0)
-        append!(v_l,exp10(r.zero[1]))
-        append!(v_v,exp10(r.zero[2]))
+        #j! = (J,z) -> Jac_bubble_pressure(model, J, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
+        r  =nlsolve(f!,v0)
+        append!(v_l,exp10(r.info.zero[1]))
+        append!(v_v,exp10(r.info.zero[2]))
         append!(P_sat,pressure(model,v_l[i],T,x[i,:]))
         y[i,1:end-1] = r.zero[3:end]
         y[i,end] = 1-sum(r.zero[3:end])
@@ -228,17 +207,16 @@ function bubble_pressure(model, T, x; v0 =nothing)
 end
 
 function Obj_bubble_pressure(model, F, T, v_l, v_v, x, y)
-    components = model.components
-    append!(y,1-sum(y[i] for i in 1:(length(components)-1)))
+     append!(y,1-sum(@view y[begin:end-1]))
 
-    fun(z) = eos(model, z[end], T,z[1:end-1])
+    fun(z) = eos(model, z[end], T, @view z[1:end-1])
     df(z)  = ForwardDiff.gradient(fun,z)
     X = deepcopy(x)
     Y = deepcopy(y)
     df_l = df(append!(X,v_l))
     df_v = df(append!(Y,v_v))
-    for i in 1:length(components)
-        F[i] = (df_l[i]-df_v[i])/R̄/model.params.epsilon[components[i]]
+    for i in 1:length(x)
+        F[i] = (df_l[i]-df_v[i])/R̄/model.params.epsilon.diagvalues[i]
     end
     F[end] = (df_l[end]-df_v[end])*model.params.sigma[components[1]]^3*N_A/R̄/model.params.epsilon[components[1]]
 end
@@ -274,7 +252,19 @@ end
 
 
 
-
+function enthalpy_vap(model::EoSModel, T)
+    (P_sat,v_l,v_v) = sat_pure(model,T)
+   #= _dfl,fl =  ∂f(model,v_l,T,SA[1.0])
+    _dfv,fv =  ∂f(model,v_v,T,SA[1.0])
+    dvl,dtl = _dfl
+    dvv,dtv = _dfv
+    H_l = fl  - dvl*v_l - dtl*T
+    H_v = fv  - dvv*v_v - dtv*T =#
+    H_v = vt_enthalpy(model,v_v,T)
+    H_l = vt_enthalpy(model,v_l,T)
+    H_vap=H_v-H_l
+    return H_vap
+end
 #aproximates liquid volume at a known pressure and t,
 #by using isothermal compressibility
 function volume_compress(model,p,T,z=SA[1.0])
@@ -293,7 +283,7 @@ function volume_compress(model,p,T,z=SA[1.0])
 end
 
 function vcompress_v0(model,p,T,z=SA[1.0])
-    lb_v   = exp10(only(lb_volume(model,z,phase=:l)))
+    lb_v   = lb_volume(model,z,phase=:l)
     v0 = 1.1*lb_v
     return v0
 end
