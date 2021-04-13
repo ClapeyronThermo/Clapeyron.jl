@@ -26,7 +26,11 @@ function RK(components::Array{String,1}; userlocations::Array{String,1}=String[]
     packagedparams = RKParam(a, b, params["Tc"],_pc,Mw,T̄c)
     return RK(packagedparams,idealmodel)
 end
-
+function ab_consts(::Type{<:RKModel})
+    Ωa =  1/(9*(2^(1/3)-1))
+    Ωb = (2^(1/3)-1)/3
+    return Ωa,Ωb
+end
 function cubic_ab(model::RKModel,T,x)
     a = model.params.a.values
     b = model.params.b.values

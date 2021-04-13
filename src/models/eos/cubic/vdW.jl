@@ -27,6 +27,11 @@ function vdW(components::Array{String,1}; userlocations::Array{String,1}=String[
     return vdW(packagedparams,idealmodel)
 end
 
+function ab_consts(::Type{<:vdWModel})
+    Ωa =  27/64
+    Ωb =  1/8
+    return Ωa,Ωb
+end
 
 function cubic_ab(model::vdWModel,T,x)
     a = model.params.a.values
