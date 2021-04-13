@@ -76,16 +76,29 @@ function Jvop_sat(x,model::EoSModel,T)
 end
 
 
-function enthalpy_vap(model::EoSModel, T)
-    (P_sat,v_l,v_v) = sat_pure(model,T)
-   #= _dfl,fl =  ∂f(model,v_l,T,SA[1.0])
-    _dfv,fv =  ∂f(model,v_v,T,SA[1.0])
-    dvl,dtl = _dfl
-    dvv,dtv = _dfv
-    H_l = fl  - dvl*v_l - dtl*T
-    H_v = fv  - dvv*v_v - dtv*T =#
-    H_v = vt_enthalpy(model,v_v,T)
-    H_l = vt_enthalpy(model,v_l,T)
-    H_vap=H_v-H_l
-    return H_vap
-end
+
+
+## Mixture critical point solver
+# function crit_mix(model::SAFT,x_c)
+#     components = model.components
+#     z  = create_z(model,x_c)
+#     f! = (F,x) -> Obj_Crit_mix(model, F, exp10(x[2]), x[1]*prod(model.params.epsilon[i]^z[i] for i in components), x_c)
+#     x0 = [1.5,log10(π/6*N_A*sum(z[i]*model.params.segment[i]*model.params.sigma[i]^3 for i in components)/0.15)]
+#     r  = Solvers.nlsolve(f!,x0)
+#     T_c = r.zero[1]*prod(model.params.epsilon[i]^z[i] for i in components)
+#     v_c = exp10(r.zero[2])
+#     p_c = pressure(model, v_c, T_c, x_c)
+#     return (T_c, p_c, v_c)
+# end
+# #
+# function Obj_Crit_mix(model::SAFT, F, v_c,T_c,x_c)
+#     fun(x)  = eos(model, create_z(model, [x[1],1-x[1]]), v_c, T_c)
+#     df(x)   = ForwardDiff.derivative(fun,x)
+#     d2f(x)  = ForwardDiff.derivative(df,x)
+#     d3f(x)  = ForwardDiff.derivative(d2f,x)
+#     F[1] = d2f(x_c[1])
+#     F[2] = d3f(x_c[1])
+#     println(F)
+#     println(v_c)
+#     println(T_c)
+# end
