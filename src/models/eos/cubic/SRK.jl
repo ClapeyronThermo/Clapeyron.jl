@@ -29,6 +29,12 @@ function SRK(components::Array{String,1}; userlocations::Array{String,1}=String[
     return SRK(packagedparams,idealmodel)
 end
 
+function ab_consts(::Type{<:SRKModel})
+    Ωa =  1/(9*(2^(1/3)-1))
+    Ωb = (2^(1/3)-1)/3
+    return Ωa,Ωb
+end
+
 function cubic_ab(model::SRKModel,T,x)
     a = model.params.a.values
     b = model.params.b.values
