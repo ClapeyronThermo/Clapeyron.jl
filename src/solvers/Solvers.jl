@@ -1,7 +1,8 @@
 module Solvers
 
 using LinearAlgebra
-using NLopt, NLsolve, NLSolvers,Roots
+using NLopt, NLSolvers,Roots
+#using NLSolve
 using  DiffResults, ForwardDiff
 using StaticArrays
 using PolynomialRoots

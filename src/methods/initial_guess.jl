@@ -150,12 +150,7 @@ lb_volume(model::IAPWS95, z; phase = "unknown") = 1.4696978063543022e-5
 #     μ_scale    = 1/R̄/model.params.T[model.components[1]]
 #     return p_scale,μ_scale
 # end
-function lb_volume(model::SAFTModel, z = SA[1.0]; phase = "unknown")
-    seg = model.params.segment.values
-    σᵢᵢ = model.params.sigma.diagvalues
-    val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i]^3 for i in @comps)
-    return [log10(val)]
-end
+
 function x0_sat_pure(model::SAFTModel,T,z=SA[1.0])
     val = lb_volume(model,z)
     x0  = [val/0.5,val/1e-3]
@@ -235,10 +230,13 @@ end
 function T_scale(model::CubicModel,z=SA[1.0])
     x = z ./ sum(z)
     Ωa,Ωb = ab_consts(model) 
-    a = sum(a * (x * x'))/Ωa
-    b = sum(b * (x * x'))/Ωb
+    _a = model.params.a.values
+    _b = model.params.b.values
+    a = dot(x, Symmetric(_a), x)/Ωa
+    b = dot(x, Symmetric(_b), x)/Ωb
     return a/b/R̄
 end
+
 #=
 pressure scaling factor
 on critical eos, a function of critical pressure
@@ -252,10 +250,13 @@ function p_scale(model::SAFTModel,z=SA[1.0])
 end
 
 function p_scale(model::CubicModel,z=SA[1.0])
-    x = z ./ sum(z)
+    sumz = sum(z)
+    invsumz = (1/sumz)^2
     Ωa,Ωb = ab_consts(model) 
-    a = sum(a * (x * x'))/Ωa
-    b = sum(b * (x * x'))/Ωb
+    _a = model.params.a.values
+    _b = model.params.b.diagvalues
+    a = invsumz*dot(x, Symmetric(_a), x)/Ωa
+    b = invsumz*dot(x, Symmetric(_b), x)/Ωb
     return a/ (b^2) # Pc mean
 end
 

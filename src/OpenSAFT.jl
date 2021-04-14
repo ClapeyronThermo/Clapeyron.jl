@@ -1,7 +1,8 @@
 module OpenSAFT
 using StaticArrays
 using LinearAlgebra
-using NLopt, NLsolve, NLSolvers,Roots
+using NLopt, NLSolvers,Roots
+#using NLSolve
 using  DiffResults, ForwardDiff
 include("solvers/Solvers.jl")
 using .Solvers
