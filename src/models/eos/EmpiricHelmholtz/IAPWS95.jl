@@ -237,6 +237,14 @@ function scale_sat_pure(model::IAPWS95)
     return p_scale,μ_scale
 end
 
+function T_scale(model::IAPWS95,z=SA[1.0])
+    return model.params.Tc
+end
+
+function p_scale(model::IAPWS95,z=SA[1.0])
+    return model.params.Pc
+end
+
 export IAPWS95,IAPWS95Ideal
 
 function Base.show(io::IO,model::IAPWS95)
