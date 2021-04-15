@@ -208,7 +208,7 @@ function saturated_water_vapor(Tk)
     return R̄*Tk/p * (1.0 + p*(Blin  + p*Clin))
 end
 
-
+mw(model::IAPWS95) = model.params.mw
 molecular_weight(model::IAPWS95,z = @SVector [1.]) = 0.001*model.params.mw * only(z) / sum(z)
 
 
