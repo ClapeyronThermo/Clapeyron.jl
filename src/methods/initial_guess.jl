@@ -63,7 +63,7 @@ LJSAFT: log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in @
 
 
 function x0_volume_liquid(model,T,z)
-    v_lb = lb_volume(model,z) |> only |> exp10
+    v_lb = lb_volume(model,z) 
     return v_lb/0.8
 end
 
@@ -72,7 +72,7 @@ function x0_volume_gas(model,p,T,z)
 end
 
 function x0_volume_sc(model,p,T,z)
-    v_sc = lb_volume(model,z) |> only |> exp10
+    v_sc = lb_volume(model,z)
     return v_sc*2
 end
 
@@ -259,14 +259,3 @@ function p_scale(model::CubicModel,z=SA[1.0])
     b = invsumz*dot(x, Symmetric(_b), x)/Ωb
     return a/ (b^2) # Pc mean
 end
-
-#a = const_a R2 T2 P-1
-#b = const_b = R  T1 P-1
-#a = const_a   R2 T2 P-1
-
-#=
-p_scale    = b^2/a*27 [p]
-t_scale    = 27*b/8/a [1/RT]
-
-
-=#

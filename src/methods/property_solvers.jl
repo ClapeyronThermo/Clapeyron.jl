@@ -159,21 +159,12 @@ function crit_pure(model::EoSModel)
 end
 
 function Obj_Crit(model::EoSModel, F, T_c, v_c)
-    fun(x)  = eos(model, x, T_c,SA[1.0])
-    df(x)   = ForwardDiff.derivative(fun,x)
-    d2f(x)  = ForwardDiff.derivative(df,x)
-    d3f(x)  = ForwardDiff.derivative(d2f,x)
-    F[1] = d2f(v_c)
-    F[2] = d3f(v_c)
+    d2p,d3p = ∂p2∂p3(model,v_c,T_c,SA[1.0])
+    F[1] = -d2p
+    F[2] = -d3p
+    return F
 end
 
-
-function crit(model,z=SA[1.0])
-    if length(z) == 1
-        return crit_pure(model)
-    else
-    end
-end
 
 ## Mixture saturation solver
 function bubble_pressure(model, T, x; v0 =nothing)
