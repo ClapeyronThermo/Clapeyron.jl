@@ -437,6 +437,12 @@ uuid = "a4e569a6-e804-4fa4-b0f3-eef7a1d5b13e"
 deps = ["InteractiveUtils", "Logging", "Random", "Serialization"]
 uuid = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
+[[ThermoState]]
+deps = ["Unitful"]
+git-tree-sha1 = "7162c99bffe57dc5e60fd58aa4a07f9e0a06688c"
+uuid = "e7b6519d-fdf7-4a33-b544-2b37a9c1234a"
+version = "0.4.7"
+
 [[TranscodingStreams]]
 deps = ["Random", "Test"]
 git-tree-sha1 = "7c53c35547de1c5b9d46a4797cf6d8253807108c"
