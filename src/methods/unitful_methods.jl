@@ -101,7 +101,7 @@ function isochoric_heat_capacity(model::EoSModel, v::__VolumeKind, T::Unitful.Te
     return uconvert(output, res)
 end
 
-function isochoric_heat_capacity(model::SAFT, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"J/K")
+function isochoric_heat_capacity(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"J/K")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     res = isochoric_heat_capacity(model, _p, _T, _z; phase=phase)*u"J/K"
@@ -118,7 +118,7 @@ function isobaric_heat_capacity(model::EoSModel, v::__VolumeKind, T::Unitful.Tem
     return uconvert(output, res)
 end
 
-function isobaric_heat_capacity(model::SAFT, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"J/K")
+function isobaric_heat_capacity(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"J/K")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     res = isobaric_heat_capacity(model, _p, _T, _z; phase=phase)*u"J/K"
@@ -133,7 +133,7 @@ function isothermal_compressibility(model::EoSModel, v::__VolumeKind, T::Unitful
     return uconvert(output, res)
 end
 
-function isothermal_compressibility(model::SAFT, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"1/Pa")
+function isothermal_compressibility(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"1/Pa")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     res = isothermal_compressibility(model, _p, _T, _z; phase=phase)*u"1/Pa"
@@ -148,7 +148,7 @@ function isentropic_compressibility(model::EoSModel, v::__VolumeKind, T::Unitful
     return uconvert(output, res)
 end
 
-function isentropic_compressibility(model::SAFT, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"1/Pa")
+function isentropic_compressibility(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"1/Pa")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     res = isentropic_compressibility(model, _p, _T, _z; phase=phase)*u"1/Pa"
@@ -164,7 +164,7 @@ function speed_of_sound(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature
     return uconvert(output, res)
 end
 
-function speed_of_sound(model::SAFT, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"m/s")
+function speed_of_sound(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"m/s")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     res = speed_of_sound(model, _p, _T, _z; phase=phase)*u"m/s"
@@ -179,7 +179,7 @@ function isobaric_expansivity(model::EoSModel, v::__VolumeKind, T::Unitful.Tempe
     return uconvert(output, res)
 end
 
-function isobaric_expansivity(model::SAFT, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"1/K")
+function isobaric_expansivity(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"1/K")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     res = isobaric_expansivity(model, _p, _T, _z; phase=phase)*u"1/K"
@@ -194,7 +194,7 @@ function joule_thomson_coefficient(model::EoSModel, v::__VolumeKind, T::Unitful.
     return uconvert(output, res)
 end
 
-function joule_thomson_coefficient(model::SAFT, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"K/Pa")
+function joule_thomson_coefficient(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"K/Pa")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     res = joule_thomson_coefficient(model, _p, _T, _z; phase=phase)*u"K/Pa"
@@ -209,7 +209,7 @@ function compressibility_factor(model::EoSModel, v::__VolumeKind, T::Unitful.Tem
     return res
 end
 
-function compressibility_factor(model::SAFT, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown")
+function compressibility_factor(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     res = joule_thomson_coefficient(model, _p, _T, _z; phase=phase)
@@ -217,7 +217,7 @@ function compressibility_factor(model::SAFT, p::Unitful.Pressure, T::Unitful.Tem
 end
 
 #second_virial_coefficient
-function second_virial_coefficient(model::EoSModel, T::Unitful.Temperature, z=SA[1.];output=U"m^3")
+function second_virial_coefficient(model::EoSModel, T::Unitful.Temperature, z=SA[1.];output=u"m^3")
     st = standarize(model,-1,T,z)
     _,_T,_z = state_to_pt(model,st)
     res = second_virial_coefficient(model, _T,_z)*u"m^3"
@@ -233,7 +233,7 @@ function pip(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.])
 end
 
 #inversion_temperature
-function inversion_temperature(model::SAFT, p::Unitful.Pressure, z=SA[1.]; output=u"K")
+function inversion_temperature(model::EoSModel, p::Unitful.Pressure, z=SA[1.]; output=u"K")
     st = standarize(model,p,-1,z)
     _p,_,_z = state_to_pt(model,st)
     res = inversion_temperature(model, _p, _z)*u"K"
