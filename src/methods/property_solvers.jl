@@ -171,9 +171,13 @@ function bubble_pressure(model, T, x; v0 =nothing)
     TYPE = promote_type(eltype(T),eltype(x))
     lb_v = lb_volume(model,x)
     ts = T_scales(model,x)
-    ps = p_scale(model,x)
+    pmix = p_scale(model,x)
+    #ps = p_scales(model,x)
+    #Mollerup K
+    #k0 =   (ps ./ p) .* exp.(5.42 .* (1.0 .- (ts ./ t)))
+
     if v0 === nothing
-        y0    = 10 .*x./(1 .+x.*(10-1))
+        y0    = k0 .*x./(1 .+x.*(k0 .- 1))
         y0    = y0 ./sum(y0)
         X     = x
         v0    = [log10(lb_v/0.45),
@@ -181,7 +185,7 @@ function bubble_pressure(model, T, x; v0 =nothing)
         append!(v0,y0[1:end-1])
     end
     
-    f! = (F,z) -> Obj_bubble_pressure(model, F, T, exp10(z[1]), exp10(z[2]), x,@view(z[3:end]),ts,ps)
+    f! = (F,z) -> Obj_bubble_pressure(model, F, T, exp10(z[1]), exp10(z[2]), x,@view(z[3:end]),ts,pmix)
     #j! = (J,z) -> Jac_bubble_pressure(model, J, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
     r  =Solvers.nlsolve(f!,v0)
     v_l = exp10(r.info.zero[1])
