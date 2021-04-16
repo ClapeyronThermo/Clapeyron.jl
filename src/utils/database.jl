@@ -271,7 +271,7 @@ function findparamsincsv(components::Array{String,1}, filepath::AbstractString, 
     # Returns a Dict with all matches in a particular file for one parameter.
     normalised_columnreference = normalisestring(columnreference)
     csvtype = readcsvtype(filepath)
-    df = CSV.File(filepath; header=3, pool=0)
+    df = CSV.File(filepath; header=3, pool=0,lazystrings=true)
     csvheaders = String.(Tables.columnnames(df))
     normalised_components = normalisestring.(components; isactivated=normalisecomponents)
     normalised_csvheaders = normalisestring.(csvheaders)
@@ -397,7 +397,7 @@ function findgroupsincsv(components::Array{String,1}, filepath::AbstractString; 
     normalised_columnreference = normalisestring(columnreference)
     normalised_groupcolumnreference = normalisestring(groupcolumnreference)
     csvtype = readcsvtype(filepath)
-    df = CSV.File(filepath; header=3)
+    df = CSV.File(filepath; header=3,lazystrings=true)
     csvheaders = String.(Tables.columnnames(df))
     normalised_csvheaders = normalisestring.(csvheaders)
 
@@ -487,7 +487,7 @@ function findsitesincsvs(components::Array{String,1}, filepaths::Array{String,1}
         csvtype = readcsvtype(filepath)
         csvtype != assocdata && continue
 
-        df = CSV.File(filepath; header=3)
+        df = CSV.File(filepath; header=3,lazystrings=true)
         csvheaders = String.(Tables.columnnames(df))
         normalised_csvheaders = normalisestring.(String.(Tables.columnnames(df)))
 
