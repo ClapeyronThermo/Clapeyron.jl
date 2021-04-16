@@ -7,7 +7,7 @@ function vt_entropy(model::EoSModel, v, T,   z=SA[1.])
 end
 
 function vt_chemical_potential(model::EoSModel, v, T, z= SA[1.])
-    fun(x) = eos(model, v, T,z)
+    fun(x) = eos(model, v, T,x)
     return ForwardDiff.gradient(fun,z)
 end
 
