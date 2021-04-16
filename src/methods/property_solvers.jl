@@ -251,8 +251,8 @@ function enthalpy_vap(model::EoSModel, T)
     dvv,dtv = _dfv
     H_l = fl  - dvl*v_l - dtl*T
     H_v = fv  - dvv*v_v - dtv*T =#
-    H_v = vt_enthalpy(model,v_v,T)
-    H_l = vt_enthalpy(model,v_l,T)
+    H_v = vt_enthalpy(model,v_v,T,z)
+    H_l = vt_enthalpy(model,v_l,T,z)
     H_vap=H_v-H_l
     return H_vap
 end
@@ -280,9 +280,12 @@ function vcompress_v0(model,p,T,z=SA[1.0])
 end
 
 function volume_virial(model,p,T, z=SA[1.] )
-    B = second_virial_coeff(model,T,z)
+    B = second_virial_coefficient(model,T,z)
     a = p/(R̄*T)
     b = -1
     c = -B
     return (-b + sqrt(b*b-4*a*c))/(2*a)
 end
+
+#(z = pv/rt)
+#(RT/p = v/z)

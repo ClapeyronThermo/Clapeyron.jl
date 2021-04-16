@@ -73,7 +73,7 @@ function vt_joule_thomson_coefficient(model::EoSModel, v, T,  z=SA[1.])
 end
 
 
-function second_virial_coeff(model::EoSModel, T,  z=SA[1.])
+function second_virial_coefficient(model::EoSModel, T,  z=SA[1.])
     TT = promote_type(eltype(z),typeof(T))  
     V = 1/sqrt(eps(TT))
     _∂2f = ∂2f(model,V,T,z)
