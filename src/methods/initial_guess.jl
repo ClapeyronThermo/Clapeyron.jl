@@ -222,8 +222,8 @@ on critical based EoS, is a function of critical temperature
 on SAFT EoS, is a function of ϵ
 =#
 function T_scale(model::SAFTModel,z=SA[1.0])
-    ϵ = model.params.epsilon.values
-    return sum(z[i]*ϵ[i] for i in 1:length(z))
+    ϵ = model.params.epsilon.diagvalues
+    return dot(z,ϵ)
 end
 
 #dont use αa, just a, to avoid temperature dependence
@@ -243,7 +243,7 @@ on critical eos, a function of critical pressure
 on SAFT, a function of
 =#
 function p_scale(model::SAFTModel,z=SA[1.0])
-    ϵ = model.params.epsilon.values
+    ϵ = model.params.epsilon.diagvalues
     σᵢᵢ = model.params.sigma.diagvalues
     val =  sum(z[i]*σᵢᵢ[i]^3/ϵ[i] for i in 1:length(z))*N_A/R̄
     return 1/val
@@ -254,8 +254,51 @@ function p_scale(model::CubicModel,z=SA[1.0])
     invsumz = (1/sumz)^2
     Ωa,Ωb = ab_consts(model) 
     _a = model.params.a.values
-    _b = model.params.b.diagvalues
+    _b = model.params.b.values
     a = invsumz*dot(x, Symmetric(_a), x)/Ωa
     b = invsumz*dot(x, Symmetric(_b), x)/Ωb
     return a/ (b^2) # Pc mean
+end
+
+
+
+#=
+the following methods are fallbacks, 
+that require just the definition of T_scale,p_scale and lb_volume
+respectively. if possible, each eos should define those
+=#
+function T_scales(model,z)
+    n = length(z)
+    x = zeros(n)
+    res = zeros(n)
+    for i = 1:n
+        x[i] = 1.0
+        res[i] = T_scale(model,x)
+        x[i] = 0.0
+    end
+    return res
+end
+
+
+function lb_volumes(model,z)
+    n = length(z)
+    x = zeros(n)
+    res = zeros(n)
+    for i = 1:n
+        x[i] = 1.0
+        res[i] = lb_volume(model,x)
+        x[i] = 0.0
+    end
+    return res
+end
+
+function p_scales(model,z)
+    n = length(z)
+    x = zeros(n)
+    res = zeros(n)
+    for i = 1:n
+        x[i] = 1.0
+        res[i] = p_scale(model,x)
+        x[i] = 0.0
+    end
 end
