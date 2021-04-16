@@ -102,3 +102,32 @@ end
 #     println(v_c)
 #     println(T_c)
 # end
+
+function Jac_bubble_pressure(model, J, T, v_l, v_v, x, y)
+    components = model.components
+    append!(y,1-sum(y[i] for i in 1:(length(components)-1)))
+
+    fun(z) = eos(model, z[1:end-1], z[end], T)
+    df(z)  = ForwardDiff.gradient(fun,z)
+    d2f(z) = ForwardDiff.hessian(fun,z)
+    X = deepcopy(x)
+    Y = deepcopy(y)
+    d2f_l = d2f(append!(X,v_l))
+    d2f_v = d2f(append!(Y,v_v))
+    for i in 1:(length(components))
+        J[i,1] =  log(10)*v_l*d2f_l[i,end]/R̄/model.params.epsilon[components[i]]
+        J[i,2] = -log(10)*v_v*d2f_v[i,end]/R̄/model.params.epsilon[components[i]]
+    end
+    J[end,1] = log(10)*v_l*d2f_l[end,end]*model.params.sigma[components[1]]^3*N_A/R̄/model.params.epsilon[components[1]]
+    J[end,2] =-log(10)*v_v*d2f_v[end,end]*model.params.sigma[components[1]]^3*N_A/R̄/model.params.epsilon[components[1]]
+
+    for j in 1:(length(components)-1)
+        J[end,j+2] = (d2f_v[end,end-1]-d2f_v[end,j])*model.params.sigma[components[1]]^3*N_A/R̄/model.params.epsilon[components[1]]
+    end
+
+    for i in 1:(length(components))
+        for j in 1:(length(components)-1)
+                J[i,j+2]= -(d2f_v[i,j]-d2f_v[i,end-1])/R̄/model.params.epsilon[components[i]]
+        end
+    end
+end

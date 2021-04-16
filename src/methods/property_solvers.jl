@@ -168,80 +168,43 @@ end
 
 ## Mixture saturation solver
 function bubble_pressure(model, T, x; v0 =nothing)
-    TYPE = promote_type(eltpype(T),eltype(x))
+    TYPE = promote_type(eltype(T),eltype(x))
     lb_v = lb_volume(model,x)
-
+    ts = T_scales(model,x)
+    ps = p_scale(model,x)
     if v0 === nothing
         y0    = 10 .*x./(1 .+x.*(10-1))
-        y0    = y0 ./sum(y)
+        y0    = y0 ./sum(y0)
         X     = x
         v0    = [log10(lb_v/0.45),
                  log10(lb_v/1e-4)]
         append!(v0,y0[1:end-1])
     end
-    v_l   = TYPE[]
-    v_v   = TYPE[]
-    y     = deepcopy(x) 
-    P_sat = TYPE[]
-    for i in 1:length(x)
-        f! = (F,z) -> Obj_bubble_pressure(model, F, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
-        #j! = (J,z) -> Jac_bubble_pressure(model, J, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
-        r  =nlsolve(f!,v0)
-        append!(v_l,exp10(r.info.zero[1]))
-        append!(v_v,exp10(r.info.zero[2]))
-        append!(P_sat,pressure(model,v_l[i],T,x[i,:]))
-        y[i,1:end-1] = r.zero[3:end]
-        y[i,end] = 1-sum(r.zero[3:end])
-        v0 = r.zero
-    end
+    
+    f! = (F,z) -> Obj_bubble_pressure(model, F, T, exp10(z[1]), exp10(z[2]), x,@view(z[3:end]),ts,ps)
+    #j! = (J,z) -> Jac_bubble_pressure(model, J, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
+    r  =Solvers.nlsolve(f!,v0)
+    v_l = exp10(r.info.zero[1])
+    v_v = exp10(r.info.zero[2])
+    y = FractionVector(r.info.zero[3:end])
+    P_sat = pressure(model,v_l,T,x)
     return (P_sat, v_l, v_v, y)
 end
 
-function Obj_bubble_pressure(model, F, T, v_l, v_v, x, y)
-     append!(y,1-sum(@view y[begin:end-1]))
-
-    fun(z) = eos(model, z[end], T, @view z[1:end-1])
-    df(z)  = ForwardDiff.gradient(fun,z)
-    X = deepcopy(x)
-    Y = deepcopy(y)
-    df_l = df(append!(X,v_l))
-    df_v = df(append!(Y,v_v))
+function Obj_bubble_pressure(model, F, T, v_l, v_v, x, y,ts,ps)
+    #y = append!(y,1-sum(y))
+    #y = [y...,1-sum(y)]
+    y = FractionVector(y) #julia magic, check misc.jl
+    μ_l = vt_chemical_potential(model,v_l,T,x)
+    μ_v = vt_chemical_potential(model,v_v,T,y)
+    p_l = pressure(model,v_l,T,x)
+    p_v = pressure(model,v_v,T,y)
+    
     for i in 1:length(x)
-        F[i] = (df_l[i]-df_v[i])/R̄/model.params.epsilon.diagvalues[i]
+        F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
     end
-    F[end] = (df_l[end]-df_v[end])*model.params.sigma[components[1]]^3*N_A/R̄/model.params.epsilon[components[1]]
+    F[end] = (p_l-p_v)/ps
 end
-
-function Jac_bubble_pressure(model, J, T, v_l, v_v, x, y)
-    components = model.components
-    append!(y,1-sum(y[i] for i in 1:(length(components)-1)))
-
-    fun(z) = eos(model, z[1:end-1], z[end], T)
-    df(z)  = ForwardDiff.gradient(fun,z)
-    d2f(z) = ForwardDiff.hessian(fun,z)
-    X = deepcopy(x)
-    Y = deepcopy(y)
-    d2f_l = d2f(append!(X,v_l))
-    d2f_v = d2f(append!(Y,v_v))
-    for i in 1:(length(components))
-        J[i,1] =  log(10)*v_l*d2f_l[i,end]/R̄/model.params.epsilon[components[i]]
-        J[i,2] = -log(10)*v_v*d2f_v[i,end]/R̄/model.params.epsilon[components[i]]
-    end
-    J[end,1] = log(10)*v_l*d2f_l[end,end]*model.params.sigma[components[1]]^3*N_A/R̄/model.params.epsilon[components[1]]
-    J[end,2] =-log(10)*v_v*d2f_v[end,end]*model.params.sigma[components[1]]^3*N_A/R̄/model.params.epsilon[components[1]]
-
-    for j in 1:(length(components)-1)
-        J[end,j+2] = (d2f_v[end,end-1]-d2f_v[end,j])*model.params.sigma[components[1]]^3*N_A/R̄/model.params.epsilon[components[1]]
-    end
-
-    for i in 1:(length(components))
-        for j in 1:(length(components)-1)
-                J[i,j+2]= -(d2f_v[i,j]-d2f_v[i,end-1])/R̄/model.params.epsilon[components[i]]
-        end
-    end
-end
-
-
 
 function enthalpy_vap(model::EoSModel, T)
     (P_sat,v_l,v_v) = sat_pure(model,T)

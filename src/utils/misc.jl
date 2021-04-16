@@ -47,3 +47,43 @@ equivalent to `sum(iterator,init=0.0)`.
 function ∑(iterator) #not collecting is faster
     return reduce(Base.add_sum,iterator,init=0.0)
 end
+
+struct FractionVector{T,V} <: AbstractVector{T}
+    vec::V
+    val::T
+end
+#=
+
+Fraction Vector
+useful when expressing fractions in n-1 components.
+the last component is calculated at build time.
+it allocates less than creating a new vector or appending.
+=#
+##
+function FractionVector(v::AbstractVector)
+    a = one(eltype(v))
+    for vi in v
+        vi < 0 && throw(DomainError(vi,"all elements of a fraction vector should be positive."))
+        a -= vi
+    end
+    a < 0 && throw(DomainError(a,"the values of the input vector add to more than one"))
+    return FractionVector(v,a) 
+end
+
+function FractionVector(v::Real)
+    return FractionVector(SA[v])
+end
+
+
+@inline Base.eltype(v::FractionVector{T}) where T = T
+@inline Base.length(v::FractionVector)::Int = Base.length(v.vec) + 1
+@inline Base.size(v::FractionVector) = (length(v),)
+@inline function Base.getindex(v::FractionVector,i)
+    if length(v) == i
+        return v.val
+    else
+        return v.vec[i]
+    end
+end
+
+Base.IndexStyle(::Type{<:FractionVector}) = IndexLinear()
