@@ -1,15 +1,15 @@
 using OpenSAFT, Test
 
 @testset "ogSAFT" begin
-    test_system = system(["methanol"], "ogSAFT")
+    test_system = ogSAFT(["methanol"])
     Temp        = 298.15
     Vol         = 1e-4
-    z           = create_z(test_system, [1.])
-    @test typeof(test_system) == OpenSAFT.ogSAFT
+    z           = [1.]
+    #@test typeof(test_system) == OpenSAFT.ogSAFT
     @testset "params" begin
-        @test test_system.params.segment[Set(["methanol"])] ≈ 1.6 rtol = 1e-8
-        @test test_system.params.sigma[Set(["methanol"])] ≈ 3.203e-10 rtol = 1e-8
-        @test test_system.params.epsilon[Set(["methanol"])] ≈ 163.15 rtol = 1e-8
+        @test test_system.params.segment.values[1] ≈ 1.6 rtol = 1e-8
+        @test test_system.params.sigma.values[1] ≈ 3.203e-10 rtol = 1e-8
+        @test test_system.params.epsilon.values[1] ≈ 163.15 rtol = 1e-8
         @test test_system.params.epsilon_assoc[Set([(Set(["methanol"]), "H"), (Set(["methanol"]), "e")])] ≈ 2964 rtol = 1e-8
         @test test_system.params.bond_vol[Set([(Set(["methanol"]), "H"), (Set(["methanol"]), "e")])] ≈ 0.053 rtol = 1e-8
         @test test_system.params.n_sites[Set(["methanol"])]["e"] ≈ 1 rtol = 1e-8
@@ -23,10 +23,10 @@ using OpenSAFT, Test
 end
 
 @testset "CKSAFT" begin
-    test_system = system(["carbon dioxide","2-propanol"], "CKSAFT")
+    test_system = CKSAFT(["carbon dioxide","2-propanol"])
     Temp        = 298.15
     Vol         = 1e-4
-    z           = create_z(test_system, [0.5,0.5])
+    z           = [0.5,0.5]
     @test typeof(test_system) == OpenSAFT.CKSAFT
     @testset "params" begin
         @test test_system.params.segment[Set(["2-propanol"])] ≈ 3.249 rtol = 1e-8

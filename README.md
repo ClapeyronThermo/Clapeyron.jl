@@ -73,7 +73,7 @@ Properties available:
 | Isobaric (cubic) expansivity | :heavy_check_mark: |
 | Speed of sound               | :heavy_check_mark: |
 | Joule-Thomson coefficient    | :heavy_check_mark: |
-
+| Phase Identification Parameter (pip)    | :heavy_check_mark: |
 - Two-phase properties:
 
 | Property                  | Available?                         |

@@ -1,5 +1,6 @@
-using Documenter
 push!(LOAD_PATH,"../src/")
+using Documenter,OpenSAFT
+
 makedocs(sitename = "OpenSAFT.jl",
 format = Documenter.HTML(
     # Use clean URLs, unless built as a "local" build
