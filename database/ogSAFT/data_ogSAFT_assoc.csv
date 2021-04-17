@@ -1,5 +1,0 @@
-OpenSAFT Database File;;;;;;;;
-ogSAFT Assoc Parameters;;;;;;;;
-species1;SMILES1;site1;species2;SMILES2;site2;epsilon_assoc;bond_vol;source
-methanol;CO;H;methanol;CO;e;2964;0.053;10.1021/ie00104a021
-acetic acid;CO(=O);H;acetic acid;CO(=O);e;7200;0.00053;10.1021/ie00104a021

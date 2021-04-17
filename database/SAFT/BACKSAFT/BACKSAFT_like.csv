@@ -1,0 +1,5 @@
+OpenSAFT Database File,,,,,,,,
+PCSAFT Like Parameters,,,,,,,,
+species,DIPPR Number,Mw,m,c,vol,epsilon,alpha,source
+methane,,16.0,1.0,1.0,15.93,191.2,1.0,
+ethane,,30.0,1.07,10.0,21.43,308.4,1.028,
