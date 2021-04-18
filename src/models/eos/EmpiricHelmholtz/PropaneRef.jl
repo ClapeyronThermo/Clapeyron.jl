@@ -1,3 +1,5 @@
+struct PropaneRef <: EmpiricHelmholtzModel end
+
 const PropaneRef_consts = (
     R = 8.314472 #J·mol-1·K-1
     ,Mw = 44.09562 #g·mol-1
@@ -15,6 +17,8 @@ const PropaneRef_consts = (
     ,ref_P_0 = 100000.0
     ,ref_T_ideal_H = 26148.48 ## J·mol-1
     ,ref_T_ideal_S = 157.9105 ##J·mol-1·K-1
+    ,components = ["propane"]
+    ,lengthcomponents=1
     )
 const PropaneRef_a_consts = (
     v = (0.0,0.0,3.043,5.874,9.337,7.922)
@@ -121,19 +125,22 @@ function eos(model::PropaneRef, V, T, z=SA[1.0];phase="unknown")
     rho = (N/V)
     δ = rho/rho_c
     τ = T_c/T
-    return N*R*T *a_scaled(model::PropaneRef,δ,τ)
+    return N*R*T*a_scaled(model::PropaneRef,δ,τ)
 end
 
-struct PropaneRef <: EoSModel end
 
 mw(model::PropaneRef) = SA[PropaneRef_consts.Mw]
 molecular_weight(model::PropaneRef,z = @SVector [1.]) = PropaneRef_consts.Mw*0.001
-T_scale(model::PropaneRef,z) = PropaneRef_consts.T_c
-p_scale(model::PropaneRef,z) = PropaneRef_consts.P_c
-lb_volume(model::PropaneRef,z; phase=:l) = 6.0647250138479785e-5 #calculated at 1000 MPa and 650 K
+T_scale(model::PropaneRef,z=SA[1.0]) = PropaneRef_consts.T_c
+p_scale(model::PropaneRef,z=SA[1.0]) = PropaneRef_consts.P_c
+lb_volume(model::PropaneRef,z=SA[1.0]; phase=:l) = 6.0647250138479785e-5 #calculated at 1000 MPa and 650 K
 
 function Base.show(io::IO,mime::MIME"text/plain",model::PropaneRef)
     print(io,"Propane Reference Equation of State")
+end
+
+function Base.getproperty(model::PropaneRef,sym::Symbol)
+    return PropaneRef_consts[sym]
 end
 
 export PropaneRef

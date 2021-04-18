@@ -241,7 +241,7 @@ function volume_compress(model,p,T,z=SA[1.0])
 end
 
 function vcompress_v0(model,p,T,z=SA[1.0])
-    lb_v   = lb_volume(model,z,phase=:l)
+    lb_v   = lb_volume(model,z)
     v0 = 1.1*lb_v
     return v0
 end
