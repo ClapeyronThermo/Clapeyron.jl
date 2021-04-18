@@ -99,14 +99,14 @@ function state_to_pt(model,st::ThermoState.ThermodynamicState)
     return state_to_pt(ThermoState.state_type(st),model,st)
 end
 
-function state_to_pt(::ThermoState.QuickStates.SingleVT,model,st::ThermoState.ThermodynamicState)
+function state_to_pt(::ThermoState.QuickStates.SinglePT,model,st::ThermoState.ThermodynamicState)
     p = ThermoState.pressure(FromState(),st,u"Pa") |> only
     T = ThermoState.temperature(FromState(),st,u"K") |> only
     _z = ThermoState.moles(FromState(),st,u"mol",mw(model))
     z = SA[_z]
     return p,T,z
 end
-function state_to_pt(::ThermoState.QuickStates.MultiVT,model,st::ThermoState.ThermodynamicState)
+function state_to_pt(::ThermoState.QuickStates.MultiPT,model,st::ThermoState.ThermodynamicState)
     p = ThermoState.pressure(FromState(),st,u"Pa") |> only
     T = ThermoState.temperature(FromState(),st,u"K") |> only
     z = ThermoState.mol_number(FromState(),st,u"mol",mw(model))
