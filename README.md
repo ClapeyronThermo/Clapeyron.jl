@@ -79,7 +79,7 @@ Properties available:
 | Property                  | Available?                         |
 | ------------------------- | ---------------------------------- |
 | Saturation pressure       | :heavy_check_mark:                 |
-| Bubble pressure           | :heavy_check_mark: (SAFT EOS only)​ |
+| Bubble pressure           | :heavy_check_mark:                ​ |
 | Dew pressure              |                                    |
 | Bubble temperature        |                                    |
 | Dew temperature           |                                    |
