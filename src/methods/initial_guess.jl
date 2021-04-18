@@ -169,6 +169,11 @@ function scale_sat_pure(model::EoSModel,z=SA[1.0])
     return p,μ
 end
 
+function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
+    val = lb_volume(model,z)
+    x0  = [val/0.5,val/1e-3]
+    return log10.(x0)
+end
 
 
 
@@ -260,8 +265,8 @@ function p_scale(model::CubicModel,z=SA[1.0])
     Ωa,Ωb = ab_consts(model) 
     _a = model.params.a.values
     _b = model.params.b.values
-    a = invsumz*dot(x, Symmetric(_a), x)/Ωa
-    b = invsumz*dot(x, Symmetric(_b), x)/Ωb
+    a = invsumz*dot(z, Symmetric(_a), z)/Ωa
+    b = invsumz*dot(z, Symmetric(_b), z)/Ωb
     return a/ (b^2) # Pc mean
 end
 

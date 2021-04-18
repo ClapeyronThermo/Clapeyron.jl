@@ -55,6 +55,8 @@ include("models/eos/cubic/equations.jl")
 include("models/eos/EmpiricHelmholtz/IAPWS95.jl")
 include("models/eos/EmpiricHelmholtz/PropaneRef.jl")
 
+include("models/eos/SPUNG/SPUNG.jl")
+
 # include("models/param_structs.jl")
 # include("models/ideal_param_structs.jl")
 # include("models/model_structs.jl")
