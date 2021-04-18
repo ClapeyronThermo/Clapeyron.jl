@@ -175,7 +175,7 @@ function bubble_pressure(model, T, x; v0 =nothing)
     #ps = p_scales(model,x)
     #Mollerup K
     #k0 =   (ps ./ p) .* exp.(5.42 .* (1.0 .- (ts ./ t)))
-
+    k0 = 10.0
     if v0 === nothing
         y0    = k0 .*x./(1 .+x.*(k0 .- 1))
         y0    = y0 ./sum(y0)
@@ -251,6 +251,14 @@ function volume_virial(model,p,T, z=SA[1.] )
     a = p/(R̄*T)
     b = -1
     c = -B
+    Δ = b*b-4*a*c
+    n = sum(z)
+    if Δ <= 0
+        #virial approximation could not be calculated
+        #degrade to ideal aprox
+        return n*R̄*T/p 
+        
+    end 
     return (-b + sqrt(b*b-4*a*c))/(2*a)
 end
 

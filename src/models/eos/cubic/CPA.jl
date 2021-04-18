@@ -66,7 +66,7 @@ function cubic_ab(model::CPAModel, T, z)
     Tc = model.params.Tc.values
     c1 = model.params.c1.values
 
-    α = @. (1+c1*(1-√(T/Tc)))^2
+    α = @. min((1+c1*(1-√(T/Tc)))^2,one(T))
 
     āᾱ = ∑(a .* .√(α * α') .* (x * x'))
     b̄ = ∑(b .* (x * x'))

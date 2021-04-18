@@ -195,6 +195,11 @@ function x0_crit_pure(model::CPAModel,z=SA[1.0])
     [2.0, log10(lb_v/0.3)]
 end
 
+function x0_crit_pure(model::EoSModel,z=SA[1.0])
+    lb_v = lb_volume(model,z)
+    [1.5, log10(lb_v/0.3)]
+end
+
 
 # x0_crit_pure(model::Cubic) = [1.0, log10(model.params.b[model.components[1]]/0.3)]
 # x0_crit_pure(model::CPA) = [2, log10(model.params.b[model.components[1]]/0.3)]
@@ -211,7 +216,7 @@ end
 # end
 # T_crit_pure(model::LJSAFT) = model.params.T[model.components[1]]
 
-T_crit_pure(model::SAFTModel,z=SA[1.0]) = T_scale(model,z)
+T_crit_pure(model::EoSModel,z=SA[1.0]) = T_scale(model,z)
 
 # T_crit_pure(model::Cubic) = model.params.a[model.components[1]]/model.params.b[model.components[1]]/8.314*8/27
 
