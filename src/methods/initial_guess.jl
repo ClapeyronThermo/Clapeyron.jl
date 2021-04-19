@@ -163,11 +163,6 @@ function x0_sat_pure(model::CubicModel,T,z=SA[1.0])
     return log10.(x0)
 end
 
-function scale_sat_pure(model::EoSModel,z=SA[1.0])
-    p    = 1/p_scale(model,z)
-    μ    = 1/R̄/T_scale(model,z)
-    return p,μ
-end
 
 function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
     val = lb_volume(model,z)
@@ -175,7 +170,11 @@ function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
     return log10.(x0)
 end
 
-
+function scale_sat_pure(model::EoSModel,z=SA[1.0])
+    p    = 1/p_scale(model,z)
+    μ    = 1/R̄/T_scale(model,z)
+    return p,μ
+end
 
 
 
