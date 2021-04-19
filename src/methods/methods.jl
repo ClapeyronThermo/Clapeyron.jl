@@ -1,4 +1,4 @@
-molecular_weight(model::EoSModel,z = @SVector [1.]) = 0.001*mapreduce(+,*,paramvals(model.params.Mw),z)
+molecular_weight(model::EoSModel,z = @SVector [1.]) = 0.001*mapreduce(+,*,mw(model),z)
 mw(model::EoSModel) = paramvals(model.params.Mw)
 
 include("initial_guess.jl")

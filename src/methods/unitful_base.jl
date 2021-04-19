@@ -68,7 +68,6 @@ function autospec(t::AbstractVector{<:Unitful.Mass},st)
 end
 
 ThermoState.molecular_weight(model::EoSModel) = mw(model)
-
 #transforms vt or pt model to ThermoState.state
 function standarize(model,λ,t,z)
     spec_t = autospec(t,spec"T")
