@@ -71,7 +71,30 @@ function p_scale(model::SPUNG,z=SA[1.0])
     T0 = T_scale(model.model_ref)
     p0 = p_scale(model.model_ref)
     f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
-    return p0*f/h 
+    ps = p0*f/h 
+    return ps
 end
 
-export SPUNG
+#=
+ideally we could perform SPUNG only providing x0, but i cant find the error here
+function x0_sat_pure(model::SPUNG,T,z=SA[1.0])
+    lb_v = lb_volume(model,z)
+    f,h = shape_factors(model,lb_v,T,z)
+    T0 = T/f 
+    @show T0
+    vl0,vv0 = exp10.(x0_sat_pure(model.model_ref,T0,SA[1.0]))
+    @show vl = vl0*h
+    @show vv = vv0*h
+    return [log10(vl),log10(vv)]
+end
+=#
+
+#overloading sat_pure for SPUNG directly seems to be the way
+function sat_pure(model::SPUNG,T)
+    lb_v = lb_volume(model,SA[1.0])
+    f,h = shape_factors(model,lb_v,T,SA[1.0])
+    T0 = T/f
+    psat0,vl0,vv0 = sat_pure(model.model_ref,T0)
+    p = pressure(model,vv0*h,T)
+     return (p,vl0*h,vv0*h)
+end
