@@ -111,7 +111,36 @@ function _propane_ref_ar(δ,τ)
     end
     return αᵣ
 end
+#ancillary equations for calculation of P_sat, rhovsat y rholsat
+function _propaneref_tsat(T)
+    T_c = PropaneRef_consts.T_c
+    P_c = PropaneRef_consts.P_c
+    Tr = T/T_c
+    θ = 1.0-T/Tr
+    lnPsatPc = (-6.7722*θ + 1.6938*θ^1.5 -1.3341*θ^2.2 -3.1876*θ^4.8 + 0.94937*θ^6.2)/Tr
+    Psat = exp(lnPsatPc)*P_c
+    return Psat
+end
 
+function _propaneref_rholsat(T)
+    Tc = PropaneRef_consts.T_c
+    ρ_c =PropaneRef_consts.rho_c
+    Tr = T/Tc
+    θ = 1.0-Tr
+    #
+    ρ_l = (1.0 + 1.82205*θ^0.345 + 0.65802*θ^0.74 + 0.21109*θ^2.6 + 0.083973*θ^7.2)*ρ_c
+    return ρ_l
+end
+
+function _propaneref_rhovsat(T)
+    Tc = PropaneRef_consts.T_c
+    ρ_c =PropaneRef_consts.rho_c
+    Tr = T/Tc
+    θ = 1.0 - Tr
+    log_ρ_v_ρ_c = (-2.4887*θ^0.3785 -5.1069*θ^1.07 -12.174*θ^2.7 -30.495*θ^5.5 -52.192*θ^10 -134.89*θ^20)
+    ρ_v = exp(log_ρ_v_ρ_c)*ρ_c
+    return ρ_v
+end
 
 function a_scaled(model::PropaneRef,δ,τ) 
     return  _propane_ref_a0(δ,τ)+_propane_ref_ar(δ,τ)
@@ -135,8 +164,15 @@ T_scale(model::PropaneRef,z=SA[1.0]) = PropaneRef_consts.T_c
 p_scale(model::PropaneRef,z=SA[1.0]) = PropaneRef_consts.P_c
 lb_volume(model::PropaneRef,z=SA[1.0]; phase=:l) = 6.0647250138479785e-5 #calculated at 1000 MPa and 650 K
 
+
+
 function Base.show(io::IO,mime::MIME"text/plain",model::PropaneRef)
     print(io,"Propane Reference Equation of State")
+end
+function x0_sat_pure(model::PropaneRef,T,z=SA[1.0])
+    log10vv = log10(1.0/_propaneref_rhovsat(T))
+    log10vl = log10(1.0/_propaneref_rholsat(T))
+    return [log10vl,log10vv]
 end
 
 function Base.getproperty(model::PropaneRef,sym::Symbol)
