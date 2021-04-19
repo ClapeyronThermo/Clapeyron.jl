@@ -17,7 +17,6 @@ end
 
 function SPUNG(components::Vector{String},refmodel=PropaneRef(),shapemodel::SHAPE=SRK(components)) where SHAPE<:EoSModel
     refname = component_names(refmodel)
-    @show 1
     shape_ref = SHAPE.name.wrapper(refname)
     return SPUNG(shapemodel,shape_ref,refmodel)
 end
@@ -99,3 +98,5 @@ function sat_pure(model::SPUNG,T::Real)
     p = pressure(model,vv0*h,T)
      return (p,vl0*h,vv0*h)
 end
+
+
