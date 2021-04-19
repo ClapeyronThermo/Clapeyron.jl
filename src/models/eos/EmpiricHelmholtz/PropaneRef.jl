@@ -164,8 +164,6 @@ T_scale(model::PropaneRef,z=SA[1.0]) = PropaneRef_consts.T_c
 p_scale(model::PropaneRef,z=SA[1.0]) = PropaneRef_consts.P_c
 lb_volume(model::PropaneRef,z=SA[1.0]; phase=:l) = 6.0647250138479785e-5 #calculated at 1000 MPa and 650 K
 
-
-
 function Base.show(io::IO,mime::MIME"text/plain",model::PropaneRef)
     print(io,"Propane Reference Equation of State")
 end

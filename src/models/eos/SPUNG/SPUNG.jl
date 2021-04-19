@@ -41,6 +41,7 @@ function shape_factors(model::SPUNG{<:ABCubicModel},V,T,z=SA[1.0])
     return f,h
 end
 
+mw(model::SPUNG) = mw(model.shape_model)
 
 function Base.show(io::IO,mime::MIME"text/plain",model::SPUNG)
     println(io,"Extended Corresponding States model")
@@ -90,7 +91,7 @@ end
 =#
 
 #overloading sat_pure for SPUNG directly seems to be the way
-function sat_pure(model::SPUNG,T)
+function sat_pure(model::SPUNG,T::Real)
     lb_v = lb_volume(model,SA[1.0])
     f,h = shape_factors(model,lb_v,T,SA[1.0])
     T0 = T/f
