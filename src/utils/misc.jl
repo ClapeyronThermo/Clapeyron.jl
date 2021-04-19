@@ -78,12 +78,8 @@ end
 @inline Base.eltype(v::FractionVector{T}) where T = T
 @inline Base.length(v::FractionVector)::Int = Base.length(v.vec) + 1
 @inline Base.size(v::FractionVector) = (length(v),)
-@inline function Base.getindex(v::FractionVector,i)
-    if length(v) == i
-        return v.val
-    else
-        return v.vec[i]
-    end
+@inline function Base.getindex(v::FractionVector,i::Int)
+    return ifelse(length(v)==i,v.val,v.vec[min(length(v.vec),i)])
 end
 
 Base.IndexStyle(::Type{<:FractionVector}) = IndexLinear()
