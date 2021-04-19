@@ -86,10 +86,12 @@ end
 
 @inline Base.size(v::FractionVector) = (length(v),)
 @inline function Base.getindex(v::FractionVector,i::Int)
+    @boundscheck checkbounds(v, i)
     return ifelse(length(v)==i,v.val,v.vec[min(length(v.vec),i)])
 end
 
 @inline function Base.getindex(v::FractionVector{T,<:Real},i::Int) where T
+    @boundscheck checkbounds(v, i)
     return ifelse(i==1,v.vec,v.val)
 end
 
