@@ -209,8 +209,10 @@ end
     
 function naive_sat_pure_p(model,p)
     T0 = p_sat_t0(model,p)
-    ft0(t) = first(sat_pure(model,t)) - p
-    T = Solvers.ad_newton(ft0,T0)
+    ft0(t) = log(first(sat_pure(model,t))/p)
+    tt0 =T0
+    res = Solvers.ad_newton(ft0,tt0)
+    T = res
     vl = volume(model,p,T,phase=:l)
     vv = volume(model,p,T,phase=:v)
     return (T,vl,vv)
