@@ -42,7 +42,7 @@ function cubic_ab(model::SRKModel,T,x)
     Tc = model.params.Tc.values
     α = @. min((1+(0.480+1.547*ω-0.176*ω^2)*(1-√(T/Tc)))^2,one(T))
     āᾱ = sum(a .* .√(α * α') .* (x * x'))
-    b̄ = sum(b .* (x * x'))
+    b̄ = dot(x, Symmetric(b), x)
     return āᾱ ,b̄
 end
 

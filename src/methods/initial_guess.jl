@@ -152,20 +152,20 @@ lb_volume(model::IAPWS95, z; phase = "unknown") = 1.4696978063543022e-5
 # end
 
 function x0_sat_pure(model::SAFTModel,T,z=SA[1.0])
-    val = lb_volume(model,z)
+    val = lb_volume(model,z)*one(T)
     x0  = [val/0.5,val/1e-3]
     return log10.(x0)
 end
 
 function x0_sat_pure(model::CubicModel,T,z=SA[1.0])
-    val = lb_volume(model,z)
+    val = lb_volume(model,z)*one(T)
     x0  = [val/0.9,val/1e-4]
     return log10.(x0)
 end
 
 
 function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
-    val = lb_volume(model,z)
+    val = lb_volume(model,z)*one(T)
     x0  = [val/0.5,val/1e-3]
     return log10.(x0)
 end
