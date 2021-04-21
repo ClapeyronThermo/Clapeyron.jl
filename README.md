@@ -79,6 +79,7 @@ Properties available:
 | Property                  | Available?                         |
 | ------------------------- | ---------------------------------- |
 | Saturation pressure       | :heavy_check_mark:                 |
+| Saturation temperature    | :heavy_check_mark:                 |
 | Bubble pressure           | :heavy_check_mark:                ​ |
 | Dew pressure              |                                    |
 | Bubble temperature        |                                    |

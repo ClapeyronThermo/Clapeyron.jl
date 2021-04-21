@@ -1,60 +1,3 @@
-
-function volume(model::EoSModel,p,T,z=SA[1.0];phase="unknown")
-
-    fp(_v) = pressure(model,_v,T,z) - p
-
-#Threaded version
-
-    if is_liquid(phase)
-        return volume_compress(model,p,T,z)
-    elseif is_vapour(phase) | is_supercritical(phase)
-        vg0 = volume_virial(model,p,T,z)
-        return Solvers.ad_newton(fp,vg0,rtol=1e-08)
-    else #unknown handled here
-    end
-    
-    _vg = Threads.@spawn begin
-        vg0 = volume_virial(model,$p,$T,$z)
-        Solvers.ad_newton(fp,vg0,rtol=1e-08)
-    end
-        
-    _vl = Threads.@spawn volume_compress(model,$p,$T,$z)
-    #fp(_v) = pressure(model,_v,T,z) - p
-    vg = fetch(_vg)
-    vl = fetch(_vl)
-
-
-# Serial version
-#=
-    vg0 = volume_virial(model,p,T,z)
-    vg =Solvers.ad_newton(fp,vg0,rtol=1e-08)
-
-    vl =  volume_compress(model,p,T,z)
-=#
-    function gibbs(v)
-        _df,f =  ∂f(model,v,T,z)
-        dv,dt = _df
-        if abs((p+dv)/p) > 0.03
-            return Inf
-        else
-            return f  +p*v
-        end
-    end
-    #this catches the supercritical phase as well
-    if vl ≈ vg
-        return vl
-    end  
-        gg = gibbs(vg)
-        gl = gibbs(vl)
-        #@show vg,vl
-        #@show gg,gl
-        return ifelse(gg<gl,vg,vl)
-    
-end
-
-
-
-## Pure saturation conditions solver
 function sat_pure(model::EoSModel, T; v0 = nothing)
     f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
     #j! = (J,x) -> Jac_Sat(model, J, T, exp10(x[1]), exp10(x[2]))
@@ -136,8 +79,8 @@ function Obj_Sat(model::EoSModel, F, T, v_l, v_v)
     #components = model.components
     fun(x) = eos(model, x[2], T,SA[x[1]])
     df(x)  = ForwardDiff.gradient(fun,x)
-    df_l = df(SA[one(v_l),v_l])
-    df_v = df(SA[one(v_v),v_v])
+    df_l = df(SA[one(v_l*T),v_l])
+    df_v = df(SA[one(v_v*T),v_v])
     (p_scale,μ_scale) = scale_sat_pure(model)
     F[1] = (df_l[2]-df_v[2])*p_scale
     F[2] = (df_l[1]-df_v[1])*μ_scale
@@ -165,51 +108,6 @@ function Obj_Crit(model::EoSModel, F, T_c, v_c)
     return F
 end
 
-
-## Mixture saturation solver
-function bubble_pressure(model, T, x; v0 =nothing)
-    TYPE = promote_type(eltype(T),eltype(x))
-    lb_v = lb_volume(model,x)
-    ts = T_scales(model,x)
-    pmix = p_scale(model,x)
-    #ps = p_scales(model,x)
-    #Mollerup K
-    #k0 =   (ps ./ p) .* exp.(5.42 .* (1.0 .- (ts ./ t)))
-    k0 = 10.0
-    if v0 === nothing
-        y0    = k0 .*x./(1 .+x.*(k0 .- 1))
-        y0    = y0 ./sum(y0)
-        X     = x
-        v0    = [log10(lb_v/0.45),
-                 log10(lb_v/1e-4)]
-        append!(v0,y0[1:end-1])
-    end
-    
-    f! = (F,z) -> Obj_bubble_pressure(model, F, T, exp10(z[1]), exp10(z[2]), x,@view(z[3:end]),ts,pmix)
-    #j! = (J,z) -> Jac_bubble_pressure(model, J, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
-    r  =Solvers.nlsolve(f!,v0)
-    v_l = exp10(r.info.zero[1])
-    v_v = exp10(r.info.zero[2])
-    y = FractionVector(r.info.zero[3:end])
-    P_sat = pressure(model,v_l,T,x)
-    return (P_sat, v_l, v_v, y)
-end
-
-function Obj_bubble_pressure(model, F, T, v_l, v_v, x, y,ts,ps)
-    #y = append!(y,1-sum(y))
-    #y = [y...,1-sum(y)]
-    y = FractionVector(y) #julia magic, check misc.jl
-    μ_l = vt_chemical_potential(model,v_l,T,x)
-    μ_v = vt_chemical_potential(model,v_v,T,y)
-    p_l = pressure(model,v_l,T,x)
-    p_v = pressure(model,v_v,T,y)
-    
-    for i in 1:length(x)
-        F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
-    end
-    F[end] = (p_l-p_v)/ps
-end
-
 function enthalpy_vap(model::EoSModel, T)
     (P_sat,v_l,v_v) = sat_pure(model,T)
    #= _dfl,fl =  ∂f(model,v_l,T,SA[1.0])
@@ -223,44 +121,97 @@ function enthalpy_vap(model::EoSModel, T)
     H_vap=H_v-H_l
     return H_vap
 end
-#aproximates liquid volume at a known pressure and t,
-#by using isothermal compressibility
-function volume_compress(model,p,T,z=SA[1.0])
-    v0 = vcompress_v0(model,p,T,z)
-    function f_fixpoint(_v)
-        _p,dpdv = p∂p∂v(model,_v,T,z)
-        β = -1/_v*dpdv^-1
-        _Δ =  -(p-_p)*β
-        sign_Δ = sign(_Δ)
-        Δ = abs(_Δ)
-        vv = _v*exp(sign_Δ*Δ^(1-_Δ))#^((1+Δ)^4)
-        return vv
-    end
-    return Solvers.fixpoint(f_fixpoint,v0,Solvers.SimpleFixPoint(),rtol = 1e-12)
-    #return Roots.find_zero(f_fixpoint,v0)
+
+
+
+"""
+    acentric_factor(model::EoSModel)
+
+calculates the acentric factor using its definition:
+
+    ω = -log10(psatᵣ) -1, at Tᵣ = 0.7
+To do so, it calculates the critical temperature (using `crit_pure`) and performs a saturation calculation (with `sat_pure`)
+
+"""
+function acentric_factor(model)
+    T_c,p_c,_ = crit_pure(model)
+    T = 0.7*T_c
+    p = first(sat_pure(model,T))
+    p_r = p/p_c
+    return -log10(p_r) - 1.0
 end
 
-function vcompress_v0(model,p,T,z=SA[1.0])
-    lb_v   = lb_volume(model,z)
-    v0 = 1.1*lb_v
-    return v0
+
+function p_sat_t0(model,p)
+    #ln(pr) = h*(1-1/tr)
+    #1/(1-ln(pr)/h)*tc = t
+    tc = T_scale(model)
+    pc = p_scale(model)
+    scale = 0.7
+    t7 = scale*tc
+    p7 = first(sat_pure(model,t7))
+    h = 2.3333333333333335*log(pc/p7)
+    #T/Tc = 1(1-log(p/pc)/h)
+    return 1/(1-log(p/pc)/h)*tc
 end
 
-function volume_virial(model,p,T, z=SA[1.] )
-    B = second_virial_coefficient(model,T,z)
-    a = p/(R̄*T)
-    b = -1
-    c = -B
-    Δ = b*b-4*a*c
-    n = sum(z)
-    if Δ <= 0
-        #virial approximation could not be calculated
-        #degrade to ideal aprox
-        return n*R̄*T/p 
+function sat_pure_p(model,p)
+    #=
+    model_pred = single_sat_aprox(model)
+    t_pred = p_sat_t0(model,p) #prediction temperature
+    vv = v_zeros(_pt,model,p,t_pred)
+
+    v1 = first(vv)
+    #(v1 == v2) && return v1
+    v2 = last(vv)
+    
+    =#
+    T0 = p_sat_t0(model,p)
+    px = p
+
+    _A(v, t) = eos(model, v, t,SA[1.0])
+    v1old = zero(p)
+    v2old = zero(p)
+    Told = zero(p)
+    v1,v2 = x0_sat_pure(model,T0)
+    Tx = T0
+    for i = 1:20
+        if i > 1
+            v1old = v1
+            v2old = v2
+        end
+        A = z -> _A(z, Tx)
+        _v1 = Threads.@spawn volume(model,$p,$Tx;phase=:liquid)
+        _v2 = Threads.@spawn volume(model,$p,$Tx;phase=:gas)
+        v1 = fetch(_v1)
+        v2 = fetch(_v2)
+
+        if abs(v1 - v1old) / v1 < 1e-15 && i > 1
+            #println("v1 condition")
+            break
+        elseif abs(v2 - v2old) / v2 < 1e-15 && i > 1
+            #println("v2 condition")
+            break
+        end
         
-    end 
-    return (-b + sqrt(b*b-4*a*c))/(2*a)
-end
+        _px(T) = (_A(v1, T) - _A(v2, T)) / (v2 - v1) - p
+        #_px(T) = exp(_A(v1,T)-_A(v2,T)) - one(Tx)
+        Told = Tx
+        Tx = Solvers.ad_newton(_px, Tx)
+        if abs(Told - Tx) < 1e-10 * Tx
+            #println("P condition")
+            break
+        end
+    end
 
-#(z = pv/rt)
-#(RT/p = v/z)
+    return (Tx,v1,v2)
+end
+    
+function naive_sat_pure_p(model,p)
+    T0 = p_sat_t0(model,p)
+    ft0(t) = first(sat_pure(model,t)) - p
+    T = Solvers.ad_newton(ft0,T0)
+    vl = volume(model,p,T,phase=:l)
+    vv = volume(model,p,T,phase=:v)
+    return (T,vl,vv)
+end

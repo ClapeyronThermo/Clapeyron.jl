@@ -99,4 +99,10 @@ function sat_pure(model::SPUNG,T::Real)
      return (p,vl0*h,vv0*h)
 end
 
+function sat_pure_p(model::SPUNG,p::Real)
+    return naive_sat_pure_p(model,p)
+end
+
+
+
 
