@@ -311,3 +311,20 @@ function p_scales(model,z)
         x[i] = 0.0
     end
 end
+
+
+
+function mollerup_k0(tc,pc,p,T)
+    return (pc ./ p) .* exp.(5.42 .* (1.0 .- (tc ./ T)))
+end
+
+function wilson_k0(ω, tc,pc,p,T)
+    return exp.(log.(pc./p).+5.373 .*(1.0 .+ ω).*(1.0 .-tc./T)) 
+end
+
+function bubble_pressure_y0(model::EoSModel,T,x)
+    tc = T_scales(model,x)
+    pc = p_scales(model,x)
+    mollerup(p,t) = mollerup_k0(tc,pc,p,t)
+end
+

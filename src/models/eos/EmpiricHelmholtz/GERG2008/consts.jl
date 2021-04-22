@@ -1,7 +1,7 @@
-const GERG2008constsProps = (
+const GERG2008_consts = (
 names =[
-        "methane"
-        "nitrogen"
+        "methane",
+        "nitrogen",
         "carbon dioxide",
         "ethane",
         "propane",
@@ -23,7 +23,7 @@ names =[
         "argon"
         ],    
 
-acentric_factor = [
+acentricfactor = [
         0.0115478,
         0.0377215,
         0.223621,
@@ -46,7 +46,7 @@ acentric_factor = [
         -0.390032,
         0.0,
     ],
-    molecularWeight = [
+    Mw = [
         16.04246,
         28.0134,
         44.0095,
@@ -69,7 +69,7 @@ acentric_factor = [
         4.002602,
         39.948,
     ],
-    criticalTemperature = [
+    Tc = [
         190.564,
         126.192,
         304.1282,
@@ -92,7 +92,7 @@ acentric_factor = [
         5.1953,
         150.687,
     ],
-    criticalDensity = [
+    rhoc = [
         10.139342719,
         11.1839,
         10.624978698,
@@ -115,7 +115,7 @@ acentric_factor = [
         17.399,
         13.407429659,
     ], #molar density, in mol/dm3
-    criticalPressure = [
+    pc = [
         4599000.,
         3400000.,
         7383000.,
@@ -143,7 +143,7 @@ acentric_factor = [
 
 function GERG2008_xsel(names::Vector{String})
 
-symvalues = GERG2008constsProps.names
+symvalues = GERG2008_consts.names
     xsel = Vector{Int}()
     for i in names
         i in symvalues || throw(ArgumentError("invalid name: $i"))
