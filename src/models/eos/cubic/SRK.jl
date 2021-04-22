@@ -40,8 +40,12 @@ function cubic_ab(model::SRKModel,T,x)
     b = model.params.b.values
     ω = model.params.acentricfactor.values
     Tc = model.params.Tc.values
-    α = @. min((1+(0.480+1.547*ω-0.176*ω^2)*(1-√(T/Tc)))^2,one(T))
-    āᾱ = sum(a .* .√(α * α') .* (x * x'))
+    #root of α  
+    αx = @. sqrt(min((1+(0.480+1.547*ω-0.176*ω^2)*(1-√(T/Tc)))^2,one(T)))
+    #αx = (αi*xi for (αi,xi) in zip(α,x)) #lazy iterator
+    αx .*= x
+    #āᾱ = sum(a .* .√(α * α') .* (x * x'))
+    āᾱ =dot(αx, Symmetric(a), αx)
     b̄ = dot(x, Symmetric(b), x)
     return āᾱ ,b̄
 end

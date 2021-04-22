@@ -96,3 +96,5 @@ end
 end
 
 Base.IndexStyle(::Type{<:FractionVector}) = IndexLinear()
+
+unicode_subscript(a::Int) = join('₀'+d for d in reverse(digits(a)))
