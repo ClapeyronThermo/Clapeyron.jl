@@ -58,8 +58,16 @@ function T_scales(model::GERG2008,x)
     return model.Tc
 end
 
+function p_scale(model::GERG2008)
+    return only(model.Pc)
+end
+
+function p_scale(model::GERG2008,x)
+    return dot(x,model.Pc)
+end
+
 function p_scales(model::GERG2008,x)
-    return model.pc
+    return only(model.Pc)
 end
 
 function _v_scale(model::GERG2008,x)
@@ -77,6 +85,13 @@ function _v_scale(model::GERG2008)
     return only(model.vc)
 end
 
+function lb_volume(model::GERG2008)
+    return only(model.lb_v)
+end
+
+function lb_volume(model::GERG2008,x;phase="unknown")
+    return dot(x,model.lb_v)
+end
 
 function _delta(model::GERG2008, rho, T, x)
     vcmix = _v_scale(model,x)
@@ -370,4 +385,62 @@ function eos(model::GERG2008, v, T, z=SA[1.0])
         return N * R * T * (_f0(model, rho, T, x)+ _fr1(model, delta, tau, x) + _fr2(model, delta, tau, x))
     end
 end
- 
+
+
+function ρ_TP(species::OpenSAFT.EoSModel, T, P)
+    v = OpenSAFT.volume(species,P,T)
+    return 1/v
+end
+#=
+julia> @time [ρ_TP(thermo_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
+#4.271689 seconds (2.22 M allocations: 130.980 MiB, 1.10% gc time, 33.34% compilation time
+
+julia> @benchmark [ρ_TP(thermo_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
+
+BenchmarkTools.Trial: 
+  memory estimate:  14.73 MiB
+  allocs estimate:  320005
+  --------------
+  minimum time:     2.903 s (0.00% GC)   
+  median time:      2.994 s (0.00% GC)   
+  mean time:        2.994 s (0.00% GC)   
+  maximum time:     3.085 s (0.00% GC)   
+  --------------
+  samples:          2
+  evals/sample:     1
+
+
+julia> @time [ρ_TP(CP_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
+  0.538447 seconds (115.41 k allocations: 4.366 MiB, 6.34% compilation time)
+
+julia> @benchmark [ρ_TP(CP_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
+BenchmarkTools.Trial:
+  memory estimate:  859.66 KiB
+  allocs estimate:  50005
+  --------------
+  minimum time:     690.530 ms (0.00% GC)  median time:      708.036 ms (0.00% GC)  mean time:        832.741 ms (0.00% GC)  maximum time:     1.171 s (0.00% GC)   
+  --------------
+  samples:          6
+  evals/sample:     1
+  =#
+
+
+
+#julia> @time [ρ_TP(w, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
+#  2.781332 seconds (889.17 k allocations: 61.773 MiB, 0.73% gc time, 2.29% compilation time)
+
+#julia> @benchmark [ρ_TP(OpenSAFT_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
+#=
+BenchmarkTools.Trial:
+  memory estimate:  57.23 MiB
+  allocs estimate:  805979
+  --------------
+  minimum time:     2.841 s (0.31% GC)   
+  median time:      2.843 s (0.30% GC)   
+  mean time:        2.843 s (0.30% GC)   
+  maximum time:     2.844 s (0.30% GC)   
+  --------------
+  samples:          2
+  evals/sample:     1
+  =#
+
