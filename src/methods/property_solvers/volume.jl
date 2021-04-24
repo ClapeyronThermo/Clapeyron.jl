@@ -1,7 +1,7 @@
 #aproximates liquid volume at a known pressure and t,
 #by using isothermal compressibility
-function volume_compress(model,p,T,z=SA[1.0])
-    v0 = vcompress_v0(model,p,T,z)
+function volume_compress(model,p,T,z=SA[1.0];v0=vcompress_v0(model,p,T,z))
+    #v0 = vcompress_v0(model,p,T,z)
     function f_fixpoint(_v)
         _p,dpdv = p∂p∂v(model,_v,T,z)
         β = -1/_v*dpdv^-1
@@ -40,30 +40,37 @@ end
 #(z = pv/rt)
 #(RT/p = v/z)
 
-function volume(model::EoSModel,p,T,z=SA[1.0];phase="unknown")
+function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
 
-    fp(_v) = pressure(model,_v,T,z) - p
+    fp(_v) = log(pressure(model,_v,T,z)/p)
 
 #Threaded version
 
-    if is_liquid(phase)
-        return volume_compress(model,p,T,z)
-    elseif is_vapour(phase) | is_supercritical(phase)
-        vg0 = volume_virial(model,p,T,z)
-        return Solvers.ad_newton(fp,vg0,rtol=1e-08)
-    else #unknown handled here
+    if phase != :unknown
+        v0 = x0_volume(model,p,T,z,phase=phase)
+        #return Solvers.ad_newton(fp,vg0)
+        return volume_compress(model,p,T,z,v0=v0)
     end
     
-    _vg = Threads.@spawn begin
-        vg0 = volume_virial(model,$p,$T,$z)
-        Solvers.ad_newton(fp,vg0,rtol=1e-08)
+    if threaded
+        _vg = Threads.@spawn begin
+            vg0 = x0_volume(model,$p,$T,$z,phase=:v)
+            volume_compress(model,$p,$T,$z;v0=vg0)
+            #Solvers.ad_newton(fp,vg0)
+        end
+        vl0 = x0_volume(model,p,T,z,phase=:l) 
+        _vl = Threads.@spawn volume_compress(model,$p,$T,$z;v0=$vl0)
+        #fp(_v) = pressure(model,_v,T,z) - p
+        vg = fetch(_vg)
+        vl = fetch(_vl)
+    else
+        vg0 = x0_volume(model,p,T,z,phase=:v)
+        vl0 = x0_volume(model,p,T,z,phase=:l)
+    
+        vg =  volume_compress(model,p,T,z,v0=vg0)
+        #vg = Solvers.ad_newton(fp,vg0)
+        vl =  volume_compress(model,p,T,z,v0=vl0)
     end
-        
-    _vl = Threads.@spawn volume_compress(model,$p,$T,$z)
-    #fp(_v) = pressure(model,_v,T,z) - p
-    vg = fetch(_vg)
-    vl = fetch(_vl)
-
 
 # Serial version
 #=
