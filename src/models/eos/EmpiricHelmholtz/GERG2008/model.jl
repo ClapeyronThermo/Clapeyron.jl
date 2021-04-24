@@ -28,6 +28,7 @@ struct GERG2008 <: EmpiricHelmholtzModel
     vc::Vector{Float64}
     Tc::Vector{Float64}
     Pc::Vector{Float64}
+    lb_v::Vector{Float64}
     ideal_iters::Vector{Vector{Int64}}
     nr::Matrix{Float64}
     zeta::Matrix{Float64}
@@ -60,6 +61,7 @@ function GERG2008(components::Vector{String})
     pc = GERG2008_consts.pc
     Tc = GERG2008_consts.Tc
     Mw = GERG2008_consts.Mw
+    lb_v = GERG2008_consts.lb_volumes
     rhoc = GERG2008_consts.rhoc
     acentricfactor = GERG2008_consts.acentricfactor
 
@@ -1931,6 +1933,7 @@ function GERG2008(components::Vector{String})
         1 ./ rhoc[xsel],
         Tc[xsel],
         pc[xsel],
+        lb_v[xsel],
         ideal_iters,
         nr[:, xsel],
         zeta[:, xsel],
