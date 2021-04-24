@@ -76,15 +76,15 @@ function x0_volume_sc(model,p,T,z)
     return v_sc*2
 end
 
-function x0_volume(model::EoSModel,p,T,z; phase = "unknown")  
-    if phase == "unknown" || is_liquid(phase)
+function x0_volume(model::EoSModel,p,T,z; phase = :unknown)  
+    if phase === :unknown || is_liquid(phase)
         x0val = x0_volume_liquid(model,T,z)
     elseif is_vapour(phase)
         x0val = x0_volume_gas(model,p,T,z)
     elseif is_supercritical(phase)
         x0val = x0_volume_sc(model,p,T,z)
     end
-    return [log10(x0val)]
+    return x0val
 end
 
 
@@ -127,7 +127,6 @@ function lb_volume(model::CubicModel,z = SA[1.0]; phase = "unknown")
     return  b̄
 end
 
-lb_volume(model::IAPWS95, z; phase = "unknown") = 1.4696978063543022e-5
 
 
 
