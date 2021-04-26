@@ -31,15 +31,16 @@ function Base.show(io::IO,sp::GERG2008)
     print(io,")")
 end
 
-function x0_sat_pure(model::GERG2008,T)
-Ts = T_scale(model)
-vs = _v_scale(model)
-h = vs/0.0002
-T0 = 369.89*T/Ts
-vl = 1.0/_propaneref_rholsat(T0)
-vv = 1.0/_propaneref_rhovsat(T0)
 
-    return [log10(vl/h),log10(vv/h)]
+#uses extended corresponding states and the propane ancilliary eqs
+function x0_sat_pure(model::GERG2008,T)
+    Ts = T_scale(model)
+    vs = _v_scale(model)*0.001 #remember, vc constants in L/mol
+    h = vs*5000.0
+    T0 = 369.89*T/Ts
+    vl = 1.0/_propaneref_rholsat(T0)
+    vv = 1.0/_propaneref_rhovsat(T0)
+    return [log10(vl*h),log10(vv*h)]
 end
 
 
