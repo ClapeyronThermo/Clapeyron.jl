@@ -8,6 +8,7 @@ where `op(p[i],p[j]) == op(p[j],p[i])` , op_asym doesn't follow this symmetry.
 
 """ 
 function mixing_rule_asymetric(op, op_asym, x, p, A, A_asym)
+    #@show length(x)
     N = length(x)
     checkbounds(A, N, N)
     checkbounds(A_asym, N, N)
@@ -122,8 +123,8 @@ function _f0(model::GERG2008, ρ, T, x)
     ao2 = _0
     ao_zero = _0
 
-    ρc = model.criticalDensity
-    Tc = model.criticalTemperature
+    ρc = model.rhoc
+    Tc = model.Tc
     nr = model.nr
     zeta = model.zeta
     for i in model.ideal_iters[1]
@@ -151,11 +152,11 @@ function _f0(model::GERG2008, ρ, T, x)
             ao3 = ao_zero
             δ = ρ / ρc[i]
             τ = Tc[i] / T
-            ao1 = nr[1, i] + nr[2, i] * τ + nr[3, i] * log(tau)
+            ao1 = nr[1, i] + nr[2, i] * τ + nr[3, i] * log(τ)
             ao2 =
-                nr[4, i] * log(abs(sinh(zeta[1, i] * tau))) -
-                nr[5, i] * log(cosh(zeta[2, i] * tau)) +
-                nr[6, i] * log(abs(sinh(zeta[3, i] * tau)))
+                nr[4, i] * log(abs(sinh(zeta[1, i] * τ))) -
+                nr[5, i] * log(cosh(zeta[2, i] * τ)) +
+                nr[6, i] * log(abs(sinh(zeta[3, i] * τ)))
             ao3 = log(δ)
             a0 = RR * (ao1 + ao2) + ao3
             res += x[i] * (a0 + log(x[i]))
@@ -284,7 +285,7 @@ function _fr1(model::GERG2008, delta, tau,x)
     res1 = zero(common_type)
     x0 = zero(common_type)
 
-    for i = 1:length(model.syms)
+    for i = 1:length(model.components)
         x[i] != x0 && begin
             res1 = res0
             for k = 1:model.k_pol_ik[i]
