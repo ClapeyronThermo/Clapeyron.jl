@@ -45,7 +45,33 @@ equivalent to `sum(iterator,init=0.0)`.
 
 """
 function ∑(iterator) #not collecting is faster
-    return reduce(Base.add_sum,iterator,init=0.0)
+    #_0 = ifelse(length(iterator)>0,zero(first(iterator)),0.0)
+    _0 = 0.0
+    return reduce(Base.add_sum,iterator,init=_0)
+end
+
+
+"""
+    ∑(fn,iterator)
+
+equivalent to `sum(fniterator,init=0.0)`. 
+
+"""
+function ∑(fn,iterator) #not collecting is faster
+    #_0 = ifelse(length(iterator)>0,zero(first(iterator)),0.0)
+    _0 = 0.0
+    return mapreduce(fn,Base.add_sum,iterator,init=_0)
+end
+
+"""
+    xlogx(x::Number)
+Return `x * log(x)` for `x ≥ 0`, handling ``x = 0`` by taking the downward limit.
+
+copied from LogExpFunctions.jl
+"""
+function xlogx(x::Number)
+    result = x * log(x)
+    ifelse(iszero(x), zero(result), result)
 end
 
 struct FractionVector{T,V} <: AbstractVector{T}
