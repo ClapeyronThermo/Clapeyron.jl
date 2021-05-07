@@ -116,7 +116,7 @@ function _propaneref_tsat(T)
     T_c = PropaneRef_consts.T_c
     P_c = PropaneRef_consts.P_c
     Tr = T/T_c
-    θ = 1.0-T/Tr
+    θ = 1.0-Tr
     lnPsatPc = (-6.7722*θ + 1.6938*θ^1.5 -1.3341*θ^2.2 -3.1876*θ^4.8 + 0.94937*θ^6.2)/Tr
     Psat = exp(lnPsatPc)*P_c
     return Psat
