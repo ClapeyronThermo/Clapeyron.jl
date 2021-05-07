@@ -104,5 +104,48 @@ function sat_pure_p(model::SPUNG,p::Real)
 end
 
 
+function general_shape_factors(model::SPUNG,V,T,z=SA[1.0])
+    n = sum(z)
+    x = z * (1/n)
+    RT = R̄*T
+    b = lb_volume(model.shape_model,x)
+    b0 = lb_volume(model.shape_ref,x)
+    B = second_virial_coefficient(model.shape_model,T,x)
+    B0 = second_virial_coefficient(model.shape_ref,T)
+    #B = b-a/RT
+    #a/RT = b-B
+    #a = RT(b-B)
+    a = RT*(b-B)
+    a0 = RT*(b0-B0)
+    tau = 1/(1-4(B/b)) 
+    tau0 = 1(1-4(B0/b0))
+    Tc = T_scale(model.shape_model,x)
+    Tc0 = T_scale(model.shape_ref,x)
+
+    f0 = (tau*Tc)/(tau0*Tc0)
+    #f0 = tau/tau0
+    #@show T/f0
+     #T0 = Roots.find_zero(f0_f,T/f0)
+    #@show T0
+     #B0 = second_virial_coefficient(model.shape_ref,T0)
+    #tau0 = 1-(B0/b0) 
+    #tau0 = 1-(B0/b0)
+    #f = tau/tau0
+    
+    #a,b = cubic_ab(model.shape_model,T,x)
+    #a0,b0 = cubic_ab(model.shape_ref,T,SA[1.0])
+    h = b/b0
+    #fh = n*a/a0
+    #f = fh/h
+    f = f0
+    return f,h
+end
+
+#=
+Tc = 0.26+2.1R
+R = λ-1
 
 
+=#
+
+export SPUNG
