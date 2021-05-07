@@ -16,6 +16,13 @@ function BasicIdeal(; userlocations::Array{String,1}=String[], verbose=false)
 end
 
 function a_ideal(model::BasicIdeal, V, T, z)
-    x = z/∑(z)
-    return ∑(x .* log.(z/V)) - 1
+    N = ∑(z)
+    #x = z/∑(z)
+    res = ∑(xlogx,z) 
+    res /= N 
+    res -= log(V) 
+    res -= one(res)
+    # ∑(x .* log.(z/V)) - 1 original formulation, prone no NaN when passing pure Fractions
+    return res
+
 end
