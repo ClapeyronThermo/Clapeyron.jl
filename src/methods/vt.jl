@@ -109,3 +109,5 @@ function pip(model::EoSModel,v,T,z=SA[1.0])
     hess_p, grad_p, _ = _∂2p
     Π = v*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1]) 
 end
+
+
