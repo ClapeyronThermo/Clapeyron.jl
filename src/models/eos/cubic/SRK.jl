@@ -22,8 +22,8 @@ function SRK(components::Array{String,1}; userlocations::Array{String,1}=String[
     Tc = params["Tc"]
     Tc_ = Tc.values
     acentricfactor = params["w"]
-    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 1/(9*(2^(1/3)-1))*R̄^2*Tc_^2/pc/1e6), k)
-    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. (2^(1/3)-1)/3*R̄*Tc_/pc/1e6))
+    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 1/(9*(2^(1/3)-1))*R̄^2*Tc_^2/pc), k)
+    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. (2^(1/3)-1)/3*R̄*Tc_/pc))
 
     packagedparams = SRKParam(a, b, acentricfactor, Tc,_pc,Mw)
     return SRK(packagedparams,idealmodel)

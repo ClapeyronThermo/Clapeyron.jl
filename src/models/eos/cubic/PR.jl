@@ -21,8 +21,8 @@ function PR(components::Array{String,1}; userlocations::Array{String,1}=String[]
     Tc_ = Tc.values
     acentricfactor = params["w"]
     Ωa,Ωb = ab_consts(PRModel) 
-    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc_^2/pc/1e6), k)
-    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. Ωb*R̄*Tc_/pc/1e6))
+    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc_^2/pc), k)
+    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. Ωb*R̄*Tc_/pc))
 
     packagedparams = PRParam(a, b, acentricfactor, Tc,_pc,Mw)
     return PR(packagedparams,idealmodel)
