@@ -1,7 +1,7 @@
-const GERG2008constsProps = (
+const GERG2008_consts = (
 names =[
-        "methane"
-        "nitrogen"
+        "methane",
+        "nitrogen",
         "carbon dioxide",
         "ethane",
         "propane",
@@ -21,9 +21,32 @@ names =[
         "hydrogen sulfide",
         "helium",
         "argon"
-        ],    
-
-acentric_factor = [
+        ],
+        #calculated from Tmin and Pmax    
+lb_volumes = [
+    2.952789230664869e-5
+    2.595917396536852e-5
+    3.0350520997504374e-5
+    4.181265338895899e-5
+    5.7773265228561896e-5
+    7.778071972263543e-5
+    7.529511394064539e-5
+    9.03473213517436e-5
+    9.138272716465976e-5
+    0.00010746846161549492
+    0.00012307769607878738
+    0.00014149360905504386
+    0.00013613745434844812
+    0.00015142994339404644
+    1.6005013101722185e-5
+    2.3229544237311946e-5
+    2.9381748144372254e-5
+    1.732307538792257e-5
+    3.154736660208043e-5
+    1.2820394828598075e-5
+    2.511877404958246e-5
+],
+acentricfactor = [
         0.0115478,
         0.0377215,
         0.223621,
@@ -46,7 +69,7 @@ acentric_factor = [
         -0.390032,
         0.0,
     ],
-    molecularWeight = [
+    Mw = [
         16.04246,
         28.0134,
         44.0095,
@@ -69,7 +92,7 @@ acentric_factor = [
         4.002602,
         39.948,
     ],
-    criticalTemperature = [
+    Tc = [
         190.564,
         126.192,
         304.1282,
@@ -92,7 +115,7 @@ acentric_factor = [
         5.1953,
         150.687,
     ],
-    criticalDensity = [
+    rhoc = [
         10.139342719,
         11.1839,
         10.624978698,
@@ -115,7 +138,7 @@ acentric_factor = [
         17.399,
         13.407429659,
     ], #molar density, in mol/dm3
-    criticalPressure = [
+    pc = [
         4599000.,
         3400000.,
         7383000.,
@@ -143,7 +166,7 @@ acentric_factor = [
 
 function GERG2008_xsel(names::Vector{String})
 
-symvalues = GERG2008constsProps.names
+symvalues = GERG2008_consts.names
     xsel = Vector{Int}()
     for i in names
         i in symvalues || throw(ArgumentError("invalid name: $i"))

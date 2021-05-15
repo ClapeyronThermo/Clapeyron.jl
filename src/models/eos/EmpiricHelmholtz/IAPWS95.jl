@@ -21,16 +21,14 @@ function IAPWS95()
 end
 
 const IAPWS95_params = (
-    n00= [-8.3204464837497, 6.6832105275932, 3.00632,0.012436, 0.97315, 1.2795, 0.96956, 0.24873]
-    ,gamma00 = [0, 0, 0, 1.28728967, 3.53734222, 7.74073708, 9.24437796,27.5075105]
+    n00= (-8.3204464837497, 6.6832105275932, 3.00632,0.012436, 0.97315, 1.2795, 0.96956, 0.24873)
+    ,gamma00 = (0, 0, 0, 1.28728967, 3.53734222, 7.74073708, 9.24437796,27.5075105)
     
-    ,nr1 = [0.12533547935523e-1, 0.78957634722828e1, -0.87803203303561e1,
+    ,n = [0.12533547935523e-1, 0.78957634722828e1, -0.87803203303561e1,
     0.31802509345418, -0.26145533859358, -0.78199751687981e-2,
-    0.88089493102134e-2]
-    ,d1 = [1, 1, 1, 2, 2, 3, 4]
-    ,t1 = [-0.5, 0.875, 1, 0.5, 0.75, 0.375, 1]
-    
-    ,nr2 = [-0.66856572307965, 0.20433810950965, -0.66212605039687e-4,
+    0.88089493102134e-2,
+
+    -0.66856572307965, 0.20433810950965, -0.66212605039687e-4,
     -0.19232721156002, -0.25709043003438, 0.16074868486251,
     -0.4009282892587e-1, 0.39343422603254e-6, -0.75941377088144e-5,
     0.56250979351888e-3, -0.15608652257135e-4, 0.11537996422951e-8,
@@ -45,75 +43,96 @@ const IAPWS95_params = (
     0.34994005463765e-1, -0.76788197844621e-1, 0.22446277332006e-1,
     -0.62689710414685e-4, -0.55711118565645e-9, -0.19905718354408,
     0.31777497330738, -0.11841182425981]
-    ,c2 = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 6, 6,6, 6]
-    ,d2 = [1, 1, 1, 2, 2, 3, 4, 4, 5, 7, 9, 10, 11, 13, 15, 1, 2, 2, 2, 3,
+
+    ,d = [1, 1, 1, 2, 2, 3, 4,
+
+    1, 1, 1, 2, 2, 3, 4, 4, 5, 7, 9, 10, 11, 13, 15, 1, 2, 2, 2, 3,
     4, 4, 4, 5, 6, 6, 7, 9, 9, 9, 9, 9, 10, 10, 12, 3, 4, 4, 5, 14, 3, 6, 6, 6]
-    ,t2= [4, 6, 12, 1, 5, 4, 2, 13, 9, 3, 4, 11, 4, 13, 1, 7, 1, 9, 10, 10, 3, 7, 
+
+    ,t = [-0.5, 0.875, 1, 0.5, 0.75, 0.375, 1,
+    4, 6, 12, 1, 5, 4, 2, 13, 9, 3, 4, 11, 4, 13, 1, 7, 1, 9, 10, 10, 3, 7, 
     10, 10, 6, 10, 10, 1, 2, 3, 4, 8, 6, 9, 8, 16, 22, 23,23, 10, 50, 44, 46, 50]
     
-    ,nr3 = (-0.31306260323435e2, 0.31546140237781e2, -0.25213154341695e4)
-    ,t3 = (0, 1, 4)
-    ,beta3 = (150, 150, 250)
-    ,gamma3 = (1.21, 1.21, 1.25)
-    
-    ,nr4 =(-0.14874640856724, 0.31806110878444)
-    ,b4 =(0.85, 0.95)
-    ,C =(28, 32)
-    ,D =(700, 800)
+    ,c = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 6, 6,6, 6]
+
 )
 
 
-@inline function _f0(_model::IAPWS95,rho,T)
-    model = IAPWS95_params
-    delta = rho/322
-    tau = 647.096/T
+function _f0(_model::IAPWS95,rho,T)
+    δ = rho*0.003105590062111801 #/322
+    τ = 647.096/T
+    δ,τ = promote(δ,τ)
+    n= (-8.3204464837497, 6.6832105275932, 3.00632,0.012436, 0.97315, 1.2795, 0.96956, 0.24873)
+    γ = (0.0, 0.0, 0.0, 1.28728967, 3.53734222, 7.74073708, 9.24437796,27.5075105)
+    res = log(δ)+n[1] + n[2]*τ + n[3]*log(τ)
+
     
-    res = log(delta)+model.n00[1]
-    res = muladd(model.n00[2],tau,res)
-    res = muladd(model.n00[3],log(tau),res)
-    
- for i = 4:8
-        res = muladd(model.n00[i],log(-expm1(-model.gamma00[i]*tau)),res)
+    @inbounds for i = 4:8
+        res += n[i]*log(-expm1(-γ[i]*τ))
     end
+
     return res
 end
 
 function _fr(_model::IAPWS95,rho,T)
-    model = IAPWS95_params
-    delta = rho/322.0
-    tau = 647.096/T
-   
-    res=zero(promote_type(typeof(rho),typeof(T)))
+    δ = rho*0.003105590062111801 #/322
+    τ = 647.096/T
+    δ,τ = promote(δ,τ)
+    n = IAPWS95_params.n::Vector{Float64}
+    d = IAPWS95_params.d::Vector{Int64}
+    t = IAPWS95_params.t::Vector{Float64}
+    c = IAPWS95_params.c::Vector{Int64}
+    res=zero(δ)
     for i = 1:7
-        res = muladd((model.nr1[i]*delta^(model.d1[i])),(tau^model.t1[i]),res)
+        res += n[i]* (δ^d[i]) * (τ^t[i])
     end
-
-    for i = 1:44
-        res = muladd((model.nr2[i]*delta^(model.d2[i])),(tau^model.t2[i]) * exp(-delta^model.c2[i]),res)
-    end
-
-    for i = 1:3
-           res=res+(model.nr3[i]*delta^3) * (tau^model.t3[i]) * 
-           exp(-20*abs2(delta-1)-model.beta3[i]*abs(tau-model.gamma3[i]))
-    end
-    delta1m2 = (delta-1)^2# 
-    tau1m2 = (tau-1)^2
     
-    for i = 1:2
-        theta = (1-tau) + 0.32*delta1m2^(1/(2*0.3))
-        del = theta^2 + 0.2*delta1m2^3.5
-        psi = exp(- model.C[i]*delta1m2 - model.D[i]*tau1m2)
-        res = res+model.nr4[i]*del^model.b4[i]*psi
+    for i = 8:51
+        ic = i-7
+        res += n[i]* (δ^d[i]) * (τ^t[i]) * exp(-δ^c[ic])
     end
+
+    nτt1,nτt2,nτt3 = (-0.31306260323435e2, 0.31546140237781e2*τ, -0.25213154341695e4*τ^4)
+    δd = δ^3
+
+    #for i = 52:54
+
+    #(δ-ε)^2
+    _δ = (δ-1.0)^2# 
+    
+    gauss_d = 20*_δ
+    gauss_1 = exp(-150*((τ-1.21)^2)  -gauss_d)
+    gauss_2 = gauss_1
+    gauss_3 = exp(-250*((τ-1.25)^2)  -gauss_d)
+    
+    res += nτt1*δd*gauss_1 + nτt2*δd*gauss_2 + nτt3*δd*gauss_3
+    
+
+    
+    #for i = 55:56
+
+    nδ1,nδ2 = (-0.14874640856724*δ, 0.31806110878444*δ)
+    _τ = (τ-1.0)^2
+    Θ = (1.0-τ) + 0.32*τ^(10/6) 
+
+    Δ = Θ^2 + 0.2*_δ^3.5
+    Ψ1 = exp(- 28*_δ - 700*_τ)
+    Ψ2 = exp(- 32*_δ - 800*_τ)
+    Δb1 = Δ^0.85
+    Δb2 = Δ^0.95
+    res += nδ1*Δb1*Ψ1 + nδ2*Δb2*Ψ2
+#==#
     return res
+   
 end
 
-@inline _f(model::IAPWS95,rho,T) = _fr(model,rho,T)+_f0(model,rho,T)
+_f(model::IAPWS95,rho,T) = _fr(model,rho,T)+_f0(model,rho,T)
+
 
 const IAPWS_R_corr = 8.3143713575874/R̄
 
-function a_ideal(model::IAPWS95,V,T,z=@SVector [1.0]) 
+function a_ideal(model::IAPWS95,V,T,z=SA[1.0]) 
     Σz = only(z) #single component
     v = V/Σz
     #R value calculated from molecular weight and specific gas constant
@@ -121,10 +140,10 @@ function a_ideal(model::IAPWS95,V,T,z=@SVector [1.0])
      #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'    
      mass_v =  v*1000.0*0.055508472036052976
      rho = one(mass_v)/mass_v
-     return IAPWS_R_corr*_f0(model,rho,T)
+     return 0.9999890238768239*_f0(model,rho,T)
 end
 
-function a_res(model::IAPWS95,V,T,z=(one(V),)) 
+function a_res(model::IAPWS95,V,T,z=SA[1.0]) 
     Σz = only(z) #single component
     v = V/Σz
     #R value calculated from molecular weight and specific gas constant
@@ -132,10 +151,25 @@ function a_res(model::IAPWS95,V,T,z=(one(V),))
      #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'    
      mass_v =  v*1000.0*0.055508472036052976
      rho = one(mass_v)/mass_v
-     return IAPWS_R_corr*_fr(model,rho,T)
+     return 0.9999890238768239*_fr(model,rho,T)
 end
+
+
+function eos(model::IAPWS95, V, T, z=SA[1.0])
+    Σz = only(z) #single component
+    v = V/Σz
+    #R value calculated from molecular weight and specific gas constant
+     #return 8.3143713575874*T*_f(model, molar_to_weight(1/v,[model.molecularWeight],[1.0]),T)
+     #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'    
+     mass_v =  v*1000.0*0.055508472036052976
+     rho = one(mass_v)/mass_v
+
+    return N_A*k_B*∑(z)*T * 0.9999890238768239*_f(model,rho,T)
+end
+
 
 struct IAPWS95Ideal <:IdealModel end
+
 
 function IAPWS95Ideal(components; verbose=false)
     if only(components) == "water"
@@ -209,19 +243,18 @@ function saturated_water_vapor(Tk)
 end
 
 mw(model::IAPWS95) = model.params.mw
-molecular_weight(model::IAPWS95,z = @SVector [1.]) = 0.001*model.params.mw * only(z) / sum(z)
 
 
 function x0_volume(model::IAPWS95,p,T,z=[1.0];phase = "unknown")
     if phase == "unknown" || is_liquid(phase)
-        x0val = saturated_water_liquid(T)
+        x0val = vcompress_v0(model,p,T,z)
     elseif is_vapour(phase)
         x0val = 1.1*saturated_water_vapor(T)
     elseif is_supercritical(phase)
         x0val = only(paramvals(model.params.Vc))
 
     end
-    return [log10(x0val)]
+    return x0val
 end
 
 function x0_sat_pure(model::IAPWS95,T)
@@ -231,11 +264,6 @@ function x0_sat_pure(model::IAPWS95,T)
     return log10.(x0)
 end
 
-#calculated from scale_sat_pure of PR eos of water
-function scale_sat_pure(model::IAPWS95)
-    p_scale,μ_scale = (1.6289292028909967e-8, 0.00010672492523661923)
-    return p_scale,μ_scale
-end
 
 function T_scale(model::IAPWS95,z=SA[1.0])
     return model.params.Tc
@@ -245,7 +273,6 @@ function p_scale(model::IAPWS95,z=SA[1.0])
     return model.params.Pc
 end
 
-export IAPWS95,IAPWS95Ideal
 
 function Base.show(io::IO,model::IAPWS95)
     return eosshow(io,model)
@@ -255,6 +282,12 @@ function Base.show(io::IO,mime::MIME"text/plain",model::IAPWS95)
     return eosshow(io,mime,model)
 end
 
+lb_volume(model::IAPWS95, z; phase = "unknown") = 1.4393788065379039e-5
+
+
+export IAPWS95,IAPWS95Ideal
+
+
 function vcompress_v0(model::IAPWS95,p,T,z=SA[1.0])
     #lb_v   = exp10(only(lb_volume(model,z,phase=:l)))
     #psat = p_sat(WaterSat(),T)
@@ -262,8 +295,9 @@ function vcompress_v0(model::IAPWS95,p,T,z=SA[1.0])
     if model.params.Pc > p
         return sat_v = saturated_water_liquid(T)
     else
-        return volume_virial(model,p,t,z)
+        return volume_virial(model,p,T,z)
     end
     #@show α
     #return (1-α)*lb_v + α*sat_v
 end
+

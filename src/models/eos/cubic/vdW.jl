@@ -20,8 +20,8 @@ function vdW(components::Array{String,1}; userlocations::Array{String,1}=String[
     pc = _pc.values
     Tc = _Tc.values
 
-    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 27/64*R̄^2*Tc^2/pc/1e6), k)
-    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. 1/8*R̄*Tc/pc/1e6))
+    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 27/64*R̄^2*Tc^2/pc), k)
+    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. 1/8*R̄*Tc/pc))
 
     packagedparams = vdWParam(_Tc,_pc,Mw,a,b)
     return vdW(packagedparams,idealmodel)

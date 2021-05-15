@@ -20,8 +20,8 @@ function RK(components::Array{String,1}; userlocations::Array{String,1}=String[]
     _Tc = params["Tc"]
     Tc = _Tc.values
     T̄c = sum(sqrt(Tc*Tc'))
-    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 1/(9*(2^(1/3)-1))*R̄^2*Tc^2.5/pc/1e6/√(T̄c)), k)
-    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. (2^(1/3)-1)/3*R̄*Tc/pc/1e6))
+    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 1/(9*(2^(1/3)-1))*R̄^2*Tc^2.5/pc/√(T̄c)), k)
+    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. (2^(1/3)-1)/3*R̄*Tc/pc))
 
     packagedparams = RKParam(a, b, params["Tc"],_pc,Mw,T̄c)
     return RK(packagedparams,idealmodel)
