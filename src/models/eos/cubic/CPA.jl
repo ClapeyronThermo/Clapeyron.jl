@@ -52,7 +52,7 @@ function a_SRK(model::CPAModel, V, T, z)
     return -log(V-n*b̄) - āᾱ/(R̄*T*b̄)*log(1+n*b̄/V)
 end
 #same as SRK
-function ab_consts(::Type{<:CPAModel})
+function ab_consts(model::CPAModel)
     Ωa =  1/(9*(2^(1/3)-1))
     Ωb = (2^(1/3)-1)/3
     return Ωa,Ωb
@@ -81,7 +81,8 @@ function a_assoc(model::CPAModel, V, T, z)
     return ∑(x[i]*∑(n_sites[i][a] * (log(X_[i][a])+(1-X_[i][a])/2) for a in @sites(i)) for i in @comps)
 end
 
-function X(model::CPAModel, V, T, z)::Array{Array{Float64,1},1}
+function X(model::CPAModel, V, T, z)
+    _1 = one(V+T+first(z))
     x = z/∑(z)
     ρ = ∑(z)/V
     n_sites = model.allcomponentnsites
@@ -90,7 +91,7 @@ function X(model::CPAModel, V, T, z)::Array{Array{Float64,1},1}
     error = 1.
     tol = model.absolutetolerance
     iter = 1
-    X_ = [[1. for a ∈ @sites(i)] for i ∈ @comps]
+    X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
     X_old = deepcopy(X_)
     while error > tol
         iter > itermax && error("X has failed to converge after $itermax iterations")
