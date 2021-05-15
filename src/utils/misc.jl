@@ -45,7 +45,33 @@ equivalent to `sum(iterator,init=0.0)`.
 
 """
 function ∑(iterator) #not collecting is faster
-    return reduce(Base.add_sum,iterator,init=0.0)
+    #_0 = ifelse(length(iterator)>0,zero(first(iterator)),0.0)
+    _0 = 0.0
+    return reduce(Base.add_sum,iterator,init=_0)
+end
+
+
+"""
+    ∑(fn,iterator)
+
+equivalent to `sum(fniterator,init=0.0)`. 
+
+"""
+function ∑(fn,iterator) #not collecting is faster
+    #_0 = ifelse(length(iterator)>0,zero(first(iterator)),0.0)
+    _0 = 0.0
+    return mapreduce(fn,Base.add_sum,iterator,init=_0)
+end
+
+"""
+    xlogx(x::Number)
+Return `x * log(x)` for `x ≥ 0`, handling ``x = 0`` by taking the downward limit.
+
+copied from LogExpFunctions.jl
+"""
+function xlogx(x::Number)
+    result = x * log(x)
+    ifelse(iszero(x), zero(result), result)
 end
 
 struct FractionVector{T,V} <: AbstractVector{T}
@@ -62,28 +88,39 @@ it allocates less than creating a new vector or appending.
 ##
 function FractionVector(v::AbstractVector)
     a = one(eltype(v))
-    for vi in v
-        vi < 0 && throw(DomainError(vi,"all elements of a fraction vector should be positive."))
-        a -= vi
-    end
+    any(x->x<0,v) && throw(DomainError(v,"all elements of a fraction vector should be positive."))
+    a -=sum(v)
     a < 0 && throw(DomainError(a,"the values of the input vector add to more than one"))
     return FractionVector(v,a) 
 end
 
 function FractionVector(v::Real)
-    return FractionVector(SA[v])
+    a = one(v) 
+    (v < zero(v)) && throw(DomainError(v,"all elements of a fraction vector should be positive."))
+    a -= v
+    a < 0 && throw(DomainError(a,"the values of the input vector add to more than one"))
+    return FractionVector(v,a)
 end
 
 
 @inline Base.eltype(v::FractionVector{T}) where T = T
 @inline Base.length(v::FractionVector)::Int = Base.length(v.vec) + 1
+
+@inline function Base.length(v::FractionVector{T,<:Real})::Int where T
+    return 2
+end
+
 @inline Base.size(v::FractionVector) = (length(v),)
-@inline function Base.getindex(v::FractionVector,i)
-    if length(v) == i
-        return v.val
-    else
-        return v.vec[i]
-    end
+@inline function Base.getindex(v::FractionVector,i::Int)
+    @boundscheck checkbounds(v, i)
+    return ifelse(length(v)==i,v.val,v.vec[min(length(v.vec),i)])
+end
+
+@inline function Base.getindex(v::FractionVector{T,<:Real},i::Int) where T
+    @boundscheck checkbounds(v, i)
+    return ifelse(i==1,v.vec,v.val)
 end
 
 Base.IndexStyle(::Type{<:FractionVector}) = IndexLinear()
+
+unicode_subscript(a::Int) = join('₀'+d for d in reverse(digits(a)))

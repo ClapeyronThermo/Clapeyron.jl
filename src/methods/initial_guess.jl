@@ -76,15 +76,15 @@ function x0_volume_sc(model,p,T,z)
     return v_sc*2
 end
 
-function x0_volume(model::EoSModel,p,T,z; phase = "unknown")  
-    if phase == "unknown" || is_liquid(phase)
+function x0_volume(model::EoSModel,p,T,z; phase = :unknown)  
+    if phase === :unknown || is_liquid(phase)
         x0val = x0_volume_liquid(model,T,z)
     elseif is_vapour(phase)
         x0val = x0_volume_gas(model,p,T,z)
     elseif is_supercritical(phase)
         x0val = x0_volume_sc(model,p,T,z)
     end
-    return [log10(x0val)]
+    return x0val
 end
 
 
@@ -127,7 +127,6 @@ function lb_volume(model::CubicModel,z = SA[1.0]; phase = "unknown")
     return  b̄
 end
 
-lb_volume(model::IAPWS95, z; phase = "unknown") = 1.4696978063543022e-5
 
 
 
@@ -152,14 +151,21 @@ lb_volume(model::IAPWS95, z; phase = "unknown") = 1.4696978063543022e-5
 # end
 
 function x0_sat_pure(model::SAFTModel,T,z=SA[1.0])
-    val = lb_volume(model,z)
+    val = lb_volume(model,z)*one(T)
     x0  = [val/0.5,val/1e-3]
     return log10.(x0)
 end
 
 function x0_sat_pure(model::CubicModel,T,z=SA[1.0])
-    val = lb_volume(model,z)
+    val = lb_volume(model,z)*one(T)
     x0  = [val/0.9,val/1e-4]
+    return log10.(x0)
+end
+
+
+function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
+    val = lb_volume(model,z)*one(T)
+    x0  = [val/0.5,val/1e-3]
     return log10.(x0)
 end
 
@@ -168,9 +174,6 @@ function scale_sat_pure(model::EoSModel,z=SA[1.0])
     μ    = 1/R̄/T_scale(model,z)
     return p,μ
 end
-
-
-
 
 
 
@@ -195,6 +198,11 @@ function x0_crit_pure(model::CPAModel,z=SA[1.0])
     [2.0, log10(lb_v/0.3)]
 end
 
+function x0_crit_pure(model::EoSModel,z=SA[1.0])
+    lb_v = lb_volume(model,z)
+    [1.5, log10(lb_v/0.3)]
+end
+
 
 # x0_crit_pure(model::Cubic) = [1.0, log10(model.params.b[model.components[1]]/0.3)]
 # x0_crit_pure(model::CPA) = [2, log10(model.params.b[model.components[1]]/0.3)]
@@ -211,7 +219,7 @@ end
 # end
 # T_crit_pure(model::LJSAFT) = model.params.T[model.components[1]]
 
-T_crit_pure(model::SAFTModel,z=SA[1.0]) = T_scale(model,z)
+T_crit_pure(model::EoSModel,z=SA[1.0]) = T_scale(model,z)
 
 # T_crit_pure(model::Cubic) = model.params.a[model.components[1]]/model.params.b[model.components[1]]/8.314*8/27
 
@@ -255,8 +263,8 @@ function p_scale(model::CubicModel,z=SA[1.0])
     Ωa,Ωb = ab_consts(model) 
     _a = model.params.a.values
     _b = model.params.b.values
-    a = invsumz*dot(x, Symmetric(_a), x)/Ωa
-    b = invsumz*dot(x, Symmetric(_b), x)/Ωb
+    a = invsumz*dot(z, Symmetric(_a), z)/Ωa
+    b = invsumz*dot(z, Symmetric(_b), z)/Ωb
     return a/ (b^2) # Pc mean
 end
 
@@ -302,3 +310,20 @@ function p_scales(model,z)
         x[i] = 0.0
     end
 end
+
+
+
+function mollerup_k0(tc,pc,p,T)
+    return (pc ./ p) .* exp.(5.42 .* (1.0 .- (tc ./ T)))
+end
+
+function wilson_k0(ω, tc,pc,p,T)
+    return exp.(log.(pc./p).+5.373 .*(1.0 .+ ω).*(1.0 .-tc./T)) 
+end
+
+function bubble_pressure_y0(model::EoSModel,T,x)
+    tc = T_scales(model,x)
+    pc = p_scales(model,x)
+    mollerup(p,t) = mollerup_k0(tc,pc,p,t)
+end
+

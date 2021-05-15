@@ -100,6 +100,38 @@ function PairParam(x::SingleParam, v::Array{T,2}) where T
     return PairParam(x.name, v, convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
 
+#=
+function Base.show(io::IO,::MIME"text/plain",param::PairParam)
+    len = length(param.values)
+    println(io,"PairParam(", "\"",param.name,"\")"," with ",len," component",ifelse(len==1,":","s:"))
+    i = 0
+    for (name,val,miss) in zip(param.components,param.values,param.ismissingvalues)
+        i += 1
+        if i > 1
+            println(io)
+        end
+        if miss == false
+            print(io," ",name," = ",val)
+        else
+            print(io," ",name," = ","-")
+        end
+    end
+end
+
+function Base.show(io::IO,param::PairParam)
+    print(io,"PairParam(")
+    print(io,"\"",param.name,"\"",")[")
+    for (name,val,miss,i) in zip(param.components,param.values,param.ismissingvalues,1:length(param.values))
+        i != 1 && print(io,",")
+        if miss == false
+            print(io,name,"=",val)
+        else
+            print(io,name,"=","-")
+        end
+    end
+    print(io,"]")
+end
+=#
 struct AssocParam{T} <: OpenSAFTParam
     name::String
     values::Array{Array{T,2},2}

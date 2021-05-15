@@ -52,8 +52,12 @@ end
 
 
 
+"""
+    component_names(model)::Vector{tring}
 
-
+returns a vector of strings of each component.
+"""
+component_names(model) = model.components
 
 
 
