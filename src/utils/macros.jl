@@ -1,4 +1,18 @@
 """
+    arbitraryparam(params)
+
+returns the first field in the struct that is a subtype of `OpenSAFTParam`. errors if it finds none.
+"""
+function arbitraryparam(params)
+    paramstype = typeof(params)
+    idx = findfirst(z->z <: OpenSAFTParam,fieldtypes(paramstype))
+    if isnothing(idx)
+        error("The paramater struct ", paramstype, " must contain at least one OpenSAFTParam")
+    end
+     return fieldnames(paramstype)[idx] |> z->getfield(params,z)
+end
+
+"""
     @comps
 
 This macro is an alias to
@@ -119,7 +133,8 @@ See the tutorial or browse the implementations to see how this is used.
 """
 
 macro newmodelgc(name, parent, paramstype)
-    esc(quote struct $name{T <: IdealModel} <: $parent
+    quote 
+    struct $name{T <: IdealModel} <: $parent
         components::Array{String,1}
         lengthcomponents::Int
         icomponents::UnitRange{Int}
@@ -143,48 +158,24 @@ macro newmodelgc(name, parent, paramstype)
         idealmodel::T
         absolutetolerance::Float64
         references::Array{String,1}
-
-        function $name(params::$paramstype, groups::GCParam, sites::SiteParam, idealmodel::Type=BasicIdeal;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12, verbose::Bool=false)
-            !(idealmodel <: IdealModel) && error("idealmodel ", idealmodel, " has to be a concrete subtype of IdealModel.")
-            components = groups.components
-            lengthcomponents = length(components)
-            icomponents = 1:lengthcomponents
-
-            flattenedgroups = groups.flattenedgroups
-            lengthflattenedgroups = length(flattenedgroups)
-            allcomponentnflattenedgroups = groups.allcomponentnflattenedgroups
-            iflattenedgroups = 1:lengthflattenedgroups
-
-            allcomponentgroups = groups.allcomponentgroups
-            lengthallcomponentgroups = [length(allcomponentgroups[i]) for i in icomponents]
-            allcomponentngroups = groups.allcomponentngroups
-            igroups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ allcomponentgroups]
-
-            allgroupsites = sites.allcomponentsites
-            lengthallgroupsites = [length(groupsites) for groupsites ∈ allgroupsites]
-            allgroupnsites = sites.allcomponentnsites
-            isites = [1:lengthallgroupsites[k] for k ∈ iflattenedgroups]
-
-            verbose && idealmodel != BasicIdeal && println("Now creating ideal model ", idealmodel, ".")
-            idealmodelstruct = idealmodel(components; verbose=verbose)
-
-            return new{idealmodel}(components, lengthcomponents, icomponents,
-                          allcomponentgroups, lengthallcomponentgroups, allcomponentngroups, igroups,
-                          flattenedgroups, lengthflattenedgroups, allcomponentnflattenedgroups, iflattenedgroups,
-                          allgroupsites, lengthallgroupsites, allgroupnsites, isites,
-                          params, idealmodelstruct, absolutetolerance, references)
-        end
-        function $name(params::$paramstype, groups::GCParam, idealmodel::Type=BasicIdeal;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12, verbose::Bool=false)
-            components = groups.components
-            sites = SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], String[])
-
-            return $name(params, groups, sites, idealmodel; references=references, absolutetolerance=absolutetolerance, verbose=verbose)
-        end
     end
+
+    function $name(params::$paramstype, groups::GCParam, sites::SiteParam, idealmodel=BasicIdeal;
+                    references=String[],
+                    absolutetolerance=1E-12,
+                    verbose=false)
+        return _newmodelgc($name,params,groups,sites,idealmodel;references=references,absolutetolerance=absolutetolerance,verbose=verbose)
+    end
+    function $name(params::$paramstype, groups::GCParam, idealmodel=BasicIdeal;
+                    references=String[],
+                    absolutetolerance=1E-12, verbose=false)
+
+        return _newmodelgc($name,params, groups,idealmodel;
+                    references=references,
+                    absolutetolerance=absolutetolerance,
+                    verbose=verbose)
+    end
+    
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
@@ -193,17 +184,69 @@ macro newmodelgc(name, parent, paramstype)
     function Base.show(io::IO, model::$name)
         return eosshow(io, model)
     end
-    end)
+    end |> esc
+end
+
+const IDEALTYPE = Type{T} where T<:IdealModel
+
+function _newmodelgc(eostype,params, groups::GCParam, sites::SiteParam, idealmodel::IDEALTYPE=BasicIdeal;
+                    references::Vector{String}=String[],
+                    absolutetolerance::Float64=1E-12,
+                    verbose::Bool=false)
+
+    #!(idealmodel <: IdealModel) && error("idealmodel ", idealmodel, " has to be a concrete subtype of IdealModel.")
+    components = groups.components
+    lengthcomponents = length(components)
+    icomponents = 1:lengthcomponents
+
+    flattenedgroups = groups.flattenedgroups
+    lengthflattenedgroups = length(flattenedgroups)
+    allcomponentnflattenedgroups = groups.allcomponentnflattenedgroups
+    iflattenedgroups = 1:lengthflattenedgroups
+
+    allcomponentgroups = groups.allcomponentgroups
+    lengthallcomponentgroups = [length(allcomponentgroups[i]) for i in icomponents]
+    allcomponentngroups = groups.allcomponentngroups
+    igroups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ allcomponentgroups]
+
+    allgroupsites = sites.allcomponentsites
+    lengthallgroupsites = [length(groupsites) for groupsites ∈ allgroupsites]
+    allgroupnsites = sites.allcomponentnsites
+    isites = [1:lengthallgroupsites[k] for k ∈ iflattenedgroups]
+
+    verbose && idealmodel != BasicIdeal && @info("Now creating ideal model ", idealmodel, ".")
+    idealmodelstruct = idealmodel(components; verbose=verbose)
+
+return eostype{idealmodel}(components, lengthcomponents, icomponents,
+       allcomponentgroups, lengthallcomponentgroups, allcomponentngroups, igroups,
+       flattenedgroups, lengthflattenedgroups, allcomponentnflattenedgroups, iflattenedgroups,
+       allgroupsites, lengthallgroupsites, allgroupnsites, isites,
+       params, idealmodelstruct, absolutetolerance, references)
+end
+
+
+function _newmodelgc(eostype,params, groups, idealmodel=BasicIdeal;
+                    references=String[],
+                    absolutetolerance=1E-12,
+                    verbose=false)
+
+    components = groups.components
+    sites = SiteParam(components)
+    return _newmodelgc(eostype,params, groups, sites, idealmodel; references=references, absolutetolerance=absolutetolerance, verbose=verbose)
 end
 
 """
+
+    @newmodel name parent paramstype
+
 This is exactly the same as the above but for non-GC models.
 All group parameters are absent in this struct.
 The sites are associated to the main component rather than the groups,
 and the respective fieldnames are named correspondingly.
 """
 macro newmodel(name, parent, paramstype)
-    esc(quote struct $name{T <: IdealModel} <: $parent
+    quote 
+    struct $name{T <: IdealModel} <: $parent
         components::Array{String,1}
         lengthcomponents::Int
         icomponents::UnitRange{Int}
@@ -217,46 +260,20 @@ macro newmodel(name, parent, paramstype)
         idealmodel::T
         absolutetolerance::Float64
         references::Array{String,1}
+    end
+    
+    function $name(params::$paramstype, sites::SiteParam, idealmodel=BasicIdeal;
+                    references=String[],
+                    absolutetolerance=1E-12, verbose=false) 
 
-        function $name(params::$paramstype, sites::SiteParam, idealmodel::Type=BasicIdeal;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12, verbose::Bool=false)
-            !(idealmodel <: IdealModel) && error("idealmodel ", idealmodel, " has to be a concrete subtype of IdealModel.")
-            arbitraryparam = try
-                getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
-            catch e
-                error("The paramater struct ", $paramstype, " must contain at least one OpenSAFTParam")
-            end
-            components = arbitraryparam.components
-            lengthcomponents = length(components)
-            icomponents = 1:lengthcomponents
+        return _newmodel($name,params,sites,idealmodel;references=references,absolutetolerance=absolutetolerance,verbose=verbose)
+    end
+    function $name(params::$paramstype, idealmodel=BasicIdeal;
+                    references=String[],
+                    absolutetolerance=1E-12,
+                    verbose=false)
 
-            allcomponentsites = sites.allcomponentsites
-            lengthallcomponentsites = [length(componentsites) for componentsites ∈ allcomponentsites]
-            allcomponentnsites = sites.allcomponentnsites
-            isites = [1:lengthallcomponentsites[i] for i ∈ icomponents]
-
-            verbose && idealmodel != BasicIdeal && println("Now creating ideal model ", idealmodel, ".")
-            idealmodelstruct = idealmodel(components; verbose=verbose)
-
-            return new{idealmodel}(components, lengthcomponents, icomponents,
-                          allcomponentsites, lengthallcomponentsites, allcomponentnsites, isites,
-                          params, idealmodelstruct, absolutetolerance, references)
-        end
-        function $name(params::$paramstype, idealmodel::Type=BasicIdeal;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12, verbose::Bool=false)
-            arbitraryparam = try
-                getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
-            catch e
-                error("The paramater struct ", $paramstype, " must contain at least one OpenSAFTParam")
-            end
-            components = arbitraryparam.components
-            sites = SiteParam(components, [String[] for _ ∈ 1:length(arbitraryparam.components)],
-                [Int[] for _ ∈ 1:length(arbitraryparam.components)], String[])
-
-            return $name(params, sites, idealmodel; references=references, absolutetolerance=absolutetolerance)
-        end
+        return _newmodel($name,params, idealmodel; references=references, absolutetolerance=absolutetolerance)
     end
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
@@ -266,7 +283,42 @@ macro newmodel(name, parent, paramstype)
     function Base.show(io::IO, model::$name)
         return eosshow(io, model)
     end
-    end)
+    end |> esc
+end
+
+
+function _newmodel(eostype,params, sites::SiteParam, idealmodel::IDEALTYPE=BasicIdeal;
+                references::Array{String,1}=String[],
+                absolutetolerance::Float64=1E-12,
+                verbose::Bool=false)
+
+    #!(idealmodel <: IdealModel) && error("idealmodel ", idealmodel, " has to be a concrete subtype of IdealModel.")
+    arbparam = arbitraryparam(params)
+    components = arbparam.components
+    lengthcomponents = length(components)
+    icomponents = 1:lengthcomponents
+    allcomponentsites = sites.allcomponentsites
+    lengthallcomponentsites = [length(componentsites) for componentsites ∈ allcomponentsites]
+    allcomponentnsites = sites.allcomponentnsites
+    isites = [1:lengthallcomponentsites[i] for i ∈ icomponents]
+
+    verbose && idealmodel != BasicIdeal && @info("Now creating ideal model ", idealmodel, ".")
+    idealmodelstruct = idealmodel(components; verbose=verbose)
+
+    return eostype{idealmodel}(components, lengthcomponents, icomponents,
+        allcomponentsites, lengthallcomponentsites, allcomponentnsites, isites,
+        params, idealmodelstruct, absolutetolerance, references)
+end
+
+function _newmodel(eostype,params, idealmodel=BasicIdeal;
+                references=String[],
+                absolutetolerance=1E-12,
+                verbose=false)
+    
+    arbparam = arbitraryparam(params)
+    components = arbparam.components
+    sites = SiteParam(components)
+    return _newmodel(eostype,params, sites, idealmodel; references=references, absolutetolerance=absolutetolerance)
 end
 
 """
@@ -274,7 +326,8 @@ Even simpler model, primarily for the ideal models.
 Contains neither sites nor ideal models.
 """
 macro newmodelsimple(name, parent, paramstype)
-    esc(quote struct $name <: $parent
+    quote 
+    struct $name <: $parent
         components::Array{String,1}
         lengthcomponents::Int
         icomponents::UnitRange{Int}
@@ -282,29 +335,36 @@ macro newmodelsimple(name, parent, paramstype)
         params::$paramstype
         absolutetolerance::Float64
         references::Array{String,1}
-
-        function $name(params::$paramstype;
-                       references::Array{String,1}=String[],
-                       absolutetolerance::Float64=1E-12, verbose::Bool=false)
-            arbitraryparam = try
-                getfield(params, findfirst(x -> typeof(getfield(params, x)) <: OpenSAFTParam, fieldnames($paramstype)))
-            catch e
-                error("The paramater struct ", $paramstype, " must contain at least one OpenSAFTParam")
-            end
-            components = arbitraryparam.components
-            lengthcomponents = length(components)
-            icomponents = 1:lengthcomponents
-
-            return new(components, lengthcomponents, icomponents,
-                          params, absolutetolerance, references)
-        end
     end
 
+    function $name(params::$paramstype;
+                references::Array{String,1}=String[],
+                absolutetolerance::Float64=1E-12, verbose::Bool=false)
+        
+        return _newmodelsimple($name,params;references=references,absolutetolerance=absolutetolerance,verbose=verbose)
+    end
+    
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
     end
+
     function Base.show(io::IO, model::$name)
         return eosshow(io, model)
     end
-    end)
+    end |> esc
 end
+
+function _newmodelsimple(eostype,params;
+                        references::Array{String,1}=String[],
+                        absolutetolerance::Float64=1E-12,
+                        verbose::Bool=false)
+
+    arbparam = arbitraryparam(params)
+    components = arbparam.components
+    lengthcomponents = length(components)
+    icomponents = 1:lengthcomponents
+
+    return eostype(components, lengthcomponents, icomponents,
+        params, absolutetolerance, references)
+end
+

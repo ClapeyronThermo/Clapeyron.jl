@@ -175,5 +175,10 @@ function SiteParam(pairs::Dict{String,SingleParam{Int}})
     return SiteParam(components, allcomponentsites, allcomponentnsites, sourcecsvs)
 end
 
+
+#empty SiteParam
+function SiteParam(components::Vector{String})
+    return SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], String[])
+end
 paramvals(param::OpenSAFTParam) = param.values
 paramvals(x) = x
