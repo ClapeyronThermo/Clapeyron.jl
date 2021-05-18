@@ -10,7 +10,7 @@ uses NLSolvers.jl as backend, the jacobian is calculated with ForwardDiff.jl
 
 """
 
-function nlsolve(f!,x0,method=TrustRegion(Newton(), Dogleg()),options=NEqOptions())
+function nlsolve(f!,x0,method=TrustRegion(Newton(), NTR()),options=NEqOptions())
     #f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
     len = length(x0)
     #xcache = zeros(eltype(x0),len)
