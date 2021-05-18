@@ -10,13 +10,14 @@ using Combinatorics
 using NamedArrays
 using DataStructures: DefaultDict
 include("constants.jl")
-include("utils/macros.jl")
+include("models/basetools.jl")
 include("utils/OpenSAFTParam.jl")
+
+include("utils/macros.jl")
 using CSV, Tables
 include("utils/database.jl")
 include("utils/misc.jl")
 
-include("models/basetools.jl")
 include("models/combiningrules.jl")
 
 include("models/eos.jl")
