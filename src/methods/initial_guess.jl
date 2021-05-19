@@ -77,14 +77,16 @@ function x0_volume_sc(model,p,T,z)
 end
 
 function x0_volume(model::EoSModel,p,T,z; phase = :unknown)
+    phase = Symbol(phase)
     if phase === :unknown || is_liquid(phase)
-        x0val = x0_volume_liquid(model,T,z)
+        return x0_volume_liquid(model,T,z)
     elseif is_vapour(phase)
-        x0val = x0_volume_gas(model,p,T,z)
+        return x0_volume_gas(model,p,T,z)
     elseif is_supercritical(phase)
-        x0val = x0_volume_sc(model,p,T,z)
+        return x0_volume_sc(model,p,T,z)
+    else
+        error("unreachable state on x0_volume")
     end
-    return x0val
 end
 
 

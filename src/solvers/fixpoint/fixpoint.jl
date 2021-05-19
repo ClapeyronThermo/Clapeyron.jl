@@ -20,13 +20,15 @@ SimpleFixPoint(;dampingfactor=1.0) = SimpleFixPoint(dampingfactor)
 
 struct AitkenFixPoint <: AbstractFixPoint end
 
-function fixpoint(f,x0,
+
+function fixpoint(f,x0::Real,
     method::AbstractFixPoint = SimpleFixPoint();
-    atol=zero(float(real(nested_eltype(x0)))),
-    rtol=8eps(one(float(real(nested_eltype(x0))))), 
+    atol=zero(nested_eltype(x0)),
+    rtol=8eps(one(nested_eltype(x0))), 
     max_iters=100,
     norm = norm)
-    x0,atol,retol = promote(x0,atol,rtol)
+
+    x0,atol,rtol = promote(x0,atol,rtol)
     return _fixpoint(f,x0,method,atol,rtol,max_iters,norm)
 end
 
