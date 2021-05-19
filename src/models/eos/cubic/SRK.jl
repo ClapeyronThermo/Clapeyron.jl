@@ -17,7 +17,7 @@ function SRK(components::Array{String,1}; userlocations::Array{String,1}=String[
     k  = params["k"]
     _pc = params["pc"]
     pc = _pc.values
-    
+
 
     Tc = params["Tc"]
     Tc_ = Tc.values
@@ -26,7 +26,9 @@ function SRK(components::Array{String,1}; userlocations::Array{String,1}=String[
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. (2^(1/3)-1)/3*R̄*Tc_/pc))
 
     packagedparams = SRKParam(a, b, acentricfactor, Tc,_pc,Mw)
-    return SRK(packagedparams,idealmodel)
+    model = SRK(packagedparams,idealmodel)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 function ab_consts(::Type{<:SRKModel})
@@ -40,7 +42,7 @@ function cubic_ab(model::SRKModel,T,x)
     b = model.params.b.values
     ω = model.params.acentricfactor.values
     Tc = model.params.Tc.values
-    #root of α  
+    #root of α
     αx = @. sqrt(min((1+(0.480+1.547*ω-0.176*ω^2)*(1-√(T/Tc)))^2,one(T)))
     #αx = (αi*xi for (αi,xi) in zip(α,x)) #lazy iterator
     αx .*= x

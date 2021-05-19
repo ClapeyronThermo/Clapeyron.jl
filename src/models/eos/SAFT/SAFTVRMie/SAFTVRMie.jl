@@ -32,7 +32,9 @@ function SAFTVRMie(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, user
     packagedparams = SAFTVRMieParam(segment, sigma, lambda_a, lambda_r, epsilon, epsilon_assoc, bondvol, Mw)
     references = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
 
-    return SAFTVRMie(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = SAFTVRMie(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 
@@ -232,7 +234,7 @@ function ∂a_1╱∂ρ_S(model::SAFTVRMieModel, V, T, z, i)
     λr  = model.params.lambda_r.diagvalues
     λa  = model.params.lambda_a.diagvalues
     x_0ij = @f(x_0,i,i)
-    return @f(C,i,i)*(x_0ij^λa[i]*(@f(∂aS_1╱∂ρ_S,λa[i])+@f(∂B╱∂ρ_S,λa[i],x_0ij)) 
+    return @f(C,i,i)*(x_0ij^λa[i]*(@f(∂aS_1╱∂ρ_S,λa[i])+@f(∂B╱∂ρ_S,λa[i],x_0ij))
                       - x_0ij^λr[i]*(@f(∂aS_1╱∂ρ_S,λr[i])+@f(∂B╱∂ρ_S,λr[i],x_0ij)))
 end
 

@@ -28,7 +28,9 @@ function CKSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocation
     packagedparams = CKSAFTParam(segment, sigma, epsilon,c, epsilon_assoc, bondvol)
     references = ["TODO CKSAFT", "TODO CKSAFT"]
 
-    return CKSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = CKSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 function a_res(model::CKSAFTModel, V, T, z)
@@ -69,7 +71,7 @@ end
 
 function d(model::CKSAFTModel, V, T,z, i)
     ϵ = model.params.epsilon.diagvalues[i]
-    σ = model.params.sigma.diagvalues[i] 
+    σ = model.params.sigma.diagvalues[i]
     return σ * (1 - 0.12exp(-3ϵ/T))
 end
 
@@ -91,11 +93,11 @@ function ū(model::CKSAFTModel, V, T, z)
     it = @comps #only to stop vscode from recognizing this as an error
     m = model.params.segment.values
     num = ∑(
-            x[i]*x[j]*m[i]*m[j]*@f(u,i,j)*@f(d,i,j)^3 
+            x[i]*x[j]*m[i]*m[j]*@f(u,i,j)*@f(d,i,j)^3
             for i ∈ it for j ∈ it)
 
     denom = ∑(
-            x[i]*x[j]*m[i]*m[j]*@f(d,i,j)^3 
+            x[i]*x[j]*m[i]*m[j]*@f(d,i,j)^3
             for i ∈ it for j ∈ it)
     return num/denom
 end
@@ -129,7 +131,7 @@ function a_assoc(model::CKSAFTModel, V, T, z)
     return ∑(x[i]*
                 ∑(
                   n[i][a]*(log(X_[i][a]) - X_[i][a]/2 + 0.5)
-                for a ∈ @sites(i)) 
+                for a ∈ @sites(i))
             for i ∈ @comps)
 end
 

@@ -18,7 +18,9 @@ end
 function SPUNG(components::Vector{String},refmodel=PropaneRef(),shapemodel::SHAPE=SRK(components)) where SHAPE<:EoSModel
     refname = component_names(refmodel)
     shape_ref = SHAPE.name.wrapper(refname)
-    return SPUNG(shapemodel,shape_ref,refmodel)
+    model = SPUNG(shapemodel,shape_ref,refmodel)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 

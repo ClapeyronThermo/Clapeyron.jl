@@ -26,7 +26,9 @@ function PCSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocation
     packagedparams = PCSAFTParam(Mw,segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
-    return PCSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = PCSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 function a_res(model::PCSAFTModel, V, T, z)
@@ -149,7 +151,7 @@ function Δ(model::PCSAFTModel, V, T, z, i, j, a, b)
 end
 
 const PCSAFTconsts = (
-    corr1 =    
+    corr1 =
     [0.9105631445 -0.3084016918 -0.0906148351;
     0.6361281449 0.1860531159 0.4527842806;
     2.6861347891 -2.5030047259 0.5962700728;
@@ -158,7 +160,7 @@ const PCSAFTconsts = (
     -159.59154087 83.318680481 13.776631870;
     91.297774084 -33.746922930 -8.6728470368],
 
-    corr2 = 
+    corr2 =
     [0.7240946941 -0.5755498075 0.0976883116;
     2.2382791861 0.6995095521 -0.2557574982;
     -4.0025849485 3.8925673390 -9.1558561530;

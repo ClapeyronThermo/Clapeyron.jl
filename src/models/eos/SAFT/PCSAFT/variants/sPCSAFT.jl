@@ -16,7 +16,9 @@ function sPCSAFT(components::Array{String,1}; idealmodel::Type=BasicIdeal, userl
     packagedparams = PCSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie020753p"]
 
-    return sPCSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = sPCSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 function a_hc(model::sPCSAFTModel, V, T, z)

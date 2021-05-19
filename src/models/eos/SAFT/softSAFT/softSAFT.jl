@@ -24,7 +24,9 @@ function softSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocati
     packagedparams = softSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["todo"]
 
-    return softSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = softSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 function a_res(model::softSAFTModel, V, T, z)
