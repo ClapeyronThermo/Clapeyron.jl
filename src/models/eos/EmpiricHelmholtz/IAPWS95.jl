@@ -197,9 +197,8 @@ const watersat_data = (;n = [0.116_705_214_527_67E4,
     0.650_175_348_447_98E3]
 )
 
-struct WaterSat <: SatPureModel end
 #psat and tsat are modified from SteamTables.jl
-function p_sat(::WaterSat,t)
+function water_p_sat(t)
     n = watersat_data.n
     Θ = t + n[9]/(t - n[10])
     A =      Θ^2 + n[1]*Θ + n[2]
@@ -209,7 +208,7 @@ function p_sat(::WaterSat,t)
     return P*1000000
 end
 
-function t_sat(::WaterSat,p)
+function water_t_sat(p)
     n = watersat_data.n
     P = p/1000000
     β = P^0.25
@@ -290,7 +289,6 @@ export IAPWS95,IAPWS95Ideal
 
 function vcompress_v0(model::IAPWS95,p,T,z=SA[1.0])
     #lb_v   = exp10(only(lb_volume(model,z,phase=:l)))
-    #psat = p_sat(WaterSat(),T)
     #α = 1 + (p-psat)/p
     if model.params.Pc > p
         return sat_v = saturated_water_liquid(T)
