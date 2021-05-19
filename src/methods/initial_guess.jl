@@ -171,6 +171,13 @@ function x0_sat_pure(model::CubicModel,T,z=SA[1.0])
     return log10.(x0)
 end
 
+function x0_sat_pure(model::SAFTgammaMieModel,T,z=SA[1.0])
+    val = lb_volume(model,z)*one(T)
+    #we need to find a better way to scale those values.
+    x0  = [val/0.7,val/1e-3]
+    return log10.(x0)
+end
+
 
 function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
     val = lb_volume(model,z)*one(T)
