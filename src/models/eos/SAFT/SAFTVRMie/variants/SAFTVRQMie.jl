@@ -28,7 +28,9 @@ function SAFTVRQMie(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, use
     packagedparams = SAFTVRQMieParam(segment, sigma, lambda_a, lambda_r, epsilon, Mw)
     references = ["todo"]
 
-    return SAFTVRQMie(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = SAFTVRQMie(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 

@@ -4,7 +4,7 @@ struct vdWParam <: EoSParam
     Mw::SingleParam{Float64}
     a::PairParam{Float64}
     b::PairParam{Float64}
-    
+
 end
 
 abstract type vdWModel <: ABCubicModel end
@@ -24,7 +24,9 @@ function vdW(components::Array{String,1}; userlocations::Array{String,1}=String[
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. 1/8*R̄*Tc/pc))
 
     packagedparams = vdWParam(_Tc,_pc,Mw,a,b)
-    return vdW(packagedparams,idealmodel)
+    model = vdW(packagedparams,idealmodel)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 function ab_consts(::Type{<:vdWModel})

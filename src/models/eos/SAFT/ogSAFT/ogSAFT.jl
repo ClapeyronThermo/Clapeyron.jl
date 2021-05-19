@@ -24,7 +24,9 @@ function ogSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocation
     packagedparams = ogSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["todo"]
 
-    return ogSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = ogSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 function a_res(model::ogSAFTModel, V, T, z)

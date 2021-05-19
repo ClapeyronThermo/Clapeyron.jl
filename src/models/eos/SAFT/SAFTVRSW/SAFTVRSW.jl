@@ -28,7 +28,9 @@ function SAFTVRSW(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, userl
     packagedparams = SAFTVRSWParam(segment, sigma, lambda, epsilon, epsilon_assoc, bondvol)
     references = ["todo"]
 
-    return SAFTVRSW(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = SAFTVRSW(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 function a_res(model::SAFTVRSWModel, V, T, z)
@@ -50,7 +52,7 @@ function a_hs(model::SAFTVRSWModel, V, T, z)
     ζ3 = @f(ζn,3)
     x = z/∑(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m) 
+    m̄ = ∑(x .* m)
     return m̄*6/π/@f(ρ_S)*(3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
 end
 
@@ -64,14 +66,14 @@ function ρ_S(model::SAFTVRSWModel, V, T, z)
     N = N_A*∑z
     x = z/∑z
     m = model.params.segment.values
-    m̄ = ∑(x .* m) 
+    m̄ = ∑(x .* m)
     return N/V*m̄
 end
 
 function x_S(model::SAFTVRSWModel, V, T, z, i)
     x = z/∑(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m) 
+    m̄ = ∑(x .* m)
     return x[i]*m[i]/m̄
 end
 
@@ -83,7 +85,7 @@ end
 function a_1(model::SAFTVRSWModel, V, T, z)
     x = z/∑(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m) 
+    m̄ = ∑(x .* m)
     return -m̄/T*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*@f(a_1,i,j) for i ∈ @comps for j ∈ @comps)
 end
 
@@ -110,7 +112,7 @@ end
 function a_2(model::SAFTVRSWModel, V, T, z)
     x = z/∑(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m) 
+    m̄ = ∑(x .* m)
     return m̄/T^2*∑(@f(x_S,i)*@f(x_S,j)*@f(a_2,i,j) for i ∈ @comps for j ∈ @comps)
 end
 
@@ -132,7 +134,7 @@ function ∂a_1╱∂ρ_S(model::SAFTVRSWModel, V, T, z, i, j)
     ζ_X_ = @f(ζ_X)
     ζeff_X_ = @f(ζeff_X,λ[i,j])
     A = SAFTVRSWconsts.A
-    # ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [ζ_X_; 2ζ_X_^2; 3ζ_X_^3] 
+    # ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [ζ_X_; 2ζ_X_^2; 3ζ_X_^3]
     ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
     return -αij*(@f(gHS_0,i,j)+(5/2-ζeff_X_)/(1-ζeff_X_)^4*∂ζeff_X╱∂ζ_X)
 end
@@ -166,7 +168,7 @@ function g_1(model::SAFTVRSWModel,V, T, z, i, j)
     ζeff_X_ = @f(ζeff_X,λ[i,j])
     A = SAFTVRSWconsts.A
     ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
-    ∂ζeff_X╱∂λ = A * [0; 1; 2λ[i,j]] ⋅ [ζ_X_; ζ_X_^2; ζ_X_^3] 
+    ∂ζeff_X╱∂λ = A * [0; 1; 2λ[i,j]] ⋅ [ζ_X_; ζ_X_^2; ζ_X_^3]
     return @f(gHS_0,i,j)+(λ[i,j]^3-1)*(5/2-ζeff_X_)/(1-ζeff_X_)^4*(λ[i,j]/3*∂ζeff_X╱∂λ-ζ_X_*∂ζeff_X╱∂ζ_X)
 end
 

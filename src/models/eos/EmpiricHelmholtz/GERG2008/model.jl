@@ -1925,7 +1925,7 @@ function GERG2008(components::Vector{String})
     end
 
 
-    return GERG2008(
+    model = GERG2008(
         comps,
         acentricfactor[xsel],
         Mw[xsel],
@@ -1959,9 +1959,6 @@ function GERG2008(components::Vector{String})
         k_pol_ijk,
         k_exp_ijk,
     )
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
-
-
-
-
-
