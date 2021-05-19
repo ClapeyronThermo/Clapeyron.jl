@@ -427,7 +427,11 @@ function X(model::SAFTgammaMieModel, V, T, z)
             X_[i][k][a] = (1-damping_factor)*X_old[i][k][a] + damping_factor*rhs
         end
         error = sqrt(∑(∑(∑((X_[i][k][a]-X_old[i][k][a])^2 for a ∈ @sites(k)) for k ∈ @groups(i)) for i ∈ @comps))
-        X_old = deepcopy(X_)
+        for i = 1:length(X_)
+            for j in 1:length(X_[i])
+            X_old[i][j] .= X_[i][j]
+            end
+        end
         iter += 1
     end
     #println("Debug: X converged after ", iter, " iterations.")
