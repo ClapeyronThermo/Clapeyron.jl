@@ -31,9 +31,9 @@ function volume_virial(model,p,T, z=SA[1.] )
     if Δ <= 0
         #virial approximation could not be calculated
         #degrade to ideal aprox
-        return n*R̄*T/p 
-        
-    end 
+        return n*R̄*T/p
+
+    end
     return (-b + sqrt(b*b-4*a*c))/(2*a)
 end
 
@@ -51,14 +51,14 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
         #return Solvers.ad_newton(fp,vg0)
         return volume_compress(model,p,T,z,v0=v0)
     end
-    
+
     if threaded
         _vg = Threads.@spawn begin
             vg0 = x0_volume(model,$p,$T,$z,phase=:v)
             volume_compress(model,$p,$T,$z;v0=vg0)
             #Solvers.ad_newton(fp,vg0)
         end
-        vl0 = x0_volume(model,p,T,z,phase=:l) 
+        vl0 = x0_volume(model,p,T,z,phase=:l)
         _vl = Threads.@spawn volume_compress(model,$p,$T,$z;v0=$vl0)
         #fp(_v) = pressure(model,_v,T,z) - p
         vg = fetch(_vg)
@@ -66,7 +66,7 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
     else
         vg0 = x0_volume(model,p,T,z,phase=:v)
         vl0 = x0_volume(model,p,T,z,phase=:l)
-    
+
         vg =  volume_compress(model,p,T,z,v0=vg0)
         #vg = Solvers.ad_newton(fp,vg0)
         vl =  volume_compress(model,p,T,z,v0=vl0)
@@ -91,11 +91,13 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
     #this catches the supercritical phase as well
     if vl ≈ vg
         return vl
-    end  
+    end
         gg = gibbs(vg)
         gl = gibbs(vl)
         #@show vg,vl
         #@show gg,gl
         return ifelse(gg<gl,vg,vl)
-    
+
 end
+
+export volume
