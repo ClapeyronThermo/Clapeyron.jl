@@ -1,5 +1,6 @@
 function sat_pure(model::EoSModel, T; v0 = nothing)
-    f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
+    v_lb = lb_volume(model,SA[1.0])
+    f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]),v_lb)
     #j! = (J,x) -> Jac_Sat(model, J, T, exp10(x[1]), exp10(x[2]))
     #fj! = (F,J,x) -> Obj_Jac_sat(model,F,J,T,exp10(x[1]), exp10(x[2]))
     #jv! = (x) -> Jvop_sat(x, model, T)
@@ -75,15 +76,16 @@ function sat_pure(model::EoSModel,v0,f!,T)
     return (P_sat,v_l,v_v)
 end
 
-function Obj_Sat(model::EoSModel, F, T, v_l, v_v)
+function Obj_Sat(model::EoSModel, F, T, v_l, v_v,v_lb)
     #components = model.components
     fun(x) = eos(model, x[2], T,SA[x[1]])
     df(x)  = ForwardDiff.gradient(fun,x)
     df_l = df(SA[one(v_l*T),v_l])
     df_v = df(SA[one(v_v*T),v_v])
     (p_scale,μ_scale) = scale_sat_pure(model)
-    F[1] = (df_l[2]-df_v[2])*p_scale
-    F[2] = (df_l[1]-df_v[1])*μ_scale
+    T̄ = T/T_scale(model)
+    F[1] = (df_l[2]-df_v[2])*p_scale*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
+    F[2] = (df_l[1]-df_v[1])*μ_scale*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
 end
 
 
