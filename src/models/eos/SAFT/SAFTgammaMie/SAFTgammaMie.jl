@@ -12,7 +12,8 @@ end
 abstract type SAFTgammaMieModel <: GCSAFTModel end
 @newmodelgc SAFTgammaMie SAFTgammaMieModel SAFTgammaMieParam
 
-export SAFTgammaMie
+const SAFTγMie = SAFTgammaMie
+export SAFTgammaMie,SAFTγMie
 function SAFTgammaMie(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
     groups = buildspecies(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie"]; userlocations=userlocations, verbose=verbose)
@@ -405,6 +406,7 @@ function ∂ā_2╱∂ρ_S(model::SAFTgammaMieModel, V, T, z, i)
 end
 
 function X(model::SAFTgammaMieModel, V, T, z)
+    _1 = one(V+T+first(z))
     x = z/∑(z)
     ρ = ∑(z)*N_A/V
     v = model.allcomponentnflattenedgroups
@@ -414,7 +416,7 @@ function X(model::SAFTgammaMieModel, V, T, z)
     error = 1.
     tol = model.absolutetolerance
     iter = 1
-    X_ = [[[1. for a ∈ @sites(k)] for k ∈ @groups] for i ∈ @comps]
+    X_ = [[[_1 for a ∈ @sites(k)] for k ∈ @groups] for i ∈ @comps]
     X_old = deepcopy(X_)
     while error > tol
         if iter > itermax
@@ -428,7 +430,7 @@ function X(model::SAFTgammaMieModel, V, T, z)
         X_old = deepcopy(X_)
         iter += 1
     end
-    println("Debug: X converged after ", iter, " iterations.")
+    #println("Debug: X converged after ", iter, " iterations.")
     return X_
 end
 
