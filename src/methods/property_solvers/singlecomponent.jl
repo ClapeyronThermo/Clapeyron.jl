@@ -61,7 +61,7 @@ function sat_pure(model::EoSModel, T; v0 = nothing)
             end
         end
     else
-        (P_sat,v_l,v_v) = sat_pure(model,v0,vectorprob,T)
+        (P_sat,v_l,v_v) = sat_pure(model,v0,f!,T)
         return (P_sat,v_l,v_v)
     end
 end
@@ -164,7 +164,7 @@ function sat_pure_p(model,p)
     v1 = first(vv)
     #(v1 == v2) && return v1
     v2 = last(vv)
-    
+
     =#
     T0 = p_sat_t0(model,p)
     px = p
@@ -193,7 +193,7 @@ function sat_pure_p(model,p)
             #println("v2 condition")
             break
         end
-        
+
         _px(T) = (_A(v1, T) - _A(v2, T)) / (v2 - v1) - p
         #_px(T) = exp(_A(v1,T)-_A(v2,T)) - one(Tx)
         Told = Tx
@@ -206,7 +206,7 @@ function sat_pure_p(model,p)
 
     return (Tx,v1,v2)
 end
-    
+
 function naive_sat_pure_p(model,p)
     T0 = p_sat_t0(model,p)
     ft0(t) = log(first(sat_pure(model,t))/p)
@@ -217,3 +217,5 @@ function naive_sat_pure_p(model,p)
     vv = volume(model,p,T,phase=:v)
     return (T,vl,vv)
 end
+
+export sat_pure, crit_pure, enthalpy_vap

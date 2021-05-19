@@ -74,7 +74,7 @@ end
 
 
 function second_virial_coefficient(model::EoSModel, T,  z=SA[1.])
-    TT = promote_type(eltype(z),typeof(T))  
+    TT = promote_type(eltype(z),typeof(T))
     V = 1/sqrt(eps(TT))
     _∂2f = ∂2f(model,V,T,z)
     hessf,gradf,f = _∂2f
@@ -90,13 +90,13 @@ end
 """
     pip(model::EoSModel,v,T,z=[1.0])
 
-Phase identification parameter `Π`. as described in _1_. If `Π > 1`, then the phase is clasified as a liquid or a liquid-like vapor, being a vapor or vapor-like liquid otherwise. 
+Phase identification parameter `Π`. as described in _1_. If `Π > 1`, then the phase is clasified as a liquid or a liquid-like vapor, being a vapor or vapor-like liquid otherwise.
 
 This identification parameter fails at temperatures and pressures well above the critical point.
 
 Calculated as:
 ```
-Π = v*((∂²p/∂v∂T)/(∂p/∂T) - (∂²p/∂v²)/(∂p/∂v)) 
+Π = v*((∂²p/∂v∂T)/(∂p/∂T) - (∂²p/∂v²)/(∂p/∂v))
 ```
 
 
@@ -107,7 +107,7 @@ Calculated as:
 function pip(model::EoSModel,v,T,z=SA[1.0])
     _∂2p = ∂2p(model,v,T,z)
     hess_p, grad_p, _ = _∂2p
-    Π = v*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1]) 
+    Π = v*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1])
 end
 
-
+export second_virial_coefficient
