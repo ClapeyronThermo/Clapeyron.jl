@@ -90,11 +90,6 @@ end
 
 #=x0_sat_pure=#
 
-# function x0_sat_pure(model::SAFTgammaMie)
-#     x0    = [log10(π/6*N_A*sum(model.group_multiplicities[model.components[1]][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(model.components[1]))/0.5),
-#     log10(π/6*N_A*sum(model.group_multiplicities[model.components[1]][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(model.components[1]))/1e-3)]
-# end
-
 # function x0_sat_pure(model::SAFTVRQMie)
 #     x0    = [log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.2),
 #     log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/1e-3)]
@@ -110,7 +105,6 @@ end
 
 ##=lb_volume=#
 #
-#lb_volume(model::SAFTgammaMie,z; phase = "unknown") = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/1)]
 #lb_volume(model::LJSAFT,z; phase = "unknown") = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1)]
 
 function lb_volume(model::SAFTModel, z = SA[1.0]; phase = "unknown")
@@ -134,6 +128,16 @@ function lb_volume(model::CPAModel,z = SA[1.0]; phase = "unknown")
     return  b̄
 end
 
+function lb_volume(model::SAFTgammaMieModel, z = SA[1.0]; phase = "unknown")
+    vk  = model.igroups
+    seg = model.params.segment.values
+    S   = model.params.shapefactor.values
+    σᵢᵢ = model.params.sigma.diagvalues
+
+
+    val = π/6*N_A*sum(z[i]*sum(vk[i][k]*seg[k]*S[k]*σᵢᵢ[k]^3 for k in @groups(i)) for i in @comps)
+    return val
+end
 
 #=scale_sat_pure=#
 
@@ -185,7 +189,6 @@ end
 
 #=x0_crit_pure=#
 
-# x0_crit_pure(model::SAFTgammaMie) = [2, log10(π/6*N_A*sum(model.group_multiplicities[model.components[1]][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(model.components[1]))/0.3)]
 # x0_crit_pure(model::LJSAFT) = [1.5, log10(π/6*model.params.segment[model.components[1]]*model.params.b[model.components[1]]/0.3)]
 
 function x0_crit_pure(model::SAFTModel,z=SA[1.0])
@@ -236,7 +239,7 @@ on SAFT EoS, is a function of ϵ
 =#
 function T_scale(model::SAFTModel,z=SA[1.0])
     ϵ = model.params.epsilon.diagvalues
-    return dot(z,ϵ)
+    return prod(ϵ)^(1/length(ϵ))
 end
 
 #dont use αa, just a, to avoid temperature dependence
@@ -269,6 +272,22 @@ function p_scale(model::SAFTModel,z=SA[1.0])
     ϵ = model.params.epsilon.diagvalues
     σᵢᵢ = model.params.sigma.diagvalues
     val =  sum(z[i]*σᵢᵢ[i]^3/ϵ[i] for i in 1:length(z))*N_A/R̄
+    return 1/val
+end
+
+function p_scale(model::SAFTgammaMieModel,z=SA[1.0])
+    vk  = model.igroups
+    seg = model.params.segment.values
+    S   = model.params.shapefactor.values
+    σ   = model.params.sigma.values
+    m̄  = sum(vk[1][k]*seg[k]*S[k] for k in @groups(model.icomponents[1]))
+
+    σ̄3 = sum(vk[1][k]*vk[1][l]*
+                     seg[k]*seg[l]*
+                     S[k]*S[l]*
+                     σ[k,l]^3 for k in @groups(model.icomponents[1]) for l in @groups(model.icomponents[1]))/m̄^2
+    ϵ̄ = T_scale(model,z)
+    val    = σ̄3*N_A/R̄/ϵ̄
     return 1/val
 end
 
