@@ -24,9 +24,9 @@ function Base.show(io::IO,param::SingleParam)
     print(io,"]")
 end
 
-function Base.show(io::IO,::MIME"text/plain",param::SingleParam)
+function Base.show(io::IO,::MIME"text/plain",param::SingleParam{T}) where T
     len = length(param.values)
-    println(io,"SingleParam(", "\"",param.name,"\")"," with ",len," component",ifelse(len==1,":","s:"))
+    println(io,"SingleParam{",string(T),"} with ",len," component",ifelse(len==1,":","s:"))
     i = 0
     for (name,val,miss) in zip(param.components,param.values,param.ismissingvalues)
         i += 1
@@ -34,9 +34,9 @@ function Base.show(io::IO,::MIME"text/plain",param::SingleParam)
             println(io)
         end
         if miss == false
-            print(io," ",name," = ",val)
+            print(io," ",name," => ",val)
         else
-            print(io," ",name," = ","-")
+            print(io," ",name," => ","-")
         end
     end
 end
@@ -100,26 +100,16 @@ function PairParam(x::SingleParam, v::Array{T,2}) where T
     return PairParam(x.name, v, convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
 
-#=
-function Base.show(io::IO,::MIME"text/plain",param::PairParam)
-    len = length(param.values)
-    println(io,"PairParam(", "\"",param.name,"\")"," with ",len," component",ifelse(len==1,":","s:"))
-    i = 0
-    for (name,val,miss) in zip(param.components,param.values,param.ismissingvalues)
-        i += 1
-        if i > 1
-            println(io)
-        end
-        if miss == false
-            print(io," ",name," = ",val)
-        else
-            print(io," ",name," = ","-")
-        end
-    end
+
+function Base.show(io::IO,mime::MIME"text/plain",param::PairParam{T}) where T
+    print(io,"PairParam{",string(T),"}")
+    show(io,param.components)
+    println(io,") with values:")
+    show(io,mime,param.values)
 end
 
 function Base.show(io::IO,param::PairParam)
-    print(io,"PairParam(")
+    print(io,"PairParam(",param.name)
     print(io,"\"",param.name,"\"",")[")
     for (name,val,miss,i) in zip(param.components,param.values,param.ismissingvalues,1:length(param.values))
         i != 1 && print(io,",")
@@ -131,7 +121,7 @@ function Base.show(io::IO,param::PairParam)
     end
     print(io,"]")
 end
-=#
+
 struct AssocParam{T} <: OpenSAFTParam
     name::String
     values::Array{Array{T,2},2}
@@ -180,5 +170,6 @@ end
 function SiteParam(components::Vector{String})
     return SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], String[])
 end
+
 paramvals(param::OpenSAFTParam) = param.values
 paramvals(x) = x
