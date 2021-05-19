@@ -17,13 +17,15 @@ end
 
 function IAPWS95()
     params = IAPWS95Params(647.096,2.2064e7,5.594803726708074e-5,18.015268,0.344861)
-    return IAPWS95(["water"],1,1:1,params)
+    model = IAPWS95(["water"],1,1:1,params)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 const IAPWS95_params = (
     n00= (-8.3204464837497, 6.6832105275932, 3.00632,0.012436, 0.97315, 1.2795, 0.96956, 0.24873)
     ,gamma00 = (0, 0, 0, 1.28728967, 3.53734222, 7.74073708, 9.24437796,27.5075105)
-    
+
     ,n = [0.12533547935523e-1, 0.78957634722828e1, -0.87803203303561e1,
     0.31802509345418, -0.26145533859358, -0.78199751687981e-2,
     0.88089493102134e-2,
@@ -50,9 +52,9 @@ const IAPWS95_params = (
     4, 4, 4, 5, 6, 6, 7, 9, 9, 9, 9, 9, 10, 10, 12, 3, 4, 4, 5, 14, 3, 6, 6, 6]
 
     ,t = [-0.5, 0.875, 1, 0.5, 0.75, 0.375, 1,
-    4, 6, 12, 1, 5, 4, 2, 13, 9, 3, 4, 11, 4, 13, 1, 7, 1, 9, 10, 10, 3, 7, 
+    4, 6, 12, 1, 5, 4, 2, 13, 9, 3, 4, 11, 4, 13, 1, 7, 1, 9, 10, 10, 3, 7,
     10, 10, 6, 10, 10, 1, 2, 3, 4, 8, 6, 9, 8, 16, 22, 23,23, 10, 50, 44, 46, 50]
-    
+
     ,c = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2,
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 6, 6,6, 6]
 
@@ -67,7 +69,7 @@ function _f0(_model::IAPWS95,rho,T)
     γ = (0.0, 0.0, 0.0, 1.28728967, 3.53734222, 7.74073708, 9.24437796,27.5075105)
     res = log(δ)+n[1] + n[2]*τ + n[3]*log(τ)
 
-    
+
     @inbounds for i = 4:8
         res += n[i]*log(-expm1(-γ[i]*τ))
     end
@@ -87,7 +89,7 @@ function _fr(_model::IAPWS95,rho,T)
     for i = 1:7
         res += n[i]* (δ^d[i]) * (τ^t[i])
     end
-    
+
     for i = 8:51
         ic = i-7
         res += n[i]* (δ^d[i]) * (τ^t[i]) * exp(-δ^c[ic])
@@ -99,22 +101,22 @@ function _fr(_model::IAPWS95,rho,T)
     #for i = 52:54
 
     #(δ-ε)^2
-    _δ = (δ-1.0)^2# 
-    
+    _δ = (δ-1.0)^2#
+
     gauss_d = 20*_δ
     gauss_1 = exp(-150*((τ-1.21)^2)  -gauss_d)
     gauss_2 = gauss_1
     gauss_3 = exp(-250*((τ-1.25)^2)  -gauss_d)
-    
-    res += nτt1*δd*gauss_1 + nτt2*δd*gauss_2 + nτt3*δd*gauss_3
-    
 
-    
+    res += nτt1*δd*gauss_1 + nτt2*δd*gauss_2 + nτt3*δd*gauss_3
+
+
+
     #for i = 55:56
 
     nδ1,nδ2 = (-0.14874640856724*δ, 0.31806110878444*δ)
     _τ = (τ-1.0)^2
-    Θ = (1.0-τ) + 0.32*τ^(10/6) 
+    Θ = (1.0-τ) + 0.32*τ^(10/6)
 
     Δ = Θ^2 + 0.2*_δ^3.5
     Ψ1 = exp(- 28*_δ - 700*_τ)
@@ -124,7 +126,7 @@ function _fr(_model::IAPWS95,rho,T)
     res += nδ1*Δb1*Ψ1 + nδ2*Δb2*Ψ2
 #==#
     return res
-   
+
 end
 
 _f(model::IAPWS95,rho,T) = _fr(model,rho,T)+_f0(model,rho,T)
@@ -132,23 +134,23 @@ _f(model::IAPWS95,rho,T) = _fr(model,rho,T)+_f0(model,rho,T)
 
 const IAPWS_R_corr = 8.3143713575874/R̄
 
-function a_ideal(model::IAPWS95,V,T,z=SA[1.0]) 
+function a_ideal(model::IAPWS95,V,T,z=SA[1.0])
     Σz = only(z) #single component
     v = V/Σz
     #R value calculated from molecular weight and specific gas constant
      #return 8.3143713575874*T*_f(model, molar_to_weight(1/v,[model.molecularWeight],[1.0]),T)
-     #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'    
+     #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'
      mass_v =  v*1000.0*0.055508472036052976
      rho = one(mass_v)/mass_v
      return 0.9999890238768239*_f0(model,rho,T)
 end
 
-function a_res(model::IAPWS95,V,T,z=SA[1.0]) 
+function a_res(model::IAPWS95,V,T,z=SA[1.0])
     Σz = only(z) #single component
     v = V/Σz
     #R value calculated from molecular weight and specific gas constant
      #return 8.3143713575874*T*_f(model, molar_to_weight(1/v,[model.molecularWeight],[1.0]),T)
-     #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'    
+     #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'
      mass_v =  v*1000.0*0.055508472036052976
      rho = one(mass_v)/mass_v
      return 0.9999890238768239*_fr(model,rho,T)
@@ -160,7 +162,7 @@ function eos(model::IAPWS95, V, T, z=SA[1.0])
     v = V/Σz
     #R value calculated from molecular weight and specific gas constant
      #return 8.3143713575874*T*_f(model, molar_to_weight(1/v,[model.molecularWeight],[1.0]),T)
-     #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'    
+     #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'
      mass_v =  v*1000.0*0.055508472036052976
      rho = one(mass_v)/mass_v
 
@@ -179,7 +181,7 @@ function IAPWS95Ideal(components; verbose=false)
     end
 end
 
-function a_ideal(model::IAPWS95Ideal,V,T,z=one(V)) 
+function a_ideal(model::IAPWS95Ideal,V,T,z=one(V))
     return a_ideal(IAPWS95(),V, T, z)
 end
 
@@ -230,7 +232,7 @@ function saturated_water_liquid(Tk)
         Tk*(-0.2914492351e-3 + Tk*(0.373497936e-6 - Tk*0.21203787e-9))))) /
         ( -0.3424442728e1 + 0.1619785e-1*Tk )
     #kg/m3 -> m3/kg *(kg/mol)
-    mw = 18.015268*0.001  
+    mw = 18.015268*0.001
     v = mw/ρm
 end
 
@@ -298,4 +300,3 @@ function vcompress_v0(model::IAPWS95,p,T,z=SA[1.0])
     #@show α
     #return (1-α)*lb_v + α*sat_v
 end
-

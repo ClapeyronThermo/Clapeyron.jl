@@ -25,7 +25,9 @@ function sCKSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocatio
     packagedparams = sCKSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["TODO sCKSAFT", "TODO sCKSAFT"]
 
-    return sCKSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = sCKSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 function a_disp(model::sCKSAFTModel, V, T, z)

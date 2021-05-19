@@ -25,7 +25,9 @@ function LJSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocation
     packagedparams = LJSAFTParam(segment, b, T_tilde, epsilon_assoc, bondvol)
     references = ["10.1021/ie9602320"]
 
-    return LJSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = LJSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 function a_res(model::LJSAFTModel, V, T, z)

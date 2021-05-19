@@ -29,7 +29,9 @@ function CPA(components::Array{String,1}; userlocations::Array{String,1}=String[
     packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
     references = ["10.1021/ie051305v"]
 
-    return CPA(packagedparams, sites,idealmodel; references=references)
+    model = CPA(packagedparams, sites,idealmodel; references=references)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 function a_res(model::CPAModel, V, T, z)

@@ -20,12 +20,14 @@ function PR(components::Array{String,1}; userlocations::Array{String,1}=String[]
     Tc = params["Tc"]
     Tc_ = Tc.values
     acentricfactor = params["w"]
-    Ωa,Ωb = ab_consts(PRModel) 
+    Ωa,Ωb = ab_consts(PRModel)
     a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc_^2/pc), k)
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. Ωb*R̄*Tc_/pc))
 
     packagedparams = PRParam(a, b, acentricfactor, Tc,_pc,Mw)
-    return PR(packagedparams,idealmodel)
+    model = PR(packagedparams,idealmodel)
+    @eval Base.broadcastable(model::EoSModel) = Ref(model)
+    return model
 end
 
 function ab_consts(::Type{<:PRModel})
@@ -81,8 +83,8 @@ function a_resx(model::PRModel, v, T, x)
     RT⁻¹ = 1/(R̄*T)
     ρ = 1/v
     return -log(1-b*ρ) - a*RT⁻¹*log((Δ1*b*ρ+1)/(Δ2*b*ρ+1))/(ΔPRΔ*b)
-    
-    
+
+
     #return -log(V-n*b̄) + āᾱ/(R̄*T*b̄*2^(3/2)) * log((2*V-2^(3/2)*b̄*n+2*b̄*n)/(2*V+2^(3/2)*b̄*n+2*b̄*n))
 end
 
