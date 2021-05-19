@@ -21,7 +21,7 @@ end
 
 function gibbs_free_energy(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
     v      = volume(model, p, T, z; phase=phase)
-    return vt_gibbs_free_energy(model,v,T,z) 
+    return vt_gibbs_free_energy(model,v,T,z)
 end
 
 function helmholtz_free_energy(model::EoSModel, p, T,  z=SA[1.]; phase = "unknown")
@@ -76,3 +76,7 @@ function inversion_temperature(model::EoSModel,p,z=SA[1.0])
     return Roots.find_zero(μⱼₜ,T0)
 end
 
+export entropy, chemical_potential, internal_energy, enthalpy, gibbs_free_energy
+export helmholtz_free_energy, isochoric_heat_capacity, isobaric_heat_capacity
+export isothermal_compressibility, isentropic_compressibility, speed_of_sound
+export isobaric_expansivity, joule_thomson_coefficient, compressibility_factor, inversion_temperature

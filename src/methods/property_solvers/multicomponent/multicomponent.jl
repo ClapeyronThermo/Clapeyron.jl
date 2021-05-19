@@ -55,7 +55,7 @@ function bubble_pressure_rr(model, T, x; P = 40000)
     vl0 = exp10(sol0[1])
     vv0 = exp10(sol0[2])
 
-    
+
 
 
     @show y0 = collect(FractionVector(sol0[3:end]))
@@ -67,9 +67,9 @@ function bubble_pressure_rr(model, T, x; P = 40000)
     @show y1 = y1 ./ sum(y1)
     @show pl0 = pressure(model,vl0,T,x)
     @show pv0 = pressure(model,vv0,T,y1)
-    
+
     @show P = (pl0 - pv0)/(log(pl0) - log(pv0))
-    
+
     @show vl = volume(model,P,T,x,phase=:l)
     @show vv = volume(model,P,T,y1,phase=:v)
     #=
@@ -86,3 +86,4 @@ function bubble_pressure_rr(model, T, x; P = 40000)
     =#
 end
 
+export bubble_pressure
