@@ -10,6 +10,7 @@ include("ADNewton.jl")
 include("nested.jl")
 include("nlsolve.jl")
 include("fixpoint/fixpoint.jl")
+
 function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
     # copied from PolynomialRoots.jl, adapted to be AD friendly
     # Cubic equation solver for complex polynomial (degree=3)
@@ -25,7 +26,7 @@ function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
     A   =  2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
     B   =  E12 - 3*E2                 # = s1 s2
     # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
-    Δ = sqrt(A*A - 4*B*B*B)
+    Δ = (A*A - 4*B*B*B)^0.5
     if real(conj(A)*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
         s1 = exp(log(0.5 * (A + Δ)) * third)
     else
@@ -42,6 +43,5 @@ function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
 end
 function polyroots(x) 
     return SVector(solve_cubic_eq(x))
-    return res
 end
 end # module
