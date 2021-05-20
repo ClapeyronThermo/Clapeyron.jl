@@ -29,7 +29,6 @@ function SAFTVRSW(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, userl
     references = ["todo"]
 
     model = SAFTVRSW(packagedparams, sites, idealmodel; references=references, verbose=verbose)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 

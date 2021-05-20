@@ -1,3 +1,5 @@
+Base.broadcastable(model::EoSModel) = Ref(model)
+
 """
     eos(model::EoSModel, V, T, z=SA[1.0])
 

@@ -27,7 +27,6 @@ function SRK(components::Array{String,1}; userlocations::Array{String,1}=String[
 
     packagedparams = SRKParam(a, b, acentricfactor, Tc,_pc,Mw)
     model = SRK(packagedparams,idealmodel)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 
@@ -42,10 +41,11 @@ function cubic_ab(model::SRKModel,T,x)
     b = model.params.b.values
     ω = model.params.acentricfactor.values
     Tc = model.params.Tc.values
+    _1 = one(T+first(x))
     #root of α
-    αx = @. sqrt(min((1+(0.480+1.547*ω-0.176*ω^2)*(1-√(T/Tc)))^2,one(T)))
+    αx = @. sqrt(min((_1+(0.480+1.547*ω-0.176*ω^2)*(1-√(T/Tc)))^2,_1)) * x
     #αx = (αi*xi for (αi,xi) in zip(α,x)) #lazy iterator
-    αx .*= x
+    #αx .*= x
     #āᾱ = sum(a .* .√(α * α') .* (x * x'))
     āᾱ =dot(αx, Symmetric(a), αx)
     b̄ = dot(x, Symmetric(b), x)

@@ -33,7 +33,6 @@ function SAFTVRMie(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, user
     references = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
 
     model = SAFTVRMie(packagedparams, sites, idealmodel; references=references, verbose=verbose)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 
