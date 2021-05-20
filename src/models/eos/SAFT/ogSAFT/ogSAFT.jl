@@ -25,7 +25,6 @@ function ogSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocation
     references = ["todo"]
 
     model = ogSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 

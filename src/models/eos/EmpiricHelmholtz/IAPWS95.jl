@@ -18,7 +18,6 @@ end
 function IAPWS95()
     params = IAPWS95Params(647.096,2.2064e7,5.594803726708074e-5,18.015268,0.344861)
     model = IAPWS95(["water"],1,1:1,params)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 

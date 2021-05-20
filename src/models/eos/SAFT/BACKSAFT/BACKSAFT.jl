@@ -25,7 +25,6 @@ function BACKSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocati
     references = ["TODO BACKSAFT", "TODO BACKSAFT"]
 
     model = BACKSAFT(packagedparams, idealmodel; references=references, verbose=verbose)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 

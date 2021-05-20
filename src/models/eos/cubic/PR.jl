@@ -26,7 +26,6 @@ function PR(components::Array{String,1}; userlocations::Array{String,1}=String[]
 
     packagedparams = PRParam(a, b, acentricfactor, Tc,_pc,Mw)
     model = PR(packagedparams,idealmodel)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 
