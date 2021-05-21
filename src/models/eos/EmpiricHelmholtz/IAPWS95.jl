@@ -13,8 +13,9 @@ struct IAPWS95 <: EmpiricHelmholtzModel
     params::IAPWS95Params
 end
 
-
-
+function crit_pure(model::IAPWS95)
+    return (model.params.Tc,model.params.Pc,model.params.Vc)
+end
 function IAPWS95()
     params = IAPWS95Params(647.096,2.2064e7,5.594803726708074e-5,18.015268,0.344861)
     model = IAPWS95(["water"],1,1:1,params)
@@ -238,7 +239,7 @@ end
 function saturated_water_vapor(Tk)
     Blin = 0.70e-8 - 0.147184e-8 * exp(1734.29/Tk)
     Clin = 0.104e-14 - 0.335297e-17*exp(3645.09/Tk)
-    p = p_sat(WaterSat(),Tk)
+    p = water_p_sat(Tk)
     return R̄*Tk/p * (1.0 + p*(Blin  + p*Clin))
 end
 
@@ -282,7 +283,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::IAPWS95)
     return eosshow(io,mime,model)
 end
 
-lb_volume(model::IAPWS95, z; phase = "unknown") = 1.4393788065379039e-5
+lb_volume(model::IAPWS95, z=SA[1.0]; phase = "unknown") = 1.4393788065379039e-5
 
 
 export IAPWS95,IAPWS95Ideal
