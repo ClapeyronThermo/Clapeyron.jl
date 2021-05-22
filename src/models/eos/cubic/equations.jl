@@ -21,7 +21,6 @@ function ∂f∂v(model::ABCubicModel,v,t,z)
     return -p
 end
 
-
 function x0_volume_sc(model::ABCubicModel,p,T,z)
     Zc = cubic_zc(model)
     return Zc*R̄*T/p

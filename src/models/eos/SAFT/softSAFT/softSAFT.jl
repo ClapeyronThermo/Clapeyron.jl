@@ -25,7 +25,6 @@ function softSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocati
     references = ["todo"]
 
     model = softSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 
