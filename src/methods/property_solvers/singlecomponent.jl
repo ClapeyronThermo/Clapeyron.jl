@@ -221,3 +221,25 @@ function naive_sat_pure_p(model,p)
 end
 
 export sat_pure, crit_pure, enthalpy_vap
+
+
+function spinodals(model,T)
+    T7 = (0.7)*one(T)*T_scale(model)
+    #@show T/T_scale(model)
+    #f0(_v) = 1/last(p∂p∂v(model,_v,T))
+    lb_v = lb_volume(model)
+    if T > T7
+        sp_l7 = volume_compress(model,zero(T),T7) 
+        f0(k) = last(p∂p∂v(model,lb_v + exp(k),T))
+
+        tc,pc,vc = crit_pure(model)
+        @show vc
+        v00 = log(sp_l7 - lb_v)
+        sp_l = Roots.find_zero(f0,v00) 
+
+        sp_l = lb_v + exp(sp_l)
+    else
+        sp_l = volume_compress(model,zero(T),T)
+    end
+    return (sp_l)#sp_v)
+end

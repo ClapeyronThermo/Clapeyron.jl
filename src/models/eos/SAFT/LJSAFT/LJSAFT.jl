@@ -26,7 +26,6 @@ function LJSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocation
     references = ["10.1021/ie9602320"]
 
     model = LJSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 

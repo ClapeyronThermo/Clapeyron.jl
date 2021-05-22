@@ -25,7 +25,6 @@ function vdW(components::Array{String,1}; userlocations::Array{String,1}=String[
 
     packagedparams = vdWParam(_Tc,_pc,Mw,a,b)
     model = vdW(packagedparams,idealmodel)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 
@@ -54,7 +53,8 @@ end
 
 function cubic_poly(model::vdWModel,p,T,z)
     x = z/sum(z)
-    a,b = cubic_ab(model,t,x)
+    a,b = cubic_ab(model,T,x)
+    _1 = one(a+b)
     RT⁻¹ = 1/(R̄*T)
     A = a*p*RT⁻¹*RT⁻¹
     B = b*p*RT⁻¹

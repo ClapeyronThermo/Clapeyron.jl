@@ -17,7 +17,6 @@ function sPCSAFT(components::Array{String,1}; idealmodel::Type=BasicIdeal, userl
     references = ["10.1021/ie020753p"]
 
     model = sPCSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 

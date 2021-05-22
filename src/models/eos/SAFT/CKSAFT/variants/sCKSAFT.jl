@@ -26,7 +26,6 @@ function sCKSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocatio
     references = ["TODO sCKSAFT", "TODO sCKSAFT"]
 
     model = sCKSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 

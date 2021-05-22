@@ -36,7 +36,6 @@ function SAFTgammaMie(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, u
     references = ["10.1063/1.4851455", "10.1021/je500248h"]
 
     model = SAFTgammaMie(packagedparams, groups, sites, idealmodel; references=references, verbose=verbose)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 

@@ -30,7 +30,6 @@ function CPA(components::Array{String,1}; userlocations::Array{String,1}=String[
     references = ["10.1021/ie051305v"]
 
     model = CPA(packagedparams, sites,idealmodel; references=references)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 

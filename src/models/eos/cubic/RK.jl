@@ -25,7 +25,6 @@ function RK(components::Array{String,1}; userlocations::Array{String,1}=String[]
 
     packagedparams = RKParam(a, b, params["Tc"],_pc,Mw,T̄c)
     model = RK(packagedparams,idealmodel)
-    @eval Base.broadcastable(model::EoSModel) = Ref(model)
     return model
 end
 function ab_consts(::Type{<:RKModel})
