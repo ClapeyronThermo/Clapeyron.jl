@@ -83,5 +83,10 @@ function x0_bubble_pressure(model::GERG2008,T,x)
     return append!([log10(vl),log10(vv)],y[1:end-1])
 end
 
+function vcompress_v0(model::GERG2008,x)
+    return lb_volume(model,x)
+end
+
+
 
 export GERG2008
