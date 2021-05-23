@@ -30,10 +30,11 @@ function volume_virial(model,p,T, z=SA[1.] )
     n = sum(z)
     if Δ <= 0
         #virial approximation could not be calculated
-        #degrade to ideal aprox
-        return n*R̄*T/p
+        #return value at spinodal
+        return -2*B
 
     end
+    #only the left root has physical meaning
     return (-b + sqrt(b*b-4*a*c))/(2*a)
 end
 
