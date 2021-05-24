@@ -84,8 +84,8 @@ function Obj_Sat(model::EoSModel, F, T, v_l, v_v,v_lb)
     df_v = df(SA[one(v_v*T),v_v])
     (p_scale,μ_scale) = scale_sat_pure(model)
     T̄ = T/T_scale(model)
-    F[1] = (df_l[2]-df_v[2])*p_scale*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
-    F[2] = (df_l[1]-df_v[1])*μ_scale*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
+    F[1] = (df_l[2]-df_v[2])*p_scale#*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
+    F[2] = (df_l[1]-df_v[1])*μ_scale#*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
 end
 
 
@@ -229,13 +229,13 @@ function spinodals(model,T)
     #f0(_v) = 1/last(p∂p∂v(model,_v,T))
     lb_v = lb_volume(model)
     if T > T7
-        sp_l7 = volume_compress(model,zero(T),T7) 
+        sp_l7 = volume_compress(model,zero(T),T7)
         f0(k) = last(p∂p∂v(model,lb_v + exp(k),T))
 
         tc,pc,vc = crit_pure(model)
         @show vc
         v00 = log(sp_l7 - lb_v)
-        sp_l = Roots.find_zero(f0,v00) 
+        sp_l = Roots.find_zero(f0,v00)
 
         sp_l = lb_v + exp(sp_l)
     else
