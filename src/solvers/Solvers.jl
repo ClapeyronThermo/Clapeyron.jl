@@ -41,7 +41,12 @@ function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
     zeta2 = conj(zeta1)
     return (third*(s0 + s1 + s2), third*(s0 + s1*zeta2 + s2*zeta1), third*(s0 + s1*zeta1 + s2*zeta2))
 end
-function polyroots(x) 
+function roots3(x) 
     return SVector(solve_cubic_eq(x))
+end
+
+function roots3(a,b,c,d) 
+    x = SVector(a,b,c,d)
+    return roots3(x)
 end
 end # module
