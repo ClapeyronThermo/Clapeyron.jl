@@ -21,6 +21,12 @@ function ∂f∂v(model::ABCubicModel,v,t,z)
     return -p
 end
 
+function second_virial_coefficient(model::ABCubicModel,T,z = SA[1.0])
+    #@info "fast shortcut"
+    a,b = cubic_ab(model,T,z)
+    return b-a/(R̄*T)
+end
+
 function x0_volume_sc(model::ABCubicModel,p,T,z)
     Zc = cubic_zc(model)
     return Zc*R̄*T/p
