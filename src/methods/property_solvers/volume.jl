@@ -1,18 +1,19 @@
 #aproximates liquid volume at a known pressure and t,
 #by using isothermal compressibility
-function volume_compress(model,p,T,z=SA[1.0];v0=vcompress_v0(model,p,T,z))
-    #v0 = vcompress_v0(model,p,T,z)
+function volume_compress(model,p,T,z=SA[1.0];v0=vcompress_v0(model,p,T,z),max_iters=100)
+    logv0 = log(v0)
     function f_fixpoint(_v)
+        _v = exp(_v)
         _p,dpdv = p∂p∂v(model,_v,T,z)
         β = -1/_v*dpdv^-1
         _Δ =  -(p-_p)*β
         sign_Δ = sign(_Δ)
         Δ = abs(_Δ)
         vv = _v*exp(sign_Δ*Δ^(1-_Δ))#^((1+Δ)^4)
-        return vv
+        return log(vv)
     end
-    return Solvers.fixpoint(f_fixpoint,v0,Solvers.SimpleFixPoint(),rtol = 1e-12)
-    #return Roots.find_zero(f_fixpoint,v0)
+    res = Solvers.fixpoint(f_fixpoint,logv0,Solvers.SimpleFixPoint(),rtol = 1e-12,max_iters=max_iters)
+    return exp(res)
 end
 
 function vcompress_v0(model,p,T,z=SA[1.0])
@@ -32,7 +33,6 @@ function volume_virial(model,p,T, z=SA[1.] )
         #virial approximation could not be calculated
         #return value at spinodal
         return -2*B
-
     end
     #only the left root has physical meaning
     return (-b + sqrt(b*b-4*a*c))/(2*a)
