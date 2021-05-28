@@ -112,7 +112,7 @@ end
 function lb_volume(model::SAFTModel, z = SA[1.0]; phase = "unknown")
     seg = model.params.segment.values
     σᵢᵢ = model.params.sigma.diagvalues
-    val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i]^3 for i in @comps)
+    val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i]^3 for i in 1:length(z))
     return val
 end
 
@@ -135,8 +135,6 @@ function lb_volume(model::SAFTgammaMieModel, z = SA[1.0]; phase = "unknown")
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
     σᵢᵢ = model.params.sigma.diagvalues
-
-
     val = π/6*N_A*sum(z[i]*sum(vk[i][k]*seg[k]*S[k]*σᵢᵢ[k]^3 for k in @groups(i)) for i in @comps)
     return val
 end
@@ -161,39 +159,32 @@ end
 #     return p_scale,μ_scale
 # end
 
-function x0_sat_pure(model::SAFTModel,T,z=SA[1.0])
-    val = lb_volume(model,z)*one(T)
-    x0  = [val/0.5,val/1e-3]
-    return log10.(x0)
-end
-
-function x0_sat_pure(model::CubicModel,T,z=SA[1.0])
-    val = lb_volume(model,z)*one(T)
-    x0  = [val/0.9,val/1e-4]
-    return log10.(x0)
-end
-
-function x0_sat_pure(model::SAFTgammaMieModel,T,z=SA[1.0])
-    val = lb_volume(model,z)*one(T)
-    #we need to find a better way to scale those values.
-    x0  = [val/0.7,val/1e-3]
-    return log10.(x0)
-end
 
 
+"""
+    scale_sat_pure(model,T,z=SA[1.0])
+returns the first guesses for the equilibrium volumes at a certain T
+
+
+
+"""
 function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
-    val = lb_volume(model,z)*one(T)
-    x0  = [val/0.5,val/1e-3]
+    b = lb_volume(model,z)*one(T)
+    B = second_virial_coefficient(model,T)
+    x0v = -2*B + 2*b
+    p = -0.25*R̄*T/B
+    x0l = volume_compress(model,p,T)
+    x0  = [x0l,x0v]
+    
     return log10.(x0)
 end
+
 
 function scale_sat_pure(model::EoSModel,z=SA[1.0])
     p    = 1/p_scale(model,z)
     μ    = 1/R̄/T_scale(model,z)
     return p,μ
 end
-
-
 
 
 #=x0_crit_pure=#
@@ -352,20 +343,4 @@ function p_scales(model,z)
         res[i] = p_scale(model,x)
         x[i] = 0.0
     end
-end
-
-
-
-function mollerup_k0(tc,pc,p,T)
-    return (pc ./ p) .* exp.(5.42 .* (1.0 .- (tc ./ T)))
-end
-
-function wilson_k0(ω, tc,pc,p,T)
-    return exp.(log.(pc./p).+5.373 .*(1.0 .+ ω).*(1.0 .-tc./T))
-end
-
-function bubble_pressure_y0(model::EoSModel,T,x)
-    tc = T_scales(model,x)
-    pc = p_scales(model,x)
-    mollerup(p,t) = mollerup_k0(tc,pc,p,t)
 end
