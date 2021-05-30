@@ -23,7 +23,8 @@ function sat_pure(model::EoSModel, T; v0 = nothing,debug=false)
     if v0 === nothing
         v0 = x0_sat_pure(model,T)
     end
-    res0 = (zero(T),zero(T),zero(T))
+    nan = zero(T)/zero(T)
+    res0 = (nan,nan,nan)
     result = Ref(res0)
     error_val = Ref{Any}(nothing)
     converged = Ref{Bool}(false)
@@ -32,13 +33,18 @@ function sat_pure(model::EoSModel, T; v0 = nothing,debug=false)
     if converged[]
         return result[]
     end
+    if debug
+        if error_val[] !== nothing
+            @warn "initial saturation calculation failed with error $error_val[]"
+        end
+    end
     result[] = res0
     #convergence not achieved, trying critical aproximation
-    
+   
     
     T_c,P_c,v_c = crit_pure(model)
     ΔT = (T_c - T)
-    ΔT <= 8*eps(T_c) && throw(DomainError(T,"input temperature $T is too close or higher than critical temperature of the model $T_c"))
+    ΔT <= 8*eps(ΔT) && throw(DomainError(T,"input temperature $T is too close or higher than critical temperature of the model $T_c"))
     Tr  = T/T_c
     v0 = x0_sat_pure_crit(model,T,T_c,P_c,v_c)
     
@@ -92,7 +98,6 @@ function sat_pure(model::EoSModel,v0,f!,T)
     v_l = exp10(vsol[1])
     v_v = exp10(vsol[2])
     P_sat = pressure(model,v_v,T)
-    
     return (P_sat,v_l,v_v)
 end
 
@@ -100,15 +105,43 @@ function Obj_Sat(model::EoSModel, F, T, v_l, v_v,v_lb)
     #components = model.components
     fun(x) = eos(model, x[2], T,SA[x[1]])
     df(x)  = ForwardDiff.gradient(fun,x)
-    df_l = df(SA[one(v_l*T),v_l])
-    df_v = df(SA[one(v_v*T),v_v])
+    df_l = df(SA[one(v_l*T),v_l*one(T)])
+    df_v = df(SA[one(v_v),v_v*one(T)])
     (p_scale,μ_scale) = scale_sat_pure(model)
     #T̄ = T/T_scale(model)
     F[1] = (df_l[2]-df_v[2])*p_scale#*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
     F[2] = (df_l[1]-df_v[1])*μ_scale#*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
     return F
 end
+#=
+function Obj_Sat(model::ABCubicModel, F, T, v_l, v_v,v_lb)
+    #components = model.components
+    ar(v) = a_res(model,v,T)
+    function dar(v) 
+        a,da = Solvers.f∂f(ar,v)
+        @show vval = ForwardDiff.value(v)
+        @show aval = ForwardDiff.value(da)
+        @show rp = pressure(model,vval,T)
 
+        p = rp
+        @show pval = ForwardDiff.value(p)
+
+         Z = p*v/(R̄*T)
+        ϕ = a + (Z-1) - log(Z)
+        @show phival = ForwardDiff.value(ϕ)
+
+
+        return p,exp(ϕ)
+    end
+    pl,ϕl = dar(v_l)
+    pv,ϕv = dar(v_v)
+    (p_scale,μ_scale) = scale_sat_pure(model)
+    #T̄ = T/T_scale(model)
+    F[1] = (pl-pv)*p_scale#*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
+    F[2] = (ϕl-ϕv)*μ_scale#*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
+    return F
+end
+=#
 
 
 ## Pure critical point solver
