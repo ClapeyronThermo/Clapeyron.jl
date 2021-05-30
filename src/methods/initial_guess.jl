@@ -117,17 +117,20 @@ function lb_volume(model::SAFTModel, z = SA[1.0]; phase = "unknown")
 end
 
 function lb_volume(model::CubicModel,z = SA[1.0]; phase = "unknown")
-    x = z * (1/sum(z))
+    n = sum(z)
+    invn = one(n)/n
     b = model.params.b.values
-    b̄ = sum(b .* (x * x'))
-    return  b̄
+    b̄ = dot(z,Symmetric(b),z)*invn*invn
+    return b̄
 end
 
 function lb_volume(model::CPAModel,z = SA[1.0]; phase = "unknown")
-    x = z * (1/sum(z))
+    n = sum(z)
+    invn = one(n)/n
     b = model.params.b.values
-    b̄ = sum(b .* (x * x'))
-    return  b̄
+    b̄ = dot(z,Symmetric(b),z)*invn*invn
+    return b̄
+
 end
 
 function lb_volume(model::SAFTgammaMieModel, z = SA[1.0]; phase = "unknown")
@@ -244,23 +247,26 @@ end
 
 #dont use αa, just a, to avoid temperature dependence
 function T_scale(model::CubicModel,z=SA[1.0])
-    x = z ./ sum(z)
+    n = sum(z)
+    invn2 = one(n)/(n*n)
     Ωa,Ωb = ab_consts(model)
     _a = model.params.a.values
     _b = model.params.b.values
-    a = dot(x, Symmetric(_a), x)/Ωa
-    b = dot(x, Symmetric(_b), x)/Ωb
+    a = dot(z, Symmetric(_a), z)*invn2/Ωa
+    b = dot(z, Symmetric(_b), z)*invn2/Ωb
     return a/b/R̄
 end
 
 function T_scale(model::CPAModel,z=SA[1.0])
-    x = z ./ sum(z)
+    n = sum(z)
+    invn2 = one(n)/(n*n)
     Ωa,Ωb = ab_consts(model)
     _a = model.params.a.values
     _b = model.params.b.values
-    a = dot(x, Symmetric(_a), x)/Ωa
-    b = dot(x, Symmetric(_b), x)/Ωb
+    a = dot(z, Symmetric(_a), z)*invn2/Ωa
+    b = dot(z, Symmetric(_b), z)*invn2/Ωb
     return a/b/R̄
+
 end
 
 #=
@@ -292,13 +298,24 @@ function p_scale(model::SAFTgammaMieModel,z=SA[1.0])
 end
 
 function p_scale(model::CubicModel,z=SA[1.0])
-    sumz = sum(z)
-    invsumz = (1/sumz)^2
+    n = sum(z)
+    invn2 = (1/n)^2
     Ωa,Ωb = ab_consts(model)
     _a = model.params.a.values
     _b = model.params.b.values
-    a = invsumz*dot(z, Symmetric(_a), z)/Ωa
-    b = invsumz*dot(z, Symmetric(_b), z)/Ωb
+    a = invn2*dot(z, Symmetric(_a), z)/Ωa
+    b = invn2*dot(z, Symmetric(_b), z)/Ωb
+    return a/ (b^2) # Pc mean
+end
+
+function p_scale(model::CPAModel,z=SA[1.0])
+    n = sum(z)
+    invn2 = (1/n)^2
+    Ωa,Ωb = ab_consts(model)
+    _a = model.params.a.values
+    _b = model.params.b.values
+    a = invn2*dot(z, Symmetric(_a), z)/Ωa
+    b = invn2*dot(z, Symmetric(_b), z)/Ωb
     return a/ (b^2) # Pc mean
 end
 

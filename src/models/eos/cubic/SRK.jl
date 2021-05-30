@@ -36,19 +36,20 @@ function ab_consts(::Type{<:SRKModel})
     return Ωa,Ωb
 end
 
-function cubic_ab(model::SRKModel,T,x)
+function cubic_ab(model::SRKModel,T,z=SA[1.0],n=sum(z))
     a = model.params.a.values
     b = model.params.b.values
     ω = model.params.acentricfactor.values
     Tc = model.params.Tc.values
-    _1 = one(T+first(x))
+    _1 = one(T+n)
+    invn = one(n)/n
     #root of α
-    αx = @. sqrt(min((_1+(0.480+1.547*ω-0.176*ω^2)*(1-√(T/Tc)))^2,_1)) * x
+    αx = @. sqrt(min((_1+(0.480+1.547*ω-0.176*ω^2)*(1-√(T/Tc)))^2,_1)) * z * invn 
     #αx = (αi*xi for (αi,xi) in zip(α,x)) #lazy iterator
     #αx .*= x
     #āᾱ = sum(a .* .√(α * α') .* (x * x'))
     āᾱ =dot(αx, Symmetric(a), αx)
-    b̄ = dot(x, Symmetric(b), x)
+    b̄ = dot(z, Symmetric(b), z) * invn * invn
     return āᾱ ,b̄
 end
 
@@ -68,12 +69,16 @@ function cubic_poly(model::SRKModel,p,T,z)
     return [-A*B, -B*(B+_1) + A, -_1, _1]
 end
 
-function a_resx(model::SRKModel, v, T, x)
 
-    ā,b̄ = cubic_ab(model,T,x)
-    ρ = 1/v
+
+function a_res(model::SRKModel, V, T, z=SA[1.0])
+    n = sum(z)
+    ā,b̄ = cubic_ab(model,T,z,n)
+    ρ = n/V
     RT⁻¹ = 1/(R̄*T)
+
     return -log(1-b̄*ρ) - ā*RT⁻¹*log(b̄*ρ+1)/b̄
+    #+ log(V)
     #=
     x = z/sum(z)
     n = sum(z)
