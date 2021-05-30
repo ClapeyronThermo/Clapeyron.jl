@@ -34,19 +34,19 @@ function ab_consts(::Type{<:vdWModel})
     return Ωa,Ωb
 end
 
-function cubic_ab(model::vdWModel,T,x)
+function cubic_ab(model::vdWModel,T,z=SA[1.0],Σn=sum(z))
+    inv2Σn = (one(T)/Σn)^2
     a = model.params.a.values
     b = model.params.b.values
-    ā = sum(a .* (x * x'))
-    b̄ = sum(b .* (x * x'))
+    ā = dot(z,Symmetric(a),z)*inv2Σn
+    b̄ = dot(z,Symmetric(b),z)*inv2Σn
     return ā,b̄
 end
 
 function cubic_abp(model::vdWModel, V, T, z=@SVector [1.0])
-    x = z/sum(z)
-    n = sum(z)
+    n = ∑(z)
     v = V/n
-    a,b = cubic_ab(model,T,x)
+    a,b = cubic_ab(model,T,z,n)
     p = R̄*T/(v-b) - a/(v*v)
     return a,b,p
 end
@@ -63,12 +63,15 @@ end
 
 
 
-function a_resx(model::vdWModel, v, T, x)
-    a,b = cubic_ab(model,T,x)
+function a_res(model::vdWModel, V, T, z)
+    n = sum(z)
+    ā,b̄ = cubic_ab(model,T,z,n)
     RT⁻¹ = 1/(R̄*T)
-    ρ = 1/v
-    -log(1-b*ρ) - a*ρ*RT⁻¹
-    #return -log(V-n*b̄) - ā*n/(R̄*T*V)
+    ρ = n/V
+    return -log(1-b̄*ρ) - ā*ρ*RT⁻¹
+    # -log(1-n*b/B)-a*n/(R̄*T*B)
+    return -log(1-n*b̄/V) - ā*n/(R̄*T*V)
+    #return -log(V-n*b̄) - ā*n/(R̄*T*V) + log(V)
 end
 
 cubic_zc(::vdWModel) = 3/8

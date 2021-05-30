@@ -33,22 +33,22 @@ function ab_consts(::Type{<:PRModel})
     return 0.457235,0.077796
 end
 
-function cubic_ab(model::PRModel,T,x)
+function cubic_ab(model::PRModel,T,z=SA[1.0],n=sum(z))
     a = model.params.a.values
     b = model.params.b.values
     ω = model.params.acentricfactor.values
     Tc = model.params.Tc.values
-    α = @. min((1+(0.37464+1.54226*ω-0.26992*ω^2)*(1-√(T/Tc)))^2,one(T))
-    āᾱ = sum(a .* .√(α * α') .* (x * x'))
-    b̄ = sum(b .* (x * x'))
+    invn = one(n)/n
+    αx = @. min((1+(0.37464+1.54226*ω-0.26992*ω^2)*(1-√(T/Tc)))^2,one(T)) * z * invn 
+    āᾱ = dot(αx,Symmetric(a),αx)
+    b̄ = dot(z,Symmetric(b),z) * invn*invn
     return āᾱ ,b̄
 end
 
-function cubic_abp(model::PRModel, V, T, z)
-    x = z/sum(z)
+function cubic_abp(model::PRModel, V, T, z) 
     n = sum(z)
     v = V/n
-    āᾱ ,b̄ = cubic_ab(model,T,x)
+    āᾱ ,b̄ = cubic_ab(model,T,z,n)
     _1 = one(b̄)
     denom = evalpoly(v,(-b̄*b̄,2*b̄,_1))
     p = R̄*T/(v-b̄) - āᾱ /denom
@@ -56,8 +56,7 @@ function cubic_abp(model::PRModel, V, T, z)
 end
 
 function cubic_poly(model::PRModel,p,T,z)
-    x = z/sum(z)
-    a,b = cubic_ab(model,T,x)
+    a,b = cubic_ab(model,T,z)
     RT⁻¹ = 1/(R̄*T)
     A = a*p*RT⁻¹*RT⁻¹
     B = b*p*RT⁻¹
@@ -73,16 +72,15 @@ end
  (-B2-2B2-2B+A)
  (-3B2-2B+A)
 =#
-function a_resx(model::PRModel, v, T, x)
-
-    a,b = cubic_ab(model,T,x)
+function a_res(model::PRModel, V, T, z)
+    n = sum(z)
+    a,b = cubic_ab(model,T,z,n)
     Δ1 = 1+√2
     Δ2 = 1-√2
     ΔPRΔ = 2*√2
     RT⁻¹ = 1/(R̄*T)
-    ρ = 1/v
+    ρ = n/V
     return -log(1-b*ρ) - a*RT⁻¹*log((Δ1*b*ρ+1)/(Δ2*b*ρ+1))/(ΔPRΔ*b)
-
 
     #return -log(V-n*b̄) + āᾱ/(R̄*T*b̄*2^(3/2)) * log((2*V-2^(3/2)*b̄*n+2*b̄*n)/(2*V+2^(3/2)*b̄*n+2*b̄*n))
 end
