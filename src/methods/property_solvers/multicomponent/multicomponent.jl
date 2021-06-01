@@ -1,5 +1,52 @@
 ## Pure saturation conditions solver
 function x0_bubble_pressure(model,T,x)
+    
+    #strategy: supose virial max pressure as the saturation pressure
+    #suppose ideal gas and calculate y0
+    
+    #TODO
+    #on sufficiently large temps, 
+    #the joule-thompson inversion occurs
+    #making the virial coeff positive
+    #on those cases, use an strategy that supposes pure gas on that side
+    #Pbi = inf
+    #xi = 0
+
+    #check each T with T_scale, if treshold is over, replace Pi with inf
+    
+    T_threshold = T_scales(model,x)
+    @show T_threshold
+    replaceP = ifelse.(T_threshold .< T,true,false)
+    @show replaceP
+
+    eachx = eachcol(Diagonal(ones(eltype(x),length(x))))
+    Bi = second_virial_coefficient.(model,T,eachx)
+    #using P_B(2B) as a sat aproximation
+    #z = 1 + B/v
+    #P_B = RT/v(1+B/v)
+    #P_B(2B) = -RT/2B(1-B/2B)
+    #P_B(2B) = -0.25*RT/B
+
+    P_Bi = @. -0.25*R̄*T/Bi
+    #=xP0 = yP
+    #dot(x,P0) = P
+    P = dot(x,P0)
+    =#
+    P = zero(T)
+    for i in 1:length(x)
+        if !replaceP[i]
+            P+=x[i]*P_Bi[i]
+        end
+    end
+
+    #@show P_Bi
+    #P = dot(x,P_Bi)
+    y = @. x*P_Bi/P
+    ysum = 1/∑(y)
+    return y .* ysum
+    #return y
+
+    #=
     lb_v = lb_volume(model,x)
     k0 = 10.0
     y0    = k0 .*x./(1 .+x.*(k0 .- 1))
@@ -7,6 +54,7 @@ function x0_bubble_pressure(model,T,x)
     v0    = [log10(lb_v/0.45),
     log10(lb_v/1e-4)]
     return append!(v0,y0[1:end-1])
+    =#
 end
 
 ## Mixture saturation solver

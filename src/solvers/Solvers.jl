@@ -50,3 +50,14 @@ function roots3(a,b,c,d)
     return roots3(x)
 end
 end # module
+
+function minimizer(res)
+    info = res.info
+    if haskey(info,:zero)
+        return info.zero
+    elseif haskey(info,:solution)
+        return info.solution
+    else
+        return [1,1]
+    end
+end
