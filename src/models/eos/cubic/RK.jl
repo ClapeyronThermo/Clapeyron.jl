@@ -32,25 +32,28 @@ function ab_consts(::Type{<:RKModel})
     Ωb = (2^(1/3)-1)/3
     return Ωa,Ωb
 end
-function cubic_ab(model::RKModel,T,x)
+function cubic_ab(model::RKModel,T,z=SA[1.0],n=sum(z))
+    invn2 = (one(n)/n)^2
     a = model.params.a.values
     b = model.params.b.values
     Tc = model.params.Tc.values
     T̄c = model.params.Tbarc
-    āᾱ  = sum(a .* (x * x'))*sqrt(T̄c/T)
-    b̄ = sum(b .* (x * x'))
+    āᾱ  = dot(z,Symmetric(a),z) * invn2*sqrt(T̄c/T)
+    b̄ = dot(z,Symmetric(b),z) * invn2
     return āᾱ ,b̄
 end
 
-function cubic_abp(model::RKModel, V, T, x)
-    a,b = cubic_ab(model,T,x)
-    p =  R̄*T/(V-b) - a/((V+b)*V)
+function cubic_abp(model::RKModel, V, T, z)
+    n = sum(z)
+    a,b = cubic_ab(model,T,z,n)
+    v = V/n
+    p =  R̄*T/(v-b) - a/((v+b)*v)
     return a,b,p
 end
 
 function cubic_poly(model::RKModel,p,T,z)
-    x = z/sum(z)
-    a,b = cubic_ab(model,T,x)
+    n = sum(z)
+    a,b = cubic_ab(model,T,z,n)
     RT⁻¹ = 1/(R̄*T)
     A = a*p* RT⁻¹* RT⁻¹
     B = b*p* RT⁻¹
@@ -58,12 +61,15 @@ function cubic_poly(model::RKModel,p,T,z)
     return [-A*B, -B*(B+_1) + A, -_1, _1]
 end
 
-function a_resx(model::RKModel, v, T, x)
-    ā,b̄ = cubic_ab(model,T,x)
-    ρ = 1/v
+
+function a_res(model::RKModel, V, T, z)
+    n = sum(z)
+    ā,b̄ = cubic_ab(model,T,z,n)
+    ρ = n/V
     RT⁻¹ = 1/(R̄*T)
     return -log(1-b̄*ρ) - ā*RT⁻¹*log(b̄*ρ+1)/b̄
     #return -log(V-n*b̄) - ā/(R̄*T*b̄*√(T/T̄c))*log(1+n*b̄/V)
 end
+
 
 cubic_zc(::RKModel) = 1/3

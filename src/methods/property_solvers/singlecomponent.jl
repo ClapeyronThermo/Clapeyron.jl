@@ -1,78 +1,103 @@
-function sat_pure(model::EoSModel, T; v0 = nothing)
+function try_sat_pure(model,v0,f!,T,result,error_val,converged)
+    converged[] =  false
+    try
+        res = sat_pure(model,v0,f!,T)
+        result[] = res
+    catch e #normally, failures occur  near the critical point
+        error_val[] = e
+    end
+
+    (P_sat,v_l,v_v) = result[]
+    if abs(v_l-v_v) > 8*(eps(typeof(v_l)))
+        converged[] =  true
+    end
+
+    return nothing
+end
+
+
+function sat_pure(model::EoSModel, T; v0 = nothing,debug=false)
     v_lb = lb_volume(model,SA[1.0])
     f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]),v_lb)
-    #j! = (J,x) -> Jac_Sat(model, J, T, exp10(x[1]), exp10(x[2]))
-    #fj! = (F,J,x) -> Obj_Jac_sat(model,F,J,T,exp10(x[1]), exp10(x[2]))
-    #jv! = (x) -> Jvop_sat(x, model, T)
-    #vectorobj = NLSolvers.VectorObjective(f!,j!,fj!,jv!)
-    #vectorprob = NEqProblem(vectorobj)
-    #vectorprob = f!
-    if v0 === nothing
-        try
-            v0    = x0_sat_pure(model,T)
-            (P_sat,v_l,v_v) = sat_pure(model,v0,f!,T)
-            if abs(v_l-v_v)/v_l<1e-2
-                v0    = x0_sat_pure(model,T)
-                v0[1] = v0[1]+log10(0.5/0.52)
-                (P_sat,v_l,v_v) = sat_pure(model,v0,f!,T)
-                if abs(v_l-v_v)/v_l<1e-2
-                    v0    = x0_sat_pure(model,T)
-                    v0[1] = v0[1]+log10(0.5/0.48)
-                    (P_sat,v_l,v_v) = sat_pure(model,v0,f!,T)
-                end
-                return (P_sat,v_l,v_v)
 
-            end
-            return (P_sat,v_l,v_v)
-        catch y
-            if isa(y, DomainError)
-                try
-                    v0    = x0_sat_pure(model,T)
-                    v0[1] = v0[1]+log10(0.5/0.3)
-                    (P_sat,v_l,v_v) = sat_pure(model,v0,f!,T)
-                    if abs(v_l-v_v)/v_l<1e-2
-                        v0    = x0_sat_pure(model,T)
-                        v0[1] = v0[1]+log10(0.5/0.32)
-                        (P_sat,v_l,v_v) = sat_pure(model,v0,f!,T)
-                        if abs(v_l-v_v)/v_l<1e-2
-                            v0    = x0_sat_pure(model,T)
-                            v0[1] = v0[1]+log10(0.5/0.28)
-                            (P_sat,v_l,v_v) = sat_pure(model,v0,f!,T)
-                        end
-                    end
-                    return (P_sat,v_l,v_v)
-                catch y
-                    v0    = x0_sat_pure(model,T)
-                    v0[1] = v0[1]+log10(0.5/0.4)
-                    (P_sat,v_l,v_v) = sat_pure(model,v0,f!,T)
-                    if abs(v_l-v_v)/v_l<1e-2
-                        v0    = x0_sat_pure(model,T)
-                        v0[1] = v0[1]+log10(0.5/0.42)
-                        (P_sat,v_l,v_v) = sat_pure(model,v0,f!,T)
-                        if abs(v_l-v_v)/v_l<1e-2
-                            v0    = x0_sat_pure(model,T)
-                            v0[1] = v0[1]+log10(0.5/0.38)
-                            (P_sat,v_l,v_v) = sat_pure(model,v0,f!,T)
-                        end
-                    end
-                    return (P_sat,v_l,v_v)
-                end
-            else
-                rethrow(y)
-            end
-        end
-    else
-        (P_sat,v_l,v_v) = sat_pure(model,v0,f!,T)
-        return (P_sat,v_l,v_v)
+    if v0 === nothing
+        v0 = x0_sat_pure(model,T)
     end
+    nan = zero(T)/zero(T)
+    res0 = (nan,nan,nan)
+    result = Ref(res0)
+    error_val = Ref{Any}(nothing)
+    converged = Ref{Bool}(false)
+
+    try_sat_pure(model,v0,f!,T,result,error_val,converged)
+    if converged[]
+        return result[]
+    end
+    if debug
+        if error_val[] !== nothing
+            @warn "initial saturation calculation failed with error $error_val[]"
+        end
+    end
+    result[] = res0
+    #convergence not achieved, trying critical aproximation
+
+
+    T_c,P_c,v_c = crit_pure(model)
+    ΔT = (T_c - T)
+    ΔT <= 8*eps(ΔT) && throw(DomainError(T,"input temperature $T is too close or higher than critical temperature of the model $T_c"))
+    Tr  = T/T_c
+    v0 = x0_sat_pure_crit(model,T,T_c,P_c,v_c)
+
+    try_sat_pure(model,v0,f!,T,result,error_val,converged)
+    if converged[]
+        return result[]
+    else
+        @warn "the procedure converged to a trivial value at T=$T"
+        return result[]
+    end
+
+
+    if debug
+        throw(error_val[])
+    else
+        throw("unable to calculate equilibria at T=$T")
+    end
+
+
+
+end
+
+
+#=
+based on:
+DOI: 10.1007/s10910-007-9272-4
+Journal of Mathematical Chemistry, Vol. 43, No. 4, May 2008 (© 2007)
+The van der Waals equation: analytical and approximate solutions
+=#
+function x0_sat_pure_crit(model,T,T_c,P_c,v_c)
+    _1 = one(T)
+    Tr = T/T_c
+    Trm1 = _1-Tr
+    Trmid = sqrt(Trm1)
+    P_sat0 = (_1 -4.0*(Trm1)+4.8(Trm1*Trm1))*P_c
+    #c = 1/vr
+    c_l = 1.0+2.0*Trmid + 0.4*Trm1 - 0.52*Trmid*Trm1 +0.115*Trm1*Trm1
+    c_v = 1.0-2.0*Trmid + 0.4*Trm1 + 0.52*Trmid*Trm1 +0.207*Trm1*Trm1
+    vl0 = (1/c_l)*v_c
+    vv0 = (1/c_v)*v_c
+    #vl = volume_compress(model,P_sat0,T,v0=vl0)
+    #vv = volume_compress(model,P_sat0,T,v0=vv0)
+    return [log10(vl0),log10(vv0)]
 end
 
 function sat_pure(model::EoSModel,v0,f!,T)
-    r = Solvers.nlsolve(f!, v0)
-    #@show fieldnames(typeof(r.info))
-    v_l = exp10(r.info.zero[1])
-    v_v = exp10(r.info.zero[2])
-    P_sat = pressure(model,exp10(r.info.zero[2]),T)
+    r = Solvers.nlsolve(f!, v0,LineSearch(Newton()))
+    #@show typeof(r)
+    #@show f!(rand(2),r.info.zero)
+    vsol = minimizer(r)
+    v_l = exp10(vsol[1])
+    v_v = exp10(vsol[2])
+    P_sat = pressure(model,v_v,T)
     return (P_sat,v_l,v_v)
 end
 
@@ -80,14 +105,43 @@ function Obj_Sat(model::EoSModel, F, T, v_l, v_v,v_lb)
     #components = model.components
     fun(x) = eos(model, x[2], T,SA[x[1]])
     df(x)  = ForwardDiff.gradient(fun,x)
-    df_l = df(SA[one(v_l*T),v_l])
-    df_v = df(SA[one(v_v*T),v_v])
+    df_l = df(SA[one(v_l*T),v_l*one(T)])
+    df_v = df(SA[one(v_v),v_v*one(T)])
     (p_scale,μ_scale) = scale_sat_pure(model)
     #T̄ = T/T_scale(model)
-    F[1] = (df_l[2]-df_v[2])*p_scale*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
-    F[2] = (df_l[1]-df_v[1])*μ_scale*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
+    F[1] = (df_l[2]-df_v[2])*p_scale#*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
+    F[2] = (df_l[1]-df_v[1])*μ_scale#*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
+    return F
 end
+#=
+function Obj_Sat(model::ABCubicModel, F, T, v_l, v_v,v_lb)
+    #components = model.components
+    ar(v) = a_res(model,v,T)
+    function dar(v)
+        a,da = Solvers.f∂f(ar,v)
+        @show vval = ForwardDiff.value(v)
+        @show aval = ForwardDiff.value(da)
+        @show rp = pressure(model,vval,T)
 
+        p = rp
+        @show pval = ForwardDiff.value(p)
+
+         Z = p*v/(R̄*T)
+        ϕ = a + (Z-1) - log(Z)
+        @show phival = ForwardDiff.value(ϕ)
+
+
+        return p,exp(ϕ)
+    end
+    pl,ϕl = dar(v_l)
+    pv,ϕv = dar(v_v)
+    (p_scale,μ_scale) = scale_sat_pure(model)
+    #T̄ = T/T_scale(model)
+    F[1] = (pl-pv)*p_scale#*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
+    F[2] = (ϕl-ϕv)*μ_scale#*exp(5e-10*(v_l-v_v)^-2)*exp(1e-7*(v_l-v_lb)^-2)
+    return F
+end
+=#
 
 
 ## Pure critical point solver
@@ -222,7 +276,6 @@ end
 
 export sat_pure, crit_pure, enthalpy_vap
 
-
 function spinodals(model,T,vx = nothing)
     T7 = (0.7)*one(T)*T_scale(model)
     #@show T/T_scale(model)
@@ -233,13 +286,7 @@ function spinodals(model,T,vx = nothing)
 
     if vx === nothing
     if T > T7
-<<<<<<< HEAD
         sp_l7 = volume_compress(model,zero(T),T7)
-        f0(k) = last(p∂p∂v(model,lb_v + exp(k),T))
-
-=======
-        sp_l7 = volume_compress(model,zero(T),T7)
->>>>>>> 43be74673998cbf47e35d31ce01100ff65d8d76e
         tc,pc,vc = crit_pure(model)
         v00 = log(sp_l7 - lb_v)
         sp_l = Roots.find_zero(f0,v00)
@@ -249,24 +296,19 @@ function spinodals(model,T,vx = nothing)
         #zero pressure approach, the volume_compress function tends to stop at a spinodal at the liquid side
         sp_l = volume_compress(model,zero(T),T)
     end
-<<<<<<< HEAD
-    return (sp_l)#sp_v)
-end
-=======
     else
         v00 = log(vx - lb_v)
         sp_l = Roots.find_zero(f0,v00)
         sp_l = lb_v + exp(sp_l)
 
     end
-
     #now calculate gas spinodal
     #@show Pmin = pressure(model,sp_l,T)
     #p could be negative, and a volume search fails here.
-
     #@show volume_virial(model,Pmin,T)
     return sp_l#sp_v)
 end
+<<<<<<< HEAD
 #=
 function vsa(model,T)
     k = -0.5*one(T)#*(p_scale(model)/lb_volume(model))
@@ -316,29 +358,10 @@ function vsa(model,T)
     @show B
     return vv
 end
+=======
 
-function vv_vsa(B,db,T,k)
-    RT = R̄*T*(one(T)+db)
-    resv = Solvers.roots3(2*RT*B,RT,zero(T),one(T)*k)
-    #if k =0
-    #RTv + 2RTB = 0
-    #v + 2B = 0
-    #v = -2B
 
-    #@show real.(resv)
-    vv = sort(real.(resv))[2]
-    return vv
-end
-function vsa7(model)
-    T = 0.7*T_scale(model)
-    return vsa(model,T)
-end
-
-function vsak(model,k)
-    T = k*T_scale(model)
-    return vsa(model,T)
-end
-
+#=
 function pvplot(model,T)
     RT = OpenSAFT.R̄*T
     lb_v = OpenSAFT.lb_volume(model)
@@ -357,5 +380,5 @@ function pvplot(model,T)
     scatter!([log10.(spinodal_v)],[pressure(model,spinodal_v,T)],color=:red)
     current_figure()
 end
+
 =#
->>>>>>> 43be74673998cbf47e35d31ce01100ff65d8d76e
