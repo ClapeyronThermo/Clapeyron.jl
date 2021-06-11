@@ -1,6 +1,6 @@
 #=
-function x0_volume(model::EoS,z; phase = "unknown")
-    if phase == "unknown" || is_liquid(phase)
+function x0_volume(model::EoS,z; phase = :unknown)
+    if phase == :unknown || is_liquid(phase)
         if typeof(model)<:SAFTgammaMie
             x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/0.8)]
         elseif typeof(model)<:SAFT
@@ -31,8 +31,8 @@ end
 =#
 
 #=x0_volume=#
-# function x0_volume(model::SAFTgammaMie,z; phase = "unknown")
-#     if phase == "unknown" || is_liquid(phase)
+# function x0_volume(model::SAFTgammaMie,z; phase = :unknown)
+#     if phase == :unknown || is_liquid(phase)
 #             x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/0.8)]
 #     elseif is_vapour(phase)
 #             x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/1e-2)]
@@ -43,8 +43,8 @@ end
 # end
 
 
-# function x0_volume(model::LJSAFT,z; phase = "unknown")
-#     if phase == "unknown" || is_liquid(phase)
+# function x0_volume(model::LJSAFT,z; phase = :unknown)
+#     if phase == :unknown || is_liquid(phase)
 #         x0 = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/0.8)]
 #     elseif is_vapour(phase)
 #         x0 = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1e-2)]
@@ -65,6 +65,11 @@ LJSAFT: log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in @
 function x0_volume_liquid(model,T,z)
     v_lb = lb_volume(model,z)
     return v_lb/0.8
+end
+
+function x0_volume_liquid(model::SAFTVRMieModel,T,z)
+    v_lb = lb_volume(model,z)
+    return v_lb*1.5
 end
 
 function x0_volume_gas(model,p,T,z)
@@ -107,16 +112,16 @@ end
 
 ##=lb_volume=#
 #
-#lb_volume(model::LJSAFT,z; phase = "unknown") = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1)]
+#lb_volume(model::LJSAFT,z; phase = :unknown) = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1)]
 
-function lb_volume(model::SAFTModel, z = SA[1.0]; phase = "unknown")
+function lb_volume(model::SAFTModel, z = SA[1.0]; phase = :unknown)
     seg = model.params.segment.values
     σᵢᵢ = model.params.sigma.diagvalues
     val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i]^3 for i in 1:length(z))
     return val
 end
 
-function lb_volume(model::CubicModel,z = SA[1.0]; phase = "unknown")
+function lb_volume(model::CubicModel,z = SA[1.0]; phase = :unknown)
     n = sum(z)
     invn = one(n)/n
     b = model.params.b.values
@@ -124,7 +129,7 @@ function lb_volume(model::CubicModel,z = SA[1.0]; phase = "unknown")
     return b̄
 end
 
-function lb_volume(model::CPAModel,z = SA[1.0]; phase = "unknown")
+function lb_volume(model::CPAModel,z = SA[1.0]; phase = :unknown)
     n = sum(z)
     invn = one(n)/n
     b = model.params.b.values
@@ -133,7 +138,7 @@ function lb_volume(model::CPAModel,z = SA[1.0]; phase = "unknown")
 
 end
 
-function lb_volume(model::SAFTgammaMieModel, z = SA[1.0]; phase = "unknown")
+function lb_volume(model::SAFTgammaMieModel, z = SA[1.0]; phase = :unknown)
     vk  = model.igroups
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
@@ -173,15 +178,56 @@ returns the first guesses for the equilibrium volumes at a certain T
 """
 function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
     b = lb_volume(model,z)*one(T)
-    B = second_virial_coefficient(model,T)
+    B = second_virial_coefficient(model,T,z)
     x0v = -2*B + 2*b
     p = -0.25*R̄*T/B
-    x0l = volume_compress(model,p,T)
+    x0l = volume_compress(model,p,T,z)
+    
+    #=here we solve the saturation with aproximate 
+    models of the EoS. on the gas side, we use
+    a virial for logϕ, on the liquid side, we
+    use an isothermal compressibility model based
+    at the point P = P(-2B), vl(P)
+   
+    
+    β = vt_isothermal_compressibility(model,x0l,T,z)
+    fugv(P) = B*P/(R̄*T) #log(ϕv)
+    P0 = p
+    v0 = x0l
+    fuglx(P) = -((v0*exp(β*P0)/R̄*T*β)*exp(-β*P) -log(P))
+    fugl0 = fuglx(P0)
+    fugl(P) = fuglx(P) - fugl0
+    @show fugv(0.8P0)
+    @show fugl(0.8P0)
+    @show P0
+    f0(P) = fugl(P) - fugv(P)
+    @show Roots.find_zero(f0,0.9P0)
+     =#
     x0  = [x0l,x0v]
     
     return log10.(x0)
 end
+#=
+appendix: logϕ for the isothermal compressibility aprox
+from the volume_compress code:
 
+    Δ(P) =  -(P-p0)*β = -βP + βP0
+    v(P) = v0*exp(Δ(P)) #volume_compress uses a convergence modification
+
+    Z-1 = v/RT - 1
+
+    definition of fugacity coefficient
+
+    logϕ = ∫(Z-1)/P dp from Psat to Pmax
+    Z(P) = P*v(P)/RT
+    logϕ = ∫v/RT -1/P dP
+    logϕ = ∫v0*exp(βP0)*exp(-βP)/RT -1/P dP
+    logϕ = (v0*exp(βP0)/RT)∫exp(-βP) dp -  ∫1/P dp
+    logϕ = -(v0*exp(βP0)/RTβ)*exp(-βP) -log(P)
+
+
+
+=#
 
 function scale_sat_pure(model::EoSModel,z=SA[1.0])
     p    = 1/p_scale(model,z)

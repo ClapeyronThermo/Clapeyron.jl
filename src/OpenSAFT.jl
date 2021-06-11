@@ -8,6 +8,7 @@ include("solvers/Solvers.jl")
 using .Solvers
 using Combinatorics
 using NamedArrays
+import LogExpFunctions
 using DataStructures: DefaultDict
 include("constants.jl")
 include("models/basetools.jl")
