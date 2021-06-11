@@ -1,6 +1,6 @@
 #=
-function x0_volume(model::EoS,z; phase = "unknown")
-    if phase == "unknown" || is_liquid(phase)
+function x0_volume(model::EoS,z; phase = :unknown)
+    if phase == :unknown || is_liquid(phase)
         if typeof(model)<:SAFTgammaMie
             x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/0.8)]
         elseif typeof(model)<:SAFT
@@ -31,8 +31,8 @@ end
 =#
 
 #=x0_volume=#
-# function x0_volume(model::SAFTgammaMie,z; phase = "unknown")
-#     if phase == "unknown" || is_liquid(phase)
+# function x0_volume(model::SAFTgammaMie,z; phase = :unknown)
+#     if phase == :unknown || is_liquid(phase)
 #             x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/0.8)]
 #     elseif is_vapour(phase)
 #             x0 = [log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*model.params.segment[k]*model.params.shapefactor[k]*model.params.sigma[k]^3 for k in @groups(i)) for i in @comps)/1e-2)]
@@ -43,8 +43,8 @@ end
 # end
 
 
-# function x0_volume(model::LJSAFT,z; phase = "unknown")
-#     if phase == "unknown" || is_liquid(phase)
+# function x0_volume(model::LJSAFT,z; phase = :unknown)
+#     if phase == :unknown || is_liquid(phase)
 #         x0 = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/0.8)]
 #     elseif is_vapour(phase)
 #         x0 = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1e-2)]
@@ -112,16 +112,16 @@ end
 
 ##=lb_volume=#
 #
-#lb_volume(model::LJSAFT,z; phase = "unknown") = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1)]
+#lb_volume(model::LJSAFT,z; phase = :unknown) = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1)]
 
-function lb_volume(model::SAFTModel, z = SA[1.0]; phase = "unknown")
+function lb_volume(model::SAFTModel, z = SA[1.0]; phase = :unknown)
     seg = model.params.segment.values
     σᵢᵢ = model.params.sigma.diagvalues
     val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i]^3 for i in 1:length(z))
     return val
 end
 
-function lb_volume(model::CubicModel,z = SA[1.0]; phase = "unknown")
+function lb_volume(model::CubicModel,z = SA[1.0]; phase = :unknown)
     n = sum(z)
     invn = one(n)/n
     b = model.params.b.values
@@ -129,7 +129,7 @@ function lb_volume(model::CubicModel,z = SA[1.0]; phase = "unknown")
     return b̄
 end
 
-function lb_volume(model::CPAModel,z = SA[1.0]; phase = "unknown")
+function lb_volume(model::CPAModel,z = SA[1.0]; phase = :unknown)
     n = sum(z)
     invn = one(n)/n
     b = model.params.b.values
@@ -138,7 +138,7 @@ function lb_volume(model::CPAModel,z = SA[1.0]; phase = "unknown")
 
 end
 
-function lb_volume(model::SAFTgammaMieModel, z = SA[1.0]; phase = "unknown")
+function lb_volume(model::SAFTgammaMieModel, z = SA[1.0]; phase = :unknown)
     vk  = model.igroups
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
