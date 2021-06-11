@@ -52,7 +52,7 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
     fp(_v) = log(pressure(model,_v,T,z)/p)
 
 #Threaded version
-
+    phase = Symbol(phase)
     if phase != :unknown
         v0 = x0_volume(model,p,T,z,phase=phase)
         #return Solvers.ad_newton(fp,vg0)
@@ -96,6 +96,13 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
         end
     end
     #this catches the supercritical phase as well
+
+    if isnan(vl)
+        return vg
+    end
+    if isnan(vg)
+        return vl
+    end
     if vl ≈ vg
         return vl
     end
