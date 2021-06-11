@@ -173,3 +173,5 @@ end
 
 paramvals(param::OpenSAFTParam) = param.values
 paramvals(x) = x
+
+export SingleParam, SiteParam, PairParam, AssocParam, GroupParam

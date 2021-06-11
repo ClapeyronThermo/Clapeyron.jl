@@ -368,3 +368,4 @@ function _newmodelsimple(eostype,params;
         params, absolutetolerance, references)
 end
 
+export @newmodel, @f, _newmodel

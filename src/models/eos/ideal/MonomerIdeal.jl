@@ -17,5 +17,5 @@ function a_ideal(model::MonomerIdealModel, v, T, z)
     x = z/sum(z)
     Mw = model.params.Mw.values
     Λ = @. h/√(k_B*T*Mw/N_A)
-    return 1/sum(@. x*log(z*N_A/v*Λ^3))
+    return sum(@. x*log(z*N_A/v*Λ^3))-1.
 end

@@ -308,7 +308,6 @@ function spinodals(model,T,vx = nothing)
     #@show volume_virial(model,Pmin,T)
     return sp_l#sp_v)
 end
-<<<<<<< HEAD
 #=
 function vsa(model,T)
     k = -0.5*one(T)#*(p_scale(model)/lb_volume(model))
@@ -358,8 +357,7 @@ function vsa(model,T)
     @show B
     return vv
 end
-=======
-
+=#
 
 #=
 function pvplot(model,T)
