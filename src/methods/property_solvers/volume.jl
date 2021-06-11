@@ -12,13 +12,19 @@ function volume_compress(model,p,T,z=SA[1.0];v0=vcompress_v0(model,p,T,z),max_it
         vv = _v*exp(sign_Δ*Δ^(1-_Δ))#^((1+Δ)^4)
         return log(vv)
     end
-    res = Solvers.fixpoint(f_fixpoint,logv0,Solvers.SimpleFixPoint(),rtol = 1e-12,max_iters=max_iters)
-    return exp(res)
+        res = Solvers.fixpoint(f_fixpoint,logv0,Solvers.SimpleFixPoint(),rtol = 1e-12,max_iters=max_iters)
+        return exp(res)
 end
 
 function vcompress_v0(model,p,T,z=SA[1.0])
     lb_v   = lb_volume(model,z)
     v0 = 1.1*lb_v
+    return v0
+end
+
+function vcompress_v0(model::SAFTVRMieModel,p,T,z=SA[1.0])
+    lb_v   = lb_volume(model,z)
+    v0 = 1.5*lb_v
     return v0
 end
 
@@ -46,7 +52,7 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
     fp(_v) = log(pressure(model,_v,T,z)/p)
 
 #Threaded version
-
+    phase = Symbol(phase)
     if phase != :unknown
         v0 = x0_volume(model,p,T,z,phase=phase)
         #return Solvers.ad_newton(fp,vg0)
@@ -90,6 +96,13 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
         end
     end
     #this catches the supercritical phase as well
+
+    if isnan(vl)
+        return vg
+    end
+    if isnan(vg)
+        return vl
+    end
     if vl ≈ vg
         return vl
     end
