@@ -61,3 +61,5 @@ function Base.show(io::IO, model::GCSAFTModel)
     end
     print(io, ")")
 end
+
+export eosshow

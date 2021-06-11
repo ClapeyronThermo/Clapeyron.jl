@@ -48,6 +48,27 @@ function eos(model::IdealModel, V, T, z=SA[1.0])
 end
 
 
+"""
+    eos_res(model::EoSModel, V, T, z=SA[1.0])
+
+basic OpenSAFT function, returns the residual Helmholtz free energy.
+
+# Inputs:
+- `model::EoSModel` Thermodynamic model to evaluate
+- `V` Total volume, in [m³]
+- `T` Temperature, in [K]
+- `z` mole amounts, in [mol], by default is `@SVector [1.0]`
+
+# Outputs:
+
+- Residual Helmholtz free energy, in [J]
+
+by default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where `a_res` is the reduced residual Helmholtz energy.
+"""
+function eos_res(model::EoSModel, V, T, z=SA[1.0])
+    return N_A*k_B*∑(z)*T * (a_res(model,V,T,z))
+end
+
 # function eos(model::CubicModel, V, T, z)
 #     return N_A*k_B*sum(z)*T * a_tot(model,V,T,z)
 # end
