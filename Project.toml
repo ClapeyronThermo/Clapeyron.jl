@@ -33,7 +33,7 @@ NamedArrays = "^0.9"
 Roots = "^1"
 StaticArrays = "^1"
 Tables = "^1.4"
-ThermoState = "0.4.7"
+ThermoState = "^0.4"
 Unitful = "^1.5"
 julia = "^1.5"
 
