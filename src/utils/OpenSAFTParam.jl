@@ -10,33 +10,33 @@ struct SingleParam{T} <: OpenSAFTParam
     sources::Array{String,1}
 end
 
-function Base.show(io::IO,param::SingleParam)
-    print(io,"SingleParam(")
-    print(io,"\"",param.name,"\"",")[")
-    for (name,val,miss,i) in zip(param.components,param.values,param.ismissingvalues,1:length(param.values))
-        i != 1 && print(io,",")
-        if miss == false
-            print(io,name,"=",val)
-        else
-            print(io,name,"=","-")
-        end
+function Base.show(io::IO, param::SingleParam)
+    print(io, typeof(param), "(\"", param.name, "\")[")
+    for component in param.components
+        component != first(param.components) && print(io, ",")
+        print(io, "\"", component, "\"")
     end
-    print(io,"]")
+    print(io, "]")
 end
 
-function Base.show(io::IO,::MIME"text/plain",param::SingleParam{T}) where T
+function Base.show(io::IO, ::MIME"text/plain", param::SingleParam)
     len = length(param.values)
-    println(io,"SingleParam{",string(T),"} with ",len," component",ifelse(len==1,":","s:"))
+    print(io, typeof(param), "(\"", param.name)
+    println(io, "\") with ", len, " component", ifelse(len==1, ":", "s:"))
     i = 0
-    for (name,val,miss) in zip(param.components,param.values,param.ismissingvalues)
+    for (name, val, miss) in zip(param.components, param.values, param.ismissingvalues)
         i += 1
         if i > 1
             println(io)
         end
         if miss == false
-            print(io," ",name," => ",val)
+            if typeof(val) <: AbstractString
+                print(io, " \"", name, "\" => \"", val, "\"")
+            else
+                print(io, " \"", name, "\" => ", val)
+            end
         else
-            print(io," ",name," => ","-")
+            print(io, " \"", name, " => -")
         end
     end
 end
@@ -147,6 +147,27 @@ struct GCParam <: OpenSAFTParam
     flattenedgroups::Array{String,1}
     allcomponentnflattenedgroups::Array{Array{Int,1},1}
     sourcecsvs::Array{String,1}
+end
+
+function Base.show(io::IO, param::GCParam)
+    print(io,"GCParam(")
+    for component in param.components
+        print(io, "\"", component, "\"")
+        if (component != last(param.components))
+            print(io, ",")
+        end
+    end
+    println(io, ") with ", length(param.components), " components:", ifelse(len==1, ":", "s:"))
+    for i in 1:length(param.components)
+        print(io, " \"", param.components[i], "\": ")
+        firstloop = true
+        for j in 1:length(param.allcomponentngroups[i])
+            firstloop == false && print(io, ", ")
+            print(io, "\"", param.allcomponentgroups[i][j], "\" => ", param.allcomponentngroups[i][j])
+            firstloop = false
+        end
+        i != length(param.components) && println(io)
+    end
 end
 
 struct SiteParam <: OpenSAFTParam
