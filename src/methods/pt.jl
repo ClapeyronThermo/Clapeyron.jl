@@ -6,7 +6,7 @@ end
 
 function chemical_potential(model::EoSModel, p, T, z= SA[1.]; phase = :unknown)
     v      = volume(model, p, T, z; phase=phase)
-    return vt_chemical_potential(modle,v,T,z)
+    return vt_chemical_potential(model,v,T,z)
 end
 
 function internal_energy(model::EoSModel, p, T,  z=SA[1.]; phase = :unknown)
