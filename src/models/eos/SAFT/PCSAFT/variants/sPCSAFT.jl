@@ -6,6 +6,7 @@ function sPCSAFT(components::Array{String,1}; idealmodel::Type=BasicIdeal, userl
     params = getparams(components, ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = params["k"]
+    Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
@@ -13,7 +14,7 @@ function sPCSAFT(components::Array{String,1}; idealmodel::Type=BasicIdeal, userl
     bondvol = params["bondvol"]
     sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
-    packagedparams = PCSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
+    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie020753p"]
 
     model = sPCSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)

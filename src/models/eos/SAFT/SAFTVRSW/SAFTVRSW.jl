@@ -1,4 +1,5 @@
 struct SAFTVRSWParam <: EoSParam
+    Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     lambda::PairParam{Float64}
@@ -12,10 +13,11 @@ abstract type SAFTVRSWModel <: SAFTModel end
 
 export SAFTVRSW
 function SAFTVRSW(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["SAFT/SAFTVRSW"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/SAFTVRSW","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
     segment = params["m"]
     k = params["k"]
+    Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
@@ -25,7 +27,7 @@ function SAFTVRSW(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, userl
     bondvol = params["bondvol"]
     sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
-    packagedparams = SAFTVRSWParam(segment, sigma, lambda, epsilon, epsilon_assoc, bondvol)
+    packagedparams = SAFTVRSWParam(Mw, segment, sigma, lambda, epsilon, epsilon_assoc, bondvol)
     references = ["todo"]
 
     model = SAFTVRSW(packagedparams, sites, idealmodel; references=references, verbose=verbose)
