@@ -19,6 +19,9 @@ using OpenSAFT, Test
     filepath_asymmetry = ["test_csvs/asymmetry_pair_test",
                           "test_csvs/asymmetry_assoc_test"]
 
+    filepath_gc = ["test_csvs/group_test.csv"]
+    filepath_param_gc = ["test_csvs/group_param_test.csv"]
+
     # Check that it detects the right sites.
     @test OpenSAFT.findsitesincsvs(testspecies, filepath_normal) == [[],
                                                                      [],
@@ -106,5 +109,18 @@ using OpenSAFT, Test
     # without ignore_missingsingleparams set to true.
     @test_throws ErrorException OpenSAFT.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"])
 
-    # todo: tests for GC
+    # GC test
+    components_gc = buildspecies(["test1", "test2", ("test3", ["grp1" => 2, "grp2" => 2, "grp3" => 3])]; usergrouplocations=filepath_gc)
+
+    @test components_gc.components == ["test1", "test2", "test3"]
+    @test components_gc.allcomponentgroups == [["grp1","grp2"],["grp2"],["grp1","grp2","grp3"]]
+    @test components_gc.allcomponentngroups == [[1,2], [1], [2,2,3]]
+
+    # Check that flattening of groups is correct.
+    @test components_gc.flattenedgroups == ["grp1", "grp2", "grp3"]
+    @test components_gc.allcomponentnflattenedgroups == [[1,2,0], [0,1,0], [2,2,3]]
+
+    # Build param struct using the gc components above
+    param_gc = getparams(components_gc; userlocations=filepath_param_gc)
+    @test param_gc["param1"].values == [1, 2, 3]
 end
