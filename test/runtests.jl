@@ -1,4 +1,4 @@
-using Test
+using OpenSAFT, Test
 
 @testset "All tests" begin
     include("test_database.jl")

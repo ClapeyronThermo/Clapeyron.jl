@@ -1,4 +1,3 @@
-using OpenSAFT, Test
 
 @testset "SAFT methods single phase" begin
     system = PCSAFT(["ethanol"])

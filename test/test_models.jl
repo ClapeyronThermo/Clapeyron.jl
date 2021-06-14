@@ -1,4 +1,3 @@
-using OpenSAFT, Test
 
 @testset "models" begin
     T = 298.15

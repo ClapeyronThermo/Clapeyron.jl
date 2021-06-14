@@ -1,4 +1,3 @@
-using OpenSAFT, Test
 
 @testset "database_lookup" begin
     # Quick test to show that lookups in the OpenSAFT database works.
