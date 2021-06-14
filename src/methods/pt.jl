@@ -46,7 +46,7 @@ end
 
 function isentropic_compressibility(model::EoSModel, p, T,  z=SA[1.]; phase = :unknown)
     v       = volume(model, p, T, z; phase=phase)
-    return vt_isentropic_expansivity(model,v,T,z)
+    return vt_isentropic_compressibility(model,v,T,z)
 end
 
 function speed_of_sound(model::EoSModel, p, T,  z=SA[1.]; phase = :unknown)
