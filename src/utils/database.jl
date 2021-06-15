@@ -611,6 +611,7 @@ function mirrormatrix!(matrix::Array{Array{T,2},2}) where T
 end
 
 
+export buildspecies
 function buildspecies(gccomponents::Array{<:Any,1}, grouplocations::Array{String,1}=String[]; usergrouplocations::Array{String,1}=String[], verbose::Bool=false)
     # The format for gccomponents is an arary of either the species name (if it
     # available in the OpenSAFT database, or a tuple consisting of the species

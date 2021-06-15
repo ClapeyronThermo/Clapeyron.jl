@@ -157,7 +157,6 @@ function X_assoc(model::CKSAFTModel, V, T, z)
             X_old[i] .= X_[i]
         end
         iter += 1
-        @show X_
     end
     return X_
 end
