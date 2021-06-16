@@ -154,15 +154,31 @@ end
 function a_2(model::SAFTVRQMieModel, V, T, z, i, j)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
-    λr = model.params.lambda_r.values
-    λa = model.params.lambda_a.values
+    λr = model.params.lambda_r.values[i,j]
+    λa = model.params.lambda_a.values[i,j]
     Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
     Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
 
     x_0ij = @f(x_0,i,j)
     x_0effij = @f(x_0eff,i,j)
-    return π*@f(KHS)*(1+@f(χ,i,j))*@f(ρ_S)*ϵ[i,j]^2*@f(d,i,j)^3*@f(C,i,j)^2*(x_0ij^(2*λa[i,j])*(@f(aS_1,2*λa[i,j])+@f(B,2*λa[i,j],x_0effij))-
-        x_0ij^(λa[i,j]+λr[i,j]+8)*(2*@f(Q2,λa[i,j])*@f(Q2,λr[i,j]))*(@f(aS_1,λa[i,j]+λr[i,j]+8)+@f(B,λa[i,j]+λr[i,j]+8,x_0effij))*Dij^4)
+    return π*@f(KHS)*(1+@f(χ,i,j))*@f(ρ_S)*ϵ[i,j]^2*@f(d,i,j)^3*@f(C,i,j)^2*(x_0ij^(2*λa)*(@f(aS_1,2*λa)+@f(B,2*λa,x_0effij))-
+    x_0ij^(λa+λr)*2*(@f(aS_1,λa+λr)+@f(B,λa+λr,x_0effij))+
+    x_0ij^(2*λr)*(@f(aS_1,2*λr)+@f(B,2*λr,x_0effij))+
+    x_0ij^(2*λa+2)*2*@f(Q1,λa)*(@f(aS_1,2*λa+2)+@f(B,2*λa+2,x_0effij))*Dij+
+    x_0ij^(2*λr+2)*2*@f(Q1,λr)*(@f(aS_1,2*λr+2)+@f(B,2*λr+2,x_0effij))*Dij-
+    x_0ij^(λa+λr+2)*2*(@f(Q1,λa)+@f(Q1,λr))*(@f(aS_1,λa+λr+2)+@f(B,λa+λr+2,x_0effij))*Dij+
+    x_0ij^(2*λa+4)*@f(Q1,λa)^2*(@f(aS_1,2*λa+4)+@f(B,2*λa+4,x_0effij))*Dij^2+
+    x_0ij^(2*λr+4)*@f(Q1,λr)^2*(@f(aS_1,2*λr+4)+@f(B,2*λr+4,x_0effij))*Dij^2-
+    x_0ij^(λa+λr+4)*(2*@f(Q1,λa)*@f(Q1,λr))*(@f(aS_1,λa+λr+4)+@f(B,λa+λr+4,x_0effij))*Dij^2+
+    x_0ij^(2*λa+4)*2*@f(Q2,λa)*(@f(aS_1,2*λa+4)+@f(B,2*λa+4,x_0effij))*Dij^2+
+    x_0ij^(2*λr+4)*2*@f(Q2,λr)*(@f(aS_1,2*λr+4)+@f(B,2*λr+4,x_0effij))*Dij^2-
+    x_0ij^(λa+λr+4)*2*(@f(Q2,λa)+@f(Q2,λr))*(@f(aS_1,λa+λr+4)+@f(B,λa+λr+4,x_0effij))*Dij^2+
+    x_0ij^(2*λa+6)*2*(@f(Q1,λa)*@f(Q2,λa))*(@f(aS_1,2*λa+6)+@f(B,2*λa+6,x_0effij))*Dij^3+
+    x_0ij^(2*λr+6)*2*(@f(Q1,λr)*@f(Q2,λr))*(@f(aS_1,2*λr+6)+@f(B,2*λr+6,x_0effij))*Dij^3-
+    x_0ij^(λa+λr+6)*2*(@f(Q1,λr)*@f(Q2,λa)+@f(Q1,λa)*@f(Q2,λr))*(@f(aS_1,λa+λr+6)+@f(B,λa+λr+6,x_0effij))*Dij^3+
+    x_0ij^(2*λa+8)*@f(Q2,λa)^2*(@f(aS_1,2*λa+8)+@f(B,2*λa+8,x_0effij))*Dij^4+
+    x_0ij^(2*λr+8)*@f(Q2,λr)^2*(@f(aS_1,2*λr+8)+@f(B,2*λr+8,x_0effij))*Dij^4-
+    x_0ij^(λa+λr+8)*(2*@f(Q2,λa)*@f(Q2,λr))*(@f(aS_1,λa+λr+8)+@f(B,λa+λr+8,x_0effij))*Dij^4)
 end
 
 function χ(model::SAFTVRQMieModel, V, T, z,i,j)
