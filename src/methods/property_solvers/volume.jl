@@ -51,6 +51,10 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
 
     fp(_V) = log(pressure(model,_V,T,z)/p)
 
+    el = false
+    ev = false
+    Vg = NaN
+    Vl = NaN
 #Threaded version
     phase = Symbol(phase)
     if phase != :unknown
@@ -73,10 +77,17 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
     else
         Vg0 = x0_volume(model,p,T,z,phase=:v)
         Vl0 = x0_volume(model,p,T,z,phase=:l)
-
-        Vg =  volume_compress(model,p,T,z,V0=Vg0)
+        try
+            Vg =  volume_compress(model,p,T,z,V0=Vg0)
+        catch 
+            ev=true
+        end
         #Vg = Solvers.ad_newton(fp,Vg0)
-        Vl =  volume_compress(model,p,T,z,V0=Vl0)
+        try
+            Vl =  volume_compress(model,p,T,z,V0=Vl0)
+        catch 
+            el=true
+        end
     end
 
 # Serial version
@@ -97,14 +108,18 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
     end
     #this catches the supercritical phase as well
 
-    if isnan(Vl)
+    if isnan(Vl) || el
         return Vg
     end
-    if isnan(Vg)
+    if isnan(Vg) || ev
         return Vl
     end
     if Vl ≈ Vg
         return Vl
+    end
+
+    if ev && el
+        error("Failed to converge to a root")
     end
         gg = gibbs(Vg)
         gl = gibbs(Vl)
