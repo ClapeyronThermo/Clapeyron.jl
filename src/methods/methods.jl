@@ -3,9 +3,9 @@ mw(model::EoSModel) = paramvals(model.params.Mw)
 
 include("initial_guess.jl")
 include("differentials.jl")
-include("vt.jl")
+include("VT.jl")
 include("property_solvers/property_solvers.jl")
-include("pt.jl")
+include("pT.jl")
 include("unitful_base.jl")
 include("unitful_methods.jl")
 
