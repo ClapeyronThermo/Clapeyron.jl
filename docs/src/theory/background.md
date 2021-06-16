@@ -1,8 +1,8 @@
-# Models
+## Models
 
 Here, we give a high-level description of equations of state and the models provided by OpenSAFT.
 
-## Equations of state
+### Equations of state
 
 Equations of state provide a functional form to obtain a thermodynamic property, $F$, at given conditions $\boldsymbol{\Omega}$:
 
@@ -10,7 +10,7 @@ Equations of state provide a functional form to obtain a thermodynamic property,
 
 where $f$ is the equation of state. There are many ways one can develop an equation of state, however, the most commonly used approach is through what is known as the canonical ensemble. More information on this can be found in Statistical Mechanics textbooks. This typically results in equations that determine the Helmholtz free energy, $A$, at a given temperature, $T$, system volume, $V$ and system composition, $\mathbf{N}$. It is also typical for an equation of state to require parameters, $\boldsymbol{\Xi}$, to model certain species. What these parameters are depend on the equation of state.
 
-## Ideal model
+### Ideal model
 
 One equation of state that most engineers and scientists should be very familiar with is the ideal gas equation, commonly expressed as:
 
@@ -39,9 +39,7 @@ where $N_{\mathrm{rot},i}$, $\theta_{\mathrm{rot},i}$ and $N_{\mathrm{vib},i}$ a
 
 Note that the reference states, $\rho_0$, $H_{0,i}$ and $S_{0,i}$, can typically be neglected as these will not impact or contribute to most thermodynamic properties of interest.
 
-
-
-## Cubic models
+### Cubic models
 
 Some of the more-popular equations of state have been the engineering cubic equations. The first of these is the van der Waals (`vdW`) equation of state, written as:
 
@@ -79,7 +77,7 @@ More-complicated mixing rules do exist (such as the Wong-Sandler mixing rule) wh
 
 where $k_{ij}$ can be set to 0 but, using either more-advanced combining rules or regression to experimental data, can be tuned to improve the effectiveness of the combining rule. Further details on this will be given for the SAFT models.
 
-## SAFT models
+### SAFT models
 
 In comparison to the cubic equations of state, equations based on the Statistical Associating Fluid Theory (SAFT) take a more-theoretical approach. As mentioned earlier, the van der Waals equation can be derived from statistical mechanics where the resultant Helmholtz free energy is given by:
 
@@ -95,7 +93,7 @@ The chain term accounts for the formation of chains of spherical segments and is
 
 ``\frac{A_\mathrm{chain}}{Nk_\mathrm{B}T}=-\sum_ix_i(m_i-1)\ln{g_{ii}(d_{ii})}``
 
-where $g_{ij}(r_{ij})$ is the pair-distribution function (i.e. the likelihood of a segment of species $i$ being present at a distance $r$ from another segment of species $j$) for a hard-sphere. Many SAFT equations differ in how to express this pair-distribution function. We note here the introduction of the Barker-Henderson hard-sphere diameter, $d$ which is given by:
+where $g_{ij}(r_{ij})$ is the pair-distribution function (i.e. the likelihood of a segment of species $i$ being present at a distance $r$ from another segment of species $j$) . Many SAFT equations differ in how to express this pair-distribution function. We note here the introduction of the Barker-Henderson hard-sphere diameter, $d$ which is given by:
 
 ``d = \int_0^\sigma (1-\exp{-\beta\phi(r)})dr``
 
@@ -105,7 +103,7 @@ The association term accounts for the highly-directional associative interaction
 
 ``\frac{A_\mathrm{assoc.}}{Nk_\mathrm{B}T}=\sum_ix_i\left(\sum_a\left(\ln{X_{i,a}}-\frac{X_{i,a}}{2}\right)+\frac{M_i}{2}\right)``
 
-where $X_{i,a}$ is the fraction of association sites $a$ on species $i$ not bonded to another and $M_i$ is the number of association sites on species $i$.  $X_{i,a}$ can be solved for using the following system of equations:
+where $X_{i,a}$ is the fraction of association sites $a$ on species $i$ _not_ bonded to another and $M_i$ is the number of association sites on species $i$.  $X_{i,a}$ can be solved for using the following system of equations:
 
 ``X_{i,a} = (1+\rho\sum_jx_j\sum_bX_{j,b}\Delta_{ij,ab})^{-1}``
 
@@ -137,7 +135,7 @@ Unfortunately, due to the complex function form of SAFT equations, it is impossi
 
 We will next go through each of the variants of the SAFT equation available in OpenSAFT and what makes these unique.
 
-### Original SAFT
+#### Original SAFT
 
 Derived by Chapman _et al._ (1990), this is the first variant of the SAFT equation of state. This equation can be seen as a `proof of concept' as not many parameters are available (none for mixtures). Nevertheless, some noteworthy features of this equation is its use of a semi-empirical equation to obtain the hard-sphere diameter that depends on the number of segments of a species (no other SAFT variant does this). The chain term uses the hard-sphere pair-distribution function, which has a much-simpler analytical form than what some other SAFT equations choose to use. The association strength, $\Delta$ is evaluated in a unique way as well:
 
@@ -145,7 +143,7 @@ Derived by Chapman _et al._ (1990), this is the first variant of the SAFT equati
 
 where $\kappa_{ij,ab}$ is dimensionless. Unfortunately, the implementation of `ogSAFT` in `OpenSAFT` cannot yet replicate the figures from the original paper. The reason for this is that the monomer / segment term presented in the paper is not the one used to generate the results. The actual term used is developed by Twu _et al._ (1980) and we are currently attempting to implement this within `OpenSAFT` but it is not clear, as of yet, how it was implemented within the original equation.
 
-### CK-SAFT
+#### CK-SAFT
 
 If the SAFT equation derived by Chapman _et al._ was the prototype, the variant developed by Huang and Radosz (1990) was the first usable SAFT equation, with over a 100 pure-component parameters and many unlike parameters available. `CKSAFT` effectively simplifies many of the computationally-intensive parts of `ogSAFT`, using a simpler equation to obtain the hard-sphere diameter and actually providing the correct monomer term within the paper. The chain term between the two equations is identical. Similarly, the association strength only has a minor change:
 
@@ -153,19 +151,19 @@ If the SAFT equation derived by Chapman _et al._ was the prototype, the variant 
 
 which slightly reduces the computational cost. However, the most-noteworthy simplification came with the association term. As mentioned earlier, the association fraction needs to be solved for iteratively. However, Huang and Radosz proposed approximations of the association fraction that could be used to solve for the association term explicitly, greatly reducing the computational intensity of these calculations. These approximations have not been implemented within `OpenSAFT` as of yet, but these only impact calculations for species other than alcohols and carboxylic acids. We also point out that Huang and Radosz introduced the concept of association schemes which helps classify species based on how they interaction through association.
 
-### SAFT-VR SW
+#### SAFT-VR SW
 
-Gil-Villegas _et al._ (1997) developed a new class of SAFT equations known as SAFT variable range. Here, more emphasis was placed on the potentials used to characterise dispersion interactions where a new parameter was introduced through the potential shape. Whilst many versions of SAFT-VR are proposed, each using different underlying potentials, the one that was chosen as the default was SAFT-VR square-well (SW) with the potential shape parameter $\lambda$ (characterising the width of the potential well). Within this framework, novel expressions for the monomer and chain terms were proposed, both being based on the SW potential. The association term remained largely unchanged, with the association term having the most-noteworthy modification:
+Gil-Villegas _et al._ (1997) developed a new class of SAFT equations known as SAFT variable range. Here, more emphasis was placed on the potentials used to characterise dispersion interactions where a new parameter was introduced through the potential shape. Whilst many versions of SAFT-VR are proposed, each using different underlying potentials, the one that was chosen as the default was SAFT-VR square-well (SW) with the potential shape parameter $\lambda$ (characterising the width of the potential well). Within this framework, novel expressions for the monomer and chain terms were proposed, both being based on the SW potential. The association term remained largely unchanged, with the association strength having the most-noteworthy modification:
 
 ``\Delta_{ij,ab}=g_{ij}^\mathrm{SW}F_{ij,ab}\kappa_{ij,ab}``
 
 Here, $\kappa_{ij,ab}$ now carries units of volume. Not many parameters are available for this equation of state, primarily being use to model alkanes and perfluoro-alkanes. However, compared to most other SAFT variants, SAFT-VR SW has possibly seen the most extensions, having a group-contribution alternative (SAFT-$\gamma$ SW), electrolyte (SAFT-VRE SW) and cross-over theory (SAFT-VRX SW). 
 
-### soft-SAFT
+#### soft-SAFT
 
 Developed by Blas and Vega (2001), whereas SAFT equations up until now have used a hard-sphere reference from which to build the equation of state, soft-SAFT chooses to use a Lennard-Jones reference instead. Because of this, compared to all other SAFT equations, soft-SAFT relies heavily on correlations obtained from molecular-dynamic simulations to obtain the monomer term, pair-distribution function and association strength. Like SAFT-VR SW, soft-SAFT does not have an extensive database of parameters, but has been extended multiple times (cross over theory being the more-noteworthy extension).
 
-### PC-SAFT
+#### PC-SAFT
 
 Possibly the most-popular variant of the SAFT equation, Perturbed-Chain (not polymer-chain) SAFT was developed by Gross and Sadowski (2001) and, like soft-SAFT, chooses a different reference state than previous SAFT equations. This time, we start from the hard-chain (HC), not hard-sphere, expressing the SAFT equation as:
 
@@ -179,6 +177,7 @@ The primary reason behind PC-SAFT's popularity is three-fold. For one, the code 
 * PC-Polar SAFT (PCP-SAFT); yes, these are distinct equations
 * Electrolyte PC-SAFT (ePC-SAFT)
 * Electrolyte PPC-SAFT (ePPC-SAFT)
+* Polyelectrolyte ePC-SAFT (epPC-SAFT)
 * Critical-point based PC-SAFT (CP-PC-SAFT)
 * Critical-point based PPC-SAFT (CP-PPC-SAFT)
 * Group-contribution PC-SAFT (GC-PC-SAFT)
@@ -192,7 +191,7 @@ Nevertheless, we do provide one of these variants, being the simplified PC-SAFT 
 
 Similar to PC-SAFT, variants of the sPC-SAFT equation also exist, although no-where near as extensive. Most notably, a significant group-contribution method is available.
 
-### SAFT-VR Mie
+#### SAFT-VR Mie
 
 One of the most-novel SAFT equation of state, derived by Lafitte _et al._ (2013), this equation is effectively an extension of the SAFT-VR framework developed by Gil-Villegas _et al._ (1997), with further improvements. First of these is extending the Barker-Henderson perturbative expansion to third order instead of second order:
 
@@ -224,8 +223,80 @@ The SAFT-VR Mie does not have a significantly large repository of parameters (co
 
 A very recent extension of the SAFT-VR Mie equation is the SAFT-VRQ Mie equation developed by Aasen _et al._ (2019) which modifies the underlying Mie potential using a Feynman-Hibbs potential, which means that a single species is represented by a sum of three Mie potentials. This method attempts to classically account for quantum effects present in small species such as helium, hydrogen and neon. Unfortunately, this equation is limited to just the monomer term and, even then, it is very computationally intensive. We do note that the current implementation in `OpenSAFT` can only model pure-component properties, but we will extend this to mixture in future versions.
 
-### SAFT-$\gamma$ Mie
+#### SAFT-$\gamma$ Mie
 
 The group-contribution version of SAFT-VR Mie, developed by Papaioannou _et al._ (2014), the SAFT-$\gamma$ Mie equation uses the same general framework as SAFT-VR Mie, although, as it is a group-contribution method, we are able to model heterogenous chains (in previous SAFT equations, all segments in a chain were the same size). The group-contribution methodology is based on that developed by Lymperiadis _et al._ (2008). 37 groups are currently available for this equation. A noteworthy advantage of using groups is that unlike parameters between groups can be estimated from pure-component data; these can then be readily extended to mixtures without further regression. 
 
 This equation has also been extended to electrolytes through SAFT-$\gamma$E Mie.
+
+## Methods
+
+### The problem
+
+This document aims to outline all of the various tools used to obtain the relevant properties from a SAFT-type equation of state. In short, SAFT equations of state provide the Helmholtz free energy of a system at a given composition $\mathbf{z}$, volume $V$ and temperature $T$:
+
+``A=A(\mathbf{z},V,T)``
+
+ Taking derivatives of this function (within the OpenSAFT module, this is done using automatic differentiation) can give us a wide range of properties which are given in the appendix. However, it is more common that we are interested in the state of a system at certain conditions ($\mathbf{z}_0$, $p_0$ , $T_0$). The answer to this can be determined from the following, deceptively simple, minimisation of the Gibbs free energy:
+
+``\min G(\mathbf{z}_0,p_0,T_0)``
+
+In the case of SAFT-type equations of state, this can be expressed as:
+
+``\min A(\mathbf{z}_0,V,T_0)+p_0V``
+
+What isn't obvious in this formulation of the problem is what the variables to be optimised are. Re-expressing this problem in greater detail:
+
+``\min \sum_{i=1}^{n_\mathrm{phase}}\phi_i(A(\mathbf{z}_i,V_i,T_0)+p_0V_i)``
+
+``\mathrm{s.t.} \left(\sum_{i=1}^{n_\mathrm{phases}}\phi_iz_{j,i}\right)-z_{j,0}=0\quad\forall j \in [1,n_\mathrm{species}]``
+
+where the subscript $i$ denotes properties related to a phase $i$ and $\phi_i$ is the molar fraction of phase $i$. One can already see the difficulties behind solving such a problem as we do not often know before-hand how many phases there may be at the conditions ($\mathbf{z}_0$, $p_0$ , $T_0$) and thus, we won't know what variables to optimise for. In addition, we will want the global minimum and, particularly in systems with many components, there may be many local minima which we will need to eliminate.
+
+Nevertheless, if we know certain things about the system before-hand, we can reduce the problem to one that is easier to solve.
+
+### Pressure solvers
+
+Let us make one simplifying assumption: we know that the system exists in a single phase. This greatly simplifies the problem to:
+
+``\min_V A(\mathbf{z}_0,V,T_0)+p_0V``
+
+Where, as there is no phase split, the only variable we need to optimise is the volume. We can see that this is equivalent to solving for the volume at which the pressure predicted by the equation of state equals $p_0$:
+
+``\min_V A(\mathbf{z}_0,V,T_0)+p_0V\rightarrow\frac{\partial }{\partial V}(A(\mathbf{z}_0,V,T_0)+p_0V)=\frac{\partial A}{\partial V}(\mathbf{z}_0,V,T_0)+p_0=-p(\mathbf{z}_0,V,T_0)+p_0=0``
+
+Effectively, we can re-word this as a root-finding problem. When using the van der Waals or engineering equations of state which are expressed as $p(\mathbf{z},V,T)$, it is easier to solve them this way. When there is only one candidate phase, there is no significant advantage between expressing the problem as either an optimisation or root-finding problem.
+
+However, there will be a range of pressures below the critical temperature where there will be more than one candidate phase (corresponding to the vapour, liquid and unstable phases). Treating this as a root-finding problem has the added difficulty of there being an additional, unstable solution. Treating this as an optimisation problem means we never need to worry about this unstable phase (it corresponds to a local maxima).
+
+Actually determining the values of $V$ that minimise this equation is quite straightforward, although, with a few subtleties. Within OpenSAFT, we have used the local, derivative-based method of moving assymptotes (MMA) algorithm as implemented in `NLopt.jl` module. The reason for selecting this method is because, as a local derivative-based algorithm, it will be faster than other methods. This algorithm in particular also allows us to add inequality constraints; this is particularly important as there are certain values of $V$ which will are unphysical. These can be identified through the packing fraction:
+
+``\eta=\frac{N_\mathrm{A}\pi}{6V}\sum_ix_im_id_i^3``
+
+Without going into significant detail about the SAFT equation itself, a packing fraction greater than or equal to one results in unphysical values. As  a result, we have a lower bound for the volume:
+
+``V\geq\frac{N_\mathrm{A}\pi}{6}\sum_ix_im_id_i^3``
+
+One other issue to consider when solving this problem is that, within the liquid phase, the gradients are very large which can be difficult for algorithms to handle (even when providing the exact derivatives through automatic differentiation). There are two solutions to this:
+
+1. Good initial guesses: We can re-express the volume of a system in dimensionless units using a variable commonly used in the SAFT equations of state, the packing fraction:
+
+   ``\eta=\frac{N_\mathrm{A}\pi}{6V}m\sigma^3``
+
+   Where, for most fluids, we expect the packing fraction to be close to $0.9$ in the liquid phase. Thus, if we know that the system is within the liquid phase, we can use the initial guess:
+
+   ``V_0 = \frac{N_\mathrm{A}\pi m\sigma^3}{6\times0.9}``
+
+   It should also be mentioned that, if we know that the system is within the vapour phase which typically has a packing fraction of $10^{-3}$, we can use the initial guess of:
+
+   ``V_0 = \frac{N_\mathrm{A}\pi m\sigma^3}{6\times10^{-3}}``
+
+   Generally speaking, if we know which phase our system is in, we can use the initial guesses to find the volumes $V$ that correspond to that phase, if the phase exists at the given conditions.
+
+2. Solving for $\log_{10}{V}$ rather than $V$, i.e.:
+
+   ``\min_x A(\mathbf{z}_0,10^x,T_0)+p_010^x``
+
+   This somewhat reduces the magnitude of the gradients in the liquid phase.
+
+Using the above tricks, one should be able to obtain the value of $V$ that minimises the Gibbs free energy. The only question to answer now is: if there is more than one local minima, how do we identify the stable phase? In this case, we need to use a global optimisation algorithm. In the case of OpenSAFT, a tunneling algorithm has been implemented although any other such algorithms can be used; the tunneling algorithm was selected as it still relies on gradient-based methods and is generally the recommended algorithm for such problems.

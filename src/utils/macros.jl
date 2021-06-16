@@ -105,7 +105,7 @@ It should then return name(params::paramtype, groups::GroupParam, sites::SitePar
 The Struct consists of the following fields:
 
 * components: a string lists of components
-* longthcomponents: the number of components
+* lengthcomponents: the number of components
 * icomponents: an iterator that goes through the indices corresponding to each component
 
 * allcomponentgroups: a list of groups for each component
