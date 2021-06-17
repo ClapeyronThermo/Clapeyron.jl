@@ -70,18 +70,20 @@ function a_LJ(model::softSAFTModel, V, T, z)
 end
 
 function ϵ_m(model::softSAFTModel, V, T, z)
+    comps = @comps
     x = z/∑(z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
     m = model.params.segment.values
-    return ∑(m[i]*m[j]*x[i]*x[j]*σ[i,j]^3*ϵ[i,j] for i ∈ @comps for j ∈ @comps)/∑(m[i]*m[j]*x[i]*x[j]*σ[i,j]^3 for i ∈ @comps for j ∈ @comps)
+    return ∑(m[i]*m[j]*x[i]*x[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/∑(m[i]*m[j]*x[i]*x[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)
 end
 
 function σ_m(model::softSAFTModel, V, T, z)
+    comps = @comps
     x = z/∑(z)
     σ = model.params.sigma.values
     m = model.params.segment.values
-    return (∑(m[i]*m[j]*x[i]*x[j]*σ[i,j]^3 for i ∈ @comps for j ∈ @comps)/∑(m[i]*m[j]*x[i]*x[j] for i ∈ @comps for j ∈ @comps))^(1/3)
+    return (∑(m[i]*m[j]*x[i]*x[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)/∑(m[i]*m[j]*x[i]*x[j] for i ∈ comps for j ∈ comps))^(1/3)
 end
 
 function ρ_S(model::softSAFTModel, V, T, z)

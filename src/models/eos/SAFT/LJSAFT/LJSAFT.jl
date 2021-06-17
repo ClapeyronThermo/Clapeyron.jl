@@ -68,14 +68,16 @@ function Tm(model::LJSAFTModel, V, T, z)
     T̃ = model.params.T_tilde.values
     b = model.params.b.values
     m = model.params.segment.values
-    return ∑(m[i]*m[j]*x[i]*x[j]*b[i,j]*T̃[i,j] for i ∈ @comps for j ∈ @comps)/∑(m[i]*m[j]*x[i]*x[j]*b[i,j] for i ∈ @comps for j ∈ @comps)
+    comps = @comps
+    return ∑(m[i]*m[j]*x[i]*x[j]*b[i,j]*T̃[i,j] for i ∈ 1:length(z) for j ∈ comps)/∑(m[i]*m[j]*x[i]*x[j]*b[i,j] for i ∈ comps for j ∈ comps)
 end
 
 function bm(model::LJSAFTModel, V, T, z)
     x = z/∑(z)
+    comps = @comps
     b = model.params.b.values
     m = model.params.segment.values
-    return ∑(m[i]*m[j]*x[i]*x[j]*b[i,j] for i ∈ @comps for j ∈ @comps)/∑(m[i]*m[j]*x[i]*x[j] for i ∈ @comps for j ∈ @comps)
+    return ∑(m[i]*m[j]*x[i]*x[j]*b[i,j] for i ∈ comps for j ∈ comps)/∑(m[i]*m[j]*x[i]*x[j] for i ∈ comps for j ∈ comps)
 end
 
 function a_chain(model::LJSAFTModel, V, T, z)
