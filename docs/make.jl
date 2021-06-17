@@ -18,5 +18,6 @@ format = Documenter.HTML(
         "To-do list" => "to-do_list.md"])
 
         deploydocs(;
-    repo="github.com/ypaul21/OpenSAFT.jl.git"
+    repo="github.com/ypaul21/OpenSAFT.jl.git",
+    devbranch = "development",
 )
