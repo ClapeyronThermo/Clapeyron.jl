@@ -90,7 +90,7 @@ function lb_volume(model::GERG2008)
     return only(model.lb_v)
 end
 
-function lb_volume(model::GERG2008,x;phase="unknown")
+function lb_volume(model::GERG2008,x;phase=:unknown)
     return dot(x,model.lb_v)
 end
 
