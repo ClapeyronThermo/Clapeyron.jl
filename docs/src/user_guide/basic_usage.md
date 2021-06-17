@@ -2,7 +2,7 @@
 
 Welcome to OpenSAFT!
 
-Once OpenSAFT is installed, load it using
+Once OpenSAFT is installed, it can be loaded using:
 
 ```julia
 using OpenSAFT

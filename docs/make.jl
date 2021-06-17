@@ -7,12 +7,12 @@ format = Documenter.HTML(
     canonical = "https://juliadocs.github.io/OpenSAFT.jl/dev/",
     assets = ["assets/logo.ico"],
 ),
-    authors = "Pierre J. Walker and Hon Wa Yew.",
+    authors = "Pierre J. Walker, Hon Wa Yew and Andrés Riedemann.",
     pages = [
         "Home" => "index.md",
-        "User guide" => Any["System"=>"user_guide/system.md",
-                            "Bulk properties"=>"user_guide/bulk_props.md",
-                            "VLE properties"=>"user_guide/vle_props.md"],
-        "To-do list" => "to-do_list.md",
-        "Theory"=>Any["Methods"=>"theory/methods.md",
-                      "Models"=>"theory/models.md"]])
+        "Background" => "theory/background.md",
+        "User guide" => Any["Definitions"=>"user_guide/definitions.md",
+                            "Basic Usage"=>"user_guide/basic_usage.md",
+                            "Custom Databases"=>"user_guide/custom_dtb.md",
+                            "Custom Equations of State"=>"user_guide/custom_eos.md"],
+        "To-do list" => "to-do_list.md"])
