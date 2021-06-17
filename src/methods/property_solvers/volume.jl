@@ -1,6 +1,6 @@
 #aproximates liquid volume at a known pressure and t,
 #by using isothermal compressibility
-function volume_compress(model,p,T,z=SA[1.0];V0=Vcompress_V0(model,p,T,z),max_iters=100)
+function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     logV0 = log(V0)
     function f_fixpoint(_V)
         _V = exp(_V)
@@ -16,17 +16,6 @@ function volume_compress(model,p,T,z=SA[1.0];V0=Vcompress_V0(model,p,T,z),max_it
         return exp(res)
 end
 
-function Vcompress_V0(model,p,T,z=SA[1.0])
-    lb_V   = lb_volume(model,z)
-    V0 = 1.1*lb_V
-    return V0
-end
-
-function Vcompress_V0(model::SAFTVRMieModel,p,T,z=SA[1.0])
-    lb_V   = lb_volume(model,z)
-    V0 = 1.5*lb_V
-    return V0
-end
 
 function volume_virial(model,p,T, z=SA[1.] )
     B = second_virial_coefficient(model,T,z)
