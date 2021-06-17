@@ -146,7 +146,7 @@ function a_scaled(model::PropaneRef,δ,τ)
     return  _propane_ref_a0(δ,τ)+_propane_ref_ar(δ,τ)
 end
 
-function eos(model::PropaneRef, V, T, z=SA[1.0];phase="unknown")
+function eos(model::PropaneRef, V, T, z=SA[1.0];phase=:unknown)
     R =PropaneRef_consts.R
     T_c = PropaneRef_consts.T_c
     rho_c = PropaneRef_consts.rho_c
@@ -157,6 +157,16 @@ function eos(model::PropaneRef, V, T, z=SA[1.0];phase="unknown")
     return N*R*T*a_scaled(model::PropaneRef,δ,τ)
 end
 
+function eos_res(model::PropaneRef,V,T,z=SA[1.0];phase=:unknown)
+    R =PropaneRef_consts.R
+    T_c = PropaneRef_consts.T_c
+    rho_c = PropaneRef_consts.rho_c
+    N = only(z)
+    rho = (N/V)
+    δ = rho/rho_c
+    τ = T_c/T
+    return N*R*T*_propane_ref_ar(δ,τ)
+end
 
 mw(model::PropaneRef) = SA[PropaneRef_consts.Mw]
 molecular_weight(model::PropaneRef,z = @SVector [1.]) = PropaneRef_consts.Mw*0.001
