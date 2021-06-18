@@ -45,7 +45,7 @@ function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
     ∂²A∂V∂T = d²A[1,2]
     ∂²A∂V² = d²A[1,1]
     ∂²A∂T² = d²A[2,2]
-    return -T*(∂²A∂V² - ∂²A∂V∂T^2/∂²A∂T²)
+    return -T*(∂²A∂T² - ∂²A∂V∂T^2/∂²A∂V²)
 end
 
 function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])

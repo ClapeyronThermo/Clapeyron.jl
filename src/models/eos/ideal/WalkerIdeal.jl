@@ -45,7 +45,7 @@ function a_ideal(model::WalkerIdealModel,V,T,z)
     g2 = model.params.deg2.values
     g3 = model.params.deg3.values
     g4 = model.params.deg4.values
-    θ_vib = [θ1, θ2, θ2, θ2]
+    θ_vib = [θ1, θ2, θ3, θ4]
     g_vib = [g1, g2, g3, g4]
     return sum(x[i]*(log(z[i]*N_A/V*Λ[i]^3)-Nrot[i]/2*log(T)+sum(g_vib[v][i]*(θ_vib[v][i]/2/T+log(1-exp(-θ_vib[v][i]/T))) for v in 1:4)) for i in @comps)-1
 end
