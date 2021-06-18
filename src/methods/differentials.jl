@@ -166,17 +166,17 @@ function f_hess(model,V,T,z)
 end
 
 """
-    ∂p2∂p3(model,V,T,z=SA[1.0])
+    ∂²³f(model,V,T,z=SA[1.0])
 
-returns `∂²p/∂V²` and `∂³p/∂V³`, in a single ForwardDiff pass. used mainly in `crit_pure` objective function
+returns `∂²A/∂V²` and `∂³A/∂V³`, in a single ForwardDiff pass. used mainly in `crit_pure` objective function
 
 """
-function ∂p2∂p3(model,V,T,z=SA[1.0])
+function ∂²³f(model,V,T,z=SA[1.0])
     V_vec =   SVector(V)
-    f(∂V) = ForwardDiff.derivative(∂2V -> pressure(model,only(∂2V),T,z),only(∂V))
+    f(∂A∂V) = ForwardDiff.derivative(∂²A∂V² -> pressure(model,only(∂²A∂V²),T,z),only(∂A∂V))
     ∂result = DiffResults.GradientResult(V_vec)
-    res_∂f =  ForwardDiff.gradient!(∂result, f,V_vec)
-    _p =  DiffResults.value(res_∂f)
-    _∂p∂V = only(DiffResults.gradient(res_∂f))
-    return _p,_∂p∂V
+    res_∂f =  ForwardDiff.gradient!(∂result,f,V_vec)
+    _∂²A∂V² =  DiffResults.value(res_∂f)
+    _∂³A∂V³ = only(DiffResults.gradient(res_∂f))
+    return _∂²A∂V², _∂³A∂V³
 end
