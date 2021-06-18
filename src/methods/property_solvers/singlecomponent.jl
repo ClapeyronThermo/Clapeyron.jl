@@ -149,17 +149,17 @@ function crit_pure(model::EoSModel)
     T̄  = T_crit_pure(model)
     f! = (F,x) -> Obj_Crit(model, F, x[1]*T̄, exp10(x[2]))
     x0 = x0_crit_pure(model)
-    r  = Solvers.nlsolve(f!,x0)
+    r  = Solvers.nlsolve(f!, x0)
     T_c = r.info.zero[1]*T̄
     V_c = exp10(r.info.zero[2])
     p_c = pressure(model, V_c, T_c)
     return (T_c, p_c, V_c)
 end
 
-function Obj_Crit(model::EoSModel, F, T_c, V_c)
-    d2p,d3p = ∂p2∂p3(model,V_c,T_c,SA[1.0])
-    F[1] = -d2p
-    F[2] = -d3p
+function obj_crit(model::EoSModel, F, T_c, V_c)
+    ∂²A∂V², ∂³A∂V³ = ∂²³f(model, V_c, T_c, SA[1.0])
+    F[1] = -∂²A∂V²
+    F[2] = -∂³A∂V³
     return F
 end
 
