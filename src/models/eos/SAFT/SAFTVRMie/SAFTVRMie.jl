@@ -99,14 +99,16 @@ function C(model::SAFTVRMieModel, V, T, z, i, j)
 end
 
 function ζ_X(model::SAFTVRMieModel, V, T, z)
-    return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i)+@f(d,j))^3/8 for i ∈ @comps for j ∈ @comps)
+    comps = @comps
+    return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i)+@f(d,j))^3/8 for i ∈ comps for j ∈ comps)
 end
 
 function a_1(model::SAFTVRMieModel, V, T, z)
+    comps = @comps
     x = z/∑(z)
     m = model.params.segment.values
     m̄ = ∑(x .* m)
-    return m̄/T*∑(@f(x_S,i)*@f(x_S,j)*@f(a_1,i,j) for i ∈ @comps for j ∈ @comps)
+    return m̄/T*∑(@f(x_S,i)*@f(x_S,j)*@f(a_1,i,j) for i ∈ comps for j ∈ comps)
 end
 
 function a_1(model::SAFTVRMieModel, V, T, z, i, j)
@@ -143,10 +145,11 @@ function x_0(model::SAFTVRMieModel, V, T, z, i, j)
 end
 
 function a_2(model::SAFTVRMieModel, V, T, z)
+    comps = @comps
     x = z/∑(z)
     m = model.params.segment.values
     m̄ = ∑(x .* m)
-    return m̄/T^2*∑(@f(x_S,i)*@f(x_S,j)*@f(a_2,i,j) for i ∈ @comps for j ∈ @comps)
+    return m̄/T^2*∑(@f(x_S,i)*@f(x_S,j)*@f(a_2,i,j) for i ∈ comps for j ∈ comps)
 end
 
 function a_2(model::SAFTVRMieModel, V, T, z,i,j)
@@ -180,15 +183,17 @@ function f(model::SAFTVRMieModel, V, T, z, α, m)
 end
 
 function ζst(model::SAFTVRMieModel, V, T, z)
+    comps = @comps
     σ = model.params.sigma.values
-    return @f(ρ_S)*π/6*∑(@f(x_S,i)*@f(x_S,j)*σ[i,j]^3 for i ∈ @comps for j ∈ @comps)
+    return @f(ρ_S)*π/6*∑(@f(x_S,i)*@f(x_S,j)*σ[i,j]^3 for i ∈ comps for j ∈ comps)
 end
 
 function a_3(model::SAFTVRMieModel, V, T, z)
+    comps = @comps
     x = z/∑(z)
     m = model.params.segment.values
     m̄ = ∑(x .* m)
-    return m̄/T^3*∑(@f(x_S,i)*@f(x_S,j)*@f(a_3,i,j) for i ∈ @comps for j ∈ @comps)
+    return m̄/T^3*∑(@f(x_S,i)*@f(x_S,j)*@f(a_3,i,j) for i ∈ comps for j ∈ comps)
 end
 
 function a_3(model::SAFTVRMieModel, V, T, z, i, j)

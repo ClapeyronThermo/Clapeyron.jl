@@ -95,13 +95,16 @@ function Â_3(model::SAFTgammaMieModel, V, T, z)
 end
 
 function a_1(model::SAFTgammaMieModel, V, T, z)
-    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_1,k,l) for k ∈ @groups for l ∈ @groups)
+    groups = @groups
+    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_1,k,l) for k ∈ groups for l ∈ groups)
 end
 function a_2(model::SAFTgammaMieModel, V, T, z)
-    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_2,k,l) for k ∈ @groups for l ∈ @groups)
+    groups = @groups
+    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_2,k,l) for k ∈ groups for l ∈ groups)
 end
 function a_3(model::SAFTgammaMieModel, V, T, z)
-    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_3,k,l) for k ∈ @groups for l ∈ @groups)
+    groups = @groups
+    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_3,k,l) for k ∈ groups for l ∈ groups)
 end
 
 function a_1(model::SAFTgammaMieModel, V, T, z, k, l)
@@ -147,12 +150,14 @@ function aS_1(model::SAFTgammaMieModel, V, T, z, k, l, λ)
 end
 
 function ζ_X(model::SAFTgammaMieModel, V, T, z)
-    return π*@f(ρ_S)/6 * ∑(@f(x_S,k)*@f(x_S,l)*@f(d,k,l)^3 for k ∈ @groups for l ∈ @groups)
+    groups = @groups
+    return π*@f(ρ_S)/6 * ∑(@f(x_S,k)*@f(x_S,l)*@f(d,k,l)^3 for k ∈ groups for l ∈ groups)
 end
 
 function ζst_X(model::SAFTgammaMieModel, V, T, z)
+    groups = @groups
     σ = model.params.sigma.values
-    return π*@f(ρ_S)/6 * ∑(@f(x_S,k)*@f(x_S,l)*σ[k,l]^3 for k ∈ @groups for l ∈ @groups)
+    return π*@f(ρ_S)/6 * ∑(@f(x_S,k)*@f(x_S,l)*σ[k,l]^3 for k ∈ groups for l ∈ groups)
 end
 
 function ζeff(model::SAFTgammaMieModel, V, T, z, λ)

@@ -246,9 +246,13 @@ end
 mw(model::IAPWS95) = model.params.mw
 
 
-function x0_volume(model::IAPWS95,p,T,z=[1.0];phase = "unknown")
-    if phase == "unknown" || is_liquid(phase)
-        x0val = vcompress_v0(model,p,T,z)
+function x0_volume(model::IAPWS95,p,T,z=[1.0];phase = :unknown)
+    if phase == :unknown || is_liquid(phase)
+        if model.params.Pc > p
+            return sat_v = saturated_water_liquid(T)
+        else
+            return volume_virial(model,p,T,z) #must look for better initial point here
+        end
     elseif is_vapour(phase)
         x0val = 1.1*saturated_water_vapor(T)
     elseif is_supercritical(phase)
@@ -283,20 +287,9 @@ function Base.show(io::IO,mime::MIME"text/plain",model::IAPWS95)
     return eosshow(io,mime,model)
 end
 
-lb_volume(model::IAPWS95, z=SA[1.0]; phase = "unknown") = 1.4393788065379039e-5
+lb_volume(model::IAPWS95, z=SA[1.0]; phase = :unknown) = 1.4393788065379039e-5
 
 
 export IAPWS95,IAPWS95Ideal
 
 
-function vcompress_v0(model::IAPWS95,p,T,z=SA[1.0])
-    #lb_v   = exp10(only(lb_volume(model,z,phase=:l)))
-    #α = 1 + (p-psat)/p
-    if model.params.Pc > p
-        return sat_v = saturated_water_liquid(T)
-    else
-        return volume_virial(model,p,T,z)
-    end
-    #@show α
-    #return (1-α)*lb_v + α*sat_v
-end

@@ -46,7 +46,7 @@ function x0_sat_pure(model::GERG2008,T)
     return [log10(vl),log10(vv)]
 end
 
-function vcompress_v0(model::GERG2008,x)
+function x0_volume_liquid(model::GERG2008,T,z)
     return 1.01*lb_volume(model,x)
 end
 

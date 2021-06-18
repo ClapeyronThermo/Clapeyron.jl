@@ -59,10 +59,10 @@ function dx(model::ogSAFTModel, V, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
-
+    comps = @comps
     mx = ∑(x .* m)
-    σx = (∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ @comps for j ∈ @comps)/mx^2)^(1/3)
-    ϵx = (∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ @comps for j ∈ @comps)/mx^2)/σx^3
+    σx = (∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)/mx^2)^(1/3)
+    ϵx = (∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/mx^2)/σx^3
 
     fm = 0.0010477+0.025337*(mx-1)/mx
     f = (1+0.2977T/ϵx)/(1+0.33163T/ϵx+fm*(T/ϵx)^2)
@@ -102,7 +102,8 @@ function a_disp(model::ogSAFTModel, V, T, z)
     σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
     x = z/∑(z)
-    ϵx = ∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ @comps for j ∈ @comps)/∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ @comps for j ∈ @comps)
+    comps = @comps
+    ϵx = ∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)
     ηx = @f(η)
     ρR = (6/sqrt(2)/π)*ηx
     TR = T/ϵx
