@@ -118,7 +118,8 @@ function Halley(model::SAFTVRQMieModel, V, T, z, f_, g_, h_, x0)
 end
 
 function ζ_x(model::SAFTVRQMieModel, V, T, z)
-    return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i,j))^3 for i in @comps for j in @comps)
+    comps = @comps
+    return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i,j))^3 for i in comps for j in comps)
 end
 
 function a_1(model::SAFTVRQMieModel, V, T, z, i, j)
@@ -202,7 +203,8 @@ function χ(model::SAFTVRQMieModel, V, T, z,i,j)
 end
 
 function ζst(model::SAFTVRQMieModel, V, T, z)
-    return @f(ρ_S)*π/6*∑(@f(x_S,i)*@f(x_S,j)*(@f(σeff,i,j))^3 for i in @comps for j in @comps)
+    comps = @comps
+    return @f(ρ_S)*π/6*∑(@f(x_S,i)*@f(x_S,j)*(@f(σeff,i,j))^3 for i in comps for j in comps)
 end
 
 function a_3(model::SAFTVRQMieModel, V, T, z, i, j)

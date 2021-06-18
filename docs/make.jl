@@ -16,3 +16,8 @@ format = Documenter.HTML(
                             "Custom Databases"=>"user_guide/custom_dtb.md",
                             "Custom Equations of State"=>"user_guide/custom_eos.md"],
         "To-do list" => "to-do_list.md"])
+
+        deploydocs(;
+    repo="github.com/ypaul21/OpenSAFT.jl.git",
+    devbranch = "development",
+)
