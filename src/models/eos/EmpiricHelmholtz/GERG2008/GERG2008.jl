@@ -47,7 +47,7 @@ function x0_sat_pure(model::GERG2008,T)
 end
 
 function x0_volume_liquid(model::GERG2008,T,z)
-    return 1.01*lb_volume(model,x)
+    return 1.01*lb_volume(model,z)
 end
 
 export GERG2008

@@ -31,7 +31,7 @@ function x0_volume_sc(model::ABCubicModel,p,T,z)
     return Zc*R̄*T/p
 end
 
-function volume(model::ABCubicModel,p,T,z=SA[1.0];phase="unknown")
+function volume(model::ABCubicModel,p,T,z=SA[1.0];phase="unknown",threaded=false)
     lb_v   =lb_volume(model,z)
     xx = z/sum(z)
     RTp = R̄*T/p

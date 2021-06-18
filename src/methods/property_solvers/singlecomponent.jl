@@ -148,7 +148,6 @@ end
 function crit_pure(model::EoSModel)
     T̄  = T_crit_pure(model)
     f! = (F,x) -> Obj_Crit(model, F, x[1]*T̄, exp10(x[2]))
-    # j! = (J,x) -> Jac_Crit(J,eos,model,x[1]*model.params.epsilon[(1, 1)],exp10(x[2]))
     x0 = x0_crit_pure(model)
     r  = Solvers.nlsolve(f!,x0)
     T_c = r.info.zero[1]*T̄
