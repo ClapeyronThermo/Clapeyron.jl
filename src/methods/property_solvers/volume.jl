@@ -53,16 +53,19 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
     end
 
     if threaded
-        _Vg = Threads.@spawn begin
-            Vg0 = x0_volume(model,$p,$T,$z,phase=:v)
-            volume_compress(model,$p,$T,$z;V0=Vg0)
-            #Solvers.ad_newton(fp,Vg0)
+        try
+            Vg0 = x0_volume(model,p,T,z,phase=:v)
+            Vg = fetch(Threads.@spawn volume_compress(model,$p,$T,$z;V0=Vg0))
+        catch 
+            ev  = true
         end
-        Vl0 = x0_volume(model,p,T,z,phase=:l)
-        _Vl = Threads.@spawn volume_compress(model,$p,$T,$z;V0=$Vl0)
-        #fp(_V) = pressure(model,_V,T,z) - p
-        Vg = fetch(_Vg)
-        Vl = fetch(_Vl)
+
+        try
+            Vl0 = x0_volume(model,p,T,z,phase=:l)
+            Vl = fetch(Threads.@spawn volume_compress(model,$p,$T,$z;V0=$Vl0))
+        catch 
+            el  = true
+        end
     else
         Vg0 = x0_volume(model,p,T,z,phase=:v)
         Vl0 = x0_volume(model,p,T,z,phase=:l)

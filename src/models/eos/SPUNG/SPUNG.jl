@@ -30,6 +30,13 @@ function eos(model::SPUNG,V,T,z=SA[1.0],phase="unknown")
     return eos(model.model_ref,V0,T0)
 end
 
+function eos_res(model::SPUNG,V,T,z=SA[1.0],phase="unknown")
+    f,h = shape_factors(model,V,T,z)
+    T0 = T/f
+    V0 = V/h
+    return eos_res(model.model_ref,V0,T0)
+end
+
 function shape_factors(model::SPUNG{<:ABCubicModel},V,T,z=SA[1.0])
     n = sum(z)
     x = z * (1/n)
