@@ -147,7 +147,7 @@ end
 ## Pure critical point solver
 function crit_pure(model::EoSModel)
     T̄  = T_crit_pure(model)
-    f! = (F,x) -> Obj_Crit(model, F, x[1]*T̄, exp10(x[2]))
+    f! = (F,x) -> obj_crit(model, F, x[1]*T̄, exp10(x[2]))
     x0 = x0_crit_pure(model)
     r  = Solvers.nlsolve(f!, x0)
     T_c = r.info.zero[1]*T̄

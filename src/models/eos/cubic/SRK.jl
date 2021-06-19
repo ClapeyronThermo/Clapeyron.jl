@@ -44,7 +44,7 @@ function cubic_ab(model::SRKModel,T,z=SA[1.0],n=sum(z))
     _1 = one(T+n)
     invn = one(n)/n
     #root of α
-    αx = @. sqrt(min((_1+(0.480+1.547*ω-0.176*ω^2)*(1-√(T/Tc)))^2,_1)) * z * invn 
+    αx = @. (_1+(0.480+1.547*ω-0.176*ω^2)*(1-√(T/Tc))) * z * invn 
     #αx = (αi*xi for (αi,xi) in zip(α,x)) #lazy iterator
     #αx .*= x
     #āᾱ = sum(a .* .√(α * α') .* (x * x'))

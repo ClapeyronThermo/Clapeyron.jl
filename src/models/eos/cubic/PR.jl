@@ -39,7 +39,7 @@ function cubic_ab(model::PRModel,T,z=SA[1.0],n=sum(z))
     ω = model.params.acentricfactor.values
     Tc = model.params.Tc.values
     invn = one(n)/n
-    αx = @. min((1+(0.37464+1.54226*ω-0.26992*ω^2)*(1-√(T/Tc)))^2,one(T)) * z * invn 
+    αx = @. (1+(0.37464+1.54226*ω-0.26992*ω^2)*(1-√(T/Tc))) * z * invn 
     āᾱ = dot(αx,Symmetric(a),αx)
     b̄ = dot(z,Symmetric(b),z) * invn*invn
     return āᾱ ,b̄

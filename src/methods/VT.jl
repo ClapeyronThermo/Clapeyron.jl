@@ -89,9 +89,10 @@ end
 function second_virial_coefficient(model::EoSModel, T, z=SA[1.])
     TT = promote_type(eltype(z),typeof(T))
     V = 1/sqrt(eps(TT))
-    Aᵣ(x) = ForwardDiff.derivative(v->eos_res(model,v,T,z),x)
-    ∂Aᵣ∂V,∂²Aᵣ∂V² = Solvers.f∂f(Aᵣ,V)
-    return V^2/(R̄*T)*(∂Aᵣ∂V+V*∂²Aᵣ∂V²)
+    fun(x) = eos_res(model,x[1],T,z)
+    df(x) = ForwardDiff.derivative(fun,x[1])
+    d2f(x) = ForwardDiff.derivative(df,x[1])
+    return V^2/(R̄*T)*(df(V)+V*d2f(V))
 end
 
 function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.])

@@ -60,7 +60,8 @@ function a_LJ(model::softSAFTModel, V, T, z)
          x[28]/T̄^2+x[29]/T̄^3,
          x[30]/T̄^2+x[31]/T̄^3+x[32]/T̄^4,
         ]
-    G = zeros(6)
+    _0 = zero(V+T+first(z))
+    G = [_0,_0,_0,_0,_0,_0]
     G[1] = (1-F)/(2γ)
     for i in 2:6
         k = 2*(i-1)
