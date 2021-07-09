@@ -2,6 +2,8 @@
 
 ![OpenSAFT_logo](docs/OpenSAFT_logo.svg)
 
+❗❗ We are preparing to update our master branch soon! Please check our development branch for the latest version. ❗❗
+
 Welcome to OpenSAFT! This module intends to provide the variants of the Statistical Associating Fluid Theory (SAFT) thermodynamic equation of state, along with the relevant parameters and solvers required to use these equations.
 
 Check out the Jupyter notebooks in the ```examples``` directory to see how to set up your model.
