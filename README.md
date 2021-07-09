@@ -111,5 +111,19 @@ To load OpenSAFT, launch Julia with
 Hit the ```]``` key to enter Pkg mode, then type
 
 ```julia
-Pkg> add https://github.com/ypaul21/OpenSAFT.jl.git
+Pkg> add https://github.com/ypaul21/Clapeyron.jl#development
+```
+Exit Pkg mode by hitting backspace.
+
+Now you may begin using functions from the OpenSAFT library by entering the command
+
+```
+using OpenSAFT
+```
+
+To remove the package (for when we finally get it on JuliaHub and you want to use the official version,
+hit the ```]``` key to enter Pkg mode, then type
+
+```julia
+Pkg> rm OpenSAFT
 ```
