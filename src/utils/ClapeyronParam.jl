@@ -140,7 +140,7 @@ function AssocParam{T}(x::AssocParam, v::Array{Array{T,2},2}) where T
     return AssocParam{T}(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
 
-struct GCParam <: ClapeyronParam
+struct GroupParam <: ClapeyronParam
     components::Array{String,1}
     allcomponentgroups::Array{Array{String,1},1}
     allcomponentngroups::Array{Array{Int,1},1}
@@ -149,8 +149,8 @@ struct GCParam <: ClapeyronParam
     sourcecsvs::Array{String,1}
 end
 
-function Base.show(io::IO, param::GCParam)
-    print(io,"GCParam(")
+function Base.show(io::IO, param::GroupParam)
+    print(io,"GroupParam(")
     for component in param.components
         print(io, "\"", component, "\"")
         if (component != last(param.components))

@@ -64,7 +64,7 @@ function getparams(components::Array{String,1}, locations::Array{String,1}=Strin
     return packageparams(allparams, components, allcomponentsites, paramsourcecsvs, paramsources; asymmetricparams=asymmetricparams, ignore_missingsingleparams=ignore_missingsingleparams)
 end
 
-function getparams(groups::GCParam, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], asymmetricparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
+function getparams(groups::GroupParam, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], asymmetricparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
     # For GC.
     return getparams(groups.flattenedgroups, locations; userlocations=userlocations, asymmetricparams=asymmetricparams, ignore_missingsingleparams=ignore_missingsingleparams, verbose=verbose)
 end
@@ -611,8 +611,8 @@ function mirrormatrix!(matrix::Array{Array{T,2},2}) where T
 end
 
 
-export buildspecies
-function buildspecies(gccomponents::Array{<:Any,1}, grouplocations::Array{String,1}=String[]; usergrouplocations::Array{String,1}=String[], verbose::Bool=false)
+export GroupParam
+function GroupParam(gccomponents::Array{<:Any,1}, grouplocations::Array{String,1}=String[]; usergrouplocations::Array{String,1}=String[], verbose::Bool=false)
     # The format for gccomponents is an arary of either the species name (if it
     # available in the Clapeyron database, or a tuple consisting of the species
     # name, followed by a list of group => multiplicity pairs.  For example:
@@ -673,5 +673,5 @@ function buildspecies(gccomponents::Array{<:Any,1}, grouplocations::Array{String
             end
         end
     end
-    return GCParam(components, allcomponentgroups, allcomponentngroups, flattenedgroups, allcomponentnflattenedgroups, groupsourcecsvs)
+    return GroupParam(components, allcomponentgroups, allcomponentngroups, flattenedgroups, allcomponentnflattenedgroups, groupsourcecsvs)
 end
