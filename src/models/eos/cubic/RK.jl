@@ -11,7 +11,7 @@ abstract type RKModel <: ABCubicModel end
 @newmodel RK RKModel RKParam
 
 export RK
-function RK(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false,idealmodel=BasicIdeal)
+function RK(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
     _pc = params["pc"]
@@ -24,7 +24,7 @@ function RK(components::Array{String,1}; userlocations::Array{String,1}=String[]
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. (2^(1/3)-1)/3*R̄*Tc/pc))
 
     packagedparams = RKParam(a, b, params["Tc"],_pc,Mw,T̄c)
-    model = RK(packagedparams,idealmodel)
+    model = RK(packagedparams, idealmodel; ideal_userlocations=ideal_userlocations, verbose=verbose)
     return model
 end
 function ab_consts(::Type{<:RKModel})
