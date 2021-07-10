@@ -5,9 +5,7 @@
 
 ![Clapeyron_logo](docs/Clapeyron_logo.svg)
 
-Welcome to Clapeyron! This module intends to provide the variants of the Statistical Associating Fluid Theory (SAFT) thermodynamic equation of state, along with the relevant parameters and solvers required to use these equations.
-
-Check out the Jupyter notebooks in the ```examples``` directory to see how to set up your model.
+Welcome to Clapeyron! This module provides both a large library of equations of state and a framework for one to easily implement their own equations of state.
 
 SAFT equations of state currently available:
 
@@ -42,6 +40,15 @@ We also provide some engineering cubic equations of state for comparison:
 | Soave-Redlich-Kwong    | :heavy_check_mark: | :heavy_check_mark: |
 | Peng-Robinson          | :heavy_check_mark: | :heavy_check_mark: |
 | Cubic-Plus-Association | :heavy_check_mark: | :heavy_check_mark: |
+
+We also provide some Multi-parameter equations of state:
+
+| EoS        | Available?         |
+| ---------- | ------------------ |
+| IAWPS-95   | :heavy_check_mark: |
+| GERG-2008  | :heavy_check_mark: |
+| PropaneRef | :heavy_check_mark: |
+| SPUNG      | :heavy_check_mark: |
 
 To provide the ideal contribution to any of the above equations of state, we have a few different options:
 
@@ -79,15 +86,15 @@ Properties available:
 | Phase Identification Parameter (pip)    | :heavy_check_mark: |
 - Two-phase properties:
 
-| Property                  | Available?                         |
-| ------------------------- | ---------------------------------- |
-| Saturation pressure       | :heavy_check_mark:                 |
-| Saturation temperature    | :heavy_check_mark:                 |
-| Bubble pressure           | :heavy_check_mark:                ​ |
-| Dew pressure              |                                    |
-| Bubble temperature        |                                    |
-| Dew temperature           |                                    |
-| Enthalpy of vapourisation | :heavy_check_mark:                 |
+| Property                  | Available?         |
+| ------------------------- | ------------------ |
+| Saturation pressure       | :heavy_check_mark: |
+| Saturation temperature    | :heavy_check_mark: |
+| Bubble pressure           |                    |
+| Dew pressure              |                    |
+| Bubble temperature        |                    |
+| Dew temperature           |                    |
+| Enthalpy of vapourisation | :heavy_check_mark: |
 
 - Critical properties (pure components only):
 

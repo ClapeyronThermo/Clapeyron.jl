@@ -228,19 +228,19 @@ Instead of developing an entirely new model, some of us may want to modify or ex
 - When defining the model equations, we only need to write those that have been changed in `sPCSAFT`:
 
   ```julia
-  function Clapeyron.a_hc(model::sPCSAFTModel, V, T, z)
+  function a_hc(model::sPCSAFTModel, V, T, z)
       x = z/sum(z)
       m = model.params.segment.values
       m̄ = ∑(x .* m)
       return m̄*@f(a_hs) - (m̄-1)*log(@f(g_hs))
   end
   
-  function Clapeyron.g_hs(model::sPCSAFTModel, V, T, z)
+  function g_hs(model::sPCSAFTModel, V, T, z)
       η = @f(ζ,3)
       return (1-η/2)/(1-η)^3
   end
   
-  function Clapeyron.a_hs(model::sPCSAFTModel, V, T, z)
+  function a_hs(model::sPCSAFTModel, V, T, z)
       η = @f(ζ,3)
       return (4η-3η^2)/(1-η)^2
   end
