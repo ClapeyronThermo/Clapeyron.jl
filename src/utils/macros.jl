@@ -160,13 +160,13 @@ macro newmodelgc(name, parent, paramstype)
         references::Array{String,1}
     end
 
-    function $name(params::$paramstype, groups::GCParam, sites::SiteParam, idealmodel=BasicIdeal;
+    function $name(params::$paramstype, groups::GroupParam, sites::SiteParam, idealmodel=BasicIdeal;
                     references=String[],
                     absolutetolerance=1E-12,
                     verbose=false)
         return _newmodelgc($name,params,groups,sites,idealmodel;references=references,absolutetolerance=absolutetolerance,verbose=verbose)
     end
-    function $name(params::$paramstype, groups::GCParam, idealmodel=BasicIdeal;
+    function $name(params::$paramstype, groups::GroupParam, idealmodel=BasicIdeal;
                     references=String[],
                     absolutetolerance=1E-12, verbose=false)
 
@@ -189,7 +189,7 @@ end
 
 const IDEALTYPE = Type{T} where T<:IdealModel
 
-function _newmodelgc(eostype,params, groups::GCParam, sites::SiteParam, idealmodel::IDEALTYPE=BasicIdeal;
+function _newmodelgc(eostype,params, groups::GroupParam, sites::SiteParam, idealmodel::IDEALTYPE=BasicIdeal;
                     references::Vector{String}=String[],
                     absolutetolerance::Float64=1E-12,
                     verbose::Bool=false)

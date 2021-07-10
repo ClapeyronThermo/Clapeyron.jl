@@ -1,31 +1,28 @@
-# OpenSAFT User Guide
+# Clapeyron User Guide
 
-Welcome to OpenSAFT!
+Welcome to Clapeyron!
 
-Once OpenSAFT is installed, it can be loaded using:
-
-```julia
-using OpenSAFT
-```
-
-We may create a model using the ```system(components, method; kwargs)``` function.
+Once Clapeyron is installed, it can be loaded using:
 
 ```julia
-model = system(["methanol", "ethanol"], "PCSAFT")
+using Clapeyron
 ```
 
-OpenSAFT provides a database for a lot of paramaters that are currently publised in the literature. If you would like to use a custom database, copy the relevant files (in this case, PCSAFT) from the ```database``` directory in the package root directory to use as a template, and place it wherever you want, then create the model using
+We may create a model by calling the constructor of the respective model. For example,
 
 ```julia
-model = system(["methanol", "ethanol"], "PCSAFT";
-    customdatabase_like = "{PATH}",
-    customdatabase_unlike = "{PATH}",
-    customdatabase_assoc = "{PATH}")
+model1 = PCSAFT(["methanol", "ethanol"])
+model2 = SAFTgammaMie(["ethane", "water"])
 ```
 
-You may now find physical properties for this system!
+Clapeyron provides a database for a selection of parameters that are currently published in the literature. If you would like to use a custom database, you may link to it using the optional parameter `userlocations`.
 
-Note that the composition has to be defined using the NamedArray type. We currently have a function called ```create_z(model, composition)``` to do this for you, but this will be converted into a macro later.
+```julia
+model = PCSAFT(["my_comp1", "my_comp2"];
+    userlocations = ["path/to/database_like", "path/to/database_unlike"])
+```
+
+
 
 For example, to find the isobaric heat capacity at equal mole fractions at a pressure of 1 bar and a temperature of 300 K, we just write
 
