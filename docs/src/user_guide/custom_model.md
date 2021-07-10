@@ -205,3 +205,43 @@ end
 
    
 
+## sPC-SAFT Example
+
+Instead of developing an entirely new model, some of us may want to modify or extend an existing one. `sPCSAFT` is an example where we want to modify parts of regular `PCSAFT` but keep the rest the same. We can do this in a very succinct way by exploiting Julia's multi-dispatch features. We follow the same steps as above, only now:
+
+- When we define the model type, `sPCSAFT` is a child of `PCSAFT`:
+
+  ```julia
+  abstract type sPCSAFTModel <: PCSAFTModel end
+  ```
+
+- Since the parameters are the same, we can just use the same model params when creating the model:
+
+  ```julia
+  @newmodel sPCSAFT sPCSAFTModel PCSAFTParam
+  ```
+
+  This may not be the case if we're extending a model (_e.g._ if we're adding polar or ionic terms, we may need to define a new parameter struct to include the new parameters).
+
+- When defining the model equations, we only need to write those that have been changed in `sPCSAFT`:
+
+  ```julia
+  function Clapeyron.a_hc(model::sPCSAFTModel, V, T, z)
+      x = z/sum(z)
+      m = model.params.segment.values
+      m̄ = ∑(x .* m)
+      return m̄*@f(a_hs) - (m̄-1)*log(@f(g_hs))
+  end
+  
+  function Clapeyron.g_hs(model::sPCSAFTModel, V, T, z)
+      η = @f(ζ,3)
+      return (1-η/2)/(1-η)^3
+  end
+  
+  function Clapeyron.a_hs(model::sPCSAFTModel, V, T, z)
+      η = @f(ζ,3)
+      return (4η-3η^2)/(1-η)^2
+  end
+  ```
+
+The rest works exactly as it would with the `PCSAFT` example.
