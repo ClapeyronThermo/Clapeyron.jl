@@ -259,7 +259,7 @@ where the subscript $i$ denotes properties related to a phase $i$ and $\phi_i$ i
 
 Nevertheless, if we know certain things about the system before-hand, we can reduce the problem to one that is easier to solve.
 
-### Pressure solvers
+### Volume solvers
 
 Let us make one simplifying assumption: we know that the system exists in a single phase. This greatly simplifies the problem to:
 
@@ -269,38 +269,20 @@ Where, as there is no phase split, the only variable we need to optimise is the 
 
 ``\min_V A(\mathbf{z}_0,V,T_0)+p_0V\rightarrow\frac{\partial }{\partial V}(A(\mathbf{z}_0,V,T_0)+p_0V)=\frac{\partial A}{\partial V}(\mathbf{z}_0,V,T_0)+p_0=-p(\mathbf{z}_0,V,T_0)+p_0=0``
 
-Effectively, we can re-word this as a root-finding problem. When using the van der Waals or engineering equations of state which are expressed as $p(\mathbf{z},V,T)$, it is easier to solve them this way. When there is only one candidate phase, there is no significant advantage between expressing the problem as either an optimisation or root-finding problem.
+Effectively, we can re-word this as a root-finding problem. One slight issue with this is that there is often more than one root (there can actually be up to five, even in SAFT-type equations). The true root will be the one that minimises the Gibbs free energy; thus we must first find the candidate phases and determine their Gibbs free energy before reporting the volume.
 
-However, there will be a range of pressures below the critical temperature where there will be more than one candidate phase (corresponding to the vapour, liquid and unstable phases). Treating this as a root-finding problem has the added difficulty of there being an additional, unstable solution. Treating this as an optimisation problem means we never need to worry about this unstable phase (it corresponds to a local maxima).
+For the cubics, this problem is quite straight-forward given that (as the name suggests) all these equations can be re-arranged as a cubic equation in $V$:
 
-Actually determining the values of $V$ that minimise this equation is quite straightforward, although, with a few subtleties. Within Clapeyron, we have used the local, derivative-based method of moving assymptotes (MMA) algorithm as implemented in `NLopt.jl` module. The reason for selecting this method is because, as a local derivative-based algorithm, it will be faster than other methods. This algorithm in particular also allows us to add inequality constraints; this is particularly important as there are certain values of $V$ which will are unphysical. These can be identified through the packing fraction:
+``p_0=\frac{RT_0}{V-b}-\frac{a}{(V-c_1)(V-c_2)}\rightarrow a_0+a_1V+a_2V^2+a_3V^3=0``
 
-``\eta=\frac{N_\mathrm{A}\pi}{6V}\sum_ix_im_id_i^3``
+Thus, it is very easy to solve for all the roots in a cubic using analytical expressions. However, for other equations of state, we must use non-linear root-finding algorithms. In order to avoid the unstable phases, we try to use initial guesses close to what will be the 'true' phases:
 
-Without going into significant detail about the SAFT equation itself, a packing fraction greater than or equal to one results in unphysical values. As  a result, we have a lower bound for the volume:
+1. Vapour: Since we can use automatic differentiation to obtain the virial coefficient for any model, we can actually obtain an initial guess extremely close to the final solution using:
 
-``V\geq\frac{N_\mathrm{A}\pi}{6}\sum_ix_im_id_i^3``
+   ``\frac{p_0}{RT_0} = \frac{n_0}{V}+\frac{n_0}{V^2}B(T)\rightarrow V_0=\frac{RT_0}{p_0}\frac{-1+\sqrt{1+4p_0B(T_0)/(RT_0)}}{2}`` 
 
-One other issue to consider when solving this problem is that, within the liquid phase, the gradients are very large which can be difficult for algorithms to handle (even when providing the exact derivatives through automatic differentiation). There are two solutions to this:
+2. Liquid: The best we can do here is to obtain the volume corresponding to a large packing fraction (we typically pick 0.6-0.8):
+   ``V_0 = \frac{N_\mathrm{A}\pi}{6\times 0.8}m\sigma^3``
+   We are still looking for ways to improve this but the volume function is quite reliable as of now.
 
-1. Good initial guesses: We can re-express the volume of a system in dimensionless units using a variable commonly used in the SAFT equations of state, the packing fraction:
-
-   ``\eta=\frac{N_\mathrm{A}\pi}{6V}m\sigma^3``
-
-   Where, for most fluids, we expect the packing fraction to be close to $0.9$ in the liquid phase. Thus, if we know that the system is within the liquid phase, we can use the initial guess:
-
-   ``V_0 = \frac{N_\mathrm{A}\pi m\sigma^3}{6\times0.9}``
-
-   It should also be mentioned that, if we know that the system is within the vapour phase which typically has a packing fraction of $10^{-3}$, we can use the initial guess of:
-
-   ``V_0 = \frac{N_\mathrm{A}\pi m\sigma^3}{6\times10^{-3}}``
-
-   Generally speaking, if we know which phase our system is in, we can use the initial guesses to find the volumes $V$ that correspond to that phase, if the phase exists at the given conditions.
-
-2. Solving for $\log_{10}{V}$ rather than $V$, i.e.:
-
-   ``\min_x A(\mathbf{z}_0,10^x,T_0)+p_010^x``
-
-   This somewhat reduces the magnitude of the gradients in the liquid phase.
-
-Using the above tricks, one should be able to obtain the value of $V$ that minimises the Gibbs free energy. The only question to answer now is: if there is more than one local minima, how do we identify the stable phase? In this case, we need to use a global optimisation algorithm. In the case of Clapeyron, a tunneling algorithm has been implemented although any other such algorithms can be used; the tunneling algorithm was selected as it still relies on gradient-based methods and is generally the recommended algorithm for such problems.
+One other issue to consider when solving this problem is that, within the liquid phase, the gradients are very large which can be difficult for algorithms to handle (even when providing the exact derivatives through automatic differentiation). We try to reduce magnitude of these derivatives by solving for the logarithm of the volume instead. 
