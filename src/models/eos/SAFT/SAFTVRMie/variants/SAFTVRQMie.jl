@@ -11,7 +11,7 @@ abstract type SAFTVRQMieModel <: SAFTVRMieModel end
 @newmodel SAFTVRQMie SAFTVRQMieModel SAFTVRQMieParam
 
 export SAFTVRQMie
-function SAFTVRQMie(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
+function SAFTVRQMie(components; idealmodel::Type=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["SAFT/SAFTVRQMie"]; userlocations=userlocations, verbose=verbose)
 
     params["Mw"].values .*= 1E-3
@@ -28,7 +28,7 @@ function SAFTVRQMie(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, use
     packagedparams = SAFTVRQMieParam(segment, sigma, lambda_a, lambda_r, epsilon, Mw)
     references = ["todo"]
 
-    model = SAFTVRQMie(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = SAFTVRQMie(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
     return model
 end
 

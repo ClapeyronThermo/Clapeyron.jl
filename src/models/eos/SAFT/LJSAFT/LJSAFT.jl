@@ -10,7 +10,7 @@ abstract type LJSAFTModel <: SAFTModel end
 @newmodel LJSAFT LJSAFTModel LJSAFTParam
 
 export LJSAFT
-function LJSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
+function LJSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["SAFT/LJSAFT"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
 
@@ -25,7 +25,7 @@ function LJSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocation
     packagedparams = LJSAFTParam(segment, b, T_tilde, epsilon_assoc, bondvol)
     references = ["10.1021/ie9602320"]
 
-    model = LJSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = LJSAFT(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
     return model
 end
 

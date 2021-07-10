@@ -2,7 +2,7 @@ abstract type sPCSAFTModel <: PCSAFTModel end
 @newmodel sPCSAFT sPCSAFTModel PCSAFTParam
 
 export sPCSAFT
-function sPCSAFT(components::Array{String,1}; idealmodel::Type=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
+function sPCSAFT(components; idealmodel::Type=BasicIdeal, userlocations=String[], ideal_userlocations=String[] verbose=false)
     params = getparams(components, ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = params["k"]
@@ -17,7 +17,7 @@ function sPCSAFT(components::Array{String,1}; idealmodel::Type=BasicIdeal, userl
     packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie020753p"]
 
-    model = sPCSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = sPCSAFT(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
     return model
 end
 
