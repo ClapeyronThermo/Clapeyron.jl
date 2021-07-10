@@ -1,5 +1,6 @@
 [![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
 [![Build Status](https://github.com/ypaul21/Clapeyron.jl/workflows/CI/badge.svg)](https://github.com/ypaul21/Clapeyron.jl/actions)
+
 ![Clapeyron_logo](docs/Clapeyron_logo.svg)
 
 Welcome to Clapeyron! This module intends to provide the variants of the Statistical Associating Fluid Theory (SAFT) thermodynamic equation of state, along with the relevant parameters and solvers required to use these equations.
@@ -121,7 +122,7 @@ Now you may begin using functions from the Clapeyron library by entering the com
 using Clapeyron
 ```
 
-To remove the package (for when we finally get it on JuliaHub and you want to use the official version,
+To remove the package (for when we finally get it on JuliaHub and you want to use the official version),
 hit the ```]``` key to enter Pkg mode, then type
 
 ```julia
