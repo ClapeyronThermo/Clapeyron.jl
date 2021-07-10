@@ -1,23 +1,23 @@
 push!(LOAD_PATH,"../src/")
-using Documenter,OpenSAFT
+using Documenter,Clapeyron
 
-makedocs(sitename = "OpenSAFT.jl",
+makedocs(sitename = "Clapeyron.jl",
 format = Documenter.HTML(
     # Use clean URLs, unless built as a "local" build
-    canonical = "https://juliadocs.github.io/OpenSAFT.jl/dev/",
+    canonical = "https://juliadocs.github.io/Clapeyron.jl/dev/",
     assets = ["assets/logo.ico"],
 ),
     authors = "Pierre J. Walker, Hon Wa Yew and Andrés Riedemann.",
     pages = [
         "Home" => "index.md",
         "Background" => "theory/background.md",
-        "User guide" => Any["Definitions"=>"user_guide/definitions.md",
-                            "Basic Usage"=>"user_guide/basic_usage.md",
+        "User guide" => Any["Basic Usage"=>"user_guide/basic_usage.md",
                             "Custom Databases"=>"user_guide/custom_dtb.md",
-                            "Custom Equations of State"=>"user_guide/custom_eos.md"],
+                            "Custom Methods"=>"user_guide/custom_methods.md",
+                            "Custom Models"=>"user_guide/custom_eos.md"],
         "To-do list" => "to-do_list.md"])
 
         deploydocs(;
-    repo="github.com/ypaul21/OpenSAFT.jl.git",
+    repo="github.com/ypaul21/Clapeyron.jl.git",
     devbranch = "development",
 )
