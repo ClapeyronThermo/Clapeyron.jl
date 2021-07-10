@@ -1,13 +1,13 @@
 """
     arbitraryparam(params)
 
-returns the first field in the struct that is a subtype of `OpenSAFTParam`. errors if it finds none.
+returns the first field in the struct that is a subtype of `ClapeyronParam`. errors if it finds none.
 """
 function arbitraryparam(params)
     paramstype = typeof(params)
-    idx = findfirst(z->z <: OpenSAFTParam,fieldtypes(paramstype))
+    idx = findfirst(z->z <: ClapeyronParam,fieldtypes(paramstype))
     if isnothing(idx)
-        error("The paramater struct ", paramstype, " must contain at least one OpenSAFTParam")
+        error("The paramater struct ", paramstype, " must contain at least one ClapeyronParam")
     end
      return fieldnames(paramstype)[idx] |> z->getfield(params,z)
 end

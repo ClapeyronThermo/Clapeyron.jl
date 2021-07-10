@@ -1,4 +1,4 @@
-OpenSAFT database,,,,,,,,,
+Clapeyron database,,,,,,,,,
 SAFTVRSW Like Parameters,,,,,,,,,
 species,DIPPR Number,Mw,m,sigma,epsilon,lambda,n_e,n_H,source
 methane,,16,1,4.069,157.4,1.444,0,0,

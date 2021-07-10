@@ -4,7 +4,6 @@ struct vdWParam <: EoSParam
     Mw::SingleParam{Float64}
     a::PairParam{Float64}
     b::PairParam{Float64}
-
 end
 
 abstract type vdWModel <: ABCubicModel end

@@ -1,8 +1,8 @@
 [![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
-[![Build Status](https://github.com/ypaul21/OpenSAFT.jl/workflows/CI/badge.svg)](https://github.com/ypaul21/OpenSAFT.jl/actions)
-![OpenSAFT_logo](docs/OpenSAFT_logo.svg)
+[![Build Status](https://github.com/ypaul21/Clapeyron.jl/workflows/CI/badge.svg)](https://github.com/ypaul21/Clapeyron.jl/actions)
+![Clapeyron_logo](docs/Clapeyron_logo.svg)
 
-Welcome to OpenSAFT! This module intends to provide the variants of the Statistical Associating Fluid Theory (SAFT) thermodynamic equation of state, along with the relevant parameters and solvers required to use these equations.
+Welcome to Clapeyron! This module intends to provide the variants of the Statistical Associating Fluid Theory (SAFT) thermodynamic equation of state, along with the relevant parameters and solvers required to use these equations.
 
 Check out the Jupyter notebooks in the ```examples``` directory to see how to set up your model.
 
@@ -96,13 +96,13 @@ Properties available:
 
 We will also provide Tp-flash algorithms (Rachford-Rice and HELD alogrithm).
 
-Note that at its current stage, OpenSAFT is still in the very early stages of development, and things may be moving around or changing rapidly, but we are very excited to see where this project may go!
+Note that at its current stage, Clapeyron is still in the very early stages of development, and things may be moving around or changing rapidly, but we are very excited to see where this project may go!
 
-# Installing OpenSAFT
+# Installing Clapeyron
 
-OpenSAFT is not yet in the JuliaHub (but it will be soon!).
+Clapeyron is not yet in the JuliaHub (but it will be soon!).
 
-To load OpenSAFT, launch Julia with
+To load Clapeyron, launch Julia with
 
 ```julia
 > julia
@@ -115,15 +115,15 @@ Pkg> add https://github.com/ypaul21/Clapeyron.jl#development
 ```
 Exit Pkg mode by hitting backspace.
 
-Now you may begin using functions from the OpenSAFT library by entering the command
+Now you may begin using functions from the Clapeyron library by entering the command
 
 ```
-using OpenSAFT
+using Clapeyron
 ```
 
 To remove the package (for when we finally get it on JuliaHub and you want to use the official version,
 hit the ```]``` key to enter Pkg mode, then type
 
 ```julia
-Pkg> rm OpenSAFT
+Pkg> rm Clapeyron
 ```
