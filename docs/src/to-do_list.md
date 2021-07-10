@@ -1,0 +1,11 @@
+# Clapeyron to-do list
+
+Clapeyron is developed entirely by three recently graduated chemical engineers in our free time; none of us are experts in writing algorithms but we decided to build this package due to our experience with commerical thermodynamic modelling tools. We will continue developing Clapeyron in our free time but we welcome any contributions you might be willing to make!
+
+The current plans of Clapeyron are:
+
+* Support more group contribution (GC) models like SAFT-γ SW and GC versions of PC-SAFT and CK-SAFT.
+* Support for more ideal terms (NASA, Wilhoit, etc).
+* Support for flash calculations, first using Ratchford-Rice, and eventually HELD and RAND.
+* Support extensions of the SAFT model (e.g. electrolyte methods and dipole terms).
+* Code optimisation by introducing more macros, and changing all string keys to more efficient symbols.

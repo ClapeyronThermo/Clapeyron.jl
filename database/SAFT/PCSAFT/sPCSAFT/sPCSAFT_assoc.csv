@@ -1,0 +1,21 @@
+Clapeyron Database File,,,,,,,,
+sPCSAFT Assoc Parameters,,,,,,,,
+species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
+methanol,CO,H,methanol,CO,e,2090.2,0.146,10.1021/ie020753p
+ethanol,CCO,H,ethanol,CCO,e,2653.4,0.032384,10.1021/ie010954d
+1-propanol,CCCO,H,1-propanol,CCCO,e,2276.8,0.015268,10.1021/ie010954d
+1-butanol,CCCCO,H,1-butanol,CCCCO,e,2544.6,0.006692,10.1021/ie010954d
+1-pentanol,CCCCCO,H,1-pentanol,CCCCCO,e,2252.1,0.010319,10.1021/ie010954d
+1-hexanol,CCCCCCO,H,1-hexanol,CCCCCCO,e,2538.9,0.005747,10.1021/ie010954d
+1-heptanol,CCCCCCCO,H,1-heptanol,CCCCCCCO,e,2878.5,0.001155,10.1021/ie010954d
+1-octanol,CCCCCCCCO,H,1-octanol,CCCCCCCCO,e,2754.8,0.002197,10.1021/ie010954d
+1-nonanol,CCCCCCCCCO,H,1-nonanol,CCCCCCCCCO,e,2941.9,0.001427,10.1021/ie010954d
+2-propanol,CC(O)C,H,2-propanol,CC(O)C,e,2253.9,0.024675,10.1021/ie010954d
+2-methyl-2-butanol,CC(O)(C)CC,H,2-methyl-2-butanol,CC(O)(C)CC,e,2618.8,0.001863,10.1021/ie010954d
+water,O,H,water,O,e,2500.7,0.034868,10.1021/ie010954d
+methylamine,CN,H,methylamine,CN,e,684.3,0.095103,10.1021/ie010954d
+ethylamine,CCN,H,ethylamine,CCN,e,854.7,0.017275,10.1021/ie010954d
+1-propylamine,CCCN,H,1-propylamine,CCCN,e,1028.1,0.022674,10.1021/ie010954d
+2-propylamine,CC(N)C,H,2-propylamine,CC(N)C,e,932.2,0.02134,10.1021/ie010954d
+aniline,,H,aniline,,e,1351.6,0.074883,10.1021/ie010954d
+acetic acid,CC(=O)O,H,acetic acid,CC(=O)O,e,3044.4,0.07555,10.1021/ie010954d

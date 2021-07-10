@@ -1,0 +1,11 @@
+Clapeyron Database File,,,,,,
+SAFTVRMie Unlike Parameters,,,,,,
+species1,SMILES1,species2,SMILES2,epsilon,lambda_r,source
+ethane,CC,n-decane,CCCCCCCCCC,289.06,,10.1063/1.4819787
+carbon dioxide_lafitte,O=C(=O),n-decane,CCCCCCCCCC,275.711,,10.1063/1.4819786
+water,O,methanol,CO,278.45,,10.1021/je500248h
+water,O,carbon dioxide,O=C(=O),226.38,,10.1016/j.fluid.2015.12.044
+methanol,CO,carbon dioxide,O=C(=O),157.83,8.3462,10.1016/j.fluid.2015.12.044
+methane,C,water,O,175.41,,10.1016/j.fluid.2015.12.044
+methane,C,carbon dioxide,O,144.72,11.95,10.1016/j.fluid.2015.12.044
+methane,C,methanol,CO,233.21,,10.1016/j.fluid.2015.12.044
