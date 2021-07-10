@@ -11,7 +11,7 @@ abstract type SRKModel <: ABCubicModel end
 @newmodel SRK SRKModel SRKParam
 
 export SRK
-function SRK(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false,idealmodel=BasicIdeal)
+function SRK(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[] verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     k  = params["k"]
@@ -26,7 +26,7 @@ function SRK(components::Array{String,1}; userlocations::Array{String,1}=String[
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. (2^(1/3)-1)/3*R̄*Tc_/pc))
 
     packagedparams = SRKParam(a, b, acentricfactor, Tc,_pc,Mw)
-    model = SRK(packagedparams,idealmodel)
+    model = SRK(packagedparams, idealmodel; ideal_userlocations=ideal_userlocations, verbose=verbose)
     return model
 end
 

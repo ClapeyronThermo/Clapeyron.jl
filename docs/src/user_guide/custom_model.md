@@ -97,11 +97,12 @@ end
 2. The next step is to create an outer constructor for the model that you have just defined. It should have the same name as the struct above. It can take the following arguments, although these can be hard-coded if you so wish:
    * `components`: A list of strings that identify the components.
    * `idealmodel`: An ideal model, but this can be left as an optional parameter.
-   * `userlocations`: For you to easily specify the locations of the databases that you are using.
+   * `userlocations`: A list of strings that are paths to the databases that you are using.
+   * `ideal_userlocations`: Same as above, but for ideal models.
    * `verbose`: For when you want to print more information to the console.
 
 ```Julia
-function PCSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
+function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
   	# Obtain a Dict of parameters. We pass in custom locations through the optional parameter userlocations.
     params = getparams(components; userlocations=userlocations, verbose=verbose)
   
@@ -129,7 +130,7 @@ function PCSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocation
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
     # Build the model.
-    model = PCSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = PCSAFT(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
   
     # Return the PCSAFT object that you have just created.
     return model

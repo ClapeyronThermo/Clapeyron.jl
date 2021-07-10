@@ -11,7 +11,7 @@ abstract type PRModel <: ABCubicModel end
 @newmodel PR PRModel PRParam
 
 export PR
-function PR(components::Array{String,1}; userlocations::Array{String,1}=String[], idealmodel = BasicIdeal,verbose=false)
+function PR(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     k  = params["k"]
@@ -25,7 +25,7 @@ function PR(components::Array{String,1}; userlocations::Array{String,1}=String[]
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. Ωb*R̄*Tc_/pc))
 
     packagedparams = PRParam(a, b, acentricfactor, Tc,_pc,Mw)
-    model = PR(packagedparams,idealmodel)
+    model = PR(packagedparams, idealmodel; ideal_userlocations=ideal_userlocations, verbose=verbose)
     return model
 end
 
