@@ -1,6 +1,8 @@
 [![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
 [![Build Status](https://github.com/ypaul21/Clapeyron.jl/workflows/CI/badge.svg)](https://github.com/ypaul21/Clapeyron.jl/actions)
 
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://ypaul21.github.io/Clapeyron.jl.jl/development)
+
 ![Clapeyron_logo](docs/Clapeyron_logo.svg)
 
 Welcome to Clapeyron! This module intends to provide the variants of the Statistical Associating Fluid Theory (SAFT) thermodynamic equation of state, along with the relevant parameters and solvers required to use these equations.
