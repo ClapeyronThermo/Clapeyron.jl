@@ -121,4 +121,8 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
 
 end
 
+function volume(model::IdealModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
+    return sum(z)*R̄*T/p
+end
+
 export volume
