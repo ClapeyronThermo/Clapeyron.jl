@@ -1,35 +1,66 @@
 [![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
+[![Build Status](https://github.com/ypaul21/Clapeyron.jl/workflows/CI/badge.svg)](https://github.com/ypaul21/Clapeyron.jl/actions)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://ypaul21.github.io/Clapeyron.jl/dev)
 
-![OpenSAFT_logo](docs/OpenSAFT_logo.svg)
+![Clapeyron_logo](docs/Clapeyron_logo.svg)
 
-❗❗ We are preparing to update our master branch soon! Please check our development branch for the latest version. ❗❗
-
-Welcome to OpenSAFT! This module intends to provide the variants of the Statistical Associating Fluid Theory (SAFT) thermodynamic equation of state, along with the relevant parameters and solvers required to use these equations.
-
-Check out the Jupyter notebooks in the ```examples``` directory to see how to set up your model.
+Welcome to Clapeyron! This module provides both a large library of equations of state and a framework for one to easily implement their own equations of state.
 
 SAFT equations of state currently available:
 
 | EoS           | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
 | ------------- | ------------------ | ------------------ | ------------------ | ------------------ |
 | SAFT          | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| CK-SAFT       |                    |                    |                    |                    |
-| sSAFT         |                    |                    |                    |                    |
-| LJ-SAFT       |                    |                    |                    |                    |
+| CK-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| sSAFT         | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark:  |                    |
+| LJ-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |                    |
+| BACK-SAFT     | :heavy_check_mark: | :heavy_check_mark: | N/A                   |                    |
 | PC-SAFT       | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | sPC-SAFT      | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| SAFT-VR SW    |                    |                    |                    |                    |
-| soft-SAFT     |                    |                    |                    |                    |
+| SAFT-VR SW    | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+| soft-SAFT     | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
 | SAFT-VR Mie   | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
-| SAFT-VR Morse |                    |                    |                    |                    |
+| SAFT-VRQ Mie  | :heavy_check_mark: | N/A                | N/A                | :heavy_check_mark: |
 
 For group contribution approaches, we provide:
 
-| EoS          | Seg./Mono.? | Chain? | Assoc.? | Parameters? |
-| ------------ | ----------- | ------ | ------- | ----------- |
-| sPC-SAFT     |             |        |         |             |
-| SAFT-*ɣ* SW  |             |        |         |             |
-| SAFT-*ɣ* Mie |             |        |         |             |
+| EoS          | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
+| ------------ | ------------------ | ------------------ | ------------------ | ------------------ |
+| sPC-SAFT     |                    |                    |                    |                    |
+| SAFT-*ɣ* SW  |                    |                    |                    |                    |
+| SAFT-*ɣ* Mie | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: | :heavy_check_mark: |
+
+We also provide some engineering cubic equations of state for comparison:
+
+| EoS                    | Available?         | Parameters?        |
+| ---------------------- | ------------------ | ------------------ |
+| van der Waals          | :heavy_check_mark: | :heavy_check_mark: |
+| Redlich-Kwong          | :heavy_check_mark: | :heavy_check_mark: |
+| Soave-Redlich-Kwong    | :heavy_check_mark: | :heavy_check_mark: |
+| Peng-Robinson          | :heavy_check_mark: | :heavy_check_mark: |
+| Cubic-Plus-Association | :heavy_check_mark: | :heavy_check_mark: |
+
+We also provide some Multi-parameter equations of state:
+
+| EoS        | Available?         |
+| ---------- | ------------------ |
+| IAWPS-95   | :heavy_check_mark: |
+| GERG-2008  | :heavy_check_mark: |
+| PropaneRef | :heavy_check_mark: |
+| SPUNG      | :heavy_check_mark: |
+
+To provide the ideal contribution to any of the above equations of state, we have a few different options:
+
+| Ideal term            | Available?         | Parameters?        |
+| --------------------- | ------------------ | ------------------ |
+| Monomer               | :heavy_check_mark: | :heavy_check_mark: |
+| Reid                  | :heavy_check_mark: |                    |
+| Walker                | :heavy_check_mark: | :heavy_check_mark: |
+| Wilhoit               |                    |                    |
+| NASA                  |                    |                    |
+| Joback                |                    |                    |
+| Constantinou and Gani |                    |                    |
+| Coniglio              |                    |                    |
 
 Properties available:
 
@@ -51,12 +82,13 @@ Properties available:
 | Isobaric (cubic) expansivity | :heavy_check_mark: |
 | Speed of sound               | :heavy_check_mark: |
 | Joule-Thomson coefficient    | :heavy_check_mark: |
-
+| Phase Identification Parameter (pip)    | :heavy_check_mark: |
 - Two-phase properties:
 
 | Property                  | Available?         |
 | ------------------------- | ------------------ |
 | Saturation pressure       | :heavy_check_mark: |
+| Saturation temperature    | :heavy_check_mark: |
 | Bubble pressure           |                    |
 | Dew pressure              |                    |
 | Bubble temperature        |                    |
@@ -71,18 +103,36 @@ Properties available:
 | Critical pressure    | :heavy_check_mark: |
 | Critical volume      | :heavy_check_mark: |
 
-We will also provide a Tp-flash algorithm (Rachford-Rice and HELD alogrithm).
+We will also provide Tp-flash algorithms (Rachford-Rice and HELD alogrithm).
 
-Note that at its current stage, OpenSAFT is still in the very early stages of development, and things may be moving around or changing rapidly, but we are very excited to see where this project may go!
+Note that at its current stage, Clapeyron is still in the very early stages of development, and things may be moving around or changing rapidly, but we are very excited to see where this project may go!
 
-# Installing OpenSAFT
+# Installing Clapeyron
 
-OpenSAFT is not yet in the JuliaHub (but it will be soon!).
+Clapeyron is not yet in the JuliaHub (but it will be soon!).
 
-To load OpenSAFT, launch Julia with
+To load Clapeyron, launch Julia with
 
-    > julia
+```julia
+> julia
+```
 
 Hit the ```]``` key to enter Pkg mode, then type
 
-    Pkg> add git@github.com:ypaul21/OpenSAFT.jl.git
+```julia
+Pkg> add https://github.com/ypaul21/Clapeyron.jl#development
+```
+Exit Pkg mode by hitting backspace.
+
+Now you may begin using functions from the Clapeyron library by entering the command
+
+```
+using Clapeyron
+```
+
+To remove the package (for when we finally get it on JuliaHub and you want to use the official version),
+hit the ```]``` key to enter Pkg mode, then type
+
+```julia
+Pkg> rm Clapeyron
+```

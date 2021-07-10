@@ -1,3 +1,7 @@
-using OpenSAFT
+using OpenSAFT, Test
 
-# runtest.jl will be developed soon!
+@testset "All tests" begin
+    include("test_database.jl")
+    include("test_models.jl")
+    include("test_methods.jl")
+end

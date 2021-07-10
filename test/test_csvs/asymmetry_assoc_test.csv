@@ -1,0 +1,13 @@
+OpenSAFT Database File,,,,,
+Test Assoc Parameters,,,,,
+species1,site1,species2,site2,asymmetricassoc,source
+sp3,H,sp3,e,2000,testsource11
+sp5,H,sp5,e,2100,testsource12
+sp5,e,sp5,e,2200,testsource13
+sp3,H,sp4,H,2300,testsource14
+sp3,H,sp4,e,2400,testsource15
+sp4,H,sp5,e2,2500,testsource16
+sp5,H,sp4,e,2600,testsource17
+sp3,H,sp3,e2,2700,testsource18
+sp3,e,sp3,H,2800,testsource22
+sp3,e,sp4,H,2900,testsource23

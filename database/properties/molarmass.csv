@@ -1,0 +1,549 @@
+Clapeyron Database File,,
+Molar Mases Single Params,,
+species,DIPPR Number,Mw
+methane,1,16.04
+ethane,2,30.07
+propane,3,44.1
+butane,5,58.12
+pentane,7,72.15
+hexane,11,86.18
+heptane,17,100.2
+octane,27,114.23
+nonane,46,128.25
+decane,56,142.29
+undecane,63,156.31
+dodecane,64,170.34
+tridecane,65,184.37
+tetradecane,66,198.39
+pentadecane,67,212.42
+hexadecane,68,226.45
+heptadecane,69,240.47
+octadecane,70,254.4
+nonadecane,71,268.53
+eicosane,74,282.55
+tetracosane,77,338.65
+hexatriacontane,2086,506.97
+isobutane,4,58.12
+isopentane,8,72.15
+neopentane,9,72.15
+"2,2-dimethylbutane",14,86.18
+"2,3-dimethylbutane",15,86.18
+2-methylpentane,12,86.18
+3-methylpentane,13,86.18
+"2,3-dimethylpentane",22,100.2
+"2,2,3-trimethylbutane",25,100.2
+3-ethylpentane,20,100.2
+3-methylhexane,19,100.2
+"2,2-dimethylpentane",21,100.2
+"2,4-dimethylpentane",23,100.2
+"3,3-dimethylpentane",24,100.2
+2-methylhexane,18,100.2
+"2,2,3-trimethylpentane",40,114.23
+"2,3-dimethylhexane",33,114.23
+"3,4-dimethylhexane",37,114.23
+"2,3,4-trimethylpentane",43,114.23
+"2,3,3-trimethylpentane",42,114.23
+"2,2-dimethylhexane",32,114.23
+"2,2,4-trimethylpentane",41,114.23
+2-methylheptane,28,114.23
+3-methylheptane,29,114.23
+4-methylheptane,30,114.23
+"2,5-dimethylhexane",35,114.23
+2-methyl-3-ethylpentane,38,114.23
+3-methyl-3-ethylpentane,39,114.23
+"2,2,3,3-tetramethylbutane",44,114.23
+3-ethylhexane,31,114.23
+"2,4-dimethylhexane",34,114.23
+"3,3-dimethylhexane",36,114.23
+"2,2,4-trimethylpentane",41,114.23
+"2,2,4,4-tetramethylpentane",53,128.26
+"2,2,5-trimethylhexane",47,128.26
+"2,2-dimethylheptane",96,128.26
+"2,2-dimethyl-3-ethylpentane",190,128.26
+2-methyloctane,91,128.26
+3-methyloctane,92,128.26
+4-methyloctane,93,128.26
+"2,6-dimethylheptane",176,128.26
+"2,4-dimethyl-3-ethylpentane",192,128.26
+3-ethylheptane,94,128.26
+"2,2,3,3-tetramethylpentane",51,128.26
+"2,2,3,4-tetramethylpentane",52,128.26
+"2,3,3,4-tetramethylpentane",54,128.26
+"2,4,4-trimethylhexane",49,128.26
+"2,2-dimethyloctane",72,142.28
+2-methylnonane,86,142.28
+3-methylnonane,85,142.28
+4-methylnonane,87,142.28
+5-methylnonane,88,142.28
+"2,3-dimethyloctane",2095,142.28
+"2,4-dimethyloctane",2096,142.28
+"2,5-dimethyloctane",2097,142.28
+"2,6-dimethyloctane",2098,142.28
+"2,7-dimethyloctane",2099,142.28
+"3,3-diethylpentane",50,156.31
+cyclopropane,101,42.02
+cyclobutane,102,56.11
+cyclopentane,104,70.13
+cyclohexane,137,84.15
+methylcyclopentane,105,84.16
+ethylcyclopentane,107,98.18
+methylcyclohexane,138,98.18
+cycloheptane,159,98.19
+"1,1-dimethylcyclopentane",108,98.19
+"cis-1,2-dimethylcyclopentane",109,98.19
+"trans-1,2-dimethylcyclopentane",110,98.19
+"1,1-dimethylcyclohexane",141,112.21
+cyclooctane,160,112.21
+isopropylcyclopentane,115,112.21
+propylcyclopentane,114,112.21
+"cis-1,2-dimethylcyclohexane",142,112.21
+"trans-1,2-dimethylcyclohexane",143,112.21
+"trans-1,3-dimethylcyclohexane",145,112.21
+"cis-1,3-dimethylcyclohexane",144,112.21
+"cis-1,4-dimethylcyclohexane",146,112.21
+"trans-1,4-dimethylcyclohexane",147,112.21
+ethylcyclohexane,140,112.22
+butylcyclopentane,122,126.24
+isopropylcyclohexane,150,126.24
+propylcyclohexane,149,126.24
+cis-decahydronaphthalene,153,138.25
+trans-decahydronaphthalene,154,138.25
+butylcyclohexane,152,140.27
+decylcyclohexane,158,224.43
+1-ethylene,201,28.05
+"2,3-dimethyl-1,3-butadiene",319,28.14
+propadiene,301,40.06
+propylene,202,42.08
+"1,2-butadiene",302,54.09
+"1,3-butadiene",303,54.09
+1-butene,204,56.11
+2-butene,206,56.11
+isobutene,207,56.11
+"2-methyl-1,3-butadiene",309,68.12
+"cis-1,3-pentadiene",305,68.12
+"trans-1,3-pentadiene",306,68.12
+"1,4-pentadiene",307,68.12
+"1,2-pentadiene",304,68.12
+"2,3-pentadiene",308,68.12
+"3-methyl-1,2-butadiene",311,68.12
+3-methyl-1-butene,213,70.13
+2-methyl-1-butene,212,70.13
+2-methyl-2-butene,214,70.13
+1-pentene,209,70.13
+"1,4-hexadiene",313,82.14
+"1,5-hexadiene",310,82.14
+"cis,trans-2,4-hexadiene",320,82.14
+"trans,trans-2,4-hexadiene",314,82.14
+3-methyl-1-pentene,222,84.16
+"2,3-dimethyl-1-butene",230,84.16
+2-methyl-1-pentene,221,84.16
+2-methyl-2-pentene,224,84.16
+4-methyl-1-pentene,223,84.16
+"2,3-dimethyl-2-butene",232,84.16
+2-ethyl-1-butene,229,84.16
+cis-2-hexene,217,84.16
+trans-2-hexene,218,84.16
+4-methyl-cis-2-pentene,227,84.16
+4-methyl-trans-2-pentene,228,84.16
+1-hexene,216,84.62
+1-heptene,234,98
+3-methyl-1-hexene,240,98.19
+2-methyl-1-hexene,238,98.19
+4-methyl-1-hexene,226,98.19
+2-ethyl-1-pentene,233,98.19
+3-ethyl-2-pentene,239,98.19
+trans-2-heptene,236,98.19
+cis-2-heptene,235,98.19
+trans-3-heptene,237,98.19
+cis-3-heptene,249,98.19
+"2,5-dimethyl-1,5-hexadiene",329,110.2
+"2,5-dimethyl-2,4-hexadiene",330,110.2
+"2,4,4-trimethyl-1-pentene",256,112.21
+2-methyl-1-heptene,2252,112.21
+"2,4,4-trimethyl-2-pentene",257,112.21
+2-ethyl-1-hexene,258,112.21
+trans-2-octene,251,112.21
+cis-2-octene,276,112.21
+trans-3-octene,277,112.21
+cis-3-octene,280,112.21
+trans-4-octene,279,112.21
+cis-4-octene,278,112.21
+1-octene,250,112.22
+1-nonene,259,126
+1-decene,259,140
+1-undecene,261,154.29
+1-dodecene,262,168
+1-tridecene,263,182.35
+1-tetradecene,264,196
+1-pentadecene,265,210.4
+1-hexadecene,266,224
+1-heptadecene,281,238.45
+1-octadecene,267,252.48
+1-nonadecene,283,266.51
+1-eicosene,284,280.53
+cyclopentadiene,315,66.1
+cyclopentene,257,68.11
+"1,3-cyclohexadiene",331,80.13
+methylcyclopentadiene,312,80.13
+"1,4-cyclohexadiene",332,80.13
+cyclohexene,270,82.14
+methylcyclopentene,286,82.14
+cycloheptene,273,96.17
+vinylcyclohexene,285,108.18
+"1,5-cyclooctadiene",333,108.18
+cyclooctene,274,110.2
+ethyne,401,26.04
+1-propyne,402,40.06
+1-pentene-3-yne,421,66.1
+1-pentene-4-yne,420,66.1
+3-methyl-1-butyne,414,66.1
+1-pentyne,405,68.13
+2-pentyne,412,68.13
+1-hexyne,413,82.14
+2-hexyne,407,82.14
+3-hexyne,406,82.14
+1-heptyne,2414,96.17
+1-octyne,416,110.2
+benzene,501,78.11
+toluene,502,92.14
+ethylbenzene,504,106.17
+m-xylene,506,106.17
+o-xylene,505,106.17
+p-xylene,507,106.17
+"1,3,5-trimethyl benzene",516,120.19
+"1,2,3-trimethyl benzene",514,120.19
+"1,2,4-trimethyl benzene",515,120.19
+cumene,510,120.19
+1-methyl-3-ethyl benzene,512,120.19
+1-ethyl-2-methyl benzene,511,120.19
+1-ethyl-4-methyl benzene,513,120.19
+n-propyl benzene,509,120.19
+tetralin,701,132.21
+tert-butyl benzene,521,134.22
+p-cymene,524,134.22
+m-cymene,523,134.22
+o-cymene,522,134.22
+m-diethyl benzene,525,134.22
+o-diethyl benzene,526,134.22
+p-diethylbenzene,527,134.22
+2-ethyl-m-xylene,576,134.22
+2-ethyl-p-xylene,577,134.22
+4-ethyl-m-xylene,578,134.22
+4-ethyl-o-xylene,579,134.22
+5-ethyl-m-xylene,575,134.22
+sec-butyl benzene,520,134.22
+"1,2,4,5-tetramethyl benzene",532,134.22
+"1-ethyl-2,3-dimethylbenzene",580,134.22
+2-methylpropyl benzene,519,134.22
+n-butyl benzene,518,134.22
+n-pentyl benzene,567,148.24
+biphenyl,558,154.21
+p-tert-butyl styrene,621,160.26
+n-hexylbenzene,568,162.27
+n-heptyl benzene,549,176.3
+n-octyl benzene,569,190.32
+n-nonyl benzene,570,204.35
+n-decyl benzene,554,218.38
+n-undecyl benzene,571,232.4
+n-dodecyl benzene,574,246.43
+n-tridecyl benzene,572,260.46
+n-tetradecyl benzene,573,274.48
+n-pentadecyl benzene,2575,288.51
+n-hexadecyl benzene,2576,302.54
+n-heptadecyl benzene,2577,316.56
+n-octadecyl benzene,2578,330.59
+indene,803,116.16
+indane,820,118.18
+naphthalene,701,128.17
+adamantane,810,136.23
+camphene,839,136.23
+1-methyl naphthalene,702,142.2
+2-methyl naphthalene,703,142.2
+acenaphthene,808,154.21
+1-ethyl naphthalene,704,156.22
+dibenzofuran,1480,168.19
+1-propyl naphthalene,718,170.25
+anthracene,804,178.23
+1-butyl naphthalene,713,184.28
+pyrene,717,202.25
+1-phenyl naphthalene,710,204.27
+1-hexyl naphthalene,714,212.33
+1-nonyl naphthalene,711,254.41
+1-decyl naphthalene,712,268.44
+methyl chloride,1502,50.49
+chloroethane,1503,64.51
+2-chloropropane,1530,78.54
+dichloromethane,1511,84.93
+"2-chloro-1,3-butadiene",1583,88.54
+1-chlorobutane,1586,92.57
+2-chlorobutane,1587,92.57
+2-chloro-2-methylpropane,1535,92.57
+"1,2-dichloroethane",1523,98.96
+1-chloropentane,1588,106.59
+chlorobenzene,1571,112.56
+chlorobenzene,1571,112.56
+chloroform,1521,119.38
+"1,3-dichloro-t-2-butene",1598,125
+"1,4-dichloro-c-2-butene",1593,125
+"1,4-dichloro-t-2-butene",1505,125
+"3,4-dichloro-1-butene",1597,125
+"1,2-dichlorobutane",1536,127.01
+"1,4-dichlorobutane",1508,127.01
+"2,3-dichlorobutane",1537,127.01
+"1,1,1-trichloroethane",1527,133.4
+1-bromobutane,1655,137.02
+2-bromobutane,2638,137.02
+"1,5-dichloropentane",1509,141.04
+o-dichloro benzene,1572,147.01
+carbon tetrachloride,1501,153.82
+bromobenzene,1680,157.01
+bromobenzene,1680,157.01
+p-bromotoluene,2661,171.03
+1-bromoheptane,1667,179.1
+iodobenzene,1691,204.01
+1-bromonaphthalene,1697,207.07
+m-dibromobenzene,1678,235.9
+dimethyl ether,1401,46.07
+vinyl methyl ether,1470,58.08
+diethyl ether,1402,74.12
+methyl-n-propyl ether,1415,74.12
+methyl-n-propyl ether,1415,74.12
+p-dioxane,1421,88.11
+dipropyl ether,1446,102.17
+diisopropyl ether,1403,102.17
+methyl-n-pentyl ether,1429,102.17
+dibutyl ether,1404,130.23
+benzyl ethyl ether,1460,136.19
+diphenyl ether,1465,170.21
+dibenzyl ether,1463,198.26
+difluoromethane,1614,52.02
+difluoroethane,1640,66.05
+trifluoromethane,1615,70.01
+difluorochloromethane,1601,86.47
+perfluoromethane,1616,88
+trifluoromethyl methyl ether,,100.4
+tetrafluoroethane,1630,102.03
+hexafluoroethane,2693,138.01
+pentafluoroethyl methyl ether,,150.05
+perfluorobenzene,1864,186.05
+octafluoropropane,2652,188.02
+octafluorocyclobutane,2654,200.03
+heptafluoropropyl methyl ether,,200.06
+perfluorotoluene,,236.06
+decafluorobutane,1622,238.03
+nonafluorobutyl methyl ether,,250.07
+perfluoro-n-hexane,,338.04
+nonafluorobutyl ethyl ether,,364.1
+1H-perfluoro-n-octane,,420.07
+perfluorodecalin,,462.08
+perfluoro-n-nonane,,488.06
+1Br-perfluoro-n-octane,,498.96
+acetonitrile,1772,41.05
+acetonitrile,1772,41.05
+nitromethane,1760,61.04
+nitroethane,1761,75.07
+1-nitropropane,1762,89.09
+2-nitropropane,1763,89.09
+nitrobenzene,1886,123.11
+m-nitrotoluene,1780,137.14
+o-nitrotoluene,1778,137.14
+tetranitromethane,1768,151.04
+m-dinitrobenzene,2740,168.11
+o-dinitrobenzene,2741,168.11
+p-dinitrobenzene,2742,168.11
+methyl methanoate,1301,60.05
+ethyl methanoate,1302,74.08
+methyl acetate,1312,74.08
+vinyl acetate,1321,86.09
+methyl acrylate,1341,86.09
+ethyl acetate,1313,88.11
+ethyl acetate,1313,88.11
+methyl propanoate,1322,88.11
+propyl methanoate,1322,88.11
+n-propyl formate,1303,88.11
+allyl acetate,1318,100.12
+vinyl propionate,1331,100.12
+methyl methacrylate,1351,100.12
+propyl acetate,1314,102.13
+isopropyl acetate,1319,102.13
+ethyl propanoate,1323,102.13
+methyl butanoate,1332,102.13
+methyl isobutyrate,2332,102.13
+n-butyl formate,1304,102.13
+sec-butyl formate,2305,102.13
+tert-butyl formate,2306,102.13
+n-propyl acrylate,1343,114.14
+n-butyl acetate,1315,116.16
+isobutyl acetate,1316,116.16
+sec-butyl acetate,1320,116.16
+n-propyl propanoate,1324,116.16
+n-pentyl formate,1306,116.16
+tert-butyl acetate,2321,116.16
+ethyl isobutyrate,2337,116.16
+cyclohexyl formate,2311,128.17
+n-butyl acrylate,1344,128.17
+isobutyl acrylate,2384,128.17
+n-propyl methacrylate,1353,128.17
+isopentyl acetate,1317,130.18
+pentyl acetate,1357,130.18
+n-hexyl formate,2307,130.18
+n-propyl n-butyrate,1327,130.18
+n-propyl n-isobutyrate,1336,130.18
+ethyl isovalerate,1347,130.18
+benzyl formate,2350,136.15
+methyl benzoate,1390,136.15
+cyclohexyl acetate,2364,142.2
+n-butyl methacrylate,1389,142.2
+isobutyl methacrylate,1388,142.2
+dimethyl maleate,2387,144.13
+isobutyl isobutyrate,1360,144.21
+n-hexyl acetate,1363,144.21
+n-heptyl formate,2308,144.21
+n-butyl n-butyrate,1385,144.21
+benzyl acetate,1359,150.17
+n-heptyl acetate,1367,158.24
+n-octyl formate,1308,158.24
+n-butyl valerate,1346,158.24
+diethyl malonate,1394,160.17
+n-propyl benzoate,2392,164.2
+diethyl maleate,2386,172.18
+ethylhexyl acetate,1358,172.26
+n-octyl acetate,1368,172.26
+isopentyl isovalerate,1361,172.26
+n-nonyl formate,1309,172.27
+diethyl succinate,2378,174.19
+butyl benzoate,1365,178.23
+2-ethylhexyl acrylate,1386,184.28
+n-nonyl acetate,1369,186.29
+methyl decanoate,1395,186.29
+n-decyl formate,1310,186.3
+dimethyl phthalate,2377,194.18
+dimethyl isophthalate,1377,194.18
+dimethyl terephthalate,1381,194.18
+diallyl maleate,2381,196.2
+dipropyl maleate,2388,200.23
+n-decyl acetate,1370,200.32
+benzyl benzoate,1364,212.24
+n-butyl nonanoate,1345,214.34
+methyl dodecanoate,2385,214.34
+isopropyl myristate,1396,214.34
+diethyl phthalate,2375,222.24
+dibutyl maleate,2382,228.28
+dipropyl phthalate,1375,250.29
+dibutyl phthalate,2376,278.34
+methyl oleate,1362,296.49
+dibutyl sebacate,1384,314.46
+dihexyl adipate,2379,314.46
+n-butyl stearate,1383,340.58
+di(2-ethyl hexyl)adipate,3379,370.57
+acetone,1051,58.08
+beta-propiolactone,1091,72.06
+2-butanone,1052,72.11
+2-methylpropanal,1006,72.11
+diketene,1099,84.07
+cyclopentanone,1079,84.12
+3-pentanone,1053,86.13
+methyl isobutyl ketone,1054,100.16
+acetic anhydride,1291,102.09
+benzaldehyde,1041,106.12
+caprolactam,1880,113.16
+glutaric anhydride,1296,114.1
+2-heptanone,1063,114.19
+diisopropyl ketone,1069,114.19
+2-methylhexanal,1016,114.19
+p-tolualdehyde,1040,120.15
+2-ethyl hexanal,1013,128.21
+propionic anhydride,1292,130.14
+terephthaldehyde,1044,134.13
+isophorone,1077,138.21
+diisobutyl ketone,1068,142.24
+camphor,2850,152.23
+butyric anhydride,1293,158.19
+hydrogen sulfide,1922,34.08
+carbon sulfide,1893,44.08
+dimethyl sulfide,1820,62.14
+carbon disulfide,1938,76.14
+methyl ethyl sulfide,1813,76.16
+diethyl sulfide,1818,90.19
+methyl-n-propyl sulfide,1814,90.19
+dimethyl disulfide,1828,94.2
+methyl-n-butyl sulfide,2815,104.21
+methyl-t-butyl sulfide,1815,104.21
+dipropyl sulfide,1817,118.24
+ethyl-t-butyl sulfide,2816,118.24
+methyl-t-pentyl sulfide,1816,118.24
+diethyl disulfide,1824,122.25
+dipropyl disulfide,1829,150.31
+silane,1982,32.12
+methyl silane,3984,46.14
+dimethyl silane,3985,60.17
+disilane,1980,62.22
+trimethyl silane,3986,74.2
+methyl chlorosilane,3935,80.6
+tetramethyl silane,1984,88.22
+dimethyl chlorosilane,3987,94.62
+dichloro silane,1935,101.01
+trimethyl chlorosilane,3988,108.64
+methyl dichlorosilane,3936,115.03
+dimethyl dichlorosilane,3989,129.06
+trichloro silane,1936,135.45
+tetraethyl silane,2994,144.33
+methyl trichlorosilane,3937,149.48
+hexamethyl disilazane,1964,161.39
+hexamethyl disiloxane,1965,162.38
+tetrachloro silane,1937,169.9
+thiophene,1821,84.14
+tetrahydrothiophene,1843,88.17
+3-methyl thiophene,2845,98.17
+2-methyl thiophene,2844,98.17
+sulfolane,1845,120.17
+3-methyl sulfolane,1847,134.2
+benzo thiophene,1822,134.2
+di-n-propyl sulfone,1848,150.24
+di-n-butyl sulfone,1849,178.29
+dibenzo thiophene,2823,184.26
+tetrachloro thiophene,4877,221.92
+isopropyl mercaptan,1810,76.16
+n-propyl mercaptan,1803,76.16
+n-butyl mercaptan,1841,90.19
+isobutyl mercaptan,1805,90.19
+n-pentyl mercaptan,1827,104.21
+phenyl mercaptan,1842,110.18
+cyclohexyl mercaptan,1811,116.23
+n-hexyl mercaptan,1807,118.24
+benzyl mercaptan,1812,124.2
+n-heptyl mercaptan,1839,132.27
+n-octyl mercaptan,1809,146.29
+n-nonyl mercaptan,1808,160.32
+n-decyl mercaptan,1826,174.35
+hydrogen,902,2.02
+carbon monoxide,908,28.01
+nitrogen,905,28.01
+oxygen,901,32
+argon,914,39.95
+carbon dioxide,909,44.01
+sulfur dioxide,910,64.07
+chlorine,918,70.91
+carbon disulfide,1938,76.14
+carbon disulfide,1938,76.14
+krypton,920,83.8
+xenon,959,131.29
+methanol,,32.042
+ethanol,,46.069
+1-propanol,,60.096
+1-butanol,,74.123
+1-pentanol,,88.15
+1-hexanol,,102.177
+1-heptanol,,116.203
+1-octanol,,130.23
+1-nonanol,,144.257
+2-propanol,,60.096
+2-methyl-2-butanol,,88.15
+water,,18.015
+methylamine,,31.06
+ethylamine,,45.09
+1-propylamine,,59.11
+2-propylamine,,59.11
+aniline,,93.13
+acetic acid,,60.053
+neon,,20.1797
