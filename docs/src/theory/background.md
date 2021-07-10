@@ -8,7 +8,11 @@ Equations of state provide a functional form to obtain a thermodynamic property,
 
 ``F = f(\boldsymbol{\Omega};\boldsymbol{\Xi})``
 
-where $f$ is the equation of state. There are many ways one can develop an equation of state, however, the most commonly used approach is through what is known as the canonical ensemble. More information on this can be found in Statistical Mechanics textbooks. This typically results in equations that determine the Helmholtz free energy, $A$, at a given temperature, $T$, system volume, $V$ and system composition, $\mathbf{N}$. It is also typical for an equation of state to require parameters, $\boldsymbol{\Xi}$, to model certain species. What these parameters are depend on the equation of state.
+where $f$ is the equation of state. There are many ways one can develop an equation of state, however, the Gibbs Phase Rule states the following:
+
+`` \mathrm{DoF} = N_\mathrm{species} - N_\mathrm{phase} + 2 ``
+
+As we can see, the largest number of degrees of freedom we can have is $N_\mathrm{species}+1$; as this rule is for intensive properties (i.e. irrespective of system size), we can an additional degree of freedom, giving $N_\mathrm{species}+2$. Taking the simple case of a single species, we can specify at most 3 conditions in our system. Given that most equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks). the three variable chosen are usually temperature, $T$, volume, $V$ and number of particles, $\mathbf{N}$. The output of these equations is usually the Helmholtz free energy, $A$. It is also typical for an equation of state to require parameters, $\boldsymbol{\Xi}$, to model certain species. What these parameters are depend on the equation of state.
 
 ### Ideal model
 

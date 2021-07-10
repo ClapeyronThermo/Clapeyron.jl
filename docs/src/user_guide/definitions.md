@@ -1,4 +1,53 @@
-# Developing OpenSAFT
+## Definitions
+
+Most functions in `OpenSAFT` work around what we refer to as a 'model'. To build this object, we need to define 3 things:
+
+1. Model type
+2. Model parameters
+3. Model name
+
+We now give a brief overview of each of these aspects.
+
+### Model type
+
+Each model is assigned an abstract type (kind of like a label), the most general of which is `EoSModel`. From this parent, we branch into more-specific EoS types:
+
+- `SAFTModel`: These are the models which have three parameters in common: segment size, $\sigma$, potential depth, $\epsilon$, and number of segments, $m$. All other SAFT-type models branch from this parent (`PCSAFTModel`, `SAFTVRMieModel`, `softSAFTModel`, _etc._). 
+- `CubicModel`: These are the models whose parameters can be obtained from the critical temperature and pressure. With the exception of `CPAModel`, all cubics have a common structure where one can re-arrange the equation for the pressure as a third-order polynomial. As such, we define a subtype of `CubicModel`, `ABCubicModel` (_e.g._ `vdWModel`, `RKModel`, `SRKModel`, `PRModel`).
+- `EmpiricHelmholtzModel`: These are the high-accuracy, multi-parameter models for specific species or systems (_e.g._ `GERG2008Model`, `IAPWS95Model`). There is no general structure to the models and they are treated as self-contained.
+- `IdealModel`: Often overlooked, these models supplement the `SAFTModel` and `CubicModel` by providing the ideal contribution. Whilst the parameters and structure aren't usually the same between ideal models, this is unnecessary as the equation for the pressure is always $pV=Nk_\mathrm{B}T$ . 
+
+These model objects allow us to define tailored methods for each model and open the door for customisation with respect to both the models and methods (more on this later). 
+
+### Param object
+
+The parameters for a particular system are all stored within a struct whose type is also linked to the model in the same way as above only we now use the `Param` suffix instead of `Model`. The hierarchy is also still the same. Each parameter within the struct is also assigned an abstract type. To explain this, we consider the generic parameter structs for SAFT-type and cubic-type models:
+
+```julia
+struct GenericSAFTParam <: EoSParam
+    Mw::SingleParam{Float64}
+    segment::SingleParam{Float64}
+    sigma::PairParam{Float64}
+    epsilon::PairParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
+end
+```
+
+```julia
+struct GenericCubicParam <: EoSParam
+    Tc::SingleParam{Float64}
+    pc::SingleParam{Float64}
+    Mw::SingleParam{Float64}
+    a::PairParam{Float64}
+    b::PairParam{Float64}
+end
+```
+
+As we can see, we have a few new types to define for each of these parameters:
+
+- `SingleParam`: These are the parameters associated with a pure species 
+
 There are three components to the implementation of an equation of state (EoS):
 
 1. importing parameters, and getting them to a form where they can easily be accessed

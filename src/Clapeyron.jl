@@ -1,4 +1,4 @@
-module OpenSAFT
+module Clapeyron
 using StaticArrays
 using LinearAlgebra
 using NLopt, NLSolvers,Roots
@@ -12,7 +12,7 @@ import LogExpFunctions
 using DataStructures: DefaultDict
 include("constants.jl")
 include("models/basetools.jl")
-include("utils/OpenSAFTParam.jl")
+include("utils/ClapeyronParam.jl")
 
 include("utils/macros.jl")
 using CSV, Tables

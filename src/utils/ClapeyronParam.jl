@@ -1,6 +1,6 @@
-abstract type OpenSAFTParam end
+abstract type ClapeyronParam end
 
-struct SingleParam{T} <: OpenSAFTParam
+struct SingleParam{T} <: ClapeyronParam
     name::String
     values::Array{T,1}
     ismissingvalues::Array{Bool,1}
@@ -68,7 +68,7 @@ function SingleParam(x::SingleParam, v::Array{T,1}) where T
     return SingleParam(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources),)
 end
 
-struct PairParam{T} <: OpenSAFTParam
+struct PairParam{T} <: ClapeyronParam
     name::String
     values::Array{T,2}
     diagvalues::SubArray{T,1,Array{T,1},Tuple{Array{Int64,1}},false}
@@ -122,7 +122,7 @@ function Base.show(io::IO,param::PairParam)
     print(io,"]")
 end
 
-struct AssocParam{T} <: OpenSAFTParam
+struct AssocParam{T} <: ClapeyronParam
     name::String
     values::Array{Array{T,2},2}
     ismissingvalues::Array{Array{Bool,2},2}
@@ -140,7 +140,7 @@ function AssocParam{T}(x::AssocParam, v::Array{Array{T,2},2}) where T
     return AssocParam{T}(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
 
-struct GCParam <: OpenSAFTParam
+struct GCParam <: ClapeyronParam
     components::Array{String,1}
     allcomponentgroups::Array{Array{String,1},1}
     allcomponentngroups::Array{Array{Int,1},1}
@@ -170,7 +170,7 @@ function Base.show(io::IO, param::GCParam)
     end
 end
 
-struct SiteParam <: OpenSAFTParam
+struct SiteParam <: ClapeyronParam
     components::Array{String,1}
     allcomponentsites::Array{Array{String,1},1}
     allcomponentnsites::Array{Array{Int,1},1}
@@ -192,7 +192,7 @@ function SiteParam(components::Vector{String})
     return SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], String[])
 end
 
-paramvals(param::OpenSAFTParam) = param.values
+paramvals(param::ClapeyronParam) = param.values
 paramvals(x) = x
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam

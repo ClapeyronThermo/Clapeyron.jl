@@ -1,4 +1,4 @@
-function sigma_LorentzBerthelot(sigma::OpenSAFTParam)
+function sigma_LorentzBerthelot(sigma::ClapeyronParam)
     sigma = PairParam(sigma)
     σ = sigma.values
     for i ∈ 1:length(sigma.components), j ∈ 1:length(sigma.components)
@@ -9,7 +9,7 @@ function sigma_LorentzBerthelot(sigma::OpenSAFTParam)
     return sigma
 end
 
-function epsilon_LorentzBerthelot(epsilon::OpenSAFTParam, k::PairParam)
+function epsilon_LorentzBerthelot(epsilon::ClapeyronParam, k::PairParam)
     epsilon = PairParam(epsilon)
     ϵ = epsilon.values
     k_ = k.values
@@ -21,7 +21,7 @@ function epsilon_LorentzBerthelot(epsilon::OpenSAFTParam, k::PairParam)
     return epsilon
 end
 
-function epsilon_HudsenMcCoubrey(epsilon::OpenSAFTParam, sigma::PairParam)
+function epsilon_HudsenMcCoubrey(epsilon::ClapeyronParam, sigma::PairParam)
     epsilon = PairParam(epsilon)
     ϵ = epsilon.values
     σ = sigma.values
@@ -33,7 +33,7 @@ function epsilon_HudsenMcCoubrey(epsilon::OpenSAFTParam, sigma::PairParam)
     return epsilon
 end
 
-function lambda_LorentzBerthelot(lambda::OpenSAFTParam)
+function lambda_LorentzBerthelot(lambda::ClapeyronParam)
     lambda = PairParam(lambda)
     λ = lambda.values
     for i ∈ 1:length(lambda.components), j ∈ 1:length(lambda.components)
@@ -44,7 +44,7 @@ function lambda_LorentzBerthelot(lambda::OpenSAFTParam)
     return lambda
 end
 
-function lambda_squarewell(lambda::OpenSAFTParam, sigma::PairParam)
+function lambda_squarewell(lambda::ClapeyronParam, sigma::PairParam)
     lambda = PairParam(lambda)
     λ = lambda.values
     σ = sigma.values
@@ -68,7 +68,7 @@ where `op` is a function of two arguments that satisfies op(p[i],p[i]) = p[i]
 ```julia-repl
 julia> prop = [200,600];
 julia> x0 = [0.3,0.7];
-julia> propmix1 = OpenSAFT.mixing_rule_quad((x,y)->0.5*(x+y),x0,prop);
+julia> propmix1 = Clapeyron.mixing_rule_quad((x,y)->0.5*(x+y),x0,prop);
 julia> propmix2 = sum(x0[i]*x0[j]*(prop[i]+prop[j])*0.5 for i in 1:2 for j in 1:2);
 julia> propmix1 ≈ propmix2;
 true

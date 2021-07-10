@@ -3,7 +3,7 @@ Base.broadcastable(model::EoSModel) = Ref(model)
 """
     eos(model::EoSModel, V, T, z=SA[1.0])
 
-basic OpenSAFT function, returns the total Helmholtz free energy.
+basic Clapeyron function, returns the total Helmholtz free energy.
 
 # Inputs:
 - `model::EoSModel` Thermodynamic model to evaluate
@@ -36,7 +36,7 @@ julia> pr = PR(["water"],idealmodel=IAPWS95Ideal)
 PR{IAPWS95Ideal} with 1 component:
  "water"
 Contains parameters: a, b, acentricfactor, Tc, Mw   
-julia> OpenSAFT.idealmodel(pr)
+julia> Clapeyron.idealmodel(pr)
 IAPWS95Ideal()
 ```
 
@@ -51,7 +51,7 @@ end
 """
     eos_res(model::EoSModel, V, T, z=SA[1.0])
 
-basic OpenSAFT function, returns the residual Helmholtz free energy.
+basic Clapeyron function, returns the residual Helmholtz free energy.
 
 # Inputs:
 - `model::EoSModel` Thermodynamic model to evaluate

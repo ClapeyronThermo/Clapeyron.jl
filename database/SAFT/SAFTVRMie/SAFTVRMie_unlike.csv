@@ -1,4 +1,4 @@
-OpenSAFT Database File,,,,,,
+Clapeyron Database File,,,,,,
 SAFTVRMie Unlike Parameters,,,,,,
 species1,SMILES1,species2,SMILES2,epsilon,lambda_r,source
 ethane,CC,n-decane,CCCCCCCCCC,289.06,,10.1063/1.4819787

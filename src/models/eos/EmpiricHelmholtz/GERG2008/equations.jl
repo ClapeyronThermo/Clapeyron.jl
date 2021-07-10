@@ -388,8 +388,8 @@ function eos(model::GERG2008, v, T, z=SA[1.0])
 end
 
 
-function ρ_TP(species::OpenSAFT.EoSModel, T, P)
-    v = OpenSAFT.volume(species,P,T)
+function ρ_TP(species::EoSModel, T, P)
+    v = volume(species,P,T)
     return 1/v
 end
 #=
@@ -430,7 +430,7 @@ BenchmarkTools.Trial:
 #julia> @time [ρ_TP(w, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
 #  2.781332 seconds (889.17 k allocations: 61.773 MiB, 0.73% gc time, 2.29% compilation time)
 
-#julia> @benchmark [ρ_TP(OpenSAFT_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
+#julia> @benchmark [ρ_TP(Clapeyron_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
 #=
 BenchmarkTools.Trial:
   memory estimate:  57.23 MiB

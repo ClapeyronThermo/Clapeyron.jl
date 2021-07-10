@@ -10,7 +10,7 @@ The documentation is laid out as follows:
 ### Authors
 
 - [Pierre J. Walker](https://github.com/pw0908), California Institute of Technology
-- [Hon-Wa (Paul) Yew](https://github.com/ypaul21), Petronas
+- [Hon-Wa (Paul) Yew](https://github.com/ypaul21)
 - [Andrès Riedemann](https://github.com/longemen3000), University of Concepción
 
 ### License

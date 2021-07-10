@@ -18,52 +18,64 @@ end
 
 function sat_pure(model::EoSModel, T; V0 = nothing,debug=false)
     V_lb = lb_volume(model,SA[1.0])
-    f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]),V_lb)
+    p_sat = []
+    V_l   = []
+    V_v   = []
 
-    if V0 === nothing
-        V0 = x0_sat_pure(model,T)
-    end
-    nan = zero(T)/zero(T)
-    res0 = (nan,nan,nan)
-    result = Ref(res0)
-    error_val = Ref{Any}(nothing)
-    converged = Ref{Bool}(false)
+    for i in 1:length(T)
+    
+        f! = (F,x) -> Obj_Sat(model, F, T[i], exp10(x[1]), exp10(x[2]),V_lb)
 
-    try_sat_pure(model,V0,f!,T,result,error_val,converged)
-    if converged[]
-        return result[]
-    end
-    if debug
-        if error_val[] !== nothing
-            @warn "initial saturation calculation failed with error $error_val[]"
+        if V0 === nothing && i == 1
+            V0 = x0_sat_pure(model,T[i])
         end
+        nan = zero(T[i])/zero(T[i])
+        res0 = (nan,nan,nan)
+        result = Ref(res0)
+        error_val = Ref{Any}(nothing)
+        converged = Ref{Bool}(false)
+
+        try_sat_pure(model,V0,f!,T[i],result,error_val,converged)
+        if converged[]
+            append!(p_sat,result[][1])
+            append!(V_l,result[][2])
+            append!(V_v,result[][3])
+            V0 = log10.([V_l[i],V_v[i]])
+        end
+        # if debug
+        #     if error_val[] !== nothing
+        #         @warn "initial saturation calculation failed with error $error_val[]"
+        #     end
+        # end
+        # result[] = res0
+        # #convergence not achieved, trying critical aproximation
+
+
+        # T_c,P_c,V_c = crit_pure(model)
+        # ΔT = (T_c - T[i])
+        # ΔT <= 8*eps(ΔT) && throw(DomainError(T[i],"input temperature $T is too close or higher than critical temperature of the model $T_c"))
+        # Tr  = T[i]/T_c
+        # V0 = x0_sat_pure_crit(model,T[i],T_c,P_c,V_c)
+
+        # try_sat_pure(model,V0,f!,T[i],result,error_val,converged)
+        # if converged[]
+        #     append!(p_sat,result[][1])
+        #     append!(V_l,result[][2])
+        #     append!(V_v,result[][3])
+        #     V0 = log10.([V_l[i],V_v[i]])
+        # else
+        #     @warn "the procedure converged to a trivial value at T=$T"
+        #     return result[]
+        # end
+
+
+        # if debug
+        #     throw(error_val[])
+        # else
+        #     throw("unable to calculate equilibria at T=$T")
+        # end
     end
-    result[] = res0
-    #convergence not achieved, trying critical aproximation
-
-
-    T_c,P_c,V_c = crit_pure(model)
-    ΔT = (T_c - T)
-    ΔT <= 8*eps(ΔT) && throw(DomainError(T,"input temperature $T is too close or higher than critical temperature of the model $T_c"))
-    Tr  = T/T_c
-    V0 = x0_sat_pure_crit(model,T,T_c,P_c,V_c)
-
-    try_sat_pure(model,V0,f!,T,result,error_val,converged)
-    if converged[]
-        return result[]
-    else
-        @warn "the procedure converged to a trivial value at T=$T"
-        return result[]
-    end
-
-
-    if debug
-        throw(error_val[])
-    else
-        throw("unable to calculate equilibria at T=$T")
-    end
-
-
+    return (p_sat,V_l,V_v)
 
 end
 
@@ -109,8 +121,8 @@ function Obj_Sat(model::EoSModel, F, T, V_l, V_v,V_lb)
     df_v = df(SA[one(V_v),V_v*one(T)])
     (p_scale,μ_scale) = scale_sat_pure(model)
     #T̄ = T/T_scale(model)
-    F[1] = (df_l[2]-df_v[2])*p_scale#*exp(5e-10*(V_l-V_v)^-2)*exp(1e-7*(V_l-V_lb)^-2)
-    F[2] = (df_l[1]-df_v[1])*μ_scale#*exp(5e-10*(V_l-V_v)^-2)*exp(1e-7*(V_l-V_lb)^-2)
+    F[1] = (df_l[2]-df_v[2])*p_scale
+    F[2] = (df_l[1]-df_v[1])*μ_scale
     return F
 end
 #=
@@ -145,10 +157,12 @@ end
 
 
 ## Pure critical point solver
-function crit_pure(model::EoSModel)
+function crit_pure(model::EoSModel;x0=nothing)
     T̄  = T_crit_pure(model)
     f! = (F,x) -> obj_crit(model, F, x[1]*T̄, exp10(x[2]))
-    x0 = x0_crit_pure(model)
+    if x0==nothing
+        x0 = x0_crit_pure(model)
+    end
     r  = Solvers.nlsolve(f!, x0)
     T_c = r.info.zero[1]*T̄
     V_c = exp10(r.info.zero[2])
@@ -171,9 +185,9 @@ function enthalpy_vap(model::EoSModel, T)
     dVv,dTv = _dfv
     H_l = fl  - dVl*V_l - dTl*T
     H_v = fv  - dVv*V_v - dTv*T =#
-    H_v = VT_enthalpy(model,V_v,T,z)
-    H_l = VT_enthalpy(model,V_l,T,z)
-    H_vap=H_v-H_l
+    H_v = VT_enthalpy.(model,V_v,T)
+    H_l = VT_enthalpy.(model,V_l,T)
+    H_vap=H_v .-H_l
     return H_vap
 end
 
@@ -359,23 +373,5 @@ end
 =#
 
 #=
-function pVplot(model,T)
-    RT = OpenSAFT.R̄*T
-    lb_v = OpenSAFT.lb_volume(model)
-    @show lb_v
-    b = OpenSAFT.second_virial_coefficient(model,T)
-    V = range(log(1*lb_v),-2.0,length=500)
-    V = exp.(V)
-    peos = OpenSAFT.pressure.(model,V,T)
-    pb(Vx) = RT/Vx + RT*b/(Vx*Vx)
-    pvirial = pb.(V)
-    V_vsa = OpenSAFT.vsa(model,T)
-    spinodal_v = OpenSAFT.spinodals(model,T,V_vsa)
-    lines(log10.(V),peos)
-    lines!(log10.(V),pvirial)
-    scatter!([log10.(V_vsa)],[pressure(model,V_vsa,T)])
-    scatter!([log10.(spinodal_v)],[pressure(model,spinodal_v,T)],color=:red)
-    current_figure()
-end
 
 =#

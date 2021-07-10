@@ -22,7 +22,7 @@ end
 """
     getpaths(location; relativetodatabase=false)
 
-Returns database paths that is optionally relative to OpenSAFT.jl directory.
+Returns database paths that is optionally relative to Clapeyron.jl directory.
 If path is a file, then return an Array containing a single path to that file.
 If path is a directory, then return an Array containing paths to all csv files in that directory.
 
@@ -30,19 +30,19 @@ If path is a directory, then return an Array containing paths to all csv files i
 ```julia-repl
 julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
 3-element Array{String,1}:
- "/home/user/.julia/packages/OpenSAFT.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_assoc.csv"
- "/home/user/.julia/packages/OpenSAFT.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_like.csv"
- "/home/user/.julia/packages/OpenSAFT.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_unlike.csv"
+ "/home/user/.julia/packages/Clapeyron.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_assoc.csv"
+ "/home/user/.julia/packages/Clapeyron.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_like.csv"
+ "/home/user/.julia/packages/Clapeyron.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_unlike.csv"
 
 ```
 """
 function getpaths(location::AbstractString; relativetodatabase::Bool=false)
     # We do not use realpath here directly because we want to make the .csv suffix optional.
-    filepath = relativetodatabase ? normpath(dirname(pathof(OpenSAFT)), "..", "database", location) : location
+    filepath = relativetodatabase ? normpath(dirname(pathof(Clapeyron)), "..", "database", location) : location
     isfile(filepath) && return [realpath(filepath)]
     isfile(filepath * ".csv") && return [realpath(filepath * ".csv")]
     if !isdir(filepath)
-        relativetodatabase ? error("The path ", location, " does not exist in the OpenSAFT database.") :
+        relativetodatabase ? error("The path ", location, " does not exist in the Clapeyron database.") :
             error("The path ", location, " does not exist.")
     end
     files = joinpath.(filepath, readdir(filepath))
@@ -53,9 +53,9 @@ end
 export getparams
 function getparams(components::Array{String,1}, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], asymmetricparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
     # Gets all parameters from database.
-    # locations is a list of paths relative to the OpenSAFT database directory.
+    # locations is a list of paths relative to the Clapeyron database directory.
     # userlocations is a list of paths input by the user.
-    # If parameters exist in multiple files, OpenSAFT gives priority to files in later paths.
+    # If parameters exist in multiple files, Clapeyron gives priority to files in later paths.
     # asymmetricparams is a list of parameters for which matrix reflection is disabled.
     # ignore_missingsingleparams gives users the option to disable component existence check in single params.
     filepaths = string.(vcat([(getpaths.(locations; relativetodatabase=true)...)...], [(getpaths.(userlocations)...)...]))
@@ -71,7 +71,7 @@ end
 
 function packageparams(allparams::Dict, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, paramsourcecsvs::Dict{String,Set{String}}, paramsources::Dict{String,Set{String}}; asymmetricparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false)
     # Package params into their respective Structs.
-    output = Dict{String,OpenSAFTParam}()
+    output = Dict{String,ClapeyronParam}()
     for (param, value) ∈ allparams
         if value isa Array{<:Any,1}
             newvalue, ismissingvalues = defaultmissing(value)
@@ -614,7 +614,7 @@ end
 export buildspecies
 function buildspecies(gccomponents::Array{<:Any,1}, grouplocations::Array{String,1}=String[]; usergrouplocations::Array{String,1}=String[], verbose::Bool=false)
     # The format for gccomponents is an arary of either the species name (if it
-    # available in the OpenSAFT database, or a tuple consisting of the species
+    # available in the Clapeyron database, or a tuple consisting of the species
     # name, followed by a list of group => multiplicity pairs.  For example:
     # gccomponents = ["ethane",
     #                ("hexane", ["CH3" => 2, "CH2" => 4]),

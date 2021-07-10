@@ -1,4 +1,4 @@
-struct IAPWS95Params <: OpenSAFTParam
+struct IAPWS95Params <: ClapeyronParam
     Tc::Float64
     Pc::Float64
     Vc::Float64
