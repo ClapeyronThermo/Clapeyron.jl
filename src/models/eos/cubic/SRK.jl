@@ -11,7 +11,7 @@ abstract type SRKModel <: ABCubicModel end
 @newmodel SRK SRKModel SRKParam
 
 export SRK
-function SRK(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[] verbose=false)
+function SRK(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     k  = params["k"]
