@@ -1,6 +1,6 @@
 ## Models
 
-Here, we give a high-level description of equations of state and the models provided by OpenSAFT.
+Here, we give a high-level description of equations of state and the models provided by Clapeyron.
 
 ### Equations of state
 
@@ -12,7 +12,7 @@ where $f$ is the equation of state. There are many ways one can develop an equat
 
 `` \mathrm{DoF} = N_\mathrm{species} - N_\mathrm{phase} + 2 ``
 
-As we can see, the largest number of degrees of freedom we can have is $N_\mathrm{species}+1$; as this rule is for intensive properties (i.e. irrespective of system size), we can an additional degree of freedom, giving $N_\mathrm{species}+2$. Taking the simple case of a single species, we can specify at most 3 conditions in our system. Given that most equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks). the three variable chosen are usually temperature, $T$, volume, $V$ and number of particles, $\mathbf{N}$. The output of these equations is usually the Helmholtz free energy, $A$. It is also typical for an equation of state to require parameters, $\boldsymbol{\Xi}$, to model certain species. What these parameters are depend on the equation of state.
+As we can see, the largest number of degrees of freedom we can have is $N_\mathrm{species}+1$; as this rule is for intensive properties (i.e. irrespective of system size), we can an additional degree of freedom, giving $N_\mathrm{species}+2$. Taking the simple case of a single species, we can specify at most 3 conditions in our system. Given that most equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks), the three variable chosen are usually temperature, $T$, volume, $V$ and number of particles, $\mathbf{N}$. The output of these equations is usually the Helmholtz free energy, $A$. It is also typical for an equation of state to require parameters, $\boldsymbol{\Xi}$, to model certain species. What these parameters are depend on the equation of state.
 
 ### Ideal model
 
@@ -26,17 +26,17 @@ However, if we wish to determine other thermodynamic properties, we would need t
 
 ``A_\mathrm{ideal} =- \int p\,\mathrm{d}V =- Nk_\mathrm{B}T\ln{V}+c(T,\mathbf{N})``
 
-We can see that, in just using the original equation, we've lost a temperature and composition dependence in the Helmholtz free energy. If we follow the derivation from statistical or quantum mechanics, we can obtain the following equation (we denote this as the `Monomer` model in OpenSAFT):
+We can see that, in just using the original equation, we've lost a temperature and composition dependence in the Helmholtz free energy. If we follow the derivation from statistical or quantum mechanics, we can obtain the following equation (we denote this as the `MonomerIdeal` model in Clapeyron):
 
 ``\frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T} = \left(\sum_ix_i\ln{(\rho_i\Lambda_i^3)}\right)-1``
 
-where $x_i$, $\rho_i$, and $\Lambda_i$ are the molar composition, number density and thermal de Broglie wavelength of species $i$, respectively. For the purposes of vapour-liquid equilibrium and most thermodynamic properties, this ideal model is sufficient (one can even ignore $\Lambda_i$ in the case of the former; we use this as the default `Basic` model). In addition, some would argue that this is the only ideal model as it only considers the translational motion of infinitesimally small particles.
+where $x_i$, $\rho_i$, and $\Lambda_i$ are the molar composition, number density and thermal de Broglie wavelength of species $i$, respectively. For the purposes of vapour-liquid equilibrium and most thermodynamic properties, this ideal model is sufficient (one can even ignore $\Lambda_i$ in the case of the former; we use this as the default `BasicIdeal` model). In addition, some would argue that this is the only ideal model as it only considers the translational motion of infinitesimally small particles.
 
 However, polyatomic species typically have vibrational and rotational modes of motion as well which are typically included as part of the ideal term. These can also be derived from statistical mechanics giving:
 
 ``\frac{A_{\mathrm{ideal}}}{Nk_{\mathrm{B}}T}=\sum_{i}x_{i}\bigg[\ln\left(\rho_{i}\Lambda_{i}^{3}\right)-\frac{N_{\mathrm{rot},i}}{2} \ln \frac{T}{\theta_{\mathrm{rot},i}}+\sum^{N_{\mathrm{vib},i}}_{\mathrm{v}}g_{i,\mathrm{v}}\left[\frac{\theta_{\mathrm{vib},i,\mathrm{v}}}{2T}+\ln\left(1-\exp{-(\theta_{\mathrm{vib},i,\mathrm{v}}/T)}\right)\right]-1\bigg]``
 
-where $N_{\mathrm{rot},i}$, $\theta_{\mathrm{rot},i}$ and $N_{\mathrm{vib},i}$ are the number of rotations, vibrations and rotational temperature of a species $i$, respectively. $g_{i,\mathrm{v}}$ and $\theta_{\mathrm{vib},i,\mathrm{v}}$ are the degeneracy and vibrational temperature of a vibrational mode $\mathrm{v}$ on species $i$, respectively. The `Walker` model provides the necessary parameters to use such an equation. However, the more-commonly used approach is through the use of ideal isobaric heat-capacity, $C_{p,i}^0$, correlations, such as the `Reid`, `Wilhoit` and `Aly and Lee` models. With the ideal isobaric heat-capacity, it is possible to determine the ideal Helmholtz free energy using the following equation:
+where $N_{\mathrm{rot},i}$, $\theta_{\mathrm{rot},i}$ and $N_{\mathrm{vib},i}$ are the number of rotations, vibrations and rotational temperature of a species $i$, respectively. $g_{i,\mathrm{v}}$ and $\theta_{\mathrm{vib},i,\mathrm{v}}$ are the degeneracy and vibrational temperature of a vibrational mode $\mathrm{v}$ on species $i$, respectively. The `WalkerIdeal` model provides the necessary parameters to use such an equation. However, the more-commonly used approach is through the use of ideal isobaric heat-capacity, $C_{p,i}^0$, correlations, such as the `ReidIdeal`, `WilhoitIdeal` and `AlyLeeIdeal` models. With the ideal isobaric heat-capacity, it is possible to determine the ideal Helmholtz free energy using the following equation:
 
 ``\frac{A_{\mathrm{ideal}}}{Nk_\mathrm{B}T} = \sum_{i=1}^{N_{\mathrm{Component}}} x_i\left[\ln{\frac{\rho_i}{\rho_0}}
     + \frac{1}{Nk_\mathrm{B}T} \int_{T_0}^T \!\!C_{p,i}^0 dT + \frac{H_{0,i}}{Nk_\mathrm{B}T}- \frac{1}{Nk_{B}}\!\!\int_{T_0}^T \frac{C_{p,i}^0}{T} dT -\ln{\frac{T}{T_0}}-\frac{S_{0,i}}{Nk_\mathrm{B}} - 1\right]``
@@ -49,7 +49,7 @@ Some of the more-popular equations of state have been the engineering cubic equa
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2a}{V^2}``
 
-where $a$ and $b$ are the model parameters which can be related to the critical temperature and pressure of a species. Although this equation was originally empirical, it is possible to derive this equation from statistical thermodynamics where $b$ corresponds to the excluded volume of a single species and $a$ quantifies the magnitude of attraction between species. As a result, the first term typically accounts for the repulsive interactions between species and the second accounts for attractive interactions. Although its simple functional form makes calculations quite straight-forward, this model is inadequate for modelling the liquid phase and vapour-liquid equilibrium properties. 
+where $a$ and $b$ (both in SI units) are the model parameters which can be related to the critical temperature and pressure of a species. Although this equation was originally empirical, it is possible to derive this equation from statistical thermodynamics where $b$ corresponds to the excluded volume of a single species and $a$ quantifies the magnitude of attraction between species. As a result, the first term typically accounts for the repulsive interactions between species and the second accounts for attractive interactions. Although its simple functional form makes calculations quite straight-forward, this model is inadequate for modelling the liquid phase and vapour-liquid equilibrium properties. 
 
 As result, wanting to keep with the van der Waals equation's simple form, a few engineering cubic equations have been developed. The first noteworthy one of these is the Redlich-Kwong (`RK`) equation:
 
@@ -63,7 +63,7 @@ The $\alpha$ function requires an additional parameter, the acentricity factor, 
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2\alpha(T;\omega)}{V^2+2NbV+b^2N^2}``
 
-Both the SRK and PR equations of state are comparable in performance, although the latter generally models liquid densities to a greater degree of accuracy. However, when it comes to modelling complex species such as chains or associating species, both models tend to perform badly. We do note that, within OpenSAFT,  the cubic plus association (`CPA`) equation of state has been labelled as a cubic equation; whilst this is the case, we will describe it in greater detail when discussing the SAFT-type models as it main improvement over other cubics is borrowed from the SAFT theory.
+Both the SRK and PR equations of state are comparable in performance, although the latter generally models liquid densities to a greater degree of accuracy. However, when it comes to modelling complex species such as chains or associating species, both models tend to perform badly. We do note that, within Clapeyron,  the cubic plus association (`CPA`) equation of state has been labelled as a cubic equation; whilst this is the case, we will describe it in greater detail when discussing the SAFT-type models as it main improvement over other cubics is borrowed from the SAFT theory.
 
 Something that may be apparent in all these equations is the fact that these are all functions that give a pressure and, thus, must be integrated to obtain the Helmholtz free energy. Like the ideal gas equation, there will be missing temperature and compositional dependences which need to be included.
 
@@ -73,7 +73,7 @@ One may also wonder how to model mixtures using such equations; this can be achi
 
 ``\bar{b}=\sum_i\sum_jx_ix_jb_{ij}``
 
-More-complicated mixing rules do exist (such as the Wong-Sandler mixing rule) which will be made available in OpenSAFT. When $i=j$, $a$ and $b$ are just the normal van der Waals parameters for the pure. However, when $i\neq j$, these parameter characterise the unlike interactions between $i$ and $j$. We typically need to use _combining rules_ (not to be confused with _mixing rules_) to determine the unlike parameters. Examples of these include:
+More-complicated mixing rules do exist (such as the Wong-Sandler mixing rule) which will be made available in Clapeyron. When $i=j$, $a$ and $b$ are just the normal van der Waals parameters for the pure. However, when $i\neq j$, these parameter characterise the unlike interactions between $i$ and $j$. We typically need to use _combining rules_ (not to be confused with _mixing rules_) to determine the unlike parameters. Examples of these include:
 
 ``b_{ij}=\frac{b_i+b_j}{2}``
 
@@ -103,7 +103,7 @@ where $g_{ij}(r_{ij})$ is the pair-distribution function (i.e. the likelihood of
 
 where $\phi(r)$ is our _effective_ pair potential and $\beta=1/(k_\mathrm{B}T)$. This effectively gives a temperature dependence to the size of our segment and accounts for our segment becoming _softer_ as temperature rises.
 
-The association term accounts for the highly-directional associative interactions. For most SAFT equations of state, it is expressed as:
+The association term accounts for the highly-directional associative interactions (for example, hydrogen bonding). For most SAFT equations of state, it is expressed as:
 
 ``\frac{A_\mathrm{assoc.}}{Nk_\mathrm{B}T}=\sum_ix_i\left(\sum_a\left(\ln{X_{i,a}}-\frac{X_{i,a}}{2}\right)+\frac{M_i}{2}\right)``
 
@@ -129,15 +129,15 @@ This is known as a Barker-Henderson perturbative expansion; the $N^\mathrm{th}$ 
 
 #### Parameters
 
-Although different SAFT equations use different parameters, most share a common set. These include the parameters that characterise the dispersive interactions (which are usually modelled as pair potentials): the potential depth $\epsilon$ and the segment size $\sigma$. We point out here that this potential (and its parameters) is not a _bare_ pair potential which only accounts for the interactions of two species; it is an _effective_ pair potential which accounts for the effects of other species being around the interacting pair, in some cases quantum effects and, if associative interactions are not modelled separately, account for non-dispersive interactions.
+Although different SAFT equations use different parameters, most share a common set. These include the parameters that characterise the dispersive interactions (which are usually modelled as pair potentials): the potential depth $\epsilon$ (in Kelvin) and the segment size $\sigma$ (in Angstrom). We point out here that this potential (and its parameters) is not a _bare_ pair potential which only accounts for the interactions of two species; it is an _effective_ pair potential which accounts for the effects of other species being around the interacting pair, in some cases quantum effects and, if associative interactions are not modelled separately, account for non-dispersive interactions.
 
 As species can now be modelled as chains of segments, the number of segments, $m$, also becomes a parameter. One thing to point out about this parameter is it need not be an integer (despite what its name suggest); non-integer values of $m$ can usually be interpreted as segments merging within the chain. 
 
-Only required for associating species, SAFT equations usually require a parameter for the potential well depth of the association, $\epsilon^\mathrm{assoc.}$ and a parameter characterising the length-scale of the interaction (either a bonding volume, $\kappa^\mathrm{assoc.}$ or length, $r_c^\mathrm{assoc.}$). In the case of the dispersive and associative interaction parameters, there will also be the equivalent parameters characterising unlike interactions between species in a mixture (which can also be obtained from combining rules).
+Only required for associating species, SAFT equations usually require a parameter for the potential well depth of the association, $\epsilon^\mathrm{assoc.}$ (in Kelvin) and a parameter characterising the length-scale of the interaction (either a bonding volume, $\kappa^\mathrm{assoc.}$ or length, $r_c^\mathrm{assoc.}$, either in meters or dimensionless). In the case of the dispersive and associative interaction parameters, there will also be the equivalent parameters characterising unlike interactions between species in a mixture (which can also be obtained from combining rules).
 
 Unfortunately, due to the complex function form of SAFT equations, it is impossible to directly relate these parameters to critical properties like in the engineering cubics. These parameters are typically obtained by regression using experimental data (typical pure-component saturation pressure and saturated liquid density data).
 
-We will next go through each of the variants of the SAFT equation available in OpenSAFT and what makes these unique.
+We will next go through each of the variants of the SAFT equation available in Clapeyron and what makes these unique.
 
 #### Original SAFT
 
@@ -145,15 +145,15 @@ Derived by Chapman _et al._ (1990), this is the first variant of the SAFT equati
 
 ``\Delta_{ij,ab}=d_{ij}^3g_{ij}^\mathrm{HS}F_{ij,ab}\kappa_{ij,ab}``
 
-where $\kappa_{ij,ab}$ is dimensionless. Unfortunately, the implementation of `ogSAFT` in `OpenSAFT` cannot yet replicate the figures from the original paper. The reason for this is that the monomer / segment term presented in the paper is not the one used to generate the results. The actual term used is developed by Twu _et al._ (1980) and we are currently attempting to implement this within `OpenSAFT` but it is not clear, as of yet, how it was implemented within the original equation.
+where $\kappa_{ij,ab}$ is dimensionless. Unfortunately, the implementation of `ogSAFT` in `Clapeyron` cannot yet replicate the figures from the original paper. The reason for this is that the monomer / segment term presented in the paper is not the one used to generate the results. The actual term used is developed by Twu _et al._ (1980) and we are currently attempting to implement this within `Clapeyron` but it is not clear, as of yet, how it was implemented within the original equation.
 
 #### CK-SAFT
 
-If the SAFT equation derived by Chapman _et al._ was the prototype, the variant developed by Huang and Radosz (1990) was the first usable SAFT equation, with over a 100 pure-component parameters and many unlike parameters available. `CKSAFT` effectively simplifies many of the computationally-intensive parts of `ogSAFT`, using a simpler equation to obtain the hard-sphere diameter and actually providing the correct monomer term within the paper. The chain term between the two equations is identical. Similarly, the association strength only has a minor change:
+If the SAFT equation derived by Chapman _et al._ was the prototype, the variant developed by Huang and Radosz (1990) was the first usable SAFT equation, with over 100 pure-component parameters and many unlike parameters available. `CKSAFT` effectively simplifies many of the computationally-intensive parts of `ogSAFT`, using a simpler equation to obtain the hard-sphere diameter and actually providing the correct monomer term within the paper. The chain term between the two equations is identical. Similarly, the association strength only has a minor change:
 
 ``\Delta_{ij,ab}=\sigma_{ij}^3g_{ij}^\mathrm{HS}F_{ij,ab}\kappa_{ij,ab}``
 
-which slightly reduces the computational cost. However, the most-noteworthy simplification came with the association term. As mentioned earlier, the association fraction needs to be solved for iteratively. However, Huang and Radosz proposed approximations of the association fraction that could be used to solve for the association term explicitly, greatly reducing the computational intensity of these calculations. These approximations have not been implemented within `OpenSAFT` as of yet, but these only impact calculations for species other than alcohols and carboxylic acids. We also point out that Huang and Radosz introduced the concept of association schemes which helps classify species based on how they interaction through association.
+which slightly reduces the computational cost. However, the most-noteworthy simplification came with the association term. As mentioned earlier, the association fraction needs to be solved for iteratively. However, Huang and Radosz proposed approximations of the association fraction that could be used to solve for the association term explicitly, greatly reducing the computational intensity of these calculations. These approximations have not been implemented within `Clapeyron` as of yet, but these only impact calculations for species other than alcohols and carboxylic acids. We also point out that Huang and Radosz introduced the concept of association schemes which helps classify species based on how they interaction through association.
 
 #### SAFT-VR SW
 
@@ -217,7 +217,7 @@ However, three different versions of the association strength have been develope
 
   ``\Delta_{ij,ab}=F_{ij,ab}K_{ij,ab}I_{ij,ab}(\epsilon_{ij},\sigma_{ij},\lambda_{ij})``
 
-Unfortunately, it seems that there have been inconsistencies between which of these kernels is used in different publications. The current 'default' SAFT-VR Mie equation uses the Lennard-Jones kernel, as such, this is the one used in `OpenSAFT`. We do intend to provide the option to switch between these kernels.
+Unfortunately, it seems that there have been inconsistencies between which of these kernels is used in different publications. The current 'default' SAFT-VR Mie equation uses the Lennard-Jones kernel, as such, this is the one used in `Clapeyron`. We do intend to provide the option to switch between these kernels.
 
 As it uses a Mie potential is characterised by two shape parameters, $\lambda_\mathrm{a}$ (characterising the attractive part) and $\lambda_\mathrm{r}$ (characterising the repulsive part), both of these have become parameters for each species (although $\lambda_\mathrm{a}$ is usually set to 6). An interesting aesthetic change is with the number of segments where this is now separated into the shape factor, $S$, and the number of segments $v^*$. The latter must now be an integer and the former is a direct measure of how 'fused' the segments are. As we have different association terms, we also have different sets of parameters where the only difference is the length-scale. In the Lennard-Jones and Mie kernels, $K_{ij,ab}$ is the 'bonding volume', whereas, in the hard-sphere kernel, it is a 'bonding length', $r_{ij,ab}^c$.
 
@@ -225,7 +225,7 @@ The SAFT-VR Mie does not have a significantly large repository of parameters (co
 
 #### SAFT-VRQ Mie
 
-A very recent extension of the SAFT-VR Mie equation is the SAFT-VRQ Mie equation developed by Aasen _et al._ (2019) which modifies the underlying Mie potential using a Feynman-Hibbs potential, which means that a single species is represented by a sum of three Mie potentials. This method attempts to classically account for quantum effects present in small species such as helium, hydrogen and neon. Unfortunately, this equation is limited to just the monomer term and, even then, it is very computationally intensive. We do note that the current implementation in `OpenSAFT` can only model pure-component properties, but we will extend this to mixture in future versions.
+A very recent extension of the SAFT-VR Mie equation is the SAFT-VRQ Mie equation developed by Aasen _et al._ (2019) which modifies the underlying Mie potential using a Feynman-Hibbs potential, which means that a single species is represented by a sum of three Mie potentials. This method attempts to classically account for quantum effects present in small species such as helium, hydrogen and neon. Unfortunately, this equation is limited to just the monomer term and, even then, it is very computationally intensive. We do note that the current implementation in `Clapeyron` can only model pure-component properties, but we will extend this to mixture in future versions.
 
 #### SAFT-$\gamma$ Mie
 
@@ -241,7 +241,7 @@ This document aims to outline all of the various tools used to obtain the releva
 
 ``A=A(\mathbf{z},V,T)``
 
- Taking derivatives of this function (within the OpenSAFT module, this is done using automatic differentiation) can give us a wide range of properties which are given in the appendix. However, it is more common that we are interested in the state of a system at certain conditions ($\mathbf{z}_0$, $p_0$ , $T_0$). The answer to this can be determined from the following, deceptively simple, minimisation of the Gibbs free energy:
+ Taking derivatives of this function (within the Clapeyron module, this is done using automatic differentiation) can give us a wide range of properties which are given in the appendix. However, it is more common that we are interested in the state of a system at certain conditions ($\mathbf{z}_0$, $p_0$ , $T_0$). The answer to this can be determined from the following, deceptively simple, minimisation of the Gibbs free energy:
 
 ``\min G(\mathbf{z}_0,p_0,T_0)``
 
@@ -273,7 +273,7 @@ Effectively, we can re-word this as a root-finding problem. When using the van d
 
 However, there will be a range of pressures below the critical temperature where there will be more than one candidate phase (corresponding to the vapour, liquid and unstable phases). Treating this as a root-finding problem has the added difficulty of there being an additional, unstable solution. Treating this as an optimisation problem means we never need to worry about this unstable phase (it corresponds to a local maxima).
 
-Actually determining the values of $V$ that minimise this equation is quite straightforward, although, with a few subtleties. Within OpenSAFT, we have used the local, derivative-based method of moving assymptotes (MMA) algorithm as implemented in `NLopt.jl` module. The reason for selecting this method is because, as a local derivative-based algorithm, it will be faster than other methods. This algorithm in particular also allows us to add inequality constraints; this is particularly important as there are certain values of $V$ which will are unphysical. These can be identified through the packing fraction:
+Actually determining the values of $V$ that minimise this equation is quite straightforward, although, with a few subtleties. Within Clapeyron, we have used the local, derivative-based method of moving assymptotes (MMA) algorithm as implemented in `NLopt.jl` module. The reason for selecting this method is because, as a local derivative-based algorithm, it will be faster than other methods. This algorithm in particular also allows us to add inequality constraints; this is particularly important as there are certain values of $V$ which will are unphysical. These can be identified through the packing fraction:
 
 ``\eta=\frac{N_\mathrm{A}\pi}{6V}\sum_ix_im_id_i^3``
 
@@ -303,4 +303,4 @@ One other issue to consider when solving this problem is that, within the liquid
 
    This somewhat reduces the magnitude of the gradients in the liquid phase.
 
-Using the above tricks, one should be able to obtain the value of $V$ that minimises the Gibbs free energy. The only question to answer now is: if there is more than one local minima, how do we identify the stable phase? In this case, we need to use a global optimisation algorithm. In the case of OpenSAFT, a tunneling algorithm has been implemented although any other such algorithms can be used; the tunneling algorithm was selected as it still relies on gradient-based methods and is generally the recommended algorithm for such problems.
+Using the above tricks, one should be able to obtain the value of $V$ that minimises the Gibbs free energy. The only question to answer now is: if there is more than one local minima, how do we identify the stable phase? In this case, we need to use a global optimisation algorithm. In the case of Clapeyron, a tunneling algorithm has been implemented although any other such algorithms can be used; the tunneling algorithm was selected as it still relies on gradient-based methods and is generally the recommended algorithm for such problems.
