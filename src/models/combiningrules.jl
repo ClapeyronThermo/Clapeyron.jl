@@ -1,3 +1,4 @@
+export sigma_LorentzBerthelot
 function sigma_LorentzBerthelot(sigma::ClapeyronParam)
     sigma = PairParam(sigma)
     σ = sigma.values
@@ -9,6 +10,7 @@ function sigma_LorentzBerthelot(sigma::ClapeyronParam)
     return sigma
 end
 
+export epsilon_LorentzBerthelot
 function epsilon_LorentzBerthelot(epsilon::ClapeyronParam, k::PairParam)
     epsilon = PairParam(epsilon)
     ϵ = epsilon.values
@@ -21,6 +23,7 @@ function epsilon_LorentzBerthelot(epsilon::ClapeyronParam, k::PairParam)
     return epsilon
 end
 
+export epsilon_HudsenMcCoubrey
 function epsilon_HudsenMcCoubrey(epsilon::ClapeyronParam, sigma::PairParam)
     epsilon = PairParam(epsilon)
     ϵ = epsilon.values
@@ -33,6 +36,7 @@ function epsilon_HudsenMcCoubrey(epsilon::ClapeyronParam, sigma::PairParam)
     return epsilon
 end
 
+export lambda_LorentzBerthelot
 function lambda_LorentzBerthelot(lambda::ClapeyronParam)
     lambda = PairParam(lambda)
     λ = lambda.values
@@ -44,6 +48,7 @@ function lambda_LorentzBerthelot(lambda::ClapeyronParam)
     return lambda
 end
 
+export lambda_squarewell
 function lambda_squarewell(lambda::ClapeyronParam, sigma::PairParam)
     lambda = PairParam(lambda)
     λ = lambda.values

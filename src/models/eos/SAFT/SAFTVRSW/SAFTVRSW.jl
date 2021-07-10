@@ -12,7 +12,7 @@ abstract type SAFTVRSWModel <: SAFTModel end
 @newmodel SAFTVRSW SAFTVRSWModel SAFTVRSWParam
 
 export SAFTVRSW
-function SAFTVRSW(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
+function SAFTVRSW(components; idealmodel::Type=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["SAFT/SAFTVRSW","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
     segment = params["m"]
@@ -30,7 +30,7 @@ function SAFTVRSW(components::Array{<:Any,1}; idealmodel::Type=BasicIdeal, userl
     packagedparams = SAFTVRSWParam(Mw, segment, sigma, lambda, epsilon, epsilon_assoc, bondvol)
     references = ["todo"]
 
-    model = SAFTVRSW(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = SAFTVRSW(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
     return model
 end
 
