@@ -161,16 +161,23 @@ macro newmodelgc(name, parent, paramstype)
     end
 
     function $name(params::$paramstype, groups::GroupParam, sites::SiteParam, idealmodel=BasicIdeal;
+                    ideal_userlocations=String[],
                     references=String[],
                     absolutetolerance=1E-12,
                     verbose=false)
-        return _newmodelgc($name,params,groups,sites,idealmodel;references=references,absolutetolerance=absolutetolerance,verbose=verbose)
+        return _newmodelgc($name, params, groups, sites, idealmodel;
+            ideal_userlocations=ideal_userlocations,
+            references=references,
+            absolutetolerance=absolutetolerance,
+            verbose=verbose)
     end
     function $name(params::$paramstype, groups::GroupParam, idealmodel=BasicIdeal;
+                    ideal_userlocations=String[],
                     references=String[],
                     absolutetolerance=1E-12, verbose=false)
 
-        return _newmodelgc($name,params, groups,idealmodel;
+        return _newmodelgc($name, params, groups, idealmodel;
+                    ideal_userlocations=ideal_userlocations,
                     references=references,
                     absolutetolerance=absolutetolerance,
                     verbose=verbose)
@@ -190,6 +197,7 @@ end
 const IDEALTYPE = Type{T} where T<:IdealModel
 
 function _newmodelgc(eostype,params, groups::GroupParam, sites::SiteParam, idealmodel::IDEALTYPE=BasicIdeal;
+                    ideal_userlocations=String[],
                     references::Vector{String}=String[],
                     absolutetolerance::Float64=1E-12,
                     verbose::Bool=false)
@@ -215,7 +223,7 @@ function _newmodelgc(eostype,params, groups::GroupParam, sites::SiteParam, ideal
     isites = [1:lengthallgroupsites[k] for k ∈ iflattenedgroups]
 
     verbose && idealmodel != BasicIdeal && @info("Now creating ideal model ", idealmodel, ".")
-    idealmodelstruct = idealmodel(components; verbose=verbose)
+    idealmodelstruct = idealmodel(components; userlocations=ideal_userlocations, verbose=verbose)
 
 return eostype{idealmodel}(components, lengthcomponents, icomponents,
        allcomponentgroups, lengthallcomponentgroups, allcomponentngroups, igroups,
@@ -263,17 +271,26 @@ macro newmodel(name, parent, paramstype)
     end
     
     function $name(params::$paramstype, sites::SiteParam, idealmodel=BasicIdeal;
+                    ideal_userlocations=String[],
                     references=String[],
                     absolutetolerance=1E-12, verbose=false) 
 
-        return _newmodel($name,params,sites,idealmodel;references=references,absolutetolerance=absolutetolerance,verbose=verbose)
+        return _newmodel($name, params, sites, idealmodel;
+            ideal_userlocations=ideal_userlocations,
+            references=references,
+            absolutetolerance=absolutetolerance,
+            verbose=verbose)
     end
     function $name(params::$paramstype, idealmodel=BasicIdeal;
+                    ideal_userlocations=String[],
                     references=String[],
                     absolutetolerance=1E-12,
                     verbose=false)
 
-        return _newmodel($name,params, idealmodel; references=references, absolutetolerance=absolutetolerance)
+        return _newmodel($name, params, idealmodel;
+            ideal_userlocations=ideal_userlocations,
+            references=references,
+            absolutetolerance=absolutetolerance)
     end
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
@@ -287,7 +304,8 @@ macro newmodel(name, parent, paramstype)
 end
 
 
-function _newmodel(eostype,params, sites::SiteParam, idealmodel::IDEALTYPE=BasicIdeal;
+function _newmodel(eostype, params, sites::SiteParam, idealmodel::IDEALTYPE=BasicIdeal;
+                ideal_userlocations=String[],
                 references::Array{String,1}=String[],
                 absolutetolerance::Float64=1E-12,
                 verbose::Bool=false)
@@ -303,14 +321,14 @@ function _newmodel(eostype,params, sites::SiteParam, idealmodel::IDEALTYPE=Basic
     isites = [1:lengthallcomponentsites[i] for i ∈ icomponents]
 
     verbose && idealmodel != BasicIdeal && @info("Now creating ideal model ", idealmodel, ".")
-    idealmodelstruct = idealmodel(components; verbose=verbose)
+    idealmodelstruct = idealmodel(components; userlocations=ideal_userlocations, verbose=verbose)
 
     return eostype{idealmodel}(components, lengthcomponents, icomponents,
         allcomponentsites, lengthallcomponentsites, allcomponentnsites, isites,
         params, idealmodelstruct, absolutetolerance, references)
 end
 
-function _newmodel(eostype,params, idealmodel=BasicIdeal;
+function _newmodel(eostype, params, idealmodel=BasicIdeal;
                 references=String[],
                 absolutetolerance=1E-12,
                 verbose=false)
@@ -318,7 +336,7 @@ function _newmodel(eostype,params, idealmodel=BasicIdeal;
     arbparam = arbitraryparam(params)
     components = arbparam.components
     sites = SiteParam(components)
-    return _newmodel(eostype,params, sites, idealmodel; references=references, absolutetolerance=absolutetolerance)
+    return _newmodel(eostype, params, sites, idealmodel; references=references, absolutetolerance=absolutetolerance)
 end
 
 """
@@ -341,7 +359,7 @@ macro newmodelsimple(name, parent, paramstype)
                 references::Array{String,1}=String[],
                 absolutetolerance::Float64=1E-12, verbose::Bool=false)
         
-        return _newmodelsimple($name,params;references=references,absolutetolerance=absolutetolerance,verbose=verbose)
+        return _newmodelsimple($name, params; references=references, absolutetolerance=absolutetolerance, verbose=verbose)
     end
     
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
