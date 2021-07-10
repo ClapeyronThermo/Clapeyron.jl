@@ -10,7 +10,7 @@ abstract type softSAFTModel <: SAFTModel end
 @newmodel softSAFT softSAFTModel softSAFTParam
 
 export softSAFT
-function softSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocations::Array{String,1}=String[], verbose=false)
+function softSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["SAFT/softSAFT"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = params["k"]
@@ -24,7 +24,7 @@ function softSAFT(components::Array{String,1}; idealmodel=BasicIdeal, userlocati
     packagedparams = softSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["todo"]
 
-    model = softSAFT(packagedparams, sites, idealmodel; references=references, verbose=verbose)
+    model = softSAFT(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
     return model
 end
 
