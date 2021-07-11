@@ -14,7 +14,7 @@ format = Documenter.HTML(
         "User guide" => Any["Basic Usage"=>"user_guide/basic_usage.md",
                             "Custom Databases"=>"user_guide/custom_dtb.md",
                             "Custom Methods"=>"user_guide/custom_methods.md",
-                            "Custom Models"=>"user_guide/custom_eos.md"],
+                            "Custom Models"=>"user_guide/custom_model.md"],
         "To-do list" => "to-do_list.md"])
 
         deploydocs(;
