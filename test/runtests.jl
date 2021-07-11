@@ -1,4 +1,4 @@
-using OpenSAFT, Test
+using Clapeyron, Test
 
 @testset "All tests" begin
     include("test_database.jl")
