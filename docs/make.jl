@@ -19,5 +19,4 @@ format = Documenter.HTML(
 
         deploydocs(;
     repo="github.com/ypaul21/Clapeyron.jl.git",
-    devbranch = "development",
 )
