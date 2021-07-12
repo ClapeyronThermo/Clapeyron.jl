@@ -329,6 +329,7 @@ function _newmodel(eostype, params, sites::SiteParam, idealmodel::IDEALTYPE=Basi
 end
 
 function _newmodel(eostype, params, idealmodel=BasicIdeal;
+                ideal_userlocations=String[],
                 references=String[],
                 absolutetolerance=1E-12,
                 verbose=false)
@@ -336,7 +337,7 @@ function _newmodel(eostype, params, idealmodel=BasicIdeal;
     arbparam = arbitraryparam(params)
     components = arbparam.components
     sites = SiteParam(components)
-    return _newmodel(eostype, params, sites, idealmodel; references=references, absolutetolerance=absolutetolerance)
+    return _newmodel(eostype, params, sites, idealmodel; references=references, ideal_userlocations=ideal_userlocations, absolutetolerance=absolutetolerance)
 end
 
 """
