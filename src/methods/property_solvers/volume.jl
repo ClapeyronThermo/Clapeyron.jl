@@ -35,7 +35,23 @@ end
 
 #(z = pV/RT)
 #(RT/p = V/z)
+"""
+    volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
 
+calculates the volume (m³) of the compound modelled by `model` at a certain pressure,temperature and moles.
+
+`phase` is a Symbol that determines the initial volume root to look for:
+
+- If `phase =:liquid` it will return the volume of the phase using a liquid initial point.
+
+- If `phase =:vapor` it will return the volume of the phase using a gas initial point.
+
+The default is `phase =:unknown`. with this, both liquid and volume roots will be calculated, and 
+the phase with the least amount of energy is returned.
+
+The calculation of both volume roots can be calculated in serial (`threaded=false`) or in parallel (`threaded=true`)
+
+"""
 function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
 
     fp(_V) = log(pressure(model,_V,T,z)/p)

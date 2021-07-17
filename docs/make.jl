@@ -15,7 +15,8 @@ format = Documenter.HTML(
                             "Custom Databases"=>"user_guide/custom_dtb.md",
                             "Custom Methods"=>"user_guide/custom_methods.md",
                             "Custom Models"=>"user_guide/custom_model.md"],
-        "To-do list" => "to-do_list.md"])
+        "To-do list" => "to-do_list.md"
+        "API" => "api.md"])
 
         deploydocs(;
     repo="github.com/ypaul21/Clapeyron.jl.git",
