@@ -3,19 +3,19 @@
 ## Contents
 
 ```@contents
-Pages = ["public.md"]
+Pages = ["api.md"]
 ```
 
 ## Index
 
 ```@index
-Pages = ["public.md"]
+Pages = ["api.md"]
 ```
 
 ## Volume-Temperature Based Properties
 
 ```@docs
-pip
+Clapeyron.pip
 ```
 ## Pressure-Temperature Based Properties
 
@@ -24,14 +24,14 @@ volume
 ```
 ## Automatic Differenciation functions
 ```@docs
-∂f∂T
-∂f∂V
-∂f
-p∂p∂V
-∂2f
-∂2p
-f_hess
-∂²³f
+Clapeyron.∂f∂T
+Clapeyron.∂f∂V
+Clapeyron.∂f
+Clapeyron.p∂p∂V
+Clapeyron.∂2f
+Clapeyron.∂2p
+Clapeyron.f_hess
+Clapeyron.∂²³f
 ```
 
 
