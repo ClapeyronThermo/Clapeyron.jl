@@ -3,7 +3,7 @@
     system = PCSAFT(["ethanol"])
     @test Clapeyron.volume(system, 1E5, 298) ≈ 5.9069454773905654e-5 rtol = 0.01 #returns incorrect value
     @test Clapeyron.sat_pure(system, 298)[1] ≈ 7904.2246894075415 rtol = 0.01
-    # @test Clapeyron.enthalpy_vap(system, 298) ≈ 41720.97771100548 rtol = 0.01
+    @test Clapeyron.enthalpy_vap(system, 298) ≈ 41720.97771100548 rtol = 0.01
     @test Clapeyron.crit_pure(system)[1] ≈ 1 rtol = 1E10 #T_scale not defined
     @test Clapeyron.pressure(system, 1, 298) ≈ 1 rtol = 1E10
     @test Clapeyron.entropy(system, 1E5, 298) ≈ 1 rtol = 1E10

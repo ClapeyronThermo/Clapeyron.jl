@@ -8,7 +8,9 @@ function try_sat_pure(model,V0,f!,T,result,error_val,converged)
     end
 
     (P_sat,V_l,V_v) = result[]
-    if abs(V_l-V_v) > 8*(eps(typeof(V_l)))
+    ε = abs(V_l-V_v)/(eps(typeof(V_l-V_v)))
+    if ε > 8    
+        #if ΔV > ε then Vl and Vv are different values
         converged[] =  true
     end
 
@@ -16,67 +18,25 @@ function try_sat_pure(model,V0,f!,T,result,error_val,converged)
 end
 
 
-function sat_pure(model::EoSModel, T; V0 = nothing,debug=false)
+function sat_pure(model::EoSModel, T, V0 = nothing)
     V_lb = lb_volume(model,SA[1.0])
-    p_sat = []
-    V_l   = []
-    V_v   = []
-
-    for i in 1:length(T)
-    
-        f! = (F,x) -> Obj_Sat(model, F, T[i], exp10(x[1]), exp10(x[2]),V_lb)
-
-        if V0 === nothing && i == 1
-            V0 = x0_sat_pure(model,T[i])
-        end
-        nan = zero(T[i])/zero(T[i])
-        res0 = (nan,nan,nan)
-        result = Ref(res0)
-        error_val = Ref{Any}(nothing)
-        converged = Ref{Bool}(false)
-
-        try_sat_pure(model,V0,f!,T[i],result,error_val,converged)
-        if converged[]
-            append!(p_sat,result[][1])
-            append!(V_l,result[][2])
-            append!(V_v,result[][3])
-            V0 = log10.([V_l[i],V_v[i]])
-        end
-        # if debug
-        #     if error_val[] !== nothing
-        #         @warn "initial saturation calculation failed with error $error_val[]"
-        #     end
-        # end
-        # result[] = res0
-        # #convergence not achieved, trying critical aproximation
-
-
-        # T_c,P_c,V_c = crit_pure(model)
-        # ΔT = (T_c - T[i])
-        # ΔT <= 8*eps(ΔT) && throw(DomainError(T[i],"input temperature $T is too close or higher than critical temperature of the model $T_c"))
-        # Tr  = T[i]/T_c
-        # V0 = x0_sat_pure_crit(model,T[i],T_c,P_c,V_c)
-
-        # try_sat_pure(model,V0,f!,T[i],result,error_val,converged)
-        # if converged[]
-        #     append!(p_sat,result[][1])
-        #     append!(V_l,result[][2])
-        #     append!(V_v,result[][3])
-        #     V0 = log10.([V_l[i],V_v[i]])
-        # else
-        #     @warn "the procedure converged to a trivial value at T=$T"
-        #     return result[]
-        # end
-
-
-        # if debug
-        #     throw(error_val[])
-        # else
-        #     throw("unable to calculate equilibria at T=$T")
-        # end
+    TYPE = promote_type(typeof(T),typeof(V_lb))
+    nan = zero(TYPE)/zero(TYPE)    
+    if V0 === nothing
+        V0 = x0_sat_pure(model,T)
     end
-    return (p_sat,V_l,V_v)
+    f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]),V_lb)
+    res0 = (nan,nan,nan)
+    result = Ref(res0)
+    error_val = Ref{Any}(nothing)
+    converged = Ref{Bool}(false)
 
+    try_sat_pure(model,V0,f!,T,result,error_val,converged)   
+    if converged[]
+        return result[]
+        #V0 = log10.([V_l[i],V_v[i]])
+    end
+    return res0
 end
 
 
@@ -185,9 +145,9 @@ function enthalpy_vap(model::EoSModel, T)
     dVv,dTv = _dfv
     H_l = fl  - dVl*V_l - dTl*T
     H_v = fv  - dVv*V_v - dTv*T =#
-    H_v = VT_enthalpy.(model,V_v,T)
-    H_l = VT_enthalpy.(model,V_l,T)
-    H_vap=H_v .-H_l
+    H_v = VT_enthalpy(model,V_v,T)
+    H_l = VT_enthalpy(model,V_l,T)
+    H_vap=H_v -H_l
     return H_vap
 end
 
