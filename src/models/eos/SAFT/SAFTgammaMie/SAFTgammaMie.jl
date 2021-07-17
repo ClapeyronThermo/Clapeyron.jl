@@ -451,7 +451,7 @@ function Δ(model::SAFTgammaMieModel, V, T, z, i, j, k, l, a, b)
     ρR = @f(ρ_S)*σ3_x
     TR = T/ϵ̄_
     c  = SAFTγMieconsts.c
-    I = ∑(∑(c[p+1,q+1]*ρR^p*TR^q for q ∈ 0:(10-n)) for p ∈ 0:10)
+    I = ∑(∑(c[p+1,q+1]*ρR^p*TR^q for q ∈ 0:(10-p)) for p ∈ 0:10)
 
     ϵHB = model.params.epsilon_assoc.values
     K = model.params.bondvol.values
