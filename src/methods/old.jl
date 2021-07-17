@@ -131,3 +131,38 @@ function Jac_bubble_pressure(model, J, T, v_l, v_v, x, y)
         end
     end
 end
+
+##Old sat pure code in case of points near the critical point
+# if debug
+        #     if error_val[] !== nothing
+        #         @warn "initial saturation calculation failed with error $error_val[]"
+        #     end
+        # end
+        # result[] = res0
+        # #convergence not achieved, trying critical aproximation
+
+
+        # T_c,P_c,V_c = crit_pure(model)
+        # ΔT = (T_c - T[i])
+        # ΔT <= 8*eps(ΔT) && throw(DomainError(T[i],"input temperature $T is too close or higher than critical temperature of the model $T_c"))
+        # Tr  = T[i]/T_c
+        # V0 = x0_sat_pure_crit(model,T[i],T_c,P_c,V_c)
+
+        # try_sat_pure(model,V0,f!,T[i],result,error_val,converged)
+        # if converged[]
+        #     append!(p_sat,result[][1])
+        #     append!(V_l,result[][2])
+        #     append!(V_v,result[][3])
+        #     V0 = log10.([V_l[i],V_v[i]])
+        # else
+        #     @warn "the procedure converged to a trivial value at T=$T"
+        #     return result[]
+        # end
+
+
+        # if debug
+        #     throw(error_val[])
+        # else
+        #     throw("unable to calculate equilibria at T=$T")
+        # end
+    

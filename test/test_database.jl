@@ -109,7 +109,7 @@
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"])
 
     # GC test
-    components_gc = buildspecies(["test1", "test2", ("test3", ["grp1" => 2, "grp2" => 2, "grp3" => 3])]; usergrouplocations=filepath_gc)
+    components_gc = GroupParam(["test1", "test2", ("test3", ["grp1" => 2, "grp2" => 2, "grp3" => 3])]; usergrouplocations=filepath_gc)
 
     @test components_gc.components == ["test1", "test2", "test3"]
     @test components_gc.allcomponentgroups == [["grp1","grp2"],["grp2"],["grp1","grp2","grp3"]]
