@@ -32,17 +32,18 @@ end
 returns zeroth order (value) and first order derivative information of the total helmholtz energy (given by `eos(model,V,T,z)`).
 the result is given in two values:
 
-```
+```julia
 grad_f,fval = ∂2f(model,V,T,z)
 ```
 
 where:
-```
+
+```julia
 fval   = f(V,T) = eos(model,V,T,z)
 
 grad_f = [ ∂f/∂V; ∂f/∂T]
 
- ```
+```
 
 Where `V` is the total volume, `T` is the temperature and `f` is the total helmholtz energy.
 """
