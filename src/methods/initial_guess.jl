@@ -187,8 +187,8 @@ function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
         x0l[] = b/0.25
     end
 
-    if x0l[]>x0v || isnan(x0l)
-        x0l = b/0.25
+    if x0l[] >x0v || isnan(x0l[])
+        x0l[] = b/0.25
     end
     #=here we solve the saturation with aproximate 
     models of the EoS. on the gas side, we use
