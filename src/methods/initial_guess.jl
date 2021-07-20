@@ -170,10 +170,9 @@ end
 
 
 """
-    scale_sat_pure(model,T,z=SA[1.0])
-returns the first guesses for the equilibrium volumes at a certain T
+    x0_sat_pure(model::EoSModel,T,z=SA[1.0])
 
-
+    Returns a 2-element vector corresponding to `[log10(Vₗ),(Vᵥ)]`, where Vₗ and Vᵥ are the liquid and vapor initial guesses. 
 
 """
 function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
@@ -181,14 +180,14 @@ function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
     B = second_virial_coefficient(model,T,z)
     x0v = -2*B + 2*b
     p = -0.25*R̄*T/B
-    x0l = []
+    x0l = Ref(b)
     try
-        x0l = volume_compress(model,p,T,z)
+        x0l[] = volume_compress(model,p,T,z)
     catch
-        x0l = b/0.25
+        x0l[] = b/0.25
     end
 
-    if x0l>x0v || isnan(x0l)
+    if x0l[]>x0v || isnan(x0l)
         x0l = b/0.25
     end
     #=here we solve the saturation with aproximate 
@@ -196,8 +195,7 @@ function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
     a virial for logϕ, on the liquid side, we
     use an isothermal compressibility model based
     at the point P = P(-2B), vl(P)
-   
-    
+     
     β = vt_isothermal_compressibility(model,x0l,T,z)
     fugv(P) = B*P/(R̄*T) #log(ϕv)
     P0 = p
@@ -211,7 +209,7 @@ function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
     f0(P) = fugl(P) - fugv(P)
     @show Roots.find_zero(f0,0.9P0)
      =#
-    x0  = [x0l,x0v]
+    x0  = [x0l[],x0v]
     
     return log10.(x0)
 end
