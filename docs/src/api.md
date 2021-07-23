@@ -21,7 +21,7 @@ Clapeyron.pip
 ## Pressure-Temperature Based Properties
 
 ```@docs
-volume
+Clapeyron.volume
 Clapeyron.compressibility_factor
 ```
 ## Single component properties
@@ -53,7 +53,6 @@ Clapeyron.p_scale
 Clapeyron.x0_volume
 Clapeyron.x0_volume_liquid
 Clapeyron.x0_volume_gas
-Clapeyron.x0_volume
 Clapeyron.volume_virial
 Clapeyron.x0_sat_pure
 Clapeyron.x0_crit_pure
