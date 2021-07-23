@@ -17,14 +17,21 @@ function try_sat_pure(model,V0,f!,T,result,error_val,converged)
     return nothing
 end
 
+"""
+    sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
 
-function sat_pure(model::EoSModel, T, V0 = nothing)
+Performs a single component saturation equilibrium calculation, at the specified temperature `T`, of one mol of pure sustance specified by `model`
+
+Returns `(p₀, Vₗ, Vᵥ)` where `p₀` is the saturation pressure (in Pa), `Vₗ` is the liquid saturation volume (in m³) and `Vᵥ` is the vapour saturation volume (in m³).
+
+If the calculation fails, returns  `(NaN, NaN, NaN)`
+
+`V0` is `[log10(Vₗ₀),log10(Vᵥ₀)]` , where `Vₗ₀`  and `Vᵥ₀` are initial guesses for the liquid and vapour volumes.
+"""
+function sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     V_lb = lb_volume(model,SA[1.0])
     TYPE = promote_type(typeof(T),typeof(V_lb))
     nan = zero(TYPE)/zero(TYPE)    
-    if V0 === nothing
-        V0 = x0_sat_pure(model,T)
-    end
     f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]),V_lb)
     res0 = (nan,nan,nan)
     result = Ref(res0)
@@ -116,9 +123,15 @@ end
 =#
 
 
-## Pure critical point solver
+"""
+    crit_pure(model::EoSModel,x0=nothing)
+
+Calculates the critical point of a single component modelled by `model`. 
+
+Returns `(Tc, pc, Vc)` where `Tc` is the critical temperature (in K), `pc` is the critical pressure (in Pa) and `Vc` is the critical volume (in  m³)
+"""
 function crit_pure(model::EoSModel,x0=nothing)
-    T̄  = T_crit_pure(model)
+    T̄  = T_scale(model)
     f! = (F,x) -> obj_crit(model, F, x[1]*T̄, exp10(x[2]))
     if x0 === nothing
         x0 = x0_crit_pure(model)
@@ -136,7 +149,11 @@ function obj_crit(model::EoSModel, F, T_c, V_c)
     F[2] = -∂³A∂V³
     return F
 end
+"""
+    enthalpy_vap(model::EoSModel, T)
 
+Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies at temperature `T`, in J   
+"""
 function enthalpy_vap(model::EoSModel, T)
     (P_sat,V_l,V_v) = sat_pure(model,T)
    #= _dfl,fl =  ∂f(model,V_l,T,SA[1.0])

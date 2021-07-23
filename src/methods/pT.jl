@@ -62,7 +62,16 @@ function joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase = :unk
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_joule_thomson_coefficient(model,V,T,z)
 end
+"""
+    compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
 
+Calculates the compressibility factor `Z`, defined as:
+
+```julia
+Z = p*V(p)/R*T
+```
+the keywords `phase` and `threaded` are passed to the [volume solver](@ref volume).
+"""
 function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return p*V/(R̄*T)
