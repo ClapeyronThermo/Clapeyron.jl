@@ -61,17 +61,25 @@ SAFTgammaMie:  log10(π/6*N_A*sum(z[i]*sum(model.group_multiplicities[i][k]*mode
 LJSAFT: log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in @comps)
 =#
 
+"""
+    x0_volume_liquid(model,T,z)
 
+Returns an initial guess to the liquid volume, dependent on temperature and composition. by default is 1.25 times the [lower bound volume](@ref lb_volume).
+"""
 function x0_volume_liquid(model,T,z)
     v_lb = lb_volume(model,z)
-    return v_lb/0.8
+    return v_lb*1.25
 end
 
 function x0_volume_liquid(model::SAFTVRMieModel,T,z)
     v_lb = lb_volume(model,z)
     return v_lb*1.5
 end
+"""
+    x0_volume_gas(model,p,T,z)
 
+Returns an initial guess to the gas volume, depending of pressure, temperature and composition. by default uses a [virial aproximation](@ref volume_virial)
+"""
 function x0_volume_gas(model,p,T,z)
     return volume_virial(model,p,T,z)
 end
@@ -81,6 +89,16 @@ function x0_volume_sc(model,p,T,z)
     return v_sc*2
 end
 
+"""
+    x0_volume(model::EoSModel,p,T,z; phase = :unknown)
+
+Returns an initial guess of the volume at a pressure, temperature, composition and suggested phase.
+
+If the suggested phase is `:unkwown` or `:liquid`, calls [`x0_volume_liquid`](@ref).
+
+If the suggested phase is `:gas`, calls [`x0_volume_gas`](@ref).
+
+"""
 function x0_volume(model::EoSModel,p,T,z; phase = :unknown)
     phase = Symbol(phase)
     if phase === :unknown || is_liquid(phase)
@@ -88,8 +106,7 @@ function x0_volume(model::EoSModel,p,T,z; phase = :unknown)
     elseif is_vapour(phase)
         return x0_volume_gas(model,p,T,z)
     elseif is_supercritical(phase)
-        return x0_volume_sc(model,p,T,z)
-    else
+     else
         error("unreachable state on x0_volume")
     end
 end
@@ -114,14 +131,36 @@ end
 #
 #lb_volume(model::LJSAFT,z; phase = :unknown) = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1)]
 
-function lb_volume(model::SAFTModel, z = SA[1.0]; phase = :unknown)
+
+
+"""
+    lb_volume(model::EoSModel,z=SA[1.0])
+
+Returns the lower bound volume. 
+
+It has different meanings depending on the Equation of State, but symbolizes the minimum allowable volume at a certain composition:
+
+- SAFT EoS: the packing volume
+- Cubic EoS, covolume (b) parameter
+
+On empiric equations of state, the value is chosen to match the volume of the conditions at maximum pressure and minimum temperature
+, but the equation itself normally can be evaluated at lower volumes.
+
+On SAFT and Cubic EoS, volumes lower than `lb_volume` will likely error.
+
+The lower bound volume is used for guesses of liquid volumes at a certain pressure, saturated liquid volumes and critical volumes.
+"""
+function lb_volume end
+
+
+function lb_volume(model::SAFTModel, z = SA[1.0])
     seg = model.params.segment.values
     σᵢᵢ = model.params.sigma.diagvalues
     val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i]^3 for i in 1:length(z))
     return val
 end
 
-function lb_volume(model::CubicModel,z = SA[1.0]; phase = :unknown)
+function lb_volume(model::CubicModel,z = SA[1.0])
     n = sum(z)
     invn = one(n)/n
     b = model.params.b.values
@@ -129,7 +168,7 @@ function lb_volume(model::CubicModel,z = SA[1.0]; phase = :unknown)
     return b̄
 end
 
-function lb_volume(model::CPAModel,z = SA[1.0]; phase = :unknown)
+function lb_volume(model::CPAModel,z = SA[1.0])
     n = sum(z)
     invn = one(n)/n
     b = model.params.b.values
@@ -138,7 +177,7 @@ function lb_volume(model::CPAModel,z = SA[1.0]; phase = :unknown)
 
 end
 
-function lb_volume(model::SAFTgammaMieModel, z = SA[1.0]; phase = :unknown)
+function lb_volume(model::SAFTgammaMieModel, z = SA[1.0])
     vk  = model.igroups
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
@@ -172,8 +211,8 @@ end
 """
     x0_sat_pure(model::EoSModel,T,z=SA[1.0])
 
-    Returns a 2-element vector corresponding to `[log10(Vₗ),(Vᵥ)]`, where Vₗ and Vᵥ are the liquid and vapor initial guesses. 
-
+Returns a 2-element vector corresponding to `[log10(Vₗ),log10(Vᵥ)]`, where Vₗ and Vᵥ are the liquid and vapor initial guesses. 
+Used in [`sat_pure`](@ref).
 """
 function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
     b = lb_volume(model,z)*one(T)
@@ -246,9 +285,17 @@ end
 
 # x0_crit_pure(model::LJSAFT) = [1.5, log10(π/6*model.params.segment[model.components[1]]*model.params.b[model.components[1]]/0.3)]
 
+"""
+    x0_crit_pure(model::SAFTModel,z=SA[1.0])
+
+Returns a 2-element vector corresponding to
+    `[k,log10(Vc0)]`, where `k` is `Tc0/T_scale(model,z)`
+"""
+function x0_crit_pure end
+
 function x0_crit_pure(model::SAFTModel,z=SA[1.0])
     lb_v = lb_volume(model,z)
-    [2, log10(lb_v/0.3)]
+    [2.0, log10(lb_v/0.3)]
 end
 
 function x0_crit_pure(model::CubicModel,z=SA[1.0])
@@ -282,7 +329,6 @@ end
 # end
 # T_crit_pure(model::LJSAFT) = model.params.T[model.components[1]]
 
-T_crit_pure(model::EoSModel,z=SA[1.0]) = T_scale(model,z)
 
 # T_crit_pure(model::Cubic) = model.params.a[model.components[1]]/model.params.b[model.components[1]]/8.314*8/27
 
@@ -292,6 +338,21 @@ T_crit_pure(model::EoSModel,z=SA[1.0]) = T_scale(model,z)
 on critical based EoS, is a function of critical temperature
 on SAFT EoS, is a function of ϵ
 =#
+
+
+"""
+    T_scale(model::EoS,z=SA[1.0])
+
+Represents a temperature scaling factor. 
+
+On any EoS based on Critical parameters (Cubic or Empiric EoS), the temperature scaling factor is chosen to be the critical temperature.
+
+On SAFT or other molecular EoS, the temperature scaling factor is chosen to be a function of the potential depth ϵ.
+
+Used as scaling factors in [`sat_pure`](@ref) and as input for solving [`crit_pure`](@ref)
+"""
+function T_scale end
+
 function T_scale(model::SAFTModel,z=SA[1.0])
     ϵ = model.params.epsilon.diagvalues
     return prod(ϵ)^(1/length(ϵ))
@@ -321,11 +382,21 @@ function T_scale(model::CPAModel,z=SA[1.0])
 
 end
 
-#=
-pressure scaling factor
-on critical eos, a function of critical pressure
-on SAFT, a function of
-=#
+"""
+    p_scale(model::SAFTModel,z=SA[1.0])
+
+Represents a pressure scaling factor
+
+On any EoS based on Critical parameters (Cubic or  
+Empiric EoS), the pressure scaling factor is    
+chosen to be a function of the critical pressure.
+
+On SAFT or other molecular EoS, the temperature    
+scaling factor is chosen to a function of ∑(zᵢ*ϵᵢ*(σᵢᵢ)³)    
+
+Used as scaling factors in [`sat_pure`](@ref) and as input for solving [`crit_pure`](@ref)
+
+"""
 function p_scale(model::SAFTModel,z=SA[1.0])
     ϵ = model.params.epsilon.diagvalues
     σᵢᵢ = model.params.sigma.diagvalues

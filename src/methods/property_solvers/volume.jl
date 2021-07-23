@@ -1,5 +1,19 @@
 #aproximates liquid volume at a known pressure and t,
 #by using isothermal compressibility
+
+
+"""
+    volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+
+Main routine to calculate a volume, given a pressure, temperature, composition and intitial volume guess. each step is taken by locally aproximating the EoS as an isothermal compressibility process.
+The new volume is calculated by the following recurrence formula:
+
+```julia
+v[i+1] = v[i]*exp(β[i]*(p-p(v[i])))
+```
+
+In the liquid root region, the iterations follow `v0 < v[i] < v[i+1] < v(p)`, allowing the calculation of the liquid root without entering the metastable region.
+"""
 function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     logV0 = log(V0)
     function f_fixpoint(_V)
@@ -16,9 +30,22 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
         return exp(res)
 end
 
+"""
+    volume_virial(model,p,T,z=SA[1.0])
 
-function volume_virial(model,p,T, z=SA[1.] )
+Calculates an aproximation to the gas volume at specified pressure, volume and composition, by aproximating:
+
+```julia
+
+Z(v) ≈ 1 + B(T)/v 
+```
+where `Z` is the [compressibility factor](@ref compressibility_factor) and `B` is the [second virial coefficient](@ref second_virial_coefficient).
+if `B>0`, (over the inversion temperature) returns `NaN`. If the solution to the problem is complex (`Z = 1 + B/v` implies solving a quadratic polynomial), returns `-2*B`.
+"""
+function volume_virial(model,p,T,z=SA[1.0])
+    _0 = zero(p+T+first(z))
     B = second_virial_coefficient(model,T,z)
+    B > 0 && return _0/_0
     a = p/(R̄*T)
     b = -1
     c = -B

@@ -86,12 +86,23 @@ function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
     return -(∂²A∂V∂T - ∂²A∂V²*((T*∂²A∂T² + V*∂²A∂V∂T) / (T*∂²A∂V∂T + V*∂²A∂V²)))^-1
 end
 
+
+"""
+    second_virial_coefficient(model::EoSModel, T, z=SA[1.])
+
+Calculates the second virial coefficient `B`, defined as:
+
+```julia
+B = lim(V->∞)[ V^2/RT *  (∂Aᵣ∂V + V*∂²Aᵣ∂V²) ]
+```
+where `Aᵣ` is the residual helmholtz energy
+"""
 function second_virial_coefficient(model::EoSModel, T, z=SA[1.])
     TT = promote_type(eltype(z),typeof(T))
     V = 1/sqrt(eps(TT))
-    fun(x) = eos_res(model,x[1],T,z)
-    df(x) = ForwardDiff.derivative(fun,x[1])
-    d2f(x) = ForwardDiff.derivative(df,x[1])
+    fun(x) = eos_res(model,x,T,z)
+    df(x) = ForwardDiff.derivative(fun,x)
+    d2f(x) = ForwardDiff.derivative(df,x)
     return V^2/(R̄*T)*(df(V)+V*d2f(V))
 end
 
