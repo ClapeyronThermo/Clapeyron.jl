@@ -95,7 +95,7 @@ Calculates the second virial coefficient `B`, defined as:
 ```julia
 B = lim(V->∞)[ V^2/RT *  (∂Aᵣ∂V + V*∂²Aᵣ∂V²) ]
 ```
-where `Aᵣ` is the residual helmholtz energy
+where `Aᵣ` is the residual helmholtz energy.
 """
 function second_virial_coefficient(model::EoSModel, T, z=SA[1.])
     TT = promote_type(eltype(z),typeof(T))
