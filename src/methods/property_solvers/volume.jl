@@ -39,7 +39,7 @@ Calculates an aproximation to the gas volume at specified pressure, volume and c
 
 Z(v) ≈ 1 + B(T)/v 
 ```
-where `Z` is the [compressibility factor](@ref Clapeyron.compressibility_factor) and `B` is the [second virial coefficient](@ref Clapeyron.second_virial_coefficient).
+where `Z` is the compressibility factor and `B` is the second virial coefficient.
 if `B>0`, (over the inversion temperature) returns `NaN`. If the solution to the problem is complex (`Z = 1 + B/v` implies solving a quadratic polynomial), returns `-2*B`.
 """
 function volume_virial(model,p,T,z=SA[1.0])

@@ -1,7 +1,7 @@
 """
     f∂f(f,x)
 
-returns f and df/fx evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate f and dfdx in one pass
+returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
 function f∂f(f,x::T) where T
     _f(z) = f(only(z))
@@ -10,7 +10,23 @@ function f∂f(f,x::T) where T
     _∂f =  ForwardDiff.gradient!(∂result, _f,x_vec)
     fx =  DiffResults.value(_∂f)
     ∂f∂x = only(DiffResults.gradient(_∂f))
-    return fx,fx/∂f∂x
+    return fx,∂f∂x
+end
+
+"""
+    f∂f∂2f(f,x)
+
+returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
+"""
+function f∂f∂2f(f,x::T) where T
+    _f(z) = f(only(z))
+    x_vec =   SVector(x)
+    ∂result = DiffResults.HessianResult(x_vec)  
+    _∂f =  ForwardDiff.hessian!(∂result, _f,x_vec)
+    fx =  DiffResults.value(_∂f)
+    ∂f∂x = only(DiffResults.gradient(_∂f))
+    ∂²f∂²x =  only(DiffResults.hessian(_∂f))
+    return fx,∂f∂x,∂²f∂²x
 end
 
 """

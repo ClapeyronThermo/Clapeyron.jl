@@ -1,15 +1,17 @@
 #nlsolve functionality
 """
-    function nlsolve(f!,x0,TrustRegion(Newton(), Dogleg()), options=NEqOptions())
+    function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()), options=NEqOptions())
 
 
-given a function f!(result,x) that returns a system of equations,
-`nlsolve!(f!,x0)` returns a vector x that satisfies result = 0 to some accuracy.
+Given a function `f!(result,x)` that returns a system of equations,
+`nlsolve(f!,x0)` returns a `NLSolvers.ConvergenceInfo` struct that contains the results of the non-linear solving procedure.
 
-uses NLSolvers.jl as backend, the jacobian is calculated with ForwardDiff.jl
+Uses `NLSolvers.jl` as backend, the jacobian is calculated with `ForwardDiff.jl`
 
+To obtain the underlying solution vector, use [`x_sol`](@ref)
+
+To see available solvers and options, check `NLSolvers.jl`
 """
-
 function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),options=NEqOptions())
     #f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
     len = length(x0)
