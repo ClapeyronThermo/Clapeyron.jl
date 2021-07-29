@@ -73,7 +73,7 @@ function sat_pure(model::EoSModel,V0,f!,T)
     r = Solvers.nlsolve(f!, V0,LineSearch(Newton()))
     #@show typeof(r)
     #@show f!(rand(2),r.info.zero)
-    Vsol = minimizer(r)
+    Vsol = Solvers.x_sol(r)
     V_l = exp10(Vsol[1])
     V_v = exp10(Vsol[2])
     P_sat = pressure(model,V_v,T)
@@ -136,9 +136,9 @@ function crit_pure(model::EoSModel,x0=nothing)
     if x0 === nothing
         x0 = x0_crit_pure(model)
     end
-    r  = Solvers.nlsolve(f!, x0)
-    T_c = r.info.zero[1]*T̄
-    V_c = exp10(r.info.zero[2])
+    r  = Solvers.x_sol(Solvers.nlsolve(f!, x0))
+    T_c = r[1]*T̄
+    V_c = exp10(r[2])
     p_c = pressure(model, V_c, T_c)
     return (T_c, p_c, V_c)
 end
@@ -167,7 +167,6 @@ function enthalpy_vap(model::EoSModel, T)
     H_vap=H_v -H_l
     return H_vap
 end
-
 
 
 """

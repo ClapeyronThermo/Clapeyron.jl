@@ -102,8 +102,8 @@ function second_virial_coefficient(model::EoSModel, T, z=SA[1.])
     V = 1/sqrt(eps(TT))
     fun(x) = eos_res(model,x,T,z)
     df(x) = ForwardDiff.derivative(fun,x)
-    d2f(x) = ForwardDiff.derivative(df,x)
-    return V^2/(R̄*T)*(df(V)+V*d2f(V))
+    df,d2f = Solvers.f∂f(df,V)
+    return V^2/(R̄*T)*(df+V*d2f)
 end
 
 function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.])
