@@ -14,14 +14,14 @@ The documentation is laid out as follows:
 
 ### License
 
-Clapeyron.jl is licensed under the [MIT license](https://github.com/ypaul21/OpenSAFT.jl/blob/master/LICENSE.md).
+Clapeyron.jl is licensed under the [MIT license](https://github.com/ypaul21/Clapeyron.jl/blob/master/LICENSE.md).
 
-### Instillation
+### Installation
 
-Clapeyron.jl is not currently a registered package (will be soon!) but can be installed by running:
+Clapeyron.jl is a registered package, it can be installed from the general registry by:
 
 ```julia
-pkg> add git@github.com:ypaul21/Clapeyron.jl.git 
+pkg> add Clapeyron
 ```
 
 

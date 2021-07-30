@@ -120,6 +120,10 @@ To load Clapeyron, launch Julia with
 Hit the ```]``` key to enter Pkg mode, then type
 
 ```julia
+Pkg> add Clapeyron
+```
+Or to add the development version:
+```julia
 Pkg> add https://github.com/ypaul21/Clapeyron.jl
 ```
 Exit Pkg mode by hitting backspace.
