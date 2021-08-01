@@ -6,6 +6,10 @@
 
 Welcome to Clapeyron! This module provides both a large library of equations of state and a framework for one to easily implement their own equations of state.
 
+We have recently presented at the JuliaCon 2021 conference! Feel free to take a look at our talk:
+
+[![Clapeyron.jl: An Extensible Implementation of Equations of State | Paul Yew et al | JuliaCon2021](https://img.youtube.com/vi/Re5qI-9zyIM/0.jpg)](https://www.youtube.com/watch?v=Re5qI-9zyIM "Clapeyron.jl: An Extensible Implementation of Equations of State | Paul Yew et al | JuliaCon2021")
+
 SAFT equations of state currently available:
 
 | EoS           | Seg./Mono.?        | Chain?             | Assoc.?            | Parameters?        |
@@ -109,9 +113,7 @@ Note that at its current stage, Clapeyron is still in the very early stages of d
 
 # Installing Clapeyron
 
-Clapeyron is not yet in the JuliaHub (but it will be soon!).
-
-To load Clapeyron, launch Julia with
+To install Clapeyron, launch Julia with
 
 ```julia
 > julia
@@ -124,7 +126,7 @@ Pkg> add Clapeyron
 ```
 Or to add the development version:
 ```julia
-Pkg> add https://github.com/ypaul21/Clapeyron.jl
+Pkg> add https://github.com/ypaul21/Clapeyron.jl#development
 ```
 Exit Pkg mode by hitting backspace.
 
@@ -134,8 +136,7 @@ Now you may begin using functions from the Clapeyron library by entering the com
 using Clapeyron
 ```
 
-To remove the package (for when we finally get it on JuliaHub and you want to use the official version),
-hit the ```]``` key to enter Pkg mode, then type
+To remove the package, hit the ```]``` key to enter Pkg mode, then type
 
 ```julia
 Pkg> rm Clapeyron
