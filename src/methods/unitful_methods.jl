@@ -270,7 +270,7 @@ end
 
 
 #mass density 
-function mass_density(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown",threaded=true, output=u"mol/m^3")
+function mass_density(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown",threaded=true, output=u"kg/m^3")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     
