@@ -37,11 +37,11 @@ Note that it is extremely important that the cell A2 has the word 'Like', 'Unlik
 
 ## Using your own parameters
 
-If you have CSV files formatted as above with your own parameters, and you want to implement these into one of the existing equations of state in Clapeyron, all that is needed is to provide the path to those files in the definition of your model:
+If you have CSV files formatted as above with your own parameters, and you want to implement these into one of the existing equations of state in Clapeyron, all that is needed is to provide the path to those files in the definition of your model (note that ideal term related parameters are specified separately):
 
 ```julia
-model1 = PR(["your_species_1","your_species_2"];userlocations=["path/to/your/database/"])
-model2 = PCSAFT(["your_species_1","your_species_2"];userlocations=["dtb_like","dtb_unlike","dtb_assoc"])
+model1 = PR(["your_species_1","your_species_2"];userlocations=["path/to/your/database/"], ideal_userlocations=["path/to/your/ideal_database"])
+model2 = PCSAFT(["your_species_1","your_species_2"];userlocations=["dtb_like","dtb_unlike","dtb_assoc"],ideal_userlocations=["dtb_ideal"])
 ```
 
 The rest works exactly as it normally would! We recommend reading the background documentation for the various models to ensure the units of the parameters you provide are correct.
