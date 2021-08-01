@@ -59,6 +59,21 @@ Multi-parameter equations:
 
 We also support the SPUNG method (`SPUNG`)
 
+### Specifying an ideal term
+
+By default, Clapeyron uses what we refer to as the `BasicIdeal` model to account for the ideal contribution. For properties which only have derivatives with respect to volume or composition (_e.g._ pressure, isothermal compressibility, critical points, saturation points), or monoatomic species (_e.g._ noble gases), this is perfectly fine. However, for any other properties or species, the results obtained will most likely be quite poor. This is because this model does not account for the rotational and vibrational modes of the species. To amend this, we provide two additional ideal models to be used instead (more soon to come):
+
+- Walker and Haslam's ideal correlation (`WalkerIdeal`)
+- Reid's polynomial correlation (`ReidIdeal`)
+
+These can be specified for any of the cubic or SAFT-type equations of state using:
+
+```julia
+model4 = PCSAFT(["carbon dioxide"]; idealmodel = WalkerIdeal)
+```
+
+Everything else will work as normal.
+
 ### Available properties
 
 Once we have our model object, we will be able to call the respective thermodynamic methods to obtain the properties that we are looking for. For example, to find the isobaric heat capacity of a 0.5 mol methanol and 0.5 mol ethanol mixture using PC-SAFT at a pressure of 10 bar and a temperature of 300 K, we just call the `isobaric_heat_capacity(model, p, T, z)` function with the desired model and conditions as parameters.
