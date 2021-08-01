@@ -83,7 +83,22 @@ function inversion_temperature(model::EoSModel, p, z=SA[1.0])
     return Roots.find_zero(μⱼₜ,T0)
 end
 
+
+function molar_density(model::EoSModel,p,T,z=SA[1.0];phase = :unknown,threaded=true)
+     V = volume(model,p,T,z;phase=phase,threaded=threaded)
+     return sum(z)/V
+end
+
+function mass_density(model::EoSModel,p,T,z=SA[1.0];phase = :unknown,threaded=true)
+    V = volume(model,p,T,z;phase=phase,threaded=threaded)
+    molar_weight = molecular_weight(model,z)
+    return molar_weight/V
+end
+
+
+
 export entropy, chemical_potential, internal_energy, enthalpy, gibbs_free_energy
 export helmholtz_free_energy, isochoric_heat_capacity, isobaric_heat_capacity
 export isothermal_compressibility, isentropic_compressibility, speed_of_sound
 export isobaric_expansivity, joule_thomson_coefficient, compressibility_factor, inversion_temperature
+export mass_density,molar_density
