@@ -257,3 +257,25 @@ function sat_pure(model::EoSModel, T::Unitful.Temperature; output=[u"Pa", u"m^3"
     _v_v = uconvert(output[3],v_v*u"m^3")
     return (_P_sat,_v_l,_v_v)
 end
+
+
+#molar density 
+function molar_density(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown",threaded=true, output=u"mol/m^3")
+    st = standarize(model,p,T,z)
+    _p,_T,_z = state_to_pt(model,st)
+    
+    res = molar_density(model,_p,_T,_z;phase=phase,threaded=threaded) *u"mol/m^3"
+    return uconvert(output, res)
+end
+
+
+#mass density 
+function mass_density(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown",threaded=true, output=u"kg/m^3")
+    st = standarize(model,p,T,z)
+    _p,_T,_z = state_to_pt(model,st)
+    
+    res = mass_density(model,_p,_T,_z;phase=phase,threaded=threaded) *u"kg/m^3"
+    return uconvert(output, res)
+end
+
+
