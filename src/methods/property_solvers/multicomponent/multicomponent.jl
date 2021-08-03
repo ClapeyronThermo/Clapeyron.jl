@@ -90,6 +90,7 @@ function x0_bubble_pressure(model::SAFTModel,T,x)
     #P = dot(x,P_Bi)
     y = @. x*P_sat/P
     ysum = 1/∑(y)
+    y    = y.*ysum
     V0_l  = sum(x.*V_l_sat)
     V0_v = sum(y.*V_v_sat)
     
