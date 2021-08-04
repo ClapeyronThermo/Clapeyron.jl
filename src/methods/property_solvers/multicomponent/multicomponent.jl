@@ -1,9 +1,5 @@
 ## Pure saturation conditions solver
 function x0_bubble_pressure(model::ABCubicModel,T,x)
-    
-    #strategy: supose virial max pressure as the saturation pressure
-    #suppose ideal gas and calculate y0
-    
     #TODO
     #on sufficiently large temps, 
     #the joule-thompson inversion occurs
@@ -15,9 +11,7 @@ function x0_bubble_pressure(model::ABCubicModel,T,x)
     #check each T with T_scale, if treshold is over, replace Pi with inf
     
     T_threshold = T_scales(model,x)
-    @show T_threshold
     replaceP = ifelse.(T_threshold .< T,true,false)
-    @show replaceP
 
     eachx = eachcol(Diagonal(ones(eltype(x),length(x))))
     Bi = second_virial_coefficient.(model,T,eachx)
@@ -26,8 +20,12 @@ function x0_bubble_pressure(model::ABCubicModel,T,x)
     #P_B = RT/v(1+B/v)
     #P_B(2B) = -RT/2B(1-B/2B)
     #P_B(2B) = -0.25*RT/B
-
-    P_Bi = @. -0.25*R̄*T/Bi
+    pure = split_model(model)
+    sat = sat_pure.(pure,T)
+    P_sat = [tup[1] for tup in sat]
+    V_l_sat = [tup[2] for tup in sat]
+    V_v_sat = [tup[3] for tup in sat]
+#     P_Bi = @. -0.25*R̄*T/Bi
     #=xP0 = yP
     #dot(x,P0) = P
     P = dot(x,P0)
@@ -35,33 +33,22 @@ function x0_bubble_pressure(model::ABCubicModel,T,x)
     P = zero(T)
     for i in 1:length(x)
         if !replaceP[i]
-            P+=x[i]*P_Bi[i]
+            P+=x[i]*P_sat[i][1]
         end
     end
 
     #@show P_Bi
     #P = dot(x,P_Bi)
-    y = @. x*P_Bi/P
+    y = @. x*P_sat/P
     ysum = 1/∑(y)
-    return y .* ysum
-    #return y
-
-    #=
-    lb_v = lb_volume(model,x)
-    k0 = 10.0
-    y0    = k0 .*x./(1 .+x.*(k0 .- 1))
-    y0    = y0 ./sum(y0)
-    v0    = [log10(lb_v/0.45),
-    log10(lb_v/1e-4)]
-    return append!(v0,y0[1:end-1])
-    =#
+    V0_l  = sum(x.*V_l_sat)
+    V0_v = sum(y.*V_v_sat)
+    
+    prepend!(y,log10.([V0_l,V0_v]))
+    return y
 end
 
 function x0_bubble_pressure(model::SAFTModel,T,x)
-    
-    #strategy: supose virial max pressure as the saturation pressure
-    #suppose ideal gas and calculate y0
-    
     #TODO
     #on sufficiently large temps, 
     #the joule-thompson inversion occurs
@@ -73,9 +60,7 @@ function x0_bubble_pressure(model::SAFTModel,T,x)
     #check each T with T_scale, if treshold is over, replace Pi with inf
     
     T_threshold = 1.5*T_scales(model,x)
-    @show T_threshold
     replaceP = ifelse.(T_threshold .< T,true,false)
-    @show replaceP
 
     eachx = eachcol(Diagonal(ones(eltype(x),length(x))))
     Bi = second_virial_coefficient.(model,T,eachx)
@@ -84,8 +69,12 @@ function x0_bubble_pressure(model::SAFTModel,T,x)
     #P_B = RT/v(1+B/v)
     #P_B(2B) = -RT/2B(1-B/2B)
     #P_B(2B) = -0.25*RT/B
-
-    P_Bi = @. -0.25*R̄*T/Bi
+    pure = split_model(model)
+    sat = sat_pure.(pure,T)
+    P_sat = [tup[1] for tup in sat]
+    V_l_sat = [tup[2] for tup in sat]
+    V_v_sat = [tup[3] for tup in sat]
+#     P_Bi = @. -0.25*R̄*T/Bi
     #=xP0 = yP
     #dot(x,P0) = P
     P = dot(x,P0)
@@ -93,22 +82,23 @@ function x0_bubble_pressure(model::SAFTModel,T,x)
     P = zero(T)
     for i in 1:length(x)
         if !replaceP[i]
-            P+=x[i]*P_Bi[i]
+            P+=x[i]*P_sat[i][1]
         end
     end
 
     #@show P_Bi
     #P = dot(x,P_Bi)
-    y = @. x*P_Bi/P
+    y = @. x*P_sat/P
     ysum = 1/∑(y)
-    V0_l  = x0_volume(model,P,T,x;phase=:l)
-    V0_v = x0_volume(model,P,T,y;phase=:v)
+    y    = y.*ysum
+    V0_l  = sum(x.*V_l_sat)
+    V0_v = sum(y.*V_v_sat)
     
-    prepend!(y,[V0_l,V0_v])
+    prepend!(y,log10.([V0_l,V0_v]))
     return y
 end
 
-function bubble_pressure(model, T, x; v0 =nothing)
+function bubble_pressure(model::SAFTModel, T, x; v0 =nothing)
     TYPE = promote_type(eltype(T),eltype(x))
 #     lb_v = lb_volume(model,x)
     ts = T_scales(model,x)
@@ -121,16 +111,15 @@ function bubble_pressure(model, T, x; v0 =nothing)
     Fcache = zeros(eltype(v0[1:end-1]),len)
     f! = (F,z) -> Obj_bubble_pressure(model, F, T, exp10(z[1]), exp10(z[2]), x,z[3:end],ts,pmix)
     r  =Solvers.nlsolve(f!,v0[1:end-1],LineSearch(Newton()))
-    v_l = exp10(r.info.zero[1])
-    v_v = exp10(r.info.zero[2])
-    y = FractionVector(r.info.zero[3:end])
-    append!(y,1-sum(y))
+    sol = Solvers.x_sol(r)
+    v_l = exp10(sol[1])
+    v_v = exp10(sol[2])
+    y = FractionVector(sol[3:end])
     P_sat = pressure(model,v_l,T,x)
     return (P_sat, v_l, v_v, y)
 end
 
-function Obj_bubble_pressure(model, F, T, v_l, v_v, x, y,ts,ps)
-        println(y)
+function Obj_bubble_pressure(model::SAFTModel, F, T, v_l, v_v, x, y,ts,ps)
     y   = FractionVector(y) #julia magic, check misc.jl
     μ_l = VT_chemical_potential(model,v_l,T,x)
     μ_v = VT_chemical_potential(model,v_v,T,y)
@@ -140,7 +129,7 @@ function Obj_bubble_pressure(model, F, T, v_l, v_v, x, y,ts,ps)
         F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
     end
     F[end] = (p_l-p_v)/ps
-    println(F)
+    return F
 end
 
     #j! = (J,z) -> Jac_bubble_pressure(model, J, T, exp10(z[1]), exp10(z[2]), x[i,:], z[3:end])
