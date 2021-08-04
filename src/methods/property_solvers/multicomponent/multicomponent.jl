@@ -98,7 +98,7 @@ function x0_bubble_pressure(model::SAFTModel,T,x)
     return y
 end
 
-function bubble_pressure(model::SAFTModel, T, x; v0 =nothing)
+function bubble_pressure(model::EoSModel, T, x; v0 =nothing)
     TYPE = promote_type(eltype(T),eltype(x))
 #     lb_v = lb_volume(model,x)
     ts = T_scales(model,x)
@@ -119,7 +119,7 @@ function bubble_pressure(model::SAFTModel, T, x; v0 =nothing)
     return (P_sat, v_l, v_v, y)
 end
 
-function Obj_bubble_pressure(model::SAFTModel, F, T, v_l, v_v, x, y,ts,ps)
+function Obj_bubble_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     y   = FractionVector(y) #julia magic, check misc.jl
     μ_l = VT_chemical_potential(model,v_l,T,x)
     μ_v = VT_chemical_potential(model,v_v,T,y)
