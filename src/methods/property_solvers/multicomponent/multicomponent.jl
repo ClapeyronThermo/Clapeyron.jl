@@ -1,5 +1,5 @@
 ## Pure saturation conditions solver
-function x0_bubble_pressure(model::ABCubicModel,T,x)
+function x0_bubble_pressure(model::EoSModel,T,x)
     #TODO
     #on sufficiently large temps, 
     #the joule-thompson inversion occurs
@@ -9,19 +9,23 @@ function x0_bubble_pressure(model::ABCubicModel,T,x)
     #xi = 0
 
     #check each T with T_scale, if treshold is over, replace Pi with inf
+    pure = split_model(model)
+    crit = crit_pure.(pure)
     
-    T_threshold = T_scales(model,x)
-    replaceP = ifelse.(T_threshold .< T,true,false)
+    T_c = [tup[1] for tup in crit]
+    V_c = [tup[3] for tup in crit]
+
+    replaceP = ifelse.(T_c .< T,true,false)
 
     eachx = eachcol(Diagonal(ones(eltype(x),length(x))))
-    Bi = second_virial_coefficient.(model,T,eachx)
+#     Bi = second_virial_coefficient.(model,T,eachx)
     #using P_B(2B) as a sat aproximation
     #z = 1 + B/v
     #P_B = RT/v(1+B/v)
     #P_B(2B) = -RT/2B(1-B/2B)
     #P_B(2B) = -0.25*RT/B
-    pure = split_model(model)
     sat = sat_pure.(pure,T)
+    
     P_sat = [tup[1] for tup in sat]
     V_l_sat = [tup[2] for tup in sat]
     V_v_sat = [tup[3] for tup in sat]
@@ -31,68 +35,33 @@ function x0_bubble_pressure(model::ABCubicModel,T,x)
     P = dot(x,P0)
     =#
     P = zero(T)
+    V0_l = zero(T)
+    V0_v = zero(T)
+    Pi   = zero(x)
     for i in 1:length(x)
         if !replaceP[i]
-            P+=x[i]*P_sat[i][1]
+            Pi[i] = P_sat[i][1]
+            P+=x[i]*Pi[i]
+            V0_l += x[i]*V_l_sat[i]
+        else 
+            Pi[i] = pressure(pure[i],V_c[i],T)
+            P+=x[i]*Pi[i]
+            V0_l += x[i]*V_c[i]
         end
     end
-
     #@show P_Bi
     #P = dot(x,P_Bi)
-    y = @. x*P_sat/P
-    ysum = 1/∑(y)
-    V0_l  = sum(x.*V_l_sat)
-    V0_v = sum(y.*V_v_sat)
-    
-    prepend!(y,log10.([V0_l,V0_v]))
-    return y
-end
-
-function x0_bubble_pressure(model::SAFTModel,T,x)
-    #TODO
-    #on sufficiently large temps, 
-    #the joule-thompson inversion occurs
-    #making the virial coeff positive
-    #on those cases, use an strategy that supposes pure gas on that side
-    #Pbi = inf
-    #xi = 0
-
-    #check each T with T_scale, if treshold is over, replace Pi with inf
-    
-    T_threshold = 1.5*T_scales(model,x)
-    replaceP = ifelse.(T_threshold .< T,true,false)
-
-    eachx = eachcol(Diagonal(ones(eltype(x),length(x))))
-    Bi = second_virial_coefficient.(model,T,eachx)
-    #using P_B(2B) as a sat aproximation
-    #z = 1 + B/v
-    #P_B = RT/v(1+B/v)
-    #P_B(2B) = -RT/2B(1-B/2B)
-    #P_B(2B) = -0.25*RT/B
-    pure = split_model(model)
-    sat = sat_pure.(pure,T)
-    P_sat = [tup[1] for tup in sat]
-    V_l_sat = [tup[2] for tup in sat]
-    V_v_sat = [tup[3] for tup in sat]
-#     P_Bi = @. -0.25*R̄*T/Bi
-    #=xP0 = yP
-    #dot(x,P0) = P
-    P = dot(x,P0)
-    =#
-    P = zero(T)
-    for i in 1:length(x)
-        if !replaceP[i]
-            P+=x[i]*P_sat[i][1]
-        end
-    end
-
-    #@show P_Bi
-    #P = dot(x,P_Bi)
-    y = @. x*P_sat/P
+    y = @. x*Pi/P
     ysum = 1/∑(y)
     y    = y.*ysum
-    V0_l  = sum(x.*V_l_sat)
-    V0_v = sum(y.*V_v_sat)
+    
+    for i in 1:length(x)
+        if !replaceP[i]
+            V0_v += y[i]*V_v_sat[i]
+        else
+            V0_v += y[i]*V_c[i]*1.2
+        end
+    end
     
     prepend!(y,log10.([V0_l,V0_v]))
     return y
