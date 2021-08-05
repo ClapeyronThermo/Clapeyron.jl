@@ -31,7 +31,6 @@ function SAFTgammaMie(components; idealmodel::Type=BasicIdeal, userlocations=Str
     bondvol = params["bondvol"]
 
     sites = SiteParam(Dict("e1" => params["n_e1"], "e2" => params["n_e2"], "H" => params["n_H"]))
-    @show params["n_e1"]
     packagedparams = SAFTgammaMieParam(segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1063/1.4851455", "10.1021/je500248h"]
 
