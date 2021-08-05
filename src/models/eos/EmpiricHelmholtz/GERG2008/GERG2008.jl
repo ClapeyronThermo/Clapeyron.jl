@@ -7,28 +7,16 @@ mw(model::GERG2008) = model.Mw
 
 function Base.show(io::IO, mime::MIME"text/plain",sp::GERG2008)
     ln = length(sp.components)
-    println(io,ln,"-element GERG008 model, with compounds:")
+    println(io,"GERG008 model with ",ln," component",ifelse(isone(ln),"","s"),":")
+    tick = "\""
     for i in 1:ln-1
-        println(io," n",i," : ",sp.components[i])
+        println(io,tick,sp.components[i],tick)
     end
-    print(io," n",ln," : ",sp.components[ln])
+    print(io,tick,sp.components[ln],tick)
 end
 
-function Base.show(io::IO,sp::GERG2008)
-    print(io,"GERG2008(")
-    i = 0
-    for name in model.components
-        i += 1
-        if i > 1
-            println(io)
-        end
-        if miss == false
-            print(io," ",name)
-        else
-            print(io," ",name)
-        end
-    end
-    print(io,")")
+function Base.show(io::IO,model::GERG2008)
+    return eosshow(io,model)
 end
 
 #uses extended corresponding states and the propane ancilliary eqs
