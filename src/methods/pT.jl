@@ -62,6 +62,15 @@ function joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase = :unk
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_joule_thomson_coefficient(model,V,T,z)
 end
+
+function activity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
+    pure   = split_model(model)
+    μ_pure = chemical_potential.(pure,p,T;phase = phase, threaded=threaded)
+    μ_mixt = chemical_potential(model,p,T,z;phase = phase, threaded=threaded)
+    μ_pure = [μ_pure[i][1] for i in 1:length(z)]
+    γ_i    = @. exp((μ_mixt-μ_pure)/R̄/T)/z
+    return γ_i
+end
 """
     compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
 
@@ -101,4 +110,4 @@ export entropy, chemical_potential, internal_energy, enthalpy, gibbs_free_energy
 export helmholtz_free_energy, isochoric_heat_capacity, isobaric_heat_capacity
 export isothermal_compressibility, isentropic_compressibility, speed_of_sound
 export isobaric_expansivity, joule_thomson_coefficient, compressibility_factor, inversion_temperature
-export mass_density,molar_density
+export mass_density,molar_density, activity_coefficient
