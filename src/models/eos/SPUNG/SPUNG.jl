@@ -23,14 +23,14 @@ function SPUNG(components::Vector{String},refmodel=PropaneRef(),shapemodel::SHAP
 end
 
 
-function eos(model::SPUNG,V,T,z=SA[1.0],phase="unknown")
+function eos(model::SPUNG,V,T,z=SA[1.0],phase=:unknown)
     f,h = shape_factors(model,V,T,z)
     T0 = T/f
     V0 = V/h
     return eos(model.model_ref,V0,T0)
 end
 
-function eos_res(model::SPUNG,V,T,z=SA[1.0],phase="unknown")
+function eos_res(model::SPUNG,V,T,z=SA[1.0],phase=:unknown)
     f,h = shape_factors(model,V,T,z)
     T0 = T/f
     V0 = V/h
@@ -98,7 +98,7 @@ end
 =#
 
 #overloading sat_pure for SPUNG directly seems to be the way
-function sat_pure(model::SPUNG,T::Real;v0=nothing)
+function sat_pure(model::SPUNG,T::Real,v0=x0_sat_pure(model,T))
     lb_v = lb_volume(model,SA[1.0])
     f,h = shape_factors(model,lb_v,T,SA[1.0])
     T0 = T/f
