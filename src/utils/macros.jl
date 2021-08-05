@@ -58,13 +58,13 @@ end
 
 This macro is an alias to
 
-    model.isites[component]
+    model.sites.isites[component]
 
 `isites[component]` is an iterator that goes through all sites relevant to
 each group in a GC model, and to each main component in a non-GC model.
 """
 macro sites(component)
-    return :($(esc(:(model.isites[$(component)]))))
+    return :($(esc(:(model.sites.isites[$(component)]))))
 end
 
 """
@@ -136,7 +136,6 @@ macro newmodelgc(name, parent, paramstype)
     quote 
     struct $name{T <: IdealModel} <: $parent
         components::Array{String,1}
-        lengthcomponents::Int
         icomponents::UnitRange{Int}
 
         allcomponentgroups::Array{Array{String,1},1}
@@ -149,10 +148,7 @@ macro newmodelgc(name, parent, paramstype)
         allcomponentnflattenedgroups::Array{Array{Int,1},1}
         iflattenedgroups::UnitRange{Int}
 
-        allgroupsites::Array{Array{String,1},1}
-        lengthallgroupsites::Array{Int,1}
-        allgroupnsites::Array{Array{Int,1},1}
-        isites::Array{UnitRange{Int},1}
+        sites::SiteParam
 
         params::$paramstype
         idealmodel::T
@@ -191,6 +187,8 @@ macro newmodelgc(name, parent, paramstype)
     function Base.show(io::IO, model::$name)
         return eosshow(io, model)
     end
+
+    Base.length(model::$name) = Base.length(model.icomponents)
     end |> esc
 end
 
@@ -217,18 +215,14 @@ function _newmodelgc(eostype,params, groups::GroupParam, sites::SiteParam, ideal
     allcomponentngroups = groups.allcomponentngroups
     igroups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ allcomponentgroups]
 
-    allgroupsites = sites.allcomponentsites
-    lengthallgroupsites = [length(groupsites) for groupsites ∈ allgroupsites]
-    allgroupnsites = sites.allcomponentnsites
-    isites = [1:lengthallgroupsites[k] for k ∈ iflattenedgroups]
 
     verbose && idealmodel != BasicIdeal && @info("Now creating ideal model ", idealmodel, ".")
     idealmodelstruct = idealmodel(components; userlocations=ideal_userlocations, verbose=verbose)
 
-return eostype{idealmodel}(components, lengthcomponents, icomponents,
+return eostype{idealmodel}(components, icomponents,
        allcomponentgroups, lengthallcomponentgroups, allcomponentngroups, igroups,
        flattenedgroups, lengthflattenedgroups, allcomponentnflattenedgroups, iflattenedgroups,
-       allgroupsites, lengthallgroupsites, allgroupnsites, isites,
+       sites,
        params, idealmodelstruct, absolutetolerance, references)
 end
 
@@ -256,14 +250,8 @@ macro newmodel(name, parent, paramstype)
     quote 
     struct $name{T <: IdealModel} <: $parent
         components::Array{String,1}
-        lengthcomponents::Int
         icomponents::UnitRange{Int}
-
-        allcomponentsites::Array{Array{String,1},1}
-        lengthallcomponentsites::Array{Int,1}
-        allcomponentnsites::Array{Array{Int,1},1}
-        isites::Array{UnitRange{Int},1}
-
+        sites::SiteParam
         params::$paramstype
         idealmodel::T
         absolutetolerance::Float64
@@ -300,6 +288,8 @@ macro newmodel(name, parent, paramstype)
     function Base.show(io::IO, model::$name)
         return eosshow(io, model)
     end
+
+    Base.length(model::$name) = Base.length(model.icomponents)
     end |> esc
 end
 
@@ -313,18 +303,17 @@ function _newmodel(eostype, params, sites::SiteParam, idealmodel::IDEALTYPE=Basi
     #!(idealmodel <: IdealModel) && error("idealmodel ", idealmodel, " has to be a concrete subtype of IdealModel.")
     arbparam = arbitraryparam(params)
     components = arbparam.components
-    lengthcomponents = length(components)
-    icomponents = 1:lengthcomponents
-    allcomponentsites = sites.allcomponentsites
-    lengthallcomponentsites = [length(componentsites) for componentsites ∈ allcomponentsites]
-    allcomponentnsites = sites.allcomponentnsites
-    isites = [1:lengthallcomponentsites[i] for i ∈ icomponents]
+    icomponents = 1:length(components)
+    #allcomponentsites = sites.allcomponentsites
+    #lengthallcomponentsites = [length(componentsites) for componentsites ∈ allcomponentsites]
+    #allcomponentnsites = sites.allcomponentnsites
+    #isites = [1:lengthallcomponentsites[i] for i ∈ icomponents]
 
     verbose && idealmodel != BasicIdeal && @info("Now creating ideal model ", idealmodel, ".")
     idealmodelstruct = idealmodel(components; userlocations=ideal_userlocations, verbose=verbose)
 
-    return eostype{idealmodel}(components, lengthcomponents, icomponents,
-        allcomponentsites, lengthallcomponentsites, allcomponentnsites, isites,
+    return eostype{idealmodel}(components, icomponents,
+        sites,
         params, idealmodelstruct, absolutetolerance, references)
 end
 
@@ -348,7 +337,6 @@ macro newmodelsimple(name, parent, paramstype)
     quote 
     struct $name <: $parent
         components::Array{String,1}
-        lengthcomponents::Int
         icomponents::UnitRange{Int}
 
         params::$paramstype
@@ -370,6 +358,9 @@ macro newmodelsimple(name, parent, paramstype)
     function Base.show(io::IO, model::$name)
         return eosshow(io, model)
     end
+
+    Base.length(model::$name) = Base.length(model.icomponents)
+
     end |> esc
 end
 
@@ -380,8 +371,7 @@ function _newmodelsimple(eostype,params;
 
     arbparam = arbitraryparam(params)
     components = arbparam.components
-    lengthcomponents = length(components)
-    icomponents = 1:lengthcomponents
+    icomponents = 1:length(components)
 
     return eostype(components, lengthcomponents, icomponents,
         params, absolutetolerance, references)
