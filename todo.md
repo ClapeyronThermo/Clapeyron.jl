@@ -9,12 +9,12 @@
 - [x] Update all models to use new input format
 - [ ] Add more comments in the code base according to Julia's recommended format
 - [ ] Documentation
-- [ ] Tutorial
-- [ ] Tests
-- [ ] Add OpenSAFT to Julia repository
+- [x] Tutorial
+- [x] Tests
+- [x] Add ~~OpenSAFT~~ Clapeyron to Julia repository
 
 ## maybe v0.3.0
 
 - [ ] pT flashes
-  - [ ] Ratchford-Rice
-  - [ ] HELD
+- [ ] Ratchford-Rice
+- [ ] HELD

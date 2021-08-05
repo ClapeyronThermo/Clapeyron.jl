@@ -1,5 +1,8 @@
 function try_sat_pure(model,V0,f!,T,result,error_val,converged)
     converged[] =  false
+    if !isfinite(V0[1]) | !isfinite(V0[2])
+        return nothing
+    end
     try
         res = sat_pure(model,V0,f!,T)
         result[] = res
@@ -36,13 +39,22 @@ function sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     res0 = (nan,nan,nan)
     result = Ref(res0)
     error_val = Ref{Any}(nothing)
-    converged = Ref{Bool}(false)
-
+    converged = Ref{Bool}(false) 
     try_sat_pure(model,V0,f!,T,result,error_val,converged)   
     if converged[]
         return result[]
-        #V0 = log10.([V_l[i],V_v[i]])
     end
+    (T_c, p_c, V_c) = crit_pure(model)
+    if T_c < T
+        @error "initial temperature $T greater than critical temperature $T_c. returning NaN"
+    else
+        V0 = x0_sat_pure_crit(model,T,T_c,P_c,V_c)
+        try_sat_pure(model,V0,f!,T,result,error_val,converged)   
+        if converged[]
+            return result[]
+        end
+    end
+    #not converged, even trying with better critical aprox.
     return res0
 end
 
@@ -69,10 +81,8 @@ function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
     return [log10(Vl0),log10(Vv0)]
 end
 
-function sat_pure(model::EoSModel,V0,f!,T)
-    r = Solvers.nlsolve(f!, V0,LineSearch(Newton()))
-    #@show typeof(r)
-    #@show f!(rand(2),r.info.zero)
+function sat_pure(model::EoSModel,V0,f!,T)  
+    r = Solvers.nlsolve(f!, V0 , LineSearch(Newton()))
     Vsol = Solvers.x_sol(r)
     V_l = exp10(Vsol[1])
     V_v = exp10(Vsol[2])

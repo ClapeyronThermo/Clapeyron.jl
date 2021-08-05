@@ -81,18 +81,3 @@ end
 returns a vector of strings of each component.
 """
 component_names(model) = model.components
-
-
-
-
-
-function v_rackett(model,T)
-    tc = only(paramvals(model.params.Tc))
-    pc = only(paramvals(model.params.Pc))
-    vc = only(paramvals(model.params.Vc))
-    TT = promote_type(typeof(tc),typeof(T))
-    zc = pc*vc/(R̄*tc)
-    _2_7 = TT(2//7)
-    _1 = TT(1.0)
-    R̄*tc/pc*zc^(_1 + (_1 - T/tc)^(_2_7))
-end
