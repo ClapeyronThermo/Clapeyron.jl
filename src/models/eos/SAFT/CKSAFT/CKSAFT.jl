@@ -125,7 +125,7 @@ end
 function a_assoc(model::CKSAFTModel, V, T, z)
     x = z/∑(z)
     X_ = @f(X_assoc)
-    n = model.allcomponentnsites
+    n = model.sites.allcomponentnsites
     #return ∑(x[i]*∑(log(X_iA[i,a])-X_iA[i,a]/2 + model.params.n_sites[i][a]/2 for a ∈ keys(model.params.n_sites[i])) for i ∈ model.components)
     return ∑(x[i]*
                 ∑(

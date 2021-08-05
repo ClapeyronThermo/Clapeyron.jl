@@ -178,7 +178,7 @@ end
 
 function a_assoc(model::SAFTVRSWModel, V, T, z)
     x = z/∑(z)
-    n = model.allcomponentnsites
+    n = model.sites.allcomponentnsites
     X_ = @f(X)
     return ∑(x[i]*∑(n[i][a]*(log(X_[i][a])+(1-X_[i][a])/2) for a ∈ @sites(i)) for i ∈ @comps)
 end
@@ -188,7 +188,7 @@ function X(model::SAFTVRSWModel, V, T, z)
     ∑z = ∑(z)
     x = z/∑z
     ρ = N_A*∑z/V
-    n = model.allcomponentnsites
+    n = model.sites.allcomponentnsites
     itermax = 500
     dampingfactor = 0.5
     error = 1.

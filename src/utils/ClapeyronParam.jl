@@ -71,16 +71,17 @@ end
 struct PairParam{T} <: ClapeyronParam
     name::String
     values::Array{T,2}
-    diagvalues::SubArray{T,1,Array{T,1},Tuple{Array{Int64,1}},false}
+    diagvalues::SubArray{T, 1, Vector{T}, Tuple{StepRange{Int64, Int64}}, true}
     ismissingvalues::Array{Bool,2}
     components::Array{String,1}
     allcomponentsites::Array{Array{String,1},1}
     sourcecsvs::Array{String,1}
     sources::Array{String,1}
-    function PairParam(name::String, values::Array{T,2}, ismissingvalues::Array{Bool,2}, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, sourcecsvs::Array{String,1}, sources::Array{String,1}) where T
-        diagvalues = view(values, [1+(length(components)+1)*x for x in 0:length(components)-1])
-        return new{T}(name, values, diagvalues, ismissingvalues, components, allcomponentsites, sourcecsvs, sources)
-    end
+end
+
+function PairParam(name::String, values::Array{T,2}, ismissingvalues::Array{Bool,2}, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, sourcecsvs::Array{String,1}, sources::Array{String,1}) where T
+    diagvalues = view(values, diagind(values))
+    return PairParam{T}(name, values, diagvalues, ismissingvalues, components, allcomponentsites, sourcecsvs, sources)
 end
 
 function PairParam(x::PairParam{T}) where T
@@ -99,7 +100,6 @@ end
 function PairParam(x::SingleParam, v::Array{T,2}) where T
     return PairParam(x.name, v, convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
-
 
 function Base.show(io::IO,mime::MIME"text/plain",param::PairParam{T}) where T
     print(io,"PairParam{",string(T),"}")
@@ -140,6 +140,27 @@ function AssocParam{T}(x::AssocParam, v::Array{Array{T,2},2}) where T
     return AssocParam{T}(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
 
+function Base.show(io::IO,mime::MIME"text/plain",param::AssocParam{T}) where T
+    print(io,"AssocParam{",string(T),"}")
+    show(io,param.components)
+    println(io,") with values:")
+    show(io,mime,param.values)
+end
+
+function Base.show(io::IO,param::AssocParam)
+    print(io,"AssocParam(",param.name)
+    print(io,"\"",param.name,"\"",")[")
+    for (name,val,miss,i) in zip(param.components,param.values,param.ismissingvalues,1:length(param.values))
+        i != 1 && print(io,",")
+        if miss == false
+            print(io,name,"=",val)
+        else
+            print(io,name,"=","-")
+        end
+    end
+    print(io,"]")
+end
+
 struct GroupParam <: ClapeyronParam
     components::Array{String,1}
     allcomponentgroups::Array{Array{String,1},1}
@@ -174,8 +195,21 @@ struct SiteParam <: ClapeyronParam
     components::Array{String,1}
     allcomponentsites::Array{Array{String,1},1}
     allcomponentnsites::Array{Array{Int,1},1}
+    lengthallcomponentsites::Array{Int,1}
+    isites::Array{UnitRange{Int},1}
     sourcecsvs::Array{String,1}
 end
+
+#=
+ allcomponentsites::Array{Array{String,1},1}
+        lengthallcomponentsites::Array{Int,1}
+        allcomponentnsites::Array{Array{Int,1},1}
+        isites::Array{UnitRange{Int},1}
+    allcomponentnsites = sites.allcomponentnsites
+    isites = [1:lengthallcomponentsites[i] for i ∈ icomponents]
+
+
+=#
 
 function SiteParam(pairs::Dict{String,SingleParam{Int}})
     arbitraryparam = first(values(pairs))
@@ -183,16 +217,105 @@ function SiteParam(pairs::Dict{String,SingleParam{Int}})
     allcomponentsites = arbitraryparam.allcomponentsites
     sourcecsvs = unique([([x.sourcecsvs for x in values(pairs)]...)...])
     allcomponentnsites = [[pairs[allcomponentsites[i][j]].values[i] for j ∈ 1:length(allcomponentsites[i])] for i ∈ 1:length(components)]  # or groupsites
-    return SiteParam(components, allcomponentsites, allcomponentnsites, sourcecsvs)
+    lengthallcomponentsites = [length(componentsites) for componentsites ∈ allcomponentsites]
+    isites = [1:lengthallcomponentsites[i] for i ∈ 1:length(components)]
+
+    return SiteParam(components,
+    allcomponentsites,
+    allcomponentnsites,
+    lengthallcomponentsites,
+    isites,
+    sourcecsvs)
 end
 
 
 #empty SiteParam
 function SiteParam(components::Vector{String})
-    return SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], String[])
+    n = length(components)
+    return SiteParam(components,
+    [String[] for _ ∈ 1:n],
+    [Int[] for _ ∈ 1:n], 
+    zeros(Int,n),
+    [1:0 for _ ∈ 1:n],
+    String[])
 end
 
 paramvals(param::ClapeyronParam) = param.values
 paramvals(x) = x
 
+
+function split_model(param::SingleParam{T},components = param.components) where T
+    return [SingleParam{T}(
+    param.name,
+    [param.values[i]],
+    [param.ismissingvalues[i]],
+    [components[i]],
+    [param.allcomponentsites[i]],
+    deepcopy(param.sourcecsvs),
+    deepcopy(param.sources)
+    ) for i in 1:length(components)]
+end
+
+#this conversion is lossy, as interaction between two or more components are lost.
+function split_model(param::PairParam{T},components = param.components) where T
+    function generator(i)     
+        _value = zeros(T,1,1)
+        _value[1,1] = param.values[i,i]
+        _diagvalue = view(_value,1:1:1)
+        _ismissingvalues = zeros(Bool,1,1)
+        _ismissingvalues[1,1] = param.ismissingvalues[i,i]
+        return PairParam{T}(
+                param.name,
+                _value,
+                _diagvalue,
+                _ismissingvalues,
+                [components[i]],
+                [param.allcomponentsites[i]],
+                deepcopy(param.sourcecsvs),
+                deepcopy(param.sources)
+                )
+    end 
+    return [generator(i) for i in 1:length(components)]
+end
+
+function split_model(param::Vector,components)
+    checkbounds(length(param),length(components))
+    return [[xi] for xi in param]
+    
+end
+
+#this conversion is lossy, as interaction between two or more components are lost.
+function split_model(param::AssocParam{T},components = param.components) where T
+    function generator(i)     
+        _value = Matrix{Matrix{T}}(undef,1,1)
+        _value[1,1] = param.values[i,i]
+        _ismissingvalues = Matrix{Matrix{Bool}}(undef,1,1)
+        _ismissingvalues[1,1] = param.ismissingvalues[i,i]
+        return AssocParam{T}(
+                param.name,
+                _value,
+                _ismissingvalues,
+                [components[i]],
+                [param.allcomponentsites[i]],
+                deepcopy(param.sourcecsvs),
+                deepcopy(param.sources)
+                )
+    end 
+    return [generator(i) for i in 1:length(components)]
+end
+
+    
+
+#==
+
+struct AssocParam{T} <: ClapeyronParam
+    name::String
+    values::Array{Array{T,2},2}
+    ismissingvalues::Array{Array{Bool,2},2}
+    components::Array{String,1}
+    allcomponentsites::Array{Array{String,1},1}
+    sourcecsvs::Array{String,1}
+    sources::Array{String,1}
+end
+==#
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
