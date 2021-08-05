@@ -56,7 +56,6 @@ include("models/eos/EmpiricHelmholtz/GERG2008/GERG2008.jl")
 
 include("models/eos/SPUNG/SPUNG.jl")
 
-
 include("methods/methods.jl")
 
 end # module
