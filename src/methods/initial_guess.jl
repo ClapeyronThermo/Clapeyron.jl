@@ -178,7 +178,7 @@ function lb_volume(model::CPAModel,z = SA[1.0])
 end
 
 function lb_volume(model::SAFTgammaMieModel, z = SA[1.0])
-    vk  = model.igroups
+    vk  = model.allcomponentnflattenedgroups
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
     σᵢᵢ = model.params.sigma.diagvalues
@@ -405,7 +405,7 @@ function p_scale(model::SAFTModel,z=SA[1.0])
 end
 
 function p_scale(model::SAFTgammaMieModel,z=SA[1.0])
-    vk  = model.igroups
+    vk  = model.allcomponentnflattenedgroups
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
     σ   = model.params.sigma.values
