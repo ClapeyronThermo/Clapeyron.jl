@@ -132,15 +132,12 @@ function sat_pure!(model::CachedEoS,T::S,x0 = x0_sat_pure(model,T)) where S<:Rea
     if T_c < T
         insert_first = true
     end
-
     P0,Vl,Vv = sat_pure(model.model,T,x0_sat_pure(model,T))
     #we dont want to store points too close
     insert_values = true
-    if length(T_vec >= sizehint(model))
+    if length(T_vec) >= sizehint(model)
         insert_values = false
     end
-
-    
 
     #avoid splitting if possible
     insert_first = false
@@ -162,8 +159,7 @@ function sat_pure!(model::CachedEoS,T::S,x0 = x0_sat_pure(model,T)) where S<:Rea
         end   
     end
     return P0,Vl,Vv
-    
 end
-include("sat_pure_aprox/sat_pure_aprox.jl")
+include("sat_pure_aprox/TPInterpolation.jl")
 
 export CachedEoS
