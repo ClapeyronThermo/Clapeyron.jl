@@ -415,7 +415,7 @@ function X(model::SAFTgammaMieModel, V, T, z)
     x = z/∑(z)
     ρ = ∑(z)*N_A/V
     v = model.allcomponentnflattenedgroups
-    n = model.allgroupnsites
+    n = model.sites.allcomponentnsites
     itermax = 1000
     damping_factor = 0.5
     error = 1.
