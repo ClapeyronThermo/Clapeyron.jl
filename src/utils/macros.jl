@@ -32,12 +32,12 @@ end
 
 This macro is an alias to
 
-    model.iflattenedgroups
+    model.groups.i_flattenedgroups
 
 `iflattenedgroups` is an iterator that goes through all groups in flattenedgroups.
 """
 macro groups()
-    return :($(esc(:(model.iflattenedgroups))))
+    return :($(esc(:(model.groups.i_flattenedgroups))))
 end
 
 """
@@ -45,12 +45,12 @@ end
 
 This macro is an alias to
 
-    model.igroups[component]
+    model.groups.i_groups[component]
 
-`igroups[component]` is an iterator that goes through all groups in relevent to a given component.
+`i_groups[component]` is an iterator that goes through all groups in relevent to a given component.
 """
 macro groups(component)
-    return :($(esc(:(model.igroups[$(component)]))))
+    return :($(esc(:(model.groups.i_groups[$(component)]))))
 end
 
 """
@@ -58,13 +58,13 @@ end
 
 This macro is an alias to
 
-    model.sites.isites[component]
+    model.sites.i_sites[component]
 
-`isites[component]` is an iterator that goes through all sites relevant to
+`i_sites[component]` is an iterator that goes through all sites relevant to
 each group in a GC model, and to each main component in a non-GC model.
 """
 macro sites(component)
-    return :($(esc(:(model.sites.isites[$(component)]))))
+    return :($(esc(:(model.sites.i_sites[$(component)]))))
 end
 
 """
@@ -137,19 +137,8 @@ macro newmodelgc(name, parent, paramstype)
     struct $name{T <: IdealModel} <: $parent
         components::Array{String,1}
         icomponents::UnitRange{Int}
-
-        allcomponentgroups::Array{Array{String,1},1}
-        lengthallcomponentgroups::Array{Int,1}
-        allcomponentngroups::Array{Array{Int,1},1}
-        igroups::Array{Array{Int,1},1}
-
-        flattenedgroups::Array{String,1}
-        lengthflattenedgroups::Int
-        allcomponentnflattenedgroups::Array{Array{Int,1},1}
-        iflattenedgroups::UnitRange{Int}
-
+        groups::GroupParam
         sites::SiteParam
-
         params::$paramstype
         idealmodel::T
         absolutetolerance::Float64
@@ -189,7 +178,8 @@ macro newmodelgc(name, parent, paramstype)
     end
 
     Base.length(model::$name) = Base.length(model.icomponents)
-    end |> esc
+
+end |> esc
 end
 
 const IDEALTYPE = Type{T} where T<:IdealModel
@@ -205,24 +195,12 @@ function _newmodelgc(eostype,params, groups::GroupParam, sites::SiteParam, ideal
     lengthcomponents = length(components)
     icomponents = 1:lengthcomponents
 
-    flattenedgroups = groups.flattenedgroups
-    lengthflattenedgroups = length(flattenedgroups)
-    allcomponentnflattenedgroups = groups.allcomponentnflattenedgroups
-    iflattenedgroups = 1:lengthflattenedgroups
-
-    allcomponentgroups = groups.allcomponentgroups
-    lengthallcomponentgroups = [length(allcomponentgroups[i]) for i in icomponents]
-    allcomponentngroups = groups.allcomponentngroups
-    igroups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ allcomponentgroups]
-
-
     verbose && idealmodel != BasicIdeal && @info("Now creating ideal model ", idealmodel, ".")
     idealmodelstruct = idealmodel(components; userlocations=ideal_userlocations, verbose=verbose)
 
 return eostype{idealmodel}(components, icomponents,
-       allcomponentgroups, lengthallcomponentgroups, allcomponentngroups, igroups,
-       flattenedgroups, lengthflattenedgroups, allcomponentnflattenedgroups, iflattenedgroups,
-       sites,
+                        groups,
+                        sites,
        params, idealmodelstruct, absolutetolerance, references)
 end
 

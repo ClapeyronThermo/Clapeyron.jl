@@ -36,6 +36,10 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
 
 ```
 """
+
+function __paa()
+    return @__MODULE__()
+end
 function getpaths(location::AbstractString; relativetodatabase::Bool=false)
     # We do not use realpath here directly because we want to make the .csv suffix optional.
     filepath = relativetodatabase ? normpath(dirname(pathof(Clapeyron)), "..", "database", location) : location
@@ -614,8 +618,6 @@ function mirrormatrix!(matrix::Array{Array{T,2},2}) where T
     return matrix
 end
 
-
-export GroupParam
 function GroupParam(gccomponents::Array{<:Any,1}, grouplocations::Array{String,1}=String[]; usergrouplocations::Array{String,1}=String[], verbose::Bool=false)
     # The format for gccomponents is an arary of either the species name (if it
     # available in the Clapeyron database, or a tuple consisting of the species
@@ -626,6 +628,7 @@ function GroupParam(gccomponents::Array{<:Any,1}, grouplocations::Array{String,1
     BuildSpeciesType = Union{Tuple{String, Array{Pair{String, Int64},1}}, String, Tuple{String}}
     any(.!(isa.(gccomponents, BuildSpeciesType))) && error("The format of the components is incorrect.")
     filepaths = string.(vcat([(getpaths.(grouplocations; relativetodatabase=true)...)...], [(getpaths.(usergrouplocations)...)...]))
+    
     components = String[]
     allcomponentgroups = Array{Array{String,1},1}(undef, 0)
     allcomponentngroups = Array{Array{Int,1},1}(undef, 0)
@@ -677,5 +680,15 @@ function GroupParam(gccomponents::Array{<:Any,1}, grouplocations::Array{String,1
             end
         end
     end
-    return GroupParam(components, allcomponentgroups, allcomponentngroups, flattenedgroups, allcomponentnflattenedgroups, groupsourcecsvs)
+    igroups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ allcomponentgroups]
+    iflattenedgroups = 1:length(allcomponentnflattenedgroups)
+    
+    return GroupParam(components, 
+    allcomponentgroups, 
+    allcomponentngroups,
+    igroups,
+    flattenedgroups, 
+    allcomponentnflattenedgroups, 
+    iflattenedgroups,
+    groupsourcecsvs)
 end

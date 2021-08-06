@@ -163,71 +163,120 @@ end
 
 struct GroupParam <: ClapeyronParam
     components::Array{String,1}
-    allcomponentgroups::Array{Array{String,1},1}
-    allcomponentngroups::Array{Array{Int,1},1}
+    groups::Array{Array{String,1},1}
+    n_groups::Array{Array{Int,1},1}
+    i_groups::Array{Array{Int,1},1}
     flattenedgroups::Array{String,1}
-    allcomponentnflattenedgroups::Array{Array{Int,1},1}
+    n_flattenedgroups::Array{Array{Int,1},1}
+    i_flattenedgroups::UnitRange{Int}
     sourcecsvs::Array{String,1}
 end
 
-function Base.show(io::IO, param::GroupParam)
-    print(io,"GroupParam(")
-    for component in param.components
-        print(io, "\"", component, "\"")
-        if (component != last(param.components))
-            print(io, ",")
-        end
-    end
-    println(io, ") with ", length(param.components), " components:", ifelse(len==1, ":", "s:"))
+function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)
+    print(io,"GroupParam ")
+    len = length(param.components)
+    println(io,"with ", len, " component", ifelse(len==1, ":", "s:"))
+    
     for i in 1:length(param.components)
+        
         print(io, " \"", param.components[i], "\": ")
         firstloop = true
-        for j in 1:length(param.allcomponentngroups[i])
+        for j in 1:length(param.n_groups[i])
             firstloop == false && print(io, ", ")
-            print(io, "\"", param.allcomponentgroups[i][j], "\" => ", param.allcomponentngroups[i][j])
+            print(io, "\"", param.groups[i][j], "\" => ", param.n_groups[i][j])
             firstloop = false
         end
         i != length(param.components) && println(io)
-    end
+    end 
 end
+
+function Base.show(io::IO, param::GroupParam)
+    print(io,"GroupParam[")
+    len = length(param.components)
+    
+    for i in 1:length(param.components)
+        
+        print(io, "\"", param.components[i], "\" => [")
+        firstloop = true
+        for j in 1:length(param.n_groups[i])
+            firstloop == false && print(io, ", ")
+            print(io, "\"", param.groups[i][j], "\" => ", param.n_groups[i][j])
+            firstloop = false
+        end
+        print(io,']')
+        i != length(param.components) && print(io,", ")
+    end
+    print(io,"]")
+end
+
 
 struct SiteParam <: ClapeyronParam
     components::Array{String,1}
-    allcomponentsites::Array{Array{String,1},1}
-    allcomponentnsites::Array{Array{Int,1},1}
-    lengthallcomponentsites::Array{Int,1}
-    isites::Array{UnitRange{Int},1}
+    sites::Array{Array{String,1},1}
+    n_sites::Array{Array{Int,1},1}
+    length_sites::Array{Int,1}
+    i_sites::Array{UnitRange{Int},1}
     sourcecsvs::Array{String,1}
 end
 
-#=
- allcomponentsites::Array{Array{String,1},1}
-        lengthallcomponentsites::Array{Int,1}
-        allcomponentnsites::Array{Array{Int,1},1}
-        isites::Array{UnitRange{Int},1}
-    allcomponentnsites = sites.allcomponentnsites
-    isites = [1:lengthallcomponentsites[i] for i ∈ icomponents]
+function Base.show(io::IO, mime::MIME"text/plain", param::SiteParam)
+    print(io,"SiteParam ")
+    len = length(param.components)
+    println(io,"with ", len, " site", ifelse(len==1, ":", "s:"))
+    
+    for i in 1:length(param.components)
+        
+        print(io, " \"", param.components[i], "\": ")
+        firstloop = true
+        if length(param.n_sites[i]) == 0
+            print(io,"(no sites)")
+        end
+        for j in 1:length(param.n_sites[i])
+            firstloop == false && print(io, ", ")
+            print(io, "\"", param.sites[i][j], "\" => ", param.n_sites[i][j])
+            firstloop = false
+        end
+        i != length(param.components) && println(io)
+    end 
+end
 
+function Base.show(io::IO, param::SiteParam)
+    print(io,"SiteParam[")
+    len = length(param.components)
+    
+    for i in 1:length(param.components)
+        
+        print(io, "\"", param.components[i], "\" => [")
+        firstloop = true
+    
+        for j in 1:length(param.n_sites[i])
+            firstloop == false && print(io, ", ")
+            print(io, "\"", param.sites[i][j], "\" => ", param.n_sites[i][j])
+            firstloop = false
+        end
+        print(io,']')
+        i != length(param.components) && print(io,", ")
+    end
+    print(io,"]")
+end
 
-=#
 
 function SiteParam(pairs::Dict{String,SingleParam{Int}})
     arbitraryparam = first(values(pairs))
     components = arbitraryparam.components
-    allcomponentsites = arbitraryparam.allcomponentsites
+    sites = arbitraryparam.allcomponentsites
     sourcecsvs = unique([([x.sourcecsvs for x in values(pairs)]...)...])
-    allcomponentnsites = [[pairs[allcomponentsites[i][j]].values[i] for j ∈ 1:length(allcomponentsites[i])] for i ∈ 1:length(components)]  # or groupsites
-    lengthallcomponentsites = [length(componentsites) for componentsites ∈ allcomponentsites]
-    isites = [1:lengthallcomponentsites[i] for i ∈ 1:length(components)]
+    n_sites = [[pairs[sites[i][j]].values[i] for j ∈ 1:length(sites[i])] for i ∈ 1:length(components)]  # or groupsites
+    length_sites = [length(componentsites) for componentsites ∈ sites]
+    i_sites = [1:length_sites[i] for i ∈ 1:length(components)]
 
     return SiteParam(components,
-    allcomponentsites,
-    allcomponentnsites,
-    lengthallcomponentsites,
-    isites,
+    sites,
+    n_sites,
+    length_sites,
+    i_sites,
     sourcecsvs)
 end
-
 
 #empty SiteParam
 function SiteParam(components::Vector{String})
@@ -304,18 +353,4 @@ function split_model(param::AssocParam{T},components = param.components) where T
     return [generator(i) for i in 1:length(components)]
 end
 
-    
-
-#==
-
-struct AssocParam{T} <: ClapeyronParam
-    name::String
-    values::Array{Array{T,2},2}
-    ismissingvalues::Array{Array{Bool,2},2}
-    components::Array{String,1}
-    allcomponentsites::Array{Array{String,1},1}
-    sourcecsvs::Array{String,1}
-    sources::Array{String,1}
-end
-==#
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
