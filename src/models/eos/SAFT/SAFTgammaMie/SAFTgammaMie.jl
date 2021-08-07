@@ -48,7 +48,7 @@ end
 
 function a_chain(model::SAFTgammaMieModel, V, T, z)
     x = z/∑(z)
-    v = model.allcomponentnflattenedgroups
+    v  = model.groups.n_flattenedgroups
     vst = model.params.segment.values
     S = model.params.shapefactor.values
     return -∑(x[i] * (∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i))-1) * log(@f(g_Mie,i)) for i ∈ @comps)
@@ -56,8 +56,8 @@ end
 
 function a_assoc(model::SAFTgammaMieModel, V, T, z)
     x = z/∑(z)
-    v = model.allcomponentnflattenedgroups
-    n = model.sites.allcomponentnsites
+    v = model.groups.n_flattenedgroups
+    n = model.sites.n_sites
     X_ = @f(X)
     return ∑(x[i] * ∑(v[i][k] * ∑(n[k][a] * (log(X_[i][k][a])+(1-X_[i][k][a])/2) for a ∈ @sites(k)) for k ∈ @groups(i)) for i ∈ @comps)
 end
@@ -73,21 +73,21 @@ end
 
 function Â_1(model::SAFTgammaMieModel, V, T, z)
     x = z/∑(z)
-    v = model.allcomponentnflattenedgroups
+    v = model.groups.n_flattenedgroups
     vst = model.params.segment.values
     S = model.params.shapefactor.values
     return 1/T * ∑(x[i]*∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps) * @f(a_1)
 end
 function Â_2(model::SAFTgammaMieModel, V, T, z)
     x = z/∑(z)
-    v = model.allcomponentnflattenedgroups
+    v = model.groups.n_flattenedgroups
     vst = model.params.segment.values
     S = model.params.shapefactor.values
     return 1/T^2 * ∑(x[i]*∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps) * @f(a_2)
 end
 function Â_3(model::SAFTgammaMieModel, V, T, z)
     x = z/∑(z)
-    v = model.allcomponentnflattenedgroups
+    v = model.groups.n_flattenedgroups
     vst = model.params.segment.values
     S = model.params.shapefactor.values
     return 1/T^3 * ∑(x[i]*∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps) * @f(a_3)
@@ -190,7 +190,7 @@ end
 
 function ρ_S(model::SAFTgammaMieModel, V, T, z)
     x = z/∑(z)
-    v = model.allcomponentnflattenedgroups
+    v = model.groups.n_flattenedgroups
     vst = model.params.segment.values
     S = model.params.shapefactor.values
     ρ = ∑(z)*N_A/V
@@ -199,7 +199,7 @@ end
 
 function x_S(model::SAFTgammaMieModel, V, T, z, k)
     x = z/∑(z)
-    v = model.allcomponentnflattenedgroups
+    v = model.groups.n_flattenedgroups
     vst = model.params.segment.values
     S = model.params.shapefactor.values
     return ∑(x[i]*v[i][k]*vst[k]*S[k] for i ∈ @comps) / ∑(x[i] * ∑(v[i][l]*vst[l]*S[l] for l ∈ @groups(i)) for i ∈ @comps)
@@ -230,7 +230,7 @@ function C(model::SAFTgammaMieModel, V, T, z, λa, λr)
 end
 
 function ẑ(model::SAFTgammaMieModel, V, T, z, i, k)
-    v = model.allcomponentnflattenedgroups
+    v = v = model.groups.n_flattenedgroups
     vst = model.params.segment.values
     S = model.params.shapefactor.values
     return v[i][k]*vst[k]*S[k] / ∑(v[i][l]*vst[l]*S[l] for l ∈ @groups(i))
@@ -414,8 +414,8 @@ function X(model::SAFTgammaMieModel, V, T, z)
     _1 = one(V+T+first(z))
     x = z/∑(z)
     ρ = ∑(z)*N_A/V
-    v = model.allcomponentnflattenedgroups
-    n = model.sites.allcomponentnsites
+    v = model.groups.n_flattenedgroups
+    n = model.sites.n_sites
     itermax = 1000
     damping_factor = 0.5
     error = 1.
