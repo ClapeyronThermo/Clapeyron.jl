@@ -160,6 +160,7 @@ function Base.show(io::IO,param::AssocParam)
     end
     print(io,"]")
 end
+const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
 struct GroupParam <: ClapeyronParam
     components::Array{String,1}
@@ -170,6 +171,29 @@ struct GroupParam <: ClapeyronParam
     n_flattenedgroups::Array{Array{Int,1},1}
     i_flattenedgroups::UnitRange{Int}
     sourcecsvs::Array{String,1}
+end
+
+function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=String[])
+    components = [first(i) for i ∈ input] #["ethanol","nonadecanol","ibuprofen"]
+    raw_groups =  [last(i) for i ∈ input]
+    groups = [first.(grouppairs) for grouppairs ∈ raw_groups]
+    n_groups = [last.(grouppairs) for grouppairs ∈ raw_groups]
+    flattenedgroups = unique!(reduce(vcat,groups))
+    i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
+    len_flattenedgroups = length(flattenedgroups)
+    i_flattenedgroups = 1:len_flattenedgroups
+    n_flattenedgroups = [zeros(Int,len_flattenedgroups) for _ ∈ 1:length(input)]
+    for i in length(input)
+        setindex!.(n_flattenedgroups,n_groups,i_groups)
+    end
+    return GroupParam(components, 
+    groups, 
+    n_groups,
+    i_groups, 
+    flattenedgroups,
+    n_flattenedgroups, 
+    i_flattenedgroups,
+    sourcecsvs)
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)
