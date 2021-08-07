@@ -178,7 +178,7 @@ function lb_volume(model::CPAModel,z = SA[1.0])
 end
 
 function lb_volume(model::SAFTgammaMieModel, z = SA[1.0])
-    vk  = model.allcomponentnflattenedgroups
+    vk  = model.groups.n_flattenedgroups
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
     σᵢᵢ = model.params.sigma.diagvalues
@@ -205,8 +205,6 @@ end
 #     μ_scale    = 1/R̄/model.params.T[model.components[1]]
 #     return p_scale,μ_scale
 # end
-
-
 
 """
     x0_sat_pure(model::EoSModel,T,z=SA[1.0])
@@ -405,7 +403,7 @@ function p_scale(model::SAFTModel,z=SA[1.0])
 end
 
 function p_scale(model::SAFTgammaMieModel,z=SA[1.0])
-    vk  = model.allcomponentnflattenedgroups
+    vk  = model.groups.n_flattenedgroups
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
     σ   = model.params.sigma.values
