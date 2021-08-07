@@ -681,7 +681,7 @@ function GroupParam(gccomponents::Array{<:Any,1}, grouplocations::Array{String,1
         end
     end
     igroups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ allcomponentgroups]
-    iflattenedgroups = 1:length(allcomponentnflattenedgroups)
+    iflattenedgroups = 1:length(flattenedgroups)
     
     return GroupParam(components, 
     allcomponentgroups, 
