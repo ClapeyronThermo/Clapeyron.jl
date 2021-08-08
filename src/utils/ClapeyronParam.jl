@@ -330,10 +330,14 @@ function split_model(param::SingleParam{T},components = param.components) where 
 end
 
 #this conversion is lossy, as interaction between two or more components are lost.
-function split_model(param::PairParam{T},components = param.components) where T
-    function generator(i)     
-        _value = zeros(T,1,1)
-        _value[1,1] = param.values[i,i]
+
+ 
+function split_model(param::PairParam{T},
+    components = split_model(1:length(param.components))) where T
+    function generator(I) 
+        len = length(I)
+        _value = zeros(T,len,len)
+        _value[1,1] = param.values[I,I]
         _diagvalue = view(_value,1:1:1)
         _ismissingvalues = zeros(Bool,1,1)
         _ismissingvalues[1,1] = param.ismissingvalues[i,i]
@@ -351,11 +355,9 @@ function split_model(param::PairParam{T},components = param.components) where T
     return [generator(i) for i in 1:length(components)]
 end
 
-function split_model(param::Vector,components)
-    checkbounds(length(param),length(components))
+function split_model(param::AbstractVector)
     return [[xi] for xi in param]
-    
-end
+end 
 
 #this conversion is lossy, as interaction between two or more components are lost.
 function split_model(param::AssocParam{T},components = param.components) where T
@@ -376,5 +378,37 @@ function split_model(param::AssocParam{T},components = param.components) where T
     end 
     return [generator(i) for i in 1:length(components)]
 end
+
+#this param has a defined split form
+function split_model(groups::GroupParam)
+    len = length(groups.components)
+    function generator(i)
+        return GroupParam(
+        [groups.components[i]],
+        [groups.groups[i]],
+        [groups.n_groups[i]],
+        [collect(1:length(groups.n_groups[i]))],
+        groups.flattenedgroups[groups.i_groups[i]],
+        [groups.n_groups[i]],
+        1:length(groups.n_groups[i]),
+        groups.sourcecsvs)
+    end
+    [generator(i) for i in 1:len]
+end
+
+
+#=
+struct GroupParam <: ClapeyronParam
+    components::Array{String,1}
+    groups::Array{Array{String,1},1}
+    n_groups::Array{Array{Int,1},1}
+    i_groups::Array{Array{Int,1},1}
+    flattenedgroups::Array{String,1}
+    n_flattenedgroups::Array{Array{Int,1},1}
+    i_flattenedgroups::UnitRange{Int}
+    sourcecsvs::Array{String,1}
+end
+
+=#
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam

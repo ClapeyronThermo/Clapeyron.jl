@@ -660,7 +660,6 @@ function _GroupParam(gccomponents, grouplocations::Array{String,1}=String[]; use
             gccomponents_parsed[i] = (first(gccomponent),groupsandngroups)
         end
     end
-    #@show gccomponents_parsed
     return GroupParam(gccomponents_parsed,groupsourcecsvs)
 end
 
