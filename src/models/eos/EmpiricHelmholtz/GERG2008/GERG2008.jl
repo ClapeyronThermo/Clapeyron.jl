@@ -3,7 +3,7 @@ include("model.jl")
 include("equations.jl")
 
 idealmodel(model::GERG2008) = model
-mw(model::GERG2008) = model.Mw
+molecular_weight(model::GERG2008,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
 
 function Base.show(io::IO, mime::MIME"text/plain",sp::GERG2008)
     ln = length(sp.components)
