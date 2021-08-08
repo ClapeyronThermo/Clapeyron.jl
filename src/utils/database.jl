@@ -270,12 +270,11 @@ function swapdictorder(dict::Dict)
     end
     return output
 end
-
 function findparamsincsv(components::Array{String,1}, filepath::AbstractString, headerparams::Array{String,1}; columnreference::AbstractString="species", sitecolumnreference::AbstractString="site", sourcecolumnreference::AbstractString="source", verbose::Bool=false, normalisecomponents::Bool=true)
     # Returns a Dict with all matches in a particular file for one parameter.
     normalised_columnreference = normalisestring(columnreference)
     csvtype = readcsvtype(filepath)
-    df = CSV.File(filepath; header=3, pool=0,lazystrings=true)
+    df = CSV.File(filepath; header=3, pool=0,lazystrings=true,silencewarnings=true)
     csvheaders = String.(Tables.columnnames(df))
     normalised_components = normalisestring.(components; isactivated=normalisecomponents)
     normalised_csvheaders = normalisestring.(csvheaders)
@@ -460,7 +459,11 @@ end
 function readheaderparams(filepath::AbstractString; headerline::Int = 3)
     # Returns array of filtered header strings at line 3.
     headers = split(getline(filepath, headerline), ',')
+    if last(headers) == ""
+        pop!(headers)
+    end
     ignorelist = ["source", "species", "dipprnumber", "smiles", "site"]
+    
     return String.(filter(x -> normalisestring(x; tofilter=r"[ \-\_\d]") ∉ ignorelist, headers))
 end
 
