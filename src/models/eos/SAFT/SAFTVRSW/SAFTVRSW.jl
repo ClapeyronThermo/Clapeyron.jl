@@ -12,7 +12,7 @@ abstract type SAFTVRSWModel <: SAFTModel end
 @newmodel SAFTVRSW SAFTVRSWModel SAFTVRSWParam
 
 export SAFTVRSW
-function SAFTVRSW(components; idealmodel::Type=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function SAFTVRSW(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["SAFT/SAFTVRSW","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
     segment = params["m"]

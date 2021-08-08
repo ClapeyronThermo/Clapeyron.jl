@@ -11,7 +11,7 @@ abstract type SAFTVRQMieModel <: SAFTVRMieModel end
 @newmodel SAFTVRQMie SAFTVRQMieModel SAFTVRQMieParam
 
 export SAFTVRQMie
-function SAFTVRQMie(components; idealmodel::Type=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["SAFT/SAFTVRQMie"]; userlocations=userlocations, verbose=verbose)
 
     params["Mw"].values .*= 1E-3

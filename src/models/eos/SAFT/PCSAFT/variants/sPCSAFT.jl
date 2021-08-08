@@ -2,7 +2,7 @@ abstract type sPCSAFTModel <: PCSAFTModel end
 @newmodel sPCSAFT sPCSAFTModel PCSAFTParam
 
 export sPCSAFT
-function sPCSAFT(components; idealmodel::Type=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function sPCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = params["k"]

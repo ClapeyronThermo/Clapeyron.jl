@@ -14,7 +14,7 @@ abstract type SAFTgammaMieModel <: GCSAFTModel end
 
 const SAFTγMie = SAFTgammaMie
 export SAFTgammaMie,SAFTγMie
-function SAFTgammaMie(components; idealmodel::Type=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function SAFTgammaMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie"]; userlocations=userlocations, verbose=verbose)
 
