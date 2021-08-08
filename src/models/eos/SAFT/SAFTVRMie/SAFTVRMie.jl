@@ -13,7 +13,7 @@ abstract type SAFTVRMieModel <: SAFTModel end
 @newmodel SAFTVRMie SAFTVRMieModel SAFTVRMieParam
 
 export SAFTVRMie
-function SAFTVRMie(components; idealmodel::Type=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function SAFTVRMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
     params["Mw"].values .*= 1E-3
