@@ -44,24 +44,37 @@ is_supercritical(str::String) = is_vapour(Symbol(str))
 equivalent to `sum(iterator,init=0.0)`. 
 
 """
-function ∑(iterator) #not collecting is faster
-    #_0 = ifelse(length(iterator)>0,zero(first(iterator)),0.0)
-    _0 = 0.0
-    return reduce(Base.add_sum,iterator,init=_0)
+function ∑ end
+
+if Base.VERSION < v"1.6"
+    function ∑(iterator)
+        _0 = 0.0
+        return reduce(Base.add_sum,iterator,init=_0)
+    end
+    ∑(iterator) = sum(iterator)
+    function ∑(iterator::AbstractArray) 
+        if iszero(length(iterator))
+            return zero(eltype(iterator))
+        else
+            return sum(iterator)
+        end
+    end
+
+    function ∑(fn,iterator) #not collecting is faster
+        #_0 = ifelse(length(iterator)>0,zero(first(iterator)),0.0)
+        _0 = 0.0
+        return mapreduce(fn,Base.add_sum,iterator,init=_0)
+    end
+else
+    ∑(iterator) = sum(iterator)
+    function ∑(iterator::AbstractArray) 
+        ifelse(iszero(length(iterator)),zero(eltype(iterator)),sum(iterator))
+    end
+    ∑(fn,iterator) = sum(fn,iterator) 
 end
 
 
-"""
-    ∑(fn,iterator)
 
-equivalent to `sum(fniterator,init=0.0)`. 
-
-"""
-function ∑(fn,iterator) #not collecting is faster
-    #_0 = ifelse(length(iterator)>0,zero(first(iterator)),0.0)
-    _0 = 0.0
-    return mapreduce(fn,Base.add_sum,iterator,init=_0)
-end
 
 """
     xlogx(x::Number)
