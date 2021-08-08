@@ -25,6 +25,7 @@ include("models/eos/ideal/BasicIdeal.jl")
 include("models/eos/ideal/MonomerIdeal.jl")
 include("models/eos/ideal/ReidIdeal.jl")
 include("models/eos/ideal/WalkerIdeal.jl")
+include("models/eos/ideal/JobackIdeal.jl")
 
 include("models/eos/SAFT/PCSAFT/PCSAFT.jl")
 include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
