@@ -118,7 +118,7 @@
     # Check that flattening of groups is correct.
     @test components_gc.flattenedgroups == ["grp1", "grp2", "grp3"]
     @test components_gc.n_flattenedgroups == [[1,2,0], [0,1,0], [2,2,3]]
-
+    @test components_gc.i_flattenedgroups == 1:3
     # Build param struct using the gc components above
     param_gc = getparams(components_gc; userlocations=filepath_param_gc)
     @test param_gc["param1"].values == [1, 2, 3]
