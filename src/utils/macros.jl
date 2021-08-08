@@ -179,6 +179,8 @@ macro newmodelgc(name, parent, paramstype)
 
     Base.length(model::$name) = Base.length(model.icomponents)
 
+    molecular_weight(model::$name,z=SA[1.0]) = group_molecular_weight(model.groups,mw(model),z)
+
 end |> esc
 end
 
@@ -190,7 +192,6 @@ function _newmodelgc(eostype,params, groups::GroupParam, sites::SiteParam, ideal
                     absolutetolerance::Float64=1E-12,
                     verbose::Bool=false)
 
-    #!(idealmodel <: IdealModel) && error("idealmodel ", idealmodel, " has to be a concrete subtype of IdealModel.")
     components = groups.components
     lengthcomponents = length(components)
     icomponents = 1:lengthcomponents
@@ -266,7 +267,7 @@ macro newmodel(name, parent, paramstype)
     function Base.show(io::IO, model::$name)
         return eosshow(io, model)
     end
-
+    molecular_weight(model::$name,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
     Base.length(model::$name) = Base.length(model.icomponents)
     end |> esc
 end
@@ -278,15 +279,9 @@ function _newmodel(eostype, params, sites::SiteParam, idealmodel::IDEALTYPE=Basi
                 absolutetolerance::Float64=1E-12,
                 verbose::Bool=false)
 
-    #!(idealmodel <: IdealModel) && error("idealmodel ", idealmodel, " has to be a concrete subtype of IdealModel.")
     arbparam = arbitraryparam(params)
     components = arbparam.components
     icomponents = 1:length(components)
-    #allcomponentsites = sites.allcomponentsites
-    #lengthallcomponentsites = [length(componentsites) for componentsites ∈ allcomponentsites]
-    #allcomponentnsites = sites.allcomponentnsites
-    #isites = [1:lengthallcomponentsites[i] for i ∈ icomponents]
-
     verbose && idealmodel != BasicIdeal && @info("Now creating ideal model ", idealmodel, ".")
     idealmodelstruct = idealmodel(components; userlocations=ideal_userlocations, verbose=verbose)
 
