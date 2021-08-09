@@ -13,7 +13,7 @@ abstract type SAFTVRMieModel <: SAFTModel end
 @newmodel SAFTVRMie SAFTVRMieModel SAFTVRMieParam
 
 export SAFTVRMie
-function SAFTVRMie(components; idealmodel::Type=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function SAFTVRMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
     params["Mw"].values .*= 1E-3
@@ -310,7 +310,7 @@ end
 function a_assoc(model::SAFTVRMieModel, V, T, z)
     x = z/∑(z)
     X_ = @f(X)
-    n = model.allcomponentnsites
+    n = model.sites.n_sites
     return ∑(x[i]*∑(n[i][a]*(log(X_[i][a])+(1-X_[i][a])/2) for a ∈ @sites(i)) for i ∈ @comps)
 end
 
@@ -319,7 +319,7 @@ function X(model::SAFTVRMieModel, V, T, z)
     ∑z = ∑(z)
     x = z/∑z
     ρ = N_A*∑z/V
-    n = model.allcomponentnsites
+    n = model.sites.n_sites
     itermax = 500
     dampingfactor = 0.5
     error = 1.

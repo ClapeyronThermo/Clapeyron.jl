@@ -8,3 +8,4 @@ abstract type IdealModel <: EoSModel end
 abstract type EmpiricHelmholtzModel <: EoSModel end
 abstract type EoSParam end
 export EoSModel,SAFTModel,CubicModel,EmpiricHelmholtzModel,IdealModel, EoSParam
+abstract type SatPureAproximation <: EoSModel end

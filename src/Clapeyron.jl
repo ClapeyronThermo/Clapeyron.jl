@@ -25,6 +25,7 @@ include("models/eos/ideal/BasicIdeal.jl")
 include("models/eos/ideal/MonomerIdeal.jl")
 include("models/eos/ideal/ReidIdeal.jl")
 include("models/eos/ideal/WalkerIdeal.jl")
+include("models/eos/ideal/JobackIdeal.jl")
 
 include("models/eos/SAFT/PCSAFT/PCSAFT.jl")
 include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
@@ -55,6 +56,8 @@ include("models/eos/EmpiricHelmholtz/PropaneRef.jl")
 include("models/eos/EmpiricHelmholtz/GERG2008/GERG2008.jl")
 
 include("models/eos/SPUNG/SPUNG.jl")
+
+include("models/eos/cached/CachedEoS.jl")
 
 include("methods/methods.jl")
 
