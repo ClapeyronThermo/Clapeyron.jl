@@ -68,6 +68,17 @@ function crit_pure(model::CachedEoS)
     end
 end
 
+function split_model(model::CachedEoS)
+    if haskey(model.cache,:split_model)
+        return model.cache[:split_model]
+    else
+        primal_splitted_model = split_model(model.model)
+        res = [CachedEoS(modeli,sat_pure_aprox = model.sat_pure_aprox) for modeli in primal_splitted_model]
+        model.cache[:split_model] = res
+        return res
+    end
+end
+
 function acentric_factor(model::CachedEoS)
     if haskey(model.cache,:acentric_factor)
         return model.cache[:acentric_factor]
