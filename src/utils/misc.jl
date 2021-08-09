@@ -46,7 +46,7 @@ equivalent to `sum(iterator,init=0.0)`.
 """
 function ∑ end
 ∑(iterator) = reduce(Base.add_sum,iterator,init=0.0)
-∑(fn,iterator) = mapreduce(fn,Base.add_sum,iterator,init=_0)
+∑(fn,iterator) = mapreduce(fn,Base.add_sum,iterator,init=0.0)
 
 
 
