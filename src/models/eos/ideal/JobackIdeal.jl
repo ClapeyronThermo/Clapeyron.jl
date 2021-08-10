@@ -29,7 +29,7 @@ abstract type JobackIdealModel <: IdealModel end
 
 export JobackIdeal
 function JobackIdeal(components;userlocations=String[], verbose=false)
-    groups = GroupParam(components, verbose=verbose)
+    groups = GroupParam(components,["ideal/JobackIdeal_Groups.csv"], verbose=verbose)
     params = getparams(groups, ["ideal/JobackIdeal.csv","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]::SingleParam{Float64}
     N_a = params["N_a"]::SingleParam{Int}
@@ -160,6 +160,28 @@ end
 
 function crit_pure(model::JobackIdeal)
     return (T_c(model),P_c(model),V_c(model))
+end
+
+function a_ideal(model::JobackIdealModel, V, T, z)
+    a = model.params.a.values
+    b = model.params.b.values
+    c = model.params.c.values
+    d = model.params.d.values
+    n = model.groups.n_flattenedgroups
+    res = zero(V+T+first(z))
+    Σz = sum(z)
+    x = z/Σz
+    @inbounds for i in @comps
+        ni = n[i]
+        c0 = ∑(a[j]*ni[j] for j in @groups(i)) - 37.93
+        c1 = ∑(b[j]*ni[j] for j in @groups(i)) + 0.210
+        c2 = ∑(c[j]*ni[j] for j in @groups(i)) - 3.91e-4
+        c3 = ∑(d[j]*ni[j] for j in @groups(i)) + 2.06e-7
+        polycoeff = [c0,c1,c2,c3]
+        res +=x[i]*(log(z[i]/V) + 1/(R̄*T)*(sum(polycoeff[k]/k*(T^k-298^k) for k in 1:4)) -
+        1/R̄*((polycoeff[1]-R̄)*log(T/298)+sum(polycoeff[k]/(k-1)*(T^(k-1)-298^(k-1)) for k in 2:4)))
+    end
+    return res
 end
 
 export JobackIdeal
