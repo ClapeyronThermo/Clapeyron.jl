@@ -44,23 +44,32 @@ is_supercritical(str::String) = is_vapour(Symbol(str))
 equivalent to `sum(iterator,init=0.0)`. 
 
 """
-function ∑(iterator) #not collecting is faster
-    #_0 = ifelse(length(iterator)>0,zero(first(iterator)),0.0)
-    _0 = 0.0
-    return reduce(Base.add_sum,iterator,init=_0)
+function ∑(iterator)
+    len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
+    hastype =  (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
+    local _0
+    if hastype
+        _0 = zero(eltype(iterator))
+    else
+        _0 = 0.0
+    end
+    len && iszero(length(iterator)) && return _0
+    !len && return reduce(Base.add_sum,iterator,init=_0)
+    return sum(iterator)
 end
 
-
-"""
-    ∑(fn,iterator)
-
-equivalent to `sum(fniterator,init=0.0)`. 
-
-"""
-function ∑(fn,iterator) #not collecting is faster
-    #_0 = ifelse(length(iterator)>0,zero(first(iterator)),0.0)
-    _0 = 0.0
-    return mapreduce(fn,Base.add_sum,iterator,init=_0)
+function ∑(fn,iterator) 
+    len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
+    hastype =  (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
+    local _0
+    if hastype
+        _0 = zero(eltype(iterator))
+    else
+        _0 = 0.0
+    end
+    len && iszero(length(iterator)) && return _0
+    !len && return mapreduce(fn,Base.add_sum,iterator,init=_0)
+    return sum(fn,iterator)
 end
 
 """

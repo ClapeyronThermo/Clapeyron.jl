@@ -14,7 +14,9 @@ function x0_bubble_pressure(model::EoSModel,T,x)
     
     T_c = [tup[1] for tup in crit]
     V_c = [tup[3] for tup in crit]
-
+    _0 = zero(T+first(x))
+    nan = _0/_0 
+    sat_nan = (nan,nan,nan)
     replaceP = ifelse.(T_c .< T,true,false)
 
     eachx = eachcol(Diagonal(ones(eltype(x),length(x))))
@@ -24,7 +26,7 @@ function x0_bubble_pressure(model::EoSModel,T,x)
     #P_B = RT/v(1+B/v)
     #P_B(2B) = -RT/2B(1-B/2B)
     #P_B(2B) = -0.25*RT/B
-    sat = sat_pure.(pure,T)
+    sat = [if !replaceP[i] sat_pure(pure[i],T) else sat_nan end for i in 1:length(pure)]
     
     P_sat = [tup[1] for tup in sat]
     V_l_sat = [tup[2] for tup in sat]

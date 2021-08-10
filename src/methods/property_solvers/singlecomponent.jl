@@ -32,6 +32,7 @@ If the calculation fails, returns  `(NaN, NaN, NaN)`
 `V0` is `[log10(Vₗ₀),log10(Vᵥ₀)]` , where `Vₗ₀`  and `Vᵥ₀` are initial guesses for the liquid and vapour volumes.
 """
 function sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
+    T = T*T/T
     V_lb = lb_volume(model,SA[1.0])
     TYPE = promote_type(typeof(T),typeof(V_lb))
     nan = zero(TYPE)/zero(TYPE)    
