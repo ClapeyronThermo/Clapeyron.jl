@@ -71,16 +71,17 @@ end
 struct PairParam{T} <: ClapeyronParam
     name::String
     values::Array{T,2}
-    diagvalues::SubArray{T,1,Array{T,1},Tuple{Array{Int64,1}},false}
+    diagvalues::SubArray{T, 1, Vector{T}, Tuple{StepRange{Int64, Int64}}, true}
     ismissingvalues::Array{Bool,2}
     components::Array{String,1}
     allcomponentsites::Array{Array{String,1},1}
     sourcecsvs::Array{String,1}
     sources::Array{String,1}
-    function PairParam(name::String, values::Array{T,2}, ismissingvalues::Array{Bool,2}, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, sourcecsvs::Array{String,1}, sources::Array{String,1}) where T
-        diagvalues = view(values, [1+(length(components)+1)*x for x in 0:length(components)-1])
-        return new{T}(name, values, diagvalues, ismissingvalues, components, allcomponentsites, sourcecsvs, sources)
-    end
+end
+
+function PairParam(name::String, values::Array{T,2}, ismissingvalues::Array{Bool,2}, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, sourcecsvs::Array{String,1}, sources::Array{String,1}) where T
+    diagvalues = view(values, diagind(values))
+    return PairParam{T}(name, values, diagvalues, ismissingvalues, components, allcomponentsites, sourcecsvs, sources)
 end
 
 function PairParam(x::PairParam{T}) where T
@@ -99,7 +100,6 @@ end
 function PairParam(x::SingleParam, v::Array{T,2}) where T
     return PairParam(x.name, v, convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
-
 
 function Base.show(io::IO,mime::MIME"text/plain",param::PairParam{T}) where T
     print(io,"PairParam{",string(T),"}")
@@ -140,59 +140,275 @@ function AssocParam{T}(x::AssocParam, v::Array{Array{T,2},2}) where T
     return AssocParam{T}(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources))
 end
 
+function Base.show(io::IO,mime::MIME"text/plain",param::AssocParam{T}) where T
+    print(io,"AssocParam{",string(T),"}")
+    show(io,param.components)
+    println(io,") with values:")
+    show(io,mime,param.values)
+end
+
+function Base.show(io::IO,param::AssocParam)
+    print(io,"AssocParam(",param.name)
+    print(io,"\"",param.name,"\"",")[")
+    for (name,val,miss,i) in zip(param.components,param.values,param.ismissingvalues,1:length(param.values))
+        i != 1 && print(io,",")
+        if miss == false
+            print(io,name,"=",val)
+        else
+            print(io,name,"=","-")
+        end
+    end
+    print(io,"]")
+end
+const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
+
 struct GroupParam <: ClapeyronParam
     components::Array{String,1}
-    allcomponentgroups::Array{Array{String,1},1}
-    allcomponentngroups::Array{Array{Int,1},1}
+    groups::Array{Array{String,1},1}
+    n_groups::Array{Array{Int,1},1}
+    i_groups::Array{Array{Int,1},1}
     flattenedgroups::Array{String,1}
-    allcomponentnflattenedgroups::Array{Array{Int,1},1}
+    n_flattenedgroups::Array{Array{Int,1},1}
+    i_flattenedgroups::UnitRange{Int}
     sourcecsvs::Array{String,1}
 end
 
-function Base.show(io::IO, param::GroupParam)
-    print(io,"GroupParam(")
-    for component in param.components
-        print(io, "\"", component, "\"")
-        if (component != last(param.components))
-            print(io, ",")
-        end
+function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=String[])
+    components = [first(i) for i ∈ input] #["ethanol","nonadecanol","ibuprofen"]
+    raw_groups =  [last(i) for i ∈ input]
+    groups = [first.(grouppairs) for grouppairs ∈ raw_groups]
+    n_groups = [last.(grouppairs) for grouppairs ∈ raw_groups]
+    flattenedgroups = unique!(reduce(vcat,groups))
+    i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
+    len_flattenedgroups = length(flattenedgroups)
+    i_flattenedgroups = 1:len_flattenedgroups
+    n_flattenedgroups = [zeros(Int,len_flattenedgroups) for _ ∈ 1:length(input)]
+    for i in length(input)
+        setindex!.(n_flattenedgroups,n_groups,i_groups)
     end
-    println(io, ") with ", length(param.components), " components:", ifelse(len==1, ":", "s:"))
+    return GroupParam(components, 
+    groups, 
+    n_groups,
+    i_groups, 
+    flattenedgroups,
+    n_flattenedgroups, 
+    i_flattenedgroups,
+    sourcecsvs)
+end
+
+function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)
+    print(io,"GroupParam ")
+    len = length(param.components)
+    println(io,"with ", len, " component", ifelse(len==1, ":", "s:"))
+    
     for i in 1:length(param.components)
+        
         print(io, " \"", param.components[i], "\": ")
         firstloop = true
-        for j in 1:length(param.allcomponentngroups[i])
+        for j in 1:length(param.n_groups[i])
             firstloop == false && print(io, ", ")
-            print(io, "\"", param.allcomponentgroups[i][j], "\" => ", param.allcomponentngroups[i][j])
+            print(io, "\"", param.groups[i][j], "\" => ", param.n_groups[i][j])
             firstloop = false
         end
         i != length(param.components) && println(io)
-    end
+    end 
 end
+
+function Base.show(io::IO, param::GroupParam)
+    print(io,"GroupParam[")
+    len = length(param.components)
+    
+    for i in 1:length(param.components)
+        
+        print(io, "\"", param.components[i], "\" => [")
+        firstloop = true
+        for j in 1:length(param.n_groups[i])
+            firstloop == false && print(io, ", ")
+            print(io, "\"", param.groups[i][j], "\" => ", param.n_groups[i][j])
+            firstloop = false
+        end
+        print(io,']')
+        i != length(param.components) && print(io,", ")
+    end
+    print(io,"]")
+end
+
 
 struct SiteParam <: ClapeyronParam
     components::Array{String,1}
-    allcomponentsites::Array{Array{String,1},1}
-    allcomponentnsites::Array{Array{Int,1},1}
+    sites::Array{Array{String,1},1}
+    n_sites::Array{Array{Int,1},1}
+    length_sites::Array{Int,1}
+    i_sites::Array{UnitRange{Int},1}
     sourcecsvs::Array{String,1}
 end
+
+function Base.show(io::IO, mime::MIME"text/plain", param::SiteParam)
+    print(io,"SiteParam ")
+    len = length(param.components)
+    println(io,"with ", len, " site", ifelse(len==1, ":", "s:"))
+    
+    for i in 1:length(param.components)
+        
+        print(io, " \"", param.components[i], "\": ")
+        firstloop = true
+        if length(param.n_sites[i]) == 0
+            print(io,"(no sites)")
+        end
+        for j in 1:length(param.n_sites[i])
+            firstloop == false && print(io, ", ")
+            print(io, "\"", param.sites[i][j], "\" => ", param.n_sites[i][j])
+            firstloop = false
+        end
+        i != length(param.components) && println(io)
+    end 
+end
+
+function Base.show(io::IO, param::SiteParam)
+    print(io,"SiteParam[")
+    len = length(param.components)
+    
+    for i in 1:length(param.components)
+        
+        print(io, "\"", param.components[i], "\" => [")
+        firstloop = true
+    
+        for j in 1:length(param.n_sites[i])
+            firstloop == false && print(io, ", ")
+            print(io, "\"", param.sites[i][j], "\" => ", param.n_sites[i][j])
+            firstloop = false
+        end
+        print(io,']')
+        i != length(param.components) && print(io,", ")
+    end
+    print(io,"]")
+end
+
 
 function SiteParam(pairs::Dict{String,SingleParam{Int}})
     arbitraryparam = first(values(pairs))
     components = arbitraryparam.components
-    allcomponentsites = arbitraryparam.allcomponentsites
+    sites = arbitraryparam.allcomponentsites
     sourcecsvs = unique([([x.sourcecsvs for x in values(pairs)]...)...])
-    allcomponentnsites = [[pairs[allcomponentsites[i][j]].values[i] for j ∈ 1:length(allcomponentsites[i])] for i ∈ 1:length(components)]  # or groupsites
-    return SiteParam(components, allcomponentsites, allcomponentnsites, sourcecsvs)
-end
+    n_sites = [[pairs[sites[i][j]].values[i] for j ∈ 1:length(sites[i])] for i ∈ 1:length(components)]  # or groupsites
+    length_sites = [length(componentsites) for componentsites ∈ sites]
+    i_sites = [1:length_sites[i] for i ∈ 1:length(components)]
 
+    return SiteParam(components,
+    sites,
+    n_sites,
+    length_sites,
+    i_sites,
+    sourcecsvs)
+end
 
 #empty SiteParam
 function SiteParam(components::Vector{String})
-    return SiteParam(components, [String[] for _ ∈ 1:length(components)], [Int[] for _ ∈ 1:length(components)], String[])
+    n = length(components)
+    return SiteParam(components,
+    [String[] for _ ∈ 1:n],
+    [Int[] for _ ∈ 1:n], 
+    zeros(Int,n),
+    [1:0 for _ ∈ 1:n],
+    String[])
 end
 
 paramvals(param::ClapeyronParam) = param.values
 paramvals(x) = x
+
+
+function split_model(param::SingleParam{T},components = param.components) where T
+    return [SingleParam{T}(
+    param.name,
+    [param.values[i]],
+    [param.ismissingvalues[i]],
+    [components[i]],
+    [param.allcomponentsites[i]],
+    deepcopy(param.sourcecsvs),
+    deepcopy(param.sources)
+    ) for i in 1:length(components)]
+end
+
+#this conversion is lossy, as interaction between two or more components are lost.
+
+ 
+function split_model(param::PairParam{T},
+    components = split_model(1:length(param.components))) where T
+    function generator(I) 
+        len = length(I)
+        _value = zeros(T,len,len)
+        _value[1,1] = param.values[I,I]
+        _diagvalue = view(_value,1:1:1)
+        _ismissingvalues = zeros(Bool,1,1)
+        _ismissingvalues[1,1] = param.ismissingvalues[i,i]
+        return PairParam{T}(
+                param.name,
+                _value,
+                _diagvalue,
+                _ismissingvalues,
+                [components[i]],
+                [param.allcomponentsites[i]],
+                deepcopy(param.sourcecsvs),
+                deepcopy(param.sources)
+                )
+    end 
+    return [generator(i) for i in 1:length(components)]
+end
+
+function split_model(param::AbstractVector)
+    return [[xi] for xi in param]
+end 
+
+#this conversion is lossy, as interaction between two or more components are lost.
+function split_model(param::AssocParam{T},components = param.components) where T
+    function generator(i)     
+        _value = Matrix{Matrix{T}}(undef,1,1)
+        _value[1,1] = param.values[i,i]
+        _ismissingvalues = Matrix{Matrix{Bool}}(undef,1,1)
+        _ismissingvalues[1,1] = param.ismissingvalues[i,i]
+        return AssocParam{T}(
+                param.name,
+                _value,
+                _ismissingvalues,
+                [components[i]],
+                [param.allcomponentsites[i]],
+                deepcopy(param.sourcecsvs),
+                deepcopy(param.sources)
+                )
+    end 
+    return [generator(i) for i in 1:length(components)]
+end
+
+#this param has a defined split form
+function split_model(groups::GroupParam)
+    len = length(groups.components)
+    function generator(i)
+        return GroupParam(
+        [groups.components[i]],
+        [groups.groups[i]],
+        [groups.n_groups[i]],
+        [collect(1:length(groups.n_groups[i]))],
+        groups.flattenedgroups[groups.i_groups[i]],
+        [groups.n_groups[i]],
+        1:length(groups.n_groups[i]),
+        groups.sourcecsvs)
+    end
+    [generator(i) for i in 1:len]
+end
+
+
+#=
+struct GroupParam <: ClapeyronParam
+    components::Array{String,1}
+    groups::Array{Array{String,1},1}
+    n_groups::Array{Array{Int,1},1}
+    i_groups::Array{Array{Int,1},1}
+    flattenedgroups::Array{String,1}
+    n_flattenedgroups::Array{Array{Int,1},1}
+    i_flattenedgroups::UnitRange{Int}
+    sourcecsvs::Array{String,1}
+end
+
+=#
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam

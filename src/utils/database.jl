@@ -18,7 +18,6 @@ function getfileextension(filepath::AbstractString)
     return filepath[dotpos+1:end]
 end
 
-
 """
     getpaths(location; relativetodatabase=false)
 
@@ -36,6 +35,7 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
 
 ```
 """
+
 function getpaths(location::AbstractString; relativetodatabase::Bool=false)
     # We do not use realpath here directly because we want to make the .csv suffix optional.
     filepath = relativetodatabase ? normpath(dirname(pathof(Clapeyron)), "..", "database", location) : location
@@ -270,12 +270,11 @@ function swapdictorder(dict::Dict)
     end
     return output
 end
-
 function findparamsincsv(components::Array{String,1}, filepath::AbstractString, headerparams::Array{String,1}; columnreference::AbstractString="species", sitecolumnreference::AbstractString="site", sourcecolumnreference::AbstractString="source", verbose::Bool=false, normalisecomponents::Bool=true)
     # Returns a Dict with all matches in a particular file for one parameter.
     normalised_columnreference = normalisestring(columnreference)
     csvtype = readcsvtype(filepath)
-    df = CSV.File(filepath; header=3, pool=0,lazystrings=true)
+    df = CSV.File(filepath; header=3, pool=0,lazystrings=true,silencewarnings=true)
     csvheaders = String.(Tables.columnnames(df))
     normalised_components = normalisestring.(components; isactivated=normalisecomponents)
     normalised_csvheaders = normalisestring.(csvheaders)
@@ -460,7 +459,11 @@ end
 function readheaderparams(filepath::AbstractString; headerline::Int = 3)
     # Returns array of filtered header strings at line 3.
     headers = split(getline(filepath, headerline), ',')
+    if last(headers) == ""
+        pop!(headers)
+    end
     ignorelist = ["source", "species", "dipprnumber", "smiles", "site"]
+    
     return String.(filter(x -> normalisestring(x; tofilter=r"[ \-\_\d]") ∉ ignorelist, headers))
 end
 
@@ -613,10 +616,15 @@ function mirrormatrix!(matrix::Array{Array{T,2},2}) where T
     end
     return matrix
 end
-
-
-export GroupParam
-function GroupParam(gccomponents::Array{<:Any,1}, grouplocations::Array{String,1}=String[]; usergrouplocations::Array{String,1}=String[], verbose::Bool=false)
+function GroupParam(gccomponents, grouplocations::Array{String,1}=String[]; usergrouplocations::Array{String,1}=String[], verbose::Bool=false)
+    if (!(gccomponents isa PARSED_GROUP_VECTOR_TYPE)) | iszero(length(grouplocations)) | iszero(length(usergrouplocations)) | verbose
+        return _GroupParam(gccomponents,grouplocations;usergrouplocations,verbose)
+    else
+         return GroupParam(gccomponents)
+    end        
+end
+    
+function _GroupParam(gccomponents, grouplocations::Array{String,1}=String[]; usergrouplocations::Array{String,1}=String[], verbose::Bool=false)
     # The format for gccomponents is an arary of either the species name (if it
     # available in the Clapeyron database, or a tuple consisting of the species
     # name, followed by a list of group => multiplicity pairs.  For example:
@@ -626,9 +634,6 @@ function GroupParam(gccomponents::Array{<:Any,1}, grouplocations::Array{String,1
     BuildSpeciesType = Union{Tuple{String, Array{Pair{String, Int64},1}}, String, Tuple{String}}
     any(.!(isa.(gccomponents, BuildSpeciesType))) && error("The format of the components is incorrect.")
     filepaths = string.(vcat([(getpaths.(grouplocations; relativetodatabase=true)...)...], [(getpaths.(usergrouplocations)...)...]))
-    components = String[]
-    allcomponentgroups = Array{Array{String,1},1}(undef, 0)
-    allcomponentngroups = Array{Array{Int,1},1}(undef, 0)
     componentstolookup = String[]
     append!(componentstolookup, [x for x ∈ gccomponents[isa.(gccomponents, String)]])
     append!(componentstolookup, [first(x) for x ∈ gccomponents[isa.(gccomponents, Tuple{String})]])
@@ -644,38 +649,20 @@ function GroupParam(gccomponents::Array{<:Any,1}, grouplocations::Array{String,1
         merge!(allfoundcomponentgroups, findgroupsincsv(componentstolookup, filepath; verbose=verbose))
         append!(groupsourcecsvs, [filepath])
     end
-    for gccomponent ∈ gccomponents
+    gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(gccomponents))
+    for (i,gccomponent) ∈ pairs(gccomponents)
         if gccomponent isa Tuple{String, Array{Pair{String, Int64},1}}
-            append!(components, [gccomponent[1]])
-            groupsandngroups = gccomponent[2]
+            gccomponents_parsed[i] = gccomponent
         elseif gccomponent isa String
             !haskey(allfoundcomponentgroups, gccomponent) && error("Predefined component ", gccomponent, " not found in any group input csvs.")
-            append!(components, [gccomponent])
             groupsandngroups = eval(Meta.parse(allfoundcomponentgroups[gccomponent]))
-        elseif gccomponent isa Union{String, Tuple{String}}
+            gccomponents_parsed[i] = (gccomponent,groupsandngroups)
+        elseif gccomponent isa Tuple{String}
             !haskey(allfoundcomponentgroups, first(gccomponent)) && error("Predefined component ", gccomponent, " not found in any group input csvs.")
-            append!(components, [first(gccomponent)])
             groupsandngroups = eval(Meta.parse(allfoundcomponentgroups[first(gccomponent)]))
-        end
-        componentgroups = String[]
-        componentngroups = Int[]
-        for (componentgroup, ncomponentgroup) ∈ groupsandngroups
-            append!(componentgroups, [componentgroup])
-            append!(componentngroups, [ncomponentgroup])
-        end
-        append!(allcomponentgroups, [componentgroups])
-        append!(allcomponentngroups, [componentngroups])
-    end
-    flattenedgroups = unique([(allcomponentgroups...)...])
-    allcomponentnflattenedgroups = [zeros(Int, length(flattenedgroups)) for _ in 1:length(components)]
-    for i in 1:length(components)
-        for (k, group) in enumerate(flattenedgroups)
-            if group in allcomponentgroups[i]
-                allcomponentnflattenedgroups[i][k] = allcomponentngroups[i][findfirst(isequal(group), allcomponentgroups[i])]
-            else
-                allcomponentnflattenedgroups[i][k] = 0
-            end
+            gccomponents_parsed[i] = (first(gccomponent),groupsandngroups)
         end
     end
-    return GroupParam(components, allcomponentgroups, allcomponentngroups, flattenedgroups, allcomponentnflattenedgroups, groupsourcecsvs)
+    return GroupParam(gccomponents_parsed,groupsourcecsvs)
 end
+
