@@ -48,7 +48,7 @@ function sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     if T_c < T
         @error "initial temperature $T greater than critical temperature $T_c. returning NaN"
     else
-        V0 = x0_sat_pure_crit(model,T,T_c,P_c,V_c)
+        V0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
         try_sat_pure(model,V0,f!,T,result,error_val,converged)   
         if converged[]
             return result[]
