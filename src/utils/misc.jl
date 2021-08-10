@@ -88,17 +88,17 @@ it allocates less than creating a new vector or appending.
 ##
 function FractionVector(v::AbstractVector)
     a = one(eltype(v))
-    any(x->x<0,v) && throw(DomainError(v,"all elements of a fraction vector should be positive."))
+    # any(x->x<0,v) && throw(DomainError(v,"all elements of a fraction vector should be positive."))
     a -=sum(v)
-    a < 0 && throw(DomainError(a,"the values of the input vector add to more than one"))
+    # a < 0 && throw(DomainError(a,"the values of the input vector add to more than one"))
     return FractionVector(v,a) 
 end
 
 function FractionVector(v::Real)
     a = one(v) 
-    (v < zero(v)) && throw(DomainError(v,"all elements of a fraction vector should be positive."))
+    # (v < zero(v)) && throw(DomainError(v,"all elements of a fraction vector should be positive."))
     a -= v
-    a < 0 && throw(DomainError(a,"the values of the input vector add to more than one"))
+    # a < 0 && throw(DomainError(a,"the values of the input vector add to more than one"))
     return FractionVector(v,a)
 end
 
