@@ -127,7 +127,7 @@ function a_2(model::SAFTVRSWModel, V, T, z, i, j)
     ζ2 = @f(ζn,2)
     ζ3 = @f(ζn,3)
     KHS = ζ0*(1-ζ3)^4/(ζ0*(1-ζ3)^2+6*ζ1*ζ2*(1-ζ3)+9*ζ2^3)
-    return 1/2*KHS*ϵ[i,j]*@f(ρ_S)*@f(∂a_1╱∂ρ_S,i,j)
+    return 1/2*KHS*ϵ[i,j]*@f(∂a_1╱∂ρ_S,i,j)
 end
 
 function ∂a_1╱∂ρ_S(model::SAFTVRSWModel, V, T, z, i, j)
@@ -138,9 +138,9 @@ function ∂a_1╱∂ρ_S(model::SAFTVRSWModel, V, T, z, i, j)
     ζ_X_ = @f(ζ_X)
     ζeff_X_ = @f(ζeff_X,λ[i,j])
     A = SAFTVRSWconsts.A
-    # ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [ζ_X_; 2ζ_X_^2; 3ζ_X_^3]
-    ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
-    return -αij*(@f(gHS_0,i,j)+(5/2-ζeff_X_)/(1-ζeff_X_)^4*∂ζeff_X╱∂ζ_X)
+    ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [ζ_X_; 2ζ_X_^2; 3ζ_X_^3]
+    # ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
+    return -αij*(@f(ρ_S)*@f(gHS_0,i,j)+(5/2-ζeff_X_)/(1-ζeff_X_)^4*∂ζeff_X╱∂ζ_X)
 end
 
 function a_chain(model::SAFTVRSWModel, V, T, z)
