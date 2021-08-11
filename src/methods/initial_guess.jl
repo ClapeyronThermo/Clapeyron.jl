@@ -301,6 +301,13 @@ function x0_crit_pure(model::SAFTModel,z=SA[1.0])
     [2.0, log10(lb_v/0.3)]
 end
 
+function x0_crit_pure(model::sCKSAFTModel,z=SA[1.0])
+    lb_v = lb_volume(model,z)
+    res = [5.0, log10(lb_v/0.3)]
+    #@show res
+    return res
+end
+
 function x0_crit_pure(model::CubicModel,z=SA[1.0])
     lb_v = lb_volume(model,z)
     [1.0, log10(lb_v/0.3)]
