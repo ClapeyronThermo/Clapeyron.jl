@@ -43,7 +43,9 @@
     # Contains missing values
     @test typeof(params["missingparam"]) <: Clapeyron.SingleParam{Int}
     # All missing values
-    @test typeof(params["emptyparam"]) <: Clapeyron.SingleParam{Any}
+    #before returned Clapeyron.SingleParam{Any}
+    #now returns Clapeyron.SingleParam{Float64}
+    @test typeof(params["emptyparam"]) <: Clapeyron.SingleParam{Float64}
     # Overwrite Int with Float, and also an upgrade from single to pair param
     @test typeof(params["overwriteparam"]) <: Clapeyron.PairParam{Float64}
     # Overwrite String with Int
