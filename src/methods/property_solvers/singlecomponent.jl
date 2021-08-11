@@ -147,7 +147,10 @@ function crit_pure(model::EoSModel,x0=nothing)
     if x0 === nothing
         x0 = x0_crit_pure(model)
     end
-    r  = Solvers.x_sol(Solvers.nlsolve(f!, x0))
+
+    solver_res = Solvers.nlsolve(f!, x0)
+    #print(solver_res)
+    r  = Solvers.x_sol(solver_res)
     T_c = r[1]*T̄
     V_c = exp10(r[2])
     p_c = pressure(model, V_c, T_c)
@@ -167,12 +170,6 @@ Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies 
 """
 function enthalpy_vap(model::EoSModel, T)
     (P_sat,V_l,V_v) = sat_pure(model,T)
-   #= _dfl,fl =  ∂f(model,V_l,T,SA[1.0])
-    _dfv,fv =  ∂f(model,V_v,T,SA[1.0])
-    dVl,dTl = _dfl
-    dVv,dTv = _dfv
-    H_l = fl  - dVl*V_l - dTl*T
-    H_v = fv  - dVv*V_v - dTv*T =#
     H_v = VT_enthalpy(model,V_v,T)
     H_l = VT_enthalpy(model,V_l,T)
     H_vap=H_v -H_l

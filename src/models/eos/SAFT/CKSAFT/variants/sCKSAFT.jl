@@ -37,23 +37,30 @@ function a_disp(model::sCKSAFTModel, V, T, z)
     vs = V/(N_A*∑z*m̄)
     it = @comps
     v̄Ȳ = ∑(x[i]*x[j]*m[i]*m[j]*(@f(d,i,j)^3/√(2))*(exp(@f(u,i,j)/T/2)-1) for i ∈ it for j ∈ it)/∑(x[i]*x[j]*m[i]*m[j] for i ∈ it for j ∈ it)
-    return 36*log(vs/(vs+v̄Ȳ))
+    #res = 36*log(vs/(vs+v̄Ȳ)) 
+    #this formulation is prone to horrible floating point issues.
+    #writing this term in log1p form solves the problem.
+    res = 36*log1p(- v̄Ȳ/vs)
+    return res
 end
 
 function d(model::sCKSAFTModel, V, T, z, i)
     ϵ = model.params.epsilon.diagvalues
     σ = model.params.sigma.diagvalues
-    return σ[i] * (1 - 0.333exp(-3ϵ[i]/T))
+    res = σ[i] * (1 - 0.333exp(-3ϵ[i]/T))
+    return res
 end
 
 function u(model::sCKSAFTModel, V, T, z, i, j)
     ϵ0 = model.params.epsilon.values[i,j]
-    return ϵ0*(1-10/T)
+    res = ϵ0*(1-10/T)
+    return res
 end
 
 function Δ(model::sCKSAFTModel, V, T, z, i, j, a, b)
     ϵ_assoc = model.params.epsilon_assoc.values[i,j][a,b]
     κ = model.params.bondvol.values[i,j][a,b]
     g = @f(g_hsij,i,j)
-    return g*@f(d,i,j)^3*(exp(ϵ_assoc/T)-1)*κ
+    res = g*@f(d,i,j)^3*(exp(ϵ_assoc/T)-1)*κ
+    return res
 end
