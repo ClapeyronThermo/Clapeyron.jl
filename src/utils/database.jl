@@ -239,7 +239,7 @@ end
 #if an array with only missings is passed, the Resulting ClapeyronParam will be 
 #of the type that this function returns
 function defaultmissing(array::Array{Missing},defaultvalue=0.0)
-    return array,Array(ismissing.(array))
+    return coalesce.(array,defaultvalue),Array(ismissing.(array))
 end
 
 function defaultmissing(array::Array{Union{Missing,T1,T2}},defaultvalue="") where {T1 <:Number,T2<:AbstractString}
