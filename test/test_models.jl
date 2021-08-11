@@ -22,9 +22,9 @@
     @testset "SAFTVRSW" begin
         system = SAFTVRSW(["water", "ethane"])
         z = [0.5, 0.5]
-        @test_broken Clapeyron.a_mono(system, V, T, z) ≈ -1.4659622048306407 rtol = 1e-6
-        @test_broken Clapeyron.a_chain(system, V, T, z) ≈ 0.022703334973543182 rtol = 1e-6
-        @test_broken Clapeyron.a_assoc(system, V, T, z) ≈ -0.5091186885233859 rtol = 1e-6
+        @test Clapeyron.a_mono(system, V, T, z) ≈ -1.4367205951569462 rtol = 1e-6
+        @test Clapeyron.a_chain(system, V, T, z) ≈ 0.024000058201261557 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -0.5238154638538838 rtol = 1e-6
     end
 
     @testset "softSAFT" begin
@@ -63,7 +63,7 @@
     @testset "SAFTVRQMie" begin
         system = SAFTVRQMie(["helium"])
         z = [1.]
-        @test_broken Clapeyron.a_mono(system, V, T, z) ≈ 0.12253715358076675 rtol = 1e-6
+        @test Clapeyron.a_mono(system, V, T, z) ≈ 0.12286776703976324 rtol = 1e-6
     end
 
     @testset "SAFTgammaMie" begin
