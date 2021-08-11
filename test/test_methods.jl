@@ -31,3 +31,12 @@ end
     @test Clapeyron.molar_density(model,(380.5+101.3)u"kPa",-153.0u"°C",lng_composition_molar_fractions;output=u"mol/L") ≈ 24.98*u"mol/L"  rtol=1E-2
     @test Clapeyron.mass_density(model,(380.5+101.3)u"kPa",-153.0u"°C",lng_composition_molar_fractions;output=u"kg/m^3")  ≈ 440.73*u"kg/m^3" rtol=1E-2
 end
+
+@testset "Critical pure test, sCKSAFT" begin
+    smodel = sCKSAFT(["ethane"])
+    tc_test,pc_test,vc_test = (340.2146485307944, 7.321069162025713e6, 0.0001381492224781526)
+    tc,pc,vc = crit_pure(smodel)
+    @test tc ≈ tc_test rtol = 1E-3
+    @test pc ≈ pc_test rtol = 1E-3
+    @test vc ≈ vc_test rtol = 1E-3
+end
