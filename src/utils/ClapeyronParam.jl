@@ -56,13 +56,11 @@ function SingleParam(
     allcomponentsites = Array{Array{String,1},1}(undef,0),
     sourcecsvs = String[],
     sources = String[]
-    ) where T<:Union{ <: Real,Missing}
-    
-    _values,_ismissingvalues = nondefaultmissing(values; defaultvalue=nothing)
+    ) where T<:Union{<: Real,Missing}
+    _values,_ismissingvalues = defaultmissing(values,nothing)
     TT = eltype(_values)
     return  SingleParam{TT}(names, _values, _ismissingvalues, components, allcomponentsites, sourcecsvs, sources)
 end
-
 
 function SingleParam(x::SingleParam, v::Array{T,1}) where T
     return SingleParam(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, deepcopy(x.sourcecsvs), deepcopy(x.sources),)
