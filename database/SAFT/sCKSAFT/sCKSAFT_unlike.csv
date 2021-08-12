@@ -1,7 +1,7 @@
 Clapeyron Database File,,,,,
 sCKSAFT Unlike Parameters,,,,,
 species1,SMILES1,species2,SMILES2,k,source
-benzene,,acetic acid,,0.038,
+benzene,,acetic acid,,0.028,
 acetic acid,,tetrachloromethane,,0.042,
 heptane,,propanoic acid,,0.040,
 benzene,,propanoic acid,,0.002,

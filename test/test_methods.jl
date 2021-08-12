@@ -34,7 +34,7 @@ end
 
 @testset "Critical pure test, sCKSAFT" begin
     smodel = sCKSAFT(["ethane"])
-    tc_test,pc_test,vc_test = (340.2146485307944, 7.321069162025713e6, 0.0001381492224781526)
+    tc_test,pc_test,vc_test = (321.00584034360014, 6.206975436514129e6, 0.0001515067748592245)
     tc,pc,vc = crit_pure(smodel)
     @test tc ≈ tc_test rtol = 1E-3
     @test pc ≈ pc_test rtol = 1E-3

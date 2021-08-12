@@ -40,7 +40,7 @@ function a_disp(model::sCKSAFTModel, V, T, z)
     #res = 36*log(vs/(vs+v̄Ȳ)) 
     #this formulation is prone to horrible floating point issues.
     #writing this term in log1p form solves the problem.
-    res = 36*log1p(- v̄Ȳ/vs)
+    res = -36*log1p(v̄Ȳ/vs)
     return res
 end
 
