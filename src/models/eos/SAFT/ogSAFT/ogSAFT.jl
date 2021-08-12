@@ -49,7 +49,7 @@ function d(model::ogSAFTModel, V, T, z, i)
     ϵ = model.params.epsilon.diagvalues
     σ = model.params.sigma.diagvalues
     m = model.params.segment.values
-    fm = 0.0010477+0.025337*(m[i]-1)/m[i]
+    fm = 0.0010477#+0.025337*(m[i]-1)/m[i]
     f = (1+0.2977T/ϵ[i])/(1+0.33163T/ϵ[i]+fm*(T/ϵ[i])^2)
     return σ[i] * f
 end
@@ -64,7 +64,7 @@ function dx(model::ogSAFTModel, V, T, z)
     σx = (∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)/mx^2)^(1/3)
     ϵx = (∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/mx^2)/σx^3
 
-    fm = 0.0010477+0.025337*(mx-1)/mx
+    fm = 0.0010477#+0.025337*(mx-1)/mx
     f = (1+0.2977T/ϵx)/(1+0.33163T/ϵx+fm*(T/ϵx)^2)
     return σx * f
 end
@@ -92,9 +92,17 @@ function g_hsij(model::ogSAFTModel, V, T, z, i, j)
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 end
 
+# function a_hs(model::ogSAFTModel, V, T, z)
+#     ηx = @f(η)
+#     return (4ηx-3ηx^2)/(1-ηx)^2
+# end
+
 function a_hs(model::ogSAFTModel, V, T, z)
-    ηx = @f(η)
-    return (4ηx-3ηx^2)/(1-ηx)^2
+    ζ0 = @f(ζn,0)
+    ζ1 = @f(ζn,1)
+    ζ2 = @f(ζn,2)
+    ζ3 = @f(ζn,3)
+    return 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
 end
 
 function a_disp(model::ogSAFTModel, V, T, z)
@@ -104,8 +112,8 @@ function a_disp(model::ogSAFTModel, V, T, z)
     x = z/∑(z)
     comps = @comps
     ϵx = ∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)
-    ηx = @f(η)
-    ρR = (6/sqrt(2)/π)*ηx
+    ζ3 = @f(ζn,3)
+    ρR = (6/sqrt(2)/π)*ζ3
     TR = T/ϵx
     a_seg1 = ρR*evalpoly(ρR,(-8.5959,-4.5424,-2.1268,10.285))
     a_seg2 = ρR*evalpoly(ρR,(-1.9075,9.9724,-22.216,+15.904))
@@ -158,6 +166,7 @@ function X(model::ogSAFTModel, V, T, z)
     ∑z = ∑(z)
     x = z/∑z
     ρ = N_A*∑z/V
+    n = model.sites.n_sites
     itermax = 100
     dampingfactor = 0.5
     error = 1.
@@ -168,7 +177,7 @@ function X(model::ogSAFTModel, V, T, z)
     while error > tol
         iter > itermax && error("X has failed to converge after $itermax iterations")
         for i ∈ @comps, a ∈ @sites(i)
-            rhs = 1/(1+∑(ρ*x[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
+            rhs = 1/(1+∑(ρ*x[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b)*n[j][b] for b ∈ @sites(j)) for j ∈ @comps))
             X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
         end
         error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))

@@ -4,11 +4,11 @@
     V = 1e-4
 
     @testset "ogSAFT" begin
-        system = ogSAFT(["methanol"])
-        z = [1.]
-        @test Clapeyron.a_seg(system, V, T, z) ≈ -0.540464960274975 rtol = 1e-6
-        @test Clapeyron.a_chain(system, V, T, z) ≈ -0.22445414690633522 rtol = 1e-6
-        @test Clapeyron.a_assoc(system, V, T, z) ≈ -4.695916382523908 rtol = 1e-6
+        system = ogSAFT(["water","ethylene glycol"])
+        z = [0.5, 0.5]
+        @test Clapeyron.a_seg(system, V, T, z) ≈ -2.0332062924093366 rtol = 1e-6
+        @test Clapeyron.a_chain(system, V, T, z) ≈ -0.006317441684202759 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -4.034042081699316 rtol = 1e-6
     end
 
     @testset "CKSAFT" begin
