@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
 [![Build Status](https://github.com/ypaul21/Clapeyron.jl/workflows/CI/badge.svg)](https://github.com/ypaul21/Clapeyron.jl/actions)
-[![Coverage Status](https://coveralls.io/repos/ypaul21/Clapeyron.jl//badge.svg?branch=master&service=github)](https://coveralls.io/github/ypaul21/Clapeyron.jl/?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/ypaul21/Clapeyron.jl/badge.svg?branch=master)](https://coveralls.io/github/ypaul21/Clapeyron.jl?branch=master)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://ypaul21.github.io/Clapeyron.jl/dev)
 
 ![Clapeyron_logo](docs/Clapeyron_logo.svg)
