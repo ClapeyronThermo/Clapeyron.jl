@@ -19,6 +19,13 @@
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.2937079004096872 rtol = 1e-6
     end
 
+    @testset "sCKSAFT" begin
+        system = sCKSAFT(["benzene","acetic acid"])
+        z = [0.5, 0.5]
+        @test Clapeyron.a_seg(system, V, T, z) ≈ -3.1809330810925256 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -3.3017434376105514 rtol = 1e-6
+    end
+
     @testset "SAFTVRSW" begin
         system = SAFTVRSW(["water", "ethane"])
         z = [0.5, 0.5]
