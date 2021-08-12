@@ -1,5 +1,16 @@
 Clapeyron Database File,,,,,,,,
 ogSAFT Assoc Parameters,,,,,,,,
 species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
-methanol,CO,H,methanol,CO,e,2964.,0.053,10.1021/ie00104a021
-acetic acid,CO(=O),H,acetic acid,CO(=O),e,7200,0.00053,10.1021/ie00104a021
+methanol,,H,methanol,,e,2320.77,0.019,
+ethanol,,H,ethanol,,e,2616.52,0.012,
+ethylene glycol,,H,ethylene glycol,,e,2375.26,0.02,
+propylene glycol,,H,propylene glycol,,e,1910.97,0.021,
+"1,3-propylene glycol",,H,"1,3-propylene glycol",,e,1910.96,0.037,
+glycerol,,H,glycerol,,e,2195.15,0.004,
+DEG,,H,DEG,,e,1859.72,0.031,
+TEG,,H,TEG,,e,2470.02,0.061,
+water,,H,water,,e,1195.2,0.038,
+water,,H,ethylene glycol,,e,1767.298689,0.029,
+ethylene glycol,,H,water,,e,1767.298689,0.029,
+water,,H,propylene glycol,,e,1592.595268,0.0295,
+propylene glycol,,H,water,,e,1592.595268,0.0295,
