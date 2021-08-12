@@ -35,11 +35,11 @@
     end
 
     @testset "softSAFT" begin
-        system = softSAFT(["methanol"])
-        z = [1.]
-        @test Clapeyron.a_LJ(system, V, T, z) ≈ -1.299697047509115 rtol = 1e-6
-        @test Clapeyron.a_chain(system, V, T, z) ≈ 0.33553325545339646 rtol = 1e-6
-        @test Clapeyron.a_assoc(system, V, T, z) ≈ -3.7490459421490447 rtol = 1e-6
+        system = softSAFT(["hexane","1-propanol"])
+        z = [0.5,0.5]
+        @test Clapeyron.a_LJ(system, V, T, z) ≈ -3.960728242264164 rtol = 1e-6
+        @test Clapeyron.a_chain(system, V, T, z) ≈ 0.3736728407455211 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -2.0461376618069034 rtol = 1e-6
     end
 
     @testset "PCSAFT" begin
