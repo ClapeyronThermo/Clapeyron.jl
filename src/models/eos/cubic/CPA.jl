@@ -13,7 +13,7 @@ abstract type CPAModel <: EoSModel end
 
 export CPA
 function CPA(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
-    params = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
     k  = params["k"]
     Tc = params["Tc"]
@@ -24,8 +24,6 @@ function CPA(components; idealmodel=BasicIdeal, userlocations=String[], ideal_us
     b  = sigma_LorentzBerthelot(params["b"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
-
     packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
     references = ["10.1021/ie051305v"]
 

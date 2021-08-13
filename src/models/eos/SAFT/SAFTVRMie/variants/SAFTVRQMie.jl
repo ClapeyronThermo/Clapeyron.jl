@@ -23,12 +23,10 @@ function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], i
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
 
-    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
-
     packagedparams = SAFTVRQMieParam(segment, sigma, lambda_a, lambda_r, epsilon, Mw)
     references = ["todo"]
 
-    model = SAFTVRQMie(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
+    model = SAFTVRQMie(packagedparams, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
     return model
 end
 

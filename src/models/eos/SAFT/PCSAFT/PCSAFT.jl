@@ -12,7 +12,8 @@ abstract type PCSAFTModel <: SAFTModel end
 
 export PCSAFT
 function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
-    params = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    
     segment = params["m"]
     k = params["k"]
     Mw = params["Mw"]
@@ -21,7 +22,6 @@ function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
     packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
