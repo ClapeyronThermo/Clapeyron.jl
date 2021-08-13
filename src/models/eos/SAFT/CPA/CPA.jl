@@ -13,7 +13,7 @@ abstract type CPAModel <: EoSModel end
 
 export CPA
 function CPA(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
-    params,sites = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
     k  = params["k"]
     Tc = params["Tc"]
@@ -75,7 +75,7 @@ end
 
 function a_assoc(model::CPAModel, V, T, z)
     x = z/∑(z)
-    n_sites = model.allcomponentnsites
+    n_sites = model.sites.n_flattenedsites
     X_ = @f(X)
     return ∑(x[i]*∑(n_sites[i][a] * (log(X_[i][a])+(1-X_[i][a])/2) for a in @sites(i)) for i in @comps)
 end
@@ -84,7 +84,7 @@ function X(model::CPAModel, V, T, z)
     _1 = one(V+T+first(z))
     x = z/∑(z)
     ρ = ∑(z)/V
-    n_sites = model.allcomponentnsites
+    n_sites = model.sites.n_flattenedsites
     itermax = 100
     dampingfactor = 0.5
     error = 1.
@@ -112,7 +112,7 @@ function Δ(model::CPAModel, V, T, z, i, j, a, b)
     b = model.params.b.values
     b̄ = ∑(b .* (x * x'))
     η = b̄*∑(z)/(4*V)
-    g = 1/(1-1.9η)
+    g = (1-η/2)/(1-η)^3
     bij = (b[i,i]+b[j,j])/2
     return g*(exp(ϵ_associjab/T)-1)*βijab*bij
 end

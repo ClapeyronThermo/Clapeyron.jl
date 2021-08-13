@@ -53,20 +53,20 @@ function d(model::ogSAFTModel, V, T, z, i)
     return σ[i] * f
 end
 
-function dx(model::ogSAFTModel, V, T, z)
-    x = z/∑(z)
-    m = model.params.segment.values
-    σ = model.params.sigma.values
-    ϵ = model.params.epsilon.values
-    comps = @comps
-    mx = ∑(x .* m)
-    σx = (∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)/mx^2)^(1/3)
-    ϵx = (∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/mx^2)/σx^3
+# function dx(model::ogSAFTModel, V, T, z)
+#     x = z/∑(z)
+#     m = model.params.segment.values
+#     σ = model.params.sigma.values
+#     ϵ = model.params.epsilon.values
+#     comps = @comps
+#     mx = ∑(x .* m)
+#     σx = (∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)/mx^2)^(1/3)
+#     ϵx = (∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/mx^2)/σx^3
 
-    fm = 0.0010477#+0.025337*(mx-1)/mx
-    f = (1+0.2977T/ϵx)/(1+0.33163T/ϵx+fm*(T/ϵx)^2)
-    return σx * f
-end
+#     fm = 0.0010477#+0.025337*(mx-1)/mx
+#     f = (1+0.2977T/ϵx)/(1+0.33163T/ϵx+fm*(T/ϵx)^2)
+#     return σx * f
+# end
 
 function ζn(model::ogSAFTModel, V, T, z, n)
     ∑z = ∑(z)
@@ -75,13 +75,13 @@ function ζn(model::ogSAFTModel, V, T, z, n)
     return N_A*∑z*π/6/V * ∑(x[i]*m[i]*@f(d, i)^n for i ∈ @comps)
 end
 
-function η(model::ogSAFTModel, V, T, z)
-    ∑z = ∑(z)
-    x = z/∑z
-    m = model.params.segment.values
-    m̄ = ∑(x .* m)
-    return N_A*∑z*π/6/V*@f(dx)^3*m̄
-end
+# function η(model::ogSAFTModel, V, T, z)
+#     ∑z = ∑(z)
+#     x = z/∑z
+#     m = model.params.segment.values
+#     m̄ = ∑(x .* m)
+#     return N_A*∑z*π/6/V*@f(dx)^3*m̄
+# end
 
 function g_hsij(model::ogSAFTModel, V, T, z, i, j)
     di = @f(d,i)

@@ -34,6 +34,13 @@
         @test Clapeyron.a_disp(system, V, T, z) ≈ -2.4492518566426296 rtol = 1e-6
     end
 
+    @testset "CPA" begin
+        system = CPA(["ethanol","benzene"])
+        z = [0.5, 0.5]
+        @test Clapeyron.a_SRK(system, V, T, z) ≈ 4.510022402195623 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.1575210505284332 rtol = 1e-6
+    end
+
     @testset "SAFTVRSW" begin
         system = SAFTVRSW(["water", "ethane"])
         z = [0.5, 0.5]
