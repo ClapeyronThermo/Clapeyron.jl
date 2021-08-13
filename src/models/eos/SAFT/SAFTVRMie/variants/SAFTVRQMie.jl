@@ -12,7 +12,7 @@ abstract type SAFTVRQMieModel <: SAFTVRMieModel end
 
 export SAFTVRQMie
 function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
-    params,sites = getparams(components, ["SAFT/SAFTVRQMie"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/SAFTVRQMie"]; userlocations=userlocations, verbose=verbose)
 
     params["Mw"].values .*= 1E-3
     Mw = params["Mw"]
@@ -26,7 +26,7 @@ function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], i
     packagedparams = SAFTVRQMieParam(segment, sigma, lambda_a, lambda_r, epsilon, Mw)
     references = ["todo"]
 
-    model = SAFTVRQMie(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
+    model = SAFTVRQMie(packagedparams, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
     return model
 end
 
