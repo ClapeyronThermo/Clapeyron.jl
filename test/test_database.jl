@@ -20,7 +20,6 @@
 
     filepath_gc = ["test_csvs/group_test.csv"]
     filepath_param_gc = ["test_csvs/group_param_test.csv"]
-
     # Check that it detects the right sites.
     @test Clapeyron.findsitesincsvs(testspecies, filepath_normal) == [[],
                                                                      [],
@@ -110,6 +109,7 @@
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"])
 
     # GC test, 3 comps, 4 groups
+
     components_gc = GroupParam(["test1", "test2", ("test3", ["grp1" => 2, "grp2" => 2, "grp3" => 3,"grp4" => 5])]; usergrouplocations=filepath_gc)
 
     @test components_gc.components == ["test1", "test2", "test3"]
@@ -121,6 +121,7 @@
     @test components_gc.n_flattenedgroups == [[1,2,0,0], [0,1,0,0 ], [2,2,3,5]]
     @test components_gc.i_flattenedgroups == 1:4
     # Build param struct using the gc components above
-    param_gc,_ = getparams(components_gc; userlocations=filepath_param_gc)
+    
+    param_gc = getparams(components_gc; userlocations=filepath_param_gc)
     @test param_gc["param1"].values == [1, 2, 3, 4]
 end
