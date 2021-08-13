@@ -4,3 +4,4 @@ species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
 methanol,CO,H,methanol,CO,e,3213.0,4.847E-27,
 ethanol,CCO,H,ethanol,CCO,e,3387,2.641E-27,
 water,O,H,water,O,e,2388,2.932E-27,
+1-propanol,CO,H,1-propanol,CO,e,3600.0,2.3e-27,

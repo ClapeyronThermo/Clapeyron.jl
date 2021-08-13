@@ -76,7 +76,7 @@ function x0_volume_liquid(model::SAFTVRMieModel,T,z)
     return v_lb*1.5
 end
 
-function x0_volume_liquid(model::SAFTgammaMie,T,z)
+function x0_volume_liquid(model::SAFTgammaMieModel,T,z)
     v_lb = lb_volume(model,z)
     return v_lb*1.5
 end
@@ -188,6 +188,14 @@ function lb_volume(model::SAFTgammaMieModel, z = SA[1.0])
     S   = model.params.shapefactor.values
     σᵢᵢ = model.params.sigma.diagvalues
     val = π/6*N_A*sum(z[i]*sum(vk[i][k]*seg[k]*S[k]*σᵢᵢ[k]^3 for k in @groups(i)) for i in @comps)
+    return val
+end
+
+function lb_volume(model::BACKSAFTModel, z = SA[1.0])
+    seg = model.params.segment.values
+    σᵢᵢ = model.params.sigma.diagvalues
+    α   = model.params.alpha.values
+    val = π/6*N_A*sum(z[i]*α[i]*seg[i]*σᵢᵢ[i]^3 for i in 1:length(z))
     return val
 end
 

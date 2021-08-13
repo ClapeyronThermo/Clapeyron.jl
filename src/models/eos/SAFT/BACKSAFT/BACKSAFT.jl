@@ -80,7 +80,7 @@ end
 function g_hcb(model::BACKSAFTModel, V, T, z)
     α = model.params.alpha.values[1]
     η = @f(ζ,3)
-    return 1/(1-η)+3*(1+α)*α*η/((1-η)^2*(1+3α))+3*η^2*α^2/((1-η)^3*(1+3α))
+    return 1/(1-η)+3*(1+α)*α*η/((1-η)^2*(1+3α))+2*η^2*α^2/((1-η)^3*(1+3α))
 end
 
 const BACKSAFT_consts = (
