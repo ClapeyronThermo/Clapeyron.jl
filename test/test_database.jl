@@ -1,7 +1,7 @@
 
 @testset "database_lookup" begin
-    # Quick test to show that lookups in the Clapeyron database works.
-    @test haskey(Clapeyron.getparams(["water", "methanol"], ["SAFT/PCSAFT"]), "sigma")
+    params1, _ = Clapeyron.getparams(["water", "methanol"], ["SAFT/PCSAFT"])
+    @test haskey(params1, "sigma")
 
     # The rest of the test will be conducted with a custom dataset in the test_csvs directory.
     testspecies = ["sp1", "sp2", "sp3", "sp4", "sp5"]
@@ -28,11 +28,10 @@
                                                                      ["e", "H"],
                                                                      ["e", "e2", "H"]]
 
-    # Check that it throws an error if ignore_missingsingleparams is not set to true.
+    # Check that it throws an error if ignore_missing_singleparams is not set to true.
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_normal)
 
-    params = Clapeyron.getparams(testspecies; userlocations=filepath_normal, ignore_missingsingleparams=true)
-
+    params,sites = Clapeyron.getparams(testspecies; userlocations=filepath_normal, ignore_missing_singleparams=true)
     # Check that all the types are correct.
     @test typeof(params["intparam"]) <: Clapeyron.SingleParam{Int}
     @test typeof(params["doubleparam"]) <: Clapeyron.SingleParam{Float64}
@@ -90,9 +89,9 @@
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_clashingheaders)
 
     # If parameter is not tagged as asymmetrical, having non-missing values across the diagonal will throw an error
-    @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, ignore_missingsingleparams=true)
+    @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, ignore_missing_singleparams=true)
 
-    asymmetricparams = Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"], ignore_missingsingleparams=true)
+    asymmetricparams,_ = Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"], ignore_missing_singleparams=true)
     asymmetricparams["asymmetricpair"].values == [0.06  0.04  0.0  0.0   0.0
                                                   0.05  0.0   0.0  0.0   0.0
                                                   0.0   0.0   0.0  0.02  0.0
@@ -107,21 +106,21 @@
 
     # Also, since a non-missing value exists on the diagonal of "asymmetricpair",
     # and the diagonal contains missing values, it should throw an error
-    # without ignore_missingsingleparams set to true.
+    # without ignore_missing_singleparams set to true.
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"])
 
-    # GC test
-    components_gc = GroupParam(["test1", "test2", ("test3", ["grp1" => 2, "grp2" => 2, "grp3" => 3])]; usergrouplocations=filepath_gc)
+    # GC test, 3 comps, 4 groups
+    components_gc = GroupParam(["test1", "test2", ("test3", ["grp1" => 2, "grp2" => 2, "grp3" => 3,"grp4" => 5])]; usergrouplocations=filepath_gc)
 
     @test components_gc.components == ["test1", "test2", "test3"]
-    @test components_gc.groups == [["grp1","grp2"],["grp2"],["grp1","grp2","grp3"]]
-    @test components_gc.n_groups == [[1,2], [1], [2,2,3]]
+    @test components_gc.groups == [["grp1","grp2"],["grp2"],["grp1","grp2","grp3","grp4"]]
+    @test components_gc.n_groups == [[1,2], [1], [2,2,3,5]]
 
     # Check that flattening of groups is correct.
-    @test components_gc.flattenedgroups == ["grp1", "grp2", "grp3"]
-    @test components_gc.n_flattenedgroups == [[1,2,0], [0,1,0], [2,2,3]]
-    @test components_gc.i_flattenedgroups == 1:3
+    @test components_gc.flattenedgroups == ["grp1", "grp2", "grp3","grp4"]
+    @test components_gc.n_flattenedgroups == [[1,2,0,0], [0,1,0,0 ], [2,2,3,5]]
+    @test components_gc.i_flattenedgroups == 1:4
     # Build param struct using the gc components above
-    param_gc = getparams(components_gc; userlocations=filepath_param_gc)
-    @test param_gc["param1"].values == [1, 2, 3]
+    param_gc,_ = getparams(components_gc; userlocations=filepath_param_gc)
+    @test param_gc["param1"].values == [1, 2, 3, 4]
 end

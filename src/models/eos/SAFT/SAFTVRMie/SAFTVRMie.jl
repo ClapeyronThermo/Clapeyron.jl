@@ -14,7 +14,7 @@ abstract type SAFTVRMieModel <: SAFTModel end
 
 export SAFTVRMie
 function SAFTVRMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
-    params = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
     params["Mw"].values .*= 1E-3
     Mw = params["Mw"]
@@ -24,10 +24,8 @@ function SAFTVRMie(components; idealmodel=BasicIdeal, userlocations=String[], id
     epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
-
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
     packagedparams = SAFTVRMieParam(segment, sigma, lambda_a, lambda_r, epsilon, epsilon_assoc, bondvol, Mw)
     references = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]

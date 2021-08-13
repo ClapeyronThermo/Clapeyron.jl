@@ -10,6 +10,7 @@ using Unitful
 import LogExpFunctions
 include("constants.jl")
 include("models/basetools.jl")
+include("utils/ParamOptions.jl")
 include("utils/ClapeyronParam.jl")
 include("utils/macros.jl")
 using CSV, Tables
