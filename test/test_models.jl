@@ -26,6 +26,14 @@
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -3.3017434376105514 rtol = 1e-6
     end
 
+    @testset "BACKSAFT" begin
+        system = BACKSAFT(["carbon dioxide"])
+        z = [1.]
+        @test Clapeyron.a_hcb(system, V, T, z) ≈ 1.0118842111801198 rtol = 1e-6
+        @test Clapeyron.a_chain(system, V, T, z) ≈ -0.14177009317268635 rtol = 1e-6
+        @test Clapeyron.a_disp(system, V, T, z) ≈ -2.4492518566426296 rtol = 1e-6
+    end
+
     @testset "SAFTVRSW" begin
         system = SAFTVRSW(["water", "ethane"])
         z = [0.5, 0.5]
