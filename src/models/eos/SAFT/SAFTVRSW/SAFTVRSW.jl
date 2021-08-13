@@ -13,7 +13,7 @@ abstract type SAFTVRSWModel <: SAFTModel end
 
 export SAFTVRSW
 function SAFTVRSW(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
-    params = getparams(components, ["SAFT/SAFTVRSW","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/SAFTVRSW","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
     segment = params["m"]
     k = params["k"]
@@ -25,7 +25,6 @@ function SAFTVRSW(components; idealmodel=BasicIdeal, userlocations=String[], ide
 
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
     packagedparams = SAFTVRSWParam(Mw, segment, sigma, lambda, epsilon, epsilon_assoc, bondvol)
     references = ["todo"]

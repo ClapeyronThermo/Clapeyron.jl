@@ -11,7 +11,7 @@ abstract type LJSAFTModel <: SAFTModel end
 
 export LJSAFT
 function LJSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
-    params = getparams(components, ["SAFT/LJSAFT"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/LJSAFT"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
 
     params["b"].values .*= 1E-3
@@ -20,7 +20,6 @@ function LJSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal
     T_tilde = epsilon_LorentzBerthelot(params["T_tilde"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
     packagedparams = LJSAFTParam(segment, b, T_tilde, epsilon_assoc, bondvol)
     references = ["10.1021/ie9602320"]

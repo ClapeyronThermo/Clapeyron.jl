@@ -11,7 +11,8 @@ abstract type softSAFTModel <: SAFTModel end
 
 export softSAFT
 function softSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
-    params = getparams(components, ["SAFT/softSAFT"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/softSAFT"]; userlocations=userlocations, verbose=verbose)
+    
     segment = params["m"]
     k = params["k"]
     params["sigma"].values .*= 1E-10
@@ -19,7 +20,6 @@ function softSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ide
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
     packagedparams = softSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["todo"]

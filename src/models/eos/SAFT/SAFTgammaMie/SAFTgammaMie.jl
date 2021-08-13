@@ -16,7 +16,7 @@ const SAFTγMie = SAFTgammaMie
 export SAFTgammaMie,SAFTγMie
 function SAFTgammaMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
-    params = getparams(groups, ["SAFT/SAFTgammaMie"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(groups, ["SAFT/SAFTgammaMie"]; userlocations=userlocations, verbose=verbose)
 
     segment = params["vst"]
     shapefactor = params["S"]
@@ -26,11 +26,10 @@ function SAFTgammaMie(components; idealmodel=BasicIdeal, userlocations=String[],
     epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
-
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
-    sites = SiteParam(Dict("e1" => params["n_e1"], "e2" => params["n_e2"], "H" => params["n_H"]))
+    #sites = SiteParam(Dict("e1" => params["n_e1"], "e2" => params["n_e2"], "H" => params["n_H"]))
     packagedparams = SAFTgammaMieParam(segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1063/1.4851455", "10.1021/je500248h"]
 
