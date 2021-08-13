@@ -10,7 +10,7 @@ abstract type sCKSAFTModel <: CKSAFTModel end
 @newmodel sCKSAFT sCKSAFTModel sCKSAFTParam
 export sCKSAFT
 function sCKSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
-    params = getparams(components, ["SAFT/sCKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/sCKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = params["k"]
     sigma = params["vol"]
@@ -20,7 +20,6 @@ function sCKSAFT(components; idealmodel=BasicIdeal, userlocations=String[], idea
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
 
     packagedparams = sCKSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["TODO sCKSAFT", "TODO sCKSAFT"]

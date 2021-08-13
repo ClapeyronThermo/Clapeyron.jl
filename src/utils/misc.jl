@@ -139,7 +139,7 @@ unicode_subscript(a::Int) = join('₀'+d for d in reverse(digits(a)))
 Takes in a model for a multi-component system and returns a vector of model for each pure system.
 """
 function split_model(model::EoSModel)
-    pure = []
+    pure = Vector{typeof(model)}(undef,0)
     for i ∈ model.components
         append!(pure,[eval(nameof(typeof(model)))([i])])
     end

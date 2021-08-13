@@ -1,5 +1,9 @@
 @enum CSVType singledata pairdata assocdata groupdata
 
+
+
+
+
 """
     getfileextension(filepath)
 
@@ -56,28 +60,84 @@ function flattenfilepaths(locations,userlocations)
     return res
 end
 
-function getparams(components::Array{String,1}, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], asymmetricparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
-    # Gets all parameters from database.
+#function getparams()
+
+function getparams(components, 
+                    locations::Array{String,1}=String[]; 
+                    userlocations::Vector{String}=String[],
+                    asymmetricparams::Vector{String}=String[],
+                    ignore_missing_singleparams::Bool=false,
+                    verbose::Bool=false,
+                    species_columnreference::String="species",
+                    source_columnreference::String="source",
+                    site_columnreference::String="site",
+                    group_columnreference::String="groups",
+                    normalisecomponents::Bool=true
+                    )
+
+    options = ParamOptions(;userlocations,
+                            asymmetricparams,
+                            ignore_missing_singleparams,
+                            verbose,
+                            species_columnreference,
+                            source_columnreference,
+                            site_columnreference,
+                            group_columnreference,
+                            normalisecomponents)
+    
     # locations is a list of paths relative to the Clapeyron database directory.
     # userlocations is a list of paths input by the user.
     # If parameters exist in multiple files, Clapeyron gives priority to files in later paths.
     # asymmetricparams is a list of parameters for which matrix reflection is disabled.
-    # ignore_missingsingleparams gives users the option to disable component existence check in single params.
-    filepaths = flattenfilepaths(locations,userlocations)
-    allcomponentsites = findsitesincsvs(components, filepaths; verbose=verbose)
-    allparams, paramsourcecsvs, paramsources = createparamarrays(components, filepaths, allcomponentsites; verbose=verbose)
-    return packageparams(allparams, components, allcomponentsites, paramsourcecsvs, paramsources; asymmetricparams=asymmetricparams, ignore_missingsingleparams=ignore_missingsingleparams)
+    # ignore_missingsingleparams gives users the option to disable component existence check in single params.                   
+    return getparams(components,locations,options)
+    
+end
+function getparams(components::Vector{String},locations::Vector{String},options)
+    filepaths = flattenfilepaths(locations,options.userlocations)
+    allcomponentsites = findsitesincsvs(components, filepaths,options)
+    allparams, paramsourcecsvs, paramsources = createparamarrays(components, filepaths, allcomponentsites,options)
+    result = packageparams(allparams, components, allcomponentsites, paramsourcecsvs, paramsources,options)
+    if any(x isa AssocParam for x in values(result))
+        sites = buildsites(result,components,allcomponentsites,options.n_sites_columns)
+        return result,sites
+    else
+        return result
+    end
 end
 
-function getparams(groups::GroupParam, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], asymmetricparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
-    return getparams(groups.flattenedgroups, locations; userlocations=userlocations, asymmetricparams=asymmetricparams, ignore_missingsingleparams=ignore_missingsingleparams, verbose=verbose)
+function buildsites(result,components,allcomponentsites,n_sites_columns)
+    v = String[]
+    for sitei in allcomponentsites
+        append!(v,sitei)
+    end
+    unique!(v)
+    iszero(length(v)) && return SiteParam(components)
+    if !any(haskey(result,n_sites_columns[vi]) for vi in v)
+        return SiteParam(components)
+    end
+    
+    n_sites_dict = Dict{String,SingleParam{Int}}(vi => result[n_sites_columns[vi]] for vi in v)    
+    return SiteParam(n_sites_dict,allcomponentsites)
 end
 
-function getparams(components::String, locations::Array{String,1}=String[]; userlocations::Array{String,1}=String[], asymmetricparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false, verbose::Bool=false)
-    return getparams([components], locations; userlocations=userlocations, asymmetricparams=asymmetricparams, ignore_missingsingleparams=ignore_missingsingleparams, verbose=verbose)
+function getparams(groups::GroupParam, locations::Vector{String}=String[],options::ParamOptions=ParamOptions())
+    return getparams(groups.flattenedgroups, locations,options)
 end
 
-function packageparams(allparams::Dict, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, paramsourcecsvs::Dict{String,Set{String}}, paramsources::Dict{String,Set{String}}; asymmetricparams::Array{String,1}=String[], ignore_missingsingleparams::Bool=false)
+function getparams(components::String, locations::Vector{String}=String[],options::ParamOptions=ParamOptions())
+    return getparams([components],locations,options)
+end
+
+function packageparams(allparams::Dict, 
+    components::Vector{String}, 
+    allcomponentsites::Array{Array{String,1},1}, 
+    paramsourcecsvs::Dict{String,Set{String}}, 
+    paramsources::Dict{String,Set{String}},
+    options::ParamOptions = ParamOptions())
+
+    asymmetricparams = options.asymmetricparams
+    ignore_missingsingleparams = options.ignore_missing_singleparams
     # Package params into their respective Structs.
     output = Dict{String,ClapeyronParam}()
     for (param, value) ∈ allparams
@@ -86,7 +146,7 @@ function packageparams(allparams::Dict, components::Array{String,1}, allcomponen
             if !ignore_missingsingleparams && any(ismissingvalues)
                 error("Missing values exist in single parameter ", param, ": ", value, ".")
             end
-            output[param] = SingleParam(param, newvalue, ismissingvalues, components, allcomponentsites, collect(paramsourcecsvs[param]), collect(paramsources[param]))
+            output[param] = SingleParam(param, newvalue, ismissingvalues, components, collect(paramsourcecsvs[param]), collect(paramsources[param]))
         elseif value isa Matrix{<:Array}
             param ∉ asymmetricparams && mirrormatrix!(value) 
             newvalue_ismissingvalues = defaultmissing.(value)
@@ -101,7 +161,7 @@ function packageparams(allparams::Dict, components::Array{String,1}, allcomponen
                 && any([ismissingvalues[x,x] for x ∈ 1:size(ismissingvalues,1)]))
                 error("Partial missing values exist in diagonal of pair parameter ", param, ": ", [value[x,x] for x ∈ 1:size(ismissingvalues,1)], ".")
             end
-            output[param] = PairParam(param, newvalue, ismissingvalues, components, allcomponentsites, collect(paramsourcecsvs[param]), collect(paramsources[param]))
+            output[param] = PairParam(param, newvalue, ismissingvalues, components, collect(paramsourcecsvs[param]), collect(paramsources[param]))
         else
             error("Format for ", param, " is incorrect.")
         end
@@ -125,8 +185,9 @@ function param_type(::Type{Bool},::Type{Int})
     return Union{Bool,Missing}
 end
 
-function createparamarrays(components::Array{String,1}, filepaths::Array{String,1}, allcomponentsites::Array{Array{String,1},1}; verbose::Bool=false)
+function createparamarrays(components::Array{String,1}, filepaths::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, options::ParamOptions = ParamOptions())
     # Returns Dict with all parameters in their respective arrays.
+    verbose = options.verbose
     checkfor_clashingheaders(filepaths)
     allparams = Dict{String,Any}()
     paramsourcecsvs = Dict{String,Set{String}}()
@@ -141,7 +202,7 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
         end
         headerparams = readheaderparams(filepath)
         verbose && println("Searching for ", string(csvtype), " headers ", headerparams, " for components ", components, " at ", filepath, "...")
-        foundparams, paramtypes, sources = findparamsincsv(components, filepath, headerparams; verbose=verbose)
+        foundparams, paramtypes, sources = findparamsincsv(components, filepath, headerparams,options)
         foundcomponents = collect(keys(foundparams))
         foundparams = swapdictorder(foundparams)
         for headerparam ∈ headerparams
@@ -275,12 +336,15 @@ function swapdictorder(dict)
 end
 function findparamsincsv(components::Array{String,1},
     filepath::AbstractString,
-    headerparams::Array{String,1};
-    columnreference::AbstractString="species",
-    sitecolumnreference::AbstractString="site",
-    sourcecolumnreference::AbstractString="source",
-    verbose::Bool=false,
-    normalisecomponents::Bool=true)
+    headerparams::Array{String,1},
+    options::ParamOptions = ParamOptions())
+
+
+    columnreference = options.species_columnreference
+    sitecolumnreference = options.site_columnreference
+    sourcecolumnreference = options.source_columnreference
+    verbose = options.verbose
+    normalisecomponents = options.normalisecomponents
     # Returns a Dict with all matches in a particular file for one parameter.
     normalised_columnreference = normalisestring(columnreference)
     normalised_columnreference1 = normalised_columnreference * '1'
@@ -461,7 +525,14 @@ function checkfor_clashingheaders(filepaths::Array{String,1})
     !isempty(clashingheaders) && error("Headers ", clashingheaders, " appear in both loaded assoc and non-assoc files.")
 end
 
-function findsitesincsvs(components::Array{String,1}, filepaths::Array{String,1}; columnreference::AbstractString="species", sitecolumnreference::AbstractString="site", verbose::Bool=false, normalisecomponents::Bool=true)
+function findsitesincsvs(components::Array{String,1}, 
+                        filepaths::Array{String,1},
+                        options::ParamOptions = ParamOptions())
+
+    columnreference = options.species_columnreference
+    sitecolumnreference = options.site_columnreference
+    verbose = options.verbose
+    normalisecomponents = options.normalisecomponents
     # Look for all relevant sites in the database.
     # Note that this might not necessarily include all sites associated with a component.
     normalised_components = normalisestring.(components; isactivated=normalisecomponents)
@@ -513,14 +584,14 @@ function findsitesincsvs(components::Array{String,1}, filepaths::Array{String,1}
 end
 
 
-function findgroupsincsv(components::Array{String,1},
-    filepath::AbstractString; 
-    columnreference::AbstractString="species", 
-    groupcolumnreference::AbstractString="groups", 
-    verbose::Bool=false,
-    normalisecomponents=true)
-
-    # Returns a Dict with the group string that will be parsed in buildspecies.
+function findgroupsincsv(components::Vector{String},
+    filepath::String,options::ParamOptions = ParamOptions())
+    
+    columnreference = options.species_columnreference
+    groupcolumnreference= options.group_columnreference
+    verbose = options.verbose
+    normalisecomponents = options.normalisecomponents
+    # Returns a Dict with the group string that will be parsed in GroupParam.
     csvtype = readcsvtype(filepath)
     csvtype != groupdata && return Dict{String,String}()
     normalised_components = normalisestring.(components; isactivated=normalisecomponents)
@@ -573,6 +644,9 @@ function createemptyparamsarray(datatype::Type, csvtype::CSVType, components::Ar
         return output
     end
 end
+
+
+
 
 function createemptyparamsarray(csvtype::CSVType, components::Array{String,1})
     allcomponentsites = [String[] for _ in 1:length(components)]
@@ -647,21 +721,25 @@ function mirrormatrix!(matrix::Array{Array{T,2},2}) where T
     end
     return matrix
 end
-function GroupParam(gccomponents, grouplocations::Array{String,1}=String[]; usergrouplocations::Array{String,1}=String[], verbose::Bool=false)
-    if (!(gccomponents isa PARSED_GROUP_VECTOR_TYPE)) | iszero(length(grouplocations)) | iszero(length(usergrouplocations)) | verbose
-        return _GroupParam(gccomponents,grouplocations;usergrouplocations,verbose)
-    else
-         return GroupParam(gccomponents)
-    end        
+function GroupParam(gccomponents::Vector, 
+    grouplocations::Vector{String}=String[]; 
+    usergrouplocations::Vector{String}=String[], 
+    verbose::Bool=false)
+    options = ParamOptions(;usergrouplocations,verbose)
+    return GroupParam(gccomponents,grouplocations,options)        
 end
-    
-function _GroupParam(gccomponents, grouplocations::Array{String,1}=String[]; usergrouplocations::Array{String,1}=String[], verbose::Bool=false)
+
+function GroupParam(gccomponents, 
+    grouplocations::Array{String,1}=String[],
+    options::ParamOptions = ParamOptions())
     # The format for gccomponents is an arary of either the species name (if it
     # available in the Clapeyron database, or a tuple consisting of the species
     # name, followed by a list of group => multiplicity pairs.  For example:
     # gccomponents = ["ethane",
     #                ("hexane", ["CH3" => 2, "CH2" => 4]),
     #                ("octane", ["CH3" => 2, "CH2" => 6])]
+    usergrouplocations = options.usergrouplocations
+    verbose = options.verbose
     BuildSpeciesType = Union{Tuple{String, Array{Pair{String, Int64},1}}, String, Tuple{String}}
     any(.!(isa.(gccomponents, BuildSpeciesType))) && error("The format of the components is incorrect.")
     filepaths = flattenfilepaths(grouplocations,usergrouplocations)
@@ -678,7 +756,7 @@ function _GroupParam(gccomponents, grouplocations::Array{String,1}=String[]; use
             continue
         end
         verbose && println("Searching for groups for components ", componentstolookup, " at ", filepath, "...")
-        merge!(allfoundcomponentgroups, findgroupsincsv(componentstolookup, filepath; verbose=verbose))
+        merge!(allfoundcomponentgroups, findgroupsincsv(componentstolookup, filepath, options))
         append!(groupsourcecsvs, [filepath])
     end
     gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(gccomponents))
