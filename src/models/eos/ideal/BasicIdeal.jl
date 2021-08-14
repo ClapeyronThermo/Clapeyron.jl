@@ -6,6 +6,7 @@ struct BasicIdeal <: BasicIdealModel
     params::BasicIdealParam
 end
 
+
 export BasicIdeal
 function BasicIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
     return BasicIdeal(BasicIdealParam())

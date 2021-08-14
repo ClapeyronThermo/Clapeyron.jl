@@ -1,6 +1,6 @@
 @enum CSVType singledata pairdata assocdata groupdata
 
-
+const NumberOrString = Union{Union{T1,Missing},Union{T2,Missing}} where {T1 <: AbstractString, T2 <: Number}
 
 
 
@@ -98,6 +98,9 @@ function getparams(components::Vector{String},locations::Vector{String},options)
     allcomponentsites = findsitesincsvs(components, filepaths,options)
     allparams, paramsourcecsvs, paramsources = createparamarrays(components, filepaths, allcomponentsites,options)
     result = packageparams(allparams, components, allcomponentsites, paramsourcecsvs, paramsources,options)
+    if !options.return_sites
+        return result
+    end
     if any(x isa AssocParam for x in values(result))
         sites = buildsites(result,components,allcomponentsites,options.n_sites_columns)
         return result,sites
@@ -141,33 +144,60 @@ function packageparams(allparams::Dict,
     # Package params into their respective Structs.
     output = Dict{String,ClapeyronParam}()
     for (param, value) ∈ allparams
-        if value isa Vector 
-            newvalue, ismissingvalues = defaultmissing(value)
-            if !ignore_missingsingleparams && any(ismissingvalues)
-                error("Missing values exist in single parameter ", param, ": ", value, ".")
-            end
-            output[param] = SingleParam(param, newvalue, ismissingvalues, components, collect(paramsourcecsvs[param]), collect(paramsources[param]))
-        elseif value isa Matrix{<:Array}
-            param ∉ asymmetricparams && mirrormatrix!(value) 
-            newvalue_ismissingvalues = defaultmissing.(value)
-            newvalue = getindex.(newvalue_ismissingvalues, 1)
-            ismissingvalues = getindex.(newvalue_ismissingvalues, 2)
-            output[param] = AssocParam(param, newvalue, ismissingvalues, components, allcomponentsites, collect(paramsourcecsvs[param]), collect(paramsources[param]))
-        elseif value isa Matrix
-            param ∉ asymmetricparams && mirrormatrix!(value)
-            newvalue, ismissingvalues = defaultmissing(value)
-            if (!ignore_missingsingleparams 
-                && !all([ismissingvalues[x,x] for x ∈ 1:size(ismissingvalues,1)])
-                && any([ismissingvalues[x,x] for x ∈ 1:size(ismissingvalues,1)]))
-                error("Partial missing values exist in diagonal of pair parameter ", param, ": ", [value[x,x] for x ∈ 1:size(ismissingvalues,1)], ".")
-            end
-            output[param] = PairParam(param, newvalue, ismissingvalues, components, collect(paramsourcecsvs[param]), collect(paramsources[param]))
-        else
-            error("Format for ", param, " is incorrect.")
-        end
+        output[param] = pkgparam(param,value,components,allcomponentsites,paramsourcecsvs,paramsources,options)
     end
     return output
 end
+#SingleParam
+function pkgparam(param::String,
+    value::Vector{<:NumberOrString},
+    components::Vector{String}, 
+    allcomponentsites::Array{Array{String,1},1}, 
+    paramsourcecsvs::Dict{String,Set{String}}, 
+    paramsources::Dict{String,Set{String}},
+    options::ParamOptions = ParamOptions())
+    newvalue, ismissingvalues = defaultmissing(value)
+    if !options.ignore_missing_singleparams && any(ismissingvalues)
+        error("Missing values exist in single parameter ", param, ": ", value, ".")
+    end
+    return SingleParam(param, newvalue, ismissingvalues, components, collect(paramsourcecsvs[param]), collect(paramsources[param]))
+end
+#PairParam
+function pkgparam(param::String,
+    value::Matrix{<:NumberOrString},
+    components::Vector{String}, 
+    allcomponentsites::Array{Array{String,1},1}, 
+    paramsourcecsvs::Dict{String,Set{String}}, 
+    paramsources::Dict{String,Set{String}},
+    options::ParamOptions = ParamOptions())
+    
+    param ∉ options.asymmetricparams && mirrormatrix!(value)
+    newvalue, ismissingvalues = defaultmissing(value)
+    if (!options.ignore_missing_singleparams 
+        && !all([ismissingvalues[x,x] for x ∈ 1:size(ismissingvalues,1)])
+        && any([ismissingvalues[x,x] for x ∈ 1:size(ismissingvalues,1)]))
+        error("Partial missing values exist in diagonal of pair parameter ", param, ": ", [value[x,x] for x ∈ 1:size(ismissingvalues,1)], ".")
+    end
+    return PairParam(param, newvalue, ismissingvalues, components, collect(paramsourcecsvs[param]), collect(paramsources[param]))
+end
+#AssocParam
+function pkgparam(param::String,
+    value::Matrix{<:Matrix{<:NumberOrString}},
+    components::Vector{String}, 
+    allcomponentsites::Array{Array{String,1},1}, 
+    paramsourcecsvs::Dict{String,Set{String}}, 
+    paramsources::Dict{String,Set{String}},
+    options::ParamOptions = ParamOptions())
+    
+    param ∉ options.asymmetricparams && mirrormatrix!(value) 
+    newvalue_ismissingvalues = defaultmissing.(value)
+    newvalue = getindex.(newvalue_ismissingvalues, 1)
+    ismissingvalues = getindex.(newvalue_ismissingvalues, 2)
+    return AssocParam(param, newvalue, ismissingvalues, components, allcomponentsites, collect(paramsourcecsvs[param]), collect(paramsources[param]))
+
+end
+
+
 
 function param_type(t1,t2)
     t_promoted = promote_type(t1,t2)

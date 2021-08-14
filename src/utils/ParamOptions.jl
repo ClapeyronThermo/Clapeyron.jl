@@ -17,4 +17,5 @@ Base.@kwdef struct ParamOptions
     group_columnreference::String="groups" 
     normalisecomponents::Bool=true
     n_sites_columns::Dict{String,String} = DEFAULT_N_SITES
+    return_sites::Bool = true
 end

@@ -12,6 +12,8 @@ include("constants.jl")
 include("models/basetools.jl")
 include("utils/ParamOptions.jl")
 include("utils/ClapeyronParam.jl")
+
+include("models/eos/ideal/BasicIdeal.jl") #before macros, because its used there
 include("utils/macros.jl")
 using CSV, Tables
 include("utils/database.jl")
@@ -23,7 +25,6 @@ include("models/eos.jl")
 include("utils/visualisation.jl")
 
 
-include("models/eos/ideal/BasicIdeal.jl")
 include("models/eos/ideal/MonomerIdeal.jl")
 include("models/eos/ideal/ReidIdeal.jl")
 include("models/eos/ideal/WalkerIdeal.jl")
