@@ -85,8 +85,14 @@ as long as the first four parameters in the function are written exactly as abov
 
 """
 macro f(func, args...)
-    args = [esc(arg) for arg ∈ args]
-    return :($(func)($(esc(:model)),$(esc(:V)),$(esc(:T)),$(esc(:z)),$(args...)))
+    f = func
+    model = :model
+    V = :V
+    T = :T
+    z = :z
+    quote
+        $f($model,$V,$T,$z,$(args...))
+    end |> esc
 end
 
 """
@@ -145,29 +151,9 @@ macro newmodelgc(name, parent, paramstype)
         references::Array{String,1}
     end
 
-    function $name(params::$paramstype, groups::GroupParam, sites::SiteParam, idealmodel=BasicIdeal;
-                    ideal_userlocations=String[],
-                    references=String[],
-                    absolutetolerance=1E-12,
-                    verbose=false)
-        return _newmodelgc($name, params, groups, sites, idealmodel;
-            ideal_userlocations=ideal_userlocations,
-            references=references,
-            absolutetolerance=absolutetolerance,
-            verbose=verbose)
-    end
-    function $name(params::$paramstype, groups::GroupParam, idealmodel=BasicIdeal;
-                    ideal_userlocations=String[],
-                    references=String[],
-                    absolutetolerance=1E-12, verbose=false)
-
-        return _newmodelgc($name, params, groups, idealmodel;
-                    ideal_userlocations=ideal_userlocations,
-                    references=references,
-                    absolutetolerance=absolutetolerance,
-                    verbose=verbose)
-    end
-    
+    has_sites(::Type{$name}) = true
+    has_groups(::Type{$name}) = true
+    built_by_macro(::Type{$name}) = true
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
@@ -182,38 +168,6 @@ macro newmodelgc(name, parent, paramstype)
     molecular_weight(model::$name,z=SA[1.0]) = group_molecular_weight(model.groups,mw(model),z)
 
 end |> esc
-end
-
-const IDEALTYPE = Type{T} where T<:IdealModel
-
-function _newmodelgc(eostype,params, groups::GroupParam, sites::SiteParam, idealmodel::IDEALTYPE=BasicIdeal;
-                    ideal_userlocations=String[],
-                    references::Vector{String}=String[],
-                    absolutetolerance::Float64=1E-12,
-                    verbose::Bool=false)
-
-    components = groups.components
-    lengthcomponents = length(components)
-    icomponents = 1:lengthcomponents
-
-    verbose && idealmodel != BasicIdeal && @info("Now creating ideal model ", idealmodel, ".")
-    idealmodelstruct = idealmodel(components; userlocations=ideal_userlocations, verbose=verbose)
-
-return eostype{idealmodel}(components, icomponents,
-                        groups,
-                        sites,
-       params, idealmodelstruct, absolutetolerance, references)
-end
-
-
-function _newmodelgc(eostype,params, groups, idealmodel=BasicIdeal;
-                    references=String[],
-                    absolutetolerance=1E-12,
-                    verbose=false)
-
-    components = groups.components
-    sites = SiteParam(components)
-    return _newmodelgc(eostype,params, groups, sites, idealmodel; references=references, absolutetolerance=absolutetolerance, verbose=verbose)
 end
 
 """
@@ -236,30 +190,10 @@ macro newmodel(name, parent, paramstype)
         absolutetolerance::Float64
         references::Array{String,1}
     end
-    
-    function $name(params::$paramstype, sites::SiteParam, idealmodel=BasicIdeal;
-                    ideal_userlocations=String[],
-                    references=String[],
-                    absolutetolerance=1E-12, verbose=false) 
-
-        return _newmodel($name, params, sites, idealmodel;
-            ideal_userlocations=ideal_userlocations,
-            references=references,
-            absolutetolerance=absolutetolerance,
-            verbose=verbose)
-    end
-    function $name(params::$paramstype, idealmodel=BasicIdeal;
-                    ideal_userlocations=String[],
-                    references=String[],
-                    absolutetolerance=1E-12,
-                    verbose=false)
-
-        return _newmodel($name, params, idealmodel;
-            ideal_userlocations=ideal_userlocations,
-            references=references,
-            absolutetolerance=absolutetolerance)
-    end
-
+    has_sites(::Type{$name}) = true
+    has_groups(::Type{$name}) = false
+    built_by_macro(::Type{$name}) = true
+   
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
     end
@@ -272,36 +206,6 @@ macro newmodel(name, parent, paramstype)
     end |> esc
 end
 
-
-function _newmodel(eostype, params, sites::SiteParam, idealmodel::IDEALTYPE=BasicIdeal;
-                ideal_userlocations=String[],
-                references::Array{String,1}=String[],
-                absolutetolerance::Float64=1E-12,
-                verbose::Bool=false)
-
-    arbparam = arbitraryparam(params)
-    components = arbparam.components
-    icomponents = 1:length(components)
-    verbose && idealmodel != BasicIdeal && @info("Now creating ideal model ", idealmodel, ".")
-    idealmodelstruct = idealmodel(components; userlocations=ideal_userlocations, verbose=verbose)
-
-    return eostype{idealmodel}(components, icomponents,
-        sites,
-        params, idealmodelstruct, absolutetolerance, references)
-end
-
-function _newmodel(eostype, params, idealmodel=BasicIdeal;
-                ideal_userlocations=String[],
-                references=String[],
-                absolutetolerance=1E-12,
-                verbose=false)
-    
-    arbparam = arbitraryparam(params)
-    components = arbparam.components
-    sites = SiteParam(components)
-    return _newmodel(eostype, params, sites, idealmodel; references=references, ideal_userlocations=ideal_userlocations, absolutetolerance=absolutetolerance)
-end
-
 """
 Even simpler model, primarily for the ideal models.
 Contains neither sites nor ideal models.
@@ -311,19 +215,14 @@ macro newmodelsimple(name, parent, paramstype)
     struct $name <: $parent
         components::Array{String,1}
         icomponents::UnitRange{Int}
-
         params::$paramstype
         absolutetolerance::Float64
         references::Array{String,1}
     end
+    has_sites(::Type{$name}) = false
+    has_groups(::Type{$name}) = false
+    built_by_macro(::Type{$name}) = true
 
-    function $name(params::$paramstype;
-                references::Array{String,1}=String[],
-                absolutetolerance::Float64=1E-12, verbose::Bool=false)
-        
-        return _newmodelsimple($name, params; references=references, absolutetolerance=absolutetolerance, verbose=verbose)
-    end
-    
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
     end
@@ -337,17 +236,91 @@ macro newmodelsimple(name, parent, paramstype)
     end |> esc
 end
 
-function _newmodelsimple(eostype,params;
-                        references::Array{String,1}=String[],
-                        absolutetolerance::Float64=1E-12,
-                        verbose::Bool=false)
+export @newmodel, @f, @newmodelgc
+
+
+
+
+const IDEALTYPE = Union{T,Type{T}} where T<:IdealModel
+
+function (::Type{model})(params::EoSParam,
+        groups::GroupParam,
+        sites::SiteParam,
+        idealmodel::IDEALTYPE = BasicIdeal;
+        ideal_userlocations::Vector{String}=[],
+        references::Vector{String}=[],
+        absolutetolerance::Float64 = 1e-12,
+        verbose::Bool = false) where model <:EoSModel
+
+        components = groups.components
+        icomponents = 1:length(components)
+        init_idealmodel = initialize_idealmodel(idealmodel,components,ideal_userlocations,verbose)
+        return model(components, icomponents,
+        groups,
+        sites,
+        params, init_idealmodel, absolutetolerance, references)
+end
+
+function (::Type{model})(params::EoSParam,
+        groups::GroupParam,
+        idealmodel::IDEALTYPE = BasicIdeal;
+        ideal_userlocations::Vector{String}=[],
+        references::Vector{String}=[],
+        absolutetolerance::Float64 = 1e-12,
+        verbose::Bool = false) where model <:EoSModel
+
+    sites = SiteParam(groups.components)
+    return model(params,groups,sites,idealmodel;ideal_userlocations,references,absolutetolerance,verbose)
+end
+
+
+#non GC
+function (::Type{model})(params::EoSParam,
+        sites::SiteParam,
+        idealmodel::IDEALTYPE = BasicIdeal;
+        ideal_userlocations::Vector{String}=[],
+        references::Vector{String}=[],
+        absolutetolerance::Float64 = 1e-12,
+        verbose::Bool = false) where model <:EoSModel
+    
+    components = sites.components
+    icomponents = 1:length(components)
+
+    init_idealmodel = initialize_idealmodel(idealmodel,components,ideal_userlocations,verbose)
+    return model(components, icomponents,
+    sites, params, init_idealmodel, absolutetolerance, references)
+
+end
+
+#non GC, may be shared with model simple
+function (::Type{model})(params::EoSParam,
+        idealmodel::IDEALTYPE = BasicIdeal;
+        ideal_userlocations::Vector{String}=[],
+        references::Vector{String}=[],
+        absolutetolerance::Float64 = 1e-12,
+        verbose::Bool = false) where model <:EoSModel
 
     arbparam = arbitraryparam(params)
     components = arbparam.components
+    
+    if has_sites(model)
+        sites = SiteParam(components)
+        return model(params,sites,idealmodel;ideal_userlocations,references,absolutetolerance,verbose)
+    end
+    #With sites out of the way, this is a simplemodel, no need to initialize the ideal model
     icomponents = 1:length(components)
-
-    return eostype(components, lengthcomponents, icomponents,
-        params, absolutetolerance, references)
+    return model(components,icomponents,params,references,absolutetolerance)
 end
 
-export @newmodel, @f, _newmodel
+function initialize_idealmodel(idealmodel::IdealModel,components,userlocations,verbose)
+    return idealmodel
+end
+
+function initialize_idealmodel(idealmodel::BasicIdeal,components,userlocations,verbose)
+    return BasicIdeal()
+end
+
+function initialize_idealmodel(idealmodel::Type{<:IdealModel},components,userlocations,verbose)
+    verbose && @info("Now creating ideal model ", idealmodel, ".")
+    return idealmodel(components;userlocations,verbose)
+end
