@@ -267,7 +267,7 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
             end
             if csvtype == pairdata
                 if allparams[headerparam] isa Vector
-                    allparams[headerparam] = convertsingletopair(allparams[headerparam], true)
+                    allparams[headerparam] = convertsingletopair(allparams[headerparam], missing)
                 end
                 isempty(foundparams) && continue
                 for (componentpair, value) ∈ foundparams[headerparam]
@@ -621,7 +621,6 @@ function findgroupsincsv(components::Vector{String},
     groupcolumnreference= options.group_columnreference
     verbose = options.verbose
     normalisecomponents = options.normalisecomponents
-    # Returns a Dict with the group string that will be parsed in GroupParam.
     csvtype = readcsvtype(filepath)
     csvtype != groupdata && return Dict{String,String}()
     normalised_components = normalisestring.(components; isactivated=normalisecomponents)
@@ -631,28 +630,26 @@ function findgroupsincsv(components::Vector{String},
     df = CSV.File(filepath; header=3,lazystrings=true)
     csvheaders = String.(Tables.columnnames(df))
     normalised_csvheaders = normalisestring.(csvheaders)
-
     normalised_columnreference ∉ normalised_csvheaders && error("Header ", normalised_columnreference, " not found.")
     normalised_groupcolumnreference ∉ normalised_csvheaders && error("Header ", normalised_groupcolumnreference, " not found.")
-
     foundgroups = Dict{String,String}()
-
     lookupcolumnindex = findfirst(isequal(normalised_columnreference), normalised_csvheaders)
     isnothing(lookupcolumnindex) && error("Header ", normalised_columnreference, " not found.")
     lookupcolumn = Symbol(csvheaders[lookupcolumnindex])
-
     lookupgroupcolumnindex = findfirst(isequal(normalised_groupcolumnreference), normalised_csvheaders)
     isnothing(lookupgroupcolumnindex) && error("Header ", normalised_groupcolumnreference, " not found.")
     lookupgroupcolumn = Symbol(csvheaders[lookupgroupcolumnindex])
+    
     for row ∈ Tables.rows(df)
-    component = row[lookupcolumn]
-    foundcomponentidx = findfirst(isequal(normalisestring(component; isactivated=normalisecomponents)), normalised_components)
-    isnothing(foundcomponentidx) && continue
-    verbose && print("Found component: ", component)
-    component = components[foundcomponentidx]
-    foundgroups[component] = row[lookupgroupcolumn]
-    verbose && println(" with groups ", foundgroups[component])
+        component = row[lookupcolumn]
+        foundcomponentidx = findfirst(isequal(normalisestring(component; isactivated=normalisecomponents)), normalised_components)
+        isnothing(foundcomponentidx) && continue
+        verbose && print("Found component: ", component)
+        component = components[foundcomponentidx]
+        foundgroups[component] = row[lookupgroupcolumn]
+        verbose && println(" with groups ", foundgroups[component])
     end
+
     return foundgroups
 end
 
@@ -675,9 +672,6 @@ function createemptyparamsarray(datatype::Type, csvtype::CSVType, components::Ar
     end
 end
 
-
-
-
 function createemptyparamsarray(csvtype::CSVType, components::Array{String,1})
     allcomponentsites = [String[] for _ in 1:length(components)]
     return createemptyparamsarray(Any, csvtype, components, allcomponentsites)
@@ -686,31 +680,33 @@ end
 function createemptyparamsarray(csvtype::CSVType, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1})
     return createemptyparamsarray(Any, csvtype, components, allcomponentsites)
 end
- 
-"""
-    convertsingletopair(params::Vector,outputmissing=false)
 
-For numbers, this is equal to Matrix(Diagonal(params)).
-For strings, this is equal to a matrix filled with "", whose diagonal is `params`
+
+_zero(t::Number) = zero(t)
+_zero(::String) = ""
+_zero(::Missing) = missing
+function _zero(x::Type{T})  where T<:Number
+    return zero(T)
+end
+_zero(::Type{String}) = ""
+_zero(::Type{Missing}) = missing
+function _zero(::Type{T}) where T <:Union{T1,Missing} where T1
+    return missing
+end
 
 """
-function convertsingletopair(params::Array{T,1}, outputmissing::Bool=false) where T
-    # Returns a missing square matrix with its diagonal matrix replaced by the given parameters. 
-    paramslength = length(params)
-    if outputmissing
-        output = Array{Union{Missing,T}}(undef, paramslength, paramslength) .= missing
-    else
-        if T == Any
-            output = Array{T}(undef, paramslength, paramslength) .= 0
-        elseif T <: Number
-            output = Array{T}(undef, paramslength, paramslength) .= 0
-        elseif T <: AbstractString
-            output = Array{T}(undef, paramslength, paramslength) .= ""
-        else
-            error("Data type ", T, " not supported.")
-        end
-    end
-    for i = 1:paramslength
+    convertsingletopair(params::Vector,outputmissing=zero(T))
+
+Generates a square matrix, filled with "zeros" (considering the "zero" of a string, a empty string). 
+The generated matrix will have the values of `params` in the diagonal.
+If missing is passed, the matrix will be filled with `missing`
+"""
+function convertsingletopair(params::Vector{T1},outputmissing::T2 =_zero(T1)) where {T1,T2}
+    len = length(params)
+    T = Union{T1,T2}
+    output = Matrix{T}(undef,len,len)
+    fill!(output,_zero(T))
+    @inbounds  for i in 1:len
         output[i,i] = params[i]
     end
     return output
