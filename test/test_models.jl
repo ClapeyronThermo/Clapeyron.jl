@@ -97,11 +97,11 @@
     end
 
     @testset "SAFTgammaMie" begin
-        system = SAFTgammaMie(["ethanol"])
+        system = SAFTgammaMie(["methanol","butane"])
         V_γMie = exp10(-3.5)
-        z = [1.]
-        @test Clapeyron.a_mono(system, V_γMie, T, z) ≈ -1.151043781769667 rtol = 1e-6
-        @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.1255227354789658 rtol = 1e-6
-        @test Clapeyron.a_assoc(system, V_γMie, T, z) ≈ -1.9386416653191778 rtol = 1e-6
+        z = [0.5,0.5]
+        @test Clapeyron.a_mono(system, V_γMie, T, z) ≈ -1.0400249396482548 rtol = 1e-6
+        @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.07550931466871749 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V_γMie, T, z) ≈ -0.8205840455850311 rtol = 1e-6
     end
 end
