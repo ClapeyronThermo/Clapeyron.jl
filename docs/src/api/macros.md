@@ -9,11 +9,15 @@ Pages = ["macros.md"]
 ```@index
 Pages = ["macros.md"]
 ```
-## Macros
+## Model Macros
 ```@docs
 Clapeyron.@newmodelgc
 Clapeyron.@newmodel
 Clapeyron.@newmodelsimple
+```
+
+## Utility Macros
+```@docs
 Clapeyron.@comps
 Clapeyron.@groups
 Clapeyron.@sites

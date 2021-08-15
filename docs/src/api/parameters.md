@@ -16,3 +16,10 @@ Clapeyron.ParamOptions
 Clapeyron.getparams
 ```
 ## Parameter types
+```@docs
+Clapeyron.SingleParam
+Clapeyron.PairParam
+Clapeyron.AssocParam
+Clapeyron.GroupParam
+Clapeyron.SiteParam
+```

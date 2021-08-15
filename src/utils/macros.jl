@@ -102,8 +102,6 @@ end
 Wraps the function in a `try-catch` block, and if a `DomainError` or `DivideError` is raised, then returns `default`.
 for better results, its best to generate the default result beforehand
 """
-
-
 macro nan(Base.@nospecialize(fcall),default = nothing)
     e = gensym(:error)
     quote
