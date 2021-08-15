@@ -18,7 +18,7 @@ format = Documenter.HTML(
         "To-do list" => "to-do_list.md",
         "API" => Any[
         "Parameters" => "api/parameters.md",
-        "macros" => "api/macros.md",
+        "Macros" => "api/macros.md",
         "Properties" => "api/properties.md",
         "Automatic Differenciation" => "api/ad.md",
 
