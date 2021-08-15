@@ -1,10 +1,58 @@
 abstract type ClapeyronParam end
 
+
+"""
+    SingleParam{T}
+
+Struct designed to contain single parameters. Basically a vector with some extra info.
+
+## Creation:
+```julia-repl
+julia> mw = SingleParam("molecular weight",["water","ammonia"],[18.01,17.03])
+SingleParam{Float64}("molecular weight") with 2 components:
+ "water" => 18.01
+ "ammonia" => 17.03
+
+julia> mw.values
+2-element Vector{Float64}:
+ 18.01
+ 17.03
+
+julia> mw.components
+2-element Vector{String}:
+ "water"
+ "ammonia"
+
+julia> mw2 = SingleParam(mw,"new name")
+SingleParam{Float64}("new name") with 2 components:
+ "water" => 18.01
+ "ammonia" => 17.03
+
+julia> has_oxigen = [true,false]; has_o = SingleParam(mw2,has_oxigen)
+SingleParam{Bool}("new name") with 2 components:
+ "water" => true
+ "ammonia" => false
+
+```
+
+## Example usage in models:
+
+```
+function molecular_weight(model,molar_frac)
+    mw = model.params.mw.values
+    res = zero(eltype(molarfrac))
+    for i in @comps #iterating through all components
+        res += molar_frac[i]*mw[i]
+    end
+    return res
+end
+```
+"""
 struct SingleParam{T} <: ClapeyronParam
     name::String
+    components::Array{String,1}
     values::Array{T,1}
     ismissingvalues::Array{Bool,1}
-    components::Array{String,1}
     sourcecsvs::Array{String,1}
     sources::Array{String,1}
 end
@@ -41,7 +89,7 @@ function Base.show(io::IO, ::MIME"text/plain", param::SingleParam)
 end
 
 function SingleParam(x::SingleParam{T},name=x.name) where T
-    return SingleParam(name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.sourcecsvs, x.sources)
+    return SingleParam(name, x.components,deepcopy(x.values), deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
 end
 
 #a barebones constructor, in case we dont build from csv
@@ -49,49 +97,102 @@ function SingleParam(
     name::String,
     components::Vector{String},
     values::Vector{T},
-    ismissingvalues::Vector{Bool} = [ismissing for i = 1:length(value)],
     sourcecsvs = String[],
     sources = String[]
-    ) where T<:Union{<: Real,Missing}
-    _values,_ismissingvalues = defaultmissing(values,nothing)
+    ) where T
+    _values,_ismissingvalues = defaultmissing(values)
     TT = eltype(_values)
-    return  SingleParam{TT}(names, _values, _ismissingvalues, components, sourcecsvs, sources)
+    return  SingleParam{TT}(name,components, _values, _ismissingvalues, sourcecsvs, sources)
 end
 
 function SingleParam(x::SingleParam, v::Vector{T}) where T
-    return SingleParam(x.name, v, Array(ismissing.(v)), x.components, x.sourcecsvs, x.sources)
+    _values,_ismissingvalues = defaultmissing(values)
+    return SingleParam(x.name, x.components,_values, _ismissingvalues , x.sourcecsvs, x.sources)
 end
+"""
+    PairParam{T}
 
+Struct designed to contain pair data. used a matrix as underlying data storage.
+
+## Creation:
+```julia-repl
+julia> kij = PairParam("interaction params",["water","ammonia"],[0.1 0.0;0.1 0.0])
+PairParam{Float64}["water", "ammonia"]) with values:
+2×2 Matrix{Float64}:
+ 0.1  0.0
+ 0.1  0.0
+
+julia> kij.values
+2×2 Matrix{Float64}:
+ 0.1  0.0
+ 0.1  0.0
+
+julia> kij.diagvalues
+2-element view(::Vector{Float64}, 
+1:3:4) with eltype Float64:
+ 0.1
+ 0.0
+```
+
+## Example usage in models:
+
+```julia
+#lets compute ∑xᵢxⱼkᵢⱼ
+function alpha(model,x)
+    kij = model.params.kij.values
+    ki = model.params.kij.diagvalues
+    res = zero(eltype(molarfrac))
+    for i in @comps 
+        @show ki[i]
+        for j in @comps 
+            res += x[i]*x[j]*kij[i,j]
+        end
+    end
+    return res
+end
+"""
 struct PairParam{T} <: ClapeyronParam
     name::String
+    components::Array{String,1}
     values::Array{T,2}
     diagvalues::SubArray{T, 1, Vector{T}, Tuple{StepRange{Int64, Int64}}, true}
     ismissingvalues::Array{Bool,2}
-    components::Array{String,1}
     sourcecsvs::Array{String,1}
     sources::Array{String,1}
 end
 
-function PairParam(name::String, values::Array{T,2}, ismissingvalues::Array{Bool,2}, components::Array{String,1}, sourcecsvs::Array{String,1}, sources::Array{String,1}) where T
-    diagvalues = view(values, diagind(values))
-    return PairParam{T}(name, values, diagvalues, ismissingvalues, components, sourcecsvs, sources)
+function PairParam(name::String,
+                    components::Array{String,1},
+                    values::Array{T,2},
+                    sourcecsvs::Array{String,1} = String[], 
+                    sources::Array{String,1} = String[]) where T
+    
+    _values,_ismissingvalues = defaultmissing(values)
+    diagvalues = view(_values, diagind(_values))
+
+    return PairParam{T}(name, components,_values, diagvalues, _ismissingvalues, sourcecsvs, sources)
 end
 
 function PairParam(x::PairParam,name::String=x.name)
-    return PairParam(name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.sourcecsvs, x.sources)
+    return PairParam(name, x.components, deepcopy(x.values),deepcopy(x.diagvalues), deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
 end
+
 function PairParam(x::SingleParam{T},name::String=x.name) where T
-    return PairParam(x.name, convertsingletopair(x.values), convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.sourcecsvs, x.sources)
+    pairvalues = singletopair(x.values,missing)
+    _values,_ismissingvalues = defaultmissing(pairvalues)
+    diagvalues = view(_values, diagind(_values))
+    return PairParam(name, x.components, _values,diagvalues,_ismissingvalues,x.sourcecsvs, x.sources)
 end
 
 function PairParam(x::PairParam, v::Matrix{T},name::String=x.name) where T
-    return PairParam(x.name, v, deepcopy(x.ismissingvalues), x.components, x.sourcecsvs, x.sources)
+    return PairParam(name, x.components,deepcopy(v), x.sourcecsvs, x.sources)
 end
 function PairParam(x::SingleParam, v::Vector{T},name::String=x.name) where T
-    return PairParam(x.name, convertsingletopair(v), convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.sourcecsvs, x.sources)
+    pairvalues = singletopair(v,missing)
+    return PairParam(x.name, x.components, pairvalues,x.sourcecsvs, x.sources)
 end
 function PairParam(x::SingleParam, v::Matrix{T},name::String=x.name) where T
-    return PairParam(x.name, v, convert(Array{Bool},.!(convertsingletopair(convert(Array{Bool},.!(x.ismissingvalues))))), x.components, x.sourcecsvs, x.sources)
+    return PairParam(x.name, x.components, deepcopy(v),x.sourcecsvs, x.sources)
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",param::PairParam{T}) where T
@@ -114,23 +215,27 @@ function Base.show(io::IO,param::PairParam)
     end
     print(io,"]")
 end
+"""
+    AssocParam{T}
 
+Struct holding association parameters.
+"""
 struct AssocParam{T} <: ClapeyronParam
     name::String
+    components::Array{String,1}
     values::Array{Array{T,2},2}
     ismissingvalues::Array{Array{Bool,2},2}
-    components::Array{String,1}
     allcomponentsites::Array{Array{String,1},1}
     sourcecsvs::Array{String,1}
     sources::Array{String,1}
 end
 
 function AssocParam(x::AssocParam{T}) where T
-    return PairParam{T}(x.name, deepcopy(x.values), deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.sourcecsvs, x.sources)
+    return PairParam{T}(x.name,x.components, deepcopy(x.values), deepcopy(x.ismissingvalues), x.allcomponentsites, x.sourcecsvs, x.sources)
 end
 
 function AssocParam{T}(x::AssocParam, v::Matrix{Matrix{T}}) where T
-    return AssocParam{T}(x.name, v, deepcopy(x.ismissingvalues), x.components, x.allcomponentsites, x.sourcecsvs, x.sources)
+    return AssocParam{T}(x.name, x.components,deepcopy(v), deepcopy(x.ismissingvalues), x.allcomponentsites, x.sourcecsvs, x.sources)
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",param::AssocParam{T}) where T
@@ -138,7 +243,6 @@ function Base.show(io::IO,mime::MIME"text/plain",param::AssocParam{T}) where T
     show(io,param.components)
     println(io,") with values:")
     show(io,mime,param.values)
-
 end
 
 function Base.show(io::IO,param::AssocParam)
@@ -156,6 +260,11 @@ function Base.show(io::IO,param::AssocParam)
 end
 const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
+"""
+    GroupParam
+
+Struct holding group parameters.
+"""
 struct GroupParam <: ClapeyronParam
     components::Array{String,1}
     groups::Array{Array{String,1},1}
@@ -228,7 +337,11 @@ function Base.show(io::IO, param::GroupParam)
     print(io,"]")
 end
 
+"""
+    SiteParam
 
+Struct holding site parameters.
+"""
 struct SiteParam <: ClapeyronParam
     components::Array{String,1}
     sites::Array{Array{String,1},1}
@@ -461,3 +574,20 @@ function split_model(groups::GroupParam)
 end
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
+#=
+* allcomponentgroups: a list of groups for each component
+* lengthallcomponentgroups: a list containing the number of groups for each component
+* allcomponentngroups: a list of the group multiplicity of each group corresponding to each group in allcomponentsgroup
+* igroups: an iterable that contains a list of group indices corresponding to flattenedgroups for each component
+
+* flattenedgroups: a list of all unique groups--the parameters correspond to this list
+* lengthflattenedgroups: the number of unique groups
+* allcomponentnflattenedgroups: the group multiplicities corresponding to each group in flattenedgroups
+* iflattenedgroups: an iterator that goes through the indices for each flattenedgroup
+
+* allgroupsites: a list containing a list of all sites corresponding to each group in flattenedgroups
+* lengthallgroupsites: a list containing the number of unique sites for each group in flattenedgroups
+* allgroupnsites: a list of the site multiplicities corresponding to each group in flattenedgroups
+* isites: an iterator that goes through the indices corresponding to each group in flattenedgroups
+
+=#

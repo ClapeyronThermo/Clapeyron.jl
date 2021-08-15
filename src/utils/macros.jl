@@ -95,15 +95,36 @@ macro f(func, args...)
     end |> esc
 end
 
+
 """
-    @newmodelgc name parent paramstype
+    @nan(function_call,default=NaN)
+
+Wraps the function in a `try-catch` block, and if a `DomainError` or `DivideError` is raised, then returns `default`.
+for better results, its best to generate the default result beforehand
+"""
+macro nan(Base.@nospecialize(fcall),default = nothing)
+    e = gensym(:error)
+    quote
+      try $fcall
+      catch $e
+        if $e isa Union{DomainError,DivideError}
+          $default
+        else
+          rethrow($e)
+        end
+      end
+    end
+  end
+
+"""
+    @newmodelgc modelname parent paramstype
 
 This is a data type that contains all the information needed to use an EoS model.
 It also functions as an identifier to ensure that the right functions are called.
 
 The user is expected to create an outter constructor that takes this signature
 
-    function name(components::Array{String,1})
+    function modelname(components::Array{String,1})
 
 It should then return name(params::paramtype, groups::GroupParam, sites::SiteParam, idealmodel::IdealModel)
 
@@ -111,33 +132,16 @@ It should then return name(params::paramtype, groups::GroupParam, sites::SitePar
 The Struct consists of the following fields:
 
 * components: a string lists of components
-* lengthcomponents: the number of components
 * icomponents: an iterator that goes through the indices corresponding to each component
-
-* allcomponentgroups: a list of groups for each component
-* lengthallcomponentgroups: a list containing the number of groups for each component
-* allcomponentngroups: a list of the group multiplicity of each group corresponding to each group in allcomponentsgroup
-* igroups: an iterable that contains a list of group indices corresponding to flattenedgroups for each component
-
-* flattenedgroups: a list of all unique groups--the parameters correspond to this list
-* lengthflattenedgroups: the number of unique groups
-* allcomponentnflattenedgroups: the group multiplicities corresponding to each group in flattenedgroups
-* iflattenedgroups: an iterator that goes through the indices for each flattenedgroup
-
-* allgroupsites: a list containing a list of all sites corresponding to each group in flattenedgroups
-* lengthallgroupsites: a list containing the number of unique sites for each group in flattenedgroups
-* allgroupnsites: a list of the site multiplicities corresponding to each group in flattenedgroups
-* isites: an iterator that goes through the indices corresponding to each group in flattenedgroups
-
+* groups: a [`GroupParam`](@ref)
+* sites: a [`SiteParam`](@ref)
 * params: the Struct paramstype that contains all parameters in the model
 * idealmodel: the IdealModel struct that determines which ideal model to use
 * absolutetolerance: the absolute tolerance for solvers; the default value is 1E-12
 * references: reference for this EoS
 
 See the tutorial or browse the implementations to see how this is used.
-
 """
-
 macro newmodelgc(name, parent, paramstype)
     quote 
     struct $name{T <: IdealModel} <: $parent
@@ -321,6 +325,7 @@ function initialize_idealmodel(idealmodel::BasicIdeal,components,userlocations,v
 end
 
 function initialize_idealmodel(idealmodel::Type{<:IdealModel},components,userlocations,verbose)
-    verbose && @info("Now creating ideal model ", idealmodel, ".")
+    verbose && @info("""Now creating ideal model:
+    $idealmodel""")
     return idealmodel(components;userlocations,verbose)
 end
