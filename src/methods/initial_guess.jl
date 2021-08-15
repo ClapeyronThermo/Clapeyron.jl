@@ -199,6 +199,15 @@ function lb_volume(model::BACKSAFTModel, z = SA[1.0])
     return val
 end
 
+function lb_volume(model::LJSAFTModel, z = SA[1.0])
+    seg = model.params.segment.values
+    b = model.params.b.diagvalues
+    val = π/6*sum(z[i]*seg[i]*b[i] for i in 1:length(z))
+    return val
+end
+
+
+
 #=scale_sat_pure=#
 
 # function scale_sat_pure(model::SAFTgammaMie)
@@ -376,6 +385,11 @@ function T_scale(model::SAFTModel,z=SA[1.0])
     return prod(ϵ)^(1/length(ϵ))
 end
 
+function T_scale(model::LJSAFTModel,z=SA[1.0])
+    T̃ = model.params.T_tilde.diagvalues
+    return prod(T̃)^(1/length(T̃))
+end
+
 #dont use αa, just a, to avoid temperature dependence
 function T_scale(model::CubicModel,z=SA[1.0])
     n = sum(z)
@@ -419,6 +433,13 @@ function p_scale(model::SAFTModel,z=SA[1.0])
     ϵ = model.params.epsilon.diagvalues
     σᵢᵢ = model.params.sigma.diagvalues
     val =  sum(z[i]*σᵢᵢ[i]^3/ϵ[i] for i in 1:length(z))*N_A/R̄
+    return 1/val
+end
+
+function p_scale(model::LJSAFTModel,z=SA[1.0])
+    T̃ = model.params.T_tilde.diagvalues
+    b = model.params.b.diagvalues
+    val =  sum(z[i]*b[i]/T̃[i] for i in 1:length(z))/R̄
     return 1/val
 end
 

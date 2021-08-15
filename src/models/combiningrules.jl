@@ -1,3 +1,16 @@
+export sigma_LorentzBerthelot_mod
+function sigma_LorentzBerthelot_mod(sigma::ClapeyronParam,zeta::PairParam)
+    sigma = PairParam(sigma)
+    σ = sigma.values
+    zeta_ = zeta.values
+    for i ∈ 1:length(sigma.components), j ∈ 1:length(sigma.components)
+        if sigma.ismissingvalues[i,j]
+            σ[i,j] = (1-zeta_[i,j])*(σ[i,i] + σ[j,j]) / 2
+        end
+    end
+    return sigma
+end
+
 export sigma_LorentzBerthelot
 function sigma_LorentzBerthelot(sigma::ClapeyronParam)
     sigma = PairParam(sigma)
