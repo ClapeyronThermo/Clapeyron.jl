@@ -1,15 +1,13 @@
-
-
 ## Contents
 
 ```@contents
-Pages = ["api.md"]
+Pages = ["properties.md"]
 ```
 
 ## Index
 
 ```@index
-Pages = ["api.md"]
+Pages = ["properties.md"]
 ```
 
 ## Volume-Temperature Based Properties
@@ -31,18 +29,6 @@ Clapeyron.sat_pure
 Clapeyron.enthalpy_vap
 Clapeyron.crit_pure
 Clapeyron.acentric_factor
-```
-
-## Automatic Differenciation functions
-```@docs
-Clapeyron.∂f∂T
-Clapeyron.∂f∂V
-Clapeyron.∂f
-Clapeyron.p∂p∂V
-Clapeyron.∂2f
-Clapeyron.∂2p
-Clapeyron.f_hess
-Clapeyron.∂²³f
 ```
 
 ## Initial guess functions
