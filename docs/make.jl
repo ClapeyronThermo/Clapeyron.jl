@@ -16,7 +16,15 @@ format = Documenter.HTML(
                             "Custom Methods"=>"user_guide/custom_methods.md",
                             "Custom Models"=>"user_guide/custom_model.md"],
         "To-do list" => "to-do_list.md",
-        "API" => "api.md"])
+        "API" => Any[
+        "Parameters" => "api/parameters.md",
+        "macros" => "api/macros.md",
+        "Properties" => "api/properties.md",
+        "Automatic Differenciation" => "api/ad.md",
+
+        ]
+        
+        ])
 
         deploydocs(;
     repo="github.com/ypaul21/Clapeyron.jl.git",
