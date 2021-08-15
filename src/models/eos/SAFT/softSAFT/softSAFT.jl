@@ -96,13 +96,6 @@ function ρ_S(model::softSAFTModel, V, T, z)
     return N/V*m̄
 end
 
-function x_S(model::softSAFTModel, V, T, z,i)
-    x = z/∑(z)
-    m = model.params.segment.values
-    m̄ = ∑(x .* m)
-    return x[i]*m[i]/m̄
-end
-
 function a_chain(model::softSAFTModel, V, T, z)
     x = z/∑(z)
     m = model.params.segment.values

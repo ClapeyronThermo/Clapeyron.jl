@@ -14,10 +14,14 @@ function LJSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal
     params,sites = getparams(components, ["SAFT/LJSAFT"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
 
-    params["b"].values .*= 1E-3
-    b = sigma_LorentzBerthelot(params["b"])
     k = params["k"]
+    zeta = params["zeta"]
+    
     T_tilde = epsilon_LorentzBerthelot(params["T_tilde"], k)
+    params["b"].values .*= 1E-3
+    params["b"].values .^= 1/3
+    b = sigma_LorentzBerthelot_mod(params["b"],zeta)
+    b.values .^= 3
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
@@ -49,12 +53,12 @@ function a_seg(model::LJSAFTModel, V, T, z)
     m̄ = ∑(m .* x)
     ρ = ∑(z)/V
     ρst = m̄*b̄*ρ
-    η = ρst*π/6*(∑(D[i+3]*Tst^(i/2) for i ∈ -2:1)+D[end]*log(Tst))^3
+    η = ρst*π/6*(∑(D[i+3]*pow(Tst,i/2) for i ∈ -2:1)+D[end]*log(Tst))^3
 
     A_HS = Tst*(5/3*log(1-η)+(η*(34-33η+4η^2))/(6*(1-η)^2))
-    ΔB2 = ∑(C[j+8]*Tst^(j/2) for j ∈ -7:0)
+    ΔB2 = ∑(C[j+8]*pow(Tst,j/2) for j ∈ -7:0)
     A0 = ∑(C0[j-1]*ρst^j for j ∈ 2:5)
-    A1 = ∑(C1[j-1]*Tst^(-1/2)*ρst^j for j ∈ 2:6)
+    A1 = ∑(C1[j-1]*pow(Tst,-1/2)*ρst^j for j ∈ 2:6)
     A2 = ∑(C2[j-1]*Tst^(-1)*ρst^j for j ∈ 2:6)
     A4 = ∑(C4[j-1]*Tst^(-2)*ρst^j for j ∈ 2:6)
 
@@ -82,22 +86,19 @@ end
 function a_chain(model::LJSAFTModel, V, T, z)
     x = z/∑(z)
     m = model.params.segment.values
-    m̄ = ∑(m .* x)
-    return -log(@f(g_LJ))*(m̄-1)
+    return -∑(x[i]*(m[i]-1)*log(@f(g_LJ,i)) for i ∈ @comps)
 end
 
-function g_LJ(model::LJSAFTModel, V, T, z)
+function g_LJ(model::LJSAFTModel, V, T, z, i)
     ∑z = ∑(z)
     x = z/∑(z)
     m = model.params.segment.values
+    b = model.params.b.diagvalues
+    T̃ = model.params.T_tilde.diagvalues
 
-    T̃ = @f(Tm)
-    b̄ = @f(bm)
-
-    Tst = T/T̃
-    m̄ = ∑(m .* x)
+    Tst = T/T̃[i]
     ρ = ∑z/V
-    ρ̄ = m̄*b̄*ρ
+    ρ̄ = b[i]*m[i]*x[i]*ρ
     a = LJSAFTconsts.a
 
     return (1+∑(a[i,j]*ρ̄^i*Tst^(1-j) for i ∈ 1:5 for j ∈ 1:5))
@@ -142,19 +143,17 @@ function Δ(model::LJSAFTModel, V, T, z, i, j, a, b)
     ∑z = ∑(z)
     x = z/∑z
     m = model.params.segment.values
+    _b = model.params.b.values
+    T̃ = model.params.T_tilde.values
 
-    T̃ = @f(Tm)
-    b̄ = @f(bm)
-
-    Tst = T/T̃
-    m̄ = ∑(m .* x)
+    Tst = T/T̃[i,j]
     ρ = ∑z/V
-    ρ̄ = m̄*b̄*ρ
+    ρ̄ = x[i]*_b[i,j]*m[i]*ρ
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     b_ = LJSAFTconsts.b
     I = ∑(b_[i+1,j+1]*ρ̄^i*Tst^j for i ∈ 0:4 for j ∈ 0:4)/3.84/1e4
-    return 4π*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]*I*b̄
+    return 4π*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]*I*_b[i,j]
 end
 
 const LJSAFTconsts = (

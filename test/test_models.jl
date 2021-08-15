@@ -34,6 +34,14 @@
         @test Clapeyron.a_disp(system, V, T, z) ≈ -2.4492518566426296 rtol = 1e-6
     end
 
+    @testset "LJSAFT" begin
+        system = LJSAFT(["ethane","1-propanol"])
+        z = [0.5, 0.5]
+        @test Clapeyron.a_seg(system, V, T, z) ≈ -2.207632433058473 rtol = 1e-6
+        @test Clapeyron.a_chain(system, V, T, z) ≈ -0.04577483379871112 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.3009761155167205 rtol = 1e-6
+    end
+
     @testset "CPA" begin
         system = CPA(["ethanol","benzene"])
         z = [0.5, 0.5]
