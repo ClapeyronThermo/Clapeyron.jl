@@ -143,13 +143,14 @@ function alpha(model,x)
     ki = model.params.kij.diagvalues
     res = zero(eltype(molarfrac))
     for i in @comps 
-        @show ki[i]
+        @show ki[i] #diagonal values
         for j in @comps 
             res += x[i]*x[j]*kij[i,j]
         end
     end
     return res
 end
+```
 """
 struct PairParam{T} <: ClapeyronParam
     name::String
@@ -270,7 +271,74 @@ const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64
 """
     GroupParam
 
-Struct holding group parameters.
+Struct holding group parameters.contains:
+* components: a list of all components
+* groups: a list of groups names for each component
+* i_groups: a list containing the number of groups for each component
+* n_groups: a list of the group multiplicity of each group corresponding to each group in i_groups
+* flattenedgroups: a list of all unique groups--the parameters correspond to this list
+* n_flattenedgroups: the group multiplicities corresponding to each group in flattenedgroups
+* i_flattenedgroups: an iterator that goes through the indices for each flattenedgroup
+
+You can create a group param by passing a Vector{Tuple{String, Vector{Pair{String, Int64}}}}.
+for example:
+```julia-repl
+julia> grouplist = [
+           ("ethanol", ["CH3"=>1, "CH2"=>1, "OH"=>1]), 
+           ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),
+           ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])];
+
+julia> groups = GroupParam(grouplist)
+GroupParam with 3 components:
+ "ethanol": "CH3" => 1, "CH2" => 1, "OH" => 1
+ "nonadecanol": "CH3" => 1, "CH2" => 18, "OH" => 1    
+ "ibuprofen": "CH3" => 3, "COOH" => 1, "aCCH" => 1, "aCCH2" => 1, "aCH" => 4
+
+julia> groups.flattenedgroups
+7-element Vector{String}:
+ "CH3"
+ "CH2"
+ "OH"
+ "COOH"
+ "aCCH"
+ "aCCH2"
+ "aCH"
+
+julia> groups.i_groups
+3-element Vector{Vector{Int64}}:
+ [1, 2, 3]
+ [1, 2, 3]
+ [1, 4, 5, 6, 7]
+
+julia> groups.n_groups
+3-element Vector{Vector{Int64}}:
+ [1, 1, 1]
+ [1, 18, 1]
+ [3, 1, 1, 1, 4]
+
+julia> groups.n_flattenedgroups
+ 3-element Vector{Vector{Int64}}:
+ [1, 1, 1, 0, 0, 0, 0]
+ [1, 18, 1, 0, 0, 0, 0]
+ [3, 0, 0, 1, 1, 1, 4]
+```
+
+if you have CSV with group data, you can also pass those, to automatically query the missing groups in your input vector:
+
+```julia-repl
+julia> grouplist = [
+           "ethanol", 
+           ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),
+           ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])];
+
+           julia> groups = GroupParam(grouplist, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"])
+           GroupParam with 3 components:
+            "ethanol": "CH2OH" => 1, "CH3" => 1
+            "nonadecanol": "CH3" => 1, "CH2" => 18, "OH" => 1    
+            "ibuprofen": "CH3" => 3, "COOH" => 1, "aCCH" => 1, "aCCH2" => 1, "aCH" => 4
+```
+In this case, `SAFTGammaMie` files support the second order group `CH2OH`.
+
 """
 struct GroupParam <: ClapeyronParam
     components::Array{String,1}
@@ -348,6 +416,72 @@ end
     SiteParam
 
 Struct holding site parameters.
+Is built by parsing all association parameters in the input CSV files.
+It has the following fields:
+* `components`: a list of all components (or groups in Group Contribution models)
+* `sites`: a list containing a list of all sites corresponding to each component (or group) in the components field
+* `n_sites`: a list of the site multiplicities corresponding to each site in `flattenedsites`
+* `flattenedsites`: a list of all unique sites
+* `i_sites`: an iterator that goes through the indices corresponding  to each site in `flattenedsites`
+* `n_flattenedsites`: the site multiplicities corresponding to each site in `flattenedsites`
+* `i_flattenedsites`: an iterator that goes through the indices for each flattenedsite
+
+Let's explore the sites in a 3-component `SAFTGammaMie` model:
+
+```julia
+
+julia> model3 = SAFTgammaMie([    
+               "ethanol",
+               ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),     
+                       ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])
+                               ]  
+
+ )
+SAFTgammaMie{BasicIdeal} with 3 components:
+ "ethanol"
+ "nonadecanol"
+ "ibuprofen"
+Contains parameters: segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol 
+
+julia> model3.sites
+SiteParam with 8 sites:
+ "CH2OH": "H" => 1, "e1" => 2     
+ "CH3": (no sites)
+ "CH2": (no sites)
+ "OH": "H" => 1, "e1" => 2        
+ "COOH": "e2" => 2, "H" => 1, "e1" => 2
+ "aCCH": (no sites)
+ "aCCH2": (no sites)
+ "aCH": (no sites)
+
+julia> model3.sites.flattenedsites
+3-element Vector{String}:
+ "H"
+ "e1"
+ "e2"
+
+julia> model3.sites.i_sites       
+8-element Vector{Vector{Int64}}:
+ [1, 2]
+ []
+ []
+ [1, 2]
+ [1, 2, 3]
+ []
+ []
+ []
+
+julia> model3.sites.n_sites       
+8-element Vector{Vector{Int64}}:
+ [1, 2]
+ []
+ []
+ [1, 2]
+ [2, 1, 2]
+ []
+ []
+ []
+```
 """
 struct SiteParam <: ClapeyronParam
     components::Array{String,1}
@@ -460,21 +594,7 @@ function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=St
 
 
 end
-#empty SiteParam
 
-#=
-struct SiteParam <: ClapeyronParam
-    components::Array{String,1}
-    sites::Array{Array{String,1},1}
-    n_sites::Array{Array{Int,1},1}
-    i_sites::Array{Array{Int,1},1}
-    flattenedsites::Array{String,1}
-    n_flattenedsites::Array{Array{Int,1},1}
-    i_flattenedsites::UnitRange{Int}
-    sourcecsvs::Array{String,1}
-end
-
-=#
 function SiteParam(components::Vector{String})
     n = length(components)
     return SiteParam(
@@ -506,9 +626,9 @@ function split_model(param::SingleParam{T},
     splitter =split_model(1:length(param.components))) where T
     return [SingleParam(
     param.name,
+    param.components[i],
     param.values[i],
     param.ismissingvalues[i],
-    param.components[i],
     param.sourcecsvs,
     param.sources
     ) for i in splitter]
@@ -528,10 +648,10 @@ function split_model(param::PairParam{T},
         components = param.components[I]
         return PairParam{T}(
                 param.name,
+                components,
                 value,
                 diagvalue,
                 ismissingvalues,
-                components,
                 param.sourcecsvs,
                 param.sources
                 )
@@ -582,15 +702,6 @@ end
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
 #=
-* allcomponentgroups: a list of groups for each component
-* lengthallcomponentgroups: a list containing the number of groups for each component
-* allcomponentngroups: a list of the group multiplicity of each group corresponding to each group in allcomponentsgroup
-* igroups: an iterable that contains a list of group indices corresponding to flattenedgroups for each component
-
-* flattenedgroups: a list of all unique groups--the parameters correspond to this list
-* lengthflattenedgroups: the number of unique groups
-* allcomponentnflattenedgroups: the group multiplicities corresponding to each group in flattenedgroups
-* iflattenedgroups: an iterator that goes through the indices for each flattenedgroup
 
 * allgroupsites: a list containing a list of all sites corresponding to each group in flattenedgroups
 * lengthallgroupsites: a list containing the number of unique sites for each group in flattenedgroups
