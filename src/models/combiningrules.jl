@@ -20,6 +20,7 @@ function sigma_LorentzBerthelot(sigma::ClapeyronParam)
             σ[i,j] = (σ[i,i] + σ[j,j]) / 2
         end
     end
+    sigma.ismissingvalues .= false
     return sigma
 end
 
@@ -33,6 +34,7 @@ function epsilon_LorentzBerthelot(epsilon::ClapeyronParam, k::PairParam)
             ϵ[i,j] = (1 - k_[i,j]) * sqrt(ϵ[i,i] * ϵ[j,j])
         end
     end
+    epsilon.ismissingvalues .= false
     return epsilon
 end
 
@@ -46,6 +48,7 @@ function epsilon_HudsenMcCoubrey(epsilon::ClapeyronParam, sigma::PairParam)
             ϵ[i,j] = (σ[i,i]^3 * σ[j,j]^3) / σ[i,j]^6 * sqrt(ϵ[i,i] * ϵ[j,j])
         end
     end
+    epsilon.ismissingvalues .= false
     return epsilon
 end
 
@@ -58,6 +61,7 @@ function lambda_LorentzBerthelot(lambda::ClapeyronParam)
             λ[i,j] = 3 + sqrt((λ[i,i] - 3) * (λ[j,j] - 3))
         end
     end
+    lambda.ismissingvalues .= false
     return lambda
 end
 
@@ -71,6 +75,7 @@ function lambda_squarewell(lambda::ClapeyronParam, sigma::PairParam)
             λ[i,j] = (λ[i,i]*σ[i,i] + λ[j,j]*σ[j,j]) / (σ[i,i] + σ[j,j])
         end
     end
+    lambda.ismissingvalues .= false
     return lambda
 end
 

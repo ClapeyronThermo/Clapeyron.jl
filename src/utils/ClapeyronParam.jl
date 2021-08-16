@@ -105,8 +105,8 @@ function SingleParam(
     return  SingleParam{TT}(name,components, _values, _ismissingvalues, sourcecsvs, sources)
 end
 
-function SingleParam(x::SingleParam, v::Vector{T}) where T
-    _values,_ismissingvalues = defaultmissing(values)
+function SingleParam(x::SingleParam, v::Vector)
+    _values,_ismissingvalues = defaultmissing(v)
     return SingleParam(x.name, x.components,_values, _ismissingvalues , x.sourcecsvs, x.sources)
 end
 """
@@ -174,29 +174,36 @@ function PairParam(name::String,
 end
 
 function PairParam(x::PairParam,name::String=x.name)
-    return PairParam(name, x.components, deepcopy(x.values),deepcopy(x.diagvalues), deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
+    values = deepcopy(x.values)
+    diagvalues = view(values,diagind(values))
+    return PairParam(name, x.components,values ,diagvalues, deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
 end
 
-function PairParam(x::SingleParam{T},name::String=x.name) where T
+function PairParam(x::SingleParam,name::String=x.name)
     pairvalues = singletopair(x.values,missing)
+    for i in 1:length(x.values)
+        if x.ismissingvalues[i]
+            pairvalues[i,i] = missing
+        end
+    end
     _values,_ismissingvalues = defaultmissing(pairvalues)
     diagvalues = view(_values, diagind(_values))
     return PairParam(name, x.components, _values,diagvalues,_ismissingvalues,x.sourcecsvs, x.sources)
 end
 
-function PairParam(x::PairParam, v::Matrix{T},name::String=x.name) where T
+function PairParam(x::PairParam, v::Matrix,name::String=x.name)
     return PairParam(name, x.components,deepcopy(v), x.sourcecsvs, x.sources)
 end
-function PairParam(x::SingleParam, v::Vector{T},name::String=x.name) where T
+function PairParam(x::SingleParam, v::Vector,name::String=x.name)
     pairvalues = singletopair(v,missing)
     return PairParam(x.name, x.components, pairvalues,x.sourcecsvs, x.sources)
 end
-function PairParam(x::SingleParam, v::Matrix{T},name::String=x.name) where T
+function PairParam(x::SingleParam, v::Matrix,name::String=x.name)
     return PairParam(x.name, x.components, deepcopy(v),x.sourcecsvs, x.sources)
 end
 
-function Base.show(io::IO,mime::MIME"text/plain",param::PairParam{T}) where T
-    print(io,"PairParam{",string(T),"}")
+function Base.show(io::IO,mime::MIME"text/plain",param::PairParam)
+    print(io,"PairParam{",string(typeof(param)),"}")
     show(io,param.components)
     println(io,") with values:")
     show(io,mime,param.values)
