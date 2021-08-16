@@ -99,8 +99,8 @@ function SingleParam(
     values::Vector{T},
     sourcecsvs = String[],
     sources = String[]
-    ) where T
-    _values,_ismissingvalues = defaultmissing(values)
+    ;default = _zero(T)) where T
+    _values,_ismissingvalues = defaultmissing(values,default)
     TT = eltype(_values)
     return  SingleParam{TT}(name,components, _values, _ismissingvalues, sourcecsvs, sources)
 end
@@ -203,6 +203,9 @@ function PairParam(x::SingleParam, v::Matrix,name::String=x.name)
     return PairParam(x.name, x.components, deepcopy(v),x.sourcecsvs, x.sources)
 end
 
+#barebones constructor by list of pairs.
+
+
 function Base.show(io::IO,mime::MIME"text/plain",param::PairParam)
     print(io,"PairParam{",string(typeof(param)),"}")
     show(io,param.components)
@@ -280,8 +283,8 @@ Struct holding group parameters.contains:
 * `n_flattenedgroups`: the group multiplicities corresponding to each group in `flattenedgroups`
 * `i_flattenedgroups`: an iterator that goes through the indices for each flattened group
 
-You can create a group param by passing a Vector{Tuple{String, Vector{Pair{String, Int64}}}}.
-for example:
+You can create a group param by passing a `Vector{Tuple{String, Vector{Pair{String, Int64}}}}.
+For example:
 ```julia-repl
 julia> grouplist = [
            ("ethanol", ["CH3"=>1, "CH2"=>1, "OH"=>1]), 
@@ -431,12 +434,11 @@ Let's explore the sites in a 3-component `SAFTGammaMie` model:
 ```julia
 
 julia> model3 = SAFTgammaMie([    
-               "ethanol",
-               ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),     
-                       ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])
-                               ]  
+                "ethanol",
+                ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),     
+                ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])
+                               ])
 
- )
 SAFTgammaMie{BasicIdeal} with 3 components:
  "ethanol"
  "nonadecanol"
@@ -701,11 +703,57 @@ function split_model(groups::GroupParam)
 end
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
-#=
+#
 
-* allgroupsites: a list containing a list of all sites corresponding to each group in flattenedgroups
-* lengthallgroupsites: a list containing the number of unique sites for each group in flattenedgroups
-* allgroupnsites: a list of the site multiplicities corresponding to each group in flattenedgroups
-* isites: an iterator that goes through the indices corresponding to each group in flattenedgroups
+#=
+"""
+    VectorParam{T}
+
+a Param that stores a vector of values for each component. is built by passing a vector of `SingleParams`
+
+
+"""
+struct VectorParam{T} <: ClapeyronParam
+    name::String
+    components::Array{String,1}
+    coeff_names::Array{String,1}
+    values::Vector{Vector{T}}
+    length_values::Vector{Int}
+    ismissingvalues::Vector{Vector{T}}
+    sourcecsvs::Array{String,1}
+    sources::Array{String,1}
+end
+
+function VectorParam(name::String,input::Vector{SingleParam{T}};prunemissings = true,prunezeros = true) where T 
+    f1 = first(input)
+    components = f1.components
+    len = length(input)
+    length_comps = length(components)
+    vec_values = [zeros(T,len) for _ in components]
+    ismissingvalues = [zeros(Bool,len) for _ in components]
+
+    coeff_names = [param.name for param in input]
+    sourcecsvs = String[]
+    sources = String[]
+    for (i,param) in pairs(input)
+        for j in 1:length_comps
+            vec_values[j][i] = param.values[j]
+            ismissingvalues[j][i] = param.ismissingvalues[j]
+        end
+        vcat(sourcecsvs,param.sourcecsvs)
+        vcat(sources,param.sources)
+    end
+    #=pruning goes here 
+    
+    =#
+    length_values = [length(vect) for vect in vec_values]
+
+    unique!(sources)
+    unique!(sourcecsvs)
+    return VectorParam{T}(name,components,coeff_names,vec_values,length_values,ismissingvalues,sourcecsvs,sources)
+end
 
 =#
+
+
+

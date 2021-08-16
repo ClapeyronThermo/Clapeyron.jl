@@ -370,11 +370,12 @@ end
 function defaultmissing(array::Array{Any},defaultvalue="")
     return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
 end
-
-function defaultmissing(array,defaultvalue="")
+function defaultmissing(array::Array{T},defaultvalue::T2) where T<:Union{T2,Missing} where T2
+    coalesce.(array,Ref(defaultvalue)),Array(ismissing.(array))
+end
+function defaultmissing(array)
     throw("Unsupported array element type  $(typeof(array))")
 end
-
 
 function swapdictorder(dict)
     # Swap the first two levels in a nested dictionary.
