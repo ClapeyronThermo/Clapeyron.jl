@@ -36,7 +36,8 @@ function sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     V_lb = lb_volume(model,SA[1.0])
     TYPE = promote_type(typeof(T),typeof(V_lb))
     nan = zero(TYPE)/zero(TYPE)    
-    f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]),V_lb)
+    scales = scale_sat_pure(model)
+    f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]),scales)
     res0 = (nan,nan,nan)
     result = Ref(res0)
     error_val = Ref{Any}(nothing)
@@ -91,17 +92,33 @@ function sat_pure(model::EoSModel,V0,f!,T)
     return (P_sat,V_l,V_v)
 end
 
-function Obj_Sat(model::EoSModel, F, T, V_l, V_v,V_lb)
-    #components = model.components
+function Obj_Sat(model::EoSModel, F, T, V_l, V_v,scales)
     fun(x) = eos(model, x[2], T,SA[x[1]])
     df(x)  = ForwardDiff.gradient(fun,x)
     df_l = df(SA[one(V_l*T),V_l*one(T)])
     df_v = df(SA[one(V_v),V_v*one(T)])
-    (p_scale,μ_scale) = scale_sat_pure(model)
+    (p_scale,μ_scale) = scales
     #T̄ = T/T_scale(model)
     F[1] = (df_l[2]-df_v[2])*p_scale
     F[2] = (df_l[1]-df_v[1])*μ_scale
     return F
+   
+    #=
+    This is the original algorithm, but it seems
+    that evaluating both pressure and chemical potential 
+    at the same time is faster.
+    
+    #GERG2008(["water"]) - ForwardDiff one pass - 74.100 μs
+    #GERG2008(["water"]) - original - 108.000 μs
+    _1 = SA[1.0]
+    μ_l = only(VT_chemical_potential(model,V_l,T,_1))
+    μ_v = only(VT_chemical_potential(model,V_v,T,_1))
+    p_l = -pressure(model,V_l,T,_1)
+    p_v = -pressure(model,V_v,T,_1)
+    F[1] = (μ_l-μ_v)*p_scale
+    F[2] = (p_l-p_v)*μ_scale
+    return F
+    =#
 end
 #=
 function Obj_Sat(model::ABCubicModel, F, T, V_l, V_v,V_lb)
@@ -305,57 +322,4 @@ function spinodals(model,T,Vx = nothing)
     #@show volume_virial(model,Pmin,T)
     return sp_l#sp_v)
 end
-#=
-function vsa(model,T)
-    k = -0.5*one(T)#*(p_scale(model)/lb_volume(model))
-    B = second_virial_coefficient(model,T)
-    #=basis
-    obtain the value at which ∂p/∂V = -0.5
-    0.5 is a randomly chosen value.
-    the idea is to choose the lowest value possible such
-    as not pass the gas spinodal.
-    with the value calculated, a pressure and then an aproximate liquid volume is calculated.
 
-    The main equation is:
-    z = 1+B/V = pV/RT
-    p = RT/V + RTB/V2
-    ∂p/∂V = -RT/V2 -2RTB/V3 = 0.5
-    -RTV -2RTB = 0.5V3
-    0 = 0.5V3 + RTV + 2RTB
-    0.5V3 + 0V2 + RTV + 2RTB = 0
-    (0.5,0,RT,2RTB)
-
-    on B = B(V)
-    p = RT/V + RTB/V2
-    ∂p/∂V = -RT/V2 -2RT/V3*B + ∂B*RT/V2 = 0.5
-    ∂p/∂V = -RT(1+∂B)/V2 -2RT/V3*B = 0.5
-
-    -RTV -2RTB = 0.5V3
-    0 = 0.5V3 + RTV + 2RTB
-    0.5V3 + 0V2 + RTV + 2RTB = 0
-    (0.5,0,RT,2RTB)
-    =#
-    #k*one(T),zero(T),R̄*T,2*B
-    RT = R̄*T
-    Vv = -2*B
-
-    #Vv = Vv_vsa(B,zero(T),T,k)
-    p,dpdV = p∂p∂V(model,Vv,T)
-    #now, to calculate a new better aproximate of the function at that volume:
-    #p = p0 + dpdV0(V-V0) / multiplying by V/RT and adding 1-1
-    #pV/RT = 1-1+p0V/RT + dpdV0(V-V0)*V/RT
-    #z = 1 + (-1+p0V/RT + dpdV0(V-V0)*V/RT)*V/V
-    #z = 1 + B/V
-    Bi(V) = (-1+p*V/RT + dpdV*(V-Vv)*V/RT)*V
-
-
-    @show dpdV
-    @show Bi(Vv)
-    @show B
-    return Vv
-end
-=#
-
-#=
-
-=#
