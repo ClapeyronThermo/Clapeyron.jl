@@ -333,15 +333,15 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
     return allparams, paramsourcecsvs, paramsources
 end
 
-function defaultmissing(array::Array{<:Number},defaultvalue)
+function defaultmissing(array::Array{<:Number},defaultvalue = zero(eltype(array)))
     return deepcopy(array),Array(ismissing.(array))
 end
 
-function defaultmissing(array::Array{<:AbstractString},defaultvalue)
+function defaultmissing(array::Array{<:AbstractString},defaultvalue = "")
     return string.(array),Array(ismissing.(array))
 end
 
-function defaultmissing(array::Array{String},defaultvalue)
+function defaultmissing(array::Array{String},defaultvalue = "")
     return deepcopy(array),Array(ismissing.(array))
 end
 

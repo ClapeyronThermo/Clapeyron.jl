@@ -1,3 +1,6 @@
+
+
+
 struct RKParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}
@@ -8,10 +11,43 @@ struct RKParam <: EoSParam
 end
 
 abstract type RKModel <: ABCubicModel end
-@newmodel RK RKModel RKParam
+
+struct RK{T <: IdealModel,α,γ} <: RKModel
+    components::Array{String,1}
+    icomponents::UnitRange{Int}
+    alpha::α
+    activity::γ
+    params::RKParam
+    idealmodel::T
+    absolutetolerance::Float64
+    references::Array{String,1}
+end
+
+has_sites(::Type{RK}) = false
+has_groups(::Type{RK}) = false
+built_by_macro(::Type{RK}) = false
+
+function Base.show(io::IO, mime::MIME"text/plain", model::RK)
+    return eosshow(io, mime, model)
+end
+
+function Base.show(io::IO, model::RK)
+    return eosshow(io, model)
+end
+
+Base.length(model::RK) = Base.length(model.icomponents)
+
+molecular_weight(model::RK,z=SA[1.0]) = group_molecular_weight(model.groups,mw(model),z)
 
 export RK
-function RK(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function RK(components; idealmodel=BasicIdeal,
+    alpha = nothing,
+    activity = nothing,
+    userlocations=String[], 
+    ideal_userlocations=String[],
+    alpha_userlocations = String[],
+    activity_userlocations = String[],
+     verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
     _pc = params["pc"]
@@ -22,9 +58,14 @@ function RK(components; idealmodel=BasicIdeal, userlocations=String[], ideal_use
     T̄c = sum(sqrt(Tc*Tc'))
     a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 1/(9*(2^(1/3)-1))*R̄^2*Tc^2.5/pc/√(T̄c)), k)
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. (2^(1/3)-1)/3*R̄*Tc/pc))
-
+    
+    init_idealmodel = initialize_idealmodel(idealmodel,components,ideal_userlocations,verbose)
+    init_alpha = initialize_idealmodel(alpha,components,alpha_userlocations,verbose)
+    init_activity = initialize_idealmodel(activity,components,activity_userlocations,verbose)
+    icomponents = 1:length(components)
     packagedparams = RKParam(a, b, params["Tc"],_pc,Mw,T̄c)
-    model = RK(packagedparams, idealmodel; ideal_userlocations=ideal_userlocations, verbose=verbose)
+    references = String[]
+    model = RK(components,icomponents,init_alpha,init_activity,packagedparams,init_idealmodel,1e-12,references)
     return model
 end
 function ab_consts(::Type{<:RKModel})
@@ -32,7 +73,7 @@ function ab_consts(::Type{<:RKModel})
     Ωb = (2^(1/3)-1)/3
     return Ωa,Ωb
 end
-function cubic_ab(model::RKModel,T,z=SA[1.0],n=sum(z))
+function cubic_ab(model::RK{<:Any,Nothing},T,z=SA[1.0],n=sum(z))
     invn2 = (one(n)/n)^2
     a = model.params.a.values
     b = model.params.b.values

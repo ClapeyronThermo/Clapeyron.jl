@@ -320,6 +320,11 @@ function initialize_idealmodel(idealmodel::IdealModel,components,userlocations,v
     return idealmodel
 end
 
+function initialize_idealmodel(::Nothing,components,userlocations,verbose)
+    return nothing
+end
+
+
 function initialize_idealmodel(idealmodel::BasicIdeal,components,userlocations,verbose)
     return BasicIdeal()
 end
