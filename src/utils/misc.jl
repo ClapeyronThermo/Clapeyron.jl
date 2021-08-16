@@ -132,8 +132,6 @@ end
 
 Base.IndexStyle(::Type{<:FractionVector}) = IndexLinear()
 
-unicode_subscript(a::Int) = join('₀'+d for d in reverse(digits(a)))
-
 """
     split_model(model::EoSModel)
 Takes in a model for a multi-component system and returns a vector of model for each pure system.

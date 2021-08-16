@@ -81,7 +81,8 @@ function getparams(components,
                     source_columnreference::String="source",
                     site_columnreference::String="site",
                     group_columnreference::String="groups",
-                    normalisecomponents::Bool=true
+                    normalisecomponents::Bool=true,
+                    return_sites = true
                     )
 
     options = ParamOptions(;userlocations,
@@ -93,7 +94,8 @@ function getparams(components,
                             source_columnreference,
                             site_columnreference,
                             group_columnreference,
-                            normalisecomponents)
+                            normalisecomponents,
+                            return_sites)
     
     # locations is a list of paths relative to the Clapeyron database directory.
     # userlocations is a list of paths input by the user.
@@ -112,14 +114,15 @@ function getparams(components::Vector{String},locations::Vector{String},options)
         return result
     end
     if any(x isa AssocParam for x in values(result))
-        sites = buildsites(result,components,allcomponentsites,options.n_sites_columns)
+        sites = buildsites(result,components,allcomponentsites,options)
         return result,sites
     else
         return result
     end
 end
 
-function buildsites(result,components,allcomponentsites,n_sites_columns)
+function buildsites(result,components,allcomponentsites,options)
+    n_sites_columns = options.n_sites_columns
     v = String[]
     for sitei in allcomponentsites
         append!(v,sitei)
@@ -127,6 +130,23 @@ function buildsites(result,components,allcomponentsites,n_sites_columns)
     unique!(v)
     iszero(length(v)) && return SiteParam(components)
     if !any(haskey(result,n_sites_columns[vi]) for vi in v)
+        @error """No columns containing number of sites were found. Supposing zero sites.
+        If your model doesn't use sites, but some input CSV folders contain Association params. consider using return_sites=false.
+        If there are columns containing number of sites, then those aren't recognized. Consider passing a Dict with the mappings between the sites and the name of the column containing the number of said sites in with the n_sites_columns keyword"
+        """
+        assoc_csv = Set(String[])
+        for x in values(result)
+            if x isa AssocParam
+                for csvx in x.sourcecsvs
+                push!(assoc_csv,csvx)
+                end
+            end
+        end
+        assoc_csv = collect(assoc_csv)
+        @error "Parsed Association CSV were:"
+        for csv in assoc_csv
+            println(csv)
+        end
         return SiteParam(components)
     end
     

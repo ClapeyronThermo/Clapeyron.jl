@@ -1,6 +1,6 @@
 
 @testset "database_lookup" begin
-    params1, _ = Clapeyron.getparams(["water", "methanol"], ["SAFT/PCSAFT"])
+    params1 = Clapeyron.getparams(["water", "methanol"], ["SAFT/PCSAFT"],return_sites=false)
     @test haskey(params1, "sigma")
 
     # The rest of the test will be conducted with a custom dataset in the test_csvs directory.
@@ -28,9 +28,9 @@
                                                                      ["e", "e2", "H"]]
 
     # Check that it throws an error if ignore_missing_singleparams is not set to true.
-    @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_normal)
+    @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_normal,return_sites = false)
 
-    params,sites = Clapeyron.getparams(testspecies; userlocations=filepath_normal, ignore_missing_singleparams=true)
+    params = Clapeyron.getparams(testspecies; userlocations=filepath_normal, ignore_missing_singleparams=true,return_sites = false)
     # Check that all the types are correct.
     @test typeof(params["intparam"]) <: Clapeyron.SingleParam{Int}
     @test typeof(params["doubleparam"]) <: Clapeyron.SingleParam{Float64}
@@ -46,6 +46,12 @@
     @test typeof(params["emptyparam"]) <: Clapeyron.SingleParam{Float64}
     # Overwrite Int with Float, and also an upgrade from single to pair param
     @test typeof(params["overwriteparam"]) <: Clapeyron.PairParam{Float64}
+    #test for missingness in PairParam, i got bitten by this before
+    @test params["overwriteparam"].ismissingvalues ==  Bool[0 0 1 1 1;
+                                                            0 0 1 0 1;
+                                                            1 1 0 0 1; 
+                                                            1 0 0 0 1; 
+                                                            1 1 1 1 0]
     # Overwrite String with Int
     @test typeof(params["overwritestringparam"]) <: Clapeyron.SingleParam{String}
     # Overwrite Int with String
@@ -66,6 +72,13 @@
     @test params["missingparam"].values == [0, 2, 3, 0, 0]
     @test params["missingparam"].ismissingvalues == Bool[1, 0, 0, 1, 1]
 
+    #test that Passing a single param to a pair param doesnt erase the missings
+    singletopairparam = PairParam(params["missingparam"],"singletopairparam")
+    diagmissingvalues = view(singletopairparam.ismissingvalues,1:6:25)
+    @test all(diagmissingvalues .== params["missingparam"].ismissingvalues)
+    diagmissingvalues .= true
+    @test all(singletopairparam.ismissingvalues)
+
     # Check that the promotion form 1D to 2D array is succesful, with non-diagonal values present and symmetrical.
     @test params["overwriteparam"].values == [1.6  4.0  0.0  0.0  0.0
                                               4.0  1.2  0.0  3.0  0.0
@@ -74,6 +87,7 @@
                                               0.0  0.0  0.0  0.0  1.5]
                                               
     @test params["overwriteparam"].diagvalues == [1.6, 1.2, 1.3, 1.4, 1.5]
+
 
     # Now check that assoc param is correct.
     @test params["assocparam"].values ==
@@ -88,9 +102,9 @@
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_clashingheaders)
 
     # If parameter is not tagged as asymmetrical, having non-missing values across the diagonal will throw an error
-    @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, ignore_missing_singleparams=true)
+    @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, ignore_missing_singleparams=true,return_sites = false)
 
-    asymmetricparams,_ = Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"], ignore_missing_singleparams=true)
+    asymmetricparams = Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"], ignore_missing_singleparams=true,return_sites = false)
     asymmetricparams["asymmetricpair"].values == [0.06  0.04  0.0  0.0   0.0
                                                   0.05  0.0   0.0  0.0   0.0
                                                   0.0   0.0   0.0  0.02  0.0
