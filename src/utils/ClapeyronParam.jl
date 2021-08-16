@@ -272,13 +272,13 @@ const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64
     GroupParam
 
 Struct holding group parameters.contains:
-* components: a list of all components
-* groups: a list of groups names for each component
-* i_groups: a list containing the number of groups for each component
-* n_groups: a list of the group multiplicity of each group corresponding to each group in i_groups
-* flattenedgroups: a list of all unique groups--the parameters correspond to this list
-* n_flattenedgroups: the group multiplicities corresponding to each group in flattenedgroups
-* i_flattenedgroups: an iterator that goes through the indices for each flattenedgroup
+* `components`: a list of all components
+* `groups`: a list of groups names for each component
+* `i_groups`: a list containing the number of groups for each component
+* `n_groups`: a list of the group multiplicity of each group corresponding to each group in `i_groups`
+* `flattenedgroups`: a list of all unique groups--the parameters correspond to this list
+* `n_flattenedgroups`: the group multiplicities corresponding to each group in `flattenedgroups`
+* `i_flattenedgroups`: an iterator that goes through the indices for each flattened group
 
 You can create a group param by passing a Vector{Tuple{String, Vector{Pair{String, Int64}}}}.
 for example:
@@ -424,7 +424,7 @@ It has the following fields:
 * `flattenedsites`: a list of all unique sites
 * `i_sites`: an iterator that goes through the indices corresponding  to each site in `flattenedsites`
 * `n_flattenedsites`: the site multiplicities corresponding to each site in `flattenedsites`
-* `i_flattenedsites`: an iterator that goes through the indices for each flattenedsite
+* `i_flattenedsites`: an iterator that goes through the indices for each flattened site
 
 Let's explore the sites in a 3-component `SAFTGammaMie` model:
 
