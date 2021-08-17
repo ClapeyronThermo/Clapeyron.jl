@@ -45,7 +45,7 @@ end
 
 function isentropic_compressibility(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
-    return VT_isobaric_expansivity(model,V,T,z)
+    return VT_isentropic_compressibility(model,V,T,z)
 end
 
 function speed_of_sound(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
@@ -83,7 +83,7 @@ the keywords `phase` and `threaded` are passed to the [volume solver](@ref Clape
 """
 function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
-    return p*V/(R̄*T)
+    return VT_compressibility_factor(model, V, T, z)
 end
 
 function inversion_temperature(model::EoSModel, p, z=SA[1.0])
