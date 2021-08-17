@@ -108,6 +108,25 @@ end
     @test vc ≈ vc_test rtol = 1E-3
 end
 
+
+@testset "SAFT methods, multi-components" begin
+    system = PCSAFT(["methanol","cyclohexane"])
+    p = 1e5
+    T = 313.15
+    z = [0.5,0.5]
+    z_LLE = [0.27,0.73]
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T, z) ≈ 7.779694485714412e-5 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.speed_of_sound(system, p, T, z) ≈ 1087.0303138908864 rtol = 1E-6
+    end
+    @testset "Equilibrium properties" begin
+        @test Clapeyron.bubble_pressure(system,T,z)[1] ≈ 54532.249600937736 rtol = 1E-6
+        @test Clapeyron.LLE_pressure(system,T,z_LLE)[1] ≈ 737971.7522006684 rtol = 1E-6
+        @test Clapeyron.three_phase(system, T)[1] ≈ 54504.079665621306 rtol = 1E-6
+        @test Clapeyron.crit_mix(system,z)[1] ≈ 518.0004062881115 rtol = 1E-6
+    end
+end
+
 @testset "testing density methods for GERG2008" begin
     model = Clapeyron.GERG2008(["nitrogen","methane","ethane","propane","butane","isobutane","pentane"])
     lng_composition = [0.93,92.1,4.64,1.7,0.42,0.32,0.09]
