@@ -212,114 +212,114 @@ function acentric_factor(model)
 end
 
 
-function p_sat_t0(model,p)
-    #ln(pr) = h*(1-1/tr)
-    #1/(1-ln(pr)/h)*tc = t
-    tc = T_scale(model)
-    pc = p_scale(model)
-    scale = 0.7
-    t7 = scale*tc
-    p7 = first(sat_pure(model,t7))
-    h = 2.3333333333333335*log(pc/p7)
-    #T/Tc = 1(1-log(p/pc)/h)
-    return 1/(1-log(p/pc)/h)*tc
-end
+# function p_sat_t0(model,p)
+#     #ln(pr) = h*(1-1/tr)
+#     #1/(1-ln(pr)/h)*tc = t
+#     tc = T_scale(model)
+#     pc = p_scale(model)
+#     scale = 0.7
+#     t7 = scale*tc
+#     p7 = first(sat_pure(model,t7))
+#     h = 2.3333333333333335*log(pc/p7)
+#     #T/Tc = 1(1-log(p/pc)/h)
+#     return 1/(1-log(p/pc)/h)*tc
+# end
 
-function sat_pure_p(model,p)
-    #=
-    model_pred = single_sat_aprox(model)
-    t_pred = p_sat_t0(model,p) #prediction temperature
-    Vv = V_zeros(_pt,model,p,t_pred)
+# function sat_pure_p(model,p)
+#     #=
+#     model_pred = single_sat_aprox(model)
+#     t_pred = p_sat_t0(model,p) #prediction temperature
+#     Vv = V_zeros(_pt,model,p,t_pred)
 
-    V1 = first(Vv)
-    #(V1 == V2) && return V1
-    V2 = last(Vv)
+#     V1 = first(Vv)
+#     #(V1 == V2) && return V1
+#     V2 = last(Vv)
 
-    =#
-    T0 = p_sat_t0(model,p)
-    px = p
+#     =#
+#     T0 = p_sat_t0(model,p)
+#     px = p
 
-    _A(V, t) = eos(model, V, t,SA[1.0])
-    V1old = zero(p)
-    V2old = zero(p)
-    Told = zero(p)
-    V1,V2 = x0_sat_pure(model,T0)
-    Tx = T0
-    for i = 1:20
-        if i > 1
-            V1old = V1
-            V2old = V2
-        end
-        A = z -> _A(z, Tx)
-        _V1 = Threads.@spawn volume(model,$p,$Tx;phase=:liquid)
-        _V2 = Threads.@spawn volume(model,$p,$Tx;phase=:gas)
-        V1 = fetch(_V1)
-        V2 = fetch(_V2)
+#     _A(V, t) = eos(model, V, t,SA[1.0])
+#     V1old = zero(p)
+#     V2old = zero(p)
+#     Told = zero(p)
+#     V1,V2 = x0_sat_pure(model,T0)
+#     Tx = T0
+#     for i = 1:20
+#         if i > 1
+#             V1old = V1
+#             V2old = V2
+#         end
+#         A = z -> _A(z, Tx)
+#         _V1 = Threads.@spawn volume(model,$p,$Tx;phase=:liquid)
+#         _V2 = Threads.@spawn volume(model,$p,$Tx;phase=:gas)
+#         V1 = fetch(_V1)
+#         V2 = fetch(_V2)
 
-        if abs(V1 - V1old) / V1 < 1e-15 && i > 1
-            #println("V1 condition")
-            break
-        elseif abs(V2 - V2old) / V2 < 1e-15 && i > 1
-            #println("V2 condition")
-            break
-        end
+#         if abs(V1 - V1old) / V1 < 1e-15 && i > 1
+#             #println("V1 condition")
+#             break
+#         elseif abs(V2 - V2old) / V2 < 1e-15 && i > 1
+#             #println("V2 condition")
+#             break
+#         end
 
-        _px(T) = (_A(V1, T) - _A(V2, T)) / (V2 - V1) - p
-        #_px(T) = exp(_A(V1,T)-_A(V2,T)) - one(Tx)
-        Told = Tx
-        Tx = Solvers.ad_newton(_px, Tx)
-        if abs(Told - Tx) < 1e-10 * Tx
-            #println("P condition")
-            break
-        end
-    end
+#         _px(T) = (_A(V1, T) - _A(V2, T)) / (V2 - V1) - p
+#         #_px(T) = exp(_A(V1,T)-_A(V2,T)) - one(Tx)
+#         Told = Tx
+#         Tx = Solvers.ad_newton(_px, Tx)
+#         if abs(Told - Tx) < 1e-10 * Tx
+#             #println("P condition")
+#             break
+#         end
+#     end
 
-    return (Tx,V1,V2)
-end
+#     return (Tx,V1,V2)
+# end
 
-function naive_sat_pure_p(model,p)
-    T0 = p_sat_t0(model,p)
-    ft0(t) = log(first(sat_pure(model,t))/p)
-    tt0 =T0
-    res = Solvers.ad_newton(ft0,tt0)
-    T = res
-    Vl = volume(model,p,T,phase=:l)
-    Vv = volume(model,p,T,phase=:v)
-    return (T,Vl,Vv)
-end
+# function naive_sat_pure_p(model,p)
+#     T0 = p_sat_t0(model,p)
+#     ft0(t) = log(first(sat_pure(model,t))/p)
+#     tt0 =T0
+#     res = Solvers.ad_newton(ft0,tt0)
+#     T = res
+#     Vl = volume(model,p,T,phase=:l)
+#     Vv = volume(model,p,T,phase=:v)
+#     return (T,Vl,Vv)
+# end
 
-export sat_pure, crit_pure, enthalpy_vap
+# export sat_pure, crit_pure, enthalpy_vap
 
-function spinodals(model,T,Vx = nothing)
-    T7 = (0.7)*one(T)*T_scale(model)
-    #@show T/T_scale(model)
-    #f0(_V) = 1/last(p∂p∂V(model,_V,T))
+# function spinodals(model,T,Vx = nothing)
+#     T7 = (0.7)*one(T)*T_scale(model)
+#     #@show T/T_scale(model)
+#     #f0(_V) = 1/last(p∂p∂V(model,_V,T))
 
-    lb_v = lb_volume(model)
-    f0(k) = last(p∂p∂V(model,lb_v + exp(k),T))
+#     lb_v = lb_volume(model)
+#     f0(k) = last(p∂p∂V(model,lb_v + exp(k),T))
 
-    if Vx === nothing
-    if T > T7
-        sp_l7 = volume_compress(model,zero(T),T7)
-        Tc,pc,Vc = crit_pure(model)
-        V00 = log(sp_l7 - lb_v)
-        sp_l = Roots.find_zero(f0,V00)
+#     if Vx === nothing
+#     if T > T7
+#         sp_l7 = volume_compress(model,zero(T),T7)
+#         Tc,pc,Vc = crit_pure(model)
+#         V00 = log(sp_l7 - lb_v)
+#         sp_l = Roots.find_zero(f0,V00)
 
-        sp_l = lb_v + exp(sp_l)
-    else
-        #zero pressure approach, the volume_compress function tends to stop at a spinodal at the liquid side
-        sp_l = volume_compress(model,zero(T),T)
-    end
-    else
-        V00 = log(Vx - lb_v)
-        sp_l = Roots.find_zero(f0,V00)
-        sp_l = lb_v + exp(sp_l)
+#         sp_l = lb_v + exp(sp_l)
+#     else
+#         #zero pressure approach, the volume_compress function tends to stop at a spinodal at the liquid side
+#         sp_l = volume_compress(model,zero(T),T)
+#     end
+#     else
+#         V00 = log(Vx - lb_v)
+#         sp_l = Roots.find_zero(f0,V00)
+#         sp_l = lb_v + exp(sp_l)
 
-    end
-    #now calculate gas spinodal
-    #@show Pmin = pressure(model,sp_l,T)
-    #p could be negative, and a volume search fails here.
-    #@show volume_virial(model,Pmin,T)
-    return sp_l#sp_v)
-end
+#     end
+#     #now calculate gas spinodal
+#     #@show Pmin = pressure(model,sp_l,T)
+#     #p could be negative, and a volume search fails here.
+#     #@show volume_virial(model,Pmin,T)
+#     return sp_l#sp_v)
+# end
 
