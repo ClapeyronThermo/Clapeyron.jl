@@ -7,7 +7,6 @@ struct RKParam <: EoSParam
     Tc::SingleParam{Float64}
     Pc::SingleParam{Float64}
     Mw::SingleParam{Float64}
-    Tbarc::Float64 # Not sure if we want to allow this
 end
 
 abstract type RKModel <: ABCubicModel end
@@ -55,7 +54,6 @@ function RK(components; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     _Tc = params["Tc"]
     Tc = _Tc.values
-    T̄c = sum(sqrt(Tc*Tc'))
     a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 1/(9*(2^(1/3)-1))*R̄^2*Tc^2.5/pc/√(T̄c)), k)
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. (2^(1/3)-1)/3*R̄*Tc/pc))
     
@@ -63,7 +61,7 @@ function RK(components; idealmodel=BasicIdeal,
     init_alpha = initialize_idealmodel(alpha,components,alpha_userlocations,verbose)
     init_activity = initialize_idealmodel(activity,components,activity_userlocations,verbose)
     icomponents = 1:length(components)
-    packagedparams = RKParam(a, b, params["Tc"],_pc,Mw,T̄c)
+    packagedparams = RKParam(a, b, params["Tc"],_pc,Mw)
     references = String[]
     model = RK(components,icomponents,init_alpha,init_activity,packagedparams,init_idealmodel,1e-12,references)
     return model
@@ -78,7 +76,7 @@ function cubic_ab(model::RK{<:Any,Nothing},T,z=SA[1.0],n=sum(z))
     a = model.params.a.values
     b = model.params.b.values
     Tc = model.params.Tc.values
-    T̄c = model.params.Tbarc
+    T̄c = sum(sqrt(Tc*Tc'))
     āᾱ  = dot(z,Symmetric(a),z) * invn2*sqrt(T̄c/T)
     b̄ = dot(z,Symmetric(b),z) * invn2
     return āᾱ ,b̄

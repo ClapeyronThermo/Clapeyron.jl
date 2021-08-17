@@ -164,6 +164,23 @@ function auto_split_model(Base.@nospecialize(model::EoSModel))
         if hasfield(typeof(model),:references)
             allfields[:references] = fill(model.references,len_comps)
         end
+
+        if hasfield(typeof(model),:alpha)
+            if isnothing(model.alpha)
+                allfields[:alpha] = fill(nothing,len)
+            else
+                allfields[:alpha] = split_model(model.alpha)
+            end
+        end
+
+        if hasfield(typeof(model),:activity)
+            if isnothing(model.alpha)
+                allfields[:activity] = fill(nothing,len)
+            else
+                allfields[:activity] = split_model(model.activity)
+            end
+        end
+
         if hasfield(typeof(model),:absolutetolerance)
             allfields[:absolutetolerance] = fill(model.absolutetolerance,len_comps)
         end
@@ -171,7 +188,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel))
             allfields[:sites] = split_model(model.sites,splitter)
         end
         return [M((allfields[k][i] for k in fieldnames(M))...) for i in 1:len]
-    catch e
+    catch
         return simple_split_model(model)
     end
 end
