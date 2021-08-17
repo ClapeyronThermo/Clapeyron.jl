@@ -155,9 +155,9 @@ macro newmodelgc(name, parent, paramstype)
         references::Array{String,1}
     end
 
-    has_sites(::Type{$name}) = true
-    has_groups(::Type{$name}) = true
-    built_by_macro(::Type{$name}) = true
+    has_sites(::Type{<:$name}) = true
+    has_groups(::Type{<:$name}) = true
+    built_by_macro(::Type{<:$name}) = true
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
@@ -194,9 +194,9 @@ macro newmodel(name, parent, paramstype)
         absolutetolerance::Float64
         references::Array{String,1}
     end
-    has_sites(::Type{$name}) = true
-    has_groups(::Type{$name}) = false
-    built_by_macro(::Type{$name}) = true
+    has_sites(::Type{<:$name}) = true
+    has_groups(::Type{<:$name}) = false
+    built_by_macro(::Type{<:$name}) = true
    
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
@@ -211,6 +211,8 @@ macro newmodel(name, parent, paramstype)
 end
 
 """
+    @newmodelsimple
+
 Even simpler model, primarily for the ideal models.
 Contains neither sites nor ideal models.
 """
@@ -223,9 +225,9 @@ macro newmodelsimple(name, parent, paramstype)
         absolutetolerance::Float64
         references::Array{String,1}
     end
-    has_sites(::Type{$name}) = false
-    has_groups(::Type{$name}) = false
-    built_by_macro(::Type{$name}) = true
+    has_sites(::Type{<:$name}) = false
+    has_groups(::Type{<:$name}) = false
+    built_by_macro(::Type{<:$name}) = true
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
@@ -240,19 +242,14 @@ macro newmodelsimple(name, parent, paramstype)
     end |> esc
 end
 
-export @newmodel, @f, @newmodelgc
-
-
-
-
 const IDEALTYPE = Union{T,Type{T}} where T<:IdealModel
 
 function (::Type{model})(params::EoSParam,
         groups::GroupParam,
         sites::SiteParam,
         idealmodel::IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=[],
-        references::Vector{String}=[],
+        ideal_userlocations::Vector{String}=String[],
+        references::Vector{String}=String[],
         absolutetolerance::Float64 = 1e-12,
         verbose::Bool = false) where model <:EoSModel
 
@@ -268,8 +265,8 @@ end
 function (::Type{model})(params::EoSParam,
         groups::GroupParam,
         idealmodel::IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=[],
-        references::Vector{String}=[],
+        ideal_userlocations::Vector{String}=String[],
+        references::Vector{String}=String[],
         absolutetolerance::Float64 = 1e-12,
         verbose::Bool = false) where model <:EoSModel
 
@@ -277,13 +274,12 @@ function (::Type{model})(params::EoSParam,
     return model(params,groups,sites,idealmodel;ideal_userlocations,references,absolutetolerance,verbose)
 end
 
-
 #non GC
 function (::Type{model})(params::EoSParam,
         sites::SiteParam,
         idealmodel::IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=[],
-        references::Vector{String}=[],
+        ideal_userlocations::Vector{String}=String[],
+        references::Vector{String}=String[],
         absolutetolerance::Float64 = 1e-12,
         verbose::Bool = false) where model <:EoSModel
     
@@ -296,11 +292,11 @@ function (::Type{model})(params::EoSParam,
 
 end
 
-#non GC, may be shared with model simple
+#non GC may be shared with model simple
 function (::Type{model})(params::EoSParam,
         idealmodel::IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=[],
-        references::Vector{String}=[],
+        ideal_userlocations::Vector{String}=String[],
+        references::Vector{String}=String[],
         absolutetolerance::Float64 = 1e-12,
         verbose::Bool = false) where model <:EoSModel
 
@@ -313,7 +309,7 @@ function (::Type{model})(params::EoSParam,
     end
     #With sites out of the way, this is a simplemodel, no need to initialize the ideal model
     icomponents = 1:length(components)
-    return model(components,icomponents,params,references,absolutetolerance)
+    return model(components,icomponents,params,absolutetolerance,references)
 end
 
 function initialize_idealmodel(idealmodel::IdealModel,components,userlocations,verbose)
@@ -324,7 +320,6 @@ function initialize_idealmodel(::Nothing,components,userlocations,verbose)
     return nothing
 end
 
-
 function initialize_idealmodel(idealmodel::BasicIdeal,components,userlocations,verbose)
     return BasicIdeal()
 end
@@ -334,3 +329,5 @@ function initialize_idealmodel(idealmodel::Type{<:IdealModel},components,userloc
     $idealmodel""")
     return idealmodel(components;userlocations,verbose)
 end
+
+export @newmodel, @f, @newmodelgc, @newmodelsimple

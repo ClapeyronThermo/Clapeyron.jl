@@ -14,6 +14,7 @@ include("utils/ParamOptions.jl")
 include("utils/ClapeyronParam.jl")
 
 include("models/eos/ideal/BasicIdeal.jl") #before macros, because its used there
+
 include("utils/macros.jl")
 using CSV, Tables
 include("utils/database.jl")
@@ -23,7 +24,7 @@ include("models/combiningrules.jl")
 
 include("models/eos.jl")
 include("utils/visualisation.jl")
-
+include("utils/split_model.jl")
 
 include("models/eos/ideal/MonomerIdeal.jl")
 include("models/eos/ideal/ReidIdeal.jl")

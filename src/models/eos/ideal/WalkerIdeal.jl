@@ -30,8 +30,7 @@ function WalkerIdeal(components::Array{String,1}; userlocations::Array{String,1}
     deg4 = params["deg_4"]
     packagedparams = WalkerIdealParam(Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4)
     references = ["10.1021/acs.jced.0c00723"]
-    sites = SiteParam(groups.components)
-    model = WalkerIdeal(packagedparams, groups, sites, BasicIdeal, references=references, verbose=verbose)
+    model = WalkerIdeal(packagedparams, groups, BasicIdeal, references=references, verbose=verbose)
     return model
 end
 
