@@ -102,7 +102,7 @@ end
 @testset "sCKSAFT methods, single component" begin
     system = sCKSAFT(["ethane"])
     tc_test,pc_test,vc_test = (321.00584034360014, 6.206975436514129e6, 0.0001515067748592245)
-    tc,pc,vc = crit_pure(system)
+    tc,pc,vc = Clapeyron.crit_pure(system)
     @test tc ≈ tc_test rtol = 1E-3
     @test pc ≈ pc_test rtol = 1E-3
     @test vc ≈ vc_test rtol = 1E-3
