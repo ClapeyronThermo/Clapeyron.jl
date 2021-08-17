@@ -132,14 +132,3 @@ end
 
 Base.IndexStyle(::Type{<:FractionVector}) = IndexLinear()
 
-"""
-    split_model(model::EoSModel)
-Takes in a model for a multi-component system and returns a vector of model for each pure system.
-"""
-function split_model(model::EoSModel)
-    pure = Vector{typeof(model)}(undef,0)
-    for i ∈ model.components
-        append!(pure,[eval(nameof(typeof(model)))([i])])
-    end
-    return pure
-end
