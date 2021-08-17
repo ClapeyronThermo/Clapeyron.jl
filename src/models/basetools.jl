@@ -7,5 +7,11 @@ abstract type ABCubicModel <: CubicModel end #cubics that have an exact polynomi
 abstract type IdealModel <: EoSModel end
 abstract type EmpiricHelmholtzModel <: EoSModel end
 abstract type EoSParam end
-export EoSModel,SAFTModel,CubicModel,EmpiricHelmholtzModel,IdealModel, EoSParam
 abstract type SatPureAproximation <: EoSModel end
+abstract type AlphaModel <:EoSModel end
+export EoSModel
+export SAFTModel,CubicModel,EmpiricHelmholtzModel
+export IdealModel
+export EoSParam
+export AlphaModel
+
