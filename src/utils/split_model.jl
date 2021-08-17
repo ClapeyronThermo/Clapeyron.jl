@@ -1,6 +1,20 @@
 """
     split_model(model::EoSModel)
+
 Takes in a model for a multi-component system and returns a vector of model for each pure system.
+
+## Example:
+```julia-repl
+julia> gerg2 = GERG2008(["propane","pentane"])
+GERG008 model with 2 components:
+"propane"
+"pentane"
+
+julia> split_model(gerg2)
+2-element Vector{GERG2008}:
+ GERG2008("propane")
+ GERG2008("pentane")
+```
 """
 function split_model end
 

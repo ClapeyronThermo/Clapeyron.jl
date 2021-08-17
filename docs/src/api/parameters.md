@@ -23,3 +23,8 @@ Clapeyron.AssocParam
 Clapeyron.GroupParam
 Clapeyron.SiteParam
 ```
+
+## Model Splitting
+```@docs
+Clapeyron.split_model
+```
