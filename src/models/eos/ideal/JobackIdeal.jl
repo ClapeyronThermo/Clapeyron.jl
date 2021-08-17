@@ -79,7 +79,7 @@ function C_p(model::JobackIdeal,T,z=SA[1.0])
     c = model.params.c.values
     d = model.params.d.values
     n = model.groups.n_flattenedgroups
-    res = zero(V+T+first(z))
+    res = zero(T+first(z))
     Σz = sum(z)
     @inbounds for i in @comps
         ni = n[i]
