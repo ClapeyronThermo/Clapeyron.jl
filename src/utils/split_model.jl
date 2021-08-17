@@ -174,7 +174,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel))
         end
 
         if hasfield(typeof(model),:activity)
-            if isnothing(model.alpha)
+            if isnothing(model.activity)
                 allfields[:activity] = fill(nothing,len)
             else
                 allfields[:activity] = split_model(model.activity)
@@ -188,7 +188,8 @@ function auto_split_model(Base.@nospecialize(model::EoSModel))
             allfields[:sites] = split_model(model.sites,splitter)
         end
         return [M((allfields[k][i] for k in fieldnames(M))...) for i in 1:len]
-    catch
+    catch e
+        throw(e)
         return simple_split_model(model)
     end
 end

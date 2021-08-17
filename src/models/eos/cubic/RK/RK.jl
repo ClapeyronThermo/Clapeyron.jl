@@ -22,9 +22,9 @@ struct RK{T <: IdealModel,α,γ} <: RKModel
     references::Array{String,1}
 end
 
-has_sites(::Type{RK}) = false
-has_groups(::Type{RK}) = false
-built_by_macro(::Type{RK}) = false
+has_sites(::Type{<:RKModel}) = false
+has_groups(::Type{<:RKModel}) = false
+built_by_macro(::Type{<:RKModel}) = false
 
 function Base.show(io::IO, mime::MIME"text/plain", model::RK)
     return eosshow(io, mime, model)
@@ -39,7 +39,7 @@ Base.length(model::RK) = Base.length(model.icomponents)
 molecular_weight(model::RK,z=SA[1.0]) = group_molecular_weight(model.groups,mw(model),z)
 
 export RK
-function RK(components; idealmodel=BasicIdeal,
+function RK(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = nothing,
     activity = nothing,
     userlocations=String[], 
@@ -54,8 +54,11 @@ function RK(components; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     _Tc = params["Tc"]
     Tc = _Tc.values
-    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 1/(9*(2^(1/3)-1))*R̄^2*Tc^2.5/pc/√(T̄c)), k)
-    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. (2^(1/3)-1)/3*R̄*Tc/pc))
+    T̄c = sum(sqrt(Tc*Tc'))
+    Ωa, Ωb = ab_consts(RK)
+    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc^2.5/pc/√(T̄c)), k) 
+    #check if this is correct in the general case.
+    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. Ωb*R̄*Tc/pc))
     
     init_idealmodel = initialize_idealmodel(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = initialize_idealmodel(alpha,components,alpha_userlocations,verbose)
@@ -66,6 +69,7 @@ function RK(components; idealmodel=BasicIdeal,
     model = RK(components,icomponents,init_alpha,init_activity,packagedparams,init_idealmodel,1e-12,references)
     return model
 end
+
 function ab_consts(::Type{<:RKModel})
     Ωa =  1/(9*(2^(1/3)-1))
     Ωb = (2^(1/3)-1)/3
@@ -110,5 +114,6 @@ function a_res(model::RKModel, V, T, z)
     #return -log(V-n*b̄) - ā/(R̄*T*b̄*√(T/T̄c))*log(1+n*b̄/V)
 end
 
-
 cubic_zc(::RKModel) = 1/3
+
+include("variants/SRK.jl")
