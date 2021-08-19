@@ -255,7 +255,7 @@ function (::Type{model})(params::EoSParam,
 
         components = groups.components
         icomponents = 1:length(components)
-        init_idealmodel = initialize_idealmodel(idealmodel,components,ideal_userlocations,verbose)
+        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
         return model(components, icomponents,
         groups,
         sites,
@@ -286,7 +286,7 @@ function (::Type{model})(params::EoSParam,
     components = sites.components
     icomponents = 1:length(components)
 
-    init_idealmodel = initialize_idealmodel(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     return model(components, icomponents,
     sites, params, init_idealmodel, absolutetolerance, references)
 
@@ -312,19 +312,19 @@ function (::Type{model})(params::EoSParam,
     return model(components,icomponents,params,absolutetolerance,references)
 end
 
-function initialize_idealmodel(idealmodel::IdealModel,components,userlocations,verbose)
+function init_model(idealmodel::IdealModel,components,userlocations,verbose)
     return idealmodel
 end
 
-function initialize_idealmodel(::Nothing,components,userlocations,verbose)
+function init_model(::Nothing,components,userlocations,verbose)
     return nothing
 end
 
-function initialize_idealmodel(idealmodel::BasicIdeal,components,userlocations,verbose)
+function init_model(idealmodel::BasicIdeal,components,userlocations,verbose)
     return BasicIdeal()
 end
 
-function initialize_idealmodel(idealmodel::Type{<:IdealModel},components,userlocations,verbose)
+function init_model(idealmodel::Type{<:IdealModel},components,userlocations,verbose)
     verbose && @info("""Now creating ideal model:
     $idealmodel""")
     return idealmodel(components;userlocations,verbose)

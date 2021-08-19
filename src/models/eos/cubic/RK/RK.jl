@@ -1,6 +1,3 @@
-
-
-
 struct RKParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}
@@ -54,15 +51,15 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     _Tc = params["Tc"]
     Tc = _Tc.values
-    T̄c = sum(sqrt(Tc*Tc'))
+    T̄c = sum(sqrt(Tc*Tc')) #is this term correctly calculated? sqrt(Tc*Tc') is a matrix sqrt
     Ωa, Ωb = ab_consts(RK)
     a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc^2.5/pc/√(T̄c)), k) 
     #check if this is correct in the general case.
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. Ωb*R̄*Tc/pc))
     
-    init_idealmodel = initialize_idealmodel(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = initialize_idealmodel(alpha,components,alpha_userlocations,verbose)
-    init_activity = initialize_idealmodel(activity,components,activity_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_activity = init_model(activity,components,activity_userlocations,verbose)
     icomponents = 1:length(components)
     packagedparams = RKParam(a, b, params["Tc"],_pc,Mw)
     references = String[]
