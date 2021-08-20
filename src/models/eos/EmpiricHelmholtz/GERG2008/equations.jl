@@ -353,8 +353,7 @@ function a_ideal(model::GERG2008, v, T, z=SA[1.0])
     len = length(z)
     x = z/N
     rho = 1.0e-3 / (v/N)
-    R = R̄
-    return N *R * T * _f0(model, rho, T, x)
+    return _f0(model, rho, T, x)
 end
 
 function a_res(model::GERG2008, v, T, z=SA[1.0])
@@ -362,13 +361,12 @@ function a_res(model::GERG2008, v, T, z=SA[1.0])
     len = length(z)
     rho = 1.0e-3 / (v/N)
     x = z/N
-    R = R̄
     delta = _delta(model, rho, T, x)
     tau = _tau(model, rho, T, x)
     if len == 1
-        return N * R * T * _fr1(model, delta, tau) 
+        return _fr1(model, delta, tau) 
     else
-        return N * R * T * (_fr1(model, delta, tau, x) + _fr2(model, delta, tau, x))
+        return (_fr1(model, delta, tau, x) + _fr2(model, delta, tau, x))
     end
 end
 

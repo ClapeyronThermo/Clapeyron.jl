@@ -149,6 +149,26 @@ function a_scaled(model::PropaneRef,δ,τ)
     return  _propane_ref_a0(δ,τ)+_propane_ref_ar(δ,τ)
 end
 
+function a_ideal(model::PropaneRef,V,T,z=SA[1.])
+    T_c = PropaneRef_consts.T_c
+    rho_c = PropaneRef_consts.rho_c
+    N = only(z)
+    rho = (N/V)
+    δ = rho/rho_c
+    τ = T_c/T
+    return  _propane_ref_a0(δ,τ)
+end
+
+function a_res(model::PropaneRef,V,T,z=SA[1.])
+    T_c = PropaneRef_consts.T_c
+    rho_c = PropaneRef_consts.rho_c
+    N = only(z)
+    rho = (N/V)
+    δ = rho/rho_c
+    τ = T_c/T
+    return  _propane_ref_ar(δ,τ)
+end
+
 function eos(model::PropaneRef, V, T, z=SA[1.0];phase=:unknown)
     R =PropaneRef_consts.R
     T_c = PropaneRef_consts.T_c
