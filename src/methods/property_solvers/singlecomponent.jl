@@ -288,7 +288,7 @@ end
 #     return (T,Vl,Vv)
 # end
 
-# export sat_pure, crit_pure, enthalpy_vap
+export sat_pure, crit_pure, enthalpy_vap
 
 # function spinodals(model,T,Vx = nothing)
 #     T7 = (0.7)*one(T)*T_scale(model)

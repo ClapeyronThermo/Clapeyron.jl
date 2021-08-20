@@ -57,21 +57,21 @@ function ab_consts(model::CPAModel)
     return Ωa,Ωb
 end
 
-function cubic_ab(model::CPAModel, T, z)
-    x = z/∑(z)
-    n = ∑(z)
-    a = model.params.a.values
-    b = model.params.b.values
-    Tc = model.params.Tc.values
-    c1 = model.params.c1.values
+# function cubic_ab(model::CPAModel, T, z)
+#     x = z/∑(z)
+#     n = ∑(z)
+#     a = model.params.a.values
+#     b = model.params.b.values
+#     Tc = model.params.Tc.values
+#     c1 = model.params.c1.values
 
-    α = @. min((1+c1*(1-√(T/Tc)))^2,one(T))
+#     α = @. min((1+c1*(1-√(T/Tc)))^2,one(T))
 
-    āᾱ = ∑(a .* .√(α * α') .* (x * x'))
-    b̄ = ∑(b .* (x * x'))
+#     āᾱ = ∑(a .* .√(α * α') .* (x * x'))
+#     b̄ = ∑(b .* (x * x'))
 
-    return āᾱ ,b̄
-end
+#     return āᾱ ,b̄
+# end
 
 function a_assoc(model::CPAModel, V, T, z)
     x = z/∑(z)

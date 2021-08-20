@@ -135,3 +135,33 @@ end
         @test Clapeyron.a_ideal(system,V,T,z) ≈ -20.368750666236373 rtol = 1e-6
     end
 end
+
+@testset "Multi-parameter models" begin
+    T = 298.15
+    V = 1e-4
+
+    @testset "IAPWS95" begin
+        z = [1.]
+        system = IAPWS95()
+        @test Clapeyron.a_ideal(system, V, T, z) ≈ 7.932118505056652 rtol = 1e-6
+        @test Clapeyron.a_res(system, V, T, z) ≈ -2.1152657050144347e14 rtol = 1e-6
+    end
+
+    @testset "PropaneRef" begin
+        z   = [1.]
+        system = PropaneRef()
+        @test Clapeyron.a_ideal(system, V, T, z) ≈ 0.6426994942361217 rtol = 1e-6
+        @test Clapeyron.a_res(system, V, T, z) ≈ -2.436280448227229 rtol = 1e-6
+    end
+
+    @testset "GERG2008" begin
+        z   = [1.]
+        system = GERG2008(["water"])
+        @test Clapeyron.a_ideal(system, V, T, z) ≈ 4.500099760879548 rtol = 1e-6
+        @test Clapeyron.a_res(system, V, T, z) ≈ -10.122119572808764 rtol = 1e-6
+        z   = [0.5,0.5]
+        system = GERG2008(["water","carbon dioxide"])
+        @test Clapeyron.a_ideal(system, V, T, z) ≈ 3.8068049812016898 rtol = 1e-6
+        @test Clapeyron.a_res(system, V, T, z) ≈ -73.48214663581652 rtol = 1e-6
+    end
+end
