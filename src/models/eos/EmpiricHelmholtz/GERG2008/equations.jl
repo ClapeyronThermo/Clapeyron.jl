@@ -354,6 +354,11 @@ function a_ideal(model::GERG2008, v, T, z=SA[1.0])
     x = z/N
     rho = 1.0e-3 / (v/N)
     return _f0(model, rho, T, x)
+    if len == 1
+        return _f0(model, rho, T) 
+    else
+        return _f0(model, rho, T, x)
+    end
 end
 
 function a_res(model::GERG2008, v, T, z=SA[1.0])
