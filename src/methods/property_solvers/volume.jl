@@ -15,6 +15,8 @@ v[i+1] = v[i]*exp(β[i]*(p-p(v[i])))
 In the liquid root region, the iterations follow `v0 < v[i] < v[i+1] < v(p)`, allowing the calculation of the liquid root without entering the metastable region.
 """
 function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+    _0 = zero(p+T+first(z))
+    _nan = _0/_0
     logV0 = log(V0)
     function f_fixpoint(_V)
         _V = exp(_V)
@@ -26,7 +28,7 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
         Vv = _V*exp(sign_Δ*Δ^(1-_Δ))#^((1+Δ)^4)
         return log(Vv)
     end
-        res = Solvers.fixpoint(f_fixpoint,logV0,Solvers.SimpleFixPoint(),rtol = 1e-12,max_iters=max_iters)
+        res = @nan Solvers.fixpoint(f_fixpoint,logV0,Solvers.SimpleFixPoint(),rtol = 1e-12,max_iters=max_iters) _nan
         return exp(res)
 end
 
@@ -83,10 +85,6 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
 
     fp(_V) = log(pressure(model,_V,T,z)/p)
 
-    el = false
-    ev = false
-    Vg = NaN
-    Vl = NaN
 #Threaded version
     phase = Symbol(phase)
     if phase != :unknown
@@ -95,34 +93,18 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
         return volume_compress(model,p,T,z,V0=V0)
     end
 
-    if threaded
-        try
+    if threaded     
             Vg0 = x0_volume(model,p,T,z,phase=:v)
-            Vg = fetch(Threads.@spawn volume_compress(model,$p,$T,$z;V0=Vg0))
-        catch 
-            ev  = true
-        end
-
-        try
             Vl0 = x0_volume(model,p,T,z,phase=:l)
-            Vl = fetch(Threads.@spawn volume_compress(model,$p,$T,$z;V0=$Vl0))
-        catch 
-            el  = true
-        end
+            _Vg = Threads.@spawn volume_compress(model,$p,$T,$z;V0=Vg0)
+            _Vl = Threads.@spawn volume_compress(model,$p,$T,$z;V0=$Vl0)
+            Vg = fetch(_Vg)     
+            Vl = fetch(_Vl)
     else
-        Vg0 = x0_volume(model,p,T,z,phase=:v)
-        Vl0 = x0_volume(model,p,T,z,phase=:l)
-        try
+            Vg0 = x0_volume(model,p,T,z,phase=:v)
+            Vl0 = x0_volume(model,p,T,z,phase=:l)
             Vg =  volume_compress(model,p,T,z,V0=Vg0)
-        catch 
-            ev=true
-        end
-        #Vg = Solvers.ad_newton(fp,Vg0)
-        try
-            Vl =  volume_compress(model,p,T,z,V0=Vl0)
-        catch 
-            el=true
-        end
+            Vl =  volume_compress(model,p,T,z,V0=Vl0)        
     end
 
 # Serial version
@@ -143,24 +125,15 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
     end
     #this catches the supercritical phase as well
 
-    if isnan(Vl) || el
-        return Vg
-    end
-    if isnan(Vg) || ev
-        return Vl
-    end
-    if Vl ≈ Vg
-        return Vl
-    end
+    isnan(Vl) && return Vg
+    isnan(Vg) && return Vl
+    (isnan(Vl) & isnan(Vg)) && error("Failed to converge to a root")
 
-    if ev && el
-        error("Failed to converge to a root")
-    end
-        gg = gibbs(Vg)
-        gl = gibbs(Vl)
-        #@show Vg,Vl
-        #@show gg,gl
-        return ifelse(gg<gl,Vg,Vl)
+    gg = gibbs(Vg)
+    gl = gibbs(Vl)
+    #@show Vg,Vl
+    #@show gg,gl
+    return ifelse(gg<gl,Vg,Vl)
 
 end
 
