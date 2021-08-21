@@ -119,6 +119,7 @@ end
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T, z) ≈ 7.779694485714412e-5 rtol = 1e-6 #returns incorrect value
         @test Clapeyron.speed_of_sound(system, p, T, z) ≈ 1087.0303138908864 rtol = 1E-6
+        @test Clapeyron.activity_coefficient(system, p, T, z)[1] ≈ 1.794138454452822 rtol = 1E-6
     end
     @testset "Equilibrium properties" begin
         @test Clapeyron.bubble_pressure(system,T,z)[1] ≈ 54532.249600937736 rtol = 1E-6
@@ -160,4 +161,21 @@ end
     end
 end
 
-
+@testset "IAWPS95 methods" begin
+    system = IAWPS95()
+    p = 1e5
+    T = 298.15
+    T_v = 380.15
+    T_c = 700.
+    p_c = 250e5
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T) ≈ 1.8068623941501927e-5 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.volume(system, p, T_v;phase=:vapour) ≈ 0.03116877990373624 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.volume(system, p_c, T_c;phase=:sc) ≈ 0.00018553711945962424 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 1496.699163371358 rtol = 1e-6 #returns incorrect value
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.sat_pure(system, T)[1] ≈ 3169.9293390134403 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 647.096 rtol = 1E-5 #T_scale not defined
+    end
+end

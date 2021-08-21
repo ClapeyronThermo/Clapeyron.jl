@@ -67,9 +67,9 @@ function p_scale(model::GERG2008,x=SA[1.])
     return dot(x,model.Pc)
 end
 
-function p_scales(model::GERG2008,x=SA[1.])
-    return only(model.Pc)
-end
+# function p_scales(model::GERG2008,x=SA[1.])
+#     return only(model.Pc)
+# end
 
 function _v_scale(model::GERG2008,x=SA[1.])
     return mixing_rule_asymetric(
@@ -390,10 +390,10 @@ function eos(model::GERG2008, v, T, z=SA[1.0])
 end
 
 
-function ρ_TP(species::EoSModel, T, P)
-    v = volume(species,P,T)
-    return 1/v
-end
+# function ρ_TP(species::EoSModel, T, P)
+#     v = volume(species,P,T)
+#     return 1/v
+# end
 #=
 julia> @time [ρ_TP(thermo_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
 #4.271689 seconds (2.22 M allocations: 130.980 MiB, 1.10% gc time, 33.34% compilation time

@@ -244,6 +244,7 @@ function saturated_water_vapor(Tk)
 end
 
 mw(model::IAPWS95) = model.params.mw
+molecular_weight(model::IAPWS95,z=SA[1.]) = model.params.mw*1e-3
 
 
 function x0_volume(model::IAPWS95,p,T,z=[1.0];phase = :unknown)
