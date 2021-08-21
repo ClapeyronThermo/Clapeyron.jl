@@ -107,10 +107,22 @@ function sat_pure(model::SPUNG,T::Real,v0=x0_sat_pure(model,T))
      return (p,vl0*h,vv0*h)
 end
 
+#============
+uncomment when sat_pure_p is ready
+====================
 function sat_pure_p(model::SPUNG,p::Real)
     return naive_sat_pure_p(model,p)
 end
+=#
 
+function split_model(model::SPUNG)
+    #only the shape model is splittable
+    shape_model = split_model(model.shape_model)
+    len = length(shape_model)
+    shape_ref = fill(model.shape_ref,len)
+    model_ref = fill(model.model_ref,len)
+    return SPUNG.(shape_model,shape_ref,model_ref)
+end
 
 function general_shape_factors(model::SPUNG,V,T,z=SA[1.0])
     n = sum(z)

@@ -113,7 +113,7 @@ macro nan(Base.@nospecialize(fcall),default = nothing)
           rethrow($e)
         end
       end
-    end
+    end |> esc
   end
 
 """

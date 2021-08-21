@@ -201,6 +201,7 @@ const watersat_data = (;n = [0.116_705_214_527_67E4,
 
 #psat and tsat are modified from SteamTables.jl
 function water_p_sat(t)
+    t > 647.096 && return zero(t)/zero(t)
     n = watersat_data.n
     Θ = t + n[9]/(t - n[10])
     A =      Θ^2 + n[1]*Θ + n[2]
@@ -211,6 +212,7 @@ function water_p_sat(t)
 end
 
 function water_t_sat(p)
+    p > 2.2064e7 && return zero(p)/zero(p)
     n = watersat_data.n
     P = p/1000000
     β = P^0.25

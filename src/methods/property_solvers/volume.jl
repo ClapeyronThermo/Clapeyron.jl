@@ -28,7 +28,7 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
         Vv = _V*exp(sign_Δ*Δ^(1-_Δ))#^((1+Δ)^4)
         return log(Vv)
     end
-        res = @nan Solvers.fixpoint(f_fixpoint,logV0,Solvers.SimpleFixPoint(),rtol = 1e-12,max_iters=max_iters) _nan
+        res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SimpleFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
         return exp(res)
 end
 
