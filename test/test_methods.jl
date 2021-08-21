@@ -166,7 +166,7 @@ end
     p = 1e5
     T = 298.15
     T_v = 380.15
-    T_c = 700.
+    T_c = 750.
     p_c = 250e5
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 1.8068623941501927e-5 rtol = 1e-6 #returns incorrect value
