@@ -161,8 +161,8 @@ end
     end
 end
 
-@testset "IAWPS95 methods" begin
-    system = IAWPS95()
+@testset "IAPWS95 methods" begin
+    system = IAPWS95()
     p = 1e5
     T = 298.15
     T_v = 380.15
