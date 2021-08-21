@@ -40,7 +40,7 @@ end
 _gerg_asymetric_mix_rule(xi, xj, b) = b * (xi + xj) / (xi * b^2 + xj)
 
 
-function T_scale(model::GERG2008,x)
+function T_scale(model::GERG2008,x=SA[1.])
     return mixing_rule_asymetric(
         (a,b)->sqrt(a * b),
         _gerg_asymetric_mix_rule,
@@ -51,27 +51,27 @@ function T_scale(model::GERG2008,x)
     )
 end
 
-function T_scale(model::GERG2008)
-    return only(model.Tc)
-end
+# function T_scale(model::GERG2008)
+#     return only(model.Tc)
+# end
 
-function T_scales(model::GERG2008,x)
+function T_scales(model::GERG2008,x=SA[1.])
     return model.Tc
 end
 
-function p_scale(model::GERG2008)
-    return only(model.Pc)
-end
+# function p_scale(model::GERG2008)
+#     return only(model.Pc)
+# end
 
-function p_scale(model::GERG2008,x)
+function p_scale(model::GERG2008,x=SA[1.])
     return dot(x,model.Pc)
 end
 
-function p_scales(model::GERG2008,x)
+function p_scales(model::GERG2008,x=SA[1.])
     return only(model.Pc)
 end
 
-function _v_scale(model::GERG2008,x)
+function _v_scale(model::GERG2008,x=SA[1.])
     return mixing_rule_asymetric(
         (a,b) -> ((cbrt(a) + cbrt(b))*0.5)^3,
         _gerg_asymetric_mix_rule,
@@ -82,37 +82,37 @@ function _v_scale(model::GERG2008,x)
     )
 end
 
-function _v_scale(model::GERG2008)
-    return only(model.vc)
-end
+# function _v_scale(model::GERG2008)
+#     return only(model.vc)
+# end
 
-function lb_volume(model::GERG2008)
-    return only(model.lb_v)
-end
+# function lb_volume(model::GERG2008)
+#     return only(model.lb_v)
+# end
 
-function lb_volume(model::GERG2008,x;phase=:unknown)
+function lb_volume(model::GERG2008,x=SA[1.];phase=:unknown)
     return dot(x,model.lb_v)
 end
 
-function _delta(model::GERG2008, rho, T, x)
+function _delta(model::GERG2008, rho, T, x=SA[1.])
     vcmix = _v_scale(model,x)
     return rho * vcmix
 end
 
-function _tau(model::GERG2008, rho, T, x)
+function _tau(model::GERG2008, rho, T, x=SA[1.])
     Tcmix  = T_scale(model,x)
     return Tcmix / T
 end
 
-function _delta(model::GERG2008, rho, T)
-    vcmix = _v_scale(model)
-    return rho * vcmix
-end
+# function _delta(model::GERG2008, rho, T)
+#     vcmix = _v_scale(model)
+#     return rho * vcmix
+# end
 
-function _tau(model::GERG2008, rho, T)
-    Tcmix  = T_scale(model)
-    return Tcmix / T
-end
+# function _tau(model::GERG2008, rho, T)
+#     Tcmix  = T_scale(model)
+#     return Tcmix / T
+# end
 
 function _f0(model::GERG2008, ρ, T, x)
     RR = 8.314472 / 8.314510
