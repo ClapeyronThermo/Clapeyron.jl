@@ -1,5 +1,5 @@
 
-
+abstract type PRModel <: ABCubicModel end
 
 struct PRParam <: EoSParam
     a::PairParam{Float64}
@@ -8,8 +8,6 @@ struct PRParam <: EoSParam
     Pc::SingleParam{Float64}
     Mw::SingleParam{Float64}
 end
-
-abstract type PRModel <: ABCubicModel end
 
 struct PR{T <: IdealModel,α,γ} <: RKModel
     components::Array{String,1}
@@ -85,7 +83,7 @@ function cubic_ab(model::PR{<:Any,SoaveAlpha},T,z=SA[1.0],n=sum(z))
     āᾱ = dot(αx,Symmetric(a),αx)
     b̄ = dot(z,Symmetric(b),z) * invn*invn
     return āᾱ ,b̄
-
+end
 
 
 function cubic_abp(model::PRModel, V, T, z) 
@@ -107,9 +105,7 @@ function cubic_poly(model::PRModel,p,T,z)
     k₁ = -B*(3*B+2.0) + A
     k₂ = B-1.0
     k₃ = 1.0
-    return [k₀,k₁,k₂,k₃]
 end
-
 #=
  (-B2-2(B2+B)+A)
  (-B2-2B2-2B+A)
