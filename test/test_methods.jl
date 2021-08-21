@@ -179,3 +179,17 @@ end
         @test Clapeyron.crit_pure(system)[1] ≈ 647.096 rtol = 1E-5 #T_scale not defined
     end
 end
+
+@testset "PropaneRef methods" begin
+    system = PropaneRef()
+    p = 1e5
+    T = 230.15
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T) ≈ 7.577761282115866e-5 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 1166.6704395959607 rtol = 1e-6 #returns incorrect value
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.sat_pure(system, T)[1] ≈ 97424.11102152328 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 369.8900089509652 rtol = 1E-6 #T_scale not defined
+    end
+end
