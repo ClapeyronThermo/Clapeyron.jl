@@ -65,10 +65,11 @@ using StaticArrays
         return res.info.minimizer
     end
 
-    include("tunneling.jl")
+   
     include("ADNewton.jl")
     include("nested.jl")
     include("nlsolve.jl")
     include("fixpoint/fixpoint.jl")
     include("optimize.jl")
+    #include("tunneling.jl") work in progress
 end # module

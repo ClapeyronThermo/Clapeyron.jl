@@ -1,23 +1,26 @@
+struct TunnelingModifier{T,F,V}
+    f::F
+    x::V
+    fbest::Ref{T}
+end
+
+
 function tunneling(f,lb,ub,x0)
     N = length(ub)
     # Relevant configuration
     tolf=1e-8
-
+    options = OptimizationOptions(g_abstol=5e-8)
+    prob = ADScalarObjective(f,x0)
     # Minimisation phase
-    opt_min = NLopt.Opt(:LD_MMA, length(ub))
-    opt_min.lower_bounds = lb
-    opt_min.upper_bounds = ub
+    prob = OptimizationProblem(obj=scalarobj, 
+    bounds=(lb,ub); inplace=true)
     opt_min.xtol_rel = 1e-8
+    res =  NLSolvers.solve(prob, x0, ModifiedActiveBox(Newton();epsilon=tolbounds), options)
+    
 
-    obj_f0 = x -> f(x)
-    obj_f = (x,g) -> NLopt_obj(obj_f0,x,g)
-    opt_min.min_objective =  obj_f
-
-    (min_f,min_x,status) = NLopt.optimize(opt_min, x0)
-
-    best_f = min_f
+    best_f = res.info.minimum
     opt_x  = []
-    best_x = min_x
+    best_x = res.info.minimizer
     append!(opt_x,[min_x])
 
     # Tunneling phase
@@ -39,7 +42,7 @@ function tunneling(f,lb,ub,x0)
 
         # Tunneling
         (new_f,new_x,status) = NLopt.optimize(opt_tun, x0)
-        if status != :FORCED_STOP
+        if minimum(res.info.∇fz) <=
             println(i)
             break
         end
@@ -53,7 +56,6 @@ function tunneling(f,lb,ub,x0)
         else
             append!(opt_x,[min_x])
         end
-
     end
     return (best_f,best_x)
 end
