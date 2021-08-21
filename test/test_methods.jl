@@ -4,9 +4,9 @@
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 5.907908736304141e-5 rtol = 1e-6 #returns incorrect value
-        @test Clapeyron.volume(system, p, T;phase=:v) ≈ 0.020427920501436134 rtol = 1e-6 #returns incorrect value
-        @test Clapeyron.volume(system, p, T;threaded=:false) ≈ 5.907908736304141e-5 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.volume(system, p, T) ≈ 5.907908736304141e-5 rtol = 1e-6 
+        @test Clapeyron.volume(system, p, T;phase=:v) ≈ 0.020427920501436134 rtol = 1e-6 
+        @test Clapeyron.volume(system, p, T;threaded=:false) ≈ 5.907908736304141e-5 rtol = 1e-6 
         @test Clapeyron.pip(system, 5.907908736304141e-5, T, [1.]) ≈ 6.857076349623449 rtol = 1e-6
         @test Clapeyron.compressibility_factor(system, p, T) ≈ 0.002383223535444557 rtol = 1e-6
         @test Clapeyron.pressure(system, 5.907908736304141e-5, T) ≈ p rtol = 1e-6
@@ -30,7 +30,7 @@
         @test Clapeyron.sat_pure(system, T)[1] ≈ 7972.550405922014 rtol = 1E-6
         @test Clapeyron.enthalpy_vap(system, T) ≈ 41712.78521121877 rtol = 1E-6
         @test Clapeyron.acentric_factor(system) ≈ 0.5730309964718605 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 533.1324329774004 rtol = 1E-6 #T_scale not defined
+        @test Clapeyron.crit_pure(system)[1] ≈ 533.1324329774004 rtol = 1E-6 
     end
 end
 
@@ -40,11 +40,11 @@ end
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 5.8990680856791996e-5 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.volume(system, p, T) ≈ 5.8990680856791996e-5 rtol = 1e-6 
     end
     @testset "VLE properties" begin
         @test Clapeyron.sat_pure(system, T)[1] ≈ 7933.046853495474 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 533.4350720160273 rtol = 1E-6 #T_scale not defined
+        @test Clapeyron.crit_pure(system)[1] ≈ 533.4350720160273 rtol = 1E-6 
     end
 end
 
@@ -53,11 +53,11 @@ end
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 0.00015924416586849443 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.volume(system, p, T) ≈ 0.00015924416586849443 rtol = 1e-6 
     end
     @testset "VLE properties" begin
         @test Clapeyron.sat_pure(system, T)[1] ≈ 581.785675150425 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 618.8455740197799 rtol = 1E-6 #T_scale not defined
+        @test Clapeyron.crit_pure(system)[1] ≈ 618.8455740197799 rtol = 1E-6 
     end
 end
 
@@ -66,11 +66,11 @@ end
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 5.913050998953597e-5 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.volume(system, p, T) ≈ 5.913050998953597e-5 rtol = 1e-6 
     end
     @testset "VLE properties" begin
         @test Clapeyron.sat_pure(system, T)[1] ≈ 7923.883649594267 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 539.218257256262 rtol = 1E-6 #T_scale not defined
+        @test Clapeyron.crit_pure(system)[1] ≈ 539.218257256262 rtol = 1E-6 
     end
 end
 
@@ -79,11 +79,11 @@ end
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 5.753982584153832e-5 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.volume(system, p, T) ≈ 5.753982584153832e-5 rtol = 1e-6 
     end
     @testset "VLE properties" begin
         @test Clapeyron.sat_pure(system, T)[1] ≈ 7714.849872968086 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 521.959273608428 rtol = 1E-6 #T_scale not defined
+        @test Clapeyron.crit_pure(system)[1] ≈ 521.959273608428 rtol = 1E-6 
     end
 end
 
@@ -92,11 +92,11 @@ end
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 4.064466003321247e-5 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.volume(system, p, T) ≈ 4.064466003321247e-5 rtol = 1e-6 
     end
     @testset "VLE properties" begin
         @test Clapeyron.sat_pure(system, T)[1] ≈ 16957.625653548406 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 524.1487001618932 rtol = 1E-6 #T_scale not defined
+        @test Clapeyron.crit_pure(system)[1] ≈ 524.1487001618932 rtol = 1E-6 
     end
 end
 
@@ -117,7 +117,7 @@ end
     z = [0.5,0.5]
     z_LLE = [0.27,0.73]
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T, z) ≈ 7.779694485714412e-5 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.volume(system, p, T, z) ≈ 7.779694485714412e-5 rtol = 1e-6 
         @test Clapeyron.speed_of_sound(system, p, T, z) ≈ 1087.0303138908864 rtol = 1E-6
         @test Clapeyron.activity_coefficient(system, p, T, z)[1] ≈ 1.794138454452822 rtol = 1E-6
     end
@@ -134,12 +134,12 @@ end
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 1.8067969591040684e-5 rtol = 1e-6 #returns incorrect value
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 1484.0034692716843 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.volume(system, p, T) ≈ 1.8067969591040684e-5 rtol = 1e-6 
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 1484.0034692716843 rtol = 1e-6 
     end
     @testset "VLE properties" begin
         @test Clapeyron.sat_pure(system, T)[1] ≈ 3184.83242429761 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 647.0960000000457 rtol = 1E-6 #T_scale not defined
+        @test Clapeyron.crit_pure(system)[1] ≈ 647.0960000000457 rtol = 1E-6 
     end
 end
 
@@ -169,14 +169,15 @@ end
     T_c = 750.
     p_c = 250e5
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 1.8068623941501927e-5 rtol = 1e-6 #returns incorrect value
-        @test Clapeyron.volume(system, p, T_v;phase=:vapour) ≈ 0.03116877990373624 rtol = 1e-6 #returns incorrect value
-        @test Clapeyron.volume(system, p_c, T_c;phase=:sc) ≈ 0.00018553711945962424 rtol = 1e-6 #returns incorrect value
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 1496.699163371358 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.volume(system, p, T) ≈ 1.8068623941501927e-5 rtol = 1e-6 
+        @test Clapeyron.volume(system, p, T_v;phase=:vapour) ≈ 0.03116877990373624 rtol = 1e-6 
+        @test Clapeyron.volume(system, p_c, T_c) ≈ 0.00018553711945962424 rtol = 1e-6 
+        @test Clapeyron.volume(system, p_c, T_c;phase=:sc) ≈ 0.00018553711945962424 rtol = 1e-6 
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 1496.699163371358 rtol = 1e-6 
     end
     @testset "VLE properties" begin
         @test Clapeyron.sat_pure(system, T)[1] ≈ 3169.9293390134403 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 647.096 rtol = 1E-5 #T_scale not defined
+        @test Clapeyron.crit_pure(system)[1] ≈ 647.096 rtol = 1E-5 
     end
 end
 
@@ -185,12 +186,12 @@ end
     p = 1e5
     T = 230.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 7.577761282115866e-5 rtol = 1e-6 #returns incorrect value
-        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ 0.018421882342664616 rtol = 1e-6 #returns incorrect value
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 1166.6704395959607 rtol = 1e-6 #returns incorrect value
+        @test Clapeyron.volume(system, p, T) ≈ 7.577761282115866e-5 rtol = 1e-6 
+        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ 0.018421882342664616 rtol = 1e-6 
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 1166.6704395959607 rtol = 1e-6 
     end
     @testset "VLE properties" begin
         @test Clapeyron.sat_pure(system, T)[1] ≈ 97424.11102152328 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 369.8900089509652 rtol = 1E-6 #T_scale not defined
+        @test Clapeyron.crit_pure(system)[1] ≈ 369.8900089509652 rtol = 1E-6 
     end
 end

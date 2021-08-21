@@ -170,22 +170,22 @@ function eos(model::IAPWS95, V, T, z=SA[1.0])
 end
 
 
-struct IAPWS95Ideal <:IdealModel end
+# struct IAPWS95Ideal <:IdealModel end
 
 
-function IAPWS95Ideal(components; verbose=false)
-    if only(components) == "water"
-        return IAPWS95Ideal()
-    else
-        return error("IAPWS95 is for water only")
-    end
-end
+# function IAPWS95Ideal(components; verbose=false)
+#     if only(components) == "water"
+#         return IAPWS95Ideal()
+#     else
+#         return error("IAPWS95 is for water only")
+#     end
+# end
 
-function a_ideal(model::IAPWS95Ideal,V,T,z=one(V))
-    return a_ideal(IAPWS95(),V, T, z)
-end
+# function a_ideal(model::IAPWS95Ideal,V,T,z=one(V))
+#     return a_ideal(IAPWS95(),V, T, z)
+# end
 
-idealmodel(model::IAPWS95) = IAPWS95Ideal()
+# idealmodel(model::IAPWS95) = IAPWS95Ideal()
 
 const watersat_data = (;n = [0.116_705_214_527_67E4,
     -0.724_213_167_032_06E6,
