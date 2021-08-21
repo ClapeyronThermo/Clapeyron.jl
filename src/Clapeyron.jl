@@ -52,8 +52,7 @@ include("models/eos/cubic/alphas/alphas.jl")
 
 include("models/eos/cubic/vdW.jl")
 include("models/eos/cubic/RK/RK.jl")
-#include("models/eos/cubic/SRK.jl")
-include("models/eos/cubic/PR.jl")
+include("models/eos/cubic/PR/PR.jl")
 include("models/eos/cubic/equations.jl")
 
 include("models/eos/EmpiricHelmholtz/IAPWS95.jl")
