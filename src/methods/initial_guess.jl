@@ -239,16 +239,12 @@ function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
     B = second_virial_coefficient(model,T,z)
     x0v = -2*B + 2*b
     p = -0.25*R̄*T/B
-    x0l = Ref(b)
-    try
-        x0l[] = volume_compress(model,p,T,z)
-    catch
-        x0l[] = b/0.25
+    
+    x0l = volume_compress(model,p,T,z)
+    if isnan(x0l) | (x0l >x0v)
+        x0l= b/0.25
     end
 
-    if x0l[] >x0v || isnan(x0l[])
-        x0l[] = b/0.25
-    end
     #=here we solve the saturation with aproximate 
     models of the EoS. on the gas side, we use
     a virial for logϕ, on the liquid side, we
@@ -268,7 +264,7 @@ function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
     f0(P) = fugl(P) - fugv(P)
     @show Roots.find_zero(f0,0.9P0)
      =#
-    x0  = [x0l[],x0v]
+    x0  = [x0l,x0v]
     
     return log10.(x0)
 end
