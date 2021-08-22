@@ -1,24 +1,24 @@
-#=
-SPUNG = State Research Program for Utilization of Natural Gas
+"""
+SPUNG: State Research Program for Utilization of Natural Gas
 
 based on:
 Unification of the two-parameter equation of state and the principle ofcorresponding states
 Jørgen Mollerup
 
-the idea is to use mollerup shape factors and PropaneRef as the EoS
-but any function that provides a_scaled and shape_factors will suffice
-=#
+The idea is to use a "shape model" that provides a corresponding states parameters
+and a "reference model" that implements a helmholtz energy function.
 
+this SPUNG by default uses the propane reference equation of state (`PropaneRef`) as the reference model
+and SRK for the shape model.
+"""
 struct SPUNG{S<:EoSModel,E<:EoSModel} <: EoSModel
     shape_model::S
     shape_ref::S
     model_ref::E
 end
 
-function SPUNG(components::Vector{String},refmodel=PropaneRef(),shapemodel::SHAPE=SRK(components)) where SHAPE<:EoSModel
-    refname = component_names(refmodel)
-    shape_ref = SHAPE.name.wrapper(refname)
-    model = SPUNG(shapemodel,shape_ref,refmodel)
+function SPUNG(components::Vector{String},refmodel=PropaneRef(),shapemodel=SRK(components),shaperef = SRK(component_names(refmodel)))
+    model = SPUNG(shapemodel,shaperef,refmodel)
     return model
 end
 
@@ -60,7 +60,7 @@ function Base.show(io::IO,model::SPUNG)
     print(io,"SPUNG(",model.shape_ref,",",model.model_ref,")")
 end
 
-function lb_volume(model::SPUNG,z=SA[1.0];phase=:l)
+function lb_volume(model::SPUNG,z=SA[1.0])
     lb_v0 = lb_volume(model.model_ref)
     T0 = T_scale(model.model_ref)
     f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
@@ -102,7 +102,7 @@ function sat_pure(model::SPUNG,T::Real,v0=x0_sat_pure(model,T))
     lb_v = lb_volume(model,SA[1.0])
     f,h = shape_factors(model,lb_v,T,SA[1.0])
     T0 = T/f
-    psat0,vl0,vv0 = sat_pure(model.model_ref,T0;v0)
+    psat0,vl0,vv0 = sat_pure(model.model_ref,T0,v0)
     p = pressure(model,vv0*h,T)
      return (p,vl0*h,vv0*h)
 end

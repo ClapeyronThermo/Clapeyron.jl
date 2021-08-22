@@ -53,7 +53,7 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     _Tc = params["Tc"]
     Tc = _Tc.values
     Ωa, Ωb = ab_consts(PR)
-    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc^2/pc, k))
+    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc^2/pc),k)
     #check if this is correct in the general case.
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. Ωb*R̄*Tc/pc))
     

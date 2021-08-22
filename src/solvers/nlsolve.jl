@@ -12,7 +12,7 @@ To obtain the underlying solution vector, use [`x_sol`](@ref)
 
 To see available solvers and options, check `NLSolvers.jl`
 """
-function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),options=NEqOptions())
+function nlsolve(f!,x0,method=TrustRegion(CholeskyNewton(), NWI()),options=NEqOptions())
     #f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
     len = length(x0)
     #xcache = zeros(eltype(x0),len)

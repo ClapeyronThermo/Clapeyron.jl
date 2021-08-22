@@ -51,10 +51,9 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     _Tc = params["Tc"]
     Tc = _Tc.values
-    T̄c = sum(sqrt(Tc*Tc')) #is this term correctly calculated? sqrt(Tc*Tc') is a matrix sqrt
+    #T̄c = sum(sqrt.(Tc*Tc')) #is this term correctly calculated? sqrt(Tc*Tc') is a matrix sqrt
     Ωa, Ωb = ab_consts(RK)
-    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc^2.5/pc/√(T̄c)), k) 
-    #check if this is correct in the general case.
+    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc^2/pc), k) 
     b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. Ωb*R̄*Tc/pc))
     
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
@@ -77,7 +76,7 @@ function cubic_ab(model::RK{<:Any,Nothing},T,z=SA[1.0],n=sum(z))
     a = model.params.a.values
     b = model.params.b.values
     Tc = model.params.Tc.values
-    T̄c = sum(sqrt(Tc*Tc'))
+    T̄c = sum(sqrt.(Tc*Tc'))
     āᾱ  = dot(z,Symmetric(a),z) * invn2*sqrt(T̄c/T)
     b̄ = dot(z,Symmetric(b),z) * invn2
     return āᾱ ,b̄

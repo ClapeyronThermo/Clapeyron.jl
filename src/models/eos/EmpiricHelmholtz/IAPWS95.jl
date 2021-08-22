@@ -8,7 +8,6 @@ end
 
 struct IAPWS95 <: EmpiricHelmholtzModel
     components::Array{String,1}
-    lengthcomponents::Int
     icomponents::UnitRange{Int}
     params::IAPWS95Params
 end
@@ -16,9 +15,10 @@ end
 function crit_pure(model::IAPWS95)
     return (model.params.Tc,model.params.Pc,model.params.Vc)
 end
+
 function IAPWS95()
     params = IAPWS95Params(647.096,2.2064e7,5.594803726708074e-5,18.015268,0.344861)
-    model = IAPWS95(["water"],1,1:1,params)
+    model = IAPWS95(["water"],1:1,params)
     return model
 end
 
@@ -142,7 +142,7 @@ function a_ideal(model::IAPWS95,V,T,z=SA[1.0])
      #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'
      mass_v =  v*1000.0*0.055508472036052976
      rho = one(mass_v)/mass_v
-     return 0.9999890238768239*_f0(model,rho,T)
+     return IAPWS_R_corr*_f0(model,rho,T)
 end
 
 function a_res(model::IAPWS95,V,T,z=SA[1.0])
@@ -153,7 +153,7 @@ function a_res(model::IAPWS95,V,T,z=SA[1.0])
      #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'
      mass_v =  v*1000.0*0.055508472036052976
      rho = one(mass_v)/mass_v
-     return 0.9999890238768239*_fr(model,rho,T)
+     return IAPWS_R_corr*_fr(model,rho,T)
 end
 
 
@@ -166,7 +166,7 @@ function eos(model::IAPWS95, V, T, z=SA[1.0])
      mass_v =  v*1000.0*0.055508472036052976
      rho = one(mass_v)/mass_v
 
-    return N_A*k_B*∑(z)*T * 0.9999890238768239*_f(model,rho,T)
+    return N_A*k_B*∑(z)*T * IAPWS_R_corr*_f(model,rho,T)
 end
 
 
@@ -224,8 +224,6 @@ function water_t_sat(p)
     return T
 end
 
-
-
 #from MoistAir.jl, liquid
 function saturated_water_liquid(Tk)
     ρm= ( -0.2403360201e4 +
@@ -281,6 +279,7 @@ function p_scale(model::IAPWS95,z=SA[1.0])
     return model.params.Pc
 end
 
+Base.length(::IAPWS95) = 1
 
 function Base.show(io::IO,model::IAPWS95)
     return eosshow(io,model)
