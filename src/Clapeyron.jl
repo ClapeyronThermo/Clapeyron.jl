@@ -1,8 +1,8 @@
 module Clapeyron
 using StaticArrays
 using LinearAlgebra
-using NLopt, NLSolvers,Roots
-using  DiffResults, ForwardDiff
+using NLSolvers,Roots
+using DiffResults, ForwardDiff
 using NaNMath: log, pow
 include("solvers/Solvers.jl")
 using .Solvers

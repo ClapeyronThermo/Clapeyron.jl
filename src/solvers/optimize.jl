@@ -1,3 +1,15 @@
+function cholesky_linsolve(d,B,∇f)
+    cholesky!(Positive, B)
+    Bchol = Cholesky(B,'L',0)
+    d .=  Bchol\∇f
+end
+
+function cholesky_linsolve(B,∇f)
+    Bchol =cholesky(Positive, B)
+    Bchol\∇f
+end
+
+Base.summary(::NLSolvers.Newton{<:Direct, typeof(cholesky_linsolve)}) = "Newton's method with Cholesky linsolve"
 
 function ADScalarObjective(f,x0::AbstractArray)
     Hres = DiffResults.HessianResult(x0)
@@ -74,10 +86,10 @@ end
 struct ModifiedActiveBox{M,T}
     scheme::M
     ϵ::T
-
 end
 
 Base.summary(ab::ModifiedActiveBox) = "Active Box, using $(Base.summary(ab.scheme))"
+
 NLSolvers.modelscheme(ab::ModifiedActiveBox) = ab.scheme
 ModifiedActiveBox(scheme=Newton(); epsilon=1e-12) =  ModifiedActiveBox(scheme,epsilon)
 
@@ -85,10 +97,10 @@ function box_optimize(f,x0,lb,ub,options=OptimizationOptions();tolbounds = 1e-12
     scalarobj = ADScalarObjective(f,x0)
     prob = OptimizationProblem(obj=scalarobj, 
     bounds=(lb,ub); inplace=true)
-    NLSolvers.solve(prob, x0, ModifiedActiveBox(Newton();epsilon=tolbounds), options)
+    NLSolvers.solve(prob, x0, ModifiedActiveBox(Newton(linsolve = cholesky_linsolve);epsilon=tolbounds), options)
 end
 
-#this should be fixed on NLSolvers.jl, see https://github.com/JuliaNLSolvers/NLSolvers.jl/issues/21
+#see https://github.com/JuliaNLSolvers/NLSolvers.jl/issues/21
 function NLSolvers.solve(prob::OptimizationProblem, x0, scheme::ModifiedActiveBox, options::OptimizationOptions)
     t0 = time()
 
@@ -119,6 +131,7 @@ function NLSolvers.solve(prob::OptimizationProblem, x0, scheme::ModifiedActiveBo
     xnorm = copy(∇fz)
     activeset = similar(∇fz,Bool)
     Ĥ = copy(B)
+    Ĥchol = cholesky(Ĥ)
     for iter = 1:options.maxiter
         x .= z
         fx = fz
@@ -127,13 +140,14 @@ function NLSolvers.solve(prob::OptimizationProblem, x0, scheme::ModifiedActiveBo
         ϵ = min(norm(clamp.(x.-∇fx, lower, upper).-x), ϵbounds) # Kelley 5.41 and just after (83) in [1]
         activeset .= NLSolvers.is_ϵ_active.(x, lower, upper, ∇fx, ϵ)
         Ĥ .= NLSolvers.diagrestrict.(B, activeset, activeset', Ix)
+        #d = clamp.(x.-HhatChol\∇fx, lower, upper).-x
         # Update current gradient and calculate the search direction
-        unconstrained_d = NLSolvers.find_direction!(unconstrained_d,Ĥ,objvars.Pg,∇fx,direction_scheme)
+        NLSolvers.find_direction!(unconstrained_d,Ĥ,objvars.Pg,∇fx,direction_scheme)
         d .= clamp.(x .+ unconstrained_d, lower, upper).-x #clamp unconstrained direction
         dmin .= d./unconstrained_d
         d_scale = minimum(dmin) 
         #scale the direction, the original direction is the same.
-        #d =  @. unconstrained_d*d_scale + (one(d_scale)-d_scale)*d
+        #d .=  @. unconstrained_d*d_scale + (one(d_scale)-d_scale)*d
         !iszero(d_scale) && (d .= unconstrained_d .* d_scale)
         #if the scale is zero, we are actually in a boundary, and we can only grow parallel along the box.
         φ = NLSolvers._lineobjective(mstyle, prob, ∇fz, z, x, d, fz, dot(∇fz, d))
@@ -150,7 +164,7 @@ function NLSolvers.solve(prob::OptimizationProblem, x0, scheme::ModifiedActiveBo
         z .= @. x + s
         s .= clamp.(z, lower, upper) .- x
         z .= x .+ s
-        # Update approximation
+        # Update approximation. it only works with newton at the moment
         fz, ∇fz, B, s, y = NLSolvers.update_obj!(prob.objective,s,y, ∇fx, z, ∇fz, B, direction_scheme)
         #fz, ∇fz, B, s, y = NLSolvers.update_obj(prob.objective, s, ∇fx, z, ∇fz, B, direction_scheme,is_first)
         #@show fz, ∇fz, B, s, y
