@@ -6,6 +6,21 @@ using PositiveFactorizations
 using DiffResults, ForwardDiff
 using StaticArrays
 
+    function cholesky_linsolve(d,B,∇f)
+        cholesky!(Positive, B)
+        Bchol = Cholesky(B,'L',0)
+        d .=  Bchol\∇f
+    end
+
+    function cholesky_linsolve(B,∇f)
+        Bchol =cholesky(Positive, B)
+        Bchol\∇f
+    end
+
+    Base.summary(::NLSolvers.Newton{<:Direct, typeof(cholesky_linsolve)}) = "Newton's method with Cholesky linsolve"
+    CholeskyNewton() = NLSolvers.Newton(linsolve=cholesky_linsolve)
+    export CholeskyNewton
+
     function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
         # copied from PolynomialRoots.jl, adapted to be AD friendly
         # Cubic equation solver for complex polynomial (degree=3)
@@ -71,5 +86,5 @@ using StaticArrays
     include("nlsolve.jl")
     include("fixpoint/fixpoint.jl")
     include("optimize.jl")
-    #include("tunneling.jl") work in progress
+
 end # module
