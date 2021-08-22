@@ -8,5 +8,7 @@ function init_model(model::Type{<:AlphaModel},components,userlocations,verbose)
     return model(components;userlocations,verbose)
 end
 
-
+include("RKAlpha.jl")
+include("PRAlpha.jl")
 include("soave.jl")
+include("BM.jl")

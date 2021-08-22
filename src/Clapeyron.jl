@@ -48,11 +48,17 @@ include("models/eos/SAFT/CKSAFT/variants/sCKSAFT.jl")
 
 include("models/eos/SAFT/BACKSAFT/BACKSAFT.jl")
 
-include("models/eos/cubic/alphas/alphas.jl")
 
 include("models/eos/cubic/vdW.jl")
 include("models/eos/cubic/RK/RK.jl")
 include("models/eos/cubic/PR/PR.jl")
+
+include("models/eos/cubic/alphas/alphas.jl")
+
+include("models/eos/cubic/mixing/mixing.jl")
+
+include("models/eos/cubic/RK/variants/SRK.jl")
+
 include("models/eos/cubic/equations.jl")
 
 include("models/eos/EmpiricHelmholtz/IAPWS95.jl")
