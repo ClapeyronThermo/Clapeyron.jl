@@ -195,3 +195,19 @@ end
         @test Clapeyron.crit_pure(system)[1] ≈ 369.8900089509652 rtol = 1E-6 
     end
 end
+
+@testset "SPUNG methods" begin
+    system = SPUNG(["ethane"])
+    p = 1e5
+    T = 313.15
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T) ≈ 0.035641472902311774 rtol = 1e-6 
+        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ 0.035641472902311774 rtol = 1e-6 
+    end
+
+    T_sat = 250.15
+    @testset "VLE properties" begin
+        @test Clapeyron.sat_pure(system, T)[1] ≈ 2.887234087929866e6 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 270.27247485012657 rtol = 1E-6 
+    end
+end

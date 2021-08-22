@@ -124,7 +124,7 @@ function split_model(model::SPUNG)
     return SPUNG.(shape_model,shape_ref,model_ref)
 end
 
-function general_shape_factors(model::SPUNG,V,T,z=SA[1.0])
+function shape_factors(model::SPUNG,V,T,z=SA[1.0])
     n = sum(z)
     x = z * (1/n)
     RT = R̄*T
@@ -138,7 +138,7 @@ function general_shape_factors(model::SPUNG,V,T,z=SA[1.0])
     a = RT*(b-B)
     a0 = RT*(b0-B0)
     tau = 1/(1-4(B/b))
-    tau0 = 1(1-4(B0/b0))
+    tau0 = 1/(1-4(B0/b0))
     Tc = T_scale(model.shape_model,x)
     Tc0 = T_scale(model.shape_ref,x)
 

@@ -165,3 +165,19 @@ end
         @test Clapeyron.a_res(system, V, T, z) ≈ -1.1706377677539772 rtol = 1e-6
     end
 end
+
+@testset "SPUNG models" begin
+    T = 298.15
+    V = 1e-4
+    z = [1.]
+
+    @testset "SRK" begin
+        system = SPUNG(["ethane"])
+        @test Clapeyron.shape_factors(system, V, T, z)[1] ≈ 0.7289071312821193 rtol = 1e-6
+    end
+
+    @testset "PCSAFT" begin
+        system = SPUNG(["ethane"],PropaneRef(),PCSAFT(["ethane"]),PCSAFT(["propane"]))
+        @test Clapeyron.shape_factors(system, V, T, z)[1] ≈ 1.3499576779924594 rtol = 1e-6
+    end
+end
