@@ -1,15 +1,3 @@
-function cholesky_linsolve(d,B,∇f)
-    cholesky!(Positive, B)
-    Bchol = Cholesky(B,'L',0)
-    d .=  Bchol\∇f
-end
-
-function cholesky_linsolve(B,∇f)
-    Bchol =cholesky(Positive, B)
-    Bchol\∇f
-end
-
-Base.summary(::NLSolvers.Newton{<:Direct, typeof(cholesky_linsolve)}) = "Newton's method with Cholesky linsolve"
 
 function ADScalarObjective(f,x0::AbstractArray)
     Hres = DiffResults.HessianResult(x0)
