@@ -33,7 +33,7 @@ end
 
 Base.length(model::RK) = Base.length(model.icomponents)
 
-molecular_weight(model::RK,z=SA[1.0]) = group_molecular_weight(model.groups,mw(model),z)
+molecular_weight(model::RK,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
 
 export RK
 function RK(components::Vector{String}; idealmodel=BasicIdeal,
