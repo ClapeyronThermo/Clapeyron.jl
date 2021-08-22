@@ -203,6 +203,8 @@ end
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 0.035641472902311774 rtol = 1e-6 
         @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ 0.035641472902311774 rtol = 1e-6 
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 357.8705332163255 rtol = 1e-6 
+
     end
 
     T_sat = 250.15

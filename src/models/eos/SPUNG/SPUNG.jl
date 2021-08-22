@@ -49,6 +49,7 @@ function shape_factors(model::SPUNG{<:ABCubicModel},V,T,z=SA[1.0])
 end
 
 mw(model::SPUNG) = mw(model.shape_model)
+molecular_weight(model::SPUNG,z=SA[1.0]) = molecular_weight(model.shape_model,z)
 
 function Base.show(io::IO,mime::MIME"text/plain",model::SPUNG)
     println(io,"Extended Corresponding States model")
@@ -74,14 +75,14 @@ function T_scale(model::SPUNG,z=SA[1.0])
     return T0*f
 end
 
-function p_scale(model::SPUNG,z=SA[1.0])
-    lb_v0 = lb_volume(model.model_ref)
-    T0 = T_scale(model.model_ref)
-    p0 = p_scale(model.model_ref)
-    f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
-    ps = p0*f/h
-    return ps
-end
+# function p_scale(model::SPUNG,z=SA[1.0])
+#     lb_v0 = lb_volume(model.model_ref)
+#     T0 = T_scale(model.model_ref)
+#     p0 = p_scale(model.model_ref)
+#     f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
+#     ps = p0*f/h
+#     return ps
+# end
 
 #=
 ideally we could perform SPUNG only providing x0, but i cant find the error here
@@ -115,14 +116,14 @@ function sat_pure_p(model::SPUNG,p::Real)
 end
 =#
 
-function split_model(model::SPUNG)
-    #only the shape model is splittable
-    shape_model = split_model(model.shape_model)
-    len = length(shape_model)
-    shape_ref = fill(model.shape_ref,len)
-    model_ref = fill(model.model_ref,len)
-    return SPUNG.(shape_model,shape_ref,model_ref)
-end
+# function split_model(model::SPUNG)
+#     #only the shape model is splittable
+#     shape_model = split_model(model.shape_model)
+#     len = length(shape_model)
+#     shape_ref = fill(model.shape_ref,len)
+#     model_ref = fill(model.model_ref,len)
+#     return SPUNG.(shape_model,shape_ref,model_ref)
+# end
 
 function shape_factors(model::SPUNG,V,T,z=SA[1.0])
     n = sum(z)
