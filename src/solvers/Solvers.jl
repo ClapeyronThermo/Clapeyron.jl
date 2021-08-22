@@ -1,9 +1,9 @@
 module Solvers
 
 using LinearAlgebra
-using NLopt, NLSolvers,Roots
-#using NLSolve
-using  DiffResults, ForwardDiff
+using NLSolvers,Roots
+using PositiveFactorizations
+using DiffResults, ForwardDiff
 using StaticArrays
 
     function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
