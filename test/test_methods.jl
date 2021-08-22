@@ -207,7 +207,7 @@ end
 
     T_sat = 250.15
     @testset "VLE properties" begin
-        @test Clapeyron.sat_pure(system, T)[1] ≈ 2.887234087929866e6 rtol = 1E-6
+        @test Clapeyron.sat_pure(system, T_sat)[1] ≈ 2.887234087929866e6 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 270.27247485012657 rtol = 1E-6 
     end
 end
