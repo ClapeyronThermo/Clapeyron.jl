@@ -175,7 +175,8 @@ function crit_pure(model::EoSModel,x0=nothing)
 end
 
 function obj_crit(model::EoSModel, F, T_c, V_c)
-    ∂²A∂V², ∂³A∂V³ = ∂²³f(model, V_c, T_c, SA[1.0])
+    _1 = one(T_c+V_c)
+    ∂²A∂V², ∂³A∂V³ = ∂²³f(model, V_c, T_c, SA[_1])
     F[1] = -∂²A∂V²
     F[2] = -∂³A∂V³
     return F
