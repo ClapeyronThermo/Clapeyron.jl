@@ -101,7 +101,7 @@ end
 
 function a_res(model::RKModel, V, T, z)
     n = sum(z)
-    ā,b̄ = cubic_ab(model,T,z,n)
+    ā,b̄ = cubic_ab(model,V,T,z,n)
     ρ = n/V
     RT⁻¹ = 1/(R̄*T)
     return -log(1-b̄*ρ) - ā*RT⁻¹*log(b̄*ρ+1)/b̄
