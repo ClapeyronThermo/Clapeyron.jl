@@ -9,7 +9,7 @@ export vdW1fRule
 function vdW1fRule(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = SingleParam(params["w"],"acentric factor")
-    packagedparams = vdW1fRuleParam(acentricfactor)
+    packagedparams = vdW1fRuleParam()
     model = vdW1fRule(packagedparams, verbose=verbose)
     return model
 end

@@ -304,6 +304,7 @@ function (::Type{model})(params::EoSParam,
     
     if has_sites(model)
         arbparam = arbitraryparam(params)
+        components = arbparam.components
         sites = SiteParam(components)
         return model(params,sites,idealmodel;ideal_userlocations,references,absolutetolerance,verbose)
     end
