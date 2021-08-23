@@ -40,8 +40,8 @@ end
 function shape_factors(model::SPUNG{<:ABCubicModel},V,T,z=SA[1.0])
     n = sum(z)
     x = z * (1/n)
-    a,b = cubic_ab(model.shape_model,T,x)
-    a0,b0 = cubic_ab(model.shape_ref,T,SA[1.0])
+    a,b = cubic_ab(model.shape_model,V,T,x)
+    a0,b0 = cubic_ab(model.shape_ref,V,T,SA[1.0])
     h = b/b0
     fh = n*a/a0
     f = fh/h
