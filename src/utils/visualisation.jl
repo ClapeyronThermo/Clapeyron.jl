@@ -1,6 +1,6 @@
 
 
-function eosshow(io::IO, ::MIME"text/plain", model::EoSModel)
+function eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSModel))
     print(io, typeof(model))
     length(model) == 1 && println(io, " with 1 component:")
     length(model) > 1 && println(io, " with ", length(model), " components:")
@@ -8,16 +8,18 @@ function eosshow(io::IO, ::MIME"text/plain", model::EoSModel)
         print(io, " \"", model.components[i], "\"")
         println(io)
     end
-    print(io,"Contains parameters: ")
+    paramnames = fieldnames(typeof(model.params))
+    len_params = length(paramnames)
+    !iszero(len_params) && print(io,"Contains parameters: ")
     firstloop = true
-    for fieldname in fieldnames(typeof(model.params))
+    for fieldname in paramnames
         firstloop == false && print(io, ", ")
         print(io, fieldname)
         firstloop = false
     end
 end
 
-function eosshow(io::IO, model::EoSModel)
+function eosshow(io::IO, Base.@nospecialize(model::EoSModel))
     print(io, typeof(model))
     firstloop = true
     print(io, "(")
@@ -29,16 +31,16 @@ function eosshow(io::IO, model::EoSModel)
     print(io, ")")
 end
 
-function Base.show(io::IO, ::MIME"text/plain", model::GCSAFTModel)
+function gc_eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSModel))
     print(io, typeof(model))
     length(model) == 1 && println(io, " with 1 component:")
     length(model) > 1 && println(io, " with ", length(model), " components:")
-    for i in model.icomponents
+    for i in 1:length(model)
         print(io, " \"", model.components[i], "\": ")
         firstloop = true
-        for k in 1:length(model.allcomponentgroups[i])
+        for k in 1:length(model.groups.groups[i])
             firstloop == false && print(io, ", ")
-            print(io, "\"", model.allcomponentgroups[i][k], "\" => ", model.allcomponentngroups[i][k])
+            print(io, "\"", model.groups.groups[i][k], "\" => ", model.groups.n_groups[i][k])
             firstloop = false
         end
         println(io)
@@ -52,15 +54,5 @@ function Base.show(io::IO, ::MIME"text/plain", model::GCSAFTModel)
     end
 end
 
-function Base.show(io::IO, model::GCSAFTModel)
-    print(io, typeof(model))
-    firstloop = true
-    for i in model.icomponents
-        firstloop == false && print(io, ", ")
-        print(io, "\"", model.components[i], "\"")
-        firstloop = false
-    end
-    print(io, ")")
-end
 
 export eosshow
