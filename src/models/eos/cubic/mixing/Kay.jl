@@ -19,7 +19,7 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b
     n = sum(z)
     invn2 = (one(n)/n)^2
     b̄ = (dot(z,Symmetric(b.^(1/3)),z) * invn2).^3
-    ā = √(dot(z,Symmetric(a .* (α*α') ./ b).^2,z)* invn2)  * b̄
+    ā = √(dot(z,Symmetric(a .* sqrt.(α*α') ./ b).^2,z)* invn2)  * b̄
     return ā,b̄
 end
 
