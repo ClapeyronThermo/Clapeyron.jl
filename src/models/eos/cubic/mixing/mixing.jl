@@ -4,8 +4,8 @@ function init_model(model::MixingRule,components,userlocations,verbose)
 end
 
 function init_model(model::Type{<:MixingRule},components,userlocations,verbose)
-    verbose && @info("""Now creating alpha model:
-    $idealmodel""")
+    verbose && @info("""Now creating mixing model:
+    $model""")
     return model(components;userlocations,verbose)
 end
 

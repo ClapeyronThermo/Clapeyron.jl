@@ -1,12 +1,11 @@
 abstract type RKAlphaModel <: AlphaModel end
 
 struct RKAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
 end
 
-has_sites(::Type{<:AlphaModel})=false
 
 @newmodelsimple RKAlpha RKAlphaModel RKAlphaParam
+is_splittable(::RKAlpha) = false
 
 export RKAlpha
 function RKAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
