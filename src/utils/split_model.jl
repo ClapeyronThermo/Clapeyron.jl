@@ -22,9 +22,11 @@ function split_model end
 """
     is_splittable(model)::Bool
 
-trait to determine if a model should be splitted by itself or can be simply copied into a vector.
-"""
+Trait to determine if a `EoSModel` should be splitted by itself or can be simply filled into a vector.
+This is useful in the case of models without any parameters, as those models are impossible by definition to split, because they don't have any underlying data.
 
+The Default is `is_splittable(model) = true`.
+"""
 is_splittable(model) = true
 
 function split_model(param::SingleParam{T},
