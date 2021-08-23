@@ -8,71 +8,78 @@ Once Clapeyron is installed, it can be loaded using:
 using Clapeyron
 ```
 
-We may create a model object by calling the constructor of the respective model. For example,
+We may create a model object by calling the constructor of the respective equation of state. For example,
 
 ```julia
-model1 = PCSAFT(["methanol", "ethanol"])
-model2 = softSAFT(["ethane", "water"])
+model1 = PCSAFT(["methanol"])
+model2 = PR(["ethane", "water"])
+model3 = GERG2008(["propane","pentane"])
 ```
 
-We also support group-contribution models like SAFT-*ɣ* Mie. We have a database of species with the number of each group associated with it for easy lookup, but you may also use your own combinations. We use a tuple of the name of the molecule and an array of the group-multiplicity mappings.
+We also support group-contribution models like SAFT-*ɣ* Mie. We have a database of species with the number of each group associated with it for easy lookup, but you may also use your own combinations. We use a tuple of the name of the molecule and an array of the group-multiplicity mappings. For example
 
 ```julia
-model3 = SAFTgammaMie([
+model4 = SAFTgammaMie([
         "ethanol",
-        ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),
-        ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])
-        ]
-    )
+        ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])])
 ```
 
-### Available equations of state
+One can find out more about the information stored within these model objects in the API documentation. In terms of equations of state available, we have the following:
 
-Cubic-type:
+| Cubics                                           | SAFT                                                         | Empirical                                   | Others  |
+| ------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------- | ------- |
+| `vdW`<br />`RK`<br />`SRK`<br />`PR`<br />`PR78` | `ogSAFT`<br />`CKSAFT`<br />`sCKSAFT`<br />`LJSAFT`<br />`BACKSAFT`<br />`LJSAFT`<br />`SAFTVRSW`<br />`softSAFT`<br />`CPA`<br />`PCSAFT`<br />`sPCSAFT`<br />`SAFTVRMie`<br />`SAFTVRQMie`<br />`SAFTgammaMie` | `IAPWS95`<br />`GERG2008`<br />`PropaneRef` | `SPUNG` |
 
-- van der Waals (`vdW`)
-- Redlich-Kwong (`RK`)
-- Soave-Redlich-Kwong (`SRK`)
-- Peng-Robinson (`PR`)
-- Cubic-plus-association (`CPA`)
+One can find out more about each of these equations of state within our background documentation. Nevertheless, all of these equations are compatible with all methods availble in our package. 
 
-SAFT-type:
-
-- PC-SAFT (`PCSAFT`)
-  - sPC-SAFT (`sPCSAFT`)
-- SAFT-*ɣ* Mie (`SAFTgammaMie`)
-- SAFT-VR Mie (`SAFTVRMie`)
-  - SAFT-VRQ Mie (`SAFTVRQMie`)
-- soft-SAFT (`softSAFT`)
-- Original SAFT (`ogSAFT`)
-- CK-SAFT (`CKSAFT`)
-  - sCK-SAFT (`sCKSAFT`)
-- LJ-SAFT (`LJSAFT`)
-- BACK-SAFT (`BACKSAFT`)
-- SAFT-VR SW (`SAFTVRSW`)
-
-Multi-parameter equations:
-
-- IAPWS-95 (`IAWPS95`)
-- GERG-2008 (`GERG2008`)
-- Propane Reference (`PropaneRef`)
-
-We also support the SPUNG method (`SPUNG`)
+There a few optional arguments available for these equations which will be explained below. One of these is specifying the location of the parameter databases, the details of which can be found in our Custom databases documentation.
 
 ### Specifying an ideal term
 
-By default, Clapeyron uses what we refer to as the `BasicIdeal` model to account for the ideal contribution. For properties which only have derivatives with respect to volume or composition (_e.g._ pressure, isothermal compressibility, critical points, saturation points), or monoatomic species (_e.g._ noble gases), this is perfectly fine. However, for any other properties or species, the results obtained will most likely be quite poor. This is because this model does not account for the rotational and vibrational modes of the species. To amend this, we provide two additional ideal models to be used instead (more soon to come):
+Both SAFT and cubic-type equations of state rely upon an ideal model. By default, Clapeyron uses what we refer to as the `BasicIdeal` model to account for the ideal contribution which does not require any parameters. For properties which only have derivatives with respect to volume or composition (_e.g._ volume, isothermal compressibility, critical points, saturation points), or monoatomic species (_e.g._ noble gases), this is perfectly fine. However, for any other properties or species, the results obtained will most likely be quite poor. This is because this model does not account for the rotational and vibrational modes of the species. To amend this, we provide three additional ideal models to be used instead (more to come):
 
 - Walker and Haslam's ideal correlation (`WalkerIdeal`)
+- Joback's ideal correlation (`JobackIdeal`)
 - Reid's polynomial correlation (`ReidIdeal`)
 
-These can be specified for any of the cubic or SAFT-type equations of state using:
+These can be specified for any of the SAFT or cubic-type equations of state using:
 
 ```julia
-model4 = PCSAFT(["carbon dioxide"]; idealmodel = WalkerIdeal)
+model5 = PCSAFT(["carbon dioxide"]; idealmodel = WalkerIdeal)
 ```
 
 Everything else will work as normal.
+
+### Specifying an alpha function
+
+Both RK and PR cubic equations rely on an alpha function (SRK is technically just RK but with a different alpha function). Whilst we use the defaults for both RK and PR, it is possible to toggle between them. For example:
+
+```julia
+model6 = RK(["ethane","propane"];alpha=SoaveAlpha)
+```
+
+The above model would be equivalent to a model built by SRK directly. We support the following alpha functions (more to come):
+
+- `RKAlpha`: This is the default alpha function for regular RK 
+- `SoaveAlpha`: This is the default alpha function for SRK
+- `PRAlpha`: This is the default alpha function for regular PR
+- `PR78Alpha`: This is the default alpha function for PR78
+- `BMAlpha`: This is the modified alpha function proposed by Boston and Mathias designed to improve estimates above the critical point. This works for both PR and RK.
+
+### Specifying a mixing rule
+
+Only relevant to cubic equations of state and mixtures, we can alternate between different mixing rules in case these may result in better predictions. We can toggle between these mixing rules:
+
+```julia
+model7 = RK(["ethane","propane"];mixing=KayRule)
+```
+
+We currently only support two combining rules:
+
+- `vdW1fRule`: The standard van der Waals one-fluid mixing rule which is the default in all cubics.
+- `KayRule`: Takes an approach closer to the mixing rules used in SAFT.
+
+We do aim to support the Huron-Vidal and Wong-Sandler mixing rules soon, once we support Activity coefficient models.
 
 ### Available properties
 
@@ -84,7 +91,7 @@ Cp = isobaric_heat_capacity(model1, 10e5, 300, [0.5, 0.5])
 
 The functions for the physical properties that we currently support are as follows:
 
-- Bulk properties (must specify _p, T, z_):
+- Bulk properties:
 
   ```julia
   V = volume(model, p, T, z)
@@ -103,7 +110,26 @@ The functions for the physical properties that we currently support are as follo
   alphaV = isobaric_expansitivity(model, p, T, z)
   muJT = joule_thomson_coefficient(model, p, T, z)
   Z = compressibility_factor(model, p, T, z)
+  gamma = activity_coefficients(model, p, T, z)
   ```
+
+  All the above functions have two optional arguments (although, technically, z is an optional argument if you're only obtaining properties for a pure species):
+
+  - `phase`: If you already know the phase of the species and want a (minor) speed-up, you can specify it. For example:
+
+    ```julia
+    V = volume(model, p, T, z; phase=:liquid)
+    ```
+
+    The default value is `:unknown` where it will find both the vapour and liquid roots first and determine which has the lowest Gibbs free energy.
+
+  - `threaded`: This determines whether or not to run the vapour and liquid calculations in parallel or not and is only relevant for when the phases are unknown and non-cubic models. 
+
+    ```
+    V = volume(model, p, T, z; threaded=false)
+    ```
+
+    The default value is `true`. This shouldn't change the results.
 
   Note that all of the above functions can be broadcast _i.e._ if `T` is an array, instead of a for loop, we can simply:
 
@@ -111,20 +137,56 @@ The functions for the physical properties that we currently support are as follo
   Cp = isobaric_heat_capacity.(model, p, T, z)
   ```
 
-- Vapour-liquid equilibrium properties (must specify _T, z_):
+- Vapour-liquid, liquid-liquid and vapour-liquid-liquid equilibrium properties:
+
+  - For pure species:
+
+    ```julia
+    (p_sat, V_l_sat, V_v_sat) = sat_pure(model, T)
+    H_vap = enthalpy_vap(model, T)
+    ```
+
+  - For mixtures:
+
+    ```julia
+    (p_sat, V_l_sat, V_v_sat, y) = bubble_pressure(model, T, x)
+    (p_LLE, V_l_LLE, V_ll_LLE, xx) = LLE_pressure(model, T, x)
+    (p_VLLE,V_l_sat, V_ll_sat, V_v_sat, x, xx, y) = three_phase(model, T)
+    ```
+
+  All the above arguments take in an optional argument for the initial guess:
 
   ```julia
-  (p_sat, V_l_sat, V_v_sat) = sat_pure(model, T)
-  H_vap = enthalpy_vap(model, T)
+  (p_sat, V_l_sat, V_v_sat) = sat_pure(model, T;v0=log10.([V_l0,V_v0]))
   ```
 
-  Mixture VLE properties are currently in development
+  Although our calculations tend to be quite robust, this argument is generally useful for when one wants to obtain smooth VLE envelopes quicly when making figures. Here, you'd use a for loop where each iteration uses the previous' iteration value as an initial guess (except the first iteration). For example:
+
+  ```julia
+  (p_sat, V_l_sat, V_v_sat) = sat_pure(model, T[1])
+  for i in 2:length(T)
+    A = sat_pure(model,T[i];v0=log10.([V_l_sat[i-1],V_v_sat[i-1]]))
+    append!(p_sat,A[1])
+    append!(V_l_sat,A[2])
+    append!(V_v_sat,A[3])
+  end
+  ```
 
 - Critical properties:
 
-  ```julia
-  (T_c, p_c, V_c) = crit_pure(model)
-  ```
+  - For pure species:
+
+    ```julia
+    (T_c, p_c, V_c) = crit_pure(model)
+    ```
+
+  - For mixtures:
+
+    ```julia
+    (T_c, p_c, V_c) = crit_mix(model, z)
+    ```
+
+  Like the above functions, for `crit_mix`, you can also specify initial guesses to produce smooth critical curves. 
 
 - Miscellaneous:
 
@@ -132,8 +194,6 @@ The functions for the physical properties that we currently support are as follo
   T = inversion_temperature(model, p, z)
   B = second_virial_coefficient(model, T, z)
   ```
-
-We note that whilst the bulk properties are all compatible with mixtures, the VLE and critical properties methods are only compatible with pure systems. The extension to mixtures is currently in development.
 
 `Clapeyron` also supports physical units through the use of `Unitful.jl`.
 
@@ -144,7 +204,7 @@ import Unitful: bar, °C, mol
 Cp2 = isobaric_heat_capacity(model1, 5bar, 25°C, [0.5mol, 0.5mol])
 ```
 
-Note that if you do not wish to import specific units, you may also just use a Unitful string, `pressure = 20u"psi"`.
+Note that if you do not wish to import specific units, you may also just use a Unitful string, `pressure = 20u"psi"`. This is only supported for bulk properties.
 
 ## Customisation
 
