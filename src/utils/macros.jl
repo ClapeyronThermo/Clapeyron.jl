@@ -160,7 +160,7 @@ macro newmodelgc(name, parent, paramstype)
     built_by_macro(::Type{<:$name}) = true
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
-        return eosshow(io, mime, model)
+        return gc_eosshow(io, mime, model)
     end
 
     function Base.show(io::IO, model::$name)
@@ -300,16 +300,25 @@ function (::Type{model})(params::EoSParam,
         absolutetolerance::Float64 = 1e-12,
         verbose::Bool = false) where model <:EoSModel
 
-    arbparam = arbitraryparam(params)
-    components = arbparam.components
+    
     
     if has_sites(model)
+        arbparam = arbitraryparam(params)
         sites = SiteParam(components)
         return model(params,sites,idealmodel;ideal_userlocations,references,absolutetolerance,verbose)
     end
     #With sites out of the way, this is a simplemodel, no need to initialize the ideal model
+    #if there isnt any params, just put empty values.
+    if length(fieldnames(typeof(params))) > 0
+    arbparam = arbitraryparam(params)
+    components = arbparam.components
     icomponents = 1:length(components)
+    else
+        components = String[]
+        icomponents =1:0
+    end
     return model(components,icomponents,params,absolutetolerance,references)
+
 end
 
 function init_model(idealmodel::IdealModel,components,userlocations,verbose)
