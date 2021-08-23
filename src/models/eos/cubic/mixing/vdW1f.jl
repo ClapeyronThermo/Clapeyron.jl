@@ -1,7 +1,6 @@
 abstract type vdW1fRuleModel <: MixingRule end
 
 struct vdW1fRuleParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
 end
 
 @newmodelsimple vdW1fRule vdW1fRuleModel vdW1fRuleParam
@@ -22,3 +21,5 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a
     ā = dot(z,Symmetric(a .* (α*α')),z) * invn2
     return ā,b̄
 end
+
+is_splittable(::vdW1fRule) = false

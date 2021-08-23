@@ -18,6 +18,15 @@ julia> split_model(gerg2)
 """
 function split_model end
 
+
+"""
+    is_splittable(model)::Bool
+
+trait to determine if a model should be splitted by itself or can be simply copied into a vector.
+"""
+
+is_splittable(model) = true
+
 function split_model(param::SingleParam{T},
     splitter =split_model(1:length(param.components))) where T    
     function generator(I)
@@ -149,36 +158,31 @@ function auto_split_model(Base.@nospecialize(model::EoSModel))
             allfields[:icomponents] = [1:1 for _ in 1:len_comps]
         end
         
-        #generate a vector of all params
+        #process all model fields
+        modelfields = filter(x->getproperty(model,x) isa EoSModel,fieldnames(M))
+        for modelkey in modelfields
+            modelx = getproperty(model,modelkey)
+            if is_splittable(modelx)
+                allfields[modelkey]= split_model(modelx)
+            else
+                allfields[modelkey] = fill(modelx,len_comps)
+            end
+        end
+
+        #process all empty (Missing,Nothing) fields
+        emptyfields = filter(x->getproperty(model,x) isa Union{Nothing,Missing},fieldnames(M))
+
+        for emptykey in emptyfields
+             allfields[emptykey] = fill(model.emptykey,len_comps)
+        end
+        
+        
         if hasfield(typeof(model),:params)
             allfields[:params] = split_model(model.params,splitter)
         end
 
-        if hasfield(typeof(model),:idealmodel)
-            if model.idealmodel == BasicIdeal()
-                allfields[:idealmodel] = fill(BasicIdeal(),len)
-            else
-                allfields[:idealmodel] = split_model(model.idealmodel)
-            end
-        end
         if hasfield(typeof(model),:references)
             allfields[:references] = fill(model.references,len_comps)
-        end
-
-        if hasfield(typeof(model),:alpha)
-            if isnothing(model.alpha)
-                allfields[:alpha] = fill(nothing,len)
-            else
-                allfields[:alpha] = split_model(model.alpha)
-            end
-        end
-
-        if hasfield(typeof(model),:activity)
-            if isnothing(model.activity)
-                allfields[:activity] = fill(nothing,len)
-            else
-                allfields[:activity] = split_model(model.activity)
-            end
         end
 
         if hasfield(typeof(model),:absolutetolerance)
@@ -187,9 +191,11 @@ function auto_split_model(Base.@nospecialize(model::EoSModel))
         if hasfield(typeof(model),:sites)
             allfields[:sites] = split_model(model.sites,splitter)
         end
+
+
         return [M((allfields[k][i] for k in fieldnames(M))...) for i in 1:len]
     catch e
-        throw(e)
+        @show model
         return simple_split_model(model)
     end
 end
