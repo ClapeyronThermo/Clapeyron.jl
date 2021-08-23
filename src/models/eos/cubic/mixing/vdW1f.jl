@@ -18,7 +18,7 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a
     n = sum(z)
     invn2 = (one(n)/n)^2
     b̄ = dot(z,Symmetric(b),z) * invn2
-    ā = dot(z,Symmetric(a .* (α*α')),z) * invn2
+    ā = dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
     return ā,b̄
 end
 
