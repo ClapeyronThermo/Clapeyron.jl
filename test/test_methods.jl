@@ -129,6 +129,35 @@ end
     end
 end
 
+@testset "Cubic methods, single components" begin
+    system = RK(["ethane"])
+    p = 1e7
+    T = 298.15
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T) ≈ 8.618705276676834e-5 rtol = 1e-6 
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 602.5544111624743 rtol = 1e-6 
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.sat_pure(system, T)[1] ≈ 4.241109225181897e6 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 305.31999999999994 rtol = 1E-6 
+    end
+end
+
+@testset "Cubic methods, multi-components" begin
+    system = RK(["ethane","undecane"])
+    p = 1e7
+    T = 298.15
+    z = [0.5,0.5]
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T, z) ≈ 0.00017378014541520907 rtol = 1e-6 
+        @test Clapeyron.speed_of_sound(system, p, T, z) ≈ 892.4941848133369 rtol = 1e-6 
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 1.5760730143760687e6 rtol = 1E-6
+        @test Clapeyron.crit_mix(system, z)[1] ≈ 575.622237585033 rtol = 1E-6 
+    end
+end
+
 @testset "GERG2008 methods, single components" begin
     system = GERG2008(["water"])
     p = 1e5
