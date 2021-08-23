@@ -132,13 +132,17 @@ end
 @testset "Cubic methods, single components" begin
     system = RK(["ethane"])
     p = 1e7
-    T = 298.15
+    p2 = 1e5
+    T = 250.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 8.618705276676834e-5 rtol = 1e-6 
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 602.5544111624743 rtol = 1e-6 
+        @test Clapeyron.volume(system, p, T) ≈ 6.819297582048736e-5 rtol = 1e-6 
+        @test Clapeyron.volume(system, p2, T) ≈ 0.020539807199804024 rtol = 1e-6
+        @test Clapeyron.volume(system, p2, T;phase=:vapour) ≈ 0.020539807199804024 rtol = 1e-6  
+        @test Clapeyron.volume(system, p2, T;phase=:liquid) ≈ 7.563111462588624e-5 rtol = 1e-6 
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 800.288303407983 rtol = 1e-6 
     end
     @testset "VLE properties" begin
-        @test Clapeyron.sat_pure(system, T)[1] ≈ 4.241109225181897e6 rtol = 1E-6
+        @test Clapeyron.sat_pure(system, T)[1] ≈ 1.409820798879772e6 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 305.31999999999994 rtol = 1E-6 
     end
 end
@@ -233,7 +237,6 @@ end
         @test Clapeyron.volume(system, p, T) ≈ 0.035641472902311774 rtol = 1e-6 
         @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ 0.035641472902311774 rtol = 1e-6 
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 357.8705332163255 rtol = 1e-6 
-
     end
 
     T_sat = 250.15

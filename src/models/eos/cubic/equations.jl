@@ -1,16 +1,16 @@
 
-function eos(model::vdWModel, V, T, z=@SVector [1.0])
-    n = sum(z)
-    return R̄*n*T * (a_ideal(idealmodel(model),V,T,z)+ a_res(model,V,T,z))
-end
+# function eos(model::vdWModel, V, T, z=@SVector [1.0])
+#     n = sum(z)
+#     return R̄*n*T * (a_ideal(idealmodel(model),V,T,z)+ a_res(model,V,T,z))
+# end
 
-function a_res(model::ABCubicModel, V, T, z=@SVector [1.0])
-    n = sum(z)
-    n⁻¹ = 1/n   
-    x = z.*n⁻¹
-    v = V*n⁻¹
-    return a_resx(model,v,T,x)
-end
+# function a_res(model::ABCubicModel, V, T, z=@SVector [1.0])
+#     n = sum(z)
+#     n⁻¹ = 1/n   
+#     x = z.*n⁻¹
+#     v = V*n⁻¹
+#     return a_resx(model,v,T,x)
+# end
 
 #fast shortcut to evaluate cubics, pressure is known
 #=
@@ -26,12 +26,12 @@ function second_virial_coefficient(model::ABCubicModel,T,z = SA[1.0])
     return b-a/(R̄*T)
 end
 
-function x0_volume_sc(model::ABCubicModel,p,T,z)
-    Zc = cubic_zc(model)
-    return Zc*R̄*T/p
-end
+# function x0_volume_sc(model::ABCubicModel,p,T,z)
+#     Zc = cubic_zc(model)
+#     return Zc*R̄*T/p
+# end
 
-function volume(model::ABCubicModel,p,T,z=SA[1.0];phase="unknown",threaded=false)
+function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
     lb_v   =lb_volume(model,z)
     xx = z/sum(z)
     RTp = R̄*T/p
@@ -83,7 +83,7 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase="unknown",threaded=false
     if vl ≈ vg
         return vl
     end
-    if phase == "unknown"
+    if phase == :unknown
         gg = gibbs(vg)
         gl = gibbs(vl)
         #@show vg,vl
@@ -93,12 +93,12 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase="unknown",threaded=false
         return vl
     elseif is_vapour(phase)
         return vg
-    else
-        gg = gibbs(vg)
-        gl = gibbs(vl)
-        #@show vg,vl
-        #@show gg,gl
-        return ifelse(gg<gl,vg,vl)
+    # else
+    #     gg = gibbs(vg)
+    #     gl = gibbs(vl)
+    #     #@show vg,vl
+    #     #@show gg,gl
+    #     return ifelse(gg<gl,vg,vl)
     end
 end
 

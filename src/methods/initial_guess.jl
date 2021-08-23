@@ -497,25 +497,25 @@ function T_scales(model,z)
 end
 
 
-function lb_volumes(model,z)
-    n = length(z)
-    x = zeros(n)
-    res = zeros(n)
-    for i = 1:n
-        x[i] = 1.0
-        res[i] = lb_volume(model,x)
-        x[i] = 0.0
-    end
-    return res
-end
+# function lb_volumes(model,z)
+#     n = length(z)
+#     x = zeros(n)
+#     res = zeros(n)
+#     for i = 1:n
+#         x[i] = 1.0
+#         res[i] = lb_volume(model,x)
+#         x[i] = 0.0
+#     end
+#     return res
+# end
 
-function p_scales(model,z)
-    n = length(z)
-    x = zeros(n)
-    res = zeros(n)
-    for i = 1:n
-        x[i] = 1.0
-        res[i] = p_scale(model,x)
-        x[i] = 0.0
-    end
-end
+# function p_scales(model,z)
+#     n = length(z)
+#     x = zeros(n)
+#     res = zeros(n)
+#     for i = 1:n
+#         x[i] = 1.0
+#         res[i] = p_scale(model,x)
+#         x[i] = 0.0
+#     end
+# end
