@@ -15,6 +15,7 @@ end
 function BasicIdeal(; userlocations::Array{String,1}=String[], verbose=false)
     return BasicIdeal(BasicIdealParam())
 end
+is_splittable(::BasicIdeal) = false
 
 function a_ideal(model::BasicIdeal, V, T, z)
     N = ∑(z)

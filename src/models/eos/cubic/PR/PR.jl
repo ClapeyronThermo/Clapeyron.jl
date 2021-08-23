@@ -9,11 +9,11 @@ struct PRParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
-struct PR{T <: IdealModel,α,γ} <: RKModel
+struct PR{T <: IdealModel,α,γ} <:PRModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     alpha::α
-    activity::γ
+    mixing::γ
     params::PRParam
     idealmodel::T
     absolutetolerance::Float64
@@ -34,16 +34,16 @@ end
 
 Base.length(model::PR) = Base.length(model.icomponents)
 
-molecular_weight(model::PR,z=SA[1.0]) = group_molecular_weight(model.groups,mw(model),z)
+molecular_weight(model::PR,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
 
 export PR
 function PR(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = SoaveAlpha,
-    activity = nothing,
+    alpha = PRAlpha,
+    mixing = vdW1fRule,
     userlocations=String[], 
     ideal_userlocations=String[],
     alpha_userlocations = String[],
-    activity_userlocations = String[],
+    mixing_userlocations = String[],
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
@@ -59,11 +59,11 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    init_activity = init_model(activity,components,activity_userlocations,verbose)
+    init_mixing = init_model(mixing,components,mixing_userlocations,verbose)
     icomponents = 1:length(components)
     packagedparams = PRParam(a, b, params["Tc"],_pc,Mw)
     references = String[]
-    model = PR(components,icomponents,init_alpha,init_activity,packagedparams,init_idealmodel,1e-12,references)
+    model = PR(components,icomponents,init_alpha,init_mixing,packagedparams,init_idealmodel,1e-12,references)
     return model
 end
 
@@ -72,24 +72,19 @@ function ab_consts(::Type{<:PRModel})
     return 0.457235,0.077796
 end
 
-function cubic_ab(model::PR{<:Any,SoaveAlpha},T,z=SA[1.0],n=sum(z))
+function cubic_ab(model::PR{<:Any,<:Any,<:Any},V,T,z=SA[1.0],n=sum(z))
+    invn2 = (one(n)/n)^2
     a = model.params.a.values
     b = model.params.b.values
-    α = model.alpha
-    ω = α.params.acentricfactor.values
-    Tc = model.params.Tc.values
-    invn = one(n)/n
-    αx = @. (1+(0.37464+1.54226*ω-0.26992*ω^2)*(1-√(T/Tc))) * z * invn 
-    āᾱ = dot(αx,Symmetric(a),αx)
-    b̄ = dot(z,Symmetric(b),z) * invn*invn
-    return āᾱ ,b̄
+    α = @f(α_function,model.alpha)
+    ā,b̄ = @f(mixing_rule,model.mixing,α,a,b)
+    return ā ,b̄
 end
-
 
 function cubic_abp(model::PRModel, V, T, z) 
     n = sum(z)
     v = V/n
-    āᾱ ,b̄ = cubic_ab(model,T,z,n)
+    āᾱ ,b̄ = cubic_ab(model,V,T,z,n)
     _1 = one(b̄)
     denom = evalpoly(v,(-b̄*b̄,2*b̄,_1))
     p = R̄*T/(v-b̄) - āᾱ /denom
@@ -97,7 +92,7 @@ function cubic_abp(model::PRModel, V, T, z)
 end
 
 function cubic_poly(model::PRModel,p,T,z)
-    a,b = cubic_ab(model,T,z)
+    a,b = cubic_ab(model,p,T,z)
     RT⁻¹ = 1/(R̄*T)
     A = a*p*RT⁻¹*RT⁻¹
     B = b*p*RT⁻¹
@@ -105,6 +100,7 @@ function cubic_poly(model::PRModel,p,T,z)
     k₁ = -B*(3*B+2.0) + A
     k₂ = B-1.0
     k₃ = 1.0
+    return [k₀,k₁,k₂,k₃]
 end
 #=
  (-B2-2(B2+B)+A)
@@ -113,7 +109,7 @@ end
 =#
 function a_res(model::PRModel, V, T, z)
     n = sum(z)
-    a,b = cubic_ab(model,T,z,n)
+    a,b = cubic_ab(model,V,T,z,n)
     Δ1 = 1+√2
     Δ2 = 1-√2
     ΔPRΔ = 2*√2

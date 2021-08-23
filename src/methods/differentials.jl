@@ -154,7 +154,7 @@ returns the second order volume (`V`) and temperature (`T`) derivatives of the t
 
 ```
 [ ∂²f/∂V²  ∂²f/∂V∂T
- ∂²f/∂V∂T  ∂²f/∂V²]
+ ∂²f/∂V∂T  ∂²f/∂T²]
  ```
 
 use this instead of the ∂2f if you only need second order information. ∂2f also gives zeroth and first order derivative information, but due to a bug in the used AD, it allocates more than necessary.

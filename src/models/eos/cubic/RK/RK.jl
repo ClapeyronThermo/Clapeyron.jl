@@ -12,7 +12,7 @@ struct RK{T <: IdealModel,α,γ} <: RKModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     alpha::α
-    activity::γ
+    mixing::γ
     params::RKParam
     idealmodel::T
     absolutetolerance::Float64
@@ -37,12 +37,12 @@ molecular_weight(model::RK,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
 
 export RK
 function RK(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = nothing,
-    activity = nothing,
+    alpha = RKAlpha,
+    mixing = vdW1fRule,
     userlocations=String[], 
     ideal_userlocations=String[],
     alpha_userlocations = String[],
-    activity_userlocations = String[],
+    mixing_userlocations = String[],
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
@@ -58,11 +58,11 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    init_activity = init_model(activity,components,activity_userlocations,verbose)
+    init_mixing = init_model(mixing,components,mixing_userlocations,verbose)
     icomponents = 1:length(components)
     packagedparams = RKParam(a, b, params["Tc"],_pc,Mw)
     references = String[]
-    model = RK(components,icomponents,init_alpha,init_activity,packagedparams,init_idealmodel,1e-12,references)
+    model = RK(components,icomponents,init_alpha,init_mixing,packagedparams,init_idealmodel,1e-12,references)
     return model
 end
 
@@ -71,20 +71,18 @@ function ab_consts(::Type{<:RKModel})
     Ωb = (2^(1/3)-1)/3
     return Ωa,Ωb
 end
-function cubic_ab(model::RK{<:Any,Nothing},T,z=SA[1.0],n=sum(z))
+function cubic_ab(model::RK{<:Any,<:Any,<:Any},V,T,z=SA[1.0],n=sum(z))
     invn2 = (one(n)/n)^2
     a = model.params.a.values
     b = model.params.b.values
-    Tc = model.params.Tc.values
-    T̄c = sum(sqrt.(Tc*Tc'))
-    āᾱ  = dot(z,Symmetric(a),z) * invn2*sqrt(T̄c/T)
-    b̄ = dot(z,Symmetric(b),z) * invn2
-    return āᾱ ,b̄
+    α = @f(α_function,model.alpha)
+    ā,b̄ = @f(mixing_rule,model.mixing,α,a,b)
+    return ā ,b̄
 end
 
 function cubic_abp(model::RKModel, V, T, z)
     n = sum(z)
-    a,b = cubic_ab(model,T,z,n)
+    a,b = cubic_ab(model,V,T,z,n)
     v = V/n
     p =  R̄*T/(v-b) - a/((v+b)*v)
     return a,b,p
@@ -92,7 +90,7 @@ end
 
 function cubic_poly(model::RKModel,p,T,z)
     n = sum(z)
-    a,b = cubic_ab(model,T,z,n)
+    a,b = cubic_ab(model,p,T,z,n)
     RT⁻¹ = 1/(R̄*T)
     A = a*p* RT⁻¹* RT⁻¹
     B = b*p* RT⁻¹
@@ -103,7 +101,7 @@ end
 
 function a_res(model::RKModel, V, T, z)
     n = sum(z)
-    ā,b̄ = cubic_ab(model,T,z,n)
+    ā,b̄ = cubic_ab(model,V,T,z,n)
     ρ = n/V
     RT⁻¹ = 1/(R̄*T)
     return -log(1-b̄*ρ) - ā*RT⁻¹*log(b̄*ρ+1)/b̄
@@ -112,4 +110,4 @@ end
 
 cubic_zc(::RKModel) = 1/3
 
-include("variants/SRK.jl")
+# include("variants/SRK.jl")

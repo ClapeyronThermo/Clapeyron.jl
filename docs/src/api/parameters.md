@@ -27,4 +27,5 @@ Clapeyron.SiteParam
 ## Model Splitting
 ```@docs
 Clapeyron.split_model
+Clapeyron.is_splittable
 ```
