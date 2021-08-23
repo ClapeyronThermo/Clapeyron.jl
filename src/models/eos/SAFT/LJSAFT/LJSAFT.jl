@@ -53,12 +53,12 @@ function a_seg(model::LJSAFTModel, V, T, z)
     m̄ = ∑(m .* x)
     ρ = ∑(z)/V
     ρst = m̄*b̄*ρ
-    η = ρst*π/6*(∑(D[i+3]*pow(Tst,i/2) for i ∈ -2:1)+D[end]*log(Tst))^3
+    η = ρst*π/6*(∑(D[i+3]*Tst^(i/2) for i ∈ -2:1)+D[end]*log(Tst))^3
 
     A_HS = Tst*(5/3*log(1-η)+(η*(34-33η+4η^2))/(6*(1-η)^2))
-    ΔB2 = ∑(C[j+8]*pow(Tst,j/2) for j ∈ -7:0)
+    ΔB2 = ∑(C[j+8]*Tst^(j/2) for j ∈ -7:0)
     A0 = ∑(C0[j-1]*ρst^j for j ∈ 2:5)
-    A1 = ∑(C1[j-1]*pow(Tst,-1/2)*ρst^j for j ∈ 2:6)
+    A1 = ∑(C1[j-1]*Tst^(-1/2)*ρst^j for j ∈ 2:6)
     A2 = ∑(C2[j-1]*Tst^(-1)*ρst^j for j ∈ 2:6)
     A4 = ∑(C4[j-1]*Tst^(-2)*ρst^j for j ∈ 2:6)
 

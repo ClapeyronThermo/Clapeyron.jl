@@ -3,9 +3,10 @@ using StaticArrays
 using LinearAlgebra
 using NLSolvers,Roots
 using DiffResults, ForwardDiff
-using NaNMath: log, pow
+
 include("solvers/Solvers.jl")
 using .Solvers
+using .Solvers: log #more flexible than NaNMath log
 using Unitful
 import LogExpFunctions
 include("constants.jl")

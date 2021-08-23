@@ -14,6 +14,7 @@ const SL = SanchezLacombe
 const k_B = 1.380649e-23 # m2 kg s-2 K-1
 #im supposing that this is the expression for total helmholtz energy, including ideal terms
 function eos(model::SanchezLacombeModel,V,T,z=SA[1.0])
+    negative_vt(V,T) && return nan_num(V,T,z)
     rᵢ = model.params.r.values
     ϵᵢⱼ∗ = model.params.epsilon_ast.values
     ϵᵢ∗ = model.params.epsilon_ast.diagvalues

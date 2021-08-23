@@ -132,3 +132,20 @@ end
 
 Base.IndexStyle(::Type{<:FractionVector}) = IndexLinear()
 
+
+
+@inline function nan_num(V,T,z)
+    _0 = zero(V+T+first(z))
+    _0/_0
+end
+
+@inline function zero_one_nan(V,T,z)
+    _0 = zero(V+T+first(z))
+    return _0,one(_0),_0/_0
+end
+
+@inline function negative_vt(V,T)::Bool
+    _0 = zero(V+T)
+    (T <= _0) | (V <= _0)   
+end
+

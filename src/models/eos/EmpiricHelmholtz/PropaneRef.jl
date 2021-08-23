@@ -170,6 +170,7 @@ function a_res(model::PropaneRef,V,T,z=SA[1.])
 end
 
 function eos(model::PropaneRef, V, T, z=SA[1.0];phase=:unknown)
+    negative_vt(V,T) && return nan_num(V,T,z)
     R =PropaneRef_consts.R
     T_c = PropaneRef_consts.T_c
     rho_c = PropaneRef_consts.rho_c

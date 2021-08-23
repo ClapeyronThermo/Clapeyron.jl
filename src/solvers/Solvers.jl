@@ -17,6 +17,8 @@ using StaticArrays
         Bchol\∇f
     end
 
+    @inline log(x) = ifelse(x>=zero(x),Base.log(x),zero(x)/zero(x))
+
     Base.summary(::NLSolvers.Newton{<:Direct, typeof(cholesky_linsolve)}) = "Newton's method with Cholesky linsolve"
     CholeskyNewton() = NLSolvers.Newton(linsolve=cholesky_linsolve)
     export CholeskyNewton

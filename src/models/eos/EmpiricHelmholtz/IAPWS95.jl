@@ -158,6 +158,7 @@ end
 
 
 function eos(model::IAPWS95, V, T, z=SA[1.0])
+    negative_vt(V,T) && return nan_num(V,T,z)
     Σz = only(z) #single component
     v = V/Σz
     #R value calculated from molecular weight and specific gas constant

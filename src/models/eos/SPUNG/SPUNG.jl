@@ -24,6 +24,7 @@ end
 
 
 function eos(model::SPUNG,V,T,z=SA[1.0],phase=:unknown)
+    negative_vt(V,T) && return nan_num(V,T,z)
     f,h = shape_factors(model,V,T,z)
     T0 = T/f
     V0 = V/h

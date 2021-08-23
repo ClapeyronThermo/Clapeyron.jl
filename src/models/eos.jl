@@ -44,6 +44,7 @@ IAPWS95Ideal()
 idealmodel(model::EoSModel) = model.idealmodel
 
 function eos(model::IdealModel, V, T, z=SA[1.0])
+    negative_vt(V,T) && return nan_num(V,T,z)
     return N_A*k_B*sum(z)*T * a_ideal(model,V,T,z)
 end
 
@@ -66,6 +67,7 @@ basic Clapeyron function, returns the residual Helmholtz free energy.
 by default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where `a_res` is the reduced residual Helmholtz energy.
 """
 function eos_res(model::EoSModel, V, T, z=SA[1.0])
+    negative_vt(V,T) && return nan_num(V,T,z)
     return N_A*k_B*∑(z)*T * (a_res(model,V,T,z))
 end
 

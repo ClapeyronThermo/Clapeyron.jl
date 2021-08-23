@@ -1,5 +1,6 @@
 
 function eos(model::vdWModel, V, T, z=@SVector [1.0])
+    negative_vt(V,T) && return nan_num(V,T,z)
     n = sum(z)
     return R̄*n*T * (a_ideal(idealmodel(model),V,T,z)+ a_res(model,V,T,z))
 end
