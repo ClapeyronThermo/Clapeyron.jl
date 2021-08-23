@@ -10,8 +10,7 @@ is_splittable(::RKAlpha) = false
 export RKAlpha
 function RKAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    acentricfactor = SingleParam(params["w"],"acentric factor")
-    packagedparams = RKAlphaParam(acentricfactor)
+    packagedparams = RKAlphaParam()
     model = RKAlpha(packagedparams, verbose=verbose)
     return model
 end
