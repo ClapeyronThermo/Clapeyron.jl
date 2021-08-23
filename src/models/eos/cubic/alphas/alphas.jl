@@ -13,5 +13,6 @@ has_groups(::Type{<:AlphaModel})=false
 
 include("RKAlpha.jl")
 include("PRAlpha.jl")
+include("PR78Alpha.jl")
 include("soave.jl")
 include("BM.jl")
