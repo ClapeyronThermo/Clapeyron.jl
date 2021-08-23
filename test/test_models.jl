@@ -106,6 +106,62 @@
     end
 end
 
+@testset "Cubic models" begin
+    T = 333.15
+    V = 1e-3
+    p = 1e5
+    z = [0.5, 0.5]
+
+    @testset "vdW Models" begin
+            system = vdW(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.7088380780265725 rtol = 1e-6
+            @test Clapeyron.cubic_poly(system, p, T, z)[1] ≈ -0.0002475728429728521 rtol = 1e-6
+            @test Clapeyron.cubic_abp(system, V, T, z)[1] ≈ 2.591962221523441 rtol = 1e-6
+    end
+
+    @testset "RK Models" begin
+        @testset "Default RK" begin
+            system = RK(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.9825375012134132 rtol = 1e-6
+            @test Clapeyron.cubic_poly(system, p, T, z)[1] ≈ -0.00022230043592123767 rtol = 1e-6
+            @test Clapeyron.cubic_abp(system, V, T, z)[1] ≈ 3.357807485319651 rtol = 1e-6
+        end
+
+        @testset "SRK" begin
+            system = SRK(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2572506872856557 rtol = 1e-6
+        end
+
+        @testset "RK w/ KayRule" begin
+            system = RK(["ethane","undecane"];mixing = KayRule)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.8176850121211936 rtol = 1e-6
+        end
+
+        @testset "RK w/ BMAlpha" begin
+            system = RK(["ethane","undecane"];alpha = BMAlpha)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2569334957019538 rtol = 1e-6
+        end
+    end
+
+    @testset "PR Models" begin
+        @testset "Default PR" begin
+            system = PR(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.244772730766631 rtol = 1e-6
+            @test Clapeyron.cubic_poly(system, p, T, z)[1] ≈ -0.00023285390449318037 rtol = 1e-6
+            @test Clapeyron.cubic_abp(system, V, T, z)[1] ≈ 4.268630968024985 rtol = 1e-6
+        end
+
+        @testset "PR78" begin
+            system = PR78(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.246269686941749 rtol = 1e-6
+        end
+
+        @testset "PR w/ BMAlpha" begin
+            system = PR(["ethane","undecane"];alpha = BMAlpha)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.244507550417118 rtol = 1e-6
+        end
+    end
+end
 
 @testset "Ideal models" begin
     T = 298.15
