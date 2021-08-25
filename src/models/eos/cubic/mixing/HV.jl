@@ -1,0 +1,36 @@
+abstract type HVRuleModel <: MixingRule end
+
+struct HVRule{γ} <: HVRuleModel
+    components::Array{String,1}
+    activity::γ
+end
+
+has_sites(::Type{<:HVRuleModel}) = false
+has_groups(::Type{<:HVRuleModel}) = false
+built_by_macro(::Type{<:HVRuleModel}) = false
+
+function Base.show(io::IO, mime::MIME"text/plain", model::HVRule)
+    return eosshow(io, mime, model)
+end
+
+function Base.show(io::IO, model::HVRule)
+    return eosshow(io, model)
+end
+
+export HVRule
+function HVRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+    init_activity = activity(components;userlocations = activity_userlocations,verbose)
+    
+    model = HVRule(components, init_activity)
+    return model
+end
+
+function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b)
+    n = sum(z)
+    invn2 = (one(n)/n)^2
+    b̄ = dot(z,Symmetric(b),z) * invn2
+    ā = b̄*((sum(z[i]*a[i,i]*α[i]/b[i,i] for i ∈ @comps))/n-excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)/n/log(2))
+    return ā,b̄
+end
+
+is_splittable(::HVRule) = true

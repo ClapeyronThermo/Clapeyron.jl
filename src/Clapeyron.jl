@@ -62,6 +62,9 @@ include("models/eos/cubic/PR/variants/PR78.jl")
 
 include("models/eos/cubic/equations.jl")
 
+include("models/eos/Activity/Wilson/Wilson.jl")
+include("models/eos/Activity/NRTL/NRTL.jl")
+
 include("models/eos/EmpiricHelmholtz/IAPWS95.jl")
 include("models/eos/EmpiricHelmholtz/PropaneRef.jl")
 include("models/eos/EmpiricHelmholtz/GERG2008/GERG2008.jl")
