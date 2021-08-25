@@ -1,19 +1,24 @@
 #just a function, no struct
 function SRK(components::Vector{String}; idealmodel=BasicIdeal,
+    alpha = SoaveAlpha,
     mixing = vdW1fRule,
+    activity = nothing,
     userlocations=String[], 
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
+    activity_userlocations = String[],
      verbose=false)
 
      return RK(components;
      idealmodel = idealmodel,
-     alpha = SoaveAlpha,
+     alpha = alpha,
      mixing=mixing,
+     activity = activity,
      ideal_userlocations = ideal_userlocations,
      alpha_userlocations = alpha_userlocations,
      mixing_userlocations = mixing_userlocations,
+     activity_userlocations = activity_userlocations,
      verbose = verbose)
 end
 export SRK

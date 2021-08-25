@@ -6,7 +6,7 @@ end
 @newmodelsimple vdW1fRule vdW1fRuleModel vdW1fRuleParam
 
 export vdW1fRule
-function vdW1fRule(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = SingleParam(params["w"],"acentric factor")
     packagedparams = vdW1fRuleParam()

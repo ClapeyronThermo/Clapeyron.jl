@@ -22,7 +22,7 @@ end
 =#
 function second_virial_coefficient(model::ABCubicModel,T,z = SA[1.0])
     #@info "fast shortcut"
-    a,b = cubic_ab(model,T,z)
+    a,b = cubic_ab(model,1e-4,T,z)
     return b-a/(R̄*T)
 end
 

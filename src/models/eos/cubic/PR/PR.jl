@@ -40,10 +40,12 @@ export PR
 function PR(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
+    activity=nothing,
     userlocations=String[], 
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
+    activity_userlocations = String[],
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
@@ -59,7 +61,7 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    init_mixing = init_model(mixing,components,mixing_userlocations,verbose)
+    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     icomponents = 1:length(components)
     packagedparams = PRParam(a, b, params["Tc"],_pc,Mw)
     references = String[]
@@ -77,7 +79,12 @@ function cubic_ab(model::PR{<:Any,<:Any,<:Any},V,T,z=SA[1.0],n=sum(z))
     a = model.params.a.values
     b = model.params.b.values
     α = @f(α_function,model.alpha)
-    ā,b̄ = @f(mixing_rule,model.mixing,α,a,b)
+    if length(z)>1
+        ā,b̄ = @f(mixing_rule,model.mixing,α,a,b)
+    else
+        ā = a[1,1]*α[1]
+        b̄ = b[1,1]
+    end
     return ā ,b̄
 end
 
