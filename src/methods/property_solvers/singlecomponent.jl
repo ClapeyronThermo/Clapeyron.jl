@@ -88,7 +88,7 @@ function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
     return [log10(Vl0),log10(Vv0)]
 end
 
-function sat_pure(model::EoSModel,V0,f!,T,method =LineSearch(CholeskyNewton()) )  
+function sat_pure(model::EoSModel,V0,f!,T,method =LineSearch(Newton()) )  
     r = Solvers.nlsolve(f!, V0 ,method )
     Vsol = Solvers.x_sol(r)
     V_l = exp10(Vsol[1])
