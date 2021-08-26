@@ -64,6 +64,7 @@ include("models/eos/cubic/equations.jl")
 
 include("models/eos/Activity/Wilson/Wilson.jl")
 include("models/eos/Activity/NRTL/NRTL.jl")
+include("models/eos/Activity/UNIQUAC/UNIQUAC.jl")
 
 include("models/eos/EmpiricHelmholtz/IAPWS95.jl")
 include("models/eos/EmpiricHelmholtz/PropaneRef.jl")
