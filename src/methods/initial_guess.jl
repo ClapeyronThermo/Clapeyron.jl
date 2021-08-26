@@ -336,10 +336,12 @@ function x0_sat_pure(model,T,z=SA[1.0])
         c_v = 2*mean_c - c_l
 
     end
+    #volumes predicted by vdW
     Vl0 = (1/c_l)*Vc
-    Vv0 = (1/c_v)*Vc   
+    Vv0 = (1/c_v)*Vc 
     x0l = min(Vl0,vl)
-    return [log10(x0l),log10(Vv0)] 
+    x0v = min(1e4*one(Vv0),Vv0) #cutoff volume
+    return [log10(x0l),log10(x0v)] 
 end
 
 function scale_sat_pure(model::EoSModel,z=SA[1.0])
