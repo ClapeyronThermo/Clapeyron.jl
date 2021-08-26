@@ -23,9 +23,8 @@ function a_ideal(model::BasicIdeal, V, T, z)
     res = ∑(xlogx,z) 
     res /= N 
     res -= log(V) 
-    res -= log(pow(T,(3/2)))
+    res -= log(T^1.5)
     res -= one(res)
     # ∑(x .* log.(z/V)) - 1 original formulation, prone no NaN when passing pure Fractions
     return res
-
 end
