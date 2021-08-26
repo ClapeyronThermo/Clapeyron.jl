@@ -234,61 +234,113 @@ end
 Returns a 2-element vector corresponding to `[log10(Vₗ),log10(Vᵥ)]`, where Vₗ and Vᵥ are the liquid and vapor initial guesses. 
 Used in [`sat_pure`](@ref).
 """
-function x0_sat_pure(model::EoSModel,T,z=SA[1.0])
-    b = lb_volume(model,z)*one(T)
-    B = second_virial_coefficient(model,T,z)
-    x0v = -2*B + 2*b
-    p = -0.25*R̄*T/B
+function x0_sat_pure(model,T,z=SA[1.0])
+    #=theory as follows
+    #given T = Teos:
+    #calculate B(Teos)
+    PB = Peos = -2B
     
-    x0l = volume_compress(model,p,T,z)
-    if isnan(x0l) | (x0l >x0v)
-        x0l= b/0.25
+    veos = volume_compress(model,PB,T)
+    with a (P,V,T,B) pair, change to
+    (P,V,a,b)
+=#
+    B = second_virial_coefficient(model,T,SA[1.0])
+    lb_v = lb_volume(model,SA[1.0])*one(T)
+    _0 = zero(B)
+    #virial volume below lower bound volume.
+    #that means that we are way over the critical point
+    if -2B < lb_v 
+        _nan = _0/_0
+        return [_nan,_nan]
+    end
+    p = -0.25*R̄*T/B
+    vl = x0_volume(model,p,T,z,phase=:l)
+    
+    vl = volume_compress(model,p,T,z,V0=vl)
+    #=the basis is that p = RT/v-b - a/v2
+    we have a (p,v,T) pair
+    and B = 2nd virial coefficient = b-a/RT
+    with that, we solve for a and b 
+    as a and b are vdW, Pc and Tc can be calculated
+    with Tc and Pc, we use [1] to calculate vl0 and vv0
+    with Tc, we can also know in what regime we are.
+    in near critical pressures, we use directly vv0 = -2B
+    and vl0 = 4*lb_v
+
+    [1]
+    DOI: 10.1007/s10910-007-9272-4
+    Journal of Mathematical Chemistry, Vol. 43, No. 4, May 2008 (© 2007)
+    The van der Waals equation: analytical and approximate solutions
+    =#
+    γ = p*vl*vl/(R̄*T)
+    _c = vl*vl + B*vl - γ*vl 
+    _b = γ - B - vl
+    Δ = _b*_b - 4*_c
+    if isnan(vl) | (Δ < 0)
+        #old strategy
+        x0l = 4*lb_v
+        x0v = -2*B + 2*lb_v
+        return [log10(x0l),log10(x0v)]   
+    end
+    Δsqrt = sqrt(Δ)
+    b1 = 0.5*(-_b + Δsqrt)
+    b2 = 0.5*(-_b - Δsqrt)
+    if b1 < 0
+        b = b2
+    elseif b1 > vl
+        b = b2
+    else
+        b = b1
+    end
+    a = -R̄*T*(B-b)
+    Vc = 3*b
+    Ωa =  27/64
+    Ωb =  1/8
+    ar = a/Ωa
+    br = b/Ωb
+    Tc = ar/br/R̄
+    Pc = ar/(br*br)
+    Tr = T/Tc
+    #Tr(vdW approx) > Tr(model)
+    if Tr >= 1
+        _nan = _0/_0
+        return [_nan,_nan]
+    end
+    # if b1/b2 < -0.95, then T is near Tc.
+    #if b<lb_v then we are in trouble 
+    #critical regime or something horribly wrong happened
+    if (b1/b2 < -0.95) | (b<lb_v) | (Tr>0.99)
+        x0l = 4*lb_v
+        x0v = -2*B #gas volume as high as possible
+        return [log10(x0l),log10(x0v)]   
+    end
+   
+    Trm1 = 1.0-Tr
+    Trmid = sqrt(Trm1)
+    if Tr >= 0.7 
+        c_l = 1.0+2.0*Trmid + 0.4*Trm1 - 0.52*Trmid*Trm1 +0.115*Trm1*Trm1 #Eq. 29
+    else
+        c_l = 1.5*(1+sqrt(1-(32/27)*Tr)) #Eq. 32
     end
 
-    #=here we solve the saturation with aproximate 
-    models of the EoS. on the gas side, we use
-    a virial for logϕ, on the liquid side, we
-    use an isothermal compressibility model based
-    at the point P = P(-2B), vl(P)
-     
-    β = vt_isothermal_compressibility(model,x0l,T,z)
-    fugv(P) = B*P/(R̄*T) #log(ϕv)
-    P0 = p
-    v0 = x0l
-    fuglx(P) = -((v0*exp(β*P0)/R̄*T*β)*exp(-β*P) -log(P))
-    fugl0 = fuglx(P0)
-    fugl(P) = fuglx(P) - fugl0
-    @show fugv(0.8P0)
-    @show fugl(0.8P0)
-    @show P0
-    f0(P) = fugl(P) - fugv(P)
-    @show Roots.find_zero(f0,0.9P0)
-     =#
-    x0  = [x0l,x0v]
-    
-    return log10.(x0)
+    if Tr >= 0.46
+        #Eq. 30, valid in 0.46 < Tr < 1 
+        c_v = 1.0-2.0*Trmid + 0.4*Trm1 + 0.52*Trmid*Trm1 +0.207*Trm1*Trm1   
+    elseif Tr <= 0.33
+        #Eq. 33, valid in 0 < Tr < 0.33
+        c_v = (3*c_l/(ℯ*(3-c_l)))*exp(-(1/(1-c_l/3)))
+
+    else
+        #Eq. 31 valid in 0.25 < Tr < 1
+        mean_c = 1.0 + 0.4*Trm1 + 0.161*Trm1*Trm1     
+        c_v = 2*mean_c - c_l
+
+    end
+    Vl0 = (1/c_l)*Vc
+    Vv0 = (1/c_v)*Vc   
+    x0l = min(Vl0,vl)
+    return [log10(x0l),log10(Vv0)] 
 end
-#=
-appendix: logϕ for the isothermal compressibility aprox
-from the volume_compress code:
-
-    Δ(P) =  -(P-p0)*β = -βP + βP0
-    v(P) = v0*exp(Δ(P)) #volume_compress uses a convergence modification
-
-    Z-1 = v/RT - 1
-
-    definition of fugacity coefficient
-
-    logϕ = ∫(Z-1)/P dp from Psat to Pmax
-    Z(P) = P*v(P)/RT
-    logϕ = ∫v/RT -1/P dP
-    logϕ = ∫v0*exp(βP0)*exp(-βP)/RT -1/P dP
-    logϕ = (v0*exp(βP0)/RT)∫exp(-βP) dp -  ∫1/P dp
-    logϕ = -(v0*exp(βP0)/RTβ)*exp(-βP) -log(P)
-
-
-
-=#
 
 function scale_sat_pure(model::EoSModel,z=SA[1.0])
     p    = 1/p_scale(model,z)
@@ -519,3 +571,37 @@ end
 #         x[i] = 0.0
 #     end
 # end
+
+#=
+@show vxx
+    if Tr >= 0.7 
+        c_l = 1.0+2.0*Trmid + 0.4*Trm1 - 0.52*Trmid*Trm1 +0.115*Trm1*Trm1 #Eq. 29
+    else
+        c_l = 1.5*(1+sqrt(1-(32/27)*Tr)) #Eq. 32
+    end
+
+    if Tr >= 0.46
+        @info "case 1"
+        c_v = 1.0-2.0*Trmid + 0.4*Trm1 + 0.52*Trmid*Trm1 +0.207*Trm1*Trm1 #Eq. 30   
+    elseif Tr <= 0.33
+        @info "case 2"
+        c_v = (3*c_l/(ℯ*(3-c_l)))*exp(-(1/(1-c_l/3)))
+
+    elseif 0.25 <= Tr
+        @info "case 3"
+        mean_c = 1.0 + 0.4*Trm1 + 0.161*Trm1*Trm1 #Eq. 34
+        
+        c_v = 2*mean_c - c_l
+    else
+        @info "case 4"
+        @show Tr
+        mean_c = 1.5 - (4/9)*Tr - 0.15*Tr*Tr #Eq. 34
+        @show mean_c
+        c_v = 2*mean_c - c_l
+        @show c_v
+    end
+    Vl0 = (1/c_l)*Vc
+    Vv0 = (1/c_v)*Vc
+    @show Vl0
+    @show Vv0
+=#
