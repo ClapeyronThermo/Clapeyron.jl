@@ -5,7 +5,7 @@ using NLSolvers,Roots
 using PositiveFactorizations
 using DiffResults, ForwardDiff
 using StaticArrays
-
+import NaNMath
     function cholesky_linsolve(d,B,∇f)
         cholesky!(Positive, B)
         Bchol = Cholesky(B,'L',0)
@@ -80,7 +80,16 @@ using StaticArrays
         return res.info.minimizer
     end
 
-   
+    @inline log(x::Number) = Base.log(x)
+    @inline log(x::Complex) = Base.log(x)
+    @inline log(x::Real) = ifelse(x>=zero(x),Base.log(x),zero(x)/zero(x))
+    @inline log(x::Float64) = NaNMath.log(x)
+    @inline log(x::Float32) = NaNMath.log(x)
+    @inline log(x::Int8) = NaNMath.log(float(x))
+    @inline log(x::Int16) = NaNMath.log(float(x))
+    @inline log(x::Int32) = NaNMath.log(float(x))
+    @inline log(x::Int64) = NaNMath.log(float(x))
+    
     include("ADNewton.jl")
     include("nested.jl")
     include("nlsolve.jl")

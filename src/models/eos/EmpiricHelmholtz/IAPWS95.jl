@@ -270,7 +270,6 @@ function x0_sat_pure(model::IAPWS95,T)
     return log10.(x0)
 end
 
-
 function T_scale(model::IAPWS95,z=SA[1.0])
     return model.params.Tc
 end

@@ -1,23 +1,23 @@
-function try_sat_pure(model,V0,f!,T,result,error_val,converged)
-    converged[] =  false
+function try_sat_pure(model,V0,f!,T,result,error_val,method = LineSearch(Newton()))
     if !isfinite(V0[1]) | !isfinite(V0[2])
-        return nothing
+        return false
     end
     try
-        res = sat_pure(model,V0,f!,T)
+        res = sat_pure(model,V0,f!,T,method)
         result[] = res
-    catch e #normally, failures occur  near the critical point
+    catch e #normally, failures occur near the critical point
         error_val[] = e
+        return false
     end
 
     (P_sat,V_l,V_v) = result[]
     ε = abs(V_l-V_v)/(eps(typeof(V_l-V_v)))
-    if ε > 8    
+    if (ε > 8)
         #if ΔV > ε then Vl and Vv are different values
-        converged[] =  true
+        return true
     end
 
-    return nothing
+    return false
 end
 
 """
@@ -41,9 +41,9 @@ function sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     res0 = (nan,nan,nan)
     result = Ref(res0)
     error_val = Ref{Any}(nothing)
-    converged = Ref{Bool}(false) 
-    try_sat_pure(model,V0,f!,T,result,error_val,converged)   
-    if converged[]
+    converged = try_sat_pure(model,V0,f!,T,result,error_val)   
+    #did not converge, but didnt error.
+    if converged
         return result[]
     end
     (T_c, p_c, V_c) = crit_pure(model)
@@ -51,8 +51,8 @@ function sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
         @error "initial temperature $T greater than critical temperature $T_c. returning NaN"
     else
         V0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
-        try_sat_pure(model,V0,f!,T,result,error_val,converged)   
-        if converged[]
+        converged = try_sat_pure(model,V0,f!,T,result,error_val)   
+        if converged
             return result[]
         end
     end
@@ -60,12 +60,17 @@ function sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     return res0
 end
 
-
 #=
+    x0_sat_pure_crit(model,T,T_c,P_c,V_c)
+
 based on:
 DOI: 10.1007/s10910-007-9272-4
 Journal of Mathematical Chemistry, Vol. 43, No. 4, May 2008 (© 2007)
 The van der Waals equation: analytical and approximate solutions
+
+we only use the upper part of the approximation
+but we use the calculated Tc, Vc and Pc. that shifts the 
+result enough to be useful as a starting point
 =#
 function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
     _1 = one(T)
@@ -83,8 +88,8 @@ function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
     return [log10(Vl0),log10(Vv0)]
 end
 
-function sat_pure(model::EoSModel,V0,f!,T)  
-    r = Solvers.nlsolve(f!, V0 , LineSearch(Newton()))
+function sat_pure(model::EoSModel,V0,f!,T,method =LineSearch(Newton()) )  
+    r = Solvers.nlsolve(f!, V0 ,method )
     Vsol = Solvers.x_sol(r)
     V_l = exp10(Vsol[1])
     V_v = exp10(Vsol[2])
