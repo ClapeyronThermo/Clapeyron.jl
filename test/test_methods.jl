@@ -229,6 +229,7 @@ end
     end
 end
 
+#=
 @testset "SPUNG methods" begin
     system = SPUNG(["ethane"])
     p = 1e5
@@ -245,3 +246,4 @@ end
         @test Clapeyron.crit_pure(system)[1] ≈ 270.27247485012657 rtol = 1E-6 
     end
 end
+=#

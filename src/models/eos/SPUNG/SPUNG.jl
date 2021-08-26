@@ -38,12 +38,10 @@ function eos_res(model::SPUNG,V,T,z=SA[1.0],phase=:unknown)
 end
 
 function shape_factors(model::SPUNG{<:ABCubicModel},V,T,z=SA[1.0])
-    n = sum(z)
-    x = z * (1/n)
-    a,b = cubic_ab(model.shape_model,V,T,x)
-    a0,b0 = cubic_ab(model.shape_ref,V,T,SA[1.0])
+    a,b = cubic_ab(model.shape_model,V,T,z)
+    a0,b0 = cubic_ab(model.shape_ref,V,T,z)
     h = b/b0
-    fh = n*a/a0
+    fh = a/a0
     f = fh/h
     return f,h
 end
@@ -86,26 +84,23 @@ end
 
 #=
 ideally we could perform SPUNG only providing x0, but i cant find the error here
-function x0_sat_pure(model::SPUNG,T,z=SA[1.0])
-    lb_v = lb_volume(model,z)
-    f,h = shape_factors(model,lb_v,T,z)
-    T0 = T/f
-    @show T0
-    vl0,vv0 = exp10.(x0_sat_pure(model.model_ref,T0,SA[1.0]))
-    @show vl = vl0*h
-    @show vv = vv0*h
-    return [log10(vl),log10(vv)]
-end
-=#
 
+=#
 #overloading sat_pure for SPUNG directly seems to be the way
-function sat_pure(model::SPUNG,T::Real,v0=x0_sat_pure(model,T))
-    lb_v = lb_volume(model,SA[1.0])
-    f,h = shape_factors(model,lb_v,T,SA[1.0])
+function sat_pure(model::SPUNG,T::Real,v0=[zero(T)/zero(T),zero(T)/zero(T)])
+    lb_v0 = lb_volume(model.model_ref)
+    f,h = shape_factors(model,lb_v0,T,SA[1.0]) #h normaly should be independent of temperature
     T0 = T/f
+    if isnan(v0[1]) && isnan(v0[2])
+        v0 = x0_sat_pure(model.model_ref,T0)
+    else
+        vl = exp10(v0[1])
+        vv = exp10(v0[2])
+        v0 = [log10(vl*h),log10(vv*h)]
+    end
     psat0,vl0,vv0 = sat_pure(model.model_ref,T0,v0)
-    p = pressure(model,vv0*h,T)
-     return (p,vl0*h,vv0*h)
+    p = pressure(model,vl0*h,T)
+    return (p,vl0*h,vv0*h)
 end
 
 #============
