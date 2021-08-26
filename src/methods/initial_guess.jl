@@ -573,37 +573,3 @@ end
 #         x[i] = 0.0
 #     end
 # end
-
-#=
-@show vxx
-    if Tr >= 0.7 
-        c_l = 1.0+2.0*Trmid + 0.4*Trm1 - 0.52*Trmid*Trm1 +0.115*Trm1*Trm1 #Eq. 29
-    else
-        c_l = 1.5*(1+sqrt(1-(32/27)*Tr)) #Eq. 32
-    end
-
-    if Tr >= 0.46
-        @info "case 1"
-        c_v = 1.0-2.0*Trmid + 0.4*Trm1 + 0.52*Trmid*Trm1 +0.207*Trm1*Trm1 #Eq. 30   
-    elseif Tr <= 0.33
-        @info "case 2"
-        c_v = (3*c_l/(ℯ*(3-c_l)))*exp(-(1/(1-c_l/3)))
-
-    elseif 0.25 <= Tr
-        @info "case 3"
-        mean_c = 1.0 + 0.4*Trm1 + 0.161*Trm1*Trm1 #Eq. 34
-        
-        c_v = 2*mean_c - c_l
-    else
-        @info "case 4"
-        @show Tr
-        mean_c = 1.5 - (4/9)*Tr - 0.15*Tr*Tr #Eq. 34
-        @show mean_c
-        c_v = 2*mean_c - c_l
-        @show c_v
-    end
-    Vl0 = (1/c_l)*Vc
-    Vv0 = (1/c_v)*Vc
-    @show Vl0
-    @show Vv0
-=#
