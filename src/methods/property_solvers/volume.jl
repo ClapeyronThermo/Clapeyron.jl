@@ -33,7 +33,8 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
 end
 
 """
-    volume_virial(model,p,T,z=SA[1.0])
+    volume_virial(model::EoSModel,p,T,z=SA[1.0])
+    volume_virial(B::Real,p,T,z=SA[1.0])
 
 Calculates an aproximation to the gas volume at specified pressure, volume and composition, by aproximating:
 
@@ -42,12 +43,21 @@ Calculates an aproximation to the gas volume at specified pressure, volume and c
 Z(v) ≈ 1 + B(T)/v 
 ```
 where `Z` is the compressibility factor and `B` is the second virial coefficient.
-if `B>0`, (over the inversion temperature) returns `NaN`. If the solution to the problem is complex (`Z = 1 + B/v` implies solving a quadratic polynomial), returns `-2*B`.
+If `B>0`, (over the inversion temperature) returns `NaN`. If the solution to the problem is complex (`Z = 1 + B/v` implies solving a quadratic polynomial), returns `-2*B`.
+
+If you pass an `EoSModel` as the first argument, `B` will be calculated from the EoS at the input `T`. You can provide your own second virial coefficient instead of a model.
+
 """
-function volume_virial(model,p,T,z=SA[1.0])
-    _0 = zero(p+T+first(z))
+function volume_virial end
+
+function volume_virial(model::EoSModel,p,T,z=SA[1.0])
     B = second_virial_coefficient(model,T,z)
-    B > 0 && return _0/_0
+    return volume_virial(B,p,T,z)
+end
+
+function volume_virial(B::Real,p,T,z=SA[1.0])
+    _0 = zero(B)
+    B > _0 && return _0/_0
     a = p/(R̄*T)
     b = -1
     c = -B
