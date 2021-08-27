@@ -115,7 +115,7 @@ end
 function _propaneref_tsat(T)
     T_c = PropaneRef_consts.T_c
     P_c = PropaneRef_consts.P_c
-    T>T_c && return NaN
+    T>T_c && return zero(T)/zero(T)
     Tr = T/T_c
     θ = 1.0-Tr
     lnPsatPc = (-6.7722*θ + 1.6938*θ^1.5 -1.3341*θ^2.2 -3.1876*θ^4.8 + 0.94937*θ^6.2)/Tr
@@ -126,7 +126,7 @@ end
 function _propaneref_rholsat(T)
     Tc = PropaneRef_consts.T_c
     ρ_c =PropaneRef_consts.rho_c
-    T>Tc && return NaN
+    T>Tc && return zero(T)/zero(T)
     Tr = T/Tc
     θ = 1.0-Tr
     #
@@ -137,7 +137,7 @@ end
 function _propaneref_rhovsat(T)
     Tc = PropaneRef_consts.T_c
     ρ_c =PropaneRef_consts.rho_c
-    T>Tc && return NaN
+    T>Tc && return zero(T)/zero(T)
     Tr = T/Tc
     θ = 1.0 - Tr
     log_ρ_v_ρ_c = (-2.4887*θ^0.3785 -5.1069*θ^1.07 -12.174*θ^2.7 -30.495*θ^5.5 -52.192*θ^10 -134.89*θ^20)

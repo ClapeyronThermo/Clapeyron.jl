@@ -375,6 +375,7 @@ function a_res(model::GERG2008, v, T, z=SA[1.0])
 end
 
 function eos(model::GERG2008, v, T, z=SA[1.0])
+    negative_vt(v,T) && return nan_num(v,T,z)
     N = sum(z)
     len = length(z)
     rho = 1.0e-3 / (v/N)

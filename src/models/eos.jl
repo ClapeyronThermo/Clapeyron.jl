@@ -44,6 +44,7 @@ IAPWS95Ideal()
 idealmodel(model::EoSModel) = model.idealmodel
 
 function eos(model::IdealModel, V, T, z=SA[1.0])
+    negative_vt(V,T) && return nan_num(V,T,z)
     return N_A*k_B*sum(z)*T * a_ideal(model,V,T,z)
 end
 
