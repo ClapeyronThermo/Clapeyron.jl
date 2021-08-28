@@ -1,25 +1,17 @@
-
-# function eos(model::vdWModel, V, T, z=@SVector [1.0])
-#     n = sum(z)
-#     return R̄*n*T * (a_ideal(idealmodel(model),V,T,z)+ a_res(model,V,T,z))
-# end
-
-# function a_res(model::ABCubicModel, V, T, z=@SVector [1.0])
-#     n = sum(z)
-#     n⁻¹ = 1/n   
-#     x = z.*n⁻¹
-#     v = V*n⁻¹
-#     return a_resx(model,v,T,x)
-# end
-
-#fast shortcut to evaluate cubics, pressure is known
-#=
-function ∂f∂v(model::ABCubicModel,v,t,z)
-    #@info "fast shortcut"
-    a,b,p = cubic_abp(model,v,t,z)
-    return -p
+function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
+    invn2 = (one(n)/n)^2
+    a = model.params.a.values
+    b = model.params.b.values
+    α = @f(α_function,model.alpha)
+    if length(z)>1
+        ā,b̄ = @f(mixing_rule,model.mixing,α,a,b)
+    else
+        ā = a[1,1]*α[1]
+        b̄ = b[1,1]
+    end
+    return ā ,b̄
 end
-=#
+
 function second_virial_coefficient(model::ABCubicModel,T,z = SA[1.0])
     #@info "fast shortcut"
     a,b = cubic_ab(model,1e-4,T,z)

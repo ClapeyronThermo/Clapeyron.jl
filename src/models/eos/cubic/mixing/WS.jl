@@ -25,11 +25,22 @@ function WSRule(components::Vector{String}; activity = Wilson, userlocations::Ve
     return model
 end
 
-function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::WSRuleModel,α,a,b)
+function mixing_rule(model::RKModel,V,T,z,mixing_model::WSRuleModel,α,a,b)
     n = sum(z)
     invn2 = (one(n)/n)^2
     num = sum(z[i]*(b[i,i]-a[i,i]*α[i]/(R̄*T)) for i ∈ @comps)/n
     den = 1 - (sum(z[i]*a[i,i]*α[i]/b[i,i]/(n*R̄*T) for i ∈ @comps)-excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)/(n*R̄*T)/log(2))
+    b̄  = num/den
+    ā  = R̄*T*(b̄-num)
+    return ā,b̄
+end
+
+function mixing_rule(model::PRModel,V,T,z,mixing_model::WSRuleModel,α,a,b)
+    λ = 1/(2*√(2))*log((2+√(2))/(2-√(2)))
+    n = sum(z)
+    invn2 = (one(n)/n)^2
+    num = sum(z[i]*(b[i,i]-a[i,i]*α[i]/(R̄*T)) for i ∈ @comps)/n
+    den = 1 - (sum(z[i]*a[i,i]*α[i]/b[i,i]/(n*R̄*T) for i ∈ @comps)-excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)/(n*R̄*T)/λ)
     b̄  = num/den
     ā  = R̄*T*(b̄-num)
     return ā,b̄

@@ -73,19 +73,6 @@ function ab_consts(::Type{<:RKModel})
     Ωb = (2^(1/3)-1)/3
     return Ωa,Ωb
 end
-function cubic_ab(model::RKModel,V,T,z=SA[1.0],n=sum(z))
-    invn2 = (one(n)/n)^2
-    a = model.params.a.values
-    b = model.params.b.values
-    α = @f(α_function,model.alpha)
-    if length(z)>1
-        ā,b̄ = @f(mixing_rule,model.mixing,α,a,b)
-    else
-        ā = a[1,1]*α[1]
-        b̄ = b[1,1]
-    end
-    return ā ,b̄
-end
 
 function cubic_abp(model::RKModel, V, T, z)
     n = sum(z)

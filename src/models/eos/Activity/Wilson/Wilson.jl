@@ -61,33 +61,11 @@ function activity_coefficient(model::WilsonModel,p,T,z)
     Pc  = model.params.Pc.values
     
     Tr  = T ./ Tc
-    V =  @. (R̄ *Tc/Pc)*pow(ZRA,(1 + pow((1-Tr),2/7)))
+    V =  @. (R̄ *Tc/Pc)*ZRA^(1 + (1-Tr)^2/7)
     Λ = (V' ./ V) .*exp.(-model.params.g.values/R̄/T)
     x = z ./ sum(z)
     lnγ = 1 .- log.(sum(x[i]*Λ[:,i] for i ∈ @comps)) .-sum(x[j] .*Λ[j,:] ./(sum(x[i]*Λ[j,i] for i ∈ @comps)) for j ∈ @comps)
     return exp.(lnγ)
-end
-
-function excess_gibbs_free_energy(model::WilsonModel,p,T,z)
-    ZRA = model.params.ZRA.values
-    Tc  = model.params.Tc.values
-    Pc  = model.params.Pc.values
-    
-    Tr  = T ./ Tc
-    V =  @. (R̄ *Tc/Pc)*pow(ZRA,(1 + pow((1-Tr),2/7)))
-    Λ = @. (V' / V) *exp(-model.params.g.values/R̄/T)
-    x = z ./ sum(z)
-    g_E = -sum(x[j]*log(sum(x[i]*Λ[j,i] for i ∈ @comps)) for j ∈ @comps)
-    return g_E*sum(z)*R̄*T
-end
-
-function bubble_pressure(model::ActivityModel,T,x)
-    sat = sat_pure.(model.puremodel,T)
-    p_sat = [tup[1] for tup in sat]
-    γ     = activity_coefficient(model,1e-4,T,x)
-    p     = sum(x.*γ.*p_sat)
-    y     = x.*γ.*p_sat ./ p
-    return (p,y)
 end
 
 is_splittable(::Wilson) = true

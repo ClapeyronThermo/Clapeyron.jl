@@ -64,9 +64,4 @@ function activity_coefficient(model::NRTLModel,p,T,z)
     return exp.(lnγ)
 end
 
-function excess_gibbs_free_energy(model::NRTLModel,p,T,z)
-    lnγ = log.(activity_coefficient(model,p,T,z))
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
-end
-
 is_splittable(::NRTL) = true

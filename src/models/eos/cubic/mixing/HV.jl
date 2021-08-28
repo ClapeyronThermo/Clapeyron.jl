@@ -25,11 +25,20 @@ function HVRule(components::Vector{String}; activity = Wilson, userlocations::Ve
     return model
 end
 
-function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b)
+function mixing_rule(model::RKModel,V,T,z,mixing_model::HVRuleModel,α,a,b)
     n = sum(z)
     invn2 = (one(n)/n)^2
     b̄ = dot(z,Symmetric(b),z) * invn2
     ā = b̄*((sum(z[i]*a[i,i]*α[i]/b[i,i] for i ∈ @comps))/n-excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)/n/log(2))
+    return ā,b̄
+end
+
+function mixing_rule(model::PRModel,V,T,z,mixing_model::HVRuleModel,α,a,b)
+    λ = 1/(2*√(2))*log((2+√(2))/(2-√(2)))
+    n = sum(z)
+    invn2 = (one(n)/n)^2
+    b̄ = dot(z,Symmetric(b),z) * invn2
+    ā = b̄*((sum(z[i]*a[i,i]*α[i]/b[i,i] for i ∈ @comps))/n-excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)/n/λ)
     return ā,b̄
 end
 
