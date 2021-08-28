@@ -132,14 +132,24 @@ end
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2572506872856557 rtol = 1e-6
         end
 
+        @testset "RK w/ BMAlpha" begin
+            system = RK(["ethane","undecane"];alpha = BMAlpha)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2569334957019538 rtol = 1e-6
+        end
+
         @testset "RK w/ KayRule" begin
             system = RK(["ethane","undecane"];mixing = KayRule)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.8176850121211936 rtol = 1e-6
         end
 
-        @testset "RK w/ BMAlpha" begin
-            system = RK(["ethane","undecane"];alpha = BMAlpha)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2569334957019538 rtol = 1e-6
+        @testset "RK w/ HVRule" begin
+            system = RK(["methanol","benzene"];mixing = HVRule, activity=Wilson)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5209112693371991 rtol = 1e-6
+        end
+
+        @testset "RK w/ WSRule" begin
+            system = RK(["methanol","benzene"];mixing = WSRule, activity=Wilson)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.572912690389026 rtol = 1e-6
         end
     end
 
@@ -160,6 +170,37 @@ end
             system = PR(["ethane","undecane"];alpha = BMAlpha)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.244507550417118 rtol = 1e-6
         end
+
+        @testset "PR w/ HVRule" begin
+            system = PR(["methanol","benzene"];mixing = HVRule, activity=Wilson)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.632982061564318 rtol = 1e-6
+        end
+
+        @testset "PR w/ WSRule" begin
+            system = PR(["methanol","benzene"];mixing = WSRule, activity=Wilson)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.669085674824878 rtol = 1e-6
+        end
+    end
+end
+
+@testset "Activity models" begin
+    T = 333.15
+    p = 1e5
+    z = [0.5,0.5]
+
+    @testset "Wilson" begin
+        system = Wilson(["methanol","benzene"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.530046633499114 rtol = 1e-6
+    end
+
+    @testset "NRTL" begin
+        system = NRTL(["methanol","benzene"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5309354738922405 rtol = 1e-6
+    end
+
+    @testset "UNIQUAC" begin
+        system = UNIQUAC(["methanol","benzene"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.3630421218486388 rtol = 1e-6
     end
 end
 

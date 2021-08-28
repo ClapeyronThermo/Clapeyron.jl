@@ -66,9 +66,4 @@ function activity_coefficient(model::UNIQUACModel,p,T,z)
     return exp.(lnγ_comb+lnγ_res)
 end
 
-function excess_gibbs_free_energy(model::UNIQUACModel,p,T,z)
-    lnγ = log.(activity_coefficient(model,p,T,z))
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
-end
-
 is_splittable(::UNIQUAC) = true
