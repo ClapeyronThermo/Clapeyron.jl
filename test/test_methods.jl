@@ -169,7 +169,7 @@ end
     T = 298.15
     z = [0.5,0.5]
     @testset "VLE properties" begin
-        @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 108687.75289597166 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.647133460465 rtol = 1E-6
     end
 end
 
@@ -253,7 +253,7 @@ end
 
     T_sat = 250.15
     @testset "VLE properties" begin
-        @test Clapeyron.sat_pure(system, T_sat)[1] ≈ 2.887234087929866e6 rtol = 1E-6
+        @test Clapeyron.sat_pure(system, T_sat)[1] ≈ 3.512026457101926e6 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 270.27247485012657 rtol = 1E-6 
     end
 end
