@@ -1,3 +1,4 @@
+using Clapeyron, Test
 
 @testset "SAFT models" begin
     T = 298.15
