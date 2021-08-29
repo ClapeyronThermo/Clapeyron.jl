@@ -25,6 +25,8 @@ import NaNMath
         # copied from PolynomialRoots.jl, adapted to be AD friendly
         # Cubic equation solver for complex polynomial (degree=3)
         # http://en.wikipedia.org/wiki/Cubic_function   Lagrange's method
+        # poly = (a,b,c,d) that represents ax3 + bx2 + cx2 + d 
+
         _1 = one(T)
         third = _1/3
         a1  =  complex(one(T) / poly[4])
@@ -52,8 +54,12 @@ import NaNMath
         return (third*(s0 + s1 + s2), third*(s0 + s1*zeta2 + s2*zeta1), third*(s0 + s1*zeta1 + s2*zeta2))
     end
 
-    function roots3(x) 
-        return SVector(solve_cubic_eq(x))
+    """
+        roots3(pol)
+    solves a cubic equation of the form pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3
+    """
+    function roots3(pol) 
+        return SVector(solve_cubic_eq(pol))
     end
 
     function roots3(a,b,c,d) 
