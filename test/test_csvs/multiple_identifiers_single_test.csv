@@ -1,0 +1,6 @@
+OpenSAFT Database File,,
+test single parameters,,
+species,param_single,param_pair,source
+sp1,100,1000,testsource50
+sp2~|~sp3,200,2000,testsource51
+sp4~|~sp5~|~sp6,300,3000,testsource52

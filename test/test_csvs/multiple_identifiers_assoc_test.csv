@@ -1,0 +1,5 @@
+OpenSAFT Database File,,,,,,
+Test Assoc Parameters,,,,,,
+species1,site1,species2,site2,param_assoc,source
+sp2,H,sp3,e,10000,testsource56
+sp1,H,sp5,e,20000,testsource57

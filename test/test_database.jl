@@ -1,4 +1,3 @@
-
 @testset "database_lookup" begin
     params1 = Clapeyron.getparams(["water", "methanol"], ["SAFT/PCSAFT"],return_sites=false)
     @test haskey(params1, "sigma")
@@ -18,6 +17,9 @@
     filepath_asymmetry = ["test_csvs/asymmetry_pair_test",
                           "test_csvs/asymmetry_assoc_test"]
 
+    filepath_multiple_identifiers = ["test_csvs/multiple_identifiers_single_test.csv",
+                                     "test_csvs/multiple_identifiers_pair_test.csv",
+                                     "test_csvs/multiple_identifiers_assoc_test.csv"]
     filepath_gc = ["test_csvs/group_test.csv"]
     filepath_param_gc = ["test_csvs/group_param_test.csv"]
     # Check that it detects the right sites.
@@ -121,6 +123,17 @@
     # and the diagonal contains missing values, it should throw an error
     # without ignore_missing_singleparams set to true.
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"])
+
+    # Testing for multiple identifiers
+    multiple_identifiers = Clapeyron.getparams(testspecies; userlocations=filepath_multiple_identifiers, return_sites=false)
+    @test multiple_identifiers["param_single"].values == [100, 200, 200, 300, 300]
+    @test multiple_identifiers["param_pair"].values   == [1000  4000     0     0     0
+                                                         4000  2000     0  6000     0
+                                                            0     0  2000  5000     0
+                                                            0  6000  5000  3000     0
+                                                            0     0     0     0  3000]
+    @test multiple_identifiers["param_assoc"].values[3,2][1,1] == 10000 &&
+            multiple_identifiers["param_assoc"].values[5,1][1,1] == 20000
 
     # GC test, 3 comps, 4 groups
 
