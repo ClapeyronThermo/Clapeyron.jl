@@ -203,6 +203,11 @@ end
         system = UNIQUAC(["methanol","benzene"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.3630421218486388 rtol = 1e-6
     end
+
+    @testset "UNIFAC" begin
+        system = UNIFAC(["methanol","benzene"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5322232657797463 rtol = 1e-6
+    end
 end
 
 @testset "Ideal models" begin
