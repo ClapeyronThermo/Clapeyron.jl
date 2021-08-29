@@ -74,7 +74,7 @@ function getparams(components,
                     locations::Array{String,1}=String[]; 
                     userlocations::Vector{String}=String[],
                     asymmetricparams::Vector{String}=String[],
-                    ignore_missing_singleparams::Bool=false,
+                    ignore_missing_singleparams::Vector{String}=String[],
                     ignore_headers::Vector{String} =  ["dipprnumber", "smiles"],
                     verbose::Bool=false,
                     species_columnreference::String="species",
@@ -187,7 +187,7 @@ function pkgparam(param::String,
     paramsources::Dict{String,Set{String}},
     options::ParamOptions = ParamOptions())
     newvalue, ismissingvalues = defaultmissing(value)
-    if !options.ignore_missing_singleparams && any(ismissingvalues)
+    if param ∉ options.ignore_missing_singleparams && any(ismissingvalues)
         error("Missing values exist in single parameter ", param, ": ", value, ".")
     end
     return SingleParam(param, components, newvalue, ismissingvalues, collect(paramsourcecsvs[param]), collect(paramsources[param]))
@@ -203,7 +203,7 @@ function pkgparam(param::String,
     
     param ∉ options.asymmetricparams && mirrormatrix!(value)
     newvalue, ismissingvalues = defaultmissing(value)
-    if (!options.ignore_missing_singleparams 
+    if (param ∉ options.ignore_missing_singleparams 
         && !all([ismissingvalues[x,x] for x ∈ 1:size(ismissingvalues,1)])
         && any([ismissingvalues[x,x] for x ∈ 1:size(ismissingvalues,1)]))
         error("Partial missing values exist in diagonal of pair parameter ", param, ": ", [value[x,x] for x ∈ 1:size(ismissingvalues,1)], ".")

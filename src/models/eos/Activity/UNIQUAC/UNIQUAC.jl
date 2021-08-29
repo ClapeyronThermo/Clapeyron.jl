@@ -37,7 +37,7 @@ export UNIQUAC
 function UNIQUAC(components::Vector{String}; puremodel=PR,
     userlocations=String[], 
      verbose=false)
-    params = getparams(components, ["Activity/UNIQUAC/UNIQUAC_like.csv", "properties/molarmass.csv","Activity/UNIQUAC/UNIQUAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a"], ignore_missing_singleparams=true, verbose=verbose)
+    params = getparams(components, ["Activity/UNIQUAC/UNIQUAC_like.csv", "properties/molarmass.csv","Activity/UNIQUAC/UNIQUAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose=verbose)
     a  = params["a"]
     r  = params["r"]
     q  = params["q"]

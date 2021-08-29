@@ -38,7 +38,7 @@ export Wilson
 function Wilson(components::Vector{String}; puremodel=PR,
     userlocations=String[], 
      verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/Wilson/Wilson_unlike.csv"]; userlocations=userlocations, asymmetricparams=["g"], ignore_missing_singleparams=true, verbose=verbose)
+    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/Wilson/Wilson_unlike.csv"]; userlocations=userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g"], verbose=verbose)
     g  = params["g"]
     Tc        = params["Tc"]
     pc        = params["pc"]
