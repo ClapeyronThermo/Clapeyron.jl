@@ -39,7 +39,7 @@ function PT_flash(model::EoSModel,P,T,z,K0=nothing)
         println("bubble point")
         β = _0
         β0 = _0
-        xil = copy(z0)
+        xil = copy(z)
         xiv = rr_flash_vapor(K0,z,_0)
     elseif g_1 >= 0 #dew point assumption
         println("dew point")
