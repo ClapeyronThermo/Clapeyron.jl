@@ -34,7 +34,7 @@ using Clapeyron, Test
     # Check that it throws an error if ignore_missing_singleparams is not set to true.
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_normal,return_sites = false)
 
-    params = Clapeyron.getparams(testspecies; userlocations=filepath_normal, ignore_missing_singleparams=true,return_sites = false)
+    params = Clapeyron.getparams(testspecies; userlocations=filepath_normal, ignore_missing_singleparams=["emptyparam","missingparam"],return_sites = false)
     # Check that all the types are correct.
     @test typeof(params["intparam"]) <: Clapeyron.SingleParam{Int}
     @test typeof(params["doubleparam"]) <: Clapeyron.SingleParam{Float64}
@@ -106,9 +106,9 @@ using Clapeyron, Test
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_clashingheaders)
 
     # If parameter is not tagged as asymmetrical, having non-missing values across the diagonal will throw an error
-    @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, ignore_missing_singleparams=true,return_sites = false)
+    @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, ignore_missing_singleparams=["asymmetricpair"],return_sites = false)
 
-    asymmetricparams = Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"], ignore_missing_singleparams=true,return_sites = false)
+    asymmetricparams = Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"], ignore_missing_singleparams=["asymmetricpair"],return_sites = false)
     asymmetricparams["asymmetricpair"].values == [0.06  0.04  0.0  0.0   0.0
                                                   0.05  0.0   0.0  0.0   0.0
                                                   0.0   0.0   0.0  0.02  0.0
@@ -123,7 +123,7 @@ using Clapeyron, Test
 
     # Also, since a non-missing value exists on the diagonal of "asymmetricpair",
     # and the diagonal contains missing values, it should throw an error
-    # without ignore_missing_singleparams set to true.
+    # when parameter is not in ignore_missing_singleparams
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"])
 
     # Testing for multiple identifiers
