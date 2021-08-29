@@ -1,3 +1,5 @@
+using Clapeyron, Test
+
 const SOL = Clapeyron.Solvers
 
 quadratic(x) = x*x - 4

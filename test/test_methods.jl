@@ -1,3 +1,4 @@
+using Clapeyron, Test, Unitful
 
 @testset "SAFT methods, single components" begin
     system = PCSAFT(["ethanol"])
