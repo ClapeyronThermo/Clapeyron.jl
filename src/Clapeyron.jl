@@ -48,7 +48,6 @@ include("models/eos/SAFT/CKSAFT/variants/sCKSAFT.jl")
 
 include("models/eos/SAFT/BACKSAFT/BACKSAFT.jl")
 
-
 include("models/eos/cubic/vdW.jl")
 include("models/eos/cubic/RK/RK.jl")
 include("models/eos/cubic/PR/PR.jl")
@@ -61,6 +60,11 @@ include("models/eos/cubic/RK/variants/SRK.jl")
 include("models/eos/cubic/PR/variants/PR78.jl")
 
 include("models/eos/cubic/equations.jl")
+include("models/eos/Activity/equations.jl")
+
+include("models/eos/Activity/Wilson/Wilson.jl")
+include("models/eos/Activity/NRTL/NRTL.jl")
+include("models/eos/Activity/UNIQUAC/UNIQUAC.jl")
 
 include("models/eos/EmpiricHelmholtz/IAPWS95.jl")
 include("models/eos/EmpiricHelmholtz/PropaneRef.jl")

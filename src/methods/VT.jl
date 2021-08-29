@@ -11,6 +11,11 @@ function VT_chemical_potential(model::EoSModel, V, T, z=SA[1.])
     return ForwardDiff.gradient(fun,z)
 end
 
+function VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.])
+    fun(x) = eos_res(model,V,T,x)
+    return ForwardDiff.gradient(fun,z)
+end
+
 function VT_internal_energy(model::EoSModel, V, T, z=SA[1.])
     dA, A = ∂f(model,V,T,z)
     ∂A∂V, ∂A∂T = dA

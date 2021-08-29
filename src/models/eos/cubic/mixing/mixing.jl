@@ -1,15 +1,17 @@
 abstract type MixingRule <:EoSModel end
-function init_model(model::MixingRule,components,userlocations,verbose)
+function init_model(model::MixingRule,components,activity,userlocations,activity_userlocations,verbose)
     return model
 end
 
-function init_model(model::Type{<:MixingRule},components,userlocations,verbose)
+function init_model(model::Type{<:MixingRule},components,activity,userlocations,activity_userlocations,verbose)
     verbose && @info("""Now creating mixing model:
     $model""")
-    return model(components;userlocations,verbose)
+    return model(components;activity,userlocations,activity_userlocations,verbose)
 end
 
 has_sites(::Type{<:MixingRule})=false
 
 include("vdW1f.jl")
 include("Kay.jl")
+include("HV.jl")
+include("WS.jl")
