@@ -82,7 +82,8 @@ function getparams(components,
                     site_columnreference::String="site",
                     group_columnreference::String="groups",
                     normalisecomponents::Bool=true,
-                    return_sites = true
+                    return_sites::Bool = true,
+                    component_delimiter::String = "~|~"
                     )
 
     options = ParamOptions(;userlocations,
@@ -95,7 +96,8 @@ function getparams(components,
                             site_columnreference,
                             group_columnreference,
                             normalisecomponents,
-                            return_sites)
+                            return_sites,
+                            component_delimiter)
     
     # locations is a list of paths relative to the Clapeyron database directory.
     # userlocations is a list of paths input by the user.
