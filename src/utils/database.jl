@@ -405,6 +405,7 @@ function findparamsincsv(components::Array{String,1},
     sourcecolumnreference = options.source_columnreference
     verbose = options.verbose
     normalisecomponents = options.normalisecomponents
+    component_delimiter = options.component_delimiter
     # Returns a Dict with all matches in a particular file for one parameter.
     normalised_columnreference = normalisestring(columnreference)
     normalised_columnreference1 = normalised_columnreference * '1'
@@ -446,21 +447,23 @@ function findparamsincsv(components::Array{String,1},
 
         for row ∈ Tables.rows(df)
             
-            component = row[lookupcolumn]
-            foundcomponentidx = findfirst(isequal(normalisestring(component,normalisecomponents)), normalised_components)
-            isnothing(foundcomponentidx) && continue
-            verbose && print("Found component: ", component)
-            component = components[foundcomponentidx]
-            foundvalues[component] = Dict{String,Any}()
-            for headerparam ∈ headerparams
-                foundvalues[component][headerparam] = row[Symbol(headerparam)]
-            end
-            verbose && println(" with values ", foundvalues[component])
-            if getsources
-                source = row[sourcecolumn]
-                sources[component] = source
-            else
-                sources[component] = missing
+            component_split = split.(row[lookupcolumn], component_delimiter, keepempty=false)
+            for component ∈ component_split
+                foundcomponentidx = findfirst(isequal(normalisestring(component,normalisecomponents)), normalised_components)
+                isnothing(foundcomponentidx) && continue
+                verbose && print("Found component: ", component)
+                component = components[foundcomponentidx]
+                foundvalues[component] = Dict{String,Any}()
+                for headerparam ∈ headerparams
+                    foundvalues[component][headerparam] = row[Symbol(headerparam)]
+                end
+                verbose && println(" with values ", foundvalues[component])
+                if getsources
+                    source = row[sourcecolumn]
+                    sources[component] = source
+                else
+                    sources[component] = missing
+                end
             end
         end
     elseif csvtype == pairdata
@@ -471,23 +474,25 @@ function findparamsincsv(components::Array{String,1},
         lookupcolumn1 = Symbol(csvheaders[lookupcolumnindex1])
         lookupcolumn2 = Symbol(csvheaders[lookupcolumnindex2])
         for row ∈ Tables.rows(df)
-            component1 = row[lookupcolumn1]
-            component2 = row[lookupcolumn2]
-            foundcomponentidx1 = findfirst(isequal(normalisestring(component1,normalisecomponents)), normalised_components)
-            foundcomponentidx2 = findfirst(isequal(normalisestring(component2,normalisecomponents)), normalised_components)
-            (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
-            verbose && print("Found component pair: ", (component1, component2))
-            componentpair = (components[foundcomponentidx1], components[foundcomponentidx2])
-            foundvalues[componentpair] = Dict{String,Any}()
-            for headerparam ∈ headerparams
-                foundvalues[componentpair][headerparam] = row[Symbol(headerparam)]
-            end
-            verbose && println(" with values ", foundvalues[componentpair])
-            if getsources
-                source = row[sourcecolumn]
-                sources[componentpair] = source
-            else
-                sources[componentpair] = missing
+            component_split1 = split.(row[lookupcolumn1], component_delimiter, keepempty=false)
+            component_split2 = split.(row[lookupcolumn2], component_delimiter, keepempty=false)
+            for component1 ∈ component_split1, component2 ∈ component_split2
+                foundcomponentidx1 = findfirst(isequal(normalisestring(component1,normalisecomponents)), normalised_components)
+                foundcomponentidx2 = findfirst(isequal(normalisestring(component2,normalisecomponents)), normalised_components)
+                (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
+                verbose && print("Found component pair: ", (component1, component2))
+                componentpair = (components[foundcomponentidx1], components[foundcomponentidx2])
+                foundvalues[componentpair] = Dict{String,Any}()
+                for headerparam ∈ headerparams
+                    foundvalues[componentpair][headerparam] = row[Symbol(headerparam)]
+                end
+                verbose && println(" with values ", foundvalues[componentpair])
+                if getsources
+                    source = row[sourcecolumn]
+                    sources[componentpair] = source
+                else
+                    sources[componentpair] = missing
+                end
             end
         end
     elseif csvtype == assocdata  
@@ -507,25 +512,27 @@ function findparamsincsv(components::Array{String,1},
         lookupsitecolumn1 = Symbol(csvheaders[lookupsitecolumnindex1])
         lookupsitecolumn2 = Symbol(csvheaders[lookupsitecolumnindex2])
         for row ∈ Tables.rows(df)
-            component1 = row[lookupcolumn1]
-            component2 = row[lookupcolumn2]
-            foundcomponentidx1 = findfirst(isequal(normalisestring(component1,normalisecomponents)), normalised_components)
-            foundcomponentidx2 = findfirst(isequal(normalisestring(component2,normalisecomponents)), normalised_components)
-            (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
-            site1 = row[lookupsitecolumn1]
-            site2 = row[lookupsitecolumn2]
-            verbose && print("Found assoc pair: ", ((component1, component2),(site1, site2)))
-            assocpair = ((components[foundcomponentidx1], components[foundcomponentidx2]), (site1, site2))
-            foundvalues[assocpair] = Dict{String,Any}()
-            for headerparam ∈ headerparams
-                foundvalues[assocpair][headerparam] = row[Symbol(headerparam)]
-            end
-            verbose && println(" with values ", foundvalues[assocpair])
-            if getsources
-                source = row[sourcecolumn]
-                sources[assocpair] = source
-            else
-                sources[assocpair] = missing
+            component_split1 = split.(row[lookupcolumn1], component_delimiter, keepempty=false)
+            component_split2 = split.(row[lookupcolumn2], component_delimiter, keepempty=false)
+            for component1 ∈ component_split1, component2 ∈ component_split2
+                foundcomponentidx1 = findfirst(isequal(normalisestring(component1,normalisecomponents)), normalised_components)
+                foundcomponentidx2 = findfirst(isequal(normalisestring(component2,normalisecomponents)), normalised_components)
+                (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
+                site1 = row[lookupsitecolumn1]
+                site2 = row[lookupsitecolumn2]
+                verbose && print("Found assoc pair: ", ((component1, component2),(site1, site2)))
+                assocpair = ((components[foundcomponentidx1], components[foundcomponentidx2]), (site1, site2))
+                foundvalues[assocpair] = Dict{String,Any}()
+                for headerparam ∈ headerparams
+                    foundvalues[assocpair][headerparam] = row[Symbol(headerparam)]
+                end
+                verbose && println(" with values ", foundvalues[assocpair])
+                if getsources
+                    source = row[sourcecolumn]
+                    sources[assocpair] = source
+                else
+                    sources[assocpair] = missing
+                end
             end
         end
     else

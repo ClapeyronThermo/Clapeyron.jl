@@ -23,6 +23,7 @@ Struct containing all the options related to parameter parsing:
 * `normalisecomponents::Bool = true`: If `true`, performs normalization of strings, on the CSV and input components
 * `n_sites_columns::Dict{String,String} = Dict( "e" => "n_e","e1" => "n_e1","e2" => "n_e2","H" => "n_H")`: dictionary to look number of sites. the number of sites is stored as columns in a single parameter csv file. for example, the number of sites of name `e` will be looked on the column `n_e`
 * `return_sites::Bool = true`: If set to false, association params will be ignored and sites will not be created, even if they exist in the list of locations.
+* `component_delimiter::String = "~|~"`: When there are multiple component names to match, seperate them by this delimiter.
 """
 Base.@kwdef struct ParamOptions
     userlocations::Vector{String} = String[]
@@ -38,6 +39,7 @@ Base.@kwdef struct ParamOptions
     normalisecomponents::Bool = true
     n_sites_columns::Dict{String,String} = DEFAULT_N_SITES
     return_sites::Bool = true
+    component_delimiter::String = "~|~"
 end
 
 export ParamOptions
