@@ -171,6 +171,12 @@ function auto_split_model(Base.@nospecialize(model::EoSModel))
             end
         end
 
+        modelfields = filter(x->getproperty(model,x) isa Vector{<:EoSModel},fieldnames(M))
+        for modelkey in modelfields
+            modelx = getproperty(model,modelkey)
+            allfields[modelkey] = [[tup] for tup in modelx]
+        end
+
         #process all empty (Missing,Nothing) fields
         emptyfields = filter(x->getproperty(model,x) isa Union{Nothing,Missing},fieldnames(M))
 

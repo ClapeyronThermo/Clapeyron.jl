@@ -120,6 +120,7 @@ end
         @test Clapeyron.volume(system, p, T, z) ≈ 7.779694485714412e-5 rtol = 1e-6 
         @test Clapeyron.speed_of_sound(system, p, T, z) ≈ 1087.0303138908864 rtol = 1E-6
         @test Clapeyron.activity_coefficient(system, p, T, z)[1] ≈ 1.794138454452822 rtol = 1E-6
+        @test Clapeyron.fugacity_coefficient(system, p, T, z)[1] ≈ 0.5582931304564298 rtol = 1E-6
     end
     @testset "Equilibrium properties" begin
         @test Clapeyron.bubble_pressure(system,T,z)[1] ≈ 54532.249600937736 rtol = 1E-6
@@ -159,6 +160,16 @@ end
     @testset "VLE properties" begin
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 1.5760730143760687e6 rtol = 1E-6
         @test Clapeyron.crit_mix(system, z)[1] ≈ 575.622237585033 rtol = 1E-6 
+    end
+end
+
+@testset "Activity methods, multi-components" begin
+    system = Wilson(["methanol","benzene"])
+    p = 1e7
+    T = 298.15
+    z = [0.5,0.5]
+    @testset "VLE properties" begin
+        @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.647133460465 rtol = 1E-6
     end
 end
 

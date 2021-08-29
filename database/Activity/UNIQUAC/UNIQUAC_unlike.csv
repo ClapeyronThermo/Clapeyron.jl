@@ -1,0 +1,7 @@
+﻿Clapeyron Database File,,,,,
+UNIQUAC Unlike Parameters,,,,,
+species1,SMILES1,species2,SMILES2,a,source
+methanol,,benzene,,-123.69,
+benzene,,methanol,,935.05,
+acetone,,benzene,,166.57,
+benzene,,acetone,,-105.1,

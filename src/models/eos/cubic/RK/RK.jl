@@ -8,11 +8,11 @@ end
 
 abstract type RKModel <: ABCubicModel end
 
-struct RK{T <: IdealModel,α,γ} <: RKModel
+struct RK{T <: IdealModel,α,M} <: RKModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     alpha::α
-    mixing::γ
+    mixing::M
     params::RKParam
     idealmodel::T
     absolutetolerance::Float64
@@ -39,10 +39,12 @@ export RK
 function RK(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = RKAlpha,
     mixing = vdW1fRule,
+    activity = nothing,
     userlocations=String[], 
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
+    activity_userlocations = String[],
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
@@ -58,7 +60,7 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    init_mixing = init_model(mixing,components,mixing_userlocations,verbose)
+    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     icomponents = 1:length(components)
     packagedparams = RKParam(a, b, params["Tc"],_pc,Mw)
     references = String[]
@@ -70,14 +72,6 @@ function ab_consts(::Type{<:RKModel})
     Ωa =  1/(9*(2^(1/3)-1))
     Ωb = (2^(1/3)-1)/3
     return Ωa,Ωb
-end
-function cubic_ab(model::RK{<:Any,<:Any,<:Any},V,T,z=SA[1.0],n=sum(z))
-    invn2 = (one(n)/n)^2
-    a = model.params.a.values
-    b = model.params.b.values
-    α = @f(α_function,model.alpha)
-    ā,b̄ = @f(mixing_rule,model.mixing,α,a,b)
-    return ā ,b̄
 end
 
 function cubic_abp(model::RKModel, V, T, z)
