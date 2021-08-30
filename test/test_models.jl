@@ -197,6 +197,11 @@ end
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.6210836570941939 rtol = 1e-6
         end
 
+        @testset "PR w/ LCVMRule" begin
+            system = PR(["methanol","benzene"];mixing = LCVMRule, activity=Wilson)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.6286234264772204 rtol = 1e-6
+        end
+
         @testset "PR w/ WSRule" begin
             system = PR(["methanol","benzene"];mixing = WSRule, activity=Wilson)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.669085674824878 rtol = 1e-6
