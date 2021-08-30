@@ -148,6 +148,16 @@ end
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.5209112693371991 rtol = 1e-6
         end
 
+        @testset "RK w/ MHV1Rule" begin
+            system = RK(["methanol","benzene"];mixing = MHV1Rule, activity=Wilson)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5091065987876959 rtol = 1e-6
+        end
+
+        @testset "RK w/ MHV2Rule" begin
+            system = RK(["methanol","benzene"];mixing = MHV2Rule, activity=Wilson)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5071048453490448 rtol = 1e-6
+        end
+
         @testset "RK w/ WSRule" begin
             system = RK(["methanol","benzene"];mixing = WSRule, activity=Wilson)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.572912690389026 rtol = 1e-6
@@ -175,6 +185,16 @@ end
         @testset "PR w/ HVRule" begin
             system = PR(["methanol","benzene"];mixing = HVRule, activity=Wilson)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.632982061564318 rtol = 1e-6
+        end
+
+        @testset "PR w/ MHV1Rule" begin
+            system = PR(["methanol","benzene"];mixing = MHV1Rule, activity=Wilson)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.6211434867194446 rtol = 1e-6
+        end
+
+        @testset "PR w/ MHV2Rule" begin
+            system = PR(["methanol","benzene"];mixing = MHV2Rule, activity=Wilson)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.6210836570941939 rtol = 1e-6
         end
 
         @testset "PR w/ WSRule" begin
