@@ -36,19 +36,16 @@ function PT_flash(model::EoSModel,P,T,z,K0=nothing)
     g_1 = rr_flash_eval(K0,z,_1)
     
     if g_0 <= 0  #bubble point assumption
-        println("bubble point")
         β = _0
         β0 = _0
         xil = copy(z)
         xiv = rr_flash_vapor(K0,z,_0)
     elseif g_1 >= 0 #dew point assumption
-        println("dew point")
         β = _1
         β0 = _1
         xil = rr_flash_liquid(K0,z,_1)
         xiv = copy(z)
     else #two phase assumption
-        println("flash point")
         β = rr_vle_vapor_fraction(K0,z)
         
         xil = rr_flash_liquid(K0,z,β)

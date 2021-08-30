@@ -1,3 +1,14 @@
+"""
+    rr_vle_vapor_fraction(K,z)
+
+Given a vector of K values and a vector of compositions, calculates the vapor fraction `β`.
+the algorithm is a modification of _(1)_ , with safeguards for extreme cases.
+
+If the algorithm fails to converge, returns `NaN`. if it converges to a value `β ∉ [0,1]`, returns `-Inf` or `Inf`, depending on the case.
+
+
+1. Vassilis Gaganis, "Solution of the Rachford Rice equation using perturbation analysis", Fluid Phase Equilibria, Volume 536,2021,112981
+"""
 function rr_vle_vapor_fraction(K,z)
     #Solution of the Rachford Rice equation using perturbation analysis
     #https://doi.org/10.1016/j.fluid.2021.112981
@@ -10,17 +21,28 @@ function rr_vle_vapor_fraction(K,z)
     #ε*β_ℵ2(ε) ≈ ∑ci*ε^i
     #we obtain the coefficients and evaluate ε = 1.
     #for n = length(z) <= 4, we return exact solutions. 
-    
-    if length(z) <= 4
+    n_z = length(z)
+    _0 = zero(first(z)+first(K))
+    _1 = one(_0)
+    kmin = minimum(K)
+    kmax = maximum(K)
+    βmax = 1/(1-kmin) 
+    βmin = 1/(1-kmax) 
+    βmax < 0 && return -_1/_0
+    βmin > 1 && return _1/_0
+    if n_z <= 4
         return rr_vle_vapor_fraction_exact(K,z)
     end
     
     #z_ℵ1 is normalized
     ℵ1,k_ℵ1,z_ℵ1 = Clapeyron.rr_find_strongest(K,z)
+    β_near0,β_near1 = extrema(((_1/(_1 -k_ℵ1[1])),(_1/(_1 -k_ℵ1[2]))))
+    near_mean = sqrt(abs(β_near0)*abs(_1-β_near1))
+    
+
+
     β0 = rr_vle_vapor_fraction_exact(k_ℵ1,z_ℵ1)
     b0 = β0
-    _0 = zero(first(z)+first(K))
-    _1 = one(_0)
     M1,M2 = _0,_0
     N1,N2 = _0,_0
     Ξ1,Ξ2 = _0,_0
@@ -56,30 +78,58 @@ function rr_vle_vapor_fraction(K,z)
     t1 = b11*b11*P1 + 3*b11*b2*Ξ1 + (b22+2*b1*b3)*N1
     t2 = b111*Ξ2 + 2*b12*N2 + b3*M2
     b4 = -(t1+t2)/M1
-    #@show b0,b1,b2,b3,b4
-    βx = (b0+b1+b2+b3+b4)
-    #now we have 5 points to select.
-    r0 = rr_flash_eval(K,z,b0)
-    β1 = b0+b1
-    r1 = rr_flash_eval(K,z,β1)
-    β2 = β1+b2
-    r2 = rr_flash_eval(K,z,β2)
-    β3 = β2+b3
-    r3 = rr_flash_eval(K,z,β3)
-    β4 = β3+b4
-    r4 = rr_flash_eval(K,z,β4)
-    bx = SA[r0,r1,r2,r3,r4]
-    all_β = (β0,β1,β2,β3,β4)
-    idx_b = sortperm(bx)
-    sort_β = map(x->getindex(all_β,x),idx_b)
-    #TODO: refine 
-    return β4
+    βaprox = (b0+b1+b2+b3+b4) #β(ε=1)
+    βsol1 =  Solvers.ad_newton(x->rr_flash_eval(K,z,x),βaprox)
+
+    #converged to -2.2e-16 or lower, practically 0
+    if abs(βsol1) < eps(_1)
+        βsol1 =_0
+    end
+    if 0 <= βsol1 <= 1 #converged as expected inside range [0,1]
+        βsol = βsol1
+    elseif iszero(near_mean) #one βi is exacly zero or exactly one
+        (rr_flash_eval(K,z,_1) < eps(_1)) && (βsol = _1)
+        (rr_flash_eval(K,z,_0) < eps(_1)) && (βsol = _0)
+    elseif (βsol1 < β_near0) | (βsol1 > β_near1)     #in this case, we have two asymptotes really, really near one and zero  
+        βaprox_near0 = near_mean
+        βaprox_near1 = _1 - near_mean
+        βsol_near0 =  Solvers.ad_newton(x->rr_flash_eval(K,z,x),βaprox_near0)
+        βsol_near1 =  Solvers.ad_newton(x->rr_flash_eval(K,z,x),βaprox_near1)
+        βsol_near0,βsol_near1
+        if 0 <= βsol_near0 <= 1
+            βsol = βsol_near0
+        elseif 0 <= βsol_near1 <= 1
+            βsol = βsol_near1
+        end
+    else
+        βsol = _0/_0
+    end
+    return βsol
+
 end
 function rr_find_strongest(K,z)
     _0 = zero(first(z)+first(K))
     _1 = one(_0)
-    (_,idmin) =  findmin(K)
-    (_,idmax) =  findmax(K)
+    (kmin,idmin) =  findmin(K)
+    (kmax,idmax) =  findmax(K)
+    βmin = _1/(_1-kmax) 
+    βmax = _1/(_1-kmin) 
+    idx = 0
+    for i in 1:length(z)
+        idx +=1
+        Ki = K[i] 
+        idx in (idmin,idmax) && continue
+        βi = _1/(_1-Ki)
+        if βmin <= βi <= 0
+            idmin = idx
+            βmin = βi
+        elseif 1 <= βi <=βmax
+            idmax = idx
+            βmax = βi
+        end
+    end
+    
+    #(4, 2, 1, 5)
     id1 = 0
     id2 = 0
 
@@ -112,29 +162,13 @@ function rr_find_strongest(K,z)
     ks = (K[idmin],K[idmax],K[id1],K[id2])
     return idxs,ks,zs
     end
-    #=here are some tests, from the paper.
-    the paper has errors, z2 has 10 components, 9 and 10 repeated.
-    and after that, they dont include the bmax,bmin in their selected pair.
-    z1 = [0.30,0.15, 0.05, 0.02, 0.01, 0.02, 0.02, 0.03, 0.07, 0.33]
-    k1 = [3.0E+00, 2.0E+00, 1.1E+00, 8.0E-01, 4.0E-01, 1.0E-01, 5.0E-02, 2.0E-02, 1.0E-02, 1.0E-04]
-    idxs1,ks1,zs1 = Clapeyron.rr_find_strongest(k1,z1)
-    @test all(in.(idxs1,Ref((1,2,9,10))))
     
-    z2 = [0.00034825,0.01376300,0.13084000,0.10925000,0.00001000,0.51009000,0.23564000,0.00006000]
-    k2 = [5.2663E+02, 5.0400E+01, 1.6463E+00, 8.7450E-01, 1.5589E-01, 3.6588E-02, 2.6625E-02, 4.8918E-06]
-    idxs2,ks2,zs2 = Clapeyron.rr_find_strongest(k2,z2)
-    @test_broken all(in.(idxs2,Ref((1,2,6,7))))
-    #the paper is wrong here.
-    z3 = [0.0187002, 0.0243002, 0.5419054, 0.0999010, 0.0969010, 0.0400004, 0.0212002, 0.0148001, 0.0741507, 0.0350404, 0.0173602, 0.0157402]
-    k3 = [1.32420, 1.12778, 1.22222, 1.11760, 9.88047E-01, 8.94344E-01, 7.87440E-01, 7.43687E-01, 8.11797E-01, 6.93279E-01, 5.09443E-01, 2.28721E-01]
-    idxs3,ks3,zs3 = Clapeyron.rr_find_strongest(k3,z3)
-    @test all(in.(idxs3,Ref((1,3,9,12))))
-    
-    =#
     function rr_vle_vapor_fraction_exact(K,z)
+    #if this function is called, then we are sure that there is a solution in the interval [0,1]
+    _0 = zero(first(K)+first(z))
     n = length(z)
-    if n == 2
-        #0 = a1b -a0
+    _1 = one(_0)
+    if  n == 2
         z1,z2 = z
         k1,k2 = K
         b1,b2 = 1/(1-k1),1/(1-k2)
@@ -146,8 +180,6 @@ function rr_find_strongest(K,z)
         z1,z2,z3 = z
         k1,k2,k3 = K
         b1,b2,b3 = 1/(1-k1),1/(1-k2),1/(1-k3)
-        bmin = min(b1,b2,b3)
-        bmax = max(b1,b2,b3)
         a2 =(z1 + z2 + z3) 
         a1 = -b1*(z2 + z3) - b2*(z1 + z3) - b3*(z1 + z2)
         a0 = b1*b2*z3 + b1*b3*z2 + b2*b3*z1
@@ -157,25 +189,30 @@ function rr_find_strongest(K,z)
         x = -a1*inva2
         β1 = x-Δ2
         β2 = x+Δ2
-        #@show β1,β2
-        #@show bmin,bmax
-        if bmin < β1 < bmax
+        βmax = max(β1,β2)
+        βmin = min(β1,β2)
+        if 0 < β1 < 1
             return β1
-        else
+        elseif 0 < β2 < 1
             return β2
-        end
+        else
+            βmax = max(β1,β2)
+            βmin = min(β1,β2)
+            βmax < 0 && return -_1/_0
+            βmin > 1 && return _1/_0
+        end 
     elseif n == 4
         #0 = a0 + a1β + a2β^2 + a3β^3
         z1,z2,z3,z4 = z
         k1,k2,k3,k4 = K
         b1,b2,b3,b4 = 1/(1-k1),1/(1-k2),1/(1-k3),1/(1-k4)
-        bmin = min(b1,b2,b3,b4)
-        bmax = max(b1,b2,b3,b4)
         a3 =(z1 + z2 + z3 + z4)
         a2 = -b1*(z2 + z3 + z4) - b2*(z1 + z3 + z4) - b3*(z1 + z2 + z4)
         a1 = b1*b2*(z3+z4) + b1*b3*(z2+z4) + b2*b3*(z1+z4) + b1*b4*(z2+z3) + b2*b4*(z1+z3) + b3*b4*(z1+z2)
         a0 = -b1*b2*b3*z4 - b1*b2*b4*z3 - b1*b3*b4*z2 - b2*b3*b4*z1
         res1 =  Solvers.roots3(a0,a1,a2,a3)
+        βmax = max(b1,b2,b3,b4)
+        βmin = min(b1,b2,b3,b4)
         clx1,clx2,clx3 = res1
         r1,r2,r3 = real(clx1),real(clx2),real(clx3)
         rsum = r1+r2+r3
@@ -183,7 +220,6 @@ function rr_find_strongest(K,z)
         rmid = rsum - rmax - rmin
         return rmid
     else
-        _0 = zero(first(K)+first(z))
         return _0/_0
     end
     end
@@ -202,11 +238,8 @@ function rr_flash_eval(K,z,β,normalize=true)
             Kim1 = K[i] - _1
             res += invsumz*z[i]*Kim1/(1+β*Kim1)
         end
-        #@show β,res
-
-        return res
-    end
-     #porting those functions from my ex pkg.
+    return res
+end
    
 """
     rr_flash_vapor(k,z,β) 
