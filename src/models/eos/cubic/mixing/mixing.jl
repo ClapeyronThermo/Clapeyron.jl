@@ -14,4 +14,6 @@ has_sites(::Type{<:MixingRule})=false
 include("vdW1f.jl")
 include("Kay.jl")
 include("HV.jl")
+include("MHV1.jl")
+include("MHV2.jl")
 include("WS.jl")
