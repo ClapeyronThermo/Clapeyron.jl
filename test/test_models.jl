@@ -182,6 +182,11 @@ end
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.244507550417118 rtol = 1e-6
         end
 
+        @testset "PR w/ TwuAlpha" begin
+            system = PR(["ethane","undecane"];alpha = TwuAlpha)
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2650743158660063 rtol = 1e-6
+        end
+
         @testset "PR w/ HVRule" begin
             system = PR(["methanol","benzene"];mixing = HVRule, activity=Wilson)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.632982061564318 rtol = 1e-6
