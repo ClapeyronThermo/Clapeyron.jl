@@ -29,13 +29,17 @@ golden_number_fixpoint(x) = one(x) + one(x)/x
         #example of FMinBox in Optim.jl
         x0 = 2+ rand()
         ϕ = (1+sqrt(5))/2
-        @test SOL.fixpoint(golden_number_fixpoint,x0) ≈ ϕ
+        @test @inferred(SOL.fixpoint(golden_number_fixpoint,x0)) ≈ ϕ
     end
 
     function f_diffmcp!(fvec, x)
         fvec[1] = (1-x[1])^2-1.01
     end
 
+    @testset "roots3" begin
+        #@test [@inferred(SOL.roots3(SA[-6im, -(3 + 4im), 2im-2, 1.0]))...] ≈ [3, -2im, -1]
+        @test @inferred(SOL.roots3(1.0, -3.0, 3.0, -1.0)) ≈ [1, 1, 1]
+    end
     # A difficult MCP.
     #
     # Presented in Miranda and Fackler (2002): "Applied Computational Economics and
