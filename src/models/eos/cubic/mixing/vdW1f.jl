@@ -14,12 +14,13 @@ function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::
     return model
 end
 
-function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b)
+function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b,c)
     n = sum(z)
     invn2 = (one(n)/n)^2
     b̄ = dot(z,Symmetric(b),z) * invn2
+    c̄ = dot(z,c)/n
     ā = dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
-    return ā,b̄
+    return ā,b̄,c̄
 end
 
 is_splittable(::vdW1fRule) = false

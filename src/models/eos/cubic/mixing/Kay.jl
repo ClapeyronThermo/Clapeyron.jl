@@ -15,12 +15,13 @@ function KayRule(components::Vector{String}; activity=nothing, userlocations::Ve
     return model
 end
 
-function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b)
+function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b,c)
     n = sum(z)
     invn2 = (one(n)/n)^2
+    c̄ = dot(z,c)/n
     b̄ = (dot(z,Symmetric(b.^(1/3)),z) * invn2).^3
     ā = √(dot(z,Symmetric(a .* sqrt.(α*α') ./ b).^2,z)* invn2)  * b̄
-    return ā,b̄
+    return ā,b̄,c̄
 end
 
 is_splittable(::KayRule) = false

@@ -3,16 +3,18 @@ struct RKParam <: EoSParam
     b::PairParam{Float64}
     Tc::SingleParam{Float64}
     Pc::SingleParam{Float64}
+    Vc::SingleParam{Float64}
     Mw::SingleParam{Float64}
 end
 
 abstract type RKModel <: ABCubicModel end
 
-struct RK{T <: IdealModel,α,M} <: RKModel
+struct RK{T <: IdealModel,α,c,M} <: RKModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     alpha::α
     mixing::M
+    translation::c
     params::RKParam
     idealmodel::T
     absolutetolerance::Float64
@@ -37,14 +39,16 @@ molecular_weight(model::RK,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
 
 export RK
 function RK(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = RKAlpha,
+    alpha = PRAlpha,
     mixing = vdW1fRule,
-    activity = nothing,
+    activity=nothing,
+    translation=NoTranslation,
     userlocations=String[], 
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
+    translation_userlocations = String[],
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
@@ -53,6 +57,7 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     _Tc = params["Tc"]
     Tc = _Tc.values
+    _Vc = params["vc"]
     #T̄c = sum(sqrt.(Tc*Tc')) #is this term correctly calculated? sqrt(Tc*Tc') is a matrix sqrt
     Ωa, Ωb = ab_consts(RK)
     a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc^2/pc), k) 
@@ -61,10 +66,12 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
+    init_translation = init_model(translation,components,translation_userlocations,verbose)
+
     icomponents = 1:length(components)
-    packagedparams = RKParam(a, b, params["Tc"],_pc,Mw)
+    packagedparams = RKParam(a, b, params["Tc"],_pc,_Vc,Mw)
     references = String[]
-    model = RK(components,icomponents,init_alpha,init_mixing,packagedparams,init_idealmodel,1e-12,references)
+    model = RK(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
     return model
 end
 
@@ -76,29 +83,30 @@ end
 
 function cubic_abp(model::RKModel, V, T, z)
     n = sum(z)
-    a,b = cubic_ab(model,V,T,z,n)
-    v = V/n
-    p =  R̄*T/(v-b) - a/((v+b)*v)
+    a,b,c = cubic_ab(model,V,T,z,n)
+    v = V/n+c
+    p =  R̄*T/(v+c-b) - a/((v+c+b)*(v+c))
     return a,b,p
 end
 
 function cubic_poly(model::RKModel,p,T,z)
     n = sum(z)
-    a,b = cubic_ab(model,p,T,z,n)
+    a,b,c = cubic_ab(model,p,T,z,n)
     RT⁻¹ = 1/(R̄*T)
     A = a*p* RT⁻¹* RT⁻¹
     B = b*p* RT⁻¹
     _1 = one(a)
-    return [-A*B, -B*(B+_1) + A, -_1, _1]
+    return [-A*B, -B*(B+_1) + A, -_1, _1],c
 end
 
 
 function a_res(model::RKModel, V, T, z)
     n = sum(z)
-    ā,b̄ = cubic_ab(model,V,T,z,n)
-    ρ = n/V
+    ā,b̄,c̄ = cubic_ab(model,V,T,z,n)
+    ρt = (V/n+c̄)^(-1) # translated density
+    ρ  = n/V
     RT⁻¹ = 1/(R̄*T)
-    return -log(1-b̄*ρ) - ā*RT⁻¹*log(b̄*ρ+1)/b̄
+    return -log(1+(c̄-b̄)*ρ) - ā*RT⁻¹*log(b̄*ρt+1)/b̄
     #return -log(V-n*b̄) - ā/(R̄*T*b̄*√(T/T̄c))*log(1+n*b̄/V)
 end
 
