@@ -17,9 +17,22 @@ import NaNMath
         Bchol\∇f
     end
 
+    #
     Base.summary(::NLSolvers.Newton{<:Direct, typeof(cholesky_linsolve)}) = "Newton's method with Cholesky linsolve"
     CholeskyNewton() = NLSolvers.Newton(linsolve=cholesky_linsolve)
     export CholeskyNewton
+
+    """
+        det_22(a,b,c,d)
+
+    Calculates `a*b - c*d` without less rounding error than doing it naively
+    """
+    function det_22(a,b,c,d)
+        t = c*d
+        e = muladd(c,d,-t) #cd - cd
+        f = muladd(a,b,-t) #ab - cd
+        return f-e  #ab - cd + cd - cd
+    end
 
     function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
         # copied from PolynomialRoots.jl, adapted to be AD friendly
@@ -35,10 +48,14 @@ import NaNMath
         E3  = -poly[1]*a1
         s0  =  E1
         E12 =  E1*E1
-        A   =  2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
-        B   =  E12 - 3*E2                 # = s1 s2
+        A   =  det_22(2*E1,E12,9*E1,E2) + 27*E3
+        #A   =  2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
+        B = det_22(E1,E1,3,E2)
+        #B   =  E12 - 3*E2                 # = s1 s2
         # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
-        Δ = (A*A - 4*B*B*B)^0.5
+        Δ2 = det_22(A,A,4*B*B,B)
+        Δ = sqrt(Δ2)
+        #Δ = (A*A - 4*B*B*B)^0.5
         if real(conj(A)*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
             s1 = exp(log(0.5 * (A + Δ)) * third)
         else

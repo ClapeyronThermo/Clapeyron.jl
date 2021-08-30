@@ -1,7 +1,3 @@
-
-
-
-
 include("rachford_rice.jl")
 include("bubble_pressure.jl")
 include("LLE_pressure.jl")
