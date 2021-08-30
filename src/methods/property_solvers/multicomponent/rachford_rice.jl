@@ -10,8 +10,16 @@ function rr_vle_vapor_fraction(K,z)
     #ε*β_ℵ2(ε) ≈ ∑ci*ε^i
     #we obtain the coefficients and evaluate ε = 1.
     #for n = length(z) <= 4, we return exact solutions. 
-    
-    if length(z) <= 4
+    n_z = length(z)
+    _0 = zero(first(z)+first(K))
+    _1 = one(_0)
+    kmin = minimum(K)
+    kmax = maximum(K)
+    βmin = 1/(1-kmin)
+    βmax < 0 && return -_1/_0
+    βmax > 1 && return _1/_0
+
+    if n_z <= 4
         return rr_vle_vapor_fraction_exact(K,z)
     end
     
@@ -19,8 +27,7 @@ function rr_vle_vapor_fraction(K,z)
     ℵ1,k_ℵ1,z_ℵ1 = Clapeyron.rr_find_strongest(K,z)
     β0 = rr_vle_vapor_fraction_exact(k_ℵ1,z_ℵ1)
     b0 = β0
-    _0 = zero(first(z)+first(K))
-    _1 = one(_0)
+   
     M1,M2 = _0,_0
     N1,N2 = _0,_0
     Ξ1,Ξ2 = _0,_0
@@ -132,9 +139,11 @@ function rr_find_strongest(K,z)
     
     =#
     function rr_vle_vapor_fraction_exact(K,z)
+    #if this function is called, then we are sure that there is a solution in the interval [0,1]
+    _0 = zero(first(K)+first(z))
     n = length(z)
-    if n == 2
-        #0 = a1b -a0
+    _1 = one(_0)
+    if  n == 2
         z1,z2 = z
         k1,k2 = K
         b1,b2 = 1/(1-k1),1/(1-k2)
@@ -146,8 +155,6 @@ function rr_find_strongest(K,z)
         z1,z2,z3 = z
         k1,k2,k3 = K
         b1,b2,b3 = 1/(1-k1),1/(1-k2),1/(1-k3)
-        bmin = min(b1,b2,b3)
-        bmax = max(b1,b2,b3)
         a2 =(z1 + z2 + z3) 
         a1 = -b1*(z2 + z3) - b2*(z1 + z3) - b3*(z1 + z2)
         a0 = b1*b2*z3 + b1*b3*z2 + b2*b3*z1
@@ -157,20 +164,23 @@ function rr_find_strongest(K,z)
         x = -a1*inva2
         β1 = x-Δ2
         β2 = x+Δ2
-        #@show β1,β2
-        #@show bmin,bmax
-        if bmin < β1 < bmax
+        βmax = max(β1,β2)
+        βmin = min(β1,β2)
+        if 0 < β1 < 1
             return β1
-        else
+        elseif 0 < β2 < 1
             return β2
-        end
+        else
+            βmax = max(β1,β2)
+            βmin = min(β1,β2)
+            βmax < 0 && return -_1/_0
+            βmin > 1 && return _1/_0
+        end 
     elseif n == 4
         #0 = a0 + a1β + a2β^2 + a3β^3
         z1,z2,z3,z4 = z
         k1,k2,k3,k4 = K
         b1,b2,b3,b4 = 1/(1-k1),1/(1-k2),1/(1-k3),1/(1-k4)
-        bmin = min(b1,b2,b3,b4)
-        bmax = max(b1,b2,b3,b4)
         a3 =(z1 + z2 + z3 + z4)
         a2 = -b1*(z2 + z3 + z4) - b2*(z1 + z3 + z4) - b3*(z1 + z2 + z4)
         a1 = b1*b2*(z3+z4) + b1*b3*(z2+z4) + b2*b3*(z1+z4) + b1*b4*(z2+z3) + b2*b4*(z1+z3) + b3*b4*(z1+z2)
@@ -183,7 +193,6 @@ function rr_find_strongest(K,z)
         rmid = rsum - rmax - rmin
         return rmid
     else
-        _0 = zero(first(K)+first(z))
         return _0/_0
     end
     end
