@@ -3,18 +3,20 @@ function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
     a = model.params.a.values
     b = model.params.b.values
     α = @f(α_function,model.alpha)
+    c = @f(translation,model.translation)
     if length(z)>1
-        ā,b̄ = @f(mixing_rule,model.mixing,α,a,b)
+        ā,b̄,c̄ = @f(mixing_rule,model.mixing,α,a,b,c)
     else
         ā = a[1,1]*α[1]
         b̄ = b[1,1]
+        c̄ = c[1,1]
     end
-    return ā ,b̄
+    return ā ,b̄, c̄
 end
 
 function second_virial_coefficient(model::ABCubicModel,T,z = SA[1.0])
     #@info "fast shortcut"
-    a,b = cubic_ab(model,1e-4,T,z)
+    a,b,c = cubic_ab(model,1e-4,T,z)
     return b-a/(R̄*T)
 end
 
@@ -27,7 +29,7 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
     lb_v   =lb_volume(model,z)
     xx = z/sum(z)
     RTp = R̄*T/p
-    _poly = cubic_poly(model,p,T,z)
+    _poly,c̄ = cubic_poly(model,p,T,z)
 
     #sols = Solvers.poly3(_poly)
     sols = Solvers.roots3(_poly)
@@ -73,18 +75,18 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
     end
     #this catches the supercritical phase as well
     if vl ≈ vg
-        return vl
+        return vl-c̄
     end
     if phase == :unknown
-        gg = gibbs(vg)
-        gl = gibbs(vl)
+        gg = gibbs(vg-c̄)
+        gl = gibbs(vl-c̄)
         #@show vg,vl
         #@show gg,gl
-        return ifelse(gg<gl,vg,vl)
+        return ifelse(gg<gl,vg-c̄,vl-c̄)
     elseif is_liquid(phase)
-        return vl
+        return vl-c̄
     elseif is_vapour(phase)
-        return vg
+        return vg-c̄
     # else
     #     gg = gibbs(vg)
     #     gl = gibbs(vl)

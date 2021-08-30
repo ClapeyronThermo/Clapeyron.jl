@@ -26,12 +26,13 @@ function LCVMRule(components::Vector{String}; activity = Wilson, userlocations::
 end
 
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::LCVMRuleModel,α,a,b)
+function mixing_rule(model::PRModel,V,T,z,mixing_model::LCVMRuleModel,α,a,b,c)
     n = sum(z)
     x = z./n
     invn2 = (one(n)/n)^2
     g_E = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z) / n
     b̄ = dot(z,Symmetric(b),z) * invn2
+    c̄ = dot(z,c)/n
 
     ᾱ = a.*sqrt.(α.*α')./(b*R̄*T)
 
@@ -41,7 +42,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::LCVMRuleModel,α,a,b)
     C1 = λ/AV+(1-λ)/AM
 
     ā = b̄*R̄*T*(C1*(g_E/(R̄*T)-0.3*sum(x[i]*log(b̄/b[i,i]) for i ∈ @comps))+sum(x[i]*ᾱ[i,i] for i ∈ @comps))
-    return ā,b̄
+    return ā,b̄,c̄
 end
 
 is_splittable(::LCVMRule) = true
