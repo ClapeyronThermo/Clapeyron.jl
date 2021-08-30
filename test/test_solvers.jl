@@ -106,4 +106,11 @@ golden_number_fixpoint(x) = one(x) + one(x)/x
     zs_eps_0 = [0.13754371891028325, 0.2984515568715462, 0.2546683930289046, 0.08177453852283137, 0.22756179266643456]
     @test abs(Clapeyron.rr_vle_vapor_fraction(Ks_eps_0,zs_eps_0)) < eps(Float64)
 end
+    @testset "det_22" begin
+        a1 = 1
+        a2 = 2
+        a3 = 3
+        a4 = 4
+        @test SOL.det_22(1,2,3,4) == a1*a2 - a3*a4
+    end
 end
