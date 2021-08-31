@@ -17,22 +17,7 @@ struct Wilson{c<:EoSModel} <: WilsonModel
     references::Array{String,1}
 end
 
-has_sites(::Type{<:WilsonModel}) = false
-has_groups(::Type{<:WilsonModel}) = false
-built_by_macro(::Type{<:WilsonModel}) = false
-
-function Base.show(io::IO, mime::MIME"text/plain", model::Wilson)
-    return eosshow(io, mime, model)
-end
-
-function Base.show(io::IO, model::Wilson)
-    return eosshow(io, model)
-end
-
-Base.length(model::Wilson) = Base.length(model.icomponents)
-
-molecular_weight(model::Wilson,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
-
+@registermodel Wilson
 export Wilson
 
 function Wilson(components::Vector{String}; puremodel=PR,
@@ -67,5 +52,3 @@ function activity_coefficient(model::WilsonModel,p,T,z)
     lnγ = 1 .- log.(sum(x[i]*Λ[:,i] for i ∈ @comps)) .-sum(x[j] .*Λ[j,:] ./(sum(x[i]*Λ[j,i] for i ∈ @comps)) for j ∈ @comps)
     return exp.(lnγ)
 end
-
-is_splittable(::Wilson) = true

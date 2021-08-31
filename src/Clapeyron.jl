@@ -48,6 +48,8 @@ include("models/eos/SAFT/CKSAFT/variants/sCKSAFT.jl")
 
 include("models/eos/SAFT/BACKSAFT/BACKSAFT.jl")
 
+include("models/eos/cubic/translation/translation.jl")
+
 include("models/eos/cubic/vdW.jl")
 include("models/eos/cubic/RK/RK.jl")
 include("models/eos/cubic/PR/PR.jl")

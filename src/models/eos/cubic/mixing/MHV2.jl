@@ -5,18 +5,7 @@ struct MHV2Rule{γ} <: MHV2RuleModel
     activity::γ
 end
 
-has_sites(::Type{<:MHV2RuleModel}) = false
-has_groups(::Type{<:MHV2RuleModel}) = false
-built_by_macro(::Type{<:MHV2RuleModel}) = false
-
-function Base.show(io::IO, mime::MIME"text/plain", model::MHV2Rule)
-    return eosshow(io, mime, model)
-end
-
-function Base.show(io::IO, model::MHV2Rule)
-    return eosshow(io, model)
-end
-
+@registermodel MHV2Rule
 export MHV2Rule
 function MHV2Rule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)
@@ -60,5 +49,3 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::MHV2RuleModel,α,a,b,c)
     ā = b̄*R̄*T*(-q1-sqrt(q1^2-4*q2*c))/(2*q2)
     return ā,b̄,c̄
 end
-
-is_splittable(::MHV2Rule) = true
