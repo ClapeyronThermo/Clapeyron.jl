@@ -19,3 +19,5 @@ function α_function(model::CubicModel,V,T,z,alpha_model::RKAlphaModel)
     α = @. 1 /√(T/Tc)
     return α
 end
+
+is_splittable(::RKAlpha) = false
