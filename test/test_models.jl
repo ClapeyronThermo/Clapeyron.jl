@@ -133,6 +133,11 @@ end
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2572506872856557 rtol = 1e-6
         end
 
+        @testset "PSRK" begin
+            system = PSRK(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.0615645670968852 rtol = 1e-6
+        end
+
         @testset "RK w/ BMAlpha" begin
             system = RK(["ethane","undecane"];alpha = BMAlpha)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2569334957019538 rtol = 1e-6
@@ -180,6 +185,16 @@ end
         @testset "PR78" begin
             system = PR78(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.246269686941749 rtol = 1e-6
+        end
+
+        @testset "VTPR" begin
+            system = VTPR(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.1140940850567485 rtol = 1e-6
+        end
+
+        @testset "UMRPR" begin
+            system = UMRPR(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.0424955521839336 rtol = 1e-6
         end
 
         @testset "PR w/ BMAlpha" begin
