@@ -24,7 +24,7 @@ function translation(model::CubicModel,V,T,z,translation_model::MTTranslation)
     β  = @. -10.2447-28.6312*ω
 
     t0 = @. R̄*Tc/Pc*(-0.014471+0.067498*ω-0.084852*ω^2+0.067298*ω^3-0.017366*ω^4)
-    tc = @. R*Tc/Pc*(0.3074-Zc)
+    tc = @. R̄*Tc/Pc*(0.3074-Zc)
 
     Tr = @. T/Tc
     return @. t0+(tc-t0)*exp(β*abs(1-Tr))
