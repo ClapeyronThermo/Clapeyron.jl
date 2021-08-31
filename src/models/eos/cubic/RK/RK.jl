@@ -69,7 +69,7 @@ function cubic_abp(model::RKModel, V, T, z)
     n = sum(z)
     a,b,c = cubic_ab(model,V,T,z,n)
     v = V/n+c
-    p =  R̄*T/(v+c-b) - a/((v+c+b)*(v+c))
+    p =  R̄*T/(v-b) - a/((v+b)*v)
     return a,b,p
 end
 

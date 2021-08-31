@@ -63,6 +63,23 @@ function lnγ_comb(model::UNIFACModel,V,T,z)
     return lnγ_comb
 end
 
+function lnγ_SG(model::UNIFACModel,V,T,z)
+    Q = model.params.Q.values
+    R = model.params.R.values
+
+    v  = model.groups.n_flattenedgroups
+
+    x = z ./ sum(z)
+
+    r =sum(v[:][k]*R[k] for k in @groups)
+    q =sum(v[:][k]*Q[k] for k in @groups)
+
+    Φ = r/sum(x[i]*r[i] for i ∈ @comps)
+    θ = q/sum(x[i]*q[i] for i ∈ @comps)
+    lnγ_SG = @. -5*q*(log(Φ/θ)+(1-Φ/θ))
+    return lnγ_SG
+end
+
 function lnγ_res(model::UNIFACModel,V,T,z)
     v  = model.groups.n_flattenedgroups
 

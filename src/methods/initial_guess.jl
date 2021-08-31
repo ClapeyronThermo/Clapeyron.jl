@@ -167,10 +167,14 @@ end
 
 function lb_volume(model::CubicModel,z = SA[1.0])
     n = sum(z)
+    V = 1e-5
+    T = 0.
     invn = one(n)/n
     b = model.params.b.values
+    c = @f(translation,model.translation)
     b̄ = dot(z,Symmetric(b),z)*invn*invn
-    return b̄
+    c̄ = dot(z,c)*invn
+    return b̄-c̄
 end
 
 function lb_volume(model::CPAModel,z = SA[1.0])
