@@ -24,7 +24,7 @@ end
 export RK
 
 function RK(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = PRAlpha,
+    alpha = RKAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
