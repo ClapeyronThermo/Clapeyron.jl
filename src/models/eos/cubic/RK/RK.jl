@@ -53,7 +53,7 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     init_translation = init_model(translation,components,translation_userlocations,verbose)
 
     icomponents = 1:length(components)
-    packagedparams = RKParam(a, b, params["Tc"],_pc,_Vc,Mw)
+    packagedparams = RKParam(a, b, params["Tc"],_pc,Mw)
     references = String[]
     model = RK(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
     return model
