@@ -203,6 +203,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel))
 
         return [M((allfields[k][i] for k in fieldnames(M))...) for i in 1:len]
     catch e
+        rethrow(e)
         @show model
         return simple_split_model(model)
     end

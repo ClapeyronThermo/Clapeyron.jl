@@ -3,7 +3,6 @@ struct RKParam <: EoSParam
     b::PairParam{Float64}
     Tc::SingleParam{Float64}
     Pc::SingleParam{Float64}
-    Vc::SingleParam{Float64}
     Mw::SingleParam{Float64}
 end
 
@@ -21,23 +20,9 @@ struct RK{T <: IdealModel,α,c,M} <: RKModel
     references::Array{String,1}
 end
 
-has_sites(::Type{<:RKModel}) = false
-has_groups(::Type{<:RKModel}) = false
-built_by_macro(::Type{<:RKModel}) = false
-
-function Base.show(io::IO, mime::MIME"text/plain", model::RK)
-    return eosshow(io, mime, model)
-end
-
-function Base.show(io::IO, model::RK)
-    return eosshow(io, model)
-end
-
-Base.length(model::RK) = Base.length(model.icomponents)
-
-molecular_weight(model::RK,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
-
+@registermodel RK
 export RK
+
 function RK(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
@@ -57,7 +42,6 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     _Tc = params["Tc"]
     Tc = _Tc.values
-    _Vc = params["vc"]
     #T̄c = sum(sqrt.(Tc*Tc')) #is this term correctly calculated? sqrt(Tc*Tc') is a matrix sqrt
     Ωa, Ωb = ab_consts(RK)
     a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc^2/pc), k) 
@@ -69,7 +53,7 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     init_translation = init_model(translation,components,translation_userlocations,verbose)
 
     icomponents = 1:length(components)
-    packagedparams = RKParam(a, b, params["Tc"],_pc,_Vc,Mw)
+    packagedparams = RKParam(a, b, params["Tc"],_pc,Mw)
     references = String[]
     model = RK(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
     return model
