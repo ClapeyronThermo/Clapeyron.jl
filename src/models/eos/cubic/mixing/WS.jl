@@ -5,18 +5,7 @@ struct WSRule{γ} <: WSRuleModel
     activity::γ
 end
 
-has_sites(::Type{<:WSRuleModel}) = false
-has_groups(::Type{<:WSRuleModel}) = false
-built_by_macro(::Type{<:WSRuleModel}) = false
-
-function Base.show(io::IO, mime::MIME"text/plain", model::WSRule)
-    return eosshow(io, mime, model)
-end
-
-function Base.show(io::IO, model::WSRule)
-    return eosshow(io, model)
-end
-
+@registermodel WSRule
 export WSRule
 function WSRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)
@@ -48,4 +37,3 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::WSRuleModel,α,a,b,c)
     return ā,b̄,c̄
 end
 
-is_splittable(::WSRule) = true

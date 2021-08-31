@@ -5,18 +5,7 @@ struct HVRule{γ} <: HVRuleModel
     activity::γ
 end
 
-has_sites(::Type{<:HVRuleModel}) = false
-has_groups(::Type{<:HVRuleModel}) = false
-built_by_macro(::Type{<:HVRuleModel}) = false
-
-function Base.show(io::IO, mime::MIME"text/plain", model::HVRule)
-    return eosshow(io, mime, model)
-end
-
-function Base.show(io::IO, model::HVRule)
-    return eosshow(io, model)
-end
-
+@registermodel HVRule
 export HVRule
 function HVRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)
@@ -44,4 +33,3 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::HVRuleModel,α,a,b,c)
     return ā,b̄,c̄
 end
 
-is_splittable(::HVRule) = true
