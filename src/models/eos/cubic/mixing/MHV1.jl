@@ -5,18 +5,7 @@ struct MHV1Rule{γ} <: MHV1RuleModel
     activity::γ
 end
 
-has_sites(::Type{<:MHV1RuleModel}) = false
-has_groups(::Type{<:MHV1RuleModel}) = false
-built_by_macro(::Type{<:MHV1RuleModel}) = false
-
-function Base.show(io::IO, mime::MIME"text/plain", model::MHV1Rule)
-    return eosshow(io, mime, model)
-end
-
-function Base.show(io::IO, model::MHV1Rule)
-    return eosshow(io, model)
-end
-
+@registermodel MHV1Rule
 export MHV1Rule
 function MHV1Rule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)
@@ -46,5 +35,3 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::MHV1RuleModel,α,a,b,c)
     ā = b̄*R̄*T*(sum(x[i]*a[i,i]*α[i]/b[i,i]/(R̄*T) for i ∈ @comps)-1/0.53*(g_E/(R̄*T)+sum(x[i]*log(b̄/b[i,i]) for i ∈ @comps)))
     return ā,b̄,c̄
 end
-
-is_splittable(::MHV1Rule) = true

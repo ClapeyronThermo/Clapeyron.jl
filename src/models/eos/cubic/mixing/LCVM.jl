@@ -5,18 +5,7 @@ struct LCVMRule{γ} <: LCVMRuleModel
     activity::γ
 end
 
-has_sites(::Type{<:LCVMRuleModel}) = false
-has_groups(::Type{<:LCVMRuleModel}) = false
-built_by_macro(::Type{<:LCVMRuleModel}) = false
-
-function Base.show(io::IO, mime::MIME"text/plain", model::LCVMRule)
-    return eosshow(io, mime, model)
-end
-
-function Base.show(io::IO, model::LCVMRule)
-    return eosshow(io, model)
-end
-
+@registermodel LCVMRule
 export LCVMRule
 function LCVMRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)
@@ -44,5 +33,3 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::LCVMRuleModel,α,a,b,c)
     ā = b̄*R̄*T*(C1*(g_E/(R̄*T)-0.3*sum(x[i]*log(b̄/b[i,i]) for i ∈ @comps))+sum(x[i]*ᾱ[i,i] for i ∈ @comps))
     return ā,b̄,c̄
 end
-
-is_splittable(::LCVMRule) = true

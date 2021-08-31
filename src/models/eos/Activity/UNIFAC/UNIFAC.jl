@@ -18,22 +18,7 @@ struct UNIFAC{c<:EoSModel} <: UNIFACModel
     references::Array{String,1}
 end
 
-has_sites(::Type{<:UNIFACModel}) = false
-has_groups(::Type{<:UNIFACModel}) = true
-built_by_macro(::Type{<:UNIFACModel}) = false
-
-function Base.show(io::IO, mime::MIME"text/plain", model::UNIFAC)
-    return eosshow(io, mime, model)
-end
-
-function Base.show(io::IO, model::UNIFAC)
-    return eosshow(io, model)
-end
-
-Base.length(model::UNIFAC) = Base.length(model.icomponents)
-
-molecular_weight(model::UNIFAC,z=SA[1.0]) = group_molecular_weight(mw(model),z)
-
+@registermodel UNIFAC
 export UNIFAC
 
 function UNIFAC(components; puremodel=PR,
@@ -49,7 +34,7 @@ function UNIFAC(components; puremodel=PR,
     Q  = params["Q"]
     icomponents = 1:length(components)
     
-    init_puremodel = [puremodel([components[i]]) for i in icomponents]
+    init_puremodel = [puremodel([groups.components[i]]) for i in icomponents]
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String[]
     model = UNIFAC(components,icomponents,groups,packagedparams,init_puremodel,1e-12,references)
@@ -119,5 +104,3 @@ function lnΓi(model::UNIFACModel,V,T,z)
     lnΓi_ = [Q.*(1 .-log.(sum(θ[i][m]*ψ[m,:] for m ∈ @groups)) .- sum(θ[i][m]*ψ[:,m]./sum(θ[i][n]*ψ[n,m] for n ∈ @groups) for m ∈ @groups)) for i ∈ @comps]
     return lnΓi_
 end
-
-is_splittable(::UNIFAC) = true

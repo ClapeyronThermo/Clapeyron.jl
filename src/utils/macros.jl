@@ -24,7 +24,9 @@ The caveat is that `model` has to exist in the local namespace.
 `icomponents` is an iterator that goes through all component indices.
 """
 macro comps()
-    return :($(esc(:(model.icomponents))))
+    return quote
+        1:length(model)
+    end |> esc
 end
 
 """
@@ -338,6 +340,64 @@ function init_model(idealmodel::Type{<:IdealModel},components,userlocations,verb
     verbose && @info("""Now creating ideal model:
     $idealmodel""")
     return idealmodel(components;userlocations,verbose)
+end
+
+macro registermodel(model)
+    _model = @eval $model
+    _has_components = hasfield(_model,:components)
+    splittable = _has_components
+
+    _has_sites = hasfield(_model,:sites)
+    _has_groups = hasfield(_model,:groups)
+    _eos_show = if _has_groups
+        :(gc_eosshow(io, mime, model))
+    else
+        :(eosshow(io, mime, model))
+    end
+  
+    _len = if hasfield(_model,:icomponents)
+        :(Base.length(model.icomponents))
+    else
+        :(Base.length(model.components))
+    end
+
+    _length = if _has_components
+            :(Base.length(model::$model) = $_len)
+        else
+            :()
+        end
+
+    _mw = if _has_groups
+        :(group_molecular_weight(model.groups,mw(model),z))
+    else
+        :(comp_molecular_weight(mw(model),z))
+    end
+
+    _molecular_weight = if _has_components
+        :(molecular_weight(model::$model,z=SA[1.0]) =$_mw)
+    else
+        :()
+    end
+
+return quote 
+    has_sites(::Type{<:$model}) = $_has_sites
+    has_groups(::Type{<:$model}) = $_has_groups
+
+    function Base.show(io::IO, mime::MIME"text/plain", model::$model)
+        return $_eos_show
+    end
+
+    function Base.show(io::IO, model::$model)
+        return eosshow(io, model)
+    end
+
+    built_by_macro(::Type{<:$model}) = false
+    
+    $_length
+
+    $_molecular_weight
+
+    end |> esc
 end
 
 export @newmodel, @f, @newmodelgc, @newmodelsimple

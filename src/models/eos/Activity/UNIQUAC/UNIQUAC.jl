@@ -15,23 +15,7 @@ struct UNIQUAC{c<:EoSModel} <: UNIQUACModel
     absolutetolerance::Float64
     references::Array{String,1}
 end
-
-has_sites(::Type{<:UNIQUACModel}) = false
-has_groups(::Type{<:UNIQUACModel}) = false
-built_by_macro(::Type{<:UNIQUACModel}) = false
-
-function Base.show(io::IO, mime::MIME"text/plain", model::UNIQUAC)
-    return eosshow(io, mime, model)
-end
-
-function Base.show(io::IO, model::UNIQUAC)
-    return eosshow(io, model)
-end
-
-Base.length(model::UNIQUAC) = Base.length(model.icomponents)
-
-molecular_weight(model::UNIQUAC,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
-
+@registermodel UNIQUAC
 export UNIQUAC
 
 function UNIQUAC(components::Vector{String}; puremodel=PR,
@@ -65,5 +49,3 @@ function activity_coefficient(model::UNIQUACModel,p,T,z)
     lnγ_res  = q.*(1 .-log.(sum(θ[i]*τ[i,:] for i ∈ @comps)) .-sum(θ[i]*τ[:,i]/sum(θ[j]*τ[j,i] for j ∈ @comps) for i ∈ @comps))
     return exp.(lnγ_comb+lnγ_res)
 end
-
-is_splittable(::UNIQUAC) = true
