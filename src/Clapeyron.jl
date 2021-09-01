@@ -54,6 +54,7 @@ include("models/eos/Activity/Wilson/Wilson.jl")
 include("models/eos/Activity/NRTL/NRTL.jl")
 include("models/eos/Activity/UNIQUAC/UNIQUAC.jl")
 include("models/eos/Activity/UNIFAC/UNIFAC.jl")
+include("models/eos/Activity/COSMOSAC/COSMOSAC.jl")
 
 include("models/eos/cubic/alphas/alphas.jl")
 include("models/eos/cubic/mixing/mixing.jl")
