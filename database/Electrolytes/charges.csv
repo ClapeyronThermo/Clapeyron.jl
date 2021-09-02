@@ -1,0 +1,7 @@
+Clapeyron Database File,,,,,
+Charges Like Parameters,,,,,
+species,charge,source
+water,0.,
+Li+,1.,
+Na+,1.,
+Cl-,-1.,
