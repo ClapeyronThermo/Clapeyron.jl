@@ -273,6 +273,21 @@ end
         system = UNIFAC(["methanol","benzene"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5322232657797463 rtol = 1e-6
     end
+
+    @testset "COSMOSAC02" begin
+        system = COSMOSAC02(["water","ethanol"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.3871817962565904 rtol = 1e-6
+    end
+
+    @testset "COSMOSAC10" begin
+        system = COSMOSAC10(["water","ethanol"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.4015660588643404 rtol = 1e-6
+    end
+
+    @testset "COSMOSACdsp" begin
+        system = COSMOSACdsp(["water","ethanol"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.4398951117248127 rtol = 1e-6
+    end
 end
 
 @testset "Ideal models" begin
