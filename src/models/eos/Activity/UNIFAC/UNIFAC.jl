@@ -53,8 +53,8 @@ function lnγ_comb(model::UNIFACModel,V,T,z)
 
     x = z ./ sum(z)
 
-    r =sum(v[:][k]*R[k] for k in @groups)
-    q =sum(v[:][k]*Q[k] for k in @groups)
+    r =[sum(v[i][k]*R[k] for k in @groups) for i in @comps]
+    q =[sum(v[i][k]*Q[k] for k in @groups) for i in @comps]
 
     Φ = r/sum(x[i]*r[i] for i ∈ @comps)
     Φ_p = r.^(3/4)/sum(x[i]*r[i]^(3/4) for i ∈ @comps)
@@ -71,8 +71,8 @@ function lnγ_SG(model::UNIFACModel,V,T,z)
 
     x = z ./ sum(z)
 
-    r =sum(v[:][k]*R[k] for k in @groups)
-    q =sum(v[:][k]*Q[k] for k in @groups)
+    r =[sum(v[i][k]*R[k] for k in @groups) for i ∈ @comps]
+    q =[sum(v[i][k]*Q[k] for k in @groups) for i ∈ @comps]
 
     Φ = r/sum(x[i]*r[i] for i ∈ @comps)
     θ = q/sum(x[i]*q[i] for i ∈ @comps)
@@ -85,7 +85,7 @@ function lnγ_res(model::UNIFACModel,V,T,z)
 
     lnΓ_ = @f(lnΓ)
     lnΓi_ = @f(lnΓi)
-    lnγ_res_ =  sum(v[:][k].*(lnΓ_[k].-lnΓi_[:][k]) for k ∈ @groups)
+    lnγ_res_ =  [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
     return lnγ_res_
 end
 
@@ -116,8 +116,8 @@ function lnΓi(model::UNIFACModel,V,T,z)
     v  = model.groups.n_flattenedgroups
 
     ψ = @. exp(-(A+B*T+C*T^2)/T)
-    X = v ./ sum(v[:][k] for k ∈ @groups)
-    θ = X.*Q ./ sum(X[:][n]*Q[n] for n ∈ @groups)
+    X = [v[i][:] ./ sum(v[i][k] for k ∈ @groups) for i ∈ @comps]
+    θ = [X[i][:].*Q ./ sum(X[i][n]*Q[n] for n ∈ @groups) for i ∈ @comps]
     lnΓi_ = [Q.*(1 .-log.(sum(θ[i][m]*ψ[m,:] for m ∈ @groups)) .- sum(θ[i][m]*ψ[:,m]./sum(θ[i][n]*ψ[n,m] for n ∈ @groups) for m ∈ @groups)) for i ∈ @comps]
     return lnΓi_
 end
