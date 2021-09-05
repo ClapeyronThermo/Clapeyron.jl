@@ -20,7 +20,6 @@ export DH
 function DH(components; RSPmodel=ConstW, SAFTlocations=String[], userlocations=String[], ideal_userlocations=String[], verbose=false)
     params,sites = getparams(components, append!(["Electrolytes/charges.csv","properties/molarmass.csv"],SAFTlocations); userlocations=userlocations, verbose=verbose)
     icomponents = 1:length(components)
-    println(params)
     params["sigma"].values .*= 1E-10
     sigma = params["sigma"]
     charge = params["charge"]

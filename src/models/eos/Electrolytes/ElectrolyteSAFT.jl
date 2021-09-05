@@ -8,6 +8,7 @@ struct ElectrolyteSAFT{c<:SAFTModel,i<:IonModel} <: ElectrolyteSAFTModel
     icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
+    stoic_coeff::Vector{Vector{Int64}}
     SAFTmodel::c
     Ionicmodel::i
     absolutetolerance::Float64
@@ -17,20 +18,25 @@ end
 @registermodel ElectrolyteSAFT
 export ElectrolyteSAFT
 
-function ElectrolyteSAFT(solvents,ions; SAFTmodel=PCSAFT,
+function ElectrolyteSAFT(solvents,salts; SAFTmodel=PCSAFT,
     ionicmodel = DH,
     RSPmodel = ConstW,
     userlocations=String[], 
      verbose=false)
-     components = append!(solvents,ions)
+    ion_groups = GroupParam(salts, ["Electrolytes/salts.csv"]; verbose=verbose)
+
+    ions = ion_groups.flattenedgroups
+    components = deepcopy(solvents)
+    append!(components,ions)
+    stoichiometric_coeff = ion_groups.n_flattenedgroups
     icomponents = 1:length(components)
-    isolvents = 1:sum(components .== solvents)
-    iions = (sum(components .== solvents)+1):length(components)
+    isolvents = 1:length(solvents)
+    iions = (length(solvents)+1):length(components)
 
     init_SAFTmodel = SAFTmodel(components)
     init_Ionicmodel = ionicmodel(components;RSPmodel=RSPmodel,SAFTlocations=["SAFT/"*string(SAFTmodel)])
     references = String[]
-    model = ElectrolyteSAFT(components,solvents,ions,icomponents,isolvents,iions,init_SAFTmodel,init_Ionicmodel,1e-12,references)
+    model = ElectrolyteSAFT(components,solvents,ions,icomponents,isolvents,iions,stoichiometric_coeff,init_SAFTmodel,init_Ionicmodel,1e-12,references)
     return model
 end
 
