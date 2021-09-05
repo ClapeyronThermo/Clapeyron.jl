@@ -111,6 +111,16 @@ function FractionVector(v::Real)
     return FractionVector(v,a)
 end
 
+function ElectrolyteFractionVector(model,M,z=[1.])
+    ν = model.stoic_coeff
+    Mw = model.puremodel.params.Mw.values.*1e-3
+    isalts = 1:length(model.stoic_coeff)
+    iions = 1:length(model.stoic_coeff[1])
+    x_solv = z ./ (1+sum(z[j]*Mw[j] for j in model.isolvents)*(sum(M[k]*sum(ν[k][i] for i ∈ iions) for k ∈ isalts)))
+    x_ions = [sum(M[k]*ν[k][l] for k ∈ isalts) / (1/sum(z[j]*Mw[j] for j in model.isolvents)+(sum(M[k]*sum(ν[k][i] for i ∈ iions) for k ∈ isalts))) for l ∈ iions]
+    return append!(x_solv,x_ions)
+end
+
 
 @inline Base.eltype(v::FractionVector{T}) where T = T
 @inline Base.length(v::FractionVector)::Int = Base.length(v.vec) + 1

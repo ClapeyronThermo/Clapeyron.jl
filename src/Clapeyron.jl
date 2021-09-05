@@ -81,6 +81,7 @@ include("models/eos/cached/CachedEoS.jl")
 
 include("models/eos/Electrolytes/ConstW.jl")
 include("models/eos/Electrolytes/DH.jl")
+include("models/eos/Electrolytes/MSA.jl")
 include("models/eos/Electrolytes/ElectrolyteSAFT.jl")
 
 include("methods/methods.jl")

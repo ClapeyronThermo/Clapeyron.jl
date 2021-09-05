@@ -210,6 +210,9 @@ function lb_volume(model::LJSAFTModel, z = SA[1.0])
     return val
 end
 
+function lb_volume(model::ElectrolyteModel, z = SA[1.0])
+    return lb_volume(model.puremodel,z)
+end
 
 
 #=scale_sat_pure=#
