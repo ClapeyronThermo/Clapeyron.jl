@@ -115,6 +115,7 @@ end
     system = PCSAFT(["methanol","cyclohexane"])
     p = 1e5
     T = 313.15
+    T2 = 443.15
     z = [0.5,0.5]
     z_LLE = [0.27,0.73]
     @testset "Bulk properties" begin
@@ -124,9 +125,12 @@ end
         @test Clapeyron.fugacity_coefficient(system, p, T, z)[1] ≈ 0.5582931304564298 rtol = 1E-6
     end
     @testset "Equilibrium properties" begin
+        @test Clapeyron.UCEP_mix(system)[1] ≈ 319.36877456397684 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system,T,z)[1] ≈ 54532.249600937736 rtol = 1E-6
         @test Clapeyron.LLE_pressure(system,T,z_LLE)[1] ≈ 737971.7522006684 rtol = 1E-6
-        @test Clapeyron.three_phase(system, T)[1] ≈ 54504.079665621306 rtol = 1E-6
+        @test Clapeyron.azeotrope_pressure(system,T2)[1] ≈ 2.4435462800998255e6 rtol = 1E-6
+        @test Clapeyron.UCST_mix(system,T2)[1] ≈ 1.0211532467788119e9 rtol = 1E-6
+        @test Clapeyron.VLLE_mix(system, T)[1] ≈ 54504.079665621306 rtol = 1E-6
         @test Clapeyron.crit_mix(system,z)[1] ≈ 518.0004062881115 rtol = 1E-6
     end
 end
