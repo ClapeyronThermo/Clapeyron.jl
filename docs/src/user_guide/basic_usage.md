@@ -238,7 +238,8 @@ The functions for the physical properties that we currently support are as follo
     ```julia
     (p_sat, V_l_sat, V_v_sat, y) = bubble_pressure(model, T, x)
     (p_LLE, V_l_LLE, V_ll_LLE, xx) = LLE_pressure(model, T, x)
-    (p_VLLE,V_l_sat, V_ll_sat, V_v_sat, x, xx, y) = three_phase(model, T)
+    (p_az, V_l_sat, V_v_sat, x) = azeotrope_pressure(model, T)
+    (p_VLLE,V_l_sat, V_ll_sat, V_v_sat, x, xx, y) = VLLE_mix(model, T)
     ```
 
   All the above arguments take in an optional argument for the initial guess:
@@ -271,6 +272,8 @@ The functions for the physical properties that we currently support are as follo
 
     ```julia
     (T_c, p_c, V_c) = crit_mix(model, z)
+    (p_UCST, V_UCST, x_UCST) = UCST_mix(model, T)
+    (T_UCEP, p_UCEP, V_l_UCEP, V_v_UCEP, x, y) = UCEP_mix(model)
     ```
 
   Like the above functions, for `crit_mix`, you can also specify initial guesses to produce smooth critical curves. 
