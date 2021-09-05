@@ -177,7 +177,7 @@ end
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 2136.2222361829276 rtol = 1e-6 
     end
     @testset "VLE properties" begin
-        @test Clapeyron.crit_pure(system, T)[1] ≈ 512.6399509413803 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 512.6399509413803 rtol = 1E-6
         @test Clapeyron.sat_pure(system, T)[1] ≈ 15525.980361987053 rtol = 1E-6
     end
 end
