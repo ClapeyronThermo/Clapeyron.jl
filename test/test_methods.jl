@@ -168,11 +168,30 @@ end
     end
 end
 
+@testset "Activity methods, pure components" begin
+    system = Wilson(["methanol"])
+    p = 1e5
+    T = 298.15
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T) ≈ 4.736782417401261e-5 rtol = 1e-6 
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 2136.2222361829276 rtol = 1e-6 
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.crit_pure(system, T)[1] ≈ 512.6399509413803 rtol = 1E-6
+        @test Clapeyron.sat_pure(system, T)[1] ≈ 15525.980361987053 rtol = 1E-6
+    end
+end
+
 @testset "Activity methods, multi-components" begin
     system = Wilson(["methanol","benzene"])
-    p = 1e7
+    p = 1e5
     T = 298.15
     z = [0.5,0.5]
+    z_bulk = [0.2,0.8]
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T, z_bulk) ≈ 8.602344040626639e-5 rtol = 1e-6 
+        @test Clapeyron.speed_of_sound(system, p, T, z_bulk) ≈ 1371.9014493149134 rtol = 1e-6 
+    end
     @testset "VLE properties" begin
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.647133460465 rtol = 1E-6
     end
