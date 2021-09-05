@@ -15,15 +15,15 @@ We support many equations of state and properties. Some examples of figures you 
 
 - Isobaric heat capacity of carbon dioxide at 20 MPa:
 
-  ![Clapeyron_logo](docs/CO2_cp.pdf)
+  ![CO2_cp](docs/CO2_cp.svg)
 
 - Water VLE enveloppe:
 
-  ![Clapeyron_logo](docs/water_VLE.pdf)
+  ![water_VLE](docs/water_VLE.svg)
 
 - Ethanol+water Pxy diagram at 423.15 K:
 
-  ![Clapeyron_logo](docs/ethanol+water.pdf)
+  ![ethanol+water](docs/ethanol+water.svg)
 
 - pT-isopleth of methanol+cyclohexane generated using PC-SAFT:
 
