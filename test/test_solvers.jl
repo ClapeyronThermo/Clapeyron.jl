@@ -60,7 +60,7 @@ golden_number_fixpoint(x) = one(x) + one(x)/x
     Ks = [192.3625321718047, 105.20070698573475, 76.30532397111489, 37.090890262982, 21.38862102676539, 18.093547012968767,
             10.319129068837443, 9.001962137200403, 4.565198737490148, 340.69153314749224, 269.09234343328467,
             21.858385052861507]
-    @test Clapeyron.rr_vle_vapor_fraction(Ks,zs) == -Inf
+    @test Clapeyron.rr_vle_vapor_fraction(Ks,zs) == Inf
     
     #here are some tests, from the paper.
     #the paper has errors, z2 has 10 components, 9 and 10 repeated.
