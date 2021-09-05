@@ -1,7 +1,7 @@
 struct COSMOSACdspParam <: EoSParam
-    Pnhb::SingleParam{String}
-    POH::SingleParam{String}
-    POT::SingleParam{String}
+    Pnhb::SingleParam{Vector{Float64}}
+    POH::SingleParam{Vector{Float64}}
+    POT::SingleParam{Vector{Float64}}
     epsilon::SingleParam{Float64}
     V::SingleParam{Float64}
     A::SingleParam{Float64}
@@ -29,9 +29,9 @@ function COSMOSACdsp(components; puremodel=PR,
     userlocations=String[], 
      verbose=false)
     params = getparams(components, ["Activity/COSMOSAC/COSMOSAC10_like.csv","Activity/COSMOSAC/COSMOSACdsp_like.csv"]; userlocations=userlocations, verbose=verbose)
-    Pnhb  = params["Pnhb"]
-    POH  = params["POH"]
-    POT  = params["POT"]
+    Pnhb  = COSMO_parse_Pi(params["Pnhb"])
+    POH  = COSMO_parse_Pi(params["POH"])
+    POT  = COSMO_parse_Pi(params["POT"])
     A  = params["A"]
     V  = params["V"]
     epsilon  = params["epsilon"]
@@ -49,7 +49,7 @@ function COSMOSACdsp(components; puremodel=PR,
 end
 
 function activity_coefficient(model::COSMOSACdspModel,V,T,z)
-    return exp.(@f(lnγ_comb)+@f(lnγ_res)+@f(lnγ_dsp))
+    return exp.(@f(lnγ_comb) .+@f(lnγ_res).+@f(lnγ_dsp))
 end
 
 function lnγ_dsp(model::COSMOSACdspModel,V,T,z)
