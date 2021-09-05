@@ -177,6 +177,11 @@ function lb_volume(model::CubicModel,z = SA[1.0])
     return b̄-c̄
 end
 
+function lb_volume(model::ActivityModel,z = SA[1.0])
+    b = maximum([model.puremodel[i].params.b.values[1,1] for i ∈ @comps])
+    return b
+end
+
 function lb_volume(model::CPAModel,z = SA[1.0])
     n = sum(z)
     invn = one(n)/n
@@ -456,6 +461,17 @@ function T_scale(model::CubicModel,z=SA[1.0])
     return a/b/R̄
 end
 
+function T_scale(model::ActivityModel,z=SA[1.0])
+    n = sum(z)
+    invn2 = one(n)/(n*n)
+    Ωa,Ωb = ab_consts(model.puremodel[1])
+    _a = [model.puremodel[i].params.a.values[1,1] for i in @comps]
+    _b = [model.puremodel[i].params.b.values[1,1] for i in @comps]
+    a = dot(z, _a)*invn2/Ωa
+    b = dot(z, _b)*invn2/Ωb
+    return a/b/R̄
+end
+
 function T_scale(model::CPAModel,z=SA[1.0])
     n = sum(z)
     invn2 = one(n)/(n*n)
@@ -521,6 +537,17 @@ function p_scale(model::CubicModel,z=SA[1.0])
     _b = model.params.b.values
     a = invn2*dot(z, Symmetric(_a), z)/Ωa
     b = invn2*dot(z, Symmetric(_b), z)/Ωb
+    return a/ (b^2) # Pc mean
+end
+
+function p_scale(model::ActivityModel,z=SA[1.0])
+    n = sum(z)
+    invn2 = (1/n)^2
+    Ωa,Ωb = ab_consts(model.puremodel[1])
+    _a = [model.puremodel[i].params.a.values[1,1] for i in @comps]
+    _b = [model.puremodel[i].params.b.values[1,1] for i in @comps]
+    a = dot(z, _a)*invn2/Ωa
+    b = dot(z, _b)*invn2/Ωb
     return a/ (b^2) # Pc mean
 end
 
