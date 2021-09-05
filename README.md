@@ -27,7 +27,7 @@ We support many equations of state and properties. Some examples of figures you 
 
 - pT-isopleth of methanol+cyclohexane generated using PC-SAFT:
 
-![CH3OH_CyHx](docs/CH3OH_CyHex.pdf)
+![CH3OH_CyHx](docs/CH3OH_CyHex.svg)
 
 We intend to provide functions for users to generate these figures themselves.
 
