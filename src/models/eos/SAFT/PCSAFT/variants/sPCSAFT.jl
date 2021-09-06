@@ -21,9 +21,9 @@ function sPCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], idea
 end
 
 function a_hc(model::sPCSAFTModel, V, T, z)
-    x = z/sum(z)
+    Σz = sum(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z, m)/Σz
     return m̄*@f(a_hs) - (m̄-1)*log(@f(g_hs))
 end
 
