@@ -116,6 +116,18 @@ function x0_volume(model::EoSModel,p,T,z; phase = :unknown)
     end
 end
 
+function x0_volume(model::ElectrolyteModel,p,T,z; phase = :unknown)
+    phase = Symbol(phase)
+    if phase === :unknown || is_liquid(phase)
+        return x0_volume_liquid(model.puremodel,T,z)
+    elseif is_vapour(phase)
+        return x0_volume_gas(model.puremodel,p,T,z)
+    elseif is_supercritical(phase)
+     else
+        error("unreachable state on x0_volume")
+    end
+end
+
 
 #=x0_sat_pure=#
 

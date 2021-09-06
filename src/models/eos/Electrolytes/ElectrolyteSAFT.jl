@@ -1,9 +1,9 @@
 abstract type ElectrolyteModel <: EoSModel end
 abstract type ElectrolyteSAFTModel <: ElectrolyteModel end
 
-struct ElectrolyteSAFT{T<:IdealModel,c<:SAFTModel,i<:IonModel} <: ElectrolyteSAFTModel
+struct ElectrolyteSAFT{T<:IdealModel,c<:SAFTModel,i<:IonModel,b} <: ElectrolyteSAFTModel
     components::Array{String,1}
-    solvent::Array{String,1}
+    solvents::Array{String,1}
     ions::Array{String,1}
     icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
@@ -11,7 +11,8 @@ struct ElectrolyteSAFT{T<:IdealModel,c<:SAFTModel,i<:IonModel} <: ElectrolyteSAF
     stoic_coeff::Vector{Vector{Int64}}
     idealmodel::T
     puremodel::c
-    Ionicmodel::i
+    ionicmodel::i
+    bornmodel::b
     absolutetolerance::Float64
     references::Array{String,1}
 end
@@ -23,6 +24,7 @@ function ElectrolyteSAFT(solvents,salts; puremodel=PCSAFT,
     idealmodel = BasicIdeal,
     ionicmodel = DH,
     RSPmodel = ConstW,
+    bornmodel = nothing,
     userlocations=String[], 
     ideal_userlocations=String[],
      verbose=false)
@@ -38,12 +40,21 @@ function ElectrolyteSAFT(solvents,salts; puremodel=PCSAFT,
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_SAFTmodel = puremodel(components)
-    init_Ionicmodel = ionicmodel(components;RSPmodel=RSPmodel,SAFTlocations=["SAFT/"*string(puremodel)])
+    init_Ionicmodel = ionicmodel(solvents,salts;RSPmodel=RSPmodel,SAFTlocations=["SAFT/"*string(puremodel)])
+    if bornmodel !== nothing
+        init_bornmodel = bornmodel(solvents,salts;RSPmodel=RSPmodel,SAFTlocations=["SAFT/"*string(puremodel)])
+    else
+        init_bornmodel = nothing
+    end
     references = String[]
-    model = ElectrolyteSAFT(components,solvents,ions,icomponents,isolvents,iions,stoichiometric_coeff,init_idealmodel,init_SAFTmodel,init_Ionicmodel,1e-12,references)
+    model = ElectrolyteSAFT(components,solvents,ions,icomponents,isolvents,iions,stoichiometric_coeff,init_idealmodel,init_SAFTmodel,init_Ionicmodel,init_bornmodel,1e-12,references)
     return model
 end
 
 function a_res(model::ElectrolyteSAFTModel, V, T, z)
-    return a_res(model.puremodel,V,T,z)+a_ion(model.Ionicmodel,V,T,z)
+    if model.bornmodel !== nothing
+        return a_res(model.puremodel,V,T,z)+a_ion(model.ionicmodel,V,T,z)+a_born(model.bornmodel,V,T,z)
+    else
+        return a_res(model.puremodel,V,T,z)+a_ion(model.ionicmodel,V,T,z)
+    end
 end

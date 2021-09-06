@@ -4,15 +4,38 @@ abstract type ConstWModel <: RSPModel end
 struct ConstWParam <: EoSParam
 end
 
-@newmodelsimple ConstW ConstWModel ConstWParam
+struct ConstW <: ConstWModel
+    components::Array{String,1}
+    solvents::Array{String,1}
+    ions::Array{String,1}
+    icomponents::UnitRange{Int}
+    isolvents::UnitRange{Int}
+    iions::UnitRange{Int}
+    params::ConstWParam
+    absolutetolerance::Float64
+    references::Array{String,1}
+end
 
+@registermodel ConstW
 export ConstW
-function ConstW(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    model = ConstW(ConstWParam())
+function ConstW(solvents,salts; userlocations::Vector{String}=String[], verbose::Bool=false)
+    ion_groups = GroupParam(salts, ["Electrolytes/salts.csv"]; verbose=verbose)
+
+    ions = ion_groups.flattenedgroups
+    components = deepcopy(solvents)
+    append!(components,ions)
+    icomponents = 1:length(components)
+    isolvents = 1:length(solvents)
+    iions = (length(solvents)+1):length(components)
+    icomponents = 1:length(components)
+
+    references = [""]
+    
+    model = ConstW(components, solvents, ions, icomponents, isolvents, iions, ConstWParam(), 1e-12,references)
     return model
 end
 
-function RSP(model::ConstWModel,V,T,z,)
+function RSP(model::ConstWModel,V,T,z)
     return 78.4
 end
 
