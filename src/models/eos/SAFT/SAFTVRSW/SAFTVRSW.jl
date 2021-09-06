@@ -50,9 +50,9 @@ function a_hs(model::SAFTVRSWModel, V, T, z)
     ζ1 = @f(ζn,1)
     ζ2 = @f(ζn,2)
     ζ3 = @f(ζn,3)
-    x = z/∑(z)
+    Σz = sum(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z, m)/Σz
     return m̄*6/π/@f(ρ_S)*(3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
 end
 
@@ -62,19 +62,18 @@ function ζn(model::SAFTVRSWModel, V, T, z, n)
 end
 
 function ρ_S(model::SAFTVRSWModel, V, T, z)
-    ∑z = ∑(z)
-    N = N_A*∑z
-    x = z/∑z
+    Σz = sum(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z, m)/Σz
+    N = N_A*∑z
     return N/V*m̄
 end
 
 function x_S(model::SAFTVRSWModel, V, T, z, i)
-    x = z/∑(z)
+    Σz = sum(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
-    return x[i]*m[i]/m̄
+    m̄ = dot(z, m)
+    return z[i]*m[i]/m̄
 end
 
 function ζ_X(model::SAFTVRSWModel, V, T, z)
@@ -85,9 +84,9 @@ end
 
 function a_1(model::SAFTVRSWModel, V, T, z)
     comps = @comps
-    x = z/∑(z)
+    Σz = sum(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z, m)/Σz
     return -m̄/T*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*@f(a_1,i,j) for i ∈ comps for j ∈ comps)
 end
 
@@ -113,9 +112,9 @@ end
 
 function a_2(model::SAFTVRSWModel, V, T, z)
     comps = @comps
-    x = z/∑(z)
+    Σz = sum(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z, m)/Σz
     return m̄/T^2*∑(@f(x_S,i)*@f(x_S,j)*@f(a_2,i,j) for i ∈ comps for j ∈ comps)
 end
 
@@ -143,9 +142,9 @@ function ∂a_1╱∂ρ_S(model::SAFTVRSWModel, V, T, z, i, j)
 end
 
 function a_chain(model::SAFTVRSWModel, V, T, z)
-    x = z/∑(z)
+    Σz = sum(z)
     m = model.params.segment.values
-    return -∑(x[i]*(log(@f(γSW,i))*(m[i]-1)) for i ∈ @comps)
+    return -∑(z[i]*(log(@f(γSW,i))*(m[i]-1)) for i ∈ @comps)/Σz
 end
 
 function γSW(model::SAFTVRSWModel,V, T, z, i)
@@ -176,10 +175,10 @@ function g_1(model::SAFTVRSWModel,V, T, z, i, j)
 end
 
 function a_assoc(model::SAFTVRSWModel, V, T, z)
-    x = z/∑(z)
+    Σz = sum(z)
     n = model.sites.n_sites
     X_ = @f(X)
-    return ∑(x[i]*∑(n[i][a]*(log(X_[i][a])+(1-X_[i][a])/2) for a ∈ @sites(i)) for i ∈ @comps)
+    return ∑(z[i]*∑(n[i][a]*(log(X_[i][a])+(1-X_[i][a])/2) for a ∈ @sites(i)) for i ∈ @comps)/Σz
 end
 
 function X(model::SAFTVRSWModel, V, T, z)
