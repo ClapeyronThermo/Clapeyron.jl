@@ -64,14 +64,14 @@ function ρ_S(model::SAFTVRMieModel, V, T, z)
     N = N_A*∑z
     x = z/∑z
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ =dot(x,m)
     return N/V*m̄
 end
 
 function x_S(model::SAFTVRMieModel, V, T, z, i)
     x = z/∑(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ =dot(x,m)
     return x[i]*m[i]/m̄
 end
 
@@ -105,8 +105,8 @@ function a_1(model::SAFTVRMieModel, V, T, z)
     comps = @comps
     x = z/∑(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
-    return m̄/T*∑(@f(x_S,i)*@f(x_S,j)*@f(a_1,i,j) for i ∈ comps for j ∈ comps)
+    m̄ =dot(x,m)
+    return m̄/T * ∑(@f(x_S,i)*@f(x_S,j)*@f(a_1,i,j) for i ∈ comps for j ∈ comps)
 end
 
 function a_1(model::SAFTVRMieModel, V, T, z, i, j)
@@ -146,7 +146,7 @@ function a_2(model::SAFTVRMieModel, V, T, z)
     comps = @comps
     x = z/∑(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ =dot(x,m)
     return m̄/T^2*∑(@f(x_S,i)*@f(x_S,j)*@f(a_2,i,j) for i ∈ comps for j ∈ comps)
 end
 
@@ -190,8 +190,8 @@ function a_3(model::SAFTVRMieModel, V, T, z)
     comps = @comps
     x = z/∑(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
-    return m̄/T^3*∑(@f(x_S,i)*@f(x_S,j)*@f(a_3,i,j) for i ∈ comps for j ∈ comps)
+    m̄ =dot(x,m)
+    return m̄/T^3* ∑(@f(x_S,i)*@f(x_S,j)*@f(a_3,i,j) for i ∈ comps for j ∈ comps)
 end
 
 function a_3(model::SAFTVRMieModel, V, T, z, i, j)
