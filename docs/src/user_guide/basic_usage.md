@@ -24,13 +24,53 @@ model4 = SAFTgammaMie([
         ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])])
 ```
 
-One can find out more about the information stored within these model objects in the API documentation. In terms of equations of state available, we have the following:
+One can find out more about the information stored within these model objects in the API documentation. In terms of equations of state available, we have the following default models:
 
-| Cubics                                           | SAFT                                                         | Empirical                                   | Others  |
-| ------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------- | ------- |
-| `vdW`<br />`RK`<br />`SRK`<br />`PR`<br />`PR78` | `ogSAFT`<br />`CKSAFT`<br />`sCKSAFT`<br />`LJSAFT`<br />`BACKSAFT`<br />`LJSAFT`<br />`SAFTVRSW`<br />`softSAFT`<br />`CPA`<br />`PCSAFT`<br />`sPCSAFT`<br />`SAFTVRMie`<br />`SAFTVRQMie`<br />`SAFTgammaMie` | `IAPWS95`<br />`GERG2008`<br />`PropaneRef` | `SPUNG` |
+**Cubics**:
 
-One can find out more about each of these equations of state within our background documentation. Nevertheless, all of these equations are compatible with all methods availble in our package. 
+- `vdW`
+- `RK`
+  - `SRK`
+  - `PSRK`
+- `PR`
+  - `PR78`
+  - `UMRPR`
+  - `VTPR`
+
+**SAFT**:
+
+- `ogSAFT`
+- `CKSAFT`
+  - `sCKSAFT`
+- `BACKSAFT`
+- `LJSAFT`
+- `SAFTVRSW`
+- `CPA`
+- `softSAFT`
+- `PCSAFT`
+  - `sPCSAFT`
+- `SAFTVRMie`
+  - `SAFTVRQMie`
+- `SAFTgammaMie`
+
+**Activity coefficient** (N.B. these models only provide VLE properties for mixtures):
+
+- `Wilson`
+- `NRTL`
+- `UNIQUAC`
+- `UNIFAC`
+- `COSMOSAC`
+  - `COSMOSAC02`
+  - `COSMOSAC10`
+  - `COSMOSACdsp`
+
+**Empirical**:
+
+- `GERG2008`
+- `IAPWS95`
+- `PropaneRef`
+
+We also support the `SPUNG` model. One can find out more about each of these equations of state within our background documentation. Nevertheless, all of these equations are compatible with all methods availble in our package. 
 
 There a few optional arguments available for these equations which will be explained below. One of these is specifying the location of the parameter databases, the details of which can be found in our Custom databases documentation.
 
@@ -60,11 +100,13 @@ model6 = RK(["ethane","propane"];alpha=SoaveAlpha)
 
 The above model would be equivalent to a model built by SRK directly. We support the following alpha functions (more to come):
 
-- `RKAlpha`: This is the default alpha function for regular RK 
-- `SoaveAlpha`: This is the default alpha function for SRK
-- `PRAlpha`: This is the default alpha function for regular PR
-- `PR78Alpha`: This is the default alpha function for PR78
+- `RKAlpha`: This is the default alpha function for regular RK .
+- `SoaveAlpha`: This is the default alpha function for SRK.
+- `PRAlpha`: This is the default alpha function for regular PR.
+- `PR78Alpha`: This is the default alpha function for PR78.
 - `BMAlpha`: This is the modified alpha function proposed by Boston and Mathias designed to improve estimates above the critical point. This works for both PR and RK.
+- `TwuAlpha`: Proposed by Twu _et al._, this alpha function uses species-specific parameters rather than correlation and, thus, is slightly more accurate than regular alpha functions. It was intended to be used with PR and is used in VTPR.
+- `MTAlpha`: Proposed by Magoulas and Tassios, this alpha function is essentially like the regular PR alpha function only to a higher order. It is used within UMRPR.
 
 ### Specifying a mixing rule
 
@@ -74,12 +116,57 @@ Only relevant to cubic equations of state and mixtures, we can alternate between
 model7 = RK(["ethane","propane"];mixing=KayRule)
 ```
 
-We currently only support two combining rules:
+We currently only support:
 
 - `vdW1fRule`: The standard van der Waals one-fluid mixing rule which is the default in all cubics.
+
 - `KayRule`: Takes an approach closer to the mixing rules used in SAFT.
 
-We do aim to support the Huron-Vidal and Wong-Sandler mixing rules soon, once we support Activity coefficient models.
+- `HVRule`: The Huron-Vidal mixing rule with uses information from activity coefficient models to form the mixing rule. It is meant to be more accurate than regular mixing rules. As it requires an activity coefficient model, this must be specified:
+
+  ```julia
+  model7 = RK(["methanol","benzene"];mixing=HVRule,activity=Wilson)
+  ```
+
+- `MHV1Rule`: The modified Huron-Vidal mixing rule proposed by Michelsen to first order. This has rather significant improvements over the regular mixing rule. Also needs an activity model to be specified.
+
+- `MHV2Rule`: The modified Huron-Vidal mixing rule proposed by Michelsen to second order. This is meant to be an improvement over the first order rule. Also needs an activity model to be specified.
+
+- `WSRule`: The Wong-Sandler mixing rule which also relies on an activity model. The equations are slightly more complicated but it is meant to be an improvement compared to `HVRule`. Also needs an activity model to be specified.
+
+- `LCVMRule`: The Linear Combiniation of Vidal and Michelsen mixing rules is designed for asymmetric mixtures. Also needs an activity model to be specified.
+
+If one goes looking within the source code, they will also find `VTPRRule`, `PSRKRule` and `UMRRule`; these are only intended for use in their respective models and shouldn't be used otherwise. However, it is still possible to toggle between them.
+
+### Specifying a volume translation method
+
+In order to improve the predictions of bulk properties in cubics, without affecting VLE properties, a volume translation method can be used which simply shifts the volume within the cubics by `c`. The default for all cubics is `NoTranslation`, however, we can toggle between the methods:
+
+```julia
+model7 = RK(["ethane","propane"];translation=PenelouxTranslation)
+```
+
+We support the following methods:
+
+- `PenelouxTranslation`: Used in PSRK.
+- `RackettTranslation`: Used in VTPR.
+- `MTTranslation`: Used in UMRPR.
+
+Note that not all these methods will be compatible with all species as they require the critical volume of the species.
+
+### Using an Activity coefficient model
+
+Activity coefficient models are primarily designed to obtain accurate estimate of mixture VLE properties _below_ the critical point of all species. Whilst not as flexible as other equations of state, they are computationally cheaper and, generally, more accurate. The activity coefficients are obtained as only a function of temperature and composition ($\gamma (T,\mathbf{x})$), meaning we can simply use modified Raoult's law to obtain the bubble (and dew) point:
+
+``y_ip= x_i\gamma_ip_{\mathrm{sat},i}``
+
+The only problem here is that another model must provide the saturation pressure $p_{\mathrm{sat},i}$. By default, this is chosen to be PR; however, one can toggle this setting as well:
+
+```julia
+model3 = UNIFAC(["methanol","benzene"];puremodel=PCSAFT)
+```
+
+Everything else will work as normal (so long as the species are also available within the specified pure model).
 
 ### Available properties
 
@@ -151,7 +238,8 @@ The functions for the physical properties that we currently support are as follo
     ```julia
     (p_sat, V_l_sat, V_v_sat, y) = bubble_pressure(model, T, x)
     (p_LLE, V_l_LLE, V_ll_LLE, xx) = LLE_pressure(model, T, x)
-    (p_VLLE,V_l_sat, V_ll_sat, V_v_sat, x, xx, y) = three_phase(model, T)
+    (p_az, V_l_sat, V_v_sat, x) = azeotrope_pressure(model, T)
+    (p_VLLE,V_l_sat, V_ll_sat, V_v_sat, x, xx, y) = VLLE_mix(model, T)
     ```
 
   All the above arguments take in an optional argument for the initial guess:
@@ -184,6 +272,8 @@ The functions for the physical properties that we currently support are as follo
 
     ```julia
     (T_c, p_c, V_c) = crit_mix(model, z)
+    (p_UCST, V_UCST, x_UCST) = UCST_mix(model, T)
+    (T_UCEP, p_UCEP, V_l_UCEP, V_v_UCEP, x, y) = UCEP_mix(model)
     ```
 
   Like the above functions, for `crit_mix`, you can also specify initial guesses to produce smooth critical curves. 

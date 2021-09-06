@@ -1,19 +1,13 @@
 ## LLE pressure solver
 function x0_LLE_pressure(model::EoSModel,T,x)
     xx = 1 .-x
-    
     pure = split_model(model)
-
     eachx = eachcol(Diagonal(ones(eltype(x),length(x))))
-
     sat = sat_pure.(pure,T)
-    
     P_sat = [tup[1] for tup in sat]
     V_l_sat = [tup[2] for tup in sat]
-    
     V0_l = sum(x.*V_l_sat)
     V0_ll = sum(xx.*V_l_sat)
-    
     prepend!(xx,log10.([V0_l,V0_ll]))
     return xx
 end

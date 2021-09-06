@@ -28,8 +28,9 @@ function rr_vle_vapor_fraction(K,z)
     kmax = maximum(K)
     βmax = 1/(1-kmin) 
     βmin = 1/(1-kmax) 
-    βmax < 0 && return -_1/_0
-    βmin > 1 && return _1/_0
+
+    kmax < 1 && return (-_1/_0)
+    kmin > 1 && return (_1/_0)
     if n_z <= 4
         return rr_vle_vapor_fraction_exact(K,z)
     end
@@ -39,8 +40,6 @@ function rr_vle_vapor_fraction(K,z)
     β_near0,β_near1 = extrema(((_1/(_1 -k_ℵ1[1])),(_1/(_1 -k_ℵ1[2]))))
     near_mean = sqrt(abs(β_near0)*abs(_1-β_near1))
     
-
-
     β0 = rr_vle_vapor_fraction_exact(k_ℵ1,z_ℵ1)
     b0 = β0
     M1,M2 = _0,_0
@@ -195,11 +194,13 @@ function rr_find_strongest(K,z)
             return β1
         elseif 0 < β2 < 1
             return β2
+        elseif isfinite(β1+β2)
+            kmin = min(k1,k2,k3)
+            kmax = max(k1,k2,k3)
+            kmin > 1 && return βmax
+            kmax < 1 && return βmin
         else
-            βmax = max(β1,β2)
-            βmin = min(β1,β2)
-            βmax < 0 && return -_1/_0
-            βmin > 1 && return _1/_0
+            return _0/_0
         end 
     elseif n == 4
         #0 = a0 + a1β + a2β^2 + a3β^3

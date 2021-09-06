@@ -1,5 +1,5 @@
 ## VLLE Solver
-function Obj_three_phase(model::EoSModel, F, T, v_l, v_ll, v_v, x, xx, y,ts,ps)
+function Obj_VLLE_mix(model::EoSModel, F, T, v_l, v_ll, v_v, x, xx, y,ts,ps)
     x   = FractionVector(x)
     y   = FractionVector(y)
     xx  = FractionVector(xx)#julia magic, check misc.jl
@@ -19,18 +19,18 @@ function Obj_three_phase(model::EoSModel, F, T, v_l, v_ll, v_v, x, xx, y,ts,ps)
     return F
 end
 
-function three_phase(model::EoSModel, T; v0 =nothing)
+function VLLE_mix(model::EoSModel, T; v0 =nothing)
 #     TYPE = promote_type(eltype(T),eltype(x))
 #     lb_v = lb_volume(model,x)
     if v0 === nothing
-        v0 = x0_three_phase(model,T)
+        v0 = x0_VLLE_mix(model,T)
     end
     ts = T_scales(model,[v0[4],1-v0[4]])
     pmix = p_scale(model,[v0[4],1-v0[4]])
     len = length(v0[1:end])
     #xcache = zeros(eltype(x0),len)
     Fcache = zeros(eltype(v0[1:end]),len)
-    f! = (F,z) -> Obj_three_phase(model, F, T, exp10(z[1]), exp10(z[2]), exp10(z[3]), z[4], z[5], z[6],ts,pmix)
+    f! = (F,z) -> Obj_VLLE_mix(model, F, T, exp10(z[1]), exp10(z[2]), exp10(z[3]), z[4], z[5], z[6],ts,pmix)
     r  = Solvers.nlsolve(f!,v0[1:end],LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     v_l = exp10(sol[1])
@@ -46,7 +46,7 @@ function three_phase(model::EoSModel, T; v0 =nothing)
     return (P_sat, v_l, v_ll, v_v, x, xx, y)
 end
 
-function x0_three_phase(model::EoSModel, T)
+function x0_VLLE_mix(model::EoSModel, T)
     pure = split_model(model)
     sat  = sat_pure.(pure,T)
     x0    = [0.75,0.25]
