@@ -332,10 +332,6 @@ function init_model(::Nothing,components,userlocations,verbose)
     return nothing
 end
 
-function init_model(idealmodel::BasicIdeal,components,userlocations,verbose)
-    return BasicIdeal()
-end
-
 function init_model(idealmodel::Type{<:IdealModel},components,userlocations,verbose)
     verbose && @info("""Now creating ideal model:
     $idealmodel""")
