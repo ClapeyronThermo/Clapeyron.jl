@@ -264,8 +264,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
     end
     p = -0.25*R̄*T/B
     vl = x0_volume(model,p,T,z,phase=:l)
-    
-    vl = volume_compress(model,p,T,z,V0=vl)
+    vl = volume_compress(model,p,T,SA[1.0],V0=vl)
     #=the basis is that p = RT/v-b - a/v2
     we have a (p,v,T) pair
     and B = 2nd virial coefficient = b-a/RT
@@ -286,10 +285,12 @@ function x0_sat_pure(model,T,z=SA[1.0])
     _b = γ - B - vl
     Δ = _b*_b - 4*_c
     if isnan(vl) | (Δ < 0)
+        #fails on two ocassions:
+        #near critical point, or too low.
         #old strategy
         x0l = 4*lb_v
         x0v = -2*B + 2*lb_v
-        return [log10(x0l),log10(x0v)]   
+        return [log10(x0l),log10(x0v)]
     end
     Δsqrt = sqrt(Δ)
     b1 = 0.5*(-_b + Δsqrt)
@@ -323,7 +324,14 @@ function x0_sat_pure(model,T,z=SA[1.0])
         x0v = -2*B #gas volume as high as possible
         return [log10(x0l),log10(x0v)]   
     end
-   
+    Vl0,Vv0 = vdw_x0_xat_pure(T,Tc,Pc,Vc)
+    x0l = min(Vl0,vl)
+    x0v = min(1e4*one(Vv0),Vv0) #cutoff volume
+    return [log10(x0l),log10(x0v)] 
+end
+
+function vdw_x0_xat_pure(T,T_c,P_c,V_c)
+    Tr = T/T_c
     Trm1 = 1.0-Tr
     Trmid = sqrt(Trm1)
     if Tr >= 0.7 
@@ -343,25 +351,19 @@ function x0_sat_pure(model,T,z=SA[1.0])
         #Eq. 31 valid in 0.25 < Tr < 1
         mean_c = 1.0 + 0.4*Trm1 + 0.161*Trm1*Trm1     
         c_v = 2*mean_c - c_l
-
     end
     #volumes predicted by vdW
-    Vl0 = (1/c_l)*Vc
-    Vv0 = (1/c_v)*Vc 
-    x0l = min(Vl0,vl)
-    x0v = min(1e4*one(Vv0),Vv0) #cutoff volume
-    return [log10(x0l),log10(x0v)] 
+    Vl0 = (1/c_l)*V_c
+    Vv0 = (1/c_v)*V_c
+    return (Vl0,Vv0)
 end
-
 function scale_sat_pure(model::EoSModel,z=SA[1.0])
     p    = 1/p_scale(model,z)
     μ    = 1/R̄/T_scale(model,z)
     return p,μ
 end
 
-
 #=x0_crit_pure=#
-
 # x0_crit_pure(model::LJSAFT) = [1.5, log10(π/6*model.params.segment[model.components[1]]*model.params.b[model.components[1]]/0.3)]
 
 """
