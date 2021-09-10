@@ -38,21 +38,22 @@ end
 function d(model::SAFTVRQMieModel, V, T, z, i)
     ϵ = model.params.epsilon.diagvalues
     σ = model.params.sigma.diagvalues
-    λr = model.params.lambda_r.diagvalues
-    λa = model.params.lambda_a.diagvalues
+    λr = model.params.lambda_r.diagvalues[i]
+    λa = model.params.lambda_a.diagvalues[i]
     Mw = model.params.Mw.values
 
     Di = ħ^2/(12*k_B*T*Mw[i]/N_A*σ[i]^2)
     βi = ϵ[i]/T
-    u(x) = @f(C,i,i)*((x^-λr[i]-x^-λa[i])+
-              Di*(@f(Q1,λr[i])*x^-(λr[i]+2)-@f(Q1,λa[i])*x^-(λa[i]+2))+
-              Di^2*(@f(Q2,λr[i])*x^-(λr[i]+4)-@f(Q2,λa[i])*x^-(λa[i]+4)))
-    du(x) = -@f(C,i,i)*((λr[i]*x^-(λr[i]+1)-λa[i]*x^-(λa[i]+1))+
-                Di*(@f(Q1,λr[i])*(λr[i]+2)*x^-(λr[i]+3)-@f(Q1,λa[i])*(λa[i]+2)*x^-(λa[i]+3))+
-                Di^2*(@f(Q2,λr[i])*(λr[i]+4)*x^-(λr[i]+5)-@f(Q2,λa[i])*(λa[i]+4)*x^-(λa[i]+5)))
-    d2u(x) = @f(C,i,i)*((λr[i]*(λr[i]+1)*x^-(λr[i]+2)-λa[i]*(λa[i]+1)*x^-(λa[i]+2))+
-                Di*(@f(Q1,λr[i])*(λr[i]+2)*(λr[i]+3)*x^-(λr[i]+4)-@f(Q1,λa[i])*(λa[i]+2)*(λa[i]+3)*x^-(λa[i]+4))+
-                Di^2*(@f(Q2,λr[i])*(λr[i]+4)*(λr[i]+5)*x^-(λr[i]+6)-@f(Q2,λa[i])*(λa[i]+4)*(λa[i]+5)*x^-(λa[i]+6)))
+    _C =  @f(C,λa,λr)
+    u(x) =_C*((x^-λr-x^-λa)+
+              Di*(@f(Q1,λr)*x^-(λr+2)-@f(Q1,λa)*x^-(λa+2))+
+              Di^2*(@f(Q2,λr)*x^-(λr+4)-@f(Q2,λa)*x^-(λa+4)))
+    du(x) = -_C*((λr*x^-(λr+1)-λa*x^-(λa+1))+
+                Di*(@f(Q1,λr)*(λr+2)*x^-(λr+3)-@f(Q1,λa)*(λa+2)*x^-(λa+3))+
+                Di^2*(@f(Q2,λr)*(λr+4)*x^-(λr+5)-@f(Q2,λa)*(λa+4)*x^-(λa+5)))
+    d2u(x) = _C*((λr*(λr+1)*x^-(λr+2)-λa*(λa+1)*x^-(λa+2))+
+                Di*(@f(Q1,λr)*(λr+2)*(λr+3)*x^-(λr+4)-@f(Q1,λa)*(λa+2)*(λa+3)*x^-(λa+4))+
+                Di^2*(@f(Q2,λr)*(λr+4)*(λr+5)*x^-(λr+6)-@f(Q2,λa)*(λa+4)*(λa+5)*x^-(λa+6)))
 
     f(x) = exp(-βi*u(x))
     g(x) = -βi*exp(-βi*u(x))*du(x)

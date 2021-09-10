@@ -46,10 +46,7 @@ function a_disp(model::SAFTVRMieModel, V, T, z)
 end
 
 function a_hs(model::SAFTVRMieModel, V, T, z)
-    ζ0 = @f(ζn, 0)
-    ζ1 = @f(ζn, 1)
-    ζ2 = @f(ζn, 2)
-    ζ3 = @f(ζn, 3)
+    ζ0,ζ1,ζ2,ζ3 = @f(ζ0123)
     N = N_A*∑(z)
     return 6*V/π/N*(3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
 end
@@ -59,8 +56,28 @@ function C(model::SAFTVRMieModel, V, T, z, λa, λr)
     return (λr/(λr-λa)) * (λr/λa)^(λa/(λr-λa))
 end
 
-function ζn(model::SAFTVRMieModel, V, T, z, n)
-    return π/6*@f(ρ_S) * ∑(@f(x_S,i)*@f(d,i)^n for i ∈ @comps)
+function ζ0123(model::SAFTVRMieModel, V, T, z)
+    ζ0 = zero(V+T+first(z))
+    ζ1 = ζ0
+    ζ2 = ζ0
+    ζ3 = ζ0
+    m = model.params.segment.values
+    m̄ =dot(z,m)
+    m̄inv = 1/m̄
+    for  i ∈ @comps
+        d1 = @f(d,i)
+        d2 = d1*d1
+        d3 = d2*d1
+        constant = z[i]*m[i]*m̄inv
+        ζ0 += constant
+        ζ1 += constant*d1
+        ζ2 += constant*d2
+        ζ3 += constant*d3
+    end
+
+    k = π/6* (N_A/V) * m̄
+    return k*ζ0,k*ζ1,k*ζ2,k*ζ3
+    #return π/6*@f(ρ_S) * ∑(@f(x_S,i)*@f(d,i)^n for i ∈ @comps)
 end
 
 function ρ_S(model::SAFTVRMieModel, V, T, z)
@@ -90,8 +107,6 @@ end
 function d(model::SAFTVRMieModel, V, T, z, i, j)
     return (@f(d,i)+@f(d,j))/2
 end
-
-
 
 function ζ_X(model::SAFTVRMieModel, V, T, z)
     comps = @comps
