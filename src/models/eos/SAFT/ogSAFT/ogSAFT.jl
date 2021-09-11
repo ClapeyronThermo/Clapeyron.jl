@@ -153,12 +153,7 @@ end
 #     return mx*(a_res)
 # end
 
-function a_assoc(model::ogSAFTModel, V, T, z)
-    x = z/∑(z)
-    X_ = @f(X)
-    n = model.sites.n_sites
-    return ∑(x[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)
-end
+
 
 function X(model::ogSAFTModel, V, T, z)
     _1 = one(V+T+first(z))

@@ -120,19 +120,8 @@ function g_hsij(model::CKSAFTModel, V, T, z, i, j)
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 end
 
-function a_assoc(model::CKSAFTModel, V, T, z)
-    x = z/∑(z)
-    X_ = @f(X_assoc)
-    n = model.sites.n_sites
-    #return ∑(x[i]*∑(log(X_iA[i,a])-X_iA[i,a]/2 + model.params.n_sites[i][a]/2 for a ∈ keys(model.params.n_sites[i])) for i ∈ model.components)
-    return ∑(x[i]*
-                ∑(
-                  n[i][a]*(log(X_[i][a]) - X_[i][a]/2 + 0.5)
-                for a ∈ @sites(i))
-            for i ∈ @comps)
-end
 
-function X_assoc(model::CKSAFTModel, V, T, z)
+function X(model::CKSAFTModel, V, T, z)
     _1 = one(V+T+first(z))
     Σz = ∑(z)
     x = z/ Σz

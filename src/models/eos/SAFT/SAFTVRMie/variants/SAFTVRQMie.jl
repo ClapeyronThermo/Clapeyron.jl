@@ -158,10 +158,10 @@ function a_2(model::SAFTVRQMieModel, V, T, z, i, j)
     λa = model.params.lambda_a.values[i,j]
     Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
     Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
-
+    ζₓ = @f(ζ_X)
     x_0ij = @f(x_0,i,j)
     x_0effij = @f(x_0eff,i,j)
-    return π*@f(KHS)*(1+@f(χ,i,j))*@f(ρ_S)*ϵ[i,j]^2*@f(d,i,j)^3*@f(C,i,j)^2*(x_0ij^(2*λa)*(@f(aS_1,2*λa)+@f(B,2*λa,x_0effij))-
+    return π*@f(KHS,ζₓ)*(1+@f(χ,i,j))*@f(ρ_S)*ϵ[i,j]^2*@f(d,i,j)^3*@f(C,i,j)^2*(x_0ij^(2*λa)*(@f(aS_1,2*λa)+@f(B,2*λa,x_0effij))-
     x_0ij^(λa+λr)*2*(@f(aS_1,λa+λr)+@f(B,λa+λr,x_0effij))+
     x_0ij^(2*λr)*(@f(aS_1,2*λr)+@f(B,2*λr,x_0effij))+
     x_0ij^(2*λa+2)*2*@f(Q1,λa)*(@f(aS_1,2*λa+2)+@f(B,2*λa+2,x_0effij))*Dij+

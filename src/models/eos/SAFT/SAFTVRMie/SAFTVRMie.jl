@@ -315,11 +315,6 @@ function ∂a_2╱∂ρ_S(model::SAFTVRMieModel,V, T, z, i)
               + x_0ij^(2*λr)*(@f(∂aS_1╱∂ρ_S,2*λr)+@f(∂B╱∂ρ_S,2*λr,x_0ij))))
 end
 
-function a_assoc(model::SAFTVRMieModel, V, T, z)
-    X_ = @f(X)
-    n = model.sites.n_sites
-    return ∑(z[i]*∑(n[i][a]*(log(X_[i][a])+(1-X_[i][a])/2) for a ∈ @sites(i)) for i ∈ @comps)/sum(z)
-end
 
 function X(model::SAFTVRMieModel, V, T, z)
     _1 = one(V+T+first(z))
