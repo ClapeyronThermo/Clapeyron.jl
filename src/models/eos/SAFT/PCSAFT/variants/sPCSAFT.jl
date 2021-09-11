@@ -30,15 +30,16 @@ function a_hc(model::sPCSAFTModel, V, T, z)
     return m̄*a_hs - (m̄-1)*log(g_hs)
 end
 #=
-function g_hs(model::sPCSAFTModel, V, T, z)
-    η = @f(ζ,3)
-    return (1-η/2)/(1-η)^3
-end
+
 function a_hs(model::sPCSAFTModel, V, T, z)
     η = @f(ζ,3)
     return (4η-3η^2)/(1-η)^2
 end
 =#
+function g_hs(model::sPCSAFTModel, V, T, z)
+    η = @f(ζ,3)
+    return (1-η/2)/(1-η)^3
+end
 
 function Δ(model::sPCSAFTModel, V, T, z, i, j, a, b)
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]

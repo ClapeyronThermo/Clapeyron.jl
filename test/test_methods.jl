@@ -57,7 +57,7 @@ end
         @test Clapeyron.volume(system, p, T) ≈ 0.00015924416586849443 rtol = 1e-6 
     end
     @testset "VLE properties" begin
-        @test Clapeyron.sat_pure(system, T)[1] ≈ 581.785675150425 rtol = 1E-6
+        @test Clapeyron.sat_pure(system, T)[1] ≈ 167.8313793818096 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 618.8455740197799 rtol = 1E-6 
     end
 end
