@@ -328,7 +328,7 @@ function X(model::SAFTVRMieModel, V, T, z)
     ρ = N_A*∑z/V
     n = model.sites.n_sites
     itermax = 500
-    dampingfactor = 0.8
+    dampingfactor = 0.5
     error = 1.
 
     tol = model.absolutetolerance
