@@ -139,12 +139,12 @@ function zero_assoc(m::CompressedAssocMatrix,::Type{T} = Float64) where T <:Numb
     newvalues = zeros(T,length(m.values))
     return CompressedAssocMatrix(newvalues,m.outer_indices,m.inner_indices,m.outer_size,m.inner_size)
 end
-
-function zero_assoc(m::CompressedAssocMatrix,::T = 0.0) where T <:Number
-    newvalues = fill(T,length(m.values))
+#=
+function zero_assoc(m::CompressedAssocMatrix,x::T = 0.0) where T <:Number
+    newvalues = fill(x,length(m.values))
     return CompressedAssocMatrix(newvalues,m.outer_indices,m.inner_indices,m.outer_size,m.inner_size)
 end
-
+=#
 function indices(x::CompressedAssocMatrix)
     return zip(1:length(x.values),x.outer_indices,x.inner_indices)
 end
@@ -165,7 +165,7 @@ function  Δ(model::PCSAFTModel, V, T, z)
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     σ = model.params.sigma.values
-    Δres = zero_assoc(κ,)
+    Δres = zero_assoc(κ)
     for (idx,(i,j),(a,b) in indices(Δ)
         gij = @f(g_hs,i,j)
         Δres[idx] = gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
@@ -181,6 +181,21 @@ function rhs(model::PCSAFTModel, V, T, z,Δ, X)
         end
 
 end
+
+function X_assoc_fixpoint(model,V,T,z,Δ,X,ρ)
+    for i ∈ @comps, a ∈ @sites(i)
+        Xi = X[i]
+        iszero(length(Xi)) && continue #no sites on this component
+        
+        
+        for a ∈ @sites(i)
+            
+            rhs
+        end
+            for (idx,(i,j),(a,b) in indices(Δ)
+            X[i][a] = rhs
+    end
+
 
     n = model.sites.n_sites
     res =  ∑(z[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)/sum(z)
