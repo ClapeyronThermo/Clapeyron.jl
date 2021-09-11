@@ -222,7 +222,6 @@ function X(model::PCSAFTModel, V, T, z)
             X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
         end
         error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
-        @show error
         for i = 1:length(X_)
             X_old[i] .= X_[i]
         end

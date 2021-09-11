@@ -64,8 +64,8 @@ end
 function ρ_S(model::SAFTVRSWModel, V, T, z)
     Σz = sum(z)
     m = model.params.segment.values
-    m̄ = dot(z, m)/Σz
-    N = N_A*∑z
+    m̄ = dot(z, m)
+    N = N_A
     return N/V*m̄
 end
 
