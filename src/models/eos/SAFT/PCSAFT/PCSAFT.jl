@@ -121,12 +121,12 @@ function g_hs(model::PCSAFTModel, V, T, z, i, j)
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 end
 
-#=
+
 function a_hs(model::PCSAFTModel, V, T, z)
     ζ0,ζ1,ζ2,ζ3 = @f(ζ0123)
     return 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
 end
-=#
+
 function C1(model::PCSAFTModel, V, T, z)
     m = model.params.segment.values
     m̄ = dot(z, m)/sum(z)
@@ -182,6 +182,7 @@ function a_assoc(model::PCSAFTModel, V, T, z)
         return zero(V+T+first(z))
     end
     X_ = @f(X)
+    
     n = model.sites.n_sites
     res =  ∑(z[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)/sum(z)
     return res
@@ -190,35 +191,58 @@ end
 function X(model::PCSAFTModel, V, T, z)
     _1 = one(V+T+first(z))
     Σz = ∑(z)
-    ρ = N_A* Σz/V
+    ρ = N_A/V
     itermax = 100
     dampingfactor = 0.5
     error = 1.
     tol = model.absolutetolerance
     iter = 1
+    
     X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
+
+    #solution for one component - one site.
+    if isone(length(model.sites.i_sites))
+        if length(only(model.sites.i_sites)) == 2
+            _Δ =  @f(Δ,1,1,1,2)
+            _a = _Δ*z[1]*ρ
+            X = 2/(_1 + sqrt(muladd(4,_a,_1))) 
+           X_[1][1] = X
+           X_[1][2] = X
+           return X_
+        end
+    end
     X_old = deepcopy(X_)
+    
     while error > tol
         iter > itermax && error("X has failed to converge after $itermax iterations")
         for i ∈ @comps, a ∈ @sites(i)
-            rhs = 1/(1+∑(ρ*z[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps)/Σz)
+           
+            rhs = 1/(1+∑(ρ*z[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
+            
             X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
         end
         error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
+        @show error
         for i = 1:length(X_)
             X_old[i] .= X_[i]
         end
+        
         iter += 1
     end
+
     return X_
 end
 
 function Δ(model::PCSAFTModel, V, T, z, i, j, a, b)
+    _0 = zero(V+T+first(z))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
+    κijab = κ[i,j][a,b] 
+    iszero(κijab) && return _0
     σ = model.params.sigma.values
     gij = @f(g_hs,i,j)
-    return gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
+    res = gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κijab
+    return res
 end
 
 const PCSAFTconsts = (
