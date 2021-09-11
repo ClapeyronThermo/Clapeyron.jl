@@ -174,13 +174,6 @@ function g_1(model::SAFTVRSWModel,V, T, z, i, j)
     return @f(gHS_0,i,j)+(λ[i,j]^3-1)*(5/2-ζeff_X_)/(1-ζeff_X_)^4*(λ[i,j]/3*∂ζeff_X╱∂λ-ζ_X_*∂ζeff_X╱∂ζ_X)
 end
 
-function a_assoc(model::SAFTVRSWModel, V, T, z)
-    Σz = sum(z)
-    n = model.sites.n_sites
-    X_ = @f(X)
-    return ∑(z[i]*∑(n[i][a]*(log(X_[i][a])+(1-X_[i][a])/2) for a ∈ @sites(i)) for i ∈ @comps)/Σz
-end
-
 function X(model::SAFTVRSWModel, V, T, z)
     _1 = one(V+T+first(z))
     ∑z = ∑(z)

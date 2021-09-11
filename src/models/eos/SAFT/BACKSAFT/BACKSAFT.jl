@@ -66,10 +66,8 @@ function d(model::BACKSAFTModel, V, T, z, i)
 end
 
 function ζ(model::BACKSAFTModel, V, T, z, n)
-    ∑z = ∑(z)
-    x = z/∑z
     m = model.params.segment.values
-    return N_A*∑z*π/6/V * ∑(x[i]*m[i]*@f(d,i)^n for i ∈ @comps)
+    return N_A*π/6/V * ∑(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
 end
 
 function a_chain(model::BACKSAFTModel, V, T, z)
