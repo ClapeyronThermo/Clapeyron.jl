@@ -32,16 +32,15 @@ function a_res(model::ogSAFTModel, V, T, z)
 end
 
 function a_seg(model::ogSAFTModel, V, T, z)
-    x = z/∑(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z,m)/sum(z)
     return m̄*(@f(a_hs)+@f(a_disp))
 end
 
 function a_chain(model::ogSAFTModel, V, T, z)
-    x = z/∑(z)
+    #x = z/∑(z)
     m = model.params.segment.values
-    return ∑(x[i]*(1-m[i])*log(@f(g_hsij, i, i)) for i ∈ @comps)
+    return sum(z[i]*(1-m[i])*log(@f(g_hsij, i, i)) for i ∈ @comps)/sum(z)
 end
 
 function d(model::ogSAFTModel, V, T, z, i)
@@ -69,10 +68,10 @@ end
 # end
 
 function ζn(model::ogSAFTModel, V, T, z, n)
-    ∑z = ∑(z)
-    x = z/∑z
+    #∑z = ∑(z)
+    #x = z/∑z
     m = model.params.segment.values
-    return N_A*∑z*π/6/V * ∑(x[i]*m[i]*@f(d, i)^n for i ∈ @comps)
+    return N_A*π/6/V * ∑(z[i]*m[i]*@f(d, i)^n for i ∈ @comps)
 end
 
 # function η(model::ogSAFTModel, V, T, z)
@@ -108,9 +107,9 @@ function a_disp(model::ogSAFTModel, V, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
-    x = z/∑(z)
+    #x = z/∑(z)
     comps = @comps
-    ϵx = ∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)
+    ϵx = ∑(z[i]*z[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/∑(z[i]*z[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)
     ζ3 = @f(ζn,3)
     ρR = (6/sqrt(2)/π)*ζ3
     TR = T/ϵx
