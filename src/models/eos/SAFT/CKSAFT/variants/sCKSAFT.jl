@@ -30,12 +30,11 @@ end
 
 function a_disp(model::sCKSAFTModel, V, T, z)
     ∑z = ∑(z)
-    x = z.*(1/∑z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z, m)/∑z
     vs = V/(N_A*∑z*m̄)
     it = @comps
-    v̄Ȳ = ∑(x[i]*x[j]*m[i]*m[j]*(@f(d,i,j)^3/√(2))*(exp(@f(u,i,j)/T/2)-1) for i ∈ it for j ∈ it)/∑(x[i]*x[j]*m[i]*m[j] for i ∈ it for j ∈ it)
+    v̄Ȳ = ∑(z[i]*z[j]*m[i]*m[j]*(@f(d,i,j)^3/√(2))*(exp(@f(u,i,j)/T/2)-1) for i ∈ it for j ∈ it)/∑(z[i]*z[j]*m[i]*m[j] for i ∈ it for j ∈ it)
     #res = 36*log(vs/(vs+v̄Ȳ)) 
     #this formulation is prone to horrible floating point issues.
     #writing this term in log1p form solves the problem.
