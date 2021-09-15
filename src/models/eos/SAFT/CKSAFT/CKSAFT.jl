@@ -35,9 +35,10 @@ function a_res(model::CKSAFTModel, V, T, z)
 end
 
 function a_seg(model::CKSAFTModel, V, T, z)
-    x = z/∑(z)
+    Σz = ∑(z)
+    comps = @comps 
     m = model.params.segment.values
-    m̄ = mixing_rule_quad((x,y)->0.5*(x+y), x,m)
+    m̄ = sum(0.5*(m[i]+m[j])*z[i]*z[j] for i ∈ comps for j ∈ comps)/(Σz*Σz)
     return m̄*(@f(a_hs) + @f(a_disp))
 end
 
@@ -50,7 +51,6 @@ function a_hs(model::CKSAFTModel, V, T, z)
 end
 
 function a_disp(model::CKSAFTModel, V, T, z)
-    x = z/∑(z)
     ϵ̄ = @f(ū)
     η = @f(ζ,3)
     τ = 0.74048
@@ -101,15 +101,13 @@ end
 
 function ζ(model::CKSAFTModel, V, T, z, n)
     ∑z = ∑(z)
-    x = z.*(1/∑z)
     m = model.params.segment.values
-    return N_A*∑z*π/6/V * ∑(x[i]*m[i]*@f(d,i)^n for i ∈ @comps)
+    return N_A*π/6/V * ∑(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
 end
 
 function a_chain(model::CKSAFTModel, V, T, z)
-    x = z/∑(z)
     m = model.params.segment.values
-    return ∑(x[i]*(1-m[i])*log(@f(g_hsij,i,i)) for i ∈ @comps)
+    return ∑(z[i]*(1-m[i])*log(@f(g_hsij,i,i)) for i ∈ @comps)/∑(z)
 end
 
 function g_hsij(model::CKSAFTModel, V, T, z, i, j)
@@ -119,7 +117,6 @@ function g_hsij(model::CKSAFTModel, V, T, z, i, j)
     ζ3 = @f(ζ,3)
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 end
-
 
 function X(model::CKSAFTModel, V, T, z)
     _1 = one(V+T+first(z))
