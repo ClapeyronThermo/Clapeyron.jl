@@ -1,3 +1,4 @@
+#=
 function vϕ(model::EoSModel,P,T,z;phase=:unknown)
     v = volume(model,P,T,z,phase = phase)
     vx = volume(model,P,T,z)
@@ -115,3 +116,4 @@ function PT_flash(model::EoSModel,P,T,z,K0=nothing)
 end
 
  
+=#
