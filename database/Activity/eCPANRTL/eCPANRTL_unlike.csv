@@ -1,0 +1,9 @@
+﻿Clapeyron Database File,,,,,,,
+eCPANRTL Unlike Parameters,,,,,,,
+species1,SMILES1,species2,SMILES2,dUref,TU,omegaU,alpha,source
+water,,Na+,,-223.5,340.,1573.,0.,
+Na+,,water,,-223.5,340.,1573.,0.,
+water,,Cl-,,-223.5,340.,1573.,0.,
+Cl-,,water,,-223.5,340.,1573.,0.,
+Cl-,,Na+,,0.,340.,0.,0.,
+Na+,,Cl-,,0.,340.,0.,0.,

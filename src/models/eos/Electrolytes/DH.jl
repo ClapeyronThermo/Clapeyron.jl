@@ -30,10 +30,18 @@ function DH(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocatio
     icomponents = 1:length(components)
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
+
+    if occursin("CPA",SAFTlocations[1])
+        params,sites = getparams(components, append!(["Electrolytes/charges.csv","properties/molarmass.csv"],SAFTlocations); userlocations=userlocations,ignore_missing_singleparams=["b","charge"], verbose=verbose)
+        params["b"].values .*= 3/2/N_A
+        params["b"].values .^= 1/3
+        sigma = params["b"]
+    else
+        params,sites = getparams(components, append!(["Electrolytes/charges.csv","properties/molarmass.csv"],SAFTlocations); userlocations=userlocations,ignore_missing_singleparams=["sigma","charge"], verbose=verbose)
+        params["sigma"].values .*= 1E-10
+        sigma = params["sigma"]
+    end
     
-    params,sites = getparams(components, append!(["Electrolytes/charges.csv","properties/molarmass.csv"],SAFTlocations); userlocations=userlocations,ignore_missing_singleparams=["sigma","charge"], verbose=verbose)
-    params["sigma"].values .*= 1E-10
-    sigma = params["sigma"]
     charge = params["charge"]
 
     packagedparams = DHParam(sigma,charge)
