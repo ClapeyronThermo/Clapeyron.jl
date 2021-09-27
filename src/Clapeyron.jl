@@ -33,7 +33,7 @@ include("models/eos/ideal/JobackIdeal.jl")
 
 include("models/eos/SAFT/PCSAFT/PCSAFT.jl")
 include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
-include("models/eos/SAFT/PCSAFT/variants/ePCSAFT.jl")
+# include("models/eos/SAFT/PCSAFT/variants/ePCSAFT.jl")
 
 include("models/eos/SAFT/ogSAFT/ogSAFT.jl")
 include("models/eos/SAFT/CPA/CPA.jl")
