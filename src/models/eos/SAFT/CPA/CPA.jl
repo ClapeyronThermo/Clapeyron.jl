@@ -73,13 +73,6 @@ end
 #     return āᾱ ,b̄
 # end
 
-function a_assoc(model::CPAModel, V, T, z)
-    x = z/∑(z)
-    n_sites = model.sites.n_flattenedsites
-    X_ = @f(X)
-    return ∑(x[i]*∑(n_sites[i][a] * (log(X_[i][a])+(1-X_[i][a])/2) for a in @sites(i)) for i in @comps)
-end
-
 function X(model::CPAModel, V, T, z)
     _1 = one(V+T+first(z))
     x = z/∑(z)
