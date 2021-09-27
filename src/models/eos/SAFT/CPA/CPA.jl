@@ -8,11 +8,39 @@ struct CPAParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
-abstract type CPAModel <: EoSModel end
-@newmodel CPA CPAModel CPAParam
+abstract type CPAModel <: SAFTModel end
+
+struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
+    components::Array{String,1}
+    icomponents::UnitRange{Int}
+    cubicmodel::c
+    params::CPAParam
+    sites::SiteParam
+    idealmodel::T
+    absolutetolerance::Float64
+    references::Array{String,1}
+end
+
+@registermodel CPA
+export CPA
 
 export CPA
-function CPA(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function CPA(components; 
+            idealmodel=BasicIdeal, 
+            cubicmodel=RK, 
+            alpha=CPAAlpha, 
+            mixing=vdW1fRule,
+            activity=nothing,
+            translation=NoTranslation, 
+            userlocations=String[], 
+            ideal_userlocations=String[], 
+            alpha_userlocations=String[],
+            activity_userlocations=String[],
+            mixing_userlocations=String[],
+            translation_userlocations=String[],
+            verbose=false)
+    icomponents = 1:length(components)
+
     params,sites = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
     k  = params["k"]
@@ -25,53 +53,31 @@ function CPA(components; idealmodel=BasicIdeal, userlocations=String[], ideal_us
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
     packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
+
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
+    init_translation = init_model(translation,components,translation_userlocations,verbose)
+
+    if occursin("RK",string(cubicmodel))
+        cubicparams = RKParam(a, b, params["Tc"],params["pc"],Mw)
+    elseif occursin("PR",string(cubicmodel))
+        cubicparams = PRParam(a, b, params["Tc"],params["pc"],Mw)
+    end
+
+    init_cubicmodel = cubicmodel(components,icomponents,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,1e-12,String[])
+
     references = ["10.1021/ie051305v"]
 
-    model = CPA(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
+    model = CPA(components, icomponents, init_cubicmodel, packagedparams, sites, init_idealmodel, 1e-12, references)
     return model
 end
 
 function a_res(model::CPAModel, V, T, z)
-    return @f(a_SRK) + @f(a_assoc) + log(V)  # + f(x)
+    n = sum(z)
+    ā,b̄,c̄ = cubic_ab(model.cubicmodel,V,T,z,n)
+    return a_res(model.cubicmodel,V,T,z) + a_assoc(model,V+c̄*n,T,z)
 end
-
-function a_SRK(model::CPAModel, V, T, z)
-    x = z/∑(z)
-    n = ∑(z)
-    a = model.params.a.values
-    b = model.params.b.values
-    Tc = model.params.Tc.values
-    c1 = model.params.c1.values
-
-    α = @. (1+c1*(1-√(T/Tc)))^2
-
-    āᾱ = ∑(a .* .√(α * α') .* (x * x'))
-    b̄ = ∑(b .* (x * x'))
-
-    return -log(V-n*b̄) - āᾱ/(R̄*T*b̄)*log(1+n*b̄/V)
-end
-#same as SRK
-function ab_consts(model::CPAModel)
-    Ωa =  1/(9*(2^(1/3)-1))
-    Ωb = (2^(1/3)-1)/3
-    return Ωa,Ωb
-end
-
-# function cubic_ab(model::CPAModel, T, z)
-#     x = z/∑(z)
-#     n = ∑(z)
-#     a = model.params.a.values
-#     b = model.params.b.values
-#     Tc = model.params.Tc.values
-#     c1 = model.params.c1.values
-
-#     α = @. min((1+c1*(1-√(T/Tc)))^2,one(T))
-
-#     āᾱ = ∑(a .* .√(α * α') .* (x * x'))
-#     b̄ = ∑(b .* (x * x'))
-
-#     return āᾱ ,b̄
-# end
 
 function a_assoc(model::CPAModel, V, T, z)
     x = z/∑(z)
