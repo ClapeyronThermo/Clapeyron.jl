@@ -30,7 +30,6 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
 
     function f_fixpoint(_V)
         Δ = logstep(_V)
-        @show Δ
         _V + sign(Δ)*abs(Δ)^(one(Δ)+Δ)
     end
 
@@ -52,14 +51,12 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
         Δ0 = Δ1
         Δ1 = logstep(logV1+Δ0)
         logV1 = logV1 + Δ1
-        @show Δ1
         iter +=1
     end
     if iter == 20
         return _nan
     end
-    @show exp(logV1)
-    res = @nan(Solvers.fixpoint(f_fixpoint,logV1,Solvers.SimpleFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
+    res = @nan(Solvers.fixpoint(f_fixpoint,logV1,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
 
     return exp(res)
 end
