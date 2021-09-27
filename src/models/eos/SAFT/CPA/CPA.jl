@@ -79,6 +79,8 @@ function a_res(model::CPAModel, V, T, z)
     return a_res(model.cubicmodel,V,T,z) + a_assoc(model,V+c̄*n,T,z)
 end
 
+ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
+
 function a_assoc(model::CPAModel, V, T, z)
     x = z/∑(z)
     n_sites = model.sites.n_flattenedsites
