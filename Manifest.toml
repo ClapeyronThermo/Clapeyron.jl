@@ -194,6 +194,11 @@ git-tree-sha1 = "13652491f6856acfd2db29360e1bbcd4565d04f1"
 uuid = "efe28fd5-8261-553b-a9e1-b2916fc3738e"
 version = "0.5.5+0"
 
+[[PackedVectorsOfVectors]]
+git-tree-sha1 = "78a46960967e9e37f81dbf7f61b45b0159637afe"
+uuid = "7713531c-48ef-4bdd-9821-9ff7a8736089"
+version = "0.1.2"
+
 [[Parsers]]
 deps = ["Dates"]
 git-tree-sha1 = "bfd7d8c7fd87f04543810d9cbd3995972236ba1b"

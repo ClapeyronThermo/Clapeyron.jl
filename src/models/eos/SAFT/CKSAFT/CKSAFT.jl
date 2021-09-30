@@ -117,7 +117,7 @@ function g_hsij(model::CKSAFTModel, V, T, z, i, j)
     ζ3 = @f(ζ,3)
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 end
-
+#=
 function X(model::CKSAFTModel, V, T, z)
     _1 = one(V+T+first(z))
     Σz = ∑(z)
@@ -144,7 +144,7 @@ function X(model::CKSAFTModel, V, T, z)
     end
     return X_
 end
-
+=#
 function Δ(model::CKSAFTModel, V, T, z, i, j, a, b)
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
     κijab = model.params.bondvol.values[i,j][a,b]
