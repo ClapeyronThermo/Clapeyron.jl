@@ -3,14 +3,10 @@
 
 returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
-function f∂f(f,x::T) where T
-    _f(z) = f(only(z))
-    x_vec =   SVector(x)
-    ∂result = DiffResults.GradientResult(x_vec)  
-    _∂f =  ForwardDiff.gradient!(∂result, _f,x_vec)
-    fx =  DiffResults.value(_∂f)
-    ∂f∂x = only(DiffResults.gradient(_∂f))
-    return fx,∂f∂x
+function f∂f(f::F, x::R) where {F,R}
+    T = typeof(ForwardDiff.Tag(f, R))
+    out = f(ForwardDiff.Dual{T}(x, one(x)))
+    return ForwardDiff.value(out), ForwardDiff.extract_derivative(T, out)
 end
 
 """

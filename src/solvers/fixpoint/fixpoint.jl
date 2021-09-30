@@ -30,50 +30,54 @@ function promote_method(method::AitkenFixPoint,T)
     return method
 end
 
-@inline function convergence(xold,xi,atol,rtol)
-    !isfinite(xi) && return (true,false) #terminate, with nan
+function convergence(xold,xi,atol,rtol)
+    not_finite = false
+    for xii in xi
+        if !isfinite(xii)
+            not_finite = false
+            break
+        end
+    end
+    not_finite && return (true,false) #terminate, with nan
     xi == xold && return (true,true) #terminate, with current number
-    Δx = abs(xi-xold)
-    if abs(Δx) < max(atol,abs(xi)*rtol)
+    if xi isa Number
+        Δx = abs(xi-xold)
+    else
+        Δx = norm((xi[i] - xold[i] for i in eachindex(xold,xi)))
+    end
+    normxi = norm(xi)
+    if abs(Δx) < max(atol,normxi*rtol)
         return (true,true) #terminate, with current number
     end
     return (false,false) #keep iterating
 end
 
-function fixpoint(f,x0::Real,
+function fixpoint(f,x0,
     method::AbstractFixPoint = SSFixPoint();
-    atol=zero(nested_eltype(x0)),
-    rtol=8eps(one(nested_eltype(x0))), 
+    atol=zero(eltype(x0)),
+    rtol=8eps(one(eltype(x0))), 
     max_iters=100)
-    x0,atol,rtol = promote(x0,atol,rtol)
-    method = promote_method(method,typeof(x0))
+    _,atol,rtol = promote(one(eltype(x0)),atol,rtol)
+    method = promote_method(method,eltype(x0))
     return _fixpoint(f,x0,method,atol,rtol,max_iters)
 end
 
-function fixpoint(f,x0::AbstractVector{<:Real},
-    method::AbstractFixPoint = AndersonFixPoint();
-    atol=zero(nested_eltype(x0)),
-    rtol=8eps(one(nested_eltype(x0))), 
-    max_iters=100)
-    x0,atol,rtol = promote(x0,atol,rtol)
-    method = promote_method(method,nested_eltype(x0))
-    return _fixpoint(f,x0,method,atol,rtol,max_iters)
-end
 
 function _fixpoint(f::F,
     x0::T,
     method::SSFixPoint,
     atol::T = zero(T),
     rtol::T =8*eps(T),
-    max_iters=100) where {F,T}
+    max_iters=100) where {F,T<:Real}
     nan = (0*atol)/(0*atol)
     xi = f(x0)
     converged,finite = convergence(x0,xi,atol,rtol)
     converged && return ifelse(finite,xi,nan)
     itercount = 1
     xold = x0
+    α = method.dampingfactor
     while itercount < max_iters
-        xi = f(xi)  
+        xi = α*f(xi) + (1-α)*xi  
         converged,finite = convergence(xold,xi,atol,rtol)
         converged && return ifelse(finite,xi,nan)    
         itercount +=1
@@ -105,7 +109,6 @@ function _fixpoint(f::F,
         λ2 = (x2 - x1)/(x1-x3)
         dx = -(λ2/(1-λ2))*(x2-x1)
         x3 = x2 + α*dx
-    
         converged,finite = convergence(x2,x3,atol,rtol)
         converged && return ifelse(finite,x3,nan)
         
@@ -122,37 +125,43 @@ function _fixpoint(f::F,
     return nan
 end
 
-Base.@kwdef struct AndersonFixPoint{T} <: AbstractFixPoint
-    theta::T = 0.01
-    tau::T = 0.001
-    D::T = 1e6
-    eps::T = 1e-6
-    m::Int = 5
-    dampingfactor::T = 0.1
-end
-
-function _fixpoint(f,
-    x0::AbstractVector{<:T},
-    method::AndersonFixPoint,
+function _fixpoint(f!::F,
+    x0::X where {X <:AbstractVector{T}},
+    method::SSFixPoint,
     atol::T = zero(T),
     rtol::T =8*eps(T),
-    max_iters=100) where {T <: Real}
-    
+    max_iters=100) where {F,T<:Real}
     nan = (0*atol)/(0*atol)
-    θ =  method.theta
-    τ = method.tau
+    xi = copy(x0)
+    xi = f!(xi,x0)
+    converged,finite = convergence(x0,xi,atol,rtol)
+    if converged
+        if finite
+            return xi
+        else
+            xi .= nan
+            return xi 
+        end
+    end
+    itercount = 1
     α = method.dampingfactor
-    ϵ = method.eps
-    D = method.D
-    m = method.m
-    xᵢ₋₁ = x0
-    mᵢ = 0
-    naa = 0
-    xᵢ = f(xᵢ₋₁)
-    Hk = one(xi)
-    gi = abs(xᵢ₋₁ - xᵢ)
-    U = gi
-    yᵢ = gi
-    gold = zero(xi)
+    xold = copy(x0)
+    while itercount < max_iters
+        xi = f!(xi,xold)
+        xi .*= α
+        xi .+= (1 .- α) .* xold
+        converged,finite = convergence(xold,xi,atol,rtol)
+        if converged
+            if finite
+                return xi
+            else
+                xi .= nan
+                return xi 
+            end
+        end
+        itercount +=1
+        xold .= xi
+    end
+    xi .= nan
+    return xi
 end
-

@@ -118,7 +118,7 @@ function g_LJ(model::softSAFTModel, V, T, z)
     return 1+sum(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
 end
 
-
+#=
 function X(model::softSAFTModel, V, T, z)
     _1 = one(V+T+first(z))
     ∑z = ∑(z)
@@ -146,7 +146,7 @@ function X(model::softSAFTModel, V, T, z)
     end
     return X_
 end
-
+=#
 function Δ(model::softSAFTModel, V, T, z, i, j, a, b)
     ϵ̄ = @f(ϵ_m)
     σ̄ = @f(σ_m)

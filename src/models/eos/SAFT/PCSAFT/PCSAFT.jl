@@ -31,39 +31,44 @@ function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal
 end
 
 function a_res(model::PCSAFTModel, V, T, z)
-    return @f(a_hc) + @f(a_disp) + @f(a_assoc)
+    _data = @f(data)
+    return @f(a_hc,_data) + @f(a_disp,_data) + @f(a_assoc,_data)
 end
 
-function a_hc(model::PCSAFTModel, V, T, z)
-    Σz = sum(z)
+function data(model::PCSAFTModel,V,T,z)
+    _d = @f(d)
+    ζ0,ζ1,ζ2,ζ3 = @f(ζ0123,_d)
     m = model.params.segment.values
-    m̄ = dot(z, m)/Σz
+    m̄ = dot(z, m)/sum(z)
+    return (_d,ζ0,ζ1,ζ2,ζ3,m̄)
+end
+
+function a_hc(model::PCSAFTModel, V, T, z,_data=@f(data))
+    dii,ζ0,ζ1,ζ2,ζ3,m̄ = _data
     ϵᵢᵢ = model.params.epsilon.diagvalues
     σᵢᵢ = model.params.sigma.diagvalues
-    ζ0,ζ1,ζ2,ζ3 = @f(ζ0123)
-    #constants for g_hs
+    m = model.params.segment.values
+    Σz = sum(z)
     c1 = 1/(1-ζ3)
     c2 = 3ζ2/(1-ζ3)^2
     c3 = 2ζ2^2/(1-ζ3)^3
-
     a_hs = 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
     res = zero(a_hs)
     for i ∈ @comps
-        dᵢ = σᵢᵢ[i] * (1 - 0.12exp(-3ϵᵢᵢ[i]/T))
+        dᵢ = dii[i]
         di,dj = dᵢ,dᵢ
         g_hsᵢᵢ = c1 + di*dj/(di+dj)*c2 + (di*dj/(di+dj))^2*c3
         res += z[i]*(m[i]-1)*log(g_hsᵢᵢ)
     end
     #return  m̄*@f(a_hs) - ∑(z[i]*(m[i]-1)*log(@f(g_hs,i,i)) for i ∈ @comps)/Σz
-    return m̄*a_hs - res/sum(z)
+    return m̄*a_hs - res/Σz
 end
 
-function a_disp(model::PCSAFTModel, V, T, z)
+function a_disp(model::PCSAFTModel, V, T, z,_data=@f(data))
+    di,ζ0,ζ1,ζ2,ζ3,m̄ = _data
     Σz = sum(z)
-    m = model.params.segment.values
-    m̄ = dot(z, m)/Σz
     m2ϵσ3₁,m2ϵσ3₂ = @f(m2ϵσ3)
-    return -2*π*N_A*Σz/V*@f(I,1)*m2ϵσ3₁ - π*m̄*N_A*Σz/V*@f(C1)*@f(I,2)*m2ϵσ3₂
+    return -2*π*N_A*Σz/V*@f(I,1,_data)*m2ϵσ3₁ - π*m̄*N_A*Σz/V*@f(C1,_data)*@f(I,2,_data)*m2ϵσ3₂
 end
 
 function d(model::PCSAFTModel, V, T, z, i)
@@ -72,20 +77,26 @@ function d(model::PCSAFTModel, V, T, z, i)
     return σᵢᵢ * (1 - 0.12exp(-3ϵᵢᵢ/T))
 end
 
-function ζ(model::PCSAFTModel, V, T, z, n)
+function d(model::PCSAFTModel, V, T, z)
+    ϵᵢᵢ = model.params.epsilon.diagvalues
+    σᵢᵢ = model.params.sigma.diagvalues 
+    return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
+end
+
+function ζ(model::PCSAFTModel, V, T, z, n , _d)
     m = model.params.segment.values
     ϵᵢᵢ = model.params.epsilon.diagvalues
     σᵢᵢ = model.params.sigma.diagvalues
     res = zero(V+T+first(z))
     for i ∈ @comps
-        dᵢ = σᵢᵢ[i] * (1 - 0.12exp(-3ϵᵢᵢ[i]/T))
+        dᵢ = _d[i]
         res += z[i]*m[i]*dᵢ^n
     end
     res *= N_A*π/6/V
     return res
 end
 
-function ζ0123(model::PCSAFTModel, V, T, z)
+function ζ0123(model::PCSAFTModel, V, T, z,_d)
     m = model.params.segment.values
     ϵᵢᵢ = model.params.epsilon.diagvalues
     σᵢᵢ = model.params.sigma.diagvalues
@@ -94,7 +105,7 @@ function ζ0123(model::PCSAFTModel, V, T, z)
     ζ2 = ζ0
     ζ3 = ζ0
     for i ∈ @comps
-        dᵢ = σᵢᵢ[i] * (1 - 0.12exp(-3ϵᵢᵢ[i]/T))
+        dᵢ = _d[i]
         zᵢmᵢ = z[i]*m[i]
         d1 = dᵢ
         d2 = d1*d1
@@ -113,24 +124,21 @@ function ζ0123(model::PCSAFTModel, V, T, z)
 end
 
 
-function g_hs(model::PCSAFTModel, V, T, z, i, j)
-    di = @f(d,i)
-    dj = @f(d,j)
-    ζ2 = @f(ζ,2)
-    ζ3 = @f(ζ,3)
+function g_hs(model::PCSAFTModel, V, T, z, i, j,_data=@f(data))
+    _d,ζ0,ζ1,ζ2,ζ3,_ = _data
+    di = _d[i]
+    dj = _d[j]
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 end
 
 
-function a_hs(model::PCSAFTModel, V, T, z)
-    ζ0,ζ1,ζ2,ζ3 = @f(ζ0123)
+function a_hs(model::PCSAFTModel, V, T, z,_data=@f(data))
+    _,ζ0,ζ1,ζ2,ζ3,_ = _data
     return 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
 end
 
-function C1(model::PCSAFTModel, V, T, z)
-    m = model.params.segment.values
-    m̄ = dot(z, m)/sum(z)
-    η = @f(ζ,3)
+function C1(model::PCSAFTModel, V, T, z,_data=@f(data))
+    _,_,_,_,η,m̄ = _data
     return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
 end
 
@@ -155,20 +163,16 @@ function m2ϵσ3(model::PCSAFTModel, V, T, z)
     #return ∑(z[i]*z[j]*m[i]*m[j] * (ϵ[i,j]*(1)/T)^n * σ[i,j]^3 for i ∈ @comps, j ∈ @comps)/(sum(z)^2)
 end
 
-function I(model::PCSAFTModel, V, T, z, n)
-    m = model.params.segment.values
-    m̄ = dot(z, m)/sum(z)
+function I(model::PCSAFTModel, V, T, z, n , _data=@f(data))
+    _,_,_,_,η,m̄ = _data
     σ = model.params.sigma.values
-    η = @f(ζ,3)
     if n == 1
         corr = PCSAFTconsts.corr1
     elseif n == 2
-       
         corr = PCSAFTconsts.corr2
     end
-
     res = zero(η)
-    @inbounds for i = 1:7
+    @inbounds for i ∈ 1:7
         ii = i-1 
         corr1,corr2,corr3 = corr[i]
         ki = corr1 + (m̄-1)/m̄*corr2 + (m̄-1)/m̄*(m̄-2)/m̄*corr3
@@ -176,62 +180,32 @@ function I(model::PCSAFTModel, V, T, z, n)
     end
     return res
     end
-
-
-function X(model::PCSAFTModel, V, T, z)
-    _1 = one(V+T+first(z))
-    Σz = ∑(z)
-    ρ = N_A/V
-    itermax = 100
-    dampingfactor = 0.5
-    error = 1.
-    tol = model.absolutetolerance
-    iter = 1
-    
-    X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
-
-    #solution for one component - one site.
-    if isone(length(model.sites.i_sites))
-        if length(only(model.sites.i_sites)) == 2
-            _Δ =  @f(Δ,1,1,1,2)
-            _a = _Δ*z[1]*ρ
-            X = 2/(_1 + sqrt(muladd(4,_a,_1))) 
-           X_[1][1] = X
-           X_[1][2] = X
-           return X_
-        end
-    end
-    X_old = deepcopy(X_)
-    
-    while error > tol
-        iter > itermax && error("X has failed to converge after $itermax iterations")
-        for i ∈ @comps, a ∈ @sites(i)
-           
-            rhs = 1/(1+∑(ρ*z[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
-            
-            X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
-        end
-        error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
-        for i = 1:length(X_)
-            X_old[i] .= X_[i]
-        end
-        
-        iter += 1
-    end
-
-    return X_
-end
-
-function Δ(model::PCSAFTModel, V, T, z, i, j, a, b)
+ 
+function Δ(model::PCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     _0 = zero(V+T+first(z))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     κijab = κ[i,j][a,b] 
     iszero(κijab) && return _0
     σ = model.params.sigma.values
-    gij = @f(g_hs,i,j)
+    gij = @f(g_hs,i,j,_data)
     res = gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κijab
     return res
+end
+
+#optimized version, reduces memory allocations, but is specific to this PCSAFT
+#thats why it is bound to the specific PCSAFT struct
+#instead of the more general PCSAFTModel
+function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
+    ϵ_assoc = model.params.epsilon_assoc.values
+    κ = model.params.bondvol.values
+    σ = model.params.sigma.values
+    Δres = zero_assoc(κ,typeof(V+T+first(z)))
+    for (idx,(i,j),(a,b)) in indices(Δres)
+        gij = @f(g_hs,i,j,_data)
+        Δres[idx] = gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
+    end
+    return Δres
 end
 
 const PCSAFTconsts = (

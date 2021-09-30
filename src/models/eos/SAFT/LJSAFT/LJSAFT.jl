@@ -101,7 +101,7 @@ function g_LJ(model::LJSAFTModel, V, T, z, i)
     return (1+sum(a[i,j]*ρ̄^i*Tst^(1-j) for i ∈ 1:5 for j ∈ 1:5))
 end
 
-
+#=
 function X(model::LJSAFTModel, V, T, z)
     _1 = one(V+T+first(z))
     ∑z = ∑(z)
@@ -129,22 +129,20 @@ function X(model::LJSAFTModel, V, T, z)
     end
     return X_
 end
-
+=#
 function Δ(model::LJSAFTModel, V, T, z, i, j, a, b)
     ∑z = ∑(z)
-    x = z/∑z
     m = model.params.segment.values
     _b = model.params.b.values
     T̃ = model.params.T_tilde.values
-
     Tst = T/T̃[i,j]
     ρ = ∑z/V
-    ρ̄ = x[i]*_b[i,j]*m[i]*ρ
+    ρ̄ = z[i]*_b[i,j]*m[i]*ρ/∑z
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     b_ = LJSAFTconsts.b
-    I = ∑(b_[i+1,j+1]*ρ̄^i*Tst^j for i ∈ 0:4 for j ∈ 0:4)/3.84/1e4
-    return 4π*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]*I*_b[i,j]
+    I = sum(b_[i+1,j+1]*ρ̄^i*Tst^j for i ∈ 0:4 for j ∈ 0:4)/3.84/1e4
+    return 4π*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]*I*_b[i,j]/N_A
 end
 
 const LJSAFTconsts = (
@@ -163,6 +161,5 @@ const LJSAFTconsts = (
     C0 = [2.01546797,-28.17881636,28.28313847,-10.42402873],
     C1 = [-19.58371655,75.62340289,-120.70586598,93.92740328,-27.37737354],
     C2 = [29.34470520,-112.35356937,170.64908980,-123.06669187,34.42288969],
-    C4 = [-13.37031968,65.38059570,-115.09233113,88.91973082,-25.62099890]
-         
+    C4 = [-13.37031968,65.38059570,-115.09233113,88.91973082,-25.62099890]    
    )

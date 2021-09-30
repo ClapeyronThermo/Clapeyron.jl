@@ -173,7 +173,7 @@ function g_1(model::SAFTVRSWModel,V, T, z, i, j)
     ∂ζeff_X╱∂λ = A * [0; 1; 2λ[i,j]] ⋅ [ζ_X_; ζ_X_^2; ζ_X_^3]
     return @f(gHS_0,i,j)+(λ[i,j]^3-1)*(5/2-ζeff_X_)/(1-ζeff_X_)^4*(λ[i,j]/3*∂ζeff_X╱∂λ-ζ_X_*∂ζeff_X╱∂ζ_X)
 end
-
+#=
 function X(model::SAFTVRSWModel, V, T, z)
     _1 = one(V+T+first(z))
     ∑z = ∑(z)
@@ -202,7 +202,7 @@ function X(model::SAFTVRSWModel, V, T, z)
     end
     return X_
 end
-
+=#
 function Δ(model::SAFTVRSWModel, V, T, z, i, j, a, b)
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values

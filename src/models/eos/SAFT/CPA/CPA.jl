@@ -72,7 +72,7 @@ end
 
 #     return āᾱ ,b̄
 # end
-
+#=
 function X(model::CPAModel, V, T, z)
     _1 = one(V+T+first(z))
     x = z/∑(z)
@@ -97,15 +97,15 @@ function X(model::CPAModel, V, T, z)
     end
     return X_
 end
-
+=#
 function Δ(model::CPAModel, V, T, z, i, j, a, b)
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b] * 1e2/R̄
     βijab = model.params.bondvol.values[i,j][a,b] * 1e-3
-    x = z/∑(z)
+    Σz = sum(z)
     b = model.params.b.values
-    b̄ = ∑(b .* (x * x'))
-    η = b̄*∑(z)/(4*V)
+    b̄ = dot(z,b,z)
+    η = b̄/(4*V*Σz)
     g = (1-η/2)/(1-η)^3
     bij = (b[i,i]+b[j,j])/2
-    return g*(exp(ϵ_associjab/T)-1)*βijab*bij
+    return g*(exp(ϵ_associjab/T)-1)*βijab*bij/N_A
 end

@@ -1,7 +1,10 @@
 module Clapeyron
 using StaticArrays
 using LinearAlgebra
-using NLSolvers,Roots
+import PackedVectorsOfVectors
+const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
+using Roots: Roots
+using NLSolvers
 using DiffResults, ForwardDiff
 include("solvers/Solvers.jl")
 using .Solvers

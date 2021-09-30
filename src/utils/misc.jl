@@ -95,3 +95,8 @@ end
     _0 = zero(V+T)
     (T <= _0) | (V <= _0)   
 end
+
+function complement_index(i,ij)
+    i1,i2 = ij
+    ifelse(i1 == i,i2,i1)
+end
