@@ -91,8 +91,9 @@ function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z)
 end
 
 function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,data)
+    _0 = zero(V+T+first(z))
     if iszero(length(model.sites.flattenedsites))
-        return zero(V+T+first(z))
+        return _0
     end
     X_ = @f(X,data)
     n = model.sites.n_sites
