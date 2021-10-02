@@ -15,6 +15,14 @@ function  Δ(model::Union{SAFTModel,CPAModel}, V, T, z,data)
     end
     return Δres
 end
+function issite(i,a,ij,ab)
+    ia = (i,a)
+    i1,i2 = ij
+    a1,a2 = ab
+    ia1 = (i1,a1)
+    ia2 = (i2,a2)
+    return (ia == ia1) | (ia == ia2)
+end 
 
 function X!(output,input,pack_indices,delta,modelsites,ρ,z)
     _0 = zero(eltype(output))
@@ -28,12 +36,13 @@ function X!(output,input,pack_indices,delta,modelsites,ρ,z)
         for a ∈ sitesᵢ
             ∑X = _0
             @inbounds for (idx,ij,ab) in indices(delta)
-                if (i ∈ ij) & (a ∈ ab)
+                if issite(i,a,ij,ab)
                     j = complement_index(i,ij)
                     b = complement_index(a,ab)
                     nj = n[j]
                     njb = nj[b]
                     ∑X += ρ*njb*z[j]*Xinput[j][b]*delta.values[idx]
+                    
                 end
             end
             rhs = _1/(_1 +∑X)
@@ -111,4 +120,12 @@ function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,data)
     return res/sum(z)
 end
 
+
 #res =  ∑(z[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)/sum(z)
+#=
+
+aa = 4.76197468041569
+aa = 4.76197468041569
+aa = 42.788399307705504
+aa = 42.788399307705504
+=#
