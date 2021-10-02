@@ -78,7 +78,7 @@ function _split_model(assoc::CompressedAssocMatrix{T},I) where T
     idx_bool = findall(x -> (first(x) ∈ I)&(last(x) ∈ I),old_idx)
     values = assoc.values[idx_bool]
     outer_indices = assoc.outer_indices[idx_bool]
-    inner_indices = assoc_inner_indices[idx_bool]
+    inner_indices = assoc.inner_indices[idx_bool]
     outer_size = length(I)
     inner_size = assoc.inner_size
     for i ∈ 1:length(outer_indices)
