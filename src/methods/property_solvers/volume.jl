@@ -18,8 +18,7 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
     _0 = zero(p+T+first(z))
     _nan = _0/_0
     logV0 = log(V0)
-    lb_v = lb_volume(model)
-    V0
+    lb_v = lb_volume(model,z)
     function logstep(_V)
         _V < log(lb_v) && return zero(_V)/zero(_V)
         _V = exp(_V)
