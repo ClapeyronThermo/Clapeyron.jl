@@ -49,15 +49,16 @@ Base.IndexStyle(::Type{<:FractionVector}) = IndexLinear()
 
 ##
 
-struct CompressedAssocMatrix{T}
+struct CompressedAssocMatrix{T} 
     values::Vector{T}
-    outer_indices::Vector{Tuple{Int,Int}}
-    inner_indices::Vector{Tuple{Int,Int}}
-    outer_size::Tuple{Int,Int}
-    inner_size::Tuple{Int,Int}
+    outer_indices::Vector{Tuple{Int,Int}} #index of components
+    inner_indices::Vector{Tuple{Int,Int}} #index of sites
+    outer_size::Tuple{Int,Int} #size of component matrix
+    inner_size::Tuple{Int,Int} #size of sites matrices
 end
 
-function CompressedAssocMatrix(x::Matrix{Matrix{T}}) where T
+const MatrixofMatrices{T} = AbstractMatrix{<:AbstractMatrix{T}} where T
+function CompressedAssocMatrix(x::MatrixofMatrices{T}) where T
     outer_size = size(x)
     is1, is2 = 0, 0
     os1, os2 = outer_size
@@ -106,6 +107,7 @@ function Base.getindex(m::CompressedAssocMatrix,i::Int,j::Int)
     end
 end
 
+#Base.eltype(m::CompressedAssocMatrix{T}) where T = T
 
 function Base.setindex!(m::CompressedAssocMatrix,val,i::Int)
     @inbounds begin
