@@ -101,35 +101,6 @@ function g_LJ(model::LJSAFTModel, V, T, z, i)
     return (1+sum(a[i,j]*ρ̄^i*Tst^(1-j) for i ∈ 1:5 for j ∈ 1:5))
 end
 
-#=
-function X(model::LJSAFTModel, V, T, z)
-    _1 = one(V+T+first(z))
-    ∑z = ∑(z)
-    x = z/∑z
-    ρ = ∑z/V
-    n = model.sites.n_sites
-    itermax = 500
-    dampingfactor = 0.5
-    error = 1.
-    tol = model.absolutetolerance
-    iter = 1
-    X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
-    X_old = deepcopy(X_)
-    while error > tol
-        iter > itermax && error("X has failed to converge after $itermax iterations")
-        for i ∈ @comps, a ∈ @sites(i)
-            rhs = 1/(1+∑(ρ*x[j]*∑(n[j][b]*X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
-            X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
-        end
-        error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
-        for i = 1:length(X_)
-            X_old[i] .= X_[i]
-        end
-        iter += 1
-    end
-    return X_
-end
-=#
 function Δ(model::LJSAFTModel, V, T, z, i, j, a, b)
     ∑z = ∑(z)
     m = model.params.segment.values

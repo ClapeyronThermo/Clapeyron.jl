@@ -117,34 +117,7 @@ function g_hsij(model::CKSAFTModel, V, T, z, i, j)
     ζ3 = @f(ζ,3)
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 end
-#=
-function X(model::CKSAFTModel, V, T, z)
-    _1 = one(V+T+first(z))
-    Σz = ∑(z)
-    x = z/ Σz
-    ρ = N_A* Σz/V
-    itermax = 100
-    dampingfactor = 0.5
-    error = 1.
-    tol = model.absolutetolerance
-    iter = 20
-    X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
-    X_old = deepcopy(X_)
-    while error > tol
-        iter > itermax && error("X has failed to converge after $itermax iterations")
-        for i ∈ @comps, a ∈ @sites(i)
-            rhs = 1/(1+∑(ρ*x[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
-            X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
-        end
-        error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
-        for i = 1:length(X_)
-            X_old[i] .= X_[i]
-        end
-        iter += 1
-    end
-    return X_
-end
-=#
+
 function Δ(model::CKSAFTModel, V, T, z, i, j, a, b)
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
     κijab = model.params.bondvol.values[i,j][a,b]

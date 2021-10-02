@@ -234,19 +234,24 @@ Struct holding association parameters.
 struct AssocParam{T} <: ClapeyronParam
     name::String
     components::Array{String,1}
-    values::Array{Array{T,2},2}
+    values::CompressedAssocMatrix{T}
     ismissingvalues::Array{Array{Bool,2},2}
     allcomponentsites::Array{Array{String,1},1}
     sourcecsvs::Array{String,1}
     sources::Array{String,1}
 end
 
+function AssocParam(name::String,components::Vector{String},values::Array{Array{T,2},2},ismissingvalues,allcomponentsites,sourcecsvs,sources) where T
+    _values = CompressedAssocMatrix(values)
+    return AssocParam(name,components,_values,ismissingvalues,allcomponentsites,sourcecsvs,sources)
+end
+
 function AssocParam(x::AssocParam{T}) where T
-    return PairParam{T}(x.name,x.components, deepcopy(x.values), deepcopy(x.ismissingvalues), x.allcomponentsites, x.sourcecsvs, x.sources)
+    return AssocParam{T}(x.name,x.components, deepcopy(x.values), deepcopy(x.ismissingvalues), x.allcomponentsites, x.sourcecsvs, x.sources)
 end
 
 function AssocParam{T}(x::AssocParam, v::Matrix{Matrix{T}}) where T
-    return AssocParam{T}(x.name, x.components,deepcopy(v), deepcopy(x.ismissingvalues), x.allcomponentsites, x.sourcecsvs, x.sources)
+    return AssocParam{T}(x.name, x.components,CompressedAssocMatrix(v), deepcopy(x.ismissingvalues), x.allcomponentsites, x.sourcecsvs, x.sources)
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",param::AssocParam{T}) where T

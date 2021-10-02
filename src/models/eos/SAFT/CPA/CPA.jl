@@ -71,33 +71,8 @@ end
 #     b̄ = ∑(b .* (x * x'))
 
 #     return āᾱ ,b̄
-# end
-#=
-function X(model::CPAModel, V, T, z)
-    _1 = one(V+T+first(z))
-    x = z/∑(z)
-    ρ = ∑(z)/V
-    n_sites = model.sites.n_flattenedsites
-    itermax = 100
-    dampingfactor = 0.5
-    error = 1.
-    tol = model.absolutetolerance
-    iter = 1
-    X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
-    X_old = deepcopy(X_)
-    while error > tol
-        iter > itermax && error("X has failed to converge after $itermax iterations")
-        for i ∈ @comps, a ∈ @sites(i)
-            rhs = 1/(1+∑(ρ*x[j]*∑(n_sites[j][b]*X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
-            X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
-        end
-        error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
-        X_old = deepcopy(X_)
-        iter += 1
-    end
-    return X_
-end
-=#
+#end
+
 function Δ(model::CPAModel, V, T, z, i, j, a, b)
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b] * 1e2/R̄
     βijab = model.params.bondvol.values[i,j][a,b] * 1e-3
