@@ -74,9 +74,11 @@ function eCPA(solvents,salts;
 end
 
 function a_res(model::eCPAModel, V, T, z)
+    n = sum(z)
+    ā,b̄,c̄ = cubic_ab(model.puremodel.cubicmodel,V,T,z,n)
     if model.bornmodel !== nothing
-        return a_res(model.puremodel,V,T,z)+a_ion(model.ionicmodel,V,T,z)+a_born(model.bornmodel,V,T,z)
+        return a_res(model.puremodel,V,T,z)+a_ion(model.ionicmodel,V+c̄*n,T,z)+a_born(model.bornmodel,V+c̄*n,T,z)
     else
-        return a_res(model.puremodel,V,T,z)+a_ion(model.ionicmodel,V,T,z)
+        return a_res(model.puremodel,V+c̄*n,T,z)+a_ion(model.ionicmodel,V+c̄*n,T,z)
     end
 end

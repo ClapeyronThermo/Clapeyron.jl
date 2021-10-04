@@ -25,7 +25,7 @@ export eCPANRTL
 function eCPANRTL(components::Vector{String}; puremodel=PR,
     userlocations=String[], 
      verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/eCPANRTL/eCPANRTL_unlike.csv","SAFT/CPA/CPA_like.csv"]; userlocations=userlocations, asymmetricparams=["dUref","TU","omegaU"], ignore_missing_singleparams=["dUref","TU","omegaU"], verbose=verbose)
+    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/eCPANRTL/eCPANRTL_unlike.csv","SAFT/sCPA/sCPA_like.csv"]; userlocations=userlocations, asymmetricparams=["dUref","TU","omegaU"], ignore_missing_singleparams=["dUref","TU","omegaU"], verbose=verbose)
     dUref  = params["dUref"]
     params["TU"].values[diagind(params["TU"].values)] .= 1.
     TU  = params["TU"]
@@ -53,5 +53,5 @@ function excess_gibbs_free_energy(model::eCPANRTLModel,p,T,z)
 
     τ = @. (ΔUref+ωΔU*((1-T/TΔU)^2-(1-298.15/TΔU)^2))/T
     G = @. exp(-α*τ)
-    return sum(x[i]*sum(x[j]*b[j]*G[j,i]*τ[j,i] for j ∈ @comps)/sum(x[j]*b[j]*G[j,i] for j ∈ @comps) for i ∈ @comps)
+    return sum(x[i]*sum(x[j]*b[j]*G[j,i]*τ[j,i] for j ∈ @comps)/sum(x[j]*b[j]*G[j,i] for j ∈ @comps) for i ∈ @comps)*sum(z)*R̄*T
 end

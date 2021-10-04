@@ -23,7 +23,7 @@ end
 
 @registermodel MM1
 export MM1
-function MM1(solvents,salts; assocmodel=CPA, userlocations::Vector{String}=String[],assoc_userlocations::Vector{String}=String[], verbose::Bool=false)
+function MM1(solvents,salts; assocmodel=sCPA, userlocations::Vector{String}=String[],assoc_userlocations::Vector{String}=String[], verbose::Bool=false)
     ion_groups = GroupParam(salts, ["Electrolytes/salts.csv"]; verbose=verbose)
 
     ions = ion_groups.flattenedgroups

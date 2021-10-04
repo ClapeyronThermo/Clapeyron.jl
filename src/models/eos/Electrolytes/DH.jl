@@ -33,7 +33,7 @@ function DH(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocatio
 
     if occursin("CPA",SAFTlocations[1])
         params,sites = getparams(components, append!(["Electrolytes/charges.csv","properties/molarmass.csv"],SAFTlocations); userlocations=userlocations,ignore_missing_singleparams=["b","charge"], verbose=verbose)
-        params["b"].values .*= 3/2/N_A
+        params["b"].values .*= 3/2/N_A/π*1e-3
         params["b"].values .^= 1/3
         sigma = params["b"]
     else
