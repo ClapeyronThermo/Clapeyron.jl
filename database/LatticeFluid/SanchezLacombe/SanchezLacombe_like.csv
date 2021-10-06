@@ -1,0 +1,17 @@
+Clapeyron Database File
+SanchezLacombe Like Parameters
+species,epsilon,vol,segment
+carbon dioxide,2276.66,3.638,8.564
+ethane,2444.62,7.865,6.653
+ethylene,2273.34,7.238,6.518
+Xenon,2943.30,11.854,3.644
+Biphenyl,5280.12,14.985,11.708
+Naphthalene,5509.75,12.407,9.600 
+"2,3-Dimethylnaphthalene",5604.69,13.069,11.245
+"2,6-Dimethylnaphthalene",5540.04,13.069,11.244
+Fluorene,5866.55,10.676,11.821
+Phenanthrene,6354.58,13.804,11.378
+Anthracene,6372.58,13.804,11.378
+Pyrene,6732.91,14.733,11.980
+n-Octacosane,5295.78,17.360,22.989
+Benzoic Acid,4920.81,6.196,15.431

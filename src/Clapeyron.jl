@@ -84,6 +84,8 @@ include("models/eos/EmpiricHelmholtz/IAPWS95.jl")
 include("models/eos/EmpiricHelmholtz/PropaneRef.jl")
 include("models/eos/EmpiricHelmholtz/GERG2008/GERG2008.jl")
 
+include("models/eos/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
+
 include("models/eos/SPUNG/SPUNG.jl")
 
 include("models/eos/cached/CachedEoS.jl")
