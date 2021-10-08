@@ -1,4 +1,3 @@
-include("SVRM.jl")
 struct SAFTVRMieParam <: EoSParam
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
