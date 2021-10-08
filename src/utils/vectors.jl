@@ -56,8 +56,12 @@ struct CompressedAssocMatrix{T}
     outer_size::Tuple{Int,Int} #size of component matrix
     inner_size::Tuple{Int,Int} #size of sites matrices
 end
+function CompressedAssocMatrix{T}() where T
+    return CompressedAssocMatrix(T[],Tuple{Int,Int}[],Tuple{Int,Int}[],(0,0),(0,0))
+end
 
 const MatrixofMatrices{T} = AbstractMatrix{<:AbstractMatrix{T}} where T
+
 function CompressedAssocMatrix(x::MatrixofMatrices{T}) where T
     outer_size = size(x)
     is1, is2 = 0, 0

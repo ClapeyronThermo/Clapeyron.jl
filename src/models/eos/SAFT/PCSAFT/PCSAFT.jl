@@ -45,8 +45,6 @@ end
 
 function a_hc(model::PCSAFTModel, V, T, z,_data=@f(data))
     dii,ζ0,ζ1,ζ2,ζ3,m̄ = _data
-    ϵᵢᵢ = model.params.epsilon.diagvalues
-    σᵢᵢ = model.params.sigma.diagvalues
     m = model.params.segment.values
     Σz = sum(z)
     c1 = 1/(1-ζ3)
@@ -71,12 +69,6 @@ function a_disp(model::PCSAFTModel, V, T, z,_data=@f(data))
     return -2*π*N_A*Σz/V*@f(I,1,_data)*m2ϵσ3₁ - π*m̄*N_A*Σz/V*@f(C1,_data)*@f(I,2,_data)*m2ϵσ3₂
 end
 
-function d(model::PCSAFTModel, V, T, z, i)
-    ϵᵢᵢ = model.params.epsilon.diagvalues[i]
-    σᵢᵢ = model.params.sigma.diagvalues[i]
-    return σᵢᵢ * (1 - 0.12exp(-3ϵᵢᵢ/T))
-end
-
 function d(model::PCSAFTModel, V, T, z)
     ϵᵢᵢ = model.params.epsilon.diagvalues
     σᵢᵢ = model.params.sigma.diagvalues 
@@ -85,8 +77,6 @@ end
 
 function ζ(model::PCSAFTModel, V, T, z, n , _d)
     m = model.params.segment.values
-    ϵᵢᵢ = model.params.epsilon.diagvalues
-    σᵢᵢ = model.params.sigma.diagvalues
     res = zero(V+T+first(z))
     for i ∈ @comps
         dᵢ = _d[i]
@@ -98,8 +88,6 @@ end
 
 function ζ0123(model::PCSAFTModel, V, T, z,_d)
     m = model.params.segment.values
-    ϵᵢᵢ = model.params.epsilon.diagvalues
-    σᵢᵢ = model.params.sigma.diagvalues
     ζ0 = zero(V+T+first(z))
     ζ1 = ζ0
     ζ2 = ζ0
@@ -179,7 +167,7 @@ function I(model::PCSAFTModel, V, T, z, n , _data=@f(data))
         res +=ki*η^ii
     end
     return res
-    end
+end
  
 function Δ(model::PCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     _0 = zero(V+T+first(z))

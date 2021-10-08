@@ -74,16 +74,20 @@ function split_model(param::AbstractVector)
 end 
 
 function _split_model(assoc::CompressedAssocMatrix{T},I) where T
+    len = length(assoc.values)
+    iszero(len) && return CompressedAssocMatrix{T}()
     old_idx = assoc.outer_indices 
     idx_bool = findall(x -> (first(x) ∈ I)&(last(x) ∈ I),old_idx)
+    iszero(length(idx_bool)) && return CompressedAssocMatrix{T}()
     values = assoc.values[idx_bool]
     outer_indices = assoc.outer_indices[idx_bool]
     inner_indices = assoc.inner_indices[idx_bool]
-    outer_size = length(I)
+    out_val = length(I)
+    outer_size = (out_val,out_val)
     inner_size = assoc.inner_size
-    for i ∈ 1:length(outer_indices)
+    for i ∈ 1:len
         i1,j1 = outer_indices[i]
-        i2,j2 = findfirst(i1,I),findfirst(j1,I)
+        i2,j2 = findfirst(==(i1),I),findfirst(==(j1),I)
         outer_indices[i] = (i2,j2)
     end
     return CompressedAssocMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
