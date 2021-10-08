@@ -28,7 +28,7 @@ function ElectrolyteSAFT(solvents,salts; puremodel=PCSAFT,
     userlocations=String[], 
     ideal_userlocations=String[],
      verbose=false)
-    ion_groups = GroupParam(salts, ["Electrolytes/salts.csv"]; verbose=verbose)
+    ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
 
     ions = ion_groups.flattenedgroups
     components = deepcopy(solvents)

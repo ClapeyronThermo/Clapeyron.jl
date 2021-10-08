@@ -24,7 +24,7 @@ end
 @registermodel MM1
 export MM1
 function MM1(solvents,salts; assocmodel=sCPA, userlocations::Vector{String}=String[],assoc_userlocations::Vector{String}=String[], verbose::Bool=false)
-    ion_groups = GroupParam(salts, ["Electrolytes/salts.csv"]; verbose=verbose)
+    ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
 
     ions = ion_groups.flattenedgroups
     components = deepcopy(solvents)
@@ -33,7 +33,7 @@ function MM1(solvents,salts; assocmodel=sCPA, userlocations::Vector{String}=Stri
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
 
-    params = getparams(components, ["Electrolytes/MM1_like.csv","Electrolytes/MM1_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["Electrolytes/RSP/MM1_like.csv","Electrolytes/RSP/MM1_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     params["gamma"].values .*= pi/180
     gamma = params["gamma"]
     params["theta"].values .*= pi/180
@@ -82,7 +82,9 @@ function RSP(model::MM1Model, V, T, z)
     g = [_1 for i ∈ model.isolvents]
 
     for i ∈ model.isolvents
-        g[i] = 1+sum(z̄[i,j].*P[i][j].*cos(γ[i,j])./(sum(P[i][j] for j ∈ 1:length(model.solvents)).*cos(θ[i,j])+1).*μ0[j]/μ0[i] for j ∈ 1:length(model.solvents))
+        if μ0[i]!=0
+            g[i] = 1+sum(z̄[i,j].*P[i][j].*cos(γ[i,j])./(sum(P[i][j] for j ∈ 1:length(model.solvents)).*cos(θ[i,j])+1).*μ0[j]/μ0[i] for j ∈ 1:length(model.solvents))
+        end
     end
 
 

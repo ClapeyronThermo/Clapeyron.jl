@@ -21,7 +21,7 @@ end
 export eCPA
 
 function eCPA(solvents,salts; 
-    puremodel=CPA,
+    puremodel=sCPA,
     cubicmodel=RK, 
     alpha=CPAAlpha, 
     mixing=HVRule,
@@ -38,7 +38,7 @@ function eCPA(solvents,salts;
     mixing_userlocations=String[],
     translation_userlocations=String[],
      verbose=false)
-    ion_groups = GroupParam(salts, ["Electrolytes/salts.csv"]; verbose=verbose)
+    ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
 
     ions = ion_groups.flattenedgroups
     components = deepcopy(solvents)

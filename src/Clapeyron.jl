@@ -33,7 +33,7 @@ include("models/eos/ideal/JobackIdeal.jl")
 
 include("models/eos/SAFT/PCSAFT/PCSAFT.jl")
 include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
-# include("models/eos/SAFT/PCSAFT/variants/ePCSAFT.jl")
+include("models/eos/SAFT/PCSAFT/variants/PCPSAFT.jl")
 
 include("models/eos/SAFT/CPA/CPA.jl")
 include("models/eos/SAFT/CPA/variants/sCPA.jl")
@@ -85,14 +85,14 @@ include("models/eos/SPUNG/SPUNG.jl")
 
 include("models/eos/cached/CachedEoS.jl")
 
-include("models/eos/Electrolytes/ConstW.jl")
-include("models/eos/Electrolytes/Schreckenberg.jl")
-include("models/eos/Electrolytes/MM1.jl")
-include("models/eos/Electrolytes/DH.jl")
-include("models/eos/Electrolytes/MSA.jl")
-include("models/eos/Electrolytes/Born.jl")
-include("models/eos/Electrolytes/ElectrolyteSAFT.jl")
-include("models/eos/Electrolytes/eCPA.jl")
+include("models/eos/Electrolytes/RSP/ConstW.jl")
+include("models/eos/Electrolytes/RSP/Schreckenberg.jl")
+include("models/eos/Electrolytes/RSP/MM1.jl")
+include("models/eos/Electrolytes/Ion/DH.jl")
+include("models/eos/Electrolytes/Ion/MSA.jl")
+include("models/eos/Electrolytes/Born/Born.jl")
+include("models/eos/Electrolytes/ElectrolyteSAFT/ElectrolyteSAFT.jl")
+include("models/eos/Electrolytes/ElectrolyteSAFT/eCPA.jl")
 
 include("methods/methods.jl")
 

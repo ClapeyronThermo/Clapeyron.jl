@@ -19,7 +19,7 @@ end
 @registermodel ConstW
 export ConstW
 function ConstW(solvents,salts; userlocations::Vector{String}=String[], verbose::Bool=false)
-    ion_groups = GroupParam(salts, ["Electrolytes/salts.csv"]; verbose=verbose)
+    ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
 
     ions = ion_groups.flattenedgroups
     components = deepcopy(solvents)

@@ -20,7 +20,7 @@ end
 @registermodel Schreckenberg
 export Schreckenberg
 function Schreckenberg(solvents,salts; userlocations::Vector{String}=String[], verbose::Bool=false)
-    ion_groups = GroupParam(salts, ["Electrolytes/salts.csv"]; verbose=verbose)
+    ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
 
     ions = ion_groups.flattenedgroups
     components = deepcopy(solvents)
@@ -29,7 +29,7 @@ function Schreckenberg(solvents,salts; userlocations::Vector{String}=String[], v
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
 
-    params = getparams(solvents, ["Electrolytes/Schreckenberg.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(solvents, ["Electrolytes/properties/Schreckenberg.csv"]; userlocations=userlocations, verbose=verbose)
     d_T = params["d_T"]
     d_V = params["d_V"]
     packagedparams = SchreckenbergParam(d_T,d_V)

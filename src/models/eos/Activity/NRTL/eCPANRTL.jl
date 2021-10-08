@@ -1,7 +1,7 @@
 struct eCPANRTLParam <: EoSParam
-    dUref::PairParam{Float64}
-    TU::PairParam{Float64}
-    omegaU::PairParam{Float64}
+    A::PairParam{Float64}
+    B::PairParam{Float64}
+    C::PairParam{Float64}
     alpha::PairParam{Float64}
     b::SingleParam{Float64}
     Mw::SingleParam{Float64}
@@ -25,33 +25,32 @@ export eCPANRTL
 function eCPANRTL(components::Vector{String}; puremodel=PR,
     userlocations=String[], 
      verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/eCPANRTL/eCPANRTL_unlike.csv","SAFT/sCPA/sCPA_like.csv"]; userlocations=userlocations, asymmetricparams=["dUref","TU","omegaU"], ignore_missing_singleparams=["dUref","TU","omegaU"], verbose=verbose)
-    dUref  = params["dUref"]
-    params["TU"].values[diagind(params["TU"].values)] .= 1.
-    TU  = params["TU"]
-    omegaU  = params["omegaU"]
+    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/eCPANRTL/eCPANRTL_unlike.csv","SAFT/sCPA/sCPA_like.csv"]; userlocations=userlocations, asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
+    A  = params["A"]
+    B  = params["B"]
+    C  = params["C"]
     alpha = params["alpha"]
     Mw  = params["Mw"]
     b = params["b"]
     icomponents = 1:length(components)
     
     init_puremodel = [puremodel([components[i]]) for i in icomponents]
-    packagedparams = eCPANRTLParam(dUref,TU,omegaU,alpha,b,Mw)
+    packagedparams = eCPANRTLParam(A,B,C,alpha,b,Mw)
     references = String[]
     model = eCPANRTL(components,icomponents,packagedparams,init_puremodel,1e-12,references)
     return model
 end
 
 function excess_gibbs_free_energy(model::eCPANRTLModel,p,T,z)
-    ΔUref = model.params.dUref.values
-    TΔU = model.params.TU.values
-    ωΔU = model.params.omegaU.values
+    A = model.params.A.values
+    B = model.params.B.values
+    C = model.params.C.values
     α = model.params.alpha.values
     b = model.params.b.values
 
     x = z ./ sum(z)
 
-    τ = @. (ΔUref+ωΔU*((1-T/TΔU)^2-(1-298.15/TΔU)^2))/T
+    τ = @. (A+B*T+C*T^2)/T
     G = @. exp(-α*τ)
     return sum(x[i]*sum(x[j]*b[j]*G[j,i]*τ[j,i] for j ∈ @comps)/sum(x[j]*b[j]*G[j,i] for j ∈ @comps) for i ∈ @comps)*sum(z)*R̄*T
 end

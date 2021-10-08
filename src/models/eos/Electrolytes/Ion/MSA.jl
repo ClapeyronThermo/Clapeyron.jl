@@ -21,7 +21,7 @@ end
 @registermodel MSA
 export MSA
 function MSA(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocations=String[], ideal_userlocations=String[], verbose=false)
-    ion_groups = GroupParam(salts, ["Electrolytes/salts.csv"]; verbose=verbose)
+    ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
 
     ions = ion_groups.flattenedgroups
     components = deepcopy(solvents)
@@ -30,7 +30,7 @@ function MSA(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocati
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
     
-    params,sites = getparams(components, append!(["Electrolytes/charges.csv","properties/molarmass.csv"],SAFTlocations); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
+    params,sites = getparams(components, append!(["Electrolytes/properties/charges.csv","properties/molarmass.csv"],SAFTlocations); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     icomponents = 1:length(components)
     params["sigma"].values .*= 1E-10
     sigma = params["sigma"]
