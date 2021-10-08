@@ -9,7 +9,7 @@ end
 
 abstract type SanchezLacombeModel <: LatticeFluidModel end
 include("mixing/mixing.jl")
-struct SanchezLacombe{T <: SLMixingRule,I<:IdealModel} <:PRModel
+struct SanchezLacombe{T <: SLMixingRule,I<:IdealModel} <:SanchezLacombeModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     mixing::T
@@ -62,6 +62,57 @@ function a_res(model::SanchezLacombe,V,T,z=SA[1.0])
     return r̄*(-ρ̃ /T̃ + (_1/ρ̃  - _1)*log(1-ρ̃ )+_1)
 end
 
+function lb_volume(model::SanchezLacombe,z=SA[1.0])
+    Σz = sum(z)
+    r = model.params.segment.values
+    v = model.params.vol.diagvalues
+    r̄ = dot(z,r)
+    #v_r,ε_r = mix_vε(model,0.0,0.0,z,model.mixing,r̄,Σz)
+    return sum(r[i]*z[i]*v[i] for i in @comps)
+end
 
+function T_scale(model::SanchezLacombe,z=SA[1.0])
+    Σz = sum(z)
+    r = model.params.segment.values
+    r̄ = dot(z,r)
+    v_r,ε_r = mix_vε(model,0.0,0.0,z,model.mixing,r̄,Σz)
+    return ε_r/R̄
+end
+
+function p_scale(model::SanchezLacombe,z=SA[1.0])
+    Σz = sum(z)
+    r = model.params.segment.values
+    r̄ = dot(z,r)
+    v_r,ε_r = mix_vε(model,0.0,0.0,z,model.mixing,r̄,Σz)
+    Ts = ε_r/R̄
+    vs = v_r*r̄
+    return R̄*Ts/vs
+end
+
+function x0_volume_liquid(model::SanchezLacombe,T,z)
+    v_lb = lb_volume(model,z)
+    return v_lb*1.1
+end
+#SL does not work with the virial coefficient
+function x0_volume_gas(model::SanchezLacombe,p,T,z)
+    return sum(z)*R̄*T/p
+end
+
+function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
+    Σz = sum(z)
+    r = model.params.segment.values
+    r̄ = dot(z,r)
+    v_r,ε_r = mix_vε(model,0.0,T,z,model.mixing,r̄,Σz)
+    Ts = ε_r/R̄
+    vs = v_r*r̄
+    Ps = R̄*Ts/vs
+    Tr = T/Ts
+end
+
+function testx()
+    m = 5
+    x = zeros(1,5)
+    i = 0
+end
 
 
