@@ -134,7 +134,7 @@ end
 
         @testset "PSRK" begin
             system = PSRK(["ethane","undecane"])
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.1994085074805483 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.1969396653771307 rtol = 1e-6
         end
 
         @testset "RK w/ BMAlpha" begin
@@ -144,7 +144,7 @@ end
 
         @testset "RK w/ PenelouxTranslation" begin
             system = RK(["ethane","undecane"];translation = PenelouxTranslation)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -0.9800472116681871 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.9819562816377643 rtol = 1e-6
         end
 
         @testset "RK w/ KayRule" begin
@@ -188,7 +188,7 @@ end
 
         @testset "VTPR" begin
             system = VTPR(["ethane","undecane"])
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.23401133834732 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2363810961666926 rtol = 1e-6
         end
 
         @testset "UMRPR" begin
@@ -213,7 +213,7 @@ end
         
         @testset "PR w/ RackettTranslation" begin
             system = PR(["ethane","undecane"];translation = RackettTranslation)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2453840474643165 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2478785399196568 rtol = 1e-6
         end
 
         @testset "PR w/ MTTranslation" begin

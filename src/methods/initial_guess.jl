@@ -196,10 +196,15 @@ end
 
 function lb_volume(model::CPAModel,z = SA[1.0])
     n = sum(z)
+    V = 1e-5
+    T = 0.
     invn = one(n)/n
     b = model.params.b.values
+    c = @f(translation,model.cubicmodel.translation)
+    
     b̄ = dot(z,Symmetric(b),z)*invn*invn
-    return b̄
+    c̄ = dot(z,c)*invn
+    return b̄-c̄
 
 end
 
@@ -406,7 +411,7 @@ end
 
 function x0_crit_pure(model::CPAModel,z=SA[1.0])
     lb_v = lb_volume(model,z)
-    [2.0, log10(lb_v/0.3)]
+    [1.0, log10(lb_v/0.3)]
 end
 
 function x0_crit_pure(model::EoSModel,z=SA[1.0])
@@ -488,15 +493,8 @@ function T_scale(model::ActivityModel,z=SA[1.0])
 end
 
 function T_scale(model::CPAModel,z=SA[1.0])
-    n = sum(z)
-    invn2 = one(n)/(n*n)
-    Ωa,Ωb = ab_consts(model)
-    _a = model.params.a.values
-    _b = model.params.b.values
-    a = dot(z, Symmetric(_a), z)*invn2/Ωa
-    b = dot(z, Symmetric(_b), z)*invn2/Ωb
-    return a/b/R̄
-
+    Tc = model.params.Tc.values
+    return prod(Tc)^(1/length(Tc))
 end
 
 """

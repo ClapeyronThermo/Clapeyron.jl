@@ -18,7 +18,7 @@ export sCPA
 function sCPA(components; 
             idealmodel=BasicIdeal, 
             cubicmodel=RK, 
-            alpha=CPAAlpha, 
+            alpha=sCPAAlpha, 
             mixing=vdW1fRule,
             activity=nothing,
             translation=NoTranslation, 
