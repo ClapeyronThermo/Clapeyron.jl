@@ -414,7 +414,7 @@ function findparamsincsv(components::Array{String,1},
     normalised_columnreference2 = normalised_columnreference * '2'
 
     csvtype = readcsvtype(filepath)
-    df = CSV.File(filepath; header=3, pool=0,stringtype=PosLenString,silencewarnings=true)
+    df = CSV.File(filepath; header=3, pool=0,silencewarnings=true)
     cols = Tables.columns(df)
     csvheaders = String.(Tables.columnnames(df))
     normalised_components = normalisestring.(components,normalisecomponents)
@@ -630,7 +630,7 @@ function findsitesincsvs(components::Array{String,1},
     for filepath ∈ filepaths
         csvtype = readcsvtype(filepath)
         csvtype != assocdata && continue
-        df = CSV.File(filepath; header=3,stringtype=PosLenString,silencewarnings = !verbose)
+        df = CSV.File(filepath; header=3,silencewarnings = !verbose)
         
         csvheaders = String.(Tables.columnnames(df))
         normalised_csvheaders = normalisestring.(String.(Tables.columnnames(df)))
@@ -721,7 +721,7 @@ function findgroupsincsv(components::Vector{String},
     normalised_columnreference = normalisestring(columnreference)
     normalised_groupcolumnreference = normalisestring(groupcolumnreference)
 
-    df = CSV.File(filepath; header=3,stringtype=PosLenString,silencewarnings = !verbose)
+    df = CSV.File(filepath; header=3,silencewarnings = !verbose)
     columns = Tables.columns(df)
 
     csvheaders = String.(Tables.columnnames(df))
