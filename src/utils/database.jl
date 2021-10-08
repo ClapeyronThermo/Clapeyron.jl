@@ -794,6 +794,9 @@ function _zero(::Type{T}) where T <:Union{T1,Missing} where T1
     return missing
 end
 
+_iszero(t::Number) = iszero(t)
+_iszero(::Missing) = true
+_iszero(t::AbstractString) = isempty(t)
 """
     singletopair(params::Vector,outputmissing=zero(T))
 
