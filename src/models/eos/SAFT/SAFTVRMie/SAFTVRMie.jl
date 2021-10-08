@@ -665,7 +665,7 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
     a₂ = a₂*m̄/(T*T)/∑z
     a₃ = a₃*m̄/(T*T*T)/∑z
     adisp =  a₁ + a₂ + a₃ 
-    return adisp + achain
+    return adisp + achain/∑z
 end
 
 function a_disp(model::SAFTVRMie, V, T, z,_data = @f(data))
@@ -860,7 +860,7 @@ function a_chain(model::SAFTVRMie, V, T, z,_data = @f(data))
         #@show (g_Mie_,i)
         achain +=  z[i]*(log(g_Mie_)*(m[i]-1))
     end
-    return -achain
+    return -achain/∑z
 end
 const SAFTVRMieconsts = (
     u = (0.26356031971814109102031,1.41340305910651679221800,3.59642577104072208122300,7.08581000585883755692200,12.6408008442757826594300),

@@ -91,7 +91,7 @@ function CompressedAssocMatrix(x::MatrixofMatrices{T}) where T
             for a in 1:a1
                 start = ifelse(i == j,a,1)
                 for b in start:a2 #but not on the same site
-                    if !iszero(xi[a,b])
+                    if !_iszero(xi[a,b]) 
                         push!(values,xi[a,b])
                         push!(outer_indices,(i,j))
                         push!(inner_indices,(a,b))
@@ -133,10 +133,12 @@ Base.size(m::AssocView) = m.size
 Base.eltype(m::AssocView{T}) where T = T
 
 function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
-    i,j = minmax(i,j)
     @inbounds begin
         idxs = searchsorted(m.indices,(i,j))
-        iszero(length(idxs)) && return zero(T)
+        if iszero(length(idxs)) 
+            idxs = searchsorted(m.indices,(j,i))
+            iszero(length(idxs)) &&  return zero(T)  
+        end
         idx = first(idxs)
         return m.values[idx]
     end

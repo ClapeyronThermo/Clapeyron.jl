@@ -92,14 +92,30 @@ using Clapeyron, Test
                                               
     @test params["overwriteparam"].diagvalues == [1.6, 1.2, 1.3, 1.4, 1.5]
 
-
-    # Now check that assoc param is correct.
-    @test params["assocparam"].values ==
+    assoc_param_values =
     [[Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,3)          ]  [Array{Int64}(undef,0,2)]  [Array{Int64}(undef,0,3)       ]
      [Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,3)          ]  [Array{Int64}(undef,0,2)]  [Array{Int64}(undef,0,3)       ]
      [Array{Int64}(undef,3,0)]  [Array{Int64}(undef,3,0)]  [[0 0 2000; 0 0 2700; 2000 2700 0]]  [[0 0; 0 0; 2400 2300]  ]  [[0 0 0; 0 0 0; 0 0 0]         ]
      [Array{Int64}(undef,2,0)]  [Array{Int64}(undef,2,0)]  [[0 0 2400; 0 0 2300]             ]  [[0 0; 0 0]             ]  [[0 0 2600; 0 2500 0]          ]
      [Array{Int64}(undef,3,0)]  [Array{Int64}(undef,3,0)]  [[0 0 0; 0 0 0; 0 0 0]            ]  [[0 0; 0 2500; 2600 0]  ]  [[2200 0 2100; 0 0 0; 2100 0 0]]]
+
+    for i ∈ 1:5
+        for j ∈ 1:5
+            valij = assoc_param_values[i,j]
+            s1,s2 = size(valij)
+            testij = params["assocparam"].values[i,j]
+            if iszero(s1*s2)
+                continue # a compressed assoc matrix can hold more information that is discarded normally
+            else
+                for a ∈ 1:s1
+                    for b ∈ 1:s2
+                        @test valij[a,b] == testij[a,b]
+                    end
+                end
+            end
+        end
+    end 
+  #  @test params["assocparam"].values[i,j] .== assoc_param_values[i,j] for (i,j) in zip()
 
 
     # Clashing headers between association and non-association parameters are not allowed
@@ -154,3 +170,4 @@ using Clapeyron, Test
     param_gc = getparams(components_gc; userlocations=filepath_param_gc)
     @test param_gc["param1"].values == [1, 2, 3, 4]
 end
+
