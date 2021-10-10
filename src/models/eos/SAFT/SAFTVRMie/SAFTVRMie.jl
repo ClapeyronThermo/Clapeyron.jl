@@ -38,9 +38,8 @@ function data(model::SAFTVRMieModel, V, T, z)
     _d = @f(d)
     ζi = @f(ζ0123,_d)
     _ζ_X,σ3x = @f(ζ_X_σ3,_d)
-    _ζst = @f(ζst)
     _ρ_S = @f(ρ_S)
-    
+    _ζst = σ3x*_ρ_S*π/6  
     return (_d,_ρ_S,ζi,_ζ_X,_ζst,σ3x)
 end
 
@@ -189,7 +188,7 @@ function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d))
     #return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i)+@f(d,j))^3/8 for i ∈ comps for j ∈ comps)
     return kρS*_ζ_X,σ3_x
 end
-#
+
 function a_1(model::SAFTVRMie, V, T, z,_data = @f(data))
     _d,ρS,ζi,_ζ_X,_ζst,_ = _data
     comps = @comps
@@ -516,7 +515,6 @@ end
 function I(model::SAFTVRMieModel, V, T, z,TR,_data = @f(data))
     _d,ρS,ζi,_ζ_X,_ζst,σ3_x = _data
     ϵ = model.params.epsilon.values
-
     c  = SAFTVRMieconsts.c
     res = zero(_ζst)
     ρR = ρS*σ3_x
@@ -525,7 +523,6 @@ function I(model::SAFTVRMieModel, V, T, z,TR,_data = @f(data))
             res += c[n+1,m+1]*ρR^n*TR^m
         end
     end
-    
     return res
 end
 
@@ -683,7 +680,6 @@ function a_disp(model::SAFTVRMie, V, T, z,_data = @f(data))
     a₁ = zero(V+T+first(z))
     a₂ = a₁
     a₃ = a₁
-    achain = a₁
     _ζst5 = _ζst^5
     _ζst8 = _ζst^8
     _KHS = @f(KHS,_ζ_X,ρS)
@@ -692,12 +688,11 @@ function a_disp(model::SAFTVRMie, V, T, z,_data = @f(data))
         x_Si = z[i]*m[i]*m̄inv
         x_Sj = x_Si
         ϵ = _ϵ[i,j]
-        λa = _λa[i,j]
-        λr = _λr[i,j] 
-        σ = _σ[i,j]
+        λa = _λa[i,i]
+        λr = _λr[i,i] 
+        σ = _σ[i,i]
         _C = @f(Cλ,λa,λr)
         dij = _d[i]
-        x_0ij = σ/dij
         dij3 = dij^3
         x_0ij = σ/dij
         #calculations for a1 - diagonal
@@ -726,11 +721,10 @@ function a_disp(model::SAFTVRMie, V, T, z,_data = @f(data))
         #calculations for a3 - diagonal
         a3_ij = -ϵ^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
         #adding - diagonal
-        a₁ += a1_ij*x_Si*x_Sj
-        a₂ += a2_ij*x_Si*x_Sj
-        a₃ += a3_ij*x_Si*x_Sj
+        a₁ += a1_ij*x_Si*x_Si
+        a₂ += a2_ij*x_Si*x_Si
+        a₃ += a3_ij*x_Si*x_Si
         for j ∈ (i+1):l
-            x_Si = z[i]*m[i]*m̄inv
             x_Sj = z[j]*m[j]*m̄inv   
             ϵ = _ϵ[i,j]
             λa = _λa[i,j]
@@ -790,13 +784,12 @@ function a_chain(model::SAFTVRMie, V, T, z,_data = @f(data))
     _ζst8 = _ζst^8
     _KHS,_∂KHS = @f(KHS_fdf,_ζ_X,ρS)
     for i ∈ comps
-        j = i
         x_Si = z[i]*m[i]*m̄inv
         x_Sj = x_Si
-        ϵ = _ϵ[i,j]
-        λa = _λa[i,j]
-        λr = _λr[i,j] 
-        σ = _σ[i,j]
+        ϵ = _ϵ[i,i]
+        λa = _λa[i,i]
+        λr = _λr[i,i] 
+        σ = _σ[i,i]
         _C = @f(Cλ,λa,λr)
         dij = _d[i]
         x_0ij = σ/dij

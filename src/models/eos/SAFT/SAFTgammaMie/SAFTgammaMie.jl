@@ -45,6 +45,10 @@ function a_mono(model::SAFTgammaMieModel, V, T, z)
     return @f(ÂHS) + @f(Â_1) + @f(Â_2) + @f(Â_3)
 end
 
+function a_disp(model::SAFTgammaMieModel, V, T, z)
+    return @f(Â_1) + @f(Â_2) + @f(Â_3)
+end
+
 function a_chain(model::SAFTgammaMieModel, V, T, z)
     x = z/∑(z)
     v  = model.groups.n_flattenedgroups
@@ -70,6 +74,14 @@ function ÂHS(model::SAFTgammaMieModel, V, T, z)
     return 6/π/ρ * (3ζ_1*ζ_2/(1-ζ_3) + ζ_2^3/(ζ_3*(1-ζ_3)^2) + (ζ_2^3/ζ_3^2-ζ_0)*log(1-ζ_3))
 end
 
+function ζ0123(model::SAFTgammaMieModel, V, T, z)
+    ζ_0   = @f(ζ,0)
+    ζ_1   = @f(ζ,1)
+    ζ_2   = @f(ζ,2)
+    ζ_3   = @f(ζ,3)
+    return ζ_0,ζ_1,ζ_2,ζ_3
+end
+
 function ∑Â_n(model::SAFTgammaMieModel, V, T, z)
     v = model.groups.n_flattenedgroups
     vst = model.params.segment.values
@@ -87,7 +99,7 @@ function ∑Â_n(model::SAFTgammaMieModel, V, T, z)
     end
     res1 = res/∑(z)
     #res2 = ∑(z[i]*∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps)/∑(z)
-    #@show res1
+    #       ∑(x[i]*∑(v[i][l]*vst[l]*S[l] for l ∈ @groups(i)) for i ∈ @comps)
     #@show res2
     return res1
 end
@@ -240,7 +252,7 @@ function C(model::SAFTgammaMieModel, V, T, z, λa, λr)
 end
 
 function ẑ(model::SAFTgammaMieModel, V, T, z, i, k)
-    v = v = model.groups.n_flattenedgroups
+    v = model.groups.n_flattenedgroups
     vst = model.params.segment.values
     S = model.params.shapefactor.values
     return v[i][k]*vst[k]*S[k] / ∑(v[i][l]*vst[l]*S[l] for l ∈ @groups(i))
