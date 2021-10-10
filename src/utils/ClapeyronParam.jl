@@ -254,6 +254,17 @@ function AssocParam{T}(x::AssocParam, v::Matrix{Matrix{T}}) where T
     return AssocParam{T}(x.name, x.components,CompressedAssocMatrix(v), deepcopy(x.ismissingvalues), x.allcomponentsites, x.sourcecsvs, x.sources)
 end
 
+function AssocParam{T}(name::String,components::Vector{String}) where T
+    n = length(components)
+    return AssocParam{T}(name, 
+    components,
+    CompressedAssocMatrix{T}(),
+    Matrix{Matrix{Bool}}(undef,n,n), 
+    [String[] for _ ∈ 1:n], 
+    String[],
+    String[])
+end
+
 function Base.show(io::IO,mime::MIME"text/plain",param::AssocParam{T}) where T
     print(io,"AssocParam{",string(T),"}")
     show(io,param.components)

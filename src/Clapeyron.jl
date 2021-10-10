@@ -47,6 +47,8 @@ include("models/eos/SAFT/softSAFT/softSAFT.jl")
 include("models/eos/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/eos/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
 include("models/eos/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
+include("models/eos/SAFT/SAFTgammaMie/SAFTgammaMie2.jl")
+
 include("models/eos/SAFT/CKSAFT/CKSAFT.jl")
 include("models/eos/SAFT/CKSAFT/variants/sCKSAFT.jl")
 include("models/eos/SAFT/BACKSAFT/BACKSAFT.jl")
