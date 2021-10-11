@@ -340,12 +340,6 @@ function f123456(model::SAFTVRMieModel, V, T, z, α)
     #return sum(ϕ[i+1][m]*α^i for i ∈ 0:3)/(1+∑(ϕ[i+1][m]*α^(i-3) for i ∈ 4:6))
 end
 
-function ζst(model::SAFTVRMieModel, V, T, z)
-    comps = @comps
-    σ = model.params.sigma.values
-    return @f(ρ_S)*π/6*∑(@f(x_S,i)*@f(x_S,j)*σ[i,j]^3 for i ∈ comps for j ∈ comps)
-end
-
 function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma.values)
     m = model.params.segment.values
     m̄ = dot(z, m)
