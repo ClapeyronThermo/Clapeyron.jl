@@ -346,6 +346,28 @@ function ζst(model::SAFTVRMieModel, V, T, z)
     return @f(ρ_S)*π/6*∑(@f(x_S,i)*@f(x_S,j)*σ[i,j]^3 for i ∈ comps for j ∈ comps)
 end
 
+function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma.values)
+    m = model.params.segment.values
+    m̄ = dot(z, m)
+    m̄inv = 1/m̄
+    ρS = N_A/V*m̄
+    comps = @comps
+    _ζst = zero(V+T+first(z))
+    kρS = ρS* π/6
+    for i ∈ comps
+        x_Si = z[i]*m[i]*m̄inv
+        _ζst += x_Si*x_Si*(_σ[i,i]^3)
+        for j ∈ 1:i-1
+            x_Si = 
+            x_Sj = z[j]*m[j]*m̄inv
+            _ζst += 2*x_Si*x_Sj*(_σ[i,j]^3)           
+        end
+    end
+
+    #return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i)+@f(d,j))^3/8 for i ∈ comps for j ∈ comps)
+    return kρS*_ζst
+end
+
 function a_3(model::SAFTVRMieModel, V, T, z)
     comps = @comps
     m = model.params.segment.values

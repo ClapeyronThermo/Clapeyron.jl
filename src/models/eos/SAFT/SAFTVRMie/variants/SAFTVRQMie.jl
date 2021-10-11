@@ -4,7 +4,7 @@ struct SAFTVRQMieParam <: EoSParam
     lambda_a::PairParam{Float64}
     lambda_r::PairParam{Float64}
     epsilon::PairParam{Float64}
-    Mw::SingleParam{Float64}
+    Mw::PairParam{Float64}
 end
 
 abstract type SAFTVRQMieModel <: SAFTVRMieModel end
@@ -15,7 +15,7 @@ function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], i
     params = getparams(components, ["SAFT/SAFTVRQMie"]; userlocations=userlocations, verbose=verbose)
 
     params["Mw"].values .*= 1E-3
-    Mw = params["Mw"]
+    Mw = sigma_LorentzBerthelot(params["Mw"])
     segment = params["m"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
@@ -35,67 +35,224 @@ function a_res(model::SAFTVRQMieModel, V, T, z)
     return @f(a_mono)
 end
 
-function d(model::SAFTVRQMieModel, V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues
-    σ = model.params.sigma.diagvalues
-    λr = model.params.lambda_r.diagvalues[i]
-    λa = model.params.lambda_a.diagvalues[i]
-    Mw = model.params.Mw.values
+function data(model::SAFTVRQMieModel, V, T, z)
+    _σeff = @f(σeff)
+    _ϵff = @f(ϵeff)
+    _d = @f(d,_σeff)
+    ζi = @f(ζ0123,_d)
+    _ζst = @f(ζst,_σeff)
+    _ζ_X,σ3x = @f(ζ_X_σ3,_d)
+    _ρ_S = @f(ρ_S)
+    _ζst = σ3x*_ρ_S*π/6  
+    return (_d,_ρ_S,ζi,_ζ_X,_ζst)
+end
 
-    Di = ħ^2/(12*k_B*T*Mw[i]/N_A*σ[i]^2)
-    βi = ϵ[i]/T
-    _C =  @f(C,λa,λr)
-    u(x) =_C*((x^-λr-x^-λa)+
-              Di*(@f(Q1,λr)*x^-(λr+2)-@f(Q1,λa)*x^-(λa+2))+
-              Di^2*(@f(Q2,λr)*x^-(λr+4)-@f(Q2,λa)*x^-(λa+4)))
-    du(x) = -_C*((λr*x^-(λr+1)-λa*x^-(λa+1))+
-                Di*(@f(Q1,λr)*(λr+2)*x^-(λr+3)-@f(Q1,λa)*(λa+2)*x^-(λa+3))+
-                Di^2*(@f(Q2,λr)*(λr+4)*x^-(λr+5)-@f(Q2,λa)*(λa+4)*x^-(λa+5)))
-    d2u(x) = _C*((λr*(λr+1)*x^-(λr+2)-λa*(λa+1)*x^-(λa+2))+
-                Di*(@f(Q1,λr)*(λr+2)*(λr+3)*x^-(λr+4)-@f(Q1,λa)*(λa+2)*(λa+3)*x^-(λa+4))+
-                Di^2*(@f(Q2,λr)*(λr+4)*(λr+5)*x^-(λr+6)-@f(Q2,λa)*(λa+4)*(λa+5)*x^-(λa+6)))
 
-    f(x) = exp(-βi*u(x))
-    g(x) = -βi*exp(-βi*u(x))*du(x)
-    h(x) = βi*exp(-βi*u(x))*(βi*du(x)^2-d2u(x))
-    x_min = @f(Halley,f,g,h,1.)
-    σ_effi = @f(σeff,i,i)/σ[i]
+
+function d(model::SAFTVRQMieModel, V, T, z,_σeff = @f(σeff))
+    _ϵ = model.params.epsilon.diagvalues
+    _σ = model.params.sigma.diagvalues
+    _λr = model.params.lambda_r.diagvalues
+    _λa = model.params.lambda_a.diagvalues
+    _Mw = model.params.Mw.values
     x = SAFTVRQMieconsts.x
     w = SAFTVRQMieconsts.w
-    return σ[i]*(σ_effi-(σ_effi-x_min)/2*∑(w[i]*f((σ_effi-x_min)/2*x[i]+(σ_effi+x_min)/2) for i in 1:21))
+
+    function udud2u(x,λa,λr,σ,T,Mw)
+        Q1λr = @f(Q1,λr)
+        Q1λa = @f(Q1,λa)
+        Q2λr = @f(Q2,λr)
+        Q2λa = @f(Q2,λa)
+        Di = ħ^2/(12*k_B*T*Mw/N_A*σ^2)
+        x2 = x*x
+        x4 = x2*x2 
+        _C = @f(Cλ,λa,λr)
+        _u = _C*((x^-λr-x^-λa)+
+                Di*(Q1λr*x^-(λr+2)-Q1λa*x^-(λa+2))+
+                Di^2*(Q2λr*x^-(λr+4)-Q2λa*x^-(λa+4)))
+        _du = -_C*((λr*x^-(λr+1)-λa*x^-(λa+1))+
+                    Di*(Q1λr*(λr+2)*x^-(λr+3)-Q1λa*(λa+2)*x^-(λa+3))+
+                    Di^2*(Q2λr*(λr+4)*x^-(λr+5)-Q2λa*(λa+4)*x^-(λa+5)))
+        _d2u = _C*((λr*(λr+1)*x^-(λr+2)-λa*(λa+1)*x^-(λa+2))+
+                    Di*(Q1λr*(λr+2)*(λr+3)*x^-(λr+4)-Q1λa*(λa+2)*(λa+3)*x^-(λa+4))+
+                    Di^2*(Q2λr*(λr+4)*(λr+5)*x^-(λr+6)-Q2λa*(λa+4)*(λa+5)*x^-(λa+6)))
+        
+        
+        return _u,_du,_d2u
+    end
+
+    function u(x,λa,λr,σ,T,Mw)
+        Q1λr = @f(Q1,λr)
+        Q1λa = @f(Q1,λa)
+        Q2λr = @f(Q2,λr)
+        Q2λa = @f(Q2,λa)
+        Di = ħ^2/(12*k_B*T*Mw/N_A*σ^2)
+        x2 = x*x
+        _C = @f(Cλ,λa,λr)
+        _u = _C*((x^-λr-x^-λa)+
+                Di*(Q1λr*x^-(λr+2)-Q1λa*x^-(λa+2))+
+                Di^2*(Q2λr*x^-(λr+4)-Q2λa*x^-(λa+4)))
+    
+        return _u
+    end
+    
+    function fgh(x,λa,λr,ϵ,σ,T,Mw)
+        βi = ϵ/T
+        _u,_du,_d2u = udud2u(x,λa,λr,σ,T,Mw)
+        _f = exp(-βi*_u)
+        _g = -βi*exp(-βi*_u)*_du
+        _h = βi*exp(-βi*_u)*(βi*_du^2-_d2u)
+        return _f,_g,_h
+    end
+
+
+    _d = zeros(typeof(T),length(z))
+
+    for i in 1:length(_d)
+
+        λa,λr,ϵ,σ,Mw =_λa[i],_λr[i],_ϵ[i],_σ[i],_Mw[i]
+        f0 = x->fgh(x,λa,λr,ϵ,σ,T,Mw)
+        x_min = halley(f0,one(T))
+        σ_effi = _σeff[i,i]/σ
+        βi = ϵ/T
+        d_i = zero(T)
+        for j in 1:21
+            xi = (σ_effi-x_min)/2*x[j]+(σ_effi+x_min)/2
+            _u = u(xi,λa,λr,σ,T,Mw)
+            fi = exp(-βi*_u)
+            d_i += w[j]*fi
+        end
+        d_i = d_i*(σ_effi-x_min)/2
+        _d[i] = d_i*σ[i]*(σ_effi-d_i)
+    end
+    return _d
+    #f(x) = exp(-βi*u(x))
+    #g(x) = -βi*exp(-βi*u(x))*du(x)
+    #h(x) = βi*exp(-βi*u(x))*(βi*du(x)^2-d2u(x))
+    #x_min = @f(Halley,f,g,h,1.)
+    #σ_effi = @f(σeff,i,i)/σ[i]
+    #return σ[i]*(σ_effi-(σ_effi-x_min)/2*∑(w[i]*f((σ_effi-x_min)/2*x[i]+(σ_effi+x_min)/2) for i in 1:21))
 end
 
-function σeff(model::SAFTVRQMieModel, V, T, z, i, j)
-    σ = model.params.sigma.values
-    λr = model.params.lambda_r.values
-    λa = model.params.lambda_a.values
-    Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
-    Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
+function σeff(model::SAFTVRQMieModel, V, T, z)
+    _σ = model.params.sigma.values
+    _λr = model.params.lambda_r.values
+    _λa = model.params.lambda_a.values
+    Mwij = model.params.Mw.values
+    #Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
 
-    f(x) = Dij^2*@f(Q2,λr[i,j])+Dij*@f(Q1,λr[i,j])*x^2+x^4-x^(λr[i,j]-λa[i,j])*(Dij^2*@f(Q2,λa[i,j])+Dij*@f(Q1,λa[i,j])*x^2+x^4)
-    g(x) = 2*Dij*@f(Q1,λr[i,j])*x+4x^3-x^(λr[i,j]-λa[i,j]-1)*((λr[i,j]-λa[i,j])*Dij^2*@f(Q2,λa[i,j])+(λr[i,j]-λa[i,j]+2)*Dij*@f(Q1,λa[i,j])*x^2+(λr[i,j]-λa[i,j]+4)*x^4)
-    h(x) = 2*Dij*@f(Q1,λr[i,j])+12x^2-x^(λr[i,j]-λa[i,j]-2)*((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j])*Dij^2*@f(Q2,λa[i,j])+((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j]+2)+2*(λr[i,j]-λa[i,j]+2))*Dij*@f(Q1,λa[i,j])*x^2+((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j]+4)+4*(λr[i,j]-λa[i,j]+4))*x^4)
+    #f(x) = Dij^2*@f(Q2,λr[i,j])+Dij*@f(Q1,λr[i,j])*x^2+x^4-x^(λr[i,j]-λa[i,j])*(Dij^2*@f(Q2,λa[i,j])+Dij*@f(Q1,λa[i,j])*x^2+x^4)
+    #g(x) = 2*Dij*@f(Q1,λr[i,j])*x+4x^3-x^(λr[i,j]-λa[i,j]-1)*((λr[i,j]-λa[i,j])*Dij^2*@f(Q2,λa[i,j])+(λr[i,j]-λa[i,j]+2)*Dij*@f(Q1,λa[i,j])*x^2+(λr[i,j]-λa[i,j]+4)*x^4)
+    #h(x) = 2*Dij*@f(Q1,λr[i,j])+12x^2-x^(λr[i,j]-λa[i,j]-2)*((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j])*Dij^2*@f(Q2,λa[i,j])+((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j]+2)+2*(λr[i,j]-λa[i,j]+2))*Dij*@f(Q1,λa[i,j])*x^2+((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j]+4)+4*(λr[i,j]-λa[i,j]+4))*x^4)
 
-    return σ[i,j]*@f(Halley,f,g,h,1.)
+    function fgh(x,λa,λr,σ,T,Mw)
+        Q1λr = @f(Q1,λr)
+        Q1λa = @f(Q1,λa)
+        Q2λr = @f(Q2,λr)
+        Q2λa = @f(Q2,λa)
+        Dij = ħ^2/(12*k_B*T*Mw/N_A*σ^2)
+        xΔλ =x^(λr-λa)
+        x2 = x*x
+        x4 = x2*x2
+        f = Dij^2*Q2λr+Dij*Q1λr*x2+x4-xΔλ*(Dij^2*Q2λa+Dij*Q1λa*x2+x4)
+        g = 2*Dij*Q1λr*x+4x^3-(xΔλ/x)*((λr-λa)*Dij^2*Q2λa+(λr-λa+2)*Dij*Q1λa*x2+(λr-λa+4)*x4)
+        h = 2*Dij*Q1λr+12x^2-x^(λr-λa-2)*((λr-λa-1)*(λr-λa)*Dij^2*Q2λa+((λr-λa-1)*(λr-λa+2)+2*(λr-λa+2))*Dij*Q1λa*x2+((λr-λa-1)*(λr-λa+4)+4*(λr-λa+4))*x4)
+        return f,g,h
+    end
+    
+    _σeff = zeros(typeof(T),size(_σ))
+    n1,n2 = size(_σ)
+    for i in 1:n1
+        f0 = x -> fgh(x,_λa[i,i],_λr[i,i],_σ[i,i],T,Mwij[i,i])
+        _σeff[i,i] =  _σ[i,i]*halley(f0,one(T))
+        for j in 1:i-1
+        f0 = x -> fgh(x,_λa[i,j],_λr[i,j],_σ[i,j],T,Mwij[i,j])
+        _σeff[i,j] =  _σ[i,j]*halley(f0,one(T))
+        _σeff[j,i] = _σeff[i,j]
+        end
+    end
+    return _σeff
+    #_σ .* halley.(fgh,ones(size(_σ)))
+    #f0(x) = fgh.(x,_λa,_λr,_σ,T,Mw)
+    #return _σ .* halley.(fgh,ones(size(_σ)))
 end
 
-function ϵeff(model::SAFTVRQMieModel, V, T, z, i, j)
+function halley(fgh::T,x0) where T
+    tolx = one(x0)
+    tolf = one(x0)
+    while tolf > 1e-16 && tolx > 1e-15
+        ff,gg,hh = fgh(x0)
+        ff < eps(x0) && return x0
+        d = ff/gg*(1-ff*hh/(2*gg^2))^-1
+        x0=x0-d
+        f0 = ff
+        tolf = abs(f0)
+        tolx = abs(d)
+    end
+    return x0
+    
+end
+
+function ϵeff(model::SAFTVRQMieModel, V, T, z)
     ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values
-    λr = model.params.lambda_r.values
-    λa = model.params.lambda_a.values
-    Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
-    Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
+    _σ = model.params.sigma.values
+    _λr = model.params.lambda_r.values
+    _λa = model.params.lambda_a.values
+    Mwij = model.params.Mw.values#[i] + model.params.Mw.values[j])/2 # check
+    #Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
 
-    u(x) = @f(C,i,j)*((x^-λr[i,j]-x^-λa[i,j])+
-            Dij*(@f(Q1,λr[i,j])*x^-(λr[i,j]+2)-@f(Q1,λa[i,j])*x^-(λa[i,j]+2))+
-            Dij^2*(@f(Q2,λr[i,j])*x^-(λr[i,j]+4)-@f(Q2,λa[i,j])*x^-(λa[i,j]+4)))
-    f(x) = (λr[i,j]+4)*Dij^2*@f(Q2,λr[i,j])+(λr[i,j]+2)*Dij*@f(Q1,λr[i,j])*x^2+λr[i,j]*x^4-x^(λr[i,j]-λa[i,j])*((λa[i,j]+4)*Dij^2*@f(Q2,λa[i,j])+(λa[i,j]+2)*Dij*@f(Q1,λa[i,j])*x^2+λa[i,j]*x^4)
-    g(x) = 2*(λr[i,j]+2)*Dij*@f(Q1,λr[i,j])*x+4λr[i,j]*x^3-x^(λr[i,j]-λa[i,j]-1)*((λa[i,j]+4)*(λr[i,j]-λa[i,j])*Dij^2*@f(Q2,λa[i,j])+(λa[i,j]+2)*(λr[i,j]-λa[i,j]+2)*Dij*@f(Q1,λa[i,j])*x^2+λa[i,j]*(λr[i,j]-λa[i,j]+4)*x^4)
-    h(x) = 2*(λr[i,j]+2)*Dij*@f(Q1,λr[i,j])+12λr[i,j]*x^2-x^(λr[i,j]-λa[i,j]-2)*((λa[i,j]+4)*(λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j])*Dij^2*@f(Q2,λa[i,j])+(λa[i,j]+2)*((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j]+2)+2*(λr[i,j]-λa[i,j]+2))*Dij*@f(Q1,λa[i,j])*x^2+λa[i,j]*((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j]+4)+4*(λr[i,j]-λa[i,j]+4))*x^4)
+    function fgh(x,λa,λr,σ,T,Mw)
+        Q1λr = @f(Q1,λr)
+        Q1λa = @f(Q1,λa)
+        Q2λr = @f(Q2,λr)
+        Q2λa = @f(Q2,λa)
+        Dij = ħ^2/(12*k_B*T*Mw/N_A*σ^2)
+        
+        xΔλ =x^(λr-λa)
+        x2 = x*x
+        x4 = x2*x2
+        f = (λr+4)*Dij^2*Q2λr+(λr+2)*Dij*Q1λr*x2+λr*x4-x^(λr-λa)*((λa+4)*Dij^2*Q2λa+(λa+2)*Dij*Q1λa*x2+λa*x4)
+        g = 2*(λr+2)*Dij*Q1λr*x+4λr*x^3-x^(λr-λa-1)*((λa+4)*(λr-λa)*Dij^2*Q2λa+(λa+2)*(λr-λa+2)*Dij*Q1λa*x2+λa*(λr-λa+4)*x4)
+        h = 2*(λr+2)*Dij*Q1λr+12λr*x2-x^(λr-λa-2)*((λa+4)*(λr-λa-1)*(λr-λa)*Dij^2*Q2λa+(λa+2)*((λr-λa-1)*(λr-λa+2)+2*(λr-λa+2))*Dij*Q1λa*x2+λa*((λr-λa-1)*(λr-λa+4)+4*(λr-λa+4))*x4)
+    return f,g,h
+    end
 
-    σ_min = @f(Halley,f,g,h,(λr[i,j]/λa[i,j])^(1/(λr[i,j]-λa[i,j])))
-    return -ϵ[i,j]*u(σ_min)
+    function u(x,λa,λr,σ,T,Mw)
+        Q1λr = @f(Q1,λr)
+        Q1λa = @f(Q1,λa)
+        Q2λr = @f(Q2,λr)
+        Q2λa = @f(Q2,λa)
+        _C = @f(Cλ,λa,λr)
+        Dij = ħ^2/(12*k_B*T*Mw/N_A*σ^2)
+        return _C*((x^-λr-x^-λa)+
+        Dij*(Q1λr*x^-(λr+2)-Q1λa*x^-(λa+2))+
+        Dij^2*(Q2λr*x^-(λr+4)-Q2λa*x^-(λa+4)))
+    end
+    #f(x) = (λr[i,j]+4)*Dij^2*@f(Q2,λr[i,j])+(λr[i,j]+2)*Dij*@f(Q1,λr[i,j])*x^2+λr[i,j]*x^4-x^(λr[i,j]-λa[i,j])*((λa[i,j]+4)*Dij^2*@f(Q2,λa[i,j])+(λa[i,j]+2)*Dij*@f(Q1,λa[i,j])*x^2+λa[i,j]*x^4)
+    #g(x) = 2*(λr[i,j]+2)*Dij*@f(Q1,λr[i,j])*x+4λr[i,j]*x^3-x^(λr[i,j]-λa[i,j]-1)*((λa[i,j]+4)*(λr[i,j]-λa[i,j])*Dij^2*@f(Q2,λa[i,j])+(λa[i,j]+2)*(λr[i,j]-λa[i,j]+2)*Dij*@f(Q1,λa[i,j])*x^2+λa[i,j]*(λr[i,j]-λa[i,j]+4)*x^4)
+    #h(x) = 2*(λr[i,j]+2)*Dij*@f(Q1,λr[i,j])+12λr[i,j]*x^2-x^(λr[i,j]-λa[i,j]-2)*((λa[i,j]+4)*(λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j])*Dij^2*@f(Q2,λa[i,j])+(λa[i,j]+2)*((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j]+2)+2*(λr[i,j]-λa[i,j]+2))*Dij*@f(Q1,λa[i,j])*x^2+λa[i,j]*((λr[i,j]-λa[i,j]-1)*(λr[i,j]-λa[i,j]+4)+4*(λr[i,j]-λa[i,j]+4))*x^4)
+
+   # σ_min = @f(Halley,f,g,h,(λr[i,j]/λa[i,j])^(1/(λr[i,j]-λa[i,j])))
+    #return -ϵ[i,j]*u(σ_min)
+
+    _ϵeff = zeros(typeof(T),size(_σ))
+    n1,n2 = size(_σ)
+    for i in 1:n1
+        f0 = x -> fgh(x,_λa[i,i],_λr[i,i],_σ[i,i],T,Mwij[i,i])
+        x0 = (_λr[i,i]/_λa[i,i])^(1/(_λr[i,i]-_λa[i,i]))
+        _σmin = halley(f0,one(T)*x0)
+        uij =u(_σmin,_λa[i,i],_λr[i,i],_σ[i,i],T,Mwij[i,i])
+        _ϵeff[i,i] =  -ϵ[i,i]*uij
+        for j in 1:i-1
+            f0 = x -> fgh(x,_λa[i,j],_λr[i,j],_σ[i,j],T,Mwij[i,j])
+            x0 = (_λr[i,j]/_λa[i,j])^(1/(_λr[i,j]-_λa[i,j]))
+            _σmin = halley(f0,one(T)*x0)
+            uij =u(_σmin,_λa[i,j],_λr[i,j],_σ[i,j],T,_Mw[i,j])
+            _ϵeff[i,j] =  -ϵ[i,j]*uij
+            _ϵeff[j,i] = _ϵeff[i,j]
+        end
+    end
+    return _ϵeff
 end
 
 function Halley(model::SAFTVRQMieModel, V, T, z, f_, g_, h_, x0)
@@ -116,9 +273,32 @@ function Halley(model::SAFTVRQMieModel, V, T, z, f_, g_, h_, x0)
     end
 end
 
-function ζ_x(model::SAFTVRQMieModel, V, T, z)
-    comps = @comps
-    return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i,j))^3 for i in comps for j in comps)
+function a_disp(model::SAFTVRQMieModel,V,T,z,_data = @f(data))
+    _ϵ = model.params.epsilon.values
+    _σ = model.params.sigma.values
+    _λr = model.params.lambda_r.values
+    _λa = model.params.lambda_a.values
+    
+    a1 = zero(V+T+first(z))
+    a2 = a1
+    a3 = a1
+    for i in @comps
+        ϵ = _ϵ[i,i]
+        σ = _σ[i,i]
+        λr = _λr[i,i]
+        λa = _λa[i,i]
+
+        Q1λr = @f(Q1,λr)
+        Q1λa = @f(Q1,λa)
+        Q2λr = @f(Q2,λr)
+        Q2λa = @f(Q2,λa)
+
+
+        for j in 1:i-1
+        end
+    end
+
+
 end
 
 function a_1(model::SAFTVRQMieModel, V, T, z, i, j)
@@ -158,10 +338,9 @@ function a_2(model::SAFTVRQMieModel, V, T, z, i, j)
     λa = model.params.lambda_a.values[i,j]
     Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
     Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
-    ζₓ = @f(ζ_X)
     x_0ij = @f(x_0,i,j)
     x_0effij = @f(x_0eff,i,j)
-    return π*@f(KHS,ζₓ)*(1+@f(χ,i,j))*@f(ρ_S)*ϵ[i,j]^2*@f(d,i,j)^3*@f(C,i,j)^2*(x_0ij^(2*λa)*(@f(aS_1,2*λa)+@f(B,2*λa,x_0effij))-
+    return π*@f(KHS)*(1+@f(χ,i,j))*@f(ρ_S)*ϵ[i,j]^2*@f(d,i,j)^3*@f(C,i,j)^2*(x_0ij^(2*λa)*(@f(aS_1,2*λa)+@f(B,2*λa,x_0effij))-
     x_0ij^(λa+λr)*2*(@f(aS_1,λa+λr)+@f(B,λa+λr,x_0effij))+
     x_0ij^(2*λr)*(@f(aS_1,2*λr)+@f(B,2*λr,x_0effij))+
     x_0ij^(2*λa+2)*2*@f(Q1,λa)*(@f(aS_1,2*λa+2)+@f(B,2*λa+2,x_0effij))*Dij+
@@ -201,10 +380,7 @@ function χ(model::SAFTVRQMieModel, V, T, z,i,j)
     return @f(f,α,1)*ζst_+@f(f,α,2)*ζst_^5+@f(f,α,3)*ζst_^8
 end
 
-function ζst(model::SAFTVRQMieModel, V, T, z)
-    comps = @comps
-    return @f(ρ_S)*π/6*∑(@f(x_S,i)*@f(x_S,j)*(@f(σeff,i,j))^3 for i in comps for j in comps)
-end
+
 
 function a_3(model::SAFTVRQMieModel, V, T, z, i, j)
     λr = model.params.lambda_r.values
@@ -213,7 +389,7 @@ function a_3(model::SAFTVRQMieModel, V, T, z, i, j)
     ϵ = model.params.epsilon.values
     σeffij = @f(σeff,i,j)
     ϵeffij = @f(ϵeff,i,j)
-    Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
+    Mwij = model.params.Mw.values[i,j]
     Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
 
     ζst_ = ζst(model, V, T, z)
@@ -225,6 +401,7 @@ function a_3(model::SAFTVRQMieModel, V, T, z, i, j)
                (σ[i,j]/σeffij)^(4+λr[i,j])*@f(Q2,λr[i,j])/(λr[i,j]+1)))
     return -ϵeffij^3*@f(f,α,4)*ζst_*exp(@f(f,α,5)*ζst_+@f(f,α,6)*ζst_^2)
 end
+
 
 const SAFTVRQMieconsts = (
     x = [-0.9956571630258080807355,-0.973906528517171720078,-0.9301574913557082260012,-0.8650633666889845107321,-0.7808177265864168970637,-0.6794095682990244062343,-0.562757134668604683339,
