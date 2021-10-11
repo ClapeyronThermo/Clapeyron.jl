@@ -1,7 +1,7 @@
 name = "Clapeyron"
 uuid = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
 authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pwalker@mit.edu>"]
-version = "0.2.2"
+version = "0.2.4"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
@@ -21,7 +21,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 
-CSV = "^0.8, 0.9"
+CSV = "0.9"
 DiffResults = "^1.0"
 ForwardDiff = "^0.10"
 LogExpFunctions = "^0.2,^0.3"
