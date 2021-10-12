@@ -214,16 +214,8 @@ function Base.show(io::IO,mime::MIME"text/plain",param::PairParam)
 end
 
 function Base.show(io::IO,param::PairParam)
-    print(io,"PairParam(",param.name)
-    print(io,"\"",param.name,"\"",")[")
-    for (name,val,miss,i) in zip(param.components,param.values,param.ismissingvalues,1:length(param.values))
-        i != 1 && print(io,",")
-        if miss == false
-            print(io,name,"=",val)
-        else
-            print(io,name,"=","-")
-        end
-    end
+    print(io, typeof(param), "(\"", param.name, "\")[")
+    print(io,Base.summary(param.values))
     print(io,"]")
 end
 """
@@ -269,21 +261,30 @@ function Base.show(io::IO,mime::MIME"text/plain",param::AssocParam{T}) where T
     print(io,"AssocParam{",string(T),"}")
     show(io,param.components)
     println(io,") with values:")
-    show(io,mime,param.values)
+    comps = param.components
+    vals = param.values
+    sitenames = param.allcomponentsites
+    for (idx,(i,j),(a,b)) in indices(vals)
+        print(io,"(\"",comps[i],"\", \"",sitenames[i][a],"\")")
+        print(io," >=< ")
+        print(io,"(\"",comps[j],"\", \"",sitenames[j][b],"\")")
+        print(io,": ")
+        println(io,vals.values[idx])
+    end
 end
 
 function Base.show(io::IO,param::AssocParam)
-    print(io,"AssocParam(",param.name)
-    print(io,"\"",param.name,"\"",")[")
-    for (name,val,miss,i) in zip(param.components,param.values,param.ismissingvalues,1:length(param.values))
-        i != 1 && print(io,",")
-        if miss == false
-            print(io,name,"=",val)
-        else
-            print(io,name,"=","-")
-        end
-    end
-    print(io,"]")
+    print(io, typeof(param), "(\"", param.name, "\")")
+
+    print(io,param.values.values)
+    #for (name,val,miss,i) in zip(param.components,param.values,param.ismissingvalues,1:length(param.values))
+    #    i != 1 && print(io,",")
+    #    if miss == false
+    #        print(io,name,"=",val)
+    #    else
+    #        print(io,name,"=","-")
+    #    end
+   # end
 end
 const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
