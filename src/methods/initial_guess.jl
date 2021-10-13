@@ -446,6 +446,11 @@ function T_scale(model::SAFTModel,z=SA[1.0])
     return prod(ϵ)^(1/length(ϵ))
 end
 
+function T_scale(model::SAFTgammaMieModel,z=SA[1.0])
+    return T_scale(model.vrmodel,z)
+end
+
+
 function T_scale(model::LJSAFTModel,z=SA[1.0])
     T̃ = model.params.T_tilde.diagvalues
     return prod(T̃)^(1/length(T̃))
@@ -516,16 +521,9 @@ function p_scale(model::LJSAFTModel,z=SA[1.0])
 end
 
 function p_scale(model::SAFTgammaMieModel,z=SA[1.0])
-    vk  = model.groups.n_flattenedgroups
-    seg = model.params.segment.values
-    S   = model.params.shapefactor.values
-    σ   = model.params.sigma.values
-    m̄  = sum(vk[1][k]*seg[k]*S[k] for k in @groups(model.icomponents[1]))
-
-    σ̄3 = sum(vk[1][k]*vk[1][l]*
-                     seg[k]*seg[l]*
-                     S[k]*S[l]*
-                     σ[k,l]^3 for k in @groups(model.icomponents[1]) for l in @groups(model.icomponents[1]))/m̄^2
+    V = zero(first(z))
+    T = zero(first(z))
+    σ̄3 = @f(σ3x)
     ϵ̄ = T_scale(model,z)
     val    = σ̄3*N_A/R̄/ϵ̄
     return 1/val
