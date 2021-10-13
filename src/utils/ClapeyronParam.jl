@@ -227,23 +227,22 @@ struct AssocParam{T} <: ClapeyronParam
     name::String
     components::Array{String,1}
     values::CompressedAssocMatrix{T}
-    ismissingvalues::Array{Array{Bool,2},2}
-    allcomponentsites::Array{Array{String,1},1}
+    sites::Array{Array{String,1},1}
     sourcecsvs::Array{String,1}
     sources::Array{String,1}
 end
 
-function AssocParam(name::String,components::Vector{String},values::Array{Array{T,2},2},ismissingvalues,allcomponentsites,sourcecsvs,sources) where T
+function AssocParam(name::String,components::Vector{String},values::Array{Array{T,2},2},allcomponentsites,sourcecsvs,sources) where T
     _values = CompressedAssocMatrix(values)
-    return AssocParam(name,components,_values,ismissingvalues,allcomponentsites,sourcecsvs,sources)
+    return AssocParam(name,components,_values,allcomponentsites,sourcecsvs,sources)
 end
 
 function AssocParam(x::AssocParam{T}) where T
-    return AssocParam{T}(x.name,x.components, deepcopy(x.values), deepcopy(x.ismissingvalues), x.allcomponentsites, x.sourcecsvs, x.sources)
+    return AssocParam{T}(x.name,x.components, deepcopy(x.values), x.sites, x.sourcecsvs, x.sources)
 end
 
 function AssocParam{T}(x::AssocParam, v::Matrix{Matrix{T}}) where T
-    return AssocParam{T}(x.name, x.components,CompressedAssocMatrix(v), deepcopy(x.ismissingvalues), x.allcomponentsites, x.sourcecsvs, x.sources)
+    return AssocParam{T}(x.name, x.components,CompressedAssocMatrix(v), x.sites, x.sourcecsvs, x.sources)
 end
 
 function AssocParam{T}(name::String,components::Vector{String}) where T
@@ -251,7 +250,6 @@ function AssocParam{T}(name::String,components::Vector{String}) where T
     return AssocParam{T}(name, 
     components,
     CompressedAssocMatrix{T}(),
-    Matrix{Matrix{Bool}}(undef,n,n), 
     [String[] for _ ∈ 1:n], 
     String[],
     String[])
@@ -259,11 +257,11 @@ end
 
 function Base.show(io::IO,mime::MIME"text/plain",param::AssocParam{T}) where T
     print(io,"AssocParam{",string(T),"}")
-    show(io,param.components)
+    print(io,param.components)
     println(io,") with values:")
     comps = param.components
     vals = param.values
-    sitenames = param.allcomponentsites
+    sitenames = param.sites
     for (idx,(i,j),(a,b)) in indices(vals)
         print(io,"(\"",comps[i],"\", \"",sitenames[i][a],"\")")
         print(io," >=< ")
@@ -275,16 +273,7 @@ end
 
 function Base.show(io::IO,param::AssocParam)
     print(io, typeof(param), "(\"", param.name, "\")")
-
     print(io,param.values.values)
-    #for (name,val,miss,i) in zip(param.components,param.values,param.ismissingvalues,1:length(param.values))
-    #    i != 1 && print(io,",")
-    #    if miss == false
-    #        print(io,name,"=",val)
-    #    else
-    #        print(io,name,"=","-")
-    #    end
-   # end
 end
 const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
@@ -517,7 +506,7 @@ end
 function Base.show(io::IO, mime::MIME"text/plain", param::SiteParam)
     print(io,"SiteParam ")
     len = length(param.components)
-    println(io,"with ", len, " site", ifelse(len==1, ":", "s:"))
+    println(io,"with ", len, " component", ifelse(len==1, ":", "s:"))
     
     for i in 1:length(param.components)
         

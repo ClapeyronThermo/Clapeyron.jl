@@ -99,13 +99,12 @@ function split_model(param::AssocParam{T},
     splitter = split_model(1:length(param.components))) where T
     function generator(I)     
         _value  = _split_model(param.values,I)
-        _ismissingvalues = param.ismissingvalues[I,I]
+     
         return AssocParam{T}(
                 param.name,
                 param.components[I],
                 _value,
-                _ismissingvalues,
-                param.allcomponentsites[I],
+                param.sites[I],
                 param.sourcecsvs,
                 param.sources
                 )
