@@ -175,10 +175,7 @@ export SAFTgammaMie,SAFTγMie
 
 function a_res(model::SAFTgammaMieModel, V, T, z)
     _data = @f(data)
-    vrmodel = model.vrmodel
-    _a_hs = a_hs(vrmodel,V,T,z,_data)
-    _a_dispchain = a_dispchain(vrmodel,V,T,z,_data)
-    return _a_hs+_a_dispchain 
+    return @f(a_hs,_data) + @f(a_disp,_data) + @f(a_chain,_data) + @f(a_assoc,_data)
 end
 
 
@@ -309,6 +306,27 @@ function ζ_X_σ3(model::SAFTgammaMieModel, V, T, z,_d = @f(d_gc))
 
     #return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i)+@f(d,j))^3/8 for i ∈ comps for j ∈ comps)
     return kρS*_ζ_X,σ3_x
+end
+
+function σ3x(model::SAFTgammaMieModel, V, T, z)
+    vrmodel = model.vrmodel
+    m = vrmodel.params.segment.values
+    m̄ = dot(z, m)
+    m̄inv = 1/m̄
+    σ = model.params.sigma.values
+    _mi = model.params.mixedsegment.values
+    σ3_x =  zero(first(z))
+    for i ∈ @groups
+        mi = _mi[i]
+        x_Si = dot(mi,z)*m̄inv
+        σ3_x += x_Si*x_Si*(σ[i,i]^3)
+        for j ∈ 1:i-1
+            mj = _mi[j]
+            x_Sj = dot(mj,z)*m̄inv
+            σ3_x += 2*x_Si*x_Sj*(σ[i,j]^3)
+        end
+    end
+    return σ3_x
 end
 
 function  a_hs(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
