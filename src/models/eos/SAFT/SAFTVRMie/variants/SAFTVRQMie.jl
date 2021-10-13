@@ -253,7 +253,8 @@ function Halley(model::SAFTVRQMieModel, V, T, z, f_, g_, h_, x0)
 end
 
 
-function a_1(model::SAFTVRQMieModel, V, T, z, i, j)
+function a_1(model::SAFTVRQMieModel, V, T, z, i, j,_data = @f(data))
+    _σeff,_ϵff,_d,_ρ_S,ζi,_ζ_X,_ζst = _data
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
     λr = model.params.lambda_r.values
@@ -261,8 +262,9 @@ function a_1(model::SAFTVRQMieModel, V, T, z, i, j)
     Mwij = (model.params.Mw.values[i] + model.params.Mw.values[j])/2 # check
     Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
     x_0ij = @f(x_0,i,j)
-    x_0effij = @f(x_0eff,i,j)
-    return 2*π*ϵ[i,j]*@f(d,i,j)^3*@f(C,i,j)*@f(ρ_S)*
+    dij = 0.5*(_d[i] + _d[j])
+    x_0effij = _σeff[i,j]/dij
+    return 2*π*ϵ[i,j]*dij^3*@f(Cλ,λa[i,j],λr[i,j])*@f(ρ_S)*
     ( (x_0ij^λa[i,j]*(@f(aS_1,λa[i,j])+@f(B,λa[i,j],x_0effij))-
         x_0ij^λr[i,j]*(@f(aS_1,λr[i,j])+@f(B,λr[i,j],x_0effij)))+
         (x_0ij^(λa[i,j]+2)*@f(Q1,λa[i,j])*(@f(aS_1,λa[i,j]+2)+@f(B,λa[i,j]+2,x_0effij))-
@@ -283,7 +285,7 @@ function x_0eff(model::SAFTVRQMieModel, V, T, z, i, j)
     return @f(σeff,i,j)/@f(d,i,j)
 end
 
-function a_2(model::SAFTVRQMieModel, V, T, z, i, j)
+function a_2(model::SAFTVRQMieModel, V, T, z, i, j,_data = @f(data))
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
     λr = model.params.lambda_r.values[i,j]
@@ -415,18 +417,18 @@ function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
             x_0ij^(2*λa+2)*2*Q1λa*(@f(aS_1,2*λa+2)+@f(B,2*λa+2,x_0effij,_ζ_X))*Dij+
             x_0ij^(2*λr+2)*2*Q1λr*(@f(aS_1,2*λr+2)+@f(B,2*λr+2,x_0effij,_ζ_X))*Dij-
             x_0ij^(λa+λr+2)*2*(Q1λa+Q1λr)*(@f(aS_1,λa+λr+2)+@f(B,λa+λr+2,x_0effij,_ζ_X))*Dij+
-            x_0ij^(2*λa+4)*Q1λa^2*(@f(aS_1,2*λa+4)+@f(B,2*λa+4,x_0effij,_ζ_X))*Dij^2+
-            x_0ij^(2*λr+4)*Q1λr^2*(@f(aS_1,2*λr+4)+@f(B,2*λr+4,x_0effij,_ζ_X))*Dij^2-
-            x_0ij^(λa+λr+4)*(2*Q1λa*Q1λr)*(@f(aS_1,λa+λr+4)+@f(B,λa+λr+4,x_0effij,_ζ_X))*Dij^2+
-            x_0ij^(2*λa+4)*2*Q2λa*(@f(aS_1,2*λa+4)+@f(B,2*λa+4,x_0effij,_ζ_X))*Dij^2+
-            x_0ij^(2*λr+4)*2*Q2λr*(@f(aS_1,2*λr+4)+@f(B,2*λr+4,x_0effij,_ζ_X))*Dij^2-
-            x_0ij^(λa+λr+4)*2*(Q2λa+Q2λr)*(@f(aS_1,λa+λr+4)+@f(B,λa+λr+4,x_0effij,_ζ_X))*Dij^2+
+            x_0ij^(2*λa+4)*Q1λa^2*(@f(aS_1,2*λa+4,_ζ_X)+@f(B,2*λa+4,x_0effij,_ζ_X))*Dij^2+
+            x_0ij^(2*λr+4)*Q1λr^2*(@f(aS_1,2*λr+4,_ζ_X)+@f(B,2*λr+4,x_0effij,_ζ_X))*Dij^2-
+            x_0ij^(λa+λr+4)*(2*Q1λa*Q1λr)*(@f(aS_1,λa+λr+4,_ζ_X)+@f(B,λa+λr+4,x_0effij,_ζ_X))*Dij^2+
+            x_0ij^(2*λa+4)*2*Q2λa*(@f(aS_1,2*λa+4,_ζ_X)+@f(B,2*λa+4,x_0effij,_ζ_X))*Dij^2+
+            x_0ij^(2*λr+4)*2*Q2λr*(@f(aS_1,2*λr+4,_ζ_X)+@f(B,2*λr+4,x_0effij,_ζ_X))*Dij^2-
+            x_0ij^(λa+λr+4)*2*(Q2λa+Q2λr)*(@f(aS_1,λa+λr+4,_ζ_X)+@f(B,λa+λr+4,x_0effij,_ζ_X))*Dij^2+
             x_0ij^(2*λa+6)*2*(Q1λa*Q2λa)*(@f(aS_1,2*λa+6)+@f(B,2*λa+6,x_0effij,_ζ_X))*Dij^3+
             x_0ij^(2*λr+6)*2*(Q1λr*Q2λr)*(@f(aS_1,2*λr+6)+@f(B,2*λr+6,x_0effij,_ζ_X))*Dij^3-
             x_0ij^(λa+λr+6)*2*(Q1λr*Q2λa+Q1λa*Q2λr)*(@f(aS_1,λa+λr+6)+@f(B,λa+λr+6,x_0effij,_ζ_X))*Dij^3+
-            x_0ij^(2*λa+8)*Q2λa^2*(@f(aS_1,2*λa+8)+@f(B,2*λa+8,x_0effij,_ζ_X))*Dij^4+
-            x_0ij^(2*λr+8)*Q2λr^2*(@f(aS_1,2*λr+8)+@f(B,2*λr+8,x_0effij,_ζ_X))*Dij^4-
-            x_0ij^(λa+λr+8)*(2*Q2λa*Q2λr)*(@f(aS_1,λa+λr+8)+@f(B,λa+λr+8,x_0effij,_ζ_X))*Dij^4)
+            x_0ij^(2*λa+8)*Q2λa^2*(@f(aS_1,2*λa+8,_ζ_X)+@f(B,2*λa+8,x_0effij,_ζ_X))*Dij^4+
+            x_0ij^(2*λr+8)*Q2λr^2*(@f(aS_1,2*λr+8,_ζ_X)+@f(B,2*λr+8,x_0effij,_ζ_X))*Dij^4-
+            x_0ij^(λa+λr+8)*(2*Q2λa*Q2λr)*(@f(aS_1,λa+λr+8,_ζ_X)+@f(B,λa+λr+8,x_0effij,_ζ_X))*Dij^4)
     
         
         #calculations for a3 - diagonal
@@ -470,26 +472,25 @@ function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
                 σcoeff^(4+λr)*Q2λr/(λr+1)))
             f1,f2,f3,f4,f5,f6 = @f(f123456,α)
              _χ = f1*_ζst+f2*_ζst5+f3*_ζst8
-            a2_ij = π*_KHS*(1+_χ)*_ρ_S*ϵ^2*dij3*_C^2*(x_0ij^(2*λa)*(@f(aS_1,2*λa)+@f(B,2*λa,x_0effij,_ζ_X))-
-                x_0ij^(λa+λr)*2*(@f(aS_1,λa+λr)+@f(B,λa+λr,x_0effij,_ζ_X))+
-                x_0ij^(2*λr)*(@f(aS_1,2*λr)+@f(B,2*λr,x_0effij,_ζ_X))+
-                x_0ij^(2*λa+2)*2*Q1λa*(@f(aS_1,2*λa+2)+@f(B,2*λa+2,x_0effij,_ζ_X))*Dij+
-                x_0ij^(2*λr+2)*2*Q1λr*(@f(aS_1,2*λr+2)+@f(B,2*λr+2,x_0effij,_ζ_X))*Dij-
-                x_0ij^(λa+λr+2)*2*(Q1λa+Q1λr)*(@f(aS_1,λa+λr+2)+@f(B,λa+λr+2,x_0effij,_ζ_X))*Dij+
-                x_0ij^(2*λa+4)*Q1λa^2*(@f(aS_1,2*λa+4)+@f(B,2*λa+4,x_0effij,_ζ_X))*Dij^2+
-                x_0ij^(2*λr+4)*Q1λr^2*(@f(aS_1,2*λr+4)+@f(B,2*λr+4,x_0effij,_ζ_X))*Dij^2-
-                x_0ij^(λa+λr+4)*(2*Q1λa*Q1λr)*(@f(aS_1,λa+λr+4)+@f(B,λa+λr+4,x_0effij,_ζ_X))*Dij^2+
-                x_0ij^(2*λa+4)*2*Q2λa*(@f(aS_1,2*λa+4)+@f(B,2*λa+4,x_0effij,_ζ_X))*Dij^2+
-                x_0ij^(2*λr+4)*2*Q2λr*(@f(aS_1,2*λr+4)+@f(B,2*λr+4,x_0effij,_ζ_X))*Dij^2-
-                x_0ij^(λa+λr+4)*2*(Q2λa+Q2λr)*(@f(aS_1,λa+λr+4)+@f(B,λa+λr+4,x_0effij,_ζ_X))*Dij^2+
-                x_0ij^(2*λa+6)*2*(Q1λa*Q2λa)*(@f(aS_1,2*λa+6)+@f(B,2*λa+6,x_0effij,_ζ_X))*Dij^3+
-                x_0ij^(2*λr+6)*2*(Q1λr*Q2λr)*(@f(aS_1,2*λr+6)+@f(B,2*λr+6,x_0effij,_ζ_X))*Dij^3-
-                x_0ij^(λa+λr+6)*2*(Q1λr*Q2λa+Q1λa*Q2λr)*(@f(aS_1,λa+λr+6)+@f(B,λa+λr+6,x_0effij,_ζ_X))*Dij^3+
-                x_0ij^(2*λa+8)*Q2λa^2*(@f(aS_1,2*λa+8)+@f(B,2*λa+8,x_0effij,_ζ_X))*Dij^4+
-                x_0ij^(2*λr+8)*Q2λr^2*(@f(aS_1,2*λr+8)+@f(B,2*λr+8,x_0effij,_ζ_X))*Dij^4-
-                x_0ij^(λa+λr+8)*(2*Q2λa*Q2λr)*(@f(aS_1,λa+λr+8)+@f(B,λa+λr+8,x_0effij,_ζ_X))*Dij^4)
+             a2_ij = π*_KHS*(1+_χ)*_ρ_S*ϵ^2*dij3*_C^2*(x_0ij^(2*λa)*(@f(aS_1,2*λa)+@f(B,2*λa,x_0effij,_ζ_X))-
+             x_0ij^(λa+λr)*2*(@f(aS_1,λa+λr)+@f(B,λa+λr,x_0effij,_ζ_X))+
+             x_0ij^(2*λr)*(@f(aS_1,2*λr)+@f(B,2*λr,x_0effij,_ζ_X))+
+             x_0ij^(2*λa+2)*2*Q1λa*(@f(aS_1,2*λa+2)+@f(B,2*λa+2,x_0effij,_ζ_X))*Dij+
+             x_0ij^(2*λr+2)*2*Q1λr*(@f(aS_1,2*λr+2)+@f(B,2*λr+2,x_0effij,_ζ_X))*Dij-
+             x_0ij^(λa+λr+2)*2*(Q1λa+Q1λr)*(@f(aS_1,λa+λr+2)+@f(B,λa+λr+2,x_0effij,_ζ_X))*Dij+
+             x_0ij^(2*λa+4)*Q1λa^2*(@f(aS_1,2*λa+4,_ζ_X)+@f(B,2*λa+4,x_0effij,_ζ_X))*Dij^2+
+             x_0ij^(2*λr+4)*Q1λr^2*(@f(aS_1,2*λr+4,_ζ_X)+@f(B,2*λr+4,x_0effij,_ζ_X))*Dij^2-
+             x_0ij^(λa+λr+4)*(2*Q1λa*Q1λr)*(@f(aS_1,λa+λr+4,_ζ_X)+@f(B,λa+λr+4,x_0effij,_ζ_X))*Dij^2+
+             x_0ij^(2*λa+4)*2*Q2λa*(@f(aS_1,2*λa+4,_ζ_X)+@f(B,2*λa+4,x_0effij,_ζ_X))*Dij^2+
+             x_0ij^(2*λr+4)*2*Q2λr*(@f(aS_1,2*λr+4,_ζ_X)+@f(B,2*λr+4,x_0effij,_ζ_X))*Dij^2-
+             x_0ij^(λa+λr+4)*2*(Q2λa+Q2λr)*(@f(aS_1,λa+λr+4,_ζ_X)+@f(B,λa+λr+4,x_0effij,_ζ_X))*Dij^2+
+             x_0ij^(2*λa+6)*2*(Q1λa*Q2λa)*(@f(aS_1,2*λa+6)+@f(B,2*λa+6,x_0effij,_ζ_X))*Dij^3+
+             x_0ij^(2*λr+6)*2*(Q1λr*Q2λr)*(@f(aS_1,2*λr+6)+@f(B,2*λr+6,x_0effij,_ζ_X))*Dij^3-
+             x_0ij^(λa+λr+6)*2*(Q1λr*Q2λa+Q1λa*Q2λr)*(@f(aS_1,λa+λr+6)+@f(B,λa+λr+6,x_0effij,_ζ_X))*Dij^3+
+             x_0ij^(2*λa+8)*Q2λa^2*(@f(aS_1,2*λa+8,_ζ_X)+@f(B,2*λa+8,x_0effij,_ζ_X))*Dij^4+
+             x_0ij^(2*λr+8)*Q2λr^2*(@f(aS_1,2*λr+8,_ζ_X)+@f(B,2*λr+8,x_0effij,_ζ_X))*Dij^4-
+             x_0ij^(λa+λr+8)*(2*Q2λa*Q2λr)*(@f(aS_1,λa+λr+8,_ζ_X)+@f(B,λa+λr+8,x_0effij,_ζ_X))*Dij^4)
     
-            
             #calculations for a3
             a3_ij = -ϵff^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
             #adding
