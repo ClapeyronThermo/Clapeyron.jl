@@ -1,3 +1,4 @@
+#=
 struct SAFTgammaMieParam <: EoSParam
     segment::SingleParam{Int}
     shapefactor::SingleParam{Float64}
@@ -539,3 +540,4 @@ const SAFTγMieconsts =(
                 4.65297446837297	    -0.00192518067137033 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0
                -0.867296219639940	     0	                 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0],
 )
+=#
