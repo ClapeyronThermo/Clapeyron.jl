@@ -1,5 +1,18 @@
+
+include("utils.jl")
+#just a holder for the z partitions.
+#to allow split_model to work correctly
+
+abstract type SAFTgammaMieModel <: GCSAFTModel end
+
+struct γMieZ <: EoSModel
+    components::Vector{String}
+    z::SingleParam{Vector{Float64}}
+end
+
 struct SAFTgammaMieParam <: EoSParam
     segment::SingleParam{Int}
+    mixedsegment::SingleParam{Vector{Float64}}
     shapefactor::SingleParam{Float64}
     lambda_a::PairParam{Float64}
     lambda_r::PairParam{Float64}
@@ -9,505 +22,414 @@ struct SAFTgammaMieParam <: EoSParam
     bondvol::AssocParam{Float64}
 end
 
-abstract type SAFTgammaMieModel <: GCSAFTModel end
-@newmodelgc SAFTgammaMie SAFTgammaMieModel SAFTgammaMieParam
+@registermodel γMieZ
 
-const SAFTγMie = SAFTgammaMie
-export SAFTgammaMie,SAFTγMie
-function SAFTgammaMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+struct SAFTgammaMie{I,VR} <: SAFTgammaMieModel
+    components::Vector{String}
+    groups::GroupParam
+    sites::SiteParam
+    params::SAFTgammaMieParam
+    idealmodel::I
+    vrmodel::VR
+    mie_zfractions::γMieZ
+    absolutetolerance::Float64
+    references::Array{String,1}
+end
+
+function SAFTgammaMie(components; 
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    absolutetolerance = 1e-12)
+
     groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
-    params,sites = getparams(groups, ["SAFT/SAFTgammaMie"]; userlocations=userlocations, verbose=verbose)
-
-    segment = params["vst"]
+    params,sites = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    _sites = sites.i_sites
+    components = groups.components
+    gc = groups.i_flattenedgroups
+    comps = 1:length(components)
+    gc_segment = params["vst"]
     shapefactor = params["S"]
-
-    params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
-    lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
-    lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bondvol"]
-
-    #sites = SiteParam(Dict("e1" => params["n_e1"], "e2" => params["n_e2"], "H" => params["n_H"]))
-    packagedparams = SAFTgammaMieParam(segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol)
-    references = ["10.1063/1.4851455", "10.1021/je500248h"]
-
-    model = SAFTgammaMie(packagedparams, groups, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
-    return model
-end
-
-function a_res(model::SAFTgammaMieModel, V, T, z)
-    return @f(a_mono) + @f(a_chain) + @f(a_assoc)
-end
-
-function a_mono(model::SAFTgammaMieModel, V, T, z)
-    return @f(ÂHS) + @f(Â_1) + @f(Â_2) + @f(Â_3)
-end
-
-function a_disp(model::SAFTgammaMieModel, V, T, z)
-    return @f(Â_1) + @f(Â_2) + @f(Â_3)
-end
-
-function a_chain(model::SAFTgammaMieModel, V, T, z)
-    x = z/∑(z)
-    v  = model.groups.n_flattenedgroups
-    vst = model.params.segment.values
-    S = model.params.shapefactor.values
-    return -∑(x[i] * (∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i))-1) * log(@f(g_Mie,i)) for i ∈ @comps)
-end
-
-function a_assoc(model::SAFTgammaMieModel, V, T, z)
-    x = z/∑(z)
-    v = model.groups.n_flattenedgroups
-    n = model.sites.n_sites
-    X_ = @f(X)
-    return ∑(x[i] * ∑(v[i][k] * ∑(n[k][a] * (log(X_[i][k][a])+(1-X_[i][k][a])/2) for a ∈ @sites(k)) for k ∈ @groups(i)) for i ∈ @comps)
-end
-
-function ÂHS(model::SAFTgammaMieModel, V, T, z)
-    ζ_0   = @f(ζ,0)
-    ζ_1   = @f(ζ,1)
-    ζ_2   = @f(ζ,2)
-    ζ_3   = @f(ζ,3)
-    ρ = ∑(z)*N_A/V
-    return 6/π/ρ * (3ζ_1*ζ_2/(1-ζ_3) + ζ_2^3/(ζ_3*(1-ζ_3)^2) + (ζ_2^3/ζ_3^2-ζ_0)*log(1-ζ_3))
-end
-
-function ζ0123(model::SAFTgammaMieModel, V, T, z)
-    ζ_0   = @f(ζ,0)
-    ζ_1   = @f(ζ,1)
-    ζ_2   = @f(ζ,2)
-    ζ_3   = @f(ζ,3)
-    return ζ_0,ζ_1,ζ_2,ζ_3
-end
-
-function ∑Â_n(model::SAFTgammaMieModel, V, T, z)
-    v = model.groups.n_flattenedgroups
-    vst = model.params.segment.values
-    S = model.params.shapefactor.values
-    res = zero(V+T+first(z))
-    @inbounds for i ∈ @comps
-        res_i = zero(res)
+    S = shapefactor.values
+    vst = gc_segment.values
+    v  = groups.n_flattenedgroups
+    comp_segment = zeros(Float64,length(comps))
+    for i ∈ comps
+        res_i = 0.0
         vi = v[i]
-        groups_i = @groups(i)
+        groups_i = groups.i_groups[i]
         for idx in 1:length(groups_i)
             k = groups_i[idx]
             res_i += vi[k]*S[k]*vst[k]
         end
-        res += z[i]*res_i
+        comp_segment[i] = res_i
     end
-    res1 = res/∑(z)
-    #res2 = ∑(z[i]*∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps)/∑(z)
-    #       ∑(x[i]*∑(v[i][l]*vst[l]*S[l] for l ∈ @groups(i)) for i ∈ @comps)
-    #@show res2
-    return res1
-end
-function Â_1(model::SAFTgammaMieModel, V, T, z)
-    return 1/T * @f(∑Â_n) * @f(a_1)
-end
-function Â_2(model::SAFTgammaMieModel, V, T, z)
-    return 1/T^2 * @f(∑Â_n) * @f(a_2)
-end
-function Â_3(model::SAFTgammaMieModel, V, T, z)
-    return 1/T^3 * @f(∑Â_n) * @f(a_3)
-end
+    segment = SingleParam("segment",components,comp_segment)
 
-function a_1(model::SAFTgammaMieModel, V, T, z)
-    groups = @groups
-    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_1,k,l) for k ∈ groups for l ∈ groups)
-end
-function a_2(model::SAFTgammaMieModel, V, T, z)
-    groups = @groups
-    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_2,k,l) for k ∈ groups for l ∈ groups)
-end
-function a_3(model::SAFTgammaMieModel, V, T, z)
-    groups = @groups
-    return ∑(@f(x_S,k)*@f(x_S,l)*@f(a_3,k,l) for k ∈ groups for l ∈ groups)
-end
+    #used in x_S:
+    #x_S(group i) = dot(z,mixsegment[i])/dot(z,m_vr)
+    mixsegment =  [[v[i][k]*vst[k]*S[k] for i ∈ comps] for k ∈ gc]
+    gc_mixedsegment = SingleParam("mixed segment",components,mixsegment,[false for i in gc],String[],String[])
 
-function a_1(model::SAFTgammaMieModel, V, T, z, k, l)
-    σ = model.params.sigma.values[k,l]
-    λa = model.params.lambda_a.values[k,l]
-    λr = model.params.lambda_r.values[k,l]
-
-    x_0 = σ/@f(d,k,l)
-    return @f(C,λa,λr) * (x_0^λa*(@f(aS_1,k,l,λa)+@f(B,k,l,λa)) - x_0^λr*(@f(aS_1,k,l,λr)+@f(B,k,l,λr)))
-end
-function a_2(model::SAFTgammaMieModel, V, T, z, k, l)
-    σ = model.params.sigma.values[k,l]
-    ϵ = model.params.epsilon.values[k,l]
-    λa = model.params.lambda_a.values[k,l]
-    λr = model.params.lambda_r.values[k,l]
-
-    x_0 = σ/@f(d,k,l)
-    return 1/2*@f(KHS)*(1+@f(χ,k,l))*ϵ*@f(C,λa,λr)^2 * (
-           x_0^(2λa)*(@f(aS_1,k,l,2λa) + @f(B,k,l,2λa))
-         - 2x_0^(λa+λr)*(@f(aS_1,k,l,λa+λr) + @f(B,k,l,λa+λr))
-         + x_0^(2λr)*(@f(aS_1,k,l,2λr) + @f(B,k,l,2λr)) )
-end
-function a_3(model::SAFTgammaMieModel, V, T, z, k, l)
-    ϵ = model.params.epsilon.values[k,l]
-    ζst_X_ = @f(ζst_X)
-    return -ϵ^3*@f(f,k,l,4)*ζst_X_ * exp(@f(f,k,l,5)*ζst_X_ + @f(f,k,l,6)*ζst_X_^2)
-end
-
-function B(model::SAFTgammaMieModel, V, T, z, k, l, λ)
-    ϵ = model.params.epsilon.values[k,l]
-    σ = model.params.sigma.values[k,l]
-    x_0 = σ/@f(d,k,l)
-    ζ_X_ = @f(ζ_X)
-    I = (1-x_0^(3-λ))/(λ-3)
-    J = (1-x_0^(4-λ)*(λ-3)+x_0^(3-λ)*(λ-4))/((λ-3)*(λ-4))
-    return 2π*@f(ρ_S)*@f(d,k,l)^3*ϵ * ((1-ζ_X_/2)/(1-ζ_X_)^3*I-9ζ_X_*(1+ζ_X_)/(2(1-ζ_X_)^3)*J)
-end
-
-function aS_1(model::SAFTgammaMieModel, V, T, z, k, l, λ)
-    ϵ = model.params.epsilon.values[k,l]
-    ζeff_ = @f(ζeff, λ)
-    return -2π*@f(ρ_S) * ϵ*@f(d,k,l)^3/(λ-3) * (1-ζeff_/2)/(1-ζeff_)^3
-end
-
-function ζ_X(model::SAFTgammaMieModel, V, T, z)
-    groups = @groups
-    return π*@f(ρ_S)/6 * ∑(@f(x_S,k)*@f(x_S,l)*@f(d,k,l)^3 for k ∈ groups for l ∈ groups)
-end
-
-function ζst_X(model::SAFTgammaMieModel, V, T, z)
-    groups = @groups
-    σ = model.params.sigma.values
-    return π*@f(ρ_S)/6 * ∑(@f(x_S,k)*@f(x_S,l)*σ[k,l]^3 for k ∈ groups for l ∈ groups)
-end
-
-function ζeff(model::SAFTgammaMieModel, V, T, z, λ)
-    A = SAFTγMieconsts.A
-    ζ_X_ = @f(ζ_X)
-    return A * SA[1; 1/λ; 1/λ^2; 1/λ^3] ⋅ SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4]
-end
-
-function KHS(model::SAFTgammaMieModel, V, T, z)
-    ζ_X_ = @f(ζ_X)
-    return (1-ζ_X_)^4/(1+4ζ_X_+4ζ_X_^2-4ζ_X_^3+ζ_X_^4)
-end
-
-function χ(model::SAFTgammaMieModel, V, T, z, k, l)
-    ζst_X_ = @f(ζst_X)
-    return @f(f,k,l,1)*ζst_X_ + @f(f,k,l,2)*ζst_X_^5 + @f(f,k,l,3)*ζst_X_^8
-end
-
-function f(model::SAFTgammaMieModel, V, T, z, k, l, m)
-    ϕ = SAFTγMieconsts.ϕ
-    λa = model.params.lambda_a.values[k,l]
-    λr = model.params.lambda_r.values[k,l]
-    α = @f(C,λa,λr)*(1/(λa-3)-1/(λr-3))
-    sum(ϕ[i+1][m]*α^i for i ∈ 0:3)/
-    (1+sum(ϕ[i+1][m]*α^(i-3) for i ∈ 4:6))
-end
-
-function ζ(model::SAFTgammaMieModel, V, T, z, m)
-    return π/6*@f(ρ_S)*∑(@f(x_S,k)*@f(d,k)^m for k ∈ @groups)
-end
-
-function ρ_S(model::SAFTgammaMieModel, V, T, z)
-    #x = z/∑(z)
-    #v = model.groups.n_flattenedgroups
-    #vst = model.params.segment.values
-    #S = model.params.shapefactor.values
-    ρ = ∑(z)*N_A/V
-    #res1 =  ρ * ∑(x[i] * ∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps)
-    res2 = ρ *@f(∑Â_n)
-    return res2
-end
-
-function x_S(model::SAFTgammaMieModel, V, T, z, k)
-    x = z/∑(z)
-    v = model.groups.n_flattenedgroups
-    vst = model.params.segment.values
-    S = model.params.shapefactor.values
-    return ∑(x[i]*v[i][k]*vst[k]*S[k] for i ∈ @comps) / ∑(x[i] * ∑(v[i][l]*vst[l]*S[l] for l ∈ @groups(i)) for i ∈ @comps)
-end
-
-function d(model::SAFTgammaMieModel, V, T, z, k)
-    ϵ = model.params.epsilon.diagvalues[k]
-    σ = model.params.sigma.diagvalues[k]
-    λa = model.params.lambda_a.diagvalues[k]
-    λr = model.params.lambda_r.diagvalues[k]
-    u = SAFTγMieconsts.u
-    w = SAFTγMieconsts.w
-    θ = @f(C,λa,λr)*ϵ/T
-    return σ*(1-∑(w[j]*(θ./(θ+u[j]))^(1/λr)*(exp(θ*(1/(θ./(θ+u[j]))^(λa/λr)-1))/(u[j]+θ)/λr) for j ∈ 1:5))
-end
-
-function d(model::SAFTgammaMieModel, V, T, z, k, l)
-    # Lorentz mixing rule
-    if k == l
-        return @f(d, k)
-    else
-        return (@f(d, k) + @f(d, l))/2
+    gc_sigma = sigma_LorentzBerthelot(params["sigma"])
+    gc_sigma.values .*= 1E-10
+    gc_epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], gc_sigma)
+    ϵ = gc_epsilon.values
+    σ = gc_sigma.values
+     #helper functions
+     function ẑ(i, k)
+        return v[i][k]*vst[k]*S[k] / ∑(v[i][l]*vst[l]*S[l] for l ∈ gc)
     end
-end
 
-function C(model::SAFTgammaMieModel, V, T, z, λa, λr)
-    return (λr/(λr-λa)) * (λr/λa)^(λa/(λr-λa))
-end
-
-function ẑ(model::SAFTgammaMieModel, V, T, z, i, k)
-    v = model.groups.n_flattenedgroups
-    vst = model.params.segment.values
-    S = model.params.shapefactor.values
-    return v[i][k]*vst[k]*S[k] / ∑(v[i][l]*vst[l]*S[l] for l ∈ @groups(i))
-end
-
-function σ̄(model::SAFTgammaMieModel, V, T, z, i)
-    σ = model.params.sigma.values
-    return cbrt(∑(∑(@f(ẑ,i,k)*@f(ẑ,i,l)*σ[k,l]^3 for l ∈ @groups) for k ∈ @groups))
-end
-
-function σ̄(model::SAFTgammaMieModel, V, T, z, i, j)
-    if i == j
-        return @f(σ̄, i)
-    else
-        return (@f(σ̄, i) + @f(σ̄, j))/2
-    end
-end
-
-function d̄(model::SAFTgammaMieModel, V, T, z, i)
-    return cbrt(∑(∑(@f(ẑ,i,k)*@f(ẑ,i,l)*@f(d,k,l)^3 for l ∈ @groups) for k ∈ @groups))
-end
-
-function ϵ̄(model::SAFTgammaMieModel, V, T, z, i)
-    ϵ = model.params.epsilon.values
-    return ∑(∑(@f(ẑ,i,k)*@f(ẑ,i,l)*ϵ[k,l] for l ∈ @groups) for k ∈ @groups)
-end
-
-function ϵ̄(model::SAFTgammaMieModel, V, T, z, i, j)
-    if i == j
-        return @f(ϵ̄, i)
-    else
-        return sqrt(@f(σ̄,i)*@f(σ̄,j))/@f(σ̄,i,j) * sqrt(@f(ϵ̄,i)*@f(ϵ̄,j))
-    end
-end
-
-function λ̄a(model::SAFTgammaMieModel, V, T, z, i)
-    λa = model.params.lambda_a.values
-    return ∑(∑(@f(ẑ,i,k)*@f(ẑ,i,l)*λa[k,l] for l ∈ @groups) for k ∈ @groups)
-end
-
-function λ̄r(model::SAFTgammaMieModel, V, T, z, i)
-    λr = model.params.lambda_r.values
-    return ∑(∑(@f(ẑ,i,k)*@f(ẑ,i,l)*λr[k,l] for l ∈ @groups) for k ∈ @groups)
-end
-
-function g_Mie(model::SAFTgammaMieModel, V, T, z, i)
-    ϵ̄_=@f(ϵ̄,i)
-    g_HSi = @f(g_HS,i)
-    return g_HSi*exp(ϵ̄_/T*@f(g_1,i)/g_HSi+(ϵ̄_/T)^2*@f(g_2,i)/g_HSi)
-end
-
-function g_HS(model::SAFTgammaMieModel, V, T, z, i)
-    x̄_0 = @f(σ̄,i)/@f(d̄,i)
-    ζ_X_ = @f(ζ_X)
-    k_0 = -log(1-ζ_X_) + (42ζ_X_-39ζ_X_^2+9ζ_X_^3-2ζ_X_^4)/(6*(1-ζ_X_)^3)
-    k_1 = (ζ_X_^4+6ζ_X_^2-12ζ_X_)/(2*(1-ζ_X_)^3)
-    k_2 = -3ζ_X_^2/(8(1-ζ_X_)^2)
-    k_3 = (-ζ_X_^4+3ζ_X_^2+3ζ_X_)/(6(1-ζ_X_)^3)
-    return exp(k_0+k_1*x̄_0+k_2*x̄_0^2+k_3*x̄_0^3)
-end
-
-function g_1(model::SAFTgammaMieModel, V, T, z, i)
-    λ̄a_ = @f(λ̄a,i)
-    λ̄r_ = @f(λ̄r,i)
-    σ̄_ = @f(σ̄,i)
-    ϵ̄_ = @f(ϵ̄,i)
-    d̄_ = @f(d̄,i)
-    ρ_S_ = @f(ρ_S)
-    x̄_0 = σ̄_/@f(d̄,i)
-    C̄_ = @f(C,λ̄a_,λ̄r_)
-    return 1/(2π*ϵ̄_*d̄_^3*ρ_S_)*(3*@f(∂ā_1╱∂ρ_S,i) - C̄_*λ̄a_*x̄_0^λ̄a_*(@f(āS_1,i,λ̄a_)+@f(B̄,i,λ̄a_)) + C̄_*λ̄r_*x̄_0^λ̄r_*(@f(āS_1,i,λ̄r_)+@f(B̄,i,λ̄r_)))
-end
-
-function g_2(model::SAFTgammaMieModel, V, T, z, i)
-    return (1+@f(γ_c,i))*@f(gMCA_2,i)
-end
-
-function γ_c(model::SAFTgammaMieModel, V, T, z, i)
-    λ̄a_ = @f(λ̄a,i)
-    λ̄r_ = @f(λ̄r,i)
-    ϵ̄_ = @f(ϵ̄,i)
-    ᾱ = @f(C,λ̄a_,λ̄r_)*(1/(λ̄a_-3)-1/(λ̄r_-3))
-    θ = exp(ϵ̄_/T)-1
-    ζst_X_ = @f(ζst_X)
-    return 10 * (-tanh(10*(0.57-ᾱ))+1) * ζst_X_*θ*exp(-6.7*ζst_X_-8ζst_X_^2)
-end
-
-function gMCA_2(model::SAFTgammaMieModel, V, T, z, i)
-    ϵ̄_ = @f(ϵ̄,i)
-    σ̄_ = @f(σ̄,i)
-    d̄_ = @f(d̄,i)
-    x̄_0 = σ̄_/d̄_
-    λ̄a_ = @f(λ̄a,i)
-    λ̄r_ = @f(λ̄r,i)
-    ρ_S_ = @f(ρ_S)
-    C̄_ = @f(C,λ̄a_,λ̄r_)
-    KHS_ = @f(KHS)
-    return 1/(2π*ϵ̄_^2*d̄_^3*ρ_S_)*(3*@f(∂ā_2╱∂ρ_S,i)-
-        ϵ̄_*KHS_*C̄_^2*λ̄r_*x̄_0^(2λ̄r_)*(@f(āS_1,i,2λ̄r_)+@f(B̄,i,2λ̄r_))+
-        ϵ̄_*KHS_*C̄_^2*(λ̄a_+λ̄r_)*x̄_0^(λ̄a_+λ̄r_)*(@f(āS_1,i,λ̄a_+λ̄r_)+@f(B̄,i,λ̄a_+λ̄r_))-
-        ϵ̄_*KHS_*C̄_^2*λ̄a_*x̄_0^(2λ̄a_)*(@f(āS_1,i,2λ̄a_)+@f(B̄,i,2λ̄a_)))
-end
-
-function B̄(model::SAFTgammaMieModel, V, T, z, i, λ̄)
-    ϵ̄_ = @f(ϵ̄,i)
-    σ̄_ = @f(σ̄,i)
-    d̄_ = @f(d̄,i)
-    x̄_0 = σ̄_/d̄_
-    ζ_X_ = @f(ζ_X)
-    I = (1-x̄_0^(3-λ̄))/(λ̄-3)
-    J = (1-x̄_0^(4-λ̄)*(λ̄-3)+x̄_0^(3-λ̄)*(λ̄-4))/((λ̄-3)*(λ̄-4))
-    return 2π*@f(ρ_S)*d̄_^3*ϵ̄_ * ((1-ζ_X_/2)/(1-ζ_X_)^3*I-9ζ_X_*(1+ζ_X_)/(2(1-ζ_X_)^3)*J)
-end
-
-function ∂B╱∂ρ_S(model::SAFTgammaMieModel, V, T, z, i, λ̄)
-    ϵ̄_ = @f(ϵ̄,i)
-    σ̄_ = @f(σ̄,i)
-    d̄_ = @f(d̄,i)
-    x̄_0 = σ̄_/d̄_
-    ζ_X_ = @f(ζ_X)
-    I = (1-x̄_0^(3-λ̄))/(λ̄-3)
-    J = (1-x̄_0^(4-λ̄)*(λ̄-3)+x̄_0^(3-λ̄)*(λ̄-4))/((λ̄-3)*(λ̄-4))
-    return @f(B̄,i,λ̄) + 2π*@f(ρ_S)*d̄_^3*ϵ̄_ * ζ_X_*((3*(1-ζ_X_/2)*(1-ζ_X_)^2
-            -0.5*(1-ζ_X_)^3)*I/(1-ζ_X_)^6-9*J*((1+2*ζ_X_)*(1-ζ_X_)^3+ζ_X_*(1+ζ_X_)*3*(1-ζ_X_)^2)/(2*(1-ζ_X_)^6))
-end
-
-function ā_1(model::SAFTgammaMieModel, V, T, z, i)
-    λ̄a_ = @f(λ̄a,i)
-    λ̄r_ = @f(λ̄r,i)
-    x̄_0 = @f(σ̄,i)/@f(d̄,i)
-    return @f(C,λ̄a_,λ̄r_)*(x̄_0^λ̄a_*(@f(āS_1,i,λ̄a_)+@f(B̄,i,λ̄a_))-x̄_0^λ̄r_*(@f(āS_1,i,λ̄r_)+@f(B̄,i,λ̄r_)))
-end
-
-function ∂ā_1╱∂ρ_S(model::SAFTgammaMieModel, V, T, z, i)
-    λ̄a_ = @f(λ̄a,i)
-    λ̄r_ = @f(λ̄r,i)
-    x̄_0 = @f(σ̄,i)/@f(d̄,i)
-    return @f(C,λ̄a_,λ̄r_)*(x̄_0^λ̄a_*(@f(∂āS_1╱∂ρ_S,i,λ̄a_)+@f(∂B╱∂ρ_S,i,λ̄a_))
-                          - x̄_0^λ̄r_*(@f(∂āS_1╱∂ρ_S,i,λ̄r_)+@f(∂B╱∂ρ_S,i,λ̄r_)))
-end
-
-function āS_1(model::SAFTgammaMieModel, V, T, z, i, λ̄)
-    ϵ̄_ = @f(ϵ̄,i)
-    σ̄_ = @f(σ̄,i)
-    d̄_ = @f(d̄,i)
-    ζ̄eff_ = @f(ζeff, λ̄)
-    return -2π*@f(ρ_S) * ϵ̄_*d̄_^3/(λ̄-3) * (1-ζ̄eff_/2)/(1-ζ̄eff_)^3
-end
-
-function ∂āS_1╱∂ρ_S(model::SAFTgammaMieModel, V, T, z, i, λ̄)
-    ϵ̄_ = @f(ϵ̄,i)
-    σ̄_ = @f(σ̄,i)
-    d̄_ = @f(d̄,i)
-    ζ̄eff_ = @f(ζeff, λ̄)
-    A = SAFTγMieconsts.A
-    ζ_X_ = @f(ζ_X)
-    ∂ζ̄eff╱∂ρ_S = A * SA[1; 1/λ̄; 1/λ̄^2; 1/λ̄^3] ⋅ SA[1; 2ζ_X_; 3ζ_X_^2; 4ζ_X_^3]
-    return @f(āS_1,i,λ̄) - 2π*(ϵ̄_*d̄_^3)/(λ̄-3) *@f(ρ_S)* ((3*(1-ζ̄eff_/2)*(1-ζ̄eff_)^2-1/2*(1-ζ̄eff_)^3)/(1-ζ̄eff_)^6 * ∂ζ̄eff╱∂ρ_S*ζ_X_)
-end
-
-
-function ∂ā_2╱∂ρ_S(model::SAFTgammaMieModel, V, T, z, i)
-    ϵ̄_ = @f(ϵ̄,i)
-    σ̄_ = @f(σ̄,i)
-    d̄_ = @f(d̄,i)
-    x̄_0 = σ̄_/d̄_
-    ζ_X_ = @f(ζ_X)
-    ρ_S_ = @f(ρ_S)
-    ∂KHS╱∂ρ_S = -(4*(1-ζ_X_)^3*(1+4ζ_X_+4ζ_X_^2-4ζ_X_^3+ζ_X_^4)+(1-ζ_X_)^4*(4+8ζ_X_-12ζ_X_^2+4ζ_X_^3))/(1+4ζ_X_+4ζ_X_^2-4ζ_X_^3+ζ_X_^4)^2*ζ_X_
-    λ̄a_ = @f(λ̄a,i)
-    λ̄r_ = @f(λ̄r,i)
-    return 1/2*ϵ̄_*@f(C,λ̄a_,λ̄r_)^2*(∂KHS╱∂ρ_S*(x̄_0^(2λ̄a_)*(@f(āS_1,i,2λ̄a_)+@f(B̄,i,2λ̄a_))
-        -2x̄_0^(λ̄a_+λ̄r_)*(@f(āS_1,i,λ̄a_+λ̄r_)+@f(B̄,i,λ̄a_+λ̄r_))
-        +x̄_0^(2λ̄r_)*(@f(āS_1,i,2λ̄r_)+@f(B̄,i,2λ̄r_)))
-        +@f(KHS)*(x̄_0^(2λ̄a_)*(@f(∂āS_1╱∂ρ_S,i,2λ̄a_)+@f(∂B╱∂ρ_S,i,2λ̄a_))
-        -2x̄_0^(λ̄a_+λ̄r_)*(@f(∂āS_1╱∂ρ_S,i,λ̄a_+λ̄r_)+@f(∂B╱∂ρ_S,i,λ̄a_+λ̄r_))
-        +x̄_0^(2λ̄r_)*(@f(∂āS_1╱∂ρ_S,i,2λ̄r_)+@f(∂B╱∂ρ_S,i,2λ̄r_))))
-end
-
-function X(model::SAFTgammaMieModel, V, T, z)
-    _1 = one(V+T+first(z))
-    _0 = zero(_1)
-    x = z/∑(z)
-    ρ = ∑(z)*N_A/V
-    v = model.groups.n_flattenedgroups
-    n = model.sites.n_sites
-    itermax = 1000
-    damping_factor = 0.5
-    error = 1.
-    error_old = 1.
-    ndamping = 2
-    tol = model.absolutetolerance
-    iter = 1
-    X_ = [[[_1 for a ∈ @sites(k)] for k ∈ @groups] for i ∈ @comps]
-    X_old = deepcopy(X_)
-    while error > tol
-        if iter > itermax
-            throw("X has failed to converge after $itermax iterations")
+    zz = [[0.0 for k in 1:length(v[i])] for i in 1:length(v)]
+    zzparam = SingleParam("z fraction",components,zz,[false for i in 1:length(components)],String[],String[])
+    for i in 1:length(zz)
+        zzi = zz[i]
+        for k in 1:length(zzi)
+            zzi[k] = ẑ(i, k)
         end
-        @inbounds for i ∈ @comps, k ∈ @groups(i), a ∈ @sites(k)
-            #rhs = 1/(1+ρ*∑(x[j] * ∑(v[j][l] * ∑(n[l][b] * X_old[j][l][b] * @f(Δ,i,j,k,l,a,b) for b ∈ @sites(l),init=_0) for l ∈ @groups(j),init=_0) for j ∈ @comps,init=_0))
-            res = _0
-            for j ∈ @comps
-                res_j = _0
-                for l ∈ @groups(j)
-                    res_l = _0
-                    for b ∈ @sites(l)
-                        res_l += n[l][b] * X_old[j][l][b] * @f(Δ,i,j,k,l,a,b)
-                    end
-                    res_j += v[j][l]*res_l
-                end
-                res += x[j]*res_j
-            end
-            
-            rhs = (1/(1+ρ*res))
-            @inbounds begin
-            X_[i][k][a] = (1-damping_factor)*X_old[i][k][a] + damping_factor*rhs
-            end
-        end
-        #error = sqrt(∑(∑(∑((X_[i][k][a]-X_old[i][k][a])^2 for a ∈ @sites(k)) for k ∈ @groups(i)) for i ∈ @comps))
-        _error = _0
-        for i = 1:length(X_)
-            for j in 1:length(X_[i])
-                for k in 1:length(X_[i][j])
-                    new = X_[i][j][k]
-                    old = X_old[i][j][k]
-                    _error += abs2(old-new) 
-                   X_old[i][j][k] = new
-                end
-            end
-        end
-        error_old = error
-        error = sqrt(_error)
-        if error < 1e-4
-            damping_factor = 1.0
-        end
-        iter += 1
     end
     
-    return X_
+    function σ̄(i)
+        return cbrt(∑(∑(ẑ(i,k)*ẑ(i,l)*σ[k,l]^3 for l ∈ gc) for k ∈ gc))
+    end
+    
+    function σ̄(i, j)
+        return (σ̄(i) + σ̄(j))/2
+    end
+
+    function ϵ̄(i)
+        return ∑(∑(ẑ(i,k)*ẑ(i,l)*ϵ[k,l] for l ∈ gc) for k ∈ gc)
+    end
+    
+    function ϵ̄(i, j)
+        if i == j
+            return ϵ̄(i)
+        else
+            return sqrt(σ̄(i)*σ̄(j))/σ̄(i,j) * sqrt(ϵ̄(i)*ϵ̄(j))
+        end
+    end
+
+    comp_ϵ = [ϵ̄(i, j) for (i,j) in Iterators.product(comps,comps)]
+    epsilon = PairParam("epsilon",components,comp_ϵ)
+    
+    comp_σ = [σ̄(i, j) for (i,j) in Iterators.product(comps,comps)]
+    sigma = PairParam("sigma",components,comp_σ)
+
+    gc_lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
+    gc_lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
+    #@show gc_lambda_a
+    gc_λa = gc_lambda_a.values
+    gc_λr = gc_lambda_r.values
+    
+    function λi(ll,i)
+        return ∑(∑(ẑ(i,k)*ẑ(i,l)*ll[k,l] for l ∈ gc) for k ∈ gc)
+    end
+    comp_lambda_a = [λi(gc_λa,i) for i in comps]
+    comp_lambda_r = [λi(gc_λr,i) for i in comps]
+    lambda_a = lambda_LorentzBerthelot(SingleParam("lambda_a",components,comp_lambda_a))
+    lambda_r = lambda_LorentzBerthelot(SingleParam("lambda_r",components,comp_lambda_r))
+
+    #assoc
+    gc_epsilon_assoc = params["epsilon_assoc"]
+    gc_bondvol = params["bondvol"]
+    comp_sites,idx_dict = gc_to_comp_sites(sites,groups)
+    assoc_idx = gc_to_comp_assoc_idx(gc_bondvol,sites,idx_dict)
+    assoc_idxs,outer,inner,outer_size,inner_size = assoc_idx.values,assoc_idx.outer_indices,assoc_idx.inner_indices,assoc_idx.outer_size,assoc_idx.inner_size
+    
+    _comp_bondvol = [gc_bondvol.values.values[i] for i in assoc_idxs]
+    _comp_epsilon_assoc = [gc_epsilon_assoc.values.values[i] for i in assoc_idxs]
+    compval_bondvol = CompressedAssocMatrix(_comp_bondvol,outer,inner,outer_size,inner_size)
+    compval_epsilon_assoc = CompressedAssocMatrix(_comp_epsilon_assoc,outer,inner,outer_size,inner_size)
+    comp_bondvol = AssocParam{Float64}("epsilon assoc",components,compval_bondvol,comp_sites.sites,String[],String[])
+    comp_epsilon_assoc = AssocParam{Float64}("bondvol",components,compval_epsilon_assoc,comp_sites.sites,String[],String[])
+
+    #mixing of Mw
+    comp_mw = zeros(Float64,length(components))
+    gc_mw = params["Mw"].values
+    for i in 1:length(components)
+        vi = v[i]
+        gi = groups.i_groups[i]
+        mwi = 0.0
+        for idx in 1:length(gi)
+            j = gi[idx]
+            mwi += gc_mw[j]*vi[j]
+        end
+        comp_mw[i] =mwi
+    end  
+    _mw = SingleParam("molecular_weight",components,comp_mw)
+    gcparams = SAFTgammaMieParam(gc_segment,gc_mixedsegment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
+    vrparams = SAFTVRMieParam(segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol,_mw)
+    vr = SAFTVRMie(vrparams, comp_sites, BasicIdeal(); ideal_userlocations=ideal_userlocations, verbose=verbose)
+    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    mie_z = γMieZ(components,zzparam)
+    γmierefs = ["10.1063/1.4851455", "10.1021/je500248h"]
+    gmie = SAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,mie_z,absolutetolerance,γmierefs)
+    return gmie
+end
+@registermodel SAFTgammaMie
+
+const SAFTγMie = SAFTgammaMie
+export SAFTgammaMie,SAFTγMie
+
+function a_res(model::SAFTgammaMieModel, V, T, z)
+    _data = @f(data)
+    vrmodel = model.vrmodel
+    _a_hs = a_hs(vrmodel,V,T,z,_data)
+    _a_dispchain = a_dispchain(vrmodel,V,T,z,_data)
+    return _a_hs+_a_dispchain 
 end
 
-function Δ(model::SAFTgammaMieModel, V, T, z, i, j, k, l, a, b)
-    σ = model.params.sigma.values
-    σ3_x = ∑(∑(@f(x_S,k)*@f(x_S,l)*σ[k,l]^3 for k ∈ @groups) for l ∈ @groups)
-    ϵ̄_ = @f(ϵ̄,i,j)
-    ρR = @f(ρ_S)*σ3_x
-    TR = T/ϵ̄_
-    c  = SAFTγMieconsts.c
-    I = ∑(∑(c[p+1,q+1]*ρR^p*TR^q for q ∈ 0:(10-p)) for p ∈ 0:10)
 
-    ϵHB = model.params.epsilon_assoc.values
-    K = model.params.bondvol.values
-    F = (exp(ϵHB[k,l][a,b]/T)-1)
-    return F*K[k,l][a,b]*I
+
+function data(model::SAFTgammaMieModel, V, T, z)
+    _d_gc = @f(d_gc)
+    _d = @f(d,_d_gc)
+    ζi = @f(ζ0123,_d_gc)
+    _ζ_X,σ3x = @f(ζ_X_σ3,_d_gc)
+    _ρ_S = @f(ρ_S)
+    _ζst = _ζst = σ3x*_ρ_S*π/6
+    return (_d_gc,(_d,_ρ_S,ζi,_ζ_X,_ζst,σ3x))
+end
+
+function d_gc(model::SAFTgammaMieModel, V, T, z)
+    _ϵ = model.params.epsilon.diagvalues
+    _σ = model.params.sigma.diagvalues
+    _λa = model.params.lambda_a.diagvalues
+    _λr = model.params.lambda_r.diagvalues
+    u = SAFTγMieconsts.u
+    w = SAFTγMieconsts.w
+    _0 = zero(T+first(z))
+    n = length(_ϵ)
+    _d_gc = zeros(typeof(_0),n)
+    for k ∈ 1:n
+        ϵ = _ϵ[k]
+        σ = _σ[k]
+        λa = _λa[k]
+        λr = _λr[k]
+        θ = Cλ(model.vrmodel,V,T,z,λa,λr)*ϵ/T
+        di = _0
+        λrinv = 1/λr
+        λaλr = λa/λr
+        for j ∈ 1:5
+            di += w[j]*(θ/(θ+u[j]))^λrinv*(exp(θ*(1/(θ/(θ+u[j]))^λaλr-1))/(u[j]+θ)/λr)
+        end
+        _d_gc[k] = σ*(1-di)
+    end
+    return _d_gc
+end
+
+function d(model::SAFTgammaMieModel,V,T,z,_d_gc = @f(d_gc))
+    _d = zeros(eltype(_d_gc),length(z))
+    _0 = zero(eltype(_d))
+    _zz = model.mie_zfractions.z.values
+    for i ∈ @comps
+        _z = _zz[i]
+        m = length(_z)
+        di = _0
+        for k ∈ 1:m
+            zk = _z[k]
+            iszero(zk) && continue
+            dk = _d_gc[k]
+            di += zk*zk*dk^3
+            for l in 1:k - 1
+                di += 0.25*zk*_z[l]*(dk + _d_gc[l])^3
+            end
+        end
+        _d[i] = cbrt(di)
+    end
+    #d̂[i] = cbrt(∑(∑(@f(ẑ,i,k)*@f(ẑ,i,l)*@f(d,k,l)^3 for l ∈ @groups) for k ∈ @groups))
+    return _d
+end
+
+function ζ0123(model::SAFTgammaMieModel, V, T, z,_d_gc=@f(d_gc))
+    vrmodel = model.vrmodel
+    m = vrmodel.params.segment.values
+    m̄ = dot(z, m)
+    m̄inv = 1/m̄
+    _0 = zero(V+T+first(z))
+    ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
+    _ϵ = model.params.epsilon.diagvalues
+    σ = model.params.sigma.diagvalues
+    _λr = model.params.lambda_r.diagvalues
+    _λa = model.params.lambda_a.diagvalues
+    u = SAFTVRMieconsts.u
+    _mi = model.params.mixedsegment.values
+    w = SAFTVRMieconsts.w
+    for i ∈ @groups
+        λa = _λa[i]
+        λr = _λr[i]
+        ϵ = _ϵ[i]  
+        di =_d_gc[i]
+        mi = _mi[i]
+        xS = dot(mi,z)*m̄inv
+        ζ0 += xS
+        ζ1 += xS*di
+        ζ2 += xS*di*di
+        ζ3 += xS*di*di*di
+    end
+    c = π/6*N_A*m̄/V
+    ζ0,ζ1,ζ2,ζ3 = c*ζ0,c*ζ1,c*ζ2,c*ζ3
+    return ζ0,ζ1,ζ2,ζ3 
+end
+
+#return π/6*@f(ρ_S)*∑(@f(x_S,k)*@f(d,k)^m for k ∈ @groups)
+
+function ρ_S(model::SAFTgammaMieModel, V, T, z)
+    return ρ_S(model.vrmodel,V,T,z)
+end
+
+function ζ_X_σ3(model::SAFTgammaMieModel, V, T, z,_d = @f(d_gc))
+    vrmodel = model.vrmodel
+    m = vrmodel.params.segment.values
+    m̄ = dot(z, m)
+    m̄inv = 1/m̄
+    σ = model.params.sigma.values
+    _mi = model.params.mixedsegment.values
+    ρS = N_A/V*m̄
+    _ζ_X = zero(first(_d))
+    kρS = ρS* π/6
+    σ3_x = _ζ_X
+    r1 =_ζ_X
+    for i ∈ @groups
+        mi = _mi[i]
+        x_Si = dot(mi,z)*m̄inv
+        σ3_x += x_Si*x_Si*(σ[i,i]^3)
+        _ζ_X += x_Si*x_Si*(_d[i])^3   
+        for j ∈ 1:i-1
+            mj = _mi[j]
+            x_Sj = dot(mj,z)*m̄inv
+            σ3_x += 2*x_Si*x_Sj*(σ[i,j]^3)
+            dij = 0.5*(_d[i] + _d[j])
+            r1 = 2*x_Si*x_Sj*dij^3          
+            _ζ_X += r1
+        end
+    end
+
+    #return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i)+@f(d,j))^3/8 for i ∈ comps for j ∈ comps)
+    return kρS*_ζ_X,σ3_x
+end
+
+function  a_hs(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
+    _,vrdata = _data
+    return a_hs(model.vrmodel,V,T,z,vrdata)
+end
+
+function a_chain(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
+    _,vrdata = _data
+    return a_chain(model.vrmodel,V,T,z,vrdata)
+end
+
+function a_assoc(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
+    _,vrdata = _data
+    return a_assoc(model.vrmodel,V,T,z,vrdata)
+end
+
+function a_disp(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
+    groups = @groups
+    gcmodel = model
+    model = gcmodel.vrmodel
+    _d,vrdata = _data
+    _,ρS,ζi,_ζ_X,_ζst,_ = vrdata
+    comps = @comps
+    l = length(comps)
+    ∑z = ∑(z)
+    m = model.params.segment.values
+    _mi = gcmodel.params.mixedsegment.values
+    _ϵ = gcmodel.params.epsilon.values
+    _λr = gcmodel.params.lambda_r.values
+    _λa = gcmodel.params.lambda_a.values
+    _σ = gcmodel.params.sigma.values
+    m̄ = dot(z, m)
+    m̄inv = 1/m̄
+    a₁ = zero(V+T+first(z))
+    a₂ = a₁
+    a₃ = a₁
+    _ζst5 = _ζst^5
+    _ζst8 = _ζst^8
+    _KHS = @f(KHS,_ζ_X,ρS)
+    for i ∈ groups
+        j = i
+        mi = _mi[i]
+        x_Si = dot(mi,z)*m̄inv
+        ϵ = _ϵ[i,j]
+        λa = _λa[i,j]
+        λr = _λr[i,j] 
+        σ = _σ[i,j]
+        _C = @f(Cλ,λa,λr)
+        dij = _d[i]
+        x_0ij = σ/dij
+        dij3 = dij^3
+        x_0ij = σ/dij
+        #calculations for a1 - diagonal
+        aS_1_a = @f(aS_1,λa,_ζ_X)
+        aS_1_r = @f(aS_1,λr,_ζ_X)
+        B_a = @f(B,λa,x_0ij,_ζ_X)
+        B_r = @f(B,λr,x_0ij,_ζ_X)
+        a1_ij = (2*π*ϵ*dij3)*_C*ρS*
+        (x_0ij^λa*(aS_1_a+B_a) - x_0ij^λr*(aS_1_r+B_r))
+
+        #calculations for a2 - diagonal
+        aS_1_2a = @f(aS_1,2*λa,_ζ_X)
+        aS_1_2r = @f(aS_1,2*λr,_ζ_X)
+        aS_1_ar = @f(aS_1,λa+λr,_ζ_X)
+        B_2a = @f(B,2*λa,x_0ij,_ζ_X)
+        B_2r = @f(B,2*λr,x_0ij,_ζ_X)
+        B_ar = @f(B,λr+λa,x_0ij,_ζ_X)
+        α = _C*(1/(λa-3)-1/(λr-3))
+        f1,f2,f3,f4,f5,f6 = @f(f123456,α)
+        _χ = f1*_ζst+f2*_ζst5+f3*_ζst8
+        a2_ij = π*_KHS*(1+_χ)*ρS*ϵ^2*dij3*_C^2 *
+        (x_0ij^(2*λa)*(aS_1_2a+B_2a)
+        - 2*x_0ij^(λa+λr)*(aS_1_ar+B_ar)
+        + x_0ij^(2*λr)*(aS_1_2r+B_2r))
+        
+        #calculations for a3 - diagonal
+        a3_ij = -ϵ^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
+        #adding - diagonal
+        a₁ += a1_ij*x_Si*x_Si
+        a₂ += a2_ij*x_Si*x_Si
+        a₃ += a3_ij*x_Si*x_Si
+        for j ∈ 1:i-1
+            mj = _mi[j]
+            x_Sj = dot(mj,z)*m̄inv
+            ϵ = _ϵ[i,j]
+            λa = _λa[i,j]
+            λr = _λr[i,j] 
+            σ = _σ[i,j]
+            _C = @f(Cλ,λa,λr)
+            dij = 0.5*(_d[i]+_d[j])
+            x_0ij = σ/dij
+            dij3 = dij^3
+            x_0ij = σ/dij
+            #calculations for a1
+            a1_ij = (2*π*ϵ*dij3)*_C*ρS*
+            (x_0ij^λa*(@f(aS_1,λa,_ζ_X)+@f(B,λa,x_0ij,_ζ_X)) - x_0ij^λr*(@f(aS_1,λr,_ζ_X)+@f(B,λr,x_0ij,_ζ_X)))
+
+            #calculations for a2
+            α = _C*(1/(λa-3)-1/(λr-3))
+            f1,f2,f3,f4,f5,f6 = @f(f123456,α)
+            _χ = f1*_ζst+f2*_ζst5+f3*_ζst8
+            a2_ij = π*_KHS*(1+_χ)*ρS*ϵ^2*dij3*_C^2 *
+            (x_0ij^(2*λa)*(@f(aS_1,2*λa,_ζ_X)+@f(B,2*λa,x_0ij,_ζ_X))
+            - 2*x_0ij^(λa+λr)*(@f(aS_1,λa+λr,_ζ_X)+@f(B,λa+λr,x_0ij,_ζ_X))
+            + x_0ij^(2*λr)*(@f(aS_1,2λr,_ζ_X)+@f(B,2*λr,x_0ij,_ζ_X)))
+            
+            #calculations for a3
+            a3_ij = -ϵ^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
+            #adding
+            a₁ += 2*a1_ij*x_Si*x_Sj
+            a₂ += 2*a2_ij*x_Si*x_Sj
+            a₃ += 2*a3_ij*x_Si*x_Sj            
+        end
+    end
+    a₁ = a₁*m̄/T/∑z
+    a₂ = a₂*m̄/(T*T)/∑z
+    a₃ = a₃*m̄/(T*T*T)/∑z
+    #@show (a₁,a₂,a₃)
+    adisp =  a₁ + a₂ + a₃ 
+    return adisp
 end
 
 const SAFTγMieconsts =(
@@ -539,3 +461,5 @@ const SAFTγMieconsts =(
                 4.65297446837297	    -0.00192518067137033 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0
                -0.867296219639940	     0	                 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0],
 )
+
+
