@@ -56,6 +56,19 @@ struct CompressedAssocMatrix{T}
     outer_size::Tuple{Int,Int} #size of component matrix
     inner_size::Tuple{Int,Int} #size of sites matrices
 end
+
+function Base.show(io::IO,mime::MIME"text/plain",m::CompressedAssocMatrix{T}) where T
+    n = length(m.values)
+    println(io,typeof(m)," with ",n," entr",(n == 1 ? "y:" : "ies:"))
+    for (idx,(i,j),(a,b)) in indices(m)
+        print(io," ",(i,a)," >=< ",(j,b),": ",m.values[idx])
+    end
+end
+
+function Base.show(io::IO,m::CompressedAssocMatrix{T}) where T
+    print(io,typeof(m))
+    print(io,m.values)
+end
 function CompressedAssocMatrix{T}() where T
     return CompressedAssocMatrix(T[],Tuple{Int,Int}[],Tuple{Int,Int}[],(0,0),(0,0))
 end

@@ -225,8 +225,7 @@ function pkgparam(param::String,
     param ∉ options.asymmetricparams && mirrormatrix!(value) 
     newvalue_ismissingvalues = defaultmissing.(value)
     newvalue = first.(newvalue_ismissingvalues)
-    ismissingvalues = last.(newvalue_ismissingvalues)
-    return AssocParam(param,components, newvalue, ismissingvalues , allcomponentsites, collect(paramsourcecsvs[param]), collect(paramsources[param]))
+    return AssocParam(param,components, newvalue , allcomponentsites, collect(paramsourcecsvs[param]), collect(paramsources[param]))
 end
 
 
