@@ -23,7 +23,7 @@ export eCPA
 function eCPA(solvents,salts; 
     puremodel=sCPA,
     cubicmodel=RK, 
-    alpha=CPAAlpha, 
+    alpha=sCPAAlpha, 
     mixing=HVRule,
     activity=eCPANRTL,
     translation=NoTranslation, 

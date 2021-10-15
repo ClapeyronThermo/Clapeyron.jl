@@ -55,6 +55,7 @@ end
 
 function RSP(model::MM1Model, V, T, z)
     _1 = one(V+T+first(z))
+    _0 = zero(V+T+first(z))
 
     μ0 = model.params.mu.values
     γ = model.params.gamma.values
@@ -65,17 +66,21 @@ function RSP(model::MM1Model, V, T, z)
     sites = model.assocmodel.sites.i_sites
 
     x = z ./ sum(z)
-    ρ = N_A*sum(z)/(V)
+    ρ = Clapeyron.N_A*sum(z)/(V)
 
-    A = ρ/(3*ϵ_0)*sum(x[i]*α[i] for i ∈ @comps)
+    A = ρ/(3*Clapeyron.ϵ_0)*sum(x[i]*α[i] for i ∈ @Clapeyron.comps)
     ϵ_inf = (2*A+1)/(1-A)
 
-    X_ = X(model.assocmodel,V,T,z)
+    X_ = Clapeyron.X(model.assocmodel,V,T,z)
 
-    P = [[_1 for i ∈ model.isolvents] for j ∈ model.isolvents]
+    P = [[_0 for i ∈ model.isolvents] for j ∈ model.isolvents]
     for i ∈ model.isolvents
-        for j ∈ model.isolvents
-            P[i][j] = ρ/N_A*x[j]*sum(sum(Δ(model.assocmodel,V,T,z,i,j,a,b)*X_[i][a]*X_[j][b] for a ∈ sites[i]) for b ∈ sites[j])
+        if !isempty(sites[i])
+            for j ∈ model.isolvents
+                if !isempty(sites[j])
+                    P[i][j] = ρ/Clapeyron.N_A*x[j]*sum(sum(Clapeyron.Δ(model.assocmodel,V,T,z,i,j,a,b)*X_[i][a]*X_[j][b] for a ∈ sites[i]) for b ∈ sites[j])
+                end
+            end
         end
     end
 
