@@ -43,6 +43,7 @@ function newton(f::F,x0::T;
     atol=rtol*oneunit(T),
     max_iters = 100) where {F,T} 
     xo = T(Inf)
+    x = x0
     for _ in 1:max_iters
         fx, gx = f(x)
         Δx = fx/gx
