@@ -32,16 +32,15 @@ function a_res(model::ogSAFTModel, V, T, z)
 end
 
 function a_seg(model::ogSAFTModel, V, T, z)
-    x = z/∑(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z,m)/sum(z)
     return m̄*(@f(a_hs)+@f(a_disp))
 end
 
 function a_chain(model::ogSAFTModel, V, T, z)
-    x = z/∑(z)
+    #x = z/∑(z)
     m = model.params.segment.values
-    return ∑(x[i]*(1-m[i])*log(@f(g_hsij, i, i)) for i ∈ @comps)
+    return sum(z[i]*(1-m[i])*log(@f(g_hsij, i, i)) for i ∈ @comps)/sum(z)
 end
 
 function d(model::ogSAFTModel, V, T, z, i)
@@ -69,10 +68,10 @@ end
 # end
 
 function ζn(model::ogSAFTModel, V, T, z, n)
-    ∑z = ∑(z)
-    x = z/∑z
+    #∑z = ∑(z)
+    #x = z/∑z
     m = model.params.segment.values
-    return N_A*∑z*π/6/V * ∑(x[i]*m[i]*@f(d, i)^n for i ∈ @comps)
+    return N_A*π/6/V * ∑(z[i]*m[i]*@f(d, i)^n for i ∈ @comps)
 end
 
 # function η(model::ogSAFTModel, V, T, z)
@@ -108,9 +107,9 @@ function a_disp(model::ogSAFTModel, V, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
-    x = z/∑(z)
+    #x = z/∑(z)
     comps = @comps
-    ϵx = ∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/∑(x[i]*x[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)
+    ϵx = ∑(z[i]*z[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/∑(z[i]*z[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)
     ζ3 = @f(ζn,3)
     ρR = (6/sqrt(2)/π)*ζ3
     TR = T/ϵx
@@ -153,44 +152,11 @@ end
 #     return mx*(a_res)
 # end
 
-function a_assoc(model::ogSAFTModel, V, T, z)
-    x = z/∑(z)
-    X_ = @f(X)
-    n = model.sites.n_sites
-    return ∑(x[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)
-end
-
-function X(model::ogSAFTModel, V, T, z)
-    _1 = one(V+T+first(z))
-    ∑z = ∑(z)
-    x = z/∑z
-    ρ = N_A*∑z/V
-    n = model.sites.n_sites
-    itermax = 100
-    dampingfactor = 0.5
-    error = 1.
-    tol = model.absolutetolerance
-    iter = 1
-    X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
-    X_old = deepcopy(X_)
-    while error > tol
-        iter > itermax && error("X has failed to converge after $itermax iterations")
-        for i ∈ @comps, a ∈ @sites(i)
-            rhs = 1/(1+∑(ρ*x[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b)*n[j][b] for b ∈ @sites(j)) for j ∈ @comps))
-            X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
-        end
-        error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
-        for i = 1:length(X_)
-            X_old[i] .= X_[i]
-        end
-        iter += 1
-    end
-    return X_
-end
-
 function Δ(model::ogSAFTModel, V, T, z, i, j, a, b)
-    ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
+    kijab =κ[i,j][a,b]
+    ϵ_assoc = model.params.epsilon_assoc.values
     g = @f(g_hsij,i,j)
-    return (@f(d,i)+@f(d,j))^3/2^3*g*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
+    return (@f(d,i)+@f(d,j))^3/2^3*g*(exp(ϵ_assoc[i,j][a,b]/T)-1)*kijab
 end
+

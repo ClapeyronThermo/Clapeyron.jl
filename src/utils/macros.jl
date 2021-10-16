@@ -39,7 +39,7 @@ This macro is an alias to
 `iflattenedgroups` is an iterator that goes through all groups in flattenedgroups.
 """
 macro groups()
-    return :($(esc(:(model.groups.i_flattenedgroups))))
+    return :($(esc(:(model.groups.i_flattenedgroups::UnitRange{Int64}))))
 end
 
 """
@@ -52,7 +52,7 @@ This macro is an alias to
 `i_groups[component]` is an iterator that goes through all groups in relevent to a given component.
 """
 macro groups(component)
-    return :($(esc(:(model.groups.i_groups[$(component)]))))
+    return :($(esc(:(model.groups.i_groups[$(component)]::Vector{Int}))))
 end
 
 """
@@ -66,7 +66,7 @@ This macro is an alias to
 each group in a GC model, and to each main component in a non-GC model.
 """
 macro sites(component)
-    return :($(esc(:(model.sites.i_sites[$(component)]))))
+    return :($(esc(:(model.sites.i_sites[$(component)]::Vector{Int}))))
 end
 
 """
@@ -330,10 +330,6 @@ end
 
 function init_model(::Nothing,components,userlocations,verbose)
     return nothing
-end
-
-function init_model(idealmodel::BasicIdeal,components,userlocations,verbose)
-    return BasicIdeal()
 end
 
 function init_model(idealmodel::Type{<:IdealModel},components,userlocations,verbose)

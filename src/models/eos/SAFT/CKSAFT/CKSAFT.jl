@@ -35,9 +35,10 @@ function a_res(model::CKSAFTModel, V, T, z)
 end
 
 function a_seg(model::CKSAFTModel, V, T, z)
-    x = z/∑(z)
+    Σz = ∑(z)
+    comps = @comps 
     m = model.params.segment.values
-    m̄ = mixing_rule_quad((x,y)->0.5*(x+y), x,m)
+    m̄ = sum(0.5*(m[i]+m[j])*z[i]*z[j] for i ∈ comps for j ∈ comps)/(Σz*Σz)
     return m̄*(@f(a_hs) + @f(a_disp))
 end
 
@@ -50,7 +51,6 @@ function a_hs(model::CKSAFTModel, V, T, z)
 end
 
 function a_disp(model::CKSAFTModel, V, T, z)
-    x = z/∑(z)
     ϵ̄ = @f(ū)
     η = @f(ζ,3)
     τ = 0.74048
@@ -101,15 +101,13 @@ end
 
 function ζ(model::CKSAFTModel, V, T, z, n)
     ∑z = ∑(z)
-    x = z.*(1/∑z)
     m = model.params.segment.values
-    return N_A*∑z*π/6/V * ∑(x[i]*m[i]*@f(d,i)^n for i ∈ @comps)
+    return N_A*π/6/V * ∑(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
 end
 
 function a_chain(model::CKSAFTModel, V, T, z)
-    x = z/∑(z)
     m = model.params.segment.values
-    return ∑(x[i]*(1-m[i])*log(@f(g_hsij,i,i)) for i ∈ @comps)
+    return ∑(z[i]*(1-m[i])*log(@f(g_hsij,i,i)) for i ∈ @comps)/∑(z)
 end
 
 function g_hsij(model::CKSAFTModel, V, T, z, i, j)
@@ -118,45 +116,6 @@ function g_hsij(model::CKSAFTModel, V, T, z, i, j)
     ζ2 = @f(ζ,2)
     ζ3 = @f(ζ,3)
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
-end
-
-function a_assoc(model::CKSAFTModel, V, T, z)
-    x = z/∑(z)
-    X_ = @f(X_assoc)
-    n = model.sites.n_sites
-    #return ∑(x[i]*∑(log(X_iA[i,a])-X_iA[i,a]/2 + model.params.n_sites[i][a]/2 for a ∈ keys(model.params.n_sites[i])) for i ∈ model.components)
-    return ∑(x[i]*
-                ∑(
-                  n[i][a]*(log(X_[i][a]) - X_[i][a]/2 + 0.5)
-                for a ∈ @sites(i))
-            for i ∈ @comps)
-end
-
-function X_assoc(model::CKSAFTModel, V, T, z)
-    _1 = one(V+T+first(z))
-    Σz = ∑(z)
-    x = z/ Σz
-    ρ = N_A* Σz/V
-    itermax = 100
-    dampingfactor = 0.5
-    error = 1.
-    tol = model.absolutetolerance
-    iter = 20
-    X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
-    X_old = deepcopy(X_)
-    while error > tol
-        iter > itermax && error("X has failed to converge after $itermax iterations")
-        for i ∈ @comps, a ∈ @sites(i)
-            rhs = 1/(1+∑(ρ*x[j]*∑(X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
-            X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
-        end
-        error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
-        for i = 1:length(X_)
-            X_old[i] .= X_[i]
-        end
-        iter += 1
-    end
-    return X_
 end
 
 function Δ(model::CKSAFTModel, V, T, z, i, j, a, b)

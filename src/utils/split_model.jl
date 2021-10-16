@@ -73,19 +73,38 @@ function split_model(param::AbstractVector)
     return [[xi] for xi in param]
 end 
 
+function _split_model(assoc::CompressedAssocMatrix{T},I) where T
+    len = length(assoc.values)
+    iszero(len) && return CompressedAssocMatrix{T}()
+    old_idx = assoc.outer_indices 
+    idx_bool = findall(x -> (first(x) ∈ I)&(last(x) ∈ I),old_idx)
+    iszero(length(idx_bool)) && return CompressedAssocMatrix{T}()
+    values = assoc.values[idx_bool]
+    outer_indices = assoc.outer_indices[idx_bool]
+    inner_indices = assoc.inner_indices[idx_bool]
+    out_val = length(I)
+    outer_size = (out_val,out_val)
+    inner_size = assoc.inner_size
+    for i ∈ 1:len
+        i1,j1 = outer_indices[i]
+        i2,j2 = findfirst(==(i1),I),findfirst(==(j1),I)
+        outer_indices[i] = (i2,j2)
+    end
+    return CompressedAssocMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
+end
+
 #this conversion is lossy, as interaction between two or more components are lost.
 #also, this conversion stores the site values for other components. (those are not used)
 function split_model(param::AssocParam{T},
     splitter = split_model(1:length(param.components))) where T
     function generator(I)     
-        _value  = param.values[I,I]
-        _ismissingvalues = param.ismissingvalues[I,I]
+        _value  = _split_model(param.values,I)
+     
         return AssocParam{T}(
                 param.name,
                 param.components[I],
                 _value,
-                _ismissingvalues,
-                param.allcomponentsites[I],
+                param.sites[I],
                 param.sourcecsvs,
                 param.sources
                 )

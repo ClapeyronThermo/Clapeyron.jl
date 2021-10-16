@@ -20,27 +20,27 @@ function sPCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], idea
     return model
 end
 
-function a_hc(model::sPCSAFTModel, V, T, z)
-    x = z/sum(z)
-    m = model.params.segment.values
-    m̄ = ∑(x .* m)
-    return m̄*@f(a_hs) - (m̄-1)*log(@f(g_hs))
+function a_hc(model::sPCSAFTModel, V, T, z , _data = @f(data))
+    _,_,_,_,η,m̄ = _data
+    g_hs = (1-η/2)/(1-η)^3
+    a_hs = (4η-3η^2)/(1-η)^2
+    return m̄*a_hs - (m̄-1)*log(g_hs)
 end
 
-function g_hs(model::sPCSAFTModel, V, T, z)
-    η = @f(ζ,3)
+function g_hs(model::sPCSAFTModel, V, T, z,_data = @f(data))
+    _,_,_,_,η,_ = _data
     return (1-η/2)/(1-η)^3
 end
 
 function a_hs(model::sPCSAFTModel, V, T, z)
-    η = @f(ζ,3)
+    _,_,_,_,η,_ = _data
     return (4η-3η^2)/(1-η)^2
 end
 
-function Δ(model::sPCSAFTModel, V, T, z, i, j, a, b)
+function Δ(model::sPCSAFTModel, V, T, z, i, j, a, b,_data = @f(data))
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
     κijab = model.params.bondvol.values[i,j][a,b]
     σij = model.params.sigma.values[i,j]
-    g_hs_ = @f(g_hs)
+    g_hs_ = @f(g_hs,_data)
     return g_hs_*σij^3*(exp(ϵ_associjab/T)-1)*κijab
 end
