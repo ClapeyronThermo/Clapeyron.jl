@@ -43,15 +43,16 @@ function a_seg(model::LJSAFTModel, V, T, z)
     C1 = LJSAFTconsts.C1
     C2 = LJSAFTconsts.C2
     C4 = LJSAFTconsts.C4
-    x = z/∑(z)
+  
+    Σz = ∑(z)
     m = model.params.segment.values
 
     T̃ = @f(Tm)
     b̄ = @f(bm)
 
     Tst = T/T̃
-    m̄ = ∑(m .* x)
-    ρ = ∑(z)/V
+    m̄ = dot(m,z)/Σz
+    ρ = Σz/V
     ρst = m̄*b̄*ρ
     η = ρst*π/6*(∑(D[i+3]*Tst^(i/2) for i ∈ -2:1)+D[end]*log(Tst))^3
 
@@ -67,93 +68,52 @@ function a_seg(model::LJSAFTModel, V, T, z)
 end
 
 function Tm(model::LJSAFTModel, V, T, z)
-    x = z/∑(z)
+    #x = z/∑(z)
     T̃ = model.params.T_tilde.values
     b = model.params.b.values
     m = model.params.segment.values
     comps = @comps
-    return ∑(m[i]*m[j]*x[i]*x[j]*b[i,j]*T̃[i,j] for i ∈ 1:length(z) for j ∈ comps)/∑(m[i]*m[j]*x[i]*x[j]*b[i,j] for i ∈ comps for j ∈ comps)
+    return ∑(m[i]*m[j]*z[i]*z[j]*b[i,j]*T̃[i,j] for i ∈ 1:length(z) for j ∈ comps)/∑(m[i]*m[j]*z[i]*z[j]*b[i,j] for i ∈ comps for j ∈ comps)
 end
 
 function bm(model::LJSAFTModel, V, T, z)
-    x = z/∑(z)
     comps = @comps
     b = model.params.b.values
     m = model.params.segment.values
-    return ∑(m[i]*m[j]*x[i]*x[j]*b[i,j] for i ∈ comps for j ∈ comps)/∑(m[i]*m[j]*x[i]*x[j] for i ∈ comps for j ∈ comps)
+    return ∑(m[i]*m[j]*z[i]*z[j]*b[i,j] for i ∈ comps for j ∈ comps)/∑(m[i]*m[j]*z[i]*z[j] for i ∈ comps for j ∈ comps)
 end
 
 function a_chain(model::LJSAFTModel, V, T, z)
-    x = z/∑(z)
     m = model.params.segment.values
-    return -∑(x[i]*(m[i]-1)*log(@f(g_LJ,i)) for i ∈ @comps)
+
+    return -sum(z[i]*(m[i]-1)*log(@f(g_LJ,i)) for i ∈ @comps)/∑(z)
 end
 
 function g_LJ(model::LJSAFTModel, V, T, z, i)
-    ∑z = ∑(z)
-    x = z/∑(z)
+
     m = model.params.segment.values
     b = model.params.b.diagvalues
     T̃ = model.params.T_tilde.diagvalues
-
     Tst = T/T̃[i]
-    ρ = ∑z/V
-    ρ̄ = b[i]*m[i]*x[i]*ρ
-    a = LJSAFTconsts.a
-
-    return (1+∑(a[i,j]*ρ̄^i*Tst^(1-j) for i ∈ 1:5 for j ∈ 1:5))
-end
-
-function a_assoc(model::LJSAFTModel, V, T, z)
-    x = z/∑(z)
-    n = model.sites.n_sites
-    X_ = @f(X)
-    return ∑(x[i]*∑(n[i][a]*(log(X_[i][a])+(1-X_[i][a])/2) for a ∈ @sites(i)) for i ∈ @comps)
-end
-
-function X(model::LJSAFTModel, V, T, z)
-    _1 = one(V+T+first(z))
-    ∑z = ∑(z)
-    x = z/∑z
-    ρ = ∑z/V
-    n = model.sites.n_sites
-    itermax = 500
-    dampingfactor = 0.5
-    error = 1.
-    tol = model.absolutetolerance
-    iter = 1
-    X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
-    X_old = deepcopy(X_)
-    while error > tol
-        iter > itermax && error("X has failed to converge after $itermax iterations")
-        for i ∈ @comps, a ∈ @sites(i)
-            rhs = 1/(1+∑(ρ*x[j]*∑(n[j][b]*X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
-            X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
-        end
-        error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
-        for i = 1:length(X_)
-            X_old[i] .= X_[i]
-        end
-        iter += 1
-    end
-    return X_
+    ρ = 1/V
+    ρ̄ = b[i]*m[i]*z[i]*ρ
+    a = LJSAFTconsts.a::Matrix{Float64}
+    return (1+sum(a[i,j]*ρ̄^i*Tst^(1-j) for i ∈ 1:5 for j ∈ 1:5))
 end
 
 function Δ(model::LJSAFTModel, V, T, z, i, j, a, b)
     ∑z = ∑(z)
-    x = z/∑z
     m = model.params.segment.values
     _b = model.params.b.values
     T̃ = model.params.T_tilde.values
-
     Tst = T/T̃[i,j]
     ρ = ∑z/V
-    ρ̄ = x[i]*_b[i,j]*m[i]*ρ
+    ρ̄ = z[i]*_b[i,j]*m[i]*ρ/∑z
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     b_ = LJSAFTconsts.b
-    I = ∑(b_[i+1,j+1]*ρ̄^i*Tst^j for i ∈ 0:4 for j ∈ 0:4)/3.84/1e4
-    return 4π*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]*I*_b[i,j]
+    I = sum(b_[i+1,j+1]*ρ̄^i*Tst^j for i ∈ 0:4 for j ∈ 0:4)/3.84/1e4
+    return 4π*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]*I*_b[i,j]/N_A
 end
 
 const LJSAFTconsts = (
@@ -172,6 +132,5 @@ const LJSAFTconsts = (
     C0 = [2.01546797,-28.17881636,28.28313847,-10.42402873],
     C1 = [-19.58371655,75.62340289,-120.70586598,93.92740328,-27.37737354],
     C2 = [29.34470520,-112.35356937,170.64908980,-123.06669187,34.42288969],
-    C4 = [-13.37031968,65.38059570,-115.09233113,88.91973082,-25.62099890]
-         
+    C4 = [-13.37031968,65.38059570,-115.09233113,88.91973082,-25.62099890]    
    )

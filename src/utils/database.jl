@@ -225,8 +225,7 @@ function pkgparam(param::String,
     param ∉ options.asymmetricparams && mirrormatrix!(value) 
     newvalue_ismissingvalues = defaultmissing.(value)
     newvalue = first.(newvalue_ismissingvalues)
-    ismissingvalues = last.(newvalue_ismissingvalues)
-    return AssocParam(param,components, newvalue, ismissingvalues , allcomponentsites, collect(paramsourcecsvs[param]), collect(paramsources[param]))
+    return AssocParam(param,components, newvalue , allcomponentsites, collect(paramsourcecsvs[param]), collect(paramsources[param]))
 end
 
 
@@ -794,6 +793,9 @@ function _zero(::Type{T}) where T <:Union{T1,Missing} where T1
     return missing
 end
 
+_iszero(t::Number) = iszero(t)
+_iszero(::Missing) = true
+_iszero(t::AbstractString) = isempty(t)
 """
     singletopair(params::Vector,outputmissing=zero(T))
 

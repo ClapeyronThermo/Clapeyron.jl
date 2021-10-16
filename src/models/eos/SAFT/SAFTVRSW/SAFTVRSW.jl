@@ -50,9 +50,9 @@ function a_hs(model::SAFTVRSWModel, V, T, z)
     ζ1 = @f(ζn,1)
     ζ2 = @f(ζn,2)
     ζ3 = @f(ζn,3)
-    x = z/∑(z)
+    Σz = sum(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z, m)/Σz
     return m̄*6/π/@f(ρ_S)*(3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
 end
 
@@ -62,19 +62,18 @@ function ζn(model::SAFTVRSWModel, V, T, z, n)
 end
 
 function ρ_S(model::SAFTVRSWModel, V, T, z)
-    ∑z = ∑(z)
-    N = N_A*∑z
-    x = z/∑z
+    Σz = sum(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z, m)
+    N = N_A
     return N/V*m̄
 end
 
 function x_S(model::SAFTVRSWModel, V, T, z, i)
-    x = z/∑(z)
+    Σz = sum(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
-    return x[i]*m[i]/m̄
+    m̄ = dot(z, m)
+    return z[i]*m[i]/m̄
 end
 
 function ζ_X(model::SAFTVRSWModel, V, T, z)
@@ -85,9 +84,9 @@ end
 
 function a_1(model::SAFTVRSWModel, V, T, z)
     comps = @comps
-    x = z/∑(z)
+    Σz = sum(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z, m)/Σz
     return -m̄/T*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*@f(a_1,i,j) for i ∈ comps for j ∈ comps)
 end
 
@@ -113,9 +112,9 @@ end
 
 function a_2(model::SAFTVRSWModel, V, T, z)
     comps = @comps
-    x = z/∑(z)
+    Σz = sum(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z, m)/Σz
     return m̄/T^2*∑(@f(x_S,i)*@f(x_S,j)*@f(a_2,i,j) for i ∈ comps for j ∈ comps)
 end
 
@@ -143,9 +142,9 @@ function ∂a_1╱∂ρ_S(model::SAFTVRSWModel, V, T, z, i, j)
 end
 
 function a_chain(model::SAFTVRSWModel, V, T, z)
-    x = z/∑(z)
+    Σz = sum(z)
     m = model.params.segment.values
-    return -∑(x[i]*(log(@f(γSW,i))*(m[i]-1)) for i ∈ @comps)
+    return -∑(z[i]*(log(@f(γSW,i))*(m[i]-1)) for i ∈ @comps)/Σz
 end
 
 function γSW(model::SAFTVRSWModel,V, T, z, i)
@@ -173,42 +172,6 @@ function g_1(model::SAFTVRSWModel,V, T, z, i, j)
     ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
     ∂ζeff_X╱∂λ = A * [0; 1; 2λ[i,j]] ⋅ [ζ_X_; ζ_X_^2; ζ_X_^3]
     return @f(gHS_0,i,j)+(λ[i,j]^3-1)*(5/2-ζeff_X_)/(1-ζeff_X_)^4*(λ[i,j]/3*∂ζeff_X╱∂λ-ζ_X_*∂ζeff_X╱∂ζ_X)
-end
-
-function a_assoc(model::SAFTVRSWModel, V, T, z)
-    x = z/∑(z)
-    n = model.sites.n_sites
-    X_ = @f(X)
-    return ∑(x[i]*∑(n[i][a]*(log(X_[i][a])+(1-X_[i][a])/2) for a ∈ @sites(i)) for i ∈ @comps)
-end
-
-function X(model::SAFTVRSWModel, V, T, z)
-    _1 = one(V+T+first(z))
-    ∑z = ∑(z)
-    x = z/∑z
-    ρ = N_A*∑z/V
-    n = model.sites.n_sites
-    itermax = 500
-    dampingfactor = 0.5
-    error = 1.
-    tol = model.absolutetolerance
-    iter = 1
-    X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
-    X_old = deepcopy(X_)
-    while error > tol
-        iter > itermax && error("X has failed to converge after $itermax iterations")
-        for i ∈ @comps, a ∈ @sites(i)
-            rhs = 1/(1+∑(ρ*x[j]*∑(n[j][b]*X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
-            X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
-        end
-        error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
-        for i = 1:length(X_)
-            X_old[i] .= X_[i]
-        end
-        X_
-        iter += 1
-    end
-    return X_
 end
 
 function Δ(model::SAFTVRSWModel, V, T, z, i, j, a, b)

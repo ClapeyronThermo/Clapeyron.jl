@@ -1,7 +1,10 @@
 module Clapeyron
 using StaticArrays
 using LinearAlgebra
-using NLSolvers,Roots
+import PackedVectorsOfVectors
+const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
+using Roots: Roots
+using NLSolvers
 using DiffResults, ForwardDiff
 include("solvers/Solvers.jl")
 using .Solvers
@@ -9,16 +12,17 @@ using .Solvers: log
 using Unitful
 import LogExpFunctions
 include("constants.jl")
-include("models/basetools.jl")
-include("utils/ParamOptions.jl")
+include("models/basetools.jl") #type hierarchy
+include("utils/ParamOptions.jl") 
+include("utils/vectors.jl")
 include("utils/ClapeyronParam.jl")
 
-include("models/eos/ideal/BasicIdeal.jl") #before macros, because its used there
 
 include("utils/macros.jl")
 using CSV, Tables
 include("utils/database.jl")
 include("utils/misc.jl")
+
 
 include("models/combiningrules.jl")
 
@@ -26,6 +30,7 @@ include("models/eos.jl")
 include("utils/visualisation.jl")
 include("utils/split_model.jl")
 
+include("models/eos/ideal/BasicIdeal.jl") #before macros, because its used there
 include("models/eos/ideal/MonomerIdeal.jl")
 include("models/eos/ideal/ReidIdeal.jl")
 include("models/eos/ideal/WalkerIdeal.jl")
@@ -42,9 +47,12 @@ include("models/eos/SAFT/softSAFT/softSAFT.jl")
 include("models/eos/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/eos/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
 include("models/eos/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
+
 include("models/eos/SAFT/CKSAFT/CKSAFT.jl")
 include("models/eos/SAFT/CKSAFT/variants/sCKSAFT.jl")
 include("models/eos/SAFT/BACKSAFT/BACKSAFT.jl")
+
+include("models/eos/SAFT/equations.jl")
 
 include("models/eos/cubic/vdW.jl")
 include("models/eos/cubic/RK/RK.jl")
@@ -76,6 +84,8 @@ include("models/eos/Activity/equations.jl")
 include("models/eos/EmpiricHelmholtz/IAPWS95.jl")
 include("models/eos/EmpiricHelmholtz/PropaneRef.jl")
 include("models/eos/EmpiricHelmholtz/GERG2008/GERG2008.jl")
+
+include("models/eos/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
 include("models/eos/SPUNG/SPUNG.jl")
 
