@@ -178,6 +178,9 @@ function a_res(model::SAFTgammaMieModel, V, T, z)
     return @f(a_hs,_data) + @f(a_disp,_data) + @f(a_chain,_data) + @f(a_assoc,_data)
 end
 
+function a_mono(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
+    return @f(a_hs,_data) + @f(a_disp,_data)
+end
 
 
 function data(model::SAFTgammaMieModel, V, T, z)
