@@ -30,9 +30,13 @@ function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], i
     return model
 end
 
+function a_mono(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
+    _,_,vrdata = _data
+    return @f(a_hs,vrdata) + @f(a_disp,_data)
+end
 
 function a_res(model::SAFTVRQMieModel, V, T, z)
-    return @f(a_mono)
+    @f(a_mono)
 end
 
 function data(model::SAFTVRQMieModel, V, T, z)
@@ -43,7 +47,9 @@ function data(model::SAFTVRQMieModel, V, T, z)
     _ζst = @f(ζst,_σeff)
     _ζ_X,_ = @f(ζ_X_σ3,_d)
     _ρ_S = @f(ρ_S)
-    return (_σeff,_ϵff,_d,_ρ_S,ζi,_ζ_X,_ζst)
+    σ3x = _ζst/(_ρ_S*π/6)
+    vrdata = (_d,_ρ_S,ζi,_ζ_X,_ζst,σ3x)
+    return (_σeff,_ϵff,vrdata)
 end
 
 
@@ -91,7 +97,7 @@ function d(model::SAFTVRQMieModel, V, T, z, i,_data)
         _h = βi*_f*(βi*_du^2-_d2u)
         return _f,_g,_h
     end
-    x_min = halley(fgh,one(T))
+    x_min = Solvers.halley(fgh,one(T))
     σ_effi = σeff/σ
     x = SAFTVRQMieconsts.x
     w = SAFTVRQMieconsts.w
@@ -143,33 +149,14 @@ function σeff(model::SAFTVRQMieModel, V, T, z)
     n1,n2 = size(_σ)
     for i in 1:n1
         f0 = x -> fgh(x,_λa[i,i],_λr[i,i],_σ[i,i],T,Mwij[i,i])
-        _σeff[i,i] =  _σ[i,i]*halley(f0,one(T))
+        _σeff[i,i] =  _σ[i,i]*Solvers.halley(f0,one(T))
         for j in 1:i-1
         f0 = x -> fgh(x,_λa[i,j],_λr[i,j],_σ[i,j],T,Mwij[i,j])
-        _σeff[i,j] =  _σ[i,j]*halley(f0,one(T))
+        _σeff[i,j] =  _σ[i,j]*Solvers.halley(f0,one(T))
         _σeff[j,i] = _σeff[i,j]
         end
     end
     return _σeff
-    #_σ .* halley.(fgh,ones(size(_σ)))
-    #f0(x) = fgh.(x,_λa,_λr,_σ,T,Mw)
-    #return _σ .* halley.(fgh,ones(size(_σ)))
-end
-
-function halley(fgh::T,x0) where T
-    tolx = one(x0)
-    tolf = one(x0)
-    while tolf > 1e-16 && tolx > 1e-15
-        ff,gg,hh = fgh(x0)
-        ff < eps(x0) && return x0
-        d = ff/gg*(1-ff*hh/(2*gg^2))^-1
-        x0=x0-d
-        f0 = ff
-        tolf = abs(f0)
-        tolx = abs(d)
-    end
-    return x0
-    
 end
 
 function ϵeff(model::SAFTVRQMieModel, V, T, z)
@@ -219,37 +206,19 @@ function ϵeff(model::SAFTVRQMieModel, V, T, z)
     for i in 1:n1
         f0 = x -> fgh(x,_λa[i,i],_λr[i,i],_σ[i,i],T,Mwij[i,i])
         x0 = (_λr[i,i]/_λa[i,i])^(1/(_λr[i,i]-_λa[i,i]))
-        _σmin = halley(f0,one(T)*x0)
+        _σmin = Solvers.halley(f0,one(T)*x0)
         uij =u(_σmin,_λa[i,i],_λr[i,i],_σ[i,i],T,Mwij[i,i])
         _ϵeff[i,i] =  -ϵ[i,i]*uij
         for j in 1:i-1
             f0 = x -> fgh(x,_λa[i,j],_λr[i,j],_σ[i,j],T,Mwij[i,j])
             x0 = (_λr[i,j]/_λa[i,j])^(1/(_λr[i,j]-_λa[i,j]))
-            _σmin = halley(f0,one(T)*x0)
+            _σmin = Solvers.halley(f0,one(T)*x0)
             uij =u(_σmin,_λa[i,j],_λr[i,j],_σ[i,j],T,_Mw[i,j])
             _ϵeff[i,j] =  -ϵ[i,j]*uij
             _ϵeff[j,i] = _ϵeff[i,j]
         end
     end
     return _ϵeff
-end
-
-function Halley(model::SAFTVRQMieModel, V, T, z, f_, g_, h_, x0)
-    tolx = 1.
-    tolf = 1.
-    f0 = f_(x0)
-    if f0 < 1e-16
-        return x0
-    else
-        while tolf > 1e-16 && tolx > 1e-15
-            d = f_(x0)/g_(x0)*(1-f_(x0)*h_(x0)/(2*g_(x0)^2))^-1
-            x0=x0-d
-            f0 = f_(x0)
-            tolf = abs(f0)
-            tolx = abs(d)
-        end
-        return x0
-    end
 end
 
 
@@ -357,8 +326,8 @@ function a_3(model::SAFTVRQMieModel, V, T, z, i, j)
 end
 
 function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
-    
-    _σeff,_ϵff,_d,_ρ_S,ζi,_ζ_X,_ζst = _data
+    _σeff,_ϵff,vrdata= _data
+    _d,_ρ_S,ζi,_ζ_X,_ζst  = vrdata
     comps = @comps
     l = length(comps)
     ∑z = ∑(z)
@@ -502,7 +471,6 @@ function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     a₁ = a₁*m̄/T/∑z
     a₂ = a₂*m̄/(T*T)/∑z
     a₃ = a₃*m̄/(T*T*T)/∑z
-    @show (a₁,a₂,a₃)
     adisp =  a₁ + a₂ + a₃ 
     return adisp
 end
