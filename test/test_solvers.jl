@@ -40,7 +40,7 @@ end
         x1 = [0.1,0.1]
         @test @inferred(SOL.fixpoint(golden_number_fixpoint,x0)) ≈ ϕ
         @test @inferred(SOL.fixpoint(golden_number_fixpoint,x0,SOL.AitkenFixPoint())) ≈ ϕ
-        @test @inferred(SOL.fixpoint(quadratic_fixpoint,x0)) ≈ [0.6*sqrt(5),0.8*sqrt(5)]
+        @test @inferred(SOL.fixpoint(quadratic_fixpoint,x1)) ≈ [0.6*sqrt(5),0.8*sqrt(5)]
     end
 
     function f_diffmcp!(fvec, x)
