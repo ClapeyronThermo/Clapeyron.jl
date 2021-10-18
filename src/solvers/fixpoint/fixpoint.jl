@@ -93,7 +93,6 @@ function _fixpoint(f::F,
     rtol::T =8*eps(T),
     max_iters=100) where {F,T}
 
-    α = method.dampingfactor
     nan = (0*atol)/(0*atol)
     itercount = 2
     x3 = x00
@@ -108,7 +107,7 @@ function _fixpoint(f::F,
         itercount += 1
         λ2 = (x2 - x1)/(x1-x3)
         dx = -(λ2/(1-λ2))*(x2-x1)
-        x3 = x2 + α*dx
+        x3 = x2 + dx
         converged,finite = convergence(x2,x3,atol,rtol)
         converged && return ifelse(finite,x3,nan)
         

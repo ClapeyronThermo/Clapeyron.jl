@@ -52,6 +52,13 @@ function data(model::SAFTVRQMieModel, V, T, z)
     return (_σeff,_ϵff,vrdata)
 end
 
+function Q1(model::SAFTVRQMieModel, V, T, z, λ)
+    return λ*(λ-1)
+end
+
+function Q2(model::SAFTVRQMieModel, V, T, z, λ)
+    return 1/2*(λ+2)*(λ+1)*λ*(λ-1)
+end
 
 function d(model::SAFTVRQMieModel, V, T, z, i,_data)
     ϵ,σ,λr,λa,Mw,σeff = _data
@@ -221,7 +228,7 @@ function ϵeff(model::SAFTVRQMieModel, V, T, z)
     return _ϵeff
 end
 
-
+#=
 function a_1(model::SAFTVRQMieModel, V, T, z, i, j,_data = @f(data))
     _σeff,_ϵff,_d,_ρ_S,ζi,_ζ_X,_ζst = _data
     ϵ = model.params.epsilon.values
@@ -241,15 +248,9 @@ function a_1(model::SAFTVRQMieModel, V, T, z, i, j,_data = @f(data))
         (x_0ij^(λa[i,j]+4)*@f(Q2,λa[i,j])*(@f(aS_1,λa[i,j]+4)+@f(B,λa[i,j]+4,x_0effij))-
          x_0ij^(λr[i,j]+4)*@f(Q2,λr[i,j])*(@f(aS_1,λr[i,j]+4)+@f(B,λr[i,j]+4,x_0effij)))*Dij^2 )
 end
+=#
 
-function Q1(model::SAFTVRQMieModel, V, T, z, λ)
-    return λ*(λ-1)
-end
-
-function Q2(model::SAFTVRQMieModel, V, T, z, λ)
-    return 1/2*(λ+2)*(λ+1)*λ*(λ-1)
-end
-
+#=
 function x_0eff(model::SAFTVRQMieModel, V, T, z, i, j)
     return @f(σeff,i,j)/@f(d,i,j)
 end
@@ -324,7 +325,7 @@ function a_3(model::SAFTVRQMieModel, V, T, z, i, j)
                (σ[i,j]/σeffij)^(4+λr[i,j])*@f(Q2,λr[i,j])/(λr[i,j]+1)))
     return -ϵeffij^3*@f(f,α,4)*ζst_*exp(@f(f,α,5)*ζst_+@f(f,α,6)*ζst_^2)
 end
-
+=#
 function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     _σeff,_ϵff,vrdata= _data
     _d,_ρ_S,ζi,_ζ_X,_ζst  = vrdata
