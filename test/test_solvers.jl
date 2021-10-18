@@ -5,13 +5,21 @@ const SOL = Clapeyron.Solvers
 quadratic(x) = x*x - 4
 rosenbrock(x) = (1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2
 golden_number_fixpoint(x) = one(x) + one(x)/x
+fgh_lgmx(x) = (log(x)+x,1/x +1,-1/(x^2))
+function quadratic_fixpoint(y,x)
+    y[1] = sqrt(-x[2]^2 + 5)
+    y[2] = 2*sqrt(-x[1]^2 + 9)/3
+    y
+end
 @testset "Solvers Module" begin
-    @testset "ad_newton" begin
+    @testset "newton,halley" begin
         x0 = 2+rand()
         fdf = SOL.f∂f(quadratic,x0)
         @test fdf[1] ≈ quadratic(x0)
         @test fdf[2] ≈ 2*x0
         @test SOL.ad_newton(quadratic,x0) ≈ 2.0
+        @test SOL.newton(x->(quadratic(x),2*x),x0) ≈ 2.0
+        @test SOL.halley(fgh_lgmx,0.5)≈ 0.567143290409784
     end
 
     @testset "box optimize" begin
@@ -29,7 +37,10 @@ golden_number_fixpoint(x) = one(x) + one(x)/x
         #example of FMinBox in Optim.jl
         x0 = 2+ rand()
         ϕ = (1+sqrt(5))/2
+        x1 = [0.1,0.1]
         @test @inferred(SOL.fixpoint(golden_number_fixpoint,x0)) ≈ ϕ
+        @test @inferred(SOL.fixpoint(golden_number_fixpoint,x0,SOL.AitkenFixPoint())) ≈ ϕ
+        @test @inferred(SOL.fixpoint(quadratic_fixpoint,x0)) ≈ [0.6*sqrt(5),0.8*sqrt(5)]
     end
 
     function f_diffmcp!(fvec, x)

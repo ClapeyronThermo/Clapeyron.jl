@@ -47,7 +47,7 @@ function newton(f::F,x0::T;
     for _ in 1:max_iters
         fx, gx = f(x)
         Δx = fx/gx
-        iszero(fx) && return x
+        abs(fx) < eps(x) && return x
         x -= Δx
         if isapprox(x, xo, atol=atol, rtol=rtol)
             return x
@@ -63,7 +63,7 @@ function halley(fgh::F,x0::T;
     max_iters = 100) where {F,T}
     for _ in 1:max_iters
         ff,gg,hh = fgh(x0)
-        ff < eps(x0) && return x0
+        abs(ff) < eps(x0) && return x0      
         d = ff/gg/(1-ff*hh/(2*gg^2))
         if isapprox(x0, x0-d, atol=atol, rtol=rtol)
             return x0
