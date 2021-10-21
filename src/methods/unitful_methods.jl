@@ -59,14 +59,14 @@ end
 function compressibility_factor(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.])
     st = standarize(model,v,T,z)
     _v,_T,_z = state_to_vt(model,st)
-    res = vt_joule_thomson_coefficient(model, _v, _T,_z)
+    res = VT_compressibility_factor(model, _v, _T,_z)
     return res
 end
 
 function compressibility_factor(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
-    res = joule_thomson_coefficient(model, _p, _T, _z; phase=phase)
+    res = compressibility_factor(model, _p, _T, _z; phase=phase)
     return res
 end
 
