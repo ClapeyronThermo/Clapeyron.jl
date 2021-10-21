@@ -69,8 +69,8 @@ function split_model(param::PairParam{T},
     return [generator(I) for I in splitter]
 end
 
-function split_model(param::AbstractVector)
-    return [[xi] for xi in param]
+function split_model(param::AbstractVector,splitter = ([i] for i in 1:length(param)))
+    return [param[i] for i in splitter]
 end 
 
 function _split_model(assoc::CompressedAssocMatrix{T},I) where T
@@ -85,7 +85,8 @@ function _split_model(assoc::CompressedAssocMatrix{T},I) where T
     out_val = length(I)
     outer_size = (out_val,out_val)
     inner_size = assoc.inner_size
-    for i ∈ 1:len
+    len2 = length(outer_indices)
+    for i ∈ 1:len2
         i1,j1 = outer_indices[i]
         i2,j2 = findfirst(==(i1),I),findfirst(==(j1),I)
         outer_indices[i] = (i2,j2)
@@ -154,29 +155,39 @@ end
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
 #
 
-split_model(model::EoSModel) = auto_split_model(model)
+split_model(model::EoSModel,subset=nothing) = auto_split_model(model,subset)
 
-function auto_split_model(Base.@nospecialize(model::EoSModel))
+function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
     try
         allfields = Dict{Symbol,Any}()
         
         if has_groups(typeof(model))
-            splitter = model.groups.i_groups
+            raw_splitter = model.groups.i_groups
         else
-            splitter = split_model(1:length(model.components))
+            raw_splitter = split_model(1:length(model.components))
         end
+        if subset === nothing
+            splitter = raw_splitter
+        elseif eltype(subset) <: Integer
+            splitter = raw_splitter[subset]
+        elseif eltype(subset) <: AbstractVector
+            splitter = subset
+        else
+            throw("invalid type of subset.")
+        end
+        
         len = length(splitter)
 
-        if hasfield(typeof(model),:groups)
+        if hasfield(typeof(model),:groups) #TODO implement a splitter that accepts a subset
             allfields[:groups] = split_model(model.groups)
         end
         M = typeof(model)
 
-        len_comps = length(model.components)
-        allfields[:components] = split_model(model.components)
+        len_comps = length(splitter)
+        allfields[:components] = split_model(model.components,splitter)
         
         if hasfield(typeof(model),:icomponents)
-            allfields[:icomponents] = [1:1 for _ in 1:len_comps]
+            allfields[:icomponents] = [1:length(splitter[i]) for i in 1:len_comps]
         end
         
         #process all model fields
@@ -184,7 +195,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel))
         for modelkey in modelfields
             modelx = getproperty(model,modelkey)
             if is_splittable(modelx)
-                allfields[modelkey]= split_model(modelx)
+                allfields[modelkey]= split_model(modelx,subset)
             else
                 allfields[modelkey] = fill(modelx,len_comps)
             end
@@ -224,16 +235,21 @@ function auto_split_model(Base.@nospecialize(model::EoSModel))
     catch e
         rethrow(e)
         @show model
-        return simple_split_model(model)
+        return simple_split_model(model,subset)
     end
 end
 
 ##fallback,around 50 times slower if there is any need to read csvs
 
-function simple_split_model(Base.@nospecialize(model::EoSModel))
+function simple_split_model(Base.@nospecialize(model::EoSModel),subset = nothing)
     MODEL = typeof(model)
     pure = Vector{MODEL}(undef,0)
-    for comp ∈ model.components
+    if subset === nothing
+        comps = model.components
+    else
+        comps = model.components[subset]
+    end
+    for comp ∈ comps
         push!(pure,MODEL([comp]))
     end
     return pure
