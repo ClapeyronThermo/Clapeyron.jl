@@ -279,4 +279,16 @@ end
         @test Clapeyron.sat_pure(system, T_sat)[1] ≈ 3.5120264571020138e6 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 270.27247485012657 rtol = 1E-6 
     end
+
+    @testset "Split models" begin
+        model2 = PCSAFT(["water","ethanol"])
+        models2 = split_model(model2)
+        @test models2[1].components[1] == model2.components[1]
+        @test models2[2].components[1] == model2.components[2]
+        @test models2[1].icomponents == models2[2].icomponents == 1:1
+
+        model2_unsplit = only(split_model(model2,[[1,2]]))
+        @test model2_unsplit.icomponents == model2.icomponents
+        @test model2_unsplit.components == model2.components
+    end
 end
