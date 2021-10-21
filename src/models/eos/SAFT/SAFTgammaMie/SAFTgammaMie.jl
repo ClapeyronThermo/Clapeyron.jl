@@ -70,8 +70,7 @@ function SAFTgammaMie(components;
     #used in x_S:
     #x_S(group i) = dot(z,mixsegment[i])/dot(z,m_vr)
     mixsegment =  [[v[i][k]*vst[k]*S[k] for i ∈ comps] for k ∈ gc]
-    gc_mixedsegment = SingleParam("mixed segment",components,mixsegment,[false for i in gc],String[],String[])
-
+    gc_mixedsegment = SingleParam("mixed segment",groups.flattenedgroups,mixsegment,[false for i in gc],String[],String[])
     gc_sigma = sigma_LorentzBerthelot(params["sigma"])
     gc_sigma.values .*= 1E-10
     gc_epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], gc_sigma)

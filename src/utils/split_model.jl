@@ -184,7 +184,11 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
         M = typeof(model)
 
         len_comps = length(splitter)
-        allfields[:components] = split_model(model.components,splitter)
+        if hasfield(typeof(model),:groups)
+            allfields[:components] = split_model(model.components)
+        else
+            allfields[:components] = split_model(model.components,splitter)
+        end
         
         if hasfield(typeof(model),:icomponents)
             allfields[:icomponents] = [1:length(splitter[i]) for i in 1:len_comps]
@@ -207,14 +211,19 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             allfields[modelkey] = [[tup] for tup in modelx]
         end
 
+        only_paramfields = filter(x->getproperty(model,x) isa Union{SingleParam,PairParam,AssocParam},fieldnames(M))
+        for paramkey in only_paramfields
+            modelx = getproperty(model,paramkey)
+            allfields[paramkey] = split_model(modelx,splitter)
+        end
+
         #process all empty (Missing,Nothing) fields
         emptyfields = filter(x->getproperty(model,x) isa Union{Nothing,Missing},fieldnames(M))
 
         for emptykey in emptyfields
              allfields[emptykey] = fill(model.emptykey,len_comps)
         end
-        
-        
+    
         if hasfield(typeof(model),:params)
             allfields[:params] = split_model(model.params,splitter)
         end
@@ -233,9 +242,8 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
 
         return [M((allfields[k][i] for k in fieldnames(M))...) for i in 1:len]
     catch e
+        @error "$M cannot be splitted"
         rethrow(e)
-        @show model
-        return simple_split_model(model,subset)
     end
 end
 
