@@ -134,9 +134,8 @@ function SAFTgammaMie(components;
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
     comp_sites,idx_dict = gc_to_comp_sites(sites,groups)
-    assoc_idx = gc_to_comp_assoc_idx(gc_bondvol,sites,idx_dict)
+    assoc_idx = gc_to_comp_assoc_idx(gc_bondvol,comp_sites,idx_dict)
     assoc_idxs,outer,inner,outer_size,inner_size = assoc_idx.values,assoc_idx.outer_indices,assoc_idx.inner_indices,assoc_idx.outer_size,assoc_idx.inner_size
-    
     _comp_bondvol = [gc_bondvol.values.values[i] for i in assoc_idxs]
     _comp_epsilon_assoc = [gc_epsilon_assoc.values.values[i] for i in assoc_idxs]
     compval_bondvol = CompressedAssocMatrix(_comp_bondvol,outer,inner,outer_size,inner_size)
@@ -345,6 +344,8 @@ function a_assoc(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     _,vrdata = _data
     return a_assoc(model.vrmodel,V,T,z,vrdata)
 end
+
+
 
 function a_disp(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     groups = @groups
