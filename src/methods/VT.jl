@@ -19,7 +19,7 @@ end
 function VT_internal_energy(model::EoSModel, V, T, z=SA[1.])
     dA, A = ∂f(model,V,T,z)
     ∂A∂V, ∂A∂T = dA
-    return A - T*∂A∂V
+    return A - T*∂A∂T
 end
 
 function VT_enthalpy(model::EoSModel, V, T, z=SA[1.])
