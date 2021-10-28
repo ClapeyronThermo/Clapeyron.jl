@@ -13,7 +13,7 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.pressure(system, 5.907908736304141e-5, T) ≈ p rtol = 1e-6
         @test Clapeyron.entropy(system, p, T) ≈ -58.87118569239617 rtol = 1E-6
         @test Clapeyron.chemical_potential(system, p, T)[1] ≈ -18323.877542682934 rtol = 1E-6
-        @test Clapeyron.internal_energy(system, p, T) ≈ 2.9796670214913704e7 rtol = 1E-6
+        @test Clapeyron.internal_energy(system, p, T) ≈ -35882.22946560716 rtol = 1E-6
         @test Clapeyron.enthalpy(system, p, T) ≈ -35876.32155687084 rtol = 1E-6
         @test Clapeyron.gibbs_free_energy(system, p, T) ≈ -18323.87754268292 rtol = 1E-6
         @test Clapeyron.helmholtz_free_energy(system, p, T) ≈ -18329.785451419295 rtol = 1E-6
