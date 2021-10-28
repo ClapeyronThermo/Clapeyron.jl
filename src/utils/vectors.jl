@@ -61,6 +61,9 @@ function Base.show(io::IO,mime::MIME"text/plain",m::CompressedAssocMatrix{T}) wh
     n = length(m.values)
     println(io,typeof(m)," with ",n," entr",(n == 1 ? "y:" : "ies:"))
     for (idx,(i,j),(a,b)) in indices(m)
+        if idx != 1
+        println(io)
+        end
         print(io," ",(i,a)," >=< ",(j,b),": ",m.values[idx])
     end
 end
