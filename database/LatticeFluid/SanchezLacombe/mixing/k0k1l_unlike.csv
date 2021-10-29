@@ -1,0 +1,23 @@
+Clapeyron Database File
+SanchezLacombe k0-k1-l unlike Parameters
+species1,species2,k0,k1,l
+carbon dioxide,biphenyl,0.1840,0.1580,0.0067
+carbon dioxide,naphthalene,0.1985,0.2509,-0.2162
+carbon dioxide,"2,3-m-naphthalene",0.2259,0.0907,-0.2729
+carbon dioxide,"2,6-m-naphthalene",0.2285,0.1858,-0.3110
+carbon dioxide,"fluorene",0.2279,0.1722,-0.4510
+carbon dioxide,"phenanthrene",0.2434,0.0959,-0.2301
+carbon dioxide,"anthracene",0.2471,0.2755,-0.1589
+carbon dioxide,"pyrene",0.2615,0.1518,-0.2040
+carbon dioxide,n-octacosane,0.2711,0.0465,-0.3562
+carbon dioxide,"benzoic acid",0.1191,0.2753,-0.4264
+ethane,biphenyl,0.0740,0.1496,-0.1069
+ethane,naphthalene,0.0678,0.2893,-0.2188
+ethane,anthracene,0.1197,0.2430,-0.1998
+ethane,n-octacosane,0.1249,0.0101,-0.4677
+ethane,"benzoic acid",-0.1455,0.1563,0.1817
+ethylene,fluorene,0.0759,0.1801,-0.3545
+ethylene,phenanthrene,0.2020,-0.1635,-0.0330
+ethylene,pyrene,0.1457,0.1632,-0.3614
+ethylene,benzoic acid,0.0340,0.2542,-0.4361
+Xenon,naphthalene,0.0283,-0.0214,-0.0372

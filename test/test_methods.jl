@@ -13,7 +13,7 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.pressure(system, 5.907908736304141e-5, T) ≈ p rtol = 1e-6
         @test Clapeyron.entropy(system, p, T) ≈ -58.87118569239617 rtol = 1E-6
         @test Clapeyron.chemical_potential(system, p, T)[1] ≈ -18323.877542682934 rtol = 1E-6
-        @test Clapeyron.internal_energy(system, p, T) ≈ 2.9796670214913704e7 rtol = 1E-6
+        @test Clapeyron.internal_energy(system, p, T) ≈ -35882.22946560716 rtol = 1E-6
         @test Clapeyron.enthalpy(system, p, T) ≈ -35876.32155687084 rtol = 1E-6
         @test Clapeyron.gibbs_free_energy(system, p, T) ≈ -18323.87754268292 rtol = 1E-6
         @test Clapeyron.helmholtz_free_energy(system, p, T) ≈ -18329.785451419295 rtol = 1E-6
@@ -24,7 +24,7 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1236.4846683094133 rtol = 1E-6 #requires that the model has Mr
         @test Clapeyron.isobaric_expansivity(system, p, T) ≈ -0.0010874255138433413 rtol = 1E-6
         @test Clapeyron.joule_thomson_coefficient(system, p, T) ≈ -6.007581864883784e-7 rtol = 1E-6
-        @test Clapeyron.second_virial_coefficient(system, T) ≈ -0.004883874325089262 rtol = 1E-6
+        @test Clapeyron.second_virial_coefficient(system, T) ≈ -0.004883874325089262 rtol = 1E-6 #exact value calculated by using BigFloat
         @test Clapeyron.inversion_temperature(system, 1.1e8) ≈ 824.4137805298458 rtol = 1E-6
     end
     @testset "VLE properties" begin
@@ -57,7 +57,7 @@ end
         @test Clapeyron.volume(system, p, T) ≈ 0.00015924416586849443 rtol = 1e-6 
     end
     @testset "VLE properties" begin
-        @test Clapeyron.sat_pure(system, T)[1] ≈ 581.785675150425 rtol = 1E-6
+        @test Clapeyron.sat_pure(system, T)[1] ≈ 167.8313793818096 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 618.8455740197799 rtol = 1E-6 
     end
 end
@@ -84,7 +84,7 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.sat_pure(system, T)[1] ≈ 7714.849872968086 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 521.959273608428 rtol = 1E-6 
+        @test Clapeyron.crit_pure(system)[1] ≈ 522.7742692078155 rtol = 1E-6 
     end
 end
 
@@ -278,5 +278,17 @@ end
     @testset "VLE properties" begin
         @test Clapeyron.sat_pure(system, T_sat)[1] ≈ 3.5120264571020138e6 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 270.27247485012657 rtol = 1E-6 
+    end
+
+    @testset "Split models" begin
+        model2 = PCSAFT(["water","ethanol"])
+        models2 = split_model(model2)
+        @test models2[1].components[1] == model2.components[1]
+        @test models2[2].components[1] == model2.components[2]
+        @test models2[1].icomponents == models2[2].icomponents == 1:1
+
+        model2_unsplit = only(split_model(model2,[[1,2]]))
+        @test model2_unsplit.icomponents == model2.icomponents
+        @test model2_unsplit.components == model2.components
     end
 end

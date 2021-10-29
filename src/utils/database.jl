@@ -225,8 +225,7 @@ function pkgparam(param::String,
     param ∉ options.asymmetricparams && mirrormatrix!(value) 
     newvalue_ismissingvalues = defaultmissing.(value)
     newvalue = first.(newvalue_ismissingvalues)
-    ismissingvalues = last.(newvalue_ismissingvalues)
-    return AssocParam(param,components, newvalue, ismissingvalues , allcomponentsites, collect(paramsourcecsvs[param]), collect(paramsources[param]))
+    return AssocParam(param,components, newvalue , allcomponentsites, collect(paramsourcecsvs[param]), collect(paramsources[param]))
 end
 
 
@@ -414,7 +413,7 @@ function findparamsincsv(components::Array{String,1},
     normalised_columnreference2 = normalised_columnreference * '2'
 
     csvtype = readcsvtype(filepath)
-    df = CSV.File(filepath; header=3, pool=0,lazystrings=true,silencewarnings=true)
+    df = CSV.File(filepath; header=3, pool=0,silencewarnings=true)
     cols = Tables.columns(df)
     csvheaders = String.(Tables.columnnames(df))
     normalised_components = normalisestring.(components,normalisecomponents)
@@ -630,7 +629,7 @@ function findsitesincsvs(components::Array{String,1},
     for filepath ∈ filepaths
         csvtype = readcsvtype(filepath)
         csvtype != assocdata && continue
-        df = CSV.File(filepath; header=3,lazystrings=true,silencewarnings = !verbose)
+        df = CSV.File(filepath; header=3,silencewarnings = !verbose)
         
         csvheaders = String.(Tables.columnnames(df))
         normalised_csvheaders = normalisestring.(String.(Tables.columnnames(df)))
@@ -721,7 +720,7 @@ function findgroupsincsv(components::Vector{String},
     normalised_columnreference = normalisestring(columnreference)
     normalised_groupcolumnreference = normalisestring(groupcolumnreference)
 
-    df = CSV.File(filepath; header=3,lazystrings=true,silencewarnings = !verbose)
+    df = CSV.File(filepath; header=3,silencewarnings = !verbose)
     columns = Tables.columns(df)
 
     csvheaders = String.(Tables.columnnames(df))
@@ -794,6 +793,9 @@ function _zero(::Type{T}) where T <:Union{T1,Missing} where T1
     return missing
 end
 
+_iszero(t::Number) = iszero(t)
+_iszero(::Missing) = true
+_iszero(t::AbstractString) = isempty(t)
 """
     singletopair(params::Vector,outputmissing=zero(T))
 
