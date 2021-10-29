@@ -1,7 +1,7 @@
 name = "Clapeyron"
 uuid = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
-authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pwalker@mit.edu>"]
-version = "0.2.1"
+authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pwalker@mit.edu>","Andrés Riedemann <andres.riedemann@gmail.com>"]
+version = "0.2.6"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
@@ -11,6 +11,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LogExpFunctions = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
 NLSolvers = "337daf1e-9722-11e9-073e-8b9effe078ba"
 NaNMath = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
+PackedVectorsOfVectors = "7713531c-48ef-4bdd-9821-9ff7a8736089"
 PositiveFactorizations = "85a6dd25-e78a-55b7-8502-1745935b8125"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
@@ -19,12 +20,14 @@ ThermoState = "e7b6519d-fdf7-4a33-b544-2b37a9c1234a"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
-CSV = "^0.8"
+
+CSV = "0.9"
 DiffResults = "^1.0"
 ForwardDiff = "^0.10"
 LogExpFunctions = "^0.2,^0.3"
 NLSolvers = "^0.1"
 NaNMath = "^0.3"
+PackedVectorsOfVectors = "^0.1.2"
 PositiveFactorizations = "0.2"
 Roots = "^1"
 StaticArrays = "^1"

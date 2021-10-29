@@ -34,7 +34,8 @@ end
 
 function a_LJ(model::softSAFTModel, V, T, z)
     m = model.params.segment.values
-    m̄ = ∑(z/∑(z) .* m)
+    Σz = sum(z)
+    m̄ = dot(z,m)/Σz
     ϵ̄ = @f(ϵ_m)
     σ̄ = @f(σ_m)
     ρ̄ = @f(ρ_S)*σ̄^3
@@ -42,7 +43,10 @@ function a_LJ(model::softSAFTModel, V, T, z)
     γ = 3
     F = exp(-γ*ρ̄^2)
     x = softSAFTconsts.x
-    a = [
+    T2 = T̄*T̄
+    T3 = T2*T̄
+    T4 = T2*T2
+    a = (
          x[1]*T̄+x[2]*√(T̄)+x[3]+x[4]/T̄+x[5]/T̄^2,
          x[6]*T̄+x[7]+x[8]/T̄+x[9]/T̄^2,
          x[11]+x[10]*T̄+x[12]/T̄,
@@ -51,55 +55,51 @@ function a_LJ(model::softSAFTModel, V, T, z)
          x[16]/T̄,
          x[17]/T̄+x[18]/T̄^2,
          x[19]/T̄^2,
-        ]
-    b = [
-         x[20]/T̄^2+x[21]/T̄^3,
-         x[22]/T̄^2+x[23]/T̄^4,
-         x[24]/T̄^2+x[25]/T̄^3,
-         x[26]/T̄^2+x[27]/T̄^4,
-         x[28]/T̄^2+x[29]/T̄^3,
-         x[30]/T̄^2+x[31]/T̄^3+x[32]/T̄^4,
-        ]
-    _0 = zero(V+T+first(z))
-    G = [_0,_0,_0,_0,_0,_0]
-    G[1] = (1-F)/(2γ)
-    for i in 2:6
-        k = 2*(i-1)
-        G[i] = -(F*ρ̄^k - k*G[i-1]) / 2γ
-    end
-    return m̄*(∑(a[i]*ρ̄^i/i for i ∈ 1:8)+∑(b[i]*G[i] for i ∈ 1:6))/T̄
+        )
+    b = (
+         x[20]/T2+x[21]/T3,
+         x[22]/T2+x[23]/T4,
+         x[24]/T2+x[25]/T3,
+         x[26]/T2+x[27]/T4,
+         x[28]/T2+x[29]/T3,
+         x[30]/T2+x[31]/T3+x[32]/T4,
+        )
+    G1 = (1-F)/(2γ)
+    G2 = -(F*ρ̄ ^2 - 2*G1) / 2γ
+    G3 = -(F*ρ̄ ^4 - 4*G2) / 2γ
+    G4 = -(F*ρ̄ ^6 - 6*G3) / 2γ
+    G5 = -(F*ρ̄ ^8 - 8*G4) / 2γ
+    G6 = -(F*ρ̄ ^10 - 10*G5) / 2γ
+    G = (G1,G2,G3,G4,G5,G6)
+  
+    return m̄*(∑(a[i]*ρ̄ ^i/i for i ∈ 1:8)+∑(b[i]*G[i] for i ∈ 1:6))/T̄
 end
-
 function ϵ_m(model::softSAFTModel, V, T, z)
     comps = @comps
-    x = z/∑(z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
     m = model.params.segment.values
-    return ∑(m[i]*m[j]*x[i]*x[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/∑(m[i]*m[j]*x[i]*x[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)
+    return sum(m[i]*m[j]*z[i]*z[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/sum(m[i]*m[j]*z[i]*z[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)
 end
 
 function σ_m(model::softSAFTModel, V, T, z)
     comps = @comps
-    x = z/∑(z)
     σ = model.params.sigma.values
     m = model.params.segment.values
-    return (∑(m[i]*m[j]*x[i]*x[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)/∑(m[i]*m[j]*x[i]*x[j] for i ∈ comps for j ∈ comps))^(1/3)
+    return (sum(m[i]*m[j]*z[i]*z[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)/sum(m[i]*m[j]*z[i]*z[j] for i ∈ comps for j ∈ comps))^(1/3)
 end
 
 function ρ_S(model::softSAFTModel, V, T, z)
     ∑z = ∑(z)
     N = N_A*∑z
-    x = z/∑z
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z,m)/∑z
     return N/V*m̄
 end
 
 function a_chain(model::softSAFTModel, V, T, z)
-    x = z/∑(z)
     m = model.params.segment.values
-    m̄ = ∑(x .* m)
+    m̄ = dot(z,m)/∑(z)
     return -log(@f(y_LJ))*(m̄-1)
 end
 
@@ -115,16 +115,10 @@ function g_LJ(model::softSAFTModel, V, T, z)
     T̄ = T/ϵ̄
     ρ̄ = @f(ρ_S)*σ̄^3
     a = LJSAFTconsts.a
-    return 1+∑(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
+    return 1+sum(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
 end
 
-function a_assoc(model::softSAFTModel, V, T, z)
-    x = z/∑(z)
-    X_ = @f(X)
-    n = model.sites.n_sites
-    return ∑(x[i]*∑(n[i][a]*(log(X_[i][a])+(1-X_[i][a])/2) for a ∈ @sites(i)) for i ∈ @comps)
-end
-
+#=
 function X(model::softSAFTModel, V, T, z)
     _1 = one(V+T+first(z))
     ∑z = ∑(z)
@@ -152,7 +146,7 @@ function X(model::softSAFTModel, V, T, z)
     end
     return X_
 end
-
+=#
 function Δ(model::softSAFTModel, V, T, z, i, j, a, b)
     ϵ̄ = @f(ϵ_m)
     σ̄ = @f(σ_m)
@@ -162,7 +156,7 @@ function Δ(model::softSAFTModel, V, T, z, i, j, a, b)
     κ = model.params.bondvol.values
     b_ = LJSAFTconsts.b
 
-    I = ∑(b_[i+1,j+1]*ρ̄^i*T̄^j for i ∈ 0:4 for j ∈ 0:4)/3.84/1e4
+    I = sum(b_[i+1,j+1]*ρ̄^i*T̄^j for i ∈ 0:4 for j ∈ 0:4)/3.84/1e4
     return 4π*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]*I
 end
 

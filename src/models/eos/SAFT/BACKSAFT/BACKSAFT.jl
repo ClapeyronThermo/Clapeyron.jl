@@ -47,29 +47,27 @@ function a_disp(model::BACKSAFTModel, V, T, z)
     c = model.params.c.values[1]
     u = model.params.epsilon.values[1]*(1+c/T)
     η = @f(ζ,3)
-    τ = 0.74048
+    τ = .740480
     D1 = BACKSAFT_consts.D1
     D2 = BACKSAFT_consts.D2
     D3 = BACKSAFT_consts.D3
     D4 = BACKSAFT_consts.D4
-    A1 = ∑(D1[j]*(u/T)*(η/τ)^j for j ∈ 1:6)
-    A2 = ∑(D2[j]*(u/T)^2*(η/τ)^j for j ∈ 1:9)
-    A3 = ∑(D3[j]*(u/T)^3*(η/τ)^j for j ∈ 1:5)
-    A4 = ∑(D4[j]*(u/T)^4*(η/τ)^j for j ∈ 1:4)
+    A1 = sum(D1[j]*(u/T)*(η/τ)^j for j ∈ 1:6)
+    A2 = sum(D2[j]*(u/T)^2*(η/τ)^j for j ∈ 1:9)
+    A3 = sum(D3[j]*(u/T)^3*(η/τ)^j for j ∈ 1:5)
+    A4 = sum(D4[j]*(u/T)^4*(η/τ)^j for j ∈ 1:4)
     return m*(A1+A2+A3+A4)
 end
 
 function d(model::BACKSAFTModel, V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues
-    σ = model.params.sigma.diagvalues
-    return σ[i] * (1 - 0.12exp(-3ϵ[i]/T))
+    ϵ = model.params.epsilon.diagvalues[i]
+    σ = model.params.sigma.diagvalues[i]
+    return σ * (1 - 0.12exp(-3ϵ/T))
 end
 
 function ζ(model::BACKSAFTModel, V, T, z, n)
-    ∑z = ∑(z)
-    x = z/∑z
     m = model.params.segment.values
-    return N_A*∑z*π/6/V * ∑(x[i]*m[i]*@f(d,i)^n for i ∈ @comps)
+    return N_A*π/6/V * sum(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
 end
 
 function a_chain(model::BACKSAFTModel, V, T, z)

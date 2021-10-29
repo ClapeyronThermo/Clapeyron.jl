@@ -41,7 +41,7 @@ function split_model(param::SingleParam{T},
     param.sources
     )
     end
-    return [generator(i) for i in splitter]
+    return [generator(i) for i ∈ splitter]
 end
 
 function split_model(param::ClapeyronParam,groups::GroupParam)
@@ -66,31 +66,51 @@ function split_model(param::PairParam{T},
                 param.sources
                 )
     end 
-    return [generator(I) for I in splitter]
+    return [generator(I) for I ∈ splitter]
 end
 
-function split_model(param::AbstractVector)
-    return [[xi] for xi in param]
+function split_model(param::AbstractVector,splitter = ([i] for i ∈ 1:length(param)))
+    return [param[i] for i ∈ splitter]
 end 
+
+function _split_model(assoc::CompressedAssocMatrix{T},I) where T
+    len = length(assoc.values)
+    iszero(len) && return CompressedAssocMatrix{T}()
+    old_idx = assoc.outer_indices 
+    idx_bool = findall(x -> (first(x) ∈ I)&(last(x) ∈ I),old_idx)
+    iszero(length(idx_bool)) && return CompressedAssocMatrix{T}()
+    values = assoc.values[idx_bool]
+    outer_indices = assoc.outer_indices[idx_bool]
+    inner_indices = assoc.inner_indices[idx_bool]
+    out_val = length(I)
+    outer_size = (out_val,out_val)
+    inner_size = assoc.inner_size
+    len2 = length(outer_indices)
+    for i ∈ 1:len2
+        i1,j1 = outer_indices[i]
+        i2,j2 = findfirst(==(i1),I),findfirst(==(j1),I)
+        outer_indices[i] = (i2,j2)
+    end
+    return CompressedAssocMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
+end
 
 #this conversion is lossy, as interaction between two or more components are lost.
 #also, this conversion stores the site values for other components. (those are not used)
 function split_model(param::AssocParam{T},
     splitter = split_model(1:length(param.components))) where T
     function generator(I)     
-        _value  = param.values[I,I]
-        _ismissingvalues = param.ismissingvalues[I,I]
+        _value  = _split_model(param.values,I)
+     
         return AssocParam{T}(
                 param.name,
                 param.components[I],
                 _value,
-                _ismissingvalues,
-                param.allcomponentsites[I],
+                param.sites[I],
                 param.sourcecsvs,
                 param.sources
                 )
         end
-    return [generator(I) for I in splitter]
+    return [generator(I) for I ∈ splitter]
 end
 
 #this param has a defined split form
@@ -107,7 +127,7 @@ function split_model(groups::GroupParam)
         1:length(groups.n_groups[i]),
         groups.sourcecsvs)
     end
-    [generator(i) for i in 1:len]
+    [generator(i) for i ∈ 1:len]
 end
 
 function split_model(param::SiteParam,
@@ -117,74 +137,93 @@ function split_model(param::SiteParam,
             param.components[I],
             param.sites[I],
             param.n_sites[I],
-             param.i_sites[I],
+            param.i_sites[I],
             param.flattenedsites,
             param.n_flattenedsites[I],
             1:length(param.flattenedsites),
         param.sourcecsvs)
     end
-    return [generator(i) for i in splitter]
+    return [generator(i) for i ∈ splitter]
 end
 
 function split_model(Base.@nospecialize(params::EoSParam),splitter)
     T = typeof(params)
-    split_paramsvals = [split_model(getfield(params,i),splitter) for i  in fieldnames(T)]
+    split_paramsvals = [split_model(getfield(params,i),splitter) for i  ∈ fieldnames(T)]
     return T.(split_paramsvals...)
 end
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
 #
 
-split_model(model::EoSModel) = auto_split_model(model)
+split_model(model::EoSModel,subset=nothing) = auto_split_model(model,subset)
 
-function auto_split_model(Base.@nospecialize(model::EoSModel))
+function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
     try
         allfields = Dict{Symbol,Any}()
-        
         if has_groups(typeof(model))
-            splitter = model.groups.i_groups
+            raw_splitter = model.groups.i_groups
+            subset !== nothing && throw("using subsets is not supported with Group Contribution models")
         else
-            splitter = split_model(1:length(model.components))
+            raw_splitter = split_model(1:length(model.components))
         end
+        if subset === nothing
+            splitter = raw_splitter
+        elseif eltype(subset) <: Integer
+            splitter = raw_splitter[subset]
+        elseif eltype(subset) <: AbstractVector
+            splitter = subset
+        else
+            throw("invalid type of subset.")
+        end
+        
         len = length(splitter)
 
-        if hasfield(typeof(model),:groups)
+        if hasfield(typeof(model),:groups) #TODO implement a splitter that accepts a subset
             allfields[:groups] = split_model(model.groups)
         end
         M = typeof(model)
 
-        len_comps = length(model.components)
-        allfields[:components] = split_model(model.components)
+        len_comps = length(splitter)
+        if hasfield(typeof(model),:groups)
+            allfields[:components] = split_model(model.components)
+        else
+            allfields[:components] = split_model(model.components,splitter)
+        end
         
         if hasfield(typeof(model),:icomponents)
-            allfields[:icomponents] = [1:1 for _ in 1:len_comps]
+            allfields[:icomponents] = [1:length(splitter[i]) for i ∈ 1:len_comps]
         end
         
         #process all model fields
         modelfields = filter(x->getproperty(model,x) isa EoSModel,fieldnames(M))
-        for modelkey in modelfields
+        for modelkey ∈ modelfields
             modelx = getproperty(model,modelkey)
             if is_splittable(modelx)
-                allfields[modelkey]= split_model(modelx)
+                allfields[modelkey]= split_model(modelx,subset)
             else
                 allfields[modelkey] = fill(modelx,len_comps)
             end
         end
 
         modelfields = filter(x->getproperty(model,x) isa Vector{<:EoSModel},fieldnames(M))
-        for modelkey in modelfields
+        for modelkey ∈ modelfields
             modelx = getproperty(model,modelkey)
-            allfields[modelkey] = [[tup] for tup in modelx]
+            allfields[modelkey] = [[tup] for tup ∈ modelx]
+        end
+
+        only_paramfields = filter(x->getproperty(model,x) isa Union{SingleParam,PairParam,AssocParam},fieldnames(M))
+        for paramkey ∈ only_paramfields
+            modelx = getproperty(model,paramkey)
+            allfields[paramkey] = split_model(modelx,splitter)
         end
 
         #process all empty (Missing,Nothing) fields
         emptyfields = filter(x->getproperty(model,x) isa Union{Nothing,Missing},fieldnames(M))
 
-        for emptykey in emptyfields
+        for emptykey ∈ emptyfields
              allfields[emptykey] = fill(model.emptykey,len_comps)
         end
-        
-        
+    
         if hasfield(typeof(model),:params)
             allfields[:params] = split_model(model.params,splitter)
         end
@@ -201,20 +240,24 @@ function auto_split_model(Base.@nospecialize(model::EoSModel))
         end
 
 
-        return [M((allfields[k][i] for k in fieldnames(M))...) for i in 1:len]
+        return [M((allfields[k][i] for k ∈ fieldnames(M))...) for i ∈ 1:len]
     catch e
+        @error "$M cannot be splitted"
         rethrow(e)
-        @show model
-        return simple_split_model(model)
     end
 end
 
 ##fallback,around 50 times slower if there is any need to read csvs
 
-function simple_split_model(Base.@nospecialize(model::EoSModel))
+function simple_split_model(Base.@nospecialize(model::EoSModel),subset = nothing)
     MODEL = typeof(model)
     pure = Vector{MODEL}(undef,0)
-    for comp ∈ model.components
+    if subset === nothing
+        comps = model.components
+    else
+        comps = model.components[subset]
+    end
+    for comp ∈ comps
         push!(pure,MODEL([comp]))
     end
     return pure

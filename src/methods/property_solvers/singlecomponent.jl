@@ -11,8 +11,13 @@ function try_sat_pure(model,V0,f!,T,result,error_val,method = LineSearch(Newton(
     end
 
     (P_sat,V_l,V_v) = result[]
+    _,dpdvl = p∂p∂V(model,V_l,T,SA[1.0])
+    _,dpdvv = p∂p∂V(model,V_v,T,SA[1.0])
+    (dpdvl > 0) | (dpdvv > 0) && return false
     ε = abs(V_l-V_v)/(eps(typeof(V_l-V_v)))
-    if (ε > 8)
+    ups = (eps(typeof(V_l-V_v)))
+    #@show abs(V_l-V_v),ups
+    if (ε > 5e9)
         #if ΔV > ε then Vl and Vv are different values
         return true
     end
@@ -47,6 +52,9 @@ function sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
         return result[]
     end
     (T_c, p_c, V_c) = crit_pure(model)
+    if abs(T_c-T) < eps(typeof(T))
+        return (p_c,V_c,V_c)
+    end
     if T_c < T
         @error "initial temperature $T greater than critical temperature $T_c. returning NaN"
     else
@@ -60,34 +68,32 @@ function sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     return res0
 end
 
-#=
-    x0_sat_pure_crit(model,T,T_c,P_c,V_c)
 
-based on:
-DOI: 10.1007/s10910-007-9272-4
-Journal of Mathematical Chemistry, Vol. 43, No. 4, May 2008 (© 2007)
-The van der Waals equation: analytical and approximate solutions
+ #   x0_sat_pure_crit(model,T,T_c,P_c,V_c)
 
-we only use the upper part of the approximation
-but we use the calculated Tc, Vc and Pc. that shifts the 
-result enough to be useful as a starting point
-=#
-function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
-    _1 = one(T)
-    Tr = T/T_c
-    Trm1 = _1-Tr
-    Trmid = sqrt(Trm1)
-    P_sat0 = (_1 -4.0*(Trm1)+4.8(Trm1*Trm1))*P_c
-    #c = 1/Vr
-    c_l = 1.0+2.0*Trmid + 0.4*Trm1 - 0.52*Trmid*Trm1 +0.115*Trm1*Trm1
-    c_v = 1.0-2.0*Trmid + 0.4*Trm1 + 0.52*Trmid*Trm1 +0.207*Trm1*Trm1
-    Vl0 = (1/c_l)*V_c
-    Vv0 = (1/c_v)*V_c
-    #Vl = volume_compress(model,P_sat0,T,V0=Vl0)
-    #Vv = volume_compress(model,P_sat0,T,V0=Vv0)
+
+
+#with the critical point, we can perform a
+#corresponding states approximation with the
+#propane reference equation of state
+function x0_sat_pure_crit(model,T,T_c,P_c,V_c) 
+    h = V_c*5000
+    T0 = 369.89*T/T_c
+    Vl0 = (1.0/_propaneref_rholsat(T0))*h
+    Vv0 = (1.0/_propaneref_rhovsat(T0))*h
+    _1 = SA[1.0]
+    #μ_l = only(VT_chemical_potential(model,Vl0,T,_1))
+    #μ_v = only(VT_chemical_potential(model,Vv0,T,_1))
+    #@show (μ_l < μ_v,T/T_c)
+    #if μ_l < μ_v 
+      #@show μ_l,μ_v
+    #end
+    # _,dpdvv = p∂p∂V(model,Vv0,T,SA[1.0])
+    # @show dpdvv*Vv0
+    # _,dpdvv = p∂p∂V(model,2*Vv0,T,SA[1.0])
+    # @show dpdvv*Vv0
     return [log10(Vl0),log10(Vv0)]
 end
-
 function sat_pure(model::EoSModel,V0,f!,T,method =LineSearch(Newton()) )  
     r = Solvers.nlsolve(f!, V0 ,method )
     Vsol = Solvers.x_sol(r)

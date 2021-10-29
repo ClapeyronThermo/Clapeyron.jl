@@ -114,7 +114,6 @@ import NaNMath
     @inline log(x::Int64) = NaNMath.log(float(x))
     
     include("ADNewton.jl")
-    include("nested.jl")
     include("nlsolve.jl")
     include("fixpoint/fixpoint.jl")
     include("optimize.jl")

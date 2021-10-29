@@ -1,17 +1,25 @@
-using Clapeyron, Test
+using Clapeyron, Test, NLSolvers
 
 const SOL = Clapeyron.Solvers
 
 quadratic(x) = x*x - 4
 rosenbrock(x) = (1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2
 golden_number_fixpoint(x) = one(x) + one(x)/x
+fgh_lgmx(x) = (log(x)+x,1/x +1,-1/(x^2))
+function quadratic_fixpoint(y,x)
+    y[1] = sqrt(-x[2]^2 + 5)
+    y[2] = 2*sqrt(-x[1]^2 + 9)/3
+    y
+end
 @testset "Solvers Module" begin
-    @testset "ad_newton" begin
+    @testset "newton,halley" begin
         x0 = 2+rand()
         fdf = SOL.f∂f(quadratic,x0)
         @test fdf[1] ≈ quadratic(x0)
         @test fdf[2] ≈ 2*x0
         @test SOL.ad_newton(quadratic,x0) ≈ 2.0
+        @test SOL.newton(x->(quadratic(x),2*x),x0) ≈ 2.0
+        @test SOL.halley(fgh_lgmx,0.5)≈ 0.567143290409784
     end
 
     @testset "box optimize" begin
@@ -29,7 +37,10 @@ golden_number_fixpoint(x) = one(x) + one(x)/x
         #example of FMinBox in Optim.jl
         x0 = 2+ rand()
         ϕ = (1+sqrt(5))/2
+        x1 = [0.1,0.1]
         @test @inferred(SOL.fixpoint(golden_number_fixpoint,x0)) ≈ ϕ
+        @test @inferred(SOL.fixpoint(golden_number_fixpoint,x0,SOL.AitkenFixPoint())) ≈ ϕ
+        @test @inferred(SOL.fixpoint(quadratic_fixpoint,x1)) ≈ [0.6*sqrt(5),0.8*sqrt(5)]
     end
 
     function f_diffmcp!(fvec, x)
@@ -46,7 +57,10 @@ golden_number_fixpoint(x) = one(x) + one(x)/x
     # Finance", p. 51
     #does not converge in NLSolve.jl converges here with NLSolvers.jl
     @testset "nlsolve" begin
-        res = SOL.nlsolve(f_diffmcp!,[0.0])
+        res = SOL.nlsolve(f_diffmcp!,[0.0],TrustRegion(Newton()))
+        res2 = SOL.nlsolve(f_diffmcp!,[0.0],LineSearch(Newton()))
+        @test SOL.x_sol(res) isa Vector
+        @test SOL.x_sol(res2) isa Vector
         solution = SOL.x_sol(res)
         v = [1.0]
         f_diffmcp!(v,solution)
@@ -54,7 +68,7 @@ golden_number_fixpoint(x) = one(x) + one(x)/x
     end
 
     @testset "Rachford Rice" begin
-    #error, all Ks > 0, from CalebBell/(Chemicals
+    #error, all Ks > 0, from CalebBell/Chemicals
     zs = [0.0, 0.0885053990596404, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.721469918219507, 0.01742948033685831,
             0.1725952023839942]
     Ks = [192.3625321718047, 105.20070698573475, 76.30532397111489, 37.090890262982, 21.38862102676539, 18.093547012968767,
