@@ -16,7 +16,6 @@ export SAFTVRMie
 function SAFTVRMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params,sites = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
-    params["Mw"].values .*= 1E-3
     Mw = params["Mw"]
     segment = params["m"]
     params["sigma"].values .*= 1E-10

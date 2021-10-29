@@ -1,16 +1,6 @@
-struct CPAParam <: EoSParam
-    a::PairParam{Float64}
-    b::PairParam{Float64}
-    c1::SingleParam{Float64}
-    Tc::SingleParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
-    Mw::SingleParam{Float64}
-end
+abstract type sCPAModel <: CPAModel end
 
-abstract type CPAModel <: SAFTModel end
-
-struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
+struct sCPA{T <: IdealModel,c <: CubicModel} <: sCPAModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     cubicmodel::c
@@ -21,14 +11,14 @@ struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
     references::Array{String,1}
 end
 
-@registermodel CPA
-export CPA
+@registermodel sCPA
+export sCPA
 
-export CPA
-function CPA(components; 
+export sCPA
+function sCPA(components; 
             idealmodel=BasicIdeal, 
             cubicmodel=RK, 
-            alpha=CPAAlpha, 
+            alpha=sCPAAlpha, 
             mixing=vdW1fRule,
             activity=nothing,
             translation=NoTranslation, 
@@ -41,7 +31,7 @@ function CPA(components;
             verbose=false)
     icomponents = 1:length(components)
 
-    params,sites = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/sCPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
     k  = params["k"]
     Tc = params["Tc"]
@@ -69,33 +59,18 @@ function CPA(components;
 
     references = ["10.1021/ie051305v"]
 
-    model = CPA(components, icomponents, init_cubicmodel, packagedparams, sites, init_idealmodel, 1e-12, references)
+    model = sCPA(components, icomponents, init_cubicmodel, packagedparams, sites, init_idealmodel, 1e-12, references)
     return model
 end
 
-function a_res(model::CPAModel, V, T, z)
-    n = sum(z)
-    ā,b̄,c̄ = cubic_ab(model.cubicmodel,V,T,z,n)
-    return a_res(model.cubicmodel,V,T,z) + a_assoc(model,V+c̄*n,T,z)
-end
-
-ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
-
-function a_assoc(model::CPAModel, V, T, z)
-    x = z/∑(z)
-    n_sites = model.sites.n_flattenedsites
-    X_ = @f(X)
-    return ∑(x[i]*∑(n_sites[i][a] * (log(X_[i][a])+(1-X_[i][a])/2) for a in @sites(i)) for i in @comps)
-end
-
-function Δ(model::CPAModel, V, T, z, i, j, a, b)
+function Δ(model::sCPAModel, V, T, z, i, j, a, b)
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b] * 1e2/R̄
     βijab = model.params.bondvol.values[i,j][a,b] * 1e-3
-    Σz = sum(z)
+    x = z/∑(z)
     b = model.params.b.values
-    b̄ = dot(z,b,z)
-    η = b̄/(4*V*Σz)
-    g = (1-η/2)/(1-η)^3
+    b̄ = ∑(b .* (x * x'))
+    η = b̄*∑(z)/(4*V)
+    g = (1-1.9η)^-1
     bij = (b[i,i]+b[j,j])/2
-    return g*(exp(ϵ_associjab/T)-1)*βijab*bij/N_A
+    return g*(exp(ϵ_associjab/T)-1)*βijab*bij
 end
