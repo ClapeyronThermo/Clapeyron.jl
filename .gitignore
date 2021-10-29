@@ -1,0 +1,9 @@
+.DS_Store
+examples/.ipynb_checkpoints/*
+*.pdf
+*.svg
+*.png
+examples/MSE Seminar/*
+Untitled.ipynb
+Test.ipynb
+*.ipynb
