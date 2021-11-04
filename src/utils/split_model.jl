@@ -140,7 +140,7 @@ function split_model(param::SiteParam,
             param.i_sites[I],
             param.flattenedsites,
             param.n_flattenedsites[I],
-            1:length(param.flattenedsites),
+            param.i_flattenedsites[I],
         param.sourcecsvs)
     end
     return [generator(i) for i ∈ splitter]
