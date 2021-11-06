@@ -30,7 +30,6 @@ function X!(output,input,pack_indices,delta,modelsites,ρ,z)
     _1 = one(_0)
     Xinput = PackedVofV(pack_indices,input)
     Xoutput = PackedVofV(pack_indices,output)
-    
     #=
     n = modelsites.n_flattenedsites
     sitesⱼ = modelsites.i_flattenedsites
@@ -56,7 +55,7 @@ function X!(output,input,pack_indices,delta,modelsites,ρ,z)
             Xoutput[i][_a] = rhs
         end
     end=#
-    n = modelsites.n_sites
+        n = modelsites.n_sites
     for i ∈ 1:length(modelsites.components)
         sitesᵢ = modelsites.i_sites[i]
         iszero(length(sitesᵢ)) && continue
@@ -79,47 +78,75 @@ function X!(output,input,pack_indices,delta,modelsites,ρ,z)
     return output
 end
 
-function X(model::Union{SAFTModel,CPAModel}, V, T, z)
+function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     _1 = one(V+T+first(z))
-    ρ = N_A/V
     tol = model.absolutetolerance
     X_ = PackedVectorsOfVectors.packed_ones(typeof(_1),length(@sites(i)) for i ∈ @comps)
     idxs = indices(X_)    
     X0 = X_.v
-    _Δ = @f(Δ)
-    @show X_
+    nn = length(model.params.bondvol.values.values)
+    if isone(nn)
+        x1,x2 = X_exact1(model,V,T,z,data)
+        X0[1] = x1
+        X0[2] = x2
+        return PackedVofV(idxs,X0)
+    end
+    ρ = N_A/V
+    if data === nothing
+        _Δ = @f(Δ)
+    else
+        _Δ = @f(Δ,data)
+    end  
     fX(out,in) = X!(out,in,idxs,_Δ,model.sites,ρ,z)
     Xsol = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(0.5),atol=tol,max_iters = 500)
     return PackedVofV(idxs,Xsol)
 end
 
-function X(model::Union{SAFTModel,CPAModel}, V, T, z,data)
-    _1 = one(V+T+first(z))
+#exact calculation of site non-bonded fraction when there is only one site
+function X_exact1(model,V,T,z,data=nothing)
+    κ = model.params.bondvol.values
+    i,j = κ.outer_indices[1]
+    a,b = κ.inner_indices[1]
+    if data === nothing
+        _Δ = @f(Δ,i,j,a,b)
+    else
+        _Δ = @f(Δ,i,j,a,b,data)
+    end
     ρ = N_A/V
-    tol = model.absolutetolerance
-    X_ = PackedVectorsOfVectors.packed_ones(typeof(_1),length(@sites(i)) for i ∈ @comps)
-    idxs = indices(X_)    
-    X0 = X_.v
-    _Δ = @f(Δ,data)
-    fX(out,in) = X!(out,in,idxs,_Δ,model.sites,ρ,z)
-    Xsol = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(0.5),atol=tol,max_iters = 500)
-    return PackedVofV(idxs,Xsol)
+    zi = z[i]
+    zj = z[j]
+    ni = model.sites.n_flattenedsites[i]
+    na = ni[a]
+    nj = model.sites.n_flattenedsites[j]
+    nb = nj[b]
+    ρ = N_A/V
+    kia = na*zi*ρ*_Δ
+    kjb = nb*zj*ρ*_Δ
+    #kia*x*x + x(kjb-kia+1) - 1 = 0
+    a = kia
+    b = 1 -kia + kjb
+    c = -1
+    xia = -2*c/(b + sqrt(b*b - 4*a*c))
+    xjb = 1/(1+kia*xia)
+    if (i,a) < (j,b)
+        return (xia,xjb)
+    else
+        return (xjb,xia)
+    end 
 end
 
 function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z)
     _0 = zero(V+T+first(z))
-    if iszero(length(model.sites.flattenedsites))
-        return _0
-    end
+    nn = length(model.params.bondvol.values.values)
+    iszero(nn) && return _0
     X_ = @f(X)
     return @f(_a_assoc,X_)
 end
 
 function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,data)
     _0 = zero(V+T+first(z))
-    if iszero(length(model.sites.flattenedsites))
-        return _0
-    end
+    nn = length(model.params.bondvol.values.values)
+    iszero(nn) && return _0
     X_ = @f(X,data)
     return @f(_a_assoc,X_)
 end
@@ -151,10 +178,26 @@ end
 
 
 #res =  ∑(z[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)/sum(z)
-#=
 
-aa = 4.76197468041569
-aa = 4.76197468041569
-aa = 42.788399307705504
-aa = 42.788399307705504
+#=
+on one site:
+Xia = 1/(1+*nb*z[j]*rho*Δ*Xjb)
+Xjb = 1/(1+*na*z[i]*rho*Δ*Xia)
+
+kia = na*z[i]*rho*Δ
+kjb = nb*z[j]*rho*Δ
+
+Xia = 1/(1+kjb*Xjb)
+Xjb = 1/(1+kia*Xia)
+
+Xia = 1/(1+kjb*(1/(1+kia*Xia)))
+Xia = 1/(1+kjb/(1+kia*Xia))
+Xia = 1/((1+kia*Xia+kjb)/(1+kia*Xia))
+Xia = (1+kia*Xia)/(1+kia*Xia+kjb)
+Xia*(1+kia*Xia+kjb) = 1+kia*Xia #x = Xia
+x*(1+kia*x+kjb) = 1+kia*x
+x + kia*x*x + kjb*x - 1 - kia*x = 0
+kia*x*x + x(kjb-kia+1) - 1 = 0
+x = - (kjb-kia+1) + 
+
 =#
