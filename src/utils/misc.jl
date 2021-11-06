@@ -1,7 +1,6 @@
 # extract all sites
 const LIQUID_STR = (:liquid,:LIQUID,:L,:l)
 
-
 """
     is_liquid(x::Union{Symbol,String})   
 
@@ -26,7 +25,6 @@ is_vapour(str::String) = is_vapour(Symbol(str))
 
 const SUPERCRITICAL_STR = (:sc,:SC,:supercritical,:SUPERCRITICAL)
 
-
 """
     is_supercritical(x::Union{Symbol,String})   
 
@@ -36,7 +34,6 @@ If a string is passed, it is converted to symbol.
 """
 is_supercritical(sym::Symbol) = sym in SUPERCRITICAL_STR
 is_supercritical(str::String) = is_vapour(Symbol(str))
-
 
 """
     ∑(iterator)
@@ -83,13 +80,10 @@ function xlogx(x::Number)
     ifelse(iszero(x), zero(result), result)
 end
 
-
-
 @inline function nan_num(V,T,z)
     _0 = zero(V+T+first(z))
     _0/_0
 end
-
 
 @inline function negative_vt(V,T)::Bool
     _0 = zero(V+T)
