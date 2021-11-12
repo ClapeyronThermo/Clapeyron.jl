@@ -242,6 +242,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
 
         return [M((allfields[k][i] for k ∈ fieldnames(M))...) for i ∈ 1:len]
     catch e
+        M = typeof(model)
         @error "$M cannot be splitted"
         rethrow(e)
     end
