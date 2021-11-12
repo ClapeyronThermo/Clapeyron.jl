@@ -97,16 +97,38 @@ function CompressedAssocMatrix(x::MatrixofMatrices{T}) where T
     end
     
 
+
+
+    #self association
+    
+   
     for i in 1:os1
-        for j in i:os2 #there can be self association
+        xi = x[i,i]
+        if iszero(length(xi))
+            continue
+        end
+        a1,a2 = size(xi)
+        for a in 1:a1
+            for b in 1:a-1
+                if !_iszero(xi[a,b]) 
+                    push!(values,xi[a,b])
+                    push!(outer_indices,(i,i))
+                    push!(inner_indices,(a,b))
+                end
+            end
+        end
+    end
+    #inter compound association
+    for i in 1:os1
+        for j in 1:os2
+            i == j && continue
             xi = x[i,j]
             if iszero(length(xi))
                 continue
             end
-            a1,a2 = size(xi)
+            a1,a2 = size(xi)   
             for a in 1:a1
-                start = ifelse(i == j,a,1)
-                for b in start:a2 #but not on the same site
+                for b in 1:a2
                     if !_iszero(xi[a,b]) 
                         push!(values,xi[a,b])
                         push!(outer_indices,(i,j))
@@ -182,3 +204,15 @@ end
 function indices(x::PackedVofV)
     return x.p
 end
+
+#=
+ (1, 1)
+ (1, 3)
+ (1, 3)
+ (1, 3)
+ (1, 3)
+ (1, 3)
+ (1, 3)
+ (2, 2)
+ (3, 3)
+=#
