@@ -117,6 +117,11 @@ function getparams(components::Vector{String},locations::Vector{String},options)
     end
     if any(x isa AssocParam for x in values(result))
         sites = buildsites(result,components,allcomponentsites,options)
+        for (k,v) ∈ pairs(result)
+            if v isa AssocParam
+            result[k] = _postprocess!(v,sites)
+            end
+        end
         return result,sites
     else
         return result

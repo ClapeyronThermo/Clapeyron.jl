@@ -58,6 +58,7 @@ function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
     site1 = Vector{Int64}(undef,ngc)
     site2 = Vector{Int64}(undef,ngc)
     assoc_idxdict = Dict{Tuple{Int,Int},Int}()
+
     for ii in 1:ngc
         i,j = outer[ii]
         a,b = inner[ii]
@@ -68,14 +69,17 @@ function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
         assoc_idxdict[(s1,s2)] = ii
         assoc_idxdict[(s2,s1)] = ii
     end
+
     #return site1,site2
     x = Matrix{Matrix{Int}}(undef,ncomps,ncomps)
     for i = 1:ncomps
         xi = zeros(Int,nsites,nsites)
         for (a,b) in Iterators.product(sites.i_sites[i],sites.i_sites[i])
             abval = get(assoc_idxdict,(a,b),0)
-            xi[a,b] = abval
-            xi[b,a] = abval
+            if a != b
+                xi[a,b] = abval
+                xi[b,a] = abval
+            end
         end
         x[i,i] = xi
         for j = 1:i-1
