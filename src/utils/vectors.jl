@@ -128,7 +128,7 @@ function CompressedAssocMatrix(x::MatrixofMatrices{T}) where T
             end
             a1,a2 = size(xi)   
             for a in 1:a1
-                for b in 1:a2
+                for b in (a):a2
                     if !_iszero(xi[a,b]) 
                         push!(values,xi[a,b])
                         push!(outer_indices,(i,j))
@@ -216,3 +216,5 @@ end
  (2, 2)
  (3, 3)
 =#
+
+

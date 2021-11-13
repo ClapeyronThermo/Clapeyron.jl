@@ -10,7 +10,6 @@ struct γMieZ <: EoSModel
     z::SingleParam{Vector{Float64}}
 end
 
-
 struct SAFTgammaMieParam <: EoSParam
     segment::SingleParam{Int}
     mixedsegment::SingleParam{Vector{Float64}}
