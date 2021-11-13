@@ -111,6 +111,7 @@ function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,data=nothing)
     nn = length(model.params.bondvol.values.values)
     iszero(nn) && return _0
     X_ = @f(X,data)
+    
     return @f(_a_assoc,X_)
 end
 

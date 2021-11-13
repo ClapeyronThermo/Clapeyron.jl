@@ -92,5 +92,9 @@ include("models/eos/SPUNG/SPUNG.jl")
 include("models/eos/cached/CachedEoS.jl")
 
 include("methods/methods.jl")
-
+function errorsaft()
+    system = SAFTgammaMie(["methanol","water"])
+    pure = split_model(system)
+    crit = crit_pure.(pure)
+end
 end # module
