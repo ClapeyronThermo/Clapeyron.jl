@@ -58,6 +58,7 @@ function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
     site1 = Vector{Int64}(undef,ngc)
     site2 = Vector{Int64}(undef,ngc)
     assoc_idxdict = Dict{Tuple{Int,Int},Int}()
+
     for ii in 1:ngc
         i,j = outer[ii]
         a,b = inner[ii]
@@ -68,20 +69,24 @@ function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
         assoc_idxdict[(s1,s2)] = ii
         assoc_idxdict[(s2,s1)] = ii
     end
+
     #return site1,site2
     x = Matrix{Matrix{Int}}(undef,ncomps,ncomps)
     for i = 1:ncomps
         xi = zeros(Int,nsites,nsites)
         for (a,b) in Iterators.product(sites.i_sites[i],sites.i_sites[i])
             abval = get(assoc_idxdict,(a,b),0)
+            
             xi[a,b] = abval
             xi[b,a] = abval
+            
         end
         x[i,i] = xi
         for j = 1:i-1
             xi = zeros(Int,nsites,nsites)
             for (a,b) in Iterators.product(sites.i_sites[i],sites.i_sites[j])
                 abval = get(assoc_idxdict,(a,b),0)
+                
                 xi[a,b] = abval
                 xi[b,a] = abval
             end
@@ -89,9 +94,21 @@ function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
             x[j,i] = xi
         end
     end
-    return CompressedAssocMatrix(x)
+    val =  CompressedAssocMatrix(x)
+    new_inneridx = val.inner_indices
+    for (idx,(i,j),(a,b)) ∈ indices(val)
+        _a = sites.i_flattenedsites[i][a]
+        _b = sites.i_flattenedsites[j][b]
+        new_inneridx[idx] = (_a,_b)
+    end
 
-    
-
-
+    n = findall(!=((0,0)),new_inneridx)
+    values = val.values[n]
+    outer_indices = val.outer_indices[n]
+    inner_indices = new_inneridx[n]
+    outer_size = val.outer_size
+    inner_size = val.inner_size
+    newvals = CompressedAssocMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
 end
+    
+  

@@ -36,6 +36,23 @@ struct SAFTgammaMie{I,VR} <: SAFTgammaMieModel
     references::Array{String,1}
 end
 
+function split_model(model::SAFTgammaMie,subset = nothing)
+    if !(subset === nothing)
+        error("SAFTgammaMie does not support custom subsets")
+    end
+    pures = auto_split_model(model)
+    for (i,pure) in pairs(pures)
+        filter!(!iszero,pure.mie_zfractions.z.values[1])
+        mixm = pure.params.mixedsegment.values
+        for mi in mixm
+            xi = mi[i]
+            resize!(mi, 1)
+            mi[1] = xi
+        end
+    end 
+    return pures
+end
+
 function SAFTgammaMie(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
@@ -59,7 +76,7 @@ function SAFTgammaMie(components;
         res_i = 0.0
         vi = v[i]
         groups_i = groups.i_groups[i]
-        for idx in 1:length(groups_i)
+        for idx ∈ 1:length(groups_i)
             k = groups_i[idx]
             res_i += vi[k]*S[k]*vst[k]
         end
@@ -70,7 +87,7 @@ function SAFTgammaMie(components;
     #used in x_S:
     #x_S(group i) = dot(z,mixsegment[i])/dot(z,m_vr)
     mixsegment =  [[v[i][k]*vst[k]*S[k] for i ∈ comps] for k ∈ gc]
-    gc_mixedsegment = SingleParam("mixed segment",groups.flattenedgroups,mixsegment,[false for i in gc],String[],String[])
+    gc_mixedsegment = SingleParam("mixed segment",groups.flattenedgroups,mixsegment,[false for i ∈ gc],String[],String[])
     gc_sigma = sigma_LorentzBerthelot(params["sigma"])
     gc_sigma.values .*= 1E-10
     gc_epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], gc_sigma)
@@ -81,11 +98,11 @@ function SAFTgammaMie(components;
         return v[i][k]*vst[k]*S[k] / ∑(v[i][l]*vst[l]*S[l] for l ∈ gc)
     end
 
-    zz = [[0.0 for k in 1:length(v[i])] for i in 1:length(v)]
-    zzparam = SingleParam("z fraction",components,zz,[false for i in 1:length(components)],String[],String[])
-    for i in 1:length(zz)
+    zz = [[0.0 for k ∈ 1:length(v[i])] for i ∈ comps]
+    zzparam = SingleParam("z fraction",components,zz,[false for i ∈ 1:length(components)],String[],String[])
+    for i ∈ 1:length(zz)
         zzi = zz[i]
-        for k in 1:length(zzi)
+        for k ∈ 1:length(zzi)
             zzi[k] = ẑ(i, k)
         end
     end
@@ -110,10 +127,10 @@ function SAFTgammaMie(components;
         end
     end
 
-    comp_ϵ = [ϵ̄(i, j) for (i,j) in Iterators.product(comps,comps)]
+    comp_ϵ = [ϵ̄(i, j) for (i,j) ∈ Iterators.product(comps,comps)]
     epsilon = PairParam("epsilon",components,comp_ϵ)
     
-    comp_σ = [σ̄(i, j) for (i,j) in Iterators.product(comps,comps)]
+    comp_σ = [σ̄(i, j) for (i,j) ∈ Iterators.product(comps,comps)]
     sigma = PairParam("sigma",components,comp_σ)
 
     gc_lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
@@ -125,8 +142,8 @@ function SAFTgammaMie(components;
     function λi(ll,i)
         return ∑(∑(ẑ(i,k)*ẑ(i,l)*ll[k,l] for l ∈ gc) for k ∈ gc)
     end
-    comp_lambda_a = [λi(gc_λa,i) for i in comps]
-    comp_lambda_r = [λi(gc_λr,i) for i in comps]
+    comp_lambda_a = [λi(gc_λa,i) for i ∈ comps]
+    comp_lambda_r = [λi(gc_λr,i) for i ∈ comps]
     lambda_a = lambda_LorentzBerthelot(SingleParam("lambda_a",components,comp_lambda_a))
     lambda_r = lambda_LorentzBerthelot(SingleParam("lambda_r",components,comp_lambda_r))
 
@@ -136,21 +153,20 @@ function SAFTgammaMie(components;
     comp_sites,idx_dict = gc_to_comp_sites(sites,groups)
     assoc_idx = gc_to_comp_assoc_idx(gc_bondvol,comp_sites,idx_dict)
     assoc_idxs,outer,inner,outer_size,inner_size = assoc_idx.values,assoc_idx.outer_indices,assoc_idx.inner_indices,assoc_idx.outer_size,assoc_idx.inner_size
-    _comp_bondvol = [gc_bondvol.values.values[i] for i in assoc_idxs]
-    _comp_epsilon_assoc = [gc_epsilon_assoc.values.values[i] for i in assoc_idxs]
+    _comp_bondvol = [gc_bondvol.values.values[i] for i ∈ assoc_idxs]
+    _comp_epsilon_assoc = [gc_epsilon_assoc.values.values[i] for i ∈ assoc_idxs]
     compval_bondvol = CompressedAssocMatrix(_comp_bondvol,outer,inner,outer_size,inner_size)
     compval_epsilon_assoc = CompressedAssocMatrix(_comp_epsilon_assoc,outer,inner,outer_size,inner_size)
     comp_bondvol = AssocParam{Float64}("epsilon assoc",components,compval_bondvol,comp_sites.sites,String[],String[])
     comp_epsilon_assoc = AssocParam{Float64}("bondvol",components,compval_epsilon_assoc,comp_sites.sites,String[],String[])
-
     #mixing of Mw
     comp_mw = zeros(Float64,length(components))
     gc_mw = params["Mw"].values
-    for i in 1:length(components)
+    for i ∈ 1:length(components)
         vi = v[i]
         gi = groups.i_groups[i]
         mwi = 0.0
-        for idx in 1:length(gi)
+        for idx ∈ 1:length(gi)
             j = gi[idx]
             mwi += gc_mw[j]*vi[j]
         end
@@ -231,7 +247,7 @@ function d(model::SAFTgammaMieModel,V,T,z,_d_gc = @f(d_gc))
             iszero(zk) && continue
             dk = _d_gc[k]
             di += zk*zk*dk^3
-            for l in 1:k - 1
+            for l ∈ 1:k - 1
                 di += 0.25*zk*_z[l]*(dk + _d_gc[l])^3
             end
         end
@@ -344,8 +360,6 @@ function a_assoc(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     _,vrdata = _data
     return a_assoc(model.vrmodel,V,T,z,vrdata)
 end
-
-
 
 function a_disp(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     groups = @groups

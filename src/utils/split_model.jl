@@ -35,7 +35,7 @@ function split_model(param::SingleParam{T},
     return SingleParam(
     param.name,
     param.components[I],
-    param.values[I],
+    deepcopy(param.values[I]),#for SingleParam{Vector{X}}
     param.ismissingvalues[I],
     param.sourcecsvs,
     param.sources
@@ -140,7 +140,7 @@ function split_model(param::SiteParam,
             param.i_sites[I],
             param.flattenedsites,
             param.n_flattenedsites[I],
-            1:length(param.flattenedsites),
+            param.i_flattenedsites[I],
         param.sourcecsvs)
     end
     return [generator(i) for i ∈ splitter]
@@ -242,6 +242,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
 
         return [M((allfields[k][i] for k ∈ fieldnames(M))...) for i ∈ 1:len]
     catch e
+        M = typeof(model)
         @error "$M cannot be splitted"
         rethrow(e)
     end
