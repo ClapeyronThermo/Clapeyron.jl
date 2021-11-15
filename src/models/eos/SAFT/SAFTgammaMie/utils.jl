@@ -95,7 +95,6 @@ function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
         end
     end
     val =  CompressedAssocMatrix(x)
-    show(stdout,MIME"text/plain"(),val)
     new_inneridx = val.inner_indices
     for (idx,(i,j),(a,b)) ∈ indices(val)
         _a = sites.i_flattenedsites[i][a]
