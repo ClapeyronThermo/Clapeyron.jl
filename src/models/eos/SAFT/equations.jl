@@ -58,12 +58,17 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     X_ = PackedVectorsOfVectors.packed_ones(typeof(_1),length(@sites(i)) for i ∈ @comps)
     idxs = indices(X_)    
     X0 = X_.v
-    nn = length(model.params.bondvol.values.values)
+    bv = model.params.bondvol.values
+    nn = length(bv.values)
     if isone(nn)
-        x1,x2 = X_exact1(model,V,T,z,data)
-        X0[1] = x1
-        X0[2] = x2
-        return PackedVofV(idxs,X0)
+        xia,xjb = X_exact1(model,V,T,z,data)
+        i,j = only(bv.outer_indices) 
+        a,b = only(bv.inner_indices) 
+        #in the case that i = j, a = b, this does assignment twice
+        #we do xia last because xjb is calculated from xia
+        X_[j][b] = xjb
+        X_[i][a] = xia
+        return X_
     end
     ρ = N_A/V
     if data === nothing
@@ -81,12 +86,13 @@ function X_exact1(model,V,T,z,data=nothing)
     κ = model.params.bondvol.values
     i,j = κ.outer_indices[1]
     a,b = κ.inner_indices[1]
+    
+    
     if data === nothing
         _Δ = @f(Δ,i,j,a,b)
     else
         _Δ = @f(Δ,i,j,a,b,data)
     end
-    
     ρ = N_A/V
     zi = z[i]
     zj = z[j]
@@ -103,7 +109,7 @@ function X_exact1(model,V,T,z,data=nothing)
     _c = -1
     xia = -2*_c/(_b + sqrt(_b*_b - 4*_a*_c))
     xjb = 1/(1+kia*xia)
-    return ifelse((i,a) < (j,b),(xia,xjb),(xjb,xia))
+    return (xia,xjb)
 end
 
 function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,data=nothing)
@@ -165,4 +171,8 @@ x + kia*x*x + kjb*x - 1 - kia*x = 0
 kia*x*x + x(kjb-kia+1) - 1 = 0
 x = - (kjb-kia+1) + 
 
+x = 1/1+kiax
+x(1+kx) - 1 = 0
+kx2 +x - 1 = 0
+end
 =#
