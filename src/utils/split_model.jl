@@ -35,7 +35,7 @@ function split_model(param::SingleParam{T},
     return SingleParam(
     param.name,
     param.components[I],
-    param.values[I],
+    deepcopy(param.values[I]),#for SingleParam{Vector{X}}
     param.ismissingvalues[I],
     param.sourcecsvs,
     param.sources
