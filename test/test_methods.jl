@@ -24,7 +24,7 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1236.4846683094133 rtol = 1E-6 #requires that the model has Mr
         @test Clapeyron.isobaric_expansivity(system, p, T) ≈ -0.0010874255138433413 rtol = 1E-6
         @test Clapeyron.joule_thomson_coefficient(system, p, T) ≈ -6.007581864883784e-7 rtol = 1E-6
-        @test Clapeyron.second_virial_coefficient(system, T) ≈ -0.004883874325089262 rtol = 1E-6 #exact value calculated by using BigFloat
+        @test Clapeyron.second_virial_coefficient(system, T) ≈ -0.004919678119638886  rtol = 1E-6 #exact value calculated by using BigFloat
         @test Clapeyron.inversion_temperature(system, 1.1e8) ≈ 824.4137805298458 rtol = 1E-6
     end
     @testset "VLE properties" begin
