@@ -94,24 +94,3 @@ function complement_index(i,ij)
     i1,i2 = ij
     ifelse(i1 == i,i2,i1)
 end
-
-#this function is added in 1.7
-@static if Base.VERSION < v"1.7"
-    function keepat!(a::AbstractVector, inds)
-        local prev
-        i = firstindex(a)
-        for k in inds
-            if @isdefined(prev)
-                prev < k || throw(ArgumentError("indices must be unique and sorted"))
-            end
-            ak = a[k] # must happen even when i==k for bounds checking
-            if i != k
-                @inbounds a[i] = ak # k > i, so a[i] is inbounds
-            end
-            prev = k
-            i = nextind(a, i)
-        end
-        deleteat!(a, i:lastindex(a))
-        return a
-    end
-end
