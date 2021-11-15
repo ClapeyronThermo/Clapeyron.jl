@@ -45,7 +45,9 @@ function split_model(model::SAFTgammaMie,subset = nothing)
         filter!(!iszero,pure.mie_zfractions.z.values[1])
         mixm = pure.params.mixedsegment.values
         for mi in mixm
-            keepat!(mi,i)
+            xi = mi[i]
+            resize!(mi, 1)
+            mi[1] = xi
         end
     end 
     return pures
