@@ -262,13 +262,18 @@ function Base.show(io::IO,mime::MIME"text/plain",param::AssocParam{T}) where T
     comps = param.components
     vals = param.values
     sitenames = param.sites
-    flattenedsites = unique!(reduce(vcat,sitenames,init = String[]))
     for (idx,(i,j),(a,b)) in indices(vals)
-        print(io,"(\"",comps[i],"\", \"",flattenedsites[a],"\")")
+        try
+        s1 = sitenames[i][a]
+        s2 = sitenames[j][b]
+        print(io,"(\"",comps[i],"\", \"",s1,"\")")
         print(io," >=< ")
-        print(io,"(\"",comps[j],"\", \"",flattenedsites[b],"\")")
+        print(io,"(\"",comps[j],"\", \"",s2,"\")")
         print(io,": ")
         println(io,vals.values[idx])
+        catch
+        println("error at i = $i, j = $j a = $a, b = $b")
+        end
     end
 end
 
@@ -626,29 +631,6 @@ function SiteParam(components::Vector{String})
     String[])
 end
 
-function _postprocess!(param::AssocParam,site::SiteParam)
-    vals = param.values
-    
-    new_inneridx = copy(vals.inner_indices)
-    for (idx,(i,j),(a,b)) ∈ indices(vals)
-        if i == j && a == b
-            new_inneridx[idx] = (0,0)
-            continue
-        end
-        _a = site.i_flattenedsites[i][a]
-        _b = site.i_flattenedsites[j][b]
-        new_inneridx[idx] = (_a,_b)
-    end
-    n = findall(!=((0,0)),new_inneridx)
-    values = vals.values[n]
-    outer_indices = vals.outer_indices[n]
-    inner_indices = new_inneridx[n]
-    outer_size = vals.outer_size
-    inner_size = vals.inner_size
-    newvals = CompressedAssocMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
-    newparam = AssocParam(param.name,param.components,newvals,param.sites,param.sourcecsvs,param.sources)
-    return newparam
-end
 paramvals(param::ClapeyronParam) = param.values
 paramvals(x) = x
 
