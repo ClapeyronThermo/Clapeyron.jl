@@ -2,8 +2,6 @@
 
 const NumberOrString = Union{Union{T1,Missing},Union{T2,Missing}} where {T1 <: AbstractString, T2 <: Number}
 
-
-
 """
     getfileextension(filepath)
 
@@ -885,7 +883,7 @@ function GroupParam(gccomponents,
             continue
         end
         verbose && println("Searching for groups for components ", componentstolookup, " at ", filepath, "...")
-        merge!(allfoundcomponentgroups, findgroupsincsv(componentstolookup, filepath, options))
+        merge!(allfoundcomponentgroups,  (componentstolookup, filepath, options))
         append!(groupsourcecsvs, [filepath])
     end
     gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(gccomponents))
