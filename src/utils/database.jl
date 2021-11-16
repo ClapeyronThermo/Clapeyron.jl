@@ -883,7 +883,7 @@ function GroupParam(gccomponents,
             continue
         end
         verbose && println("Searching for groups for components ", componentstolookup, " at ", filepath, "...")
-        merge!(allfoundcomponentgroups,  (componentstolookup, filepath, options))
+        merge!(allfoundcomponentgroups,  findgroupsincsv(componentstolookup, filepath, options))
         append!(groupsourcecsvs, [filepath])
     end
     gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(gccomponents))
