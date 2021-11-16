@@ -32,12 +32,12 @@ function UNIFAC(components; puremodel=PR,
     C  = params["C"]
     R  = params["R"]
     Q  = params["Q"]
-    icomponents = 1:length(components)
+    icomponents = 1:length(groups.components)
     
     init_puremodel = [puremodel([groups.components[i]]) for i in icomponents]
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String[]
-    model = UNIFAC(components,icomponents,groups,packagedparams,init_puremodel,1e-12,references)
+    model = UNIFAC(groups.components,icomponents,groups,packagedparams,init_puremodel,1e-12,references)
     return model
 end
 

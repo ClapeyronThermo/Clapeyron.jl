@@ -38,7 +38,7 @@ include("models/eos/ideal/JobackIdeal.jl")
 
 include("models/eos/SAFT/PCSAFT/PCSAFT.jl")
 include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
-# include("models/eos/SAFT/PCSAFT/variants/PCPSAFT.jl")
+include("models/eos/SAFT/PCSAFT/variants/ePCSAFT.jl")
 
 include("models/eos/SAFT/CPA/CPA.jl")
 include("models/eos/SAFT/CPA/variants/sCPA.jl")
@@ -97,6 +97,7 @@ include("models/eos/cached/CachedEoS.jl")
 
 include("models/eos/Electrolytes/RSP/ConstW.jl")
 include("models/eos/Electrolytes/RSP/Schreckenberg.jl")
+include("models/eos/Electrolytes/RSP/Zhuang.jl")
 include("models/eos/Electrolytes/RSP/MM1.jl")
 include("models/eos/Electrolytes/Ion/DH.jl")
 include("models/eos/Electrolytes/Ion/MSA.jl")

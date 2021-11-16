@@ -61,7 +61,7 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z)
     X0 = X_.v
     _Δ = @f(Δ)
     fX(out,in) = X!(out,in,idxs,_Δ,model.sites,ρ,z)
-    Xsol = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(0.5),atol=tol,max_iters = 500)
+    Xsol = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(0.5),atol=tol,max_iters = 10000)
     return PackedVofV(idxs,Xsol)
 end
 
@@ -74,7 +74,7 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data)
     X0 = X_.v
     _Δ = @f(Δ,data)
     fX(out,in) = X!(out,in,idxs,_Δ,model.sites,ρ,z)
-    Xsol = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(0.5),atol=tol,max_iters = 500)
+    Xsol = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(0.5),atol=tol,max_iters = 10000)
     return PackedVofV(idxs,Xsol)
 end
 

@@ -10,7 +10,7 @@ function Tp_flash(model::EoSModel,T,p,z;phases=:VLE,K0=nothing)
     α₀ = 0.
     while tol>1e-10
         g(α) = sum(z[i]*(K0[i]-1.)/(K0[i]*α+(1. -α)) for i ∈ @Clapeyron.comps)
-        α₀ = find_zero(g, 0.5)
+        α₀ = Roots.find_zero(g, 0.5)
         
         x = @.  z / (K0*α₀+(1-α₀))
         y = @.  z*K0 / (K0*α₀+(1-α₀))
@@ -43,7 +43,7 @@ function Tp_flash(model::ElectrolyteModel,T,p,z;phases=:VLE,K0=nothing)
     α₀ = 0.
     while tol>1e-3
         g(α) = sum(z[i]*(K0[i]-1.)/(K0[i]*α+(1. -α)) for i ∈ @Clapeyron.comps)
-        α₀ = find_zero(g, 0.5)
+        α₀ = Roots.find_zero(g, 0.5)
         
         x = @.  z / (K0*α₀+(1-α₀))
         y = @.  z*K0 / (K0*α₀+(1-α₀))
