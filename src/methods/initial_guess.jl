@@ -78,7 +78,7 @@ end
 
 function x0_volume_liquid(model::SAFTgammaMieModel,T,z)
     v_lb = lb_volume(model,z)
-    return v_lb*1.5
+    return v_lb*2.0
 end
 """
     x0_volume_gas(model,p,T,z)
