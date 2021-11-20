@@ -154,11 +154,11 @@ function buildsites(result,components,allcomponentsites,options)
     return SiteParam(n_sites_dict,allcomponentsites)
 end
 
-function getparams(groups::GroupParam, locations::Vector{String}=String[],options::ParamOptions=ParamOptions())
+function getparams(groups::GroupParam, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
     return getparams(groups.flattenedgroups, locations,options)
 end
 
-function getparams(components::String, locations::Vector{String}=String[],options::ParamOptions=ParamOptions())
+function getparams(components::String, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
     return getparams([components],locations,options)
 end
 
@@ -167,7 +167,7 @@ function packageparams(allparams::Dict,
     allcomponentsites::Array{Array{String,1},1}, 
     paramsourcecsvs::Dict{String,Set{String}}, 
     paramsources::Dict{String,Set{String}},
-    options::ParamOptions = ParamOptions())
+    options::ParamOptions = DefaultOptions)
 
     asymmetricparams = options.asymmetricparams
     ignore_missingsingleparams = options.ignore_missing_singleparams
@@ -185,7 +185,7 @@ function pkgparam(param::String,
     allcomponentsites::Array{Array{String,1},1}, 
     paramsourcecsvs::Dict{String,Set{String}}, 
     paramsources::Dict{String,Set{String}},
-    options::ParamOptions = ParamOptions())
+    options::ParamOptions = DefaultOptions)
     newvalue, ismissingvalues = defaultmissing(value)
     if param ∉ options.ignore_missing_singleparams && any(ismissingvalues)
         error("Missing values exist in single parameter ", param, ": ", value, ".")
@@ -199,7 +199,7 @@ function pkgparam(param::String,
     allcomponentsites::Array{Array{String,1},1}, 
     paramsourcecsvs::Dict{String,Set{String}}, 
     paramsources::Dict{String,Set{String}},
-    options::ParamOptions = ParamOptions())
+    options::ParamOptions = DefaultOptions)
     
     param ∉ options.asymmetricparams && mirrormatrix!(value)
     newvalue, ismissingvalues = defaultmissing(value)
@@ -218,7 +218,7 @@ function pkgparam(param::String,
     allcomponentsites::Array{Array{String,1},1}, 
     paramsourcecsvs::Dict{String,Set{String}}, 
     paramsources::Dict{String,Set{String}},
-    options::ParamOptions = ParamOptions())
+    options::ParamOptions = DefaultOptions)
     
     param ∉ options.asymmetricparams && mirrormatrix!(value) 
     newvalue_ismissingvalues = defaultmissing.(value)
@@ -244,7 +244,7 @@ function param_type(::Type{Bool},::Type{Int})
     return Union{Bool,Missing}
 end
 
-function createparamarrays(components::Array{String,1}, filepaths::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, options::ParamOptions = ParamOptions())
+function createparamarrays(components::Array{String,1}, filepaths::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, options::ParamOptions = DefaultOptions)
     # Returns Dict with all parameters in their respective arrays.
     verbose = options.verbose
     check_clashingheaders(filepaths,options)
@@ -256,11 +256,11 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
     for filepath ∈ reverse(filepaths)
         csvtype = readcsvtype(filepath)
         if csvtype == groupdata
-            verbose && println("Skipping groupdata csv ", filepath)
+            verbose && @info("Skipping groupdata csv $filepath")
             continue
         end
         headerparams = readheaderparams(filepath,options)
-        verbose && println("Searching for ", string(csvtype), " headers ", headerparams, " for components ", components, " at ", filepath, "...")
+        verbose && @info("Searching for $(Symbol(csvtype)) headers $headerparams for components $components at $filepath ...")
         foundparams, paramtypes, sources = findparamsincsv(components, filepath,options)
         foundcomponents = collect(keys(foundparams))
         foundparams = swapdictorder(foundparams)
@@ -396,7 +396,7 @@ function swapdictorder(dict)
 end
 
 
-function col_indices(csvtype,headernames,options=ParamOptions())
+function col_indices(csvtype,headernames,options=DefaultOptions)
     columnreference = options.species_columnreference
     normalised_columnreference = normalisestring(columnreference)
 
@@ -452,7 +452,7 @@ end
 
 function findparamsincsv(components::Array{String,1},
     filepath::AbstractString,
-    options::ParamOptions = ParamOptions())
+    options::ParamOptions = DefaultOptions)
 
     headerparams = readheaderparams(filepath,options)
     sourcecolumnreference = options.source_columnreference
@@ -490,13 +490,15 @@ function findparamsincsv(components::Array{String,1},
             for component ∈ component_split
                 foundcomponentidx = findfirst(isequal(normalisestring(component,normalisecomponents)), normalised_components)
                 isnothing(foundcomponentidx) && continue
-                verbose && print("Found component: ", component)
+                
                 component = components[foundcomponentidx]
                 foundvalues[component] = Dict{String,Any}()
                 for headerparam ∈ headerparams
                     foundvalues[component][headerparam] = row[Symbol(headerparam)]
                 end
-                verbose && println(" with values ", foundvalues[component])
+                verbose && @info("""Found component: $(component)
+                with values: $(foundvalues[component])
+                """)
                 if getsources
                     source = row[sourcecolumn]
                     sources[component] = source
@@ -513,13 +515,14 @@ function findparamsincsv(components::Array{String,1},
                 foundcomponentidx1 = findfirst(isequal(normalisestring(component1,normalisecomponents)), normalised_components)
                 foundcomponentidx2 = findfirst(isequal(normalisestring(component2,normalisecomponents)), normalised_components)
                 (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
-                verbose && print("Found component pair: ", (component1, component2))
                 componentpair = (components[foundcomponentidx1], components[foundcomponentidx2])
                 foundvalues[componentpair] = Dict{String,Any}()
                 for headerparam ∈ headerparams
                     foundvalues[componentpair][headerparam] = row[Symbol(headerparam)]
                 end
-                verbose && println(" with values ", foundvalues[componentpair])
+                verbose && @info("""Found component pair: ($(component1),$(component2))
+                with values: $(foundvalues[componentpair])
+                """)
                 if getsources
                     source = row[sourcecolumn]
                     sources[componentpair] = source
@@ -538,13 +541,14 @@ function findparamsincsv(components::Array{String,1},
                 (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
                 site1 = row[lookupsitecolumnindex1]
                 site2 = row[lookupsitecolumnindex2]
-                verbose && print("Found assoc pair: ", ((component1, component2),(site1, site2)))
                 assocpair = ((components[foundcomponentidx1], components[foundcomponentidx2]), (site1, site2))
                 foundvalues[assocpair] = Dict{String,Any}()
                 for headerparam ∈ headerparams
                     foundvalues[assocpair][headerparam] = row[Symbol(headerparam)]
                 end
-                verbose && println(" with values ", foundvalues[assocpair])
+                verbose && @info("""Found assoc pair: ($(component1),$(component2)) , ($(site1),$(site2))
+                with values: $(foundvalues[assocpair])
+                """)
                 if getsources
                     source = row[sourcecolumn]
                     sources[assocpair] = source
@@ -601,8 +605,7 @@ function getline(filepath::AbstractString, selectedline::Int)
     end
 end
 
-
-function readheaderparams(filepath::AbstractString, options::ParamOptions = ParamOptions(),headerline::Int = 3)
+function readheaderparams(filepath::AbstractString, options::ParamOptions = DefaultOptions,headerline::Int = 3)
     # Returns array of filtered header strings at line 3.
     ignorelist = deepcopy(options.ignore_headers)
     push!(ignorelist,options.species_columnreference)
@@ -616,7 +619,7 @@ function readheaderparams(filepath::AbstractString, options::ParamOptions = Para
 end
 
 function check_clashingheaders(filepaths::Vector{String},
-                                options::ParamOptions = ParamOptions())
+                                options::ParamOptions = DefaultOptions)
     # Raises an error if the header of any assoc parameter clashes with a non-assoc parameter.
     headerparams = String[]
     headerparams_assoc = String[]
@@ -634,7 +637,7 @@ end
 
 function findsitesincsvs(components::Array{String,1}, 
                         filepaths::Array{String,1},
-                        options::ParamOptions = ParamOptions())
+                        options::ParamOptions = DefaultOptions)
     
     verbose = options.verbose
     normalisecomponents = options.normalisecomponents
@@ -665,14 +668,14 @@ output = Array{Array{String,1}}(undef, 0)
 for component ∈ components
     push!(output, collect(sites[component]))
 end
-verbose && println("Found sites for ", components, " are ", output, ".")
+verbose && @info("Found sites for $components are $(output).")
 return output
 end
 
 
 function findgroupsincsv(components::Vector{String},
                         filepath::String,
-                        options::ParamOptions = ParamOptions())
+                        options::ParamOptions = DefaultOptions)
     
     verbose = options.verbose
     normalisecomponents = options.normalisecomponents
@@ -809,7 +812,7 @@ end
 
 function GroupParam(gccomponents, 
     grouplocations::Array{String,1}=String[],
-    options::ParamOptions = ParamOptions())
+    options::ParamOptions = DefaultOptions)
     # The format for gccomponents is an arary of either the species name (if it
     # available in the Clapeyron database, or a tuple consisting of the species
     # name, followed by a list of group => multiplicity pairs.  For example:
@@ -830,10 +833,10 @@ function GroupParam(gccomponents,
     for filepath in filepaths
         csvtype = readcsvtype(filepath)
         if csvtype != groupdata
-            verbose && println("Skipping ", csvtype, " csv at ", filepath)
+            verbose && @info("Skipping $csvtype csv at $filepath")
             continue
         end
-        verbose && println("Searching for groups for components ", componentstolookup, " at ", filepath, "...")
+        verbose && @info("Searching for groups for components $componentstolookup at $filepath ...")
         merge!(allfoundcomponentgroups,  findgroupsincsv(componentstolookup, filepath, options))
         append!(groupsourcecsvs, [filepath])
     end
