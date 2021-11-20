@@ -45,3 +45,5 @@ model2 = PCSAFT(["your_species_1","your_species_2"];userlocations=["dtb_like","d
 ```
 
 The rest works exactly as it normally would! We recommend reading the background documentation for the various models to ensure the units of the parameters you provide are correct.
+
+You can create those parameters without leaving the julia REPL, by using [`Clapeyron.ParamTable`](@ref)
