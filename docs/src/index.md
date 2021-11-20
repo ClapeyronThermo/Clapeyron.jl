@@ -8,9 +8,9 @@ The documentation is laid out as follows:
 
 ### Authors
 
-- [Pierre J. Walker](pjwalker@caltech.edu), California Institute of Technology
-- [Hon-Wa (Paul) Yew](honwa.yew16@imperial.ac.uk), Imperial College London
-- [Andrés Riedemann](andres.riedemann@gmail.com), University of Concepción
+- [Pierre J. Walker](mailto:pjwalker@caltech.edu), California Institute of Technology
+- [Hon-Wa (Paul) Yew](mailto:honwa.yew16@imperial.ac.uk), Imperial College London
+- [Andrés Riedemann](mailto:andres.riedemann@gmail.com), University of Concepción
 
 ### License
 
