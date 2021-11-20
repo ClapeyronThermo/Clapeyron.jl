@@ -74,9 +74,9 @@ function generate_location!()
 end
 """
     cleartemp!()
+
 Deletes all files in the temporary Clapeyron scratch space, used to store the csvs created by `ParamTable`.
 """
-
 function cleartemp!()
     Scratch.delete_scratch!(PKG_UUID,"ParamTables")
 end
