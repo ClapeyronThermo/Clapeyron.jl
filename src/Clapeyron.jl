@@ -1,11 +1,12 @@
 module Clapeyron
 using StaticArrays
-using LinearAlgebra
+using LinearAlgebra 
 import PackedVectorsOfVectors
 const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 using Roots: Roots
 using NLSolvers
 using DiffResults, ForwardDiff
+using Scratch 
 include("solvers/Solvers.jl")
 using .Solvers
 using .Solvers: log
@@ -29,6 +30,7 @@ include("models/combiningrules.jl")
 include("models/eos.jl")
 include("utils/visualisation.jl")
 include("utils/split_model.jl")
+include("utils/UserReader.jl")
 
 include("models/eos/ideal/BasicIdeal.jl") #before macros, because its used there
 include("models/eos/ideal/MonomerIdeal.jl")
