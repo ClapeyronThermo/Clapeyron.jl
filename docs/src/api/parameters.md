@@ -16,7 +16,7 @@ Clapeyron.ParamOptions
 Clapeyron.getparams
 ```
 
-## creating Files from Parameters
+## Creating Files from Parameters
 ```@docs
 Clapeyron.ParamTable
 Clapeyron.cleartemp!
