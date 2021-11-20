@@ -154,11 +154,11 @@ function buildsites(result,components,allcomponentsites,options)
     return SiteParam(n_sites_dict,allcomponentsites)
 end
 
-function getparams(groups::GroupParam, locations::Vector{String}=String[],options::ParamOptions=ParamOptions())
+function getparams(groups::GroupParam, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
     return getparams(groups.flattenedgroups, locations,options)
 end
 
-function getparams(components::String, locations::Vector{String}=String[],options::ParamOptions=ParamOptions())
+function getparams(components::String, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
     return getparams([components],locations,options)
 end
 
@@ -167,7 +167,7 @@ function packageparams(allparams::Dict,
     allcomponentsites::Array{Array{String,1},1}, 
     paramsourcecsvs::Dict{String,Set{String}}, 
     paramsources::Dict{String,Set{String}},
-    options::ParamOptions = ParamOptions())
+    options::ParamOptions = DefaultOptions)
 
     asymmetricparams = options.asymmetricparams
     ignore_missingsingleparams = options.ignore_missing_singleparams
@@ -185,7 +185,7 @@ function pkgparam(param::String,
     allcomponentsites::Array{Array{String,1},1}, 
     paramsourcecsvs::Dict{String,Set{String}}, 
     paramsources::Dict{String,Set{String}},
-    options::ParamOptions = ParamOptions())
+    options::ParamOptions = DefaultOptions)
     newvalue, ismissingvalues = defaultmissing(value)
     if param ∉ options.ignore_missing_singleparams && any(ismissingvalues)
         error("Missing values exist in single parameter ", param, ": ", value, ".")
@@ -199,7 +199,7 @@ function pkgparam(param::String,
     allcomponentsites::Array{Array{String,1},1}, 
     paramsourcecsvs::Dict{String,Set{String}}, 
     paramsources::Dict{String,Set{String}},
-    options::ParamOptions = ParamOptions())
+    options::ParamOptions = DefaultOptions)
     
     param ∉ options.asymmetricparams && mirrormatrix!(value)
     newvalue, ismissingvalues = defaultmissing(value)
@@ -218,7 +218,7 @@ function pkgparam(param::String,
     allcomponentsites::Array{Array{String,1},1}, 
     paramsourcecsvs::Dict{String,Set{String}}, 
     paramsources::Dict{String,Set{String}},
-    options::ParamOptions = ParamOptions())
+    options::ParamOptions = DefaultOptions)
     
     param ∉ options.asymmetricparams && mirrormatrix!(value) 
     newvalue_ismissingvalues = defaultmissing.(value)
@@ -244,7 +244,7 @@ function param_type(::Type{Bool},::Type{Int})
     return Union{Bool,Missing}
 end
 
-function createparamarrays(components::Array{String,1}, filepaths::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, options::ParamOptions = ParamOptions())
+function createparamarrays(components::Array{String,1}, filepaths::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, options::ParamOptions = DefaultOptions)
     # Returns Dict with all parameters in their respective arrays.
     verbose = options.verbose
     check_clashingheaders(filepaths,options)
@@ -256,11 +256,11 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
     for filepath ∈ reverse(filepaths)
         csvtype = readcsvtype(filepath)
         if csvtype == groupdata
-            verbose && println("Skipping groupdata csv ", filepath)
+            verbose && @info("Skipping groupdata csv $filepath")
             continue
         end
         headerparams = readheaderparams(filepath,options)
-        verbose && println("Searching for ", string(csvtype), " headers ", headerparams, " for components ", components, " at ", filepath, "...")
+        verbose && @info("Searching for $(Symbol(csvtype)) headers $headerparams for components $components at $filepath ...")
         foundparams, paramtypes, sources = findparamsincsv(components, filepath,options)
         foundcomponents = collect(keys(foundparams))
         foundparams = swapdictorder(foundparams)
@@ -394,25 +394,74 @@ function swapdictorder(dict)
     end
     return output
 end
+
+
+function col_indices(csvtype,headernames,options=DefaultOptions)
+    columnreference = options.species_columnreference
+    normalised_columnreference = normalisestring(columnreference)
+
+    idx_species = 0
+    idx_groups = 0
+    idx_species1 = 0
+    idx_species2 = 0
+    idx_sites1 = 0
+    idx_sites2 = 0
+
+    if csvtype === singledata || csvtype === groupdata
+        lookupcolumnindex = findfirst(isequal(normalised_columnreference), headernames)
+        isnothing(lookupcolumnindex) && error("Header ", normalised_columnreference, " not found.")
+        idx_species = lookupcolumnindex
+        if csvtype === groupdata
+            groupcolumnreference= options.group_columnreference
+            normalised_groupcolumnreference = normalisestring(groupcolumnreference)
+            lookupgroupcolumnindex = findfirst(isequal(normalised_groupcolumnreference), headernames)
+            isnothing(lookupgroupcolumnindex) && error("Header ", normalised_groupcolumnreference, " not found.")
+            idx_groups = lookupgroupcolumnindex
+        end
+    
+    elseif csvtype === pairdata || csvtype == assocdata
+        normalised_columnreference1 = normalised_columnreference * '1'
+        normalised_columnreference2 = normalised_columnreference * '2'
+        lookupcolumnindex1 = findfirst(isequal(normalised_columnreference1), headernames)
+        lookupcolumnindex2 = findfirst(isequal(normalised_columnreference2), headernames)
+        isnothing(lookupcolumnindex1) && error("Header ", normalised_columnreference1, " not found.")
+        isnothing(lookupcolumnindex2) && error("Header ", normalised_columnreference2, " not found.")
+        idx_species1 = lookupcolumnindex1
+        idx_species2 = lookupcolumnindex2
+        if csvtype == assocdata
+            sitecolumnreference = options.site_columnreference
+            normalised_sitecolumnreference = normalisestring(sitecolumnreference)
+            normalised_sitecolumnreference1 = normalised_sitecolumnreference * '1'
+            normalised_sitecolumnreference2 = normalised_sitecolumnreference * '2'
+            lookupsitecolumnindex1 = findfirst(isequal(normalised_sitecolumnreference1), headernames)
+            lookupsitecolumnindex2 = findfirst(isequal(normalised_sitecolumnreference2), headernames)
+            isnothing(lookupsitecolumnindex1) && error("Header ", normalised_sitecolumnreference1, " not found.")
+            isnothing(lookupsitecolumnindex2) && error("Header ", normalised_sitecolumnreference2, " not found.")
+            idx_sites1 = lookupsitecolumnindex1
+            idx_sites2 = lookupsitecolumnindex2
+        end
+    end
+
+    _single = (idx_species,idx_groups)
+    _pair = (idx_species1,idx_species2)
+    _assoc = (idx_sites1,idx_sites2)
+    return (_single,_pair,_assoc)
+end
+
+
+
 function findparamsincsv(components::Array{String,1},
     filepath::AbstractString,
-    options::ParamOptions = ParamOptions())
+    options::ParamOptions = DefaultOptions)
 
     headerparams = readheaderparams(filepath,options)
-    columnreference = options.species_columnreference
-    sitecolumnreference = options.site_columnreference
     sourcecolumnreference = options.source_columnreference
     verbose = options.verbose
     normalisecomponents = options.normalisecomponents
     component_delimiter = options.component_delimiter
-    # Returns a Dict with all matches in a particular file for one parameter.
-    normalised_columnreference = normalisestring(columnreference)
-    normalised_columnreference1 = normalised_columnreference * '1'
-    normalised_columnreference2 = normalised_columnreference * '2'
 
     csvtype = readcsvtype(filepath)
     df = CSV.File(filepath; header=3, pool=0,silencewarnings=true)
-    cols = Tables.columns(df)
     csvheaders = String.(Tables.columnnames(df))
     normalised_components = normalisestring.(components,normalisecomponents)
     normalised_csvheaders = normalisestring.(csvheaders)
@@ -430,33 +479,26 @@ function findparamsincsv(components::Array{String,1},
         sourcecolumn = Symbol(normalised_csvheaders[findfirst(isequal(normalised_sourcecolumnreference), normalised_csvheaders)])
     end
 
-    if csvtype == singledata
-        lookupcolumnindex = findfirst(isequal(normalised_columnreference), normalised_csvheaders)
-        isnothing(lookupcolumnindex) && error("Header ", normalised_columnreference, " not found.")
-        lookupcolumn = Symbol(csvheaders[lookupcolumnindex])
-        #==
-        #===============
-        WORK IN PROGRESS
-        ===============#
-        col_species = normalisestring.(Tables.getcolumn(cols,lookupcolumn),normalisecomponents)
-        single_idxs = findall(in(normalised_components),col_species)
-        #nothing found
-        iszero(length(single_idxs)) && return foundvalues, paramtypes, sources
-        =#
+    single_idx,pair_idx,assoc_idx = col_indices(csvtype,normalised_csvheaders,options)
+    lookupcolumnindex,_ = single_idx
+    lookupcolumnindex1,lookupcolumnindex2 = pair_idx
+    lookupsitecolumnindex1,lookupsitecolumnindex2 = assoc_idx
 
-        for row ∈ Tables.rows(df)
-            
-            component_split = split.(row[lookupcolumn], component_delimiter, keepempty=false)
+    if csvtype == singledata
+        for row ∈ Tables.rows(df)   
+            component_split = split.(row[lookupcolumnindex], component_delimiter, keepempty=false)
             for component ∈ component_split
                 foundcomponentidx = findfirst(isequal(normalisestring(component,normalisecomponents)), normalised_components)
                 isnothing(foundcomponentidx) && continue
-                verbose && print("Found component: ", component)
+                
                 component = components[foundcomponentidx]
                 foundvalues[component] = Dict{String,Any}()
                 for headerparam ∈ headerparams
                     foundvalues[component][headerparam] = row[Symbol(headerparam)]
                 end
-                verbose && println(" with values ", foundvalues[component])
+                verbose && @info("""Found component: $(component)
+                with values: $(foundvalues[component])
+                """)
                 if getsources
                     source = row[sourcecolumn]
                     sources[component] = source
@@ -466,26 +508,21 @@ function findparamsincsv(components::Array{String,1},
             end
         end
     elseif csvtype == pairdata
-        lookupcolumnindex1 = findfirst(isequal(normalised_columnreference1), normalised_csvheaders)
-        lookupcolumnindex2 = findfirst(isequal(normalised_columnreference2), normalised_csvheaders)
-        isnothing(lookupcolumnindex1) && error("Header ",normalised_columnreference1, " not found.")
-        isnothing(lookupcolumnindex2) && error("Header ", normalised_columnreference2, " not found.")
-        lookupcolumn1 = Symbol(csvheaders[lookupcolumnindex1])
-        lookupcolumn2 = Symbol(csvheaders[lookupcolumnindex2])
         for row ∈ Tables.rows(df)
-            component_split1 = split.(row[lookupcolumn1], component_delimiter, keepempty=false)
-            component_split2 = split.(row[lookupcolumn2], component_delimiter, keepempty=false)
+            component_split1 = split.(row[lookupcolumnindex1], component_delimiter, keepempty=false)
+            component_split2 = split.(row[lookupcolumnindex2], component_delimiter, keepempty=false)
             for component1 ∈ component_split1, component2 ∈ component_split2
                 foundcomponentidx1 = findfirst(isequal(normalisestring(component1,normalisecomponents)), normalised_components)
                 foundcomponentidx2 = findfirst(isequal(normalisestring(component2,normalisecomponents)), normalised_components)
                 (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
-                verbose && print("Found component pair: ", (component1, component2))
                 componentpair = (components[foundcomponentidx1], components[foundcomponentidx2])
                 foundvalues[componentpair] = Dict{String,Any}()
                 for headerparam ∈ headerparams
                     foundvalues[componentpair][headerparam] = row[Symbol(headerparam)]
                 end
-                verbose && println(" with values ", foundvalues[componentpair])
+                verbose && @info("""Found component pair: ($(component1),$(component2))
+                with values: $(foundvalues[componentpair])
+                """)
                 if getsources
                     source = row[sourcecolumn]
                     sources[componentpair] = source
@@ -495,37 +532,23 @@ function findparamsincsv(components::Array{String,1},
             end
         end
     elseif csvtype == assocdata  
-        lookupcolumnindex1 = findfirst(isequal(normalised_columnreference1), normalised_csvheaders)
-        lookupcolumnindex2 = findfirst(isequal(normalised_columnreference2), normalised_csvheaders)
-        isnothing(lookupcolumnindex1) && error("Header ", normalised_columnreference1, " not found.")
-        isnothing(lookupcolumnindex2) && error("Header ", normalised_columnreference2, " not found.")
-        lookupcolumn1 = Symbol(csvheaders[lookupcolumnindex1])
-        lookupcolumn2 = Symbol(csvheaders[lookupcolumnindex2])
-        normalised_sitecolumnreference = normalisestring(sitecolumnreference)
-        normalised_sitecolumnreference1 = normalised_sitecolumnreference * '1'
-        normalised_sitecolumnreference2 = normalised_sitecolumnreference * '2'
-        lookupsitecolumnindex1 = findfirst(isequal(normalised_sitecolumnreference1), normalised_csvheaders)
-        lookupsitecolumnindex2 = findfirst(isequal(normalised_sitecolumnreference2), normalised_csvheaders)
-        isnothing(lookupcolumnindex1) && error("Header ", normalised_sitecolumnreference1, " not found.")
-        isnothing(lookupcolumnindex2) && error("Header ", normalised_sitecolumnreference2, " not found.")
-        lookupsitecolumn1 = Symbol(csvheaders[lookupsitecolumnindex1])
-        lookupsitecolumn2 = Symbol(csvheaders[lookupsitecolumnindex2])
         for row ∈ Tables.rows(df)
-            component_split1 = split.(row[lookupcolumn1], component_delimiter, keepempty=false)
-            component_split2 = split.(row[lookupcolumn2], component_delimiter, keepempty=false)
+            component_split1 = split.(row[lookupcolumnindex1], component_delimiter, keepempty=false)
+            component_split2 = split.(row[lookupcolumnindex2], component_delimiter, keepempty=false)
             for component1 ∈ component_split1, component2 ∈ component_split2
                 foundcomponentidx1 = findfirst(isequal(normalisestring(component1,normalisecomponents)), normalised_components)
                 foundcomponentidx2 = findfirst(isequal(normalisestring(component2,normalisecomponents)), normalised_components)
                 (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
-                site1 = row[lookupsitecolumn1]
-                site2 = row[lookupsitecolumn2]
-                verbose && print("Found assoc pair: ", ((component1, component2),(site1, site2)))
+                site1 = row[lookupsitecolumnindex1]
+                site2 = row[lookupsitecolumnindex2]
                 assocpair = ((components[foundcomponentidx1], components[foundcomponentidx2]), (site1, site2))
                 foundvalues[assocpair] = Dict{String,Any}()
                 for headerparam ∈ headerparams
                     foundvalues[assocpair][headerparam] = row[Symbol(headerparam)]
                 end
-                verbose && println(" with values ", foundvalues[assocpair])
+                verbose && @info("""Found assoc pair: ($(component1),$(component2)) , ($(site1),$(site2))
+                with values: $(foundvalues[assocpair])
+                """)
                 if getsources
                     source = row[sourcecolumn]
                     sources[assocpair] = source
@@ -548,20 +571,26 @@ function normalisestring(str::AbstractString, isactivated::Bool=true; tofilter::
 end
 
 const readcsvtype_keywords  = ["like", "single", "unlike", "pair", "assoc", "group", "groups"]
-function readcsvtype(filepath::AbstractString)
+
+function readcsvtype(filepath)
     # Searches for type from second line of CSV.
     keywords = readcsvtype_keywords
-    words = split(lowercase(rstrip(getline(filepath, 2), ',')), ' ')
+    words = split(lowercase(rstrip(getline(String(filepath), 2), ',')), ' ')
     foundkeywords = intersect(words, keywords)
     isempty(foundkeywords) && error("Unable to determine type of database", filepath, ". Check that keyword is present on Line 2.")
     length(foundkeywords) > 1 && error("Multiple keywords found in database ", filepath, ": ", foundkeywords)
-    first(foundkeywords) == "single" && return singledata
-    first(foundkeywords) == "like" && return singledata
-    first(foundkeywords) == "pair" && return pairdata
-    first(foundkeywords) == "unlike" && return pairdata
-    first(foundkeywords) == "assoc" && return assocdata
-    first(foundkeywords) == "group" && return groupdata
-    first(foundkeywords) == "groups" && return groupdata
+    _readcsvtype(only(foundkeywords)) 
+end
+
+function _readcsvtype(key)
+    key == "single" && return singledata
+    key == "like" && return singledata
+    key == "pair" && return pairdata
+    key == "unlike" && return pairdata
+    key == "assoc" && return assocdata
+    key == "group" && return groupdata
+    key == "groups" && return groupdata
+    error("Unable to determine database type of $key")
 end
 
 function getline(filepath::AbstractString, selectedline::Int)
@@ -576,8 +605,7 @@ function getline(filepath::AbstractString, selectedline::Int)
     end
 end
 
-
-function readheaderparams(filepath::AbstractString, options::ParamOptions = ParamOptions(),headerline::Int = 3)
+function readheaderparams(filepath::AbstractString, options::ParamOptions = DefaultOptions,headerline::Int = 3)
     # Returns array of filtered header strings at line 3.
     ignorelist = deepcopy(options.ignore_headers)
     push!(ignorelist,options.species_columnreference)
@@ -591,7 +619,7 @@ function readheaderparams(filepath::AbstractString, options::ParamOptions = Para
 end
 
 function check_clashingheaders(filepaths::Vector{String},
-                                options::ParamOptions = ParamOptions())
+                                options::ParamOptions = DefaultOptions)
     # Raises an error if the header of any assoc parameter clashes with a non-assoc parameter.
     headerparams = String[]
     headerparams_assoc = String[]
@@ -609,133 +637,59 @@ end
 
 function findsitesincsvs(components::Array{String,1}, 
                         filepaths::Array{String,1},
-                        options::ParamOptions = ParamOptions())
-    columnreference = options.species_columnreference
-    sitecolumnreference = options.site_columnreference
+                        options::ParamOptions = DefaultOptions)
+    
     verbose = options.verbose
     normalisecomponents = options.normalisecomponents
     # Look for all relevant sites in the database.
     # Note that this might not necessarily include all sites associated with a component.
     normalised_components = normalisestring.(components,normalisecomponents)
-    inverse_idx = Dict(compi=>i for (i,compi) in pairs(normalised_components))
-    
-    normalised_columnreference = normalisestring(columnreference)
-    normalised_columnreference1 = normalised_columnreference * '1'
-    normalised_columnreference2 = normalised_columnreference * '2'
-    normalised_sitecolumnreference = normalisestring(sitecolumnreference)
     sites = Dict(components .=> [Set{String}() for _ ∈ 1:length(components)])
     for filepath ∈ filepaths
         csvtype = readcsvtype(filepath)
         csvtype != assocdata && continue
-        df = CSV.File(filepath; header=3,silencewarnings = !verbose)
-        
+        df = CSV.File(filepath; header=3,silencewarnings = !verbose) 
         csvheaders = String.(Tables.columnnames(df))
-        normalised_csvheaders = normalisestring.(String.(Tables.columnnames(df)))
-        lookupcolumnindex1 = findfirst(isequal(normalised_columnreference1), normalised_csvheaders)
-        lookupcolumnindex2 = findfirst(isequal(normalised_columnreference2), normalised_csvheaders)
-        isnothing(lookupcolumnindex1) && error("Header ", normalised_columnreference1, " not found.")
-        isnothing(lookupcolumnindex2) && error("Header ", normalised_columnreference2, " not found.")
-        lookupcolumn1 = Symbol(csvheaders[lookupcolumnindex1])
-        lookupcolumn2 = Symbol(csvheaders[lookupcolumnindex2])
-
-        normalised_sitecolumnreference = normalisestring(sitecolumnreference)
-        normalised_sitecolumnreference1 = normalised_sitecolumnreference * '1'
-        normalised_sitecolumnreference2 = normalised_sitecolumnreference * '2'
-
-        lookupsitecolumnindex1 = findfirst(isequal(normalised_sitecolumnreference1), normalised_csvheaders)
-        lookupsitecolumnindex2 = findfirst(isequal(normalised_sitecolumnreference2), normalised_csvheaders)
-        isnothing(lookupcolumnindex1) && error("Header ", normalised_sitecolumnreference1, " not found.")
-        isnothing(lookupcolumnindex2) && error("Header ", normalised_sitecolumnreference2, " not found.")
-        lookupsitecolumn1 = Symbol(csvheaders[lookupsitecolumnindex1])
-        lookupsitecolumn2 = Symbol(csvheaders[lookupsitecolumnindex2])
-
+        normalised_csvheaders = normalisestring.(csvheaders)
+        _,pair_idx,assoc_idx = col_indices(csvtype,normalised_csvheaders,options)
+        lookupcolumnindex1,lookupcolumnindex2 = pair_idx
+        lookupsitecolumnindex1,lookupsitecolumnindex2 = assoc_idx
         for row ∈ Tables.rows(df)
-            component1 = row[Symbol(lookupcolumn1)]
-            component2 = row[Symbol(lookupcolumn2)]
+            component1 = row[lookupcolumnindex1]
+            component2 = row[lookupcolumnindex2]
             foundcomponentidx1 = findfirst(isequal(normalisestring(component1,normalisecomponents)), normalised_components)
             foundcomponentidx2 = findfirst(isequal(normalisestring(component2,normalisecomponents)), normalised_components)
             (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
-            push!(sites[components[foundcomponentidx1]], row[Symbol(lookupsitecolumn1)])
-            push!(sites[components[foundcomponentidx2]], row[Symbol(lookupsitecolumn2)])
+            push!(sites[components[foundcomponentidx1]], row[lookupsitecolumnindex1])
+            push!(sites[components[foundcomponentidx2]], row[lookupsitecolumnindex2])
         end
     end
-
-            #=
-        columns = Tables.columns(df)
-        col_species1 = normalisestring.(Tables.getcolumn(columns,Symbol(lookupcolumn1)),normalisecomponents)
-        col_species2 = normalisestring.(Tables.getcolumn(columns,Symbol(lookupcolumn2)),normalisecomponents)
-        
-        col_sites1 = Tables.getcolumn(columns,Symbol(lookupsitecolumn1))
-        col_sites2 = Tables.getcolumn(columns,Symbol(lookupsitecolumn2))
-
-        found_species1_idx = findall(in(normalised_components),col_species1)
-        found_species2_idx = findall(in(normalised_components),col_species2)
-        common_idx = intersect(found_species1_idx,found_species2_idx)
-        iszero(length(common_idx)) && continue
-        for i in common_idx
-            component1 = col_species1[i]
-            component2 = col_species2[i]
-            site1 = col_sites1[i]
-            site2 = col_sites2[i]
-            j1 = inverse_idx[component1]
-            j2 = inverse_idx[component2]
-            push!(sites[components[j1]],site1)
-            push!(sites[components[j2]],site2)
-        end
-    end
-    output = Array{Array{String,1}}(undef, 0)
-    for component ∈ components
-        push!(output, collect(sites[component]))
-    end
-    verbose && println("Found sites for ", components, " are ", output, ".")
-    if verbose
-        @info("""Found sites for $(components) are:
-        $(output)
-        """)
-    end
-=#
 output = Array{Array{String,1}}(undef, 0)
 for component ∈ components
     push!(output, collect(sites[component]))
 end
-verbose && println("Found sites for ", components, " are ", output, ".")
+verbose && @info("Found sites for $components are $(output).")
 return output
 end
 
 
 function findgroupsincsv(components::Vector{String},
                         filepath::String,
-                        options::ParamOptions = ParamOptions())
+                        options::ParamOptions = DefaultOptions)
     
-    columnreference = options.species_columnreference
-    groupcolumnreference= options.group_columnreference
     verbose = options.verbose
     normalisecomponents = options.normalisecomponents
     csvtype = readcsvtype(filepath)
-    csvtype != groupdata && return Dict{String,String}()
-    
+    csvtype != groupdata && return Dict{String,String}()    
     normalised_components = normalisestring.(components,normalisecomponents)
-    normalised_columnreference = normalisestring(columnreference)
-    normalised_groupcolumnreference = normalisestring(groupcolumnreference)
-
     df = CSV.File(filepath; header=3,silencewarnings = !verbose)
     columns = Tables.columns(df)
-
     csvheaders = String.(Tables.columnnames(df))
     normalised_csvheaders = normalisestring.(csvheaders)
-    normalised_columnreference ∉ normalised_csvheaders && error("Header ", normalised_columnreference, " not found.")
-    normalised_groupcolumnreference ∉ normalised_csvheaders && error("Header ", normalised_groupcolumnreference, " not found.")
-    
-    lookupcolumnindex = findfirst(isequal(normalised_columnreference), normalised_csvheaders)
-    isnothing(lookupcolumnindex) && error("Header ", normalised_columnreference, " not found.")
-    species_lookupcolumn = Symbol(csvheaders[lookupcolumnindex])
-
-    lookupgroupcolumnindex = findfirst(isequal(normalised_groupcolumnreference), normalised_csvheaders)
-    isnothing(lookupgroupcolumnindex) && error("Header ", normalised_groupcolumnreference, " not found.")
-    groups_lookupcolumn = Symbol(csvheaders[lookupgroupcolumnindex])
-    
-    species_column = Tables.getcolumn(columns,species_lookupcolumn)
-    groups_column = Tables.getcolumn(columns,groups_lookupcolumn)
+    single_idx,_,_ = col_indices(csvtype,normalised_csvheaders,options)
+    lookupcolumnindex,lookupgroupcolumnindex = single_idx
+    species_column = Tables.getcolumn(columns,lookupcolumnindex)
+    groups_column = Tables.getcolumn(columns,lookupgroupcolumnindex)
     norm_species_column = normalisestring.(species_column,normalisecomponents)
     idx = findall(in(normalised_components),norm_species_column)
     found_comps = @view species_column[idx]
@@ -858,7 +812,7 @@ end
 
 function GroupParam(gccomponents, 
     grouplocations::Array{String,1}=String[],
-    options::ParamOptions = ParamOptions())
+    options::ParamOptions = DefaultOptions)
     # The format for gccomponents is an arary of either the species name (if it
     # available in the Clapeyron database, or a tuple consisting of the species
     # name, followed by a list of group => multiplicity pairs.  For example:
@@ -879,10 +833,10 @@ function GroupParam(gccomponents,
     for filepath in filepaths
         csvtype = readcsvtype(filepath)
         if csvtype != groupdata
-            verbose && println("Skipping ", csvtype, " csv at ", filepath)
+            verbose && @info("Skipping $csvtype csv at $filepath")
             continue
         end
-        verbose && println("Searching for groups for components ", componentstolookup, " at ", filepath, "...")
+        verbose && @info("Searching for groups for components $componentstolookup at $filepath ...")
         merge!(allfoundcomponentgroups,  findgroupsincsv(componentstolookup, filepath, options))
         append!(groupsourcecsvs, [filepath])
     end

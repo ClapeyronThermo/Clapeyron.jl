@@ -42,4 +42,6 @@ Base.@kwdef struct ParamOptions
     component_delimiter::String = "~|~"
 end
 
+const DefaultOptions = ParamOptions()
+
 export ParamOptions

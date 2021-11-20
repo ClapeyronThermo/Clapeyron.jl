@@ -1,6 +1,6 @@
 name = "Clapeyron"
 uuid = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
-authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pwalker@mit.edu>","Andrés Riedemann <andres.riedemann@gmail.com>"]
+authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pwalker@mit.edu>", "Andrés Riedemann <andres.riedemann@gmail.com>"]
 version = "0.2.8"
 
 [deps]
@@ -14,13 +14,14 @@ NaNMath = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
 PackedVectorsOfVectors = "7713531c-48ef-4bdd-9821-9ff7a8736089"
 PositiveFactorizations = "85a6dd25-e78a-55b7-8502-1745935b8125"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
+Scratch = "6c6a2e73-6563-6170-7368-637461726353"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 ThermoState = "e7b6519d-fdf7-4a33-b544-2b37a9c1234a"
+UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
-
 CSV = "0.9"
 DiffResults = "^1.0"
 ForwardDiff = "^0.10"
@@ -30,6 +31,7 @@ NaNMath = "^0.3"
 PackedVectorsOfVectors = "^0.1.2"
 PositiveFactorizations = "0.2"
 Roots = "^1"
+Scratch = "^1.1"
 StaticArrays = "^1"
 Tables = "^1.4"
 ThermoState = "^0.4"
