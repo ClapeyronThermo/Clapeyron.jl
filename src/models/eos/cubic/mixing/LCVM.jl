@@ -17,19 +17,19 @@ end
 
 function mixing_rule(model::PRModel,V,T,z,mixing_model::LCVMRuleModel,α,a,b,c)
     n = sum(z)
-    x = z./n
-    invn2 = (one(n)/n)^2
+    #x = z./n
+    invn = (one(n)/n)
+    invn2 = invn^2
     g_E = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z) / n
     b̄ = dot(z,Symmetric(b),z) * invn2
     c̄ = dot(z,c)/n
-
-    ᾱ = a.*sqrt.(α.*α')./(b*R̄*T)
-
+    #ᾱ  = a.*sqrt.(α.*α')./(b*R̄*T)
+    Σxᾱ  = sum(α[i]*a[i,i]*z[i]/b[i] for i ∈ @comps)*invn
     λ  = 0.7
     AV = -0.52
     AM = -0.623
-    C1 = λ/AV+(1-λ)/AM
-
-    ā = b̄*R̄*T*(C1*(g_E/(R̄*T)-0.3*sum(x[i]*log(b̄/b[i,i]) for i ∈ @comps))+sum(x[i]*ᾱ[i,i] for i ∈ @comps))
+    C1 = -1.8276947771329795 #λ/AV+(1-λ)/AM,is this ok?, that C1 is independent of the input conditions
+    Σlogb = sum(z[i]*log(b̄/b[i,i]) for i ∈ @comps)*invn #sum(x[i]*log(b̄/b[i,i]) for i ∈ @comps)
+    ā = b̄*R̄*T*(C1*(g_E/(R̄*T)-0.3*Σlogb)+Σxᾱ )
     return ā,b̄,c̄
 end
