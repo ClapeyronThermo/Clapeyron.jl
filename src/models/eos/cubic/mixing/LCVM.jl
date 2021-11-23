@@ -9,7 +9,6 @@ end
 export LCVMRule
 function LCVMRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)
-    
     model = LCVMRule(components, init_activity)
     return model
 end
@@ -24,7 +23,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::LCVMRuleModel,α,a,b,c)
     b̄ = dot(z,Symmetric(b),z) * invn2
     c̄ = dot(z,c)/n
     #ᾱ  = a.*sqrt.(α.*α')./(b*R̄*T)
-    Σxᾱ  = sum(α[i]*a[i,i]*z[i]/b[i] for i ∈ @comps)*invn
+    Σxᾱ  = sum(α[i]*a[i,i]*z[i]/b[i,i] for i ∈ @comps)*invn/(R̄*T)
     λ  = 0.7
     AV = -0.52
     AM = -0.623
