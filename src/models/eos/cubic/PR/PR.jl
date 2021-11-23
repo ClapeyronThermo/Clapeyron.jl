@@ -44,13 +44,11 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     _Tc = params["Tc"]
     Tc = _Tc.values
     Ωa, Ωb = ab_consts(PR)
-    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc^2/pc),k)
-    #check if this is correct in the general case.
-    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. Ωb*R̄*Tc/pc))
     
+    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
+    a,b = ab_premixing(PR,init_mixing,_Tc,_pc,k)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
 
     icomponents = 1:length(components)
@@ -58,6 +56,15 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     references = String[]
     model = PR(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
     return model
+end
+
+function ab_premixing(::Type{PR},mixing,Tc,pc,kij)
+    Ωa, Ωb = ab_consts(PR)
+    _Tc = Tc.values
+    _pc = pc.values
+    a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
+    b = sigma_LorentzBerthelot(SingleParam(pc, @. Ωb*R̄*_Tc/_pc))
+    return a,b
 end
 
 

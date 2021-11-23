@@ -19,8 +19,20 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a
     invn2 = (one(n)/n)^2
     b̄ = dot(z,Symmetric(b),z) * invn2
     c̄ = dot(z,c)/n
-    ā = dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
+    ā = zero(eltype(α))+zero(eltype(z))
+    for i in 1:length(z)
+        zi = z[i]
+        αi = α[i]
+        ā+= a[i,i]*αi*zi^2
+        for j in 1:(i-1)
+            ā+= 2*a[i,j]*sqrt(αi*α[j])*zi*z[j]
+        end
+    end
+    ā *= invn2
+    #dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
     return ā,b̄,c̄
 end
+
+
 
 is_splittable(::vdW1fRule) = false
