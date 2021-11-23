@@ -21,19 +21,16 @@ function ab_premixing(::Type{PR},mixing::VTPRRule,Tc,pc,kij)
     a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     bi = @. Ωb*R̄*_Tc/_pc
     bij = ((bi.^(3/4).+bi'.^(3/4))/2).^(4/3)
-    b = PairParam("b",_Tc.components,bij)
+    b = PairParam("b",Tc.components,bij)
     return a,b
 end
 
 function mixing_rule(model::PRModel,V,T,z,mixing_model::VTPRRuleModel,α,a,b,c)
     n = sum(z)
-    #x = z./n
     invn = (one(n)/n)
     invn2 = invn^2
     lnγ_res_ = lnγ_res(mixing_model.activity,1e5,T,z)
-    g_E_res = sum(x[i]*R̄*T*lnγ_res_[i] for i ∈ @comps)
-    #b = Diagonal(b).diag
-    #b = ((b.^(3/4).+b'.^(3/4))/2).^(4/3)
+    g_E_res = sum(z[i]*R̄*T*lnγ_res_[i] for i ∈ @comps)*invn
     b̄ = dot(z,Symmetric(b),z) * invn2
     c̄ = dot(z,c)/n
     Σab = invn*sum(z[i]*a[i,i]*α[i]/b[i,i]/(R̄*T) for i ∈ @comps)
