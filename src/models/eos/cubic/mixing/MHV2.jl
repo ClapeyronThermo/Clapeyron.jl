@@ -15,20 +15,29 @@ function MHV2Rule(components::Vector{String}; activity = Wilson, userlocations::
 end
 
 MHV2q(::PRModel) = (-0.4347,-0.003654)
-MHV2q(::RKModel) = (-0.4783,-0.0047 )
+MHV2q(::RKModel) = (-0.4783,-0.0047)
 function mixing_rule(model::Union{PRModel,RKModel},V,T,z,mixing_model::MHV2RuleModel,α,a,b,c)
     n = sum(z)
-    #x = z./n
     invn = (one(n)/n)
     invn2 = invn^2
-    g_E = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z) / n
+    g_E = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
     b̄ = dot(z,Symmetric(b),z) * invn2
-    c̄ = dot(z,c)/n
+    c̄ = dot(z,c)*invn
     #ᾱ = a.*sqrt.(α.*α')./(b*R̄*T)
     q1,q2 = MHV2q(model)
-    Σlogb = sum(z[i]*log(b̄/b[i,i]) for i ∈ @comps)
-    Σab = sum(z[i]*a[i,i]*α[i]/b[i,i]/(R̄*T) for i ∈ @comps)*invn
-    Σab2 = sum(z[i]*a[i,i]*(α[i]^2)/b[i,i]/(R̄*T) for i ∈ @comps)*invn
+    Σlogb = zero(first(z))
+    Σab = zero(T+first(z))
+    Σab2 = Σab
+    for i ∈ @comps
+        ᾱ  = a[i,i]*α[i]/(b[i,i]*R̄*T)
+        zia = z[i]*ᾱ  
+        Σab += zia 
+        Σab2 += zia*ᾱ  
+        Σlogb += z[i]*log(b̄/b[i,i])
+    end
+    Σab *= invn
+    Σab2 *= invn
+    Σlogb *= invn
     c  = -q1*Σab-q2*Σab2-g_E/(R̄*T)-Σlogb
     ā = b̄*R̄*T*(-q1-sqrt(q1^2-4*q2*c))/(2*q2)
     return ā,b̄,c̄
