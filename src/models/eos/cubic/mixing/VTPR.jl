@@ -14,7 +14,7 @@ function VTPRRule(components::Vector{String}; activity = Wilson, userlocations::
     return model
 end
 
-function ab_premixing(::Type{PR},mixing::UMRRuleModel,Tc,pc,kij)
+function ab_premixing(::Type{PR},mixing::VTPRRule,Tc,pc,kij)
     Ωa, Ωb = ab_consts(PR)
     _Tc = Tc.values
     _pc = pc.values
