@@ -1,3 +1,12 @@
+function ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
+    Ωa, Ωb = ab_consts(T)
+    _Tc = Tc.values
+    _pc = pc.values
+    a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
+    b = sigma_LorentzBerthelot(SingleParam(pc, @. Ωb*R̄*_Tc/_pc))
+    return a,b
+end
+
 function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
     invn2 = (one(n)/n)^2
     a = model.params.a.values

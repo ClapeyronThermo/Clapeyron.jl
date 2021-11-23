@@ -56,6 +56,7 @@ include("models/eos/SAFT/BACKSAFT/BACKSAFT.jl")
 
 include("models/eos/SAFT/equations.jl")
 
+include("models/eos/cubic/equations.jl")
 include("models/eos/cubic/vdW.jl")
 include("models/eos/cubic/RK/RK.jl")
 include("models/eos/cubic/PR/PR.jl")
@@ -80,7 +81,6 @@ include("models/eos/cubic/PR/variants/PR78.jl")
 include("models/eos/cubic/PR/variants/VTPR.jl")
 include("models/eos/cubic/PR/variants/UMRPR.jl")
 
-include("models/eos/cubic/equations.jl")
 include("models/eos/Activity/equations.jl")
 
 include("models/eos/EmpiricHelmholtz/IAPWS95.jl")
