@@ -20,7 +20,7 @@ function ab_premixing(::Type{PR},mixing::VTPRRule,Tc,pc,kij)
     _pc = pc.values
     a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     bi = @. Ωb*R̄*_Tc/_pc
-    bij = ((b.^(3/4).+b'.^(3/4))/2).^(4/3)
+    bij = ((bi.^(3/4).+bi'.^(3/4))/2).^(4/3)
     b = PairParam("b",_Tc.components,bij)
     return a,b
 end

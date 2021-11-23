@@ -19,7 +19,7 @@ function ab_premixing(::Type{PR},mixing::UMRRuleModel,Tc,pc,kij)
     _pc = pc.values
     a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     bi = @. Ωb*R̄*_Tc/_pc
-    bij = ((b.^(1/2).+b'.^(1/2))/2).^2
+    bij = ((bi.^(1/2).+bi'.^(1/2))/2).^2
     b = PairParam("b",_Tc.components,bij)
     return a,b
 end
