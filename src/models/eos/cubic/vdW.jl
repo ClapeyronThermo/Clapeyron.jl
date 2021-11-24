@@ -35,21 +35,15 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
-    _pc = params["pc"]
-    pc = _pc.values
+    pc = params["pc"]
     Mw = params["Mw"]
-    _Tc = params["Tc"]
-    Tc = _Tc.values
-    #T̄c = sum(sqrt.(Tc*Tc')) #is this term correctly calculated? sqrt(Tc*Tc') is a matrix sqrt
-    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. 27/64*R̄^2*Tc^2/pc), k)
-    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. 1/8*R̄*Tc/pc))
-    
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
+    a,b = ab_premixing(vdW,init_mixing,Tc,pc,k)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-
     icomponents = 1:length(components)
-    packagedparams = vdWParam(a, b, params["Tc"],_pc,Mw)
+    packagedparams = vdWParam(a,b,Tc,pc,Mw)
     references = String[]
     model = vdW(components,icomponents,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
     return model
