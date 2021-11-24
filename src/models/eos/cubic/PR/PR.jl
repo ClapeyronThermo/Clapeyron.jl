@@ -38,27 +38,22 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
-    _pc = params["pc"]
-    pc = _pc.values
+    pc = params["pc"]
     Mw = params["Mw"]
-    _Tc = params["Tc"]
-    Tc = _Tc.values
-    Ωa, Ωb = ab_consts(PR)
-    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc^2/pc),k)
-    #check if this is correct in the general case.
-    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. Ωb*R̄*Tc/pc))
-    
+    Tc = params["Tc"]
+    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
+    a,b = ab_premixing(PR,init_mixing,Tc,pc,k)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-
     icomponents = 1:length(components)
-    packagedparams = PRParam(a, b, params["Tc"],_pc,Mw)
+    packagedparams = PRParam(a,b,Tc,pc,Mw)
     references = String[]
     model = PR(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
     return model
 end
+
+
 
 
 function ab_consts(::Type{<:PRModel})

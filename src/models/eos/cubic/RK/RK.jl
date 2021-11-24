@@ -37,23 +37,16 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
-    _pc = params["pc"]
-    pc = _pc.values
+    pc = params["pc"]
     Mw = params["Mw"]
-    _Tc = params["Tc"]
-    Tc = _Tc.values
-    #T̄c = sum(sqrt.(Tc*Tc')) #is this term correctly calculated? sqrt(Tc*Tc') is a matrix sqrt
-    Ωa, Ωb = ab_consts(RK)
-    a = epsilon_LorentzBerthelot(SingleParam(params["pc"], @. Ωa*R̄^2*Tc^2/pc), k) 
-    b = sigma_LorentzBerthelot(SingleParam(params["pc"], @. Ωb*R̄*Tc/pc))
-    
+    Tc = params["Tc"]
+    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
+    a,b = ab_premixing(RK,init_mixing,Tc,pc,k)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-
     icomponents = 1:length(components)
-    packagedparams = RKParam(a, b, params["Tc"],_pc,Mw)
+    packagedparams = RKParam(a,b,Tc,pc,Mw)
     references = String[]
     model = RK(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
     return model
