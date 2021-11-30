@@ -26,7 +26,7 @@ function try_sat_pure(model,V0,f!,T,result,error_val,method = LineSearch(Newton(
 end
 
 """
-    sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
+    saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
 
 Performs a single component saturation equilibrium calculation, at the specified temperature `T`, of one mol of pure sustance specified by `model`
 
@@ -36,7 +36,7 @@ If the calculation fails, returns  `(NaN, NaN, NaN)`
 
 `V0` is `[log10(Vₗ₀),log10(Vᵥ₀)]` , where `Vₗ₀`  and `Vᵥ₀` are initial guesses for the liquid and vapour volumes.
 """
-function sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
+function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     T = T*T/T
     V_lb = lb_volume(model,SA[1.0])
     TYPE = promote_type(typeof(T),typeof(V_lb))
@@ -131,6 +131,25 @@ function Obj_Sat(model::EoSModel, F, T, V_l, V_v,scales)
     return F
     =#
 end
+
+
+function saturation_temperature(model::EoSModel,p)
+    f(z) = Obj_sat_pure_T(model,z,p)
+    Tc,pc,vc = crit_pure(model)
+    if p>pc
+        return (NaN,NaN,NaN)
+    else
+        T = Roots.find_zero(f,(0.3*Tc,0.99*Tc))
+        p,v_l,v_v = saturation_pressure(model,T)
+        return T,v_l,v_v
+    end 
+end
+
+function Obj_sat_pure_T(model,T,p)
+    p̃,v_l,v_v = saturation_pressure(model,T)
+    return p̃-p
+end
+
 #=
 function Obj_Sat(model::ABCubicModel, F, T, V_l, V_v,V_lb)
     #components = model.components
@@ -300,7 +319,7 @@ end
 #     return (T,Vl,Vv)
 # end
 
-export sat_pure, crit_pure, enthalpy_vap
+export saturation_pressure, saturation_temperature, crit_pure, enthalpy_vap
 
 # function spinodals(model,T,Vx = nothing)
 #     T7 = (0.7)*one(T)*T_scale(model)

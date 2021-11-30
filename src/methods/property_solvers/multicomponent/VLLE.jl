@@ -48,7 +48,7 @@ end
 
 function x0_VLLE_mix(model::EoSModel, T)
     pure = split_model(model)
-    sat  = sat_pure.(pure,T)
+    sat  = saturation_pressure.(pure,T)
     x0    = [0.75,0.25]
     xx0   = [0.25,0.75]
     y0    = [0.5,0.5]
