@@ -229,7 +229,8 @@ The functions for the physical properties that we currently support are as follo
   - For pure species:
 
     ```julia
-    (p_sat, V_l_sat, V_v_sat) = sat_pure(model, T)
+    (p_sat, V_l_sat, V_v_sat) = saturation_pressure(model, T)
+    (T_sat, V_l_sat, V_v_sat) = saturation_temperature(model, p)
     H_vap = enthalpy_vap(model, T)
     ```
 
@@ -245,15 +246,15 @@ The functions for the physical properties that we currently support are as follo
   All the above arguments take in an optional argument for the initial guess:
 
   ```julia
-  (p_sat, V_l_sat, V_v_sat) = sat_pure(model, T;v0=log10.([V_l0,V_v0]))
+  (p_sat, V_l_sat, V_v_sat) = saturation_pressure(model, T;v0=log10.([V_l0,V_v0]))
   ```
 
   Although our calculations tend to be quite robust, this argument is generally useful for when one wants to obtain smooth VLE envelopes quicly when making figures. Here, you'd use a for loop where each iteration uses the previous' iteration value as an initial guess (except the first iteration). For example:
 
   ```julia
-  (p_sat, V_l_sat, V_v_sat) = sat_pure(model, T[1])
+  (p_sat, V_l_sat, V_v_sat) = saturation_pressure(model, T[1])
   for i in 2:length(T)
-    A = sat_pure(model,T[i];v0=log10.([V_l_sat[i-1],V_v_sat[i-1]]))
+    A = saturation_pressure(model,T[i];v0=log10.([V_l_sat[i-1],V_v_sat[i-1]]))
     append!(p_sat,A[1])
     append!(V_l_sat,A[2])
     append!(V_v_sat,A[3])
