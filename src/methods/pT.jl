@@ -3,6 +3,11 @@ function entropy(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true
     return VT_entropy(model,V,T,z)
 end
 
+function entropy_res(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
+    V = volume(model, p, T, z; phase=phase, threaded=threaded)
+    return VT_entropy_res(model,V,T,z)
+end
+
 function chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_chemical_potential(model,V,T,z)
@@ -119,4 +124,4 @@ export entropy, chemical_potential, internal_energy, enthalpy, gibbs_free_energy
 export helmholtz_free_energy, isochoric_heat_capacity, isobaric_heat_capacity
 export isothermal_compressibility, isentropic_compressibility, speed_of_sound
 export isobaric_expansivity, joule_thomson_coefficient, compressibility_factor, inversion_temperature
-export mass_density,molar_density, activity_coefficient, fugacity_coefficient
+export mass_density,molar_density, activity_coefficient, fugacity_coefficient, entropy_res

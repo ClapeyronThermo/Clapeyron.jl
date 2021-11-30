@@ -6,6 +6,11 @@ function VT_entropy(model::EoSModel, V, T, z=SA[1.])
     return -∂f∂T(model,V,T,z)
 end
 
+function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
+    fun(x) = eos_res(model,V,x,z)
+    return -ForwardDiff.derivative(fun,T)
+end
+
 function VT_chemical_potential(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos(model,V,T,x)
     return ForwardDiff.gradient(fun,z)
@@ -105,10 +110,10 @@ where `Aᵣ` is the residual helmholtz energy.
 function second_virial_coefficient(model::EoSModel, T, z=SA[1.])
     TT = promote_type(eltype(z),typeof(T))
     V = 1/sqrt(eps(TT))
-    fun(x) = eos_res(model,x,T,z)
-    df(x) = ForwardDiff.derivative(fun,x)
-    d2f(x) = ForwardDiff.derivative(df,x)
-    return V^2/(R̄*T)*(df(V)+V*d2f(V))
+    Aᵣ(x) = eos_res(model,x,T,z)
+    ∂Aᵣ∂V(x) = ForwardDiff.derivative(Aᵣ,x)
+    ∂²Aᵣ∂V²(x) = ForwardDiff.derivative(∂Aᵣ∂V,x)
+    return V^2/(R̄*T)*(∂Aᵣ∂V(V)+V*∂²Aᵣ∂V²(V))
     # df,d2f = Solvers.f∂f(df,V)
     # return V^2/(R̄*T)*(df+V*d2f)
 end
