@@ -13,7 +13,7 @@ struct invTlogPInterpolation
 end
 
 function sizehint(cachedmodel::CACHED_SAT_PURE_APROX{invTlogPInterpolation})
-    return cachedmodel.sat_pure_aprox.max_length
+    return cachedmodel.saturation_pressure_aprox.max_length
 end
 
 const TPInterpolation = invTlogPInterpolation
@@ -22,11 +22,11 @@ TPInterpolation() = TPInterpolation(256) #max length of 200 data points
 
 
 function x0_sat_pure(model::CACHED_SAT_PURE_APROX{invTlogPInterpolation},T)
-    if !haskey(model.cache,:sat_pure)
+    if !haskey(model.cache,:saturation_pressure)
         return x0_sat_pure(model.model,T)
     end
     
-    T_vec,P_vec,Vl_vec,Vv_vec = model.cache[:sat_pure]
+    T_vec,P_vec,Vl_vec,Vv_vec = model.cache[:saturation_pressure]
     isone(length(T_vec)) && return x0_sat_pure(model.model,T) #use underlying x0_sat_pure
     Tmin,Tc = first(T_vec),last(T_vec)
     nan = zero(T)/zero(T)
@@ -68,16 +68,16 @@ function x0_sat_pure(model::CACHED_SAT_PURE_APROX{invTlogPInterpolation},T)
     return [log10(vl0),log10(vv0)]
 end
 
-function sat_pure_approx(model::CACHED_SAT_PURE_APROX{invTlogPInterpolation},T)
-    if !haskey(model.cache,:sat_pure)
-        return sat_pure(model,T)
+function saturation_pressure_approx(model::CACHED_SAT_PURE_APROX{invTlogPInterpolation},T)
+    if !haskey(model.cache,:saturation_pressure)
+        return saturation_pressure(model,T)
     end
-    T_vec,P_vec,Vl_vec,Vv_vec = model.cache[:sat_pure]
-    isone(length(T_vec)) && return sat_pure(model,T) #use underlying x0_sat_pure
+    T_vec,P_vec,Vl_vec,Vv_vec = model.cache[:saturation_pressure]
+    isone(length(T_vec)) && return saturation_pressure(model,T) #use underlying x0_saturation_pressure
     Tmin,Tc = first(T_vec),last(T_vec)
     nan = zero(T)/zero(T)
     T > Tc && return (nan,nan,nan) #error, because T>Tc
-    T < Tmin && return sat_pure(model,T) #use underlying x0_sat_pure
+    T < Tmin && return saturation_pressure(model,T) #use underlying x0_saturation_pressure
     pos = searchsorted(T_vec,T)
     
     if length(pos) == 1 #the value is already there
@@ -113,9 +113,9 @@ function sat_pure_approx(model::CACHED_SAT_PURE_APROX{invTlogPInterpolation},T)
     #vl0 = volume_compress(model.model,P0,T,V0=vl00)
     return (P0,vl0,vv0)
 end
-function sat_pure_cached(::TPInterpolation,model::CachedEoS,T)
-    res = sat_pure!(model,T)
+function saturation_pressure_cached(::TPInterpolation,model::CachedEoS,T)
+    res = saturation_pressure!(model,T)
 end
 
-export sat_pure_approx, TPInterpolation
+export saturation_pressure_approx, TPInterpolation
 

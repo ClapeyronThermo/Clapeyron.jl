@@ -437,7 +437,7 @@ On any EoS based on Critical parameters (Cubic or Empiric EoS), the temperature 
 
 On SAFT or other molecular EoS, the temperature scaling factor is chosen to be a function of the potential depth ϵ.
 
-Used as scaling factors in [`sat_pure`](@ref) and as input for solving [`crit_pure`](@ref)
+Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
 """
 function T_scale end
 
@@ -503,7 +503,7 @@ chosen to be a function of the critical pressure.
 On SAFT or other molecular EoS, the temperature    
 scaling factor is chosen to a function of ∑(zᵢ*ϵᵢ*(σᵢᵢ)³)    
 
-Used as scaling factors in [`sat_pure`](@ref) and as input for solving [`crit_pure`](@ref)
+Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
 
 """
 function p_scale(model::SAFTModel,z=SA[1.0])

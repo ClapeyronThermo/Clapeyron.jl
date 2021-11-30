@@ -3,7 +3,7 @@
 Within `Clapeyron`, we provide a few methods which we use to obtain thermodynamic properties (you can find out more details on how we implement these methods in our background information):
 
 - `volume(model, p, T, z)`: Obtains the volume of a system at a given temperature, pressure and composition. If the phase is unknown, it will find the vapour and liquid roots and return the one that minimises the Gibbs free energy. This function is called by all of our bulk property methods.
-- `sat_pure(model, T)`: Obtains the saturation pressures and volumes for a pure species.
+- `saturation_pressure(model, T)`: Obtains the saturation pressures and volumes for a pure species.
 - `crit_pure(model)`: Obtains the critical point for a pure species.
 
 Clearly this is not an exhaustive list and we make absolutely no guarantees as to the quality of these methods. However, if you have a new method or algorithm you would like to implement or test out, it is possible to do so.

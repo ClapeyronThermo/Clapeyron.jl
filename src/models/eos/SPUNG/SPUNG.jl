@@ -86,8 +86,8 @@ end
 ideally we could perform SPUNG only providing x0, but i cant find the error here
 
 =#
-#overloading sat_pure for SPUNG directly seems to be the way
-function sat_pure(model::SPUNG,T::Real,v0=[zero(T)/zero(T),zero(T)/zero(T)])
+#overloading saturation_pressure for SPUNG directly seems to be the way
+function saturation_pressure(model::SPUNG,T::Real,v0=[zero(T)/zero(T),zero(T)/zero(T)])
     lb_v0 = lb_volume(model.model_ref)
     f,h = shape_factors(model,lb_v0,T,SA[1.0]) #h normaly should be independent of temperature
     T0 = T/f
@@ -98,16 +98,16 @@ function sat_pure(model::SPUNG,T::Real,v0=[zero(T)/zero(T),zero(T)/zero(T)])
         vv = exp10(v0[2])
         v0 = [log10(vl*h),log10(vv*h)]
     end
-    psat0,vl0,vv0 = sat_pure(model.model_ref,T0,v0)
+    psat0,vl0,vv0 = saturation_pressure(model.model_ref,T0,v0)
     p = pressure(model,vl0*h,T)
     return (p,vl0*h,vv0*h)
 end
 
 #============
-uncomment when sat_pure_p is ready
+uncomment when saturation_pressure_p is ready
 ====================
-function sat_pure_p(model::SPUNG,p::Real)
-    return naive_sat_pure_p(model,p)
+function saturation_pressure_p(model::SPUNG,p::Real)
+    return naive_saturation_pressure_p(model,p)
 end
 =#
 

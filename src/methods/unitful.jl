@@ -18,9 +18,9 @@ function volume(model::SAFT, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1
     return uconvert(output, volume(model, p, T, z; phase=phase)*u"m^3")
 end
 
-function sat_pure(model::SAFT, T::Unitful.Temperature; output=[u"Pa", u"m^3", u"m^3"])
+function saturation_pressure(model::SAFT, T::Unitful.Temperature; output=[u"Pa", u"m^3", u"m^3"])
     T = float(ustrip(u"K", T))
-    (P_sat, v_l, v_v) = sat_pure(model, T)
+    (P_sat, v_l, v_v) = saturation_pressure(model, T)
     return (P_sat*u"Pa", v_l*u"m^3", v_v*u"m^3")
 end
 
