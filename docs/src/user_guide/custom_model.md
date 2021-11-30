@@ -203,7 +203,7 @@ end
    
    T_sat = range(220,T_c,length=200)
    
-   (p_sat, V_l_sat, V_v_sat) = sat_pure(model,T_sat)
+   (p_sat, V_l_sat, V_v_sat) = saturation_pressure(model,T_sat)
    ```
 
    

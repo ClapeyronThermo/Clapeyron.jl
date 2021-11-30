@@ -102,10 +102,10 @@ function enthalpy_vap(model::EoSModel, T::Unitful.Temperature; output=u"J")
     return uconvert(output,res)
 end
 
-function sat_pure(model::EoSModel, T::Unitful.Temperature; output=[u"Pa", u"m^3", u"m^3"])
+function saturation_pressure(model::EoSModel, T::Unitful.Temperature; output=[u"Pa", u"m^3", u"m^3"])
     st = standarize(model,-1,T,SA[1.0])
     _,_T,_ = state_to_pt(model,st)
-    (P_sat, v_l, v_v) = sat_pure(model,_T)
+    (P_sat, v_l, v_v) = saturation_pressure(model,_T)
     _P_sat = uconvert(output[1],P_sat*u"Pa")
     _v_l = uconvert(output[2],v_l*u"m^3")
     _v_v = uconvert(output[3],v_v*u"m^3")

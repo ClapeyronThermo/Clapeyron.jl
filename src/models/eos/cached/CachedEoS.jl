@@ -4,7 +4,7 @@
 struct CachedEoS{EoS<:EoSModel,S} <: EoSModel
     model::EoS
     cache::Dict{Symbol,Any}
-    sat_pure_aprox::S
+    saturation_pressure_aprox::S
 end
 
 const CACHED_SAT_PURE_APROX{S} =  CachedEoS{<:Any,S}
@@ -13,14 +13,14 @@ const CACHED_SAT_PURE_APROX{S} =  CachedEoS{<:Any,S}
 #is 256 too low? to high?
 sizehint(::CACHED_SAT_PURE_APROX{Nothing}) = 256
 
-function sat_pure_aprox_strategy(model::CachedEoS)
-    return model.sat_pure_aprox
+function saturation_pressure_aprox_strategy(model::CachedEoS)
+    return model.saturation_pressure_aprox
 end
 Base.length(model::CachedEoS) = Base.length(model.model)
 
-function CachedEoS(model::EoSModel;sat_pure_aprox = nothing)
+function CachedEoS(model::EoSModel;saturation_pressure_aprox = nothing)
     cache=Dict{Symbol,Any}()
-    return CachedEoS(model,cache,sat_pure_aprox)
+    return CachedEoS(model,cache,saturation_pressure_aprox)
 end
 
 function eos(model::CachedEoS,V,T,z=SA[1.0],phase=:unknown)
@@ -73,7 +73,7 @@ function split_model(model::CachedEoS)
         return model.cache[:split_model]
     else
         primal_splitted_model = split_model(model.model)
-        res = [CachedEoS(modeli,sat_pure_aprox = model.sat_pure_aprox) for modeli in primal_splitted_model]
+        res = [CachedEoS(modeli,saturation_pressure_aprox = model.saturation_pressure_aprox) for modeli in primal_splitted_model]
         model.cache[:split_model] = res
         return res
     end
@@ -95,25 +95,25 @@ function acentric_factor(model::CachedEoS)
 end
 
 #for some reason, it does not work without an overloading here
-function sat_pure(model::CachedEoS{<:Any},T::Real)
-    aprox_strategy = sat_pure_aprox_strategy(model)
-    return sat_pure_cached(aprox_strategy,model,T)
+function saturation_pressure(model::CachedEoS{<:Any},T::Real)
+    aprox_strategy = saturation_pressure_aprox_strategy(model)
+    return saturation_pressure_cached(aprox_strategy,model,T)
 end
 
 #no caching
-function sat_pure_cached(::Nothing,model::CachedEoS,T)
-    return sat_pure(model.model,T)
+function saturation_pressure_cached(::Nothing,model::CachedEoS,T)
+    return saturation_pressure(model.model,T)
 end
 
 
 """
-    sat_pure!(model::CachedEoS,T,x0=x0_sat_pure(model,T))
-    performs a calculation of [`sat_pure`](@ref) and stores the results in a vector, sorted by temperature.
+    saturation_pressure!(model::CachedEoS,T,x0=x0_sat_pure(model,T))
+    performs a calculation of [`saturation_pressure`](@ref) and stores the results in a vector, sorted by temperature.
 
 """
-function sat_pure!(model::CachedEoS,T::S,x0 = x0_sat_pure(model,T)) where S<:Real
+function saturation_pressure!(model::CachedEoS,T::S,x0 = x0_sat_pure(model,T)) where S<:Real
     #empty cache, create one
-    if !haskey(model.cache,:sat_pure)
+    if !haskey(model.cache,:saturation_pressure)
         (T_c, p_c, V_c) = crit_pure(model)  
         T_TYPE = promote_type(S,typeof(T_c))
         T_vec,P_vec,Vl_vec,Vv_vec = T_TYPE[],T_TYPE[],T_TYPE[],T_TYPE[]
@@ -126,9 +126,9 @@ function sat_pure!(model::CachedEoS,T::S,x0 = x0_sat_pure(model,T)) where S<:Rea
         push!(P_vec,p_c)
         push!(Vl_vec,V_c)
         push!(Vv_vec,V_c)
-        model.cache[:sat_pure] = (T_vec,P_vec,Vl_vec,Vv_vec)
+        model.cache[:saturation_pressure] = (T_vec,P_vec,Vl_vec,Vv_vec)
     end
-    T_vec,P_vec,Vl_vec,Vv_vec = model.cache[:sat_pure]
+    T_vec,P_vec,Vl_vec,Vv_vec = model.cache[:saturation_pressure]
     position = searchsorted(T_vec,T)
     #one and only one match, that means that T was already evaluated
     if first(position) == last(position)
@@ -143,7 +143,7 @@ function sat_pure!(model::CachedEoS,T::S,x0 = x0_sat_pure(model,T)) where S<:Rea
     if T_c < T
         insert_first = true
     end
-    P0,Vl,Vv = sat_pure(model.model,T,x0_sat_pure(model,T))
+    P0,Vl,Vv = saturation_pressure(model.model,T,x0_sat_pure(model,T))
     #we dont want to store points too close
     insert_values = true
     if length(T_vec) >= sizehint(model)

@@ -21,7 +21,7 @@ function eos_res(model::ActivityModel,V,T,z)
 end
 
 function bubble_pressure(model::ActivityModel,T,x)
-    sat = sat_pure.(model.puremodel,T)
+    sat = saturation_pressure.(model.puremodel,T)
     p_sat = [tup[1] for tup in sat]
     γ     = activity_coefficient(model,1e-4,T,x)
     p     = sum(x.*γ.*p_sat)

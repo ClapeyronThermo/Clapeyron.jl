@@ -217,7 +217,7 @@ end
 Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies at temperature `T`, in J   
 """
 function enthalpy_vap(model::EoSModel, T)
-    (P_sat,V_l,V_v) = sat_pure(model,T)
+    (P_sat,V_l,V_v) = saturation_pressure(model,T)
     H_v = VT_enthalpy(model,V_v,T)
     H_l = VT_enthalpy(model,V_l,T)
     H_vap=H_v -H_l
@@ -237,7 +237,7 @@ To do so, it calculates the critical temperature (using `crit_pure`) and perform
 function acentric_factor(model)
     T_c,p_c,_ = crit_pure(model)
     T = 0.7*T_c
-    p = first(sat_pure(model,T))
+    p = first(saturation_pressure(model,T))
     p_r = p/p_c
     return -log10(p_r) - 1.0
 end
