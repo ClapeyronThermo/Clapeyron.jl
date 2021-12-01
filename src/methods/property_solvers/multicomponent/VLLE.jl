@@ -60,7 +60,7 @@ end
 
 function VLLE_temperature(model,p)
     f(z) = Obj_VLLE_temperature(model,z,p)
-    Ti   = T_scales(model,x).*1.7
+    Ti   = T_scales(model,model.icomponents).*1.7
     T = Roots.find_zero(f,sum(Ti)/length(Ti))
     p,v_l,v_v,y = VLLE_pressure(model,T)
     return T,v_l,v_v,y
