@@ -23,6 +23,7 @@ end
 export vdW
 
 function vdW(components::Vector{String}; idealmodel=BasicIdeal,
+    alpha = NoAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
@@ -42,6 +43,7 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     a,b = ab_premixing(vdW,init_mixing,Tc,pc,k)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
+    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     icomponents = 1:length(components)
     packagedparams = vdWParam(a,b,Tc,pc,Mw)
     references = String[]
@@ -55,21 +57,6 @@ function ab_consts(::Type{<:vdWModel})
     return Ωa,Ωb
 end
 
-function cubic_ab(model::vdWModel,V,T,z=SA[1.0],n=sum(z))
-    invn2 = (one(n)/n)^2
-    a = model.params.a.values
-    b = model.params.b.values
-    α = ones(length(z))
-    c = @f(translation,model.translation)
-    if length(z)>1
-        ā,b̄,c̄ = @f(mixing_rule,model.mixing,α,a,b,c)
-    else
-        ā = a[1,1]*α[1]
-        b̄ = b[1,1]
-        c̄ = c[1,1]
-    end
-    return ā ,b̄, c̄
-end
 
 function cubic_abp(model::vdWModel, V, T, z)
     n = ∑(z)
