@@ -238,6 +238,9 @@ The functions for the physical properties that we currently support are as follo
 
     ```julia
     (p_sat, V_l_sat, V_v_sat, y) = bubble_pressure(model, T, x)
+    (T_sat, V_l_sat, V_v_sat, y) = bubble_temperature(model, p, x)
+    (p_sat, V_l_sat, V_v_sat, x) = dew_pressure(model, T, y)
+    (T_sat, V_l_sat, V_v_sat, x) = dew_temperature(model, p, y)
     (p_LLE, V_l_LLE, V_ll_LLE, xx) = LLE_pressure(model, T, x)
     (p_az, V_l_sat, V_v_sat, x) = azeotrope_pressure(model, T)
     (p_VLLE,V_l_sat, V_ll_sat, V_v_sat, x, xx, y) = VLLE_mix(model, T)

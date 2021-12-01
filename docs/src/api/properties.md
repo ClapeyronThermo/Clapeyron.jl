@@ -25,7 +25,7 @@ Clapeyron.compressibility_factor
 ## Single component properties
 
 ```@docs
-Clapeyron.sat_pure
+Clapeyron.saturation_pressure
 Clapeyron.enthalpy_vap
 Clapeyron.crit_pure
 Clapeyron.acentric_factor
