@@ -19,6 +19,7 @@ struct UNIFAC{c<:EoSModel} <: UNIFACModel
 end
 
 @registermodel UNIFAC
+const modUNIFAC = UNIFAC
 export UNIFAC
 
 function UNIFAC(components; puremodel=PR,
@@ -90,16 +91,13 @@ function lnγ_res(model::UNIFACModel,V,T,z)
 end
 
 function lnΓ(model::UNIFACModel,V,T,z)
-    A = model.params.A.values
-    B = model.params.B.values
-    C = model.params.C.values
     Q = model.params.Q.values
     
     v  = model.groups.n_flattenedgroups
 
     x = z ./ sum(z)
 
-    ψ = @. exp(-(A+B*T+C*T^2)/T)
+    ψ = @f(Ψ)
     X = sum(v[i][:]*x[i] for i ∈ @comps) ./ sum(sum(v[i][k]*x[i] for k ∈ @groups) for i ∈ @comps)
     θ = X.*Q / dot(X,Q)
 
@@ -108,16 +106,20 @@ function lnΓ(model::UNIFACModel,V,T,z)
 end
 
 function lnΓi(model::UNIFACModel,V,T,z)
-    A = model.params.A.values
-    B = model.params.B.values
-    C = model.params.C.values
     Q = model.params.Q.values
     
     v  = model.groups.n_flattenedgroups
 
-    ψ = @. exp(-(A+B*T+C*T^2)/T)
+    ψ = @f(Ψ)
     X = [v[i][:] ./ sum(v[i][k] for k ∈ @groups) for i ∈ @comps]
     θ = [X[i][:].*Q ./ sum(X[i][n]*Q[n] for n ∈ @groups) for i ∈ @comps]
     lnΓi_ = [Q.*(1 .-log.(sum(θ[i][m]*ψ[m,:] for m ∈ @groups)) .- sum(θ[i][m]*ψ[:,m]./sum(θ[i][n]*ψ[n,m] for n ∈ @groups) for m ∈ @groups)) for i ∈ @comps]
     return lnΓi_
+end
+
+function Ψ(model::UNIFACModel,V,T,z)
+    A = model.params.A.values
+    B = model.params.B.values
+    C = model.params.C.values
+    return @. exp(-(A+B*T+C*T^2)/T)
 end
