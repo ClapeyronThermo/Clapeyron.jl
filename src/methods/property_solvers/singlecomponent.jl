@@ -68,10 +68,9 @@ function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     return res0
 end
 
-
- #   x0_sat_pure_crit(model,T,T_c,P_c,V_c)
-
-
+#remove when Clapeyron is at 0.3.0
+sat_pure(model::EoSModel, T, V0 = x0_sat_pure(model,T)) = saturation_pressure(model,T,V0)
+Base.@deprecate sat_pure(model,T) saturation_pressure(model,T)
 
 #with the critical point, we can perform a
 #corresponding states approximation with the
