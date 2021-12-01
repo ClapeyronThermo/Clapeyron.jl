@@ -1,8 +1,14 @@
 module Clapeyron
 using StaticArrays
-using LinearAlgebra 
+using LinearAlgebra
+
+#for the assoc solver
 import PackedVectorsOfVectors
 const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
+
+#for non allocating vectors of zeros and ones
+using FillArrays: FillArrays
+
 using Roots: Roots
 using NLSolvers
 using DiffResults, ForwardDiff
