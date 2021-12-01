@@ -119,7 +119,7 @@ function dew_temperature(model,p,y)
             Ti[i] = sat[i][1]
         end
     end
-    T = Roots.find_zero(f,mean(Ti))
+    T = Roots.find_zero(f,sum(Ti)/length(y))
     p,v_l,v_v,x = dew_pressure(model,T,y)
     return T,v_l,v_v,x
 end
