@@ -32,3 +32,28 @@ function Obj_az_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     F[end] = (p_l-p_v)/ps
     return F
 end
+
+function azeotrope_temperature(model,p)
+    f(z) = Obj_azeotrope_temperature(model,z,p)
+    pure = split_model(model)
+    sat = saturation_temperature.(pure,p)
+    Ti   = zeros(length(pure),1)
+    for i ∈ 1:length(pure)
+        if isnan(sat[i][1])
+            Tc,pc,vc = crit_pure(pure[i])
+            g(x) = p-pressure(pure[i],vc,x,[1.])
+            Ti[i] = find_zero(g,(Tc))
+        else
+            Ti[i] = sat[i][1]
+        end
+    end
+    T = Roots.find_zero(f,(minimum(Ti)*0.9,maximum(Ti)*1.1))
+    p,v_l,v_v,y = azeotrope_pressure(model,T)
+    return T,v_l,v_v,y
+end
+
+function Obj_azeotrope_temperature(model,T,p)
+    p̃,v_l,v_ll,xx = azeotrope_pressure(model,T)
+    return p̃-p
+end
+

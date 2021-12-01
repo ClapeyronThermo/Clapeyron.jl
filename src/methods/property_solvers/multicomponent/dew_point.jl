@@ -114,7 +114,6 @@ function dew_temperature(model,p,y)
             Tc,pc,vc = crit_pure(pure[i])
             g(x) = p-pressure(pure[i],vc,x,[1.])
             Ti[i] = find_zero(g,(Tc))
-            println(i)
         else
             Ti[i] = sat[i][1]
         end
