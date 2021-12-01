@@ -116,9 +116,10 @@ end
     system = PCSAFT(["methanol","cyclohexane"])
     p = 1e5
     T = 313.15
-    T2 = 443.15
     z = [0.5,0.5]
-    z_LLE = [0.27,0.73]
+    p2 = 2e6
+    T2 = 443.15
+    z2 = [0.27,0.73]
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T, z) ≈ 7.779694485714412e-5 rtol = 1e-6 
         @test Clapeyron.speed_of_sound(system, p, T, z) ≈ 1087.0303138908864 rtol = 1E-6
@@ -128,7 +129,10 @@ end
     @testset "Equilibrium properties" begin
         @test Clapeyron.UCEP_mix(system)[1] ≈ 319.36877456397684 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system,T,z)[1] ≈ 54532.249600937736 rtol = 1E-6
-        @test Clapeyron.LLE_pressure(system,T,z_LLE)[1] ≈ 737971.7522006684 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system,p2,z)[1] ≈ 435.80890506865 rtol = 1E-6
+        @test Clapeyron.dew_pressure(system,T2,z)[1] ≈ 1.6555486543884084e6 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system,p2,z)[1] ≈ 453.0056727580934 rtol = 1E-6
+        @test Clapeyron.LLE_pressure(system,T,z2)[1] ≈ 737971.7522006684 rtol = 1E-6
         @test Clapeyron.azeotrope_pressure(system,T2)[1] ≈ 2.4435462800998255e6 rtol = 1E-6
         @test Clapeyron.UCST_mix(system,T2)[1] ≈ 1.0211532467788119e9 rtol = 1E-6
         @test Clapeyron.VLLE_mix(system, T)[1] ≈ 54504.079665621306 rtol = 1E-6
