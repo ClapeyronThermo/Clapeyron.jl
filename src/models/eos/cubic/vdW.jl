@@ -8,9 +8,10 @@ end
 
 abstract type vdWModel <: ABCubicModel end
 
-struct vdW{T <: IdealModel,c,M} <: vdWModel
+struct vdW{T <: IdealModel,α,c,M} <: vdWModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
+    alpha::α
     mixing::M
     translation::c
     params::vdWParam
@@ -47,7 +48,7 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     icomponents = 1:length(components)
     packagedparams = vdWParam(a,b,Tc,pc,Mw)
     references = String[]
-    model = vdW(components,icomponents,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
+    model = vdW(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
     return model
 end
 
