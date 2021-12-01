@@ -237,13 +237,16 @@ The functions for the physical properties that we currently support are as follo
   - For mixtures:
 
     ```julia
-    (p_sat, V_l_sat, V_v_sat, y) = bubble_pressure(model, T, x)
-    (T_sat, V_l_sat, V_v_sat, y) = bubble_temperature(model, p, x)
-    (p_sat, V_l_sat, V_v_sat, x) = dew_pressure(model, T, y)
-    (T_sat, V_l_sat, V_v_sat, x) = dew_temperature(model, p, y)
+    (p_bub, V_l_bub, V_v_bub, y) = bubble_pressure(model, T, x)
+    (T_bub, V_l_bub, V_v_bub, y) = bubble_temperature(model, p, x)
+    (p_dew, V_l_dew, V_v_dew, x) = dew_pressure(model, T, y)
+    (T_dew, V_l_dew, V_v_dew, x) = dew_temperature(model, p, y)
     (p_LLE, V_l_LLE, V_ll_LLE, xx) = LLE_pressure(model, T, x)
-    (p_az, V_l_sat, V_v_sat, x) = azeotrope_pressure(model, T)
-    (p_VLLE,V_l_sat, V_ll_sat, V_v_sat, x, xx, y) = VLLE_mix(model, T)
+    (T_LLE, V_l_LLE, V_ll_LLE, xx) = LLE_temperature(model, p, x)
+    (p_az, V_l_az, V_v_az, x) = azeotrope_pressure(model, T)
+    (T_az, V_l_az, V_v_az, x) = azeotrope_temperature(model, p)
+    (p_VLLE,V_l_sat, V_ll_sat, V_v_sat, x, xx, y) = VLLE_pressure(model, T)
+    (T_VLLE,V_l_sat, V_ll_sat, V_v_sat, x, xx, y) = VLLE_temperature(model, p)
     ```
 
   All the above arguments take in an optional argument for the initial guess:
