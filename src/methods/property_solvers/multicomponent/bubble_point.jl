@@ -113,12 +113,10 @@ function bubble_temperature(model,p,x)
             Tc,pc,vc = crit_pure(pure[i])
             g(x) = p-pressure(pure[i],vc,x,[1.])
             Ti[i] = find_zero(g,(Tc))
-            println(i)
         else
             Ti[i] = sat[i][1]
         end
     end
-    println(Ti)
     T = Roots.find_zero(f,(minimum(Ti)*0.9,maximum(Ti)*1.1))
     p,v_l,v_v,y = bubble_pressure(model,T,x)
     return T,v_l,v_v,y

@@ -32,3 +32,17 @@ function LLE_pressure(model::EoSModel, T, x; v0 =nothing)
     P_sat = pressure(model,v_l,T,x)
     return (P_sat, v_l, v_ll, xx)
 end
+
+function LLE_temperature(model,p,x)
+    f(z) = Obj_LLE_temperature(model,z,p,x)
+    Ti   = Clapeyron.T_scales(model,x).*1.5
+    T = Roots.find_zero(f,sum(Ti)/length(Ti))
+    p,v_l,v_ll,xx = LLE_pressure(model,T,x)
+    return T,v_l,v_ll,xx
+end
+
+function Obj_LLE_temperature(model,T,p,x)
+    p̃,v_l,v_ll,xx = LLE_pressure(model,T,x)
+    return p̃-p
+end
+
