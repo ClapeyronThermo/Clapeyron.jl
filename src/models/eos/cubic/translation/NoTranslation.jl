@@ -12,7 +12,7 @@ function NoTranslation(components::Vector{String}; userlocations::Vector{String}
 end
 
 function translation(model::CubicModel,V,T,z,translation_model::NoTranslation)
-    return zero(z)
+    return FillArrays.Zeros{Float64}(length(z))
 end
 
 is_splittable(::NoTranslation) = false
