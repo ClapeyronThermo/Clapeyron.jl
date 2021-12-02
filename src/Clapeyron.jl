@@ -11,6 +11,7 @@ using FillArrays: FillArrays
 
 using Roots: Roots
 using NLSolvers
+using BlackBoxOptim
 using DiffResults, ForwardDiff
 using Scratch 
 include("solvers/Solvers.jl")
