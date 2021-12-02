@@ -443,7 +443,7 @@ function T_scale end
 
 function T_scale(model::SAFTModel,z=SA[1.0])
     ϵ = model.params.epsilon.diagvalues
-    return prod(ϵ[i]^z[i] for i in i:length(z))^(1/sum(z))
+    return prod(ϵ[i]^z[i] for i in 1:length(z))^(1/sum(z))
 end
 
 function T_scale(model::SAFTgammaMieModel,z=SA[1.0])
@@ -453,7 +453,7 @@ end
 
 function T_scale(model::LJSAFTModel,z=SA[1.0])
     T̃ = model.params.T_tilde.diagvalues
-    return prod(T̃[i]^z[i] for i in i:length(z))^(1/sum(z))
+    return prod(T̃[i]^z[i] for i in 1:length(z))^(1/sum(z))
 end
 
 #dont use αa, just a, to avoid temperature dependence
