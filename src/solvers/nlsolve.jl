@@ -1,31 +1,31 @@
 #nlsolve functionality
 """
-    function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()), options=NEqOptions())
+    function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),chunk = ForwardDiff.Chunk{2}() options=NEqOptions())
 
 
 Given a function `f!(result,x)` that returns a system of equations,
 `nlsolve(f!,x0)` returns a `NLSolvers.ConvergenceInfo` struct that contains the results of the non-linear solving procedure.
 
-Uses `NLSolvers.jl` as backend, the jacobian is calculated with `ForwardDiff.jl`
+Uses `NLSolvers.jl` as backend, the jacobian is calculated with `ForwardDiff.jl`, with the specified `chunk` size
 
 To obtain the underlying solution vector, use [`x_sol`](@ref)
 
 To see available solvers and options, check `NLSolvers.jl`
 """
-function nlsolve(f!,x0,method=TrustRegion(CholeskyNewton(), NWI()),options=NEqOptions())
+function nlsolve(f!,x0,method=TrustRegion(CholeskyNewton(), NWI()),chunk = ForwardDiff.Chunk{2}(),options=NEqOptions();)
     #f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
     len = length(x0)
     #xcache = zeros(eltype(x0),len)
     Fcache = zeros(eltype(x0),len)
     #JCache = zeros(eltype(x0),len,len)
-    #jconfig = ForwardDiff.JacobianConfig(f!,x0,x0)
+    jconfig = ForwardDiff.JacobianConfig(f!,x0,x0,chunk)
     function j!(J,x)
         #@show J
-        ForwardDiff.jacobian!(J,f!,Fcache,x)
+        ForwardDiff.jacobian!(J,f!,Fcache,x,jconfig)
     end
     function fj!(F,J,x)
         #@show J,F
-        ForwardDiff.jacobian!(J,f!,F,x)
+        ForwardDiff.jacobian!(J,f!,F,x,jconfig)
         F,J
     end
 
