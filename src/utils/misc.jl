@@ -76,8 +76,11 @@ Return `x * log(x)` for `x ≥ 0`, handling ``x = 0`` by taking the downward lim
 copied from LogExpFunctions.jl
 """
 function xlogx(x::Number)
-    result = x * log(x)
-    ifelse(iszero(x), zero(result), result)
+    if x > 0
+        return x*log(x)
+    else
+        return zero(x)
+    end
 end
 
 @inline function nan_num(V,T,z)
