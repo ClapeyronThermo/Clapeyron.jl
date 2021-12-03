@@ -1,4 +1,4 @@
-using Clapeyron, Test, NLSolvers
+using Clapeyron, Test, NLSolvers, ForwardDiff
 
 const SOL = Clapeyron.Solvers
 
@@ -57,8 +57,8 @@ end
     # Finance", p. 51
     #does not converge in NLSolve.jl converges here with NLSolvers.jl
     @testset "nlsolve" begin
-        res = SOL.nlsolve(f_diffmcp!,[0.0],TrustRegion(Newton()))
-        res2 = SOL.nlsolve(f_diffmcp!,[0.0],LineSearch(Newton()))
+        res = SOL.nlsolve(f_diffmcp!,[0.0],TrustRegion(Newton()),ForwardDiff.Chunk{1}())
+        res2 = SOL.nlsolve(f_diffmcp!,[0.0],LineSearch(Newton()),ForwardDiff.Chunk{1}())
         @test SOL.x_sol(res) isa Vector
         @test SOL.x_sol(res2) isa Vector
         solution = SOL.x_sol(res)
