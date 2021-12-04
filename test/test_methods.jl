@@ -300,3 +300,14 @@ end
         @test model2_unsplit.components == model2.components
     end
 end
+
+@testset "Tp flash algorithms" begin
+    system = PCSAFT(["methanol","cyclohexane"])
+    T = 298.15
+    p = 1e5
+    z = [0.5,0.5]
+    numphases = 2
+    @testset "DE Algorithm" begin
+        @test Clapeyron.tp_flash(system, p, T,z)[3] ≈ -6.8640948943443565 rtol = 1e-6 
+    end
+end
