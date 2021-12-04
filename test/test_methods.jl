@@ -308,6 +308,6 @@ end
     z = [0.5,0.5]
     numphases = 2
     @testset "DE Algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T,z)[3] ≈ -6.8640948943443565 rtol = 1e-6 
+        @test Clapeyron.tp_flash(system, p, T,z,2)[3] ≈ -6.8640948943443565 rtol = 1e-6 
     end
 end
