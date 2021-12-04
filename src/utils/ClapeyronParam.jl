@@ -631,6 +631,21 @@ function SiteParam(components::Vector{String})
     String[])
 end
 
+"""
+    AssocOptions(;rtol = 1e-12,atol = 1e-12,max_iters = 1000,dampingfactor = 0.5)
+
+Struct containing iteration parameters for the solver of association sites.
+
+"""
+@Base.kwdef struct AssocOptions <: ClapeyronParam
+    rtol::Float64 = 1e-12
+    atol::Float64 = 1e-12
+    max_iters::Int = 1000
+    dampingfactor::Float64 = 0.5
+end
+
+is_splittable(::AssocOptions) = false
+
 paramvals(param::ClapeyronParam) = param.values
 paramvals(x) = x
 
