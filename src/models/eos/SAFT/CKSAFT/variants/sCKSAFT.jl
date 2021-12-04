@@ -9,7 +9,13 @@ end
 abstract type sCKSAFTModel <: CKSAFTModel end
 @newmodel sCKSAFT sCKSAFTModel sCKSAFTParam
 export sCKSAFT
-function sCKSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function sCKSAFT(components;
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
     params,sites = getparams(components, ["SAFT/sCKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = params["k"]
@@ -24,7 +30,7 @@ function sCKSAFT(components; idealmodel=BasicIdeal, userlocations=String[], idea
     packagedparams = sCKSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["TODO sCKSAFT", "TODO sCKSAFT"]
 
-    model = sCKSAFT(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
+    model = sCKSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
 

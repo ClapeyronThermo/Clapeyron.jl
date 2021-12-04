@@ -32,7 +32,7 @@ struct SAFTgammaMie{I,VR} <: SAFTgammaMieModel
     idealmodel::I
     vrmodel::VR
     mie_zfractions::γMieZ
-    absolutetolerance::Float64
+    assoc_options::AssocOptions
     references::Array{String,1}
 end
 
@@ -58,7 +58,7 @@ function SAFTgammaMie(components;
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
-    absolutetolerance = 1e-12)
+    assoc_options = AssocOptions())
 
     groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params,sites = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
@@ -175,11 +175,11 @@ function SAFTgammaMie(components;
     _mw = SingleParam("molecular_weight",components,comp_mw)
     gcparams = SAFTgammaMieParam(gc_segment,gc_mixedsegment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
     vrparams = SAFTVRMieParam(segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol,_mw)
-    vr = SAFTVRMie(vrparams, comp_sites, BasicIdeal(); ideal_userlocations=ideal_userlocations, verbose=verbose)
     idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    vr = SAFTVRMie(vrparams, comp_sites, idmodel; ideal_userlocations, verbose, assoc_options)
     mie_z = γMieZ(components,zzparam)
     γmierefs = ["10.1063/1.4851455", "10.1021/je500248h"]
-    gmie = SAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,mie_z,absolutetolerance,γmierefs)
+    gmie = SAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,mie_z,assoc_options,γmierefs)
     return gmie
 end
 @registermodel SAFTgammaMie
