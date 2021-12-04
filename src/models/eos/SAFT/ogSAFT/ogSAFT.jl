@@ -10,7 +10,13 @@ abstract type ogSAFTModel <: SAFTModel end
 @newmodel ogSAFT ogSAFTModel ogSAFTParam
 
 export ogSAFT
-function ogSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function ogSAFT(components;
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
     params,sites = getparams(components, ["SAFT/ogSAFT"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = params["k"]
@@ -23,7 +29,7 @@ function ogSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal
     packagedparams = ogSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["todo"]
 
-    model = ogSAFT(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
+    model = ogSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
 

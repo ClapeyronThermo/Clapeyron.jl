@@ -10,7 +10,13 @@ abstract type BACKSAFTModel <: SAFTModel end
 @newmodel BACKSAFT BACKSAFTModel BACKSAFTParam
 
 export BACKSAFT
-function BACKSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function BACKSAFT(components; 
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
     params = getparams(components, ["SAFT/BACKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     c = params["c"]
@@ -24,7 +30,7 @@ function BACKSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ide
     packagedparams = BACKSAFTParam(segment, sigma, epsilon, c, alpha)
     references = ["TODO BACKSAFT", "TODO BACKSAFT"]
 
-    model = BACKSAFT(packagedparams, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
+    model = BACKSAFT(packagedparams, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
 

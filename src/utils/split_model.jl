@@ -28,6 +28,9 @@ This is useful in the case of models without any parameters, as those models are
 The Default is `is_splittable(model) = true`.
 """
 is_splittable(model) = true
+is_splittable(null::Union{Nothing,Missing}) = false
+is_splittable(::Number) = false
+is_splittable(::String) = false
 
 function split_model(param::SingleParam{T},
     splitter =split_model(1:length(param.components))) where T    
@@ -71,7 +74,11 @@ end
 
 function split_model(param::AbstractVector,splitter = ([i] for i ∈ 1:length(param)))
     return [param[i] for i ∈ splitter]
-end 
+end
+
+function split_model(param::UnitRange{Int},splitter = ([i] for i ∈ 1:length(param)))
+    return [1:length(i) for i ∈ splitter]
+end
 
 function _split_model(assoc::CompressedAssocMatrix{T},I) where T
     len = length(assoc.values)
@@ -177,68 +184,38 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
         end
         
         len = length(splitter)
+        M = typeof(model)
 
         if hasfield(typeof(model),:groups) #TODO implement a splitter that accepts a subset
             allfields[:groups] = split_model(model.groups)
         end
-        M = typeof(model)
 
-        len_comps = length(splitter)
-        if hasfield(typeof(model),:groups)
-            allfields[:components] = split_model(model.components)
-        else
-            allfields[:components] = split_model(model.components,splitter)
+        #add here any special keys
+        for modelkey in [:references]
+            allfields[modelkey] = fill(getproperty(model,modelkey),len)
         end
-        
-        if hasfield(typeof(model),:icomponents)
-            allfields[:icomponents] = [1:length(splitter[i]) for i ∈ 1:len_comps]
-        end
-        
-        #process all model fields
+    
+        #process all model fields. require special handling
         modelfields = filter(x->getproperty(model,x) isa EoSModel,fieldnames(M))
         for modelkey ∈ modelfields
             modelx = getproperty(model,modelkey)
             if is_splittable(modelx)
                 allfields[modelkey]= split_model(modelx,subset)
             else
-                allfields[modelkey] = fill(modelx,len_comps)
+                allfields[modelkey] = fill(modelx,len)
             end
         end
 
-        modelfields = filter(x->getproperty(model,x) isa Vector{<:EoSModel},fieldnames(M))
-        for modelkey ∈ modelfields
-            modelx = getproperty(model,modelkey)
-            allfields[modelkey] = [[tup] for tup ∈ modelx]
+        for modelkey ∈ fieldnames(M)
+            if !haskey(allfields,modelkey)
+                modelx = getproperty(model,modelkey)
+                if is_splittable(modelx)
+                    allfields[modelkey]= split_model(modelx,splitter)
+                else
+                    allfields[modelkey] = fill(modelx,len)
+                end
+            end
         end
-
-        only_paramfields = filter(x->getproperty(model,x) isa Union{SingleParam,PairParam,AssocParam},fieldnames(M))
-        for paramkey ∈ only_paramfields
-            modelx = getproperty(model,paramkey)
-            allfields[paramkey] = split_model(modelx,splitter)
-        end
-
-        #process all empty (Missing,Nothing) fields
-        emptyfields = filter(x->getproperty(model,x) isa Union{Nothing,Missing},fieldnames(M))
-
-        for emptykey ∈ emptyfields
-             allfields[emptykey] = fill(model.emptykey,len_comps)
-        end
-    
-        if hasfield(typeof(model),:params)
-            allfields[:params] = split_model(model.params,splitter)
-        end
-
-        if hasfield(typeof(model),:references)
-            allfields[:references] = fill(model.references,len_comps)
-        end
-
-        if hasfield(typeof(model),:absolutetolerance)
-            allfields[:absolutetolerance] = fill(model.absolutetolerance,len_comps)
-        end
-        if hasfield(typeof(model),:sites)
-            allfields[:sites] = split_model(model.sites,splitter)
-        end
-
 
         return [M((allfields[k][i] for k ∈ fieldnames(M))...) for i ∈ 1:len]
     catch e
