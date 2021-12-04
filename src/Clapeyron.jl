@@ -15,7 +15,7 @@ using DiffResults, ForwardDiff
 using Scratch 
 include("solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log
+using .Solvers: log, sqrt
 using Unitful
 import LogExpFunctions
 include("constants.jl")

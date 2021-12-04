@@ -105,14 +105,22 @@ import NaNMath
 
     @inline log(x::Number) = Base.log(x)
     @inline log(x::Complex) = Base.log(x)
-    @inline log(x::Real) = ifelse(x>=zero(x),Base.log(x),zero(x)/zero(x))
-    @inline log(x::Float64) = NaNMath.log(x)
-    @inline log(x::Float32) = NaNMath.log(x)
-    @inline log(x::Int8) = NaNMath.log(float(x))
-    @inline log(x::Int16) = NaNMath.log(float(x))
-    @inline log(x::Int32) = NaNMath.log(float(x))
-    @inline log(x::Int64) = NaNMath.log(float(x))
+
+    @inline function log(x::T) where T <:Real
+            _0 = zero(x)
+            ifelse(x>=zero(x),Base.log(max(_0,x)),_0/_0)
+        end
+    #@inline log(x::Float64) = NaNMath.log(x)
+    #@inline log(x::Float32) = NaNMath.log(x)
+    #@inline log(x::Int8) = NaNMath.log(float(x))
+    #@inline log(x::Int16) = NaNMath.log(float(x))
+    #@inline log(x::Int32) = NaNMath.log(float(x))
+    #@inline log(x::Int64) = NaNMath.log(float(x))
     
+    @inline function sqrt(x::T) where T <:Real
+        _0 = zero(x)
+        ifelse(x>=zero(x),Base.sqrt(max(_0,x)),_0/_0)
+    end
     include("ADNewton.jl")
     include("nlsolve.jl")
     include("fixpoint/fixpoint.jl")
