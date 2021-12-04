@@ -15,9 +15,7 @@ Outputs - Tuple containing:
  - n_ij, Array of mole numbers of species j in phase i, mol
  - G, Gibbs Free Energy of Equilibrium Mixture
 """
-
-function tp_flash(model::EoSModel, p, T, n, numphases; 
-        MaxSteps = 1e4*(numphases-1), PopulationSize = 50, TraceMode = :silent)
+function tp_flash(model::EoSModel, p, T, n, numphases; MaxSteps = 1e4*(numphases-1), PopulationSize = 50, TraceMode = :silent)
     
     numspecies = length(model.components)
     
@@ -88,16 +86,16 @@ function tp_flash(model::EoSModel, p, T, n, numphases;
                 return 1e9
             end
         end
-        
-        return G
+        return G/Clapeyron.R̄/T
     end
-    
+    algorithm = Metaheuristics.DE()
     #Minimize Gibbs Free Energy
-    result = bboptimize(GibbsFreeEnergy; SearchRange = (0.0, 1.0), 
-        NumDimensions = numspecies*(numphases-1), MaxSteps=MaxSteps, PopulationSize = PopulationSize, 
-        TraceMode = TraceMode)
+#     result = bboptimize(GibbsFreeEnergy; SearchRange = (0.0, 1.0), 
+#         NumDimensions = numspecies*(numphases-1), MaxSteps=MaxSteps, PopulationSize = PopulationSize, 
+#         TraceMode = TraceMode)
+    result = Metaheuristics.optimize(GibbsFreeEnergy,vcat(zeros(1,numspecies*(numphases-1)),ones(1,numspecies*(numphases-1))),algorithm)
     
-   dividers = reshape(best_candidate(result), 
+    dividers = reshape(Metaheuristics.minimizer(result), 
             (numphases - 1, numspecies))
         
     #Initialize arrays xij and nvalsij, 
@@ -121,7 +119,7 @@ function tp_flash(model::EoSModel, p, T, n, numphases;
         x[i, :] = nvals[i, :] / sum(nvals[i, :])
     end      
     
-    return (x, nvals, best_fitness(result))
+    return (x, nvals, Metaheuristics.minimum(result))
 end
 
 export tp_flash

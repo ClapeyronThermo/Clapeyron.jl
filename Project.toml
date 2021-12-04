@@ -4,13 +4,13 @@ authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pwalker@mit.edu>",
 version = "0.2.9"
 
 [deps]
-BlackBoxOptim = "a134a8b2-14d6-55f6-9291-3336d3ab0209"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 LogExpFunctions = "2ab3a3ac-af41-5b50-aa03-7779005ae688"
+Metaheuristics = "bcdb8e00-2c21-11e9-3065-2b553b22f898"
 NLSolvers = "337daf1e-9722-11e9-073e-8b9effe078ba"
 NaNMath = "77ba4419-2d1f-58cd-9bb1-8ffee604a2e3"
 PackedVectorsOfVectors = "7713531c-48ef-4bdd-9821-9ff7a8736089"
@@ -24,7 +24,6 @@ UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
-BlackBoxOptim = "0.6"
 CSV = "0.9"
 DiffResults = "^1.0"
 FillArrays = "^0.12"
