@@ -10,7 +10,13 @@ abstract type softSAFTModel <: SAFTModel end
 @newmodel softSAFT softSAFTModel softSAFTParam
 
 export softSAFT
-function softSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function softSAFT(components;
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
     params,sites = getparams(components, ["SAFT/softSAFT"]; userlocations=userlocations, verbose=verbose)
     
     segment = params["m"]
@@ -24,7 +30,7 @@ function softSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ide
     packagedparams = softSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["todo"]
 
-    model = softSAFT(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
+    model = softSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
 

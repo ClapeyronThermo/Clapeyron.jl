@@ -54,7 +54,6 @@ end
 
 function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     _1 = one(V+T+first(z))
-    tol = model.absolutetolerance
     X_ = PackedVectorsOfVectors.packed_ones(typeof(_1),length(@sites(i)) for i ∈ @comps)
     idxs = indices(X_)    
     X0 = X_.v
@@ -77,7 +76,13 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
         _Δ = @f(Δ,data)
     end  
     fX(out,in) = X!(out,in,idxs,_Δ,model.sites,ρ,z)
-    Xsol = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(0.5),atol=tol,max_iters = 1000)
+
+    options = model.assoc_options
+    atol = options.atol
+    rtol = options.rtol
+    max_iters = options.max_iters
+    α = options.dampingfactor
+    Xsol = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(α),atol=atol,rtol = rtol,max_iters = max_iters)
     return PackedVofV(idxs,Xsol)
 end
 

@@ -12,7 +12,12 @@ abstract type CPAModel <: EoSModel end
 @newmodel CPA CPAModel CPAParam
 
 export CPA
-function CPA(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function CPA(components;
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
     params,sites = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
     k  = params["k"]
@@ -27,7 +32,7 @@ function CPA(components; idealmodel=BasicIdeal, userlocations=String[], ideal_us
     packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
     references = ["10.1021/ie051305v"]
 
-    model = CPA(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
+    model = CPA(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
 
