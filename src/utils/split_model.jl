@@ -171,7 +171,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             raw_splitter = model.groups.i_groups
             subset !== nothing && throw("using subsets is not supported with Group Contribution models")
         else
-            raw_splitter = split_model(1:length(model.components))
+            raw_splitter = split_model(Vector(1:length(model.components)))
         end
         if subset === nothing
             splitter = raw_splitter
@@ -185,7 +185,6 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
         
         len = length(splitter)
         M = typeof(model)
-
         if hasfield(typeof(model),:groups) #TODO implement a splitter that accepts a subset
             allfields[:groups] = split_model(model.groups)
         end
