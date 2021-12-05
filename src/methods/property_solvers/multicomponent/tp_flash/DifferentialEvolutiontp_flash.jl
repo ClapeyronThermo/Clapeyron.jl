@@ -41,8 +41,10 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     numspecies = length(model)
     TYPE = typeof(p+T+first(n))
     numphases = method.numphases
-    
-    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases)
+    x = zeros(TYPE,numphases, numspecies)
+    nvals = zeros(TYPE,numphases, numspecies)
+
+    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals)
 
     options = Metaheuristics.Options(time_limit = method.time_limit,iterations = method.max_steps)
     algorithm = Metaheuristics.DE(N=method.population_size,options=options)
@@ -62,8 +64,6 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     #where i in 1..numphases, j in 1..numspecies
     #xij is mole fraction of j in phase i.
     #nvals is mole numbers of j in phase i.
-    x = zeros(TYPE,numphases, numspecies)
-    nvals = zeros(TYPE,numphases, numspecies)
     partition!(dividers,n,x,nvals)
     
     return (x, nvals, Metaheuristics.minimum(result))
@@ -85,7 +85,7 @@ the species between the phases. Each set of (numphases - 1) numbers
 will result in a unique partition of the species into the numphases
 phases.
 """
-function Obj_de_tp_flash(model,p,T,n,dividers,numphases)
+function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals)
     _0 = zero(p+T+first(n))
     numspecies = length(n)
     TYPE  = typeof(_0) 
@@ -96,8 +96,8 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases)
     #where i in 1..numphases, j in 1..numspecies
     #xij is mole fraction of j in phase i.
     #nvals is mole numbers of j in phase i.
-    x = zeros(TYPE,numphases, numspecies)
-    nvals = zeros(TYPE,numphases, numspecies)
+    #x = zeros(TYPE,numphases, numspecies)
+    #nvals = zeros(TYPE,numphases, numspecies)
     #Calculate partition of species into phases
     partition!(dividers,n,x,nvals)
     #Calculate Overall Gibbs Free Energy (J)
