@@ -3,6 +3,7 @@ abstract type MHV2RuleModel <: MixingRule end
 struct MHV2Rule{γ} <: MHV2RuleModel
     components::Array{String,1}
     activity::γ
+    references::Array{String,1}
 end
 
 @registermodel MHV2Rule
@@ -10,7 +11,8 @@ export MHV2Rule
 function MHV2Rule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)
     
-    model = MHV2Rule(components, init_activity)
+    references = ["10.1016/0378-3812(90)85053-D"]
+    model = MHV2Rule(components, init_activity,references)
     return model
 end
 
