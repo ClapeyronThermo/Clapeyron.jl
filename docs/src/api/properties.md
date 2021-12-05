@@ -31,6 +31,15 @@ Clapeyron.crit_pure
 Clapeyron.acentric_factor
 ```
 
+## Multi component properties
+
+```@docs
+Clapeyron.tp_flash
+Clapeyron.TPFlashMethod
+Clapeyron.DETPFlash
+Clapeyron.numphases
+```
+
 ## Initial guess functions
 ```@docs
 Clapeyron.lb_volume

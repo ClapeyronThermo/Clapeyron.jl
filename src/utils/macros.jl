@@ -333,7 +333,13 @@ function init_model(idealmodel::Type{<:IdealModel},components,userlocations,verb
     $idealmodel""")
     return idealmodel(components;userlocations,verbose)
 end
+"""
+    @registermodel(model)
 
+given an existing model, composed of Clapeyron EoS models, ClapeyronParams or EoSParams, it will generate 
+the necessary traits to make the model compatible with Clapeyron routines.
+
+"""
 macro registermodel(model)
     _model = @eval $model
     _has_components = hasfield(_model,:components)
