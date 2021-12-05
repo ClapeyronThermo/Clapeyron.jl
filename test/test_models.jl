@@ -49,6 +49,12 @@ using Clapeyron, Test
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.1575210505284332 rtol = 1e-6
     end
 
+    @testset "sCPA" begin
+        system = sCPA(["water","carbon dioxide"])
+        z = [0.5, 0.5]
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.957518287413705 rtol = 1e-6
+    end
+
     @testset "SAFTVRSW" begin
         system = SAFTVRSW(["water", "ethane"])
         z = [0.5, 0.5]

@@ -1,0 +1,5 @@
+Clapeyron Database File,,,,,,,,
+sCPA Like Parameters,,,,,,,,
+species,SMILES,Mw,b,a,c1,c,n_H,n_e,source
+water,,0.,0.014515,1.2277709283030354,0.6736,0.,2,2,
+carbon dioxide,,0.,0.02720,3.50789609,0.7602,0.,0,1,
