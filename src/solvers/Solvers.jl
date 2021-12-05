@@ -5,7 +5,7 @@ using NLSolvers,Roots
 using PositiveFactorizations
 using DiffResults, ForwardDiff
 using StaticArrays
-import NaNMath
+
     function cholesky_linsolve(d,B,∇f)
         cholesky!(Positive, B)
         Bchol = Cholesky(B,'L',0)
