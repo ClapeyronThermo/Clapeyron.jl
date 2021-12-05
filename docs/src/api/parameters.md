@@ -29,6 +29,7 @@ Clapeyron.PairParam
 Clapeyron.AssocParam
 Clapeyron.GroupParam
 Clapeyron.SiteParam
+Clapeyron.AssocOptions
 ```
 
 ## Model Splitting
