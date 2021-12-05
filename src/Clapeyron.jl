@@ -50,6 +50,7 @@ include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
 
 include("models/eos/SAFT/ogSAFT/ogSAFT.jl")
 include("models/eos/SAFT/CPA/CPA.jl")
+include("models/eos/SAFT/CPA/variants/sCPA.jl")
 include("models/eos/SAFT/SAFTVRSW/SAFTVRSW.jl")
 include("models/eos/SAFT/LJSAFT/LJSAFT.jl")
 include("models/eos/SAFT/softSAFT/softSAFT.jl")

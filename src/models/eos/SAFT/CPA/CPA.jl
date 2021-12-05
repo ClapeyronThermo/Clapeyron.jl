@@ -17,6 +17,7 @@ struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
     params::CPAParam
     sites::SiteParam
     idealmodel::T
+    assoc_options::AssocOptions
     absolutetolerance::Float64
     references::Array{String,1}
 end
@@ -36,7 +37,8 @@ function CPA(components;
     activity_userlocations=String[],
     mixing_userlocations=String[],
     translation_userlocations=String[],
-    verbose=false)
+    verbose=false,
+    assoc_options = AssocOptions())
     
     icomponents = 1:length(components)
 
@@ -68,7 +70,7 @@ function CPA(components;
 
     references = ["10.1021/ie051305v"]
 
-    model = CPA(components, icomponents, init_cubicmodel, packagedparams, sites, init_idealmodel, 1e-12, references)
+    model = CPA(components, icomponents, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, 1e-12, references)
     return model
 end
 
