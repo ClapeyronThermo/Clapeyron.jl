@@ -73,12 +73,14 @@ end
 
 Function to calculate Gibbs Free Energy for given partition of moles between phases.
 This is a little tricky. 
+
 We must find a way of uniquely converting a vector of numbers,
 each in (0, 1), to a partition. We must be careful that 
 the mapping is 1-to-1, not many-to-1, as if many inputs
 map to the same physical state in a redundant way, there
 will be multiple global optima, and the global optimization 
 will perform poorly.
+
 Our approach is to specify (numphases-1) numbers in (0,1) for
 each species. We then scale these numbers systematically in order to partition
 the species between the phases. Each set of (numphases - 1) numbers
