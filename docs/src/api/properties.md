@@ -37,6 +37,7 @@ Clapeyron.acentric_factor
 Clapeyron.tp_flash
 Clapeyron.TPFlashMethod
 Clapeyron.DETPFlash
+Clapeyron.RRTPFlash
 Clapeyron.numphases
 ```
 
