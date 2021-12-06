@@ -1,3 +1,8 @@
+#=
+Original code by Thomas Moore
+@denbigh
+included in https://github.com/ypaul21/Clapeyron.jl/pull/56
+=#
 """
     DETPFlash(;numphases = 2;max_steps = 1e4*(numphases-1),population_size =50,time_limit = Inf)
 
