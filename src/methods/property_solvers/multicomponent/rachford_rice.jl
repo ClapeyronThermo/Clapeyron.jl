@@ -1,11 +1,10 @@
 """
-    rr_vle_vapor_fraction(K,z)
+    rr_vle_vapor_fraction(K,z,α = NaN)
 
 Given a vector of K values and a vector of compositions, calculates the vapor fraction `β`.
 the algorithm is a modification of _(1)_ , with safeguards for extreme cases.
 
 If the algorithm fails to converge, returns `NaN`. if it converges to a value `β ∉ [0,1]`, returns `-Inf` or `Inf`, depending on the case.
-
 
 1. Vassilis Gaganis, "Solution of the Rachford Rice equation using perturbation analysis", Fluid Phase Equilibria, Volume 536,2021,112981
 """
@@ -251,12 +250,16 @@ Each gas phase composition is calculated acording to:
     xvᵢ = kᵢzᵢ/(1+ β(kᵢ-1))
 """
 function rr_flash_vapor(k,z,β)
+    rr_flash_vapor!(similar(k),k,z,β)
+end
+
+function rr_flash_vapor!(y,k,z,β)
     function f(ki,zi)
     _1 = one(ki) 
         return ki*zi/(_1+β*(ki-_1))
     end
-
-    return map(f,k,z)
+    y .= f.(k,z)
+    y
 end
 
 """
@@ -268,9 +271,14 @@ Each gas phase composition is calculated acording to:
     xlᵢ = zᵢ/(1+ β(kᵢ-1))
 """
 function rr_flash_liquid(k,z,β)
+    rr_flash_liquid!(similar(k),k,z,β)
+end
+
+function rr_flash_liquid!(x,k,z,β)
     function f(ki,zi)
         _1 = one(ki) 
         return zi/(_1+β*(ki-_1))
     end
-    return map(f,k,z)
+    x .= f.(k,z)
+    x
 end
