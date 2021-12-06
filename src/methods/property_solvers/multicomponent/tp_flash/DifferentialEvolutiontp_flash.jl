@@ -51,7 +51,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
 
     GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals)
 
-    options = Metaheuristics.Options(time_limit = method.time_limit,iterations = method.max_steps)
+    options = Metaheuristics.Options(time_limit = method.time_limit,iterations = method.max_steps,seed = UInt(373))
     algorithm = Metaheuristics.DE(N=method.population_size,options=options)
 
     #Minimize Gibbs Free Energy
