@@ -112,7 +112,7 @@ function bubble_temperature(model,p,x)
         if isnan(sat[i][1])
             Tc,pc,vc = crit_pure(pure[i])
             g(x) = p-pressure(pure[i],vc,x,[1.])
-            Ti[i] = find_zero(g,(Tc))
+            Ti[i] = Roots.find_zero(g,(Tc))
         else
             Ti[i] = sat[i][1]
         end

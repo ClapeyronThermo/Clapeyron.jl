@@ -113,7 +113,7 @@ function dew_temperature(model,p,y)
         if isnan(sat[i][1])
             Tc,pc,vc = crit_pure(pure[i])
             g(x) = p-pressure(pure[i],vc,x,[1.])
-            Ti[i] = find_zero(g,(Tc))
+            Ti[i] = Roots.find_zero(g,(Tc))
         else
             Ti[i] = sat[i][1]
         end

@@ -302,12 +302,17 @@ end
 end
 
 @testset "Tp flash algorithms" begin
-    system = PCSAFT(["methanol","cyclohexane"])
+    system = PCSAFT(["water","cyclohexane","carbon dioxide"])
     T = 298.15
     p = 1e5
-    z = [0.5,0.5]
-    numphases = 2
-    @testset "DE Algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash())[3] ≈ -6.8640948943443565 rtol = 1e-6 
+    z = [0.333, 0.333, 0.334]
+
+    @testset "RR Algorithm" begin
+        @test Clapeyron.tp_flash(system, p, T,z, RRTPFlash())[3] ≈ -6.520115787050558 rtol = 1e-6 
     end
+
+    @testset "DE Algorithm" begin
+        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3,population_size=20))[3] ≈ -6.73128934227615 rtol = 1e-6 
+    end
+    
 end
