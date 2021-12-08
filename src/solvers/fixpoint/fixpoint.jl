@@ -14,6 +14,7 @@ the following strategies:
 
 """
 function fixpoint end
+
 struct SSFixPoint{T<:Real} <: AbstractFixPoint 
     dampingfactor::T
 end
@@ -56,19 +57,21 @@ function fixpoint(f,x0,
     method::AbstractFixPoint = SSFixPoint();
     atol=zero(eltype(x0)),
     rtol=8eps(one(eltype(x0))), 
-    max_iters=100)
+    max_iters=100,
+    return_last = false)
     _,atol,rtol = promote(one(eltype(x0)),atol,rtol)
     method = promote_method(method,eltype(x0))
-    return _fixpoint(f,x0,method,atol,rtol,max_iters)
+    return _fixpoint(f,x0,method,atol,rtol,max_iters,stop_iter)
 end
-
 
 function _fixpoint(f::F,
     x0::T,
     method::SSFixPoint,
     atol::T = zero(T),
     rtol::T =8*eps(T),
-    max_iters=100) where {F,T<:Real}
+    max_iters=100,
+    return_last = false) where {F,T<:Real}
+    
     nan = (0*atol)/(0*atol)
     xi = f(x0)
     converged,finite = convergence(x0,xi,atol,rtol)
@@ -83,7 +86,7 @@ function _fixpoint(f::F,
         itercount +=1
         xold = xi
     end
-    return nan
+    return ifelse(return_last,xi,nan)
 end
 
 function _fixpoint(f::F,
@@ -91,7 +94,8 @@ function _fixpoint(f::F,
     method::AitkenFixPoint,
     atol::T = zero(T),
     rtol::T =8*eps(T),
-    max_iters=100) where {F,T}
+    max_iters=100,
+    return_last = false) where {F,T<:Real}
 
     nan = (0*atol)/(0*atol)
     itercount = 2
@@ -121,7 +125,7 @@ function _fixpoint(f::F,
         converged,finite = convergence(x1,x2,atol,rtol)
         converged && return ifelse(finite,x2,nan)
     end
-    return nan
+    return ifelse(return_last,x2,nan)
 end
 
 function _fixpoint(f!::F,
@@ -129,7 +133,9 @@ function _fixpoint(f!::F,
     method::SSFixPoint,
     atol::T = zero(T),
     rtol::T =8*eps(T),
-    max_iters=100) where {F,T<:Real}
+    max_iters=100,
+    return_last = false) where {F,T<:Real}
+    
     nan = (0*atol)/(0*atol)
     xi = copy(x0)
     xi = f!(xi,x0)
@@ -161,6 +167,6 @@ function _fixpoint(f!::F,
         itercount +=1
         xold .= xi
     end
-    xi .= nan
+    !return_last && (xi .= nan)
     return xi
 end
