@@ -25,6 +25,15 @@ function f∂f∂2f(f,x::T) where T
     return fx,∂f∂x,∂²f∂²x
 end
 
+
+
+function newton_fixpoint(f::F,x::T) where {F,T}
+    fx, gx = f(x)
+    Δx = fx/gx
+    x =x - Δx
+    return x
+end
+
 """
     ad_newton(f,x0;atol = oneunit(T) * (eps(one(T)))^(4/5),rtol = )
 
@@ -35,41 +44,32 @@ function ad_newton(f::F,x0::T;
     rtol= (eps(one(T)))^(4/5),
     atol=rtol*oneunit(T),
     max_iters = 100) where {F,T}
-    return newton(Base.Fix1(f∂f,f),x0;rtol,atol,max_iters)
+    fdf(x) =  f∂f(f,x)
+    f0(x) = newton_fixpoint(fdf,x)
+    return fixpoint(f0,x0;rtol,atol,max_iters)
 end
 
 function newton(f::F,x0::T;
     rtol= (eps(one(T)))^(4/5),
     atol=rtol*oneunit(T),
-    max_iters = 100) where {F,T} 
-    xo = T(Inf)
-    x = x0
-    for _ in 1:max_iters
-        fx, gx = f(x)
-        Δx = fx/gx
-        abs(fx) < eps(x) && return x
-        x -= Δx
-        if isapprox(x, xo, atol=atol, rtol=rtol)
-            return x
-        end
-        xo = x
-    end
-    return zero(x0)/zero(x0)
+    max_iters = 100) where {F,T}
+    f0(x) = newton_fixpoint(f,x)
+    return fixpoint(f0,x0;rtol,atol,max_iters)
 end
 
-function halley(fgh::F,x0::T;
+function halley_fixpoint(f::F,x::T) where {F,T}
+    ff,gg,hh = f(x)
+    Δx = ff/gg/(1-ff*hh/(2*gg^2))
+    x =x - Δx
+    return x
+end
+
+function halley(f::F,x0::T;
     rtol= (eps(one(T)))^(4/5),
     atol=rtol*oneunit(T),
     max_iters = 100) where {F,T}
-    for _ in 1:max_iters
-        ff,gg,hh = fgh(x0)
-        abs(ff) < eps(x0) && return x0      
-        d = ff/gg/(1-ff*hh/(2*gg^2))
-        if isapprox(x0, x0-d, atol=atol, rtol=rtol)
-            return x0
-        end
-        x0=x0-d
-    end
-    return zero(x0)/zero(x0)
+    f0(x) = halley_fixpoint(f,x)
+    return fixpoint(f0,x0;rtol,atol,max_iters)
 end
+
 
