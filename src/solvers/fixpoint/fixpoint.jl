@@ -61,7 +61,7 @@ function fixpoint(f,x0,
     return_last = false)
     _,atol,rtol = promote(one(eltype(x0)),atol,rtol)
     method = promote_method(method,eltype(x0))
-    return _fixpoint(f,x0,method,atol,rtol,max_iters,stop_iter)
+    return _fixpoint(f,x0,method,atol,rtol,max_iters,return_last)
 end
 
 function _fixpoint(f::F,
