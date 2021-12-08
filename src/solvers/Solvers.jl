@@ -103,26 +103,9 @@ using StaticArrays
         return res.info.minimizer
     end
 
-    @inline log(x) = Base.log(x)
-
-    @inline function log(x::T) where T <:Real
-            _0 = zero(x)
-            ifelse(x>=zero(x),Base.log(max(_0,x)),_0/_0)
-        end
-    #@inline log(x::Float64) = NaNMath.log(x)
-    #@inline log(x::Float32) = NaNMath.log(x)
-    #@inline log(x::Int8) = NaNMath.log(float(x))
-    #@inline log(x::Int16) = NaNMath.log(float(x))
-    #@inline log(x::Int32) = NaNMath.log(float(x))
-    #@inline log(x::Int64) = NaNMath.log(float(x))
-    @inline sqrt(x) = Base.sqrt(x)
-    @inline function sqrt(x::T) where T <:Real
-        _0 = zero(x)
-        ifelse(x>=zero(x),Base.sqrt(max(_0,x)),_0/_0)
-    end
-    include("ADNewton.jl")
+    include("nanmath.jl")
     include("nlsolve.jl")
     include("fixpoint/fixpoint.jl")
+    include("fixpoint/ADNewton.jl")
     include("optimize.jl")
-
 end # module
