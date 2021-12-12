@@ -476,14 +476,14 @@ function findparamsincsv(components::Array{String,1},
     getsources = false
     if normalised_sourcecolumnreference ∈ normalised_csvheaders
         getsources = true
-        sourcecolumn = Symbol(normalised_csvheaders[findfirst(isequal(normalised_sourcecolumnreference), normalised_csvheaders)])
+        sourcecolumn = findfirst(isequal(normalised_sourcecolumnreference), normalised_csvheaders)
     end
 
     single_idx,pair_idx,assoc_idx = col_indices(csvtype,normalised_csvheaders,options)
     lookupcolumnindex,_ = single_idx
     lookupcolumnindex1,lookupcolumnindex2 = pair_idx
     lookupsitecolumnindex1,lookupsitecolumnindex2 = assoc_idx
-
+    headerparams_indices = [findfirst(isequal(i),normalised_csvheaders) for i in normalised_headerparams]
     if csvtype == singledata
         for row ∈ Tables.rows(df)   
             component_split = split.(row[lookupcolumnindex], component_delimiter, keepempty=false)
@@ -493,8 +493,8 @@ function findparamsincsv(components::Array{String,1},
                 
                 component = components[foundcomponentidx]
                 foundvalues[component] = Dict{String,Any}()
-                for headerparam ∈ headerparams
-                    foundvalues[component][headerparam] = row[Symbol(headerparam)]
+                for (headerparam,idx) ∈ zip(headerparams,headerparams_indices)
+                    foundvalues[component][headerparam] = row[idx]
                 end
                 verbose && @info("""Found component: $(component)
                 with values: $(foundvalues[component])
@@ -517,8 +517,8 @@ function findparamsincsv(components::Array{String,1},
                 (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
                 componentpair = (components[foundcomponentidx1], components[foundcomponentidx2])
                 foundvalues[componentpair] = Dict{String,Any}()
-                for headerparam ∈ headerparams
-                    foundvalues[componentpair][headerparam] = row[Symbol(headerparam)]
+                for (headerparam,idx) ∈ zip(headerparams,headerparams_indices)
+                    foundvalues[componentpair][headerparam] = row[idx]
                 end
                 verbose && @info("""Found component pair: ($(component1),$(component2))
                 with values: $(foundvalues[componentpair])
@@ -543,8 +543,8 @@ function findparamsincsv(components::Array{String,1},
                 site2 = row[lookupsitecolumnindex2]
                 assocpair = ((components[foundcomponentidx1], components[foundcomponentidx2]), (site1, site2))
                 foundvalues[assocpair] = Dict{String,Any}()
-                for headerparam ∈ headerparams
-                    foundvalues[assocpair][headerparam] = row[Symbol(headerparam)]
+                for (headerparam,idx) ∈ zip(headerparams,headerparams_indices)
+                    foundvalues[assocpair][headerparam] = row[idx]
                 end
                 verbose && @info("""Found assoc pair: ($(component1),$(component2)) , ($(site1),$(site2))
                 with values: $(foundvalues[assocpair])
