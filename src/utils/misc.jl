@@ -95,9 +95,3 @@ function complement_index(i,ij)
     i1,i2 = ij
     ifelse(i1 == i,i2,i1)
 end
-
-@static if Base.VERSION < v"1.8"
-    lazysplit(x) = Base.split(x)
-else
-    lazysplit(x) = Base.eachsplit(x)
-end
