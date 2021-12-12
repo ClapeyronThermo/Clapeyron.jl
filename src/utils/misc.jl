@@ -70,17 +70,15 @@ function ∑(fn,iterator)
 end
 
 """
-    xlogx(x::Number)
+    xlogx(x::Real)
 Return `x * log(x)` for `x ≥ 0`, handling ``x = 0`` by taking the downward limit.
 
 copied from LogExpFunctions.jl
 """
-function xlogx(x::Number)
-    if x > 0
-        return x*log(x)
-    else
-        return zero(x)
-    end
+function xlogx(x::Real)
+    _0 = zero(x)
+    iszero(x) && return _0
+    ifelse(x >= _0,x*Base.log(max(_0,x)),_0/_0)
 end
 
 @inline function nan_num(V,T,z)
@@ -96,4 +94,10 @@ end
 function complement_index(i,ij)
     i1,i2 = ij
     ifelse(i1 == i,i2,i1)
+end
+
+@static if Base.VERSION < v"1.8"
+    lazysplit(x) = Base.split(x)
+else
+    lazysplit(x) = Base.eachsplit(x)
 end
