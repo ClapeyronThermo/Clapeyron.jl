@@ -21,14 +21,14 @@ using Unitful
 import LogExpFunctions
 include("constants.jl")
 include("models/basetools.jl") #type hierarchy
-include("utils/ParamOptions.jl") 
+include("database/ParamOptions.jl") 
 include("utils/vectors.jl")
 include("utils/ClapeyronParam.jl")
 
 
 include("utils/macros.jl")
 using CSV, Tables
-include("utils/database.jl")
+include("database/database.jl")
 include("utils/misc.jl")
 
 
@@ -37,7 +37,7 @@ include("models/combiningrules.jl")
 include("models/eos.jl")
 include("utils/visualisation.jl")
 include("utils/split_model.jl")
-include("utils/UserReader.jl")
+include("database/UserReader.jl")
 
 include("models/eos/ideal/BasicIdeal.jl") #before macros, because its used there
 include("models/eos/ideal/MonomerIdeal.jl")
