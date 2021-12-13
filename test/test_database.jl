@@ -35,6 +35,19 @@ using Clapeyron, Test
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_normal,return_sites = false)
 
     params = Clapeyron.getparams(testspecies; userlocations=filepath_normal, ignore_missing_singleparams=["emptyparam","missingparam"],return_sites = false)
+    sites = Clapeyron.SiteParam(params["intparam"].components)
+    #Printing: SingleParam
+    @test repr(params["intparam"]) == "SingleParam{Int64}(\"intparam\")[\"sp1\",\"sp2\",\"sp3\",\"sp4\",\"sp5\"]"
+    @test repr("text/plain",params["intparam"]) == "SingleParam{Int64}(\"intparam\") with 5 components:\n \"sp1\" => 6\n \"sp2\" => 2\n \"sp3\" => 7\n \"sp4\" => 4\n \"sp5\" => 5"
+    #Printing: PairParam
+    @test repr(params["overwriteparam"]) == "PairParam{Float64}(\"overwriteparam\")[5×5 Matrix{Float64}]"
+    @test repr("text/plain",params["overwriteparam"]) == "PairParam{PairParam{Float64}}[\"sp1\", \"sp2\", \"sp3\", \"sp4\", \"sp5\"]) with values:\n5×5 Matrix{Float64}:\n 1.6  4.0  0.0  0.0  0.0\n 4.0  1.2  0.0  3.0  0.0\n 0.0  0.0  1.3  2.0  0.0\n 0.0  3.0  2.0  1.4  0.0\n 0.0  0.0  0.0  0.0  1.5"
+    #Printing: AssocParam
+    @test repr(params["overwriteassocparam"]) == "AssocParam{String}(\"overwriteassocparam\")[\"val1\", \"val8\", \"val5\", \"val4\", \"val7\", \"val6\", \"val3\", \"42\"]"
+    @test repr("text/plain",params["overwriteassocparam"]) == "AssocParam{String}[\"sp1\", \"sp2\", \"sp3\", \"sp4\", \"sp5\"]) with values:\n(\"sp3\", \"e\") >=< (\"sp3\", \"H\"): val1\n(\"sp3\", \"e2\") >=< (\"sp3\", \"H\"): val8\n(\"sp3\", \"H\") >=< (\"sp4\", \"e\"): val5\n(\"sp3\", \"H\") >=< (\"sp4\", \"H\"): val4\n(\"sp4\", \"e\") >=< (\"sp5\", \"H\"): val7\n(\"sp4\", \"H\") >=< (\"sp5\", \"e2\"): val6\n(\"sp5\", \"e\") >=< (\"sp5\", \"e\"): val3\n(\"sp5\", \"e\") >=< (\"sp5\", \"H\"): 42\n"
+    #Printing: SiteParam
+    @test repr(sites) == "SiteParam[\"sp1\" => [], \"sp2\" => [], \"sp3\" => [], \"sp4\" => [], \"sp5\" => []]"
+    @test repr("text/plain",sites) == "SiteParam with 5 components:\n \"sp1\": (no sites)\n \"sp2\": (no sites)\n \"sp3\": (no sites)\n \"sp4\": (no sites)\n \"sp5\": (no sites)"
     # Check that all the types are correct.
     @test typeof(params["intparam"]) <: Clapeyron.SingleParam{Int}
     @test typeof(params["doubleparam"]) <: Clapeyron.SingleParam{Float64}
@@ -60,7 +73,8 @@ using Clapeyron, Test
     @test typeof(params["overwritestringparam"]) <: Clapeyron.SingleParam{String}
     # Overwrite Int with String
     @test typeof(params["overwriteassocparam"]) <: Clapeyron.AssocParam{String}
-
+    @test repr(params["overwriteassocparam"]) == "AssocParam{String}(\"overwriteassocparam\")[\"val1\", \"val8\", \"val5\", \"val4\", \"val7\", \"val6\", \"val3\", \"42\"]"
+    @test repr("text/plain",params["overwriteassocparam"]) == "AssocParam{String}[\"sp1\", \"sp2\", \"sp3\", \"sp4\", \"sp5\"]) with values:\n(\"sp3\", \"e\") >=< (\"sp3\", \"H\"): val1\n(\"sp3\", \"e2\") >=< (\"sp3\", \"H\"): val8\n(\"sp3\", \"H\") >=< (\"sp4\", \"e\"): val5\n(\"sp3\", \"H\") >=< (\"sp4\", \"H\"): val4\n(\"sp4\", \"e\") >=< (\"sp5\", \"H\"): val7\n(\"sp4\", \"H\") >=< (\"sp5\", \"e2\"): val6\n(\"sp5\", \"e\") >=< (\"sp5\", \"e\"): val3\n(\"sp5\", \"e\") >=< (\"sp5\", \"H\"): 42\n"
     # Check that values of "sp1" and "sp3" has been correctly overwritten.
     # "sp1" was overwritten from the same file
     # "sp3" was overwritten from a separate file, "normal_single2_test.csv"
@@ -125,6 +139,7 @@ using Clapeyron, Test
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, ignore_missing_singleparams=["asymmetricpair"],return_sites = false)
 
     asymmetricparams = Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"], ignore_missing_singleparams=["asymmetricpair"],return_sites = false)
+   
     asymmetricparams["asymmetricpair"].values == [0.06  0.04  0.0  0.0   0.0
                                                   0.05  0.0   0.0  0.0   0.0
                                                   0.0   0.0   0.0  0.02  0.0
@@ -156,7 +171,11 @@ using Clapeyron, Test
     # GC test, 3 comps, 4 groups
 
     components_gc = GroupParam(["test1", "test2", ("test3", ["grp1" => 2, "grp2" => 2, "grp3" => 3,"grp4" => 5])]; usergrouplocations=filepath_gc)
-
+    
+    #Printing: GroupParam
+    @test repr(components_gc) == "GroupParam[\"test1\" => [\"grp1\" => 1, \"grp2\" => 2], \"test2\" => [\"grp2\" => 1], \"test3\" => [\"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5]]"
+    @test repr("text/plain",components_gc) == "GroupParam with 3 components:\n \"test1\": \"grp1\" => 1, \"grp2\" => 2\n \"test2\": \"grp2\" => 1\n \"test3\": \"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5"
+    
     @test components_gc.components == ["test1", "test2", "test3"]
     @test components_gc.groups == [["grp1","grp2"],["grp2"],["grp1","grp2","grp3","grp4"]]
     @test components_gc.n_groups == [[1,2], [1], [2,2,3,5]]
@@ -170,6 +189,7 @@ using Clapeyron, Test
     param_gc = getparams(components_gc; userlocations=filepath_param_gc)
     @test param_gc["param1"].values == [1, 2, 3, 4]
 
+    #ParamTable
     file = ParamTable(:single,(species = ["sp1"],userparam = [2]))
     param_user = getparams(testspecies,userlocations = [file],ignore_missing_singleparams=["userparam"])
     @test param_user["userparam"].values[1] === 2
