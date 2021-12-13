@@ -308,11 +308,11 @@ end
     z = [0.333, 0.333, 0.334]
 
     @testset "RR Algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T,z, RRTPFlash())[3] ≈ -6.520115787050558 rtol = 1e-6 
+        @test Clapeyron.tp_flash(system, p, T,z, RRTPFlash())[3] ≈ -6.520178250317485 rtol = 1e-6 
     end
 
     @testset "DE Algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3,population_size=20))[3] ≈ -6.73128934227615 rtol = 1e-6 
+        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3,population_size=20))[3] ≈ -6.73130492921276 rtol = 1e-6 
     end
     
 end
