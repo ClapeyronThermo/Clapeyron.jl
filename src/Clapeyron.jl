@@ -74,6 +74,8 @@ include("models/eos/Activity/NRTL/NRTL.jl")
 include("models/eos/Activity/UNIQUAC/UNIQUAC.jl")
 include("models/eos/Activity/UNIFAC/UNIFAC.jl")
 include("models/eos/Activity/UNIFAC/variants/ogUNIFAC.jl")
+include("models/eos/Activity/UNIFAC/variants/PSRK.jl")
+include("models/eos/Activity/UNIFAC/variants/VTPR.jl")
 
 include("models/eos/Activity/COSMOSAC/utils.jl")
 include("models/eos/Activity/COSMOSAC/COSMOSAC02.jl")
