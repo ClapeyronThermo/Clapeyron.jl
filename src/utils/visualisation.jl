@@ -37,16 +37,19 @@ function gc_eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSMod
     print(io, typeof(model))
     length(model) == 1 && println(io, " with 1 component:")
     length(model) > 1 && println(io, " with ", length(model), " components:")
-    for i in 1:length(model)
-        print(io, " \"", model.components[i], "\": ")
+    param = model.groups
+    for i in 1:length(param.components)
+        
+        print(io, " \"", param.components[i], "\": ")
         firstloop = true
-        for k in 1:length(model.groups.groups[i])
+        for j in 1:length(param.n_groups[i])
             firstloop == false && print(io, ", ")
-            print(io, "\"", model.groups.groups[i][k], "\" => ", model.groups.n_groups[i][k])
+            print(io, "\"", param.groups[i][j], "\" => ", param.n_groups[i][j])
             firstloop = false
         end
-        println(io)
+        i != length(param.components) && println(io)
     end
+    println(io)
     print(io, "Contains parameters: ")
     firstloop = true
     for fieldname in fieldnames(typeof(model.params))
