@@ -262,7 +262,6 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
         headerparams = readheaderparams(filepath,options)
         verbose && @info("Searching for $(Symbol(csvtype)) headers $headerparams for components $components at $filepath ...")
         foundparams, paramtypes, sources = findparamsincsv(components, filepath,options)
-        foundcomponents = collect(keys(foundparams))
         foundparams = swapdictorder(foundparams)
         for headerparam ∈ headerparams
             if !haskey(allparams, headerparam)
@@ -486,7 +485,7 @@ function findparamsincsv(components::Array{String,1},
     headerparams_indices = [findfirst(isequal(i),normalised_csvheaders) for i in normalised_headerparams]
     if csvtype == singledata
         for row ∈ Tables.rows(df)   
-            component_split = split.(row[lookupcolumnindex], component_delimiter, keepempty=false)
+            component_split = split(row[lookupcolumnindex], component_delimiter, keepempty=false)
             for component ∈ component_split
                 foundcomponentidx = findfirst(isequal(normalisestring(component,normalisecomponents)), normalised_components)
                 isnothing(foundcomponentidx) && continue
@@ -509,51 +508,58 @@ function findparamsincsv(components::Array{String,1},
         end
     elseif csvtype == pairdata
         for row ∈ Tables.rows(df)
-            component_split1 = split.(row[lookupcolumnindex1], component_delimiter, keepempty=false)
-            component_split2 = split.(row[lookupcolumnindex2], component_delimiter, keepempty=false)
-            for component1 ∈ component_split1, component2 ∈ component_split2
+            component_split1 = split(row[lookupcolumnindex1], component_delimiter, keepempty=false)
+            for component1 ∈ component_split1
                 foundcomponentidx1 = findfirst(isequal(normalisestring(component1,normalisecomponents)), normalised_components)
-                foundcomponentidx2 = findfirst(isequal(normalisestring(component2,normalisecomponents)), normalised_components)
-                (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
-                componentpair = (components[foundcomponentidx1], components[foundcomponentidx2])
-                foundvalues[componentpair] = Dict{String,Any}()
-                for (headerparam,idx) ∈ zip(headerparams,headerparams_indices)
-                    foundvalues[componentpair][headerparam] = row[idx]
-                end
-                verbose && @info("""Found component pair: ($(component1),$(component2))
-                with values: $(foundvalues[componentpair])
-                """)
-                if getsources
-                    source = row[sourcecolumn]
-                    sources[componentpair] = source
-                else
-                    sources[componentpair] = missing
+                isnothing(foundcomponentidx1) && continue
+                component_split2 = split(row[lookupcolumnindex2], component_delimiter, keepempty=false)
+                for component2 ∈ component_split2
+                    foundcomponentidx1 = findfirst(isequal(normalisestring(component1,normalisecomponents)), normalised_components)
+                    foundcomponentidx2 = findfirst(isequal(normalisestring(component2,normalisecomponents)), normalised_components)
+                    isnothing(foundcomponentidx2) && continue
+                    componentpair = (components[foundcomponentidx1], components[foundcomponentidx2])
+                    foundvalues[componentpair] = Dict{String,Any}()
+                    for (headerparam,idx) ∈ zip(headerparams,headerparams_indices)
+                        foundvalues[componentpair][headerparam] = row[idx]
+                    end
+                    verbose && @info("""Found component pair: ($(component1),$(component2))
+                    with values: $(foundvalues[componentpair])
+                    """)
+                    if getsources
+                        source = row[sourcecolumn]
+                        sources[componentpair] = source
+                    else
+                        sources[componentpair] = missing
+                    end
                 end
             end
         end
     elseif csvtype == assocdata  
         for row ∈ Tables.rows(df)
-            component_split1 = split.(row[lookupcolumnindex1], component_delimiter, keepempty=false)
-            component_split2 = split.(row[lookupcolumnindex2], component_delimiter, keepempty=false)
-            for component1 ∈ component_split1, component2 ∈ component_split2
+            component_split1 = split(row[lookupcolumnindex1], component_delimiter, keepempty=false)
+            for component1 ∈ component_split1
                 foundcomponentidx1 = findfirst(isequal(normalisestring(component1,normalisecomponents)), normalised_components)
-                foundcomponentidx2 = findfirst(isequal(normalisestring(component2,normalisecomponents)), normalised_components)
-                (isnothing(foundcomponentidx1) || isnothing(foundcomponentidx2)) && continue
-                site1 = row[lookupsitecolumnindex1]
-                site2 = row[lookupsitecolumnindex2]
-                assocpair = ((components[foundcomponentidx1], components[foundcomponentidx2]), (site1, site2))
-                foundvalues[assocpair] = Dict{String,Any}()
-                for (headerparam,idx) ∈ zip(headerparams,headerparams_indices)
-                    foundvalues[assocpair][headerparam] = row[idx]
-                end
-                verbose && @info("""Found assoc pair: ($(component1),$(component2)) , ($(site1),$(site2))
-                with values: $(foundvalues[assocpair])
-                """)
-                if getsources
-                    source = row[sourcecolumn]
-                    sources[assocpair] = source
-                else
-                    sources[assocpair] = missing
+                isnothing(foundcomponentidx1) && continue
+                component_split2 = split(row[lookupcolumnindex2], component_delimiter, keepempty=false)
+                for component2 ∈ component_split2
+                    foundcomponentidx2 = findfirst(isequal(normalisestring(component2,normalisecomponents)), normalised_components)
+                    isnothing(foundcomponentidx2) && continue
+                    site1 = row[lookupsitecolumnindex1]
+                    site2 = row[lookupsitecolumnindex2]
+                    assocpair = ((components[foundcomponentidx1], components[foundcomponentidx2]), (site1, site2))
+                    foundvalues[assocpair] = Dict{String,Any}()
+                    for (headerparam,idx) ∈ zip(headerparams,headerparams_indices)
+                        foundvalues[assocpair][headerparam] = row[idx]
+                    end
+                    verbose && @info("""Found assoc pair: ($(component1),$(component2)) , ($(site1),$(site2))
+                    with values: $(foundvalues[assocpair])
+                    """)
+                    if getsources
+                        source = row[sourcecolumn]
+                        sources[assocpair] = source
+                    else
+                        sources[assocpair] = missing
+                    end
                 end
             end
         end
@@ -611,7 +617,7 @@ function readheaderparams(filepath::AbstractString, options::ParamOptions = Defa
     push!(ignorelist,options.species_columnreference)
     push!(ignorelist,options.source_columnreference)
     push!(ignorelist,options.site_columnreference)
-    headers = split(getline(filepath, headerline), ',')
+    headers = split(getline(filepath, headerline), ',',keepempty = false)
     while last(headers) == ""
         pop!(headers)
     end
