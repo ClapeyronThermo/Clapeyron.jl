@@ -191,7 +191,7 @@ function PairParam(x::SingleParam,name::String=x.name)
     diagvalues = view(_values, diagind(_values))
     return PairParam(name, x.components, _values,diagvalues,_ismissingvalues,x.sourcecsvs, x.sources)
 end
-
+#=
 function PairParam(x::PairParam, v::Matrix,name::String=x.name)
     return PairParam(name, x.components,deepcopy(v), x.sourcecsvs, x.sources)
 end
@@ -202,7 +202,7 @@ end
 function PairParam(x::SingleParam, v::Matrix,name::String=x.name)
     return PairParam(x.name, x.components, deepcopy(v),x.sourcecsvs, x.sources)
 end
-
+=#
 #barebones constructor by list of pairs.
 
 
@@ -237,6 +237,7 @@ function AssocParam(name::String,components::Vector{String},values::Array{Array{
     return AssocParam(name,components,_values,allcomponentsites,sourcecsvs,sources)
 end
 
+#=
 function AssocParam(x::AssocParam{T}) where T
     return AssocParam{T}(x.name,x.components, deepcopy(x.values), x.sites, x.sourcecsvs, x.sources)
 end
@@ -254,7 +255,7 @@ function AssocParam{T}(name::String,components::Vector{String}) where T
     String[],
     String[])
 end
-
+=#
 function Base.show(io::IO,mime::MIME"text/plain",param::AssocParam{T}) where T
     print(io,"AssocParam{",string(T),"}")
     print(io,param.components)
