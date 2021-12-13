@@ -2,7 +2,7 @@
 function PSRK(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = SoaveAlpha,
     mixing = PSRKRule,
-    activity = UNIFAC,
+    activity = PSRKUNIFAC,
     translation=PenelouxTranslation,
     userlocations=String[], 
     ideal_userlocations=String[],
