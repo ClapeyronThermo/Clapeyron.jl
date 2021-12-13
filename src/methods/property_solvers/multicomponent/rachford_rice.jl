@@ -78,10 +78,10 @@ function rr_vle_vapor_fraction(K,z)
     b4 = -(t1+t2)/M1
     βaprox = (b0+b1+b2+b3+b4) #β(ε=1)
     βsol1 =  Solvers.ad_newton(x->rr_flash_eval(K,z,x),βaprox)
-
+    βsol = βsol1
     #converged to -2.2e-16 or lower, practically 0
     if abs(βsol1) < eps(_1)
-        βsol1 =_0
+        βsol =_0
     end
     if 0 <= βsol1 <= 1 #converged as expected inside range [0,1]
         βsol = βsol1
@@ -103,7 +103,6 @@ function rr_vle_vapor_fraction(K,z)
         βsol = _0/_0
     end
     return βsol
-
 end
 function rr_find_strongest(K,z)
     _0 = zero(first(z)+first(K))
