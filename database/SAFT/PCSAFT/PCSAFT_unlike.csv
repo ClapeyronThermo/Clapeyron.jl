@@ -27,6 +27,7 @@ carbon dioxide,(O=)C=O,n-pentane,CCCCC,0.143,10.1021/ie0003887
 carbon dioxide,(O=)C=O,n-heptane,CCCCCCC,0.129,10.1021/ie0003887
 carbon dioxide,(O=)C=O,methylcyclohexane,,0.144,10.1021/ie0003887
 carbon dioxide,(O=)C=O,cyclohexane,,0.13,10.1021/ie0003887
+carbon dioxide,(O=)C=O,water,,-0.005927,10.1021/ie0003887
 1-chlorobutane,CCCC(Cl),hexane,CCCCCC,0.017,10.1021/ie0003887
 methanol,CO,isobutanol,,0.05,10.1021/ie010954d
 methanol,CO,cyclohexane,C1CCCCC1,0.051,10.1021/ie010954d
