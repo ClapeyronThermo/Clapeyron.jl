@@ -304,6 +304,7 @@ end
         model4_split = Clapeyron.split_model(model4)
         @test model4_split[4].groups.n_groups[1][2] == 3
         @test model4_split[1].components[1] == "methane"
+        @test all(isone(length(model4_split[i].components)) for i in 1:4)
     end
 end
 

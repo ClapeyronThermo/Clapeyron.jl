@@ -187,9 +187,10 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
         M = typeof(model)
         if hasfield(typeof(model),:groups) #TODO implement a splitter that accepts a subset
             allfields[:groups] = split_model(model.groups)
+            allfields[:components] = getfield.(allfields[:groups],:components)
         end
         allfieldnames = fieldnames(M)
-        #add here any special keys
+        #add here any special keys, that behave as non_splittable values
         for modelkey in [:references]
             if modelkey in allfieldnames
                 if !haskey(allfields,modelkey)
@@ -197,24 +198,16 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
                 end
             end
         end
-    
-        #process all model fields. require special handling
-        modelfields = filter(x->getproperty(model,x) isa EoSModel,fieldnames(M))
-        for modelkey ∈ modelfields
-            modelx = getproperty(model,modelkey)
-            if is_splittable(modelx)
-                allfields[modelkey]= split_model(modelx,subset)
-            else
-                allfields[modelkey] = fill(modelx,len)
-            end
-        end
 
-        for modelkey ∈ fieldnames(M)
+        for modelkey ∈ allfieldnames
             if !haskey(allfields,modelkey)
-                
                 modelx = getproperty(model,modelkey)
                 if is_splittable(modelx)
-                    allfields[modelkey]= split_model(modelx,splitter)
+                    if modelx isa EoSModel
+                        allfields[modelkey]= split_model(modelx,subset)
+                    else
+                        allfields[modelkey]= split_model(modelx,splitter)
+                    end
                 else
                     allfields[modelkey] = fill(modelx,len)
                 end
