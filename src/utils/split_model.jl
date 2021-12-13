@@ -188,10 +188,14 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
         if hasfield(typeof(model),:groups) #TODO implement a splitter that accepts a subset
             allfields[:groups] = split_model(model.groups)
         end
-
+        allfieldnames = fieldnames(M)
         #add here any special keys
         for modelkey in [:references]
-            allfields[modelkey] = fill(getproperty(model,modelkey),len)
+            if modelkey in allfieldnames
+                if !haskey(allfields,modelkey)
+                    allfields[modelkey] = fill(getproperty(model,modelkey),len)
+                end
+            end
         end
     
         #process all model fields. require special handling
@@ -207,6 +211,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
 
         for modelkey ∈ fieldnames(M)
             if !haskey(allfields,modelkey)
+                
                 modelx = getproperty(model,modelkey)
                 if is_splittable(modelx)
                     allfields[modelkey]= split_model(modelx,splitter)
