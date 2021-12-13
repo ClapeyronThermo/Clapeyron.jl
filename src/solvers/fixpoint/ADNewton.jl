@@ -29,7 +29,7 @@ end
 
 function newton_fixpoint(f::F,x::T,atol) where {F,T}
     fx, gx = f(x)
-    fx < atol && return x
+    abs(fx) < atol && return x
     Δx = fx/gx
     x =x - Δx
     return x
@@ -54,13 +54,13 @@ function newton(f::F,x0::T;
     rtol= (eps(one(T)))^(4/5),
     atol=rtol*oneunit(T),
     max_iters = 100) where {F,T}
-    f0(x) = newton_fixpoint(f,x)
+    f0(x) = newton_fixpoint(f,x,atol)
     return fixpoint(f0,x0;rtol,atol,max_iters)
 end
 
 function halley_fixpoint(f::F,x::T,atol) where {F,T}
     ff,gg,hh = f(x)
-    ff < atol && return x
+    abs(ff) < atol && return x
     Δx = ff/gg/(1-ff*hh/(2*gg^2))
     x =x - Δx
     return x
