@@ -291,7 +291,7 @@ end
     @testset "Split models" begin
         model2 = PCSAFT(["water","ethanol"])
         model4 = SAFTgammaMie(["methane","butane","isobutane","pentane"])
-        
+        gc3 = UNIFAC(["propane","butane","isobutane"])
         models2 = split_model(model2)
         @test models2[1].components[1] == model2.components[1]
         @test models2[2].components[1] == model2.components[2]
@@ -305,6 +305,10 @@ end
         @test model4_split[4].groups.n_groups[1][2] == 3
         @test model4_split[1].components[1] == "methane"
         @test all(isone(length(model4_split[i].components)) for i in 1:4)
+
+        gc3_split = Clapeyron.split_model(gc3)
+        @test all(isone(length(gc3_split[i].components)) for i in 1:3)
+        @test all(isone(length(gc3_split[i].puremodel)) for i in 1:3)
     end
 end
 
