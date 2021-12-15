@@ -110,12 +110,9 @@ where `Aᵣ` is the residual helmholtz energy.
 function second_virial_coefficient(model::EoSModel, T, z=SA[1.])
     TT = promote_type(eltype(z),typeof(T))
     V = 1/sqrt(eps(TT))
-    Aᵣ(x) = eos_res(model,x,T,z)
-    ∂Aᵣ∂V(x) = ForwardDiff.derivative(Aᵣ,x)
-    ∂²Aᵣ∂V²(x) = ForwardDiff.derivative(∂Aᵣ∂V,x)
-    return V^2/(R̄*T)*(∂Aᵣ∂V(V)+V*∂²Aᵣ∂V²(V))
-    # df,d2f = Solvers.f∂f(df,V)
-    # return V^2/(R̄*T)*(df+V*d2f)
+    fAᵣ(x) = eos_res(model,x,T,z)
+    Aᵣ,∂Aᵣ∂V,∂²Aᵣ∂V² = Solvers.f∂f∂2f(fAᵣ,V)
+    return V^2/(R̄*T)*(∂Aᵣ∂V+V*∂²Aᵣ∂V²)
 end
 
 function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.])
@@ -146,4 +143,4 @@ function pip(model::EoSModel, V, T, z=SA[1.0])
     Π = V*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1])
 end
 
-export second_virial_coefficient
+export second_virial_coefficient,pressure

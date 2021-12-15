@@ -14,7 +14,7 @@ end
 
 returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
-function f∂f∂2f(f,x::T) where T
+function f∂f∂2f(f::F,x::T) where {F,T}
     _f(z) = f(only(z))
     x_vec =   SVector(x)
     ∂result = DiffResults.HessianResult(x_vec)  
