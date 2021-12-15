@@ -52,8 +52,8 @@ function RR_fixpoint(K1,K0,model,p,T,n,x,y,φ_α,φ_β,α)
     α[1] = α₀
     x = rr_flash_liquid!(x,K0,n,α₀)
     y .= K0 .* x
-    φ_α .= fugacity_coefficient(model,p,T,x)
-    φ_β .= fugacity_coefficient(model,p,T,y)
+    φ_α .= fugacity_coefficient(model,p,T,x,phase = :l)
+    φ_β .= fugacity_coefficient(model,p,T,y,phase = :v)
     K1 .= φ_α./φ_β
     K1
 end

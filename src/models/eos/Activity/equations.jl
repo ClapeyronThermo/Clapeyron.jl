@@ -1,23 +1,27 @@
 function excess_gibbs_free_energy(model::ActivityModel,p,T,z)
-    lnγ = log.(activity_coefficient(model,p,T,z))
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+    γ = activity_coefficient(model,p,T,z)
+    return sum(z[i]*R̄*T*log(γ[i]) for i ∈ @comps)
 end
 
 function eos(model::ActivityModel,V,T,z)
-    x = z./sum(z)
+    Σz = sum(z)
+    lnΣz = log(Σz)
     g_E = excess_gibbs_free_energy(model,V,T,z)
-    g_pure = VT_gibbs_free_energy.(model.puremodel,V,T)
-    p      = pressure.(model.puremodel,V,T)
-    g_ideal = sum(z[i]*R̄*T*log(x[i]) for i ∈ @comps)
-    return g_E+g_ideal+sum(z[i]*g_pure[i] for i ∈ @comps)-sum(x[i]*p[i] for i ∈ @comps)*V
+    pures = model.puremodel
+    p = sum(z[i]*pressure(pures[i],V,T) for i ∈ @comps)/Σz
+    g_ideal = sum(z[i]*R̄*T*(log(z[i])-lnΣz) for i ∈ @comps)
+    g_pure = sum(z[i]*VT_gibbs_free_energy(pures[i],V,T) for i ∈ @comps)
+    return g_E+g_ideal+g_pure-p*V
 end
 
 function eos_res(model::ActivityModel,V,T,z)
-    x = z./sum(z)
+    Σz = sum(z)
     g_E = excess_gibbs_free_energy(model,V,T,z)
-    g_pure_res = VT_chemical_potential_res.(model.puremodel,V,T)
-    p_res      = pressure.(model.puremodel,V,T).-sum(z)*R̄*T/V
-    return g_E+sum(z[i]*g_pure_res[i][1] for i ∈ @comps)-sum(z[i]*p_res[i] for i ∈ @comps)*V
+    pures = model.puremodel
+    g_pure_res = sum(VT_chemical_potential_res(pures[i],V,T)[1]*z[i] for i ∈ @comps)
+    p = sum(z[i]*pressure(pures[i],V,T) for i ∈ @comps)/Σz
+    p_res = p - Σz*R̄*T/V
+    return g_E+g_pure_res-p_res*V
 end
 
 function bubble_pressure(model::ActivityModel,T,x)
