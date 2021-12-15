@@ -103,21 +103,25 @@ function Obj_bubble_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     return F
 end
 
-function bubble_temperature(model,p,x)
+function bubble_temperature(model,p,x;T0=nothing)
     f(z) = Obj_bubble_temperature(model,z,p,x)
-    pure = split_model(model)
-    sat = saturation_temperature.(pure,p)
-    Ti   = zero(x)
-    for i ∈ 1:length(x)
-        if isnan(sat[i][1])
-            Tc,pc,vc = crit_pure(pure[i])
-            g(x) = p-pressure(pure[i],vc,x,[1.])
-            Ti[i] = Roots.find_zero(g,(Tc))
-        else
-            Ti[i] = sat[i][1]
+    if T0===nothing 
+        pure = split_model(model)
+        sat = saturation_temperature.(pure,p)
+        Ti   = zero(x)
+        for i ∈ 1:length(x)
+            if isnan(sat[i][1])
+                Tc,pc,vc = crit_pure(pure[i])
+                g(x) = p-pressure(pure[i],vc,x,[1.])
+                Ti[i] = Roots.find_zero(g,(Tc))
+            else
+                Ti[i] = sat[i][1]
+            end
         end
+        T = Roots.find_zero(f,(minimum(Ti)*0.9,maximum(Ti)*1.1))
+    else
+        T = Roots.find_zero(f,T0)
     end
-    T = Roots.find_zero(f,(minimum(Ti)*0.9,maximum(Ti)*1.1))
     p,v_l,v_v,y = bubble_pressure(model,T,x)
     return T,v_l,v_v,y
 end
