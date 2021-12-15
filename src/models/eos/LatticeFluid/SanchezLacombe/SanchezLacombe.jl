@@ -53,8 +53,8 @@ function a_res(model::SanchezLacombe,V,T,z=SA[1.0])
     r = model.params.segment.values
     mixing = model.mixing
     r̄ = dot(z,r)
-    v_r,ε_r = mix_vε(model,V,T,z,mixing,r̄,Σz)
     r̄ = r̄/Σz
+    v_r,ε_r = mix_vε(model,V,T,z,mixing,r̄,Σz)
     v = V/Σz
     ρ̃ = r̄*v_r/v
     T̃ = R̄*T/ε_r
@@ -107,12 +107,18 @@ function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
     vs = v_r*r̄
     Ps = R̄*Ts/vs
     Tr = T/Ts
+    nan = zero(Tr)/zero(Tr)
+    Tr > 1 && return [nan,nan]
+    Tstar = Tr*PropaneRef_consts.T_c
+    rhov = _propaneref_rhovsat(Tstar)
+    vv = 1/rhov
+    psat = pressure(model,vv,T)
+    #vv = R̄*T/Ps
+    vl = volume(model,psat,T,phase =:l)
+    if isnan(vl)
+        vv = nan
+    end
+    return [log10(vl),log10(vv)]
 end
 
-function testx()
-    m = 5
-    x = zeros(1,5)
-    i = 0
-end
-
-
+export SL,SanchezLacombe,SLk0k1lMixingRule
