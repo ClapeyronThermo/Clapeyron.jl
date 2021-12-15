@@ -1,0 +1,6 @@
+Clapeyron Database File,,,,,
+Schreckenberg Like Parameters,,,,,
+species,d_T,d_V,source
+water,1403.0,0.3777e-3,
+methanol,1011.0,0.5484e-3,
+carbon dioxide,0,-0.025,
