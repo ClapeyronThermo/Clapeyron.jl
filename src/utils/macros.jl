@@ -159,7 +159,6 @@ macro newmodelgc(name, parent, paramstype)
 
     has_sites(::Type{<:$name}) = true
     has_groups(::Type{<:$name}) = true
-    built_by_macro(::Type{<:$name}) = true
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return gc_eosshow(io, mime, model)
@@ -198,7 +197,6 @@ macro newmodel(name, parent, paramstype)
     end
     has_sites(::Type{<:$name}) = true
     has_groups(::Type{<:$name}) = false
-    built_by_macro(::Type{<:$name}) = true
    
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
@@ -228,7 +226,6 @@ macro newmodelsimple(name, parent, paramstype)
     end
     has_sites(::Type{<:$name}) = false
     has_groups(::Type{<:$name}) = false
-    built_by_macro(::Type{<:$name}) = true
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
@@ -388,8 +385,6 @@ return quote
     function Base.show(io::IO, model::$model)
         return eosshow(io, model)
     end
-
-    built_by_macro(::Type{<:$model}) = false
     
     $_length
 
