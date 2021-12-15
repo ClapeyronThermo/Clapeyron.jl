@@ -151,7 +151,9 @@ function choose_p(p1,p2)
     end
     return p
 end
-
+#=
+    an alternative algorithm for saturation pressure.
+        
 """
     FugSucessiveSatPure(;max_iters=100,ptol= 1e-10,vtol=1e-15,V0=nothing) 
 
@@ -251,3 +253,4 @@ function saturation_pressure(model::EoSModel,T,method::FugSucessiveSatPure)
     end
     return (nan,nan,nan)
 end
+=#
