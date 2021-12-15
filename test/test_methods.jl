@@ -287,28 +287,20 @@ end
         @test Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 3.5120264571020138e6 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 270.27247485012657 rtol = 1E-6 
     end
+end
 
-    @testset "Split models" begin
-        model2 = PCSAFT(["water","ethanol"])
-        model4 = SAFTgammaMie(["methane","butane","isobutane","pentane"])
-        gc3 = UNIFAC(["propane","butane","isobutane"])
-        models2 = split_model(model2)
-        @test models2[1].components[1] == model2.components[1]
-        @test models2[2].components[1] == model2.components[2]
-        @test models2[1].icomponents == models2[2].icomponents == 1:1
-
-        model2_unsplit = only(split_model(model2,[[1,2]]))
-        @test model2_unsplit.icomponents == model2.icomponents
-        @test model2_unsplit.components == model2.components
-
-        model4_split = Clapeyron.split_model(model4)
-        @test model4_split[4].groups.n_groups[1][2] == 3
-        @test model4_split[1].components[1] == "methane"
-        @test all(isone(length(model4_split[i].components)) for i in 1:4)
-
-        gc3_split = Clapeyron.split_model(gc3)
-        @test all(isone(length(gc3_split[i].components)) for i in 1:3)
-        @test all(isone(length(gc3_split[i].puremodel)) for i in 1:3)
+@testset "lattice methods" begin
+    p = 1e5
+    T = 298.15
+    T1 = 301.15
+    system = Clapeyron.SanchezLacombe(["carbon dioxide"])
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T1) ≈ 0.02492944175392707 rtol = 1E-6
+        @test Clapeyron.speed_of_sound(system, p, T1) ≈ 307.7871016597499 rtol = 1E-6
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 6.468653945184592e6 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1]  ≈ 304.21081254005446 rtol = 1E-6
     end
 end
 
@@ -325,5 +317,4 @@ end
     @testset "DE Algorithm" begin
         @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3,population_size=20))[3] ≈ -6.73130492921276 rtol = 1e-6 
     end
-    
 end

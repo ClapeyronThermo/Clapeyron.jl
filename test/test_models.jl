@@ -376,3 +376,11 @@ end
         @test Clapeyron.shape_factors(system, V, T, z)[1] ≈ 1.3499576779924594 rtol = 1e-6
     end
 end
+
+@testset "lattice models" begin
+    T = 298.15
+    V = 1e-4
+    z = [1.]
+    system = Clapeyron.SanchezLacombe(["carbon dioxide"])
+    @test Clapeyron.a_res(system, V, T, z) ≈ -0.9511044462267396 rtol = 1e-6
+end
