@@ -12,6 +12,7 @@ Base.@kwdef struct RRTPFlash{T} <: TPFlashMethod
     rtol::Float64 = 1e-10
     atol::Float64 = 1e-10
     max_iters::Int = 100
+    spec::Symbol = :unknown
 end
 
 #z is the original feed composition, x is a matrix with molar fractions, n is a matrix with molar amounts
@@ -35,7 +36,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::RRTPFlash)
     α = zeros(eltype(K0),1)
     φ_α = zero(K0)
     φ_β = zero(K0)
-    f(Kout,Kin) = RR_fixpoint(Kout,Kin,model,p,T,n,x,y,φ_α,φ_β,α)
+    f(Kout,Kin) = RR_fixpoint(Kout,Kin,model,p,T,n,x,y,φ_α,φ_β,α,method.spec)
 
     Solvers.fixpoint(f,K0,Solvers.SSFixPoint();atol,rtol,max_iters)
     α₀ = α[1]
@@ -47,13 +48,24 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::RRTPFlash)
     return (X, nvals, G)
 end
 
-function RR_fixpoint(K1,K0,model,p,T,n,x,y,φ_α,φ_β,α)
+function RR_fixpoint(K1,K0,model,p,T,n,x,y,φ_α,φ_β,α,spec)
     α₀ = rr_vle_vapor_fraction(K0,n)
     α[1] = α₀
     x = rr_flash_liquid!(x,K0,n,α₀)
     y .= K0 .* x
-    φ_α .= fugacity_coefficient(model,p,T,x,phase = :l)
-    φ_β .= fugacity_coefficient(model,p,T,y,phase = :v)
+    if spec == :lle
+        phaseα = :l
+        phaseβ = :l
+    elseif spec ==:vle
+        phaseα = :l
+        phaseβ = :v
+    else
+        phaseα = :unknown
+        phaseβ = :unknown
+    end
+
+    φ_α .= fugacity_coefficient(model,p,T,x,phase = phaseα)
+    φ_β .= fugacity_coefficient(model,p,T,y,phase = phaseβ)
     K1 .= φ_α./φ_β
     K1
 end
