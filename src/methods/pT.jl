@@ -87,6 +87,7 @@ end
 function activity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
     pure   = split_model(model)
     μ_mixt = chemical_potential(model,p,T,z;phase,threaded)
+    γ_i = μ_mixt
     for i ∈ @comps
         μ_pure_i = chemical_potential(pure[i],p,T;phase,threaded)[1]
         γ_i[i] = exp((μ_mixt[i]-μ_pure_i)/R̄/T)/z[i]
