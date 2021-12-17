@@ -4,15 +4,17 @@ Here, we give a high-level description of equations of state and the models prov
 
 ### Equations of state
 
-Equations of state provide a functional form to obtain a thermodynamic property, $F$, at given conditions $\boldsymbol{\Omega}$:
+An equation of state is a functional form, $f$ (say), that allows us to obtain a thermodynamic property, $F$, at given conditions $\boldsymbol{\Omega}$:
 
-``F = f(\boldsymbol{\Omega};\boldsymbol{\Xi})``
+``F = f(\boldsymbol{\Omega};\boldsymbol{\Xi})``.
 
-where $f$ is the equation of state. There are many ways one can develop an equation of state, however, the Gibbs Phase Rule states the following:
+There are many ways one can develop an equation of state, however, these must respect the constraints on the degrees of freedom required by the Gibbs Phase Rule:
 
 `` \mathrm{DoF} = N_\mathrm{species} - N_\mathrm{phase} + 2 ``
 
-As we can see, the largest number of degrees of freedom we can have is $N_\mathrm{species}+1$; as this rule is for intensive properties (i.e. irrespective of system size), we can an additional degree of freedom, giving $N_\mathrm{species}+2$. Taking the simple case of a single species, we can specify at most 3 conditions in our system. Given that most equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks), the three variable chosen are usually temperature, $T$, volume, $V$ and number of particles, $\mathbf{N}$. The output of these equations is usually the Helmholtz free energy, $A$. It is also typical for an equation of state to require parameters, $\boldsymbol{\Xi}$, to model certain species. What these parameters are depend on the equation of state.
+As we can see, the largest number of degrees of freedom we can have is $N_\mathrm{species}+1$; as this rule relates to intensive properties (i.e., those that are independent of system size), we can add an additional degree of freedom, giving $N_\mathrm{species}+2$. Taking the simple case of a single species, we can specify at most three conditions in our system. For a traditional equation of state, we specify volume, $V$, temperature, $T$, and the size of the system – for example the number of particles, $N$, or moles, $n$; the equation of state then returns the pressure, $p$. Many modern equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks) and, accordingly, the three variable chosen are again usually $T$, $V$ and  $N$. The output of these equations is usually the Helmholtz free energy, $A$. 
+
+Many equations of state are based on an underlying molecular model. Consequently, it is also typical for an equation of state to require parameters, $\boldsymbol{\Xi}$, to model certain species. The nature of these parameters depends on the equation of state.
 
 ### Ideal model
 
