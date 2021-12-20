@@ -24,6 +24,8 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::RRTPFlash)
         pc = [crit[i][2] for i ∈ @comps]
         ω = acentric_factor.(pure)
         K0 = @. exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
+    else 
+        K0 = method.K0
     end
     
     atol = method.atol
