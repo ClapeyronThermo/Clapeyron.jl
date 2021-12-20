@@ -8,50 +8,54 @@ An equation of state is a functional form, $f$ (say), that allows us to obtain a
 
 ``F = f(\boldsymbol{\Omega};\boldsymbol{\Xi})``.
 
-There are many ways one can develop an equation of state, however, these must respect the constraints on the degrees of freedom required by the Gibbs Phase Rule:
+There are many ways one can develop an equation of state, however, these must respect the constraints on the number of prooperties we can specify, as required by the Gibbs Phase Rule:
 
 `` \mathrm{DoF} = N_\mathrm{species} - N_\mathrm{phase} + 2 ``
 
-As we can see, the largest number of degrees of freedom we can have is $N_\mathrm{species}+1$; as this rule relates to intensive properties (i.e., those that are independent of system size), we can add an additional degree of freedom, giving $N_\mathrm{species}+2$. Taking the simple case of a single species, we can specify at most three conditions in our system. For a traditional equation of state, we specify volume, $V$, temperature, $T$, and the size of the system – for example the number of particles, $N$, or moles, $n$; the equation of state then returns the pressure, $p$. Many modern equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks) and, accordingly, the three variable chosen are again usually $T$, $V$ and  $N$. The output of these equations is usually the Helmholtz free energy, $A$. 
+Here, `` \mathrm{DoF}`` means "Degrees of Freedom"; this is the number of so-called intensive state properties or, in other words, those that are independent of system size. As we can see, the largest number of degrees of freedom we can have is $N_\mathrm{species}+1$; as this rule relates to intensive properties, system size itself is not included so, in practise, this represents one more variable that we can specify, giving $N_\mathrm{species}+2$. Thus, taking the simple case of a single species, we can specify at most three conditions in our system. For a traditional equation of state, we specify volume, $V$, temperature, $T$, and the size of the system – for example the number of particles, $N$, or moles, $n$; the equation of state then returns the pressure, $p$. Many modern equations of state are derived using what is known as the canonical ensemble (more information can be found in Statistical Mechanics textbooks) and, accordingly, the three variable chosen are again usually $T$, $V$ and  $N$; the output of these equations is usually the Helmholtz free energy, $A$. 
 
 Many equations of state are based on an underlying molecular model. Consequently, it is also typical for an equation of state to require parameters, $\boldsymbol{\Xi}$, to model certain species. The nature of these parameters depends on the equation of state.
 
-### Ideal model
+### Ideal-gas equation of state
 
-One equation of state that most engineers and scientists should be very familiar with is the ideal gas equation, commonly expressed as:
+One equation of state that most engineers and scientists should be very familiar with is the ideal-gas equation, commonly expressed as:
 
 ``pV = Nk_\mathrm{B}T``
 
-where $p$ is the pressure, $N$ is the total number of particles and $k_\mathrm{B}$ is the Boltzmann constant. It is possible to derive this equation by assuming that species can be modelled as infinitesimally  small particles. This is surprisingly appropriate for a variety of species in the gas phase at high temperature and low pressure.
+where $p$ is the pressure, $N$ is the total number of particles and $k_\mathrm{B}$ is the Boltzmann constant. Ideal-gas molecules are "invisible" to each other; there is zero interaction between ideal-gas molecules (this is, in essence, the ideal-gas model), so you can think of them as being infinitely small. This equation was first written down (although in slightly different form) in 1834 by Émile Clapeyron (in whose honour _Clapeyron_ is named). Most (if not all) subsequent equations of state are descended from Clapeyron's equation, which is surprisingly appropriate for a wide variety of species in the gas phase at high-enough temperature and low-enough pressure.
 
-However, if we wish to determine other thermodynamic properties, we would need to integrate the above equation with respect to volume to determine the Helmholtz free energy:
+If we wish to determine other thermodynamic properties this equation is a bit inconvenient, however. It would be much easier if it was expressed in the form of the free energy, from which other properties can then be evaluated using standard thermodynamic relationships. Accordingly, we could first integrate the above equation with respect to volume to determine the Helmholtz free energy:
 
-``A_\mathrm{ideal} =- \int p\,\mathrm{d}V =- Nk_\mathrm{B}T\ln{V}+c(T,\mathbf{N})``
+``A_\mathrm{ideal} =- \int p\,\mathrm{d}V =- Nk_\mathrm{B}T\ln{V}+c(T,N)``
 
-We can see that, in just using the original equation, we've lost a temperature and composition dependence in the Helmholtz free energy. If we follow the derivation from statistical or quantum mechanics, we can obtain the following equation (we denote this as the `MonomerIdeal` model in Clapeyron):
+This is still a little inconvenient, however, since we have to deal with a tricky constant of integration. Fortunately, we can instead derive ``A_\mathrm{ideal}`` from statistical mechanics (using just a few well-known results from quantum mechanics). Following this route, we obtain (for a pure component (_i.e._, a single species))
 
-``\frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T} = \left(\sum_ix_i\ln{(\rho_i\Lambda_i^3)}\right)-1``
+``\frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T} = ln{(\rho\Lambda^3)}\right)-1``,
 
-where $x_i$, $\rho_i$, and $\Lambda_i$ are the molar composition, number density and thermal de Broglie wavelength of species $i$, respectively. For the purposes of vapour-liquid equilibrium and most thermodynamic properties, this ideal model is sufficient (one can even ignore $\Lambda_i$ in the case of the former; we use this as the default `BasicIdeal` model). In addition, some would argue that this is the only ideal model as it only considers the translational motion of infinitesimally small particles.
+where $\rho = N/V$ is the number density, and $\Lambda$ is the thermal de Broglie wavelength, which introduces the kinetic contributions to the free energy (strictly speaking, with this notation only translations are included). We can generalise this as a sum over species $i$ for a multicomponent mixture:
 
-However, polyatomic species typically have vibrational and rotational modes of motion as well which are typically included as part of the ideal term. These can also be derived from statistical mechanics giving:
+``\frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T} = \left(\sum_ix_i\ln{(\rho_i\Lambda_i^3)}\right)-1``,
 
-``\frac{A_{\mathrm{ideal}}}{Nk_{\mathrm{B}}T}=\sum_{i}x_{i}\bigg[\ln\left(\rho_{i}\Lambda_{i}^{3}\right)-\frac{N_{\mathrm{rot},i}}{2} \ln \frac{T}{\theta_{\mathrm{rot},i}}+\sum^{N_{\mathrm{vib},i}}_{\mathrm{v}}g_{i,\mathrm{v}}\left[\frac{\theta_{\mathrm{vib},i,\mathrm{v}}}{2T}+\ln\left(1-\exp{-(\theta_{\mathrm{vib},i,\mathrm{v}}/T)}\right)\right]-1\bigg]``
+where $x_i$ is the molar composition of species $i$. This equation represnts the `MonomerIdeal` form in _Clapeyron_. For the purposes of vapour–liquid-equilibrium properties, one can even ignore $\Lambda_i$ (since it cancels out in solving the phase equilibrium); we therefore use this as the default `BasicIdeal` model. 
 
-where $N_{\mathrm{rot},i}$, $\theta_{\mathrm{rot},i}$ and $N_{\mathrm{vib},i}$ are the number of rotations, vibrations and rotational temperature of a species $i$, respectively. $g_{i,\mathrm{v}}$ and $\theta_{\mathrm{vib},i,\mathrm{v}}$ are the degeneracy and vibrational temperature of a vibrational mode $\mathrm{v}$ on species $i$, respectively. The `WalkerIdeal` model provides the necessary parameters to use such an equation. However, the more-commonly used approach is through the use of ideal isobaric heat-capacity, $C_{p,i}^0$, correlations, such as the `ReidIdeal`, `WilhoitIdeal` and `AlyLeeIdeal` models. With the ideal isobaric heat-capacity, it is possible to determine the ideal Helmholtz free energy using the following equation:
+Polyatomic species have vibrational and rotational modes of motion, as well as translational; these also contribute to the ideal free energy. The statistical-mechanical derivation of the ideal free energy becomes a little more complicated but can still be done, resulting in the following expression:
+
+``\frac{A_{\mathrm{ideal}}}{Nk_{\mathrm{B}}T}=\sum_{i}x_{i}\bigg[\ln\left(\rho_{i}\Lambda_{i}^{3}\right)-\frac{N_{\mathrm{rot},i}}{2} \ln \frac{T}{\theta_{\mathrm{rot},i}}+\sum^{N_{\mathrm{vib},i}}_{\mathrm{v}}g_{i,\mathrm{v}}\left[\frac{\theta_{\mathrm{vib},i,\mathrm{v}}}{2T}+\ln\left(1-\exp{-(\theta_{\mathrm{vib},i,\mathrm{v}}/T)}\right)\right]-1\bigg]``.
+
+Here $N_{\mathrm{rot},i}$, $\theta_{\mathrm{rot},i}$ and $N_{\mathrm{vib},i}$ are the number of rotations, the number of vibrations and the rotational temperature of a species $i$, respectively; $g_{i,\mathrm{v}}$ and $\theta_{\mathrm{vib},i,\mathrm{v}}$ represent the degeneracy and vibrational temperature of a vibrational mode $\mathrm{v}$ of species $i$. The `WalkerIdeal` model provides the necessary parameters to use such an equation. However, the more-commonly used approach is through the use of correlations of the ideal isobaric heat capacity, $C_{p,i}^0$, such as the `ReidIdeal`, `WilhoitIdeal` and `AlyLeeIdeal` models. From the ideal isobaric heat capacity, it is possible to determine the ideal Helmholtz free energy using the following equation:
 
 ``\frac{A_{\mathrm{ideal}}}{Nk_\mathrm{B}T} = \sum_{i=1}^{N_{\mathrm{Component}}} x_i\left[\ln{\frac{\rho_i}{\rho_0}}
     + \frac{1}{Nk_\mathrm{B}T} \int_{T_0}^T \!\!C_{p,i}^0 dT + \frac{H_{0,i}}{Nk_\mathrm{B}T}- \frac{1}{Nk_{B}}\!\!\int_{T_0}^T \frac{C_{p,i}^0}{T} dT -\ln{\frac{T}{T_0}}-\frac{S_{0,i}}{Nk_\mathrm{B}} - 1\right]``
 
 Note that the reference states, $\rho_0$, $H_{0,i}$ and $S_{0,i}$, can typically be neglected as these will not impact or contribute to most thermodynamic properties of interest.
 
-### Cubic models
+### Cubic equations of state
 
-Some of the more-popular equations of state have been the engineering cubic equations. The first of these is the van der Waals (`vdW`) equation of state, written as:
+This is the most-popular class of equations of state. The first of these is the van der Waals (`vdW`) equation of state, written as:
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2a}{V^2}``
 
-where $a$ and $b$ (both in SI units) are the model parameters which can be related to the critical temperature and pressure of a species. Although this equation was originally empirical, it is possible to derive this equation from statistical thermodynamics where $b$ corresponds to the excluded volume of a single species and $a$ quantifies the magnitude of attraction between species. As a result, the first term typically accounts for the repulsive interactions between species and the second accounts for attractive interactions. Although its simple functional form makes calculations quite straight-forward, this model is inadequate for modelling the liquid phase and vapour-liquid equilibrium properties. 
+where $a$ and $b$ (both in SI units) are the model parameters which can be related to the critical temperature and pressure of a species. Although this equation was phenomenological in origin, it is possible to derive this equation from statistical thermodynamics;  $b$ corresponds to the excluded volume of a single species and $a$ quantifies the magnitude of attraction between species. As a result, the first term typically accounts for the repulsive interactions between species and the second accounts for attractive interactions. Although its simple functional form makes calculations quite straight-forward, this model is inadequate for modelling the liquid phase and vapour-liquid equilibrium properties. 
 
 As result, wanting to keep with the van der Waals equation's simple form, a few engineering cubic equations have been developed. The first noteworthy one of these is the Redlich-Kwong (`RK`) equation:
 
