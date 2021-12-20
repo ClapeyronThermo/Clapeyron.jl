@@ -1,7 +1,7 @@
 Clapeyron Database File,,,,,
 sPCSAFT Unlike Parameters,,,,,
 species1,SMILES1,species2,SMILES2,k,source
-water,,Cl-,,0.,
+water,,Cl-,,-0.,
 water,,Na+,,0.,
 Na+,,Cl-,,0.317,
 Na+,,Br-,,0.290,
