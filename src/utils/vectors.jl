@@ -49,15 +49,15 @@ Base.IndexStyle(::Type{<:FractionVector}) = IndexLinear()
 
 ##
 
-struct CompressedAssocMatrix{T} 
-    values::Vector{T}
+struct Compressed4DMatrix{T,V<:AbstractVector{T}} 
+    values::V
     outer_indices::Vector{Tuple{Int,Int}} #index of components
     inner_indices::Vector{Tuple{Int,Int}} #index of sites
     outer_size::Tuple{Int,Int} #size of component matrix
     inner_size::Tuple{Int,Int} #size of sites matrices
 end
 
-function Base.show(io::IO,mime::MIME"text/plain",m::CompressedAssocMatrix{T}) where T
+function Base.show(io::IO,mime::MIME"text/plain",m::Compressed4DMatrix{T}) where T
     n = length(m.values)
     println(io,typeof(m)," with ",n," entr",(n == 1 ? "y:" : "ies:"))
     for (idx,(i,j),(a,b)) in indices(m)
@@ -68,17 +68,17 @@ function Base.show(io::IO,mime::MIME"text/plain",m::CompressedAssocMatrix{T}) wh
     end
 end
 
-function Base.show(io::IO,m::CompressedAssocMatrix{T}) where T
+function Base.show(io::IO,m::Compressed4DMatrix{T}) where T
     print(io,typeof(m))
     print(io,m.values)
 end
-function CompressedAssocMatrix{T}() where T
-    return CompressedAssocMatrix(T[],Tuple{Int,Int}[],Tuple{Int,Int}[],(0,0),(0,0))
+function Compressed4DMatrix{T}() where T
+    return Compressed4DMatrix(T[],Tuple{Int,Int}[],Tuple{Int,Int}[],(0,0),(0,0))
 end
 
 const MatrixofMatrices{T} = AbstractMatrix{<:AbstractMatrix{T}} where T
 
-function CompressedAssocMatrix(x::MatrixofMatrices{T}) where T
+function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     outer_size = size(x)
     is1, is2 = 0, 0
     os1, os2 = outer_size
@@ -93,7 +93,7 @@ function CompressedAssocMatrix(x::MatrixofMatrices{T}) where T
     outer_indices = Tuple{Int,Int}[]
 
     if iszero(os1) & iszero(os2)
-        return CompressedAssocMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
+        return Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
     end
     
 
@@ -121,10 +121,10 @@ function CompressedAssocMatrix(x::MatrixofMatrices{T}) where T
             end
         end
     end
-    return CompressedAssocMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
+    return Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,outer_size,inner_size)
 end
 
-function Base.getindex(m::CompressedAssocMatrix,i::Int,j::Int)
+function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
     i,j = minmax(i,j)
     @inbounds begin
     idx = searchsorted(m.outer_indices,(i,j))
@@ -132,9 +132,9 @@ function Base.getindex(m::CompressedAssocMatrix,i::Int,j::Int)
     end
 end
 
-#Base.eltype(m::CompressedAssocMatrix{T}) where T = T
+#Base.eltype(m::Compressed4DMatrix{T}) where T = T
 
-function Base.setindex!(m::CompressedAssocMatrix,val,i::Int)
+function Base.setindex!(m::Compressed4DMatrix,val,i::Int)
     @inbounds begin
         m.values[i] = val
     end
@@ -165,22 +165,22 @@ function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
     end
 end
 
-function zero_assoc(m::CompressedAssocMatrix,::Type{T} = Float64) where T <:Number
+function zero_assoc(m::Compressed4DMatrix,::Type{T} = Float64) where T <:Number
     newvalues = zeros(T,length(m.values))
-    return CompressedAssocMatrix(newvalues,m.outer_indices,m.inner_indices,m.outer_size,m.inner_size)
+    return Compressed4DMatrix(newvalues,m.outer_indices,m.inner_indices,m.outer_size,m.inner_size)
 end
 
 function zero_assoc(m::Matrix{<:Matrix},a::Type{T} = Float64) where T <:Number
-    return zero_assoc(CompressedAssocMatrix(m),a)
+    return zero_assoc(Compressed4DMatrix(m),a)
 end
 
 #=
-function zero_assoc(m::CompressedAssocMatrix,x::T = 0.0) where T <:Number
+function zero_assoc(m::Compressed4DMatrix,x::T = 0.0) where T <:Number
     newvalues = fill(x,length(m.values))
-    return CompressedAssocMatrix(newvalues,m.outer_indices,m.inner_indices,m.outer_size,m.inner_size)
+    return Compressed4DMatrix(newvalues,m.outer_indices,m.inner_indices,m.outer_size,m.inner_size)
 end
 =#
-function indices(x::CompressedAssocMatrix)
+function indices(x::Compressed4DMatrix)
     return zip(1:length(x.values),x.outer_indices,x.inner_indices)
 end
 
@@ -188,16 +188,68 @@ function indices(x::PackedVofV)
     return x.p
 end
 
-#=
- (1, 1)
- (1, 3)
- (1, 3)
- (1, 3)
- (1, 3)
- (1, 3)
- (1, 3)
- (2, 2)
- (3, 3)
-=#
+ith_index(pv::PackedVofV,i) = @inbounds begin (pv.p[i]):(pv.p[i+1]-1) end
 
+struct SparsePackedMofV{E,P<:PackedVofV}<:SparseArrays.AbstractSparseMatrixCSC{E,Int}
+    storage::P
+    idx::SparseMatrixCSC{Int,Int}
+end
 
+function SparsePackedMofV(storage,idx)
+    E = eltype(storage)
+    P = typeof(storage)
+    return SparsePackedMofV{E,P}(storage,idx)
+end
+
+_findnz(x::SparseMatrixCSC) = SparseArrays.findnz(x)
+function _findnz(x::AbstractMatrix{<:AbstractVector})
+    idxs = findall(z->!iszero(length(z)),x)
+    i = first.(idxs)
+    j = last.(idxs)
+    vals = x[idxs]
+    return i,j,vals
+end
+
+function SparsePackedMofV(m_of_v::AbstractMatrix{<:AbstractVector})
+    i,j,unpack_sparse_vals = _findnz(m_of_v)
+    #unpack_sparse_vals = m_of_v[sparse_idx]
+    pack_sparse_vals = PackedVectorsOfVectors.pack(unpack_sparse_vals)
+    len_linear = length(unpack_sparse_vals)
+    idx_linear = collect(1:len_linear)
+    m,n = size(m_of_v)
+    idx = sparse(i,j,idx_linear,m,n)
+    E = eltype(pack_sparse_vals)
+    P = typeof(pack_sparse_vals)
+    return SparsePackedMofV{E,P}(pack_sparse_vals,idx)
+end
+
+function Base.getindex(x::SparsePackedMofV,i::Int,j::Int)
+    _idx = x.idx[i,j]
+    iszero(_idx) && (return view(x.storage.v,1:0))
+    
+    return x.storage[_idx]
+end
+@inline Base.size(x::SparsePackedMofV) = size(x.idx)
+@inline SparseArrays.nnz(x::SparsePackedMofV) = length(x.storage.p)
+@inline function SparseArrays.findnz(x::SparsePackedMofV)
+    i,j,_ = SparseArrays.findnz(x.idx)
+    return i,j,x.storage
+end
+@inline SparseArrays.nonzeros(x::SparsePackedMofV) = x.storage
+@inline SparseArrays.rowvals(x::SparsePackedMofV) = SparseArrays.rowvals(x.idx)
+@inline SparseArrays.nzrange(A::SparsePackedMofV, col::Integer) = SparseArrays.nzrange(A.idx,col)
+@inline SparseArrays._checkbuffers(A::SparsePackedMofV) = SparseArrays._checkbuffers(A.idx)
+@inline SparseArrays.getcolptr(A::SparsePackedMofV) = SparseArrays.getcolptr(A.idx)
+export SparsePackedMofV
+
+function tt(x)
+    rows = rowvals(x)
+    vals = nonzeros(x)
+    m, n = size(x)
+    for j = 1:n
+        for i in nzrange(x, j)
+            row = rows[i]
+            val = vals[i]
+        end
+    end
+end

@@ -94,7 +94,7 @@ function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
             x[j,i] = xi
         end
     end
-    val =  CompressedAssocMatrix(x)
+    val =  Compressed4DMatrix(x)
     new_inneridx = val.inner_indices
     for (idx,(i,j),(a,b)) ∈ indices(val)
         _a = sites.i_flattenedsites[i][a]
@@ -108,7 +108,7 @@ function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
     inner_indices = new_inneridx[n]
     outer_size = val.outer_size
     inner_size = val.inner_size
-    newvals = CompressedAssocMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
+    newvals = Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
 end
     
   

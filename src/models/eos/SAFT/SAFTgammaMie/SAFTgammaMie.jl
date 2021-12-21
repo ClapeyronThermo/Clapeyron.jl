@@ -155,8 +155,8 @@ function SAFTgammaMie(components;
     assoc_idxs,outer,inner,outer_size,inner_size = assoc_idx.values,assoc_idx.outer_indices,assoc_idx.inner_indices,assoc_idx.outer_size,assoc_idx.inner_size
     _comp_bondvol = [gc_bondvol.values.values[i] for i ∈ assoc_idxs]
     _comp_epsilon_assoc = [gc_epsilon_assoc.values.values[i] for i ∈ assoc_idxs]
-    compval_bondvol = CompressedAssocMatrix(_comp_bondvol,outer,inner,outer_size,inner_size)
-    compval_epsilon_assoc = CompressedAssocMatrix(_comp_epsilon_assoc,outer,inner,outer_size,inner_size)
+    compval_bondvol = Compressed4DMatrix(_comp_bondvol,outer,inner,outer_size,inner_size)
+    compval_epsilon_assoc = Compressed4DMatrix(_comp_epsilon_assoc,outer,inner,outer_size,inner_size)
     comp_bondvol = AssocParam{Float64}("epsilon assoc",components,compval_bondvol,comp_sites.sites,String[],String[])
     comp_epsilon_assoc = AssocParam{Float64}("bondvol",components,compval_epsilon_assoc,comp_sites.sites,String[],String[])
     #mixing of Mw
