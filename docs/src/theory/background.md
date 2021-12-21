@@ -55,31 +55,36 @@ This is the most-popular class of equations of state. The progenitor of these is
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2a}{V^2}``
 
-where $a$ and $b$ (both in SI units) are the model parameters. Although the vdW equation was phenomenological in origin, it, too, can be derived from statistical thermodynamics. Strictly speaking, $b$ accounts for the space taken up by the molecules themselves (it corresponds to the excluded volume per molecule) and $a$ quantifies the magnitude of attraction between species. As a result, the first term is often thought of as accounting for the repulsive interactions between molecules, while the second accounts for attractive interactions. In principle, therefore, one could obtain values of $a$ and $b$ for a particular species from (for example) spectroscopic information. However, since $a$ and $b$ can be related to the critical temperature and pressure of the vdW fluid, to relate the equation of state to a particular species, it is conventional to use the critical temperature and pressure of the species to obtain working values of the parameters. However, although its simple functional form makes calculations quite straight-forward, the vdW equation is inadequate for quantitative modelling, particularly for volumetric properties, and is most useful only for providing a qualitative description of the thermodynamic properties of the fluid. 
+where $a$ and $b$ are the model parameters. Although the vdW equation was phenomenological in origin, it, too, can be derived from statistical thermodynamics. Strictly speaking, $b$ accounts for the space taken up by the molecules themselves (it corresponds to the excluded volume per molecule) and $a$ quantifies the magnitude of attraction between species. As a result, the first term is often thought of as accounting for the repulsive interactions between molecules, while the second accounts for attractive interactions. In principle, therefore, one could obtain values of $a$ and $b$ for a particular species from (for example) spectroscopic information. However, since $a$ and $b$ can be related to the critical temperature and pressure of the vdW fluid, to relate the equation of state to a particular species, it is conventional to use the critical temperature and pressure of the species to obtain working values of the parameters. 
 
-As result, wanting to keep with the van der Waals equation's simple form, a few engineering cubic equations have been developed. The first noteworthy one of these is the Redlich-Kwong (`RK`) equation:
+Unfortunately, although its simple functional form makes calculations quite straight-forward, the vdW equation is inadequate for quantitative modelling, particularly for volumetric properties, and is most useful only for providing a qualitative description of the thermodynamic properties of the fluid. 
+As a result, many other engineering cubic equations have been developed, retaining (as far as possible) the simple mathematical form of van der Waals' equation. The first noteworthy one of these is the Redlich-Kwong (`RK`) equation:
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2a}{\sqrt{T}V(V+Nb)}``
 
-There is no physical justification for the change in the second term, however, it was found to give improved modelling of the liquid phase. This equation was subsequently improved upon by Soave, resulting in the `SRK` equation of state:
+There is no physical justification for the change in the second term; its origin is entirely empirical. The authors made the modification so that the equation would provide better gas-phase fugacities. This equation was subsequently improved upon by Soave, resulting in the `SRK` equation of state:
 
  ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2\alpha(T;\omega)}{V(V+Nb)}``
 
-The $\alpha$ function requires an additional parameter, the acentricity factor, which is effectively a measure of the location of the saturation pressure when $T/T_c=0.7$. The idea behind this is, if you can capture both the critical point and another point along the vapour curve, you will improve the accuracy of your equation of state. This is indeed what happened. Further improvements were also made by Peng and Robinson who introduced their own equation of state (`PR`):
+The $\alpha$ function requires an additional parameter, the acentric factor (or acentricity), which is effectively a measure of the location of the saturation pressure when $T/T_\mathrm{c}=0.7$, where $T_\mathrm{c}$ is the critical temperature. The idea behind this is, if you can capture both the critical point and another point along the vapour-pressure curve, you will improve the accuracy of your equation of state. This is indeed what happened. Although Soave described his equation as a "modified Redlich–Kwong equation", in truth it is more than this. The introduction of the $\alpha$ function represents a giant step forwards; the inclusion of a similar $\alpha$ function is probably the key feature in the equation of Peng and Robinson, who introduced their equation of state (`PR`) to provide improved liquid-phase volumetric properties. In addition to the inclusion of an $\alpha$ function, Peng and Robinson further revised the attractive term:
 
 ``p = \frac{Nk_\mathrm{B}T}{V-Nb}-\frac{N^2\alpha(T;\omega)}{V^2+2NbV+b^2N^2}``
 
-Both the SRK and PR equations of state are comparable in performance, although the latter generally models liquid densities to a greater degree of accuracy. However, when it comes to modelling complex species such as chains or associating species, both models tend to perform badly. We do note that, within Clapeyron,  the cubic plus association (`CPA`) equation of state has been labelled as a cubic equation; whilst this is the case, we will describe it in greater detail when discussing the SAFT-type models as it main improvement over other cubics is borrowed from the SAFT theory.
+The SRK and PR equations of state are comparable in performance, although the latter generally provides liquid densities with a greater degree of accuracy, while the former usually provides better fugacities. However, when it comes to modelling complex species such as polymers (macromolecules), or associating species, both equations struggle to perform well. This is unsurprising, since the underlying molecular model remains, in essence, a "van der Waalsian sphere" – in other words,a hard spherical core surrounded by a region of attraction. A more-sophisticated molecular model is required to account well for the increased molecular complexitiies of these species.
 
-Something that may be apparent in all these equations is the fact that these are all functions that give a pressure and, thus, must be integrated to obtain the Helmholtz free energy. Like the ideal gas equation, there will be missing temperature and compositional dependences which need to be included.
+Before moving on from cubic equations of state we note that, within Clapeyron, the cubic plus association (`CPA`) equation of state is supported. A CPA equation is the amalgamation of a cubic equation (usually SRK, as in _Clapeyron_, or PR) with the association term from the SAFT equation, which we will meet later. Strictly speaking, it is neither a cubic nor a SAFT equation of state but, rather, occupies a middle ground between these two classes of equation. 
 
-One may also wonder how to model mixtures using such equations; this can be achieved using _mixing rules_. Although there are many variants, one of the more-popular ones is the van der Waals one-fluid mixing rules which treats the mixture as having the same parameters $\bar{a}$ and $\bar{b}$ which can be determined from:
+Something that may be apparent in all these equations is the fact that these are all functions that return the pressure and, thus, must be integrated to obtain the Helmholtz free energy. Like the ideal-gas equation, there will be missing temperature and compositional dependences which need to be included.
+
+#### Mixtures with cubic equations of state
+
+One may wonder how to model mixtures using such equations. This can be achieved using _mixing rules_, in conjunction with _combining rules_. Although there are many variants, one of the more-popular mixing rules is the van der Waals one-fluid mixing rule: the mixture is treated as a hypothetical pure fluid, characterised by parameters $\bar{a}$ and $\bar{b}$ that are given by
 
 ``\bar{a}=\sum_i\sum_jx_ix_ja_{ij}``
 
 ``\bar{b}=\sum_i\sum_jx_ix_jb_{ij}``
 
-More-complicated mixing rules do exist (such as the Wong-Sandler mixing rule) which will be made available in Clapeyron. When $i=j$, $a$ and $b$ are just the normal van der Waals parameters for the pure. However, when $i\neq j$, these parameter characterise the unlike interactions between $i$ and $j$. We typically need to use _combining rules_ (not to be confused with _mixing rules_) to determine the unlike parameters. Examples of these include:
+When $i=j$, $a$ and $b$ are just the normal van der Waals parameters for the pure. However, when $i\neq j$, these parameter characterise the unlike interactions between $i$ and $j$. We typically need to use _combining rules_ (not to be confused with _mixing rules_) to determine the unlike parameters. Examples of these include:
 
 ``b_{ij}=\frac{b_i+b_j}{2}``
 
@@ -87,43 +92,47 @@ More-complicated mixing rules do exist (such as the Wong-Sandler mixing rule) wh
 
 where $k_{ij}$ can be set to 0 but, using either more-advanced combining rules or regression to experimental data, can be tuned to improve the effectiveness of the combining rule. Further details on this will be given for the SAFT models.
 
-### SAFT models
+More-complicated mixing rules (such as the Wong-Sandler mixing rule) are available and, although not currently supported, will be implemented in _Clapeyron_. 
 
-In comparison to the cubic equations of state, equations based on the Statistical Associating Fluid Theory (SAFT) take a more-theoretical approach. As mentioned earlier, the van der Waals equation can be derived from statistical mechanics where the resultant Helmholtz free energy is given by:
+### SAFT equations of state
 
-``\frac{A}{Nk_\mathrm{B}T} = \frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}``
+In comparison to the cubic equations of state, equations based on the Statistical Associating Fluid Theory (SAFT) are based on a more-theoretical approach, although still can be considered as descendents of van der Waals' equation. As mentioned earlier, the van der Waals equation can be derived from statistical mechanics, whereby the Helmholtz free energy of the van der Waals fluid is obtained as
 
-where the ideal and hard-sphere (HS) terms combine to give the repulsive term whilst the $A_1$ term results in the attractive term. We can see that, in the van der Waals equation, species are effectively modelled as hard-spheres with dispersive interactions (we sometimes can these London dispersion interactions). The last two terms can be merged into what is referred to as the monomer or segment term. Whilst this is a step up from the ideal term, most species can't be modelled effectively as single spheres and, in cases like water, experiences interactions more complex that simple dispersion (dipoles and hydrogen bonding). 
+``\frac{A}{Nk_\mathrm{B}T} = \frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{HS}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{1}}{(Nk_\mathrm{B}T)^2}``;
 
-Using Wertheim's TPT1 theory of association, it is possible to model species as chains which can interact through both dispersive and associative interactions. The latter is described as interactions through associations sites on the segments which are strong and highly directional (like hydrogen bonding and dipole interactions). This results in the addition of two extra contributions to the Helmholtz free energy (note that the HS and dispersive terms have been merged into a monomer term):
+here the ideal and hard-sphere (HS) terms combine to give the repulsive term (of the pressure form of the equation) whilst the $A_1$ term results in the attractive term. We can see from this that, using the van der Waals equation, species are effectively modelled as hard spheres with dispersive interactions (we sometimes call these London dispersion interactions). The latter two terms can be merged into what is referred to as the monomer or segment term. 
+
+Whilst, as already noted, this is clearly a step up from the ideal gas, most species can't be modelled effectively as single spheres; they may be highly non-speherical in shape (as is usually the case with large molecules), or they may experience interactions that are more complex than simple dispersion. A classic example of the latter is water; although the water molecule is small and (at first glance) may appear simple, the behaviour of water is very strongly influenced by hydrogen-bonding interactions.  
+
+Using Wertheim's TPT1 theory of association, it is possible to model molecules as chains of spheres; the shape of the model molecule can thereby be tailored to represent that of the real molecule far better than a single sphere. Wertheim's TPT1 theory can also be used to account for intermolecular association interactions (such as dipole–dipole interactions, or hydrogen bonding), which are strongly directional. These are described using associations sites that are located on one or more of the spherical segments of the chain molecule. This results in the addition of two extra contributions to the Helmholtz free energy (note that the HS and dispersive terms have been merged into a monomer term):
 
 `` \frac{A}{Nk_\mathrm{B}T} = \frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{mono.}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{chain}}{Nk_\mathrm{B}T}+\frac{A_\mathrm{assoc.}}{Nk_\mathrm{B}T}``
 
-The chain term accounts for the formation of chains of spherical segments and is generally expressed as:
+The chain term accounts for the formation of chains of spherical segments and is generally expressed as
 
-``\frac{A_\mathrm{chain}}{Nk_\mathrm{B}T}=-\sum_ix_i(m_i-1)\ln{g_{ii}(d_{ii})}``
+``\frac{A_\mathrm{chain}}{Nk_\mathrm{B}T}=-\sum_ix_i(m_i-1)\ln{g_{ii}(d_{ii})}``,
 
-where $g_{ij}(r_{ij})$ is the pair-distribution function (i.e. the likelihood of a segment of species $i$ being present at a distance $r$ from another segment of species $j$) . Many SAFT equations differ in how to express this pair-distribution function. We note here the introduction of the Barker-Henderson hard-sphere diameter, $d$ which is given by:
+where $g_{ii}(r_{ii})$ is the pair-distribution function for species $i$ (which carries information about the structure of the fluid; it expresses how likely it is that a segment of species $i$ is present at a distance $r_{ii}$ from another segment of species $i$) . Many SAFT equations differ in how to express this pair-distribution function. We note here the introduction of the Barker-Henderson hard-sphere diameter, $d_{ii}$ which is given (dropping the subscripts for clarity) by
 
-``d = \int_0^\sigma (1-\exp{-\beta\phi(r)})dr``
+``d = \int_0^\sigma (1-\exp{-\beta\phi(r)})dr``;
 
-where $\phi(r)$ is our _effective_ pair potential and $\beta=1/(k_\mathrm{B}T)$. This effectively gives a temperature dependence to the size of our segment and accounts for our segment becoming _softer_ as temperature rises.
+here $\phi(r)$ is our _effective_ pair potential and $\beta=1/(k_\mathrm{B}T)$. This effectively gives a temperature dependence to the size of our segment and accounts for our segment becoming _softer_ as temperature rises.
 
 The association term accounts for the highly-directional associative interactions (for example, hydrogen bonding). For most SAFT equations of state, it is expressed as:
 
 ``\frac{A_\mathrm{assoc.}}{Nk_\mathrm{B}T}=\sum_ix_i\left(\sum_a\left(\ln{X_{i,a}}-\frac{X_{i,a}}{2}\right)+\frac{M_i}{2}\right)``
 
-where $X_{i,a}$ is the fraction of association sites $a$ on species $i$ _not_ bonded to another and $M_i$ is the number of association sites on species $i$.  $X_{i,a}$ can be solved for using the following system of equations:
+where $X_{i,a}$ is the fraction of association sites $a$ on species $i$ _not_ bonded to another and $M_i$ is the number of association sites on species $i$.  $X_{i,a}$ can be obtained by solving the following system of equations:
 
 ``X_{i,a} = (1+\rho\sum_jx_j\sum_bX_{j,b}\Delta_{ij,ab})^{-1}``
 
-An important aspect of the association term is that the above equation results in a system of equations that typically needs to be solved iteratively; this greatly increases the computational cost of the SAFT equations. $\Delta_{ij,ab}$ is the association strength between site $a$ on species $i$ with site $b$ on species $j$; this is also an aspect where SAFT equations usually differ but can all be written generally as:
+An important aspect of the association term is that the above system of equations typically needs to be solved iteratively; this greatly increases the computational cost of the SAFT equations (compared, for example, to the cubic equations of state). $\Delta_{ij,ab}$ is the association strength between site $a$ on species $i$ with site $b$ on species $j$; this is also an aspect where SAFT equations usually differ but can all be written generally as
 
 ``\Delta_{ij,ab} = F_{ij,ab}K_{ij,ab}I_{ij,ab}``
 
-Where $F_{ij,ab}$ is Mayer's function given by:
+where $F_{ij,ab}$ is Mayer's function, given by
 
-``F = \exp{-\beta\epsilon^\mathrm{assoc.}}-1``
+``F = \exp{-\beta\epsilon^\mathrm{assoc.}}-1``,
 
 where $\epsilon^\mathrm{assoc.}$ is the potential depth of the association interaction. $K$ and $I$ differ between equations but, generally, these represent the length scale of the interaction and the likelihood that the sites are correctly orientated such that they overlap, respectively.
 
