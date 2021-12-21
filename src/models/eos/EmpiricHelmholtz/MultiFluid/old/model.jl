@@ -1,4 +1,4 @@
-
+#=
 #creates the beta_v and beta_T from the vector specified
 function gerg_betamatrix_from_vector(v, symmetric_op = (a) -> a)
     N1 = length(v)
@@ -21,42 +21,55 @@ function gerg_betamatrix_from_vector(v, symmetric_op = (a) -> a)
 end
 
 struct GERG2008 <: EmpiricHelmholtzModel
-    components::Vector{String}
-    acentricfactor::Vector{Float64}
-    Mw::Vector{Float64}
-    rhoc::Vector{Float64}
-    vc::Vector{Float64}
-    Tc::Vector{Float64}
-    Pc::Vector{Float64}
-    lb_v::Vector{Float64}
-    ideal_iters::Vector{Vector{Int64}}
-    nr::Matrix{Float64}
-    zeta::Matrix{Float64}
-    n0ik::Vector{Vector{Float64}}
-    t0ik::Vector{Vector{Float64}}
-    d0ik::Vector{Vector{Int64}}
-    c0ik::Vector{Vector{Int64}}
+    components::Vector{String} #SingleParam
+    acentricfactor::Vector{Float64} #SingleParam
+    Mw::Vector{Float64} #SingleParam
+    rhoc::Vector{Float64} #SingleParam
+    vc::Vector{Float64} #SingleParam
+    Tc::Vector{Float64} #SingleParam
+    Pc::Vector{Float64} #SingleParam
+    lb_v::Vector{Float64} #SingleParam
+    ideal_iters::Vector{Vector{Int64}} #SingleParam{Int}
+    nr::Matrix{Float64} #SingleParam
+    zeta::Matrix{Float64} #SingleParam
+    n0ik::Vector{Vector{Float64}} #VectorSingleParam
+    t0ik::Vector{Vector{Float64}} #VectorSingleParam
+    d0ik::Vector{Vector{Int64}} #VectorSingleParam
+    c0ik::Vector{Vector{Int64}} #VectorSingleParam
     k_pol_ik::Vector{Int64}
     k_exp_ik::Vector{Int64}
-    gamma_v::Matrix{Float64}
-    gamma_T::Matrix{Float64}
-    beta_v::Matrix{Float64}
-    beta_T::Matrix{Float64}
-    Aij_indices::Vector{Tuple{Int64,Int64,Int64}}
-    fij::Vector{Float64}
-    dijk::Vector{Vector{Int64}}
-    tijk::Vector{Vector{Float64}}
-    nijk::Vector{Vector{Float64}}
-    etaijk::Vector{Vector{Float64}}
-    epsijk::Vector{Vector{Float64}}
+    gamma_v::Matrix{Float64} #PairParam
+    gamma_T::Matrix{Float64} #PairParam
+    beta_v::Matrix{Float64} #PairParam
+    beta_T::Matrix{Float64} #PairParam
+    Aij_indices::Vector{Tuple{Int64,Int64,Int64}} #AssocParam ?
+    fij::Vector{Float64} #SparsePairParam
+    dijk::Vector{Vector{Int64}} #SparsePairParam
+    tijk::Vector{Vector{Float64}} #SparsePairParam
+    nijk::Vector{Vector{Float64}} #SparsePairParam
+    etaijk::Vector{Vector{Float64}} #SparsePairParam
+    epsijk::Vector{Vector{Float64}} #SparsePairParam
     betaijk::Vector{Vector{Float64}}
     gammaijk::Vector{Vector{Float64}}
     k_pol_ijk::Vector{Int64}
     k_exp_ijk::Vector{Int64}
 end
+function GERG2008_splitter(names::Vector{String})
+    symvalues = GERG2008_consts.names
+    xsel = Vector{Int}()
+    for i in names
+        i in symvalues || throw(ArgumentError("invalid name: $i"))
+        push!(xsel, findall(isequal(i), symvalues)[1])
 
+    end
+    if iszero(length(xsel))
+        return ArgumentError("no match found for input components. valid components are: $(GERG2008constsProps.names)")
+    else
+        return xsel
+    end
+end
 function GERG2008(components::Vector{String})
-    xsel = GERG2008_xsel(components)
+    xsel = GERG2008_splitter(components)
     comps = components
     pc = GERG2008_consts.pc
     Tc = GERG2008_consts.Tc
@@ -560,22 +573,7 @@ function GERG2008(components::Vector{String})
     #hydrogen
     c0ik4 = [1, 1, 1, 1, 2, 2, 3, 3, 5]
     d0ik4 = [1, 1, 2, 2, 4, 1, 5, 5, 5, 1, 1, 2, 5, 1]
-    t0ik4 = [
-        0.500,
-        0.625,
-        0.375,
-        0.625,
-        1.125,
-        2.625,
-        0.000,
-        0.250,
-        1.375,
-        4.000,
-        4.250,
-        5.000,
-        8.000,
-        8.000,
-    ]
+    t0ik4 = [0.500,0.625, 0.375, 0.625, 1.125, 2.625, 0.000, 0.250, 1.375, 4.000, 4.250, 5.000, 8.000, 8.000]
     k_exp_ik4 = length(c0ik4)
     k_pol_ik4 = length(d0ik4) - k_exp_ik4
 
@@ -1926,27 +1924,27 @@ function GERG2008(components::Vector{String})
 
 
     model = GERG2008(
-        comps,
-        acentricfactor[xsel],
-        Mw[xsel],
-        rhoc[xsel],
-        1 ./ rhoc[xsel],
-        Tc[xsel],
-        pc[xsel],
-        lb_v[xsel],
-        ideal_iters,
-        nr[:, xsel],
-        zeta[:, xsel],
-        n0ik[xsel],
-        t0ik[xsel],
-        d0ik[xsel],
-        c0ik[xsel],
+        comps, #
+        acentricfactor[xsel],#
+        Mw[xsel], #
+        rhoc[xsel], #
+        1 ./ rhoc[xsel], #
+        Tc[xsel], #
+        pc[xsel], #
+        lb_v[xsel], #
+        ideal_iters, #
+        nr[:, xsel], #
+        zeta[:, xsel], #
+        n0ik[xsel], #
+        t0ik[xsel], #
+        d0ik[xsel],#
+        c0ik[xsel], #
         k_pol_ik[xsel],
         k_exp_ik[xsel],
-        gamma_v[xsel, xsel],
-        gamma_T[xsel, xsel],
-        beta_v[xsel, xsel],
-        beta_T[xsel, xsel],
+        gamma_v[xsel, xsel], #
+        gamma_T[xsel, xsel], #
+        beta_v[xsel, xsel], #
+        beta_T[xsel, xsel], #
         Aij_indices,
         fij,
         dijk,
@@ -1961,3 +1959,4 @@ function GERG2008(components::Vector{String})
     )
     return model
 end
+=#

@@ -1,7 +1,4 @@
-include("consts.jl")
-include("model.jl")
-include("equations.jl")
-
+#=
 idealmodel(model::GERG2008) = model
 molecular_weight(model::GERG2008,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
 split_model(model::GERG2008) = simple_split_model(model)
@@ -40,3 +37,4 @@ function x0_volume_liquid(model::GERG2008,T,z)
 end
 
 export GERG2008
+=#
