@@ -1,7 +1,7 @@
 module Clapeyron
 using StaticArrays
 using LinearAlgebra
-
+using SparseArrays
 #for the assoc solver
 import PackedVectorsOfVectors
 const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
@@ -96,7 +96,7 @@ include("models/eos/Activity/equations.jl")
 
 include("models/eos/EmpiricHelmholtz/IAPWS95.jl")
 include("models/eos/EmpiricHelmholtz/PropaneRef.jl")
-include("models/eos/EmpiricHelmholtz/GERG2008/GERG2008.jl")
+include("models/eos/EmpiricHelmholtz/MultiFluid/MultiFluid.jl")
 
 include("models/eos/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 

@@ -1,44 +1,5 @@
 
-"""
-    mixing_rule_asymetric(op, op_asym, x, p, A, A_asym)
-
-returns an efficient implementation of:
-` sum(A[i,j] * x[i] * x[j] * op(p[i],p[j]) * op_asym(x[i],x[j],A_asym[i,j])) for i = 1:n , j = 1:n)`
-where `op(p[i],p[j]) == op(p[j],p[i])` , op_asym doesn't follow this symmetry.
-
-""" 
-function mixing_rule_asymetric(op, op_asym, x, p, A, A_asym)
-    #@show length(x)
-    N = length(x)
-    checkbounds(A, N, N)
-    checkbounds(A_asym, N, N)
-    @boundscheck checkbounds(p, N)
-    @inbounds begin
-        res1 = zero(eltype(x))
-
-        for i = 1:N
-            x[i] != 0 && begin
-                res1 += p[i] * x[i]^2
-                for j = 1:i - 1
-                    res1 +=
-                        2 *
-                        x[i] *
-                        x[j] *
-                        op(p[i], p[j]) *
-                        A[i, j] *
-                        op_asym(x[i], x[j], A_asym[i, j])
-                end
-            end
-        end
-    end
-    return res1
-end
-
-
-
-
-_gerg_asymetric_mix_rule(xi, xj, b) = b * (xi + xj) / (xi * b^2 + xj)
-
+#=
 
 function T_scale(model::GERG2008,x=SA[1.])
     return mixing_rule_asymetric(
@@ -273,8 +234,6 @@ function _fr1(model::GERG2008, delta, tau)
             exp(-delta^model.c0ik[1][k-model.k_pol_ik[1]])
     end
     res += res1
-
-
     return res
 end
 
@@ -309,6 +268,7 @@ end
 
 
 
+
 function _fr2(model::GERG2008, delta, tau, x)
     common_type = promote_type(typeof(delta), typeof(tau), eltype(x))
     res = zero(common_type)
@@ -317,7 +277,6 @@ function _fr2(model::GERG2008, delta, tau, x)
 
     for kk = 1:length(model.Aij_indices)
         i1, i2, i0 = model.Aij_indices[kk]
-
         x[i1] != x0 && x[i2] != x0 && begin
             res1 = res0
             for j = 1:model.k_pol_ijk[i0]
@@ -345,8 +304,6 @@ function _fr2(model::GERG2008, delta, tau, x)
     end
     return res
 end
-
-
 
 function a_ideal(model::GERG2008, v, T, z=SA[1.0])
     N = sum(z)
@@ -389,62 +346,4 @@ function eos(model::GERG2008, v, T, z=SA[1.0])
         return N * R * T * (_f0(model, rho, T, x)+ _fr1(model, delta, tau, x) + _fr2(model, delta, tau, x))
     end
 end
-
-
-# function ρ_TP(species::EoSModel, T, P)
-#     v = volume(species,P,T)
-#     return 1/v
-# end
-#=
-julia> @time [ρ_TP(thermo_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
-#4.271689 seconds (2.22 M allocations: 130.980 MiB, 1.10% gc time, 33.34% compilation time
-
-julia> @benchmark [ρ_TP(thermo_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
-
-BenchmarkTools.Trial: 
-  memory estimate:  14.73 MiB
-  allocs estimate:  320005
-  --------------
-  minimum time:     2.903 s (0.00% GC)   
-  median time:      2.994 s (0.00% GC)   
-  mean time:        2.994 s (0.00% GC)   
-  maximum time:     3.085 s (0.00% GC)   
-  --------------
-  samples:          2
-  evals/sample:     1
-
-
-julia> @time [ρ_TP(CP_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
-  0.538447 seconds (115.41 k allocations: 4.366 MiB, 6.34% compilation time)
-
-julia> @benchmark [ρ_TP(CP_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
-BenchmarkTools.Trial:
-  memory estimate:  859.66 KiB
-  allocs estimate:  50005
-  --------------
-  minimum time:     690.530 ms (0.00% GC)  median time:      708.036 ms (0.00% GC)  mean time:        832.741 ms (0.00% GC)  maximum time:     1.171 s (0.00% GC)   
-  --------------
-  samples:          6
-  evals/sample:     1
-  =#
-
-
-
-#julia> @time [ρ_TP(w, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
-#  2.781332 seconds (889.17 k allocations: 61.773 MiB, 0.73% gc time, 2.29% compilation time)
-
-#julia> @benchmark [ρ_TP(Clapeyron_H2O, T, P) for T in LinRange(280, 330, 100), P in LinRange(8e4, 12e5, 100)];
-#=
-BenchmarkTools.Trial:
-  memory estimate:  57.23 MiB
-  allocs estimate:  805979
-  --------------
-  minimum time:     2.841 s (0.31% GC)   
-  median time:      2.843 s (0.30% GC)   
-  mean time:        2.843 s (0.30% GC)   
-  maximum time:     2.844 s (0.30% GC)   
-  --------------
-  samples:          2
-  evals/sample:     1
-  =#
-
+=#
