@@ -1,5 +1,13 @@
 abstract type ClapeyronParam end
 
+struct SingleParameter{T,V<:AbstractVector{T}} <: ClapeyronParam
+    name::String
+    components::Array{String,1}
+    values::V
+    ismissingvalues::Array{Bool,1}
+    sourcecsvs::Array{String,1}
+    sources::Array{String,1}
+end
 
 """
     SingleParam{T}
@@ -48,16 +56,14 @@ function molecular_weight(model,molar_frac)
 end
 ```
 """
-struct SingleParam{T} <: ClapeyronParam
-    name::String
-    components::Array{String,1}
-    values::Array{T,1}
-    ismissingvalues::Array{Bool,1}
-    sourcecsvs::Array{String,1}
-    sources::Array{String,1}
-end
+const SingleParam{T} = SingleParameter{T,Vector{T}} where T
 
-function Base.show(io::IO, param::SingleParam)
+SingleParam(name,components,values,missingvals,src,sourcecsv) = SingleParameter(name,components,values,missingvals,src,sourcecsv)
+function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})::SingleParam{String}
+    values = String.(param.values)
+    return (param.name,param.components,values,param.missingvals,param.src,param.sourcecsv)
+end
+function Base.show(io::IO, param::SingleParameter)
     print(io, typeof(param), "(\"", param.name, "\")[")
     for component in param.components
         component != first(param.components) && print(io, ",")
@@ -66,9 +72,9 @@ function Base.show(io::IO, param::SingleParam)
     print(io, "]")
 end
 
-function Base.show(io::IO, ::MIME"text/plain", param::SingleParam)
+function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     len = length(param.values)
-    print(io, typeof(param), "(\"", param.name)
+    print(io, "SingleParam{",eltype(param.values), "}(\"", param.name)
     println(io, "\") with ", len, " component", ifelse(len==1, ":", "s:"))
     i = 0
     for (name, val, miss) in zip(param.components, param.values, param.ismissingvalues)
@@ -88,7 +94,7 @@ function Base.show(io::IO, ::MIME"text/plain", param::SingleParam)
     end
 end
 
-function SingleParam(x::SingleParam{T},name=x.name) where T
+function SingleParam(x::SingleParameter,name=x.name)
     return SingleParam(name, x.components,deepcopy(x.values), deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
 end
 
@@ -105,9 +111,21 @@ function SingleParam(
     return  SingleParam{TT}(name,components, _values, _ismissingvalues, sourcecsvs, sources)
 end
 
-function SingleParam(x::SingleParam, v::Vector)
+
+function SingleParam(x::SingleParameter, v::Vector)
     _values,_ismissingvalues = defaultmissing(v)
     return SingleParam(x.name, x.components,_values, _ismissingvalues , x.sourcecsvs, x.sources)
+end
+
+
+struct PairParameter{T,V<:AbstractMatrix{T},D} <: ClapeyronParam
+    name::String
+    components::Array{String,1}
+    values::V
+    diagvalues::D
+    ismissingvalues::Array{Bool,2}
+    sourcecsvs::Array{String,1}
+    sources::Array{String,1}
 end
 """
     PairParam{T}
@@ -152,35 +170,40 @@ function alpha(model,x)
 end
 ```
 """
-struct PairParam{T} <: ClapeyronParam
-    name::String
-    components::Array{String,1}
-    values::Array{T,2}
-    diagvalues::SubArray{T, 1, Vector{T}, Tuple{StepRange{Int64, Int64}}, true}
-    ismissingvalues::Array{Bool,2}
-    sourcecsvs::Array{String,1}
-    sources::Array{String,1}
-end
+const PairParam{T} = PairParameter{T,Matrix{T},SubArray{T, 1, Vector{T}, Tuple{StepRange{Int64, Int64}}, true}} where T
 
+PairParam(name,components,values,diagvals, missingvals,src,sourcecsv) = PairParameter(name,components,values,diagvals,missingvals,src,sourcecsv)
+
+#unsafe constructor
+function PairParam(name,components,values)
+    missingvals = fill(false,size(values))
+    diagvals = view(values, diagind(values))
+    src = String[]
+    sourcecsv = String[]
+    return PairParam(name,components,values,diagvals, missingvals,src,sourcecsv)
+end
 function PairParam(name::String,
                     components::Array{String,1},
                     values::Array{T,2},
+                    ismissingvalues = fill(false,length(components),length(components)),
                     sourcecsvs::Array{String,1} = String[], 
                     sources::Array{String,1} = String[]) where T
     
     _values,_ismissingvalues = defaultmissing(values)
     diagvalues = view(_values, diagind(_values))
-
-    return PairParam{T}(name, components,_values, diagvalues, _ismissingvalues, sourcecsvs, sources)
+    if !all(ismissingvalues)
+        _ismissingvalues = ismissingvalues
+    end
+    return PairParam(name, components,_values, diagvalues, _ismissingvalues, sourcecsvs, sources)
 end
 
-function PairParam(x::PairParam,name::String=x.name)
+function PairParam(x::PairParameter,name::String=x.name)
     values = deepcopy(x.values)
     diagvalues = view(values,diagind(values))
     return PairParam(name, x.components,values ,diagvalues, deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
 end
 
-function PairParam(x::SingleParam,name::String=x.name)
+function PairParam(x::SingleParameter,name::String=x.name)
     pairvalues = singletopair(x.values,missing)
     for i in 1:length(x.values)
         if x.ismissingvalues[i]
@@ -206,15 +229,15 @@ end
 #barebones constructor by list of pairs.
 
 
-function Base.show(io::IO,mime::MIME"text/plain",param::PairParam)
-    print(io,"PairParam{",string(typeof(param)),"}")
+function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter) 
+    print(io,"PairParam{",eltype(param.values),"}")
     show(io,param.components)
     println(io,") with values:")
     show(io,mime,param.values)
 end
 
-function Base.show(io::IO,param::PairParam)
-    print(io, typeof(param), "(\"", param.name, "\")[")
+function Base.show(io::IO,param::PairParameter)
+    print(io, "PairParam{",eltype(param.values),"}", "(\"", param.name, "\")[")
     print(io,Base.summary(param.values))
     print(io,"]")
 end
@@ -226,14 +249,14 @@ Struct holding association parameters.
 struct AssocParam{T} <: ClapeyronParam
     name::String
     components::Array{String,1}
-    values::CompressedAssocMatrix{T}
+    values::Compressed4DMatrix{T,Vector{T}}
     sites::Array{Array{String,1},1}
     sourcecsvs::Array{String,1}
     sources::Array{String,1}
 end
 
-function AssocParam(name::String,components::Vector{String},values::Array{Array{T,2},2},allcomponentsites,sourcecsvs,sources) where T
-    _values = CompressedAssocMatrix(values)
+function AssocParam(name::String,components::Vector{String},values::MatrixofMatrices,allcomponentsites,sourcecsvs,sources) where T
+    _values = Compressed4DMatrix(values)
     return AssocParam(name,components,_values,allcomponentsites,sourcecsvs,sources)
 end
 
@@ -243,14 +266,14 @@ function AssocParam(x::AssocParam{T}) where T
 end
 
 function AssocParam{T}(x::AssocParam, v::Matrix{Matrix{T}}) where T
-    return AssocParam{T}(x.name, x.components,CompressedAssocMatrix(v), x.sites, x.sourcecsvs, x.sources)
+    return AssocParam{T}(x.name, x.components,Compressed4DMatrix(v), x.sites, x.sourcecsvs, x.sources)
 end
 
 function AssocParam{T}(name::String,components::Vector{String}) where T
     n = length(components)
     return AssocParam{T}(name, 
     components,
-    CompressedAssocMatrix{T}(),
+    Compressed4DMatrix{T}(),
     [String[] for _ ∈ 1:n], 
     String[],
     String[])
@@ -651,6 +674,45 @@ paramvals(param::ClapeyronParam) = param.values
 paramvals(x) = x
 
 
+function pack_vectors(x::AbstractVector{<:AbstractVector})
+    return PackedVectorsOfVectors.pack(x)
+end
 
+function pack_vectors(x::SparseMatrixCSC{<:AbstractVector})
+    return SparsePackedMofV(x)
+end
 
+function pack_vectors(param::SingleParameter{<:AbstractVector})
+    name,components,vals,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources
+    vals = pack_vectors(vals)
+    return SingleParam(name,components,vals,missingvals,srccsv,src)
+end
 
+function pack_vectors(param::PairParameter{<:AbstractVector})
+    name,components,vals,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources
+    vals = pack_vectors(vals)
+    return PairParam(name,components,vals,nothing,missingvals,srccsv,src)
+end
+
+function pack_vectors(params::Vararg{SingleParameter{T},N}) where {T<:Number,N}
+    param = first(params)
+    name,components,_,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources
+    len = length(params)
+    vals = [zeros(len) for _ in params]
+
+    for i in 1:length(vals)
+        vali = vals[i]
+        for (k,par) in pairs(params)
+            vali[k] = par.values[i]
+        end
+    end
+    vals = PackedVectorsOfVectors.pack(vals)
+    SingleParam(name,components,vals,missingvals,srccsv,src)
+end
+
+const PackedVectorSingleParam{T} = Clapeyron.SingleParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}
+
+const PackedSparsePairParam{T} = Clapeyron.PairParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, SparsePackedMofV{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, 
+true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}, Nothing} where T
+export PackedSparsePairParam
+export PackedVectorSingleParam

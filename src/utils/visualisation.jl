@@ -6,7 +6,7 @@ function eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSModel)
     length(model) > 1 && println(io, " with ", length(model), " components:")
     for i in 1:length(model)
         print(io, " \"", model.components[i], "\"")
-        println(io)
+        i != length(model) && println(io)
     end
     if hasfield(typeof(model),:params)
         paramnames = fieldnames(typeof(model.params))
@@ -49,13 +49,16 @@ function gc_eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSMod
         end
         i != length(param.components) && println(io)
     end
-    println(io)
-    print(io, "Contains parameters: ")
-    firstloop = true
-    for fieldname in fieldnames(typeof(model.params))
-        firstloop == false && print(io, ", ")
-        print(io, fieldname)
-        firstloop = false
+    fields = fieldnames(typeof(model.params))
+    if length(fields) != 0
+        println(io)
+        print(io, "Contains parameters: ")
+        firstloop = true
+        for fieldname in fields
+            firstloop == false && print(io, ", ")
+            print(io, fieldname)
+            firstloop = false
+        end
     end
 end
 
