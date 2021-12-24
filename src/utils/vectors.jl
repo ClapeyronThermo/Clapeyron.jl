@@ -238,18 +238,19 @@ end
 @inline SparseArrays.nonzeros(x::SparsePackedMofV) = x.storage
 @inline SparseArrays.rowvals(x::SparsePackedMofV) = SparseArrays.rowvals(x.idx)
 @inline SparseArrays.nzrange(A::SparsePackedMofV, col::Integer) = SparseArrays.nzrange(A.idx,col)
-@inline SparseArrays._checkbuffers(A::SparsePackedMofV) = SparseArrays._checkbuffers(A.idx)
 @inline SparseArrays.getcolptr(A::SparsePackedMofV) = SparseArrays.getcolptr(A.idx)
 export SparsePackedMofV
 
-function tt(x)
-    rows = rowvals(x)
-    vals = nonzeros(x)
-    m, n = size(x)
-    for j = 1:n
-        for i in nzrange(x, j)
-            row = rows[i]
-            val = vals[i]
+function Base.show(io::IO,::MIME"text/plain",A::SparsePackedMofV)
+    m,n = size(A)
+    println(io,"$(m)×$(n) Sparse Packed Matrix of Vectors of eltype $(eltype(A.storage)) with $(length(A.storage)) non empty values:")
+    vals = A.storage
+    rows = rowvals(A)
+    for j in 1:n
+        for ii ∈ nzrange(A, j)
+            i = rows[ii]
+            val= vals[ii]
+            println(io,"  ($i,$j) => $val")
         end
     end
 end

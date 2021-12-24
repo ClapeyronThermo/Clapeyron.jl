@@ -9,6 +9,7 @@ function eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSModel)
         i != length(model) && println(io)
     end
     if hasfield(typeof(model),:params)
+        println(io)
         paramnames = fieldnames(typeof(model.params))
         len_params = length(paramnames)
         !iszero(len_params) && print(io,"Contains parameters: ")
