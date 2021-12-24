@@ -618,3 +618,20 @@ function getparams_gerg2008()
         :gamma_ij =>gamma_ij,
     )
 end
+
+function getnames_gerg2008(components::Vector{String})
+    comps = normalisestring.(components)
+    names = normalisestring.(GERG2008_names)
+    @assert allunique(comps)
+    res = zeros(Int,length(comps))
+    for (i,comp) in pairs(comps)
+        idx = findfirst(==(comp),names)
+        idx === nothing && continue
+        res[i] = idx
+    end
+    if any(iszero,res)
+        idx = findfirst(iszero,res)
+        throw(error("component $(components[idx]) could not be found"))
+    end
+    return res
+end

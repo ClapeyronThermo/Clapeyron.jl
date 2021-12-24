@@ -11,7 +11,7 @@ end
 @registermodel EOS_LNG
 
 function EOS_LNG(components::Vector{String})
-    I = GERG2008_splitter(components)
+    I = getnames_gerg2008(components)
     lng_newpairs = [(1,6),(1,7),(1,8),(1,9)]
     β_T = [0.9421, 0.9405, 0.9082, 0.886]
     γ_T = [1.0307, 0.9917, 1.03884, 0.993]

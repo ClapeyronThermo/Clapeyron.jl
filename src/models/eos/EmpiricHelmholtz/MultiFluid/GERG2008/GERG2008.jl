@@ -11,7 +11,7 @@ end
 @registermodel GERG2008
 
 function GERG2008(components::Vector{String})
-    I = GERG2008_splitter(components)
+    I = getnames_gerg2008(components)
     params = getparams_gerg2008()
     Mw = each_split_model(params[:Mw],I)
     rhoc = each_split_model(params[:rhoc],I)
