@@ -64,7 +64,7 @@
         @test repr("text/plain",model2) == "PCSAFT{BasicIdeal} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"
         #@newmodelsimple
         @test repr(noparam1) == "NoTranslation()"
-        @test repr("text/plain",noparam1) == "NoTranslation"
+        @test repr("text/plain",noparam1) == "NoTranslation\n"
         @test repr(simple1) == "PRAlpha(\"propane\")"
         @test repr("text/plain",simple1) == "PRAlpha with 1 component:\n \"propane\"\nContains parameters: acentricfactor"
     end 
