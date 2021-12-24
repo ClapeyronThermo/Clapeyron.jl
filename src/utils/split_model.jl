@@ -250,7 +250,6 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             allfields[:groups] = split_model(model.groups)
             allfields[:components] = getfield.(allfields[:groups],:components)
             for modelkey in allfieldnames
-                @show modelkey
                 if !haskey(allfields,modelkey)
                     modelx = getproperty(model,modelkey)
                     if modelx isa Vector{<:EoSModel}
