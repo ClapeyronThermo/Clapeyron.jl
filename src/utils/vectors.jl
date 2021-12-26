@@ -188,7 +188,6 @@ function indices(x::PackedVofV)
     return x.p
 end
 
-ith_index(pv::PackedVofV,i) = @inbounds begin (pv.p[i]):(pv.p[i+1]-1) end
 
 struct SparsePackedMofV{E,P<:PackedVofV}<:SparseArrays.AbstractSparseMatrixCSC{E,Int}
     storage::P
