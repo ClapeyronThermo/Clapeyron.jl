@@ -96,7 +96,7 @@ include("models/eos/Activity/equations.jl")
 
 include("models/eos/EmpiricHelmholtz/IAPWS95.jl")
 include("models/eos/EmpiricHelmholtz/PropaneRef.jl")
-include("models/eos/EmpiricHelmholtz/MultiFluid/MultiFluid.jl")
+include("models/eos/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
 include("models/eos/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
