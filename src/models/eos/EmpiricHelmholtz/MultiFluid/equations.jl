@@ -151,6 +151,7 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
         for ii ∈ nzrange(F, j)
             i = rows[ii]
             Fᵢⱼ= Fij[ii]
+            aij = _0
             kall = ith_index(n,ii)
             kexp = ith_index(η,ii)
             divider = length(kall) - length(kexp)
