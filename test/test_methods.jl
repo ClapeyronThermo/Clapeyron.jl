@@ -233,7 +233,7 @@ end
         system = GERG2008(["carbon dioxide","water"])
         T = 298.15
         z = [0.8,0.2]
-        @test Clapeyron.bubble_pressure(system, T,z)[1] ≈ 5.853909891112583e6 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system, T,z)[1] ≈ 5.853909891112583e6 rtol = 1E-5
     end
 end
 
