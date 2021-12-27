@@ -1,6 +1,7 @@
 using Clapeyron, Test, Unitful
 
 @testset "SAFT methods, single components" begin
+    @printline
     system = PCSAFT(["ethanol"])
     p = 1e5
     T = 298.15
@@ -34,6 +35,7 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.acentric_factor(system) ≈ 0.5730309964718605 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 533.1324329774004 rtol = 1E-6 
     end
+    @printline
 end
 
 
@@ -113,6 +115,7 @@ end
 
 
 @testset "SAFT methods, multi-components" begin
+    @printline
     system = PCSAFT(["methanol","cyclohexane"])
     p = 1e5
     T = 313.15
@@ -143,6 +146,7 @@ end
         @test Clapeyron.VLLE_temperature(system, p)[1] ≈ 328.2478837563423 rtol = 1E-6
         @test Clapeyron.crit_mix(system,z)[1] ≈ 518.0004062881115 rtol = 1E-6
     end
+    @printline
 end
 
 @testset "Cubic methods, single components" begin

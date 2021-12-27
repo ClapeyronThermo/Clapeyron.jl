@@ -1,7 +1,7 @@
 using Clapeyron, Test, NLSolvers, ForwardDiff
 
 const SOL = Clapeyron.Solvers
-
+@printline
 quadratic(x) = x*x - 4
 rosenbrock(x) = (1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2
 golden_number_fixpoint(x) = one(x) + one(x)/x
@@ -128,3 +128,4 @@ end
         @test SOL.det_22(1,2,3,4) == a1*a2 - a3*a4
     end
 end
+@printline

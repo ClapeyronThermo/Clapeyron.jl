@@ -1,4 +1,5 @@
 @testset "utils" begin
+    @printline
     model2 = PCSAFT(["water","ethanol"])
     model4 = SAFTgammaMie(["methane","butane","isobutane","pentane"])
     gc3 = UNIFAC(["propane","butane","isobutane"])
@@ -67,5 +68,6 @@
         @test repr("text/plain",noparam1) == "NoTranslation\n"
         @test repr(simple1) == "PRAlpha(\"propane\")"
         @test repr("text/plain",simple1) == "PRAlpha with 1 component:\n \"propane\"\nContains parameters: acentricfactor"
-    end 
+    end
+    @printline
 end

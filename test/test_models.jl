@@ -3,7 +3,7 @@ using Clapeyron, Test
 @testset "SAFT models" begin
     T = 298.15
     V = 1e-4
-
+    @printline
     @testset "ogSAFT" begin
         system = ogSAFT(["water","ethylene glycol"])
         z = [0.5, 0.5]
@@ -112,9 +112,11 @@ using Clapeyron, Test
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.07550931466871749 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V_γMie, T, z) ≈ -0.8205840455850311 rtol = 1e-6
     end
+    @printline
 end
 
 @testset "Cubic models" begin
+    @printline
     T = 333.15
     V = 1e-3
     p = 1e5
@@ -254,9 +256,11 @@ end
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.669085674824878 rtol = 1e-6
         end
     end
+    @printline
 end
 
 @testset "Activity models" begin
+    @printline
     T = 333.15
     p = 1e5
     z = [0.5,0.5]
@@ -300,13 +304,14 @@ end
         system = COSMOSACdsp(["water","ethanol"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.4398951117248127 rtol = 1e-6
     end
+    @printline
 end
 
 @testset "Ideal models" begin
     T = 298.15
     V = 1e-4
     z = [1.]
-
+    @printline
     @testset "Joback" begin
         system = JobackIdeal(["hexane"])
         @test Clapeyron.C_p(system,298.15) ≈ 143.22076150138616 rtol = 1e-6
@@ -329,12 +334,13 @@ end
         system = MonomerIdeal(["hexane"])
         @test Clapeyron.a_ideal(system,V,T,z) ≈ -20.368750666236373 rtol = 1e-6
     end
+    @printline
 end
 
 @testset "Multi-parameter models" begin
     T = 298.15
     V = 1e-4
-
+    @printline
     @testset "IAPWS95" begin
         z = [1.]
         system = IAPWS95()
@@ -359,6 +365,7 @@ end
         @test Clapeyron.a_ideal(system, V, T, z) ≈ 3.1135835641766594 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T, z) ≈ -1.1706377677539772 rtol = 1e-6
     end
+    @printline
 end
 
 @testset "SPUNG models" begin

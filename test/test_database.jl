@@ -3,7 +3,8 @@ using Clapeyron, Test
 @testset "database_lookup" begin
     params1 = Clapeyron.getparams(["water", "methanol"], ["SAFT/PCSAFT"],return_sites=false)
     @test haskey(params1, "sigma")
-
+    
+    @printline
     # The rest of the test will be conducted with a custom dataset in the test_csvs directory.
     testspecies = ["sp1", "sp2", "sp3", "sp4", "sp5"]
 
