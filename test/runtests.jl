@@ -1,7 +1,7 @@
-using Clapeyron, Test, Unitful , Printf
+using Clapeyron, Test, Unitful
 
 t1 = @elapsed using Clapeyron
-@info @sprintf("Loading Clapeyron took %.1f seconds", t1)
+@info "Loading Clapeyron took $(round(t1,digits = 2)) seconds"
 
 macro printline()  # useful in hunting for where tests get stuck
     file = split(string(__source__.file), "/")[end]
