@@ -1,5 +1,7 @@
 using Clapeyron, Test
 
+@printline
+
 struct TestModel <: EoSModel end
 
 function Clapeyron.eos(model::TestModel,V,T,z)
