@@ -28,7 +28,8 @@ end
 
 _gerg_asymetric_mix_rule(xi, xj, b) = b * (xi + xj) / (xi * b^2 + xj)
 
-#ith_index(pv::PackedVofV,i) = @inbounds begin (pv.p[i]):(pv.p[i+1]-1) end
+ith_index(pv::PackedVofV,i) = @inbounds begin (pv.p[i]):(pv.p[i+1]-1) end
+
 @inline function ith_index(pol_i,exp_i,i) 
     @inbounds begin 
         kall_1::Int = pol_i[i]
@@ -41,11 +42,11 @@ _gerg_asymetric_mix_rule(xi, xj, b) = b * (xi + xj) / (xi * b^2 + xj)
         kmid = kall_1+divider
         k1 = kall_1:(kmid - 1)
         k2 = kmid:(kall_end -1)
-        kexp = kall_1:(kexp_end-1)
+        kexp = kexp_1:(kexp_end-1)
         return k1,k2,kexp
     end
-
 end
+
 function _T_scale(model::MultiFluidModel,z=SA[1.],Σz = sum(z))
     Tc = model.properties.Tc.values
     #isone(length(z)) && return only(Tc) 
@@ -126,15 +127,15 @@ function _fr1(model::MultiFluidModel,δ,τ,z)
     res = _0
     n  = model.single.n.values
     c = model.single.c.values
-    kall = n.p
-    kexp = c.p
+    k_all = n.p
+    k_exp = c.p
     nᵢ = n.v
     dᵢ = model.single.d.values.v
     tᵢ = model.single.t.values.v
     cᵢ = c.v
     @inbounds for i ∈ @comps
         ai = _0
-        k1,k2,kexp = ith_index(kall,kexp,i)
+        k1,k2,kexp = ith_index(k_all,k_exp,i)
         for k ∈ k1
             ai += nᵢ[k]*(δ^dᵢ[k])*(τ^tᵢ[k])
         end
@@ -156,8 +157,8 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
     n = model.pair.nij.values.storage
     η = model.pair.eta_ij.values.storage
     rows = rowvals(F)
-    kall = n.p
-    kexp = η.p
+    k_all = n.p
+    k_exp = η.p
     nᵢⱼ = n.v
     tᵢⱼ = model.pair.tij.values.storage.v
     dᵢⱼ = model.pair.dij.values.storage.v
@@ -170,7 +171,7 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
             i = rows[ii]
             Fᵢⱼ= Fij[ii]
             aij = _0
-            k1,k2,kexp = ith_index(kall,kexp,ii)
+            k1,k2,kexp = ith_index(k_all,k_exp,ii)
             for k ∈ k1
                 aij += nᵢⱼ[k]*(δ^(dᵢⱼ[k]))*(τ^(tᵢⱼ[k]))
             end
