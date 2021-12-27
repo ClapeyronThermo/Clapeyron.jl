@@ -1,4 +1,4 @@
-using Clapeyron, Test, Unitful
+using Clapeyron, Test, Unitful , Printf
 
 t1 = @elapsed using Clapeyron
 @info @sprintf("Loading Clapeyron took %.1f seconds", t1)
