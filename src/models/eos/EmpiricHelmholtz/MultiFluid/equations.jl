@@ -175,9 +175,9 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
             for k ∈ k1
                 aij += nᵢⱼ[k]*(δ^(dᵢⱼ[k]))*(τ^(tᵢⱼ[k]))
             end
-            for (k,_k) ∈ zip(k2,kexp)
+            for (k,k_) ∈ zip(k2,kexp)
                 aij += nᵢⱼ[k]*(δ^(dᵢⱼ[k]))*(τ^(tᵢⱼ[k]))*
-                exp(-ηᵢⱼ[_k]*(δ - εᵢⱼ[_k])^2 - βᵢⱼ[_k]*(δ -γᵢⱼ[_k]))
+                exp(-ηᵢⱼ[k_]*(δ - εᵢⱼ[k_])^2 - βᵢⱼ[k_]*(δ -γᵢⱼ[k_]))
             end
            res +=z[i]*z[j]*Fᵢⱼ*aij
         end
