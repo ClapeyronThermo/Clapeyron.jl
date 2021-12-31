@@ -199,17 +199,35 @@ end
 #this is technically an unsafe extension.
 function _v_scale(model::LJRef,z=SA[1.0])
     σᵢᵢ = model.params.sigma.diagvalues
-    val = sum(z[i]*σᵢᵢ[i]^3 for i in 1:length(z))
+    val = N_A*sum(z[i]*σᵢᵢ[i]^3 for i in 1:length(z))
     return val
 end
 
 function T_scale(model::LJRef,z=SA[1.0])
-    ϵ = model.params.epsilon.diagvalues
-    return prod(ϵ[i]^z[i] for i in 1:length(z))^(1/sum(z))
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+
+    σϵ_mix = zero(eltype(z))
+    σ_mix = zero(eltype(z))
+    comps = length(model)
+    for i ∈ 1:comps
+        zi = z[i]
+        zii = zi*zi
+        σ3 = σ[i,i]^3
+        σϵ_mix += ziix*σ3*ϵ[i,i]
+        σ_mix += zii*σ3
+        for j ∈ 1:(i-1)
+            σ3ij = σ[i,j]^3
+            zij = zi*z[j]
+            σϵ_mix += 2*zij*σ3ij*ϵ[i,j]
+            σ_mix += 2*zij*σ3ij*ϵ[i,j]
+        end
+    end
+    return σϵ_mix/σ_mix
 end
 
 function lb_volume(model::LJRef, z = SA[1.0])
-    val = π/6*N_A*_v_scale(model,z)
+    val = π/6*_v_scale(model,z)
     return val
 end
 
@@ -218,7 +236,7 @@ function eos(model::LJRef,V,T,z = SA[1.0])
     ρ = Σz/V
     α0 = _f0(model,ρ,T,Σz)
     τ = 1.32/(T/T_scale(model,z))
-    δ = (ρ*N_A*_v_scale(model,z)/Σz)/0.31
+    δ = (ρ*_v_scale(model,z)/Σz)/0.31
     αr =  _fr(model,δ,τ)
     x1 = R̄*T*Σz*αr 
     x2 =  R̄*T*α0
@@ -237,7 +255,7 @@ function a_res(model::LJRef,V,T,z = SA[1.0])
     ρ = Σz/V
     α0 = _f0(model,ρ,T,Σz)
     τ = 1.32/(T/T_scale(model,z))
-    δ = (ρ*N_A*_v_scale(model,z)/Σz)/0.31
+    δ = (ρ*_v_scale(model,z)/Σz)/0.31
     return  _fr(model,δ,τ)
 end
 
@@ -246,7 +264,7 @@ function eos_res(model::LJRef,V,T,z = SA[1.0])
     ρ = Σz/V
     α0 = _f0(model,ρ,T,Σz)
     τ = 1.32/(T/T_scale(model,z))
-    δ = (ρ*N_A*_v_scale(model,z)/Σz)/0.31
+    δ = (ρ*_v_scale(model,z)/Σz)/0.31
     αr =  _fr(model,δ,τ)
     return R̄*T*Σz*αr 
 end
@@ -290,7 +308,7 @@ function x0_sat_pure(model::LJRef,T)
 end
 
 function p_scale(model::LJRef,z = SA[1.0])
-    rhoc = 1/(N_A*_v_scale(model,z))
+    rhoc = 1/(_v_scale(model,z))
     Tc = T_scale(model,z)
     return R̄*Tc*rhoc
 end
