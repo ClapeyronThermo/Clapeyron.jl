@@ -370,7 +370,7 @@ end
         system = LJRef(["methane"])
         T = 1.051*Clapeyron.T_scale(system)
         p = 0.035*Clapeyron.p_scale(system)
-        V = Clapeyron.N_A*Clapeyron._v_scale(system)/0.673
+        V = Clapeyron._v_scale(system)/0.673
         @test Clapeyron.a_ideal(system, V, T) ≈ 9.282222884866785 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T) ≈ -2.244730279521925 rtol = 1e-6
     end
