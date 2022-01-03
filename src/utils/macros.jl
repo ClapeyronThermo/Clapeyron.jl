@@ -12,22 +12,7 @@ function arbitraryparam(params)
      return fieldnames(paramstype)[idx] |> z->getfield(params,z)
 end
 
-"""
-    @comps
 
-This macro is an alias to
-
-    model.icomponents
-
-The caveat is that `model` has to exist in the local namespace.
-`model` is expected to be an EoSModel type that contains the `icomponents` field.
-`icomponents` is an iterator that goes through all component indices.
-"""
-macro comps()
-    return quote
-        1:length(model)
-    end |> esc
-end
 
 """
     @groups
@@ -98,25 +83,6 @@ macro f(func, args...)
 end
 
 
-"""
-    @nan(function_call,default=NaN)
-
-Wraps the function in a `try-catch` block, and if a `DomainError` or `DivideError` is raised, then returns `default`.
-for better results, its best to generate the default result beforehand
-"""
-macro nan(Base.@nospecialize(fcall),default = nothing)
-    e = gensym(:error)
-    quote
-      try $fcall
-      catch $e
-        if $e isa Union{DomainError,DivideError}
-          $default
-        else
-          rethrow($e)
-        end
-      end
-    end |> esc
-  end
 
 """
     @newmodelgc modelname parent paramstype
@@ -240,7 +206,7 @@ macro newmodelsimple(name, parent, paramstype)
     end |> esc
 end
 
-const IDEALTYPE = Union{T,Type{T}} where T<:IdealModel
+const IDEALTYPE = Union{T,Type{T}} where T<:EoSModel
 
 function (::Type{model})(params::EoSParam,
         groups::GroupParam,
@@ -307,9 +273,9 @@ function (::Type{model})(params::EoSParam,
     #With sites out of the way, this is a simplemodel, no need to initialize the ideal model
     #if there isnt any params, just put empty values.
     if length(fieldnames(typeof(params))) > 0
-    arbparam = arbitraryparam(params)
-    components = arbparam.components
-    icomponents = 1:length(components)
+        arbparam = arbitraryparam(params)
+        components = arbparam.components
+        icomponents = 1:length(components)
     else
         components = String[]
         icomponents =1:0
@@ -317,7 +283,7 @@ function (::Type{model})(params::EoSParam,
     return model(components,icomponents,params,references)
 end
 
-function init_model(idealmodel::IdealModel,components,userlocations,verbose)
+function init_model(idealmodel::EoSModel,components,userlocations,verbose)
     return idealmodel
 end
 
@@ -325,11 +291,7 @@ function init_model(::Nothing,components,userlocations,verbose)
     return nothing
 end
 
-function init_model(idealmodel::Type{<:IdealModel},components,userlocations,verbose)
-    verbose && @info("""Now creating ideal model:
-    $idealmodel""")
-    return idealmodel(components;userlocations,verbose)
-end
+
 """
     @registermodel(model)
 
