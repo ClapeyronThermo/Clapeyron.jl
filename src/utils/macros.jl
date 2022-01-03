@@ -83,7 +83,6 @@ macro f(func, args...)
 end
 
 
-
 """
     @newmodelgc modelname parent paramstype
 
