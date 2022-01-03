@@ -18,6 +18,7 @@ end
 #z is the original feed composition, x is a matrix with molar fractions, n is a matrix with molar amounts
 
 function tp_flash_impl(model::EoSModel, p, T, n, method::RRTPFlash)
+    
     if method.K0===nothing
         pure = split_model.(model)
         crit = crit_pure.(pure)

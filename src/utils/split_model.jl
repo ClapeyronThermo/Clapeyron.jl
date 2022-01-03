@@ -122,7 +122,6 @@ julia> split_model(gerg2)
 """
 function split_model end
 
-
 """
     is_splittable(model)::Bool
 
@@ -159,25 +158,11 @@ function split_model(param::UnitRange{Int},splitter = ([i] for i ∈ 1:length(pa
     return [1:length(i) for i ∈ splitter]
 end
 
-
-
 #this conversion is lossy, as interaction between two or more components are lost.
 #also, this conversion stores the site values for other components. (those are not used)
 function split_model(param::AssocParam{T},
     splitter = split_model(1:length(param.components))) where T
-    function generator(I)     
-        _value  = each_split_model(param.values,I)
-     
-        return AssocParam{T}(
-                param.name,
-                param.components[I],
-                _value,
-                param.sites[I],
-                param.sourcecsvs,
-                param.sources
-                )
-        end
-    return [generator(I) for I ∈ splitter]
+    return [each_split_model(param,i) for i ∈ splitter]
 end
 
 #this param has a defined split form

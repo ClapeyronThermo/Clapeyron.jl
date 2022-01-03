@@ -96,7 +96,6 @@ function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
     return -(∂²A∂V∂T - ∂²A∂V²*((T*∂²A∂T² + V*∂²A∂V∂T) / (T*∂²A∂V∂T + V*∂²A∂V²)))^-1
 end
 
-
 """
     second_virial_coefficient(model::EoSModel, T, z=SA[1.])
 
