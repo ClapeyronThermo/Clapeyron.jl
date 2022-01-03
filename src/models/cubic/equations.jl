@@ -30,6 +30,8 @@ function second_virial_coefficient(model::ABCubicModel,T,z = SA[1.0])
 end
 
 function lb_volume(model::CubicModel,z = SA[1.0])
+    V = 1e-5
+    T = 0.
     n = sum(z)
     invn = one(n)/n
     b = model.params.b.values

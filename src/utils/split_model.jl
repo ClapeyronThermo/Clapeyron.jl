@@ -91,7 +91,7 @@ function each_split_model(param::PairParameter,I)
     return res
 end
 
-function each_split_model(AssocParam,I)     
+function each_split_model(param::AssocParam,I)     
     _value  = each_split_model(param.values,I)
     return AssocParam(
             param.name,

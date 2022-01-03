@@ -213,7 +213,7 @@ function T_scale(model::LJRef,z=SA[1.0])
         zi = z[i]
         zii = zi*zi
         σ3 = σ[i,i]^3
-        σϵ_mix += ziix*σ3*ϵ[i,i]
+        σϵ_mix += zii*σ3*ϵ[i,i]
         σ_mix += zii*σ3
         for j ∈ 1:(i-1)
             σ3ij = σ[i,j]^3
