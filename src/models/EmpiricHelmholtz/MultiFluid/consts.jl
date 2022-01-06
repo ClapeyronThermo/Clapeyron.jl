@@ -623,15 +623,22 @@ function getnames_gerg2008(components::Vector{String})
     comps = normalisestring.(components)
     names = normalisestring.(GERG2008_names)
     @assert allunique(comps)
-    res = zeros(Int,length(comps))
-    for (i,comp) in pairs(comps)
-        idx = findfirst(==(comp),names)
-        idx === nothing && continue
-        res[i] = idx
-    end
-    if any(iszero,res)
-        idx = findfirst(iszero,res)
+    res = indexin(comps,names)
+    if any(isnothing,res)
+        idx = findfirst(isnothing,res)
         throw(error("component $(components[idx]) could not be found"))
     end
     return res
 end
+
+function f(s)
+    state = zeros(Int, 2)
+    state = state
+    code = Meta.parse.(s)
+    for c in code
+        println(@macroexpand(@eval($c))) 
+        
+    end
+    return state
+end
+
