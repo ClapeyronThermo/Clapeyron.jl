@@ -72,13 +72,8 @@ as long as the first four parameters in the function are written exactly as abov
 
 """
 macro f(func, args...)
-    f = func
-    model = :model
-    V = :V
-    T = :T
-    z = :z
     quote
-        $f($model,$V,$T,$z,$(args...))
+        $func(model,V,T,z,$(args...))
     end |> esc
 end
 
