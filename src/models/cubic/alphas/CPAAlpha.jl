@@ -15,10 +15,3 @@ function CPAAlpha(components::Vector{String}; userlocations::Vector{String}=Stri
     return model
 end
 
-function α_function(model::CubicModel,V,T,z,alpha_model::CPAAlphaModel)
-    Tc = model.params.Tc.values
-    Tr = @. T/Tc
-    c1  = alpha_model.params.c1.values
-    α  = @. (1+c1*(1-√(Tr)))^2
-    return α
-end
