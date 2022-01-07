@@ -102,7 +102,7 @@ using StaticArrays
     function x_sol(res::NLSolvers.ConvergenceInfo{<:Any, <:Any, <:NLSolvers.OptimizationOptions})
         return res.info.minimizer
     end
-
+    include("ad.jl")
     include("nanmath.jl")
     include("nlsolve.jl")
     include("fixpoint/fixpoint.jl")

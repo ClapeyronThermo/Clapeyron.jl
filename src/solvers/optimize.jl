@@ -37,7 +37,7 @@ end
 
 function ADScalarObjective(f,x0::Number)
     function g(x)
-        return ForwardDiff.derivative(f,x)
+        return derivative(f,x)
     end
 
     function fg(∂fx,x)
@@ -51,7 +51,7 @@ function ADScalarObjective(f,x0::Number)
     end
 
     function h(∂2fx,x)
-        ∂2fx = ForwardDiff.derivative(g,x)
+        ∂2fx = derivative(g,x)
         return ∂2fx
     end
 

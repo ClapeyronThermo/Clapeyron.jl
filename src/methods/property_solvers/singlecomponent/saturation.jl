@@ -97,10 +97,9 @@ function sat_pure(model::EoSModel,V0,f!,T,method =LineSearch(Newton()))
 end
 
 function Obj_Sat(model::EoSModel, F, T, V_l, V_v,scales)
-    fun(x) = eos(model, x[2], T,SA[x[1]])
-    df(x)  = ForwardDiff.gradient(fun,x)
-    df_l = df(SA[one(V_l*T),V_l*one(T)])
-    df_v = df(SA[one(V_v*T),V_v*one(T)])
+    fun(_z1,_V) = eos(model, _V, T,SA[_z1])
+    df_l = Solvers.gradient2(fun,one(V_l*T),V_l*one(T))
+    df_v = Solvers.gradient2(fun,one(V_v*T),V_v*one(T))
     (p_scale,μ_scale) = scales
     #T̄ = T/T_scale(model)
     F[1] = (df_l[2]-df_v[2])*p_scale

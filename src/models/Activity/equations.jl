@@ -66,7 +66,7 @@ end
 
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
-    df(x) = ForwardDiff.derivative(f,x)
+    df(x) = Solvers.derivative(f,x)
     return -df(T)*T^2
 end
 
@@ -77,7 +77,7 @@ end
 
 function mixing(model::ActivityModel,p,T,z,::typeof(entropy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
-    df(x) = ForwardDiff.derivative(f,x)
+    df(x) = Solvers.derivative(f,x)
     _f,_df = Solvers.f∂f(f,T)
     return -_df*T-_f
 end
