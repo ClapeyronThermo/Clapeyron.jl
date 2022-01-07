@@ -18,6 +18,12 @@ end
 function α_function(model::CubicModel,V,T,z,alpha_model::PRAlphaModel)
     Tc = model.params.Tc.values
     ω  = alpha_model.params.acentricfactor.values
-    α = @. (1+(0.37464+1.54226*ω-0.26992*ω^2)*(1-√(T/Tc)))^2
+    α = zeros(typeof(T),length(Tc))
+    for i in @comps
+        ωi = ω[i]
+        Tr = T/Tc[i]
+        m = evalpoly(ωi,(0.37464,1.54226,-0.26992))
+        α[i] = (1+m*(1-√(Tr)))^2
+    end
     return α
 end

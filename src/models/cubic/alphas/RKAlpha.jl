@@ -16,7 +16,11 @@ end
 
 function α_function(model::CubicModel,V,T,z,alpha_model::RKAlphaModel)
     Tc = model.params.Tc.values
-    α = @. 1 /√(T/Tc)
+    α = zeros(typeof(T),length(Tc))
+    for i in @comps
+        Tr = T/Tc[i]
+        α[i] = 1 /√(Tr)
+    end
     return α
 end
 
