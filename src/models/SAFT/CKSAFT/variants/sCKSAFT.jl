@@ -34,9 +34,9 @@ function sCKSAFT(components;
     return model
 end
 
-function x0_crit_pure(model::sCKSAFTModel,z=SA[1.0])
-    lb_v = lb_volume(model,z)
-    res = [5.0, log10(lb_v/0.3)]
+function x0_crit_pure(model::sCKSAFTModel)
+    lb_v = lb_volume(model)
+    res = (5.0, log10(lb_v/0.3))
     return res
 end
 
