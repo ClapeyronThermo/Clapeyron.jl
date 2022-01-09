@@ -35,6 +35,11 @@ using StaticArrays
     end
 
     function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
+        tup = (poly[1],poly[2],poly[3],poly[4])
+        return solve_cubic_eq(tup)
+    end
+    
+    function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
         # copied from PolynomialRoots.jl, adapted to be AD friendly
         # Cubic equation solver for complex polynomial (degree=3)
         # http://en.wikipedia.org/wiki/Cubic_function   Lagrange's method
