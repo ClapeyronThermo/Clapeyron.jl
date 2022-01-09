@@ -70,7 +70,6 @@ end
 
 function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
     lb_v   =lb_volume(model,z)
-    xx = z/sum(z)
     RTp = R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
     sols = Solvers.roots3(_poly)
@@ -85,13 +84,10 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
     vvv = extrema(real.(xx))
     zl,zg = vvv
     vvl,vvg = RTp*zl,RTp*zg
-    #@show _sols[isreal]
-    #@show model.params.b.values
-    #@show sum(isreal)
     if sum(isreal) == 3 #3 roots
         vg = vvg
         _vl = vvl
-        vl = ifelse(_vl>lb_v,_vl,vg)
+        vl = ifelse(_vl>lb_v,_vl,vg) #catch case where solution is unphysical
     elseif  sum(isreal) == 1
         i = findfirst(imagfilter,sols)
         vl = real(sols[i])*RTp
@@ -99,18 +95,15 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
     elseif  sum(isreal) == 0
         #try to use the default volume solver
         V0 = x0_volume(model,p,T,z;phase)
-        v = volume_compress(model,p,T;V0)
+        v = _volume_compress(model,p,T,V0)
         return v
     end
- 
-    #fp(_v) = pressure(model,_v,T,z) - p
-    #@show vl
-    #@show vg
+
     function gibbs(v)
         _df,f =  ∂f(model,v,T,z)
         dv,dt = _df
         if abs((p+dv)/p) > 0.03
-            return Inf
+            return one(dv)/zero(dv)
         else
             return f  +p*v
         end
@@ -119,22 +112,15 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
     if vl ≈ vg
         return vl-c̄
     end
-    if phase == :unknown
-        gg = gibbs(vg-c̄)
-        gl = gibbs(vl-c̄)
-        #@show vg,vl
-        #@show gg,gl
-        return ifelse(gg<gl,vg-c̄,vl-c̄)
-    elseif is_liquid(phase)
+
+    if is_liquid(phase)
         return vl-c̄
     elseif is_vapour(phase)
         return vg-c̄
-    # else
-    #     gg = gibbs(vg)
-    #     gl = gibbs(vl)
-    #     #@show vg,vl
-    #     #@show gg,gl
-    #     return ifelse(gg<gl,vg,vl)
+    else
+        gg = gibbs(vg-c̄)
+        gl = gibbs(vl-c̄)
+        return ifelse(gg<gl,vg-c̄,vl-c̄)
     end
 end
 

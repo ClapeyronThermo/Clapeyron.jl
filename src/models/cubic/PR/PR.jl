@@ -79,16 +79,15 @@ function cubic_poly(model::PRModel,p,T,z)
     k₁ = -B*(3*B+2.0) + A
     k₂ = B-1.0
     k₃ = 1.0
-    return [k₀,k₁,k₂,k₃],c
+    return (k₀,k₁,k₂,k₃),c
 end
 #=
  (-B2-2(B2+B)+A)
  (-B2-2B2-2B+A)
  (-3B2-2B+A)
 =#
-function a_res(model::PRModel, V, T, z)
-    n = sum(z)
-    ā,b̄,c̄ = cubic_ab(model,V,T,z,n)
+function a_res(model::PRModel, V, T, z,n=sum(z),abc=cubic_ab(model,V,T,z,n))
+    ā,b̄,c̄ = abc
     Δ1 = 1+√2
     Δ2 = 1-√2
     ΔPRΔ = 2*√2
