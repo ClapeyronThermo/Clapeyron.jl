@@ -36,6 +36,7 @@ If the calculation fails, returns  `(NaN, NaN, NaN)`
 """
 function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     T = T*T/T
+    V0 = MVector((V0[1],V0[2]))
     V_lb = lb_volume(model,SA[1.0])
     TYPE = promote_type(typeof(T),typeof(V_lb))
     nan = zero(TYPE)/zero(TYPE)    
@@ -57,6 +58,7 @@ function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
         @error "initial temperature $T greater than critical temperature $T_c. returning NaN"
     else
         V0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
+        V0 = MVector((V0[1],V0[2]))
         converged = try_sat_pure(model,V0,f!,T,result,error_val)   
         if converged
             return result[]
@@ -85,7 +87,7 @@ function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
     # @show dpdvv*Vv0
     # _,dpdvv = p∂p∂V(model,2*Vv0,T,SA[1.0])
     # @show dpdvv*Vv0
-    return [log10(Vl0),log10(Vv0)]
+    return (log10(Vl0),log10(Vv0))
 end
 function sat_pure(model::EoSModel,V0,f!,T,method =LineSearch(Newton()))  
     r = Solvers.nlsolve(f!, V0 ,method )
