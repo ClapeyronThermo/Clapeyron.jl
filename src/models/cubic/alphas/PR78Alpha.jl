@@ -21,11 +21,12 @@ function α_function(model::CubicModel,V,T,z,alpha_model::PR78AlphaModel)
     α = zeros(typeof(T),length(Tc))
     for i in @comps
         ωi = ω[i]
-        m = ifelse(ωi<=0.491,evalpoly(ωi,(37464,1.54226,-0.26992)),evalpoly(ωi,(0.379642,1.487503,-0.164423,-0.016666)))
+        m = ifelse(ωi<=0.491,
+            evalpoly(ωi,(0.37464,1.54226,-0.26992)),
+            evalpoly(ωi,(0.379642,1.487503,-0.164423,-0.016666)))
         Tr = T/Tc[i]
         α[i] = (1+m*(1-√(Tr)))^2
     end
-
     
     return α
 

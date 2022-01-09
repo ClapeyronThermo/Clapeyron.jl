@@ -21,3 +21,16 @@ function α_function(model::CubicModel,V,T,z,alpha_model::SoaveAlpha)
     α = @. (1+(0.480+1.547*ω-0.176*ω^2)*(1-√(T/Tc)))^2
     return α
 end
+
+function α_function(model::CubicModel,V,T,z,alpha_model::PRAlphaModel)
+    Tc = model.params.Tc.values
+    ω  = alpha_model.params.acentricfactor.values
+    α = zeros(typeof(T),length(Tc))
+    for i in @comps
+        ωi = ω[i]
+        Tr = T/Tc[i]
+        m = evalpoly(ωi,(0.480,1.547,-0.176))
+        α[i] = (1+m*(1-√(Tr)))^2
+    end
+    return α
+end
