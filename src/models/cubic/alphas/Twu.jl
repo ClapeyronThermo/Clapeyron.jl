@@ -21,10 +21,17 @@ end
 
 function α_function(model::CubicModel,V,T,z,alpha_model::TwuAlphaModel)
     Tc = model.params.Tc.values
-    M  = alpha_model.params.M.values
-    N  = alpha_model.params.N.values
-    L  = alpha_model.params.L.values
-    Tr = T ./ Tc
-    α = @. Tr^(N*(M-1))*exp(L*(1-Tr^(N*M)))
+    _M  = alpha_model.params.M.values
+    _N  = alpha_model.params.N.values
+    _L  = alpha_model.params.L.values
+    α = zeros(typeof(T),length(Tc))
+    for i in @comps
+        M = _M[i]
+        N = _N[i]
+        L = _L[i]
+        Tr = T/Tc[i]
+        α[i] = Tr^(N*(M-1))*exp(L*(1-Tr^(N*M)))
+    end
     return α
 end
+

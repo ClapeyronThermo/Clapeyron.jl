@@ -28,7 +28,14 @@ function α_function(model::PRModel,V,T,z,alpha_model::BMAlphaModel)
     Tc = model.params.Tc.values
     Tr = @. T/Tc
     ω  = alpha_model.params.acentricfactor.values
-    m  = @. 0.37464+1.54226*ω-0.26992*ω^2
-    α  = @. (Tr>1)*(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2+(Tr<=1)*(1+m*(1-√(Tr)))^2
+    #m  = @. 0.37464+1.54226*ω-0.26992*ω^2
+    #α  = @. (Tr>1)*(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2+(Tr<=1)*(1+m*(1-√(Tr)))^2
+    α = zeros(typeof(T),length(Tc))
+    for i in @comps
+        ωi = ω[i]
+        m = evalpoly(ωi,(0.37464,1.54226,-0.26992))
+        Tr = T/Tc[i]
+        α[i] = ifelse(Tr>1,(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2,(1+m*(1-√(Tr)))^2)
+    end
     return α
 end
