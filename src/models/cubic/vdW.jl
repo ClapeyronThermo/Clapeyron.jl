@@ -79,8 +79,9 @@ end
 
 
 
-function a_res(model::vdWModel, V, T, z,n=sum(z),abc=cubic_ab(model,V,T,z,n))
-    ā,b̄,c̄ = abc
+function a_res(model::vdWModel, V, T, z)
+    n=sum(z)
+    ā,b̄,c̄ = cubic_ab(model,V,T,z,n)
     RT⁻¹ = 1/(R̄*T)
     ρt = (V/n+c̄)^(-1) # translated density
     ρ  = n/V
