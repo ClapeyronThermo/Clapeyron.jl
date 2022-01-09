@@ -86,8 +86,9 @@ end
  (-B2-2B2-2B+A)
  (-3B2-2B+A)
 =#
-function a_res(model::PRModel, V, T, z,n=sum(z),abc=cubic_ab(model,V,T,z,n))
-    ā,b̄,c̄ = abc
+function a_res(model::PRModel, V, T, z)
+    n = sum(z)
+    ā,b̄,c̄ = cubic_ab(model,V,T,z,n)
     Δ1 = 1+√2
     Δ2 = 1-√2
     ΔPRΔ = 2*√2
