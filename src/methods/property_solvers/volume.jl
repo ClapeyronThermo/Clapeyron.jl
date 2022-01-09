@@ -16,9 +16,9 @@ In the liquid root region, the iterations follow `v0 < v[i] < v[i+1] < v(p)`, al
 """
 function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     p,T,V0 = promote(p,T,V0)
-    return volume_compress(model,p,T,z,V0,max_iters)
+    return _volume_compress(model,p,T,z,V0,max_iters)
 end
-function volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(p+T+first(z))
     _nan = _0/_0
     logV0 = log(V0)
@@ -124,29 +124,29 @@ The calculation of both volume roots can be calculated in serial (`threaded=fals
 
 """
 function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
-    return volume(model,p,T,z,phase,threaded)
+    return _volume(model,p,T,z,phase,threaded)
 end
 
-function volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
+function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
 #Threaded version
     TYPE = typeof(p+T+first(z))
     if phase != :unknown
         V0 = x0_volume(model,p,T,z,phase=phase)
-        return volume_compress(model,p,T,z,V0)
+        return _volume_compress(model,p,T,z,V0)
     end
     if threaded     
         Vg0 = x0_volume(model,p,T,z,phase=:v)
         Vl0 = x0_volume(model,p,T,z,phase=:l)
-        _Vg = Threads.@spawn volume_compress(model,$p,$T,$z,$Vg0)
-        _Vl = Threads.@spawn volume_compress(model,$p,$T,$z,$Vl0)
+        _Vg = Threads.@spawn _volume_compress(model,$p,$T,$z,$Vg0)
+        _Vl = Threads.@spawn _volume_compress(model,$p,$T,$z,$Vl0)
          Vg::TYPE = fetch(_Vg)     
          Vl::TYPE = fetch(_Vl)
     else
         Vg0 = x0_volume(model,p,T,z,phase=:v)
         Vl0 = x0_volume(model,p,T,z,phase=:l)
        
-        Vg =  volume_compress(model,p,T,z,Vg0)
-        Vl =  volume_compress(model,p,T,z,Vl0)        
+        Vg =  _volume_compress(model,p,T,z,Vg0)
+        Vl =  _volume_compress(model,p,T,z,Vl0)        
     end
 
     #this catches the supercritical phase as well

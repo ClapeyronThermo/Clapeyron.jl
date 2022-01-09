@@ -85,7 +85,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
     end
     p = -0.25*R̄*T/B
     vl = x0_volume(model,p,T,z,phase=:l)
-    vl = volume_compress(model,p,T,SA[1.0],vl)
+    vl = _volume_compress(model,p,T,SA[1.0],vl)
     #=the basis is that p = RT/v-b - a/v2
     we have a (p,v,T) pair
     and B = 2nd virial coefficient = b-a/RT

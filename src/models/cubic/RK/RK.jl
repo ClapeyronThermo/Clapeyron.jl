@@ -73,13 +73,12 @@ function cubic_poly(model::RKModel,p,T,z)
     A = a*p* RT⁻¹* RT⁻¹
     B = b*p* RT⁻¹
     _1 = one(a)
-    return [-A*B, -B*(B+_1) + A, -_1, _1],c
+    return (-A*B, -B*(B+_1) + A, -_1, _1),c
 end
 
 
-function a_res(model::RKModel, V, T, z)
-    n = sum(z)
-    ā,b̄,c̄ = cubic_ab(model,V,T,z,n)
+function a_res(model::RKModel, V, T, z,n=sum(z),abc=cubic_ab(model,V,T,z,n))
+    ā,b̄,c̄ = abc
     ρt = (V/n+c̄)^(-1) # translated density
     ρ  = n/V
     RT⁻¹ = 1/(R̄*T)
