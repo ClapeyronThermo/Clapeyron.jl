@@ -2,13 +2,13 @@
 
 struct ∂Tag end
 
-function derivative(f::F, x::R) where {F,R<:Number}
+@inline function derivative(f::F, x::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(∂Tag(), R))
     out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),))))
     return ForwardDiff.extract_derivative(T, out)
 end
 
-function gradient2(f::F, x1::R,x2::R) where {F,R<:Number}
+@inline function gradient2(f::F, x1::R,x2::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(∂Tag(), R))
     _1 = one(R)
     _0 = zero(R)
@@ -19,7 +19,7 @@ function gradient2(f::F, x1::R,x2::R) where {F,R<:Number}
     return SVector(∂out.values)
 end
 
-function gradient2(f::F,x1::R1,x2::R2) where{F,R1<:Number,R2<:Number}
+function gradient2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)
     return gradient2(f,y1,y2)
 end
@@ -29,10 +29,10 @@ end
 
 returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
-function f∂f(f::F, x::R) where {F,R<:Number}
+@inline function f∂f(f::F, x::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(∂Tag(), R))
     out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),))))
-    return ForwardDiff.value(out), only(ForwardDiff.partials(out).values)
+    return ForwardDiff.value(out),  ForwardDiff.extract_derivative(T, out)
 end
 
 """
@@ -40,7 +40,7 @@ end
 
 returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
-function f∂f∂2f(f::F,x::R) where {F,R<:Number}
+@inline function f∂f∂2f(f::F,x::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(∂Tag(), R))
     out = ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),)))
     _f,_df = f∂f(f,out)
@@ -55,12 +55,12 @@ end
 
 returns f and ∇f(x),using `ForwardDiff.jl`
 """
-function fgradf2(f::F,x1::R1,x2::R2) where{F,R1<:Number,R2<:Number}
+function fgradf2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)
     return fgradf2(f,y1,y2)
 end
 
-function fgradf2(f::F,x1::R,x2::R) where{F,R<:Number}
+@inline function fgradf2(f::F,x1::R,x2::R) where{F,R<:Real}
     T = typeof(ForwardDiff.Tag(∂Tag(), R))
     _1 = one(R)
     _0 = zero(R)
@@ -72,7 +72,7 @@ function fgradf2(f::F,x1::R,x2::R) where{F,R<:Number}
 end
 
 #Manual implementation of an hyperdual.
-function ∂2(f::F,x1::R,x2::R) where {F,R<:Number}
+@inline function ∂2(f::F,x1::R,x2::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(∂Tag(), R))
     _1 = one(R)
     _0 = zero(R)
@@ -88,7 +88,7 @@ function ∂2(f::F,x1::R,x2::R) where {F,R<:Number}
     return (fx,df,d2f)
 end
 
-function ∂2(f::F,x1::R1,x2::R2) where{F,R1<:Number,R2<:Number}
+function ∂2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)
     return ∂2(f,y1,y2)
 end
