@@ -84,6 +84,7 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
     vvv = extrema(real.(xx))
     zl,zg = vvv
     vvl,vvg = RTp*zl,RTp*zg
+    err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if sum(isreal) == 3 #3 roots
         vg = vvg
         _vl = vvl
@@ -96,6 +97,7 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
         #try to use the default volume solver
         V0 = x0_volume(model,p,T,z;phase)
         v = _volume_compress(model,p,T,V0)
+        isnan(v) && err()
         return v
     end
 
