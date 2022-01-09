@@ -140,6 +140,8 @@ function enthalpy_vap(model::EoSModel, T)
     return H_vap
 end
 
+
+#=
 function choose_p(p1,p2)
     if p1 > 0 && p2 > 0
         p = (p1+p2)/2
@@ -152,7 +154,6 @@ function choose_p(p1,p2)
     end
     return p
 end
-#=
     an alternative algorithm for saturation pressure.
         
 """
