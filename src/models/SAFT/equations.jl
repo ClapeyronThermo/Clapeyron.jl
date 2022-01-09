@@ -5,9 +5,9 @@ function lb_volume(model::SAFTModel, z = SA[1.0])
     return val
 end
 
-function x0_crit_pure(model::SAFTModel,z=SA[1.0])
-    lb_v = lb_volume(model,z)
-    [2.0, log10(lb_v/0.3)]
+function x0_crit_pure(model::SAFTModel)
+    lb_v = lb_volume(model)
+    (2.0, log10(lb_v/0.3))
 end
 
 function T_scale(model::SAFTModel,z=SA[1.0])

@@ -61,7 +61,7 @@ function lb_volume end
 """
     x0_sat_pure(model::EoSModel,T,z=SA[1.0])
 
-Returns a 2-element vector corresponding to `[log10(Vₗ),log10(Vᵥ)]`, where Vₗ and Vᵥ are the liquid and vapor initial guesses. 
+Returns a 2-tuple corresponding to `(log10(Vₗ),log10(Vᵥ))`, where Vₗ and Vᵥ are the liquid and vapor initial guesses. 
 Used in [`sat_pure`](@ref).
 """
 function x0_sat_pure(model,T,z=SA[1.0])
@@ -81,7 +81,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
     #that means that we are way over the critical point
     if -2B < lb_v 
         _nan = _0/_0
-        return [_nan,_nan]
+        return (_nan,_nan)
     end
     p = -0.25*R̄*T/B
     vl = x0_volume(model,p,T,z,phase=:l)
@@ -111,7 +111,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
         #old strategy
         x0l = 4*lb_v
         x0v = -2*B + 2*lb_v
-        return [log10(x0l),log10(x0v)]
+        return (log10(x0l),log10(x0v))
     end
     Δsqrt = sqrt(Δ)
     b1 = 0.5*(-_b + Δsqrt)
@@ -135,7 +135,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
     #Tr(vdW approx) > Tr(model)
     if Tr >= 1
         _nan = _0/_0
-        return [_nan,_nan]
+        return (_nan,_nan)
     end
     # if b1/b2 < -0.95, then T is near Tc.
     #if b<lb_v then we are in trouble 
@@ -143,12 +143,12 @@ function x0_sat_pure(model,T,z=SA[1.0])
     if (b1/b2 < -0.95) | (b<lb_v) | (Tr>0.99)
         x0l = 4*lb_v
         x0v = -2*B #gas volume as high as possible
-        return [log10(x0l),log10(x0v)]   
+        return (log10(x0l),log10(x0v))   
     end
     Vl0,Vv0 = vdw_x0_xat_pure(T,Tc,Pc,Vc)
     x0l = min(Vl0,vl)
     x0v = min(1e4*one(Vv0),Vv0) #cutoff volume
-    return [log10(x0l),log10(x0v)] 
+    return (log10(x0l),log10(x0v)) 
 end
 
 function vdw_x0_xat_pure(T,T_c,P_c,V_c)
@@ -186,16 +186,16 @@ function scale_sat_pure(model,z=SA[1.0])
 end
 
 """
-    x0_crit_pure(model::SAFTModel,z=SA[1.0])
+    x0_crit_pure(model::SAFTModel)
 
-Returns a 2-element vector corresponding to
-    `[k,log10(Vc0)]`, where `k` is `Tc0/T_scale(model,z)`
+Returns a 2-tuple corresponding to
+    `(k,log10(Vc0))`, where `k` is `Tc0/T_scale(model,z)`
 """
 function x0_crit_pure end
 
-function x0_crit_pure(model::EoSModel,z=SA[1.0])
-    lb_v = lb_volume(model,z)
-    [1.5, log10(lb_v/0.3)]
+function x0_crit_pure(model::EoSModel)
+    lb_v = lb_volume(model)
+    (1.5, log10(lb_v/0.3))
 end
 
 """

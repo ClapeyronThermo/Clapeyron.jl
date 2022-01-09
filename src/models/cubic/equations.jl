@@ -63,9 +63,9 @@ function p_scale(model::CubicModel,z=SA[1.0])
     return a/ (b^2) # Pc mean
 end
 
-function x0_crit_pure(model::CubicModel,z=SA[1.0])
+function x0_crit_pure(model::CubicModel)
     lb_v = lb_volume(model,z)
-    [1.0, log10(lb_v/0.3)]
+    (1.0, log10(lb_v/0.3))
 end
 
 function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
