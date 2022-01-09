@@ -11,7 +11,8 @@ function crit_pure(model::EoSModel,x0=nothing)
     if x0 === nothing
         x0 = x0_crit_pure(model)
     end
-
+    x0 = MVector((x0[1],x0[2]))
+    #x0 = [x0[1],x0[2]]
     solver_res = Solvers.nlsolve(f!, x0)
     #print(solver_res)
     r  = Solvers.x_sol(solver_res)
