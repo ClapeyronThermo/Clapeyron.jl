@@ -65,16 +65,14 @@ function Obj_bubble_temperature(model::ActivityModel,T,p,x)
 end
 
 function mixing(model::ActivityModel,p,T,z,property)
+    g(x) = excess_gibbs_free_energy(model,p,x,z)/x
+    dg(x) = ForwardDiff.derivative(g,x)
     if property==enthalpy
-        g(x) = excess_gibbs_free_energy(model,p,x,z)/x
-        dg(x) = ForwardDiff.derivative(g,x)
         return -dg(T)*T^2
     elseif property==gibbs_free_energy
         x = z./sum(z)
         return excess_gibbs_free_energy(model,p,T,z)+dot(z,log.(x))*R̄*T
     elseif property==entropy
-        g(x) = excess_gibbs_free_energy(model,p,x,z)/x
-        dg(x) = ForwardDiff.derivative(g,x)
         return -dg(T)*T-g(T)
     end
 end
