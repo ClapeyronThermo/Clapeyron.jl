@@ -64,7 +64,7 @@ function p_scale(model::CubicModel,z=SA[1.0])
 end
 
 function x0_crit_pure(model::CubicModel)
-    lb_v = lb_volume(model,z)
+    lb_v = lb_volume(model)
     (1.0, log10(lb_v/0.3))
 end
 
