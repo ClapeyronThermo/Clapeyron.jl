@@ -85,7 +85,7 @@ using StaticArrays
     end
 
     function roots3(a,b,c,d) 
-        x = SVector(a,b,c,d)
+        x = (a,b,c,d)
         return roots3(x)
     end
 

@@ -49,9 +49,8 @@ struct DeivVecTag end
 function jacvec!(dy, f, x, v,
                       cache1 = ForwardDiff.Dual{DeivVecTag}.(x, v),
                       cache2 = ForwardDiff.Dual{DeivVecTag}.(x, v))
-    cache1 .= Dual{DeivVecTag}.(x, v)
     f(cache2,cache1)
-    dy .= partials.(cache2, 1)
+    dy .= ForwardDiff.partials.(cache2, 1)
 end
 
 function jacvec(f, x, v)
