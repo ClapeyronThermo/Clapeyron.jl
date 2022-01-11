@@ -19,7 +19,7 @@ function translation(model::CubicModel,V,T,z,translation_model::RackettTranslati
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = translation_model.params.Vc.values
-    c = zeros(typeof(Tc),length(Tc))
+    c = zeros(eltype(Tc),length(Tc))
     for i ∈ @comps
         Tci = Tc[i]
         Pci = Pc[i]
