@@ -35,7 +35,8 @@ If the calculation fails, returns  `(NaN, NaN, NaN)`
 `V0` is `[log10(Vₗ₀),log10(Vᵥ₀)]` , where `Vₗ₀`  and `Vᵥ₀` are initial guesses for the liquid and vapour volumes.
 """
 function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
-    T = T*T/T
+    !isone(length(model)) && throw(error("$model have more than one component."))
+     T = T*T/T
     V0 = MVector((V0[1],V0[2]))
     V_lb = lb_volume(model,SA[1.0])
     TYPE = promote_type(typeof(T),typeof(V_lb))

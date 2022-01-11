@@ -6,6 +6,7 @@ Calculates the critical point of a single component modelled by `model`.
 Returns `(Tc, pc, Vc)` where `Tc` is the critical temperature (in K), `pc` is the critical pressure (in Pa) and `Vc` is the critical volume (in  m³)
 """
 function crit_pure(model::EoSModel,x0=nothing)
+    !isone(length(model)) && throw(error("$model have more than one component."))
     T̄  = T_scale(model)
     f! = (F,x) -> obj_crit(model, F, x[1]*T̄, exp10(x[2]))
     if x0 === nothing
