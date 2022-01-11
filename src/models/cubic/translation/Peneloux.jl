@@ -20,4 +20,13 @@ function translation(model::CubicModel,V,T,z,translation_model::PenelouxTranslat
     Pc = model.params.Pc.values
     Vc = translation_model.params.Vc.values
     return @. -0.252*R̄*Tc/Pc*(1.5448*Pc*Vc/(R̄*Tc)-0.4024)
+    c = zeros(typeof(Tc),length(Tc))
+    for i ∈ @comps
+        Tci = Tc[i]
+        Pci = Pc[i]
+        RT = Tci*R̄
+        Zc = Pci*Vc/RT
+        c[i] = -0.252*RT/Pci*(1.5448*Zc-0.4024)
+    end
+    return c
 end

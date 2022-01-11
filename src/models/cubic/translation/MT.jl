@@ -19,10 +19,17 @@ function translation(model::CubicModel,V,T,z,translation_model::MTTranslation)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     ω  = translation_model.params.acentricfactor.values
-    Zc = @. 0.289-0.0701*ω-0.0207*ω^2
-    β  = @. -10.2447-28.6312*ω
-    t0 = @. R̄*Tc/Pc*(-0.014471+0.067498*ω-0.084852*ω^2+0.067298*ω^3-0.017366*ω^4)
-    tc = @. R̄*Tc/Pc*(0.3074-Zc)
-    Tr = @. T/Tc
-    return @. t0+(tc-t0)*exp(β*abs(1-Tr))
+    c = zeros(typeof(T),length(Tc))
+    for i ∈ @comps
+        ωi = ω[i]
+        Zc = evalpoly(ωi,(0.289,-0.0701,-0.0207))
+        β  = -10.2447-28.6312*ωi
+        Tci = Tc[i]
+        RTp = R̄*Tci/Pc[i]
+        t0 = RTp*evalpoly(ωi,(-0.014471,0.067498,-0.084852,0.067298,-0.017366))
+        tc = RTp*(0.3074-Zc)
+        Tr = T/Tci
+        c[i] = t0+(tc-t0)*exp(β*abs(1-Tr))
+    end
+    return c
 end
