@@ -366,6 +366,15 @@ end
         @test Clapeyron.a_res(system, V, T, z) ≈ -1.1706377677539772 rtol = 1e-6
     end
 
+    @testset "EOS-LNG" begin
+        #LNG paper, table 16
+        T = 150.0
+        V = 1/(18002.169)
+        z   = [0.6,0.4] 
+        system = EOS_LNG(["methane","butane"])
+        @test Clapeyron.eos(system,V,T,z) ≈ -6020.0044 rtol = 5e-6
+    end
+
     @testset "LJRef" begin
         system = LJRef(["methane"])
         T = 1.051*Clapeyron.T_scale(system)

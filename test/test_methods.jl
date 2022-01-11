@@ -247,6 +247,17 @@ end
     end
 end
 
+@testset "EOS-LNG methods, multi-components" begin
+    @testset "Bulk properties" begin
+        system = EOS_LNG(["methane","isobutane"])
+        z = [0.6,0.4]
+        V = 1/17241.868
+        @test Clapeyron.VT_speed_of_sound(system,1e16,210.0,z) ≈ 252.48363281981858
+        @test Clapeyron.volume(system,1e7,150.0,z) ≈ 5.799835609459486e-5
+        @test Clapeyron.pressure(system,0.01,350,z) ≈ 287244.4789047023
+    end
+end
+
 @testset "IAPWS95 methods" begin
     system = IAPWS95()
     p = 1e5
