@@ -19,5 +19,13 @@ function translation(model::CubicModel,V,T,z,translation_model::RackettTranslati
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = translation_model.params.Vc.values
-    return @. 0.40768*R̄*Tc/Pc*(0.29441-Pc*Vc/(R̄*Tc))
+    c = zeros(typeof(Tc),length(Tc))
+    for i ∈ @comps
+        Tci = Tc[i]
+        Pci = Pc[i]
+        RT = Tci*R̄
+        Zc = Pci*Vc/RT
+        c[i] = 0.40768*RT/Pci*(0.29441-Zc)
+    end
+    return c
 end

@@ -22,17 +22,6 @@ end
         @test SOL.halley(fgh_lgmx,0.5)≈ 0.567143290409784
     end
 
-    @testset "box optimize" begin
-        #example of FMinBox in Optim.jl
-        lower = [1.25, -2.1]
-        upper = [Inf, Inf]
-        solution = [1.25, 1.5625]
-        initial_x = [2.0, 2.0]
-        res = SOL.box_optimize(rosenbrock,initial_x,lower,upper)
-        @test all(res.info.minimizer .≈ solution)
-        @test res.info.minimum ≈ 0.0625
-    end
-
     @testset "fixpoint" begin
         #example of FMinBox in Optim.jl
         x0 = 2+ rand()
