@@ -70,6 +70,7 @@ function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     return -df(T)*T^2
 end
 
+
 function mixing(model::ActivityModel,p,T,z,::typeof(gibbs_free_energy))
     x = z./sum(z)
     return excess_gibbs_free_energy(model,p,T,z)+dot(z,log.(x))*R̄*T
@@ -77,9 +78,8 @@ end
 
 function mixing(model::ActivityModel,p,T,z,::typeof(entropy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
-    df(x) = Solvers.derivative(f,x)
-    _f,_df = Solvers.f∂f(f,T)
-    return -_df*T-_f
+    g,dg = Solvers.f∂f(f,T)
+    return -dg*T-g
 end
 
 function lb_volume(model::ActivityModel,z = SA[1.0])

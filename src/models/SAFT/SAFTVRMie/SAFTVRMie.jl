@@ -69,9 +69,9 @@ function a_mono(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     return @f(a_hs,_data)+@f(a_disp,_data)
 end
 
-function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
-    return @f(a_1,_data)+@f(a_2,_data)+@f(a_3,_data)
-end
+# function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
+#     return @f(a_1,_data)+@f(a_2,_data)+@f(a_3,_data)
+# end
 
 function a_hs(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     _,_,ζi,_,_,_ = _data
@@ -693,7 +693,7 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
     return adisp + achain/∑z
 end
 
-function a_disp(model::SAFTVRMie, V, T, z,_data = @f(data))
+function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     _d,ρS,ζi,_ζ_X,_ζst,_ = _data
     comps = @comps
     l = length(comps)
@@ -792,7 +792,7 @@ function a_disp(model::SAFTVRMie, V, T, z,_data = @f(data))
     return adisp
 end
 
-function a_chain(model::SAFTVRMie, V, T, z,_data = @f(data))
+function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     _d,ρS,ζi,_ζ_X,_ζst,_ = _data
     comps = @comps
     l = length(comps)

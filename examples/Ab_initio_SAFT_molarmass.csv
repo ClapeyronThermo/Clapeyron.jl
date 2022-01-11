@@ -1,0 +1,18 @@
+Clapeyron Database File,,
+Molar Mases Single Params,,
+species,DIPPR Number,Mw
+He_Aasen,,4.002602
+Ne_Aasen,,20.1797
+Ne_Dufal,,20
+Ar_Dufal,,40
+Kr_Dufal,,80
+Xe_Dufal,,80
+He_CCSD(T),,4.002602
+Ne_CCSD(T),,20.1797
+Ar_CCSD(T),,39.948
+Kr_CCSD(T),,83.798
+He_JHBV,,4.002602
+Ne_JHBV,,20.1797
+Ar_JHBV,,39.948
+Kr_JHBV,,83.798
+Xe_JHBV,,131.293
