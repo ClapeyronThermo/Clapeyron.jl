@@ -24,7 +24,7 @@ function translation(model::CubicModel,V,T,z,translation_model::RackettTranslati
         Tci = Tc[i]
         Pci = Pc[i]
         RT = Tci*R̄
-        Zc = Pci*Vc/RT
+        Zc = Pci*Vc[i]/RT
         c[i] = 0.40768*RT/Pci*(0.29441-Zc)
     end
     return c

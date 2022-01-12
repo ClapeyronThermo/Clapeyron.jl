@@ -24,7 +24,7 @@ function translation(model::CubicModel,V,T,z,translation_model::PenelouxTranslat
         Tci = Tc[i]
         Pci = Pc[i]
         RT = Tci*R̄
-        Zc = Pci*Vc/RT
+        Zc = Pci*Vc[i]/RT
         c[i] = -0.252*RT/Pci*(1.5448*Zc-0.4024)
     end
     return c
