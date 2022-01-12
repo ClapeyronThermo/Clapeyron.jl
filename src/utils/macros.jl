@@ -156,7 +156,6 @@ macro newmodel(name, parent, paramstype)
         references::Array{String,1}
     end
     has_sites(::Type{<:$name}) = true
-    has_groups(::Type{<:$name}) = false
    
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
@@ -184,8 +183,6 @@ macro newmodelsimple(name, parent, paramstype)
         params::$paramstype
         references::Array{String,1}
     end
-    has_sites(::Type{<:$name}) = false
-    has_groups(::Type{<:$name}) = false
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
@@ -296,56 +293,67 @@ the necessary traits to make the model compatible with Clapeyron routines.
 macro registermodel(model)
     _model = @eval $model
     _has_components = hasfield(_model,:components)
-    splittable = _has_components
-
+    ∅ = :()
     _has_sites = hasfield(_model,:sites)
     _has_groups = hasfield(_model,:groups)
-    _eos_show = if _has_groups
-        :(gc_eosshow(io, mime, model))
+    _sites = _has_sites ? :(has_sites(::$model) = true) : ∅
+    _groups = _has_groups ? :(has_groups(::$model) = true) : ∅
+
+    _eos_show = 
+    if _has_components
+        if _has_groups
+            quote
+                function Base.show(io::IO, mime::MIME"text/plain", model::$model)
+                    return gc_eosshow(io, mime, model)
+                end
+            
+                function Base.show(io::IO, model::$model)
+                    return gc_eosshow(io, mime, model)
+                end
+            end
+        else
+            quote
+                function Base.show(io::IO, mime::MIME"text/plain", model::$model)
+                    return eosshow(io, mime, model)
+                end
+            
+                function Base.show(io::IO, model::$model)
+                    return eosshow(io, mime, model)
+                end
+            end
+        end
     else
-        :(eosshow(io, mime, model))
+        ∅
     end
   
-    _len = if hasfield(_model,:icomponents)
-        :(Base.length(model.icomponents))
+    _has_icomponents = hasfield(_model,:components)
+
+    _length =
+    if _has_icomponents
+    :(Base.length(model::$model) = Base.length(model.icomponents))
+    elseif _has_components
+        :(Base.length(model::$model) = Base.length(model.components))
     else
-        :(Base.length(model.components))
+        ∅
     end
 
-    _length = if _has_components
-            :(Base.length(model::$model) = $_len)
+    _molecular_weight = 
+    if _has_components
+        if _has_groups 
+            :(molecular_weight(model::$model,z=SA[1.0]) =group_molecular_weight(model.groups,mw(model),z))
         else
-            :()
+            :(molecular_weight(model::$model,z=SA[1.0]) =comp_molecular_weight(mw(model),z))
         end
-
-    _mw = if _has_groups
-        :(group_molecular_weight(model.groups,mw(model),z))
     else
-        :(comp_molecular_weight(mw(model),z))
-    end
-
-    _molecular_weight = if _has_components
-        :(molecular_weight(model::$model,z=SA[1.0]) =$_mw)
-    else
-        :()
+        ∅
     end
 
 return quote 
-    has_sites(::Type{<:$model}) = $_has_sites
-    has_groups(::Type{<:$model}) = $_has_groups
-
-    function Base.show(io::IO, mime::MIME"text/plain", model::$model)
-        return $_eos_show
-    end
-
-    function Base.show(io::IO, model::$model)
-        return eosshow(io, model)
-    end
-    
+    $_eos_show
+    $_sites
+    $_groups
     $_length
-
     $_molecular_weight
-
     end |> esc
 end
 

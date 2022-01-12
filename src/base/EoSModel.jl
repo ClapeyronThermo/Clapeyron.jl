@@ -65,13 +65,6 @@ function eos_res(model::EoSModel, V, T, z=SA[1.0])
     return N_A*k_B*sum(z)*T*(a_res(model,V,T,z))
 end
 
-"""
-    component_names(model)::Vector{tring}
-
-returns a vector of strings of each component.
-"""
-component_names(model) = model.components
-
 Base.broadcastable(model::EoSModel) = Ref(model)
 
 """
@@ -90,3 +83,6 @@ macro comps()
         1:length(model)
     end |> esc
 end
+
+has_sites(::EoSModel) = false
+has_groups(::EoSModel) = false

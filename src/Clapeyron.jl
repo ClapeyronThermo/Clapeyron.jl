@@ -112,6 +112,7 @@ include("models/cubic/PR/variants/UMRPR.jl")
 
 include("models/EmpiricHelmholtz/IAPWS95.jl")
 include("models/EmpiricHelmholtz/PropaneRef.jl")
+include("models/EmpiricHelmholtz/LJRef.jl")
 include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")

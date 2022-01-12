@@ -8,9 +8,6 @@ function init_model(model::Type{<:AlphaModel},components,userlocations,verbose)
     return model(components;userlocations,verbose)
 end
 
-has_sites(::Type{<:AlphaModel})=false
-has_groups(::Type{<:AlphaModel})=false
-
 include("NoAlpha.jl")
 include("RKAlpha.jl")
 include("PRAlpha.jl")

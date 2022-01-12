@@ -17,7 +17,7 @@ struct SPUNG{S<:EoSModel,E<:EoSModel} <: EoSModel
     model_ref::E
 end
 
-function SPUNG(components::Vector{String},refmodel=PropaneRef(),shapemodel=SRK(components),shaperef = SRK(component_names(refmodel)))
+function SPUNG(components::Vector{String},refmodel=PropaneRef(),shapemodel=SRK(components),shaperef = SRK(refmodel.components))
     model = SPUNG(shapemodel,shaperef,refmodel)
     return model
 end
@@ -103,22 +103,6 @@ function saturation_pressure(model::SPUNG,T::Real,v0=[zero(T)/zero(T),zero(T)/ze
     return (p,vl0*h,vv0*h)
 end
 
-#============
-uncomment when saturation_pressure_p is ready
-====================
-function saturation_pressure_p(model::SPUNG,p::Real)
-    return naive_saturation_pressure_p(model,p)
-end
-=#
-
-# function split_model(model::SPUNG)
-#     #only the shape model is splittable
-#     shape_model = split_model(model.shape_model)
-#     len = length(shape_model)
-#     shape_ref = fill(model.shape_ref,len)
-#     model_ref = fill(model.model_ref,len)
-#     return SPUNG.(shape_model,shape_ref,model_ref)
-# end
 
 function shape_factors(model::SPUNG,V,T,z=SA[1.0])
     n = sum(z)
@@ -160,8 +144,6 @@ end
 #=
 Tc = 0.26+2.1R
 R = λ-1
-
-
 =#
 
 export SPUNG
