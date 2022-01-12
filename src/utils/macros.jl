@@ -12,22 +12,7 @@ function arbitraryparam(params)
      return fieldnames(paramstype)[idx] |> z->getfield(params,z)
 end
 
-"""
-    @comps
 
-This macro is an alias to
-
-    model.icomponents
-
-The caveat is that `model` has to exist in the local namespace.
-`model` is expected to be an EoSModel type that contains the `icomponents` field.
-`icomponents` is an iterator that goes through all component indices.
-"""
-macro comps()
-    return quote
-        1:length(model)
-    end |> esc
-end
 
 """
     @groups
@@ -87,36 +72,11 @@ as long as the first four parameters in the function are written exactly as abov
 
 """
 macro f(func, args...)
-    f = func
-    model = :model
-    V = :V
-    T = :T
-    z = :z
     quote
-        $f($model,$V,$T,$z,$(args...))
+        $func(model,V,T,z,$(args...))
     end |> esc
 end
 
-
-"""
-    @nan(function_call,default=NaN)
-
-Wraps the function in a `try-catch` block, and if a `DomainError` or `DivideError` is raised, then returns `default`.
-for better results, its best to generate the default result beforehand
-"""
-macro nan(Base.@nospecialize(fcall),default = nothing)
-    e = gensym(:error)
-    quote
-      try $fcall
-      catch $e
-        if $e isa Union{DomainError,DivideError}
-          $default
-        else
-          rethrow($e)
-        end
-      end
-    end |> esc
-  end
 
 """
     @newmodelgc modelname parent paramstype
@@ -196,7 +156,6 @@ macro newmodel(name, parent, paramstype)
         references::Array{String,1}
     end
     has_sites(::Type{<:$name}) = true
-    has_groups(::Type{<:$name}) = false
    
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
@@ -224,8 +183,6 @@ macro newmodelsimple(name, parent, paramstype)
         params::$paramstype
         references::Array{String,1}
     end
-    has_sites(::Type{<:$name}) = false
-    has_groups(::Type{<:$name}) = false
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
         return eosshow(io, mime, model)
@@ -240,7 +197,7 @@ macro newmodelsimple(name, parent, paramstype)
     end |> esc
 end
 
-const IDEALTYPE = Union{T,Type{T}} where T<:IdealModel
+const IDEALTYPE = Union{T,Type{T}} where T<:EoSModel
 
 function (::Type{model})(params::EoSParam,
         groups::GroupParam,
@@ -307,9 +264,9 @@ function (::Type{model})(params::EoSParam,
     #With sites out of the way, this is a simplemodel, no need to initialize the ideal model
     #if there isnt any params, just put empty values.
     if length(fieldnames(typeof(params))) > 0
-    arbparam = arbitraryparam(params)
-    components = arbparam.components
-    icomponents = 1:length(components)
+        arbparam = arbitraryparam(params)
+        components = arbparam.components
+        icomponents = 1:length(components)
     else
         components = String[]
         icomponents =1:0
@@ -317,7 +274,7 @@ function (::Type{model})(params::EoSParam,
     return model(components,icomponents,params,references)
 end
 
-function init_model(idealmodel::IdealModel,components,userlocations,verbose)
+function init_model(idealmodel::EoSModel,components,userlocations,verbose)
     return idealmodel
 end
 
@@ -325,11 +282,7 @@ function init_model(::Nothing,components,userlocations,verbose)
     return nothing
 end
 
-function init_model(idealmodel::Type{<:IdealModel},components,userlocations,verbose)
-    verbose && @info("""Now creating ideal model:
-    $idealmodel""")
-    return idealmodel(components;userlocations,verbose)
-end
+
 """
     @registermodel(model)
 
@@ -338,58 +291,71 @@ the necessary traits to make the model compatible with Clapeyron routines.
 
 """
 macro registermodel(model)
-    _model = @eval $model
-    _has_components = hasfield(_model,:components)
-    splittable = _has_components
+    _model = getfield(@__MODULE__(),model)
+    ∅ = :()
 
+    _has_components = hasfield(_model,:components)
+    _has_icomponents = hasfield(_model,:icomponents)
     _has_sites = hasfield(_model,:sites)
     _has_groups = hasfield(_model,:groups)
-    _eos_show = if _has_groups
-        :(gc_eosshow(io, mime, model))
+    
+    _sites = _has_sites ? :(has_sites(::Type{<:$model}) = true) : ∅
+    _groups = _has_groups ? :(has_groups(::Type{<:$model}) = true) : ∅
+
+    _eos_show = 
+    if _has_components
+        if _has_groups
+            quote
+                function Base.show(io::IO, mime::MIME"text/plain", model::$model)
+                    return gc_eosshow(io, mime, model)
+                end
+            
+                function Base.show(io::IO, model::$model)
+                    return gc_eosshow(io, mime, model)
+                end
+            end
+        else
+            quote
+                function Base.show(io::IO, mime::MIME"text/plain", model::$model)
+                    return eosshow(io, mime, model)
+                end
+            
+                function Base.show(io::IO, model::$model)
+                    return eosshow(io, model)
+                end
+            end
+        end
     else
-        :(eosshow(io, mime, model))
+        ∅
     end
   
-    _len = if hasfield(_model,:icomponents)
-        :(Base.length(model.icomponents))
+
+    _length =
+    if _has_icomponents
+    :(Base.length(model::$model) = Base.length(model.icomponents))
+    elseif _has_components
+        :(Base.length(model::$model) = Base.length(model.components))
     else
-        :(Base.length(model.components))
+        ∅
     end
 
-    _length = if _has_components
-            :(Base.length(model::$model) = $_len)
+    _molecular_weight = 
+    if _has_components
+        if _has_groups 
+            :(molecular_weight(model::$model,z=SA[1.0]) =group_molecular_weight(model.groups,mw(model),z))
         else
-            :()
+            :(molecular_weight(model::$model,z=SA[1.0]) =comp_molecular_weight(mw(model),z))
         end
-
-    _mw = if _has_groups
-        :(group_molecular_weight(model.groups,mw(model),z))
     else
-        :(comp_molecular_weight(mw(model),z))
-    end
-
-    _molecular_weight = if _has_components
-        :(molecular_weight(model::$model,z=SA[1.0]) =$_mw)
-    else
-        :()
+        ∅
     end
 
 return quote 
-    has_sites(::Type{<:$model}) = $_has_sites
-    has_groups(::Type{<:$model}) = $_has_groups
-
-    function Base.show(io::IO, mime::MIME"text/plain", model::$model)
-        return $_eos_show
-    end
-
-    function Base.show(io::IO, model::$model)
-        return eosshow(io, model)
-    end
-    
+    $_eos_show
+    $_sites
+    $_groups
     $_length
-
     $_molecular_weight
-
     end |> esc
 end
 

@@ -3,7 +3,8 @@ using Clapeyron, Test
 @testset "database_lookup" begin
     params1 = Clapeyron.getparams(["water", "methanol"], ["SAFT/PCSAFT"],return_sites=false)
     @test haskey(params1, "sigma")
-
+    
+    @printline
     # The rest of the test will be conducted with a custom dataset in the test_csvs directory.
     testspecies = ["sp1", "sp2", "sp3", "sp4", "sp5"]
 
@@ -41,7 +42,7 @@ using Clapeyron, Test
     @test repr("text/plain",params["intparam"]) == "SingleParam{Int64}(\"intparam\") with 5 components:\n \"sp1\" => 6\n \"sp2\" => 2\n \"sp3\" => 7\n \"sp4\" => 4\n \"sp5\" => 5"
     #Printing: PairParam
     @test repr(params["overwriteparam"]) == "PairParam{Float64}(\"overwriteparam\")[5×5 Matrix{Float64}]"
-    @test repr("text/plain",params["overwriteparam"]) == "PairParam{PairParam{Float64}}[\"sp1\", \"sp2\", \"sp3\", \"sp4\", \"sp5\"]) with values:\n5×5 Matrix{Float64}:\n 1.6  4.0  0.0  0.0  0.0\n 4.0  1.2  0.0  3.0  0.0\n 0.0  0.0  1.3  2.0  0.0\n 0.0  3.0  2.0  1.4  0.0\n 0.0  0.0  0.0  0.0  1.5"
+    @test repr("text/plain",params["overwriteparam"]) == "PairParam{Float64}[\"sp1\", \"sp2\", \"sp3\", \"sp4\", \"sp5\"]) with values:\n5×5 Matrix{Float64}:\n 1.6  4.0  0.0  0.0  0.0\n 4.0  1.2  0.0  3.0  0.0\n 0.0  0.0  1.3  2.0  0.0\n 0.0  3.0  2.0  1.4  0.0\n 0.0  0.0  0.0  0.0  1.5"
     #Printing: AssocParam
     @test repr(params["overwriteassocparam"]) == "AssocParam{String}(\"overwriteassocparam\")[\"val1\", \"val8\", \"val5\", \"val4\", \"val7\", \"val6\", \"val3\", \"42\"]"
     @test repr("text/plain",params["overwriteassocparam"]) == "AssocParam{String}[\"sp1\", \"sp2\", \"sp3\", \"sp4\", \"sp5\"]) with values:\n(\"sp3\", \"e\") >=< (\"sp3\", \"H\"): val1\n(\"sp3\", \"e2\") >=< (\"sp3\", \"H\"): val8\n(\"sp3\", \"H\") >=< (\"sp4\", \"e\"): val5\n(\"sp3\", \"H\") >=< (\"sp4\", \"H\"): val4\n(\"sp4\", \"e\") >=< (\"sp5\", \"H\"): val7\n(\"sp4\", \"H\") >=< (\"sp5\", \"e2\"): val6\n(\"sp5\", \"e\") >=< (\"sp5\", \"e\"): val3\n(\"sp5\", \"e\") >=< (\"sp5\", \"H\"): 42\n"
@@ -52,9 +53,9 @@ using Clapeyron, Test
     @test typeof(params["intparam"]) <: Clapeyron.SingleParam{Int}
     @test typeof(params["doubleparam"]) <: Clapeyron.SingleParam{Float64}
     @test typeof(params["boolparam"]) <: Clapeyron.SingleParam{Bool}
-    @test typeof(params["stringparam"]) <: Clapeyron.SingleParam{String}
+    #@test typeof(params["stringparam"]) <: Clapeyron.SingleParam{String} obsolete with the convert
     # If column has both strings and numbers, they should all be strings.
-    @test typeof(params["mixedparam"]) <: Clapeyron.SingleParam{String}
+    #@test typeof(params["mixedparam"]) <: Clapeyron.SingleParam{String}
     # Contains missing values
     @test typeof(params["missingparam"]) <: Clapeyron.SingleParam{Int}
     # All missing values

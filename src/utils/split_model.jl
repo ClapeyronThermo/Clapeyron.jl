@@ -1,3 +1,107 @@
+function each_split_model(param::AbstractVector,I)
+    val = param[I]
+    eltype(param) <: AbstractArray && return deepcopy(val)
+    return val
+end
+
+function each_split_model(param::AbstractMatrix,I)
+    val =  param[I,I]
+    eltype(param) <: AbstractArray && return deepcopy(val)
+    return val
+end
+
+function each_split_model(y::SparseMatrixCSC{<:AbstractVector},I)
+    x = y[I,I]
+    m,n,colptr,rowval,nzval = x.m,x.n,x.colptr,x.rowval,x.nzval
+    return SparseMatrixCSC(m,n,colptr,rowval,nzval)
+end
+
+function each_split_model(y::SparsePackedMofV,I)
+    idx = y.idx[I,I]     
+    if iszero(length(y.storage))
+        return SparsePackedMofV(y.storage,idx)
+    end
+    
+    if iszero(nnz(idx))
+        st = y.storage
+        storage = PackedVofV([1],zeros(eltype(st.v),0))
+        return SparsePackedMofV(storage,idx)
+    else
+        str = y.storage[nnz(idx)]
+        storage = PackedVectorsOfVectors.pack(str)
+        return SparsePackedMofV(storage,idx)
+    end
+end
+
+function each_split_model(param::PackedVofV,I)
+    val =  PackedVectorsOfVectors.pack(param[I])
+    return val
+end
+
+function each_split_model(assoc::Compressed4DMatrix{T},I) where T
+    len = length(assoc.values)
+    iszero(len) && return Compressed4DMatrix{T}()
+    old_idx = assoc.outer_indices 
+    idx_bool = findall(x -> (first(x) ∈ I)&(last(x) ∈ I),old_idx)
+    iszero(length(idx_bool)) && return Compressed4DMatrix{T}()
+    values = assoc.values[idx_bool]
+    outer_indices = assoc.outer_indices[idx_bool]
+    inner_indices = assoc.inner_indices[idx_bool]
+    out_val = length(I)
+    outer_size = (out_val,out_val)
+    inner_size = assoc.inner_size
+    len2 = length(outer_indices)
+    for i ∈ 1:len2
+        i1,j1 = outer_indices[i]
+        i2,j2 = findfirst(==(i1),I),findfirst(==(j1),I)
+        outer_indices[i] = (i2,j2)
+    end
+    return Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
+end
+
+function each_split_model(param::SingleParameter,I)
+    return SingleParameter(
+        param.name,
+        param.components[I],
+        each_split_model(param.values,I),
+        param.ismissingvalues[I],
+        param.sourcecsvs,
+        param.sources
+    )
+end
+
+function each_split_model(param::PairParameter,I)
+    value = each_split_model(param.values,I)
+    if isnothing(param.diagvalues)
+        diagvalue = nothing
+    else
+        diagvalue = view(value,diagind(value))
+    end
+    ismissingvalues = param.ismissingvalues[I,I]
+    components = param.components[I]
+    res = PairParameter(
+            param.name,
+            components,
+            value,
+            diagvalue,
+            ismissingvalues,
+            param.sourcecsvs,
+            param.sources
+            )
+    return res
+end
+
+function each_split_model(param::AssocParam,I)     
+    _value  = each_split_model(param.values,I)
+    return AssocParam(
+            param.name,
+            param.components[I],
+            _value,
+            param.sites[I],
+            param.sourcecsvs,
+            param.sources
+            )
+end
 """
     split_model(model::EoSModel)
 
@@ -18,7 +122,6 @@ julia> split_model(gerg2)
 """
 function split_model end
 
-
 """
     is_splittable(model)::Bool
 
@@ -32,19 +135,9 @@ is_splittable(null::Union{Nothing,Missing}) = false
 is_splittable(::Number) = false
 is_splittable(::String) = false
 
-function split_model(param::SingleParam{T},
-    splitter =split_model(1:length(param.components))) where T    
-    function generator(I)
-    return SingleParam(
-    param.name,
-    param.components[I],
-    deepcopy(param.values[I]),#for SingleParam{Vector{X}}
-    param.ismissingvalues[I],
-    param.sourcecsvs,
-    param.sources
-    )
-    end
-    return [generator(i) for i ∈ splitter]
+function split_model(param::SingleParameter,
+    splitter =split_model(1:length(param.components)))
+    return [each_split_model(param,i) for i ∈ splitter]
 end
 
 function split_model(param::ClapeyronParam,groups::GroupParam)
@@ -52,72 +145,24 @@ function split_model(param::ClapeyronParam,groups::GroupParam)
 end
 #this conversion is lossy, as interaction between two or more components are lost.
 
-function split_model(param::PairParam{T},
-    splitter = split_model(1:length(param.components))) where T
-    function generator(I) 
-        value = param.values[I,I]
-        diagvalue = view(value,diagind(value))
-        ismissingvalues = param.ismissingvalues[I,I]
-        components = param.components[I]
-        return PairParam{T}(
-                param.name,
-                components,
-                value,
-                diagvalue,
-                ismissingvalues,
-                param.sourcecsvs,
-                param.sources
-                )
-    end 
-    return [generator(I) for I ∈ splitter]
+function split_model(param::PairParameter,
+    splitter = split_model(1:length(param.components)))
+    return [each_split_model(param,i) for i ∈ splitter]
 end
 
 function split_model(param::AbstractVector,splitter = ([i] for i ∈ 1:length(param)))
-    return [param[i] for i ∈ splitter]
+    return [each_split_model(param,i) for i ∈ splitter]
 end
 
 function split_model(param::UnitRange{Int},splitter = ([i] for i ∈ 1:length(param)))
     return [1:length(i) for i ∈ splitter]
 end
 
-function _split_model(assoc::CompressedAssocMatrix{T},I) where T
-    len = length(assoc.values)
-    iszero(len) && return CompressedAssocMatrix{T}()
-    old_idx = assoc.outer_indices 
-    idx_bool = findall(x -> (first(x) ∈ I)&(last(x) ∈ I),old_idx)
-    iszero(length(idx_bool)) && return CompressedAssocMatrix{T}()
-    values = assoc.values[idx_bool]
-    outer_indices = assoc.outer_indices[idx_bool]
-    inner_indices = assoc.inner_indices[idx_bool]
-    out_val = length(I)
-    outer_size = (out_val,out_val)
-    inner_size = assoc.inner_size
-    len2 = length(outer_indices)
-    for i ∈ 1:len2
-        i1,j1 = outer_indices[i]
-        i2,j2 = findfirst(==(i1),I),findfirst(==(j1),I)
-        outer_indices[i] = (i2,j2)
-    end
-    return CompressedAssocMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
-end
-
 #this conversion is lossy, as interaction between two or more components are lost.
 #also, this conversion stores the site values for other components. (those are not used)
 function split_model(param::AssocParam{T},
     splitter = split_model(1:length(param.components))) where T
-    function generator(I)     
-        _value  = _split_model(param.values,I)
-     
-        return AssocParam{T}(
-                param.name,
-                param.components[I],
-                _value,
-                param.sites[I],
-                param.sourcecsvs,
-                param.sources
-                )
-        end
-    return [generator(I) for I ∈ splitter]
+    return [each_split_model(param,i) for i ∈ splitter]
 end
 
 #this param has a defined split form
@@ -155,7 +200,7 @@ end
 
 function split_model(Base.@nospecialize(params::EoSParam),splitter)
     T = typeof(params)
-    split_paramsvals = [split_model(getfield(params,i),splitter) for i  ∈ fieldnames(T)]
+    split_paramsvals = (split_model(getfield(params,i),splitter) for i  ∈ fieldnames(T))
     return T.(split_paramsvals...)
 end
 
