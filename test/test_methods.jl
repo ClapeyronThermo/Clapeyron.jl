@@ -253,7 +253,7 @@ end
         z = [0.6,0.4]
         V = 1/17241.868
         @test Clapeyron.VT_speed_of_sound(system,1e16,210.0,z) ≈ 252.48363281981858
-        @test Clapeyron.volume(system,1e7,150.0,z) ≈ 5.799835609459486e-5
+        @test Clapeyron.volume(system,5e6,160.0,z) ≈ 5.9049701669337714e-5
         @test Clapeyron.pressure(system,0.01,350,z) ≈ 287244.4789047023
     end
 end

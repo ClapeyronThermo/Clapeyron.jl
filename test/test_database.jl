@@ -71,7 +71,6 @@ using Clapeyron, Test
                                                             1 0 0 0 1; 
                                                             1 1 1 1 0]
     # Overwrite String with Int
-    @show (params["overwritestringparam"])
     @test typeof(params["overwritestringparam"]) <: Clapeyron.SingleParam{String}
     # Overwrite Int with String
     @test typeof(params["overwriteassocparam"]) <: Clapeyron.AssocParam{String}
