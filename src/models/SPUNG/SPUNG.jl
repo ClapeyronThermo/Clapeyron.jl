@@ -22,15 +22,16 @@ function SPUNG(components::Vector{String},refmodel=PropaneRef(),shapemodel=SRK(c
     return model
 end
 
+Base.length(model::SPUNG) = length(model.shape_model)
 
-function eos(model::SPUNG,V,T,z=SA[1.0],phase=:unknown)
+function eos(model::SPUNG,V,T,z=SA[1.0])
     f,h = shape_factors(model,V,T,z)
     T0 = T/f
     V0 = V/h
     return eos(model.model_ref,V0,T0)
 end
 
-function eos_res(model::SPUNG,V,T,z=SA[1.0],phase=:unknown)
+function eos_res(model::SPUNG,V,T,z=SA[1.0])
     f,h = shape_factors(model,V,T,z)
     T0 = T/f
     V0 = V/h
