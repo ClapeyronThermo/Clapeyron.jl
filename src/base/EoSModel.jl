@@ -84,5 +84,7 @@ macro comps()
     end |> esc
 end
 
-has_sites(::EoSModel) = false
-has_groups(::EoSModel) = false
+has_sites(::Type{<:EoSModel}) = false
+has_groups(::Type{<:EoSModel}) = false
+has_sites(::T) where T<:EoSModel = has_sites(T)
+has_groups(::T) where T<:EoSModel = has_groups(T)

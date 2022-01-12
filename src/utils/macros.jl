@@ -291,13 +291,16 @@ the necessary traits to make the model compatible with Clapeyron routines.
 
 """
 macro registermodel(model)
-    _model = @eval $model
-    _has_components = hasfield(_model,:components)
+    _model = getfield(@__MODULE__(),model)
     ∅ = :()
+
+    _has_components = hasfield(_model,:components)
+    _has_icomponents = hasfield(_model,:icomponents)
     _has_sites = hasfield(_model,:sites)
     _has_groups = hasfield(_model,:groups)
-    _sites = _has_sites ? :(has_sites(::$model) = true) : ∅
-    _groups = _has_groups ? :(has_groups(::$model) = true) : ∅
+    
+    _sites = _has_sites ? :(has_sites(::Type{<:$model}) = true) : ∅
+    _groups = _has_groups ? :(has_groups(::Type{<:$model}) = true) : ∅
 
     _eos_show = 
     if _has_components
@@ -318,7 +321,7 @@ macro registermodel(model)
                 end
             
                 function Base.show(io::IO, model::$model)
-                    return eosshow(io, mime, model)
+                    return eosshow(io, model)
                 end
             end
         end
@@ -326,7 +329,6 @@ macro registermodel(model)
         ∅
     end
   
-    _has_icomponents = hasfield(_model,:components)
 
     _length =
     if _has_icomponents
