@@ -9,8 +9,6 @@ function init_model(model::Type{<:TranslationModel},components,userlocations,ver
     return model(components;userlocations,verbose)
 end
 
-has_sites(::Type{<:TranslationModel})=false
-
 include("NoTranslation.jl")
 include("Rackett.jl")
 include("Peneloux.jl")

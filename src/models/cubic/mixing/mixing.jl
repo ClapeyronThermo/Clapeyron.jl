@@ -9,8 +9,6 @@ function init_model(model::Type{<:MixingRule},components,activity,userlocations,
     return model(components;activity,userlocations,activity_userlocations,verbose)
 end
 
-has_sites(::Type{<:MixingRule})=false
-
 include("vdW1f.jl")
 include("Kay.jl")
 include("HV.jl")
