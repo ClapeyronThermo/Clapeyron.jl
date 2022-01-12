@@ -125,7 +125,7 @@ function a_ideal(model::PropaneRef,V,T,z=SA[1.])
     rho = (N/V)
     δ = rho/rho_c
     τ = T_c/T
-    return  _propane_ref_a0(δ,τ)
+    return  _f0(model,δ,τ)
 end
 
 function a_res(model::PropaneRef,V,T,z=SA[1.])
@@ -135,7 +135,7 @@ function a_res(model::PropaneRef,V,T,z=SA[1.])
     rho = (N/V)
     δ = rho/rho_c
     τ = T_c/T
-    return  _propane_ref_ar(δ,τ)
+    return  _fr1(model,δ,τ)
 end
 
 function eos(model::PropaneRef, V, T, z=SA[1.0];phase=:unknown)
@@ -157,7 +157,7 @@ function eos_res(model::PropaneRef,V,T,z=SA[1.0];phase=:unknown)
     rho = (N/V)
     δ = rho/rho_c
     τ = T_c/T
-    return N*R*T*_propane_ref_ar(δ,τ)
+    return N*R*T*_fr1(model,δ,τ)
 end
 
 mw(model::PropaneRef) = SA[model.consts.Mw]
