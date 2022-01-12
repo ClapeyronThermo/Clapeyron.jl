@@ -15,6 +15,10 @@ v[i+1] = v[i]*exp(β[i]*(p-p(v[i])))
 In the liquid root region, the iterations follow `v0 < v[i] < v[i+1] < v(p)`, allowing the calculation of the liquid root without entering the metastable region.
 """
 function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+    p,T,V0 = promote(p,T,V0)
+    return _volume_compress(model,p,T,z,V0,max_iters)
+end
+function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(p+T+first(z))
     _nan = _0/_0
     logV0 = log(V0)
@@ -120,63 +124,53 @@ The calculation of both volume roots can be calculated in serial (`threaded=fals
 
 """
 function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
-
-    fp(_V) = log(pressure(model,_V,T,z)/p)
-
-#Threaded version
-    phase = Symbol(phase)
-    if phase != :unknown
-        V0 = x0_volume(model,p,T,z,phase=phase)
-        #return Solvers.ad_newton(fp,Vg0)
-        return volume_compress(model,p,T,z,V0=V0)
-    end
-
-    if threaded     
-            Vg0 = x0_volume(model,p,T,z,phase=:v)
-            Vl0 = x0_volume(model,p,T,z,phase=:l)
-            _Vg = Threads.@spawn volume_compress(model,$p,$T,$z;V0=Vg0)
-            _Vl = Threads.@spawn volume_compress(model,$p,$T,$z;V0=$Vl0)
-            Vg = fetch(_Vg)     
-            Vl = fetch(_Vl)
-    else
-            Vg0 = x0_volume(model,p,T,z,phase=:v)
-            Vl0 = x0_volume(model,p,T,z,phase=:l)
-            Vg =  volume_compress(model,p,T,z,V0=Vg0)
-            Vl =  volume_compress(model,p,T,z,V0=Vl0)        
-    end
-
-# Serial version
-#=
-    Vg0 = volume_virial(model,p,T,z)
-    Vg =Solvers.ad_newton(fp,Vg0,rtol=1e-08)
-
-    Vl =  volume_compress(model,p,T,z)
-=#
-    function gibbs(V)
-        _df,f =  ∂f(model,V,T,z)
-        dV,dt = _df
-        if abs((p+dV)/p) > 0.03
-            return Inf
-        else
-            return f  +p*V
-        end
-    end
-    #this catches the supercritical phase as well
-
-    isnan(Vl) && return Vg
-    isnan(Vg) && return Vl
-    (isnan(Vl) & isnan(Vg)) && error("Failed to converge to a root")
-
-    gg = gibbs(Vg)
-    gl = gibbs(Vl)
-    #@show Vg,Vl
-    #@show gg,gl
-    return ifelse(gg<gl,Vg,Vl)
-
+    return _volume(model,p,T,z,phase,threaded)
 end
 
-function volume(model::IdealModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
-    return sum(z)*R̄*T/p
+function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
+#Threaded version
+    TYPE = typeof(p+T+first(z))
+    if phase != :unknown
+        V0 = x0_volume(model,p,T,z,phase=phase)
+        return _volume_compress(model,p,T,z,V0)
+    end
+    if threaded     
+        Vg0 = x0_volume(model,p,T,z,phase=:v)
+        Vl0 = x0_volume(model,p,T,z,phase=:l)
+        _Vg = Threads.@spawn _volume_compress(model,$p,$T,$z,$Vg0)
+        _Vl = Threads.@spawn _volume_compress(model,$p,$T,$z,$Vl0)
+         Vg::TYPE = fetch(_Vg)     
+         Vl::TYPE = fetch(_Vl)
+    else
+        Vg0 = x0_volume(model,p,T,z,phase=:v)
+        Vl0 = x0_volume(model,p,T,z,phase=:l)
+       
+        Vg =  _volume_compress(model,p,T,z,Vg0)
+        Vl =  _volume_compress(model,p,T,z,Vl0)        
+    end
+
+    #this catches the supercritical phase as well
+    
+    isnan(Vl) && return Vg
+    isnan(Vg) && return Vl
+
+   err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
+    if (isnan(Vl) & isnan(Vg))
+        err()
+        return zero(TYPE)/zero(TYPE)
+    end 
+    _dfg,fg =  ∂f(model,Vg,T,z)
+    dVg,_ = _dfg
+    gg = ifelse(abs((p+dVg)/p) > 0.03,zero(dVg)/one(dVg),fg + p*Vg)
+    _dfl,fl =  ∂f(model,Vl,T,z)
+    dVl,_ = _dfl
+    gl = ifelse(abs((p+dVl)/p) > 0.03,zero(dVl)/one(dVl),fl + p*Vl)
+    
+    if gg<gl
+        return Vg
+    else
+        return Vl
+    end
 end
 
 export volume
