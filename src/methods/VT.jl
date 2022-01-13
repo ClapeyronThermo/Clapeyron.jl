@@ -8,7 +8,7 @@ end
 
 function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,V,x,z)
-    return -ForwardDiff.derivative(fun,T)
+    return -Solvers.derivative(fun,T)
 end
 
 function VT_chemical_potential(model::EoSModel, V, T, z=SA[1.])
@@ -45,8 +45,8 @@ end
 
 function VT_isochoric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
     A(x) = eos(model,V,x,z)
-    ∂A∂T(x) = ForwardDiff.derivative(A,x)
-    ∂²A∂T²(x) = ForwardDiff.derivative(∂A∂T,x)
+    ∂A∂T(x) = Solvers.derivative(A,x)
+    ∂²A∂T²(x) = Solvers.derivative(∂A∂T,x)
     return -T*∂²A∂T²(T)
 end
 
@@ -60,7 +60,7 @@ end
 
 function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])
     p0,dpdV = p∂p∂V(model,V,T,z)
-    return -1/V*dpdV^-1
+    return -1/V/dpdV
 end
 
 function VT_isentropic_compressibility(model::EoSModel, V, T, z=SA[1.])
@@ -68,7 +68,7 @@ function VT_isentropic_compressibility(model::EoSModel, V, T, z=SA[1.])
     ∂²A∂V∂T = d²A[1,2]
     ∂²A∂V² = d²A[1,1]
     ∂²A∂T² = d²A[2,2]
-    return 1/V*(∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)^-1
+    return 1/V/(∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)
 end
 
 function VT_speed_of_sound(model::EoSModel, V, T, z=SA[1.])
@@ -95,7 +95,6 @@ function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
     ∂²A∂T² = d²A[2,2]
     return -(∂²A∂V∂T - ∂²A∂V²*((T*∂²A∂T² + V*∂²A∂V∂T) / (T*∂²A∂V∂T + V*∂²A∂V²)))^-1
 end
-
 
 """
     second_virial_coefficient(model::EoSModel, T, z=SA[1.])

@@ -1,32 +1,3 @@
-"""
-    f∂f(f,x)
-
-returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
-"""
-function f∂f(f::F, x::R) where {F,R}
-    T = typeof(ForwardDiff.Tag(f, R))
-    out = f(ForwardDiff.Dual{T}(x, one(x)))
-    return ForwardDiff.value(out), ForwardDiff.extract_derivative(T, out)
-end
-
-"""
-    f∂f∂2f(f,x)
-
-returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
-"""
-function f∂f∂2f(f::F,x::T) where {F,T}
-    _f(z) = f(only(z))
-    x_vec =   SVector(x)
-    ∂result = DiffResults.HessianResult(x_vec)  
-    _∂f =  ForwardDiff.hessian!(∂result, _f,x_vec)
-    fx =  DiffResults.value(_∂f)
-    ∂f∂x = only(DiffResults.gradient(_∂f))
-    ∂²f∂²x =  only(DiffResults.hessian(_∂f))
-    return fx,∂f∂x,∂²f∂²x
-end
-
-
-
 function newton_fixpoint(f::F,x::T,atol) where {F,T}
     fx, gx = f(x)
     abs(fx) < atol && return x

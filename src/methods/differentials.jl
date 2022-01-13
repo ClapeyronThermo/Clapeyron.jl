@@ -4,7 +4,6 @@
 #differentiation logic from the property logic allows the differentials
 #to be compiled only once
 
-
 """
     ∂f∂T(model,V,T,z=SA[1.0])
 
@@ -12,7 +11,8 @@ returns `f` and `∂f/∂T` at constant total volume and composition, where f is
 
 """
 function ∂f∂T(model,V,T,z=SA[1.0])
-    return ForwardDiff.derivative(∂T -> eos(model,V,∂T,z),T)
+    f(∂T) = eos(model,V,∂T,z)
+    return Solvers.derivative(f,T)
 end
 
 """
@@ -22,7 +22,8 @@ returns `f` and `∂f/∂V` at constant temperature and composition, where f is 
 
 """
 function ∂f∂V(model,V,T,z)
-    return ForwardDiff.derivative(∂V -> eos(model,∂V,T,z),V)
+    f(∂V) = eos(model,∂V,T,z)
+    return Solvers.derivative(f,V)
 end
 
 #returns a tuple of the form ([∂f∂V,∂f∂T],f),using the least amount of computation
@@ -48,14 +49,9 @@ grad_f = [ ∂f/∂V; ∂f/∂T]
 Where `V` is the total volume, `T` is the temperature and `f` is the total helmholtz energy.
 """
 function ∂f(model,V,T,z)
-    f(w) = eos(model,first(w),last(w),z)
-    V,T = promote(V,T)
-    VT_vec = SVector(V,T)
-    ∂result = DiffResults.GradientResult(VT_vec)
-    res_∂f =  ForwardDiff.gradient!(∂result, f,VT_vec)
-    _f =  DiffResults.value(res_∂f)
-    _∂f = DiffResults.gradient(res_∂f)
-    return (_∂f,_f)
+    f(∂V,∂T) = eos(model,∂V,∂T,z)
+    _f,_df = Solvers.fgradf2(f,V,T)
+    return _df,_f
 end
 
 #returns p and ∂p∂V at constant T
@@ -69,13 +65,9 @@ returns `p` and `∂p/∂V` at constant temperature, where p is the pressure = `
 
 """
 function p∂p∂V(model,V,T,z=SA[1.0])
-    V_vec =   SVector(V)
-    f(∂V) = pressure(model,only(∂V),T,z)
-    ∂result = DiffResults.GradientResult(V_vec)
-    res_∂f =  ForwardDiff.gradient!(∂result, f,V_vec)
-    _p =  DiffResults.value(res_∂f)
-    _∂p∂V = only(DiffResults.gradient(res_∂f))
-    return _p,_∂p∂V
+    f(∂V) = pressure(model,∂V,T,z)
+    p,∂p∂V = Solvers.f∂f(f,V)
+    return p,∂p∂V
 end
 
 """
@@ -101,14 +93,8 @@ hess_f = [ ∂²f/∂V²; ∂²f/∂V∂T
 Where `V` is the total volume, `T` is the temperature and `f` is the total helmholtz energy.
 """
 function ∂2f(model,V,T,z)
-    f(w) = eos(model,first(w),last(w),z)
-    V,T = promote(V,T)
-    VT_vec =   SVector(V,T)
-    ∂result = DiffResults.HessianResult(VT_vec)
-    res_∂f =  ForwardDiff.hessian!(∂result, f,VT_vec)
-    _f =  DiffResults.value(res_∂f)
-    _∂f = DiffResults.gradient(res_∂f)
-    _∂2f = DiffResults.hessian(res_∂f)
+    f(_V,_T) = eos(model,_V,_T,z)
+    _f,_∂f,_∂2f =  Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
 
@@ -135,17 +121,10 @@ hess_p = [ ∂²p/∂V²; ∂²p/∂V∂T
 Where `V` is the total volume, `T` is the temperature and `p` is the pressure.
 """
 function ∂2p(model,V,T,z)
-    f(w) = pressure(model,first(w),last(w),z)
-    V,T = promote(V,T)
-    VT_vec =   SVector(V,T)
-    ∂result = DiffResults.HessianResult(VT_vec)
-    res_∂f =  ForwardDiff.hessian!(∂result, f,VT_vec)
-    _f =  DiffResults.value(res_∂f)
-    _∂f = DiffResults.gradient(res_∂f)
-    _∂2f = DiffResults.hessian(res_∂f)
+    f(_V,_T) = pressure(model,_V,_T,z)
+    _f,_∂f,_∂2f =  Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
-
 
 """
     f_hess(model,V,T,z)
@@ -173,11 +152,8 @@ returns `∂²A/∂V²` and `∂³A/∂V³`, in a single ForwardDiff pass. used 
 
 """
 function ∂²³f(model,V,T,z=SA[1.0])
-    V_vec =   SVector(V)
-    f(∂A∂V) = ForwardDiff.derivative(∂²A∂V² -> pressure(model,only(∂²A∂V²),T,z),only(∂A∂V))
-    ∂result = DiffResults.GradientResult(V_vec)
-    res_∂f =  ForwardDiff.gradient!(∂result,f,V_vec)
-    _∂²A∂V² =  DiffResults.value(res_∂f)
-    _∂³A∂V³ = only(DiffResults.gradient(res_∂f))
-    return _∂²A∂V², _∂³A∂V³
+    p(∂²A∂V²) =  pressure(model,∂²A∂V²,T,z)
+    f(∂A∂V) = Solvers.derivative(p,∂A∂V)
+    ∂²A∂V², ∂³A∂V³ = Solvers.f∂f(f,V)
+    return ∂²A∂V², ∂³A∂V³
 end
