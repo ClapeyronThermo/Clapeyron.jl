@@ -35,7 +35,9 @@ If the calculation fails, returns  `(NaN, NaN, NaN)`
 `V0` is `[log10(Vₗ₀),log10(Vᵥ₀)]` , where `Vₗ₀`  and `Vᵥ₀` are initial guesses for the liquid and vapour volumes.
 """
 function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
+    !isone(length(model)) && throw(error("$model have more than one component."))
     T = T*T/T
+    V0 = MVector((V0[1],V0[2]))
     V_lb = lb_volume(model,SA[1.0])
     TYPE = promote_type(typeof(T),typeof(V_lb))
     nan = zero(TYPE)/zero(TYPE)    
@@ -57,6 +59,7 @@ function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
         @error "initial temperature $T greater than critical temperature $T_c. returning NaN"
     else
         V0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
+        V0 = MVector((V0[1],V0[2]))
         converged = try_sat_pure(model,V0,f!,T,result,error_val)   
         if converged
             return result[]
@@ -85,7 +88,7 @@ function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
     # @show dpdvv*Vv0
     # _,dpdvv = p∂p∂V(model,2*Vv0,T,SA[1.0])
     # @show dpdvv*Vv0
-    return [log10(Vl0),log10(Vv0)]
+    return (log10(Vl0),log10(Vv0))
 end
 function sat_pure(model::EoSModel,V0,f!,T,method =LineSearch(Newton()))  
     r = Solvers.nlsolve(f!, V0 ,method )
@@ -97,10 +100,9 @@ function sat_pure(model::EoSModel,V0,f!,T,method =LineSearch(Newton()))
 end
 
 function Obj_Sat(model::EoSModel, F, T, V_l, V_v,scales)
-    fun(x) = eos(model, x[2], T,SA[x[1]])
-    df(x)  = ForwardDiff.gradient(fun,x)
-    df_l = df(SA[one(V_l*T),V_l*one(T)])
-    df_v = df(SA[one(V_v),V_v*one(T)])
+    fun(_z1,_V) = eos(model, _V, T,SA[_z1])
+    df_l = Solvers.gradient2(fun,one(V_l*T),V_l*one(T))
+    df_v = Solvers.gradient2(fun,one(V_v*T),V_v*one(T))
     (p_scale,μ_scale) = scales
     #T̄ = T/T_scale(model)
     F[1] = (df_l[2]-df_v[2])*p_scale
@@ -139,6 +141,8 @@ function enthalpy_vap(model::EoSModel, T)
     return H_vap
 end
 
+
+#=
 function choose_p(p1,p2)
     if p1 > 0 && p2 > 0
         p = (p1+p2)/2
@@ -151,7 +155,6 @@ function choose_p(p1,p2)
     end
     return p
 end
-#=
     an alternative algorithm for saturation pressure.
         
 """
