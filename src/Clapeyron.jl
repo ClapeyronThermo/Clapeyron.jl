@@ -122,4 +122,6 @@ include("models/UFTheory/UFTheory.jl")
 
 include("models/cached/CachedEoS.jl")
 
+include("utils/estimation.jl")
+
 end # module
