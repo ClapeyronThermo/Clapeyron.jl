@@ -74,18 +74,24 @@ function joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase = :unk
 end
 
 function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
-    μ_res  = chemical_potential_res(model,p,T,z;phase = phase, threaded=threaded)
-    Z      = compressibility_factor(model,p,T,z;phase = phase, threaded=threaded)
-    φ_i    = @. exp(μ_res/R̄/T)/Z
-    return φ_i
+    V = volume(model,p,T,z;phase,threaded)
+    μ_res = VT_chemical_potential_res(model,V,T,z)
+    φ = μ_res
+    Z = p*V/R̄/T/sum(z)
+    for i ∈ @comps
+        φ[i] = exp(μ_res[i]/R̄/T)/Z
+    end
+    return φ
 end
 
 function activity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
     pure   = split_model(model)
-    μ_pure = chemical_potential.(pure,p,T;phase = phase, threaded=threaded)
-    μ_mixt = chemical_potential(model,p,T,z;phase = phase, threaded=threaded)
-    μ_pure = [μ_pure[i][1] for i in 1:length(z)]
-    γ_i    = @. exp((μ_mixt-μ_pure)/R̄/T)/z
+    μ_mixt = chemical_potential(model,p,T,z;phase,threaded)
+    γ_i = μ_mixt
+    for i ∈ @comps
+        μ_pure_i = chemical_potential(pure[i],p,T;phase,threaded)[1]
+        γ_i[i] = exp((μ_mixt[i]-μ_pure_i)/R̄/T)/z[i]
+    end
     return γ_i
 end
 """
@@ -120,8 +126,43 @@ function mass_density(model::EoSModel,p,T,z=SA[1.0];phase = :unknown,threaded=tr
     return molar_weight/V
 end
 
+"""
+    mixing(model::EoSModel, p, T, z=SA[1.], property; phase = :unknown,threaded=true)
+
+Calculates the mixing function for a specified property as:
+
+```julia
+f_mix = f(p,T,z)-z*f_pure(p,T)
+```
+the keywords `phase` and `threaded` are passed to the [volume solver](@ref Clapeyron.volume).
+"""
+function mixing(model::EoSModel,p,T,z,property;phase = :unknown,threaded=true)
+    pure = split_model(model)
+    pure_prop = property.(pure,p,T;phase=phase, threaded=threaded)
+    mix_prop  = property(model,p,T,z;phase=phase, threaded=threaded)
+    return mix_prop - dot(pure_prop,z)
+end
+
+excess(model::EoSModel,p,T,z,property) = mixing(model::EoSModel,p,T,z,property)
+
+function excess(model::EoSModel,p,T,z,::typeof(entropy))
+    pure = split_model(model)
+    s_pure = entropy_res.(pure,p,T)
+    s_mix = entropy_res(model,p,T,z)
+    return s_mix-Clapeyron.dot(s_pure,z)
+end
+
+function excess(model::EoSModel,p,T,z,::typeof(gibbs_free_energy))
+    pure = split_model(model)
+    g_pure = gibbs_free_energy.(pure,p,T)
+    g_mix = gibbs_free_energy(model,p,T,z)
+    x = z./sum(z)
+    return g_mix-Clapeyron.dot(g_pure,z)-Clapeyron.N_A*Clapeyron.k_B*T*Clapeyron.dot(z,log.(x))
+end
+
 export entropy, chemical_potential, internal_energy, enthalpy, gibbs_free_energy
 export helmholtz_free_energy, isochoric_heat_capacity, isobaric_heat_capacity
 export isothermal_compressibility, isentropic_compressibility, speed_of_sound
 export isobaric_expansivity, joule_thomson_coefficient, compressibility_factor, inversion_temperature
 export mass_density,molar_density, activity_coefficient, fugacity_coefficient, entropy_res
+export mixing, excess
