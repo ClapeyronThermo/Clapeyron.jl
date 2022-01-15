@@ -59,7 +59,7 @@ export return_model
 function return_model(
         estimation::Estimation,
         params::Vector{Symbol},
-        values::Vector{Any}) 
+        values::Vector{T} where {T<:Any}) 
     model = deepcopy(estimation.model)
     for (i, param) in enumerate(params)
         current_param = getfield(model.params, param)

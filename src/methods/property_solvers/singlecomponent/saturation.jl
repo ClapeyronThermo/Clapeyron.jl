@@ -56,7 +56,7 @@ function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
         return (p_c,V_c,V_c)
     end
     if T_c < T
-        @error "initial temperature $T greater than critical temperature $T_c. returning NaN"
+        # @error "initial temperature $T greater than critical temperature $T_c. returning NaN"
     else
         V0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
         V0 = MVector((V0[1],V0[2]))
