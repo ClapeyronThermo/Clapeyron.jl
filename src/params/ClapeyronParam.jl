@@ -708,6 +708,31 @@ function pack_vectors(params::Vararg{SingleParameter{T},N}) where {T<:Number,N}
     SingleParam(name,components,vals,missingvals,srccsv,src)
 end
 
+#this should take care of converting ints to floats and ints to bool if necessary
+function Base.convert(::Type{SingleParam{Float64}},param::SingleParam{Int})
+    values = Float64.(param.values)
+    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{Int})
+    @assert all(z->(isone(z) | iszero(z)),param.values)
+    values = Array(Bool.(x))
+    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{PairParam{Float64}},param::PairParam{Int})
+    values = Float64.(param.values)
+    diagvalues = view(values, diagind(values))
+    return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{PairParam{Bool}},param::PairParam{Int})
+    @assert all(z->(isone(z) | iszero(z)),param.values)
+    values = Array(Bool.(x))
+    diagvalues = view(values, diagind(values))
+    return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
 const PackedVectorSingleParam{T} = Clapeyron.SingleParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}
 
 const PackedSparsePairParam{T} = Clapeyron.PairParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, SparsePackedMofV{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, 
