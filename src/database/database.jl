@@ -203,12 +203,16 @@ function pkgparam(param::String,
     
     param ∉ options.asymmetricparams && mirrormatrix!(value)
     newvalue, ismissingvalues = defaultmissing(value)
-    if (param ∉ options.ignore_missing_singleparams 
-        && !all([ismissingvalues[x,x] for x ∈ 1:size(ismissingvalues,1)])
-        && any([ismissingvalues[x,x] for x ∈ 1:size(ismissingvalues,1)]))
-        error("Partial missing values exist in diagonal of pair parameter ", param, ": ", [value[x,x] for x ∈ 1:size(ismissingvalues,1)], ".")
+    diagidx = diagind(newvalue)
+    diagvalues = view(newvalue,diagidx)
+
+    if param ∉ options.ignore_missing_singleparams 
+        missing_diag = view(ismissingvalues,diagidx)
+        type = first(missing_diag)
+        if any(!=(type),missing_diag) #if all are true or all are false 
+            error("Partial missing values exist in diagonal of pair parameter ", param, ": ", [value[x,x] for x ∈ 1:size(ismissingvalues,1)], ".")
+       end
     end
-    diagvalues = view(newvalue,diagind(newvalue))
     return PairParam(param,components, newvalue,diagvalues,ismissingvalues, collect(paramsourcecsvs[param]), collect(paramsources[param]))
 end
 #AssocParam
@@ -237,11 +241,6 @@ function param_type(t1,t2)
         res = Union{Missing,t1,t2}
     end
     return res
-end
-
-#try not to promote to Int64. this will error if a user pass integer values different from 0 and 1
-function param_type(::Type{Bool},::Type{Int})
-    return Union{Bool,Missing}
 end
 
 function createparamarrays(components::Array{String,1}, filepaths::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, options::ParamOptions = DefaultOptions)
@@ -331,46 +330,39 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
     return allparams, paramsourcecsvs, paramsources
 end
 
-function defaultmissing(array::Array{<:Number},defaultvalue = zero(eltype(array)))
-    return deepcopy(array),Array(ismissing.(array))
+function defaultmissing(array::Array{<:Number})
+
+    return deepcopy(array),fill(false,size(array))
 end
 
-function defaultmissing(array::Array{<:AbstractString},defaultvalue = "")
-    return string.(array),Array(ismissing.(array))
+function defaultmissing(array::Array{<:AbstractString})
+    return String.(array),fill(false,size(array))
 end
 
-function defaultmissing(array::Array{String},defaultvalue = "")
-    return deepcopy(array),Array(ismissing.(array))
+function defaultmissing(array::Array{Union{Missing, T}}) where T <:AbstractString
+    return String.(coalesce.(array,"")),Array(ismissing.(array))
 end
 
-function defaultmissing(array::Array{Union{Missing, T}},defaultvalue="") where T <:AbstractString
-    return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{Union{Missing, T}},defaultvalue=zero(eltype(array))) where T<:Number
-    return coalesce.(array,defaultvalue),Array(ismissing.(array))
-end
-
-function defaultmissing(array::Array{Union{Missing, Bool}},defaultvalue=zero(eltype(array)))
-    return [coalesce(i,defaultvalue) for i in array],Array(ismissing.(array))
+function defaultmissing(array::Array{Union{Missing, T}}) where T<:Number
+    default = zero(eltype(array))
+    return coalesce.(array,default),Array(ismissing.(array))
 end
 
 #if an array with only missings is passed, the Resulting ClapeyronParam will be 
 #of the type that this function returns
-function defaultmissing(array::Array{Missing},defaultvalue=0.0)
-    return coalesce.(array,defaultvalue),Array(ismissing.(array))
+function defaultmissing(array::Array{Missing})
+    n =size(array)
+    return fill(0.0,n),Array(fill(true,n))
 end
 
-function defaultmissing(array::Array{Union{Missing,T1,T2}},defaultvalue="") where {T1 <:Number,T2<:AbstractString}
-    return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
+function defaultmissing(array::Array{Union{Missing,T1,T2}}) where {T1 <:Number,T2<:AbstractString}
+    return string.(coalesce.(array,"")),Array(ismissing.(array))
 end
 
-function defaultmissing(array::Array{Any},defaultvalue="")
-    return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
+function defaultmissing(array::Array{Any})
+    return string.(coalesce.(array,"")),Array(ismissing.(array))
 end
-function defaultmissing(array::Array{T},defaultvalue::T2) where T<:Union{T2,Missing} where T2
-    coalesce.(array,Ref(defaultvalue)),Array(ismissing.(array))
-end
+
 function defaultmissing(array)
     throw("Unsupported array element type  $(typeof(array))")
 end
@@ -677,7 +669,6 @@ end
 verbose && @info("Found sites for $components are $(output).")
 return output
 end
-
 
 function findgroupsincsv(components::Vector{String},
                         filepath::String,

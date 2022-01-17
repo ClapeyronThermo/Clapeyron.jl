@@ -106,10 +106,15 @@ function SingleParam(
     components::Vector{String},
     values::Vector{T},
     sourcecsvs = String[],
-    sources = String[]
-    ;default = _zero(T)) where T
-    _values,_ismissingvalues = defaultmissing(values,default)
-    TT = eltype(_values)
+    sources = String[]) where T
+    if any(ismissing,values)
+        _values,_ismissingvalues = defaultmissing(values)
+        TT = eltype(_values)
+    else
+        _values = values
+        _ismissingvalues = fill(false,length(values))
+        TT = T
+    end
     return  SingleParam{TT}(name,components, _values, _ismissingvalues, sourcecsvs, sources)
 end
 
@@ -716,7 +721,13 @@ end
 
 function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{Int})
     @assert all(z->(isone(z) | iszero(z)),param.values)
-    values = Array(Bool.(x))
+    values = Array(Bool.(param.values))
+    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{SingleParam{Int}},param::SingleParam{Float64})
+    @assert all(z->isinteger(z),param.values)
+    values = Int.(param.values)
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
@@ -728,7 +739,14 @@ end
 
 function Base.convert(::Type{PairParam{Bool}},param::PairParam{Int})
     @assert all(z->(isone(z) | iszero(z)),param.values)
-    values = Array(Bool.(x))
+    values = Array(Bool.(param.values))
+    diagvalues = view(values, diagind(values))
+    return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{PairParam{Int}},param::PairParam{Float64})
+    @assert all(z->isinteger(z),param.values)
+    values = Int.(param.values)
     diagvalues = view(values, diagind(values))
     return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
 end

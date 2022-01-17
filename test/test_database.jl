@@ -52,7 +52,9 @@ using Clapeyron, Test
     # Check that all the types are correct.
     @test typeof(params["intparam"]) <: Clapeyron.SingleParam{Int}
     @test typeof(params["doubleparam"]) <: Clapeyron.SingleParam{Float64}
-    @test typeof(params["boolparam"]) <: Clapeyron.SingleParam{Bool}
+    
+    #@test typeof(params["boolparam"]) <: Clapeyron.SingleParam{Bool} 
+    #the conversion is now done at EoSParam assigment time
     #@test typeof(params["stringparam"]) <: Clapeyron.SingleParam{String} obsolete with the convert
     # If column has both strings and numbers, they should all be strings.
     #@test typeof(params["mixedparam"]) <: Clapeyron.SingleParam{String}
