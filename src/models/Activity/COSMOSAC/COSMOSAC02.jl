@@ -17,6 +17,28 @@ end
 
 @registermodel COSMOSAC02
 export COSMOSAC02
+@doc """
+COSMOSAC02(components; puremodel=PR,userlocations=String[],verbose=false)
+
+COSMOSAC02 EoS
+
+## Input parameters:
+- `Pi` :Single Parameter{String} 
+- `V`: Single Parameter{Float64}
+- `A`: Single Parameter{Float64}
+
+
+## Model Parameters:
+- Pi::SingleParam{Vector{Float64}}
+- V::SingleParam{Float64}
+- A::SingleParam{Float64}
+
+## Description
+An activity coefficient model using molecular solvation based on the COSMO-RS method.
+
+""" COSMOSAC02
+
+
 
 function COSMOSAC02(components; puremodel=PR,
     userlocations=String[], 
@@ -30,7 +52,7 @@ function COSMOSAC02(components; puremodel=PR,
 
     init_puremodel = [puremodel([components[i]]) for i in icomponents]
     packagedparams = COSMOSAC02Param(Pi,V,A)
-    references = String[]
+    references = String["10.1021/ie001047w"]
     model = COSMOSAC02(components,icomponents,packagedparams,init_puremodel,1e-12,references)
     return model
 end
