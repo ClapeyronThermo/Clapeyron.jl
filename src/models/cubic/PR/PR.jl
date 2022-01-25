@@ -78,7 +78,7 @@ function cubic_poly(model::PRModel,p,T,z)
     k₀ = B*(B*(B+1.0)-A)
     k₁ = -B*(3*B+2.0) + A
     k₂ = B-1.0
-    k₃ = 1.0
+    k₃ = one(a) # important to enable autodiff
     return (k₀,k₁,k₂,k₃),c
 end
 #=
