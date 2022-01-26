@@ -130,7 +130,9 @@ function zero_assoc(m::Compressed4DMatrix,x::T = 0.0) where T <:Number
 end
 =#
 function indices(x::Compressed4DMatrix)
-    return zip(1:length(x.values),x.outer_indices,x.inner_indices)
+    xin = x.outer_indices
+    l = 1:length(xin) 
+    return zip(l,xin,x.inner_indices)
 end
 
 function indices(x::PackedVofV)
