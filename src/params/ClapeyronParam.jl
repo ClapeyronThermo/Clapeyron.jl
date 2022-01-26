@@ -526,7 +526,7 @@ julia> model3.sites.n_sites
 struct SiteParam <: ClapeyronParam
     components::Array{String,1}
     sites::Array{Array{String,1},1}
-    n_sites::Array{Array{Int,1},1}
+    n_sites::PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int}, Vector{Int}, SubArray{Int, 1, Vector{Int}, Tuple{UnitRange{Int64}}, true}}
     i_sites::Array{Array{Int,1},1}
     flattenedsites::Array{String,1}
     n_flattenedsites::Array{Array{Int,1},1}
@@ -606,7 +606,7 @@ function SiteParam(pairs::Dict{String,SingleParam{Int}},allcomponentsites)
     end
     return SiteParam(components, 
     sites, 
-    n_sites,
+    PackedVectorsOfVectors.pack(n_sites),
     i_sites, 
     flattenedsites,
     n_flattenedsites, 
@@ -636,7 +636,7 @@ function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=St
 
     return SiteParam(components, 
     sites, 
-    n_sites,
+    PackedVectorsOfVectors.pack(n_sites),
     i_sites, 
     flattenedsites,
     n_flattenedsites, 
@@ -649,7 +649,7 @@ function SiteParam(components::Vector{String})
     return SiteParam(
     components,
     [String[] for _ ∈ 1:n],
-    [Int[] for _ ∈ 1:n],
+    PackedVectorsOfVectors.pack([Int[] for _ ∈ 1:n]),
     [Int[] for _ ∈ 1:n],
     String[],
     [Int[] for _ ∈ 1:n],

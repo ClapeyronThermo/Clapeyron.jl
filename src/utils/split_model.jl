@@ -188,7 +188,7 @@ function split_model(param::SiteParam,
         return SiteParam(
             param.components[I],
             param.sites[I],
-            param.n_sites[I],
+            each_split_model(param.sites.n_sites,I),
             param.i_sites[I],
             param.flattenedsites,
             param.n_flattenedsites[I],

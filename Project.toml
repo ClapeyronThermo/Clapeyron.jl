@@ -37,7 +37,7 @@ Roots = "^1"
 Scratch = "^1.1"
 StaticArrays = "^1"
 Tables = "^1.4"
-ThermoState = "^0.4"
+ThermoState = "^0.5"
 Unitful = "^1.5"
 julia = "^1.5"
 
