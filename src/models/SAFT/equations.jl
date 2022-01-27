@@ -66,7 +66,7 @@ function assoc_site_matrix(model,V,T,z,data=nothing)
     end
     _sites = model.sites.n_sites
     p = _sites.p
-    ρ = sum(z)/V
+    ρ = N_A/V
     _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
     _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
     _idx = 1:length(_ii)
@@ -120,35 +120,49 @@ function assoc_site_matrix(model,V,T,z,data=nothing)
     return res
 end
 
+@inline function newton_refinement(newton,x,A,Ax,i)
+    if newton
+        fi = Ax*x + x - 1
+        #fi = ifelse(fi>4*eps(typeof(fi)),fi,zero(fi))
+        dfi = Ax + 1 + x*A[i,i]
+        return fi/dfi
+    else
+        return zero(x)
+    end
+end
+
 function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     bv = model.params.bondvol.values
     nn = length(bv.values)
     isone(nn) && return X_exact1(model,V,T,z,data)
     _1 = one(V+T+first(z))
-    idxs = model.sites.n_sites.p
-    X0 = fill(_1,length(idxs)+1)
-    AA = assoc_site_matrix(model,V,T,z,data)
-    @show X0
-    function fX(out,in)
-        mul!(out,AA,in)
-        @show out
-        @show(in)
-        for i in 1:length(out)
-            Axᵢ = out[i]
-            out[i] = _1/(Axᵢ+_1)
-        end
-        return out 
-    end
-    X1 = copy(X0)
-    fX(X1,X0)
-    @show X1 
+    _0 = zero(_1)
+    
     options = model.assoc_options
     atol = options.atol
     rtol = options.rtol
     max_iters = options.max_iters
     α = options.dampingfactor
+    newton = options.newton
+
+    idxs = model.sites.n_sites.p
+    X0 = fill(_1*(!newton),length(idxs)+1)
+    A = assoc_site_matrix(model,V,T,z,data)
+    
+    function fX(out,in)
+        mul!(out,A,in) 
+        for i in 1:length(out)
+            x = in[i]
+            Ax = out[i]
+            Δxi_newton = newton_refinement(newton,x,A,Ax,i)         
+            fixpoint_xi = _1/(_1 + Ax)        
+            res = fixpoint_xi - Δxi_newton          
+            out[i] = res
+        end
+        return out
+    end
+    
     Xsol = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(α),atol=atol,rtol = rtol,max_iters = max_iters)
-    @show Xsol
     return PackedVofV(idxs,Xsol)
 end
 
@@ -213,7 +227,6 @@ function _a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
         res += resᵢₐ*z[i] 
     end
     return res/sum(z)
-
 end
 
 #=
