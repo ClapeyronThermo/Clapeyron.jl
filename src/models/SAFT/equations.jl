@@ -119,17 +119,9 @@ function assoc_site_matrix(model,V,T,z,data=nothing)
     res = sparse(c1,c2,val)
     return res
 end
-
-@inline function newton_refinement(newton,x,A,Ax,i)
-    if newton
-        fi = Ax*x + x - 1
-        #fi = ifelse(fi>4*eps(typeof(fi)),fi,zero(fi))
-        dfi = Ax + 1 + x*A[i,i]
-        return fi/dfi
-    else
-        return zero(x)
-    end
-end
+#Mx = a + b(x,x)
+#Axx + x - 1 = 0
+#x = 1 - Axx
 
 function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     bv = model.params.bondvol.values
@@ -142,22 +134,25 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     rtol = options.rtol
     max_iters = options.max_iters
     α = options.dampingfactor
-    newton = options.newton
 
     idxs = model.sites.n_sites.p
     n = length(model.sites.n_sites.v)
-    X0 = fill(_1*(!newton),n)
     A = assoc_site_matrix(model,V,T,z,data)
+    Amin,Amax = extrema(A.nzval)
+    if Amax > 1
+        f = _1/Amin
+    else
+        f = _1-Amin
+    end
+    X0 = fill(f,n)
 
     function fX(out,in)
         mul!(out,A,in) 
         for i in 1:length(out)
             x = in[i]
             Ax = out[i]
-            Δxi_newton = newton_refinement(newton,x,A,Ax,i)         
-            fixpoint_xi = _1/(_1 + Ax)        
-            res = fixpoint_xi - Δxi_newton          
-            out[i] = res
+            fixpoint_xi = _1/(_1+Ax) 
+            out[i] = fixpoint_xi 
         end
         return out
     end

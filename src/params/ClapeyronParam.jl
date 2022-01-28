@@ -658,7 +658,7 @@ function SiteParam(components::Vector{String})
 end
 
 """
-    AssocOptions(;rtol = 1e-12,atol = 1e-12,max_iters = 1000,dampingfactor = 0.5,newton = true)
+    AssocOptions(;rtol = 1e-12,atol = 1e-12,max_iters = 1000,dampingfactor = 0.5)
 
 Struct containing iteration parameters for the solver of association sites.
 
@@ -668,7 +668,6 @@ Struct containing iteration parameters for the solver of association sites.
     atol::Float64 = 1e-12
     max_iters::Int = 1000
     dampingfactor::Float64 = 0.5
-    newton::Bool = true
 end
 
 is_splittable(::AssocOptions) = false
