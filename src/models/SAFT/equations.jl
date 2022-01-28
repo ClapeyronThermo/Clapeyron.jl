@@ -136,8 +136,7 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     nn = length(bv.values)
     isone(nn) && return X_exact1(model,V,T,z,data)
     _1 = one(V+T+first(z))
-    _0 = zero(_1)
-    
+        
     options = model.assoc_options
     atol = options.atol
     rtol = options.rtol
@@ -146,9 +145,10 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     newton = options.newton
 
     idxs = model.sites.n_sites.p
-    X0 = fill(_1*(!newton),length(idxs)+1)
+    n = length(model.sites.n_sites.v)
+    X0 = fill(_1*(!newton),n)
     A = assoc_site_matrix(model,V,T,z,data)
-    
+
     function fX(out,in)
         mul!(out,A,in) 
         for i in 1:length(out)
@@ -205,7 +205,6 @@ function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,data=nothing)
     nn = length(model.params.bondvol.values.values)
     iszero(nn) && return _0
     X_ = @f(X,data)
-    
     return @f(_a_assoc,X_)
 end
 
