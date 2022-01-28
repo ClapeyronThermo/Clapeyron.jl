@@ -11,7 +11,7 @@ using FillArrays: FillArrays
 
 using Roots: Roots
 using NLSolvers
-import Metaheuristics
+import BlackBoxOptim
 using DiffResults, ForwardDiff
 using Scratch 
 

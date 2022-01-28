@@ -72,8 +72,6 @@ function assoc_site_matrix(model,V,T,z,data=nothing)
     _idx = 1:length(_ii)
     _Δ= delta.values
     TT = eltype(_Δ)
-    c1 = zeros(Int,0)
-    c2 = zeros(Int,0)
     count = 0
     @inbounds for i ∈ 1:length(z) #for i ∈ comps 
         sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
@@ -82,12 +80,7 @@ function assoc_site_matrix(model,V,T,z,data=nothing)
             for idx ∈ _idx #iterating for all sites
                 ij = _ii[idx]
                 ab = _aa[idx]
-                if issite(i,a,ij,ab)
-                    j = complement_index(i,ij)
-                    b = complement_index(a,ab)
-                    #jb = compute_index(pack_indices,j,b)
-                    count += 1
-                end
+                issite(i,a,ij,ab) && (count += 1)
             end
         end
     end
@@ -116,8 +109,8 @@ function assoc_site_matrix(model,V,T,z,data=nothing)
             end
         end
     end
-    res = sparse(c1,c2,val)
-    return res
+    K = sparse(c1,c2,val)
+    return K
 end
 #Mx = a + b(x,x)
 #Axx + x - 1 = 0
@@ -135,28 +128,27 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     max_iters = options.max_iters
     α = options.dampingfactor
 
+    K = assoc_site_matrix(model,V,T,z,data)
+    
+    Kmin,Kmax = extrema(K.nzval)
+    if Kmax > 1
+        f = _1/Kmin
+    else
+        f = _1-Kmin
+    end
     idxs = model.sites.n_sites.p
     n = length(model.sites.n_sites.v)
-    A = assoc_site_matrix(model,V,T,z,data)
-    Amin,Amax = extrema(A.nzval)
-    if Amax > 1
-        f = _1/Amin
-    else
-        f = _1-Amin
-    end
     X0 = fill(f,n)
 
     function fX(out,in)
         mul!(out,A,in) 
         for i in 1:length(out)
-            x = in[i]
-            Ax = out[i]
-            fixpoint_xi = _1/(_1+Ax) 
-            out[i] = fixpoint_xi 
+            Kx = out[i]
+            out[i] = _1/(_1+Kx) 
         end
         return out
     end
-    
+
     Xsol = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(α),atol=atol,rtol = rtol,max_iters = max_iters)
     return PackedVofV(idxs,Xsol)
 end
@@ -173,7 +165,10 @@ function X_exact1(model,V,T,z,data=nothing)
         _Δ = @f(Δ,i,j,a,b,data)
     end
     _1 = one(eltype(_Δ))
-    X_ = PackedVectorsOfVectors.packed_ones(typeof(_1),length(@sites(i)) for i ∈ @comps)
+    idxs = model.sites.n_sites.p
+    n = length(model.sites.n_sites.v)
+    Xsol = fill(_1,n)
+    _X = PackedVofV(idxs,Xsol)
     ρ = N_A/V
     zi = z[i]
     zj = z[j]
@@ -186,13 +181,13 @@ function X_exact1(model,V,T,z,data=nothing)
     kjb = nb*zj*ρ*_Δ
     #kia*x*x + x(kjb-kia+1) - 1 = 0
     _a = kia
-    _b = 1 -kia + kjb
-    _c = -1
+    _b = _1 -kia + kjb
+    _c = -_1
     xia = -2*_c/(_b + sqrt(_b*_b - 4*_a*_c))
-    xjb = 1/(1+kia*xia)
-    X_[j][b] = xjb
-    X_[i][a] = xia
-    return X_
+    xjb = _1/(1+kia*xia)
+    _X[j][b] = xjb
+    _X[i][a] = xia
+    return _X
 end
 
 function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,data=nothing)
