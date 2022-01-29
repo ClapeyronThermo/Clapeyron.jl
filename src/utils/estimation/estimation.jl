@@ -1,10 +1,3 @@
-struct EstimationData{F<:Function}
-    method::F
-    condition_input_name::Vector{Symbol}
-    condition_input::Vector{Vector{Float64}}
-    condition_output::Vector{Vector{Float64}}
-end
-
 export Estimation
 # Mutable for now to make it easy to just replace the model
 mutable struct Estimation{T<:EoSModel, U<:EoSParam}
@@ -90,5 +83,3 @@ function return_model(
     return model
 end
 
-function create_estimationdata(filepaths::Vector{String})
-end
