@@ -141,7 +141,7 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     X0 = fill(f,n)
 
     function fX(out,in)
-        mul!(out,A,in) 
+        mul!(out,K,in) 
         for i in 1:length(out)
             Kx = out[i]
             out[i] = _1/(_1+Kx) 
