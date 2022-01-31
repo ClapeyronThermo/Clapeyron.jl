@@ -65,8 +65,8 @@ UMR_g_E(model,V,T,z) = excess_gibbs_free_energy(model,V,T,z)
 
 function UMR_g_E(model::UNIFACModel,V,T,z) 
     Σz = sum(z)
-    lnγ_SG_  = lnγ_SG(mixing_model.activity,1e5,T,z)
-    lnγ_res_ = lnγ_res(mixing_model.activity,1e5,T,z)
+    lnγ_SG_  = lnγ_SG(model,1e5,T,z)
+    lnγ_res_ = lnγ_res(model,1e5,T,z)
     return sum(z[i]*R̄*T*(lnγ_res_[i]+lnγ_SG_[i]) for i ∈ @comps)/Σz
 end
 
