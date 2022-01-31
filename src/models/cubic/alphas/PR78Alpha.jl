@@ -5,8 +5,36 @@ struct PR78AlphaParam <: EoSParam
 end
 
 @newmodelsimple PR78Alpha PR78AlphaModel PR78AlphaParam
-
 export PR78Alpha
+
+@doc """
+    PR78Alpha <: PR78AlphaModel
+    
+    PR78Alpha(components::Vector{String};
+    userlocations::Vector{String}=String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+- `w`: Single Parameter
+
+## Model Parameters
+
+- `acentricfactor`: Single Parameter
+
+## Description
+
+Cubic alpha `(α(T))` model. Default for `PR78` EoS.
+```
+αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
+Trᵢ = T/Tcᵢ
+if ωᵢ ≤ 0.491
+    mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
+else
+    mᵢ = 0.379642 + 1.487503ωᵢ - 0.164423ωᵢ^2 - 0.016666ωᵢ^3
+```
+""" PR78Alpha
+
 function PR78Alpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = SingleParam(params["w"],"acentric factor")

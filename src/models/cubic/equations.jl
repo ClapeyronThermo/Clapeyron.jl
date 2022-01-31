@@ -1,3 +1,18 @@
+
+
+"""
+    ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
+
+given `Tc::SingleParam`, `pc::SingleParam`, `kij::PairParam` and `mixing <: MixingRule`, it will return 
+`PairParam`s `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the van der Wals One-Fluid mixing rule. that is:
+```
+aᵢⱼ = sqrt(aᵢ*aⱼ)*(1-kᵢⱼ)
+bᵢⱼ = (bᵢ + bⱼ)/2
+```
+
+"""
+function ab_premixing end
+
 function ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
     Ωa, Ωb = ab_consts(T)
     _Tc = Tc.values

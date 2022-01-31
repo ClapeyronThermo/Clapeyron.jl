@@ -23,6 +23,53 @@ end
 @registermodel RK
 export RK
 
+@doc """
+    RK(components::Vector{String}; idealmodel=BasicIdeal,
+    alpha = PRAlpha,
+    mixing = vdW1fRule,
+    activity=nothing,
+    translation=NoTranslation,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    alpha_userlocations = String[],
+    mixing_userlocations = String[],
+    activity_userlocations = String[],
+    translation_userlocations = String[],
+    verbose=false)
+
+## Input parameters
+- `Tc`: Single Parameter
+- `Pc`: Single Parameter
+- `Mw` :Single Parameter
+- `k`: Pair Parameter
+
+## Model Parameters
+- `Tc`: Single Parameter
+- `Pc`: Single Parameter
+- `Mw` :Single Parameter
+- `a`: Pair Parameter
+- `b`: Pair Parameter
+
+## Input models
+- `idealmodel`: Ideal Model
+- `alpha`: Alpha model
+- `mixing`: Mixing model
+- `activity`: Activity Model, used in the creation of the mixing model.
+- `translation`: Translation Model
+
+## Description
+
+Redlich-Kwong Equation of state.
+```
+P = RT/(V-Nb) + a•α(T)/(V(V+Nb))
+```
+
+## References
+
+1. Redlich, O., & Kwong, J. N. S. (1949). On the thermodynamics of solutions; an equation of state; fugacities of gaseous solutions. Chemical Reviews, 44(1), 233–244. doi:10.1021/cr60137a013
+
+""" RK
+
 function RK(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = RKAlpha,
     mixing = vdW1fRule,
@@ -47,7 +94,7 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     icomponents = 1:length(components)
     packagedparams = RKParam(a,b,Tc,pc,Mw)
-    references = String[]
+    references = String["10.1021/cr60137a013"]
     model = RK(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
     return model
 end
