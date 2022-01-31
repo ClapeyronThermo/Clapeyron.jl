@@ -37,11 +37,13 @@ bᵢⱼ = (bᵢ +bⱼ)/2
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ā = b̄(∑[xᵢaᵢᵢαᵢ/(bᵢᵢ)] - gᴱ/λ)
-if the model is Peng-Robinson:
-    λ = 0.6232252401402305
-if the model is Redlich-Kwong:
-    λ = 0.6931471805599453
+for Redlich-Kwong:
+    λ = log(2) (0.6931471805599453)
+for Peng-Robinson:
+    λ = 1/(2√(2))log((2+√(2))/(2-√(2))) (0.6232252401402305)
 ```
+`λ` is a coefficient indicating the relation between `gᴱ` and `gᴱ(cubic)` at infinite pressure. see [1] for more information. it can be customized by defining `HV_λ(::HVRuleModel,::CubicModel)`
+
 ## References
 1. Huron, M.-J., & Vidal, J. (1979). New mixing rules in simple equations of state for representing vapour-liquid equilibria of strongly non-ideal mixtures. Fluid Phase Equilibria, 3(4), 255–271. doi:10.1016/0378-3812(79)80001-1
 
@@ -57,8 +59,8 @@ function HVRule(components::Vector{String}; activity = Wilson, userlocations::Ve
     return model
 end
 
-HVλ(::PRModel) =  1/(2*√(2))*log((2+√(2))/(2-√(2)))
-HVλ(::RKModel) = log(2)
+HV_λ(::HVRuleModel,::PRModel) =  1/(2*√(2))*log((2+√(2))/(2-√(2)))
+HV_λ(::HVRuleModel,::RKModel) = log(2)
 
 function mixing_rule(model::CubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,c)
     n = sum(z)
@@ -68,7 +70,7 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,c)
     c̄ = dot(z,c)/n
     gᴱ = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
     ∑ab = sum(z[i]*a[i,i]*α[i]/b[i,i] for i ∈ @comps)*invn
-    _λ = HVλ(mixing_model,model)
+    _λ = HV_λ(mixing_model,model)
     ā = b̄*(∑ab-gᴱ/_λ)
     return ā,b̄,c̄
 end

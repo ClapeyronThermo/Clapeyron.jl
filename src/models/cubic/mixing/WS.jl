@@ -41,12 +41,12 @@ B̄ = Σxᵢxⱼ(bᵢⱼ - aᵢⱼ√(αᵢαⱼ)/RT)
 b̄  = B̄/(1 - gᴱ/λRT - Σxᵢaᵢαᵢ/bᵢRT)
 ā = RT(b̄ - B̄)
 for Redlich-Kwong:
-    λ = log(2)
+    λ = log(2) (0.6931471805599453)
 for Peng-Robinson:
-    λ = 1/(2√(2))log((2+√(2))/(2-√(2)))
+    λ = 1/(2√(2))log((2+√(2))/(2-√(2))) (0.6232252401402305)
 ```
 
-`λ` is a coefficient related to the relation between `gᴱ` and `gᴱ(cubic)` at infinite pressure. see [1] for more information. it can be customized by defining `WS_λ(::CubicModel)`
+`λ` is a coefficient indicating the relation between `gᴱ` and `gᴱ(cubic)` at infinite pressure. see [1] for more information. it can be customized by defining `WS_λ(::WSRuleModel,::CubicModel)`
 ## References
 
 1. Wong, D. S. H., & Sandler, S. I. (1992). A theoretically correct mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 38(5), 671–680. doi:10.1002/aic.690380505
