@@ -7,7 +7,7 @@ end
 @newmodelsimple PR78Alpha PR78AlphaModel PR78AlphaParam
 export PR78Alpha
 
-@doc """
+"""
     PR78Alpha <: PR78AlphaModel
     
     PR78Alpha(components::Vector{String};
@@ -33,7 +33,8 @@ if ωᵢ ≤ 0.491
 else
     mᵢ = 0.379642 + 1.487503ωᵢ - 0.164423ωᵢ^2 - 0.016666ωᵢ^3
 ```
-""" PR78Alpha
+"""
+PR78Alpha
 
 function PR78Alpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)

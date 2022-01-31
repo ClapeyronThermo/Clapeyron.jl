@@ -5,8 +5,7 @@ end
 @newmodelsimple MTAlpha SoaveAlphaModel MTAlphaParam
 export MTAlpha
 
-
-@doc """
+"""
     MTAlpha <: MTAlphaModel
     
     MTAlpha(components::Vector{String};
@@ -34,7 +33,8 @@ mᵢ = 0.384401 + 1.52276ωᵢ - 0.213808ωᵢ^2 + 0.034616ωᵢ^3 - 0.001976ω�
 
 1. Magoulas, K., & Tassios, D. (1990). Thermophysical properties of n-Alkanes from C1 to C20 and their prediction for higher ones. Fluid Phase Equilibria, 56, 119–140. doi:10.1016/0378-3812(90)85098-u
 
-""" MTAlpha
+"""
+MTAlpha
 
 function MTAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)

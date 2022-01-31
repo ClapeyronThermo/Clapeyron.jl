@@ -7,7 +7,7 @@ end
 @newmodelsimple BMAlpha BMAlphaModel BMAlphaParam
 export BMAlpha
 
-@doc """
+"""
     BMAlpha <: BMAlphaModel
     
     MTAlpha(components::Vector{String};
@@ -43,7 +43,8 @@ for RK models:
 
 1. .M. Boston, P.M. Mathias, Proceedings of the 2nd International Conference on Phase Equilibria and Fluid Properties in the Chemical Process Industries, West Berlin, March, 1980, pp. 823–849
 
-""" BMAlpha
+"""
+BMAlpha
 
 function BMAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)

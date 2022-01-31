@@ -5,7 +5,7 @@ end
 
 @newmodelsimple KayRule KayRuleModel KayRuleParam
 
-@doc """
+"""
     KayRule <: KayRuleModel
     
     KayRule(components::Vector{String};
@@ -31,7 +31,8 @@ ā = b̄*(∑[aᵢⱼxᵢxⱼ√(αᵢ(T)αⱼ(T))/bᵢⱼ])^2
 b̄ = (∑∛(bᵢⱼ)xᵢxⱼ)^3
 c̄ = ∑cᵢxᵢ
 ```
-""" KayRule
+"""
+KayRule
 
 export KayRule
 

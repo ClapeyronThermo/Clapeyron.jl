@@ -7,7 +7,7 @@ end
 @newmodelsimple CPAAlpha CPAAlphaModel CPAAlphaParam
 export CPAAlpha
 
-@doc """
+"""
     CPAAlpha <: CPAAlphaModel
     
     CPAAlpha(components::Vector{String};
@@ -30,7 +30,8 @@ Cubic alpha `(α(T))` model. Default for `CPA` EoS.
 
 ```
 
-""" CPAAlpha
+"""
+CPAAlpha
 
 function CPAAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["SAFT/CPA/CPA_like.csv"]; userlocations=userlocations, ignore_missing_singleparams=["Mw"], verbose=verbose)

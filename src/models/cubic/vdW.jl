@@ -23,7 +23,7 @@ end
 @registermodel vdW
 export vdW
 
-@doc """
+"""
     vdW(components::Vector{String};
     idealmodel=BasicIdeal,
     alpha = NoAlpha,
@@ -70,7 +70,8 @@ P = RT/(V-Nb) + a•α(T)/V²
 
 1. van der Waals JD. Over de Continuiteit van den Gasen Vloeistoftoestand. PhD thesis, University of Leiden; 1873
 
-""" vdW
+"""
+vdW
 
 function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = NoAlpha,

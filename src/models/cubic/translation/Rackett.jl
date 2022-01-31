@@ -6,7 +6,7 @@ end
 
 @newmodelsimple RackettTranslation RackettTranslationModel RackettTranslationParam
 
-@doc """
+"""
     RackettTranslation <: RackettTranslationModel
 
     RackettTranslation(components::Vector{String};
@@ -33,7 +33,8 @@ Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 
 1. Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. doi:10.1021/je60047a012
 
-""" RackettTranslation
+"""
+RackettTranslation
 
 export RackettTranslation
 function RackettTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)

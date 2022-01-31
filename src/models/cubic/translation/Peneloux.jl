@@ -6,7 +6,7 @@ end
 
 @newmodelsimple PenelouxTranslation PenelouxTranslationModel PenelouxTranslationParam
 
-@doc """
+"""
 
     PenelouxTranslation <: PenelouxTranslationModel
 
@@ -35,7 +35,8 @@ Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 
 1. Péneloux A, Rauzy E, Fréze R. (1982) A consistent correction for Redlich‐Kwong‐Soave volumes. Fluid Phase Equilibria 1, 8(1), 7–23. doi:10.1016/0378-3812(82)80002-2
 
-""" PenelouxTranslation
+"""
+PenelouxTranslation
 
 export PenelouxTranslation
 function PenelouxTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)

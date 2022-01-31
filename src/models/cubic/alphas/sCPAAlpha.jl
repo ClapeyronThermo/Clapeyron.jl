@@ -3,7 +3,7 @@ abstract type sCPAAlphaModel <: CPAAlphaModel end
 
 @newmodelsimple sCPAAlpha sCPAAlphaModel CPAAlphaParam
 
-@doc """
+"""
     sCPAAlpha <: sCPAAlphaModel
     
     CPAAlpha(components::Vector{String};
@@ -25,7 +25,8 @@ Cubic alpha `(α(T))` model. Default for `sCPA` EoS.
 αᵢ = (1+c¹ᵢ(1-√(Trᵢ)))^2
 ```
 
-""" sCPAAlpha
+"""
+sCPAAlpha
 
 export sCPAAlpha
 function sCPAAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)

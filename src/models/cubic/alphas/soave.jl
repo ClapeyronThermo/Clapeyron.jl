@@ -7,7 +7,7 @@ end
 @newmodelsimple SoaveAlpha SoaveAlphaModel SoaveAlphaParam
 export SoaveAlpha
 
-@doc """
+"""
     SoaveAlpha <: SoaveAlphaModel
     
     SoaveAlpha(components::Vector{String};
@@ -30,8 +30,10 @@ Cubic alpha `(α(T))` model. Default for `SRK` EoS.
 Trᵢ = T/Tcᵢ
 mᵢ = 0.480 + 1.547ωᵢ - 0.176ωᵢ^2
 ```
-c
-""" SoaveAlpha
+to use different polynomial coefficients for `mᵢ`, overload `Clapeyron.α_m(::CubicModel,::SoaveAlphaModel) = (c₁,c₂,...cₙ)`
+
+"""
+SoaveAlpha
 
 function SoaveAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)

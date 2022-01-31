@@ -23,7 +23,7 @@ end
 
 @registermodel PR
 
-@doc """
+"""
     PR(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
@@ -70,7 +70,8 @@ b₂ = (1 - √2)b
 
 1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. doi:10.1021/I160057A011
 
-""" PR
+"""
+PR
 
 
 export PR
