@@ -23,6 +23,56 @@ end
 
 @registermodel PR
 
+@doc """
+    PR(components::Vector{String}; idealmodel=BasicIdeal,
+    alpha = PRAlpha,
+    mixing = vdW1fRule,
+    activity=nothing,
+    translation=NoTranslation,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    alpha_userlocations = String[],
+    mixing_userlocations = String[],
+    activity_userlocations = String[],
+    translation_userlocations = String[],
+    verbose=false)
+
+## Input parameters
+- `Tc`: Single Parameter
+- `Pc`: Single Parameter
+- `Mw` :Single Parameter
+- `k`: Pair Parameter
+
+## Model Parameters
+- `Tc`: Single Parameter
+- `Pc`: Single Parameter
+- `Mw` :Single Parameter
+- `a`: Pair Parameter
+- `b`: Pair Parameter
+
+## Input models
+- `idealmodel`: Ideal Model
+- `alpha`: Alpha model
+- `mixing`: Mixing model
+- `activity`: Activity Model, used in the creation of the mixing model.
+- `translation`: Translation Model
+
+## Description
+
+Peng-Robinson Equation of state.
+```
+P = RT/(V-Nb) + a•α(T)/(V-Nb₁)(V-Nb₂)
+b₁ = (1 + √2)b
+b₂ = (1 - √2)b
+```
+
+## References
+
+1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. doi:10.1021/I160057A011
+
+""" PR
+
+
 export PR
 function PR(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = PRAlpha,
@@ -48,7 +98,7 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     icomponents = 1:length(components)
     packagedparams = PRParam(a,b,Tc,pc,Mw)
-    references = String[]
+    references = String["10.1021/I160057A011"]
     model = PR(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
     return model
 end
