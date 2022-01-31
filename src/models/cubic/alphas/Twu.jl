@@ -8,7 +8,7 @@ end
 
 @newmodelsimple TwuAlpha TwuAlphaModel TwuAlphaParam
 
-@doc """
+"""
     TwuAlpha <: TwuAlphaModel
     
     TwuAlpha(components::Vector{String};
@@ -40,7 +40,8 @@ Trᵢ = T/Tcᵢ
 
 1. Twu, C. H., Lee, L. L., & Starling, K. E. (1980). Improved analytical representation of argon thermodynamic behavior. Fluid Phase Equilibria, 4(1–2), 35–44. doi:10.1016/0378-3812(80)80003-3
 
-""" TwuAlpha
+"""
+TwuAlpha
 
 export TwuAlpha
 function TwuAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)

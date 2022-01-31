@@ -6,6 +6,26 @@ struct BasicIdeal <: BasicIdealModel
     params::BasicIdealParam
 end
 
+"""
+    BasicIdeal <: IdealModel
+    BasicIdeal(components::Array{String,1}; 
+    userlocations::Array{String,1}=String[], 
+    verbose=false)
+
+## Input parameters
+
+None
+
+## Model Parameters
+
+None
+
+Default Ideal Model. It does not require any parameters. its helmholtz energy is defined as:
+```
+    a₀ = A₀/nRT =  ∑(xᵢlog(nxᵢ/V)) - 1 - 1.5log(T)
+```
+"""
+
 export BasicIdeal
 function BasicIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
     return BasicIdeal(BasicIdealParam())
@@ -27,3 +47,4 @@ function a_ideal(model::BasicIdeal, V, T, z)
     # ∑(x .* log.(z/V)) - 1 original formulation, prone no NaN when passing pure Fractions
     return res
 end
+

@@ -8,7 +8,7 @@ end
 
 @registermodel LCVMRule
 
-@doc """
+"""
     LCVMRule{γ} <: LCVMRuleModel
     
     LCVMRule(components::Vector{String};
@@ -46,7 +46,8 @@ ā = b̄RT(-1.827[gᴱ/RT - 0.3∑log(bᵢᵢ/b̄)] + Σᾱᵢxᵢ)
 
 1. Boukouvalas, C., Spiliotis, N., Coutsikos, P., Tzouvaras, N., & Tassios, D. (1994). Prediction of vapor-liquid equilibrium with the LCVM model: a linear combination of the Vidal and Michelsen mixing rules coupled with the original UNIFAC. Fluid Phase Equilibria, 92, 75–106. doi:10.1016/0378-3812(94)80043-x
 
-""" LCVMRule
+"""
+LCVMRule
 
 export LCVMRule
 function LCVMRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)

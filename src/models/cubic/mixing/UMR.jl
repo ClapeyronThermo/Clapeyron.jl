@@ -8,7 +8,7 @@ end
 
 @registermodel UMRRule
 
-@doc """
+"""
     UMRRule{γ} <: UMRRuleModel
     
     UMRRule(components::Vector{String};
@@ -39,7 +39,8 @@ b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - [gᴱ/RT]/0.53)
 ```
-""" UMRRule
+"""
+UMRRule
 export UMRRule
 function UMRRule(components::Vector{String}; activity = UNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)   

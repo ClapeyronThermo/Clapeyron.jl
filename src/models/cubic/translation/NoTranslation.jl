@@ -7,7 +7,7 @@ end
 
 export NoTranslation
 
-@doc """
+"""
     NoTranslation(args...) <: TranslationModel
 
 ## Input Parameters
@@ -27,7 +27,8 @@ V = V₀ + mixing_rule(cᵢ)
 cᵢ = 0 ∀ i
 ```
 
-""" NoTranslation
+"""
+NoTranslation
 
 function NoTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     model = NoTranslation(NoTranslationParam())

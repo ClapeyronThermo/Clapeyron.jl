@@ -8,7 +8,7 @@ end
 
 @registermodel WSRule
 
-@doc """
+"""
     WSRule{γ} <: WSRuleModel
     
     WSRule(components::Vector{String};
@@ -51,7 +51,8 @@ for Peng-Robinson:
 
 1. Wong, D. S. H., & Sandler, S. I. (1992). A theoretically correct mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 38(5), 671–680. doi:10.1002/aic.690380505
 2. Orbey, H., & Sandler, S. I. (1995). Reformulation of Wong-Sandler mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 41(3), 683–690. doi:10.1002/aic.690410325
-""" WSRule
+"""
+WSRule
 
 export WSRule
 function WSRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)

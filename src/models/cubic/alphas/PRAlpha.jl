@@ -5,7 +5,7 @@ end
 @newmodelsimple PRAlpha SoaveAlphaModel PRAlphaParam
 export PRAlpha
 
-@doc """
+"""
     PRAlpha <: SoaveAlphaModel
     
     PRAlpha(components::Vector{String};
@@ -29,7 +29,8 @@ Trᵢ = T/Tcᵢ
 mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
 ```
 
-""" PRAlpha
+"""
+PRAlpha
 
 function PRAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)

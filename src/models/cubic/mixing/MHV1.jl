@@ -8,7 +8,7 @@ end
 
 @registermodel MHV1Rule
 
-@doc """
+"""
     MHV1Rule{γ} <: MHV1RuleModel
     
     MHV1Rule(components::Vector{String};
@@ -51,7 +51,8 @@ to use different values for `q`, overload `Clapeyron.MHV1q(::CubicModel,::MHV1Mo
 ## References
 1. Michelsen, M. L. (1990). A modified Huron-Vidal mixing rule for cubic equations of state. Fluid Phase Equilibria, 60(1–2), 213–219. doi:10.1016/0378-3812(90)85053-d
 
-""" MHV1Rule
+"""
+MHV1Rule
 
 export MHV1Rule
 function MHV1Rule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)

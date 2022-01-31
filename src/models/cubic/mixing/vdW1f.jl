@@ -6,7 +6,7 @@ end
 @newmodelsimple vdW1fRule vdW1fRuleModel vdW1fRuleParam
 export vdW1fRule
 
-@doc """
+"""
     vdW1fRule <: vdW1fRuleModel
     
     vdW1fRule(components::Vector{String};
@@ -33,7 +33,8 @@ b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ```
 
-""" vdW1fRule
+"""
+vdW1fRule
 
 function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     packagedparams = vdW1fRuleParam()

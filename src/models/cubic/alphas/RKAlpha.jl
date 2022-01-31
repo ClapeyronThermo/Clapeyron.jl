@@ -6,7 +6,7 @@ end
 @newmodelsimple RKAlpha RKAlphaModel RKAlphaParam
 export RKAlpha
 
-@doc """
+"""
     RKAlpha <: RKAlphaModel
     
     RKAlpha(components::Vector{String};
@@ -29,7 +29,8 @@ Cubic alpha `(α(T))` model. Default for `RK` EoS.
 Trᵢ = T/Tcᵢ
 ```
 
-""" RKAlpha
+"""
+RKAlpha
 
 function RKAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)

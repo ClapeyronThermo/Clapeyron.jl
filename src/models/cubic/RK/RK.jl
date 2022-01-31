@@ -23,7 +23,7 @@ end
 @registermodel RK
 export RK
 
-@doc """
+"""
     RK(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
@@ -68,7 +68,8 @@ P = RT/(V-Nb) + a•α(T)/(V(V+Nb))
 
 1. Redlich, O., & Kwong, J. N. S. (1949). On the thermodynamics of solutions; an equation of state; fugacities of gaseous solutions. Chemical Reviews, 44(1), 233–244. doi:10.1021/cr60137a013
 
-""" RK
+"""
+RK
 
 function RK(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = RKAlpha,

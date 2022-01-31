@@ -8,7 +8,7 @@ end
 
 @registermodel VTPRRule
 
-@doc """
+"""
     VTPRRule{γ} <: VTPRRuleModel
     
     VTPRRule(components::Vector{String};
@@ -43,7 +43,8 @@ b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - gᴱᵣₑₛ/(0.53087RT))
 ```
-""" VTPRRule
+"""
+VTPRRule
 
 export VTPRRule
 function VTPRRule(components::Vector{String}; activity = UNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)

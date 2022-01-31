@@ -7,7 +7,7 @@ end
 @newmodelsimple MTTranslation MTTranslationModel MTTranslationParam
 export MTTranslation
 
-@doc """
+"""
 
 MTTranslation <: MTTranslationModel
 
@@ -40,7 +40,8 @@ Zcᵢ = 0.289 - 0.0701ωᵢ - 0.0207ωᵢ^2
 
 1. Magoulas, K., & Tassios, D. (1990). Thermophysical properties of n-Alkanes from C1 to C20 and their prediction for higher ones. Fluid Phase Equilibria, 56, 119–140. doi:10.1016/0378-3812(90)85098-u
 
-""" MTTranslation
+"""
+MTTranslation
 
 function MTTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)

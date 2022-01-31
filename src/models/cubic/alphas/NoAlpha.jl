@@ -6,7 +6,7 @@ end
 @newmodelsimple NoAlpha NoAlphaModel NoAlphaParam
 export NoAlpha
 
-@doc """
+"""
     NoAlpha(args...) <: NoAlphaModel
 
 
@@ -25,7 +25,8 @@ Cubic alpha `(α(T))` model. Default for `vdW` EoS
 αᵢ = 1 ∀ i
 ```
 
-""" NoAlpha
+"""
+NoAlpha
 
 function NoAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     model = NoAlpha(NoAlphaParam())

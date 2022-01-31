@@ -7,7 +7,7 @@ struct HVRule{γ} <: HVRuleModel
 end
 @registermodel HVRule
 
-@doc """
+"""
     HVRule{γ} <: HVRuleModel
     
     HVRule(components::Vector{String};
@@ -45,7 +45,8 @@ if the model is Redlich-Kwong:
 ## References
 1. Huron, M.-J., & Vidal, J. (1979). New mixing rules in simple equations of state for representing vapour-liquid equilibria of strongly non-ideal mixtures. Fluid Phase Equilibria, 3(4), 255–271. doi:10.1016/0378-3812(79)80001-1
 
-""" HVRule
+"""
+HVRule
 
 export HVRule
 function HVRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
