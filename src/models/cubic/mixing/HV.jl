@@ -62,7 +62,8 @@ HVλ(::RKModel) = log(2)
 
 function mixing_rule(model::CubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,c)
     n = sum(z)
-    invn2 = (one(n)/n)^2
+    invn = 1/n
+    invn2 = invn*invn
     b̄ = dot(z,Symmetric(b),z) * invn2
     c̄ = dot(z,c)/n
     gᴱ = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
