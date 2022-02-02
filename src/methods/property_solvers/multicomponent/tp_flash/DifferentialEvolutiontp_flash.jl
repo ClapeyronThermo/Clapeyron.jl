@@ -53,7 +53,21 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
 
     GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals)
     #Minimize Gibbs Free Energy
+    
+    #=
+    options = Metaheuristics.Options(time_limit = method.time_limit,iterations = method.max_steps,seed = UInt(373))
+    algorithm = Metaheuristics.WOA(N=method.population_size,options=options)   
+    bounds = vcat(zeros(TYPE,(1,numspecies*(numphases-1))),ones(TYPE,1,numspecies*(numphases-1)))
+    result = Metaheuristics.optimize(GibbsFreeEnergy,bounds,algorithm)
+    
+    dividers = reshape(Metaheuristics.minimizer(result), 
+            (numphases - 1, numspecies))
+    best_f = Metaheuristics.minimum(result)
+    
+    =#
+    
     result = BlackBoxOptim.bboptimize(GibbsFreeEnergy; 
+        Method = :xnes,
         SearchRange = (0.0, 1.0), 
         NumDimensions = numspecies*(numphases-1),
         MaxSteps=method.max_steps,
@@ -63,14 +77,16 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
         
     dividers = reshape(BlackBoxOptim.best_candidate(result), 
             (numphases - 1, numspecies))
-        
+    best_f = BlackBoxOptim.best_fitness(result)
+   
+
     #Initialize arrays xij and nvalsij, 
     #where i in 1..numphases, j in 1..numspecies
     #xij is mole fraction of j in phase i.
     #nvals is mole numbers of j in phase i.
     partition!(dividers,n,x,nvals)
     
-    return (x, nvals, BlackBoxOptim.best_fitness(result))
+    return (x, nvals, best_f)
 end
 """
     Obj_de_tp_flash(model,p,T,z,dividers,numphases)
@@ -115,7 +131,7 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals)
             #calling with PTn calls the internal volume solver
             #if it returns an error, is a bug in our part.
     end
-    return ifelse(isnan(G),bignum,G/R̄/T)
+    return ifelse(isfinite(G),bignum,G/R̄/T)
 end
 
 numphases(method::DETPFlash) = method.numphases

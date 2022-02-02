@@ -12,7 +12,7 @@ Pages = ["models.md"]
 
 ## Cubic Models
 
-All cubic models in this package follow a common evaluation order:
+All cubic models in `Clapeyron.jl` follow a common evaluation order:
 ```julia
 
 function CubicModel(args...)
@@ -99,3 +99,15 @@ Clapeyron.VTPRRule
 Clapeyron.PSRKRule
 ```
 
+## Ideal Models
+
+All `Clapeyron.jl` models contain an ideal part.
+
+```@docs
+Clapeyron.idealmodel
+Clapeyron.BasicIdeal
+Clapeyron.ReidIdeal
+Clapeyron.JobackIdeal
+Clapeyron.MonomerIdeal
+Clapeyron.WalkerIdeal
+```
