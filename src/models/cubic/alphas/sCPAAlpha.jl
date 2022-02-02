@@ -14,10 +14,6 @@ abstract type sCPAAlphaModel <: CPAAlphaModel end
 
 - `c1`: Single Parameter
 
-## Model Parameters
-
-- `c1`: Single Parameter
-
 ## Description
 
 Cubic alpha `(α(T))` model. Default for `sCPA` EoS.

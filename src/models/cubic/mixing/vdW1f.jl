@@ -17,10 +17,6 @@ export vdW1fRule
 
 None
 
-## Model Parameters
-
-None
-
 ## Description
 
 van der Wals One-Fluid mixing rule for cubic parameters:

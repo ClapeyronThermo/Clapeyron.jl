@@ -16,11 +16,7 @@ export CPAAlpha
 
 ## Input Parameters
 
-- `c1`: Single Parameter
-
-## Model Parameters
-
-- `c1`: Single Parameter
+- `c1`: Single Parameter (`Float64`)
 
 ## Description
 

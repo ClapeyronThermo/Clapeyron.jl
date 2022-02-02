@@ -16,10 +16,6 @@ end
 
 None
 
-## Model Parameters
-
-None
-
 ## Description
 
 Kay mixing rule for cubic parameters:

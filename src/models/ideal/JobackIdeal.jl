@@ -242,4 +242,36 @@ function a_ideal(model::JobackIdealModel, V, T, z)
 end
 
 export JobackIdeal
-#acetone = [("acetone",["−CH3"=>1,">C=O (non-ring)"=>1])]
+
+
+##utilities
+#=
+function reid_to_joback(a,b,c,d)
+    _a = a + 37.93
+    _b = b - 0.210
+    _c = c + 3.91e-4
+    _d = d - 2.06e-7
+    return (_a,_b,_c,_d)
+end
+
+#Vc = 5.594807453383915e-5
+#Tc = 647.096
+#Pc = 2.2064e7
+#Tb = 373.15
+function crit_to_joback(Tb,Tc,Pc,Vc,na)
+    tb = Tb - 198.2
+    vc = Vc*1e6 - 17.5
+    Tx = Tc/Tb
+    Tx = 1/Tx - 0.584 #(0.965Ti(1 - Ti))
+    Tx = Tx/0.965
+    #Tx = Ti(1-Ti), #-Ti2 + Ti - Tx = 0, Ti2 - Ti + Tx = 0 
+    tc = (1 + sqrt(1 -4Tx))/2
+    fxt(t) = Tb*(0.584 + 0.965*t - t*t)^-1 - Tc
+    tc = Roots.find_zero(fxt,tc)
+    fxp(p) = (0.113 + 0.0032*na - p)^-2 - 1e-5*Pc
+    pc = sqrt(abs(1/(Pc*Pc*1e-10) -0.113 - 0.0032*na)) 
+    @show pc
+    pc = Roots.find_zero(fxp,pc)
+    return (tc,pc,vc,tb)
+end
+=#
