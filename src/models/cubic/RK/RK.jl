@@ -38,17 +38,17 @@ export RK
     verbose=false)
 
 ## Input parameters
-- `Tc`: Single Parameter
-- `Pc`: Single Parameter
-- `Mw` :Single Parameter
-- `k`: Pair Parameter
+- `Tc`: Single Parameter (`Float64`)
+- `Pc`: Single Parameter (`Float64`)
+- `Mw` :Single Parameter (`Float64`)
+- `k`: Pair Parameter (`Float64`)
 
 ## Model Parameters
-- `Tc`: Single Parameter
-- `Pc`: Single Parameter
-- `Mw` :Single Parameter
-- `a`: Pair Parameter
-- `b`: Pair Parameter
+- `Tc`: Single Parameter (`Float64`)
+- `Pc`: Single Parameter (`Float64`)
+- `Mw` :Single Parameter (`Float64`)
+- `a`: Pair Parameter (`Float64`)
+- `b`: Pair Parameter (`Float64`)
 
 ## Input models
 - `idealmodel`: Ideal Model

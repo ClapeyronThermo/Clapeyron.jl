@@ -20,9 +20,9 @@ abstract type MonomerIdealModel <: IdealModel end
 
 None
 
-Monomer Ideal Model, calculated as a function of the thermal wavelength `Λ`
+Monomer Ideal Model, calculated as a function of the thermal de Broglie wavelength `Λ`
 ```
-    Λᵢ = h/√(kᵦTMwᵢ/Nₐ)
+    Λᵢ = h/√(kᵦTMwᵢ/Nₐ)    
     a₀ = A₀/nRT = ∑xᵢlog((Λᵢ^3)*n*xᵢ*Nₐ/V)
 ```
 """
@@ -35,12 +35,13 @@ function MonomerIdeal(components::Array{String,1}; userlocations::Array{String,1
     return MonomerIdeal(packagedparams)
 end
 
-function a_ideal(model::MonomerIdealModel, v, T, z)
+function a_ideal(model::MonomerIdealModel, V, T, z)
     Mw = model.params.Mw.values
     res = zero(V+T+first(z))
     for i in @comps
-        Λᵢ = h/√(k_B*T*Mw[i]/N_A)
-        res +=  z[i]*log(z[i]*N_A/v*Λᵢ^3)
+        Mwᵢ = Mw[i]*0.001
+        Λᵢ = h/√(k_B*T*Mwᵢ/N_A)
+        res +=  z[i]*log(z[i]*N_A/V*Λᵢ^3)
     end
     return res/sum(z) - 1
 end

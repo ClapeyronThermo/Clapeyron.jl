@@ -16,11 +16,11 @@ export BMAlpha
 
 ## Input Parameters
 
-- `w`: Single Parameter
+- `w`: Single Parameter (`Float64`)
 
 ## Model Parameters
 
-- `acentricfactor`: Single Parameter
+- `acentricfactor`: Single Parameter (`Float64`)
 
 ## Description
 

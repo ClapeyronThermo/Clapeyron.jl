@@ -14,10 +14,6 @@ export NoTranslation
 
 None
 
-## Model Parameters
-
-None
-
 ## Description
 
 Default volume translation model for cubic models. it performs no translation:

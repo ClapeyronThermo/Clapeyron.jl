@@ -2,6 +2,7 @@ Clapeyron Database File,
 Joback Groups,
 species,groups
 etane,"[""-CH3"" => 2]"
+water,"[""H2O"" => 1]"
 propane,"[""-CH3"" => 2,""-CH2-"" => 1]"
 butane,"[""-CH3"" => 2,""-CH2-"" => 2]"
 pentane,"[""-CH3"" => 2,""-CH2-"" => 3]"

@@ -15,11 +15,7 @@ end
 
 ## Input Parameters
 
-- `vc`: Single Parameter
-
-## Model Parameters
-
-- `Vc`: Single Parameter
+- `vc`: Single Parameter (`Float64`)
 
 ## Description
 

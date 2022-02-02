@@ -14,10 +14,6 @@ export NoAlpha
 
 None
 
-## Model Parameters
-
-None
-
 ## Description
 
 Cubic alpha `(α(T))` model. Default for `vdW` EoS

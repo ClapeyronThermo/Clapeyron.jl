@@ -21,10 +21,6 @@ end
 
 None
 
-## Model Parameters
-
-None
-
 ## Input models 
 
 - `activity`: Activity Model

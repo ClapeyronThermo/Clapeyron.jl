@@ -332,7 +332,7 @@ end
 
     @testset "Monomer" begin
         system = MonomerIdeal(["hexane"])
-        @test Clapeyron.a_ideal(system,V,T,z) ≈ -20.368750666236373 rtol = 1e-6
+        @test Clapeyron.a_ideal(system,V,T,z) ≈ -10.00711774776317 rtol = 1e-6
     end
     @printline
 end
