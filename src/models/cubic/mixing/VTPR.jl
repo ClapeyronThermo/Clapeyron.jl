@@ -7,6 +7,41 @@ struct VTPRRule{γ} <: VTPRRuleModel
 end
 
 @registermodel VTPRRule
+
+"""
+    VTPRRule{γ} <: VTPRRuleModel
+    
+    VTPRRule(components::Vector{String};
+    activity = UNIFAC,
+    userlocations::Vector{String}=String[],
+    activity_userlocations::Vector{String}=String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+None
+
+## Input models 
+
+- `activity`: Activity Model
+
+## Description
+
+Mixing Rule used by the Volume-translated Peng-Robinson (`VTPR`) equation of state.
+only works with activity models that define an `lnγ_res` function (`UNIFAC` models)
+
+```
+aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
+bᵢⱼ = ((bᵢ^(3/4) + bⱼ^(3/4))/2)^(4/3)
+log(γʳ)ᵢ = lnγ_res(model.activity,V,T,z) 
+gᴱᵣₑₛ = ∑RTlog(γʳ)ᵢxᵢ
+b̄ = ∑bᵢⱼxᵢxⱼ
+c̄ = ∑cᵢxᵢ
+ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - gᴱᵣₑₛ/(0.53087RT))
+```
+"""
+VTPRRule
+
 export VTPRRule
 function VTPRRule(components::Vector{String}; activity = UNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)

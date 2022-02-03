@@ -7,6 +7,44 @@ struct LCVMRule{γ} <: LCVMRuleModel
 end
 
 @registermodel LCVMRule
+
+"""
+    LCVMRule{γ} <: LCVMRuleModel
+    
+    LCVMRule(components::Vector{String};
+    activity = Wilson,
+    userlocations::Vector{String}=String[],
+    activity_userlocations::Vector{String}=String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+None
+
+## Input models 
+
+- `activity`: Activity Model
+
+## Description
+
+Linear Combination of Vidal and Michaelsen (LCVM) Mixing Rule
+```
+aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
+bᵢⱼ = (bᵢ + bⱼ)/2
+b̄ = ∑bᵢⱼxᵢxⱼ
+c̄ = ∑cᵢxᵢ
+ᾱᵢ  = aᵢαᵢ/bᵢRT
+ċ = -q₁*Σᾱᵢxᵢ - q₂*Σᾱᵢxᵢ^2 - gᴱ/RT - ∑log(bᵢᵢ/b̄)
+ā = b̄RT(-1.827[gᴱ/RT - 0.3∑log(bᵢᵢ/b̄)] + Σᾱᵢxᵢ)
+```
+
+## References
+
+1. Boukouvalas, C., Spiliotis, N., Coutsikos, P., Tzouvaras, N., & Tassios, D. (1994). Prediction of vapor-liquid equilibrium with the LCVM model: a linear combination of the Vidal and Michelsen mixing rules coupled with the original UNIFAC. Fluid Phase Equilibria, 92, 75–106. doi:10.1016/0378-3812(94)80043-x
+
+"""
+LCVMRule
+
 export LCVMRule
 function LCVMRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)
@@ -14,7 +52,6 @@ function LCVMRule(components::Vector{String}; activity = Wilson, userlocations::
     model = LCVMRule(components, init_activity,references)
     return model
 end
-
 
 function mixing_rule(model::PRModel,V,T,z,mixing_model::LCVMRuleModel,α,a,b,c)
     n = sum(z)

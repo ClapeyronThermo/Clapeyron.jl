@@ -1,12 +1,37 @@
-abstract type PRAlphaModel <: AlphaModel end
-
 struct PRAlphaParam <: EoSParam
     acentricfactor::SingleParam{Float64}
 end
 
-@newmodelsimple PRAlpha PRAlphaModel PRAlphaParam
-
+@newmodelsimple PRAlpha SoaveAlphaModel PRAlphaParam
 export PRAlpha
+
+"""
+    PRAlpha <: SoaveAlphaModel
+    
+    PRAlpha(components::Vector{String};
+    userlocations::Vector{String}=String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+- `w`: Single Parameter (`Float64`)
+
+## Model Parameters
+
+- `acentricfactor`: Single Parameter (`Float64`)
+
+## Description
+
+Cubic alpha `(α(T))` model. Default for `PR` EoS.
+```
+αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
+Trᵢ = T/Tcᵢ
+mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
+```
+
+"""
+PRAlpha
+
 function PRAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = SingleParam(params["w"],"acentric factor")
@@ -15,15 +40,4 @@ function PRAlpha(components::Vector{String}; userlocations::Vector{String}=Strin
     return model
 end
 
-function α_function(model::CubicModel,V,T,z,alpha_model::PRAlphaModel)
-    Tc = model.params.Tc.values
-    ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(T),length(Tc))
-    for i in @comps
-        ωi = ω[i]
-        Tr = T/Tc[i]
-        m = evalpoly(ωi,(0.37464,1.54226,-0.26992))
-        α[i] = (1+m*(1-√(Tr)))^2
-    end
-    return α
-end
+@inline α_m(model,::PRAlpha) = (0.37464,1.54226,-0.26992)

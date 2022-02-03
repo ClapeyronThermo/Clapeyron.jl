@@ -11,7 +11,7 @@ using FillArrays: FillArrays
 
 using Roots: Roots
 using NLSolvers
-import Metaheuristics
+import BlackBoxOptim
 using DiffResults, ForwardDiff
 using Scratch 
 
@@ -112,7 +112,7 @@ include("models/cubic/PR/variants/UMRPR.jl")
 
 include("models/EmpiricHelmholtz/IAPWS95.jl")
 include("models/EmpiricHelmholtz/PropaneRef.jl")
-include("models/EmpiricHelmholtz/LJRef.jl")
+include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
 include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
