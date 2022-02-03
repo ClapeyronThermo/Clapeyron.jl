@@ -20,10 +20,12 @@ abstract type MonomerIdealModel <: IdealModel end
 
 None
 
-Monomer Ideal Model, calculated as a function of the thermal de Broglie wavelength `Λ`
+## Description
+
+Monomer Ideal Model, result obtained from statistical mechanics `Λ`
 ```
     Λᵢ = h/√(kᵦTMwᵢ/Nₐ)    
-    a₀ = A₀/nRT = ∑xᵢlog((Λᵢ^3)*n*xᵢ*Nₐ/V)
+    a₀ = A₀/nRT = ∑xᵢlog(ρᵢΛᵢ^3)
 ```
 """
 

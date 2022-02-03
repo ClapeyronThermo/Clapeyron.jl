@@ -64,6 +64,8 @@ export JobackIdeal
 - `eta_a`: Single Parameter (`Float64`)
 - `eta_b`: Single Parameter (`Float64`)
 
+## Description
+
 Joback Group Contribution Ideal Model. GC version of `ReidIdeal`. Helmholtz energy obtained via integration of specific heat capacity:
 
 ```
@@ -72,9 +74,6 @@ bᵢ = ∑(νᵢₖbₖ) + 0.210
 cᵢ = ∑(νᵢₖcₖ) - 3.91e-4
 dᵢ = ∑(νᵢₖbₖ) + 2.06e-7
 Cpᵢ(T) = aᵢ  + bᵢT + cᵢT^2 + dᵢT^3
-Cp(T) = ∑Cpᵢxᵢ
-a₀ᵢ = A₀ᵢ/nᵢRT =  -1 + ln(T/T₀) - log(V/V₀)  + (H⁰ᵢ - TS⁰ᵢ)/RT + [∫Cpᵢ(T)dT - T∫[Cpᵢ(T)/T]dT]/RT
-a = ∑xᵢa₀ᵢ
 ```
 
 The GC-averaged Reid Model is available by using `ReidIdeal(model::JobackIdeal)`.

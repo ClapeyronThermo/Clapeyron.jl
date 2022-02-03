@@ -30,7 +30,7 @@ Unfortunately, if we wish to determine other thermodynamic properties this equat
 
 This is still a little inconvenient, however, since we have to deal with a tricky constant of integration. Fortunately, we can instead derive ``A_\mathrm{ideal}`` from statistical mechanics (using just a few well-known results from quantum mechanics). Following this route, we obtain (for a pure component (_i.e._, a single species))
 
-``\frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T} = ln{(\rho\Lambda^3)}\right)-1``,
+``\frac{A_\mathrm{ideal}}{Nk_\mathrm{B}T} = ln{(\rho\Lambda^3)}-1``,
 
 where $\rho = N/V$ is the number density, and $\Lambda$ is the thermal de Broglie wavelength, which introduces the kinetic contributions to the free energy (strictly speaking, with this notation only translations are included). We can generalise this as a sum over species $i$ for a multicomponent mixture:
 
