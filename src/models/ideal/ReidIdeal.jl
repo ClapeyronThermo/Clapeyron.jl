@@ -38,13 +38,13 @@ abstract type ReidIdealModel <: IdealModel end
 
 - `coeffs`: Single Parameter (`NTuple{4,Float64}`)
 
+## Description
+
 Reid Ideal Model. Helmholtz energy obtained via integration of specific heat capacity:
 
 ```
 Cpᵢ(T) = aᵢ  + bᵢT + cᵢT^2 + dᵢT^3
 Cp(T) = ∑Cpᵢxᵢ
-a₀ᵢ = A₀ᵢ/nᵢRT =  -1 + ln(T/T₀) - log(V/V₀)  + (H⁰ᵢ - TS⁰ᵢ)/RT + [∫Cpᵢ(T)dT - T∫[Cpᵢ(T)/T]dT]/RT
-a = ∑xᵢa₀ᵢ
 ```
 """
 ReidIdeal

@@ -33,6 +33,7 @@ abstract type WalkerIdealModel <: IdealModel end
 - `deg3`: Single Parameter (`Int`)
 - `deg4`: Single Parameter (`Int`)
 
+## Description
 
 Walker [1] Group Contribution Ideal Model.
 ```
