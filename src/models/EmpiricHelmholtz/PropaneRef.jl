@@ -71,17 +71,20 @@ PropaneRef() = PropaneRef(["propane"],PropaneRefConsts(),["1021/je900217v"])
 is_splittable(::PropaneRef) = false
 
 function _f0(::PropaneRef,δ,τ)
+    δ,τ = promote(δ,τ)
+    _1 = one(δ)
     n₁ = -4.970583
     n₂ = 4.29352     
     γ = (1.062478, 3.344237,5.363757,11.762957)
     n = (3.043,5.874,9.337,7.922)
-    α₀ = log(δ) + + n₁ + n₂*τ + 3*log(τ) 
-     n[1]*log(1-exp(-γ[1]*τ)) + 
-     n[2]*log(1-exp(-γ[2]*τ)) + 
-     n[3]*log(1-exp(-γ[3]*τ)) + 
-     n[4]*log(1-exp(-γ[4]*τ))
+    α₀ = log(δ) + 3*log(τ) + n₁ + n₂*τ +
+     n[1]*log(_1-exp(-γ[1]*τ)) + 
+     n[2]*log(_1-exp(-γ[2]*τ)) + 
+     n[3]*log(_1-exp(-γ[3]*τ)) + 
+     nameof[4]*log(_1-exp(-γ[4]*τ))
      return α₀
 end
+
 
 function _fr1(model::PropaneRef,δ,τ)
     δ,τ = promote(δ,τ)

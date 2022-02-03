@@ -350,6 +350,6 @@ end
     end
 
     @testset "DE Algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3,population_size=20))[3] ≈ -6.73130492921276 rtol = 1e-6 
+        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3,time_limit = 500))[3] ≈ -6.73130492921276 rtol = 1e-6 
     end
 end
