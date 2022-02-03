@@ -179,7 +179,7 @@ end
 
         @testset "RK w/ WSRule" begin
             system = RK(["methanol","benzene"];mixing = WSRule, activity=Wilson)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -0.572912690389026 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5568144490135614 rtol = 1e-6
         end
     end
 
@@ -253,7 +253,7 @@ end
 
         @testset "PR w/ WSRule" begin
             system = PR(["methanol","benzene"];mixing = WSRule, activity=Wilson)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -0.669085674824878 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.6602069628893608 rtol = 1e-6
         end
     end
     @printline
@@ -332,7 +332,7 @@ end
 
     @testset "Monomer" begin
         system = MonomerIdeal(["hexane"])
-        @test Clapeyron.a_ideal(system,V,T,z) ≈ -20.368750666236373 rtol = 1e-6
+        @test Clapeyron.a_ideal(system,V,T,z) ≈ -10.00711774776317 rtol = 1e-6
     end
     @printline
 end

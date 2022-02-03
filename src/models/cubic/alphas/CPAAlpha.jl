@@ -5,8 +5,30 @@ struct CPAAlphaParam <: EoSParam
 end
 
 @newmodelsimple CPAAlpha CPAAlphaModel CPAAlphaParam
-
 export CPAAlpha
+
+"""
+    CPAAlpha <: CPAAlphaModel
+    
+    CPAAlpha(components::Vector{String};
+    userlocations::Vector{String}=String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+- `c1`: Single Parameter (`Float64`)
+
+## Description
+
+Cubic alpha `(α(T))` model. Default for `CPA` EoS.
+```
+αᵢ = (1+c¹ᵢ(1-√(Trᵢ)))^2
+
+```
+
+"""
+CPAAlpha
+
 function CPAAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["SAFT/CPA/CPA_like.csv"]; userlocations=userlocations, ignore_missing_singleparams=["Mw"], verbose=verbose)
     c1 = params["c1"]

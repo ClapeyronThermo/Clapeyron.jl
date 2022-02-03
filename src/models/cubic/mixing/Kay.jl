@@ -5,6 +5,31 @@ end
 
 @newmodelsimple KayRule KayRuleModel KayRuleParam
 
+"""
+    KayRule <: KayRuleModel
+    
+    KayRule(components::Vector{String};
+    userlocations::Vector{String}=String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+None
+
+## Description
+
+Kay mixing rule for cubic parameters:
+
+```
+aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
+bᵢⱼ = (bᵢ + bⱼ)/2
+ā = b̄*(∑[aᵢⱼxᵢxⱼ√(αᵢ(T)αⱼ(T))/bᵢⱼ])^2
+b̄ = (∑∛(bᵢⱼ)xᵢxⱼ)^3
+c̄ = ∑cᵢxᵢ
+```
+"""
+KayRule
+
 export KayRule
 
 function KayRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false)

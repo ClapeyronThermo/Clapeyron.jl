@@ -39,7 +39,7 @@ function  Δ(model::Union{SAFTModel,CPAModel}, V, T, z,data)
     end
     return Δres
 end
-function issite(i,a,ij,ab)
+function issite(i::Int,a::Int,ij::Tuple{Int,Int},ab::Tuple{Int,Int})::Bool
     ia = (i,a)
     i1,i2 = ij
     a1,a2 = ab
@@ -48,85 +48,127 @@ function issite(i,a,ij,ab)
     return (ia == ia1) | (ia == ia2)
 end
 
-function complement_index(i,ij)
+function complement_index(i,ij)::Int
     i1,i2 = ij
-    ifelse(i1 == i,i2,i1)
+    ifelse(i1 == i,i2,i1)::Int
 end
 
-function X!(output,input,pack_indices,delta,modelsites,ρ,z)
-    
-    _0 = zero(eltype(output))
-    _1 = one(_0)
-    Xinput = PackedVofV(pack_indices,input)
-    Xoutput = PackedVofV(pack_indices,output)
-    n = modelsites.n_sites
-    for i ∈ 1:length(modelsites.components) #for i ∈ comps
-        sitesᵢ = 1:length(n[i]) #sites are normalized, with independent indices for each component
-        iszero(length(sitesᵢ)) && continue
+function compute_index(idxs,i,a)::Int
+    res::Int = idxs[i] + a - 1
+    return res
+end
+
+function assoc_site_matrix(model,V,T,z,data=nothing)
+    if data === nothing
+        delta = @f(Δ)
+    else
+        delta = @f(Δ,data)
+    end
+    _sites = model.sites.n_sites
+    p = _sites.p
+    ρ = N_A/V
+    _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
+    _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
+    _idx = 1:length(_ii)
+    _Δ= delta.values
+    TT = eltype(_Δ)
+    count = 0
+    @inbounds for i ∈ 1:length(z) #for i ∈ comps 
+        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
         for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            ∑X = _0
-            for (idx,ij,ab) in indices(delta) #iterating for all sites
+            #ia = compute_index(pack_indices,i,a)
+            for idx ∈ _idx #iterating for all sites
+                ij = _ii[idx]
+                ab = _aa[idx]
+                issite(i,a,ij,ab) && (count += 1)
+            end
+        end
+    end
+    c1 = zeros(Int,count)
+    c2 = zeros(Int,count)
+    val = zeros(TT,count)
+    _n = model.sites.n_sites.v
+    count = 0
+    @inbounds for i ∈ 1:length(z) #for i ∈ comps 
+        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
+        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
+            ia = compute_index(p,i,a)
+            for idx ∈ _idx #iterating for all sites
+                ij = _ii[idx]
+                ab = _aa[idx]
                 if issite(i,a,ij,ab)
                     j = complement_index(i,ij)
                     b = complement_index(a,ab)
-                    nj = n[j]
-                    njb = nj[b]
-                    ∑X += ρ*njb*z[j]*Xinput[j][b]*delta.values[idx]
+                    jb = compute_index(p,j,b)
+                    njb = _n[jb]
+                    count += 1
+                    c1[count] = ia
+                    c2[count] = jb
+                    val[count] = ρ*njb*z[j]*_Δ[idx]
                 end
             end
-            rhs = _1/(_1 +∑X)
-            Xoutput[i][a] = rhs
         end
     end
-    return output
+    K = sparse(c1,c2,val)
+    return K
 end
+#Mx = a + b(x,x)
+#Axx + x - 1 = 0
+#x = 1 - Axx
 
 function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
-    _1 = one(V+T+first(z))
-    X_ = PackedVectorsOfVectors.packed_ones(typeof(_1),length(@sites(i)) for i ∈ @comps)
-    idxs = indices(X_)    
-    X0 = X_.v
     bv = model.params.bondvol.values
     nn = length(bv.values)
-    if isone(nn)
-        xia,xjb = X_exact1(model,V,T,z,data)
-        i,j = only(bv.outer_indices) 
-        a,b = only(bv.inner_indices) 
-        #in the case that i = j, a = b, this does assignment twice
-        #we do xia last because xjb is calculated from xia
-        X_[j][b] = xjb
-        X_[i][a] = xia
-        return X_
-    end
-    ρ = N_A/V
-    if data === nothing
-        _Δ = @f(Δ)
-    else
-        _Δ = @f(Δ,data)
-    end  
-    fX(out,in) = X!(out,in,idxs,_Δ,model.sites,ρ,z)
-
+    isone(nn) && return X_exact1(model,V,T,z,data)
+    _1 = one(V+T+first(z))
+        
     options = model.assoc_options
     atol = options.atol
     rtol = options.rtol
     max_iters = options.max_iters
     α = options.dampingfactor
+
+    K = assoc_site_matrix(model,V,T,z,data)
+    
+    Kmin,Kmax = extrema(K.nzval)
+    if Kmax > 1
+        f = _1/Kmin
+    else
+        f = _1-Kmin
+    end
+    idxs = model.sites.n_sites.p
+    n = length(model.sites.n_sites.v)
+    X0 = fill(f,n)
+
+    function fX(out,in)
+        mul!(out,K,in) 
+        for i in 1:length(out)
+            Kx = out[i]
+            out[i] = _1/(_1+Kx) 
+        end
+        return out
+    end
+
     Xsol = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(α),atol=atol,rtol = rtol,max_iters = max_iters)
     return PackedVofV(idxs,Xsol)
 end
 
 #exact calculation of site non-bonded fraction when there is only one site
-function X_exact1(model,V,T,z,data=nothing)
+function X_exact1(model,V,T,z,data=nothing)  
     κ = model.params.bondvol.values
     i,j = κ.outer_indices[1]
     a,b = κ.inner_indices[1]
-    
     
     if data === nothing
         _Δ = @f(Δ,i,j,a,b)
     else
         _Δ = @f(Δ,i,j,a,b,data)
     end
+    _1 = one(eltype(_Δ))
+    idxs = model.sites.n_sites.p
+    n = length(model.sites.n_sites.v)
+    Xsol = fill(_1,n)
+    _X = PackedVofV(idxs,Xsol)
     ρ = N_A/V
     zi = z[i]
     zj = z[j]
@@ -139,11 +181,13 @@ function X_exact1(model,V,T,z,data=nothing)
     kjb = nb*zj*ρ*_Δ
     #kia*x*x + x(kjb-kia+1) - 1 = 0
     _a = kia
-    _b = 1 -kia + kjb
-    _c = -1
+    _b = _1 -kia + kjb
+    _c = -_1
     xia = -2*_c/(_b + sqrt(_b*_b - 4*_a*_c))
-    xjb = 1/(1+kia*xia)
-    return (xia,xjb)
+    xjb = _1/(1+kia*xia)
+    _X[j][b] = xjb
+    _X[i][a] = xia
+    return _X
 end
 
 function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,data=nothing)
@@ -151,7 +195,6 @@ function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,data=nothing)
     nn = length(model.params.bondvol.values.values)
     iszero(nn) && return _0
     X_ = @f(X,data)
-    
     return @f(_a_assoc,X_)
 end
 
@@ -173,15 +216,41 @@ function _a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
         res += resᵢₐ*z[i] 
     end
     return res/sum(z)
-
 end
 
-function show_param(param)
-    for i in fieldnames(typeof(param))
-        display(getfield(param,i))
+#=
+function AX!(output,input,pack_indices,delta::Compressed4DMatrix{TT,VV} ,modelsites,ρ,z) where {TT,VV}
+    _0 = zero(TT)
+    p = modelsites.p::Vector{Int}
+    _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
+    _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
+    _Δ::VV = delta.values
+    _idx = 1:length(_ii)
+    #n = modelsites
+    _n::Vector{Int} = modelsites.v
+    #pv.p[i]:pv.p[i+1]-1)
+    @inbounds for i ∈ 1:length(z) #for i ∈ comps 
+        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
+        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
+            ∑X = _0
+            ia = compute_index(pack_indices,i,a)
+            for idx ∈ _idx #iterating for all sites
+                ij = _ii[idx]
+                ab = _aa[idx]
+                if issite(i,a,ij,ab)
+                    j = complement_index(i,ij)
+                    b = complement_index(a,ab)
+                    jb = compute_index(pack_indices,j,b)
+                    njb = _n[jb]
+                    ∑X += ρ*njb*z[j]*input[jb]*_Δ[idx]
+                end
+            end
+            output[ia] = ∑X
+        end
     end
+    return output
 end
-
+=#
 #res =  ∑(z[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)/sum(z)
 
 #=
