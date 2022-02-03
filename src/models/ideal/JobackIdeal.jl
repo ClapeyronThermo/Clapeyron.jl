@@ -148,20 +148,11 @@ end
 ReidIdeal(model::JobackIdeal) = model.reidmodel
 
 function C_p(model::JobackIdeal,T,z=SA[1.0])
-    a = model.params.a.values
-    b = model.params.b.values
-    c = model.params.c.values
-    d = model.params.d.values
-    n = model.groups.n_flattenedgroups
+    coeffs = model.reidmodel.params.coeffs.vlaues
     res = zero(T+first(z))
     Σz = sum(z)
     @inbounds for i in @comps
-        ni = n[i]
-        c0 = ∑(a[j]*ni[j] for j in @groups(i)) - 37.93
-        c1 = ∑(b[j]*ni[j] for j in @groups(i)) + 0.210
-        c2 = ∑(c[j]*ni[j] for j in @groups(i)) - 3.91e-4
-        c3 = ∑(d[j]*ni[j] for j in @groups(i)) + 2.06e-7
-        pol = (c0,c1,c2,c3)
+        pol = coeffs[i]
         res +=z[i]*evalpoly(T,pol)
     end
     return res/Σz
