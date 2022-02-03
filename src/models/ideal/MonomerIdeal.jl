@@ -28,6 +28,7 @@ Monomer Ideal Model, result obtained from statistical mechanics `Λ`
     a₀ = A₀/nRT = ∑xᵢlog(ρᵢΛᵢ^3)
 ```
 """
+MonomerIdeal
 
 export MonomerIdeal
 function MonomerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
