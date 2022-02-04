@@ -148,11 +148,11 @@ end
 ReidIdeal(model::JobackIdeal) = model.reidmodel
 
 function C_p(model::JobackIdeal,T,z=SA[1.0])
-    coeffs = model.reidmodel.params.coeffs.vlaues
+    coeff = model.reidmodel.params.coeffs.values
     res = zero(T+first(z))
     Σz = sum(z)
     @inbounds for i in @comps
-        pol = coeffs[i]
+        pol = coeff[i]
         res +=z[i]*evalpoly(T,pol)
     end
     return res/Σz
