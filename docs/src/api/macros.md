@@ -13,6 +13,7 @@ Pages = ["macros.md"]
 ```@index
 Pages = ["macros.md"]
 ```
+
 ## Model Macros
 ```@docs
 Clapeyron.@newmodelgc
