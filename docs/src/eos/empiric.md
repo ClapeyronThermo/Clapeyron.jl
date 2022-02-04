@@ -8,7 +8,7 @@ CurrentModule = Clapeyron
 Pages = ["empiric.md"]
 ```
 
-## Empiric Helmholtz Models
+# Empiric Helmholtz Models
 
 ```@docs
 Clapeyron.IAPWS95

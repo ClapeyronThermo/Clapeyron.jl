@@ -39,11 +39,6 @@ Walker [1] Group Contribution Ideal Model.
 ```
 Cpᵢ(T)/R = (5+NRot)/2 ∑νᵢₖ∑gₖᵥ(θₖᵥ/T)^2*exp(θₖᵥ/T)/(1-exp(θₖᵥ/T)) , v ∈ 1:4 
 ```
-Helmholtz energy is calculated via integration of specific heat capacity:
-```
-a₀ᵢ = A₀ᵢ/nᵢRT =  -1 + ln(T/T₀) - log(V/V₀)  + (H⁰ᵢ - TS⁰ᵢ)/RT + [∫Cpᵢ(T)dT - T∫[Cpᵢ(T)/T]dT]/RT
-a = ∑xᵢa₀ᵢ
-```
 
 ## References
 
