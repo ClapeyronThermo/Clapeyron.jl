@@ -28,7 +28,6 @@ format = Documenter.HTML(
         "Macros" => "api/macros.md",
         "Properties" => "api/properties.md",
         "Automatic Differenciation" => "api/ad.md",
-        "Equation of State Models" => "api/models.md",
         ]
         ])
 
