@@ -7,7 +7,7 @@ CurrentModule = Clapeyron
 ```@index
 Pages = ["ideal.md"]
 ```
-## Ideal Models
+# Ideal Models
 
 All `Clapeyron.jl` models can be separated between an ideal and a residual contribution. The ideal contribution can be obtained via integration of the ideal isobaric heat capacity:
 

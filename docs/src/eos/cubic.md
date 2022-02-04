@@ -8,7 +8,7 @@ CurrentModule = Clapeyron
 Pages = ["cubic.md"]
 ```
 
-## Cubic Models
+# Cubic Models
 
 All cubic models in `Clapeyron.jl` follow a common evaluation order:
 ```julia
@@ -44,7 +44,7 @@ end
 
 - The same Mixing rule, given `aᵢⱼ`, `bᵢⱼ`, `αᵢ(T)` and `cᵢ` returns the the mixture values of `ā`, `b̄` and `c̄` that are then used by the corresponding cubic model. a Mixing Rule can contain activity models to participate in the mixing (for example, Huron-Vidal rules)
 
-### Models
+## Main Models
 ```@docs
 Clapeyron.vdW
 Clapeyron.RK
@@ -56,7 +56,7 @@ Clapeyron.UMRPR
 Clapeyron.VTPR
 ```
 
-### Alpha `(α(T))` Models
+## Alpha `(α(T))` Models
 
 ```@docs
 Clapeyron.α_function
@@ -72,7 +72,7 @@ Clapeyron.BMAlpha
 Clapeyron.TwuAlpha
 ```
 
-### Volume Translation Models
+## Volume Translation Models
 
 ```@docs
 Clapeyron.translation
@@ -82,7 +82,7 @@ Clapeyron.PenelouxTranslation
 Clapeyron.MTTranslation
 ```
 
-### Mixing Rule Models
+## Mixing Rule Models
 ```@docs
 Clapeyron.ab_premixing
 Clapeyron.mixing_rule
