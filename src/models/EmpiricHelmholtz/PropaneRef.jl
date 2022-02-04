@@ -81,7 +81,7 @@ function _f0(::PropaneRef,δ,τ)
      n[1]*log(_1-exp(-γ[1]*τ)) + 
      n[2]*log(_1-exp(-γ[2]*τ)) + 
      n[3]*log(_1-exp(-γ[3]*τ)) + 
-     nameof[4]*log(_1-exp(-γ[4]*τ))
+     n[4]*log(_1-exp(-γ[4]*τ))
      return α₀
 end
 
