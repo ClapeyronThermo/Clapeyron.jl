@@ -314,7 +314,7 @@ end
     @printline
     @testset "Joback" begin
         system = JobackIdeal(["hexane"])
-        @test Clapeyron.C_p(system,298.15) ≈ 143.22076150138616 rtol = 1e-6
+        @test Clapeyron.VT_isobaric_heat_capacity(system,V,298.15) ≈ 143.22076150138616 rtol = 1e-6
         @test Clapeyron.T_b(system) ≈ 336.88 rtol = 1e-6
         @test Clapeyron.crit_pure(system)[1] ≈ 500.2728274871347 rtol = 1e-6
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 9.210841420941021 rtol = 1e-6
