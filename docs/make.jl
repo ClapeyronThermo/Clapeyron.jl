@@ -16,6 +16,13 @@ format = Documenter.HTML(
                             "Custom Methods"=>"user_guide/custom_methods.md",
                             "Custom Models"=>"user_guide/custom_model.md"],
         "To-do list" => "to-do_list.md",
+        
+        "Available EoS" => [
+        "Ideal Models" => "eos/ideal.md"
+        "Cubic Models" => "eos/cubic.md"
+        "Empiric Helmholtz Models" => "eos/empiric.md"
+        ],
+        
         "API" => Any[
         "Parameters" => "api/parameters.md",
         "Macros" => "api/macros.md",
@@ -23,7 +30,6 @@ format = Documenter.HTML(
         "Automatic Differenciation" => "api/ad.md",
         "Equation of State Models" => "api/models.md",
         ]
-        
         ])
 
         deploydocs(;

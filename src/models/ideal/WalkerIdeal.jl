@@ -22,7 +22,7 @@ abstract type WalkerIdealModel <: IdealModel end
 
 ## Input parameters
 
-- `Mw`: Single Parameter (`Float64`)
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `Nrot`: Single Parameter (`Int`)
 - `theta1`: Single Parameter (`Float64`)
 - `theta2`: Single Parameter (`Float64`)

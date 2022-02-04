@@ -38,15 +38,15 @@ export RK
     verbose=false)
 
 ## Input parameters
-- `Tc`: Single Parameter (`Float64`)
-- `Pc`: Single Parameter (`Float64`)
-- `Mw` :Single Parameter (`Float64`)
+- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `k`: Pair Parameter (`Float64`)
 
 ## Model Parameters
-- `Tc`: Single Parameter (`Float64`)
-- `Pc`: Single Parameter (`Float64`)
-- `Mw` :Single Parameter (`Float64`)
+- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `a`: Pair Parameter (`Float64`)
 - `b`: Pair Parameter (`Float64`)
 
