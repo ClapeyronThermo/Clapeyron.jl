@@ -67,7 +67,6 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     =#
     
     result = BlackBoxOptim.bboptimize(GibbsFreeEnergy; 
-        Method = :xnes,
         SearchRange = (0.0, 1.0), 
         NumDimensions = numspecies*(numphases-1),
         MaxSteps=method.max_steps,
@@ -78,8 +77,6 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     dividers = reshape(BlackBoxOptim.best_candidate(result), 
             (numphases - 1, numspecies))
     best_f = BlackBoxOptim.best_fitness(result)
-   
-
     #Initialize arrays xij and nvalsij, 
     #where i in 1..numphases, j in 1..numspecies
     #xij is mole fraction of j in phase i.
@@ -131,7 +128,7 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals)
             #calling with PTn calls the internal volume solver
             #if it returns an error, is a bug in our part.
     end
-    return ifelse(isfinite(G),bignum,G/R̄/T)
+    return ifelse(isnan(G),bignum,G/R̄/T)
 end
 
 numphases(method::DETPFlash) = method.numphases
