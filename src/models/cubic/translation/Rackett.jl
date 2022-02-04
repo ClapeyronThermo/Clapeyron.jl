@@ -15,7 +15,7 @@ end
 
 ## Input Parameters
 
-- `vc`: Single Parameter (`Float64`)
+- `vc`: Single Parameter (`Float64`) - Critical Volume `[m³/mol]`
 
 ## Description
 

@@ -28,7 +28,6 @@ abstract type ReidIdealModel <: IdealModel end
 
 ## Input parameters
 
-
 - `a`: Single Parameter (`Float64`)
 - `b`: Single Parameter (`Float64`)
 - `c`: Single Parameter (`Float64`)
