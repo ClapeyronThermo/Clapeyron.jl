@@ -141,24 +141,15 @@ function JobackIdeal(components;userlocations=String[], verbose=false)
     end
     reidparam = ReidIdealParam(SingleParam("GC-averaged Reid Coefficients",groups.components,coeffs))
     reidmodel = ReidIdeal(reidparam)
-    model = JobackIdeal(groups.components,1:length(groups.flattenedgroups),groups,packagedparams,reidmodel,references)
+    model = JobackIdeal(groups.components,1:length(n),groups,packagedparams,reidmodel,references)
     return model
 end
 
 ReidIdeal(model::JobackIdeal) = model.reidmodel
 
-function C_p(model::JobackIdeal,T,z=SA[1.0])
-    coeff = model.reidmodel.params.coeffs.values
-    res = zero(T+first(z))
-    Σz = sum(z)
-    @inbounds for i in @comps
-        pol = coeff[i]
-        res +=z[i]*evalpoly(T,pol)
-    end
-    return res/Σz
+function VT_isobaric_heat_capacity(model::JobackIdeal,V,T,z=SA[1.])
+    return VT_isobaric_heat_capacity(model.reidmodel,V,T,z)
 end
-
-
 
 function T_b(model::JobackIdeal)
     n = model.groups.n_flattenedgroups

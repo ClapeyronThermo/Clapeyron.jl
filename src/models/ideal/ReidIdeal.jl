@@ -82,3 +82,14 @@ function a_ideal(model::ReidIdealModel, V, T, z)
     end
     return res/Σz
 end
+
+function VT_isobaric_heat_capacity(model::ReidIdealModel,V,T,z=SA[1.])
+    coeff = model.params.coeffs.values
+    res = zero(T+first(z))
+    Σz = sum(z)
+    for i in @comps
+        pol = coeff[i]
+        res +=z[i]*evalpoly(T,pol)
+    end
+    return res/Σz
+end
