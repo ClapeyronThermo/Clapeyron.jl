@@ -47,7 +47,7 @@ end
 
 
 struct IAPWS95 <: EmpiricHelmholtzModel
-    components::Array{String,1}
+    components::Vector{String}
     consts::IAPWS95Consts
     references::Vector{String}
 end
@@ -55,6 +55,8 @@ end
 function crit_pure(model::IAPWS95)
     return (model.consts.Tc,model.consts.Pc,model.consts.Vc)
 end
+
+
 
 """
     IAPWS95 <: EmpiricHelmholtzModel
@@ -93,7 +95,7 @@ IAPWS95
 
 IAPWS95() = IAPWS95(["water"],IAPWS95Consts(),["IAPWS R6-95(2018)"])
 
-function _f0(_model::IAPWS95,δ,τ)
+function iapws_f0(model,δ,τ)
     n= (-8.3204464837497, 6.6832105275932, 3.00632,0.012436, 0.97315, 1.2795, 0.96956, 0.24873)
     γ = (0.0, 0.0, 0.0, 1.28728967, 3.53734222, 7.74073708, 9.24437796,27.5075105)
     res = log(δ)+n[1] + n[2]*τ + n[3]*log(τ)
@@ -102,6 +104,9 @@ function _f0(_model::IAPWS95,δ,τ)
     end
     return res
 end
+
+_f0(model::IAPWS95,δ,τ) = iapws_f0(_model::IAPWS95,δ,τ)
+
 
 function _fr(model::IAPWS95,δ,τ)
     n = model.consts.n::Vector{Float64}
