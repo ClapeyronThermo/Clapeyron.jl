@@ -21,4 +21,6 @@ Clapeyron.ReidIdeal
 Clapeyron.JobackIdeal
 Clapeyron.MonomerIdeal
 Clapeyron.WalkerIdeal
+Clapeyron.IAPWS95Ideal
+Clapeyron.LJRefIdeal
 ```

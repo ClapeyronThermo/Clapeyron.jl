@@ -110,9 +110,11 @@ include("models/cubic/PR/variants/PR78.jl")
 include("models/cubic/PR/variants/VTPR.jl")
 include("models/cubic/PR/variants/UMRPR.jl")
 
-include("models/EmpiricHelmholtz/IAPWS95.jl")
+include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
+include("models/EmpiricHelmholtz/IAPWS95/IAPWS95Ideal.jl")
 include("models/EmpiricHelmholtz/PropaneRef.jl")
 include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
+include("models/EmpiricHelmholtz/LJRef/LJRefIdeal.jl")
 include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")

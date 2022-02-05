@@ -92,7 +92,7 @@ When $i=j$, $a$ and $b$ are just the normal van der Waals parameters for the pur
 
 where $k_{ij}$ can be set to 0 but, using either more-advanced combining rules or regression to experimental data, can be tuned to improve the effectiveness of the combining rule. Further details on this will be given for the SAFT models.
 
-More-complicated mixing rules (such as the Wong-Sandler mixing rule) are available and, although not currently supported, will be implemented in `Clapeyron`. 
+More-complicated mixing rules (such as the Wong-Sandler mixing rule) are available and implemented in `Clapeyron`. 
 
 ### SAFT equations of state
 

@@ -78,6 +78,11 @@ function p_scale(model::CubicModel,z=SA[1.0])
     return a/ (b^2) # Pc mean
 end
 
+function x0_crit_pure(model::CubicModel)
+    lb_v = lb_volume(model)
+    (1.0, log10(lb_v/0.3))
+end
+
 function crit_pure(model::ABCubicModel)
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
@@ -99,6 +104,7 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
     xx = (x1,x2,x3)
     isreal = imagfilter.(xx)
     vvv = extrema(real.(xx))
+    
     zl,zg = vvv
     vvl,vvg = RTp*zl,RTp*zg
     err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
@@ -111,9 +117,9 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
         vl = real(sols[i])*RTp
         vg = real(sols[i])*RTp
     elseif  sum(isreal) == 0
-        #try to use the default volume solver
+       
         V0 = x0_volume(model,p,T,z;phase)
-        v = _volume_compress(model,p,T,V0)
+        v = _volume_compress(model,p,T,z,V0)
         isnan(v) && err()
         return v
     end

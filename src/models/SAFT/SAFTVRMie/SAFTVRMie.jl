@@ -179,10 +179,7 @@ function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d))
     m = model.params.segment.values
     m̄ = dot(z, m)
     m̄inv = 1/m̄
-    ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
-    λr = model.params.lambda_r.values
-    λa = model.params.lambda_a.values
     ρS = N_A/V*m̄
     comps = @comps
     _ζ_X = zero(V+T+first(z))
@@ -430,11 +427,9 @@ function ∂a_1╱∂ρ_S(model::SAFTVRMieModel, V, T, z, i)
 end
 =#
 function ζeff_fdf(model::SAFTVRMieModel, V, T, z, λ,ζ_X_,ρ_S_)
-
     A = SAFTγMieconsts.A
     λ⁻¹ = one(λ)/λ
     Aλ⁻¹ = A * SA[one(λ); λ⁻¹; λ⁻¹*λ⁻¹; λ⁻¹*λ⁻¹*λ⁻¹]
-
     _f =  Aλ⁻¹ ⋅ SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4]
     _df = Aλ⁻¹ ⋅  SA[1; 2ζ_X_; 3ζ_X_^2; 4ζ_X_^3] * ζ_X_/ρ_S_
     return _f,_df
@@ -543,7 +538,6 @@ end
 
 function I(model::SAFTVRMieModel, V, T, z,TR,_data = @f(data))
     _d,ρS,ζi,_ζ_X,_ζst,σ3_x = _data
-    ϵ = model.params.epsilon.values
     c  = SAFTVRMieconsts.c
     res = zero(_ζst)
     ρR = ρS*σ3_x
@@ -556,11 +550,8 @@ function I(model::SAFTVRMieModel, V, T, z,TR,_data = @f(data))
 end
 
 function Δ(model::SAFTVRMieModel, V, T, z, i, j, a, b,_data = @f(data))
-    σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
-    
     TR = T/ϵ[i,j]
-  
     _I = @f(I,TR,_data)
     ϵ_assoc = model.params.epsilon_assoc.values
     K = model.params.bondvol.values
@@ -572,7 +563,6 @@ end
 function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
     _d,ρS,ζi,_ζ_X,_ζst,_ = _data
     comps = @comps
-    l = length(comps)
     ∑z = ∑(z)
     m = model.params.segment.values
     _ϵ = model.params.epsilon.values

@@ -13,4 +13,7 @@ Pages = ["empiric.md"]
 ```@docs
 Clapeyron.IAPWS95
 Clapeyron.PropaneRef
+Clapeyron.LJRef
+Clapeyron.GERG2008
+Clapeyron.EOS_LNG
 ```

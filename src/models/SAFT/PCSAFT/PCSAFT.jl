@@ -124,7 +124,6 @@ function g_hs(model::PCSAFTModel, V, T, z, i, j,_data=@f(data))
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 end
 
-
 function a_hs(model::PCSAFTModel, V, T, z,_data=@f(data))
     _,ζ0,ζ1,ζ2,ζ3,_ = _data
     return 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))

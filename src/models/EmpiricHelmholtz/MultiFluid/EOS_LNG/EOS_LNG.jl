@@ -120,3 +120,24 @@ function getparams_eos_lng()
 
     return params
 end
+
+"""
+    EOS_LNG <: MultiFluidModel
+    EOS_LNG(components::Vector{String})
+
+## Imput Parameters
+
+None
+
+## Description
+
+EOS-LNG: A Fundamental Equation of State for the Calculation of Thermodynamic Properties of Liquefied Natural Gases. valid for 21 compounds (`Clapeyron.GERG2008_names`). the EoS has new binary-specific parameters for methane + n-butane, methane + isobutane, methane + n-pentane, and methane + isopentane.
+
+It uses the same functional form as `GERG2008`.
+
+## References
+
+1. Thol, M., Richter, M., May, E. F., Lemmon, E. W., & Span, R. (2019). EOS-LNG: A fundamental equation of state for the calculation of thermodynamic properties of liquefied natural gases. Journal of Physical and Chemical Reference Data, 48(3), 033102. doi:10.1063/1.5093800
+2. Kunz, O., & Wagner, W. (2012). The GERG-2008 wide-range equation of state for natural gases and other mixtures: An expansion of GERG-2004. Journal of Chemical and Engineering Data, 57(11), 3032–3091. doi:10.1021/je300655b
+"""
+EOS_LNG
