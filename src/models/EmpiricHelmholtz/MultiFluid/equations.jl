@@ -229,6 +229,11 @@ function x0_sat_pure(model::MultiFluidModel,T)
     return [log10(vl),log10(vv)]
 end
 
+function Clapeyron.x0_volume_gas(model::Clapeyron.MultiFluidModel,p,T,z=Clapeyron.SA[1.])
+    V = sum(z)*Clapeyron.R̄*T/p
+    return V*2
+end
+
 function x0_volume_liquid(model::MultiFluidModel,T,z)
     return 1.01*lb_volume(model,z)
 end
