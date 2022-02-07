@@ -83,7 +83,7 @@ function x0_crit_pure(model::CPAModel)
     if isempty(model.params.epsilon_assoc.values[1,1])
         [2.0, log10(lb_v/0.3)]
     else
-        [2.5, log10(lb_v/0.3)]
+        [2.8, log10(lb_v/0.3)]
     end
 end
 
