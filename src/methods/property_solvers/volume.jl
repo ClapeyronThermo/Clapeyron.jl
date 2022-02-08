@@ -38,7 +38,6 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         Δᵣ = ifelse(abs(Δ) < q,abs(Δ)^Δ,_1)
         vv = _V + Δ*Δᵣ #damping
         vg = exp(vv)
-        @show vg
         return vv
     end
     res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=20),_nan)
