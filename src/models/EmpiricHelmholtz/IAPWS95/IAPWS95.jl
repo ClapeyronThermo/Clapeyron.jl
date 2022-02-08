@@ -105,7 +105,7 @@ function iapws_f0(model,δ,τ)
     return res
 end
 
-_f0(model::IAPWS95,δ,τ) = iapws_f0(_model::IAPWS95,δ,τ)
+_f0(model::IAPWS95,δ,τ) = iapws_f0(model,δ,τ)
 
 
 function _fr(model::IAPWS95,δ,τ)
@@ -265,15 +265,13 @@ function x0_volume(model::IAPWS95,p,T,z=[1.0];phase = :unknown)
         if model.consts.Pc > p
             return sat_v = saturated_water_liquid(T)
         else
-            return volume_virial(model,p,T,z) #must look for better initial point here
+            return model.consts.Vc #must look for better initial point here
         end
     elseif is_vapour(phase)
-        x0val = 1.1*saturated_water_vapor(T)
+        return 1.1*saturated_water_vapor(T)
     elseif is_supercritical(phase)
-        x0val = model.consts.Vc
-
+        return model.consts.Vc
     end
-    return x0val
 end
 
 function x0_sat_pure(model::IAPWS95,T)

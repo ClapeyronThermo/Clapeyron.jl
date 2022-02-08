@@ -11,6 +11,8 @@ function init_model(idealmodel::Type{<:IAPWS95Ideal},components,userlocations,ve
     return IAPWS95Ideal()
 end
 
+idealmodel(model::IAPWS95) = IAPWS95Ideal(model.components,model.references)
+
 """
     IAPWS95Ideal <: IdealModel
     IAPWS95Ideal(components; 
@@ -42,7 +44,5 @@ function a_ideal(model::IAPWS95Ideal,V,T,z=SA[1.0])
     rho = one(mass_v)/mass_v
     δ = rho*0.003105590062111801 #/322
     τ = 647.096/T
-    return 0.9999890238768239*iapws95_f0(model,δ,τ)
+    return 0.9999890238768239*iapws_f0(model,δ,τ)
 end
-
-
