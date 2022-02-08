@@ -29,7 +29,6 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         _V = exp(_V)
         _p,dpdV = p∂p∂V(model,_V,T,z)
         _Δ = (p-_p)/(_V*dpdV)
-        println("Δ = $_Δ, ∂p∂V = $dpdV")
         return _Δ
     end
     q = 0.1 #change to 0 to use vanilla iteration
