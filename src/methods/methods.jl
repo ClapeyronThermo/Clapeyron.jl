@@ -181,6 +181,21 @@ macro nan(Base.@nospecialize(fcall),default = nothing)
     end |> esc
 end
 
+function gradient_type(V,T,z::StaticArray)
+    μ = typeof(V+T+first(z))
+    return StaticArrays.similar_type(z,μ)
+end
+
+function gradient_type(V,T,z::Vector)
+    μ = typeof(V+T+first(z))
+    return Vector{μ}
+end
+
+function gradient_type(V,T,z::FractionVector)
+    μ = typeof(V+T+first(z))
+    return Vector{μ}
+end
+
 include("initial_guess.jl")
 include("differentials.jl")
 include("VT.jl")

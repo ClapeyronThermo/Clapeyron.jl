@@ -11,7 +11,6 @@ function x0_bubble_pressure(model::EoSModel,T,x)
     #check each T with T_scale, if treshold is over, replace Pi with inf
     pure = split_model(model)
     crit = crit_pure.(pure)
-    
     T_c = [tup[1] for tup in crit]
     V_c = [tup[3] for tup in crit]
     _0 = zero(T+first(x))

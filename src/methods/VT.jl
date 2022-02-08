@@ -11,16 +11,6 @@ function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
     return -Solvers.derivative(fun,T)
 end
 
-function VT_chemical_potential(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos(model,V,T,x)
-    return ForwardDiff.gradient(fun,z)
-end
-
-function VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos_res(model,V,T,x)
-    return ForwardDiff.gradient(fun,z)
-end
-
 function VT_internal_energy(model::EoSModel, V, T, z=SA[1.])
     dA, A = ∂f(model,V,T,z)
     ∂A∂V, ∂A∂T = dA
@@ -142,4 +132,20 @@ function pip(model::EoSModel, V, T, z=SA[1.0])
     Π = V*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1])
 end
 
+#Vector Properties
+
+function VT_chemical_potential(model::EoSModel, V, T, z=SA[1.])
+    fun(x) = eos(model,V,T,x)
+    TT = gradient_type(V,T,z) #type stability matters a lot
+    return ForwardDiff.gradient(fun,z)::TT
+end
+
+function VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.])
+    fun(x) = eos_res(model,V,T,x)
+    TT = gradient_type(V,T,z) #type stability matters a lot
+    return ForwardDiff.gradient(fun,z)::TT
+end
+
+
 export second_virial_coefficient,pressure
+
