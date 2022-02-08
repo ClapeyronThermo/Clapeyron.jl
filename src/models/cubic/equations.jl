@@ -26,6 +26,7 @@ function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
     invn2 = (one(n)/n)^2
     a = model.params.a.values
     b = model.params.b.values
+    T = T*float(one(T))
     α = @f(α_function,model.alpha)
     c = @f(translation,model.translation)
     if length(z)>1
