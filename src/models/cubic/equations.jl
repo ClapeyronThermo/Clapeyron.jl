@@ -39,7 +39,7 @@ function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
     return ā ,b̄, c̄
 end
 
-function second_virial_coefficient(model::ABCubicModel,T,z = SA[1.0])
+function second_virial_coefficient(model::ABCubicModel,T::Real,z = SA[1.0])
     #@info "fast shortcut"
     a,b,c = cubic_ab(model,1e-4,T,z)
     return b-a/(R̄*T)
