@@ -37,7 +37,7 @@ function Obj_UCEP_mix(model::EoSModel,F,x,y,V_l,V_v,T,ts,ps)
     y    = FractionVector(y)
     x    = FractionVector(x)
     f(z) = eos(model,V_l,T,z)
-    H(z) = ForwardDiff.hessian(f,z)/(R̄T)
+    H(z) = ForwardDiff.hessian(f,z)/(R̄*T)
     L(z) = det(H(z))
     dL(z) = ForwardDiff.gradient(L,z)
     M(z) = [H(z)[1:end-1,:];transpose(dL(z))]
