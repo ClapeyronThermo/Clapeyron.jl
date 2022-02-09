@@ -31,7 +31,7 @@ end
 function Obj_UCST_mix(model::EoSModel,F,z,V,T)
     z    = FractionVector(z)
     f(x) = eos(model,V,T,x)
-    H(x) = ForwardDiff.hessian(f,x)/(R̄T)
+    H(x) = ForwardDiff.hessian(f,x)/(R̄*T)
     L(x) = det(H(x))
     dL(x) = ForwardDiff.gradient(L,x)
     M(x) = [H(x)[1:end-1,:];transpose(dL(x))]
