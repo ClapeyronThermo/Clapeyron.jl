@@ -1,13 +1,5 @@
 ## Bubble pressure solver
 function x0_bubble_pressure(model::EoSModel,T,x)
-    #TODO
-    #on sufficiently large temps, 
-    #the joule-thompson inversion occurs
-    #making the virial coeff positive
-    #on those cases, use an strategy that supposes pure gas on that side
-    #Pbi = inf
-    #xi = 0
-
     #check each T with T_scale, if treshold is over, replace Pi with inf
     pure = split_model(model)
     crit = crit_pure.(pure)
@@ -17,24 +9,12 @@ function x0_bubble_pressure(model::EoSModel,T,x)
     nan = _0/_0 
     sat_nan = (nan,nan,nan)
     replaceP = ifelse.(T_c .< T,true,false)
-
-    eachx = eachcol(Diagonal(ones(eltype(x),length(x))))
-#     Bi = second_virial_coefficient.(model,T,eachx)
-    #using P_B(2B) as a sat aproximation
-    #z = 1 + B/v
-    #P_B = RT/v(1+B/v)
-    #P_B(2B) = -RT/2B(1-B/2B)
-    #P_B(2B) = -0.25*RT/B
     sat = [if !replaceP[i] saturation_pressure(pure[i],T) else sat_nan end for i in 1:length(pure)]
     
     P_sat = [tup[1] for tup in sat]
     V_l_sat = [tup[2] for tup in sat]
     V_v_sat = [tup[3] for tup in sat]
-#     P_Bi = @. -0.25*R̄*T/Bi
-    #=xP0 = yP
-    #dot(x,P0) = P
-    P = dot(x,P0)
-    =#
+
     P = zero(T)
     V0_l = zero(T)
     V0_v = zero(T)
@@ -50,8 +30,7 @@ function x0_bubble_pressure(model::EoSModel,T,x)
             V0_l += x[i]*V_c[i]
         end
     end
-    #@show P_Bi
-    #P = dot(x,P_Bi)
+
     y = @. x*Pi/P
     ysum = 1/∑(y)
     y    = y.*ysum
