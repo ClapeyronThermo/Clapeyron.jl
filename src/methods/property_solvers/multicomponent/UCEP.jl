@@ -1,5 +1,22 @@
+
+
+
+"""
+    UCEP_mix(model::EoSModel;v0=x0_UCEP_mix(model))
+
+Calculates the Upper Critical End Point of a binary mixture.
+
+returns:
+- UCEP Temperature [`K`]
+- UCEP Pressure [`Pa`]
+- liquid volume at UCEP Point [`m^3`]
+- vapour volume at UCEP Point [`m^3`]
+- liquid molar composition at UCEP Point
+- vapour molar composition at UCEP Point
+
+"""
 function UCEP_mix(model::EoSModel;v0=nothing)
-    if v0 == nothing
+    if v0 === nothing
         v0 = x0_UCEP_mix(model)
     end  
     ts = T_scales(model,[0.5,0.5])
@@ -20,7 +37,7 @@ function Obj_UCEP_mix(model::EoSModel,F,x,y,V_l,V_v,T,ts,ps)
     y    = FractionVector(y)
     x    = FractionVector(x)
     f(z) = eos(model,V_l,T,z)
-    H(z) = ForwardDiff.hessian(f,z)/8.134/T
+    H(z) = ForwardDiff.hessian(f,z)/(R̄T)
     L(z) = det(H(z))
     dL(z) = ForwardDiff.gradient(L,z)
     M(z) = [H(z)[1:end-1,:];transpose(dL(z))]
@@ -34,12 +51,23 @@ function Obj_UCEP_mix(model::EoSModel,F,x,y,V_l,V_v,T,ts,ps)
         F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
     end
     F[3] = (p_l-p_v)/ps
-    
     F[4] = L(x)
     F[5] = det(M(x))
     return F
 end
+"""
+    x0_UCEP_mix(model::EoSModel)
 
+Initial point for `UCEP_mix(model)`.
+
+Returns a tuple, containing:
+- Initial guess for liquid composition
+- Initial guess for vapour composition
+- Initial guess for liquid volume `[m³]`
+- Initial guess for vapour volume `[m³]`
+- Initial guess for UCEP Temperature `[K]`
+
+"""
 function x0_UCEP_mix(model::EoSModel)
     T0 = T_scale(model,[0.5,0.5])*1.5
     x0 = 0.5

@@ -34,21 +34,27 @@ function LLE_pressure(model::EoSModel, T, x; v0 =nothing)
 end
 
 function LLE_temperature(model,p,x;T0=nothing)
-    f(z) = Obj_LLE_temperature(model,z,p,x)
-    Ti   = T_scales(model,x).*1.5
-    T = Roots.find_zero(f,sum(Ti)/length(Ti))
     if T0===nothing
-        Ti   = T_scales(model,x).*1.5
-        T = Roots.find_zero(f,sum(Ti)/length(Ti))
-    else
-        T = Roots.find_zero(f,T0)
+        T0 = x0_LLE_temperature(model,p,x)
     end
-    p,v_l,v_ll,xx = LLE_pressure(model,T,x)
-    return T,v_l,v_ll,xx
+    TT = promote_type(typeof(p),eltype(x))
+    cache = Ref{Tuple{TT,TT,TT,FractionVector{TT,Vector{TT}}}}()
+    f(z) = Obj_LLE_temperature(model,z,p,x,cache)
+    fT = Roots.ZeroProblem(f,T0)
+    Roots.solve(fT)
+    return cache[]
+    #p,v_l,v_ll,xx = LLE_pressure(model,T,x)
+    #return T,v_l,v_ll,xx
 end
 
-function Obj_LLE_temperature(model,T,p,x)
+function Obj_LLE_temperature(model,T,p,x,cache)
     p̃,v_l,v_ll,xx = LLE_pressure(model,T,x)
+    cache[] = (T,v_l,v_ll,xx)
     return p̃-p
 end
 
+function x0_LLE_temperature(model,p,x)
+    return  sum(T_scales(model,x))*1.5/length(x)
+end
+
+#(312.9523684945143, 9.390559216356496e-5, 6.43948735903196e-5, [0.6870052814855845, 0.3129947185144155])
