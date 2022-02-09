@@ -43,6 +43,8 @@ Clapeyron.TPFlashMethod
 Clapeyron.DETPFlash
 Clapeyron.RRTPFlash
 Clapeyron.numphases
+Clapeyron.UCEP_mix
+Clapeyron.UCST_mix
 ```
 
 ## Initial guess functions
