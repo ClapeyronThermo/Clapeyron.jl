@@ -1,14 +1,5 @@
 ## dew pressure solver
 function x0_dew_pressure(model::EoSModel,T,y)
-    #TODO
-    #on sufficiently large temps, 
-    #the joule-thompson inversion occurs
-    #making the virial coeff positive
-    #on those cases, use an strategy that supposes pure gas on that side
-    #Pbi = inf
-    #xi = 0
-
-    #check each T with T_scale, if treshold is over, replace Pi with inf
     pure = split_model(model)
     crit = crit_pure.(pure)
     
@@ -18,24 +9,11 @@ function x0_dew_pressure(model::EoSModel,T,y)
     nan = _0/_0 
     sat_nan = (nan,nan,nan)
     replaceP = ifelse.(T_c .< T,true,false)
-
-    eachx = eachcol(Diagonal(ones(eltype(y),length(y))))
-#     Bi = second_virial_coefficient.(model,T,eachx)
-    #using P_B(2B) as a sat aproximation
-    #z = 1 + B/v
-    #P_B = RT/v(1+B/v)
-    #P_B(2B) = -RT/2B(1-B/2B)
-    #P_B(2B) = -0.25*RT/B
     sat = [if !replaceP[i] saturation_pressure(pure[i],T) else sat_nan end for i in 1:length(pure)]
     
     P_sat = [tup[1] for tup in sat]
     V_l_sat = [tup[2] for tup in sat]
     V_v_sat = [tup[3] for tup in sat]
-#     P_Bi = @. -0.25*R̄*T/Bi
-    #=xP0 = yP
-    #dot(x,P0) = P
-    P = dot(x,P0)
-    =#
     P⁻¹ = zero(T)
     V0_l = zero(T)
     V0_v = zero(T)
@@ -51,8 +29,6 @@ function x0_dew_pressure(model::EoSModel,T,y)
             V0_v += y[i]*V_c[i]*1.2
         end
     end
-    #@show P_Bi
-    #P = dot(x,P_Bi)
     P = 1/P⁻¹
     x = @. y*P/Pi
     xsum = 1/∑(x)
@@ -65,7 +41,6 @@ function x0_dew_pressure(model::EoSModel,T,y)
             V0_l += x[i]*V_c[i]
         end
     end
-    
     prepend!(x,log10.([V0_l,V0_v]))
     return x
 end
@@ -79,7 +54,6 @@ function dew_pressure(model::EoSModel, T, y; v0 =nothing)
         v0 = x0_dew_pressure(model,T,y)
     end
     len = length(v0[1:end-1])
-    #xcache = zeros(eltype(x0),len)
     Fcache = zeros(eltype(v0[1:end-1]),len)
     f!(F,z) = Obj_dew_pressure(model, F, T, exp10(z[1]), exp10(z[2]), z[3:end],y,ts,pmix)
     r  =Solvers.nlsolve(f!,v0[1:end-1],LineSearch(Newton()))
@@ -104,27 +78,53 @@ function Obj_dew_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     return F
 end
 
-function dew_temperature(model,p,y)
-    f(z) = Obj_dew_temperature(model,z,p,y)
-    pure = split_model(model)
-    sat = saturation_temperature.(pure,p)
-    Ti   = zero(y)
-    for i ∈ 1:length(y)
-        if isnan(sat[i][1])
-            Tc,pc,vc = crit_pure(pure[i])
-            g(x) = p-pressure(pure[i],vc,x,[1.])
-            Ti[i] = Roots.find_zero(g,(Tc))
-        else
-            Ti[i] = sat[i][1]
-        end
+function dew_temperature(model::EoSModel,p,y,T₀=nothing)
+    TT = promote_type(typeof(p),eltype(y))
+    nan = TT(NaN)
+    if T₀ === nothing
+        T₀::TT = x0_dew_temperature(model,p,y)
     end
-    T = Roots.find_zero(f,sum(Ti)/length(y))
-    p,v_l,v_v,x = dew_pressure(model,T,y)
-    return T,v_l,v_v,x
+    x0 = x0_dew_pressure(model,T₀,y)
+    x = FractionVector(x0[3:end-1])
+    v_l = exp10(x0[1])
+    v_v = exp10(x0[2])
+    cache = Ref{Tuple{TT,TT,TT,FractionVector{TT,Vector{TT}}}}((T₀,v_l,v_v,x))
+    __f(z) = Obj_dew_temperature(model,z,p,y,cache)
+    
+    fT = Roots.ZeroProblem(__f,T₀)
+    T::TT = Roots.solve(fT)
+    return cache[]
 end
 
-function Obj_dew_temperature(model,T,p,y)
-    p̃,v_l,v_v,y = dew_pressure(model,T,y)
+function Obj_dew_temperature(model,T,p,y,cache)
+    last_result = cache[]
+    x0 = collect(last(last_result))
+    prepend!(x0,(log10(last_result[2]),log10(last_result[3])))
+    p̃,v_l,v_v,x= dew_pressure(model,T,y,v0 = x0)  
+    cache[] = (T,v_l,v_v,x)
     return p̃-p
 end
 
+function x0_dew_temperature(model,p::T1,y::AbstractVector{T2}) where {T1,T2}
+    TT = promote_type(T1,T2)
+    pure = split_model(model)
+    n = length(y)
+    T̄ = zero(TT)
+    for i ∈ 1:length(y)
+        Tsat,_,_ = saturation_temperature(pure[i],p)
+        if isnan(Tsat) && dew_temperature_T0i
+            T̄ +=dew_temperature_T0i(pure[i],p)
+        else
+            T̄ += Tsat
+        end
+    end
+    T̄ /= n
+    return T̄::TT
+end
+
+function dew_temperature_T0i(model,p)
+    Tc,_,vc = crit_pure(model)
+    g(T) = p - pressure(model,vc,T)
+    gi = Roots.ZeroProblem(g,Tc)
+    Roots.solve(gi)
+end
