@@ -6,9 +6,8 @@
 #dL(z) = ForwardDiff.gradient(L,z)
 #M(z) = [H(z)[1:end-1,:];transpose(dL(z))]
 """
-    LdetM(model,V,T,z)
+    mixture_critical_constraint(model,V,T,z)
 
-Used for UCEP and UCST_mix. 
 with `a(x)` the reduced `(A/RT)` helmholtz energy dependent on composition `xᵢ` for `i` ∈ `1:n`, returns `L` and `det(M)`, where `L` and `M` are defined as:
 ```
 L := det(ℍ(a)) (ℍ = hessian)
@@ -16,7 +15,7 @@ M := ℍ(a) for rows ∈ 1:n-1
   := ∇L for row n
 ```
 """
-function LdetM(model,V,T,z)
+function mixture_critical_constraint(model,V,T,z)
     f(x) = eos(model,V,T,x)/(R̄*T)
     H(x) = ForwardDiff.hessian(f,x) #∂A/∂zᵢ∂zⱼ == ∂A/∂zⱼ∂zᵢ
     L(x) = det(Symmetric(H(x)))
@@ -30,6 +29,18 @@ function LdetM(model,V,T,z)
     return LL , det(MM)
 end
 
+function μp_equality(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
+    μ_l = VT_chemical_potential(model,v_l,T,x)
+    μ_v = VT_chemical_potential(model,v_v,T,y)
+    p_l = pressure(model,v_l,T,x)
+    p_v = pressure(model,v_v,T,y)
+    n_c = length(x)
+    for i in 1:n_c
+        F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
+    end
+    F[n_c+1] = (p_l-p_v)/ps
+    return F
+end
 
 include("rachford_rice.jl")
 include("bubble_point.jl")

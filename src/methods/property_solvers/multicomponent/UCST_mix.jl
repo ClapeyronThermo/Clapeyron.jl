@@ -30,7 +30,7 @@ end
 
 function Obj_UCST_mix(model::EoSModel,F,z,V,T)
     z    = FractionVector(z)
-    L,detM = LdetM(model,V,T,z)
+    L,detM = mixture_critical_constraint(model,V,T,z)
     F[1] = L
     F[2] = detM
     return F

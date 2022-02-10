@@ -33,24 +33,15 @@ function UCEP_mix(model::EoSModel;v0=nothing)
     return (T, p, V_l, V_v, x, y)
 end
 
-
-
 function Obj_UCEP_mix(model::EoSModel,F,x,y,V_l,V_v,T,ts,ps)
-    y    = FractionVector(y)
-    x    = FractionVector(x)
-    μ_l = VT_chemical_potential(model,V_l,T,x)
-    μ_v = VT_chemical_potential(model,V_v,T,y)
-    p_l = pressure(model,V_l,T,x)
-    p_v = pressure(model,V_v,T,y)
-    L,detM = LdetM(model,V_l,T,x) 
-    for i in 1:length(x)
-        F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
-    end
-    F[3] = (p_l-p_v)/ps
-    F[4] = L
-    F[5] = detM
+    x̄ = FractionVector(x)
+    F = μp_equality(model,F,T,V_l,V_v,x̄,FractionVector(y),ts,ps) #equality of chemical potentials and pressures
+    L,detM = mixture_critical_constraint(model,V_l,T,x̄) 
+    F[end-1] = L
+    F[end] = detM
     return F
 end
+
 """
     x0_UCEP_mix(model::EoSModel)
 
