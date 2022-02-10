@@ -1,11 +1,7 @@
 function Obj_crit_mix(model::EoSModel,F,z,V,T)
-    f(x) = eos(model,V,T,x)
-    H(x) = ForwardDiff.hessian(f,x)/R̄/T
-    L(x) = det(H(x))
-    dL(x) = ForwardDiff.gradient(L,x)
-    M(x) = [H(x)[1:end-1,:];transpose(dL(x))]
-    F[1] = L(z)
-    F[2] = det(M(z))
+    L,detM = mixture_critical_constraint(model,V,T,z)
+    F[1] = L
+    F[2] = detM
     return F
 end
     

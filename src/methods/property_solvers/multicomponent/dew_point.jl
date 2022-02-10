@@ -66,16 +66,7 @@ function dew_pressure(model::EoSModel, T, y; v0 =nothing)
 end
 
 function Obj_dew_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
-    x   = FractionVector(x) #julia magic, check misc.jl
-    μ_l = VT_chemical_potential(model,v_l,T,x)
-    μ_v = VT_chemical_potential(model,v_v,T,y)
-    p_l = pressure(model,v_l,T,x)
-    p_v = pressure(model,v_v,T,y)
-    for i in 1:length(x)
-        F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
-    end
-    F[end] = (p_l-p_v)/ps
-    return F
+    return μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), y ,ts,ps)
 end
 
 function dew_temperature(model::EoSModel,p,y,T₀=nothing)
