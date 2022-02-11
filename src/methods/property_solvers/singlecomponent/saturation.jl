@@ -100,22 +100,22 @@ function sat_pure(model::EoSModel,V0,f!,T,method =LineSearch(Newton()))
 end
 
 function Obj_Sat(model::EoSModel, F, T, V_l, V_v,scales)
-    fun(_z1,_V) = eos(model, _V, T,SA[_z1])
-    df_l = Solvers.gradient2(fun,one(V_l*T),V_l*one(T))
-    df_v = Solvers.gradient2(fun,one(V_v*T),V_v*one(T))
+    fun(_V) = eos(model, _V, T,SA[1.])
+    A_l,Av_l = Solvers.f∂f(fun,V_l)
+    A_v,Av_v =Solvers.f∂f(fun,V_v)
+    g_l,g_v = A_l - V_l*Av_l,A_v - V_v*Av_v
     (p_scale,μ_scale) = scales
-    #T̄ = T/T_scale(model)
-    F[1] = (df_l[2]-df_v[2])*p_scale
-    F[2] = (df_l[1]-df_v[1])*μ_scale
+    F[1] = -(Av_l-Av_v)*p_scale
+    F[2] = (g_l-g_v)*μ_scale
     return F
 end
 
-
 function saturation_temperature(model::EoSModel,p)
+    nan = zero(p)/zero(p)
     f(z) = Obj_sat_pure_T(model,z,p)
     Tc,pc,vc = crit_pure(model)
     if p>pc
-        return (NaN,NaN,NaN)
+        return (nan,nan,nan)
     else
         T = Roots.find_zero(f,(0.3*Tc,0.99*Tc))
         p,v_l,v_v = saturation_pressure(model,T)
