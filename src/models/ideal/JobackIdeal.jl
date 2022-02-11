@@ -141,7 +141,7 @@ function JobackIdeal(components;userlocations=String[], verbose=false)
     end
     reidparam = ReidIdealParam(SingleParam("GC-averaged Reid Coefficients",groups.components,coeffs))
     reidmodel = ReidIdeal(reidparam)
-    model = JobackIdeal(groups.components,1:length(n),groups,packagedparams,reidmodel,references)
+    model = JobackIdeal(groups.components,comps,groups,packagedparams,reidmodel,references)
     return model
 end
 

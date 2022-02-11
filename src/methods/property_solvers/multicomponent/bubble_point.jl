@@ -48,9 +48,7 @@ function x0_bubble_pressure(model::EoSModel,T,x)
 end
 
 function bubble_pressure(model::EoSModel, T, x; v0 =nothing)
-    TYPE = promote_type(eltype(T),eltype(x))
-#     lb_v = lb_volume(model,x)
-    ts = T_scales(model,x)
+    ts = T_scales(model)
     pmix = p_scale(model,x)
     if v0 === nothing
         v0 = x0_bubble_pressure(model,T,x)
@@ -72,30 +70,24 @@ function Obj_bubble_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     return μp_equality(model::EoSModel, F, T, v_l, v_v, x, FractionVector(y),ts,ps)
 end
 
+function Obj_bubble_temperature(model,T,p,x)
+    p̃,v_l,v_v,y = bubble_pressure(model,T,x)
+    return p̃-p
+end
+
 function bubble_temperature(model,p,x;T0=nothing)
     f(z) = Obj_bubble_temperature(model,z,p,x)
-    if T0===nothing 
-        pure = split_model(model)
-        sat = saturation_temperature.(pure,p)
-        Ti   = zero(x)
-        for i ∈ 1:length(x)
-            if isnan(sat[i][1])
-                Tc,pc,vc = crit_pure(pure[i])
-                g(x) = p-pressure(pure[i],vc,x,[1.])
-                Ti[i] = Roots.find_zero(g,(Tc))
-            else
-                Ti[i] = sat[i][1]
-            end
-        end
-        T = Roots.find_zero(f,(minimum(Ti)*0.9,maximum(Ti)*1.1))
-    else
-        T = Roots.find_zero(f,T0)
+    if T0 === nothing
+        T0 = x0_bubble_temperature(model,p,x)
     end
+    fT = Roots.ZeroProblem(f,T0)
+    T = Roots.solve(fT)
     p,v_l,v_v,y = bubble_pressure(model,T,x)
     return T,v_l,v_v,y
 end
 
-function Obj_bubble_temperature(model,T,p,x)
-    p̃,v_l,v_v,y = bubble_pressure(model,T,x)
-    return p̃-p
+function x0_bubble_temperature(model,p,x)
+    Ti = _sat_Ti(model,p)
+    Tmin,Tmax = extrema(Ti)
+    return (0.9*Tmin,1.1*Tmax)
 end

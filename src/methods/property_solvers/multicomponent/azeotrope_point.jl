@@ -1,7 +1,7 @@
 function azeotrope_pressure(model::EoSModel, T; v0 =nothing)
     TYPE = promote_type(eltype(T),eltype([0.5,0.5]))
 #     lb_v = lb_volume(model,x)
-    ts = T_scales(model,[0.5,0.5])
+    ts = T_scales(model)
     pmix = p_scale(model,[0.5,0.5])
     if v0 === nothing
         v0 = x0_bubble_pressure(model,T,[0.5,0.5])
@@ -23,21 +23,13 @@ function Obj_az_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     return μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), FractionVector(y),ts,ps)
 end
 
-function azeotrope_temperature(model,p)
+function azeotrope_temperature(model,p;T0 = nothing)
     f(z) = Obj_azeotrope_temperature(model,z,p)
-    pure = split_model(model)
-    sat = saturation_temperature.(pure,p)
-    Ti   = zeros(length(pure),1)
-    for i ∈ 1:length(pure)
-        if isnan(sat[i][1])
-            Tc,pc,vc = crit_pure(pure[i])
-            g(x) = p-pressure(pure[i],vc,x,[1.])
-            Ti[i] = Roots.find_zero(g,(Tc))
-        else
-            Ti[i] = sat[i][1]
-        end
+    if T0 === nothing
+        T0 = x0_azeotrope_temperature(model,p)
     end
-    T = Roots.find_zero(f,(minimum(Ti)*0.9,maximum(Ti)*1.1))
+    fT = Roots.ZeroProblem(f,T0)
+    T = Roots.solve(fT)
     p,v_l,v_v,y = azeotrope_pressure(model,T)
     return T,v_l,v_v,y
 end
@@ -46,4 +38,11 @@ function Obj_azeotrope_temperature(model,T,p)
     p̃,v_l,v_ll,xx = azeotrope_pressure(model,T)
     return p̃-p
 end
+
+function x0_azeotrope_temperature(model,p)
+    Ti = _sat_Ti(model,p)
+    Tmin,Tmax = extrema(Ti)
+    return (0.9*Tmin,1.1*Tmax)
+end
+
 

@@ -15,6 +15,10 @@ function T_scale(model::SAFTModel,z=SA[1.0])
     return prod(ϵ[i]^z[i] for i in 1:length(z))^(1/sum(z))
 end
 
+function T_scales(model::SAFTModel)
+    ϵ = model.params.epsilon.diagvalues
+end
+
 function p_scale(model::SAFTModel,z=SA[1.0])
     ϵ = model.params.epsilon.diagvalues
     σᵢᵢ = model.params.sigma.diagvalues
