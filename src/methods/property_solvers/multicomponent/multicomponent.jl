@@ -30,17 +30,55 @@ function mixture_critical_constraint(model,V,T,z)
 end
 
 function μp_equality(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
-    μ_l = VT_chemical_potential(model,v_l,T,x)
-    μ_v = VT_chemical_potential(model,v_v,T,y)
+    n_c = length(x)
+    μ_l = similar(F,n_c)
+    μ_l = VT_chemical_potential!(μ_l,model,v_l,T,x)
+    for i in 1:n_c
+        F[i] = μ_l[i]
+    end
+    μ_v = VT_chemical_potential!(μ_l,model,v_v,T,y)
+    for i in 1:n_c
+        μli = F[i]
+        Δμ = (μli -μ_v[i])/(R̄*ts[i])
+        F[i] = Δμ
+    end
     p_l = pressure(model,v_l,T,x)
     p_v = pressure(model,v_v,T,y)
-    n_c = length(x)
-    for i in 1:n_c
-        F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
-    end
     F[n_c+1] = (p_l-p_v)/ps
     return F
 end
+
+function VT_chemical_potential!(result,model,V,T,z)
+    fun(x) = eos(model,V,T,x)
+    return ForwardDiff.gradient!(result,fun,z)
+end
+
+function PV_critical_temperature(model,p)
+    Tc,_,vc = crit_pure(model)
+    g(T) = p - pressure(model,vc,T)
+    gi = Roots.ZeroProblem(g,Tc)
+    T = Roots.solve(gi)
+    return T
+end
+
+function _sat_Ti(model,p)
+    pure = split_model(model)
+    n = length(pure)
+    Tsat = first.(saturation_temperature.(pure,p))
+    for i ∈ 1:n
+        if isnan(Tsat[i])
+            T = PV_critical_temperature(pure[i],p)
+            Tsat[i] = T
+        end
+    end
+    return Tsat
+end
+
+function sat_T_equimix(model,p)
+    n = length(model)
+    return sum(_sat_Ti(model,p))/n
+end
+
 
 include("rachford_rice.jl")
 include("bubble_point.jl")

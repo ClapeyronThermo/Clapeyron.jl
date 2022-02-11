@@ -48,7 +48,7 @@ end
 function dew_pressure(model::EoSModel, T, y; v0 =nothing)
     TYPE = promote_type(eltype(T),eltype(y))
 #     lb_v = lb_volume(model,x)
-    ts = T_scales(model,y)
+    ts = T_scales(model)
     pmix = p_scale(model,y)
     if v0 === nothing
         v0 = x0_dew_pressure(model,T,y)
@@ -69,23 +69,22 @@ function Obj_dew_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     return μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), y ,ts,ps)
 end
 
-function dew_temperature(model::EoSModel,p,y,T₀=nothing)
+function dew_temperature(model::EoSModel,p,y;T0=nothing)
     TT = promote_type(typeof(p),eltype(y))
-    nan = TT(NaN)
-    if T₀ === nothing
-        T₀::TT = x0_dew_temperature(model,p,y)
+    if T0 === nothing
+        T0 = x0_dew_temperature(model,p,y)
     end
-    x0 = x0_dew_pressure(model,T₀,y)
+    x0 = x0_dew_pressure(model,T0,y)
     x = FractionVector(x0[3:end-1])
     v_l = exp10(x0[1])
     v_v = exp10(x0[2])
-    cache = Ref{Tuple{TT,TT,TT,FractionVector{TT,Vector{TT}}}}((T₀,v_l,v_v,x))
-    __f(z) = Obj_dew_temperature(model,z,p,y,cache)
-    
-    fT = Roots.ZeroProblem(__f,T₀)
+    cache = Ref{Tuple{TT,TT,TT,FractionVector{TT,Vector{TT}}}}((T0,v_l,v_v,x))
+    f(z) = Obj_dew_temperature(model,z,p,y,cache)
+    fT = Roots.ZeroProblem(f,T0)
     T::TT = Roots.solve(fT)
     return cache[]
 end
+
 
 function Obj_dew_temperature(model,T,p,y,cache)
     last_result = cache[]
@@ -96,26 +95,4 @@ function Obj_dew_temperature(model,T,p,y,cache)
     return p̃-p
 end
 
-function x0_dew_temperature(model,p::T1,y::AbstractVector{T2}) where {T1,T2}
-    TT = promote_type(T1,T2)
-    pure = split_model(model)
-    n = length(y)
-    T̄ = zero(TT)
-    for i ∈ 1:length(y)
-        Tsat,_,_ = saturation_temperature(pure[i],p)
-        if isnan(Tsat) && dew_temperature_T0i
-            T̄ +=dew_temperature_T0i(pure[i],p)
-        else
-            T̄ += Tsat
-        end
-    end
-    T̄ /= n
-    return T̄::TT
-end
-
-function dew_temperature_T0i(model,p)
-    Tc,_,vc = crit_pure(model)
-    g(T) = p - pressure(model,vc,T)
-    gi = Roots.ZeroProblem(g,Tc)
-    Roots.solve(gi)
-end
+x0_dew_temperature(model,p,y) = sat_T_equimix(model,p)

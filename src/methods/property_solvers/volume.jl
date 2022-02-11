@@ -155,32 +155,4 @@ end
 
 export volume
 
-function crit_volume(model)
-    f,_ = x0_crit_pure(model)
-    T0 = 1.5*f*T_scale(model)
-    B = second_virial_coefficient(model,T0)
-    v0 = -B
-    Px(_v) = pressure(model,_v,T0)
-    p,dp,d2p = Solvers.f∂f∂2f(Px,v0)
-    #p- p0 = dp(v-v0) + d2p(v-v0)2
-    #Δp = dpΔv + ddpΔv^2/2
-    #Δp = Δv(dp + ddp/2 Δv)
-    #Δp = 0 -> Δv(dp + ddp/2 Δv) =0 #-> dp + ddp/2 Δv = 0 -> -2*dp/ddp
-    #pi = p0 + dp0(v-v0) + d2p(v-v0)^2
-    #
-    Δv = -2*dp/d2p
-    for i in 1:20
-    v0 = v0 + Δv
-    @show d2p
-    p,dp,d2p = Solvers.f∂f∂2f(Px,v0)
-    Δv = -2*dp/d2p
-    end
-    return v0,Δv
-end
-#
-#∂logstep\dV = [dpdv(P-P0) + d2pdv2*V(P - P0)]/[dpdv*V]^2 < 1
-#∂logstep\dV = [(P-P0)(dpdv + V*d2pdv2)]/[dpdv*V]^2 < 1
-
-#case 1: P > P0 -> v < v0
-
 

@@ -9,7 +9,7 @@ function Obj_VLLE_pressure(model::EoSModel, F, T, v_l, v_ll, v_v, x, xx, y,ts,ps
     p_l   = pressure(model,v_l,T,x)
     p_ll  = pressure(model,v_ll,T,xx)
     p_v   = pressure(model,v_v,T,y)
-    n_c   = length(model.components)
+    n_c   = length(model)
     for i in 1:n_c
         F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
         F[i+n_c] = (μ_ll[i]-μ_v[i])/(R̄*ts[i])
@@ -23,9 +23,9 @@ function VLLE_pressure(model::EoSModel, T; v0 =nothing)
 #     TYPE = promote_type(eltype(T),eltype(x))
 #     lb_v = lb_volume(model,x)
     if v0 === nothing
-        v0 = x0_VLLE(model,T)
+        v0 = x0_VLLE_pressure(model,T)
     end
-    ts = T_scales(model,[v0[4],1-v0[4]])
+    ts = T_scales(model)
     pmix = p_scale(model,[v0[4],1-v0[4]])
     len = length(v0[1:end])
     #xcache = zeros(eltype(x0),len)
@@ -46,7 +46,7 @@ function VLLE_pressure(model::EoSModel, T; v0 =nothing)
     return (P_sat, v_l, v_ll, v_v, x, xx, y)
 end
 
-function x0_VLLE(model::EoSModel, T)
+function x0_VLLE_pressure(model::EoSModel, T)
     pure = split_model(model)
     sat  = saturation_pressure.(pure,T)
     x0    = [0.75,0.25]
@@ -58,12 +58,19 @@ function x0_VLLE(model::EoSModel, T)
     return [log10(v_l0),log10(v_ll0),log10(v_v0),x0[1],xx0[1],y0[1]]
 end
 
-function VLLE_temperature(model,p)
+function VLLE_temperature(model,p;T0 = nothing)
+    if v0 === nothing
+        v0 = x0_VLLE_temperature(model,p)
+    end
     f(z) = Obj_VLLE_temperature(model,z,p)
-    Ti   = T_scales(model,model.icomponents).*1.7
-    T = Roots.find_zero(f,sum(Ti)/length(Ti))
-    p,v_l,v_v,y = VLLE_pressure(model,T)
-    return T,v_l,v_v,y
+    fT = Roots.ZeroProblem(f,v0)
+    T = Roots.solve(fT)
+    P_sat, v_l, v_ll, v_v, x, xx, y = VLLE_pressure(model,T)
+    return T, v_l, v_ll, v_v, x, xx, y
+end
+
+function x0_VLLE_temperature(model,p)
+   return 1.7*sum(T_scales(model))/length(model)
 end
 
 function Obj_VLLE_temperature(model,T,p)

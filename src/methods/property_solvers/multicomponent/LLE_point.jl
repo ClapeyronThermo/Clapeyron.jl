@@ -15,7 +15,7 @@ end
 function LLE_pressure(model::EoSModel, T, x; v0 =nothing)
     TYPE = promote_type(eltype(T),eltype(x))
 #     lb_v = lb_volume(model,x)
-    ts = T_scales(model,x)
+    ts = T_scales(model)
     pmix = p_scale(model,x)
     if v0 === nothing
         v0 = x0_LLE_pressure(model,T,x)
@@ -54,7 +54,7 @@ function Obj_LLE_temperature(model,T,p,x,cache)
 end
 
 function x0_LLE_temperature(model,p,x)
-    return  sum(T_scales(model,x))*1.5/length(x)
+    return  1.5*sum(T_scales(model))/length(x)
 end
 
 #(312.9523684945143, 9.390559216356496e-5, 6.43948735903196e-5, [0.6870052814855845, 0.3129947185144155])
