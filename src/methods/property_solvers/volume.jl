@@ -28,19 +28,19 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         _V < log(lb_v) && return zero(_V)/zero(_V)
         _V = exp(_V)
         _p,dpdV = p∂p∂V(model,_V,T,z)
-        _Δ = (p-_p)/(_V*dpdV)
+        _Δ = (p-_p)/(_V*dpdV)      
         return _Δ
     end
     q = 0.1 #change to 0 to use vanilla iteration
     function f_fixpoint(_V)
         Δ = logstep(_V)
+        abs(Δ) < 0.3cbrt(eps(typeof(_V))) && return _V
         _1 = one(Δ)
         Δᵣ = ifelse(abs(Δ) < q,abs(Δ)^Δ,_1)
         vv = _V + Δ*Δᵣ #damping
-        vg = exp(vv)
         return vv
     end
-    res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=20),_nan)
+    res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=100),_nan)
     return exp(res)
 end
 
@@ -154,3 +154,33 @@ function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
 end
 
 export volume
+
+function crit_volume(model)
+    f,_ = x0_crit_pure(model)
+    T0 = 1.5*f*T_scale(model)
+    B = second_virial_coefficient(model,T0)
+    v0 = -B
+    Px(_v) = pressure(model,_v,T0)
+    p,dp,d2p = Solvers.f∂f∂2f(Px,v0)
+    #p- p0 = dp(v-v0) + d2p(v-v0)2
+    #Δp = dpΔv + ddpΔv^2/2
+    #Δp = Δv(dp + ddp/2 Δv)
+    #Δp = 0 -> Δv(dp + ddp/2 Δv) =0 #-> dp + ddp/2 Δv = 0 -> -2*dp/ddp
+    #pi = p0 + dp0(v-v0) + d2p(v-v0)^2
+    #
+    Δv = -2*dp/d2p
+    for i in 1:20
+    v0 = v0 + Δv
+    @show d2p
+    p,dp,d2p = Solvers.f∂f∂2f(Px,v0)
+    Δv = -2*dp/d2p
+    end
+    return v0,Δv
+end
+#
+#∂logstep\dV = [dpdv(P-P0) + d2pdv2*V(P - P0)]/[dpdv*V]^2 < 1
+#∂logstep\dV = [(P-P0)(dpdv + V*d2pdv2)]/[dpdv*V]^2 < 1
+
+#case 1: P > P0 -> v < v0
+
+
