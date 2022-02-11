@@ -28,19 +28,19 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         _V < log(lb_v) && return zero(_V)/zero(_V)
         _V = exp(_V)
         _p,dpdV = p∂p∂V(model,_V,T,z)
-        _Δ = (p-_p)/(_V*dpdV)      
+        abs(_p-p) < 3eps(p) && return zero(_V)
+        _Δ = (p-_p)/(_V*dpdV)
         return _Δ
     end
     q = 0.1 #change to 0 to use vanilla iteration
     function f_fixpoint(_V)
         Δ = logstep(_V)
-        abs(Δ) < 0.3cbrt(eps(typeof(_V))) && return _V
         _1 = one(Δ)
         Δᵣ = ifelse(abs(Δ) < q,abs(Δ)^Δ,_1)
         vv = _V + Δ*Δᵣ #damping
         return vv
     end
-    res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=100),_nan)
+    res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
     return exp(res)
 end
 
