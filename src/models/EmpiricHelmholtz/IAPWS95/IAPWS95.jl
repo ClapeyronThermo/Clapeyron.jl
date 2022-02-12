@@ -275,10 +275,15 @@ function x0_volume(model::IAPWS95,p,T,z=[1.0];phase = :unknown)
 end
 
 function x0_sat_pure(model::IAPWS95,T)
-    vl = saturated_water_liquid(T)
-    vg = saturated_water_vapor(T)
-    x0  = (vl,vg)
+    if T > 647.096
+        nan = zero(T)/zero(T)
+        return nan,nan
+    else
+        vl = saturated_water_liquid(T)
+        vg = saturated_water_vapor(T)
+        x0  = (vl,vg)
     return log10.(x0)
+    end
 end
 
 function T_scale(model::IAPWS95,z=SA[1.0])
