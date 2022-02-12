@@ -15,5 +15,4 @@ end
     include("test_misc.jl")
     include("test_models.jl")
     include("test_methods.jl")
-    include("test_vlle.jl")
 end
