@@ -70,7 +70,7 @@ function VLLE_temperature(model,p;T0 = nothing)
 end
 
 function x0_VLLE_temperature(model,p)
-   return 1.7*sum(T_scales(model))/length(model)
+   return 1.6*sum(T_scales(model))/length(model)
 end
 
 function Obj_VLLE_temperature(model,T,p)
