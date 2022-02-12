@@ -56,7 +56,7 @@ function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
         return (p_c,V_c,V_c)
     end
     if T_c < T
-        @error "initial temperature $T greater than critical temperature $T_c. returning NaN"
+        #@error "initial temperature $T greater than critical temperature $T_c. returning NaN"
     else
         V0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
         V0 = MVector((V0[1],V0[2]))
@@ -103,29 +103,57 @@ function Obj_Sat(model::EoSModel, F, T, V_l, V_v,scales)
     fun(_V) = eos(model, _V, T,SA[1.])
     A_l,Av_l = Solvers.f∂f(fun,V_l)
     A_v,Av_v =Solvers.f∂f(fun,V_v)
-    g_l,g_v = A_l - V_l*Av_l,A_v - V_v*Av_v
+    g_l = muladd(-V_l,Av_l,A_l)
+    g_v = muladd(-V_v,Av_v,A_v)
     (p_scale,μ_scale) = scales
     F[1] = -(Av_l-Av_v)*p_scale
     F[2] = (g_l-g_v)*μ_scale
     return F
 end
 
-function saturation_temperature(model::EoSModel,p)
-    nan = zero(p)/zero(p)
-    f(z) = Obj_sat_pure_T(model,z,p)
-    Tc,pc,vc = crit_pure(model)
-    if p>pc
+#by default, starts right before the critical point, and descends via Clapeyron equation: (∂p/∂T)sat = ΔS/ΔV ≈ Δp/ΔT
+
+function saturation_temperature(model::EoSModel,p,T0= nothing)
+    if T0 === nothing
+        T0 = x0_saturation_temperature(model,p)
+    end
+    TT = typeof(T0/T0)
+    nan = zero(TT)/zero(TT)
+    if isnan(T0)
         return (nan,nan,nan)
-    else
-        T = Roots.find_zero(f,(0.3*Tc,0.99*Tc))
-        p,v_l,v_v = saturation_pressure(model,T)
-        return T,v_l,v_v
     end 
+    cache = Ref{Tuple{TT,TT,TT,TT}}((nan,nan,nan,nan))
+    f(T) = Obj_sat_pure_T(model,T,p,cache)
+    T = Solvers.fixpoint(f,T0)
+    _,_,v_l,v_v = cache[]
+    return T,v_l,v_v
 end
 
-function Obj_sat_pure_T(model,T,p)
-    p̃,v_l,v_v = saturation_pressure(model,T)
-    return p̃-p
+function x0_saturation_temperature(model,p)
+    Tc,pc,vc = crit_pure(model)    
+    p > 0.99999pc && (return zero(p)/zero(p))
+    T99 = 0.99*Tc
+    return T99
+end
+
+function Obj_sat_pure_T(model,T,p,cache)
+    Told,pold,vlold,vvold = cache[]
+    pii,vli,vvi = saturation_pressure(model,T)
+    Δp = (p-pii)
+    abs(Δp) < 4eps(p) && return T
+    if Told < T
+        if isnan(pii) && !isnan(pold)
+            return (T+Told)/2
+        end
+    end
+    cache[] = (T,pii,vli,vvi) 
+    S_v = VT_entropy(model,vvi,T)
+    S_l = VT_entropy(model,vli,T)
+    ΔS = S_v - S_l
+    ΔV = vvi - vli
+    dpdt = ΔS/ΔV #≈ (p - pii)/(T-Tnew)
+    Ti = T + Δp/dpdt
+    return Ti
 end
 
 """
@@ -142,118 +170,4 @@ function enthalpy_vap(model::EoSModel, T)
 end
 
 
-#=
-function choose_p(p1,p2)
-    if p1 > 0 && p2 > 0
-        p = (p1+p2)/2
-    elseif p1 < 0 
-        p = p2
-    elseif p2 < 0
-        p = p1
-    elseif isnan(p1) || isnan(p2)
-        p = zero(p1)/zero(p2)
-    end
-    return p
-end
-    an alternative algorithm for saturation pressure.
-        
-"""
-    FugSucessiveSatPure(;max_iters=100,ptol= 1e-10,vtol=1e-15,V0=nothing) 
 
-Performs a saturation pressure calculation, by sucessive substitution:
-```julia
-    vl = pressure(model,p,T,phase=:l)
-    vv = pressure(model,p,T,phase=:v)
-    p = (eos(model,vl,T) - eos(model,vv,T))/(vv-vl)
-```
-It's more stable than the default volume based method, but it is slower.
-if no initial `V0` is passed, it will be calculated via `x0_sat_pure(model,T)`.if a number is passed, it will be used as an initial pressure.
-"""
-Base.@kwdef struct FugSucessiveSatPure{T}
-    max_iters::Int = 100
-    ptol::Float64 = 1e-10
-    vtol::Float64 = 1e-15
-    V0::T = nothing 
-end
-
-export FugSucessiveSatPure
-
-function saturation_pressure(model::EoSModel,T,method::FugSucessiveSatPure)
-    nan = zero(T)/zero(T)
-    if isnothing(method.V0) || length(method.V0) == 2   
-        if isnothing(method.V0)
-            V1,V2 = x0_sat_pure(model,T)
-        else
-            V1,V2 = method.V0
-        end
-        V1,V2 = exp10(V1),exp10(V2)     
-        p1,p2 = pressure(model,V1,T), pressure(model,V2,T)
-    elseif (method.V0) isa Real
-        p = method.V0
-        p1,p2 = p
-        V1 = volume(model,p,T;phase=:l)
-        V2 = volume(model,p,T;phase=:v)
-    else
-        throw(error("invalid initial point for saturation pressure"))
-    end
-    T = T*one(nan)
-    A(V, t) = eos(model, V, t,SA[1.0])
-    p = choose_p(p1,p2)
-    if isnan(p)
-        T_c,P_c,V_c = crit_pure(model)
-        if T_c < T
-            @error "initial temperature $T greater than critical temperature $T_c. returning NaN"
-        end
-        V1,V2 = x0_sat_pure_crit(model,T,T_c,P_c,V_c)
-        V1,V2 = exp10(V1),exp10(V2)     
-        p1,p2 = pressure(model,V1,T), pressure(model,V2,T)
-        p = choose_p(p1,p2)
-    end
-    V1old = nan
-    V2old = nan
-    if isnan(p)
-        @error("cannot find initial pressure")
-        return (nan,nan,nan)
-    end
-    pold = one(T)/zero(T)
-    iters = method.max_iters
-    ptol = method.ptol
-    vtol = method.vtol
-    
-    function Fug(model,V,T,p)
-        μres = ForwardDiff.derivative(z->eos_res(model,V,T,SA[z]),1.0)
-        Z = p*V/(R̄*T)
-        exp(μres/R̄/T)/Z
-    end
-    for i = 1:iters
-        V1 = volume(model,p,T;phase=:l)
-        V2 = volume(model,p,T;phase=:v)
-        vvtol = max(abs(V1 - V1old)/V1, abs(V2 - V2old)/V2)
-        pptol = abs(pold - p)/p
-        if vvtol < vtol && i > 1
-            @show i
-            if check_valid_sat_pure(model,p,V1,V2,T)
-                return (p,V1,V2)
-            else
-                return (nan,nan,nan)
-            end
-        end
-        pold = p
-        ϕl =  Fug(model,V1,T,p)
-        ϕv =  Fug(model,V2,T,p)
- 
-        p = p*ϕl/ϕv
-
-        if pptol < ptol && i > 1
-            if check_valid_sat_pure(model,p,V1,V2,T)
-                return (p,V1,V2)
-            else
-                return (nan,nan,nan)
-            end
-        end
-        V1old = V1
-        V2old = V2
-    end
-    return (nan,nan,nan)
-end
-=#
