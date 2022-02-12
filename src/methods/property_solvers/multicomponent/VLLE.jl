@@ -64,13 +64,13 @@ function VLLE_temperature(model,p;T0 = nothing)
     end
     f(z) = Obj_VLLE_temperature(model,z,p)
     fT = Roots.ZeroProblem(f,T0)
-    T = Roots.solve(fT,Order0())
+    T = Roots.solve(fT,Roots.Order0())
     P_sat, v_l, v_ll, v_v, x, xx, y = VLLE_pressure(model,T)
     return T, v_l, v_ll, v_v, x, xx, y
 end
 
 function x0_VLLE_temperature(model,p)
-   return 1.6*sum(T_scales(model))/length(model)
+   return 1.7*sum(T_scales(model))/length(model)
 end
 
 function Obj_VLLE_temperature(model,T,p)
