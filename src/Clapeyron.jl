@@ -14,13 +14,17 @@ using NLSolvers
 import BlackBoxOptim
 using DiffResults, ForwardDiff
 using Scratch 
+using Unitful
+import LogExpFunctions
 
 include("solvers/Solvers.jl")
 using .Solvers
 using .Solvers: log, sqrt
 ∂Tag = Solvers.∂Tag
-using Unitful
-import LogExpFunctions
+
+include("utils/fractions.jl")
+import .Fractions
+using .Fractions: FractionVector
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
 include("base/constants.jl") 

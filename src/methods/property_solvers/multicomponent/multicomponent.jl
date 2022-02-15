@@ -61,7 +61,21 @@ function PV_critical_temperature(model,p)
     return T
 end
 
+#returns saturation temperature if below crit_pure, if not, it returns  
 function _sat_Ti(model,p)
+    pure = split_model(model)
+    n = length(pure)
+    Tsat = first.(saturation_temperature.(pure,p))
+    for i ∈ 1:n
+        if isnan(Tsat[i])
+            T = PV_critical_temperature(pure[i],p)
+            Tsat[i] = T
+        end
+    end
+    return Tsat
+end
+
+function _sat_Pi(model,p)
     pure = split_model(model)
     n = length(pure)
     Tsat = first.(saturation_temperature.(pure,p))
@@ -78,7 +92,6 @@ function sat_T_equimix(model,p)
     n = length(model)
     return sum(_sat_Ti(model,p))/n
 end
-
 
 include("rachford_rice.jl")
 include("bubble_point.jl")
