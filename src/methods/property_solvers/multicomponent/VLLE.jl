@@ -2,18 +2,33 @@
 function Obj_VLLE_pressure(model::EoSModel, F, T, v_l, v_ll, v_v, x, xx, y,ts,ps)
     x   = FractionVector(x)
     y   = FractionVector(y)
-    xx  = FractionVector(xx)#julia magic, check misc.jl
-    μ_l   = VT_chemical_potential(model,v_l,T,x)
-    μ_ll  = VT_chemical_potential(model,v_ll,T,xx)
-    μ_v   = VT_chemical_potential(model,v_v,T,y)
+    xx  = FractionVector(xx)
+    n_c = length(model)
+    μ_v = VT_chemical_potential(model,v_v,T,y)
+    
+    @inbounds for i in 1:n_c
+        F[i] = -μ_v[i]/(R̄*ts[i])
+        F[i+n_c] = -μ_v[i]/(R̄*ts[i])
+    end
+
+    μ_l = VT_chemical_potential!(μ_v,model,v_l,T,x)
+    @inbounds for i in 1:n_c
+        F[i] += μ_l[i]/(R̄*ts[i])
+    end
+    μ_ll = VT_chemical_potential!(μ_l,model,v_ll,T,xx)
+    @inbounds for i in 1:n_c
+        F[i+n_c] += (μ_ll[i])/(R̄*ts[i])
+    end
+
     p_l   = pressure(model,v_l,T,x)
     p_ll  = pressure(model,v_ll,T,xx)
     p_v   = pressure(model,v_v,T,y)
-    n_c   = length(model)
-    for i in 1:n_c
-        F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
-        F[i+n_c] = (μ_ll[i]-μ_v[i])/(R̄*ts[i])
-    end
+    
+    #for i in 1:n_c
+    #    F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
+    #    F[i+n_c] = (μ_ll[i]-μ_v[i])/(R̄*ts[i])
+    #end
+
     F[end-1] = (p_l-p_v)/ps
     F[end]   = (p_ll-p_v)/ps
     return F
@@ -36,23 +51,24 @@ function VLLE_pressure(model::EoSModel, T; v0 =nothing)
     if v0 === nothing
         v0 = x0_VLLE_pressure(model,T)
     end
-    v0[4]
     ts = T_scales(model)
     pmix = p_scale(model,collect(FractionVector(v0[4])))
-    n = length(model)
     nx = length(model) -1 
-    len = 2*(n+2)
     x0 = vcat(v0...)
-    Fcache = zeros(eltype(T),len)
-    f! = (F,z) -> Obj_VLLE_pressure(model, F, T, exp10(z[1]), exp10(z[2]), exp10(z[3]), z[4:(nx+3)], z[(nx+4):(2nx+3)], z[(2nx+4):end],ts,pmix)
+    idx_x = 4:(nx+3)
+    idx_xx = (nx+4):(2nx+3)
+    idx_y = (2nx+4):length(x0)
+    f! = (F,z) -> @inbounds Obj_VLLE_pressure(model, F, T, 
+    exp10(z[1]), exp10(z[2]), exp10(z[3]),
+    z[idx_x], z[idx_xx], z[idx_y],ts,pmix)
     r  = Solvers.nlsolve(f!,x0,LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     v_l = exp10(sol[1])
     v_ll = exp10(sol[2])
     v_v = exp10(sol[3])
-    x = FractionVector(sol[4:(nx+3)])
-    xx = FractionVector(sol[(nx+4):(2nx+3)])
-    y = FractionVector(sol[(2nx+4):end])
+    x = FractionVector(sol[idx_x])
+    xx = FractionVector(sol[idx_xx])
+    y = FractionVector(sol[idx_y])
     P_sat = pressure(model,v_v,T,y)
     return (P_sat, v_l, v_ll, v_v, x, xx, y)
 end
@@ -103,12 +119,3 @@ function Obj_VLLE_temperature(model,T,p)
     p̃,v_l,v_ll,xx = VLLE_pressure(model,T)
     return p̃-p
 end
-
-#=
-  0.002896 seconds (2.08 k allocations: 335.297 KiB)
-(54504.07966631277, 
-6.461304272627602e-5, 9.36874408395517e-5, 0.045108311104382584, 
-[0.6842913136788397, 0.31570868632116034], 
-[0.27359159385170784, 0.7264084061482922], 
-[0.5774677072292492, 0.4225322927707508])
-=#
