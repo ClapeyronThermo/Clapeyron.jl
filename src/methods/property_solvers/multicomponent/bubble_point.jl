@@ -46,7 +46,16 @@ function x0_bubble_pressure(model::EoSModel,T,x)
     prepend!(y,log10.([V0_l,V0_v]))
     return y
 end
+"""
+    bubble_pressure(model::EoSModel, T, x; v0 = x0_bubble_pressure(model,T,x))
 
+calculates the bubble pressure and properties at a given temperature.
+Returns a tuple, containing:
+- Bubble Pressure `[Pa]`
+- liquid volume at Bubble Point [`m³`]
+- vapour volume at Bubble Point [`m³`]
+- Gas composition at Bubble Point
+"""
 function bubble_pressure(model::EoSModel, T, x; v0 =nothing)
     ts = T_scales(model)
     pmix = p_scale(model,x)
@@ -75,13 +84,23 @@ function Obj_bubble_temperature(model,T,p,x)
     return p̃-p
 end
 
+"""
+    bubble_temperature(model::EoSModel, p, x; T0 = x0_bubble_pressure(model,p,x))
+
+calculates the bubble temperature and properties at a given pressure.
+Returns a tuple, containing:
+- Bubble Temperature `[K]`
+- liquid volume at Bubble Point [`m³`]
+- vapour volume at Bubble Point [`m³`]
+- Gas composition at Bubble Point
+"""
 function bubble_temperature(model,p,x;T0=nothing)
     f(z) = Obj_bubble_temperature(model,z,p,x)
     if T0 === nothing
         T0 = x0_bubble_temperature(model,p,x)
     end
     fT = Roots.ZeroProblem(f,T0)
-    T = Roots.solve(fT)
+    T = Roots.solve(fT,Roots.Order0())
     p,v_l,v_v,y = bubble_pressure(model,T,x)
     return T,v_l,v_v,y
 end

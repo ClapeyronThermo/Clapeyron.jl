@@ -1,3 +1,8 @@
+"""
+    pressure(model::EoSModel, V, T, z=SA[1.])
+
+Returns the pressure of the model in `[Pa]` at a given volume, temperature and composition.
+"""
 function pressure(model::EoSModel, V, T, z=SA[1.])
     return -∂f∂V(model,V,T,z)
 end

@@ -45,6 +45,16 @@ function x0_dew_pressure(model::EoSModel,T,y)
     return x
 end
 
+"""
+    dew_pressure(model::EoSModel, T, y; v0 = x0_dew_pressure(model,T,y))
+
+calculates the dew pressure and properties at a given temperature.
+Returns a tuple, containing:
+- Dew Pressure `[Pa]`
+- liquid volume at Dew Point [`m³`]
+- vapour volume at Dew Point [`m³`]
+- Liquid composition at Dew Point
+"""
 function dew_pressure(model::EoSModel, T, y; v0 =nothing)
     TYPE = promote_type(eltype(T),eltype(y))
 #     lb_v = lb_volume(model,x)
@@ -68,7 +78,16 @@ end
 function Obj_dew_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     return μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), y ,ts,ps)
 end
+"""
+    dew_temperature(model::EoSModel, p, y; T0 = x0_dew_temperature(model,p,y))
 
+calculates the dew temperature and properties at a given pressure.
+Returns a tuple, containing:
+- Dew Temperature `[K]`
+- liquid volume at Dew Point [`m³`]
+- vapour volume at Dew Point [`m³`]
+- Liquid composition at Dew Point
+"""
 function dew_temperature(model::EoSModel,p,y;T0=nothing)
     TT = promote_type(typeof(p),eltype(y))
     if T0 === nothing
@@ -81,10 +100,9 @@ function dew_temperature(model::EoSModel,p,y;T0=nothing)
     cache = Ref{Tuple{TT,TT,TT,FractionVector{TT,Vector{TT}}}}((T0,v_l,v_v,x))
     f(z) = Obj_dew_temperature(model,z,p,y,cache)
     fT = Roots.ZeroProblem(f,T0)
-    T::TT = Roots.solve(fT)
+    T::TT = Roots.solve(fT,Roots.Order0())
     return cache[]
 end
-
 
 function Obj_dew_temperature(model,T,p,y,cache)
     last_result = cache[]

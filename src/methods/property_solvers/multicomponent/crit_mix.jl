@@ -4,25 +4,47 @@ function Obj_crit_mix(model::EoSModel,F,z,V,T)
     F[2] = detM
     return F
 end
-    
+
+
+"""
+    crit_mix(model::EoSModel,z;v0=x=x0_crit_mix(model,z))
+
+Returns the critical mixture point at a ginven composition.
+
+Returns a tuple, containing:
+- Critical Mixture Temperature `[K]`
+- Critical Mixture Pressure `[Pa]`
+- Critical Mixture Volume `[m³]`
+"""
 function crit_mix(model::EoSModel,z;v0=nothing)
     if v0 === nothing
         v0 = x0_crit_mix(model,z)
-    end  
+    end
+    
+    x0 = [v0[1],v0[2]] #could replace for MVector{2}
     f! = (F,x) -> Obj_crit_mix(model, F, z, exp10(x[1]), x[2])
-    r  = Solvers.nlsolve(f!,v0[1:end],LineSearch(Newton()))
+    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     T_c = sol[2]
     V_c = exp10(sol[1])
     p_c = pressure(model, V_c, T_c, z)
     return (T_c, p_c, V_c)
 end
+"""
+    x0_crit_mix(model::EoSModel,z)
 
+Initial point for `crit_mix(model,z)`. 
+
+Returns a tuple, containing:
+- Base 10 logarithm of initial guess for Critical Volume `[m³]`
+- Initial guess for critical temperature `[K]`     
+"""
 function x0_crit_mix(model::EoSModel,z)
     pure = split_model(model)
     crit = crit_pure.(pure)
-    n_c  = length(pure)
-    V_c  = sum(z[i]*crit[i][3] for i in 1:n_c)
-    T_c  = prod(crit[i][1]^z[i] for i ∈ 1:n_c)
-    return [log10(V_c),T_c]
+    vci = getindex.(crit,3)
+    tci = getindex.(crit,1)
+    V_c = dot(z,vci)/sum(z)
+    T_c  = prod(tci[i]^z[i] for i ∈ 1:length(model))
+    return (log10(V_c),T_c)
 end

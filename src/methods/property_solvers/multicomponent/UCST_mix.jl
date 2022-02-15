@@ -1,31 +1,40 @@
 """
     UCST_mix(model::EoSModel,T;v0=x0_UCST_mix(model,T))
 
-Calculates the Upper critical solution point of a binary mixture at a given Temperature.
+Calculates the Upper critical solution point of a mixture at a given Temperature.
 
 returns:
-- UCEP Pressure [`Pa`]
-- liquid volume at UCEP Point [`m^3`]
-- gas volume at UCEP Point [`m^3`]
-- liquid molar composition at UCEP Point
-- gas molar composition at UCEP Point
-
+- UCST Pressure [`Pa`]
+- volume at UCST Point [`m³`]
+- molar composition at UCST Point
 """
 function UCST_mix(model::EoSModel,T;v0=nothing)
     if v0 === nothing
         v0 = x0_UCST_mix(model,T)
-    end  
-    f! = (F,x) -> Obj_UCST_mix(model, F, x[2], exp10(x[1]), T)
-    r  = Solvers.nlsolve(f!,v0[1:end],LineSearch(Newton()))
+    end
+    x0 = vcat(v0[1],v0[2][1:end-1])
+    f! = (F,x) -> Obj_UCST_mix(model, F, x[2:end], exp10(x[1]), T)
+    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton()))
     sol = Solvers.x_sol(r)
-    z_c = FractionVector(sol[2])
+    z_c = FractionVector(sol[2:end])
     V_c = exp10(sol[1])
     p_c = pressure(model, V_c, T, z_c)
     return (p_c, V_c, z_c)
 end
+
+"""
+    x0_UCST_mix(model::EoSModel,T)
+
+Initial point for `UCST_mix(model,T)`.
+
+Returns a tuple, containing:
+- Base 10 logarithm initial guess for liquid composition `[m³]`
+- Initial guess for molar fractions at UCST Point (default: equimolar)
+"""
 function x0_UCST_mix(model::EoSModel,T)
-    V  = x0_volume_liquid(model,T,[0.5,0.5])
-    return [log10(V),0.5]
+    x0 = Fractions.zeros(length(model))
+    V  = x0_volume_liquid(model,T,x0)
+    return (log10(V),x0)
 end
 
 function Obj_UCST_mix(model::EoSModel,F,z,V,T)
