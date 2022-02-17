@@ -69,14 +69,20 @@ function a_ideal(model::ReidIdealModel, V, T, z)
     res = zero(V+T+first(z))
     Σz = sum(z)
     @inbounds for i in @comps
-        c0,c1,c2,c3 = polycoeff[i]
-        pol1 = (c0,c1*0.5,c2/3,c3*0.25)
-        pol2 = (c1,c2*0.5,c3/3)
+        ci = polycoeff[i]
+        n = length(ci)
+        c0 = first(ci)
+        cii = last(ci,n-1)
+        div1 = NTuple{n,Int}(1:n)
+        div2 = NTuple{n-1,Int}(1:n)
+        R̄⁻¹= 1/R̄
+        pol1 = ci ./ div1
+        pol2 = cii ./ div2
         lnV = log(z[i]/V)
-        lnT = (R̄ - c0)*(log(T/298))/R̄
-        k1 = evalpoly(T,pol1)/R̄ - 298*evalpoly(298,pol1)/(R̄*T)
-        k2 = T*evalpoly(T,pol2) - 298*evalpoly(298,pol2)
-        res += z[i]*(lnV+lnT+k1-k2/R̄)
+        lnT = (1 - c0*R̄⁻¹)*(log(T/298))
+        H = (evalpoly(T,pol1) - 298*evalpoly(298,pol1)/T)*R̄⁻¹
+        TS = (T*evalpoly(T,pol2) - 298*evalpoly(298,pol2))*R̄⁻¹
+        res += z[i]*(lnV+lnT+H-TS)
         #res +=x[i]*(log(z[i]/V) + 1/(R̄*T)*(sum(polycoeff[k]/k*(T^k-298^k) for k in 1:4)) -
         #1/R̄*((polycoeff[1]-R̄)*log(T/298)+sum(polycoeff[k]/(k-1)*(T^(k-1)-298^(k-1)) for k in 2:4)))
     end
