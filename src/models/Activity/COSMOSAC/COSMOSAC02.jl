@@ -102,7 +102,7 @@ function lnγ_res(model::COSMOSAC02Model,V,T,z)
 end
 
 function lnΓ(model::COSMOSAC02Model,V,T,z,P)
-    Γold =lnΓ_fixpoint(P,T)
+    Γold =lnΓ_fixpoint(P,T,z)
     atol = model.absolutetolerance
     lnΓ_f0(x,y) = lnΓ_fixpoint(x,y,P,T)
     Γ = Solvers.fixpoint(lnΓ_f0,Γold,Solvers.SSFixPoint(0.5),atol =atol ,max_iters=1000)
@@ -122,8 +122,8 @@ function lnΓ_fixpoint(Γnew,Γold,P,T)
     Γnew .= one(eltype(Γnew))./Γnew
 end
 
-function lnΓ_fixpoint(P,T)
-    Γnew = zeros(eltype(T),length(P))
+function lnΓ_fixpoint(P,T,z)
+    Γnew = zeros(eltype(T+P+first(z)),length(P))
     σ  = -0.025:0.001:0.025
     Tinv = one(T)/T
     @inbounds for i = 1:length(Γnew)
