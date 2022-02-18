@@ -7,7 +7,7 @@ Abstract type for `tp_flash` routines. it requires defining `numphases(method)` 
 abstract type TPFlashMethod end
 
 """
-tp_flash(model, p, T, n, method::TPFlashMethod =DETPFlash())
+    tp_flash(model, p, T, n, method::TPFlashMethod =DETPFlash())
 
 Routine to solve non-reactive multicomponent flash problem.
 The default method uses Global Optimization. see [DETPFlash](@ref)
