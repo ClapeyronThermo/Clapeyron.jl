@@ -3,8 +3,10 @@ A [Julia](http://julialang.org) package for the modelling of fluids using thermo
 
 The documentation is laid out as follows:
 
-- Background: Find more information about the origin and differences for each equation of state provided in this package, as well as some of the methods used to obtain the various thermodynamic properties
-- User guide: Find out how to use the equations of state provided in the package, how to use your own parameters, implement your own equation of state or algorithm.
+- **Background**: Find more information about the origin and differences for each equation of state provided in this package, as well as some of the methods used to obtain the various thermodynamic properties.
+- **User guide**: Find out how to use the equations of state provided in the package, how to use your own parameters, implement your own equation of state or algorithm.
+- **Available Models**: A list of all available Equations of State present in the package.
+- **API**: A list of all available methods.
 
 ### Authors
 

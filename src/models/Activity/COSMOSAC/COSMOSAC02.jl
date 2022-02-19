@@ -123,7 +123,7 @@ function lnΓ_fixpoint(Γnew,Γold,P,T)
 end
 
 function lnΓ_fixpoint(P,T,z)
-    Γnew = zeros(eltype(T+P+first(z)),length(P))
+    Γnew = zeros(promote_type(eltype(T),eltype(P),eltype(z)),length(P))
     σ  = -0.025:0.001:0.025
     Tinv = one(T)/T
     @inbounds for i = 1:length(Γnew)
