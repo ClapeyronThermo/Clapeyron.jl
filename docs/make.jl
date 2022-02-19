@@ -11,7 +11,7 @@ format = Documenter.HTML(
     pages = [
         "Home" => "index.md",
         "Examples" => Any[
-            "Cubic EoS" =>  "Examples/Cubic_EoS.md"
+            "Cubic EoS" =>  "examples/Cubic_EoS.md"
         ],
         "Background" => "theory/background.md",
         "User guide" => Any["Basic Usage"=>"user_guide/basic_usage.md",
