@@ -85,7 +85,7 @@ function VT_isobaric_expansivity(model::EoSModel, V, T, z=SA[1.])
     ∂²A∂V∂T = d²A[1,2]
     ∂²A∂V² = d²A[1,1]
     ∂²A∂T² = d²A[2,2]
-    return ∂²A∂V∂T/(V*∂²A∂V²)
+    return -∂²A∂V∂T/(V*∂²A∂V²)
 end
 
 function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
