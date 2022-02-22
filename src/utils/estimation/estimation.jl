@@ -1,13 +1,39 @@
+include("estimationdata.jl")
+
 export Estimation
 # Mutable for now to make it easy to just replace the model
-mutable struct Estimation{T<:EoSModel, U<:EoSParam}
+mutable struct Estimation{T<:EoSModel}
     model::T
-    initial_param::U
-    # data::Vector{EstimationData}
+    initial_model::T
+    filepaths::Array{String}
+    data::Vector{EstimationData}
 end
 
-function Estimation(model::EoSModel)
-    return Estimation(model, deepcopy(model.params))
+function Base.show(io::IO, mime::MIME"text/plain", estimation::Estimation)
+    print(io, typeof(estimation))
+    println(io, " with data for:")
+    firstloop = true
+    for data in estimation.data
+        !firstloop && println(io, "")
+        print(io, "  :" * String(data.method))
+        firstloop = false
+    end
+end
+
+function Base.show(io::IO, estimation::Estimation)
+    print(io, typeof(estimation))
+end
+
+function Estimation(model::EoSModel, filepaths::Array{String})
+    return Estimation(model, deepcopy(model), filepaths, EstimationData(filepaths))
+end
+
+function reload_data(estimation::Estimation)
+    estimationdata = EstimationData(estimation.filepaths)
+    empty!(estimation.data)
+    for i in 1:length(estimation.filepaths)
+        push!(estimation.data, estimationdata[i])
+    end
 end
 
 export update_estimation!

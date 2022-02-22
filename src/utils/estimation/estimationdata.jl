@@ -85,13 +85,16 @@ function Base.show(io::IO, mime::MIME"text/plain", data::EstimationData)
         println(io, "  :" * String(input))
     end
     println(io, " Outputs:")
+    firstloop = true
     for output in data.outputs_name
-        println(io, "  :" * String(output))
+        !firstloop && println(io, "")
+        print(io, "  :" * String(output))
+        firstloop = false
     end
 end
 
 function Base.show(io::IO, data::EstimationData)
-    println(io, "EstimationData{:" * String(data.method) * "}")
+    print(io, "EstimationData{:" * String(data.method) * "}")
 end
 
 EstimationData(["saturation_p_rhoL.csv"])
