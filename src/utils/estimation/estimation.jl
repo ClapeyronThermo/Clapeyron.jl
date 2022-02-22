@@ -1,10 +1,38 @@
 include("estimationdata.jl")
 
+struct ToEstimate
+    params::Vector{Symbol}
+    indices::Vector{Union{Vector{Integer},Nothing}}  # if nothing, use all
+    lower::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}
+    upper::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}
+    guess::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}  # if nothing, use current
+end
+
+function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
+    params = Vector{Symbol}(undef,0)
+    indices = Vector{Union{Vector{Integer},Nothing}}(nothing,0)
+    lower = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
+    upper = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
+    guess = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
+    for dict in params_dict
+        push!(params, dict[:param])
+        push!(indices, get(dict, :indices, nothing))
+        lower_ = get(dict, :lower, nothing)
+        push!(lower, typeof(lower_) <: AbstractFloat ? [lower_] : lower_)
+        upper_ = get(dict, :upper, nothing)
+        push!(upper, typeof(upper_) <: AbstractFloat ? [upper_] : upper_)
+        guess_ = get(dict, :guess, nothing)
+        push!(guess, typeof(guess_) <: AbstractFloat ? [guess_] : guess_)
+    end
+    return ToEstimate(params, indices, lower, upper, guess)
+end
+
 export Estimation
 # Mutable for now to make it easy to just replace the model
 mutable struct Estimation{T<:EoSModel}
     model::T
     initial_model::T
+    toestimate::ToEstimate
     filepaths::Array{String}
     data::Vector{EstimationData}
 end
@@ -18,14 +46,26 @@ function Base.show(io::IO, mime::MIME"text/plain", estimation::Estimation)
         print(io, "  :" * String(data.method))
         firstloop = false
     end
+    println(io, "\n to estimate:")
+    firstloop = true
+    for (param, indices) in zip(
+            estimation.toestimate.params, estimation.toestimate.indices)
+        !firstloop && println(io, "")
+        print(io, "  :" * String(param))
+        if !(indices === nothing)
+            print(io, " with indices => " * "[" * 
+                  join(indices,",") * "]")
+        end
+        firstloop = false
+    end
 end
 
 function Base.show(io::IO, estimation::Estimation)
     print(io, typeof(estimation))
 end
 
-function Estimation(model::EoSModel, filepaths::Array{String})
-    return Estimation(model, deepcopy(model), filepaths, EstimationData(filepaths))
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Array{String})
+    return Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths))
 end
 
 function reload_data(estimation::Estimation)
@@ -109,3 +149,24 @@ function return_model(
     return model
 end
 
+toestimate = [
+    Dict(
+        :param => :epsilon,
+        :indices => [1],
+        :lower => [3.7],
+        :upper => 5.0,
+        :guess => 3.0
+    ),
+    Dict(
+        :param => :sigma,
+        :lower => 3.3,
+        :upper => 3.8,
+        :guess => 3.5
+    ),
+    Dict(
+        :param => :lambda_r,
+        :lower => 12.0,
+        :upper => 16.0,
+        :guess => 16.0
+    )
+] 
