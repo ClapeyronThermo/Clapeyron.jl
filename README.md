@@ -16,9 +16,9 @@ We support many equations of state and properties. Some examples of figures you 
 
 - Isobaric heat capacity of carbon dioxide at 20 MPa:
 
-  ![CO2_cp](docs/CO2_cp.svg)
+  ![CO2_cp](docs/CO2_cp.svg) 
 
-- Water VLE enveloppe:
+- Water VLE envelope:
 
   ![water_VLE](docs/water_VLE.svg)
 
@@ -29,10 +29,6 @@ We support many equations of state and properties. Some examples of figures you 
 - pT-isopleth of methanol+cyclohexane generated using PC-SAFT:
 
 ![CH3OH_CyHx](docs/CH3OH_CyHex.svg)
-
-We intend to provide functions for users to generate these figures themselves.
-
-Note that at its current stage, Clapeyron is still in the very early stages of development, and things may be moving around or changing rapidly, but we are very excited to see where this project may go!
 
 # Installing Clapeyron
 
@@ -49,7 +45,7 @@ Pkg> add Clapeyron
 ```
 Or to add the development version:
 ```julia
-Pkg> add https://github.com/ypaul21/Clapeyron.jl#development
+Pkg> add https://github.com/ypaul21/Clapeyron.jl#master
 ```
 Exit Pkg mode by hitting backspace.
 
@@ -64,3 +60,9 @@ To remove the package, hit the ```]``` key to enter Pkg mode, then type
 ```julia
 Pkg> rm Clapeyron
 ```
+
+Note that at its current stage, Clapeyron is still in the early stages of development, and things may be moving around or changing rapidly, but we are very excited to see where this project may go!
+
+We are open to contributions, new models, improved methods and more databases are always appreciated.
+
+If you find any issue, feel free to contact us directly on the Zulip Channel, or open a Github issue. 

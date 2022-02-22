@@ -41,7 +41,7 @@ Leonard-Jones Reference equation of state. Ideal Part. valid from 0.5 < T/Tc < 7
 a⁰ᵢ(δ,τ) = log(δᵢ) + 1.5log(τᵢ) + 1.515151515τᵢ + 6.262265814 
 a⁰(δ,τ,z) = ∑xᵢ(a⁰ᵢ + log(xᵢ))
 
-````
+```
 
 `LJRefIdeal` acts as a wrapper of `LJRef` model, you can access it with `LJRef(model::LJRefIdeal)`.
 
