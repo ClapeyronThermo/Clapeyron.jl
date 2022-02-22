@@ -48,7 +48,7 @@ function extract_dataerror(df::CSV.File, csvheaders::Vector{String}, extract_hea
     return data, error, errortype
 end
 
-function get_estimationdata(filepaths::Vector{String})
+function EstimationData(filepaths::Vector{String})
     estimationdata = Vector{EstimationData}()
     for filepath ∈ filepaths
         method = Symbol(strip(getline(filepath, 2), [',']))
@@ -78,4 +78,20 @@ function get_estimationdata(filepaths::Vector{String})
     return estimationdata
 end
 
-get_estimationdata(["saturation_p_rhoL.csv"])
+function Base.show(io::IO, mime::MIME"text/plain", data::EstimationData)
+    println(io, "EstimationData{:" * String(data.method) * "}:")
+    println(io, " Inputs:")
+    for input in data.inputs_name
+        println(io, "  :" * String(input))
+    end
+    println(io, " Outputs:")
+    for output in data.outputs_name
+        println(io, "  :" * String(output))
+    end
+end
+
+function Base.show(io::IO, data::EstimationData)
+    println(io, "EstimationData{:" * String(data.method) * "}")
+end
+
+EstimationData(["saturation_p_rhoL.csv"])
