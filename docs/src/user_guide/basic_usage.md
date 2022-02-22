@@ -298,9 +298,10 @@ The functions for the physical properties that we currently support are as follo
 
 ```julia
 using Unitful
-import Unitful: bar, °C, mol
-
-Cp2 = isobaric_heat_capacity(model1, 5bar, 25°C, [0.5mol, 0.5mol])
+import Unitful: bar, °C, mol, kg, l
+model_unit = PCSAFT(["methanol","water"])
+Cp2 = isobaric_heat_capacity(model_unit, 5bar, 25°C, [0.5kg, 0.5kg]) # isobaric heat capacity of 1 mol of mixture, at a pressure of 5 bar
+Cp2 = isobaric_heat_capacity(model_unit, 1.0l/kg, 25°C, [0.4kg, 0.6kg])  # isobaric heat capacity of 1 kg of mixture, at a volume of 1 L/kg
 ```
 
 Note that if you do not wish to import specific units, you may also just use a Unitful string, `pressure = 20u"psi"`. This is only supported for bulk properties.

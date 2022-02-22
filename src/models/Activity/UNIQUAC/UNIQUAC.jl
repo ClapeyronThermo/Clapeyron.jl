@@ -73,7 +73,7 @@ function activity_coefficient(model::UNIQUACModel,p,T,z)
     return exp.(lnγ_comb+lnγ_res)
 end
 
-function Ψ(model::UNIFACModel,V,T,z)
+function Ψ(model::UNIQUACModel,V,T,z)
     Tinv = 1/T
     a = model.params.a.values
     return @. exp(-a*Tinv)
