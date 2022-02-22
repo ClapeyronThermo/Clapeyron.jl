@@ -2,13 +2,17 @@ using CSV, Tables
 
 struct EstimationData
     method::Symbol
-    condition_names::Vector{Symbol}
-    out_names::Vector{Symbol}
-    conditions::Vector{Vector{Union{Float64,Missing}}}
-    conditions_error::Vector{Vector{Union{Float64,Missing}}}
-    outs::Vector{Vector{Union{Float64,Missing}}}
-    outs_error::Vector{Vector{Union{Float64,Missing}}}
+    inputs_name::Vector{Symbol}
+    outputs_name::Vector{Symbol}
+    inputs::Vector{Vector{Union{Float64,Missing}}}
+    outputs::Vector{Vector{Union{Float64,Missing}}}
+    inputs_error::Vector{Vector{Union{Float64,Missing}}}
+    outputs_error::Vector{Vector{Union{Float64,Missing}}}
+    inputs_errortype::Vector{Union{Symbol,Nothing}}
+    outputs_errortype::Vector{Union{Symbol,Nothing}}
 end
+
+errortypes = [:error_abs, :error_rel, :error_std]
 
 # Copied from database.jl; methods that are common should be refactored into
 # separate files.
@@ -27,15 +31,21 @@ end
 function extract_dataerror(df::CSV.File, csvheaders::Vector{String}, extract_headers::Vector{String})
     data = Vector{Vector{Union{Float64,Missing}}}(undef, length(extract_headers))
     error = Vector{Vector{Union{Float64,Missing}}}(undef, length(extract_headers))
+    errortype = Vector{Union{Symbol,Nothing}}(nothing, length(extract_headers))
     for (i, header) in enumerate(extract_headers)
         data[i] = Tables.getcolumn(df, Symbol(header))
-        if header * "_error" ∈ csvheaders
-            error[i] = Tables.getcolumn(df, Symbol(header * "_error"))
-        else
+        for errortype_ ∈ errortypes
+            if header * "_" * String(errortype_) ∈ csvheaders
+                error[i] = Tables.getcolumn(df, Symbol(header * "_" * String(errortype_)))
+                errortype[i] = errortype_
+                break
+            end
+        end
+        if isnothing(errortype)
             error[i] = Vector{Missing}(undef, length(df))
         end
     end
-    return data, error
+    return data, error, errortype
 end
 
 function get_estimationdata(filepaths::Vector{String})
@@ -44,13 +54,28 @@ function get_estimationdata(filepaths::Vector{String})
         method = Symbol(strip(getline(filepath, 2), [',']))
         df = CSV.File(filepath; header=3, pool=0, silencewarnings=true)
         csvheaders = String.(Tables.columnnames(df))
-        out_headers = String.(SubString.(filter(x -> startswith(x, "out_") && !endswith(x, "_error"), csvheaders), 5))
-        condition_headers = filter(x -> !startswith(x, "out_") && !endswith(x, "_error"), csvheaders)
-        conditions, conditions_error = extract_dataerror(df, csvheaders, condition_headers)
-        outs, outs_error = extract_dataerror(df, csvheaders, "out_" .* out_headers)
-        push!(estimationdata, EstimationData(method, Symbol.(condition_headers), Symbol.(out_headers), conditions, conditions_error, outs, outs_error))
+        outputs_headers = chop.(String.(filter(x -> startswith(x, "out_") && !any(endswith.(x, "_" .* String.(errortypes))), csvheaders)), head=4, tail=0)
+        inputs_headers = filter(x -> !startswith(x, "out_") && !any(endswith.(x, "_" .* String.(errortypes))), csvheaders)
+        inputs, inputs_error, inputs_errortype = extract_dataerror(
+            df, csvheaders, inputs_headers)
+        outputs, outputs_error, outputs_errortype = extract_dataerror(
+            df, csvheaders, "out_" .* outputs_headers)
+        push!(
+            estimationdata,
+            EstimationData(
+                method,
+                Symbol.(inputs_headers),
+                Symbol.(outputs_headers),
+                inputs,
+                outputs,
+                inputs_error,
+                outputs_error,
+                inputs_errortype,
+                outputs_errortype
+                )
+            )
     end
     return estimationdata
 end
 
-extract_estimationdata(["saturation_p_rhoL.csv"])
+get_estimationdata(["saturation_p_rhoL.csv"])
