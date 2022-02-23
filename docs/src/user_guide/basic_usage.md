@@ -41,11 +41,12 @@ One can find out more about the information stored within these model objects in
 - CK (Chen and Kreglewski) SAFT (`CKSAFT`)
   - Simplified CK-SAFT (`sCKSAFT`)
 - `BACKSAFT`
-- Leonard-Jones SAFT (`LJSAFT`)
+- Lennard-Jones SAFT (`LJSAFT`)
 - SAFT, Variable Range (VR) ,Square Well (SW) (`SAFTVRSW`)
 - Cubic plus Associacion (`CPA`)
   - Simplified CPA (`sCPA`) 
-- Soft SAFT (`softSAFT`)
+- Soft SAFT, with Lennard-Jones function from Johnson et al. (1995) (`softSAFT`)
+- Soft SAFT, with Lennard-Jones function from Thol et al. (2016)  (`softSAFT2016`)
 - Perturbed-Chain SAFT (`PCSAFT`)
   - Simplified PC-SAFT (`sPCSAFT`)
 - SAFT-VR with Mie potential (`SAFTVRMie`)
@@ -67,9 +68,9 @@ One can find out more about the information stored within these model objects in
 
 - GERG-2008 EoS for Natural Gas (`GERG2008`)
   - EOS-LNG for Liquified Natural Gas (`EOS-LNG`)
-- IAPWS-95 Water reference `IAPWS95`
-- Propane Reference `PropaneRef`
-- Leonard Jones Reference `LJRef`
+- IAPWS-95 Water reference (`IAPWS95`)
+- Propane Reference (`PropaneRef`)
+- Lennard Jones Reference from Thol et al. (2016) (`LJRef`)
 
 We also support the `SPUNG` model. One can find out more about each of these equations of state within our background documentation. Nevertheless, all of these equations are compatible with all methods availble in our package. 
 
