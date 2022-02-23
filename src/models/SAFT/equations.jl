@@ -221,7 +221,6 @@ function _a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
     end
     return res/sum(z)
 end
-
 #=
 function AX!(output,input,pack_indices,delta::Compressed4DMatrix{TT,VV} ,modelsites,ρ,z) where {TT,VV}
     _0 = zero(TT)
