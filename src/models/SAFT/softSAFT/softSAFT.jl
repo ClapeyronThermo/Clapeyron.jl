@@ -28,7 +28,7 @@ function softSAFT(components;
     bondvol = params["bondvol"]
 
     packagedparams = softSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
-    references = ["10.1080/002689797170707"]
+    references = ["10.1080/002689797170707","10.1080/00268979300100411"]
 
     model = softSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model

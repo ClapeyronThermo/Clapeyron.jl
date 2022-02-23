@@ -38,7 +38,7 @@ function softSAFT2016(components;
     bondvol = params["bondvol"]
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     packagedparams = softSAFT2016Param(segment, sigma, epsilon, epsilon_assoc, bondvol)
-    references = ["10.1080/002689797170707"]
+    references = ["10.1080/002689797170707","10.1063/1.4945000"]
     icomponents = 1:length(components)
     return softSAFT2016(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references, LJRefConsts())
 end
