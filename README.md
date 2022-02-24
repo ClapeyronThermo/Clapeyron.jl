@@ -6,9 +6,11 @@
 
 ![Clapeyron_logo](docs/Clapeyron_logo.svg)
 
-Welcome to Clapeyron! This module provides both a large library of equations of state and a framework for one to easily implement their own equations of state.
+Welcome to Clapeyron! This module provides both a large library of thermodynamic models and a framework for one to easily implement their own models.
 
-We have recently presented at the JuliaCon 2021 conference! Feel free to take a look at our talk:
+We have recently submitted a manuscript to arxiv for those who'd like to find out more about how Clapeyron.jl works: https://arxiv.org/abs/2201.08927
+
+We have also ppresented at the JuliaCon 2021 conference! Feel free to take a look at our talk:
 
 [![Clapeyron.jl: An Extensible Implementation of Equations of State | Paul Yew et al | JuliaCon2021](https://img.youtube.com/vi/Re5qI-9zyIM/0.jpg)](https://www.youtube.com/watch?v=Re5qI-9zyIM "Clapeyron.jl: An Extensible Implementation of Equations of State | Paul Yew et al | JuliaCon2021")
 
