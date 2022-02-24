@@ -96,18 +96,7 @@ function ζ0123(model::SAFTVRMieModel, V, T, z,_d=@f(d))
     m̄ = dot(z, m)
     _0 = zero(V+T+first(z))
     ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
-
-    _ϵ = model.params.epsilon.diagvalues
-    σ = model.params.sigma.diagvalues
-    _λr = model.params.lambda_r.diagvalues
-    _λa = model.params.lambda_a.diagvalues
-    u = SAFTVRMieconsts.u
-    w = SAFTVRMieconsts.w
     for i ∈ @comps
-        λa = _λa[i]
-        λr = _λr[i]
-        ϵ = _ϵ[i]
-        
         di =_d[i]
         xS = z[i]*m[i]/m̄
         ζ0 += xS
