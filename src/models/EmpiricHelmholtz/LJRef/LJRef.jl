@@ -217,8 +217,9 @@ function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
     lnΣz = log(∑z)
     res = zero(ρ+T+first(z))
     for i  ∈ @comps
+        mᵢ = m[i]
         τᵢ = 1.32/(T/ϵ[i])  
-        δᵢ = (m[i]*N_A*ρ*σ[i]^3)/0.31
+        δᵢ = (mᵢ*N_A*ρ*σ[i]^3)/0.31
         aᵢ = log(δᵢ) + 1.5*log(τᵢ) + 1.515151515*τᵢ + 6.262265814 
         res += z[i]*(aᵢ + log(z[i]) - lnΣz)
     end

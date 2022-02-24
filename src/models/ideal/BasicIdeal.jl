@@ -46,4 +46,3 @@ function a_ideal(model::BasicIdeal, V, T, z)
     # ∑(x .* log.(z/V)) - 1 original formulation, prone no NaN when passing pure Fractions
     return res
 end
-
