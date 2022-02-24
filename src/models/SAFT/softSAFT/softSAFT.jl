@@ -28,23 +28,28 @@ function softSAFT(components;
     bondvol = params["bondvol"]
 
     packagedparams = softSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
-    references = ["todo"]
+    references = ["10.1080/002689797170707","10.1080/00268979300100411"]
 
     model = softSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
 
-function a_res(model::softSAFTModel, V, T, z)
-    return @f(a_LJ) + @f(a_chain) + @f(a_assoc)
+function data(model::softSAFTModel,V,T,z)
+    σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,V,T,z)
+    ∑z = sum(z)
+    N = N_A*∑z
+    ρS = N/V*m̄
+    ρ̄  = ρS*σ3
+    return σ3,ϵ̄,m̄,ρ̄ 
 end
 
-function a_LJ(model::softSAFTModel, V, T, z)
-    m = model.params.segment.values
-    Σz = sum(z)
-    m̄ = dot(z,m)/Σz
-    ϵ̄ = @f(ϵ_m)
-    σ̄ = @f(σ_m)
-    ρ̄ = @f(ρ_S)*σ̄^3
+function a_res(model::softSAFTModel, V, T, z)    
+    _data = @f(data)
+    return @f(a_LJ,_data) + @f(a_chain) + @f(a_assoc)
+end
+
+function a_LJ(model::softSAFTModel, V, T, z,_data = @f(data))
+    σ3,ϵ̄,m̄,ρ̄  = _data
     T̄ = T/ϵ̄
     γ = 3
     F = exp(-γ*ρ̄^2)
@@ -70,16 +75,17 @@ function a_LJ(model::softSAFTModel, V, T, z)
          x[28]/T2+x[29]/T3,
          x[30]/T2+x[31]/T3+x[32]/T4,
         )
-    G1 = (1-F)/(2γ)
+    G1 =  (1-F)/(2γ)
     G2 = -(F*ρ̄ ^2 - 2*G1) / 2γ
     G3 = -(F*ρ̄ ^4 - 4*G2) / 2γ
     G4 = -(F*ρ̄ ^6 - 6*G3) / 2γ
     G5 = -(F*ρ̄ ^8 - 8*G4) / 2γ
     G6 = -(F*ρ̄ ^10 - 10*G5) / 2γ
     G = (G1,G2,G3,G4,G5,G6)
-  
-    return m̄*(∑(a[i]*ρ̄ ^i/i for i ∈ 1:8)+∑(b[i]*G[i] for i ∈ 1:6))/T̄
+    ā = a ./ (1,2,3,4,5,6,7,8)
+    return m̄*(evalpoly(ρ̄ ,ā)*ρ̄ +dot(b,G))/T̄
 end
+
 function ϵ_m(model::softSAFTModel, V, T, z)
     comps = @comps
     ϵ = model.params.epsilon.values
@@ -103,68 +109,35 @@ function ρ_S(model::softSAFTModel, V, T, z)
     return N/V*m̄
 end
 
-function a_chain(model::softSAFTModel, V, T, z)
-    m = model.params.segment.values
-    m̄ = dot(z,m)/∑(z)
-    return -log(@f(y_LJ))*(m̄-1)
+function a_chain(model::softSAFTModel, V, T, z,_data = @f(data))
+    σ3,ϵ̄,m̄,ρ̄  = _data
+    return -log(@f(y_LJ,_data))*(m̄-1)
 end
 
-function y_LJ(model::softSAFTModel, V, T, z)
-    ϵ̄ = @f(ϵ_m)
-    gLJ = @f(g_LJ)
+function y_LJ(model::softSAFTModel, V, T, z, _data = @f(data))
+    σ3,ϵ̄,m̄,ρ̄  = _data
+    gLJ = @f(g_LJ,_data)
     return gLJ*exp(-ϵ̄/T)
 end
 
-function g_LJ(model::softSAFTModel, V, T, z)
-    ϵ̄ = @f(ϵ_m)
-    σ̄ = @f(σ_m)
+function g_LJ(model::softSAFTModel, V, T, z ,_data = @f(data))
+    σ3,ϵ̄,m̄,ρ̄  = _data
     T̄ = T/ϵ̄
-    ρ̄ = @f(ρ_S)*σ̄^3
-    a = LJSAFTconsts.a
-    return 1+sum(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
+    a = softSAFTconsts.a
+    gLJ =  1+sum(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
 end
 
-#=
-function X(model::softSAFTModel, V, T, z)
-    _1 = one(V+T+first(z))
-    ∑z = ∑(z)
-    x = z/∑z
-    ρ = N_A*∑z/V
-    n = model.sites.n_sites
-    itermax = 500
-    dampingfactor = 0.5
-    error = 1.
-    tol = model.absolutetolerance
-    iter = 1
-    X_ = [[_1 for a ∈ @sites(i)] for i ∈ @comps]
-    X_old = deepcopy(X_)
-    while error > tol
-        iter > itermax && error("X has failed to converge after $itermax iterations")
-        for i ∈ @comps, a ∈ @sites(i)
-            rhs = 1/(1+∑(ρ*x[j]*∑(n[j][b]*X_old[j][b]*@f(Δ,i,j,a,b) for b ∈ @sites(j)) for j ∈ @comps))
-            X_[i][a] = (1-dampingfactor)*X_old[i][a] + dampingfactor*rhs
-        end
-        error = sqrt(∑(∑((X_[i][a] - X_old[i][a])^2 for a ∈ @sites(i)) for i ∈ @comps))
-        for i = 1:length(X_)
-            X_old[i] .= X_[i]
-        end
-        iter += 1
-    end
-    return X_
-end
-=#
-function Δ(model::softSAFTModel, V, T, z, i, j, a, b)
-    ϵ̄ = @f(ϵ_m)
-    σ̄ = @f(σ_m)
+function Δ(model::softSAFTModel, V, T, z, i, j, a, b,_data = @f(data))
+    σ3,ϵ̄,m̄,ρ̄   = _data
     T̄ = T/ϵ̄
-    ρ̄ = @f(ρ_S)*σ̄^3
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
-    b_ = LJSAFTconsts.b
+    b_ = softSAFTconsts.b
 
     I = sum(b_[i+1,j+1]*ρ̄^i*T̄^j for i ∈ 0:4 for j ∈ 0:4)/3.84/1e4
     return 4π*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]*I
 end
+
 
 const softSAFTconsts =
 (

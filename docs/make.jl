@@ -10,14 +10,13 @@ format = Documenter.HTML(
     authors = "Pierre J. Walker, Hon Wa Yew and Andrés Riedemann.",
     pages = [
         "Home" => "index.md",
-        "Examples" => Any[
-            "Cubic EoS" =>  "examples/Cubic_EoS.md"
-        ],
         "Background" => "theory/background.md",
-        "User guide" => Any["Basic Usage"=>"user_guide/basic_usage.md",
+        "Basic Usage" => "user_guide/basic_usage.md",
+        "Customization" => Any[
                             "Custom Databases"=>"user_guide/custom_dtb.md",
                             "Custom Methods"=>"user_guide/custom_methods.md",
                             "Custom Models"=>"user_guide/custom_model.md"],
+        "Notebook Examples" => "notebook_examples.md",
         "To-do list" => "to-do_list.md",
         
         "Available EoS" => [

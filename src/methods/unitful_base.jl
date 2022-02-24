@@ -81,9 +81,11 @@ function state_to_vt(model,st::ThermoState.ThermodynamicState)
 end
 
 function state_to_vt(::ThermoState.QuickStates.SingleVT,model,st::ThermoState.ThermodynamicState)
-    v = ThermoState.total_volume(FromState(),st,u"m^3",mw(model)) |> only
-    T = ThermoState.temperature(FromState(),st,u"K") |> only
-    _z = ThermoState.moles(FromState(),st,u"mol",mw(model))
+    mww = only(mw(model))
+    v = ThermoState.total_volume(FromState(),st,u"m^3",mww) 
+    T = ThermoState.temperature(FromState(),st,u"K")
+    _z = ThermoState.moles(FromState(),st,u"mol",mww)
+    #_z = ThermoState.moles(FromState(),st,mw(model))
     z = SA[_z]
     return v,T,z
 end
