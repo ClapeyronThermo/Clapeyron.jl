@@ -52,3 +52,31 @@ function activity_coefficient(model::WilsonModel,p,T,z)
     lnγ = 1 .- log.(sum(x[i]*Λ[:,i] for i ∈ @comps)) .-sum(x[j] .*Λ[j,:] ./(sum(x[i]*Λ[j,i] for i ∈ @comps)) for j ∈ @comps)
     return exp.(lnγ)
 end
+
+function excess_gibbs_free_energy(model::WilsonModel,p,T,z)
+    ZRA = model.params.ZRA.values
+    Tc  = model.params.Tc.values
+    Pc  = model.params.Pc.values
+    g = model.params.g.values
+    _0 = zero(p+T+first(z))
+    n = sum(z)
+    invn = 1/n
+    invRT = 1/(R̄*T)
+    res = _0 
+    for i ∈ @comps
+        Tci = Tc[i]
+        Tri = T/Tci
+        Vi = (R̄ *Tci/Pc[i])*ZRA[i]^(1 + (1-Tri)^2/7)
+        ∑xΛ = _0
+        xi = z[i]*invn
+        for j ∈ @comps
+            Tcj = Tc[j]
+            Trj = T/Tcj
+            Vj =  (R̄ *Tcj/Pc[j])*ZRA[j]^(1 + (1-Trj)^2/7)
+            Λij = exp(-g[i,j]*invRT)*Vj/Vi
+            ∑xΛ += Λij*z[j]*invn
+        end
+        res += xi*log(∑xΛ)
+    end
+    return -res*R̄*T
+end
