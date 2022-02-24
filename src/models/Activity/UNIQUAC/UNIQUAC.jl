@@ -19,6 +19,28 @@ end
 @registermodel UNIQUAC
 export UNIQUAC
 
+"""
+    UNIQUACModel <: ActivityModel
+    UNIQUAC(components::Vector{String};
+    puremodel=PR, 
+    userlocations=String[], 
+    verbose=false)
+
+## Input parameters
+- `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Energy Parameter `[J/mol]`
+- `r`: Single Parameter (`Float64`)  - Van der Vals volume `[]`
+- `q`: Single Parameter (`Float64`) - Surface Area `[]`
+- `q_p`: Single Parameter (`Float64`) []
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+
+
+## Input models
+- `puremodel`: model for evaluating pure component pressures
+
+UNIQUAC (Universal QuasiChemical Activity Coefficients)
+
+"""
+
 function UNIQUAC(components::Vector{String}; puremodel=PR,
     userlocations=String[], 
      verbose=false)
@@ -36,26 +58,7 @@ function UNIQUAC(components::Vector{String}; puremodel=PR,
     model = UNIQUAC(components,icomponents,packagedparams,init_puremodel,1e-12,references)
     return model
 end
-#=
-function lnγ_comb(model::UNIQUACModel,p,T,z)
-    #Φ =  x.*r/sum(x[i]*r[i] for i ∈ @comps)
-    #θ = x.*q/sum(x[i]*q[i] for i ∈ @comps)
-    q = model.params.q.values
-    r = model.params.r.values
-    ∑z = sum(z)
-    Φ_mean = dot(z,q)/∑z
-    θ_mean = dot(z,r)/∑z
-    _0 = zero(p+T+first(z))
-    lnγ = fill(_0,length(model))
-    for i in @comps
-        zi = z[i]
-        Φᵢ = zi*q[i]/Φ_mean
-        θᵢ = zi*r[i]/θ_mean
-        lnγ[i] =  log(Φᵢ/zi)+(1-Φᵢ/zi)-5*q[i]*(log(Φᵢ/θᵢ)+(1-Φᵢ/θᵢ))
-    end
-    return lnγ
-end
-=#
+
 function activity_coefficient(model::UNIQUACModel,p,T,z)
     a = model.params.a.values
     q = model.params.q.values
@@ -78,3 +81,52 @@ function Ψ(model::UNIQUACModel,V,T,z)
     a = model.params.a.values
     return @. exp(-a*Tinv)
 end
+
+function excess_g_comb(model::UNIQUACModel,p,T,z=SA[1.0])
+    _0 = zero(p+T+first(z))
+    r = model.params.r.values
+    q = model.params.q.values
+    
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    G_comp = _0
+    for i ∈ @comps
+        xi = z[i]*invn
+        Φi = r[i]*xi/Φm
+        θi = q[i]*xi/θm
+        G_comp += xi*log(Φi/xi) + 5*q[i]*xi*log(θi/Φi)
+    end
+    return G_comp
+end
+
+function excess_g_res(model::UNIQUACModel,p,T,z=SA[1.0])
+    _0 = zero(p+T+first(z))
+    q_p = model.params.q_p.values
+    a = model.params.a.values
+    n = sum(z)
+    invn = 1/n
+    invT = 1/T
+    θpm = dot(q_p,z)*invn
+    G_res = _0
+    for i ∈ @comps
+        q_pi = q_p[i]
+        xi = z[i]*invn
+        ∑θpτ = _0
+        for j ∈ @comps
+            θpj = q_p[j]*z[j]/θpm*invn
+            τji = exp(-a[j,i]*invT)
+            ∑θpτ += θpj*τji
+        end
+        G_res += q_pi*xi*log(∑θpτ)
+    end
+    return -G_res
+end
+
+function excess_gibbs_free_energy(model::UNIQUACModel,p,T,z)
+    g_comp = excess_g_comb(model,p,T,z)
+    g_res = excess_g_res(model,p,T,z)
+    return (g_comp+g_res)*R̄*T 
+end
+
