@@ -10,7 +10,7 @@ Clearly this is not an exhaustive list and we make absolutely no guarantees as t
 
 ## Custom initial guesses example
 
-One of the most common reasons for our methods to fail (that we've seen) is due to poor initial guesses. If you are experiencing issues with our `sat_pure` method specifically, you could try modifying the initial guess for a particular equation of state (see the custom models documentation for explanation on abstract types):
+One of the most common reasons for our methods to fail (that we've seen) is due to poor initial guesses. If you are experiencing issues with our `saturation_pressure` method specifically, you could try modifying the initial guess for a particular equation of state (see the custom models documentation for explanation on abstract types):
 
 ```julia
 function Clapeyron.x0_sat_pure(model::PCSAFTModel,T,z=SA[1.0])

@@ -81,8 +81,6 @@ function lnγ_comb(model::COSMOSAC02Model,p,T,z)
   end
 
 function lnγ_res(model::COSMOSAC02Model,V,T,z)
-    x = z ./ sum(z)
-
     aeff = 7.5
     A = model.params.A.values
     n = A ./ aeff

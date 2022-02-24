@@ -32,7 +32,7 @@ idealmodel(model::LJRef) = LJRefIdeal(model.components,model)
 
 ## Description
 
-Leonard-Jones Reference equation of state. Ideal Part. valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
+Lennard-Jones Reference equation of state. Ideal Part. valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
 
 
 ```

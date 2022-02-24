@@ -71,6 +71,12 @@ using Clapeyron, Test
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -2.0461376618069034 rtol = 1e-6
     end
 
+    @testset "softSAFT2016" begin
+        system = softSAFT2016(["hexane","1-propanol"])
+        z = [0.5,0.5]
+        @test Clapeyron.a_LJ(system, V, T, z) ≈ -3.986690073534575 rtol = 1e-6
+    end
+
     @testset "PCSAFT" begin
         system = PCSAFT(["butane", "ethanol"])
         z = [0.5, 0.5]

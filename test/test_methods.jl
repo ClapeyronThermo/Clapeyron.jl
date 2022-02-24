@@ -52,6 +52,20 @@ end
     end
 end
 
+@testset "softSAFT methods, single components" begin
+    system = softSAFT(["ethanol"])
+    p = 1e5
+    T = 273.15 + 78.24
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T,phase=:v) ≈ 0.027368884099868623 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T,phase=:l) ≈ 3.582709893664124e-5 rtol = 1e-6
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 101341.9709136089 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 540.1347889779657 rtol = 1E-6 
+    end
+end
+
 @testset "BACKSAFT methods, single components" begin
     system = BACKSAFT(["decane"])
     p = 1e5
