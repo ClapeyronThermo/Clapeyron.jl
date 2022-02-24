@@ -82,6 +82,18 @@ function mixing(model::ActivityModel,p,T,z,::typeof(entropy))
     return -dg*T-g
 end
 
+function gibbs_solvation(model::ActivityModel,T)
+    z = [1.0,1e-30]
+    
+    p,v_l,v_v = saturation_pressure(model.puremodel[1],T)
+    p2,v_l2,v_v2 = saturation_pressure(model.puremodel[2],T)
+
+    γ = activity_coefficient(model,p,T,z)
+    K = v_v/v_l*γ[2]*p2/p
+    
+    return -R̄*T*log(K)
+end    
+
 function lb_volume(model::ActivityModel,z = SA[1.0])
     b = maximum([model.puremodel[i].params.b.values[1,1] for i ∈ @comps])
     return b

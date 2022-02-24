@@ -173,9 +173,33 @@ function excess(model::EoSModel,p,T,z,::typeof(gibbs_free_energy))
     return g_mix-Clapeyron.dot(g_pure,z)-R̄*T*Clapeyron.dot(z,log.(x))
 end
 
+"""
+    gibbs_solvation(model::EoSModel, T)
+
+Calculates the solvation free energy as:
+
+```julia
+g_solv = -R̄*T*log(K)
+```
+where the first component is the solvent and second is the solute.
+"""
+function gibbs_solvation(model::EoSModel,T)
+    pure = split_model(model)
+    z = [1.0,1e-30]
+    
+    p,v_l,v_v = saturation_pressure(pure[1],T)
+    
+    φ_l = fugacity_coefficient(model,p,T,z;phase=:l)
+    φ_v = fugacity_coefficient(model,p,T,z;phase=:v)
+    
+    K = φ_v[2]*v_v/φ_l[2]/v_l
+    
+    return -R̄*T*log(K)
+end    
+
 export entropy, chemical_potential, internal_energy, enthalpy, gibbs_free_energy
 export helmholtz_free_energy, isochoric_heat_capacity, isobaric_heat_capacity
 export isothermal_compressibility, isentropic_compressibility, speed_of_sound
 export isobaric_expansivity, joule_thomson_coefficient, compressibility_factor, inversion_temperature
 export mass_density,molar_density, activity_coefficient, fugacity_coefficient, entropy_res
-export mixing, excess
+export mixing, excess, gibbs_solvation
