@@ -13,15 +13,6 @@ function quadratic_fixpoint(y,x)
     y
 end
 
-@testset "AD - misc" begin
-    @test SOL.gradient2(fg_2,1,1) == [6,12] 
-    @test eltype(SOL.gradient2(fg_2,1.0,1)) == Float64 
-    @test eltype.(SOL.∂2(fg_2,1.0,1)) == (Float64, Float64, Float64)
-    ad = SOL.ADScalarObjective(rosenbrock,zeros(2))
-    @test ad.f(zeros(2)) == 1.0
-    @test ad.fg(ones(2),zeros(2))[2] == [-2.0,0.0]
-    @test ad.fgh(ones(2),ones(2,2),zeros(2))[3] == [2.0 0.0; 0.0 200.0]
-end
 
 @testset "Solvers Module" begin
     @testset "newton,halley" begin
@@ -130,5 +121,15 @@ end
         a4 = 4
         @test SOL.det_22(1,2,3,4) == a1*a2 - a3*a4
     end
+    @testset "AD - misc" begin
+        @test SOL.gradient2(fg_2,1,1) == [6,12] 
+        @test eltype(SOL.gradient2(fg_2,1.0,1)) == Float64 
+        @test eltype.(SOL.∂2(fg_2,1.0,1)) == (Float64, Float64, Float64)
+        ad = SOL.ADScalarObjective(rosenbrock,zeros(2))
+        @test ad.f(zeros(2)) == 1.0
+        @test ad.fg(ones(2),zeros(2))[2] == [-2.0,0.0]
+        @test ad.fgh(ones(2),ones(2,2),zeros(2))[3] == [2.0 0.0; 0.0 200.0]
+    end
+    
 end
 @printline
