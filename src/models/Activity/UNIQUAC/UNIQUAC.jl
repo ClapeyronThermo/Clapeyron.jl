@@ -58,9 +58,8 @@ function UNIQUAC(components::Vector{String}; puremodel=PR,
     model = UNIQUAC(components,icomponents,packagedparams,init_puremodel,1e-12,references)
     return model
 end
-
+#=
 function activity_coefficient(model::UNIQUACModel,p,T,z)
-    a = model.params.a.values
     q = model.params.q.values
     q_p = model.params.q_p.values
     r = model.params.r.values
@@ -75,6 +74,7 @@ function activity_coefficient(model::UNIQUACModel,p,T,z)
     lnγ_res  = q_p.*(1 .-log.(sum(θ_p[i]*τ[i,:] for i ∈ @comps)) .-sum(θ_p[i]*τ[:,i]/sum(θ_p[j]*τ[j,i] for j ∈ @comps) for i ∈ @comps))
     return exp.(lnγ_comb+lnγ_res)
 end
+=#
 
 function Ψ(model::UNIQUACModel,V,T,z)
     Tinv = 1/T
@@ -98,7 +98,7 @@ function excess_g_comb(model::UNIQUACModel,p,T,z=SA[1.0])
         θi = q[i]*xi/θm
         G_comp += xi*log(Φi/xi) + 5*q[i]*xi*log(θi/Φi)
     end
-    return G_comp
+    return n*G_comp
 end
 
 function excess_g_res(model::UNIQUACModel,p,T,z=SA[1.0])
@@ -121,7 +121,7 @@ function excess_g_res(model::UNIQUACModel,p,T,z=SA[1.0])
         end
         G_res += q_pi*xi*log(∑θpτ)
     end
-    return -G_res
+    return -n*G_res
 end
 
 function excess_gibbs_free_energy(model::UNIQUACModel,p,T,z)
@@ -130,3 +130,4 @@ function excess_gibbs_free_energy(model::UNIQUACModel,p,T,z)
     return (g_comp+g_res)*R̄*T 
 end
 
+activity_coefficient(model::UNIQUACModel,p,T,z) = activity_coefficient_ad(model,p,T,z)

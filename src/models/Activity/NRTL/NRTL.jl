@@ -37,18 +37,19 @@ function NRTL(components::Vector{String}; puremodel=PR,
     return model
 end
 
+#=
 function activity_coefficient(model::NRTLModel,p,T,z)
     a = model.params.a.values
     b = model.params.b.values
     c = model.params.c.values
-
     x = z ./ sum(z)
-
     τ = @. a+b/T
     G = @. exp(-c*τ)
     lnγ = sum(x[j]*τ[j,:].*G[j,:] for j ∈ @comps)./sum(x[k]*G[k,:] for k ∈ @comps)+sum(x[j]*G[:,j]/sum(x[k]*G[k,j] for k ∈ @comps).*(τ[:,j] .-sum(x[m]*τ[m,j]*G[m,j] for m ∈ @comps)/sum(x[k]*G[k,j] for k ∈ @comps)) for j in @comps)
     return exp.(lnγ)
 end
+=#
+
 
 function excess_gibbs_free_energy(model::NRTLModel,p,T,z)
     a = model.params.a.values
@@ -73,5 +74,7 @@ function excess_gibbs_free_energy(model::NRTLModel,p,T,z)
         end
         res += xi*∑τGx/∑Gx
     end
-    return res*R̄*T
+    return n*res*R̄*T
 end
+
+activity_coefficient(model::NRTLModel,p,T,z) = activity_coefficient_ad(model,p,T,z)
