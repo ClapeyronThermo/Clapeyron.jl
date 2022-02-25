@@ -111,7 +111,7 @@ end
 
 function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.])
     p = pressure(model,V,T,z)
-    return p*V/(R̄*T)
+    return p*V/(sum(z)*R̄*T)
 end
 
 """
