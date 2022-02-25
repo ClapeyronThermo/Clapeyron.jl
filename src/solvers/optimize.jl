@@ -35,6 +35,7 @@ function ADScalarObjective(f,x0::AbstractArray)
     h=h)
 end
 
+#=
 function ADScalarObjective(f,x0::Number)
     function g(x)
         return derivative(f,x)
@@ -68,4 +69,4 @@ function optimize(f,x0::Number,method=LineSearch(Newton()),options=OptimizationO
     scalarobj = ADScalarObjective(f,x0)   
     optprob = OptimizationProblem(scalarobj; inplace=false) 
     return NLSolvers.solve(optprob, x0, method,options)
-end
+end=#
