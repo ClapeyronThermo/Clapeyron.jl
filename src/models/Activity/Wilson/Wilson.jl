@@ -62,21 +62,23 @@ function excess_gibbs_free_energy(model::WilsonModel,p,T,z)
     n = sum(z)
     invn = 1/n
     invRT = 1/(R̄*T)
-    res = _0 
+    res = _0
+    #a^b^c is too slow to be done on a quadratic loop
+    V = zeros(typeof(T),length(model))
     for i ∈ @comps
         Tci = Tc[i]
         Tri = T/Tci
-        Vi = (R̄ *Tci/Pc[i])*ZRA[i]^(1 + (1-Tri)^2/7)
+        V[i] = (R̄ *Tci/Pc[i])*ZRA[i]^(1 + (1-Tri)^2/7)
+    end
+    for i ∈ @comps
         ∑xΛ = _0
         xi = z[i]*invn
         for j ∈ @comps
-            Tcj = Tc[j]
-            Trj = T/Tcj
-            Vj =  (R̄ *Tcj/Pc[j])*ZRA[j]^(1 + (1-Trj)^2/7)
-            Λij = exp(-g[i,j]*invRT)*Vj/Vi
+            Λij = exp(-g[i,j]*invRT)*V[j]/V[i]
+
             ∑xΛ += Λij*z[j]*invn
         end
         res += xi*log(∑xΛ)
     end
-    return -res*R̄*T
+    return -n*res*R̄*T
 end
