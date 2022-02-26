@@ -25,10 +25,10 @@ for (fn,unit) in Iterators.zip(
     u"J",
     u"J/K",
     u"J/K",
-    u"1/Pa",
-    u"1/Pa",
+    u"Pa^-1",
+    u"Pa^-1",
     u"m/s",
-    u"1/K",
+    u"K^-1",
     u"K/Pa"])
     VT_fn = Symbol(:VT_,fn)
     @eval begin 
@@ -39,7 +39,7 @@ for (fn,unit) in Iterators.zip(
             return uconvert(output, res)
         end
 
-        function $fn(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=$unit)
+        function $fn(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=$unit)
             st = standarize(model,p,T,z)
             _p,_T,_z = state_to_pt(model,st)
             res = $fn(model, _p, _T, _z; phase=phase)*($unit)
@@ -47,7 +47,7 @@ for (fn,unit) in Iterators.zip(
         end
     end
 end
-function volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown", output=u"m^3")
+function volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=u"m^3")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     res = volume(model, _p, _T, _z; phase=phase)*u"m^3"
@@ -63,7 +63,7 @@ function compressibility_factor(model::EoSModel, v::__VolumeKind, T::Unitful.Tem
     return res
 end
 
-function compressibility_factor(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown")
+function compressibility_factor(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown)
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     res = compressibility_factor(model, _p, _T, _z; phase=phase)
@@ -113,7 +113,7 @@ function saturation_pressure(model::EoSModel, T::Unitful.Temperature; output=[u"
 end
 
 #molar density 
-function molar_density(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown",threaded=true, output=u"mol/m^3")
+function molar_density(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown,threaded=true, output=u"mol/m^3")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     
@@ -122,7 +122,7 @@ function molar_density(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperat
 end
 
 #mass density 
-function mass_density(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase="unknown",threaded=true, output=u"kg/m^3")
+function mass_density(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown,threaded=true, output=u"kg/m^3")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     
