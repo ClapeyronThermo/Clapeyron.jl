@@ -60,11 +60,13 @@ end
 """
 const SingleParam{T} = SingleParameter{T,Vector{T}} where T
 
-SingleParam(name,components,values,missingvals,src,sourcecsv) = SingleParameter(name,components,values,missingvals,src,sourcecsv)
+SingleParam(name, components, values, missingvals, src, sourcecsv) = SingleParameter(name, components, values, missingvals, src, sourcecsv)
+
 function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})::SingleParam{String}
     values = String.(param.values)
-    return (param.name,param.components,values,param.missingvals,param.src,param.sourcecsv)
+    return (param.name, param.components, values, param.missingvals, param.src, param.sourcecsv)
 end
+
 function Base.show(io::IO, param::SingleParameter)
     print(io, typeof(param), "(\"", param.name, "\")[")
     for component in param.components
@@ -76,7 +78,7 @@ end
 
 function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     len = length(param.values)
-    print(io, "SingleParam{",eltype(param.values), "}(\"", param.name)
+    print(io, "SingleParam{", eltype(param.values), "}(\"", param.name)
     println(io, "\") with ", len, " component", ifelse(len==1, ":", "s:"))
     i = 0
     for (name, val, miss) in zip(param.components, param.values, param.ismissingvalues)
@@ -96,8 +98,8 @@ function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     end
 end
 
-function SingleParam(x::SingleParameter,name=x.name)
-    return SingleParam(name, x.components,deepcopy(x.values), deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
+function SingleParam(x::SingleParameter, name=x.name)
+    return SingleParam(name, x.components, deepcopy(x.values), deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
 end
 
 #a barebones constructor, in case we dont build from csv
@@ -108,22 +110,20 @@ function SingleParam(
     sourcecsvs = String[],
     sources = String[]) where T
     if any(ismissing,values)
-        _values,_ismissingvalues = defaultmissing(values)
+        _values, _ismissingvalues = defaultmissing(values)
         TT = eltype(_values)
     else
         _values = values
-        _ismissingvalues = fill(false,length(values))
+        _ismissingvalues = fill(false, length(values))
         TT = T
     end
-    return  SingleParam{TT}(name,components, _values, _ismissingvalues, sourcecsvs, sources)
+    return  SingleParam{TT}(name, components, _values, _ismissingvalues, sourcecsvs, sources)
 end
-
 
 function SingleParam(x::SingleParameter, v::Vector)
     _values,_ismissingvalues = defaultmissing(v)
     return SingleParam(x.name, x.components,_values, _ismissingvalues , x.sourcecsvs, x.sources)
 end
-
 
 struct PairParameter{T,V<:AbstractMatrix{T},D} <: ClapeyronParam
     name::String
@@ -134,6 +134,7 @@ struct PairParameter{T,V<:AbstractMatrix{T},D} <: ClapeyronParam
     sourcecsvs::Array{String,1}
     sources::Array{String,1}
 end
+
 """
     PairParam{T}
 
@@ -177,9 +178,9 @@ function alpha(model,x)
 end
 ```
 """
-const PairParam{T} = PairParameter{T,Matrix{T},SubArray{T, 1, Vector{T}, Tuple{StepRange{Int64, Int64}}, true}} where T
+const PairParam{T} = PairParameter{T, Matrix{T}, SubArray{T, 1, Vector{T}, Tuple{StepRange{Int64, Int64}}, true}} where T
 
-PairParam(name,components,values,diagvals, missingvals,src,sourcecsv) = PairParameter(name,components,values,diagvals,missingvals,src,sourcecsv)
+PairParam(name, components, values, diagvals, missingvals, src,sourcecsv) = PairParameter(name, components, values, diagvals, missingvals, src, sourcecsv)
 
 #unsafe constructor
 function PairParam(name,components,values)
@@ -187,8 +188,9 @@ function PairParam(name,components,values)
     diagvals = view(values, diagind(values))
     src = String[]
     sourcecsv = String[]
-    return PairParam(name,components,values,diagvals, missingvals,src,sourcecsv)
+    return PairParam(name, components, values, diagvals, missingvals, src, sourcecsv)
 end
+
 function PairParam(name::String,
                     components::Array{String,1},
                     values::Array{T,2},
@@ -201,17 +203,17 @@ function PairParam(name::String,
     if !all(ismissingvalues)
         _ismissingvalues = ismissingvalues
     end
-    return PairParam(name, components,_values, diagvalues, _ismissingvalues, sourcecsvs, sources)
+    return PairParam(name, components, _values, diagvalues, _ismissingvalues, sourcecsvs, sources)
 end
 
 function PairParam(x::PairParameter,name::String=x.name)
     values = deepcopy(x.values)
-    diagvalues = view(values,diagind(values))
-    return PairParam(name, x.components,values ,diagvalues, deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
+    diagvalues = view(values, diagind(values))
+    return PairParam(name, x.components, values ,diagvalues, deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
 end
 
-function PairParam(x::SingleParameter,name::String=x.name)
-    pairvalues = singletopair(x.values,missing)
+function PairParam(x::SingleParameter, name::String=x.name)
+    pairvalues = singletopair(x.values, missing)
     for i in 1:length(x.values)
         if x.ismissingvalues[i]
             pairvalues[i,i] = missing
@@ -219,8 +221,9 @@ function PairParam(x::SingleParameter,name::String=x.name)
     end
     _values,_ismissingvalues = defaultmissing(pairvalues)
     diagvalues = view(_values, diagind(_values))
-    return PairParam(name, x.components, _values,diagvalues,_ismissingvalues,x.sourcecsvs, x.sources)
+    return PairParam(name, x.components, _values, diagvalues, _ismissingvalues, x.sourcecsvs, x.sources)
 end
+
 #=
 function PairParam(x::PairParam, v::Matrix,name::String=x.name)
     return PairParam(name, x.components,deepcopy(v), x.sourcecsvs, x.sources)
@@ -235,19 +238,19 @@ end
 =#
 #barebones constructor by list of pairs.
 
-
-function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter) 
-    print(io,"PairParam{",eltype(param.values),"}")
-    show(io,param.components)
-    println(io,") with values:")
-    show(io,mime,param.values)
+function Base.show(io::IO, mime::MIME"text/plain", param::PairParameter) 
+    print(io, "PairParam{", eltype(param.values), "}")
+    show(io, param.components)
+    println(io, ") with values:")
+    show(io, mime, param.values)
 end
 
-function Base.show(io::IO,param::PairParameter)
-    print(io, "PairParam{",eltype(param.values),"}", "(\"", param.name, "\")[")
+function Base.show(io::IO, param::PairParameter)
+    print(io, "PairParam{", eltype(param.values), "}", "(\"", param.name, "\")[")
     print(io,Base.summary(param.values))
-    print(io,"]")
+    print(io, "]")
 end
+
 """
     AssocParam{T}
 
@@ -262,9 +265,9 @@ struct AssocParam{T} <: ClapeyronParam
     sources::Array{String,1}
 end
 
-function AssocParam(name::String,components::Vector{String},values::MatrixofMatrices,allcomponentsites,sourcecsvs,sources) where T
+function AssocParam(name::String, components::Vector{String}, values::MatrixofMatrices, allcomponentsites, sourcecsvs, sources) where T
     _values = Compressed4DMatrix(values)
-    return AssocParam(name,components,_values,allcomponentsites,sourcecsvs,sources)
+    return AssocParam(name, components, _values, allcomponentsites, sourcecsvs, sources)
 end
 
 #=
@@ -286,31 +289,32 @@ function AssocParam{T}(name::String,components::Vector{String}) where T
     String[])
 end
 =#
-function Base.show(io::IO,mime::MIME"text/plain",param::AssocParam{T}) where T
-    print(io,"AssocParam{",string(T),"}")
-    print(io,param.components)
-    println(io,") with values:")
+
+function Base.show(io::IO, mime::MIME"text/plain", param::AssocParam{T}) where T
+    print(io, "AssocParam{", string(T), "}")
+    print(io, param.components)
+    println(io, ") with values:")
     comps = param.components
     vals = param.values
     sitenames = param.sites
-    for (idx,(i,j),(a,b)) in indices(vals)
+    for (idx, (i,j), (a,b)) in indices(vals)
         try
         s1 = sitenames[i][a]
         s2 = sitenames[j][b]
-        print(io,"(\"",comps[i],"\", \"",s1,"\")")
-        print(io," >=< ")
-        print(io,"(\"",comps[j],"\", \"",s2,"\")")
-        print(io,": ")
-        println(io,vals.values[idx])
+        print(io, "(\"", comps[i], "\", \"", s1, "\")")
+        print(io, " >=< ")
+        print(io, "(\"", comps[j], "\", \"", s2, "\")")
+        print(io, ": ")
+        println(io, vals.values[idx])
         catch
         println("error at i = $i, j = $j a = $a, b = $b")
         end
     end
 end
 
-function Base.show(io::IO,param::AssocParam)
+function Base.show(io::IO, param::AssocParam)
     print(io, typeof(param), "(\"", param.name, "\")")
-    print(io,param.values.values)
+    print(io, param.values.values)
 end
 const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
@@ -407,24 +411,25 @@ function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=S
     len_flattenedgroups = length(flattenedgroups)
     i_flattenedgroups = 1:len_flattenedgroups
     n_flattenedgroups = [zeros(Int,len_flattenedgroups) for _ ∈ 1:length(input)]
+
     for i in length(input)
-        setindex!.(n_flattenedgroups,n_groups,i_groups)
+        setindex!.(n_flattenedgroups, n_groups, i_groups)
     end
 
     return GroupParam(components, 
-    groups, 
-    n_groups,
-    i_groups, 
-    flattenedgroups,
-    n_flattenedgroups, 
-    i_flattenedgroups,
-    sourcecsvs)
+        groups, 
+        n_groups,
+        i_groups, 
+        flattenedgroups,
+        n_flattenedgroups, 
+        i_flattenedgroups,
+        sourcecsvs)
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)
-    print(io,"GroupParam ")
+    print(io, "GroupParam ")
     len = length(param.components)
-    println(io,"with ", len, " component", ifelse(len==1, ":", "s:"))
+    println(io, "with ", len, " component", ifelse(len==1, ":", "s:"))
     
     for i in 1:length(param.components)
         
@@ -440,7 +445,7 @@ function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)
 end
 
 function Base.show(io::IO, param::GroupParam)
-    print(io,"GroupParam[")
+    print(io, "GroupParam[")
     len = length(param.components)
     
     for i in 1:length(param.components)
@@ -541,16 +546,14 @@ end
 
 
 function Base.show(io::IO, mime::MIME"text/plain", param::SiteParam)
-    print(io,"SiteParam ")
+    print(io, "SiteParam ")
     len = length(param.components)
-    println(io,"with ", len, " component", ifelse(len==1, ":", "s:"))
-    
+    println(io, "with ", len, " component", ifelse(len==1, ":", "s:"))
     for i in 1:length(param.components)
-        
         print(io, " \"", param.components[i], "\": ")
         firstloop = true
         if length(param.n_sites[i]) == 0
-            print(io,"(no sites)")
+            print(io, "(no sites)")
         end
         for j in 1:length(param.n_sites[i])
             firstloop == false && print(io, ", ")
@@ -562,20 +565,17 @@ function Base.show(io::IO, mime::MIME"text/plain", param::SiteParam)
 end
 
 function Base.show(io::IO, param::SiteParam)
-    print(io,"SiteParam[")
+    print(io, "SiteParam[")
     len = length(param.components)
-    
     for i in 1:length(param.components)
-        
         print(io, "\"", param.components[i], "\" => [")
         firstloop = true
-    
         for j in 1:length(param.n_sites[i])
             firstloop == false && print(io, ", ")
             print(io, "\"", param.sites[i][j], "\" => ", param.n_sites[i][j])
             firstloop = false
         end
-        print(io,']')
+        print(io, ']')
         i != length(param.components) && print(io,", ")
     end
     print(io,"]")
@@ -597,26 +597,26 @@ function SiteParam(pairs::Dict{String,SingleParam{Int}},allcomponentsites)
     n_sites = [[pairs[sites[i][j]].values[i] for j ∈ 1:length(sites[i])] for i ∈ 1:ncomps]  # or groupsites
     length_sites = [length(componentsites) for componentsites ∈ sites]
     i_sites = [1:length_sites[i] for i ∈ 1:ncomps]
-    flattenedsites = unique!(reduce(vcat,sites,init = String[]))
+    flattenedsites = unique!(reduce(vcat, sites, init = String[]))
     len_flattenedsites = length(flattenedsites)
     #i_flattenedsites = 1:len_flattenedsites
-    n_flattenedsites = [zeros(Int,len_flattenedsites) for _ ∈ 1:ncomps]
-    i_flattenedsites = [zeros(Int,len_flattenedsites) for _ ∈ 1:ncomps]
+    n_flattenedsites = [zeros(Int, len_flattenedsites) for _ ∈ 1:ncomps]
+    i_flattenedsites = [zeros(Int, len_flattenedsites) for _ ∈ 1:ncomps]
     for i in 1:ncomps
-        setindex!.(n_flattenedsites,n_sites,i_sites)
+        setindex!.(n_flattenedsites, n_sites, i_sites)
         flatsites_i = i_flattenedsites[i]
         for (aidx,a) in Base.pairs(i_sites[i])
             flatsites_i[a] = aidx
         end
     end
     return SiteParam(components, 
-    sites, 
-    PackedVectorsOfVectors.pack(n_sites),
-    i_sites, 
-    flattenedsites,
-    n_flattenedsites, 
-    i_flattenedsites,
-    sourcecsvs)
+        sites, 
+        PackedVectorsOfVectors.pack(n_sites),
+        i_sites, 
+        flattenedsites,
+        n_flattenedsites, 
+        i_flattenedsites,
+        sourcecsvs)
 end
 
 function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=String[])
@@ -624,42 +624,39 @@ function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=St
     raw_sites =  [last(i) for i ∈ input]
     sites = [first.(sitepairs) for sitepairs ∈ raw_sites]
     n_sites = [last.(sitepairs) for sitepairs ∈ raw_sites]
-    flattenedsites = unique!(reduce(vcat,sites,init = String[]))
+    flattenedsites = unique!(reduce(vcat, sites, init = String[]))
     i_sites = [[findfirst(isequal(site), flattenedsites) for site ∈ componentsites] for componentsites ∈ sites]
     len_flattenedsites = length(flattenedsites)
-    i_flattenedsites = [zeros(Int,len_flattenedsites) for _ ∈ 1:length(input)]
-    n_flattenedsites = [zeros(Int,len_flattenedsites) for _ ∈ 1:length(input)]
+    i_flattenedsites = [zeros(Int, len_flattenedsites) for _ ∈ 1:length(input)]
+    n_flattenedsites = [zeros(Int, len_flattenedsites) for _ ∈ 1:length(input)]
     for i in 1:length(input)
-        setindex!.(n_flattenedsites,n_sites,i_sites)
+        setindex!.(n_flattenedsites, n_sites, i_sites)
         flatsites_i = i_flattenedsites[i]
         for (aidx,a) in Base.pairs(i_sites[i])
             flatsites_i[a] = aidx
         end
     end
-
-
-
     return SiteParam(components, 
-    sites, 
-    PackedVectorsOfVectors.pack(n_sites),
-    i_sites, 
-    flattenedsites,
-    n_flattenedsites, 
-    i_flattenedsites,
-    sourcecsvs)
+        sites, 
+        PackedVectorsOfVectors.pack(n_sites),
+        i_sites, 
+        flattenedsites,
+        n_flattenedsites, 
+        i_flattenedsites,
+        sourcecsvs)
 end
 
 function SiteParam(components::Vector{String})
     n = length(components)
     return SiteParam(
-    components,
-    [String[] for _ ∈ 1:n],
-    PackedVectorsOfVectors.pack([Int[] for _ ∈ 1:n]),
-    [Int[] for _ ∈ 1:n],
-    String[],
-    [Int[] for _ ∈ 1:n],
-    [Int[] for _ ∈ 1:n],
-    String[])
+        components,
+        [String[] for _ ∈ 1:n],
+        PackedVectorsOfVectors.pack([Int[] for _ ∈ 1:n]),
+        [Int[] for _ ∈ 1:n],
+        String[],
+        [Int[] for _ ∈ 1:n],
+        [Int[] for _ ∈ 1:n],
+        String[])
 end
 
 """
@@ -686,69 +683,68 @@ function pack_vectors(x::SparseMatrixCSC{<:AbstractVector})
 end
 
 function pack_vectors(param::SingleParameter{<:AbstractVector})
-    name,components,vals,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources
+    name, components, vals, missingvals, srccsv, src = param.name, param.components, param.values, param.ismissingvalues, param.sourcecsvs, param.sources
     vals = pack_vectors(vals)
-    return SingleParam(name,components,vals,missingvals,srccsv,src)
+    return SingleParam(name, components, vals, missingvals, srccsv, src)
 end
 
 function pack_vectors(param::PairParameter{<:AbstractVector})
-    name,components,vals,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources
+    name, components, vals, missingvals, srccsv, src = param.name, param.components, param.values, param.ismissingvalues, param.sourcecsvs, param.sources
     vals = pack_vectors(vals)
-    return PairParam(name,components,vals,nothing,missingvals,srccsv,src)
+    return PairParam(name, components, vals, nothing, missingvals, srccsv, src)
 end
 
 function pack_vectors(params::Vararg{SingleParameter{T},N}) where {T<:Number,N}
     param = first(params)
-    name,components,_,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources
+    name, components, _, missingvals, srccsv, src = param.name, param.components, param.values, param.ismissingvalues, param.sourcecsvs, param.sources
     len = length(params)
     vals = [zeros(len) for _ in params]
-
     for i in 1:length(vals)
         vali = vals[i]
-        for (k,par) in pairs(params)
+        for (k, par) in pairs(params)
             vali[k] = par.values[i]
         end
     end
     vals = PackedVectorsOfVectors.pack(vals)
-    SingleParam(name,components,vals,missingvals,srccsv,src)
+    SingleParam(name, components, vals, missingvals, srccsv, src)
 end
 
 #this should take care of converting ints to floats and ints to bool if necessary
-function Base.convert(::Type{SingleParam{Float64}},param::SingleParam{Int})
+function Base.convert(::Type{SingleParam{Float64}}, param::SingleParam{Int})
     values = Float64.(param.values)
-    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+    return SingleParam(param.name, param.components, values, param.ismissingvalues, param.sourcecsvs, param.sources)
 end
 
-function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{Int})
-    @assert all(z->(isone(z) | iszero(z)),param.values)
+function Base.convert(::Type{SingleParam{Bool}}, param::SingleParam{Int})
+    @assert all(z->(isone(z) | iszero(z)), param.values)
     values = Array(Bool.(param.values))
-    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+    return SingleParam(param.name, param.components, values, param.ismissingvalues, param.sourcecsvs, param.sources)
 end
 
-function Base.convert(::Type{SingleParam{Int}},param::SingleParam{Float64})
+function Base.convert(::Type{SingleParam{Int}}, param::SingleParam{Float64})
     @assert all(z->isinteger(z),param.values)
     values = Int.(param.values)
-    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+    return SingleParam(param.name, param.components, values, param.ismissingvalues, param.sourcecsvs, param.sources)
 end
 
-function Base.convert(::Type{PairParam{Float64}},param::PairParam{Int})
+function Base.convert(::Type{PairParam{Float64}}, param::PairParam{Int})
     values = Float64.(param.values)
     diagvalues = view(values, diagind(values))
-    return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
+    return PairParam(param.name, param.components, values, diagvalues, param.ismissingvalues, param.sourcecsvs, param.sources)
 end
 
-function Base.convert(::Type{PairParam{Bool}},param::PairParam{Int})
-    @assert all(z->(isone(z) | iszero(z)),param.values)
+function Base.convert(::Type{PairParam{Bool}}, param::PairParam{Int})
+    @assert all(z->(isone(z) | iszero(z)), param.values)
     values = Array(Bool.(param.values))
     diagvalues = view(values, diagind(values))
-    return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
+    return PairParam(param.name, param.components, values, diagvalues, param.ismissingvalues, param.sourcecsvs, param.sources)
 end
 
 function Base.convert(::Type{PairParam{Int}},param::PairParam{Float64})
-    @assert all(z->isinteger(z),param.values)
+    @assert all(z->isinteger(z), param.values)
     values = Int.(param.values)
     diagvalues = view(values, diagind(values))
-    return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
+    return PairParam(param.name, param.components, values, diagvalues, param.ismissingvalues, param.sourcecsvs, param.sources)
 end
 
 const PackedVectorSingleParam{T} = Clapeyron.SingleParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}
