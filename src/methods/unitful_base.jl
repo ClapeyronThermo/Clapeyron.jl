@@ -10,62 +10,33 @@ Unitful.@derived_dimension __MolVolume Unitful.𝐋^3/Unitful.𝐍
 const __VolumeKind = Union{__MassDensity,__MolDensity,__MassVolume,__MolVolume,Unitful.Volume}
 
 #real, use st argument
-function autospec(λ::Real,st)
-    return ThermoState.spec(st,λ)
-end
+autospec(λ::Real,st) = ThermoState.spec(st,λ)
+
+
 
 #with units, use units
-function autospec(λ::Unitful.Temperature,st)
-    return ThermoState.spec(spec"T",λ)
-end
+#p,T
+autospec(λ::Unitful.Temperature,st) = ThermoState.spec(spec"T",λ)
+autospec(λ::Unitful.Pressure,st) = ThermoState.spec(spec"p",λ)
+autospec(λ::Unitful.Volume,st) = ThermoState.spec(spec"total_v",λ)
+autospec(λ::__MolDensity,st) = ThermoState.spec(spec"mol_rho",λ)
+autospec(λ::__MassDensity,st) = hermoState.spec(spec"mass_rho",λ)
+autospec(λ::__MolVolume,st) = ThermoState.spec(spec"mol_v",λ)
+autospec(λ::__MassVolume,st) = ThermoState.spec(spec"mass_v",λ)
 
-function autospec(λ::Unitful.Pressure,st)
-    return ThermoState.spec(spec"p",λ)
-end
+#mass, moles
 
-function autospec(λ::Unitful.Volume,st)
-    return ThermoState.spec(spec"total_v",λ)
-end
+#in case of passing only a number instead of a vector in z
+autospec(t::Unitful.Mass,st) = ThermoState.spec(spec"mass",t)
+autospec(t::Unitful.Amount,st) = ThermoState.spec(spec"moles",t)
 
-function autospec(λ::__MolDensity,st)
-    return ThermoState.spec(spec"mol_rho",λ)
-end
+#Vectors of mass, moles
 
-function autospec(λ::__MassDensity,st)
-    return ThermoState.spec(spec"mass_rho",λ)
-end
+autospec(t::AbstractVector{<:Unitful.Amount},st) = isone(length(t)) ? ThermoState.spec(spec"moles",only(t)) : ThermoState.spec(spec"n",t)
+autospec(t::AbstractVector{<:Unitful.Mass},st) = isone(length(t)) ? ThermoState.spec(spec"mass",only(t)) : ThermoState.spec(spec"m",t)
 
-function autospec(λ::__MolVolume,st)
-    return ThermoState.spec(spec"mol_v",λ)
-end
-
-function autospec(λ::__MassVolume,st)
-    return ThermoState.spec(spec"mass_v",λ)
-end
-
-function autospec(t::AbstractVector{<:Real},st)
-    if length(t) == 1
-        return ThermoState.spec(spec"moles",only(t))
-    else
-        return ThermoState.spec(spec"n",t)
-    end
-end
-
-function autospec(t::AbstractVector{<:Unitful.Amount},st)
-    if length(t) == 1
-        return ThermoState.spec(spec"moles",only(t))
-    else
-        return ThermoState.spec(spec"n",t)
-    end
-end
-
-function autospec(t::AbstractVector{<:Unitful.Mass},st)
-    if length(t) == 1
-        return ThermoState.spec(spec"mass",only(t))
-    else
-        return ThermoState.spec(spec"m",t)
-    end
-end
+#Clapeyron default: if no numbers are passed, assume molar amounts
+autospec(t::AbstractVector{<:Real},st) = isone(length(t)) ? ThermoState.spec(spec"moles",only(t)) : ThermoState.spec(spec"n",t)
 
 ThermoState.molecular_weight(model::EoSModel) = mw(model)
 #transforms vt or pt model to ThermoState.state
@@ -76,14 +47,15 @@ function standarize(model,λ,t,z)
     st = ThermoState.state(spec_λ,spec_t,spec_z)
 end
 
-function state_to_vt(model,st::ThermoState.ThermodynamicState)
-    return state_to_vt(ThermoState.state_type(st),model,st)
-end
+#state_to_vt:  converts a ThermoState.state to V,T,z valid Clapeyron coordinates
+state_to_vt(model,st::ThermoState.ThermodynamicState) = state_to_vt(ThermoState.state_type(st),model,st)
 
 function state_to_vt(::ThermoState.QuickStates.SingleVT,model,st::ThermoState.ThermodynamicState)
-    v = ThermoState.total_volume(FromState(),st,u"m^3",mw(model)) |> only
-    T = ThermoState.temperature(FromState(),st,u"K") |> only
-    _z = ThermoState.moles(FromState(),st,u"mol",mw(model))
+    mww = only(mw(model))
+    v = ThermoState.total_volume(FromState(),st,u"m^3",mww) 
+    T = ThermoState.temperature(FromState(),st,u"K")
+    _z = ThermoState.moles(FromState(),st,u"mol",mww)
+    #_z = ThermoState.moles(FromState(),st,mw(model))
     z = SA[_z]
     return v,T,z
 end

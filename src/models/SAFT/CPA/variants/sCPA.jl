@@ -68,10 +68,10 @@ end
 function Δ(model::sCPAModel, V, T, z, i, j, a, b)
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b] * 1e2/R̄
     βijab = model.params.bondvol.values[i,j][a,b] * 1e-3
-    x = z/∑(z)
+    Σz = ∑(z)
     b = model.params.b.values
-    b̄ = ∑(b .* (x * x'))
-    η = b̄*∑(z)/(4*V)
+    b̄ = dot(z,b,z)/(Σz*Σz)
+    η = b̄*Σz/(4*V)
     g = (1-1.9η)^-1
     bij = (b[i,i]+b[j,j])/2
     return g*(exp(ϵ_associjab/T)-1)*βijab*bij/N_A

@@ -106,7 +106,7 @@ the keywords `phase` and `threaded` are passed to the [volume solver](@ref Clape
 """
 function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
-    return VT_compressibility_factor(model, V, T, z)
+    return p*V/(sum(z)*R̄*T)
 end
 
 function inversion_temperature(model::EoSModel, p, z=SA[1.0])
@@ -136,33 +136,70 @@ f_mix = f(p,T,z)-z*f_pure(p,T)
 ```
 the keywords `phase` and `threaded` are passed to the [volume solver](@ref Clapeyron.volume).
 """
-function mixing(model::EoSModel,p,T,z,property;phase = :unknown,threaded=true)
+function mixing(model::EoSModel,p,T,z,property::ℜ;phase = :unknown,threaded=true) where {ℜ}
     pure = split_model(model)
-    pure_prop = property.(pure,p,T;phase=phase, threaded=threaded)
-    mix_prop  = property(model,p,T,z;phase=phase, threaded=threaded)
-    return mix_prop - dot(pure_prop,z)
+    TT = typeof(p+T+first(z))
+    mix_prop  = property(model,p,T,z;phase,threaded)
+    for i in 1:length(z)
+        mix_prop -= z[i]*property(pure[i],p,T;phase,threaded)
+    end
+    return mix_prop::TT
 end
 
 excess(model::EoSModel,p,T,z,property) = mixing(model::EoSModel,p,T,z,property)
 
 function excess(model::EoSModel,p,T,z,::typeof(entropy))
+    TT = typeof(p+T+first(z))
     pure = split_model(model)
-    s_pure = entropy_res.(pure,p,T)
     s_mix = entropy_res(model,p,T,z)
-    return s_mix-Clapeyron.dot(s_pure,z)
+    for i in 1:length(z)
+        s_mix -= z[i]*entropy_res(pure[i],p,T)
+    end
+    #s_pure = entropy_res.(pure,p,T)
+    return s_mix::TT
 end
 
 function excess(model::EoSModel,p,T,z,::typeof(gibbs_free_energy))
+    TT = typeof(p+T+first(z))
     pure = split_model(model)
     g_pure = gibbs_free_energy.(pure,p,T)
     g_mix = gibbs_free_energy(model,p,T,z)
+    log∑z = log(sum(z))
     x = z./sum(z)
-    return g_mix-Clapeyron.dot(g_pure,z)-Clapeyron.N_A*Clapeyron.k_B*T*Clapeyron.dot(z,log.(x))
+    for i in 1:length(z)
+        g_mix -= z[i]*(gibbs_free_energy(pure[i],p,T) + R̄*T*(log(z[i]) - log∑z))
+    end
+    return g_mix::TT
+    return g_mix-Clapeyron.dot(g_pure,z)-R̄*T*Clapeyron.dot(z,log.(x))
 end
+
+"""
+    gibbs_solvation(model::EoSModel, T)
+
+Calculates the solvation free energy as:
+
+```julia
+g_solv = -R̄*T*log(K)
+```
+where the first component is the solvent and second is the solute.
+"""
+function gibbs_solvation(model::EoSModel,T)
+    pure = split_model(model)
+    z = [1.0,1e-30]
+    
+    p,v_l,v_v = saturation_pressure(pure[1],T)
+    
+    φ_l = fugacity_coefficient(model,p,T,z;phase=:l)
+    φ_v = fugacity_coefficient(model,p,T,z;phase=:v)
+    
+    K = φ_v[2]*v_v/φ_l[2]/v_l
+    
+    return -R̄*T*log(K)
+end    
 
 export entropy, chemical_potential, internal_energy, enthalpy, gibbs_free_energy
 export helmholtz_free_energy, isochoric_heat_capacity, isobaric_heat_capacity
 export isothermal_compressibility, isentropic_compressibility, speed_of_sound
 export isobaric_expansivity, joule_thomson_coefficient, compressibility_factor, inversion_temperature
 export mass_density,molar_density, activity_coefficient, fugacity_coefficient, entropy_res
-export mixing, excess
+export mixing, excess, gibbs_solvation

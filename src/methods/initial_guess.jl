@@ -233,8 +233,8 @@ the following methods are fallbacks,
 that require just the definition of T_scale,p_scale and lb_volume
 respectively. if possible, each eos should define those
 =#
-function T_scales(model,z)
-    n = length(z)
+function T_scales(model)
+    n = length(model)
     x = zeros(n)
     res = zeros(n)
     for i = 1:n
@@ -244,3 +244,5 @@ function T_scales(model,z)
     end
     return res
 end
+
+T_scales(model,z) = T_scales(model)

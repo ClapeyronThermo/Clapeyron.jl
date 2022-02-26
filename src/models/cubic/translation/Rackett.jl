@@ -6,6 +6,32 @@ end
 
 @newmodelsimple RackettTranslation RackettTranslationModel RackettTranslationParam
 
+"""
+    RackettTranslation <: RackettTranslationModel
+
+    RackettTranslation(components::Vector{String};
+    userlocations::Vector{String}=String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+- `vc`: Single Parameter (`Float64`) - Critical Volume `[m³/mol]`
+
+## Description
+
+Rackett Translation model for cubics:
+```
+V = V₀ + mixing_rule(cᵢ)
+cᵢ = 0.40768*RTcᵢ/Pcᵢ*(0.29441-Zcᵢ)
+Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
+```
+## References
+
+1. Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. doi:10.1021/je60047a012
+
+"""
+RackettTranslation
+
 export RackettTranslation
 function RackettTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)

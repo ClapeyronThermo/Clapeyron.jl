@@ -9,6 +9,13 @@ function eos(model::IdealModel, V, T, z=SA[1.0])
     return N_A*k_B*sum(z)*T * a_ideal(model,V,T,z)
 end
 
-function volume(model::IdealModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
+function eos_res(model::IdealModel, V, T, z=SA[1.0])
+    return zero(V+T+first(z))
+end
+
+function volume(model::IdealModel,p::Real,T::Real,z=SA[1.0];phase=:unknown,threaded=false)
     return sum(z)*R̄*T/p
 end
+
+lb_volume(model::IdealModel,z=SA[1.0]) = zero(eltype(z))
+

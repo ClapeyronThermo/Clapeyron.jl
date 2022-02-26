@@ -1,3 +1,8 @@
+"""
+    pressure(model::EoSModel, V, T, z=SA[1.])
+
+Returns the pressure of the model in `[Pa]` at a given volume, temperature and composition.
+"""
 function pressure(model::EoSModel, V, T, z=SA[1.])
     return -∂f∂V(model,V,T,z)
 end
@@ -9,16 +14,6 @@ end
 function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,V,x,z)
     return -Solvers.derivative(fun,T)
-end
-
-function VT_chemical_potential(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos(model,V,T,x)
-    return ForwardDiff.gradient(fun,z)
-end
-
-function VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos_res(model,V,T,x)
-    return ForwardDiff.gradient(fun,z)
 end
 
 function VT_internal_energy(model::EoSModel, V, T, z=SA[1.])
@@ -116,7 +111,7 @@ end
 
 function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.])
     p = pressure(model,V,T,z)
-    return p*V/(R̄*T)
+    return p*V/(sum(z)*R̄*T)
 end
 
 """
@@ -142,4 +137,20 @@ function pip(model::EoSModel, V, T, z=SA[1.0])
     Π = V*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1])
 end
 
+#Vector Properties
+
+function VT_chemical_potential(model::EoSModel, V, T, z=SA[1.])
+    fun(x) = eos(model,V,T,x)
+    TT = gradient_type(V,T,z) #type stability matters a lot
+    return ForwardDiff.gradient(fun,z)::TT
+end
+
+function VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.])
+    fun(x) = eos_res(model,V,T,x)
+    TT = gradient_type(V,T,z) #type stability matters a lot
+    return ForwardDiff.gradient(fun,z)::TT
+end
+
+
 export second_virial_coefficient,pressure
+

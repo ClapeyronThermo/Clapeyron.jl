@@ -4,11 +4,35 @@ struct vdW1fRuleParam <: EoSParam
 end
 
 @newmodelsimple vdW1fRule vdW1fRuleModel vdW1fRuleParam
-
 export vdW1fRule
+
+"""
+    vdW1fRule <: vdW1fRuleModel
+    
+    vdW1fRule(components::Vector{String};
+    userlocations::Vector{String}=String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+None
+
+## Description
+
+van der Wals One-Fluid mixing rule for cubic parameters:
+
+```
+aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
+bᵢⱼ = (bᵢ + bⱼ)/2
+ā = ∑aᵢⱼxᵢxⱼ√(αᵢ(T)αⱼ(T))
+b̄ = ∑bᵢⱼxᵢxⱼ
+c̄ = ∑cᵢxᵢ
+```
+
+"""
+vdW1fRule
+
 function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    acentricfactor = SingleParam(params["w"],"acentric factor")
     packagedparams = vdW1fRuleParam()
     model = vdW1fRule(packagedparams, verbose=verbose)
     return model

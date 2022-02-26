@@ -1,6 +1,7 @@
 struct LJRefParam <: EoSParam
     epsilon::PairParam{Float64}
     sigma::PairParam{Float64}
+    segment::SingleParam{Float64}
     Mw::SingleParam{Float64}
 end
 
@@ -135,8 +136,63 @@ struct LJRef <: EmpiricHelmholtzModel
 end
 @registermodel LJRef
 
-idealmodel(x::LJRef) = x
 export LJRef
+
+"""
+    LJRef <: EmpiricHelmholtzModel
+    LJRef(components;
+    userlocations=String[],
+    verbose=false)
+
+## Input parameters
+
+- `sigma`: Single Parameter (`Float64`) - particle size [Å]
+- `epsilon`: Single Parameter (`Float64`) - dispersion energy [`K`]
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `k`: Pair Parameter (`Float64`) - `sigma` mixing coefficient
+
+## Model Parameters
+
+- `sigma`: Pair Parameter (`Float64`) - particle size [m]
+- `epsilon`: Pair Parameter (`Float64`) - dispersion energy [`K`]
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+
+## Description
+
+Lennard-Jones Reference equation of state. valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
+
+
+```
+σᵢⱼ = (σᵢ + σⱼ)/2
+ϵᵢⱼ = (1-kᵢⱼ)√(ϵⱼϵⱼ)
+σ^3 = Σxᵢxⱼσᵢⱼ^3
+ϵ = Σxᵢxⱼϵᵢⱼσᵢⱼ^3/σ^3
+
+τᵢ = 1.32ϵᵢ/T
+δᵢ = n(Nₐσᵢ^3)/0.31V
+a⁰ᵢ(δ,τ) = log(δᵢ) + 1.5log(τᵢ) + 1.515151515τᵢ + 6.262265814 
+a⁰(δ,τ,z) = ∑xᵢ(a⁰ᵢ + log(xᵢ))
+
+τ = 1.32ϵ/T
+δ = n(Nₐσ^3)/0.31V
+
+aʳ(δ,τ)  = aʳ₁+ aʳ₂ + aʳ₃ + aʳ₄
+aʳ₁(δ,τ)  =  ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:6
+aʳ₂(δ,τ)  =  ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 7:12
+aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 13:23
+```
+parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
+
+!!! warning "Mutiple component warning"
+
+    The original model was done with only one component in mind. to support multiple components, a VDW 1-fluid mixing rule (shown above) is implemented, but it is not tested.
+
+## References
+
+1. Thol, M., Rutkai, G., Köster, A., Lustig, R., Span, R., & Vrabec, J. (2016). Equation of state for the Lennard-Jones fluid. Journal of physical and chemical reference data, 45(2), 023101. doi:10.1063/1.4945000
+
+"""
+LJRef
 
 function LJRef(components;
     userlocations=String[],
@@ -146,7 +202,8 @@ function LJRef(components;
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], params["k"])
-    params = LJRefParam(epsilon,sigma,Mw)
+    segment = params["m"]
+    params = LJRefParam(epsilon,sigma,segment,Mw)
     consts = LJRefConsts()
     icomponents = 1:length(components)
     references = ["10.1063/1.4945000"]
@@ -156,11 +213,13 @@ end
 function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
+    m = model.params.segment.values
     lnΣz = log(∑z)
     res = zero(ρ+T+first(z))
     for i  ∈ @comps
+        mᵢ = m[i]
         τᵢ = 1.32/(T/ϵ[i])  
-        δᵢ = (N_A*ρ*σ[i]^3)/0.31
+        δᵢ = (mᵢ*N_A*ρ*σ[i]^3)/0.31
         aᵢ = log(δᵢ) + 1.5*log(τᵢ) + 1.515151515*τᵢ + 6.262265814 
         res += z[i]*(aᵢ + log(z[i]) - lnΣz)
     end
@@ -197,31 +256,63 @@ end
 #TODO: better relations? EoSRef was done with one fluid in mind.
 #this is technically an unsafe extension.
 function _v_scale(model::LJRef,z=SA[1.0])
-    σᵢᵢ = model.params.sigma.diagvalues
-    val = N_A*sum(z[i]*σᵢᵢ[i]^3 for i in 1:length(z))
-    return val
+    σ = model.params.sigma.values
+    m = model.params.segment.values
+
+    σ_mix = zero(eltype(z))
+    comps = length(model)
+    ∑z = sum(z)
+    m̄ = dot(m,z)/∑z
+    m̄inv = 1/m̄
+    for i ∈ 1:comps
+        zi = z[i]*m[i]*m̄inv
+        zii = zi*zi
+        σ3 = σ[i,i]^3
+        σ_mix += zii*σ3
+        for j ∈ 1:(i-1)
+            σ3ij = σ[i,j]^3
+            zij = zi*z[j]*m[j]*m̄inv
+            σ_mix += 2*zij*σ3ij
+        end
+    end
+    return m̄*N_A*σ_mix/(∑z*∑z)
 end
 
-function T_scale(model::LJRef,z=SA[1.0])
+function σϵ_m_vdw1f(model,V,T,z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
+    m = model.params.segment.values
+
     σϵ_mix = zero(eltype(z))
     σ_mix = zero(eltype(z))
     comps = length(model)
+    ∑z = sum(z)
+    m̄ = dot(m,z)/∑z
+    m̄inv = 1/m̄
     for i ∈ 1:comps
-        zi = z[i]
+        zi = z[i]*m[i]*m̄inv
         zii = zi*zi
         σ3 = σ[i,i]^3
         σϵ_mix += zii*σ3*ϵ[i,i]
         σ_mix += zii*σ3
         for j ∈ 1:(i-1)
             σ3ij = σ[i,j]^3
-            zij = zi*z[j]
+            zij = zi*z[j]*m[j]*m̄inv
             σϵ_mix += 2*zij*σ3ij*ϵ[i,j]
-            σ_mix += 2*zij*σ3ij*ϵ[i,j]
+            σ_mix += 2*zij*σ3ij
         end
     end
-    return σϵ_mix/σ_mix
+    return σ_mix/(∑z*∑z), σϵ_mix/σ_mix, m̄
+end
+
+function VT_scale(model,z = SA[1.0])
+    σ3, ϵ, m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
+    return m̄*N_A*σ3, ϵ, m̄
+end
+
+function T_scale(model::LJRef,z=SA[1.0])
+    σ, ϵ , m̄ = VT_scale(model,z)
+    return ϵ
 end
 
 function lb_volume(model::LJRef, z = SA[1.0])
@@ -233,9 +324,10 @@ function eos(model::LJRef,V,T,z = SA[1.0])
     Σz = sum(z)
     ρ = Σz/V
     α0 = _f0(model,ρ,T,Σz)
-    τ = 1.32/(T/T_scale(model,z))
-    δ = (ρ*_v_scale(model,z)/Σz)/0.31
-    αr =  _fr(model,δ,τ)
+    V0,T0,m̄ = VT_scale(model,z)
+    τ = 1.32/(T/T0)
+    δ = (ρ*V0)/0.31
+    αr =  m̄*_fr(model,δ,τ)
     x1 = R̄*T*Σz*αr 
     x2 =  R̄*T*α0
     return x1+x2
@@ -252,18 +344,20 @@ function a_res(model::LJRef,V,T,z = SA[1.0])
     Σz = sum(z)
     ρ = Σz/V
     α0 = _f0(model,ρ,T,Σz)
-    τ = 1.32/(T/T_scale(model,z))
-    δ = (ρ*_v_scale(model,z)/Σz)/0.31
-    return  _fr(model,δ,τ)
+    V0,T0,m̄ = VT_scale(model,z)
+    τ = 1.32/(T/T0)
+    δ = (ρ*V0)/0.31
+    return  m̄*_fr(model,δ,τ)
 end
 
 function eos_res(model::LJRef,V,T,z = SA[1.0])
     Σz = sum(z)
     ρ = Σz/V
     α0 = _f0(model,ρ,T,Σz)
-    τ = 1.32/(T/T_scale(model,z))
-    δ = (ρ*_v_scale(model,z)/Σz)/0.31
-    αr =  _fr(model,δ,τ)
+    V0,T0,m̄ = VT_scale(model,z)
+    τ = 1.32/(T/T0)
+    δ = (ρ*V0)/0.31
+    αr =  m̄*_fr(model,δ,τ)
     return R̄*T*Σz*αr 
 end
 #=
@@ -293,13 +387,16 @@ function ljref_rhovsat(Tr)
     return exp(res)*rhoc
 end
 
-function x0_sat_pure(model::LJRef,T)
-    σ = model.params.sigma.values[1]
+function x0_sat_pure_lj(model,T)
+    σ3, ϵ, m̄  = σϵ_m_vdw1f(model,1.0,1.0,SA[1.0])
     Tc = 1.32*T_scale(model)
-    ρl =  ljref_rholsat(T/Tc)/(N_A*σ^3)
-    ρv =  ljref_rhovsat(T/Tc)/(N_A*σ^3)
-    return [log10(1/ρl),log10(1/ρv)]
+    ρl =  ljref_rholsat(T/Tc)/(m̄*N_A*σ3)
+    ρv =  ljref_rhovsat(T/Tc)/(m̄*N_A*σ3)
+    return (log10(1/ρl),log10(1/ρv))
 end
+
+x0_sat_pure(model::LJRef,T) = x0_sat_pure_lj(model,T)
+
 
 function p_scale(model::LJRef,z = SA[1.0])
     rhoc = 1/(_v_scale(model,z))

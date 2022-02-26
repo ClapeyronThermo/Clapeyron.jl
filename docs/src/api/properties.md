@@ -1,3 +1,7 @@
+```@meta
+CurrentModule = Clapeyron
+```
+
 ## Contents
 
 ```@contents
@@ -32,6 +36,24 @@ Clapeyron.acentric_factor
 ```
 
 ## Multi component properties
+
+```@docs
+Clapeyron.bubble_pressure
+Clapeyron.bubble_temperature
+Clapeyron.dew_pressure
+Clapeyron.dew_temperature
+Clapeyron.azeotrope_pressure
+Clapeyron.azeotrope_temperature
+Clapeyron.LLE_pressure
+Clapeyron.LLE_temperature
+Clapeyron.VLLE_pressure
+Clapeyron.VLLE_temperature
+Clapeyron.crit_mix
+Clapeyron.UCEP_mix
+Clapeyron.UCST_mix
+```
+
+## TP Flash
 
 ```@docs
 Clapeyron.tp_flash

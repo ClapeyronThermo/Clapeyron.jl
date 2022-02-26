@@ -52,6 +52,20 @@ end
     end
 end
 
+@testset "softSAFT methods, single components" begin
+    system = softSAFT(["ethanol"])
+    p = 1e5
+    T = 273.15 + 78.24
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T,phase=:v) ≈ 0.027368884099868623 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T,phase=:l) ≈ 3.582709893664124e-5 rtol = 1e-6
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 101341.9709136089 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 540.1347889779657 rtol = 1E-6 
+    end
+end
+
 @testset "BACKSAFT methods, single components" begin
     system = BACKSAFT(["decane"])
     p = 1e5
@@ -134,6 +148,7 @@ end
         @test Clapeyron.excess(system, p, T, z, Clapeyron.gibbs_free_energy) ≈ 1626.6212908893858 rtol = 1E-6
     end
     @testset "Equilibrium properties" begin
+        @test Clapeyron.gibbs_solvation(system,T) ≈ -13131.087644740426 rtol = 1E-6
         @test Clapeyron.UCEP_mix(system)[1] ≈ 319.36877456397684 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system,T,z)[1] ≈ 54532.249600937736 rtol = 1E-6
         @test Clapeyron.bubble_temperature(system,p2,z)[1] ≈ 435.80890506865 rtol = 1E-6
@@ -211,6 +226,7 @@ end
         @test Clapeyron.mixing(system, p, T, z_bulk, Clapeyron.enthalpy) ≈ 519.0920708672975 rtol = 1e-6 
     end
     @testset "VLE properties" begin
+        @test Clapeyron.gibbs_solvation(system, T) ≈ -24707.145697543132 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.647133460465 rtol = 1E-6
     end
 end
@@ -274,7 +290,10 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.9293390134403 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 647.096 rtol = 1E-5 
+        tc,pc,vc =  Clapeyron.crit_pure(system)
+        @test tc ≈ 647.096 rtol = 1E-5 
+        v2 =  volume(system,pc,tc)
+        @test pressure(system,v2,tc) ≈ pc rtol = 1E-6
     end
 end
 
@@ -350,6 +369,52 @@ end
     end
 
     @testset "DE Algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3,population_size=20))[3] ≈ -6.73130492921276 rtol = 1e-6 
+        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3))[3] ≈ -6.73130492921276 rtol = 1e-6 
     end
+end
+
+@testset "Unitful Methods" begin
+    model11 = GERG2008(["methane"])
+    model10 = GERG2008(["butane"])
+    #example 3.11 abott van ness, 7th ed.
+    #pressure. 189 atm with CS compressibility relation
+    p11 = 185.95465583962599u"atm"
+    v11 = 2u"ft^3"
+    T11 = 122u"°F"
+    n11 = 453.59237u"mol" #1 lb-mol
+    z11 = 0.8755772456569365 #t0.89 from CS compressibility relation
+    @test Clapeyron.pressure(model11,v11,T11,n11,output = u"atm") ≈ p11
+    @test Clapeyron.pressure(model11,v11,T11,[n11],output = u"atm") ≈ p11
+    @test Clapeyron.compressibility_factor(model11,v11,T11,n11) ≈ z11 rtol = 1E-6
+    @test Clapeyron.compressibility_factor(model11,p11,T11,n11) ≈ z11 rtol = 1E-6
+
+    #example 3.10 abott van ness, 7th ed.
+    #volume, 1480 cm3, with CS virial correlation
+    p10 = 25u"bar"
+    T10 = 510u"K"
+    Tc10 = 425.75874890467253u"K"
+    pc10 = 3.830319495176967e6u"Pa"
+    R = (Clapeyron.R̄)u"J/(K*mol)"
+    v10 = 1478.2681326033257u"cm^3"
+    @test volume(model10,p10,T10,output=u"cm^3") ≈ v10 rtol = 1E-6
+    #generalized pitzer CS virial gives -0.220 
+    @test Clapeyron.second_virial_coefficient(model10,T10)*pc10/(R*Tc10) |> Unitful.ustrip ≈ -0.22346581496303466 rtol = 1E-6
+    
+    #example 3.13, abbott and van ness, 7th ed.
+    model13 = PR(["ammonia"],translation = RackettTranslation)
+    v13 = 26.545208120801895u"cm^3"
+    T13 = 310u"K"
+    #experimental value is 29.14 cm3/mol. PR default is ≈ 32, Racckett overcorrects
+    @test saturation_pressure(model13,T13,output = (u"atm",u"cm^3",u"cm^3"))[2] ≈ v13 rtol = 1E-6
+    @test Clapeyron.pip(model13,v13,T13) > 1 #check if is a liquid phase
+
+    #problem 3.1 abbott and van ness, 7th ed.
+    model31 = IAPWS95()
+    v31 = volume(model31,1u"bar",50u"°C")
+    #experimental value is 44.18e-6. close enough.
+
+    @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1E-6
+    @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1E-6
+    #enthalpy of vaporization of water at 100 °C
+    @test enthalpy_vap(model31,100u"°C",output = u"kJ") ≈ 40.64971775824767u"kJ" rtol = 1E-6
 end

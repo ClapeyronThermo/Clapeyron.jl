@@ -140,9 +140,6 @@ function split_model(param::SingleParameter,
     return [each_split_model(param,i) for i ∈ splitter]
 end
 
-function split_model(param::ClapeyronParam,groups::GroupParam)
-    return split_model(param,groups.i_groups)
-end
 #this conversion is lossy, as interaction between two or more components are lost.
 
 function split_model(param::PairParameter,
@@ -188,7 +185,7 @@ function split_model(param::SiteParam,
         return SiteParam(
             param.components[I],
             param.sites[I],
-            param.n_sites[I],
+            each_split_model(param.n_sites,I),
             param.i_sites[I],
             param.flattenedsites,
             param.n_flattenedsites[I],
@@ -268,7 +265,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             end
         end
 
-        return [M((allfields[k][i] for k ∈ fieldnames(M))...) for i ∈ 1:len]
+        return [M((allfields[k][i] for k ∈ fieldnames(M))...) for i ∈ 1:len]::Vector{M}
     catch e
         M = typeof(model)
         @error "$M cannot be splitted"

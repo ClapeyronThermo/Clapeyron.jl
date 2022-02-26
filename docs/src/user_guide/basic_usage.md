@@ -1,12 +1,10 @@
-# Clapeyron User Guide
-
-Welcome to Clapeyron!
-
 Once Clapeyron is installed, it can be loaded using:
 
 ```julia
 using Clapeyron
 ```
+
+## Creating a thermodynamic model
 
 We may create a model object by calling the constructor of the respective equation of state. For example,
 
@@ -28,56 +26,61 @@ One can find out more about the information stored within these model objects in
 
 **Cubics**:
 
-- `vdW`
-- `RK`
-  - `SRK`
-  - `PSRK`
-- `PR`
-  - `PR78`
-  - `UMRPR`
-  - `VTPR`
+- van der Waals (`vdW`)
+- Redlich-Kwong (`RK`)
+  - Soave-Redlich-Kwong (`SRK`)
+  - Predictive Soave-Redlich-Kwong (`PSRK`)
+- Peng-Robinson (`PR`)
+  - Peng-Robinson (1978) (`PR78`)
+  - "Universal Mixing Rule" Peng-Robinson (`UMRPR`)
+  - Volume-Translated Peng-Robinson (`VTPR`)
 
 **SAFT**:
 
-- `ogSAFT`
-- `CKSAFT`
-  - `sCKSAFT`
+- SAFT (`ogSAFT`)
+- CK (Chen and Kreglewski) SAFT (`CKSAFT`)
+  - Simplified CK-SAFT (`sCKSAFT`)
 - `BACKSAFT`
-- `LJSAFT`
-- `SAFTVRSW`
-- `CPA`
-- `softSAFT`
-- `PCSAFT`
-  - `sPCSAFT`
-- `SAFTVRMie`
-  - `SAFTVRQMie`
-- `SAFTgammaMie`
+- Lennard-Jones SAFT (`LJSAFT`)
+- SAFT, Variable Range (VR) ,Square Well (SW) (`SAFTVRSW`)
+- Cubic plus Associacion (`CPA`)
+  - Simplified CPA (`sCPA`) 
+- Soft SAFT, with Lennard-Jones function from Johnson et al. (1995) (`softSAFT`)
+- Soft SAFT, with Lennard-Jones function from Thol et al. (2016)  (`softSAFT2016`)
+- Perturbed-Chain SAFT (`PCSAFT`)
+  - Simplified PC-SAFT (`sPCSAFT`)
+- SAFT-VR with Mie potential (`SAFTVRMie`)
+  - SAFT-VR with quantum corrected Mie potential (`SAFTVRQMie`)
+- SAFT-γ-Mie (`SAFTgammaMie`)
 
 **Activity coefficient** (N.B. these models only provide VLE properties for mixtures):
 
 - `Wilson`
-- `NRTL`
-- `UNIQUAC`
-- `UNIFAC`
-- `COSMOSAC`
-  - `COSMOSAC02`
-  - `COSMOSAC10`
-  - `COSMOSACdsp`
+- Non-random two-liquid (`NRTL`)
+- *Universal quasichemical Activity Coefficients* (UNIQUAC): (`UNIQUAC`)
+- *UNIQUAC Functional-group Activity Coefficients* (UNIFAC): (`UNIFAC`)
+- Conductor-like Screening Model Segment Activity Model (COSMO-SAC)
+  - COSMO-SAC (2002 version) (`COSMOSAC02`)
+  - COSMO-SAC (2010 version) (`COSMOSAC10`)
+  - COSMO-SAC with dispersive interactions (`COSMOSACdsp`)
 
 **Empirical**:
 
-- `GERG2008`
-- `IAPWS95`
-- `PropaneRef`
+- GERG-2008 EoS for Natural Gas (`GERG2008`)
+  - EOS-LNG for Liquified Natural Gas (`EOS-LNG`)
+- IAPWS-95 Water reference (`IAPWS95`)
+- Propane Reference (`PropaneRef`)
+- Lennard Jones Reference from Thol et al. (2016) (`LJRef`)
 
 We also support the `SPUNG` model. One can find out more about each of these equations of state within our background documentation. Nevertheless, all of these equations are compatible with all methods availble in our package. 
 
 There a few optional arguments available for these equations which will be explained below. One of these is specifying the location of the parameter databases, the details of which can be found in our Custom databases documentation.
 
-### Specifying an ideal term
+## Specifying an ideal term
 
-Both SAFT and cubic-type equations of state rely upon an ideal model. By default, Clapeyron uses what we refer to as the `BasicIdeal` model to account for the ideal contribution which does not require any parameters. For properties which only have derivatives with respect to volume or composition (_e.g._ volume, isothermal compressibility, critical points, saturation points), or monoatomic species (_e.g._ noble gases), this is perfectly fine. However, for any other properties or species, the results obtained will most likely be quite poor. This is because this model does not account for the rotational and vibrational modes of the species. To amend this, we provide three additional ideal models to be used instead (more to come):
+Both SAFT and cubic-type equations of state rely upon an ideal model. By default, Clapeyron uses what we refer to as the `BasicIdeal` model to account for the ideal contribution which does not require any parameters. For properties which only have derivatives with respect to volume or composition (_e.g._ volume, isothermal compressibility, critical points, saturation points), or monoatomic species (_e.g._ noble gases), this is perfectly fine. However, for any other properties or species, the results obtained will most likely be quite poor. This is because this model does not account for the rotational and vibrational modes of the species. To amend this, we provide three additional ideal models to be used instead:
 
+- Monomer ideal correlation (`MonomerIdeal`)
 - Walker and Haslam's ideal correlation (`WalkerIdeal`)
 - Joback's ideal correlation (`JobackIdeal`)
 - Reid's polynomial correlation (`ReidIdeal`)
@@ -90,15 +93,15 @@ model5 = PCSAFT(["carbon dioxide"]; idealmodel = WalkerIdeal)
 
 Everything else will work as normal.
 
-### Specifying an alpha function
+## Specifying an alpha function
 
-Both RK and PR cubic equations rely on an alpha function (SRK is technically just RK but with a different alpha function). Whilst we use the defaults for both RK and PR, it is possible to toggle between them. For example:
+vdW, RK and PR cubic equations rely on an alpha function (SRK is technically just RK but with a different alpha function). Whilst we use the defaults for both RK and PR, it is possible to toggle between them. For example:
 
 ```julia
 model6 = RK(["ethane","propane"];alpha=SoaveAlpha)
 ```
 
-The above model would be equivalent to a model built by SRK directly. We support the following alpha functions (more to come):
+The above model would be equivalent to a model built by SRK directly. We support the following alpha functions:
 
 - `RKAlpha`: This is the default alpha function for regular RK .
 - `SoaveAlpha`: This is the default alpha function for SRK.
@@ -108,7 +111,7 @@ The above model would be equivalent to a model built by SRK directly. We support
 - `TwuAlpha`: Proposed by Twu _et al._, this alpha function uses species-specific parameters rather than correlation and, thus, is slightly more accurate than regular alpha functions. It was intended to be used with PR and is used in VTPR.
 - `MTAlpha`: Proposed by Magoulas and Tassios, this alpha function is essentially like the regular PR alpha function only to a higher order. It is used within UMRPR.
 
-### Specifying a mixing rule
+## Specifying a mixing rule
 
 Only relevant to cubic equations of state and mixtures, we can alternate between different mixing rules in case these may result in better predictions. We can toggle between these mixing rules:
 
@@ -116,7 +119,7 @@ Only relevant to cubic equations of state and mixtures, we can alternate between
 model7 = RK(["ethane","propane"];mixing=KayRule)
 ```
 
-We currently only support:
+We currently support:
 
 - `vdW1fRule`: The standard van der Waals one-fluid mixing rule which is the default in all cubics.
 
@@ -138,7 +141,7 @@ We currently only support:
 
 If one goes looking within the source code, they will also find `VTPRRule`, `PSRKRule` and `UMRRule`; these are only intended for use in their respective models and shouldn't be used otherwise. However, it is still possible to toggle between them.
 
-### Specifying a volume translation method
+## Specifying a volume translation method
 
 In order to improve the predictions of bulk properties in cubics, without affecting VLE properties, a volume translation method can be used which simply shifts the volume within the cubics by `c`. The default for all cubics is `NoTranslation`, however, we can toggle between the methods:
 
@@ -154,7 +157,7 @@ We support the following methods:
 
 Note that not all these methods will be compatible with all species as they require the critical volume of the species.
 
-### Using an Activity coefficient model
+## Using an Activity coefficient model
 
 Activity coefficient models are primarily designed to obtain accurate estimate of mixture VLE properties _below_ the critical point of all species. Whilst not as flexible as other equations of state, they are computationally cheaper and, generally, more accurate. The activity coefficients are obtained as only a function of temperature and composition ($\gamma (T,\mathbf{x})$), meaning we can simply use modified Raoult's law to obtain the bubble (and dew) point:
 
@@ -168,7 +171,7 @@ model3 = UNIFAC(["methanol","benzene"];puremodel=PCSAFT)
 
 Everything else will work as normal (so long as the species are also available within the specified pure model).
 
-### Available properties
+## Available properties
 
 Once we have our model object, we will be able to call the respective thermodynamic methods to obtain the properties that we are looking for. For example, to find the isobaric heat capacity of a 0.5 mol methanol and 0.5 mol ethanol mixture using PC-SAFT at a pressure of 10 bar and a temperature of 300 K, we just call the `isobaric_heat_capacity(model, p, T, z)` function with the desired model and conditions as parameters.
 
@@ -296,13 +299,10 @@ The functions for the physical properties that we currently support are as follo
 
 ```julia
 using Unitful
-import Unitful: bar, °C, mol
-
-Cp2 = isobaric_heat_capacity(model1, 5bar, 25°C, [0.5mol, 0.5mol])
+import Unitful: bar, °C, mol, kg, l
+model_unit = PCSAFT(["methanol","water"])
+Cp2 = isobaric_heat_capacity(model_unit, 5bar, 25°C, [0.5kg, 0.5kg]) # isobaric heat capacity of 1 mol of mixture, at a pressure of 5 bar
+Cp2 = isobaric_heat_capacity(model_unit, 1.0l/kg, 25°C, [0.4kg, 0.6kg])  # isobaric heat capacity of 1 kg of mixture, at a volume of 1 L/kg
 ```
 
 Note that if you do not wish to import specific units, you may also just use a Unitful string, `pressure = 20u"psi"`. This is only supported for bulk properties.
-
-## Customisation
-
-Although we provide many models, methods and parameters, Clapeyron also allows for easy customisation in all three of these aspects. To find out more how to customise your models, please read the relevant sections in the documentation.

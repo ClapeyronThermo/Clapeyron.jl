@@ -18,6 +18,7 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
     p,T,V0 = promote(p,T,V0)
     return _volume_compress(model,p,T,z,V0,max_iters)
 end
+
 function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(p+T+first(z))
     _nan = _0/_0
@@ -27,40 +28,16 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         _V < log(lb_v) && return zero(_V)/zero(_V)
         _V = exp(_V)
         _p,dpdV = p∂p∂V(model,_V,T,z)
+        abs(_p-p) < 3eps(p) && return zero(_V)
         _Δ = (p-_p)/(_V*dpdV)
         return _Δ
     end
-
     function f_fixpoint(_V)
         Δ = logstep(_V)
-        _V + sign(Δ)*abs(Δ)^(one(Δ)+Δ)
+        vv = _V + Δ
+        return vv
     end
-
-    Δ0 = logstep(logV0)
-    Δ00 = Δ0
-    Δ1 = logstep(logV0+Δ0)
-    logV1 = logV0
-    iter = 0
-
-    #convergence hill. we do Successive substitution until we land on a
-    #good initial point for aitken acceleration
-    for i in 1:20
-        if abs(Δ00) > abs(Δ1)
-            break
-        end
-        if !isfinite(Δ1)
-            return _nan
-        end
-        Δ0 = Δ1
-        Δ1 = logstep(logV1+Δ0)
-        logV1 = logV1 + Δ1
-        iter +=1
-    end
-    if iter == 20
-        return _nan
-    end
-    res = @nan(Solvers.fixpoint(f_fixpoint,logV1,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
-
+    res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
     return exp(res)
 end
 
@@ -174,3 +151,5 @@ function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
 end
 
 export volume
+
+

@@ -14,6 +14,39 @@ end
 abstract type WalkerIdealModel <: IdealModel end
 @newmodelgc WalkerIdeal WalkerIdealModel WalkerIdealParam
 
+"""
+    WalkerIdeal <: WalkerIdealModel
+    WalkerIdeal(components::Array{String,1}; 
+    userlocations::Array{String,1}=String[], 
+    verbose=false)
+
+## Input parameters
+
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Nrot`: Single Parameter (`Int`)
+- `theta1`: Single Parameter (`Float64`)
+- `theta2`: Single Parameter (`Float64`)
+- `theta3`: Single Parameter (`Float64`)
+- `theta4`: Single Parameter (`Float64`)
+- `deg1`: Single Parameter (`Int`)
+- `deg2`: Single Parameter (`Int`)
+- `deg3`: Single Parameter (`Int`)
+- `deg4`: Single Parameter (`Int`)
+
+## Description
+
+Walker [1] Group Contribution Ideal Model.
+```
+Cpᵢ(T)/R = (5+NRot)/2 ∑νᵢₖ∑gₖᵥ(θₖᵥ/T)^2*exp(θₖᵥ/T)/(1-exp(θₖᵥ/T)) , v ∈ 1:4 
+```
+
+## References
+
+1. Walker, P. J., & Haslam, A. J. (2020). A new predictive group-contribution ideal-heat-capacity model and its influence on second-derivative properties calculated using a free-energy equation of state. Journal of Chemical and Engineering Data, 65(12), 5809–5829. doi:10.1021/acs.jced.0c00723
+
+"""
+WalkerIdeal
+
 export WalkerIdeal
 function WalkerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
     groups = GroupParam(components,["ideal/WalkerIdeal_Groups.csv"], verbose=verbose)
@@ -45,8 +78,8 @@ function a_ideal(model::WalkerIdealModel,V,T,z)
     g2 = model.params.deg2.values
     g3 = model.params.deg3.values
     g4 = model.params.deg4.values
-    θ_vib = [θ1, θ2, θ3, θ4]
-    g_vib = [g1, g2, g3, g4]
+    θ_vib = (θ1, θ2, θ3, θ4)
+    g_vib = (g1, g2, g3, g4)
     n = model.groups.n_flattenedgroups
     res = zero(V+T+first(z))
     Σz = sum(z)

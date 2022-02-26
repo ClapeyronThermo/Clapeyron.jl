@@ -11,16 +11,20 @@ using FillArrays: FillArrays
 
 using Roots: Roots
 using NLSolvers
-import Metaheuristics
+import BlackBoxOptim
 using DiffResults, ForwardDiff
 using Scratch 
+using Unitful
+import LogExpFunctions
 
 include("solvers/Solvers.jl")
 using .Solvers
 using .Solvers: log, sqrt
 ∂Tag = Solvers.∂Tag
-using Unitful
-import LogExpFunctions
+
+include("utils/fractions.jl")
+import .Fractions
+using .Fractions: FractionVector
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
 include("base/constants.jl") 
@@ -65,6 +69,14 @@ include("models/ideal/ReidIdeal.jl")
 include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
 
+#softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
+include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
+include("models/EmpiricHelmholtz/IAPWS95/IAPWS95Ideal.jl")
+include("models/EmpiricHelmholtz/PropaneRef.jl")
+include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
+include("models/EmpiricHelmholtz/LJRef/LJRefIdeal.jl")
+include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
+
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
@@ -73,6 +85,8 @@ include("models/SAFT/CPA/variants/sCPA.jl")
 include("models/SAFT/SAFTVRSW/SAFTVRSW.jl")
 include("models/SAFT/LJSAFT/LJSAFT.jl")
 include("models/SAFT/softSAFT/softSAFT.jl")
+include("models/SAFT/softSAFT/variants/softSAFT2016.jl")
+
 include("models/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
 include("models/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
@@ -110,18 +124,12 @@ include("models/cubic/PR/variants/PR78.jl")
 include("models/cubic/PR/variants/VTPR.jl")
 include("models/cubic/PR/variants/UMRPR.jl")
 
-include("models/EmpiricHelmholtz/IAPWS95.jl")
-include("models/EmpiricHelmholtz/PropaneRef.jl")
-include("models/EmpiricHelmholtz/LJRef.jl")
-include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
-
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
 include("models/SPUNG/SPUNG.jl")
 include("models/UFTheory/UFTheory.jl")
 
 include("models/cached/CachedEoS.jl")
-
 include("utils/estimation.jl")
-
+include("utils/misc.jl")
 end # module

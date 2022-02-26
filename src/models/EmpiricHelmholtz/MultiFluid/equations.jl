@@ -233,6 +233,11 @@ function x0_volume_liquid(model::MultiFluidModel,T,z)
     return 1.01*lb_volume(model,z)
 end
 
+function x0_volume_gas(model::MultiFluidModel,p,T,z=SA[1.])
+    V = sum(z)*R̄*T/p
+    return V
+end
+
 molecular_weight(model::MultiFluidModel,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
 mw(model::MultiFluidModel) = model.properties.Mw.values
 

@@ -1,3 +1,18 @@
+
+
+"""
+    ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
+
+given `Tc::SingleParam`, `pc::SingleParam`, `kij::PairParam` and `mixing <: MixingRule`, it will return 
+`PairParam`s `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the van der Wals One-Fluid mixing rule. that is:
+```
+aᵢⱼ = sqrt(aᵢ*aⱼ)*(1-kᵢⱼ)
+bᵢⱼ = (bᵢ + bⱼ)/2
+```
+
+"""
+function ab_premixing end
+
 function ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
     Ωa, Ωb = ab_consts(T)
     _Tc = Tc.values
@@ -11,6 +26,7 @@ function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
     invn2 = (one(n)/n)^2
     a = model.params.a.values
     b = model.params.b.values
+    T = T*float(one(T))
     α = @f(α_function,model.alpha)
     c = @f(translation,model.translation)
     if length(z)>1
@@ -23,7 +39,7 @@ function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
     return ā ,b̄, c̄
 end
 
-function second_virial_coefficient(model::ABCubicModel,T,z = SA[1.0])
+function second_virial_coefficient(model::ABCubicModel,T::Real,z = SA[1.0])
     #@info "fast shortcut"
     a,b,c = cubic_ab(model,1e-4,T,z)
     return b-a/(R̄*T)
@@ -68,6 +84,13 @@ function x0_crit_pure(model::CubicModel)
     (1.0, log10(lb_v/0.3))
 end
 
+function crit_pure(model::ABCubicModel)
+    Tc = model.params.Tc.values[1]
+    Pc = model.params.Pc.values[1]
+    Vc = volume(model,Pc,Tc,SA[1.],phase=:v)
+    return (Tc,Pc,Vc)
+end
+
 function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
     lb_v   =lb_volume(model,z)
     RTp = R̄*T/p
@@ -82,6 +105,7 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
     xx = (x1,x2,x3)
     isreal = imagfilter.(xx)
     vvv = extrema(real.(xx))
+    
     zl,zg = vvv
     vvl,vvg = RTp*zl,RTp*zg
     err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
@@ -94,9 +118,9 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
         vl = real(sols[i])*RTp
         vg = real(sols[i])*RTp
     elseif  sum(isreal) == 0
-        #try to use the default volume solver
+       
         V0 = x0_volume(model,p,T,z;phase)
-        v = _volume_compress(model,p,T,V0)
+        v = _volume_compress(model,p,T,z,V0)
         isnan(v) && err()
         return v
     end

@@ -7,6 +7,53 @@ struct MHV2Rule{γ} <: MHV2RuleModel
 end
 
 @registermodel MHV2Rule
+
+"""
+    MHV2Rule{γ} <: MHV2RuleModel
+    
+    MHV2Rule(components::Vector{String};
+    activity = Wilson,
+    userlocations::Vector{String}=String[],
+    activity_userlocations::Vector{String}=String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+None
+
+## Input models 
+
+- `activity`: Activity Model
+
+## Description
+
+Modified Huron-Vidal Mixing Rule, Second Order.
+```
+aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
+bᵢⱼ = (bᵢ + bⱼ)/2
+b̄ = ∑bᵢⱼxᵢxⱼ
+c̄ = ∑cᵢxᵢ
+ᾱᵢ  = aᵢαᵢ/bᵢRT
+ċ = -q₁*Σᾱᵢxᵢ - q₂*Σᾱᵢxᵢ^2 - gᴱ/RT - ∑log(bᵢᵢ/b̄)
+ā = (-q₁ - √(q₁^2 - 4q₂ċ))/(2q₂)
+
+if the model is Peng-Robinson:
+    q₁ = -0.4347, q₂ = -0.003654
+if the model is Redlich-Kwong:
+    q₁ = -0.4783, q₂ = -0.0047
+    (-0.4783,-0.0047)
+```
+
+to use different values for `q₁` and `q₂`, overload `Clapeyron.MHV1q(::CubicModel,::MHV2Model) = (q₁,q₂)`
+
+
+## References
+1. Michelsen, M. L. (1990). A modified Huron-Vidal mixing rule for cubic equations of state. Fluid Phase Equilibria, 60(1–2), 213–219. doi:10.1016/0378-3812(90)85053-d
+
+"""
+MHV2Rule
+
+
 export MHV2Rule
 function MHV2Rule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)
@@ -16,8 +63,9 @@ function MHV2Rule(components::Vector{String}; activity = Wilson, userlocations::
     return model
 end
 
-MHV2q(::PRModel) = (-0.4347,-0.003654)
-MHV2q(::RKModel) = (-0.4783,-0.0047)
+MHV2q(::MHV2RuleModel,::PRModel) = (-0.4347,-0.003654)
+MHV2q(::MHV2RuleModel,::RKModel) = (-0.4783,-0.0047)
+
 function mixing_rule(model::Union{PRModel,RKModel},V,T,z,mixing_model::MHV2RuleModel,α,a,b,c)
     n = sum(z)
     invn = (one(n)/n)
@@ -26,7 +74,7 @@ function mixing_rule(model::Union{PRModel,RKModel},V,T,z,mixing_model::MHV2RuleM
     b̄ = dot(z,Symmetric(b),z) * invn2
     c̄ = dot(z,c)*invn
     #ᾱ = a.*sqrt.(α.*α')./(b*R̄*T)
-    q1,q2 = MHV2q(model)
+    q1,q2 = MHV2q(mixing_model,model)
     Σlogb = zero(first(z))
     Σab = zero(T+first(z))
     Σab2 = Σab

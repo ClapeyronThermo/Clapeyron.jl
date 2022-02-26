@@ -3,6 +3,12 @@ function excess_gibbs_free_energy(model::ActivityModel,p,T,z)
     return sum(z[i]*R̄*T*log(γ[i]) for i ∈ @comps)
 end
 
+#for use in models that have gibbs free energy defined.
+function activity_coefficient_ad(model::ActivityModel,p,T,z)
+    X = gradient_type(p,T,z)
+    return exp.(ForwardDiff.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
+end
+
 function eos(model::ActivityModel,V,T,z)
     Σz = sum(z)
     lnΣz = log(Σz)
@@ -70,7 +76,6 @@ function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     return -df(T)*T^2
 end
 
-
 function mixing(model::ActivityModel,p,T,z,::typeof(gibbs_free_energy))
     x = z./sum(z)
     return excess_gibbs_free_energy(model,p,T,z)+dot(z,log.(x))*R̄*T
@@ -81,6 +86,15 @@ function mixing(model::ActivityModel,p,T,z,::typeof(entropy))
     g,dg = Solvers.f∂f(f,T)
     return -dg*T-g
 end
+
+function gibbs_solvation(model::ActivityModel,T)
+    z = [1.0,1e-30] 
+    p,v_l,v_v = saturation_pressure(model.puremodel[1],T)
+    p2,v_l2,v_v2 = saturation_pressure(model.puremodel[2],T)
+    γ = activity_coefficient(model,p,T,z)
+    K = v_v/v_l*γ[2]*p2/p   
+    return -R̄*T*log(K)
+end    
 
 function lb_volume(model::ActivityModel,z = SA[1.0])
     b = maximum([model.puremodel[i].params.b.values[1,1] for i ∈ @comps])

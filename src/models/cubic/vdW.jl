@@ -23,6 +23,56 @@ end
 @registermodel vdW
 export vdW
 
+"""
+    vdW(components::Vector{String};
+    idealmodel=BasicIdeal,
+    alpha = NoAlpha,
+    mixing = vdW1fRule,
+    activity=nothing,
+    translation=NoTranslation,
+    userlocations=String[], 
+    ideal_userlocations=String[],
+    alpha_userlocations = String[],
+    mixing_userlocations = String[],
+    activity_userlocations = String[],
+    translation_userlocations = String[],
+    verbose=false)
+
+## Input parameters
+- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `k`: Pair Parameter (`Float64`)
+
+## Model Parameters
+- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `a`: Pair Parameter (`Float64`)
+- `b`: Pair Parameter (`Float64`)
+
+## Input models
+- `idealmodel`: Ideal Model
+- `alpha`: Alpha model
+- `mixing`: Mixing model
+- `activity`: Activity Model, used in the creation of the mixing model.
+- `translation`: Translation Model
+
+## Description
+
+van der Wals Equation of state.
+
+```
+P = RT/(V-Nb) + a•α(T)/V²
+```
+
+## References
+
+1. van der Waals JD. Over de Continuiteit van den Gasen Vloeistoftoestand. PhD thesis, University of Leiden; 1873
+
+"""
+vdW
+
 function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
@@ -34,7 +84,7 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-     verbose=false)
+    verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
     pc = params["pc"]
@@ -76,8 +126,6 @@ function cubic_poly(model::vdWModel,p,T,z)
     B = b*p*RT⁻¹
     return (-A*B, A, -B-_1, _1),c
 end
-
-
 
 function a_res(model::vdWModel, V, T, z)
     n=sum(z)

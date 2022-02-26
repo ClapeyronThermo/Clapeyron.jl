@@ -5,8 +5,47 @@ struct BMAlphaParam <: EoSParam
 end
 
 @newmodelsimple BMAlpha BMAlphaModel BMAlphaParam
-
 export BMAlpha
+
+"""
+    BMAlpha <: BMAlphaModel
+    
+    MTAlpha(components::Vector{String};
+    userlocations::Vector{String}=String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+- `w`: Single Parameter (`Float64`)
+
+## Model Parameters
+
+- `acentricfactor`: Single Parameter (`Float64`)
+
+## Description
+
+Cubic alpha `(α(T))` model. Default for `UMRPR` EoS.
+```
+if Trᵢ > 1
+    αᵢ = (exp((1-2/(2+mᵢ))*(1-Trᵢ^(1+mᵢ/2))))^2
+else
+    αᵢ = (1+mᵢ*(1-√(Trᵢ)))^2
+
+Trᵢ = T/Tcᵢ
+
+for PR models:
+    mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
+for RK models:
+    mᵢ = 0.480 + 1.547ωᵢ - 0.176ωᵢ^2
+```
+
+## References
+
+1. .M. Boston, P.M. Mathias, Proceedings of the 2nd International Conference on Phase Equilibria and Fluid Properties in the Chemical Process Industries, West Berlin, March, 1980, pp. 823–849
+
+"""
+BMAlpha
+
 function BMAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = SingleParam(params["w"],"acentric factor")
@@ -17,16 +56,19 @@ end
 
 function α_function(model::RKModel,V,T,z,alpha_model::BMAlphaModel)
     Tc = model.params.Tc.values
-    Tr = @. T/Tc
     ω  = alpha_model.params.acentricfactor.values
-    m  = @. 0.480+1.547*ω-0.176*ω^2
-    α  = @. (Tr>1)*(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2+(Tr<=1)*(1+m*(1-√(Tr)))^2
+    α = zeros(typeof(T),length(Tc))
+    for i in @comps
+        ωi = ω[i]
+        m = evalpoly(ωi,(0.480,1.547,-0.176))
+        Tr = T/Tc[i]
+        α[i] = ifelse(Tr>1,(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2,(1+m*(1-√(Tr)))^2)
+    end
     return α
 end
 
 function α_function(model::PRModel,V,T,z,alpha_model::BMAlphaModel)
     Tc = model.params.Tc.values
-    Tr = @. T/Tc
     ω  = alpha_model.params.acentricfactor.values
     #m  = @. 0.37464+1.54226*ω-0.26992*ω^2
     #α  = @. (Tr>1)*(exp((1-2/(2+m))*(1-Tr^(1+m/2))))^2+(Tr<=1)*(1+m*(1-√(Tr)))^2

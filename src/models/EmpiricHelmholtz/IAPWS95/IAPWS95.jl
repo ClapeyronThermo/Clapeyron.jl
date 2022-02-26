@@ -44,8 +44,10 @@ struct IAPWS95Consts <: EoSParam
     end
 end
 
+
+
 struct IAPWS95 <: EmpiricHelmholtzModel
-    components::Array{String,1}
+    components::Vector{String}
     consts::IAPWS95Consts
     references::Vector{String}
 end
@@ -54,9 +56,46 @@ function crit_pure(model::IAPWS95)
     return (model.consts.Tc,model.consts.Pc,model.consts.Vc)
 end
 
+
+
+"""
+    IAPWS95 <: EmpiricHelmholtzModel
+    IAPWS95()
+
+## Input parameters
+
+None
+
+## Description
+
+IAPWS95 (International Association for the Properties of Water and Steam) Pure water Model, 2018 update.
+
+```
+δ = ρ/ρc
+τ = T/Tc
+a⁰(δ,τ) = log(δ) + n⁰₁ + n⁰₂τ + n⁰₃log(τ) + ∑n⁰ᵢ(1-exp(-γ⁰ᵢτ)), i ∈ 4:8
+aʳ(δ,τ)  = aʳ₁+ aʳ₂ + aʳ₃ + aʳ₄
+aʳ₁(δ,τ)  =  ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:7
+aʳ₂(δ,τ)  =  ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 8:51
+aʳ₃(δ,τ)  =  ∑nᵢexp(-αᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 52:54
+aʳ₄(δ,τ) = ∑nᵢδΨΔ^(bᵢ), i ∈ 55:56
+Δ = θ^2 + Bᵢ[(δ - 1)^2]^aᵢ
+θ = (1 - τ) + Aᵢ[(δ - 1)^2]^(1/2βᵢ)
+Ψ = exp(-Cᵢ(δ - 1)^2 - Dᵢ(τ - 1)^2)
+```
+parameters `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`α`,`β`,`γ`,`ε`,`A`,`B`,`C`,`D` where obtained via fitting.
+
+## References
+
+1. Wagner, W., & Pruß, A. (2002). The IAPWS formulation 1995 for the thermodynamic properties of ordinary water substance for general and scientific use. Journal of physical and chemical reference data, 31(2), 387–535. doi:10.1063/1.1461829
+2. IAPWS R6-95 (2018). Revised Release on the IAPWS Formulation 1995 for the Thermodynamic Properties of Ordinary Water Substance for General and Scientific Use
+
+"""
+IAPWS95
+
 IAPWS95() = IAPWS95(["water"],IAPWS95Consts(),["IAPWS R6-95(2018)"])
 
-function _f0(_model::IAPWS95,δ,τ)
+function iapws_f0(model,δ,τ)
     n= (-8.3204464837497, 6.6832105275932, 3.00632,0.012436, 0.97315, 1.2795, 0.96956, 0.24873)
     γ = (0.0, 0.0, 0.0, 1.28728967, 3.53734222, 7.74073708, 9.24437796,27.5075105)
     res = log(δ)+n[1] + n[2]*τ + n[3]*log(τ)
@@ -65,6 +104,9 @@ function _f0(_model::IAPWS95,δ,τ)
     end
     return res
 end
+
+_f0(model::IAPWS95,δ,τ) = iapws_f0(model,δ,τ)
+
 
 function _fr(model::IAPWS95,δ,τ)
     n = model.consts.n::Vector{Float64}
@@ -223,22 +265,25 @@ function x0_volume(model::IAPWS95,p,T,z=[1.0];phase = :unknown)
         if model.consts.Pc > p
             return sat_v = saturated_water_liquid(T)
         else
-            return volume_virial(model,p,T,z) #must look for better initial point here
+            return model.consts.Vc #must look for better initial point here
         end
     elseif is_vapour(phase)
-        x0val = 1.1*saturated_water_vapor(T)
+        return 1.1*saturated_water_vapor(T)
     elseif is_supercritical(phase)
-        x0val = model.consts.Vc
-
+        return model.consts.Vc
     end
-    return x0val
 end
 
 function x0_sat_pure(model::IAPWS95,T)
-    vl = saturated_water_liquid(T)
-    vg = saturated_water_vapor(T)
-    x0  = (vl,vg)
+    if T > 647.096
+        nan = zero(T)/zero(T)
+        return nan,nan
+    else
+        vl = saturated_water_liquid(T)
+        vg = saturated_water_vapor(T)
+        x0  = (vl,vg)
     return log10.(x0)
+    end
 end
 
 function T_scale(model::IAPWS95,z=SA[1.0])

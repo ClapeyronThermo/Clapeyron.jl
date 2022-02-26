@@ -4,19 +4,21 @@ Original code by Thomas Moore
 included in https://github.com/ypaul21/Clapeyron.jl/pull/56
 =#
 """
-    DETPFlash(;numphases = 2;max_steps = 1e4*(numphases-1),population_size =50,time_limit = Inf)
+    DETPFlash(;numphases = 2;max_steps = 1e4*(numphases-1),population_size =20,time_limit = Inf,verbose = false)
 
 Method to solve non-reactive multicomponent flash problem by finding global minimum of Gibbs Free Energy via Differential Evolution.
 
 User must assume a number of phases, `numphases`. If true number of phases is smaller than numphases, model should predict either (a) identical composition in two or more phases, or (b) one phase with negligible total number of moles. If true number of phases is larger than numphases, a thermodynamically unstable solution will be predicted.
 
 The optimizer will stop at `max_steps` evaluations or at `time_limit` seconds
+
 """
 Base.@kwdef struct DETPFlash <: TPFlashMethod
     numphases::Int = 2
     max_steps::Int = 1e4*(numphases-1)
     population_size::Int = 50
     time_limit::Float64 = Inf
+    verbose::Bool = false
 end
 
 #z is the original feed composition, x is a matrix with molar fractions, n is a matrix with molar amounts
@@ -50,28 +52,38 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     nvals = zeros(TYPE,numphases, numspecies)
 
     GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals)
-
-    options = Metaheuristics.Options(time_limit = method.time_limit,iterations = method.max_steps,seed = UInt(373))
-    algorithm = Metaheuristics.DE(N=method.population_size,options=options)
-
     #Minimize Gibbs Free Energy
-#     result = bboptimize(GibbsFreeEnergy; SearchRange = (0.0, 1.0), 
-#         NumDimensions = numspecies*(numphases-1), MaxSteps=MaxSteps, PopulationSize = PopulationSize, 
-#         TraceMode = TraceMode)
     
+    #=
+    options = Metaheuristics.Options(time_limit = method.time_limit,iterations = method.max_steps,seed = UInt(373))
+    algorithm = Metaheuristics.WOA(N=method.population_size,options=options)   
     bounds = vcat(zeros(TYPE,(1,numspecies*(numphases-1))),ones(TYPE,1,numspecies*(numphases-1)))
     result = Metaheuristics.optimize(GibbsFreeEnergy,bounds,algorithm)
     
     dividers = reshape(Metaheuristics.minimizer(result), 
             (numphases - 1, numspecies))
+    best_f = Metaheuristics.minimum(result)
+    
+    =#
+    
+    result = BlackBoxOptim.bboptimize(GibbsFreeEnergy; 
+        SearchRange = (0.0, 1.0), 
+        NumDimensions = numspecies*(numphases-1),
+        MaxSteps=method.max_steps,
+        PopulationSize = method.population_size,
+        MaxTime = method.time_limit,
+        TraceMode = ifelse(method.verbose,:verbose,:silent))
         
+    dividers = reshape(BlackBoxOptim.best_candidate(result), 
+            (numphases - 1, numspecies))
+    best_f = BlackBoxOptim.best_fitness(result)
     #Initialize arrays xij and nvalsij, 
     #where i in 1..numphases, j in 1..numspecies
     #xij is mole fraction of j in phase i.
     #nvals is mole numbers of j in phase i.
     partition!(dividers,n,x,nvals)
     
-    return (x, nvals, Metaheuristics.minimum(result))
+    return (x, nvals, best_f)
 end
 """
     Obj_de_tp_flash(model,p,T,z,dividers,numphases)

@@ -37,6 +37,34 @@ struct PropaneRef <: EmpiricHelmholtzModel
     references::Vector{String}
 end
 
+"""
+    PropaneRef <: EmpiricHelmholtzModel
+    PropaneRef()
+
+## Input parameters
+
+None
+
+## Description
+
+Propane Reference Equation of State
+```
+δ = ρ/ρc
+τ = T/Tc
+a⁰(δ,τ) = log(δ) + n⁰₁ + n⁰₂τ + n⁰₃log(τ) + ∑n⁰ᵢ(1-exp(-γ⁰ᵢτ)), i ∈ 4:7
+aʳ(δ,τ)  = aʳ₁+ aʳ₂ + aʳ₃
+aʳ₁(δ,τ)  =  ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:5
+aʳ₂(δ,τ)  =  ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 6:11
+aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 12:18
+
+```
+parameters  `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
+
+## References
+1. Lemmon, E. W., McLinden, M. O., & Wagner, W. (2009). Thermodynamic properties of propane. III. A reference equation of state for temperatures from the melting line to 650 K and pressures up to 1000 MPa. Journal of Chemical and Engineering Data, 54(12), 3141–3180. doi:10.1021/je900217v
+"""
+PropaneRef
+
 PropaneRef() = PropaneRef(["propane"],PropaneRefConsts(),["1021/je900217v"])
 
 
@@ -45,17 +73,18 @@ is_splittable(::PropaneRef) = false
 function _f0(::PropaneRef,δ,τ)
     δ,τ = promote(δ,τ)
     _1 = one(δ)
-    a₁ = -4.970583
-    a₂ = 4.29352     
-    b = (1.062478, 3.344237,5.363757,11.762957)
-    v = (3.043,5.874,9.337,7.922)
-    α₀ = log(δ) + 3*log(τ) + a₁ + a₂*τ +
-     v[1]*log(_1-exp(-b[1]*τ)) + 
-     v[2]*log(_1-exp(-b[2]*τ)) + 
-     v[3]*log(_1-exp(-b[3]*τ)) + 
-     v[4]*log(_1-exp(-b[4]*τ))
+    n₁ = -4.970583
+    n₂ = 4.29352     
+    γ = (1.062478, 3.344237,5.363757,11.762957)
+    n = (3.043,5.874,9.337,7.922)
+    α₀ = log(δ) + 3*log(τ) + n₁ + n₂*τ +
+     n[1]*log(_1-exp(-γ[1]*τ)) + 
+     n[2]*log(_1-exp(-γ[2]*τ)) + 
+     n[3]*log(_1-exp(-γ[3]*τ)) + 
+     n[4]*log(_1-exp(-γ[4]*τ))
      return α₀
 end
+
 
 function _fr1(model::PropaneRef,δ,τ)
     δ,τ = promote(δ,τ)
@@ -194,5 +223,4 @@ export PropaneRef
     ,ref_P_0 = 100000.0
     ,ref_T_ideal_H = 26148.48 ## J·mol-1
     ,ref_T_ideal_S = 157.9105 ##J·mol-1·K-1
-
 =#

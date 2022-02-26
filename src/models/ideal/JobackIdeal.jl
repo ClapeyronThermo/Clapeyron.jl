@@ -25,9 +25,67 @@ end
 
 
 abstract type JobackIdealModel <: IdealModel end
-@newmodelgc JobackIdeal JobackIdealModel JobackIdealParam
+
+struct JobackIdeal <: JobackIdealModel
+    components::Array{String,1}
+    icomponents::UnitRange{Int}
+    groups::GroupParam
+    params::JobackIdealParam
+    reidmodel::ReidIdeal
+    references::Array{String,1}
+end
+@registermodel JobackIdeal
 
 export JobackIdeal
+
+"""
+    JobackIdeal <: JobackIdealModel
+    JobackIdeal(components; 
+    userlocations::Array{String,1}=String[], 
+    verbose=false)
+
+## Input parameters
+
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `N_a`: Single Parameter (`Float64`)
+- `T_c`: Single Parameter (`Float64`)
+- `P_c`: Single Parameter (`Float64`)
+- `V_c`: Single Parameter (`Float64`)
+- `T_b`: Single Parameter (`Float64`)
+- `T_m`: Single Parameter (`Float64`)
+- `H_form`: Single Parameter (`Float64`)
+- `G_form`: Single Parameter (`Float64`)
+- `a`: Single Parameter (`Float64`)
+- `b`: Single Parameter (`Float64`)
+- `c`: Single Parameter (`Float64`)
+- `d`: Single Parameter (`Float64`)
+- `H_fusion`: Single Parameter (`Float64`)
+- `H_vap`: Single Parameter (`Float64`)
+- `eta_a`: Single Parameter (`Float64`)
+- `eta_b`: Single Parameter (`Float64`)
+
+## Description
+
+Joback Group Contribution Ideal Model. GC version of `ReidIdeal`. Helmholtz energy obtained via integration of specific heat capacity:
+
+```
+aᵢ = ∑(νᵢₖbₖ) - 37.93
+bᵢ = ∑(νᵢₖbₖ) + 0.210
+cᵢ = ∑(νᵢₖcₖ) - 3.91e-4
+dᵢ = ∑(νᵢₖbₖ) + 2.06e-7
+Cpᵢ(T) = aᵢ  + bᵢT + cᵢT^2 + dᵢT^3
+```
+
+The GC-averaged Reid Model is available by using `ReidIdeal(model::JobackIdeal)`.
+
+The estimated critical point of a single component can be obtained via `crit_pure(model::JobackIdeal)`
+## References
+
+1. Joback, K. G., & Reid, R. C. (1987). Estimation of pure-component properties from group-contributions. Chemical Engineering Communications, 57(1–6), 233–243. doi:10.1080/00986448708960487
+
+"""
+JobackIdeal
+
 function JobackIdeal(components;userlocations=String[], verbose=false)
     groups = GroupParam(components,["ideal/JobackIdeal_Groups.csv"], verbose=verbose)
     params = getparams(groups, ["ideal/JobackIdeal.csv","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
@@ -67,33 +125,31 @@ function JobackIdeal(components;userlocations=String[], verbose=false)
     eta_a,
     eta_b)
     references = ["10.1080/00986448708960487"]
-    sites = SiteParam(groups.components)
-    model = JobackIdeal(packagedparams, groups, sites, BasicIdeal, references=references, verbose=verbose)
+    
+    comps = 1:length(groups.components)
+    i_groups = groups.i_groups
+    n = groups.n_flattenedgroups
+    coeffs = Vector{NTuple{4,Float64}}(undef,length(comps)) 
+    for i in comps
+        #res +=z[i]*(log(z[i]/V))/Σz
+        ni = n[i]
+        _a = ∑(a.values[j]*ni[j] for j in i_groups[i]) - 37.93
+        _b = ∑(b.values[j]*ni[j] for j in i_groups[i]) + 0.210
+        _c = ∑(c.values[j]*ni[j] for j in i_groups[i]) - 3.91e-4
+        _d = ∑(d.values[j]*ni[j] for j in i_groups[i]) + 2.06e-7
+        coeffs[i] = (_a,_b,_c,_d)
+    end
+    reidparam = ReidIdealParam(SingleParam("GC-averaged Reid Coefficients",groups.components,coeffs))
+    reidmodel = ReidIdeal(reidparam)
+    model = JobackIdeal(groups.components,comps,groups,packagedparams,reidmodel,references)
     return model
 end
 
+ReidIdeal(model::JobackIdeal) = model.reidmodel
 
-function C_p(model::JobackIdeal,T,z=SA[1.0])
-    a = model.params.a.values
-    b = model.params.b.values
-    c = model.params.c.values
-    d = model.params.d.values
-    n = model.groups.n_flattenedgroups
-    res = zero(T+first(z))
-    Σz = sum(z)
-    @inbounds for i in @comps
-        ni = n[i]
-        c0 = ∑(a[j]*ni[j] for j in @groups(i)) - 37.93
-        c1 = ∑(b[j]*ni[j] for j in @groups(i)) + 0.210
-        c2 = ∑(c[j]*ni[j] for j in @groups(i)) - 3.91e-4
-        c3 = ∑(d[j]*ni[j] for j in @groups(i)) + 2.06e-7
-        pol = (c0,c1,c2,c3)
-        res +=z[i]*evalpoly(T,pol)
-    end
-    return res/Σz
+function VT_isobaric_heat_capacity(model::JobackIdeal,V,T,z=SA[1.])
+    return VT_isobaric_heat_capacity(model.reidmodel,V,T,z)
 end
-
-
 
 function T_b(model::JobackIdeal)
     n = model.groups.n_flattenedgroups
@@ -163,26 +219,40 @@ function crit_pure(model::JobackIdeal)
 end
 
 function a_ideal(model::JobackIdealModel, V, T, z)
-    a = model.params.a.values
-    b = model.params.b.values
-    c = model.params.c.values
-    d = model.params.d.values
-    n = model.groups.n_flattenedgroups
-    res = zero(V+T+first(z))
-    Σz = sum(z)
-    x = z/Σz
-    @inbounds for i in @comps
-        ni = n[i]
-        c0 = ∑(a[j]*ni[j] for j in @groups(i)) - 37.93
-        c1 = ∑(b[j]*ni[j] for j in @groups(i)) + 0.210
-        c2 = ∑(c[j]*ni[j] for j in @groups(i)) - 3.91e-4
-        c3 = ∑(d[j]*ni[j] for j in @groups(i)) + 2.06e-7
-        polycoeff = [c0,c1,c2,c3]
-        res +=x[i]*(log(z[i]/V) + 1/(R̄*T)*(sum(polycoeff[k]/k*(T^k-298^k) for k in 1:4)) -
-        1/R̄*((polycoeff[1]-R̄)*log(T/298)+sum(polycoeff[k]/(k-1)*(T^(k-1)-298^(k-1)) for k in 2:4)))
-    end
-    return res
+    return a_ideal(model.reidmodel,V,T,z)
 end
 
 export JobackIdeal
-#acetone = [("acetone",["−CH3"=>1,">C=O (non-ring)"=>1])]
+
+
+##utilities
+#=
+function reid_to_joback(a,b,c,d)
+    _a = a + 37.93
+    _b = b - 0.210
+    _c = c + 3.91e-4
+    _d = d - 2.06e-7
+    return (_a,_b,_c,_d)
+end
+
+#Vc = 5.594807453383915e-5
+#Tc = 647.096
+#Pc = 2.2064e7
+#Tb = 373.15
+function crit_to_joback(Tb,Tc,Pc,Vc,na)
+    tb = Tb - 198.2
+    vc = Vc*1e6 - 17.5
+    Tx = Tc/Tb
+    Tx = 1/Tx - 0.584 #(0.965Ti(1 - Ti))
+    Tx = Tx/0.965
+    #Tx = Ti(1-Ti), #-Ti2 + Ti - Tx = 0, Ti2 - Ti + Tx = 0 
+    tc = (1 + sqrt(1 -4Tx))/2
+    fxt(t) = Tb*(0.584 + 0.965*t - t*t)^-1 - Tc
+    tc = Roots.find_zero(fxt,tc)
+    fxp(p) = (0.113 + 0.0032*na - p)^-2 - 1e-5*Pc
+    pc = sqrt(abs(1/(Pc*Pc*1e-10) -0.113 - 0.0032*na)) 
+    @show pc
+    pc = Roots.find_zero(fxp,pc)
+    return (tc,pc,vc,tb)
+end
+=#

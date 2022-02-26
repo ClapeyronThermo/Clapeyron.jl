@@ -100,9 +100,10 @@ end
    * `userlocations`: A list of strings that are paths to the databases that you are using.
    * `ideal_userlocations`: Same as above, but for ideal models.
    * `verbose`: For when you want to print more information to the console.
+   * `assoc_options`: For use in the association sites solver.
 
 ```Julia
-function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false,assoc_options = AssocOptions())
   	# Obtain a Dict of parameters. We pass in custom locations through the optional parameter userlocations.
     params = getparams(components; userlocations=userlocations, verbose=verbose)
   
@@ -130,7 +131,7 @@ function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
     # Build the model.
-    model = PCSAFT(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
+    model = PCSAFT(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose,assoc_options = assoc_options)
   
     # Return the PCSAFT object that you have just created.
     return model

@@ -7,8 +7,38 @@ struct UMRRule{γ} <: UMRRuleModel
 end
 
 @registermodel UMRRule
+
+"""
+    UMRRule{γ} <: UMRRuleModel
+    
+    UMRRule(components::Vector{String};
+    activity = UNIFAC,
+    userlocations::Vector{String}=String[],
+    activity_userlocations::Vector{String}=String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+None
+
+## Input models 
+
+- `activity`: Activity Model
+
+## Description
+
+Mixing Rule used by the Universal Mixing Rule Peng-Robinson (`UMRPR`) equation of state.
+```
+aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
+bᵢⱼ = ((√bᵢ +√bⱼ)/2)^2
+b̄ = ∑bᵢⱼxᵢxⱼ
+c̄ = ∑cᵢxᵢ
+ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - [gᴱ/RT]/0.53)
+```
+"""
+UMRRule
 export UMRRule
-function UMRRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function UMRRule(components::Vector{String}; activity = UNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)   
 
     references = ["10.1021/ie049580p"]
@@ -27,14 +57,21 @@ function ab_premixing(::Type{PR},mixing::UMRRuleModel,Tc,pc,kij)
     return a,b
 end
 
+UMR_g_E(model,V,T,z) = excess_gibbs_free_energy(model,V,T,z)
+
+function UMR_g_E(model::UNIFACModel,V,T,z) 
+    Σz = sum(z)
+    lnγ_SG_  = lnγ_SG(model,1e5,T,z)
+    lnγ_res_ = lnγ_res(model,1e5,T,z)
+    return sum(z[i]*R̄*T*(lnγ_res_[i]+lnγ_SG_[i]) for i ∈ @comps)/Σz
+end
+
 function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b,c)
     n = sum(z)
-    #x = z./n
+    activity = mixing_model.activity
     invn = (one(n)/n)
     invn2 = invn^2
-    lnγ_SG_  = lnγ_SG(mixing_model.activity,1e5,T,z)
-    lnγ_res_ = lnγ_res(mixing_model.activity,1e5,T,z)
-    g_E = sum(z[i]*R̄*T*(lnγ_res_[i]+lnγ_SG_[i]) for i ∈ @comps)*invn
+    g_E = UMR_g_E(activity,V,T,z)
     #b = Diagonal(b).diag
     #b = ((b.^(1/2).+b'.^(1/2))/2).^2
     b̄ = dot(z,Symmetric(b),z) * invn2
