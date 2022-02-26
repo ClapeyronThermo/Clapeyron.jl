@@ -106,7 +106,7 @@ the keywords `phase` and `threaded` are passed to the [volume solver](@ref Clape
 """
 function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
-    return p*V/(R̄*T)
+    return p*V/(sum(z)*R̄*T)
 end
 
 function inversion_temperature(model::EoSModel, p, z=SA[1.0])
