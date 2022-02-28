@@ -350,6 +350,8 @@ end
     @testset "IAPWS95" begin
         z = [1.]
         system = IAPWS95()
+        system_ideal = Clapeyron.idealmodel(system)
+        @test Clapeyron.a_ideal(system_ideal, V, T, z) ≈ 7.932118505056652 rtol = 1e-6
         @test Clapeyron.a_ideal(system, V, T, z) ≈ 7.932118505056652 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T, z) ≈ -2.1152657050144347e14 rtol = 1e-6
     end
