@@ -80,35 +80,26 @@ function excess_g_comb(model::ogUNIFACModel,p,T,z=SA[1.0])
     return n*G_comb
 end
 
-
 function excess_g_res(model::ogUNIFACModel,p,T,z=SA[1.0])
     _0 = zero(T+first(z))
     Q = model.params.Q.values
     A = model.params.A.values
-    B = model.params.B.values
-    C = model.params.C.values
-    n = sum(z)
     invT = 1/T
     mi  = model.params.mixedsegment.values
-    m = model.unifac_cache.m
-    m̄ = dot(z,m)
+    m̄ = dot(z,model.unifac_cache.m)
     m̄inv = 1/m̄
-    θpm = zero(eltype(z))
-    for i in @groups
-        θpm += dot(z,mi[i])*m̄inv*Q[i]
-    end
+    X = [dot(z,mi_i)*m̄inv for mi_i in mi]
+    θpm = dot(X,Q)
     G_res = _0
     for i ∈ @groups
         q_pi = Q[i]
-        xi = dot(z,mi[i])*m̄inv  
         ∑θpτ = _0
         for j ∈ @groups
-            xj = dot(z,mi[j])*m̄inv    
-            θpj = Q[j]*xj/θpm
+            θpj = Q[j]*X[j]/θpm
             τji = exp(-A[j,i]*invT)
             ∑θpτ += θpj*τji
         end
-        G_res += q_pi*xi*log(∑θpτ)*m̄
+        G_res += q_pi*X[i]*log(∑θpτ)
     end
-    return -n*G_res
+    return -m̄*G_res
 end
