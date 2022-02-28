@@ -2,6 +2,7 @@ struct ogUNIFACParam <: EoSParam
     A::PairParam{Float64}
     R::SingleParam{Float64}
     Q::SingleParam{Float64}
+    mixedsegment::SingleParam{Vector{Float64}}
 end
 
 abstract type ogUNIFACModel <: UNIFACModel end
@@ -12,8 +13,8 @@ struct ogUNIFAC{c<:EoSModel} <: ogUNIFACModel
     groups::GroupParam
     params::ogUNIFACParam
     puremodel::Vector{c}
-    absolutetolerance::Float64
     references::Array{String,1}
+    unifac_cache::UNIFACCache
 end
 
 @registermodel ogUNIFAC
@@ -31,9 +32,11 @@ function ogUNIFAC(components; puremodel=PR,
     icomponents = 1:length(components)
     
     init_puremodel = [puremodel([groups.components[i]]) for i in icomponents]
-    packagedparams = ogUNIFACParam(A,R,Q)
+    gc_mixedsegment = mix_segment(groups) #this function is used in SAFTγMie
+    packagedparams = ogUNIFACParam(A,R,Q,gc_mixedsegment)
     references = String[]
-    model = ogUNIFAC(components,icomponents,groups,packagedparams,init_puremodel,1e-12,references)
+    cache = UNIFACCache(groups,packagedparams)
+    model = ogUNIFAC(components,icomponents,groups,packagedparams,init_puremodel,references,cache)
     return model
 end
 
@@ -57,4 +60,55 @@ end
 function Ψ(model::ogUNIFACModel,V,T,z)
     A = model.params.A.values
     return @. exp(-A/T)
+end
+
+function excess_g_comb(model::ogUNIFACModel,p,T,z=SA[1.0])
+    _0 = zero(eltype(z))
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm =  dot(q,z)*invn
+    G_comb = _0
+    for i ∈ @comps
+        xi = z[i]*invn
+        Φi = r[i]/Φm
+        θi = q[i]/θm
+        G_comb += xi*log(Φi) + 5*q[i]*xi*log(θi/Φi)
+    end
+    return n*G_comb
+end
+
+
+function excess_g_res(model::ogUNIFACModel,p,T,z=SA[1.0])
+    _0 = zero(T+first(z))
+    Q = model.params.Q.values
+    A = model.params.A.values
+    B = model.params.B.values
+    C = model.params.C.values
+    n = sum(z)
+    invT = 1/T
+    mi  = model.params.mixedsegment.values
+    m = model.unifac_cache.m
+    m̄ = dot(z,m)
+    m̄inv = 1/m̄
+    θpm = zero(eltype(z))
+    for i in @groups
+        θpm += dot(z,mi[i])*m̄inv*Q[i]
+    end
+    G_res = _0
+    for i ∈ @groups
+        q_pi = Q[i]
+        xi = dot(z,mi[i])*m̄inv  
+        ∑θpτ = _0
+        for j ∈ @groups
+            xj = dot(z,mi[j])*m̄inv    
+            θpj = Q[j]*xj/θpm
+            τji = exp(-A[j,i]*invT)
+            ∑θpτ += θpj*τji
+        end
+        G_res += q_pi*xi*log(∑θpτ)*m̄
+    end
+    return -n*G_res
 end

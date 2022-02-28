@@ -94,9 +94,9 @@ function excess_g_comb(model::UNIQUACModel,p,T,z=SA[1.0])
     G_comp = _0
     for i ∈ @comps
         xi = z[i]*invn
-        Φi = r[i]*xi/Φm
-        θi = q[i]*xi/θm
-        G_comp += xi*log(Φi/xi) + 5*q[i]*xi*log(θi/Φi)
+        Φi = r[i]/Φm
+        θi = q[i]/θm
+        G_comp += xi*log(Φi) + 5*q[i]*xi*log(θi/Φi)
     end
     return n*G_comp
 end
