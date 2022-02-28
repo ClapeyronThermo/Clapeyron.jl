@@ -110,5 +110,14 @@ function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
     inner_size = val.inner_size
     newvals = Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
 end
+
+
+function mix_segment(groups::GroupParam,segment = ones(length(groups.flattenedgroups)),s =segment)
+    gc = 1:length(groups.flattenedgroups)
+    comps = 1:length(groups.components)
+    v = groups.n_flattenedgroups
+    mixsegment =  [[v[i][k]*segment[k]*s[k] for i ∈ comps] for k ∈ gc]
+    SingleParam("mixed segment",groups.flattenedgroups,mixsegment,[false for i ∈ gc],String[],String[])
+end
     
   

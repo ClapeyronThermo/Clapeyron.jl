@@ -60,10 +60,9 @@ end
 UMR_g_E(model,V,T,z) = excess_gibbs_free_energy(model,V,T,z)
 
 function UMR_g_E(model::UNIFACModel,V,T,z) 
-    Σz = sum(z)
-    lnγ_SG_  = lnγ_SG(model,1e5,T,z)
-    lnγ_res_ = lnγ_res(model,1e5,T,z)
-    return sum(z[i]*R̄*T*(lnγ_res_[i]+lnγ_SG_[i]) for i ∈ @comps)/Σz
+    g_SG  = excess_g_SG(model,1e5,T,z)
+    g_res = excess_g_res(model,1e5,T,z)
+    return R̄*T*(g_SG+g_res)
 end
 
 function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b,c)

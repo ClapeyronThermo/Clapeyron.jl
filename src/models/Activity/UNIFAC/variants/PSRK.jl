@@ -7,8 +7,8 @@ struct PSRKUNIFAC{c<:EoSModel} <: PSRKUNIFACModel
     groups::GroupParam
     params::UNIFACParam
     puremodel::Vector{c}
-    absolutetolerance::Float64
     references::Array{String,1}
+    unifac_cache::UNIFACCache
 end
 
 @registermodel PSRKUNIFAC
@@ -28,8 +28,10 @@ function PSRKUNIFAC(components; puremodel=PR,
     icomponents = 1:length(components)
     
     init_puremodel = [puremodel([groups.components[i]]) for i in icomponents]
-    packagedparams = UNIFACParam(A,B,C,R,Q)
+    gc_mixedsegment = mix_segment(groups)
+    packagedparams = UNIFACParam(A,B,C,R,Q,gc_mixedsegment)
     references = String[]
-    model = PSRKUNIFAC(components,icomponents,groups,packagedparams,init_puremodel,1e-12,references)
+    cache = UNIFACCache(groups,packagedparams)
+    model = PSRKUNIFAC(components,icomponents,groups,packagedparams,init_puremodel,references,cache)
     return model
 end
