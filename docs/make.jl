@@ -22,7 +22,7 @@ format = Documenter.HTML(
         "Available EoS" => [
         "Ideal Models" => "eos/ideal.md"
         "Cubic Models" => "eos/cubic.md"
-        "Activity Models" => "eos/cubic.md"
+        "Activity Models" => "eos/activity.md"
         "Empiric Helmholtz Models" => "eos/empiric.md"
         ],
         
