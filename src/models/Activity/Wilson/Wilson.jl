@@ -91,7 +91,7 @@ function excess_gibbs_free_energy(model::WilsonModel,p,T,z)
     Tc  = model.params.Tc.values
     Pc  = model.params.Pc.values
     g = model.params.g.values
-    _0 = zero(p+T+first(z))
+    _0 = zero(T+first(z))
     n = sum(z)
     invn = 1/n
     invRT = 1/(R̄*T)

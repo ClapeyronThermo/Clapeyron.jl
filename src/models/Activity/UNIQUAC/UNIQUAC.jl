@@ -93,7 +93,7 @@ end
 =#
 
 function excess_g_comb(model::UNIQUACModel,p,T,z=SA[1.0])
-    _0 = zero(p+T+first(z))
+    _0 = zero(eltype(z))
     r = model.params.r.values
     q = model.params.q.values
     
@@ -112,7 +112,7 @@ function excess_g_comb(model::UNIQUACModel,p,T,z=SA[1.0])
 end
 
 function excess_g_res(model::UNIQUACModel,p,T,z=SA[1.0])
-    _0 = zero(p+T+first(z))
+    _0 = zero(T+first(z))
     q_p = model.params.q_p.values
     a = model.params.a.values
     n = sum(z)

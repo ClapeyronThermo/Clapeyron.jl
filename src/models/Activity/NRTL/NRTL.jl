@@ -84,7 +84,7 @@ function excess_gibbs_free_energy(model::NRTLModel,p,T,z)
     a = model.params.a.values
     b  = model.params.b.values
     c  = model.params.c.values
-    _0 = zero(p+T+first(z))
+    _0 = zero(T+first(z))
     n = sum(z)
     invn = 1/n
     invT = 1/(T)
