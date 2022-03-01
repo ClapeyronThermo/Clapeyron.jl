@@ -46,7 +46,6 @@ end
 None
 
 ## Description
-
 Propane Reference Equation of State
 ```
 δ = ρ/ρc

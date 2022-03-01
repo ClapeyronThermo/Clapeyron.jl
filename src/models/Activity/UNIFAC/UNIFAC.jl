@@ -23,6 +23,59 @@ end
 const modUNIFAC = UNIFAC
 export UNIFAC
 
+"""
+    UNIFACModel <: ActivityModel
+
+    UNIFAC(components::Vector{String};
+    puremodel=PR, 
+    userlocations=String[], 
+    verbose=false)
+
+## Input parameters
+- `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
+- `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
+- `A`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
+- `B`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
+- `C`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
+
+## Input models
+- `puremodel`: model to calculate pure pressure-dependent properties
+
+## Description
+UNIFAC (UNIQUAC Functional-group Activity Coefficients) activity model.
+
+Modified UNIFAC (Dortmund) implementation.
+
+The Combinatorial part corresponds to an GC-averaged modified UNIQUAC model. The residual part iterates over groups instead of components.
+
+```
+Gᴱ = nRT(gᴱ(comb) + gᴱ(res))
+```
+
+Combinatorial part:
+```
+gᴱ(comb) = ∑[xᵢlog(Φ'ᵢ) + 5qᵢxᵢlog(θᵢ/Φᵢ)]
+θᵢ = qᵢxᵢ/∑qᵢxᵢ
+Φᵢ = rᵢxᵢ/∑rᵢxᵢ
+Φ'ᵢ = rᵢ^(0.75)/∑xᵢrᵢ^(0.75)
+rᵢ = ∑Rₖνᵢₖ for k ∈ groups
+qᵢ = ∑Qₖνᵢₖ for k ∈ groups
+```
+Residual Part:
+```
+gᴱ(residual) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
+v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
+Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components 
+Θₖ = QₖXₖ/∑QₖXₖ
+Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
+```
+
+## References
+1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. doi:10.1021/i260064a004
+2. Weidlich, U.; Gmehling, J. A modified UNIFAC model. 1. Prediction of VLE, hE, and.gamma..infin. Ind. Eng. Chem. Res. 1987, 26, 1372–1381.
+"""
+UNIFAC
+
 function UNIFAC(components; puremodel=PR,
     userlocations=String[], 
      verbose=false)
@@ -38,13 +91,11 @@ function UNIFAC(components; puremodel=PR,
     gc_mixedsegment = mix_segment(groups) #this function is used in SAFTγMie
     init_puremodel = [puremodel([groups.components[i]]) for i in icomponents]
     packagedparams = UNIFACParam(A,B,C,R,Q,gc_mixedsegment)
-    references = String[]
+    references = String["10.1021/i260064a004"]
     cache = UNIFACCache(groups,packagedparams)
     model = UNIFAC(components,icomponents,groups,packagedparams,init_puremodel,references,cache)
     return model
 end
-
-activity_coefficient(model::UNIFACModel,p,T,z) = activity_coefficient_ad(model,p,T,z)
 
 function excess_g_SG(model::UNIFACModel,p,T,z=SA[1.0])
     _0 = zero(eltype(z))
@@ -54,14 +105,14 @@ function excess_g_SG(model::UNIFACModel,p,T,z=SA[1.0])
     invn = 1/n
     Φm = dot(r,z)*invn
     θm =  dot(q,z)*invn
-    G_comb = _0
+    G_sg = _0
     for i ∈ @comps
         xi = z[i]*invn
         Φi = r[i]/Φm
         θi = q[i]/θm
-        G_comb += 5*q[i]*xi*log(θi/Φi)
+        G_sg += 5*q[i]*xi*log(θi/Φi)
     end
-    return n*G_comb
+    return n*G_sg
 end
 
 function excess_g_comb(model::UNIFACModel,p,T,z=SA[1.0])

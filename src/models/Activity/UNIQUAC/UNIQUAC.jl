@@ -21,25 +21,41 @@ export UNIQUAC
 
 """
     UNIQUACModel <: ActivityModel
+
     UNIQUAC(components::Vector{String};
     puremodel=PR, 
     userlocations=String[], 
     verbose=false)
 
 ## Input parameters
-- `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Energy Parameter `[J/mol]`
-- `r`: Single Parameter (`Float64`)  - Van der Vals volume `[]`
-- `q`: Single Parameter (`Float64`) - Surface Area `[]`
-- `q_p`: Single Parameter (`Float64`) []
+- `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Energy Parameter
+- `r`: Single Parameter (`Float64`)  - Normalized Van der Vals volume
+- `q`: Single Parameter (`Float64`) - Normalized Surface Area
+- `q_p`: Single Parameter (`Float64`) - Modified Normalized Surface Area 
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 
 
 ## Input models
-- `puremodel`: model for evaluating pure component pressures
+- `puremodel`: model to calculate pure pressure-dependent properties
 
-UNIQUAC (Universal QuasiChemical Activity Coefficients)
+UNIQUAC (Universal QuasiChemical Activity Coefficients) activity model:
+
+```
+Gᴱ = nRT(gᴱ(comb) + gᴱ(res))
+gᴱ(comb) = ∑[xᵢlog(Φᵢ/xᵢ) + 5qᵢxᵢlog(θᵢ/Φᵢ)]
+gᴱ(res) = -∑xᵢqᵖᵢlog(∑θᵖⱼτⱼᵢ)
+θᵢ = qᵢxᵢ/∑qᵢxᵢ
+θᵖ = qᵖᵢxᵢ/∑qᵖᵢxᵢ
+Φᵢ = rᵢxᵢ/∑rᵢxᵢ
+τᵢⱼ = exp(-aᵢⱼ/T)
+```
+
+## References
+
+1. Abrams, D. S., & Prausnitz, J. M. (1975). Statistical thermodynamics of liquid mixtures: A new expression for the excess Gibbs energy of partly or completely miscible systems. AIChE journal. American Institute of Chemical Engineers, 21(1), 116–128. doi:10.1002/aic.690210115
 
 """
+UNIQUAC
 
 function UNIQUAC(components::Vector{String}; puremodel=PR,
     userlocations=String[], 
@@ -75,12 +91,6 @@ function activity_coefficient(model::UNIQUACModel,p,T,z)
     return exp.(lnγ_comb+lnγ_res)
 end
 =#
-
-function Ψ(model::UNIQUACModel,V,T,z)
-    Tinv = 1/T
-    a = model.params.a.values
-    return @. exp(-a*Tinv)
-end
 
 function excess_g_comb(model::UNIQUACModel,p,T,z=SA[1.0])
     _0 = zero(p+T+first(z))
@@ -129,5 +139,3 @@ function excess_gibbs_free_energy(model::UNIQUACModel,p,T,z)
     g_res = excess_g_res(model,p,T,z)
     return (g_comp+g_res)*R̄*T 
 end
-
-activity_coefficient(model::UNIQUACModel,p,T,z) = activity_coefficient_ad(model,p,T,z)
