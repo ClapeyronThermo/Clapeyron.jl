@@ -5,7 +5,7 @@ CurrentModule = Clapeyron
 ## Index
 
 ```@index
-Pages = ["cubic.md"]
+Pages = ["activity.md"]
 ```
 
 # Activity Models
