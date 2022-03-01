@@ -19,6 +19,35 @@ end
 @registermodel NRTL
 
 export NRTL
+"""
+    NRTL <: ActivityModel
+
+    function NRTL(components::Vector{String};
+    puremodel=PR,
+    userlocations=String[], 
+    verbose=false)
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
+- `b`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
+- `c`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
+
+## Input models
+- `puremodel`: model to calculate pure pressure-dependent properties
+
+## Description
+NRTL (Non Random Two Fluid) activity model:
+```
+Gᴱ = nRT∑[xᵢ(∑τⱼᵢGⱼᵢxⱼ)/(∑Gⱼᵢxⱼ)]
+Gᵢⱼ exp(-cᵢⱼτᵢⱼ)
+τᵢⱼ = aᵢⱼ + bᵢⱼ/T
+```
+
+## References
+1. Renon, H., & Prausnitz, J. M. (1968). Local compositions in thermodynamic excess functions for liquid mixtures. AIChE journal. American Institute of Chemical Engineers, 14(1), 135–144. doi:10.1002/aic.690140124
+"""
+NRTL
 
 function NRTL(components::Vector{String}; puremodel=PR,
     userlocations=String[], 
@@ -32,7 +61,7 @@ function NRTL(components::Vector{String}; puremodel=PR,
     
     init_puremodel = [puremodel([components[i]]) for i in icomponents]
     packagedparams = NRTLParam(a,b,c,Mw)
-    references = String[]
+    references = String["10.1002/aic.690140124"]
     model = NRTL(components,icomponents,packagedparams,init_puremodel,1e-12,references)
     return model
 end
@@ -76,5 +105,3 @@ function excess_gibbs_free_energy(model::NRTLModel,p,T,z)
     end
     return n*res*R̄*T
 end
-
-activity_coefficient(model::NRTLModel,p,T,z) = activity_coefficient_ad(model,p,T,z)
