@@ -69,8 +69,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::VTPRRuleModel,α,a,b,c)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
-    lnγ_res_ = lnγ_res(mixing_model.activity,1e5,T,z)
-    g_E_res = sum(z[i]*R̄*T*lnγ_res_[i] for i ∈ @comps)*invn
+    g_E_res = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)
     b̄ = dot(z,Symmetric(b),z) * invn2
     c̄ = dot(z,c)/n
     Σab = invn*sum(z[i]*a[i,i]*α[i]/b[i,i]/(R̄*T) for i ∈ @comps)
