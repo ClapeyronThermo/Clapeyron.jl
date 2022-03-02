@@ -6,8 +6,6 @@ This is a list of currently available example notebooks for `Clapeyron.jl`:
 
 - [Cubic equations of state](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/cubic_eos.ipynb): Examples of how one can use cubic equations of state, along with customizing those with different α-functions, Volume translation or mixing rules.
 
-- [Cubic equations of state](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/cubic_eos.ipynb): Examples of how one can use cubic equations of state, along with customizing those with different α-functions, Volume translation or mixing rules.
-
 - [SAFT equations of state](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/SAFT_eos.ipynb): Examples of how one can use SAFT-type equations.
 
 - [Activity models](https://nbviewer.org/github/ypaul21/Clapeyron.jl/blob/master/examples/activity_models.ipynb): Examples on how to use activity models, standalone or as a mixing rule in a cubic equation of state.
