@@ -51,6 +51,7 @@ Clapeyron.VLLE_temperature
 Clapeyron.crit_mix
 Clapeyron.UCEP_mix
 Clapeyron.UCST_mix
+Clapeyron.gibbs_solvation
 ```
 
 ## TP Flash
