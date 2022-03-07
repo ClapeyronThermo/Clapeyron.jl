@@ -133,20 +133,26 @@ function _fr1(model::MultiFluidModel,δ,τ,z)
     dᵢ = model.single.d.values.v
     tᵢ = model.single.t.values.v
     cᵢ = c.v
+    lnδ = log(δ)
+    lnτ = log(τ)
     @inbounds for i ∈ @comps
         ai = _0
         k1,k2,kexp = ith_index(k_all,k_exp,i)
         for k ∈ k1
-            ai += nᵢ[k]*(δ^dᵢ[k])*(τ^tᵢ[k])
+            ai += nᵢ[k]*exp(lnδ*dᵢ[k] + lnτ*tᵢ[k])
+            #ai += nᵢ[k]*(δ^dᵢ[k])*(τ^tᵢ[k])
         end
 
         for (k,k_) ∈ zip(k2,kexp)
-            ai += nᵢ[k]*(δ^dᵢ[k])*(τ^tᵢ[k])*exp(-δ^cᵢ[k_])
+
+            ai += nᵢ[k]*exp(lnδ*dᵢ[k] + lnτ*tᵢ[k]-δ^cᵢ[k_])
+            #ai += nᵢ[k]*(δ^dᵢ[k])*(τ^tᵢ[k])*exp(-δ^cᵢ[k_])
         end  
         res += z[i]*ai 
     end
     return res
 end
+
 function _fr2(model::MultiFluidModel,δ,τ,z)
     _0 = zero(promote_type(typeof(δ), typeof(τ), eltype(z)))
     isone(length(z)) && return _0
@@ -166,6 +172,8 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
     εᵢⱼ = model.pair.epsilon_ij.values.storage.v
     βᵢⱼ = model.pair.beta_ij.values.storage.v
     γᵢⱼ = model.pair.gamma_ij.values.storage.v
+    lnδ = log(δ)
+    lnτ = log(τ)
     @inbounds for j ∈ @comps
         for ii ∈ nzrange(F, j)
             i = rows[ii]
@@ -173,11 +181,14 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
             aij = _0
             k1,k2,kexp = ith_index(k_all,k_exp,ii)
             for k ∈ k1
-                aij += nᵢⱼ[k]*(δ^(dᵢⱼ[k]))*(τ^(tᵢⱼ[k]))
+                aij += nᵢⱼ[k]*exp(lnδ*dᵢⱼ[k] + lnτ*tᵢⱼ[k])
+                #aij += nᵢⱼ[k]*(δ^(dᵢⱼ[k]))*(τ^(tᵢⱼ[k]))
             end
             for (k,k_) ∈ zip(k2,kexp)
                 aij += nᵢⱼ[k]*(δ^(dᵢⱼ[k]))*(τ^(tᵢⱼ[k]))*
                 exp(-ηᵢⱼ[k_]*(δ - εᵢⱼ[k_])^2 - βᵢⱼ[k_]*(δ -γᵢⱼ[k_]))
+                #aij += nᵢⱼ[k]*exp(lnδ*dᵢⱼ[k] + lnτ*tᵢⱼ[k]
+                #-ηᵢⱼ[k_]*(δ - εᵢⱼ[k_])^2 - βᵢⱼ[k_]*(δ -γᵢⱼ[k_]))
             end
            res +=z[i]*z[j]*Fᵢⱼ*aij
         end
@@ -226,7 +237,7 @@ function x0_sat_pure(model::MultiFluidModel,T)
     T0 = 369.89*T/Ts
     vl = (1.0/_propaneref_rholsat(T0))*h
     vv = (1.0/_propaneref_rhovsat(T0))*h
-    return [log10(vl),log10(vv)]
+    return (log10(vl),log10(vv)) 
 end
 
 function x0_volume_liquid(model::MultiFluidModel,T,z)
@@ -241,3 +252,6 @@ end
 molecular_weight(model::MultiFluidModel,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
 mw(model::MultiFluidModel) = model.properties.Mw.values
 
+function x0_crit_pure(model::MultiFluidModel)
+    return (1.,log10(_v_scale(model)*0.001))
+end
