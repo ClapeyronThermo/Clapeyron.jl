@@ -11,7 +11,7 @@ using FillArrays: FillArrays
 
 using Roots: Roots
 using NLSolvers
-import Metaheuristics
+import BlackBoxOptim
 using DiffResults, ForwardDiff
 using Scratch 
 
@@ -122,6 +122,6 @@ include("models/UFTheory/UFTheory.jl")
 
 include("models/cached/CachedEoS.jl")
 
-include("utils/estimation.jl")
+include("utils/estimation/estimation.jl")
 
 end # module
