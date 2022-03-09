@@ -13,33 +13,28 @@ To obtain the underlying solution vector, use [`x_sol`](@ref)
 To see available solvers and options, check `NLSolvers.jl`
 """
 function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),chunk = ForwardDiff.Chunk{2}(),options=NEqOptions();)
-    #f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]))
-    len = length(x0)
-    #xcache = zeros(eltype(x0),len)
-    Fcache = zeros(eltype(x0),len)
-    #JCache = zeros(eltype(x0),len,len)
+    vectorobj = autoVectorObjective(f!,x0,chunk)
+    vectorprob = NEqProblem(vectorobj)
+    return NLSolvers.solve(vectorprob, x0,method, options)
+end
+
+function autoVectorObjective(f!,x0,chunk)
+    Fcache = x0 .* false
     jconfig = ForwardDiff.JacobianConfig(f!,x0,x0,chunk)
     function j!(J,x)
-        #@show J
         ForwardDiff.jacobian!(J,f!,Fcache,x,jconfig)
     end
     function fj!(F,J,x)
-        #@show J,F
         ForwardDiff.jacobian!(J,f!,F,x,jconfig)
         F,J
     end
-
     function jv!(x)
         function JacV(dy,v)
             return jacvec!(dy,f!,x,v)
         end
         return LinearMap(JacV,length(x))
     end
-
-    vectorobj = NLSolvers.VectorObjective(f!,j!,fj!,jv!)
-    vectorprob = NEqProblem(vectorobj)
-    return NLSolvers.solve(vectorprob, x0,method , options)
-    #@show res
+    return NLSolvers.VectorObjective(f!,j!,fj!,jv!)
 end
 
 #from SparseDiffTools.jl, but it happens to work on dense vectors as well
