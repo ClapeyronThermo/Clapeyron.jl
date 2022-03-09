@@ -40,8 +40,7 @@ function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
 end
 
 function second_virial_coefficient(model::ABCubicModel,T::Real,z = SA[1.0])
-    #@info "fast shortcut"
-    a,b,c = cubic_ab(model,1e-4,T,z)
+    a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T,z)
     return b-a/(R̄*T)
 end
 
@@ -154,7 +153,56 @@ function ab_consts(model::CubicModel)
     return ab_consts(typeof(model))
 end
 
+function x0_sat_pure(model::ABCubicModel,T)
+    a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T)
+    Tc = model.params.Tc.values[1]
+    pc = model.params.Pc.values[1]
+    zc = cubic_zc(model)
+    vc = zc*R̄*Tc/pc - c
+    if Tc < T
+        nan = zero(T)/zero(T)
+        return (nan,nan)
+    end
+    B = b-a/(R̄*T)
+    pv0 = -0.25*R̄*T/B
+    vl = b + sqrt(0.5R̄*T*b^3/a) - c
+    pc = model.params.Pc.values[1]
+    p_vl = pressure(model,vl,T)
+    p_low = min(p_vl,pc)
+    pl0 = max(zero(b),p_low)
+    p0 = 0.5*(pl0+pv0)
+    vv = volume_virial(B,p0,T) - c
+    if p_vl > pc #improves predictions around critical point
+        vlc,vvc =  vdw_x0_xat_pure(T,Tc,pc,vc)
+        vl = 0.5*(vl+vlc)
+        vv = 0.5*(vv+vvc)
+    end
+    return (log10(vl),log10(vv))
+end
+#=
+#on the dpdv limit:
+dp/dv = 0
+p = RT/v-b - a/pol(v)
+dpdv = -RT/(v-b)^2 + a/pol^2 * dpol = a*k -RT/(v-b)^2
 
-    
+vdw: pol = v2 -> pol(b) = b2, dpol(b) = 2b
+pr: pol = v2 + 2bv - b2 -> pol(b) = 2b2, dpol(b) = 2v + 2b = 4b
+rk: pol = v*(v+b) -> pol(b) = 2b2, dpol(b) = 2v + b = 3b
 
+vdw:k = 2b/(b2)^2 = 2/b3 , k^-1 = 0.5b3
+pr:k =  4b/(2b^2) = 1/b3, k^-1 = b3
+rk:k =  3b/(2b^2) = 0.75/b3 lower  1.33b3
 
+we want the lowest possible volume, to be sure on being on the liquid side.
+
+solving for dpdv = 0
+0 = a*k -RT/(v-b)^2
+(v-b)^2 = RT/ak
+v2 - 2vb + b2 - RT/ak = 0
+v = b ± sqrt(b2 +  RT/ak - b2) #v > b
+v = b + sqrt(kb3RT/a)
+the lowest volume is reached with k(vdw):
+vl = b + sqrt(0.5RTb3/2a)
+on models with translation:
+vl = b + sqrt(0.5RTb3/2a) - c
+=#
