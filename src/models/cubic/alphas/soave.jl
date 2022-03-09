@@ -58,3 +58,13 @@ function α_function(model::CubicModel,V,T,z,alpha_model::SoaveAlphaModel)
     end
     return α
 end
+
+function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::SoaveAlphaModel)
+    Tc = model.params.Tc.values[1]
+    ω  = alpha_model.params.acentricfactor.values[1]
+    coeff = α_m(model,alpha_model)
+    Tr = T/Tc
+    m = evalpoly(ω,coeff)
+    α  = (1+m*(1-√(Tr)))^2
+    return α
+end
