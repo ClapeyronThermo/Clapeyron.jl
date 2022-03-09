@@ -49,4 +49,10 @@ function α_function(model::CubicModel,V,T,z,alpha_model::RKAlphaModel)
     return α
 end
 
+function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::RKAlphaModel)
+    Tc = model.params.Tc.values[1]
+    Tr = T/Tc
+    α = 1 /√(Tr)
+end
+
 is_splittable(::RKAlpha) = false
