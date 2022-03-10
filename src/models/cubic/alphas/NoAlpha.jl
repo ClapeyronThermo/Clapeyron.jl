@@ -29,6 +29,8 @@ function NoAlpha(components::Vector{String}; userlocations::Vector{String}=Strin
     return model
 end
 
+NoAlpha() = NoAlpha(NoAlphaParam())
+
 function α_function(model::CubicModel,V,T,z,alpha_model::NoAlphaModel)
    return FillArrays.Ones{Float64}(length(z))
 end
