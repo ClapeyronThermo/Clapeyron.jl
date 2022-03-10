@@ -16,7 +16,6 @@ struct RK{T <: IdealModel,α,c,M} <: RKModel
     translation::c
     params::RKParam
     idealmodel::T
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
@@ -93,7 +92,7 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     icomponents = 1:length(components)
     packagedparams = RKParam(a,b,Tc,pc,Mw)
     references = String["10.1021/cr60137a013"]
-    model = RK(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
+    model = RK(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 
@@ -117,7 +116,7 @@ function cubic_poly(model::RKModel,p,T,z)
     RT⁻¹ = 1/(R̄*T)
     A = a*p* RT⁻¹* RT⁻¹
     B = b*p* RT⁻¹
-    _1 = one(a)
+    _1 = one(A)
     return (-A*B, -B*(B+_1) + A, -_1, _1),c
 end
 

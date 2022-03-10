@@ -17,7 +17,6 @@ struct PR{T <: IdealModel,α,c,γ} <:PRModel
     translation::c
     params::PRParam
     idealmodel::T
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
@@ -97,7 +96,7 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     icomponents = 1:length(components)
     packagedparams = PRParam(a,b,Tc,pc,Mw)
     references = String["10.1021/I160057A011"]
-    model = PR(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
+    model = PR(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 

@@ -16,7 +16,6 @@ struct vdW{T <: IdealModel,α,c,M} <: vdWModel
     translation::c
     params::vdWParam
     idealmodel::T
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
@@ -98,7 +97,7 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     icomponents = 1:length(components)
     packagedparams = vdWParam(a,b,Tc,pc,Mw)
     references = String[]
-    model = vdW(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,1e-12,references)
+    model = vdW(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 
@@ -120,10 +119,10 @@ end
 function cubic_poly(model::vdWModel,p,T,z)
     n = sum(z)
     a,b,c = cubic_ab(model,p,T,z,n)
-    _1 = one(a+b)
     RT⁻¹ = 1/(R̄*T)
     A = a*p*RT⁻¹*RT⁻¹
     B = b*p*RT⁻¹
+    _1 = one(A)
     return (-A*B, A, -B-_1, _1),c
 end
 
