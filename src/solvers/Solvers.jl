@@ -95,18 +95,8 @@ using StaticArrays
         
         Returns the scalar or vector x that solves the system of equations or is the minimizer of an optimization procedure.
     """
+    x_sol(res) = NLSolvers.solution(res)
 
-    function x_sol(res::NLSolvers.ConvergenceInfo{<:NLSolvers.LineSearch, <:Any, <:NLSolvers.NEqOptions})
-        res.info.solution
-    end
-
-    function x_sol(res::NLSolvers.ConvergenceInfo{<:NLSolvers.TrustRegion, <:Any, <:NLSolvers.NEqOptions})
-        return res.info.zero
-    end
-
-    function x_sol(res::NLSolvers.ConvergenceInfo{<:Any, <:Any, <:NLSolvers.OptimizationOptions})
-        return res.info.minimizer
-    end
     include("ad.jl")
     include("nanmath.jl")
     include("nlsolve.jl")
