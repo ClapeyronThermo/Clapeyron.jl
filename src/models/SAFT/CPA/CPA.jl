@@ -18,7 +18,6 @@ struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
     sites::SiteParam
     idealmodel::T
     assoc_options::AssocOptions
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
@@ -66,11 +65,11 @@ function CPA(components;
         cubicparams = PRParam(a, b, params["Tc"],params["pc"],Mw)
     end
 
-    init_cubicmodel = cubicmodel(components,icomponents,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,1e-12,String[])
+    init_cubicmodel = cubicmodel(components,icomponents,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
 
     references = ["10.1021/ie051305v"]
 
-    model = CPA(components, icomponents, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, 1e-12, references)
+    model = CPA(components, icomponents, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
     return model
 end
 
