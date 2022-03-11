@@ -77,4 +77,8 @@ Clapeyron.x0_sat_pure
 Clapeyron.x0_crit_pure
 ```
 
+## Testing
+```@docs
+Clapeyron.gibbs_duhem
+```
 
