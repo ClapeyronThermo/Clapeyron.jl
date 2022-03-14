@@ -41,7 +41,7 @@ end
 returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
 @inline function f∂f∂2f(f::F,x::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(∂Tag(), R))
+    T = typeof(ForwardDiff.Tag(typeof(f), R))
     out = ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),)))
     _f,_df = f∂f(f,out)
     fx = ForwardDiff.value(_f)

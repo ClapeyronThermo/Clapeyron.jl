@@ -18,7 +18,7 @@ struct CompositeModel{NT} <: EoSModel
     models::NT
 end
 
-function volume(model::CompositeModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
+function _volume(model::CompositeModel,p,T,z,phase=:unknown,threaded=false)
     if is_liquid(phase)
         return volume(model.models.liquid,p,T,z;phase,threaded)
     elseif is_vapour(phase)
@@ -72,6 +72,7 @@ function crit_pure(model::CompositeModel)
 end
 
 include("SaturationModel/SaturationModel.jl")
+include("LiquidVolumeModel/LiquidVolumeModel.jl")
 
 
 

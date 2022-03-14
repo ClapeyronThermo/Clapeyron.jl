@@ -1,4 +1,3 @@
 abstract type LiquidVolumeModel <: EoSModel end
 
-include("RackettLiquid/RackettLiquid.jl")
-
+include("Rackett/RackettLiquid.jl")

@@ -128,6 +128,8 @@ include("models/cubic/PR/variants/UMRPR.jl")
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
 include("models/SPUNG/SPUNG.jl")
+include("models/Virial/Virial.jl")
+
 #include("models/UFTheory/UFTheory.jl")
 include("models/CompositeModel/CompositeModel.jl")
 
