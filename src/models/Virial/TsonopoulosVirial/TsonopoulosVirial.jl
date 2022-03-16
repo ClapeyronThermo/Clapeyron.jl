@@ -5,7 +5,6 @@ struct TsonopoulosVirialParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
-abstract type TsonopoulosVirialModel <: IdealModel end
 @newmodel TsonopoulosVirial VirialModel TsonopoulosVirialParam
 
 
@@ -41,17 +40,17 @@ function TsonopoulosVirial(components;
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false)
-    params = getparams(components, ["properties/molarmass"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components,["properties/critical.csv", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     Tc = params["Tc"]
     Pc = params["pc"]
     acentricfactor = params["w"]
     packagedparams = TsonopoulosVirialParam(Tc,Pc,acentricfactor,Mw)
     references = String[]
-    return PCSAFT(packagedparams, idealmodel; ideal_userlocations, references, verbose)
+    return TsonopoulosVirial(packagedparams, idealmodel; ideal_userlocations, references, verbose)
 end
 
-function second_virial_coefficient(model::TsonopoulosVirialModel,T,z=SA[1.0])
+function second_virial_coefficient(model::TsonopoulosVirial,T,z=SA[1.0])
     B = zero(T+first(z))
     Tc = model.params.Tc.values
     ω = model.params.acentricfactor.values
