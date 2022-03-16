@@ -24,7 +24,7 @@ end
 
 export RackettLiquid 
 
-function _volume(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,threaded=false)
+function volume_impl(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,threaded=false)
     tci = model.params.Tc.values
     pci = model.params.Pc.values
     zci = model.params.Zc.values
@@ -62,7 +62,7 @@ function _volume(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,threaded
     return ∑z*R̄*Tcm*Pcm_inv*Zcm^(1+(1-Tr)^(2/7))
 end
 
-function _volume(model::RackettLiquidModel,p,T,z::SingleComp,phase=:unknown,threaded=false)
+function volume_impl(model::RackettLiquidModel,p,T,z::SingleComp,phase=:unknown,threaded=false)
     Tc = only(model.params.Tc.values)
     Pc = only(model.params.Pc.values)
     Pc_inv = 1/Pc

@@ -18,7 +18,7 @@ struct CompositeModel{NT} <: EoSModel
     models::NT
 end
 
-function _volume(model::CompositeModel,p,T,z,phase=:unknown,threaded=false)
+function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false)
     if is_liquid(phase)
         return volume(model.models.liquid,p,T,z;phase,threaded)
     elseif is_vapour(phase)

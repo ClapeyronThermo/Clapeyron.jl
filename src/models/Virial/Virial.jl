@@ -20,4 +20,8 @@ lb_volume(model::SecondVirial,z = SA[1.0]) = zero(eltype(z))
 
 second_virial_coefficient(model::SecondVirial,T,z=SA[1.0]) =  second_virial_coefficient(model.model,T,z)
 
-
+function volume_impl(model::VirialModel,p,T,z,phase,threaded)
+    B = second_virial_coefficient(model,T,z)
+    V < max(zero(B),-2*B) && (return zero(B)/zero(B))
+    return volume_virial(B,p,T,z)
+end 
