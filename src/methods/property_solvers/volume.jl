@@ -71,7 +71,6 @@ function volume_virial(B::Real,p,T,z=SA[1.0])
     b = -1
     c = -B
     Δ = b*b-4*a*c
-    n = sum(z)
     if Δ <= 0
         #virial approximation could not be calculated
         #return value at spinodal
@@ -101,10 +100,10 @@ The calculation of both volume roots can be calculated in serial (`threaded=fals
 
 """
 function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
-    return _volume(model,p,T,z,phase,threaded)
+    return volume_impl(model,p,T,z,phase,threaded)
 end
 
-function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
+function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
 #Threaded version
     TYPE = typeof(p+T+first(z))
     if phase != :unknown
