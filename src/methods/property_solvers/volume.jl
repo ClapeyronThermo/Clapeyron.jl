@@ -109,7 +109,9 @@ function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
     TYPE = typeof(p+T+first(z))
     if phase != :unknown
         V0 = x0_volume(model,p,T,z,phase=phase)
-        return _volume_compress(model,p,T,z,V0)
+        V = _volume_compress(model,p,T,z,V0)
+        isstable(model,V,T,z)
+        return V
     end
     if threaded     
         Vg0 = x0_volume(model,p,T,z,phase=:v)
@@ -127,9 +129,13 @@ function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
     end
 
     #this catches the supercritical phase as well
-    
-    isnan(Vl) && return Vg
-    isnan(Vg) && return Vl
+    if isnan(Vl)
+        isstable(model,Vg,T,z)
+        return Vg
+    elseif isnan(Vg)
+        isstable(model,Vl,T,z)
+        return Vl
+    end
 
    err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if (isnan(Vl) & isnan(Vg))
@@ -142,10 +148,11 @@ function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
     _dfl,fl =  ∂f(model,Vl,T,z)
     dVl,_ = _dfl
     gl = ifelse(abs((p+dVl)/p) > 0.03,zero(dVl)/one(dVl),fl + p*Vl)
-    
     if gg<gl
+        isstable(model,Vg,T,z)
         return Vg
     else
+        isstable(model,Vl,T,z)
         return Vl
     end
 end
