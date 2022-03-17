@@ -20,12 +20,14 @@ Pages = ["properties.md"]
 Clapeyron.second_virial_coefficient
 Clapeyron.pip
 ```
+
 ## Pressure-Temperature Based Properties
 
 ```@docs
 Clapeyron.volume
 Clapeyron.compressibility_factor
 ```
+
 ## Single component properties
 
 ```@docs
@@ -54,6 +56,15 @@ Clapeyron.UCST_mix
 Clapeyron.gibbs_solvation
 ```
 
+## Consistency and Stability
+
+```@docs
+Clapeyron.gibbs_duhem
+Clapeyron.isstable
+Clapeyron.mechanical_stability
+Clapeyron.diffusive_stability
+```
+
 ## TP Flash
 
 ```@docs
@@ -65,6 +76,7 @@ Clapeyron.numphases
 ```
 
 ## Initial guess functions
+
 ```@docs
 Clapeyron.lb_volume
 Clapeyron.T_scale
@@ -77,8 +89,5 @@ Clapeyron.x0_sat_pure
 Clapeyron.x0_crit_pure
 ```
 
-## Testing
-```@docs
-Clapeyron.gibbs_duhem
-```
+
 
