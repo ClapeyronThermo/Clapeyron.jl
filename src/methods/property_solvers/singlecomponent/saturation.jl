@@ -197,5 +197,36 @@ function enthalpy_vap(model::EoSModel, T)
     return H_vap
 end
 
+### NEW METHOD
+function Obj_Sat_Temp2(model::EoSModel, F, T, V_l, V_v,p,scales)
+    fun(_V) = eos(model, _V, T,SA[1.])
+    A_l,Av_l = Solvers.f∂f(fun,V_l)
+    A_v,Av_v =Solvers.f∂f(fun,V_v)
+    g_l = muladd(-V_l,Av_l,A_l)
+    g_v = muladd(-V_v,Av_v,A_v)
+    (p_scale,μ_scale) = scales
+    F[1] = -(Av_l+p)*p_scale
+    F[2] = -(Av_v+p)*p_scale
+    F[3] = (g_l-g_v)*μ_scale
+    return F
+end
 
+function x0_saturation_temperature2(model,p)
+    T0= T_scale(model)*0.9
+    (Vl0,Vv0) = x0_sat_pure(model,T0)
+    return [T0,Vl0,Vv0]
+end
 
+function saturation_temperature2(model,p)
+    scales = scale_sat_pure(model)
+    v0 = x0_saturation_temperature2(model,p)
+    F = zeros(eltype(v0),length(v0))
+
+    f!(F,x) = Obj_Sat_Temp2(model,F,x[1],10^x[2],10^x[3],p,scales)
+    r = Solvers.nlsolve(f!,v0, LineSearch(Newton()))
+    sol = Solvers.x_sol(r)
+    T = sol[1]
+    Vl = 10^sol[2]
+    Vv = 10^sol[3]
+    return (T,Vl,Vv)
+end
