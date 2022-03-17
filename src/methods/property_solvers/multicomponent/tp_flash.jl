@@ -43,10 +43,17 @@ function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
             " species in the model, but the number of mole numbers specified is ", 
             length(n))
     end
+
+    
     if numphases(method) == 1
-        return (n, n / sum(n), gibbs_free_energy(model, p, T, n))
+        V = volume(model,p,T,n,phase =:stable)
+        return (n, n / sum(n), VT_gibbs_free_energy(model, V, T, n))
     end
-    return tp_flash_impl(model::EoSModel,p,T,n,method)
+
+    nij,xij,g = tp_flash_impl(model::EoSModel,p,T,n,method)
+    #TODO: perform stability check ritht here:
+    return nij,xij,g
+
 end
 
 export tp_flash
