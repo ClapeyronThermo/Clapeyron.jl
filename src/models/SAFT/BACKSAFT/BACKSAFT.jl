@@ -34,10 +34,27 @@ function BACKSAFT(components;
     return model
 end
 
-function x0_volume_liquid(model,T,z)
+
+function lb_volume(model::BACKSAFTModel,z)
+    α = model.params.alpha.values[1]
+    pol(x) = evalpoly(x,(1.0,3α-2,3α*α - 3α +1 , -α*α))
+    k = Solvers.ad_newton(pol,1.81)
+    seg = model.params.segment.values
+    σᵢᵢ = model.params.sigma.diagvalues
+    val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i]^3 for i in 1:length(z)) #limit at η -> 0
+    return k*val #only positive root of η 
+end
+
+function x0_volume_liquid(model::BACKSAFTModel,T,z)
     v_lb = lb_volume(model,z)
     return v_lb*1.01
 end
+
+function x0_crit_pure(model::BACKSAFTModel)
+    lb_v = lb_volume(model)
+    (2.0, log10(lb_v/0.4))
+end
+
 function a_res(model::BACKSAFTModel ,V, T, z)
     a_hcb_ = @f(a_hcb)
     a_disp_ = @f(a_disp)
@@ -45,6 +62,11 @@ function a_res(model::BACKSAFTModel ,V, T, z)
     return  a_hcb_ + a_chain_ + (1.75*(a_chain_/a_hcb_)+1)*a_disp_
 end
 
+#=
+
+z = 1/(1-y) + 3ay/(1-y)2 + (3a2y2-a2y3)/(1-y)^3
+3a2y2(1-y)
+=#
 function a_hcb(model::BACKSAFTModel, V, T, z)
     α = model.params.alpha.values[1]
     m = model.params.segment.values[1]
@@ -84,7 +106,7 @@ function a_chain(model::BACKSAFTModel, V, T, z)
     m = model.params.segment.values[1]
     return (1-m)*log(@f(g_hcb))
 end
-
+#1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 function g_hcb(model::BACKSAFTModel, V, T, z)
     α = model.params.alpha.values[1]
     η = @f(ζ,3)
