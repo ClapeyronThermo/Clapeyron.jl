@@ -34,6 +34,19 @@ function softSAFT(components;
     return model
 end
 
+
+function lb_volume(model::softSAFTModel,z=SA[1.0])
+    σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
+    return m̄*N_A*σ3*π/6
+end
+
+
+function x0_volume_liquid(model::softSAFTModel,T,z)
+    v_lb = lb_volume(model,z)
+    return v_lb*1.8
+end
+
+
 function data(model::softSAFTModel,V,T,z)
     σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,V,T,z)
     ∑z = sum(z)
