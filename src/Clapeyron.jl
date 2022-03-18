@@ -12,6 +12,9 @@ using FillArrays: FillArrays
 using Roots: Roots
 using NLSolvers
 import BlackBoxOptim
+# For minimizing tangent plane distance function
+using Optim
+
 using DiffResults, ForwardDiff
 using Scratch 
 using Unitful
