@@ -34,14 +34,10 @@ function BACKSAFT(components;
     return model
 end
 
-function lb_volume(model::BACKSAFTModel, z = SA[1.0])
-    seg = model.params.segment.values
-    σᵢᵢ = model.params.sigma.diagvalues
-    α   = model.params.alpha.values
-    val = π/6*N_A*sum(z[i]*α[i]*seg[i]*σᵢᵢ[i]^3 for i in 1:length(z))
-    return val
+function x0_volume_liquid(model,T,z)
+    v_lb = lb_volume(model,z)
+    return v_lb*1.01
 end
-
 function a_res(model::BACKSAFTModel ,V, T, z)
     a_hcb_ = @f(a_hcb)
     a_disp_ = @f(a_disp)
