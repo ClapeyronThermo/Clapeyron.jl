@@ -89,7 +89,8 @@ function chemical_stability(model::EoSModel,p,T,z)
     w_vap = Kʷ.*z
     w_liq = z./Kʷ
 
-    tdp_func(w) = Optim.minimum(optimize(w -> tangent_plane_distance(model,p,T,z,w), z))
+    tdp_func(w,phase) = Optim.minimum(optimize(w -> 
+                            tangent_plane_distance(model,p,T,z,phase,w), w))
     tdp = tdp_func(w_vap), tdp_func(w_liq)
     if any(tdp > 0)
         return true
@@ -105,9 +106,8 @@ Uses unconstrained minimisation from NLSolvers.jl
 """
 function tangent_plane_distance(model,p,T,z,w)
     w = w./sum(w)
-    V = volume(model, p, T, w)
+    V = volume(model, p, T, w;phase=phase)
 
     μ(w) = Clapeyron.VT_chemical_potential(model,V,T,w)
-
-    tdp = sum(w.*(μ(w) .- μ(z)))./(8.314*T)
+    tdp = sum(w.*(μ(w) .- μ(z)))#./(8.314*T)
 end
