@@ -4,7 +4,6 @@ struct UNIFACParam <: EoSParam
     C::PairParam{Float64}
     R::SingleParam{Float64}
     Q::SingleParam{Float64}
-    mixedsegment::SingleParam{Vector{Float64}}
 end
 
 abstract type UNIFACModel <: ActivityModel end
@@ -88,9 +87,8 @@ function UNIFAC(components; puremodel=PR,
     R  = params["R"]
     Q  = params["Q"]
     icomponents = 1:length(components)
-    gc_mixedsegment = mix_segment(groups) #this function is used in SAFTγMie
     init_puremodel = [puremodel([groups.components[i]]) for i in icomponents]
-    packagedparams = UNIFACParam(A,B,C,R,Q,gc_mixedsegment)
+    packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1021/i260064a004"]
     cache = UNIFACCache(groups,packagedparams)
     model = UNIFAC(components,icomponents,groups,packagedparams,init_puremodel,references,cache)
@@ -143,10 +141,11 @@ function excess_g_res(model::UNIFACModel,p,T,z=SA[1.0])
     B = model.params.B.values
     C = model.params.C.values
     invT = 1/T
-    mi  = model.params.mixedsegment.values
+    mi  = reshape(model.groups.n_groups_cache.v,(length(@groups),length(z)))
     m̄ = dot(z,model.unifac_cache.m)
     m̄inv = 1/m̄
-    X = [dot(z,mi_i)*m̄inv for mi_i in mi]
+    X = m̄inv*mi*z
+    #X = [dot(z,mi_i)*m̄inv for mi_i in eachcol(mi)]
     θpm = dot(X,Q)
     G_res = _0
     for i ∈ @groups

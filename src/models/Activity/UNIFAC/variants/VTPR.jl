@@ -74,8 +74,7 @@ function VTPRUNIFAC(components; puremodel=PR,
     icomponents = 1:length(components)
     cache = VTPRUNIFACCache(groups)
     init_puremodel = [puremodel([groups.components[i]]) for i in icomponents]
-    gc_mixedsegment = mix_segment(groups)
-    packagedparams = UNIFACParam(A,B,C,R,Q,gc_mixedsegment)
+    packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1016/S0378-3812(01)00626-4"]
     model = VTPRUNIFAC(components,icomponents,groups,packagedparams,init_puremodel,references,cache)
     return model
