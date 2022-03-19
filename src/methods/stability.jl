@@ -71,8 +71,6 @@ function gibbs_duhem(model,V,T,z=SA[1.0])
     return abs(μ-g),μ,g
 end
 
-export isstable, mechanical_stability, diffusive_stability, gibbs_duhem
-
 """
     chemical_stability(model,V,T,z)::Bool
 Performs a chemical stability check using the 
@@ -91,8 +89,8 @@ function chemical_stability(model::EoSModel,p,T,z)
 
     tdp_func(w,phase) = Optim.minimum(optimize(w -> 
                             tangent_plane_distance(model,p,T,z,phase,w), w))
-    tdp = tdp_func(w_vap), tdp_func(w_liq)
-    if any(tdp > 0)
+    tdp = [tdp_func(w_vap,:v), tdp_func(w_liq,:l)]
+    if any(tdp .> 0)
         return true
     else
         return false
@@ -104,10 +102,13 @@ end
 Calculates the tangent plane distance for a tangent plane stability test
 Uses unconstrained minimisation from NLSolvers.jl
 """
-function tangent_plane_distance(model,p,T,z,w)
+function tangent_plane_distance(model,p,T,z,phase,w)
     w = w./sum(w)
     V = volume(model, p, T, w;phase=phase)
 
     μ(w) = Clapeyron.VT_chemical_potential(model,V,T,w)
     tdp = sum(w.*(μ(w) .- μ(z)))#./(8.314*T)
 end
+
+export isstable, mechanical_stability, diffusive_stability, gibbs_duhem, chemical_stability
+
