@@ -73,7 +73,8 @@ end
 
 """
     chemical_stability(model,V,T,z)::Bool
-Performs a chemical stability check using the 
+
+Performs a chemical stability check using the tangent plane distance criterion, starting with the wilson correlation for K-values.
 """
 function chemical_stability(model::EoSModel,V,T,z)
     # Generate vapourlike and liquidlike initial guesses
@@ -119,9 +120,8 @@ function pure_chemical_instability(model,V,T)
 end
 
 """
-    tangent_plane_distance(model,V,T,z)::Float
+    tangent_plane_distance(model,V,T,z,phase::Symbol,w)::Float
 Calculates the tangent plane distance for a tangent plane stability test
-Uses unconstrained minimisation from NLSolvers.jl
 """
 function tangent_plane_distance(model,p,T,z,phase,w)
     w = w./sum(w)
