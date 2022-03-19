@@ -112,10 +112,13 @@ function each_split_model(param::GroupParam,I)
 
     #unique, but without allocating sets.
     idx = zeros(Int,length(param.flattenedgroups))
-    for group_i in i_groups
-        @view(idx[group_i]) .= group_i
+    for i in I
+        group_i = param.groups[i]
+        for k in 1:length(group_i)
+            j = findfirst(==(group_i[k]),param.flattenedgroups)
+            idx[j] = j
+        end
     end
-    @show idx
     zero_idx = iszero.(idx)
     nonzero_idx = @. !zero_idx
     _idx = view(idx,nonzero_idx)
@@ -125,30 +128,17 @@ function each_split_model(param::GroupParam,I)
     
     flattenedgroups = param.flattenedgroups[_idx]
     n_flattenedgroups = Vector{Vector{Int64}}(undef,length(I))
-    for i in 1:length(I)
+    for (k,i) in pairs(I)
         pii = param.n_flattenedgroups[i]
-        n_flattenedgroups[i] = pii[_idx]
+        n_flattenedgroups[k] = pii[_idx]
     end
     n_groups_cache  = PackedVectorsOfVectors.packed_fill(0.0,(length(ni) for ni in n_flattenedgroups))
 
-    for i in 1:length(I)
+    for (k,i) in pairs(I)
         pii = param.n_groups_cache[i]
         true_n = @view(pii[_idx])
-        @show n_groups_cache
-        @show true_n
-        n_groups_cache[i] .= true_n
+        n_groups_cache[k] .= true_n
     end
-    k = 0
-    for i in 1:length(idx)
-        if !iszero(idx[i])
-            k += 1
-            idx[i] = k
-        end
-    end         
-    #set true i_groups indices
-    #for i in 1:length(I)
-    #    i_groups[i] .= idx[i_groups[i]]
-    #end
 
     return GroupParam(
         components,
