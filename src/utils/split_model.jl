@@ -102,6 +102,65 @@ function each_split_model(param::AssocParam,I)
             param.sources
             )
 end
+
+function each_split_model(param::GroupParam,I) 
+    components = param.components[I]
+    groups = param.groups[I]
+    n_groups = param.n_groups[I]
+    i_groups = param.i_groups[I]
+    sourcecsvs = param.sourcecsvs
+
+    #unique, but without allocating sets.
+    idx = zeros(Int,length(param.flattenedgroups))
+    for group_i in i_groups
+        @view(idx[group_i]) .= group_i
+    end
+    @show idx
+    zero_idx = iszero.(idx)
+    nonzero_idx = @. !zero_idx
+    _idx = view(idx,nonzero_idx)
+    
+    len_groups = length(_idx)
+    i_flattenedgroups = 1:len_groups
+    
+    flattenedgroups = param.flattenedgroups[_idx]
+    n_flattenedgroups = Vector{Vector{Int64}}(undef,length(I))
+    for i in 1:length(I)
+        pii = param.n_flattenedgroups[i]
+        n_flattenedgroups[i] = pii[_idx]
+    end
+    n_groups_cache  = PackedVectorsOfVectors.packed_fill(0.0,(length(ni) for ni in n_flattenedgroups))
+
+    for i in 1:length(I)
+        pii = param.n_groups_cache[i]
+        true_n = @view(pii[_idx])
+        @show n_groups_cache
+        @show true_n
+        n_groups_cache[i] .= true_n
+    end
+    k = 0
+    for i in 1:length(idx)
+        if !iszero(idx[i])
+            k += 1
+            idx[i] = k
+        end
+    end         
+    #set true i_groups indices
+    #for i in 1:length(I)
+    #    i_groups[i] .= idx[i_groups[i]]
+    #end
+
+    return GroupParam(
+        components,
+        groups,
+        n_groups,
+        i_groups,
+        flattenedgroups,
+        n_flattenedgroups,
+        n_groups_cache,
+        i_flattenedgroups,
+        sourcecsvs)
+end
 """
     split_model(model::EoSModel)
 
