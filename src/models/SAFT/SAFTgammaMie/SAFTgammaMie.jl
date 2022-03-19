@@ -3,16 +3,11 @@ include("utils.jl")
 #just a holder for the z partitions.
 #to allow split_model to work correctly
 
-abstract type SAFTgammaMieModel <: GCSAFTModel end
+abstract type SAFTgammaMieModel <: SAFTVRMieModel end
 
-struct γMieZ <: EoSModel
-    components::Vector{String}
-    z::SingleParam{Vector{Float64}}
-end
 
 struct SAFTgammaMieParam <: EoSParam
     segment::SingleParam{Int}
-    mixedsegment::SingleParam{Vector{Float64}}
     shapefactor::SingleParam{Float64}
     lambda_a::PairParam{Float64}
     lambda_r::PairParam{Float64}
@@ -22,7 +17,6 @@ struct SAFTgammaMieParam <: EoSParam
     bondvol::AssocParam{Float64}
 end
 
-@registermodel γMieZ
 
 struct SAFTgammaMie{I,VR} <: SAFTgammaMieModel
     components::Vector{String}
@@ -31,27 +25,10 @@ struct SAFTgammaMie{I,VR} <: SAFTgammaMieModel
     params::SAFTgammaMieParam
     idealmodel::I
     vrmodel::VR
-    mie_zfractions::γMieZ
     assoc_options::AssocOptions
     references::Array{String,1}
 end
 
-function split_model(model::SAFTgammaMie,subset = nothing)
-    if !(subset === nothing)
-        error("SAFTgammaMie does not support custom subsets")
-    end
-    pures = auto_split_model(model)
-    for (i,pure) in pairs(pures)
-        filter!(!iszero,pure.mie_zfractions.z.values[1])
-        mixm = pure.params.mixedsegment.values
-        for mi in mixm
-            xi = mi[i]
-            resize!(mi, 1)
-            mi[1] = xi
-        end
-    end 
-    return pures
-end
 
 function SAFTgammaMie(components; 
     idealmodel=BasicIdeal,
@@ -86,7 +63,7 @@ function SAFTgammaMie(components;
 
     #used in x_S:
     #x_S(group i) = dot(z,mixsegment[i])/dot(z,m_vr)
-    gc_mixedsegment = mix_segment(groups,vst,S)
+    mix_segment!(groups,S)
     gc_sigma = sigma_LorentzBerthelot(params["sigma"])
     gc_sigma.values .*= 1E-10
     gc_epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], gc_sigma)
@@ -97,15 +74,6 @@ function SAFTgammaMie(components;
         return v[i][k]*vst[k]*S[k] / ∑(v[i][l]*vst[l]*S[l] for l ∈ gc)
     end
 
-    zz = [[0.0 for k ∈ 1:length(v[i])] for i ∈ comps]
-    zzparam = SingleParam("z fraction",components,zz,[false for i ∈ 1:length(components)],String[],String[])
-    for i ∈ 1:length(zz)
-        zzi = zz[i]
-        for k ∈ 1:length(zzi)
-            zzi[k] = ẑ(i, k)
-        end
-    end
-    
     function σ̄(i)
         return cbrt(∑(∑(ẑ(i,k)*ẑ(i,l)*σ[k,l]^3 for l ∈ gc) for k ∈ gc))
     end
@@ -172,13 +140,12 @@ function SAFTgammaMie(components;
         comp_mw[i] =mwi
     end  
     _mw = SingleParam("molecular_weight",components,comp_mw)
-    gcparams = SAFTgammaMieParam(gc_segment,gc_mixedsegment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
+    gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
     vrparams = SAFTVRMieParam(segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol,_mw)
     idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     vr = SAFTVRMie(vrparams, comp_sites, idmodel; ideal_userlocations, verbose, assoc_options)
-    mie_z = γMieZ(components,zzparam)
     γmierefs = ["10.1063/1.4851455", "10.1021/je500248h"]
-    gmie = SAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,mie_z,assoc_options,γmierefs)
+    gmie = SAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,assoc_options,γmierefs)
     return gmie
 end
 @registermodel SAFTgammaMie
