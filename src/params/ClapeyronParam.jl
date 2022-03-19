@@ -388,6 +388,7 @@ struct GroupParam <: ClapeyronParam
     i_groups::Array{Array{Int,1},1}
     flattenedgroups::Array{String,1}
     n_flattenedgroups::Array{Array{Int,1},1}
+    n_groups_cache::PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{Float64}, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}}
     i_flattenedgroups::UnitRange{Int}
     sourcecsvs::Array{String,1}
 end
@@ -402,16 +403,19 @@ function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=S
     len_flattenedgroups = length(flattenedgroups)
     i_flattenedgroups = 1:len_flattenedgroups
     n_flattenedgroups = [zeros(Int,len_flattenedgroups) for _ ∈ 1:length(input)]
-    for i in length(input)
-        setindex!.(n_flattenedgroups,n_groups,i_groups)
+    n_groups_cache = PackedVectorsOfVectors.packed_fill(0.0,fill(len_flattenedgroups,length(input)))
+    for i in 1:length(input)
+        setindex!(n_flattenedgroups[i],n_groups[i],i_groups[i])
+        setindex!(n_groups_cache[i],n_groups[i],i_groups[i])
     end
-
+    
     return GroupParam(components, 
     groups, 
     n_groups,
     i_groups, 
     flattenedgroups,
-    n_flattenedgroups, 
+    n_flattenedgroups,
+    n_groups_cache,
     i_flattenedgroups,
     sourcecsvs)
 end
