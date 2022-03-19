@@ -112,12 +112,16 @@ function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
 end
 
 
-function mix_segment(groups::GroupParam,segment = ones(length(groups.flattenedgroups)),s =segment)
+function mix_segment!(groups::GroupParam,s = ones(length(groups.flattenedgroups)))
     gc = 1:length(groups.flattenedgroups)
     comps = 1:length(groups.components)
-    v = groups.n_flattenedgroups
-    mixsegment =  [[v[i][k]*segment[k]*s[k] for i ∈ comps] for k ∈ gc]
-    SingleParam("mixed segment",groups.flattenedgroups,mixsegment,[false for i ∈ gc],String[],String[])
+    v = groups.n_groups_cache
+    for k in 1:length(gc)
+        for i in 1:length(comps)
+            v[i][k] = v[i][k]*s[k]
+        end
+    end
+    #SingleParam("mixed segment",groups.flattenedgroups,mixsegment,[false for i ∈ gc],String[],String[])
 end
     
   
