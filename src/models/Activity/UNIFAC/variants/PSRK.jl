@@ -82,8 +82,7 @@ function PSRKUNIFAC(components; puremodel=PR,
     icomponents = 1:length(components)
     
     init_puremodel = [puremodel([groups.components[i]]) for i in icomponents]
-    gc_mixedsegment = mix_segment(groups)
-    packagedparams = UNIFACParam(A,B,C,R,Q,gc_mixedsegment)
+    packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1021/i260064a004","10.1016/j.fluid.2004.11.002"]
     cache = UNIFACCache(groups,packagedparams)
     model = PSRKUNIFAC(components,icomponents,groups,packagedparams,init_puremodel,references,cache)
