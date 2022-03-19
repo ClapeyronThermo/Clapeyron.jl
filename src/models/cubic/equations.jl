@@ -206,3 +206,36 @@ vl = b + sqrt(0.5RTb3/2a)
 on models with translation:
 vl = b + sqrt(0.5RTb3/2a) - c
 =#
+
+
+#optimization for cubics
+function chemical_stability(model::ABCubicModel,p,T,z)
+    # Generate vapourlike and liquidlike initial guesses
+    # Currently using Wilson correlation
+    if isone(length(z))
+        return pure_chemical_instability(model,V/sum(z),T) 
+    end
+    Pc = model.params.Pc.values
+    Tc = model.params.Tc.values
+
+    if hasfield(typeof(model.alpha),:acentric_factor)
+        ω = model.alpha.params.acentricfactor.values
+    else
+        pure = split_model(model)
+        ω = acentric_factor.(pure)
+    end
+
+    Kʷ = @. Pc/p*exp(5.373*(1+ω)*(1-Tc/T))
+    z = z./sum(z)
+    w_vap = Kʷ.*z
+    w_liq = z./Kʷ
+
+    tdp_func(w,phase) = Solvers.optimize(w -> tangent_plane_distance(model,p,T,z,phase,w), w) |> Solvers.x_minimum
+    tdp = (tdp_func(w_vap,:v), tdp_func(w_liq,:l))
+    if minimum(tdp) >= 0
+        return true
+    else
+        return false
+    end
+end
+

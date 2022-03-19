@@ -75,25 +75,46 @@ end
     chemical_stability(model,V,T,z)::Bool
 Performs a chemical stability check using the 
 """
-function chemical_stability(model::EoSModel,p,T,z)
+function chemical_stability(model::EoSModel,V,T,z)
     # Generate vapourlike and liquidlike initial guesses
     # Currently using Wilson correlation
-    Pc = model.params.Pc.values
-    Tc = model.params.Tc.values
-    ω = model.alpha.params.acentricfactor.values
 
+    #in case of only pure components.
+    if isone(length(z))
+        return pure_chemical_instability(model,V/sum(z),T) 
+    end
+    pure = split_model(model)
+    crit = crit_pure.(pure)
+    Tc = getindex.(crit,1)
+    Pc = getindex.(crit,2)
+    ω = acentric_factor.(pure)
+    p = pressure(model,V,T,z)
     Kʷ = @. Pc/p*exp(5.373*(1+ω)*(1-Tc/T))
     z = z./sum(z)
     w_vap = Kʷ.*z
     w_liq = z./Kʷ
-
-    tdp_func(w,phase) = Optim.minimum(optimize(w -> 
-                            tangent_plane_distance(model,p,T,z,phase,w), w))
-    tdp = [tdp_func(w_vap,:v), tdp_func(w_liq,:l)]
-    if any(tdp .> 0)
+   
+    tdp_func(w,phase) = Solvers.optimize(w -> tangent_plane_distance(model,p,T,z,phase,w), w) |> Solvers.x_minimum
+    tdp = (tdp_func(w_vap,:v), tdp_func(w_liq,:l))
+    if minimum(tdp) >= 0
         return true
     else
         return false
+    end
+end
+
+function pure_chemical_instability(model,V,T)
+    Tc,Pc,Vc = crit_pure(model)
+    T >= Tc && return true
+    psat,vl,vv = saturation_pressure(model,T)
+    if isnan(psat)
+        @error "could not determine chemical instability. saturation solver failed."
+        return false
+    end
+    if (vl < V < vv)
+        return false
+    else
+        return true
     end
 end
 
@@ -105,10 +126,12 @@ Uses unconstrained minimisation from NLSolvers.jl
 function tangent_plane_distance(model,p,T,z,phase,w)
     w = w./sum(w)
     V = volume(model, p, T, w;phase=phase)
-
     μ(w) = Clapeyron.VT_chemical_potential(model,V,T,w)
     tdp = sum(w.*(μ(w) .- μ(z)))#./(8.314*T)
 end
 
-export isstable, mechanical_stability, diffusive_stability, gibbs_duhem, chemical_stability
+export isstable
+export mechanical_stability, diffusive_stability,chemical_stability
+export gibbs_duhem
+
 
