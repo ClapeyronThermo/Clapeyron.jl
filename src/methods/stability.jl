@@ -21,6 +21,10 @@ function isstable(model,V,T,z,phase=:stable)
         @warn "StabilityWarning: Phase is diffusively unstable"
         stable = false
     end
+    if !chemical_stability(model,V,T,z)
+        @warn "StabilityWarning: Phase is chemically unstable"
+        stable = false
+    end
     return stable
 end
 
@@ -67,6 +71,65 @@ function gibbs_duhem(model,V,T,z=SA[1.0])
     return abs(μ-g),μ,g
 end
 
-export isstable, mechanical_stability, diffusive_stability, gibbs_duhem
+"""
+    chemical_stability(model,V,T,z)::Bool
+Performs a chemical stability check using the 
+"""
+function chemical_stability(model::EoSModel,V,T,z)
+    # Generate vapourlike and liquidlike initial guesses
+    # Currently using Wilson correlation
 
+    #in case of only pure components.
+    if isone(length(z))
+        return pure_chemical_instability(model,V/sum(z),T) 
+    end
+    pure = split_model(model)
+    crit = crit_pure.(pure)
+    Tc = getindex.(crit,1)
+    Pc = getindex.(crit,2)
+    ω = acentric_factor.(pure)
+    p = pressure(model,V,T,z)
+    Kʷ = @. Pc/p*exp(5.373*(1+ω)*(1-Tc/T))
+    z = z./sum(z)
+    w_vap = Kʷ.*z
+    w_liq = z./Kʷ
+   
+    tdp_func(w,phase) = Solvers.optimize(w -> tangent_plane_distance(model,p,T,z,phase,w), w) |> Solvers.x_minimum
+    tdp = (tdp_func(w_vap,:v), tdp_func(w_liq,:l))
+    if minimum(tdp) >= 0
+        return true
+    else
+        return false
+    end
+end
 
+function pure_chemical_instability(model,V,T)
+    Tc,Pc,Vc = crit_pure(model)
+    T >= Tc && return true
+    psat,vl,vv = saturation_pressure(model,T)
+    if isnan(psat)
+        @error "could not determine chemical instability. saturation solver failed."
+        return false
+    end
+    if (vl < V < vv)
+        return false
+    else
+        return true
+    end
+end
+
+"""
+    tangent_plane_distance(model,V,T,z)::Float
+Calculates the tangent plane distance for a tangent plane stability test
+Uses unconstrained minimisation from NLSolvers.jl
+"""
+function tangent_plane_distance(model,p,T,z,phase,w)
+    w = w./sum(w)
+    V = volume(model, p, T, w;phase=phase)
+    μ(w) = Clapeyron.VT_chemical_potential(model,V,T,w)
+    tdp = sum(w.*(μ(w) .- μ(z)))#./(8.314*T)
+end
+
+export isstable
+export mechanical_stability, diffusive_stability,chemical_stability
+export gibbs_duhem
