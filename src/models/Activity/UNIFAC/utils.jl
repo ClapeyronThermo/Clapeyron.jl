@@ -1,3 +1,4 @@
+#a GC averaged UNIFAC.
 struct UNIFACCache <: EoSModel
     components::Vector{String}
     r::Vector{Float64}
