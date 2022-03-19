@@ -133,5 +133,3 @@ end
 export isstable
 export mechanical_stability, diffusive_stability,chemical_stability
 export gibbs_duhem
-
-
