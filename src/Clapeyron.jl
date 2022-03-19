@@ -46,6 +46,9 @@ include("database/UserReader.jl")
 #macros, used for defining models
 include("utils/macros.jl")
 
+#index reduction
+include("utils/index_reduction.jl")
+
 #splitting models, useful for methods.
 include("utils/split_model.jl")
 
