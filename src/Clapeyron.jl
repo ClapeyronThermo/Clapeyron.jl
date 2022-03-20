@@ -104,6 +104,8 @@ include("models/cubic/vdW.jl")
 include("models/cubic/RK/RK.jl")
 include("models/cubic/PR/PR.jl")
 
+include("models/cached/EoSVectorParam.jl")
+
 include("models/Activity/Wilson/Wilson.jl")
 include("models/Activity/NRTL/NRTL.jl")
 include("models/Activity/UNIQUAC/UNIQUAC.jl")
@@ -134,6 +136,5 @@ include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 include("models/SPUNG/SPUNG.jl")
 include("models/UFTheory/UFTheory.jl")
 
-include("models/cached/CachedEoS.jl")
 include("utils/misc.jl")
 end # module

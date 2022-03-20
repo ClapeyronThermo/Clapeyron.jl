@@ -6,7 +6,7 @@ struct PSRKUNIFAC{c<:EoSModel} <: PSRKUNIFACModel
     icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACParam
-    puremodel::Vector{c}
+    puremodel::EoSVectorParam{c}
     references::Array{String,1}
     unifac_cache::UNIFACCache
 end
@@ -18,9 +18,10 @@ export PSRKUNIFAC
     PSRKUNIFACModel <: UNIFACModel
 
     PSRKUNIFAC(components::Vector{String};
-    puremodel=PR, 
-    userlocations=String[], 
-    verbose=false)
+    puremodel = PR,
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
@@ -68,9 +69,12 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 """
 PSRKUNIFAC
 
-function PSRKUNIFAC(components; puremodel=PR,
-    userlocations=String[], 
-     verbose=false)
+function PSRKUNIFAC(components::Vector{String};
+    puremodel = PR,
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose = false)
+
     groups = GroupParam(components, ["Activity/UNIFAC/PSRK/PSRK_groups.csv"]; verbose=verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/PSRK/PSRK_like.csv", "Activity/UNIFAC/PSRK/PSRK_unlike.csv"]; userlocations=userlocations,  asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
@@ -81,10 +85,10 @@ function PSRKUNIFAC(components; puremodel=PR,
     Q  = params["Q"]
     icomponents = 1:length(components)
     
-    init_puremodel = [puremodel([groups.components[i]]) for i in icomponents]
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1021/i260064a004","10.1016/j.fluid.2004.11.002"]
     cache = UNIFACCache(groups,packagedparams)
-    model = PSRKUNIFAC(components,icomponents,groups,packagedparams,init_puremodel,references,cache)
+    model = PSRKUNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
     return model
 end
