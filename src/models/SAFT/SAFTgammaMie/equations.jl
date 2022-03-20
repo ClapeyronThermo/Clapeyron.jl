@@ -33,14 +33,14 @@ function a_res(model::SAFTgammaMieModel, V, T, z)
     dgc,X,vrdata = _data
     _,ρS,ζi,_ζ_X,_ζst,σ3x,m̄ = vrdata
     vrdata_disp = (dgc,ρS,ζi,_ζ_X,_ζst,σ3x,m̄)
-    return @f(a_hs,_data) + a_disp(model,V,T,X,vrdata_disp) + @f(a_chain,_data) + @f(a_assoc,_data)
+    return @f(a_hs,_data) + a_disp(model,V,T,X,vrdata_disp)/sum(z) + @f(a_chain,_data) + @f(a_assoc,_data)
 end
 
-
-
-
 function a_mono(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
-    return @f(a_hs,_data) + @f(a_disp,_data)
+    dgc,X,vrdata = _data
+    _,ρS,ζi,_ζ_X,_ζst,σ3x,m̄ = vrdata
+    vrdata_disp = (dgc,ρS,ζi,_ζ_X,_ζst,σ3x,m̄)
+    return @f(a_hs,_data) + a_disp(model,V,T,X,vrdata_disp)/sum(z)
 end
 
 function data(model::SAFTgammaMieModel, V, T, z)
@@ -88,7 +88,7 @@ end
 function σ3x(model::SAFTgammaMieModel, V, T, z)
     X = @f(X_gc)
     m = model.params.segment.values
-    m̄ = dot(z, m)
+    m̄ = dot(z, model.vrmodel.params.segment.values)
     m̄inv = 1/m̄
     σ = model.params.sigma.values
     σ3_x =  zero(first(z))

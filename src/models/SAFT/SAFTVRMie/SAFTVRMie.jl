@@ -93,7 +93,7 @@ function ζ0123(model::SAFTVRMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params
     m = model.params.segment.values
     _0 = zero(V+T+first(z))
     ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
-    for i ∈ @comps
+    for i ∈ 1:length(z)
         di =_d[i]
         xS = z[i]*m[i]/m̄
         ζ0 += xS
@@ -224,7 +224,7 @@ function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d),m̄ = dot(z,model.pa
     m̄inv = 1/m̄
     σ = model.params.sigma.values
     ρS = N_A/V*m̄
-    comps = @comps
+    comps = 1:length(z)
     _ζ_X = zero(V+T+first(z))
     kρS = ρS* π/6/8 
     σ3_x = _ζ_X
@@ -239,8 +239,7 @@ function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d),m̄ = dot(z,model.pa
             x_Sj = z[j]*m[j]*m̄inv
             σ3_x += 2*x_Si*x_Sj*(σ[i,j]^3)
             dij = (di + _d[j])
-            r1 = kρS*x_Si*x_Sj*dij^3  
-            @show r1        
+            r1 = kρS*x_Si*x_Sj*dij^3         
             _ζ_X += 2*r1
         end
     end
@@ -739,13 +738,12 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
 end
 
 function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
-    _d,ρS,ζi,_ζ_X,_ζst,_,m̄ = _data
-    l = length(z)
-    comps = 1:l
+    _d,ρS,ζi,_ζ_X,_ζst,_,m̄ = _data 
+    comps = 1:length(z)
     #this is a magic trick. we normally (should) expect length(z) = length(model),
     #but on GC models, @comps != @groups
     #if we pass Xgc instead of z, the equation is exactly the same.
-    ∑z = ∑(z)
+    #we need to add the divide the result by sum(z) later.
     m = model.params.segment.values
     _ϵ = model.params.epsilon.values
     _λr = model.params.lambda_r.values
@@ -799,7 +797,7 @@ function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
         a₁ += a1_ij*x_Si*x_Si
         a₂ += a2_ij*x_Si*x_Si
         a₃ += a3_ij*x_Si*x_Si
-        for j ∈ (i+1):l
+        for j ∈ 1:(i-1)
             x_Sj = z[j]*m[j]*m̄inv   
             ϵ = _ϵ[i,j]
             λa = _λa[i,j]
@@ -831,9 +829,9 @@ function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
             a₃ += 2*a3_ij*x_Si*x_Sj            
         end
     end
-    a₁ = a₁*m̄/T/∑z
-    a₂ = a₂*m̄/(T*T)/∑z
-    a₃ = a₃*m̄/(T*T*T)/∑z
+    a₁ = a₁*m̄/T #/sum(z)
+    a₂ = a₂*m̄/(T*T)  #/sum(z)
+    a₃ = a₃*m̄/(T*T*T)  #/sum(z)
     #@show (a₁,a₂,a₃)
     adisp =  a₁ + a₂ + a₃ 
     return adisp
