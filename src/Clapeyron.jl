@@ -70,6 +70,10 @@ include("models/ideal/ReidIdeal.jl")
 include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
 
+#Basic utility EoS
+include("models/cached/HasWater.jl")
+
+
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95Ideal.jl")
@@ -131,6 +135,5 @@ include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 include("models/SPUNG/SPUNG.jl")
 include("models/UFTheory/UFTheory.jl")
 
-include("models/cached/CachedEoS.jl")
 include("utils/misc.jl")
 end # module
