@@ -38,6 +38,18 @@ function epsilon_LorentzBerthelot(epsilon::ClapeyronParam, k::PairParameter)
     return epsilon
 end
 
+function epsilon_LorentzBerthelot(epsilon::ClapeyronParam)
+    epsilon = PairParam(epsilon)
+    ϵ = epsilon.values
+    for i ∈ 1:length(epsilon.components), j ∈ 1:length(epsilon.components)
+        if epsilon.ismissingvalues[i,j]
+            ϵ[i,j] = sqrt(ϵ[i,i] * ϵ[j,j])
+        end
+    end
+    epsilon.ismissingvalues .= false
+    return epsilon
+end
+
 export epsilon_HudsenMcCoubrey
 function epsilon_HudsenMcCoubrey(epsilon::ClapeyronParam, sigma::PairParameter)
     epsilon = PairParam(epsilon)
