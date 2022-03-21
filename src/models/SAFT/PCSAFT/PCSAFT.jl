@@ -26,7 +26,8 @@ function PCSAFT(components;
     
     segment = params["m"]
     k0 = params["k"]
-    k1 = params["kT"]
+    n = length(components)
+    k1 = get(params,"kT",PairParam("kT",components,zeros(n,n)))
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
