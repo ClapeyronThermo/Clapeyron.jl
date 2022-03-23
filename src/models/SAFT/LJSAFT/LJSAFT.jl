@@ -25,7 +25,7 @@ function LJSAFT(components;
     T_tilde = epsilon_LorentzBerthelot(params["T_tilde"], k)
     params["b"].values .*= 1E-3
     params["b"].values .^= 1/3
-    b = sigma_LorentzBerthelot_mod(params["b"],zeta)
+    b = sigma_LorentzBerthelot(params["b"],zeta)
     b.values .^= 3
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]

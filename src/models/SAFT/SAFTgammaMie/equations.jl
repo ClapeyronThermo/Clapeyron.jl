@@ -77,7 +77,7 @@ function d_gc_av(model::SAFTgammaMieModel,V,T,z,_d_gc = d(model,V,T,@f(X_gc)))
             dk = _d_gc[k]
             di += zk*zk*dk^3
             for l ∈ 1:k - 1
-                di += 0.25*zk*_z[l]*(dk + _d_gc[l])^3
+                di += 0.25*zk*_z[l]*(dk + _d_gc[l])^3 # 2*(di + dj/2)^3 = di 
             end
         end
         _d[i] = cbrt(di*∑zinv2)

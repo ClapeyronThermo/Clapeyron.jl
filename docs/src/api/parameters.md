@@ -36,8 +36,21 @@ Clapeyron.SiteParam
 Clapeyron.AssocOptions
 ```
 
+## Combining Rules
+```
+Clapeyron.kij_mix
+Clapeyron.pair_mix
+Clapeyron.sigma_LorentzBerthelot
+Clapeyron.epsilon_LorentzBerthelot
+Clapeyron.epsilon_HudsenMcCoubrey
+Clapeyron.lambda_LorentzBerthelot
+Clapeyron.lambda_squarewell
+Clapeyron.group_sum
+```
+
 ## Model Splitting
 ```@docs
 Clapeyron.split_model
 Clapeyron.is_splittable
+Clapeyron.index_reduction
 ```

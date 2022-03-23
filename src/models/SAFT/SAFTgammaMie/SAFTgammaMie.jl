@@ -48,22 +48,12 @@ function SAFTgammaMie(components;
     S = shapefactor.values
     vst = gc_segment.values
     v  = groups.n_flattenedgroups
-    comp_segment = zeros(Float64,length(comps))
-    for i ∈ comps
-        res_i = 0.0
-        vi = v[i]
-        groups_i = groups.i_groups[i]
-        for idx ∈ 1:length(groups_i)
-            k = groups_i[idx]
-            res_i += vi[k]*S[k]*vst[k]
-        end
-        comp_segment[i] = res_i
-    end
-    segment = SingleParam("segment",components,comp_segment)
 
-    #used in x_S:
-    #x_S(group i) = dot(z,mixsegment[i])/dot(z,m_vr)
+    _mw = group_sum(groups,params["Mw"])
+
     mix_segment!(groups,S,vst)
+    segment = SingleParam("segment",components,group_sum(groups))
+
     gc_sigma = sigma_LorentzBerthelot(params["sigma"])
     gc_sigma.values .*= 1E-10
     gc_epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], gc_sigma)
@@ -113,8 +103,6 @@ function SAFTgammaMie(components;
     comp_lambda_r = [λi(gc_λr,i) for i ∈ comps]
     lambda_a = lambda_LorentzBerthelot(SingleParam("lambda_a",components,comp_lambda_a))
     lambda_r = lambda_LorentzBerthelot(SingleParam("lambda_r",components,comp_lambda_r))
-
-    #assoc
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
     comp_sites,idx_dict = gc_to_comp_sites(sites,groups)
@@ -126,20 +114,6 @@ function SAFTgammaMie(components;
     compval_epsilon_assoc = Compressed4DMatrix(_comp_epsilon_assoc,outer,inner,outer_size,inner_size)
     comp_bondvol = AssocParam{Float64}("epsilon assoc",components,compval_bondvol,comp_sites.sites,String[],String[])
     comp_epsilon_assoc = AssocParam{Float64}("bondvol",components,compval_epsilon_assoc,comp_sites.sites,String[],String[])
-    #mixing of Mw
-    comp_mw = zeros(Float64,length(components))
-    gc_mw = params["Mw"].values
-    for i ∈ 1:length(components)
-        vi = v[i]
-        gi = groups.i_groups[i]
-        mwi = 0.0
-        for idx ∈ 1:length(gi)
-            j = gi[idx]
-            mwi += gc_mw[j]*vi[j]
-        end
-        comp_mw[i] =mwi
-    end
-    _mw = SingleParam("molecular_weight",components,comp_mw)
     gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
     vrparams = SAFTVRMieParam(segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol,_mw)
     idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
