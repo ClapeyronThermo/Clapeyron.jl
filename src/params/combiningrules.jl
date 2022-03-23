@@ -48,9 +48,9 @@ function kij_mix!(f::F,p,K,B) where F
     end
 end
 ### functions to use:
-mix_mean(p_i,p_j,k) = 0.5*(p_i+p_j)*(1-k)  
-mix_geomean(p_i,p_j,k) = sqrt(p_i*p_j)*(1-k) 
-mix_powmean(p_i,p_j,k,n) =(1-k)*(0.5*(p_i^n + p_j^n))^(1/n)
+mix_mean(p_i,p_j,k=0) = 0.5*(p_i+p_j)*(1-k)  
+mix_geomean(p_i,p_j,k=0) = sqrt(p_i*p_j)*(1-k) 
+mix_powmean(p_i,p_j,k=0,n=2) =(1-k)*(0.5*(p_i^n + p_j^n))^(1/n)
 
 ##special lambda with custom k
 function mix_lambda(λ_i,λ_j,k)
@@ -136,7 +136,7 @@ function pair_mix!(f,p,q,B)
                 q_i = q[j,j]
                 q_ji =  q[j,i]
                 p_ji = f(p_i,p_j,q_i,q_j,q_ji)
-                r[j,i] = p_ji
+                p[j,i] = p_ji
             end
         end
     end
@@ -224,6 +224,12 @@ function group_sum(groups::GroupParam,param::SingleParameter)
                         param.sourcecsvs)
 end
 
+
+function group_sum(groups::GroupParam,param::AbstractVector)
+    v = groups.n_groups_cache
+    comp_vals = [dot(vi,param) for vi in v]
+end
+
 """
     group_sum(groups::GroupParam)
 
@@ -234,11 +240,6 @@ pᵢ = ∑νᵢₖ
 where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
-function group_sum(groups::GroupParam,param::AbstractVector)
-    v = groups.n_groups_cache
-    comp_vals = [dot(vi,param) for vi in v]
-end
-
 function group_sum(groups::GroupParam)
     v = groups.n_groups_cache
     comp_vals = [sum(vi) for vi in v]
@@ -255,34 +256,74 @@ function group_matrix(groups::GroupParam)
     mi  = reshape(groups.n_groups_cache.v,(gc,comp))
 end
 
-function group_cbrt_mix(f::T,groups::GroupParam,param::SingleParameter) where T
-    return SingleParam(param.name,groups.components,group_cbrt_mix(f,groups,param.values))
+"""
+    group_pairsum(groups::GroupParam,param::PairParam)
+    group_pairsum(f,groups::GroupParam,param::SingleParam)
+Given a `GroupParam`and a parameter `P` it will return a single parameter `p` of component data, where:
+
+pᵢ = ∑νᵢₖ(∑(νᵢₗ*P(i,j))) / ∑νᵢₖ(∑νᵢₗ)
+
+where `νᵢₖ` is the number of groups `k` at component `i` and `P(i,j)` depends on the type of `P`:
+- if `P` is a single paremeter, then `P(i,j) = f(P[i],P[j])`
+- if `P` is a pair paremeter, then `P(i,j) = p[i,j]`
+
+"""
+function group_pairsum end
+
+group_pairsum(groups::GroupParam,param) = group_pairsum(mix_mean,groups,param)
+
+function group_pairsum(f::T,groups::GroupParam,param) where {T}
+    return SingleParam(param.name,groups.components,group_pairsum(f,groups,param.values))
 end
 
-function group_cbrt_mix(f::T,groups::GroupParam,p::AbstractVector) where T
-    lgroups = 1:length(groups.n_flattenedgroups)
+function group_pairsum(f,groups::GroupParam,p::AbstractMatrix)
+    lgroups = 1:length(groups.i_flattenedgroups)
     lcomps = 1:length(groups.components)
-    _zz = groups.n_groups_cache
+    zz = groups.n_groups_cache
     _0 = zero(eltype(p))
     res = zeros(eltype(p),length(lcomps))
     for i ∈ lcomps
-        _z = _zz[i]
-        ∑zinv2 = 1/(sum(_z)^2)
+        ẑ = zz[i]
+        ∑ẑinv2 = 1/(sum(ẑ)^2)
         p_i = _0
         for k ∈ lgroups
-            zk = _z[k]
-            iszero(zk) && continue
-            pk = p[k]
-            p_i += zk*zk*pk
+            ẑk = ẑ[k]
+            iszero(ẑk) && continue
+            pk = p[k,k]
+            p_i += ẑk*ẑk*pk
             for l ∈ 1:k - 1
-                pl = p[l]
-                p_i += 2*zk*_z[l]*f(pk,pl)
+                p_i += 2*ẑk*ẑ[l]*p[k,l]
             end
         end
-        res[i] = cbrt(p_i*∑zinv2)
+        res[i] = p_i*∑ẑinv2
     end
     return res
 end
+
+function group_pairsum(f::T,groups::GroupParam,p::AbstractMatrix) where {T}
+    lgroups = 1:length(groups.i_flattenedgroups)
+    lcomps = 1:length(groups.components)
+    zz = groups.n_groups_cache
+    _0 = zero(eltype(p))
+    res = zeros(eltype(p),length(lcomps))
+    for i ∈ lcomps
+        ẑ = zz[i]
+        ∑ẑinv2 = 1/(sum(ẑ)^2)
+        p_i = _0
+        for k ∈ lgroups
+            ẑk = ẑ[k]
+            iszero(ẑk) && continue
+            pk = p[k]
+            p_i += ẑk*ẑk*pk
+            for l ∈ 1:k - 1
+                p_i += 2*ẑk*ẑ[l]*f(pk,p[l])
+            end
+        end
+        res[i] = p_i*∑ẑinv2
+    end
+    return res
+end
+
 
 """
     mix_segment!(groups::GroupParam,S = ones(length(@groups)),vst = ones(length(@groups)))
@@ -311,4 +352,4 @@ export epsilon_LorentzBerthelot
 export epsilon_HudsenMcCoubrey
 export lambda_LorentzBerthelot
 export lambda_squarewell
-export group_sum
+export group_sum,group_pairsum

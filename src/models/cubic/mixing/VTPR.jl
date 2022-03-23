@@ -58,6 +58,7 @@ function ab_premixing(::Type{PR},mixing::VTPRRule,Tc,pc,kij)
     Ωa, Ωb = ab_consts(PR)
     _Tc = Tc.values
     _pc = pc.values
+    components = pc.components
     a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     bi = @. Ωb*R̄*_Tc/_pc
     vtpr_mix(bi,bj,kij) = mix_powmean(bi,bj,0,0.5)
