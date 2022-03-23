@@ -11,6 +11,9 @@ function EoSVectorParam(model::EoSModel)
 end
 
 Base.getindex(x::EoSVectorParam,I) = x.pure[I]
+Base.length(x::EoSVectorParam) = length(x.pure)
+Base.eltype(x::EoSVectorParam{T}) where T = T 
+Base.broadcastable(x::EoSVectorParam) = x.pure
 
 function init_puremodel(model::Type{<:EoSModel},components,userlocations,verbose)
     verbose && @info("""Now creating ideal model:
