@@ -45,7 +45,6 @@ Clapeyron.epsilon_LorentzBerthelot
 Clapeyron.epsilon_HudsenMcCoubrey
 Clapeyron.lambda_LorentzBerthelot
 Clapeyron.lambda_squarewell
-Clapeyron.group_sum
 ```
 
 ## Model Splitting
@@ -54,3 +53,11 @@ Clapeyron.split_model
 Clapeyron.is_splittable
 Clapeyron.index_reduction
 ```
+
+## Group Reduction
+```@docs
+Clapeyron.group_sum
+Clapeyron.group_pairsum
+Clapeyron.group_matrix
+```
+

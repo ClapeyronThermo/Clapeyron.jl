@@ -646,4 +646,39 @@ function a_disp(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     return adisp
 end
 
+
+#=
+    ϵ = gc_epsilon.values
+    σ = gc_sigma.values
+     #helper functions
+     function ẑ(i, k)
+        return v[i][k]*vst[k]*S[k] / ∑(v[i][l]*vst[l]*S[l] for l ∈ gc)
+    end
+
+    function σ̄(i)
+        return cbrt(∑(∑(ẑ(i,k)*ẑ(i,l)*σ[k,l]^3 for l ∈ gc) for k ∈ gc))
+    end
+    
+    function σ̄(i, j)
+        return (σ̄(i) + σ̄(j))/2
+    end
+
+    function ϵ̄(i)
+        return ∑(∑(ẑ(i,k)*ẑ(i,l)*ϵ[k,l] for l ∈ gc) for k ∈ gc)
+    end
+    
+    function ϵ̄(i, j)
+        if i == j
+            return ϵ̄(i)
+        else
+            return sqrt(σ̄(i)*σ̄(j))/σ̄(i,j) * sqrt(ϵ̄(i)*ϵ̄(j))
+        end
+    end
+    epsilon_mix(ϵi,ϵj,σi,σj,σij) = sqrt(ϵi*ϵi)*sqrt(σi*σj)/σij
+    comp_ϵ = [ϵ̄(i, j) for (i,j) ∈ Iterators.product(comps,comps)]
+    #epsilon = PairParam("epsilon",components,comp_ϵ)
+    
+    comp_σ = [σ̄(i, j) for (i,j) ∈ Iterators.product(comps,comps)]
+    sigma = PairParam("sigma",components,comp_σ)
+    =#
 =#
