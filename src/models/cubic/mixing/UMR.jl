@@ -50,10 +50,11 @@ function ab_premixing(::Type{PR},mixing::UMRRuleModel,Tc,pc,kij)
     Ωa, Ωb = ab_consts(PR)
     _Tc = Tc.values
     _pc = pc.values
+    components = pc.components
     a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     bi = @. Ωb*R̄*_Tc/_pc
-    bij = ((bi.^(1/2).+bi'.^(1/2))/2).^2
-    b = PairParam("b",Tc.components,bij)
+    umr_mix(bi,bj,kij) = mix_powmean(bi,bj,0,0.5)
+    b = kij_mix(umr_mix,SingleParam("b (covolume)",components,bi))
     return a,b
 end
 
