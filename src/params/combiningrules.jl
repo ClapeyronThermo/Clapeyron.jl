@@ -29,6 +29,7 @@ function kij_mix(f::F,param::ClapeyronParam,K = nothing) where F
         k = K.values
     end
     kij_mix!(f,p,k,param.ismissingvalues)
+    param.ismissingvalues .= false
     return param
 end
 
@@ -122,28 +123,30 @@ function pair_mix(f::F,P::ClapeyronParam,Q::ClapeyronParam) where F
     p = P.values
     q = Q.values
     pair_mix!(f,p,q,P.ismissingvalues)
+    P.ismissingvalues .= false
     return P
 end
 
 function pair_mix!(f,p,q,B)
     N = LinearAlgebra.checksquare(p)
     for j ∈ 1:N
-        p_j = p[j]
+        p_j = p[j,j]
         q_j = q[j,j]
         for i ∈ 1:N
             if B[j,i]
-                p_i = p[i]
-                q_i = q[j,j]
+                p_i = p[i,i]
+                q_i = q[i,i]
                 q_ji =  q[j,i]
-                p_ji = f(p_i,p_j,q_i,q_j,q_ji)
+                p_ji = f(p_j,p_i,q_j,q_i,q_ji)
                 p[j,i] = p_ji
             end
         end
     end
     return p
 end
+
 mix_HudsenMcCoubrey(ϵᵢ,ϵⱼ,σᵢ,σⱼ,σᵢⱼ) = √(ϵᵢ*ϵⱼ)*(σᵢ^3 * σⱼ^3)/σᵢⱼ^6 
-mix_lambda_squarewell(λᵢ,λⱼ,σᵢ,σⱼ,σᵢⱼ) =  (σᵢ*λᵢ + σⱼ*λⱼ)/(σᵢ + σⱼ)
+mix_lambda_squarewell(λᵢ,λⱼ,σᵢ,σⱼ,σᵢⱼ) = (σᵢ*λᵢ + σⱼ*λⱼ)/(σᵢ + σⱼ)
 
 """
     epsilon_HudsenMcCoubrey(ϵ::ClapeyronParam,σ::PairParam)::PairParam
@@ -198,6 +201,8 @@ Ignores non-diagonal entries already set.
 
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `λᵢᵢ = λᵢ`.
 """
+function lambda_squarewell end
+
 function lambda_squarewell(lambda::ClapeyronParam, sigma::Union{PairParameter,SingleParameter})
     return pair_mix(mix_lambda_squarewell,lambda,sigma)
 end
@@ -227,7 +232,7 @@ end
 
 function group_sum(groups::GroupParam,param::AbstractVector)
     v = groups.n_groups_cache
-    comp_vals = [dot(vi,param) for vi in v]
+    return [dot(vi,param) for vi in v]
 end
 
 """
@@ -242,7 +247,7 @@ where `νᵢₖ` is the number of groups `k` at component `i`.
 """
 function group_sum(groups::GroupParam)
     v = groups.n_groups_cache
-    comp_vals = [sum(vi) for vi in v]
+    return [sum(vi) for vi in v]
 end
 
 """
@@ -253,7 +258,7 @@ returns a matrix of size `(k,i)` with values νₖᵢ. when multiplied with a mo
 function group_matrix(groups::GroupParam)
     gc = length(groups.i_flattenedgroups)
     comp = length(groups.components)
-    mi  = reshape(groups.n_groups_cache.v,(gc,comp))
+    return reshape(groups.n_groups_cache.v,(gc,comp))
 end
 
 """
@@ -300,7 +305,7 @@ function group_pairsum(f,groups::GroupParam,p::AbstractMatrix)
     return res
 end
 
-function group_pairsum(f::T,groups::GroupParam,p::AbstractMatrix) where {T}
+function group_pairsum(f::T,groups::GroupParam,p::AbstractVector) where {T}
     lgroups = 1:length(groups.i_flattenedgroups)
     lcomps = 1:length(groups.components)
     zz = groups.n_groups_cache
