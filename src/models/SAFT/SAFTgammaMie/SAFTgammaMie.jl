@@ -63,7 +63,7 @@ function SAFTgammaMie(components;
 
     #used in x_S:
     #x_S(group i) = dot(z,mixsegment[i])/dot(z,m_vr)
-    mix_segment!(groups,S)
+    mix_segment!(groups,S,vst)
     gc_sigma = sigma_LorentzBerthelot(params["sigma"])
     gc_sigma.values .*= 1E-10
     gc_epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], gc_sigma)
@@ -138,7 +138,7 @@ function SAFTgammaMie(components;
             mwi += gc_mw[j]*vi[j]
         end
         comp_mw[i] =mwi
-    end  
+    end
     _mw = SingleParam("molecular_weight",components,comp_mw)
     gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
     vrparams = SAFTVRMieParam(segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol,_mw)
