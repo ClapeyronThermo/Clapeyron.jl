@@ -186,13 +186,15 @@ function m2ϵσ3(model::PCSAFTModel, V, T, z)
     @inbounds for i ∈ @comps
         zi = z[i]
         mi = m[i]
-        constant = (k != i)*zi*zi*mi*mi*(σ[i,i])^3
+        ki = (k != i)
+        constant = ki*zi*zi*mi*mi*(σ[i,i])^3
         exp1 = (ϵ[i,i]/T)
         exp2 = exp1*exp1
         m2ϵσ3₁ += constant*exp1
         m2ϵσ3₂ += constant*exp2
         for j ∈ 1:(i-1)
-            constant = (j != i)*zi*z[j]*mi*m[j] * σ[i,j]^3 
+            kj = (j != k)
+            constant = ki*kj*zi*z[j]*mi*m[j] * σ[i,j]^3 
             exp1 = ϵ[i,j]*(1 - k0[i,j] - k1[i,j]*T)/T
             exp2 = exp1*exp1
             m2ϵσ3₁ += 2*constant*exp1
@@ -201,16 +203,12 @@ function m2ϵσ3(model::PCSAFTModel, V, T, z)
     end
 
     if !iszero(k)
-        σh20 = σ[k,k] + Δσh20(T)
+        Δσ = Δσh20(T)   
         zkmk = z[k]*m[k]
-        constant = zkmk*zkmk*σh20^3
-        exp1 = ϵ[k,k]/T
-        exp2 = exp1*exp1
-        m2ϵσ3₁ += constant*exp1
-        m2ϵσ3₂ += constant*exp2
         @inbounds for j ∈ @comps
-            constant = (j != k)*0.125*zkmk*z[j]*m[j]*(σh20 + σ[j,j])^3
-            exp1 = (ϵ[i,j]/T)
+            σij = σ[k,j] + 0.5*((k==i) + (k==j))*Δσ
+            constant = zkmk*z[j]*m[j]*σij^3
+            exp1 = (ϵ[k,j]/T)
             exp2 = exp1*exp1
             m2ϵσ3₁ += 2*constant*exp1
             m2ϵσ3₂ += 2*constant*exp2
@@ -251,7 +249,7 @@ function Δ(model::PCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     gij = @f(g_hs,i,j,_data)
     k = water08_k(model)
     Δσ = ifelse(iszero(k),zero(T),Δσh20(T))     
-    σij = σ[i,j] + 0.5*in(k,(i,j))*Δσ
+    σij = σ[i,j] + 0.5*((k==i) + (k==j))*Δσ
     res = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κijab
     return res
 end
@@ -269,7 +267,7 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
     Δres = zero_assoc(κ,typeof(V+T+first(z)))
     for (idx,(i,j),(a,b)) in indices(Δres)
         gij = @f(g_hs,i,j,_data)
-        σij = σ[i,j] + 0.5*in(k,(i,j))*Δσ
+        σij = σ[i,j] + 0.5*((k==i) + (k==j))*Δσ
         Δres[idx] = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
     end
     return Δres
