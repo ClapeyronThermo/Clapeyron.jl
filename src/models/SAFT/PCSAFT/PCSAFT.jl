@@ -3,8 +3,6 @@ struct PCSAFTParam <: EoSParam
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     epsilon::PairParam{Float64}
-    k0::PairParam{Float64}
-    k1::PairParam{Float64}
     epsilon_assoc::AssocParam{Float64}
     bondvol::AssocParam{Float64}
 end
@@ -19,23 +17,18 @@ function PCSAFT(components;
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-    params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; 
-    userlocations=userlocations, 
-    verbose=verbose,
-    ignore_missing_singleparams = ["kT"])
+    params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     
     segment = params["m"]
-    k0 = params["k"]
-    n = length(components)
-    k1 = get(params,"kT",PairParam("kT",components,zeros(n,n)))
+    k = params["k"]
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"])
+    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
-    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
+    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
     model = PCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
@@ -123,6 +116,7 @@ function ζ0123(model::PCSAFTModel, V, T, z,_d)
     return ζ0,ζ1,ζ2,ζ3
 end
 
+
 function g_hs(model::PCSAFTModel, V, T, z, i, j,_data=@f(data))
     _d,ζ0,ζ1,ζ2,ζ3,_ = _data
     di = _d[i]
@@ -144,29 +138,20 @@ function m2ϵσ3(model::PCSAFTModel, V, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
-    k0 = model.params.k0.values
-    k1 = model.params.k1.values
     m2ϵσ3₂ = zero(V+T+first(z))
     m2ϵσ3₁ = m2ϵσ3₂
     @inbounds for i ∈ @comps
-        zi = z[i]
-        mi = m[i]
-        constant = zi*zi*mi*mi * σ[i,i]^3
-        exp1 = (ϵ[i,i]/T)
-        exp2 = exp1*exp1
-        m2ϵσ3₁ += constant*exp1
-        m2ϵσ3₂ += constant*exp2
-        for j ∈ 1:(i-1)
-            constant =zi*z[j]*mi*m[j] * σ[i,j]^3 
-            exp1 = ϵ[i,j]*(1 - k0[i,j] - k1[i,j]*T)/T
+        for j ∈ @comps
+            constant = z[i]*z[j]*m[i]*m[j] * σ[i,j]^3
+            exp1 = (ϵ[i,j]/T)
             exp2 = exp1*exp1
-            m2ϵσ3₁ += 2*constant*exp1
-            m2ϵσ3₂ += 2*constant*exp2
+            m2ϵσ3₁ += constant*exp1
+            m2ϵσ3₂ += constant*exp2
         end
     end
     Σz = sum(z)
-    invn2 = (1/Σz)^2
-    return invn2*m2ϵσ3₁,invn2*m2ϵσ3₂
+    k = (1/Σz)^2
+    return k*m2ϵσ3₁,k*m2ϵσ3₂
     #return ∑(z[i]*z[j]*m[i]*m[j] * (ϵ[i,j]*(1)/T)^n * σ[i,j]^3 for i ∈ @comps, j ∈ @comps)/(sum(z)^2)
 end
 
@@ -207,7 +192,6 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     σ = model.params.sigma.values
-
     Δres = zero_assoc(κ,typeof(V+T+first(z)))
     for (idx,(i,j),(a,b)) in indices(Δres)
         gij = @f(g_hs,i,j,_data)

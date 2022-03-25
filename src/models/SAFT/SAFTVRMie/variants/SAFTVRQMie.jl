@@ -40,15 +40,16 @@ function a_res(model::SAFTVRQMieModel, V, T, z)
 end
 
 function data(model::SAFTVRQMieModel, V, T, z)
+    m̄ = dot(z,model.params.segment.values)
     _σeff = @f(σeff)
     _ϵff = @f(ϵeff)
     _d = @f(d,_σeff)
     ζi = @f(ζ0123,_d)
     _ζst = @f(ζst,_σeff)
-    _ζ_X,_ = @f(ζ_X_σ3,_d)
-    _ρ_S = @f(ρ_S)
+    _ζ_X,_ = @f(ζ_X_σ3,_d,m̄)
+    _ρ_S = @f(ρ_S,m̄)
     σ3x = _ζst/(_ρ_S*π/6)
-    vrdata = (_d,_ρ_S,ζi,_ζ_X,_ζst,σ3x)
+    vrdata = (_d,_ρ_S,ζi,_ζ_X,_ζst,σ3x,m̄)
     return (_σeff,_ϵff,vrdata)
 end
 
@@ -328,7 +329,7 @@ end
 =#
 function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     _σeff,_ϵff,vrdata= _data
-    _d,_ρ_S,ζi,_ζ_X,_ζst  = vrdata
+    _d,_ρ_S,ζi,_ζ_X,_ζst,_,m̄  = vrdata
     comps = @comps
     l = length(comps)
     ∑z = ∑(z)
@@ -337,8 +338,7 @@ function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     _λr = model.params.lambda_r.values
     _λa = model.params.lambda_a.values
     _σ = model.params.sigma.values
-    Mw = model.params.Mw.values
-    m̄ = dot(z, m)
+    Mw = model.params.Mw.values 
     m̄inv = 1/m̄
     a₁ = zero(V+T+first(z))
     a₂ = a₁

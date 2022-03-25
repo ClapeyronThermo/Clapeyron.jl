@@ -10,7 +10,7 @@ struct COSMOSAC02{c<:EoSModel} <: COSMOSAC02Model
     components::Array{String,1}
     icomponents::UnitRange{Int}
     params::COSMOSAC02Param
-    puremodel::Vector{c}
+    puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
     references::Array{String,1}
 end
@@ -18,7 +18,11 @@ end
 @registermodel COSMOSAC02
 export COSMOSAC02
 @doc """
-COSMOSAC02(components; puremodel=PR,userlocations=String[],verbose=false)
+COSMOSAC02(components::Vector{String};
+puremodel = PR,
+userlocations = String[],
+pure_userlocations = String[],
+verbose = false)
 
 COSMOSAC02 EoS
 
@@ -40,9 +44,12 @@ An activity coefficient model using molecular solvation based on the COSMO-RS me
 
 
 
-function COSMOSAC02(components; puremodel=PR,
-    userlocations=String[], 
-     verbose=false)
+function COSMOSAC02(components::Vector{String};
+    puremodel = PR,
+    userlocations = String[],
+    pure_userlocations = String[],
+    verbose=false)
+
     params = getparams(components, ["Activity/COSMOSAC/COSMOSAC02_like.csv"]; userlocations=userlocations, verbose=verbose)
     Pi  = COSMO_parse_Pi(params["Pi"])
     A  = params["A"]
@@ -50,10 +57,10 @@ function COSMOSAC02(components; puremodel=PR,
     icomponents = 1:length(components) 
 
 
-    init_puremodel = [puremodel([components[i]]) for i in icomponents]
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSAC02Param(Pi,V,A)
     references = String["10.1021/ie001047w"]
-    model = COSMOSAC02(components,icomponents,packagedparams,init_puremodel,1e-12,references)
+    model = COSMOSAC02(components,icomponents,packagedparams,_puremodel,1e-12,references)
     return model
 end
 
