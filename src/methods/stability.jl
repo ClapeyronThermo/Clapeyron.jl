@@ -84,13 +84,7 @@ function chemical_stability(model::EoSModel,V,T,z)
     if isone(length(z))
         return pure_chemical_instability(model,V/sum(z),T) 
     end
-    pure = split_model(model)
-    crit = crit_pure.(pure)
-    Tc = getindex.(crit,1)
-    Pc = getindex.(crit,2)
-    ω = acentric_factor.(pure)
-    p = pressure(model,V,T,z)
-    Kʷ = @. Pc/p*exp(5.373*(1+ω)*(1-Tc/T))
+    Kʷ = wilson_k_values(model,p,T)
     z = z./sum(z)
     w_vap = Kʷ.*z
     w_liq = z./Kʷ
