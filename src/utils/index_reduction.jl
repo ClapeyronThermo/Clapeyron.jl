@@ -1,5 +1,5 @@
 """
-    index_reduction(model::EoSModel,z,,zmin = sum(z)*4*eps(eltype(z)))::EoSModel
+    index_reduction(model::EoSModel,z,zmin = sum(z)*4*eps(eltype(z)))
 
 Removes any component with composition `z[i] < zmin`. returns a reduced model `model_r` and a vector of indices `idx_r`, such as:
 
