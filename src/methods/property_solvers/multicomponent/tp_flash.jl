@@ -36,6 +36,18 @@ numphases(method::TPFlashMethod) = 2
 include("tp_flash/DifferentialEvolutiontp_flash.jl")
 include("tp_flash/RachfordRicetp_flash.jl")
 
+function expand_matrix(x,idr,numspecies)
+    numspecies == length(idr) && return x
+    numphases,_ = size(x)
+    res = zeros(eltype(x),numphases, numspecies)
+    for (jj,j) ∈ pairs(idr)
+        for i in 1:numphases
+            res[i,j] = x[i,jj]
+        end
+    end
+    return res
+
+end
 function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
     numspecies = length(model)
     if numspecies != length(n)
@@ -44,16 +56,24 @@ function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
             length(n))
     end
 
-    
-    if numphases(method) == 1
-        V = volume(model,p,T,n,phase =:stable)
-        return (n, n / sum(n), VT_gibbs_free_energy(model, V, T, n))
+    model_r,idx_r = index_reduction(model,n)
+    n_r = n[idx_r]
+    if length(model_r) == 1
+        V = volume(model_r,p,T,n_r)
+        return (n, n / sum(n), VT_gibbs_free_energy(model_r, V, T, n_r))
     end
 
-    nij,xij,g = tp_flash_impl(model::EoSModel,p,T,n,method)
+    if numphases(method) == 1
+        V = volume(model_r,p,T,n_r,phase =:stable)
+        return (n, n / sum(n), VT_gibbs_free_energy(model_r, V, T, n_r))
+    end
+    
+    xij_r,nij_r,g = tp_flash_impl(model_r,p,T,n_r,method)
     #TODO: perform stability check ritht here:
-    return nij,xij,g
-
+    #expand reduced model:
+    nij = expand_matrix(nij_r,idx_r,numspecies)
+    xij = expand_matrix(xij_r,idx_r,numspecies)
+    return xij,nij,g
 end
 
 export tp_flash
