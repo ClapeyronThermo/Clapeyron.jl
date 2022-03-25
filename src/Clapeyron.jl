@@ -71,7 +71,7 @@ include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
 
 #Basic utility EoS
-include("models/cached/HasWater.jl")
+include("models/cached/SpecialComp.jl")
 
 
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
