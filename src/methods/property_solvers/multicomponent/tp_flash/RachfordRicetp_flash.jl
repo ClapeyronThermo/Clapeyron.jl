@@ -19,7 +19,7 @@ index_reduction(flash::RRTPFlash{Nothing},idx::Vector{Int}) = flash
 
 function index_reduction(flash::RRTPFlash,idx::Vector{Int})
     K02 = flash.K0[idx]
-    return RRTPFlash(flash.K02,flash.rtol,flash.atol,flash.max_iters,flash.spec)
+    return RRTPFlash(K02,flash.rtol,flash.atol,flash.max_iters,flash.spec)
 end
 
 #z is the original feed composition, x is a matrix with molar fractions, n is a matrix with molar amounts
