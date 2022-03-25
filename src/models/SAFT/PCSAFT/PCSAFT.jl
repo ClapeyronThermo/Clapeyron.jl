@@ -113,7 +113,7 @@ function d(model::PCSAFTModel, V, T, z)
         _d[i] = σᵢᵢ[i]*(1- 0.12*exp(-3ϵᵢᵢ[i]/T))
     end
     k = water08_k(model)
-    if !iszero(h20_i)
+    if !iszero(k)
         _d[k] += Δσh20(T)*(1- 0.12*exp(-3ϵᵢᵢ[k]/T))
     end
     return _d
