@@ -60,7 +60,7 @@ function LLE_temperature(model,p,x;T0=nothing)
         T0 = x0_LLE_temperature(model,p,x)
     end
     TT = promote_type(typeof(p),eltype(x))
-    cache = Ref{Tuple{TT,TT,TT,FractionVector{TT,Vector{TT}}}}()
+    cache = Base.RefValue{Tuple{TT,TT,TT,Vector{TT}}}()
     f(z) = Obj_LLE_temperature(model,z,p,x,cache)
     fT = Roots.ZeroProblem(f,T0)
     Roots.solve(fT,Roots.Order0())
