@@ -96,7 +96,7 @@ end
 function wilson_k_values(model::EoSModel,p,T)
     n = length(model)
     pure = split_model.(model)
-    K0 = zeros(n,typeof(p+T))
+    K0 = zeros(typeof(p+T),n)
     for i ∈ 1:n
         pure_i = pure[i]
         Tc,pc,_ = crit_pure(pure_i)
