@@ -243,7 +243,6 @@ function group_splitter(group,splitted_groups)
     flattenedgroups = group.flattenedgroups
     res = Vector{Vector{Int64}}(undef,length(splitted_groups))
     for (i,groupi) in pairs(splitted_groups)
-        @show groupi
         res[i] = indexin(groupi.flattenedgroups,flattenedgroups)
     end    
     return res

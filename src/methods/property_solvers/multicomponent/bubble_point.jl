@@ -57,21 +57,29 @@ Returns a tuple, containing:
 - Gas composition at Bubble Point
 """
 function bubble_pressure(model::EoSModel, T, x; v0 =nothing)
-    ts = T_scales(model)
-    pmix = p_scale(model,x)
+    model_r,idx_r = index_reduction(model,x)
+    if length(model_r)==1
+        (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
+        return (P_sat,v_l,v_v,x)
+    end
+    x_r = x[idx_r]
+    ts = T_scales(model_r)
+    pmix = p_scale(model_r,x_r)
     if v0 === nothing
-        v0 = x0_bubble_pressure(model,T,x)
+        v0 = x0_bubble_pressure(model_r,T,x_r)
     end
     len = length(v0[1:end-1])
     #xcache = zeros(eltype(x0),len)
     Fcache = zeros(eltype(v0[1:end-1]),len)
-    f!(F,z) = Obj_bubble_pressure(model, F, T, exp10(z[1]),exp10(z[2]),x,z[3:end],ts,pmix)
+    f!(F,z) = Obj_bubble_pressure(model_r, F, T, exp10(z[1]),exp10(z[2]),x_r,z[3:end],ts,pmix)
     r  =Solvers.nlsolve(f!,v0[1:end-1],LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     v_l = exp10(sol[1])
     v_v = exp10(sol[2])
-    y = FractionVector(sol[3:end])
-    P_sat = pressure(model,v_l,T,x)
+    y_r = FractionVector(sol[3:end])
+    P_sat = pressure(model_r,v_l,T,x_r)
+    y = zeros(length(model))
+    y[idx_r] = y_r
     return (P_sat, v_l, v_v, y)
 end
 
