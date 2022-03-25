@@ -62,7 +62,7 @@
         @test repr("text/plain",ideal1) == "WalkerIdeal{BasicIdeal} with 1 component:\n \"hexane\": \"CH3\" => 2, \"CH2\" => 4\nContains parameters: Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4"
         #@newmodel
         @test repr(model2) == "PCSAFT{BasicIdeal}(\"water\", \"ethanol\")"
-        @test repr("text/plain",model2) == "PCSAFT{BasicIdeal} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, k0, k1, epsilon_assoc, bondvol"
+        @test repr("text/plain",model2) == "PCSAFT{BasicIdeal} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"
         #@newmodelsimple
         @test repr(noparam1) == "NoTranslation()"
         @test repr("text/plain",noparam1) == "NoTranslation\n"

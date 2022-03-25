@@ -21,7 +21,7 @@ Returns a tuple, containing:
 - Liquid composition `x₂`
 """
 function LLE_pressure(model::EoSModel, T, x; v0 =nothing)
-    model_r,idx_r = index_reduction(model,z)
+    model_r,idx_r = index_reduction(model,x)
     if length(model_r)==1
         error("There is no LLE for a pure component")
     end
