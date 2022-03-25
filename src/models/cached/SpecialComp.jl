@@ -1,5 +1,5 @@
 """
-    SpecialComp(components::Vector{String},defaults=["water"])
+    SpecialComp(components::Vector{String},defaults=["water08"])
 
 Auxiliary model that just stores the index of one component. faster than looking for the component string on each iteration. 
 
@@ -11,7 +11,7 @@ struct SpecialComp <: EoSModel
     references::Vector{String}
 end
 
-function SpecialComp(components::Vector{String},defaults=["water"])
+function SpecialComp(components::Vector{String},defaults=["water08"])
     idx = findfirst(in(defaults),components)
     idx === nothing && (idx = 0)
     return SpecialComp(components,idx,defaults)

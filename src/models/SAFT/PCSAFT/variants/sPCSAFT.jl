@@ -1,5 +1,17 @@
 abstract type sPCSAFTModel <: PCSAFTModel end
-@newmodel sPCSAFT sPCSAFTModel PCSAFTParam
+
+struct sPCSAFT{T <: IdealModel} <: sPCSAFTModel
+    components::Array{String,1}
+    icomponents::UnitRange{Int}
+    sites::SiteParam
+    params::PCSAFTParam
+    idealmodel::T
+    assoc_options::AssocOptions
+    references::Array{String,1}
+    water::SpecialComp
+end
+
+@registermodel sPCSAFT
 
 export sPCSAFT
 function sPCSAFT(components;
@@ -9,10 +21,16 @@ function sPCSAFT(components;
     verbose=false,
     assoc_options = AssocOptions())
     
-    params,sites = getparams(components, ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/PCSAFT/sPCSAFT","properties/molarmass.csv"]; 
+    userlocations=userlocations, 
+    verbose=verbose,
+    ignore_missing_singleparams = ["kT"])
     
+    water = SpecialComp(components,["water08"])
+    icomponents = 1:length(components)
     segment = params["m"]
-    k = params["k"]
+    k0 = params["k"]
+    n = length(components)
     k1 = get(params,"kT",PairParam("kT",components,zeros(n,n)))
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
@@ -20,10 +38,12 @@ function sPCSAFT(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon,k,k1, epsilon_assoc, bondvol)
+
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
     references = ["10.1021/ie020753p"]
 
-    model = sPCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
+    model = sPCSAFT(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references,water)
     return model
 end
 
