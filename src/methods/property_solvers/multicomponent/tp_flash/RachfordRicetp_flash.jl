@@ -27,12 +27,7 @@ end
 function tp_flash_impl(model::EoSModel, p, T, n, method::RRTPFlash)
     
     if method.K0===nothing
-        pure = split_model.(model)
-        crit = crit_pure.(pure)
-        Tc = [crit[i][1] for i ∈ @comps]
-        pc = [crit[i][2] for i ∈ @comps]
-        ω = acentric_factor.(pure)
-        K0 = @. exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
+        K0 = wilson_k_values(model,p,T)
     else 
         K0 = method.K0
     end
