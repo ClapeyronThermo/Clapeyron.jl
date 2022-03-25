@@ -46,7 +46,6 @@ function expand_matrix(x,idr,numspecies)
         end
     end
     return res
-
 end
 function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
     numspecies = length(model)
@@ -68,7 +67,7 @@ function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
         return (n, n / sum(n), VT_gibbs_free_energy(model_r, V, T, n_r))
     end
     
-    xij_r,nij_r,g = tp_flash_impl(model_r,p,T,n_r,method)
+    xij_r,nij_r,g = tp_flash_impl(model_r,p,T,n_r,index_reduction(method,idx_r))
     #TODO: perform stability check ritht here:
     #expand reduced model:
     nij = expand_matrix(nij_r,idx_r,numspecies)

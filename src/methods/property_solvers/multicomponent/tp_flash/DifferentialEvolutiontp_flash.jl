@@ -21,6 +21,9 @@ Base.@kwdef struct DETPFlash <: TPFlashMethod
     verbose::Bool = false
 end
 
+index_reduction(flash::DETPFlash,z) = flash
+
+
 #z is the original feed composition, x is a matrix with molar fractions, n is a matrix with molar amounts
 function partition!(dividers,n,x,nvals)
     numphases, numspecies = size(x)
