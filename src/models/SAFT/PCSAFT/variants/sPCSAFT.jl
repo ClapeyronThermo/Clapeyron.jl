@@ -9,17 +9,23 @@ function sPCSAFT(components;
     verbose=false,
     assoc_options = AssocOptions())
     
-    params,sites = getparams(components, ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]; 
+    userlocations=userlocations, 
+    verbose=verbose,
+    ignore_missing_singleparams = ["kT"])
     
     segment = params["m"]
-    k = params["k"]
+    k0 = params["k"]
+    n = length(components)
+    k1 = get(params,"kT",PairParam("kT",components,zeros(n,n)))
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
+    epsilon = epsilon_LorentzBerthelot(params["epsilon"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
+
+    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
     references = ["10.1021/ie020753p"]
 
     model = sPCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
