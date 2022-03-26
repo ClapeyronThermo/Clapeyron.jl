@@ -11,7 +11,7 @@ struct NRTL{c<:EoSModel} <: NRTLModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     params::NRTLParam
-    puremodel::Vector{c}
+    puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
     references::Array{String,1}
 end
@@ -24,7 +24,8 @@ export NRTL
 
     function NRTL(components::Vector{String};
     puremodel=PR,
-    userlocations=String[], 
+    userlocations=String[],
+    pure_userlocations = String[],
     verbose=false)
 
 ## Input parameters
@@ -50,8 +51,9 @@ Gᵢⱼ exp(-cᵢⱼτᵢⱼ)
 NRTL
 
 function NRTL(components::Vector{String}; puremodel=PR,
-    userlocations=String[], 
-     verbose=false)
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/NRTL/NRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b"], verbose=verbose)
     a  = params["a"]
     b  = params["b"]
@@ -59,10 +61,10 @@ function NRTL(components::Vector{String}; puremodel=PR,
     Mw  = params["Mw"]
     icomponents = 1:length(components)
     
-    init_puremodel = [puremodel([components[i]]) for i in icomponents]
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = NRTLParam(a,b,c,Mw)
     references = String["10.1002/aic.690140124"]
-    model = NRTL(components,icomponents,packagedparams,init_puremodel,1e-12,references)
+    model = NRTL(components,icomponents,packagedparams,_puremodel,1e-12,references)
     return model
 end
 

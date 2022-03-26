@@ -46,6 +46,9 @@ include("database/UserReader.jl")
 #macros, used for defining models
 include("utils/macros.jl")
 
+#index reduction
+include("utils/index_reduction.jl")
+
 #splitting models, useful for methods.
 include("utils/split_model.jl")
 
@@ -70,10 +73,13 @@ include("models/ideal/ReidIdeal.jl")
 include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
 
+<<<<<<< HEAD
 #Basic utility EoS
 include("models/cached/SpecialComp.jl")
 
 
+=======
+>>>>>>> 4c2f8f9c7800a07f045f1ae4cb45e1d9d808698a
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95Ideal.jl")
@@ -104,6 +110,8 @@ include("models/cubic/equations.jl")
 include("models/cubic/vdW.jl")
 include("models/cubic/RK/RK.jl")
 include("models/cubic/PR/PR.jl")
+
+include("models/cached/EoSVectorParam.jl")
 
 include("models/Activity/Wilson/Wilson.jl")
 include("models/Activity/NRTL/NRTL.jl")

@@ -12,7 +12,7 @@ struct Wilson{c<:EoSModel} <: WilsonModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     params::WilsonParam
-    puremodel::Vector{c}
+    puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
     references::Array{String,1}
 end
@@ -23,10 +23,11 @@ export Wilson
 """
     Wilson <: ActivityModel
 
-    function Wilson(components::Vector{String};
-    puremodel=PR,
-    userlocations=String[], 
-    verbose=false)
+    Wilson(components::Vector{String};
+    puremodel = PR,
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -53,9 +54,11 @@ Vᵢ = (RTcᵢ/Pcᵢ)(0.29056 - 0.08775ZRAᵢ)^(1 + (1-T/Tcᵢ)^2/7)
 Wilson
 
 function Wilson(components::Vector{String};
-        puremodel=PR,
-        userlocations=String[], 
-        verbose=false)
+    puremodel = PR,
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose = false)
+    
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/Wilson/Wilson_unlike.csv"]; userlocations=userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g"], verbose=verbose)
     g  = params["g"]
     Tc        = params["Tc"]
@@ -66,10 +69,10 @@ function Wilson(components::Vector{String};
     ZRA.values .+= 0.29056
     icomponents = 1:length(components)
     
-    init_puremodel = [puremodel([components[i]]) for i in icomponents]
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = WilsonParam(g,Tc,pc,ZRA,Mw)
     references = String["10.1021/ja01056a002"]
-    model = Wilson(components,icomponents,packagedparams,init_puremodel,1e-12,references)
+    model = Wilson(components,icomponents,packagedparams,_puremodel,1e-12,references)
     return model
 end
 
