@@ -3,6 +3,8 @@ struct PCSAFTParam <: EoSParam
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     epsilon::PairParam{Float64}
+    k0::PairParam{Float64}
+    k1::PairParam{Float64}
     epsilon_assoc::AssocParam{Float64}
     bondvol::AssocParam{Float64}
 end
@@ -30,33 +32,27 @@ function PCSAFT(components;
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-<<<<<<< HEAD
 
     params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; 
     userlocations=userlocations, 
     verbose=verbose,
     ignore_missing_singleparams = ["kT"])
-=======
-    params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
->>>>>>> 4c2f8f9c7800a07f045f1ae4cb45e1d9d808698a
     
     water = SpecialComp(components,["water08"])
     icomponents = 1:length(components)
     segment = params["m"]
-    k = params["k"]
+    k0 = params["k"]
+    n = length(components)
+    k1 = get(params,"kT",PairParam("kT",components,zeros(n,n)))
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
+    epsilon = epsilon_LorentzBerthelot(params["epsilon"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
-<<<<<<< HEAD
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
-=======
-    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
->>>>>>> 4c2f8f9c7800a07f045f1ae4cb45e1d9d808698a
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
     model = PCSAFT(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references,water)
@@ -159,7 +155,6 @@ function ζ0123(model::PCSAFTModel, V, T, z,_d)
     return ζ0,ζ1,ζ2,ζ3
 end
 
-
 function g_hs(model::PCSAFTModel, V, T, z, i, j,_data=@f(data))
     _d,ζ0,ζ1,ζ2,ζ3,_ = _data
     di = _d[i]
@@ -181,13 +176,14 @@ function m2ϵσ3(model::PCSAFTModel, V, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
+    k0 = model.params.k0.values
+    k1 = model.params.k1.values
     m2ϵσ3₂ = zero(V+T+first(z))
     m2ϵσ3₁ = m2ϵσ3₂
     
     k = water08_k(model)
 
     @inbounds for i ∈ @comps
-<<<<<<< HEAD
         zi = z[i]
         mi = m[i]
         ki = (k != i)
@@ -200,14 +196,9 @@ function m2ϵσ3(model::PCSAFTModel, V, T, z)
             kj = (j != k)
             constant = ki*kj*zi*z[j]*mi*m[j] * σ[i,j]^3 
             exp1 = ϵ[i,j]*(1 - k0[i,j] - k1[i,j]*T)/T
-=======
-        for j ∈ @comps
-            constant = z[i]*z[j]*m[i]*m[j] * σ[i,j]^3
-            exp1 = (ϵ[i,j]/T)
->>>>>>> 4c2f8f9c7800a07f045f1ae4cb45e1d9d808698a
             exp2 = exp1*exp1
-            m2ϵσ3₁ += constant*exp1
-            m2ϵσ3₂ += constant*exp2
+            m2ϵσ3₁ += 2*constant*exp1
+            m2ϵσ3₂ += 2*constant*exp2
         end
     end
 
@@ -225,8 +216,8 @@ function m2ϵσ3(model::PCSAFTModel, V, T, z)
     end
 
     Σz = sum(z)
-    k = (1/Σz)^2
-    return k*m2ϵσ3₁,k*m2ϵσ3₂
+    invn2 = (1/Σz)^2
+    return invn2*m2ϵσ3₁,invn2*m2ϵσ3₂
     #return ∑(z[i]*z[j]*m[i]*m[j] * (ϵ[i,j]*(1)/T)^n * σ[i,j]^3 for i ∈ @comps, j ∈ @comps)/(sum(z)^2)
 end
 
@@ -270,12 +261,9 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     σ = model.params.sigma.values
-<<<<<<< HEAD
     k = water08_k(model)
     k = model.water[]
     Δσ = ifelse(iszero(k),zero(T),Δσh20(T))     
-=======
->>>>>>> 4c2f8f9c7800a07f045f1ae4cb45e1d9d808698a
     Δres = zero_assoc(κ,typeof(V+T+first(z)))
     for (idx,(i,j),(a,b)) in indices(Δres)
         gij = @f(g_hs,i,j,_data)

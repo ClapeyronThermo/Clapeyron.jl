@@ -2,7 +2,6 @@ struct ogUNIFACParam <: EoSParam
     A::PairParam{Float64}
     R::SingleParam{Float64}
     Q::SingleParam{Float64}
-    mixedsegment::SingleParam{Vector{Float64}}
 end
 
 abstract type ogUNIFACModel <: UNIFACModel end
@@ -12,7 +11,7 @@ struct ogUNIFAC{c<:EoSModel} <: ogUNIFACModel
     icomponents::UnitRange{Int}
     groups::GroupParam
     params::ogUNIFACParam
-    puremodel::Vector{c}
+    puremodel::EoSVectorParam{c}
     references::Array{String,1}
     unifac_cache::UNIFACCache
 end
@@ -24,9 +23,10 @@ export ogUNIFAC
     ogUNIFACModel <: UNIFACModel
 
     ogUNIFAC(components::Vector{String};
-    puremodel=PR, 
-    userlocations=String[], 
-    verbose=false)
+    puremodel = PR, 
+    userlocations = String[],
+    pure_userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
@@ -69,9 +69,12 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 """
 ogUNIFAC
 
-function ogUNIFAC(components; puremodel=PR,
-    userlocations=String[], 
-     verbose=false)
+function ogUNIFAC(components::Vector{String};
+    puremodel = PR,
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose = false)
+
     groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"]; verbose=verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_like.csv", "Activity/UNIFAC/ogUNIFAC/ogUNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose=verbose)
@@ -80,12 +83,11 @@ function ogUNIFAC(components; puremodel=PR,
     Q  = params["Q"]
     icomponents = 1:length(components)
     
-    init_puremodel = [puremodel([groups.components[i]]) for i in icomponents]
-    gc_mixedsegment = mix_segment(groups) #this function is used in SAFTγMie
-    packagedparams = ogUNIFACParam(A,R,Q,gc_mixedsegment)
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    packagedparams = ogUNIFACParam(A,R,Q)
     references = String[]
     cache = UNIFACCache(groups,packagedparams)
-    model = ogUNIFAC(components,icomponents,groups,packagedparams,init_puremodel,references,cache)
+    model = ogUNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
     return model
 end
 
@@ -112,10 +114,10 @@ function excess_g_res(model::ogUNIFACModel,p,T,z=SA[1.0])
     Q = model.params.Q.values
     A = model.params.A.values
     invT = 1/T
-    mi  = model.params.mixedsegment.values
+    mi  = reshape(model.groups.n_groups_cache.v,(length(@groups),length(z)))
     m̄ = dot(z,model.unifac_cache.m)
     m̄inv = 1/m̄
-    X = [dot(z,mi_i)*m̄inv for mi_i in mi]
+    X = m̄inv*mi*z
     θpm = dot(X,Q)
     G_res = _0
     for i ∈ @groups

@@ -39,8 +39,12 @@ function sPCSAFT(components;
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
+<<<<<<< HEAD
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
+=======
+    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
+>>>>>>> 4c2f8f9c7800a07f045f1ae4cb45e1d9d808698a
     references = ["10.1021/ie020753p"]
 
     model = sPCSAFT(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references,water)

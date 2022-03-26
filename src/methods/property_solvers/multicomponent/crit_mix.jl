@@ -17,17 +17,25 @@ Returns a tuple, containing:
 - Critical Mixture Volume `[m³]`
 """
 function crit_mix(model::EoSModel,z;v0=nothing)
+    model_r,idx_r = index_reduction(model,z)
+    if length(model_r)==1
+        (T_c,p_c,V_c) = crit_pure(model_r)
+        return (T_c,p_c,V_c)
+    end
+
+    z_r = z[idx_r]
+
     if v0 === nothing
-        v0 = x0_crit_mix(model,z)
+        v0 = x0_crit_mix(model_r,z_r)
     end
     
     x0 = [v0[1],v0[2]] #could replace for MVector{2}
-    f! = (F,x) -> Obj_crit_mix(model, F, z, exp10(x[1]), x[2])
+    f! = (F,x) -> Obj_crit_mix(model_r, F, z_r, exp10(x[1]), x[2])
     r  = Solvers.nlsolve(f!,x0,LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     T_c = sol[2]
     V_c = exp10(sol[1])
-    p_c = pressure(model, V_c, T_c, z)
+    p_c = pressure(model_r, V_c, T_c, z_r)
     return (T_c, p_c, V_c)
 end
 """
