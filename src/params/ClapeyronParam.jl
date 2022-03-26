@@ -680,7 +680,7 @@ Elliott's rule requires that both `Δ(i,i,a,b)` and  `Δ(j,j,a,b)` exists, that 
     atol::Float64 = 1e-12
     max_iters::Int = 1000
     dampingfactor::Float64 = 0.5
-    combining::Symbol = :no
+    combining::Symbol = :sparse_nocombining
 end
 
 is_splittable(::AssocOptions) = false
