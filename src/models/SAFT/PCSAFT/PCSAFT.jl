@@ -8,40 +8,17 @@ struct PCSAFTParam <: EoSParam
 end
 
 abstract type PCSAFTModel <: SAFTModel end
-
-struct PCSAFT{T <: IdealModel} <: PCSAFTModel
-    components::Array{String,1}
-    icomponents::UnitRange{Int}
-    sites::SiteParam
-    params::PCSAFTParam
-    idealmodel::T
-    assoc_options::AssocOptions
-    references::Array{String,1}
-    water::SpecialComp
-end
-
-@registermodel PCSAFT
+@newmodel PCSAFT PCSAFTModel PCSAFTParam
 
 export PCSAFT
-
 function PCSAFT(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-<<<<<<< HEAD
-
-    params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; 
-    userlocations=userlocations, 
-    verbose=verbose,
-    ignore_missing_singleparams = ["kT"])
-=======
     params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
->>>>>>> 4c2f8f9c7800a07f045f1ae4cb45e1d9d808698a
     
-    water = SpecialComp(components,["water08"])
-    icomponents = 1:length(components)
     segment = params["m"]
     k = params["k"]
     Mw = params["Mw"]
@@ -51,15 +28,10 @@ function PCSAFT(components;
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
-<<<<<<< HEAD
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
-=======
     packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
->>>>>>> 4c2f8f9c7800a07f045f1ae4cb45e1d9d808698a
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
-    model = PCSAFT(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references,water)
+    model = PCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
 
@@ -67,13 +39,6 @@ function a_res(model::PCSAFTModel, V, T, z)
     _data = @f(data)
     return @f(a_hc,_data) + @f(a_disp,_data) + @f(a_assoc,_data)
 end
-
-#Δσh20(T) = σ[T] - σconstant
-# σ = σconstant + Δσh20(T)
-#https://doi.org/10.1016/j.cep.2007.02.034
-Δσh20(T) = (10.1100*exp(-0.01775*T)-1.41700*exp(-0.01146*T))*1e-10 
-@inline water08_k(model::PCSAFTModel) = 0
-@inline water08_k(model::PCSAFT) = model.water[]
 
 function data(model::PCSAFTModel,V,T,z)
     _d = @f(d)
@@ -112,15 +77,7 @@ end
 function d(model::PCSAFTModel, V, T, z)
     ϵᵢᵢ = model.params.epsilon.diagvalues
     σᵢᵢ = model.params.sigma.diagvalues 
-    _d = zeros(typeof(T),length(z))
-    for i ∈ @comps
-        _d[i] = σᵢᵢ[i]*(1- 0.12*exp(-3ϵᵢᵢ[i]/T))
-    end
-    k = water08_k(model)
-    if !iszero(k)
-        _d[k] += Δσh20(T)*(1- 0.12*exp(-3ϵᵢᵢ[k]/T))
-    end
-    return _d
+    return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
 end
 
 function ζ(model::PCSAFTModel, V, T, z, n , _d)
@@ -183,47 +140,15 @@ function m2ϵσ3(model::PCSAFTModel, V, T, z)
     ϵ = model.params.epsilon.values
     m2ϵσ3₂ = zero(V+T+first(z))
     m2ϵσ3₁ = m2ϵσ3₂
-    
-    k = water08_k(model)
-
     @inbounds for i ∈ @comps
-<<<<<<< HEAD
-        zi = z[i]
-        mi = m[i]
-        ki = (k != i)
-        constant = ki*zi*zi*mi*mi*(σ[i,i])^3
-        exp1 = (ϵ[i,i]/T)
-        exp2 = exp1*exp1
-        m2ϵσ3₁ += constant*exp1
-        m2ϵσ3₂ += constant*exp2
-        for j ∈ 1:(i-1)
-            kj = (j != k)
-            constant = ki*kj*zi*z[j]*mi*m[j] * σ[i,j]^3 
-            exp1 = ϵ[i,j]*(1 - k0[i,j] - k1[i,j]*T)/T
-=======
         for j ∈ @comps
             constant = z[i]*z[j]*m[i]*m[j] * σ[i,j]^3
             exp1 = (ϵ[i,j]/T)
->>>>>>> 4c2f8f9c7800a07f045f1ae4cb45e1d9d808698a
             exp2 = exp1*exp1
             m2ϵσ3₁ += constant*exp1
             m2ϵσ3₂ += constant*exp2
         end
     end
-
-    if !iszero(k)
-        Δσ = Δσh20(T)   
-        zkmk = z[k]*m[k]
-        @inbounds for j ∈ @comps
-            σij = σ[k,j] + 0.5*((k==i) + (k==j))*Δσ
-            constant = zkmk*z[j]*m[j]*σij^3
-            exp1 = (ϵ[k,j]/T)
-            exp2 = exp1*exp1
-            m2ϵσ3₁ += 2*constant*exp1
-            m2ϵσ3₂ += 2*constant*exp2
-        end
-    end
-
     Σz = sum(z)
     k = (1/Σz)^2
     return k*m2ϵσ3₁,k*m2ϵσ3₂
@@ -232,7 +157,6 @@ end
 
 function I(model::PCSAFTModel, V, T, z, n , _data=@f(data))
     _,_,_,_,η,m̄ = _data
-    σ = model.params.sigma.values
     if n == 1
         corr = PCSAFTconsts.corr1
     elseif n == 2
@@ -256,10 +180,7 @@ function Δ(model::PCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     iszero(κijab) && return _0
     σ = model.params.sigma.values
     gij = @f(g_hs,i,j,_data)
-    k = water08_k(model)
-    Δσ = ifelse(iszero(k),zero(T),Δσh20(T))     
-    σij = σ[i,j] + 0.5*((k==i) + (k==j))*Δσ
-    res = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κijab
+    res = gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κijab
     return res
 end
 
@@ -270,17 +191,10 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     σ = model.params.sigma.values
-<<<<<<< HEAD
-    k = water08_k(model)
-    k = model.water[]
-    Δσ = ifelse(iszero(k),zero(T),Δσh20(T))     
-=======
->>>>>>> 4c2f8f9c7800a07f045f1ae4cb45e1d9d808698a
     Δres = zero_assoc(κ,typeof(V+T+first(z)))
     for (idx,(i,j),(a,b)) in indices(Δres)
         gij = @f(g_hs,i,j,_data)
-        σij = σ[i,j] + 0.5*((k==i) + (k==j))*Δσ
-        Δres[idx] = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
+        Δres[idx] = gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
     end
     return Δres
 end

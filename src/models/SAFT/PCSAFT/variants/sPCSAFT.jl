@@ -1,17 +1,5 @@
 abstract type sPCSAFTModel <: PCSAFTModel end
-
-struct sPCSAFT{T <: IdealModel} <: sPCSAFTModel
-    components::Array{String,1}
-    icomponents::UnitRange{Int}
-    sites::SiteParam
-    params::PCSAFTParam
-    idealmodel::T
-    assoc_options::AssocOptions
-    references::Array{String,1}
-    water::SpecialComp
-end
-
-@registermodel sPCSAFT
+@newmodel sPCSAFT sPCSAFTModel PCSAFTParam
 
 export sPCSAFT
 function sPCSAFT(components;
@@ -21,33 +9,21 @@ function sPCSAFT(components;
     verbose=false,
     assoc_options = AssocOptions())
     
-    params,sites = getparams(components, ["SAFT/PCSAFT/sPCSAFT","properties/molarmass.csv"]; 
-    userlocations=userlocations, 
-    verbose=verbose,
-    ignore_missing_singleparams = ["kT"])
+    params,sites = getparams(components, ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]; userlocations=userlocations, verbose=verbose)
     
-    water = SpecialComp(components,["water08"])
-    icomponents = 1:length(components)
     segment = params["m"]
-    k0 = params["k"]
-    n = length(components)
-    k1 = get(params,"kT",PairParam("kT",components,zeros(n,n)))
+    k = params["k"]
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"])
+    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
-<<<<<<< HEAD
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
-=======
     packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
->>>>>>> 4c2f8f9c7800a07f045f1ae4cb45e1d9d808698a
     references = ["10.1021/ie020753p"]
 
-    model = sPCSAFT(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references,water)
+    model = sPCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
 

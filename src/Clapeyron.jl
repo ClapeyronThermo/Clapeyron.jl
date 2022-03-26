@@ -73,13 +73,10 @@ include("models/ideal/ReidIdeal.jl")
 include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
 
-<<<<<<< HEAD
 #Basic utility EoS
 include("models/cached/SpecialComp.jl")
 
 
-=======
->>>>>>> 4c2f8f9c7800a07f045f1ae4cb45e1d9d808698a
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95Ideal.jl")
@@ -90,6 +87,7 @@ include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/pharmaPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")
 include("models/SAFT/CPA/variants/sCPA.jl")
