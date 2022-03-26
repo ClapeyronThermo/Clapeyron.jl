@@ -26,4 +26,4 @@ function p_scale(model::SAFTModel,z=SA[1.0])
     return 1/val
 end
 
-include("association.jl")
+

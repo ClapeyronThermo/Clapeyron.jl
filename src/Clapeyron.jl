@@ -103,6 +103,7 @@ include("models/SAFT/CKSAFT/CKSAFT.jl")
 include("models/SAFT/CKSAFT/variants/sCKSAFT.jl")
 include("models/SAFT/BACKSAFT/BACKSAFT.jl")
 include("models/SAFT/equations.jl")
+include("models/SAFT/association.jl")
 
 include("models/cubic/equations.jl")
 include("models/cubic/vdW.jl")
