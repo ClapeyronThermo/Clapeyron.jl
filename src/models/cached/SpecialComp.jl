@@ -19,6 +19,7 @@ end
 
 function split_model(model::SpecialComp,subset=nothing)
     splitted = auto_split_model(model,subset)
+    defaults = model.references
     for i in 1:length(splitted)
         splitted[i] = SpecialComp(splitted[i].components,defaults)
     end

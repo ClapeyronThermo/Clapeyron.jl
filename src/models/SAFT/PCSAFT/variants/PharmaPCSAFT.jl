@@ -15,7 +15,7 @@ struct pharmaPCSAFT{T <: IdealModel} <: pharmaPCSAFTModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     sites::SiteParam
-    params::PCSAFTParam
+    params::pharmaPCSAFTParam
     idealmodel::T
     assoc_options::AssocOptions
     references::Array{String,1}
@@ -52,10 +52,10 @@ function pharmaPCSAFT(components;
     bondvol = params["bondvol"]
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
+    packagedparams = pharmaPCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
-    model = PCSAFT(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references,water)
+    model = pharmaPCSAFT(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references,water)
     return model
 end
 
@@ -84,8 +84,8 @@ function m2ϵσ3(model::pharmaPCSAFTModel, V, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
-    k0 = model.params.k0.values
-    k1 = model.params.k1.values
+    k0 = model.params.k.values
+    k1 = model.params.kT.values
     m2ϵσ3₂ = zero(V+T+first(z))
     m2ϵσ3₁ = m2ϵσ3₂
     
