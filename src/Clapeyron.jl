@@ -87,7 +87,7 @@ include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
-include("models/SAFT/PCSAFT/variants/pharmaPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/PharmaPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")
 include("models/SAFT/CPA/variants/sCPA.jl")
