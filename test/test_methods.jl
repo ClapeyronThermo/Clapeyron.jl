@@ -389,7 +389,7 @@ end
     end
 end
 
-@test "association" begin
+@testset "association" begin
     no_comb = Clapeyron.AssocOptions()
     no_comb_dense = Clapeyron.AssocOptions(combining = :dense_nocombining)
     elliott = Clapeyron.AssocOptions(combining = :elliott)
@@ -406,6 +406,7 @@ end
     @test Clapeyron.a_assoc(model_no_comb,V,T,z) ≈ Clapeyron.a_assoc(model_no_comb_dense,V,T,z)  rtol = 1E-6
     @test Clapeyron.a_assoc(model_elliott_comb,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
 end
+
 @testset "Tp flash algorithms" begin
     system = PCSAFT(["water","cyclohexane","propane"])
     T = 298.15
