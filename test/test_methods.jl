@@ -38,6 +38,19 @@ using Clapeyron, Test, Unitful
     @printline
 end
 
+@testset "pharmaPCSAFT, single components" begin
+    system = pharmaPCSAFT(["water08"])
+    v1 = Clapeyron.saturation_pressure(system, 280.15)[2]
+    v2 = Clapeyron.saturation_pressure(system, 278.15)[2]
+    v3 = Clapeyron.saturation_pressure(system, 275.15)[2]
+
+    @test v1 ≈ 1.8022574135800437e-5  rtol = 1E-6 
+    @test v2 ≈ 1.8022307234361546e-5 rtol = 1E-6 
+    @test v3 ≈ 1.80240702177789e-5 rtol = 1E-6 
+    #density maxima of water
+    @test v2 < v1
+    @test v2 < v3
+end
 
 @testset "LJSAFT methods, single components" begin
     system = LJSAFT(["ethanol"])
@@ -376,6 +389,23 @@ end
     end
 end
 
+@test "association" begin
+    no_comb = Clapeyron.AssocOptions()
+    no_comb_dense = Clapeyron.AssocOptions(combining = :dense_nocombining)
+    elliott = Clapeyron.AssocOptions(combining = :elliott)
+    
+    model_no_comb = PCSAFT(["methanol","ethanol"])
+    model_no_comb_dense = PCSAFT(["methanol","ethanol"],assoc_options = no_assoc_dense)
+    model_elliott_comb = PCSAFT(["methanol","ethanol"],assoc_options = elliott)
+
+    V = 5e-5
+    T = 298.15
+    z = [0.5,0.5]
+
+    @test Clapeyron.a_assoc(model_no_comb,V,T,z) ≈ -4.667036481159167  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_no_comb,V,T,z) ≈ Clapeyron.a_assoc(model_no_comb_dense,V,T,z)  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_elliott_comb,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
+end
 @testset "Tp flash algorithms" begin
     system = PCSAFT(["water","cyclohexane","propane"])
     T = 298.15
