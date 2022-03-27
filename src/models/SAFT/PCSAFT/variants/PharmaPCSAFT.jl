@@ -144,9 +144,6 @@ function Δ(model::pharmaPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     return res
 end
 
-#optimized version, reduces memory allocations, but is specific to this PCSAFT
-#thats why it is bound to the specific PCSAFT struct
-#instead of the more general PCSAFTModel
 function  Δ(model::pharmaPCSAFT, V, T, z,_data=@f(data))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
