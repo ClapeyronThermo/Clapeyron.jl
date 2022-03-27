@@ -78,6 +78,8 @@ jobs:
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest
+        with:
+          coverage: true
   docs:
     name: Documentation
     runs-on: ubuntu-latest
