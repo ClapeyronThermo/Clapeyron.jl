@@ -64,19 +64,19 @@ end
 #https://doi.org/10.1016/j.cep.2007.02.034
 Δσh20(T) = (10.1100*exp(-0.01775*T)-1.41700*exp(-0.01146*T))*1e-10 
 @inline water08_k(model::PCSAFTModel) = 0
-@inline water08_k(model::PCSAFT) = model.water[]
+@inline water08_k(model::pharmaPCSAFTModel) = model.water[]
 
 function d(model::pharmaPCSAFTModel, V, T, z)
     ϵᵢᵢ = model.params.epsilon.diagvalues
     σᵢᵢ = model.params.sigma.diagvalues 
     _d = zeros(typeof(T),length(z))
-    for i ∈ @comps
-        _d[i] = σᵢᵢ[i]*(1- 0.12*exp(-3ϵᵢᵢ[i]/T))
-    end
+    Δσ = Δσh20(T)
     k = water08_k(model)
-    if !iszero(k)
-        _d[k] += Δσh20(T)*(1- 0.12*exp(-3ϵᵢᵢ[k]/T))
+    for i ∈ @comps
+        σᵢ = σᵢᵢ[i] + (k==i)*Δσ
+        _d[i] = σᵢ*(1 - 0.12*exp(-3ϵᵢᵢ[i]/T))
     end
+
     return _d
 end
 
@@ -90,39 +90,26 @@ function m2ϵσ3(model::pharmaPCSAFTModel, V, T, z)
     m2ϵσ3₁ = m2ϵσ3₂
     
     k = water08_k(model)
-
+    Δσ = Δσh20(T) 
     @inbounds for i ∈ @comps
         zi = z[i]
         mi = m[i]
         ki = (k != i)
-        constant = ki*zi*zi*mi*mi*(σ[i,i])^3
+        σii = σ[i,i] + (k==i)*Δσ
+        constant = zi*zi*mi*mi*(σii)^3
         exp1 = (ϵ[i,i]/T)
         exp2 = exp1*exp1
         m2ϵσ3₁ += constant*exp1
         m2ϵσ3₂ += constant*exp2
         for j ∈ 1:(i-1)
-            kj = (j != k)
-            constant = ki*kj*zi*z[j]*mi*m[j] * σ[i,j]^3 
+            σij = σ[i,j] + 0.5*(k==i  +  k==j)*Δσ
+            constant = zi*z[j]*mi*m[j] * σij^3 
             exp1 = ϵ[i,j]*(1 - k0[i,j] - k1[i,j]*T)/T
             exp2 = exp1*exp1
             m2ϵσ3₁ += 2*constant*exp1
             m2ϵσ3₂ += 2*constant*exp2
         end
     end
-
-    if !iszero(k)
-        Δσ = Δσh20(T)   
-        zkmk = z[k]*m[k]
-        @inbounds for j ∈ @comps
-            σij = σ[k,j] + 0.5*((k==i) + (k==j))*Δσ
-            constant = zkmk*z[j]*m[j]*σij^3
-            exp1 = (ϵ[k,j]/T)
-            exp2 = exp1*exp1
-            m2ϵσ3₁ += 2*constant*exp1
-            m2ϵσ3₂ += 2*constant*exp2
-        end
-    end
-
     Σz = sum(z)
     invn2 = (1/Σz)^2
     return invn2*m2ϵσ3₁,invn2*m2ϵσ3₂
@@ -138,7 +125,7 @@ function Δ(model::pharmaPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     σ = model.params.sigma.values
     gij = @f(g_hs,i,j,_data)
     k = water08_k(model)
-    Δσ = ifelse(iszero(k),zero(T),Δσh20(T))     
+    Δσ = Δσh20(T)    
     σij = σ[i,j] + 0.5*((k==i) + (k==j))*Δσ
     res = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κijab
     return res
@@ -150,7 +137,7 @@ function  Δ(model::pharmaPCSAFT, V, T, z,_data=@f(data))
     σ = model.params.sigma.values
     k = water08_k(model)
     k = model.water[]
-    Δσ = ifelse(iszero(k),zero(T),Δσh20(T))     
+    Δσ = Δσh20(T)   
     Δres = zero_assoc(κ,typeof(V+T+first(z)))
     for (idx,(i,j),(a,b)) in indices(Δres)
         gij = @f(g_hs,i,j,_data)
