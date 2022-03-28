@@ -673,7 +673,7 @@ the combining option controls the type of combining rule applied to the associat
 
 !!! info "Association Scheme matters"
 
-Elliott's rule requires that both `Δ(i,i,a,b)` and  `Δ(j,j,a,b)` exists, that means that components that don't self associate will not be mixed.
+    Elliott's rule requires that both `Δ(i,i,a,b)` and  `Δ(j,j,a,b)` are non-zero, that means that components that don't self associate will not be combined.
 """
 @Base.kwdef struct AssocOptions <: ClapeyronParam
     rtol::Float64 = 1e-12
