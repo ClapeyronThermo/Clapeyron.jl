@@ -401,7 +401,7 @@ end
     V = 5e-5
     T = 298.15
     z = [0.5,0.5]
-
+    @test Clapeyron.nonzero_extrema(0:3) == (1, 3)
     @test Clapeyron.a_assoc(model_no_comb,V,T,z) ≈ -4.667036481159167  rtol = 1E-6
     @test Clapeyron.a_assoc(model_no_comb,V,T,z) ≈ Clapeyron.a_assoc(model_no_comb_dense,V,T,z)  rtol = 1E-6
     @test Clapeyron.a_assoc(model_elliott_comb,V,T,z) ≈ -5.323430326406561  rtol = 1E-6

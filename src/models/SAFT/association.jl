@@ -42,7 +42,7 @@ end
 
 nonzero_extrema(K::SparseArrays.SparseMatrixCSC) = extrema(K.nzval)
 
-function nonzero_extrema(K::AbstractMatrix)
+function nonzero_extrema(K)
     _0 = zero(eltype(K))
     _max = _0
     _min = _0
@@ -202,7 +202,7 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     max_iters = options.max_iters
     α = options.dampingfactor
 
-    if model.assoc_options.combining == :no
+    if model.assoc_options.combining == :sparse_nocombining
         K = sparse_assoc_site_matrix(model,V,T,z,data)
     else
         K = dense_assoc_site_matrix(model,V,T,z,data)
