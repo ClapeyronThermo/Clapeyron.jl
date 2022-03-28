@@ -56,7 +56,7 @@ function data(model::SAFTgammaMieModel, V, T, z)
 end
 
 function X_gc(model::SAFTgammaMieModel,V,T,z)
-    mi  = reshape(model.groups.n_groups_cache.v,(length(@groups),length(@comps)))
+    mi  = group_matrix(model.groups)
     mm = model.params.segment.values
     X = mi*z
     X ./= mm

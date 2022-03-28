@@ -98,7 +98,7 @@ function VTPRUNIFACCache(groups::GroupParam)
         end
         comp_segment[i] = res_i
     end
-    m = comp_segment
+    m = group_sum(groups)
     return VTPRUNIFACCache(groups.components,m)
 end
 
