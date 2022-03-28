@@ -54,18 +54,18 @@ function SAFTgammaMie(components;
     gc_sigma.values .*= 1E-10
     gc_sigma3 = PairParam(gc_sigma)
     gc_sigma3.values .^= 3
-    sigma3 = group_pairsum(groups,gc_sigma3)
+    sigma3 = group_pairmean(groups,gc_sigma3)
     sigma3.values .= cbrt.(sigma3.values)
     sigma = sigma_LorentzBerthelot(sigma3)
 
     gc_epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], gc_sigma)
-    epsilon = epsilon_HudsenMcCoubrey(group_pairsum(groups,gc_epsilon),sigma)
+    epsilon = epsilon_HudsenMcCoubrey(group_pairmean(groups,gc_epsilon),sigma)
     
     gc_lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     gc_lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
 
-    lambda_a = group_pairsum(groups,gc_lambda_a) |> lambda_LorentzBerthelot
-    lambda_r = group_pairsum(groups,gc_lambda_r) |> lambda_LorentzBerthelot
+    lambda_a = group_pairmean(groups,gc_lambda_a) |> lambda_LorentzBerthelot
+    lambda_r = group_pairmean(groups,gc_lambda_r) |> lambda_LorentzBerthelot
  
     #GC to component model in association
     gc_epsilon_assoc = params["epsilon_assoc"]

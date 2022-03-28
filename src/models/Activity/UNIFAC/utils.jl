@@ -13,7 +13,7 @@ function UNIFACCache(groups::GroupParam,Q,R)
     r = group_sum(groups,R.values)
     q = group_sum(groups,Q.values)
     q_p = r.^(3/4)
-    m = [sum(vi) for vi in groups.n_groups_cache]
+    m = group_sum(groups,nothing)
     return UNIFACCache(groups.components,r,q,q_p,m)
 end
 

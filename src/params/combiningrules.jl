@@ -209,9 +209,8 @@ end
 
 """
     group_sum(groups::GroupParam,P::SingleParameter)
-    group_sum(groups::GroupParam,P::AbstractVector)
 
-Given a `GroupParam` and a Single Parameter (or vector) `P` for group data, it will return a single parameter `p` of component data, where:
+Given a `GroupParam` and a Single Parameter `P` for group data, it will return a single parameter `p` of component data, where:
 
 pᵢ = ∑Pₖνᵢₖ
 
@@ -229,23 +228,32 @@ function group_sum(groups::GroupParam,param::SingleParameter)
                         param.sourcecsvs)
 end
 
+"""
+    group_sum(groups::GroupParam,P::AbstractVector)
 
+Given a `GroupParam` and a Vector `P` for group data, it will return a Vector `p` of component data, where:
+
+pᵢ = ∑Pₖνᵢₖ
+
+where `νᵢₖ` is the number of groups `k` at component `i`.
+
+"""
 function group_sum(groups::GroupParam,param::AbstractVector)
     v = groups.n_groups_cache
     return [dot(vi,param) for vi in v]
 end
 
 """
-    group_sum(groups::GroupParam)
+    group_sum(groups::GroupParam,::Nothing)
 
-Given a `GroupParam`, it will return a single parameter `p` of component data, where:
+Given a `GroupParam`, it will return a vector `p` of component data, where:
 
 pᵢ = ∑νᵢₖ
 
 where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
-function group_sum(groups::GroupParam)
+function group_sum(groups::GroupParam,::Nothing)
     v = groups.n_groups_cache
     return [sum(vi) for vi in v]
 end
@@ -256,14 +264,15 @@ end
 returns a matrix of size `(k,i)` with values νₖᵢ. when multiplied with a molar amount, it returns the amount of moles of each group.
 """
 function group_matrix(groups::GroupParam)
+    ng = groups.n_groups_cache
+    comp = length(ng)
     gc = length(groups.i_flattenedgroups)
-    comp = length(groups.components)
-    return reshape(groups.n_groups_cache.v,(gc,comp))
+    return reshape(ng.v,(gc,comp))
 end
 
 """
-    group_pairsum(groups::GroupParam,param::PairParam)
-    group_pairsum(f,groups::GroupParam,param::SingleParam)
+    group_pairmean(groups::GroupParam,param::PairParam)
+    group_pairmean(f,groups::GroupParam,param::SingleParam)
 Given a `GroupParam`and a parameter `P` it will return a single parameter `p` of component data, where:
 
 pᵢ = ∑νᵢₖ(∑(νᵢₗ*P(i,j))) / ∑νᵢₖ(∑νᵢₗ)
@@ -273,15 +282,15 @@ where `νᵢₖ` is the number of groups `k` at component `i` and `P(i,j)` depen
 - if `P` is a pair paremeter, then `P(i,j) = p[i,j]`
 
 """
-function group_pairsum end
+function group_pairmean end
 
-group_pairsum(groups::GroupParam,param) = group_pairsum(mix_mean,groups,param)
+group_pairmean(groups::GroupParam,param) = group_pairmean(mix_mean,groups,param)
 
-function group_pairsum(f::T,groups::GroupParam,param) where {T}
-    return SingleParam(param.name,groups.components,group_pairsum(f,groups,param.values))
+function group_pairmean(f::T,groups::GroupParam,param) where {T}
+    return SingleParam(param.name,groups.components,group_pairmean(f,groups,param.values))
 end
 
-function group_pairsum(f,groups::GroupParam,p::AbstractMatrix)
+function group_pairmean(f,groups::GroupParam,p::AbstractMatrix)
     lgroups = 1:length(groups.i_flattenedgroups)
     lcomps = 1:length(groups.components)
     zz = groups.n_groups_cache
@@ -305,7 +314,7 @@ function group_pairsum(f,groups::GroupParam,p::AbstractMatrix)
     return res
 end
 
-function group_pairsum(f::T,groups::GroupParam,p::AbstractVector) where {T}
+function group_pairmean(f::T,groups::GroupParam,p::AbstractVector) where {T}
     lgroups = 1:length(groups.i_flattenedgroups)
     lcomps = 1:length(groups.components)
     zz = groups.n_groups_cache
@@ -357,4 +366,4 @@ export epsilon_LorentzBerthelot
 export epsilon_HudsenMcCoubrey
 export lambda_LorentzBerthelot
 export lambda_squarewell
-export group_sum,group_pairsum
+export group_sum,group_pairmean
