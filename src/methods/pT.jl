@@ -102,7 +102,7 @@ Calculates the compressibility factor `Z`, defined as:
 ```julia
 Z = p*V(p)/R*T
 ```
-the keywords `phase` and `threaded` are passed to [Clapeyron.volume](@ref).
+the keywords `phase` and `threaded` are passed to [`Clapeyron.volume`](@ref).
 """
 function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
