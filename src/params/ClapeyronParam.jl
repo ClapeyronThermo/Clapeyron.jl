@@ -685,6 +685,8 @@ end
 
 is_splittable(::AssocOptions) = false
 
+export AssocOptions
+
 function pack_vectors(x::AbstractVector{<:AbstractVector})
     return PackedVectorsOfVectors.pack(x)
 end
