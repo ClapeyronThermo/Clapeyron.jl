@@ -1,7 +1,14 @@
 """
     pressure(model::EoSModel, V, T, z=SA[1.])
 
-Returns the pressure of the model in `[Pa]` at a given volume, temperature and composition.
+default units: `[Pa]`
+
+Returns the pressure of the model at a given volume, temperature and composition, defined as:
+
+```julia
+p =  -∂A/∂V
+```
+
 """
 function pressure(model::EoSModel, V, T, z=SA[1.])
     return -∂f∂V(model,V,T,z)
@@ -54,8 +61,8 @@ function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])
-    p0,dpdV = p∂p∂V(model,V,T,z)
-    return -1/V/dpdV
+    p0,∂p∂V = p∂p∂V(model,V,T,z)
+    return -1/V/∂p∂V
 end
 
 function VT_isentropic_compressibility(model::EoSModel, V, T, z=SA[1.])

@@ -1,78 +1,330 @@
+"""
+    entropy(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+Default units: `[J/K]`
+
+Calculates entropy, defined as:
+
+```julia
+S = -∂A/∂T
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_entropy(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+"""
 function entropy(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_entropy(model,V,T,z)
 end
 
+"""
+    entropy_res(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+Default units: `[J/K]`
+
+Calculates residual entropy, defined as:
+
+```julia
+S = -∂Ares/∂T
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_entropy_res(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+"""
 function entropy_res(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_entropy_res(model,V,T,z)
 end
 
+"""
+    chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+Default units: `[J/mol]`    
+
+Calculates the chemical potential, defined as:
+
+```julia
+μᵢ = ∂A/∂nᵢ
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_chemical_potential(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+"""
 function chemical_potential(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_chemical_potential(model,V,T,z)
 end
 
+"""
+    chemical_potential_res(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+Default units: `[J/mol]`
+
+Calculates the residual chemical potential, defined as:
+
+```julia
+μresᵢ = ∂Ares/∂nᵢ
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_chemical_potential_res(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+"""
 function chemical_potential_res(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_chemical_potential_res(model,V,T,z)
 end
 
+"""
+    internal_energy(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+Default units: `[J]`
+
+Calculates the internal energy, defined as:
+
+```julia
+U = A - T * ∂A/∂T
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_internal_energy(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+"""
 function internal_energy(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_internal_energy(model,V,T,z)
 end
 
+"""
+    enthalpy(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+Default units: `[J]`
+     
+Calculates the enthalpy, defined as:
+
+```julia
+H = A - T * ∂A/∂T - V * ∂A/∂V
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_enthalpy(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+"""
 function enthalpy(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_enthalpy(model,V,T,z)
 end
 
+"""
+    gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+Default units: `[J]`
+     
+Calculates the gibbs free energy, defined as:
+
+```julia
+G = A - V * ∂A/∂V
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_gibbs_free_energy(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+"""
 function gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
-    return VT_gibbs_free_energy(model,V,T,z)
+    A = eos(model,V,T,z)
+    return A + V*p
+    #return A - V*∂A∂V
+    #return VT_gibbs_free_energy(model,V,T,z)
 end
 
+"""
+    helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+Default units: `[J]`
+     
+Calculates the helmholtz free energy, defined as:
+
+```julia
+A = eos(model,V(p),T,z)
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `eos(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+"""
 function helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_helmholtz_free_energy(model,V,T,z)
 end
 
+"""
+    isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+Default units: `[J/T]`
+     
+Calculates the isochoric heat capacity, defined as:
+
+```julia
+Cv = -T * ∂²A/∂T²
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+calculates the property via `VT_isochoric_heat_capacity(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+
+!!! warning "Accurate ideal model required"
+    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel=ReidIdeal)`).
+"""
 function isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_isochoric_heat_capacity(model,V,T,z)
 end
 
+"""
+    isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+Default units: `[J/T]`
+   
+Calculates the isobaric heat capacity, defined as:
+
+```julia
+Cp =  -T*(∂²A/∂T² - (∂²A/∂V∂T)^2 / ∂²A/∂V²)
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+calculates the property via `VT_isobaric_heat_capacity(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+
+!!! warning "Accurate ideal model required"
+    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel=ReidIdeal)`).
+
+"""
 function isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_isobaric_heat_capacity(model,V,T,z)
 end
+"""
+    isothermal_compressibility(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
 
+default units: `[Pa^-1]`
+
+Calculates the isothermal compressibility, defined as:
+
+```julia
+κT =  (V*∂p/∂V)^-1
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+calculates the property via `VT_isothermal_compressibility(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+"""
 function isothermal_compressibility(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_isothermal_compressibility(model,V,T,z)
 end
 
+"""
+    isentropic_compressibility(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+default units: `[Pa^-1]`    
+
+Calculates the isentropic compressibility, defined as:
+
+```julia
+κS =  (V*( ∂²A/∂V² - ∂²A/∂V∂T^2 / ∂²A/∂T² ))^-1
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+calculates the property via `VT_isentropic_compressibility(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+
+!!! warning "Accurate ideal model required"
+    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel=ReidIdeal)`).
+
+"""
 function isentropic_compressibility(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_isentropic_compressibility(model,V,T,z)
 end
 
+"""
+    speed_of_sound(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+default units: `[m/s]`
+
+Calculates the speed of sound, defined as:
+
+```julia
+c =  V * √(∂²A/∂V² - ∂²A/∂V∂T^2 / ∂²A/∂T²)/Mr)
+```
+Where `Mr` is the molecular weight of the model at the input composition.
+
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+calculates the property via `VT_speed_of_sound(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+
+!!! warning "Accurate ideal model required"
+    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel=ReidIdeal)`).
+
+"""
 function speed_of_sound(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_speed_of_sound(model,V,T,z)
 end
 
+"""
+    isobaric_expansivity(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+default units: `[K^-1]`
+
+Calculates the isobaric expansivity, defined as:
+
+```julia
+α =  -∂²A/∂V∂T / (V*∂²A/∂V²)
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+calculates the property via `VT_isobaric_expansivity(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+"""
 function isobaric_expansivity(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_isobaric_expansivity(model,V,T,z)
 end
 
+"""
+    joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+default units: `[K/Pa]`
+
+Calculates the joule thomson coefficient, defined as:
+
+```julia
+μⱼₜ =  -(∂²A/∂V∂T - ∂²A/∂V² * ((T*∂²A/∂T² + V*∂²A/∂V∂T) / (T*∂²A/∂V∂T + V*∂²A/∂V²)))^-1
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+calculates the property via `VT_joule_thomson_coefficient(model,V,T,z)`.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+
+!!! warning "Accurate ideal model required"
+    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel=ReidIdeal)`).
+
+"""
 function joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_joule_thomson_coefficient(model,V,T,z)
 end
 
+"""
+    fugacity_coefficient(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+     
+Calculates the joule thomson coefficient, defined as:
+
+```julia
+log(φᵢ) =  μresᵢ/RT - log(Z)
+```
+Where `μresᵢ` is the vector of residual chemical potentials and `Z` is the compressibility factor.
+
+The keywords `phase` and `threaded` are passed to [`Clapeyron.volume`](@ref).
+"""
 function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
     V = volume(model,p,T,z;phase,threaded)
     μ_res = VT_chemical_potential_res(model,V,T,z)
@@ -102,7 +354,7 @@ Calculates the compressibility factor `Z`, defined as:
 ```julia
 Z = p*V(p)/R*T
 ```
-the keywords `phase` and `threaded` are passed to [`Clapeyron.volume`](@ref).
+The keywords `phase` and `threaded` are passed to [`Clapeyron.volume`](@ref).
 """
 function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
@@ -115,11 +367,37 @@ function inversion_temperature(model::EoSModel, p, z=SA[1.0])
     return Roots.find_zero(μⱼₜ,T0)
 end
 
+"""
+    molar_density(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+
+default units: `[mol/m^3]`
+
+Calculates the molar density, defined as:
+
+```julia
+ρₙ =  ∑nᵢ/V
+```
+The keywords `phase` and `threaded` are passed to the volume solver.
+"""
 function molar_density(model::EoSModel,p,T,z=SA[1.0];phase = :unknown,threaded=true)
      V = volume(model,p,T,z;phase=phase,threaded=threaded)
      return sum(z)/V
 end
 
+"""
+    mass_density(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
+    
+default units: `[kg/m^3]`
+
+Calculates the molar density, defined as:
+
+```julia
+ρₙ =  Mr/V
+```
+Where `Mr` is the molecular weight of the model at the input composition.
+
+The keywords `phase` and `threaded` are passed to the volume solver.
+"""
 function mass_density(model::EoSModel,p,T,z=SA[1.0];phase = :unknown,threaded=true)
     V = volume(model,p,T,z;phase=phase,threaded=threaded)
     molar_weight = molecular_weight(model,z)
@@ -132,9 +410,9 @@ end
 Calculates the mixing function for a specified property as:
 
 ```julia
-f_mix = f(p,T,z)-z*f_pure(p,T)
+f_mix = f(p,T,z) - ∑zᵢ*f_pureᵢ(p,T)
 ```
-the keywords `phase` and `threaded` are passed to the [volume solver](@ref Clapeyron.volume).
+The keywords `phase` and `threaded` are passed to the [volume solver](@ref Clapeyron.volume).
 """
 function mixing(model::EoSModel,p,T,z,property::ℜ;phase = :unknown,threaded=true) where {ℜ}
     pure = split_model(model)
