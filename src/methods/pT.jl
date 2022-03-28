@@ -95,7 +95,7 @@ function activity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, th
     return γ_i
 end
 """
-    compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
+    compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
 
 Calculates the compressibility factor `Z`, defined as:
 
