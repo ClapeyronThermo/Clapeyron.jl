@@ -157,7 +157,6 @@ end
 
 function I(model::PCSAFTModel, V, T, z, n , _data=@f(data))
     _,_,_,_,η,m̄ = _data
-    σ = model.params.sigma.values
     if n == 1
         corr = PCSAFTconsts.corr1
     elseif n == 2

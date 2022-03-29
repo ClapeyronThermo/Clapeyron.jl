@@ -12,6 +12,7 @@ using FillArrays: FillArrays
 using Roots: Roots
 using NLSolvers
 import BlackBoxOptim
+
 using DiffResults, ForwardDiff
 using Scratch 
 using Unitful
@@ -45,6 +46,9 @@ include("database/UserReader.jl")
 #macros, used for defining models
 include("utils/macros.jl")
 
+#index reduction
+include("utils/index_reduction.jl")
+
 #splitting models, useful for methods.
 include("utils/split_model.jl")
 
@@ -69,6 +73,10 @@ include("models/ideal/ReidIdeal.jl")
 include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
 
+#Basic utility EoS
+include("models/cached/SpecialComp.jl")
+
+
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95Ideal.jl")
@@ -79,6 +87,7 @@ include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/PharmaPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")
 include("models/SAFT/CPA/variants/sCPA.jl")
@@ -94,11 +103,14 @@ include("models/SAFT/CKSAFT/CKSAFT.jl")
 include("models/SAFT/CKSAFT/variants/sCKSAFT.jl")
 include("models/SAFT/BACKSAFT/BACKSAFT.jl")
 include("models/SAFT/equations.jl")
+include("models/SAFT/association.jl")
 
 include("models/cubic/equations.jl")
 include("models/cubic/vdW.jl")
 include("models/cubic/RK/RK.jl")
 include("models/cubic/PR/PR.jl")
+
+include("models/cached/EoSVectorParam.jl")
 
 include("models/Activity/Wilson/Wilson.jl")
 include("models/Activity/NRTL/NRTL.jl")

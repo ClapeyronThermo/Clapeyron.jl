@@ -15,17 +15,19 @@ Base.@kwdef struct RRTPFlash{T} <: TPFlashMethod
     spec::Symbol = :unknown
 end
 
+index_reduction(flash::RRTPFlash{Nothing},idx::Vector{Int}) = flash
+
+function index_reduction(flash::RRTPFlash,idx::Vector{Int})
+    K02 = flash.K0[idx]
+    return RRTPFlash(K02,flash.rtol,flash.atol,flash.max_iters,flash.spec)
+end
+
 #z is the original feed composition, x is a matrix with molar fractions, n is a matrix with molar amounts
 
 function tp_flash_impl(model::EoSModel, p, T, n, method::RRTPFlash)
     
     if method.K0===nothing
-        pure = split_model.(model)
-        crit = crit_pure.(pure)
-        Tc = [crit[i][1] for i ∈ @comps]
-        pc = [crit[i][2] for i ∈ @comps]
-        ω = acentric_factor.(pure)
-        K0 = @. exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
+        K0 = wilson_k_values(model,p,T)
     else 
         K0 = method.K0
     end

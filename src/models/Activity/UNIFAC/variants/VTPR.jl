@@ -11,7 +11,7 @@ struct VTPRUNIFAC{c<:EoSModel} <: VTPRUNIFACModel
     icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACParam
-    puremodel::Vector{c}
+    puremodel::EoSVectorParam{c}
     references::Array{String,1}
     unifac_cache::VTPRUNIFACCache
 end
@@ -23,9 +23,10 @@ export VTPRUNIFAC
     VTPRUNIFACModel <: UNIFACModel
 
     VTPRUNIFAC(components::Vector{String};
-    puremodel=PR, 
-    userlocations=String[], 
-    verbose=false)
+    puremodel = PR,
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
@@ -59,9 +60,12 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 """
 VTPRUNIFAC
 
-function VTPRUNIFAC(components; puremodel=PR,
-    userlocations=String[], 
-     verbose=false)
+function VTPRUNIFAC(components::Vector{String};
+    puremodel = PR,
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose = false)
+
     groups = GroupParam(components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"]; verbose=verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/VTPR/VTPR_like.csv", "Activity/UNIFAC/VTPR/VTPR_unlike.csv"]; userlocations=userlocations,  asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
@@ -73,11 +77,10 @@ function VTPRUNIFAC(components; puremodel=PR,
     R.values .= 0
     icomponents = 1:length(components)
     cache = VTPRUNIFACCache(groups)
-    init_puremodel = [puremodel([groups.components[i]]) for i in icomponents]
-    gc_mixedsegment = mix_segment(groups)
-    packagedparams = UNIFACParam(A,B,C,R,Q,gc_mixedsegment)
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1016/S0378-3812(01)00626-4"]
-    model = VTPRUNIFAC(components,icomponents,groups,packagedparams,init_puremodel,references,cache)
+    model = VTPRUNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
     return model
 end
 
@@ -95,7 +98,7 @@ function VTPRUNIFACCache(groups::GroupParam)
         end
         comp_segment[i] = res_i
     end
-    m = comp_segment
+    m = group_sum(groups)
     return VTPRUNIFACCache(groups.components,m)
 end
 

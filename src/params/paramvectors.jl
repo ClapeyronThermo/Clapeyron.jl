@@ -107,7 +107,7 @@ function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
         idxs = searchsorted(m.indices,(i,j))
         if iszero(length(idxs)) 
             idxs = searchsorted(m.indices,(j,i))
-            iszero(length(idxs)) &&  return zero(T)  
+            iszero(length(idxs)) &&  return zero(T)
         end
         idx = first(idxs)
         return m.values[idx]

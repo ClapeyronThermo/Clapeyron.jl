@@ -1,5 +1,5 @@
 
-function ADScalarObjective(f,x0::AbstractArray)
+function ADScalarObjective(f,x0::AbstractArray,chunk = autochunk(x0))
     Hres = DiffResults.HessianResult(x0)
     function _g(df,x,Hresult)
         ForwardDiff.gradient!(Hresult,f,x)
@@ -65,8 +65,12 @@ end
 """
     function optimize(f,x0,method=LineSearch(Newton()), options=OptimizationOptions())
 """
-function optimize(f,x0::Number,method=LineSearch(Newton()),options=OptimizationOptions())
-    scalarobj = ADScalarObjective(f,x0)   
+=#
+
+function optimize(f,x0,method=LineSearch(Newton()),chunk =autochunk(x0),options=OptimizationOptions())
+    scalarobj = ADScalarObjective(f,x0,chunk)   
     optprob = OptimizationProblem(scalarobj; inplace=false) 
     return NLSolvers.solve(optprob, x0, method,options)
-end=#
+end
+
+x_minimum(res::NLSolvers.ConvergenceInfo) = res.info.minimum

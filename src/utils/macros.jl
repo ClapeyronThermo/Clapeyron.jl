@@ -313,7 +313,7 @@ macro registermodel(model)
                 end
             
                 function Base.show(io::IO, model::$model)
-                    return gc_eosshow(io, mime, model)
+                    return gc_eosshow(io, model)
                 end
             end
         else

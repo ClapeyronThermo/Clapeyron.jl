@@ -33,7 +33,7 @@ function SAFTVRSW(components;
     bondvol = params["bondvol"]
 
     packagedparams = SAFTVRSWParam(Mw, segment, sigma, lambda, epsilon, epsilon_assoc, bondvol)
-    references = ["todo"]
+    references = ["10.1063/1.473101"]
 
     model = SAFTVRSW(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model

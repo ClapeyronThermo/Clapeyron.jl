@@ -9,7 +9,7 @@ end
 abstract type sCKSAFTModel <: CKSAFTModel end
 @newmodel sCKSAFT sCKSAFTModel sCKSAFTParam
 export sCKSAFT
-function sCKSAFT(components;
+function sCKSAFT(components::Vector{String};
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],

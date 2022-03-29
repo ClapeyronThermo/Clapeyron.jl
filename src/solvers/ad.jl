@@ -92,3 +92,8 @@ function ∂2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)
     return ∂2(f,y1,y2)
 end
+
+function autochunk(x)
+    k = ForwardDiff.pickchunksize(length(x))
+    return ForwardDiff.Chunk{k}()
+end

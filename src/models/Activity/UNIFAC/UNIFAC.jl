@@ -4,7 +4,6 @@ struct UNIFACParam <: EoSParam
     C::PairParam{Float64}
     R::SingleParam{Float64}
     Q::SingleParam{Float64}
-    mixedsegment::SingleParam{Vector{Float64}}
 end
 
 abstract type UNIFACModel <: ActivityModel end
@@ -14,7 +13,7 @@ struct UNIFAC{c<:EoSModel} <: UNIFACModel
     icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACParam
-    puremodel::Vector{c}
+    puremodel::EoSVectorParam{c}
     references::Array{String,1}
     unifac_cache::UNIFACCache
 end
@@ -27,9 +26,10 @@ export UNIFAC
     UNIFACModel <: ActivityModel
 
     UNIFAC(components::Vector{String};
-    puremodel=PR, 
-    userlocations=String[], 
-    verbose=false)
+    puremodel = PR,
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
@@ -76,9 +76,12 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 """
 UNIFAC
 
-function UNIFAC(components; puremodel=PR,
-    userlocations=String[], 
-     verbose=false)
+function UNIFAC(components::Vector{String};
+    puremodel = PR,
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose = false)
+    
     groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; verbose=verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
@@ -88,12 +91,11 @@ function UNIFAC(components; puremodel=PR,
     R  = params["R"]
     Q  = params["Q"]
     icomponents = 1:length(components)
-    gc_mixedsegment = mix_segment(groups) #this function is used in SAFTγMie
-    init_puremodel = [puremodel([groups.components[i]]) for i in icomponents]
-    packagedparams = UNIFACParam(A,B,C,R,Q,gc_mixedsegment)
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1021/i260064a004"]
     cache = UNIFACCache(groups,packagedparams)
-    model = UNIFAC(components,icomponents,groups,packagedparams,init_puremodel,references,cache)
+    model = UNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
     return model
 end
 
@@ -143,10 +145,11 @@ function excess_g_res(model::UNIFACModel,p,T,z=SA[1.0])
     B = model.params.B.values
     C = model.params.C.values
     invT = 1/T
-    mi  = model.params.mixedsegment.values
+    mi = group_matrix(model.groups)
     m̄ = dot(z,model.unifac_cache.m)
     m̄inv = 1/m̄
-    X = [dot(z,mi_i)*m̄inv for mi_i in mi]
+    X = m̄inv*mi*z
+    #X = [dot(z,mi_i)*m̄inv for mi_i in eachcol(mi)]
     θpm = dot(X,Q)
     G_res = _0
     for i ∈ @groups

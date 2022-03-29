@@ -206,3 +206,21 @@ vl = b + sqrt(0.5RTb3/2a)
 on models with translation:
 vl = b + sqrt(0.5RTb3/2a) - c
 =#
+
+function wilson_k_values(model::ABCubicModel,p,T)
+    Pc = model.params.Pc.values
+    Tc = model.params.Tc.values
+
+    if hasfield(typeof(model.alpha),:acentricfactor)
+        ω = model.alpha.params.acentricfactor.values
+    else
+        pure = split_model(model)
+        ω = zero(Tc)
+        for i in 1:length(Tc)
+            ps = first(saturation_pressure(pure[i],0.7*Tc[i]))
+            ω[i] = -log10(ps/Pc[i]) - 1.0
+        end
+    end
+
+    return  @. Pc/p*exp(5.373*(1+ω)*(1-Tc/T))
+end

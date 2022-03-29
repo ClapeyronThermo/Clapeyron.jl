@@ -17,7 +17,7 @@ struct COSMOSACdsp{c<:EoSModel} <: COSMOSACdspModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     params::COSMOSACdspParam
-    puremodel::Vector{c}
+    puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
     references::Array{String,1}
 end
@@ -25,9 +25,12 @@ end
 @registermodel COSMOSACdsp
 export COSMOSACdsp
 
-function COSMOSACdsp(components; puremodel=PR,
-    userlocations=String[], 
-     verbose=false)
+function COSMOSACdsp(components::Vector{String};
+    puremodel = PR,
+    userlocations = String[],
+    pure_userlocations = String[],
+    verbose=false)
+
     params = getparams(components, ["Activity/COSMOSAC/COSMOSAC10_like.csv","Activity/COSMOSAC/COSMOSACdsp_like.csv"]; userlocations=userlocations, verbose=verbose)
     Pnhb  = COSMO_parse_Pi(params["Pnhb"])
     POH  = COSMO_parse_Pi(params["POH"])
@@ -41,10 +44,10 @@ function COSMOSACdsp(components; puremodel=PR,
     hb_don = params["hb_don"]
     icomponents = 1:length(components)
     
-    init_puremodel = [puremodel([components[i]]) for i in icomponents]
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSACdspParam(Pnhb,POH,POT,epsilon,V,A,water,COOH,hb_acc,hb_don)
     references = String[]
-    model = COSMOSACdsp(components,icomponents,packagedparams,init_puremodel,1e-12,references)
+    model = COSMOSACdsp(components,icomponents,packagedparams,_puremodel,1e-12,references)
     return model
 end
 
