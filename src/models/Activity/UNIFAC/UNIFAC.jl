@@ -13,7 +13,7 @@ struct UNIFAC{c<:EoSModel} <: UNIFACModel
     icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACParam
-    puremodel::EoSVectorParam{c}
+    puremodel::EoSVector{c}
     references::Array{String,1}
     unifac_cache::UNIFACCache
 end

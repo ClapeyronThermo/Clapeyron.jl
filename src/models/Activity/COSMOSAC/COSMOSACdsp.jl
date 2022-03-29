@@ -17,7 +17,7 @@ struct COSMOSACdsp{c<:EoSModel} <: COSMOSACdspModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     params::COSMOSACdspParam
-    puremodel::EoSVectorParam{c}
+    puremodel::EoSVector{c}
     absolutetolerance::Float64
     references::Array{String,1}
 end
