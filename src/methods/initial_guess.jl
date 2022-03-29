@@ -1,7 +1,7 @@
 """
     x0_volume_liquid(model,T,z)
 
-Returns an initial guess to the liquid volume, dependent on temperature and composition. by default is 1.25 times the [lower bound volume](@ref lb_volume).
+Returns an initial guess to the liquid volume, dependent on temperature and composition. by default is 1.25 times [`lb_volume`](@ref).
 """
 function x0_volume_liquid(model,T,z)
     v_lb = lb_volume(model,z)
@@ -11,7 +11,7 @@ end
 """
     x0_volume_gas(model,p,T,z)
 
-Returns an initial guess to the gas volume, depending of pressure, temperature and composition. by default uses a [virial aproximation](@ref volume_virial)
+Returns an initial guess to the gas volume, depending of pressure, temperature and composition. by default uses [`volume_virial`](@ref)
 """
 function x0_volume_gas(model,p,T,z)
     return volume_virial(model,p,T,z)
@@ -62,7 +62,7 @@ function lb_volume end
     x0_sat_pure(model::EoSModel,T,z=SA[1.0])
 
 Returns a 2-tuple corresponding to `(log10(Vₗ),log10(Vᵥ))`, where Vₗ and Vᵥ are the liquid and vapor initial guesses. 
-Used in [`sat_pure`](@ref).
+Used in [`saturation_pressure`](@ref)
 """
 function x0_sat_pure(model,T,z=SA[1.0])
     #=theory as follows
