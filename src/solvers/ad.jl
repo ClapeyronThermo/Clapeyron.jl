@@ -3,13 +3,13 @@
 struct ∂Tag end
 
 @inline function derivative(f::F, x::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(∂Tag(), R))
+    T = typeof(ForwardDiff.Tag(f, R))
     out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),))))
     return ForwardDiff.extract_derivative(T, out)
 end
 
 @inline function gradient2(f::F, x1::R,x2::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(∂Tag(), R))
+    T = typeof(ForwardDiff.Tag(f, R))
     _1 = one(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
@@ -30,7 +30,7 @@ end
 returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
 @inline function f∂f(f::F, x::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(∂Tag(), R))
+    T = typeof(ForwardDiff.Tag(f, R))
     out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),))))
     return ForwardDiff.value(out),  ForwardDiff.extract_derivative(T, out)
 end
@@ -41,7 +41,7 @@ end
 returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
 @inline function f∂f∂2f(f::F,x::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(typeof(f), R))
+    T = typeof(ForwardDiff.Tag(f, R))
     out = ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),)))
     _f,_df = f∂f(f,out)
     fx = ForwardDiff.value(_f)
@@ -61,7 +61,7 @@ function fgradf2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
 end
 
 @inline function fgradf2(f::F,x1::R,x2::R) where{F,R<:Real}
-    T = typeof(ForwardDiff.Tag(∂Tag(), R))
+    T = typeof(ForwardDiff.Tag(f, R))
     _1 = one(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
@@ -73,7 +73,7 @@ end
 
 #Manual implementation of an hyperdual.
 @inline function ∂2(f::F,x1::R,x2::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(∂Tag(), R))
+    typeof(ForwardDiff.Tag(f, R))
     _1 = one(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
