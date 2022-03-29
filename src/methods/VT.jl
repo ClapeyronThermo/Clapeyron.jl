@@ -146,17 +146,19 @@ end
 
 #Vector Properties
 
-function VT_chemical_potential(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos(model,V,T,x)
-    TT = gradient_type(V,T,z) #type stability matters a lot
+function VT_partial_property(model::EoSModel,V,T,z,property::ℜ) where {ℜ}
+    fun(x) = property(model,V,T,x)
+    TT = gradient_type(V,T,z)
     return ForwardDiff.gradient(fun,z)::TT
 end
 
-function VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos_res(model,V,T,x)
-    TT = gradient_type(V,T,z) #type stability matters a lot
-    return ForwardDiff.gradient(fun,z)::TT
-end
+VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos)
+VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos_res)
+
+
+
+
+
 
 
 export second_virial_coefficient,pressure
