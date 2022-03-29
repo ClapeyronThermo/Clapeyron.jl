@@ -299,6 +299,7 @@ end
     @testset "COSMOSAC02" begin
         system = COSMOSAC02(["water","ethanol"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.3871817962565904 rtol = 1e-6
+        @test Clapeyron.excess_gibbs_free_energy(system,p,T,z) ≈ 610.5706657776052 rtol = 1e-6
     end
 
     @testset "COSMOSAC10" begin
