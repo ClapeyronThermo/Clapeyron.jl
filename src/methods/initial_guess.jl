@@ -105,7 +105,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
     _b = γ - B - vl
     Δ = _b*_b - 4*_c
     if isnan(vl) | (Δ < 0)
-         
+        println("error condition: fail solving vl")
         #fails on two ocassions:
         #near critical point, or too low.
         #old strategy
@@ -138,10 +138,12 @@ function x0_sat_pure(model,T,z=SA[1.0])
         _nan = _0/_0
         return (_nan,_nan)
     end
+    @show (Tc,Pc)
     # if b1/b2 < -0.95, then T is near Tc.
     #if b<lb_v then we are in trouble 
     #critical regime or something horribly wrong happened
     if (b1/b2 < -0.95) | (b<lb_v) | (Tr>0.99)
+        println("warning: near criticality")
         x0l = 4*lb_v
         x0v = -2*B #gas volume as high as possible
         return (log10(x0l),log10(x0v))   
@@ -247,3 +249,139 @@ function T_scales(model)
 end
 
 T_scales(model,z) = T_scales(model)
+
+function x0_sat_pure2(model,T,z=SA[1.0])
+    #=
+    x0_sat_pure v3: full local van der waals.
+
+    first version: 
+        - constant values
+    second version: 
+        - calculate B(Teos) (B = b - a/RT)
+        - PB = Peos = P(v = -2B,T) # gas spinodal aproximation
+        - vl obtained from volume(model,PB,T)
+        - solve a,b from (P,V,T,B) coordinates 
+        - in case that volume solver fails, regress to constant near critical.
+    third version:
+        - calculate B(Teos) (B = b - a/RT)
+        - solve (a,b) such as:
+            - p(eos) = max(p(vdw),0)
+            - v ≈ b(1 + sqrt(0.5RTb/a)) #liquid spinodal aproximation
+            - (modified volume_compress, does not fail even near criticality.)
+    =#
+    B = second_virial_coefficient(model,T,SA[1.0])
+    lb_v = lb_volume(model,SA[1.0])*one(T)
+    _0 = zero(B)
+    TT = typeof(_0)
+    if -2B < lb_v 
+        _nan = _0/_0
+        return (_nan,_nan)
+    end
+    
+    a,b = vdw_ab(model,T,B)
+    @show a,b
+    Ωa =  27/64
+    Ωb =  1/8
+    ar = a/Ωa
+    br = b/Ωb
+    Tc = ar/br/R̄
+    Pc = ar/(br*br)
+    Vc = 3*b
+
+    #=the basis is that p = RT/v-b - a/v2
+    we have a (p,v,T) pair
+    and B = 2nd virial coefficient = b-a/RT
+    with that, we solve for a and b 
+    as a and b are vdW, Pc and Tc can be calculated
+    with Tc and Pc, we use [1] to calculate vl0 and vv0
+    
+    with Tc, we can also know in what regime we are.
+    in near critical pressures, we use directly vv0 = -2B
+    and vl0 = 4*lb_v
+
+    [1]
+    DOI: 10.1007/s10910-007-9272-4
+    Journal of Mathematical Chemistry, Vol. 43, No. 4, May 2008 (© 2007)
+    The van der Waals equation: analytical and approximate solutions
+    =#
+    @show Tc,Pc
+    Tr = T/Tc
+    #Tr(vdW approx) > Tr(model)
+    if Tr >= 1
+        _nan = _0/_0
+        return (_nan,_nan)
+    end
+
+
+
+    # if b1/b2 < -0.95, then T is near Tc.
+    #if b<lb_v then we are in trouble 
+    #critical regime or something horribly wrong happened
+    if (b<lb_v) | (Tr>0.99)
+        x0l = 4*lb_v
+        x0v = -2*B #gas volume as high as possible
+        return (log10(x0l),log10(x0v))   
+    end
+   
+
+    #spinodal values
+   
+    v_sv = -2*B
+    p_sv = -0.25*R̄*T/B
+    v_sl = b*(1+sqrt(0.5*R̄*T*b/a))
+    p_sl =  max(R̄*T/(v_sl- b) - a/(v_sl^2),zero(v_sl))
+    p_l = min(p_sl,Pc)
+    pm = 0.5*(p_sv+p_l)
+    #Δ is a measure on how close
+
+
+    
+    vv = volume_virial(B,pm,T) 
+    vl = v_sl
+
+    #@show (p_sv,p_sl)
+    #x0l = max(Vl0,v_sl)
+    #x0v = min(v_mean_sl,Vv0) #cutoff volume
+    
+    if p_sl > Pc #improves predictions around critical point
+        vlc,vvc =  vdw_x0_xat_pure(T,Tc,Pc,Vc)
+        vl = 0.5*(vl+vlc)
+        vv = 0.5*(vv+vvc)
+    end
+    @show vl,vv
+    return (log10(vl),log10(vv)) 
+end
+
+function vdw_ab(model,T,B = second_virial_coefficient(model,T))
+    z = SA[1.0]
+    lb_v = lb_volume(model,z)
+    x0_l = x0_volume_liquid(model,T,z)
+    logb0 = log(x0_l)
+    log_lb_v = log(lb_v)
+    _nan = zero(T)/zero(T)
+    _0 = zero(_nan)
+    
+    function logstep(logb)
+        
+        logb < log_lb_v && return _nan
+        b = exp(logb) 
+        a = -R̄*T*(B - b)
+        v = b*(1+sqrt(0.5*R̄*T*b/a))
+        p_vdw = max(R̄*T/(v- b) - a/(v^2),_0)
+        p_eos,dpdV = p∂p∂V(model,v,T,z)
+        dpdV > 0 && return _nan #inline mechanical stability. 
+        abs(p_eos-p_vdw) < 3eps(p_eos) && return _0
+        Δ = (p_vdw-p_eos)/(v*dpdV) 
+        return Δ
+    end
+
+    function f_fixpoint(_V)
+        Δ = logstep(_V)
+        vv = _V + Δ
+        return vv
+    end
+    log_bb = @nan(Solvers.fixpoint(f_fixpoint,logb0,Solvers.SSFixPoint(),rtol = 1e-8,max_iters=100),_nan)
+    bb =  exp(log_bb)
+    aa = -R̄*T*(B - bb)
+    return (aa,bb)
+end
