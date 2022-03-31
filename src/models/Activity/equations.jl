@@ -10,6 +10,10 @@ function activity_coefficient(model::ActivityModel,p,T,z)
     return exp.(ForwardDiff.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
 end
 
+function saturation_pressure(model::ActivityModel,T::Real,v0 = x0_sat_pure(model.puremodel[1],T))
+    return saturation_pressure(model.puremodel[1],T,v0)
+end
+
 function eos(model::ActivityModel,V,T,z)
     Σz = sum(z)
     lnΣz = log(Σz)
