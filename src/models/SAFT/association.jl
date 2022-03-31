@@ -195,7 +195,7 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     nn = length(bv.values)
     isone(nn) && return X_exact1(model,V,T,z,data)
     _1 = one(V+T+first(z))
-        
+    TT = typeof(_1)    
     options = model.assoc_options
     atol = options.atol
     rtol = options.rtol
@@ -227,7 +227,7 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
         return out
     end
 
-    Xsol = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(α),atol=atol,rtol = rtol,max_iters = max_iters)
+    Xsol::Vector{TT} = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(α),atol=atol,rtol = rtol,max_iters = max_iters)
     return PackedVofV(idxs,Xsol)
 end
 
