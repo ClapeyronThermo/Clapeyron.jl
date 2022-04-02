@@ -448,7 +448,6 @@ function excess(model::EoSModel,p,T,z,::typeof(gibbs_free_energy))
         g_mix -= z[i]*(gibbs_free_energy(pure[i],p,T) + R̄*T*(log(z[i]) - log∑z))
     end
     return g_mix::TT
-    return g_mix-Clapeyron.dot(g_pure,z)-R̄*T*Clapeyron.dot(z,log.(x))
 end
 
 """
