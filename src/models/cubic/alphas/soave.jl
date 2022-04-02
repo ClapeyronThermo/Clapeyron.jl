@@ -43,7 +43,8 @@ function SoaveAlpha(components::Vector{String}; userlocations::Vector{String}=St
     return model
 end
 
-@inline α_m(model,::SoaveAlpha) = (0.480,1.547,-0.176)
+@inline α_m(model::RKModel,::SoaveAlpha) = (0.480,1.547,-0.176)
+@inline α_m(model::PRModel,::SoaveAlpha) = (0.37464,1.54226,-0.26992) #equal to PRAlpha
 
 function α_function(model::CubicModel,V,T,z,alpha_model::SoaveAlphaModel)
     Tc = model.params.Tc.values
