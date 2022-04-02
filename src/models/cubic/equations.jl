@@ -211,7 +211,7 @@ function wilson_k_values(model::ABCubicModel,p,T)
     Pc = model.params.Pc.values
     Tc = model.params.Tc.values
 
-    if hasfield(typeof(model.alpha),:acentricfactor)
+    if hasfield(typeof(model.alpha.params),:acentricfactor)
         ω = model.alpha.params.acentricfactor.values
     else
         pure = split_model(model)
