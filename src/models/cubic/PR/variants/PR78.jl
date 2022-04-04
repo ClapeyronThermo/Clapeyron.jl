@@ -8,11 +8,12 @@
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
+    translation_userlocations = String[],
     verbose=false)
 
 Peng Robinson (1978) equation of state. it uses the following models:
 
-- Translation Model: `PR78Alpha`
+- Translation Model: `NoTranslation`
 - Alpha Model: `PR78Alpha`
 - Mixing Rule Model: `vdW1fRule`
 
