@@ -1,0 +1,353 @@
+Clapeyron Database File
+E-PPR78 unlike Parameters
+species1,species2,A,B
+CH3,CH2,65.54,65.54
+CH3,CH,214.9,214.9
+CH3,C,431.6,431.6
+CH3,CH4,28.48,28.48
+CH3,C2H6,3.775,3.775
+CH3,CH aro,98.83,98.83
+CH3,C aro,103.6,103.6
+CH3,C fused aromatic rings,624.9,624.9
+CH3,CH2 cyclic,43.58,43.58
+CH3,CH cyclic~|~C cyclic,293.4,293.4
+CH3,CO2,144.8,144.8
+CH3,N2,38.09,38.09
+CH3,H2S,159.6,159.6
+CH3,SH,789.6,789.6
+CH3,H2O,3557.0,3557.0
+CH3,C2H4,7.892,7.892
+CH3,CH2 alkenic~|~CH alkenic,48.73,48.73
+CH3,C alkenic,102.6,102.6
+CH3,CH cycloalkenic~|~C cycloalkenic,47.01,47.01
+CH3,H2,174.0,174.0
+CH3,C2F6,119.1,119.1
+CH3,CF3,123.2,123.2
+CH3,CF2,58.33,58.33
+CH3,CF2 double bond~|~CF double bond,-12.29,-12.29
+CH3,C2H4F2,128.3,128.3
+CH3,C2H2F4,158.5,158.5
+CH3,CO,91.24,91.24
+CH3,He,416.3,416.3
+CH3,Ar,11.27,11.27
+CH3,SO2,322.2,322.2
+CH3,O2,86.1,86.1
+CH3,C2H2,-6.86,-6.86
+CH3,HC=-C-,306.1,306.1
+CH3,-C=-C-,72.06,72.06
+CH2,CH,39.05,39.05
+CH2,C,134.5,134.5
+CH2,CH4,37.75,37.75
+CH2,C2H6,29.85,29.85
+CH2,CH aro,25.05,25.05
+CH2,C aro,5.147,5.147
+CH2,C fused aromatic rings,-17.84,-17.84
+CH2,CH2 cyclic,8.579,8.579
+CH2,CH cyclic~|~C cyclic,63.48,63.48
+CH2,CO2,141.4,141.4
+CH2,N2,83.73,83.73
+CH2,H2S,136.6,136.6
+CH2,SH,439.9,439.9
+CH2,H2O,4324.0,4324.0
+CH2,C2H4,59.71,59.71
+CH2,CH2 alkenic~|~CH alkenic,9.608,9.608
+CH2,C alkenic,64.85,64.85
+CH2,CH cycloalkenic~|~C cycloalkenic,34.31,34.31
+CH2,H2,155.4,155.4
+CH2,C2F6,105.0,105.0
+CH2,CF3,195.6,195.6
+CH2,CF2,58.33,58.33
+CH2,C2H4F2,107.1,107.1
+CH2,C2H2F4,86.47,86.47
+CH2,CO,44.0,44.0
+CH2,He,520.52,520.52
+CH2,Ar,113.6,113.6
+CH2,SO2,55.9,55.9
+CH2,O2,107.4,107.4
+CH2,C2H2,421.0,421.0
+CH2,HC=-C-,303.3,303.3
+CH2,-C=-C-,488.0,488.0
+CH,C,-86.13,-86.13
+CH,CH4,131.4,131.4
+CH,C2H6,156.1,156.1
+CH,CH aro,56.62,56.62
+CH,C aro,48.73,48.73
+CH,CH2 cyclic,73.09,73.09
+CH,CH cyclic~|~C cyclic,-120.8,-120.8
+CH,CO2,191.8,191.8
+CH,N2,383.6,383.6
+CH,H2S,192.5,192.5
+CH,SH,374.0,374.0
+CH,H2O,971.4,971.4
+CH,C2H4,147.9,147.9
+CH,CH2 alkenic~|~CH alkenic,84.76,84.76
+CH,C alkenic,91.62,91.62
+CH,CH cycloalkenic~|~C cycloalkenic,0.52,0.52
+CH,H2,326.0,326.0
+CH,CF3,531.5,531.5
+CH,CF2,-122.8,-122.8
+CH,C2H4F2,143.8,143.8
+CH,C2H2F4,121.5,121.5
+CH,He,728.1,728.1
+CH,Ar,185.8,185.8
+CH,SO2,-70.0,-70.0
+CH,HC=-C-,206.9,206.9
+CH,-C=-C-,4.46,4.46
+C,CH4,309.5,309.5
+C,C2H6,388.1,388.1
+C,CH aro,170.5,170.5
+C,C aro,128.3,128.3
+C,CH2 cyclic,208.6,208.6
+C,CH cyclic~|~C cyclic,25.05,25.05
+C,CO2,377.5,377.5
+C,N2,341.8,341.8
+C,H2S,330.8,330.8
+C,SH,685.9,685.9
+C,C2H4,366.8,366.8
+C,CH2 alkenic~|~CH alkenic,181.2,181.2
+C,H2,548.3,548.3
+C,CF3,413.1,413.1
+C,CF2,479.0,479.0
+C,Ar,899.0,899.0
+CH4,C2H6,9.951,9.951
+CH4,CH aro,67.26,67.26
+CH4,C aro,106.7,106.7
+CH4,C fused aromatic rings,249.1,249.1
+CH4,CH2 cyclic,33.97,33.97
+CH4,CH cyclic~|~C cyclic,188.0,188.0
+CH4,CO2,136.6,136.6
+CH4,N2,30.88,30.88
+CH4,H2S,190.1,190.1
+CH4,SH,701.7,701.7
+CH4,H2O,2277.1,2277.1
+CH4,C2H4,19.22,19.22
+CH4,CH2 alkenic~|~CH alkenic,48.73,48.73
+CH4,H2,156.1,156.1
+CH4,CO,14.43,14.43
+CH4,He,394.5,394.5
+CH4,Ar,15.97,15.97
+CH4,SO2,205.9,205.9
+CH4,COS,44.61,44.61
+CH4,NH3,436.1,436.1
+CH4,N2O,74.81,74.81
+C2H6,CH aro,41.18,41.18
+C2H6,C aro,67.94,67.94
+C2H6,CH2 cyclic,12.7,12.7
+C2H6,CH cyclic~|~C cyclic,118.0,118.0
+C2H6,CO2,136.2,136.2
+C2H6,N2,61.59,61.59
+C2H6,H2S,157.2,157.2
+C2H6,H2O,2333.0,2333.0
+C2H6,C2H4,7.549,7.549
+C2H6,CH2 alkenic~|~CH alkenic,26.77,26.77
+C2H6,H2,137.6,137.6
+C2H6,C2F6,96.08,96.08
+C2H6,CF3,87.16,87.16
+C2H6,CF2,79.27,79.27
+C2H6,CF2 double bond~|~CF double bond,95.55,95.55
+C2H6,C2H2F4,72.4,72.4
+C2H6,CO,15.42,15.42
+C2H6,He,581.3,581.3
+C2H6,Ar,43.81,43.81
+C2H6,C2H2,137.9,137.9
+CH aro,C aro,-16.47,-16.47
+CH aro,C fused aromatic rings,52.5,52.5
+CH aro,CH2 cyclic,28.82,28.82
+CH aro,CH cyclic~|~C cyclic,129.0,129.0
+CH aro,CO2,98.48,98.48
+CH aro,N2,185.3,185.3
+CH aro,H2S,21.28,21.28
+CH aro,SH,277.6,277.6
+CH aro,H2O,2268.0,2268.0
+CH aro,C2H4,25.74,25.74
+CH aro,CH2 alkenic~|~CH alkenic,9.951,9.951
+CH aro,C alkenic,-16.47,-16.47
+CH aro,CH cycloalkenic~|~C cycloalkenic,3.375,3.375
+CH aro,H2,288.9,288.9
+CH aro,CF3,680.1,680.1
+CH aro,CF2,-31.57,-31.57
+CH aro,CF2 double bond~|~CF double bond,-274.3,-274.3
+CH aro,CO,153.4,153.4
+CH aro,He,753.6,753.6
+CH aro,Ar,195.6,195.6
+CH aro,SO2,37.1,37.1
+CH aro,O2,233.4,233.4
+CH aro,C2H2,29.17,29.17
+CH aro,HC=-C-,96.08,96.08
+CH aro,-C=-C-,403.9,403.9
+C aro,C fused aromatic rings,-328.0,-328.0
+C aro,CH2 cyclic,37.4,37.4
+C aro,CH cyclic~|~C cyclic,-99.17,-99.17
+C aro,CO2,154.4,154.4
+C aro,N2,343.8,343.8
+C aro,H2S,9.608,9.608
+C aro,SH,1002.0,1002.0
+C aro,H2O,543.5,543.5
+C aro,C2H4,97.8,97.8
+C aro,CH2 alkenic~|~CH alkenic,-48.38,-48.38
+C aro,C alkenic,343.1,343.1
+C aro,CH cycloalkenic~|~C cycloalkenic,242.9,242.9
+C aro,H2,400.1,400.1
+C aro,CF3,733.0,733.0
+C aro,CF2,-8.922,-8.922
+C aro,CF2 double bond~|~CF double bond,78.62,78.62
+C fused aromatic rings,CH2 cyclic,140.7,140.7
+C fused aromatic rings,CH cyclic~|~C cyclic,-99.17,-99.17
+C fused aromatic rings,CO2,331.1,331.1
+C fused aromatic rings,N2,702.4,702.4
+C fused aromatic rings,H2S,9.608,9.608
+C fused aromatic rings,SH,1002.0,1002.0
+C fused aromatic rings,H2O,1340.0,1340.0
+C fused aromatic rings,C2H4,209.7,209.7
+C fused aromatic rings,CH2 alkenic~|~CH alkenic,669.8,669.8
+C fused aromatic rings,H2,602.9,602.9
+C fused aromatic rings,CO,197.0,197.0
+C fused aromatic rings,He,753.6,753.6
+CH2 cyclic,CH cyclic~|~C cyclic,139.0,139.0
+CH2 cyclic,CO2,144.1,144.1
+CH2 cyclic,N2,179.5,179.5
+CH2 cyclic,H2S,117.4,117.4
+CH2 cyclic,SH,493.1,493.1
+CH2 cyclic,H2O,4211.0,4211.0
+CH2 cyclic,C2H4,35.34,35.34
+CH2 cyclic,CH2 alkenic~|~CH alkenic,-15.44,-15.44
+CH2 cyclic,C alkenic,159.6,159.6
+CH2 cyclic,CH cycloalkenic~|~C cycloalkenic,31.91,31.91
+CH2 cyclic,H2,236.1,236.1
+CH2 cyclic,CF3,216.2,216.2
+CH2 cyclic,CF2,42.55,42.55
+CH2 cyclic,CO,113.1,113.1
+CH2 cyclic,Ar,1269.0,1269.0
+CH2 cyclic,O2,181.2,181.2
+CH2 cyclic,NO,-27.5,-27.5
+CH2 cyclic,HC=-C-,496.2,496.2
+CH2 cyclic,-C=-C-,845.9,845.9
+CH cyclic~|~C cyclic,CO2,216.2,216.2
+CH cyclic~|~C cyclic,N2,331.5,331.5
+CH cyclic~|~C cyclic,H2S,71.37,71.37
+CH cyclic~|~C cyclic,SH,463.2,463.2
+CH cyclic~|~C cyclic,H2O,244.0,244.0
+CH cyclic~|~C cyclic,C2H4,297.2,297.2
+CH cyclic~|~C cyclic,CH2 alkenic~|~CH alkenic,260.1,260.1
+CH cyclic~|~C cyclic,CH cycloalkenic~|~C cycloalkenic,151.3,151.3
+CH cyclic~|~C cyclic,H2,-51.82,-51.82
+CH cyclic~|~C cyclic,O2,102.3,102.3
+CH cyclic~|~C cyclic,HC=-C-,863.7,863.7
+CO2,N2,113.9,113.9
+CO2,H2S,135.2,135.2
+CO2,SH,484.15,484.15
+CO2,H2O,559.3,559.3
+CO2,C2H4,73.09,73.09
+CO2,CH2 alkenic~|~CH alkenic,60.74,60.74
+CO2,C alkenic,74.81,74.81
+CO2,CH cycloalkenic~|~C cycloalkenic,87.85,87.85
+CO2,H2,261.1,261.1
+CO2,C2F6,126.6,126.6
+CO2,CF3,156.5,156.5
+CO2,CF2,125.2,125.2
+CO2,CF2 double bond~|~CF double bond,36.25,36.25
+CO2,C2H4F2,48.73,48.73
+CO2,C2H2F4,29.51,29.51
+CO2,CO,87.85,87.85
+CO2,He,685.9,685.9
+CO2,Ar,177.8,177.8
+CO2,SO2,54.9,54.9
+CO2,O2,154.4,154.4
+CO2,NO,5.1,5.1
+CO2,COS,83.04,83.04
+CO2,NO2~|~N2O4,124.9,124.9
+CO2,N2O,3.77,3.77
+CO2,HC=-C-,60.05,60.05
+N2,H2S,319.5,319.5
+N2,SH,1042.0,1042.0
+N2,H2O,2574.0,2574.0
+N2,C2H4,45.3,45.3
+N2,CH2 alkenic~|~CH alkenic,59.71,59.71
+N2,C alkenic,541.5,541.5
+N2,H2,65.2,65.2
+N2,CO,23.33,23.33
+N2,He,204.7,204.7
+N2,Ar,6.488,6.488
+N2,SO2,282.4,282.4
+N2,O2,2.4,2.4
+N2,NO,258.7,258.7
+N2,NH3,585.8,585.8
+N2,NO2~|~N2O4,263.5,263.5
+N2,N2O,101.6,101.6
+H2S,SH,-157.8,-157.8
+H2S,H2O,603.9,603.9
+H2S,H2,145.8,145.8
+H2S,CO,278.6,278.6
+H2S,COS,101.9,101.9
+SH,H2O,30.88,30.88
+H2O,C2H4,1650.0,1650.0
+H2O,CH2 alkenic~|~CH alkenic,2243.0,2243.0
+H2O,H2,830.8,830.8
+H2O,CO,715.1,715.1
+H2O,Ar,1197.0,1197.0
+H2O,SO2,374.4,374.4
+H2O,O2,1376.0,1376.0
+H2O,NH3,-550.1,-550.1
+H2O,N2O,568.9,568.9
+H2O,C2H2,436.8,436.8
+H2O,HC=-C-,-2395.5,-2395.5
+C2H4,CH2 alkenic~|~CH alkenic,14.76,14.76
+C2H4,C alkenic,-518.2,-518.2
+C2H4,CH cycloalkenic~|~C cycloalkenic,-98.83,-98.83
+C2H4,H2,151.3,151.3
+C2H4,CF3,453.0,453.0
+C2H4,CF2 double bond~|~CF double bond,-132.7,-132.7
+C2H4,CO,84.55,84.55
+C2H4,He,569.6,569.6
+C2H4,SO2,26.8,26.8
+CH2 alkenic~|~CH alkenic,C alkenic,24.71,24.71
+CH2 alkenic~|~CH alkenic,CH cycloalkenic~|~C cycloalkenic,14.07,14.07
+CH2 alkenic~|~CH alkenic,H2,175.7,175.7
+CH2 alkenic~|~CH alkenic,C2F6,124.9,124.9
+CH2 alkenic~|~CH alkenic,CF3,155.4,155.4
+CH2 alkenic~|~CH alkenic,CF2,155.4,155.4
+CH2 alkenic~|~CH alkenic,CF2 double bond~|~CF double bond,88.21,88.21
+CH2 alkenic~|~CH alkenic,C2H4F2,76.86,76.86
+CH2 alkenic~|~CH alkenic,C2H2F4,64.51,64.51
+CH2 alkenic~|~CH alkenic,He,644.3,644.3
+CH2 alkenic~|~CH alkenic,Ar,203.0,203.0
+CH2 alkenic~|~CH alkenic,C2H2,165.4,165.4
+CH2 alkenic~|~CH alkenic,HC=-C-,134.5,134.5
+CH2 alkenic~|~CH alkenic,-C=-C-,255.6,255.6
+C alkenic,CH cycloalkenic~|~C cycloalkenic,23.68,23.68
+C alkenic,H2,621.4,621.4
+C alkenic,SO2,-141.7,-141.7
+C alkenic,HC=-C-,212.8,212.8
+C alkenic,-C=-C-,-874.3,-874.3
+CH cycloalkenic~|~C cycloalkenic,H2,460.8,460.8
+CH cycloalkenic~|~C cycloalkenic,CF3,1232.0,1232.0
+H2,CO,75.84,75.84
+H2,He,138.7,138.7
+H2,Ar,128.2,128.2
+H2,NH3,701.7,701.7
+C2F6,CF3,-14.47,-14.47
+C2F6,CF2 double bond~|~CF double bond,55.9,55.9
+C2F6,C2H2F4,60.74,60.74
+CF3,CF2,0.0,0.0
+CF3,CF2 double bond~|~CF double bond,17.55,17.55
+CF3,C2H4F2,113.2,113.2
+CF3,C2H2F4,28.14,28.14
+CF2,C2H4F2,120.1,120.1
+CF2,C2H2F4,229.9,229.9
+C2H4F2,C2H2F4,-4.118,-4.118
+C2H4F2,C2H2,-58.68,-58.68
+CO,He,260.1,260.1
+CO,Ar,4.042,4.042
+CO,NO,309.2,309.2
+He,Ar,243.1,243.1
+Ar,SO2,299.9,299.9
+Ar,O2,4.8,4.8
+Ar,NO,110.8,110.8
+Ar,NH3,630.0,630.0
+Ar,NO2~|~N2O4,278.6,278.6
+SO2,O2,340.0,340.0
+SO2,NO,172.3,172.3
+O2,NO2~|~N2O4,271.1,271.1
+O2,N2O,120.1,120.1
+C2H2,HC=-C-,122.5,122.5
+HC=-C-,-C=-C-,-497.6,-497.6
