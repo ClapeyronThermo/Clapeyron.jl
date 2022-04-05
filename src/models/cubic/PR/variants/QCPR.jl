@@ -33,7 +33,7 @@ function QCPR(components::Vector{String}; idealmodel=BasicIdeal,
     twu_alpha = "cubic/QCPR/Twu_QCPR.csv"
     const_translation = "cubic/QCPR/QCPR_translation.csv"
 
-    userlocations = vcat(crit,unlike,userlocations)
+    userlocations = vcat(crit,userlocations)
     alpha_userlocations = vcat(twu_alpha,alpha_userlocations)
    
     translation_userlocations = vcat(const_translation,translation_userlocations)
