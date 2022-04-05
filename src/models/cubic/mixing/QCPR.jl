@@ -4,7 +4,7 @@ struct QCPRRuleParam <: EoSParam
     l::PairParam{Float64}
 end
 
-abstract type QCPRRuleModel <: QCPRRule end
+abstract type QCPRRuleModel <: MixingRule end
 
 struct QCPRRule <: QCPRRuleModel
     components::Array{String,1}
@@ -55,11 +55,11 @@ function QCPRRule(components::Vector{String}; activity = nothing, userlocations:
     params = getparams(components, ["cubic/QCPR/QCPR_like.csv","cubic/QCPR/QCPR_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     references = String["10.1016/j.fluid.2020.112790"]
     pkgparams = QCPRRuleParam(params["A"],params["B"],params["l"])
-    model = QCPRRule(components, params ,references)
+    model = QCPRRule(components, pkgparams ,references)
     return model
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b,c)
+function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
