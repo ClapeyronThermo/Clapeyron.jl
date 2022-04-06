@@ -78,7 +78,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
         βi = (1 + Ai/(T + Bi))^3 / (1 + Ai/(Tc[i] + Bi))^3
         bqi = βi*b[i,i]
         b̄ += bqi*zi2
-        ā += a[i,i]*αi*zi^2
+        ā += a[i,i]*αi*zi2
         for j in 1:(i-1)
             zij = zi*z[j]
             Bj = B[j]
