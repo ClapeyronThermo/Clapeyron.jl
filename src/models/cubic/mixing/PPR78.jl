@@ -83,9 +83,9 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
                 αik =zni[k]* ∑zni⁻¹
                 αjk =znj[k]* ∑znj⁻¹
                 Δαk = (αik - αjk)
-                for l in 1:k-1
-                    αil =zni[k]* ∑zni⁻¹
-                    αjl =znj[k]* ∑znj⁻¹
+                for l in 1:k-1 #Δαk*Δαl = Δαl*Δαk
+                    αil =zni[l]* ∑zni⁻¹
+                    αjl =znj[l]* ∑znj⁻¹
                     Δαl = (αil - αjl)
                     Akl = A[k,l]
                     Bkl = B[k,l]
