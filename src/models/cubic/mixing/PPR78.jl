@@ -1,6 +1,5 @@
 abstract type PPR78RuleModel <: MixingRule end
 
-
 struct PPR78Param <: EoSParam
     A::PairParam{Float64}
     B::PairParam{Float64}
@@ -15,9 +14,9 @@ end
 @registermodel HVRule
 
 """
-    HVRule{γ} <: HVRuleModel
+    PPR78Rule <: PPR78RuleModel
     
-    HVRule(components;
+    PPR78Rule(components;
     userlocations::Vector{String}=String[],
     verbose::Bool=false)
 
@@ -43,35 +42,60 @@ Eᵢⱼ = ∑(z̄ᵢₖ - z̄ⱼₖ)(z̄ᵢₗ - z̄ⱼₗ) × Aₖₗ × (298.1
 2. Jaubert, J.-N., Qian, J.-W., Lasala, S., & Privat, R. (2022). The impressive impact of including enthalpy and heat capacity of mixing data when parameterising equations of state. Application to the development of the E-PPR78 (Enhanced-Predictive-Peng-Robinson-78) model. Fluid Phase Equilibria, (113456), 113456. doi:10.1016/j.fluid.2022.113456
 
 """
-HVRule
+PPR78Rule
 
-export HVRule
-function HVRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    init_activity = activity(components;userlocations = activity_userlocations,verbose)
-    
+export PPR78Rule
+function PPR78Rule(components, userlocations::Vector{String}=String[],group_userlocations::Vector{String}=String[], verbose::Bool=false)
+    groups = GroupParam(components,["cubic/EPPR78_groups.csv"]; verbose=verbose)
+    params = getparams(groups, ["cubic/EPPR78_unlike.csv"]; userlocations=userlocations)
+    pkgparams = PPR78Rule(params["A"],params["B"])
     references = ["10.1002/aic.12232","10.1016/j.fluid.2022.113456"]
-    model = HVRule(components, init_activity,references)
+    model = PPR78Rule(groups,groups.components,pkgparams,references)
     return model
 end
 
 
-function mixing_rule(model::CubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,c)
+function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
     n = sum(z)
     invn = 1/n
     invn2 = invn*invn
+    T̄ = 298.15/T
     b̄ = dot(z,Symmetric(b),z) * invn2
     c̄ = dot(z,c)/n
-    gᴱ = zero(T+first(z))
+    _0 = zero(T+first(z))
+    gᴱ = _0
+
     A = mixing_model.params.A.values
     B = mixing_model.params.B.values
     groups = mixing_model.groups
-    gc = groups
+    gc = groups.i_flattenedgroups
+    z̄n = groups.n_groups.cache
+   
+
     for i ∈ @comps
+        zni = z̄n[i]
+        ∑zni⁻¹ = 1/sum(zni)
         for j in 1:i-1
+            znj = z̄n[j]
+            ∑znj⁻¹ = 1/sum(znj)
+            Eij = _0
             for k in gc
+                αik =zni[k]* ∑zni⁻¹
+                αjk =znj[k]* ∑znj⁻¹
+                Δαk = (αik - αjk)
+                for l in 1:k-1
+                    αil =zni[k]* ∑zni⁻¹
+                    αjl =znj[k]* ∑znj⁻¹
+                    Δαl = (αil - αjl)
+                    Akl = A[k,l]
+                    Bkl = B[k,l]
+                    Eij -= Δαk*Δαl*Akl*T̄^(Akl/Bkl - 1) # -1/2 * 2
+                end
             end
+            gᴱ += z[i]*z[j]*Eij
         end
     end
+    gᴱ = 0.5*gᴱ*invn2/b̄
     ∑ab = sum(z[i]*a[i,i]*α[i]/b[i,i] for i ∈ @comps)*invn
     ā = b̄*(∑ab-gᴱ/_λ)
     return ā,b̄,c̄
