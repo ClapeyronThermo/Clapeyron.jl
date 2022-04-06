@@ -8,6 +8,8 @@
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
+    activity_userlocations = String[],
+    translation_userlocations = String[],
     verbose=false)
 
 Volume-translated Peng Robinson equation of state. it uses the following models:

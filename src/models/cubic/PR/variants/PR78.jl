@@ -30,6 +30,7 @@ function PR78(components::Vector{String}; idealmodel=BasicIdeal,
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
+    translation_userlocations = String[],
     verbose=false)
 
     return PR(components;
@@ -42,6 +43,7 @@ function PR78(components::Vector{String}; idealmodel=BasicIdeal,
     ideal_userlocations = ideal_userlocations,
     alpha_userlocations = alpha_userlocations,
     mixing_userlocations = mixing_userlocations,
+    translation_userlocations = translation_userlocations,
     verbose = verbose)
 end
 export PR78
