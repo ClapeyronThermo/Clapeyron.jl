@@ -41,3 +41,53 @@ C2H2
 HC=-C-
 -C=-C-
 =#
+
+"""
+    EPPR78(components::Vector{String}; idealmodel=BasicIdeal,
+    alpha = PR78Alpha,
+    mixing = vdW1fRule,
+    activity = nothing,
+    translation=NoTranslation,
+    userlocations=String[], 
+    ideal_userlocations=String[],
+    alpha_userlocations = String[],
+    mixing_userlocations = String[],
+    translation_userlocations = String[],
+    verbose=false)
+
+Enhanced Predictive Peng Robinson equation of state. it uses the following models:
+
+- Translation Model: `NoTranslation`
+- Alpha Model: `PR78Alpha`
+- Mixing Rule Model: `PPR78Rule`
+
+## References
+
+1. Robinson DB, Peng DY. The characterization of the heptanes and heavier fractions for the GPA Peng-Robinson programs. Tulsa: Gas Processors Association; 1978
+"""
+function EPPR78(components::Vector{String}; idealmodel=BasicIdeal,
+    alpha = PR78Alpha,
+    mixing = PPR78Rule,
+    activity = nothing,
+    translation=NoTranslation,
+    userlocations=String[], 
+    ideal_userlocations=String[],
+    alpha_userlocations = String[],
+    mixing_userlocations = String[],
+    translation_userlocations = String[],
+    verbose=false)
+
+    return PR(components;
+    idealmodel = idealmodel,
+    alpha = alpha,
+    mixing=mixing,
+    activity = activity,
+    translation=translation,
+    userlocations = userlocations,
+    ideal_userlocations = ideal_userlocations,
+    alpha_userlocations = alpha_userlocations,
+    mixing_userlocations = mixing_userlocations,
+    translation_userlocations = translation_userlocations,
+    verbose = verbose)
+end
+export EPPR78
