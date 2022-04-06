@@ -28,30 +28,31 @@ function QCPR(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
     verbose=false)
 
-    crit = "cubic/QCPR/QCPR_critical.csv"
+    userlocations = vcat(alpha_userlocations,translation_userlocations,userlocations)
 
-    twu_alpha = "cubic/QCPR/Twu_QCPR.csv"
-    const_translation = "cubic/QCPR/QCPR_translation.csv"
+    params = getparams(components, ["cubic/QCPR/QCPR_critical.csv", "cubic/QCPR/QCPR_unlike.csv","cubic/QCPR/Twu_QCPR.csv","cubic/QCPR/QCPR_translation.csv"]; userlocations=userlocations, verbose=verbose)
+    k  = params["k"]
+    pc = params["pc"]
+    Mw = params["Mw"]
+    Tc = params["Tc"]
+    init_mixing = init_model(QCPRRule,components,nothing,mixing_userlocations,activity_userlocations,verbose)
+    a,b = ab_premixing(PR,init_mixing,Tc,pc,k)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
 
-    userlocations = vcat(crit,userlocations)
-    alpha_userlocations = vcat(twu_alpha,alpha_userlocations)
-   
-    translation_userlocations = vcat(const_translation,translation_userlocations)
+    M = params["M"]
+    N = params["N"]
+    L = params["L"]
+    packagedparams = TwuAlphaParam(M,N,L)
+    init_alpha = TwuAlpha(packagedparams, verbose=verbose)
 
-    model = PR(components; idealmodel=idealmodel,
-    alpha = TwuAlpha,
-    mixing = QCPRRule,
-    activity=nothing,
-    translation=ConstantTranslation,
-    userlocations=userlocations, 
-    ideal_userlocations=ideal_userlocations,
-    alpha_userlocations = alpha_userlocations,
-    mixing_userlocations = mixing_userlocations,
-    activity_userlocations = activity_userlocations,
-    translation_userlocations = translation_userlocations,
-    verbose=verbose)
+    c = params["c"]
+    packagedparams = ConstantTranslationParam(c)
+    init_translation = ConstantTranslation(packagedparams, verbose=verbose)
 
-    push!(model.references,"10.1016/j.fluid.2020.112790")
+    icomponents = 1:length(components)
+    packagedparams = PRParam(a,b,Tc,pc,Mw)
+    references = String["10.1021/I160057A011"]
+    model = PR(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 
