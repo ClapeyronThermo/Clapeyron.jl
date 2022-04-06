@@ -89,7 +89,9 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
                     Δαl = (αil - αjl)
                     Akl = A[k,l]
                     Bkl = B[k,l]
-                    Eij -= Δαk*Δαl*Akl*T̄^(Akl/Bkl - 1) # -1/2 * 2
+                    if !iszero(Akl)
+                        Eij -= Δαk*Δαl*Akl*T̄^(Akl/Bkl - 1) # -1/2 * 2
+                    end
                 end
             end
             gᴱ += z[i]*z[j]*Eij
