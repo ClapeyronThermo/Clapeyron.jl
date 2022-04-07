@@ -61,8 +61,8 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
     invn = 1/n
     invn2 = invn*invn
     T̄ = 298.15/T
-    b̄ = dot(z,Symmetric(b),z) * invn2
-    c̄ = dot(z,c)/n
+    b̄ = dot(z,diag(b)) * invn
+    c̄ = dot(z,c)*invn
     _0 = zero(T+first(z))
     gᴱ = _0
 
@@ -98,7 +98,7 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
             gᴱ += bi*b[j,j]*z[i]*z[j]*Eij #(0.5 * 2)
         end
     end
-    gᴱ = gᴱ*invn2/b̄
+    gᴱ = gᴱ*invn2/b̄*1e6
     ∑ab = sum(z[i]*a[i,i]*α[i]/b[i,i] for i ∈ @comps)*invn
     ā = b̄*(∑ab-gᴱ)
     return ā,b̄,c̄
