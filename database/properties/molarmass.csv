@@ -545,7 +545,12 @@ ethylamine,,45.09
 1-propylamine,,59.11
 2-propylamine,,59.11
 aniline,,93.13
-acetic acid,,60.053
+formic acid,64186,46.02538 
+acetic acid,64197,60.05
+propionic acid,79094,74.08
+n-Butyric acid,107926,88.11
+isobutyric acid,79312,88.11
+benzoic acid,65850,122.12
 neon,,20.1797
 sulfur hexafluoride,,146.055
 nitrous oxide,,44.013
