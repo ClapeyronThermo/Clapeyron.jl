@@ -11,7 +11,7 @@ struct PPR78Rule <: PPR78RuleModel
     params::PPR78Param
     references::Vector{String}
 end
-@registermodel HVRule
+@registermodel PPR78Rule
 
 """
     PPR78Rule <: PPR78RuleModel
@@ -45,10 +45,11 @@ Eᵢⱼ = ∑(z̄ᵢₖ - z̄ⱼₖ)(z̄ᵢₗ - z̄ⱼₗ) × Aₖₗ × (298.1
 PPR78Rule
 
 export PPR78Rule
-function PPR78Rule(components, userlocations::Vector{String}=String[],group_userlocations::Vector{String}=String[], verbose::Bool=false)
-    groups = GroupParam(components,["cubic/EPPR78_groups.csv"]; verbose=verbose)
-    params = getparams(groups, ["cubic/EPPR78_unlike.csv"]; userlocations=userlocations)
-    pkgparams = PPR78Rule(params["A"],params["B"])
+
+function PPR78Rule(components; activity = nothing, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+    groups = GroupParam(components,["cubic/EPPR78/EPPR78_groups.csv"]; verbose=verbose)
+    params = getparams(groups, ["cubic/EPPR78/EPPR78_unlike.csv"]; userlocations=userlocations)
+    pkgparams = PPR78Param(params["A"],params["B"])
     references = ["10.1002/aic.12232","10.1016/j.fluid.2022.113456"]
     model = PPR78Rule(groups,groups.components,pkgparams,references)
     return model
@@ -67,14 +68,14 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
 
     A = mixing_model.params.A.values
     B = mixing_model.params.B.values
-    groups = mixing_model.groups
+    groups = mixing_model.groups 
     gc = groups.i_flattenedgroups
-    z̄n = groups.n_groups.cache
+    z̄n = groups.n_groups_cache
    
-
     for i ∈ @comps
         zni = z̄n[i]
         ∑zni⁻¹ = 1/sum(zni)
+        bi = b[i,i]
         for j in 1:i-1
             znj = z̄n[j]
             ∑znj⁻¹ = 1/sum(znj)
@@ -90,16 +91,16 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
                     Akl = A[k,l]
                     Bkl = B[k,l]
                     if !iszero(Akl)
-                        Eij -= Δαk*Δαl*Akl*T̄^(Akl/Bkl - 1) # -1/2 * 2
+                        Eij -= Δαk*Δαl*Akl*T̄^(Bkl/Akl - 1) # -1/2 * 2
                     end
                 end
             end
-            gᴱ += z[i]*z[j]*Eij
+            gᴱ += bi*b[j,j]*z[i]*z[j]*Eij
         end
     end
     gᴱ = 0.5*gᴱ*invn2/b̄
     ∑ab = sum(z[i]*a[i,i]*α[i]/b[i,i] for i ∈ @comps)*invn
-    ā = b̄*(∑ab-gᴱ/_λ)
+    ā = b̄*(∑ab-gᴱ)
     return ā,b̄,c̄
 end
 
