@@ -217,10 +217,10 @@ end
             @test Clapeyron.a_res(system, V, 25, z) ≈ -0.04727878068343511 rtol = 1e-6
         end
 
-        @testset "EPPR78" begin
-            system = EPPR78(["ethane","undecane"])
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2516664842567844 rtol = 1e-6
-        end
+        #@testset "EPPR78" begin
+        #    system = EPPR78(["ethane","undecane"])
+        #    @test Clapeyron.a_res(system, V, T, z) ≈ -1.2516664842567844 rtol = 1e-6
+        #end
         
         @testset "PR w/ BMAlpha" begin
             system = PR(["ethane","undecane"];alpha = BMAlpha)
