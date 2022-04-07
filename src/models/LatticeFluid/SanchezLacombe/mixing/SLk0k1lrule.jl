@@ -6,6 +6,7 @@ struct SLk0k1lMixingRule <: SLMixingRule
 end
 
 @registermodel SLk0k1lMixingRule
+export SLk0k1lMixingRule
 
 function SLk0k1lMixingRule(components; userlocations=String[], verbose=false)
     params = getparams(components, ["LatticeFluid/SanchezLacombe/mixing/k0k1l_unlike.csv"]; userlocations=userlocations, verbose=verbose)

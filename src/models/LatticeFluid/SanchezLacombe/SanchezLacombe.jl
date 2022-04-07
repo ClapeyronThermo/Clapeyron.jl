@@ -60,7 +60,7 @@ function a_res(model::SanchezLacombe,V,T,z=SA[1.0])
     ρ̃ = r̄*v_r/v
     T̃ = R̄*T/ε_r
     _1 = one(V+T+first(z))
-    return r̄*(-ρ̃ /T̃ + (_1/ρ̃  - _1)*log(1-ρ̃ )+_1)
+    return r̄*(-ρ̃ /T̃ + (_1/ρ̃  - _1)*log1p(-ρ̃ )+_1)
 end
 
 function lb_volume(model::SanchezLacombe,z=SA[1.0])
@@ -120,4 +120,4 @@ function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
     return (log10(vl),log10(vv))
 end
 
-export SL,SanchezLacombe,SLk0k1lMixingRule
+export SL,SanchezLacombe
