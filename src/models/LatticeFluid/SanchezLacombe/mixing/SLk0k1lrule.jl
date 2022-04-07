@@ -12,7 +12,7 @@ function SLk0k1lMixingRule(components; userlocations=String[], verbose=false)
     k0 = params["k0"]
     k1 = params["k1"]
     l = params["l"]
-    model = SLk0k1lMixingRule(components,k0,k1,l)
+   model = SLk0k1lMixingRule(components,k0,k1,l)
     return model
 end
 
@@ -24,13 +24,14 @@ function sl_mix(unmixed_vol,unmixed_epsilon,mixmodel::SLk0k1lMixingRule)
 end
 
 function mix_vε(model::SanchezLacombe,V,T,z,mix::SLk0k1lMixingRule,r̄,Σz)
-    r =  model.params.segment.values
+    ε = model.params.epsilon.values
     v = model.params.vol.values
+    isone(length(z)) && return (only(v),only(ε))
+    r =  model.params.segment.values
     k0 = mix.k0.values
     k1 = mix.k1.values
-    ε = model.params.epsilon.values
     r̄inv = one(r̄)/r̄
-     ϕ = @. r* z* r̄inv/Σz
+    ϕ = @. r* z* r̄inv/Σz
     v_r = zero(V+T+first(z))
     ε_r = v_r
     Σz2 = 1/(Σz*Σz)
