@@ -1,4 +1,4 @@
-abstract type SLMixingRule end
+abstract type SLMixingRule <: EoSModel end
 
 function init_model(model::SLMixingRule,components,userlocations,verbose)
     return model
