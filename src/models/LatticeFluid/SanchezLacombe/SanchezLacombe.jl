@@ -20,7 +20,6 @@ end
 @registermodel SanchezLacombe
 const SL = SanchezLacombe
 
-
 function SanchezLacombe(components; 
     idealmodel=BasicIdeal, 
     mixing = SLk0k1lMixingRule, 
@@ -47,6 +46,7 @@ function SanchezLacombe(components;
 end
 
 include("mixing/SLk0k1lrule.jl")
+include("mixing/SLKrule.jl")
 
 function a_res(model::SanchezLacombe,V,T,z=SA[1.0])
     Σz = sum(z)     
@@ -63,10 +63,8 @@ function a_res(model::SanchezLacombe,V,T,z=SA[1.0])
 end
 
 function lb_volume(model::SanchezLacombe,z=SA[1.0])
-    Σz = sum(z)
     r = model.params.segment.values
     v = model.params.vol.diagvalues
-    r̄ = dot(z,r)
     #v_r,ε_r = mix_vε(model,0.0,0.0,z,model.mixing,r̄,Σz)
     return sum(r[i]*z[i]*v[i] for i in @comps)
 end
@@ -109,7 +107,7 @@ function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
     Tr = T/Ts
     nan = zero(Tr)/zero(Tr)
     Tr > 1 && return [nan,nan]
-    Tstar = Tr*PropaneRef_consts.T_c
+    Tstar = Tr*369.89
     rhov = _propaneref_rhovsat(Tstar)
     vv = 1/rhov
     psat = pressure(model,vv,T)
@@ -118,7 +116,7 @@ function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
     if isnan(vl)
         vv = nan
     end
-    return [log10(vl),log10(vv)]
+    return (log10(vl),log10(vv))
 end
 
 export SL,SanchezLacombe,SLk0k1lMixingRule
