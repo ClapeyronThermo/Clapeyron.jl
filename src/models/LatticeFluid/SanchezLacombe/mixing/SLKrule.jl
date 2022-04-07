@@ -4,7 +4,7 @@ struct SLKRule <: SLMixingRule
 end
 
 @registermodel SLKRule
-
+export SLKRule
 function sl_mix(unmixed_vol,unmixed_epsilon,mixmodel::SLKRule)
     #dont mind the function names, it performs the correct mixing
     premixed_vol= epsilon_LorentzBerthelot(unmixed_vol)

@@ -18,6 +18,9 @@ struct SanchezLacombe{T <: SLMixingRule,I<:IdealModel} <:SanchezLacombeModel
     references::Array{String,1}
 end
 @registermodel SanchezLacombe
+
+
+
 const SL = SanchezLacombe
 
 function SanchezLacombe(components; 
@@ -32,8 +35,6 @@ function SanchezLacombe(components;
     segment = params["segment"]
     unmixed_epsilon = params["epsilon"]
     unmixed_vol = params["vol"]
-    unmixed_epsilon.values #.*= k_B #to convert from temperature to eps
-    unmixed_vol.values .*= 1e-6 #convert from cm3/mol to m3/mol
     Mw = params["Mw"]
     mixmodel = init_model(mixing,components,mixing_userlocations,verbose)
     ideal = init_model(idealmodel,components,ideal_userlocations,verbose)
