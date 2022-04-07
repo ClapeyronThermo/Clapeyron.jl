@@ -9,6 +9,7 @@ function x0_LLE_pressure(model::EoSModel,T,x)
     prepend!(xx,log10.((V0_l,V0_ll)))
     return xx[1:end-1]
 end
+
 """
     LLE_pressure(model::EoSModel, T, x; v0 = x0_LLE_pressure(model,T,x))
 
@@ -77,4 +78,25 @@ end
 
 function x0_LLE_temperature(model,p,x)
     return  1.5*sum(T_scales(model))/length(x)
+end
+
+function presents_LLE(model,p,T)
+    pure = split_model(model)
+    g_pure = gibbs_free_energy.(pure,p,T)
+    
+    function mixing_gibbs(x1)
+        z = FractionVector(x1)
+        log∑z = log(sum(z))
+        g_mix = gibbs_free_energy(model,p,T,z)
+        for i in 1:length(z)
+            g_mix -= z[i]*(g_pure[i] + R̄*T*(log(z[i]) - log∑z))
+        end
+        return g_mix
+    end
+
+    f0(x1) = ForwardDiff.derivative(mixing_gibbs,x1)
+    prob = Roots.ZeroProblem(f0,(0.9))
+    res = Roots.solve(prob)
+    return (res,mixing_gibbs(res))
+
 end

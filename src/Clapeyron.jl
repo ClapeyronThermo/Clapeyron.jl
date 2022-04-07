@@ -136,6 +136,8 @@ include("models/cubic/RK/variants/PSRK.jl")
 include("models/cubic/PR/variants/PR78.jl")
 include("models/cubic/PR/variants/VTPR.jl")
 include("models/cubic/PR/variants/UMRPR.jl")
+include("models/cubic/PR/variants/QCPR.jl")
+include("models/cubic/PR/variants/EPPR78.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
