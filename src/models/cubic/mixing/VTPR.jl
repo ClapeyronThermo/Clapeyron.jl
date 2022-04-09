@@ -27,8 +27,8 @@ None
 
 ## Description
 
-Mixing Rule used by the Volume-translated Peng-Robinson (`VTPR`)[@ref] equation of state.
-only works with activity models that define an `lnγ_res` function (`UNIFAC` models)
+Mixing Rule used by the Volume-translated Peng-Robinson [`VTPR`](@ref) equation of state.
+only works with activity models that define an excess residual gibbs energy function `Clapeyron.excess_g_res(model,P,T,z)` function (like [`UNIQUAC`](@ref) and [`UNIFAC`](@ref) models)
 
 ```
 aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)

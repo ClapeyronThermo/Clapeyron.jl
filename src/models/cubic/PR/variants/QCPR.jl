@@ -10,9 +10,9 @@
 
 Quantum-corrected Peng Robinson equation of state. it uses the following models:
 
-- Translation Model: (`ConstantTranslation`)[@ref]
-- Alpha Model: (`TwuAlpha`)[@ref]
-- Mixing Rule Model: (`QCPRRule`)[@ref]
+- Translation Model: [`ConstantTranslation`](@ref)
+- Alpha Model: [`TwuAlpha`](@ref)
+- Mixing Rule Model: [`QCPRRule`](@ref)
 
 ## References
 
