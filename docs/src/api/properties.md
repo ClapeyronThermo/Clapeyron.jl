@@ -13,6 +13,20 @@ Pages = ["properties.md"]
 ```@index
 Pages = ["properties.md"]
 ```
+## Automatic Differenciation functions
+
+All bulk properties in `Clapeyron` are calculated via a combination of these Automatic Differenciation Primitives. 
+ 
+```@docs
+Clapeyron.∂f∂T
+Clapeyron.∂f∂V
+Clapeyron.∂f
+Clapeyron.p∂p∂V
+Clapeyron.∂2f
+Clapeyron.∂2p
+Clapeyron.f_hess
+Clapeyron.∂²³f
+```
 
 ## Volume-Temperature Based Properties
 

@@ -30,7 +30,6 @@ format = Documenter.HTML(
         "Parameters" => "api/parameters.md",
         "Macros" => "api/macros.md",
         "Properties" => "api/properties.md",
-        "Automatic Differenciation" => "api/ad.md",
         ]
         ])
 
