@@ -27,7 +27,7 @@ None
 
 ## Description
 
-Mixing Rule used by the Volume-translated Peng-Robinson (`VTPR`) equation of state.
+Mixing Rule used by the Volume-translated Peng-Robinson (`VTPR`)[@ref] equation of state.
 only works with activity models that define an `lnγ_res` function (`UNIFAC` models)
 
 ```

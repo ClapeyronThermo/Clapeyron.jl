@@ -33,7 +33,7 @@ None
 
 ## Description
 
-Quantum-Corrected Mixing Rule:
+Quantum-Corrected Mixing Rule, used by (`QCPR`)[@ref] EoS:
 ```
 aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
 bᵢⱼ = (1-lᵢⱼ)(bqᵢ + bqⱼ)/2

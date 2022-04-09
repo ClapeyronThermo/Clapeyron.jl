@@ -24,7 +24,7 @@ export SoaveAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for `SRK` EoS.
+Cubic alpha `(α(T))` model. Default for (`SRK`)[@ref] EoS.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
