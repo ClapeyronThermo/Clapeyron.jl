@@ -377,11 +377,14 @@ Calculates the molar density, defined as:
 ```julia
 ρₙ =  ∑nᵢ/V
 ```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+calculates the property via `VT_molar_density(model,V,T,z)`.
+
 The keywords `phase` and `threaded` are passed to the volume solver.
 """
 function molar_density(model::EoSModel,p,T,z=SA[1.0];phase = :unknown,threaded=true)
      V = volume(model,p,T,z;phase=phase,threaded=threaded)
-     return sum(z)/V
+     return VT_molar_density(model,V,T,z)
 end
 
 """
@@ -396,12 +399,14 @@ Calculates the molar density, defined as:
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
 
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+calculates the property via `VT_mass_density(model,V,T,z)`.
+
 The keywords `phase` and `threaded` are passed to the volume solver.
 """
 function mass_density(model::EoSModel,p,T,z=SA[1.0];phase = :unknown,threaded=true)
     V = volume(model,p,T,z;phase=phase,threaded=threaded)
-    molar_weight = molecular_weight(model,z)
-    return molar_weight/V
+    return VT_mass_density(model,V,T,z)
 end
 
 """
