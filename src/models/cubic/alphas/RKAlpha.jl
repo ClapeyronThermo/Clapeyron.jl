@@ -23,7 +23,7 @@ export RKAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for `RK` EoS.
+Cubic alpha `(α(T))` model. Default for (`RK`)[@ref] EoS.
 ```
 αᵢ = 1/√(Trᵢ)
 Trᵢ = T/Tcᵢ

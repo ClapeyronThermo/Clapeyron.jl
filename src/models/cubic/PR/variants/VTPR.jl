@@ -14,9 +14,9 @@
 
 Volume-translated Peng Robinson equation of state. it uses the following models:
 
-- Translation Model: `RackettTranslation`
-- Alpha Model: `TwuAlpha`
-- Mixing Rule Model: `VTPRRule` with `VTPRUNIFAC` activity
+- Translation Model: (`RackettTranslation`)[@ref]
+- Alpha Model: (`TwuAlpha`)[@ref]
+- Mixing Rule Model: (`VTPRRule`)[@ref] with (`VTPRUNIFAC`)[@ref] activity
 
 ## References
 

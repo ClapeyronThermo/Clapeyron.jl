@@ -13,9 +13,9 @@
 
 Peng Robinson (1978) equation of state. it uses the following models:
 
-- Translation Model: `NoTranslation`
-- Alpha Model: `PR78Alpha`
-- Mixing Rule Model: `vdW1fRule`
+- Translation Model: (`NoTranslation`)[@ref]
+- Alpha Model: (`PR78Alpha`)[@ref]
+- Mixing Rule Model: (`vdW1fRule`)[@ref]
 
 ## References
 
