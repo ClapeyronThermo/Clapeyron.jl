@@ -52,7 +52,7 @@ Clapeyron.PR
 ```
 
 ## Variant Models
-```
+```@docs
 Clapeyron.SRK
 Clapeyron.PSRK
 Clapeyron.PR78
