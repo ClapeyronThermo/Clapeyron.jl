@@ -46,7 +46,7 @@ UNIFAC (UNIQUAC Functional-group Activity Coefficients) activity model.
 
 Modified UNIFAC (Dortmund) implementation.
 
-The Combinatorial part corresponds to an GC-averaged modified `UNIQUAC`[@ref] model. The residual part iterates over groups instead of components.
+The Combinatorial part corresponds to an GC-averaged modified [`UNIQUAC`](@ref) model. The residual part iterates over groups instead of components.
 
 ```
 Gᴱ = nRT(gᴱ(comb) + gᴱ(res))

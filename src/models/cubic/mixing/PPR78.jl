@@ -27,7 +27,7 @@ end
 
 ## Description
 
-PPR78 Mixing Rule, Uses E-PPR78 Group params. Default for (`EPPR78`)[@ref] EoS.
+PPR78 Mixing Rule, Uses E-PPR78 Group params. Default for [`EPPR78`](@ref) EoS.
 ```
 aᵢⱼ = √(aᵢaⱼ)
 bᵢⱼ = (bᵢ +bⱼ)/2

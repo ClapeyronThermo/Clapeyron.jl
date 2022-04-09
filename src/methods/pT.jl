@@ -417,7 +417,7 @@ Calculates the mixing function for a specified property as:
 ```julia
 f_mix = f(p,T,z) - ∑zᵢ*f_pureᵢ(p,T)
 ```
-The keywords `phase` and `threaded` are passed to the [volume solver](@ref Clapeyron.volume).
+The keywords `phase` and `threaded` are passed to the volume solver.
 """
 function mixing(model::EoSModel,p,T,z,property::ℜ;phase = :unknown,threaded=true) where {ℜ}
     pure = split_model(model)
