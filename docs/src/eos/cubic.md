@@ -102,4 +102,6 @@ Clapeyron.LCVMRule
 Clapeyron.WSRule
 Clapeyron.VTPRRule
 Clapeyron.PSRKRule
+Clapeyron.QCPRRule
+Clapeyron.PPR78Rule
 ```
