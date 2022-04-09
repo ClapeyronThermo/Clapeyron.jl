@@ -17,7 +17,9 @@ for (fn,unit) in Iterators.zip(
     :isentropic_compressibility,
     :speed_of_sound,
     :isobaric_expansivity,
-    :joule_thomson_coefficient],
+    :joule_thomson_coefficient,
+    :mass_density,
+    :molar_density],
     [u"J",
     u"J/K",
     u"J",
@@ -29,9 +31,11 @@ for (fn,unit) in Iterators.zip(
     u"Pa^-1",
     u"m/s",
     u"K^-1",
-    u"K/Pa"])
+    u"K/Pa",
+    u"m^3/kg",
+    u"m^3/mol"])
     VT_fn = Symbol(:VT_,fn)
-    @eval begin 
+    @eval begin
         function $fn(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=$unit)
             st = standarize(model,v,T,z)
             _v,_T,_z = state_to_vt(model,st)
@@ -47,13 +51,13 @@ for (fn,unit) in Iterators.zip(
         end
     end
 end
+
 function volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=u"m^3")
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     res = volume(model, _p, _T, _z; phase=phase)*u"m^3"
     return uconvert(output, res)
 end
-
 
 #compressibility_factor
 function compressibility_factor(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.])
@@ -111,23 +115,3 @@ function saturation_pressure(model::EoSModel, T::Unitful.Temperature; output=[u"
     _v_v = uconvert(output[3],v_v*u"m^3")
     return (_P_sat,_v_l,_v_v)
 end
-
-#molar density 
-function molar_density(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown,threaded=true, output=u"mol/m^3")
-    st = standarize(model,p,T,z)
-    _p,_T,_z = state_to_pt(model,st)
-    
-    res = molar_density(model,_p,_T,_z;phase=phase,threaded=threaded) *u"mol/m^3"
-    return uconvert(output, res)
-end
-
-#mass density 
-function mass_density(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown,threaded=true, output=u"kg/m^3")
-    st = standarize(model,p,T,z)
-    _p,_T,_z = state_to_pt(model,st)
-    
-    res = mass_density(model,_p,_T,_z;phase=phase,threaded=threaded) *u"kg/m^3"
-    return uconvert(output, res)
-end
-
-
