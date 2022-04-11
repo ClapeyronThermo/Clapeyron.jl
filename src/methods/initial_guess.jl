@@ -105,7 +105,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
     _b = γ - B - vl
     Δ = _b*_b - 4*_c
     if isnan(vl) | (Δ < 0)
-        println("error condition: fail solving vl")
+        #println("error condition: fail solving vl")
         #fails on two ocassions:
         #near critical point, or too low.
         #old strategy
@@ -138,7 +138,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
         _nan = _0/_0
         return (_nan,_nan)
     end
-    @show (Tc,Pc)
+    #@show (Tc,Pc)
     # if b1/b2 < -0.95, then T is near Tc.
     #if b<lb_v then we are in trouble 
     #critical regime or something horribly wrong happened
@@ -177,8 +177,8 @@ function vdw_x0_xat_pure(T,T_c,P_c,V_c)
         c_v = 2*mean_c - c_l
     end
     #volumes predicted by vdW
-    Vl0 = (1/c_l)*V_c
-    Vv0 = (1/c_v)*V_c
+    Vl0 = V_c/c_l
+    Vv0 = V_c/c_v
     return (Vl0,Vv0)
 end
 
@@ -278,15 +278,9 @@ function x0_sat_pure2(model,T,z=SA[1.0])
         return (_nan,_nan)
     end
     
-    a,b = vdw_ab(model,T,B)
-    @show a,b
-    Ωa =  27/64
-    Ωb =  1/8
-    ar = a/Ωa
-    br = b/Ωb
-    Tc = ar/br/R̄
-    Pc = ar/(br*br)
-    Vc = 3*b
+    a,b = vdw_ab(model,T,false,B)
+    #@show a,b
+    Tc,Pc,Vc = crit_pure_vdw_ab(a,b)
 
     #=the basis is that p = RT/v-b - a/v2
     we have a (p,v,T) pair
@@ -304,7 +298,14 @@ function x0_sat_pure2(model,T,z=SA[1.0])
     Journal of Mathematical Chemistry, Vol. 43, No. 4, May 2008 (© 2007)
     The van der Waals equation: analytical and approximate solutions
     =#
-    @show Tc,Pc
+
+    #pseudo spinodal values
+   
+    v_sv = -2*B
+    p_sv = -0.25*R̄*T/B
+    v_sl = b*(1+sqrt(0.5*R̄*T*b/a))
+    p_sl =  max(R̄*T/(v_sl- b) - a/(v_sl^2),zero(v_sl))
+
     Tr = T/Tc
     #Tr(vdW approx) > Tr(model)
     if Tr >= 1
@@ -312,47 +313,36 @@ function x0_sat_pure2(model,T,z=SA[1.0])
         return (_nan,_nan)
     end
 
-
-
-    # if b1/b2 < -0.95, then T is near Tc.
-    #if b<lb_v then we are in trouble 
-    #critical regime or something horribly wrong happened
-    if (b<lb_v) | (Tr>0.99)
-        x0l = 4*lb_v
-        x0v = -2*B #gas volume as high as possible
-        return (log10(x0l),log10(x0v))   
-    end
-   
-
-    #spinodal values
-   
-    v_sv = -2*B
-    p_sv = -0.25*R̄*T/B
-    v_sl = b*(1+sqrt(0.5*R̄*T*b/a))
-    p_sl =  max(R̄*T/(v_sl- b) - a/(v_sl^2),zero(v_sl))
-    p_l = min(p_sl,Pc)
-    pm = 0.5*(p_sv+p_l)
-    #Δ is a measure on how close
-
-
-    
-    vv = volume_virial(B,pm,T) 
-    vl = v_sl
-
-    #@show (p_sv,p_sl)
-    #x0l = max(Vl0,v_sl)
-    #x0v = min(v_mean_sl,Vv0) #cutoff volume
-    
-    if p_sl > Pc #improves predictions around critical point
+    if p_sv < p_sl ||  p_sl > Pc 
+        #if p_sl is over the critical point or over the vapour spinodal
+        #then we are in a critical regime. we then recalculate a,b 
+        #with a critical correlation. 
+        a,b = vdw_ab(model,T,true,B,b)
+        Tc,Pc,Vc = crit_pure_vdw_ab(a,b)
+        v_sv = -2*B
+        p_sv = -0.25*R̄*T/B
+        v_sl = b*(1+sqrt(0.5*R̄*T*b/a))
+        p_sl =  max(R̄*T/(v_sl- b) - a/(v_sl^2),zero(v_sl))
+        #use rackett with the critical volume
+        Zc = Pc*Vc/(R̄*Tc)
+        vl = (R̄*Tc/Pc)*Zc^(1 + (1-Tr)^(2/7))
+        vv = v_sv
         vlc,vvc =  vdw_x0_xat_pure(T,Tc,Pc,Vc)
         vl = 0.5*(vl+vlc)
         vv = 0.5*(vv+vvc)
+    else
+        p_l = p_sl
+        pm = 0.5*(p_sv+p_l)
+        #one volume iteration
+        dpdv_sl = -R̄*T/(v_sl - b)^2 + 2*a/v_sl^3
+        _Δ = (pm-p_l)/(v_sl*dpdv_sl)
+        vl = v_sl*exp(_Δ)
+        vv = volume_virial(B,pm,T)
     end
-    @show vl,vv
     return (log10(vl),log10(vv)) 
 end
 
-function vdw_ab(model,T,B = second_virial_coefficient(model,T))
+function vdw_ab(model,T,crit = false,B = second_virial_coefficient(model,T),b0 = x0_volume_liquid(model,T,SA[1.0]))
     z = SA[1.0]
     lb_v = lb_volume(model,z)
     x0_l = x0_volume_liquid(model,T,z)
@@ -360,13 +350,22 @@ function vdw_ab(model,T,B = second_virial_coefficient(model,T))
     log_lb_v = log(lb_v)
     _nan = zero(T)/zero(T)
     _0 = zero(_nan)
-    
-    function logstep(logb)
-        
+    Ωa =  27/64
+    Ωb =  1/8
+    function logstep(logb)       
         logb < log_lb_v && return _nan
-        b = exp(logb) 
+        b = exp(logb)
         a = -R̄*T*(B - b)
-        v = b*(1+sqrt(0.5*R̄*T*b/a))
+        if crit
+            Tc,Pc,Vc = crit_pure_vdw_ab(a,b)
+            Tr = T/Tc
+            Trm1 = 1.0-Tr
+            Trmid = sqrt(Trm1)
+            c_l = 1.0 + 2.0*Trmid + 0.4*Trm1 - 0.52*Trmid*Trm1 + 0.115*Trm1*Trm1
+            v = 0.5*(b*(1+sqrt(0.5*R̄*T*b/a)) + (Vc/c_l))
+        else
+            v = b*(1+sqrt(0.5*R̄*T*b/a))
+        end
         p_vdw = max(R̄*T/(v- b) - a/(v^2),_0)
         p_eos,dpdV = p∂p∂V(model,v,T,z)
         dpdV > 0 && return _nan #inline mechanical stability. 
@@ -384,4 +383,15 @@ function vdw_ab(model,T,B = second_virial_coefficient(model,T))
     bb =  exp(log_bb)
     aa = -R̄*T*(B - bb)
     return (aa,bb)
+end
+
+function crit_pure_vdw_ab(a,b)
+    Ωa =  27/64
+    Ωb =  1/8
+    ar = a/Ωa
+    br = b/Ωb
+    Tc = ar/br/R̄
+    Pc = ar/(br*br)
+    Vc = 3*b
+    return Tc,Pc,Vc
 end
