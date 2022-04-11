@@ -22,7 +22,7 @@ export MTAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for `UMRPR` EoS.
+Magoulas & Tassios Cubic alpha `(α(T))` model. Default for [`UMRPR`](@ref) EoS.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ

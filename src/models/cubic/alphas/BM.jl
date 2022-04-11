@@ -24,7 +24,7 @@ export BMAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for `UMRPR` EoS.
+Boston Mathias Cubic alpha `(α(T))` model.
 ```
 if Trᵢ > 1
     αᵢ = (exp((1-2/(2+mᵢ))*(1-Trᵢ^(1+mᵢ/2))))^2

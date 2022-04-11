@@ -377,11 +377,14 @@ Calculates the molar density, defined as:
 ```julia
 ρₙ =  ∑nᵢ/V
 ```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+calculates the property via `VT_molar_density(model,V,T,z)`.
+
 The keywords `phase` and `threaded` are passed to the volume solver.
 """
 function molar_density(model::EoSModel,p,T,z=SA[1.0];phase = :unknown,threaded=true)
      V = volume(model,p,T,z;phase=phase,threaded=threaded)
-     return sum(z)/V
+     return VT_molar_density(model,V,T,z)
 end
 
 """
@@ -396,12 +399,14 @@ Calculates the molar density, defined as:
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
 
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+calculates the property via `VT_mass_density(model,V,T,z)`.
+
 The keywords `phase` and `threaded` are passed to the volume solver.
 """
 function mass_density(model::EoSModel,p,T,z=SA[1.0];phase = :unknown,threaded=true)
     V = volume(model,p,T,z;phase=phase,threaded=threaded)
-    molar_weight = molecular_weight(model,z)
-    return molar_weight/V
+    return VT_mass_density(model,V,T,z)
 end
 
 """
@@ -412,7 +417,7 @@ Calculates the mixing function for a specified property as:
 ```julia
 f_mix = f(p,T,z) - ∑zᵢ*f_pureᵢ(p,T)
 ```
-The keywords `phase` and `threaded` are passed to the [volume solver](@ref Clapeyron.volume).
+The keywords `phase` and `threaded` are passed to the volume solver.
 """
 function mixing(model::EoSModel,p,T,z,property::ℜ;phase = :unknown,threaded=true) where {ℜ}
     pure = split_model(model)
@@ -448,7 +453,6 @@ function excess(model::EoSModel,p,T,z,::typeof(gibbs_free_energy))
         g_mix -= z[i]*(gibbs_free_energy(pure[i],p,T) + R̄*T*(log(z[i]) - log∑z))
     end
     return g_mix::TT
-    return g_mix-Clapeyron.dot(g_pure,z)-R̄*T*Clapeyron.dot(z,log.(x))
 end
 
 """

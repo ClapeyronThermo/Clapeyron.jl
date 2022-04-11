@@ -133,7 +133,7 @@ None
 
 EOS-LNG: A Fundamental Equation of State for the Calculation of Thermodynamic Properties of Liquefied Natural Gases. valid for 21 compounds (`Clapeyron.GERG2008_names`). the EoS has new binary-specific parameters for methane + n-butane, methane + isobutane, methane + n-pentane, and methane + isopentane.
 
-It uses the same functional form as `GERG2008`.
+It uses the same functional form as [`GERG2008`](@ref).
 
 ## References
 

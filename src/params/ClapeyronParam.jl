@@ -661,6 +661,44 @@ function SiteParam(components::Vector{String})
     String[])
 end
 
+#this should take care of converting ints to floats and ints to bool if necessary
+function Base.convert(::Type{SingleParam{Float64}},param::SingleParam{Int})
+    values = Float64.(param.values)
+    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{Int})
+    @assert all(z->(isone(z) | iszero(z)),param.values)
+    values = Array(Bool.(param.values))
+    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{SingleParam{Int}},param::SingleParam{Float64})
+    @assert all(z->isinteger(z),param.values)
+    values = Int.(param.values)
+    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{PairParam{Float64}},param::PairParam{Int})
+    values = Float64.(param.values)
+    diagvalues = view(values, diagind(values))
+    return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{PairParam{Bool}},param::PairParam{Int})
+    @assert all(z->(isone(z) | iszero(z)),param.values)
+    values = Array(Bool.(param.values))
+    diagvalues = view(values, diagind(values))
+    return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{PairParam{Int}},param::PairParam{Float64})
+    @assert all(z->isinteger(z),param.values)
+    values = Int.(param.values)
+    diagvalues = view(values, diagind(values))
+    return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
 """
     AssocOptions(;rtol = 1e-12,atol = 1e-12,max_iters = 1000,dampingfactor = 0.5,combining =:nocombining)
 

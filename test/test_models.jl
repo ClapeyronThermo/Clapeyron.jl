@@ -212,6 +212,16 @@ end
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.1447318247939071 rtol = 1e-6
         end
 
+        @testset "QCPR" begin
+            system = QCPR(["neon","helium"])
+            @test Clapeyron.a_res(system, V, 25, z) ≈ -0.04727878068343511 rtol = 1e-6
+        end
+
+        @testset "EPPR78" begin
+           system = EPPR78(["benzene","isooctane"])
+           @test Clapeyron.a_res(system, V, T, z) ≈ -1.138852387092216 rtol = 1e-6
+        end
+        
         @testset "PR w/ BMAlpha" begin
             system = PR(["ethane","undecane"];alpha = BMAlpha)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.244507550417118 rtol = 1e-6
@@ -411,11 +421,29 @@ end
         @test Clapeyron.shape_factors(system, V, T, z)[1] ≈ 1.3499576779924594 rtol = 1e-6
     end
 end
-
 @testset "lattice models" begin
-    T = 298.15
-    V = 1e-4
-    z = [1.]
-    system = Clapeyron.SanchezLacombe(["carbon dioxide"])
-    @test Clapeyron.a_res(system, V, T, z) ≈ -0.9511044462267396 rtol = 1e-6
+
+    @testset "single component" begin
+        T = 298.15
+        V = 1e-4
+        z = [1.]
+        system = Clapeyron.SanchezLacombe(["carbon dioxide"])
+        @test Clapeyron.a_res(system, V, T, z) ≈ -0.9511044462267396 rtol = 1e-6
+    end
+
+    @testset "Sanchez-Lacombe,Kij rule" begin
+        T = 298.15
+        V = 1e-4
+        z = [0.5,0.5]
+        system = SanchezLacombe(["carbon dioxide","benzoic acid"],mixing = SLKRule)
+        @test Clapeyron.a_res(system, V, T, z) ≈ -6.494291842858994 rtol = 1e-6
+    end
+
+    @testset "Sanchez-Lacombe K0-K1-L rule" begin
+        T = 298.15
+        V = 1e-4
+        z = [0.5,0.5]
+        system = SanchezLacombe(["carbon dioxide","benzoic acid"],mixing = SLk0k1lMixingRule)
+        @test Clapeyron.a_res(system, V, T, z) ≈ -5.579621796375229 rtol = 1e-6
+    end
 end
