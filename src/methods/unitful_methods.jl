@@ -32,8 +32,8 @@ for (fn,unit) in Iterators.zip(
     u"m/s",
     u"K^-1",
     u"K/Pa",
-    u"m^3/kg",
-    u"m^3/mol"])
+    u"kg/m^3",
+    u"mol/m^3"])
     VT_fn = Symbol(:VT_,fn)
     @eval begin
         function $fn(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=$unit)
