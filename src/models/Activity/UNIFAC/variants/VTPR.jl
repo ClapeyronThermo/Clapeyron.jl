@@ -85,20 +85,7 @@ function VTPRUNIFAC(components::Vector{String};
 end
 
 function VTPRUNIFACCache(groups::GroupParam)
-    comps = 1:length(groups.components)
-    comp_segment = zeros(length(comps))
-    v = groups.n_flattenedgroups
-    for i ∈ comps
-        res_i = 0.0
-        vi = v[i]
-        groups_i = groups.i_groups[i]
-        for idx ∈ 1:length(groups_i)
-            k = groups_i[idx]
-            res_i += vi[k]
-        end
-        comp_segment[i] = res_i
-    end
-    m = group_sum(groups)
+    m = group_sum(groups,nothing)
     return VTPRUNIFACCache(groups.components,m)
 end
 

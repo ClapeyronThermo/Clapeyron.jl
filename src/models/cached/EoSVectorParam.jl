@@ -15,8 +15,8 @@ Base.length(x::EoSVectorParam) = length(x.pure)
 Base.eltype(x::EoSVectorParam{T}) where T = T 
 Base.broadcastable(x::EoSVectorParam) = x.pure
 
-function init_puremodel(model::Type{<:EoSModel},components,userlocations,verbose)
-    verbose && @info("""Now creating ideal model:
+function init_puremodel(model,components,userlocations,verbose)
+    verbose && @info("""Now creating pure model:
     $idealmodel""")
     return EoSVectorParam(model(components;userlocations,verbose))
 end
@@ -24,3 +24,5 @@ end
 function init_puremodel(model::EoSModel,components,userlocations,verbose)
    return EoSVectorParam(model)
 end
+
+
