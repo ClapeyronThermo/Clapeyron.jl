@@ -99,88 +99,8 @@ function UNIFAC(components::Vector{String};
     return model
 end
 
-function excess_g_SG(model::UNIFACModel,p,T,z=SA[1.0])
-    _0 = zero(eltype(z))
-    r =model.unifac_cache.r
-    q =model.unifac_cache.q
-    n = sum(z)
-    invn = 1/n
-    Φm = dot(r,z)*invn
-    θm =  dot(q,z)*invn
-    G_sg = _0
-    for i ∈ @comps
-        xi = z[i]*invn
-        Φi = r[i]/Φm
-        θi = q[i]/θm
-        G_sg += 5*q[i]*xi*log(θi/Φi)
-    end
-    return n*G_sg
-end
-
-function excess_g_comb(model::UNIFACModel,p,T,z=SA[1.0])
-    _0 = zero(eltype(z))
-    r =model.unifac_cache.r
-    q =model.unifac_cache.q
-    q_p = model.unifac_cache.q_p
-    n = sum(z)
-    invn = 1/n
-    Φm = dot(r,z)*invn
-    Φpm = dot(q_p,z)*invn
-    θm =  dot(q,z)*invn
-    G_comb = _0
-    for i ∈ @comps
-        xi = z[i]*invn
-        Φi = r[i]/Φm
-        Φpi = q_p[i]/Φpm
-        θi = q[i]/θm
-        G_comb += xi*log(Φpi) + 5*q[i]*xi*log(θi/Φi)
-    end
-    return n*G_comb
-end
-
-#=
-function excess_g_res(model::UNIFACModel,p,T,z=SA[1.0])
-    _0 = zero(T+first(z))
-    Q = model.params.Q.values
-    A = model.params.A.values
-    B = model.params.B.values
-    C = model.params.C.values
-    invT = 1/T
-    mi = group_matrix(model.groups)
-    m̄ = dot(z,model.unifac_cache.m)
-    m̄inv = 1/(m̄) # mol^-1
-    X = (m̄inv)*mi*z #(mol^-1 * mol) no units
-    @show (sum(X))
-    θpm = dot(X,Q)
-    G_res = _0
-    nn = model.groups.n_flattenedgroups
-    for i ∈ @groups
-        q_pi = Q[i]
-        ∑θpτ = _0
-        for j ∈ @groups
-            θpj = Q[j]*X[j]/θpm
-            τji = exp(-evalpoly(T,(A[j,i],B[j,i],C[j,i]))*invT)
-            ∑θpτ += θpj*τji
-        end      
-        G_res += q_pi*X[i]*log(∑θpτ)
-    end
-    @show m̄
-    return -m̄*G_res
-end
-=#
-function excess_gibbs_free_energy(model::UNIFACModel,p,T,z)
-    g_comp = excess_g_comb(model,p,T,z)
-    g_res = excess_g_res(model,p,T,z)
-    return (g_comp+g_res)*R̄*T 
-end
-
 function activity_coefficient(model::UNIFACModel,V,T,z)
     return exp.(@f(lnγ_comb)+ @f(lnγ_res))
-end
-
-function excess_g_res(model::UNIFACModel,p,T,z)
-    lnγ = lnγ_res(model,p,T,z)
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
 
 function lnγ_comb(model::UNIFACModel,V,T,z)
@@ -196,6 +116,7 @@ function lnγ_comb(model::UNIFACModel,V,T,z)
 end
 
 function lnγ_SG(model::UNIFACModel,V,T,z)
+
     x = z ./ sum(z)
 
     r =model.unifac_cache.r
@@ -218,11 +139,9 @@ end
 
 function lnΓ(model::UNIFACModel,V,T,z,ψ = @f(ψ))
     Q = model.params.Q.values
-    mi = group_matrix(model.groups)
-    m̄ = dot(z,model.unifac_cache.m)
-    m̄inv = 1/(m̄) # mol^-1
-    X = (m̄inv)*mi*z #(mol^-1 * mol) no units
-    #X = sum(v[i][:]*x[i] for i ∈ @comps) ./ sum(sum(v[i][k]*x[i] for k ∈ @groups) for i ∈ @comps)
+    v  = model.groups.n_flattenedgroups
+    x = z ./ sum(z)
+    X = sum(v[i][:]*x[i] for i ∈ @comps) ./ sum(sum(v[i][k]*x[i] for k ∈ @groups) for i ∈ @comps)
     θ = X.*Q / dot(X,Q)
     lnΓ_ = Q.*(1 .-log.(sum(θ[m]*ψ[m,:] for m ∈ @groups)) .- sum(θ[m]*ψ[:,m]./sum(θ[n]*ψ[n,m] for n ∈ @groups) for m ∈ @groups))
     return lnΓ_
@@ -232,8 +151,7 @@ function lnΓi(model::UNIFACModel,V,T,z,ψ = @f(ψ))
     Q = model.params.Q.values
     v  = model.groups.n_flattenedgroups
     ψ = @f(Ψ)
-    m = model.unifac_cache.m
-    X = [v[i][:] ./ m[i] for i ∈ @comps]
+    X = [v[i][:] ./ sum(v[i][k] for k ∈ @groups) for i ∈ @comps]
     θ = [X[i][:].*Q ./ sum(X[i][n]*Q[n] for n ∈ @groups) for i ∈ @comps]
     lnΓi_ = [Q.*(1 .-log.(sum(θ[i][m]*ψ[m,:] for m ∈ @groups)) .- sum(θ[i][m]*ψ[:,m]./sum(θ[i][n]*ψ[n,m] for n ∈ @groups) for m ∈ @groups)) for i ∈ @comps]
     return lnΓi_
@@ -244,4 +162,14 @@ function Ψ(model::UNIFACModel,V,T,z)
     B = model.params.B.values
     C = model.params.C.values
     return @. exp(-(A+B*T+C*T^2)/T)
+end
+
+function excess_g_SG(model::UNIFACModel,p,T,z)
+    lnγ = lnγ_SG(model,p,T,z)
+    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+end
+
+function excess_g_res(model::UNIFACModel,p,T,z)
+    lnγ = lnγ_res(model,p,T,z)
+    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end

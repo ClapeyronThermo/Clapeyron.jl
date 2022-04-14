@@ -90,5 +90,6 @@ function VTPRUNIFACCache(groups::GroupParam)
 end
 
 function excess_gibbs_free_energy(model::VTPRUNIFACModel,V,T,z)
-    return excess_g_res(model,V,T,z)*R̄*T
+    lnγ = lnγ_res(model,V,T,z)
+    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
