@@ -1,4 +1,10 @@
-
+struct ABCubicParam <: EoSParam
+    a::PairParam{Float64}
+    b::PairParam{Float64}
+    Tc::SingleParam{Float64}
+    Pc::SingleParam{Float64}
+    Mw::SingleParam{Float64}
+end
 
 """
     ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
@@ -9,7 +15,6 @@ given `Tc::SingleParam`, `pc::SingleParam`, `kij::PairParam` and `mixing <: Mixi
 aᵢⱼ = sqrt(aᵢ*aⱼ)*(1-kᵢⱼ)
 bᵢⱼ = (bᵢ + bⱼ)/2
 ```
-
 """
 function ab_premixing end
 
@@ -36,6 +41,12 @@ function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
          c̄ = c[1]
     end
     return ā ,b̄, c̄
+end
+
+function data(model::ABCubicModel,V,T,z)
+    n = sum(z)
+    ā ,b̄, c̄ = cubic_ab(model,V,T,z,n)
+    return n, ā ,b̄, c̄
 end
 
 function second_virial_coefficient(model::ABCubicModel,T::Real,z = SA[1.0])
