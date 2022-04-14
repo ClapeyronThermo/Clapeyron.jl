@@ -24,6 +24,8 @@ model4 = SAFTgammaMie([
         ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])])
 ```
 
+### Available models
+
 One can find out more about the information stored within these model objects in the API documentation. In terms of equations of state available, we have the following default models:
 
 **Cubics**:
