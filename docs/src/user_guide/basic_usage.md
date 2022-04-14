@@ -128,9 +128,9 @@ model7 = RK(["ethane","propane"];mixing=KayRule)
 
 We currently support:
 
-- [`vdW1fRule`:] The standard van der Waals one-fluid mixing rule which is the default in all cubics.
-- [`KayRule`]: Takes an approach closer to the mixing rules used in SAFT.
-- [`HVRule`]: The Huron-Vidal mixing rule with uses information from activity coefficient models to form the mixing rule. It is meant to be more accurate than regular mixing rules. As it requires an activity coefficient model, this must be specified:
+- [`vdW1fRule`](@ref): The standard van der Waals one-fluid mixing rule which is the default in all cubics.
+- [`KayRule`](@ref): Takes an approach closer to the mixing rules used in SAFT.
+- [`HVRule`](@ref): The Huron-Vidal mixing rule with uses information from activity coefficient models to form the mixing rule. It is meant to be more accurate than regular mixing rules. As it requires an activity coefficient model, this must be specified:
 
   ```julia
   model7 = RK(["methanol","benzene"];mixing=HVRule,activity=Wilson)
