@@ -1,4 +1,5 @@
 struct SAFTVRMieParam <: EoSParam
+    Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     lambda_a::PairParam{Float64}
@@ -65,7 +66,6 @@ function SAFTVRMie(components;
     assoc_options = AssocOptions())
     params,sites = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
-    params["Mw"].values .*= 1E-3
     Mw = params["Mw"]
     segment = params["m"]
     params["sigma"].values .*= 1E-10
@@ -76,7 +76,7 @@ function SAFTVRMie(components;
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
-    packagedparams = SAFTVRMieParam(segment, sigma, lambda_a, lambda_r, epsilon, epsilon_assoc, bondvol, Mw)
+    packagedparams = SAFTVRMieParam(Mw, segment, sigma, lambda_a, lambda_r, epsilon, epsilon_assoc, bondvol)
     references = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
 
     model = SAFTVRMie(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)

@@ -30,20 +30,19 @@ function sCPA(components;
             translation_userlocations=String[],
             verbose=false,
             assoc_options = AssocOptions())
+            
     icomponents = 1:length(components)
 
     params,sites = getparams(components, ["SAFT/CPA/sCPA/", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
     k  = params["k"]
-    Tc = params["Tc"]
-    c1 = params["c1"]
     params["a"].values .*= 1E-1
     params["b"].values .*= 1E-3
     a  = epsilon_LorentzBerthelot(params["a"], k)
     b  = sigma_LorentzBerthelot(params["b"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
+    packagedparams = CPAParam(epsilon_assoc, bondvol)
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
@@ -64,12 +63,11 @@ function sCPA(components;
     return model
 end
 
-function Δ(model::sCPAModel, V, T, z, i, j, a, b)
+function Δ(model::sCPAModel, V, T, z, i, j, a, b,_data = data(model,V,T,z))
+    Σz,ā,b̄,c̄ = _data
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b] * 1e2/R̄
     βijab = model.params.bondvol.values[i,j][a,b] * 1e-3
-    Σz = ∑(z)
-    b = model.params.b.values
-    b̄ = dot(z,b,z)/(Σz*Σz)
+    V = V + c̄*Σz
     η = b̄*Σz/(4*V)
     g = (1-1.9η)^-1
     bij = (b[i,i]+b[j,j])/2
