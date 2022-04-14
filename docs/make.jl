@@ -23,7 +23,9 @@ format = Documenter.HTML(
         "Ideal Models" => "eos/ideal.md"
         "Cubic Models" => "eos/cubic.md"
         "Activity Models" => "eos/activity.md"
+        "SAFT and CPA Models"  => "eos/saft.md"
         "Empiric Helmholtz Models" => "eos/empiric.md"
+        "Other Models" => "eos/misc.md"
         ],
         
         "API" => Any[

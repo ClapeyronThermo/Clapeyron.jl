@@ -23,3 +23,6 @@ Clapeyron.SAFTVRSW
 Clapeyron.SAFTVRMie
 Clapeyron.SAFTgammaMie
 ```
+
+#CPA Models
+
