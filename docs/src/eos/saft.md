@@ -8,7 +8,7 @@ CurrentModule = Clapeyron
 Pages = ["saft.md"]
 ```
 
-# SAFT Models
+## SAFT Models
 
 ```@docs
 Clapeyron.ogSAFT
@@ -26,7 +26,7 @@ Clapeyron.SAFTVRQMie
 Clapeyron.SAFTgammaMie
 ```
 
-#CPA Models
+## CPA Models
 
 ```@docs
 Clapeyron.CPA
