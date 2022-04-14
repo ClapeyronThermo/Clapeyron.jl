@@ -1,4 +1,5 @@
 struct BACKSAFTParam <: EoSParam
+    Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     epsilon::PairParam{Float64}
@@ -22,6 +23,7 @@ export BACKSAFT
     assoc_options = AssocOptions())
 
 ## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `vol`: Single Parameter (`Float64`) - Segment Volume [`dm^3`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K/mol]`
@@ -30,6 +32,7 @@ export BACKSAFT
 - `alpha`: Single Parameter (`Float64`) - Non-spherical deviation (no units)
 
 ## Model Parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
@@ -65,7 +68,7 @@ function BACKSAFT(components;
     sigma.values .^= 1/3
     sigma = sigma_LorentzBerthelot(sigma)
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    packagedparams = BACKSAFTParam(segment, sigma, epsilon, c, alpha)
+    packagedparams = BACKSAFTParam(params["Mw"],segment, sigma, epsilon, c, alpha)
     references = ["TODO BACKSAFT", "TODO BACKSAFT"]
 
     model = BACKSAFT(packagedparams, idealmodel; ideal_userlocations, references, verbose, assoc_options)

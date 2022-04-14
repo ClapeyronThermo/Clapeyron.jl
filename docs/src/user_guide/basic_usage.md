@@ -51,7 +51,7 @@ One can find out more about the information stored within these model objects in
 - SAFT, Variable Range (VR) ,Square Well (SW) ([`SAFTVRSW`](@ref))
 - Cubic plus Associacion ([`CPA`](@ref))
   - Simplified CPA ([`sCPA`](@ref)) 
-- Soft SAFT, with Lennard-Jones function from Johnson et al. (1995) ([`softSAFT`](@ref))
+- Soft SAFT, with Lennard-Jones function from Johnson et al. (1993) ([`softSAFT`](@ref))
 - Soft SAFT, with Lennard-Jones function from Thol et al. (2016)  ([`softSAFT2016`](@ref))
 - Perturbed-Chain SAFT ([`PCSAFT`](@ref))
   - Simplified PC-SAFT ([`sPCSAFT`](@ref))
