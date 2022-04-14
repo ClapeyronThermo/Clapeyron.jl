@@ -138,6 +138,7 @@ function excess_g_comb(model::UNIFACModel,p,T,z=SA[1.0])
     return n*G_comb
 end
 
+#=
 function excess_g_res(model::UNIFACModel,p,T,z=SA[1.0])
     _0 = zero(T+first(z))
     Q = model.params.Q.values
@@ -147,11 +148,12 @@ function excess_g_res(model::UNIFACModel,p,T,z=SA[1.0])
     invT = 1/T
     mi = group_matrix(model.groups)
     m̄ = dot(z,model.unifac_cache.m)
-    m̄inv = 1/m̄
-    X = m̄inv*mi*z
-    #X = [dot(z,mi_i)*m̄inv for mi_i in eachcol(mi)]
+    m̄inv = 1/(m̄) # mol^-1
+    X = (m̄inv)*mi*z #(mol^-1 * mol) no units
+    @show (sum(X))
     θpm = dot(X,Q)
     G_res = _0
+    nn = model.groups.n_flattenedgroups
     for i ∈ @groups
         q_pi = Q[i]
         ∑θpτ = _0
@@ -159,14 +161,87 @@ function excess_g_res(model::UNIFACModel,p,T,z=SA[1.0])
             θpj = Q[j]*X[j]/θpm
             τji = exp(-evalpoly(T,(A[j,i],B[j,i],C[j,i]))*invT)
             ∑θpτ += θpj*τji
-        end
+        end      
         G_res += q_pi*X[i]*log(∑θpτ)
     end
+    @show m̄
     return -m̄*G_res
 end
-
+=#
 function excess_gibbs_free_energy(model::UNIFACModel,p,T,z)
     g_comp = excess_g_comb(model,p,T,z)
     g_res = excess_g_res(model,p,T,z)
     return (g_comp+g_res)*R̄*T 
+end
+
+function activity_coefficient(model::UNIFACModel,V,T,z)
+    return exp.(@f(lnγ_comb)+ @f(lnγ_res))
+end
+
+function excess_g_res(model::UNIFACModel,p,T,z)
+    lnγ = @f(lnγ_res)
+    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+end
+
+function lnγ_comb(model::UNIFACModel,V,T,z)
+    x = z ./ sum(z)
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+    q_p = model.unifac_cache.q_p
+    Φ = r/dot(x,r)
+    Φ_p = q_p/dot(x,q_p)
+    θ = q/dot(x,q)
+    lnγ_comb = @. log(Φ_p)+(1-Φ_p)-5*q*(log(Φ/θ)+(1-Φ/θ))
+    return lnγ_comb
+end
+
+function lnγ_SG(model::UNIFACModel,V,T,z)
+    x = z ./ sum(z)
+
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+
+    Φ = r/dot(x,r)
+    θ = q/dot(x,q)
+    lnγ_SG = @. -5*q*(log(Φ/θ)+(1-Φ/θ))
+    return lnγ_SG
+end
+
+function lnγ_res(model::UNIFACModel,V,T,z)
+    v  = model.groups.n_flattenedgroups
+    _ψ = @f(Ψ)
+    lnΓ_ = @f(lnΓ,_ψ)
+    lnΓi_ = @f(lnΓi,_ψ)
+    lnγ_res_ =  [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
+    return lnγ_res_
+end
+
+function lnΓ(model::UNIFACModel,V,T,z,ψ = @f(ψ))
+    Q = model.params.Q.values
+    mi = group_matrix(model.groups)
+    m̄ = dot(z,model.unifac_cache.m)
+    m̄inv = 1/(m̄) # mol^-1
+    X = (m̄inv)*mi*z #(mol^-1 * mol) no units
+    #X = sum(v[i][:]*x[i] for i ∈ @comps) ./ sum(sum(v[i][k]*x[i] for k ∈ @groups) for i ∈ @comps)
+    θ = X.*Q / dot(X,Q)
+    lnΓ_ = Q.*(1 .-log.(sum(θ[m]*ψ[m,:] for m ∈ @groups)) .- sum(θ[m]*ψ[:,m]./sum(θ[n]*ψ[n,m] for n ∈ @groups) for m ∈ @groups))
+    return lnΓ_
+end
+
+function lnΓi(model::UNIFACModel,V,T,z,ψ = @f(ψ))
+    Q = model.params.Q.values
+    v  = model.groups.n_flattenedgroups
+    ψ = @f(Ψ)
+    m = model.unifac_cache.m
+    X = [v[i][:] ./ m[i] for i ∈ @comps]
+    θ = [X[i][:].*Q ./ sum(X[i][n]*Q[n] for n ∈ @groups) for i ∈ @comps]
+    lnΓi_ = [Q.*(1 .-log.(sum(θ[i][m]*ψ[m,:] for m ∈ @groups)) .- sum(θ[i][m]*ψ[:,m]./sum(θ[i][n]*ψ[n,m] for n ∈ @groups) for m ∈ @groups)) for i ∈ @comps]
+    return lnΓi_
+end
+
+function Ψ(model::UNIFACModel,V,T,z)
+    A = model.params.A.values
+    B = model.params.B.values
+    C = model.params.C.values
+    return @. exp(-(A+B*T+C*T^2)/T)
 end
