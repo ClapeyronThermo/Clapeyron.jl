@@ -179,7 +179,7 @@ function activity_coefficient(model::UNIFACModel,V,T,z)
 end
 
 function excess_g_res(model::UNIFACModel,p,T,z)
-    lnγ = @f(lnγ_res)
+    lnγ = lnγ_res(model,p,T,z)
     return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
 
