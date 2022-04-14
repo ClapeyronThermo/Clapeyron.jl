@@ -57,7 +57,7 @@ function LJSAFT(components;
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-    params,sites = getparams(components, ["SAFT/LJSAFT"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/LJSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
 
     k = params["k"]
@@ -71,7 +71,7 @@ function LJSAFT(components;
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
-    packagedparams = LJSAFTParam(segment, b, T_tilde, epsilon_assoc, bondvol)
+    packagedparams = LJSAFTParam(params["Mw"],segment, b, T_tilde, epsilon_assoc, bondvol)
     references = ["10.1021/ie9602320"]
 
     model = LJSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
