@@ -14,6 +14,8 @@ model2 = PR(["ethane", "water"])
 model3 = GERG2008(["propane","pentane"])
 ```
 
+### Group Contribution Models
+
 We also support group-contribution models like SAFT-*ɣ* Mie. We have a database of species with the number of each group associated with it for easy lookup, but you may also use your own combinations. We use a tuple of the name of the molecule and an array of the group-multiplicity mappings. For example
 
 ```julia
@@ -26,7 +28,7 @@ One can find out more about the information stored within these model objects in
 
 **Cubics**:
 
-- van der Waals (`vdW`)
+- van der Waals ([`vdW`](@ref))
 - Redlich-Kwong (`RK`)
   - Soave-Redlich-Kwong (`SRK`)
   - Predictive Soave-Redlich-Kwong (`PSRK`)
@@ -34,6 +36,8 @@ One can find out more about the information stored within these model objects in
   - Peng-Robinson (1978) (`PR78`)
   - "Universal Mixing Rule" Peng-Robinson (`UMRPR`)
   - Volume-Translated Peng-Robinson (`VTPR`)
+  - Quantum Corrected Peng-Robinson (`QCPR`)
+  - Enhanced Predictive Peng-Robinson (1978) (`EPPR78`)
 
 **SAFT**:
 
@@ -49,6 +53,7 @@ One can find out more about the information stored within these model objects in
 - Soft SAFT, with Lennard-Jones function from Thol et al. (2016)  (`softSAFT2016`)
 - Perturbed-Chain SAFT (`PCSAFT`)
   - Simplified PC-SAFT (`sPCSAFT`)
+  - PC-SAFT with T-dependent kᵢⱼ and special correlation for water (`pharmaPCSAFT`)
 - SAFT-VR with Mie potential (`SAFTVRMie`)
   - SAFT-VR with quantum corrected Mie potential (`SAFTVRQMie`)
 - SAFT-γ-Mie (`SAFTgammaMie`)
