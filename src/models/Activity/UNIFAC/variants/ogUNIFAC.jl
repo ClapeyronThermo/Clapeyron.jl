@@ -109,6 +109,7 @@ function excess_g_comb(model::ogUNIFACModel,p,T,z=SA[1.0])
     return n*G_comb
 end
 
+#=
 function excess_g_res(model::ogUNIFACModel,p,T,z=SA[1.0])
     _0 = zero(T+first(z))
     Q = model.params.Q.values
@@ -131,4 +132,10 @@ function excess_g_res(model::ogUNIFACModel,p,T,z=SA[1.0])
         G_res += q_pi*X[i]*log(∑θpτ)
     end
     return -m̄*G_res
+end
+=#
+
+function Ψ(model::UNIFACModel,V,T,z)
+    A = model.params.A.values
+    return @. exp(-A/T)
 end

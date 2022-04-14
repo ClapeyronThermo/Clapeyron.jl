@@ -33,9 +33,9 @@ include("base/EoSModel.jl")
 include("base/eosshow.jl")
 
 #EoSParam, ClapeyronParam
-include("params/paramvectors.jl")
-include("params/ClapeyronParam.jl")
-include("params/combiningrules.jl")
+include("database/params/paramvectors.jl")
+include("database/params/ClapeyronParam.jl")
+include("database/params/combiningrules.jl")
 
 using CSV, Tables
 #getparams machinery
@@ -58,10 +58,8 @@ include("methods/methods.jl")
 #=
 the dependency chain is the following:
 
-base --> params -|-> database ----------------|
-                 |-> split_model --> methods -|-> models
-                 |-> macros ------------------|
-
+base --> database(params)  -|-> split_model --> methods -|-> models                     
+                            |-> macros ------------------|
 =#
 
 #Clapeyron EoS collection
