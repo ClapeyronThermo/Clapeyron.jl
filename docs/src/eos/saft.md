@@ -28,3 +28,7 @@ Clapeyron.SAFTgammaMie
 
 #CPA Models
 
+```@docs
+Clapeyron.CPA
+Clapeyron.sCPA
+```
