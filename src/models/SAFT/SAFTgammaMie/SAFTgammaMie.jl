@@ -29,6 +29,49 @@ struct SAFTgammaMie{I,VR} <: SAFTgammaMieModel
     references::Array{String,1}
 end
 
+"""
+    SAFTVRSWModel <: SAFTModel
+
+    SAFTVRSW(components; 
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `shapefactor`: Single Parameter (`Float64`) - Shape factor for segment (no units)
+- `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+- `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
+- `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume
+
+## Model Parameters
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `shapefactor`: Single Parameter (`Float64`) - Shape factor for segment (no units)
+- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+- `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
+- `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume
+
+## Input models
+- `idealmodel`: Ideal Model
+
+## Description
+
+SAFT-γ-Mie EoS
+
+## References
+1. Papaioannou, V., Lafitte, T., Avendaño, C., Adjiman, C. S., Jackson, G., Müller, E. A., & Galindo, A. (2014). Group contribution methodology based on the statistical associating fluid theory for heteronuclear molecules formed from Mie segments. The Journal of Chemical Physics, 140(5), 054107. doi:10.1063/1.4851455
+2. Dufal, S., Papaioannou, V., Sadeqzadeh, M., Pogiatzis, T., Chremos, A., Adjiman, C. S., … Galindo, A. (2014). Prediction of thermodynamic properties and phase behavior of fluids and mixtures with the SAFT-γ Mie group-contribution equation of state. Journal of Chemical and Engineering Data, 59(10), 3272–3288. doi:10.1021/je500248h
+"""
+SAFTgammaMie
 
 function SAFTgammaMie(components; 
     idealmodel=BasicIdeal,
@@ -81,7 +124,7 @@ function SAFTgammaMie(components;
     comp_epsilon_assoc = AssocParam{Float64}("bondvol",components,compval_epsilon_assoc,comp_sites.sites,String[],String[])
     
     gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
-    vrparams = SAFTVRMieParam(segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol,mw)
+    vrparams = SAFTVRMieParam(mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
     
     idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     

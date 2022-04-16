@@ -185,7 +185,7 @@ end
 
         @testset "RK w/ WSRule" begin
             system = RK(["methanol","benzene"];mixing = WSRule, activity=Wilson)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5568144490135614 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5729126903890258 rtol = 1e-6
         end
     end
 
@@ -269,7 +269,7 @@ end
 
         @testset "PR w/ WSRule" begin
             system = PR(["methanol","benzene"];mixing = WSRule, activity=Wilson)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -0.6602069628893608 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.669085674824878 rtol = 1e-6
         end
     end
     @printline
@@ -299,6 +299,10 @@ end
     @testset "UNIFAC" begin
         system = UNIFAC(["methanol","benzene"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5322232657797463 rtol = 1e-6
+        #when fast UNIFAC works, it should pass this test.
+        # system2 = UNIFAC(["methanol","benzene"])
+        # prop2 = ()
+        # @test Clapeyron.activity_coefficient(system2,1e-4,423.15,[0.,1.])  ≈ [2.0807335111878937,1.0] rtol = 1e-6
     end
 
     @testset "ogUNIFAC" begin

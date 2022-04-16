@@ -1,4 +1,5 @@
 struct SAFTVRMieParam <: EoSParam
+    Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     lambda_a::PairParam{Float64}
@@ -6,11 +7,54 @@ struct SAFTVRMieParam <: EoSParam
     epsilon::PairParam{Float64}
     epsilon_assoc::AssocParam{Float64}
     bondvol::AssocParam{Float64}
-    Mw::SingleParam{Float64}
 end
 
 abstract type SAFTVRMieModel <: SAFTModel end
 @newmodel SAFTVRMie SAFTVRMieModel SAFTVRMieParam
+
+"""
+    SAFTVRMieModel <: SAFTModel
+
+    SAFTVRMie(components; 
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+- `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
+- `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
+- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume
+
+## Model Parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+- `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
+- `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume
+
+## Input models
+- `idealmodel`: Ideal Model
+
+## Description
+
+SAFT-VR with Mie potential
+
+## References
+1. Lafitte, T., Apostolakou, A., Avendaño, C., Galindo, A., Adjiman, C. S., Müller, E. A., & Jackson, G. (2013). Accurate statistical associating fluid theory for chain molecules formed from Mie segments. The Journal of Chemical Physics, 139(15), 154504. doi:10.1063/1.4819786
+2. Dufal, S., Lafitte, T., Haslam, A. J., Galindo, A., Clark, G. N. I., Vega, C., & Jackson, G. (2015). The A in SAFT: developing the contribution of association to the Helmholtz free energy within a Wertheim TPT1 treatment of generic Mie fluids. Molecular Physics, 113(9–10), 948–984. doi:10.1080/00268976.2015.1029027
+"""
+SAFTVRMie
 
 export SAFTVRMie
 
@@ -22,7 +66,6 @@ function SAFTVRMie(components;
     assoc_options = AssocOptions())
     params,sites = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
-    params["Mw"].values .*= 1E-3
     Mw = params["Mw"]
     segment = params["m"]
     params["sigma"].values .*= 1E-10
@@ -33,7 +76,7 @@ function SAFTVRMie(components;
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
-    packagedparams = SAFTVRMieParam(segment, sigma, lambda_a, lambda_r, epsilon, epsilon_assoc, bondvol, Mw)
+    packagedparams = SAFTVRMieParam(Mw, segment, sigma, lambda_a, lambda_r, epsilon, epsilon_assoc, bondvol)
     references = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
 
     model = SAFTVRMie(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)

@@ -316,7 +316,7 @@ end
 """
     fugacity_coefficient(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
      
-Calculates the joule thomson coefficient, defined as:
+Calculates the fugacity coefficient φᵢ, defined as:
 
 ```julia
 log(φᵢ) =  μresᵢ/RT - log(Z)

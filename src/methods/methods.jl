@@ -1,20 +1,12 @@
 mw(model::EoSModel) = model.params.Mw.values
 
 function group_molecular_weight(groups::GroupParam,mw,z = @SVector [1.])
-    n = groups.n_flattenedgroups
     res = zero(first(z))
-    Σz = sum(z)
-    @inbounds for i in 1:length(groups.components)
-        ni = n[i]
-        gi = groups.i_groups[i]
-        mwi = zero(res)
-        for idx in 1:length(gi)
-            j = gi[idx]
-            mwi += mw[j]*ni[j]
-        end
+    for ni in groups.n_flattenedgroups
+        mwi = dot(ni,mw)
         res +=z[i]*mwi
     end
-    return 0.001*res/Σz
+    return 0.001*res/sum(z)
 end
 
 comp_molecular_weight(mw,z = @SVector [1.]) = 0.001*dot(mw,z)

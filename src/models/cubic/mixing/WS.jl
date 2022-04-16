@@ -72,22 +72,22 @@ function mixing_rule(model::Union{RKModel,PRModel},V,T,z,mixing_model::WSRuleMod
     for i in @comps
         zi = z[i]   
         αi = α[i]
-        aij = a[i,i]*αi
-        bij = b[i,i]
-        B̄ += zi*zi*(bij-aij*RT⁻¹)
-        Σab += zi*aij/bij
+        ai = a[i,i]*αi
+        bi = b[i,i]
+        B̄ += zi*zi*(bi-ai*RT⁻¹)
+        Σab += zi*ai/bi
         for j in 1:(i-1)
             αj = α[j]
-            bij = b[i,j]
-            aij = a[i,j]*sqrt(αi*αj)
-            B̄ += 2*zi*z[j]*(bij-aij*RT⁻¹)
+            bj= b[j,j]
+            aj = a[j,j]*αj
+            B̄ += zi*z[j]*((bj-aj*RT⁻¹)+(bi-ai*RT⁻¹))
         end
     end
     Σab = Σab*invn
     B̄ = B̄*invn*invn
     Aᴱ = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)*invn
-    b̄  = B̄/(1 - (Aᴱ/λ + Σab)*RT⁻¹)
-    ā = R̄*T*(b̄ - B̄)
+    b̄  = B̄/(1 + (Aᴱ/λ - Σab)*RT⁻¹)
+    ā = b̄*(Σab-Aᴱ/λ)
     c̄ = dot(z,c)*invn
     return ā,b̄,c̄
 end

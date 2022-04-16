@@ -636,8 +636,6 @@ function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=St
         end
     end
 
-
-
     return SiteParam(components, 
     sites, 
     PackedVectorsOfVectors.pack(n_sites),

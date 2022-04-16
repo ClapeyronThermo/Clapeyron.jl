@@ -17,3 +17,5 @@ Clapeyron.SLKRule
 Clapeyron.SLk0k1lMixingRule
 ```
 
+## Extended Corresponding states Model
+
