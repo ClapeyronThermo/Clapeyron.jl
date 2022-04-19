@@ -60,7 +60,6 @@ function WSRule(components::Vector{String}; activity = Wilson, userlocations::Ve
 end
 
 WS_λ(::WSRuleModel,model::ABCubicModel) = infinite_pressure_gibbs_correction(model)
-WS_λ(::WSRuleModel,::RKModel) = infinite_pressure_gibbs_correction(model)
 
 function mixing_rule(model::Union{RKModel,PRModel},V,T,z,mixing_model::WSRuleModel,α,a,b,c)
     λ = WS_λ(mixing_model,model)
