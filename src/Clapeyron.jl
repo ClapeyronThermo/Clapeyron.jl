@@ -20,7 +20,7 @@ import LogExpFunctions
 
 include("solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log, sqrt
+using .Solvers: log, sqrt, log1p
 ∂Tag = Solvers.∂Tag
 
 include("utils/fractions.jl")
