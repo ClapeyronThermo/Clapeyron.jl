@@ -134,7 +134,7 @@ function Base.convert(::Type{SingleParam{Int}},param::SingleParam{Float64})
 end
 
 #broadcasting utilities
-Base.broadcastable(param::SingleParameter{T,V}) = param.values
+Base.broadcastable(param::SingleParameter) = param.values
 
 #pack vectors
 

@@ -143,7 +143,7 @@ function Base.convert(::Type{PairParam{Int}},param::PairParam{Float64})
 end
 
 #broadcasting utilities
-Base.broadcastable(param::PairParameter{T,V}) = param.values
+Base.broadcastable(param::PairParameter) = param.values
 
 function pack_vectors(param::PairParameter{<:AbstractVector})
     name,components,vals,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources
