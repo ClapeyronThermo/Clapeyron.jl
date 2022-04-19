@@ -27,20 +27,27 @@ include("utils/fractions.jl")
 import .Fractions
 using .Fractions: FractionVector
 
-#The Base of Clapeyron: EoSModel and eos(model,V,T,z)
+#Gas constant, Boltzmann Constant
 include("base/constants.jl") 
-include("base/EoSModel.jl") 
+
+#The Base of Clapeyron: EoSModel and eos(model,V,T,z)
+include("base/EoSModel.jl")
+
+#show(model<:EoSModel)
 include("base/eosshow.jl")
 
-#EoSParam, ClapeyronParam
-include("database/params/paramvectors.jl")
-include("database/params/ClapeyronParam.jl")
+#EoSParam, ClapeyronParam, All Params
+include("database/ClapeyronParam.jl")
+
+#Combining Rules for Single and Pair Params.
 include("database/params/combiningrules.jl")
 
 using CSV, Tables
-#getparams machinery
+#getparams options
 include("database/ParamOptions.jl") 
+#getparams definition
 include("database/database.jl")
+#transform Tables.jl tables to Clapeyron csv files
 include("database/UserReader.jl")
 
 #macros, used for defining models

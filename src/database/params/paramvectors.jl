@@ -1,7 +1,9 @@
-#=
-The Vectors defined here are necessary to 
-ClapeyronParam
-=#
+"""
+    Compressed4DMatrix{T,V<:AbstractVector{T}}
+
+struct used internally to store association data.
+
+"""
 struct Compressed4DMatrix{T,V<:AbstractVector{T}} 
     values::V
     outer_indices::Vector{Tuple{Int,Int}} #index of components
@@ -135,11 +137,14 @@ function indices(x::Compressed4DMatrix)
     return zip(l,xin,x.inner_indices)
 end
 
-function indices(x::PackedVofV)
-    return x.p
-end
 
 
+"""
+    SparsePackedMofV{T,V<:AbstractVector{T}} <:SparseArrays.AbstractSparseMatrixCSC{E,Int}
+
+Sparse Matrix struct used internally to store a matrix of Vectors efficiently.
+
+"""
 struct SparsePackedMofV{E,P<:PackedVofV}<:SparseArrays.AbstractSparseMatrixCSC{E,Int}
     storage::P
     idx::SparseMatrixCSC{Int,Int}

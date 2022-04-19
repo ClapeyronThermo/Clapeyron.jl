@@ -248,9 +248,6 @@ function group_splitter(group,splitted_groups)
     return res
 end
 
-export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
-#
-
 split_model(model::EoSModel,subset=nothing) = auto_split_model(model,subset)
 
 function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
