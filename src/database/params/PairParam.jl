@@ -62,6 +62,7 @@ function PairParam(name,components,values)
     sourcecsv = String[]
     return PairParam(name,components,values,diagvals, missingvals,src,sourcecsv)
 end
+
 function PairParam(name::String,
                     components::Array{String,1},
                     values::Array{T,2},
@@ -94,21 +95,7 @@ function PairParam(x::SingleParameter,name::String=x.name)
     diagvalues = view(_values, diagind(_values))
     return PairParam(name, x.components, _values,diagvalues,_ismissingvalues,x.sourcecsvs, x.sources)
 end
-#=
-function PairParam(x::PairParam, v::Matrix,name::String=x.name)
-    return PairParam(name, x.components,deepcopy(v), x.sourcecsvs, x.sources)
-end
-function PairParam(x::SingleParam, v::Vector,name::String=x.name)
-    pairvalues = singletopair(v,missing)
-    return PairParam(x.name, x.components, pairvalues,x.sourcecsvs, x.sources)
-end
-function PairParam(x::SingleParam, v::Matrix,name::String=x.name)
-    return PairParam(x.name, x.components, deepcopy(v),x.sourcecsvs, x.sources)
-end
-=#
-#barebones constructor by list of pairs.
 
-#convert utilities
 function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter) 
     print(io,"PairParam{",eltype(param.values),"}")
     show(io,param.components)
@@ -122,6 +109,7 @@ function Base.show(io::IO,param::PairParameter)
     print(io,"]")
 end
 
+#convert utilities
 function Base.convert(::Type{PairParam{Float64}},param::PairParam{Int})
     values = Float64.(param.values)
     diagvalues = view(values, diagind(values))
