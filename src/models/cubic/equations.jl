@@ -62,6 +62,8 @@ function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     return -log1p((c̄-b̄)*ρ) - ā*RT⁻¹*log((Δ1*b̄ρt+1)/(Δ2*b̄ρt+1))/(ΔΔ*b̄)
 end
 
+#log (2 + sqrt2/2 - sqrt2)/(2sqrt2)
+
 function cubic_poly(model::ABCubicModel,p,T,z)
     a,b,c = cubic_ab(model,p,T,z)
     RT⁻¹ = 1/(R̄*T)

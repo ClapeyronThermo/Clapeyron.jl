@@ -55,8 +55,7 @@ function HVRule(components::Vector{String}; activity = Wilson, userlocations::Ve
     return model
 end
 
-HV_λ(::HVRuleModel,::PRModel) =  1/(2*√(2))*log((2+√(2))/(2-√(2)))
-HV_λ(::HVRuleModel,::RKModel) = log(2)
+HV_λ(::HVRuleModel,model::ABCubicModel) = infinite_pressure_gibbs_correction(model)
 
 function mixing_rule(model::CubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,c)
     n = sum(z)
