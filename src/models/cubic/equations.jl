@@ -49,6 +49,43 @@ function data(model::ABCubicModel,V,T,z)
     return n, ā ,b̄, c̄
 end
 
+function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
+    n,ā,b̄,c̄ = _data
+    Δ1,Δ2 = cubic_Δ(model)
+    Δ1 = 1+√2
+    Δ2 = 1-√2
+    ΔΔ = Δ1 - Δ2
+    RT⁻¹ = 1/(R̄*T)
+    ρt = (V/n+c̄)^(-1) # translated density
+    ρ  = n/V
+    b̄ρt = b̄*ρt
+    return -log1p((c̄-b̄)*ρ) - ā*RT⁻¹*log((Δ1*b̄ρt+1)/(Δ2*b̄ρt+1))/(ΔΔ*b̄)
+end
+
+function cubic_poly(model::ABCubicModel,p,T,z)
+    a,b,c = cubic_ab(model,p,T,z)
+    RT⁻¹ = 1/(R̄*T)
+    A = a*p*RT⁻¹*RT⁻¹
+    B = b*p*RT⁻¹
+    Δ1,Δ2 = cubic_Δ(model)
+    ∑Δ = Δ1 + Δ2
+    Δ1Δ2 = Δ1*Δ2
+    k₀ = -B*evalpoly(B,(A,Δ1Δ2,Δ1Δ2))
+    k₁ = evalpoly(B,(A,-∑Δ,Δ1Δ2-∑Δ))
+    k₂ = (∑Δ - 1)*B - 1
+    k₃ = one(A) # important to enable autodiff
+    return (k₀,k₁,k₂,k₃),c
+end
+
+function cubic_abp(model::ABCubicModel, V, T, z)
+    Δ1,Δ2 = cubic_Δ(model)
+    n = ∑(z)
+    a,b,c = cubic_ab(model,V,T,z,n)
+    v = V/n+c
+    p = R̄*T/(v-b) - a/((v-Δ1*b)*(v-Δ2*b))
+    return a,b,p
+end
+
 function second_virial_coefficient(model::ABCubicModel,T::Real,z = SA[1.0])
     a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T,z)
     return b-a/(R̄*T)

@@ -101,25 +101,7 @@ function ab_consts(::Type{<:vdWModel})
     return Ωa,Ωb
 end
 
-
-function cubic_abp(model::vdWModel, V, T, z)
-    n = ∑(z)
-    a,b,c = cubic_ab(model,V,T,z,n)
-    v = V/n+c
-    p = R̄*T/(v-b) - a/(v^2)
-    return a,b,p
-end
-
-function cubic_poly(model::vdWModel,p,T,z)
-    n = sum(z)
-    a,b,c = cubic_ab(model,p,T,z,n)
-    RT⁻¹ = 1/(R̄*T)
-    A = a*p*RT⁻¹*RT⁻¹
-    B = b*p*RT⁻¹
-    _1 = one(A)
-    return (-A*B, A, -B-_1, _1),c
-end
-
+cubic_Δ(model::vdWmodel) = (0.0,0.0)
 
 function a_res(model::vdWModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
