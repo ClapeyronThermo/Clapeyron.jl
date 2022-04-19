@@ -22,4 +22,3 @@ end
 
 is_splittable(::AssocOptions) = false
 
-export AssocOptions
