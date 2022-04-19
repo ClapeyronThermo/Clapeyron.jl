@@ -101,7 +101,7 @@ function ab_consts(::Type{<:vdWModel})
     return Ωa,Ωb
 end
 
-cubic_Δ(model::vdWmodel) = (0.0,0.0)
+cubic_Δ(model::vdWModel) = (0.0,0.0)
 
 function a_res(model::vdWModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
