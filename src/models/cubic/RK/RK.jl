@@ -99,6 +99,16 @@ function cubic_Δ(model::RKModel)
     return (0.0,1.0)
 end
 
+#when either Δ1 or Δ2 is equal to zero, requires defining a_res
+function a_res(model::RKModel, V, T, z,_data = data(model,V,T,z))
+    n,ā,b̄,c̄ = _data
+    ρt = (V/n+c̄)^(-1) # translated density
+    ρ  = n/V
+    RT⁻¹ = 1/(R̄*T)
+    return -log1p((c̄-b̄)*ρ) - ā*RT⁻¹*log(b̄*ρt+1)/b̄
+    #return -log(V-n*b̄) - ā/(R̄*T*b̄*√(T/T̄c))*log(1+n*b̄/V)
+end
+
 cubic_zc(::RKModel) = 1/3
 
 # include("variants/SRK.jl")

@@ -103,6 +103,7 @@ end
 
 cubic_Δ(model::vdWModel) = (0.0,0.0)
 
+#when either Δ1 or Δ2 is equal to zero, requires defining a_res
 function a_res(model::vdWModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
     RT⁻¹ = 1/(R̄*T)
