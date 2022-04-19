@@ -50,4 +50,3 @@ function SRK(components::Vector{String}; idealmodel=BasicIdeal,
 end
 export SRK
 
-const SRKModel = RK{I,SoaveAlpha,M,T} where {I,M,T}
