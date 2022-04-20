@@ -24,7 +24,7 @@ end
 
 """
     KumarCubic(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = KCAlpha,
+    alpha = KumarAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
@@ -75,26 +75,12 @@ b = Ωb(R²Tcᵢ²/Pcᵢ)
 1. Kumar, A., & Upadhyay, R. (2021). A new two-parameters cubic equation of state with benefits of three-parameters. Chemical Engineering Science, 229(116045), 116045. doi:10.1016/j.ces.2020.116045
 """
 KumarCubic
+export KumarCubic
 
 #another alternative would be to store the Ωa, Ωb in the mixing struct.
-function ab_premixing(::Type{<:KumarCubic},mixing,Tc,pc,kij,Vc)
-    Ωa, Ωb = ab_consts(T)
-    _Tc = Tc.values
-    _pc = pc.values
-    _vc = Vc.values
-    Zc = _pc .* _vc ./ (R̄ .* _tc)
-    χ  = @. cbrt(sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Z -20)/(32*sqrt(3)*Zc^2) - (729*Zc^3 - 216*Zc + 8)/(1728*Zc^3))
-    α  = @. (χ + (81*Zc^2 - 72*Zc + 4)/(144*χ*Zc^2) + (3*Zc - 2)/(12*Zc))
-    Ωa = @. Zc*((1 + 1.6*α - 0.8*α^2)^2/((1 - α^2)(2 + 1.6*α)))
-    Ωb = @. Zc*α
-    a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
-    b = sigma_LorentzBerthelot(SingleParam(pc, @. Ωb*R̄*_Tc/_pc))
-    return a,b
-end
 
-export KumarCubic
 function KumarCubic(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = KCAlpha,
+    alpha = KumarAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
@@ -121,6 +107,21 @@ function KumarCubic(components::Vector{String}; idealmodel=BasicIdeal,
     references = String["10.1016/j.ces.2020.116045"]
     model = KumarCubic(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
+end
+
+function ab_premixing(::Type{<:KumarCubic},mixing,Tc,pc,kij,Vc)
+    Ωa, Ωb = ab_consts(T)
+    _Tc = Tc.values
+    _pc = pc.values
+    _vc = Vc.values
+    Zc = _pc .* _vc ./ (R̄ .* _tc)
+    χ  = @. cbrt(sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Z -20)/(32*sqrt(3)*Zc^2) - (729*Zc^3 - 216*Zc + 8)/(1728*Zc^3))
+    α  = @. (χ + (81*Zc^2 - 72*Zc + 4)/(144*χ*Zc^2) + (3*Zc - 2)/(12*Zc))
+    Ωa = @. Zc*((1 + 1.6*α - 0.8*α^2)^2/((1 - α^2)(2 + 1.6*α)))
+    Ωb = @. Zc*α
+    a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
+    b = sigma_LorentzBerthelot(SingleParam(pc, @. Ωb*R̄*_Tc/_pc))
+    return a,b
 end
 
 #only used in premixing
