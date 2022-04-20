@@ -1,12 +1,12 @@
-abstract type WSRuleModel <: MixingRule end
+abstract type modWSRuleModel <: WSRuleModel end
 
-struct WSRule{γ} <: WSRuleModel
+struct modWSRule{γ} <: WSRuleModel
     components::Array{String,1}
     activity::γ
     references::Array{String,1}
 end
 
-@registermodel WSRule
+@registermodel modWSRule
 
 """
     WSRule{γ} <: WSRuleModel
@@ -27,14 +27,13 @@ None
 
 ## Description
 
-Wong-Sandler Mixing Rule.
+modified Wong-Sandler Mixing Rule.
 
 ```
 aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
 bᵢⱼ = (bᵢ + bⱼ)/2
 c̄ = ∑cᵢxᵢ
-B̄ = ΣxᵢxⱼB̄ᵢⱼ
-B̄ᵢⱼ = (1 - kᵢⱼ)((bᵢ - aᵢ/RT) + (bⱼ - aⱼ/RT))/2
+B̄ = Σxᵢxⱼ(bᵢⱼ - aᵢⱼ√(αᵢαⱼ)/RT)
 b̄  = B̄/(1 - gᴱ/λRT - Σxᵢaᵢαᵢ/bᵢRT)
 ā = RT(b̄ - B̄)
 for Redlich-Kwong:
@@ -47,19 +46,18 @@ for Peng-Robinson:
 ## References
 
 1. Wong, D. S. H., & Sandler, S. I. (1992). A theoretically correct mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 38(5), 671–680. doi:10.1002/aic.690380505
+2. Orbey, H., & Sandler, S. I. (1995). Reformulation of Wong-Sandler mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 41(3), 683–690. doi:10.1002/aic.690410325
 """
-WSRule
+modWSRule
 
-export WSRule
-function WSRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+export modWSRule
+function modWSRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)
     
-    references = ["10.1002/aic.690380505"]
-    model = WSRule(components, init_activity,references)
+    references = ["10.1002/aic.690380505","10.1002/aic.690410325"]
+    model = modWSRule(components, init_activity,references)
     return model
 end
-
-WS_λ(::WSRuleModel,model::ABCubicModel) = infinite_pressure_gibbs_correction(model)
 
 function mixing_rule(model::Union{RKModel,PRModel},V,T,z,mixing_model::WSRuleModel,α,a,b,c)
     λ = WS_λ(mixing_model,model)
@@ -71,18 +69,15 @@ function mixing_rule(model::Union{RKModel,PRModel},V,T,z,mixing_model::WSRuleMod
     for i in @comps
         zi = z[i]   
         αi = α[i]
-        _ai = a[i,i]
-        ai = _ai*αi
+        ai = a[i,i]*αi
         bi = b[i,i]
         B̄ += zi*zi*(bi-ai*RT⁻¹)
         Σab += zi*ai/bi
         for j in 1:(i-1)
             αj = α[j]
-            bj= b[j,j]
-            _aj = a[j,j]
-            _1mkij = a[i,j]^2/(_ai*_aj) #1 - kij
-            aj = a[j,j]*αj
-            B̄ += _1mkij*zi*z[j]*((bj-aj*RT⁻¹)+(bi-ai*RT⁻¹))
+            bij = b[i,j]
+            aij = a[i,j]*sqrt(αi*αj)
+            B̄ += 2*zi*z[j]*(bij-aij*RT⁻¹)
         end
     end
     Σab = Σab*invn
