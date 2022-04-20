@@ -45,6 +45,7 @@ end
 
 @inline α_m(model::RKModel,::SoaveAlpha) = (0.480,1.547,-0.176)
 @inline α_m(model::PRModel,::SoaveAlpha) = (0.37464,1.54226,-0.26992) #equal to PRAlpha
+@inline α_m(model::vdWModel,::SoaveAlpha) = (0.4998,1.5928,0.19563,0.025)
 
 function α_function(model::CubicModel,V,T,z,alpha_model::SoaveAlphaModel)
     Tc = model.params.Tc.values
