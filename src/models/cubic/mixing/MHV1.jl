@@ -59,8 +59,8 @@ function MHV1Rule(components::Vector{String}; activity = Wilson, userlocations::
 end
 
 MHV1q(::MHV1RuleModel,::PRModel) = 0.53
-MHV1q(::MHV1RuleModel,::RKModel) = 0.593 #sheck if it applies to vanilla RK
-MHV1q(::MHV1RuleModel,::SRKModel) = 0.593
+MHV1q(::MHV1RuleModel,::RKModel) = 0.593 #check if it applies to vanilla RK
+#MHV1q(::MHV1RuleModel,::SRKModel) = 0.593 causes ambiguities
 MHV1q(::MHV1RuleModel,::vdWModel) = 0.85
 
 function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::MHV1RuleModel,α,a,b,c)
