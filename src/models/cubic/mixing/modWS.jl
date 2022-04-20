@@ -59,7 +59,7 @@ function modWSRule(components::Vector{String}; activity = Wilson, userlocations:
     return model
 end
 
-function mixing_rule(model::Union{RKModel,PRModel},V,T,z,mixing_model::WSRuleModel,α,a,b,c)
+function mixing_rule(model::Union{RKModel,PRModel},V,T,z,mixing_model::modWSRuleModel,α,a,b,c)
     λ = WS_λ(mixing_model,model)
     n = sum(z)
     invn = (one(n)/n)
