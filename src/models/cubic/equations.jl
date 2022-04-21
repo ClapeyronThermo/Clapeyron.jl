@@ -18,8 +18,8 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
-    Ωa, Ωb = ab_consts(T)
+function ab_premixing(model,mixing,Tc,pc,kij) 
+    Ωa, Ωb = ab_consts(model)
     _Tc = Tc.values
     _pc = pc.values
     a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
