@@ -79,7 +79,9 @@ include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
 
 #Basic utility EoS
-include("models/cached/SpecialComp.jl")
+include("models/utility/ZeroResidual.jl")
+include("models/utility/SpecialComp.jl")
+include("models/utility/EoSVectorParam.jl")
 
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
@@ -114,7 +116,6 @@ include("models/SAFT/BACKSAFT/BACKSAFT.jl")
 include("models/SAFT/equations.jl")
 include("models/SAFT/association.jl")
 
-include("models/cached/EoSVectorParam.jl")
 
 include("models/Activity/Wilson/Wilson.jl")
 include("models/Activity/NRTL/NRTL.jl")
