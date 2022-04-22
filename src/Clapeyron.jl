@@ -17,6 +17,15 @@ using DiffResults, ForwardDiff
 using Scratch 
 using Unitful
 import LogExpFunctions
+include("database/ParamOptions.jl") 
+
+include("utils/macros.jl")
+using CSV, Tables
+include("database/database.jl")
+include("utils/misc.jl")
+
+include("utils/split_model.jl")
+include("database/UserReader.jl")
 
 include("solvers/Solvers.jl")
 using .Solvers
@@ -59,7 +68,17 @@ include("utils/index_reduction.jl")
 #splitting models, useful for methods.
 include("utils/split_model.jl")
 
-#Clapeyron methods (AD, property solvers, etc)
+include("models/Electrolytes/RSP/ConstW.jl")
+include("models/Electrolytes/RSP/Schreckenberg.jl")
+include("models/Electrolytes/RSP/Zhuang.jl")
+include("models/Electrolytes/RSP/MM1.jl")
+include("models/Electrolytes/RSP/WAvgIL.jl")
+include("models/Electrolytes/Ion/DH.jl")
+include("models/Electrolytes/Ion/MSA.jl")
+include("models/Electrolytes/Born/Born.jl")
+include("models/Electrolytes/ElectrolyteSAFT/ElectrolyteSAFT.jl")
+include("models/Electrolytes/ElectrolyteSAFT/eCPA.jl")
+
 include("methods/methods.jl")
 
 #=

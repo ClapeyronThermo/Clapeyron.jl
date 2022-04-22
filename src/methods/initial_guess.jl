@@ -39,6 +39,40 @@ function x0_volume(model,p,T,z; phase = :unknown)
     end
 end
 
+function x0_volume(model::ElectrolyteModel,p,T,z; phase = :unknown)
+    phase = Symbol(phase)
+    if phase === :unknown || is_liquid(phase)
+        return 1.5*x0_volume_liquid(model.puremodel,T,z)
+    elseif is_vapour(phase)
+        return 1.5*x0_volume_gas(model.puremodel,p,T,z)
+    elseif is_supercritical(phase)
+     else
+        error("unreachable state on x0_volume")
+    end
+end
+
+
+#=x0_sat_pure=#
+
+# function x0_sat_pure(model::SAFTVRQMie)
+#     x0    = [log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.2),
+#     log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/1e-3)]
+# end
+
+# function x0_sat_pure(model::LJSAFT)
+#     x0    = [log10(π/6*model.params.segment[model.components[1]]*model.params.b[model.components[1]]/0.5),
+#     log10(π/6*model.params.segment[model.components[1]]*model.params.b[model.components[1]]/1e-3)]
+# end
+
+
+
+
+##=lb_volume=#
+#
+#lb_volume(model::LJSAFT,z; phase = :unknown) = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1)]
+
+
+
 """
     lb_volume(model::EoSModel,z=SA[1.0])
 

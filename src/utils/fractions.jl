@@ -3,7 +3,15 @@ a composition can be seen as a point in a Simplex manifold.
 for that reason, you can define some common operations that are useful.
 the 
 =#
-
+function ElectrolyteFractionVector(model,M,z=[1.])
+    ν = model.stoic_coeff
+    Mw = model.puremodel.params.Mw.values.*1e-3
+    isalts = 1:length(model.stoic_coeff)
+    iions = 1:length(model.stoic_coeff[1])
+    x_solv = z ./ (1+sum(z[j]*Mw[j] for j in model.isolvents)*(sum(M[k]*sum(ν[k][i] for i ∈ iions) for k ∈ isalts)))
+    x_ions = [sum(M[k]*ν[k][l] for k ∈ isalts) / (1/sum(z[j]*Mw[j] for j in model.isolvents)+(sum(M[k]*sum(ν[k][i] for i ∈ iions) for k ∈ isalts))) for l ∈ iions]
+    return append!(x_solv,x_ions)
+end
 module Fractions
     frac(x) = x ./ Base.sum(x)
     sum(x1,x2) = frac(x1 .* x2)
