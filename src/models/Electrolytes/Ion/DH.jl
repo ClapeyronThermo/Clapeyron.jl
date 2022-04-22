@@ -3,7 +3,6 @@ struct DHParam <: EoSParam
     charge::SingleParam{Float64}
 end
 
-abstract type IonModel <: EoSModel end
 abstract type DHModel <: IonModel end
 
 struct DH{ϵ<:RSPModel} <: DHModel

@@ -1,4 +1,3 @@
-abstract type ElectrolyteModel <: EoSModel end
 abstract type ElectrolyteSAFTModel <: ElectrolyteModel end
 
 struct ElectrolyteSAFT{T<:IdealModel,c<:SAFTModel,i<:IonModel,b} <: ElectrolyteSAFTModel

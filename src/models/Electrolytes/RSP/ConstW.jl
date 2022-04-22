@@ -1,4 +1,3 @@
-abstract type RSPModel <: EoSModel end
 abstract type ConstWModel <: RSPModel end
 
 struct ConstWParam <: EoSParam
