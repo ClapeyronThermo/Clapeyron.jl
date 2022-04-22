@@ -57,13 +57,13 @@ function a_ion(model::ElectrolyteModel, V, T, z,ion::DHModel)
     σ = ion.params.sigma.values
     Z = ion.params.charge.values
     ϵ_r = RSP(model,V,T,z,model.RSPmodel)
-
-    x = z ./ sum(z)
+    ∑z = sum(z)
+    #x = z ./ sum(z)
     ρ = N_A*sum(z)/V
 
     s = e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)
-    κ = (4π*s*ρ*sum(x[i]*Z[i]^2 for i ∈ ion.iions))^(1/2)
+    κ = (4π*s*ρ*sum(z[i]*Z[i]^2 for i ∈ ion.iions)/∑z)^(1/2)
     y = σ*κ
     χ = @. 3/y^3*(3/2+log1p(y)-2*(1+y)+1/2*(1+y)^2)
-    return -1/3*s*κ*sum(x[i]*Z[i]^2*χ[i] for i ∈ ion.iions)
+    return -1/3*s*κ*sum(z[i]*Z[i]^2*χ[i] for i ∈ ion.iions)/∑z
 end
