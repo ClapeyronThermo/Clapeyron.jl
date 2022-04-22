@@ -1,6 +1,6 @@
-abstract type KumarCubicModel <: ABCubicModel end
+abstract type KUModel <: ABCubicModel end
 
-struct KumarCubicParam <: EoSParam
+struct KUParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}
     Tc::SingleParam{Float64}
@@ -9,22 +9,22 @@ struct KumarCubicParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
-struct KumarCubic{T <: IdealModel,α,c,γ} <:KumarCubicModel
+struct KU{T <: IdealModel,α,c,γ} <:KUModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     alpha::α
     mixing::γ
     translation::c
-    params::KumarCubicParam
+    params::KUParam
     idealmodel::T
     references::Array{String,1}
 end
 
-@registermodel KumarCubic
+@registermodel KU
 
 """
-    KumarCubic(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = KumarAlpha,
+    KU(components::Vector{String}; idealmodel=BasicIdeal,
+    alpha = KUAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
@@ -59,7 +59,7 @@ end
 - `translation`: Translation Model
 
 ## Description
-Ashutosh Kumar and Rajeev Upadhyay "Two-Parameter Cubic" Equation of state.
+Kumar-Upadhyay Cubic Equation of state. `Ωa` and `Ωb` are component-dependent
 ```
 P = RT/(v-b) + a•κ(T)/((v²-1.6bv - 0.8b²)
 a = Ωa(R²Tcᵢ²/Pcᵢ)
@@ -74,13 +74,13 @@ b = Ωb(R²Tcᵢ²/Pcᵢ)
 ## References
 1. Kumar, A., & Upadhyay, R. (2021). A new two-parameters cubic equation of state with benefits of three-parameters. Chemical Engineering Science, 229(116045), 116045. doi:10.1016/j.ces.2020.116045
 """
-KumarCubic
-export KumarCubic
+KU
+export KU
 
 #another alternative would be to store the Ωa, Ωb in the mixing struct.
 
-function KumarCubic(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = KumarAlpha,
+function KU(components::Vector{String}; idealmodel=BasicIdeal,
+    alpha = KUAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
@@ -98,18 +98,18 @@ function KumarCubic(components::Vector{String}; idealmodel=BasicIdeal,
     Tc = params["Tc"]
     Vc = params["Vc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(KumarCubic,init_mixing,Tc,pc,k,Vc)
+    a,b = ab_premixing(KU,init_mixing,Tc,pc,k,Vc)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     icomponents = 1:length(components)
-    packagedparams = KumarCubicParam(a,b,Tc,pc,Vc,Mw)
+    packagedparams = KUParam(a,b,Tc,pc,Vc,Mw)
     references = String["10.1016/j.ces.2020.116045"]
-    model = KumarCubic(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = KU(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 
-function ab_premixing(::Type{<:KumarCubic},mixing,Tc,pc,kij,Vc)
+function ab_premixing(::Type{<:KU},mixing,Tc,pc,kij,Vc)
     Ωa, Ωb = ab_consts(T)
     _Tc = Tc.values
     _pc = pc.values
@@ -125,11 +125,11 @@ function ab_premixing(::Type{<:KumarCubic},mixing,Tc,pc,kij,Vc)
 end
 
 #only used in premixing
-function ab_consts(::Type{<:KumarCubicModel})
+function ab_consts(::Type{<:KUModel})
     return 1.0,1.0
 end
 
-cubic_Δ(model::KumarCubicModel) = (-0.4,2.0)
+cubic_Δ(model::KUModel) = (-0.4,2.0)
 
 #only used for single component properties, we need a better abstraction here
-cubic_zc(model::KumarCubicModel) = only(model.Pc.values)*only(model.Vc.values)/(R̄*only(model.Tc.values))
+cubic_zc(model::KUModel) = only(model.Pc.values)*only(model.Vc.values)/(R̄*only(model.Tc.values))

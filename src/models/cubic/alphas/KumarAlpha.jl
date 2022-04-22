@@ -1,16 +1,16 @@
-abstract type KumarAlphaModel <: AlphaModel end
+abstract type KUAlphaModel <: AlphaModel end
 
-struct KumarAlphaParam <: EoSParam
+struct KUAlphaParam <: EoSParam
     acentricfactor::SingleParam{Float64}
 end
 
-@newmodelsimple KumarAlpha KumarAlphaModel KumarAlphaParam
-export KumarAlpha
+@newmodelsimple KUAlpha KUAlphaModel KUAlphaParam
+export KUAlpha
 
 """
-    KumarAlpha <: AlphaModel
+    KUAlpha <: AlphaModel
     
-    KumarAlpha(components::Vector{String};
+    KUAlpha(components::Vector{String};
     userlocations::Vector{String}=String[],
     verbose::Bool=false)
 
@@ -24,7 +24,7 @@ export KumarAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for [`KumarCubic`](@ref) EoS.
+Cubic alpha `(α(T))` model. Default for [`KU`](@ref) EoS.
 
 For `Tr < 1`
 ```
@@ -39,13 +39,13 @@ For `Tr > 1` is a 6th order taylor expansion around `T = Tc`.
 1. Kumar, A., & Upadhyay, R. (2021). A new two-parameters cubic equation of state with benefits of three-parameters. Chemical Engineering Science, 229(116045), 116045. doi:10.1016/j.ces.2020.116045
 
 """
-KumarAlpha
+KUAlpha
 
-function KumarAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function KUAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = SingleParam(params["w"],"acentric factor")
-    packagedparams = KumarAlphaParam(acentricfactor)
-    model = KumarAlpha(packagedparams, verbose=verbose)
+    packagedparams = KUAlphaParam(acentricfactor)
+    model = KUAlpha(packagedparams, verbose=verbose)
     return model
 end
 
@@ -63,7 +63,7 @@ function taylor_alpha_kumar(Tr,m,n)
     return evalpoly(ΔT,αpol)
 end
 
-function α_function(model::CubicModel,V,T,z,alpha_model::KumarAlphaModel)
+function α_function(model::CubicModel,V,T,z,alpha_model::KUAlphaModel)
     Tc = model.params.Tc.values
     ω  = alpha_model.params.acentricfactor.values
     α = zeros(typeof(T),length(Tc))
@@ -84,7 +84,7 @@ function α_function(model::CubicModel,V,T,z,alpha_model::KumarAlphaModel)
     return α
 end
 
-function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::KumarAlphaModel)
+function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::KUAlphaModel)
     Tc = model.params.Tc.values[1]
     ω  = alpha_model.params.acentricfactor.values[1]
     coeff_m = (0.37790, 1.51959, -0.46904, 0.015679)

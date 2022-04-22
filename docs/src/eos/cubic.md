@@ -49,7 +49,7 @@ end
 Clapeyron.vdW
 Clapeyron.RK
 Clapeyron.PR
-Clapeyron.KumarCubic
+Clapeyron.KU
 ```
 
 ## Variant Models
@@ -77,7 +77,7 @@ Clapeyron.sCPAAlpha
 Clapeyron.MTAlpha
 Clapeyron.BMAlpha
 Clapeyron.TwuAlpha
-Clapeyron.KumarAlpha
+Clapeyron.KUAlpha
 ```
 
 ## Volume Translation Models

@@ -40,7 +40,7 @@ One can find out more about the information stored within these model objects in
   - Volume-Translated Peng-Robinson ([`VTPR`](@ref))
   - Quantum Corrected Peng-Robinson ([`QCPR`](@ref))
   - Enhanced Predictive Peng-Robinson (1978) ([`EPPR78`](@ref))
-- Ashutosh Kumar and Rajeev Upadhyay Cubic Model ([`KumarCubic`](@ref))
+- Kumar-Upadhyay ([`KU`](@ref))
 **SAFT**:
 
 - SAFT ([`ogSAFT`](@ref))
@@ -114,8 +114,8 @@ The above model would be equivalent to a model built by SRK directly. We support
 - [`SoaveAlpha`](@ref): This is the default alpha function for SRK.
 - [`PRAlpha`](@ref): This is the default alpha function for regular PR.
 - [`PR78Alpha`](@ref): This is the default alpha function for PR78.
-- [`KumarAlpha`](@ref): This is the default alpha function for Kumar Cubic
-- [`BMAlpha`](@ref): This is the modified alpha function proposed by Boston and Mathias designed to improve estimates above the critical point. This works for both PR and RK.
+- [`KUAlpha`](@ref): This is the default alpha function for KU
+- [`BMAlpha`](@ref): This is the modified alpha function proposed by Boston and Mathias designed to improve estimates above the critical point. This works for both PR and RK. 
 - [`TwuAlpha`](@ref): Proposed by Twu _et al._, this alpha function uses species-specific parameters rather than correlation and, thus, is slightly more accurate than regular alpha functions. It was intended to be used with PR and is used in VTPR.
 - [`MTAlpha`](@ref): Proposed by Magoulas and Tassios, this alpha function is essentially like the regular PR alpha function only to a higher order. It is used within UMRPR.
 
