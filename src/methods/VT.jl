@@ -1,3 +1,15 @@
+"""
+    pressure(model::EoSModel, V, T, z=SA[1.])
+
+default units: `[Pa]`
+
+Returns the pressure of the model at a given volume, temperature and composition, defined as:
+
+```julia
+p =  -∂A/∂V
+```
+
+"""
 function pressure(model::EoSModel, V, T, z=SA[1.])
     return -∂f∂V(model,V,T,z)
 end
@@ -8,17 +20,7 @@ end
 
 function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
     fun(x) = eos_res(model,V,x,z)
-    return -ForwardDiff.derivative(fun,T)
-end
-
-function VT_chemical_potential(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos(model,V,T,x)
-    return ForwardDiff.gradient(fun,z)
-end
-
-function VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.])
-    fun(x) = eos_res(model,V,T,x)
-    return ForwardDiff.gradient(fun,z)
+    return -Solvers.derivative(fun,T)
 end
 
 function VT_internal_energy(model::EoSModel, V, T, z=SA[1.])
@@ -45,8 +47,8 @@ end
 
 function VT_isochoric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
     A(x) = eos(model,V,x,z)
-    ∂A∂T(x) = ForwardDiff.derivative(A,x)
-    ∂²A∂T²(x) = ForwardDiff.derivative(∂A∂T,x)
+    ∂A∂T(x) = Solvers.derivative(A,x)
+    ∂²A∂T²(x) = Solvers.derivative(∂A∂T,x)
     return -T*∂²A∂T²(T)
 end
 
@@ -59,8 +61,8 @@ function VT_isobaric_heat_capacity(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_isothermal_compressibility(model::EoSModel, V, T, z=SA[1.])
-    p0,dpdV = p∂p∂V(model,V,T,z)
-    return -1/V*dpdV^-1
+    p0,∂p∂V = p∂p∂V(model,V,T,z)
+    return -1/V/∂p∂V
 end
 
 function VT_isentropic_compressibility(model::EoSModel, V, T, z=SA[1.])
@@ -68,7 +70,7 @@ function VT_isentropic_compressibility(model::EoSModel, V, T, z=SA[1.])
     ∂²A∂V∂T = d²A[1,2]
     ∂²A∂V² = d²A[1,1]
     ∂²A∂T² = d²A[2,2]
-    return 1/V*(∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)^-1
+    return 1/V/(∂²A∂V²-∂²A∂V∂T^2/∂²A∂T²)
 end
 
 function VT_speed_of_sound(model::EoSModel, V, T, z=SA[1.])
@@ -85,7 +87,7 @@ function VT_isobaric_expansivity(model::EoSModel, V, T, z=SA[1.])
     ∂²A∂V∂T = d²A[1,2]
     ∂²A∂V² = d²A[1,1]
     ∂²A∂T² = d²A[2,2]
-    return ∂²A∂V∂T/(V*∂²A∂V²)
+    return -∂²A∂V∂T/(V*∂²A∂V²)
 end
 
 function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
@@ -95,7 +97,6 @@ function VT_joule_thomson_coefficient(model::EoSModel, V, T, z=SA[1.])
     ∂²A∂T² = d²A[2,2]
     return -(∂²A∂V∂T - ∂²A∂V²*((T*∂²A∂T² + V*∂²A∂V∂T) / (T*∂²A∂V∂T + V*∂²A∂V²)))^-1
 end
-
 
 """
     second_virial_coefficient(model::EoSModel, T, z=SA[1.])
@@ -117,7 +118,7 @@ end
 
 function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.])
     p = pressure(model,V,T,z)
-    return p*V/(R̄*T)
+    return p*V/(sum(z)*R̄*T)
 end
 
 """
@@ -143,4 +144,29 @@ function pip(model::EoSModel, V, T, z=SA[1.0])
     Π = V*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1])
 end
 
+function VT_mass_density(model::EoSModel,V,T,z=SA[1.0])
+    molar_weight = molecular_weight(model,z)
+    return molar_weight/V
+end
+
+function VT_molar_density(model::EoSModel,V,T,z=SA[1.0])
+    return sum(z)/V
+end
+
+#Vector Properties
+
+function VT_chemical_potential(model::EoSModel, V, T, z=SA[1.])
+    fun(x) = eos(model,V,T,x)
+    TT = gradient_type(V,T,z) #type stability matters a lot
+    return ForwardDiff.gradient(fun,z)::TT
+end
+
+function VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.])
+    fun(x) = eos_res(model,V,T,x)
+    TT = gradient_type(V,T,z) #type stability matters a lot
+    return ForwardDiff.gradient(fun,z)::TT
+end
+
+
 export second_virial_coefficient,pressure
+

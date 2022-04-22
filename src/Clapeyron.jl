@@ -1,8 +1,8 @@
 module Clapeyron
 using StaticArrays
 using LinearAlgebra
-
-#for the assoc solver
+using SparseArrays
+#for the assoc solver and the sparse packed VofV
 import PackedVectorsOfVectors
 const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 
@@ -11,113 +11,161 @@ using FillArrays: FillArrays
 
 using Roots: Roots
 using NLSolvers
-import Metaheuristics
+import BlackBoxOptim
+
 using DiffResults, ForwardDiff
 using Scratch 
-include("solvers/Solvers.jl")
-using .Solvers
-using .Solvers: log, sqrt
 using Unitful
 import LogExpFunctions
-include("constants.jl")
-include("models/basetools.jl") #type hierarchy
 include("database/ParamOptions.jl") 
-include("utils/vectors.jl")
-include("utils/ClapeyronParam.jl")
-
 
 include("utils/macros.jl")
 using CSV, Tables
 include("database/database.jl")
 include("utils/misc.jl")
 
-
-include("models/combiningrules.jl")
-
-include("models/eos.jl")
-include("utils/visualisation.jl")
 include("utils/split_model.jl")
 include("database/UserReader.jl")
 
-include("models/eos/ideal/BasicIdeal.jl") #before macros, because its used there
-include("models/eos/ideal/MonomerIdeal.jl")
-include("models/eos/ideal/ReidIdeal.jl")
-include("models/eos/ideal/WalkerIdeal.jl")
-include("models/eos/ideal/JobackIdeal.jl")
+include("solvers/Solvers.jl")
+using .Solvers
+using .Solvers: log, sqrt
+∂Tag = Solvers.∂Tag
 
-include("models/eos/SAFT/PCSAFT/PCSAFT.jl")
-include("models/eos/SAFT/PCSAFT/variants/sPCSAFT.jl")
-include("models/eos/SAFT/PCSAFT/variants/ePCSAFT.jl")
+include("utils/fractions.jl")
+import .Fractions
+using .Fractions: FractionVector
 
-include("models/eos/SAFT/CPA/CPA.jl")
-include("models/eos/SAFT/CPA/variants/sCPA.jl")
+#Gas constant, Boltzmann Constant
+include("base/constants.jl") 
 
-include("models/eos/SAFT/ogSAFT/ogSAFT.jl")
-include("models/eos/SAFT/SAFTVRSW/SAFTVRSW.jl")
-include("models/eos/SAFT/LJSAFT/LJSAFT.jl")
-include("models/eos/SAFT/softSAFT/softSAFT.jl")
-include("models/eos/SAFT/SAFTVRMie/SAFTVRMie.jl")
-include("models/eos/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
-include("models/eos/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
+#The Base of Clapeyron: EoSModel and eos(model,V,T,z)
+include("base/EoSModel.jl")
 
-include("models/eos/SAFT/CKSAFT/CKSAFT.jl")
-include("models/eos/SAFT/CKSAFT/variants/sCKSAFT.jl")
-include("models/eos/SAFT/BACKSAFT/BACKSAFT.jl")
+#show(model<:EoSModel)
+include("base/eosshow.jl")
 
-include("models/eos/SAFT/equations.jl")
+#EoSParam, ClapeyronParam, All Params
+include("database/ClapeyronParam.jl")
 
-include("models/eos/cubic/equations.jl")
-include("models/eos/cubic/vdW.jl")
-include("models/eos/cubic/RK/RK.jl")
-include("models/eos/cubic/PR/PR.jl")
+#Combining Rules for Single and Pair Params.
+include("database/params/combiningrules.jl")
 
-include("models/eos/Activity/Wilson/Wilson.jl")
-include("models/eos/Activity/NRTL/NRTL.jl")
-include("models/eos/Activity/NRTL/eCPANRTL.jl")
-include("models/eos/Activity/UNIQUAC/UNIQUAC.jl")
-include("models/eos/Activity/UNIFAC/UNIFAC.jl")
-include("models/eos/Activity/UNIFAC/variants/ogUNIFAC.jl")
-include("models/eos/Activity/UNIFAC/variants/PSRK.jl")
-include("models/eos/Activity/UNIFAC/variants/VTPR.jl")
+using CSV, Tables
+#getparams options
+include("database/ParamOptions.jl") 
+#getparams definition
+include("database/database.jl")
+#transform Tables.jl tables to Clapeyron csv files
+include("database/UserReader.jl")
 
-include("models/eos/Activity/COSMOSAC/utils.jl")
-include("models/eos/Activity/COSMOSAC/COSMOSAC02.jl")
-include("models/eos/Activity/COSMOSAC/COSMOSAC10.jl")
-include("models/eos/Activity/COSMOSAC/COSMOSACdsp.jl")
+#macros, used for defining models
+include("utils/macros.jl")
 
-include("models/eos/cubic/alphas/alphas.jl")
-include("models/eos/cubic/mixing/mixing.jl")
-include("models/eos/cubic/translation/translation.jl")
+#index reduction
+include("utils/index_reduction.jl")
 
-include("models/eos/cubic/RK/variants/SRK.jl")
-include("models/eos/cubic/RK/variants/PSRK.jl")
-include("models/eos/cubic/PR/variants/PR78.jl")
-include("models/eos/cubic/PR/variants/VTPR.jl")
-include("models/eos/cubic/PR/variants/UMRPR.jl")
+#splitting models, useful for methods.
+include("utils/split_model.jl")
 
-include("models/eos/Activity/equations.jl")
-
-include("models/eos/EmpiricHelmholtz/IAPWS95.jl")
-include("models/eos/EmpiricHelmholtz/PropaneRef.jl")
-include("models/eos/EmpiricHelmholtz/GERG2008/GERG2008.jl")
-
-include("models/eos/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
-
-include("models/eos/SPUNG/SPUNG.jl")
-
-include("models/eos/cached/CachedEoS.jl")
-
-include("models/eos/Electrolytes/RSP/ConstW.jl")
-include("models/eos/Electrolytes/RSP/Schreckenberg.jl")
-include("models/eos/Electrolytes/RSP/Zhuang.jl")
-include("models/eos/Electrolytes/RSP/MM1.jl")
-include("models/eos/Electrolytes/RSP/WAvgIL.jl")
-include("models/eos/Electrolytes/Ion/DH.jl")
-include("models/eos/Electrolytes/Ion/MSA.jl")
-include("models/eos/Electrolytes/Born/Born.jl")
-include("models/eos/Electrolytes/ElectrolyteSAFT/ElectrolyteSAFT.jl")
-include("models/eos/Electrolytes/ElectrolyteSAFT/eCPA.jl")
+include("models/Electrolytes/RSP/ConstW.jl")
+include("models/Electrolytes/RSP/Schreckenberg.jl")
+include("models/Electrolytes/RSP/Zhuang.jl")
+include("models/Electrolytes/RSP/MM1.jl")
+include("models/Electrolytes/RSP/WAvgIL.jl")
+include("models/Electrolytes/Ion/DH.jl")
+include("models/Electrolytes/Ion/MSA.jl")
+include("models/Electrolytes/Born/Born.jl")
+include("models/Electrolytes/ElectrolyteSAFT/ElectrolyteSAFT.jl")
+include("models/Electrolytes/ElectrolyteSAFT/eCPA.jl")
 
 include("methods/methods.jl")
 
+#=
+the dependency chain is the following:
+
+base --> database(params)  -|-> split_model --> methods -|-> models                     
+                            |-> macros ------------------|
+=#
+
+#Clapeyron EoS collection
+include("models/types.jl") #type hierarchy
+include("models/ideal/ideal.jl")
+include("models/ideal/BasicIdeal.jl")
+include("models/ideal/MonomerIdeal.jl")
+include("models/ideal/ReidIdeal.jl")
+include("models/ideal/WalkerIdeal.jl")
+include("models/ideal/JobackIdeal.jl")
+
+#Basic utility EoS
+include("models/cached/SpecialComp.jl")
+
+#softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
+include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
+include("models/EmpiricHelmholtz/IAPWS95/IAPWS95Ideal.jl")
+include("models/EmpiricHelmholtz/PropaneRef.jl")
+include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
+include("models/EmpiricHelmholtz/LJRef/LJRefIdeal.jl")
+include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
+
+include("models/cubic/equations.jl")
+include("models/cubic/vdW.jl")
+include("models/cubic/RK/RK.jl")
+include("models/cubic/PR/PR.jl")
+
+include("models/SAFT/PCSAFT/PCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/PharmaPCSAFT.jl")
+include("models/SAFT/ogSAFT/ogSAFT.jl")
+include("models/SAFT/CPA/CPA.jl")
+include("models/SAFT/CPA/variants/sCPA.jl")
+include("models/SAFT/SAFTVRSW/SAFTVRSW.jl")
+include("models/SAFT/LJSAFT/LJSAFT.jl")
+include("models/SAFT/softSAFT/softSAFT.jl")
+include("models/SAFT/softSAFT/variants/softSAFT2016.jl")
+
+include("models/SAFT/SAFTVRMie/SAFTVRMie.jl")
+include("models/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
+include("models/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
+include("models/SAFT/CKSAFT/CKSAFT.jl")
+include("models/SAFT/CKSAFT/variants/sCKSAFT.jl")
+include("models/SAFT/BACKSAFT/BACKSAFT.jl")
+include("models/SAFT/equations.jl")
+include("models/SAFT/association.jl")
+
+include("models/cached/EoSVectorParam.jl")
+
+include("models/Activity/Wilson/Wilson.jl")
+include("models/Activity/NRTL/NRTL.jl")
+include("models/Activity/UNIQUAC/UNIQUAC.jl")
+include("models/Activity/UNIFAC/utils.jl")
+include("models/Activity/UNIFAC/UNIFAC.jl")
+include("models/Activity/UNIFAC/variants/ogUNIFAC.jl")
+include("models/Activity/UNIFAC/variants/PSRK.jl")
+include("models/Activity/UNIFAC/variants/VTPR.jl")
+include("models/Activity/equations.jl")
+
+include("models/Activity/COSMOSAC/utils.jl")
+include("models/Activity/COSMOSAC/COSMOSAC02.jl")
+include("models/Activity/COSMOSAC/COSMOSAC10.jl")
+include("models/Activity/COSMOSAC/COSMOSACdsp.jl")
+
+include("models/cubic/alphas/alphas.jl")
+include("models/cubic/mixing/mixing.jl")
+include("models/cubic/translation/translation.jl")
+
+include("models/cubic/RK/variants/SRK.jl")
+include("models/cubic/RK/variants/PSRK.jl")
+include("models/cubic/PR/variants/PR78.jl")
+include("models/cubic/PR/variants/VTPR.jl")
+include("models/cubic/PR/variants/UMRPR.jl")
+include("models/cubic/PR/variants/QCPR.jl")
+include("models/cubic/PR/variants/EPPR78.jl")
+
+include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
+
+include("models/SPUNG/SPUNG.jl")
+include("models/UFTheory/UFTheory.jl")
+
+include("utils/misc.jl")
 end # module

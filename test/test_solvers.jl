@@ -1,16 +1,19 @@
 using Clapeyron, Test, NLSolvers, ForwardDiff
 
 const SOL = Clapeyron.Solvers
-
+@printline
 quadratic(x) = x*x - 4
 rosenbrock(x) = (1.0 - x[1])^2 + 100.0 * (x[2] - x[1]^2)^2
 golden_number_fixpoint(x) = one(x) + one(x)/x
 fgh_lgmx(x) = (log(x)+x,1/x +1,-1/(x^2))
+fg_2(x,y) = (x+2*y)^2
 function quadratic_fixpoint(y,x)
     y[1] = sqrt(-x[2]^2 + 5)
     y[2] = 2*sqrt(-x[1]^2 + 9)/3
     y
 end
+
+
 @testset "Solvers Module" begin
     @testset "newton,halley" begin
         x0 = 2+rand()
@@ -20,17 +23,6 @@ end
         @test SOL.ad_newton(quadratic,x0) ≈ 2.0
         @test SOL.newton(x->(quadratic(x),2*x),x0) ≈ 2.0
         @test SOL.halley(fgh_lgmx,0.5)≈ 0.567143290409784
-    end
-
-    @testset "box optimize" begin
-        #example of FMinBox in Optim.jl
-        lower = [1.25, -2.1]
-        upper = [Inf, Inf]
-        solution = [1.25, 1.5625]
-        initial_x = [2.0, 2.0]
-        res = SOL.box_optimize(rosenbrock,initial_x,lower,upper)
-        @test all(res.info.minimizer .≈ solution)
-        @test res.info.minimum ≈ 0.0625
     end
 
     @testset "fixpoint" begin
@@ -50,6 +42,7 @@ end
     @testset "roots3" begin
         #@test [@inferred(SOL.roots3(SA[-6im, -(3 + 4im), 2im-2, 1.0]))...] ≈ [3, -2im, -1]
         @test @inferred(SOL.roots3(1.0, -3.0, 3.0, -1.0)) ≈ [1, 1, 1]
+        @test @inferred(SOL.roots3([1.0, -3.0, 3.0, -1.0])) ≈ [1, 1, 1]
     end
     # A difficult MCP.
     #
@@ -66,6 +59,7 @@ end
         f_diffmcp!(v,solution)
         @test v[1] <= sqrt(eps(Float64))
     end
+
 
     @testset "Rachford Rice" begin
     #error, all Ks > 0, from CalebBell/Chemicals
@@ -127,4 +121,15 @@ end
         a4 = 4
         @test SOL.det_22(1,2,3,4) == a1*a2 - a3*a4
     end
+    @testset "AD - misc" begin
+        @test SOL.gradient2(fg_2,1,1) == [6,12] 
+        @test eltype(SOL.gradient2(fg_2,1.0,1)) == Float64 
+        @test eltype.(SOL.∂2(fg_2,1.0,1)) == (Float64, Float64, Float64)
+        ad = SOL.ADScalarObjective(rosenbrock,zeros(2))
+        @test ad.f(zeros(2)) == 1.0
+        @test ad.fg(ones(2),zeros(2))[2] == [-2.0,0.0]
+        @test ad.fgh(ones(2),ones(2,2),zeros(2))[3] == [2.0 0.0; 0.0 200.0]
+    end
+    
 end
+@printline

@@ -4,20 +4,26 @@ Original code by Thomas Moore
 included in https://github.com/ypaul21/Clapeyron.jl/pull/56
 =#
 """
-    DETPFlash(;numphases = 2;max_steps = 1e4*(numphases-1),population_size =50,time_limit = Inf)
+    DETPFlash(;numphases = 2;max_steps = 1e4*(numphases-1),population_size =20,time_limit = Inf,verbose = false, logspace = false)
 
 Method to solve non-reactive multicomponent flash problem by finding global minimum of Gibbs Free Energy via Differential Evolution.
 
 User must assume a number of phases, `numphases`. If true number of phases is smaller than numphases, model should predict either (a) identical composition in two or more phases, or (b) one phase with negligible total number of moles. If true number of phases is larger than numphases, a thermodynamically unstable solution will be predicted.
 
 The optimizer will stop at `max_steps` evaluations or at `time_limit` seconds
+
 """
 Base.@kwdef struct DETPFlash <: TPFlashMethod
     numphases::Int = 2
     max_steps::Int = 1e4*(numphases-1)
     population_size::Int = 50
     time_limit::Float64 = Inf
+    verbose::Bool = false
+    logspace::Bool = false
 end
+
+index_reduction(flash::DETPFlash,z) = flash
+
 
 #z is the original feed composition, x is a matrix with molar fractions, n is a matrix with molar amounts
 function partition!(dividers,n,x,nvals)
@@ -48,33 +54,51 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     numphases = method.numphases
     x = zeros(TYPE,numphases, numspecies)
     nvals = zeros(TYPE,numphases, numspecies)
+    logspace = method.logspace
 
-    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals)
-
-    options = Metaheuristics.Options(time_limit = method.time_limit,iterations = method.max_steps,seed = UInt(373))
-    algorithm = Metaheuristics.DE(N=method.population_size,options=options)
-
+    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,logspace)
     #Minimize Gibbs Free Energy
-#     result = bboptimize(GibbsFreeEnergy; SearchRange = (0.0, 1.0), 
-#         NumDimensions = numspecies*(numphases-1), MaxSteps=MaxSteps, PopulationSize = PopulationSize, 
-#         TraceMode = TraceMode)
     
+    #=
+    options = Metaheuristics.Options(time_limit = method.time_limit,iterations = method.max_steps,seed = UInt(373))
+    algorithm = Metaheuristics.WOA(N=method.population_size,options=options)   
     bounds = vcat(zeros(TYPE,(1,numspecies*(numphases-1))),ones(TYPE,1,numspecies*(numphases-1)))
     result = Metaheuristics.optimize(GibbsFreeEnergy,bounds,algorithm)
     
     dividers = reshape(Metaheuristics.minimizer(result), 
             (numphases - 1, numspecies))
+    best_f = Metaheuristics.minimum(result)
+    
+    =#
+    if logspace
+        bounds = (log(4*eps(TYPE)),zero(TYPE))
+    else
+        bounds = (zero(TYPE),one(TYPE))
+    end
+    result = BlackBoxOptim.bboptimize(GibbsFreeEnergy; 
+        SearchRange = bounds, 
+        NumDimensions = numspecies*(numphases-1),
+        MaxSteps=method.max_steps,
+        PopulationSize = method.population_size,
+        MaxTime = method.time_limit,
+        TraceMode = ifelse(method.verbose,:verbose,:silent))
         
+    dividers = reshape(BlackBoxOptim.best_candidate(result), 
+            (numphases - 1, numspecies))
+    best_f = BlackBoxOptim.best_fitness(result)
     #Initialize arrays xij and nvalsij, 
     #where i in 1..numphases, j in 1..numspecies
     #xij is mole fraction of j in phase i.
     #nvals is mole numbers of j in phase i.
+    if logspace
+        dividers .= exp.(dividers)
+    end
     partition!(dividers,n,x,nvals)
     
-    return (x, nvals, Metaheuristics.minimum(result))
+    return (x, nvals, best_f)
 end
 """
-    Obj_de_tp_flash(model,p,T,z,dividers,numphases)
+    Obj_de_tp_flash(model,p,T,z,dividers,numphases,logspace = false)
 
 Function to calculate Gibbs Free Energy for given partition of moles between phases.
 This is a little tricky. 
@@ -92,11 +116,14 @@ the species between the phases. Each set of (numphases - 1) numbers
 will result in a unique partition of the species into the numphases
 phases.
 """
-function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals)
+function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,logspace = false)
     _0 = zero(p+T+first(n))
     numspecies = length(n)
     TYPE  = typeof(_0) 
     bignum = TYPE(1e300)
+    if logspace
+        dividers .= exp.(dividers)
+    end
     dividers = reshape(dividers, 
         (numphases - 1, numspecies))
     #Initialize arrays xij and nvalsij, 
@@ -115,6 +142,9 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals)
             G += gibbs_free_energy(model, p, T, @view(nvals[i, :])) 
             #calling with PTn calls the internal volume solver
             #if it returns an error, is a bug in our part.
+    end
+    if logspace
+        dividers .= log.(dividers)
     end
     return ifelse(isnan(G),bignum,G/R̄/T)
 end

@@ -15,7 +15,13 @@ v[i+1] = v[i]*exp(β[i]*(p-p(v[i])))
 In the liquid root region, the iterations follow `v0 < v[i] < v[i+1] < v(p)`, allowing the calculation of the liquid root without entering the metastable region.
 """
 function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+    p,T,V0 = promote(p,T,V0)
+    return _volume_compress(model,p,T,z,V0,max_iters)
+end
+
+function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(p+T+first(z))
+    pset = one(_0)*p
     _nan = _0/_0
     logV0 = log(V0)
     lb_v = lb_volume(model,z)
@@ -23,40 +29,17 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
         _V < log(lb_v) && return zero(_V)/zero(_V)
         _V = exp(_V)
         _p,dpdV = p∂p∂V(model,_V,T,z)
-        _Δ = (p-_p)/(_V*dpdV)
+        dpdV > 0 && return _nan #inline mechanical stability. 
+        abs(_p-pset) < 3eps(pset) && return zero(_V)
+        _Δ = (pset-_p)/(_V*dpdV)
         return _Δ
     end
-
     function f_fixpoint(_V)
         Δ = logstep(_V)
-        _V + sign(Δ)*abs(Δ)^(one(Δ)+Δ)
+        vv = _V + Δ
+        return vv
     end
-
-    Δ0 = logstep(logV0)
-    Δ00 = Δ0
-    Δ1 = logstep(logV0+Δ0)
-    logV1 = logV0
-    iter = 0
-
-    #convergence hill. we do Successive substitution until we land on a
-    #good initial point for aitken acceleration
-    for i in 1:20
-        if abs(Δ00) > abs(Δ1)
-            break
-        end
-        if !isfinite(Δ1)
-            return _nan
-        end
-        Δ0 = Δ1
-        Δ1 = logstep(logV1+Δ0)
-        logV1 = logV1 + Δ1
-        iter +=1
-    end
-    if iter == 20
-        return _nan
-    end
-    res = @nan(Solvers.fixpoint(f_fixpoint,logV1,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
-
+    res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
     return exp(res)
 end
 
@@ -109,74 +92,88 @@ calculates the volume (m³) of the compound modelled by `model` at a certain pre
 
 `phase` is a Symbol that determines the initial volume root to look for:
 
-- If `phase =:liquid` it will return the volume of the phase using a liquid initial point.
+- If `phase =:unknown` (Default), it will return the physically correct volume root with the least gibbs energy. 
 
-- If `phase =:vapor` it will return the volume of the phase using a gas initial point.
+- If `phase =:liquid`, it will return the volume of the phase using a liquid initial point.
 
-The default is `phase =:unknown`. with this, both liquid and volume roots will be calculated, and 
-the phase with the least amount of energy is returned.
+- If `phase =:vapor`, it will return the volume of the phase using a gas initial point.
+
+- If `phase =:stable`, it will return the physically correct volume root with the least gibbs energy, and perform a stability test on the result.
+
+All volume calculations are checked for mechanical stability, that is: `dP/dV <= 0`.
 
 The calculation of both volume roots can be calculated in serial (`threaded=false`) or in parallel (`threaded=true`)
 
+!!! warning "Stability checks"
+
+    The stability check is disabled by default. that means that the volume obtained just follows the the relation `P = pressure(model,V,T,z)`.
+    For single component models, this is alright, but phase splits (with different compositions that the input) can and will occur, meaning that
+    the volume solution does not correspond to an existing phase.
+
+    For unknown multicomponent mixtures, it is recommended to use a phase equilibrium procedure (like `tp_flash`) to obtain a list of valid compositions, and then perform a volume calculation over those compositions.
+    You can also pass `phase=:stable` to perform the stability test inside the volume solver. Finally, you can perform the stability test after the volume solver:
+    ```julia
+    v = volume(model,p,T,z)
+    isstable(model,v,T,z)
+    ```
 """
 function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
-
-    fp(_V) = log(pressure(model,_V,T,z)/p)
-
-#Threaded version
-    phase = Symbol(phase)
-    if phase != :unknown
-        V0 = x0_volume(model,p,T,z,phase=phase)
-        #return Solvers.ad_newton(fp,Vg0)
-        return volume_compress(model,p,T,z,V0=V0)
-    end
-
-    if threaded     
-            Vg0 = x0_volume(model,p,T,z,phase=:v)
-            Vl0 = x0_volume(model,p,T,z,phase=:l)
-            _Vg = Threads.@spawn volume_compress(model,$p,$T,$z;V0=Vg0)
-            _Vl = Threads.@spawn volume_compress(model,$p,$T,$z;V0=$Vl0)
-            Vg = fetch(_Vg)     
-            Vl = fetch(_Vl)
-    else
-            Vg0 = x0_volume(model,p,T,z,phase=:v)
-            Vl0 = x0_volume(model,p,T,z,phase=:l)
-            Vg =  volume_compress(model,p,T,z,V0=Vg0)
-            Vl =  volume_compress(model,p,T,z,V0=Vl0)        
-    end
-
-# Serial version
-#=
-    Vg0 = volume_virial(model,p,T,z)
-    Vg =Solvers.ad_newton(fp,Vg0,rtol=1e-08)
-
-    Vl =  volume_compress(model,p,T,z)
-=#
-    function gibbs(V)
-        _df,f =  ∂f(model,V,T,z)
-        dV,dt = _df
-        if abs((p+dV)/p) > 0.03
-            return Inf
-        else
-            return f  +p*V
-        end
-    end
-    #this catches the supercritical phase as well
-
-    isnan(Vl) && return Vg
-    isnan(Vg) && return Vl
-    (isnan(Vl) & isnan(Vg)) && error("Failed to converge to a root")
-
-    gg = gibbs(Vg)
-    gl = gibbs(Vl)
-    #@show Vg,Vl
-    #@show gg,gl
-    return ifelse(gg<gl,Vg,Vl)
-
+    return _volume(model,p,T,z,phase,threaded)
 end
 
-function volume(model::IdealModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
-    return sum(z)*R̄*T/p
+function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
+#Threaded version
+    TYPE = typeof(p+T+first(z))
+    if phase != :unknown
+        V0 = x0_volume(model,p,T,z,phase=phase)
+        V = _volume_compress(model,p,T,z,V0)
+        #isstable(model,V,T,z,phase) the user just wants that phase
+        return V
+    end
+    if threaded     
+        Vg0 = x0_volume(model,p,T,z,phase=:v)
+        Vl0 = x0_volume(model,p,T,z,phase=:l)
+        _Vg = Threads.@spawn _volume_compress(model,$p,$T,$z,$Vg0)
+        _Vl = Threads.@spawn _volume_compress(model,$p,$T,$z,$Vl0)
+         Vg::TYPE = fetch(_Vg)     
+         Vl::TYPE = fetch(_Vl)
+    else
+        Vg0 = x0_volume(model,p,T,z,phase=:v)
+        Vl0 = x0_volume(model,p,T,z,phase=:l)
+       
+        Vg =  _volume_compress(model,p,T,z,Vg0)
+        Vl =  _volume_compress(model,p,T,z,Vl0)        
+    end
+
+    #this catches the supercritical phase as well
+    if isnan(Vl)
+        isstable(model,Vg,T,z,phase)
+        return Vg
+    elseif isnan(Vg)
+        isstable(model,Vl,T,z,phase)
+        return Vl
+    end
+
+   err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
+    if (isnan(Vl) & isnan(Vg))
+        err()
+        return zero(TYPE)/zero(TYPE)
+    end 
+    _dfg,fg =  ∂f(model,Vg,T,z)
+    dVg,_ = _dfg
+    gg = ifelse(abs((p+dVg)/p) > 0.03,zero(dVg)/one(dVg),fg + p*Vg)
+    _dfl,fl =  ∂f(model,Vl,T,z)
+    dVl,_ = _dfl
+    gl = ifelse(abs((p+dVl)/p) > 0.03,zero(dVl)/one(dVl),fl + p*Vl)
+    if gg<gl
+        isstable(model,Vg,T,z,phase)
+        return Vg
+    else
+        isstable(model,Vl,T,z,phase)
+        return Vl
+    end
 end
 
 export volume
+
+

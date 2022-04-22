@@ -1,0 +1,8 @@
+Clapeyron Database File
+QCPR unlike Parameters
+species1,species2,k,l
+helium,deuterium,0.45,0
+helium,hydrogen,0.17,-0.16
+neon,deuterium,0.18,0.0
+neon,hydrogen,0.18,0.0
+neon,helium,-0.17,0.0

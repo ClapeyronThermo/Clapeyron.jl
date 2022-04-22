@@ -1,0 +1,158 @@
+struct CPAParam <: EoSParam
+    a::PairParam{Float64}
+    b::PairParam{Float64}
+    c1::SingleParam{Float64}
+    Tc::SingleParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
+    Mw::SingleParam{Float64}
+end
+
+abstract type CPAModel <: EoSModel end
+
+struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
+    components::Array{String,1}
+    icomponents::UnitRange{Int}
+    cubicmodel::c
+    params::CPAParam
+    sites::SiteParam
+    idealmodel::T
+    assoc_options::AssocOptions
+    references::Array{String,1}
+end
+
+@registermodel CPA
+
+"""
+    CPAModel <: EoSModel
+
+    function CPA(components; 
+        idealmodel=BasicIdeal, 
+        cubicmodel=RK, 
+        alpha=sCPAAlpha, 
+        mixing=vdW1fRule,
+        activity=nothing,
+        translation=NoTranslation, 
+        userlocations=String[], 
+        ideal_userlocations=String[], 
+        alpha_userlocations=String[],
+        activity_userlocations=String[],
+        mixing_userlocations=String[],
+        translation_userlocations=String[],
+        verbose=false,
+        assoc_options = AssocOptions())
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `a`: Single Parameter (`Float64`) - Atraction parameter
+- `b`: Single Parameter (`Float64`) - Covolume
+- `c1`: Single Parameter (`Float64`) - α-function constant Parameter
+- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
+
+## Model Parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter
+- `b`: Pair Parameter (`Float64`) - Mixed Covolume
+- `c1`: Single Parameter (`Float64`) - α-function constant Parameter
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
+
+## Input models
+- `idealmodel`: Ideal Model
+- `cubicmodel`: Cubic Model
+
+## Description
+
+Cubic Plus Association (CPA) EoS
+## References
+1. Kontogeorgis, G. M., Michelsen, M. L., Folas, G. K., Derawi, S., von Solms, N., & Stenby, E. H. (2006). Ten years with the CPA (cubic-plus-association) equation of state. Part 1. Pure compounds and self-associating systems. Industrial & Engineering Chemistry Research, 45(14), 4855–4868. doi:10.1021/ie051305v
+"""
+CPA
+
+export CPA
+function CPA(components; 
+    idealmodel=BasicIdeal, 
+    cubicmodel=RK, 
+    alpha=CPAAlpha, 
+    mixing=vdW1fRule,
+    activity=nothing,
+    translation=NoTranslation, 
+    userlocations=String[], 
+    ideal_userlocations=String[], 
+    alpha_userlocations=String[],
+    activity_userlocations=String[],
+    mixing_userlocations=String[],
+    translation_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+    
+    icomponents = 1:length(components)
+
+    params,sites = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    Mw  = params["Mw"]
+    k  = params["k"]
+    Tc = params["Tc"]
+    c1 = params["c1"]
+    params["a"].values .*= 1E-1
+    params["b"].values .*= 1E-3
+    a  = epsilon_LorentzBerthelot(params["a"], k)
+    b  = sigma_LorentzBerthelot(params["b"])
+    epsilon_assoc = params["epsilon_assoc"]
+    bondvol = params["bondvol"]
+    packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
+
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
+    init_translation = init_model(translation,components,translation_userlocations,verbose)
+
+    if occursin("RK",string(cubicmodel))
+        cubicparams = RKParam(a, b, params["Tc"],params["pc"],Mw)
+    elseif occursin("PR",string(cubicmodel))
+        cubicparams = PRParam(a, b, params["Tc"],params["pc"],Mw)
+    end
+
+    init_cubicmodel = cubicmodel(components,icomponents,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
+
+    references = ["10.1021/ie051305v"]
+
+    model = CPA(components, icomponents, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
+    return model
+end
+
+lb_volume(model::CPAModel,z = SA[1.0]) = lb_volume(model.cubicmodel,z)
+T_scale(model::CPAModel,z=SA[1.0]) = T_scale(model.cubicmodel,z)
+p_scale(model::CPAModel,z=SA[1.0]) = p_scale(model.cubicmodel,z)
+
+function x0_crit_pure(model::CPAModel)
+    lb_v = lb_volume(model)
+    if isempty(model.params.epsilon_assoc.values[1,1])
+        [2.0, log10(lb_v/0.3)]
+    else
+        [2.75, log10(lb_v/0.3)]
+    end
+end
+
+function a_res(model::CPAModel, V, T, z)
+    n = sum(z)
+    ā,b̄,c̄ = cubic_ab(model.cubicmodel,V,T,z,n)
+    return a_res(model.cubicmodel,V,T,z) + a_assoc(model,V+c̄*n,T,z)
+end
+
+ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
+
+function Δ(model::CPAModel, V, T, z, i, j, a, b)
+    ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b] * 1e2/R̄
+    βijab = model.params.bondvol.values[i,j][a,b] * 1e-3
+    Σz = sum(z)
+    b = model.params.b.values
+    b̄ = dot(z,b,z)
+    η = b̄/(4*V*Σz)
+    g = (1-η/2)/(1-η)^3
+    bij = (b[i,i]+b[j,j])/2
+    return g*(exp(ϵ_associjab/T)-1)*βijab*bij/N_A
+end

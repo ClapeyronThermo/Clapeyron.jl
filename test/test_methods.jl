@@ -1,6 +1,7 @@
 using Clapeyron, Test, Unitful
 
 @testset "SAFT methods, single components" begin
+    @printline
     system = PCSAFT(["ethanol"])
     p = 1e5
     T = 298.15
@@ -22,7 +23,7 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.isothermal_compressibility(system, p, T) ≈ 1.1521981407243432e-9 rtol = 1E-6
         @test Clapeyron.isentropic_compressibility(system, p, T) ≈ 8.387789464951438e-10 rtol = 1E-6
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1236.4846683094133 rtol = 1E-6 #requires that the model has Mr
-        @test Clapeyron.isobaric_expansivity(system, p, T) ≈ -0.0010874255138433413 rtol = 1E-6
+        @test Clapeyron.isobaric_expansivity(system, p, T) ≈ 0.0010874255138433413 rtol = 1E-6
         @test Clapeyron.joule_thomson_coefficient(system, p, T) ≈ -6.007581864883784e-7 rtol = 1E-6
         @test Clapeyron.second_virial_coefficient(system, T) ≈ -0.004919678119638886  rtol = 1E-6 #exact value calculated by using BigFloat
         @test Clapeyron.inversion_temperature(system, 1.1e8) ≈ 824.4137805298458 rtol = 1E-6
@@ -34,8 +35,22 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.acentric_factor(system) ≈ 0.5730309964718605 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 533.1324329774004 rtol = 1E-6 
     end
+    @printline
 end
 
+@testset "pharmaPCSAFT, single components" begin
+    system = pharmaPCSAFT(["water08"])
+    v1 = Clapeyron.saturation_pressure(system, 280.15)[2]
+    v2 = Clapeyron.saturation_pressure(system, 278.15)[2]
+    v3 = Clapeyron.saturation_pressure(system, 275.15)[2]
+
+    @test v1 ≈ 1.8022929328333385e-5  rtol = 1E-6 
+    @test v2 ≈ 1.8022662044726256e-5 rtol = 1E-6 
+    @test v3 ≈ 1.802442451376152e-5 rtol = 1E-6 
+    #density maxima of water
+    @test v2 < v1
+    @test v2 < v3
+end
 
 @testset "LJSAFT methods, single components" begin
     system = LJSAFT(["ethanol"])
@@ -50,12 +65,28 @@ end
     end
 end
 
+@testset "softSAFT methods, single components" begin
+    system = softSAFT(["ethanol"])
+    p = 1e5
+    T = 273.15 + 78.24
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T,phase=:v) ≈ 0.027368884099868623 rtol = 1e-6
+        #volume(SAFTgammaMie(["ethanol"]),p,T,phase =:l)  =6.120507339375205e-5
+        @test Clapeyron.volume(system, p, T,phase=:l) ≈ 6.245903786961202e-5 rtol = 1e-6
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 101341.9709136089 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 540.1347889779657 rtol = 1E-6 
+    end
+end
+
 @testset "BACKSAFT methods, single components" begin
     system = BACKSAFT(["decane"])
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 0.00015924416586849443 rtol = 1e-6 
+        #0.0001950647173402879 with SAFTgammaMie 
+        @test Clapeyron.volume(system, p, T) ≈ 0.00019299766073894634 rtol = 1e-6 
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 167.8313793818096 rtol = 1E-6
@@ -113,6 +144,7 @@ end
 
 
 @testset "SAFT methods, multi-components" begin
+    @printline
     system = PCSAFT(["methanol","cyclohexane"])
     p = 1e5
     T = 313.15
@@ -131,20 +163,38 @@ end
         @test Clapeyron.excess(system, p, T, z, Clapeyron.gibbs_free_energy) ≈ 1626.6212908893858 rtol = 1E-6
     end
     @testset "Equilibrium properties" begin
+        #Those are the highest memory-intensive routines. i suspect that this is causing the 
+        #failures on windows 1.6. testing if adding GC pauses helps the problem
+        GC.gc()
+        @test Clapeyron.gibbs_solvation(system,T) ≈ -13131.087644740426 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.UCEP_mix(system)[1] ≈ 319.36877456397684 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.bubble_pressure(system,T,z)[1] ≈ 54532.249600937736 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.bubble_temperature(system,p2,z)[1] ≈ 435.80890506865 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.dew_pressure(system,T2,z)[1] ≈ 1.6555486543884084e6 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.dew_temperature(system,p2,z)[1] ≈ 453.0056727580934 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.LLE_pressure(system,T,z2)[1] ≈ 737971.7522006684 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.LLE_temperature(system,p,z2)[1] ≈ 312.9523684945214 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.azeotrope_pressure(system,T2)[1] ≈ 2.4435462800998255e6 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.azeotrope_temperature(system,p)[1] ≈ 328.2431049077264 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.UCST_mix(system,T2)[1] ≈ 1.0211532467788119e9 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.VLLE_pressure(system, T)[1] ≈ 54504.079665621306 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.VLLE_temperature(system, p)[1] ≈ 328.2478837563423 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.crit_mix(system,z)[1] ≈ 518.0004062881115 rtol = 1E-6
     end
+    @printline
 end
 
 @testset "Cubic methods, single components" begin
@@ -207,6 +257,7 @@ end
         @test Clapeyron.mixing(system, p, T, z_bulk, Clapeyron.enthalpy) ≈ 519.0920708672975 rtol = 1e-6 
     end
     @testset "VLE properties" begin
+        @test Clapeyron.gibbs_solvation(system, T) ≈ -24707.145697543132 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.647133460465 rtol = 1E-6
     end
 end
@@ -239,7 +290,18 @@ end
         system = GERG2008(["carbon dioxide","water"])
         T = 298.15
         z = [0.8,0.2]
-        @test Clapeyron.bubble_pressure(system, T,z)[1] ≈ 5.853909891112583e6 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system, T,z)[1] ≈ 5.853909891112583e6 rtol = 1E-5
+    end
+end
+
+@testset "EOS-LNG methods, multi-components" begin
+    @testset "Bulk properties" begin
+        system = EOS_LNG(["methane","isobutane"])
+        z = [0.6,0.4]
+        V = 1/17241.868
+        @test Clapeyron.VT_speed_of_sound(system,1e16,210.0,z) ≈ 252.48363281981858
+        @test Clapeyron.volume(system,5e6,160.0,z) ≈ 5.9049701669337714e-5
+        @test Clapeyron.pressure(system,0.01,350,z) ≈ 287244.4789047023
     end
 end
 
@@ -259,7 +321,10 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.9293390134403 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 647.096 rtol = 1E-5 
+        tc,pc,vc =  Clapeyron.crit_pure(system)
+        @test tc ≈ 647.096 rtol = 1E-5 
+        v2 =  volume(system,pc,tc)
+        @test pressure(system,v2,tc) ≈ pc rtol = 1E-6
     end
 end
 
@@ -275,6 +340,20 @@ end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 97424.11102152328 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 369.8900089509652 rtol = 1E-6 
+    end
+end
+
+@testset "LJRef methods" begin
+    system = LJRef(["methane"])
+    T = 1.051*Clapeyron.T_scale(system)
+    p = 0.035*Clapeyron.p_scale(system)
+    v = Clapeyron._v_scale(system)/0.673
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T) ≈ v rtol = 1e-5 
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ p rtol = 1E-1
+        @test Clapeyron.crit_pure(system)[1]/Clapeyron.T_scale(system) ≈ 1.32 rtol = 1E-4 
     end
 end
 
@@ -310,17 +389,81 @@ end
     end
 end
 
+@testset "association" begin
+    no_comb = Clapeyron.AssocOptions()
+    no_comb_dense = Clapeyron.AssocOptions(combining = :dense_nocombining)
+    elliott = Clapeyron.AssocOptions(combining = :elliott)
+    
+    model_no_comb = PCSAFT(["methanol","ethanol"],assoc_options = no_comb)
+    model_no_comb_dense = PCSAFT(["methanol","ethanol"],assoc_options = no_comb_dense)
+    model_elliott_comb = PCSAFT(["methanol","ethanol"],assoc_options = elliott)
+
+    V = 5e-5
+    T = 298.15
+    z = [0.5,0.5]
+    @test Clapeyron.nonzero_extrema(0:3) == (1, 3)
+    @test Clapeyron.a_assoc(model_no_comb,V,T,z) ≈ -4.667036481159167  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_no_comb,V,T,z) ≈ Clapeyron.a_assoc(model_no_comb_dense,V,T,z)  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_elliott_comb,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
+end
+
 @testset "Tp flash algorithms" begin
-    system = PCSAFT(["water","cyclohexane","carbon dioxide"])
+    system = PCSAFT(["water","cyclohexane","propane"])
     T = 298.15
     p = 1e5
     z = [0.333, 0.333, 0.334]
 
     @testset "RR Algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T,z, RRTPFlash())[3] ≈ -6.520178250317485 rtol = 1e-6 
+        @test Clapeyron.tp_flash(system, p, T,z, RRTPFlash())[3] ≈ -6.539976318817461 rtol = 1e-6 
     end
 
     @testset "DE Algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3,population_size=20))[3] ≈ -6.73130492921276 rtol = 1e-6 
+        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3))[3] ≈ -6.759674475174073 rtol = 1e-6 
     end
+end
+
+@testset "Unitful Methods" begin
+    model11 = GERG2008(["methane"])
+    model10 = GERG2008(["butane"])
+    #example 3.11 abott van ness, 7th ed.
+    #pressure. 189 atm with CS compressibility relation
+    p11 = 185.95465583962599u"atm"
+    v11 = 2u"ft^3"
+    T11 = 122u"°F"
+    n11 = 453.59237u"mol" #1 lb-mol
+    z11 = 0.8755772456569365 #t0.89 from CS compressibility relation
+    @test Clapeyron.pressure(model11,v11,T11,n11,output = u"atm") ≈ p11
+    @test Clapeyron.pressure(model11,v11,T11,[n11],output = u"atm") ≈ p11
+    @test Clapeyron.compressibility_factor(model11,v11,T11,n11) ≈ z11 rtol = 1E-6
+    @test Clapeyron.compressibility_factor(model11,p11,T11,n11) ≈ z11 rtol = 1E-6
+
+    #example 3.10 abott van ness, 7th ed.
+    #volume, 1480 cm3, with CS virial correlation
+    p10 = 25u"bar"
+    T10 = 510u"K"
+    Tc10 = 425.75874890467253u"K"
+    pc10 = 3.830319495176967e6u"Pa"
+    R = (Clapeyron.R̄)u"J/(K*mol)"
+    v10 = 1478.2681326033257u"cm^3"
+    @test volume(model10,p10,T10,output=u"cm^3") ≈ v10 rtol = 1E-6
+    #generalized pitzer CS virial gives -0.220 
+    @test Clapeyron.second_virial_coefficient(model10,T10)*pc10/(R*Tc10) |> Unitful.ustrip ≈ -0.22346581496303466 rtol = 1E-6
+    
+    #example 3.13, abbott and van ness, 7th ed.
+    model13 = PR(["ammonia"],translation = RackettTranslation)
+    v13 = 26.545208120801895u"cm^3"
+    T13 = 310u"K"
+    #experimental value is 29.14 cm3/mol. PR default is ≈ 32, Racckett overcorrects
+    @test saturation_pressure(model13,T13,output = (u"atm",u"cm^3",u"cm^3"))[2] ≈ v13 rtol = 1E-6
+    @test Clapeyron.pip(model13,v13,T13) > 1 #check if is a liquid phase
+
+    #problem 3.1 abbott and van ness, 7th ed.
+    model31 = IAPWS95()
+    v31 = volume(model31,1u"bar",50u"°C")
+    #experimental value is 44.18e-6. close enough.
+
+    @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1E-6
+    @test isothermal_compressibility(model31,1u"bar",50u"°C",output = u"bar^-1") ≈ 44.17306906730427e-6u"bar^-1" rtol = 1E-6
+    #enthalpy of vaporization of water at 100 °C
+    @test enthalpy_vap(model31,100u"°C",output = u"kJ") ≈ 40.64971775824767u"kJ" rtol = 1E-6
 end

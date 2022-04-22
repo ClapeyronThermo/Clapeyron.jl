@@ -3,7 +3,7 @@ using Clapeyron, Test
 @testset "SAFT models" begin
     T = 298.15
     V = 1e-4
-
+    @printline
     @testset "ogSAFT" begin
         system = ogSAFT(["water","ethylene glycol"])
         z = [0.5, 0.5]
@@ -71,6 +71,12 @@ using Clapeyron, Test
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -2.0461376618069034 rtol = 1e-6
     end
 
+    @testset "softSAFT2016" begin
+        system = softSAFT2016(["hexane","1-propanol"])
+        z = [0.5,0.5]
+        @test Clapeyron.a_LJ(system, V, T, z) ≈ -3.986690073534575 rtol = 1e-6
+    end
+
     @testset "PCSAFT" begin
         system = PCSAFT(["butane", "ethanol"])
         z = [0.5, 0.5]
@@ -112,9 +118,11 @@ using Clapeyron, Test
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.07550931466871749 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V_γMie, T, z) ≈ -0.8205840455850311 rtol = 1e-6
     end
+    @printline
 end
 
 @testset "Cubic models" begin
+    @printline
     T = 333.15
     V = 1e-3
     p = 1e5
@@ -177,7 +185,7 @@ end
 
         @testset "RK w/ WSRule" begin
             system = RK(["methanol","benzene"];mixing = WSRule, activity=Wilson)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -0.572912690389026 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5729126903890258 rtol = 1e-6
         end
     end
 
@@ -204,6 +212,16 @@ end
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.1447318247939071 rtol = 1e-6
         end
 
+        @testset "QCPR" begin
+            system = QCPR(["neon","helium"])
+            @test Clapeyron.a_res(system, V, 25, z) ≈ -0.04727878068343511 rtol = 1e-6
+        end
+
+        @testset "EPPR78" begin
+           system = EPPR78(["benzene","isooctane"])
+           @test Clapeyron.a_res(system, V, T, z) ≈ -1.138852387092216 rtol = 1e-6
+        end
+        
         @testset "PR w/ BMAlpha" begin
             system = PR(["ethane","undecane"];alpha = BMAlpha)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.244507550417118 rtol = 1e-6
@@ -254,9 +272,11 @@ end
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.669085674824878 rtol = 1e-6
         end
     end
+    @printline
 end
 
 @testset "Activity models" begin
+    @printline
     T = 333.15
     p = 1e5
     z = [0.5,0.5]
@@ -279,6 +299,10 @@ end
     @testset "UNIFAC" begin
         system = UNIFAC(["methanol","benzene"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5322232657797463 rtol = 1e-6
+        #when fast UNIFAC works, it should pass this test.
+        # system2 = UNIFAC(["methanol","benzene"])
+        # prop2 = ()
+        # @test Clapeyron.activity_coefficient(system2,1e-4,423.15,[0.,1.])  ≈ [2.0807335111878937,1.0] rtol = 1e-6
     end
 
     @testset "ogUNIFAC" begin
@@ -289,6 +313,7 @@ end
     @testset "COSMOSAC02" begin
         system = COSMOSAC02(["water","ethanol"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.3871817962565904 rtol = 1e-6
+        @test Clapeyron.excess_gibbs_free_energy(system,p,T,z) ≈ 610.5706657776052 rtol = 1e-6
     end
 
     @testset "COSMOSAC10" begin
@@ -300,16 +325,17 @@ end
         system = COSMOSACdsp(["water","ethanol"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.4398951117248127 rtol = 1e-6
     end
+    @printline
 end
 
 @testset "Ideal models" begin
     T = 298.15
     V = 1e-4
     z = [1.]
-
+    @printline
     @testset "Joback" begin
         system = JobackIdeal(["hexane"])
-        @test Clapeyron.C_p(system,298.15) ≈ 143.22076150138616 rtol = 1e-6
+        @test Clapeyron.VT_isobaric_heat_capacity(system,V,298.15) ≈ 143.22076150138616 rtol = 1e-6
         @test Clapeyron.T_b(system) ≈ 336.88 rtol = 1e-6
         @test Clapeyron.crit_pure(system)[1] ≈ 500.2728274871347 rtol = 1e-6
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 9.210841420941021 rtol = 1e-6
@@ -327,17 +353,20 @@ end
 
     @testset "Monomer" begin
         system = MonomerIdeal(["hexane"])
-        @test Clapeyron.a_ideal(system,V,T,z) ≈ -20.368750666236373 rtol = 1e-6
+        @test Clapeyron.a_ideal(system,V,T,z) ≈ -10.00711774776317 rtol = 1e-6
     end
+    @printline
 end
 
 @testset "Multi-parameter models" begin
     T = 298.15
     V = 1e-4
-
+    @printline
     @testset "IAPWS95" begin
         z = [1.]
         system = IAPWS95()
+        system_ideal = Clapeyron.idealmodel(system)
+        @test Clapeyron.a_ideal(system_ideal, V, T, z) ≈ 7.932118505056652 rtol = 1e-6
         @test Clapeyron.a_ideal(system, V, T, z) ≈ 7.932118505056652 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T, z) ≈ -2.1152657050144347e14 rtol = 1e-6
     end
@@ -359,6 +388,26 @@ end
         @test Clapeyron.a_ideal(system, V, T, z) ≈ 3.1135835641766594 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T, z) ≈ -1.1706377677539772 rtol = 1e-6
     end
+
+    @testset "EOS-LNG" begin
+        #LNG paper, table 16
+        T = 150.0
+        V = 1/(18002.169)
+        z   = [0.6,0.4] 
+        system = EOS_LNG(["methane","butane"])
+        @test Clapeyron.eos(system,V,T,z) ≈ -6020.0044 rtol = 5e-6
+    end
+
+    @testset "LJRef" begin
+        system = LJRef(["methane"])
+        T = 1.051*Clapeyron.T_scale(system)
+        p = 0.035*Clapeyron.p_scale(system)
+        V = Clapeyron._v_scale(system)/0.673
+        @test Clapeyron.a_ideal(system, V, T) ≈ 9.282222884866785 rtol = 1e-6
+        @test Clapeyron.a_res(system, V, T) ≈ -2.244730279521925 rtol = 1e-6
+    end
+
+    @printline
 end
 
 @testset "SPUNG models" begin
@@ -376,11 +425,29 @@ end
         @test Clapeyron.shape_factors(system, V, T, z)[1] ≈ 1.3499576779924594 rtol = 1e-6
     end
 end
-
 @testset "lattice models" begin
-    T = 298.15
-    V = 1e-4
-    z = [1.]
-    system = Clapeyron.SanchezLacombe(["carbon dioxide"])
-    @test Clapeyron.a_res(system, V, T, z) ≈ -0.9511044462267396 rtol = 1e-6
+
+    @testset "single component" begin
+        T = 298.15
+        V = 1e-4
+        z = [1.]
+        system = Clapeyron.SanchezLacombe(["carbon dioxide"])
+        @test Clapeyron.a_res(system, V, T, z) ≈ -0.9511044462267396 rtol = 1e-6
+    end
+
+    @testset "Sanchez-Lacombe,Kij rule" begin
+        T = 298.15
+        V = 1e-4
+        z = [0.5,0.5]
+        system = SanchezLacombe(["carbon dioxide","benzoic acid"],mixing = SLKRule)
+        @test Clapeyron.a_res(system, V, T, z) ≈ -6.494291842858994 rtol = 1e-6
+    end
+
+    @testset "Sanchez-Lacombe K0-K1-L rule" begin
+        T = 298.15
+        V = 1e-4
+        z = [0.5,0.5]
+        system = SanchezLacombe(["carbon dioxide","benzoic acid"],mixing = SLk0k1lMixingRule)
+        @test Clapeyron.a_res(system, V, T, z) ≈ -5.579621796375229 rtol = 1e-6
+    end
 end

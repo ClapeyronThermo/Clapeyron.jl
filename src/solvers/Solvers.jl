@@ -35,6 +35,11 @@ using StaticArrays
     end
 
     function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
+        tup = (poly[1],poly[2],poly[3],poly[4])
+        return solve_cubic_eq(tup)
+    end
+    
+    function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
         # copied from PolynomialRoots.jl, adapted to be AD friendly
         # Cubic equation solver for complex polynomial (degree=3)
         # http://en.wikipedia.org/wiki/Cubic_function   Lagrange's method
@@ -80,7 +85,7 @@ using StaticArrays
     end
 
     function roots3(a,b,c,d) 
-        x = SVector(a,b,c,d)
+        x = (a,b,c,d)
         return roots3(x)
     end
 
@@ -90,19 +95,9 @@ using StaticArrays
         
         Returns the scalar or vector x that solves the system of equations or is the minimizer of an optimization procedure.
     """
+    x_sol(res) = NLSolvers.solution(res)
 
-    function x_sol(res::NLSolvers.ConvergenceInfo{<:NLSolvers.LineSearch, <:Any, <:NLSolvers.NEqOptions})
-        res.info.solution
-    end
-
-    function x_sol(res::NLSolvers.ConvergenceInfo{<:NLSolvers.TrustRegion, <:Any, <:NLSolvers.NEqOptions})
-        return res.info.zero
-    end
-
-    function x_sol(res::NLSolvers.ConvergenceInfo{<:Any, <:Any, <:NLSolvers.OptimizationOptions})
-        return res.info.minimizer
-    end
-
+    include("ad.jl")
     include("nanmath.jl")
     include("nlsolve.jl")
     include("fixpoint/fixpoint.jl")

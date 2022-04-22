@@ -35,7 +35,7 @@ function convergence(xold,xi,atol,rtol)
     not_finite = false
     for xii in xi
         if !isfinite(xii)
-            not_finite = false
+            not_finite = true
             break
         end
     end

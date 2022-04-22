@@ -1,5 +1,7 @@
 using Clapeyron, Test
 
+@printline
+
 struct TestModel <: EoSModel end
 
 function Clapeyron.eos(model::TestModel,V,T,z)
@@ -75,7 +77,6 @@ end
         @test all(ddp[2] .≈ dp)
         @test all(ddp[1] .≈ d2p)
     end
-
 end
 
 

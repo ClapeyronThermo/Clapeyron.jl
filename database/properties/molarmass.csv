@@ -25,6 +25,7 @@ tetracosane,77,338.65
 hexatriacontane,2086,506.97
 isobutane,4,58.12
 isopentane,8,72.15
+isooctane,,114.23
 neopentane,9,72.15
 "2,2-dimethylbutane",14,86.18
 "2,3-dimethylbutane",15,86.18
@@ -545,8 +546,18 @@ ethylamine,,45.09
 1-propylamine,,59.11
 2-propylamine,,59.11
 aniline,,93.13
-acetic acid,,60.053
+formic acid,64186,46.02538 
+acetic acid,64197,60.05
+propionic acid,79094,74.08
+n-Butyric acid,107926,88.11
+isobutyric acid,79312,88.11
+benzoic acid,65850,122.12
 neon,,20.1797
+<<<<<<< HEAD
+sulfur hexafluoride,,146.055
+nitrous oxide,,44.013
+ammonia,,17.031 
+=======
 H3O+,,19
 Li+,,6.941
 Na+,,22.989769
@@ -572,3 +583,4 @@ sulfur hexafluoride,,146.055
 sulfur hexafluoride,,146.055
 [C2MIM],,111.1649
 [BF4],,86.81
+>>>>>>> ElectrolyteModels

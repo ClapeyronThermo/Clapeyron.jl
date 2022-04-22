@@ -11,19 +11,28 @@ format = Documenter.HTML(
     pages = [
         "Home" => "index.md",
         "Background" => "theory/background.md",
-        "User guide" => Any["Basic Usage"=>"user_guide/basic_usage.md",
+        "Basic Usage" => "user_guide/basic_usage.md",
+        "Customization" => Any[
                             "Custom Databases"=>"user_guide/custom_dtb.md",
                             "Custom Methods"=>"user_guide/custom_methods.md",
                             "Custom Models"=>"user_guide/custom_model.md"],
+        "Notebook Examples" => "notebook_examples.md",
         "To-do list" => "to-do_list.md",
+        
+        "Available EoS" => [
+        "Ideal Models" => "eos/ideal.md"
+        "Cubic Models" => "eos/cubic.md"
+        "Activity Models" => "eos/activity.md"
+        "SAFT and CPA Models"  => "eos/saft.md"
+        "Empiric Helmholtz Models" => "eos/empiric.md"
+        "Other Models" => "eos/misc.md"
+        ],
+        
         "API" => Any[
         "Parameters" => "api/parameters.md",
         "Macros" => "api/macros.md",
         "Properties" => "api/properties.md",
-        "Automatic Differenciation" => "api/ad.md",
-
         ]
-        
         ])
 
         deploydocs(;
