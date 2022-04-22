@@ -65,9 +65,8 @@ function eCPA(solvents,salts;
     init_Ionicmodel = ionicmodel(solvents,salts;RSPmodel=RSPmodel,SAFTlocations=["SAFT/"*string(puremodel)])
     if bornmodel !== nothing
         init_bornmodel = bornmodel(solvents,salts;RSPmodel=RSPmodel,SAFTlocations=["SAFT/"*string(puremodel)])
-    else
-        init_bornmodel = nothing
     end
+    
     references = String[]
     model = eCPA(components,solvents,salts,ions,icomponents,isolvents,iions,stoichiometric_coeff,init_idealmodel,init_SAFTmodel,init_Ionicmodel,init_bornmodel,1e-12,references)
     return model
@@ -76,9 +75,5 @@ end
 function a_res(model::eCPAModel, V, T, z)
     n = sum(z)
     ā,b̄,c̄ = cubic_ab(model.puremodel.cubicmodel,V,T,z,n)
-    if model.bornmodel !== nothing
-        return a_res(model.puremodel,V,T,z)+a_ion(model.ionicmodel,V+c̄*n,T,z)+a_born(model.bornmodel,V+c̄*n,T,z)
-    else
-        return a_res(model.puremodel,V+c̄*n,T,z)+a_ion(model.ionicmodel,V+c̄*n,T,z)
-    end
+    return a_res(model.puremodel,V,T,z)+a_ion(model,V+c̄*n,T,z,model.ionicmodel)+a_born(model.bornmodel,V+c̄*n,T,z)
 end

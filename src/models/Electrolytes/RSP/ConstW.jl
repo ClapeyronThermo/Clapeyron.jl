@@ -34,7 +34,7 @@ function ConstW(solvents,salts; userlocations::Vector{String}=String[], verbose:
     return model
 end
 
-function RSP(model::ConstWModel,V,T,z)
+function RSP(electromodel::ElectrolyteModel,V,T,z,model::ConstWModel)
     return 78.4
 end
 

@@ -41,7 +41,7 @@ function WAvgIL(solvents,salts; userlocations::Vector{String}=String[],assoc_use
     return model
 end
 
-function RSP(model::WAvgILModel, V, T, z)
+function RSP(electromodel::ElectrolyteModel, V, T, z,model::WAvgILModel)
     z_salt = ∑(z[model.iions])./length(model.iions)
     z = append!(z[model.isolvents],z_salt)
     x = z./∑(z)

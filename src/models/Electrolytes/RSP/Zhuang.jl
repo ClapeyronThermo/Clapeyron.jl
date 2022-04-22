@@ -49,7 +49,7 @@ function RSP(model::ZhuangModel, V, T, z)
 
     B = 3*y*(2y^2+3y+9)/(y^2+6y+9)
 
-    poly = [2,-(1+B),-1]
+    poly = (2,-(1+B),-1)
 
     return (-poly[2]+sqrt(poly[2]^2-4*poly[1]*poly[3]))/(2*poly[1])
 end

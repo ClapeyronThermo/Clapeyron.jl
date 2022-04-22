@@ -40,7 +40,7 @@ function Schreckenberg(solvents,salts; userlocations::Vector{String}=String[], v
     return model
 end
 
-function RSP(model::SchreckenbergModel,V,T,z)
+function RSP(electromodel::ElectrolyteModel,V,T,z,model::SchreckenbergModel)
         d_T = model.params.d_T.values
         d_V = model.params.d_V.values
 

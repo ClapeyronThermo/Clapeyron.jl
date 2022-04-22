@@ -46,6 +46,8 @@ function Born(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocat
     return model
 end
 
+a_born(::Nothing,V,T,z) = 0.0
+
 function a_born(model::BornModel, V, T, z)
     σ_born = model.params.sigma_born.values
     Z = model.params.charge.values

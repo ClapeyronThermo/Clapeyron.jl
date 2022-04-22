@@ -38,7 +38,7 @@ function MSA(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocati
 
     packagedparams = MSAParam(sigma,charge)
 
-    references = [""]
+    references = String[]
 
     init_RSPmodel = RSPmodel(solvents,salts)
 
@@ -46,10 +46,10 @@ function MSA(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocati
     return model
 end
 
-function a_ion(model::MSAModel, V, T, z)
+function a_ion(model::ElectrolyteModel, V, T, z,ion::MSAModel)
     σ = model.params.sigma.values
     Z = model.params.charge.values
-    ϵ_r = RSP(model.RSPmodel,V,T,z)
+    ϵ_r = RSP(model,V,T,z,model.RSPmodel)
 
     x = z ./ sum(z)
     ρ = N_A*sum(z)/V

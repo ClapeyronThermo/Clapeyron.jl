@@ -8,7 +8,7 @@ struct MM1Param <: EoSParam
     polarizability::SingleParam{Float64}
 end
 
-struct MM1{A<:SAFTModel} <: MM1Model
+struct MM1 <: MM1Model
     components::Array{String,1}
     solvents::Array{String,1}
     ions::Array{String,1}
@@ -16,14 +16,13 @@ struct MM1{A<:SAFTModel} <: MM1Model
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
     params::MM1Param
-    assocmodel::A
     absolutetolerance::Float64
     references::Array{String,1}
 end
 
 @registermodel MM1
 export MM1
-function MM1(solvents,salts; assocmodel=sCPA, userlocations::Vector{String}=String[],assoc_userlocations::Vector{String}=String[], verbose::Bool=false)
+function MM1(solvents,salts; userlocations::Vector{String}=String[],assoc_userlocations::Vector{String}=String[], verbose::Bool=false)
     ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
 
     ions = ion_groups.flattenedgroups
@@ -45,25 +44,23 @@ function MM1(solvents,salts; assocmodel=sCPA, userlocations::Vector{String}=Stri
     polarizability = params["polarizability"]
     packagedparams = MM1Param(gamma,theta,coordz,mu,polarizability)
 
-    init_assocmodel = assocmodel(components;userlocations=assoc_userlocations)
-
-    references = [""]
+    references = String[]
     
-    model = MM1(components, solvents, ions, icomponents, isolvents, iions, packagedparams, init_assocmodel, 1e-12,references)
+    model = MM1(components, solvents, ions, icomponents, isolvents, iions, packagedparams, 1e-12,references)
     return model
 end
 
-function RSP(model::MM1Model, V, T, z)
+function RSP(electromodel::ElectrolyteModel, V, T, z,model::MM1Model)
     _1 = one(V+T+first(z))
     _0 = zero(V+T+first(z))
-
+    assocmodel = electromodel.puremodel
     μ0 = model.params.mu.values
     γ = model.params.gamma.values
     θ = model.params.theta.values
     α = model.params.polarizability.values
     z̄ = model.params.coordz.values
 
-    sites = model.assocmodel.sites.i_sites
+    sites = assocmodel.sites.i_sites
 
     x = z ./ sum(z)
     ρ = Clapeyron.N_A*sum(z)/(V)
@@ -71,7 +68,7 @@ function RSP(model::MM1Model, V, T, z)
     A = ρ/(3*Clapeyron.ϵ_0)*sum(x[i]*α[i] for i ∈ @Clapeyron.comps)
     ϵ_inf = (2*A+1)/(1-A)
 
-    X_ = Clapeyron.X(model.assocmodel,V,T,z)
+    X_ = Clapeyron.X(assocmodel,V,T,z)
 
     P = [[_0 for i ∈ model.isolvents] for j ∈ model.isolvents]
     for i ∈ model.isolvents
@@ -92,10 +89,9 @@ function RSP(model::MM1Model, V, T, z)
         end
     end
 
-
     B = ρ/(9*ϵ_0*k_B*T)*sum(x[i]*g[i]*μ0[i]^2 for i ∈ 1:length(model.solvents))
 
-    poly = [2,-(ϵ_inf+(ϵ_inf+2)^2*B),-ϵ_inf^2]
+    poly = (2,-(ϵ_inf+(ϵ_inf+2)^2*B),-ϵ_inf^2)
 
     return (-poly[2]+sqrt(poly[2]^2-4*poly[1]*poly[3]))/(2*poly[1])
 end
