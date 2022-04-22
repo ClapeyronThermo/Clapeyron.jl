@@ -1,4 +1,4 @@
-function  Δ(model::Union{SAFTModel,CPAModel}, V, T, z)
+function  Δ(model::AssociationModel, V, T, z)
     κ = model.params.bondvol.values
     Δres = zero_assoc(κ,typeof(V+T+first(z)))
     for (idx,(i,j),(a,b)) in indices(Δres)
@@ -7,7 +7,7 @@ function  Δ(model::Union{SAFTModel,CPAModel}, V, T, z)
     return Δres
 end
 
-function  Δ(model::Union{SAFTModel,CPAModel}, V, T, z,data)
+function  Δ(model::AssociationModel, V, T, z,data)
     κ = model.params.bondvol.values
     Δres = zero_assoc(κ,typeof(V+T+first(z)))
     for (idx,(i,j),(a,b)) in indices(Δres)
@@ -190,7 +190,7 @@ end
 #Axx + x - 1 = 0
 #x = 1 - Axx
 
-function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
+function X(model::AssociationModel, V, T, z,data = nothing)
     bv = model.params.bondvol.values
     nn = length(bv.values)
     isone(nn) && return X_exact1(model,V,T,z,data)
@@ -268,7 +268,7 @@ function X_exact1(model,V,T,z,data=nothing)
     return _X
 end
 
-function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,data=nothing)
+function a_assoc(model::AssociationModel, V, T, z,data=nothing)
     _0 = zero(V+T+first(z))
     nn = length(model.params.bondvol.values.values)
     iszero(nn) && return _0
@@ -276,7 +276,7 @@ function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,data=nothing)
     return @f(_a_assoc,X_)
 end
 
-function _a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
+function _a_assoc(model::AssociationModel, V, T, z,X_)
     _0 = zero(first(X_.v))
     n = model.sites.n_sites
     res = _0
