@@ -33,7 +33,7 @@ function Zhuang(solvents,salts; userlocations::Vector{String}=String[],assoc_use
     mu = params["mu"]
     packagedparams = ZhuangParam(mu)
 
-    references = [""]
+    references = String[]
     
     model = Zhuang(components, solvents, ions, icomponents, isolvents, iions, packagedparams, 1e-12,references)
     return model

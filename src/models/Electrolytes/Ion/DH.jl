@@ -45,7 +45,7 @@ function DH(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocatio
 
     packagedparams = DHParam(sigma,charge)
 
-    references = [""]
+    references = String[]
 
     init_RSPmodel = RSPmodel(solvents,salts)
 

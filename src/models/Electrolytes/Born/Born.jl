@@ -38,7 +38,7 @@ function Born(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocat
 
     packagedparams = BornParam(sigma_born,charge)
 
-    references = [""]
+    references = String[]
 
     init_RSPmodel = RSPmodel(solvents,salts)
 

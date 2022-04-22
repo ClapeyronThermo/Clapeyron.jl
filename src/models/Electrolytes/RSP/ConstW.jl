@@ -28,7 +28,7 @@ function ConstW(solvents,salts; userlocations::Vector{String}=String[], verbose:
     iions = (length(solvents)+1):length(components)
     icomponents = 1:length(components)
 
-    references = [""]
+    references = String[]
     
     model = ConstW(components, solvents, ions, icomponents, isolvents, iions, ConstWParam(), 1e-12,references)
     return model

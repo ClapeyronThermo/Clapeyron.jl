@@ -34,7 +34,7 @@ function Schreckenberg(solvents,salts; userlocations::Vector{String}=String[], v
     d_V = params["d_V"]
     packagedparams = SchreckenbergParam(d_T,d_V)
 
-    references = [""]
+    references = String[]
     
     model = Schreckenberg(components, solvents, ions, icomponents, isolvents, iions, packagedparams, 1e-12,references)
     return model
