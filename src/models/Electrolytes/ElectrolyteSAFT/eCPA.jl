@@ -75,5 +75,5 @@ end
 function a_res(model::eCPAModel, V, T, z)
     n = sum(z)
     ā,b̄,c̄ = cubic_ab(model.puremodel.cubicmodel,V,T,z,n)
-    return a_res(model.puremodel,V,T,z)+a_ion(model,V+c̄*n,T,z,model.ionicmodel)+a_born(model.bornmodel,V+c̄*n,T,z)
+    return a_res(model.puremodel,V,T,z)+a_ion(model,V+c̄*n,T,z,model.ionicmodel)+a_born(model,V+c̄*n,T,z,model.bornmodel)
 end

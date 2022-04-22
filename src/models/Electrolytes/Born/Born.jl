@@ -46,12 +46,12 @@ function Born(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocat
     return model
 end
 
-a_born(::Nothing,V,T,z) = 0.0
+a_born(model::ElectrolyteModel,V,T,z,::Nothing) = 0.0
 
-function a_born(model::BornModel, V, T, z)
+function a_born(electromodel::ElectrolyteModel, V, T, z,model::BornModel)
     σ_born = model.params.sigma_born.values
     Z = model.params.charge.values
-    ϵ_r = RSP(model.RSPmodel,V,T,z)
+    ϵ_r = RSP(electromodel,V,T,z,model.RSPmodel)
 
     return -e_c^2/(4π*ϵ_0*k_B*T*sum(z))*(1-1/ϵ_r)*sum(z[i]*Z[i]^2/σ_born[i] for i ∈ model.iions)
 end

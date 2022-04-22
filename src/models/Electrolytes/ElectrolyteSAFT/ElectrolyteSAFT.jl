@@ -51,6 +51,6 @@ function ElectrolyteSAFT(solvents,salts; puremodel=PCSAFT,
 end
 
 function a_res(model::ElectrolyteSAFTModel, V, T, z)
-    return a_res(model.puremodel,V,T,z)+a_ion(model,V,T,z)+a_born(model.bornmodel,V,T,z)  
+    return a_res(model.puremodel,V,T,z)+a_ion(model,V,T,z,model.ionicmodel)+a_born(model,V,T,z,model.bornmodel)
 end
 
