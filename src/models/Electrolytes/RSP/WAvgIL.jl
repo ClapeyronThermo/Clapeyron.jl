@@ -35,22 +35,42 @@ function WAvgIL(solvents,salts; userlocations::Vector{String}=String[],assoc_use
     Mw  = params["Mw"]
     packagedparams = WAvgILParam(e_r,Mw)
 
-    references = [""]
+    references = String[]
     
     model = WAvgIL(components, solvents, ions, icomponents, isolvents, iions, packagedparams, 1e-12,references)
     return model
 end
 
 function RSP(electromodel::ElectrolyteModel, V, T, z,model::WAvgILModel)
-    z_salt = ∑(z[model.iions])./length(model.iions)
-    z = append!(z[model.isolvents],z_salt)
-    x = z./∑(z)
+    #z_salt = ∑(z[model.iions])./length(model.iions)
     ϵᵣ = model.params.e_r.values
     Mw = model.params.Mw.values
 
-    w = x.*Mw./∑(x.*Mw);
+    ninv = 1/length(model.iions)
+    ∑z = sum(z)
+    ∑zinv = 1/∑z
+    res = zero(eltype(z))
+    ∑wmw = res
+    w = res
+    for i ∈ model.isolvents
+        w = z[i]*Mw[i]*∑zinv
+        ∑wmw += w
+        res += w*ϵᵣ[i]
+    end
+    
+    for i ∈ model.iions
+        w = z[i]*Mw[i]*∑zinv*ninv
+        ∑wmw += w
+        res += w*ϵᵣ[i]
+    end
 
-    return ∑(w.*ϵᵣ)
+    return res/∑wmw
+    #z = append!(z[model.isolvents],z_salt)
+    #x = z./∑(z)
+
+    #w = x.*Mw./∑(x.*Mw);
+
+    #return ∑(w.*ϵᵣ)
 end
 
 is_splittable(::WAvgIL) = false
