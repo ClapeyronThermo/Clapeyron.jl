@@ -206,7 +206,7 @@ function x0_sat_pure(model::ABCubicModel,T)
     a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T)
     Tc = model.params.Tc.values[1]
     pc = model.params.Pc.values[1]
-    zc = cubic_zc(model)
+    zc = pure_cubic_zc(model)
     vc = zc*R̄*Tc/pc - c
     if Tc < T
         nan = zero(T)/zero(T)
@@ -272,4 +272,32 @@ function wilson_k_values(model::ABCubicModel,p,T)
     end
 
     return  @. Pc/p*exp(5.373*(1+ω)*(1-Tc/T))
+end
+
+function vdw_tv_mix(Tc,Vc,z)
+    Tm = zero(first(Tc)+first(Vc))
+    Vm = zero(eltype(Vc))
+    n = sum(z)
+    invn2 = (1/n)^2
+    for i in @comps
+        zi = z[i]
+        Vi = Vc[i]
+        Ti = Tc[i]
+        zii = zi*zi
+        Vm += zii*Vi
+        Tm += zii*Ti*Vi
+        for j in 1:i-1
+            zj = z[j]
+            Vj = Vc[j]
+            Tj = Tc[j]
+            Tij = sqrt(Ti*Tj)
+            Vij = 0.5*(Vi+Vj)
+            zij = zj*zi
+            Vm += 2zij*Vij
+            Tm += zij*Tij*Viij
+        end
+    end
+    Tcm = Tm/Vm
+    Vcm = Vm*invn2
+    return (Tcm,Vcm)
 end

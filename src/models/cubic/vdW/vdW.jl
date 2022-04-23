@@ -114,4 +114,4 @@ function a_res(model::vdWModel, V, T, z,_data = data(model,V,T,z))
     #return -log(V-n*b̄) - ā*n/(R̄*T*V) + log(V)
 end   
 
-cubic_zc(::vdWModel) = 3/8
+pure_cubic_zc(::vdWModel) = 3/8

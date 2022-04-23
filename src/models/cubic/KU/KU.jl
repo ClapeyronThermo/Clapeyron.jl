@@ -3,6 +3,8 @@ abstract type KUModel <: ABCubicModel end
 struct KUParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}
+    omega_a::SingleParam{Float64}
+    omega_b::SingleParam{Float64}
     Tc::SingleParam{Float64}
     Pc::SingleParam{Float64}
     Vc::SingleParam{Float64}
@@ -47,6 +49,8 @@ end
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `Vc`: Single Parameter (`Float64`) - Critical Volume `[m^3]`
+- `omega_a`: Single Parameter (`Float64`) - Critical Constant for a - No units
+- `omega_b`: Single Parameter (`Float64`) - Critical Constant for b - No units
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `a`: Pair Parameter (`Float64`)
 - `b`: Pair Parameter (`Float64`)
@@ -97,32 +101,38 @@ function KU(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     Tc = params["Tc"]
     Vc = params["Vc"]
+    ku_omega = KUOmegaValues(Tc.values,Pc.values,Vc.values)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(KU,init_mixing,Tc,pc,k,Vc)
+    a,b = ab_premixing(ku_omega,init_mixing,Tc,pc,k,Vc)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     icomponents = 1:length(components)
-    packagedparams = KUParam(a,b,Tc,pc,Vc,Mw)
+    Ωa,Ωb = ab_consts(ku_omega)
+    packagedparams = KUParam(a,b,Ωa,Ωb,Tc,pc,Vc,Mw)
     references = String["10.1016/j.ces.2020.116045"]
     model = KU(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 
-function ab_premixing(::Type{<:KU},mixing,Tc,pc,kij,Vc)
-    Ωa, Ωb = ab_consts(T)
-    _Tc = Tc.values
-    _pc = pc.values
-    _vc = Vc.values
+struct KUOmegaValues
+    Tc::Vector{Float64}
+    Pc::Vector{Float64}
+    Vc::Vector{Float64}
+    Ωa::Vector{Float64}
+    Ωb::Vector{Float64}
+end
+
+function KUOmegaValues(_tc,_pc,_vc)
     Zc = _pc .* _vc ./ (R̄ .* _tc)
     χ  = @. cbrt(sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Z -20)/(32*sqrt(3)*Zc^2) - (729*Zc^3 - 216*Zc + 8)/(1728*Zc^3))
     α  = @. (χ + (81*Zc^2 - 72*Zc + 4)/(144*χ*Zc^2) + (3*Zc - 2)/(12*Zc))
     Ωa = @. Zc*((1 + 1.6*α - 0.8*α^2)^2/((1 - α^2)(2 + 1.6*α)))
     Ωb = @. Zc*α
-    a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
-    b = sigma_LorentzBerthelot(SingleParam(pc, @. Ωb*R̄*_Tc/_pc))
-    return a,b
+    return KUOmegaValues(_tc,_pc,_vc,Ωa,Ωb)
 end
+
+ab_consts(model::KUOmegaValues) = model.Ωa,model.Ωb
 
 #only used in premixing
 function ab_consts(::Type{<:KUModel})
@@ -131,5 +141,14 @@ end
 
 cubic_Δ(model::KUModel) = (-0.4,2.0)
 
+function T_scale(model::KUModel,z=SA[1.0])
+    Tc,_ = vdw_tv_mix(model.Tc.values,model.Vc.values,z)
+    return Tc
+end
+
+function p_scale(model::KUModel,z=SA[1.0])
+    return dot(model.params.Pc.values,z)/sum(z)
+end
+
 #only used for single component properties, we need a better abstraction here
-cubic_zc(model::KUModel) = only(model.Pc.values)*only(model.Vc.values)/(R̄*only(model.Tc.values))
+pure_cubic_zc(model::KUModel) = only(model.Pc.values)*only(model.Vc.values)/(R̄*only(model.Tc.values))
