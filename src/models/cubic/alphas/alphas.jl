@@ -25,6 +25,7 @@ function init_model(model::Type{<:AlphaModel},components,userlocations,verbose)
 end
 
 include("NoAlpha.jl")
+include("ClausiusAlpha.jl")
 include("RKAlpha.jl")
 include("soave.jl")
 include("PRAlpha.jl")
