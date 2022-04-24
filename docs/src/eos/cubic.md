@@ -54,6 +54,7 @@ Clapeyron.KU
 
 ## Variant Models
 ```@docs
+Clapeyron.Berthelot
 Clapeyron.SRK
 Clapeyron.PSRK
 Clapeyron.PR78
@@ -68,6 +69,7 @@ Clapeyron.QCPR
 ```@docs
 Clapeyron.α_function
 Clapeyron.NoAlpha
+Clapeyron.ClausiusAlpha
 Clapeyron.RKAlpha
 Clapeyron.SoaveAlpha
 Clapeyron.PRAlpha
