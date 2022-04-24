@@ -108,7 +108,3 @@ function a_res(model::RKModel, V, T, z,_data = data(model,V,T,z))
     return -log1p((c̄-b̄)*ρ) - ā*RT⁻¹*log(b̄*ρt+1)/b̄
     #return -log(V-n*b̄) - ā/(R̄*T*b̄*√(T/T̄c))*log(1+n*b̄/V)
 end
-
-pure_cubic_zc(::RKModel) = 1/3
-
-# include("variants/SRK.jl")

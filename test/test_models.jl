@@ -129,10 +129,16 @@ end
     z = [0.5, 0.5]
 
     @testset "vdW Models" begin
+        @testset "Default vdW" begin
             system = vdW(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.7088380780265725 rtol = 1e-6
             @test Clapeyron.cubic_poly(system, p, T, z)[1][1] ≈ -0.0002475728429728521 rtol = 1e-6
             @test Clapeyron.cubic_abp(system, V, T, z)[1] ≈ 2.591962221523441 rtol = 1e-6
+        end
+        @testset "Berthelot" begin
+            system = vdW(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.3194357795336105 rtol = 1e-6
+        end
     end
 
     @testset "RK Models" begin

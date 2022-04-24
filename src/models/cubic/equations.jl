@@ -88,6 +88,13 @@ function cubic_abp(model::ABCubicModel, V, T, z)
     return a,b,p
 end
 
+function pure_cubic_zc(model::ABCubicModel)
+    Δ1,Δ2 = cubic_Δ(model)
+    _,Ωb = ab_consts(model)
+    Ωb = only(Ωb)
+    return (1 - (Δ1+Δ2-1)*Ωb)/3
+end
+
 function second_virial_coefficient(model::ABCubicModel,T::Real,z = SA[1.0])
     a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T,z)
     return b-a/(R̄*T)
@@ -279,7 +286,7 @@ function vdw_tv_mix(Tc,Vc,z)
     Vm = zero(eltype(Vc))
     n = sum(z)
     invn2 = (1/n)^2
-    for i in @comps
+    for i in 1:length(z)
         zi = z[i]
         Vi = Vc[i]
         Ti = Tc[i]

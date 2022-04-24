@@ -108,5 +108,3 @@ end
  (-B2-2B2-2B+A)
  (-3B2-2B+A)
 =#
-
-pure_cubic_zc(::PRModel) = 0.3074
