@@ -30,12 +30,12 @@ function init_model(model::Type{<:MixingRule},components,activity,userlocations,
     return model(components;activity,userlocations,activity_userlocations,verbose)
 end
 
-function infinite_pressure_gibbs_correction(model::ABCubicModel)
-    Δ1,Δ2 = cubic_Δ(model)
+function infinite_pressure_gibbs_correction(model::ABCubicModel,z)
+    Δ1,Δ2 = cubic_Δ(model,z)
     return log((1+Δ1)/(1+Δ2))/(Δ1 - Δ2)
 end
 
-function infinite_pressure_gibbs_correction(model::vdWModel)
+function infinite_pressure_gibbs_correction(model::vdWModel,z)
     return 1.0
 end
 include("vdW1f.jl")

@@ -95,7 +95,7 @@ function ab_consts(::Type{<:RKModel})
     return Ωa,Ωb
 end
 
-function cubic_Δ(model::RKModel) 
+function cubic_Δ(model::RKModel,z) 
     return (0.0,1.0)
 end
 

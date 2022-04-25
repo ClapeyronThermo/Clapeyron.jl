@@ -52,7 +52,7 @@ end
 
 function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
-    Δ1,Δ2 = cubic_Δ(model)
+    Δ1,Δ2 = cubic_Δ(model,z)
     Δ1 = 1+√2
     Δ2 = 1-√2
     ΔΔ = Δ1 - Δ2
@@ -70,7 +70,7 @@ function cubic_poly(model::ABCubicModel,p,T,z)
     RT⁻¹ = 1/(R̄*T)
     A = a*p*RT⁻¹*RT⁻¹
     B = b*p*RT⁻¹
-    Δ1,Δ2 = cubic_Δ(model)
+    Δ1,Δ2 = cubic_Δ(model,z)
     ∑Δ = Δ1 + Δ2
     Δ1Δ2 = Δ1*Δ2
     k₀ = -B*evalpoly(B,(A,Δ1Δ2,Δ1Δ2))
@@ -81,7 +81,7 @@ function cubic_poly(model::ABCubicModel,p,T,z)
 end
 
 function cubic_abp(model::ABCubicModel, V, T, z)
-    Δ1,Δ2 = cubic_Δ(model)
+    Δ1,Δ2 = cubic_Δ(model,z)
     n = ∑(z)
     a,b,c = cubic_ab(model,V,T,z,n)
     v = V/n+c
@@ -90,7 +90,7 @@ function cubic_abp(model::ABCubicModel, V, T, z)
 end
 
 function pure_cubic_zc(model::ABCubicModel)
-    Δ1,Δ2 = cubic_Δ(model)
+    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
     _,Ωb = ab_consts(model)
     Ωb = only(Ωb)
     return (1 - (Δ1+Δ2-1)*Ωb)/3
@@ -222,7 +222,7 @@ function x0_sat_pure(model::ABCubicModel,T)
     end
     B = b-a/(R̄*T)
     pv0 = -0.25*R̄*T/B
-    Δ1,Δ2 = cubic_Δ(model)
+    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
     k⁻¹ = (1 + Δ1)*(1 + Δ2)/2
     vl = b + sqrt(k⁻¹*R̄*T*b^3/a) - c
     pc = model.params.Pc.values[1]

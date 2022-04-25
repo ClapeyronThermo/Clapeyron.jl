@@ -59,10 +59,10 @@ function WSRule(components::Vector{String}; activity = Wilson, userlocations::Ve
     return model
 end
 
-WS_λ(::WSRuleModel,model::ABCubicModel) = infinite_pressure_gibbs_correction(model)
+WS_λ(::WSRuleModel,model::ABCubicModel,z) = infinite_pressure_gibbs_correction(model,z)
 
 function mixing_rule(model::Union{RKModel,PRModel},V,T,z,mixing_model::WSRuleModel,α,a,b,c)
-    λ = WS_λ(mixing_model,model)
+    λ = WS_λ(mixing_model,model,z)
     n = sum(z)
     invn = (one(n)/n)
     RT⁻¹ = 1/(R̄*T)      

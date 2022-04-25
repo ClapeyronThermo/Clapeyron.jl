@@ -60,8 +60,7 @@ function taylor_alpha_kumar(Tr,m,n)
     k5 = t5*evalpoly(n,(-48,14-50*m,15*m-1))/1920
     k6 = t5*evalpoly(n,(480,4*(137*m-47),24-264*m,31*m-1))/23040
     ΔT = (Tr-1)
-    αpol = (1,k1,k2,k3,k4,k5)
-    @show αpol
+    αpol = (1,k1,k2,k3,k4,k5,k6)
     return evalpoly(ΔT,αpol)
 end
 
@@ -72,7 +71,6 @@ function α_function(model::CubicModel,V,T,z,alpha_model::KUAlphaModel)
     coeff_m = (0.37790, 1.51959, -0.46904, 0.015679)
     coeff_n = (0.97016, 0.05495, -0.1293, 0.0172028)
     for i in @comps
-
         ωi = ω[i]
         Tr = T/Tc[i]
         m = evalpoly(ωi,coeff_m)
@@ -80,8 +78,8 @@ function α_function(model::CubicModel,V,T,z,alpha_model::KUAlphaModel)
         if Tr <= 1
             α[i]  = (1+m*(1-√(Tr))^n)^2
         else
-            α[i] = (1-m*(√(Tr)-1)^n)^2
-            #α[i] = taylor_alpha_kumar(Tr,m,n)
+            #α[i] = (1-m*(√(Tr)-1)^n)^2
+            α[i] = taylor_alpha_kumar(Tr,m,n)
         end
     end
     return α

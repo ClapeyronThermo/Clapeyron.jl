@@ -98,7 +98,7 @@ function ab_consts(::Type{<:PRModel})
     return 0.457235,0.077796
 end
 
-function cubic_Δ(model::PRModel) 
+function cubic_Δ(model::PRModel,z) 
     sqrt2 = sqrt(2)
     return (1+sqrt2,1-sqrt2)
 end

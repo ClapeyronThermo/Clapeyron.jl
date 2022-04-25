@@ -131,7 +131,7 @@ function KUOmegaValues(_tc,_pc,_vc)
     χ  = @. cbrt(sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Zc -20)/(32*sqrt(3)*Zc^2) 
     - (729*Zc^3 - 216*Zc + 8)/(1728*Zc^3))
     α  = @. (χ + (81*Zc^2 - 72*Zc + 4)/(144*χ*Zc^2) + (3*Zc - 2)/(12*Zc))
-    Ωa = @. Zc*((1 + 1.6*α - 0.8*α^2)^2/((1 - α^2)*(2 + 1.6*α)))
+    Ωa = @. Zc*((1 + 1.6*α - 0.8*α^2)^2 / ((1 - α^2)*(2 + 1.6*α)))
     Ωb = @. Zc*α
     return KUOmegaValues(_tc,_pc,_vc,Ωa,Ωb)
 end
@@ -144,7 +144,7 @@ ab_consts(model::KUOmegaValues) = model.Ωa,model.Ωb
 ab_consts(model::KUModel) = model.params.omega_a.values,model.params.omega_b.values
 
 #only used in premixing
-cubic_Δ(model::KUModel) = (-0.4,2.0)
+cubic_Δ(model::KUModel,z) = (-0.4,2.0)
 
 function T_scale(model::KUModel,z=SA[1.0])
     Tc,_ = vdw_tv_mix(model.params.Tc.values,model.params.Vc.values,z)

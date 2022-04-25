@@ -42,7 +42,7 @@ for Peng-Robinson:
     λ = 1/(2√(2))log((2+√(2))/(2-√(2))) (0.6232252401402305)
 ```
 
-`λ` is a coefficient indicating the relation between `gᴱ` and `gᴱ(cubic)` at infinite pressure. see [1] for more information. it can be customized by defining `WS_λ(::WSRuleModel,::CubicModel)`
+`λ` is a coefficient indicating the relation between `gᴱ` and `gᴱ(cubic)` at infinite pressure. see [1] for more information. it can be customized by defining `WS_λ(::WSRuleModel,::CubicModel,z)`
 ## References
 
 1. Wong, D. S. H., & Sandler, S. I. (1992). A theoretically correct mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 38(5), 671–680. doi:10.1002/aic.690380505
@@ -60,7 +60,7 @@ function modWSRule(components::Vector{String}; activity = Wilson, userlocations:
 end
 
 function mixing_rule(model::Union{RKModel,PRModel},V,T,z,mixing_model::modWSRuleModel,α,a,b,c)
-    λ = WS_λ(mixing_model,model)
+    λ = WS_λ(mixing_model,model,z)
     n = sum(z)
     invn = (one(n)/n)
     RT⁻¹ = 1/(R̄*T)      
