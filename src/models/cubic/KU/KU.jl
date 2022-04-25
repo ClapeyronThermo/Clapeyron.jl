@@ -128,15 +128,18 @@ end
 
 function KUOmegaValues(_tc,_pc,_vc)
     Zc = _pc .* _vc ./ (R̄ .* _tc)
-    χ  = @. cbrt(sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Zc -20)/(32*sqrt(3)*Zc^2) - (729*Zc^3 - 216*Zc + 8)/(1728*Zc^3))
+    χ  = @. cbrt(sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Zc -20)/(32*sqrt(3)*Zc^2) 
+    - (729*Zc^3 - 216*Zc + 8)/(1728*Zc^3))
     α  = @. (χ + (81*Zc^2 - 72*Zc + 4)/(144*χ*Zc^2) + (3*Zc - 2)/(12*Zc))
-    @show Zc
-    @show α
     Ωa = @. Zc*((1 + 1.6*α - 0.8*α^2)^2/((1 - α^2)*(2 + 1.6*α)))
     Ωb = @. Zc*α
     return KUOmegaValues(_tc,_pc,_vc,Ωa,Ωb)
 end
 
+#χ  = @. cbrt(18*sqrt(3)*Zc*sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Zc -20) 
+#-729*Zc^3 + 216*Zc - 8)
+#α = @. χ/(12*Zc) + (81*Zc^2 - 72*Zc + 4)/(12*Zc*χ) + (3*Zc - 2)/(12*Zc)
+#@show α
 ab_consts(model::KUOmegaValues) = model.Ωa,model.Ωb
 ab_consts(model::KUModel) = model.params.omega_a.values,model.params.omega_b.values
 
@@ -152,19 +155,5 @@ function p_scale(model::KUModel,z=SA[1.0])
     return dot(model.params.Pc.values,z)/sum(z)
 end
 
-#only used for single component properties, we need a better abstraction here
+#delete when kumar branch is done
 kumar_zc(model::KUModel) = only(model.params.Pc.values)*only(model.params.Vc.values)/(R̄*only(model.params.Tc.values))
-
-function zckumar(model)
-    omegaa = model.params.omega_a.values[1]
-    omegab = model.params.omega_b.values[1]
-    a = model.params.a.values[1]/omegaa
-    b = model.params.b.values[1]/omegab
-    @show Tc = model.params.Tc.values[1]
-    @show Pc = model.params.Pc.values[1]
-    Vc = model.params.Vc.values[1]
-    @show Tccalc = a/b/R̄
-    @show Pccalc = a/(b^2)
-    return nothing
-end
-

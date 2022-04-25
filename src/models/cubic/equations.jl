@@ -22,8 +22,9 @@ function ab_premixing(model,mixing,Tc,pc,kij)
     Ωa, Ωb = ab_consts(model)
     _Tc = Tc.values
     _pc = pc.values
-    a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
-    b = sigma_LorentzBerthelot(SingleParam(pc, @. Ωb*R̄*_Tc/_pc))
+    components = Tc.components
+    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
+    b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
     return a,b
 end
 
