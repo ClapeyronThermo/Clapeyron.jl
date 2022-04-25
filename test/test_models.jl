@@ -136,7 +136,7 @@ end
             @test Clapeyron.cubic_abp(system, V, T, z)[1] ≈ 2.591962221523441 rtol = 1e-6
         end
         @testset "Berthelot" begin
-            system = vdW(["ethane","undecane"])
+            system = Berthelot(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.3194357795336105 rtol = 1e-6
         end
     end
