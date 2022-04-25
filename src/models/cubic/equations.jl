@@ -222,7 +222,9 @@ function x0_sat_pure(model::ABCubicModel,T)
     end
     B = b-a/(R̄*T)
     pv0 = -0.25*R̄*T/B
-    vl = b + sqrt(0.5R̄*T*b^3/a) - c
+    Δ1,Δ2 = cubic_Δ(model)
+    k⁻¹ = (1 + Δ1)*(1 + Δ2)/2
+    vl = b + sqrt(k⁻¹*R̄*T*b^3/a) - c
     pc = model.params.Pc.values[1]
     p_vl = pressure(model,vl,T)
     p_low = min(p_vl,pc)
@@ -242,26 +244,32 @@ dp/dv = 0
 p = RT/v-b - a/pol(v)
 dpdv = -RT/(v-b)^2 + a/pol^2 * dpol = a*k -RT/(v-b)^2
 
-vdw: pol = v2 -> pol(b) = b2, dpol(b) = 2b
-pr: pol = v2 + 2bv - b2 -> pol(b) = 2b2, dpol(b) = 2v + 2b = 4b
+vdw: pol = v2 -> pol(b) = b^2, dpol(b) = 2b
+pr: pol = v2 + 2bv - b2 -> pol(b) = 2b^2, dpol(b) = 2v + 2b = 4b
 rk: pol = v*(v+b) -> pol(b) = 2b2, dpol(b) = 2v + b = 3b
 
-vdw:k = 2b/(b2)^2 = 2/b3 , k^-1 = 0.5b3
-pr:k =  4b/(2b^2) = 1/b3, k^-1 = b3
-rk:k =  3b/(2b^2) = 0.75/b3 lower  1.33b3
+in general:
+pol(b) = (b + Δ1b)(b + Δ2b) = b^2(1 + Δ1)(1 + Δ2)
+dpol(b) = 2*(1 + Δ1)(1 + Δ2)*b
 
-we want the lowest possible volume, to be sure on being on the liquid side.
+k = dpol(b)/pol(b)^2
+k = 2*(1 + Δ1)(1 + Δ2)/((1 + Δ1)(1 + Δ2))^2 b3
+k⁻¹ = (1 + Δ1)(1 + Δ2)/2
+
+vdw: k⁻¹ = 0.50b3
+pr:  k⁻¹ = 1.00b3
+rk:  k⁻¹ = 1.33b3
 
 solving for dpdv = 0
 0 = a*k -RT/(v-b)^2
 (v-b)^2 = RT/ak
 v2 - 2vb + b2 - RT/ak = 0
 v = b ± sqrt(b2 +  RT/ak - b2) #v > b
-v = b + sqrt(kb3RT/a)
-the lowest volume is reached with k(vdw):
-vl = b + sqrt(0.5RTb3/2a)
+v = b + sqrt(k⁻¹b3RT/a)
 on models with translation:
-vl = b + sqrt(0.5RTb3/2a) - c
+vl = b + sqrt(k⁻¹RTb3/2a) - c
+
+if k⁻¹ not available, use k⁻¹ = 0.5 (vdw, lowest)
 =#
 
 function wilson_k_values(model::ABCubicModel,p,T)
