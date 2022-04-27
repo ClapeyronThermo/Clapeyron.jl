@@ -8,13 +8,14 @@
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
+    activity_userlocations = String[],
+    translation_userlocations = String[],
     verbose=false)
 
 Volume-translated Peng Robinson equation of state. it uses the following models:
-
-- Translation Model: `RackettTranslation`
-- Alpha Model: `TwuAlpha`
-- Mixing Rule Model: `VTPRRule` with `VTPRUNIFAC` activity
+- Translation Model: [`RackettTranslation`](@ref)
+- Alpha Model: [`TwuAlpha`](@ref)
+- Mixing Rule Model: [`VTPRRule`](@ref) with [`VTPRUNIFAC`](@ref) activity
 
 ## References
 
@@ -30,6 +31,7 @@ function VTPR(components::Vector{String}; idealmodel=BasicIdeal,
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
+    translation_userlocations = String[],
     verbose=false)
 
     return PR(components;
@@ -42,6 +44,7 @@ function VTPR(components::Vector{String}; idealmodel=BasicIdeal,
     ideal_userlocations = ideal_userlocations,
     alpha_userlocations = alpha_userlocations,
     mixing_userlocations = mixing_userlocations,
+    translation_userlocations = translation_userlocations,
     verbose = verbose)
 end
 export VTPR

@@ -1,4 +1,5 @@
 struct softSAFT2016Param <: EoSParam
+    Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     epsilon::PairParam{Float64}
@@ -20,6 +21,47 @@ struct softSAFT2016{T} <: softSAFT2016Model
 end
 
 @registermodel softSAFT2016
+
+"""
+    softSAFT2016Model <: softSAFTModel
+
+    softSAFT2016(components; 
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
+
+## Model Parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume
+
+## Input models
+- `idealmodel`: Ideal Model
+
+## Description
+
+Soft SAFT, with Lennard-Jones function from Thol et al. (2016)
+
+## References
+1. FELIPE J. BLAS and LOURDES F. VEGA. (1997). Thermodynamic behaviour of homonuclear and heteronuclear Lennard-Jones chains with association sites from simulation and theory. Molecular physics, 92(1), 135–150. doi:10.1080/002689797170707
+2. Thol, M., Rutkai, G., Köster, A., Lustig, R., Span, R., & Vrabec, J. (2016). Equation of state for the Lennard-Jones fluid. Journal of physical and chemical reference data, 45(2), 023101. doi:10.1063/1.4945000
+"""
+softSAFT2016
+
 function softSAFT2016(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
@@ -27,7 +69,7 @@ function softSAFT2016(components;
     verbose=false,
     assoc_options = AssocOptions())
 
-    params,sites = getparams(components, ["SAFT/softSAFT"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/softSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     
     segment = params["m"]
     k = params["k"]
@@ -37,7 +79,7 @@ function softSAFT2016(components;
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    packagedparams = softSAFT2016Param(segment, sigma, epsilon, epsilon_assoc, bondvol)
+    packagedparams = softSAFT2016Param(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1080/002689797170707","10.1063/1.4945000"]
     icomponents = 1:length(components)
     return softSAFT2016(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references, LJRefConsts())

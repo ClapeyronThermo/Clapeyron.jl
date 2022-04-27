@@ -10,7 +10,7 @@ abstract type TPFlashMethod end
     tp_flash(model, p, T, n, method::TPFlashMethod =DETPFlash())
 
 Routine to solve non-reactive multicomponent flash problem.
-The default method uses Global Optimization. see [DETPFlash](@ref)
+The default method uses Global Optimization. see [`DETPFlash`](@ref)
 
 Inputs: 
  - T, Temperature

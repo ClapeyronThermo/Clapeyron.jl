@@ -30,7 +30,7 @@ end
 returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
 @inline function f∂f(f::F, x::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(∂Tag(), R))
+    T = typeof(ForwardDiff.Tag(f, R))
     out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),))))
     return ForwardDiff.value(out),  ForwardDiff.extract_derivative(T, out)
 end

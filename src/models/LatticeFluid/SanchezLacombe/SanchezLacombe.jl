@@ -9,6 +9,8 @@ end
 
 abstract type SanchezLacombeModel <: LatticeFluidModel end
 include("mixing/mixing.jl")
+
+
 struct SanchezLacombe{T <: SLMixingRule,I<:IdealModel} <:SanchezLacombeModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
@@ -18,8 +20,50 @@ struct SanchezLacombe{T <: SLMixingRule,I<:IdealModel} <:SanchezLacombeModel
     references::Array{String,1}
 end
 @registermodel SanchezLacombe
-const SL = SanchezLacombe
 
+
+"""
+    SanchezLacombe(components::Vector{String}; 
+    idealmodel=BasicIdeal, 
+    mixing = SLk0k1lMixingRule, 
+    userlocations=String[], 
+    ideal_userlocations=String[], 
+    mixing_userlocations = String[],
+    verbose=false)
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `epsilon`: Single Parameter (`Float64`) - Nonbonded interaction energy per monomer `[J/mol]`
+- `vol`: Single Parameter (`Float64`) - Closed Packed Specific volume `[m^3/mol]`
+
+## Model Parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `epsilon`: Pair Parameter (`Float64`) - Nonbonded interaction energy per monomer `[J/mol]`
+- `vol`: Pair Parameter (`Float64`) - Closed Packed Specific volume `[m^3/mol]`
+
+## Input models
+- `idealmodel`: Ideal Model
+- `mixing`: Mixing model
+
+## Description
+Sanchez-Lacombe Lattice Fluid Equation of State.
+```
+xᵢ = zᵢ/∑zᵢ
+r̄ = ∑xᵢrᵢ
+vᵣ,εᵣ = mix_vε(model,V,T,z,model.mixing,r̄,∑zᵢ)
+ρ̃ = r̄*vᵣ/v
+T̃ = R̄*T/εᵣ
+aᵣ = r̄*(- ρ̃ /T̃ + (1/ρ̃  - 1)*log(1 - ρ̃ ) + 1)
+```
+
+## References
+1. Neau, E. (2002). A consistent method for phase equilibrium calculation using the Sanchez–Lacombe lattice–fluid equation-of-state. Fluid Phase Equilibria, 203(1–2), 133–140. doi:10.1016/s0378-3812(02)00176-0
+"""
+SanchezLacombe
+
+const SL = SanchezLacombe
 
 function SanchezLacombe(components; 
     idealmodel=BasicIdeal, 
@@ -33,8 +77,6 @@ function SanchezLacombe(components;
     segment = params["segment"]
     unmixed_epsilon = params["epsilon"]
     unmixed_vol = params["vol"]
-    unmixed_epsilon.values #.*= k_B #to convert from temperature to eps
-    unmixed_vol.values .*= 1e-6 #convert from cm3/mol to m3/mol
     Mw = params["Mw"]
     mixmodel = init_model(mixing,components,mixing_userlocations,verbose)
     ideal = init_model(idealmodel,components,ideal_userlocations,verbose)
@@ -47,6 +89,7 @@ function SanchezLacombe(components;
 end
 
 include("mixing/SLk0k1lrule.jl")
+include("mixing/SLKrule.jl")
 
 function a_res(model::SanchezLacombe,V,T,z=SA[1.0])
     Σz = sum(z)     
@@ -59,14 +102,18 @@ function a_res(model::SanchezLacombe,V,T,z=SA[1.0])
     ρ̃ = r̄*v_r/v
     T̃ = R̄*T/ε_r
     _1 = one(V+T+first(z))
-    return r̄*(-ρ̃ /T̃ + (_1/ρ̃  - _1)*log(1-ρ̃ )+_1)
+    return r̄*(-ρ̃ /T̃ + (_1/ρ̃  - _1)*log1p(-ρ̃ )+_1)
+end
+
+function rmix(model::SanchezLacombe,V,T,z)
+    r = model.params.segment.values
+    r̄ = dot(z,r)/Σz
+    return r̄
 end
 
 function lb_volume(model::SanchezLacombe,z=SA[1.0])
-    Σz = sum(z)
     r = model.params.segment.values
     v = model.params.vol.diagvalues
-    r̄ = dot(z,r)
     #v_r,ε_r = mix_vε(model,0.0,0.0,z,model.mixing,r̄,Σz)
     return sum(r[i]*z[i]*v[i] for i in @comps)
 end
@@ -109,7 +156,7 @@ function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
     Tr = T/Ts
     nan = zero(Tr)/zero(Tr)
     Tr > 1 && return [nan,nan]
-    Tstar = Tr*PropaneRef_consts.T_c
+    Tstar = Tr*369.89
     rhov = _propaneref_rhovsat(Tstar)
     vv = 1/rhov
     psat = pressure(model,vv,T)
@@ -118,7 +165,7 @@ function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
     if isnan(vl)
         vv = nan
     end
-    return [log10(vl),log10(vv)]
+    return (log10(vl),log10(vv))
 end
 
-export SL,SanchezLacombe,SLk0k1lMixingRule
+export SL,SanchezLacombe

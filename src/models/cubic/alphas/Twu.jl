@@ -29,7 +29,7 @@ end
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for `VTPR` EoS.
+Cubic alpha `(α(T))` model. Default for [`VTPR`](@ref) EoS.
 ```
 
 αᵢ = Trᵢ^(N*(M-1))*exp(L*(1-Trᵢ^(N*M))

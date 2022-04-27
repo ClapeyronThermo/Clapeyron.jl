@@ -1,4 +1,5 @@
 struct CKSAFTParam <: EoSParam
+    Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     epsilon::PairParam{Float64}
@@ -11,6 +12,48 @@ abstract type CKSAFTModel <: SAFTModel end
 @newmodel CKSAFT CKSAFTModel CKSAFTParam
 
 export CKSAFT
+"""
+    CKSAFTModel <: SAFTModel
+
+    CKSAFT(components; 
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `vol`: Single Parameter (`Float64`) - Segment Volume [`dm^3`]
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `c`: Single Parameter (`Float64`) - Dispersion T-dependent parameter (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
+
+## Model Parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `c`: Single Parameter (`Float64`) - Dispersion T-dependent parameter (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume
+
+## Input models
+- `idealmodel`: Ideal Model
+
+## Description
+
+Chen and Kreglewski SAFT (CK-SAFT)
+
+## References
+1. Huang, S. H., & Radosz, M. (1990). Equation of state for small, large, polydisperse, and associating molecules. Industrial & Engineering Chemistry Research, 29(11), 2284–2294. doi:10.1021/ie00107a014
+2. Huang, S. H., & Radosz, M. (1991). Equation of state for small, large, polydisperse, and associating molecules: extension to fluid mixtures. Industrial & Engineering Chemistry Research, 30(8), 1994–2005. doi:10.1021/ie00056a050
+"""
+CKSAFT
+
 function CKSAFT(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
@@ -29,8 +72,8 @@ function CKSAFT(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bond_vol"]
-    packagedparams = CKSAFTParam(segment, sigma, epsilon,c, epsilon_assoc, bondvol)
-    references = ["TODO CKSAFT", "TODO CKSAFT"]
+    packagedparams = CKSAFTParam(params["Mw"],segment, sigma, epsilon,c, epsilon_assoc, bondvol)
+    references = ["10.1021/IE00107A014", "10.1021/ie00056a050"]
 
     model = CKSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
@@ -106,7 +149,6 @@ function ū(model::CKSAFTModel, V, T, z)
 end
 
 function ζ(model::CKSAFTModel, V, T, z, n)
-    ∑z = ∑(z)
     m = model.params.segment.values
     return N_A*π/6/V * ∑(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
 end
