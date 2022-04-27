@@ -86,7 +86,8 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     k = 0
     UBDⱽ = gibbs_free_energy(model,p,T,n)/R̄/T
     (ℳ,G,λᴸ,λᵁ) = initial_candidate_phases(model,p,T,n)
-    
+    λ₀ = (μ₀[1:nc-1].-μ₀[nc])/R̄/T
+    LV = vec(G.+sum(λ₀'.*(n[1:nc-1]'.-ℳ[:,1:nc-1]),dims=2))
     if method.verbose == true
         println("Iteration counter set to k="*string(k))
         println("Upper bound set to UBDⱽ="*string(UBDⱽ))
@@ -106,18 +107,16 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     @constraint(OPₓᵥ,[i ∈ 1:length(G)],v<=G[i]+∑(λ.*(n[1:nc-1] .-ℳ[i,1:nc-1])))
     @constraint(OPₓᵥ,[i ∈ 1:nc-1],λᴸ[i]<=λ[i]<=λᵁ[i])
     @objective(OPₓᵥ, Max, v)
-    println(OPₓᵥ)
     optimize!(OPₓᵥ)
     λˢ = JuMP.value.(λ)
+    UBDⱽ = JuMP.value.(v)
     if method.verbose == true
         println("-------------------------------------------------------")
         println("Step 4: Solve the inner problem (IPₓᵥ) at iteration k="*string(k))
         println("-------------------------------------------------------")
     end
-    Lⱽᵏ = deepcopy(UBDⱽ)+1
     i = 0
     while i < method.max_steps
-        println(i)
         Lⱽ(x) = (eos(model,10 .^x[1],T,Fractions.FractionVector(x[2:end]))+p*10 .^x[1])/R̄/T+sum(λˢ[j]*(n[j]-x[j+1]) for j ∈ 1:nc-1)
         x0 = rand(length(n))
         x0 = x0./sum(x0)
@@ -128,14 +127,59 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
         Lⱽᵏ = Lⱽ(xᵏ)
         if Lⱽᵏ<UBDⱽ
             ℳ = [ℳ;vcat(xᵏ[2:end],1-sum(xᵏ[2:end]),xᵏ[1])']
-            println(ℳ)
-            G = append!(G,Lⱽᵏ)
+            G = append!(G,VT_gibbs_free_energy(model,10 .^xᵏ[1],T,Fractions.FractionVector(xᵏ[2:end]))/R̄/T)
+            LV = append!(LV,Lⱽᵏ)
             break
         end
         i+=1
     end
-    println(G)
+    if method.verbose == true
+    	println("------------------------------------------------")
+        println("Step 5: Select candidate phases at iteration k="*string(k))
+        println("------------------------------------------------")
+    end
+    test_b = zeros(length(G))
+    test_λ = zeros(length(G))
+    test_cross_η = float.(LV.>LV')
+    test_cross_x = zeros((length(G),length(G)))
+    for m ∈ 1:length(G)
+        test_b[m] += (UBDⱽ-LV[m]<=method.eps_b/R̄/T)
+
+        μᵢ = VT_chemical_potential(model,10 .^ℳ[m,end],T,ℳ[m,1:nc])/R̄/T
+        μᵢ = μᵢ[1:nc-1].-μᵢ[nc]
+        test_λ[m] += min(maximum(abs.((μᵢ[1:nc-1].-λˢ)./λˢ).>=method.eps_λ),1)
+        ηm = packing_fraction(model,10 .^ℳ[m,end],T,ℳ[m,1:nc])
+        xm = ℳ[m,1:nc-1]
+        for n ∈ 1:length(G)
+            if n!=m
+                ηn = packing_fraction(model,10 .^ℳ[n,end],T,ℳ[n,1:nc])
+                test_cross_η[m,n] += abs(ηm-ηn).<=method.eps_η
+                xn= ℳ[n,1:nc-1]
+                test_cross_x[m,n] += min(maximum(abs.(xm-xn).<=method.eps_x),1)
+            end
+        end
+    end
+    test = test_b+test_λ
+    test_cross=test_cross_η+test_cross_x
+    test_cross = float.(test_cross.>=2)
+    test .+= sum(test_cross,dims=2)
+    test = Bool.(1 .-(test.>=1))
+    ℳˢ = ℳ[test,:]
+    Gˢ = G[test]
+    nps = size(ℳˢ)[1]
+    if nps>=2 && method.verbose == true
+        println("Identified np≥2 candidate phases. Moving on to stage III.")
+    end
+    if method.verbose == true
+        println("=============================================")
+        println("Stage III: Acceleration and convergence tests")
+        println("=============================================")
+        println("--------------------------------")
+        println("Step 7: Free energy minimisation")
+        println("--------------------------------")
+    end
 end
+
 
 function initial_candidate_phases(model,p,T,n)
     nc = length(n)
@@ -167,10 +211,12 @@ function initial_candidate_phases(model,p,T,n)
         μ̄[i,:] = VT_chemical_potential(model,10 .^x̄[i,end],T,x̄[i,1:nc])/R̄/T
     end
     μ = [μ̂;μ̄]
-    μ = μ[:,1:nc-1]-μ[:,nc]
+    μ = μ[:,1:nc-1].-μ[:,nc]
+    G = [Ĝ;Ḡ]
+    x = [x̂;x̄]
     λᵁ = maximum(μ[:,1:nc-1];dims=1)
     λᴸ = minimum(μ[:,1:nc-1];dims=1)
-    return ([x̂;x̄],[Ĝ;Ḡ],λᴸ,λᵁ)
+    return (x,G,λᴸ,λᵁ)
 end
 
 
