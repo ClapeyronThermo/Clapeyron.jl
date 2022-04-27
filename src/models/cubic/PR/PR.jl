@@ -1,13 +1,7 @@
 
 abstract type PRModel <: ABCubicModel end
 
-struct PRParam <: EoSParam
-    a::PairParam{Float64}
-    b::PairParam{Float64}
-    Tc::SingleParam{Float64}
-    Pc::SingleParam{Float64}
-    Mw::SingleParam{Float64}
-end
+const PRParam = ABCubicParam
 
 struct PR{T <: IdealModel,α,c,γ} <:PRModel
     components::Array{String,1}
@@ -100,9 +94,6 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     return model
 end
 
-
-
-
 function ab_consts(::Type{<:PRModel})
     return 0.457235,0.077796
 end
@@ -133,9 +124,8 @@ end
  (-B2-2B2-2B+A)
  (-3B2-2B+A)
 =#
-function a_res(model::PRModel, V, T, z)
-    n = sum(z)
-    ā,b̄,c̄ = cubic_ab(model,V,T,z,n)
+function a_res(model::PRModel, V, T, z,_data = data(model,V,T,z))
+    n,ā,b̄,c̄ = _data
     Δ1 = 1+√2
     Δ2 = 1-√2
     ΔPRΔ = 2*√2

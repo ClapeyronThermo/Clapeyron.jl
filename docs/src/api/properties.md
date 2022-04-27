@@ -13,6 +13,20 @@ Pages = ["properties.md"]
 ```@index
 Pages = ["properties.md"]
 ```
+## Automatic Differenciation functions
+
+All bulk properties in `Clapeyron` are calculated via a combination of these Automatic Differenciation Primitives. 
+ 
+```@docs
+Clapeyron.∂f∂T
+Clapeyron.∂f∂V
+Clapeyron.∂f
+Clapeyron.p∂p∂V
+Clapeyron.∂2f
+Clapeyron.∂2p
+Clapeyron.f_hess
+Clapeyron.∂²³f
+```
 
 ## Volume-Temperature Based Properties
 
@@ -24,22 +38,22 @@ Clapeyron.pip
 
 ## Pressure-Temperature Based Bulk Properties
 
-In general almost all bulk properties the pattern:
+In general almost all bulk properties follow the pattern:
 ```julia
 function property(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
     return VT_property(model,V,T,z)
 end
 ```
-So, you can call the Volume-Temperature based version just by calling `VT_property(model,V,T,z).`
-Another way to do this is by using units by `Unitful.jl`:
+So, you can calculate the property with Volume-Temperature variables by calling `VT_property(model,V,T,z).`
+Another way to do this is by using units,provided by `Unitful.jl`:
 ```julia
 using Unitful
 r = 18u"kg/m^3"
 T = 373.15"K"
 prop = helholtz_free_energy(model,r,T,z,output = u"kJ")
 ```
-Where `r` could be any molar or mass density, molar or mass volume, total volume or pressure. it also supports mass and mol amounts defined as units in the `z` variable. if no units are provided by `z`, it will be assumed that they are moles.
+Where `r` could be any molar or mass density, molar or mass volume, total volume or pressure. it also supports mass and mol amounts defined as units for the composition (`z`) If no units are provided for the composition, they will be considered moles.
 
 ### Methods that require first order VT derivatives
 ```@docs
@@ -64,7 +78,6 @@ Clapeyron.isentropic_compressibility
 Clapeyron.speed_of_sound
 Clapeyron.isobaric_expansivity
 Clapeyron.joule_thomson_coefficient
-Clapeyron.compressibility_factor
 ```
 
 ### Methods that first order composition derivatives
@@ -74,8 +87,8 @@ Clapeyron.chemical_potential_res
 Clapeyron.fugacity_coefficient
 ```
 
-### Misc
-```
+### Mixing
+```@docs
 Clapeyron.mixing
 ```
 

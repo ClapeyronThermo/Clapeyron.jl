@@ -4,10 +4,25 @@ function excess_gibbs_free_energy(model::ActivityModel,p,T,z)
     return sum(z[i]*R̄*T*log(γ[i]) for i ∈ @comps)
 end
 
+function test_excess_gibbs_free_energy(model::ActivityModel,p,T,z)
+    γ = activity_coefficient(model,p,T,z)
+    return sum(z[i]*R̄*T*log(γ[i]) for i ∈ @comps)
+end
+
+
 #for use in models that have gibbs free energy defined.
 function activity_coefficient(model::ActivityModel,p,T,z)
     X = gradient_type(p,T,z)
     return exp.(ForwardDiff.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
+end
+
+function test_activity_coefficient(model::ActivityModel,p,T,z)
+    X = gradient_type(p,T,z)
+    return exp.(ForwardDiff.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
+end
+
+function saturation_pressure(model::ActivityModel,T::Real,v0 = x0_sat_pure(model.puremodel[1],T))
+    return saturation_pressure(model.puremodel[1],T,v0)
 end
 
 function eos(model::ActivityModel,V,T,z)

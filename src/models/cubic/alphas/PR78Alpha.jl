@@ -24,7 +24,7 @@ export PR78Alpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for `PR78` EoS.
+Cubic alpha `(α(T))` model. Default for [`PR78`](@ref) and [`EPPR78`](@ref) EoS.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
