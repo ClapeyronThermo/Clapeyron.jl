@@ -95,11 +95,40 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
         println("===================================================")
         println("Stage II: Identification of candidate stable phases")
         println("===================================================")
+    end
+    nps=1
+    ℳˢ =[]
+    Gˢ = []
+    LVˢ = []
+    while k<=method.max_steps
+        ℳˢ, Gˢ, LVˢ, ℳ, G, LV, UBDⱽ = HELD_stage_II(model,p,T,n,ℳ,G,LV,UBDⱽ,λᴸ,λᵁ,method,k)
+        nps = size(ℳˢ)[1]
+        if nps>=2
+            break
+        end
+        k+=1
+    end
+    if nps>=2 && method.verbose == true
+        println("Identified np≥2 candidate phases. Moving on to stage III.")
+    end
+    if method.verbose == true
+        println("=============================================")
+        println("Stage III: Acceleration and convergence tests")
+        println("=============================================")
+        println("--------------------------------")
+        println("Step 7: Free energy minimisation")
+        println("--------------------------------")
+    end
+    @show ℳˢ
+end
+
+function HELD_stage_II(model,p,T,n,ℳ,G,LV,UBDⱽ,λᴸ,λᵁ,method,k)
+    nc = length(n)
+    if method.verbose == true
         println("-------------------------------------------------------")
         println("Step 3: Solve the outer problem (OPₓᵥ) at iteration k="*string(k))
         println("-------------------------------------------------------")
     end
-
     OPₓᵥ = Model(HiGHS.Optimizer)
     @variable(OPₓᵥ, v)
     @variable(OPₓᵥ, λ[1:nc-1])
@@ -134,7 +163,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
         i+=1
     end
     if method.verbose == true
-    	println("------------------------------------------------")
+        println("------------------------------------------------")
         println("Step 5: Select candidate phases at iteration k="*string(k))
         println("------------------------------------------------")
     end
@@ -166,20 +195,9 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     test = Bool.(1 .-(test.>=1))
     ℳˢ = ℳ[test,:]
     Gˢ = G[test]
-    nps = size(ℳˢ)[1]
-    if nps>=2 && method.verbose == true
-        println("Identified np≥2 candidate phases. Moving on to stage III.")
-    end
-    if method.verbose == true
-        println("=============================================")
-        println("Stage III: Acceleration and convergence tests")
-        println("=============================================")
-        println("--------------------------------")
-        println("Step 7: Free energy minimisation")
-        println("--------------------------------")
-    end
+    LVˢ = LV[test]
+    return ℳˢ, Gˢ, LVˢ, ℳ, G, LV, UBDⱽ
 end
-
 
 function initial_candidate_phases(model,p,T,n)
     nc = length(n)
