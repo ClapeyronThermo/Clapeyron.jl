@@ -119,7 +119,46 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
         println("Step 7: Free energy minimisation")
         println("--------------------------------")
     end
-    @show ℳˢ
+    X0 = vec(reshape(ℳˢ[:,1:nc-1],(1,nps*(nc-1))))
+    X0 = append!(X0,ℳˢ[:,end])
+    X0 = append!(X0,1/nps*ones(nps))
+    X0 = append!(X0,λ₀)
+    X0 = append!(X0,0.)
+
+    g(x) = Obj_HELD_tp_flash(model,p,T,n,x,nps)
+    if method.verbose == true
+        println("------------------------")
+        println("Step 8: Convergence test")
+        println("------------------------")
+    end
+
+    r = Solvers.optimize(g,X0)
+    X = Solvers.x_sol(r)
+    G = g(X)
+
+    x = reshape(X[1:nps*(nc-1)],(nps,nc-1))
+    x = Clapeyron.Fractions.FractionVector.(eachrow(x))
+    V = 10 .^X[nps*(nc-1)+1:nps*nc]
+    ϕ = X[nps*nc+1:nps*(nc+1)]
+    λ = X[nps*(nc+1)+1:end]
+    println(λ)
+    if any(abs.(λ).<method.eps_μ)
+        println("Mass balance could not be satisfied.")
+    end
+
+    test_G = (UBDⱽ-G>=method.eps_g)
+    μ = VT_chemical_potential.(model,V,T,x)/R̄/T
+    
+    test_μ = [abs((μ[j][i]-μ[j+1][i])/μ[j][i])<method.eps_μ for i ∈ 1:nc for j ∈ 1:nps-1]
+    println(test_G)
+    println(test_μ)
+    if test_G==1 & all(test_μ.==1)
+        println("HELD has successfully converged to a solution. Terminating algorithm.")
+        return (x,ϕ.*x,G)
+    else
+        println("HELD has failed to converged to a solution. Terminating algorithm.")
+        return (x,ϕ.*x,G)
+    end
 end
 
 function HELD_stage_II(model,p,T,n,ℳ,G,LV,UBDⱽ,λᴸ,λᵁ,method,k)
@@ -235,6 +274,21 @@ function initial_candidate_phases(model,p,T,n)
     λᵁ = maximum(μ[:,1:nc-1];dims=1)
     λᴸ = minimum(μ[:,1:nc-1];dims=1)
     return (x,G,λᴸ,λᵁ)
+end
+
+function Obj_HELD_tp_flash(model,p,T,x₀,X,np)
+    nc = length(x₀)
+    x = reshape(X[1:np*(nc-1)],(np,nc-1))
+    V = 10 .^X[np*(nc-1)+1:np*nc]
+    ϕ = X[np*nc+1:np*(nc+1)]
+    λ = X[np*(nc+1)+1:end]
+
+    g = vec(λ[1:end-1]'*(ϕ'*x-x₀[1:nc-1]))[1]
+    h = λ[end]*(sum(ϕ)-1)
+    x = Clapeyron.Fractions.FractionVector.(eachrow(x))
+    A = Clapeyron.eos.(model,V,T,x)
+    f = sum(ϕ'*(A+p*V))/Clapeyron.R̄/T
+    F = f+g+h
 end
 
 
