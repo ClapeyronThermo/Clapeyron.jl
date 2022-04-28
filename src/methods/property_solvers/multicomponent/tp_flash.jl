@@ -35,6 +35,7 @@ numphases(method::TPFlashMethod) = 2
 #default
 include("tp_flash/DifferentialEvolutiontp_flash.jl")
 include("tp_flash/RachfordRicetp_flash.jl")
+include("tp_flash/HELDtp_flash.jl")
 
 function expand_matrix(x,idr,numspecies)
     numspecies == length(idr) && return x

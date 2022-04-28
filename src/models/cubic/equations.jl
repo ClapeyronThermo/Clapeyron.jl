@@ -234,3 +234,9 @@ function wilson_k_values(model::ABCubicModel,p,T)
 
     return  @. Pc/p*exp(5.373*(1+ω)*(1-Tc/T))
 end
+
+function packing_fraction(model::ABCubicModel,V,T,z)
+    ā,b̄,c̄ = cubic_ab(model,V,T,z)
+    Σz = ∑(z)
+    return b̄/(4*V*Σz)
+end
