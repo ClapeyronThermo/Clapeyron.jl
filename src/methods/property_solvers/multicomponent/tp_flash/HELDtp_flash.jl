@@ -107,6 +107,12 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     end
     if nps>=2 && method.verbose == true
         println("Identified np≥2 candidate phases. Moving on to stage III.")
+        println("Candidate solutions are:")
+        for i ∈ 1:nps
+            x = ℳˢ[i,1:nc]
+            V = 10^ℳˢ[i,end]
+            @show x,V 
+        end
     end
     if method.verbose == true
         println("=============================================")
@@ -130,6 +136,9 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     end
 
     r = Solvers.optimize(g,X0)
+    if method.verbose==true
+        println(r)
+    end
     X = Solvers.x_sol(r)
     G = g(X)
 
@@ -138,8 +147,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     V = 10 .^X[nps*(nc-1)+1:nps*nc]
     ϕ = X[nps*nc+1:nps*(nc+1)]
     λ = X[nps*(nc+1)+1:end]
-    println(λ)
-    if any(abs.(λ).<method.eps_μ)
+    if any(abs.(λ).<method.eps_μ) & method.verbose==true
         println("Mass balance could not be satisfied.")
     end
 
@@ -147,8 +155,6 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     μ = VT_chemical_potential.(model,V,T,x)/R̄/T
     
     test_μ = [abs((μ[j][i]-μ[j+1][i])/μ[j][i])<method.eps_μ for i ∈ 1:nc for j ∈ 1:nps-1]
-    println(test_G)
-    println(test_μ)
     if test_G==1 & all(test_μ.==1)
         println("HELD has successfully converged to a solution. Terminating algorithm.")
         return (x,ϕ.*x,G)
