@@ -1,10 +1,5 @@
 using JuMP, HiGHS
 
-#=
-Original code by Thomas Moore
-@denbigh
-included in https://github.com/ypaul21/Clapeyron.jl/pull/56
-=#
 """
     HELDTPFlash(;numphases = 2;max_steps = 1e4*(numphases-1),population_size =20,time_limit = Inf,verbose = false, logspace = false)
 
@@ -30,6 +25,8 @@ Base.@kwdef struct HELDTPFlash <: TPFlashMethod
 end
 
 index_reduction(flash::HELDTPFlash,z) = flash
+
+include("tunneling.jl")
 
 function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     nc = length(model)
@@ -290,26 +287,5 @@ function Obj_HELD_tp_flash(model,p,T,x₀,X,np)
     f = sum(ϕ'*(A+p*V))/Clapeyron.R̄/T
     F = f+g+h
 end
-
-
-"""
-    Obj_de_tp_flash(model,p,T,z,dividers,numphases,logspace = false)
-
-Function to calculate Gibbs Free Energy for given partition of moles between phases.
-This is a little tricky. 
-
-We must find a way of uniquely converting a vector of numbers,
-each in (0, 1), to a partition. We must be careful that 
-the mapping is 1-to-1, not many-to-1, as if many inputs
-map to the same physical state in a redundant way, there
-will be multiple global optima, and the global optimization 
-will perform poorly.
-
-Our approach is to specify (numphases-1) numbers in (0,1) for
-each species. We then scale these numbers systematically in order to partition
-the species between the phases. Each set of (numphases - 1) numbers
-will result in a unique partition of the species into the numphases
-phases.
-"""
 
 export HELDTPFlash
