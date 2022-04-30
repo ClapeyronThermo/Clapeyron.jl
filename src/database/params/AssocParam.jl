@@ -63,3 +63,14 @@ function Base.show(io::IO,param::AssocParam)
 print(io, typeof(param), "(\"", param.name, "\")")
 print(io,param.values.values)
 end
+
+# Operations
+function Base.:(+)(param::AssocParam, x::Number)
+    values = param.values + x
+    return AssocParam(param.name, param.components, values, param.sites ,param.sourcecsvs, param.sources)
+end
+
+function Base.:(*)(param::AssocParam, x::Number)
+    values = param.values * x
+    return AssocParam(param.name, param.components, values, param.sites, param.sourcecsvs, param.sources)
+end

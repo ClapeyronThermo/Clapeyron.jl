@@ -209,3 +209,14 @@ function Base.show(io::IO,::MIME"text/plain",A::SparsePackedMofV)
         end
     end
 end
+
+# Operations
+function Base.:(+)(matrix::Compressed4DMatrix, x::Number)
+    values = matrix.values .+ x
+    return Compressed4DMatrix(values, matrix.outer_indices, matrix.inner_indices, matrix.outer_size, matrix.inner_size)
+end
+
+function Base.:(*)(matrix::Compressed4DMatrix, x::Number)
+    values = matrix.values .* x
+    return Compressed4DMatrix(values, matrix.outer_indices, matrix.inner_indices, matrix.outer_size, matrix.inner_size)
+end

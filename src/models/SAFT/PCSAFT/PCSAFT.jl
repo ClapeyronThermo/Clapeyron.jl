@@ -7,6 +7,12 @@ struct PCSAFTParam <: EoSParam
     bondvol::AssocParam{Float64}
 end
 
+PCSAFT_mappings = [
+            ("m", :segment, identity),
+            ("sigma", :sigma, sigma_LorentzBerthelot ∘ x -> x * 1E-10),
+            (["epsilon", "k"], :epsilon, epsilon_LorentzBerthelot),
+           ]
+
 abstract type PCSAFTModel <: SAFTModel end
 @newmodel PCSAFT PCSAFTModel PCSAFTParam
 
@@ -57,18 +63,10 @@ function PCSAFT(components;
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-    params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    params, sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     
-    segment = params["m"]
-    k = params["k"]
-    Mw = params["Mw"]
-    params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bondvol"]
+    packagedparams = assignparams(PCSAFTParam, params, PCSAFT_mappings)
 
-    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
     model = PCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)

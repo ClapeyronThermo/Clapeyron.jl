@@ -162,5 +162,13 @@ function pack_vectors(params::Vararg{SingleParameter{T},N}) where {T<:Number,N}
     SingleParam(name,components,vals,missingvals,srccsv,src)
 end
 
+# Operations
+function Base.:(+)(param::SingleParameter, x::Number)
+    values = param.values .+ x
+    return SingleParam(param.name, param.components, values, param.ismissingvalues, param.sourcecsvs, param.sources)
+end
 
-
+function Base.:(*)(param::SingleParameter, x::Number)
+    values = param.values .* x
+    return SingleParam(param.name, param.components, values, param.ismissingvalues, param.sourcecsvs, param.sources)
+end
