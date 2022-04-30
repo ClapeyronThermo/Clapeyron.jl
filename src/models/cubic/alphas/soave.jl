@@ -24,7 +24,7 @@ export SoaveAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for `SRK` EoS.
+Cubic alpha `(α(T))` model. Default for [`SRK`](@ref) EoS.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
@@ -43,7 +43,8 @@ function SoaveAlpha(components::Vector{String}; userlocations::Vector{String}=St
     return model
 end
 
-@inline α_m(model,::SoaveAlpha) = (0.480,1.547,-0.176)
+@inline α_m(model::RKModel,::SoaveAlpha) = (0.480,1.547,-0.176)
+@inline α_m(model::PRModel,::SoaveAlpha) = (0.37464,1.54226,-0.26992) #equal to PRAlpha
 
 function α_function(model::CubicModel,V,T,z,alpha_model::SoaveAlphaModel)
     Tc = model.params.Tc.values
@@ -56,5 +57,15 @@ function α_function(model::CubicModel,V,T,z,alpha_model::SoaveAlphaModel)
         m = evalpoly(ωi,coeff)
         α[i] = (1+m*(1-√(Tr)))^2
     end
+    return α
+end
+
+function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::SoaveAlphaModel)
+    Tc = model.params.Tc.values[1]
+    ω  = alpha_model.params.acentricfactor.values[1]
+    coeff = α_m(model,alpha_model)
+    Tr = T/Tc
+    m = evalpoly(ω,coeff)
+    α  = (1+m*(1-√(Tr)))^2
     return α
 end

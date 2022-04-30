@@ -27,7 +27,7 @@ None
 
 ## Description
 
-Mixing Rule used by the Universal Mixing Rule Peng-Robinson (`UMRPR`) equation of state.
+Mixing Rule used by the Universal Mixing Rule Peng-Robinson [`UMRPR`](@ref) equation of state.
 ```
 aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
 bᵢⱼ = ((√bᵢ +√bⱼ)/2)^2
@@ -50,20 +50,20 @@ function ab_premixing(::Type{PR},mixing::UMRRuleModel,Tc,pc,kij)
     Ωa, Ωb = ab_consts(PR)
     _Tc = Tc.values
     _pc = pc.values
+    components = pc.components
     a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     bi = @. Ωb*R̄*_Tc/_pc
-    bij = ((bi.^(1/2).+bi'.^(1/2))/2).^2
-    b = PairParam("b",Tc.components,bij)
+    umr_mix(bi,bj,kij) = mix_powmean(bi,bj,0,0.5)
+    b = kij_mix(umr_mix,SingleParam("b (covolume)",components,bi))
     return a,b
 end
 
 UMR_g_E(model,V,T,z) = excess_gibbs_free_energy(model,V,T,z)
 
 function UMR_g_E(model::UNIFACModel,V,T,z) 
-    Σz = sum(z)
-    lnγ_SG_  = lnγ_SG(model,1e5,T,z)
-    lnγ_res_ = lnγ_res(model,1e5,T,z)
-    return sum(z[i]*R̄*T*(lnγ_res_[i]+lnγ_SG_[i]) for i ∈ @comps)/Σz
+    g_SG  = excess_g_SG(model,1e5,T,z)
+    g_res = excess_g_res(model,1e5,T,z)
+    return g_SG+g_res
 end
 
 function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b,c)
@@ -71,7 +71,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b,c)
     activity = mixing_model.activity
     invn = (one(n)/n)
     invn2 = invn^2
-    g_E = UMR_g_E(activity,V,T,z)
+    g_E = UMR_g_E(activity,V,T,z) * invn
     #b = Diagonal(b).diag
     #b = ((b.^(1/2).+b'.^(1/2))/2).^2
     b̄ = dot(z,Symmetric(b),z) * invn2

@@ -11,7 +11,7 @@ struct NRTL{c<:EoSModel} <: NRTLModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     params::NRTLParam
-    puremodel::Vector{c}
+    puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
     references::Array{String,1}
 end
@@ -19,10 +19,41 @@ end
 @registermodel NRTL
 
 export NRTL
+"""
+    NRTL <: ActivityModel
+
+    function NRTL(components::Vector{String};
+    puremodel=PR,
+    userlocations=String[],
+    pure_userlocations = String[],
+    verbose=false)
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
+- `b`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
+- `c`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
+
+## Input models
+- `puremodel`: model to calculate pure pressure-dependent properties
+
+## Description
+NRTL (Non Random Two Fluid) activity model:
+```
+Gᴱ = nRT∑[xᵢ(∑τⱼᵢGⱼᵢxⱼ)/(∑Gⱼᵢxⱼ)]
+Gᵢⱼ exp(-cᵢⱼτᵢⱼ)
+τᵢⱼ = aᵢⱼ + bᵢⱼ/T
+```
+
+## References
+1. Renon, H., & Prausnitz, J. M. (1968). Local compositions in thermodynamic excess functions for liquid mixtures. AIChE journal. American Institute of Chemical Engineers, 14(1), 135–144. doi:10.1002/aic.690140124
+"""
+NRTL
 
 function NRTL(components::Vector{String}; puremodel=PR,
-    userlocations=String[], 
-     verbose=false)
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/NRTL/NRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b"], verbose=verbose)
     a  = params["a"]
     b  = params["b"]
@@ -30,10 +61,10 @@ function NRTL(components::Vector{String}; puremodel=PR,
     Mw  = params["Mw"]
     icomponents = 1:length(components)
     
-    init_puremodel = [puremodel([components[i]]) for i in icomponents]
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = NRTLParam(a,b,c,Mw)
-    references = String[]
-    model = NRTL(components,icomponents,packagedparams,init_puremodel,1e-12,references)
+    references = String["10.1002/aic.690140124"]
+    model = NRTL(components,icomponents,packagedparams,_puremodel,1e-12,references)
     return model
 end
 
@@ -55,7 +86,7 @@ function excess_gibbs_free_energy(model::NRTLModel,p,T,z)
     a = model.params.a.values
     b  = model.params.b.values
     c  = model.params.c.values
-    _0 = zero(p+T+first(z))
+    _0 = zero(T+first(z))
     n = sum(z)
     invn = 1/n
     invT = 1/(T)
@@ -76,5 +107,3 @@ function excess_gibbs_free_energy(model::NRTLModel,p,T,z)
     end
     return n*res*R̄*T
 end
-
-activity_coefficient(model::NRTLModel,p,T,z) = activity_coefficient_ad(model,p,T,z)

@@ -110,5 +110,8 @@ function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
     inner_size = val.inner_size
     newvals = Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
 end
+
+
+
     
   

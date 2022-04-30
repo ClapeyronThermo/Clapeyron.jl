@@ -185,7 +185,7 @@ end
 
         @testset "RK w/ WSRule" begin
             system = RK(["methanol","benzene"];mixing = WSRule, activity=Wilson)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5568144490135614 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5729126903890258 rtol = 1e-6
         end
     end
 
@@ -212,6 +212,16 @@ end
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.1447318247939071 rtol = 1e-6
         end
 
+        @testset "QCPR" begin
+            system = QCPR(["neon","helium"])
+            @test Clapeyron.a_res(system, V, 25, z) ≈ -0.04727878068343511 rtol = 1e-6
+        end
+
+        @testset "EPPR78" begin
+           system = EPPR78(["benzene","isooctane"])
+           @test Clapeyron.a_res(system, V, T, z) ≈ -1.138852387092216 rtol = 1e-6
+        end
+        
         @testset "PR w/ BMAlpha" begin
             system = PR(["ethane","undecane"];alpha = BMAlpha)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.244507550417118 rtol = 1e-6
@@ -259,7 +269,7 @@ end
 
         @testset "PR w/ WSRule" begin
             system = PR(["methanol","benzene"];mixing = WSRule, activity=Wilson)
-            @test Clapeyron.a_res(system, V, T, z) ≈ -0.6602069628893608 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.669085674824878 rtol = 1e-6
         end
     end
     @printline
@@ -289,6 +299,10 @@ end
     @testset "UNIFAC" begin
         system = UNIFAC(["methanol","benzene"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5322232657797463 rtol = 1e-6
+        #when fast UNIFAC works, it should pass this test.
+        # system2 = UNIFAC(["methanol","benzene"])
+        # prop2 = ()
+        # @test Clapeyron.activity_coefficient(system2,1e-4,423.15,[0.,1.])  ≈ [2.0807335111878937,1.0] rtol = 1e-6
     end
 
     @testset "ogUNIFAC" begin
@@ -299,6 +313,7 @@ end
     @testset "COSMOSAC02" begin
         system = COSMOSAC02(["water","ethanol"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.3871817962565904 rtol = 1e-6
+        @test Clapeyron.excess_gibbs_free_energy(system,p,T,z) ≈ 610.5706657776052 rtol = 1e-6
     end
 
     @testset "COSMOSAC10" begin
@@ -350,6 +365,8 @@ end
     @testset "IAPWS95" begin
         z = [1.]
         system = IAPWS95()
+        system_ideal = Clapeyron.idealmodel(system)
+        @test Clapeyron.a_ideal(system_ideal, V, T, z) ≈ 7.932118505056652 rtol = 1e-6
         @test Clapeyron.a_ideal(system, V, T, z) ≈ 7.932118505056652 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T, z) ≈ -2.1152657050144347e14 rtol = 1e-6
     end
@@ -408,11 +425,29 @@ end
         @test Clapeyron.shape_factors(system, V, T, z)[1] ≈ 1.3499576779924594 rtol = 1e-6
     end
 end
-
 @testset "lattice models" begin
-    T = 298.15
-    V = 1e-4
-    z = [1.]
-    system = Clapeyron.SanchezLacombe(["carbon dioxide"])
-    @test Clapeyron.a_res(system, V, T, z) ≈ -0.9511044462267396 rtol = 1e-6
+
+    @testset "single component" begin
+        T = 298.15
+        V = 1e-4
+        z = [1.]
+        system = Clapeyron.SanchezLacombe(["carbon dioxide"])
+        @test Clapeyron.a_res(system, V, T, z) ≈ -0.9511044462267396 rtol = 1e-6
+    end
+
+    @testset "Sanchez-Lacombe,Kij rule" begin
+        T = 298.15
+        V = 1e-4
+        z = [0.5,0.5]
+        system = SanchezLacombe(["carbon dioxide","benzoic acid"],mixing = SLKRule)
+        @test Clapeyron.a_res(system, V, T, z) ≈ -6.494291842858994 rtol = 1e-6
+    end
+
+    @testset "Sanchez-Lacombe K0-K1-L rule" begin
+        T = 298.15
+        V = 1e-4
+        z = [0.5,0.5]
+        system = SanchezLacombe(["carbon dioxide","benzoic acid"],mixing = SLk0k1lMixingRule)
+        @test Clapeyron.a_res(system, V, T, z) ≈ -5.579621796375229 rtol = 1e-6
+    end
 end

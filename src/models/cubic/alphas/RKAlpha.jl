@@ -23,7 +23,7 @@ export RKAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for `RK` EoS.
+Cubic alpha `(α(T))` model. Default for [`RK`](@ref) EoS.
 ```
 αᵢ = 1/√(Trᵢ)
 Trᵢ = T/Tcᵢ
@@ -39,6 +39,8 @@ function RKAlpha(components::Vector{String}; userlocations::Vector{String}=Strin
     return model
 end
 
+RKAlpha() = RKAlpha(RKAlphaParam())
+
 function α_function(model::CubicModel,V,T,z,alpha_model::RKAlphaModel)
     Tc = model.params.Tc.values
     α = zeros(typeof(T),length(Tc))
@@ -47,6 +49,12 @@ function α_function(model::CubicModel,V,T,z,alpha_model::RKAlphaModel)
         α[i] = 1 /√(Tr)
     end
     return α
+end
+
+function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::RKAlphaModel)
+    Tc = model.params.Tc.values[1]
+    Tr = T/Tc
+    α = 1 /√(Tr)
 end
 
 is_splittable(::RKAlpha) = false

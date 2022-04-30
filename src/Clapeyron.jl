@@ -12,6 +12,7 @@ using FillArrays: FillArrays
 using Roots: Roots
 using NLSolvers
 import BlackBoxOptim
+
 using DiffResults, ForwardDiff
 using Scratch 
 using Unitful
@@ -26,24 +27,34 @@ include("utils/fractions.jl")
 import .Fractions
 using .Fractions: FractionVector
 
-#The Base of Clapeyron: EoSModel and eos(model,V,T,z)
+#Gas constant, Boltzmann Constant
 include("base/constants.jl") 
-include("base/EoSModel.jl") 
+
+#The Base of Clapeyron: EoSModel and eos(model,V,T,z)
+include("base/EoSModel.jl")
+
+#show(model<:EoSModel)
 include("base/eosshow.jl")
 
-#EoSParam, ClapeyronParam
-include("params/paramvectors.jl")
-include("params/ClapeyronParam.jl")
-include("params/combiningrules.jl")
+#EoSParam, ClapeyronParam, All Params
+include("database/ClapeyronParam.jl")
+
+#Combining Rules for Single and Pair Params.
+include("database/params/combiningrules.jl")
 
 using CSV, Tables
-#getparams machinery
+#getparams options
 include("database/ParamOptions.jl") 
+#getparams definition
 include("database/database.jl")
+#transform Tables.jl tables to Clapeyron csv files
 include("database/UserReader.jl")
 
 #macros, used for defining models
 include("utils/macros.jl")
+
+#index reduction
+include("utils/index_reduction.jl")
 
 #splitting models, useful for methods.
 include("utils/split_model.jl")
@@ -54,10 +65,8 @@ include("methods/methods.jl")
 #=
 the dependency chain is the following:
 
-base --> params -|-> database ----------------|
-                 |-> split_model --> methods -|-> models
-                 |-> macros ------------------|
-
+base --> database(params)  -|-> split_model --> methods -|-> models                     
+                            |-> macros ------------------|
 =#
 
 #Clapeyron EoS collection
@@ -69,6 +78,9 @@ include("models/ideal/ReidIdeal.jl")
 include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
 
+#Basic utility EoS
+include("models/cached/SpecialComp.jl")
+
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95Ideal.jl")
@@ -77,8 +89,14 @@ include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
 include("models/EmpiricHelmholtz/LJRef/LJRefIdeal.jl")
 include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
+include("models/cubic/equations.jl")
+include("models/cubic/vdW.jl")
+include("models/cubic/RK/RK.jl")
+include("models/cubic/PR/PR.jl")
+
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/PharmaPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")
 include("models/SAFT/CPA/variants/sCPA.jl")
@@ -94,15 +112,14 @@ include("models/SAFT/CKSAFT/CKSAFT.jl")
 include("models/SAFT/CKSAFT/variants/sCKSAFT.jl")
 include("models/SAFT/BACKSAFT/BACKSAFT.jl")
 include("models/SAFT/equations.jl")
+include("models/SAFT/association.jl")
 
-include("models/cubic/equations.jl")
-include("models/cubic/vdW.jl")
-include("models/cubic/RK/RK.jl")
-include("models/cubic/PR/PR.jl")
+include("models/cached/EoSVectorParam.jl")
 
 include("models/Activity/Wilson/Wilson.jl")
 include("models/Activity/NRTL/NRTL.jl")
 include("models/Activity/UNIQUAC/UNIQUAC.jl")
+include("models/Activity/UNIFAC/utils.jl")
 include("models/Activity/UNIFAC/UNIFAC.jl")
 include("models/Activity/UNIFAC/variants/ogUNIFAC.jl")
 include("models/Activity/UNIFAC/variants/PSRK.jl")
@@ -123,13 +140,14 @@ include("models/cubic/RK/variants/PSRK.jl")
 include("models/cubic/PR/variants/PR78.jl")
 include("models/cubic/PR/variants/VTPR.jl")
 include("models/cubic/PR/variants/UMRPR.jl")
+include("models/cubic/PR/variants/QCPR.jl")
+include("models/cubic/PR/variants/EPPR78.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
 include("models/SPUNG/SPUNG.jl")
 include("models/UFTheory/UFTheory.jl")
 
-include("models/cached/CachedEoS.jl")
 include("utils/misc.jl")
 include("utils/estimation/estimation.jl")
 

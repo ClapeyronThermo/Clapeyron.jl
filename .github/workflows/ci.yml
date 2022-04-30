@@ -6,6 +6,7 @@ jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, 'Clapeyron skip ci')"
     timeout-minutes: 120
     strategy:
       fail-fast: false
@@ -37,13 +38,12 @@ jobs:
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest
-      - uses: julia-actions/julia-processcoverage@latest
-      - uses: codecov/codecov-action@v1
         with:
-          file: lcov.info
+          coverage: false
   nighly-test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.head_commit.message, 'Clapeyron skip ci')"
     timeout-minutes: 120
     continue-on-error: ${{ matrix.experimental }}
     strategy:
@@ -76,6 +76,12 @@ jobs:
             ${{ runner.os }}-
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest
+        with:
+          coverage: true
+      - uses: julia-actions/julia-processcoverage@latest
+      - uses: codecov/codecov-action@v1
+        with:
+          file: lcov.info
   docs:
     name: Documentation
     runs-on: ubuntu-latest

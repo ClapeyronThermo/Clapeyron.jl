@@ -1,7 +1,5 @@
 abstract type MixingRule <:EoSModel end
 
-
-
 """
 
     mixing_rule(model::CubicModel,V,T,z,mixing_model::MixingRule,α,a,b,c)
@@ -42,3 +40,5 @@ include("WS.jl")
 include("PSRK.jl")
 include("VTPR.jl")
 include("UMR.jl")
+include("QCPR.jl")
+include("PPR78.jl")

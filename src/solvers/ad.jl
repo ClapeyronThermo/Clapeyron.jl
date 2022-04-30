@@ -30,7 +30,7 @@ end
 returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.jl` and `StaticArrays.jl` to calculate everything in one pass.
 """
 @inline function f∂f(f::F, x::R) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(∂Tag(), R))
+    T = typeof(ForwardDiff.Tag(f, R))
     out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),))))
     return ForwardDiff.value(out),  ForwardDiff.extract_derivative(T, out)
 end
@@ -91,4 +91,9 @@ end
 function ∂2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)
     return ∂2(f,y1,y2)
+end
+
+function autochunk(x)
+    k = ForwardDiff.pickchunksize(length(x))
+    return ForwardDiff.Chunk{k}()
 end

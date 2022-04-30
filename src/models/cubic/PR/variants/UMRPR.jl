@@ -8,13 +8,15 @@
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
+    activity_userlocations = String[],
+    translation_userlocations = String[],
     verbose=false)
 
 Universal Mixing Rule Peng Robinson equation of state. it uses the following models:
 
-- Translation Model: `MTTranslation`
-- Alpha Model: `MTAlpha`
-- Mixing Rule Model: `UMRRule` with `UNIFAC` activity
+- Translation Model: [`MTTranslation`](@ref)
+- Alpha Model: [`MTAlpha`](@ref)
+- Mixing Rule Model: [`UMRRule`](@ref) with (`UNIFAC`)(@ref) activity
 
 ## References
 
@@ -30,6 +32,8 @@ function UMRPR(components::Vector{String}; idealmodel=BasicIdeal,
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
+    activity_userlocations = String[],
+    translation_userlocations = String[],
     verbose=false)
 
     return PR(components;
@@ -42,6 +46,8 @@ function UMRPR(components::Vector{String}; idealmodel=BasicIdeal,
     ideal_userlocations = ideal_userlocations,
     alpha_userlocations = alpha_userlocations,
     mixing_userlocations = mixing_userlocations,
+    activity_userlocations = activity_userlocations,
+    translation_userlocations = translation_userlocations,
     verbose = verbose)
 end
 export UMRPR

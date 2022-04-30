@@ -38,6 +38,19 @@ using Clapeyron, Test, Unitful
     @printline
 end
 
+@testset "pharmaPCSAFT, single components" begin
+    system = pharmaPCSAFT(["water08"])
+    v1 = Clapeyron.saturation_pressure(system, 280.15)[2]
+    v2 = Clapeyron.saturation_pressure(system, 278.15)[2]
+    v3 = Clapeyron.saturation_pressure(system, 275.15)[2]
+
+    @test v1 ≈ 1.8022929328333385e-5  rtol = 1E-6 
+    @test v2 ≈ 1.8022662044726256e-5 rtol = 1E-6 
+    @test v3 ≈ 1.802442451376152e-5 rtol = 1E-6 
+    #density maxima of water
+    @test v2 < v1
+    @test v2 < v3
+end
 
 @testset "LJSAFT methods, single components" begin
     system = LJSAFT(["ethanol"])
@@ -58,7 +71,8 @@ end
     T = 273.15 + 78.24
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T,phase=:v) ≈ 0.027368884099868623 rtol = 1e-6
-        @test Clapeyron.volume(system, p, T,phase=:l) ≈ 3.582709893664124e-5 rtol = 1e-6
+        #volume(SAFTgammaMie(["ethanol"]),p,T,phase =:l)  =6.120507339375205e-5
+        @test Clapeyron.volume(system, p, T,phase=:l) ≈ 6.245903786961202e-5 rtol = 1e-6
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 101341.9709136089 rtol = 1E-6
@@ -71,7 +85,8 @@ end
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 0.00015924416586849443 rtol = 1e-6 
+        #0.0001950647173402879 with SAFTgammaMie 
+        @test Clapeyron.volume(system, p, T) ≈ 0.00019299766073894634 rtol = 1e-6 
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 167.8313793818096 rtol = 1E-6
@@ -148,19 +163,35 @@ end
         @test Clapeyron.excess(system, p, T, z, Clapeyron.gibbs_free_energy) ≈ 1626.6212908893858 rtol = 1E-6
     end
     @testset "Equilibrium properties" begin
+        #Those are the highest memory-intensive routines. i suspect that this is causing the 
+        #failures on windows 1.6. testing if adding GC pauses helps the problem
+        GC.gc()
         @test Clapeyron.gibbs_solvation(system,T) ≈ -13131.087644740426 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.UCEP_mix(system)[1] ≈ 319.36877456397684 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.bubble_pressure(system,T,z)[1] ≈ 54532.249600937736 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.bubble_temperature(system,p2,z)[1] ≈ 435.80890506865 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.dew_pressure(system,T2,z)[1] ≈ 1.6555486543884084e6 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.dew_temperature(system,p2,z)[1] ≈ 453.0056727580934 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.LLE_pressure(system,T,z2)[1] ≈ 737971.7522006684 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.LLE_temperature(system,p,z2)[1] ≈ 312.9523684945214 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.azeotrope_pressure(system,T2)[1] ≈ 2.4435462800998255e6 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.azeotrope_temperature(system,p)[1] ≈ 328.2431049077264 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.UCST_mix(system,T2)[1] ≈ 1.0211532467788119e9 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.VLLE_pressure(system, T)[1] ≈ 54504.079665621306 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.VLLE_temperature(system, p)[1] ≈ 328.2478837563423 rtol = 1E-6
+        GC.gc()
         @test Clapeyron.crit_mix(system,z)[1] ≈ 518.0004062881115 rtol = 1E-6
     end
     @printline
@@ -358,18 +389,36 @@ end
     end
 end
 
+@testset "association" begin
+    no_comb = Clapeyron.AssocOptions()
+    no_comb_dense = Clapeyron.AssocOptions(combining = :dense_nocombining)
+    elliott = Clapeyron.AssocOptions(combining = :elliott)
+    
+    model_no_comb = PCSAFT(["methanol","ethanol"],assoc_options = no_comb)
+    model_no_comb_dense = PCSAFT(["methanol","ethanol"],assoc_options = no_comb_dense)
+    model_elliott_comb = PCSAFT(["methanol","ethanol"],assoc_options = elliott)
+
+    V = 5e-5
+    T = 298.15
+    z = [0.5,0.5]
+    @test Clapeyron.nonzero_extrema(0:3) == (1, 3)
+    @test Clapeyron.a_assoc(model_no_comb,V,T,z) ≈ -4.667036481159167  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_no_comb,V,T,z) ≈ Clapeyron.a_assoc(model_no_comb_dense,V,T,z)  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_elliott_comb,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
+end
+
 @testset "Tp flash algorithms" begin
-    system = PCSAFT(["water","cyclohexane","carbon dioxide"])
+    system = PCSAFT(["water","cyclohexane","propane"])
     T = 298.15
     p = 1e5
     z = [0.333, 0.333, 0.334]
 
     @testset "RR Algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T,z, RRTPFlash())[3] ≈ -6.520178250317485 rtol = 1e-6 
+        @test Clapeyron.tp_flash(system, p, T,z, RRTPFlash())[3] ≈ -6.539976318817461 rtol = 1e-6 
     end
 
     @testset "DE Algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3))[3] ≈ -6.73130492921276 rtol = 1e-6 
+        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3))[3] ≈ -6.759674475174073 rtol = 1e-6 
     end
 end
 

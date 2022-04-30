@@ -49,11 +49,17 @@ end
 Clapeyron.vdW
 Clapeyron.RK
 Clapeyron.PR
+```
+
+## Variant Models
+```@docs
 Clapeyron.SRK
 Clapeyron.PSRK
 Clapeyron.PR78
+Clapeyron.EPPR78
 Clapeyron.UMRPR
 Clapeyron.VTPR
+Clapeyron.QCPR
 ```
 
 ## Alpha `(α(T))` Models
@@ -77,6 +83,7 @@ Clapeyron.TwuAlpha
 ```@docs
 Clapeyron.translation
 Clapeyron.NoTranslation
+Clapeyron.ConstantTranslation
 Clapeyron.RackettTranslation
 Clapeyron.PenelouxTranslation
 Clapeyron.MTTranslation
@@ -95,4 +102,6 @@ Clapeyron.LCVMRule
 Clapeyron.WSRule
 Clapeyron.VTPRRule
 Clapeyron.PSRKRule
+Clapeyron.QCPRRule
+Clapeyron.PPR78Rule
 ```

@@ -99,7 +99,7 @@ The Struct consists of the following fields:
 * sites: a [`SiteParam`](@ref)
 * params: the Struct paramstype that contains all parameters in the model
 * idealmodel: the IdealModel struct that determines which ideal model to use
-* assoc_options: struct containing options for the association solver. see [AssocOptions](@ref)
+* assoc_options: struct containing options for the association solver. see [`AssocOptions`](@ref)
 * references: reference for this EoS
 
 See the tutorial or browse the implementations to see how this is used.
@@ -313,7 +313,7 @@ macro registermodel(model)
                 end
             
                 function Base.show(io::IO, model::$model)
-                    return gc_eosshow(io, mime, model)
+                    return gc_eosshow(io, model)
                 end
             end
         else

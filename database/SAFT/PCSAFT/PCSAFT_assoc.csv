@@ -13,6 +13,7 @@ ethanol,CCO,H,ethanol,CCO,e,2653.4,0.032384,10.1021/ie010954d
 2-propanol,CC(O)C,H,2-propanol,CC(O)C,e,2253.9,0.024675,10.1021/ie010954d
 2-methyl-2-butanol,CC(O)(C)CC,H,2-methyl-2-butanol,CC(O)(C)CC,e,2618.8,0.001863,10.1021/ie010954d
 water,O,H,water,O,e,2500.7,0.034868,10.1021/ie010954d
+water08,O,H,water08,O,e,2425.6714,0.04509,10.1016/j.cep.2007.02.034
 methylamine,CN,H,methylamine,CN,e,684.3,0.095103,10.1021/ie010954d
 ethylamine,CCN,H,ethylamine,CCN,e,854.7,0.017275,10.1021/ie010954d
 1-propylamine,CCCN,H,1-propylamine,CCCN,e,1028.1,0.022674,10.1021/ie010954d

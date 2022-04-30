@@ -63,4 +63,9 @@ function gc_eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSMod
     end
 end
 
+function gc_eosshow(io::IO, Base.@nospecialize(model::EoSModel))
+    return eosshow(io,model)
+end
+
+
 export eosshow

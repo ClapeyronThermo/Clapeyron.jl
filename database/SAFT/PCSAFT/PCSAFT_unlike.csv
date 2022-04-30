@@ -28,6 +28,7 @@ carbon dioxide,(O=)C=O,n-heptane,CCCCCCC,0.129,10.1021/ie0003887
 carbon dioxide,(O=)C=O,methylcyclohexane,,0.144,10.1021/ie0003887
 carbon dioxide,(O=)C=O,cyclohexane,,0.13,10.1021/ie0003887
 carbon dioxide,(O=)C=O,water,,-0.005927,10.1021/ie0003887
+carbon dioxide,(O=)C=O,water08,,-0.005927,10.1021/ie0003887
 1-chlorobutane,CCCC(Cl),hexane,CCCCCC,0.017,10.1021/ie0003887
 methanol,CO,isobutanol,,0.05,10.1021/ie010954d
 methanol,CO,cyclohexane,C1CCCCC1,0.051,10.1021/ie010954d
@@ -39,5 +40,6 @@ ethanol,CCO,butane,CCCC,0.028,10.1021/ie010954d
 1-butanol,CCCCO,butane,CCCC,0.015,10.1021/ie010954d
 1-pentanol,CCCCCO,benzene,c1ccccc1,0.0135,10.1021/ie010954d
 water,O,1-pentanol,CCCCCO,0.016,10.1021/ie010954d
+water08,O,1-pentanol,CCCCCO,0.016,10.1021/ie010954d
 diethyl ether,,ethane,CC,0,10.1021/ie0003887
-perfluoromethane,,butnae,,0.0980,
+perfluoromethane,,butane,,0.0980,

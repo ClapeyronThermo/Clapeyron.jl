@@ -37,12 +37,17 @@ If the calculation fails, returns  `(NaN, NaN, NaN)`
 function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     !isone(length(model)) && throw(error("$model have more than one component."))
     T = T*T/T
-    V0 = MVector((V0[1],V0[2]))
-    V_lb = lb_volume(model,SA[1.0])
-    TYPE = promote_type(typeof(T),typeof(V_lb))
+    V01,V02 = V0
+    TYPE = promote_type(typeof(T),typeof(V01),typeof(V02))
+    if T isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
+        V0 = MVector((V01,V02))
+    else
+        V0 = SizedVector{2,typeof(first(V0))}((V01,V02))
+    end
     nan = zero(TYPE)/zero(TYPE)    
-    scales = scale_sat_pure(model)
-    f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]),scales)
+    #scales = scale_sat_pure(model)
+    f! = ObjSatPure(model,T)
+    #f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]),scales)
     res0 = (nan,nan,nan)
     result = Ref(res0)
     error_val = Ref{Any}(nothing)
@@ -58,8 +63,13 @@ function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     if T_c < T
         # @error "initial temperature $T greater than critical temperature $T_c. returning NaN"
     else
-        V0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
-        V0 = MVector((V0[1],V0[2]))
+        x0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
+        V01,V02 = x0
+        if T isa Base.IEEEFloat
+            V0 = MVector((V01,V02))
+        else
+            V0 = SizedVector{2,typeof(first(V0))}((V01,V02))
+        end
         converged = try_sat_pure(model,V0,f!,T,result,error_val)   
         if converged
             return result[]
@@ -69,6 +79,24 @@ function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
     return res0
 end
 
+struct ObjSatPure{M,T}
+    model::M
+    ps::T
+    mus::T
+    Tsat::T
+end
+
+function ObjSatPure(model,T)
+    ps,mus = scale_sat_pure(model)
+    ObjSatPure(model,ps,mus,T)
+end
+
+function (f::ObjSatPure)(F,x)
+    model = f.model
+    scales = (f.ps,f.mus)
+    T = f.Tsat
+    return Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]),scales)
+end
 #with the critical point, we can perform a
 #corresponding states approximation with the
 #propane reference equation of state
@@ -167,6 +195,22 @@ function enthalpy_vap(model::EoSModel, T)
     H_l = VT_enthalpy(model,V_l,T)
     H_vap=H_v -H_l
     return H_vap
+end
+
+"""
+    acentric_factor(model::EoSModel)
+
+calculates the acentric factor using its definition:
+
+    ω = -log10(psatᵣ) -1, at Tᵣ = 0.7
+To do so, it calculates the critical temperature (using `crit_pure`) and performs a saturation calculation (with `sat_pure`)
+
+"""
+function acentric_factor(model::EoSModel)
+    T_c,p_c,_ = crit_pure(model)
+    p = first(saturation_pressure(model,0.7*T_c))
+    p_r = p/p_c
+    return -log10(p_r) - 1.0
 end
 
 

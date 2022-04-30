@@ -1,14 +1,52 @@
 struct SAFTVRQMieParam <: EoSParam
+    Mw::PairParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     lambda_a::PairParam{Float64}
     lambda_r::PairParam{Float64}
     epsilon::PairParam{Float64}
-    Mw::PairParam{Float64}
 end
 
 abstract type SAFTVRQMieModel <: SAFTVRMieModel end
 @newmodel SAFTVRQMie SAFTVRQMieModel SAFTVRQMieParam
+
+"""
+    SAFTVRQMieModel <: SAFTVRMieModel
+
+    SAFTVRQMie(components; 
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
+- `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
+- `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+
+## Model Parameters
+- `Mw`: Pair Parameter (`Float64`) - Mixed Molecular Weight `[g/mol]`
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+- `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
+- `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+
+## Input models
+- `idealmodel`: Ideal Model
+
+## Description
+
+Quantum-Corrected SAFT-VR Mie 
+
+## References
+1. Aasen, A., Hammer, M., Müller, E. A., & Wilhelmsen, Ø. (2020). Equation of state and force fields for Feynman-Hibbs-corrected Mie fluids. II. Application to mixtures of helium, neon, hydrogen, and deuterium. The Journal of Chemical Physics, 152(7), 074507. doi:10.1063/1.5136079
+"""
+SAFTVRQMie
 
 export SAFTVRQMie
 function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
@@ -23,12 +61,14 @@ function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], i
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
 
-    packagedparams = SAFTVRQMieParam(segment, sigma, lambda_a, lambda_r, epsilon, Mw)
-    references = ["todo"]
+    packagedparams = SAFTVRQMieParam(Mw, segment, sigma, lambda_a, lambda_r, epsilon)
+    references = ["10.1063/1.5136079"]
 
     model = SAFTVRQMie(packagedparams, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
     return model
 end
+
+mw(model::SAFTVRQMieModel) = model.params.Mw.diagvalues .* 1e3
 
 function a_mono(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     _,_,vrdata = _data
@@ -40,15 +80,16 @@ function a_res(model::SAFTVRQMieModel, V, T, z)
 end
 
 function data(model::SAFTVRQMieModel, V, T, z)
+    m̄ = dot(z,model.params.segment.values)
     _σeff = @f(σeff)
     _ϵff = @f(ϵeff)
     _d = @f(d,_σeff)
     ζi = @f(ζ0123,_d)
     _ζst = @f(ζst,_σeff)
-    _ζ_X,_ = @f(ζ_X_σ3,_d)
-    _ρ_S = @f(ρ_S)
+    _ζ_X,_ = @f(ζ_X_σ3,_d,m̄)
+    _ρ_S = @f(ρ_S,m̄)
     σ3x = _ζst/(_ρ_S*π/6)
-    vrdata = (_d,_ρ_S,ζi,_ζ_X,_ζst,σ3x)
+    vrdata = (_d,_ρ_S,ζi,_ζ_X,_ζst,σ3x,m̄)
     return (_σeff,_ϵff,vrdata)
 end
 
@@ -328,7 +369,7 @@ end
 =#
 function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     _σeff,_ϵff,vrdata= _data
-    _d,_ρ_S,ζi,_ζ_X,_ζst  = vrdata
+    _d,_ρ_S,ζi,_ζ_X,_ζst,_,m̄  = vrdata
     comps = @comps
     l = length(comps)
     ∑z = ∑(z)
@@ -337,8 +378,7 @@ function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     _λr = model.params.lambda_r.values
     _λa = model.params.lambda_a.values
     _σ = model.params.sigma.values
-    Mw = model.params.Mw.values
-    m̄ = dot(z, m)
+    Mw = model.params.Mw.values 
     m̄inv = 1/m̄
     a₁ = zero(V+T+first(z))
     a₂ = a₁

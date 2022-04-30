@@ -1,4 +1,5 @@
 struct LJSAFTParam <: EoSParam
+    Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     b::PairParam{Float64}
     T_tilde::PairParam{Float64}
@@ -9,6 +10,46 @@ end
 abstract type LJSAFTModel <: SAFTModel end
 @newmodel LJSAFT LJSAFTModel LJSAFTParam
 
+"""
+    LJSAFTModel <: SAFTModel
+
+    LJSAFT(components; 
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `b`: Single Parameter (`Float64`) - Segment Volume [`dm^3/mol`]
+- `T_tilde`: Single Parameter (`Float64`) - Lennard-Jones attraction parameter  `[K]`
+- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater for energy(no units)
+- `zeta`: Pair Parameter (`Float64`) - Binary Interaction Paramater for volume (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
+
+## Model Parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `b`: Pair Parameter (`Float64`) - Mixed segment covolume `[dm^3/mol]`
+- `T_tilde`: Pair Parameter (`Float64`) - Mixed Lennard-Jones attraction parameter `[K]`
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume
+
+## Input models
+- `idealmodel`: Ideal Model
+
+## Description
+
+Perturbed-Chain SAFT (PC-SAFT)
+
+## References
+1. Kraska, T., & Gubbins, K. E. (1996). Phase equilibria calculations with a modified SAFT equation of state. 1. Pure alkanes, alkanols, and water. Industrial & Engineering Chemistry Research, 35(12), 4727–4737. doi:10.1021/ie9602320
+"""
+LJSAFT
+
 export LJSAFT
 function LJSAFT(components;
     idealmodel=BasicIdeal,
@@ -16,8 +57,10 @@ function LJSAFT(components;
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-    params,sites = getparams(components, ["SAFT/LJSAFT"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/LJSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
+
+    Mw = params["Mw"]
 
     k = params["k"]
     zeta = params["zeta"]
@@ -25,12 +68,12 @@ function LJSAFT(components;
     T_tilde = epsilon_LorentzBerthelot(params["T_tilde"], k)
     params["b"].values .*= 1E-3
     params["b"].values .^= 1/3
-    b = sigma_LorentzBerthelot_mod(params["b"],zeta)
+    b = sigma_LorentzBerthelot(params["b"],zeta)
     b.values .^= 3
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
-    packagedparams = LJSAFTParam(segment, b, T_tilde, epsilon_assoc, bondvol)
+    packagedparams = LJSAFTParam(Mw, segment, b, T_tilde, epsilon_assoc, bondvol)
     references = ["10.1021/ie9602320"]
 
     model = LJSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
