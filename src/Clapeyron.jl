@@ -130,6 +130,7 @@ include("models/SPUNG/SPUNG.jl")
 include("models/UFTheory/UFTheory.jl")
 
 include("models/cached/CachedEoS.jl")
-include("utils/estimation.jl")
 include("utils/misc.jl")
+include("utils/estimation/estimation.jl")
+
 end # module
