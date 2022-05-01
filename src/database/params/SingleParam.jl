@@ -98,15 +98,21 @@ end
 
 #a barebones constructor, in case we dont build from csv
 function SingleParam(
-    name::String,
-    components::Vector{String},
-    values::Vector{T},
-    sourcecsvs = String[],
-    sources = String[]
-    ;default = _zero(T)) where T
-    _values,_ismissingvalues = defaultmissing(values,default)
-    TT = eltype(_values)
-    return  SingleParam{TT}(name,components, _values, _ismissingvalues, sourcecsvs, sources)
+        name::String,
+        components::Vector{String},
+        values::Vector{T},
+        sourcecsvs = String[],
+        sources = String[]
+    ) where T
+    if any(ismissing, values)
+        _values,_ismissingvalues = defaultmissing(values)
+        TT = eltype(_values)
+    else
+        _values = values
+        _ismissingvalues = fill(false, length(values))
+        TT = T
+    end
+    return  SingleParam{TT}(name, components, _values, _ismissingvalues, sourcecsvs, sources)
 end
 
 
