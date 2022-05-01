@@ -12,7 +12,6 @@ abstract type CPAModel <: EoSModel end
 
 struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     cubicmodel::c
     params::CPAParam
     sites::SiteParam
@@ -89,8 +88,6 @@ function CPA(components;
     translation_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-    
-    icomponents = 1:length(components)
 
     params,sites = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
@@ -116,11 +113,11 @@ function CPA(components;
         cubicparams = PRParam(a, b, params["Tc"],params["pc"],Mw)
     end
 
-    init_cubicmodel = cubicmodel(components,icomponents,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
+    init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
 
     references = ["10.1021/ie051305v"]
 
-    model = CPA(components, icomponents, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
+    model = CPA(components, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
     return model
 end
 

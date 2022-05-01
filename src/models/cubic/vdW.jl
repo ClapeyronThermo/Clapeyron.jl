@@ -4,7 +4,6 @@ abstract type vdWModel <: ABCubicModel end
 
 struct vdW{T <: IdealModel,α,c,M} <: vdWModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     alpha::α
     mixing::M
     translation::c
@@ -88,10 +87,9 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    icomponents = 1:length(components)
     packagedparams = vdWParam(a,b,Tc,pc,Mw)
     references = String[]
-    model = vdW(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = vdW(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 

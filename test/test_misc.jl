@@ -14,10 +14,8 @@
         models2 = split_model(model2)
         @test models2[1].components[1] == model2.components[1]
         @test models2[2].components[1] == model2.components[2]
-        @test models2[1].icomponents == models2[2].icomponents == 1:1
 
         model2_unsplit = only(split_model(model2,[[1,2]]))
-        @test model2_unsplit.icomponents == model2.icomponents
         @test model2_unsplit.components == model2.components
 
         model4_split = Clapeyron.split_model(model4)

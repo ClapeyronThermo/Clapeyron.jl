@@ -2,7 +2,6 @@ abstract type sCPAModel <: CPAModel end
 
 struct sCPA{T <: IdealModel,c <: CubicModel} <: sCPAModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     cubicmodel::c
     params::CPAParam
     sites::SiteParam
@@ -81,7 +80,6 @@ function sCPA(components;
             verbose=false,
             assoc_options = AssocOptions())
 
-    icomponents = 1:length(components)
     params,sites = getparams(components, ["SAFT/CPA/sCPA/", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
     k  = params["k"]
@@ -106,11 +104,11 @@ function sCPA(components;
         cubicparams = PRParam(a, b, params["Tc"],params["pc"],Mw)
     end
 
-    init_cubicmodel = cubicmodel(components,icomponents,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
+    init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
 
     references = ["10.1021/ie051305v"]
 
-    model = sCPA(components, icomponents, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
+    model = sCPA(components, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
     return model
 end
 

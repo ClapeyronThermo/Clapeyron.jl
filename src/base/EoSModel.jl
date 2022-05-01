@@ -75,8 +75,6 @@ This macro is an alias to
     1:length(model)
 
 The caveat is that `model` has to exist in the local namespace.
-`model` is expected to be an EoSModel type that contains the `icomponents` field.
-`icomponents` is an iterator that goes through all component indices.
 """
 macro comps()
     return quote

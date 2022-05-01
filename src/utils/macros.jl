@@ -94,7 +94,6 @@ It should then return name(params::paramtype, groups::GroupParam, sites::SitePar
 The Struct consists of the following fields:
 
 * components: a string lists of components
-* icomponents: an iterator that goes through the indices corresponding to each component
 * groups: a [`GroupParam`](@ref)
 * sites: a [`SiteParam`](@ref)
 * params: the Struct paramstype that contains all parameters in the model
@@ -108,7 +107,6 @@ macro newmodelgc(name, parent, paramstype)
     quote 
     struct $name{T <: IdealModel} <: $parent
         components::Array{String,1}
-        icomponents::UnitRange{Int}
         groups::GroupParam
         sites::SiteParam
         params::$paramstype
@@ -128,7 +126,7 @@ macro newmodelgc(name, parent, paramstype)
         return eosshow(io, model)
     end
 
-    Base.length(model::$name) = Base.length(model.icomponents)
+    Base.length(model::$name) = Base.length(model.components)
 
     molecular_weight(model::$name,z=SA[1.0]) = group_molecular_weight(model.groups,mw(model),z)
 
@@ -148,7 +146,6 @@ macro newmodel(name, parent, paramstype)
     quote 
     struct $name{T <: IdealModel} <: $parent
         components::Array{String,1}
-        icomponents::UnitRange{Int}
         sites::SiteParam
         params::$paramstype
         idealmodel::T
@@ -165,7 +162,7 @@ macro newmodel(name, parent, paramstype)
         return eosshow(io, model)
     end
     molecular_weight(model::$name,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
-    Base.length(model::$name) = Base.length(model.icomponents)
+    Base.length(model::$name) = Base.length(model.components)
     end |> esc
 end
 
@@ -179,7 +176,6 @@ macro newmodelsimple(name, parent, paramstype)
     quote 
     struct $name <: $parent
         components::Array{String,1}
-        icomponents::UnitRange{Int}
         params::$paramstype
         references::Array{String,1}
     end
@@ -192,7 +188,7 @@ macro newmodelsimple(name, parent, paramstype)
         return eosshow(io, model)
     end
 
-    Base.length(model::$name) = Base.length(model.icomponents)
+    Base.length(model::$name) = Base.length(model.components)
 
     end |> esc
 end
@@ -209,9 +205,8 @@ function (::Type{model})(params::EoSParam,
         verbose::Bool = false) where model <:EoSModel
 
     components = groups.components
-    icomponents = 1:length(components)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    return model(components, icomponents,
+    return model(components,
     groups,
     sites,
     params, init_idealmodel, assoc_options, references)
@@ -239,10 +234,9 @@ function (::Type{model})(params::EoSParam,
         verbose::Bool = false) where model <:EoSModel
     
     components = sites.components
-    icomponents = 1:length(components)
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    return model(components, icomponents,
+    return model(components,
     sites, params, init_idealmodel, assoc_options, references)
 end
 
@@ -267,13 +261,11 @@ function (::Type{model})(params::EoSParam;
     #if there isnt any params, just put empty values.
     if Base.issingletontype(typeof(params))
         components = String[]
-        icomponents =1:0
     else
         arbparam = arbitraryparam(params)
         components = arbparam.components
-        icomponents = 1:length(components)
     end
-    return model(components,icomponents,params,references)
+    return model(components,params,references)
 end
 
 function init_model(idealmodel::EoSModel,components,userlocations,verbose)
@@ -297,7 +289,6 @@ macro registermodel(model)
     ∅ = :()
 
     _has_components = hasfield(_model,:components)
-    _has_icomponents = hasfield(_model,:icomponents)
     _has_sites = hasfield(_model,:sites)
     _has_groups = hasfield(_model,:groups)
     
@@ -333,9 +324,7 @@ macro registermodel(model)
   
 
     _length =
-    if _has_icomponents
-    :(Base.length(model::$model) = Base.length(model.icomponents))
-    elseif _has_components
+    if _has_components
         :(Base.length(model::$model) = Base.length(model.components))
     else
         ∅
