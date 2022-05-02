@@ -129,7 +129,14 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     X0 = append!(X0,1.)
 
     g(x) = Obj_HELD_tp_flash(model,p,T,n,x,nps)
-    r = Solvers.optimize(g,X0)
+    
+    #Default options, feel free to change any of those
+    options = OptimizationOptions(; x_abstol=0.0, x_reltol=0.0, x_norm=x->norm(x, Inf),
+    g_abstol=1e-8, g_reltol=0.0, g_norm=x->norm(x, Inf),
+    f_limit=-Inf, f_abstol=0.0, f_reltol=0.0,
+    nm_tol=1e-8, maxiter=10000, show_trace=false)
+
+    r = Solvers.optimize(g,X0,LineSearch(Newton()),options)
     if method.verbose==true
         println(r)
     end
@@ -151,21 +158,24 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     if any(abs.(λ).<method.eps_μ) & method.verbose==true
         println("Mass balance could not be satisfied.")
     end
-
-    test_G = (UBDⱽ-G>=method.eps_g)
+    test_G = UBDⱽ-G
+    test_G = (UBDⱽ-G)
     μ = VT_chemical_potential.(model,V,T,x)/R̄/T
+    test_μ = [abs((μ[j][i]-μ[j+1][i])/μ[j][i]) for i ∈ 1:nc for j ∈ 1:nps-1]
     
-    test_μ = [abs((μ[j][i]-μ[j+1][i])/μ[j][i])<method.eps_μ for i ∈ 1:nc for j ∈ 1:nps-1]
-    if test_G==1 & all(test_μ.==1)
+    @show test_μ
+    @show test_G
+    #test_μ = [abs((μ[j][i]-μ[j+1][i])/μ[j][i])<method.eps_μ for i ∈ 1:nc for j ∈ 1:nps-1]
+    if (test_G >=method.eps_g) & all(<(method.eps_μ),test_μ)
         if method.verbose == true
             println("HELD has successfully converged to a solution. Terminating algorithm.")
         end
-        return (x,ϕ.*x,G)
+        return (collect(x),collect(ϕ.*x),G)
     else
         if method.verbose == true
             println("HELD has failed to converged to a solution. Terminating algorithm.")
         end
-        return (x,ϕ.*x,G)
+        return (collect(x),collect(ϕ.*x),G)
     end
 end
 

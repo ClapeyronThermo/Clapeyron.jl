@@ -67,10 +67,11 @@ end
 """
 =#
 
-function optimize(f,x0,method=LineSearch(Newton()),chunk =autochunk(x0),options=OptimizationOptions())
+function optimize(f,x0,method=LineSearch(Newton()),options=OptimizationOptions(),chunk =autochunk(x0))
     scalarobj = ADScalarObjective(f,x0,chunk)   
     optprob = OptimizationProblem(scalarobj; inplace=false) 
     return NLSolvers.solve(optprob, x0, method,options)
 end
+ 
 
 x_minimum(res::NLSolvers.ConvergenceInfo) = res.info.minimum
