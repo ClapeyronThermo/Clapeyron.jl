@@ -126,19 +126,20 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     X0 = append!(X0,ℳˢ[:,end])
     X0 = append!(X0,1/nps*ones(nps))
     X0 = append!(X0,λ₀)
-    X0 = append!(X0,0.)
+    X0 = append!(X0,1.)
 
     g(x) = Obj_HELD_tp_flash(model,p,T,n,x,nps)
+    r = Solvers.optimize(g,X0)
+    if method.verbose==true
+        println(r)
+    end
+
     if method.verbose == true
         println("------------------------")
         println("Step 8: Convergence test")
         println("------------------------")
     end
 
-    r = Solvers.optimize(g,X0)
-    if method.verbose==true
-        println(r)
-    end
     X = Solvers.x_sol(r)
     G = g(X)
 
