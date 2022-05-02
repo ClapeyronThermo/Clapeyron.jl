@@ -156,10 +156,14 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     
     test_μ = [abs((μ[j][i]-μ[j+1][i])/μ[j][i])<method.eps_μ for i ∈ 1:nc for j ∈ 1:nps-1]
     if test_G==1 & all(test_μ.==1)
-        println("HELD has successfully converged to a solution. Terminating algorithm.")
+        if method.verbose == true
+            println("HELD has successfully converged to a solution. Terminating algorithm.")
+        end
         return (x,ϕ.*x,G)
     else
-        println("HELD has failed to converged to a solution. Terminating algorithm.")
+        if method.verbose == true
+            println("HELD has failed to converged to a solution. Terminating algorithm.")
+        end
         return (x,ϕ.*x,G)
     end
 end
@@ -172,6 +176,8 @@ function HELD_stage_II(model,p,T,n,ℳ,G,LV,UBDⱽ,λᴸ,λᵁ,method,k)
         println("-------------------------------------------------------")
     end
     OPₓᵥ = Model(HiGHS.Optimizer)
+    set_optimizer_attribute(OPₓᵥ, "log_to_console", "false")
+    set_optimizer_attribute(OPₓᵥ, "output_flag", "false")
     @variable(OPₓᵥ, v)
     @variable(OPₓᵥ, λ[1:nc-1])
     @constraint(OPₓᵥ,v<=UBDⱽ)
@@ -181,6 +187,9 @@ function HELD_stage_II(model,p,T,n,ℳ,G,LV,UBDⱽ,λᴸ,λᵁ,method,k)
     optimize!(OPₓᵥ)
     λˢ = JuMP.value.(λ)
     UBDⱽ = JuMP.value.(v)
+    if method.verbose == true
+        println("UBDⱽ = "*string(UBDⱽ))
+    end
     if method.verbose == true
         println("-------------------------------------------------------")
         println("Step 4: Solve the inner problem (IPₓᵥ) at iteration k="*string(k))
@@ -203,6 +212,10 @@ function HELD_stage_II(model,p,T,n,ℳ,G,LV,UBDⱽ,λᴸ,λᵁ,method,k)
             break
         end
         i+=1
+    end
+    if method.verbose == true
+        println("Lⱽᵏ = "*string(LV[end]))
+        println("ℳ = "*string(ℳ[end,:]))
     end
     if method.verbose == true
         println("------------------------------------------------")
