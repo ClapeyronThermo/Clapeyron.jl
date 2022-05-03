@@ -1,10 +1,13 @@
-struct BasicIdealParam <: EoSParam
-end
-
 abstract type BasicIdealModel <: IdealModel end
-struct BasicIdeal <: BasicIdealModel
-    params::BasicIdealParam
-end
+
+BasicIdeal_SETUP = ModelOptions(
+        :BasicIdeal;
+        supertype=BasicIdealModel,
+        has_components=false,
+        has_params=false,
+    )
+
+createmodel(BasicIdeal_SETUP; verbose=true)
 
 """
     BasicIdeal <: IdealModel
@@ -26,13 +29,6 @@ Default Ideal Model. Constant specific heat capacity equal to `5R/2`. it's Helmh
 BasicIdeal
 
 export BasicIdeal
-function BasicIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
-    return BasicIdeal(BasicIdealParam())
-end
-
-function BasicIdeal(; userlocations::Array{String,1}=String[], verbose=false)
-    return BasicIdeal(BasicIdealParam())
-end
 is_splittable(::BasicIdeal) = false
 
 function a_ideal(model::BasicIdeal, V, T, z)

@@ -1,21 +1,39 @@
-struct PCSAFTParam <: EoSParam
-    Mw::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    sigma::PairParam{Float64}
-    epsilon::PairParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
-end
-
-PCSAFT_mappings = [
-            ("m", :segment, identity),
-            ("sigma", :sigma, sigma_LorentzBerthelot ∘ x -> x * 1E-10),
-            (["epsilon", "k"], :epsilon, epsilon_LorentzBerthelot),
-           ]
-
 abstract type PCSAFTModel <: SAFTModel end
-@newmodel PCSAFT PCSAFTModel PCSAFTParam
 
+PCSAFT_SETUP = ModelOptions(
+        :PCSAFT;
+        supertype=PCSAFTModel,
+        locations=["SAFT/PCSAFT","properties/molarmass.csv"],
+        sourceparams=[
+              ParamField(:Mw, SingleParam{Float64}),
+              ParamField(:m, SingleParam{Float64}),
+              ParamField(:sigma, SingleParam{Float64}),
+              ParamField(:epsilon, SingleParam{Float64}),
+              ParamField(:k, PairParam{Float64}),
+              ParamField(:epsilon_assoc, AssocParam{Float64}),
+              ParamField(:bondvol, AssocParam{Float64}),
+        ],
+        params=[
+              ParamField(:Mw, SingleParam{Float64}),
+              ParamField(:segment, SingleParam{Float64}),
+              ParamField(:sigma, PairParam{Float64}),
+              ParamField(:epsilon, PairParam{Float64}),
+              ParamField(:epsilon_assoc, AssocParam{Float64}),
+              ParamField(:bondvol, AssocParam{Float64}),
+        ],
+        mappings=[
+              ModelMapping(:m, :segment, identity),
+              ModelMapping(:sigma, :sigma, sigma_LorentzBerthelot ∘ x -> x * 1E-10),
+              ModelMapping([:epsilon, :k], :epsilon, epsilon_LorentzBerthelot),
+        ],
+        has_sites=true,
+        members=[
+            ModelMember(:idealmodel, BasicIdeal_SETUP),
+        ],
+        references = ["10.1021/ie0003887", "10.1021/ie010954d"]
+    )
+
+createmodel(PCSAFT_SETUP; verbose=true)
 """
     PCSAFTModel <: SAFTModel
 
@@ -57,21 +75,6 @@ Perturbed-Chain SAFT (PC-SAFT)
 PCSAFT
 
 export PCSAFT
-function PCSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
-    params, sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    
-    packagedparams = assignparams(PCSAFTParam, params, PCSAFT_mappings)
-
-    references = ["10.1021/ie0003887", "10.1021/ie010954d"]
-
-    model = PCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
-    return model
-end
 
 function a_res(model::PCSAFTModel, V, T, z)
     _data = @f(data)

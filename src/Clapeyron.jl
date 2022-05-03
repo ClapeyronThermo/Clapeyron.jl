@@ -71,6 +71,7 @@ base --> database(params)  -|-> split_model --> methods -|-> models
 
 #Clapeyron EoS collection
 include("models/types.jl") #type hierarchy
+include("models/setup.jl")
 include("models/ideal/ideal.jl")
 include("models/ideal/BasicIdeal.jl")
 include("models/ideal/MonomerIdeal.jl")
