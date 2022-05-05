@@ -20,5 +20,9 @@ the combining option controls the type of combining rule applied to the associat
     combining::Symbol = :sparse_nocombining
 end
 
+const DefaultAssocOptions = AssocOptions()
+
+export AssocOptions, DefaultAssocOptions
+
 is_splittable(::AssocOptions) = false
 

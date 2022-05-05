@@ -211,8 +211,8 @@ function ModelOptions(
         has_components,
         has_sites,
         has_groups,
-        has_params && isnothing(param_options) ? ParamOptions() : param_options,
-        has_sites && isnothing(assoc_options) ? AssocOptions() : assoc_options,
+        has_params && isnothing(param_options) ? DefaultParamOptions : param_options,
+        has_sites && isnothing(assoc_options) ? DefaultAssocOptions : assoc_options,
         references,
         isnothing(inputparamstype) ? Symbol(String(name) * "InputParam") : inputparamstype,
         isnothing(paramstype) ? Symbol(String(name) * "Param") : paramstype,
@@ -306,7 +306,7 @@ function _generatecode_model_constructor(
     block = Expr(:block)
     if modeloptions.has_params
         push!(block.args, :(mappings = $(modeloptions.mappings)))
-        push!(block.args, :((rawparams, sites) = getparams(components, $(modeloptions.locations); userlocations, verbose)))
+        push!(block.args, :((rawparams, sites) = getparams(components, $(modeloptions.locations); userlocations, verbose, param_options)))
         push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), rawparams, mappings)))
     end
     for member ∈ modeloptions.members

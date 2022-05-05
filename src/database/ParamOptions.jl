@@ -11,12 +11,9 @@ const DEFAULT_N_SITES = Dict{String,String}(
     ParamOptions(;kwargs...)
 
 Struct containing all the options related to parameter parsing:
-* `userlocations::Vector{String} = String[]`: List of used-defined locations to search.
-* `usergrouplocations::Vector{String} = String[]`: List of used-defined group locations to search.
 * `asymmetricparams::Vector{String} = String[]`: List of pair or association parameters that follow that `param[i,j] ≠ param[j,i]`
 * `ignore_headers::Vector{String} =  ["dipprnumber", "smiles"]`: List of ignored headers.
 * `ignore_missing_singleparams::Vector{String} = String[]`: List of parameters where checking for missing single parameter values are ignored.
-* `verbose::Bool = false`: If `true`, show all operations done by `getparams` displayed in the terminal. this includes the warnings emmited by `CSV.jl` 
 * `species_columnreference::String ="species"`: column name to check for components. in pair and association params, it will check for `#species#1` and `#species#2`, where `#species#` is the value of this option.
 * `site_columnreference::String ="site"`: column name to check for sites in association params, it will check for `#site#1` and `#site#2`, where `#site#` is the value of this option.
 * `group_columnreference::String = "groups"`: column name to check for groups in group data.
@@ -26,12 +23,9 @@ Struct containing all the options related to parameter parsing:
 * `component_delimiter::String = "~|~"`: When there are multiple component names to match, seperate them by this delimiter.
 """
 Base.@kwdef struct ParamOptions
-    userlocations::Vector{String} = String[]
-    usergrouplocations::Vector{String} = String[]
     asymmetricparams::Vector{String}= String[]
     ignore_missing_singleparams::Vector{String} = String[]
     ignore_headers::Vector{String} = ["dipprnumber", "smiles"]
-    verbose::Bool = false
     species_columnreference::String ="species"
     source_columnreference::String = "source"
     site_columnreference::String = "site"
@@ -42,6 +36,6 @@ Base.@kwdef struct ParamOptions
     component_delimiter::String = "~|~"
 end
 
-const DefaultOptions = ParamOptions()
+const DefaultParamOptions = ParamOptions()
 
-export ParamOptions
+export ParamOptions, DefaultParamOptions
