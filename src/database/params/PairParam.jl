@@ -78,13 +78,55 @@ function PairParam(name::String,
     return PairParam(name, components,_values, diagvalues, _ismissingvalues, sourcecsvs, sources)
 end
 
-function PairParam(x::PairParameter,name::String=x.name)
-    values = deepcopy(x.values)
-    diagvalues = view(values,diagind(values))
-    return PairParam(name, x.components,values ,diagvalues, deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
+# If no value is provided, just initialise empty param.
+function PairParam{T}(
+        name::String,
+        components::Vector{String};
+        sources::Vector{String} = String[]
+    ) where T <: AbstractString
+    values = fill("", length(components), length(components))
+    missingvals = fill(false, size(values)...)
+    return PairParam(name, components, values, missingvals, String[], sources)
 end
 
-function PairParam(x::SingleParameter,name::String=x.name)
+function PairParam{T}(
+        name::String,
+        components::Vector{String};
+        sources::Vector{String} = String[]
+    ) where T <: Number
+    values = zeros(T, length(components), length(components))
+    missingvals = fill(false, size(values)...)
+    return PairParam(name, components, values, missingvals, String[], sources)
+end
+
+function PairParam(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources)
+    if isdeepcopy
+        values = deepcopy(x.values)
+        diagvalues = view(values, diagind(values))
+        return PairParam(
+            name,
+            x.components,
+            values,
+            diagvalues,
+            deepcopy(x.ismissingvalues),
+            x.sourcecsvs,
+            sources
+        )
+    end
+    return PairParam(
+        name,
+        x.components,
+        x.values,
+        x.diagvalues,
+        x.ismissingvalues,
+        x.sourcecsvs,
+        sources
+    )
+end
+
+PairParameter(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources) = PairParam(x, name; isdeepcopy, sources)
+
+function PairParam(x::SingleParam,name::String=x.name)
     pairvalues = singletopair(x.values,missing)
     for i in 1:length(x.values)
         if x.ismissingvalues[i]

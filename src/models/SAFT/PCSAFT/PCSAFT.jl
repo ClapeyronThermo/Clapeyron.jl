@@ -4,7 +4,7 @@ PCSAFT_SETUP = ModelOptions(
         :PCSAFT;
         supertype=PCSAFTModel,
         locations=["SAFT/PCSAFT","properties/molarmass.csv"],
-        sourceparams=[
+        inputparams=[
               ParamField(:Mw, SingleParam{Float64}),
               ParamField(:m, SingleParam{Float64}),
               ParamField(:sigma, SingleParam{Float64}),
@@ -22,9 +22,9 @@ PCSAFT_SETUP = ModelOptions(
               ParamField(:bondvol, AssocParam{Float64}),
         ],
         mappings=[
-              ModelMapping(:m, :segment, identity),
-              ModelMapping(:sigma, :sigma, sigma_LorentzBerthelot ∘ x -> x * 1E-10),
-              ModelMapping([:epsilon, :k], :epsilon, epsilon_LorentzBerthelot),
+              ModelMapping([:m], [:segment], identity),
+              ModelMapping([:sigma], [:sigma], sigma_LorentzBerthelot ∘ x -> x * 1E-10),
+              ModelMapping([:epsilon, :k], [:epsilon], epsilon_LorentzBerthelot),
         ],
         has_sites=true,
         members=[

@@ -92,9 +92,28 @@ function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     end
 end
 
-function SingleParam(x::SingleParameter,name=x.name)
-    return SingleParam(name, x.components,deepcopy(x.values), deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
+function SingleParam(x::SingleParam, name::String = x.name; isdeepcopy::Bool = true, sources::Vector{String} = x.sources)
+    if isdeepcopy
+        return SingleParam(
+            name,
+            x.components,
+            deepcopy(x.values),
+            deepcopy(x.ismissingvalues),
+            x.sourcecsvs,
+            sources
+        )
+    end
+    return SingleParam(
+        name,
+        x.components,
+        x.values,
+        x.ismissingvalues,
+        x.sourcecsvs,
+        sources
+    )
 end
+
+SingleParameter(x::SingleParam, name::String = x.name; isdeepcopy::Bool = true, sources::Vector{String} = x.sources) = SingleParam(x, name; isdeepcopy, sources)
 
 #a barebones constructor, in case we dont build from csv
 function SingleParam(
@@ -113,6 +132,25 @@ function SingleParam(
         TT = T
     end
     return  SingleParam{TT}(name, components, _values, _ismissingvalues, sourcecsvs, sources)
+end
+
+# If no value is provided, just initialise empty param.
+function SingleParam{T}(
+        name::String,
+        components::Vector{String};
+        sources = String[]
+    ) where T <: AbstractString
+    values = fill("", length(components))
+    return SingleParam{T}(name, components, values, String[], sources)
+end
+
+function SingleParam{T}(
+        name::String,
+        components::Vector{String};
+        sources = String[]
+    ) where T <: Number
+    values = zeros(T, length(components))
+    return SingleParam{T}(name, components, values, String[], sources)
 end
 
 
