@@ -15,20 +15,26 @@ struct ModelMapping
 end
 
 """
-    ModelMember{T}(name, modeloptions; separate_namespace = false)
+    ModelMember(name, default_type; separate_namespace = false)
 
-Part of `ModelOptions`. This is used to specify the options for member models. The parameter `T` should be a `ModelOptions`, but it's defined parametrically because of current limitations in Julia when dealing with circular definitions. Constructor definition is below `ModelOptions`.
+Part of `ModelOptions`. This is used to specify the options for member models.
 
 ## Fields
 - `name::Symbol`: The name of this member. It will be used as the fieldname for the created model object.
-- `modeloptions::ModelOptions`: The `ModelOptions` for the member object.
+- `default_type::Type`: The default type for this member. Has to have a constructor with the same function signature.
 - `separate_namespace::Bool`: If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`.
 """
-struct ModelMember{T}
+struct ModelMember
     name::Symbol
-    modeloptions::T  # ModelOptions; Workaround for circular reference.
+    default_type::Type
     separate_namespace::Bool
-    # We probably also want a ParamOptions overwrite here.
+end
+function ModelMember(
+        name::Symbol,
+        default_type::Type;
+        separate_namespace::Bool = false
+    )
+    return ModelMember(name, default_type, separate_namespace)
 end
 
 """
@@ -48,12 +54,12 @@ end
 """
     ModelOptions(args...)
 
-A complete definition for how the model object will be created in Clapeyron. 
+A complete definition for how the model object will be created in Clapeyron. If the `parent` field is given, it will take the field values of the parent unless explicitly overwritten.
 
 ## Fields
 - `name::Symbol`: The name of the model. A struct with this name will be generated in to the global/module namespace.
-- `supertype::DataType`: An abstract base type to be a subtype of.
-- `parent::Union{ModelOptions,Nothing} = nothing`: The `ModelOptions` of the parent if this is a variant model.
+- `supertype::DataType = EoSModel`: An abstract base type to be a subtype of.
+- `parent::Union{ModelOptions,Nothing} = nothing`: The `ModelOptions` of the parent model.
 - `members::Vector{ModelMember{ModelOptions}} = ModelMember{ModelOptions}[]`: A list of modular components like `IdealModel`s.
 - `locations::Vector{String} = String[]`: Default locations in Clapeyron database to look for parameters. Note that for user-specified parameters, it is easier to use the `user_locations` parameter.
 - `inputparams::Vector{ParamField} = ParamField[]`: A list of relevant source parameters. The model constructor will extract the String headers according to the Symbol name given.
@@ -63,6 +69,8 @@ A complete definition for how the model object will be created in Clapeyron.
 - `has_components::Bool = true`: Whether this model is dependent on components. A simple example of this not being the case is `BasicIdeal`.
 - `has_sites::Bool = false`: Whether this model has association.
 - `has_groups::Bool = false`: Whether this model contains groups.
+- `param_options::ParamOptions = nothing`: The default ParamOptions. If `has_params` is `true`, but param_options is `nothing`, use create one using the default constructor.
+- `assoc_options::AssocOptions = nothing`: The default AssocOptions. If `has_sites` is `true`, but assoc_options is `nothing`, use create one using the default constructor.
 - `references::Vector{String}`: References for this model. Usually DOIs.
 - `inputparamstype::Symbol = nothing`: A struct with this name will be generated in the global/module namespace for the input params. If given `nothing`, the constructor will fill it in with `{name}InputParam`.
 - `paramstype::Symbol = nothing`: A struct with this name will be generated in the global/module namespace for the target params. If given `nothing`, the constructor will fill it in with `{name}Param`.
@@ -72,7 +80,7 @@ struct ModelOptions
     name::Symbol
     supertype::DataType
     parent::Union{ModelOptions,Nothing}
-    members::Vector{ModelMember{ModelOptions}}
+    members::Vector{ModelMember}
     locations::Vector{String}
     inputparams::Vector{ParamField}
     params::Vector{ParamField}
@@ -81,6 +89,8 @@ struct ModelOptions
     has_components::Bool
     has_sites::Bool
     has_groups::Bool
+    param_options::Union{ParamOptions,Nothing}
+    assoc_options::Union{AssocOptions,Nothing}
     references::Vector{String}
     inputparamstype::Symbol
     paramstype::Symbol
@@ -88,21 +98,106 @@ end
 
 function ModelOptions(
         name::Symbol;
-        supertype::DataType = Any,
+        supertype::Union{DataType,Nothing} = nothing,
         parent::Union{ModelOptions,Nothing} = nothing,
-        members::Vector{ModelMember{ModelOptions}} = ModelMember{ModelOptions}[],
-        locations::Vector{String} = String[],
-        inputparams::Vector{ParamField} = ParamField[],
-        params::Vector{ParamField} = ParamField[],
-        mappings::Vector{ModelMapping} = ModelMapping[],
-        has_params::Bool = true,
-        has_components::Bool = true,
-        has_sites::Bool = false,
-        has_groups::Bool = false,
-        references::Vector{String} = String[],
+        members::Union{Vector{ModelMember},Nothing} = nothing,
+        locations::Union{Vector{String},Nothing} = nothing,
+        inputparams::Union{Vector{ParamField},Nothing} = nothing,
+        params::Union{Vector{ParamField},Nothing} = nothing,
+        mappings::Union{Vector{ModelMapping},Nothing} = nothing,
+        has_params::Union{Bool,Nothing} = nothing,
+        has_components::Union{Bool,Nothing} = nothing,
+        has_sites::Union{Bool,Nothing} = nothing,
+        has_groups::Union{Bool,Nothing} = nothing,
+        param_options::Union{ParamOptions,Nothing} = nothing,
+        assoc_options::Union{AssocOptions,Nothing} = nothing,
+        references::Union{Vector{String},Nothing} = nothing,
         inputparamstype::Union{Symbol,Nothing} = nothing,
         paramstype::Union{Symbol,Nothing} = nothing
     )
+    if !isnothing(parent)
+        if isnothing(supertype)
+            supertype = parent.supertype
+        end
+        if isnothing(members)
+            members = parent.members
+        end
+        if isnothing(locations)
+            locations = parent.locations
+        end
+        if isnothing(inputparams)
+            if isnothing(inputparamstype)
+                inputparamstype = parent.inputparamstype
+            end
+            inputparams = parent.inputparams
+        end
+        if isnothing(params)
+            if isnothing(paramstype)
+                paramstype = parent.paramstype
+            end
+            params = parent.params
+        end
+        if isnothing(mappings)
+            mappings = parent.mappings
+        end
+        if isnothing(has_params)
+            has_params = parent.has_params
+        end
+        if isnothing(has_components)
+            has_components = parent.has_components
+        end
+        if isnothing(has_sites)
+            has_sites = parent.has_sites
+        end
+        if isnothing(has_groups)
+            has_groups = parent.has_groups
+        end
+        if isnothing(param_options)
+            param_options = parent.param_options
+        end
+        if isnothing(assoc_options)
+            assoc_options = parent.assoc_options
+        end
+        if isnothing(references)
+            references = parent.references
+        end
+    else
+        # Default values if no parent is given.
+        if isnothing(supertype)
+            supertype = EoSModel
+        end
+        if isnothing(members)
+            members = ModelMember[]
+        end
+        if isnothing(locations)
+            locations = String[]
+        end
+        if isnothing(inputparams)
+            inputparams = ParamField[]
+        end
+        if isnothing(params)
+            params = ParamField[]
+        end
+        if isnothing(mappings)
+            mappings = ModelMapping[]
+        end
+        if isnothing(has_params)
+            has_params = true
+        end
+        if isnothing(has_components)
+            has_components = true
+        end
+        if isnothing(has_sites)
+            has_sites = false
+        end
+        if isnothing(has_groups)
+            has_groups = false
+        end
+        if isnothing(references)
+            references = String[]
+        end
+    end
+
     return ModelOptions(
         name,
         supertype,
@@ -116,20 +211,13 @@ function ModelOptions(
         has_components,
         has_sites,
         has_groups,
+        has_params && isnothing(param_options) ? ParamOptions() : param_options,
+        has_sites && isnothing(assoc_options) ? AssocOptions() : assoc_options,
         references,
         isnothing(inputparamstype) ? Symbol(String(name) * "InputParam") : inputparamstype,
         isnothing(paramstype) ? Symbol(String(name) * "Param") : paramstype,
     )
 end
-
-function ModelMember(
-    name::Symbol,
-    modeloptions::ModelOptions;
-    separate_namespace::Bool = false
-   )
-    return ModelMember{ModelOptions}(name, modeloptions, separate_namespace)
-end
-
 
 ##### Expr generators #####
 
@@ -195,11 +283,14 @@ function _generatecode_model_constructor(
     push!(parameters.args, Expr(:kw, :(userlocations::Vector{String}), :(String[])))
     push!(parameters.args, Expr(:kw, :(verbose::Bool), :false))
     push!(parameters.args, Expr(:kw, :(namespace::String), :""))
+    if modeloptions.has_params
+        push!(parameters.args, Expr(:kw, :(param_options::ParamOptions), :($(modeloptions.param_options))))
+    end
     if modeloptions.has_sites
-        push!(parameters.args, Expr(:kw, :(assoc_options::AssocOptions), :(AssocOptions())))
+        push!(parameters.args, Expr(:kw, :(assoc_options::AssocOptions), :($(modeloptions.assoc_options))))
     end
     for member ∈ modeloptions.members
-        push!(parameters.args, Expr(:kw, :($(member.name)), :($(member.modeloptions.name))))
+        push!(parameters.args, Expr(:kw, :($(member.name)), :($(member.default_type))))
     end
     push!(func_head.args, parameters)
     # Now positional args
@@ -215,14 +306,14 @@ function _generatecode_model_constructor(
     block = Expr(:block)
     if modeloptions.has_params
         push!(block.args, :(mappings = $(modeloptions.mappings)))
-        push!(block.args, :((rawparams, sites) = getparams(components, $(modeloptions.locations); userlocations=userlocations, verbose=verbose)))
+        push!(block.args, :((rawparams, sites) = getparams(components, $(modeloptions.locations); userlocations, verbose)))
         push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), rawparams, mappings)))
     end
     for member ∈ modeloptions.members
         if member.separate_namespace
-            push!(block.args, :($(member.name) = _initmodel($(member.modeloptions.name), components; userlocations, namespace=String($(member.name), verbose))))
+            push!(block.args, :($(member.name) = _initmodel($(member.name), components; userlocations, namespace=String($(member.name), verbose))))
         else
-            push!(block.args, :($(member.name) = _initmodel($(member.modeloptions.name), components; userlocations, verbose)))
+            push!(block.args, :($(member.name) = _initmodel($(member.name), components; userlocations, verbose)))
         end
     end
     push!(block.args, :(references = $(modeloptions.references)))
@@ -319,7 +410,7 @@ function _initparams(
         # For identity mappings, add to params_input_params_index
         # for making a reference to the input later
         if mapping.transformation === identity
-            # Arrays will only have one elements
+            # Arrays will only have one element
             params_inputparams_index[first(mapping.target)] = findfirst(isequal(first(mapping.source)), inputparams_names)
             continue
         end
@@ -345,7 +436,7 @@ function _initparams(
                 push!(params_params, inputparam)
             else
                 # For explicit identity mappings, assume that names change
-                # But still reference the same vallues array.
+                # But still reference the same `values` array.
                 inputparam_type = inputparams_types[index_inputparam] 
                 push!(params_params, Base.typename(inputparam_type).wrapper(inputparam, String(param); isdeepcopy=false))
             end
@@ -415,13 +506,22 @@ Create the models in the global (or module) scope using `eval`.
 See the tutorial or browse the implementations to see how this is used.
 """
 function createmodel(modeloptions::ModelOptions; verbose::Bool = false)
-    verbose && @info("Generating model code for $(modeloptions.name)")
-    inputparams = _generatecode_param_struct(modeloptions.inputparamstype, modeloptions.inputparams)
-    verbose && @info(inputparams)
-    eval(inputparams)
-    params = _generatecode_param_struct(modeloptions.paramstype, modeloptions.params)
-    verbose && @info(params)
-    eval(params)
+    verbose && @info("Generating model code for " * String(modeloptions.name))
+    if !isdefined(@__MODULE__, modeloptions.inputparamstype)
+        inputparams = _generatecode_param_struct(modeloptions.inputparamstype, modeloptions.inputparams)
+        verbose && @info(inputparams)
+        eval(inputparams)
+    else
+        verbose && @info(String(modeloptions.inputparamstype) * " already defined.")
+    end
+
+    if !isdefined(@__MODULE__, modeloptions.paramstype)
+        params = _generatecode_param_struct(modeloptions.paramstype, modeloptions.params)
+        verbose && @info(params)
+        eval(params)
+    else
+        verbose && @info(String(modeloptions.paramstype) * " already defined.")
+    end
     model = _generatecode_model_struct(modeloptions)
     verbose && @info(model)
     eval(model)

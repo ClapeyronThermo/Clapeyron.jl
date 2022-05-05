@@ -1,5 +1,14 @@
 abstract type sPCSAFTModel <: PCSAFTModel end
-@newmodel sPCSAFT sPCSAFTModel PCSAFTParam
+
+sPCSAFT_SETUP = ModelOptions(
+        :sPCSAFT;
+        supertype=sPCSAFTModel,
+        parent=PCSAFT_SETUP,
+        locations=["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT", "properties/molarmass.csv"],
+        references = ["10.1021/ie020753p"]
+    )
+
+createmodel(sPCSAFT_SETUP; verbose=true)
 
 export sPCSAFT
 
@@ -61,7 +70,7 @@ function sPCSAFT(components;
     bondvol = params["bondvol"]
 
     packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
-    references = ["10.1021/ie020753p"]
+    references = 
 
     model = sPCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model

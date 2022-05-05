@@ -28,7 +28,7 @@ PCSAFT_SETUP = ModelOptions(
         ],
         has_sites=true,
         members=[
-            ModelMember(:idealmodel, BasicIdeal_SETUP),
+            ModelMember(:idealmodel, BasicIdeal),
         ],
         references = ["10.1021/ie0003887", "10.1021/ie010954d"]
     )
