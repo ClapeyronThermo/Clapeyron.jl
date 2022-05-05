@@ -354,7 +354,7 @@ function _initmodel(
         verbose::Bool = false
     )
     verbose && @info("Creating member model: $model")
-    return model(components; userlocations, verbose)
+    return model(components; userlocations, namespace, verbose)
 end
 
 function _initmodel(
@@ -374,29 +374,34 @@ end
 Returns the constructed InputParamType and ParamType based on the rawparams and mappings.
 
 Strategy:
-
 - If a mapping is present, and it is not an identity transformation, construct a new param struct with the output param name.
 - If a mapping is present, and it is an identity transformation, then it is simply a name change. Create a new param struct, but the `value` is a reference to the inputparam array.
 - If no mapping is present, then the parameter is taken as-is from the raw/input params. Just point to the same param object.
 
-# Arguments
+## Arguments
 - `Type{InputParamType}`: The type for the inputparm struct.
 - `Type{ParamType`: The type for the param struct.
 - `rawparams::Dict`: The dict returned from `getparams`.
 - `mappings::Vector{ModelMapping}`: The list of mappings.
+- `namespace::String = ""`: A prefix to be added when quering the headers from csv.
 
-# Returns
-Tuple{InputParamType,ParamType}
+## Returns
+Tuple{InputParamType,ParamType}: The constructed params.
 """
 function _initparams(
         ::Type{I}, 
         ::Type{P},
         rawparams::Dict,
-        mappings::Vector{ModelMapping}
+        mappings::Vector{ModelMapping},
+        namespace::String = ""
     )::Tuple{I,P} where {I,P}
     inputparams_names = collect(fieldnames(I))
     inputparams_types = collect(fieldtypes(I))
-    inputparams_params = [rawparams[String(param)] for param ∈ inputparams_names]
+    if isempty(namespace)
+        inputparams_params = [rawparams[String(param)] for param ∈ inputparams_names]
+    else
+        inputparams_params = [namespace * "__" * rawparams[String(param)] for param ∈ inputparams_names]
+    end
     params_names = collect(fieldnames(P))
     params_types = collect(fieldtypes(P))
 
