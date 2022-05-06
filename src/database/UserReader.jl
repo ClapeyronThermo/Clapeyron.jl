@@ -2,15 +2,16 @@ PARAM_LOCATION = ""
 import UUIDs
 const PKG_UUID = parse(UUIDs.UUID,"7c7805af-46cc-48c9-995b-ed0ed2dc909a")
 
-#not constant,as is modified at runtime
+#not constant, as is modified at runtime
 #performance is not priority
 
 function random_csv_name(table_type)
     #return repr(table_type) * repr(rand(UInt))
     return "$(Symbol(table_type))_$(repr(rand(UInt))).csv"
 end
+
 """
-    ParamTable(type::Symbol,table,location = nothing,name = nothing, options = ParamOptions())
+    ParamTable(type::Symbol, table, location = nothing, name = nothing, options = ParamOptions())
 
 Creates a clapeyron CSV file and returns the location of that file. the type determines the table type:
 - `:single` creates a table with single parameters
@@ -42,7 +43,12 @@ SingleParam{Float64}("Mw") with 2 components:
  "methanol" => 32.042
 ```
 """
-function ParamTable(type::Symbol,data;location::Union{String,Nothing} = nothing,name::Union{String,Nothing} = nothing,options::ParamOptions = DefaultOptions)
+function ParamTable(
+        type::Symbol,
+        data;
+        location::Union{String,Nothing} = nothing,
+        name::Union{String,Nothing} = nothing,
+        options::ParamOptions = DefaultParamOptions)
     if location === nothing
         location = generate_location!()
     end
@@ -53,7 +59,7 @@ function ParamTable(type::Symbol,data;location::Union{String,Nothing} = nothing,
     csvname =  "$(Symbol(table_type))_$(name).csv"
     headers = String.(Tables.columnnames(data))
     normalised_headers = normalisestring.(headers)
-    _,_,_ = col_indices(table_type,normalised_headers,options) #basically to check the schema
+    _, _, _ = col_indices(table_type, normalised_headers, options) #basically to check the schema
     file = joinpath(location,csvname)
     io = open(file,"w")
     pretext = 
@@ -61,7 +67,7 @@ function ParamTable(type::Symbol,data;location::Union{String,Nothing} = nothing,
     $(name) $type Parameters
     """
     write(io,pretext)
-    CSV.write(io, data,append = true,header = true)
+    CSV.write(io, data, append = true, header = true)
     close(io)
     return file
 end
@@ -72,12 +78,13 @@ function generate_location!()
     end
     return PARAM_LOCATION
 end
+
 """
     cleartemp!()
 
 Deletes all files in the temporary Clapeyron scratch space, used to store the csvs created by `ParamTable`.
 """
 function cleartemp!()
-    Scratch.delete_scratch!(PKG_UUID,"ParamTables")
+    Scratch.delete_scratch!(PKG_UUID, "ParamTables")
 end
 export ParamTable

@@ -739,10 +739,10 @@ end
 
 function findgroupsincsv(
         components::Vector{String},
-        filepath::String,
+        filepath::String;
+        verbose::Bool = false,
         param_options::ParamOptions = DefaultParamOptions
     )
-    verbose = param_options.verbose
     normalisecomponents = param_options.normalisecomponents
     csvtype = readcsvtype(filepath)
     csvtype != groupdata && return Dict{String,String}()    
@@ -900,7 +900,7 @@ function GroupParam(
             continue
         end
         verbose && @info("Searching for groups for components $componentstolookup at $filepath ...")
-        merge!(allfoundcomponentgroups, findgroupsincsv(componentstolookup, filepath, param_options))
+        merge!(allfoundcomponentgroups, findgroupsincsv(componentstolookup, filepath; verbose, param_options))
         append!(groupsourcecsvs, [filepath])
     end
     gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(gccomponents))
