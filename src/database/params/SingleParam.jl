@@ -141,7 +141,7 @@ function SingleParam{T}(
         sources = String[]
     ) where T <: AbstractString
     values = fill("", length(components))
-    return SingleParam{T}(name, components, values, String[], sources)
+    return SingleParam(name, components, values, String[], sources)
 end
 
 function SingleParam{T}(
@@ -150,7 +150,7 @@ function SingleParam{T}(
         sources = String[]
     ) where T <: Number
     values = zeros(T, length(components))
-    return SingleParam{T}(name, components, values, String[], sources)
+    return SingleParam(name, components, values, String[], sources)
 end
 
 

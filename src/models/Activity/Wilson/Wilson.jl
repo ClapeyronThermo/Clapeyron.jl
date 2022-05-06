@@ -1,23 +1,38 @@
-struct WilsonParam <: EoSParam
-    g::PairParam{Float64}
-    Tc::SingleParam{Float64}
-    Pc::SingleParam{Float64}
-    ZRA::SingleParam{Float64}
-    Mw::SingleParam{Float64}
-end
-
 abstract type WilsonModel <: ActivityModel end
 
-struct Wilson{c<:EoSModel} <: WilsonModel
-    components::Array{String,1}
-    icomponents::UnitRange{Int}
-    params::WilsonParam
-    puremodel::EoSVectorParam{c}
-    absolutetolerance::Float64
-    references::Array{String,1}
-end
+PCSAFT_SETUP = ModelOptions(
+        :Wilson;
+        supertype=WilsonModel,
+        locations=["properties/critical.csv", "properties/molarmass.csv","Activity/Wilson/Wilson_unlike.csv"],
+        inputparams=[
+              ParamField(:g, PairParam{Float64}),
+              ParamField(:Tc, SingleParam{Float64}),
+              ParamField(:pc, SingleParam{Float64}),
+              ParamField(:Mw, SingleParam{Float64}),
+              ParamField(:w, SingleParam{Float64}),
+        ],
+        params=[
+              ParamField(:g, PairParam{Float64}),
+              ParamField(:Tc, SingleParam{Float64}),
+              ParamField(:Pc, SingleParam{Float64}),
+              ParamField(:ZRA, SingleParam{Float64}),
+              ParamField(:Mw, SingleParam{Float64}),
+        ],
+        mappings=[
+              ModelMapping([:pc], [:Pc], identity)
+              ModelMapping([:w], [:ZRA], x -> x * -0.08775 + 0.29056)
+        ],
+        param_options=ParamOptions(
+              asymmetricparams=["g"],
+              ignore_missing_singleparams=["g"]
+        ),
+        members=[
+            ModelMember(:puremodel, RK),
+        ],
+        references = ["10.1021/ja01056a002"]
+    )
 
-@registermodel Wilson
+createmodel(PCSAFT_SETUP; verbose=true)
 export Wilson
 
 """
@@ -52,29 +67,6 @@ Vᵢ = (RTcᵢ/Pcᵢ)(0.29056 - 0.08775ZRAᵢ)^(1 + (1-T/Tcᵢ)^2/7)
 
 """
 Wilson
-
-function Wilson(components::Vector{String};
-    puremodel = PR,
-    userlocations = String[], 
-    pure_userlocations = String[],
-    verbose = false)
-    
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/Wilson/Wilson_unlike.csv"]; userlocations=userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g"], verbose=verbose)
-    g  = params["g"]
-    Tc        = params["Tc"]
-    pc        = params["pc"]
-    Mw        = params["Mw"]
-    ZRA       = SingleParam(params["w"],"acentric factor")
-    ZRA.values .*= -0.08775
-    ZRA.values .+= 0.29056
-    icomponents = 1:length(components)
-    
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
-    packagedparams = WilsonParam(g,Tc,pc,ZRA,Mw)
-    references = String["10.1021/ja01056a002"]
-    model = Wilson(components,icomponents,packagedparams,_puremodel,1e-12,references)
-    return model
-end
 
 function activity_coefficient(model::WilsonModel,p,T,z)
     ZRA = model.params.ZRA.values
