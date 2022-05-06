@@ -306,7 +306,7 @@ function _generatecode_model_constructor(
     block = Expr(:block)
     if modeloptions.has_params
         push!(block.args, :(mappings = $(modeloptions.mappings)))
-        push!(block.args, :((rawparams, sites) = getparams(components, $(modeloptions.locations); userlocations, verbose, param_options)))
+        push!(block.args, :((rawparams, sites) = getparams(components, $(modeloptions.locations), param_options; userlocations, verbose)))
         push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), rawparams, mappings)))
     end
     for member ∈ modeloptions.members

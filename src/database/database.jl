@@ -68,8 +68,8 @@ in the available CSVs. `locations` are the locations relative to `Clapeyron` dat
 if `return_sites` is set to false, `getparams` will only return the found params.
 """
 function getparams(
-        components, 
-        locations::Vector{String} = String[]; 
+        components::Vector{String},
+        locations::Vector{String} = String[];
         userlocations::Vector{String} = String[],
         asymmetricparams::Vector{String} = String[],
         ignore_missing_singleparams::Vector{String} = String[],
@@ -101,15 +101,46 @@ function getparams(
     # If parameters exist in multiple files, Clapeyron gives priority to files in later paths.
     # asymmetricparams is a list of parameters for which matrix reflection is disabled.
     # ignore_missingsingleparams gives users the option to disable component existence check in single params.                   
-    return getparams(components, locations; userlocations, verbose, param_options)
+    return getparams(components, locations, param_options; userlocations, verbose)
+end
+
+function getparams(
+        groups::GroupParam,
+        locations::Vector{String} = String[]; 
+        userlocations::Vector{String} = String[],
+        asymmetricparams::Vector{String} = String[],
+        ignore_missing_singleparams::Vector{String} = String[],
+        ignore_headers::Vector{String} = ["dipprnumber", "smiles"],
+        verbose::Bool = false,
+        species_columnreference::String = "species",
+        source_columnreference::String = "source",
+        site_columnreference::String = "site",
+        group_columnreference::String = "groups",
+        normalisecomponents::Bool = true,
+        return_sites::Bool = true,
+        component_delimiter::String = "~|~"
+    )
+    param_options = ParamOptions(
+        ;
+        asymmetricparams,
+        ignore_missing_singleparams,
+        ignore_headers,
+        species_columnreference,
+        source_columnreference,
+        site_columnreference,
+        group_columnreference,
+        normalisecomponents,
+        return_sites,
+        component_delimiter)
+    return getparams(groups.flattenedgroups, locations, param_options; userlocations, verbose)
 end
 
 function getparams(
         components::Vector{String},
-        locations::Vector{String};
-        userlocations::Vector{String},
+        locations::Vector{String},
+        param_options::ParamOptions;
+        userlocations::Vector{String} = String[],
         verbose::Bool = false,
-        param_options::ParamOptions = DefaultParamOptions
     )
     filepaths = flattenfilepaths(locations, userlocations)
     allcomponentsites = findsitesincsvs(components, filepaths; verbose, param_options)
@@ -128,21 +159,22 @@ end
 
 function getparams(
         groups::GroupParam,
-        locations::Vector{String} = String[];
+        locations::Vector{String},
+        param_options::ParamOptions;
         userlocations::Vector{String} = String[],
         verbose::Bool = false,
-        param_options::ParamOptions = DefaultParamOptions
     )
-    return getparams(groups.flattenedgroups, locations; userlocations, verbose, param_options)
+    return getparams(groups.flattenedgroups, locations, param_options; userlocations, verbose)
 end
 
 function getparams(
         components::String,
-        locations::Vector{String}=String[];
+        locations::Vector{String},
+        param_options::ParamOptions;
         userlocations::Vector{String} = String[],
-        verbose::Bool = false,
-        param_options::ParamOptions = DefaultParamOptions)
-    return getparams([components], locations; userlocations, verbose, param_options)
+        verbose::Bool = false
+    )
+    return getparams([components], locations, param_options; userlocations, verbose)
 end
 
 function buildsites(

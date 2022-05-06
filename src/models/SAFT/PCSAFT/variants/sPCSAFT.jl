@@ -51,31 +51,6 @@ Simplified Perturbed-Chain SAFT (sPC-SAFT)
 """
 sPCSAFT
 
-function sPCSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
-    
-    params,sites = getparams(components, ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]; userlocations=userlocations, verbose=verbose)
-    
-    segment = params["m"]
-    k = params["k"]
-    Mw = params["Mw"]
-    params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bondvol"]
-
-    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
-    references = 
-
-    model = sPCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
-    return model
-end
-
 function a_hc(model::sPCSAFTModel, V, T, z , _data = @f(data))
     _,_,_,_,η,m̄ = _data
     g_hs = (1-η/2)/(1-η)^3
