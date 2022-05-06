@@ -1,6 +1,6 @@
 abstract type WilsonModel <: ActivityModel end
 
-PCSAFT_SETUP = ModelOptions(
+Wilson_SETUP = ModelOptions(
         :Wilson;
         supertype=WilsonModel,
         locations=["properties/critical.csv", "properties/molarmass.csv","Activity/Wilson/Wilson_unlike.csv"],
@@ -27,12 +27,12 @@ PCSAFT_SETUP = ModelOptions(
               ignore_missing_singleparams=["g"]
         ),
         members=[
-            ModelMember(:puremodel, RK),
+            ModelMember(:puremodel, RK; split=true),
         ],
         references = ["10.1021/ja01056a002"]
     )
 
-createmodel(PCSAFT_SETUP; verbose=true)
+createmodel(Wilson_SETUP; verbose=true)
 export Wilson
 
 """

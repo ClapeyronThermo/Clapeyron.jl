@@ -22,19 +22,38 @@ Part of `ModelOptions`. This is used to specify the options for member models.
 ## Fields
 - `name::Symbol`: The name of this member. It will be used as the fieldname for the created model object.
 - `default_type::Type`: The default type for this member. Has to have a constructor with the same function signature.
-- `separate_namespace::Bool`: If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`.
+- `split::Bool = false`: If `true`, create a vector of pure models of this type.
+- `separate_namespace::Bool = true`: If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`.
+- `parents::Union{Type,Nothing} = nothing`: If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`.
+- `nameinparrent::Symbol = nothing`: If `nothing`, just take the given name. This is for when the name in member model is different from the name in current model, which allows multiple member models of the same type to be present in the main model.
 """
 struct ModelMember
     name::Symbol
     default_type::Type
+    split::Bool
     separate_namespace::Bool
+    parents::Union{Vector{Type},Nothing}
+    nameinparent::Symbol
 end
 function ModelMember(
         name::Symbol,
         default_type::Type;
-        separate_namespace::Bool = false
+        split::Bool = false,
+        separate_namespace::Bool = false,
+        parents::Union{Vector{Type},Nothing} = nothing,
+        nameinparent::Union{Symbol,Nothing} = nothing
     )
-    return ModelMember(name, default_type, separate_namespace)
+    if isnothing(nameinparent)
+        nameinparent = name
+    end
+    return ModelMember(
+        name,
+        default_type,
+        split,
+        separate_namespace,
+        parents,
+        nameinparent
+    )
 end
 
 """
@@ -261,7 +280,11 @@ function _generatecode_model_struct(modeloptions::ModelOptions)::Expr
         push!(block.args, :(mappings::Vector{ModelMapping}))
     end
     for (i, member) ∈ enumerate(modeloptions.members)
-        push!(block.args, Expr(:(::), member.name, Symbol("M" * string(i))))
+        if member.split
+            push!(block.args, Expr(:(::), member.name, Expr(:curly, :EoSVectorParam, Symbol("M" * string(i)))))
+        else
+            push!(block.args, Expr(:(::), member.name, Symbol("M" * string(i))))
+        end
     end
     if modeloptions.has_sites
         push!(block.args, :(assoc_options::AssocOptions))
@@ -314,8 +337,8 @@ function _generatecode_model_constructor(
         push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), rawparams, mappings)))
     end
     for member ∈ modeloptions.members
-        if member.separate_namespace
-            push!(block.args, :($(member.name) = _initmodel($(member.name), components; userlocations, namespace=String($(member.name), verbose))))
+        if member.split
+            push!(block.args, :($(member.name) = _initpuremodel($(member.name), components; userlocations, verbose)))
         else
             push!(block.args, :($(member.name) = _initmodel($(member.name), components; userlocations, verbose)))
         end
@@ -351,24 +374,41 @@ end
 #####
 
 function _initmodel(
-        model::DataType,
+        model::Type,
         components;
         userlocations,
-        namespace::String = "",
         verbose::Bool = false
     )
     verbose && @info("Creating member model: $model")
-    return model(components; userlocations, namespace, verbose)
+    return model(components; userlocations, verbose)
 end
 
 function _initmodel(
         model,
         components;
         userlocations,
-        namespace::String = "",
         verbose::Bool = false
     )
     return model
+end
+
+function _initpuremodel(
+        model::Type,
+        components;
+        userlocations,
+        verbose::Bool = false
+    )
+    verbose && @info("Creating member pure model: $model")
+    return EoSVectorParam(model(components; userlocations,verbose))
+end
+
+function _initpuremodel(
+        puremodels,
+        components;
+        userlocations,
+        verbose::Bool = false
+    )
+    return puremodels
 end
 
 
