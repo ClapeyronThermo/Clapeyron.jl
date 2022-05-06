@@ -27,7 +27,7 @@ Wilson_SETUP = ModelOptions(
               ignore_missing_singleparams=["g"]
         ),
         members=[
-            ModelMember(:puremodel, RK; split=true),
+            ModelMember(:puremodel, PR; split=true),
         ],
         references = ["10.1021/ja01056a002"]
     )
