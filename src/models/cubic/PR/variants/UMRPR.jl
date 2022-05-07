@@ -34,7 +34,7 @@ function UMRPR(components::Vector{String}; idealmodel=BasicIdeal,
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    verbose=false, kwargs...)
 
     return PR(components;
     idealmodel = idealmodel,

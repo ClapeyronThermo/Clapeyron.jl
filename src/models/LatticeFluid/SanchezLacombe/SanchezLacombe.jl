@@ -71,7 +71,7 @@ function SanchezLacombe(components;
     userlocations=String[], 
     ideal_userlocations=String[], 
     mixing_userlocations = String[],
-    verbose=false)
+    verbose=false, kwargs...)
     params = getparams(components, ["LatticeFluid/SanchezLacombe","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     
     segment = params["segment"]

@@ -51,7 +51,7 @@ c̄ = ∑cᵢxᵢ
 QCPRRule
 
 
-function QCPRRule(components::Vector{String}; activity = nothing, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function QCPRRule(components::Vector{String}; activity = nothing, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
     params = getparams(components, ["cubic/QCPR/QCPR_like.csv","cubic/QCPR/QCPR_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     references = String["10.1016/j.fluid.2020.112790"]
     pkgparams = QCPRRuleParam(params["A"],params["B"],params["l"])

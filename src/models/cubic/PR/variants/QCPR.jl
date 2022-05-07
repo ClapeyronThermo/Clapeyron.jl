@@ -26,7 +26,7 @@ function QCPR(components::Vector{String}; idealmodel=BasicIdeal,
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    verbose=false, kwargs...)
 
     userlocations = vcat(alpha_userlocations,translation_userlocations,userlocations)
 

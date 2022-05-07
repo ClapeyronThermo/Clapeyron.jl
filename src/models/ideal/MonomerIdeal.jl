@@ -31,7 +31,7 @@ Monomer Ideal Model, result obtained from statistical mechanics `Λ`
 MonomerIdeal
 
 export MonomerIdeal
-function MonomerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
+function MonomerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false, kwargs...)
     params = getparams(components, ["properties/molarmass"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     packagedparams = MonomerIdealParam(Mw)

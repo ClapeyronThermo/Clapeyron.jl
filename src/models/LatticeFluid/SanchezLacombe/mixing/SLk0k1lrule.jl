@@ -32,7 +32,7 @@ Where `δᵢⱼ` is `i == j ? 1 : 0`
 """
 SLk0k1lMixingRule
 
-function SLk0k1lMixingRule(components; userlocations=String[], verbose=false)
+function SLk0k1lMixingRule(components; userlocations=String[], verbose=false, kwargs...)
     params = getparams(components, ["LatticeFluid/SanchezLacombe/mixing/k0k1l_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k0 = params["k0"]
     k1 = params["k1"]

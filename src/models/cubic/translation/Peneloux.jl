@@ -35,7 +35,7 @@ Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 PenelouxTranslation
 
 export PenelouxTranslation
-function PenelouxTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function PenelouxTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Vc = params["vc"]
     packagedparams = PenelouxTranslationParam(Vc)

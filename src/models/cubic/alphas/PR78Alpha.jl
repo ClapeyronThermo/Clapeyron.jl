@@ -36,7 +36,7 @@ else
 """
 PR78Alpha
 
-function PR78Alpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function PR78Alpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = SingleParam(params["w"],"acentric factor")
     packagedparams = PR78AlphaParam(acentricfactor)

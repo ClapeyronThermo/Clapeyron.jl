@@ -32,7 +32,7 @@ Trᵢ = T/Tcᵢ
 """
 RKAlpha
 
-function RKAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function RKAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     packagedparams = RKAlphaParam()
     model = RKAlpha(packagedparams, verbose=verbose)

@@ -80,7 +80,7 @@ function UNIFAC(components::Vector{String};
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false, kwargs...)
     
     groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; verbose=verbose)
 

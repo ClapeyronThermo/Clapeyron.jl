@@ -64,7 +64,7 @@ function VTPRUNIFAC(components::Vector{String};
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false, kwargs...)
 
     groups = GroupParam(components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"]; verbose=verbose)
 

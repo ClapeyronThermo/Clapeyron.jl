@@ -47,7 +47,7 @@ for Peng-Robinson:
 HVRule
 
 export HVRule
-function HVRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function HVRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)
     
     references = ["10.1016/0378-3812(79)80001-1"]

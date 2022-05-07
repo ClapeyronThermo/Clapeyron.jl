@@ -31,7 +31,7 @@ function PR78(components::Vector{String}; idealmodel=BasicIdeal,
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    verbose=false, kwargs...)
 
     return PR(components;
     idealmodel = idealmodel,

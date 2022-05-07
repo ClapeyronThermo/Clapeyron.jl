@@ -46,7 +46,7 @@ PPR78Rule
 
 export PPR78Rule
 
-function PPR78Rule(components; activity = nothing, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function PPR78Rule(components; activity = nothing, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
     groups = GroupParam(components,["cubic/EPPR78/EPPR78_groups.csv"]; verbose=verbose)
     params = getparams(groups, ["cubic/EPPR78/EPPR78_unlike.csv"]; userlocations=userlocations)
     pkgparams = PPR78Param(params["A"],params["B"])

@@ -33,7 +33,7 @@ ConstantTranslation
 
 export ConstantTranslation
 
-function ConstantTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function ConstantTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
     params = getparams(components, String[]; userlocations=userlocations, verbose=verbose)
     c = params["c"]
     packagedparams = ConstantTranslationParam(c)

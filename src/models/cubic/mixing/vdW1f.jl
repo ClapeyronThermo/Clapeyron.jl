@@ -32,7 +32,7 @@ c̄ = ∑cᵢxᵢ
 """
 vdW1fRule
 
-function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
     packagedparams = vdW1fRuleParam()
     model = vdW1fRule(packagedparams, verbose=verbose)
     return model

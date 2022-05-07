@@ -17,7 +17,7 @@ struct SPUNG{S<:EoSModel,E<:EoSModel} <: EoSModel
     model_ref::E
 end
 
-function SPUNG(components::Vector{String},refmodel=PropaneRef(),shapemodel=SRK(components),shaperef = SRK(refmodel.components))
+function SPUNG(components::Vector{String},refmodel=PropaneRef(),shapemodel=SRK(components),shaperef = SRK(refmodel.components); kwargs...)
     model = SPUNG(shapemodel,shaperef,refmodel)
     return model
 end
