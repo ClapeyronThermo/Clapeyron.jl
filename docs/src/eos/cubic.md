@@ -47,6 +47,7 @@ end
 ## Main Models
 ```@docs
 Clapeyron.vdW
+Clapeyron.Clausius
 Clapeyron.RK
 Clapeyron.PR
 Clapeyron.KU

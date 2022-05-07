@@ -6,6 +6,16 @@ struct ABCubicParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
+struct ABCCubicParam <: EoSParam
+    a::PairParam{Float64}
+    b::PairParam{Float64}
+    c::SingleParam{Float64}
+    Tc::SingleParam{Float64}
+    Pc::SingleParam{Float64}
+    Vc::SingleParam{Float64}
+    Mw::SingleParam{Float64}
+end
+
 """
     ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
 
@@ -27,6 +37,10 @@ function ab_premixing(model,mixing,Tc,pc,kij)
     b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
     return a,b
 end
+
+ab_premixing(model,mixing,Tc,pc,vc,kij) = ab_premixing(model,mixing,Tc,pc,kij) #ignores the Vc unless dispatch
+
+function c_premixing end
 
 function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
     a = model.params.a.values
@@ -62,8 +76,6 @@ function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     b̄ρt = b̄*ρt
     return -log1p((c̄-b̄)*ρ) - ā*RT⁻¹*log((Δ1*b̄ρt+1)/(Δ2*b̄ρt+1))/(ΔΔ*b̄)
 end
-
-#log (2 + sqrt2/2 - sqrt2)/(2sqrt2)
 
 function cubic_poly(model::ABCubicModel,p,T,z)
     a,b,c = cubic_ab(model,p,T,z)
@@ -164,6 +176,7 @@ function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
     
     zl,zg = vvv
     vvl,vvg = RTp*zl,RTp*zg
+    @show vvl,vvg
     err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if sum(isreal) == 3 #3 roots
         vg = vvg

@@ -101,46 +101,36 @@ function KU(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     Tc = params["Tc"]
     Vc = params["vc"]
-    ku_omega = KUOmegaValues(Tc.values,pc.values,Vc.values)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(ku_omega,init_mixing,Tc,pc,k)
+    a,b,omega_a,omega_b = ab_premixing(KU,init_mixing,Tc,pc,Vc,k)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     icomponents = 1:length(components)
-    Ωa,Ωb = ab_consts(ku_omega)
-    omega_a = SingleParam("Ωa",components,Ωa)
-    omega_b = SingleParam("Ωb",components,Ωb)
     packagedparams = KUParam(a,b,omega_a,omega_b,Tc,pc,Vc,Mw)
     references = String["10.1016/j.ces.2020.116045"]
     model = KU(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 
-#auxiliary mixing struct
-struct KUOmegaValues
-    Tc::Vector{Float64}
-    Pc::Vector{Float64}
-    Vc::Vector{Float64}
-    Ωa::Vector{Float64}
-    Ωb::Vector{Float64}
-end
-
-function KUOmegaValues(_tc,_pc,_vc)
+function ab_premixing(model::Type{<:KUModel},mixing,Tc,pc,vc,kij)
+    _Tc = Tc.values
+    _pc = pc.values
+    _vc = vc.values
     Zc = _pc .* _vc ./ (R̄ .* _tc)
     χ  = @. cbrt(sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Zc -20)/(32*sqrt(3)*Zc^2) 
     - (729*Zc^3 - 216*Zc + 8)/(1728*Zc^3))
     α  = @. (χ + (81*Zc^2 - 72*Zc + 4)/(144*χ*Zc^2) + (3*Zc - 2)/(12*Zc))
     Ωa = @. Zc*((1 + 1.6*α - 0.8*α^2)^2 / ((1 - α^2)*(2 + 1.6*α)))
     Ωb = @. Zc*α
-    return KUOmegaValues(_tc,_pc,_vc,Ωa,Ωb)
+    components = Tc.components
+    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
+    b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
+    omega_a = SingleParam("Ωa",components,Ωa)
+    omega_b = SingleParam("Ωb",components,Ωb)
+    return a,b,omega_a,omega_b
 end
 
-#χ  = @. cbrt(18*sqrt(3)*Zc*sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Zc -20) 
-#-729*Zc^3 + 216*Zc - 8)
-#α = @. χ/(12*Zc) + (81*Zc^2 - 72*Zc + 4)/(12*Zc*χ) + (3*Zc - 2)/(12*Zc)
-#@show α
-ab_consts(model::KUOmegaValues) = model.Ωa,model.Ωb
 ab_consts(model::KUModel) = model.params.omega_a.values,model.params.omega_b.values
 
 #only used in premixing

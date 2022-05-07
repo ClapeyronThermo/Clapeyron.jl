@@ -57,7 +57,7 @@ end
 
 HV_λ(::HVRuleModel,model::ABCubicModel,z) = infinite_pressure_gibbs_correction(model,z)
 
-function mixing_rule(model::CubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,c)
+function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,c)
     n = sum(z)
     invn = 1/n
     invn2 = invn*invn
