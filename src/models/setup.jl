@@ -6,13 +6,29 @@ Part of `ModelOptions`. Used to define how source from csv is mapped to the targ
 ## Fields
 - `source::Union{String,Vector{String}}`: The source headers from csv.
 - `target::Union{Symbol,Vector{Symbol}}`: The target parameters.
-- `transformation::function`: The transformation from source to target.
+- `transformation::function = identity`: The transformation from source to target.
+- `self_in_args::Bool = false`: If true, the first argument in the transformation function is the model object itself. Note that it is inadvisable to access other params directly via getproperties on the model object as there is no guarantees that the values are up to date at the time of update. The intension is primarily for dispatch. If it is dependent on parameters, explicitly have them as arguments to the transformation function, or ensure that the parameters accessed are never changed.
 """
 struct ModelMapping
     source::Vector{Symbol}
     target::Vector{Symbol}
     transformation::Function
+    self_in_args::Bool
 end
+function ModelMapping(
+        source::Vector{Symbol},
+        target::Vector{Symbol},
+        transformation::Function = identity;
+        self_in_args::Bool = false
+    )
+    return ModelMapping(
+        source,
+        target,
+        transformation,
+        self_in_args
+    )
+end
+
 
 """
     ModelMember(name, default_type; separate_namespace = false)
@@ -124,7 +140,7 @@ A complete definition for how the model object will be created in Clapeyron. If 
 - `has_groups::Bool = false`: Whether this model contains groups.
 - `param_options::ParamOptions = nothing`: The default ParamOptions. If `has_params` is `true`, but param_options is `nothing`, use create one using the default constructor.
 - `assoc_options::AssocOptions = nothing`: The default AssocOptions. If `has_sites` is `true`, but assoc_options is `nothing`, use create one using the default constructor.
-- `references::Vector{String}`: References for this model. Usually DOIs.
+- `references::Vector{String} = String[]`: References for this model. Usually DOIs.
 - `inputparamstype::Symbol = nothing`: A struct with this name will be generated in the global/module namespace for the input params. If given `nothing`, the constructor will fill it in with `{name}InputParam`.
 - `paramstype::Symbol = nothing`: A struct with this name will be generated in the global/module namespace for the target params. If given `nothing`, the constructor will fill it in with `{name}Param`.
 """
@@ -391,7 +407,6 @@ function _generatecode_model_constructor(
             push!(block.args, :(merge!(_accumulatedparams, merge(rawparams, _accumulatedparams))))
             push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), _accumulatedparams, mappings, _namespace)))
         end
-
     end
     for member ∈ modeloptions.members
         if member.split
@@ -411,7 +426,7 @@ function _generatecode_model_constructor(
     end
     push!(block.args, :(references = $(modeloptions.references)))
 
-    # Generate return command
+    # Create object
     call = Expr(:call)
     push!(call.args, modeloptions.name)
     push!(call.args, :(components))
@@ -433,7 +448,9 @@ function _generatecode_model_constructor(
         push!(call.args, :(assoc_options))
     end
     push!(call.args, :(references))
-    push!(block.args, Expr(:return, call))
+    push!(block.args, Expr(:(=), :model, call))
+    push!(block.args, :(updateparams!(model)))
+    push!(block.args, Expr(:return, :model))
     return Expr(:function, func_head, block)
 end
 
@@ -643,42 +660,54 @@ function _initparams(
             end
         end
     end
-    inputparams = I(inputparams_params...)
-    params = P(params_params...)
-    updateparams!(inputparams, params, mappings)
-    return (inputparams, params)
+    return (I(inputparams_params...), P(params_params...))
 end
 
 """
-    updateparams!(model)
-    updateparams!(inputparams, params, mappings)
+    updateparams!(model; updatemembers)
+    updateparams!(self, inputparams, params, mappings)
 
-Given an `EoSModel`, update the values of `params` with current
-values of `inputparams` given the `mappings`. Note that for
-identity transformations, the values share the same references,
-so they need not be updated explictly.
+Given an `EoSModel`, update the values of `params` with current values of `inputparams` given the `mappings`. Note that for identity transformations, the values share the same references, so they need not be updated explictly.  
+
+## Arguments
+- `model::EoSModel`: The model to update params on.
+- `updatemembers::Bool = true`: If `true` it will update all direct members of `model`. Note that it does not recursively update members of members. If it is desired for parameters of model members of model members to be updated, say for parameter estimation, ensure that it is also a direct member of the `model`.
 """
-function updateparams!(model::EoSModel)::Nothing
-    updateparams!(model.inputparams, model.params, model.mappings)
+function updateparams!(model::EoSModel; updatemembers::Bool = true)::Nothing
+    if hasproperty(model, :inputparams)
+        updateparams!(model, model.inputparams, model.params, model.mappings, updatemembers)
+    end
 end
 
 function updateparams!(
-        inputparams,
-        params,
-        mappings::Vector{ModelMapping}
+        self::EoSModel,
+        inputparams::EoSParam,
+        params::EoSParam,
+        mappings::Vector{ModelMapping},
+        updatemembers::Bool
        )::Nothing
-    # At the moment, we are stil constructing new ClapeyronParams,
-    # then broadcast assigning the params to them. There might be
-    # some optimisations possible here, but this will maintain
-    # maximum compatibility with existing functions for now.
     for mapping ∈ filter(m -> !(m.transformation === identity),  mappings)
-        outputs = mapping.transformation([getfield(inputparams, f) for f ∈ mapping.source]...)
-        if typeof(outputs) <: ClapeyronParam
-            outputs = [outputs]
+        # At the moment, we are stil constructing new ClapeyronParams,
+        # then broadcast assigning the params to them. There might be
+        # some optimisations possible here, but this will maintain
+        # maximum compatibility with existing functions for now.
+        if mapping.self_in_args
+            outputs = mapping.transformation(self, [getfield(inputparams, f) for f ∈ mapping.source]...)
+        else
+            outputs = mapping.transformation([getfield(inputparams, f) for f ∈ mapping.source]...)
         end
-        toupdates = [getfield(params, f) for f ∈ mapping.target]
-        for (output, toupdate) ∈ zip(outputs, toupdates)
-            toupdate.values .= output.values
+        if typeof(outputs) <: ClapeyronParam
+            getfield(params, first(mapping.target)).values .= outputs.values
+        else
+            toupdates = [getfield(params, f) for f ∈ mapping.target]
+            for (output, toupdate) ∈ zip(outputs, toupdates)
+                toupdate.values .= output.values
+            end
+        end
+    end
+    if updatemembers
+        for member in modelmembers(self)
+            updateparams!(getfield(self, member); updatemembers=false)
         end
     end
 end
@@ -716,35 +745,29 @@ function createmodel(modeloptions::ModelOptions; verbose::Bool = false)
 
     eval(quote
         has_sites(::Type{<:$(modeloptions.name)}) = $(modeloptions.has_sites)
-
         function Base.show(io::IO, model::$(modeloptions.name))
             return eosshow(io, model)
         end
-
         Base.length(model::$(modeloptions.name)) = Base.length(model.components)
     end)
-
     if modeloptions.has_groups
         eval(quote
             has_groups(::Type{<:$(modeloptions.name)}) = true
-
             function Base.show(io::IO, mime::MIME"text/plain", model::$(modeloptions.name))
                 return gc_eosshow(io, mime, model)
             end
-
             molecular_weight(model::$(modeloptions.name), z = SA[1.0]) = group_molecular_weight(model.groups, mw(model), z)
         end)
     else
         eval(quote
             has_groups(::Type{<:$(modeloptions.name)}) = false
-
             function Base.show(io::IO, mime::MIME"text/plain", model::$(modeloptions.name))
                 return eosshow(io, mime, model)
             end
-
             molecular_weight(model::$(modeloptions.name), z = SA[1.0]) = comp_molecular_weight(mw(model), z)
         end)
     end
+    eval(:(modelmembers(model::$(modeloptions.name)) = $([member.name for member in modeloptions.members])))
 end
 
 export ModelMapping, ModelMember, ParamField, ModelOptions, createmodel, updateparams!
