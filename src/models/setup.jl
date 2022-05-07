@@ -395,7 +395,7 @@ function _generatecode_model_constructor(
         if modeloptions.has_groups  # Have to figure out what to do with GC later.
             push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), rawparams, mappings, _namespace)))
         else
-            push!(block.args, :(_accumulatedparams = merge(rawparams, _accumulatedparams)))
+            push!(block.args, :(merge!(_accumulatedparams, merge(rawparams, _accumulatedparams))))
             push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), _accumulatedparams, mappings, _namespace)))
         end
 
