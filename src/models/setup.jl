@@ -440,7 +440,7 @@ end
 #####
 
 function _initmodel(
-        model::Type,
+        model::Union{Type,Function},
         components::Vector{String},
         caller::Symbol,
         nameinparent::Symbol,
@@ -451,15 +451,15 @@ function _initmodel(
         _accumulatedparams::Dict{String,ClapeyronParam},
         verbose::Bool = false
     )
-    if caller ∈ initialisedmodels
-        if nameinparent ∈ initialisedmodels[caller]
-            return initialisedmodels[caller][model]
+    if caller ∈ keys(_initialisedmodels)
+        if nameinparent ∈ _initialisedmodels[caller]
+            return _initialisedmodels[caller][model]
         end
     end
     # Default key if restrictparents is `nothing`.
-    if :_ ∈ initialisedmodels
-        if nameinparent ∈ initialisedmodels[caller]
-            return initialisedmodels[caller][model]
+    if :_ ∈ keys(_initialisedmodels)
+        if nameinparent ∈ _initialisedmodels[caller]
+            return _initialisedmodels[caller][model]
         end
     end
     verbose && @info("Creating member model: $model")
@@ -475,7 +475,7 @@ function _initmodel(
 end
 
 function _initmodel(
-        model::Type,
+        model,
         components::Vector{String},
         caller::Symbol,
         nameinparent::Symbol,
@@ -490,7 +490,7 @@ function _initmodel(
 end
 
 function _initpuremodel(
-        model::Type,
+        model::Union{Type,Function},
         components::Vector{String},
         caller::Symbol,
         nameinparent::Symbol,
@@ -501,15 +501,15 @@ function _initpuremodel(
         _accumulatedparams::Dict{String,ClapeyronParam},
         verbose::Bool = false
     )
-    if caller ∈ initialisedmodels
-        if nameinparent ∈ initialisedmodels[caller]
-            return initialisedmodels[caller][model]
+    if caller ∈ keys(_initialisedmodels)
+        if nameinparent ∈ keys(_initialisedmodels[caller])
+            return _initialisedmodels[caller][model]
         end
     end
     # Default key if restrictparents is `nothing`.
-    if :_ ∈ initialisedmodels
-        if nameinparent ∈ initialisedmodels[caller]
-            return initialisedmodels[caller][model]
+    if :_ ∈ keys(_initialisedmodels)
+        if nameinparent ∈ keys(_initialisedmodels[caller])
+            return _initialisedmodels[caller][model]
         end
     end
     verbose && @info("Creating member pure models: $puremodels")
@@ -525,7 +525,7 @@ function _initpuremodel(
 end
 
 function _initpuremodel(
-        model::Type,
+        model,
         components::Vector{String},
         caller::Symbol,
         nameinparent::Symbol,
