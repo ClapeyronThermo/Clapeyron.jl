@@ -17,22 +17,56 @@ end
 """
     ModelMember(name, default_type; separate_namespace = false)
 
-Part of `ModelOptions`. This is used to specify the options for member models.
+Part of `ModelOptions`. This is used to specify the options for member models. Note that only swappable members need to be specified here. If member models contain member models with the same name as one specified here, the same instance will be used. If this is undesired behaviour, explicitly assign the relevant parents in the `restrictparents` field.
 
 ## Fields
 - `name::Symbol`: The name of this member. It will be used as the fieldname for the created model object.
 - `default_type::Type`: The default type for this member. Has to have a constructor with the same function signature.
 - `split::Bool = false`: If `true`, create a vector of pure models of this type.
-- `separate_namespace::Bool = true`: If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`.
-- `parents::Union{Type,Nothing} = nothing`: If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`.
+- `separate_namespace::Bool = true`: This is for namespace resolution of input parameter names from user-provided CSV in `userlocations`. If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`. Note that these prefixes do not nest (the `name` must be distinct per model, and so there need only be one level).
+- `overwritelocations::Union{Vector{String},Nothing} = nothing`: If the model wants to overwrite the array of locations from a location in the Clapeyron database specific for this model, they may do so here. This location is not passed down to subsequent member models.
+- `restrictparents::Union{Symbol,Nothing} = nothing`: This is for namespoce resolution of member models. If `nothing`, any model with a member with this name will be assigned the same instantiated object. When ambiguity arises, say if two distinct `activity` models are used, provide a vector of types to specify where this member is applicable, making use of the `nameinparent` field as well for correct asignment.
 - `nameinparrent::Symbol = nothing`: If `nothing`, just take the given name. This is for when the name in member model is different from the name in current model, which allows multiple member models of the same type to be present in the main model.
+
+## Separate namespace
+To account for the possibility that parameters may share the same names across models, we can enable this option to resolve conflicts. For example, if we had a model
+
+    A{B}
+
+and both `A` and `B` contain distinct parameters `m`. Then we would enable `separate_namespace` for member `B`, and in the parameters file, if there is a column called `B__m`, it will take precedence over the column `m`. If column `B__m` is not present, it will find that column `m` is already initialised when getting parameters for `A`, so it will just take the same reference to that parameter.
+
+## Restrict parents
+Model `A` has `Y` and `X` as member models (note the order) and model `X` is a member of model `Y`.
+
+The order of initialisation is as provided in the `members` field vector. If we specified it as
+
+    A{Y{X},X}
+
+instead, then without any other instructions, it will first initialise `Y` with the default `X`, then intialise a second `X` for the entry in `A`.
+
+If we instead had it written as
+
+    A{X,Y{X}}
+
+Unless otherwise specified, the instance `X` that resides in `A` is the same instance as the one that resides in `Y`.
+
+If we specify `[A]` in `restrictparents` for `ModelMember` of `X`, then a separate instance of a `X` (the default) will be constructed for `Y`.
+
+The base model `A` will always contain an instance to any member specified in `members`. So in this case, specifying `[Y]` for the `restrictparents` field here will have the same effect as `nothing` (both referncing the same `X`). In effect, this means that for parameter estimation, we will never need to look into modifying any params deeper than one level of members.
+
+If we wish the `X` in `A` be distinct from the `X` in `Y`, yet have them both modular (swappable from the main constructor interface), we can give them separate names in the base model, but change the `nameinparent` to reflect the correct name. In this case, we will have
+
+    A{X, X2, Y{X}}
+
+where for `X`, we have `restrictparents` as `[A]`, whereas for `X2`, we have `restrictparents` as `[Y]` (superfluous here, as per discussion above, but provides clarification on usage), and `nameinparent` as `X`. Then `X2` here is the same instance as the `X` in `Y`. Note that the order of the `restrictparents` can be swapped, so thet he `X` in `Y` is the same instance as the `X` in `A`, instead of `X2` as before. However, in this case, both `restrictparams` have to be specified.
 """
 struct ModelMember
     name::Symbol
     default_type::Type
     split::Bool
     separate_namespace::Bool
-    parents::Union{Vector{Type},Nothing}
+    overwritelocations::Union{Vector{String},Nothing}
+    restrictparents::Union{Vector{Symbol},Nothing}
     nameinparent::Symbol
 end
 function ModelMember(
@@ -40,7 +74,8 @@ function ModelMember(
         default_type::Type;
         split::Bool = false,
         separate_namespace::Bool = false,
-        parents::Union{Vector{Type},Nothing} = nothing,
+        overwritelocations::Union{Vector{String},Nothing} = nothing,
+        restrictparents::Union{Vector{Symbol},Nothing} = nothing,
         nameinparent::Union{Symbol,Nothing} = nothing
     )
     if isnothing(nameinparent)
@@ -51,7 +86,8 @@ function ModelMember(
         default_type,
         split,
         separate_namespace,
-        parents,
+        overwritelocations,
+        restrictparents,
         nameinparent
     )
 end
@@ -79,7 +115,7 @@ A complete definition for how the model object will be created in Clapeyron. If 
 - `name::Symbol`: The name of the model. A struct with this name will be generated in to the global/module namespace.
 - `supertype::DataType = EoSModel`: An abstract base type to be a subtype of.
 - `parent::Union{ModelOptions,Nothing} = nothing`: The `ModelOptions` of the parent model.
-- `members::Vector{ModelMember{ModelOptions}} = ModelMember{ModelOptions}[]`: A list of modular components like `IdealModel`s.
+- `members::Vector{ModelMember} = ModelMember[]`: A list of ModelMembers. Note that the order reflects the order of initialisation. Read the docs for `ModelMember` for more details.
 - `locations::Vector{String} = String[]`: Default locations in Clapeyron database to look for parameters. Note that for user-specified parameters, it is easier to use the `user_locations` parameter.
 - `inputparams::Vector{ParamField} = ParamField[]`: A list of relevant source parameters. The model constructor will extract the String headers according to the Symbol name given.
 - `params::Vector{ParamField} = ParamField[]`: A list of relevant target parameters.
@@ -294,7 +330,24 @@ function _generatecode_model_struct(modeloptions::ModelOptions)::Expr
     return Expr(:struct, false, Meta.parse(defheader), block)
 end
 
+"""
+Generates a model constructor with the folowing function signature:
 
+## Arguments
+- `components::Union{String, Vector{String}}`: The components for this model.
+_ `userlocations::Vector{String} = String[]`: An array of filepaths to CSVs specified by the user.
+- `verbose::Bool = false`: Print more information.
+- `param_options::ParamOptions`: This is present for models with parameters to change the behaviour of `getparams`.
+- `assoc_options::AssocOptions`: This is present for models with sites to change the behaviour of association.
+- various member models: For models with modular components, each member model can be swapped out here. For example, the `idealmodal` or `activity`.
+
+## System arguments
+These are used by Clayeyron when initialising member models. They should not be modified unless you know what you are doing.
+- `_overwritelocations::Union{Vector{String}} = nothing`: If not `nothing`, overwrite the `locations` for this model.
+- `_initialisedmodels::Dict{Symbol, Dict{Symbol, Any}} = Dict{Symbol, Dict{Symbol, Any}}()`: If model is already initialised, just take a reference to it unless specified otherwise in the `MemberModel`.
+- `_namespace::String = ""`: Give higher priority to columns prepended with `{membermodel_name}__{inputparam_name}` if present.
+- `_accumulatedparams::Dict{String, ClapeyronParam} = Dict{String, ClapeyronParam}())`: If there are parameters with the same name, just point to existing reference.
+"""
 function _generatecode_model_constructor(
         modeloptions::ModelOptions
     )::Expr
@@ -305,7 +358,6 @@ function _generatecode_model_constructor(
     parameters = Expr(:parameters)
     push!(parameters.args, Expr(:kw, :(userlocations::Vector{String}), :(String[])))
     push!(parameters.args, Expr(:kw, :(verbose::Bool), :false))
-    push!(parameters.args, Expr(:kw, :(namespace::String), :""))
     if modeloptions.has_params
         push!(parameters.args, Expr(:kw, :(param_options::ParamOptions), :($(modeloptions.param_options))))
     end
@@ -315,6 +367,10 @@ function _generatecode_model_constructor(
     for member ∈ modeloptions.members
         push!(parameters.args, Expr(:kw, :($(member.name)), :($(member.default_type))))
     end
+    push!(parameters.args, Expr(:kw, :(_overwritelocations::Union{Vector{String},Nothing}), :nothing))
+    push!(parameters.args, Expr(:kw, :(_initialisedmodels::Dict{Symbol,Dict{Symbol,Any}}), :(Dict{Symbol,Dict{Symbol,Any}}())))
+    push!(parameters.args, Expr(:kw, :(_namespace::String), :""))
+    push!(parameters.args, Expr(:kw, :(_accumulatedparams::Dict{String,ClapeyronParam}), :(Dict{String,ClapeyronParam}())))
     push!(func_head.args, parameters)
     # Now positional args
     if modeloptions.has_components
@@ -329,18 +385,35 @@ function _generatecode_model_constructor(
     block = Expr(:block)
     if modeloptions.has_params
         push!(block.args, :(mappings = $(modeloptions.mappings)))
+        push!(block.args, :(locations = $(modeloptions.locations)))
+        push!(block.args, Expr(:if, :(!isnothing(_overwritelocations)), :(locations = _overwritelocations)))
         if modeloptions.has_sites
-            push!(block.args, :((rawparams, sites) = getparams(components, $(modeloptions.locations), param_options; userlocations, verbose)))
+            push!(block.args, :((rawparams, sites) = getparams(components, locations, param_options; userlocations, verbose)))
         else
-            push!(block.args, :(rawparams = getparams(components, $(modeloptions.locations), param_options; userlocations, verbose)))
+            push!(block.args, :(rawparams = getparams(components, locations, param_options; userlocations, verbose)))
         end
-        push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), rawparams, mappings)))
+        if modeloptions.has_groups  # Have to figure out what to do with GC later.
+            push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), rawparams, mappings, _namespace)))
+        else
+            push!(block.args, :(_accumulatedparams = merge(rawparams, _accumulatedparams)))
+            push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), _accumulatedparams, mappings, _namespace)))
+        end
+
     end
     for member ∈ modeloptions.members
         if member.split
-            push!(block.args, :($(member.name) = _initpuremodel($(member.name), components; userlocations, verbose)))
+            push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, $(member.overwritelocations), _initialisedmodels, _namespace, _accumulatedparams, verbose)))
         else
-            push!(block.args, :($(member.name) = _initmodel($(member.name), components; userlocations, verbose)))
+            push!(block.args, :($(member.name) = _initmodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, $(member.overwritelocations), _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+        end
+        if isnothing(member.restrictparents)
+            push!(block.args, Expr(:if, :(!haskey(_initialisedmodels, :_)), :(_initialisedmodels[:_] = Dict{Symbol,Any}())))
+            push!(block.args, :(_initialisedmodels[:_][Symbol($(member.nameinparent))] = $(member.name)))
+        else
+            for parent ∈ member.restrictparents
+                push!(block.args, Expr(:if, :(!haskey(_initialisedmodels, Symbol($parent))), :(_initialisedmodels[Symbol($parent)] = Dict{Symbol,Any}())))
+                push!(block.args, :(_initialisedmodels[Symbol($parent)][Symbol($(member.nameinparent))] = $(member.name)))
+            end
         end
     end
     push!(block.args, :(references = $(modeloptions.references)))
@@ -375,18 +448,49 @@ end
 
 function _initmodel(
         model::Type,
-        components;
-        userlocations,
+        components::Vector{String},
+        caller::Symbol,
+        nameinparent::Symbol,
+        userlocations::Vector{String},
+        _overwritelocations::Union{Vector{String},Nothing},
+        _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
+        _namespace::String,
+        _accumulatedparams::Dict{String,ClapeyronParam},
         verbose::Bool = false
     )
+    if caller ∈ initialisedmodels
+        if nameinparent ∈ initialisedmodels[caller]
+            return initialisedmodels[caller][model]
+        end
+    end
+    # Default key if restrictparents is `nothing`.
+    if :_ ∈ initialisedmodels
+        if nameinparent ∈ initialisedmodels[caller]
+            return initialisedmodels[caller][model]
+        end
+    end
     verbose && @info("Creating member model: $model")
-    return model(components; userlocations, verbose)
+    return model(
+        components;
+        userlocations,
+        verbose,
+        _overwritelocations,
+        _initialisedmodels,
+        _namespace,
+        _accumulatedparams
+    )
 end
 
 function _initmodel(
-        model,
-        components;
-        userlocations,
+        model::Type,
+        components::Vector{String},
+        caller::Symbol,
+        nameinparent::Symbol,
+        userlocations::Vector{String},
+        _overwritelocations::Union{Vector{String},Nothing},
+        _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
+        _namespace::String,
+        _accumulatedparams::Dict{String,ClapeyronParam},
         verbose::Bool = false
     )
     return model
@@ -394,26 +498,57 @@ end
 
 function _initpuremodel(
         model::Type,
-        components;
-        userlocations,
+        components::Vector{String},
+        caller::Symbol,
+        nameinparent::Symbol,
+        userlocations::Vector{String},
+        _overwritelocations::Union{Vector{String},Nothing},
+        _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
+        _namespace::String,
+        _accumulatedparams::Dict{String,ClapeyronParam},
         verbose::Bool = false
     )
-    verbose && @info("Creating member pure model: $model")
-    return EoSVectorParam(model(components; userlocations,verbose))
+    if caller ∈ initialisedmodels
+        if nameinparent ∈ initialisedmodels[caller]
+            return initialisedmodels[caller][model]
+        end
+    end
+    # Default key if restrictparents is `nothing`.
+    if :_ ∈ initialisedmodels
+        if nameinparent ∈ initialisedmodels[caller]
+            return initialisedmodels[caller][model]
+        end
+    end
+    verbose && @info("Creating member pure models: $puremodels")
+    return EoSVectorParam(model(
+        components;
+        userlocations,
+        verbose,
+        _overwritelocations,
+        _initialisedmodels,
+        _namespace,
+        _accumulatedparams
+    ))
 end
 
 function _initpuremodel(
-        puremodels,
-        components;
-        userlocations,
+        model::Type,
+        components::Vector{String},
+        caller::Symbol,
+        nameinparent::Symbol,
+        userlocations::Vector{String},
+        _overwritelocations::Union{Vector{String},Nothing},
+        _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
+        _namespace::String,
+        _accumulatedparams::Dict{String,ClapeyronParam},
         verbose::Bool = false
     )
-    return puremodels
+    return model
 end
 
 
 """
-    _initparams(::Type{I}, ::Type{P}, rawparams, mappings)
+    _initparams(::Type{I}, ::Type{P}, rawparams, mappings, namespace)
 
 Returns the constructed InputParamType and ParamType based on the rawparams and mappings.
 
@@ -427,7 +562,7 @@ Strategy:
 - `Type{ParamType`: The type for the param struct.
 - `rawparams::Dict`: The dict returned from `getparams`.
 - `mappings::Vector{ModelMapping}`: The list of mappings.
-- `namespace::String = ""`: A prefix to be added when quering the headers from csv.
+- `namespace::String = ""`: If there exists a header that is prefixed with `namespace * "__"`, this header will take priority over the non-prefixed version.
 
 ## Returns
 Tuple{InputParamType,ParamType}: The constructed params.
@@ -444,7 +579,15 @@ function _initparams(
     if isempty(namespace)
         inputparams_params = [rawparams[String(param)] for param ∈ inputparams_names]
     else
-        inputparams_params = [namespace * "__" * rawparams[String(param)] for param ∈ inputparams_names]
+        inputparams_params = []
+        for name ∈ input_params_names
+            priority_header = namespace * "__" * String(name)
+            if priority_header ∈ rawparams
+                push!(inputparams_params, rawparams[priority_header])
+            else
+                push!(inputparams_params, rawparams[String(name)])
+            end
+        end
     end
     params_names = collect(fieldnames(P))
     params_types = collect(fieldtypes(P))
@@ -535,13 +678,13 @@ function updateparams!(
     # then broadcast assigning the params to them. There might be
     # some optimisations possible here, but this will maintain
     # maximum compatibility with existing functions for now.
-    for mapping in filter(m -> !(m.transformation === identity),  mappings)
-        outputs = mapping.transformation([getfield(inputparams, f) for f in mapping.source]...)
+    for mapping ∈ filter(m -> !(m.transformation === identity),  mappings)
+        outputs = mapping.transformation([getfield(inputparams, f) for f ∈ mapping.source]...)
         if typeof(outputs) <: ClapeyronParam
             outputs = [outputs]
         end
-        toupdates = [getfield(params, f) for f in mapping.target]
-        for (output, toupdate) in zip(outputs, toupdates)
+        toupdates = [getfield(params, f) for f ∈ mapping.target]
+        for (output, toupdate) ∈ zip(outputs, toupdates)
             toupdate.values .= output.values
         end
     end
