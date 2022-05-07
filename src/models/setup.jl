@@ -23,7 +23,7 @@ Part of `ModelOptions`. This is used to specify the options for member models. N
 - `name::Symbol`: The name of this member. It will be used as the fieldname for the created model object.
 - `default_type::Type`: The default type for this member. Has to have a constructor with the same function signature.
 - `split::Bool = false`: If `true`, create a vector of pure models of this type.
-- `separate_namespace::Bool = true`: This is for namespace resolution of input parameter names from user-provided CSV in `userlocations`. If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`. Note that these prefixes do not nest (the `name` must be distinct per model, and so there need only be one level).
+- `separate_namespace::Bool = true`: This is for namespace resolution of input parameter names from user-provided csv in `userlocations`. If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`. Note that these prefixes do not nest (the `name` must be distinct per model, and so there need only be one level).
 - `overwritelocations::Union{Vector{String},Nothing} = nothing`: If the model wants to overwrite the array of locations from a location in the Clapeyron database specific for this model, they may do so here. This location is not passed down to subsequent member models.
 - `restrictparents::Union{Symbol,Nothing} = nothing`: This is for namespoce resolution of member models. If `nothing`, any model with a member with this name will be assigned the same instantiated object. When ambiguity arises, say if two distinct `activity` models are used, provide a vector of types to specify where this member is applicable, making use of the `nameinparent` field as well for correct asignment.
 - `nameinparrent::Symbol = nothing`: If `nothing`, just take the given name. This is for when the name in member model is different from the name in current model, which allows multiple member models of the same type to be present in the main model.
@@ -36,13 +36,11 @@ To account for the possibility that parameters may share the same names across m
 and both `A` and `B` contain distinct parameters `m`. Then we would enable `separate_namespace` for member `B`, and in the parameters file, if there is a column called `B__m`, it will take precedence over the column `m`. If column `B__m` is not present, it will find that column `m` is already initialised when getting parameters for `A`, so it will just take the same reference to that parameter.
 
 ## Restrict parents
-Model `A` has `Y` and `X` as member models (note the order) and model `X` is a member of model `Y`.
-
-The order of initialisation is as provided in the `members` field vector. If we specified it as
+The order of initialisation is as provided in the `members` field vector. For example, if we have model `A` has `Y` and `X` as member models (note the order) and model `X` is a member of model `Y`. If we specified it as
 
     A{Y{X},X}
 
-instead, then without any other instructions, it will first initialise `Y` with the default `X`, then intialise a second `X` for the entry in `A`.
+then without any other instructions, it will first initialise `Y` with the default `X`, then intialise a second `X` for the entry in `A`.
 
 If we instead had it written as
 
@@ -50,15 +48,15 @@ If we instead had it written as
 
 Unless otherwise specified, the instance `X` that resides in `A` is the same instance as the one that resides in `Y`.
 
-If we specify `[A]` in `restrictparents` for `ModelMember` of `X`, then a separate instance of a `X` (the default) will be constructed for `Y`.
+If we specify `[:A]` in `restrictparents` for `ModelMember` of `X`, then a separate instance of a `X` (the default) will be constructed for `Y`.
 
-The base model `A` will always contain an instance to any member specified in `members`. So in this case, specifying `[Y]` for the `restrictparents` field here will have the same effect as `nothing` (both referncing the same `X`). In effect, this means that for parameter estimation, we will never need to look into modifying any params deeper than one level of members.
+The base model `A` will always contain an instance of any member specified in `members`. So in this case, specifying `[:Y]` for the `restrictparents` field here will have the same effect as `nothing` (both referencing the same `X`). In effect, this means that for parameter estimation, we will never need to look into modifying any params deeper than one level of members.
 
 If we wish the `X` in `A` be distinct from the `X` in `Y`, yet have them both modular (swappable from the main constructor interface), we can give them separate names in the base model, but change the `nameinparent` to reflect the correct name. In this case, we will have
 
     A{X, X2, Y{X}}
 
-where for `X`, we have `restrictparents` as `[A]`, whereas for `X2`, we have `restrictparents` as `[Y]` (superfluous here, as per discussion above, but provides clarification on usage), and `nameinparent` as `X`. Then `X2` here is the same instance as the `X` in `Y`. Note that the order of the `restrictparents` can be swapped, so thet he `X` in `Y` is the same instance as the `X` in `A`, instead of `X2` as before. However, in this case, both `restrictparams` have to be specified.
+where for `X`, we have `restrictparents` as `[:A]`, whereas for `X2`, we have `restrictparents` as `[:Y]` (superfluous here, as per discussion above, but provides clarification on usage), and `nameinparent` as `X`. Then `X2` here is the same instance as the `X` in `Y`. Note that the order of the `restrictparents` can be swapped, so thet he `X` in `Y` is the same instance as the `X` in `A`, instead of `X2` as before. However, in this case, both `restrictparams` have to be specified.
 """
 struct ModelMember
     name::Symbol
@@ -99,7 +97,7 @@ Part of `ModelOptions`. This is used to specify the relevant parameters and thei
 
 ## Fields
 - `name::Symbol`: The name of the parameter field.
-- `type::DataType`: Should by either SingleParam{T}, PairParam{T} or AssocParam{T}
+- `type::DataType`: Should by either SingleParam{T}, PairParam{T} or AssocParam{T}.
 """
 struct ParamField
     name::Symbol
@@ -330,7 +328,7 @@ Generates a model constructor with the folowing function signature:
 
 ## Arguments
 - `components::Union{String, Vector{String}}`: The components for this model.
-_ `userlocations::Vector{String} = String[]`: An array of filepaths to CSVs specified by the user.
+_ `userlocations::Vector{String} = String[]`: An array of filepaths to csvs specified by the user.
 - `verbose::Bool = false`: Print more information.
 - `param_options::ParamOptions`: This is present for models with parameters to change the behaviour of `getparams`.
 - `assoc_options::AssocOptions`: This is present for models with sites to change the behaviour of association.
