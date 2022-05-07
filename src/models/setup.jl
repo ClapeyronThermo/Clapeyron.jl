@@ -288,19 +288,14 @@ function _generatecode_param_struct(
 end
 
 function _generatecode_model_struct(modeloptions::ModelOptions)::Expr
-    # arg[3] of :struct. Probably better ways to do this, but
-    # I'm just running Meta.parse on a built String for now.
-    defheader = String(modeloptions.name)
     if isempty(modeloptions.members)
-        defheader *= ""
+        defheader = modeloptions.name
     else
-        defheader *= "{"
+        defheader = Expr(:curly, modeloptions.name)
         for i ∈ 1:length(modeloptions.members)
-            defheader *= "M" * string(i) * ","
+            push!(defheader.args, Symbol(:M, Symbol(i)))
         end
-        defheader *= "}"
     end
-    defheader *= "<:" * string(modeloptions.supertype)
 
     block = Expr(:block)
     push!(block.args, :(components::Vector{String}))
@@ -327,7 +322,7 @@ function _generatecode_model_struct(modeloptions::ModelOptions)::Expr
     end
     push!(block.args, :(references::Vector{String}))
 
-    return Expr(:struct, false, Meta.parse(defheader), block)
+    return Expr(:struct, false, Expr(:<:, defheader, modeloptions.supertype), block)
 end
 
 """
