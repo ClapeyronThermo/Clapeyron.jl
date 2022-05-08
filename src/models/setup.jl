@@ -28,8 +28,6 @@ function ModelMapping(
         self_in_args
     )
 end
-is_splittable(::Vector{ModelMapping}) = false
-
 
 """
     ModelMember(name, default_type; separate_namespace = false)
@@ -242,11 +240,15 @@ function ModelOptions(
         if isnothing(locations)
             locations = String[]
         end
-        if isnothing(inputparams)
-            inputparams = ParamField[]
-        end
         if isnothing(params)
             params = ParamField[]
+        end
+        if isnothing(inputparams)
+            if !isempty(params)
+                inputparams = params
+            else
+                inputparams = ParamField[]
+            end
         end
         if isnothing(mappings)
             mappings = ModelMapping[]
@@ -267,7 +269,16 @@ function ModelOptions(
             references = String[]
         end
     end
-
+    if isnothing(paramstype)
+        paramstype = Symbol(String(name) * "Param")
+    end
+    if isnothing(inputparamstype)
+        if inputparams === params
+            inputparamstype = paramstype
+        else
+            inputparamstype = Symbol(String(name) * "InputParam")
+        end
+    end
     return ModelOptions(
         name,
         supertype,
@@ -284,8 +295,8 @@ function ModelOptions(
         has_params && isnothing(param_options) ? DefaultParamOptions : param_options,
         has_sites && isnothing(assoc_options) ? DefaultAssocOptions : assoc_options,
         references,
-        isnothing(inputparamstype) ? Symbol(String(name) * "InputParam") : inputparamstype,
-        isnothing(paramstype) ? Symbol(String(name) * "Param") : paramstype,
+        inputparamstype,
+        paramstype,
     )
 end
 
@@ -801,5 +812,7 @@ function createmodel(modeloptions::ModelOptions; verbose::Bool = false)
     end
     eval(:(modelmembers(model::$(modeloptions.name)) = $([member.name for member in modeloptions.members])))
 end
+
+is_splittable(::Vector{ModelMapping}) = false
 
 export ModelMapping, ModelMember, ParamField, ModelOptions, createmodel, updateparams!
