@@ -1,3 +1,10 @@
+struct ABCubicInputParam <: EoSParam
+    k::PairParam{Float64}
+    Tc::SingleParam{Float64}
+    pc::SingleParam{Float64}
+    Mw::SingleParam{Float64}
+end
+
 struct ABCubicParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}
@@ -25,6 +32,11 @@ function ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
     a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     b = sigma_LorentzBerthelot(SingleParam(pc, @. Ωb*R̄*_Tc/_pc))
     return a,b
+end
+
+# Dispatch that works with new interface
+function ab_premixing(model::ABCubicModel, Tc, pc, kij)
+    return ab_premixing(typeof(model), nothing, Tc, pc, kij)
 end
 
 function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))

@@ -1,19 +1,40 @@
-
 abstract type PRModel <: ABCubicModel end
 
-const PRParam = ABCubicParam
+PR_SETUP = ModelOptions(
+        :PR;
+        supertype=PRModel,
+        locations=["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"],
+        inputparams=[
+            ParamField(:k, PairParam{Float64}),
+            ParamField(:Tc, SingleParam{Float64}),
+            ParamField(:pc, SingleParam{Float64}),
+            ParamField(:Mw, SingleParam{Float64}),
+        ],
+        params=[
+            ParamField(:a, PairParam{Float64}),
+            ParamField(:b, PairParam{Float64}),
+            ParamField(:Tc, SingleParam{Float64}),
+            ParamField(:Pc, SingleParam{Float64}),
+            ParamField(:Mw, SingleParam{Float64}),
+        ],
+        mappings=[
+            ModelMapping([:pc], [:Pc], identity),
+            ModelMapping([:Tc, :pc, :k], [:a, :b], ab_premixing; self_in_args=true)
+        ],
+        members=[
+            ModelMember(:alpha, :PRAlpha),
+            ModelMember(:activity, :Nothing),
+            ModelMember(:mixing, :vdW1fRule),
+            ModelMember(:translation, :NoTranslation),
+            ModelMember(:idealmodel, :BasicIdeal),
+        ],
+        references=["10.1021/I160057A011"],
+        inputparamstype=:ABCubicInputParam,
+        paramstype=:ABCubicParam,
+    )
 
-struct PR{T <: IdealModel,α,c,γ} <:PRModel
-    components::Array{String,1}
-    alpha::α
-    mixing::γ
-    translation::c
-    params::PRParam
-    idealmodel::T
-    references::Array{String,1}
-end
-
-@registermodel PR
+createmodel(PR_SETUP; verbose=true)
+export PR
 
 """
     PR(components::Vector{String}; idealmodel=BasicIdeal,
@@ -61,36 +82,6 @@ b₂ = (1 - √2)b
 1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. doi:10.1021/I160057A011
 """
 PR
-
-
-export PR
-function PR(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = PRAlpha,
-    mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[], 
-    ideal_userlocations=String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    verbose=false, kwargs...)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = params["k"]
-    pc = params["pc"]
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(PR,init_mixing,Tc,pc,k)
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = PRParam(a,b,Tc,pc,Mw)
-    references = String["10.1021/I160057A011"]
-    model = PR(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
-    return model
-end
 
 function ab_consts(::Type{<:PRModel})
     return 0.457235,0.077796

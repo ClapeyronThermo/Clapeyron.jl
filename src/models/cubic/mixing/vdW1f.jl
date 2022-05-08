@@ -1,9 +1,13 @@
 abstract type vdW1fRuleModel <: MixingRule end
 
-struct vdW1fRuleParam <: EoSParam
-end
+vdW1fRule_SETUP = ModelOptions(
+        :vdW1fRule;
+        supertype=vdW1fRuleModel,
+        has_components=false,
+        has_params=false,
+    )
 
-@newmodelsimple vdW1fRule vdW1fRuleModel vdW1fRuleParam
+createmodel(vdW1fRule_SETUP; verbose=true)
 export vdW1fRule
 
 """
@@ -32,13 +36,10 @@ c̄ = ∑cᵢxᵢ
 """
 vdW1fRule
 
-function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
-    packagedparams = vdW1fRuleParam()
-    model = vdW1fRule(packagedparams, verbose=verbose)
-    return model
+# For backwards compatibility
+function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+    return vdW1fRule(components, String[])
 end
-
-vdW1fRule() = vdW1fRule(vdW1fRuleParam())
 
 function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b,c)
     n = sum(z)
