@@ -406,22 +406,27 @@ function _generatecode_model_constructor(
         push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), _accumulatedparams, mappings, _namespace)))
     end
     for member ∈ modeloptions.members
+        if !isnothing(member.overwritelocations)
+            push!(block.args, Expr(:if, :($(member.default_type) === $(member.name)), :(overwritelocations = $(member.overwritelocations)), :(overwritelocations = nothing)))
+        else
+            push!(block.args, :(overwritelocations = nothing))
+        end
+        if !isnothing(member.overwritegrouplocations)
+            push!(block.args, Expr(:if, :($(member.default_type) === $(member.name)), :(overwritegrouplocations = $(member.overwritegrouplocations)), :(overwritegrouplocations = nothing)))
+        else
+            push!(block.args, :(overwritegrouplocations = nothing))
+        end
         if member.groupcontribution_allowed
-            if !isnothing(member.overwritelocations)
-                push!(block.args, Expr(:if, :($(member.default_type) === $(member.name)), :(overwritegrouplocations = $(member.overwritegrouplocations)), :(overwritegrouplocations = nothing)))
-            else
-                push!(block.args, :(overwritegrouplocations = nothing))
-            end
             if member.split
-                push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, $(Symbol(:($(member.name)), :_usergrouplocations)), $(Symbol(:($(member.name)), :_groupdefinitions)), $(member.overwritelocations), overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+                push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, $(Symbol(:($(member.name)), :_usergrouplocations)), $(Symbol(:($(member.name)), :_groupdefinitions)), overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
             else
-                push!(block.args, :($(member.name) = _initmodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, $(Symbol(:($(member.name)), :_usergrouplocations)), $(Symbol(:($(member.name)), :_groupdefinitions)), $(member.overwritelocations), overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+                push!(block.args, :($(member.name) = _initmodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, $(Symbol(:($(member.name)), :_usergrouplocations)), $(Symbol(:($(member.name)), :_groupdefinitions)), overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
             end
         else
             if member.split
-                push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, String[], GroupDefinition[], $(member.overwritelocations), $(member.overwritegrouplocations), _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+                push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, String[], GroupDefinition[], overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
             else
-                push!(block.args, :($(member.name) = _initmodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, String[], GroupDefinition[], $(member.overwritelocations), $(member.overwritegrouplocations), _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+                push!(block.args, :($(member.name) = _initmodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, String[], GroupDefinition[], overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
             end
         end
         if isnothing(member.restrictparents)
