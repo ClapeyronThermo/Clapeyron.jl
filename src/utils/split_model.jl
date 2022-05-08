@@ -183,6 +183,7 @@ is_splittable(model) = true
 is_splittable(null::Union{Nothing,Missing}) = false
 is_splittable(::Number) = false
 is_splittable(::String) = false
+is_splittable(::Vector{ModelMapping}) = false
 
 function split_model(param::SingleParameter,
     splitter =split_model(1:length(param.components)))
