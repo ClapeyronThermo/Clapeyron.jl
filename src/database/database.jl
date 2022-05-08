@@ -843,6 +843,7 @@ end
 function GroupParam(
         gccomponents, 
         grouplocations::Vector{String} = String[];
+        groupdefinitions::Vector{GroupDefinition} = GroupDefinition[],
         usergrouplocations::Vector{String} = String[],
         verbose::Bool = false,
         param_options::ParamOptions = DefaultParamOptions
@@ -855,6 +856,12 @@ function GroupParam(
     #                ("octane", ["CH3" => 2, "CH2" => 6])]
     BuildSpeciesType = Union{Tuple{String, Array{Pair{String, Int64},1}}, String, Tuple{String}}
     any(.!(isa.(gccomponents, BuildSpeciesType))) && error("The format of the components is incorrect.")
+    if !(gccomponents isa Union{String,Vector{String}})
+        Base.depwarn("Listing group definitions in components argument is deprecated. List only component names, and then define the groups in keyword argument `groupdefinitions`, or in a csv and point to its location in `usergrouplocations`", :GroupParam; force=true)
+    end
+    # Groups provided explicitly in groupdefinitions have higherst priority.
+    # If group not found here, look into csvs; otherwise, error.
+    groupdefinitions_formatted = Dict(definition.component => Pair.([definition.groups, definition.multiplicities]) for definition ∈ groupdefinitions)
     filepaths = flattenfilepaths(grouplocations, usergrouplocations)
     componentstolookup = String[]
     #componentstolookup = filter(x-> x isa Union{String,Tuple{String}},gccomponents)
@@ -873,17 +880,23 @@ function GroupParam(
         append!(groupsourcecsvs, [filepath])
     end
     gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(gccomponents))
-    for (i,gccomponent) ∈ pairs(gccomponents)
-        if gccomponent isa Tuple{String, Array{Pair{String, Int64},1}}
+    for (i, gccomponent) ∈ pairs(gccomponents)
+        if gccomponent isa Tuple{String, Vector{Pair{String, Int64}}}
             gccomponents_parsed[i] = gccomponent
-        elseif gccomponent isa String
-            !haskey(allfoundcomponentgroups, gccomponent) && error("Predefined component ", gccomponent, " not found in any group input csvs.")
-            groupsandngroups = eval(Meta.parse(allfoundcomponentgroups[gccomponent]))
-            gccomponents_parsed[i] = (gccomponent,groupsandngroups)
-        elseif gccomponent isa Tuple{String}
-            !haskey(allfoundcomponentgroups, first(gccomponent)) && error("Predefined component ", gccomponent, " not found in any group input csvs.")
-            groupsandngroups = eval(Meta.parse(allfoundcomponentgroups[first(gccomponent)]))
-            gccomponents_parsed[i] = (first(gccomponent),groupsandngroups)
+        else
+            if gccomponent isa String
+                component = gccomponent
+            elseif gccomponent isa Tuple{String}
+                component = first(gccomponent)
+            end
+            if haskey(groupdefinitions_formatted, component)
+                gccomponents_parsed[i] = (component, groupdefinitions_formatted[component])
+            elseif haskey(allfoundcomponentgroups, component)
+                groupsandngroups = eval(Meta.parse(allfoundcomponentgroups[component]))
+                gccomponents_parsed[i] = (component, groupsandngroups)
+            else
+                error("Predefined component ", component, " not found in any group definitions or input csvs.")
+            end
         end
     end
     return GroupParam(gccomponents_parsed, groupsourcecsvs)

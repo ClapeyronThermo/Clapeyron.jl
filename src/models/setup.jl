@@ -16,11 +16,17 @@ struct ModelMapping
     self_in_args::Bool
 end
 function ModelMapping(
-        source::Vector{Symbol},
-        target::Vector{Symbol},
+        source::Union{Vector{Symbol},Symbol},
+        target::Union{Vector{Symbol},Symbol},
         transformation::Function = identity;
         self_in_args::Bool = false
     )
+    if source isa Symbol
+        source = [source]
+    end
+    if target isa Symbol
+        target = [target]
+    end
     return ModelMapping(
         source,
         target,
@@ -38,8 +44,10 @@ Part of `ModelOptions`. This is used to specify the options for member models. N
 - `name::Symbol`: The name of this member. It will be used as the fieldname for the created model object.
 - `default_type::Symbol`: The default type for this member. Has to have a constructor with the same function signature. Symbol is used instead of the type to avoid circular reference.
 - `split::Bool = false`: If `true`, create a vector of pure models of this type.
+- `groupcontribution_allowed::Bool = false`: If `true`, create fields for injecting group contribution arguments like `usergrouplocations` and `groupdefinitions` for this member. Note that the default does not have to be a group contribution method; just that if there is a possibility of switching to one.
 - `separate_namespace::Bool = true`: This is for namespace resolution of input parameter names from user-provided csv in `userlocations`. If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`. Note that these prefixes do not nest (the `name` must be distinct per model, and so there need only be one level).
 - `overwritelocations::Union{Vector{String},Nothing} = nothing`: If the model wants to overwrite the array of locations from a location in the Clapeyron database specific for this model, they may do so here. This location is not passed down to subsequent member models.
+- `overwritegrouplocations::Union{Vector{String},Nothing} = nothing`: If the model wants to overwrite the array of grouplocations from a location in the Clapeyron database specific for this model, they may do so here. This location is not passed down to subsequent member models. Note that there is a check so that this only applies to the default type.
 - `restrictparents::Union{Symbol,Nothing} = nothing`: This is for namespoce resolution of member models. If `nothing`, any model with a member with this name will be assigned the same instantiated object. When ambiguity arises, say if two distinct `activity` models are used, provide a vector of types to specify where this member is applicable, making use of the `nameinparent` field as well for correct asignment.
 - `nameinparrent::Symbol = nothing`: If `nothing`, just take the given name. This is for when the name in member model is different from the name in current model, which allows multiple member models of the same type to be present in the main model.
 
@@ -77,8 +85,10 @@ struct ModelMember
     name::Symbol
     default_type::Symbol
     split::Bool
+    groupcontribution_allowed::Bool
     separate_namespace::Bool
     overwritelocations::Union{Vector{String},Nothing}
+    overwritegrouplocations::Union{Vector{String},Nothing}
     restrictparents::Union{Vector{Symbol},Nothing}
     nameinparent::Symbol
 end
@@ -86,8 +96,10 @@ function ModelMember(
         name::Symbol,
         default_type::Symbol;
         split::Bool = false,
+        groupcontribution_allowed::Bool = false,
         separate_namespace::Bool = false,
         overwritelocations::Union{Vector{String},Nothing} = nothing,
+        overwritegrouplocations::Union{Vector{String},Nothing} = nothing,
         restrictparents::Union{Vector{Symbol},Nothing} = nothing,
         nameinparent::Union{Symbol,Nothing} = nothing
     )
@@ -98,8 +110,10 @@ function ModelMember(
         name,
         default_type,
         split,
+        groupcontribution_allowed,
         separate_namespace,
         overwritelocations,
+        overwritegrouplocations,
         restrictparents,
         nameinparent
     )
@@ -129,7 +143,8 @@ A complete definition for how the model object will be created in Clapeyron. If 
 - `supertype::DataType = EoSModel`: An abstract base type to be a subtype of.
 - `parent::Union{ModelOptions,Nothing} = nothing`: The `ModelOptions` of the parent model.
 - `members::Vector{ModelMember} = ModelMember[]`: A list of ModelMembers. Note that the order reflects the order of initialisation. Read the docs for `ModelMember` for more details.
-- `locations::Vector{String} = String[]`: Default locations in Clapeyron database to look for parameters. Note that for user-specified parameters, it is easier to use the `user_locations` parameter.
+- `locations::Vector{String} = String[]`: Default locations in Clapeyron database to look for parameters. Note that for user-created models, it is easier to use the `userlocations` parameter.
+- `grouplocations::Vector{String} = String[]`: Default grouplocations in Clapeyron database to look for parameters. Note that for user-created models, it is easier to use the `usergrouplocations` parameter.
 - `inputparams::Vector{ParamField} = ParamField[]`: A list of relevant source parameters. The model constructor will extract the String headers according to the Symbol name given.
 - `params::Vector{ParamField} = ParamField[]`: A list of relevant target parameters.
 - `mappings::Vector{ModelMapping} = ModelMapping[]`: Mappings from source to target.
@@ -150,6 +165,7 @@ struct ModelOptions
     parent::Union{ModelOptions,Nothing}
     members::Vector{ModelMember}
     locations::Vector{String}
+    grouplocations::Vector{String}
     inputparams::Vector{ParamField}
     params::Vector{ParamField}
     mappings::Vector{ModelMapping}
@@ -170,6 +186,7 @@ function ModelOptions(
         parent::Union{ModelOptions,Nothing} = nothing,
         members::Union{Vector{ModelMember},Nothing} = nothing,
         locations::Union{Vector{String},Nothing} = nothing,
+        grouplocations::Union{Vector{String},Nothing} = nothing,
         inputparams::Union{Vector{ParamField},Nothing} = nothing,
         params::Union{Vector{ParamField},Nothing} = nothing,
         mappings::Union{Vector{ModelMapping},Nothing} = nothing,
@@ -184,65 +201,33 @@ function ModelOptions(
         paramstype::Union{Symbol,Nothing} = nothing
     )
     if !isnothing(parent)
-        if isnothing(supertype)
-            supertype = parent.supertype
-        end
-        if isnothing(members)
-            members = parent.members
-        end
-        if isnothing(locations)
-            locations = parent.locations
-        end
+        isnothing(supertype) && (supertype = parent.supertype)
+        isnothing(members) && (members = parent.members)
+        isnothing(locations) && (locations = parent.locations)
+        isnothing(grouplocations) && (grouplocations = parent.grouplocations)
         if isnothing(inputparams)
-            if isnothing(inputparamstype)
-                inputparamstype = parent.inputparamstype
-            end
+            isnothing(inputparamstype) && (inputparamstype = parent.inputparamstype)
             inputparams = parent.inputparams
         end
         if isnothing(params)
-            if isnothing(paramstype)
-                paramstype = parent.paramstype
-            end
+            isnothing(paramstype) && (paramstype = parent.paramstype)
             params = parent.params
         end
-        if isnothing(mappings)
-            mappings = parent.mappings
-        end
-        if isnothing(has_params)
-            has_params = parent.has_params
-        end
-        if isnothing(has_components)
-            has_components = parent.has_components
-        end
-        if isnothing(has_sites)
-            has_sites = parent.has_sites
-        end
-        if isnothing(has_groups)
-            has_groups = parent.has_groups
-        end
-        if isnothing(param_options)
-            param_options = parent.param_options
-        end
-        if isnothing(assoc_options)
-            assoc_options = parent.assoc_options
-        end
-        if isnothing(references)
-            references = parent.references
-        end
+        isnothing(mappings) && (mappings = parent.mappings)
+        isnothing(has_params) && (has_params = parent.has_params)
+        isnothing(has_components) && (has_components = parent.has_components)
+        isnothing(has_sites) && (has_sites = parent.has_sites)
+        isnothing(has_groups) && (has_groups = parent.has_groups)
+        isnothing(param_options) && (param_options = parent.param_options)
+        isnothing(assoc_options) && (assoc_options = parent.assoc_options)
+        isnothing(references) && (references = parent.references)
     else
         # Default values if no parent is given.
-        if isnothing(supertype)
-            supertype = EoSModel
-        end
-        if isnothing(members)
-            members = ModelMember[]
-        end
-        if isnothing(locations)
-            locations = String[]
-        end
-        if isnothing(params)
-            params = ParamField[]
-        end
+        isnothing(supertype) && (supertype = EoSModel)
+        isnothing(members) && (members = ModelMember[])
+        isnothing(locations) && (locations = String[])
+        isnothing(grouplocations) && (grouplocations = String[])
+        isnothing(params) && (params = ParamField[])
         if isnothing(inputparams)
             if !isempty(params)
                 inputparams = params
@@ -250,28 +235,14 @@ function ModelOptions(
                 inputparams = ParamField[]
             end
         end
-        if isnothing(mappings)
-            mappings = ModelMapping[]
-        end
-        if isnothing(has_params)
-            has_params = true
-        end
-        if isnothing(has_components)
-            has_components = true
-        end
-        if isnothing(has_sites)
-            has_sites = false
-        end
-        if isnothing(has_groups)
-            has_groups = false
-        end
-        if isnothing(references)
-            references = String[]
-        end
+        isnothing(mappings) && (mappings = ModelMapping[])
+        isnothing(has_params) && (has_params = true)
+        isnothing(has_components) && (has_components = true)
+        isnothing(has_sites) && (has_sites = false)
+        isnothing(has_groups) && (has_groups = false)
+        isnothing(references) && (references = String[])
     end
-    if isnothing(paramstype)
-        paramstype = Symbol(String(name) * "Param")
-    end
+    isnothing(paramstype) && (paramstype = Symbol(String(name) * "Param"))
     if isnothing(inputparamstype)
         if inputparams === params
             inputparamstype = paramstype
@@ -285,6 +256,7 @@ function ModelOptions(
         parent,
         members,
         locations,
+        grouplocations,
         inputparams,
         params,
         mappings,
@@ -356,15 +328,20 @@ Generates a model constructor with the folowing function signature:
 
 ## Arguments
 - `components::Union{String, Vector{String}}`: The components for this model.
-_ `userlocations::Vector{String} = String[]`: An array of filepaths to csvs specified by the user.
+_ `userlocations::Vector{String} = String[]`: An array of filepaths to csvs specified by the user for parameters.
+_ `usergrouplocations::Vector{String} = String[]`: An array of filepaths to csvs specified by the user for groups. If this is not a GC model, it is not used.
+_ `groupdefinitions::Vector{GroupDefinition} = GroupDefinition[]`: An array of group definitions. If this is not a GC model, it is not used.
 - `verbose::Bool = false`: Print more information.
 - `param_options::ParamOptions`: This is present for models with parameters to change the behaviour of `getparams`.
 - `assoc_options::AssocOptions`: This is present for models with sites to change the behaviour of association.
 - various member models: For models with modular components, each member model can be swapped out here. For example, the `idealmodal` or `activity`.
+- various {member}_usergrouplocations: If member model is a GC model, this will be present to pass location to csvs for group definitions that can be specified by the user.
+- various {member}_groupdefinitions: If member model is a GC model, this will be present to pass group definiitons.
 
 ## System arguments
 These are used by Clayeyron when initialising member models. They should not be modified unless you know what you are doing.
 - `_overwritelocations::Union{Vector{String}} = nothing`: If not `nothing`, overwrite the `locations` for this model.
+- `_overwritegrouplocations::Union{Vector{String}} = nothing`: If not `nothing`, overwrite the `grouplocations` for this model.
 - `_initialisedmodels::Dict{Symbol, Dict{Symbol, Any}} = Dict{Symbol, Dict{Symbol, Any}}()`: If model is already initialised, just take a reference to it unless specified otherwise in the `MemberModel`.
 - `_namespace::String = ""`: Give higher priority to columns prepended with `{membermodel_name}__{inputparam_name}` if present.
 - `_accumulatedparams::Dict{String, ClapeyronParam} = Dict{String, ClapeyronParam}())`: If there are parameters with the same name, just point to existing reference.
@@ -378,6 +355,8 @@ function _generatecode_model_constructor(
     # Keyword args first
     parameters = Expr(:parameters)
     push!(parameters.args, Expr(:kw, :(userlocations::Vector{String}), :(String[])))
+    push!(parameters.args, Expr(:kw, :(usergrouplocations::Vector{String}), :(String[])))
+    push!(parameters.args, Expr(:kw, :(groupdefinitions::Vector{GroupDefinition}), :(GroupDefinition[])))
     push!(parameters.args, Expr(:kw, :(verbose::Bool), :false))
     if modeloptions.has_params
         push!(parameters.args, Expr(:kw, :(param_options::ParamOptions), :($(modeloptions.param_options))))
@@ -387,8 +366,13 @@ function _generatecode_model_constructor(
     end
     for member ∈ modeloptions.members
         push!(parameters.args, Expr(:kw, :($(member.name)), :($(member.default_type))))
+        if member.groupcontribution_allowed
+            push!(parameters.args, Expr(:kw, Symbol(:($(member.name)), :_usergrouplocations), :(String[])))
+            push!(parameters.args, Expr(:kw, Symbol(:($(member.name)), :_groupdefinitions), :(GroupDefinition[])))
+        end
     end
     push!(parameters.args, Expr(:kw, :(_overwritelocations::Union{Vector{String},Nothing}), :nothing))
+    push!(parameters.args, Expr(:kw, :(_overwritegrouplocations::Union{Vector{String},Nothing}), :nothing))
     push!(parameters.args, Expr(:kw, :(_initialisedmodels::Dict{Symbol,Dict{Symbol,Any}}), :(Dict{Symbol,Dict{Symbol,Any}}())))
     push!(parameters.args, Expr(:kw, :(_namespace::String), :""))
     push!(parameters.args, Expr(:kw, :(_accumulatedparams::Dict{String,ClapeyronParam}), :(Dict{String,ClapeyronParam}())))
@@ -404,6 +388,11 @@ function _generatecode_model_constructor(
 
     # Creating function body
     block = Expr(:block)
+    if modeloptions.has_groups
+        push!(block.args, :(grouplocations = $(modeloptions.grouplocations)))
+        push!(block.args, Expr(:if, :(!isnothing(_overwritegrouplocations)), :(locations = _overwritegrouplocations)))
+        push!(block.args, :(groups = GroupParam(components, grouplocations; groupdefinitions, usergrouplocations, verbose, param_options)))
+    end
     if modeloptions.has_params
         push!(block.args, :(mappings = $(modeloptions.mappings)))
         push!(block.args, :(locations = $(modeloptions.locations)))
@@ -413,18 +402,27 @@ function _generatecode_model_constructor(
         else
             push!(block.args, :(rawparams = getparams(components, locations, param_options; userlocations, verbose)))
         end
-        if modeloptions.has_groups  # Have to figure out what to do with GC later.
-            push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), rawparams, mappings, _namespace)))
-        else
-            push!(block.args, :(merge!(_accumulatedparams, merge(rawparams, _accumulatedparams))))
-            push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), _accumulatedparams, mappings, _namespace)))
-        end
+        push!(block.args, :(merge!(_accumulatedparams, merge(rawparams, _accumulatedparams))))
+        push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), _accumulatedparams, mappings, _namespace)))
     end
     for member ∈ modeloptions.members
-        if member.split
-            push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, $(member.overwritelocations), _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+        if member.groupcontribution_allowed
+            if !isnothing(member.overwritelocations)
+                push!(block.args, Expr(:if, :($(member.default_type) === $(member.name)), :(overwritegrouplocations = $(member.overwritegrouplocations)), :(overwritegrouplocations = nothing)))
+            else
+                push!(block.args, :(overwritegrouplocations = nothing))
+            end
+            if member.split
+                push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, $(Symbol(:($(member.name)), :_usergrouplocations)), $(Symbol(:($(member.name)), :_groupdefinitions)), $(member.overwritelocations), overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+            else
+                push!(block.args, :($(member.name) = _initmodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, $(Symbol(:($(member.name)), :_usergrouplocations)), $(Symbol(:($(member.name)), :_groupdefinitions)), $(member.overwritelocations), overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+            end
         else
-            push!(block.args, :($(member.name) = _initmodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, $(member.overwritelocations), _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+            if member.split
+                push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, String[], GroupDefinition[], $(member.overwritelocations), $(member.overwritegrouplocations), _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+            else
+                push!(block.args, :($(member.name) = _initmodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, String[], GroupDefinition[], $(member.overwritelocations), $(member.overwritegrouplocations), _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+            end
         end
         if isnothing(member.restrictparents)
             push!(block.args, Expr(:if, :(!haskey(_initialisedmodels, :_)), :(_initialisedmodels[:_] = Dict{Symbol,Any}())))
@@ -474,7 +472,10 @@ function _initmodel(
         caller::Symbol,
         nameinparent::Symbol,
         userlocations::Vector{String},
+        usergrouplocations::Vector{String},
+        groupdefinitions::Vector{GroupDefinition},
         _overwritelocations::Union{Vector{String},Nothing},
+        _overwritegrouplocations::Union{Vector{String},Nothing},
         _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
         _namespace::String,
         _accumulatedparams::Dict{String,ClapeyronParam},
@@ -498,8 +499,11 @@ function _initmodel(
     return model(
         components;
         userlocations,
+        usergrouplocations,
+        groupdefinitions,
         verbose,
         _overwritelocations,
+        _overwritegrouplocations,
         _initialisedmodels,
         _namespace,
         _accumulatedparams
@@ -512,7 +516,10 @@ function _initmodel(
         caller::Symbol,
         nameinparent::Symbol,
         userlocations::Vector{String},
+        usergrouplocations::Vector{String},
+        groupdefinitions::Vector{GroupDefinition},
         _overwritelocations::Union{Vector{String},Nothing},
+        _overwritegrouplocations::Union{Vector{String},Nothing},
         _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
         _namespace::String,
         _accumulatedparams::Dict{String,ClapeyronParam},
@@ -527,7 +534,10 @@ function _initpuremodel(
         caller::Symbol,
         nameinparent::Symbol,
         userlocations::Vector{String},
+        usergrouplocations::Vector{String},
+        groupdefinitions::Vector{GroupDefinition},
         _overwritelocations::Union{Vector{String},Nothing},
+        _overwritegrouplocations::Union{Vector{String},Nothing},
         _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
         _namespace::String,
         _accumulatedparams::Dict{String,ClapeyronParam},
@@ -565,7 +575,10 @@ function _initpuremodel(
         caller::Symbol,
         nameinparent::Symbol,
         userlocations::Vector{String},
+        usergrouplocations::Vector{String},
+        groupdefinitions::Vector{GroupDefinition},
         _overwritelocations::Union{Vector{String},Nothing},
+        _overwritegrouplocations::Union{Vector{String},Nothing},
         _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
         _namespace::String,
         _accumulatedparams::Dict{String,ClapeyronParam},
@@ -736,6 +749,20 @@ end
     createmodel(modeloptions; verbose)
 
 Create the models in the global (or module) scope using `eval`.
+
+The structs constructed to namespace are
+- modeloptions.paramstype (if necessary and not already exist)
+- modeloptions.inputparamstype (if necessary and not already exist)
+- modeloption.name
+
+Also defines for this modeloption.name
+- constructor for modeloptions.name
+- has_sites
+- Base.length
+- Base.show
+- has_groups
+- molecular_weight
+- modelmembers
 
 See the tutorial or browse the implementations to see how this is used.
 """
