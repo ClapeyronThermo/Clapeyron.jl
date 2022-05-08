@@ -28,6 +28,7 @@ function ModelMapping(
         self_in_args
     )
 end
+is_splittable(::Vector{ModelMapping}) = false
 
 
 """
