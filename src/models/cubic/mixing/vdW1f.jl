@@ -37,7 +37,7 @@ c̄ = ∑cᵢxᵢ
 vdW1fRule
 
 # For backwards compatibility
-function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
     return vdW1fRule(components, String[])
 end
 
