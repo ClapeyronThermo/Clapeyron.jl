@@ -26,7 +26,7 @@ PR_SETUP = ModelOptions(
             ModelMember(:activity, :Nothing),
             ModelMember(:mixing, :vdW1fRule),
             ModelMember(:translation, :NoTranslation),
-            ModelMember(:idealmodel, :BasicIdeal),
+            ModelMember(:idealmodel, :BasicIdeal; groupcontribution_allowed=true),
         ],
         references=["10.1021/I160057A011"],
         inputparamstype=:ABCubicInputParam,

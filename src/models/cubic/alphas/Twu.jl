@@ -1,12 +1,19 @@
 abstract type TwuAlphaModel <: AlphaModel end
 
-struct TwuAlphaParam <: EoSParam
-    M::SingleParam{Float64}
-    N::SingleParam{Float64}
-    L::SingleParam{Float64}
-end
+TwuAlpha_SETUP = ModelOptions(
+        :TwuAlpha;
+        supertype=TwuAlphaModel,
+        locations=["alpha/Twu/Twu_like.csv"],
+        params=[
+            ParamField(:M, SingleParam{Float64}),
+            ParamField(:N, SingleParam{Float64}),
+            ParamField(:L, SingleParam{Float64}),
+        ],
+        references=["10.1021/I160057A011"],
+    )
 
-@newmodelsimple TwuAlpha TwuAlphaModel TwuAlphaParam
+createmodel(TwuAlpha_SETUP; verbose=true)
+export TwuAlpha
 
 """
     TwuAlpha <: TwuAlphaModel
@@ -42,17 +49,6 @@ Trᵢ = T/Tcᵢ
 
 """
 TwuAlpha
-
-export TwuAlpha
-function TwuAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
-    params = getparams(components, ["properties/critical.csv","alpha/Twu/Twu_like.csv"]; userlocations=userlocations, verbose=verbose)
-    M = params["M"]
-    N = params["N"]
-    L = params["L"]
-    packagedparams = TwuAlphaParam(M,N,L)
-    model = TwuAlpha(packagedparams, verbose=verbose)
-    return model
-end
 
 function α_function(model::CubicModel,V,T,z,alpha_model::TwuAlphaModel)
     Tc = model.params.Tc.values

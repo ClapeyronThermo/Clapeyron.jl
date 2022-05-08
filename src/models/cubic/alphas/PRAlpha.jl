@@ -3,13 +3,13 @@ PRAlpha_SETUP = ModelOptions(
         supertype=SoaveAlphaModel,
         locations=["properties/critical.csv"],
         inputparams=[
-              ParamField(:w, SingleParam{Float64}),
+            ParamField(:w, SingleParam{Float64}),
         ],
         params=[
-              ParamField(:acentricfactor, SingleParam{Float64}),
+            ParamField(:acentricfactor, SingleParam{Float64}),
         ],
         mappings=[
-              ModelMapping([:w], [:acentricfactor], identity)
+            ModelMapping([:w], [:acentricfactor]),
         ],
     )
 
