@@ -5,31 +5,31 @@ Wilson_SETUP = ModelOptions(
         supertype=WilsonModel,
         locations=["properties/critical.csv", "properties/molarmass.csv","Activity/Wilson/Wilson_unlike.csv"],
         inputparams=[
-              ParamField(:g, PairParam{Float64}),
-              ParamField(:Tc, SingleParam{Float64}),
-              ParamField(:pc, SingleParam{Float64}),
-              ParamField(:Mw, SingleParam{Float64}),
-              ParamField(:w, SingleParam{Float64}),
+            ParamField(:g, PairParam{Float64}),
+            ParamField(:Tc, SingleParam{Float64}),
+            ParamField(:pc, SingleParam{Float64}),
+            ParamField(:Mw, SingleParam{Float64}),
+            ParamField(:w, SingleParam{Float64}),
         ],
         params=[
-              ParamField(:g, PairParam{Float64}),
-              ParamField(:Tc, SingleParam{Float64}),
-              ParamField(:Pc, SingleParam{Float64}),
-              ParamField(:ZRA, SingleParam{Float64}),
-              ParamField(:Mw, SingleParam{Float64}),
+            ParamField(:g, PairParam{Float64}),
+            ParamField(:Tc, SingleParam{Float64}),
+            ParamField(:Pc, SingleParam{Float64}),
+            ParamField(:ZRA, SingleParam{Float64}),
+            ParamField(:Mw, SingleParam{Float64}),
         ],
         mappings=[
-              ModelMapping([:pc], [:Pc], identity)
-              ModelMapping([:w], [:ZRA], x -> x * -0.08775 + 0.29056)
+            ModelMapping([:pc], [:Pc], identity),
+            ModelMapping([:w], [:ZRA], x -> x * -0.08775 + 0.29056),
         ],
         param_options=ParamOptions(
-              asymmetricparams=["g"],
-              ignore_missing_singleparams=["g"]
+            asymmetricparams=["g"],
+            ignore_missing_singleparams=["g"],
         ),
         members=[
-            ModelMember(:puremodel, PR; split=true),
+            ModelMember(:puremodel, :PR; split=true),
         ],
-        references = ["10.1021/ja01056a002"]
+        references=["10.1021/ja01056a002"],
     )
 
 createmodel(Wilson_SETUP; verbose=true)

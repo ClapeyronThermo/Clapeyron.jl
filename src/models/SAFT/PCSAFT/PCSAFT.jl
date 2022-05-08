@@ -28,12 +28,14 @@ PCSAFT_SETUP = ModelOptions(
         ],
         has_sites=true,
         members=[
-            ModelMember(:idealmodel, BasicIdeal),
+            ModelMember(:idealmodel, :BasicIdeal),
         ],
-        references = ["10.1021/ie0003887", "10.1021/ie010954d"]
+        references=["10.1021/ie0003887", "10.1021/ie010954d"],
     )
 
 createmodel(PCSAFT_SETUP; verbose=true)
+export PCSAFT
+
 """
     PCSAFTModel <: SAFTModel
 
@@ -73,8 +75,6 @@ Perturbed-Chain SAFT (PC-SAFT)
 2. Gross, J., & Sadowski, G. (2002). Application of the perturbed-chain SAFT equation of state to associating systems. Industrial & Engineering Chemistry Research, 41(22), 5510–5515. doi:10.1021/ie010954d
 """
 PCSAFT
-
-export PCSAFT
 
 function a_res(model::PCSAFTModel, V, T, z)
     _data = @f(data)

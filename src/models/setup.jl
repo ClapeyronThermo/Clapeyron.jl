@@ -37,7 +37,7 @@ Part of `ModelOptions`. This is used to specify the options for member models. N
 
 ## Fields
 - `name::Symbol`: The name of this member. It will be used as the fieldname for the created model object.
-- `default_type::Type`: The default type for this member. Has to have a constructor with the same function signature.
+- `default_type::Symbol`: The default type for this member. Has to have a constructor with the same function signature. Symbol is used instead of the type to avoid circular reference.
 - `split::Bool = false`: If `true`, create a vector of pure models of this type.
 - `separate_namespace::Bool = true`: This is for namespace resolution of input parameter names from user-provided csv in `userlocations`. If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`. Note that these prefixes do not nest (the `name` must be distinct per model, and so there need only be one level).
 - `overwritelocations::Union{Vector{String},Nothing} = nothing`: If the model wants to overwrite the array of locations from a location in the Clapeyron database specific for this model, they may do so here. This location is not passed down to subsequent member models.
@@ -76,7 +76,7 @@ where for `X`, we have `restrictparents` as `[:A]`, whereas for `X2`, we have `r
 """
 struct ModelMember
     name::Symbol
-    default_type::Type
+    default_type::Symbol
     split::Bool
     separate_namespace::Bool
     overwritelocations::Union{Vector{String},Nothing}
@@ -85,7 +85,7 @@ struct ModelMember
 end
 function ModelMember(
         name::Symbol,
-        default_type::Type;
+        default_type::Symbol;
         split::Bool = false,
         separate_namespace::Bool = false,
         overwritelocations::Union{Vector{String},Nothing} = nothing,
@@ -472,13 +472,13 @@ function _initmodel(
         return nothing
     end
     if caller ∈ keys(_initialisedmodels)
-        if nameinparent ∈ _initialisedmodels[caller]
+        if nameinparent ∈ keys(_initialisedmodels[caller])
             return _initialisedmodels[caller][model]
         end
     end
     # Default key if restrictparents is `nothing`.
     if :_ ∈ keys(_initialisedmodels)
-        if nameinparent ∈ _initialisedmodels[caller]
+        if nameinparent ∈ keys(_initialisedmodels[:_])
             return _initialisedmodels[caller][model]
         end
     end
@@ -531,7 +531,7 @@ function _initpuremodel(
     end
     # Default key if restrictparents is `nothing`.
     if :_ ∈ keys(_initialisedmodels)
-        if nameinparent ∈ keys(_initialisedmodels[caller])
+        if nameinparent ∈ keys(_initialisedmodels[:_])
             return _initialisedmodels[caller][model]
         end
     end
@@ -685,6 +685,8 @@ function updateparams!(model::EoSModel; updatemembers::Bool = true)::Nothing
     end
 end
 
+function updateparams!(::Nothing; updatemembers::Bool=false)::Nothing end
+
 function updateparams!(
         self::EoSModel,
         inputparams::EoSParam,
@@ -727,33 +729,44 @@ See the tutorial or browse the implementations to see how this is used.
 """
 function createmodel(modeloptions::ModelOptions; verbose::Bool = false)
     verbose && @info("Generating model code for " * String(modeloptions.name))
-    if !isdefined(@__MODULE__, modeloptions.inputparamstype)
-        inputparams = _generatecode_param_struct(modeloptions.inputparamstype, modeloptions.inputparams)
-        verbose && @info(inputparams)
-        eval(inputparams)
-    else
-        newfields = [param.name for param in modeloptions.inputparams]
-        if !isempty(newfields)  # If not specified, assume users are OK with existing definition.
+    if !isempty(modeloptions.inputparams)
+        if !isdefined(@__MODULE__, modeloptions.inputparamstype)
+            inputparams = _generatecode_param_struct(modeloptions.inputparamstype, modeloptions.inputparams)
+            verbose && @info(inputparams)
+            eval(inputparams)
+        else
+            newfields = [param.name for param in modeloptions.inputparams]
+            newtypes = [param.type for param in modeloptions.inputparams]
             oldfields = fieldnames(eval(modeloptions.inputparamstype))
+            oldtypes = fieldtypes(eval(modeloptions.inputparamstype))
             if !issetequal(newfields, oldfields)
-                error("$(modeloptions.inputparamstype) is already defined with fields $oldfileds, so cannot redefined it with fields $newfields.")
+                error("$(modeloptions.inputparamstype) is already defined with fields $oldfields, so cannot redefined it with fields $newfields.")
+            end
+            if !issetequal(newtypes, oldtypes)
+                error("$(modeloptions.inputparamstype) has the same fields $oldfields as an existing definition, but it has types $oldtypes, insted of the $newtypes.")
             end
         end
     end
 
-    if !isdefined(@__MODULE__, modeloptions.paramstype)
-        params = _generatecode_param_struct(modeloptions.paramstype, modeloptions.params)
-        verbose && @info(params)
-        eval(params)
-    else
-        newfields = [param.name for param in modeloptions.params]
-        if !isempty(newfields)  # If not specified, assume users are OK with existing definition.
+    if !isempty(modeloptions.params)
+        if !isdefined(@__MODULE__, modeloptions.paramstype)
+            params = _generatecode_param_struct(modeloptions.paramstype, modeloptions.params)
+            verbose && @info(params)
+            eval(params)
+        else
+            newfields = [param.name for param in modeloptions.params]
+            newtypes = [param.type for param in modeloptions.params]
             oldfields = fieldnames(eval(modeloptions.paramstype))
+            oldtypes = fieldtypes(eval(modeloptions.paramstype))
             if !issetequal(newfields, oldfields)
-                error("$(modeloptions.paramstype) is already defined with fields $oldfileds, so cannot redefined it with fields $newfields.")
+                error("$(modeloptions.paramstype) is already defined with fields $oldfields, so cannot redefined it with fields $newfields.")
+            end
+            if !issetequal(newtypes, oldtypes)
+                error("$(modeloptions.paramstype) has the same fields $oldfields as an existing definition, but it has types $oldtypes, insted of the $newtypes.")
             end
         end
     end
+
     model = _generatecode_model_struct(modeloptions)
     verbose && @info(model)
     eval(model)

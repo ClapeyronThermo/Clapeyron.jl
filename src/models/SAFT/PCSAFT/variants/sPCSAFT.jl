@@ -5,11 +5,10 @@ sPCSAFT_SETUP = ModelOptions(
         supertype=sPCSAFTModel,
         parent=PCSAFT_SETUP,
         locations=["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT", "properties/molarmass.csv"],
-        references = ["10.1021/ie020753p"]
+        references=["10.1021/ie020753p"],
     )
 
 createmodel(sPCSAFT_SETUP; verbose=true)
-
 export sPCSAFT
 
 """

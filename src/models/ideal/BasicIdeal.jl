@@ -8,6 +8,7 @@ BasicIdeal_SETUP = ModelOptions(
     )
 
 createmodel(BasicIdeal_SETUP; verbose=true)
+export BasicIdeal
 
 """
     BasicIdeal <: IdealModel
@@ -28,7 +29,6 @@ Default Ideal Model. Constant specific heat capacity equal to `5R/2`. it's Helmh
 """
 BasicIdeal
 
-export BasicIdeal
 is_splittable(::BasicIdeal) = false
 
 function a_ideal(model::BasicIdeal, V, T, z)
