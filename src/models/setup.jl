@@ -141,8 +141,8 @@ A complete definition for how the model object will be created in Clapeyron. If 
 - `param_options::ParamOptions = nothing`: The default ParamOptions. If `has_params` is `true`, but param_options is `nothing`, use create one using the default constructor.
 - `assoc_options::AssocOptions = nothing`: The default AssocOptions. If `has_sites` is `true`, but assoc_options is `nothing`, use create one using the default constructor.
 - `references::Vector{String} = String[]`: References for this model. Usually DOIs.
-- `inputparamstype::Symbol = nothing`: A struct with this name will be generated in the global/module namespace for the input params. If given `nothing`, the constructor will fill it in with `{name}InputParam`.
-- `paramstype::Symbol = nothing`: A struct with this name will be generated in the global/module namespace for the target params. If given `nothing`, the constructor will fill it in with `{name}Param`.
+- `inputparamstype::Symbol = nothing`: A struct with this name will be generated in the global/module namespace for the input params. If given `nothing`, the constructor will fill it in with `{name}InputParam`. Note that if a struct with the same name is already defined, it will not redefine it.
+- `paramstype::Symbol = nothing`: A struct with this name will be generated in the global/module namespace for the target params. If given `nothing`, the constructor will fill it in with `{name}Param`. Note that if a struct with the same name is already defined, it will not redefine it.
 """
 
 struct ModelOptions
@@ -468,6 +468,9 @@ function _initmodel(
         _accumulatedparams::Dict{String,ClapeyronParam},
         verbose::Bool = false
     )
+    if model === Nothing
+        return nothing
+    end
     if caller ∈ keys(_initialisedmodels)
         if nameinparent ∈ _initialisedmodels[caller]
             return _initialisedmodels[caller][model]
@@ -518,6 +521,9 @@ function _initpuremodel(
         _accumulatedparams::Dict{String,ClapeyronParam},
         verbose::Bool = false
     )
+    if model === Nothing
+        return nothing
+    end
     if caller ∈ keys(_initialisedmodels)
         if nameinparent ∈ keys(_initialisedmodels[caller])
             return _initialisedmodels[caller][model]
@@ -726,7 +732,13 @@ function createmodel(modeloptions::ModelOptions; verbose::Bool = false)
         verbose && @info(inputparams)
         eval(inputparams)
     else
-        verbose && @info(String(modeloptions.inputparamstype) * " already defined.")
+        newfields = [param.name for param in modeloptions.inputparams]
+        if !isempty(newfields)  # If not specified, assume users are OK with existing definition.
+            oldfields = fieldnames(eval(modeloptions.inputparamstype))
+            if !issetequal(newfields, oldfields)
+                error("$(modeloptions.inputparamstype) is already defined with fields $oldfileds, so cannot redefined it with fields $newfields.")
+            end
+        end
     end
 
     if !isdefined(@__MODULE__, modeloptions.paramstype)
@@ -734,7 +746,13 @@ function createmodel(modeloptions::ModelOptions; verbose::Bool = false)
         verbose && @info(params)
         eval(params)
     else
-        verbose && @info(String(modeloptions.paramstype) * " already defined.")
+        newfields = [param.name for param in modeloptions.params]
+        if !isempty(newfields)  # If not specified, assume users are OK with existing definition.
+            oldfields = fieldnames(eval(modeloptions.paramstype))
+            if !issetequal(newfields, oldfields)
+                error("$(modeloptions.paramstype) is already defined with fields $oldfileds, so cannot redefined it with fields $newfields.")
+            end
+        end
     end
     model = _generatecode_model_struct(modeloptions)
     verbose && @info(model)
