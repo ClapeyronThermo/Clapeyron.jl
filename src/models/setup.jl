@@ -613,7 +613,7 @@ function _initmodel(
         _initialisedmodels,
         _namespace,
         _accumulatedparams,
-        _ismembermodel=false,
+        _ismembermodel=true,
     )
 end
 
