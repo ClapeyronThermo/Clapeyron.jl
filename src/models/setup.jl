@@ -398,9 +398,17 @@ function _generatecode_model_constructor(
         push!(block.args, :(locations = $(modeloptions.locations)))
         push!(block.args, Expr(:if, :(!isnothing(_overwritelocations)), :(locations = _overwritelocations)))
         if modeloptions.has_sites
-            push!(block.args, :((rawparams, sites) = getparams(components, locations, param_options; userlocations, verbose)))
+            if modeloptions.has_groups
+                push!(block.args, :((rawparams, sites) = getparams(groups, locations, param_options; userlocations, verbose)))
+            else
+                push!(block.args, :((rawparams, sites) = getparams(components, locations, param_options; userlocations, verbose)))
+            end
         else
-            push!(block.args, :(rawparams = getparams(components, locations, param_options; userlocations, verbose)))
+            if modeloptions.has_groups
+                push!(block.args, :(rawparams = getparams(groups, locations, param_options; userlocations, verbose)))
+            else
+                push!(block.args, :(rawparams = getparams(components, locations, param_options; userlocations, verbose)))
+            end
         end
         push!(block.args, :(merge!(_accumulatedparams, merge(rawparams, _accumulatedparams))))
         push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), _accumulatedparams, mappings, _namespace)))
