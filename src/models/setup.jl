@@ -373,7 +373,7 @@ function _generatecode_model_constructor(
     end
     push!(parameters.args, Expr(:kw, :(_overwritelocations::Union{Vector{String},Nothing}), :nothing))
     push!(parameters.args, Expr(:kw, :(_overwritegrouplocations::Union{Vector{String},Nothing}), :nothing))
-    push!(parameters.args, Expr(:kw, :(_initialisedmodels::Dict{Symbol,Dict{Symbol,Any}}), :(Dict{Symbol,Dict{Symbol,Any}}())))
+    push!(parameters.args, Expr(:kw, :(_initialisedmodels::Dict{Symbol,Dict{Symbol,Any}}), :(Dict{Symbol,Dict{Symbol,Any}}(:_ => Dict{Symbol,Any}()))))
     push!(parameters.args, Expr(:kw, :(_namespace::String), :""))
     push!(parameters.args, Expr(:kw, :(_accumulatedparams::Dict{String,ClapeyronParam}), :(Dict{String,ClapeyronParam}())))
     push!(func_head.args, parameters)
@@ -426,24 +426,24 @@ function _generatecode_model_constructor(
         end
         if member.groupcontribution_allowed
             if member.split
-                push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, $(Symbol(:($(member.name)), :_usergrouplocations)), $(Symbol(:($(member.name)), :_groupdefinitions)), overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+                push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, $(Meta.quot(:($(modeloptions.name)))), $(Meta.quot(:($(member.nameinparent)))), userlocations, $(Symbol(:($(member.name)), :_usergrouplocations)), $(Symbol(:($(member.name)), :_groupdefinitions)), overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
             else
-                push!(block.args, :($(member.name) = _initmodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, $(Symbol(:($(member.name)), :_usergrouplocations)), $(Symbol(:($(member.name)), :_groupdefinitions)), overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+                push!(block.args, :($(member.name) = _initmodel($(member.name), components, $(Meta.quot(:($(modeloptions.name)))), $(Meta.quot(:($(member.nameinparent)))), userlocations, $(Symbol(:($(member.name)), :_usergrouplocations)), $(Symbol(:($(member.name)), :_groupdefinitions)), overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
             end
         else
             if member.split
-                push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, String[], GroupDefinition[], overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+                push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, $(Meta.quot(:($(modeloptions.name)))), $(Meta.quot(:($(member.nameinparent)))), userlocations, String[], GroupDefinition[], overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
             else
-                push!(block.args, :($(member.name) = _initmodel($(member.name), components, Symbol($(modeloptions.name)), Symbol($(member.nameinparent)), userlocations, String[], GroupDefinition[], overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+                push!(block.args, :($(member.name) = _initmodel($(member.name), components, $(Meta.quot(:($(modeloptions.name)))), $(Meta.quot(:($(member.nameinparent)))), userlocations, String[], GroupDefinition[], overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
             end
         end
         if isnothing(member.restrictparents)
-            push!(block.args, Expr(:if, :(!haskey(_initialisedmodels, :_)), :(_initialisedmodels[:_] = Dict{Symbol,Any}())))
-            push!(block.args, :(_initialisedmodels[:_][Symbol($(member.nameinparent))] = $(member.name)))
+            # push!(block.args, Expr(:if, :(!haskey(_initialisedmodels, :_)), :(_initialisedmodels[:_] = Dict{Symbol,Any}())))
+            push!(block.args, :(_initialisedmodels[:_][$(Meta.quot(:($(member.nameinparent))))] = $(member.name)))
         else
             for parent ∈ member.restrictparents
-                push!(block.args, Expr(:if, :(!haskey(_initialisedmodels, Symbol($parent))), :(_initialisedmodels[Symbol($parent)] = Dict{Symbol,Any}())))
-                push!(block.args, :(_initialisedmodels[Symbol($parent)][Symbol($(member.nameinparent))] = $(member.name)))
+                push!(block.args, Expr(:if, :(!haskey(_initialisedmodels, $(Meta.quot(:($parent))))), :(_initialisedmodels[Symbol($parent)] = Dict{Symbol,Any}())))
+                push!(block.args, :(_initialisedmodels[$(Meta.quot(:($parent)))][$(Meta.quot(:($(member.nameinparent))))] = $(member.name)))
             end
         end
     end
@@ -499,13 +499,13 @@ function _initmodel(
     end
     if caller ∈ keys(_initialisedmodels)
         if nameinparent ∈ keys(_initialisedmodels[caller])
-            return _initialisedmodels[caller][model]
+            return _initialisedmodels[caller][nameinparent]
         end
     end
     # Default key if restrictparents is `nothing`.
     if :_ ∈ keys(_initialisedmodels)
         if nameinparent ∈ keys(_initialisedmodels[:_])
-            return _initialisedmodels[caller][model]
+            return _initialisedmodels[:_][nameinparent]
         end
     end
     verbose && @info("Creating member model: $model")
@@ -561,13 +561,13 @@ function _initpuremodel(
     end
     if caller ∈ keys(_initialisedmodels)
         if nameinparent ∈ keys(_initialisedmodels[caller])
-            return _initialisedmodels[caller][model]
+            return _initialisedmodels[caller][nameinparent]
         end
     end
     # Default key if restrictparents is `nothing`.
     if :_ ∈ keys(_initialisedmodels)
         if nameinparent ∈ keys(_initialisedmodels[:_])
-            return _initialisedmodels[caller][model]
+            return _initialisedmodels[:_][nameinparent]
         end
     end
     verbose && @info("Creating member pure models: $puremodels")
