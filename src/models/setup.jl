@@ -19,7 +19,7 @@ function ModelMapping(
         source::Union{Vector{Symbol},Symbol},
         target::Union{Vector{Symbol},Symbol},
         transformation::Function = identity;
-        self_in_args::Bool = false
+        self_in_args::Bool = false,
     )
     if source isa Symbol
         source = [source]
@@ -31,7 +31,7 @@ function ModelMapping(
         source,
         target,
         transformation,
-        self_in_args
+        self_in_args,
     )
 end
 
@@ -58,7 +58,11 @@ To account for the possibility that parameters may share the same names across m
 
 and both `A` and `B` contain distinct parameters `m`. Then we would enable `separate_namespace` for member `B`, and in the parameters file, if there is a column called `B__m`, it will take precedence over the column `m`. If column `B__m` is not present, it will find that column `m` is already initialised when getting parameters for `A`, so it will just take the same reference to that parameter.
 
+Note that it can get very difficult to keep track of which models have overwritten namespaces, especially when they are used as member models themselves, so use this sparingly, and if possible, try to avoid column name conflicts in the input parameters whenever possible.
+
 ## Restrict parents
+The constructor chache all initialised models, and if a member model later initialises another member model with the same `nameinparent` (set to `name` unless specified otherwise), it will just take the same reference to the previously initialised model. Note that ony models initialised the main non-member model will add to the cache.
+
 The order of initialisation is as provided in the `members` field vector. For example, if we have model `A` has `Y` and `X` as member models (note the order) and model `X` is a member of model `Y`. If we specified it as
 
     A{Y{X},X}
@@ -69,7 +73,7 @@ If we instead had it written as
 
     A{X,Y{X}}
 
-Unless otherwise specified, the instance `X` that resides in `A` is the same instance as the one that resides in `Y`.
+unless otherwise specified, it first initialises `X`, then it initialises `Y`, where it finds that `X` already initialised, so it just takes a reference to it.
 
 If we specify `[:A]` in `restrictparents` for `ModelMember` of `X`, then a separate instance of a `X` (the default) will be constructed for `Y`.
 
@@ -91,6 +95,7 @@ struct ModelMember
     overwritegrouplocations::Union{Vector{String},Nothing}
     restrictparents::Union{Vector{Symbol},Nothing}
     nameinparent::Symbol
+    namespace::String
 end
 function ModelMember(
         name::Symbol,
@@ -101,7 +106,7 @@ function ModelMember(
         overwritelocations::Union{Vector{String},Nothing} = nothing,
         overwritegrouplocations::Union{Vector{String},Nothing} = nothing,
         restrictparents::Union{Vector{Symbol},Nothing} = nothing,
-        nameinparent::Union{Symbol,Nothing} = nothing
+        nameinparent::Union{Symbol,Nothing} = nothing,
     )
     if isnothing(nameinparent)
         nameinparent = name
@@ -115,7 +120,8 @@ function ModelMember(
         overwritelocations,
         overwritegrouplocations,
         restrictparents,
-        nameinparent
+        nameinparent,
+        separate_namespace ? string(name) : "",
     )
 end
 
@@ -145,7 +151,7 @@ A complete definition for how the model object will be created in Clapeyron. If 
 - `members::Vector{ModelMember} = ModelMember[]`: A list of ModelMembers. Note that the order reflects the order of initialisation. Read the docs for `ModelMember` for more details.
 - `locations::Vector{String} = String[]`: Default locations in Clapeyron database to look for parameters. Note that for user-created models, it is easier to use the `userlocations` parameter.
 - `grouplocations::Vector{String} = String[]`: Default grouplocations in Clapeyron database to look for parameters. Note that for user-created models, it is easier to use the `usergrouplocations` parameter.
-- `inputparams::Vector{ParamField} = ParamField[]`: A list of relevant source parameters. The model constructor will extract the String headers according to the Symbol name given.
+- `inputparams::Vector{ParamField} = ParamField[]`: A list of relevant source parameters. The model constructor will extract the String headers according to the Symbol name given. If the `inputparams` is not specified and there is no parent, make it equal to `params`.
 - `params::Vector{ParamField} = ParamField[]`: A list of relevant target parameters.
 - `mappings::Vector{ModelMapping} = ModelMapping[]`: Mappings from source to target.
 - `has_params::Bool = true`: Whether this model has params. A simple example of this not being the case is `BasicIdeal`.
@@ -198,7 +204,7 @@ function ModelOptions(
         assoc_options::Union{AssocOptions,Nothing} = nothing,
         references::Union{Vector{String},Nothing} = nothing,
         inputparamstype::Union{Symbol,Nothing} = nothing,
-        paramstype::Union{Symbol,Nothing} = nothing
+        paramstype::Union{Symbol,Nothing} = nothing,
     )
     if !isnothing(parent)
         isnothing(supertype) && (supertype = parent.supertype)
@@ -228,13 +234,7 @@ function ModelOptions(
         isnothing(locations) && (locations = String[])
         isnothing(grouplocations) && (grouplocations = String[])
         isnothing(params) && (params = ParamField[])
-        if isnothing(inputparams)
-            if !isempty(params)
-                inputparams = params
-            else
-                inputparams = ParamField[]
-            end
-        end
+        isnothing(inputparams) && (inputparams = params)
         isnothing(mappings) && (mappings = ModelMapping[])
         isnothing(has_params) && (has_params = true)
         isnothing(has_components) && (has_components = true)
@@ -242,12 +242,12 @@ function ModelOptions(
         isnothing(has_groups) && (has_groups = false)
         isnothing(references) && (references = String[])
     end
-    isnothing(paramstype) && (paramstype = Symbol(String(name) * "Param"))
+    isnothing(paramstype) && (paramstype = Symbol(name, :Param))
     if isnothing(inputparamstype)
         if inputparams === params
             inputparamstype = paramstype
         else
-            inputparamstype = Symbol(String(name) * "InputParam")
+            inputparamstype = Symbol(name, :InputParam)
         end
     end
     return ModelOptions(
@@ -274,6 +274,11 @@ end
 
 ##### Expr generators #####
 
+"""
+    _generatecode_param_struct(modeloptions)
+
+Generates the parameter struct. This can be used for both `inputparams` and `params`.
+"""
 function _generatecode_param_struct(
         name::Symbol,
         paramfields::Vector{ParamField}
@@ -285,6 +290,11 @@ function _generatecode_param_struct(
     return Expr(:struct, false, :($name <: EoSParam), block)
 end
 
+"""
+    _generatecode_model_struct(modeloptions)
+
+Generates the model struct.
+"""
 function _generatecode_model_struct(modeloptions::ModelOptions)::Expr
     if isempty(modeloptions.members)
         defheader = modeloptions.name
@@ -310,9 +320,9 @@ function _generatecode_model_struct(modeloptions::ModelOptions)::Expr
     end
     for (i, member) ∈ enumerate(modeloptions.members)
         if member.split
-            push!(block.args, Expr(:(::), member.name, Expr(:curly, :EoSVectorParam, Symbol("M" * string(i)))))
+            push!(block.args, Expr(:(::), member.name, Expr(:curly, :EoSVectorParam, Symbol(:M, Symbol(i)))))
         else
-            push!(block.args, Expr(:(::), member.name, Symbol("M" * string(i))))
+            push!(block.args, Expr(:(::), member.name, Symbol(:M, Symbol(i))))
         end
     end
     if modeloptions.has_sites
@@ -324,6 +334,8 @@ function _generatecode_model_struct(modeloptions::ModelOptions)::Expr
 end
 
 """
+    _generate_model_constructor(modeloptions)
+
 Generates a model constructor with the folowing function signature:
 
 ## Arguments
@@ -345,6 +357,7 @@ These are used by Clayeyron when initialising member models. They should not be 
 - `_initialisedmodels::Dict{Symbol, Dict{Symbol, Any}} = Dict{Symbol, Dict{Symbol, Any}}()`: If model is already initialised, just take a reference to it unless specified otherwise in the `MemberModel`.
 - `_namespace::String = ""`: Give higher priority to columns prepended with `{membermodel_name}__{inputparam_name}` if present.
 - `_accumulatedparams::Dict{String, ClapeyronParam} = Dict{String, ClapeyronParam}())`: If there are parameters with the same name, just point to existing reference.
+- `_ismembermodel::Bool = false`: Automatically changed to `true` if called from `_initmodel` or `initpuremodel`. One reason for this is to ensure that only non-member models push to `_initialisedmodels`.
 """
 function _generatecode_model_constructor(
         modeloptions::ModelOptions
@@ -376,6 +389,7 @@ function _generatecode_model_constructor(
     push!(parameters.args, Expr(:kw, :(_initialisedmodels::Dict{Symbol,Dict{Symbol,Any}}), :(Dict{Symbol,Dict{Symbol,Any}}(:_ => Dict{Symbol,Any}()))))
     push!(parameters.args, Expr(:kw, :(_namespace::String), :""))
     push!(parameters.args, Expr(:kw, :(_accumulatedparams::Dict{String,ClapeyronParam}), :(Dict{String,ClapeyronParam}())))
+    push!(parameters.args, Expr(:kw, :(_ismembermodel::Bool), :false))
     push!(func_head.args, parameters)
     # Now positional args
     if modeloptions.has_components
@@ -426,24 +440,93 @@ function _generatecode_model_constructor(
         end
         if member.groupcontribution_allowed
             if member.split
-                push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, $(Meta.quot(:($(modeloptions.name)))), $(Meta.quot(:($(member.nameinparent)))), userlocations, $(Symbol(:($(member.name)), :_usergrouplocations)), $(Symbol(:($(member.name)), :_groupdefinitions)), overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+                push!(block.args, :($(member.name) = _initpuremodel(
+                    $(member.name),
+                    components,
+                    $(Meta.quot(:($(modeloptions.name)))),
+                    $(Meta.quot(:($(member.nameinparent)))),
+                    userlocations,
+                    $(Symbol(:($(member.name)), :_usergrouplocations)),
+                    $(Symbol(:($(member.name)), :_groupdefinitions)),
+                    overwritelocations,
+                    overwritegrouplocations,
+                    _initialisedmodels,
+                    $(member.namespace),
+                    _accumulatedparams,
+                    verbose,
+                )))
             else
-                push!(block.args, :($(member.name) = _initmodel($(member.name), components, $(Meta.quot(:($(modeloptions.name)))), $(Meta.quot(:($(member.nameinparent)))), userlocations, $(Symbol(:($(member.name)), :_usergrouplocations)), $(Symbol(:($(member.name)), :_groupdefinitions)), overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+                push!(block.args, :($(member.name) = _initmodel(
+                    $(member.name),
+                    components,
+                    $(Meta.quot(:($(modeloptions.name)))),
+                    $(Meta.quot(:($(member.nameinparent)))),
+                    userlocations,
+                    $(Symbol(:($(member.name)), :_usergrouplocations)),
+                    $(Symbol(:($(member.name)), :_groupdefinitions)),
+                    overwritelocations,
+                    overwritegrouplocations,
+                    _initialisedmodels,
+                    $(member.namespace),
+                    _accumulatedparams,
+                    verbose,
+                )))
             end
         else
             if member.split
-                push!(block.args, :($(member.name) = _initpuremodel($(member.name), components, $(Meta.quot(:($(modeloptions.name)))), $(Meta.quot(:($(member.nameinparent)))), userlocations, String[], GroupDefinition[], overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+                push!(block.args, :($(member.name) = _initpuremodel(
+                    $(member.name),
+                    components,
+                    $(Meta.quot(:($(modeloptions.name)))),
+                    $(Meta.quot(:($(member.nameinparent)))),
+                    userlocations,
+                    String[],
+                    GroupDefinition[],
+                    overwritelocations,
+                    overwritegrouplocations,
+                    _initialisedmodels,
+                    $(member.namespace),
+                    _accumulatedparams,
+                    verbose,
+                )))
             else
-                push!(block.args, :($(member.name) = _initmodel($(member.name), components, $(Meta.quot(:($(modeloptions.name)))), $(Meta.quot(:($(member.nameinparent)))), userlocations, String[], GroupDefinition[], overwritelocations, overwritegrouplocations, _initialisedmodels, _namespace, _accumulatedparams, verbose)))
+                push!(block.args, :($(member.name) = _initmodel(
+                    $(member.name),
+                    components,
+                    $(Meta.quot(:($(modeloptions.name)))),
+                    $(Meta.quot(:($(member.nameinparent)))),
+                    userlocations,
+                    String[],
+                    GroupDefinition[],
+                    overwritelocations,
+                    overwritegrouplocations,
+                    _initialisedmodels,
+                    $(member.namespace),
+                    _accumulatedparams,
+                    verbose,
+                )))
             end
         end
         if isnothing(member.restrictparents)
-            # push!(block.args, Expr(:if, :(!haskey(_initialisedmodels, :_)), :(_initialisedmodels[:_] = Dict{Symbol,Any}())))
-            push!(block.args, :(_initialisedmodels[:_][$(Meta.quot(:($(member.nameinparent))))] = $(member.name)))
+            push!(block.args, Expr(
+                :if,
+                :(!_ismembermodel),
+                :(_initialisedmodels[:_][$(Meta.quot(:($(member.nameinparent))))] = $(member.name))
+            ))
         else
             for parent ∈ member.restrictparents
-                push!(block.args, Expr(:if, :(!haskey(_initialisedmodels, $(Meta.quot(:($parent))))), :(_initialisedmodels[Symbol($parent)] = Dict{Symbol,Any}())))
-                push!(block.args, :(_initialisedmodels[$(Meta.quot(:($parent)))][$(Meta.quot(:($(member.nameinparent))))] = $(member.name)))
+                push!(block.args, Expr(
+                    :if,
+                    :(!_ismembermodel),
+                    Expr(
+                        :if,
+                        :(!haskey(_initialisedmodels, $(Meta.quot(:($parent))))),
+                        :(_initialisedmodels[Symbol($parent)] = Dict{Symbol,Any}())
+                    )))
+                push!(block.args, Expr(
+                    :if,
+                    :(!_ismembermodel),
+                    :(_initialisedmodels[$(Meta.quot(:($parent)))][$(Meta.quot(:($(member.nameinparent))))] = $(member.name))))
             end
         end
     end
@@ -479,6 +562,16 @@ end
 
 #####
 
+"""
+    _initmodel(model, components, caller, nameinparent, userlocations, usergrouplocations,
+            groupdefinitions, _overwritelocations, _overwritegrouplocations, _initialisedmodels,
+            _namespace, _accumulatedparams, verbose)
+    _initpuremodel(model, components, caller, nameinparent, userlocations, usergrouplocations,
+            groupdefinitions, _overwritelocations, _overwritegrouplocations, _initialisedmodels,
+            _namespace, _accumulatedparams, verbose)
+
+These functions will call the construction of a member model, but only if it is not already initialised. Look at documentation for `MemberModel` for more information about how models are cached in the order that they are created.
+"""
 function _initmodel(
         model::Union{Type,Function},
         components::Vector{String},
@@ -492,7 +585,7 @@ function _initmodel(
         _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
         _namespace::String,
         _accumulatedparams::Dict{String,ClapeyronParam},
-        verbose::Bool = false
+        verbose::Bool = false,
     )
     if model === Nothing
         return nothing
@@ -519,7 +612,8 @@ function _initmodel(
         _overwritegrouplocations,
         _initialisedmodels,
         _namespace,
-        _accumulatedparams
+        _accumulatedparams,
+        _ismembermodel=false,
     )
 end
 
@@ -536,7 +630,7 @@ function _initmodel(
         _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
         _namespace::String,
         _accumulatedparams::Dict{String,ClapeyronParam},
-        verbose::Bool = false
+        verbose::Bool = true,
     )
     return model
 end
@@ -554,7 +648,7 @@ function _initpuremodel(
         _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
         _namespace::String,
         _accumulatedparams::Dict{String,ClapeyronParam},
-        verbose::Bool = false
+        verbose::Bool = false,
     )
     if model === Nothing
         return nothing
@@ -578,7 +672,8 @@ function _initpuremodel(
         _overwritelocations,
         _initialisedmodels,
         _namespace,
-        _accumulatedparams
+        _accumulatedparams,
+        _ismembermodel=true,
     ))
 end
 
@@ -595,7 +690,7 @@ function _initpuremodel(
         _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
         _namespace::String,
         _accumulatedparams::Dict{String,ClapeyronParam},
-        verbose::Bool = false
+        verbose::Bool = false,
     )
     return model
 end
@@ -626,7 +721,7 @@ function _initparams(
         ::Type{P},
         rawparams::Dict,
         mappings::Vector{ModelMapping},
-        namespace::String = ""
+        namespace::String = "",
     )::Tuple{I,P} where {I,P}
     inputparams_names = collect(fieldnames(I))
     inputparams_types = collect(fieldtypes(I))
@@ -709,9 +804,8 @@ end
 
 """
     updateparams!(model; updatemembers)
-    updateparams!(self, inputparams, params, mappings)
 
-Given an `EoSModel`, update the values of `params` with current values of `inputparams` given the `mappings`. Note that for identity transformations, the values share the same references, so they need not be updated explictly.  
+Given an `EoSModel`, update the values of `params` with current values of `inputparams` given the `mappings`. Note that for identity transformations, the values share the same references, so they need not be updated explictly.
 
 ## Arguments
 - `model::EoSModel`: The model to update params on.
@@ -730,7 +824,7 @@ function updateparams!(
         inputparams::EoSParam,
         params::EoSParam,
         mappings::Vector{ModelMapping},
-        updatemembers::Bool
+        updatemembers::Bool,
        )::Nothing
     for mapping ∈ filter(m -> !(m.transformation === identity),  mappings)
         # At the moment, we are stil constructing new ClapeyronParams,
@@ -766,9 +860,9 @@ Create the models in the global (or module) scope using `eval`.
 The structs constructed to namespace are
 - modeloptions.paramstype (if necessary and not already exist)
 - modeloptions.inputparamstype (if necessary and not already exist)
-- modeloption.name
+- modeloptions.name
 
-Also defines for this modeloption.name
+Also defines for this modeloptions.name
 - constructor for modeloptions.name
 - has_sites
 - Base.length
@@ -792,7 +886,7 @@ function createmodel(modeloptions::ModelOptions; verbose::Bool = false)
             oldfields = fieldnames(eval(modeloptions.inputparamstype))
             oldtypes = fieldtypes(eval(modeloptions.inputparamstype))
             if !issetequal(newfields, oldfields)
-                error("$(modeloptions.inputparamstype) is already defined with fields $oldfields, so cannot redefined it with fields $newfields.")
+                error("$(modeloptions.inputparamstype) is already defined with fields $oldfields, so it cannot be redefined with fields $newfields.")
             end
             if !issetequal(newtypes, oldtypes)
                 error("$(modeloptions.inputparamstype) has the same fields $oldfields as an existing definition, but it has types $oldtypes, insted of the $newtypes.")
@@ -811,7 +905,7 @@ function createmodel(modeloptions::ModelOptions; verbose::Bool = false)
             oldfields = fieldnames(eval(modeloptions.paramstype))
             oldtypes = fieldtypes(eval(modeloptions.paramstype))
             if !issetequal(newfields, oldfields)
-                error("$(modeloptions.paramstype) is already defined with fields $oldfields, so cannot redefined it with fields $newfields.")
+                error("$(modeloptions.paramstype) is already defined with fields $oldfields, so it cannot be redefined with fields $newfields.")
             end
             if !issetequal(newtypes, oldtypes)
                 error("$(modeloptions.paramstype) has the same fields $oldfields as an existing definition, but it has types $oldtypes, insted of the $newtypes.")
