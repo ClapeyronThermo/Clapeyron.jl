@@ -36,14 +36,29 @@ function ModelMapping(
 end
 
 """
-    ModelMember(name, default_type; separate_namespace = false)
+    ModelMember(
+            name,
+            default_type;
+            typeconstraint,
+            swappable,
+            split,
+            groupcontribution_allowed,
+            separate_namespace,
+            overwritelocations,
+            overwritegrouplocations,
+            restrictparents,
+            nameinparent,
+        )
 
 Part of `ModelOptions`. This is used to specify the options for member models. Note that only swappable members need to be specified here. If member models contain member models with the same name as one specified here, the same instance will be used. If this is undesired behaviour, explicitly assign the relevant parents in the `restrictparents` field.
 
 ## Fields
 - `name::Symbol`: The name of this member. It will be used as the fieldname for the created model object.
 - `default_type::Symbol`: The default type for this member. Has to have a constructor with the same function signature. Symbol is used instead of the type to avoid circular reference.
+- `typeconstraint::Union{Symbol,Nothing} = nothing`: If not `nothing`, make sure that the type to input is `::Union{typeconstraint,Type{typeconstraint}}`.
+- `swappable::Bool = false`: If `true`, put argument `name` into the constructor signature to allow users to swap out member models from the default type. This is useful for, say, idealmodels.
 - `split::Bool = false`: If `true`, create a vector of pure models of this type.
+- `nothing_allowed::Bool = false`: If `true`, the type constraint can be `Nothing`. Only relevant if `typeconstraint` is not `nothing`.
 - `groupcontribution_allowed::Bool = false`: If `true`, create fields for injecting group contribution arguments like `usergrouplocations` and `groupdefinitions` for this member. Note that the default does not have to be a group contribution method; just that if there is a possibility of switching to one.
 - `separate_namespace::Bool = true`: This is for namespace resolution of input parameter names from user-provided csv in `userlocations`. If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`. Note that these prefixes do not nest (the `name` must be distinct per model, and so there need only be one level).
 - `overwritelocations::Union{Vector{String},Nothing} = nothing`: If the model wants to overwrite the array of locations from a location in the Clapeyron database specific for this model, they may do so here. This location is not passed down to subsequent member models.
@@ -61,7 +76,7 @@ and both `A` and `B` contain distinct parameters `m`. Then we would enable `sepa
 Note that it can get very difficult to keep track of which models have overwritten namespaces, especially when they are used as member models themselves, so use this sparingly, and if possible, try to avoid column name conflicts in the input parameters whenever possible.
 
 ## Restrict parents
-The constructor chache all initialised models, and if a member model later initialises another member model with the same `nameinparent` (set to `name` unless specified otherwise), it will just take the same reference to the previously initialised model. Note that ony models initialised the main non-member model will add to the cache.
+The constructor caches all initialised models, and if a member model later initialises another member model with the same `nameinparent` (set to `name` unless specified otherwise), it will just take the same reference to the previously initialised model. Note that ony models initialised the main non-member model will add to the cache.
 
 The order of initialisation is as provided in the `members` field vector. For example, if we have model `A` has `Y` and `X` as member models (note the order) and model `X` is a member of model `Y`. If we specified it as
 
@@ -88,7 +103,10 @@ where for `X`, we have `restrictparents` as `[:A]`, whereas for `X2`, we have `r
 struct ModelMember
     name::Symbol
     default_type::Symbol
+    typeconstraint::Union{Symbol,Nothing}
+    swappable::Bool
     split::Bool
+    nothing_allowed::Bool
     groupcontribution_allowed::Bool
     separate_namespace::Bool
     overwritelocations::Union{Vector{String},Nothing}
@@ -100,7 +118,10 @@ end
 function ModelMember(
         name::Symbol,
         default_type::Symbol;
+        typeconstraint::Union{Symbol,Nothing} = nothing,
+        swappable::Bool = true,
         split::Bool = false,
+        nothing_allowed::Bool = false,
         groupcontribution_allowed::Bool = false,
         separate_namespace::Bool = false,
         overwritelocations::Union{Vector{String},Nothing} = nothing,
@@ -114,7 +135,10 @@ function ModelMember(
     return ModelMember(
         name,
         default_type,
+        typeconstraint,
+        swappable,
         split,
+        nothing_allowed,
         groupcontribution_allowed,
         separate_namespace,
         overwritelocations,
@@ -298,10 +322,23 @@ Generates the model struct.
 function _generatecode_model_struct(modeloptions::ModelOptions)::Expr
     if isempty(modeloptions.members)
         defheader = modeloptions.name
+        typestatement = modeloptions.supertype
     else
         defheader = Expr(:curly, modeloptions.name)
         for i ∈ 1:length(modeloptions.members)
             push!(defheader.args, Symbol(:M, Symbol(i)))
+        end
+        typestatement = Expr(:where, modeloptions.supertype)
+        for (i, member) ∈ enumerate(modeloptions.members)
+            if isnothing(member.typeconstraint)
+                push!(typestatement.args, Symbol(:M, Symbol(i)))
+            else
+                if member.nothing_allowed
+                    push!(typestatement.args, Expr(:<:, Symbol(:M, Symbol(i)), :(Union{$(member.typeconstraint),Nothing})))
+                else
+                    push!(typestatement.args, Expr(:<:, Symbol(:M, Symbol(i)), member.typeconstraint))
+                end
+            end
         end
     end
 
@@ -330,7 +367,7 @@ function _generatecode_model_struct(modeloptions::ModelOptions)::Expr
     end
     push!(block.args, :(references::Vector{String}))
 
-    return Expr(:struct, false, Expr(:<:, defheader, modeloptions.supertype), block)
+    return Expr(:struct, false, Expr(:<:, defheader, typestatement), block)
 end
 
 """
@@ -378,7 +415,17 @@ function _generatecode_model_constructor(
         push!(parameters.args, Expr(:kw, :(assoc_options::AssocOptions), :($(modeloptions.assoc_options))))
     end
     for member ∈ modeloptions.members
-        push!(parameters.args, Expr(:kw, :($(member.name)), :($(member.default_type))))
+        if member.swappable
+            if isnothing(member.typeconstraint)
+                push!(parameters.args, Expr(:kw, :($(member.name)), :($(member.default_type))))
+            else
+                if member.nothing_allowed
+                    push!(parameters.args, Expr(:kw, :($(member.name)::Union{$(member.typeconstraint),Type{<:Union{$(member.typeconstraint),Nothing}},Nothing}), :($(member.default_type))))
+                else
+                    push!(parameters.args, Expr(:kw, :($(member.name)::Union{$(member.typeconstraint),Type{<:$(member.typeconstraint)}}), :($(member.default_type))))
+                end
+            end
+        end
         if member.groupcontribution_allowed
             push!(parameters.args, Expr(:kw, Symbol(:($(member.name)), :_usergrouplocations), :(String[])))
             push!(parameters.args, Expr(:kw, Symbol(:($(member.name)), :_groupdefinitions), :(GroupDefinition[])))
@@ -427,7 +474,12 @@ function _generatecode_model_constructor(
         push!(block.args, :(merge!(_accumulatedparams, merge(rawparams, _accumulatedparams))))
         push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), _accumulatedparams, mappings, _namespace)))
     end
+
+    # Member model initialisation.
     for member ∈ modeloptions.members
+        if !member.swappable
+            push!(block.args, :($(member.name) = $(member.default_type)))
+        end
         if !isnothing(member.overwritelocations)
             push!(block.args, Expr(:if, :($(member.default_type) === $(member.name)), :(overwritelocations = $(member.overwritelocations)), :(overwritelocations = nothing)))
         else
@@ -507,6 +559,7 @@ function _generatecode_model_constructor(
                 )))
             end
         end
+        # Adding initialised model to `_initilasiedmodels` cache.
         if isnothing(member.restrictparents)
             push!(block.args, Expr(
                 :if,
@@ -555,7 +608,7 @@ function _generatecode_model_constructor(
     end
     push!(call.args, :(references))
     push!(block.args, Expr(:(=), :model, call))
-    push!(block.args, :(updateparams!(model)))
+    push!(block.args, :(updateparams!(model; updatemembers=false)))
     push!(block.args, Expr(:return, :model))
     return Expr(:function, func_head, block)
 end
@@ -630,7 +683,7 @@ function _initmodel(
         _initialisedmodels::Dict{Symbol,Dict{Symbol,Any}},
         _namespace::String,
         _accumulatedparams::Dict{String,ClapeyronParam},
-        verbose::Bool = true,
+        verbose::Bool = false,
     )
     return model
 end
