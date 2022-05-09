@@ -6,8 +6,8 @@ UMRPR_SETUP = ModelOptions(
         parent=PR_SETUP,
         members=[
             ModelMember(:alpha, :MTAlpha),
-            ModelMember(:activity, :UMRRule),
-            ModelMember(:mixing, :UNIFAC),
+            ModelMember(:activity, :UNIFAC; groupcontribution_allowed=true),
+            ModelMember(:mixing, :UMRRule),
             ModelMember(:translation, :MTTranslation),
             ModelMember(:idealmodel, :BasicIdeal; groupcontribution_allowed=true),
         ],

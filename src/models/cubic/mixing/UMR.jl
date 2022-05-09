@@ -1,12 +1,17 @@
 abstract type UMRRuleModel <: MixingRule end
 
-struct UMRRule{γ} <: UMRRuleModel
-    components::Array{String,1}
-    activity::γ
-    references::Array{String,1}
-end
+UMRRule_SETUP = ModelOptions(
+        :UMRRule;
+        supertype=UMRRuleModel,
+        has_params=false,
+        references=["10.1021/ie049580p"],
+        members=[
+            ModelMember(:activity, :UNIFAC),
+        ],
+    )
 
-@registermodel UMRRule
+createmodel(UMRRule_SETUP; verbose=true)
+export UMRRule
 
 """
     UMRRule{γ} <: UMRRuleModel
@@ -37,14 +42,6 @@ ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - [gᴱ/RT]/0.53)
 ```
 """
 UMRRule
-export UMRRule
-function UMRRule(components::Vector{String}; activity = UNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
-    init_activity = activity(components;userlocations = activity_userlocations,verbose)   
-
-    references = ["10.1021/ie049580p"]
-    model = UMRRule(components, init_activity,references)
-    return model
-end
 
 function ab_premixing(::Type{PR},mixing::UMRRuleModel,Tc,pc,kij)
     Ωa, Ωb = ab_consts(PR)
