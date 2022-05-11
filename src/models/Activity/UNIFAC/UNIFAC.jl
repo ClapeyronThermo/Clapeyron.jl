@@ -1,24 +1,36 @@
-struct UNIFACParam <: EoSParam
-    A::PairParam{Float64}
-    B::PairParam{Float64}
-    C::PairParam{Float64}
-    R::SingleParam{Float64}
-    Q::SingleParam{Float64}
-end
-
 abstract type UNIFACModel <: ActivityModel end
 
-struct UNIFAC{c<:EoSModel} <: UNIFACModel
-    components::Array{String,1}
-    icomponents::UnitRange{Int}
-    groups::GroupParam
-    params::UNIFACParam
-    puremodel::EoSVectorParam{c}
-    references::Array{String,1}
-    unifac_cache::UNIFACCache
-end
+UNIFAC_SETUP = ModelOptions(
+        :UNIFAC;
+        supertype=UNIFACModel,
+        locations=["properties/critical.csv", "properties/molarmass.csv","Activity/UNIFAC/UNIFAC_unlike.csv","Activity/UNIFAC/UNIFAC_like.csv"],
+        grouplocations = ["Activity/UNIFAC/UNIFAC_groups.csv"],
+        inputparams=[
+            ParamField(:A, PairParam{Float64}),
+            ParamField(:B, PairParam{Float64}),
+            ParamField(:C, PairParam{Float64}),
+            ParamField(:R, SingleParam{Float64}),
+            ParamField(:Q, SingleParam{Float64}),
+        ],
+        params=[
+            ParamField(:A, PairParam{Float64}),
+            ParamField(:B, PairParam{Float64}),
+            ParamField(:C, PairParam{Float64}),
+            ParamField(:R, SingleParam{Float64}),
+            ParamField(:Q, SingleParam{Float64}),
+        ],
+        has_groups = true,
+        param_options=ParamOptions(
+            asymmetricparams=["A","B","C"],
+            ignore_missing_singleparams=["A","B","C"],
+        ),
+        members=[
+            ModelMember(:puremodel, :PR; split=true, groupcontribution_allowed=false),
+        ],
+        references=["10.1021/i260064a004"],
+    )
 
-@registermodel UNIFAC
+createmodel(UNIFAC_SETUP; verbose=true)
 const modUNIFAC = UNIFAC
 export UNIFAC
 
@@ -75,29 +87,6 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 2. Weidlich, U.; Gmehling, J. A modified UNIFAC model. 1. Prediction of VLE, hE, and.gamma..infin. Ind. Eng. Chem. Res. 1987, 26, 1372–1381.
 """
 UNIFAC
-
-function UNIFAC(components::Vector{String};
-    puremodel = PR,
-    userlocations = String[], 
-    pure_userlocations = String[],
-    verbose = false, kwargs...)
-    
-    groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; verbose=verbose)
-
-    params = getparams(groups, ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
-    A  = params["A"]
-    B  = params["B"]
-    C  = params["C"]
-    R  = params["R"]
-    Q  = params["Q"]
-    icomponents = 1:length(components)
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
-    packagedparams = UNIFACParam(A,B,C,R,Q)
-    references = String["10.1021/i260064a004"]
-    cache = UNIFACCache(groups,packagedparams)
-    model = UNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
-    return model
-end
 
 function activity_coefficient(model::UNIFACModel,V,T,z)
     return exp.(@f(lnγ_comb)+ @f(lnγ_res))

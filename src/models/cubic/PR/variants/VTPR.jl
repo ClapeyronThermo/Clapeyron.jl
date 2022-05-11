@@ -7,7 +7,7 @@ VTPR_SETUP = ModelOptions(
         members=[
             ModelMember(:alpha, :TwuAlpha),
             ModelMember(:activity, :VTPRUNIFAC; groupcontribution_allowed=true),
-            ModelMember(:mixing, :VTPRRule),
+            ModelMember(:mixing, :VTPRRule; groupcontribution_allowed=true),
             ModelMember(:translation, :RackettTranslation),
             ModelMember(:idealmodel, :BasicIdeal; groupcontribution_allowed=true),
         ],
