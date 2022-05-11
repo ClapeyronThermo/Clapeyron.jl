@@ -135,9 +135,15 @@ end
             @test Clapeyron.cubic_poly(system, p, T, z)[1][1] ≈ -0.0002475728429728521 rtol = 1e-6
             @test Clapeyron.cubic_abp(system, V, T, z)[1] ≈ 2.591962221523441 rtol = 1e-6
         end
+
+        @testset "Clausius" begin
+            system = Berthelot(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2945136000972637 rtol = 1e-6
+        end
+
         @testset "Berthelot" begin
             system = Berthelot(["ethane","undecane"])
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.3194357795336105 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5282310106210891 rtol = 1e-6
         end
     end
 
@@ -277,6 +283,11 @@ end
             system = PR(["methanol","benzene"];mixing = WSRule, activity=Wilson)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.669085674824878 rtol = 1e-6
         end
+    end
+
+    @testset "KU Models" begin
+        system = KU(["ethane","undecane"])
+        @test Clapeyron.a_res(system, V, T, z) ≈ -1.2261554720898895 rtol = 1e-6
     end
     @printline
 end
