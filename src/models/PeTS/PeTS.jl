@@ -100,6 +100,10 @@ function d(model::PeTSModel, V, T, z,_data=@f(data))
     return d_pets(T̃)
 end
 
+function d_pets(T̃)
+    return 1 - 0.127112544*exp(-3.052785558/T̃)
+end
+
 a_hs(model::PeTSModel,V,T,z,_data=@f(data)) = a_ref(model,V,T,z,_data) 
 
 function a_pert(model::PeTSModel, V, T, z,_data=@f(data))
