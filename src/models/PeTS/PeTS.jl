@@ -120,10 +120,34 @@ const PeTS_A = (
     -157.8773415,
     96.93736697)
 
-const PeTS_B =(0.664852128,
-2.10733079,
--9.597951213,
--17.37871193,
-30.17506222,
-209.3942909,
--353.2743581)
+const PeTS_B = (
+    0.664852128,
+    2.10733079,
+    -9.597951213,
+    -17.37871193,
+    30.17506222,
+    209.3942909,
+    -353.2743581)
+
+function lb_volume(model::PeTSModel,z=SA[1.0])
+    σ3,_,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
+    return m̄*N_A*σ3*π/6
+end
+
+function x0_volume_liquid(model::PeTSModel,T,z)
+    v_lb = lb_volume(model,z)
+    return v_lb*1.8
+end
+
+function p_scale(model::PeTSModel,z = SA[1.0])
+    σ3,ϵ,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
+    v = m̄*N_A*σ3
+    return R̄*ϵ/v
+end
+
+function T_scale(model::PeTSModel,z=SA[1.0])
+    σ3,ϵ,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
+    return ϵ
+end
+
+
