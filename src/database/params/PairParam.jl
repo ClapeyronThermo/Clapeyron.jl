@@ -194,3 +194,8 @@ function Base.:(*)(param::PairParameter, x::Number)
     values = param.values .* x
     return PairParam(param.name, param.components, values, param.diagvalues, param.ismissingvalues, param.sourcecsvs, param.sources)
 end
+
+function Base.:(^)(param::PairParameter, x::Number)
+    values = param.values .^ x
+    return PairParam(param.name, param.components, values, param.diagvalues, param.ismissingvalues, param.sourcecsvs, param.sources)
+end

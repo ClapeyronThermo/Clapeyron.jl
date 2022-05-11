@@ -19,14 +19,31 @@ PR_SETUP = ModelOptions(
         ],
         mappings=[
             ModelMapping([:pc], [:Pc], identity),
-            ModelMapping([:Tc, :pc, :k], [:a, :b], ab_premixing; self_in_args=true)
+            ModelMapping([:_model, :Tc, :pc, :k], [:a, :b], ab_premixing)
         ],
         members=[
-            ModelMember(:alpha, :PRAlpha),
-            ModelMember(:activity, :Nothing),
-            ModelMember(:mixing, :vdW1fRule),
-            ModelMember(:translation, :NoTranslation),
-            ModelMember(:idealmodel, :BasicIdeal; groupcontribution_allowed=true),
+            ModelMember(
+                :alpha,
+                :PRAlpha;
+                typeconstraint=:AlphaModel,
+            ),
+            ModelMember(
+                :activity,
+                :Nothing;
+                typeconstraint=:ActivityModel,
+                nothing_allowed=true,
+            ),
+            ModelMember(
+                :mixing,
+                :vdW1fRule;
+                typeconstraint=:MixingRule,
+            ),
+            ModelMember(
+                :idealmodel,
+                :BasicIdeal;
+                typeconstraint=:IdealModel,
+                groupcontribution_allowed=true,
+            ),
         ],
         references=["10.1021/I160057A011"],
         inputparamstype=:ABCubicInputParam,

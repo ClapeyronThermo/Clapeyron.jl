@@ -18,6 +18,16 @@ UNIFAC_SETUP = ModelOptions(
             ParamField(:C, PairParam{Float64}),
             ParamField(:R, SingleParam{Float64}),
             ParamField(:Q, SingleParam{Float64}),
+            ParamField(:r, SingleParam{Float64}),
+            ParamField(:q, SingleParam{Float64}),
+            ParamField(:q_p, SingleParam{Float64}),
+            ParamField(:m, SingleParam{Float64}),
+        ],
+        mappings=[
+            ModelMapping([:_groups, :R], :r, group_sum),
+            ModelMapping([:_groups, :Q], :q, group_sum),
+            ModelMapping([:_groups, :R], :q_p, (x -> x^(3/4)) ∘ group_sum),
+            ModelMapping(:_groups, :m, group_sum),
         ],
         has_groups = true,
         param_options=ParamOptions(
@@ -94,9 +104,9 @@ end
 
 function lnγ_comb(model::UNIFACModel,V,T,z)
     x = z ./ sum(z)
-    r =model.unifac_cache.r
-    q =model.unifac_cache.q
-    q_p = model.unifac_cache.q_p
+    r = model.params.r.values
+    q = model.params.q.values
+    q_p = model.params.q_p.values
     Φ = r/dot(x,r)
     Φ_p = q_p/dot(x,q_p)
     θ = q/dot(x,q)
@@ -105,12 +115,9 @@ function lnγ_comb(model::UNIFACModel,V,T,z)
 end
 
 function lnγ_SG(model::UNIFACModel,V,T,z)
-
     x = z ./ sum(z)
-
-    r =model.unifac_cache.r
-    q =model.unifac_cache.q
-
+    r = model.params.r.values
+    q = model.params.q.values
     Φ = r/dot(x,r)
     θ = q/dot(x,q)
     lnγ_SG = @. -5*q*(log(Φ/θ)+(1-Φ/θ))
@@ -122,13 +129,13 @@ function lnγ_res(model::UNIFACModel,V,T,z)
     _ψ = @f(Ψ)
     lnΓ_ = @f(lnΓ,_ψ)
     lnΓi_ = @f(lnΓi,_ψ)
-    lnγ_res_ =  [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
+    lnγ_res_ = [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
     return lnγ_res_
 end
 
 function lnΓ(model::UNIFACModel,V,T,z,ψ = @f(ψ))
     Q = model.params.Q.values
-    v  = model.groups.n_flattenedgroups
+    v = model.groups.n_flattenedgroups
     x = z ./ sum(z)
     X = sum(v[i][:]*x[i] for i ∈ @comps) ./ sum(sum(v[i][k]*x[i] for k ∈ @groups) for i ∈ @comps)
     θ = X.*Q / dot(X,Q)
@@ -138,7 +145,7 @@ end
 
 function lnΓi(model::UNIFACModel,V,T,z,ψ = @f(ψ))
     Q = model.params.Q.values
-    v  = model.groups.n_flattenedgroups
+    v = model.groups.n_flattenedgroups
     ψ = @f(Ψ)
     X = [v[i][:] ./ sum(v[i][k] for k ∈ @groups) for i ∈ @comps]
     θ = [X[i][:].*Q ./ sum(X[i][n]*Q[n] for n ∈ @groups) for i ∈ @comps]

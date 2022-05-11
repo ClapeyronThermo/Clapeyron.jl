@@ -4,22 +4,26 @@
 Part of `ModelOptions`. Used to define how source from csv is mapped to the target struct. The `source` and `target` should be defined in `inputparams` and `params` respecfully in `ModelOptions`.
 
 ## Fields
-- `source::Union{String,Vector{String}}`: The source headers from csv.
+- `source::Union{String,Vector{String}}`: The source headers from csv. There are special symbols that extract non-parameter inputs, but note that these arguments have to be propagated by the respective functions if they are composed.
+    - `:_model`: The model object itself. Note that it is inadvisable to access other params directly via getproperties on the model object as there is no guarantees that the values are up to date at the time of update. The intension is primarily for dispatch. If it is dependent on parameters, explicitly have them as arguments to the transformation function, or ensure that the parameters accessed are never changed.
+    - `:_groups`: Takes `model.groups`.
+    - `:_sites`: Takes `model.sites`
 - `target::Union{Symbol,Vector{Symbol}}`: The target parameters.
 - `transformation::function = identity`: The transformation from source to target.
-- `self_in_args::Bool = false`: If true, the first argument in the transformation function is the model object itself. Note that it is inadvisable to access other params directly via getproperties on the model object as there is no guarantees that the values are up to date at the time of update. The intension is primarily for dispatch. If it is dependent on parameters, explicitly have them as arguments to the transformation function, or ensure that the parameters accessed are never changed.
+- `source_cache::Vector{Any}: Storing references to objects so that `getfield` does not have to be called each time mapping is updated.
+- `target_cache::Vector{Any}: Storing references to objects so that `getfield` does not have to be called each time mapping is updated.
 """
 struct ModelMapping
     source::Vector{Symbol}
     target::Vector{Symbol}
     transformation::Function
-    self_in_args::Bool
+    source_cache::Vector{Any}
+    target_cache::Vector{Any}
 end
 function ModelMapping(
         source::Union{Vector{Symbol},Symbol},
         target::Union{Vector{Symbol},Symbol},
-        transformation::Function = identity;
-        self_in_args::Bool = false,
+        transformation::Function = identity,
     )
     if source isa Symbol
         source = [source]
@@ -31,7 +35,8 @@ function ModelMapping(
         source,
         target,
         transformation,
-        self_in_args,
+        Any[],
+        Any[],
     )
 end
 
@@ -56,13 +61,13 @@ Part of `ModelOptions`. This is used to specify the options for member models. N
 - `name::Symbol`: The name of this member. It will be used as the fieldname for the created model object.
 - `default_type::Symbol`: The default type for this member. Has to have a constructor with the same function signature. Symbol is used instead of the type to avoid circular reference.
 - `typeconstraint::Union{Symbol,Nothing} = nothing`: If not `nothing`, make sure that the type to input is `::Union{typeconstraint,Type{typeconstraint}}`.
-- `swappable::Bool = false`: If `true`, put argument `name` into the constructor signature to allow users to swap out member models from the default type. This is useful for, say, idealmodels.
+- `swappable::Bool = false`: If `true`, put argument `name` into the constructor signature to allow users to swap out member models from the default type. This is useful for, say, idealmodels, but should be set to `false` if the model very specifically depends on a particular combination of member models.
 - `split::Bool = false`: If `true`, create a vector of pure models of this type.
-- `nothing_allowed::Bool = false`: If `true`, the type constraint can be `Nothing`. Only relevant if `typeconstraint` is not `nothing`.
+- `nothing_allowed::Bool = false`: If `true`, the type constraint can be `Nothing`.
 - `groupcontribution_allowed::Bool = false`: If `true`, create fields for injecting group contribution arguments like `usergrouplocations` and `groupdefinitions` for this member. Note that the default does not have to be a group contribution method; just that if there is a possibility of switching to one.
 - `separate_namespace::Bool = true`: This is for namespace resolution of input parameter names from user-provided csv in `userlocations`. If `true`, all headers in the input csvs specified in `userlocations` should be prefixed with `{name}__`. Note that these prefixes do not nest (the `name` must be distinct per model, and so there need only be one level).
-- `overwritelocations::Union{Vector{String},Nothing} = nothing`: If the model wants to overwrite the array of locations from a location in the Clapeyron database specific for this model, they may do so here. This location is not passed down to subsequent member models.
-- `overwritegrouplocations::Union{Vector{String},Nothing} = nothing`: If the model wants to overwrite the array of grouplocations from a location in the Clapeyron database specific for this model, they may do so here. This location is not passed down to subsequent member models. Note that there is a check so that this only applies to the default type.
+- `overwritelocations::Union{Vector{String},Nothing} = nothing`: If the model wants to overwrite the array of locations from a location in the Clapeyron database specific for this model, they may do so here. This location is not passed down to subsequent member models. This only applies to the default model.
+- `overwritegrouplocations::Union{Vector{String},Nothing} = nothing`: If the model wants to overwrite the array of grouplocations from a location in the Clapeyron database specific for this model, they may do so here. This location is not passed down to subsequent member models. This only applies to the default model.
 - `restrictparents::Union{Symbol,Nothing} = nothing`: This is for namespoce resolution of member models. If `nothing`, any model with a member with this name will be assigned the same instantiated object. When ambiguity arises, say if two distinct `activity` models are used, provide a vector of types to specify where this member is applicable, making use of the `nameinparent` field as well for correct asignment.
 - `nameinparrent::Symbol = nothing`: If `nothing`, just take the given name. This is for when the name in member model is different from the name in current model, which allows multiple member models of the same type to be present in the main model.
 
@@ -472,7 +477,11 @@ function _generatecode_model_constructor(
             end
         end
         push!(block.args, :(merge!(_accumulatedparams, merge(rawparams, _accumulatedparams))))
-        push!(block.args, :((inputparams, params) = _initparams($(modeloptions.inputparamstype), $(modeloptions.paramstype), _accumulatedparams, mappings, _namespace)))
+        if modeloptions.has_groups
+            push!(block.args, :((inputparams, params) = _initparams(groups.flattenedgroups, $(modeloptions.inputparamstype), $(modeloptions.paramstype), _accumulatedparams, mappings, _namespace)))
+        else
+            push!(block.args, :((inputparams, params) = _initparams(components, $(modeloptions.inputparamstype), $(modeloptions.paramstype), _accumulatedparams, mappings, _namespace)))
+        end
     end
 
     # Member model initialisation.
@@ -717,7 +726,7 @@ function _initpuremodel(
             return _initialisedmodels[:_][nameinparent]
         end
     end
-    verbose && @info("Creating member pure models: $puremodels")
+    verbose && @info("Creating member pure models: $model")
     return EoSVectorParam(model(
         components;
         userlocations,
@@ -760,6 +769,7 @@ Strategy:
 - If no mapping is present, then the parameter is taken as-is from the raw/input params. Just point to the same param object.
 
 ## Arguments
+- `components::Vector{String}`: The list of components (or groups).
 - `Type{InputParamType}`: The type for the inputparm struct.
 - `Type{ParamType`: The type for the param struct.
 - `rawparams::Dict`: The dict returned from `getparams`.
@@ -770,6 +780,7 @@ Strategy:
 Tuple{InputParamType,ParamType}: The constructed params.
 """
 function _initparams(
+        components::Vector{String},
         ::Type{I}, 
         ::Type{P},
         rawparams::Dict,
@@ -840,15 +851,15 @@ function _initparams(
             index_param = findfirst(isequal(param), params_names)
             param_type = params_types[index_param]
             indices_inputparams = indexin(mappings[index_mapping].source, inputparams_names)
-            inputparams = [inputparams_params[index] for index ∈ indices_inputparams]
+            inputparams = [inputparams_params[index] for index ∈ filter(!isnothing, indices_inputparams)]
             sources = _get_sources(inputparams)
             if param_type <: SingleParam || param_type <: PairParam
                 # Initialise empty SingleParam or PairParam
-                push!(params_params, param_type(String(param), inputparams[1].components; sources))
+                push!(params_params, param_type(String(param), components; sources))
             elseif param_type <: AssocParam
                 # If AssocParam, just copy from one of the inputparams
                 # We assume inputparam is also an AssocParam
-                push!(params_params, Base.typename(inputparam_type).wrapper(first(inputparams), String(param); isdeepcopy=true, sources))
+                push!(params_params, Base.typename(inputparam_type).wrapper(components, String(param); isdeepcopy=true, sources))
             end
         end
     end
@@ -873,34 +884,45 @@ end
 function updateparams!(::Nothing; updatemembers::Bool=false)::Nothing end
 
 function updateparams!(
-        self::EoSModel,
+        model::EoSModel,
         inputparams::EoSParam,
         params::EoSParam,
         mappings::Vector{ModelMapping},
         updatemembers::Bool,
        )::Nothing
+    if updatemembers
+        for member in modelmembers(self)
+            updateparams!(getfield(self, member); updatemembers=false)
+        end
+    end
     for mapping ∈ filter(m -> !(m.transformation === identity),  mappings)
         # At the moment, we are stil constructing new ClapeyronParams,
         # then broadcast assigning the params to them. There might be
         # some optimisations possible here, but this will maintain
         # maximum compatibility with existing functions for now.
-        if mapping.self_in_args
-            outputs = mapping.transformation(self, [getfield(inputparams, f) for f ∈ mapping.source]...)
-        else
-            outputs = mapping.transformation([getfield(inputparams, f) for f ∈ mapping.source]...)
-        end
-        if typeof(outputs) <: ClapeyronParam
-            getfield(params, first(mapping.target)).values .= outputs.values
-        else
-            toupdates = [getfield(params, f) for f ∈ mapping.target]
-            for (output, toupdate) ∈ zip(outputs, toupdates)
-                toupdate.values .= output.values
+        if isempty(mapping.source_cache)
+            for arg in mapping.source
+                if arg === :_model
+                    push!(mapping.source_cache, model)
+                elseif arg === :_groups
+                    push!(mapping.source_cache, model.groups)
+                elseif arg === :_sites
+                    push!(mapping.source_cache, model.sites)
+                else
+                    push!(mapping.source_cache, getfield(inputparams, arg))
+                end
             end
         end
-    end
-    if updatemembers
-        for member in modelmembers(self)
-            updateparams!(getfield(self, member); updatemembers=false)
+        if isempty(mapping.target_cache)
+            append!(mapping.target_cache, [getfield(params, f) for f ∈ mapping.target])
+        end
+        outputs = mapping.transformation(mapping.source_cache...)
+        if outputs isa ClapeyronParam
+            first(mapping.target_cache).values .= outputs.values
+        else
+            for (output, target) ∈ zip(outputs, mapping.target_cache)
+                target.values .= output.values
+            end
         end
     end
 end
