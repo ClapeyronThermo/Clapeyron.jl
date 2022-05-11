@@ -152,8 +152,3 @@ function x0_crit_pure(model::KUModel)
     vc = model.params.Vc.values[1]
     (1.1, log10(vc))
 end
-#entonces, el factor de compresibilidad critico coincide para el metano, 
-#pero se desvia del valor experimental
-#a su vez, coincide con la descripción teórica del factor critico dependiente de Ωb.
-
-#pure_cubic_zc(model::KUModel) = kumar_zc(model)
