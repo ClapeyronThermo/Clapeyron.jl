@@ -3,7 +3,7 @@ abstract type UNIFACModel <: ActivityModel end
 UNIFAC_SETUP = ModelOptions(
         :UNIFAC;
         supertype=UNIFACModel,
-        locations=["properties/critical.csv", "properties/molarmass.csv","Activity/UNIFAC/UNIFAC_unlike.csv","Activity/UNIFAC/UNIFAC_like.csv"],
+        locations=["Activity/UNIFAC/UNIFAC_unlike.csv", "Activity/UNIFAC/UNIFAC_like.csv"],
         grouplocations = ["Activity/UNIFAC/UNIFAC_groups.csv"],
         inputparams=[
             ParamField(:A, PairParam{Float64}),
@@ -21,11 +21,11 @@ UNIFAC_SETUP = ModelOptions(
         ],
         has_groups = true,
         param_options=ParamOptions(
-            asymmetricparams=["A","B","C"],
-            ignore_missing_singleparams=["A","B","C"],
+            asymmetricparams=["A", "B", "C"],
+            ignore_missing_singleparams=["A", "B", "C"],
         ),
         members=[
-            ModelMember(:puremodel, :PR; split=true, groupcontribution_allowed=false),
+            ModelMember(:puremodel, :PR; split=true),
         ],
         references=["10.1021/i260064a004"],
     )
