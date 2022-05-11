@@ -19,14 +19,14 @@ struct Berthelot{T <: IdealModel,α,c,M} <: BerthelotModel
     idealmodel::T
     references::Array{String,1}
 end
-
 @registermodel Berthelot
+
 export Berthelot
 
 """
     Berthelot(components::Vector{String};
     idealmodel=BasicIdeal,
-    alpha = NoAlpha,
+    alpha = ClausiusAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
@@ -63,12 +63,13 @@ export Berthelot
 
 ## Description
 
-Berthelot Equation of state.
-
+Berthelot Equation of state. it uses the Volume-Pressure Based mixing rules, that is:
 ```
 a = 8*Pc*Vc^2
 b = Vc/3
+R = (8/3)*Pc*Vc/Tc
 P = RT/(V-Nb) + a•α(T)/V²
+α(T) = Tc/T
 ```
 
 ## References
@@ -109,12 +110,14 @@ function Berthelot(components::Vector{String}; idealmodel=BasicIdeal,
 end
 
 function ab_premixing(model::Type{<:BerthelotModel},mixing::MixingRule,Tc,pc,vc,kij)
+    _Tc = Tc.values
     _Vc = vc.values
     _pc = pc.values
-    @show _Vc
     components = vc.components
-    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. 3*_pc*_Vc*_Vc),kij)
+    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. 3*_pc*_Vc^2),kij)
     b = sigma_LorentzBerthelot(SingleParam("b",components, @. _Vc/3))
+    #a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
+    #b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
     return a,b
 end
 
@@ -124,19 +127,51 @@ end
 
 function a_res(model::BerthelotModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
-    Vc = 3*b̄
-    pcvc = ā*T/3/Vc
-    R = (8/3)*pcvc
+
+    V̄c = 3*b̄
+    #ā = 3*Pc*Vc^2*Tc
+    P̄c = dot(model.params.Pc.values,z)/n
+    T̄c = T*ā/(V̄c*V̄c*P̄c*3)
+   # if T̄c isa Float64
+   #     @show T̄c
+   # end
+    R = 8*P̄c*V̄c/(3*T̄c)
+    #@show R
     #R = R̄
     RT⁻¹ = 1/(R*T)
     ρt = (V/n+c̄)^(-1) # translated density
     ρ  = n/V
-    return -log(1+(c̄-b̄)*ρ) - ā*ρt*RT⁻¹
+    return (-log(1+(c̄-b̄)*ρ) - ā*ρt*RT⁻¹)
     #
     #return -log(V-n*b̄) - ā*n/(R̄*T*V) + log(V)
 end   
 
-function x0_crit_pure(model::CubicModel)
-    lb_v = lb_volume(model)
-    (1.0, log10(lb_v/0.3))
+function T_scale(model::BerthelotModel,z = SA[1.0])
+    comps = 1:length(z)
+    Tc = model.params.Tc.values
+    return sum(sqrt(Tc[i]*Tc[j])*z[i]*z[j] for i in comps for j in comps)/(sum(z)^2)
 end
+
+function p_scale(model::BerthelotModel,z = SA[1.0])
+    dot(model.params.Pc.values,z)/sum(z)
+end
+
+function x0_crit_pure(model::BerthelotModel)
+    lb_v = lb_volume(model)
+    (1.1, log10(lb_v*3))
+end
+
+function crit_pure(model::BerthelotModel) 
+    Tc = model.params.Tc.values[1]
+    Vc = model.params.Vc.values[1]
+    Pc = pressure(model,Vc,Tc)
+    #return Base.invoke(crit_pure,Tuple{EoSModel},model)
+    return (Tc,Pc,Vc)
+end
+
+
+#=
+z = PV/RT = 1/(1 - b/v) - a/RT2V2 
+P = RT/(v - b)  - a/TV
+
+=#

@@ -96,9 +96,9 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::KUAlphaMod
     if Tr <= 1
         α  = (1+m*(1-√(Tr))^n)^2
     else
+        #α = (1-m*(√(Tr)-1)^n)^2
         α = taylor_alpha_kumar(Tr,m,n)
     end
-
     return α
 end
 

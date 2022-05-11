@@ -7,18 +7,19 @@ Returns `(Tc, pc, Vc)` where `Tc` is the critical temperature (in K), `pc` is th
 """
 function crit_pure(model::EoSModel,x0=nothing)
     !isone(length(model)) && throw(error("$model have more than one component."))
-    T̄  = T_scale(model)
-    f! = ObjCritPure(model,T̄)
+
     #f! = (F,x) -> obj_crit(model, F, x[1]*T̄, exp10(x[2]))
     if x0 === nothing
         x0 = x0_crit_pure(model)
     end
     x01,x02 = x0
+    T̄  = T_scale(model)*one(x01*one(x02))
     if T̄ isa Base.IEEEFloat
         x0 = MVector((x01,x02))
     else
         x0 = SizedVector{2,typeof(T̄)}((x01,x02))
     end
+    f! = ObjCritPure(model,T̄)
     solver_res = Solvers.nlsolve(f!, x0)
     #print(solver_res)
     r  = Solvers.x_sol(solver_res)

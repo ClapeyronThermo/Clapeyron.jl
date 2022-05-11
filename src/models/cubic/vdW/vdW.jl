@@ -103,13 +103,4 @@ end
 
 cubic_Δ(model::vdWModel,z) = (0.0,0.0)
 
-#when either Δ1 or Δ2 is equal to zero, requires defining a_res
-function a_res(model::vdWModel, V, T, z,_data = data(model,V,T,z))
-    n,ā,b̄,c̄ = _data
-    RT⁻¹ = 1/(R̄*T)
-    ρt = (V/n+c̄)^(-1) # translated density
-    ρ  = n/V
-    return -log(1+(c̄-b̄)*ρ) - ā*ρt*RT⁻¹
-    #
-    #return -log(V-n*b̄) - ā*n/(R̄*T*V) + log(V)
-end   
+crit_pure(model::vdWModel) = crit_pure_tp(model)

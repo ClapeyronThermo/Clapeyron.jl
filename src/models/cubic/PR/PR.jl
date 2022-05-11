@@ -103,6 +103,7 @@ function cubic_Δ(model::PRModel,z)
     return (1+sqrt2,1-sqrt2)
 end
 
+crit_pure(model::PRModel) = crit_pure_tp(model)
 #=
  (-B2-2(B2+B)+A)
  (-B2-2B2-2B+A)

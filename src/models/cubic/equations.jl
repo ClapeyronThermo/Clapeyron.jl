@@ -67,14 +67,19 @@ end
 function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
     Δ1,Δ2 = cubic_Δ(model,z)
-    Δ1 = 1+√2
-    Δ2 = 1-√2
     ΔΔ = Δ1 - Δ2
     RT⁻¹ = 1/(R̄*T)
     ρt = (V/n+c̄)^(-1) # translated density
     ρ  = n/V
     b̄ρt = b̄*ρt
-    return -log1p((c̄-b̄)*ρ) - ā*RT⁻¹*log((Δ1*b̄ρt+1)/(Δ2*b̄ρt+1))/(ΔΔ*b̄)
+    a₁ = -log1p((c̄-b̄)*ρ)
+    if Δ1 == Δ2
+        return a₁ - ā*ρt*RT⁻¹
+    else
+        l1 = log1p(Δ1*b̄ρt)
+        l2 = log1p(Δ2*b̄ρt)
+        return a₁ - ā*RT⁻¹*(l1-l2)/(ΔΔ*b̄) 
+    end
 end
 
 function cubic_poly(model::ABCubicModel,p,T,z)
@@ -152,10 +157,11 @@ function x0_crit_pure(model::CubicModel)
     (1.0, log10(lb_v/0.3))
 end
 
-function crit_pure(model::ABCubicModel)
+#works with models with a fixed (Tc,Pc) coordinate
+function crit_pure_tp(model)
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
-    Vc = volume(model,Pc,Tc,SA[1.],phase=:v)
+    Vc = volume(model,Pc,Tc,SA[1.])
     return (Tc,Pc,Vc)
 end
 

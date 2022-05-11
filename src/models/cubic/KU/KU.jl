@@ -117,14 +117,14 @@ function ab_premixing(model::Type{<:KUModel},mixing,Tc,pc,vc,kij)
     _Tc = Tc.values
     _pc = pc.values
     _vc = vc.values
-    Zc = _pc .* _vc ./ (R̄ .* _tc)
+    Zc = _pc .* _vc ./ (R̄ .* _Tc)
     χ  = @. cbrt(sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Zc -20)/(32*sqrt(3)*Zc^2) 
     - (729*Zc^3 - 216*Zc + 8)/(1728*Zc^3))
     α  = @. (χ + (81*Zc^2 - 72*Zc + 4)/(144*χ*Zc^2) + (3*Zc - 2)/(12*Zc))
-    Ωa = @. Zc*((1 + 1.6*α - 0.8*α^2)^2 / ((1 - α^2)*(2 + 1.6*α)))
+    Ωa = @. Zc*(1 + 1.6*α - 0.8*α^2)^2/(1 - α)^2/(2 + 1.6*α)
     Ωb = @. Zc*α
     components = Tc.components
-    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
+    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2* _Tc^2 /_pc),kij)
     b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
     omega_a = SingleParam("Ωa",components,Ωa)
     omega_b = SingleParam("Ωb",components,Ωb)
@@ -145,5 +145,15 @@ function p_scale(model::KUModel,z=SA[1.0])
     return dot(model.params.Pc.values,z)/sum(z)
 end
 
-#delete when kumar branch is done
 kumar_zc(model::KUModel) = only(model.params.Pc.values)*only(model.params.Vc.values)/(R̄*only(model.params.Tc.values))
+
+function x0_crit_pure(model::KUModel)
+    lb_v = lb_volume(model)
+    vc = model.params.Vc.values[1]
+    (1.1, log10(vc))
+end
+#entonces, el factor de compresibilidad critico coincide para el metano, 
+#pero se desvia del valor experimental
+#a su vez, coincide con la descripción teórica del factor critico dependiente de Ωb.
+
+#pure_cubic_zc(model::KUModel) = kumar_zc(model)
