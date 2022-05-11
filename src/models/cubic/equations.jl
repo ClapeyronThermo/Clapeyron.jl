@@ -165,7 +165,7 @@ function crit_pure_tp(model)
     return (Tc,Pc,Vc)
 end
 
-function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
+function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=false)
     lb_v   =lb_volume(model,z)
     RTp = R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
