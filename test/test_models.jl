@@ -137,7 +137,7 @@ end
         end
 
         @testset "Clausius" begin
-            system = Berthelot(["ethane","undecane"])
+            system = Clausius(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2945136000972637 rtol = 1e-6
         end
 
