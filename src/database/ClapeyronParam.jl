@@ -9,6 +9,23 @@ abstract type ClapeyronParam end
 abstract type EoSParam end
 export EoSParam
 
+function Base.show(io::IO, mime::MIME"text/plain", params::EoSParam)
+    names = fieldnames(typeof(params))
+    if length(names) == 1
+        print(io, typeof(params), " for ", getfield(params, first(names)).components, " with ", length(names), " param:")
+    else
+        print(io, typeof(params), " for ", getfield(params, first(names)).components, " with ", length(names), " params:")
+    end
+    for name in names
+        param = getfield(params, name)
+        print(io, "\n ", param.name, "::", typeof(param))
+    end
+end
+
+function Base.show(io::IO, params::EoSParam)
+    print(io, typeof(params))
+end
+
 const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
 function pack_vectors(x::AbstractVector{<:AbstractVector})
