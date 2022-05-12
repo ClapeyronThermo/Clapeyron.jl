@@ -253,16 +253,12 @@ pᵢ = ∑νᵢₖ
 where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
-function group_sum(groups::GroupParam,::Nothing)
+function group_sum(groups::GroupParam, ::Nothing)
     v = groups.n_groups_cache
     return [sum(vi) for vi in v]
 end
 
-function group_sum(groups::GroupParam)
-    return SingleParam("m",
-                        groups.components,
-                        group_sum(groups, nothing))
-end
+group_sum(groups::GroupParam) = group_sum(groups, nothing)
 
 """
     group_matrix(groups::GroupParam)

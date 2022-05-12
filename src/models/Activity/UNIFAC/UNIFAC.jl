@@ -18,6 +18,8 @@ UNIFAC_SETUP = ModelOptions(
             ParamField(:C, PairParam{Float64}),
             ParamField(:R, SingleParam{Float64}),
             ParamField(:Q, SingleParam{Float64}),
+            # Above is groupwise params and bottom is componentwise params.
+            # Currently works only when #components == #groups.
             ParamField(:r, SingleParam{Float64}),
             ParamField(:q, SingleParam{Float64}),
             ParamField(:q_p, SingleParam{Float64}),
@@ -27,7 +29,7 @@ UNIFAC_SETUP = ModelOptions(
             ModelMapping([:_groups, :R], :r, group_sum),
             ModelMapping([:_groups, :Q], :q, group_sum),
             ModelMapping([:_groups, :R], :q_p, (x -> x^(3/4)) ∘ group_sum),
-            ModelMapping(:_groups, :m, group_sum),
+            ModelMapping([:_groups], :m, group_sum),
         ],
         has_groups = true,
         param_options=ParamOptions(

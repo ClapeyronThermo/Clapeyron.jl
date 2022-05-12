@@ -7,7 +7,8 @@ Part of `ModelOptions`. Used to define how source from csv is mapped to the targ
 - `source::Union{String,Vector{String}}`: The source headers from csv. There are special symbols that extract non-parameter inputs, but note that these arguments have to be propagated by the respective functions if they are composed.
     - `:_model`: The model object itself. Note that it is inadvisable to access other params directly via getproperties on the model object as there is no guarantees that the values are up to date at the time of update. The intension is primarily for dispatch. If it is dependent on parameters, explicitly have them as arguments to the transformation function, or ensure that the parameters accessed are never changed.
     - `:_groups`: Takes `model.groups`.
-    - `:_sites`: Takes `model.sites`
+    - `:_sites`: Takes `model.sites`.
+    - `:_nothing`: Place `nothing` into argument.
 - `target::Union{Symbol,Vector{Symbol}}`: The target parameters.
 - `transformation::function = identity`: The transformation from source to target.
 - `source_cache::Vector{Any}: Storing references to objects so that `getfield` does not have to be called each time mapping is updated.
@@ -917,12 +918,19 @@ function updateparams!(
             append!(mapping.target_cache, [getfield(params, f) for f ∈ mapping.target])
         end
         outputs = mapping.transformation(mapping.source_cache...)
+        println(typeof(outputs))
         if outputs isa ClapeyronParam
             first(mapping.target_cache).values .= outputs.values
-        else
+        elseif outputs isa Union{Tuple, Vector}
             for (output, target) ∈ zip(outputs, mapping.target_cache)
-                target.values .= output.values
+                if output isa ClapeyronParam
+                    target.values .= output.values
+                else
+                    target.values .= output
+                end
             end
+        else
+            first(mapping.target_cache).values .= outputs
         end
     end
 end
