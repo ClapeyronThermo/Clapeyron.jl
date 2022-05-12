@@ -135,11 +135,11 @@ function pair_mix(f::F,P::ClapeyronParam,Q::ClapeyronParam) where F
     #consider the two here:
     out.ismissingvalues .= missingP .& missingQ
     #but diagonals are all non-missing, by default:
-     for i in 1:N
+     for i in 1:size(out.ismissingvalues,1)
         out.ismissingvalues[i,i] = false
     end
     pair_mix!(f,out,q,out.ismissingvalues)
-    #P.ismissingvalues .= false
+    #out.ismissingvalues .= false
     return out
 end
 
