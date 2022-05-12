@@ -22,8 +22,8 @@ If a Single Parameter is passed as input, it will be converted to a Pair Paramet
 function kij_mix(f::F,param::ClapeyronParam,K = nothing) where F
     N = length(param.components)
     
-    param = PairParam(param)
-    p = param.values
+    out = PairParam(param)
+    p = out.values
     if K === nothing
         k = FillArrays.Zeros(N,N)
         missingK = FillArrays.Fill(true,N,N)
@@ -32,17 +32,15 @@ function kij_mix(f::F,param::ClapeyronParam,K = nothing) where F
         missingK = K.ismissingvalues
     end
 
-    
-    kij_mix!(f,p,k,param.ismissingvalues)
+    kij_mix!(f,p,k,out.ismissingvalues)
     #should consider the two.
-    param.ismissingvalues .= param.ismissingvalues .& missingK
+    out.ismissingvalues .= out.ismissingvalues .& missingK
         
     #but diagonals are all non-missing, by default:
     for i in 1:N
-        param.ismissingvalues[i,i] = false
+        out.ismissingvalues[i,i] = false
     end
-    #param.ismissingvalues .= false
-    return param
+    return out
 end
 
 #p,K: matrices
@@ -132,12 +130,12 @@ f(Pᵢ,Pⱼ,Qᵢⱼ) = g(Pᵢ,Pⱼ,_,_,Qᵢⱼ)
 function pair_mix(f::F,P::ClapeyronParam,Q::ClapeyronParam) where F
     out = PairParam(P)
     Q isa PairParameter || (Q = PairParam(Q))
-    p = out.values
+     = out.values
     q = Q.values
     missingP = out.ismissingvalues
     missingQ = Q.ismissingvalues
     
-    pair_mix!(f,out,q,out.ismissingvalues)
+    pair_mix!(f,p,q,out.ismissingvalues)
     #consider the two here:
     out.ismissingvalues .= missingP .& missingQ
     #but diagonals are all non-missing, by default:
