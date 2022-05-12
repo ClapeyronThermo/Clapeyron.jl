@@ -62,7 +62,7 @@ To remove the package, hit the ```]``` key to enter Pkg mode, then type
 ```julia
 Pkg> rm Clapeyron
 ```
-## Citing `Clapeyron.jl`
+## Citing Clapeyron
 
 If you are using Clapeyron for your research work, please cite the following:
 
