@@ -11,7 +11,7 @@ struct ogUNIFAC{c<:EoSModel} <: ogUNIFACModel
     icomponents::UnitRange{Int}
     groups::GroupParam
     params::ogUNIFACParam
-    puremodel::EoSVector{c}
+    puremodel::EoSVectorParam{c}
     references::Array{String,1}
     unifac_cache::UNIFACCache
 end

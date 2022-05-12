@@ -10,7 +10,7 @@ struct COSMOSAC02{c<:EoSModel} <: COSMOSAC02Model
     components::Array{String,1}
     icomponents::UnitRange{Int}
     params::COSMOSAC02Param
-    puremodel::EoSVector{c}
+    puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
     references::Array{String,1}
 end

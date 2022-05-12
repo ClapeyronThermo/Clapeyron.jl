@@ -11,7 +11,7 @@ struct NRTL{c<:EoSModel} <: NRTLModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     params::NRTLParam
-    puremodel::EoSVector{c}
+    puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
     references::Array{String,1}
 end

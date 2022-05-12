@@ -12,7 +12,7 @@ struct Wilson{c<:EoSModel} <: WilsonModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     params::WilsonParam
-    puremodel::EoSVector{c}
+    puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
     references::Array{String,1}
 end

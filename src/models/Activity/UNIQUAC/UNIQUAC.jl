@@ -12,7 +12,7 @@ struct UNIQUAC{c<:EoSModel} <: UNIQUACModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     params::UNIQUACParam
-    puremodel::EoSVector{c}
+    puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
     references::Array{String,1}
 end

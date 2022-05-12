@@ -11,7 +11,7 @@ struct VTPRUNIFAC{c<:EoSModel} <: VTPRUNIFACModel
     icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACParam
-    puremodel::EoSVector{c}
+    puremodel::EoSVectorParam{c}
     references::Array{String,1}
     unifac_cache::VTPRUNIFACCache
 end
