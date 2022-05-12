@@ -130,7 +130,7 @@ f(Pᵢ,Pⱼ,Qᵢⱼ) = g(Pᵢ,Pⱼ,_,_,Qᵢⱼ)
 function pair_mix(f::F,P::ClapeyronParam,Q::ClapeyronParam) where F
     out = PairParam(P)
     Q isa PairParameter || (Q = PairParam(Q))
-     = out.values
+    p = out.values
     q = Q.values
     missingP = out.ismissingvalues
     missingQ = Q.ismissingvalues
