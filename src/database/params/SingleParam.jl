@@ -9,40 +9,31 @@ end
 
 """
     SingleParam{T}
-
 Struct designed to contain single parameters. Basically a vector with some extra info.
-
 ## Creation:
 ```julia-repl
 julia> mw = SingleParam("molecular weight",["water","ammonia"],[18.01,17.03])
 SingleParam{Float64}("molecular weight") with 2 components:
  "water" => 18.01
  "ammonia" => 17.03
-
 julia> mw.values
 2-element Vector{Float64}:
  18.01
  17.03
-
 julia> mw.components
 2-element Vector{String}:
  "water"
  "ammonia"
-
 julia> mw2 = SingleParam(mw,"new name")
 SingleParam{Float64}("new name") with 2 components:
  "water" => 18.01
  "ammonia" => 17.03
-
 julia> has_oxigen = [true,false]; has_o = SingleParam(mw2,has_oxigen)
 SingleParam{Bool}("new name") with 2 components:
  "water" => true
  "ammonia" => false
-
 ```
-
 ## Example usage in models:
-
 ```
 function molecular_weight(model,molar_frac)
     mw = model.params.mw.values
@@ -92,21 +83,65 @@ function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     end
 end
 
-function SingleParam(x::SingleParameter,name=x.name)
-    return SingleParam(name, x.components,deepcopy(x.values), deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
+function SingleParam(x::SingleParam, name::String = x.name; isdeepcopy::Bool = true, sources::Vector{String} = x.sources)
+    if isdeepcopy
+        return SingleParam(
+            name,
+            x.components,
+            deepcopy(x.values),
+            deepcopy(x.ismissingvalues),
+            x.sourcecsvs,
+            sources
+        )
+    end
+    return SingleParam(
+        name,
+        x.components,
+        x.values,
+        x.ismissingvalues,
+        x.sourcecsvs,
+        sources
+    )
 end
+
+SingleParameter(x::SingleParam, name::String = x.name; isdeepcopy::Bool = true, sources::Vector{String} = x.sources) = SingleParam(x, name; isdeepcopy, sources)
 
 #a barebones constructor, in case we dont build from csv
 function SingleParam(
-    name::String,
-    components::Vector{String},
-    values::Vector{T},
-    sourcecsvs = String[],
-    sources = String[]
-    ;default = _zero(T)) where T
-    _values,_ismissingvalues = defaultmissing(values,default)
-    TT = eltype(_values)
-    return  SingleParam{TT}(name,components, _values, _ismissingvalues, sourcecsvs, sources)
+        name::String,
+        components::Vector{String},
+        values::Vector{T},
+        sourcecsvs = String[],
+        sources = String[]
+    ) where T
+    if any(ismissing, values)
+        _values,_ismissingvalues = defaultmissing(values)
+        TT = eltype(_values)
+    else
+        _values = values
+        _ismissingvalues = fill(false, length(values))
+        TT = T
+    end
+    return  SingleParam{TT}(name, components, _values, _ismissingvalues, sourcecsvs, sources)
+end
+
+# If no value is provided, just initialise empty param.
+function SingleParam{T}(
+        name::String,
+        components::Vector{String};
+        sources = String[]
+    ) where T <: AbstractString
+    values = fill("", length(components))
+    return SingleParam(name, components, values, String[], sources)
+end
+
+function SingleParam{T}(
+        name::String,
+        components::Vector{String};
+        sources = String[]
+    ) where T <: Number
+    values = zeros(T, length(components))
+    return SingleParam(name, components, values, String[], sources)
 end
 
 
@@ -162,5 +197,18 @@ function pack_vectors(params::Vararg{SingleParameter{T},N}) where {T<:Number,N}
     SingleParam(name,components,vals,missingvals,srccsv,src)
 end
 
+# Operations
+function Base.:(+)(param::SingleParameter, x::Number)
+    values = param.values .+ x
+    return SingleParam(param.name, param.components, values, param.ismissingvalues, param.sourcecsvs, param.sources)
+end
 
+function Base.:(*)(param::SingleParameter, x::Number)
+    values = param.values .* x
+    return SingleParam(param.name, param.components, values, param.ismissingvalues, param.sourcecsvs, param.sources)
+end
 
+function Base.:(^)(param::SingleParameter, x::Number)
+    values = param.values .^ x
+    return SingleParam(param.name, param.components, values, param.ismissingvalues, param.sourcecsvs, param.sources)
+end

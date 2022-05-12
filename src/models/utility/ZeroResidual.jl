@@ -13,13 +13,9 @@ Base.show(io::IO, mime::MIME"text/plain", model::ZeroResidual) = eosshow(io,mime
     idealmodel=BasicIdeal,
     ideal_userlocations=String[],
     verbose=false)
-
 ## Input parameters
-
 None
-
 ## Description
-
 Zero residual model.
 ```
     a_res(model,V,T,z) = 0
@@ -35,3 +31,4 @@ function ZeroResidual(components;
 end
 
 a_res(model::ZeroResidual,V,T,z) = 0.0
+export ZeroResidual
