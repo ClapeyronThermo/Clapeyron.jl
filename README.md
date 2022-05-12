@@ -8,7 +8,7 @@
 
 Welcome to Clapeyron! This module provides both a large library of thermodynamic models and a framework for one to easily implement their own models.
 
-We have recently submitted a manuscript to arxiv for those who'd like to find out more about how Clapeyron.jl works: https://arxiv.org/abs/2201.08927
+The official manuscript is in ACS. https://pubs.acs.org/doi/10.1021/acs.iecr.2c00326. There is also a preprint available at arxiv: https://arxiv.org/abs/2201.08927
 
 We have also ppresented at the JuliaCon 2021 conference! Feel free to take a look at our talk:
 
@@ -62,6 +62,26 @@ To remove the package, hit the ```]``` key to enter Pkg mode, then type
 ```julia
 Pkg> rm Clapeyron
 ```
+## Citing Clapeyron
+
+If you are using Clapeyron for your research work, please cite the following:
+
+```
+@article{Clapeyron-2022,
+    title={Clapeyron.jl: An Extensible, Open-Source Fluid Thermodynamics Toolkit},
+    author={Pierre J. Walker, Hon-Wa Yew, and Andrés Riedemann},
+    journal={Ind. Eng. Chem. Res.},
+    volume={XX},
+    number={XX},
+    pages={XX--XX},
+    year={2022},
+    publisher={American Chemical Society},
+    doi={doi/10.1021/acs.iecr.2c00326},
+    url={https://pubs.acs.org/doi/10.1021/acs.iecr.2c00326}
+}
+```
+
+## Package in active Development
 
 Note that at its current stage, Clapeyron is still in the early stages of development, and things may be moving around or changing rapidly, but we are very excited to see where this project may go!
 

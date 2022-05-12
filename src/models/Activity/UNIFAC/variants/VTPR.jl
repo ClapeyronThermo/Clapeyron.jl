@@ -85,23 +85,11 @@ function VTPRUNIFAC(components::Vector{String};
 end
 
 function VTPRUNIFACCache(groups::GroupParam)
-    comps = 1:length(groups.components)
-    comp_segment = zeros(length(comps))
-    v = groups.n_flattenedgroups
-    for i ∈ comps
-        res_i = 0.0
-        vi = v[i]
-        groups_i = groups.i_groups[i]
-        for idx ∈ 1:length(groups_i)
-            k = groups_i[idx]
-            res_i += vi[k]
-        end
-        comp_segment[i] = res_i
-    end
-    m = group_sum(groups)
+    m = group_sum(groups,nothing)
     return VTPRUNIFACCache(groups.components,m)
 end
 
 function excess_gibbs_free_energy(model::VTPRUNIFACModel,V,T,z)
-    return excess_g_res(model,V,T,z)*R̄*T
+    lnγ = lnγ_res(model,V,T,z)
+    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end

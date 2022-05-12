@@ -107,7 +107,6 @@ function each_split_model(param::GroupParam,I)
     components = param.components[I]
     groups = param.groups[I]
     n_groups = param.n_groups[I]
-    i_groups = param.i_groups[I]
     sourcecsvs = param.sourcecsvs
 
     #unique, but without allocating sets.
@@ -127,6 +126,7 @@ function each_split_model(param::GroupParam,I)
     i_flattenedgroups = 1:len_groups
     
     flattenedgroups = param.flattenedgroups[_idx]
+    i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
     n_flattenedgroups = Vector{Vector{Int64}}(undef,length(I))
     for (k,i) in pairs(I)
         pii = param.n_flattenedgroups[i]
@@ -247,9 +247,6 @@ function group_splitter(group,splitted_groups)
     end    
     return res
 end
-
-export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
-#
 
 split_model(model::EoSModel,subset=nothing) = auto_split_model(model,subset)
 

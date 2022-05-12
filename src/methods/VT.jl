@@ -144,6 +144,15 @@ function pip(model::EoSModel, V, T, z=SA[1.0])
     Π = V*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1])
 end
 
+function VT_mass_density(model::EoSModel,V,T,z=SA[1.0])
+    molar_weight = molecular_weight(model,z)
+    return molar_weight/V
+end
+
+function VT_molar_density(model::EoSModel,V,T,z=SA[1.0])
+    return sum(z)/V
+end
+
 #Vector Properties
 
 function VT_partial_property(model::EoSModel,V,T,z,property::ℜ) where {ℜ}

@@ -95,7 +95,6 @@ function x0_sat_pure(model,T,z=SA[1.0])
     with Tc, we can also know in what regime we are.
     in near critical pressures, we use directly vv0 = -2B
     and vl0 = 4*lb_v
-
     [1]
     DOI: 10.1007/s10910-007-9272-4
     Journal of Mathematical Chemistry, Vol. 43, No. 4, May 2008 (© 2007)
@@ -106,11 +105,13 @@ function x0_sat_pure(model,T,z=SA[1.0])
     _b = γ - B - vl
     Δ = _b*_b - 4*_c
     if isnan(vl) | (Δ < 0)
+         
         #fails on two ocassions:
         #near critical point, or too low.
         #old strategy
         x0l = 4*lb_v
         x0v = -2*B + 2*lb_v
+        
         return (log10(x0l),log10(x0v))
     end
     Δsqrt = sqrt(Δ)

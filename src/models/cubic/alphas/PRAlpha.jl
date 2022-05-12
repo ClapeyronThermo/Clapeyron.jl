@@ -22,7 +22,7 @@ export PRAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for `PR` EoS.
+Cubic alpha `(α(T))` model. Default for [`PR`](@ref) EoS.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ

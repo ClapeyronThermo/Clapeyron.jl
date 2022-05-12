@@ -21,6 +21,7 @@ end
 
 function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(p+T+first(z))
+    pset = one(_0)*p
     _nan = _0/_0
     logV0 = log(V0)
     lb_v = lb_volume(model,z)
@@ -29,8 +30,8 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         _V = exp(_V)
         _p,dpdV = p∂p∂V(model,_V,T,z)
         dpdV > 0 && return _nan #inline mechanical stability. 
-        abs(_p-p) < 3eps(p) && return zero(_V)
-        _Δ = (p-_p)/(_V*dpdV)
+        abs(_p-pset) < 3eps(pset) && return zero(_V)
+        _Δ = (pset-_p)/(_V*dpdV)
         return _Δ
     end
     function f_fixpoint(_V)
