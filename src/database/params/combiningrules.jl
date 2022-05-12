@@ -25,11 +25,19 @@ function kij_mix(f::F,param::ClapeyronParam,K = nothing) where F
     p = param.values
     if K === nothing
         k = FillArrays.Zeros(N,N)
+        missingK = FillArrays.Fill(true,N,N)
     else
         k = K.values
+        missingK = K.ismissingvalues
+    end
+    #should consider the two.
+    param.ismissingvalues .= param.ismissingvalues .& missingK
+    #but diagonals are all non-missing, by default:
+    for i in 1:N
+        param.ismissingvalues[i,i] = false
     end
     kij_mix!(f,p,k,param.ismissingvalues)
-    param.ismissingvalues .= false
+    #param.ismissingvalues .= false
     return param
 end
 
@@ -118,13 +126,21 @@ f(Pᵢ,Pⱼ,Qᵢⱼ) = g(Pᵢ,Pⱼ,_,_,Qᵢⱼ)
 ```
 """
 function pair_mix(f::F,P::ClapeyronParam,Q::ClapeyronParam) where F
-    P = PairParam(P)
+    out = PairParam(P)
     Q isa PairParameter || (Q = PairParam(Q))
-    p = P.values
+    p = out.values
     q = Q.values
-    pair_mix!(f,p,q,P.ismissingvalues)
-    P.ismissingvalues .= false
-    return P
+    missingP = out.ismissingvalues
+    missingQ = Q.ismissingvalues
+    #consider the two here:
+    out.ismissingvalues .= missingP .& missingQ
+    #but diagonals are all non-missing, by default:
+     for i in 1:N
+        out.ismissingvalues[i,i] = false
+    end
+    pair_mix!(f,out,q,out.ismissingvalues)
+    #P.ismissingvalues .= false
+    return out
 end
 
 function pair_mix!(f,p,q,B)
