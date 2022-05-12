@@ -35,7 +35,7 @@ If you are using Clapeyron for your research work, please cite the following:
 
 ```
 @article{Clapeyron-2022,
-    title={Julia: A fresh approach to numerical computing},
+    title={Clapeyron.jl: An Extensible, Open-Source Fluid Thermodynamics Toolkit},
     author={Pierre J. Walker, Hon-Wa Yew, and Andrés Riedemann},
     journal={Ind. Eng. Chem. Res.},
     volume={XX},
