@@ -22,26 +22,13 @@ PR_SETUP = ModelOptions(
             ModelMapping([:_model, :Tc, :pc, :k], [:a, :b], ab_premixing)
         ],
         members=[
-            ModelMember(
-                :alpha,
-                :PRAlpha;
-                typeconstraint=:AlphaModel,
+            ModelMember(:alpha, :PRAlpha;
+                typeconstraint=:AlphaModel
             ),
-            ModelMember(
-                :activity,
-                :Nothing;
-                typeconstraint=:ActivityModel,
-                nothing_allowed=true,
-            ),
-            ModelMember(
-                :mixing,
-                :vdW1fRule;
-                typeconstraint=:MixingRule,
-            ),
-            ModelMember(
-                :idealmodel,
-                :BasicIdeal;
-                typeconstraint=:IdealModel,
+            ModelMember(:activity, :Nothing; nothing_allowed=true),
+            ModelMember(:mixing, :vdW1fRule),
+            ModelMember(:translation, :NoTranslation),
+            ModelMember(:idealmodel, :BasicIdeal;
                 groupcontribution_allowed=true,
             ),
         ],

@@ -918,7 +918,6 @@ function updateparams!(
             append!(mapping.target_cache, [getfield(params, f) for f ∈ mapping.target])
         end
         outputs = mapping.transformation(mapping.source_cache...)
-        println(typeof(outputs))
         if outputs isa ClapeyronParam
             first(mapping.target_cache).values .= outputs.values
         elseif outputs isa Union{Tuple, Vector}
