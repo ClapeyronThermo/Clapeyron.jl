@@ -21,6 +21,7 @@ If a Single Parameter is passed as input, it will be converted to a Pair Paramet
 """
 function kij_mix(f::F,param::ClapeyronParam,K = nothing) where F
     N = length(param.components)
+    
     param = PairParam(param)
     p = param.values
     if K === nothing
@@ -30,13 +31,16 @@ function kij_mix(f::F,param::ClapeyronParam,K = nothing) where F
         k = K.values
         missingK = K.ismissingvalues
     end
+
+    
+    kij_mix!(f,p,k,param.ismissingvalues)
     #should consider the two.
     param.ismissingvalues .= param.ismissingvalues .& missingK
+        
     #but diagonals are all non-missing, by default:
     for i in 1:N
         param.ismissingvalues[i,i] = false
     end
-    kij_mix!(f,p,k,param.ismissingvalues)
     #param.ismissingvalues .= false
     return param
 end
@@ -132,13 +136,14 @@ function pair_mix(f::F,P::ClapeyronParam,Q::ClapeyronParam) where F
     q = Q.values
     missingP = out.ismissingvalues
     missingQ = Q.ismissingvalues
+    
+    pair_mix!(f,out,q,out.ismissingvalues)
     #consider the two here:
     out.ismissingvalues .= missingP .& missingQ
     #but diagonals are all non-missing, by default:
      for i in 1:size(out.ismissingvalues,1)
         out.ismissingvalues[i,i] = false
     end
-    pair_mix!(f,out,q,out.ismissingvalues)
     #out.ismissingvalues .= false
     return out
 end
