@@ -258,8 +258,11 @@ function group_sum(groups::GroupParam,::Nothing)
     return [sum(vi) for vi in v]
 end
 
-group_sum(groups::GroupParam) = group_sum(groups,nothing)
-
+function group_sum(groups::GroupParam)
+    return SingleParam("m",
+                        groups.components,
+                        group_sum(groups, nothing))
+end
 """
     group_matrix(groups::GroupParam)
 
