@@ -9,9 +9,7 @@ struct PairParameter{T,V<:AbstractMatrix{T},D} <: ClapeyronParam
 end
 """
     PairParam{T}
-
 Struct designed to contain pair data. used a matrix as underlying data storage.
-
 ## Creation:
 ```julia-repl
 julia> kij = PairParam("interaction params",["water","ammonia"],[0.1 0.0;0.1 0.0])
@@ -19,21 +17,17 @@ PairParam{Float64}["water", "ammonia"]) with values:
 2×2 Matrix{Float64}:
  0.1  0.0
  0.1  0.0
-
 julia> kij.values
 2×2 Matrix{Float64}:
  0.1  0.0
  0.1  0.0
-
 julia> kij.diagvalues
 2-element view(::Vector{Float64}, 
 1:3:4) with eltype Float64:
  0.1
  0.0
 ```
-
 ## Example usage in models:
-
 ```julia
 #lets compute ∑xᵢxⱼkᵢⱼ
 function alpha(model,x)
@@ -78,13 +72,55 @@ function PairParam(name::String,
     return PairParam(name, components,_values, diagvalues, _ismissingvalues, sourcecsvs, sources)
 end
 
-function PairParam(x::PairParameter,name::String=x.name)
-    values = deepcopy(x.values)
-    diagvalues = view(values,diagind(values))
-    return PairParam(name, x.components,values ,diagvalues, deepcopy(x.ismissingvalues), x.sourcecsvs, x.sources)
+# If no value is provided, just initialise empty param.
+function PairParam{T}(
+        name::String,
+        components::Vector{String};
+        sources::Vector{String} = String[]
+    ) where T <: AbstractString
+    values = fill("", length(components), length(components))
+    missingvals = fill(false, size(values))
+    return PairParam(name, components, values, missingvals, String[], sources)
 end
 
-function PairParam(x::SingleParameter,name::String=x.name)
+function PairParam{T}(
+        name::String,
+        components::Vector{String};
+        sources::Vector{String} = String[]
+    ) where T <: Number
+    values = zeros(T, length(components), length(components))
+    missingvals = fill(false, size(values)...)
+    return PairParam(name, components, values, missingvals, String[], sources)
+end
+
+function PairParam(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources)
+    if isdeepcopy
+        values = deepcopy(x.values)
+        diagvalues = view(values, diagind(values))
+        return PairParam(
+            name,
+            x.components,
+            values,
+            diagvalues,
+            deepcopy(x.ismissingvalues),
+            x.sourcecsvs,
+            sources
+        )
+    end
+    return PairParam(
+        name,
+        x.components,
+        x.values,
+        x.diagvalues,
+        x.ismissingvalues,
+        x.sourcecsvs,
+        sources
+    )
+end
+
+PairParameter(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources) = PairParam(x, name; isdeepcopy, sources)
+
+function PairParam(x::SingleParam,name::String=x.name)
     pairvalues = singletopair(x.values,missing)
     for i in 1:length(x.values)
         if x.ismissingvalues[i]
@@ -142,3 +178,18 @@ end
 const PackedSparsePairParam{T} = Clapeyron.PairParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, SparsePackedMofV{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, 
 true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}, Nothing} where T
 
+# Operations
+function Base.:(+)(param::PairParameter, x::Number)
+    values = param.values .+ x
+    return PairParam(param.name, param.components, values, param.ismissingvalues, param.sourcecsvs, param.sources)
+end
+
+function Base.:(*)(param::PairParameter, x::Number)
+    values = param.values .* x
+    return PairParam(param.name, param.components, values, param.diagvalues, param.ismissingvalues, param.sourcecsvs, param.sources)
+end
+
+function Base.:(^)(param::PairParameter, x::Number)
+    values = param.values .^ x
+    return PairParam(param.name, param.components, values, param.diagvalues, param.ismissingvalues, param.sourcecsvs, param.sources)
+end
