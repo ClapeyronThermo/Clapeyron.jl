@@ -80,7 +80,7 @@ function screening_length(model::MSAModel,V,T,z)
         Pn = ρ/Ω*sum(z[i]*σ[i]*Z[i]/(1+Γold*σ[i]) for i ∈ model.iions)/∑z
         #Q = @. (Z-σ^2*Pn*(π/(2Δ)))./(1+Γold*σ)
         ∑Q2x = _0
-        for i in ∈ model.iions
+        for i ∈ model.iions
             Qi = (Z[i]-σ[i]^2*Pn*(π/(2Δ)))/(1+Γold*σ[i])
             ∑Q2x += z[i]*Qi^2
         end
