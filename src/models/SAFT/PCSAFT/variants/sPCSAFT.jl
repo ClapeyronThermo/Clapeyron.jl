@@ -4,7 +4,7 @@ sPCSAFT_SETUP = ModelOptions(
         :sPCSAFT;
         supertype=sPCSAFTModel,
         parent=PCSAFT_SETUP,
-        locations=["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT", "properties/molarmass.csv"],
+        locations=["SAFT/PCSAFT/sPCSAFT/", "properties/molarmass.csv"],
         references=["10.1021/ie020753p"],
     )
 

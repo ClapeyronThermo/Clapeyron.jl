@@ -3,7 +3,7 @@ abstract type PCSAFTModel <: SAFTModel end
 PCSAFT_SETUP = ModelOptions(
         :PCSAFT;
         supertype=PCSAFTModel,
-        locations=["SAFT/PCSAFT","properties/molarmass.csv"],
+        locations=["SAFT/PCSAFT/","properties/molarmass.csv"],
         inputparams=[
               ParamField(:Mw, SingleParam{Float64}),
               ParamField(:m, SingleParam{Float64}),
