@@ -11,7 +11,7 @@ permissions:
   contents: write
 jobs:
   TagBot:
-    if: github.event_name == 'workflow_dispatch' || github.actor == 'JuliaTagBot' || "contains(github.event.head_commit.message, 'clapeyron manual tag')"
+    if: github.event_name == 'workflow_dispatch' || github.actor == 'JuliaTagBot'
     runs-on: ubuntu-latest
     steps:
       - uses: JuliaRegistries/TagBot@v1
