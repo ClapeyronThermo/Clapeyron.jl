@@ -9,9 +9,7 @@ struct PairParameter{T,V<:AbstractMatrix{T},D} <: ClapeyronParam
 end
 """
     PairParam{T}
-
 Struct designed to contain pair data. used a matrix as underlying data storage.
-
 ## Creation:
 ```julia-repl
 julia> kij = PairParam("interaction params",["water","ammonia"],[0.1 0.0;0.1 0.0])
@@ -19,21 +17,17 @@ PairParam{Float64}["water", "ammonia"]) with values:
 2×2 Matrix{Float64}:
  0.1  0.0
  0.1  0.0
-
 julia> kij.values
 2×2 Matrix{Float64}:
  0.1  0.0
  0.1  0.0
-
 julia> kij.diagvalues
 2-element view(::Vector{Float64}, 
 1:3:4) with eltype Float64:
  0.1
  0.0
 ```
-
 ## Example usage in models:
-
 ```julia
 #lets compute ∑xᵢxⱼkᵢⱼ
 function alpha(model,x)
@@ -85,7 +79,7 @@ function PairParam{T}(
         sources::Vector{String} = String[]
     ) where T <: AbstractString
     values = fill("", length(components), length(components))
-    missingvals = fill(false, size(values)...)
+    missingvals = fill(false, size(values))
     return PairParam(name, components, values, missingvals, String[], sources)
 end
 
@@ -95,7 +89,7 @@ function PairParam{T}(
         sources::Vector{String} = String[]
     ) where T <: Number
     values = zeros(T, length(components), length(components))
-    missingvals = fill(false, size(values)...)
+    missingvals = fill(false, size(values))
     return PairParam(name, components, values, missingvals, String[], sources)
 end
 

@@ -74,8 +74,9 @@ base --> database(params)  -|-> split_model --> methods -|-> models
 include("models/types.jl") #type hierarchy
 
 #Basic utility EoS
-include("models/cached/SpecialComp.jl")
-include("models/cached/EoSVectorParam.jl")
+include("models/utility/SpecialComp.jl")
+include("models/utility/EoSVectorParam.jl")
+include("models/utility/ZeroResidual.jl")
 
 include("models/setup.jl")
 include("models/ideal/ideal.jl")
@@ -84,6 +85,7 @@ include("models/ideal/MonomerIdeal.jl")
 include("models/ideal/ReidIdeal.jl")
 include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
+
 
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")

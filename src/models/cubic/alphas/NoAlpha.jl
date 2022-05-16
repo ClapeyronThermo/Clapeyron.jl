@@ -1,13 +1,13 @@
 abstract type NoAlphaModel <: AlphaModel end
 
-BasicIdeal_SETUP = ModelOptions(
+NoAlpha_SETUP = ModelOptions(
         :NoAlpha;
         supertype=NoAlphaModel,
         has_components=false,
         has_params=false,
     )
 
-createmodel(BasicIdeal_SETUP; verbose=true)
+createmodel(NoAlpha_SETUP; verbose=true)
 
 export NoAlpha
 

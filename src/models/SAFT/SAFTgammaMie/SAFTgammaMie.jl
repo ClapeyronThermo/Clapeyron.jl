@@ -91,7 +91,7 @@ function SAFTgammaMie(components;
     
     mix_segment!(groups,shapefactor.values,gc_segment.values)
     
-    segment = SingleParam("segment",components,group_sum(groups))
+    segment = SingleParam("segment",components,group_sum(groups,nothing))
     
     gc_sigma = sigma_LorentzBerthelot(params["sigma"])  
     gc_sigma.values .*= 1E-10

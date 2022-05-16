@@ -1,8 +1,6 @@
 """
     ClapeyronParam
-
 Abstract type corresponding to a Clapeyron parameter.
-
 it has to be splittable (via [`split_model`](@ref)) and have a `components` field
 """
 abstract type ClapeyronParam end

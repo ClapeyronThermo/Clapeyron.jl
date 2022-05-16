@@ -1,7 +1,9 @@
-
 """
     AssocParam{T}
+<<<<<<< HEAD
 
+=======
+>>>>>>> 86881673672b83c3210345333b2bcabaffbfdab4
 Struct holding association parameters.
 """
 struct AssocParam{T} <: ClapeyronParam
@@ -45,48 +47,6 @@ function AssocParam(x::AssocParam, name::String = x.name; isdeepcopy = true, sou
         sources
     )
 end
-
-# function AssocParam{T}(x::AssocParam, v::Matrix{Matrix{T}}) where T
-#     return AssocParam{T}(
-#         x.name,
-#         x.components
-#         Compressed4DMatrix(v),
-#         x.sites,
-#         x.sourcecsvs,
-#         x.sources)
-# end
-
-# function AssocParam{T}(name::String, components::Vector{String}) where T
-#     n = length(components)
-#     return AssocParam{T}(name, 
-#         components,
-#         Compressed4DMatrix{T}(),
-#         [String[] for _ ∈ 1:n], 
-#         String[],
-#         String[])
-# end
-
-# # If no value is provided, just initialise empty param.
-# function AssocParam(
-#         ::Type{T},
-#         name::String,
-#         components::Vector{String}
-#         sites::Vector{Vector{String}};
-#         sources = String[]
-#     ) where T <: AbstractString
-#     values = fill("", length(components))
-#     return AssocParam{T}(name, components, values, String[], sources)
-# end
-
-# function AssocParam(
-#         ::Type{T},
-#         name::String,
-#         components::Vector{String};
-#         sources = String[]
-#     ) where T <: Number
-#     values = zeros(T, length(components))
-#     return AssocParam{T}(name, components, values, String[], sources)
-# end
 
 function Base.show(io::IO, mime::MIME"text/plain", param::AssocParam{T}) where T
     print(io, "AssocParam{", string(T), "}")
