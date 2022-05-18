@@ -479,7 +479,7 @@ function _generatecode_model_constructor(
                 push!(block.args, :(rawparams = getparams(components, locations, param_options; userlocations, verbose)))
             end
         end
-        push!(block.args, :(merge!(_accumulatedparams, merge(rawparams, _accumulatedparams))))
+        push!(block.args, :(_accumulatedparams = merge!(rawparams, _accumulatedparams)))
         if modeloptions.has_groups
             push!(block.args, :((inputparams, params) = _initparams(groups.flattenedgroups, $(modeloptions.inputparamstype), $(modeloptions.paramstype), _accumulatedparams, mappings, _namespace)))
         else
@@ -1135,9 +1135,14 @@ begin
         idealmodel_groupdefinitions = GroupDefinition[], 
         _overwritelocations::Union{Vector{String}, Nothing} = nothing, 
         _overwritegrouplocations::Union{Vector{String}, Nothing} = nothing, 
-        _initialisedmodels::Dict{Symbol, Dict{Symbol,Any}} = Dict{Symbol, Dict{Symbol, Any}}(:_ => Dict{Symbol, Any}()), _namespace::String = "", _accumulatedparams::Dict{String, ClapeyronParam} = Dict{String, ClapeyronParam}(), _ismembermodel::Bool = false)
+        _initialisedmodels::Dict{Symbol, Dict{Symbol,Any}} = Dict{Symbol, Dict{Symbol, Any}}(:_ => Dict{Symbol, Any}()), _namespace::String = "", 
+        _accumulatedparams::Dict{String, ClapeyronParam} = Dict{String, ClapeyronParam}(), 
+        _ismembermodel::Bool = false)
+
         mappings = ModelMapping[ModelMapping([:m], [:segment], identity, Any[], Any[]), ModelMapping([:sigma], [:sigma], Clapeyron.sigma_LorentzBerthelot ∘ Clapeyron.var"#416#417"(), Any[], Any[]), ModelMapping([:epsilon, :k], [:epsilon], Clapeyron.epsilon_LorentzBerthelot, Any[], Any[])]
+        
         locations = ["SAFT/PCSAFT/sPCSAFT/", "properties/molarmass.csv"]
+        
         if !(isnothing(_overwritelocations))
             locations = _overwritelocations
         end
