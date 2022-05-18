@@ -1,9 +1,5 @@
 """
     AssocParam{T}
-<<<<<<< HEAD
-
-=======
->>>>>>> 86881673672b83c3210345333b2bcabaffbfdab4
 Struct holding association parameters.
 """
 struct AssocParam{T} <: ClapeyronParam
@@ -14,6 +10,8 @@ struct AssocParam{T} <: ClapeyronParam
     sourcecsvs::Array{String,1}
     sources::Array{String,1}
 end
+
+components(x::AssocParam) = x.components
 
 function AssocParam(
         name::String,

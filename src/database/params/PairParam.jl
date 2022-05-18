@@ -51,6 +51,7 @@ Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T
 Base.setindex!(param::PairParameter,val,i) = setindex!(param.values,val,i,i)
 Base.setindex!(param::PairParameter,val,i,j) = setindex!(param.values,val,i,j)
 #TODO: enforce optional symmetry
+components(x::PairParameter) = x.components
 
 PairParam(name,components,values,diagvals, missingvals,src,sourcecsv) = PairParameter(name,components,values,diagvals,missingvals,src,sourcecsv)
 

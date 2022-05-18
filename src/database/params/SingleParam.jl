@@ -51,7 +51,8 @@ Base.@propagate_inbounds Base.getindex(param::SingleParameter{T,<:AbstractVector
 LinearAlgebra.dot(param::SingleParameter,x::AbstractVector) = dot(param.values,x)
 LinearAlgebra.dot(x::AbstractVector,param::SingleParameter) = dot(x,param.values)
 Base.setindex!(param::SingleParameter,val,i) = setindex!(param.values,val,i)
- 
+components(x::SingleParameter) = x.components
+
 SingleParam(name,components,values,missingvals,src,sourcecsv) = SingleParameter(name,components,values,missingvals,src,sourcecsv)
 function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})::SingleParam{String}
     values = String.(param.values)
