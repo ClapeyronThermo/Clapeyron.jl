@@ -213,7 +213,7 @@ struct ModelOptions
     has_groups::Bool
     param_options::Union{ParamOptions,Nothing}
     assoc_options::Union{AssocOptions,Nothing}
-    references::Vector{String}
+    references::Union{Vector{String},Nothing}
     inputparamstype::Symbol
     paramstype::Symbol
 end
@@ -272,7 +272,6 @@ function ModelOptions(
         isnothing(has_components) && (has_components = true)
         isnothing(has_sites) && (has_sites = false)
         isnothing(has_groups) && (has_groups = false)
-        isnothing(references) && (references = String[])
     end
     isnothing(paramstype) && (paramstype = Symbol(name, :Param))
     if isnothing(inputparamstype)
@@ -351,13 +350,9 @@ function _generatecode_model_struct(modeloptions::ModelOptions)::Expr
     end
 
     block = Expr(:block)
-    push!(block.args, :(components::Vector{String}))
-    if modeloptions.has_groups
-        push!(block.args, :(groups::GroupParam))
-    end
-    if modeloptions.has_sites
-        push!(block.args, :(sites::SiteParam))
-    end
+    modeloptions.has_components && push!(block.args, :(components::Vector{String}))
+    modeloptions.has_groups && push!(block.args, :(groups::GroupParam))
+    modeloptions.has_sites && push!(block.args, :(sites::SiteParam))
     if modeloptions.has_params
         push!(block.args, :(inputparams::$(modeloptions.inputparamstype)))
         push!(block.args, :(params::$(modeloptions.paramstype)))
@@ -373,9 +368,14 @@ function _generatecode_model_struct(modeloptions::ModelOptions)::Expr
     if modeloptions.has_sites
         push!(block.args, :(assoc_options::AssocOptions))
     end
-    push!(block.args, :(references::Vector{String}))
-
+    if modeloptions.references !== nothing
+        push!(block.args, :(references::Vector{String}))
+    end
     return Expr(:struct, false, Expr(:<:, defheader, typestatement), block)
+end
+
+function is_empty_model(model::ModelOptions)
+    return !(model.has_sites | model.has_groups | model.has_components | model.has_params | !isnothing(model.references))
 end
 
 """
@@ -447,14 +447,10 @@ function _generatecode_model_constructor(
     push!(parameters.args, Expr(:kw, :(_ismembermodel::Bool), :false))
     push!(func_head.args, parameters)
     # Now positional args
-    if modeloptions.has_components
-        # `components` is mandatory
-        push!(func_head.args, :(components::Union{String,Vector{String}}))
-    else
-        # `components` is optional
-        push!(func_head.args, Expr(:kw, :(components::Union{String,Vector{String}}), :(String[])))
-    end
-
+    
+    # `components` is mandatory
+    push!(func_head.args, :(components::Union{String,Vector{String}}))
+    
     # Creating function body
     block = Expr(:block)
     if modeloptions.has_groups
@@ -600,7 +596,9 @@ function _generatecode_model_constructor(
     # Create object
     call = Expr(:call)
     push!(call.args, modeloptions.name)
-    push!(call.args, :(components))
+    if modeloptions.has_components
+        push!(call.args, :(components))
+    end
     if modeloptions.has_groups
         push!(call.args, :(groups))
     end
@@ -618,7 +616,9 @@ function _generatecode_model_constructor(
     if modeloptions.has_sites
         push!(call.args, :(assoc_options))
     end
-    push!(call.args, :(references))
+    if modeloptions.references !== nothing
+        push!(call.args, :(references))
+    end
     push!(block.args, Expr(:(=), :model, call))
     push!(block.args, :(updateparams!(model; updatemembers=false)))
     push!(block.args, Expr(:return, :model))
@@ -993,7 +993,6 @@ function _has_groups_expr(modeloptions::ModelOptions)::Expr
         end
     else
         return quote
-            has_groups(::Type{<:$(modeloptions.name)}) = false
             function Base.show(io::IO, mime::MIME"text/plain", model::$(modeloptions.name))
                 return eosshow(io, mime, model)
             end
@@ -1003,11 +1002,19 @@ function _has_groups_expr(modeloptions::ModelOptions)::Expr
 end
 
 function _has_sites_expr(modeloptions::ModelOptions)::Expr
-    return :(has_sites(::Type{<:$(modeloptions.name)}) = $(modeloptions.has_sites))
+    if modeloptions.has_sites
+        return :(has_sites(::Type{<:$(modeloptions.name)}) = $(modeloptions.has_sites))
+    else
+        return ∅_expr
+    end
 end
 
 function _length_expr(modeloptions::ModelOptions)::Expr
-    return :(Base.length(model::$(modeloptions.name)) = Base.length(model.components))
+    if modeloptions.has_components
+        return :(Base.length(model::$(modeloptions.name)) = Base.length(model.components))
+    else
+        return ∅_expr
+    end
 end
 
 function _short_show_expr(modeloptions::ModelOptions)::Expr
