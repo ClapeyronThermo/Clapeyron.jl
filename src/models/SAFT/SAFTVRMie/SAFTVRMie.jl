@@ -89,7 +89,7 @@ function x0_volume_liquid(model::SAFTVRMieModel,T,z)
 end
 
 function data(model::SAFTVRMieModel, V, T, z)
-    m̄ = dot(z,model.params.segment.values)
+    m̄ = dot(z,model.params.segment)
     _d = @f(d)
     ζi = @f(ζ0123,_d)
     _ζ_X,σ3x = @f(ζ_X_σ3,_d,m̄)
@@ -133,7 +133,7 @@ function ρ_S(model::SAFTVRMieModel, V, T, z, m̄ = dot(z,model.params.segment.v
 end
 
 function ζ0123(model::SAFTVRMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params.segment.values))
-    m = model.params.segment.values
+    m = model.params.segment
     _0 = zero(V+T+first(z))
     ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
     for i ∈ 1:length(z)
@@ -190,10 +190,10 @@ end
 =#
 
 function d(model::SAFTVRMieModel, V, T, z)
-    _ϵ = model.params.epsilon.diagvalues
-    _σ = model.params.sigma.diagvalues
-    _λa = model.params.lambda_a.diagvalues
-    _λr = model.params.lambda_r.diagvalues
+    _ϵ = model.params.epsilon
+    _σ = model.params.sigma
+    _λa = model.params.lambda_a
+    _λr = model.params.lambda_r
     u = SAFTVRMieconsts.u
     w = SAFTVRMieconsts.w
     _0 = zero(T+first(z))
@@ -261,11 +261,11 @@ function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d), m̄ = dot(z,model.p
     return kρS*_ζ_X,σ3_x
 end
 =#
-function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d),m̄ = dot(z,model.params.segment.values))
-    m = model.params.segment.values
+function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d),m̄ = dot(z,model.params.segment))
+    m = model.params.segment
     m̄ = dot(z, m)
     m̄inv = 1/m̄
-    σ = model.params.sigma.values
+    σ = model.params.sigma
     ρS = N_A/V*m̄
     comps = 1:length(z)
     _ζ_X = zero(V+T+first(z))
@@ -447,8 +447,8 @@ function f123456(model::SAFTVRMieModel, V, T, z, α)
     #return sum(ϕ[i+1][m]*α^i for i ∈ 0:3)/(1+∑(ϕ[i+1][m]*α^(i-3) for i ∈ 4:6))
 end
 
-function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma.values)
-    m = model.params.segment.values
+function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma)
+    m = model.params.segment
     m̄ = dot(z, m)
     m̄inv = 1/m̄
     ρS = N_A/V*m̄
@@ -617,8 +617,8 @@ function KHS_fdf(model::SAFTVRMieModel, V, T, z,ζ_X_,ρ_S_ = @f(ρ_S))
 end
 
 function ∂a_2╱∂ρ_S(model::SAFTVRMieModel,V, T, z, i)
-    λr = model.params.lambda_r.diagvalues
-    λa = model.params.lambda_a.diagvalues
+    λr = model.params.lambda_r#.diagvalues
+    λa = model.params.lambda_a#.diagvalues
     x_0ij = @f(x_0,i,i)
     ζ_X_ = @f(ζ_X)
     ρ_S_ = @f(ρ_S)
@@ -648,7 +648,7 @@ function I(model::SAFTVRMieModel, V, T, z,TR,_data = @f(data))
 end
 
 function Δ(model::SAFTVRMieModel, V, T, z, i, j, a, b,_data = @f(data))
-    ϵ = model.params.epsilon.values
+    ϵ = model.params.epsilon
     TR = T/ϵ[i,j]
     _I = @f(I,TR,_data)
     ϵ_assoc = model.params.epsilon_assoc.values
@@ -662,11 +662,11 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
     _d,ρS,ζi,_ζ_X,_ζst,_,m̄ = _data
     comps = @comps
     ∑z = ∑(z)
-    m = model.params.segment.values
-    _ϵ = model.params.epsilon.values
-    _λr = model.params.lambda_r.values
-    _λa = model.params.lambda_a.values
-    _σ = model.params.sigma.values
+    m = model.params.segment
+    _ϵ = model.params.epsilon
+    _λr = model.params.lambda_r
+    _λa = model.params.lambda_a
+    _σ = model.params.sigma
     m̄inv = 1/m̄
     a₁ = zero(V+T+first(z))
     a₂ = a₁
@@ -787,11 +787,11 @@ function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     #but on GC models, @comps != @groups
     #if we pass Xgc instead of z, the equation is exactly the same.
     #we need to add the divide the result by sum(z) later.
-    m = model.params.segment.values
-    _ϵ = model.params.epsilon.values
-    _λr = model.params.lambda_r.values
-    _λa = model.params.lambda_a.values
-    _σ = model.params.sigma.values
+    m = model.params.segment
+    _ϵ = model.params.epsilon
+    _λr = model.params.lambda_r
+    _λa = model.params.lambda_a
+    _σ = model.params.sigma
     m̄inv = 1/m̄
     a₁ = zero(V+T+first(z))
     a₂ = a₁
@@ -885,11 +885,11 @@ function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     l = length(z)
     comps = 1:l
     ∑z = ∑(z)
-    m = model.params.segment.values
-    _ϵ = model.params.epsilon.values
-    _λr = model.params.lambda_r.values
-    _λa = model.params.lambda_a.values
-    _σ = model.params.sigma.values
+    m = model.params.segment
+    _ϵ = model.params.epsilon
+    _λr = model.params.lambda_r
+    _λa = model.params.lambda_a
+    _σ = model.params.sigma
     m̄inv = 1/m̄
     a₁ = zero(V+T+first(z))
     a₂ = a₁
