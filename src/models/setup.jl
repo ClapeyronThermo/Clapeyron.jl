@@ -1013,7 +1013,7 @@ function _length_expr(modeloptions::ModelOptions)::Expr
     if modeloptions.has_components
         return :(Base.length(model::$(modeloptions.name)) = Base.length(model.components))
     else
-        return ∅_expr
+        return :(Clapeyron.components(model::$(modeloptions.name)) = nothing)
     end
 end
 

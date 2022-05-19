@@ -26,6 +26,7 @@ function kij_mix(f::F,param::ClapeyronParam,K = nothing) where F
         k = FillArrays.Zeros(N,N)
         k_missing = FillArrays.Fill(true,N,N)
         K = PairParameter(param.name,param.components,k,nothing,k_missing,param.sourcecsvs,param.sources)
+    end
     return kij_mix!(f,out,K)
 end
 

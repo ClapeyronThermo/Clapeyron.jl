@@ -1,6 +1,24 @@
 abstract type EoSModel end
 export EoSModel
 
+groups(model::EoSModel) = model.groups
+components(model::EoSModel) = model.components
+components(model) = nothing
+
+function eos_length_error(model,l,lz)
+    throw(DimensionMismatch("EoS Model has length $l, molar amount vector has length $lz"))
+end
+
+function eos_length_check(model,z)
+    components(model) === nothing && return nothing  
+    lz = length(z)
+    lm = length(model)
+    if !(lm == lz)
+        eos_length_error(model,lm,lz)
+    end
+    return nothing
+end
+
 """
     eos(model::EoSModel, V, T, z=SA[1.0])
 
@@ -23,6 +41,7 @@ You can mix and match ideal models if you provide:
 
 """
 function eos(model::EoSModel, V, T, z=SA[1.0])
+    eos_length_check(model,z)
     return N_A*k_B*sum(z)*T * (a_ideal(idealmodel(model),V,T,z)+a_res(model,V,T,z))
 end
 """
@@ -62,6 +81,7 @@ basic Clapeyron function, returns the residual Helmholtz free energy.
 by default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where `a_res` is the reduced residual Helmholtz energy.
 """
 function eos_res(model::EoSModel, V, T, z=SA[1.0])
+    eos_length_check(model,z)
     return N_A*k_B*sum(z)*T*(a_res(model,V,T,z))
 end
 
@@ -87,6 +107,3 @@ has_groups(::Type{<:T}) where T = false
 has_sites(::T) where T = has_sites(T)
 has_groups(::T) where T = has_groups(T)
 
-groups(model::EoSModel) = model.groups
-components(model::EoSModel) = model.components
-components(model) = nothing
