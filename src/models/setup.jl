@@ -894,8 +894,8 @@ function updateparams!(
         updatemembers::Bool,
        )::Nothing
     if updatemembers
-        for member in modelmembers(self)
-            updateparams!(getfield(self, member); updatemembers=false)
+        for member in modelmembers(model)
+            updateparams!(getfield(model, member); updatemembers=false)
         end
     end
     for mapping ∈ filter(m -> !(m.transformation === identity),  mappings)
