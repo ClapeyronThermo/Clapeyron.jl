@@ -30,6 +30,17 @@ function kij_mix(f::F,param::ClapeyronParam,K = nothing) where F
     return kij_mix!(f,out,K)
 end
 
+function kij_mix!(f::F,out::PairParam,::Nothing) where F
+    N = length(param.components)
+    k = FillArrays.Zeros(N,N)
+    out_missing = out.ismissingvalues
+    kij_mix!(f,out.values,k,out_missing)
+    #if kij is missing, then the output values should be the same as the input values.
+    #no missing prop has to be done
+    return out
+end
+
+
 function kij_mix!(f::F,out::PairParam,K::PairParam) where F
     out_missing = out.ismissingvalues
     kij_mix!(f,out.values,k.values,out_missing)
