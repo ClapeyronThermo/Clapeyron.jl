@@ -56,15 +56,14 @@ function Base.setindex!(param::PairParameter,val,i,j)
 end
 components(x::PairParameter) = x.components
 
-PairParam(name,components,values,diagvals, missingvals,src,sourcecsv) = PairParameter(name,components,values,diagvals,missingvals,src,sourcecsv)
+PairParam(name,components,values,symmetric, missingvals,src,sourcecsv) = PairParameter(name,components,values,symmetric,missingvals,src,sourcecsv)
 
 #unsafe constructor
-function PairParam(name,components,values)
+function PairParam(name,components,values,symmetric = true)
     missingvals = fill(false,size(values))
-    symmetric = true
     src = String[]
     sourcecsv = String[]
-    return PairParam(name,components,values,symmetric,missingvals,src,sourcecsv)
+    return PairParameter(name,components,values,symmetric,missingvals,src,sourcecsv)
 end
 
 function PairParam(name::String,

@@ -228,6 +228,7 @@ function pkgparam(param::String,
     symmetric && mirrormatrix!(value)
     newvalue, ismissingvalues = defaultmissing(value)
     if param ∉ param_options.ignore_missing_singleparams 
+        diagidx = diagind(ismissingvalues)
         missing_diag = view(ismissingvalues,diagidx)
         type = first(missing_diag)
         if any(!=(type),missing_diag) #if all are true or all are false 

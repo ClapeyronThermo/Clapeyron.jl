@@ -38,7 +38,7 @@ vdW1fRule
 
 # For backwards compatibility
 function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
-    return vdW1fRule(components, String[])
+    return vdW1fRule()
 end
 
 function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b,c)
@@ -66,7 +66,5 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a
     #dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
     return ā,b̄,c̄
 end
-
-
 
 is_splittable(::vdW1fRule) = false
