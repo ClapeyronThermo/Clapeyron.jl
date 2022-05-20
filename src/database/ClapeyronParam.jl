@@ -28,6 +28,9 @@ function Base.show(io::IO, mime::MIME"text/plain", params::EoSParam)
         #while the decorative params.name are nice, for accessing, the field name is more useful
     end
 end
+function param(::Type{T},dict::Dict{String,ClapeyronParam}) where T <: EoSParam
+    return T((dict[string(name)] for name in fieldnames(T))...)
+end
 
 function Base.show(io::IO, params::EoSParam)
     print(io, typeof(params))
