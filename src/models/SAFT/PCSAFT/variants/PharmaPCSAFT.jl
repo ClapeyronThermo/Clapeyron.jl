@@ -112,14 +112,14 @@ end
 @inline water08_k(model::pharmaPCSAFTModel) = model.water[]
 
 function d(model::pharmaPCSAFTModel, V, T, z)
-    ϵᵢᵢ = model.params.epsilon.diagvalues
-    σᵢᵢ = model.params.sigma.diagvalues 
+    ϵᵢᵢ = model.params.epsilon.values
+    σᵢᵢ = model.params.sigma.values 
     _d = zeros(typeof(T),length(z))
     Δσ = Δσh20(T)
     k = water08_k(model)
     for i ∈ @comps
-        σᵢ = σᵢᵢ[i] + (k==i)*Δσ
-        _d[i] = σᵢ*(1 - 0.12*exp(-3ϵᵢᵢ[i]/T))
+        σᵢ = σᵢᵢ[i,i] + (k==i)*Δσ
+        _d[i] = σᵢ*(1 - 0.12*exp(-3ϵᵢᵢ[i,i]/T))
     end
 
     return _d

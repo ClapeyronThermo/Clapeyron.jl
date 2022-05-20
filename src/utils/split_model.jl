@@ -95,18 +95,14 @@ end
 
 function each_split_model(param::PairParameter,I)
     value = each_split_model(param.values,I)
-    if isnothing(param.diagvalues)
-        diagvalue = nothing
-    else
-        diagvalue = view(value,diagind(value))
-    end
+
     ismissingvalues = param.ismissingvalues[I,I]
     components = param.components[I]
     res = PairParameter(
             param.name,
             components,
             value,
-            diagvalue,
+            param.symmetric,
             ismissingvalues,
             param.sourcecsvs,
             param.sources

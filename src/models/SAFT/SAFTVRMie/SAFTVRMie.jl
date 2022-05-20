@@ -158,10 +158,10 @@ end =#
 
 #=
 function d(model::SAFTVRMieModel, V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues[i]
-    σ = model.params.sigma.diagvalues[i]
-    λr = model.params.lambda_r.diagvalues[i]
-    λa = model.params.lambda_a.diagvalues[i]
+    ϵ = model.params.epsilon.#diagvalues[i]
+    σ = model.params.sigma.#diagvalues[i]
+    λr = model.params.lambda_r.#diagvalues[i]
+    λa = model.params.lambda_a.#diagvalues[i]
     return @f(d,λa,λr,ϵ,σ)
 end
 
@@ -180,10 +180,10 @@ function C(model::SAFTVRMieModel, V, T, z, i, j)
 end
 
 function d(model::SAFTVRMieModel, V, T, z)
-    ϵ = model.params.epsilon.diagvalues
-    σ = model.params.sigma.diagvalues
-    λr = model.params.lambda_r.diagvalues
-    λa = model.params.lambda_a.diagvalues
+    ϵ = model.params.epsilon.#diagvalues
+    σ = model.params.sigma.#diagvalues
+    λr = model.params.lambda_r.#diagvalues
+    λa = model.params.lambda_a.#diagvalues
     return d.(model,V,T,Ref(z),λa,λr,ϵ,σ)
 end
 
@@ -491,7 +491,7 @@ end
 
 
 function g_Mie(model::SAFTVRMieModel, V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues
+    ϵ = model.params.epsilon.#diagvalues
     g_HSi = @f(g_HS,i)
     return g_HSi*exp(ϵ[i]/T*@f(g_1,i)/g_HSi+(ϵ[i]/T)^2*@f(g_2,i)/g_HSi);
 end
@@ -510,15 +510,15 @@ end
 
 #=
 function g_1(model::SAFTVRMieModel, V, T, z, i)
-    λr = model.params.lambda_r.diagvalues
-    λa = model.params.lambda_a.diagvalues
+    λr = model.params.lambda_r.#diagvalues
+    λa = model.params.lambda_a.#diagvalues
     x_0ij = @f(x_0,i,i)
     return 3*@f(∂a_1╱∂ρ_S,i)-@f(C,i,i)*(λa[i]*x_0ij^λa[i]*(@f(aS_1,λa[i])+@f(B,λa[i],x_0ij))-λr[i]*x_0ij^λr[i]*(@f(aS_1,λr[i])+@f(B,λr[i],x_0ij)))
 end
 
 function ∂a_1╱∂ρ_S(model::SAFTVRMieModel, V, T, z, i)
-    λr  = model.params.lambda_r.diagvalues
-    λa  = model.params.lambda_a.diagvalues
+    λr  = model.params.lambda_r.#diagvalues
+    λa  = model.params.lambda_a.#diagvalues
     x_0ij = @f(x_0,i,i)
     return @f(C,i,i)*(x_0ij^λa[i]*(@f(∂aS_1╱∂ρ_S,λa[i])+@f(∂B╱∂ρ_S,λa[i],x_0ij))
                       - x_0ij^λr[i]*(@f(∂aS_1╱∂ρ_S,λr[i])+@f(∂B╱∂ρ_S,λr[i],x_0ij)))
@@ -586,9 +586,9 @@ function g_2(model::SAFTVRMieModel,V, T, z, i)
 end
 
 function γ_c(model::SAFTVRMieModel,V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues
-    λr = model.params.lambda_r.diagvalues
-    λa = model.params.lambda_a.diagvalues
+    ϵ = model.params.epsilon.#diagvalues
+    λr = model.params.lambda_r.#diagvalues
+    λa = model.params.lambda_a.#diagvalues
     ζst_ = @f(ζst)
     α = @f(C,i,i)*(1/(λa[i]-3)-1/(λr[i]-3))
     θ = exp(ϵ[i]/T)-1
@@ -596,8 +596,8 @@ function γ_c(model::SAFTVRMieModel,V, T, z, i)
 end
 
 function gMCA_2(model::SAFTVRMieModel, V, T, z, i)
-    λr  = model.params.lambda_r.diagvalues
-    λa  = model.params.lambda_a.diagvalues
+    λr  = model.params.lambda_r.#diagvalues
+    λa  = model.params.lambda_a.#diagvalues
     x_0ij = @f(x_0,i,i)
     ζ_X_  = @f(ζ_X)
     return 3*@f(∂a_2╱∂ρ_S,i)-@f(KHS)*@f(C,i,i)^2 *
@@ -617,8 +617,8 @@ function KHS_fdf(model::SAFTVRMieModel, V, T, z,ζ_X_,ρ_S_ = @f(ρ_S))
 end
 
 function ∂a_2╱∂ρ_S(model::SAFTVRMieModel,V, T, z, i)
-    λr = model.params.lambda_r#.diagvalues
-    λa = model.params.lambda_a#.diagvalues
+    λr = model.params.lambda_r#.#diagvalues
+    λa = model.params.lambda_a#.#diagvalues
     x_0ij = @f(x_0,i,i)
     ζ_X_ = @f(ζ_X)
     ρ_S_ = @f(ρ_S)

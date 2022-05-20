@@ -106,8 +106,10 @@ using Clapeyron, Test
                                               0.0  0.0  1.3  2.0  0.0
                                               0.0  3.0  2.0  1.4  0.0
                                               0.0  0.0  0.0  0.0  1.5]
-                                              
-    @test params["overwriteparam"].diagvalues == [1.6, 1.2, 1.3, 1.4, 1.5]
+    
+    overwriteparam_values =    params["overwriteparam"].values                                       
+    diagvalues = [overwriteparam_values.values[i,i] for i in size(overwriteparam_values,1)]
+    @test diagvalues == [1.6, 1.2, 1.3, 1.4, 1.5]
 
     assoc_param_values =
     [[Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,3)          ]  [Array{Int64}(undef,0,2)]  [Array{Int64}(undef,0,3)       ]

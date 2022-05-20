@@ -116,8 +116,8 @@ function a_disp(model::CKSAFTModel, V, T, z)
 end
 
 function d(model::CKSAFTModel, V, T,z, i)
-    ϵ = model.params.epsilon.diagvalues[i]
-    σ = model.params.sigma.diagvalues[i]
+    ϵ = model.params.epsilon.values[i,i]
+    σ = model.params.sigma.values[i,i]
     return σ * (1 - 0.12exp(-3ϵ/T))
 end
 

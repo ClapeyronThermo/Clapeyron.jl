@@ -121,9 +121,9 @@ function a_disp(model::PCSAFTModel, V, T, z,_data=@f(data))
 end
 
 function d(model::PCSAFTModel, V, T, z)
-    ϵᵢᵢ = model.params.epsilon.diagvalues
-    σᵢᵢ = model.params.sigma.diagvalues 
-    return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    [σ[i,i]*(1 - 0.12*exp(-3ϵ[i,i]/T)) for i in @comps]
 end
 
 function ζ(model::PCSAFTModel, V, T, z, n , _d)

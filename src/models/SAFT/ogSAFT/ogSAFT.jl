@@ -92,12 +92,12 @@ function a_chain(model::ogSAFTModel, V, T, z)
 end
 
 function d(model::ogSAFTModel, V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues
-    σ = model.params.sigma.diagvalues
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
     m = model.params.segment.values
     fm = 0.0010477#+0.025337*(m[i]-1)/m[i]
-    f = (1+0.2977T/ϵ[i])/(1+0.33163T/ϵ[i]+fm*(T/ϵ[i])^2)
-    return σ[i] * f
+    f = (1+0.2977T/ϵ[i,i])/(1+0.33163T/ϵ[i,i]+fm*(T/ϵ[i,i])^2)
+    return σ[i,i] * f
 end
 
 # function dx(model::ogSAFTModel, V, T, z)
