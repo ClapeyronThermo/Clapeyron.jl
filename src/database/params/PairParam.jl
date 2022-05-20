@@ -154,17 +154,13 @@ function PairParam(x::SingleParam,name::String=x.name,symmetric = true)
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter) 
-    sym = param.symmetric ? "Symmetric" : ""
-    print(io,sym," PairParam{",eltype(param.values),"}")
+    sym = param.symmetric ? "Symmetric " : ""
+    _size = size(param)
+    _size_str = string(_size[1]) * "×" * string(_size[2]) * " "
+    print(io,sym,_size_str,"PairParam{",eltype(param.values),"}(")
     show(io,param.components)
     println(io,") with values:")
-    show(io,mime,param.values)
-end
-
-function Base.show(io::IO,param::PairParameter)
-    print(io, "PairParam{",eltype(param.values),"}", "(\"", param.name,"\",)[")
-    print(io,Base.summary(param.values))
-    print(io,"]")
+    Base.print_matrix(IOContext(io, :compact => true),param.values)
 end
 
 #convert utilities

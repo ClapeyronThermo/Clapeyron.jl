@@ -74,14 +74,6 @@ function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractS
     values = String.(param.values)
     return (param.name,param.components,values,param.missingvals,param.src,param.sourcecsv)
 end
-function Base.show(io::IO, param::SingleParameter)
-    print(io, typeof(param), "(\"", param.name, "\")[")
-    for component in param.components
-        component != first(param.components) && print(io, ",")
-        print(io, "\"", component, "\"")
-    end
-    print(io, "]")
-end
 
 function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     len = length(param.values)

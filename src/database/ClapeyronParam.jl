@@ -24,7 +24,8 @@ function Base.show(io::IO, mime::MIME"text/plain", params::EoSParam)
     end
     for name in names
         param = getfield(params, name)
-        print(io, "\n ", param.name, "::", typeof(param))
+        print(io, "\n ", name, "::", typeof(param)) 
+        #while the decorative params.name are nice, for accessing, the field name is more useful
     end
 end
 
@@ -45,6 +46,12 @@ end
 include("params/paramvectors.jl")
 include("params/SingleParam.jl")
 include("params/PairParam.jl")
+
+function Base.show(io::IO,param::Union{SingleParameter,PairParameter})
+    print(io, typeof(param), "(\"", param.name, "\")")
+    show(io,param.components)  
+end
+
 include("params/AssocParam.jl")
 include("params/GroupParam.jl")
 include("params/SiteParam.jl")
