@@ -4,7 +4,7 @@
 struct used internally to store association data.
 
 """
-struct Compressed4DMatrix{T,V<:AbstractVector{T}} 
+mutable struct Compressed4DMatrix{T,V<:AbstractVector{T}} 
     values::V
     outer_indices::Vector{Tuple{Int,Int}} #index of components
     inner_indices::Vector{Tuple{Int,Int}} #index of sites
