@@ -4,6 +4,14 @@ Abstract type corresponding to a Clapeyron parameter.
 it has to be splittable (via [`split_model`](@ref)) and have a `components` field
 """
 abstract type ClapeyronParam end
+
+"""
+    ClapeyronDataParam
+Abstract type corresponding to a Clapeyron data parameter.
+it has to be splittable (via [`split_model`](@ref)), have a `components` field and have stored values
+"""
+abstract type ClapeyronDataParam <: ClapeyronParam end
+
 abstract type EoSParam end
 export EoSParam
 
