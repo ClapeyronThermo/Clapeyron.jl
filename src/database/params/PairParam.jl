@@ -71,6 +71,7 @@ function PairParam(name::String,
                     components::Array{String,1},
                     values::Array{T,2},
                     symmetric = true,
+                    ismissingvalues = fill(false,length(components),length(components)),
                     sourcecsvs::Array{String,1} = String[], 
                     sources::Array{String,1} = String[]) where T
     
@@ -78,7 +79,7 @@ function PairParam(name::String,
     if !all(ismissingvalues)
         _ismissingvalues = ismissingvalues
     end
-    return PairParam(name, components,_values, symmetric, _ismissingvalues, sourcecsvs, sources)
+    return PairParameter(name, components,_values, symmetric, _ismissingvalues, sourcecsvs, sources)
 end
 
 # If no value is provided, just initialise empty param.
