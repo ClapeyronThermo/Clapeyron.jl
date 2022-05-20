@@ -224,12 +224,9 @@ function pkgparam(param::String,
     paramsourcecsvs::Dict{String,Set{String}}, 
     paramsources::Dict{String,Set{String}};
     param_options::ParamOptions = DefaultParamOptions)
-    
-    param ∉ param_options.asymmetricparams && mirrormatrix!(value)
+    symmetric = param ∉ param_options.asymmetricparams
+    symmetric && mirrormatrix!(value)
     newvalue, ismissingvalues = defaultmissing(value)
-    diagidx = diagind(newvalue)
-    diagvalues = view(newvalue,diagidx)
-
     if param ∉ param_options.ignore_missing_singleparams 
         missing_diag = view(ismissingvalues,diagidx)
         type = first(missing_diag)
@@ -237,7 +234,7 @@ function pkgparam(param::String,
             error("Partial missing values exist in diagonal of pair parameter ", param, ": ", [value[x,x] for x ∈ 1:size(ismissingvalues,1)], ".")
        end
     end
-    return PairParam(param,components, newvalue, diagvalues,ismissingvalues, collect(paramsourcecsvs[param]), collect(paramsources[param]))
+    return PairParam(param,components, newvalue, symmetric ,ismissingvalues, collect(paramsourcecsvs[param]), collect(paramsources[param]))
 end
 
 #AssocParam
