@@ -1,4 +1,4 @@
-struct SingleParameter{T,V<:AbstractVector{T}} <: ClapeyronParam
+struct SingleParameter{T,V<:AbstractVector{T}} <: ClapeyronDataParam
     name::String
     components::Array{String,1}
     values::V
@@ -47,10 +47,23 @@ end
 """
 const SingleParam{T} = SingleParameter{T,Vector{T}} where T
 
+#indexing
+
 Base.@propagate_inbounds Base.getindex(param::SingleParameter{T,<:AbstractVector{T}},i::Int) where T = param.values[i]
+Base.setindex!(param::SingleParameter,val,i) = setindex!(param.values,val,i)
+
+#broadcasting
+
+Base.broadcastable(param::SingleParameter) = param.values
+Base.BroadcastStyle(::Type{<:SingleParameter}) = Broadcast.Style{SingleParameter}()
+Base.copyto!(param::SingleParameter,x) = Base.copyto!(param.values,x)
+Base.size(param::SingleParameter) = size(param.values)
+
+#linear algebra
+
 LinearAlgebra.dot(param::SingleParameter,x::AbstractVector) = dot(param.values,x)
 LinearAlgebra.dot(x::AbstractVector,param::SingleParameter) = dot(x,param.values)
-Base.setindex!(param::SingleParameter,val,i) = setindex!(param.values,val,i)
+
 components(x::SingleParameter) = x.components
 
 SingleParam(name,components,values,missingvals,src,sourcecsv) = SingleParameter(name,components,values,missingvals,src,sourcecsv)
@@ -173,9 +186,6 @@ function Base.convert(::Type{SingleParam{Int}},param::SingleParam{Float64})
     values = Int.(param.values)
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
-
-#broadcasting utilities
-Base.broadcastable(param::SingleParameter) = param.values
 
 #pack vectors
 

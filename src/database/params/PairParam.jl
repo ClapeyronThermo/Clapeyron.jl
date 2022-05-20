@@ -1,4 +1,4 @@
-struct PairParameter{T,V<:AbstractMatrix{T}} <: ClapeyronParam
+struct PairParameter{T,V<:AbstractMatrix{T}} <: ClapeyronDataParam
     name::String
     components::Array{String,1}
     values::V
@@ -46,7 +46,9 @@ end
 ```
 """
 const PairParam{T} = PairParameter{T,Matrix{T}} where T
+
 #indexing
+
 Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T}},i::Int) where T = param.values[i,i]
 Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T}},i::Int,j::Int) where T = param.values[i,j]
 Base.setindex!(param::PairParameter,val,i) = setindex!(param.values,val,i,i)
@@ -54,6 +56,14 @@ function Base.setindex!(param::PairParameter,val,i,j)
     setindex!(param.values,val,i,j)
     param.symmetric && setindex!(param.values,val,j,i)
 end
+
+#Broadcasting
+
+Base.broadcastable(param::PairParameter) = param.values
+Base.BroadcastStyle(::Type{<:PairParameter}) = Broadcast.Style{PairParameter}()
+Base.copyto!(param::PairParameter,x) = Base.copyto!(param.values,x)
+Base.size(param::PairParameter) = size(param.values)
+
 components(x::PairParameter) = x.components
 
 PairParam(name,components,values,symmetric, missingvals,src,sourcecsv) = PairParameter(name,components,values,symmetric,missingvals,src,sourcecsv)
@@ -173,7 +183,6 @@ function Base.convert(::Type{PairParam{Int}},param::PairParam{Float64})
 end
 
 #broadcasting utilities
-Base.broadcastable(param::PairParameter) = param.values
 
 function pack_vectors(param::PairParameter{<:AbstractVector})
     name,components,vals,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources
@@ -185,6 +194,7 @@ const PackedSparsePairParam{T} = Clapeyron.PairParameter{SubArray{T, 1, Vector{T
 true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}} where T
 
 # Operations
+#=
 function Base.:(+)(param::PairParameter, x::Number)
     values = param.values .+ x
     return PairParam(param.name, param.components, values, param.symmetric, param.ismissingvalues, param.sourcecsvs, param.sources)
@@ -199,3 +209,4 @@ function Base.:(^)(param::PairParameter, x::Number)
     values = param.values .^ x
     return PairParam(param.name, param.components, values, param.symmetric, param.ismissingvalues, param.sourcecsvs, param.sources)
 end
+=#
