@@ -22,16 +22,11 @@ If a Single Parameter is passed as input, it will be converted to a Pair Paramet
 function kij_mix(f::F,param::ClapeyronParam,K = nothing) where F
     out = PairParam(param) #copy the input
     N = length(param.components)
-    if K === nothing
-        k = FillArrays.Zeros(N,N)
-        k_missing = FillArrays.Fill(true,N,N)
-        K = PairParameter(param.name,param.components,k,nothing,k_missing,param.sourcecsvs,param.sources)
-    end
     return kij_mix!(f,out,K)
 end
 
 function kij_mix!(f::F,out::PairParam,::Nothing) where F
-    N = length(param.components)
+    N = length(out.components)
     k = FillArrays.Zeros(N,N)
     out_missing = out.ismissingvalues
     kij_mix!(f,out.values,k,out_missing)
@@ -43,7 +38,7 @@ end
 
 function kij_mix!(f::F,out::PairParam,K::PairParam) where F
     out_missing = out.ismissingvalues
-    kij_mix!(f,out.values,k.values,out_missing)
+    kij_mix!(f,out.values,K.values,out_missing)
     #should consider the two.
     out_missing .= out_missing .& K.ismissingvalues
     #but diagonals are all non-missing, by default:
