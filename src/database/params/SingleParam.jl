@@ -56,7 +56,10 @@ Base.setindex!(param::SingleParameter,val,i) = setindex!(param.values,val,i)
 
 Base.broadcastable(param::SingleParameter) = param.values
 Base.BroadcastStyle(::Type{<:SingleParameter}) = Broadcast.Style{SingleParameter}()
-Base.copyto!(param::SingleParameter,x) = Base.copyto!(param.values,x)
+function Base.copyto!(param::SingleParameter,x)
+    Base.copyto!(param.values,x)
+    return param
+end
 Base.size(param::SingleParameter) = size(param.values)
 
 #linear algebra

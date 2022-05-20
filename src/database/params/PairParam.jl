@@ -61,7 +61,10 @@ end
 
 Base.broadcastable(param::PairParameter) = param.values
 Base.BroadcastStyle(::Type{<:PairParameter}) = Broadcast.Style{PairParameter}()
-Base.copyto!(param::PairParameter,x) = Base.copyto!(param.values,x)
+function Base.copyto!(param::PairParameter,x)
+    Base.copyto!(param.values,x)
+    return param
+end
 Base.size(param::PairParameter) = size(param.values)
 
 components(x::PairParameter) = x.components
@@ -194,7 +197,7 @@ const PackedSparsePairParam{T} = Clapeyron.PairParameter{SubArray{T, 1, Vector{T
 true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}} where T
 
 # Operations
-#=
+
 function Base.:(+)(param::PairParameter, x::Number)
     values = param.values .+ x
     return PairParam(param.name, param.components, values, param.symmetric, param.ismissingvalues, param.sourcecsvs, param.sources)
@@ -209,4 +212,3 @@ function Base.:(^)(param::PairParameter, x::Number)
     values = param.values .^ x
     return PairParam(param.name, param.components, values, param.symmetric, param.ismissingvalues, param.sourcecsvs, param.sources)
 end
-=#
