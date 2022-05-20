@@ -108,11 +108,12 @@ end
 function PairParam{T}(
         name::String,
         components::Vector{String};
+        symmetric::Bool = true,
         sources::Vector{String} = String[]
     ) where T <: Number
     values = zeros(T, length(components), length(components))
     missingvals = fill(false, size(values))
-    return PairParam(name, components, values, missingvals, String[], sources)
+    return PairParam(name, components, values, symmetric, missingvals, String[], sources)
 end
 
 function PairParam(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources)
