@@ -46,12 +46,14 @@ end
 ```
 """
 const PairParam{T} = PairParameter{T,Matrix{T}} where T
-
+#indexing
 Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T}},i::Int) where T = param.values[i,i]
 Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T}},i::Int,j::Int) where T = param.values[i,j]
 Base.setindex!(param::PairParameter,val,i) = setindex!(param.values,val,i,i)
-Base.setindex!(param::PairParameter,val,i,j) = setindex!(param.values,val,i,j)
-#TODO: enforce optional symmetry
+function Base.setindex!(param::PairParameter,val,i,j) 
+    setindex!(param.values,val,i,j)
+    param.symmetric && setindex!(param.values,val,j,i)
+end
 components(x::PairParameter) = x.components
 
 PairParam(name,components,values,diagvals, missingvals,src,sourcecsv) = PairParameter(name,components,values,diagvals,missingvals,src,sourcecsv)
