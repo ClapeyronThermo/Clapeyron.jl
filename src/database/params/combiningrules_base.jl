@@ -19,13 +19,13 @@ Ignores non-diagonal entries already set.
 
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `pᵢᵢ = pᵢ`.
 """
-function kij_mix(f::F,param::ClapeyronParam,K = nothing) where F
+function kij_mix(f::F,param::Union{SingleParameter,PairParameter},K = nothing) where F
     out = PairParam(param) #copy the input
     N = length(param.components)
     return kij_mix!(f,out,K)
 end
 
-function kij_mix!(f::F,out::PairParam,::Nothing) where F
+function kij_mix!(f::F,out::PairParameter,::Nothing) where F
     N = length(out.components)
     k = FillArrays.Zeros(N,N)
     out_missing = out.ismissingvalues
@@ -36,7 +36,7 @@ function kij_mix!(f::F,out::PairParam,::Nothing) where F
 end
 
 
-function kij_mix!(f::F,out::PairParam,K::PairParam) where F
+function kij_mix!(f::F,out::PairParameter,K::PairParameter) where F
     out_missing = out.ismissingvalues
     kij_mix!(f,out.values,K.values,out_missing)
     #should consider the two.
@@ -63,13 +63,39 @@ function kij_mix!(f::F,p,K,B) where F
         end
     end
 end
+
+
+
+"""
+    pair_mix(g,P::ClapeyronParam,Q::ClapeyronParam)::PairParam
+    pair_mix(g,P::ClapeyronParam,Q::ClapeyronParam)::PairParam
+
+General combining rule for a pair and a single parameter. returns a pair parameter `P` with non diagonal entries equal to:
+```
+Pᵢⱼ = g(Pᵢ,Pⱼ,Qᵢ,Qⱼ,Qᵢⱼ)
+```
+Where `f` is a 'combining' function that follows the rules:
+```
+Pᵢⱼ = Pⱼᵢ = g(Pᵢ,Pⱼ,Qᵢ,Qⱼ,Qᵢⱼ) = g(Pⱼ,Pᵢ,Qⱼ,Qᵢ,Qᵢⱼ)
+g(Pᵢ,Pᵢ,Qᵢ,Qᵢ,Qᵢ) = Pᵢ
+```
+it is a more general form of `kij_mix`, where `kij_mix(f,P,Q) == pair_mix(g,P,Q)` is correct if:
+```
+f(Pᵢ,Pⱼ,Qᵢⱼ) = g(Pᵢ,Pⱼ,_,_,Qᵢⱼ)
+```
+"""
 function pair_mix(f::F,P::ClapeyronParam,Q::ClapeyronParam) where F
     out = PairParam(P) #copy the input
-    Q isa PairParameter || (Q = PairParam(Q)) #because diagonals matter, Q could be a SingleParam?
+    if Q isa SingleParameter
+        vals = Diagonal(Q.vals)
+        missingvals = out.ismissingvalues
+        Q = PairParam(Q.name,Q.components,vals,true,out.ismissingvalues,Q.sources,Q.sourcecsvs)
+    end
+
     return pair_mix!(f,out,Q)
 end
 
-function pair_mix!(f::F,out::PairParam,Q::PairParam) where F
+function pair_mix!(f::F,out::PairParameter,Q::PairParameter) where F
     out_missing = out.ismissingvalues
     pair_mix!(f,out.values,Q.values,out_missing)
     #consider the two here:
