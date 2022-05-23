@@ -36,6 +36,21 @@ function Base.show(io::IO, params::EoSParam)
     print(io, typeof(params))
 end
 
+function Base.copyto!(dest::T,src::T) where T<:EoSParam
+    for name in fieldnames(T)
+        copyto!(getfield(dest,name),gerfield(dest,name))
+    end
+    return dest
+end
+
+#general fallback that only depends on the the definition of Param(x::InputParam)
+#it can be overloaded to use implace values, but it is a performance consideration
+function inputparams!(model,input,output)
+    calculated_output = output(input)
+    copyto!(output,calculated_output)
+    return model
+end
+
 const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
 function pack_vectors(x::AbstractVector{<:AbstractVector})
@@ -61,8 +76,6 @@ include("params/SiteParam.jl")
 include("params/AssocOptions.jl")
 include("params/combiningrules_base.jl") #general combining Rules for Single and Pair Params.
 include("params/combiningrules.jl") #specific rules.
-
-
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
 export AssocOptions

@@ -137,7 +137,14 @@ function indices(x::Compressed4DMatrix)
     return zip(l,xin,x.inner_indices)
 end
 
-
+function Base.copyto!(dest::Compressed4DMatrix,src::Compressed4DMatrix)
+    copy!(dest.values,src.values) #copy! also copies the size
+    copy!(outer_indices,src.outer_indices)
+    copy!(inner_indices,src.inner_indices)
+    dest.outer_size .= src.outer_size
+    dest.inner_size .= src.inner_size
+    return dest
+end
 
 """
     SparsePackedMofV{T,V<:AbstractVector{T}} <:SparseArrays.AbstractSparseMatrixCSC{E,Int}
@@ -208,6 +215,15 @@ function Base.show(io::IO,::MIME"text/plain",A::SparsePackedMofV)
             println(io,"  ($i,$j) => $val")
         end
     end
+end
+
+function Base.copyto!(dest::SparsePackedMofV,src::SparsePackedMofV)
+    #copy storage
+    copy!(dest.storage.v,src.storage.v)
+    copy!(dest.storage.p,src.storage.p)
+    #copy indices
+    copy!(dest.idx,src.idx)
+    return dest
 end
 
 # Operations

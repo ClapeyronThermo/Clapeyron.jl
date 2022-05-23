@@ -11,6 +11,18 @@ struct AssocParam{T} <: ClapeyronDataParam
     sources::Array{String,1}
 end
 
+function Base.copyto!(dest::SingleParameter,src::SingleParameter) #used to set params
+    #key check
+    dest.components == src.components || throw(DimensionMismatch("components of source and destination single parameters are not the same for $dest"))
+    copyto!(dest.values,src.values)
+    dest_sites = dest.sites
+    src_sites = src.sites
+    for (i,site) in enumerate(dest_sites)
+        copy!(site,src_sites[i]) #copy also changes size
+    end
+    return dest
+end
+
 components(x::AssocParam) = x.components
 
 function AssocParam(

@@ -53,14 +53,23 @@ Base.@propagate_inbounds Base.getindex(param::SingleParameter{T,<:AbstractVector
 Base.setindex!(param::SingleParameter,val,i) = setindex!(param.values,val,i)
 
 #broadcasting
-
+Base.size(param::SingleParameter) = size(param.values)
 Base.broadcastable(param::SingleParameter) = param.values
 Base.BroadcastStyle(::Type{<:SingleParameter}) = Broadcast.Style{SingleParameter}()
-function Base.copyto!(param::SingleParameter,x)
-    Base.copyto!(param.values,x)
-    return param
+
+#copyto!
+function Base.copyto!(dest::SingleParameter,src) #general, just copies the values, used in a .= f.(a)
+    Base.copyto!(dest.values,x)
+    return dest
 end
-Base.size(param::SingleParameter) = size(param.values)
+
+function Base.copyto!(dest::SingleParameter,src::SingleParameter) #used to set params
+    #key check
+    dest.components == src.components || throw(DimensionMismatch("components of source and destination single parameters are not the same for $dest"))
+    copyto!(dest.values,src.values)
+    dest.ismissingvalues .= src.ismissingvalues
+    return dest
+end
 
 #linear algebra
 

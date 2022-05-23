@@ -61,10 +61,31 @@ end
 
 Base.broadcastable(param::PairParameter) = param.values
 Base.BroadcastStyle(::Type{<:PairParameter}) = Broadcast.Style{PairParameter}()
+
+#copyto!
+
 function Base.copyto!(param::PairParameter,x)
     Base.copyto!(param.values,x)
     return param
 end
+
+function Base.copyto!(dest::PairParameter,src::PairParameter) #used to set params
+    #key check
+    dest.components == src.components || throw(DimensionMismatch("components of source and destination pair parameters are not the same for $dest"))
+    
+    #=
+    TODO: it does not check that dest.symmetric = src.symmetric, the only solution i see at the moment 
+    is to make the Single, Pair and Assoc Params, mutable structs, but i don't really know the performance
+    implications of that.
+
+    supposedly, this copyto! is only used internally, and both src and dest params are already the same. but it would
+    be good to enforce that.
+    =#
+    copyto!(dest.values,src.values)
+    dest.ismissingvalues .= src.ismissingvalues
+    return dest
+end
+
 Base.size(param::PairParameter) = size(param.values)
 
 components(x::PairParameter) = x.components
