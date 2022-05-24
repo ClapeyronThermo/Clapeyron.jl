@@ -75,7 +75,8 @@ include("params/GroupParam.jl")
 include("params/SiteParam.jl")
 include("params/AssocOptions.jl")
 include("params/combiningrules_base.jl") #general combining Rules for Single and Pair Params.
-include("params/combiningrules.jl") #specific rules.
+include("params/combiningrules_implace.jl") #implace specific rules.
+include("params/combiningrules.jl") #out of place versions
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
 export AssocOptions
