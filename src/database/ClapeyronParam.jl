@@ -75,7 +75,8 @@ include("params/paramvectors.jl")
 include("params/SingleParam.jl")
 include("params/PairParam.jl")
 
-function Base.show(io::IO,param::Union{SingleParameter,PairParameter})
+const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
+function Base.show(io::IO,param::SingleOrPair)
     print(io, typeof(param), "(\"", param.name, "\")")
     show(io,param.components)  
 end

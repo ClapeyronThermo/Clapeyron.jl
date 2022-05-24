@@ -16,11 +16,11 @@ If a Single Parameter is passed as input, it will be converted to a Pair Paramet
 """
 function sigma_LorentzBerthelot end
 
-function sigma_LorentzBerthelot(sigma::Union{SingleParameter,PairParameter},zeta::PairParameter) 
+function sigma_LorentzBerthelot(sigma::SingleOrPair,zeta::PairParameter) 
     return sigma_LorentzBerthelot!(PairParam(sigma),zeta)
 end
 
-function sigma_LorentzBerthelot(sigma::Union{SingleParameter,PairParameter}) 
+function sigma_LorentzBerthelot(sigma::SingleOrPair) 
     return sigma_LorentzBerthelot!(PairParam(sigma))
 end
 
@@ -42,11 +42,11 @@ If a Single Parameter is passed as input, it will be converted to a Pair Paramet
 """
 function epsilon_LorentzBerthelot end
 
-function epsilon_LorentzBerthelot(epsilon::Union{SingleParameter,PairParameter}, k::PairParameter)
+function epsilon_LorentzBerthelot(epsilon::SingleOrPair, k::PairParameter)
     return epsilon_LorentzBerthelot!(PairParam(epsilon),k)
 end
 
-function epsilon_LorentzBerthelot(epsilon::Union{SingleParameter,PairParameter})
+function epsilon_LorentzBerthelot(epsilon::SingleOrPair)
     return epsilon_LorentzBerthelot!(PairParam(epsilon))
 end
 
@@ -66,7 +66,7 @@ Ignores non-diagonal entries already set.
 
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `ϵᵢᵢ = ϵᵢ`.
 """
-function epsilon_HudsenMcCoubrey(epsilon::Union{SingleParameter,PairParameter}, sigma::PairParameter)
+function epsilon_HudsenMcCoubrey(epsilon::SingleOrPair, sigma::PairParameter)
     return epsilon_HudsenMcCoubrey!(PairParam(epsilon),sigma)
 end
 
