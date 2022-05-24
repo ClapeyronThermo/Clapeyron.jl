@@ -8,7 +8,6 @@ abstract type ogUNIFACModel <: UNIFACModel end
 
 struct ogUNIFAC{c<:EoSModel} <: ogUNIFACModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     groups::GroupParam
     params::ogUNIFACParam
     puremodel::EoSVectorParam{c}
@@ -81,13 +80,12 @@ function ogUNIFAC(components::Vector{String};
     A  = params["A"]
     R  = params["R"]
     Q  = params["Q"]
-    icomponents = 1:length(components)
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = ogUNIFACParam(A,R,Q)
     references = String[]
     cache = UNIFACCache(groups,packagedparams)
-    model = ogUNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
+    model = ogUNIFAC(components,groups,packagedparams,_puremodel,references,cache)
     return model
 end
 

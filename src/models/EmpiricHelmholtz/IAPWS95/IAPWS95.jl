@@ -44,8 +44,6 @@ struct IAPWS95Consts <: EoSParam
     end
 end
 
-
-
 struct IAPWS95 <: EmpiricHelmholtzModel
     components::Vector{String}
     consts::IAPWS95Consts

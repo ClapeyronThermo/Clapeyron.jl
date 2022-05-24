@@ -13,7 +13,6 @@ abstract type pharmaPCSAFTModel <: PCSAFTModel end
 
 struct pharmaPCSAFT{T <: IdealModel} <: pharmaPCSAFTModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     sites::SiteParam
     params::pharmaPCSAFTParam
     idealmodel::T
@@ -84,7 +83,6 @@ function pharmaPCSAFT(components;
     ignore_missing_singleparams = ["kT"])
     
     water = SpecialComp(components,["water08"])
-    icomponents = 1:length(components)
     segment = params["m"]
     k0 = params["k"]
     n = length(components)
@@ -100,7 +98,7 @@ function pharmaPCSAFT(components;
     packagedparams = pharmaPCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d","10.1016/j.cep.2007.02.034"]
 
-    model = pharmaPCSAFT(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references,water)
+    model = pharmaPCSAFT(components,sites,packagedparams,init_idealmodel,assoc_options,references,water)
     return model
 end
 

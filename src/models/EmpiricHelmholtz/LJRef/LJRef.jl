@@ -129,7 +129,6 @@ is_splittable(::LJRefConsts) = false
 
 struct LJRef <: EmpiricHelmholtzModel
     components::Vector{String}
-    icomponents::UnitRange{Int}
     params::LJRefParam
     consts::LJRefConsts
     references::Vector{String}
@@ -205,9 +204,8 @@ function LJRef(components;
     segment = params["m"]
     params = LJRefParam(epsilon,sigma,segment,Mw)
     consts = LJRefConsts()
-    icomponents = 1:length(components)
     references = ["10.1063/1.4945000"]
-    return LJRef(components,icomponents,params,consts,references)
+    return LJRef(components,params,consts,references)
 end
 
 function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))

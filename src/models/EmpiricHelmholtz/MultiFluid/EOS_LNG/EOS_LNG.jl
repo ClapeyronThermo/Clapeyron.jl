@@ -1,6 +1,5 @@
 struct EOS_LNG <: MultiFluidModel
     components::Vector{String}
-    icomponents::UnitRange{Int}
     properties::MultiFluidPropertyParam
     ideal::MultiFluidIdealParam
     single::MultiFluidSingleParam
@@ -42,9 +41,8 @@ function EOS_LNG(components::Vector{String})
     beta_ij = each_split_model(params[:beta_ij],I) |> pack_vectors
     gamma_ij = each_split_model(params[:gamma_ij],I) |> pack_vectors
     pair = MultiFluidPairParam(nij,tij,dij,Fij,beta_ij,gamma_ij,eta_ij,epsilon_ij)
-    icomponents = 1:length(I)
     references = ["10.1021/je300655b"]
-    return EOS_LNG(components,icomponents,properties,ideal,single,pair,references)
+    return EOS_LNG(components,properties,ideal,single,pair,references)
 end
 
 export EOS_LNG

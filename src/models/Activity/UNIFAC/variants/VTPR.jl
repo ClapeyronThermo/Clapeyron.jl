@@ -8,7 +8,6 @@ end
 
 struct VTPRUNIFAC{c<:EoSModel} <: VTPRUNIFACModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACParam
     puremodel::EoSVectorParam{c}
@@ -75,12 +74,11 @@ function VTPRUNIFAC(components::Vector{String};
     Q  = params["Q"]
     R = deepcopy(Q)
     R.values .= 0
-    icomponents = 1:length(components)
     cache = VTPRUNIFACCache(groups)
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1016/S0378-3812(01)00626-4"]
-    model = VTPRUNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
+    model = VTPRUNIFAC(components,groups,packagedparams,_puremodel,references,cache)
     return model
 end
 
