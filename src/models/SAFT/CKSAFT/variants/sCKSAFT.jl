@@ -100,7 +100,7 @@ end
 function d(model::sCKSAFTModel, V, T, z, i)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
-    res = σ[i,i] * (1 - 0.333exp(-3ϵ[i.i]/T))
+    res = σ[i,i] * (1 - 0.333exp(-3ϵ[i,i]/T))
     return res
 end
 

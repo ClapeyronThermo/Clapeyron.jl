@@ -448,7 +448,7 @@ function f123456(model::SAFTVRMieModel, V, T, z, α)
 end
 
 function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma)
-    m = model.params.segment
+    m = model.params.segment.values
     m̄ = dot(z, m)
     m̄inv = 1/m̄
     ρS = N_A/V*m̄

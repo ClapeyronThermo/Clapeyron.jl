@@ -105,7 +105,7 @@ If a Single Parameter is passed as input, it will be converted to a Pair Paramet
 function lambda_squarewell end
 
 function lambda_squarewell(lambda::Union{PairParameter,SingleParameter}, sigma::Union{PairParameter,SingleParameter})
-    return lambda_squarewell!(lambda,sigma)
+    return lambda_squarewell!(PairParam(lambda),sigma)
 end
 
 export sigma_LorentzBerthelot

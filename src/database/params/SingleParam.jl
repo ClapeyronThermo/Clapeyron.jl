@@ -73,8 +73,8 @@ end
 
 #linear algebra
 
-LinearAlgebra.dot(param::SingleParameter,x::AbstractVector) = dot(param.values,x)
-LinearAlgebra.dot(x::AbstractVector,param::SingleParameter) = dot(x,param.values)
+LinearAlgebra.dot(param::SingleParameter,x::Union{<:AbstractVector,<:Number}) = dot(param.values,x)
+LinearAlgebra.dot(x::Union{<:AbstractVector,<:Number},param::SingleParameter) = dot(x,param.values)
 
 components(x::SingleParameter) = x.components
 
