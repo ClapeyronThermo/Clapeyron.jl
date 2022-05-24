@@ -45,9 +45,19 @@ end
 
 #general fallback that only depends on the the definition of Param(x::InputParam)
 #it can be overloaded to use implace values, but it is a performance consideration
-function inputparams!(model,input,output)
-    calculated_output = output(input)
-    copyto!(output,calculated_output)
+function updateparams2!(model,input,output)
+    model === nothing && return model #if the model is nothing, return unchanged
+    components(model) === nothing && return model #if a model doesn't have components, shouldn't be updated!
+    T = typeof(model)
+    types = fieldtypes(T)
+    #default behaviour, return the same model if we are unable to know if we can update
+    if !(typeof(input) ∈ types & typeof(output) ∈ types)
+        @warn("cannot update $T with input parameters $input and output parameters $output")
+        return model
+    end
+    output_f = parameterless_type(output) #in utils/core_utils.jl
+    calculated_output = output_f(input) #calculate output from input (user defined).
+    copyto!(output,calculated_output) #copy the results to the output,we suppose output = model.params, but it could not.
     return model
 end
 

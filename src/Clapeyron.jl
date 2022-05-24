@@ -18,6 +18,8 @@ using Scratch
 using Unitful
 import LogExpFunctions
 
+include("utils/core_utils.jl") #parameterless_type(model)
+
 include("solvers/Solvers.jl")
 using .Solvers
 using .Solvers: log, sqrt
@@ -150,7 +152,6 @@ include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 include("models/SPUNG/SPUNG.jl")
 include("models/UFTheory/UFTheory.jl")
 
-include("utils/misc.jl")
 # include("utils/estimation/estimation.jl")
 
 end # module

@@ -20,7 +20,7 @@ function sigma_LorentzBerthelot(sigma::Union{SingleParameter,PairParameter},zeta
     return sigma_LorentzBerthelot!(PairParam(sigma),zeta)
 end
 
-function sigma_LorentzBerthelot(sigma::Union{SingleParameter,PairParameter},zeta::PairParameter) 
+function sigma_LorentzBerthelot(sigma::Union{SingleParameter,PairParameter}) 
     return sigma_LorentzBerthelot!(PairParam(sigma))
 end
 
