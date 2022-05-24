@@ -19,10 +19,13 @@ Ignores non-diagonal entries already set.
 
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `pᵢᵢ = pᵢ`.
 """
-function kij_mix(f::F,param::SingleOrPair,K = nothing) where F
+function kij_mix(f::F,param::SingleOrPair) where F
     out = PairParam(param) #copy the input
-    N = length(param.components)
-    return kij_mix!(f,out,K)
+    return kij_mix!(f,out,nothing)
+end
+
+function kij_mix!(f::F,out::PairParameter) where F
+    return kij_mix!(f,out,nothing)
 end
 
 function kij_mix!(f::F,out::PairParameter,::Nothing) where F
@@ -34,7 +37,6 @@ function kij_mix!(f::F,out::PairParameter,::Nothing) where F
     #no missing prop has to be done
     return out
 end
-
 
 function kij_mix!(f::F,out::PairParameter,K::PairParameter) where F
     out_missing = out.ismissingvalues

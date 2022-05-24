@@ -30,7 +30,7 @@ For the out of place version, check [`sigma_LorentzBerthelot`](@ref)
 function sigma_LorentzBerthelot! end
 
 sigma_LorentzBerthelot!(sigma::PairParameter,zeta::PairParameter) = kij_mix!(mix_mean,sigma,zeta)
-sigma_LorentzBerthelot!(sigma::PairParameter) = kij_mix!(mix_mean,sigma)
+sigma_LorentzBerthelot!(sigma::PairParameter) = kij_mix!(mix_mean,sigma,nothing)
 
 """
     epsilon_LorentzBerthelot!(ϵ::ClapeyronParam,k::PairParam)::PairParam
