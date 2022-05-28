@@ -35,8 +35,8 @@ function ADScalarObjective(f,x0::AbstractArray,chunk = autochunk(x0))
     h=h)
 end
 
-#=
-function ADScalarObjective(f,x0::Number)
+
+function ADScalarObjective(f,x0::Number,autochunk)
     function g(x)
         return derivative(f,x)
     end
@@ -62,15 +62,21 @@ function ADScalarObjective(f,x0::Number)
     fgh=fgh,
     h=h)
 end
-"""
-    function optimize(f,x0,method=LineSearch(Newton()), options=OptimizationOptions())
-"""
-=#
+#uses brent, the same default that Optim.jl uses
+function optimize(f,x0::NTuple{T,T},method=BrentMin(T((3 - sqrt(5)) / 2)),options=OptimizationOptions()) where T<:Real
+    scalarobj = ADScalarObjective(f,x0)   
+    optprob = OptimizationProblem(scalarobj;bounds = x0, inplace=false) 
+    return NLSolvers.solve(optprob,method,options)
+end
+#general one, with support for ActiveBox
+function optimize(f,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
+    scalarobj = ADScalarObjective(f,x0,autochunk)   
+    optprob = OptimizationProblem(scalarobj,inplace = (x0 isa number),bounds = bounds) 
+    return NLSolvers.solve(optprob,x0,method,options)
+end
 
-function optimize(f,x0,method=LineSearch(Newton()),chunk =autochunk(x0),options=OptimizationOptions())
-    scalarobj = ADScalarObjective(f,x0,chunk)   
-    optprob = OptimizationProblem(scalarobj; inplace=false) 
-    return NLSolvers.solve(optprob, x0, method,options)
+function optimize(optprob::OptimizationProblem,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
+    return NLSolvers.solve(optprob,x0,method,options)
 end
 
 x_minimum(res::NLSolvers.ConvergenceInfo) = res.info.minimum
