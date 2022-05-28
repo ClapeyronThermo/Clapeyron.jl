@@ -123,6 +123,22 @@ end
 function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:lv, K0=nothing,
                             x0=nothing, y0=nothing, vol0=[nothing, nothing],
                             K_tol=1e-16, itss=10, second_order=false)
+    # Function to compute two phase flash at given temperature, pressure and
+    # global composition
+    # p = Pressure
+    # T = Temperature
+    # z = global composition array
+    # equilibrium = equilibrium type ":lv" for liquid vapor equilibria, ":lle" for liquid liquid equilibria
+    # K0 = optional, initial guess for the constants K
+    # x0 = optional, initial guess for the composition of phase x
+    # y0 = optional, initial guess for the composition of phase y
+    # vol0 = optional, initial guesses for phase x and phase y volumes
+    # K_tol = tolerance to stop the calculation
+    # itss = number of Successive Substitution iterations to perform
+    # second_order = wheter to solve the gibbs energy minimization using the analycal hessian or not
+
+    # out = phase x composition, phase y composition, phase split fraction
+
 
     if equilibrium == :lv
         phasex = :liquid
