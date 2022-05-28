@@ -1,5 +1,3 @@
-using ForwardDiff, DiffResults
-
 # Function to compute fugacity coefficient
 function lnϕ(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing)
     RT = R̄*T
@@ -30,11 +28,11 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=n
     ∂2F = DiffResults.hessian(result)
 
     ∂F∂V = ∂F[1]
-    ∂F∂n = ∂F[2:(ncomponents+1)]
+    ∂F∂n = @view ∂F[2:(ncomponents+1)]
 
     ∂2F∂V2 = ∂2F[1, 1]
-    ∂2F∂n2 = ∂2F[2:(ncomponents+1), 2:(ncomponents+1)]
-    ∂2F∂n∂V = ∂2F[1, 2:(ncomponents+1)]
+    ∂2F∂n2 = @view ∂2F[2:(ncomponents+1), 2:(ncomponents+1)]
+    ∂2F∂n∂V = @view ∂2F[1, 2:(ncomponents+1)]
 
     ∂P∂V = -RT*∂2F∂V2 - n*RT/V^2
     ∂P∂n = -RT.*∂2F∂n∂V .+ RT/V

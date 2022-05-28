@@ -1,6 +1,3 @@
-import Optim: optimize
-import Roots: find_zero
-using NLsolve: nlsolve, only_fj!
 
 # objective functions for Pmin and Pmax initiation method
 function fobj_pmax(model::EoSModel, V, T, z=[1.])
@@ -13,7 +10,7 @@ end
 
 function psat_init(model::EoSModel, T, Tc, Vc)
     # Function to get an initial guess for the saturation pressure at a given temperature
-    z = [1.]
+    z = SA[1.] #static vector
     RT = R̄*T
     Tr = T/Tc
     # Zero pressure initiation
@@ -27,15 +24,16 @@ function psat_init(model::EoSModel, T, Tc, Vc)
     elseif Tr <= 1.0
         low_v = Vc
         up_v = 5 * Vc
-        fmax(V) = fobj_pmax(model, V, T)
-        sol_max = optimize(fmax, low_v, up_v)
+    
+        fmax(V) = pressure(model, V, T)
+        sol_max = Optim.optimize(fmax, low_v, up_v)
         v_max = sol_max.minimizer
         P_max = - sol_max.minimum
 
-        low_v = 1e-10*Vc
+        low_v = lb_volume(model)
         up_v = Vc
-        fmin(V) = fobj_pmin(model, V, T)
-        sol_min = optimize(fmin, low_v, up_v)
+        fmin(V) = -pressure(model, V, T)
+        sol_min = Optim.optimize(fmin, low_v, up_v)
         v_min = sol_min.minimizer
         P_min = sol_min.minimum
         P0 = (max(0., P_min) + P_max) / 2
@@ -53,12 +51,12 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=[nothing, nothing])
     # vol0 = initial guesses for the phase volumes = [vol liquid, vol vapor]
     # out = Saturation Pressure, vol liquid, vol vapor
     vol_liq0, vol_vap0 = vol0
-
+    z = SA[1.]
     RT = R̄*T
     P = 1. * p0
     # Solving the phase volumes for the first iteration
-    vol_liq = volume(model, P, T, phase=:liquid, vol0=vol_liq0)
-    vol_vap = volume(model, P, T, phase=:vapor, vol0=vol_vap0)
+    vol_liq = _volume_compress(model, P, T, z, x0_volume_liquid(model,T,z))
+    vol_vap = _volume_compress(model, P, T, z, x0_volume_gas(model,p,T,z))
 
     itmax = 20
     for i in 1:itmax
@@ -78,8 +76,8 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=[nothing, nothing])
         P = P - dP
         if abs(dP) < 1e-8; break; end
         # Updating the phase volumes
-        vol_liq = volume(model, P, T, phase=:liquid, vol0=vol_liq)
-        vol_vap = volume(model, P, T, phase=:vapor, vol0=vol_vap)
+        vol_liq = _volume_compress(model, P, T, z,vol_liq)
+        vol_vap = _volume_compress(model, P, T, z,vol_vap)
     end
     return P, vol_liq, vol_vap
 end
@@ -175,10 +173,10 @@ function psat(model::EoSModel, T; p0=nothing, vol0=[nothing, nothing])
     elseif method == :chempot
         ρ0 = [1/vol_liq0, 1/vol_vap0]
         ofpsat(F, J, ρ) = fobj_psat!(model, ρ, T, F, J)
-        sol = nlsolve(only_fj!(ofpsat), ρ0, method = :newton)
+        sol = NLsolve.nlsolve(only_fj!(ofpsat), ρ0, method = :newton)
         ρ = sol.zero
         vol_liq, vol_vap = 1 ./ ρ
-        P = pressure(model, vol_vap, T, [1.])
+        P = pressure(model, vol_vap, T)
     end
 
     return P, vol_liq, vol_vap
@@ -188,7 +186,7 @@ end
 function obj_tsat(model::EoSModel, T, P)
     global vol_liq
     global vol_vap
-
+    #to avoid using globals, the best thing here is using a cache (TODO)
     RT = R̄*T
 
     vol_liq = volume(model, P, T, phase=:liquid, vol0=vol_liq)
@@ -216,8 +214,9 @@ function tsat(model::EoSModel, P, T0)
 
     vol_liq = nothing
     vol_vap = nothing
-
+    
     ftsat(T) = obj_tsat(model, T, P)
-    T = find_zero(ftsat, T0)
+
+    T = Roots.find_zero(ftsat, T0)
     return T, vol_liq, vol_vap
 end

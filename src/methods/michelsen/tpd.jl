@@ -1,5 +1,4 @@
-import Optim: optimize, only_fgh!, Newton
-import LinearAlgebra: I as Identity
+
 
 
 function tpd_obj!(model::EoSModel, p, T, di, α, phasew, z_notzero; volw0=nothing,
@@ -22,9 +21,10 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew, z_notzero; volw0=nothin
         dtpd = log.(w_notzero) + lnϕw[z_notzero] - di
         gi = dtpd.*(α./2)
 
-        eye = Matrix{Float64}(Identity, ncomponents, ncomponents)
-        hess = eye .* (1. .+  (gi./α))  .+ sqrt.(w_notzero * w_notzero') .* ∂lnϕ∂nw[z_notzero, z_notzero]
-        H[:, :] = hess
+        eye = Identity(ncomponents)
+        #TODO: check that just using Identity without instantiation works
+        hess = @view H[:, :]
+        hess .= eye .* (1. .+  (gi./α))  .+ sqrt.(w_notzero * w_notzero') .* ∂lnϕ∂nw[z_notzero, z_notzero]
     else
         lnϕw, volw = lnϕ(model, p, T, w; phase=phasew, vol0=volw0)
         if isnan(volw)
@@ -34,15 +34,17 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew, z_notzero; volw0=nothin
         gi = dtpd.*(α./2)
     end
 
-    tpdi = w_notzero.*(dtpd .- 1.)
     if G != nothing
+        Gvec = vec(G)
         # computing the gradient
-        G[:] = gi
+        Gvec .= gi
     end
 
     if F != nothing
         # computing the TPD value
-        tpd = sum(tpdi) + 1
+        #tpdi = w_notzero.*(dtpd .- 1.)
+        #tpd = sum(tpdi) + 1
+        tpd = dot(w_notzero,dtpd) - sum(w_notzero) + 1
         return tpd
     end
 end
@@ -83,7 +85,7 @@ function tpd_min(model::EoSModel, p, T, z, w, phasez, phasew; volz0=nothing, vol
 
     # minimizing the TPD by Newton's method
     dftpd!(F, G, H, α) = tpd_obj!(model, p, T, di, α, phasew, z_notzero, volw0=volw, F=F, G=G, H=H)
-    sol = optimize(only_fgh!(dftpd!), α0, Newton())
+    sol = Optim.optimize(only_fgh!(dftpd!), α0, Optim.Newton())
     nc = length(model)
     # computing phase composition
     w = zeros(nc)
@@ -109,7 +111,7 @@ function all_tpd(model::EoSModel, p, T, z)
     phasez_array = []
     phasew_array = []
 
-    for phasez in [:liquid, :vapor]
+    for phasez in (:liquid, :vapor)
         # computing the di vector for the phase z (constant along the minimization for a given phasez)
         lnϕz, volz = lnϕ(model, p, T, z; phase=phasez, vol0=nothing)
         di = log.(z[z_notzero]) + lnϕz[z_notzero]
@@ -134,7 +136,7 @@ function all_tpd(model::EoSModel, p, T, z)
                 try
                     # minimizing the TPD by Newton's method
                     dftpd!(F, G, H, α) = tpd_obj!(model, p, T, di, α, phasew, z_notzero, volw0=volw, F=F, G=G, H=H)
-                    sol = optimize(only_fgh!(dftpd!), α0, Newton())
+                    sol = Optim.optimize(only_fgh!(dftpd!), α0, Optim.Newton())
                     w = zeros(nc)
                     w[z_notzero] = sol.minimizer.^2/4.
                     w = w/sum(w)
@@ -187,13 +189,15 @@ function lle_init(model::EoSModel, p, T, z)
     # and then by a Newton's method multiple times
     # This functions attempts to find all the liquid tpd minima
     # out = array of minimas composition, array of tpd values
+    _1 = one(p+T+first(z))
+    TYPE = typeof(_1)
     z_notzero = z .> 0.
 
     nc = length(model)
-    Id = Matrix{Float64}(Identity, nc, nc)
+    Id = Matrix{TYPE}(Identity, nc, nc)
 
-    w_array = []
-    tpd_array = []
+    w_array = TYPE[]
+    tpd_array = TYPE[]
 
     phasez = :liquid
     phasew = :liquid
@@ -213,7 +217,7 @@ function lle_init(model::EoSModel, p, T, z)
         try
             # minimizing the TPD by Newton's method
             dftpd!(F, G, H, α) = tpd_obj!(model, p, T, di, α, phasew, z_notzero, volw0=volw, F=F, G=G, H=H)
-            sol = optimize(only_fgh!(dftpd!), α0, Newton())
+            sol = Optim.optimize(only_fgh!(dftpd!), α0, Optim.Newton())
             w = zeros(nc)
             w[z_notzero] = sol.minimizer.^2/4.
             w = w/sum(w)
