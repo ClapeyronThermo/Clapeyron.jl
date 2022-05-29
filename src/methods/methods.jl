@@ -47,6 +47,29 @@ If a string is passed, it is converted to symbol.
 is_supercritical(sym::Symbol) = sym in SUPERCRITICAL_STR
 is_supercritical(str::String) = is_vapour(Symbol(str))
 
+const VLE_STR = (:vle,:lve,:vl,:lv)
+"""
+    is_vle(x::Union{Symbol,String})
+
+Returns `true` if the symbol is in `(:vle,:lve,:vl,:lv)`.
+
+If a string is passed, it is converted to symbol.
+"""
+is_vle(sym::Symbol) = sym in VLE_STR
+is_vle(str::String) = is_vapour(Symbol(str))
+
+const LLE_STR = (:lle,:ll)
+"""
+    is_lle(x::Union{Symbol,String})
+
+Returns `true` if the symbol is in `(:lle,:ll)`.
+
+If a string is passed, it is converted to symbol.
+"""
+is_lle(sym::Symbol) = sym in SUPERCRITICAL_STR
+is_lle(str::String) = is_vapour(Symbol(str))
+
+
 
 """
     ∑(iterator)

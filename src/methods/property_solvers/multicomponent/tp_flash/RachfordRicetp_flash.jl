@@ -58,10 +58,10 @@ function RR_fixpoint(K1,K0,model,p,T,n,x,y,φ_α,φ_β,α,spec)
     α[1] = α₀
     x = rr_flash_liquid!(x,K0,n,α₀)
     y .= K0 .* x
-    if spec == :lle
+    if is_lle(spec)
         phaseα = :l
         phaseβ = :l
-    elseif spec ==:vle
+    elseif is_vle(spec)
         phaseα = :l
         phaseβ = :v
     else
