@@ -63,6 +63,10 @@ function saturation_pressure_impl(model::EoSModel,T,method::IsoFugacitySaturatio
     p0 = method.p0
     if isnan(p0)
         Tc, Pc, Vc = crit_pure(model)
+        if Tc < T
+            nan = p0*zero(T)/zero(T)
+            return (nan,nan,nan)
+        end
         p0 = psat_init(model, T, Tc, Vc)
     end
     return psat_fugacity(model,T,p0,vol0,method.max_iters,method.p_tol)
@@ -110,7 +114,6 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters
     return P, vol_liq, vol_vap
 end
 
-
 function ∂Helmholtz(model::EoSModel, ρ, T, z=[1.0])
     # Auxiliar functions to compute Helmholtz Energy and its first density derivative
     f(dρ) = eos(model, 1. / dρ, T, z)
@@ -124,7 +127,6 @@ function ∂2Helmholtz(model::EoSModel, ρ, T, z=[1.0])
     A, ∂A, ∂2A = Solvers.f∂f∂2f(f, ρ)
     return A, ∂A, ∂2A
 end
-
 
 function fobj_psat!(model::EoSModel, ρ, T, F, J)
     # Objetive function to solve saturation pressure using the densities as iterable variables
@@ -164,13 +166,13 @@ function fobj_psat!(model::EoSModel, ρ, T, F, J)
     end
 end
 
-
 function psat(model::EoSModel, T; p0=nothing, vol0=(nothing, nothing))
     # Function to solve saturation pressure of a pure fluid
     # T = Saturation Temperature
     # p0 = initial guess for the saturation pressure
     # vol0 = initial guesses for the phase volumes = [vol liquid, vol vapor]
     # out = Saturation Pressure, vol liquid, vol vapor
+    
     T = T*one(T)/one(T)
     init = false
 
@@ -196,20 +198,23 @@ function psat(model::EoSModel, T; p0=nothing, vol0=(nothing, nothing))
     end
 
     if method == :fug
-        P, vol_liq, vol_vap = psat_fugacity(model, T, p0, vol0)
-    elseif method == :chempot
-        
-        ρl0 = 1/vol_liq0
-        ρv0 = 1/vol_vap0
-        ρ0 = vec2(ρl0,ρv0,T)
-        ofpsat(F, J, ρ) = fobj_psat!(model, ρ, T, F, J)
-        # sol = NLsolve.nlsolve(only_fj!(ofpsat), ρ0, method = :newton)
-        sol = Solvers.nlsolve(Solvers.only_fj!(ofpsat), ρ0)
-        ρ = Solvers.x_sol(sol)
-        vol_liq, vol_vap = 1 ./ ρ
-        P = pressure(model, vol_vap, T)
+        return psat_fugacity(model, T, p0, vol0)
+    elseif method == :chempot  
+        return psat_chempot(model,T,vol_liq0,vol_vap0)
     end
+    return P, vol_liq, vol_vap
+end
 
+function psat_chempot(model,T,vol_liq0,vol_vap0)
+    ρl0 = 1/vol_liq0
+    ρv0 = 1/vol_vap0
+    ρ0 = vec2(ρl0,ρv0,T)
+    ofpsat(F, J, ρ) = fobj_psat!(model, ρ, T, F, J)
+    # sol = NLsolve.nlsolve(only_fj!(ofpsat), ρ0, method = :newton)
+    sol = Solvers.nlsolve(Solvers.only_fj!(ofpsat), ρ0)
+    ρ = Solvers.x_sol(sol)
+    vol_liq, vol_vap = 1 ./ ρ
+    P = pressure(model, vol_vap, T)
     return P, vol_liq, vol_vap
 end
 
