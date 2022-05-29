@@ -3,7 +3,7 @@
 Generates a correct 2-length static array `[x1,x2]`, with support for non-isbits types 
 """
 function vec2(x1,x2,opt = true)
-    V01,V02,_ = promote(x1,x2,t)
+    V01,V02,_ = promote(x1,x2,opt)
     if V01 isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
         return MVector((V01,V02))
     else

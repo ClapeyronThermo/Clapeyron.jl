@@ -9,7 +9,7 @@ ChemPotVSaturation(x::Tuple) = ChemPotVSaturation(first(x),last(x))
 ChemPotVSaturation(x::Vector) = ChemPotVSaturation(first(x),last(x))
 
 function vec2(method::ChemPotVSaturation{T},opt = true) where T <:Real
-    return vec2(method.vl,method.vv,t)
+    return vec2(method.vl,method.vv,opt)
 end
 
 function ChemPotVSaturation(;vl = nothing,vv = nothing)
@@ -58,7 +58,12 @@ function saturation_pressure(model,T,V0::Union{Tuple,Vector} = x0_sat_pure(model
     return saturation_pressure_impl(model,T,method)
 end
 
-function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation)
+function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{Nothing})
+    return saturation_pressure_impl(model,T,ChemPotVSaturation(x0_sat_pure(model,T)))
+end
+
+function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{<:Number})
+    
     V0 = vec2(method,T)
     V01,V02 = V0
     TYPE = eltype(V0)
