@@ -81,7 +81,7 @@ function optimize(optprob::OptimizationProblem,method=LineSearch(Newton()),optio
 end
 #build scalar objective -> Optimization Problem
 function optimize(scalarobj::ScalarObjective,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
-    optprob = OptimizationProblem(scalarobj,inplace = (x0 isa Number)) #,bounds = bounds)
+    optprob = OptimizationProblem(obj = scalarobj,inplace = (x0 isa Number),bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
