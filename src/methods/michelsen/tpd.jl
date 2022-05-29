@@ -85,13 +85,14 @@ function tpd_min(model::EoSModel, p, T, z, w, phasez, phasew; volz0=nothing, vol
 
     # minimizing the TPD by Newton's method
     dftpd!(F, G, H, α) = tpd_obj!(model, p, T, di, α, phasew, z_notzero, volw0=volw, F=F, G=G, H=H)
-    sol = Optim.optimize(only_fgh!(dftpd!), α0, Optim.Newton())
+    # sol = Optim.optimize(only_fgh!(dftpd!), α0, Optim.Newton())
+    sol = Solvers.optimize(Solvers.only_fgh!(dftpd!), α0) #, method=LineSearch(Newton()))#  , Optim.Newton())
     nc = length(model)
     # computing phase composition
     w = zeros(nc)
-    w[z_notzero] = sol.minimizer.^2/4.
+    w[z_notzero] = sol.info.solution.^2 / 4.
     w = w/sum(w)
-    tpd = sol.minimum
+    tpd = sol.info.minimum
     return w, tpd
 end
 
@@ -136,11 +137,12 @@ function all_tpd(model::EoSModel, p, T, z)
                 try
                     # minimizing the TPD by Newton's method
                     dftpd!(F, G, H, α) = tpd_obj!(model, p, T, di, α, phasew, z_notzero, volw0=volw, F=F, G=G, H=H)
-                    sol = Optim.optimize(only_fgh!(dftpd!), α0, Optim.Newton())
+                    # sol = Optim.optimize(only_fgh!(dftpd!), α0, Optim.Newton())
+                    sol = Solvers.optimize(Solvers.only_fgh!(dftpd!), α0)
                     w = zeros(nc)
-                    w[z_notzero] = sol.minimizer.^2/4.
+                    w[z_notzero] = sol.info.solution.^2 / 4.
                     w = w/sum(w)
-                    tpd = sol.minimum
+                    tpd = sol.info.minimum
                     if tpd < 0. && ~isapprox(z, w, atol=1e-3)
                         if length(w_array) > 0
                             already_computed = false
@@ -196,8 +198,8 @@ function lle_init(model::EoSModel, p, T, z)
     nc = length(model)
     Id = Matrix{TYPE}(Identity, nc, nc)
 
-    w_array = TYPE[]
-    tpd_array = TYPE[]
+    w_array = []
+    tpd_array = []
 
     phasez = :liquid
     phasew = :liquid
@@ -217,11 +219,12 @@ function lle_init(model::EoSModel, p, T, z)
         try
             # minimizing the TPD by Newton's method
             dftpd!(F, G, H, α) = tpd_obj!(model, p, T, di, α, phasew, z_notzero, volw0=volw, F=F, G=G, H=H)
-            sol = Optim.optimize(only_fgh!(dftpd!), α0, Optim.Newton())
+            # sol = Optim.optimize(only_fgh!(dftpd!), α0, Optim.Newton())
+            sol = Solvers.optimize(Solvers.only_fgh!(dftpd!), α0)
             w = zeros(nc)
-            w[z_notzero] = sol.minimizer.^2/4.
+            w[z_notzero] = sol.info.solution.^2 / 4.
             w = w/sum(w)
-            tpd = sol.minimum
+            tpd = sol.info.minimum
             if tpd < 0. && ~isapprox(z, w, atol=1e-3)
                 if length(w_array) > 0
                     already_computed = false
