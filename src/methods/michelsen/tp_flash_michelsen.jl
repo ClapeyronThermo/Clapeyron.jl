@@ -1,6 +1,3 @@
-import Optim: optimize, only_fg!, only_fgh!, Newton, BFGS
-import LinearAlgebra: I as Identity
-
 function rachfordrice(β, K, z)
     # Function to solve Rachdord-Rice mass balance
     K1 = K .- 1.
@@ -119,8 +116,53 @@ function dgibbs_obj!(model::EoSModel, p, T, z, z_notzero, phasex, phasey, ny; F=
 
 end
 
+"""
+    MichelsenTPFlash{T}(;K0 = nothing,rtol= 1e-10,atol = 1e-10,max_iters = 100)
 
-function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:lv, K0=nothing,
+Method to solve non-reactive multicomponent flash problem by Michelsen's method.
+
+Only two phases are supported. if `K0` is `nothing`, it will be calculated via the Wilson correlation.
+
+- equilibrium = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria
+- `K0` (optional), initial guess for the constants K
+- `x0` (optional), initial guess for the composition of phase x
+- `y0` = optional, initial guess for the composition of phase y
+- `vol0` = optional, initial guesses for phase x and phase y volumes
+- `K_tol` = tolerance to stop the calculation
+- `ss_iters` = number of Successive Substitution iterations to perform
+- `second_order` = wheter to solve the gibbs energy minimization using the analytical hessian or not
+"""
+struct MichelsenTPFlash{T} <: TPFlashMethod
+    equilibrium::Symbol
+    K0::Union{Vector{T},Nothing}
+    x0::Union{Vector{T},Nothing}
+    y0::Union{Vector{T},Nothing}
+    v0::Union{Tuple{T,T},Nothing} 
+    K_tol::Float64 = eps(Float64)
+    ss_iters::Int = 10
+    second_order::Bool = false
+end
+
+function MichelsenTPFlash(;equilibrium = :vle,K0 = nothing, x0 = nothing,y0=nothing,v0=nothing,K_tol = eps(Float64),ss_iters = 10,second_order = false)
+    !(is_vle(equilibrium) | is_lle(equilibrium)) && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
+    if K0 == x0 == y0 === v0 == nothing #nothing specified
+        equilibrium == :lle && throw(error("""
+        You need to provide either an initial guess for the partion constant K
+        or for compositions of x and y for LLE"""))   
+        T = Float64
+    else
+        if !isnothing(K0) & isnothing(x0) & isnothing(y0) #K0 specified
+            T = eltype(K0)
+        elseif isnothing(K0) & isnothing(x0) & isnothing(y0)  #x0, y0 specified
+            T = eltype(x0)
+        else
+            throw(error("invalid specification of initial points"))
+        end
+     end
+    return MichelsenTPFlash{T}(equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order)
+end
+
+function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothing,
                             x0=nothing, y0=nothing, vol0=[nothing, nothing],
                             K_tol=1e-16, itss=10, second_order=false)
     # Function to compute two phase flash at given temperature, pressure and
@@ -140,10 +182,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:lv, K0=nothin
     # out = phase x composition, phase y composition, phase split fraction
 
 
-    if equilibrium == :lv
+    if is_vle(equilibrium)
         phasex = :liquid
         phasey = :vapor
-    elseif equilibrium == :ll
+    elseif is_lle(equilibrium)
         phasex = :liquid
         phasey = :liquid
     end
@@ -162,7 +204,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:lv, K0=nothin
         lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
         lnK = lnϕx - lnϕy
         K = exp.(lnK)
-    elseif equilibrium == :lv
+    elseif is_vle(equilibrium)
         # Wilson Correlation for K
         # Check this function, it didnt work with SAFT-γ-Mie
         K = wilson_k_values(model,p,T)
@@ -210,17 +252,16 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:lv, K0=nothin
         if second_order
             dfgibbs!(F, G, H, ny) = dgibbs_obj!(model, p, T, z, z_notzero, phasex, phasey,
                                              ny; F=F, G=G, H=H)
-            sol = optimize(only_fgh!(dfgibbs!), ny, Newton())
+            sol = Optim.optimize(only_fgh!(dfgibbs!), ny, Optim.Newton())
         else
             fgibbs!(F, G, ny) = gibbs_obj!(model, p, T, z, z_notzero, phasex, phasey,
                                            ny; F, G=G)
-            sol = optimize(only_fg!(fgibbs!), ny, BFGS())
+            sol = Optim.optimize(only_fg!(fgibbs!), ny, Optim.BFGS())
         end
         # Converting from moles to mole fractions
         ny = sol.minimizer
         x = fill!(similar(z), 0)
         y = fill!(similar(z), 0)
-
         β = sum(ny)
         nx = z[z_notzero] .- ny
         x[z_notzero] = nx ./ sum(nx)
