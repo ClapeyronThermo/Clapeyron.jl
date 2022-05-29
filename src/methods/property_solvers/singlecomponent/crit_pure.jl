@@ -13,12 +13,7 @@ function crit_pure(model::EoSModel,x0=nothing)
     if x0 === nothing
         x0 = x0_crit_pure(model)
     end
-    x01,x02 = x0
-    if T̄ isa Base.IEEEFloat
-        x0 = MVector((x01,x02))
-    else
-        x0 = SizedVector{2,typeof(T̄)}((x01,x02))
-    end
+    x0 = vec2(first(x0),last(x0),T̄)
     solver_res = Solvers.nlsolve(f!, x0)
     #print(solver_res)
     r  = Solvers.x_sol(solver_res)

@@ -1,13 +1,4 @@
 
-# objective functions for Pmin and Pmax initiation method
-function fobj_pmax(model::EoSModel, V, T, z=[1.])
-    return - pressure(model, V, T, z)
-end
-
-function fobj_pmin(model::EoSModel, V, T, z=[1.])
-    return pressure(model, V, T, z)
-end
-
 function psat_init(model::EoSModel, T, Tc, Vc)
     # Function to get an initial guess for the saturation pressure at a given temperature
     z = SA[1.] #static vector
@@ -46,8 +37,38 @@ function psat_init(model::EoSModel, T, Tc, Vc)
     return  P0
 end
 
+struct IsoFugacitySaturation{T} <: SaturationMethod
+    p0::T
+    vl::Union{Nothing,T}
+    vv::Union{Nothing,T}
+    max_iters::Int
+    p_tol::Float64
+end
 
-function psat_fugacity(model::EoSModel, T, p0, vol0=[nothing, nothing])
+function IsoFugacitySaturation(;p0 = nothing,vl = nothing,vv = nothing,max_iters = 20,p_tol = sqrt(eps(Float64)))
+    p0 === nothing && (p0 = NaN)
+    if vl !== nothing
+        p0,vl = promote(p0,vl)
+    elseif vv !== nothing
+        p0,vv = promote(p0,vv)
+    elseif (vv !== nothing) & (vl !== nothing)
+        p0,vl,vv = promote(p0,vl,vv)
+    else
+    end
+    return IsoFugacitySaturation(p0,vl,vv,max_iters,p_tol)
+end
+
+function saturation_pressure_impl(model::EoSModel,T,method::IsoFugacitySaturation)
+    vol0 = (method.vl,method.vv,T)
+    p0 = method.p0
+    if isnan(p0)
+        Tc, Pc, Vc = crit_pure(model)
+        p0 = psat_init(model, T, Tc, Vc)
+    end
+    return psat_fugacity(model,T,p0,vol0,method.max_iters,method.p_tol)
+end
+
+function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters = 20,p_tol = sqrt(eps(Float64)))
     # Objetive function to solve saturation pressure using the pressure as iterable variable
     # T = Saturation Temperature
     # p0 = initial guess for the saturation pressure
@@ -65,7 +86,7 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=[nothing, nothing])
     vol_liq = _volume_compress(model, P, T, z, vol_liq0)
     vol_vap = _volume_compress(model, P, T, z, vol_vap0)
 
-    itmax = 20
+    itmax = max_iters
     for i in 1:itmax
         # Computing chemical potential
         μ_liq = VT_chemical_potential_res(model, vol_liq, T)[1]
@@ -81,7 +102,7 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=[nothing, nothing])
         dFO = (Z_vap - Z_liq) / P
         dP = FO / dFO
         P = P - dP
-        if abs(dP) < 1e-8; break; end
+        if abs(dP) < p_tol; break; end
         # Updating the phase volumes
         vol_liq = _volume_compress(model, P, T, z,vol_liq)
         vol_vap = _volume_compress(model, P, T, z,vol_vap)
@@ -114,7 +135,7 @@ function fobj_psat!(model::EoSModel, ρ, T, F, J)
 
     ρ_liq, ρ_vap = ρ
 
-    if !(J == nothing)
+    if !(J === nothing)
         A_liq, ∂A_liq, ∂2A_liq = ∂2Helmholtz(model, ρ_liq, T)
         ∂P_liq = 2. * ρ_liq * ∂A_liq + ρ_liq^2 * ∂2A_liq
         ∂μ_liq = ρ_liq*∂2A_liq + 2*∂A_liq
@@ -137,11 +158,10 @@ function fobj_psat!(model::EoSModel, ρ, T, F, J)
     P_vap = ∂A_vap*ρ_vap^2
     μ_vap = A_vap + ρ_vap * ∂A_vap
 
-    if !(F == nothing)
+    if !(F === nothing)
         F[1] = μ_liq - μ_vap
         F[2] = P_liq - P_vap
     end
-
 end
 
 
@@ -181,11 +201,7 @@ function psat(model::EoSModel, T; p0=nothing, vol0=(nothing, nothing))
         
         ρl0 = 1/vol_liq0
         ρv0 = 1/vol_vap0
-        if T isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
-            ρ0 = MVector{2,typeof(ρl0)}(ρl0,ρv0)
-        else
-            ρ0 = SizedVector{2,typeof(ρl0)}((ρl0,ρv0))
-        end
+        ρ0 = vec2(ρl0,ρv0,T)
         ofpsat(F, J, ρ) = fobj_psat!(model, ρ, T, F, J)
         # sol = NLsolve.nlsolve(only_fj!(ofpsat), ρ0, method = :newton)
         sol = Solvers.nlsolve(Solvers.only_fj!(ofpsat), ρ0)
