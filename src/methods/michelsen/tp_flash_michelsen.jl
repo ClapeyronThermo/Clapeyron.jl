@@ -138,9 +138,9 @@ struct MichelsenTPFlash{T} <: TPFlashMethod
     x0::Union{Vector{T},Nothing}
     y0::Union{Vector{T},Nothing}
     v0::Union{Tuple{T,T},Nothing} 
-    K_tol::Float64 = eps(Float64)
-    ss_iters::Int = 10
-    second_order::Bool = false
+    K_tol::Float64
+    ss_iters::Int
+    second_order::Bool
 end
 
 function MichelsenTPFlash(;equilibrium = :vle,K0 = nothing, x0 = nothing,y0=nothing,v0=nothing,K_tol = eps(Float64),ss_iters = 10,second_order = false)
