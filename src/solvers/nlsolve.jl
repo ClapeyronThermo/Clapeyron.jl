@@ -55,3 +55,37 @@ end
 function jacvec(f, x, v)
     partials.(f(Dual{DeivVecTag}.(x, v)), 1)
 end
+
+#= only_fj!: NLsolve.jl legacy form:
+
+function only_fj!(F, J, x)
+    # shared calculations begin
+    # ...
+    # shared calculation end
+    if !(F == nothing)
+        # mutating calculations specific to f! goes here
+    end
+    if !(J == nothing)
+        # mutating calculations specific to j! goes
+    end
+end       
+=#
+function only_fj!(fj!::T) where T
+    function _f!(F,x)
+        fj!(F,nothing,x)
+        F
+    end
+    
+    function _fj!(F,J,x)
+        fj!(F,J,x)
+        F,J
+    end
+
+    function _j!(J,x)
+        fj!(nothing,J,x)
+        J
+    end
+
+    _jv!(x) = nothing
+    return NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> NEqProblem
+end

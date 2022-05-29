@@ -78,5 +78,88 @@ end
 function optimize(optprob::OptimizationProblem,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
     return NLSolvers.solve(optprob,x0,method,options)
 end
+#build scalar objective -> Optimization Problem
+function optimize(scalarobj::ScalarObjective,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
+    optprob = OptimizationProblem(scalarobj,inplace = (x0 isa number),bounds = bounds)
+    return NLSolvers.solve(optprob,x0,method,options)
+end
 
 x_minimum(res::NLSolvers.ConvergenceInfo) = res.info.minimum
+
+#= only_fg!: Optim.jl legacy form:
+function fg!(F,G,x)
+  # do common computations here
+  # ...
+  if G != nothing
+    # code to compute gradient here
+    # writing the result to the vector G
+  end
+  if F != nothing
+    # value = ... code to compute objective function
+    return value
+  end
+end
+=#
+
+function only_fg!(fg!::T) where T      
+    function f(x)
+        return fg!(true,nothing,x)
+    end
+    
+    function g(df,x)
+        fg!(nothing,df,x)
+        return df
+    end
+    function fg(df,x)
+        fx = fg!(true,df,x)
+        return fx,df
+    end
+
+    return ScalarObjective(f=f,
+    g=g,
+    fg=fg,
+    fgh=nothing,
+    h=nothing)
+end
+
+#= only_fgh!: Optim.jl legacy form:
+function fgh!(F,G,H,x)
+  G == nothing || # compute gradient and store in G
+  H == nothing || # compute Hessian and store in H
+  F == nothing || return f(x)
+  nothing
+end
+=#
+
+function only_fgh!(fgh!::T) where T      
+    function f(x)
+        return fgh!(true,nothing,nothing,x)
+    end
+    
+    function g(df,x)
+        fgh!(nothing,df,nothing,x)
+        return df
+    end
+
+    function fg(df,x)
+        fx = fgh!(true,df,nothing,x)
+        return fx,df
+    end
+
+    function fgh(df,d2f,x)
+        fx = fgh!(true,df,d2f,x)
+        return fx,df,d2f
+    end
+
+    function h(df,d2f,x)
+        fgh!(nothing,nothing,d2f,x)
+        return d2f
+    end
+
+    return ScalarObjective(f=f,
+    g=g,
+    fg=fg,
+    fgh=fgh,
+    h=nothing)
+end
+
