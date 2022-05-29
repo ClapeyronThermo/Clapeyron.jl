@@ -64,14 +64,14 @@ function ADScalarObjective(f,x0::Number,autochunk)
 end
 #uses brent, the same default that Optim.jl uses
 function optimize(f,x0::NTuple{T,T},method=BrentMin(T((3 - sqrt(5)) / 2)),options=OptimizationOptions()) where T<:Real
-    scalarobj = ADScalarObjective(f,x0)   
-    optprob = OptimizationProblem(scalarobj;bounds = x0, inplace=false) 
+    scalarobj = ADScalarObjective(f,x0)
+    optprob = OptimizationProblem(scalarobj;bounds = x0, inplace=false)
     return NLSolvers.solve(optprob,method,options)
 end
 #general one, with support for ActiveBox
 function optimize(f,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
-    scalarobj = ADScalarObjective(f,x0,autochunk)   
-    optprob = OptimizationProblem(scalarobj,inplace = (x0 isa number),bounds = bounds) 
+    scalarobj = ADScalarObjective(f,x0,autochunk)
+    optprob = OptimizationProblem(scalarobj,inplace = (x0 isa number),bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
@@ -80,7 +80,7 @@ function optimize(optprob::OptimizationProblem,method=LineSearch(Newton()),optio
 end
 #build scalar objective -> Optimization Problem
 function optimize(scalarobj::ScalarObjective,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
-    optprob = OptimizationProblem(scalarobj,inplace = (x0 isa number),bounds = bounds)
+    optprob = OptimizationProblem(scalarobj,inplace = (x0 isa Number)) #,bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
@@ -101,11 +101,11 @@ function fg!(F,G,x)
 end
 =#
 
-function only_fg!(fg!::T) where T      
+function only_fg!(fg!::T) where T
     function f(x)
         return fg!(true,nothing,x)
     end
-    
+
     function g(df,x)
         fg!(nothing,df,x)
         return df
@@ -131,11 +131,11 @@ function fgh!(F,G,H,x)
 end
 =#
 
-function only_fgh!(fgh!::T) where T      
+function only_fgh!(fgh!::T) where T
     function f(x)
         return fgh!(true,nothing,nothing,x)
     end
-    
+
     function g(df,x)
         fgh!(nothing,df,nothing,x)
         return df
@@ -162,4 +162,3 @@ function only_fgh!(fgh!::T) where T
     fgh=fgh,
     h=nothing)
 end
-
