@@ -68,14 +68,14 @@ function only_fj!(F, J, x)
     if !(J == nothing)
         # mutating calculations specific to j! goes
     end
-end       
+end
 =#
 function only_fj!(fj!::T) where T
     function _f!(F,x)
         fj!(F,nothing,x)
         F
     end
-    
+
     function _fj!(F,J,x)
         fj!(F,J,x)
         F,J
@@ -87,5 +87,6 @@ function only_fj!(fj!::T) where T
     end
 
     _jv!(x) = nothing
-    return NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> NEqProblem
+    return NLSolvers.VectorObjective(_f!,_j!,_fj!,_jv!) |> NEqProblem
+    # return NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> NEqProblem
 end
