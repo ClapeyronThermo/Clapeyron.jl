@@ -11,7 +11,7 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew, z_notzero; volw0=nothin
     w[z_notzero] = α.^2 /4.
     w_notzero = w[z_notzero]
 
-    if H != nothing
+    if H !== nothing
         # computing the hessian
         lnϕw, ∂lnϕ∂nw, ∂lnϕ∂Pw, volw = ∂lnϕ∂n∂P(model, p, T, w; phase=phasew, vol0=volw0)
         if isnan(volw)
@@ -34,13 +34,13 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew, z_notzero; volw0=nothin
         gi = dtpd.*(α./2)
     end
 
-    if G != nothing
+    if G !== nothing
         Gvec = vec(G)
         # computing the gradient
         Gvec .= gi
     end
 
-    if F != nothing
+    if F !== nothing
         # computing the TPD value
         #tpdi = w_notzero.*(dtpd .- 1.)
         #tpd = sum(tpdi) + 1

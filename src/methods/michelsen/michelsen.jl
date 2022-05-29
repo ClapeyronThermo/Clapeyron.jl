@@ -1,6 +1,6 @@
+import Optim
 import LinearAlgebra: I as Identity
 using Optim: only_fg!, only_fgh!
-using NLsolve: only_fj!
 
 include("fugacity_coefficient.jl")
 include("saturation_pure.jl")

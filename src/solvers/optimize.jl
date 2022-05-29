@@ -63,15 +63,16 @@ function ADScalarObjective(f,x0::Number,autochunk)
     h=h)
 end
 #uses brent, the same default that Optim.jl uses
-function optimize(f,x0::NTuple{T,T},method=BrentMin(T((3 - sqrt(5)) / 2)),options=OptimizationOptions()) where T<:Real
-    scalarobj = ADScalarObjective(f,x0)   
-    optprob = OptimizationProblem(scalarobj;bounds = x0, inplace=false) 
-    return NLSolvers.solve(optprob,method,options)
+function optimize(f,x0::NTuple{2,T},method=BrentMin(),options=OptimizationOptions()) where T<:Real
+    scalarobj = ADScalarObjective(f,first(x0),nothing)   
+    optprob = OptimizationProblem(obj = scalarobj,bounds = x0, inplace=false) 
+    res =  NLSolvers.solve(optprob,method,options)
+    return res
 end
 #general one, with support for ActiveBox
 function optimize(f,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
-    scalarobj = ADScalarObjective(f,x0,autochunk)   
-    optprob = OptimizationProblem(scalarobj,inplace = (x0 isa number),bounds = bounds) 
+    scalarobj = ADScalarObjective(f,x0,autochunk)
+    optprob = OptimizationProblem(obj = scalarobj,inplace = (x0 isa number),bounds = bounds) 
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
@@ -80,11 +81,13 @@ function optimize(optprob::OptimizationProblem,method=LineSearch(Newton()),optio
 end
 #build scalar objective -> Optimization Problem
 function optimize(scalarobj::ScalarObjective,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
-    optprob = OptimizationProblem(scalarobj,inplace = (x0 isa number),bounds = bounds)
+    optprob = OptimizationProblem(obj = scalarobj,inplace = (x0 isa number),bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
 x_minimum(res::NLSolvers.ConvergenceInfo) = res.info.minimum
+#for BrentMin (should be fixed at NLSolvers 0.3)
+x_minimum(res::Tuple{<:Number,<:Number}) = last(res)
 
 #= only_fg!: Optim.jl legacy form:
 function fg!(F,G,x)

@@ -11,11 +11,12 @@ end
 function psat_init(model::EoSModel, T, Tc, Vc)
     # Function to get an initial guess for the saturation pressure at a given temperature
     z = SA[1.] #static vector
+    _0 = zero(T+Tc+Vc)
     RT = R̄*T
     Tr = T/Tc
     # Zero pressure initiation
     if Tr < 0.8
-        P0 = 0.
+        P0 = _0
         vol_liq0 = volume(model, P0, T, phase=:liquid)
         ares = a_res(model, vol_liq0, T, z)
         lnϕ_liq0 = ares - 1. + log(RT/vol_liq0)
@@ -24,21 +25,23 @@ function psat_init(model::EoSModel, T, Tc, Vc)
     elseif Tr <= 1.0
         low_v = Vc
         up_v = 5 * Vc
-
+        #note: P_max is the pressure at the maximum volume, not the maximum pressure
         fmax(V) = pressure(model, V, T)
-        sol_max = Optim.optimize(fmax, low_v, up_v)
-        v_max = sol_max.minimizer
-        P_max = - sol_max.minimum
+        sol_max = Solvers.optimize(fmax, (low_v, up_v))
+        v_max = Solvers.x_sol(sol_max)
+        P_max = Solvers.x_minimum(sol_max)
 
         low_v = lb_volume(model)
         up_v = Vc
+        
+        #note: P_min is the pressure at the minimum volume, not the minimum pressure
         fmin(V) = -pressure(model, V, T)
-        sol_min = Optim.optimize(fmin, low_v, up_v)
-        v_min = sol_min.minimizer
-        P_min = sol_min.minimum
+        sol_min = Solvers.optimize(fmin, (low_v,up_v))
+        v_min = Solvers.x_sol(sol_min)
+        P_min = Solvers.x_minimum(sol_min)
         P0 = (max(0., P_min) + P_max) / 2
     else
-        P0 = NaN
+        P0 = _0/_0 #NaN, but propagates the type
     end
     return  P0
 end
@@ -142,13 +145,13 @@ function fobj_psat!(model::EoSModel, ρ, T, F, J)
 end
 
 
-function psat(model::EoSModel, T; p0=nothing, vol0=[nothing, nothing])
+function psat(model::EoSModel, T; p0=nothing, vol0=(nothing, nothing))
     # Function to solve saturation pressure of a pure fluid
     # T = Saturation Temperature
     # p0 = initial guess for the saturation pressure
     # vol0 = initial guesses for the phase volumes = [vol liquid, vol vapor]
     # out = Saturation Pressure, vol liquid, vol vapor
-
+    T = T*one(T)/one(T)
     init = false
 
     vol_liq0, vol_vap0 = vol0
@@ -175,13 +178,18 @@ function psat(model::EoSModel, T; p0=nothing, vol0=[nothing, nothing])
     if method == :fug
         P, vol_liq, vol_vap = psat_fugacity(model, T, p0, vol0)
     elseif method == :chempot
-        ρ0 = [1/vol_liq0, 1/vol_vap0]
+        
+        ρl0 = 1/vol_liq0
+        ρv0 = 1/vol_vap0
+        if T isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
+            ρ0 = MVector{2,typeof(ρl0)}(ρl0,ρv0)
+        else
+            ρ0 = SizedVector{2,typeof(ρl0)}((ρl0,ρv0))
+        end
         ofpsat(F, J, ρ) = fobj_psat!(model, ρ, T, F, J)
         # sol = NLsolve.nlsolve(only_fj!(ofpsat), ρ0, method = :newton)
-
-        # This solver still doesnt work 
-        sol = Solvers.nlsolve(Solvers.only_fj!(ofpsat), ρ0) #, method = :newton)
-        ρ = sol.zero
+        sol = Solvers.nlsolve(Solvers.only_fj!(ofpsat), ρ0)
+        ρ = Solvers.x_sol(sol)
         vol_liq, vol_vap = 1 ./ ρ
         P = pressure(model, vol_vap, T)
     end

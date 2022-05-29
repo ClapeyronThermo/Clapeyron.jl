@@ -69,8 +69,6 @@ If a string is passed, it is converted to symbol.
 is_lle(sym::Symbol) = sym in SUPERCRITICAL_STR
 is_lle(str::String) = is_vapour(Symbol(str))
 
-
-
 """
     ∑(iterator)
 
