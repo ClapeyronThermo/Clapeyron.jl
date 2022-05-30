@@ -188,12 +188,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     elseif is_lle(equilibrium)
         phasex = :liquid
         phasey = :liquid
-    else
-        # for some reason this error is ignored
-        err() = @error("""Unkown phases specification, set equilibrium=:vle for
-                    vapor liquid equilibria and equilibrium=:lle for
-                    liquid liquid equilibria""")
-        err()
     end
 
     # Setting the initial guesses for volumes
