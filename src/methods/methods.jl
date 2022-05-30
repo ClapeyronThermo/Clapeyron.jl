@@ -66,8 +66,8 @@ Returns `true` if the symbol is in `(:lle,:ll)`.
 
 If a string is passed, it is converted to symbol.
 """
-is_lle(sym::Symbol) = sym in SUPERCRITICAL_STR
-is_lle(str::String) = is_vapour(Symbol(str))
+is_lle(sym::Symbol) = sym in LLE_STR
+is_lle(str::String) = is_liquid(Symbol(str))
 
 """
     ∑(iterator)
