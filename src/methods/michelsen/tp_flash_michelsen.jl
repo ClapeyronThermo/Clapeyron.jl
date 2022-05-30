@@ -137,7 +137,7 @@ struct MichelsenTPFlash{T} <: TPFlashMethod
     K0::Union{Vector{T},Nothing}
     x0::Union{Vector{T},Nothing}
     y0::Union{Vector{T},Nothing}
-    v0::Union{Tuple{T,T},Nothing} 
+    v0::Union{Tuple{T,T},Nothing}
     K_tol::Float64
     ss_iters::Int
     second_order::Bool
@@ -148,7 +148,7 @@ function MichelsenTPFlash(;equilibrium = :vle,K0 = nothing, x0 = nothing,y0=noth
     if K0 == x0 == y0 === v0 == nothing #nothing specified
         equilibrium == :lle && throw(error("""
         You need to provide either an initial guess for the partion constant K
-        or for compositions of x and y for LLE"""))   
+        or for compositions of x and y for LLE"""))
         T = Float64
     else
         if !isnothing(K0) & isnothing(x0) & isnothing(y0) #K0 specified
@@ -170,7 +170,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     # p = Pressure
     # T = Temperature
     # z = global composition array
-    # equilibrium = equilibrium type ":lv" for liquid vapor equilibria, ":lle" for liquid liquid equilibria
+    # equilibrium = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria
     # K0 = optional, initial guess for the constants K
     # x0 = optional, initial guess for the composition of phase x
     # y0 = optional, initial guess for the composition of phase y
@@ -188,6 +188,12 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     elseif is_lle(equilibrium)
         phasex = :liquid
         phasey = :liquid
+    else
+        # for some reason this error is ignored
+        err() = @error("""Unkown phases specification, set equilibrium=:vle for
+                    vapor liquid equilibria and equilibrium=:lle for
+                    liquid liquid equilibria""")
+        err()
     end
 
     # Setting the initial guesses for volumes
@@ -206,8 +212,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         K = exp.(lnK)
     elseif is_vle(equilibrium)
         # Wilson Correlation for K
-        # Check this function, it didnt work with SAFT-γ-Mie
         K = wilson_k_values(model,p,T)
+        lnK = log.(K)
     else
         err() = @error("""You need to provide either an initial guess for the partion constant K
                         or for compositions of x and y for LLE""")
@@ -252,14 +258,16 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         if second_order
             dfgibbs!(F, G, H, ny) = dgibbs_obj!(model, p, T, z, z_notzero, phasex, phasey,
                                              ny; F=F, G=G, H=H)
-            sol = Optim.optimize(only_fgh!(dfgibbs!), ny, Optim.Newton())
+            #sol = Optim.optimize(only_fgh!(dfgibbs!), ny, Optim.Newton())
+            sol = Solvers.optimize(Solvers.only_fgh!(dfgibbs!), ny, LineSearch(Newton()))
         else
             fgibbs!(F, G, ny) = gibbs_obj!(model, p, T, z, z_notzero, phasex, phasey,
                                            ny; F, G=G)
-            sol = Optim.optimize(only_fg!(fgibbs!), ny, Optim.BFGS())
+            sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny, LineSearch(BFGS()))
         end
         # Converting from moles to mole fractions
-        ny = sol.minimizer
+        # ny = sol.minimizer
+        ny = sol.info.solution
         x = fill!(similar(z), 0)
         y = fill!(similar(z), 0)
         β = sum(ny)
