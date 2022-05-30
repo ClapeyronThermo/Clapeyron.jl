@@ -24,7 +24,7 @@ function psat_init(model::EoSModel, T, Tc, Vc)
 
         low_v = lb_volume(model)
         up_v = Vc
-        
+
         #note: P_min is the pressure at the minimum volume, not the minimum pressure
         fmin(V) = -pressure(model, V, T)
         sol_min = Solvers.optimize(fmin, (low_v,up_v))
@@ -172,7 +172,7 @@ function psat(model::EoSModel, T; p0=nothing, vol0=(nothing, nothing))
     # p0 = initial guess for the saturation pressure
     # vol0 = initial guesses for the phase volumes = [vol liquid, vol vapor]
     # out = Saturation Pressure, vol liquid, vol vapor
-    
+
     T = T*one(T)/one(T)
     init = false
 
@@ -199,7 +199,7 @@ function psat(model::EoSModel, T; p0=nothing, vol0=(nothing, nothing))
 
     if method == :fug
         return psat_fugacity(model, T, p0, vol0)
-    elseif method == :chempot  
+    elseif method == :chempot
         return psat_chempot(model,T,vol_liq0,vol_vap0)
     end
     return P, vol_liq, vol_vap
@@ -211,7 +211,7 @@ function psat_chempot(model,T,vol_liq0,vol_vap0)
     ρ0 = vec2(ρl0,ρv0,T)
     ofpsat(F, J, ρ) = fobj_psat!(model, ρ, T, F, J)
     # sol = NLsolve.nlsolve(only_fj!(ofpsat), ρ0, method = :newton)
-    sol = Solvers.nlsolve(Solvers.only_fj!(ofpsat), ρ0)
+    sol = Solvers.nlsolve(Solvers.only_fj!(ofpsat), ρ0, LineSearch(Newton()))
     ρ = Solvers.x_sol(sol)
     vol_liq, vol_vap = 1 ./ ρ
     P = pressure(model, vol_vap, T)
