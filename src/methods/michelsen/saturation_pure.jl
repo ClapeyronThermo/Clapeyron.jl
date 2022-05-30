@@ -205,6 +205,22 @@ function psat(model::EoSModel, T; p0=nothing, vol0=(nothing, nothing))
     return P, vol_liq, vol_vap
 end
 
+struct ChemPotDensitySaturation{T} <: SaturationMethod
+    vl::Union{Nothing,T}
+    vv::Union{Nothing,T}
+end
+
+function ChemPotDensitySaturation(;vl = nothing,vv = nothing)
+    if vv !== nothing
+        vl,vv = promote(vl,vv)
+    end
+    return ChemPotDensitySaturation(vl,vv)
+end
+
+function saturation_pressure_impl(model::EoSModel,T,method::ChemPotDensitySaturation)
+    return psat_chempot(model,T,method.vl,method.vv)
+end
+
 function psat_chempot(model,T,vol_liq0,vol_vap0)
     ρl0 = 1/vol_liq0
     ρv0 = 1/vol_vap0
