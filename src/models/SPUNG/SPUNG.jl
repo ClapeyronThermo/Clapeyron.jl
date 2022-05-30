@@ -26,16 +26,18 @@ Base.length(model::SPUNG) = length(model.shape_model)
 
 function eos(model::SPUNG,V,T,z=SA[1.0])
     f,h = shape_factors(model,V,T,z)
+    n = sum(z)
     T0 = T/f
-    V0 = V/h
-    return eos(model.model_ref,V0,T0)
+    V0 = V/h/n
+    return n*eos(model.model_ref,V0,T0)
 end
 
 function eos_res(model::SPUNG,V,T,z=SA[1.0])
     f,h = shape_factors(model,V,T,z)
+    n = sum(z)
     T0 = T/f
-    V0 = V/h
-    return eos_res(model.model_ref,V0,T0)
+    V0 = V/h/n
+    return n*eos_res(model.model_ref,V0,T0)
 end
 
 function shape_factors(model::SPUNG{<:ABCubicModel},V,T,z=SA[1.0])
