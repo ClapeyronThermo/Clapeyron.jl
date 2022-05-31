@@ -141,7 +141,6 @@ function fobj_psat!(model::EoSModel, ρ, T, F, J)
         A_liq, ∂A_liq, ∂2A_liq = ∂2Helmholtz(model, ρ_liq, T)
         ∂P_liq = 2. * ρ_liq * ∂A_liq + ρ_liq^2 * ∂2A_liq
         ∂μ_liq = ρ_liq*∂2A_liq + 2*∂A_liq
-
         A_vap, ∂A_vap, ∂2A_vap = ∂2Helmholtz(model, ρ_vap, T)
         ∂P_vap = 2. * ρ_vap * ∂A_vap + ρ_vap^2 * ∂2A_vap
         ∂μ_vap = ρ_vap*∂2A_vap + 2*∂A_vap
@@ -211,10 +210,25 @@ struct ChemPotDensitySaturation{T} <: SaturationMethod
 end
 
 function ChemPotDensitySaturation(;vl = nothing,vv = nothing)
-    if vv !== nothing
-        vl,vv = promote(vl,vv)
+    if (vl === nothing) && (vv === nothing)
+        return ChemPotVSaturation{Nothing}(nothing,nothing)
+    elseif !(vl === nothing) && (vv === nothing)
+        vl = float(vl)
+        return ChemPotVSaturation(vl,vv)
+    elseif (vl === nothing) && !(vv === nothing)
+        vv = float(vv)
+        return ChemPotVSaturation(vl,vv)
+    else
+        T = one(vl)/one(vv)
+        vl,vv,_ = promote(vl,vv,T)
+        return ChemPotVSaturation(vl,vv)
     end
-    return ChemPotDensitySaturation(vl,vv)
+end
+
+function saturation_pressure_impl(model::EoSModel, T, method::ChemPotDensitySaturation{Nothing})
+    x0 = x0_sat_pure(model,T) .|> exp10
+    vl,vv = x0
+    return saturation_pressure_impl(model,T,ChemPotVSaturation(vl,vv))
 end
 
 function saturation_pressure_impl(model::EoSModel,T,method::ChemPotDensitySaturation)
