@@ -103,14 +103,14 @@ function all_tpd(model::EoSModel, p, T, z)
     # out = array of minimas composition (w), array of tpd values (tpd), array of phase z state, array of phase w state
 
     z_notzero = z .> 0.
-
+    _1 = one(p+T+first(z))
     nc = length(model)
     Id = Matrix{Float64}(Identity, nc, nc)
 
-    w_array = []
-    tpd_array = []
-    phasez_array = []
-    phasew_array = []
+    w_array = fill(_1,0)
+    tpd_array = fill(_1,0)
+    phasez_array = fill(_1,0)
+    phasew_array = fill(_1,0)
 
     for phasez in (:liquid, :vapor)
         # computing the di vector for the phase z (constant along the minimization for a given phasez)
@@ -118,9 +118,9 @@ function all_tpd(model::EoSModel, p, T, z)
         di = log.(z[z_notzero]) + lnϕz[z_notzero]
 
         if phasez == :liquid
-            possible_phasew = [:liquid, :vapor]
+            possible_phasew = (:liquid, :vapor)
         else
-            possible_phasew = [:liquid]
+            possible_phasew = (:liquid)
         end
 
         for phasew in possible_phasew
@@ -198,8 +198,8 @@ function lle_init(model::EoSModel, p, T, z)
     nc = length(model)
     Id = Matrix{TYPE}(Identity, nc, nc)
 
-    w_array = []
-    tpd_array = []
+    w_array = fill(_1,0) #an array of the type of _1
+    tpd_array = fill(_1,0)
 
     phasez = :liquid
     phasew = :liquid
