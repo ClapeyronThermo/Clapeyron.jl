@@ -56,7 +56,7 @@ Returns `true` if the symbol is in `(:vle,:lve,:vl,:lv)`.
 If a string is passed, it is converted to symbol.
 """
 is_vle(sym::Symbol) = sym in VLE_STR
-is_vle(str::String) = is_vapour(Symbol(str))
+is_vle(str::String) = is_vle(Symbol(str))
 
 const LLE_STR = (:lle,:ll)
 """
@@ -67,7 +67,7 @@ Returns `true` if the symbol is in `(:lle,:ll)`.
 If a string is passed, it is converted to symbol.
 """
 is_lle(sym::Symbol) = sym in LLE_STR
-is_lle(str::String) = is_liquid(Symbol(str))
+is_lle(str::String) = is_lle(Symbol(str))
 
 """
     ∑(iterator)
