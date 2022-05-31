@@ -33,96 +33,100 @@ function rachfordrice(β, K, z)
     return β, D, singlephase
 end
 
-function gibbs_obj!(model::EoSModel, p, T, z, z_notzero, phasex, phasey, ny; F=nothing, G=nothing)
+function gibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny, vcache; F=nothing, G=nothing)
     # Objetive Function to minimize the Gibbs Free Energy
     # It computes the Gibbs free energy and its gradient
-    x = fill!(similar(z), 0)
-    y = fill!(similar(z), 0)
+    nx = z .- ny
+    x = nx ./ sum(nx)
+    y = ny ./ sum(ny)
 
-    nx = z[z_notzero] .- ny
-    x[z_notzero] = nx ./ sum(nx)
-    y[z_notzero] = ny ./ sum(ny)
-
-    # Volumes are set to global variables to reuse their values for following
+    # Volumes are set from local cache to reuse their values for following
     # Iterations
-    global volx
-    global voly
+    volx,voly = vcache[]
 
     lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
     lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
 
-    ϕx = log.(x[z_notzero]) + lnϕx[z_notzero]
-    ϕy = log.(y[z_notzero]) + lnϕy[z_notzero]
+    ϕx = log.(x) .+ lnϕx
+    ϕy = log.(y) .+ lnϕy
 
-    if G != nothing
+    #volumes are stored in the local cache
+    vcache[] = (volx,voly)
+    if G !== nothing
         # Computing Gibbs Energy gradient
-        G[:] = ϕy - ϕx
+        G .= ϕy .- ϕx
     end
 
-    if F != nothing
+    if F !== nothing
         # Computing Gibbs Energy
-        FO = sum(ny.*ϕy[z_notzero] + nx.*ϕx[z_notzero])
+        FO = dot(ny,ϕy) + dot(nx,ϕx)
         return FO
     end
 
 end
 
 
-function dgibbs_obj!(model::EoSModel, p, T, z, z_notzero, phasex, phasey, ny; F=nothing, G=nothing, H=nothing)
+function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny, vcache; F=nothing, G=nothing, H=nothing)
     # Objetive Function to minimize the Gibbs Free Energy
     # It computes the Gibbs free energy, its gradient and its hessian
-    x = fill!(similar(z), 0)
-    y = fill!(similar(z), 0)
-
-    ncomponents = length(ny)
-    nx = z[z_notzero] .- ny
+    nx = z .- ny
     nxsum = sum(nx)
     nysum = sum(ny)
-    x[z_notzero] = nx ./ nxsum
-    y[z_notzero] = ny ./ nysum
+    x = nx ./ nxsum
+    y = ny ./ nysum
 
-    # Volumes are set to global variables to reuse their values for following
+    # Volumes are set from local cache to reuse their values for following
     # Iterations
-    global volx
-    global voly
+    volx,voly = vcache[]
 
-    if H != nothing
+    if H !== nothing
         # Computing Gibbs Energy Hessian
         lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x; phase=phasex, vol0=volx)
         lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y; phase=phasey, vol0=voly)
 
-        eye = Matrix{Float64}(Identity, ncomponents, ncomponents)
-        ∂ϕx = eye./nx .- 1/nxsum .+ ∂lnϕ∂nx[z_notzero, z_notzero]/nxsum
-        ∂ϕy = eye./ny .- 1/nysum .+ ∂lnϕ∂ny[z_notzero, z_notzero]/nysum
-        H[:, :] = ∂ϕx + ∂ϕy
+        ∂ϕx,∂ϕy = ∂lnϕ∂nx,∂lnϕ∂ny
+
+        ∂ϕx .-= 1
+        ∂ϕy .-= 1
+        ∂ϕx ./= nxsum
+        ∂ϕy ./= nxsum
+        for (i,idiag) in pairs(diagind(∂ϕy))
+            ∂ϕx[idiag] += 1/nx[i]
+            ∂ϕy[idiag] += 1/ny[i]
+        end
+        #∂ϕx = eye./nx .- 1/nxsum .+ ∂lnϕ∂nx/nxsum
+        #∂ϕy = eye./ny .- 1/nysum .+ ∂lnϕ∂ny/nysum
+        H .= ∂ϕx .+ ∂ϕy
     else
         lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
         lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
     end
+    #volumes are stored in the local cache
+    vcache[] = (volx,voly)
+    ϕx = log.(x) .+ lnϕx
+    ϕy = log.(y) .+ lnϕy
 
-    ϕx = log.(x[z_notzero]) + lnϕx[z_notzero]
-    ϕy = log.(y[z_notzero]) + lnϕy[z_notzero]
-
-    if G != nothing
+    if G !== nothing
         # Computing Gibbs Energy gradient
-        G[:] = ϕy - ϕx
+        G .= ϕy .- ϕx
     end
 
     if F != nothing
         # Computing Gibbs Energy
-        FO = sum(ny.*ϕy[z_notzero] + nx.*ϕx[z_notzero])
+        FO = dot(ny,ϕy) + dot(nx,ϕx)
         return FO
     end
 
 end
 
 """
-    MichelsenTPFlash{T}(;K0 = nothing,rtol= 1e-10,atol = 1e-10,max_iters = 100)
+    MichelsenTPFlash{T}(;kwargs...)
 
 Method to solve non-reactive multicomponent flash problem by Michelsen's method.
 
 Only two phases are supported. if `K0` is `nothing`, it will be calculated via the Wilson correlation.
 
+### Keyword Arguments:
 - equilibrium = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria
 - `K0` (optional), initial guess for the constants K
 - `x0` (optional), initial guess for the composition of phase x
@@ -143,13 +147,15 @@ struct MichelsenTPFlash{T} <: TPFlashMethod
     second_order::Bool
 end
 
+numphases(::MichelsenTPFlash) = 2
+
 function MichelsenTPFlash(;equilibrium = :vle,K0 = nothing, x0 = nothing,y0=nothing,v0=nothing,K_tol = eps(Float64),ss_iters = 10,second_order = false)
     !(is_vle(equilibrium) | is_lle(equilibrium)) && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
     if K0 == x0 == y0 === v0 == nothing #nothing specified
-        equilibrium == :lle && throw(error("""
+        is_lle(equilibrium) && throw(error("""
         You need to provide either an initial guess for the partion constant K
         or for compositions of x and y for LLE"""))
-        T = Float64
+        T = nothing
     else
         if !isnothing(K0) & isnothing(x0) & isnothing(y0) #K0 specified
             T = eltype(K0)
@@ -162,8 +168,25 @@ function MichelsenTPFlash(;equilibrium = :vle,K0 = nothing, x0 = nothing,y0=noth
     return MichelsenTPFlash{T}(equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order)
 end
 
+is_vle(method::MichelsenTPFlash) = is_vle(method.equilibrium)
+is_lle(method::MichelsenTPFlash) = is_lle(method.equilibrium)
+
+function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
+    x,y,β =  tp_flash_michelsen(model,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
+                        x0 = method.x0, y0 = method.y0, vol0 = method.v0,
+                        K_tol = method.K_tol,itss = method.ss_iters,second_order = method.second_order)
+
+
+    G = (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
+
+    X = hcat(x,y)'
+    nvals = X.*[1-β
+                β] .* sum(z)
+    return (X, nvals, G)
+end
+
 function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothing,
-                            x0=nothing, y0=nothing, vol0=[nothing, nothing],
+                            x0=nothing, y0=nothing, vol0=(nothing, nothing),
                             K_tol=1e-16, itss=10, second_order=false)
     # Function to compute two phase flash at given temperature, pressure and
     # global composition
@@ -180,8 +203,12 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     # second_order = wheter to solve the gibbs energy minimization using the analycal hessian or not
 
     # out = phase x composition, phase y composition, phase split fraction
-
-
+    #reduce model
+    
+    model_full,z_full = model,z
+    model,z = index_reduction(model,z)
+    z_nonzero = indexin(z,z_full)
+    
     if is_vle(equilibrium)
         phasex = :liquid
         phasey = :vapor
@@ -213,61 +240,66 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
                         or for compositions of x and y for LLE""")
         err()
     end
-
+    _1 = one(p+T+first(z))
     # Initial guess for phase split
     βmin = max(0., minimum(((K.*z .- 1) ./ (K .-  1.))[K .> 1]))
     βmax = min(1., maximum(((1 .- z) ./ (1. .- K))[K .< 1]))
-    β = (βmin + βmax)/2
-
+    β = _1*(βmin + βmax)/2
     # Stage 1: Successive Substitution
     it = 0
-    error = 1.
+    error = _1
     singlephase = false
+    lnK_old = copy(K) .* _1
     while error > K_tol && it < itss
         it += 1
-        lnK_old = lnK
+        lnK_old .= lnK
         # Solving Rachford-Rice Eq.
         β, D, singlephase = rachfordrice(β, K, z)
         # Recomputing phase composition
-        x = z ./ D
-        y = x .* K
+        x .= z ./ D
+        y .= x .* K
         x ./= sum(x)
         y ./= sum(y)
         # Updating K's
         lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
         lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
-        lnK = lnϕx - lnϕy
-        K = exp.(lnK)
+        lnK .= lnϕx .- lnϕy
+        K .= exp.(lnK)
         # Computing error
-        error = sum(abs.(lnK - lnK_old))
+        error = dnorm(lnK,lnK_old,1)
     end
+    vt = volx,voly
+    vcache = Ref{typeof(vt)}(vt)
 
     # Stage 2: Minimization of Gibbs Free Energy
     if error > K_tol && it == itss &&  ~singlephase
-        global volx
-        global voly
         z_notzero = z .> 0.
         ny = β*y[z_notzero]
         # minimizing Gibbs Free Energy
         if second_order
-            dfgibbs!(F, G, H, ny) = dgibbs_obj!(model, p, T, z, z_notzero, phasex, phasey,
-                                             ny; F=F, G=G, H=H)
+            dfgibbs!(F, G, H, ny) = dgibbs_obj!(model, p, T, z, phasex, phasey,
+                                             ny,vcache; F=F, G=G, H=H)
             #sol = Optim.optimize(only_fgh!(dfgibbs!), ny, Optim.Newton())
             sol = Solvers.optimize(Solvers.only_fgh!(dfgibbs!), ny, LineSearch(Newton()))
         else
-            fgibbs!(F, G, ny) = gibbs_obj!(model, p, T, z, z_notzero, phasex, phasey,
-                                           ny; F, G=G)
+            fgibbs!(F, G, ny) = gibbs_obj!(model, p, T, z, phasex, phasey,
+                                           ny,vcache; F, G=G)
             sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny, LineSearch(BFGS()))
         end
         # Converting from moles to mole fractions
         # ny = sol.minimizer
-        ny = sol.info.solution
-        x = fill!(similar(z), 0)
-        y = fill!(similar(z), 0)
+        ny = Solvers.x_sol(sol)
         β = sum(ny)
-        nx = z[z_notzero] .- ny
-        x[z_notzero] = nx ./ sum(nx)
-        y[z_notzero] = ny ./ β
+        nx = z .- ny
+        x = nx ./ sum(nx)
+        y = ny ./ β
     end
-    return x, y, β
+     x̄ = similar(z_full)
+     ȳ = similar(z_full)
+     x̄ .= 0
+     ȳ .= 0
+     #restore to original size
+     x̄[z_nonzero] .= x
+     ȳ[z_nonzero] .= y
+    return x̄, ȳ, β
 end

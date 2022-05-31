@@ -10,3 +10,11 @@ function vec2(x1,x2,opt = true)
         return SizedVector{2,typeof(V01)}((V01,V02))
     end
 end
+"""
+    dnorm(x,y,p)
+
+Equivalent to `norm((xi-yi for (xi, yi) in zip(x, y)), p)`
+"""
+function dnorm(x,y,p)
+    return norm((xi-yi for (xi, yi) in zip(x, y)), p)
+end
