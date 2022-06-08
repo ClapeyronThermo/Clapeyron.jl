@@ -1,7 +1,8 @@
 # Function to compute fugacity coefficient
 function lnϕ(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing)
     RT = R̄*T
-    vol = volume(model, p, T, z, phase=phase, vol0=vol0)
+    vol0 === nothing && vol0 = x0_volume(model, p, T, z, phase = phase)
+    vol = _volume_compress(model,p,t,z,vol0)
     μ_res = VT_chemical_potential_res(model, vol, T, z)
     Z = p*vol/RT/sum(z)
     lnϕ = μ_res/RT .- log(Z)
@@ -16,10 +17,10 @@ function ∂lnϕ∂n∂P(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=n
     Z = p*V/RT/n
 
     F_res(model, V, T, z) = eos_res(model, V, T, z) / RT
-    fun(aux) = F_res(model, aux[1], T, aux[2:(ncomponents+1)])
+    fun(aux) = F_res(model, aux[1], T, @view(aux[2:(ncomponents+1)]))
 
     ncomponents = length(z)
-    aux = reduce(vcat, [V, z])
+    aux = vcat(V,z)
     result = DiffResults.HessianResult(aux)
     result = ForwardDiff.hessian!(result, fun, aux)
 
@@ -53,10 +54,10 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vo
     Z = p*V/RT/n
 
     ncomponents = length(z)
-    aux = reduce(vcat, [V, T, z])
+    aux = vcat(V,T,z)
 
     F_res(model, V, T, z) = eos_res(model, V, T, z) / R̄ / T
-    fun(aux) = F_res(model, aux[1], aux[2], aux[3:(ncomponents+2)])
+    fun(aux) = F_res(model, aux[1], aux[2], @view(aux[3:(ncomponents+2)]))
 
     result = DiffResults.HessianResult(aux)
     result = ForwardDiff.hessian!(result, fun, aux)
@@ -66,14 +67,14 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vo
     ∂2F = DiffResults.hessian(result)
 
     ∂F∂V = ∂F[1]
-    ∂F∂T = ∂F[1]
-    ∂F∂n = ∂F[3:(ncomponents+2)]
+    ∂F∂T = ∂F[2]
+    ∂F∂n = @view ∂F[3:(ncomponents+2)]
 
     ∂2F∂V2 = ∂2F[1, 1]
-    ∂2F∂n2 = ∂2F[3:(ncomponents+2), 3:(ncomponents+2)]
+    ∂2F∂n2 = @view ∂2F[3:(ncomponents+2), 3:(ncomponents+2)]
     ∂2F∂T2 = ∂2F[2, 2]
-    ∂2F∂n∂V = ∂2F[1, 3:(ncomponents+2)]
-    ∂2F∂n∂T = ∂2F[2, 3:(ncomponents+2)]
+    ∂2F∂n∂V = @view ∂2F[1, 3:(ncomponents+2)]
+    ∂2F∂n∂T = @view ∂2F[2, 3:(ncomponents+2)]
     ∂2F∂V∂T = ∂2F[1, 2]
 
     lnϕ = ∂F∂n .- log(Z)
@@ -84,7 +85,7 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vo
 
     ∂V∂n = - ∂P∂n ./ ∂P∂V
     ∂lnϕ∂P = ∂V∂n ./ RT .- 1. ./ p
-    ∂lnϕ∂T = ∂2F∂n∂T .+ 1. ./ T - (∂V∂n.*∂P∂T) ./ RT
+    ∂lnϕ∂T = ∂2F∂n∂T .+ 1. ./ T .- (∂V∂n.*∂P∂T) ./ RT
     ∂lnϕ∂n = ∂2F∂n2 .+ 1. / n .+ (∂P∂n * ∂P∂n') ./ ∂P∂V / RT
     return lnϕ, ∂lnϕ∂n, ∂lnϕ∂P, ∂lnϕ∂T, V
 end
