@@ -206,8 +206,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     #reduce model
     
     model_full,z_full = model,z
-    model,z = index_reduction(model,z)
-    z_nonzero = indexin(z,z_full)
+    model,z_nonzero = index_reduction(model_full,z_full)
+    z = z_full[z_nonzero]
     
     if is_vle(equilibrium)
         phasex = :liquid
