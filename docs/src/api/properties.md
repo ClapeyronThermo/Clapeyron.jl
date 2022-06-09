@@ -127,6 +127,7 @@ Clapeyron.gibbs_duhem
 Clapeyron.isstable
 Clapeyron.mechanical_stability
 Clapeyron.diffusive_stability
+Clapeyron.tpd
 ```
 
 ## TP Flash
@@ -136,6 +137,7 @@ Clapeyron.tp_flash
 Clapeyron.TPFlashMethod
 Clapeyron.DETPFlash
 Clapeyron.RRTPFlash
+Clapeyron.MichelsenTPFlash
 Clapeyron.numphases
 ```
 

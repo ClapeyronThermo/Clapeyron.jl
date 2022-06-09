@@ -69,6 +69,16 @@ If a string is passed, it is converted to symbol.
 is_lle(sym::Symbol) = sym in LLE_STR
 is_lle(str::String) = is_lle(Symbol(str))
 
+function canonical_phase(phase::Symbol)
+     if is_liquid(phase)
+        return :liquid
+     elseif is_vapour(phase)
+        return :vapour
+     else
+        return phase
+     end
+end
+
 """
     ∑(iterator)
 
@@ -164,6 +174,7 @@ include("initial_guess.jl")
 include("differentials.jl")
 include("VT.jl")
 include("property_solvers/property_solvers.jl")
+include("tpd.jl")
 include("stability.jl")
 include("pT.jl")
 include("unitful_base.jl")
