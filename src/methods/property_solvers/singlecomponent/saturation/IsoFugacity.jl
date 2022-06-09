@@ -32,17 +32,16 @@ function psat_init(model::EoSModel, T, Tc, Vc)
         low_v = Vc
         up_v = 5 * Vc
         #note: P_max is the pressure at the maximum volume, not the maximum pressure
-        fmax(V) = pressure(model, V, T)
+        fmax(V) = -pressure(model, V, T)
         sol_max = Solvers.optimize(fmax, (low_v, up_v))
-        P_max = Solvers.x_minimum(sol_max)
+        P_max = -Solvers.x_minimum(sol_max)
         low_v = lb_volume(model)
         up_v = Vc
-
         #note: P_min is the pressure at the minimum volume, not the minimum pressure
-        fmin(V) = -pressure(model, V, T)
+        fmin(V) = pressure(model, V, T)
         sol_min = Solvers.optimize(fmin, (low_v,up_v))
         P_min = Solvers.x_minimum(sol_min)
-        P0 = (max(0., P_min) + P_max) / 2
+        P0 = (max(zero(P_min), P_min) + P_max) / 2
     else
         P0 = _0/_0 #NaN, but propagates the type
     end
@@ -101,20 +100,19 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters
     RT = R̄*T
     P = 1. * p0
     vol_liq0, vol_vap0 = vol0
-    vol_liq0 === nothing && (vol_liq0 = x0_volume_liquid(model,T,z))
-    vol_vap0 === nothing && (vol_vap0 = x0_volume_gas(model,P,T,z))
-
-    # Solving the phase volumes for the first iteration
-
-    vol_liq = _volume_compress(model, P, T, z, vol_liq0)
-    vol_vap = _volume_compress(model, P, T, z, vol_vap0)
-
+    #we use volume here, because cubics can opt in to their root solver.
+    vol_liq0 === nothing && (vol_liq0 = volume(model,P,T,z,phase =:liquid))
+    vol_vap0 === nothing && (vol_vap0 = volume(model,P,T,z,phase =:gas))
+    
+    vol_liq = vol_liq0 
+    vol_vap = vol_vap0
+    #@show vol_liq, vol_vap
     itmax = max_iters
     for i in 1:itmax
         # Computing chemical potential
         μ_liq = VT_chemical_potential_res(model, vol_liq, T)[1]
         μ_vap = VT_chemical_potential_res(model, vol_vap, T)[1]
-
+        #@show vol_liq,vol_vap
         Z_liq = P*vol_liq/RT
         Z_vap = P*vol_vap/RT
 

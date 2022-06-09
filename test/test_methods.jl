@@ -31,6 +31,7 @@ using Clapeyron, Test, Unitful
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7972.550405922014 rtol = 1E-6
         @test Clapeyron.saturation_temperature(system, p)[1] ≈ 351.32529505096164 rtol = 1E-6
+        @test Clapeyron.saturation_temperature(system, p, 350)[1] ≈ 351.32529505096164 rtol = 1E-6
         @test Clapeyron.enthalpy_vap(system, T) ≈ 41712.78521121877 rtol = 1E-6
         @test Clapeyron.acentric_factor(system) ≈ 0.5730309964718605 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 533.1324329774004 rtol = 1E-6 
@@ -321,6 +322,8 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.9293390134403 rtol = 1E-6
+        #saturation temperature tests are noisy
+        @test Clapeyron.saturation_temperature(system,3169.9293390134403) ≈ 298.1480314879574  rtol = 1E-6
         tc,pc,vc =  Clapeyron.crit_pure(system)
         @test tc ≈ 647.096 rtol = 1E-5 
         v2 =  volume(system,pc,tc)
@@ -339,6 +342,8 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 97424.11102152328 rtol = 1E-6
+        #saturation temperature tests are noisy
+        @test Clapeyron.saturation_temperature(system,97424.11102152328) ≈ 230.15014586866016  rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 369.8900089509652 rtol = 1E-6 
     end
 end
@@ -451,6 +456,12 @@ end
     @test p3 ≈ p rtol = 1e-6
     p4,vl4,vv4 = saturation_pressure(model,T,ChemPotDensitySaturation(;vl,vv))
     @test p4 ≈ p rtol = 1e-6
+
+    #test IsoFugacity, near criticality
+    Tc_near = 0.95*647.096
+    psat_Tcnear = 1.4960621837287119e7 #default solver result
+    @test first(saturation_pressure(model,Tc_near,IsoFugacitySaturation())) ≈ psat_Tcnear rtol = 1e-6
+
 end
 
 @testset "Unitful Methods" begin

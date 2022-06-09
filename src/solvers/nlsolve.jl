@@ -15,7 +15,7 @@ To see available solvers and options, check `NLSolvers.jl`
 function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),chunk = ForwardDiff.Chunk{2}(),options=NEqOptions();)
     vector_objective = autoVectorObjective(f!,x0,chunk)
     nl_problem = NEqProblem(vector_objective)
-    return NLSolvers.solve(nl_problem, x0,method, options)
+    return nlsolve(nl_problem, x0,method, options)
 end
 
 function nlsolve(nl_problem::NEqProblem,x0,method =TrustRegion(Newton(), NWI()),options=NEqOptions())
