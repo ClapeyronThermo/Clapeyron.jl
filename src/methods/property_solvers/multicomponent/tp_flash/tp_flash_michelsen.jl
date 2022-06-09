@@ -1,3 +1,4 @@
+#=
 function rachfordrice(β, K, z)
     # Function to solve Rachdord-Rice mass balance
     K1 = K .- 1.
@@ -33,7 +34,7 @@ function rachfordrice(β, K, z)
     return β, D, singlephase
 end
 
-
+=#
 function gibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny, vcache; F=nothing, G=nothing)
     # Objetive Function to minimize the Gibbs Free Energy
     # It computes the Gibbs free energy and its gradient
@@ -262,14 +263,17 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     error = _1
     singlephase = false
     lnK_old = copy(K) .* _1
+    x = similar(z)
+    y = similar(z)
     while error > K_tol && it < itss
         it += 1
         lnK_old .= lnK
         # Solving Rachford-Rice Eq.
-        β, D, singlephase = rachfordrice(β, K, z)
+        β = rr_vle_vapor_fraction(K, z)
+        singlephase = !(0 <= β <= 1)
         # Recomputing phase composition
-        x .= z ./ D
-        y .= x .* K
+        x = rr_flash_liquid!(x,K,z,β)
+        y .= K .* x
         x ./= sum(x)
         y ./= sum(y)
         # Updating K's
@@ -283,10 +287,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     vt = volx,voly
     vcache = Ref{typeof(vt)}(vt)
 
+
     # Stage 2: Minimization of Gibbs Free Energy
     if error > K_tol && it == itss &&  ~singlephase
-        z_notzero = z .> 0.
-        ny = β*y[z_notzero]
+        ny = β*y
         # minimizing Gibbs Free Energy
         if second_order
             dfgibbs!(F, G, H, ny) = dgibbs_obj!(model, p, T, z, phasex, phasey,
@@ -305,19 +309,21 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         nx = z .- ny
         x = nx ./ sum(nx)
         y = ny ./ β
+ 
     end
+
+    if singlephase
+        β = zero(β)/zero(β)
+        fill!(x,z)
+        fill!(y,z)
+    end
+
     if !reduced
-        x̄ = similar(z_full)
-        ȳ = similar(z_full)
-        x̄ .= 0
-        ȳ .= 0
-        #restore to original size
-        x̄[z_nonzero] .= x
-        ȳ[z_nonzero] .= y
-        return x̄, ȳ, β
-    else
-        return x, y, β
+        x = index_expansion(x,z_nonzero)
+        y = index_expansion(y,z_nonzero)
     end
+
+    return x, y, β
 end
 
 export MichelsenTPFlash
