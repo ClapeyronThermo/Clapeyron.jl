@@ -15,9 +15,9 @@ Base.@kwdef struct RRTPFlash{T} <: TPFlashMethod
     spec::Symbol = :unknown
 end
 
-index_reduction(flash::RRTPFlash{Nothing},idx::Vector{Int}) = flash
+index_reduction(flash::RRTPFlash{Nothing},idx::AbstractVector) = flash
 
-function index_reduction(flash::RRTPFlash,idx::Vector{Int})
+function index_reduction(flash::RRTPFlash,idx::AbstractVector)
     K02 = flash.K0[idx]
     return RRTPFlash(K02,flash.rtol,flash.atol,flash.max_iters,flash.spec)
 end
