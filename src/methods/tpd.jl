@@ -4,26 +4,23 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew; volw0=nothing,
     # Function that computes the TPD function, its gradient and its hessian
     nc = length(model)
     w = α.^2 /4.
-
     if H !== nothing
         # computing the hessian
         lnϕw, ∂lnϕ∂nw, ∂lnϕ∂Pw, volw = ∂lnϕ∂n∂P(model, p, T, w; phase=phasew, vol0=volw0)
         if isnan(volw)
             lnϕw, ∂lnϕ∂nw, ∂lnϕ∂Pw, volw = ∂lnϕ∂n∂P(model, p, T, w; phase=phasew, vol0=nothing)
         end
-
         dtpd = log.(w) + lnϕw - di
         gi = dtpd.*(α./2)
-
         eye = Identity(nc)
         #TODO: check that just using Identity without instantiation works
-        hess .= eye .* (1. .+  (gi./α))  .+ sqrt.(w * w') .* ∂lnϕ∂nw
+        H .= eye .* (1. .+  (gi./α))  .+ sqrt.(w * w') .* ∂lnϕ∂nw
     else
         lnϕw, volw = lnϕ(model, p, T, w; phase=phasew, vol0=volw0)
         if isnan(volw)
             lnϕw, volw = lnϕ(model, p, T, w; phase=phasew, vol0=nothing)
         end
-        dtpd = log.(2) + lnϕw - di
+        dtpd = log.(2) .+ lnϕw .- di
         gi = dtpd.*(α./2)
     end
 
@@ -31,7 +28,6 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew; volw0=nothing,
         # computing the gradient
          G .= gi
     end
-
     if F !== nothing
         # computing the TPD value
         #tpdi = w_notzero.*(dtpd .- 1.)
@@ -41,9 +37,9 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew; volw0=nothing,
     end
 end
 
-function tpd_ss(model::EoSModel, p, T, di, w, phasew; volw0=nothing;max_iters = 5)
+function tpd_ss(model::EoSModel, p, T, di, w, phasew; volw0=nothing,max_iters = 5)
     # Function that minimizes the tpd function by Successive Substitution
-    volw0 isa nothing && (volw0 = volume(p, T, w, phase = phasew))
+    volw0 === nothing && (volw0 = volume(model, p, T, w, phase = phasew))
     volw = volw0
     wres = copy(w)
     lnw = copy(w)
@@ -91,21 +87,20 @@ function all_tpd(model::EoSModel, p, T, z,phasepairs = ((:liquid,:vapour),(:liqu
     
     _1 = one(p+T+first(z))
     nc = length(model)
-    Id = fill(one(eltype(z)),nc,nc)
+    Id = fill(zero(eltype(z)),nc,nc)
+    for i in diagind(Id)
+        Id[i] = 1.0
+    end
     w_array = Vector{Vector{eltype(_1)}}(undef,0)
     tpd_array = fill(_1,0)
     phasez_array = fill(:x,0)
     phasew_array = fill(:x,0)
 
-    for (phasez,possible_phasew) in phasepairs
-        # computing the di vector for the phase z (constant along the minimization for a given phasez)
-        lnϕz, volz = lnϕ(model, p, T, z; phase=phasez, vol0=nothing)
-        di = log.(z) + lnϕz
+    for (phasez,phasew) in phasepairs
         for i in 1:length(model)
             w0 = Id[i, :]
-            # improving initial guess by Successive Substitution
             try
-                w, tpd = tpd_min(model,p,T,di,w0,phasez,possible_phasew)
+                w, tpd = tpd_min(model,p,T,z,w0,phasez,phasew)
                 if tpd < 0. && ~isapprox(z, w, atol=1e-3)
                     if length(w_array) > 0
                         already_computed = false
@@ -128,7 +123,7 @@ function all_tpd(model::EoSModel, p, T, z,phasepairs = ((:liquid,:vapour),(:liqu
                         # println(i, ' ', phasez, ' ', phasew, ' ', w, ' ', tpd)
                     end
                 end
-            catch
+            catch e
                 # If the minimization is not successful print this line
                 verbose && @warn("""Failed to minimize the TPD function for w0 = $(Id[i, :]),
                         phasew = $phasew, phasez = $phasez at pressure p = $p [Pa],
@@ -147,15 +142,16 @@ end
 """
     tpd(model,p,T,z;verbose=false)
 
-Calculates the Tangent plane distance function. It returns:
-    - a vector with trial phase compositions where tpd < 0
-    - a vector with the tpd values
-    - a vector with symbols indicating the phase of the input composition
-    - a vector with symbols indicating the phase of the trial composition
+Calculates the Tangent plane distance function (`tpd`). It returns:
+
+- a vector with trial phase compositions where `tpd < 0`
+- a vector with the `tpd` values
+- a vector with symbols indicating the phase of the input composition
+- a vector with symbols indicating the phase of the trial composition
 
 It iterates over each two-phase combination, starting from pure trial compositions, it does succesive substitution, then Gibbs optimization.
 
-If the vectors are empty, then the procedure couldn't find a negative tpd. That is an indication that the phase is (almost) surely stable.
+If the vectors are empty, then the procedure couldn't find a negative `tpd`. That is an indication that the phase is (almost) surely stable.
 
 """
 tpd(model,p,T,z;verbose = false) = all_tpd(model,p,T,z;verbose = verbose)

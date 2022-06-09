@@ -39,7 +39,6 @@ Given an input vector generated from a reduced model and the non zero indices, r
 """
 function index_expansion(x::Vector,idr)
     numspecies = length(idr)
-    numphases,_ = size(x)
     res = zeros(eltype(x), numspecies)
     res[idr] .= x
     return res
