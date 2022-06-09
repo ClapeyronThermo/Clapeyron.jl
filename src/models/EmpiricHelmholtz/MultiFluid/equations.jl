@@ -245,7 +245,6 @@ function psat_init(model::MultiFluidModel,T)
     Ts = T_scale(model)
     T0 = 369.89*T/Ts
     Ps = p_scale(model)
-    B = second_virial_coefficient(model,T)
     return Ps*_propaneref_psat(T0)/4.2512e6
 end
 
