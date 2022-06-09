@@ -10,7 +10,9 @@ abstract type SaturationMethod end
 
 
 """
-    saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
+    saturation_pressure(model::EoSModel, T)
+    saturation_pressure(model::EoSModel,T,method::SaturationMethod)
+    saturation_pressure(model,T,x0::Union{Tuple,Vector})
 
 Performs a single component saturation equilibrium calculation, at the specified temperature `T`, of one mol of pure sustance specified by `model`
 
@@ -18,7 +20,25 @@ Returns `(p₀, Vₗ, Vᵥ)` where `p₀` is the saturation pressure (in Pa), `V
 
 If the calculation fails, returns  `(NaN, NaN, NaN)`
 
-`V0` is `[log10(Vₗ₀),log10(Vᵥ₀)]` , where `Vₗ₀`  and `Vᵥ₀` are initial guesses for the liquid and vapour volumes.
+By default, it uses [`ChemPotVSaturation`](@ref)
+## Examples:
+julia-repl
+```
+julia> pr = PR(["water"])
+PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule} with 1 component:
+ "water"
+Contains parameters: a, b, Tc, Pc, Mw
+
+julia> saturation_pressure(pr,373.15) #default, uses Clapeyron.ChemPotVSaturation
+(96099.38979351855, 2.2674781912892906e-5, 0.03201681565699426)
+
+julia> saturation_pressure(pr,373.15,IsoFugacitySaturation()) #iso fugacity
+(96099.38979351871, 2.2674781912892933e-5, 0.03201681565699359)
+
+julia> saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)) #iso fugacity, with starting point
+(96099.38979351871, 2.2674781912892933e-5, 0.03201681565699547)
+```
+
 """
 
 function saturation_pressure(model,T,method::SaturationMethod)
@@ -28,10 +48,12 @@ function saturation_pressure(model,T,method::SaturationMethod)
 end
 
 include("ChemPotV.jl")
+include("IsoFugacity.jl")
+include("ChemPotDensity.jl")
 
 #by default, starts right before the critical point, and descends via Clapeyron equation: (∂p/∂T)sat = ΔS/ΔV ≈ Δp/ΔT
 
-function saturation_temperature(model::EoSModel,p,T0 = nothing)
+function saturation_temperature(model::EoSModel,p)
     if T0 === nothing
         T0 = x0_saturation_temperature(model,p)
     end
@@ -74,6 +96,38 @@ function Obj_sat_pure_T(model,T,p,cache)
     return Ti
 end
 
+function obj_tsat(model::EoSModel, T, P,cache)
+    vol_liq,vol_vap = cache[]
+    RT = R̄*T
+
+    vol_liq = volume(model, P, T, phase=:liquid, vol0=vol_liq)
+    vol_vap = volume(model, P, T, phase=:vapor, vol0=vol_vap)
+
+    μ_liq = VT_chemical_potential_res(model, vol_liq, T)[1]
+    μ_vap = VT_chemical_potential_res(model, vol_vap, T)[1]
+
+    Z_liq = P*vol_liq/RT
+    Z_vap = P*vol_vap/RT
+
+    lnϕ_liq = μ_liq/RT - log(Z_liq)
+    lnϕ_vap = μ_vap/RT - log(Z_vap)
+    FO = lnϕ_vap - lnϕ_liq
+    cache[] = (vol_liq,vol_vap)
+    return FO
+end
+
+function saturation_temperature(model::EoSModel, P, T0::Number)
+    #if a number is provided as initial point, it will instead proceed to solve directly
+    vol_liq = volume(model, P, T0, phase=:liquid)
+    vol_vap = volume(model, P, T0, phase=:vapor)
+    cache = Ref((vol_liq,vol_vap))
+    ftsat(T) = obj_tsat(model, T, P,cache)
+    fT = Roots.ZeroProblem(ftsat,T0)
+    T = Roots.solve(fT,Roots.Order0())
+    vol_liq,vol_vap = cache[]
+    return T, vol_liq, vol_vap
+end
+
 """
     enthalpy_vap(model::EoSModel, T,method = ChemPotVSaturation(x0_sat_pure(model,T)))
 
@@ -104,5 +158,7 @@ function acentric_factor(model::EoSModel)
     return -log10(p_r) - 1.0
 end
 
+#tsat, psat interface
+include("tsat_psat.jl")
 
 

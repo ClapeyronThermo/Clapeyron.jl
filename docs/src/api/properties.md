@@ -96,6 +96,9 @@ Clapeyron.mixing
 
 ```@docs
 Clapeyron.saturation_pressure
+Clapeyron.ChemPotVSaturation
+Clapeyron.ChemPotDensitySaturation
+Clapeyron.IsoFugacitySaturation
 Clapeyron.enthalpy_vap
 Clapeyron.crit_pure
 Clapeyron.acentric_factor
@@ -152,6 +155,7 @@ Clapeyron.x0_volume_liquid
 Clapeyron.x0_volume_gas
 Clapeyron.volume_virial
 Clapeyron.x0_sat_pure
+Clapeyron.psat_init
 Clapeyron.x0_crit_pure
 ```
 

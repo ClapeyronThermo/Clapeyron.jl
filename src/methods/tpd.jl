@@ -12,7 +12,7 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew; volw0=nothing,
         end
         dtpd = log.(w) + lnϕw - di
         gi = dtpd.*(α./2)
-        eye = Identity(nc)
+        eye = LinearAlgebra.I(nc)
         #TODO: check that just using Identity without instantiation works
         H .= eye .* (1. .+  (gi./α))  .+ sqrt.(w * w') .* ∂lnϕ∂nw
     else

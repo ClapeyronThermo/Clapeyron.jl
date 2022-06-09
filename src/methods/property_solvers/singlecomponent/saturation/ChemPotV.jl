@@ -1,5 +1,15 @@
 #TODO: better name
+"""
+    ChemPotVSaturation()
+    ChemPotVSaturation(;log10vl,log10vv)
+    ChemPotVSaturation(V0)
 
+Default Saturation method used by `Clapeyron.jl`. It uses equality of Chemical Potentials with a volume basis. If no volumes are provided, it will use  [`x0_sat_pure`](@ref). 
+
+If those initial guesses fail and the specification is near critical point, it will try one more time, using Corresponding States instead.
+
+`V0` is `[log10(Vₗ₀),log10(Vᵥ₀)]` , where `Vₗ₀`  and `Vᵥ₀` are initial guesses for the liquid and vapour volumes.
+"""
 struct ChemPotVSaturation{T} <: SaturationMethod
     vl::Union{Nothing,T}
     vv::Union{Nothing,T}
@@ -12,19 +22,19 @@ function vec2(method::ChemPotVSaturation{T},opt = true) where T <:Real
     return vec2(method.vl,method.vv,opt)
 end
 
-function ChemPotVSaturation(;vl = nothing,vv = nothing)
-    if (vl === nothing) && (vv === nothing)
+function ChemPotVSaturation(;log10vl = nothing,log10vv = nothing)
+    if (log10vl === nothing) && (log10vv === nothing)
         return ChemPotVSaturation{Nothing}(nothing,nothing)
-    elseif !(vl === nothing) && (vv === nothing)
-        vl = float(vl)
-        return ChemPotVSaturation(vl,vv)
-    elseif (vl === nothing) && !(vv === nothing)
-        vv = float(vv)
-        return ChemPotVSaturation(vl,vv)
+    elseif !(log10vl === nothing) && (log10vv === nothing)
+        log10vl = float(log10vl)
+        return ChemPotVSaturation(log10vl,log10vv)
+    elseif (log10vl === nothing) && !(log10vv === nothing)
+        log10vv = float(log10vv)
+        return ChemPotVSaturation(log10vl,log10vv)
     else
         T = one(vl)/one(vv)
-        vl,vv,_ = promote(vl,vv,T)
-        return ChemPotVSaturation(vl,vv)
+        log10vl,log10vv,_ = promote(log10vl,log10vv,T)
+        return ChemPotVSaturation(log10vl,log10vv)
     end
 end
 
@@ -159,3 +169,5 @@ function Obj_Sat(model::EoSModel, F, T, V_l, V_v,scales)
     F[2] = (g_l-g_v)*μ_scale
     return F
 end
+
+export ChemPotVSaturation
