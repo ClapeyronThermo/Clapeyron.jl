@@ -33,6 +33,7 @@ function rachfordrice(β, K, z)
     return β, D, singlephase
 end
 
+
 function gibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny, vcache; F=nothing, G=nothing)
     # Objetive Function to minimize the Gibbs Free Energy
     # It computes the Gibbs free energy and its gradient
@@ -148,7 +149,7 @@ struct MichelsenTPFlash{T} <: TPFlashMethod
 end
 
 function index_reduction(m::MichelsenTPFlash,idx::AbstractVector)
-    equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order = m.equilibrium,m.K0,m.x0,m.y0,m.K_tol,m.ss_iters,m.second_order
+    equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.ss_iters,m.second_order
     K0 !== nothing && (K0 = K0[idx])
     x0 !== nothing && (x0 = x0[idx])
     y0 !== nothing && (y0 = y0[idx])
@@ -167,7 +168,7 @@ function MichelsenTPFlash(;equilibrium = :vle,K0 = nothing, x0 = nothing,y0=noth
     else
         if !isnothing(K0) & isnothing(x0) & isnothing(y0) #K0 specified
             T = eltype(K0)
-        elseif isnothing(K0) & isnothing(x0) & isnothing(y0)  #x0, y0 specified
+        elseif isnothing(K0) & !isnothing(x0) & !isnothing(y0)  #x0, y0 specified
             T = eltype(x0)
         else
             throw(error("invalid specification of initial points"))
@@ -228,6 +229,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     end
 
     # Setting the initial guesses for volumes
+    vol0 === nothing && (vol0 = (nothing,nothing))
     volx, voly = vol0
 
     # Computing the initial guess for the K vector

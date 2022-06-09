@@ -8,7 +8,7 @@ If the method accept component-dependent inputs, it also should define `index_re
 abstract type TPFlashMethod end
 
 """
-    tp_flash(model, p, T, n, method::TPFlashMethod =DETPFlash())
+    tp_flash(model, p, T, n, method::TPFlashMethod = DETPFlash())
 
 Routine to solve non-reactive multicomponent flash problem.
 The default method uses Global Optimization. see [`DETPFlash`](@ref)
