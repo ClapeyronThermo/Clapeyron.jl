@@ -319,3 +319,5 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         return x, y, β
     end
 end
+
+export MichelsenTPFlash

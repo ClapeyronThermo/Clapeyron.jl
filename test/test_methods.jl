@@ -407,6 +407,15 @@ end
     @test Clapeyron.a_assoc(model_elliott_comb,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
 end
 
+@testset "tpd" begin
+    system = PCSAFT(["water","cyclohexane"])
+    T = 298.15
+    p = 1e5
+    phases,tpds,symz,symw = Clapeyron.tpd(system,p,T,[0.5,0.5])
+    @test tpds[1] ≈ -7.934197556675743  rtol = 1e-6 
+end
+
+
 @testset "Tp flash algorithms" begin
     system = PCSAFT(["water","cyclohexane","propane"])
     T = 298.15
@@ -420,6 +429,28 @@ end
     @testset "DE Algorithm" begin
         @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3))[3] ≈ -6.759674475174073 rtol = 1e-6 
     end
+
+    @testset "Michelsen Algorithm" begin
+        system = PCSAFT(["water","cyclohexane"])
+        method = MichelsenTPFlash(x0 = [0.9997755902156433, 0.0002244097843566859],
+                                    y0 = [6.425238373915699e-6, 0.9999935747616262],
+                                    equilibrium= :lle)
+        @test Clapeyron.tp_flash(system, p, T, [0.5,0.5],method)[3] ≈ -7.577270350886795 rtol = 1e-6 
+    end
+end
+
+@test "Saturation Methods" begin
+    model = PR(["water"])
+    T = 373.15
+    p,vl,vv = saturation_pressure(model,T) #default
+    p1,vl1,vv1 = saturation_pressure(model,T,IsoFugacitySaturation())
+    @test p1 ≈ p rtol = 1e-6
+    p2,vl2,vv2 = saturation_pressure(model,T,IsoFugacitySaturation(p0 = 1e5))
+    @test p1 ≈ p rtol = 1e-6
+    p3,vl3,vv3 = saturation_pressure(model,T,ChemPotDensitySaturation())
+    @test p3 ≈ p rtol = 1e-6
+    p4,vl4,vv4 = saturation_pressure(model,T,ChemPotDensitySaturation(;vl,vv))
+    @test p4 ≈ p rtol = 1e-6
 end
 
 @testset "Unitful Methods" begin

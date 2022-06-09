@@ -20,7 +20,7 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew; volw0=nothing,
         if isnan(volw)
             lnϕw, volw = lnϕ(model, p, T, w; phase=phasew, vol0=nothing)
         end
-        dtpd = log.(2) .+ lnϕw .- di
+        dtpd = log.(w) + lnϕw - di
         gi = dtpd.*(α./2)
     end
 
@@ -96,6 +96,10 @@ function all_tpd(model::EoSModel, p, T, z,phasepairs = ((:liquid,:vapour),(:liqu
     phasez_array = fill(:x,0)
     phasew_array = fill(:x,0)
 
+    #TODO for the future:
+    #this operation is a "embarrasingly parallel" problem, multithreading will surely speed this up
+    #but Base.@threads on julia 1.6 behaves on a static manner, on 1.8 onwards, there is Base.@threads :dynamic,
+    #that allows nesting. Ideally, all Clapeyron operations should be multithread-friendly.
     for (phasez,phasew) in phasepairs
         for i in 1:length(model)
             w0 = Id[i, :]
@@ -160,3 +164,5 @@ function lle_init(model::EoSModel, p, T, z;verbose = false)
     w_array, tpd_array, _, _ = all_tpd(model,p,T,z,((:liquid,:liquid),);verbose = verbose)
     return w_array, tpd_array
 end
+
+export tpd
