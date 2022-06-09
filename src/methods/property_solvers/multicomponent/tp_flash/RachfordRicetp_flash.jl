@@ -49,7 +49,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::RRTPFlash)
     
     X = hcat(x,y)'
     nvals = X.*[1-α₀
-                α₀]  .* sum(z)
+                α₀]  .* sum(n)
     return (X, nvals, G)
 end
 
