@@ -1,11 +1,19 @@
 """
-    psat_init(model::EoSModel, T, Tc, Vc)
+    psat_init(model::EoSModel, T)
 
 Initial point for saturation pressure, given the temperature and V,T critical coordinates.
 On moderate pressures it will use a Zero Pressure initialization. On pressures near the critical point it will switch to spinodal finding.
 
 It can be overloaded to provide more accurate estimates if necessary.
 """
+function psat_init(model,T)
+    Tc, Pc, Vc = crit_pure(model)
+    if T > Tc
+        return zero(T)/zero(T)
+    end
+    return psat_init(model, T, Tc, Vc)
+end
+
 function psat_init(model::EoSModel, T, Tc, Vc)
     # Function to get an initial guess for the saturation pressure at a given temperature
     z = SA[1.] #static vector
@@ -72,13 +80,14 @@ function saturation_pressure_impl(model::EoSModel,T,method::IsoFugacitySaturatio
     vol0 = (method.vl,method.vv,T)
     p0 = method.p0
     if isnan(p0)
-        Tc, Pc, Vc = crit_pure(model)
-        if Tc < T
-            nan = p0*zero(T)/zero(T)
-            return (nan,nan,nan)
-        end
-        p0 = psat_init(model, T, Tc, Vc)
+        p0 = psat_init(model, T)
     end
+
+    if isnan(p0) #over critical point, or something else.
+        nan = p0/p0
+        return (nan,nan,nan)
+    end
+
     return psat_fugacity(model,T,p0,vol0,method.max_iters,method.p_tol)
 end
 

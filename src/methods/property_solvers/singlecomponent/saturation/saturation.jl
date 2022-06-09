@@ -51,29 +51,26 @@ include("ChemPotV.jl")
 include("IsoFugacity.jl")
 include("ChemPotDensity.jl")
 
-#by default, starts right before the critical point, and descends via Clapeyron equation: (∂p/∂T)sat = ΔS/ΔV ≈ Δp/ΔT
+#if a model overloads x0_saturation_temperature to return a T0::Number, we can assume this number is near
+#the actual saturation temperature, so we use the direct algorithm. otherwise, we use a safe approach, starting from the critical
+#coordinate and descending.
+x0_saturation_temperature(model,p) = nothing
 
-function saturation_temperature(model::EoSModel,p)
-    if T0 === nothing
-        T0 = x0_saturation_temperature(model,p)
-    end
-    TT = typeof(T0/T0)
+#by default, starts right before the critical point, and descends via Clapeyron equation: (∂p/∂T)sat = ΔS/ΔV ≈ Δp/ΔT
+saturation_temperature(model::EoSModel, P) = saturation_temperature(model, P,x0_saturation_temperature(model,P))
+
+function saturation_temperature(model::EoSModel,p,T0::Nothing)
+    Tc,pc,vc = crit_pure(model)
+    TT = typeof(vc*pc/Tc)
     nan = zero(TT)/zero(TT)
-    if isnan(T0)
-        return (nan,nan,nan)
-    end 
+    p > 0.99999pc && (return (nan,nan,nan)) 
+    T0 = 0.99*Tc
+    isnan(T0) && (return (nan,nan,nan))
     cache = Ref{Tuple{TT,TT,TT,TT}}((nan,nan,nan,nan))
     f(T) = Obj_sat_pure_T(model,T,p,cache)
     T = Solvers.fixpoint(f,T0)
     _,_,v_l,v_v = cache[]
     return T,v_l,v_v
-end
-
-function x0_saturation_temperature(model,p)
-    Tc,pc,vc = crit_pure(model)    
-    p > 0.99999pc && (return zero(p)/zero(p))
-    T99 = 0.99*Tc
-    return T99
 end
 
 function Obj_sat_pure_T(model,T,p,cache)
@@ -116,8 +113,8 @@ function obj_tsat(model::EoSModel, T, P,cache)
     return FO
 end
 
+#if a number is provided as initial point, it will instead proceed to solve directly
 function saturation_temperature(model::EoSModel, P, T0::Number)
-    #if a number is provided as initial point, it will instead proceed to solve directly
     vol_liq = volume(model, P, T0, phase=:liquid)
     vol_vap = volume(model, P, T0, phase=:vapor)
     cache = Ref((vol_liq,vol_vap))

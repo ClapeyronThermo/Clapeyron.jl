@@ -412,7 +412,7 @@ end
     T = 298.15
     p = 1e5
     phases,tpds,symz,symw = Clapeyron.tpd(system,p,T,[0.5,0.5])
-    @test tpds[1] ≈ -7.934197556675743  rtol = 1e-6 
+    @test tpds[1] ≈ -0.8370113547074933  rtol = 1e-6 
 end
 
 
@@ -439,7 +439,7 @@ end
     end
 end
 
-@test "Saturation Methods" begin
+@testset "Saturation Methods" begin
     model = PR(["water"])
     T = 373.15
     p,vl,vv = saturation_pressure(model,T) #default
