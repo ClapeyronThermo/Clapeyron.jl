@@ -201,21 +201,29 @@ function eos_res(model::PropaneRef,V,T,z=SA[1.0];phase=:unknown)
 end
 
 mw(model::PropaneRef) = SA[model.consts.Mw]
+
 molecular_weight(model::PropaneRef,z = @SVector [1.]) = model.consts.Mw*0.001
+
 T_scale(model::PropaneRef,z=SA[1.0]) = model.consts.T_c
+
 p_scale(model::PropaneRef,z=SA[1.0]) = model.consts.P_c
+
 lb_volume(model::PropaneRef,z=SA[1.0]) = 6.0647250138479785e-5 #calculated at 1000 MPa and 650 K
+
 Base.length(::PropaneRef) = 1
+
 function Base.show(io::IO,mime::MIME"text/plain",model::PropaneRef)
     print(io,"Propane Reference Equation of State")
 end
+
 function x0_sat_pure(model::PropaneRef,T,z=SA[1.0])
     log10vv = log10(1.0/_propaneref_rhovsat(T))
     log10vl = log10(1.0/_propaneref_rholsat(T))
-    return [log10vl,log10vv]
+    return (log10vl,log10vv)
 end
 
 psat_init(model::PropaneRef,T) = _propaneref_psat(T)
+
 x0_saturation_temperature(model::PropaneRef,p) = _propaneref_tsat(p)
 
 

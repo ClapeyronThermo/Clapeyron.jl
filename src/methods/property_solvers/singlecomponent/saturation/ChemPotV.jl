@@ -119,6 +119,7 @@ end
 
 function ObjSatPure(model,T)
     ps,mus = scale_sat_pure(model)
+    ps,mus,T = promote(ps,mus,T)
     ObjSatPure(model,ps,mus,T)
 end
 

@@ -115,14 +115,15 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters
         #@show vol_liq,vol_vap
         Z_liq = P*vol_liq/RT
         Z_vap = P*vol_vap/RT
-
         lnϕ_liq = μ_liq/RT - log(Z_liq)
         lnϕ_vap = μ_vap/RT - log(Z_vap)
         # Updating the saturation pressure
         FO = lnϕ_vap - lnϕ_liq
         dFO = (Z_vap - Z_liq) / P
         dP = FO / dFO
-        P = P - dP
+        #at very low pressures and some EoS (GERG2008(["water"]) at 298K) the first step could be too big.
+        #this will limit steps diving on negative pressures
+        P = max(P - dP,P/2)
         if abs(dP) < p_tol; break; end
         # Updating the phase volumes
         vol_liq = _volume_compress(model, P, T, z,vol_liq)

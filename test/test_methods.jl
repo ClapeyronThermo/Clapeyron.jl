@@ -273,6 +273,7 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3184.83242429761 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3184.83242429761 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 647.0960000000457 rtol = 1E-6 
     end
 end
@@ -322,6 +323,7 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.9293390134403 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3169.9293390134403 rtol = 1E-6
         #saturation temperature tests are noisy
         @test Clapeyron.saturation_temperature(system,3169.9293390134403) ≈ 298.1480314879574  rtol = 1E-6
         tc,pc,vc =  Clapeyron.crit_pure(system)
@@ -342,6 +344,7 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 97424.11102152328 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 97424.11102152328 rtol = 1E-6
         #saturation temperature tests are noisy
         @test Clapeyron.saturation_temperature(system,97424.11102152328) ≈ 230.15014586866016  rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 369.8900089509652 rtol = 1E-6 
@@ -422,6 +425,7 @@ end
 
 
 @testset "Tp flash algorithms" begin
+    #this is a VLLE equilibria
     system = PCSAFT(["water","cyclohexane","propane"])
     T = 298.15
     p = 1e5
