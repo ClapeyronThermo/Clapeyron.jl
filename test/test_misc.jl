@@ -70,11 +70,12 @@
         @test repr("text/plain",simple1) == "PRAlpha with 1 component:\n \"propane\"\nContains parameters: acentricfactor"
     end
 
-    @testset phase_symbols begin
+    @testset "phase symbols" begin
         @test Clapeyron.canonical_phase(:l) == :liquid
         @test Clapeyron.canonical_phase(:v) == :vapour
         @test Clapeyron.canonical_phase(:m) == :m
     end
+    
     @printline
 
 end
