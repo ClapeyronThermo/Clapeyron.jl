@@ -325,7 +325,7 @@ end
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.9293390134403 rtol = 1E-6
         @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3169.9293390134403 rtol = 1E-6
         #saturation temperature tests are noisy
-        @test Clapeyron.saturation_temperature(system,3169.9293390134403) ≈ 298.1480314879574  rtol = 1E-6
+        @test Clapeyron.saturation_temperature(system,3169.9293390134403)[1] ≈ 298.1480314879574  rtol = 1E-6
         tc,pc,vc =  Clapeyron.crit_pure(system)
         @test tc ≈ 647.096 rtol = 1E-5 
         v2 =  volume(system,pc,tc)
