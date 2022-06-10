@@ -79,10 +79,17 @@ function Base.show(io::IO,model::SPUNG)
 end
 
 function lb_volume(model::SPUNG,z=SA[1.0])
-    lb_v0 = lb_volume(model.model_ref)
+    lb_v0 = lb_volume(model.model_ref,z)
     T0 = T_scale(model.model_ref)
     f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
     return lb_v0*h
+end
+
+function x0_volume_liquid(model::SPUNG,T,z=SA[1.0])
+    f,h = shape_factors(model,zero(T),T,z)
+    T0 = T/f
+    v0l = x0_volume_liquid(model.model_ref,T0,z)
+    return v0l*h
 end
 
 function T_scale(model::SPUNG,z=SA[1.0])
