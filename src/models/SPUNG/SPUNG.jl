@@ -29,7 +29,9 @@ function eos(model::SPUNG,V,T,z=SA[1.0])
     n = sum(z)
     T0 = T/f
     V0 = V/h/n
-    return n*eos(model.model_ref,V0,T0)
+    #eos(V,T)/RT = eos0(V0,T0)/RT0
+    #eos(V,T) = eos0(V0,T0)*T/T0
+    return n*eos(model.model_ref,V0,T0)*f
 end
 
 function eos_res(model::SPUNG,V,T,z=SA[1.0])
@@ -37,15 +39,29 @@ function eos_res(model::SPUNG,V,T,z=SA[1.0])
     n = sum(z)
     T0 = T/f
     V0 = V/h/n
-    return n*eos_res(model.model_ref,V0,T0)
+    return n*eos_res(model.model_ref,V0,T0)*f
 end
 
 function shape_factors(model::SPUNG{<:ABCubicModel},V,T,z=SA[1.0])
     a,b = cubic_ab(model.shape_model,V,T,z)
-    a0,b0 = cubic_ab(model.shape_ref,V,T,z)
+    n = sum(z)
+    v = V/n
+    # initial point
+    shape_ref = model.shape_ref
+    amix = dot(z,model.shape_model.params.a.values,z)/(n*n)
+    a00 = shape_ref.params.a.values[1,1]
+    b00 = shape_ref.params.b.values[1,1]
+    
+    fT0 = one(T)*b00*amix/a00/b
+    function f_0(f)
+        a0f,b0f = cubic_ab(shape_ref,v,T/f)
+        return f*b/b0f - a/a0f
+    end
+
+    prob = Roots.ZeroProblem(f_0,fT0)
+    f = Roots.solve(prob)
+    _,b0 = cubic_ab(shape_ref,v,T/f)
     h = b/b0
-    fh = a/a0
-    f = fh/h
     return f,h
 end
 
@@ -59,7 +75,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::SPUNG)
 end
 
 function Base.show(io::IO,model::SPUNG)
-    print(io,"SPUNG(",model.shape_ref,",",model.model_ref,")")
+    print(io,string(typeof(model)),model.shape_model.components)
 end
 
 function lb_volume(model::SPUNG,z=SA[1.0])
@@ -76,36 +92,35 @@ function T_scale(model::SPUNG,z=SA[1.0])
     return T0*f
 end
 
-# function p_scale(model::SPUNG,z=SA[1.0])
-#     lb_v0 = lb_volume(model.model_ref)
-#     T0 = T_scale(model.model_ref)
-#     p0 = p_scale(model.model_ref)
-#     f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
-#     ps = p0*f/h
-#     return ps
-# end
-
-#=
-ideally we could perform SPUNG only providing x0, but i cant find the error here
-
-=#
-#overloading saturation_pressure for SPUNG directly seems to be the way
-function saturation_pressure(model::SPUNG,T::Real,v0=[zero(T)/zero(T),zero(T)/zero(T)])
-    lb_v0 = lb_volume(model.model_ref)
-    f,h = shape_factors(model,lb_v0,T,SA[1.0]) #h normaly should be independent of temperature
-    T0 = T/f
-    if isnan(v0[1]) && isnan(v0[2])
-        v0 = x0_sat_pure(model.model_ref,T0)
-    else
-        vl = exp10(v0[1])
-        vv = exp10(v0[2])
-        v0 = [log10(vl*h),log10(vv*h)]
-    end
-    psat0,vl0,vv0 = saturation_pressure(model.model_ref,T0,v0)
-    p = pressure(model,vl0*h,T)
-    return (p,vl0*h,vv0*h)
+function p_scale(model::SPUNG,z=SA[1.0])
+     lb_v0 = lb_volume(model.model_ref)
+     T0 = T_scale(model.model_ref)
+     p0 = p_scale(model.model_ref)
+     f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
+     ps = p0*f/h
+     return ps
 end
 
+function x0_sat_pure(model::SPUNG,T,z = SA[1.0])
+    f,h = shape_factors(model,zero(T),T) 
+    T0 = T/f
+    v0l,v0v = x0_sat_pure(model.model_ref,T0)
+    lh = log10(h)
+    v0l = v0l + lh
+    v0v = v0v + lh
+    v0 = (v0l,v0v) 
+    return v0
+end
+
+function split_model(model::SPUNG,subset=nothing)
+    shape_model_vec = split_model(model.shape_model,subset)
+    shape_ref,model_ref = model.shape_ref, model.model_ref
+    return [SPUNG(shape_modeli,shape_ref,model_ref) for shape_modeli in shape_model_vec]
+end
+
+#==
+Experimental way of trying to make general shape factors
+WIP
 
 function shape_factors(model::SPUNG,V,T,z=SA[1.0])
     n = sum(z)
@@ -144,7 +159,7 @@ function shape_factors(model::SPUNG,V,T,z=SA[1.0])
     return f,h
 end
 
-#=
+
 Tc = 0.26+2.1R
 R = λ-1
 =#

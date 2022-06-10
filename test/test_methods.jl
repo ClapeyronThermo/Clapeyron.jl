@@ -365,7 +365,7 @@ end
         @test Clapeyron.crit_pure(system)[1]/Clapeyron.T_scale(system) ≈ 1.32 rtol = 1E-4 
     end
 end
-
+#=
 @testset "SPUNG methods" begin
     system = SPUNG(["ethane"])
     p = 1e5
@@ -382,7 +382,7 @@ end
         @test Clapeyron.crit_pure(system)[1] ≈ 270.27247485012657 rtol = 1E-6 
     end
 end
-
+=#
 @testset "lattice methods" begin
     p = 1e5
     T = 298.15
