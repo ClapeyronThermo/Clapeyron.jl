@@ -108,22 +108,31 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters
     vol_vap = vol_vap0
     #@show vol_liq, vol_vap
     itmax = max_iters
+    fun(_V) = eos_res(model, _V, T,SA[1.])
+
     for i in 1:itmax
         # Computing chemical potential
-        μ_liq = VT_chemical_potential_res(model, vol_liq, T)[1]
-        μ_vap = VT_chemical_potential_res(model, vol_vap, T)[1]
-        #@show vol_liq,vol_vap
+        A_l,Av_l = Solvers.f∂f(fun,vol_liq)
+        A_v,Av_v = Solvers.f∂f(fun,vol_vap)
+        μ_liq = muladd(-vol_liq,Av_l,A_l)
+        μ_vap = muladd(-vol_vap,Av_v,A_v)
+        #μ_liq = VT_chemical_potential_res(model, vol_liq, T)[1]
+        #μ_vap = VT_chemical_potential_res(model, vol_vap, T)[1]
+
         Z_liq = P*vol_liq/RT
         Z_vap = P*vol_vap/RT
+        
         lnϕ_liq = μ_liq/RT - log(Z_liq)
         lnϕ_vap = μ_vap/RT - log(Z_vap)
         # Updating the saturation pressure
         FO = lnϕ_vap - lnϕ_liq
         dFO = (Z_vap - Z_liq) / P
+        #dP = -expm1(lnϕ_liq-lnϕ_vap)
         dP = FO / dFO
         #at very low pressures and some EoS (GERG2008(["water"]) at 298K) the first step could be too big.
         #this will limit steps diving on negative pressures
         P = max(P - dP,P/2)
+        
         if abs(dP) < p_tol; break; end
         # Updating the phase volumes
         vol_liq = _volume_compress(model, P, T, z,vol_liq)
