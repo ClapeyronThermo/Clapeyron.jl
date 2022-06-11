@@ -10,6 +10,8 @@ and a "reference model" that implements a helmholtz energy function.
 
 this SPUNG by default uses the propane reference equation of state (`PropaneRef`) as the reference model
 and SRK for the shape model.
+
+
 """
 struct SPUNG{S<:EoSModel,E<:EoSModel} <: EoSModel
     shape_model::S
@@ -42,12 +44,13 @@ function eos_res(model::SPUNG,V,T,z=SA[1.0])
     return n*eos_res(model.model_ref,V0,T0)*f
 end
 
-function shape_factors(model::SPUNG{<:ABCubicModel},V,T,z=SA[1.0])
+shape_factors(model::SPUNG,V,T,z=SA[1.0]) = shape_factors(model,model.shape_ref,V,T,z)
+
+function shape_factors(model::SPUNG,shape_ref::ABCubicModel,V,T,z=SA[1.0])
     a,b = cubic_ab(model.shape_model,V,T,z)
     n = sum(z)
     v = V/n
     # initial point
-    shape_ref = model.shape_ref
     amix = dot(z,model.shape_model.params.a.values,z)/(n*n)
     a00 = shape_ref.params.a.values[1,1]
     b00 = shape_ref.params.b.values[1,1]
@@ -129,46 +132,36 @@ end
 Experimental way of trying to make general shape factors
 WIP
 
-function shape_factors(model::SPUNG,V,T,z=SA[1.0])
+It will try to make extended corresponding states by the same criteria as the cubic:
+f*h = a(T)/a0(T0)
+where h = lb_volume(model)/lb_volume(model0)
+a(T) = RT*(b-B(T))
+==#
+function shape_factors(model::SPUNG,shape_ref::EoSModel,V,T,z=SA[1.0])
     n = sum(z)
-    x = z * (1/n)
+    shape_ref = model.shape_ref
     RT = R̄*T
-    b = lb_volume(model.shape_model,x)
-    b0 = lb_volume(model.shape_ref,x)
-    B = second_virial_coefficient(model.shape_model,T,x)
-    B0 = second_virial_coefficient(model.shape_ref,T)
+    b = lb_volume(model.shape_model,z)
+    b0 = lb_volume(shape_ref)
+    n = sum(z)
+    v = V/n
+    B = second_virial_coefficient(model.shape_model,T,z)
+    B00 = second_virial_coefficient(shape_ref,T)
     #B = b-a/RT
     #a/RT = b-B
-    #a = RT(b-B)
-    a = RT*(b-B)
-    a0 = RT*(b0-B0)
-    tau = 1/(1-4(B/b))
-    tau0 = 1/(1-4(B0/b0))
-    Tc = T_scale(model.shape_model,x)
-    Tc0 = T_scale(model.shape_ref,x)
-
-    f0 = (tau*Tc)/(tau0*Tc0)
-    #f0 = tau/tau0
-    #@show T/f0
-     #T0 = Roots.find_zero(f0_f,T/f0)
-    #@show T0
-     #B0 = second_virial_coefficient(model.shape_ref,T0)
-    #tau0 = 1-(B0/b0)
-    #tau0 = 1-(B0/b0)
-    #f = tau/tau0
-
-    #a,b = cubic_ab(model.shape_model,T,x)
-    #a0,b0 = cubic_ab(model.shape_ref,T,SA[1.0])
+    a = R̄*T*(b-B)
+    a00 = R̄*T*(b0-B00) #f = 1
     h = b/b0
-    #fh = n*a/a0
-    #f = fh/h
-    f = f0
+    fT0 = one(T)*b0*a/a00/b
+    function f_0(f)
+        T0 = T/f
+        B0f = second_virial_coefficient(shape_ref,T0)
+        a0f = R̄*T0*(b0-B0f)
+        return f*h - a/a0f
+    end
+    prob = Roots.ZeroProblem(f_0,fT0)
+    f = Roots.solve(prob)
     return f,h
 end
-
-
-Tc = 0.26+2.1R
-R = λ-1
-=#
 
 export SPUNG
