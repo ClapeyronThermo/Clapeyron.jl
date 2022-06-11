@@ -384,7 +384,7 @@ end
 
     T_sat = 250.15
     @testset "VLE properties" begin
-        @test_broken Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 1.3085074415334722e6 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 1.3085074415334722e6 rtol = 1E-6
         #Critical point of ethane: 305.322
         @test Clapeyron.crit_pure(system)[1] ≈ 305.37187249327553 rtol = 1E-6 
     end
