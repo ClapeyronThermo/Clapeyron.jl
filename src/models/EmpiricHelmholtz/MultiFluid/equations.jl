@@ -240,6 +240,14 @@ function x0_sat_pure(model::MultiFluidModel,T)
     return (log10(vl),log10(vv)) 
 end
 
+#Corresponding States
+function psat_init(model::MultiFluidModel,T)
+    Ts = T_scale(model)
+    T0 = 369.89*T/Ts
+    Ps = p_scale(model)
+    return Ps*_propaneref_psat(T0)/4.2512e6
+end
+
 function x0_volume_liquid(model::MultiFluidModel,T,z)
     return 1.01*lb_volume(model,z)
 end
@@ -250,6 +258,7 @@ function x0_volume_gas(model::MultiFluidModel,p,T,z=SA[1.])
 end
 
 molecular_weight(model::MultiFluidModel,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
+
 mw(model::MultiFluidModel) = model.properties.Mw.values
 
 function x0_crit_pure(model::MultiFluidModel)

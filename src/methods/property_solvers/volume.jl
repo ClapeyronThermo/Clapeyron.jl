@@ -29,7 +29,7 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         _V < log(lb_v) && return zero(_V)/zero(_V)
         _V = exp(_V)
         _p,dpdV = p∂p∂V(model,_V,T,z)
-        dpdV > 0 && return _nan #inline mechanical stability. 
+        dpdV > 0 && return _nan #inline mechanical stability.
         abs(_p-pset) < 3eps(pset) && return zero(_V)
         _Δ = (pset-_p)/(_V*dpdV)
         return _Δ
@@ -51,7 +51,7 @@ Calculates an aproximation to the gas volume at specified pressure, volume and c
 
 ```julia
 
-Z(v) ≈ 1 + B(T)/v 
+Z(v) ≈ 1 + B(T)/v
 ```
 where `Z` is the compressibility factor and `B` is the second virial coefficient.
 If `B>0`, (over the inversion temperature) returns `NaN`. If the solution to the problem is complex (`Z = 1 + B/v` implies solving a quadratic polynomial), returns `-2*B`.
@@ -92,7 +92,7 @@ calculates the volume (m³) of the compound modelled by `model` at a certain pre
 
 `phase` is a Symbol that determines the initial volume root to look for:
 
-- If `phase =:unknown` (Default), it will return the physically correct volume root with the least gibbs energy. 
+- If `phase =:unknown` (Default), it will return the physically correct volume root with the least gibbs energy.
 
 - If `phase =:liquid`, it will return the volume of the phase using a liquid initial point.
 
@@ -117,32 +117,39 @@ The calculation of both volume roots can be calculated in serial (`threaded=fals
     isstable(model,v,T,z)
     ```
 """
-function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
-    return volume_impl(model,p,T,z,phase,threaded)
+function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true,vol0=nothing)
+    return volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
-function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
+function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,vol0=nothing)
 #Threaded version
     TYPE = typeof(p+T+first(z))
+    
+    if ~isnothing(vol0)
+        V0 = vol0
+        V = _volume_compress(model,p,T,z,V0)
+        return V
+    end
+
     if phase != :unknown
         V0 = x0_volume(model,p,T,z,phase=phase)
         V = _volume_compress(model,p,T,z,V0)
         #isstable(model,V,T,z,phase) the user just wants that phase
         return V
     end
-    if threaded     
+    if threaded
         Vg0 = x0_volume(model,p,T,z,phase=:v)
         Vl0 = x0_volume(model,p,T,z,phase=:l)
         _Vg = Threads.@spawn _volume_compress(model,$p,$T,$z,$Vg0)
         _Vl = Threads.@spawn _volume_compress(model,$p,$T,$z,$Vl0)
-         Vg::TYPE = fetch(_Vg)     
+         Vg::TYPE = fetch(_Vg)
          Vl::TYPE = fetch(_Vl)
     else
         Vg0 = x0_volume(model,p,T,z,phase=:v)
         Vl0 = x0_volume(model,p,T,z,phase=:l)
-       
+
         Vg =  _volume_compress(model,p,T,z,Vg0)
-        Vl =  _volume_compress(model,p,T,z,Vl0)        
+        Vl =  _volume_compress(model,p,T,z,Vl0)
     end
 
     #this catches the supercritical phase as well
@@ -158,7 +165,7 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
     if (isnan(Vl) & isnan(Vg))
         err()
         return zero(TYPE)/zero(TYPE)
-    end 
+    end
     _dfg,fg =  ∂f(model,Vg,T,z)
     dVg,_ = _dfg
     gg = ifelse(abs((p+dVg)/p) > 0.03,zero(dVg)/one(dVg),fg + p*Vg)
@@ -175,5 +182,3 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true)
 end
 
 export volume
-
-

@@ -21,8 +21,10 @@ function test_activity_coefficient(model::ActivityModel,p,T,z)
     return exp.(ForwardDiff.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
 end
 
-function saturation_pressure(model::ActivityModel,T::Real,v0 = x0_sat_pure(model.puremodel[1],T))
-    return saturation_pressure(model.puremodel[1],T,v0)
+x0_sat_pure(model::ActivityModel,T) = x0_sat_pure(model.puremodel[1],T)
+
+function saturation_pressure(model::ActivityModel,T::Real,method::SaturationMethod)
+    return saturation_pressure(model.puremodel[1],T,method)
 end
 
 function eos(model::ActivityModel,V,T,z)

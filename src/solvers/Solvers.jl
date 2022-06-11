@@ -96,7 +96,9 @@ using StaticArrays
         Returns the scalar or vector x that solves the system of equations or is the minimizer of an optimization procedure.
     """
     x_sol(res) = NLSolvers.solution(res)
-
+    #for BrentMin (should be fixed at NLSolvers 0.3)
+    x_sol(res::Tuple{<:Number,<:Number}) = first(res)
+    
     include("ad.jl")
     include("nanmath.jl")
     include("nlsolve.jl")
