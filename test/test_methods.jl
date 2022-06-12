@@ -31,6 +31,7 @@ using Clapeyron, Test, Unitful
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7972.550405922014 rtol = 1E-6
         @test Clapeyron.saturation_temperature(system, p)[1] ≈ 351.32529505096164 rtol = 1E-6
+        @test Clapeyron.saturation_temperature(system, p, 350)[1] ≈ 351.32529505096164 rtol = 1E-6
         @test Clapeyron.enthalpy_vap(system, T) ≈ 41712.78521121877 rtol = 1E-6
         @test Clapeyron.acentric_factor(system) ≈ 0.5730309964718605 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 533.1324329774004 rtol = 1E-6 
@@ -272,6 +273,7 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3184.83242429761 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3184.83242429761 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 647.0960000000457 rtol = 1E-6 
     end
 end
@@ -321,6 +323,10 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3169.9293390134403 rtol = 1E-6
+        #ir varies a bit, it gives 3170.301356765357
+        @test_broken Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3169.9293390134403 rtol = 1E-6
+        #saturation temperature tests are noisy
+        @test Clapeyron.saturation_temperature(system,3169.9293390134403)[1] ≈ 298.1480314879574  rtol = 1E-6
         tc,pc,vc =  Clapeyron.crit_pure(system)
         @test tc ≈ 647.096 rtol = 1E-5 
         v2 =  volume(system,pc,tc)
@@ -339,6 +345,10 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 97424.11102152328 rtol = 1E-6
+        #they vary a litte bit. i don't know why, it gives 97423.47874065055
+        @test_broken Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 97424.11102152328 rtol = 1E-6
+        #saturation temperature tests are noisy
+        @test Clapeyron.saturation_temperature(system,97424.11102152328)[1] ≈ 230.15014586866016  rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 369.8900089509652 rtol = 1E-6 
     end
 end
@@ -362,15 +372,21 @@ end
     p = 1e5
     T = 313.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 0.035641472902311774 rtol = 1e-6 
-        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ 0.035641472902311774 rtol = 1e-6 
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 357.8705332163255 rtol = 1e-6 
+        
+        #GERG2008(["ethane]): 0.025868956878898026
+        vv = 0.025868956878898026
+        @test Clapeyron.volume(system, p, T) ≈ vv rtol = 1e-6 
+        @test Clapeyron.volume(system, p, T;phase=:vapour) ≈ vv rtol = 1e-6 
+        
+        #GERG2008(["ethane]) : 318 m/s
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 308.38846317827625 rtol = 1e-6 
     end
 
     T_sat = 250.15
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 3.5120264571020138e6 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 270.27247485012657 rtol = 1E-6 
+        @test Clapeyron.saturation_pressure(system, T_sat)[1] ≈ 1.3085074415334722e6 rtol = 1E-6
+        #Critical point of ethane: 305.322
+        @test Clapeyron.crit_pure(system)[1] ≈ 305.37187249327553 rtol = 1E-6 
     end
 end
 
@@ -407,7 +423,17 @@ end
     @test Clapeyron.a_assoc(model_elliott_comb,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
 end
 
+@testset "tpd" begin
+    system = PCSAFT(["water","cyclohexane"])
+    T = 298.15
+    p = 1e5
+    phases,tpds,symz,symw = Clapeyron.tpd(system,p,T,[0.5,0.5])
+    @test tpds[1] ≈ -0.8370113547074933  rtol = 1e-6 
+end
+
+
 @testset "Tp flash algorithms" begin
+    #this is a VLLE equilibria
     system = PCSAFT(["water","cyclohexane","propane"])
     T = 298.15
     p = 1e5
@@ -420,6 +446,35 @@ end
     @testset "DE Algorithm" begin
         @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3))[3] ≈ -6.759674475174073 rtol = 1e-6 
     end
+
+    @testset "Michelsen Algorithm" begin
+        system = PCSAFT(["water","cyclohexane"])
+        method = MichelsenTPFlash(x0 = [0.9997755902156433, 0.0002244097843566859],
+                                    y0 = [6.425238373915699e-6, 0.9999935747616262],
+                                    equilibrium= :lle)
+        @test Clapeyron.tp_flash(system, p, T, [0.5,0.5],method)[3] ≈ -7.577270350886795 rtol = 1e-6 
+    end
+end
+
+@testset "Saturation Methods" begin
+    model = PR(["water"])
+    T = 373.15
+    p,vl,vv = Clapeyron.saturation_pressure(model,T) #default
+    p1,vl1,vv1 = Clapeyron.saturation_pressure_impl(model,T,IsoFugacitySaturation())
+    @test p1 ≈ p rtol = 1e-6
+    p2,vl2,vv2 = Clapeyron.saturation_pressure_impl(model,T,IsoFugacitySaturation(p0 = 1e5))
+    @test p1 ≈ p rtol = 1e-6
+    p3,vl3,vv3 = Clapeyron.saturation_pressure_impl(model,T,ChemPotDensitySaturation())
+    @test p3 ≈ p rtol = 1e-6
+    p4,vl4,vv4 = Clapeyron.saturation_pressure_impl(model,T,ChemPotDensitySaturation(;vl,vv))
+    @test p4 ≈ p rtol = 1e-6
+
+    #test IsoFugacity, near criticality
+    Tc_near = 0.95*647.096
+    psat_Tcnear = 1.4960621837287119e7 #default solver result
+    @test first(Clapeyron.saturation_pressure(model,Tc_near,IsoFugacitySaturation())) ≈ psat_Tcnear rtol = 1e-6
+    #Test that IsoFugacity fails over critical point
+    @test isnan(first(Clapeyron.saturation_pressure(model,1.1*647.096,IsoFugacitySaturation())))
 end
 
 @testset "Unitful Methods" begin

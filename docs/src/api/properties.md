@@ -96,6 +96,9 @@ Clapeyron.mixing
 
 ```@docs
 Clapeyron.saturation_pressure
+Clapeyron.ChemPotVSaturation
+Clapeyron.ChemPotDensitySaturation
+Clapeyron.IsoFugacitySaturation
 Clapeyron.enthalpy_vap
 Clapeyron.crit_pure
 Clapeyron.acentric_factor
@@ -127,6 +130,7 @@ Clapeyron.gibbs_duhem
 Clapeyron.isstable
 Clapeyron.mechanical_stability
 Clapeyron.diffusive_stability
+Clapeyron.tpd
 ```
 
 ## TP Flash
@@ -136,6 +140,7 @@ Clapeyron.tp_flash
 Clapeyron.TPFlashMethod
 Clapeyron.DETPFlash
 Clapeyron.RRTPFlash
+Clapeyron.MichelsenTPFlash
 Clapeyron.numphases
 ```
 
@@ -150,6 +155,7 @@ Clapeyron.x0_volume_liquid
 Clapeyron.x0_volume_gas
 Clapeyron.volume_virial
 Clapeyron.x0_sat_pure
+Clapeyron.psat_init
 Clapeyron.x0_crit_pure
 ```
 
