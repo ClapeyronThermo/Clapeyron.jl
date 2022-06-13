@@ -467,14 +467,18 @@ end
     p3,vl3,vv3 = Clapeyron.saturation_pressure_impl(model,T,ChemPotDensitySaturation())
     @test p3 ≈ p rtol = 1e-6
     p4,vl4,vv4 = Clapeyron.saturation_pressure_impl(model,T,ChemPotDensitySaturation(;vl,vv))
+    p4b,vl4b,vv4b = Clapeyron.psat_chempot(model,T,vl,vv)
     @test p4 ≈ p rtol = 1e-6
-
+    @test (p4 == p4b) && (vl4 == vl4b) && (vv4 = vv4b)
+    
     #test IsoFugacity, near criticality
     Tc_near = 0.95*647.096
     psat_Tcnear = 1.4960621837287119e7 #default solver result
     @test first(Clapeyron.saturation_pressure(model,Tc_near,IsoFugacitySaturation())) ≈ psat_Tcnear rtol = 1e-6
     #Test that IsoFugacity fails over critical point
     @test isnan(first(Clapeyron.saturation_pressure(model,1.1*647.096,IsoFugacitySaturation())))
+
+
 end
 
 @testset "Unitful Methods" begin

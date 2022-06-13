@@ -215,6 +215,15 @@ end
         @testset "QCPR" begin
             system = QCPR(["neon","helium"])
             @test Clapeyron.a_res(system, V, 25, z) ≈ -0.04727878068343511 rtol = 1e-6
+            @test Clapeyron.lb_volume(system,z) ≈ 8.942337913474187e-6 rtol = 1e-6
+            _a,_b,_c = Clapeyron.cubic_ab(system,V,25,z)
+            @test _a ≈ 0.012772707614252227 rtol = 1e-6
+            @test _b ≈ 1.0728356231510917e-5 rtol = 1e-6
+            @test _c ≈ -2.87335e-6 rtol = 1e-6
+            #test for the single component branch
+            system1 = QCPR(["helium"])
+            a1 = Clapeyron.a_res(system, V, 25, [0.0,1.0])
+            @test Clapeyron.a_res(system1, V, 25, [1.0])  ≈ a1
         end
 
         @testset "EPPR78" begin
