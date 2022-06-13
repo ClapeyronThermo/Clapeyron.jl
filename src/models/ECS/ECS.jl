@@ -223,5 +223,4 @@ function shape_factors(model::ECS,shape_ref::EoSModel,V,T,z=SA[1.0])
 end
 
 export ExtendedCorrespondingStates
-export ECS
-export SPUNG #deprecate on Clapeyron 0.4.0
+export ECS, shape_factors

@@ -24,3 +24,5 @@ function SPUNG(components::Vector{String},
     model = ECS(shapemodel,shaperef,refmodel)
     return model
 end
+
+export SPUNG
