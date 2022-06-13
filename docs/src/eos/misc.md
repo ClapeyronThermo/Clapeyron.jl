@@ -19,3 +19,8 @@ Clapeyron.SLk0k1lMixingRule
 
 ## Extended Corresponding states Model
 
+```@docs
+Clapeyron.ECS
+Clapeyron.shape_factors
+Clapeyron.SPUNG
+```
