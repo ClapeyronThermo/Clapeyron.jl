@@ -9,7 +9,7 @@
     
 ## Description
 
-SPUNG: State Research Program for Utilization of Natural Gas
+SPUNG: _State Research Program for Utilization of Natural Gas_
 
 [`ECS`](@ref) method. It uses [`SRK`](@ref) as the shape model and [`PropaneRef`](@ref) as the reference model.
 
