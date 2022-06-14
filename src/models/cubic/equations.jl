@@ -1,4 +1,10 @@
-
+struct ABCubicParam <: EoSParam
+    a::PairParam{Float64}
+    b::PairParam{Float64}
+    Tc::SingleParam{Float64}
+    Pc::SingleParam{Float64}
+    Mw::SingleParam{Float64}
+end
 
 """
     ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
@@ -9,7 +15,6 @@ given `Tc::SingleParam`, `pc::SingleParam`, `kij::PairParam` and `mixing <: Mixi
 aᵢⱼ = sqrt(aᵢ*aⱼ)*(1-kᵢⱼ)
 bᵢⱼ = (bᵢ + bⱼ)/2
 ```
-
 """
 function ab_premixing end
 
@@ -23,20 +28,25 @@ function ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
 end
 
 function cubic_ab(model::ABCubicModel,V,T,z=SA[1.0],n=sum(z))
-    invn2 = (one(n)/n)^2
     a = model.params.a.values
     b = model.params.b.values
     T = T*float(one(T))
     α = @f(α_function,model.alpha)
     c = @f(translation,model.translation)
     if length(z)>1
-        ā,b̄,c̄ = @f(mixing_rule,model.mixing,α,a,b,c)
+    ā,b̄,c̄ = @f(mixing_rule,model.mixing,α,a,b,c)
     else
-        ā = a[1,1]*α[1]
-        b̄ = b[1,1]
-        c̄ = c[1,1]
+         ā = a[1,1]*α[1]
+         b̄ = b[1,1]
+         c̄ = c[1]
     end
     return ā ,b̄, c̄
+end
+
+function data(model::ABCubicModel,V,T,z)
+    n = sum(z)
+    ā ,b̄, c̄ = cubic_ab(model,V,T,z,n)
+    return n, ā ,b̄, c̄
 end
 
 function second_virial_coefficient(model::ABCubicModel,T::Real,z = SA[1.0])
@@ -51,7 +61,7 @@ function lb_volume(model::CubicModel,z = SA[1.0])
     invn = one(n)/n
     b = model.params.b.values
     c = @f(translation,model.translation)
-    b̄ = dot(z,Symmetric(b),z)*invn*invn
+    b̄ = dot(z,Symmetric(b),z)*invn #b has m3/mol units, result should have m3 units
     c̄ = dot(z,c)*invn
     return b̄-c̄
 end
@@ -90,7 +100,7 @@ function crit_pure(model::ABCubicModel)
     return (Tc,Pc,Vc)
 end
 
-function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=false)
+function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=false)
     lb_v   =lb_volume(model,z)
     RTp = R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
@@ -206,3 +216,21 @@ vl = b + sqrt(0.5RTb3/2a)
 on models with translation:
 vl = b + sqrt(0.5RTb3/2a) - c
 =#
+
+function wilson_k_values(model::ABCubicModel,p,T)
+    Pc = model.params.Pc.values
+    Tc = model.params.Tc.values
+
+    if hasfield(typeof(model.alpha.params),:acentricfactor)
+        ω = model.alpha.params.acentricfactor.values
+    else
+        pure = split_model(model)
+        ω = zero(Tc)
+        for i in 1:length(Tc)
+            ps = first(saturation_pressure(pure[i],0.7*Tc[i]))
+            ω[i] = -log10(ps/Pc[i]) - 1.0
+        end
+    end
+
+    return  @. Pc/p*exp(5.373*(1+ω)*(1-Tc/T))
+end

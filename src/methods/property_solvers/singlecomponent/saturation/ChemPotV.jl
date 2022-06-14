@@ -1,10 +1,50 @@
+#TODO: better name
+"""
+    ChemPotVSaturation()
+    ChemPotVSaturation(;log10vl,log10vv)
+    ChemPotVSaturation(V0)
+
+Default Saturation method used by `Clapeyron.jl`. It uses equality of Chemical Potentials with a volume basis. If no volumes are provided, it will use  [`x0_sat_pure`](@ref). 
+
+If those initial guesses fail and the specification is near critical point, it will try one more time, using Corresponding States instead.
+
+`V0` is `[log10(Vₗ₀),log10(Vᵥ₀)]` , where `Vₗ₀`  and `Vᵥ₀` are initial guesses for the liquid and vapour volumes.
+"""
+struct ChemPotVSaturation{T} <: SaturationMethod
+    vl::Union{Nothing,T}
+    vv::Union{Nothing,T}
+end
+
+ChemPotVSaturation(x::Tuple) = ChemPotVSaturation(first(x),last(x))
+ChemPotVSaturation(x::Vector) = ChemPotVSaturation(first(x),last(x))
+
+function vec2(method::ChemPotVSaturation{T},opt = true) where T <:Real
+    return vec2(method.vl,method.vv,opt)
+end
+
+function ChemPotVSaturation(;log10vl = nothing,log10vv = nothing)
+    if (log10vl === nothing) && (log10vv === nothing)
+        return ChemPotVSaturation{Nothing}(nothing,nothing)
+    elseif !(log10vl === nothing) && (log10vv === nothing)
+        log10vl = float(log10vl)
+        return ChemPotVSaturation(log10vl,log10vv)
+    elseif (log10vl === nothing) && !(log10vv === nothing)
+        log10vv = float(log10vv)
+        return ChemPotVSaturation(log10vl,log10vv)
+    else
+        T = one(vl)/one(vv)
+        log10vl,log10vv,_ = promote(log10vl,log10vv,T)
+        return ChemPotVSaturation(log10vl,log10vv)
+    end
+end
+
 function check_valid_sat_pure(model,P_sat,V_l,V_v,T)
     _,dpdvl = p∂p∂V(model,V_l,T,SA[1.0])
     _,dpdvv = p∂p∂V(model,V_v,T,SA[1.0])
     (dpdvl > 0) | (dpdvv > 0) && return false
     ε = abs(V_l-V_v)/(eps(typeof(V_l-V_v)))
     #if ΔV > ε then Vl and Vv are different values
-    return ε > 5e9
+    return ε > 5e7
 end
 
 function try_sat_pure(model,V0,f!,T,result,error_val,method = LineSearch(Newton()))
@@ -23,31 +63,22 @@ function try_sat_pure(model,V0,f!,T,result,error_val,method = LineSearch(Newton(
     return check_valid_sat_pure(model,P_sat,V_l,V_v,T)
 end
 
-"""
-    saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
+function saturation_pressure(model,T,V0::Union{Tuple,Vector} = x0_sat_pure(model,T))
+    method = ChemPotVSaturation(V0)
+    return saturation_pressure_impl(model,T,method)
+end
 
-Performs a single component saturation equilibrium calculation, at the specified temperature `T`, of one mol of pure sustance specified by `model`
+function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{Nothing})
+    return saturation_pressure_impl(model,T,ChemPotVSaturation(x0_sat_pure(model,T)))
+end
 
-Returns `(p₀, Vₗ, Vᵥ)` where `p₀` is the saturation pressure (in Pa), `Vₗ` is the liquid saturation volume (in m³) and `Vᵥ` is the vapour saturation volume (in m³).
-
-If the calculation fails, returns  `(NaN, NaN, NaN)`
-
-`V0` is `[log10(Vₗ₀),log10(Vᵥ₀)]` , where `Vₗ₀`  and `Vᵥ₀` are initial guesses for the liquid and vapour volumes.
-"""
-function saturation_pressure(model::EoSModel, T, V0 = x0_sat_pure(model,T))
-    !isone(length(model)) && throw(error("$model have more than one component."))
-    T = T*T/T
+function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{<:Number})
+    
+    V0 = vec2(method,T)
     V01,V02 = V0
-    TYPE = promote_type(typeof(T),typeof(V01),typeof(V02))
-    if T isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
-        V0 = MVector((V01,V02))
-    else
-        V0 = SizedVector{2,typeof(first(V0))}((V01,V02))
-    end
+    TYPE = eltype(V0)
     nan = zero(TYPE)/zero(TYPE)    
-    #scales = scale_sat_pure(model)
-    f! = ObjSatPure(model,T)
-    #f! = (F,x) -> Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]),scales)
+    f! = ObjSatPure(model,T) #functor
     res0 = (nan,nan,nan)
     result = Ref(res0)
     error_val = Ref{Any}(nothing)
@@ -88,6 +119,7 @@ end
 
 function ObjSatPure(model,T)
     ps,mus = scale_sat_pure(model)
+    ps,mus,T = promote(ps,mus,T)
     ObjSatPure(model,ps,mus,T)
 end
 
@@ -230,3 +262,5 @@ function saturation_temperature2(model,p)
     Vv = 10^sol[3]
     return (T,Vl,Vv)
 end
+
+export ChemPotVSaturation

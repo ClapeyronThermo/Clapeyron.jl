@@ -540,4 +540,145 @@ const SAFTγMieconsts =(
                 4.65297446837297	    -0.00192518067137033 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0
                -0.867296219639940	     0	                 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0],
 )
+function a_disp(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
+    groups = @groups
+    gcmodel = model
+    model = gcmodel.vrmodel
+    _d,vrdata = _data
+    _,ρS,ζi,_ζ_X,_ζst,_,_ = vrdata
+    comps = @comps
+    l = length(comps)
+    ∑z = ∑(z)
+    m = model.params.segment.values
+    _mi = gcmodel.params.mixedsegment.values
+    _ϵ = gcmodel.params.epsilon.values
+    _λr = gcmodel.params.lambda_r.values
+    _λa = gcmodel.params.lambda_a.values
+    _σ = gcmodel.params.sigma.values
+    m̄ = dot(z, m)
+    m̄inv = 1/m̄
+    a₁ = zero(V+T+first(z))
+    a₂ = a₁
+    a₃ = a₁
+    _ζst5 = _ζst^5
+    _ζst8 = _ζst^8
+    _KHS = @f(KHS,_ζ_X,ρS)
+    for i ∈ groups
+        j = i
+        mi = _mi[i]
+        x_Si = dot(mi,z)*m̄inv
+        ϵ = _ϵ[i,j]
+        λa = _λa[i,j]
+        λr = _λr[i,j] 
+        σ = _σ[i,j]
+        _C = @f(Cλ,λa,λr)
+        dij = _d[i]
+        x_0ij = σ/dij
+        dij3 = dij^3
+        x_0ij = σ/dij
+        #calculations for a1 - diagonal
+        aS_1_a = @f(aS_1,λa,_ζ_X)
+        aS_1_r = @f(aS_1,λr,_ζ_X)
+        B_a = @f(B,λa,x_0ij,_ζ_X)
+        B_r = @f(B,λr,x_0ij,_ζ_X)
+        a1_ij = (2*π*ϵ*dij3)*_C*ρS*
+        (x_0ij^λa*(aS_1_a+B_a) - x_0ij^λr*(aS_1_r+B_r))
+
+        #calculations for a2 - diagonal
+        aS_1_2a = @f(aS_1,2*λa,_ζ_X)
+        aS_1_2r = @f(aS_1,2*λr,_ζ_X)
+        aS_1_ar = @f(aS_1,λa+λr,_ζ_X)
+        B_2a = @f(B,2*λa,x_0ij,_ζ_X)
+        B_2r = @f(B,2*λr,x_0ij,_ζ_X)
+        B_ar = @f(B,λr+λa,x_0ij,_ζ_X)
+        α = _C*(1/(λa-3)-1/(λr-3))
+        f1,f2,f3,f4,f5,f6 = @f(f123456,α)
+        _χ = f1*_ζst+f2*_ζst5+f3*_ζst8
+        a2_ij = π*_KHS*(1+_χ)*ρS*ϵ^2*dij3*_C^2 *
+        (x_0ij^(2*λa)*(aS_1_2a+B_2a)
+        - 2*x_0ij^(λa+λr)*(aS_1_ar+B_ar)
+        + x_0ij^(2*λr)*(aS_1_2r+B_2r))
+        
+        #calculations for a3 - diagonal
+        a3_ij = -ϵ^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
+        #adding - diagonal
+        a₁ += a1_ij*x_Si*x_Si
+        a₂ += a2_ij*x_Si*x_Si
+        a₃ += a3_ij*x_Si*x_Si
+        for j ∈ 1:i-1
+            mj = _mi[j]
+            x_Sj = dot(mj,z)*m̄inv
+            ϵ = _ϵ[i,j]
+            λa = _λa[i,j]
+            λr = _λr[i,j] 
+            σ = _σ[i,j]
+            _C = @f(Cλ,λa,λr)
+            dij = 0.5*(_d[i]+_d[j])
+            x_0ij = σ/dij
+            dij3 = dij^3
+            x_0ij = σ/dij
+            #calculations for a1
+            a1_ij = (2*π*ϵ*dij3)*_C*ρS*
+            (x_0ij^λa*(@f(aS_1,λa,_ζ_X)+@f(B,λa,x_0ij,_ζ_X)) - x_0ij^λr*(@f(aS_1,λr,_ζ_X)+@f(B,λr,x_0ij,_ζ_X)))
+
+            #calculations for a2
+            α = _C*(1/(λa-3)-1/(λr-3))
+            f1,f2,f3,f4,f5,f6 = @f(f123456,α)
+            _χ = f1*_ζst+f2*_ζst5+f3*_ζst8
+            a2_ij = π*_KHS*(1+_χ)*ρS*ϵ^2*dij3*_C^2 *
+            (x_0ij^(2*λa)*(@f(aS_1,2*λa,_ζ_X)+@f(B,2*λa,x_0ij,_ζ_X))
+            - 2*x_0ij^(λa+λr)*(@f(aS_1,λa+λr,_ζ_X)+@f(B,λa+λr,x_0ij,_ζ_X))
+            + x_0ij^(2*λr)*(@f(aS_1,2λr,_ζ_X)+@f(B,2*λr,x_0ij,_ζ_X)))
+            
+            #calculations for a3
+            a3_ij = -ϵ^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
+            #adding
+            a₁ += 2*a1_ij*x_Si*x_Sj
+            a₂ += 2*a2_ij*x_Si*x_Sj
+            a₃ += 2*a3_ij*x_Si*x_Sj            
+        end
+    end
+    a₁ = a₁*m̄/T/∑z
+    a₂ = a₂*m̄/(T*T)/∑z
+    a₃ = a₃*m̄/(T*T*T)/∑z
+    #@show (a₁,a₂,a₃)
+    adisp =  a₁ + a₂ + a₃ 
+    return adisp
+end
+
+
+#=
+    ϵ = gc_epsilon.values
+    σ = gc_sigma.values
+     #helper functions
+     function ẑ(i, k)
+        return v[i][k]*vst[k]*S[k] / ∑(v[i][l]*vst[l]*S[l] for l ∈ gc)
+    end
+
+    function σ̄(i)
+        return cbrt(∑(∑(ẑ(i,k)*ẑ(i,l)*σ[k,l]^3 for l ∈ gc) for k ∈ gc))
+    end
+    
+    function σ̄(i, j)
+        return (σ̄(i) + σ̄(j))/2
+    end
+
+    function ϵ̄(i)
+        return ∑(∑(ẑ(i,k)*ẑ(i,l)*ϵ[k,l] for l ∈ gc) for k ∈ gc)
+    end
+    
+    function ϵ̄(i, j)
+        if i == j
+            return ϵ̄(i)
+        else
+            return sqrt(σ̄(i)*σ̄(j))/σ̄(i,j) * sqrt(ϵ̄(i)*ϵ̄(j))
+        end
+    end
+    epsilon_mix(ϵi,ϵj,σi,σj,σij) = sqrt(ϵi*ϵi)*sqrt(σi*σj)/σij
+    comp_ϵ = [ϵ̄(i, j) for (i,j) ∈ Iterators.product(comps,comps)]
+    #epsilon = PairParam("epsilon",components,comp_ϵ)
+    
+    comp_σ = [σ̄(i, j) for (i,j) ∈ Iterators.product(comps,comps)]
+    sigma = PairParam("sigma",components,comp_σ)
+    =#
 =#

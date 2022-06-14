@@ -1,4 +1,5 @@
 struct softSAFTParam <: EoSParam
+    Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     epsilon::PairParam{Float64}
@@ -9,7 +10,49 @@ end
 abstract type softSAFTModel <: SAFTModel end
 @newmodel softSAFT softSAFTModel softSAFTParam
 
+
+"""
+    softSAFTModel <: SAFTModel
+
+    softSAFT(components; 
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
+
+## Model Parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume
+
+## Input models
+- `idealmodel`: Ideal Model
+
+## Description
+
+Soft SAFT, with Lennard-Jones function from Johnson et al. (1993)
+
+## References
+1. Johnson, J. K., Zollweg, J. A., & Gubbins, K. E. (1993). The Lennard-Jones equation of state revisited. Molecular physics, 78(3), 591–618. doi:10.1080/00268979300100411
+2. FELIPE J. BLAS and LOURDES F. VEGA. (1997). Thermodynamic behaviour of homonuclear and heteronuclear Lennard-Jones chains with association sites from simulation and theory. Molecular physics, 92(1), 135–150. doi:10.1080/002689797170707
+"""
+softSAFT
+
 export softSAFT
+
 function softSAFT(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
@@ -17,7 +60,7 @@ function softSAFT(components;
     verbose=false,
     assoc_options = AssocOptions())
 
-    params,sites = getparams(components, ["SAFT/softSAFT"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components, ["SAFT/softSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     
     segment = params["m"]
     k = params["k"]
@@ -27,12 +70,25 @@ function softSAFT(components;
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
-    packagedparams = softSAFTParam(segment, sigma, epsilon, epsilon_assoc, bondvol)
+    packagedparams = softSAFTParam(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1080/002689797170707","10.1080/00268979300100411"]
 
     model = softSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
+
+
+function lb_volume(model::softSAFTModel,z=SA[1.0])
+    σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
+    return m̄*N_A*σ3*π/6
+end
+
+
+function x0_volume_liquid(model::softSAFTModel,T,z)
+    v_lb = lb_volume(model,z)
+    return v_lb*1.8
+end
+
 
 function data(model::softSAFTModel,V,T,z)
     σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,V,T,z)

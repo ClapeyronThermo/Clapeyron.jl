@@ -102,6 +102,55 @@ function each_split_model(param::AssocParam,I)
             param.sources
             )
 end
+
+function each_split_model(param::GroupParam,I) 
+    components = param.components[I]
+    groups = param.groups[I]
+    n_groups = param.n_groups[I]
+    sourcecsvs = param.sourcecsvs
+
+    #unique, but without allocating sets.
+    idx = zeros(Int,length(param.flattenedgroups))
+    for i in I
+        group_i = param.groups[i]
+        for k in 1:length(group_i)
+            j = findfirst(==(group_i[k]),param.flattenedgroups)
+            idx[j] = j
+        end
+    end
+    zero_idx = iszero.(idx)
+    nonzero_idx = @. !zero_idx
+    _idx = view(idx,nonzero_idx)
+    
+    len_groups = length(_idx)
+    i_flattenedgroups = 1:len_groups
+    
+    flattenedgroups = param.flattenedgroups[_idx]
+    i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
+    n_flattenedgroups = Vector{Vector{Int64}}(undef,length(I))
+    for (k,i) in pairs(I)
+        pii = param.n_flattenedgroups[i]
+        n_flattenedgroups[k] = pii[_idx]
+    end
+    n_groups_cache  = PackedVectorsOfVectors.packed_fill(0.0,(length(ni) for ni in n_flattenedgroups))
+
+    for (k,i) in pairs(I)
+        pii = param.n_groups_cache[i]
+        true_n = @view(pii[_idx])
+        n_groups_cache[k] .= true_n
+    end
+
+    return GroupParam(
+        components,
+        groups,
+        n_groups,
+        i_groups,
+        flattenedgroups,
+        n_flattenedgroups,
+        n_groups_cache,
+        i_flattenedgroups,
+        sourcecsvs)
+end
 """
     split_model(model::EoSModel)
 
@@ -163,20 +212,9 @@ function split_model(param::AssocParam{T},
 end
 
 #this param has a defined split form
-function split_model(groups::GroupParam)
-    len = length(groups.components)
-    function generator(i)
-        return GroupParam(
-        [groups.components[i]],
-        [groups.groups[i]],
-        [groups.n_groups[i]],
-        [collect(1:length(groups.n_groups[i]))],
-        groups.flattenedgroups[groups.i_groups[i]],
-        [groups.n_groups[i]],
-        1:length(groups.n_groups[i]),
-        groups.sourcecsvs)
-    end
-    [generator(i) for i ∈ 1:len]
+function split_model(groups::GroupParam,
+    splitter = split_model(collect(1:length(groups.components))))
+    return [each_split_model(groups,i) for i in splitter]
 end
 
 function split_model(param::SiteParam,
@@ -201,20 +239,29 @@ function split_model(Base.@nospecialize(params::EoSParam),splitter)
     return T.(split_paramsvals...)
 end
 
-export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
-#
+function group_splitter(group,splitted_groups)
+    flattenedgroups = group.flattenedgroups
+    res = Vector{Vector{Int64}}(undef,length(splitted_groups))
+    for (i,groupi) in pairs(splitted_groups)
+        res[i] = indexin(groupi.flattenedgroups,flattenedgroups)
+    end    
+    return res
+end
 
 split_model(model::EoSModel,subset=nothing) = auto_split_model(model,subset)
 
 function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
     try
         allfields = Dict{Symbol,Any}()
-        if has_groups(typeof(model))
-            raw_splitter = model.groups.i_groups
-            subset !== nothing && throw("using subsets is not supported with Group Contribution models")
-        else
-            raw_splitter = split_model(Vector(1:length(model.components)))
-        end
+        #if has_groups(typeof(model))
+        #    raw_splitter = model.groups.i_groups
+        #    subset !== nothing && throw("using subsets is not supported with Group Contribution models")
+        #else
+        #    raw_splitter = split_model(Vector(1:length(model.components)))
+        #end
+        
+        raw_splitter = split_model(Vector(1:length(model.components)))
+
         if subset === nothing
             splitter = raw_splitter
         elseif eltype(subset) <: Integer
@@ -225,21 +272,16 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             throw("invalid type of subset.")
         end
         
+        if hasfield(typeof(model),:groups)
+            gc_split = split_model(model.groups,splitter)
+            allfields[:groups] = gc_split
+            allfields[:components] = split_model(model.groups.components,splitter)
+            splitter = group_splitter(model.groups,gc_split)
+        end
+
         len = length(splitter)
         M = typeof(model)
         allfieldnames = fieldnames(M)
-        if hasfield(typeof(model),:groups) #TODO implement a splitter that accepts a subset
-            allfields[:groups] = split_model(model.groups)
-            allfields[:components] = getfield.(allfields[:groups],:components)
-            for modelkey in allfieldnames
-                if !haskey(allfields,modelkey)
-                    modelx = getproperty(model,modelkey)
-                    if modelx isa Vector{<:EoSModel}
-                        allfields[modelkey] = split_model(modelx) #this is an api problem
-                    end
-                end
-            end
-        end
         
         #add here any special keys, that behave as non_splittable values
         for modelkey in [:references]
@@ -290,3 +332,22 @@ function simple_split_model(Base.@nospecialize(model::EoSModel),subset = nothing
 end
 
 export split_model
+
+#=
+function _split_model(groups::GroupParam)
+    len = length(groups.components)
+    function generator(i)
+        return GroupParam(
+        [groups.components[i]],
+        [groups.groups[i]],
+        [groups.n_groups[i]],
+        [collect(1:length(groups.n_groups[i]))],
+        groups.flattenedgroups[groups.i_groups[i]],
+        [groups.n_groups[i]],
+        each_split_model(groups.n_groups_cache,groups.i_groups[i]),
+        1:length(groups.n_groups[i]),
+        groups.sourcecsvs)
+    end
+    [generator(i) for i ∈ 1:len]
+end
+=#

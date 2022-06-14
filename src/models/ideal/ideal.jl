@@ -13,7 +13,7 @@ function eos_res(model::IdealModel, V, T, z=SA[1.0])
     return zero(V+T+first(z))
 end
 
-function volume(model::IdealModel,p::Real,T::Real,z=SA[1.0];phase=:unknown,threaded=false)
+function volume_impl(model::IdealModel,p::Real,T::Real,z=SA[1.0],phase=:unknown,threaded=false)
     return sum(z)*R̄*T/p
 end
 

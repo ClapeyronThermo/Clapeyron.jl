@@ -1,7 +1,7 @@
 """
     x0_volume_liquid(model,T,z)
 
-Returns an initial guess to the liquid volume, dependent on temperature and composition. by default is 1.25 times the [lower bound volume](@ref lb_volume).
+Returns an initial guess to the liquid volume, dependent on temperature and composition. by default is 1.25 times [`lb_volume`](@ref).
 """
 function x0_volume_liquid(model,T,z)
     v_lb = lb_volume(model,z)
@@ -11,7 +11,7 @@ end
 """
     x0_volume_gas(model,p,T,z)
 
-Returns an initial guess to the gas volume, depending of pressure, temperature and composition. by default uses a [virial aproximation](@ref volume_virial)
+Returns an initial guess to the gas volume, depending of pressure, temperature and composition. by default uses [`volume_virial`](@ref)
 """
 function x0_volume_gas(model,p,T,z)
     return volume_virial(model,p,T,z)
@@ -62,7 +62,7 @@ function lb_volume end
     x0_sat_pure(model::EoSModel,T,z=SA[1.0])
 
 Returns a 2-tuple corresponding to `(log10(Vₗ),log10(Vᵥ))`, where Vₗ and Vᵥ are the liquid and vapor initial guesses. 
-Used in [`sat_pure`](@ref).
+Used in [`saturation_pressure`](@ref)
 """
 function x0_sat_pure(model,T,z=SA[1.0])
     #=theory as follows
@@ -95,7 +95,6 @@ function x0_sat_pure(model,T,z=SA[1.0])
     with Tc, we can also know in what regime we are.
     in near critical pressures, we use directly vv0 = -2B
     and vl0 = 4*lb_v
-
     [1]
     DOI: 10.1007/s10910-007-9272-4
     Journal of Mathematical Chemistry, Vol. 43, No. 4, May 2008 (© 2007)
@@ -106,11 +105,13 @@ function x0_sat_pure(model,T,z=SA[1.0])
     _b = γ - B - vl
     Δ = _b*_b - 4*_c
     if isnan(vl) | (Δ < 0)
+         
         #fails on two ocassions:
         #near critical point, or too low.
         #old strategy
         x0l = 4*lb_v
         x0v = -2*B + 2*lb_v
+        
         return (log10(x0l),log10(x0v))
     end
     Δsqrt = sqrt(Δ)

@@ -25,7 +25,7 @@ None
 
 ## Description
 
-Mixing Rule used by the Predictive Soave-Redlich-Kwong (`PSRK`) equation of state, 
+Mixing Rule used by the Predictive Soave-Redlich-Kwong [`PSRK`](@ref) EoS, 
 derived from the First Order modified Huron-Vidal Mixing Rule.
 """
 PSRKRule

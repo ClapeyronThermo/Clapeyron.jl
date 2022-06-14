@@ -107,7 +107,6 @@ end
 
 _f0(model::IAPWS95,δ,τ) = iapws_f0(model,δ,τ)
 
-
 function _fr(model::IAPWS95,δ,τ)
     n = model.consts.n::Vector{Float64}
     d = model.consts.d::Vector{Int64}
@@ -237,6 +236,9 @@ function water_t_sat(p)
     T = (n[10]+D-√((n[10]+D)^2 - 4(n[9]+n[10]*D)))/2.0
     return T
 end
+
+x0_saturation_temperature(model::IAPWS95,p) = water_t_sat(p)
+psat_init(model::IAPWS95,T) = water_p_sat(T)
 
 #from MoistAir.jl, liquid
 function saturated_water_liquid(Tk)

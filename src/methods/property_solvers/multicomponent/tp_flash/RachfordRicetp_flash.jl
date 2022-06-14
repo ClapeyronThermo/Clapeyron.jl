@@ -15,17 +15,19 @@ Base.@kwdef struct RRTPFlash{T} <: TPFlashMethod
     spec::Symbol = :unknown
 end
 
+index_reduction(flash::RRTPFlash{Nothing},idx::AbstractVector) = flash
+
+function index_reduction(flash::RRTPFlash,idx::AbstractVector)
+    K02 = flash.K0[idx]
+    return RRTPFlash(K02,flash.rtol,flash.atol,flash.max_iters,flash.spec)
+end
+
 #z is the original feed composition, x is a matrix with molar fractions, n is a matrix with molar amounts
 
 function tp_flash_impl(model::EoSModel, p, T, n, method::RRTPFlash)
     
     if method.K0===nothing
-        pure = split_model.(model)
-        crit = crit_pure.(pure)
-        Tc = [crit[i][1] for i ∈ @comps]
-        pc = [crit[i][2] for i ∈ @comps]
-        ω = acentric_factor.(pure)
-        K0 = @. exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
+        K0 = wilson_k_values(model,p,T)
     else 
         K0 = method.K0
     end
@@ -47,7 +49,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::RRTPFlash)
     
     X = hcat(x,y)'
     nvals = X.*[1-α₀
-                α₀]
+                α₀]  .* sum(n)
     return (X, nvals, G)
 end
 
@@ -56,10 +58,10 @@ function RR_fixpoint(K1,K0,model,p,T,n,x,y,φ_α,φ_β,α,spec)
     α[1] = α₀
     x = rr_flash_liquid!(x,K0,n,α₀)
     y .= K0 .* x
-    if spec == :lle
+    if is_lle(spec)
         phaseα = :l
         phaseβ = :l
-    elseif spec ==:vle
+    elseif is_vle(spec)
         phaseα = :l
         phaseβ = :v
     else

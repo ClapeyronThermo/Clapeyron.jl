@@ -12,7 +12,7 @@ struct UNIQUAC{c<:EoSModel} <: UNIQUACModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     params::UNIQUACParam
-    puremodel::Vector{c}
+    puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
     references::Array{String,1}
 end
@@ -23,9 +23,10 @@ export UNIQUAC
     UNIQUACModel <: ActivityModel
 
     UNIQUAC(components::Vector{String};
-    puremodel=PR, 
-    userlocations=String[], 
-    verbose=false)
+    puremodel = PR,
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 - `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary Interaction Energy Parameter
@@ -57,9 +58,12 @@ gᴱ(res) = -∑xᵢqᵖᵢlog(∑θᵖⱼτⱼᵢ)
 """
 UNIQUAC
 
-function UNIQUAC(components::Vector{String}; puremodel=PR,
-    userlocations=String[], 
-     verbose=false)
+function UNIQUAC(components::Vector{String};
+    puremodel = PR,
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose = false)
+
     params = getparams(components, ["Activity/UNIQUAC/UNIQUAC_like.csv", "properties/molarmass.csv","Activity/UNIQUAC/UNIQUAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose=verbose)
     a  = params["a"]
     r  = params["r"]
@@ -68,10 +72,10 @@ function UNIQUAC(components::Vector{String}; puremodel=PR,
     Mw  = params["Mw"]
     icomponents = 1:length(components)
     
-    init_puremodel = [puremodel([components[i]]) for i in icomponents]
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIQUACParam(a,r,q,q_p,Mw)
     references = String[]
-    model = UNIQUAC(components,icomponents,packagedparams,init_puremodel,1e-12,references)
+    model = UNIQUAC(components,icomponents,packagedparams,_puremodel,1e-12,references)
     return model
 end
 #=

@@ -27,7 +27,7 @@ None
 
 ## Description
 
-IAPWS95 ideal helmholtz model for use in other models. Only valid for water. Check `IAPWS95` for more information.
+IAPWS95 ideal helmholtz model for use in other models. Only valid for water. Check [`IAPWS95`](@ref) for more information.
 
 ## References
 

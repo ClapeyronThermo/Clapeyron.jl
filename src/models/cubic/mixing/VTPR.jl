@@ -27,8 +27,8 @@ None
 
 ## Description
 
-Mixing Rule used by the Volume-translated Peng-Robinson (`VTPR`) equation of state.
-only works with activity models that define an `lnγ_res` function (`UNIFAC` models)
+Mixing Rule used by the Volume-translated Peng-Robinson [`VTPR`](@ref) equation of state.
+only works with activity models that define an excess residual gibbs energy function `Clapeyron.excess_g_res(model,P,T,z)` function (like [`UNIQUAC`](@ref) and [`UNIFAC`](@ref) models)
 
 ```
 aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
@@ -58,10 +58,11 @@ function ab_premixing(::Type{PR},mixing::VTPRRule,Tc,pc,kij)
     Ωa, Ωb = ab_consts(PR)
     _Tc = Tc.values
     _pc = pc.values
+    components = pc.components
     a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     bi = @. Ωb*R̄*_Tc/_pc
-    bij = ((bi.^(3/4).+bi'.^(3/4))/2).^(4/3)
-    b = PairParam("b",Tc.components,bij)
+    vtpr_mix(bi,bj,kij) = mix_powmean(bi,bj,0,3/4)
+    b = kij_mix(vtpr_mix,SingleParam("b (covolume)",components,bi))
     return a,b
 end
 
@@ -69,7 +70,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::VTPRRuleModel,α,a,b,c)
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
-    g_E_res = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z)
+    g_E_res = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z) / n
     b̄ = dot(z,Symmetric(b),z) * invn2
     c̄ = dot(z,c)/n
     Σab = invn*sum(z[i]*a[i,i]*α[i]/b[i,i]/(R̄*T) for i ∈ @comps)

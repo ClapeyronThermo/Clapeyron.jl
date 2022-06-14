@@ -1,4 +1,5 @@
 struct BACKSAFTParam <: EoSParam
+    Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     epsilon::PairParam{Float64}
@@ -10,6 +11,46 @@ abstract type BACKSAFTModel <: SAFTModel end
 @newmodel BACKSAFT BACKSAFTModel BACKSAFTParam
 
 export BACKSAFT
+
+"""
+    BACKSAFTModel <: SAFTModel
+
+    BACKSAFT(components; 
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `vol`: Single Parameter (`Float64`) - Segment Volume [`dm^3`]
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K/mol]`
+- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `c`: Single Parameter (`Float64`) - Adjustable parameter (no units)
+- `alpha`: Single Parameter (`Float64`) - Non-spherical deviation (no units)
+
+## Model Parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `c`: Single Parameter (`Float64`) - Adjustable parameter (no units)
+- `alpha`: Single Parameter (`Float64`) - Non-spherical deviation (no units)
+
+## Input models
+- `idealmodel`: Ideal Model
+
+## Description
+
+BACKSAFT
+
+## References
+1. Mi, J.-G., Chen, J., Gao, G.-H., & Fei, W.-Y. (2002). Equation of state extended from SAFT with improved results for polar fluids across the critical point. Fluid Phase Equilibria, 201(2), 295–307. doi:10.1016/s0378-3812(02)00093-6
+"""
+BACKSAFT
+
 function BACKSAFT(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
@@ -27,19 +68,32 @@ function BACKSAFT(components;
     sigma.values .^= 1/3
     sigma = sigma_LorentzBerthelot(sigma)
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    packagedparams = BACKSAFTParam(segment, sigma, epsilon, c, alpha)
+    packagedparams = BACKSAFTParam(params["Mw"],segment, sigma, epsilon, c, alpha)
     references = ["TODO BACKSAFT", "TODO BACKSAFT"]
 
     model = BACKSAFT(packagedparams, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
 
-function lb_volume(model::BACKSAFTModel, z = SA[1.0])
+
+function lb_volume(model::BACKSAFTModel,z)
+    α = model.params.alpha.values[1]
+    pol(x) = evalpoly(x,(1.0,3α-2,3α*α - 3α +1 , -α*α))
+    k = Solvers.ad_newton(pol,1.81)
     seg = model.params.segment.values
     σᵢᵢ = model.params.sigma.diagvalues
-    α   = model.params.alpha.values
-    val = π/6*N_A*sum(z[i]*α[i]*seg[i]*σᵢᵢ[i]^3 for i in 1:length(z))
-    return val
+    val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i]^3 for i in 1:length(z)) #limit at η -> 0
+    return k*val #only positive root of η 
+end
+
+function x0_volume_liquid(model::BACKSAFTModel,T,z)
+    v_lb = lb_volume(model,z)
+    return v_lb*1.01
+end
+
+function x0_crit_pure(model::BACKSAFTModel)
+    lb_v = lb_volume(model)
+    (2.0, log10(lb_v/0.4))
 end
 
 function a_res(model::BACKSAFTModel ,V, T, z)
@@ -49,6 +103,11 @@ function a_res(model::BACKSAFTModel ,V, T, z)
     return  a_hcb_ + a_chain_ + (1.75*(a_chain_/a_hcb_)+1)*a_disp_
 end
 
+#=
+
+z = 1/(1-y) + 3ay/(1-y)2 + (3a2y2-a2y3)/(1-y)^3
+3a2y2(1-y)
+=#
 function a_hcb(model::BACKSAFTModel, V, T, z)
     α = model.params.alpha.values[1]
     m = model.params.segment.values[1]
@@ -88,7 +147,7 @@ function a_chain(model::BACKSAFTModel, V, T, z)
     m = model.params.segment.values[1]
     return (1-m)*log(@f(g_hcb))
 end
-
+#1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 function g_hcb(model::BACKSAFTModel, V, T, z)
     α = model.params.alpha.values[1]
     η = @f(ζ,3)

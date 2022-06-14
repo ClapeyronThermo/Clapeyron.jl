@@ -1,11 +1,4 @@
-struct RKParam <: EoSParam
-    a::PairParam{Float64}
-    b::PairParam{Float64}
-    Tc::SingleParam{Float64}
-    Pc::SingleParam{Float64}
-    Mw::SingleParam{Float64}
-end
-
+const RKParam = ABCubicParam
 abstract type RKModel <: ABCubicModel end
 
 struct RK{T <: IdealModel,α,c,M} <: RKModel
@@ -121,9 +114,8 @@ function cubic_poly(model::RKModel,p,T,z)
 end
 
 
-function a_res(model::RKModel, V, T, z)
-    n=sum(z)
-    ā,b̄,c̄ = cubic_ab(model,V,T,z,n)
+function a_res(model::RKModel, V, T, z,_data = data(model,V,T,z))
+    n,ā,b̄,c̄ = _data
     ρt = (V/n+c̄)^(-1) # translated density
     ρ  = n/V
     RT⁻¹ = 1/(R̄*T)

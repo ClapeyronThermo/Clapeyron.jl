@@ -1,0 +1,8 @@
+Clapeyron Database File,,,,,
+TwuAlpha for QCPR Like Parameters,,,,,
+species,DIPPR Number,L,M,N,source
+hydrogen,,156.21,-0.0062072,5.047,
+helium,,0.48558,1.7173,0.30271
+neon,,0.3981,0.96535,0.82696
+deuterium,,55.007,-0.016981,3.1621 
+
