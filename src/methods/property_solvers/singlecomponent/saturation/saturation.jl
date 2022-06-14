@@ -43,7 +43,7 @@ julia> saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)) #iso fug
 
 function saturation_pressure(model,T,method::SaturationMethod)
     !isone(length(model)) && throw(error("$model have more than one component."))
-    T = T*T/T
+    T = T*(T/T)
     return saturation_pressure_impl(model,T,method)
 end
 
