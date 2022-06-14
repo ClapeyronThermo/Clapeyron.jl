@@ -206,8 +206,8 @@ end
     @testset "Bulk properties" begin
         @test Clapeyron.volume_impl(system, p, T) ≈ 6.819297582048736e-5 rtol = 1e-6 
         @test Clapeyron.volume_impl(system, p2, T) ≈ 0.020539807199804024 rtol = 1e-6
-        @test Clapeyron.volume_impl(system, p2, T,[1.0],:vapour) ≈ 0.020539807199804024 rtol = 1e-6  
-        @test Clapeyron.volume(system, p2, T, [1.0], :liquid) ≈ 7.563111462588624e-5 rtol = 1e-6 
+        @test Clapeyron.volume_impl(system, p2, T,[1.0], :vapour) ≈ 0.020539807199804024 rtol = 1e-6  
+        @test Clapeyron.volume_impl(system, p2, T, [1.0], :liquid) ≈ 7.563111462588624e-5 rtol = 1e-6 
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 800.288303407983 rtol = 1e-6 
     end
     @testset "VLE properties" begin
