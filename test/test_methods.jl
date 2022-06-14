@@ -204,15 +204,16 @@ end
     p2 = 1e5
     T = 250.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 6.819297582048736e-5 rtol = 1e-6 
-        @test Clapeyron.volume(system, p2, T) ≈ 0.020539807199804024 rtol = 1e-6
-        @test Clapeyron.volume(system, p2, T;phase=:vapour) ≈ 0.020539807199804024 rtol = 1e-6  
-        @test Clapeyron.volume(system, p2, T;phase=:liquid) ≈ 7.563111462588624e-5 rtol = 1e-6 
+        @test Clapeyron.volume_impl(system, p, T) ≈ 6.819297582048736e-5 rtol = 1e-6 
+        @test Clapeyron.volume_impl(system, p2, T) ≈ 0.020539807199804024 rtol = 1e-6
+        @test Clapeyron.volume_impl(system, p2, T,[1.0],:vapour) ≈ 0.020539807199804024 rtol = 1e-6  
+        @test Clapeyron.volume(system, p2, T, [1.0], :liquid) ≈ 7.563111462588624e-5 rtol = 1e-6 
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 800.288303407983 rtol = 1e-6 
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 1.409820798879772e6 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 305.31999999999994 rtol = 1E-6 
+        @test Clapeyron.wilson_k_values(system,p,T) ≈ [0.13839117786853375]  rtol = 1E-6 
     end
 end
 
@@ -228,6 +229,8 @@ end
     @testset "VLE properties" begin
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 1.5760730143760687e6 rtol = 1E-6
         @test Clapeyron.crit_mix(system, z)[1] ≈ 575.622237585033 rtol = 1E-6 
+        srksystem  = SRK(["ethane","undecane"])
+        @test Clapeyron.wilson_k_values(srksystem,p,T) ≈ [0.420849235562207, 1.6163027384311e-5] rtol = 1E-6 
     end
 end
 
