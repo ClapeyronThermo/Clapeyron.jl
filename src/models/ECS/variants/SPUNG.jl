@@ -11,7 +11,7 @@
 
 SPUNG: State Research Program for Utilization of Natural Gas
 
-[`ECS`](@ref) method. It uses [`SRK`] as the shape model and (`PropaneRef`) as the reference model.
+[`ECS`](@ref) method. It uses [`SRK`](@ref) as the shape model and [`PropaneRef`](@ref) as the reference model.
 
 ## References
 
