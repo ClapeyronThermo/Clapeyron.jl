@@ -472,7 +472,7 @@ end
     p4,vl4,vv4 = Clapeyron.saturation_pressure_impl(model,T,ChemPotDensitySaturation(;vl,vv))
     p4b,vl4b,vv4b = Clapeyron.psat_chempot(model,T,vl,vv)
     @test p4 ≈ p rtol = 1e-6
-    @test (p4 == p4b) && (vl4 == vl4b) && (vv4 = vv4b)
+    @test (p4 == p4b) && (vl4 == vl4b) && (vv4 == vv4b)
     
     #test IsoFugacity, near criticality
     Tc_near = 0.95*647.096
