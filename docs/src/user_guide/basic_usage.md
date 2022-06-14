@@ -79,7 +79,7 @@ One can find out more about the information stored within these model objects in
 - Propane Reference ([`PropaneRef`](@ref))
 - Lennard Jones Reference from Thol et al. (2016) ([`LJRef`](@ref))
 
-We also support the [`SPUNG`](@ref) model. One can find out more about each of these equations of state within our background documentation. Nevertheless, all of these equations are compatible with all methods availble in our package. 
+We also support Extended Corresponding State [`ECS`](@ref) models. One can find out more about each of these equations of state within our background documentation. Nevertheless, all of these equations are compatible with all methods availble in our package. 
 
 There a few optional arguments available for these equations which will be explained below. One of these is specifying the location of the parameter databases, the details of which can be found in our Custom databases documentation.
 
