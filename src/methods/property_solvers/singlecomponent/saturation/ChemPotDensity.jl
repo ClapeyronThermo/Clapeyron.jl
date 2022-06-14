@@ -83,7 +83,7 @@ end
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotDensitySaturation{Nothing})
     x0 = x0_sat_pure(model,T) .|> exp10
     vl,vv = x0
-    return saturation_pressure_impl(model,T,ChemPotVSaturation(vl,vv))
+    return saturation_pressure_impl(model,T,ChemPotDensitySaturation(vl,vv))
 end
 
 function saturation_pressure_impl(model::EoSModel,T,method::ChemPotDensitySaturation)
