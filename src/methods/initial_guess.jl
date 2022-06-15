@@ -246,4 +246,17 @@ function T_scales(model)
     return res
 end
 
+function p_scales(model)
+    n = length(model)
+    x = zeros(n)
+    res = zeros(n)
+    for i = 1:n
+        x[i] = 1.0
+        res[i] = p_scale(model,x)
+        x[i] = 0.0
+    end
+    return res
+end
+
 T_scales(model,z) = T_scales(model)
+p_scales(model,z) = p_scales(model)
