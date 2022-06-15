@@ -50,6 +50,7 @@ end
 include("ChemPotV.jl")
 include("IsoFugacity.jl")
 include("ChemPotDensity.jl")
+include("SuperAnc.jl")
 
 #if a model overloads x0_saturation_temperature to return a T0::Number, we can assume this number is near
 #the actual saturation temperature, so we use the direct algorithm. otherwise, we use a safe approach, starting from the critical
