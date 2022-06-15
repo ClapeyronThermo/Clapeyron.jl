@@ -8,7 +8,7 @@ AntoineSaturation()=AntoineSaturation{Nothing}(nothing,nothing,nothing)
 #if a number is provided as initial point, it will instead proceed to solve directly
 function saturation_temperature(model::EoSModel, P, T0::Number)
     sat = x0_sat_pure(model,T0)
-    return saturation_temperature_impl(model,p,AntoineSaturation(T0,sat[1],sat[3]))
+    return saturation_temperature_impl(model,p,AntoineSaturation(T0,sat[1],sat[2]))
 end
 
 function Obj_Sat_Temp(model::EoSModel, F, T, V_l, V_v,p,scales,method::AntoineSaturation)
