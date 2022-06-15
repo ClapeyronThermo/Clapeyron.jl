@@ -31,7 +31,7 @@ using Clapeyron, Test, Unitful
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7972.550405922014 rtol = 1E-6
         @test Clapeyron.saturation_temperature(system, p)[1] ≈ 351.32529505096164 rtol = 1E-6
-        @test Clapeyron.saturation_temperature(system, p, 350)[1] ≈ 351.32529505096164 rtol = 1E-6
+        @test Clapeyron.saturation_temperature(system, p, 350.)[1] ≈ 351.32529505096164 rtol = 1E-6
         @test Clapeyron.enthalpy_vap(system, T) ≈ 41712.78521121877 rtol = 1E-6
         @test Clapeyron.acentric_factor(system) ≈ 0.5730309964718605 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 533.1324329774004 rtol = 1E-6 
