@@ -155,7 +155,7 @@ Clapeyron.x0_volume_liquid
 Clapeyron.x0_volume_gas
 Clapeyron.volume_virial
 Clapeyron.x0_sat_pure
-Clapeyron.psat_init
+Clapeyron.x0_psat
 Clapeyron.x0_crit_pure
 ```
 

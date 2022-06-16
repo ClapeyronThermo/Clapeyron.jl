@@ -1,20 +1,20 @@
 """
-    psat_init(model::EoSModel, T)
+    x0_psat(model::EoSModel, T)
 
 Initial point for saturation pressure, given the temperature and V,T critical coordinates.
 On moderate pressures it will use a Zero Pressure initialization. On pressures near the critical point it will switch to spinodal finding.
 
 It can be overloaded to provide more accurate estimates if necessary.
 """
-function psat_init(model,T)
+function x0_psat(model,T)
     Tc, Pc, Vc = crit_pure(model)
     if T > Tc
         return zero(T)/zero(T)
     end
-    return psat_init(model, T, Tc, Vc)
+    return x0_psat(model, T, Tc, Vc)
 end
 
-function psat_init(model::EoSModel, T, Tc, Vc)
+function x0_psat(model::EoSModel, T, Tc, Vc)
     # Function to get an initial guess for the saturation pressure at a given temperature
     z = SA[1.] #static vector
     _0 = zero(T+Tc+Vc)
@@ -52,7 +52,7 @@ end
     IsoFugacitySaturation(;p0 = nothing, vl = nothing,vv = nothing, max_iters = 20, p_tol = sqrt(eps(Float64)))
 
 Single component saturation via isofugacity criteria. Ideal for Cubics or other EoS where the volume calculations are cheap. 
-If `p0` is not provided, it will be calculated via [`psat_init`](@ref).
+If `p0` is not provided, it will be calculated via [`x0_psat`](@ref).
 """
 struct IsoFugacitySaturation{T} <: SaturationMethod
     p0::T
@@ -79,7 +79,7 @@ function saturation_pressure_impl(model::EoSModel,T,method::IsoFugacitySaturatio
     vol0 = (method.vl,method.vv,T)
     p0 = method.p0
     if isnan(p0)
-        p0 = psat_init(model, T)
+        p0 = x0_psat(model, T)
     end
 
     if isnan(p0) #over critical point, or something else.
