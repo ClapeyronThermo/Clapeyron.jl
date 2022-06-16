@@ -9,9 +9,12 @@ end
 
 function saturation_pressure_impl(model::ABCubicModel,T,method::SuperAncSaturation)
     Tc = model.params.Tc.values[1]
+    if Tc < T
+        nan = zero(T)/zero(T)
+        return (nan,nan,nan)
+    end
     a,b,c = cubic_ab(model,1e-3,T)
     T̃ = T*R̄*b/a
-
     Vv = chebyshev_vapour_volume(model,T̃,b)
     Vl = chebyshev_liquid_volume(model,T̃,b)
     p_sat = chebyshev_pressure(model,T̃,a,b)
