@@ -7,7 +7,7 @@ end
 AntoineSaturation()=AntoineSaturation{Nothing}(nothing,nothing,nothing)
 #if a number is provided as initial point, it will instead proceed to solve directly
 function saturation_temperature(model::EoSModel, p, T0::Number)
-    sat = x0_sat_pure(model,T0)
+    sat = x0_sat_pure(model,T0) .|> exp10
     return saturation_temperature_impl(model,p,AntoineSaturation(T0,sat[1],sat[2]))
 end
 
@@ -24,33 +24,45 @@ function Obj_Sat_Temp(model::EoSModel, F, T, V_l, V_v,p,scales,method::AntoineSa
     return F
 end
 
-function x0_sat_temp(model::EoSModel,p,method::AntoineSaturation)
+x0_saturation_temperature(model,p) = x0_sat_temperature(model,p,AntoineSaturation())
+
+function x0_saturation_temperature(model::EoSModel,p,::AntoineSaturation)
     A,B,C = antoine_coef(model)
     lnp̄ = log(p / p_scale(model))
     T0 = T_scale(model)*(B/(A-lnp̄)-C)
-    Vl,Vv = x0_sat_pure(model,T0)
-    return [T0,Vl,Vv]
+    Vl,Vv = x0_sat_pure(model,T0) .|> exp10
+    return (T0,Vl,Vv)
 end
 
-function saturation_temperature_impl(model,p,method::AntoineSaturation)
+function saturation_temperature_impl(model,p,method::AntoineSaturation) 
+    
     scales = scale_sat_pure(model)
+  
     if isnothing(method.Temp)
-        v0 = x0_sat_temp(model,p,method)
+        T0,Vl,Vv = x0_saturation_temperature(model,p)
+        Vl,Vv = log10(Vl),log10(Vv) 
     elseif isnothing(method.vl) && isnothing(method.vv)
-        vl,vv = x0_sat_pure(model,method.T)
-        v0 = [method.Temp,vl,vv]
+        Vl,Vv = x0_sat_pure(model,method.T) #exp10
+        T0 = method.Temp
     else
-        v0 = [method.Temp,method.vl,method.vv]
+        T0,Vl,Vv = method.Temp,method.vl,method.vv
+        Vl,Vv = log10(Vl),log10(Vv) 
     end
 
-    F = zeros(eltype(v0),length(v0))
+    T0,Vl,Vv = promote(T0,Vl,Vv)
 
-    f!(F,x) = Obj_Sat_Temp(model,F,x[1],10^x[2],10^x[3],p,scales,method)
+    if T0 isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
+        v0 = MVector((T0,Vl,Vv))
+    else
+        v0 = SizedVector{3,typeof(T0)}((T0,Vl,Vv))
+    end
+
+    f!(F,x) = Obj_Sat_Temp(model,F,x[1],exp10(x[2]),exp10(x[3]),p,scales,method)
     r = Solvers.nlsolve(f!,v0, LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     T = sol[1]
-    Vl = 10^sol[2]
-    Vv = 10^sol[3]
+    Vl = exp10(sol[2])
+    Vv = exp10(sol[3])
     return (T,Vl,Vv)
 end
 
