@@ -17,12 +17,9 @@ using StaticArrays
         Bchol\∇f
     end
 
-    #
     Base.summary(::NLSolvers.Newton{<:Direct, typeof(cholesky_linsolve)}) = "Newton's method with Cholesky linsolve"
     CholeskyNewton() = NLSolvers.Newton(linsolve=cholesky_linsolve)
     export CholeskyNewton
-
-
 
     """
     function x_sol(res::NLSolvers.ConvergenceInfo)
