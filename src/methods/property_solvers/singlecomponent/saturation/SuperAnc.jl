@@ -23,14 +23,17 @@ function chebyshev_vapour_volume(model::ABCubicModel,T̃,b)
     Tmin = chebyshev_Tmin_v(model)
     Tmax = chebyshev_Tmax_v(model)
     for i ∈ 1:length(Cₙ)
-        if T̃<=Tmax[i] && T̃>=Tmin[i]
-            c = ChebyshevT(Cₙ[i])
-            T̄ = (2*T̃ - (Tmax[i] + Tmin[i])) / (Tmax[i] - Tmin[i])
-            ρ̃ᵥ = c(T̄)            
+        Tmin_i = Tmin[i]
+        Tmax_i = Tmax[i]
+        if Tmin_i <= T̃ <= Tmax_i
+            Cₙi::Vector{Float64} = Cₙ[i]
+            T̄ = (2*T̃ - (Tmax_i + Tmin_i)) / (Tmax_i - Tmin_i)
+            ρ̃ᵥ = Solvers.evalpoly_cheb(T̄,Cₙi)            
             Vᵥ = b/ρ̃ᵥ
             return Vᵥ
         end
     end
+    return zero(T̃)/zero(T̃)
 end
 
 function chebyshev_liquid_volume(model::ABCubicModel,T̃,b)
@@ -38,14 +41,17 @@ function chebyshev_liquid_volume(model::ABCubicModel,T̃,b)
     Tmin = chebyshev_Tmin_l(model)
     Tmax = chebyshev_Tmax_l(model)
     for i ∈ 1:length(Cₙ)
-        if T̃<=Tmax[i] && T̃>=Tmin[i]
-            c = ChebyshevT(Cₙ[i])
-            T̄ = (2*T̃ - (Tmax[i] + Tmin[i])) / (Tmax[i] - Tmin[i])
-            ρ̃ₗ = c(T̄)
-            Vₗ = b/ρ̃ₗ
-            return Vₗ
+        Tmin_i = Tmin[i]
+        Tmax_i = Tmax[i]
+        if Tmin_i <= T̃ <= Tmax_i
+            Cₙi::Vector{Float64} = Cₙ[i]
+            T̄ = (2*T̃ - (Tmax_i + Tmin_i)) / (Tmax_i - Tmin_i)
+            ρ̃ᵥ = Solvers.evalpoly_cheb(T̄,Cₙi)            
+            Vᵥ = b/ρ̃ᵥ
+            return Vᵥ
         end
     end
+    return zero(T̃)/zero(T̃)
 end
 
 function chebyshev_pressure(model::ABCubicModel,T̃,a,b)
@@ -53,14 +59,18 @@ function chebyshev_pressure(model::ABCubicModel,T̃,a,b)
     Tmin = chebyshev_Tmin_p(model)
     Tmax = chebyshev_Tmax_p(model)
     for i ∈ 1:length(Cₙ)
-        if T̃<=Tmax[i] && T̃>=Tmin[i]
-            c = ChebyshevT(Cₙ[i])
-            T̄ = (2*T̃ - (Tmax[i] + Tmin[i])) / (Tmax[i] - Tmin[i])
-            p̃ = c(T̄)
+        Tmin_i = Tmin[i]
+        Tmax_i = Tmax[i]
+        if Tmin_i <= T̃ <= Tmax_i
+            Cₙi::Vector{Float64} = Cₙ[i]
+            T̄ = (2*T̃ - (Tmax_i + Tmin_i)) / (Tmax_i - Tmin_i)
+            p̃ = Solvers.evalpoly_cheb(T̄,Cₙi)            
             p = p̃*a/b^2
             return p
         end
     end
+    return zero(T̃)/zero(T̃)
+    
 end
 
 export SuperAncSaturation

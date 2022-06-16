@@ -12,7 +12,6 @@ using FillArrays: FillArrays
 using Roots: Roots
 using NLSolvers
 import BlackBoxOptim
-using Polynomials
 
 using DiffResults, ForwardDiff
 using Scratch 
