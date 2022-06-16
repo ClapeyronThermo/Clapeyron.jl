@@ -239,8 +239,11 @@ end
 
 function x0_saturation_temperature(model::IAPWS95,p)
     T = water_t_sat(p)
-    
+    vl = saturated_water_liquid(T)
+    vv = saturated_water_vapor(T)
+    return (T,vl,vv)
 end
+
 x0_psat(model::IAPWS95,T) = water_p_sat(T)
 
 #from MoistAir.jl, liquid
