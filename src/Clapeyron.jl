@@ -146,7 +146,9 @@ include("models/cubic/PR/variants/EPPR78.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
-include("models/SPUNG/SPUNG.jl")
+include("models/ECS/ECS.jl")
+include("models/ECS/variants/SPUNG.jl")
+
 include("models/UFTheory/UFTheory.jl")
 
 include("utils/misc.jl")

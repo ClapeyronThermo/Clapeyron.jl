@@ -15,9 +15,9 @@ Base.@kwdef struct RRTPFlash{T} <: TPFlashMethod
     spec::Symbol = :unknown
 end
 
-index_reduction(flash::RRTPFlash{Nothing},idx::Vector{Int}) = flash
+index_reduction(flash::RRTPFlash{Nothing},idx::AbstractVector) = flash
 
-function index_reduction(flash::RRTPFlash,idx::Vector{Int})
+function index_reduction(flash::RRTPFlash,idx::AbstractVector)
     K02 = flash.K0[idx]
     return RRTPFlash(K02,flash.rtol,flash.atol,flash.max_iters,flash.spec)
 end
@@ -49,7 +49,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::RRTPFlash)
     
     X = hcat(x,y)'
     nvals = X.*[1-α₀
-                α₀]
+                α₀]  .* sum(n)
     return (X, nvals, G)
 end
 
@@ -58,10 +58,10 @@ function RR_fixpoint(K1,K0,model,p,T,n,x,y,φ_α,φ_β,α,spec)
     α[1] = α₀
     x = rr_flash_liquid!(x,K0,n,α₀)
     y .= K0 .* x
-    if spec == :lle
+    if is_lle(spec)
         phaseα = :l
         phaseβ = :l
-    elseif spec ==:vle
+    elseif is_vle(spec)
         phaseα = :l
         phaseβ = :v
     else

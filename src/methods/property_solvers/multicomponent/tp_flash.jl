@@ -2,12 +2,13 @@
     TPFlashMethod
 
 Abstract type for `tp_flash` routines. it requires defining `numphases(method)` and `tp_flash_impl(model,p,T,n,method)`.
+If the method accept component-dependent inputs, it also should define `index_reduction(method,nonzero_indices)`
 
 """
 abstract type TPFlashMethod end
 
 """
-    tp_flash(model, p, T, n, method::TPFlashMethod =DETPFlash())
+    tp_flash(model, p, T, n, method::TPFlashMethod = DETPFlash())
 
 Routine to solve non-reactive multicomponent flash problem.
 The default method uses Global Optimization. see [`DETPFlash`](@ref)
@@ -35,18 +36,9 @@ numphases(method::TPFlashMethod) = 2
 #default
 include("tp_flash/DifferentialEvolutiontp_flash.jl")
 include("tp_flash/RachfordRicetp_flash.jl")
+include("tp_flash/Michelsentp_flash.jl")
 
-function expand_matrix(x,idr,numspecies)
-    numspecies == length(idr) && return x
-    numphases,_ = size(x)
-    res = zeros(eltype(x),numphases, numspecies)
-    for (jj,j) ∈ pairs(idr)
-        for i in 1:numphases
-            res[i,j] = x[i,jj]
-        end
-    end
-    return res
-end
+
 function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
     numspecies = length(model)
     if numspecies != length(n)
@@ -70,8 +62,8 @@ function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
     xij_r,nij_r,g = tp_flash_impl(model_r,p,T,n_r,index_reduction(method,idx_r))
     #TODO: perform stability check ritht here:
     #expand reduced model:
-    nij = expand_matrix(nij_r,idx_r,numspecies)
-    xij = expand_matrix(xij_r,idx_r,numspecies)
+    nij = index_expansion(nij_r,idx_r)
+    xij = index_expansion(xij_r,idx_r)
     return xij,nij,g
 end
 
