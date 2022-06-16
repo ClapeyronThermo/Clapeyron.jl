@@ -73,7 +73,6 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
 end
 
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{<:Number})
-    
     V0 = vec2(method,T)
     V01,V02 = V0
     TYPE = eltype(V0)

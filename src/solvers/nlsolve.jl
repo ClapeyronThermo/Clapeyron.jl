@@ -27,6 +27,7 @@ function autoVectorObjective(f!,x0,chunk)
     jconfig = ForwardDiff.JacobianConfig(f!,x0,x0,chunk)
     function j!(J,x)
         ForwardDiff.jacobian!(J,f!,Fcache,x,jconfig)
+        J
     end
     function fj!(F,J,x)
         ForwardDiff.jacobian!(J,f!,F,x,jconfig)
@@ -90,3 +91,15 @@ function only_fj!(fj!::T) where T
     return NLSolvers.VectorObjective(_f!,_j!,_fj!,_jv!) |> NEqProblem
     # return NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> NEqProblem
 end
+
+#= 
+#trying to make nlsolve(f,x0,LineSearch(Newton(),HZAW())) work
+
+function NLSolvers.upto_gradient(meritobj::NLSolvers.MeritObjective, ∇f, x)
+    neq = meritobj.prob
+    G = neq.R.F(∇f, x)
+    F =  (norm(G)^2) / 2
+    return F,G
+end
+=#
+
