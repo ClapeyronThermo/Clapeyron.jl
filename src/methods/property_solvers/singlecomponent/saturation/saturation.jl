@@ -47,6 +47,23 @@ function saturation_pressure(model,T,method::SaturationMethod)
     return saturation_pressure_impl(model,T,method)
 end
 
+"""
+    check_valid_sat_pure(model,P_sat,Vl,Vv,T,ε0 = 5e7)
+
+Checks that a saturation method converged correctly. it checks:
+- That both volumes are mechanically stable
+- That both volumes are different, with a difference of at least `ε0` epsilons
+"""
+function check_valid_sat_pure(model,P_sat,V_l,V_v,T,ε0 = 5e7)
+    ε = abs(V_l-V_v)/(eps(typeof(V_l-V_v)))
+    ε <= ε0 && return false
+    _,dpdvl = p∂p∂V(model,V_l,T,SA[1.0])
+    _,dpdvv = p∂p∂V(model,V_v,T,SA[1.0])
+    return (dpdvl <= 0) && (dpdvv <= 0)
+    #if ΔV > ε then Vl and Vv are different values
+    
+end
+
 include("ChemPotV.jl")
 include("IsoFugacity.jl")
 include("ChemPotDensity.jl")

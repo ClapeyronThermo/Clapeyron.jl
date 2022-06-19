@@ -38,14 +38,7 @@ function ChemPotVSaturation(;log10vl = nothing,log10vv = nothing)
     end
 end
 
-function check_valid_sat_pure(model,P_sat,V_l,V_v,T)
-    _,dpdvl = p∂p∂V(model,V_l,T,SA[1.0])
-    _,dpdvv = p∂p∂V(model,V_v,T,SA[1.0])
-    (dpdvl > 0) | (dpdvv > 0) && return false
-    ε = abs(V_l-V_v)/(eps(typeof(V_l-V_v)))
-    #if ΔV > ε then Vl and Vv are different values
-    return ε > 5e7
-end
+
 
 function try_sat_pure(model,V0,f!,T,result,error_val,method = LineSearch(Newton()))
     if !isfinite(V0[1]) | !isfinite(V0[2])

@@ -26,8 +26,6 @@ end
 
 x0_saturation_temperature(model,p) = x0_saturation_temperature(model,p,AntoineSaturation())
 
-antoine_coef(model) = nothing
-
 function x0_saturation_temperature(model::EoSModel,p,::AntoineSaturation)
     coeffs = antoine_coef(model)
     coeffs === nothing && return x0_saturation_temperature(model,p,nothing)
@@ -42,6 +40,7 @@ end
 #We aproximate to RK, use the cubic antoine, and perform refinement with one Clapeyron Saturation iteration 
 function x0_saturation_temperature(model::EoSModel,p,::Nothing)
     Tc,Pc,Vc = crit_pure(model)
+    @show Tc
     A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941)
     if Pc < p
         nan = zero(p)/zero(p)
@@ -97,7 +96,12 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
     T = sol[1]
     Vl = exp10(sol[2])
     Vv = exp10(sol[3])
-    return (T,Vl,Vv)
+    valid = check_valid_sat_pure(model,p,Vl,Vv,T)
+    if valid
+        return (T,Vl,Vv)
+    else
+        return saturation_temperature_impl(model,p,ClapeyronSaturation())
+    end
 end
 
 export AntoineSaturation
