@@ -48,8 +48,7 @@ function diffusive_stability(model, V, T, z)
     isone(length(model)) && return true
     A(x) = eos(model, V, T, x)
     Hf = ForwardDiff.hessian(A, z)
-    (Λ, U) = eigen(Hf)
-    λ = minimum(Λ)
+    λ = eigmin(Hf) # calculating just minimum eigenvalue more efficient than calculating all & finding min
     return λ > 0
 end
 
@@ -84,41 +83,40 @@ function chemical_stability(model, V, T, z)
 
     # For mixtures
     p = pressure(model, V, T, z)
-    ((λ_min, tm_min), _) = chemical_stability_analysis(model, p, T, z)
+    ((tm_min, λ_min), _) = chemical_stability_analysis(model, p, T, z)
 
     stable = true
     if λ_min < 0 # Unstable
         stable = false
     elseif tm_min < 0 # Metastable
-        stable = false #! How should a meta stable state be reported?
+        stable = false #! How should a metastable state be reported?
     end
     return stable
 end
 
+# Michelsen p,T stability analysis
 function chemical_stability_analysis(model::EoSModel, p, T, z)
     # Generate vapourlike and liquidlike initial guesses
     # Currently using Wilson correlation
 
-    # Kʷ = wilson_k_values(model, p, T)
-    # z = z ./ sum(z)
-    # w_liq = z ./ Kʷ
-    # w_vap = Kʷ .* z
+    Kʷ = wilson_k_values(model, p, T)
+    z = z ./ sum(z)
+    w_liq = z ./ Kʷ
+    w_vap = Kʷ .* z
 
     # Objective function - Unconstrained formulation in mole numbers
     φ(x) = fugacity_coefficient(model, p, T, x)
     d(x) = log.(x) .+ log.(φ(x))
     tm(W, Z) = 1.0 + sum(W .* (d(W) .- d(Z) .- 1))
 
-    f(W) = tm(W .^ 2, z)
-    g(W) = ForwardDiff.gradient(f, W)
-    # tm_func(W) = Optim.optimize(W -> tm(W .^ 2, z), sqrt.(W), Optim.NelderMead())
-    tm_func(W) = Optim.optimize(f, g, sqrt.(W), Optim.BFGS(); inplace=false)
-    # res_vec = tm_func.([w_liq, w_vap])
-    x = normalize(ones(length(z)), 1)
-    res_vec = tm_func(x)
-    tm_min = Optim.minimum(res_vec)
-    tm_xmin = sqrt.(abs.(Optim.minimizer(res_vec)))
+    # This currently uses Newton, BFGS performs better in my tests with Optim
+    # Also would ideally be solved with far lower tolerance - stability analysis doesn't have to converge to machine precision
+    tm_func(W) = Solvers.optimize(W -> tm(W .^ 2, z), sqrt.(W))
+    res_vec = [tm_func(w_liq), tm_func(w_vap)]
+    (tm_min, idx) = findmin(map(x -> x.info.minimum, res_vec))
+    tm_xmin = map(x -> sqrt.(abs.(x.info.solution)), res_vec)[idx]
 
+    # We only need to consider the Hessian if wanting to distinguish between Metastable and unstable states
     H = ForwardDiff.hessian(W -> tm(W, z), tm_xmin)
     H_scaled = zeros(size(H))
     for i in 1:size(H)[1]
@@ -128,7 +126,8 @@ function chemical_stability_analysis(model::EoSModel, p, T, z)
     end
     λ_min = eigmin(H_scaled)
 
-    return ((λ_min, tm_min), normalize(tm_xmin, 1))
+    # Return compositions for initial guesses in flash algorithms
+    return ((tm_min, λ_min), normalize(tm_xmin, 1))
 end
 
 function pure_chemical_instability(model, V, T)
