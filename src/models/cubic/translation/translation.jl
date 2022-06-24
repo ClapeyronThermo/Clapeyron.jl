@@ -31,6 +31,7 @@ function init_model(model::Type{<:TranslationModel},components,userlocations,ver
 end
 
 include("NoTranslation.jl")
+include("Clausius.jl")
 include("Rackett.jl")
 include("Peneloux.jl")
 include("MT.jl")

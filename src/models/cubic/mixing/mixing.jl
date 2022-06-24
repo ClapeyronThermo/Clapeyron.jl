@@ -30,6 +30,14 @@ function init_model(model::Type{<:MixingRule},components,activity,userlocations,
     return model(components;activity,userlocations,activity_userlocations,verbose)
 end
 
+function infinite_pressure_gibbs_correction(model::ABCubicModel,z)
+    Δ1,Δ2 = cubic_Δ(model,z)
+    return log((1+Δ1)/(1+Δ2))/(Δ1 - Δ2)
+end
+
+function infinite_pressure_gibbs_correction(model::vdWModel,z)
+    return 1.0
+end
 include("vdW1f.jl")
 include("Kay.jl")
 include("HV.jl")
@@ -37,6 +45,7 @@ include("MHV1.jl")
 include("MHV2.jl")
 include("LCVM.jl")
 include("WS.jl")
+include("modWS.jl")
 include("PSRK.jl")
 include("VTPR.jl")
 include("UMR.jl")

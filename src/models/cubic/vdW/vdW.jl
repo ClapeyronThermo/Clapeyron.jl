@@ -101,34 +101,6 @@ function ab_consts(::Type{<:vdWModel})
     return Ωa,Ωb
 end
 
+cubic_Δ(model::vdWModel,z) = (0.0,0.0)
 
-function cubic_abp(model::vdWModel, V, T, z)
-    n = ∑(z)
-    a,b,c = cubic_ab(model,V,T,z,n)
-    v = V/n+c
-    p = R̄*T/(v-b) - a/(v^2)
-    return a,b,p
-end
-
-function cubic_poly(model::vdWModel,p,T,z)
-    n = sum(z)
-    a,b,c = cubic_ab(model,p,T,z,n)
-    RT⁻¹ = 1/(R̄*T)
-    A = a*p*RT⁻¹*RT⁻¹
-    B = b*p*RT⁻¹
-    _1 = one(A)
-    return (-A*B, A, -B-_1, _1),c
-end
-
-
-function a_res(model::vdWModel, V, T, z,_data = data(model,V,T,z))
-    n,ā,b̄,c̄ = _data
-    RT⁻¹ = 1/(R̄*T)
-    ρt = (V/n+c̄)^(-1) # translated density
-    ρ  = n/V
-    return -log(1+(c̄-b̄)*ρ) - ā*ρt*RT⁻¹
-    #
-    #return -log(V-n*b̄) - ā*n/(R̄*T*V) + log(V)
-end   
-
-cubic_zc(::vdWModel) = 3/8
+crit_pure(model::vdWModel) = crit_pure_tp(model)
