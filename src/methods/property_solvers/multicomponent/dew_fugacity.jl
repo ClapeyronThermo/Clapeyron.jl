@@ -1,3 +1,5 @@
+using LinearAlgebra
+
 ########## Dew pressure calculation
 """
 OF_dewPx!(model::EoSModel, y, T, vol_cache)
