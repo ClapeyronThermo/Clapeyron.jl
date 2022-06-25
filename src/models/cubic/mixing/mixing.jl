@@ -33,9 +33,9 @@ end
 function infinite_pressure_gibbs_correction(model::CubicModel,z)
     Δ1,Δ2 = cubic_Δ(model,z)
     if Δ1==Δ2
-        return -1/(1-Δ1)
+        return 1/(1-Δ1)
     else
-        return log((1-Δ1)/(1-Δ2))/(Δ1 - Δ2)
+        return -log((1-Δ1)/(1-Δ2))/(Δ1 - Δ2)
     end
 end
 
