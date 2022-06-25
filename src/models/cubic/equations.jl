@@ -9,7 +9,7 @@ end
 struct ABCCubicParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}
-    c::SingleParam{Float64}
+    c::PairParam{Float64}
     Tc::SingleParam{Float64}
     Pc::SingleParam{Float64}
     Vc::SingleParam{Float64}
@@ -74,7 +74,7 @@ function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     b̄ρt = b̄*ρt
     a₁ = -log1p((c̄-b̄)*ρ)
     if Δ1 == Δ2
-        return a₁ - ā*ρt*RT⁻¹
+        return a₁ - ā*ρt*RT⁻¹/(1-Δ1*b̄ρt)
     else
         l1 = log1p(Δ1*b̄ρt)
         l2 = log1p(Δ2*b̄ρt)
@@ -113,6 +113,13 @@ function pure_cubic_zc(model::ABCubicModel)
     return (1 - (Δ1+Δ2-1)*Ωb)/3
 end
 
+function pure_cubic_zc(model::ABCCubicModel)
+    Vc = model.params.Vc.values[1]
+    pc = model.params.Pc.values[1]
+    Tc = model.params.Tc.values[1]
+    return pc*Vc/(R̄*Tc)
+end
+
 function second_virial_coefficient(model::ABCubicModel,T::Real,z = SA[1.0])
     a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T,z)
     return b-a/(R̄*T)
@@ -133,23 +140,17 @@ end
 function T_scale(model::CubicModel, z=SA[1.0])
     n = sum(z)
     invn2 = one(n) / (n * n)
-    Ωa, Ωb = ab_consts(model)
-    _a = model.params.a.values
-    _b = model.params.b.values
-    a = dot(z, Symmetric(_a), z) * invn2 / Ωa
-    b = dot(z, Symmetric(_b), z) * invn2 / Ωb
-    return a / b / R̄
+    _Tc = model.params.Tc.values
+    Tc = dot(z, _Tc) * invn2
+    return Tc
 end
 
 function p_scale(model::CubicModel, z=SA[1.0])
     n = sum(z)
-    invn2 = (1 / n)^2
-    Ωa, Ωb = ab_consts(model)
-    _a = model.params.a.values
-    _b = model.params.b.values
-    a = invn2 * dot(z, Symmetric(_a), z) / Ωa
-    b = invn2 * dot(z, Symmetric(_b), z) / Ωb
-    return a / (b^2) # Pc mean
+    invn2 = one(n) / (n * n)
+    _pc = model.params.Pc.values
+    pc = dot(z, _pc) * invn2
+    return pc
 end
 
 function x0_crit_pure(model::CubicModel)
@@ -165,9 +166,16 @@ function crit_pure_tp(model)
     return (Tc,Pc,Vc)
 end
 
+function crit_pure_tp(model::ABCCubicModel)
+    Tc = model.params.Tc.values[1]
+    Pc = model.params.Pc.values[1]
+    Vc = model.params.Vc.values[1]
+    return (Tc,Pc,Vc)
+end
+
 function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=false)
     lb_v   =lb_volume(model,z)
-    RTp = R̄*T/p
+    nRTp = sum(z)*R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
     sols = Solvers.roots3(_poly)
     function imagfilter(x)
@@ -181,7 +189,7 @@ function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
     vvv = extrema(real.(xx))
     
     zl,zg = vvv
-    vvl,vvg = RTp*zl,RTp*zg
+    vvl,vvg = nRTp*zl,nRTp*zg
     @show vvl,vvg
     err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if sum(isreal) == 3 #3 roots
