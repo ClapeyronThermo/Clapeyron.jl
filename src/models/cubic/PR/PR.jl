@@ -100,7 +100,7 @@ end
 
 function cubic_Δ(model::PRModel,z) 
     sqrt2 = sqrt(2)
-    return (1+sqrt2,1-sqrt2)
+    return (-1+sqrt2,-1-sqrt2)
 end
 
 crit_pure(model::PRModel) = crit_pure_tp(model)

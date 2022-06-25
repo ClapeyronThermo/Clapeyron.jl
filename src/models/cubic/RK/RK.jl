@@ -96,7 +96,7 @@ function ab_consts(::Type{<:RKModel})
 end
 
 function cubic_Δ(model::RKModel,z) 
-    return (0.0,1.0)
+    return (0.0,-1.0)
 end
 
 #when either Δ1 or Δ2 is equal to zero, requires defining a_res

@@ -67,7 +67,7 @@ end
 function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
     Δ1,Δ2 = cubic_Δ(model,z)
-    ΔΔ = Δ1 - Δ2
+    ΔΔ = Δ2 - Δ1
     RT⁻¹ = 1/(R̄*T)
     ρt = (V/n+c̄)^(-1) # translated density
     ρ  = n/V
@@ -76,8 +76,8 @@ function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     if Δ1 == Δ2
         return a₁ - ā*ρt*RT⁻¹/(1-Δ1*b̄ρt)
     else
-        l1 = log1p(Δ1*b̄ρt)
-        l2 = log1p(Δ2*b̄ρt)
+        l1 = log1p(-Δ1*b̄ρt)
+        l2 = log1p(-Δ2*b̄ρt)
         return a₁ - ā*RT⁻¹*(l1-l2)/(ΔΔ*b̄) 
     end
 end
