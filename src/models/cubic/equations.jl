@@ -110,7 +110,7 @@ function pure_cubic_zc(model::ABCubicModel)
     Δ1,Δ2 = cubic_Δ(model,SA[1.0])
     _,Ωb = ab_consts(model)
     Ωb = only(Ωb)
-    return (1 - (Δ1+Δ2-1)*Ωb)/3
+    return (1 + (Δ1+Δ2+1)*Ωb)/3
 end
 
 function pure_cubic_zc(model::ABCCubicModel)
@@ -250,7 +250,7 @@ function x0_sat_pure(model::ABCubicModel, T)
     B = b-a/(R̄*T)
     pv0 = -0.25*R̄*T/B
     Δ1,Δ2 = cubic_Δ(model,SA[1.0])
-    k⁻¹ = (1 + Δ1)*(1 + Δ2)/2
+    k⁻¹ = (1 - Δ1)*(1 - Δ2)/2
     vl = b + sqrt(k⁻¹*R̄*T*b^3/a) - c
     pc = model.params.Pc.values[1]
     p_vl = pressure(model, vl, T)
