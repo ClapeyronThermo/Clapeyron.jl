@@ -134,7 +134,7 @@ end
 ab_consts(model::KUModel) = model.params.omega_a.values,model.params.omega_b.values
 
 #only used in premixing
-cubic_Δ(model::KUModel,z) = (-0.4,2.0)
+cubic_Δ(model::KUModel,z) = (0.4,-2.0)
 
 function T_scale(model::KUModel,z=SA[1.0])
     Tc,_ = vdw_tv_mix(model.params.Tc.values,model.params.Vc.values,z)
