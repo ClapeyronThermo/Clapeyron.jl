@@ -88,7 +88,7 @@ function cubic_poly(model::ABCubicModel,p,T,z)
     A = a*p*RT⁻¹*RT⁻¹
     B = b*p*RT⁻¹
     Δ1,Δ2 = cubic_Δ(model,z)
-    ∑Δ = Δ1 + Δ2
+    ∑Δ = -Δ1 - Δ2
     Δ1Δ2 = Δ1*Δ2
     k₀ = -B*evalpoly(B,(A,Δ1Δ2,Δ1Δ2))
     k₁ = evalpoly(B,(A,-∑Δ,Δ1Δ2-∑Δ))
