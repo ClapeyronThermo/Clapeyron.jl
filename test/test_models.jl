@@ -297,16 +297,19 @@ end
     @testset "KU Models" begin
         system = KU(["ethane","undecane"])
         @test Clapeyron.a_res(system, V, T, z) ≈ -1.2261554720898895 rtol = 1e-6
+        @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
     end
 
     @testset "Patel Teja Models" begin
         @testset "Patel Teja" begin
             system = PatelTeja(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2284322450064429 rtol = 1e-6
+            @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
         end
         @testset "PTV" begin
             system = PTV(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2696422558756286 rtol = 1e-6
+            @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
         end
     end
     @printline
