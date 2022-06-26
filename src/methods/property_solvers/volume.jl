@@ -102,6 +102,13 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true,vol0=
     return volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
+function _v_stable(model,V,T,z,phase)
+    if phase != :stable
+        return true
+    end
+    return isstable(model,V,T,z)
+end
+
 function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,vol0=nothing)
 #Threaded version
     TYPE = typeof(p+T+first(z))
@@ -135,10 +142,10 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
 
     #this catches the supercritical phase as well
     if isnan(Vl)
-        isstable(model,Vg,T,z,phase)
+        _v_stable(model,Vg,T,z,phase)
         return Vg
     elseif isnan(Vg)
-        isstable(model,Vl,T,z,phase)
+        _v_stable(model,Vl,T,z,phase)
         return Vl
     end
 
@@ -154,10 +161,10 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
     dVl,_ = _dfl
     gl = ifelse(abs((p+dVl)/p) > 0.03,zero(dVl)/one(dVl),fl + p*Vl)
     if gg<gl
-        isstable(model,Vg,T,z,phase)
+        _v_stable(model,Vg,T,z,phase)
         return Vg
     else
-        isstable(model,Vl,T,z,phase)
+        _v_stable(model,Vl,T,z,phase)
         return Vl
     end
 end
