@@ -44,17 +44,27 @@ end
 
 ## Description
 
-PatelTeja Equation of state. it uses [`vdW`](@ref) the following models:
-- Translation Model: [`NoTranslation`](@ref)
-- Alpha Model: [`PatelTejaAlpha`](@ref)
-- Mixing Rule Model: [`vdW1fRule`](@ref)
+Patel-Teja Equation of state.
 ```
-P = RT/(V-Nb) + a•α(T)/(V-c)²
-```
+P = RT/(v-b) + a•α(T)/((v - Δ₁b)*(v - Δ₂b))
+aᵢᵢ = Ωaᵢ(R²Tcᵢ²/Pcᵢ)
+bᵢᵢ = Ωbᵢ(R²Tcᵢ/Pcᵢ)
+cᵢ = Ωcᵢ(R²Tcᵢ/Pcᵢ)
+Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
+Ωaᵢ = 3Zcᵢ² + 3(1 - 2Zcᵢ)Ωbᵢ + Ωbᵢ² + 1 - 3Zcᵢ
+0 = -Zcᵢ³ + (3Zcᵢ²)*Ωbᵢ + (2 - 3Zcᵢ)*Ωbᵢ² + Ωbᵢ³
+Ωcᵢ = 1 - 3Zcᵢ
 
+γ = ∑cᵢxᵢ/∑bᵢxᵢ
+δ = 1 + 6γ + γ²
+ϵ = 1 + γ
+
+Δ₁ =  -(ϵ + √δ)/2
+Δ₂ =  -(ϵ - √δ)/2
+```
 ## References
 
-1. PatelTeja, D. (1899). Sur une méthode purement physique pour la détermination des poids moléculaires des gaz et des poids atomiques de leurs éléments. Journal de Physique Théorique et Appliquée, 8(1), 263–274. doi:10.1051/jphystap:018990080026300
+1. Patel, N. C., & Teja, A. S. (1982). A new cubic equation of state for fluids and fluid mixtures. Chemical Engineering Science, 37(3), 463–473. doi:10.1016/0009-2509(82)80099-7
 
 """
 PatelTeja
@@ -86,7 +96,7 @@ function PatelTeja(components::Vector{String}; idealmodel=BasicIdeal,
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     icomponents = 1:length(components)
     packagedparams = PatelTejaParam(a,b,c,Tc,pc,Vc,Mw)
-    references = String["10.1016/0009-2509(82)80099-7"]
+    references = String["doi:10.1016/0009-2509(82)80099-7"]
     model = PatelTeja(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end

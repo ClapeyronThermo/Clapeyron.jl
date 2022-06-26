@@ -22,11 +22,11 @@ export PatelTejaAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for [`PR`](@ref) EoS.
+Cubic alpha `(α(T))` model. Default for [`PatelTeja`](@ref) EoS.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
-mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
+mᵢ = 0.452413 + 1.30982ωᵢ - 0.295937ωᵢ^2
 ```
 
 """

@@ -44,12 +44,16 @@ end
 
 ## Description
 
-Clausius Equation of state. it uses [`vdW`](@ref) the following models:
-- Translation Model: [`ClausiusTranslation`](@ref)
-- Alpha Model: [`ClausiusAlpha`](@ref)
-- Mixing Rule Model: [`vdW1fRule`](@ref)
+Clausius Equation of state.
 ```
-P = RT/(V-Nb) + a•α(T)/(V-c)²
+P = RT/(v-b) + a•α(T)/((v - Δ₀b)^2)
+
+aᵢᵢ =27/64 * (RTcᵢ)²/Pcᵢ
+bᵢᵢ = Vcᵢ - 1/4 * RTcᵢ/Pcᵢ
+cᵢ = 3/8 * RTcᵢ/Pcᵢ - Vcᵢ
+
+Δ₀ = ∑cᵢxᵢ/∑bᵢxᵢ
+
 ```
 
 ## References
@@ -120,8 +124,8 @@ function cubic_Δ(model::ClausiusModel,z)
     b = model.params.b.values
     c = model.params.c.values
     z⁻¹ = sum(z)^-1
-    b̄ = ∑(b.*z)*z⁻¹
-    c̄ = ∑(c.*z)*z⁻¹
+    b̄ = dot(b,z)*z⁻¹
+    c̄ = dot(c,z)*z⁻¹
     return (-c̄/b̄,-c̄/b̄)
 end
 

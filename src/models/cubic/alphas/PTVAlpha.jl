@@ -24,13 +24,12 @@ export PTVAlpha
 
 ## Description
 
-Cubic alpha `(α(T))` model. Default for [`PR`](@ref) EoS.
+Cubic alpha `(α(T))` model. Default for [`PTV`](@ref) EoS.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
-mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
+mᵢ = 0.46283 + 3.58230Zcᵢ*ωᵢ - 8.19417(Zcᵢ*ωᵢ)^2
 ```
-
 """
 PTVAlpha
 
@@ -42,14 +41,6 @@ function PTVAlpha(components::Vector{String}; userlocations::Vector{String}=Stri
     return model
 end
 
-function α_m(model,::PTVAlpha) 
-    Tc=model.params.Tc.values
-    Pc = model.params.Pc.values
-    Vc = model.params.Vc.values
-    Zc = @. Vc*Pc/(R̄*Tc)
-    return [(0.46283,3.58230*Zc[i],8.19417*Zc[i]^2) for i ∈ @comps]
-end
-
 function α_function(model::CubicModel,V,T,z,alpha_model::PTVAlphaModel)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
@@ -58,7 +49,8 @@ function α_function(model::CubicModel,V,T,z,alpha_model::PTVAlphaModel)
     ω  = alpha_model.params.acentricfactor.values
     α = zeros(typeof(T),length(Tc))
     for i in @comps
-        coeff = (0.46283,3.58230*Zc[i],8.19417*Zc[i]^2)
+        Zci = Vc[i]*Pc[i]/(R̄*Tc[i])
+        coeff = (0.46283,3.58230*Zci,8.19417*Zci^2)
         ωi = ω[i]
         Tr = T/Tc[i]
         m = evalpoly(ωi,coeff)

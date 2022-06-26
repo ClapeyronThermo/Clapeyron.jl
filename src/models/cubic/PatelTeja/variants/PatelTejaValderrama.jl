@@ -44,17 +44,29 @@ end
 
 ## Description
 
-PTV Equation of state. it uses [`vdW`](@ref) the following models:
-- Translation Model: [`NoTranslation`](@ref)
-- Alpha Model: [`PTVAlpha`](@ref)
-- Mixing Rule Model: [`vdW1fRule`](@ref)
+Patel-Teja-Valderrama Equation of state.
+
 ```
-P = RT/(V-Nb) + a•α(T)/(V-c)²
+P = RT/(v-b) + a•α(T)/((v - Δ₁b)*(v - Δ₂b))
+aᵢᵢ = Ωaᵢ(R²Tcᵢ²/Pcᵢ)
+bᵢᵢ = Ωbᵢ(R²Tcᵢ/Pcᵢ)
+cᵢ = Ωcᵢ(R²Tcᵢ/Pcᵢ)
+Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
+Ωaᵢ = 0.66121 - 0.76105Zcᵢ
+Ωbᵢ = 0.02207 + 0.20868Zcᵢ
+Ωcᵢ = 0.57765 - 1.87080Zcᵢ
+
+γ = ∑cᵢxᵢ/∑bᵢxᵢ
+δ = 1 + 6γ + γ²
+ϵ = 1 + γ
+
+Δ₁ =  -(ϵ + √δ)/2
+Δ₂ =  -(ϵ - √δ)/2
 ```
 
 ## References
 
-1. PTV, D. (1899). Sur une méthode purement physique pour la détermination des poids moléculaires des gaz et des poids atomiques de leurs éléments. Journal de Physique Théorique et Appliquée, 8(1), 263–274. doi:10.1051/jphystap:018990080026300
+1. Valderrama, J. O. (1990). A generalized Patel-Teja equation of state for polar and nonpolar fluids and their mixtures. Journal of Chemical Engineering of Japan, 23(1), 87–91. doi:10.1252/jcej.23.87
 
 """
 PTV
@@ -86,7 +98,7 @@ function PTV(components::Vector{String}; idealmodel=BasicIdeal,
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     icomponents = 1:length(components)
     packagedparams = PTVParam(a,b,c,Tc,pc,Vc,Mw)
-    references = String["10.1016/0009-2509(82)80099-7"]
+    references = String["10.1252/jcej.23.87"]
     model = PTV(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end

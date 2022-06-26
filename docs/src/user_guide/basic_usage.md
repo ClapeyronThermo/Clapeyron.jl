@@ -31,6 +31,8 @@ One can find out more about the information stored within these model objects in
 **Cubics**:
 
 - van der Waals ([`vdW`](@ref))
+  - Clausius ([`Clausius`](@ref))
+  - Berthelot ([`Berthelot`](@ref))
 - Redlich-Kwong ([`RK`](@ref))
   - Soave-Redlich-Kwong ([`SRK`](@ref))
   - Predictive Soave-Redlich-Kwong ([`PSRK`](@ref))
@@ -40,6 +42,8 @@ One can find out more about the information stored within these model objects in
   - Volume-Translated Peng-Robinson ([`VTPR`](@ref))
   - Quantum Corrected Peng-Robinson ([`QCPR`](@ref))
   - Enhanced Predictive Peng-Robinson (1978) ([`EPPR78`](@ref))
+- Patel-Teja ([`PatelTeja`](@ref))
+  - Patel-Teja-Valderrama ([`PTV`](@ref))
 - Kumar-Upadhyay ([`KU`](@ref))
 **SAFT**:
 

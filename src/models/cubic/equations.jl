@@ -17,7 +17,9 @@ struct ABCCubicParam <: EoSParam
 end
 
 """
+    ab_premixing(model,mixing,Tc,pc,kij)
     ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
+    ab_premixing(model,mixing,Tc,pc,vc,kij)
 
 given `Tc::SingleParam`, `pc::SingleParam`, `kij::PairParam` and `mixing <: MixingRule`, it will return 
 `PairParam`s `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the van der Wals One-Fluid mixing rule. that is:
@@ -310,7 +312,6 @@ function x0_sat_pure(model::ABCubicModel, T)
             vl = 0.5 * (vl + vlc)
             vv = 0.5 * (vv + vvc)
         end
-        @show vl
         return (log10(vl), log10(vv))
     end
 end
