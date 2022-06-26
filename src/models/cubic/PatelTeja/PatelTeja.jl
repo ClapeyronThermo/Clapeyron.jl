@@ -127,11 +127,10 @@ function cubic_Δ(model::PatelTejaModel,z)
     b = model.params.b.values
     c = model.params.c.values
     z⁻¹ = sum(z)^-1
-    b̄ = ∑(b.*z)*z⁻¹
-    c̄ = ∑(c.*z)*z⁻¹
+    b̄ = dot(b,z)*z⁻¹
+    c̄ = dot(c,z)*z⁻¹
 
     cb⁻¹ = c̄/b̄
-
     det12 = 1+6*cb⁻¹+cb⁻¹^2
     tr12 = 1+cb⁻¹
     return (-1/2*(tr12+sqrt(det12)),-1/2*(tr12-sqrt(det12)))
