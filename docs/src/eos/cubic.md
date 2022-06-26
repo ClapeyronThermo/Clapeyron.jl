@@ -47,12 +47,15 @@ end
 ## Main Models
 ```@docs
 Clapeyron.vdW
+Clapeyron.Clausius
 Clapeyron.RK
 Clapeyron.PR
+Clapeyron.KU
 ```
 
 ## Variant Models
 ```@docs
+Clapeyron.Berthelot
 Clapeyron.SRK
 Clapeyron.PSRK
 Clapeyron.PR78
@@ -67,6 +70,7 @@ Clapeyron.QCPR
 ```@docs
 Clapeyron.α_function
 Clapeyron.NoAlpha
+Clapeyron.ClausiusAlpha
 Clapeyron.RKAlpha
 Clapeyron.SoaveAlpha
 Clapeyron.PRAlpha
@@ -76,6 +80,7 @@ Clapeyron.sCPAAlpha
 Clapeyron.MTAlpha
 Clapeyron.BMAlpha
 Clapeyron.TwuAlpha
+Clapeyron.KUAlpha
 ```
 
 ## Volume Translation Models
@@ -100,6 +105,7 @@ Clapeyron.MHV1Rule
 Clapeyron.MHV2Rule
 Clapeyron.LCVMRule
 Clapeyron.WSRule
+Clapeyron.modWSRule
 Clapeyron.VTPRRule
 Clapeyron.PSRKRule
 Clapeyron.QCPRRule

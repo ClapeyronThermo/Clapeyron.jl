@@ -4,14 +4,11 @@
 
 """
     volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-
 Main routine to calculate a volume, given a pressure, temperature, composition and intitial volume guess. each step is taken by locally aproximating the EoS as an isothermal compressibility process.
 The new volume is calculated by the following recurrence formula:
-
 ```julia
 v[i+1] = v[i]*exp(β[i]*(p-p(v[i])))
 ```
-
 In the liquid root region, the iterations follow `v0 < v[i] < v[i+1] < v(p)`, allowing the calculation of the liquid root without entering the metastable region.
 """
 function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
@@ -46,18 +43,13 @@ end
 """
     volume_virial(model::EoSModel,p,T,z=SA[1.0])
     volume_virial(B::Real,p,T,z=SA[1.0])
-
 Calculates an aproximation to the gas volume at specified pressure, volume and composition, by aproximating:
-
 ```julia
-
 Z(v) ≈ 1 + B(T)/v
 ```
 where `Z` is the compressibility factor and `B` is the second virial coefficient.
 If `B>0`, (over the inversion temperature) returns `NaN`. If the solution to the problem is complex (`Z = 1 + B/v` implies solving a quadratic polynomial), returns `-2*B`.
-
 If you pass an `EoSModel` as the first argument, `B` will be calculated from the EoS at the input `T`. You can provide your own second virial coefficient instead of a model.
-
 """
 function volume_virial end
 
@@ -87,29 +79,18 @@ end
 #(RT/p = V/z)
 """
     volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
-
 calculates the volume (m³) of the compound modelled by `model` at a certain pressure,temperature and moles.
-
 `phase` is a Symbol that determines the initial volume root to look for:
-
 - If `phase =:unknown` (Default), it will return the physically correct volume root with the least gibbs energy.
-
 - If `phase =:liquid`, it will return the volume of the phase using a liquid initial point.
-
 - If `phase =:vapor`, it will return the volume of the phase using a gas initial point.
-
 - If `phase =:stable`, it will return the physically correct volume root with the least gibbs energy, and perform a stability test on the result.
-
 All volume calculations are checked for mechanical stability, that is: `dP/dV <= 0`.
-
 The calculation of both volume roots can be calculated in serial (`threaded=false`) or in parallel (`threaded=true`)
-
 !!! warning "Stability checks"
-
     The stability check is disabled by default. that means that the volume obtained just follows the the relation `P = pressure(model,V,T,z)`.
     For single component models, this is alright, but phase splits (with different compositions that the input) can and will occur, meaning that
     the volume solution does not correspond to an existing phase.
-
     For unknown multicomponent mixtures, it is recommended to use a phase equilibrium procedure (like `tp_flash`) to obtain a list of valid compositions, and then perform a volume calculation over those compositions.
     You can also pass `phase=:stable` to perform the stability test inside the volume solver. Finally, you can perform the stability test after the volume solver:
     ```julia

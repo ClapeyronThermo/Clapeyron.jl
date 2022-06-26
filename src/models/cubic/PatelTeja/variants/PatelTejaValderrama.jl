@@ -1,27 +1,26 @@
+abstract type PTVModel <: PatelTejaModel end
 
-abstract type PRModel <: ABCubicModel end
+const PTVParam = ABCCubicParam
 
-const PRParam = ABCubicParam
-
-struct PR{T <: IdealModel,α,c,γ} <:PRModel
+struct PTV{T <: IdealModel,α,c,γ} <:PTVModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     alpha::α
     mixing::γ
     translation::c
-    params::PRParam
+    params::PTVParam
     idealmodel::T
     references::Array{String,1}
 end
 
-@registermodel PR
-
+@registermodel PTV
 """
-    PR(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = PRAlpha,
+    PTV(components::Vector{String};
+    idealmodel=BasicIdeal,
+    alpha = NoAlpha,
     mixing = vdW1fRule,
     activity=nothing,
-    translation=NoTranslation,
+    translation=PTVTranslation,
     userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
@@ -43,30 +42,26 @@ end
 - `a`: Pair Parameter (`Float64`)
 - `b`: Pair Parameter (`Float64`)
 
-## Input models
-- `idealmodel`: Ideal Model
-- `alpha`: Alpha model
-- `mixing`: Mixing model
-- `activity`: Activity Model, used in the creation of the mixing model.
-- `translation`: Translation Model
-
 ## Description
-Peng-Robinson Equation of state.
+
+PTV Equation of state. it uses [`vdW`](@ref) the following models:
+- Translation Model: [`NoTranslation`](@ref)
+- Alpha Model: [`PTVAlpha`](@ref)
+- Mixing Rule Model: [`vdW1fRule`](@ref)
 ```
-P = RT/(V-Nb) + a•α(T)/(V-Nb₁)(V-Nb₂)
-b₁ = (1 + √2)b
-b₂ = (1 - √2)b
+P = RT/(V-Nb) + a•α(T)/(V-c)²
 ```
 
 ## References
-1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. doi:10.1021/I160057A011
+
+1. PTV, D. (1899). Sur une méthode purement physique pour la détermination des poids moléculaires des gaz et des poids atomiques de leurs éléments. Journal de Physique Théorique et Appliquée, 8(1), 263–274. doi:10.1051/jphystap:018990080026300
+
 """
-PR
+PTV
 
-
-export PR
-function PR(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = PRAlpha,
+export PTV
+function PTV(components::Vector{String}; idealmodel=BasicIdeal,
+    alpha = PTVAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
@@ -80,30 +75,49 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = params["k"]
     pc = params["pc"]
+    Vc = params["vc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(PR,init_mixing,Tc,pc,k)
+    a,b = ab_premixing(PTV,init_mixing,Tc,pc,Vc,k)
+    c = c_premixing(PTV,init_mixing,Tc,pc,Vc,k)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     icomponents = 1:length(components)
-    packagedparams = PRParam(a,b,Tc,pc,Mw)
-    references = String["10.1021/I160057A011"]
-    model = PR(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    packagedparams = PTVParam(a,b,c,Tc,pc,Vc,Mw)
+    references = String["10.1016/0009-2509(82)80099-7"]
+    model = PTV(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 
-function ab_consts(::Type{<:PRModel})
-    return 0.457235,0.077796
+function ab_premixing(model::Type{<:PTVModel},mixing::MixingRule,Tc,pc,vc,kij)
+    _Tc = Tc.values
+    _Vc = vc.values
+    _pc = pc.values
+    components = vc.components
+    _Zc = _pc.*_Vc./(R̄*_Tc)
+             
+    Ωa = @. 0.66121-0.76105*_Zc
+    Ωb = @. 0.02207+0.20868*_Zc
+    
+    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. R̄^2*_Tc^2/_pc*Ωa),kij)
+    b = sigma_LorentzBerthelot(SingleParam("b",components, @. R̄*_Tc/_pc*Ωb))
+    return a,b
 end
 
-function cubic_Δ(model::PRModel,z) 
-    sqrt2 = sqrt(2)
-    return (-1+sqrt2,-1-sqrt2)
-end
+function c_premixing(model::Type{<:PTVModel},mixing::MixingRule,Tc,pc,vc,kij)
+    _Tc = Tc.values
+    _Vc = vc.values
+    _pc = pc.values
+    components = vc.components
+    _Zc = _pc.*_Vc./(R̄*_Tc)
 
-crit_pure(model::PRModel) = crit_pure_tp(model)
+    Ωc = @. 0.57765-1.87080*_Zc
+
+    c = sigma_LorentzBerthelot(SingleParam("c",components, @. Ωc*R̄*_Tc/_pc))
+    return c
+end
 #=
  (-B2-2(B2+B)+A)
  (-B2-2B2-2B+A)
