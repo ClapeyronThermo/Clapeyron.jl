@@ -97,13 +97,13 @@ function cubic_poly(model::ABCubicModel,p,T,z)
     return (k₀,k₁,k₂,k₃),c
 end
 
-function cubic_abp(model::ABCubicModel, V, T, z)
+
+function cubic_p(model::ABCubicModel, V, T, z,_data = @f(data))
     Δ1,Δ2 = cubic_Δ(model,z)
-    n = ∑(z)
-    a,b,c = cubic_ab(model,V,T,z,n)
+    n,a,b,c = _data
     v = V/n+c
     p = R̄*T/(v-b) - a/((v-Δ1*b)*(v-Δ2*b))
-    return a,b,p
+    return p
 end
 
 function pure_cubic_zc(model::ABCubicModel)
@@ -175,6 +175,10 @@ end
 
 function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0=nothing)
     lb_v   =lb_volume(model,z)
+    if iszero(p)
+        vl,_ = zero_pressure_impl(model,T,z)
+        return vl
+    end
     nRTp = sum(z)*R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
     sols = Solvers.roots3(_poly)
@@ -185,13 +189,19 @@ function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
     x1, x2, x3 = sols
     sols = (x1, x2, x3)
     xx = (x1, x2, x3)
+    
     isreal = imagfilter.(xx)
     vvv = extrema(real.(xx))
-    
     zl,zg = vvv
     vvl,vvg = nRTp*zl,nRTp*zg
-    @show vvl,vvg
     err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
+    
+    if !isfinite(vvl) && !isfinite(vvg) && phase != :unknown
+        V0 = x0_volume(model, p, T, z; phase)
+        v = _volume_compress(model, p, T, z, V0)
+        isnan(v) && err()
+        return v
+    end
     if sum(isreal) == 3 #3 roots
         vg = vvg
         _vl = vvl
@@ -201,7 +211,6 @@ function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
         vl = real(sols[i]) * nRTp
         vg = real(sols[i]) * nRTp
     elseif sum(isreal) == 0
-
         V0 = x0_volume(model, p, T, z; phase)
         v = _volume_compress(model, p, T, z, V0)
         isnan(v) && err()
@@ -233,71 +242,78 @@ function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
     end
 end
 
+function zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
+    #0 = R̄*T/(v-b) - a/((v-Δ1*b)*(v-Δ2*b))
+    #f(v) = ((v-Δ1*b)*(v-Δ2*b))*R̄*T - (v-b)*a
+    #RT(v^2 -(Δ1+Δ2)vb + Δ1Δ2b2) - av + ab
+    #RTv^2 -(RT*Δ1b+Δ2b - a)*v + (RT*Δ1Δ2b2 + ab)
+    A = R̄*T
+    B = -(R̄*T*b*(Δ1+Δ2) + a)
+    C = b*(R̄*T*Δ1*Δ2*b + a)
+    #Δ = B2 - 4AC
+    #R̄*T*b*(Δ1+Δ2)^2 + 2*R̄*T*b*(Δ1+Δ2)*a + a2 - 4*R̄*T*b*(R̄*T*Δ1*Δ2*b + a)
+    #R̄*T*b*(Δ1+Δ2)^2 + 2*R̄*T*b*(Δ1+Δ2)*a + a2 - 4*R̄*T*b*(R̄*T*Δ1*Δ2*b + a)
+    Δ = sqrt(B^2 - 4*A*C)
+    vl = (-B - Δ)/(2*A) - c
+    vmax = -B/(2*A) - c
+    return vl,vmax
+end
+
+function zero_pressure_impl(model::ABCubicModel,T,z)
+    a,b,c = cubic_ab(model,0,T,z)
+    Δ1,Δ2 = cubic_Δ(model,z)
+    return zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
+end
+
 function ab_consts(model::CubicModel)
     return ab_consts(typeof(model))
 end
 
 function x0_sat_pure(model::ABCubicModel, T)
-    a, b, c = cubic_ab(model, 1 / sqrt(eps(float(T))), T)
+    z = SA[1.0]
     Tc = model.params.Tc.values[1]
-    pc = model.params.Pc.values[1]
-    zc = pure_cubic_zc(model)
-    vc = zc*R̄*Tc/pc - c
     if Tc < T
         nan = zero(T) / zero(T)
         return (nan, nan)
     end
-    B = b-a/(R̄*T)
-    pv0 = -0.25*R̄*T/B
-    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
-    k⁻¹ = (1 - Δ1)*(1 - Δ2)/2
-    vl = b + sqrt(k⁻¹*R̄*T*b^3/a) - c
+
+    a, b, c = cubic_ab(model, 1 / sqrt(eps(float(T))), T)
+    data = (1.0, a, b, c)
+  
     pc = model.params.Pc.values[1]
-    p_vl = pressure(model, vl, T)
-    p_low = min(p_vl, pc)
-    pl0 = max(zero(b), p_low)
-    p0 = 0.5 * (pl0 + pv0)
-    vv = volume_virial(B, p0, T) - c
-    if p_vl > pc #improves predictions around critical point
-        vlc, vvc = vdw_x0_xat_pure(T, Tc, pc, vc)
-        vl = 0.5 * (vl + vlc)
-        vv = 0.5 * (vv + vvc)
+    zc = pure_cubic_zc(model)
+    Δ1,Δ2 = cubic_Δ(model,SA[1.0])
+    vl_p0,vl_max = zero_pressure_impl(T,a,b,c,Δ1,Δ2,z) #exact solution to zero-pressure cubic
+    B =  b-a/(R̄*T)
+    if !isnan(vl_p0)
+        ares = a_res(model, vl_p0, T, z,data)
+        lnϕ_liq0 = ares - 1. + log(R̄*T/vl_p0)
+        pl0 = exp(lnϕ_liq0)
+        dpdV = -R̄*T/((vl_p0-b)^2)  +a/(((vl_p0-Δ1*b)*(vl_p0-Δ2*b))^2) * (2*vl_p0  -b*(Δ1 + Δ2))
+        #_p,dpdV = p∂p∂V(model,vl_p0,T,z) #one refinement to the liquid volume
+        _Δ = (pl0)/(vl_p0*dpdV)
+        vl = vl_p0*exp(_Δ)
+        vv = volume_virial(B,pl0,T) - c
+        return (log10(vl), log10(vv))
+    else 
+        vc = zc*R̄*Tc/pc - c 
+        pv0 = -0.25*R̄*T/B
+        vl = vl_max
+        pc = model.params.Pc.values[1]
+        p_vl = cubic_p(model, vl, T, z, data)
+        p_low = min(p_vl, pc)
+        pl0 = max(zero(b), p_low)
+        p0 = 0.5 * (pl0 + pv0)
+        vv = volume_virial(B, p0, T) - c
+        if p_vl > pc #improves predictions around critical point
+            vlc, vvc = vdw_x0_xat_pure(T, Tc, pc, vc)
+            vl = 0.5 * (vl + vlc)
+            vv = 0.5 * (vv + vvc)
+        end
+        @show vl
+        return (log10(vl), log10(vv))
     end
-    return (log10(vl), log10(vv))
 end
-#=
-#on the dpdv limit:
-dp/dv = 0
-p = RT/v-b - a/pol(v)
-dpdv = -RT/(v-b)^2 + a/pol^2 * dpol = a*k -RT/(v-b)^2
-
-vdw: pol = v2 -> pol(b) = b^2, dpol(b) = 2b
-pr: pol = v2 + 2bv - b2 -> pol(b) = 2b^2, dpol(b) = 2v + 2b = 4b
-rk: pol = v*(v+b) -> pol(b) = 2b2, dpol(b) = 2v + b = 3b
-
-in general:
-pol(b) = (b + Δ1b)(b + Δ2b) = b^2(1 + Δ1)(1 + Δ2)
-dpol(b) = 2*(1 + Δ1)(1 + Δ2)*b
-
-k = dpol(b)/pol(b)^2
-k = 2*(1 + Δ1)(1 + Δ2)/((1 + Δ1)(1 + Δ2))^2 b3
-k⁻¹ = (1 + Δ1)(1 + Δ2)/2
-
-vdw: k⁻¹ = 0.50b3
-pr:  k⁻¹ = 1.00b3
-rk:  k⁻¹ = 1.33b3
-
-solving for dpdv = 0
-0 = a*k -RT/(v-b)^2
-(v-b)^2 = RT/ak
-v2 - 2vb + b2 - RT/ak = 0
-v = b ± sqrt(b2 +  RT/ak - b2) #v > b
-v = b + sqrt(k⁻¹b3RT/a)
-on models with translation:
-vl = b + sqrt(k⁻¹RTb3/2a) - c
-
-if k⁻¹ not available, use k⁻¹ = 0.5 (vdw, lowest)
-=#
 
 function wilson_k_values(model::ABCubicModel, p, T)
     Pc = model.params.Pc.values
