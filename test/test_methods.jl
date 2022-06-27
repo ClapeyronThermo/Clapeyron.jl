@@ -469,7 +469,7 @@ end
     pets = PeTS(["water"])
     T = 373.15
     p,vl,vv = Clapeyron.saturation_pressure(model,T) #default
-    px,vlx,vvx = Clapeyron.saturation_pressure(model,T) #vdw
+    px,vlx,vvx = Clapeyron.saturation_pressure(vdw,T) #vdw
 
     p1,vl1,vv1 = Clapeyron.saturation_pressure_impl(model,T,IsoFugacitySaturation())
     @test p1 ≈ p rtol = 1e-6
