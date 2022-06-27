@@ -84,10 +84,10 @@
         citation_ideal = Clapeyron.cite(umr.idealmodel) |> Set
         citation_mixing = Clapeyron.cite(umr.mixing) |> Set
         citation_translation = Clapeyron.cite(umr.translation) |> Set
-        @test citation_ideal ∈ citation_full
-        @test citation_top ∈ citation_full
-        @test citation_mixing ∈ citation_full
-        @test citation_translation ∈ citation_full
+        @test citation_ideal ⊆ citation_full
+        @test citation_top ⊆ citation_full
+        @test citation_mixing ⊆ citation_full
+        @test citation_translation ⊆ citation_full
     end
     @printline
 
