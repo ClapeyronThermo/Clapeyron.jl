@@ -32,6 +32,7 @@ include("base/constants.jl")
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
 include("base/EoSModel.jl")
+include("models/types.jl") #type hierarchy
 
 #show(model<:EoSModel)
 include("base/eosshow.jl")
@@ -70,7 +71,6 @@ base --> database(params)  -|-> split_model --> methods -|-> models
 =#
 
 #Clapeyron EoS collection
-include("models/types.jl") #type hierarchy
 include("models/ideal/ideal.jl")
 include("models/ideal/BasicIdeal.jl")
 include("models/ideal/MonomerIdeal.jl")

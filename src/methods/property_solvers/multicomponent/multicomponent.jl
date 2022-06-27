@@ -93,6 +93,22 @@ function sat_T_equimix(model,p)
     return sum(_sat_Ti(model,p))/n
 end
 
+function aprox_psat(pure,T,crit)
+    coeff  = antoine_coef(pure)
+    if coeff !== nothing
+        A,B,C = coeff
+        Tc,Pc,_ = crit
+        T̄ = T/Tc
+        return exp(A-B/(T̄+C))*Pc
+    else
+        #TODO: return ambrose_walton_psat(T,Pc,Tc,w)
+        A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941)
+        Tc,Pc,_ = crit
+        T̄ = T/Tc
+        return exp(A-B/(T̄+C))*Pc
+    end
+end
+
 function wilson_k_values(model::EoSModel,p,T)
     n = length(model)
     pure = split_model.(model)

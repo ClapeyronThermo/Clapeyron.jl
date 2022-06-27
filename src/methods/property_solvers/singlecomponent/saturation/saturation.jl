@@ -42,87 +42,39 @@ julia> saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)) #iso fug
 """
 
 function saturation_pressure(model,T,method::SaturationMethod)
-    !isone(length(model)) && throw(error("$model have more than one component."))
+    !isone(length(model)) && throw(error("$model can only have one component."))
     T = T*(T/T)
     return saturation_pressure_impl(model,T,method)
+end
+
+"""
+    check_valid_sat_pure(model,P_sat,Vl,Vv,T,ε0 = 5e7)
+
+Checks that a saturation method converged correctly. it checks:
+- That both volumes are mechanically stable
+- That both volumes are different, with a difference of at least `ε0` epsilons
+"""
+function check_valid_sat_pure(model,P_sat,V_l,V_v,T,ε0 = 5e7)
+    ε = abs(V_l-V_v)/(eps(typeof(V_l-V_v)))
+    ε <= ε0 && return false
+    _,dpdvl = p∂p∂V(model,V_l,T,SA[1.0])
+    _,dpdvv = p∂p∂V(model,V_v,T,SA[1.0])
+    return (dpdvl <= 0) && (dpdvv <= 0)
+    #if ΔV > ε then Vl and Vv are different values
+    
 end
 
 include("ChemPotV.jl")
 include("IsoFugacity.jl")
 include("ChemPotDensity.jl")
+include("SuperAnc.jl")
+include("ClapeyronSat.jl")
+include("AntoineSat.jl")
 
-#if a model overloads x0_saturation_temperature to return a T0::Number, we can assume this number is near
-#the actual saturation temperature, so we use the direct algorithm. otherwise, we use a safe approach, starting from the critical
-#coordinate and descending.
-x0_saturation_temperature(model,p) = nothing
-
-#by default, starts right before the critical point, and descends via Clapeyron equation: (∂p/∂T)sat = ΔS/ΔV ≈ Δp/ΔT
-saturation_temperature(model::EoSModel, P) = saturation_temperature(model, P,x0_saturation_temperature(model,P))
-
-function saturation_temperature(model::EoSModel,p,T0::Nothing)
-    Tc,pc,vc = crit_pure(model)
-    TT = typeof(vc*pc/Tc)
-    nan = zero(TT)/zero(TT)
-    p > 0.99999pc && (return (nan,nan,nan)) 
-    T0 = 0.99*Tc
-    isnan(T0) && (return (nan,nan,nan))
-    cache = Ref{Tuple{TT,TT,TT,TT}}((nan,nan,nan,nan))
-    f(T) = Obj_sat_pure_T(model,T,p,cache)
-    T = Solvers.fixpoint(f,T0)
-    _,_,v_l,v_v = cache[]
-    return T,v_l,v_v
-end
-
-function Obj_sat_pure_T(model,T,p,cache)
-    Told,pold,vlold,vvold = cache[]
-    pii,vli,vvi = saturation_pressure(model,T)
-    Δp = (p-pii)
-    abs(Δp) < 4eps(p) && return T
-    if Told < T
-        if isnan(pii) && !isnan(pold)
-            return (T+Told)/2
-        end
-    end
-    cache[] = (T,pii,vli,vvi) 
-    S_v = VT_entropy(model,vvi,T)
-    S_l = VT_entropy(model,vli,T)
-    ΔS = S_v - S_l
-    ΔV = vvi - vli
-    dpdt = ΔS/ΔV #≈ (p - pii)/(T-Tnew)
-    Ti = T + Δp/dpdt
-    return Ti
-end
-
-function obj_tsat(model::EoSModel, T, P,cache)
-    vol_liq,vol_vap = cache[]
-    RT = R̄*T
-
-    vol_liq = volume(model, P, T, phase=:liquid, vol0=vol_liq)
-    vol_vap = volume(model, P, T, phase=:vapor, vol0=vol_vap)
-
-    μ_liq = VT_chemical_potential_res(model, vol_liq, T)[1]
-    μ_vap = VT_chemical_potential_res(model, vol_vap, T)[1]
-
-    Z_liq = P*vol_liq/RT
-    Z_vap = P*vol_vap/RT
-
-    lnϕ_liq = μ_liq/RT - log(Z_liq)
-    lnϕ_vap = μ_vap/RT - log(Z_vap)
-    FO = lnϕ_vap - lnϕ_liq
-    cache[] = (vol_liq,vol_vap)
-    return FO
-end
-
-#if a number is provided as initial point, it will instead proceed to solve directly
-function saturation_temperature(model::EoSModel, P, T0::Number)
-    vol_liq = volume(model, P, T0, phase=:liquid)
-    vol_vap = volume(model, P, T0, phase=:vapor)
-    cache = Ref((vol_liq,vol_vap))
-    ftsat(T) = obj_tsat(model, T, P,cache)
-    fT = Roots.ZeroProblem(ftsat,T0)
-    T = Roots.solve(fT,Roots.Order0())
-    vol_liq,vol_vap = cache[]
-    return T, vol_liq, vol_vap
+function saturation_temperature(model,p,method::SaturationMethod=ClapeyronSaturation{Nothing}(nothing))
+    !isone(length(model)) && throw(error("$model can only have one component."))
+    p = p*p/p
+    return saturation_temperature_impl(model,p,method)
 end
 
 """
@@ -140,7 +92,7 @@ end
 
 #TODO: support method as optional parameter
 """
-    acentric_factor(model::EoSModel)
+    acentric_factor(model::EoSModel;crit = crit_pure(model), satmethod = ChemPotVSaturation())
 
 calculates the acentric factor using its definition:
 
@@ -148,12 +100,18 @@ calculates the acentric factor using its definition:
 To do so, it calculates the critical temperature (using `crit_pure`) and performs a saturation calculation (with `sat_pure`)
 
 """
-function acentric_factor(model::EoSModel)
-    T_c,p_c,_ = crit_pure(model)
-    p = first(saturation_pressure(model,0.7*T_c))
+function acentric_factor(model::EoSModel;crit = crit_pure(model),satmethod = ChemPotVSaturation())
+    return acentric_factor(model,crit,satmethod)
+end
+
+function acentric_factor(model::EoSModel,crit = crit_pure(model),satmethod = ChemPotVSaturation())
+    T_c,p_c,_ = crit
+    p = first(saturation_pressure(model,0.7*T_c,satmethod))
     p_r = p/p_c
     return -log10(p_r) - 1.0
 end
+
+
 
 #tsat, psat interface
 include("tsat_psat.jl")

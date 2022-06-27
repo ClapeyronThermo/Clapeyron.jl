@@ -86,12 +86,6 @@ end
 function Obj_bubble_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     return μp_equality(model::EoSModel, F, T, v_l, v_v, x, FractionVector(y),ts,ps)
 end
-
-function Obj_bubble_temperature(model,T,p,x)
-    p̃,v_l,v_v,y = bubble_pressure(model,T,x)
-    return p̃-p
-end
-
 """
     bubble_temperature(model::EoSModel, p, x; T0 = x0_bubble_pressure(model,p,x))
 
@@ -102,19 +96,84 @@ Returns a tuple, containing:
 - vapour volume at Bubble Point [`m³`]
 - Gas composition at Bubble Point
 """
-function bubble_temperature(model,p,x;T0=nothing)
-    f(z) = Obj_bubble_temperature(model,z,p,x)
-    if T0 === nothing
-        T0 = x0_bubble_temperature(model,p,x)
+function bubble_temperature(model::EoSModel,p,x;v0=nothing)
+    model_r,idx_r = index_reduction(model,x)
+    if length(model_r)==1
+        (T_sat,v_l,v_v) = saturation_temperature(model_r,p,v0)
+        return (T_sat,v_l,v_v,x)
     end
-    fT = Roots.ZeroProblem(f,T0)
-    T = Roots.solve(fT,Roots.Order0())
-    p,v_l,v_v,y = bubble_pressure(model,T,x)
-    return T,v_l,v_v,y
+    x_r = x[idx_r]
+    ts = T_scales(model_r)
+    pmix = p_scale(model_r,x_r)
+    if v0 === nothing
+        v0 = x0_bubble_temperature(model_r,p,x_r)
+    end
+    
+    len = length(v0[1:end-1])
+    Fcache = zeros(eltype(v0[1:end-1]),len)
+    f!(F,z) = Obj_bubble_temperature(model_r, F, p, z[1], exp10(z[2]), exp10(z[3]), x_r, z[4:end],ts,pmix)
+    r  =Solvers.nlsolve(f!,v0[1:end-1],LineSearch(Newton()))
+    sol = Solvers.x_sol(r)
+    T   = sol[1]
+    v_l = exp10(sol[2])
+    v_v = exp10(sol[3])
+    y_r = FractionVector(sol[4:end])
+    y = zeros(length(model))
+    y[idx_r] = y_r
+    return T, v_l, v_v, y
 end
 
-function x0_bubble_temperature(model,p,x)
-    Ti = _sat_Ti(model,p)
-    Tmin,Tmax = extrema(Ti)
-    return (0.9*Tmin,1.1*Tmax)
+function Obj_bubble_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ts,ps)
+    F = μp_equality(model::EoSModel, F, T, v_l, v_v, x, FractionVector(y),ts,ps)
+    F[end] = (pressure(model,v_l,T,x) - p)/ps
+    return F
 end
+
+function x0_bubble_temperature(model::EoSModel,p,x)
+    pure = split_model(model)
+    crit = crit_pure.(pure)
+    
+    p_c = [tup[2] for tup in crit]
+    V_c = [tup[3] for tup in crit]
+    _0 = zero(p+first(x))
+    nan = _0/_0 
+    sat_nan = (nan,nan,nan)
+    replaceP = ifelse.(p_c .< p,true,false)
+    sat = [if !replaceP[i] saturation_temperature(pure[i],p) else sat_nan end for i in 1:length(pure)]
+    
+    T_sat = [if !replaceP[i] sat[i][1] else crit[i][1] end for i in 1:length(pure)]
+    V_l_sat = [if !replaceP[i] sat[i][2] else crit[i][3] end for i in 1:length(pure)]
+    V_v_sat = [if !replaceP[i] sat[i][3] else crit[i][3]*1.2 end for i in 1:length(pure)]
+
+    Tb = extrema(T_sat).*[0.9,1.1]
+
+    V0_l = zero(p)
+    V0_v = zero(p)
+    f(T) = antoine_bubble(pure,T,x,crit)[1]-p
+    fT = Roots.ZeroProblem(f,Tb)
+
+    T0 = Roots.solve(fT,Roots.Order0())
+    p,y = antoine_bubble(pure,T0,x,crit)
+    for i in 1:length(x)
+        if !replaceP[i]
+            V0_v += y[i]*V_v_sat[i]
+            V0_l += x[i]*V_l_sat[i]
+        else 
+            V0_v += y[i]*V_c[i]*1.2
+            V0_l += x[i]*V_c[i]
+        end
+    end
+    prepend!(y,log10.([V0_l,V0_v]))
+    prepend!(y,T0)
+    return y
+end
+
+function antoine_bubble(pure,T,x,crit)
+    pᵢ = aprox_psat.(pure,T,crit)
+    p = sum(x.*pᵢ)
+    y = x.*pᵢ./p
+    ysum = 1/∑(y)
+    y    = y.*ysum
+    return p,y
+end
+

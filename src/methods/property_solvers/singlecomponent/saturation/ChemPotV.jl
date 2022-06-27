@@ -38,14 +38,7 @@ function ChemPotVSaturation(;log10vl = nothing,log10vv = nothing)
     end
 end
 
-function check_valid_sat_pure(model,P_sat,V_l,V_v,T)
-    _,dpdvl = p∂p∂V(model,V_l,T,SA[1.0])
-    _,dpdvv = p∂p∂V(model,V_v,T,SA[1.0])
-    (dpdvl > 0) | (dpdvv > 0) && return false
-    ε = abs(V_l-V_v)/(eps(typeof(V_l-V_v)))
-    #if ΔV > ε then Vl and Vv are different values
-    return ε > 5e7
-end
+
 
 function try_sat_pure(model,V0,f!,T,result,error_val,method = LineSearch(Newton()))
     if !isfinite(V0[1]) | !isfinite(V0[2])
@@ -167,6 +160,20 @@ function Obj_Sat(model::EoSModel, F, T, V_l, V_v,scales)
     (p_scale,μ_scale) = scales
     F[1] = -(Av_l-Av_v)*p_scale
     F[2] = (g_l-g_v)*μ_scale
+    return F
+end
+
+### NEW METHOD
+function Obj_Sat_Temp2(model::EoSModel, F, T, V_l, V_v,p,scales)
+    fun(_V) = eos(model, _V, T,SA[1.])
+    A_l,Av_l = Solvers.f∂f(fun,V_l)
+    A_v,Av_v =Solvers.f∂f(fun,V_v)
+    g_l = muladd(-V_l,Av_l,A_l)
+    g_v = muladd(-V_v,Av_v,A_v)
+    (p_scale,μ_scale) = scales
+    F[1] = -(Av_l+p)*p_scale
+    F[2] = -(Av_v+p)*p_scale
+    F[3] = (g_l-g_v)*μ_scale
     return F
 end
 

@@ -31,7 +31,7 @@ using Clapeyron, Test, Unitful
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7972.550405922014 rtol = 1E-6
         @test Clapeyron.saturation_temperature(system, p)[1] ≈ 351.32529505096164 rtol = 1E-6
-        @test Clapeyron.saturation_temperature(system, p, 350)[1] ≈ 351.32529505096164 rtol = 1E-6
+        @test Clapeyron.saturation_temperature(system, p, 350.)[1] ≈ 351.32529505096164 rtol = 1E-6
         @test Clapeyron.enthalpy_vap(system, T) ≈ 41712.78521121877 rtol = 1E-6
         @test Clapeyron.acentric_factor(system) ≈ 0.5730309964718605 rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 533.1324329774004 rtol = 1E-6 
@@ -191,7 +191,7 @@ end
         GC.gc()
         @test Clapeyron.VLLE_pressure(system, T)[1] ≈ 54504.079665621306 rtol = 1E-6
         GC.gc()
-        @test Clapeyron.VLLE_temperature(system, p)[1] ≈ 328.2478837563423 rtol = 1E-6
+        @test Clapeyron.VLLE_temperature(system, 54504.079665621306)[1] ≈ 313.1499860368554 rtol = 1E-6
         GC.gc()
         @test Clapeyron.crit_mix(system,z)[1] ≈ 518.0004062881115 rtol = 1E-6
     end
@@ -329,7 +329,7 @@ end
         #ir varies a bit, it gives 3170.301356765357
         @test_broken Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3169.9293390134403 rtol = 1E-6
         #saturation temperature tests are noisy
-        @test Clapeyron.saturation_temperature(system,3169.9293390134403)[1] ≈ 298.1480314879574  rtol = 1E-6
+        @test Clapeyron.saturation_temperature(system,3169.9293390134403)[1] ≈ 298.1499999999789 rtol = 1E-6
         tc,pc,vc =  Clapeyron.crit_pure(system)
         @test tc ≈ 647.096 rtol = 1E-5 
         v2 =  volume(system,pc,tc)
