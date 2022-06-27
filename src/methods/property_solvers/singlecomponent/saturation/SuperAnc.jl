@@ -49,9 +49,9 @@ function chebyshev_liquid_volume(model::ABCubicModel,T̃,b)
         if Tmin_i <= T̃ <= Tmax_i
             Cₙi::Vector{Float64} = Cₙ[i]
             T̄ = (2*T̃ - (Tmax_i + Tmin_i)) / (Tmax_i - Tmin_i)
-            ρ̃ᵥ = Solvers.evalpoly_cheb(T̄,Cₙi)            
-            Vᵥ = b/ρ̃ᵥ
-            return Vᵥ
+            ρ̃ₗ = Solvers.evalpoly_cheb(T̄,Cₙi)            
+            Vₗ = b/ρ̃ₗ
+            return Vₗ
         end
     end
     return zero(T̃)/zero(T̃)
