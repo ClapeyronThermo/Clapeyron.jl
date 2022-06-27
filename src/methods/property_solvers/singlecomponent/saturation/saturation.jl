@@ -104,7 +104,7 @@ function acentric_factor(model::EoSModel;crit = crit_pure(model),satmethod = Che
     return acentric_factor(model,crit,satmethod)
 end
 
-function acentric_factor(model::EoSModel,crit = crit_pure(model),satmethod = ChemPotVSaturation())
+function acentric_factor(model::EoSModel,crit,satmethod)
     T_c,p_c,_ = crit
     p = first(saturation_pressure(model,0.7*T_c,satmethod))
     p_r = p/p_c
