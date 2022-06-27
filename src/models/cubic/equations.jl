@@ -317,10 +317,6 @@ function x0_sat_pure(model::ABCubicModel, T)
     return (log10(vl), log10(vv))
 end
 
-antoine_coef(model::ABCubicModel) = (6.668322465137264,6.098791871032391,-0.08318016317721941)
-
-
-
 #=
 #on the dpdv limit:
 dp/dv = 0
@@ -348,7 +344,7 @@ vl = b + sqrt(0.5RTb3/2a)
 on models with translation:
 vl = b + sqrt(0.5RTb3/2a) - c
 =#
-end
+
 
 function wilson_k_values(model::ABCubicModel, p, T)
     Pc = model.params.Pc.values
@@ -395,3 +391,5 @@ function vdw_tv_mix(Tc,Vc,z)
     Vcm = Vm*invn2
     return (Tcm,Vcm)
 end
+
+antoine_coef(model::ABCubicModel) = (6.668322465137264,6.098791871032391,-0.08318016317721941)
