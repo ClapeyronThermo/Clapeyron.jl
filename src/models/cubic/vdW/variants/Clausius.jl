@@ -58,7 +58,7 @@ cᵢ = 3/8 * RTcᵢ/Pcᵢ - Vcᵢ
 
 ## References
 
-1. Clausius, R. (1880). Ueber das Verhalten der Kohlensäure in Bezug auf Druck, Volumen und Temperatur. Annalen der Physik, 245(3), 337–357. doi:[10.1002/andp.18802450302](https://doi.org/10.1002/andp.18802450302)
+1. Clausius, R. (1880). Ueber das Verhalten der Kohlensäure in Bezug auf Druck, Volumen und Temperatur. Annalen der Physik, 245(3), 337–357. [doi:10.1002/andp.18802450302](https://doi.org/10.1002/andp.18802450302)
 
 """
 Clausius

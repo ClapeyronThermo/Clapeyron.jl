@@ -36,7 +36,7 @@ nᵢ = 0.97016 + 0.05495ωᵢ - 0.1293ωᵢ^2 + 0.0172028ωᵢ^3
 For `Tr > 1` is a 6th order taylor expansion around `T = Tc`.
 
 ## References
-1. Kumar, A., & Upadhyay, R. (2021). A new two-parameters cubic equation of state with benefits of three-parameters. Chemical Engineering Science, 229(116045), 116045. doi:[10.1016/j.ces.2020.116045](https://doi.org/10.1016/j.ces.2020.116045)
+1. Kumar, A., & Upadhyay, R. (2021). A new two-parameters cubic equation of state with benefits of three-parameters. Chemical Engineering Science, 229(116045), 116045. [doi:10.1016/j.ces.2020.116045](https://doi.org/10.1016/j.ces.2020.116045)
 
 """
 KUAlpha

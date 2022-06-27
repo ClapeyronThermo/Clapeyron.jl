@@ -38,7 +38,7 @@ Trᵢ = T/Tcᵢ
 
 ## References
 
-1. Twu, C. H., Lee, L. L., & Starling, K. E. (1980). Improved analytical representation of argon thermodynamic behavior. Fluid Phase Equilibria, 4(1–2), 35–44. doi:[10.1016/0378-3812(80)80003-3](https://doi.org/10.1016/0378-3812(80)80003-3)
+1. Twu, C. H., Lee, L. L., & Starling, K. E. (1980). Improved analytical representation of argon thermodynamic behavior. Fluid Phase Equilibria, 4(1–2), 35–44. [doi:10.1016/0378-3812(80)80003-3](https://doi.org/10.1016/0378-3812(80)80003-3)
 
 """
 TwuAlpha
