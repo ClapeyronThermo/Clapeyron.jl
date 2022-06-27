@@ -16,7 +16,7 @@ function Base.show(io::IO, mime::MIME"text/plain", params::EoSParam)
     end
     for name in names
         param = getfield(params, name)
-        print(io, "\n ", param.name, "::", typeof(param))
+        print(io, "\n ", name, "::", typeof(param))
     end
 end
 
