@@ -24,3 +24,9 @@ Clapeyron.mix_vε
 Clapeyron.SLKRule
 Clapeyron.SLk0k1lMixingRule
 ```
+
+# Other molecular Models
+
+```@docs
+Clapeyron.PeTS
+```

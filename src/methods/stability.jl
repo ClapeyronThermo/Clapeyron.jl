@@ -8,10 +8,7 @@ Checks:
  - diffusive stability: all eigenvalues of `∂²A/∂n²` are positive.
  
 """
-function isstable(model,V,T,z,phase=:stable)
-    if phase != :stable
-        return true
-    end
+function isstable(model,V,T,z)
     stable = true
     if !mechanical_stability(model,V,T,z)
         @warn "StabilityWarning: Phase is mechanically unstable"

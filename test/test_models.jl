@@ -129,10 +129,22 @@ end
     z = [0.5, 0.5]
 
     @testset "vdW Models" begin
+        @testset "Default vdW" begin
             system = vdW(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.7088380780265725 rtol = 1e-6
             @test Clapeyron.cubic_poly(system, p, T, z)[1][1] ≈ -0.0002475728429728521 rtol = 1e-6
-            @test Clapeyron.cubic_abp(system, V, T, z)[1] ≈ 2.591962221523441 rtol = 1e-6
+            @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
+        end
+
+        @testset "Clausius" begin
+            system = Clausius(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2945136000972637 rtol = 1e-6
+        end
+
+        @testset "Berthelot" begin
+            system = Berthelot(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -0.5282310106210891 rtol = 1e-6
+        end
     end
 
     @testset "RK Models" begin
@@ -140,7 +152,7 @@ end
             system = RK(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.9825375012134132 rtol = 1e-6
             @test Clapeyron.cubic_poly(system, p, T, z)[1][1] ≈ -0.00022230043592123767 rtol = 1e-6
-            @test Clapeyron.cubic_abp(system, V, T, z)[1] ≈ 3.357807485319651 rtol = 1e-6
+            @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
         end
 
         @testset "SRK" begin
@@ -194,7 +206,7 @@ end
             system = PR(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.244772730766631 rtol = 1e-6
             @test Clapeyron.cubic_poly(system, p, T, z)[1][1] ≈ -0.00023285390449318037 rtol = 1e-6
-            @test Clapeyron.cubic_abp(system, V, T, z)[1] ≈ 4.268630968024985 rtol = 1e-6
+            @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
         end
 
         @testset "PR78" begin
@@ -279,6 +291,25 @@ end
         @testset "PR w/ WSRule" begin
             system = PR(["methanol","benzene"];mixing = WSRule, activity=Wilson)
             @test Clapeyron.a_res(system, V, T, z) ≈ -0.669085674824878 rtol = 1e-6
+        end
+    end
+
+    @testset "KU Models" begin
+        system = KU(["ethane","undecane"])
+        @test Clapeyron.a_res(system, V, T, z) ≈ -1.2261554720898895 rtol = 1e-6
+        @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
+    end
+
+    @testset "Patel Teja Models" begin
+        @testset "Patel Teja" begin
+            system = PatelTeja(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2284322450064429 rtol = 1e-6
+            @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
+        end
+        @testset "PTV" begin
+            system = PTV(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2696422558756286 rtol = 1e-6
+            @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
         end
     end
     @printline

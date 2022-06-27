@@ -46,7 +46,7 @@ function UMRRule(components::Vector{String}; activity = UNIFAC, userlocations::V
     return model
 end
 
-function ab_premixing(::Type{PR},mixing::UMRRuleModel,Tc,pc,kij)
+function ab_premixing(::Type{<:PRModel},mixing::UMRRuleModel,Tc,pc,kij)
     Ωa, Ωb = ab_consts(PR)
     _Tc = Tc.values
     _pc = pc.values
