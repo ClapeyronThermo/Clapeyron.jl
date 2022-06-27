@@ -60,7 +60,7 @@ aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ
 parameters  `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 
 ## References
-1. Lemmon, E. W., McLinden, M. O., & Wagner, W. (2009). Thermodynamic properties of propane. III. A reference equation of state for temperatures from the melting line to 650 K and pressures up to 1000 MPa. Journal of Chemical and Engineering Data, 54(12), 3141–3180. doi:10.1021/je900217v
+1. Lemmon, E. W., McLinden, M. O., & Wagner, W. (2009). Thermodynamic properties of propane. III. A reference equation of state for temperatures from the melting line to 650 K and pressures up to 1000 MPa. Journal of Chemical and Engineering Data, 54(12), 3141–3180. doi:[10.1021/je900217v](https://doi.org/10.1021/je900217v)
 """
 PropaneRef
 

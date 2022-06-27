@@ -46,7 +46,7 @@ end
 Perturbed, Truncated and Shifted (PeTS) Equation of State.
 
 ## References
-1. Heier, M., Stephan, S., Liu, J., Chapman, W. G., Hasse, H., & Langenbach, K. (2018). Equation of state for the Lennard-Jones truncated and shifted fluid with a cut-off radius of 2.5 σ based on perturbation theory and its applications to interfacial thermodynamics. Molecular Physics, 116(15–16), 2083–2094. doi:10.1080/00268976.2018.1447153
+1. Heier, M., Stephan, S., Liu, J., Chapman, W. G., Hasse, H., & Langenbach, K. (2018). Equation of state for the Lennard-Jones truncated and shifted fluid with a cut-off radius of 2.5 σ based on perturbation theory and its applications to interfacial thermodynamics. Molecular Physics, 116(15–16), 2083–2094. doi:[10.1080/00268976.2018.1447153](https://doi.org/10.1080/00268976.2018.1447153)
 """
 PeTS
 

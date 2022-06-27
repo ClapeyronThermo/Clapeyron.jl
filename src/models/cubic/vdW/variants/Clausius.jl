@@ -58,7 +58,7 @@ cᵢ = 3/8 * RTcᵢ/Pcᵢ - Vcᵢ
 
 ## References
 
-1. Clausius, D. (1899). Sur une méthode purement physique pour la détermination des poids moléculaires des gaz et des poids atomiques de leurs éléments. Journal de Physique Théorique et Appliquée, 8(1), 263–274. doi:10.1051/jphystap:018990080026300
+1. Clausius, R. (1880). Ueber das Verhalten der Kohlensäure in Bezug auf Druck, Volumen und Temperatur. Annalen der Physik, 245(3), 337–357. doi:[10.1002/andp.18802450302](https://doi.org/10.1002/andp.18802450302)
 
 """
 Clausius
@@ -90,7 +90,7 @@ function Clausius(components::Vector{String}; idealmodel=BasicIdeal,
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     icomponents = 1:length(components)
     packagedparams = ClausiusParam(a,b,c,Tc,pc,Vc,Mw)
-    references = String["10.1021/I160057A011"]
+    references = String["10.1002/andp.18802450302"]
     model = Clausius(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end

@@ -28,7 +28,7 @@ Zc_eosᵢ = (1 - (Δ1+Δ2-1)*Ωbᵢ)/3
 where `kᵢ` is the Cubic EoS calculated critical compresibility factor
 ## References
 
-1. Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. doi:10.1021/je60047a012
+1. Clausius, R. (1880). Ueber das Verhalten der Kohlensäure in Bezug auf Druck, Volumen und Temperatur. Annalen der Physik, 245(3), 337–357. doi:[10.1002/andp.18802450302](https://doi.org/10.1002/andp.18802450302)
 
 """
 ClausiusTranslation

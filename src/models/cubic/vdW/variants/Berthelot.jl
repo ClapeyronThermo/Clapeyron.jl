@@ -74,7 +74,7 @@ P = RT/(V-Nb) + a•α(T)/V²
 
 ## References
 
-1. Berthelot, D. (1899). Sur une méthode purement physique pour la détermination des poids moléculaires des gaz et des poids atomiques de leurs éléments. Journal de Physique Théorique et Appliquée, 8(1), 263–274. doi:10.1051/jphystap:018990080026300
+1. Berthelot, D. (1899). Sur une méthode purement physique pour la détermination des poids moléculaires des gaz et des poids atomiques de leurs éléments. Journal de Physique Théorique et Appliquée, 8(1), 263–274. doi:[10.1051/jphystap:018990080026300](https://doi.org/10.1051/jphystap:018990080026300)
 
 """
 Berthelot
