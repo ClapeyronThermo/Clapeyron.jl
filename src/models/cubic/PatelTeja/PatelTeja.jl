@@ -64,7 +64,7 @@ Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
 ```
 ## References
 
-1. Patel, N. C., & Teja, A. S. (1982). A new cubic equation of state for fluids and fluid mixtures. Chemical Engineering Science, 37(3), 463–473. doi:10.1016/0009-2509(82)80099-7
+1. Patel, N. C., & Teja, A. S. (1982). A new cubic equation of state for fluids and fluid mixtures. Chemical Engineering Science, 37(3), 463–473. doi:[10.1016/0009-2509(82)80099-7](https://doi.org/10.1016/0009-2509(82)80099-7)
 
 """
 PatelTeja
@@ -96,7 +96,7 @@ function PatelTeja(components::Vector{String}; idealmodel=BasicIdeal,
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     icomponents = 1:length(components)
     packagedparams = PatelTejaParam(a,b,c,Tc,pc,Vc,Mw)
-    references = String["doi:10.1016/0009-2509(82)80099-7"]
+    references = String["10.1016/0009-2509(82)80099-7"]
     model = PatelTeja(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end

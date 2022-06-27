@@ -59,7 +59,7 @@ b₂ = (1 - √2)b
 ```
 
 ## References
-1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. doi:10.1021/I160057A011
+1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. doi:[10.1021/I160057A011](https://doi.org/10.1021/I160057A011)
 """
 PR
 

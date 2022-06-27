@@ -76,7 +76,7 @@ b = Ωb(R²Tcᵢ²/Pcᵢ)
 ```
 
 ## References
-1. Kumar, A., & Upadhyay, R. (2021). A new two-parameters cubic equation of state with benefits of three-parameters. Chemical Engineering Science, 229(116045), 116045. doi:10.1016/j.ces.2020.116045
+1. Kumar, A., & Upadhyay, R. (2021). A new two-parameters cubic equation of state with benefits of three-parameters. Chemical Engineering Science, 229(116045), 116045. doi:[10.1016/j.ces.2020.116045](https://doi.org/10.1016/j.ces.2020.116045)
 """
 KU
 export KU

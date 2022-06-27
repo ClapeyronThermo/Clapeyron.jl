@@ -46,7 +46,7 @@ for Peng-Robinson:
 `λ` is a coefficient indicating the relation between `gᴱ` and `gᴱ(cubic)` at infinite pressure. see [1] for more information. it can be customized by defining `WS_λ(::WSRuleModel,::CubicModel)`
 ## References
 
-1. Wong, D. S. H., & Sandler, S. I. (1992). A theoretically correct mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 38(5), 671–680. doi:10.1002/aic.690380505
+1. Wong, D. S. H., & Sandler, S. I. (1992). A theoretically correct mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 38(5), 671–680. doi:[10.1002/aic.690380505](https://doi.org/10.1002/aic.690380505)
 """
 WSRule
 

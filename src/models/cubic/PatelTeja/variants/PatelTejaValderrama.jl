@@ -66,7 +66,7 @@ Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
 
 ## References
 
-1. Valderrama, J. O. (1990). A generalized Patel-Teja equation of state for polar and nonpolar fluids and their mixtures. Journal of Chemical Engineering of Japan, 23(1), 87–91. doi:10.1252/jcej.23.87
+1. Valderrama, J. O. (1990). A generalized Patel-Teja equation of state for polar and nonpolar fluids and their mixtures. Journal of Chemical Engineering of Japan, 23(1), 87–91. doi:[10.1252/jcej.23.87](https://doi.org/10.1252/jcej.23.87)
 
 """
 PTV
