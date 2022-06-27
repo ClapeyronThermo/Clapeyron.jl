@@ -66,11 +66,12 @@ function PeTS(components;
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
 
     packagedparams = PeTSParam(Mw, segment, sigma, epsilon)
     references = ["10.1080/00268976.2018.1447153"]
     icomponents = 1:length(components)
-    model = PeTS(components,icomponents,params,idealmodel,references)
+    model = PeTS(components,icomponents,packagedparams,init_idealmodel,references)
     return model
 end
 
@@ -153,5 +154,3 @@ function T_scale(model::PeTSModel,z=SA[1.0])
     σ3,ϵ,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
     return ϵ
 end
-
-
