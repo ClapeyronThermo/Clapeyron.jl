@@ -149,14 +149,11 @@ function x0_bubble_temperature(model::EoSModel,p,x)
 
     V0_l = zero(p)
     V0_v = zero(p)
-
-    ps  = p_scales(model)
-    ts  = T_scales(model)
-    f(T) = antoine_bubble(pure,T,x,ts,ps)[1]-p
+    f(T) = antoine_bubble(pure,T,x,crit)[1]-p
     fT = Roots.ZeroProblem(f,Tb)
 
     T0 = Roots.solve(fT,Roots.Order0())
-    p,y = antoine_bubble(pure,T0,x,ts,ps)
+    p,y = antoine_bubble(pure,T0,x,crit)
     for i in 1:length(x)
         if !replaceP[i]
             V0_v += y[i]*V_v_sat[i]
@@ -171,17 +168,29 @@ function x0_bubble_temperature(model::EoSModel,p,x)
     return y
 end
 
-function antoine_bubble(pure,T,x,ts,ps)
-    T̄ = T./ts
-    p̄ = zeros(length(x))
-    for i ∈ 1:length(pure)
-        A,B,C = antoine_coef(pure[i])
-        p̄[i] = exp(A-B/(T̄[i]+C))
+function aprox_psat(pure,T,crit)
+    coeff  = antoine_coef(pure[i])
+    if coeff !== nothing
+        A,B,C = coeff
+        Tc,Pc,_ = crit
+        T̄ = T/Tc
+        return exp(A-B/(T̄+C))*Pc
+    else
+        #TODO: return ambrose_walton_psat(T,Pc,Tc,w)
+        A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941)
+        Tc,Pc,_ = crit
+        T̄ = T/Tc
+        return exp(A-B/(T̄+C))*Pc
     end
-    pᵢ = p̄.*ps
+end
+
+
+function antoine_bubble(pure,T,x,crit)
+    pᵢ = aprox_psat.(pure,T,crit)
     p = sum(x.*pᵢ)
     y = x.*pᵢ./p
     ysum = 1/∑(y)
     y    = y.*ysum
     return p,y
 end
+

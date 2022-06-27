@@ -113,5 +113,4 @@ function presents_LLE(model,p,T)
     prob = Roots.ZeroProblem(f0,(0.9))
     res = Roots.solve(prob)
     return (res,mixing_gibbs(res))
-
 end

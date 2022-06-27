@@ -92,7 +92,7 @@ end
 
 #TODO: support method as optional parameter
 """
-    acentric_factor(model::EoSModel)
+    acentric_factor(model::EoSModel,crit = crit_pure(model), satmethod = ChemPotVSaturation())
 
 calculates the acentric factor using its definition:
 
@@ -100,9 +100,9 @@ calculates the acentric factor using its definition:
 To do so, it calculates the critical temperature (using `crit_pure`) and performs a saturation calculation (with `sat_pure`)
 
 """
-function acentric_factor(model::EoSModel)
-    T_c,p_c,_ = crit_pure(model)
-    p = first(saturation_pressure(model,0.7*T_c))
+function acentric_factor(model::EoSModel,crit = crit_pure(model),satmethod = ChemPotVSaturation())
+    T_c,p_c,_ = crit
+    p = first(saturation_pressure(model,0.7*T_c),satmethod)
     p_r = p/p_c
     return -log10(p_r) - 1.0
 end

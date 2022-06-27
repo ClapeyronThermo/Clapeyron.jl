@@ -148,13 +148,11 @@ function x0_dew_temperature(model::EoSModel,p,y)
     V0_l = zero(p)
     V0_v = zero(p)
 
-    ps  = p_scales(model)
-    ts  = T_scales(model)
-    f(T) = antoine_dew(pure,T,y,ts,ps)[1]-p
+    f(T) = antoine_dew(pure,T,y,crit)[1]-p
     fT = Roots.ZeroProblem(f,Tb)
 
     T0 = Roots.solve(fT,Roots.Order0())
-    p,x = antoine_dew(pure,T0,y,ts,ps)
+    p,x = antoine_dew(pure,T0,y,crit)
     for i in 1:length(y)
         if !replaceP[i]
             V0_v += y[i]*V_v_sat[i]
@@ -169,14 +167,8 @@ function x0_dew_temperature(model::EoSModel,p,y)
     return x
 end
 
-function antoine_dew(pure,T,y,ts,ps)
-    T̄ = T./ts
-    p̄ = zeros(length(y))
-    for i ∈ 1:length(pure)
-        A,B,C = antoine_coef(pure[i])
-        p̄[i] = exp(A-B/(T̄[i]+C))
-    end
-    pᵢ = p̄.*ps
+function antoine_dew(pure,T,y,crit)
+    pᵢ = aprox_psat.(pure,T,crit)
     p = sum(y./pᵢ)^(-1)
     x = y.*p./pᵢ
     xsum = 1/∑(x)
