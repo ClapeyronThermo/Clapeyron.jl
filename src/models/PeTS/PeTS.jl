@@ -93,11 +93,12 @@ end
 
 function a_ref(model::PeTSModel, V, T, z,_data=@f(data))
     η,ρ̃ ,T̃ = _data
-    return 3*η/(1-η) + η/(1-η)^2
+    return (3*η/(1-η) + η/(1-η)^2)*T̃
 end
 
 function d(model::PeTSModel, V, T, z,_data=@f(data))
     η,ρ̃ ,T̃ = _data
+    
     return d_pets(T̃)
 end
 
@@ -112,7 +113,7 @@ function a_pert(model::PeTSModel, V, T, z,_data=@f(data))
     I1 = evalpoly(η,PeTS_A)
     I2 = evalpoly(η,PeTS_B)
     ã1 = -2*π*ρ̃ *I1
-    ã2 = -π*ρ̃ *I2*(1 - (8η - 2η^2)/(1 - η)^4)^-1 /T̃
+    ã2 = -π*ρ̃ *I2*(1 + (8η - 2η^2)/(1 - η)^4)^-1 / T̃
     return ã1 + ã2
 end
 
@@ -153,4 +154,9 @@ end
 function T_scale(model::PeTSModel,z=SA[1.0])
     σ3,ϵ,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
     return ϵ
+end
+
+function x0_crit_pure(model::PeTSModel)
+    lb_v = lb_volume(model)
+    (1.08, log10(lb_v/0.32))
 end
