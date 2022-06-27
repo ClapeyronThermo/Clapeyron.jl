@@ -346,7 +346,7 @@ vl = b + sqrt(0.5RTb3/2a) - c
 =#
 
 
-function wilson_k_values(model::ABCubicModel, p, T)
+function wilson_k_values(model::ABCubicModel, p, T, crit = nothing)
     Pc = model.params.Pc.values
     Tc = model.params.Tc.values
 

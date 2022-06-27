@@ -276,3 +276,20 @@ function x0_saturation_temperature(model::MultiFluidModel,p)
     T = Ts*T0/369.89
     return (T,vl,vv)
 end
+
+#Optimization: does not calculate crit_pure for each value.
+function wilson_k_values(model::MultiFluidModel,p,T,crit = nothing)
+    n = length(model)
+    K0 = zeros(typeof(p+T),n)
+    pure = split_model.(model)
+    _Tc = model.properties.Tc.values
+    _Pc = model.properties.pc.values
+    for i ∈ 1:n
+        pure_i = pure[i]
+        Tc,pc = _Pc[i],_Tc[i]
+        ps = first(saturation_pressure(pure_i,0.7*Tc))
+        ω = -log10(ps/pc) - 1.0
+        K0[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
+    end
+    return K0
+end

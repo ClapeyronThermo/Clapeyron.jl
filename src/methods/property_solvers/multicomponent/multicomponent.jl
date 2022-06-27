@@ -109,13 +109,16 @@ function aprox_psat(pure,T,crit)
     end
 end
 
-function wilson_k_values(model::EoSModel,p,T)
+function wilson_k_values(model::EoSModel,p,T,crit = nothing)
     n = length(model)
     pure = split_model.(model)
+    if crit === nothing
+        crit = crit_pure.(pure)
+    end
     K0 = zeros(typeof(p+T),n)
     for i ∈ 1:n
         pure_i = pure[i]
-        Tc,pc,_ = crit_pure(pure_i)
+        Tc,pc,_ = crit[i]
         ps = first(saturation_pressure(pure_i,0.7*Tc))
         ω = -log10(ps/pc) - 1.0
         K0[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
