@@ -204,6 +204,8 @@ end
     p2 = 1e5
     T = 250.15
     @testset "Bulk properties" begin
+        #Check that we actually dispatch to volume_impl, if they vary by anything, we are using the default volume solver
+        @test Clapeyron.volume(system, p, T) == Clapeyron.volume_impl(system, p, T)
         @test Clapeyron.volume_impl(system, p, T) ≈ 6.819297582048736e-5 rtol = 1e-6 
         @test Clapeyron.volume_impl(system, p2, T) ≈ 0.020539807199804024 rtol = 1e-6
         @test Clapeyron.volume_impl(system, p2, T,[1.0], :vapour) ≈ 0.020539807199804024 rtol = 1e-6  
@@ -211,7 +213,9 @@ end
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 800.288303407983 rtol = 1e-6 
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 1.409820798879772e6 rtol = 1E-6
+        psat,_,_ = Clapeyron.saturation_pressure(system, T)
+        @test psat ≈ 1.409820798879772e6 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T,SuperAncSaturation())[1]  ≈ psat rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 305.31999999999994 rtol = 1E-6 
         @test Clapeyron.wilson_k_values(system,p,T) ≈ [0.13839117786853375]  rtol = 1E-6 
     end
@@ -461,8 +465,12 @@ end
 
 @testset "Saturation Methods" begin
     model = PR(["water"])
+    vdw = vdW(["water"])
+    pets = PeTS(["water"])
     T = 373.15
     p,vl,vv = Clapeyron.saturation_pressure(model,T) #default
+    px,vlx,vvx = Clapeyron.saturation_pressure(model,T) #vdw
+
     p1,vl1,vv1 = Clapeyron.saturation_pressure_impl(model,T,IsoFugacitySaturation())
     @test p1 ≈ p rtol = 1e-6
     p2,vl2,vv2 = Clapeyron.saturation_pressure_impl(model,T,IsoFugacitySaturation(p0 = 1e5))
@@ -480,6 +488,13 @@ end
     @test first(Clapeyron.saturation_pressure(model,Tc_near,IsoFugacitySaturation())) ≈ psat_Tcnear rtol = 1e-6
     #Test that IsoFugacity fails over critical point
     @test isnan(first(Clapeyron.saturation_pressure(model,1.1*647.096,IsoFugacitySaturation())))
+
+    #SuperAncSaturation
+    p5,vl5,vv5 = Clapeyron.saturation_pressure_impl(model,T,SuperAncSaturation())
+    @test p5 ≈ p rtol = 1e-6
+
+    @test @inferred Clapeyron.saturation_pressure_impl(vdw,T,SuperAncSaturation())[1] ≈ px
+
 
 
 end
