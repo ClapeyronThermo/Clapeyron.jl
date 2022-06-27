@@ -75,7 +75,20 @@
         @test Clapeyron.canonical_phase(:v) == :vapour
         @test Clapeyron.canonical_phase(:m) == :m
     end
-    
+
+    @testset "citing" begin
+        umr = UMRPR(["water"],idealmodel = WalkerIdeal)
+        #citations = ["10.1021/I160057A011", "10.1021/ie049580p", "10.1021/i260064a004", "10.1021/acs.jced.0c00723"] |> Set
+        citation_full = Clapeyron.cite(umr) |> Set
+        citation_top = Clapeyron.doi(umr) |> Set
+        citation_ideal = Clapeyron.cite(umr.idealmodel) |> Set
+        citation_mixing = Clapeyron.cite(umr.mixing) |> Set
+        citation_translation = Clapeyron.cite(umr.translation) |> Set
+        @test citation_ideal ∈ citation_full
+        @test citation_top ∈ citation_full
+        @test citation_mixing ∈ citation_full
+        @test citation_translation ∈ citation_full
+    end
     @printline
 
 end

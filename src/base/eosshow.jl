@@ -70,7 +70,7 @@ function gc_eosshow(io::IO, Base.@nospecialize(model::EoSModel))
 end
 
 function show_references(io::IO,model)
-    if get(ENV,"CLAPEYRON_SHOW_REFERENCES","TRUE") == "TRUE"
+    if get(ENV,"CLAPEYRON_SHOW_REFERENCES","FALSE") == "TRUE"
         citations = cite(model)
         iszero(length(citations)) && return nothing #do not do anything if there isnt any citations
         println(io)

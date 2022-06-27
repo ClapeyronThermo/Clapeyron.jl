@@ -53,6 +53,7 @@ function TwuAlpha(components::Vector{String}; userlocations::Vector{String}=Stri
     model = TwuAlpha(packagedparams, verbose=verbose)
     return model
 end
+doi(::TwuAlpha) = ["10.1016/0378-3812(80)80003-3"]
 
 function α_function(model::CubicModel,V,T,z,alpha_model::TwuAlphaModel)
     Tc = model.params.Tc.values

@@ -43,6 +43,8 @@ function PenelouxTranslation(components::Vector{String}; userlocations::Vector{S
     return model
 end
 
+doi(::PenelouxTranslation) = ["10.1016/0378-3812(82)80002-2"]
+
 function translation(model::CubicModel,V,T,z,translation_model::PenelouxTranslation)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values

@@ -122,7 +122,7 @@ julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.cite(umr) #shou
  "10.1021/acs.jced.0c00723"
 ```
 
-Starting from Clapeyron 0.3.7, this list is displayed by each `EoSModel`. you can disable this by setting `ENV["CLAPEYRON_SHOW_REFERENCES"] = "FALSE"`
+This list will displayed by each `EoSModel` on future versions. you can enable/disable this by setting `ENV["CLAPEYRON_SHOW_REFERENCES"] = "TRUE"/"FALSE"`
 """
 function cite(model::EoSModel)
     keys = fieldnames(typeof(model))
