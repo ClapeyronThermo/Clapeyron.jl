@@ -88,3 +88,54 @@ has_sites(::Type{<:EoSModel}) = false
 has_groups(::Type{<:EoSModel}) = false
 has_sites(::T) where T<:EoSModel = has_sites(T)
 has_groups(::T) where T<:EoSModel = has_groups(T)
+
+"""
+    doi(model)
+
+Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format.
+
+```julia-repl
+julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.doi(umr)
+1-element Vector{String}:
+ "10.1021/I160057A011"
+```
+"""
+function doi(model)
+    if hasfield(typeof(model),:references)
+        return model.references
+    else
+        return String[]
+    end
+end
+
+"""
+    cite(model)
+
+Returns a Vector of strings containing all bibliographic references of the model, in DOI format. this includes any nested models.
+
+```julia-repl
+julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.cite(umr) #should cite UMRPR, UNIFAC, WalkerIdeal
+4-element Vector{String}:
+ "10.1021/I160057A011"
+ "10.1021/ie049580p"
+ "10.1021/i260064a004"
+ "10.1021/acs.jced.0c00723"
+```
+
+Starting from Clapeyron 0.3.7, this list is displayed by each `EoSModel`. you can disable this by setting `ENV["CLAPEYRON_SHOW_REFERENCES"] = "FALSE"`
+"""
+function cite(model::EoSModel)
+    keys = fieldnames(typeof(model))
+    res = doi(model)
+    
+    for key in keys
+        val = getfield(model,key)
+        if val isa EoSModel
+            append!(res,cite(val))
+        elseif key == :references
+            append!(res,val)
+        end
+    end
+    return unique!(res)
+end
+    

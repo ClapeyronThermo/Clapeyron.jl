@@ -103,7 +103,9 @@ function d(model::PeTSModel, V, T, z,_data=@f(data))
 end
 
 function d_pets(T̃)
-    return 1 - 0.127112544*exp(-3.052785558/T̃)
+    #return 1 - 0.127112544*exp(-3.052785558/T̃)
+    #log(0.127112544) = -2.0626824117148774
+    return -expm1(-3.052785558/T̃ - 2.0626824117148774)
 end
 
 a_hs(model::PeTSModel,V,T,z,_data=@f(data)) = a_ref(model,V,T,z,_data) 
