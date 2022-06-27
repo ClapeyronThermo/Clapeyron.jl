@@ -93,7 +93,7 @@ end
 
 function a_ref(model::PeTSModel, V, T, z,_data=@f(data))
     η,ρ̃ ,T̃ = _data
-    return (3*η/(1-η) + η/(1-η)^2)*T̃
+    return (4η-3η^2)/(1-η)^2
 end
 
 function d(model::PeTSModel, V, T, z,_data=@f(data))
@@ -103,9 +103,9 @@ function d(model::PeTSModel, V, T, z,_data=@f(data))
 end
 
 function d_pets(T̃)
-    #return 1 - 0.127112544*exp(-3.052785558/T̃)
+    return 1 - 0.127112544*exp(-3.052785558/T̃)
     #log(0.127112544) = -2.0626824117148774
-    return -expm1(-3.052785558/T̃ - 2.0626824117148774)
+    # return -expm1(-3.052785558/T̃ - 2.0626824117148774)
 end
 
 a_hs(model::PeTSModel,V,T,z,_data=@f(data)) = a_ref(model,V,T,z,_data) 
@@ -116,7 +116,7 @@ function a_pert(model::PeTSModel, V, T, z,_data=@f(data))
     I2 = evalpoly(η,PeTS_B)
     ã1 = -2*π*ρ̃ *I1
     ã2 = -π*ρ̃ *I2*(1 + (8η - 2η^2)/(1 - η)^4)^-1 / T̃
-    return ã1 + ã2
+    return (ã1 + ã2)/T̃
 end
 
 const PeTS_A = (
