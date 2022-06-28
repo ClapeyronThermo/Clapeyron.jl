@@ -33,7 +33,7 @@ end
 #if a number is provided as initial point, it will instead proceed to solve directly
 function saturation_temperature(model::EoSModel, p, T0::Number)
     sat = x0_sat_pure(model,T0) .|> exp10
-    return saturation_temperature_impl(model,p,AntoineSaturation(T0,sat[1],sat[2]))
+    return saturation_temperature_impl(model,p,AntoineSaturation(promote(T0,sat[1],sat[2])...))
 end
 
 function Obj_Sat_Temp(model::EoSModel, F, T, V_l, V_v,p,scales,method::AntoineSaturation)
@@ -63,34 +63,6 @@ end
 
 #in case that there isn't any antoine coefficients:
 #We aproximate to RK, use the cubic antoine, and perform refinement with one Clapeyron Saturation iteration 
-function x0_saturation_temperature(model::EoSModel,p,::Nothing)
-    Tc,Pc,Vc = crit_pure(model)
-    @show Tc
-    A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941)
-    if Pc < p
-        nan = zero(p)/zero(p)
-        return (nan,nan,nan)
-    end
-    lnp̄ = log(p / Pc)
-    T0 = Tc*(B/(A-lnp̄)-C)
-    pii,vli,vvi = saturation_pressure(model,T0)
-    
-    if isnan(pii)
-        nan = zero(p)/zero(p)
-        return (nan,nan,nan)
-    end
-
-    Δp = (p-pii)
-    S_v = VT_entropy(model,vvi,T0)
-    S_l = VT_entropy(model,vli,T0)
-    ΔS = S_v - S_l
-    ΔV = vvi - vli
-    dpdt = ΔS/ΔV #≈ (p - pii)/(T-Tnew)
-    T = T0 + Δp/dpdt
-    vv = volume_virial(model,p,T)
-    vl = 0.3*lb_volume(model) + 0.7*vli
-    return (T,vl,vv)
-end
 
 function saturation_temperature_impl(model,p,method::AntoineSaturation)    
     scales = scale_sat_pure(model)
@@ -110,8 +82,9 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
     end
 
     T0,Vl,Vv = promote(T0,Vl,Vv)
+    nan = zero(T0)/zero(T0)
     if isnan(T0)
-        return (T0,T0,T0)
+        return (nan,nan,nan)
     end
     if T0 isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
         v0 = MVector((T0,Vl,Vv))
@@ -119,6 +92,16 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
         v0 = SizedVector{3,typeof(T0)}((T0,Vl,Vv))
     end
 
+    res,valid = try_sat_temp(model,p,v0,scales,method)
+    valid && return res
+    #it could be that the critical point isn't run there
+    Tc,pc,vc = crit_pure(model)
+    p > pc && return (nan,nan,nan)
+    
+    
+end
+
+function try_sat_temp(model,p,v0,scales,method::AntoineSaturation)
     f!(F,x) = Obj_Sat_Temp(model,F,x[1],exp10(x[2]),exp10(x[3]),p,scales,method)
     r = Solvers.nlsolve(f!,v0, LineSearch(Newton()))
     sol = Solvers.x_sol(r)
@@ -126,19 +109,12 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
     Vl = exp10(sol[2])
     Vv = exp10(sol[3])
     valid = check_valid_sat_pure(model,p,Vl,Vv,T)
-    if valid
-        return (T,Vl,Vv)
-    else
-        return saturation_temperature_impl(model,p,ClapeyronSaturation())
-    end
+    return (T,Vl,Vv),valid
 end
 
+#Default!
 function saturation_temperature(model,p)
     return saturation_temperature(model,p,AntoineSaturation())
-end
-
-function saturation_temperature(model,p,T0::Real)
-    return saturation_temperature(model,p,AntoineSaturation(T0=T0))
 end
 
 export AntoineSaturation

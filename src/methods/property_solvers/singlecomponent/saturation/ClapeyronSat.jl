@@ -1,5 +1,5 @@
 struct ClapeyronSaturation{T,M<:SaturationMethod} <: SaturationMethod
-    T0::Union{Nothing,T}
+    T0::T
     satmethod::M
 end
 
@@ -17,7 +17,7 @@ It is recommended that `T0 > Tsat`, as the temperature decrease iteration series
 """
 ClapeyronSaturation
 
-ClapeyronSaturation(T0 = nothing,satmethod = ChemPotVSaturation()) = ClapeyronSaturation{typeof(T0),typeof(satmethod)}(T0,satmethod)
+ClapeyronSaturation(T0 = nothing,satmethod = ChemPotVSaturation()) = ClapeyronSaturation(T0,satmethod)
 #if a model overloads x0_saturation_temperature to return a T0::Number, we can assume this number is near
 #the actual saturation temperature, so we use the direct algorithm. otherwise, we use a safe approach, starting from the critical
 #coordinate and descending.
@@ -25,18 +25,13 @@ ClapeyronSaturation(T0 = nothing,satmethod = ChemPotVSaturation()) = ClapeyronSa
 #by default, starts right before the critical point, and descends via Clapeyron equation: (∂p/∂T)sat = ΔS/ΔV ≈ Δp/ΔT
 
 function saturation_temperature_impl(model::EoSModel,p,method::ClapeyronSaturation{Nothing})
-    Tc,pc,vc = crit_pure(model)
-    TT = typeof(vc*pc/Tc)
-    nan = zero(TT)/zero(TT)
-    p > 0.99999pc && (return (nan,nan,nan)) 
-    T0 = 0.99*Tc
-    isnan(T0) && (return (nan,nan,nan))
+    T0,_,_ = x0_saturation_temperature(model,p,nothing)
     method_init = ClapeyronSaturation(T0,method.satmethod)
     return saturation_temperature_impl(model,p,method_init)
 end
 
 function saturation_temperature_impl(model::EoSModel,p,method::ClapeyronSaturation)
-    T0 = method.Temp/one(method.Temp)
+    T0 = method.T0/one(method.T0)
     TT = typeof(T0)
     nan = zero(T0)/zero(T0)
     cache = Ref{Tuple{TT,TT,TT,TT,Bool}}((nan,nan,nan,nan,false))
