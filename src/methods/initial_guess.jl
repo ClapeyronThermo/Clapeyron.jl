@@ -98,6 +98,7 @@ T̃ = T/T_scale(model)
 lnp̄ = A - B/(T̄ + C))
 ```
 
+By default returns `nothing`. This is to use alternative methods in case Antoine coefficients arent available.
 """
 function antoine_coef end
 
@@ -107,8 +108,11 @@ antoine_coef(model) = nothing
 """
     x0_sat_pure(model::EoSModel,T,z=SA[1.0])
 
-Returns a 2-tuple corresponding to `(log10(Vₗ),log10(Vᵥ))`, where Vₗ and Vᵥ are the liquid and vapor initial guesses. 
-Used in [`saturation_pressure`](@ref)
+Returns a 2-tuple corresponding to `(log10(Vₗ),log10(Vᵥ))`, where `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses. 
+
+Used in [`saturation_pressure`](@ref) methods that require initial volume guesses.
+
+It can be overloaded to provide more accurate estimates if necessary.
 """
 function x0_sat_pure(model,T,z=SA[1.0])
     #=theory as follows
@@ -241,6 +245,8 @@ end
 Initial point for saturation pressure, given the temperature and V,T critical coordinates.
 On moderate pressures it will use a Zero Pressure initialization. On pressures near the critical point it will switch to spinodal finding.
 
+Used in [`saturation_pressure`](@ref) methods that require initial pressure guesses
+
 It can be overloaded to provide more accurate estimates if necessary.
 """
 function x0_psat(model,T)
@@ -294,6 +300,13 @@ function x0_psat(model::EoSModel, T, Tc, Vc)
     return P0
 end
 
+"""
+    x0_saturation_temperature(model::EoSModel,T,z=SA[1.0])
+
+Returns a 3-tuple corresponding to `(T,Vₗ,Vᵥ)`, `T` is the initial guess for temperature and `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses. 
+Used in [`saturation_temperature`](@ref) with [`AntoineSaturation`](@ref).
+"""
+function x0_saturation_temperature end
 
 """
     x0_crit_pure(model::SAFTModel)
@@ -307,7 +320,6 @@ function x0_crit_pure(model::EoSModel)
     lb_v = lb_volume(model)
     (1.5, log10(lb_v/0.3))
 end
-
 
 #=
 the following methods are fallbacks,

@@ -1,10 +1,11 @@
 #TODO: better name
 """
+    ChemPotVSaturation <: SaturationMethod
     ChemPotVSaturation()
     ChemPotVSaturation(;log10vl,log10vv)
     ChemPotVSaturation(V0)
 
-Default Saturation method used by `Clapeyron.jl`. It uses equality of Chemical Potentials with a volume basis. If no volumes are provided, it will use  [`x0_sat_pure`](@ref). 
+Default `saturation_pressure` Saturation method used by `Clapeyron.jl`. It uses equality of Chemical Potentials with a volume basis. If no volumes are provided, it will use  [`x0_sat_pure`](@ref). 
 
 If those initial guesses fail and the specification is near critical point, it will try one more time, using Corresponding States instead.
 

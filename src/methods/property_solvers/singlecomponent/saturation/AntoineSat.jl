@@ -1,10 +1,35 @@
+"""
+    AntoineSaturation <: SaturationMethod
+    AntoineSaturation(T0 = nothing,vl = nothing, vv = nothing)
+
+Saturation method for `saturation_temperature` .Default method for saturation temperature from Clapeyron 0.3.7. It solves the Volume-Temperature system of equations for the saturation condition.
+    
+If only `T0` is provided, `vl` and `vv` are obtained via [`x0_sat_pure`](@ref). If `T0` is not provided, it will be obtained via [`x0_saturation_temperature`](@ref). It is recommended to overload `x0_saturation_temperature`, as the default starting point calls [`crit_pure`](@ref), resulting in slower than ideal times.
+
+"""
 struct AntoineSaturation{T} <: SaturationMethod
-    Temp::Union{Nothing,T}
+    T0::Union{Nothing,T}
     vl::Union{Nothing,T}
     vv::Union{Nothing,T}
 end
 
-AntoineSaturation()=AntoineSaturation{Nothing}(nothing,nothing,nothing)
+
+function AntoineSaturation(;T0 = nothing,vl = nothing, vv = nothing)
+    if T0 === vl === vv === nothing
+        AntoineSaturation{Nothing}(nothing,nothing,nothing)
+    elseif !(T0 === nothing) & vl === vv === nothing
+        return AntoineSaturation{typeof(T0)}(T0,vl,vv)
+    elseif T0 === nothing & !(vl === nothing) & !(vv === nothing)
+        vl,vv = promote(vl,vv)
+        return AntoineSaturation{typeof(vl)}(T0,vl,vv)
+    elseif !(T0 === nothing) & !(vl === nothing) & !(vv === nothing)
+        T0,vl,vv = promote(T0,vl,vv)
+        return AntoineSaturation{typeof(vl)}(T0,vl,vv)
+    else
+        throw(error("invalid specification of AntoineSaturation"))
+    end
+end
+
 #if a number is provided as initial point, it will instead proceed to solve directly
 function saturation_temperature(model::EoSModel, p, T0::Number)
     sat = x0_sat_pure(model,T0) .|> exp10
@@ -69,14 +94,18 @@ end
 
 function saturation_temperature_impl(model,p,method::AntoineSaturation)    
     scales = scale_sat_pure(model)
-    if isnothing(method.Temp)
+    if isnothing(method.T0)
         T0,Vl,Vv = x0_saturation_temperature(model,p)
-        Vl,Vv = log10(Vl),log10(Vv) 
+        if isnothing(method.vl) && isnothing(method.vv)
+            Vl,Vv = log10(Vl),log10(Vv)
+        else
+            Vl,Vv = log10(method.Vl),log10(method.Vv)
+        end
     elseif isnothing(method.vl) && isnothing(method.vv)
         Vl,Vv = x0_sat_pure(model,method.T) #exp10
-        T0 = method.Temp
+        T0 = method.T0
     else
-        T0,Vl,Vv = method.Temp,method.vl,method.vv
+        T0,Vl,Vv = method.T0,method.vl,method.vv
         Vl,Vv = log10(Vl),log10(Vv) 
     end
 
@@ -102,6 +131,14 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
     else
         return saturation_temperature_impl(model,p,ClapeyronSaturation())
     end
+end
+
+function saturation_temperature(model,p)
+    return saturation_temperature(model,p,AntoineSaturation())
+end
+
+function saturation_temperature(model,p,T0::Real)
+    return saturation_temperature(model,p,AntoineSaturation(T0=T0))
 end
 
 export AntoineSaturation

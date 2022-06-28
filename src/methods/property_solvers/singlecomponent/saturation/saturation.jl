@@ -40,7 +40,6 @@ julia> saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)) #iso fug
 ```
 
 """
-
 function saturation_pressure(model,T,method::SaturationMethod)
     !isone(length(model)) && throw(error("$model can only have one component."))
     T = T*(T/T)
@@ -61,7 +60,41 @@ function check_valid_sat_pure(model,P_sat,V_l,V_v,T,ε0 = 5e7)
     _,dpdvv = p∂p∂V(model,V_v,T,SA[1.0])
     return (dpdvl <= 0) && (dpdvv <= 0)
     #if ΔV > ε then Vl and Vv are different values
-    
+end
+
+"""
+    saturation_pressure(model::EoSModel, p)
+    saturation_pressure(model::EoSModel, p, method::SaturationMethod)
+    saturation_pressure(model, p, T0::Number)
+
+Performs a single component saturation temperature equilibrium calculation, at the specified pressure `T`, of one mol of pure sustance specified by `model`
+
+Returns `(T₀, Vₗ, Vᵥ)` where `p₀` is the saturation Temperature (in K), `Vₗ` is the liquid saturation volume (in m³) and `Vᵥ` is the vapour saturation volume (in m³).
+
+If the calculation fails, returns  `(NaN, NaN, NaN)`
+
+By default, it uses [`AntoineSaturation`](@ref)
+## Examples:
+
+julia-repl
+```
+julia> pr = PR(["water"])
+PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule} with 1 component:
+ "water"
+Contains parameters: a, b, Tc, Pc, Mw
+
+julia> Ts,vl,vv = saturation_temperature(pr,1e5) # AntoineSaturation by default
+(374.24014010712983, 2.269760164801948e-5, 0.030849387955737825)
+
+julia> saturation_pressure(pr,Ts)
+(100000.00004314569, 2.269760164804427e-5, 0.03084938795785433)
+```
+
+"""
+function saturation_temperature(model,p,method::SaturationMethod)
+    !isone(length(model)) && throw(error("$model can only have one component."))
+    p = p*p/p
+    return saturation_temperature_impl(model,p,method)
 end
 
 include("ChemPotV.jl")
@@ -71,11 +104,6 @@ include("SuperAnc.jl")
 include("ClapeyronSat.jl")
 include("AntoineSat.jl")
 
-function saturation_temperature(model,p,method::SaturationMethod=ClapeyronSaturation{Nothing}(nothing))
-    !isone(length(model)) && throw(error("$model can only have one component."))
-    p = p*p/p
-    return saturation_temperature_impl(model,p,method)
-end
 
 """
     enthalpy_vap(model::EoSModel, T,method = ChemPotVSaturation(x0_sat_pure(model,T)))
@@ -90,14 +118,13 @@ function enthalpy_vap(model::EoSModel, T,method = ChemPotVSaturation(x0_sat_pure
     return H_vap
 end
 
-#TODO: support method as optional parameter
 """
     acentric_factor(model::EoSModel;crit = crit_pure(model), satmethod = ChemPotVSaturation())
 
 calculates the acentric factor using its definition:
 
     ω = -log10(psatᵣ) -1, at Tᵣ = 0.7
-To do so, it calculates the critical temperature (using `crit_pure`) and performs a saturation calculation (with `sat_pure`)
+To do so, it calculates the critical temperature (using `crit_pure`) and performs a saturation calculation (with `saturation_pressure(model,0.7Tc,satmethod)`)
 
 """
 function acentric_factor(model::EoSModel;crit = crit_pure(model),satmethod = ChemPotVSaturation())
@@ -110,7 +137,6 @@ function acentric_factor(model::EoSModel,crit,satmethod)
     p_r = p/p_c
     return -log10(p_r) - 1.0
 end
-
 
 
 #tsat, psat interface

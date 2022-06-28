@@ -83,10 +83,11 @@ struct ChemPotDensitySaturation{T} <: SaturationMethod
 end
 
 """
+    ChemPotVSaturation <: SaturationMethod
     ChemPotVSaturation()
     ChemPotDensitySaturation(;vl,vv)
 
-Saturation method. It uses equality of Chemical Potentials with a density basis. If no volumes are provided, it will use  [`x0_sat_pure`](@ref). 
+Saturation method for `saturation_pressure`. It uses equality of Chemical Potentials with a density basis. If no volumes are provided, it will use  [`x0_sat_pure`](@ref). 
 
 If those initial guesses fail and the specification is near critical point, it will try one more time, using Corresponding States instead.
 

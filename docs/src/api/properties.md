@@ -99,6 +99,9 @@ Clapeyron.saturation_pressure
 Clapeyron.ChemPotVSaturation
 Clapeyron.ChemPotDensitySaturation
 Clapeyron.IsoFugacitySaturation
+Clapeyron.saturation_temperature
+Clapeyron.ClapeyronSaturation
+Clapeyron.AntoineSaturation
 Clapeyron.enthalpy_vap
 Clapeyron.crit_pure
 Clapeyron.acentric_factor
@@ -156,6 +159,8 @@ Clapeyron.x0_volume_gas
 Clapeyron.volume_virial
 Clapeyron.x0_sat_pure
 Clapeyron.x0_psat
+Clapeyron.x0_saturation_temperature
+Clapeyron.antoine_coef
 Clapeyron.x0_crit_pure
 ```
 
