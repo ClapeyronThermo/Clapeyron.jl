@@ -91,10 +91,7 @@ function data(model::PeTSModel,V,T,z)
     return (η,ρ̃ ,T̃)
 end
 
-function a_ref(model::PeTSModel, V, T, z,_data=@f(data))
-    η,ρ̃ ,T̃ = _data
-    return (4η-3η^2)/(1-η)^2
-end
+
 
 function d(model::PeTSModel, V, T, z,_data=@f(data))
     η,ρ̃ ,T̃ = _data
@@ -109,6 +106,11 @@ function d_pets(T̃)
 end
 
 a_hs(model::PeTSModel,V,T,z,_data=@f(data)) = a_ref(model,V,T,z,_data) 
+
+function a_ref(model::PeTSModel, V, T, z,_data=@f(data))
+    η,ρ̃ ,T̃ = _data
+    return (4η-3η^2)/(1-η)^2
+end
 
 function a_pert(model::PeTSModel, V, T, z,_data=@f(data))
     η,ρ̃ ,T̃ = _data
