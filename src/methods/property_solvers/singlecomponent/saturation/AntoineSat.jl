@@ -1,30 +1,55 @@
 """
     AntoineSaturation <: SaturationMethod
-    AntoineSaturation(T0 = nothing,vl = nothing, vv = nothing)
+    AntoineSaturation(;T0 = nothing,
+                        vl = nothing,
+                        vv = nothing,
+                        f_limit = 0.0,
+                        atol = 1e-8,
+                        rtol = 1e-12,
+                        max_iters = 10^4)
 
 Saturation method for `saturation_temperature` .Default method for saturation temperature from Clapeyron 0.3.7. It solves the Volume-Temperature system of equations for the saturation condition.
     
 If only `T0` is provided, `vl` and `vv` are obtained via [`x0_sat_pure`](@ref). If `T0` is not provided, it will be obtained via [`x0_saturation_temperature`](@ref). It is recommended to overload `x0_saturation_temperature`, as the default starting point calls [`crit_pure`](@ref), resulting in slower than ideal times.
+
+`f_limit`, `atol`, `rtol`, `max_iters` are passed to the non linear system solver.
 
 """
 struct AntoineSaturation{T} <: SaturationMethod
     T0::Union{Nothing,T}
     vl::Union{Nothing,T}
     vv::Union{Nothing,T}
+    f_limit::Float64
+    atol::Float64
+    rtol::Float64
+    max_iters::Int
 end
 
+function NLSolvers.NEqOptions(sat::AntoineSaturation)
+    return NEqOptions(f_limit = sat.f_limit,
+                    f_abstol = sat.atol,
+                    f_reltol = sat.rtol,
+                    maxiter = sat.max_iters)
+end
 
-function AntoineSaturation(;T0 = nothing,vl = nothing, vv = nothing)
+function AntoineSaturation(;T0 = nothing,
+    vl = nothing,
+    vv = nothing,
+    f_limit = 0.0,
+    atol = 1e-8,
+    rtol = 1e-12,
+    max_iters = 10^4)
+
     if T0 === vl === vv === nothing
         AntoineSaturation{Nothing}(nothing,nothing,nothing)
     elseif !(T0 === nothing) & vl === vv === nothing
-        return AntoineSaturation{typeof(T0)}(T0,vl,vv)
+        return AntoineSaturation{typeof(T0)}(T0,vl,vv,f_limit,atol,rtol,max_iters)
     elseif T0 === nothing & !(vl === nothing) & !(vv === nothing)
         vl,vv = promote(vl,vv)
-        return AntoineSaturation{typeof(vl)}(T0,vl,vv)
+        return AntoineSaturation{typeof(vl)}(T0,vl,vv,f_limit,atol,rtol,max_iters)
     elseif !(T0 === nothing) & !(vl === nothing) & !(vv === nothing)
         T0,vl,vv = promote(T0,vl,vv)
-        return AntoineSaturation{typeof(vl)}(T0,vl,vv)
+        return AntoineSaturation{typeof(vl)}(T0,vl,vv,f_limit,atol,rtol,max_iters)
     else
         throw(error("invalid specification of AntoineSaturation"))
     end
@@ -83,33 +108,38 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
 
     T0,Vl,Vv = promote(T0,Vl,Vv)
     nan = zero(T0)/zero(T0)
+    fail = (nan,nan,nan)
     if isnan(T0)
-        return (nan,nan,nan)
+        return fail
     end
+
+    res,converged = try_sat_temp(model,p,T0,Vl,Vv,scales,method)
+    converged && return res
+    #it could be that the critical point isn't run there
+    T2,_,_ = res
+    Tc,pc,vc = crit_pure(model)
+    p > pc && return fail
+    T2 >= Tc && return fail
+    Vl2,Vv2 = x0_sat_pure_crit(model,T2,Tc,pc,vc)
+    res,converged = try_sat_temp(model,p,T2,Vl2,Vv2,scales,method)
+    converged && return res
+    return fail
+end
+
+function try_sat_temp(model,p,T0,Vl,Vv,scales,method::AntoineSaturation)
     if T0 isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
         v0 = MVector((T0,Vl,Vv))
     else
         v0 = SizedVector{3,typeof(T0)}((T0,Vl,Vv))
     end
-
-    res,valid = try_sat_temp(model,p,v0,scales,method)
-    valid && return res
-    #it could be that the critical point isn't run there
-    Tc,pc,vc = crit_pure(model)
-    p > pc && return (nan,nan,nan)
-    
-    
-end
-
-function try_sat_temp(model,p,v0,scales,method::AntoineSaturation)
     f!(F,x) = Obj_Sat_Temp(model,F,x[1],exp10(x[2]),exp10(x[3]),p,scales,method)
-    r = Solvers.nlsolve(f!,v0, LineSearch(Newton()))
+    r = Solvers.nlsolve(f!,v0, LineSearch(Newton()),NEqOptions(method))
     sol = Solvers.x_sol(r)
     T = sol[1]
     Vl = exp10(sol[2])
     Vv = exp10(sol[3])
-    valid = check_valid_sat_pure(model,p,Vl,Vv,T)
-    return (T,Vl,Vv),valid
+    converged = check_valid_sat_pure(model,p,Vl,Vv,T)
+    return (T,Vl,Vv),converged
 end
 
 #Default!

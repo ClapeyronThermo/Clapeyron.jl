@@ -11,6 +11,7 @@ using FillArrays: FillArrays
 
 using Roots: Roots
 using NLSolvers
+using NLSolvers: NEqOptions
 import BlackBoxOptim
 
 using DiffResults, ForwardDiff

@@ -1,6 +1,6 @@
 #nlsolve functionality
 """
-    function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),chunk = ForwardDiff.Chunk{2}() options=NEqOptions())
+    function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()), options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
 
 
 Given a function `f!(result,x)` that returns a system of equations,
@@ -12,7 +12,7 @@ To obtain the underlying solution vector, use [`x_sol`](@ref)
 
 To see available solvers and options, check `NLSolvers.jl`
 """
-function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),chunk = ForwardDiff.Chunk{2}(),options=NEqOptions();)
+function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
     vector_objective = autoVectorObjective(f!,x0,chunk)
     nl_problem = NEqProblem(vector_objective)
     return nlsolve(nl_problem, x0,method, options)
