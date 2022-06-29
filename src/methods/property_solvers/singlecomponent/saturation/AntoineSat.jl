@@ -15,14 +15,16 @@ If only `T0` is provided, `vl` and `vv` are obtained via [`x0_sat_pure`](@ref). 
 `f_limit`, `atol`, `rtol`, `max_iters` are passed to the non linear system solver.
 
 """
-struct AntoineSaturation{T} <: SaturationMethod
+struct AntoineSaturation{T,C} <: SaturationMethod
     T0::Union{Nothing,T}
     vl::Union{Nothing,T}
     vv::Union{Nothing,T}
+    crit::C
     f_limit::Float64
     atol::Float64
     rtol::Float64
     max_iters::Int
+    
 end
 
 function NLSolvers.NEqOptions(sat::AntoineSaturation)
@@ -35,21 +37,22 @@ end
 function AntoineSaturation(;T0 = nothing,
     vl = nothing,
     vv = nothing,
+    crit = nothing,
     f_limit = 0.0,
     atol = 1e-8,
     rtol = 1e-12,
     max_iters = 10^4)
-
+    C = typeof(crit)
     if T0 === vl === vv === nothing
-        AntoineSaturation{Nothing}(nothing,nothing,nothing)
-    elseif !(T0 === nothing) & vl === vv === nothing
-        return AntoineSaturation{typeof(T0)}(T0,vl,vv,f_limit,atol,rtol,max_iters)
-    elseif T0 === nothing & !(vl === nothing) & !(vv === nothing)
+        AntoineSaturation{Nothing,C}(nothing,nothing,nothing,crit,f_limit,atol,rtol,max_iters)
+    elseif !(T0 === nothing) & (vl === vv === nothing)
+        return AntoineSaturation{typeof(T0),C}(T0,vl,vv,crit,f_limit,atol,rtol,max_iters)
+    elseif (T0 === nothing) & !(vl === nothing) & !(vv === nothing)
         vl,vv = promote(vl,vv)
-        return AntoineSaturation{typeof(vl)}(T0,vl,vv,f_limit,atol,rtol,max_iters)
+        return AntoineSaturation{typeof(vl),C}(T0,vl,vv,crit,f_limit,atol,rtol,max_iters)
     elseif !(T0 === nothing) & !(vl === nothing) & !(vv === nothing)
         T0,vl,vv = promote(T0,vl,vv)
-        return AntoineSaturation{typeof(vl)}(T0,vl,vv,f_limit,atol,rtol,max_iters)
+        return AntoineSaturation{typeof(vl),C}(T0,vl,vv,crit,f_limit,atol,rtol,max_iters)
     else
         throw(error("invalid specification of AntoineSaturation"))
     end
@@ -58,7 +61,8 @@ end
 #if a number is provided as initial point, it will instead proceed to solve directly
 function saturation_temperature(model::EoSModel, p, T0::Number)
     sat = x0_sat_pure(model,T0) .|> exp10
-    return saturation_temperature_impl(model,p,AntoineSaturation(promote(T0,sat[1],sat[2])...))
+    T0,vl,vv = promote(T0,sat[1],sat[2])
+    return saturation_temperature_impl(model,p,AntoineSaturation(;T0,vl,vv))
 end
 
 function Obj_Sat_Temp(model::EoSModel, F, T, V_l, V_v,p,scales,method::AntoineSaturation)
@@ -117,11 +121,15 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
     converged && return res
     #it could be that the critical point isn't run there
     T2,_,_ = res
-    Tc,pc,vc = crit_pure(model)
+    crit = method.crit
+    if isnothing(crit)
+        crit = crit_pure(model)
+    end
+    Tc,pc,vc = crit
     p > pc && return fail
     T2 >= Tc && return fail
-    Vl2,Vv2 = x0_sat_pure_crit(model,T2,Tc,pc,vc)
-    res,converged = try_sat_temp(model,p,T2,Vl2,Vv2,scales,method)
+    Vl2,Vv2 = x0_sat_pure_crit(model,0.99T2,Tc,pc,vc)
+    res,converged = try_sat_temp(model,p,0.99T2,Vl2,Vv2,scales,method)
     converged && return res
     return fail
 end

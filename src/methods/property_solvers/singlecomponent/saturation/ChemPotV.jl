@@ -26,8 +26,8 @@ struct ChemPotVSaturation{T} <: SaturationMethod
     max_iters::Int
 end
 
-ChemPotVSaturation(x::Tuple) = ChemPotVSaturation(first(x),last(x))
-ChemPotVSaturation(x::Vector) = ChemPotVSaturation(first(x),last(x))
+ChemPotVSaturation(x::Tuple) = ChemPotVSaturation(log10vl = first(x),log10vv = last(x))
+ChemPotVSaturation(x::Vector) = ChemPotVSaturation(log10vl = first(x),log10vv = last(x))
 
 function vec2(method::ChemPotVSaturation{T},opt = true) where T <:Real
     return vec2(method.vl,method.vv,opt)
@@ -49,7 +49,7 @@ function ChemPotVSaturation(;log10vl = nothing,
         log10vv = float(log10vv)
         return ChemPotVSaturation(log10vl,log10vv,f_limit,atol,rtol,max_iters)
     else
-        T = one(vl)/one(vv)
+        T = one(log10vl)/one(log10vv)
         log10vl,log10vv,_ = promote(log10vl,log10vv,T)
         return ChemPotVSaturation(log10vl,log10vv,f_limit,atol,rtol,max_iters)
     end

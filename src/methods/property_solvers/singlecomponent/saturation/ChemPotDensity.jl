@@ -123,7 +123,7 @@ function ChemPotDensitySaturation(;vl = nothing,
     end
 end
 
-function NLSolvers.NEqOptions(sat::ChemPotVSaturation)
+function NLSolvers.NEqOptions(sat::ChemPotDensitySaturation)
     return NEqOptions(f_limit = sat.f_limit,
                     f_abstol = sat.atol,
                     f_reltol = sat.rtol,
