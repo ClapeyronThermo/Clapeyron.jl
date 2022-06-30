@@ -168,7 +168,6 @@ function x0_bubble_temperature(model::EoSModel,p,x)
 
     T0 = Roots.solve(fT,Roots.Order0())
     p,y = antoine_bubble(pure,T0,x,crit)
-    @show p,y
     for i in 1:length(x)
         if !replaceP[i]
             V0_v += y[i]*V_v_sat[i]
