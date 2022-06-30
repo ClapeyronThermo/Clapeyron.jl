@@ -1,19 +1,30 @@
 """
     IsoFugacitySaturation <: SaturationMethod
-    IsoFugacitySaturation(;p0 = nothing, vl = nothing,vv = nothing, max_iters = 20, p_tol = sqrt(eps(Float64)))
+    IsoFugacitySaturation(;p0 = nothing,
+        vl = nothing,
+        vv = nothing,
+        crit = nothing,
+        max_iters = 20,
+        p_tol = sqrt(eps(Float64)))
 
 Saturation method for `saturation_pressure`. Uses the isofugacity criteria. Ideal for Cubics or other EoS where the volume calculations are cheap. 
 If `p0` is not provided, it will be calculated via [`x0_psat`](@ref).
 """
-struct IsoFugacitySaturation{T} <: SaturationMethod
+struct IsoFugacitySaturation{T,C} <: SaturationMethod
     p0::T
     vl::Union{Nothing,T}
     vv::Union{Nothing,T}
+    crit::C
     max_iters::Int
     p_tol::Float64
 end
 
-function IsoFugacitySaturation(;p0 = nothing,vl = nothing,vv = nothing,max_iters = 20,p_tol = sqrt(eps(Float64)))
+function IsoFugacitySaturation(;p0 = nothing,
+                                vl = nothing,
+                                vv = nothing,
+                                crit = nothing,
+                                max_iters = 20,
+                                p_tol = sqrt(eps(Float64)))
     p0 === nothing && (p0 = NaN)
     if vl !== nothing
         p0,vl = promote(p0,vl)
@@ -23,14 +34,14 @@ function IsoFugacitySaturation(;p0 = nothing,vl = nothing,vv = nothing,max_iters
         p0,vl,vv = promote(p0,vl,vv)
     else
     end
-    return IsoFugacitySaturation(p0,vl,vv,max_iters,p_tol)
+    return IsoFugacitySaturation(p0,vl,vv,crit,max_iters,p_tol)
 end
 
 function saturation_pressure_impl(model::EoSModel,T,method::IsoFugacitySaturation)
     vol0 = (method.vl,method.vv,T)
     p0 = method.p0
     if isnan(p0)
-        p0 = x0_psat(model, T)
+        p0 = x0_psat(model, T, method.crit)
     end
 
     if isnan(p0) #over critical point, or something else.

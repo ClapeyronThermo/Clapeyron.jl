@@ -77,9 +77,10 @@ function fobj_psat!(model::EoSModel, T)
 end
 
 
-struct ChemPotDensitySaturation{T} <: SaturationMethod
+struct ChemPotDensitySaturation{T,C} <: SaturationMethod
     vl::Union{Nothing,T}
     vv::Union{Nothing,T}
+    crit::C
     f_limit::Float64
     atol::Float64
     rtol::Float64
@@ -90,6 +91,7 @@ end
     ChemPotDensitySaturation <: SaturationMethod
     ChemPotDensitySaturation(;vl = nothing,
                             vv = nothing,
+                            crit = nothing,
                             f_limit = 0.0,
                             atol = 1e-8,
                             rtol = 1e-12,
@@ -103,23 +105,24 @@ Saturation method for `saturation_pressure`. It uses equality of Chemical Potent
 """
 function ChemPotDensitySaturation(;vl = nothing,
     vv = nothing,
+    crit = nothing,
     f_limit = 0.0,
     atol = 1e-8,
     rtol = 1e-12,
     max_iters = 10^4)
 
     if (vl === nothing) && (vv === nothing)
-        return ChemPotDensitySaturation{Nothing}(nothing,nothing,f_limit,atol,rtol,max_iters)
+        return ChemPotDensitySaturation{Nothing}(nothing,nothing,crit,f_limit,atol,rtol,max_iters)
     elseif !(vl === nothing) && (vv === nothing)
         vl = float(vl)
-        return ChemPotDensitySaturation(vl,vv,f_limit,atol,rtol,max_iters)
+        return ChemPotDensitySaturation(vl,vv,crit,f_limit,atol,rtol,max_iters)
     elseif (vl === nothing) && !(vv === nothing)
         vv = float(vv)
-        return ChemPotDensitySaturation(vl,vv,f_limit,atol,rtol,max_iters)
+        return ChemPotDensitySaturation(vl,vv,crit,f_limit,atol,rtol,max_iters)
     else
         T = one(vl)/one(vv)
         vl,vv,_ = promote(vl,vv,T)
-        return ChemPotDensitySaturation(vl,vv,f_limit,atol,rtol,max_iters)
+        return ChemPotDensitySaturation(vl,vv,crit,f_limit,atol,rtol,max_iters)
     end
 end
 
@@ -133,11 +136,18 @@ end
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotDensitySaturation{Nothing})
     x0 = x0_sat_pure(model,T) .|> exp10
     vl,vv = x0
-    method = ChemPotDensitySaturation(;vl,vv)
+    method = ChemPotDensitySaturation(;vl,vv,crit)
     return saturation_pressure_impl(model,T,method)
 end
 
 function saturation_pressure_impl(model::EoSModel,T,method::ChemPotDensitySaturation)
+    if crit !== nothing
+        Tc,_,_ = crit
+        if Tc < T
+            nan = zero(T)/zero(T)
+            return (nan,nan,nan)
+        end
+    end
     return psat_chempot(model,T,method.vl,method.vv,NEqOptions(method))
 end
 

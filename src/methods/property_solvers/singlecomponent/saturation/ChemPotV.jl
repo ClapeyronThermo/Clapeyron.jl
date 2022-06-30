@@ -4,6 +4,7 @@
     ChemPotVSaturation(V0)
     ChemPotVSaturation(;log10vl = nothing,
                         log10vv = nothing,
+                        crit = nothing,
                         f_limit = 0.0,
                         atol = 1e-8,
                         rtol = 1e-12,
@@ -17,9 +18,10 @@ If those initial guesses fail and the specification is near critical point, it w
 
 `f_limit`, `atol`, `rtol`, `max_iters` are passed to the non linear system solver.
 """
-struct ChemPotVSaturation{T} <: SaturationMethod
+struct ChemPotVSaturation{T,C} <: SaturationMethod
     vl::Union{Nothing,T}
     vv::Union{Nothing,T}
+    crit::C
     f_limit::Float64
     atol::Float64
     rtol::Float64
@@ -35,23 +37,24 @@ end
 
 function ChemPotVSaturation(;log10vl = nothing,
                             log10vv = nothing,
+                            crit = nothing,
                             f_limit = 0.0,
                             atol = 1e-8,
                             rtol = 1e-12,
                             max_iters = 10^4)
 
     if (log10vl === nothing) && (log10vv === nothing)
-        return ChemPotVSaturation{Nothing}(nothing,nothing,f_limit,atol,rtol,max_iters)
+        return ChemPotVSaturation{Nothing,typeof(crit)}(nothing,nothing,crit,f_limit,atol,rtol,max_iters)
     elseif !(log10vl === nothing) && (log10vv === nothing)
         log10vl = float(log10vl)
-        return ChemPotVSaturation(log10vl,log10vv,f_limit,atol,rtol,max_iters)
+        return ChemPotVSaturation(log10vl,log10vv,crit,f_limit,atol,rtol,max_iters)
     elseif (log10vl === nothing) && !(log10vv === nothing)
         log10vv = float(log10vv)
-        return ChemPotVSaturation(log10vl,log10vv,f_limit,atol,rtol,max_iters)
+        return ChemPotVSaturation(log10vl,log10vv,crit,f_limit,atol,rtol,max_iters)
     else
         T = one(log10vl)/one(log10vv)
         log10vl,log10vv,_ = promote(log10vl,log10vv,T)
-        return ChemPotVSaturation(log10vl,log10vv,f_limit,atol,rtol,max_iters)
+        return ChemPotVSaturation(log10vl,log10vv,crit,f_limit,atol,rtol,max_iters)
     end
 end
 
@@ -68,7 +71,9 @@ function saturation_pressure(model,T,V0::Union{Tuple,Vector} = x0_sat_pure(model
 end
 
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{Nothing})
-    return saturation_pressure_impl(model,T,ChemPotVSaturation(x0_sat_pure(model,T)))
+    log10vl,log10vv = x0_sat_pure(model,T)
+    crit = method.crit
+    return saturation_pressure_impl(model,T,ChemPotVSaturation(;log10vl,log10vv,crit))
 end
 
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{<:Number})
@@ -82,12 +87,16 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
         #error in initial conditions
         return fail
     end
-    result,converged = sat_pure(model,V0,f!,T,method)  
+    result,converged = sat_pure(f!,V0,method)  
     #did not converge, but didnt error.
     if converged
         return result
     end
-    (T_c, p_c, V_c) = crit_pure(model)
+    crit = method.crit
+    if isnothing(crit)
+        crit = crit_pure(model)
+    end
+    T_c, p_c, V_c = crit
     if abs(T_c-T) < eps(typeof(T))
         return (p_c,V_c,V_c)
     end
@@ -96,7 +105,7 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
         x0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
         V01,V02 = x0
         V0 = vec2(V01,V02,T)
-        result,converged = sat_pure(model,V0,f!,T,method)   
+        result,converged = sat_pure(f!,V0,method)   
         if converged
             return result
         end
@@ -145,7 +154,14 @@ function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
     # @show dpdvv*Vv0
     return (log10(Vl0),log10(Vv0))
 end
-function sat_pure(model::EoSModel,V0,f!,T,method::ChemPotVSaturation)  
+
+function sat_pure(model,T,V0,method)
+    f! = ObjSatPure(model,T)
+    return sat_pure(f!,V0,method)
+end
+
+function sat_pure(f!::ObjSatPure,V0,method)
+    model, T = f!.model, f!.Tsat
     nan = zero(eltype(V0))/zero(eltype(V0))
     if !isfinite(V0[1]) | !isfinite(V0[2]) | !isfinite(T)
         return (nan,nan,nan), false
@@ -169,20 +185,6 @@ function Obj_Sat(model::EoSModel, F, T, V_l, V_v,scales)
     (p_scale,μ_scale) = scales
     F[1] = -(Av_l-Av_v)*p_scale
     F[2] = (g_l-g_v)*μ_scale
-    return F
-end
-
-### NEW METHOD
-function Obj_Sat_Temp2(model::EoSModel, F, T, V_l, V_v,p,scales)
-    fun(_V) = eos(model, _V, T,SA[1.])
-    A_l,Av_l = Solvers.f∂f(fun,V_l)
-    A_v,Av_v =Solvers.f∂f(fun,V_v)
-    g_l = muladd(-V_l,Av_l,A_l)
-    g_v = muladd(-V_v,Av_v,A_v)
-    (p_scale,μ_scale) = scales
-    F[1] = -(Av_l+p)*p_scale
-    F[2] = -(Av_v+p)*p_scale
-    F[3] = (g_l-g_v)*μ_scale
     return F
 end
 

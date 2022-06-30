@@ -1,16 +1,21 @@
 ## Bubble pressure solver
 function x0_bubble_pressure(model::EoSModel,T,x)
     #check each T with T_scale, if treshold is over, replace Pi with inf
+    comps = length(model)
     pure = split_model(model)
     crit = crit_pure.(pure)
-    T_c = [tup[1] for tup in crit]
-    V_c = [tup[3] for tup in crit]
+    T_c = first.(crit)
+    V_c = last.(crit)
     _0 = zero(T+first(x))
     nan = _0/_0 
     sat_nan = (nan,nan,nan)
-    replaceP = ifelse.(T_c .< T,true,false)
-    sat = [if !replaceP[i] saturation_pressure(pure[i],T) else sat_nan end for i in 1:length(pure)]
-    
+    replaceP = T_c .< T
+    sat = fill(sat_nan,comps)
+    for i in 1:comps
+        if !replaceP[i]
+        sat[i] = saturation_pressure(pure[i],T,ChemPotVSaturation(crit = crit[i]))
+        end
+    end
     P_sat = [tup[1] for tup in sat]
     V_l_sat = [tup[2] for tup in sat]
     V_v_sat = [tup[3] for tup in sat]
@@ -21,7 +26,7 @@ function x0_bubble_pressure(model::EoSModel,T,x)
     Pi   = zero(x)
     for i in 1:length(x)
         if !replaceP[i]
-            Pi[i] = P_sat[i][1]
+            Pi[i] = P_sat[i]
             P+=x[i]*Pi[i]
             V0_l += x[i]*V_l_sat[i]
         else 
@@ -34,7 +39,7 @@ function x0_bubble_pressure(model::EoSModel,T,x)
     y = @. x*Pi/P
     ysum = 1/∑(y)
     y    = y.*ysum
-    
+
     for i in 1:length(x)
         if !replaceP[i]
             V0_v += y[i]*V_v_sat[i]
@@ -42,7 +47,7 @@ function x0_bubble_pressure(model::EoSModel,T,x)
             V0_v += y[i]*V_c[i]*1.2
         end
     end
-    
+
     prepend!(y,log10.([V0_l,V0_v]))
     return y
 end

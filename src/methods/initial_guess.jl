@@ -240,16 +240,18 @@ function scale_sat_pure(model,z=SA[1.0])
 end
 
 """
-    x0_psat(model::EoSModel, T)
+    x0_psat(model::EoSModel, T,crit = nothing)
 
 Initial point for saturation pressure, given the temperature and V,T critical coordinates.
 On moderate pressures it will use a Zero Pressure initialization. On pressures near the critical point it will switch to spinodal finding.
 
-Used in [`saturation_pressure`](@ref) methods that require initial pressure guesses
+Used in [`saturation_pressure`](@ref) methods that require initial pressure guesses.
+
+if the initial temperature is over the critical point, it returns `NaN`.
 
 It can be overloaded to provide more accurate estimates if necessary.
 """
-function x0_psat(model,T)
+function x0_psat(model,T,crit = nothing)
     coeffs = antoine_coef(model)
     if coeffs !== nothing
         A,B,C = coeffs
@@ -259,7 +261,10 @@ function x0_psat(model,T)
         px =  exp(lnp̃)*ps
         return px
     end
-    Tc, Pc, Vc = crit_pure(model)
+    if isnothing(crit)
+        crit = crit_pure(model)
+    end
+    Tc, Pc, Vc = crit
     if T > Tc
         return zero(T)/zero(T)
     end
@@ -301,7 +306,7 @@ function x0_psat(model::EoSModel, T, Tc, Vc)
 end
 
 """
-    x0_saturation_temperature(model::EoSModel,T,z=SA[1.0])
+    x0_saturation_temperature(model::EoSModel,p)
 
 Returns a 3-tuple corresponding to `(T,Vₗ,Vᵥ)`, `T` is the initial guess for temperature and `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses. 
 Used in [`saturation_temperature`](@ref) with [`AntoineSaturation`](@ref).
@@ -309,7 +314,12 @@ Used in [`saturation_temperature`](@ref) with [`AntoineSaturation`](@ref).
 function x0_saturation_temperature end
 
 function x0_saturation_temperature(model::EoSModel,p,::Nothing)
-    Tc,Pc,Vc = crit_pure(model)
+    crit = crit_pure(model)
+    return x0_saturation_temperature(model,p,crit)
+end
+
+function x0_saturation_temperature(model::EoSModel,p,crit::Tuple)
+    Tc,Pc,Vc = crit
     A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941)
     if Pc < p
         nan = zero(p)/zero(p)
@@ -317,7 +327,7 @@ function x0_saturation_temperature(model::EoSModel,p,::Nothing)
     end
     lnp̄ = log(p / Pc)
     T0 = Tc*(B/(A-lnp̄)-C)
-    pii,vli,vvi = saturation_pressure(model,T0)
+    pii,vli,vvi = saturation_pressure(model,T0,ChemPotVSaturation(;crit))
     
     if isnan(pii)
         nan = zero(p)/zero(p)

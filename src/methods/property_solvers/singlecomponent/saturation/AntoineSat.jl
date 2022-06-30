@@ -23,8 +23,7 @@ struct AntoineSaturation{T,C} <: SaturationMethod
     f_limit::Float64
     atol::Float64
     rtol::Float64
-    max_iters::Int
-    
+    max_iters::Int 
 end
 
 function NLSolvers.NEqOptions(sat::AntoineSaturation)
@@ -128,9 +127,20 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
     Tc,pc,vc = crit
     p > pc && return fail
     T2 >= Tc && return fail
-    Vl2,Vv2 = x0_sat_pure_crit(model,0.99T2,Tc,pc,vc)
-    res,converged = try_sat_temp(model,p,0.99T2,Vl2,Vv2,scales,method)
-    converged && return res
+    
+    if 0.999pc > p > 0.95pc 
+        #you could still perform another iteration from a better initial point
+        Vl2,Vv2 = x0_sat_pure_crit(model,0.99T2,Tc,pc,vc)
+        res,converged = try_sat_temp(model,p,0.99T2,Vl2,Vv2,scales,method)
+        converged && return res
+    end
+    
+    if p > 0.999pc
+    #almost no hope, only ClapeyronSat works in this range. 
+        crit_satmethod = ClapeyronSaturation(;crit)
+        return saturation_temperature(model,p,crit_satmethod)
+    end
+    
     return fail
 end
 

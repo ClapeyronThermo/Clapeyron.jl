@@ -17,7 +17,7 @@ Saturation method for `saturation_pressure`. it uses Chebyshev expansions constr
 """
 SuperAncSaturation
 
-function SuperAncSaturation(;p_tol = 1e-16)
+function SuperAncSaturation(;p_tol = 1e-16,crit = nothing)
     return SuperAncSaturation(p_tol)
 end
 
