@@ -144,7 +144,7 @@ end
 function x0_volume_gas(model::SanchezLacombe,p,T,z)
     return sum(z)*R̄*T/p
 end
-
+#=
 function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
     Σz = sum(z)
     r = model.params.segment.values
@@ -167,5 +167,5 @@ function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
     end
     return (log10(vl),log10(vv))
 end
-
+=#
 export SL,SanchezLacombe
