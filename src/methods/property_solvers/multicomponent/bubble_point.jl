@@ -189,7 +189,6 @@ function antoine_bubble(pure,T,x,crit)
     y = x.*pᵢ./p
     ysum = 1/∑(y)
     y    = y.*ysum
-    @show p,y
     return p,y
 end
 
