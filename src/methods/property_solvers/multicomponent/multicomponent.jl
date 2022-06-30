@@ -75,36 +75,18 @@ function _sat_Ti(model,p)
     return Tsat
 end
 
-function _sat_Pi(model,p)
-    pure = split_model(model)
-    n = length(pure)
-    Tsat = first.(saturation_temperature.(pure,p))
-    for i ∈ 1:n
-        if isnan(Tsat[i])
-            T = PV_critical_temperature(pure[i],p)
-            Tsat[i] = T
-        end
-    end
-    return Tsat
-end
-
-function sat_T_equimix(model,p)
-    n = length(model)
-    return sum(_sat_Ti(model,p))/n
-end
-
 function aprox_psat(pure,T,crit)
     coeff  = antoine_coef(pure)
     if coeff !== nothing
         A,B,C = coeff
-        Tc,Pc,_ = crit
-        T̄ = T/Tc
-        return exp(A-B/(T̄+C))*Pc
     else
-        #TODO: return ambrose_walton_psat(T,Pc,Tc,w)
         A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941)
-        Tc,Pc,_ = crit
-        T̄ = T/Tc
+    end
+    Tc,Pc,Vc = crit
+    T̄ = T/Tc
+    if T > Tc
+        return pressure(pure,Vc,Tc)
+    else
         return exp(A-B/(T̄+C))*Pc
     end
 end

@@ -1,5 +1,6 @@
 ## dew pressure solver
 function x0_dew_pressure(model::EoSModel,T,y)
+    comps = length(model)
     pure = split_model(model)
     crit = crit_pure.(pure)
     
@@ -8,8 +9,13 @@ function x0_dew_pressure(model::EoSModel,T,y)
     _0 = zero(T+first(y))
     nan = _0/_0 
     sat_nan = (nan,nan,nan)
-    replaceP = ifelse.(T_c .< T,true,false)
-    sat = [if !replaceP[i] saturation_pressure(pure[i],T) else sat_nan end for i in 1:length(pure)]
+    sat = fill(sat_nan,comps)
+    replaceP = T_c .< T
+    for i in 1:comps
+        if !replaceP[i]
+        sat[i] = saturation_pressure(pure[i],T,ChemPotVSaturation(crit = crit[i]))
+        end
+    end
     
     P_sat = [tup[1] for tup in sat]
     V_l_sat = [tup[2] for tup in sat]
@@ -128,22 +134,31 @@ function Obj_dew_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ts,ps)
 end
 
 function x0_dew_temperature(model::EoSModel,p,y)
+    comps = length(model)
     pure = split_model(model)
     crit = crit_pure.(pure)
     
     p_c = [tup[2] for tup in crit]
     V_c = [tup[3] for tup in crit]
     _0 = zero(p+first(y))
-    nan = _0/_0 
-    sat_nan = (nan,nan,nan)
-    replaceP = ifelse.(p_c .< p,true,false)
-    sat = [if !replaceP[i] saturation_temperature(pure[i],p) else sat_nan end for i in 1:length(pure)]
-    
-    T_sat = [if !replaceP[i] sat[i][1] else crit[i][1] end for i in 1:length(pure)]
-    V_l_sat = [if !replaceP[i] sat[i][2] else crit[i][3] end for i in 1:length(pure)]
-    V_v_sat = [if !replaceP[i] sat[i][3] else crit[i][3]*1.2 end for i in 1:length(pure)]
-
-    Tb = extrema(T_sat).*[0.9,1.1]
+    replaceP = p_c .< p
+    T_sat = fill(_0,comps)
+    V_l_sat = fill(_0,comps)
+    V_v_sat = fill(_0,comps)
+    for i in 1:comps
+        crit_i = crit[i]
+        Tci,Pci,Vci = crit_i
+        if !replaceP[i]
+            Ti,Vli,Vvi = saturation_temperature(pure[i],p,AntoineSaturation(crit = crit_i))
+        else
+            
+            Ti,Vli,Vvi = Tci,Vci,1.2*Vci  
+        end
+        T_sat[i] = Ti
+        V_l_sat[i] = Vli
+        V_v_sat[i] = Vvi
+    end    
+    Tb = extrema(T_sat).*(0.9,1.1)
 
     V0_l = zero(p)
     V0_v = zero(p)

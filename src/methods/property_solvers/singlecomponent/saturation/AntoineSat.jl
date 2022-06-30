@@ -112,26 +112,34 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
     T0,Vl,Vv = promote(T0,Vl,Vv)
     nan = zero(T0)/zero(T0)
     fail = (nan,nan,nan)
+    
     if isnan(T0)
         return fail
     end
-
     res,converged = try_sat_temp(model,p,T0,Vl,Vv,scales,method)
     converged && return res
     #it could be that the critical point isn't run there
     T2,_,_ = res
+
     crit = method.crit
     if isnothing(crit)
         crit = crit_pure(model)
     end
+    
     Tc,pc,vc = crit
     p > pc && return fail
     T2 >= Tc && return fail
-    
+   
     if 0.999pc > p > 0.95pc 
         #you could still perform another iteration from a better initial point
         Vl2,Vv2 = x0_sat_pure_crit(model,0.99T2,Tc,pc,vc)
         res,converged = try_sat_temp(model,p,0.99T2,Vl2,Vv2,scales,method)
+        converged && return res
+    elseif p < 0.5pc
+        #very low pressure, we need a better aproximation. luckily we now have a better T
+        #TODO: look for a way to detect this case without looking at the critical point
+        Vl2,Vv2 = x0_sat_pure(model,T2)
+        res,converged = try_sat_temp(model,p,T2,Vl2,Vv2,scales,method)
         converged && return res
     end
     
