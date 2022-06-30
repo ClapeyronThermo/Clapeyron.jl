@@ -112,7 +112,7 @@ function ChemPotDensitySaturation(;vl = nothing,
     max_iters = 10^4)
 
     if (vl === nothing) && (vv === nothing)
-        return ChemPotDensitySaturation{Nothing}(nothing,nothing,crit,f_limit,atol,rtol,max_iters)
+        return ChemPotDensitySaturation{Nothing,typeof(crit)}(nothing,nothing,crit,f_limit,atol,rtol,max_iters)
     elseif !(vl === nothing) && (vv === nothing)
         vl = float(vl)
         return ChemPotDensitySaturation(vl,vv,crit,f_limit,atol,rtol,max_iters)
@@ -136,11 +136,12 @@ end
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotDensitySaturation{Nothing})
     x0 = x0_sat_pure(model,T) .|> exp10
     vl,vv = x0
-    method = ChemPotDensitySaturation(;vl,vv,crit)
+    method = ChemPotDensitySaturation(;vl,vv,method.crit)
     return saturation_pressure_impl(model,T,method)
 end
 
 function saturation_pressure_impl(model::EoSModel,T,method::ChemPotDensitySaturation)
+    crit = method.crit
     if crit !== nothing
         Tc,_,_ = crit
         if Tc < T

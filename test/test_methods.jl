@@ -466,7 +466,6 @@ end
 @testset "Saturation Methods" begin
     model = PR(["water"])
     vdw = vdW(["water"])
-    pets = PeTS(["water"])
     T = 373.15
     p,vl,vv = Clapeyron.saturation_pressure(model,T) #default
     px,vlx,vvx = Clapeyron.saturation_pressure(vdw,T) #vdw
@@ -492,11 +491,7 @@ end
     #SuperAncSaturation
     p5,vl5,vv5 = Clapeyron.saturation_pressure_impl(model,T,SuperAncSaturation())
     @test p5 ≈ p rtol = 1e-6
-
     @test @inferred Clapeyron.saturation_pressure_impl(vdw,T,SuperAncSaturation())[1] ≈ px
-
-
-
 end
 
 @testset "Unitful Methods" begin
