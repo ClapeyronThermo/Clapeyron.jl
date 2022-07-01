@@ -198,7 +198,7 @@ end
     @printline
 end
 
-@testset "Cubic methods, single components" begin
+@testset "RK, single component" begin
     system = RK(["ethane"])
     p = 1e7
     p2 = 1e5
@@ -218,6 +218,50 @@ end
         @test Clapeyron.saturation_pressure(system, T,SuperAncSaturation())[1]  ≈ psat rtol = 1E-6
         @test Clapeyron.crit_pure(system)[1] ≈ 305.31999999999994 rtol = 1E-6 
         @test Clapeyron.wilson_k_values(system,p,T) ≈ [0.13839117786853375]  rtol = 1E-6 
+    end
+end
+
+@testset "Patel-Teja, single component" begin
+    system = PatelTeja(["water"])
+    p = 1e5
+    T = 550.15
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T) ≈ 0.04557254632681239 rtol = 1e-6 
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 4.51634223156497e6 rtol = 1E-6
+        Tc,Pc,Vc = Clapeyron.crit_pure(system)
+        @test Tc == system.params.Tc
+        @test Pc == system.params.Pc
+        @test Vc == system.params.Vc
+    end
+end
+
+@testset "Patel-Teja-Valderrama, single component" begin
+    system = PTV(["water"])
+    p = 1e5
+    T = 298.15
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T) ≈ 1.9221342043684064e-5 rtol = 1e-6 
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 2397.1315826665273 rtol = 1E-6
+        Tc,Pc,Vc = Clapeyron.crit_pure(system)
+        @test Tc == system.params.Tc
+        @test Pc == system.params.Pc
+        @test Vc == system.params.Vc
+    end
+end
+
+@testset "KU, single component" begin
+    system = KU(["water"])
+    p = 1e5
+    T = 298.15
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T) ≈ 2.0614093101238483e-5 rtol = 1e-6 
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 2574.7348636211996 rtol = 1E-6
     end
 end
 
