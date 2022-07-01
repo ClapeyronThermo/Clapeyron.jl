@@ -15,7 +15,7 @@ function index_reduction(model::EoSModel,z::AbstractVector,zmin = sum(z)*4*eps(e
     if all(idx)
         model_r = model
     else
-        model_r = split_model(model,findall(idx)) |> only
+        model_r = split_model(model,[findall(idx)]) |> only
     end
     return model_r,idx
 end

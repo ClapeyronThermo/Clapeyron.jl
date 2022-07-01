@@ -231,9 +231,9 @@ end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 4.51634223156497e6 rtol = 1E-6
         Tc,Pc,Vc = Clapeyron.crit_pure(system)
-        @test Tc == system.params.Tc
-        @test Pc == system.params.Pc
-        @test Vc == system.params.Vc
+        @test Tc == system.params.Tc.values[1]
+        @test Pc == system.params.Pc.values[1]
+        @test Vc == system.params.Vc.values[1]
     end
 end
 
@@ -247,9 +247,9 @@ end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 2397.1315826665273 rtol = 1E-6
         Tc,Pc,Vc = Clapeyron.crit_pure(system)
-        @test Tc == system.params.Tc
-        @test Pc == system.params.Pc
-        @test Vc == system.params.Vc
+        @test Tc == system.params.Tc.values[1]
+        @test Pc == system.params.Pc.values[1]
+        @test Vc == system.params.Vc.values[1]
     end
 end
 
