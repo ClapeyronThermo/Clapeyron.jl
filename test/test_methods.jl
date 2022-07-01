@@ -464,8 +464,8 @@ end
 
     #Values from FeOs notebook example:
     #We can reproduce FeOs values here
-    Tc,Pc,Vc = crit_pure(system)
-
+    crit = crit_pure(system)
+    Tc,Pc,Vc  = crit 
     @test Tc ≈ 1.08905 rtol = 1e-5
     @test Vc ≈ 1/513383.86 rtol = 1e-5
 
@@ -479,7 +479,12 @@ end
     @test saturation_temperature(system,psat)[1] ≈ 0.64  rtol = 1e-6
 
     #uses the default x0_psat initial guess
-    @test saturation_pressure(system,0.64,IsoFugacitySaturation())[1] ≈ 3.027452e+04 rtol = 1e-6
+    @test saturation_pressure(system,0.64,IsoFugacitySaturation(;crit))[1] ≈ 3.027452e+04 rtol = 1e-6
+
+    T_nearc = 1.084513 #The last value of their critical point is actually above ours.
+    psat_nearc = 1.374330e+06
+    @test saturation_pressure(system,T_nearc)[1] ≈ psat_nearc rtol = 1e-6
+    @test saturation_pressure(system,T_nearc,IsoFugacitySaturation(;crit))[1] ≈ psat_nearc rtol = 1e-6
 end
 
 @testset "association" begin

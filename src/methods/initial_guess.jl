@@ -154,9 +154,9 @@ function x0_sat_pure(model,T,z=SA[1.0])
     The van der Waals equation: analytical and approximate solutions
     =#
     γ = p*vl*vl/(R̄*T)
-    _c = vl*vl + B*vl - γ*vl 
+    _c = vl*(vl + B - γ) 
     _b = γ - B - vl
-    Δ = _b*_b - 4*_c
+    Δ = Solvers.det_22(_b,_b,4,_c)
     if isnan(vl) | (Δ < 0)
          
         #fails on two ocassions:
@@ -164,7 +164,6 @@ function x0_sat_pure(model,T,z=SA[1.0])
         #old strategy
         x0l = 4*lb_v
         x0v = -2*B + 2*lb_v
-        
         return (log10(x0l),log10(x0v))
     end
     Δsqrt = sqrt(Δ)
@@ -186,10 +185,11 @@ function x0_sat_pure(model,T,z=SA[1.0])
     Tc = ar/br/R̄
     Pc = ar/(br*br)
     Tr = T/Tc
-    #Tr(vdW approx) > Tr(model)
+    #Tr(vdW approx) > Tr(model), try default.
     if Tr >= 1
-        _nan = _0/_0
-        return (_nan,_nan)
+        x0l = 4*lb_v
+        x0v = -2*B + 2*lb_v
+        return (log10(x0l),log10(x0v))
     end
     # if b1/b2 < -0.95, then T is near Tc.
     #if b<lb_v then we are in trouble 
