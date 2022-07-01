@@ -456,6 +456,26 @@ end
     end
 end
 
+@testset "PeTS" begin
+    system = PeTS(["methane"])
+    system.params.sigma.values[1] = 1e-10
+    system.params.epsilon.values[1] = 1
+    system.params.epsilon.values[1] = 1
+
+    #Values from FeOs notebook example:
+    #We can reproduce FeOs values here
+    Tc,Pc,Vc = crit_pure(system)
+
+    @test Tc ≈ 1.08905 rtol = 1e-5
+    @test Vc ≈ 1/513383.86 rtol = 1e-5
+
+    #first value from saturation pressure(T = 0.64):
+    psat,vl,vv = saturation_pressure(system,0.64)
+    @test psat ≈ 3.027452e+04 rtol = 1e-6
+    @test vl  ≈ 1/1.359958e+06 rtol = 1e-6
+    @test vv  ≈ 1/5892.917088 rtol = 1e-6
+end
+
 @testset "association" begin
     no_comb = Clapeyron.AssocOptions()
     no_comb_dense = Clapeyron.AssocOptions(combining = :dense_nocombining)
