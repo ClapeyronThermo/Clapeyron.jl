@@ -474,6 +474,12 @@ end
     @test psat ≈ 3.027452e+04 rtol = 1e-6
     @test vl  ≈ 1/1.359958e+06 rtol = 1e-6
     @test vv  ≈ 1/5892.917088 rtol = 1e-6
+    
+    #uses the default x0_saturation_temperature initial guess
+    @test saturation_temperature(system,psat)[1] ≈ 0.64  rtol = 1e-6
+
+    #uses the default x0_psat initial guess
+    @test saturation_pressure(system,0.64,IsoFugacitySaturation())[1] ≈ 3.027452e+04 rtol = 1e-6
 end
 
 @testset "association" begin
