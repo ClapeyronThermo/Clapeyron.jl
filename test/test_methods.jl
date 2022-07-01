@@ -491,19 +491,25 @@ end
     z = [0.333, 0.333, 0.334]
 
     @testset "RR Algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T,z, RRTPFlash())[3] ≈ -6.539976318817461 rtol = 1e-6 
+        method = RRTPFlash()
+        @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.539976318817461 rtol = 1e-6 
     end
 
     @testset "DE Algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T,z, DETPFlash(numphases=3))[3] ≈ -6.759674475174073 rtol = 1e-6 
+        method = DETPFlash(numphases=3)
+        @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.759674475174073 rtol = 1e-6 
     end
 
     @testset "Michelsen Algorithm" begin
-        system = PCSAFT(["water","cyclohexane"])
-        method = MichelsenTPFlash(x0 = [0.9997755902156433, 0.0002244097843566859],
-                                    y0 = [6.425238373915699e-6, 0.9999935747616262],
-                                    equilibrium= :lle)
-        @test Clapeyron.tp_flash(system, p, T, [0.5,0.5],method)[3] ≈ -7.577270350886795 rtol = 1e-6 
+        
+        x0 = [0.9997755902156433, 0.0002244097843566859, 0.0]
+        y0 = [6.425238373915699e-6, 0.9999935747616262, 0.0]
+        method = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium= :lle)
+        @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method)[3] ≈ -7.577270350886795 rtol = 1e-6
+        
+        method2 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, second_order = true)
+        @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method)[3] ≈ -7.577270350886795 rtol = 1e-6
+
     end
 end
 
