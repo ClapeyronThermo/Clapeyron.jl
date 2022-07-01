@@ -71,7 +71,7 @@ function Base.show(io::IO, param::AssocParam)
     print(io, param.values.values)
 end
 
-# Operations
+#= Operations
 function Base.:(+)(param::AssocParam, x::Number)
     values = param.values + x
     return AssocParam(param.name, param.components, values, param.sites ,param.sourcecsvs, param.sources)
@@ -85,4 +85,4 @@ end
 function Base.:(^)(param::AssocParam, x::Number)
     values = param.values ^ x
     return AssocParam(param.name, param.components, values, param.sites, param.sourcecsvs, param.sources)
-end
+end =#
