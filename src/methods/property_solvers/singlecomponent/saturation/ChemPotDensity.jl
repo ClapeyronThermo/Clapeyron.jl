@@ -158,7 +158,7 @@ function psat_chempot(model,T,vol_liq0,vol_vap0,options = NEqOptions())
     ρ0 = vec2(ρl0,ρv0,T)
     ofpsat = fobj_psat!(model, T)
     # sol = NLsolve.nlsolve(only_fj!(ofpsat), ρ0, method = :newton)
-    sol = Solvers.nlsolve(ofpsat, ρ0, LineSearch(Newton()),options,ForwardDiff.Chunk{2}()) #LineSearch(Newton(),HZAW())
+    sol = Solvers.nlsolve(ofpsat, ρ0, LineSearch(Newton()),options)
     #@show sol
     ρ = Solvers.x_sol(sol)
     vol_liq, vol_vap = 1 ./ ρ
