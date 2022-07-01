@@ -26,6 +26,7 @@ function index_expansion(x::Matrix,idr::AbstractVector)
     numspecies = length(idr)
     l1,_ = size(x)
     res = zeros(eltype(x),l1, numspecies)
+    res .= 0
     for i in 1:l1
         res[i,idr] .= x[i,:]
     end
@@ -36,6 +37,7 @@ function index_expansion(x::AbstractMatrix,idr::AbstractVector)
     numspecies = length(idr)
     l1,_ = size(x)
     res = similar(x,(l1, numspecies))
+    res .= 0
     for i in 1:l1
         res[i,idr] .= x[i,:]
     end
@@ -50,6 +52,7 @@ Given an input vector generated from a reduced model and the non zero indices, r
 function index_expansion(x::AbstractVector,idr::AbstractVector)
     numspecies = length(idr)
     res = similar(x, numspecies)
+    res .= 0
     res[idr] .= x
     return res
 end
