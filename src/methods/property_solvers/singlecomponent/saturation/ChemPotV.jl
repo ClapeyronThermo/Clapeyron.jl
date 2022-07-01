@@ -166,7 +166,7 @@ function sat_pure(f!::ObjSatPure,V0,method)
     if !isfinite(V0[1]) | !isfinite(V0[2]) | !isfinite(T)
         return (nan,nan,nan), false
     end
-    r = Solvers.nlsolve(f!, V0 ,LineSearch(Newton()),NEqOptions(method))
+    r = Solvers.nlsolve(f!, V0 ,LineSearch(Newton()),NEqOptions(method),ForwardDiff.Chunk{2}())
     Vsol = Solvers.x_sol(r)
     V_l = exp10(Vsol[1])
     V_v = exp10(Vsol[2])

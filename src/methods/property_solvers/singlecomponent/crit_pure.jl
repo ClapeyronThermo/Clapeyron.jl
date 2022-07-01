@@ -20,7 +20,7 @@ function crit_pure(model::EoSModel,x0=nothing;options = NEqOptions())
         x0 = SizedVector{2,typeof(T̄)}((x01,x02))
     end
     f! = ObjCritPure(model,T̄)
-    solver_res = Solvers.nlsolve(f!, x0, TrustRegion(Newton(), NWI()), options)
+    solver_res = Solvers.nlsolve(f!, x0, TrustRegion(Newton(), NWI()), options,ForwardDiff.Chunk{2}())
     r  = Solvers.x_sol(solver_res)
     T_c = r[1]*T̄
     V_c = exp10(r[2])

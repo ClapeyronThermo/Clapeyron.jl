@@ -159,7 +159,7 @@ function try_sat_temp(model,p,T0,Vl,Vv,scales,method::AntoineSaturation)
         v0 = SizedVector{3,typeof(T0)}((T0,Vl,Vv))
     end
     f!(F,x) = Obj_Sat_Temp(model,F,x[1],exp10(x[2]),exp10(x[3]),p,scales,method)
-    r = Solvers.nlsolve(f!,v0, LineSearch(Newton()),NEqOptions(method))
+    r = Solvers.nlsolve(f!,v0, LineSearch(Newton()),NEqOptions(method),ForwardDiff.Chunk{3}())
     sol = Solvers.x_sol(r)
     T = sol[1]
     Vl = exp10(sol[2])
