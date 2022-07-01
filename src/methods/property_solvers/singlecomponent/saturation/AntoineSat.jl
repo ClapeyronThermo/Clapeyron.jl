@@ -99,10 +99,10 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
         if isnothing(method.vl) && isnothing(method.vv)
             Vl,Vv = log10(Vl),log10(Vv)
         else
-            Vl,Vv = log10(method.Vl),log10(method.Vv)
+            Vl,Vv = log10(method.vl),log10(method.vv)
         end
     elseif isnothing(method.vl) && isnothing(method.vv)
-        Vl,Vv = x0_sat_pure(model,method.T) #exp10
+        Vl,Vv = x0_sat_pure(model,method.T0) #exp10
         T0 = method.T0
     else
         T0,Vl,Vv = method.T0,method.vl,method.vv
@@ -129,7 +129,7 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
     Tc,pc,vc = crit
     p > pc && return fail
     T2 >= Tc && return fail
-   
+    
     if 0.999pc > p > 0.95pc 
         #you could still perform another iteration from a better initial point
         Vl2,Vv2 = x0_sat_pure_crit(model,0.99T2,Tc,pc,vc)

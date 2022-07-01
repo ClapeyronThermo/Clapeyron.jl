@@ -466,6 +466,7 @@ end
 @testset "Saturation Methods" begin
     model = PR(["water"])
     vdw = vdW(["water"])
+    p0 = 1e5
     T = 373.15
     p,vl,vv = Clapeyron.saturation_pressure(model,T) #default
     px,vlx,vvx = Clapeyron.saturation_pressure(vdw,T) #vdw
@@ -492,6 +493,15 @@ end
     p5,vl5,vv5 = Clapeyron.saturation_pressure_impl(model,T,SuperAncSaturation())
     @test p5 ≈ p rtol = 1e-6
     @test @inferred Clapeyron.saturation_pressure_impl(vdw,T,SuperAncSaturation())[1] ≈ px
+
+    #AntoineSat
+    @test Clapeyron.saturation_temperature(model,p0,AntoineSaturation(T0 = 400.0))[1] ≈ 374.2401401001685 rtol = 1e-6
+    @test Clapeyron.saturation_temperature(model,p0,AntoineSaturation(vl = vl5,vv = vv5))[1] ≈ 374.2401401001685 rtol = 1e-6
+    @test_throws Any Clapeyron.saturation_temperature(model,p0,AntoineSaturation(vl = vl5,T0 = 400))
+
+    #ClapeyronSat
+    @test Clapeyron.saturation_temperature(model,p0,ClapeyronSaturation())[1] ≈ 374.2401401001685 rtol = 1e-6
+
 end
 
 @testset "Unitful Methods" begin
