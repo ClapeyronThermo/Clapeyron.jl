@@ -11,6 +11,7 @@ using FillArrays: FillArrays
 
 using Roots: Roots
 using NLSolvers
+using NLSolvers: NEqOptions
 import BlackBoxOptim
 
 using DiffResults, ForwardDiff
@@ -20,7 +21,7 @@ import LogExpFunctions
 
 include("solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log, sqrt
+using .Solvers: log, sqrt, log1p
 ∂Tag = Solvers.∂Tag
 
 include("utils/fractions.jl")
@@ -32,6 +33,7 @@ include("base/constants.jl")
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
 include("base/EoSModel.jl")
+include("models/types.jl") #type hierarchy
 
 #show(model<:EoSModel)
 include("base/eosshow.jl")
@@ -70,7 +72,6 @@ base --> database(params)  -|-> split_model --> methods -|-> models
 =#
 
 #Clapeyron EoS collection
-include("models/types.jl") #type hierarchy
 include("models/ideal/ideal.jl")
 include("models/ideal/BasicIdeal.jl")
 include("models/ideal/MonomerIdeal.jl")
@@ -92,9 +93,10 @@ include("models/EmpiricHelmholtz/LJRef/LJRefIdeal.jl")
 include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
 include("models/cubic/equations.jl")
-include("models/cubic/vdW.jl")
+include("models/cubic/vdW/vdW.jl")
 include("models/cubic/RK/RK.jl")
 include("models/cubic/PR/PR.jl")
+include("models/cubic/KU/KU.jl")
 
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
@@ -135,7 +137,8 @@ include("models/Activity/COSMOSAC/COSMOSACdsp.jl")
 include("models/cubic/alphas/alphas.jl")
 include("models/cubic/mixing/mixing.jl")
 include("models/cubic/translation/translation.jl")
-
+include("models/cubic/vdW/variants/Clausius.jl")
+include("models/cubic/vdW/variants/Berthelot.jl")
 include("models/cubic/RK/variants/SRK.jl")
 include("models/cubic/RK/variants/PSRK.jl")
 include("models/cubic/PR/variants/PR78.jl")
@@ -143,12 +146,14 @@ include("models/cubic/PR/variants/VTPR.jl")
 include("models/cubic/PR/variants/UMRPR.jl")
 include("models/cubic/PR/variants/QCPR.jl")
 include("models/cubic/PR/variants/EPPR78.jl")
+include("models/cubic/PatelTeja/PatelTeja.jl")
+include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
-
+include("models/PeTS/PeTS.jl")
 include("models/UFTheory/UFTheory.jl")
 
 include("utils/misc.jl")

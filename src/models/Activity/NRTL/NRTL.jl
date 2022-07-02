@@ -46,7 +46,7 @@ Gᵢⱼ exp(-cᵢⱼτᵢⱼ)
 ```
 
 ## References
-1. Renon, H., & Prausnitz, J. M. (1968). Local compositions in thermodynamic excess functions for liquid mixtures. AIChE journal. American Institute of Chemical Engineers, 14(1), 135–144. doi:10.1002/aic.690140124
+1. Renon, H., & Prausnitz, J. M. (1968). Local compositions in thermodynamic excess functions for liquid mixtures. AIChE journal. American Institute of Chemical Engineers, 14(1), 135–144. [doi:10.1002/aic.690140124](https://doi.org/10.1002/aic.690140124)
 """
 NRTL
 

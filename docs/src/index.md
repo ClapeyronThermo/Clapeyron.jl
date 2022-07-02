@@ -1,3 +1,6 @@
+```@meta
+CurrentModule = Clapeyron
+```
 # Clapeyron.jl
 A [Julia](http://julialang.org) package for the modelling of fluids using thermodynamic equations of state. These include the standard cubics (van der Waals, Redlich-Kwong, Peng-Robinson, _etc._), SAFT-type equations (PC-SAFT, SAFT-VR Mie, SAFT-$\gamma$ Mie, _etc._), empirical equations (GERG2008, IAWPS95) and many more.
 
@@ -24,8 +27,7 @@ Clapeyron.jl is licensed under the [MIT license](https://github.com/ypaul21/Clap
 
 Clapeyron.jl is a registered package, it can be installed from the general registry by:
 
-
-```julia
+```
 pkg> add Clapeyron
 ```
 
@@ -47,6 +49,9 @@ If you are using Clapeyron for your research work, please cite the following:
     url={https://pubs.acs.org/doi/10.1021/acs.iecr.2c00326}
 }
 ```
+## Citing a particular equation of state model
+
+In addition to citing this work, it is encouraged to cite the references to the underlying models used. for that, you can use [`Clapeyron.cite`](@ref) to obtain the references used in a particular model
 
 
 

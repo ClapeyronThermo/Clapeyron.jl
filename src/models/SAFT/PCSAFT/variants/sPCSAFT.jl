@@ -38,7 +38,7 @@ export sPCSAFT
 Simplified Perturbed-Chain SAFT (sPC-SAFT)
 
 ## References
-1. von Solms, N., Michelsen, M. L., & Kontogeorgis, G. M. (2003). Computational and physical performance of a modified PC-SAFT equation of state for highly asymmetric and associating mixtures. Industrial & Engineering Chemistry Research, 42(5), 1098–1105. doi:10.1021/ie020753p
+1. von Solms, N., Michelsen, M. L., & Kontogeorgis, G. M. (2003). Computational and physical performance of a modified PC-SAFT equation of state for highly asymmetric and associating mixtures. Industrial & Engineering Chemistry Research, 42(5), 1098–1105. [doi:10.1021/ie020753p](https://doi.org/10.1021/ie020753p)
 """
 sPCSAFT
 

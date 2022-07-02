@@ -46,7 +46,7 @@ abstract type LJSAFTModel <: SAFTModel end
 Perturbed-Chain SAFT (PC-SAFT)
 
 ## References
-1. Kraska, T., & Gubbins, K. E. (1996). Phase equilibria calculations with a modified SAFT equation of state. 1. Pure alkanes, alkanols, and water. Industrial & Engineering Chemistry Research, 35(12), 4727–4737. doi:10.1021/ie9602320
+1. Kraska, T., & Gubbins, K. E. (1996). Phase equilibria calculations with a modified SAFT equation of state. 1. Pure alkanes, alkanols, and water. Industrial & Engineering Chemistry Research, 35(12), 4727–4737. [doi:10.1021/ie9602320](https://doi.org/10.1021/ie9602320)
 """
 LJSAFT
 

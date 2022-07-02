@@ -3,6 +3,9 @@ using Test, Unitful
 t1 = @elapsed using Clapeyron
 @info "Loading Clapeyron took $(round(t1,digits = 2)) seconds"
 
+#Disable showing citations
+ENV["CLAPEYRON_SHOW_REFERENCES"] = "FALSE"
+
 macro printline()  # useful in hunting for where tests get stuck
     file = split(string(__source__.file), "/")[end]
     printstyled("  ", file, ":", __source__.line, "\n", color=:light_black)

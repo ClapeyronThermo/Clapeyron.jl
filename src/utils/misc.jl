@@ -18,3 +18,5 @@ Equivalent to `norm((xi-yi for (xi, yi) in zip(x, y)), p)`
 function dnorm(x,y,p)
     return norm((xi-yi for (xi, yi) in zip(x, y)), p)
 end
+
+include("core_utils.jl")

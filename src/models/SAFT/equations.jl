@@ -26,4 +26,12 @@ function p_scale(model::SAFTModel,z=SA[1.0])
     return 1/val
 end
 
+function antoine_coef(model::SAFTModel)
+    m = model.params.segment.values[1]
+    A = 2.3461144513376593+0.27679968565666935*m
+    B = exp(1.7330494260220226 + 0.6185684341246401*log(m))
+    C = 0.018524160155803788 - 0.19222021003570597*log(m)
+    return A,B,C
+end    
+
 
