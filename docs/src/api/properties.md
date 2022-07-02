@@ -13,9 +13,21 @@ Pages = ["properties.md"]
 ```@index
 Pages = ["properties.md"]
 ```
+
+## Primitive functions
+
+Almost all models in Clapeyron have at least one of the following functions defined.
+
+```@docs
+Clapeyron.eos
+Clapeyron.eos_res
+Clapeyron.idealmodel
+Clapeyron.a_res
+```
+
 ## Automatic Differenciation functions
 
-All bulk properties in `Clapeyron` are calculated via a combination of these Automatic Differenciation Primitives. 
+All bulk properties in `Clapeyron` are calculated via a combination of these Automatic Differenciation Primitives over [`eos`](@ref) or [`eos_res`](@ref)
  
 ```@docs
 Clapeyron.∂f∂T
