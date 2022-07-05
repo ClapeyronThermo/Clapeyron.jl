@@ -18,6 +18,16 @@ function x0_volume_gas(model,p,T,z)
 end
 
 """
+    x0_volume_solid(model,T,z)
+
+Returns an initial guess to the solid volume, dependent on temperature and composition. needs to be defined for EoS that support solid phase. by default returns NaN
+"""
+function x0_volume_solid(model,T,z)
+    _0 = zero(T+first(z))
+    return _0/_0
+end
+
+"""
     x0_volume(model,p,T,z; phase = :unknown)
 
 Returns an initial guess of the volume at a pressure, temperature, composition and suggested phase.
@@ -25,6 +35,10 @@ Returns an initial guess of the volume at a pressure, temperature, composition a
 If the suggested phase is `:unkwown` or `:liquid`, calls [`x0_volume_liquid`](@ref).
 
 If the suggested phase is `:gas`, calls [`x0_volume_gas`](@ref).
+
+If the suggested phase is `solid`, calls [`x0_volume_solid`](@ref).
+
+Returns `NaN` otherwise
 
 """
 function x0_volume(model,p,T,z; phase = :unknown)
@@ -34,8 +48,12 @@ function x0_volume(model,p,T,z; phase = :unknown)
     elseif is_vapour(phase)
         return x0_volume_gas(model,p,T,z)
     elseif is_supercritical(phase)
-     else
-        error("unreachable state on x0_volume")
+        return x0_volume_gas(model,p,T,z)
+    elseif is_solid(phase)
+        x0_volume_solid(model,T,z)
+    else
+        _0 = zero(p+T+first(z))
+        return _0/_0
     end
 end
 

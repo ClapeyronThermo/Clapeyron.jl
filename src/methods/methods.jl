@@ -47,6 +47,18 @@ If a string is passed, it is converted to symbol.
 is_supercritical(sym::Symbol) = sym in SUPERCRITICAL_STR
 is_supercritical(str::String) = is_vapour(Symbol(str))
 
+const SOLID_STR = (:solid,:SOLID,:s)
+"""
+    is_solid(x::Union{Symbol,String})
+
+Returns `true` if the symbol is in `(:solid,:SOLID,:s)`.
+
+If a string is passed, it is converted to symbol.
+"""
+is_solid(sym::Symbol) = sym in SOLID_STR
+is_solid(str::String) = is_vapour(Symbol(str))
+
+
 const VLE_STR = (:vle,:lve,:vl,:lv)
 """
     is_vle(x::Union{Symbol,String})
