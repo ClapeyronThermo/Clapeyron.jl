@@ -131,7 +131,7 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
     end
     Vg0 = x0_volume(model,p,T,z,phase=:v)
     Vl0 = x0_volume(model,p,T,z,phase=:l)
-    Vs0 = x0_volume(model,p,T,z,phase=:s)
+    Vs0 = x0_volume_solid(model,T,z) #Needs to be const-propagated.
     volumes0 = (Vg0,Vl0,Vs0)
     if threaded
         #=
@@ -156,7 +156,7 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
         Vg::TYPE = fetch(_Vg)
         Vl::TYPE = fetch(_Vl)
         Vs::TYPE = fetch(_Vs)
-        volumes = (Vg,Vl,Vs)   
+        volumes = (Vg,Vl,Vs)
     else
         Vg =  _volume_compress(model,p,T,z,Vg0)
         Vl =  _volume_compress(model,p,T,z,Vl0)
