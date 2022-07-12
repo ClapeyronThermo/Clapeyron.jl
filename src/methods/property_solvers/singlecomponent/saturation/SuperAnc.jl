@@ -119,7 +119,4 @@ function chebyshev_temperature(model::ABCubicModel,p,method::SuperAncSaturation)
     T = Roots.solve(prob)
 end
 
-
-
-
 export SuperAncSaturation
