@@ -1,5 +1,17 @@
 @enum CSVType singledata pairdata assocdata groupdata
 
+#=This is just a tape.
+component info stores (comp1,comp2,site1,site2). on singleparams, comp = comp1
+on single and pair params, site1, site2, = ""
+data is a vector of data found
+sources is the sources for each point, same with csv
+
+the strategy is to check each csv and produce RawParams, with ONLY nonmissing values
+then we join the same params (joindata!) and then we "compile" the tapes (via compile_param)
+
+we calculate the sites with the parsed raw params, as they have all the necessary information
+For Clapeyron 0.4.0, this will also hold the group type, tapes with different group types cannot be merged.
+=#
 struct RawParam{T}
     component_info::Vector{NTuple{4,String}}
     data::Vector{T}
@@ -17,87 +29,152 @@ function Base.show(io::IO,param::RawParam)
     print(io,param.type,")")
 end
 
+#join CSV types
+#single and pair data can be merged onto pairdata
+#other csv types cannot be merged.
+function joindata!(old::CSVType,new::CSVType)
+    if new == old
+        return new
+    elseif old in (singledata,pairdata) && new in (singledata,pairdata)
+        return pairdata
+    else
+        throw(error("cannot join $(old) and $(new) CSV types"))
+    end
+end
+#join two tapes
+#tapes are destroyed here.
 function joindata!(old::RawParam,new::RawParam)
     component_info = prepend!(old.component_info,new.component_info)
     
-    #TODO: handle all the type variability here
-    data = prepend!(old.data,new.data)
-    
+    #Handle all the type variability of the data here
+    T1,T2 = eltype(old),eltype(new)
+    if promote_type(T1,T2) == T1
+        data = prepend!(old.data,new.data)
+    elseif promote_type(T1,T2) == T2
+        data = append!(new.data,old,data)
+    else
+        data = vcat(string.(new.data),string.(old.data))
+    end
+
     sources = prepend!(old.sources,new.sources)
     csv = prepend!(old.csv,new.csv)
-    if new.type == old.type
-        tnew = new.type
-    elseif old.type in (singledata,pairdata) && new.type in (singledata,pairdata)
-        tnew = pairdata
-    else
-        throw(error("cannot join $(old.data) and $(new.data) CSV types"))
-    end
+    tnew = joindata!(old.type,new.type)
     return RawParam(component_info,data,sources,csv,tnew)
 end
 
 function compile_param(components,name,raw::RawParam,site_strings,options)
-    EMPTY_STR = ""
     if raw.type == singledata
-        l = length(components)
-        values = zeros(eltype(raw),l)
-        ismissingvals = ones(Bool,l)
-        sources = fill(EMPTY_STR,l)
-        sources_csv = fill(EMPTY_STR,l)
-        for (k,v,ss,sc) in zip(raw.component_info,raw.data,raw.sources,raw.csv)
-            i = findfirst(==(k[1]),components)
-            values[i] = v
-            ismissingvals[i] = false
-            sources[i] = ss
-            sources_csv[i] = sc
-        end
-        sources = unique!(vec(sources))
-        sources_csv = unique!(vec(sources_csv))
-        return SingleParameter(name,components,values,ismissingvals,sources,sources_csv)
+        return compile_single(name,components,raw,options)
     elseif raw.type == pairdata
-        symmetric = name ∉ options.asymmetricparams 
-        l = length(components)
-        values = zeros(eltype(raw),(l,l))
-        ismissingvals = ones(Bool,(l,l))
-        sources = fill(EMPTY_STR,(l,l))
-        sources_csv = fill(EMPTY_STR,(l,l))
-        for (k,v,ss,sc) in zip(raw.component_info,raw.data,raw.sources,raw.csv)
-            i = findfirst(==(k[1]),components)
-            j = k[2] == "" ? i : findfirst(==(k[2]),components)
-            values[i,j] = v
-            ismissingvals[i,j] = false
-            sources[i,j] = ss
-            sources_csv[i,j] = sc
-            if symmetric 
-                values[j,i] = v
-                ismissingvals[j,i] = false
-                sources[j,i] = ss
-                sources_csv[j,i] = sc
-            end
-            sources = unique!(vec(sources))
-            sources_csv = unique!(vec(sources_csv))
-            diagvalues = view(values, diagind(values))
-            return PairParameter(name,components,values,diagvalues,ismissingvals,sources,sources_csv)
-        end
+        return compile_pair(name,components,raw,options)
     elseif raw.type == assocdata
-        vals = raw.data
-        c_12,s_12 = standarize_comp_info(raw.component_info,components,site_strings)
-        comp_info = raw.component_info
-        idxs = sort!([last(findall(==(u),comp_info)) for u in unique(comp_info)])
-        s_12 = s_12[idxs]
-        c_12 = c_12[idxs]
-        sources = raw.sources[idxs]
-        csvs = raw.csv[idxs]
-        ij = maximum(maximum(i) for i in c_12)
-        ab = maximum(maximum(i) for i in s_12)
-        size_ij = (ij,ij)
-        size_ab =  (ab,ab)
-        values = Compressed4DMatrix(vals[idxs],c_12,s_12,size_ij,size_ab)
-        param = AssocParam(name,components,values,site_strings,sources,csvs)
-        return param
+        return compile_assoc(name,components,raw,site_strings,options)
     end
     return nothing
 end
 
+function compile_param(components,name,raw::CSVType,site_strings,options)
+    if raw == singledata
+        return compile_single(name,components,raw,options)
+    elseif raw == pairdata
+        return compile_pair(name,components,raw,options)
+    elseif raw == assocdata
+        return compile_assoc(name,components,raw,site_strings,options)
+    end
+    return nothing
+end
+
+function compile_single(name,components,raw::RawParam,options)
+    EMPTY_STR = ""
+    l = length(components)
+    values = zeros(eltype(raw),l)
+    ismissingvals = ones(Bool,l)
+    sources = fill(EMPTY_STR,l)
+    sources_csv = fill(EMPTY_STR,l)
+    for (k,v,ss,sc) in zip(raw.component_info,raw.data,raw.sources,raw.csv)
+        i = findfirst(==(k[1]),components)
+        values[i] = v
+        ismissingvals[i] = false
+        sources[i] = ss
+        sources_csv[i] = sc
+    end
+    sources = unique!(vec(sources))
+    sources_csv = unique!(vec(sources_csv))
+    return SingleParameter(name,components,values,ismissingvals,sources,sources_csv)
+end
+
+function compile_single(name,components,type::CSVType,options)
+    l = length(components)
+    values = zeros(Float64,l)
+    ismissingvals = fill(true,l)
+    return SingleParameter(name,components,values,ismissingvals,String[],String[])
+end
+
+function compile_pair(name,components,raw::RawParam,options)
+    EMPTY_STR = ""
+    symmetric = name ∉ options.asymmetricparams 
+    l = length(components)
+    values = zeros(eltype(raw),(l,l))
+    ismissingvals = ones(Bool,(l,l))
+    sources = fill(EMPTY_STR,(l,l))
+    sources_csv = fill(EMPTY_STR,(l,l))
+    for (k,v,ss,sc) in zip(raw.component_info,raw.data,raw.sources,raw.csv)
+        i = findfirst(==(k[1]),components)
+        j = k[2] == "" ? i : findfirst(==(k[2]),components)
+        values[i,j] = v
+        ismissingvals[i,j] = false
+        sources[i,j] = ss
+        sources_csv[i,j] = sc
+        if symmetric 
+            values[j,i] = v
+            ismissingvals[j,i] = false
+            sources[j,i] = ss
+            sources_csv[j,i] = sc
+        end
+        sources = unique!(vec(sources))
+        sources_csv = unique!(vec(sources_csv))
+        diagvalues = view(values, diagind(values))
+        return PairParameter(name,components,values,diagvalues,ismissingvals,sources,sources_csv)
+    end
+end
+
+function compile_pair(name,components,type::CSVType,options)
+    l = length(components)
+    values = zeros(Float64,(l,l))
+    ismissingvals = fill(true,(l,l))
+    diagvalues = view(values, diagind(values))
+    return PairParameter(name,components,values,diagvalues,ismissingvals,String[],String[])
+end
+
+function compile_assoc(name,components,raw::RawParam,site_strings,options)
+    EMPTY_STR = ""
+    vals = raw.data
+    c_12,s_12 = standarize_comp_info(raw.component_info,components,site_strings)
+    comp_info = raw.component_info
+    idxs = sort!([last(findall(==(u),comp_info)) for u in unique(comp_info)])
+    s_12 = s_12[idxs]
+    c_12 = c_12[idxs]
+    sources = raw.sources[idxs]
+    csvs = raw.csv[idxs]
+    ij = maximum(maximum(i) for i in c_12)
+    ab = maximum(maximum(i) for i in s_12)
+    size_ij = (ij,ij)
+    size_ab =  (ab,ab)
+    values = Compressed4DMatrix(vals[idxs],c_12,s_12,size_ij,size_ab)
+    param = AssocParam(name,components,values,site_strings,sources,csvs)
+    return param
+end
+
+function compile_assoc(name,components,raw::CSVType,site_strings,options)
+    vals = Float64[]
+    c_12 = Vector{Tuple{Int,Int}}(undef,0)
+    s_12 = Vector{Tuple{Int,Int}}(undef,0)
+    values = Compressed4DMatrix(vals,c_12,s_12,(0,0),(0,0))
+    return AssocParam(name,components,values,site_strings,String[],String[])
+end
+
+
+#Sort site tape, so that components are sorted by the input.
 function standarize_comp_info(component_info,components,site_strings)
     c_12 = Vector{Tuple{Int,Int}}(undef,length(component_info))
     s_12 = Vector{Tuple{Int,Int}}(undef,length(component_info))
@@ -169,9 +246,9 @@ function getparams(components,
 end
 function getparams(components::Vector{String},locations::Vector{String},options)
     filepaths = flattenfilepaths(locations,options.userlocations)
-    allcomponentsites = findsitesincsvs(components, filepaths,options)
-    allparams, paramsourcecsvs, paramsources,result = createparamarrays(components, filepaths, allcomponentsites,options)
-    #result = packageparams(allparams, components, allcomponentsites, paramsourcecsvs, paramsources,options)
+    result,allcomponentsites = createparamarrays(components, filepaths,options)
+    #result = packageparams(allparams, components, allcomponentsites, paramsourcecsvs, paramsources,options
+   
     if !options.return_sites
         return result
     end
@@ -224,7 +301,7 @@ end
 function getparams(components::String, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
     return getparams([components],locations,options)
 end
-
+#=
 function packageparams(allparams::Dict, 
     components::Vector{String}, 
     allcomponentsites::Array{Array{String,1},1}, 
@@ -288,7 +365,7 @@ function pkgparam(param::String,
     newvalue = first.(newvalue_ismissingvalues)
     return AssocParam(param,components, newvalue , allcomponentsites, collect(paramsourcecsvs[param]), collect(paramsources[param]))
 end
-
+=#
 function findsites(data::Dict,components::Vector;verbose = false)
     sites = Dict(components .=> [Set{String}() for _ ∈ 1:length(components)])
     for raw in values(data)
@@ -307,15 +384,15 @@ function findsites(data::Dict,components::Vector;verbose = false)
     return output
 end
 
-function createparamarrays(components::Array{String,1}, filepaths::Array{String,1}, allcomponentsites::Array{Array{String,1},1}, options::ParamOptions = DefaultOptions)
+function createparamarrays(components::Array{String,1}, filepaths::Array{String,1}, options::ParamOptions = DefaultOptions)
     # Returns Dict with all parameters in their respective arrays.
     verbose = options.verbose
     check_clashingheaders(filepaths,options)
-    allparams = Dict{String,Any}()
-    allparams2 = Dict{String,RawParam}()
-
-    paramsourcecsvs = Dict{String,Set{String}}()
-    paramsources = Dict{String,Set{String}}()
+    #allparams = Dict{String,Any}()
+    allparams = Dict{String,RawParam}()
+    allnotfoundparams = Dict{String,CSVType}()
+    #paramsourcecsvs = Dict{String,Set{String}}()
+    #paramsources = Dict{String,Set{String}}()
     # Read the filepaths in reverse in order to ensure that unused sources do not get added.
     
     for filepath ∈ reverse(filepaths)
@@ -326,15 +403,23 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
         end
         headerparams = readheaderparams(filepath,options)
         verbose && @info("Searching for $(Symbol(csvtype)) headers $headerparams for components $components at $filepath ...")
-        foundparams, paramtypes, sources,foundparams2 = findparamsincsv(components, filepath,options)
-        for (kk,vv) in pairs(foundparams2)
-            if haskey(allparams2,kk)
-                vv2 = allparams2[kk]
+        foundparams, notfoundparams = findparamsincsv(components, filepath,options)
+        for (kk,vv) in pairs(foundparams)
+            if haskey(allparams,kk)
+                vv2 = allparams[kk]
                 vv = joindata!(vv2,vv)
             end
-            allparams2[kk] = vv
+            allparams[kk] = vv
         end
-        
+
+        for (kk,vv) in pairs(notfoundparams)
+            if haskey(allnotfoundparams,kk)
+                vv2 = allnotfoundparams[kk]
+                vv = joindata!(vv2,vv)
+            end
+            allnotfoundparams[kk] = vv
+        end
+        #=
         foundparams = swapdictorder(foundparams)
         for headerparam ∈ headerparams
             if !haskey(allparams, headerparam)
@@ -399,11 +484,24 @@ function createparamarrays(components::Array{String,1}, filepaths::Array{String,
                     !ismissing(sources[assocpair]) && push!(paramsources[headerparam], sources[assocpair])
                 end
             end
+        end =#
+    end
+    #delete all found params from allnotfoundparams
+    for (kk,vv) in allparams
+        if haskey(allnotfoundparams,kk)
+            delete!(allnotfoundparams,kk)
         end
     end
-    site_strings = findsites(allparams2,components)
-    result = Dict(k => compile_param(components,k,v,site_strings,options) for (k,v) in pairs(allparams2))
-    return allparams, paramsourcecsvs, paramsources, result
+    
+    #Generate component sites with the RawParam tapes
+    allcomponentsites = findsites(allparams,components)
+    
+    #Compile Params
+    result = Dict(k => compile_param(components,k,v,allcomponentsites,options) for (k,v) in allparams)
+    for (kk,vv) in allnotfoundparams
+        result[kk] = compile_param(components,kk,vv,allcomponentsites,options) 
+    end
+    return result,allcomponentsites
 end
 
 function col_indices(csvtype,headernames,options=DefaultOptions)
@@ -422,7 +520,7 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
         isnothing(lookupcolumnindex) && error("Header ", normalised_columnreference, " not found.")
         idx_species = lookupcolumnindex
         if csvtype === groupdata
-            groupcolumnreference= options.group_columnreference
+            groupcolumnreference = options.group_columnreference
             normalised_groupcolumnreference = normalisestring(groupcolumnreference)
             lookupgroupcolumnindex = findfirst(isequal(normalised_groupcolumnreference), headernames)
             isnothing(lookupgroupcolumnindex) && error("Header ", normalised_groupcolumnreference, " not found.")
@@ -460,7 +558,7 @@ end
 
 function findparamsincsv(components::Array{String,1},
     filepath::AbstractString,
-    options::ParamOptions = DefaultOptions)
+    options::ParamOptions = DefaultOptions;groups = false)
 
     headerparams = readheaderparams(filepath,options)
     sourcecolumnreference = options.source_columnreference
@@ -477,10 +575,10 @@ function findparamsincsv(components::Array{String,1},
     normalised_headerparams = normalisestring.(headerparams)
     normalised_headerparams ⊈ normalised_csvheaders && error("Headers ", setdiff(normalised_headerparams, normalised_csvheaders), " not present in csv header.")
 
-    foundvalues = Dict()
+    #foundvalues = Dict()
     foundvalues2 = Dict{String,RawParam}()
-    paramtypes = Dict(headerparams .=> [Tables.columntype(df, Symbol(x)) for x ∈ headerparams])
-    sources = Dict{Any,Union{String,Missing}}()
+    #paramtypes = Dict(headerparams .=> [Tables.columntype(df, Symbol(x)) for x ∈ headerparams])
+    #sources = Dict{Any,Union{String,Missing}}()
 
     normalised_sourcecolumnreference = normalisestring(sourcecolumnreference)
     getsources = false
@@ -490,17 +588,20 @@ function findparamsincsv(components::Array{String,1},
     end
 
     single_idx,pair_idx,assoc_idx = col_indices(csvtype,normalised_csvheaders,options)
-    lookupcolumnindex,_ = single_idx
+    lookupcolumnindex,groupindex = single_idx
     lookupcolumnindex1,lookupcolumnindex2 = pair_idx
     lookupsitecolumnindex1,lookupsitecolumnindex2 = assoc_idx
     headerparams_indices = [findfirst(isequal(i),normalised_csvheaders) for i in normalised_headerparams]
     lookupcolumnindex = max(lookupcolumnindex,lookupcolumnindex1)
+    if groups
+        lookupcolumnindex = groupindex
+    end
     species_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex),normalisecomponents)
     found_indices0,comp_indices = _indexin(components_dict,species_list,component_delimiter,1:length(species_list))
     dfR = Tables.rows(df)
     EMPTY_STR = ""
     
-    if csvtype == singledata
+    if csvtype == singledata || ((csvtype == groupdata) && groups)
         found_indices = found_indices0
         l = length(found_indices)
         if l != 0
@@ -509,7 +610,7 @@ function findparamsincsv(components::Array{String,1},
             _sources = fill(EMPTY_STR,l)
             _csv = fill(String(filepath),l)
         end
-        for (i,c) in zip(found_indices,comp_indices)
+        #= for (i,c) in zip(found_indices,comp_indices)
             component = components[c]
             row =  dfR[i]
             foundvalues[component] = Dict{String,Any}()
@@ -522,8 +623,8 @@ function findparamsincsv(components::Array{String,1},
             else
                 sources[component] = missing
             end
-        end
-    elseif csvtype == pairdata
+        end =#
+    elseif csvtype == pairdata && !groups
         species2_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex2)[found_indices0],normalisecomponents)
         found_indices2,comp_indices2 = _indexin(components_dict,species2_list,component_delimiter,1:length(species2_list))
         comp_indices1 = comp_indices[found_indices2]
@@ -535,6 +636,7 @@ function findparamsincsv(components::Array{String,1},
             _sources = fill(EMPTY_STR,l)
             _csv = fill(String(filepath),l)
         end
+        #=
         for (i,c1,c2) in zip(found_indices2,comp_indices1,comp_indices2)
             row =  dfR[i]
             component1 = components[c1]
@@ -550,8 +652,8 @@ function findparamsincsv(components::Array{String,1},
             else
                 sources[componentpair] = missing
             end
-        end
-    elseif csvtype == assocdata  
+        end =#
+    elseif csvtype == assocdata && !groups  
         species2_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex2)[found_indices0],normalisecomponents)        
         found_indices2,comp_indices2 = _indexin(components_dict,species2_list,component_delimiter,1:length(species2_list))
         comp_indices1 = comp_indices[found_indices2]
@@ -565,7 +667,7 @@ function findparamsincsv(components::Array{String,1},
             _sources = fill(EMPTY_STR,l)
             _csv = fill(String(filepath),l)
         end
-        for (i,c1,c2) in zip(found_indices2,comp_indices1,comp_indices2)
+        #= for (i,c1,c2) in zip(found_indices2,comp_indices1,comp_indices2)
             row =  dfR[i]
             component1 = components[c1]
             component2 = components[c2]
@@ -582,7 +684,7 @@ function findparamsincsv(components::Array{String,1},
             else
                 sources[assocpair] = missing
             end
-        end 
+        end  =#
     else
         error("File is of type ", String(csvtype), " and cannot be read with this function.")
     end
@@ -600,14 +702,20 @@ function findparamsincsv(components::Array{String,1},
             _vals = getindex.(_data,idx)
             s = findall(!ismissing,_vals)
             if !iszero(s)
-                foundvalues2[headerparam] = RawParam(_comp[s],_vals[s],_sources[s],_csv,csvtype)
+                foundvalues2[headerparam] = RawParam(_comp[s],identity.(_vals[s]),_sources[s],_csv,csvtype)
             end
+            #identity removes the missing type
         end
+    end
+    notfoundvalues = Dict{String,CSVType}()
+    for headerparam in headerparams
+        !haskey(foundvalues2,headerparam)
+        notfoundvalues[headerparam] = csvtype
     end
 
     verbose && verbose_findparams(foundvalues2)
 
-    return foundvalues, paramtypes, sources, foundvalues2
+    return foundvalues2, notfoundvalues
 end
 function __assoc_string(pair)
     "($(pair[1]),$(pair[3])) ⇋ ($(pair[2]), $(pair[4]))"
@@ -687,7 +795,7 @@ function check_clashingheaders(filepaths::Vector{String},
     clashingheaders = intersect(headerparams, headerparams_assoc)
     !isempty(clashingheaders) && error("Headers ", clashingheaders, " appear in both loaded assoc and non-assoc files.")
 end
-
+#=
 function findsitesincsvs(components::Array{String,1}, 
                         filepaths::Array{String,1},
                         options::ParamOptions = DefaultOptions)
@@ -724,7 +832,7 @@ output = Array{Array{String,1}}(undef, 0)
     verbose && @info("Found sites for $components are $(output).")
     return output
 end
-
+=#
 function findgroupsincsv(components::Vector{String},
                         filepath::String,
                         options::ParamOptions = DefaultOptions)
@@ -761,7 +869,7 @@ function createemptyparamsarray(datatype::Type, csvtype::CSVType, components::Ar
     allcomponentsites = [String[] for _ in 1:length(components)]
     return createemptyparamsarray(datatype, csvtype, components, allcomponentsites)
 end
-
+#=
 function createemptyparamsarray(datatype::Type, csvtype::CSVType, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1})
     # Creates a missing array of the appropriate size.
     componentslength = length(components)
@@ -784,7 +892,7 @@ end
 function createemptyparamsarray(csvtype::CSVType, components::Array{String,1}, allcomponentsites::Array{Array{String,1},1})
     return createemptyparamsarray(missing, csvtype, components, allcomponentsites)
 end
-
+=#
 
 """
     singletopair(params::Vector,outputmissing=zero(T))
@@ -803,7 +911,7 @@ function singletopair(params::Vector{T1},::T2 =_zero(T1)) where {T1,T2}
     end
     return output
 end
-
+#=
 function mirrormatrix!(matrix::Matrix{T}) where T
     # Mirrors a square matrix.
     matrixsize = size(matrix)
@@ -839,7 +947,7 @@ function mirrormatrix!(matrix::Array{Array{T,2},2}) where T
     end
     return matrix
 end
-
+=#
 function GroupParam(gccomponents::Vector, 
     grouplocations::Vector{String}=String[]; 
     usergrouplocations::Vector{String}=String[], 
