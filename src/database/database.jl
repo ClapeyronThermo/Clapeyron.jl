@@ -91,10 +91,17 @@ function compile_param(components,name,raw::CSVType,site_strings,options)
     return nothing
 end
 
+Base.@nospecialize
+
 function compile_single(name,components,raw::RawParam,options)
     EMPTY_STR = ""
     l = length(components)
-    values = zeros(eltype(raw),l)
+    L = eltype(raw)
+    if L === String
+        values = fill("",l)
+    else 
+        values = zeros(L,l)
+    end
     ismissingvals = ones(Bool,l)
     sources = fill(EMPTY_STR,l)
     sources_csv = fill(EMPTY_STR,l)
@@ -254,6 +261,14 @@ end
 function getparams(components::Vector{String},locations::Vector{String},options::ParamOptions)
     filepaths = flattenfilepaths(locations,options.userlocations)
     result,allcomponentsites = createparams(components, filepaths,options)
+    for (k,v) in result
+        print(k," => ")
+        if v isa PairParameter
+            print(v.ismissingvalues," - ")
+        end
+        println(v.values)
+
+    end
     if !(options.return_sites)
         return result
     end
@@ -588,9 +603,11 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
             _vals = getindex.(_data,idx)
             s = findall(!ismissing,_vals) #filter nonmissing values
             if !iszero(s)
-                foundvalues[headerparam] = RawParam(_comp[s],identity.(_vals[s]),_sources[s],_csv,csvtype)
-            end
-            #identity removes the missing type
+                __vals = [_vals[i] for i in s] #removes the missing type and eliminates bitvectors
+                __sources = [_sources[i] for i in s]
+                __csv = [_csv[i] for i in s]
+                foundvalues[headerparam] = RawParam(_comp[s],__vals,__sources,__csv,csvtype)
+            end 
         end
     end
     #store all headers that didn't had a result.
