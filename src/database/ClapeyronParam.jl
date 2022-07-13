@@ -42,6 +42,12 @@ include("params/GroupParam.jl")
 include("params/SiteParam.jl")
 include("params/AssocOptions.jl")
 
+const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
+function Base.show(io::IO,param::SingleOrPair)
+    print(io, typeof(param), "(\"", param.name, "\")")
+    show(io,param.components)  
+end
+
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
 export AssocOptions
 

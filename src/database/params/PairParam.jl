@@ -46,6 +46,46 @@ end
 """
 const PairParam{T} = PairParameter{T,Matrix{T},SubArray{T, 1, Vector{T}, Tuple{StepRange{Int64, Int64}}, true}} where T
 
+#indexing
+
+Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T}},i::Int) where T = param.values[i,i]
+Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T}},i::Int,j::Int) where T = param.values[i,j]
+Base.setindex!(param::PairParameter,val,i) = setindex!(param.values,val,i,i)
+function Base.setindex!(param::PairParameter,val,i,j) 
+    setindex!(param.values,val,i,j)
+    param.symmetric && setindex!(param.values,val,j,i)
+end
+
+#Broadcasting
+
+Base.broadcastable(param::PairParameter) = param.values
+Base.BroadcastStyle(::Type{<:PairParameter}) = Broadcast.Style{PairParameter}()
+
+#copyto!
+
+function Base.copyto!(param::PairParameter,x)
+    Base.copyto!(param.values,x)
+    return param
+end
+
+function Base.copyto!(dest::PairParameter,src::PairParameter) #used to set params
+    #key check
+    dest.components == src.components || throw(DimensionMismatch("components of source and destination pair parameters are not the same for $dest"))
+    
+    #=
+    TODO: it does not check that dest.symmetric = src.symmetric, the only solution i see at the moment 
+    is to make the Single, Pair and Assoc Params, mutable structs, but i don't really know the performance
+    implications of that.
+    supposedly, this copyto! is only used internally, and both src and dest params are already the same. but it would
+    be good to enforce that.
+    =#
+    copyto!(dest.values,src.values)
+    dest.ismissingvalues .= src.ismissingvalues
+    return dest
+end
+
+Base.size(param::PairParameter) = size(param.values)
+
 PairParam(name,components,values,diagvals, missingvals,src,sourcecsv) = PairParameter(name,components,values,diagvals,missingvals,src,sourcecsv)
 
 #unsafe constructor
@@ -133,16 +173,14 @@ function PairParam(x::SingleParam,name::String=x.name)
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter) 
-    print(io,"PairParam{",eltype(param.values),"}")
+    #sym = param.symmetric ? "Symmetric " : ""
+    sym = ""
+    _size = size(param)
+    _size_str = string(_size[1]) * "×" * string(_size[2]) * " "
+    print(io,sym,_size_str,"PairParam{",eltype(param.values),"}(")
     show(io,param.components)
     println(io,") with values:")
-    show(io,mime,param.values)
-end
-
-function Base.show(io::IO,param::PairParameter)
-    print(io, "PairParam{",eltype(param.values),"}", "(\"", param.name, "\")[")
-    print(io,Base.summary(param.values))
-    print(io,"]")
+    Base.print_matrix(IOContext(io, :compact => true),param.values)
 end
 
 #convert utilities

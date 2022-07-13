@@ -68,6 +68,7 @@ compile_param takes a RawParam, and instantiates it into a ClapeyronParam.
 it also builds empty params, if you pass a CSVType instead of a RawParam
 =#
 
+Base.@nospecialize
 
 function compile_param(components,name,raw::RawParam,site_strings,options)
     if raw.type == singledata
@@ -91,7 +92,6 @@ function compile_param(components,name,raw::CSVType,site_strings,options)
     return nothing
 end
 
-Base.@nospecialize
 
 function compile_single(name,components,raw::RawParam,options)
     EMPTY_STR = ""
@@ -187,7 +187,6 @@ function compile_assoc(name,components,raw::CSVType,site_strings,options)
     values = Compressed4DMatrix(vals,c_12,s_12,(0,0),(0,0))
     return AssocParam(name,components,values,site_strings,String[],String[])
 end
-
 
 #Sort site tape, so that components are sorted by the input.
 function standarize_comp_info(component_info,components,site_strings)

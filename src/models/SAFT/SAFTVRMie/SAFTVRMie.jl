@@ -158,10 +158,10 @@ end =#
 
 #=
 function d(model::SAFTVRMieModel, V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues[i]
-    σ = model.params.sigma.diagvalues[i]
-    λr = model.params.lambda_r.diagvalues[i]
-    λa = model.params.lambda_a.diagvalues[i]
+    ϵ = model.params.epsilon.values[i.i]
+    σ = model.params.sigma.values[i.i]
+    λr = model.params.lambda_r.values[i.i]
+    λa = model.params.lambda_a.values[i.i]
     return @f(d,λa,λr,ϵ,σ)
 end
 

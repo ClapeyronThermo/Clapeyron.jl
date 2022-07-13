@@ -47,18 +47,39 @@ end
 """
 const SingleParam{T} = SingleParameter{T,Vector{T}} where T
 
+#indexing
+
+Base.@propagate_inbounds Base.getindex(param::SingleParameter{T,<:AbstractVector{T}},i::Int) where T = param.values[i]
+Base.setindex!(param::SingleParameter,val,i) = setindex!(param.values,val,i)
+
+#broadcasting
+Base.size(param::SingleParameter) = size(param.values)
+Base.broadcastable(param::SingleParameter) = param.values
+Base.BroadcastStyle(::Type{<:SingleParameter}) = Broadcast.Style{SingleParameter}()
+
+#copyto!
+function Base.copyto!(dest::SingleParameter,src) #general, just copies the values, used in a .= f.(a)
+    Base.copyto!(dest.values,x)
+    return dest
+end
+
+function Base.copyto!(dest::SingleParameter,src::SingleParameter) #used to set params
+    #key check
+    dest.components == src.components || throw(DimensionMismatch("components of source and destination single parameters are not the same for $dest"))
+    copyto!(dest.values,src.values)
+    dest.ismissingvalues .= src.ismissingvalues
+    return dest
+end
+
+#linear algebra
+
+LinearAlgebra.dot(param::SingleParameter,x::Union{<:AbstractVector,<:Number}) = dot(param.values,x)
+LinearAlgebra.dot(x::Union{<:AbstractVector,<:Number},param::SingleParameter) = dot(x,param.values)
+
 SingleParam(name,components,values,missingvals,src,sourcecsv) = SingleParameter(name,components,values,missingvals,src,sourcecsv)
 function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})::SingleParam{String}
     values = String.(param.values)
     return (param.name,param.components,values,param.missingvals,param.src,param.sourcecsv)
-end
-function Base.show(io::IO, param::SingleParameter)
-    print(io, typeof(param), "(\"", param.name, "\")[")
-    for component in param.components
-        component != first(param.components) && print(io, ",")
-        print(io, "\"", component, "\"")
-    end
-    print(io, "]")
 end
 
 function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)

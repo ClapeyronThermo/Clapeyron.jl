@@ -271,7 +271,7 @@ end
 #Optimizations for Single Component PCSAFT
 
 function d(model::PCSAFT, V, T, z::SingleComp)
-    ϵ = only(model.params.epsilon.diagvalues)
-    σ = only(model.params.sigma.diagvalues)
+    ϵ = only(model.params.epsilon.values)
+    σ = only(model.params.sigma.values)
     return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
 end
