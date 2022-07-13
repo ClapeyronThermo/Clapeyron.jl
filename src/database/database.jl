@@ -133,8 +133,9 @@ function compile_pair(name,components,raw::RawParam,options)
     sources = fill(EMPTY_STR,(l,l))
     sources_csv = fill(EMPTY_STR,(l,l))
     for (k,v,ss,sc) in zip(raw.component_info,raw.data,raw.sources,raw.csv)
-        i = findfirst(==(k[1]),components)
-        j = k[2] == "" ? i : findfirst(==(k[2]),components)
+        c1,c2,_,_ = k
+        i = findfirst(==(c1),components)
+        j = k[2] == "" ? i : findfirst(==(c2),components)
         values[i,j] = v
         ismissingvals[i,j] = false
         sources[i,j] = ss
@@ -144,12 +145,12 @@ function compile_pair(name,components,raw::RawParam,options)
             ismissingvals[j,i] = false
             sources[j,i] = ss
             sources_csv[j,i] = sc
-        end
-        sources = unique!(vec(sources))
-        sources_csv = unique!(vec(sources_csv))
-        diagvalues = view(values, diagind(values))
-        return PairParameter(name,components,values,diagvalues,ismissingvals,sources,sources_csv)
+        end  
     end
+    sources = unique!(vec(sources))
+    sources_csv = unique!(vec(sources_csv))
+    diagvalues = view(values, diagind(values))
+    return PairParameter(name,components,values,diagvalues,ismissingvals,sources,sources_csv)
 end
 
 function compile_pair(name,components,type::CSVType,options)
@@ -261,14 +262,14 @@ end
 function getparams(components::Vector{String},locations::Vector{String},options::ParamOptions)
     filepaths = flattenfilepaths(locations,options.userlocations)
     result,allcomponentsites = createparams(components, filepaths,options)
-    for (k,v) in result
+    #=for (k,v) in result
         print(k," => ")
         if v isa PairParameter
             print(v.ismissingvalues," - ")
         end
         println(v.values)
 
-    end
+    end=#
     if !(options.return_sites)
         return result
     end
