@@ -91,7 +91,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny, vcache; F=not
         ∂ϕx .-= 1
         ∂ϕy .-= 1
         ∂ϕx ./= nxsum
-        ∂ϕy ./= nxsum
+        ∂ϕy ./= nysum
         for (i,idiag) in pairs(diagind(∂ϕy))
             ∂ϕx[idiag] += 1/nx[i]
             ∂ϕy[idiag] += 1/ny[i]
@@ -220,7 +220,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         model,z_nonzero = index_reduction(model_full,z_full)
         z = z_full[z_nonzero]
     end
-    
+
     if is_vle(equilibrium)
         phasex = :liquid
         phasey = :vapor
@@ -309,7 +309,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         nx = z .- ny
         x = nx ./ sum(nx)
         y = ny ./ β
- 
+
     end
 
     if singlephase
