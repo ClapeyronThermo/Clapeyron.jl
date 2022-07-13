@@ -227,7 +227,7 @@ end
 ################# Dew temperature calculation
 
 """
-OF_dewTx!(model::EoSModel, y, p, vol_cache)
+OF_dewTx_condensable!(model, y, p, x, vol_cache, condensable)
 
 Objective function to compute dew temperature using a multidimensional
 system of equations via fugacity coefficients.
@@ -324,7 +324,7 @@ function OF_dewTx_condensable!(model, y, p, x, vol_cache, condensable)
 end
 
 """
-dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothing),
+dew_temperature_fug_condensable(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothing),
                              itmax_newton = 10, itmax_ss = 5, tol_x = 1e-8,
                              tol_T = 1e-8, tol_of = 1e-8,
                              non_condensable_list=[])
