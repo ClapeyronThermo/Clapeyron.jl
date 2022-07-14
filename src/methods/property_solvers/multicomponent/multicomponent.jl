@@ -122,11 +122,9 @@ include("bubble_fugacity.jl")
 include("dew_fugacity.jl")
 include("dew_fugacity_non_condesable.jl")
 include("bubble_fugacity_non_volatile.jl")
-include("./tp_flash/Michelsentp_flash_modified.jl")
 export bubble_pressure_fug, bubble_temperature_fug, dew_temperature_fug, dew_pressure_fug
 export bubble_pressure,    dew_pressure,    LLE_pressure,    azeotrope_pressure, VLLE_pressure
 export bubble_temperature, dew_temperature, LLE_temperature, azeotrope_temperature, VLLE_temperature
 export dew_pressure_fug_condensable, dew_temperature_fug_condensable
 export bubble_pressure_fug_volatile, bubble_temperature_fug_volatile
 export crit_mix, UCEP_mix, UCST_mix
-# export tp_flash_michelsen_modified
