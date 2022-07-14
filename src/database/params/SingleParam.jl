@@ -189,9 +189,6 @@ function Base.convert(::Type{SingleParam{Int}},param::SingleParam{Float64})
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
-#broadcasting utilities
-Base.broadcastable(param::SingleParameter) = param.values
-
 #pack vectors
 
 const PackedVectorSingleParam{T} = Clapeyron.SingleParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}
