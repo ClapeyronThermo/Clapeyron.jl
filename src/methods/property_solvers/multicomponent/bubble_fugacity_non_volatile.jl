@@ -121,7 +121,7 @@ itmax_ss: optional, number of iterations to update the liquid phase composition 
 tol_x: optional, tolerance to stop successive substitution cycle
 tol_p: optional, tolerance to stop newton cycle
 tol_of: optional, tolerance to check if the objective function is zero.
-non_volatile_list: optional, array with index of molecules that are non-volatile
+non_volatile_list: optional, array with names of molecules (string) that are non-volatile
 
 Returns:
 p: bubble pressure
@@ -150,8 +150,18 @@ function bubble_pressure_fug_volatile(model::EoSModel, T, x, y0, p0; vol0=(nothi
 
     # constructing non-volatile list
     non_volatile = Bool.(zeros(nc))
-    non_volatile[non_volatile_list] .= 1
+    non_volatiles_names_list = [x for x in non_volatile_list if x in model.components]
+    for i in 1:nc
+        component = model.components[i]
+        if component in non_volatiles_names_list
+            non_volatile[i] = true
+        end
+    end
     volatile = .!non_volatile
+    """
+    # old api when using component index
+    non_volatile[non_volatile_list] .= 1
+    """
 
     for j in 1:itmax_newton
 
@@ -355,7 +365,7 @@ itmax_ss: optional, number of iterations to update the liquid phase composition 
 tol_x: optional, tolerance to stop successive substitution cycle
 tol_T: optional, tolerance to stop newton cycle
 tol_of: optional, tolerance to check if the objective function is zero
-non_volatile_list: optional, array with index of molecules that are non-volatile
+non_volatile_list: optional, array with names of molecules (string) that are non-volatile
 
 Returns:
 T: bubble temperature
@@ -383,8 +393,19 @@ function bubble_temperature_fug_volatile(model::EoSModel, p, x, y0, T0; vol0=(no
 
     # constructing non-volatile list
     non_volatile = Bool.(zeros(nc))
-    non_volatile[non_volatile_list] .= 1
+    non_volatiles_names_list = [x for x in non_volatile_list if x in model.components]
+    for i in 1:nc
+        component = model.components[i]
+        if component in non_volatiles_names_list
+            non_volatile[i] = true
+        end
+    end
     volatile = .!non_volatile
+    """
+    # old api when using component index
+    non_volatile[non_volatile_list] .= 1
+    """
+
 
     for j in 1:itmax_newton
 

@@ -123,7 +123,7 @@ itmax_ss: optional, number of iterations to update the liquid phase composition 
 tol_x: optional, tolerance to stop successive substitution cycle
 tol_p: optional, tolerance to stop newton cycle
 tol_of: optional, tolerance to check if the objective function is zero.
-non_condensable_list: optional, array with index of molecules that are non-condensable
+non_condensable_list: optional, array with names of molecules (string) that are non-condensable
 
 Returns:
 p: dew pressure
@@ -149,10 +149,20 @@ function dew_pressure_fug_condensable(model::EoSModel, T, y, x0, p0; vol0=(nothi
      lnϕy = zeros(nc)
      OF = 1.
 
-     # constructing non-condesables list
+     # constructing non-volatile list
      non_condensable = Bool.(zeros(nc))
-     non_condensable[non_condensable_list] .= true
+     non_condensable_names_list = [x for x in non_condensable_list if x in model.components]
+     for i in 1:nc
+         component = model.components[i]
+         if component in non_condensable_names_list
+             non_condensable[i] = true
+         end
+     end
      condensable = .!non_condensable
+     """
+     non_condensable[non_condensable_list] .= true
+     """
+
 
      for j in 1:itmax_newton
 
@@ -347,7 +357,7 @@ itmax_ss: optional, number of iterations to update the liquid phase composition 
 tol_x: optional, tolerance to stop successive substitution cycle
 tol_T: optional, tolerance to stop newton cycle
 tol_of: optional, tolerance to check if the objective function is zero.
-non_condensable_list: optional, array with index of molecules that are non-condensable
+non_condensable_list: optional,  array with names of molecules (string) that are non-condensable
 
 Returns:
 T: dew temperature
@@ -374,10 +384,19 @@ function dew_temperature_fug_condensable(model::EoSModel, p, y, x0, T0; vol0=(no
      lnϕy = zeros(nc)
      OF = 1.
 
-     # constructing non-condesables list
+     # constructing non-volatile list
      non_condensable = Bool.(zeros(nc))
-     non_condensable[non_condensable_list] .= true
+     non_condensable_names_list = [x for x in non_condensable_list if x in model.components]
+     for i in 1:nc
+         component = model.components[i]
+         if component in non_condensable_names_list
+             non_condensable[i] = true
+         end
+     end
      condensable = .!non_condensable
+     """
+     non_condensable[non_condensable_list] .= true
+     """
 
      for j in 1:itmax_newton
 
