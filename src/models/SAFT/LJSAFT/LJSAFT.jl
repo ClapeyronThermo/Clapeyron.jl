@@ -93,7 +93,7 @@ function T_scale(model::LJSAFTModel,z=SA[1.0])
 end
 
 function T_scales(model::LJSAFTModel)
-    T̃ = model.params.T_tilde.diagvalues
+    T̃ = diagvalues(model.params.T_tilde)
 end
 
 function p_scale(model::LJSAFTModel,z=SA[1.0])

@@ -55,12 +55,18 @@ export AssocOptions
     diagvalues(x)
 A common function to retrieve the main diagonal values that work on both SingleParam and PairParam.
 """
-function diagvalues(x::SingleParam)
-    return x.values
+function diagvalues end
+
+function diagvalues(x::AbstractMatrix)
+    return view(x, diagind(x))
 end
 
-function diagvalues(x::PairParam)
-    return view(x.values, diagind(x.values))
+function diagvalues(x::AbstractVector)
+    return x
+end
+
+function diagvalues(x::SingleOrPair)
+    return diagvalues(x.values)
 end
 
 function _get_sources(x::Vector)::Vector{String}

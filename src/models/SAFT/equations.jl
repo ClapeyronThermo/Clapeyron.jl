@@ -16,7 +16,7 @@ function T_scale(model::SAFTModel,z=SA[1.0])
 end
 
 function T_scales(model::SAFTModel)
-    ϵ = model.params.epsilon.diagvalues
+    ϵ =diagvalues(model.params.epsilon)
 end
 
 function p_scale(model::SAFTModel,z=SA[1.0])

@@ -21,7 +21,7 @@ julia> kij.values
 2×2 Matrix{Float64}:
  0.1  0.0
  0.1  0.0
-julia> kij.diagvalues
+julia> diagvalues(kij)
 2-element view(::Vector{Float64}, 
 1:3:4) with eltype Float64:
  0.1
@@ -32,7 +32,7 @@ julia> kij.diagvalues
 #lets compute ∑xᵢxⱼkᵢⱼ
 function alpha(model,x)
     kij = model.params.kij.values
-    ki = model.params.kij.diagvalues
+    ki = diagvalues(model.params.kij)
     res = zero(eltype(molarfrac))
     for i in @comps 
         @show ki[i] #diagonal values
@@ -203,9 +203,6 @@ function Base.convert(::Type{PairParam{Int}},param::PairParam{Float64})
     diagvalues = view(values, diagind(values))
     return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
-
-#broadcasting utilities
-Base.broadcastable(param::PairParameter) = param.values
 
 function pack_vectors(param::PairParameter{<:AbstractVector})
     name,components,vals,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources

@@ -115,8 +115,8 @@ function a_disp(model::PCSAFTModel, V, T, z,_data=@f(data))
 end
 
 function d(model::PCSAFTModel, V, T, z)
-    ϵᵢᵢ = model.params.epsilon.diagvalues
-    σᵢᵢ = model.params.sigma.diagvalues 
+    ϵᵢᵢ = diagvalues(model.params.epsilon)
+    σᵢᵢ = diagvalues(model.params.sigma) 
     return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
 end
 
