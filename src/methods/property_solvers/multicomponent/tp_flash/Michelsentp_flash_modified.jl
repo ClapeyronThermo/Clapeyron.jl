@@ -229,7 +229,8 @@ function tp_flash_michelsen_modified(model::EoSModel, p, T, z; equilibrium=:vle,
     iny = .!non_iny
 
     # components that are allowed to be in two phases
-    in_equilibria = inx .&& iny
+    # in_equilibria = inx .&& iny
+    in_equilibria = inx .* iny
 
 
     # Computing the initial guess for the K vector
