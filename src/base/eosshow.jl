@@ -20,6 +20,7 @@ function eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSModel)
             firstloop = false
         end
     end
+    show_references(io,model)
 end
 
 function eosshow(io::IO, Base.@nospecialize(model::EoSModel))
@@ -61,11 +62,25 @@ function gc_eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSMod
             firstloop = false
         end
     end
+    show_references(io,model)
 end
 
 function gc_eosshow(io::IO, Base.@nospecialize(model::EoSModel))
     return eosshow(io,model)
 end
 
+function show_references(io::IO,model)
+    if get(ENV,"CLAPEYRON_SHOW_REFERENCES","FALSE") == "TRUE"
+        citations = cite(model)
+        iszero(length(citations)) && return nothing #do not do anything if there isnt any citations
+        println(io)
+        print(io,"References: ") 
+        for (i,doi) in enumerate(cite(model))
+            i != 1 && print(io,", ")
+            print(io,doi)   
+        end
+    end
+    return nothing
+end
 
 export eosshow

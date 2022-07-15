@@ -38,7 +38,7 @@ Zcᵢ = 0.289 - 0.0701ωᵢ - 0.0207ωᵢ^2
 
 ## References
 
-1. Magoulas, K., & Tassios, D. (1990). Thermophysical properties of n-Alkanes from C1 to C20 and their prediction for higher ones. Fluid Phase Equilibria, 56, 119–140. doi:10.1016/0378-3812(90)85098-u
+1. Magoulas, K., & Tassios, D. (1990). Thermophysical properties of n-Alkanes from C1 to C20 and their prediction for higher ones. Fluid Phase Equilibria, 56, 119–140. [doi:10.1016/0378-3812(90)85098-u](https://doi.org/10.1016/0378-3812(90)85098-u)
 
 """
 MTTranslation

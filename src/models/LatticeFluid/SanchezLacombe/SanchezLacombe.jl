@@ -59,7 +59,7 @@ aᵣ = r̄*(- ρ̃ /T̃ + (1/ρ̃  - 1)*log(1 - ρ̃ ) + 1)
 ```
 
 ## References
-1. Neau, E. (2002). A consistent method for phase equilibrium calculation using the Sanchez–Lacombe lattice–fluid equation-of-state. Fluid Phase Equilibria, 203(1–2), 133–140. doi:10.1016/s0378-3812(02)00176-0
+1. Neau, E. (2002). A consistent method for phase equilibrium calculation using the Sanchez–Lacombe lattice–fluid equation-of-state. Fluid Phase Equilibria, 203(1–2), 133–140. [doi:10.1016/s0378-3812(02)00176-0](https://doi.org/10.1016/s0378-3812(02)00176-0)
 """
 SanchezLacombe
 
@@ -144,7 +144,7 @@ end
 function x0_volume_gas(model::SanchezLacombe,p,T,z)
     return sum(z)*R̄*T/p
 end
-
+#=
 function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
     Σz = sum(z)
     r = model.params.segment.values
@@ -167,5 +167,5 @@ function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
     end
     return (log10(vl),log10(vv))
 end
-
+=#
 export SL,SanchezLacombe

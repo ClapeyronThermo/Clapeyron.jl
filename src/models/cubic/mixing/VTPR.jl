@@ -41,7 +41,7 @@ ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - gᴱᵣₑₛ/(0.53087RT))
 ```
 
 ## References
-1. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. doi:10.1016/s0378-3812(01)00626-4
+1. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. [doi:10.1016/s0378-3812(01)00626-4](https://doi.org/10.1016/s0378-3812(01)00626-4)
 """
 VTPRRule
 
@@ -54,7 +54,7 @@ function VTPRRule(components::Vector{String}; activity = UNIFAC, userlocations::
     return model
 end
 
-function ab_premixing(::Type{PR},mixing::VTPRRule,Tc,pc,kij)
+function ab_premixing(::Type{<:PRModel},mixing::VTPRRule,Tc,pc,kij)
     Ωa, Ωb = ab_consts(PR)
     _Tc = Tc.values
     _pc = pc.values

@@ -87,7 +87,7 @@ parameters `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`α`,`β`,`γ`,`ε`,`A`,`B`,`C`,`D` wh
 
 ## References
 
-1. Wagner, W., & Pruß, A. (2002). The IAPWS formulation 1995 for the thermodynamic properties of ordinary water substance for general and scientific use. Journal of physical and chemical reference data, 31(2), 387–535. doi:10.1063/1.1461829
+1. Wagner, W., & Pruß, A. (2002). The IAPWS formulation 1995 for the thermodynamic properties of ordinary water substance for general and scientific use. Journal of physical and chemical reference data, 31(2), 387–535. [doi:10.1063/1.1461829](https://doi.org/10.1063/1.1461829)
 2. IAPWS R6-95 (2018). Revised Release on the IAPWS Formulation 1995 for the Thermodynamic Properties of Ordinary Water Substance for General and Scientific Use
 
 """
@@ -237,8 +237,14 @@ function water_t_sat(p)
     return T
 end
 
-x0_saturation_temperature(model::IAPWS95,p) = water_t_sat(p)
-psat_init(model::IAPWS95,T) = water_p_sat(T)
+function x0_saturation_temperature(model::IAPWS95,p)
+    T = water_t_sat(p)
+    vl = saturated_water_liquid(T)
+    vv = saturated_water_vapor(T)
+    return (T,vl,vv)
+end
+
+x0_psat(model::IAPWS95,T,crit=nothing) = water_p_sat(T)
 
 #from MoistAir.jl, liquid
 function saturated_water_liquid(Tk)

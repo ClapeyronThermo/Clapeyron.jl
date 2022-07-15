@@ -75,31 +75,32 @@ function _sat_Ti(model,p)
     return Tsat
 end
 
-function _sat_Pi(model,p)
-    pure = split_model(model)
-    n = length(pure)
-    Tsat = first.(saturation_temperature.(pure,p))
-    for i ∈ 1:n
-        if isnan(Tsat[i])
-            T = PV_critical_temperature(pure[i],p)
-            Tsat[i] = T
-        end
+function aprox_psat(pure,T,crit)
+    coeff  = antoine_coef(pure)
+    if coeff !== nothing
+        A,B,C = coeff
+    else
+        A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941)
     end
-    return Tsat
+    Tc,Pc,Vc = crit
+    T̄ = T/Tc
+    if T > Tc
+        return pressure(pure,Vc,Tc)
+    else
+        return exp(A-B/(T̄+C))*Pc
+    end
 end
 
-function sat_T_equimix(model,p)
-    n = length(model)
-    return sum(_sat_Ti(model,p))/n
-end
-
-function wilson_k_values(model::EoSModel,p,T)
+function wilson_k_values(model::EoSModel,p,T,crit = nothing)
     n = length(model)
     pure = split_model.(model)
+    if crit === nothing
+        crit = crit_pure.(pure)
+    end
     K0 = zeros(typeof(p+T),n)
     for i ∈ 1:n
         pure_i = pure[i]
-        Tc,pc,_ = crit_pure(pure_i)
+        Tc,pc,_ = crit[i]
         ps = first(saturation_pressure(pure_i,0.7*Tc))
         ω = -log10(ps/pc) - 1.0
         K0[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))

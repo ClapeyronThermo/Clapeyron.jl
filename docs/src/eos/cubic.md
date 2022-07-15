@@ -30,8 +30,8 @@ function cubic_ab(model::CubicModel,V,T,z=SA[1.0])
     return ā ,b̄, c̄
 end
 
-function a_res(model::CubicModel,V,T,z)
-    ā ,b̄, c̄ = cubic_ab(model,V,T,z)
+function a_res(model::CubicModel,V,T,z,data = (sum(z),cubic_ab(model,V,T,z)))
+    n, ā ,b̄, c̄ = data
     #depends on the specific EoS
     return result
 end
@@ -44,18 +44,28 @@ end
 
 - The same Mixing rule, given `aᵢⱼ`, `bᵢⱼ`, `αᵢ(T)` and `cᵢ` returns the the mixture values of `ā`, `b̄` and `c̄` that are then used by the corresponding cubic model. a Mixing Rule can contain activity models to participate in the mixing (for example, Huron-Vidal rules)
 
+## Common Definitions
+```@docs
+Clapeyron.ab_premixing
+```
+
 ## Main Models
 ```@docs
 Clapeyron.vdW
+Clapeyron.Clausius
 Clapeyron.RK
 Clapeyron.PR
+Clapeyron.PatelTeja
+Clapeyron.KU
 ```
 
 ## Variant Models
 ```@docs
+Clapeyron.Berthelot
 Clapeyron.SRK
 Clapeyron.PSRK
 Clapeyron.PR78
+Clapeyron.PTV
 Clapeyron.EPPR78
 Clapeyron.UMRPR
 Clapeyron.VTPR
@@ -67,6 +77,7 @@ Clapeyron.QCPR
 ```@docs
 Clapeyron.α_function
 Clapeyron.NoAlpha
+Clapeyron.ClausiusAlpha
 Clapeyron.RKAlpha
 Clapeyron.SoaveAlpha
 Clapeyron.PRAlpha
@@ -76,6 +87,8 @@ Clapeyron.sCPAAlpha
 Clapeyron.MTAlpha
 Clapeyron.BMAlpha
 Clapeyron.TwuAlpha
+Clapeyron.PatelTejaAlpha
+Clapeyron.KUAlpha
 ```
 
 ## Volume Translation Models
@@ -100,6 +113,7 @@ Clapeyron.MHV1Rule
 Clapeyron.MHV2Rule
 Clapeyron.LCVMRule
 Clapeyron.WSRule
+Clapeyron.modWSRule
 Clapeyron.VTPRRule
 Clapeyron.PSRKRule
 Clapeyron.QCPRRule

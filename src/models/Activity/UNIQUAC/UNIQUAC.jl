@@ -53,7 +53,7 @@ gᴱ(res) = -∑xᵢqᵖᵢlog(∑θᵖⱼτⱼᵢ)
 
 ## References
 
-1. Abrams, D. S., & Prausnitz, J. M. (1975). Statistical thermodynamics of liquid mixtures: A new expression for the excess Gibbs energy of partly or completely miscible systems. AIChE journal. American Institute of Chemical Engineers, 21(1), 116–128. doi:10.1002/aic.690210115
+1. Abrams, D. S., & Prausnitz, J. M. (1975). Statistical thermodynamics of liquid mixtures: A new expression for the excess Gibbs energy of partly or completely miscible systems. AIChE journal. American Institute of Chemical Engineers, 21(1), 116–128. [doi:10.1002/aic.690210115](https://doi.org/10.1002/aic.690210115)
 
 """
 UNIQUAC

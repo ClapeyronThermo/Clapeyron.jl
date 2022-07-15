@@ -178,7 +178,8 @@ end
 const PackedSparsePairParam{T} = Clapeyron.PairParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, SparsePackedMofV{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, 
 true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}, Nothing} where T
 
-# Operations
+# Operations (seems that they are not needed)
+#=
 function Base.:(+)(param::PairParameter, x::Number)
     values = param.values .+ x
     return PairParam(param.name, param.components, values, param.ismissingvalues, param.sourcecsvs, param.sources)
@@ -192,4 +193,4 @@ end
 function Base.:(^)(param::PairParameter, x::Number)
     values = param.values .^ x
     return PairParam(param.name, param.components, values, param.diagvalues, param.ismissingvalues, param.sourcecsvs, param.sources)
-end
+end=#

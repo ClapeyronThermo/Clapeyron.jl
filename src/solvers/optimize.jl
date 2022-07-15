@@ -70,10 +70,10 @@ function optimize(f, x0::NTuple{2,T}, method=BrentMin(), options=OptimizationOpt
     return res
 end
 #general one, with support for ActiveBox
-function optimize(f, x0, method=LineSearch(Newton()), options=OptimizationOptions(); bounds=nothing)
-    scalarobj = ADScalarObjective(f, x0, autochunk)
-    optprob = OptimizationProblem(obj=scalarobj, inplace=(x0 isa Number), bounds=bounds)
-    return NLSolvers.solve(optprob, x0, method, options)
+function optimize(f,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
+    scalarobj = ADScalarObjective(f,x0,autochunk)
+    optprob = OptimizationProblem(obj = scalarobj,inplace = (x0 isa Number),bounds = bounds)
+    return NLSolvers.solve(optprob,x0,method,options)
 end
 
 function optimize(optprob::OptimizationProblem, method=LineSearch(Newton()), options=OptimizationOptions(); bounds=nothing)

@@ -140,12 +140,14 @@ end
 
 3. Define all of the model equations. We encourage you to use the full range of Unicode characters where it makes your code clearer to read!
 
-   As convention, the first four arguments should be `model`, `V`, `T` and `z`; any other variables should come after them.
+   As convention, the first four arguments should be `model`, `V`, `T` and `z`; any other variables should come after.
 
    If we obey that convention, we may use the `@f` macro, which automatically substitutes the first four parameters for compactness. For example, `@f(func,i,j)` is equivalent to calling `func(model,V,T,z,i,j)`.
 
+    Clapeyron obtains all the properties of a model by differenciating the total helmoltz energy ([`eos`](@ref)) or the residual helmoltz energy ([`eos_res`](@ref)).  `eos` and `eos_res` themselves are defined in terms of the reduced ideal helmholtz energy ([`a_res`](@ref)). In this case, we are going to define `a_res` for our own model:
+
    ```julia
-   function a_res(model::PCSAFTModel, V, T, z)
+   function Clapeyron.a_res(model::PCSAFTModel, V, T, z)
        return @f(a_hc) + @f(a_disp) + @f(a_assoc)
    end
    
@@ -206,8 +208,6 @@ end
    
    (p_sat, V_l_sat, V_v_sat) = saturation_pressure(model,T_sat)
    ```
-
-   
 
 ## sPC-SAFT Example
 

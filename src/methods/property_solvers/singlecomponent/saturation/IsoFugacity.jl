@@ -1,68 +1,30 @@
 """
-    psat_init(model::EoSModel, T)
+    IsoFugacitySaturation <: SaturationMethod
+    IsoFugacitySaturation(;p0 = nothing,
+        vl = nothing,
+        vv = nothing,
+        crit = nothing,
+        max_iters = 20,
+        p_tol = sqrt(eps(Float64)))
 
-Initial point for saturation pressure, given the temperature and V,T critical coordinates.
-On moderate pressures it will use a Zero Pressure initialization. On pressures near the critical point it will switch to spinodal finding.
-
-It can be overloaded to provide more accurate estimates if necessary.
+Saturation method for `saturation_pressure`. Uses the isofugacity criteria. Ideal for Cubics or other EoS where the volume calculations are cheap. 
+If `p0` is not provided, it will be calculated via [`x0_psat`](@ref).
 """
-function psat_init(model,T)
-    Tc, Pc, Vc = crit_pure(model)
-    if T > Tc
-        return zero(T)/zero(T)
-    end
-    return psat_init(model, T, Tc, Vc)
-end
-
-function psat_init(model::EoSModel, T, Tc, Vc)
-    # Function to get an initial guess for the saturation pressure at a given temperature
-    z = SA[1.] #static vector
-    _0 = zero(T+Tc+Vc)
-    RT = R̄*T
-    Tr = T/Tc
-    # Zero pressure initiation
-    if Tr < 0.8
-        P0 = _0
-        vol_liq0 = volume(model, P0, T, phase=:liquid)
-        ares = a_res(model, vol_liq0, T, z)
-        lnϕ_liq0 = ares - 1. + log(RT/vol_liq0)
-        P0 = exp(lnϕ_liq0)
-    # Pmin, Pmax initiation
-    elseif Tr <= 1.0
-        low_v = Vc
-        up_v = 5 * Vc
-        #note: P_max is the pressure at the maximum volume, not the maximum pressure
-        fmax(V) = -pressure(model, V, T)
-        sol_max = Solvers.optimize(fmax, (low_v, up_v))
-        P_max = -Solvers.x_minimum(sol_max)
-        low_v = lb_volume(model)
-        up_v = Vc
-        #note: P_min is the pressure at the minimum volume, not the minimum pressure
-        fmin(V) = pressure(model, V, T)
-        sol_min = Solvers.optimize(fmin, (low_v,up_v))
-        P_min = Solvers.x_minimum(sol_min)
-        P0 = (max(zero(P_min), P_min) + P_max) / 2
-    else
-        P0 = _0/_0 #NaN, but propagates the type
-    end
-    return  P0
-end
-
-"""
-    IsoFugacitySaturation(;p0 = nothing, vl = nothing,vv = nothing, max_iters = 20, p_tol = sqrt(eps(Float64)))
-
-Single component saturation via isofugacity criteria. Ideal for Cubics or other EoS where the volume calculations are cheap. 
-If `p0` is not provided, it will be calculated via [`psat_init`](@ref).
-"""
-struct IsoFugacitySaturation{T} <: SaturationMethod
+struct IsoFugacitySaturation{T,C} <: SaturationMethod
     p0::T
     vl::Union{Nothing,T}
     vv::Union{Nothing,T}
+    crit::C
     max_iters::Int
     p_tol::Float64
 end
 
-function IsoFugacitySaturation(;p0 = nothing,vl = nothing,vv = nothing,max_iters = 20,p_tol = sqrt(eps(Float64)))
+function IsoFugacitySaturation(;p0 = nothing,
+                                vl = nothing,
+                                vv = nothing,
+                                crit = nothing,
+                                max_iters = 20,
+                                p_tol = sqrt(eps(Float64)))
     p0 === nothing && (p0 = NaN)
     if vl !== nothing
         p0,vl = promote(p0,vl)
@@ -72,14 +34,14 @@ function IsoFugacitySaturation(;p0 = nothing,vl = nothing,vv = nothing,max_iters
         p0,vl,vv = promote(p0,vl,vv)
     else
     end
-    return IsoFugacitySaturation(p0,vl,vv,max_iters,p_tol)
+    return IsoFugacitySaturation(p0,vl,vv,crit,max_iters,p_tol)
 end
 
 function saturation_pressure_impl(model::EoSModel,T,method::IsoFugacitySaturation)
     vol0 = (method.vl,method.vv,T)
     p0 = method.p0
     if isnan(p0)
-        p0 = psat_init(model, T)
+        p0 = x0_psat(model, T, method.crit)
     end
 
     if isnan(p0) #over critical point, or something else.

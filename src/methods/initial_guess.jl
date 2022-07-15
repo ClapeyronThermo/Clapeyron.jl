@@ -59,10 +59,60 @@ The lower bound volume is used for guesses of liquid volumes at a certain pressu
 function lb_volume end
 
 """
+    T_scale(model::EoS,z=SA[1.0])
+
+Represents a temperature scaling factor. 
+
+On any EoS based on Critical parameters (Cubic or Empiric EoS), the temperature scaling factor is chosen to be the critical temperature.
+
+On SAFT or other molecular EoS, the temperature scaling factor is chosen to be a function of the potential depth ϵ.
+
+Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
+"""
+function T_scale end
+
+"""
+    p_scale(model::SAFTModel,z=SA[1.0])
+
+Represents a pressure scaling factor
+
+On any EoS based on Critical parameters (Cubic or  
+Empiric EoS), the pressure scaling factor is    
+chosen to be a function of the critical pressure.
+
+On SAFT or other molecular EoS, the temperature    
+scaling factor is chosen to a function of ∑(zᵢ*ϵᵢ*(σᵢᵢ)³)    
+
+Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
+
+"""
+function p_scale end
+
+"""
+    antoine_coef(model)
+
+should return a 3-Tuple containing reduced Antoine Coefficients. The Coefficients follow the correlation:
+```
+lnp̄ = log(p / p_scale(model))
+T̃ = T/T_scale(model)
+lnp̄ = A - B/(T̄ + C))
+```
+
+By default returns `nothing`. This is to use alternative methods in case Antoine coefficients aren't available. Used mainly in single and multicomponent temperature calculations.
+"""
+function antoine_coef end
+
+antoine_coef(model) = nothing
+
+
+"""
     x0_sat_pure(model::EoSModel,T,z=SA[1.0])
 
-Returns a 2-tuple corresponding to `(log10(Vₗ),log10(Vᵥ))`, where Vₗ and Vᵥ are the liquid and vapor initial guesses. 
-Used in [`saturation_pressure`](@ref)
+Returns a 2-tuple corresponding to `(log10(Vₗ),log10(Vᵥ))`, where `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses. 
+
+Used in [`saturation_pressure`](@ref) methods that require initial volume guesses.
+
+It can be overloaded to provide more accurate estimates if necessary.
 """
 function x0_sat_pure(model,T,z=SA[1.0])
     #=theory as follows
@@ -74,6 +124,8 @@ function x0_sat_pure(model,T,z=SA[1.0])
     with a (P,V,T,B) pair, change to
     (P,V,a,b)
     =#
+
+
     B = second_virial_coefficient(model,T,SA[1.0])
     lb_v = lb_volume(model,SA[1.0])*one(T)
     _0 = zero(B)
@@ -83,6 +135,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
         _nan = _0/_0
         return (_nan,_nan)
     end
+  
     p = -0.25*R̄*T/B
     vl = x0_volume(model,p,T,z,phase=:l)
     vl = _volume_compress(model,p,T,SA[1.0],vl)
@@ -101,9 +154,9 @@ function x0_sat_pure(model,T,z=SA[1.0])
     The van der Waals equation: analytical and approximate solutions
     =#
     γ = p*vl*vl/(R̄*T)
-    _c = vl*vl + B*vl - γ*vl 
+    _c = vl*(vl + B - γ) 
     _b = γ - B - vl
-    Δ = _b*_b - 4*_c
+    Δ = Solvers.det_22(_b,_b,4,_c)
     if isnan(vl) | (Δ < 0)
          
         #fails on two ocassions:
@@ -111,7 +164,6 @@ function x0_sat_pure(model,T,z=SA[1.0])
         #old strategy
         x0l = 4*lb_v
         x0v = -2*B + 2*lb_v
-        
         return (log10(x0l),log10(x0v))
     end
     Δsqrt = sqrt(Δ)
@@ -133,10 +185,11 @@ function x0_sat_pure(model,T,z=SA[1.0])
     Tc = ar/br/R̄
     Pc = ar/(br*br)
     Tr = T/Tc
-    #Tr(vdW approx) > Tr(model)
+    #Tr(vdW approx) > Tr(model), try default.
     if Tr >= 1
-        _nan = _0/_0
-        return (_nan,_nan)
+        x0l = 4*lb_v
+        x0v = -2*B + 2*lb_v
+        return (log10(x0l),log10(x0v))
     end
     # if b1/b2 < -0.95, then T is near Tc.
     #if b<lb_v then we are in trouble 
@@ -187,6 +240,113 @@ function scale_sat_pure(model,z=SA[1.0])
 end
 
 """
+    x0_psat(model::EoSModel, T,crit = nothing)
+
+Initial point for saturation pressure, given the temperature and V,T critical coordinates.
+On moderate pressures it will use a Zero Pressure initialization. On pressures near the critical point it will switch to spinodal finding.
+
+Used in [`saturation_pressure`](@ref) methods that require initial pressure guesses.
+
+if the initial temperature is over the critical point, it returns `NaN`.
+
+It can be overloaded to provide more accurate estimates if necessary.
+"""
+function x0_psat(model,T,crit = nothing)
+    coeffs = antoine_coef(model)
+    if coeffs !== nothing
+        A,B,C = coeffs
+        T̃ = T/T_scale(model)
+        lnp̃ = A - B/(T̃ + C)
+        ps = p_scale(model)
+        px =  exp(lnp̃)*ps
+        return px
+    end
+    if isnothing(crit)
+        crit = crit_pure(model)
+    end
+    Tc, Pc, Vc = crit
+    if T > Tc
+        return zero(T)/zero(T)
+    end
+    return x0_psat(model, T, Tc, Vc)
+end
+
+function x0_psat(model::EoSModel, T, Tc, Vc)
+    # Function to get an initial guess for the saturation pressure at a given temperature
+    z = SA[1.] #static vector
+    _0 = zero(T+Tc+Vc)
+    RT = R̄*T
+    Tr = T/Tc
+    # Zero pressure initiation
+    if Tr < 0.8
+        P0 = _0
+        vol_liq0 = volume(model, P0, T, phase=:liquid)
+        ares = a_res(model, vol_liq0, T, z)
+        lnϕ_liq0 = ares - 1. + log(RT/vol_liq0)
+        P0 = exp(lnϕ_liq0)
+    # Pmin, Pmax initiation
+    elseif Tr <= 1.0
+        low_v = Vc
+        up_v = 5 * Vc
+        #note: P_max is the pressure at the maximum volume, not the maximum pressure
+        fmax(V) = -pressure(model, V, T)
+        sol_max = Solvers.optimize(fmax, (low_v, up_v))
+        P_max = -Solvers.x_minimum(sol_max)
+        low_v = lb_volume(model)
+        up_v = Vc
+        #note: P_min is the pressure at the minimum volume, not the minimum pressure
+        fmin(V) = pressure(model, V, T)
+        sol_min = Solvers.optimize(fmin, (low_v,up_v))
+        P_min = Solvers.x_minimum(sol_min)
+        P0 = (max(zero(P_min), P_min) + P_max) / 2
+    else
+        P0 = _0/_0 #NaN, but propagates the type
+    end
+    return P0
+end
+
+"""
+    x0_saturation_temperature(model::EoSModel,p)
+
+Returns a 3-tuple corresponding to `(T,Vₗ,Vᵥ)`, `T` is the initial guess for temperature and `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses. 
+Used in [`saturation_temperature`](@ref) with [`AntoineSaturation`](@ref).
+"""
+function x0_saturation_temperature end
+
+function x0_saturation_temperature(model::EoSModel,p,::Nothing)
+    crit = crit_pure(model)
+    return x0_saturation_temperature(model,p,crit)
+end
+
+function x0_saturation_temperature(model::EoSModel,p,crit::Tuple)
+    Tc,Pc,Vc = crit
+    A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941)
+    if Pc < p
+        nan = zero(p)/zero(p)
+        return (nan,nan,nan)
+    end
+    lnp̄ = log(p / Pc)
+    T0 = Tc*(B/(A-lnp̄)-C)
+    pii,vli,vvi = saturation_pressure(model,T0,ChemPotVSaturation(;crit))
+    
+    if isnan(pii)
+        nan = zero(p)/zero(p)
+        return (nan,nan,nan)
+    end
+
+    Δp = (p-pii)
+    S_v = VT_entropy(model,vvi,T0)
+    S_l = VT_entropy(model,vli,T0)
+    ΔS = S_v - S_l
+    ΔV = vvi - vli
+    dpdt = ΔS/ΔV #≈ (p - pii)/(T-Tnew)
+    T = T0 + Δp/dpdt
+    vv = volume_virial(model,p,T)
+    vl = 0.3*lb_volume(model) + 0.7*vli
+    return (T,vl,vv)
+end
+
+"""
     x0_crit_pure(model::SAFTModel)
 
 Returns a 2-tuple corresponding to
@@ -198,36 +358,6 @@ function x0_crit_pure(model::EoSModel)
     lb_v = lb_volume(model)
     (1.5, log10(lb_v/0.3))
 end
-
-"""
-    T_scale(model::EoS,z=SA[1.0])
-
-Represents a temperature scaling factor. 
-
-On any EoS based on Critical parameters (Cubic or Empiric EoS), the temperature scaling factor is chosen to be the critical temperature.
-
-On SAFT or other molecular EoS, the temperature scaling factor is chosen to be a function of the potential depth ϵ.
-
-Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
-"""
-function T_scale end
-
-"""
-    p_scale(model::SAFTModel,z=SA[1.0])
-
-Represents a pressure scaling factor
-
-On any EoS based on Critical parameters (Cubic or  
-Empiric EoS), the pressure scaling factor is    
-chosen to be a function of the critical pressure.
-
-On SAFT or other molecular EoS, the temperature    
-scaling factor is chosen to a function of ∑(zᵢ*ϵᵢ*(σᵢᵢ)³)    
-
-Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
-
-"""
-function p_scale end
 
 #=
 the following methods are fallbacks,
@@ -246,4 +376,17 @@ function T_scales(model)
     return res
 end
 
+function p_scales(model)
+    n = length(model)
+    x = zeros(n)
+    res = zeros(n)
+    for i = 1:n
+        x[i] = 1.0
+        res[i] = p_scale(model,x)
+        x[i] = 0.0
+    end
+    return res
+end
+
 T_scales(model,z) = T_scales(model)
+p_scales(model,z) = p_scales(model)
