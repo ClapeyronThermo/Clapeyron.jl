@@ -26,8 +26,8 @@ using Clapeyron, Test
     filepath_gc = ["test_csvs/group_test.csv"]
     filepath_param_gc = ["test_csvs/group_param_test.csv"]
     # Check that it detects the right sites.
-    allparams,allnotfoundparams = createparams(testspecies, filepath_normal, Clapeyron.ParamOptions()) #merge all found params
-    result, allcomponentsites = compile_params(testspecies,allparams,allnotfoundparams,options) #generate ClapeyronParams
+    allparams,allnotfoundparams = Clapeyron.createparams(testspecies, filepath_normal, Clapeyron.ParamOptions()) #merge all found params
+    result, allcomponentsites = Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,options) #generate ClapeyronParams
 
     @test allcomponentsites == [[],
                                                                      [],

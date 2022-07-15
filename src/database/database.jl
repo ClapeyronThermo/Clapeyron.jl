@@ -340,9 +340,12 @@ function getparams(components,
     return getparams(components,locations,options)
 end
 function getparams(components::Vector{String},locations::Vector{String},options::ParamOptions)
-    filepaths = flattenfilepaths(locations,options.userlocations) #generate one string of params
-    allparams,allnotfoundparams = createparams(components, filepaths, options) #merge all found params
-    result, allcomponentsites = compile_params(components,allparams,allnotfoundparams,options) #generate ClapeyronParams
+    #generate one string of params
+    filepaths = flattenfilepaths(locations,options.userlocations)
+    #merge all found params
+    allparams,allnotfoundparams = createparams(components, filepaths, options)
+    #generate ClapeyronParams
+    result, allcomponentsites = compile_params(components,allparams,allnotfoundparams,options)
     #check values
     for v in values(result) 
         is_valid_param(v,options)
@@ -370,7 +373,9 @@ function buildsites(result,components,allcomponentsites,options)
     if !any(haskey(result,n_sites_columns[vi]) for vi in v)
         @error """No columns containing number of sites were found. Supposing zero sites.
         If your model doesn't use sites, but some input CSV folders contain Association params. consider using return_sites=false.
-        If there are columns containing number of sites, then those aren't recognized. Consider passing a Dict with the mappings between the sites and the name of the column containing the number of said sites in with the n_sites_columns keyword"
+        If there are columns containing number of sites, then those aren't recognized.
+        Consider passing a Dict with the mappings between the sites and the name of the column containing the number of said sites,
+        with the n_sites_columns keyword"
         """
         assoc_csv = Set(String[])
         for x in values(result)
@@ -418,7 +423,11 @@ function findsites(data::Dict,components::Vector;verbose = false)
     return output
 end
 
-function createparams(components::Vector{String}, filepaths::Vector{String}, options::ParamOptions = DefaultOptions,parsegroups = false)
+function createparams(components::Vector{String},
+                    filepaths::Vector{String},
+                    options::ParamOptions = DefaultOptions,
+                    parsegroups = false)
+
     allparams = Dict{String,RawParam}()
     allnotfoundparams = Dict{String,CSVType}()
     # Read the filepaths in reverse in order to ensure that unused sources do not get added.
@@ -467,6 +476,10 @@ function compile_params(components,allparams,allnotfoundparams,options)
     return result,allcomponentsites
 end
 
+@noinline function _col_indices_error(header)
+    throw(error("Header ", normalised_columnreference, " not found."))
+end
+
 function col_indices(csvtype,headernames,options=DefaultOptions)
     columnreference = options.species_columnreference
     normalised_columnreference = normalisestring(columnreference)
@@ -480,13 +493,13 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
 
     if csvtype === singledata || csvtype === groupdata
         lookupcolumnindex = findfirst(isequal(normalised_columnreference), headernames)
-        isnothing(lookupcolumnindex) && error("Header ", normalised_columnreference, " not found.")
+        isnothing(lookupcolumnindex) && _col_indices_error(normalised_columnreference)
         idx_species = lookupcolumnindex
         if csvtype === groupdata
             groupcolumnreference = options.group_columnreference
             normalised_groupcolumnreference = normalisestring(groupcolumnreference)
             lookupgroupcolumnindex = findfirst(isequal(normalised_groupcolumnreference), headernames)
-            isnothing(lookupgroupcolumnindex) && error("Header ", normalised_groupcolumnreference, " not found.")
+            isnothing(lookupgroupcolumnindex) && _col_indices_error(normalised_groupcolumnreference)
             idx_groups = lookupgroupcolumnindex
         end
     
@@ -495,8 +508,8 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
         normalised_columnreference2 = normalised_columnreference * '2'
         lookupcolumnindex1 = findfirst(isequal(normalised_columnreference1), headernames)
         lookupcolumnindex2 = findfirst(isequal(normalised_columnreference2), headernames)
-        isnothing(lookupcolumnindex1) && error("Header ", normalised_columnreference1, " not found.")
-        isnothing(lookupcolumnindex2) && error("Header ", normalised_columnreference2, " not found.")
+        isnothing(lookupcolumnindex1) && _col_indices_error(normalised_columnreference1)
+        isnothing(lookupcolumnindex2) && _col_indices_error(normalised_columnreference2)
         idx_species1 = lookupcolumnindex1
         idx_species2 = lookupcolumnindex2
         if csvtype == assocdata
@@ -506,8 +519,8 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
             normalised_sitecolumnreference2 = normalised_sitecolumnreference * '2'
             lookupsitecolumnindex1 = findfirst(isequal(normalised_sitecolumnreference1), headernames)
             lookupsitecolumnindex2 = findfirst(isequal(normalised_sitecolumnreference2), headernames)
-            isnothing(lookupsitecolumnindex1) && error("Header ", normalised_sitecolumnreference1, " not found.")
-            isnothing(lookupsitecolumnindex2) && error("Header ", normalised_sitecolumnreference2, " not found.")
+            isnothing(lookupsitecolumnindex1) && _col_indices_error(normalised_sitecolumnreference1)
+            isnothing(lookupsitecolumnindex2) && _col_indices_error(normalised_sitecolumnreference2)
             idx_sites1 = lookupsitecolumnindex1
             idx_sites2 = lookupsitecolumnindex2
         end
@@ -535,7 +548,9 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
     components_dict = Dict(v => k for (k,v) in pairs(normalised_components))
     normalised_csvheaders = normalisestring.(csvheaders)
     normalised_headerparams = normalisestring.(headerparams)
-    normalised_headerparams ⊈ normalised_csvheaders && error("Headers ", setdiff(normalised_headerparams, normalised_csvheaders), " not present in csv header.")
+    if normalised_headerparams ⊈ normalised_csvheaders 
+        error("Headers ", setdiff(normalised_headerparams, normalised_csvheaders), " not present in csv header.")
+    end
 
     #function output
     foundvalues = Vector{RawParam}(undef,0)
@@ -702,8 +717,12 @@ function readcsvtype(filepath)
     keywords = readcsvtype_keywords
     words = split(lowercase(rstrip(getline(String(filepath), 2), ',')), ' ')
     foundkeywords = intersect(words, keywords)
-    isempty(foundkeywords) && error("Unable to determine type of database", filepath, ". Check that keyword is present on Line 2.")
-    length(foundkeywords) > 1 && error("Multiple keywords found in database ", filepath, ": ", foundkeywords)
+    if isempty(foundkeywords) 
+        error("Unable to determine type of database", filepath, ". Check that keyword is present on Line 2.")
+    end
+    if length(foundkeywords) > 1 
+        error("Multiple keywords found in database ", filepath, ": ", foundkeywords)
+    end
     _readcsvtype(only(foundkeywords)) 
 end
 
