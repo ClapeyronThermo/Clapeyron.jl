@@ -79,7 +79,7 @@ LinearAlgebra.dot(x::Union{<:AbstractVector,<:Number},param::SingleParameter) = 
 SingleParam(name,components,values,missingvals,src,sourcecsv) = SingleParameter(name,components,values,missingvals,src,sourcecsv)
 function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})::SingleParam{String}
     values = String.(param.values)
-    return (param.name,param.components,values,param.missingvalues,param.src,param.sourcecsv)
+    return (param.name,param.components,values,param.ismissingvalues,param.src,param.sourcecsv)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
