@@ -76,25 +76,6 @@ function normalisestring(str, isactivated::Bool=true; tofilter::Regex=r"[ \-\_]"
     return normalisedstring
 end
 
-function swapdictorder(dict)
-    # Swap the first two levels in a nested dictionary.
-    isempty(dict) && return dict
-    output = Dict()
-    outerkeys = keys(dict)
-    try
-        innerkeys = keys(first(values(dict)))
-        for innerkey ∈ innerkeys, outerkey ∈ outerkeys
-            if !haskey(output, innerkey)
-                output[innerkey] = Dict{Any,Any}(outerkey => dict[outerkey][innerkey])
-            end
-            push!(output[innerkey], outerkey => dict[outerkey][innerkey])
-        end
-    catch e
-        error("The format of the nested dictionary is not correct.")
-    end
-    return output
-end
-
 function _indexin(query,list,separator)
     querydict = Dict(v => k for (k,v) in pairs(query))
     return _indexin(querydict,list,separator,keys(list))
@@ -179,22 +160,6 @@ function defaultmissing(array::Array{T},defaultvalue::T2) where T<:Union{T2,Miss
 end
 function defaultmissing(array)
     throw("Unsupported array element type  $(typeof(array))")
-end
-
-function param_type(t1,t2)
-    t_promoted = promote_type(t1,t2)
-    local res
-    if t_promoted !== Any
-        res =  Union{Missing,t_promoted}
-    else
-        res = Union{Missing,t1,t2}
-    end
-    return res
-end
-
-#try not to promote to Int64. this will error if a user pass integer values different from 0 and 1
-function param_type(::Type{Bool},::Type{Int})
-    return Union{Bool,Missing}
 end
 
 _zero(t::Number) = zero(t)
