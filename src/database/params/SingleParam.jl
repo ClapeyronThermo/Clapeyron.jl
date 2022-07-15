@@ -188,7 +188,7 @@ end
 
 function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})::SingleParam{String}
     values = String.(param.values)
-    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+    return SingleParameter(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 #pack vectors

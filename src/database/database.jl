@@ -277,13 +277,14 @@ function is_valid_param(param::SingleParameter,options)
 end
 
 function is_valid_param(param::PairParameter,options)
+    
     diag = diagvalues(param.ismissingvalues)
     if param.name ∉ options.ignore_missing_singleparams && !all(diag) && any(diag)
-        @show options.ignore_missing_singleparams
         c = Base.text_colors
         reset = c[:normal]
         red = c[:bold] * c[:red]
-        error("Partial missing values exist in diagonal of pair parameter ",red,param.name,reset, ": ", [x for x in diag], ".")
+        vals = [ifelse(diag[i],missing,param.values[i]) for i in 1:length(diag)]
+        error("Partial missing values exist in diagonal of pair parameter ",red,param.name,reset, ": ", vals, ".")
     end
     return nothing
 end
@@ -684,19 +685,19 @@ function __verbose_findparams_found(foundvalues)
     for (k,v) in pairs(foundvalues)
         if v.type == singledata
             vdict = Dict(pair[1] => val for (pair,val) in zip(v.component_info,v.data))
-            kk = blue * k * reset
+            kk = blue * v.name * reset
             @info("""Found single component data: $kk with values: 
             $vdict
             """)
         elseif v.type == pairdata
             vdict = Dict((pair[1],pair[2]) => val for (pair,val) in zip(v.component_info,v.data))
-            kk = blue * k * reset
+            kk = blue * v.name * reset
             @info("""Found pair component data: $kk with values: 
             $vdict
             """)
         elseif v.type == assocdata
             vdict = Dict(__assoc_string(pair) => val for (pair,val) in zip(v.component_info,v.data))
-            kk = blue * k * reset
+            kk = blue * v.name * reset
             @info("""Found association component data: $kk with values: 
             $vdict
             """)
