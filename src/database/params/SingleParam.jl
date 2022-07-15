@@ -186,10 +186,16 @@ function Base.convert(::Type{SingleParam{Int}},param::SingleParam{Float64})
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
-function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})::SingleParam{String}
+function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})
     values = String.(param.values)
     return SingleParameter(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
+
+#trying to break stack overflow on julia 1.6
+function Base.convert(::Type{SingleParam{String}},param::SingleParam{String})
+    return param
+end
+
 
 #pack vectors
 

@@ -83,16 +83,18 @@ end
 
 function _indexin(query,list,separator,indices)
     kq = keys(query)
-    res = zeros(Int,length(list))
-    comp_res = copy(res)
+    res = zeros(Int,0)
+    comp_res = zeros(Int,0)
+    sizehint!(res,2*length(kq))
+    sizehint!(comp_res,2*length(kq))
     for k in indices
         list_i = list[k]
         match = false
         idx = 0
         if !occursin(separator,list_i) #simple format
             if list_i in kq
-                match = true
-                idx = query[list_i]
+                push!(res,k)
+                push!(comp_res,query[list_i])   
             end
         else #separator format
             for ki in kq
@@ -101,21 +103,16 @@ function _indexin(query,list,separator,indices)
                 elseif endswith(list_i,ki)
                     k_with_separator = separator * ki
                 else
-                    k_with_separator = separator * ki * separator
+                    k_with_separator = separator * ki * separator  
                 end
                 if occursin(k_with_separator,list_i)
-                    match = true
-                    idx = query[ki]
-                    break
+                    push!(res,k)
+                    push!(comp_res,query[ki])   
                 end
             end
         end
-        if match
-            res[k] = k
-            comp_res[k] = idx
-        end
     end
-    return filter!(!iszero,res),filter!(!iszero,comp_res)
+    return res,comp_res
 end
 
 function defaultmissing(array::Array{<:Number},defaultvalue = zero(eltype(array)))
@@ -177,3 +174,20 @@ end
 _iszero(t::Number) = iszero(t)
 _iszero(::Missing) = true
 _iszero(t::AbstractString) = isempty(t)
+
+##Error and info display utils
+function error_color(text)
+    colors = Base.text_colors
+    red = colors[:bold] * colors[:red]
+    reset = colors[:normal]
+    return red * text * reset
+end
+
+function info_color(text)
+    colors = Base.text_colors
+    red = colors[:bold] * colors[:cyan]
+    reset = colors[:normal]
+    return red * text * reset
+end
+
+

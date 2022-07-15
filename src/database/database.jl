@@ -61,6 +61,13 @@ function joindata!(old::Vector,new::Vector)
 end
 
 function joindata!(old::RawParam,new::RawParam)
+    tnew,type_sucess = joindata!(old.type,new.type)
+    if old.grouptype !== new.grouptype
+        error_different_grouptype(old,new)
+    end
+    if !type_sucess
+        error_clashing_headers(old,new)
+    end
     component_info = prepend!(old.component_info,new.component_info)
     
     #Handle all the type variability of the data here
@@ -69,12 +76,7 @@ function joindata!(old::RawParam,new::RawParam)
     sources = prepend!(old.sources,new.sources)
     csv = prepend!(old.csv,new.csv)
     tnew,type_sucess = joindata!(old.type,new.type)
-    if old.grouptype !== new.grouptype
-        error_different_grouptype(old,new)
-    end
-    if !type_sucess
-        error_clashing_headers(old,new)
-    end
+
     return RawParam(old.name,component_info,data,sources,csv,tnew,old.grouptype)
 end
 
@@ -87,11 +89,8 @@ end
 @noinline function error_clashing_headers(old::RawParam,new::RawParam)
     told = Symbol(old.type)
     tnew = Symbol(new.type)
-    c = Base.text_colors
-    reset = c[:normal]
-    red = c[:bold] * c[:red]
-    header = red * old.name * reset
-    err = """cannot join CSV header $k with incompatible data:
+    header = error_color(old.name)
+    err = """cannot join CSV header $header with incompatible data:
     current data type: $(told), with tables:
     - $(old.csv)
     incoming data type: $(tnew), with tables:
@@ -101,10 +100,7 @@ end
 end
 
 @noinline function error_clashing_headers(old::CSVType,new::CSVType,header)
-    c = Base.text_colors
-    reset = c[:normal]
-    red = c[:bold] * c[:red]
-    header = red * old.name * reset
+    header = error_color(old.name)
     ("Header ", header, " appear in both loaded assoc and non-assoc files.")
 end
 #=
@@ -188,11 +184,11 @@ function compile_pair(name,components,raw::RawParam,options)
         ismissingvals[i,j] = false
         sources[i,j] = ss
         sources_csv[i,j] = sc
-        if symmetric 
-            values[j,i] = v
+        if symmetric && i ≠ j
             ismissingvals[j,i] = false
+            values[j,i] = v
             sources[j,i] = ss
-            sources_csv[j,i] = sc
+            sources_csv[j,i] = sc            
         end  
     end
     sources = unique!(vec(sources))
@@ -268,23 +264,16 @@ function is_valid_param(param::SingleParameter,options)
     missingvals = param.ismissingvalues
     if param.name ∉ options.ignore_missing_singleparams && any(missingvals)
         vals = [ifelse(missingvals[i],missing,param.values[i]) for i in 1:length(missingvals)]
-        c = Base.text_colors
-        reset = c[:normal]
-        red = c[:bold] * c[:red]
-        error("Missing values exist in single parameter ", red, param.name,reset, ": ", vals, ".")
+        error("Missing values exist in single parameter ", error_color(param.name), ": ", vals, ".")
     end
     return nothing
 end
 
 function is_valid_param(param::PairParameter,options)
-    
     diag = diagvalues(param.ismissingvalues)
     if param.name ∉ options.ignore_missing_singleparams && !all(diag) && any(diag)
-        c = Base.text_colors
-        reset = c[:normal]
-        red = c[:bold] * c[:red]
         vals = [ifelse(diag[i],missing,param.values[i]) for i in 1:length(diag)]
-        error("Partial missing values exist in diagonal of pair parameter ",red,param.name,reset, ": ", vals, ".")
+        error("Partial missing values exist in diagonal of pair parameter ",error_color(param.name), ": ", vals, ".")
     end
     return nothing
 end
@@ -679,25 +668,22 @@ end
 
 
 function __verbose_findparams_found(foundvalues)
-    c = Base.text_colors
-    reset = c[:normal]
-    blue = c[:bold] * c[:cyan]
-    for (k,v) in pairs(foundvalues)
+    for v in foundvalues
         if v.type == singledata
             vdict = Dict(pair[1] => val for (pair,val) in zip(v.component_info,v.data))
-            kk = blue * v.name * reset
+            kk = info_color(v.name)
             @info("""Found single component data: $kk with values: 
             $vdict
             """)
         elseif v.type == pairdata
             vdict = Dict((pair[1],pair[2]) => val for (pair,val) in zip(v.component_info,v.data))
-            kk = blue * v.name * reset
+            kk = info_color(v.name)
             @info("""Found pair component data: $kk with values: 
             $vdict
             """)
         elseif v.type == assocdata
             vdict = Dict(__assoc_string(pair) => val for (pair,val) in zip(v.component_info,v.data))
-            kk = blue * v.name * reset
+            kk = info_color(v.name)
             @info("""Found association component data: $kk with values: 
             $vdict
             """)
@@ -797,7 +783,7 @@ function GroupParam(gccomponents,
             components[i]  = gcpair
             to_lookup[i] = true
         elseif gcpair isa Tuple{String, Vector{Pair{String, Int64}}}
-            components[i]  = first(pair)
+            components[i]  = first(gcpair)
         else
             error("The format of the components is incorrect.")
         end

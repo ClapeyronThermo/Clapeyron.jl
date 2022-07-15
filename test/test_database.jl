@@ -26,6 +26,9 @@ using Clapeyron, Test
     filepath_gc = ["test_csvs/group_test.csv"]
     filepath_param_gc = ["test_csvs/group_param_test.csv"]
     # Check that it detects the right sites.
+
+    multiple_identifiers = Clapeyron.getparams(testspecies; userlocations=filepath_multiple_identifiers, return_sites=false, verbose = true)
+
     opts = Clapeyron.ParamOptions()
     allparams,allnotfoundparams = Clapeyron.createparams(testspecies, filepath_normal, opts) #merge all found params
     result, allcomponentsites = Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts) #generate ClapeyronParams
@@ -144,10 +147,12 @@ using Clapeyron, Test
   #  @test params["assocparam"].values[i,j] .== assoc_param_values[i,j] for (i,j) in zip()
 
     # Clashing headers between association and non-association parameters are not allowed
+
     @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_clashingheaders)
 
-    # If parameter is not tagged as asymmetrical, having non-missing values across the diagonal will throw an error
-    @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, ignore_missing_singleparams=["asymmetricpair"],return_sites = false)
+    # If parameter is not tagged as ignore_missing_singleparams, incomplete diagonal will throw an error
+    #ignore_missing_singleparams=["asymmetricpair"]
+    @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry,return_sites = false)
 
     asymmetricparams = Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"], ignore_missing_singleparams=["asymmetricpair"],return_sites = false)
    
