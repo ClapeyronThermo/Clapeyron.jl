@@ -14,19 +14,19 @@ v[i+1] = v[i]*exp(β[i]*(p-p(v[i])))
 
 In the liquid root region, the iterations follow `v0 < v[i] < v[i+1] < v(p)`, allowing the calculation of the liquid root without entering the metastable region.
 """
-function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    p,T,V0 = promote(p,T,V0)
-    return _volume_compress(model,p,T,z,V0,max_iters)
+function volume_compress(model, p, T, z=SA[1.0]; V0=x0_volume(model, p, T, z, phase=:liquid), max_iters=100)
+    p, T, V0 = promote(p, T, V0)
+    return _volume_compress(model, p, T, z, V0, max_iters)
 end
 
-function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    _0 = zero(p+T+first(z))
-    pset = one(_0)*p
-    _nan = _0/_0
+function _volume_compress(model, p, T, z=SA[1.0], V0=x0_volume(model, p, T, z, phase=:liquid), max_iters=100)
+    _0 = zero(p + T + first(z))
+    pset = one(_0) * p
+    _nan = _0 / _0
     logV0 = log(V0)
-    lb_v = lb_volume(model,z)
+    lb_v = lb_volume(model, z)
     function logstep(_V)
-        _V < log(lb_v) && return zero(_V)/zero(_V)
+        _V < log(lb_v) && return zero(_V) / zero(_V)
         _V = exp(_V)
         _p,dpdV = p∂p∂V(model,_V,T,z)
         dpdV > 0 && return _nan #inline mechanical stability.
@@ -39,7 +39,7 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         vv = _V + Δ
         return vv
     end
-    res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
+    res = @nan(Solvers.fixpoint(f_fixpoint, logV0, Solvers.SSFixPoint(), rtol=1e-12, max_iters=max_iters), _nan)
     return exp(res)
 end
 
@@ -61,26 +61,26 @@ If you pass an `EoSModel` as the first argument, `B` will be calculated from the
 """
 function volume_virial end
 
-function volume_virial(model::EoSModel,p,T,z=SA[1.0])
-    B = second_virial_coefficient(model,T,z)
-    return volume_virial(B,p,T,z)
+function volume_virial(model::EoSModel, p, T, z=SA[1.0])
+    B = second_virial_coefficient(model, T, z)
+    return volume_virial(B, p, T, z)
 end
 
-function volume_virial(B::Real,p,T,z=SA[1.0])
+function volume_virial(B::Real, p, T, z=SA[1.0])
     _0 = zero(B)
-    B > _0 && return _0/_0
-    a = p/(R̄*T)
+    B > _0 && return _0 / _0
+    a = p / (R̄ * T)
     b = -1
     c = -B
-    Δ = b*b-4*a*c
+    Δ = b * b - 4 * a * c
     n = sum(z)
     if Δ <= 0
         #virial approximation could not be calculated
         #return value at spinodal
-        return -2*B
+        return -2 * B
     end
     #only the left root has physical meaning
-    return (-b + sqrt(b*b-4*a*c))/(2*a)
+    return (-b + sqrt(b * b - 4 * a * c)) / (2 * a)
 end
 
 #(z = pV/RT)
@@ -132,8 +132,8 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
     end
 
     if phase != :unknown
-        V0 = x0_volume(model,p,T,z,phase=phase)
-        V = _volume_compress(model,p,T,z,V0)
+        V0 = x0_volume(model, p, T, z, phase=phase)
+        V = _volume_compress(model, p, T, z, V0)
         #isstable(model,V,T,z,phase) the user just wants that phase
         return V
     end
@@ -154,14 +154,14 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
 
     #this catches the supercritical phase as well
     if isnan(Vl)
-        isstable(model,Vg,T,z,phase)
+        isstable(model, Vg, T, z, phase)
         return Vg
     elseif isnan(Vg)
-        isstable(model,Vl,T,z,phase)
+        isstable(model, Vl, T, z, phase)
         return Vl
     end
 
-   err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
+    err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if (isnan(Vl) & isnan(Vg))
         err()
         return zero(TYPE)/zero(TYPE)
@@ -176,7 +176,7 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
         isstable(model,Vg,T,z,phase)
         return Vg
     else
-        isstable(model,Vl,T,z,phase)
+        isstable(model, Vl, T, z, phase)
         return Vl
     end
 end

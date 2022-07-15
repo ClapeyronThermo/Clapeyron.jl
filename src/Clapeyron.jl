@@ -10,11 +10,12 @@ const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 using FillArrays: FillArrays
 
 using Roots: Roots
+# import Optim # Having this added makes things easier but appears to break stuff :(
 using NLSolvers
 import BlackBoxOptim
 
 using DiffResults, ForwardDiff
-using Scratch 
+using Scratch
 using Unitful
 import LogExpFunctions
 
@@ -28,7 +29,7 @@ import .Fractions
 using .Fractions: FractionVector
 
 #Gas constant, Boltzmann Constant
-include("base/constants.jl") 
+include("base/constants.jl")
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
 include("base/EoSModel.jl")
@@ -44,7 +45,7 @@ include("database/params/combiningrules.jl")
 
 using CSV, Tables
 #getparams options
-include("database/ParamOptions.jl") 
+include("database/ParamOptions.jl")
 #getparams definition
 include("database/database.jl")
 #transform Tables.jl tables to Clapeyron csv files

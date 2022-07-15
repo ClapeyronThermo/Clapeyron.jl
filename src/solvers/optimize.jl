@@ -91,7 +91,7 @@ x_minimum(res::Tuple{<:Number,<:Number}) = last(res)
 
 #= only_fg!: Optim.jl legacy form:
 function fg!(F,G,x)
-  # do common computations here
+  do common computations here
   # ...
   if G != nothing
     # code to compute gradient here

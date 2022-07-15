@@ -38,6 +38,7 @@ include("tp_flash/DifferentialEvolutiontp_flash.jl")
 include("tp_flash/RachfordRicetp_flash.jl")
 include("tp_flash/Michelsentp_flash.jl")
 
+include("tp_flash/JindrovaGeneralvt_flash.jl")
 
 function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
     numspecies = length(model)

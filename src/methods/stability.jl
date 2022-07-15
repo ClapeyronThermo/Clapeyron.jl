@@ -115,19 +115,22 @@ function chemical_stability_analysis(model::EoSModel, p, T, z)
     res_vec = [tm_func(w_liq), tm_func(w_vap)]
     (tm_min, idx) = findmin(map(x -> x.info.minimum, res_vec))
     tm_xmin = map(x -> sqrt.(abs.(x.info.solution)), res_vec)[idx]
-
+    phase = (idx == 1) ? "liq" : "vap"
+    println("stable phase = $phase")
+    @show round.(tm_xmin, digits=2)
+    return map(x -> x.info.minimum, res_vec)
     # We only need to consider the Hessian if wanting to distinguish between Metastable and unstable states
-    H = ForwardDiff.hessian(W -> tm(W, z), tm_xmin)
-    H_scaled = zeros(size(H))
-    for i in 1:size(H)[1]
-        for j in 1:size(H)[2]
-            H_scaled[i, j] = sqrt(tm_xmin[i] * tm_xmin[j]) * H[i, j]
-        end
-    end
-    λ_min = eigmin(H_scaled)
+    # H = ForwardDiff.hessian(W -> tm(W, z), tm_xmin)
+    # H_scaled = zeros(size(H))
+    # for i in 1:size(H)[1]
+    #     for j in 1:size(H)[2]
+    #         H_scaled[i, j] = sqrt(tm_xmin[i] * tm_xmin[j]) * H[i, j]
+    #     end
+    # end
+    # λ_min = eigmin(H_scaled)
 
     # Return compositions for initial guesses in flash algorithms
-    return ((tm_min, λ_min), normalize(tm_xmin, 1))
+    # return ((tm_min, 1.0), normalize(tm_xmin, 1))
 end
 
 function pure_chemical_instability(model, V, T)
