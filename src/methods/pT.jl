@@ -336,8 +336,8 @@ end
 function activity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
     pure   = split_model(model)
     μ_mixt = chemical_potential(model,p,T,z;phase,threaded)
-
-    return exp.((μ_mixt .- μ_pure_i) ./ R̄ ./ T) ./z
+    μ_pure = gibbs_free_energy.(pure,p,T;phase,threaded)
+    return exp.((μ_mixt .- μ_pure) ./ R̄ ./ T) ./z
 end
 
 """
