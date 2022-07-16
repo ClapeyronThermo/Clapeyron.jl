@@ -48,7 +48,7 @@ function getpaths(location::AbstractString; relativetodatabase::Bool=false)
 end
 
 function flattenfilepaths(locations,userlocations)
-    res = 
+    res =
                 vcat(
                     reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[]),
                     reduce(vcat,getpaths.(userlocations),init = String[]),
@@ -92,20 +92,25 @@ function _indexin(query,list,separator,indices)
         if !occursin(separator,list_i) #simple format
             if list_i in kq
                 push!(res,k)
-                push!(comp_res,query[list_i])   
+                push!(comp_res,query[list_i])
             end
         else #separator format
             for ki in kq
                 if startswith(list_i,ki) #starts with string
-                    k_with_separator = ki * separator
+                    if startswith(list_i,ki * separator)
+                        push!(res,k)
+                        push!(comp_res,query[ki])
+                    end
                 elseif endswith(list_i,ki)
-                    k_with_separator = separator * ki
+                    if endswith(list_i,separator * ki)
+                        push!(res,k)
+                        push!(comp_res,query[ki])
+                    end
                 else
-                    k_with_separator = separator * ki * separator  
-                end
-                if occursin(k_with_separator,list_i)
-                    push!(res,k)
-                    push!(comp_res,query[ki])   
+                    if occursin(separator * ki * separator,list_i)
+                        push!(res,k)
+                        push!(comp_res,query[ki])
+                    end
                 end
             end
         end
@@ -137,7 +142,7 @@ function defaultmissing(array::Array{Union{Missing, Bool}},defaultvalue=zero(elt
     return [coalesce(i,defaultvalue) for i in array],Array(ismissing.(array))
 end
 
-#if an array with only missings is passed, the Resulting ClapeyronParam will be 
+#if an array with only missings is passed, the Resulting ClapeyronParam will be
 #of the type that this function returns
 function defaultmissing(array::Array{Missing},defaultvalue=0.0)
     return coalesce.(array,defaultvalue),Array(ismissing.(array))
