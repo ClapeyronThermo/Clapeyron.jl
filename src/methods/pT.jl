@@ -330,22 +330,16 @@ function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, th
     μ_res = VT_chemical_potential_res(model,V,T,z)
     φ = μ_res
     Z = p*V/R̄/T/sum(z)
-    for i ∈ @comps
-        φ[i] = exp(μ_res[i]/R̄/T)/Z
-    end
-    return φ
+    return exp.(μ_res ./ R̄ ./ T) ./ Z
 end
 
 function activity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
     pure   = split_model(model)
     μ_mixt = chemical_potential(model,p,T,z;phase,threaded)
-    γ_i = μ_mixt
-    for i ∈ @comps
-        μ_pure_i = chemical_potential(pure[i],p,T;phase,threaded)[1]
-        γ_i[i] = exp((μ_mixt[i]-μ_pure_i)/R̄/T)/z[i]
-    end
-    return γ_i
+
+    return exp.((μ_mixt .- μ_pure_i) ./ R̄ ./ T) ./z
 end
+
 """
     compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
 

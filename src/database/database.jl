@@ -80,10 +80,11 @@ function joindata!(old::RawParam,new::RawParam)
     return RawParam(old.name,component_info,data,sources,csv,tnew,old.grouptype)
 end
 
-Base.@specialize
-
 @noinline function error_different_grouptype(old,new)
-    throw(error("cannot join two databases with different group types! (old = $(old.grouptype), new = $(new.grouptype)"))
+    throw(error("""cannot join two databases with different group types:
+    current group type: $(old.grouptype)
+    incoming group type: $(new.grouptype)
+    """))
 end
 
 @noinline function error_clashing_headers(old::RawParam,new::RawParam)
@@ -98,6 +99,8 @@ end
     """
     throw(error(err))
 end
+
+Base.@specialize
 
 @noinline function error_clashing_headers(old::CSVType,new::CSVType,header)
     header = error_color(old.name)
@@ -189,7 +192,7 @@ function compile_pair(name,components,raw::RawParam,options)
             values[j,i] = v
             sources[j,i] = ss
             sources_csv[j,i] = sc            
-        end  
+        end
     end
     sources = unique!(vec(sources))
     sources_csv = unique!(vec(sources_csv))
