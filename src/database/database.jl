@@ -69,7 +69,7 @@ function joindata!(old::RawParam,new::RawParam)
         error_clashing_headers(old,new)
     end
     component_info = prepend!(old.component_info,new.component_info)
-    
+
     #Handle all the type variability of the data here
     data = joindata!(old.data,new.data)
 
@@ -95,7 +95,7 @@ end
     current data type: $(told), with tables:
     - $(old.csv)
     incoming data type: $(tnew), with tables:
-    - $(new.csv)    
+    - $(new.csv)
     """
     throw(error(err))
 end
@@ -113,13 +113,13 @@ it also builds empty params, if you pass a CSVType instead of a RawParam
 
 Base.@nospecialize
 
-function compile_param(components,name,raw::RawParam,site_strings,options)
+function compile_param(components,name,raw::RawParam,site_strings,flattenedsites,options)
     if raw.type == singledata || raw.type == groupdata
         return compile_single(name,components,raw,options)
     elseif raw.type == pairdata
         return compile_pair(name,components,raw,options)
     elseif raw.type == assocdata
-        return compile_assoc(name,components,raw,site_strings,options)
+        return compile_assoc(name,components,raw,site_strings,flattenedsites,options)
     end
     return nothing
 end
@@ -141,7 +141,7 @@ function compile_single(name,components,raw::RawParam,options)
     L = eltype(raw)
     if L <: Number
         values = zeros(L,l)
-    else 
+    else
         values = fill("",l)
     end
     ismissingvals = ones(Bool,l)
@@ -168,12 +168,12 @@ end
 
 function compile_pair(name,components,raw::RawParam,options)
     EMPTY_STR = ""
-    symmetric = name ∉ options.asymmetricparams 
+    symmetric = name ∉ options.asymmetricparams
     l = length(components)
     L = eltype(raw)
     if L <: Number
         values = zeros(L,(l,l))
-    else 
+    else
         values = fill("",(l,l))
     end
     ismissingvals = ones(Bool,(l,l))
@@ -191,7 +191,7 @@ function compile_pair(name,components,raw::RawParam,options)
             ismissingvals[j,i] = false
             values[j,i] = v
             sources[j,i] = ss
-            sources_csv[j,i] = sc            
+            sources_csv[j,i] = sc
         end
     end
     sources = unique!(vec(sources))
@@ -208,12 +208,25 @@ function compile_pair(name,components,type::CSVType,options)
     return PairParameter(name,components,values,diagvals,ismissingvals,String[],String[])
 end
 
-function compile_assoc(name,components,raw::RawParam,site_strings,options)
+function lt_assoc(x,y)
+    c1x,c2x,s1x,s2x = x
+    c1y,c2y,s1y,s2y = y
+    isless(c1x,c1y) && return true
+    c2x < c2y && return true
+    s1x < s1y && return true
+    s2x < s2y && return true
+    return false
+end
+
+function compile_assoc(name,components,raw::RawParam,site_strings,flattenedsites,options)
     EMPTY_STR = ""
     vals = raw.data
-    c_12,s_12 = standarize_comp_info(raw.component_info,components,site_strings)
+    c_12,s_12,sort_value = standarize_comp_info(raw.component_info,components,site_strings)
     comp_info = raw.component_info
-    idxs = sort!([last(findall(==(u),comp_info)) for u in unique(comp_info)])
+    comp_info_unique = unique(comp_info)
+    _idxs = indexin(comp_info_unique,comp_info)
+    idxs = sortperm(sort_value[_idxs])
+    #idxs = sort!([last(findall(==(u),comp_info)) for u in unique(comp_info)])
     s_12 = s_12[idxs]
     c_12 = c_12[idxs]
     sources = raw.sources[idxs]
@@ -222,7 +235,9 @@ function compile_assoc(name,components,raw::RawParam,site_strings,options)
     ab = maximum(maximum(i) for i in s_12)
     size_ij = (ij,ij)
     size_ab =  (ab,ab)
-    values = Compressed4DMatrix(vals[idxs],c_12,s_12,size_ij,size_ab)
+    raw_vals = vals[idxs]
+    vals = raw_vals
+    values = Compressed4DMatrix(vals,c_12,s_12,size_ij,size_ab)
     param = AssocParam(name,components,values,site_strings,csvs,sources)
     return param
 end
@@ -239,6 +254,8 @@ end
 function standarize_comp_info(component_info,components,site_strings)
     c_12 = Vector{Tuple{Int,Int}}(undef,length(component_info))
     s_12 = Vector{Tuple{Int,Int}}(undef,length(component_info))
+    sort_value = zeros(Int,length(component_info))
+    l = length(components)
     for (i,val) in pairs(component_info)
         c1,c2,s1,s2 = val
         idx1 = findfirst(isequal(c1), components)
@@ -249,14 +266,27 @@ function standarize_comp_info(component_info,components,site_strings)
             newval = (c2,c1,s2,s1)
             c_12[i] = (idx2,idx1)
             s_12[i] = (idx22,idx21)
-        else
+        elseif idx1 < idx2
             newval = val
             c_12[i] = (idx1,idx2)
             s_12[i] = (idx21,idx22)
+        else
+            c_12[i] = (idx1,idx2)
+            if idx21 > idx22
+                s_12[i] = (idx22,idx21)
+                newval = (c1,c1,s2,s1)
+            else
+                s_12[i] = (idx21,idx22)
+                newval = val
+            end
         end
-        component_info[i] = newval
+        _idx1,_idx2 = c_12[i]
+        _idx21,_idx22 = s_12[i]
+        sort_value[i] = 10^15*_idx1 + 10^10*_idx2 + 10^5*_idx21 + _idx22
+
+        component_info[i]= newval
     end
-    return c_12,s_12
+    return c_12,s_12,sort_value
 end
 #=check valid params
 For single params, it checks that there aren't missing values (can be overrided)
@@ -296,8 +326,8 @@ in the available CSVs. `locations` are the locations relative to `Clapeyron` dat
 
 if `return_sites` is set to false, `getparams` will only return the found params.
 """
-function getparams(components, 
-                    locations::Array{String,1}=String[]; 
+function getparams(components,
+                    locations::Array{String,1}=String[];
                     userlocations::Vector{String}=String[],
                     asymmetricparams::Vector{String}=String[],
                     ignore_missing_singleparams::Vector{String}=String[],
@@ -324,12 +354,12 @@ function getparams(components,
                             normalisecomponents,
                             return_sites,
                             component_delimiter)
-    
+
     # locations is a list of paths relative to the Clapeyron database directory.
     # userlocations is a list of paths input by the user.
     # If parameters exist in multiple files, Clapeyron gives priority to files in later paths.
     # asymmetricparams is a list of parameters for which matrix reflection is disabled.
-    # ignore_missingsingleparams gives users the option to disable component existence check in single params.                   
+    # ignore_missingsingleparams gives users the option to disable component existence check in single params.
     return getparams(components,locations,options)
 end
 function getparams(components::Vector{String},locations::Vector{String},options::ParamOptions)
@@ -340,7 +370,7 @@ function getparams(components::Vector{String},locations::Vector{String},options:
     #generate ClapeyronParams
     result, allcomponentsites = compile_params(components,allparams,allnotfoundparams,options)
     #check values
-    for v in values(result) 
+    for v in values(result)
         is_valid_param(v,options)
     end
 
@@ -385,8 +415,8 @@ function buildsites(result,components,allcomponentsites,options)
         end
         return SiteParam(components)
     end
-    
-    n_sites_dict = Dict{String,SingleParam{Int}}(vi => result[n_sites_columns[vi]] for vi in v)    
+
+    n_sites_dict = Dict{String,SingleParam{Int}}(vi => result[n_sites_columns[vi]] for vi in v)
     return SiteParam(n_sites_dict,allcomponentsites)
 end
 
@@ -430,7 +460,7 @@ function createparams(components::Vector{String},
             continue
         end
         foundparams, notfoundparams = findparamsincsv(components, filepath,options,parsegroups)
-        
+
         #Merge found data
         for vv in foundparams
             kk = vv.name
@@ -461,10 +491,11 @@ end
 function compile_params(components,allparams,allnotfoundparams,options)
     #Generate component sites with the RawParam tapes
     allcomponentsites = findsites(allparams,components)
+    flattenedsites = unique!(reduce(vcat,allcomponentsites,init = String[]))
     #Compile Params
-    result = Dict{String,ClapeyronParam}(k => compile_param(components,k,v,allcomponentsites,options) for (k,v) in allparams)
+    result = Dict{String,ClapeyronParam}(k => compile_param(components,k,v,allcomponentsites,flattenedsites,options) for (k,v) in allparams)
     for (kk,vv) in allnotfoundparams
-        result[kk] = compile_param(components,kk,vv,allcomponentsites,options) 
+        result[kk] = compile_param(components,kk,vv,allcomponentsites,options)
     end
     return result,allcomponentsites
 end
@@ -495,7 +526,7 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
             isnothing(lookupgroupcolumnindex) && _col_indices_error(normalised_groupcolumnreference)
             idx_groups = lookupgroupcolumnindex
         end
-    
+
     elseif csvtype === pairdata || csvtype == assocdata
         normalised_columnreference1 = normalised_columnreference * '1'
         normalised_columnreference2 = normalised_columnreference * '2'
@@ -541,7 +572,7 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
     components_dict = Dict(v => k for (k,v) in pairs(normalised_components))
     normalised_csvheaders = normalisestring.(csvheaders)
     normalised_headerparams = normalisestring.(headerparams)
-    if normalised_headerparams ⊈ normalised_csvheaders 
+    if normalised_headerparams ⊈ normalised_csvheaders
         error("Headers ", setdiff(normalised_headerparams, normalised_csvheaders), " not present in csv header.")
     end
 
@@ -562,11 +593,11 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
     lookupsitecolumnindex1,lookupsitecolumnindex2 = assoc_idx
     headerparams_indices = [findfirst(isequal(i),normalised_csvheaders) for i in normalised_headerparams]
     lookupcolumnindex = max(lookupcolumnindex,lookupcolumnindex1)
-    
+
     verbose && __verbose_findparams_start(filepath,components,headerparams,parsegroups,csvtype)
     #list of all species
     species_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex),normalisecomponents)
-    
+
     #indices where data could be (they could be missing)
     #on pair and assoc, this is just the first component, we need to reduce the valid indices again
     found_indices0,comp_indices = _indexin(components_dict,species_list,component_delimiter,1:length(species_list))
@@ -590,12 +621,12 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
         l = length(found_indices2)
         if l != 0
             _data = dfR[found_indices2]
-            _comp = [(components[c1],components[c2],EMPTY_STR,EMPTY_STR) for (c1,c2) in zip(comp_indices1,comp_indices2)] 
+            _comp = [(components[c1],components[c2],EMPTY_STR,EMPTY_STR) for (c1,c2) in zip(comp_indices1,comp_indices2)]
             _sources = fill(EMPTY_STR,l)
             _csv = fill(String(filepath),l)
         end
-    elseif csvtype == assocdata && !parsegroups  
-        species2_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex2)[found_indices0],normalisecomponents)        
+    elseif csvtype == assocdata && !parsegroups
+        species2_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex2)[found_indices0],normalisecomponents)
         found_indices2,comp_indices2 = _indexin(components_dict,species2_list,component_delimiter,1:length(species2_list))
         comp_indices1 = comp_indices[found_indices2]
         found_indices2 = found_indices0[found_indices2]
@@ -604,11 +635,11 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
             _data = dfR[found_indices2]
             _site1 = getindex.(_data,lookupsitecolumnindex1)
             _site2 = getindex.(_data,lookupsitecolumnindex2)
-            _comp = [(components[c1],components[c2],String(s1),String(s2)) for (c1,c2,s1,s2) in zip(comp_indices1,comp_indices2,_site1,_site2)] 
+            _comp = [(components[c1],components[c2],String(s1),String(s2)) for (c1,c2,s1,s2) in zip(comp_indices1,comp_indices2,_site1,_site2)]
             _sources = fill(EMPTY_STR,l)
             _csv = fill(String(filepath),l)
         end
-    elseif csvtype == groupdata && !parsegroups 
+    elseif csvtype == groupdata && !parsegroups
         return foundvalues, notfoundvalues
     else
         error("File is of type ", String(csvtype), " and cannot be read with this function.")
@@ -620,7 +651,7 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
             _raw_sources = getindex.(_data,sourcecolumn)
             for i in eachindex(_sources)
                 source_i = _raw_sources[i]
-                !ismissing(source_i) && (_sources[i] = source_i) 
+                !ismissing(source_i) && (_sources[i] = source_i)
             end
         end
         #with the raw data preallocated, we now store it in a RawParam.
@@ -640,7 +671,7 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
     for rawparam in foundvalues
         delete!(notfoundvalues,rawparam.name)
     end
-    
+
     verbose && __verbose_findparams_found(foundvalues) #print all found values
 
     return foundvalues, notfoundvalues
@@ -656,15 +687,15 @@ function __verbose_findparams_start(filepath,components,headerparams,parsegroups
     csv_string = Symbol(csvtype)
     if !parsegroups
         if csvtype == groupdata
-            @info("Skipping $csv_string csv $filepath")    
+            @info("Skipping $csv_string csv $filepath")
         else
             @info("Searching for $csv_string headers $headerparams for query $components at $filepath ...")
         end
     else
-        if csvtype == groupdata 
+        if csvtype == groupdata
             @info("Searching for groups for components $components at $filepath ...")
         else
-            @info("Skipping $csv_string csv $filepath")  
+            @info("Skipping $csv_string csv $filepath")
         end
     end
 end
@@ -675,25 +706,25 @@ function __verbose_findparams_found(foundvalues)
         if v.type == singledata
             vdict = Dict(pair[1] => val for (pair,val) in zip(v.component_info,v.data))
             kk = info_color(v.name)
-            @info("""Found single component data: $kk with values: 
+            @info("""Found single component data: $kk with values:
             $vdict
             """)
         elseif v.type == pairdata
             vdict = Dict((pair[1],pair[2]) => val for (pair,val) in zip(v.component_info,v.data))
             kk = info_color(v.name)
-            @info("""Found pair component data: $kk with values: 
+            @info("""Found pair component data: $kk with values:
             $vdict
             """)
         elseif v.type == assocdata
             vdict = Dict(__assoc_string(pair) => val for (pair,val) in zip(v.component_info,v.data))
             kk = info_color(v.name)
-            @info("""Found association component data: $kk with values: 
+            @info("""Found association component data: $kk with values:
             $vdict
             """)
         elseif v.type == groupdata
             vdict = Dict(pair[1] => val for (pair,val) in zip(v.component_info,v.data))
             #println(val) for val in v.data)
-            @info("""Found group data: 
+            @info("""Found group data:
             $vdict
             """)
         end
@@ -707,13 +738,13 @@ function readcsvtype(filepath)
     keywords = readcsvtype_keywords
     words = split(lowercase(rstrip(getline(String(filepath), 2), ',')), ' ')
     foundkeywords = intersect(words, keywords)
-    if isempty(foundkeywords) 
+    if isempty(foundkeywords)
         error("Unable to determine type of database", filepath, ". Check that keyword is present on Line 2.")
     end
-    if length(foundkeywords) > 1 
+    if length(foundkeywords) > 1
         error("Multiple keywords found in database ", filepath, ": ", foundkeywords)
     end
-    _readcsvtype(only(foundkeywords)) 
+    _readcsvtype(only(foundkeywords))
 end
 
 function _readcsvtype(key)
@@ -740,33 +771,15 @@ function readheaderparams(filepath::AbstractString, options::ParamOptions = Defa
     return String.(filter(x -> normalisestring(x; tofilter=r"[ \-\_\d]") ∉ ignorelist, headers))
 end
 
-"""
-    singletopair(params::Vector,outputmissing=zero(T))
-
-Generates a square matrix, filled with "zeros" (considering the "zero" of a string, a empty string). 
-The generated matrix will have the values of `params` in the diagonal.
-If missing is passed, the matrix will be filled with `missing`
-"""
-function singletopair(params::Vector{T1},::T2 =_zero(T1)) where {T1,T2}
-    len = length(params)
-    T = Union{T1,T2}
-    output = Matrix{T}(undef,len,len)
-    fill!(output,_zero(T))
-    @inbounds  for i in 1:len
-        output[i,i] = params[i]
-    end
-    return output
-end
-
-function GroupParam(gccomponents::Vector, 
-    grouplocations::Vector{String}=String[]; 
-    usergrouplocations::Vector{String}=String[], 
+function GroupParam(gccomponents::Vector,
+    grouplocations::Vector{String}=String[];
+    usergrouplocations::Vector{String}=String[],
     verbose::Bool=false)
     options = ParamOptions(;usergrouplocations,verbose)
-    return GroupParam(gccomponents,grouplocations,options)        
-end 
+    return GroupParam(gccomponents,grouplocations,options)
+end
 
-function GroupParam(gccomponents, 
+function GroupParam(gccomponents,
     grouplocations::Array{String,1}=String[],
     options::ParamOptions = DefaultOptions)
     # The format for gccomponents is an arary of either the species name (if it
@@ -776,7 +789,7 @@ function GroupParam(gccomponents,
     #                ("hexane", ["CH3" => 2, "CH2" => 4]),
     #                ("octane", ["CH3" => 2, "CH2" => 6])]
     components = Vector{String}(undef,length(gccomponents))
-    
+
     to_lookup = fill(false,length(components))
     for (i,gcpair) in pairs(gccomponents)
         if gcpair isa Tuple{String}
@@ -794,13 +807,13 @@ function GroupParam(gccomponents,
     #using parsing machinery
     usergrouplocations = options.usergrouplocations
     componentstolookup = components[to_lookup]
-    filepaths = flattenfilepaths(grouplocations,usergrouplocations) 
+    filepaths = flattenfilepaths(grouplocations,usergrouplocations)
     allparams,allnotfoundparams = createparams(componentstolookup, filepaths, options, true) #merge all found params
     raw_result, _ = compile_params(componentstolookup,allparams,allnotfoundparams,options) #generate ClapeyronParams
     raw_groups = raw_result["groups"] #SingleParam{String}
     is_valid_param(raw_groups,options) #this will check if we actually found all params, via single missing detection.
     groupsourcecsvs = raw_groups.sourcecsvs
-  
+
     gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(gccomponents))
     j = 0
     for (i,needs_to_parse_group_i) ∈ pairs(to_lookup)
@@ -822,7 +835,7 @@ function _parse_group_string(gc::String)
         gcpairs = split(gc_without_brackets,",")
         result = Vector{Pair{String,Int}}(undef,length(gcpairs))
         for (i,gcpair) in pairs(gcpairs)
-            x = split(strip(gcpair),"=>") # """ "__group__"__=>__number__""" 
+            x = split(strip(gcpair),"=>") # """ "__group__"__=>__number__"""
             length(x) != 2 && throw(error("incorrect group format"))
             raw_group_i = strip(x[1])
             if startswith(raw_group_i,"\"") && endswith(raw_group_i,"\"")

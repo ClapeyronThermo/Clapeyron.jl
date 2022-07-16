@@ -10,7 +10,7 @@ A quick helper to get the file extension of any given path (without the dot).
 julia> getfileextension("~/Desktop/text.txt")
 "txt"
 ```
-""" 
+"""
 function getfileextension(filepath::AbstractString)
     path,ext = splitext(filepath)
     return String(chop(ext,head=1,tail=0))
@@ -89,8 +89,6 @@ function _indexin(query,list,separator,indices)
     sizehint!(comp_res,2*length(kq))
     for k in indices
         list_i = list[k]
-        match = false
-        idx = 0
         if !occursin(separator,list_i) #simple format
             if list_i in kq
                 push!(res,k)
@@ -174,6 +172,24 @@ end
 _iszero(t::Number) = iszero(t)
 _iszero(::Missing) = true
 _iszero(t::AbstractString) = isempty(t)
+
+"""
+    singletopair(params::Vector,outputmissing=zero(T))
+
+Generates a square matrix, filled with "zeros" (considering the "zero" of a string, a empty string).
+The generated matrix will have the values of `params` in the diagonal.
+If missing is passed, the matrix will be filled with `missing`
+"""
+function singletopair(params::Vector{T1},::T2 =_zero(T1)) where {T1,T2}
+    len = length(params)
+    T = Union{T1,T2}
+    output = Matrix{T}(undef,len,len)
+    fill!(output,_zero(T))
+    @inbounds  for i in 1:len
+        output[i,i] = params[i]
+    end
+    return output
+end
 
 ##Error and info display utils
 function error_color(text)

@@ -45,7 +45,7 @@ include("params/AssocOptions.jl")
 const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
 function Base.show(io::IO,param::SingleOrPair)
     print(io, typeof(param), "(\"", param.name, "\")")
-    show(io,param.components)  
+    show(io,param.components)
 end
 
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
@@ -76,4 +76,3 @@ end
 function _get_sources(x)::Vector{String}
     return copy(x.sources)
 end
-
