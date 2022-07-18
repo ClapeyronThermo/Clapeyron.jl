@@ -96,21 +96,15 @@ function _indexin(query,list,separator,indices)
             end
         else #separator format
             for ki in kq
-                if startswith(list_i,ki) #starts with string
-                    if startswith(list_i,ki * separator)
-                        push!(res,k)
-                        push!(comp_res,query[ki])
-                    end
-                elseif endswith(list_i,ki)
-                    if endswith(list_i,separator * ki)
-                        push!(res,k)
-                        push!(comp_res,query[ki])
-                    end
-                else
-                    if occursin(separator * ki * separator,list_i)
-                        push!(res,k)
-                        push!(comp_res,query[ki])
-                    end
+                if startswith(list_i,ki * separator) #starts with string
+                    push!(res,k)
+                    push!(comp_res,query[ki])
+                elseif endswith(list_i,separator * ki)  #ends with string
+                    push!(res,k)
+                    push!(comp_res,query[ki])
+                elseif occursin(separator * ki * separator,list_i) #string in between
+                    push!(res,k)
+                    push!(comp_res,query[ki])
                 end
             end
         end

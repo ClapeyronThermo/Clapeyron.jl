@@ -68,7 +68,7 @@ function joindata!(old::RawParam,new::RawParam)
     if !type_sucess
         error_clashing_headers(old,new)
     end
-    component_info = prepend!(old.component_info,new.component_info)
+    component_info = append!(old.component_info,new.component_info)
 
     #Handle all the type variability of the data here
     data = joindata!(old.data,new.data)
@@ -154,8 +154,10 @@ function compile_single(name,components,raw::RawParam,options)
         sources[i] = ss
         sources_csv[i] = sc
     end
-    sources = unique!(vec(sources))
-    sources_csv = unique!(vec(sources_csv))
+    sources = unique!(sources)
+    sources_csv = unique!(sources_csv)
+    filter!(!isequal(EMPTY_STR),sources)
+    filter!(!isequal(EMPTY_STR),sources_csv)
     return SingleParameter(name,components,values,ismissingvals,sources_csv,sources)
 end
 
@@ -182,6 +184,7 @@ function compile_pair(name,components,raw::RawParam,options)
     for (k,v,ss,sc) ∈ zip(raw.component_info,raw.data,raw.sources,raw.csv)
         c1,c2,_,_ = k
         i = findfirst(==(c1),components)
+        #if the second component is null, it comes from a single param, then i = (i,i)
         j = k[2] == "" ? i : findfirst(==(c2),components)
         values[i,j] = v
         ismissingvals[i,j] = false
@@ -196,6 +199,8 @@ function compile_pair(name,components,raw::RawParam,options)
     end
     sources = unique!(vec(sources))
     sources_csv = unique!(vec(sources_csv))
+    filter!(!isequal(EMPTY_STR),sources)
+    filter!(!isequal(EMPTY_STR),sources_csv)
     diagvals = diagvalues(values)
     return PairParameter(name,components,values,diagvals,ismissingvals,sources_csv,sources)
 end
@@ -208,41 +213,45 @@ function compile_pair(name,components,type::CSVType,options)
     return PairParameter(name,components,values,diagvals,ismissingvals,String[],String[])
 end
 
-function lt_assoc(x,y)
-    c1x,c2x,s1x,s2x = x
-    c1y,c2y,s1y,s2y = y
-    isless(c1x,c1y) && return true
-    c2x < c2y && return true
-    s1x < s1y && return true
-    s2x < s2y && return true
-    return false
-end
-
 function compile_assoc(name,components,raw::RawParam,site_strings,options)
+    EMPTY_STR = ""
     vals = raw.data
     c_12,s_12 = standarize_comp_info(raw.component_info,components,site_strings)
-    reverse!(raw.component_info)
-    reverse!(raw.data)
-    reverse!(c_12)
-    reverse!(s_12)
-    reverse!(raw.sources)
-    reverse!(raw.csv)
-    sort_value = [(c[1],c[2],s[1],s[2]) for (c,s) ∈ zip(c_12,s_12)] #join components and sites vector
-    unique_comps = unique(raw.component_info) #because it's reverse, it will only pick up the last values
-    unique_idxs = [findfirst(isequal(i),raw.component_info) for i ∈ unique_comps] #another option would be (findlast)
-    idxs = sortperm(sort_value[unique_idxs]) #CompressedAssoc4DMatrix requires lexicographically sorted component-site idxs
-    s_12 = s_12[idxs]
-    c_12 = c_12[idxs]
-    sources = raw.sources[idxs]
-    csvs = raw.csv[idxs]
+    unique_sitepairs = unique(raw.component_info)
+    m = length(raw.data)
+    l = length(unique_sitepairs)
+    unique_dict = Dict{NTuple{4,String},Int}(unique_sitepairs[i] => i for i in 1:l)
+    sources_csv = fill(EMPTY_STR,l)
+    sources = fill(EMPTY_STR,l)
+    c12 = similar(c_12,l)
+    s12 = similar(s_12,l)
+    inner_values = similar(raw.data,l)
+    for (j,k) ∈ enumerate(raw.component_info)
+        i = unique_dict[k]
+        inner_values[i] = raw.data[j]
+        c12[i] = c_12[j]
+        s12[i] = s_12[j]
+        sources[i] = raw.sources[j]
+        sources_csv[i] = raw.csv[j]
+    end
+
+    sort_value = [(c[1],c[2],s[1],s[2]) for (c,s) ∈ zip(c12,s12)] #join components and sites vector
+    idxs = sortperm(sort_value) #CompressedAssoc4DMatrix requires lexicographically sorted component-site idxs
+    inner_values = inner_values[idxs]
+    s12 = s12[idxs]
+    c12 = c12[idxs]
+    sources = sources[idxs]
+    sources_csv = sources_csv[idxs]
     ij = maximum(maximum(i) for i ∈ c_12)
     ab = maximum(maximum(i) for i ∈ s_12)
     size_ij = (ij,ij)
     size_ab =  (ab,ab)
-    raw_vals = vals[idxs]
-    vals = raw_vals
-    values = Compressed4DMatrix(vals,c_12,s_12,size_ij,size_ab)
-    param = AssocParam(name,components,values,site_strings,csvs,sources)
+    values = Compressed4DMatrix(inner_values,c12,s12,size_ij,size_ab)
+    unique!(sources)
+    unique!(sources_csv)
+    filter!(!isequal(EMPTY_STR),sources)
+    filter!(!isequal(EMPTY_STR),sources_csv)
+    param = AssocParam(name,components,values,site_strings,sources_csv,sources)
     return param
 end
 
