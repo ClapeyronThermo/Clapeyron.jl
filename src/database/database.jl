@@ -728,10 +728,15 @@ function __verbose_findparams_found(foundvalues)
             $vdict
             """)
         elseif v.type == groupdata
-            vdict = Dict(pair[1] => val for (pair,val) ∈ zip(v.component_info,v.data))
             #println(val) for val ∈ v.data)
+            vals = "Dict("
+            for (pair,val) ∈ zip(v.component_info,v.data)
+                pairi = pair[1] * " => " * string(val)
+                vals = vals * pairi * ", "
+            end
+            vals = chop(vals,tail=2) *")"
             @info("""Found group data:
-            $vdict
+            $vals
             """)
         end
     end
