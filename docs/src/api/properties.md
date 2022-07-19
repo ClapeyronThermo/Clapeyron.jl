@@ -166,6 +166,7 @@ Clapeyron.lb_volume
 Clapeyron.T_scale
 Clapeyron.p_scale
 Clapeyron.x0_volume
+Clapeyron.x0_volume_solid
 Clapeyron.x0_volume_liquid
 Clapeyron.x0_volume_gas
 Clapeyron.volume_virial
