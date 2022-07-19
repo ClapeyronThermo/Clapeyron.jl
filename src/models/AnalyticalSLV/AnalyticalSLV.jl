@@ -148,11 +148,41 @@ function x0_volume_solid(model::AnalyticalSLVModel,T,z = SA[1.0])
     return 1.01*b̄
 end
 
+function T_scale(model::AnalyticalSLVModel, z=SA[1.0])
+    n = sum(z)
+    invn2 = one(n) / (n * n)
+    _Tc = model.params.Tc.values
+    Tc = dot(z, _Tc) * invn2
+    return Tc
+end
+
 function _pressure(model::AnalyticalSLVModel,V,T,z=SA[1.0])
     _data = @f(data)
     ā,b̄,c̄,d̄ = _data
     v = V/sum(z)
     return R̄*T*(v-d̄)/(v-b̄)/(v-c̄) - ā/(v^2)
+end
+
+function lb_volume(model::AnalyticalSLVModel,z = SA[1.0])
+    b0 = model.params.b0.values
+    b1 = model.params.b1.values
+    b2 = model.params.b2.values
+    m = model.params.m.values
+    Tc = model.params.Tc.values
+    Vc = model.params.Vc.values
+    T = 0
+    _0 = zero(T+first(z))
+
+    b̄ = _0
+    for i in @comps
+        Tci = Tc[i]
+        Tri = T/Tci
+        zi = z[i]
+        br = b0[i]# + b1[i]*exp(-b2[i]*Tri^m[i])
+        bi = br*Vc[i]
+        b̄ += bi*zi
+    end
+    return b̄
 end
 
 function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
