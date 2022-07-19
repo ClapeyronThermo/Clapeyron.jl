@@ -163,6 +163,13 @@ function T_scale(model::AnalyticalSLVModel, z=SA[1.0])
     return Tc
 end
 
+function x0_crit_pure(model::AnalyticalSLVModel)
+    Pc = model.params.Pc.values[1]
+    Tc = model.params.Tc.values[1]
+    vc = volume(model,Pc,Tc,phase = :v)
+    return (1.01,log10(2*vc))
+end
+
 function p_scale(model::AnalyticalSLVModel, z=SA[1.0])
     n = sum(z)
     invn2 = one(n) / (n * n)
