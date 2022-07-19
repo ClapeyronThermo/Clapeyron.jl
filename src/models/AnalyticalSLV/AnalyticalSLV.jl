@@ -159,7 +159,8 @@ function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
     ā,b̄,c̄,d̄ = _data
     n = sum(z)
     RT⁻¹ = 1/(R̄*T)
-    v = V/n
-    ρ = n/V 
-    return -((b̄ - d̄)*log(v - b̄) + (d̄ - c̄)*log(v - c̄))/(b̄ - c̄) -  ā*ρ*RT⁻¹ - (d̄ - c̄)/(b̄ - c̄)
+    ρ = n/V
+    k1 =  (b̄ - d̄)*log1p(-b̄*ρ)
+    k2 =  (d̄ - c̄)*log1p(-c̄*ρ)
+    return -(k1 + k2)/(b̄ - c̄) -  ā*ρ*RT⁻¹ - (d̄ - c̄)/(b̄ - c̄)
 end
