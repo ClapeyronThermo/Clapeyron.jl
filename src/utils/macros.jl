@@ -333,8 +333,8 @@ macro registermodel(model)
   
 
     _length =
-    if _has_icomponents
-    :(Base.length(model::$model) = Base.length(model.icomponents))
+    if _has_groups
+    :(Base.length(model::$model) = Base.length(model.groups.components))
     elseif _has_components
         :(Base.length(model::$model) = Base.length(model.components))
     else
