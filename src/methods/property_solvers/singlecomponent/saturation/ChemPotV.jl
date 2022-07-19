@@ -5,12 +5,13 @@
     ChemPotVSaturation(;log10vl = nothing,
                         log10vv = nothing,
                         crit = nothing,
+                        crit_retry = true
                         f_limit = 0.0,
                         atol = 1e-8,
                         rtol = 1e-12,
                         max_iters = 10^4)
 
-Default `saturation_pressure` Saturation method used by `Clapeyron.jl`. It uses equality of Chemical Potentials with a volume basis. If no volumes are provided, it will use  [`x0_sat_pure`](@ref). 
+Default `saturation_pressure` Saturation method used by `Clapeyron.jl`. It uses equality of Chemical Potentials with a volume basis. If no volumes are provided, it will use  [`x0_sat_pure`](@ref).
 
 If those initial guesses fail and the specification is near critical point, it will try one more time, using Corresponding States instead.
 
@@ -22,6 +23,7 @@ struct ChemPotVSaturation{T,C} <: SaturationMethod
     vl::Union{Nothing,T}
     vv::Union{Nothing,T}
     crit::C
+    crit_retry::Bool
     f_limit::Float64
     atol::Float64
     rtol::Float64
@@ -38,23 +40,24 @@ end
 function ChemPotVSaturation(;log10vl = nothing,
                             log10vv = nothing,
                             crit = nothing,
+                            crit_retry = true,
                             f_limit = 0.0,
                             atol = 1e-8,
                             rtol = 1e-12,
                             max_iters = 10^4)
 
     if (log10vl === nothing) && (log10vv === nothing)
-        return ChemPotVSaturation{Nothing,typeof(crit)}(nothing,nothing,crit,f_limit,atol,rtol,max_iters)
+        return ChemPotVSaturation{Nothing,typeof(crit)}(nothing,nothing,crit,crit_retry,f_limit,atol,rtol,max_iters)
     elseif !(log10vl === nothing) && (log10vv === nothing)
         log10vl = float(log10vl)
-        return ChemPotVSaturation(log10vl,log10vv,crit,f_limit,atol,rtol,max_iters)
+        return ChemPotVSaturation(log10vl,log10vv,crit,crit_retry,f_limit,atol,rtol,max_iters)
     elseif (log10vl === nothing) && !(log10vv === nothing)
         log10vv = float(log10vv)
-        return ChemPotVSaturation(log10vl,log10vv,crit,f_limit,atol,rtol,max_iters)
+        return ChemPotVSaturation(log10vl,log10vv,crit,crit_retry,f_limit,atol,rtol,max_iters)
     else
         T = one(log10vl)/one(log10vv)
         log10vl,log10vv,_ = promote(log10vl,log10vv,T)
-        return ChemPotVSaturation(log10vl,log10vv,crit,f_limit,atol,rtol,max_iters)
+        return ChemPotVSaturation(log10vl,log10vv,crit,crit_retry,f_limit,atol,rtol,max_iters)
     end
 end
 
@@ -80,18 +83,22 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
     V0 = vec2(method,T)
     V01,V02 = V0
     TYPE = eltype(V0)
-    nan = zero(TYPE)/zero(TYPE)    
+    nan = zero(TYPE)/zero(TYPE)
     f! = ObjSatPure(model,T) #functor
     fail = (nan,nan,nan)
     if !isfinite(V0[1]) | !isfinite(V0[2]) | !isfinite(T)
         #error in initial conditions
         return fail
     end
-    result,converged = sat_pure(f!,V0,method)  
+    result,converged = sat_pure(f!,V0,method)
     #did not converge, but didnt error.
     if converged
         return result
     end
+    if !method.crit_retry
+        return fail
+    end
+
     crit = method.crit
     if isnothing(crit)
         crit = crit_pure(model)
@@ -105,7 +112,7 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
         x0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
         V01,V02 = x0
         V0 = vec2(V01,V02,T)
-        result,converged = sat_pure(f!,V0,method)   
+        result,converged = sat_pure(f!,V0,method)
         if converged
             return result
         end
@@ -136,7 +143,7 @@ end
 #with the critical point, we can perform a
 #corresponding states approximation with the
 #propane reference equation of state
-function x0_sat_pure_crit(model,T,T_c,P_c,V_c) 
+function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
     h = V_c*5000
     T0 = 369.89*T/T_c
     Vl0 = (1.0/_propaneref_rholsat(T0))*h
@@ -145,7 +152,7 @@ function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
     #μ_l = only(VT_chemical_potential(model,Vl0,T,_1))
     #μ_v = only(VT_chemical_potential(model,Vv0,T,_1))
     #@show (μ_l < μ_v,T/T_c)
-    #if μ_l < μ_v 
+    #if μ_l < μ_v
       #@show μ_l,μ_v
     #end
     # _,dpdvv = p∂p∂V(model,Vv0,T,SA[1.0])

@@ -27,6 +27,8 @@ end
 
 @registermodel AnalyticalSLV
 
+export AnalyticalSLV
+
 function AnalyticalSLV(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
@@ -97,7 +99,6 @@ function abcd(model::AnalyticalSLVModel,V,T,z=SA[1.0])
         br = b0[i] + b1[i]*exp(-b2[i]*Tri^m[i])
         bi = br*Vc[i]
         b̄ += bi*zi
-
         ari = a0[i] + a1[i]*exp(-a2[i]*Tri^n[i])
         ai = ari*(R̄*Tci)^2/Pc[i]
         ā += zi*zi*ai
@@ -117,22 +118,15 @@ function abcd(model::AnalyticalSLVModel,V,T,z=SA[1.0])
     return ā,b̄,c̄,d̄
 end
 
-function data(model::AnalyticalSLVModel,V,T,z)
-    return abcd(model,V,T,z)
-end
-
-
-function x0_volume_liquid(model::AnalyticalSLVModel,T,z = SA[1.0])
-    return 1.01*dot(model.params.c.values,z)
-end
-
 function x0_volume_solid(model::AnalyticalSLVModel,T,z = SA[1.0])
+    ∑z = sum(z)
+    Tc = model.params.Tc.values
+    Vc = model.params.Vc.values
+
     b0 = model.params.b0.values
     b1 = model.params.b1.values
     b2 = model.params.b2.values
     m = model.params.m.values
-    Tc = model.params.Tc.values
-    Vc = model.params.Vc.values
 
     _0 = zero(T+first(z))
 
@@ -145,7 +139,20 @@ function x0_volume_solid(model::AnalyticalSLVModel,T,z = SA[1.0])
         bi = br*Vc[i]
         b̄ += bi*zi
     end
+    b̄ = b̄/∑z
     return 1.01*b̄
+end
+
+function lb_volume(model::AnalyticalSLVModel,z=SA[1.0])
+    return x0_volume_solid(model,0,z)/1.01
+end
+
+function data(model::AnalyticalSLVModel,V,T,z)
+    return abcd(model,V,T,z)
+end
+
+function x0_volume_liquid(model::AnalyticalSLVModel,T,z = SA[1.0])
+    return 1.01*dot(model.params.c.values,z)
 end
 
 function T_scale(model::AnalyticalSLVModel, z=SA[1.0])
@@ -156,6 +163,14 @@ function T_scale(model::AnalyticalSLVModel, z=SA[1.0])
     return Tc
 end
 
+function p_scale(model::AnalyticalSLVModel, z=SA[1.0])
+    n = sum(z)
+    invn2 = one(n) / (n * n)
+    _pc = model.params.Pc.values
+    pc = dot(z, _pc) * invn2
+    return pc
+end
+
 function _pressure(model::AnalyticalSLVModel,V,T,z=SA[1.0])
     _data = @f(data)
     ā,b̄,c̄,d̄ = _data
@@ -163,34 +178,16 @@ function _pressure(model::AnalyticalSLVModel,V,T,z=SA[1.0])
     return R̄*T*(v-d̄)/(v-b̄)/(v-c̄) - ā/(v^2)
 end
 
-function lb_volume(model::AnalyticalSLVModel,z = SA[1.0])
-    b0 = model.params.b0.values
-    b1 = model.params.b1.values
-    b2 = model.params.b2.values
-    m = model.params.m.values
-    Tc = model.params.Tc.values
-    Vc = model.params.Vc.values
-    T = 0
-    _0 = zero(T+first(z))
-
-    b̄ = _0
-    for i in @comps
-        Tci = Tc[i]
-        Tri = T/Tci
-        zi = z[i]
-        br = b0[i]# + b1[i]*exp(-b2[i]*Tri^m[i])
-        bi = br*Vc[i]
-        b̄ += bi*zi
-    end
-    return b̄
-end
-
 function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
     ā,b̄,c̄,d̄ = _data
     n = sum(z)
     RT⁻¹ = 1/(R̄*T)
     ρ = n/V
-    k1 =  (b̄ - d̄)*log1p(-b̄*ρ)
-    k2 =  (d̄ - c̄)*log1p(-c̄*ρ)
+    bd = (b̄ - d̄)
+    dc = (d̄ - c̄)
+    k1 =  bd*log(1-b̄*ρ)
+    k2 =  dc*log(abs(1-c̄*ρ))
+    #The integral of 1/x is log(abs(x))
+    #On solid volumes, 1-c̄*ρ is negative, so the abs matters
     return -(k1 + k2)/(b̄ - c̄) -  ā*ρ*RT⁻¹ - (d̄ - c̄)/(b̄ - c̄)
 end
