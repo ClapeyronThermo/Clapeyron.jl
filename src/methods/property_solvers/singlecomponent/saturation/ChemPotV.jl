@@ -17,6 +17,8 @@ If those initial guesses fail and the specification is near critical point, it w
 
 `V0` is `[log10(Vₗ₀),log10(Vᵥ₀)]` , where `Vₗ₀`  and `Vᵥ₀` are initial guesses for the liquid and vapour volumes.
 
+when `crit_retry` is true, if the initial solve fail, it will try to obtain a better estimate by calculating the critical point. 
+
 `f_limit`, `atol`, `rtol`, `max_iters` are passed to the non linear system solver.
 """
 struct ChemPotVSaturation{T,C} <: SaturationMethod
