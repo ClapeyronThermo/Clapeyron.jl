@@ -68,7 +68,7 @@ function AnalyticalSLV(components;
 end
 
 function abcd(model::AnalyticalSLVModel,V,T,z=SA[1.0])
-    n = sum(z)
+    ∑z = sum(z)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = model.params.Vc.values
@@ -110,10 +110,10 @@ function abcd(model::AnalyticalSLVModel,V,T,z=SA[1.0])
             ā += zi*z[j]*aij
         end
     end
-    ā = ā/n/n
-    b̄ = b̄/n
-    c̄ = dot(c,z)/n
-    d̄ = dot(d,z)/n
+    ā = ā/∑z/∑z
+    b̄ = b̄/∑z
+    c̄ = dot(c,z)/∑z
+    d̄ = dot(d,z)/∑z
     return ā,b̄,c̄,d̄
 end
 
@@ -121,14 +121,6 @@ function data(model::AnalyticalSLVModel,V,T,z)
     return abcd(model,V,T,z)
 end
 
-function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
-    ā,b̄,c̄,d̄ = _data
-    n = sum(z)
-    RT⁻¹ = 1/(R̄*T)
-    ρ = n/V
-    
-    return ā*ρ*RT⁻¹
-end
 
 function x0_volume_liquid(model::AnalyticalSLVModel,T,z = SA[1.0])
     return 1.01*dot(model.params.c.values,z)
@@ -156,4 +148,18 @@ function x0_volume_solid(model::AnalyticalSLVModel,T,z = SA[1.0])
     return 1.01*b̄
 end
 
-#(b*(b-d)*log(v-b) - c*(c-d)*log(V-c))/(b-c) - b + c - d 
+function _pressure(model::AnalyticalSLVModel,V,T,z=SA[1.0])
+    _data = @f(data)
+    ā,b̄,c̄,d̄ = _data
+    v = V/sum(z)
+    return R̄*T*(v-d̄)/(v-b̄)/(v-c̄) - ā/(v^2)
+end
+
+function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
+    ā,b̄,c̄,d̄ = _data
+    n = sum(z)
+    RT⁻¹ = 1/(R̄*T)
+    v = V/n
+    ρ = n/V 
+    return -((b̄ - d̄)*log(v - b̄) + (d̄ - c̄)*log(v - c̄))/(b̄ - c̄) -  ā*ρ*RT⁻¹ - (d̄ - c̄)/(b̄ - c̄)
+end
