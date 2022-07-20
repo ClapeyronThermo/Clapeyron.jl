@@ -180,7 +180,7 @@ function Base.convert(::Type{PairParam{Float64}},param::PairParam{Int})
     return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
-function Base.convert(::Type{PairParam{Bool}},param::PairParam{Int})
+function Base.convert(::Type{PairParam{Bool}},param::PairParam{<:Union{Int,Float64}})
     @assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
     diagvalues = view(values, diagind(values))

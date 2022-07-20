@@ -59,7 +59,7 @@ using Clapeyron, Test
     @test typeof(params["intparam"]) <: Clapeyron.SingleParam{Int}
     @test typeof(params["doubleparam"]) <: Clapeyron.SingleParam{Float64}
 
-    @test typeof(params["boolparam"]) <: Clapeyron.SingleParam{Bool}
+    #@test typeof(params["boolparam"]) <: Clapeyron.SingleParam{Bool}
     #we can now convert directly, no need to parse diferently
 
     @test typeof(params["stringparam"]) <: Clapeyron.SingleParam{String}
@@ -194,7 +194,7 @@ using Clapeyron, Test
     @test_throws AssertionError convert(SingleParam{Int},floatbool)
 
     #pair param conversion and broadcasting
-    floatbool = PairParam("float to bool",compsm[1.0 2.0;3.0 4.0])
+    floatbool = PairParam("float to bool",comps,[1.0 0.0;0.0 1.0])
     intbool = PairParam("int to bool",comps,[1 2;3 4])
     @test size(floatbool) == (2,2)
     @test convert(PairParam{Bool},floatbool) isa PairParam{Bool}

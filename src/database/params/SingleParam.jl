@@ -59,7 +59,7 @@ Base.BroadcastStyle(::Type{<:SingleParameter}) = Broadcast.Style{SingleParameter
 
 #copyto!
 function Base.copyto!(dest::SingleParameter,src) #general, just copies the values, used in a .= f.(a)
-    Base.copyto!(dest.values,x)
+    Base.copyto!(dest.values,src)
     return dest
 end
 
@@ -164,7 +164,7 @@ function Base.convert(::Type{SingleParam{Float64}},param::SingleParam{Int})
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
-function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{Int})
+function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{<:Union{Int,Float64}})
     @assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
