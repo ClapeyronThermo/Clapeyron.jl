@@ -144,24 +144,14 @@ function SingleParam(
 end
 
 # If no value is provided, just initialise empty param.
-function SingleParam{T}(
+function SingleParam(
         name::String,
         components::Vector{String};
         sources = String[]
-    ) where T <: AbstractString
-    values = fill("", length(components))
+    ) 
+    values = fill(0.0, length(components))
     return SingleParam(name, components, values, String[], sources)
 end
-
-function SingleParam{T}(
-        name::String,
-        components::Vector{String};
-        sources = String[]
-    ) where T <: Number
-    values = zeros(T, length(components))
-    return SingleParam(name, components, values, String[], sources)
-end
-
 
 function SingleParam(x::SingleParameter, v::Vector)
     _values,_ismissingvalues = defaultmissing(v)

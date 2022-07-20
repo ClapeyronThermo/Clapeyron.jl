@@ -59,7 +59,7 @@ using Clapeyron, Test
     @test typeof(params["intparam"]) <: Clapeyron.SingleParam{Int}
     @test typeof(params["doubleparam"]) <: Clapeyron.SingleParam{Float64}
 
-    #@test typeof(params["boolparam"]) <: Clapeyron.SingleParam{Bool}
+    @test typeof(params["boolparam"]) <: Clapeyron.SingleParam{Bool}
     #we can now convert directly, no need to parse diferently
 
     @test typeof(params["stringparam"]) <: Clapeyron.SingleParam{String}
@@ -85,8 +85,6 @@ using Clapeyron, Test
     @test typeof(params["overwritestringparam"]) <: Clapeyron.SingleParam{String}
     # Overwrite Int with String
     @test typeof(params["overwriteassocparam"]) <: Clapeyron.AssocParam{String}
-    #@test repr(params["overwriteassocparam"]) == "AssocParam{String}(\"overwriteassocparam\")[\"val1\", \"val8\", \"val5\", \"val4\", \"val7\", \"val6\", \"val3\", \"42\"]"
-    #@test repr("text/plain",params["overwriteassocparam"]) == "AssocParam{String}[\"sp1\", \"sp2\", \"sp3\", \"sp4\", \"sp5\"]) with values:\n(\"sp3\", \"e\") >=< (\"sp3\", \"H\"): val1\n(\"sp3\", \"e2\") >=< (\"sp3\", \"H\"): val8\n(\"sp3\", \"H\") >=< (\"sp4\", \"e\"): val5\n(\"sp3\", \"H\") >=< (\"sp4\", \"H\"): val4\n(\"sp4\", \"e\") >=< (\"sp5\", \"H\"): val7\n(\"sp4\", \"H\") >=< (\"sp5\", \"e2\"): val6\n(\"sp5\", \"e\") >=< (\"sp5\", \"e\"): val3\n(\"sp5\", \"e\") >=< (\"sp5\", \"H\"): 42\n"
     # Check that values of "sp1" and "sp3" has been correctly overwritten.
     # "sp1" was overwritten from the same file
     # "sp3" was overwritten from a separate file, "normal_single2_test.csv"
@@ -182,6 +180,41 @@ using Clapeyron, Test
                                                             0     0     0     0  3000]
     @test multiple_identifiers["param_assoc"].values[3,2][1,1] == 10000 &&
             multiple_identifiers["param_assoc"].values[5,1][1,1] == 20000
+
+
+    #single param conversion and broadcasting
+    comps = ["aa","bb"]
+    floatbool = SingleParam("float to bool",comps,[1.0,0.0])
+    intbool = SingleParam("int to bool",comps,[1,0])
+    @test size(floatbool) == (2,)
+    @test convert(SingleParam{Bool},floatbool) isa SingleParam{Bool}
+    @test convert(SingleParam{Float64},intbool) isa SingleParam{Float64}
+    @test convert(SingleParam{Int},floatbool) isa SingleParam{Int}
+    floatbool .= exp.(1.1 .+ floatbool)
+    @test_throws AssertionError convert(SingleParam{Int},floatbool)
+
+    #pair param conversion and broadcasting
+    floatbool = PairParam("float to bool",compsm[1.0 2.0;3.0 4.0])
+    intbool = PairParam("int to bool",comps,[1 2;3 4])
+    @test size(floatbool) == (2,2)
+    @test convert(PairParam{Bool},floatbool) isa PairParam{Bool}
+    @test convert(PairParam{Float64},intbool) isa PairParam{Float64}
+    @test convert(PairParam{Int},floatbool) isa PairParam{Int}
+    floatbool .= exp.(1.1 .+ floatbool)
+    @test_throws AssertionError convert(PairParam{Int},floatbool)
+    #indexing for PairParam
+    floatbool[1,2] = 1000
+    @test floatbool[2,1] == 1000
+    floatbool[1,2,false] = 4000
+    @test floatbool[2,1] == 1000 
+    floatbool[1] = 1.2
+    @test floatbool[1,1] = 1.2
+
+    #pack vectors
+    s1 = SingleParam("s1",comps,[1,2])
+    s2 = SingleParam("s2",comps,[10,20])
+    s = pack_vectors(s1,s2)
+    @test s[1] == [1,10]
 
     # GC test, 3 comps, 4 groups
 

@@ -159,10 +159,7 @@ function compile_single(name,components,raw::RawParam,options)
 end
 
 function compile_single(name,components,type::CSVType,options)
-    l = length(components)
-    values = zeros(Float64,l)
-    ismissingvals = fill(true,l)
-    return SingleParameter(name,components,values,ismissingvals,String[],String[])
+    return SingleParam(name,components)
 end
 
 function compile_pair(name,components,raw::RawParam,options)
@@ -203,11 +200,7 @@ function compile_pair(name,components,raw::RawParam,options)
 end
 
 function compile_pair(name,components,type::CSVType,options)
-    l = length(components)
-    values = zeros(Float64,(l,l))
-    ismissingvals = fill(true,(l,l))
-    diagvals = diagvalues(values)
-    return PairParameter(name,components,values,diagvals,ismissingvals,String[],String[])
+    return PairParam(name,components)
 end
 
 function compile_assoc(name,components,raw::RawParam,site_strings,options)
