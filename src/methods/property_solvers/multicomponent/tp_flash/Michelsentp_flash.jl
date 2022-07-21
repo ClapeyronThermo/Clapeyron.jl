@@ -91,7 +91,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny, vcache; F=not
         ∂ϕx .-= 1
         ∂ϕy .-= 1
         ∂ϕx ./= nxsum
-        ∂ϕy ./= nxsum
+        ∂ϕy ./= nysum
         for (i,idiag) in pairs(diagind(∂ϕy))
             ∂ϕx[idiag] += 1/nx[i]
             ∂ϕy[idiag] += 1/ny[i]
@@ -217,10 +217,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     #reduce model
     if !reduced
         model_full,z_full = model,z
-        model,z_nonzero = index_reduction(model_full,z_full)
+        model, z_nonzero = index_reduction(model_full,z_full)
         z = z_full[z_nonzero]
     end
-    
+
     if is_vle(equilibrium)
         phasex = :liquid
         phasey = :vapor
@@ -260,16 +260,35 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     β = _1*(βmin + βmax)/2
     # Stage 1: Successive Substitution
     it = 0
-    error = _1
+    error_lnK = _1
     singlephase = false
-    lnK_old = copy(K) .* _1
+    lnK_old = lnK .* _1
     x = similar(z)
     y = similar(z)
-    while error > K_tol && it < itss
+    while error_lnK > K_tol && it < itss
         it += 1
         lnK_old .= lnK
+
         # Solving Rachford-Rice Eq.
-        β = rr_vle_vapor_fraction(K, z)
+        # Gustavo: for some reason this is diverging, I'll ask Andres about it
+        # β = rr_vle_vapor_fraction(K, z)
+        # for now i will just use Halley's method
+        error_β = _1
+        it_rr = 0
+        while error_β > 1e-8 && it_rr < 10
+            it_rr += 1
+            FOi = (K .- 1) ./ (1. .+ β .* (K .- 1))
+
+            OF = dot(z, FOi)
+            dOF = - dot(z, FOi.^2)
+            d2OF = 2. *dot(z, FOi.^3)
+
+            dβ = - (2*OF*dOF)/(2*dOF^2-OF*d2OF)
+            β = β + dβ
+            error_β = abs(dβ)
+            # println(it_rr, " ", β, " ", dβ, " ", OF)
+        end
+
         singlephase = !(0 <= β <= 1)
         # Recomputing phase composition
         x = rr_flash_liquid!(x,K,z,β)
@@ -282,14 +301,17 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         lnK .= lnϕx .- lnϕy
         K .= exp.(lnK)
         # Computing error
-        error = dnorm(lnK,lnK_old,1)
+        error_lnK = dnorm(lnK,lnK_old,1)
     end
+
+    # println(β, " ", x, " ", y, " ", z)
+
     vt = volx,voly
     vcache = Ref{typeof(vt)}(vt)
 
 
     # Stage 2: Minimization of Gibbs Free Energy
-    if error > K_tol && it == itss &&  ~singlephase
+    if error_lnK > K_tol && it == itss &&  ~singlephase
         ny = β*y
         # minimizing Gibbs Free Energy
         if second_order
@@ -309,13 +331,17 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         nx = z .- ny
         x = nx ./ sum(nx)
         y = ny ./ β
- 
+
     end
 
     if singlephase
+        # println(β, " ", x, " ", y, " ", z)
         β = zero(β)/zero(β)
-        fill!(x,z)
-        fill!(y,z)
+        # Gustavo: the fill! function was giving an error
+        # fill!(x,z)
+        # fill!(y,z)
+        x .= z
+        y .= z
     end
 
     if !reduced
