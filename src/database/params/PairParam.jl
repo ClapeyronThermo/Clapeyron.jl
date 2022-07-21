@@ -50,7 +50,7 @@ const PairParam{T} = PairParameter{T,Matrix{T},SubArray{T, 1, Vector{T}, Tuple{S
 
 Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T}},i::Int) where T = param.values[i,i]
 Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T}},i::Int,j::Int) where T = param.values[i,j]
-Base.setindex!(param::PairParameter,val,i) = setindex!(param.values,val,i,i,false)
+Base.setindex!(param::PairParameter,val,i) = setindex!(param,val,i,i,false)
 function Base.setindex!(param::PairParameter,val,i,j,symmetric = true) 
     setindex!(param.values,val,i,j)
     symmetric && setindex!(param.values,val,j,i)
