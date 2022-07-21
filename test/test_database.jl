@@ -208,12 +208,12 @@ using Clapeyron, Test
     floatbool[1,2,false] = 4000
     @test floatbool[2,1] == 1000 
     floatbool[1] = 1.2
-    @test floatbool[1,1] = 1.2
+    @test floatbool[1,1] == 1.2
 
     #pack vectors
     s1 = SingleParam("s1",comps,[1,2])
     s2 = SingleParam("s2",comps,[10,20])
-    s = pack_vectors(s1,s2)
+    s = Clapeyron.pack_vectors(s1,s2)
     @test s[1] == [1,10]
 
     # GC test, 3 comps, 4 groups
