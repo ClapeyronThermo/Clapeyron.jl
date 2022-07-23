@@ -1,5 +1,3 @@
-using LinearAlgebra
-
 ########## Dew pressure calculation
 """
 OF_dewPx_condensable!(model::EoSModel, y, T, x, vol_cache, condensable)

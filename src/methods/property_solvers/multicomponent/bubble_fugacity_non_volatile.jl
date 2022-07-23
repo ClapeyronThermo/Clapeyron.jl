@@ -1,6 +1,3 @@
-using LinearAlgebra
-
-
 """
 OF_bubblepy_volatile!(model::EoSModel, x, T, y, vol_cache, volatile)
 

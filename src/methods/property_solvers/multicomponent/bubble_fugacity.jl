@@ -1,6 +1,3 @@
-using LinearAlgebra
-
-
 """
 OF_bubblepy!(model::EoSModel, x, T, vol_cache)
 
