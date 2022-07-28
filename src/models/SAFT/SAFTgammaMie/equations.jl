@@ -162,7 +162,7 @@ Optimizations for single component SAFTgammaMieModel
 #######
 
 function d_gc_av(model::SAFTgammaMieModel,V,T,z::SingleComp,_d_gc = d(model,V,T,@f(X_gc)))
-    _0 = zero(eltype(_d))
+    _0 = zero(eltype(_d_gc))
     _z = only(model.groups.n_groups_cache)  
     ∑zinv2 = 1/(sum(_z)^2)
     di = _0
