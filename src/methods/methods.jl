@@ -1,3 +1,5 @@
+abstract type ThermodynamicMethod end
+
 mw(model::EoSModel) = model.params.Mw.values
 
 function group_molecular_weight(groups::GroupParam,mw,z = @SVector [1.])
