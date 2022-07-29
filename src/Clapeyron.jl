@@ -8,7 +8,6 @@ const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 
 #for non allocating vectors of zeros and ones
 using FillArrays: FillArrays
-using Setfield #for easier field set
 using Roots: Roots
 using NLSolvers
 using NLSolvers: NEqOptions
