@@ -1,4 +1,17 @@
+"""
+    ThermodynamicMethod
+
+Abstract type for all thermodynamic methods.
+
+"""
 abstract type ThermodynamicMethod end
+
+function NLSolvers.NEqOptions(method::ThermodynamicMethod)
+    return NEqOptions(f_limit = method.f_limit,
+                    f_abstol = method.atol,
+                    f_reltol = method.rtol,
+                    maxiter = method.max_iters)
+end
 
 mw(model::EoSModel) = model.params.Mw.values
 
