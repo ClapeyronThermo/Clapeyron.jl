@@ -249,17 +249,17 @@ function FugBubblePressure(;vol0 = nothing,
         T = eltype(y0)
         return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(y0)
-        vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(y))
+        vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
         return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
     elseif !isnothing(vol0) && !isnothing(y0)
-        vl,vv,_ = promote(vol0[1],vol0[2],first(y))
+        vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
         return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
     elseif  !isnothing(p0) && !isnothing(y0)
-        p0,_ = promote(p0,first(y))
+        p0,_ = promote(p0,first(y0))
         T = eltype(p0)
         y0 = convert(Vector{T},y0)
         return FugBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
@@ -282,7 +282,7 @@ end
 ################ Bubble temperature solver
 
 """
-OF_bubbleTy!(model::EoSModel, y, p, vol_cache)
+    OF_bubbleTy!(model::EoSModel, y, p, vol_cache)
 
 Objective function to compute bubble temperature using a multidimensional
 system of equations via fugacity coefficients.
@@ -376,7 +376,7 @@ function OF_bubbleTy!(model, x, p, vol_cache)
 end
 
 """
-bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,nothing),
+    bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,nothing),
                          itmax_newton = 10, itmax_ss = 5, tol_y = 1e-8,
                          tol_T = 1e-8, tol_of = 1e-8)
 
@@ -387,23 +387,23 @@ itmax_newton iterations, the system is solved using a multidimensional
 non-linear systems of equations.
 
 Inputs:
-model: equation of state model
-P: pressure ['Pa']
-x: liquid phase composition
-y: initial guess for the vapor phase composition
-T0: initial guess for the bubble temperature ['K']
-vol0: optional, initial guesses for the liquid and vapor phase volumes
-itmax_newton: optional, number of iterations to update the temperature using newton's method
-itmax_ss: optional, number of iterations to update the liquid phase composition using successive substitution
-tol_x: optional, tolerance to stop successive substitution cycle
-tol_T: optional, tolerance to stop newton cycle
-tol_of: optional, tolerance to check if the objective function is zero.
+- model: equation of state model
+- P: pressure ['Pa']
+- x: liquid phase composition
+- y: initial guess for the vapor phase composition
+- T0: initial guess for the bubble temperature ['K']
+- vol0: optional, initial guesses for the liquid and vapor phase volumes
+- itmax_newton: optional, number of iterations to update the temperature using newton's method
+- itmax_ss: optional, number of iterations to update the liquid phase composition using successive substitution
+- tol_x: optional, tolerance to stop successive substitution cycle
+- tol_T: optional, tolerance to stop newton cycle
+- tol_of: optional, tolerance to check if the objective function is zero.
 
 Returns:
-T: bubble temperature
-volx: saturared liquid volume
-voly: saturared vapor volume
-y: saturated vapor composition
+- T: bubble temperature
+- volx: saturared liquid volume
+- voly: saturared vapor volume
+- y: saturated vapor composition
 """
 function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,nothing),
                          itmax_newton = 10, itmax_ss = 5, tol_y = 1e-8,
@@ -415,7 +415,6 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
 
     T = 1. * T0
     y = 1. * y0
-
     nc = length(model)
     # to access this values outside the for loop
     lnϕx = zeros(nc)
@@ -424,57 +423,52 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
 
     for j in 1:itmax_newton
 
-    lnϕx, volx = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
-    lnϕy, voly = lnϕ(model, p, T, y, phase=:vapor, vol0=voly)
+        lnϕx, volx = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
+        lnϕy, voly = lnϕ(model, p, T, y, phase=:vapor, vol0=voly)
+        y_calc = 1. * y
 
-    y_calc = 1. * y
+        for i in 1:itmax_ss
 
-    for i in 1:itmax_ss
+            lnK = lnϕx .- lnϕy
+            K = exp.(lnK)
+            y_old = 1. * y
+            y_calc = x .* K
+            y = y_calc / sum(y_calc)
+            error = sum(abs2, y_old - y)
+            # println(i, y, error)
+            if error < tol_y
+                break
+            end
+            
+            lnϕx, volx = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
+            lnϕy, voly = lnϕ(model, p, T, y, phase=:vapor, vol0=voly)
 
+        end
+        
+        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=:liquid, vol0=volx)
+        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=:vapor, vol0=voly)
         lnK = lnϕx .- lnϕy
         K = exp.(lnK)
 
-        y_old = 1. * y
-        y_calc = x .* K
-        y = y_calc / sum(y_calc)
-        error = sum(abs2, y_old - y)
-        # println(i, y, error)
-        if error < tol_y
+        OF = sum(y_calc) - 1.
+        dOFdT = sum(x.*K.*(∂lnϕ∂Tx .- ∂lnϕ∂Ty))
+        
+        dT = OF / dOFdT
+        ! 
+        # to avoid negative temperatures
+        if dT > T
+            dT = 0.2*T
+        end
+        #T = clamp(T-dT,0.8*T,1.2*T)
+        T -= dT
+        
+        #println(j, " ", OF, " ", T, " ", dT, " ", y)
+
+        if abs(dT) < tol_T
             break
         end
 
-        lnϕx, volx = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, voly = lnϕ(model, p, T, y, phase=:vapor, vol0=voly)
-
     end
-
-    lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=:liquid, vol0=volx)
-    lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=:vapor, vol0=voly)
-    lnK = lnϕx .- lnϕy
-    K = exp.(lnK)
-
-    OF = sum(y_calc) - 1.
-    dOFdT = sum(x.*K.*(∂lnϕ∂Tx .- ∂lnϕ∂Ty))
-    dT = OF / dOFdT
-    # to avoid negative temperatures
-    if dT > T
-        dT = 0.2*T
-    end
-
-    T -= dT
-
-    # println(j, " ", OF, " ", T, " ", dT, " ", y)
-
-    if abs(dT) < tol_T
-        break
-    end
-
-
-    end
-
-    # println(T, " ", volx, " ", voly, " ", y)
-
-
     if abs(OF) > tol_of
         lnK = lnϕx .- lnϕy
         inc0 = vcat(lnK, log(T))
@@ -492,4 +486,77 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
     end
 
     return T, volx, voly, y
+end
+
+struct FugBubbleTemperature{T} <: BubblePointMethod
+    vol0::Union{Nothing,Tuple{T,T}}
+    T0::Union{Nothing,T}
+    y0::Union{Nothing,Vector{T}}
+    nonvolatiles::Union{Nothing,Vector{String}}
+    f_limit::Float64
+    atol::Float64
+    rtol::Float64
+    max_iters::Int
+    itmax_newton::Int
+    itmax_ss::Int
+    tol_y::Float64
+    tol_T::Float64
+    tol_of::Float64
+end
+
+
+function FugBubbleTemperature(;vol0 = nothing,
+    T0 = nothing,
+    y0 = nothing,
+    nonvolatiles = nothing,
+    f_limit = 0.0,
+    atol = 1e-8,
+    rtol = 1e-12,
+    max_iters = 10^4,                                
+    itmax_newton = 10,
+    itmax_ss = 5,
+    tol_y = 1e-8,
+    tol_p = 1e-8,
+    tol_of = 1e-8)
+
+    if T0 == y0 == vol0 == nothing
+        return FugBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+    elseif (T0 == y0 == nothing) && !isnothing(vol0)
+        vl,vv = promote(vol0[1],vol0[2])
+        return FugBubbleTemperature{typeof(vl)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+    elseif (vol0 == y0 == nothing) && !isnothing(T0)
+        T0 = float(T0)
+        return FugBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+    elseif (T0 == vol0 == nothing) && !isnothing(y0)
+        T = eltype(y0)
+        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+    elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(y0)
+        vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(y0))
+        T = eltype(vl)
+        y0 = convert(Vector{T},y0)
+        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+    elseif !isnothing(vol0) && !isnothing(y0)
+        vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
+        T = eltype(vl)
+        y0 = convert(Vector{T},y0)
+        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+    elseif  !isnothing(T0) && !isnothing(y0)
+        T0,_ = promote(T0,first(y0))
+        T = eltype(T0)
+        y0 = convert(Vector{T},y0)
+        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+    else
+        throw(error("invalid specification for bubble temperature"))
+    end
+end
+
+function bubble_temperature_impl(model::EoSModel, p, x,method::FugBubbleTemperature)
+    T0,vl,vv,y0 = bubble_temperature_init(model,p,x,method.vol0,method.T0,method.y0)
+    itmax_newton = method.itmax_newton
+    itmax_ss = method.itmax_ss
+    tol_y = method.tol_y
+    tol_T = method.tol_T
+    tol_of = method.tol_of
+    vol0 = (vl,vv)
+    return bubble_temperature_fug(model,p,x,y0,T0;vol0,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
 end

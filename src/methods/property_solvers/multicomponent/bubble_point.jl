@@ -138,6 +138,106 @@ function bubble_temperature(model::EoSModel,p,x,method::ThermodynamicMethod)
     return T, v_l, v_v, y
 end
 =#
+
+function __x0_bubble_temperature(model::EoSModel,p,x)
+    comps = length(model)   
+    pure = split_model(model)
+    crit = crit_pure.(pure)
+    
+    p_c = [tup[2] for tup in crit]
+    V_c = [tup[3] for tup in crit]
+    _0 = zero(p+first(x))
+    replaceP = p_c .< p
+    T_sat = fill(_0,comps)
+    V_l_sat = fill(_0,comps)
+    V_v_sat = fill(_0,comps)
+    for i in 1:comps
+        crit_i = crit[i]
+        Tci,Pci,Vci = crit_i
+        if !replaceP[i]
+            Ti,Vli,Vvi = saturation_temperature(pure[i],p,AntoineSaturation(crit = crit_i))
+        else
+            
+            Ti,Vli,Vvi = Tci,Vci,1.2*Vci  
+        end
+        T_sat[i] = Ti
+        V_l_sat[i] = Vli
+        V_v_sat[i] = Vvi
+    end    
+    Tb = extrema(T_sat).*(0.9,1.1)
+
+    V0_l = zero(p)
+    V0_v = zero(p)
+    f(T) = antoine_bubble(pure,T,x,crit)[1]-p
+    fT = Roots.ZeroProblem(f,Tb)
+
+    T0 = Roots.solve(fT,Roots.Order0())
+    p,y = antoine_bubble(pure,T0,x,crit)
+    for i in 1:length(x)
+        if !replaceP[i]
+            V0_v += y[i]*V_v_sat[i]
+            V0_l += x[i]*V_l_sat[i]
+        else 
+            V0_v += y[i]*V_c[i]*1.2
+            V0_l += x[i]*V_c[i]
+        end
+    end
+
+    return T0,V0_l,V0_v,y
+    #prepend!(y,log10.([V0_l,V0_v]))
+    #prepend!(y,T0)
+
+    #return y
+end
+
+function x0_bubble_temperature(model::EoSModel,p,x)
+    T0,V0_l,V0_v,y = __x0_bubble_temperature(model,p,x)
+    prepend!(y,log10.([V0_l,V0_v]))
+    prepend!(y,T0)
+    return y
+end
+
+function bubble_temperature_init(model,p,x,vol0,T0,y0)
+    if !isnothing(y0)
+        if !isnothing(T0)
+            if !isnothing(vol0)
+                vl,vv = vol0
+            else
+                vl = volume(model,p,T0,x,phase = :l)
+                vv = volume(model,p,T0,y0,phase =:v)
+            end
+        else
+            T0,vl0,vv0,_ = __x0_bubble_temperature(model,p,x)
+            if !isnothing(vol0)
+                vl,vv = vol0
+            else
+                vl = volume(model,p,T0,x,phase = :l)
+                vv = volume(model,p,T0,y0,phase =:v)
+            end
+        end
+    else
+        T00,vl0,vv0,y0 = __x0_bubble_temperature(model,p,x)
+        if !isnothing(T0)
+            vl = volume(model,p,T0,x,phase = :l)
+            vv = volume(model,p,T0,y0,phase = :v)
+        else
+            vl = vl0
+            vv = vv0
+            T0 = T00
+        end
+    end
+    return T0,vl,vv,y0
+end
+
+function antoine_bubble(pure,T,x,crit)
+    pᵢ = aprox_psat.(pure,T,crit)
+    p = sum(x.*pᵢ)
+    y = x.*pᵢ./p
+    ysum = 1/∑(y)
+    y    = y.*ysum
+    return p,y
+end
+
 include("bubble_point/bubble_chempot.jl")
 include("bubble_point/bubble_fugacity.jl")
 include("bubble_point/bubble_fugacity_non_volatile.jl")
@@ -152,5 +252,42 @@ function bubble_pressure(model::EoSModel,T,x;v0 = nothing)
         vol0 = (vl,vv)
         y = v0[3:end]
         bubble_pressure(model,T,x,ChemPotBubblePressure(;vol0,y))
+    end
+end
+
+"""
+    bubble_temperature(model::EoSModel, p, x,method::BubblePointMethod = ChemPotBubbleTemperature())
+
+calculates the bubble temperature and properties at a given pressure.
+Returns a tuple, containing:
+- Bubble Temperature `[K]`
+- liquid volume at Bubble Point [`m³`]
+- vapour volume at Bubble Point [`m³`]
+- Gas composition at Bubble Point
+"""
+function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
+    model_r,idx_r = index_reduction(model,x)
+    if length(model_r)==1
+        (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
+        n = sum(x)
+        return (T_sat,n*v_l,n*v_v,x)
+    end
+    x_r = x[idx_r]
+    (T_sat, v_l, v_v, y_r) = bubble_temperature_impl(model,p,x_r,method)
+    y = index_expansion(y_r,idx_r)
+    return (T_sat, v_l, v_v, y)
+end
+
+#legacy
+function bubble_temperature(model::EoSModel,T,x;v0 = nothing)
+    if isnothing(v0)
+        return bubble_temperature(model,T,x,ChemPotBubbleTemperature())
+    else
+        T0 = v0[1]
+        vl = exp10(v0[2])
+        vv = exp10(v0[3])
+        vol0 = (vl,vv)
+        y = v0[4:end]
+        bubble_pressure(model,T,x,ChemPotBubbleTemperature(;T0,vol0,y))
     end
 end
