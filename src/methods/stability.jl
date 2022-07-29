@@ -1,3 +1,5 @@
+import Optim
+
 """
     isstable(model,V,T,z)::Bool
 
@@ -8,7 +10,7 @@ Checks:
  - diffusive stability: all eigenvalues of `∂²A/∂n²` are positive.
  
 """
-function isstable(model,V,T,z)
+function isstable(model, V, T, z)
     stable = true
     if !mechanical_stability(model, V, T, z)
         @warn "StabilityWarning: Phase is mechanically unstable"
@@ -80,54 +82,46 @@ function chemical_stability(model, V, T, z)
 
     # For mixtures
     p = pressure(model, V, T, z)
-    ((tm_min, λ_min), _) = chemical_stability_analysis(model, p, T, z)
+    tm_min_vec, _ = chemical_stability_analysis(model, p, T, z; converge_min=false)
 
-    stable = true
-    if λ_min < 0 # Unstable
+    if minimum(tm_min_vec) .< 0.0
         stable = false
-    elseif tm_min < 0 # Metastable
-        stable = false #! How should a metastable state be reported?
+    else
+        stable = true
     end
+
     return stable
 end
 
-# Michelsen p,T stability analysis
-function chemical_stability_analysis(model::EoSModel, p, T, z)
-    # Generate vapourlike and liquidlike initial guesses
-    # Currently using Wilson correlation
-
-    Kʷ = wilson_k_values(model, p, T)
+function chemical_stability_analysis(model, p, T, z; converge_min=true, abstol=1e-3)
+    Kʷ = Clapeyron.wilson_k_values(model, p, T)
     z = z ./ sum(z)
-    w_liq = z ./ Kʷ
-    w_vap = Kʷ .* z
+    # Generate initial guesses
+    w_vap = normalize(z ./ Kʷ, 1) # vapour-like root
+    w_liq = normalize(Kʷ .* z, 1) # liquid-like root
+    w0_vec = [w_liq, w_vap]
 
     # Objective function - Unconstrained formulation in mole numbers
     φ(x) = fugacity_coefficient(model, p, T, x)
     d(x) = log.(x) .+ log.(φ(x))
-    tm(W, Z) = 1.0 + sum(W .* (d(W) .- d(Z) .- 1))
+    d_z = d(z)
 
-    # This currently uses Newton, BFGS performs better in my tests with Optim
-    # Also would ideally be solved with far lower tolerance - stability analysis doesn't have to converge to machine precision
-    tm_func(W) = Solvers.optimize(W -> tm(W .^ 2, z), sqrt.(W))
-    res_vec = [tm_func(w_liq), tm_func(w_vap)]
-    (tm_min, idx) = findmin(map(x -> x.info.minimum, res_vec))
-    tm_xmin = map(x -> sqrt.(abs.(x.info.solution)), res_vec)[idx]
-    phase = (idx == 1) ? "liq" : "vap"
-    println("stable phase = $phase")
-    @show round.(tm_xmin, digits=2)
-    return map(x -> x.info.minimum, res_vec)
-    # We only need to consider the Hessian if wanting to distinguish between Metastable and unstable states
-    # H = ForwardDiff.hessian(W -> tm(W, z), tm_xmin)
-    # H_scaled = zeros(size(H))
-    # for i in 1:size(H)[1]
-    #     for j in 1:size(H)[2]
-    #         H_scaled[i, j] = sqrt(tm_xmin[i] * tm_xmin[j]) * H[i, j]
-    #     end
-    # end
-    # λ_min = eigmin(H_scaled)
+    tm(W) = 1.0 + sum(W .* (d(W) .- d_z .- 1.0))
+    f(W) = tm(exp10.(W))
 
-    # Return compositions for initial guesses in flash algorithms
-    # return ((tm_min, 1.0), normalize(tm_xmin, 1))
+    if converge_min
+        f_callback = (_) -> false
+    else
+        f_callback = (x) -> f(x) < -eps()
+    end
+
+    options = Optim.Options(callback=f_callback, g_tol=abstol)
+    sol(w0) = Optim.optimize(f, log10.(w0), Optim.NewtonTrustRegion(), options; autodiff=:forward)
+
+    sol_vec = sol.(w0_vec)
+    tm_min_vec = [s.minimum for s in sol_vec]
+    tm_xmin_vec = normalize.([exp10.(s.minimizer) for s in sol_vec], 1)
+    return tm_min_vec, tm_xmin_vec
 end
 
 function pure_chemical_instability(model, V, T)
@@ -144,7 +138,6 @@ function pure_chemical_instability(model, V, T)
         return true
     end
 end
-
 
 export isstable
 export mechanical_stability, diffusive_stability, chemical_stability
