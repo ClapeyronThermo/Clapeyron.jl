@@ -1,6 +1,6 @@
 
 """
-BubblePointMethod <: ThermodynamicMethod 
+BubblePointMethod <: ThermodynamicMethod
 
 Abstract type for `bubble_pressure` and `bubble_temperature` routines.
 
@@ -124,11 +124,12 @@ Returns a tuple, containing:
 - Gas composition at Bubble Point
 """
 function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
+    x = x/sum(x)
+    T = float(T)
     model_r,idx_r = index_reduction(model,x)
     if length(model_r)==1
         (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
-        n = sum(x)
-        return (P_sat,n*v_l,n*v_v,x)
+        return (P_sat,v_l,v_v,x)
     end
     x_r = x[idx_r]
     (P_sat, v_l, v_v, y_r) = bubble_pressure_impl(model,T,x_r,index_reduction(method,idx_r))
@@ -136,35 +137,13 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     return (P_sat, v_l, v_v, y)
 end
 
-#=
-"""
-    bubble_temperature(model::EoSModel, p, x)
-
-calculates the bubble temperature and properties at a given pressure.
-Returns a tuple, containing:
-- Bubble Temperature `[K]`
-- liquid volume at Bubble Point [`m³`]
-- vapour volume at Bubble Point [`m³`]
-- Gas composition at Bubble Point
-"""
-function bubble_temperature(model::EoSModel,p,x,method::ThermodynamicMethod)
-    model_r,idx_r = index_reduction(model,x)
-    if length(model_r)==1
-        (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
-        return (T_sat,v_l,v_v,x)
-    end
-    x_r = x[idx_r]
-    (T, v_l, v_v, y_r) = bubble_temperature_impl(model,x_r,T,method)
-    y = index_expansion(y_r,idx_r)
-    return T, v_l, v_v, y
-end
-=#
+###Bubble Temperature
 
 function __x0_bubble_temperature(model::EoSModel,p,x)
-    comps = length(model)   
+    comps = length(model)
     pure = split_model(model)
     crit = crit_pure.(pure)
-    
+
     p_c = [tup[2] for tup in crit]
     V_c = [tup[3] for tup in crit]
     _0 = zero(p+first(x))
@@ -178,13 +157,13 @@ function __x0_bubble_temperature(model::EoSModel,p,x)
         if !replaceP[i]
             Ti,Vli,Vvi = saturation_temperature(pure[i],p,AntoineSaturation(crit = crit_i))
         else
-            
-            Ti,Vli,Vvi = Tci,Vci,1.2*Vci  
+
+            Ti,Vli,Vvi = Tci,Vci,1.2*Vci
         end
         T_sat[i] = Ti
         V_l_sat[i] = Vli
         V_v_sat[i] = Vvi
-    end    
+    end
     Tb = extrema(T_sat).*(0.9,1.1)
 
     V0_l = zero(p)
@@ -198,17 +177,13 @@ function __x0_bubble_temperature(model::EoSModel,p,x)
         if !replaceP[i]
             V0_v += y[i]*V_v_sat[i]
             V0_l += x[i]*V_l_sat[i]
-        else 
+        else
             V0_v += y[i]*V_c[i]*1.2
             V0_l += x[i]*V_c[i]
         end
     end
 
     return T0,V0_l,V0_v,y
-    #prepend!(y,log10.([V0_l,V0_v]))
-    #prepend!(y,T0)
-
-    #return y
 end
 
 function x0_bubble_temperature(model::EoSModel,p,x)
@@ -287,6 +262,8 @@ Returns a tuple, containing:
 - Gas composition at Bubble Point
 """
 function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
+    x = x/sum(x)
+    p = float(p)
     model_r,idx_r = index_reduction(model,x)
     if length(model_r)==1
         (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
