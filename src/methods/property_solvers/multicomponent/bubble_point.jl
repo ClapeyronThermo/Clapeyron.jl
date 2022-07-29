@@ -1,5 +1,14 @@
+
+"""
+BubblePointMethod <: ThermodynamicMethod 
+
+Abstract type for `bubble_pressure` and `bubble_temperature` routines.
+
+Should at least support passing the `y0` keyword, containing an initial vapour phase, if available.
+
+"""
 abstract type BubblePointMethod <: ThermodynamicMethod end
-abstract type BubblePressureMethod <: BubblePointMethod end
+
 
 function index_reduction(method::BubblePointMethod,idx_r)
     if hasfield(method,:y0)
@@ -83,7 +92,7 @@ function bubble_pressure_init(model,T,x,vol0,p0,y0)
         else
             if !isnothing(vol0)
                 vl,vv = vol0
-                p0 = pressure(model,vv,T,y)
+                p0 = pressure(model,vv,T,y0)
             else
                 p0,_,_,_ = __x0_bubble_pressure(model,T,x)
                 vl = volume(model,p0,T,x,phase = :l)
