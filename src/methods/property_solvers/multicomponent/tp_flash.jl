@@ -1,11 +1,11 @@
 """
-    TPFlashMethod
+    TPFlashMethod <: ThermodynamicMethod
 
 Abstract type for `tp_flash` routines. it requires defining `numphases(method)` and `tp_flash_impl(model,p,T,n,method)`.
 If the method accept component-dependent inputs, it also should define `index_reduction(method,nonzero_indices)`
 
 """
-abstract type TPFlashMethod end
+abstract type TPFlashMethod <: ThermodynamicMethod end
 
 """
     tp_flash(model, p, T, n, method::TPFlashMethod = DETPFlash())
