@@ -1,5 +1,29 @@
-## dew pressure solver
-function x0_dew_pressure(model::EoSModel,T,y)
+
+"""
+    DewPointMethod <: ThermodynamicMethod 
+
+Abstract type for `dew_pressure` and `dew_temperature` routines.
+
+Should at least support passing the `x0` keyword, containing an initial vapour phase, if available.
+
+"""
+abstract type DewPointMethod <: ThermodynamicMethod end
+
+
+function index_reduction(method::DewPointMethod,idx_r)
+    if hasfield(typeof(method),:x0)
+        if !isnothing(method.x0) 
+            method_r = deepcopy(method)
+            x0_new = method.x0[idx_r]
+            resize!(method_r.x0,length(x0_new))
+            method_r.x0 .= x0_new
+            return method_r
+        end
+    end
+    return method
+end
+
+function __x0_dew_pressure(model::EoSModel,T,y)
     comps = length(model)
     pure = split_model(model)
     crit = crit_pure.(pure)
@@ -47,12 +71,52 @@ function x0_dew_pressure(model::EoSModel,T,y)
             V0_l += x[i]*V_c[i]
         end
     end
+    return P,V0_l,V0_v,x
+    #prepend!(x,log10.([V0_l,V0_v]))
+    #return x
+end
+
+function x0_dew_pressure(model::EoSModel,T,y)
+    P,V0_l,V0_v,x = __x0_dew_pressure(model,T,y)
     prepend!(x,log10.([V0_l,V0_v]))
     return x
 end
 
+function dew_pressure_init(model,T,y,vol0,p0,x0)
+    if !isnothing(x0)
+        if !isnothing(p0)
+            if !isnothing(vol0)
+                vl,vv = vol0
+            else
+                vl = volume(model,p0,T,x0,phase = :l)
+                vv = volume(model,p0,T,y,phase =:v)
+            end
+        else
+            if !isnothing(vol0)
+                vl,vv = vol0
+                p0 = pressure(model,vv,T,y)
+            else
+                p0,vl0,vv0,_ = __x0_dew_pressure(model,T,y)
+                vl = min(vl0,volume(model,p0,T,x0,phase = :l))
+                vv = max(vv0,volume(model,p0,T,y,phase =:v))
+            end
+        end
+    else
+        p00,vl0,vv0,x0 = __x0_dew_pressure(model,T,y)
+        if !isnothing(p0)
+            vl = min(vl0,volume(model,p0,T,x0,phase = :l))
+            vv = max(vv0,volume(model,p0,T,y,phase = :v))
+        else
+            vl = vl0
+            vv = vv0
+            p0 = p00
+        end
+    end
+    return p0,vl,vv,x0
+end
+
 """
-    dew_pressure(model::EoSModel, T, y; v0 = x0_dew_pressure(model,T,y))
+    dew_pressure(model::EoSModel, T, y,method = ChemPotDewPressure())
 
 calculates the dew pressure and properties at a given temperature.
 Returns a tuple, containing:
@@ -61,79 +125,37 @@ Returns a tuple, containing:
 - vapour volume at Dew Point [`m³`]
 - Liquid composition at Dew Point
 """
-function dew_pressure(model::EoSModel, T, y; v0 =nothing)
+function dew_pressure(model::EoSModel, T, y,method::DewPointMethod)
+    y = y/sum(y)
+    T = float(T)
     model_r,idx_r = index_reduction(model,y)
     if length(model_r)==1
         (P_sat,v_l,v_v) = saturation_pressure(model_r,T)
         return (P_sat,v_l,v_v,y)
     end
     y_r = y[idx_r]
-    ts = T_scales(model_r)
-    pmix = p_scale(model_r,y_r)
-    if v0 === nothing
-        v0 = x0_dew_pressure(model_r,T,y_r)
+    (P_sat, v_l, v_v, x_r) = dew_pressure_impl(model,T,y_r,index_reduction(method,idx_r))
+    x = index_expansion(x_r,idx_r)
+    converged = bubbledew_check(v_l,v_v,y,x)
+    if converged
+        return (P_sat, v_l, v_v, x)
+    else
+        nan = zero(v_l)/zero(v_l)
+        x = x*nan
+        return (nan,nan,nan,x)
     end
-    len = length(v0[1:end-1])
-    Fcache = zeros(eltype(v0[1:end-1]),len)
-    f!(F,z) = Obj_dew_pressure(model_r, F, T, exp10(z[1]), exp10(z[2]), z[3:end],y_r,ts,pmix)
-    r  =Solvers.nlsolve(f!,v0[1:end-1],LineSearch(Newton()))
-    sol = Solvers.x_sol(r)
-    v_l = exp10(sol[1])
-    v_v = exp10(sol[2])
-    x_r = FractionVector(sol[3:end])
-    P_sat = pressure(model_r,v_v,T,y_r)
-    x = zeros(length(model))
-    x[idx_r] = x_r
-    return (P_sat, v_l, v_v, x)
 end
 
-function Obj_dew_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
-    return μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), y ,ts,ps)
-end
-"""
-    dew_temperature(model::EoSModel, p, y; T0 = x0_dew_temperature(model,p,y))
-
-calculates the dew temperature and properties at a given pressure.
-Returns a tuple, containing:
-- Dew Temperature `[K]`
-- liquid volume at Dew Point [`m³`]
-- vapour volume at Dew Point [`m³`]
-- Liquid composition at Dew Point
-"""
-function dew_temperature(model::EoSModel,p,y;v0=nothing)
-    model_r,idx_r = index_reduction(model,y)
-    if length(model_r)==1
-        (T_sat,v_l,v_v) = saturation_temperature(model_r,p,v0)
-        return (T_sat,v_l,v_v,y)
-    end
-    y_r = y[idx_r]
-    ts = T_scales(model_r)
-    pmix = p_scale(model_r,y_r)
-    if v0 === nothing
-        v0 = x0_dew_temperature(model_r,p,y_r)
-    end
-    
-    len = length(v0[1:end-1])
-    Fcache = zeros(eltype(v0[1:end-1]),len)
-    f!(F,z) = Obj_dew_temperature(model_r, F, p, z[1], exp10(z[2]), exp10(z[3]), z[4:end],y_r,ts,pmix)
-    r  =Solvers.nlsolve(f!,v0[1:end-1],LineSearch(Newton()))
-    sol = Solvers.x_sol(r)
-    T   = sol[1]
-    v_l = exp10(sol[2])
-    v_v = exp10(sol[3])
-    x_r = FractionVector(sol[4:end])
-    x = zeros(length(model))
-    x[idx_r] = x_r
-    return T, v_l, v_v, x
+function antoine_dew(pure,T,y,crit)
+    pᵢ = aprox_psat.(pure,T,crit)
+    p = sum(y./pᵢ)^(-1)
+    x = y.*p./pᵢ
+    xsum = 1/∑(x)
+    x    = x.*xsum
+    return p,x
 end
 
-function Obj_dew_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ts,ps)
-    F = μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), y ,ts,ps)
-    F[end] = (pressure(model,v_v,T,y) - p)/ps
-    return F
-end
-
-function x0_dew_temperature(model::EoSModel,p,y)
+function __x0_dew_temperature(model::EoSModel,p,y)
     comps = length(model)
     pure = split_model(model)
     crit = crit_pure.(pure)
@@ -177,16 +199,105 @@ function x0_dew_temperature(model::EoSModel,p,y)
             V0_l += x[i]*V_c[i]
         end
     end
+    return T0,V0_l,V0_v,x
+   
+end
+
+function x0_dew_temperature(model::EoSModel,p,y)
+    T0,V0_l,V0_v,x = __x0_dew_temperature(model,p,y)
     prepend!(x,log10.([V0_l,V0_v]))
     prepend!(x,T0)
     return x
 end
 
-function antoine_dew(pure,T,y,crit)
-    pᵢ = aprox_psat.(pure,T,crit)
-    p = sum(y./pᵢ)^(-1)
-    x = y.*p./pᵢ
-    xsum = 1/∑(x)
-    x    = x.*xsum
-    return p,x
+function dew_temperature_init(model,p,y,vol0,T0,x0)
+    if !isnothing(x0)
+        if !isnothing(T0)
+            if !isnothing(vol0)
+                vl,vv = vol0
+            else
+                vl = volume(model,p,T0,x0,phase = :l)
+                vv = volume(model,p,T0,y,phase =:v)
+            end
+        else
+            T0,vl0,vv0,_ = __x0_dew_temperature(model,p,y)
+            if !isnothing(vol0)
+                vl,vv = vol0
+            else
+                vl = min(vl0,volume(model,p,T0,x0,phase = :l))
+                vv = max(vv0,volume(model,p,T0,y,phase =:v))
+            end
+        end
+    else
+        T00,vl0,vv0,x0 = __x0_dew_temperature(model,p,y)
+        if !isnothing(T0)
+            vl = min(vl0,volume(model,p,T0,x0,phase = :l))
+            vv = max(vv0,volume(model,p,T0,y,phase = :v))
+        else
+            vl = vl0
+            vv = vv0
+            T0 = T00
+        end
+    end
+    return T0,vl,vv,x0
+end
+
+"""
+    dew_temperature(model::EoSModel, p, y,method = ChemPotDewTemperature())
+
+calculates the dew temperature and properties at a given pressure.
+Returns a tuple, containing:
+- Dew Temperature `[K]`
+- liquid volume at Dew Point [`m³`]
+- vapour volume at Dew Point [`m³`]
+- Liquid composition at Dew Point
+"""
+function dew_temperature(model::EoSModel,p,y,method::DewPointMethod)
+    y = y/sum(y)
+    p = float(p)
+    model_r,idx_r = index_reduction(model,y)
+    if length(model_r)==1
+        (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
+        return (T_sat,v_l,v_v,y)
+    end
+    y_r = y[idx_r]
+    (T_sat, v_l, v_v, x_r) = dew_temperature_impl(model,p,y_r,index_reduction(method,idx_r))
+    x = index_expansion(x_r,idx_r)
+    converged = bubbledew_check(v_l,v_v,y,x)
+    if converged
+        return (T_sat, v_l, v_v, x)
+    else
+        nan = zero(v_l)/zero(v_l)
+        x = x*nan
+        return (nan,nan,nan,x)
+    end
+end
+
+include("dew_point/dew_chempot.jl")
+include("dew_point/dew_fugacity.jl") 
+include("dew_point/dew_fugacity_non_condensable.jl")
+
+function dew_pressure(model::EoSModel,T,y;v0 = nothing)
+    if isnothing(v0)
+        return dew_pressure(model,T,y,ChemPotDewPressure())
+    else
+        vl = exp10(v0[1])
+        vv = exp10(v0[2])
+        vol0 = (vl,vv)
+        x = v0[3:end]
+        dew_pressure(model,T,y,ChemPotDewPressure(;vol0,x))
+    end
+end
+
+function dew_temperature(model::EoSModel,p,y;v0 = nothing)
+    if isnothing(v0)
+        return dew_temperature(model,p,y,ChemPotDewTemperature())
+    else
+        T0 = v0[1]
+        vl = exp10(v0[2])
+        vv = exp10(v0[3])
+        vol0 = (vl,vv)
+        x = v0[4:end]
+        dew_temperature(model,p,y,ChemPotDewTemperature(;T0,vol0,x))
+    end
 end

@@ -18,7 +18,7 @@ function ChemPotBubblePressure(;vol0 = nothing,
                                 atol = 1e-8,
                                 rtol = 1e-12,
                                 max_iters = 10^4)
-    
+
     if p0 == y0 == vol0 == nothing
         return ChemPotBubblePressure{Nothing}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
     elseif (p0 == y0 == nothing) && !isnothing(vol0)
@@ -31,17 +31,17 @@ function ChemPotBubblePressure(;vol0 = nothing,
         T = eltype(y0)
         return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(y0)
-        vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(y))
+        vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
         return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
     elseif !isnothing(vol0) && !isnothing(y0)
-        vl,vv,_ = promote(vol0[1],vol0[2],first(y))
+        vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
         return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
     elseif  !isnothing(p0) && !isnothing(y0)
-        p0,_ = promote(p0,first(y))
+        p0,_ = promote(p0,first(y0))
         T = eltype(p0)
         y0 = convert(Vector{T},y0)
         return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
@@ -60,7 +60,7 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     ts = T_scales(model_r,x_r)
     pmix = p_scale(model_r,x_r)
     f!(F,z) = Obj_bubble_pressure(model, F, T, exp10(z[1]),exp10(z[2]),x,z[3:end],ts,pmix)
-    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()))
+    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
     v_l = exp10(sol[1])
     v_v = exp10(sol[2])
@@ -107,17 +107,17 @@ function ChemPotBubbleTemperature(;vol0 = nothing,
         T = eltype(y0)
         return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
     elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(y0)
-        vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(y))
+        vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
         return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
     elseif !isnothing(vol0) && !isnothing(y0)
-        vl,vv,_ = promote(vol0[1],vol0[2],first(y))
+        vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
         return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
     elseif  !isnothing(T0) && !isnothing(y0)
-        T0,_ = promote(T0,first(y))
+        T0,_ = promote(T0,first(y0))
         T = eltype(T0)
         y0 = convert(Vector{T},y0)
         return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
@@ -135,7 +135,7 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     v0 = vcat(T0,log10(vl),log10(vv),y0[1:end-1])
     len = length(v0)
     f!(F,z) = Obj_bubble_temperature(model_r, F, p, z[1], exp10(z[2]), exp10(z[3]), x_r, z[4:end],ts,pmix)
-    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()))
+    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
     T   = sol[1]
     v_l = exp10(sol[2])
@@ -152,3 +152,5 @@ function Obj_bubble_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ts,ps)
     F[end] = (pressure(model,v_l,T,x) - p)/ps
     return F
 end
+
+export ChemPotBubblePressure, ChemPotBubbleTemperature

@@ -93,7 +93,7 @@ function OF_dewPx!(model, y, T, vol_cache)
 end
 
 """
-function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
+    function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
                              itmax_newton = 10, itmax_ss = 5, tol_x = 1e-8,
                              tol_p = 1e-8, tol_of = 1e-8)
 
@@ -104,23 +104,23 @@ iterations, the system is solved using a multidimensional non-linear
 systems of equations.
 
 Inputs:
-model: equation of state model
-T: dew temperature ['K']
-y: vapor phase composition
-x0: initial guess for the liquid phase composition
-p0: initial guess for the dew pressure ['Pa']
-vol0: optional, initial guesses for the liquid and vapor phase volumes
-itmax_newton: optional, number of iterations to update the pressure using newton's method
-itmax_ss: optional, number of iterations to update the liquid phase composition using successive substitution
-tol_x: optional, tolerance to stop successive substitution cycle
-tol_p: optional, tolerance to stop newton cycle
-tol_of: optional, tolerance to check if the objective function is zero.
+- model: equation of state model
+- T: dew temperature ['K']
+- y: vapor phase composition
+- x0: initial guess for the liquid phase composition
+- p0: initial guess for the dew pressure ['Pa']
+- vol0: optional, initial guesses for the liquid and vapor phase volumes
+- itmax_newton: optional, number of iterations to update the pressure using newton's method
+- itmax_ss: optional, number of iterations to update the liquid phase composition using successive substitution
+- tol_x: optional, tolerance to stop successive substitution cycle
+- tol_p: optional, tolerance to stop newton cycle
+- tol_of: optional, tolerance to check if the objective function is zero.
 
 Returns:
-p: dew pressure
-volx: saturared liquid volume
-voly: saturared vapor volume
-x: saturated liquid composition
+- p: dew pressure
+- volx: saturared liquid volume
+- voly: saturared vapor volume
+- x: saturated liquid composition
 """
 function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
                              itmax_newton = 10, itmax_ss = 5, tol_x = 1e-8,
@@ -209,6 +209,79 @@ function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
      return p, volx, voly, x
 end
 
+struct FugDewPressure{T} <: DewPointMethod
+    vol0::Union{Nothing,Tuple{T,T}}
+    p0::Union{Nothing,T}
+    x0::Union{Nothing,Vector{T}}
+    noncondensables::Union{Nothing,Vector{String}}
+    f_limit::Float64
+    atol::Float64
+    rtol::Float64
+    max_iters::Int
+    itmax_newton::Int
+    itmax_ss::Int
+    tol_x::Float64
+    tol_p::Float64
+    tol_of::Float64
+end
+
+function FugDewPressure(;vol0 = nothing,
+                                p0 = nothing,
+                                x0 = nothing,
+                                noncondensables = nothing,
+                                f_limit = 0.0,
+                                atol = 1e-8,
+                                rtol = 1e-12,
+                                max_iters = 10^4,
+                                itmax_newton = 10,
+                                itmax_ss = 5,
+                                tol_x = 1e-8,
+                                tol_p = 1e-8,
+                                tol_of = 1e-8)
+                                
+                            
+    if p0 == x0 == vol0 == nothing
+        return FugDewPressure{Nothing}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of)
+    elseif (p0 == x0 == nothing) && !isnothing(vol0)
+        vl,vv = promote(vol0[1],vol0[2])
+        return FugDewPressure{typeof(vl)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of)
+    elseif (vol0 == x0 == nothing) && !isnothing(p0)
+        p0 = float(p0)
+        return FugDewPressure{typeof(p0)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of)
+    elseif (p0 == vol0 == nothing) && !isnothing(x0)
+        T = eltype(x0)
+        return FugDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of)
+    elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(x0)
+        vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(x0))
+        T = eltype(vl)
+        x0 = convert(Vector{T},x0)
+        return FugDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of)
+    elseif !isnothing(vol0) && !isnothing(x0)
+        vl,vv,_ = promote(vol0[1],vol0[2],first(x0))
+        T = eltype(vl)
+        x0 = convert(Vector{T},x0)
+        return FugDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of)
+    elseif  !isnothing(p0) && !isnothing(x0)
+        p0,_ = promote(p0,first(x0))
+        T = eltype(p0)
+        x0 = convert(Vector{T},x0)
+        return FugDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_p,tol_of)
+    else
+        throw(error("invalid specification for dew pressure"))
+    end
+end
+
+
+function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
+    p0,vl,vv,x0 = bubble_pressure_init(model,T,y,method.vol0,method.p0,method.x0)
+    itmax_newton = method.itmax_newton
+    itmax_ss = method.itmax_ss
+    tol_x = method.tol_x
+    tol_p = method.tol_p
+    tol_of = method.tol_of
+    vol0 = (vl,vv)
+    return dew_pressure_fug(model,T,y,x0,p0;vol0,itmax_newton,itmax_ss,tol_x,tol_p,tol_of)
+end
 
 ################# Dew temperature calculation
 
@@ -424,3 +497,77 @@ function dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothin
     end
     return T, volx, voly, x
 end
+
+struct FugDewTemperature{T} <: DewPointMethod
+    vol0::Union{Nothing,Tuple{T,T}}
+    T0::Union{Nothing,T}
+    x0::Union{Nothing,Vector{T}}
+    noncondensables::Union{Nothing,Vector{String}}
+    f_limit::Float64
+    atol::Float64
+    rtol::Float64
+    max_iters::Int
+    itmax_newton::Int
+    itmax_ss::Int
+    tol_x::Float64
+    tol_T::Float64
+    tol_of::Float64
+end
+
+function FugDewTemperature(;vol0 = nothing,
+    T0 = nothing,
+    x0 = nothing,
+    noncondensables = nothing,
+    f_limit = 0.0,
+    atol = 1e-8,
+    rtol = 1e-12,
+    max_iters = 10^4,
+    itmax_newton = 10,
+    itmax_ss = 5,
+    tol_x = 1e-8,
+    tol_T = 1e-8,
+    tol_of = 1e-8)
+
+    if T0 == x0 == vol0 == nothing
+        return FugDewTemperature{Nothing}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of)
+    elseif (T0 == x0 == nothing) && !isnothing(vol0)
+        vl,vv = promote(vol0[1],vol0[2])
+        return FugDewTemperature{typeof(vl)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of)
+    elseif (vol0 == x0 == nothing) && !isnothing(T0)
+        T0 = float(T0)
+        return FugDewTemperature{typeof(T0)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of)
+    elseif (T0 == vol0 == nothing) && !isnothing(x0)
+        T = eltype(x0)
+        return FugDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of)
+    elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(x0)
+        vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(x0))
+        T = eltype(vl)
+        x0 = convert(Vector{T},x0)
+        return FugDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of)
+    elseif !isnothing(vol0) && !isnothing(x0)
+        vl,vv,_ = promote(vol0[1],vol0[2],first(x0))
+        T = eltype(vl)
+        x0 = convert(Vector{T},x0)
+        return FugDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of)
+    elseif  !isnothing(T0) && !isnothing(x0)
+        T0,_ = promote(T0,first(x0))
+        T = eltype(T0)
+        x0 = convert(Vector{T},x0)
+        return FugDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_x,tol_T,tol_of)
+    else
+        throw(error("invalid specification for bubble temperature"))
+    end
+end
+
+function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
+    T0,vl,vv,x0 = dew_temperature_init(model,p,y,method.vol0,method.T0,method.x0)
+    itmax_newton = method.itmax_newton
+    itmax_ss = method.itmax_ss
+    tol_x = method.tol_x
+    tol_T = method.tol_T
+    tol_of = method.tol_of
+    vol0 = (vl,vv)
+    return dew_temperature_fug(model,p,y,x0,T0;vol0,itmax_newton,itmax_ss,tol_x,tol_T,tol_of)
+end
+
+export FugDewPressure, FugDewTemperature

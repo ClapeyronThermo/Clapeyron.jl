@@ -141,3 +141,70 @@ end
     @test Clapeyron.saturation_temperature(model,p0,ClapeyronSaturation())[1] ≈ 374.2401401001685 rtol = 1e-6
 end
 
+@testset "bubble/dew point algorithms" begin
+    system1 = PCSAFT(["methanol","cyclohexane"])
+    p = 1e5
+    T = 313.15
+    z = [0.5,0.5]
+    p2 = 2e6
+    T2 = 443.15
+    z2 = [0.27,0.73]
+
+    pres1 = 54532.249600937736
+    Tres1 = 435.80890506865
+    pres2 = 1.6555486543884084e6
+    Tres2 = 453.0056727580934
+    @testset "bubble pressure" begin
+
+        @test Clapeyron.bubble_pressure(system,T,z,Clapeyron.ChemPotBubblePressure())[1] ≈ pres1 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system,T,z,Clapeyron.ChemPotBubblePressure(y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system,T,z,Clapeyron.ChemPotBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system,T,z,Clapeyron.ChemPotBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
+
+        @test Clapeyron.bubble_pressure(system,T,z,Clapeyron.FugBubblePressure())[1] ≈ pres1 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system,T,z,Clapeyron.FugBubblePressure(y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system,T,z,Clapeyron.FugBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system,T,z,Clapeyron.FugBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
+
+    end
+
+    @testset "bubble temperature" begin
+
+        @test Clapeyron.bubble_temperature(system,p2,z,Clapeyron.ChemPotBubbleTemperature())[1] ≈ Tres1 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system,p2,z,Clapeyron.ChemPotBubbleTemperature(y0 = [0.7,0.3]))[1] ≈ Tres1 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system,p2,z,Clapeyron.ChemPotBubbleTemperature(T0 = 450))[1] ≈ Tres1 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system,p2,z,Clapeyron.ChemPotBubbleTemperature(T0 = 450,y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
+
+        @test_broken Clapeyron.bubble_temperature(system,p2,z,Clapeyron.FugBubbleTemperature())[1] ≈ Tres1 rtol = 1E-6
+        @test_broken Clapeyron.bubble_temperature(system,p2,z,Clapeyron.FugBubbleTemperature(y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system,p2,z,Clapeyron.FugBubbleTemperature(T0 = 450))[1] ≈ Tres1 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system,p2,z,Clapeyron.FugBubbleTemperature(T0 = 450,y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
+
+    end
+
+    @testset "dew pressure" begin
+
+        @test Clapeyron.dew_pressure(system,T2,z,Clapeyron.ChemPotDewPressure())[1] ≈ pres2 rtol = 1E-6
+        @test Clapeyron.dew_pressure(system,T2,z,Clapeyron.ChemPotDewPressure(x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
+        @test Clapeyron.dew_pressure(system,T2,z,Clapeyron.ChemPotDewPressure(p0 = 1.5e6))[1] ≈ pres2 rtol = 1E-6
+        @test Clapeyron.dew_pressure(system,T2,z,Clapeyron.ChemPotDewPressure(p0 = 1.5e6,x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
+
+        @test Clapeyron.dew_pressure(system,T2,z,Clapeyron.FugDewPressure())[1] ≈ pres2 rtol = 1E-6
+        @test Clapeyron.dew_pressure(system,T2,z,Clapeyron.FugDewPressure(x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
+        @test Clapeyron.dew_pressure(system,T2,z,Clapeyron.FugDewPressure(p0 = 1.5e6))[1] ≈ pres2 rtol = 1E-6
+        @test Clapeyron.dew_pressure(system,T2,z,Clapeyron.FugDewPressure(p0 = 1.5e6,x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
+
+    end
+
+    @testset "dew temperature" begin
+        @test Clapeyron.dew_temperature(system,p2,z,Clapeyron.ChemPotDewTemperature())[1] ≈ Tres2 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system,p2,z,Clapeyron.ChemPotDewTemperature(x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system,p2,z,Clapeyron.ChemPotDewTemperature(T0 = 450))[1] ≈ Tres2 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system,p2,z,Clapeyron.ChemPotDewTemperature(T0 = 450,x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
+
+        @test_broken Clapeyron.dew_temperature(system,p2,z,Clapeyron.FugDewTemperature())[1] ≈ Tres2 rtol = 1E-6
+        @test_broken Clapeyron.dew_temperature(system,p2,z,Clapeyron.FugDewTemperature(x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system,p2,z,Clapeyron.FugDewTemperature(T0 = 450))[1] ≈ Tres2 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system,p2,z,Clapeyron.FugDewTemperature(T0 = 450,x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
+    end
+end

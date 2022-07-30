@@ -1,6 +1,6 @@
 
 """
-BubblePointMethod <: ThermodynamicMethod
+    BubblePointMethod <: ThermodynamicMethod
 
 Abstract type for `bubble_pressure` and `bubble_temperature` routines.
 
@@ -11,15 +11,16 @@ abstract type BubblePointMethod <: ThermodynamicMethod end
 
 
 function index_reduction(method::BubblePointMethod,idx_r)
-    if hasfield(method,:y0)
-        method_r = copy(method)
-        y0_new = method.y0[idx_r]
-        resize(method_r.y0,length(y0_new))
-        method_r.y0 .= y0_new
-        return method_r
-    else
-        return method
+    if hasfield(typeof(method),:y0)
+        if !isnothing(method.y0)
+            method_r = deepcopy(method)
+            y0_new = method.y0[idx_r]
+            resize!(method_r.y0,length(y0_new))
+            method_r.y0 .= y0_new
+            return method_r
+        end
     end
+    return method
 end
 
 function __x0_bubble_pressure(model::EoSModel,T,x)
@@ -134,7 +135,14 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     x_r = x[idx_r]
     (P_sat, v_l, v_v, y_r) = bubble_pressure_impl(model,T,x_r,index_reduction(method,idx_r))
     y = index_expansion(y_r,idx_r)
-    return (P_sat, v_l, v_v, y)
+    converged = bubbledew_check(v_l,v_v,y,x)
+    if converged
+        return (P_sat, v_l, v_v, y)
+    else
+        nan = zero(v_l)/zero(v_l)
+        y = y*nan
+        return (nan,nan,nan,y)
+    end
 end
 
 ###Bubble Temperature
@@ -186,6 +194,15 @@ function __x0_bubble_temperature(model::EoSModel,p,x)
     return T0,V0_l,V0_v,y
 end
 
+function antoine_bubble(pure,T,x,crit)
+    pᵢ = aprox_psat.(pure,T,crit)
+    p = sum(x.*pᵢ)
+    y = x.*pᵢ./p
+    ysum = 1/∑(y)
+    y    = y.*ysum
+    return p,y
+end
+
 function x0_bubble_temperature(model::EoSModel,p,x)
     T0,V0_l,V0_v,y = __x0_bubble_temperature(model,p,x)
     prepend!(y,log10.([V0_l,V0_v]))
@@ -207,15 +224,15 @@ function bubble_temperature_init(model,p,x,vol0,T0,y0)
             if !isnothing(vol0)
                 vl,vv = vol0
             else
-                vl = volume(model,p,T0,x,phase = :l)
-                vv = volume(model,p,T0,y0,phase =:v)
+                vl = min(volume(model,p,T0,x,phase = :l),vl0)
+                vv = max(volume(model,p,T0,y0,phase =:v),vv0)
             end
         end
     else
         T00,vl0,vv0,y0 = __x0_bubble_temperature(model,p,x)
         if !isnothing(T0)
-            vl = volume(model,p,T0,x,phase = :l)
-            vv = volume(model,p,T0,y0,phase = :v)
+            vl = min(vl0,volume(model,p,T0,x,phase = :l))
+            vv = max(vv0,volume(model,p,T0,y0,phase = :v))
         else
             vl = vl0
             vv = vv0
@@ -225,13 +242,35 @@ function bubble_temperature_init(model,p,x,vol0,T0,y0)
     return T0,vl,vv,y0
 end
 
-function antoine_bubble(pure,T,x,crit)
-    pᵢ = aprox_psat.(pure,T,crit)
-    p = sum(x.*pᵢ)
-    y = x.*pᵢ./p
-    ysum = 1/∑(y)
-    y    = y.*ysum
-    return p,y
+"""
+    bubble_temperature(model::EoSModel, p, x,method::BubblePointMethod = ChemPotBubbleTemperature())
+
+calculates the bubble temperature and properties at a given pressure.
+Returns a tuple, containing:
+- Bubble Temperature `[K]`
+- liquid volume at Bubble Point [`m³`]
+- vapour volume at Bubble Point [`m³`]
+- Gas composition at Bubble Point
+"""
+function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
+    x = x/sum(x)
+    p = float(p)
+    model_r,idx_r = index_reduction(model,x)
+    if length(model_r)==1
+        (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
+        return (T_sat,v_l,v_v,x)
+    end
+    x_r = x[idx_r]
+    (T_sat, v_l, v_v, y_r) = bubble_temperature_impl(model,p,x_r,index_reduction(method,idx_r))
+    y = index_expansion(y_r,idx_r)
+    converged = bubbledew_check(v_l,v_v,y,x)
+    if converged
+        return (T_sat, v_l, v_v, y)
+    else
+        nan = zero(v_l)/zero(v_l)
+        y = y*nan
+        return (nan,nan,nan,y)
+    end
 end
 
 include("bubble_point/bubble_chempot.jl")
@@ -251,41 +290,15 @@ function bubble_pressure(model::EoSModel,T,x;v0 = nothing)
     end
 end
 
-"""
-    bubble_temperature(model::EoSModel, p, x,method::BubblePointMethod = ChemPotBubbleTemperature())
-
-calculates the bubble temperature and properties at a given pressure.
-Returns a tuple, containing:
-- Bubble Temperature `[K]`
-- liquid volume at Bubble Point [`m³`]
-- vapour volume at Bubble Point [`m³`]
-- Gas composition at Bubble Point
-"""
-function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
-    x = x/sum(x)
-    p = float(p)
-    model_r,idx_r = index_reduction(model,x)
-    if length(model_r)==1
-        (T_sat,v_l,v_v) = saturation_temperature(model_r,p)
-        n = sum(x)
-        return (T_sat,n*v_l,n*v_v,x)
-    end
-    x_r = x[idx_r]
-    (T_sat, v_l, v_v, y_r) = bubble_temperature_impl(model,p,x_r,index_reduction(method,idx_r))
-    y = index_expansion(y_r,idx_r)
-    return (T_sat, v_l, v_v, y)
-end
-
-#legacy
-function bubble_temperature(model::EoSModel,T,x;v0 = nothing)
+function bubble_temperature(model::EoSModel,p,x;v0 = nothing)
     if isnothing(v0)
-        return bubble_temperature(model,T,x,ChemPotBubbleTemperature())
+        return bubble_temperature(model,p,x,ChemPotBubbleTemperature())
     else
         T0 = v0[1]
         vl = exp10(v0[2])
         vv = exp10(v0[3])
         vol0 = (vl,vv)
         y = v0[4:end]
-        bubble_pressure(model,T,x,ChemPotBubbleTemperature(;T0,vol0,y))
+        bubble_temperature(model,T,x,ChemPotBubbleTemperature(;T0,vol0,y))
     end
 end
