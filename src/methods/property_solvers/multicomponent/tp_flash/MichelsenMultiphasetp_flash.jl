@@ -1,26 +1,30 @@
 import NLsolve, Optim
 
-function Michelsen_multiphase_tp_flash(model, p, T, z; abstol=1e-8, outerSSiters=30, outerNewtoniters=30)
-    tm_min_vec, tm_xmin_vec = chemical_stability_analysis(model, p, T, z; converge_min=true, abstol=1e-3)
+function Michelsen_multiphase_tp_flash(model, p, T, z; abstol=1e-10, outerSSiters=30, outerNewtoniters=30)
+    w_array, tm_array = chemical_stability_analysis(model, p, T, z; converge_min=true, abstol=1e-3)
+    # w_array, tpd_array, _, _ = all_tpd(model, p, T, z)
+    # w_array, tpd_array = tpd(model, p, T, z)
 
-    if any(tm_min_vec .< 0.0)
+    if any(tm_array .< 0.0)
         stable = false
 
+        w_array = w_array[tm_array.<0.0]
+
         nC = length(z)
-        nF = 2 # Assume 2 phases to start
+        nF = length(w_array)
 
         # Create initial guesses
-        if length(tm_min_vec[tm_min_vec.<0.0]) == 2
+        if length(w_array) ≥ 2
             x = zeros(nF, nC)
             β = ones(nF) ./ nF
-            x[1, :] .= tm_xmin_vec[1]
-            x[2, :] .= tm_xmin_vec[2]
-        else # Initialise with K-factors
+            for i in 1:nF
+                x[i, :] .= w_array[i]
+            end
+        else # Initialise with K-factors?
             Kʷ = wilson_k_values(model, p, T)
             x[1, :] .= Kʷ
             x[2, :] .= 1 ./ Kʷ
         end
-
     else
         stable = true
         x = z

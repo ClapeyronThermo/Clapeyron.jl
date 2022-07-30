@@ -82,7 +82,7 @@ function chemical_stability(model, V, T, z)
 
     # For mixtures
     p = pressure(model, V, T, z)
-    tm_min_vec, _ = chemical_stability_analysis(model, p, T, z; converge_min=false)
+    _, tm_min_vec = chemical_stability_analysis(model, p, T, z; converge_min=false)
 
     if minimum(tm_min_vec) .< 0.0
         stable = false
@@ -121,7 +121,7 @@ function chemical_stability_analysis(model, p, T, z; converge_min=true, abstol=1
     sol_vec = sol.(w0_vec)
     tm_min_vec = [s.minimum for s in sol_vec]
     tm_xmin_vec = normalize.([exp10.(s.minimizer) for s in sol_vec], 1)
-    return tm_min_vec, tm_xmin_vec
+    return tm_xmin_vec, tm_min_vec
 end
 
 function pure_chemical_instability(model, V, T)
