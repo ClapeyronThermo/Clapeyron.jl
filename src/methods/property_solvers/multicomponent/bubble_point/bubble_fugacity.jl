@@ -495,7 +495,25 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
 
     return T, volx, voly, y
 end
+"""
+    FugBubbleTemperature(kwargs...)
 
+Compute bubble temperature via fugacity coefficients. First it uses
+successive substitution to update the phase composition and a outer newtown
+loop to update the temperature. If no convergence is reached after
+itmax_newton iterations, the system is solved using a multidimensional
+non-linear systems of equations.
+
+Inputs:
+- `y = nothing`: initial guess for the vapor phase composition.
+- `T0 = nothing`: initial guess for the bubble temperature [`K`].
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `itmax_newton = 10`: optional, number of iterations to update the temperature using newton's method
+- `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
+- `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
+- `tol_T = 1e-8`: optional, tolerance to stop newton cycle
+- `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
+"""
 struct FugBubbleTemperature{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
     T0::Union{Nothing,T}
