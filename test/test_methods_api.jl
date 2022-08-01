@@ -124,7 +124,7 @@ end
         0.181452  0.158233  0.65623  0.00408481] rtol = 1e-6
 
         method_both = MichelsenTPFlash(x0=x0, y0=y0, second_order=false, noncondensables = ["methane"],nonvolatiles = ["decane"])       
-        @test Clapeyron.tp_flash(system, p, T, z, method_noncondensables)[1] ≈  
+        @test Clapeyron.tp_flash(system, p, T, z, method_both)[1] ≈  
         [0.291928  0.3059    0.0       0.402171
         0.181116  0.158162  0.660722  0.0] rtol = 1e-6
     end
@@ -278,7 +278,7 @@ end
     end
 
     @testset "dew temperature - noncondensables" begin
-        (Ta,vla,vva,xa) = dew_temperature(model,p,y0,FugDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
+        (Ta,vla,vva,xa) = dew_temperature(system2,p,y0,FugDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
         @test Ta  ≈ Tres2 rtol = 1E-6
         @test xa[3] == 0.0
         #(Tb,vlb,vvb,xb) = dew_temperature(model,p,y0,ChemPotDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
