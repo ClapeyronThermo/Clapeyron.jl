@@ -207,4 +207,53 @@ end
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(T0 = 450))[1] ≈ Tres2 rtol = 1E-6
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(T0 = 450,x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
     end
+
+    #nonvolatiles/noncondensables testing. it also test model splitting
+    system2 = PCSAFT(["hexane", "ethanol", "methane", "decane"])
+    T = 320.  # K
+    p = 1e5  # Pa
+    z = [0.25, 0.25, 0.25, 0.25]
+    x0 = [0.3, 0.3, 0., 0.4]
+    y0 = [0.2, 0.2, 0.6, 0.]
+    pres1 = 33653.25605767739
+    Tres1 = 349.3673410368543
+    pres2 = 112209.1535730352
+    Tres2 = 317.58287413031866
+
+    @testset "bubble pressure - nonvolatiles" begin
+        (pa,vla,vva,ya) = bubble_pressure(system2,T,x0,FugBubblePressure(y0 = y0,p0 = 1e5,nonvolatiles = ["decane"]))
+        @test pa  ≈ pres1 rtol = 1E-6
+        @test ya[4] == 0.0
+        #(pb,vlb,vvb,yb) = bubble_pressure(system2,T,x0,ChemPotBubblePressure(y0 = y0,p0 = 1e5,nonvolatiles = ["decane"]))
+        #@test pa  ≈ pres1 rtol = 1E-6
+        #@test ya[4] == 0.0
+    end
+
+    @testset "bubble temperature - nonvolatiles" begin
+        (Ta,vla,vva,ya) = bubble_temperature(system2,p,x0,FugBubbleTemperature(y0 = y0,T0 = T,nonvolatiles = ["decane"]))
+        @test Ta  ≈ Tres1 rtol = 1E-6
+        @test ya[4] == 0.0
+        #(Tb,vlb,vvb,yb) = bubble_temperature(system2,p,x0,ChemPotBubbleTemperature(y0 = y0,T0 = T,nonvolatiles = ["decane"]))
+        #@test Tb  ≈ Tres1 rtol = 1E-6
+        #@test yb[4] == 0.0
+    end
+
+    @testset "dew pressure - noncondensables" begin
+        (pa,vla,vva,xa) = dew_pressure(system2,T,y0,FugDewPressure(noncondensables = ["methane"],p0 = p,x0 = x0))
+        @test pa  ≈ pres2 rtol = 1E-6
+        @test xa[3] == 0.0
+        #(pb,vlb,vvb,xb) = dew_pressure(system2,T,y0,ChemPotDewPressure(noncondensables = ["methane"],p0 = p,x0 = x0))
+        #@test pb  ≈ pres2 rtol = 1E-6
+        #@test xa[3] == 0.0
+    end
+
+    @testset "dew temperature - noncondensables" begin
+        (Ta,vla,vva,xa) = dew_temperature(model,p,y0,FugDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
+        @test Ta  ≈ Tres2 rtol = 1E-6
+        @test xa[3] == 0.0
+        #(Tb,vlb,vvb,xb) = dew_temperature(model,p,y0,ChemPotDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
+        #@test Tb  ≈ Tres2 rtol = 1E-6
+        #@test xa[3] == 0.0
+    end
+
 end
