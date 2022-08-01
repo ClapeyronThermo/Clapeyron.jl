@@ -133,7 +133,7 @@ function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
         return (P_sat,v_l,v_v,x)
     end
     x_r = x[idx_r]
-    (P_sat, v_l, v_v, y_r) = bubble_pressure_impl(model,T,x_r,index_reduction(method,idx_r))
+    (P_sat, v_l, v_v, y_r) = bubble_pressure_impl(model_r,T,x_r,index_reduction(method,idx_r))
     y = index_expansion(y_r,idx_r)
     converged = bubbledew_check(v_l,v_v,y,x)
     if converged
@@ -261,7 +261,7 @@ function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
         return (T_sat,v_l,v_v,x)
     end
     x_r = x[idx_r]
-    (T_sat, v_l, v_v, y_r) = bubble_temperature_impl(model,p,x_r,index_reduction(method,idx_r))
+    (T_sat, v_l, v_v, y_r) = bubble_temperature_impl(model_r,p,x_r,index_reduction(method,idx_r))
     y = index_expansion(y_r,idx_r)
     converged = bubbledew_check(v_l,v_v,y,x)
     if converged

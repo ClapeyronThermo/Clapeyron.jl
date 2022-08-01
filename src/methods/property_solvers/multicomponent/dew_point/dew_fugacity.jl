@@ -280,7 +280,14 @@ function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
     tol_p = method.tol_p
     tol_of = method.tol_of
     vol0 = (vl,vv)
-    return dew_pressure_fug(model,T,y,x0,p0;vol0,itmax_newton,itmax_ss,tol_x,tol_p,tol_of)
+    non_condensable_list = method.noncondensables
+    if isnothing(non_condensable_list)
+        return dew_pressure_fug(model,T,y,x0,p0;vol0,itmax_newton,itmax_ss,tol_x,tol_p,tol_of)
+    elseif iszero(length(non_condensable_list))
+        return dew_pressure_fug(model,T,y,x0,p0;vol0,itmax_newton,itmax_ss,tol_x,tol_p,tol_of)
+    else
+        return dew_pressure_fug_condensable(model,T,y,x0,p0;vol0,itmax_newton,itmax_ss,tol_x,tol_p,tol_of,non_condensable_list)
+    end
 end
 
 ################# Dew temperature calculation
@@ -567,7 +574,15 @@ function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
     tol_T = method.tol_T
     tol_of = method.tol_of
     vol0 = (vl,vv)
-    return dew_temperature_fug(model,p,y,x0,T0;vol0,itmax_newton,itmax_ss,tol_x,tol_T,tol_of)
+
+    non_condensable_list = method.noncondensables
+    if isnothing(non_condensable_list)
+        return dew_temperature_fug(model,p,y,x0,T0;vol0,itmax_newton,itmax_ss,tol_x,tol_T,tol_of)
+    elseif iszero(length(non_condensable_list))
+        return dew_temperature_fug(model,p,y,x0,T0;vol0,itmax_newton,itmax_ss,tol_x,tol_T,tol_of)
+    else
+        return dew_temperature_fug_condensable(model,p,y,x0,T0;vol0,itmax_newton,itmax_ss,tol_x,tol_T,tol_of,non_condensable_list)
+    end
 end
 
 export FugDewPressure, FugDewTemperature

@@ -276,7 +276,15 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
     tol_p = method.tol_p
     tol_of = method.tol_of
     vol0 = (vl,vv)
-    return bubble_pressure_fug(model,T,x,y0,p0;vol0,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+    non_volatile_list = method.nonvolatiles
+    if isnothing(method.nonvolatiles)
+        return bubble_pressure_fug(model,T,x,y0,p0;vol0,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+    elseif iszero(length(method.nonvolatiles))
+        return bubble_pressure_fug(model,T,x,y0,p0;vol0,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+    else
+        return bubble_pressure_fug_volatile(model,T,x,y0,p0;vol0,itmax_newton,itmax_ss,tol_y,tol_p,tol_of,non_volatile_list)
+    end
+
 end
 
 ################ Bubble temperature solver
@@ -558,7 +566,14 @@ function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTempera
     tol_T = method.tol_T
     tol_of = method.tol_of
     vol0 = (vl,vv)
-    return bubble_temperature_fug(model,p,x,y0,T0;vol0,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+    non_volatile_list = method.nonvolatiles
+    if isnothing(method.nonvolatiles)
+        return bubble_temperature_fug(model,p,x,y0,T0;vol0,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+    elseif iszero(length(method.nonvolatiles))
+        return bubble_temperature_fug(model,p,x,y0,T0;vol0,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
+    else
+        return bubble_temperature_fug_volatile(model,p,x,y0,T0;vol0,itmax_newton,itmax_ss,tol_y,tol_T,tol_of,non_volatile_list)
+    end
 end
 
-export FugPotBubblePressure, FugPotBubbleTemperature
+export FugBubblePressure, FugBubbleTemperature
