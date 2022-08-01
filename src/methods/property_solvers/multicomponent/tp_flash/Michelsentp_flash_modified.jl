@@ -112,87 +112,6 @@ function modified_gibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny_var,
 
 end
 
-"""
-    ModifiedMichelsenTPFlash{T}(;kwargs...)
-
-Method to solve non-reactive multicomponent flash problem by Michelsen's method.
-
-Only two phases are supported. if `K0` is `nothing`, it will be calculated via the Wilson correlation.
-
-### Keyword Arguments:
-- equilibrium = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria
-- `K0` (optional), initial guess for the constants K
-- `x0` (optional), initial guess for the composition of phase x
-- `y0` = optional, initial guess for the composition of phase y
-- `vol0` = optional, initial guesses for phase x and phase y volumes
-- `K_tol` = tolerance to stop the calculation
-- `ss_iters` = number of Successive Substitution iterations to perform
-- `second_order` = wheter to solve the gibbs energy minimization using the analytical hessian or not
-- `non_inx_list` = arrays with names (strings) of components non allowed on the phase x
-- `non_iny_list` = arrays with names (strings) of components non allowed on the phase y
-
-"""
-struct ModifiedMichelsenTPFlash{T} <: TPFlashMethod
-    equilibrium::Symbol
-    K0::Union{Vector{T},Nothing}
-    x0::Union{Vector{T},Nothing}
-    y0::Union{Vector{T},Nothing}
-    v0::Union{Tuple{T,T},Nothing}
-    K_tol::Float64
-    ss_iters::Int
-    second_order::Bool
-    non_inx_list::Vector{String}
-    non_iny_list::Vector{String}
-
-end
-
-function index_reduction(m::ModifiedMichelsenTPFlash,idx::AbstractVector)
-    equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.ss_iters,m.second_order
-    # FIX THIS: if the system is reduced there might be a problem with the index of these fluids
-    non_inx_list, non_iny_list = m.non_inx_list, m.non_iny_list
-    K0 !== nothing && (K0 = K0[idx])
-    x0 !== nothing && (x0 = x0[idx])
-    y0 !== nothing && (y0 = y0[idx])
-    return ModifiedMichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order, non_inx_list, non_iny_list)
-end
-
-
-function ModifiedMichelsenTPFlash(;equilibrium = :vle,K0 = nothing, x0 = nothing,y0=nothing,
-                                   v0=nothing,K_tol = eps(Float64),ss_iters = 10,
-                                   second_order = false, non_inx_list = String[], non_iny_list = String[])
-    !(is_vle(equilibrium) | is_lle(equilibrium)) && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
-    if K0 == x0 == y0 === v0 == nothing #nothing specified
-        is_lle(equilibrium) && throw(error("""
-        You need to provide either an initial guess for the partion constant K
-        or for compositions of x and y for LLE"""))
-        T = nothing
-    else
-        if !isnothing(K0) & isnothing(x0) & isnothing(y0) #K0 specified
-            T = eltype(K0)
-        elseif isnothing(K0) & !isnothing(x0) & !isnothing(y0)  #x0, y0 specified
-            T = eltype(x0)
-        else
-            throw(error("invalid specification of initial points"))
-        end
-     end
-    return ModifiedMichelsenTPFlash{T}(equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order,non_inx_list,non_iny_list)
-end
-
-function tp_flash_impl(model::EoSModel,p,T,z,method::ModifiedMichelsenTPFlash)
-    x,y,β =  tp_flash_michelsen_modified(model,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
-                        x0 = method.x0, y0 = method.y0, vol0 = method.v0,
-                        K_tol = method.K_tol,itss = method.ss_iters,second_order = method.second_order,
-                        non_inx_list=method.non_inx_list, non_iny_list=method.non_iny_list, reduced = true)
-
-
-    G = (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
-
-    X = hcat(x,y)'
-    nvals = X.*[1-β
-                β] .* sum(z)
-    return (X, nvals, G)
-end
-
 
 function tp_flash_michelsen_modified(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothing,
                                      x0=nothing, y0=nothing, vol0=(nothing, nothing),
@@ -222,8 +141,17 @@ function tp_flash_michelsen_modified(model::EoSModel, p, T, z; equilibrium=:vle,
     nc = length(model)
 
     # constructing non-in-x list
-    non_inx_names_list = [x for x in non_inx_list if x in model.components]
-    non_iny_names_list = [x for x in non_iny_list if x in model.components]
+    if !isnothing(non_inx_list)
+        non_inx_names_list = [x for x in non_inx_list if x in model.components]
+    else
+        non_inx_names_list = String[]
+    end
+
+    if !isnothing(non_iny_list)
+        non_iny_names_list = [x for x in non_iny_list if x in model.components]
+    else
+        non_iny_names_list = String[]
+    end
 
     # constructing non-in-x list
     non_inx = Bool.(zeros(nc))
@@ -259,7 +187,6 @@ function tp_flash_michelsen_modified(model::EoSModel, p, T, z; equilibrium=:vle,
     # components that are allowed to be in two phases
     # in_equilibria = inx .&& iny
     in_equilibria = inx .* iny
-
 
     # Computing the initial guess for the K vector
     if ~isnothing(K0)
@@ -402,7 +329,6 @@ function tp_flash_michelsen_modified(model::EoSModel, p, T, z; equilibrium=:vle,
         x = index_expansion(x,z_nonzero)
         y = index_expansion(y,z_nonzero)
     end
-
 
     return x, y, β
 

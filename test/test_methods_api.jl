@@ -97,9 +97,39 @@ end
 
         method2 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, second_order = true)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method2)[3] ≈ -7.577270350886795 rtol = 1e-6
+    end
 
+    @testset "Michelsen Algorithm, nonvolatiles/noncondensables support" begin
+
+        system = PCSAFT(["hexane", "ethanol", "methane", "decane"])
+        T = 320.  # K
+        p = 1e5  # Pa
+        z = [0.25, 0.25, 0.25, 0.25]
+        x0 = [0.3, 0.3, 0., 0.4]
+        y0 = [0.2, 0.2, 0.6, 0.]
+    
+        method_normal = MichelsenTPFlash(x0=x0, y0=y0, second_order=true)       
+        @test Clapeyron.tp_flash(system, p, T, z, method_normal)[1] ≈  
+        [0.291924  0.306002  0.00222251  0.399851
+        0.181195  0.158091  0.656644    0.00406898] rtol = 1e-6
+
+        method_nonvolatiles = MichelsenTPFlash(x0=x0, y0=y0, second_order=true, nonvolatiles = ["decane"])       
+        @test Clapeyron.tp_flash(system, p, T, z, method_nonvolatiles)[1] ≈  
+        [0.291667  0.305432  0.00223826  0.400663
+        0.180861  0.15802   0.661119    0.0] rtol = 1e-6
+
+        method_noncondensables = MichelsenTPFlash(x0=x0, y0=y0, second_order=false, noncondensables = ["methane"])       
+        @test Clapeyron.tp_flash(system, p, T, z, method_noncondensables)[1] ≈  
+        [0.292185  0.306475  0.0      0.40134
+        0.181452  0.158233  0.65623  0.00408481] rtol = 1e-6
+
+        method_both = MichelsenTPFlash(x0=x0, y0=y0, second_order=false, noncondensables = ["methane"],nonvolatiles = ["decane"])       
+        @test Clapeyron.tp_flash(system, p, T, z, method_noncondensables)[1] ≈  
+        [0.291928  0.3059    0.0       0.402171
+        0.181116  0.158162  0.660722  0.0] rtol = 1e-6
     end
 end
+
 
 @testset "Saturation Methods" begin
     model = PR(["water"])

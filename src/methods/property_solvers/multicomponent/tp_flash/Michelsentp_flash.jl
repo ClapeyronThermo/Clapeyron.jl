@@ -137,6 +137,9 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via t
 - `K_tol` = tolerance to stop the calculation
 - `ss_iters` = number of Successive Substitution iterations to perform
 - `second_order` = wheter to solve the gibbs energy minimization using the analytical hessian or not
+- `noncondensables` = arrays with names (strings) of components non allowed on the liquid phase. Not allowed with `lle` equilibria
+- `nonvolatiles` = arrays with names (strings) of components non allowed on the vapour phase. Not allowed with `lle` equilibria
+
 """
 struct MichelsenTPFlash{T} <: TPFlashMethod
     equilibrium::Symbol
@@ -147,19 +150,31 @@ struct MichelsenTPFlash{T} <: TPFlashMethod
     K_tol::Float64
     ss_iters::Int
     second_order::Bool
+    noncondensables::Union{Nothing,Vector{String}}
+    nonvolatiles::Union{Nothing,Vector{String}}
+
 end
 
 function index_reduction(m::MichelsenTPFlash,idx::AbstractVector)
-    equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.ss_iters,m.second_order
+    equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order,noncondensables,nonvolatiles = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.ss_iters,m.second_order,m.noncondensables,m.nonvolatiles
     K0 !== nothing && (K0 = K0[idx])
     x0 !== nothing && (x0 = x0[idx])
     y0 !== nothing && (y0 = y0[idx])
-    return MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order)
+    return MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order,noncondensables,nonvolatiles)
 end
 
 numphases(::MichelsenTPFlash) = 2
 
-function MichelsenTPFlash(;equilibrium = :vle,K0 = nothing, x0 = nothing,y0=nothing,v0=nothing,K_tol = eps(Float64),ss_iters = 10,second_order = false)
+function MichelsenTPFlash(;equilibrium = :vle,
+                        K0 = nothing, 
+                        x0 = nothing,
+                        y0=nothing,
+                        v0=nothing,
+                        K_tol = eps(Float64),
+                        ss_iters = 10,
+                        second_order = false,
+                        noncondensables = nothing,
+                        nonvolatiles = nothing)
     !(is_vle(equilibrium) | is_lle(equilibrium)) && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
     if K0 == x0 == y0 === v0 == nothing #nothing specified
         is_lle(equilibrium) && throw(error("""
@@ -174,18 +189,45 @@ function MichelsenTPFlash(;equilibrium = :vle,K0 = nothing, x0 = nothing,y0=noth
         else
             throw(error("invalid specification of initial points"))
         end
-     end
-    return MichelsenTPFlash{T}(equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order)
+    end
+    #check for non-volatiles / non-condensables here
+    if is_lle(equilibrium)
+        if !isnothing(nonvolatiles) && length(nonvolatiles) > 0
+            throw(error("LLE equilibria does not support setting nonvolatiles"))
+        end
+    
+        if !isnothing(noncondensables) && length(noncondensables) > 0
+            throw(error("LLE equilibria does not support setting noncondensables"))
+        end
+    end
+
+    return MichelsenTPFlash{T}(equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order,noncondensables,nonvolatiles)
 end
 
 is_vle(method::MichelsenTPFlash) = is_vle(method.equilibrium)
 is_lle(method::MichelsenTPFlash) = is_lle(method.equilibrium)
 
 function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
-    x,y,β =  tp_flash_michelsen(model,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
+    modified = false #if there is any nonvolatiles/noncondensables  
+    if !isnothing(method.nonvolatiles) && length(method.nonvolatiles) > 0
+        modified = true
+    end
+    @show method.nonvolatiles
+    if !isnothing(method.noncondensables) && length(method.noncondensables) > 0
+        modified = true
+    end
+    @show modified
+    if !modified
+        x,y,β =  tp_flash_michelsen(model,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
+                            x0 = method.x0, y0 = method.y0, vol0 = method.v0,
+                            K_tol = method.K_tol,itss = method.ss_iters,second_order = method.second_order,
+                            reduced = true)
+    else
+        x,y,β =  tp_flash_michelsen_modified(model,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
                         x0 = method.x0, y0 = method.y0, vol0 = method.v0,
                         K_tol = method.K_tol,itss = method.ss_iters,second_order = method.second_order,
-                        reduced = true)
+                        non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles, reduced = true)
+    end
 
 
     G = (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
@@ -199,22 +241,7 @@ end
 function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothing,
                             x0=nothing, y0=nothing, vol0=(nothing, nothing),
                             K_tol=1e-16, itss=10, second_order=false, reduced = false)
-    # Function to compute two phase flash at given temperature, pressure and
-    # global composition
-    # p = Pressure
-    # T = Temperature
-    # z = global composition array
-    # equilibrium = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria
-    # K0 = optional, initial guess for the constants K
-    # x0 = optional, initial guess for the composition of phase x
-    # y0 = optional, initial guess for the composition of phase y
-    # vol0 = optional, initial guesses for phase x and phase y volumes
-    # K_tol = tolerance to stop the calculation
-    # itss = number of Successive Substitution iterations to perform
-    # second_order = wheter to solve the gibbs energy minimization using the analycal hessian or not
-    #reduced = if the model has been striped of nonzero values
-    # out = phase x composition, phase y composition, phase split fraction
-    #reduce model
+
     if !reduced
         model_full,z_full = model,z
         model, z_nonzero = index_reduction(model_full,z_full)
