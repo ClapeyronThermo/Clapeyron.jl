@@ -281,7 +281,7 @@ end
         (Ta,vla,vva,xa) = dew_temperature(system2,p,y0,FugDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
         @test Ta  ≈ Tres2 rtol = 1E-6
         @test xa[3] == 0.0
-        (Tb,vlb,vvb,xb) = dew_temperature(model,p,y0,ChemPotDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
+        (Tb,vlb,vvb,xb) = dew_temperature(system2,p,y0,ChemPotDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
         @test Tb  ≈ Tres2 rtol = 1E-6
         @test xa[3] == 0.0
     end

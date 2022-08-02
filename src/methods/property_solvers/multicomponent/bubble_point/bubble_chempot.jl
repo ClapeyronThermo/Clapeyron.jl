@@ -95,6 +95,11 @@ function Obj_bubble_pressure(model::EoSModel, model_y, F, T, v_l, v_v, x, y,ts,p
     return μp_equality(model,model_y ,F, T, v_l, v_v, x, FractionVector(y),ts,ps,_view)
 end
 
+#used by LLE_pressure
+function Obj_bubble_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
+    return Obj_bubble_pressure(model, nothing, F, T, v_l, v_v, x, y,ts,ps,nothing)
+end
+
 
 struct ChemPotBubbleTemperature{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -191,6 +196,11 @@ function Obj_bubble_temperature(model::EoSModel,model_y, F, p, T, v_l, v_v, x, y
     F = μp_equality(model::EoSModel, model_y, F, T, v_l, v_v, x, FractionVector(y),ts,ps,_view)
     F[end] = (pressure(model,v_l,T,x) - p)/ps
     return F
+end
+
+#used by LLE_temperature
+function Obj_bubble_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ts,ps)
+    return Obj_bubble_temperature(model,nothing, F, p, T, v_l, v_v, x, y,ts,ps,nothing)
 end
 
 export ChemPotBubblePressure, ChemPotBubbleTemperature
