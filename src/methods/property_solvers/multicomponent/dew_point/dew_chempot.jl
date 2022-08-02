@@ -11,6 +11,7 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `max_iters = 10000`: optional, maximum number of iterations
+- `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
 """
 struct ChemPotDewPressure{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -65,24 +66,31 @@ end
 
 function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
     _,vl,vv,x0 = dew_pressure_init(model,T,y,method.vol0,method.p0,method.x0)
+    if !isnothing(method.noncondensables)
+        condensables = [!in(x,method.noncondensables) for x in model.components]
+        model_x,condensables = index_reduction(model,condensables)
+        x0 = x0[condensables]
+        ts = T_scales(model_x)
+    else
+        condensables = fill(true,length(model))
+        model_x = nothing
+        ts = T_scales(model)
+    end
     v0 = vcat(log10(vl),log10(vv),x0[1:end-1])
-    model_r,y_r = model,y
-    ts = T_scales(model_r)
-    pmix = p_scale(model_r,y_r)
-    f!(F,z) = Obj_dew_pressure(model_r, F, T, exp10(z[1]), exp10(z[2]), z[3:end],y_r,ts,pmix)
+    pmix = p_scale(model,y)
+    f!(F,z) = Obj_dew_pressure(model,model_x, F, T, exp10(z[1]), exp10(z[2]), z[3:end],y,ts,pmix,condensables)
     r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     v_l = exp10(sol[1])
     v_v = exp10(sol[2])
     x_r = FractionVector(sol[3:end])
-    P_sat = pressure(model_r,v_v,T,y_r)
-    x = zeros(length(model))
-    x .= x_r
+    P_sat = pressure(model,v_v,T,y)
+    x = index_expansion(collect(x_r),condensables)
     return (P_sat, v_l, v_v, x)
 end
 
-function Obj_dew_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
-    return μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), y ,ts,ps)
+function Obj_dew_pressure(model::EoSModel,model_x, F, T, v_l, v_v, x, y,ts,ps,_view)
+    return μp_equality(model,model_x, F, T, v_v, v_l, y,FractionVector(x) ,ts,ps,_view)
 end
 
 """
@@ -98,6 +106,7 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `max_iters = 10000`: optional, maximum number of iterations
+- `noncondensables = nothing`: optional, Vector of strings containing non condensable compounds. those will be set to zero on the liquid phase.
 """
 struct ChemPotDewTemperature{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -152,24 +161,31 @@ end
 
 function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
     T0,vl,vv,x0 = dew_temperature_init(model,p,y,method.vol0,method.T0,method.x0)
+    if !isnothing(method.noncondensables)
+        condensables = [!in(x,method.noncondensables) for x in model.components]
+        model_x,condensables = index_reduction(model,condensables)
+        x0 = x0[condensables]
+        ts = T_scales(model_x)
+    else
+        condensables = fill(true,length(model))
+        model_x = nothing
+        ts = T_scales(model)
+    end
     v0 = vcat(T0,log10(vl),log10(vv),x0[1:end-1])
-    model_r,y_r = model,y
-    ts = T_scales(model_r)
-    pmix = p_scale(model_r,y_r)
-    f!(F,z) = Obj_dew_temperature(model_r, F, p, z[1], exp10(z[2]), exp10(z[3]), z[4:end],y_r,ts,pmix)
+    pmix = p_scale(model,y)
+    f!(F,z) = Obj_dew_temperature(model,model_x, F, p, z[1], exp10(z[2]), exp10(z[3]), z[4:end],y, ts, pmix, condensables)
     r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     T   = sol[1]
     v_l = exp10(sol[2])
     v_v = exp10(sol[3])
     x_r = FractionVector(sol[4:end])
-    x = zeros(length(model))
-    x .= x_r
+    x = index_expansion(x_r,condensables)
     return T, v_l, v_v, x
 end
 
-function Obj_dew_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ts,ps)
-    F = μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), y ,ts,ps)
+function Obj_dew_temperature(model::EoSModel,model_x, F, p, T, v_l, v_v, x, y, ts, ps, _view)
+    F = μp_equality(model, model_x, F, T, v_v, v_l, y, FractionVector(x), ts, ps, _view)
     F[end] = (pressure(model,v_v,T,y) - p)/ps
     return F
 end

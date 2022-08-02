@@ -48,6 +48,33 @@ function μp_equality(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     return F
 end
 
+#non-condensable/non-volatile version
+function μp_equality(model_long::EoSModel,model_short::EoSModel, F, T, v_long, v_short, x_long, x_short,ts_short,ps_long,short_view)
+    n_short = length(x_short)
+    n_long = length(x_long)
+    μ_long = similar(F,n_long)
+    μ_long = VT_chemical_potential!(μ_long,model_long,v_long,T,x_long)
+    μ_long_view = @view(μ_long[short_view])
+    for i in 1:n_short
+        F[i] = μ_long_view[i]
+    end
+    μ_short = resize!(μ_long,n_short)
+    μ_short = VT_chemical_potential!(μ_short,model_short,v_short,T,x_short)
+    for i in 1:n_short
+        μlong_i = F[i]
+        Δμ = (μlong_i -μ_short[i])/(R̄*ts_short[i])
+        F[i] = Δμ
+    end
+    p_long = pressure(model_long,v_long,T,x_long)
+    p_short = pressure(model_short,v_short,T,x_short)
+    F[n_short+1] = (p_long-p_short)/ps_long
+    return F
+end
+
+function μp_equality(model::EoSModel,::Nothing, F, T, v_l, v_v, x, y,ts,ps,_view)
+    return μp_equality(model,F,T,v_l,v_v,x,y,ts,ps)
+end
+
 function VT_chemical_potential!(result,model,V,T,z)
     fun(x) = eos(model,V,T,x)
     return ForwardDiff.gradient!(result,fun,z)

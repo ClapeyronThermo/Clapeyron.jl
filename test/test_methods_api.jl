@@ -254,36 +254,36 @@ end
         (pa,vla,vva,ya) = bubble_pressure(system2,T,x0,FugBubblePressure(y0 = y0,p0 = 1e5,nonvolatiles = ["decane"]))
         @test pa  ≈ pres1 rtol = 1E-6
         @test ya[4] == 0.0
-        #(pb,vlb,vvb,yb) = bubble_pressure(system2,T,x0,ChemPotBubblePressure(y0 = y0,p0 = 1e5,nonvolatiles = ["decane"]))
-        #@test pa  ≈ pres1 rtol = 1E-6
-        #@test ya[4] == 0.0
+        (pb,vlb,vvb,yb) = bubble_pressure(system2,T,x0,ChemPotBubblePressure(y0 = y0,p0 = 1e5,nonvolatiles = ["decane"]))
+        @test pa  ≈ pres1 rtol = 1E-6
+        @test ya[4] == 0.0
     end
 
     @testset "bubble temperature - nonvolatiles" begin
         (Ta,vla,vva,ya) = bubble_temperature(system2,p,x0,FugBubbleTemperature(y0 = y0,T0 = T,nonvolatiles = ["decane"]))
         @test Ta  ≈ Tres1 rtol = 1E-6
         @test ya[4] == 0.0
-        #(Tb,vlb,vvb,yb) = bubble_temperature(system2,p,x0,ChemPotBubbleTemperature(y0 = y0,T0 = T,nonvolatiles = ["decane"]))
-        #@test Tb  ≈ Tres1 rtol = 1E-6
-        #@test yb[4] == 0.0
+        (Tb,vlb,vvb,yb) = bubble_temperature(system2,p,x0,ChemPotBubbleTemperature(y0 = y0,T0 = T,nonvolatiles = ["decane"]))
+        @test Tb  ≈ Tres1 rtol = 1E-6
+        @test yb[4] == 0.0
     end
 
     @testset "dew pressure - noncondensables" begin
         (pa,vla,vva,xa) = dew_pressure(system2,T,y0,FugDewPressure(noncondensables = ["methane"],p0 = p,x0 = x0))
         @test pa  ≈ pres2 rtol = 1E-6
         @test xa[3] == 0.0
-        #(pb,vlb,vvb,xb) = dew_pressure(system2,T,y0,ChemPotDewPressure(noncondensables = ["methane"],p0 = p,x0 = x0))
-        #@test pb  ≈ pres2 rtol = 1E-6
-        #@test xa[3] == 0.0
+        (pb,vlb,vvb,xb) = dew_pressure(system2,T,y0,ChemPotDewPressure(noncondensables = ["methane"],p0 = p,x0 = x0))
+        @test pb  ≈ pres2 rtol = 1E-6
+        @test xa[3] == 0.0
     end
 
     @testset "dew temperature - noncondensables" begin
         (Ta,vla,vva,xa) = dew_temperature(system2,p,y0,FugDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
         @test Ta  ≈ Tres2 rtol = 1E-6
         @test xa[3] == 0.0
-        #(Tb,vlb,vvb,xb) = dew_temperature(model,p,y0,ChemPotDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
-        #@test Tb  ≈ Tres2 rtol = 1E-6
-        #@test xa[3] == 0.0
+        (Tb,vlb,vvb,xb) = dew_temperature(model,p,y0,ChemPotDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
+        @test Tb  ≈ Tres2 rtol = 1E-6
+        @test xa[3] == 0.0
     end
 
 end

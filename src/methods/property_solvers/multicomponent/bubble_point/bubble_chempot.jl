@@ -12,6 +12,7 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `max_iters = 10000`: optional, maximum number of iterations
+- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
 """
 struct ChemPotBubblePressure{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
@@ -66,26 +67,32 @@ end
 
 function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressure)
     p0,vl,vv,y0 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0)
-    v0 = vcat(log10(vl),log10(vv),y0[1:end-1])
-    #xcache = zeros(eltype(x0),len)
-    len = length(v0)
-    Fcache = zeros(eltype(v0),len)
-    model_r,x_r = model,x
-    ts = T_scales(model_r,x_r)
-    pmix = p_scale(model_r,x_r)
-    f!(F,z) = Obj_bubble_pressure(model, F, T, exp10(z[1]),exp10(z[2]),x,z[3:end],ts,pmix)
+    if !isnothing(method.nonvolatiles)
+        volatiles = [!in(x,method.nonvolatiles) for x in model.components]
+        model_y,volatiles = index_reduction(model,volatiles)
+        y0 = y0[volatiles]
+        ts = T_scales(model_y,y0)
+    else
+        volatiles = fill(true,length(model))
+        model_y = nothing
+        ts = T_scales(model)
+    end
+    v0 = vcat(log10(vl),log10(vv),y0[1:end-1])    
+    pmix = p_scale(model,x)
+    f!(F,z) = Obj_bubble_pressure(model,model_y, F, T, exp10(z[1]),exp10(z[2]),x,z[3:end],ts,pmix,volatiles)
     r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
     v_l = exp10(sol[1])
     v_v = exp10(sol[2])
     y = FractionVector(sol[3:end])
-    P_sat = pressure(model,v_l,T,x_r)
+    y = index_expansion(collect(y),volatiles)
+    P_sat = pressure(model,v_l,T,x)
     return (P_sat, v_l, v_v, y)
 end
 
 
-function Obj_bubble_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
-    return μp_equality(model::EoSModel, F, T, v_l, v_v, x, FractionVector(y),ts,ps)
+function Obj_bubble_pressure(model::EoSModel, model_y, F, T, v_l, v_v, x, y,ts,ps,_view)
+    return μp_equality(model,model_y ,F, T, v_l, v_v, x, FractionVector(y),ts,ps,_view)
 end
 
 
@@ -113,6 +120,7 @@ Inputs:
 - `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
 - `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
 - `max_iters = 10000`: optional, maximum number of iterations
+- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
 """
 function ChemPotBubbleTemperature(;vol0 = nothing,
     T0 = nothing,
@@ -155,28 +163,32 @@ function ChemPotBubbleTemperature(;vol0 = nothing,
 end
 
 function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemperature)
-    model_r,x_r = model,x
-    #x_r = x[idx_r]
-    ts = T_scales(model_r)
-    pmix = p_scale(model_r,x_r)
     T0,vl,vv,y0 = bubble_temperature_init(model,p,x,method.vol0,method.T0,method.y0)
-    v0 = vcat(T0,log10(vl),log10(vv),y0[1:end-1])
-    len = length(v0)
-    f!(F,z) = Obj_bubble_temperature(model_r, F, p, z[1], exp10(z[2]), exp10(z[3]), x_r, z[4:end],ts,pmix)
+    if !isnothing(method.nonvolatiles)
+        volatiles = [!in(x,method.nonvolatiles) for x in model.components]
+        model_y,volatiles = index_reduction(model,volatiles)
+        y0 = y0[volatiles]
+        ts = T_scales(model_y,y0)
+    else
+        volatiles = fill(true,length(model))
+        model_y = nothing
+        ts = T_scales(model)
+    end
+    v0 = vcat(T0,log10(vl),log10(vv),y0[1:end-1])    
+    pmix = p_scale(model,x)
+    f!(F,z) = Obj_bubble_temperature(model,model_y, F, p, z[1], exp10(z[2]), exp10(z[3]), x, z[4:end],ts,pmix,volatiles)
     r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
     T   = sol[1]
     v_l = exp10(sol[2])
     v_v = exp10(sol[3])
     y_r = FractionVector(sol[4:end])
-    y = zeros(length(model))
-    y = y_r
-    #y[idx_r] = y_r
+    y = index_expansion(y_r,volatiles)
     return T, v_l, v_v, y
 end
 
-function Obj_bubble_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ts,ps)
-    F = μp_equality(model::EoSModel, F, T, v_l, v_v, x, FractionVector(y),ts,ps)
+function Obj_bubble_temperature(model::EoSModel,model_y, F, p, T, v_l, v_v, x, y,ts,ps,_view)
+    F = μp_equality(model::EoSModel, model_y, F, T, v_l, v_v, x, FractionVector(y),ts,ps,_view)
     F[end] = (pressure(model,v_l,T,x) - p)/ps
     return F
 end
