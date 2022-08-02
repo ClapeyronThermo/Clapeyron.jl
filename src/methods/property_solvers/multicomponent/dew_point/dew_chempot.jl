@@ -1,3 +1,17 @@
+"""
+    ChemPotDewPressure(kwargs...)  
+
+Function to compute [`dew_pressure`](@ref) via chemical potentials. 
+It directly solves the equality of chemical potentials system of equations.
+
+Inputs:
+- `x0 = nothing`: optional, initial guess for the liquid phase composition
+- `p0 = nothing`: optional, initial guess for the dew pressure [`Pa`]
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
+- `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
+- `max_iters = 10000`: optional, maximum number of iterations
+"""
 struct ChemPotDewPressure{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
     p0::Union{Nothing,T}
@@ -71,6 +85,20 @@ function Obj_dew_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     return μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), y ,ts,ps)
 end
 
+"""
+    ChemPotDewTemperature(kwargs...)  
+
+Function to compute [`temperature`](@ref) via chemical potentials. 
+It directly solves the equality of chemical potentials system of equations.
+
+Inputs:
+- `x0 = nothing`: optional, initial guess for the liquid phase composition
+- `T0  =nothing`: optional, initial guess for the dew temperature [`K`]
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
+- `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
+- `max_iters = 10000`: optional, maximum number of iterations
+"""
 struct ChemPotDewTemperature{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
     T0::Union{Nothing,T}

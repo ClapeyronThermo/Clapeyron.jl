@@ -8,7 +8,7 @@ system of equations via fugacity coefficients.
 Inputs:
 model: equation of state model
 y: vapor phase composition
-T: temperature ['K']
+T: temperature [`K`]
 vol_cache: array used to update the phases' volumes
 
 Returns: NLSolvers.NEqProblem
@@ -104,23 +104,23 @@ iterations, the system is solved using a multidimensional non-linear
 systems of equations.
 
 Inputs:
-- model: equation of state model
-- T: dew temperature ['K']
-- y: vapor phase composition
-- x0: initial guess for the liquid phase composition
-- p0: initial guess for the dew pressure ['Pa']
-- vol0: optional, initial guesses for the liquid and vapor phase volumes
-- itmax_newton: optional, number of iterations to update the pressure using newton's method
-- itmax_ss: optional, number of iterations to update the liquid phase composition using successive substitution
-- tol_x: optional, tolerance to stop successive substitution cycle
-- tol_p: optional, tolerance to stop newton cycle
-- tol_of: optional, tolerance to check if the objective function is zero.
+- `model`: equation of state model
+- `T`: dew temperature [`K`]
+- `y`: vapor phase composition
+- `x0`: initial guess for the liquid phase composition
+- `p0`: initial guess for the dew pressure [`Pa`]
+- `vol0`: optional, initial guesses for the liquid and vapor phase volumes
+- `itmax_newton`: optional, number of iterations to update the pressure using newton's method
+- `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
+- `tol_x`: optional, tolerance to stop successive substitution cycle
+- `tol_p`: optional, tolerance to stop newton cycle
+- `tol_of`: optional, tolerance to check if the objective function is zero.
 
 Returns:
-- p: dew pressure
-- volx: saturared liquid volume
-- voly: saturared vapor volume
-- x: saturated liquid composition
+- `p`: dew pressure
+- `volx`: saturared liquid volume
+- `voly`: saturared vapor volume
+- `x`: saturated liquid composition
 """
 function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
                              itmax_newton = 10, itmax_ss = 5, tol_x = 1e-8,
@@ -208,7 +208,25 @@ function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
 
      return p, volx, voly, x
 end
+"""
+    FugDewPressure(kwargs...)
 
+Method to compute [`dew_pressure`](@ref) via fugacity coefficients. First it uses
+successive substitution to update the phase composition and a outer newtown
+loop to update the pressure. If no convergence is reached after `itmax_newton`
+iterations, the system is solved using a multidimensional non-linear
+system of equations.
+
+Inputs:
+- `x0 = nothing`: optional, initial guess for the liquid phase composition
+- `p0 = nothing`: optional, initial guess for the dew pressure [`Pa`]
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `itmax_newton = 10`: optional, number of iterations to update the pressure using newton's method
+- `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
+- `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
+- `tol_p = 1e-8`: optional, tolerance to stop newton cycle
+- `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
+"""
 struct FugDewPressure{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
     p0::Union{Nothing,T}
@@ -224,6 +242,7 @@ struct FugDewPressure{T} <: DewPointMethod
     tol_p::Float64
     tol_of::Float64
 end
+
 
 function FugDewPressure(;vol0 = nothing,
                                 p0 = nothing,
@@ -301,7 +320,7 @@ system of equations via fugacity coefficients.
 Inputs:
 model: equation of state model
 y: vapor phase composition
-P: pressure ['Pa']
+P: pressure [`Pa`]
 vol_cache: array used to update the phases' volumes
 
 
@@ -387,7 +406,7 @@ function OF_dewTx!(model, y, p, vol_cache)
 end
 
 """
-dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothing),
+    dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothing),
                              itmax_newton = 10, itmax_ss = 5, tol_x = 1e-8,
                              tol_T = 1e-8, tol_of = 1e-8)
 
@@ -395,28 +414,27 @@ Function to compute dew temperature via fugacity coefficients. First it uses
 successive substitution to update the phase composition and a outer newtown
 loop to update the temperature. If no convergence is reached after
 itmax_newton iterations, the system is solved using a multidimensional
-non-linear systems of equations.
+non-linear system of equations.
 
 Inputs:
 model: equation of state model
-P: pressure ['Pa']
-y: vapor phase composition
-x0: initial guess for the liquid phase composition
-T0: initial guess for the dew temperature ['K']
-vol0: optional, initial guesses for the liquid and vapor phase volumes
-itmax_newton: optional, number of iterations to update the temperature using newton's method
-itmax_ss: optional, number of iterations to update the liquid phase composition using successive substitution
-tol_x: optional, tolerance to stop successive substitution cycle
-tol_T: optional, tolerance to stop newton cycle
-tol_of: optional, tolerance to check if the objective function is zero.
+`P`: pressure [`Pa`]
+`y`: vapor phase composition
+`x0`: initial guess for the liquid phase composition
+`T0`: initial guess for the dew temperature [`K`]
+`vol0`: optional, initial guesses for the liquid and vapor phase volumes
+`itmax_newton`: optional, number of iterations to update the temperature using newton's method
+`itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
+`tol_x`: optional, tolerance to stop successive substitution cycle
+`tol_T`: optional, tolerance to stop newton cycle
+`tol_of`: optional, tolerance to check if the objective function is zero.
 
 Returns:
-T: dew temperature
-volx: saturared liquid volume
-voly: saturared vapor volume
-x: saturated liquid composition
+`T`: dew temperature
+`volx`: saturared liquid volume
+`voly`: saturared vapor volume
+`x`: saturated liquid composition
 """
-
 function dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothing),
                              itmax_newton = 10, itmax_ss = 5, tol_x = 1e-8,
                              tol_T = 1e-8, tol_of = 1e-8)
@@ -505,6 +523,25 @@ function dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothin
     return T, volx, voly, x
 end
 
+"""
+    FugDewTemperature(kwargs...)
+
+Method to compute [`dew_temperature`](@ref) via fugacity coefficients. First it uses
+successive substitution to update the phase composition and a outer newtown
+loop to update the temperature. If no convergence is reached after
+`itmax_newton` iterations, the system is solved using a multidimensional
+non-linear system of equations.
+
+Inputs:
+`x0 = nothing`: optional, initial guess for the liquid phase composition
+`T0 = nothing`: optional, initial guess for the dew temperature [`K`]
+`vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+`itmax_newton = 10`: optional, number of iterations to update the temperature using newton's method
+`itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
+`tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
+`tol_T = 1e-8`: optional, tolerance to stop newton cycle
+`tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
+"""
 struct FugDewTemperature{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
     T0::Union{Nothing,T}

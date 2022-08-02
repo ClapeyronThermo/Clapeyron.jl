@@ -1,4 +1,18 @@
 ## Bubble pressure solver
+"""
+    ChemPotBubblePressure(kwargs...)  
+
+Function to compute [`bubble_pressure`](@ref) via chemical potentials. 
+It directly solves the equality of chemical potentials system of equations.
+
+Inputs:
+- `y0 = nothing`: optional, initial guess for the vapor phase composition
+- `p0 = nothing`: optional, initial guess for the bubble pressure [`Pa`]
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
+- `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
+- `max_iters = 10000`: optional, maximum number of iterations
+"""
 struct ChemPotBubblePressure{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
     p0::Union{Nothing,T}
@@ -86,6 +100,20 @@ struct ChemPotBubbleTemperature{T} <: BubblePointMethod
     max_iters::Int
 end
 
+"""
+    ChemPotBubbleTemperature(kwargs...)  
+
+Function to compute [`bubble_temperature`](@ref) via chemical potentials. 
+It directly solves the equality of chemical potentials system of equations.
+
+Inputs:
+- `y = nothing`: optional, initial guess for the vapor phase composition.
+- `T0 = nothing`: optional, initial guess for the bubble temperature [`K`].
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
+- `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
+- `max_iters = 10000`: optional, maximum number of iterations
+"""
 function ChemPotBubbleTemperature(;vol0 = nothing,
     T0 = nothing,
     y0 = nothing,

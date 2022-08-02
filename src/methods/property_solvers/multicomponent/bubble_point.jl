@@ -115,14 +115,16 @@ function bubble_pressure_init(model,T,x,vol0,p0,y0)
 end
 
 """
-    bubble_pressure(model::EoSModel, T, x; v0 = x0_bubble_pressure(model,T,x))
+    bubble_pressure(model::EoSModel, T, x, method = ChemPotBubblePressure())
 
-calculates the bubble pressure and properties at a given temperature.
+Calculates the bubble pressure and properties at a given temperature.
 Returns a tuple, containing:
 - Bubble Pressure `[Pa]`
 - liquid volume at Bubble Point [`m³`]
 - vapour volume at Bubble Point [`m³`]
 - Gas composition at Bubble Point
+
+By default, uses equality of chemical potentials, via [`ChemPotBubblePressure`](@ref)
 """
 function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
     x = x/sum(x)
@@ -245,12 +247,14 @@ end
 """
     bubble_temperature(model::EoSModel, p, x,method::BubblePointMethod = ChemPotBubbleTemperature())
 
-calculates the bubble temperature and properties at a given pressure.
+Calculates the bubble temperature and properties at a given pressure.
 Returns a tuple, containing:
 - Bubble Temperature `[K]`
 - liquid volume at Bubble Point [`m³`]
 - vapour volume at Bubble Point [`m³`]
 - Gas composition at Bubble Point
+
+By default, uses equality of chemical potentials, via [`ChemPotBubbleTemperature`](@ref)
 """
 function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
     x = x/sum(x)

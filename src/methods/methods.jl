@@ -3,6 +3,26 @@
 
 Abstract type for all thermodynamic methods.
 
+normally, a thermodynamic method has the form: `property(model,state..,method::ThermodynamicMethod)`.
+All methods used in this way subtype `ThermodynamicMethod`.
+
+## Examples
+Saturation pressure:
+```julia
+model = PR(["water"])
+Tsat = 373.15
+saturation_pressure(model,Tsat) #using default method (chemical potential with volume base)
+saturation_pressure(model,Tsat,SuperAncSaturation()) #solve using cubic superancilliary
+```
+
+Bubble point pressure
+```julia
+model = PCSAFT(["methanol","cyclohexane"])
+T = 313.15
+z = [0.5,0.5]
+bubble_pressure(model,T,z) #using default method (chemical potential equality)
+bubble_pressure(model,T,z,FugBubblePressure(y0 =  = [0.6,0.4], p0 = 5e4)) #using isofugacity criteria with starting points
+```
 """
 abstract type ThermodynamicMethod end
 

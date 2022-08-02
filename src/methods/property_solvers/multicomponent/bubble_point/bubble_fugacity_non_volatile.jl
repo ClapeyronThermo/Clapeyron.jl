@@ -7,7 +7,7 @@ system of equations via fugacity coefficients.
 Inputs:
 model: equation of state model
 x: liquid phase composition
-T: temperature ['K']
+T: temperature [`K`]
 y: vapor composition array
 vol_cache: array used to update the phases' volumes
 volatile: array, bools of volatile molecules
@@ -108,10 +108,10 @@ systems of equations.
 
 Inputs:
 model: equation of state model
-T: bubble temperature ['K']
+T: bubble temperature [`K`]
 x: liquid phase composition
 y0: initial guess for the vapor phase composition
-p0: initial guess for the bubble pressure ['Pa']
+p0: initial guess for the bubble pressure [`Pa`]
 vol0: optional, initial guesses for the liquid and vapor phase volumes
 itmax_newton: optional, number of iterations to update the pressure using newton's method
 itmax_ss: optional, number of iterations to update the liquid phase composition using successive substitution
@@ -247,7 +247,7 @@ system of equations via fugacity coefficients.
 Inputs:
 model: equation of state model
 y: vapor phase composition
-p: pressure ['Pa']
+p: pressure [`Pa`]
 y: vapor composition array
 vol_cache: array used to update the phases' volumes
 volatile: array, bools of volatile molecules
@@ -352,10 +352,10 @@ non-linear systems of equations.
 
 Inputs:
 model: equation of state model
-P: pressure ['Pa']
+P: pressure [`Pa`]
 x: liquid phase composition
 y: initial guess for the vapor phase composition
-T0: initial guess for the bubble temperature ['K']
+T0: initial guess for the bubble temperature [`K`]
 vol0: optional, initial guesses for the liquid and vapor phase volumes
 itmax_newton: optional, number of iterations to update the temperature using newton's method
 itmax_ss: optional, number of iterations to update the liquid phase composition using successive substitution

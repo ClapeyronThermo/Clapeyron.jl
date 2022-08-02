@@ -1,5 +1,5 @@
 """
-OF_bubblepy!(model::EoSModel, x, T, vol_cache)
+    OF_bubblepy!(model::EoSModel, x, T, vol_cache)
 
 Objective function to compute bubble pressure using a multidimensional
 system of equations via fugacity coefficients.
@@ -7,7 +7,7 @@ system of equations via fugacity coefficients.
 Inputs:
 model: equation of state model
 x: liquid phase composition
-T: temperature ['K']
+T: temperature [`K`]
 vol_cache: array used to update the phases' volumes
 
 Returns: NLSolvers.NEqProblem
@@ -103,22 +103,22 @@ systems of equations.
 
 Inputs:
 model: equation of state model
-- T: bubble temperature ['K']
-- x: liquid phase composition
-- y0: initial guess for the vapor phase composition
-- p0: initial guess for the bubble pressure ['Pa']
-- vol0: optional, initial guesses for the liquid and vapor phase volumes
-- itmax_newton: optional, number of iterations to update the pressure using newton's method
-- itmax_ss: optional, number of iterations to update the liquid phase composition using successive substitution
-- tol_x: optional, tolerance to stop successive substitution cycle
-- tol_p: optional, tolerance to stop newton cycle
-- tol_of: optional, tolerance to check if the objective function is zero.
+- `T`: bubble temperature [`K`]
+- `x`: liquid phase composition
+- `y0`: initial guess for the vapor phase composition
+- `p0`: initial guess for the bubble pressure [`Pa`]
+- `vol0`: optional, initial guesses for the liquid and vapor phase volumes
+- `itmax_newton`: optional, number of iterations to update the pressure using newton's method
+- `itmax_ss`: optional, number of iterations to update the liquid phase composition using successive substitution
+- `tol_x`: optional, tolerance to stop successive substitution cycle
+- `tol_p`: optional, tolerance to stop newton cycle
+- `tol_of`: optional, tolerance to check if the objective function is zero.
 
 Returns:
-p: bubble pressure
-volx: saturared liquid volume
-voly: saturared vapor volume
-y: saturated vapor composition
+`p`: bubble pressure
+`volx`: saturared liquid volume
+`voly`: saturared vapor volume
+`y`: saturated vapor composition
 """
 function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothing),
                          itmax_newton = 10, itmax_ss = 5, tol_y = 1e-8,
@@ -207,6 +207,26 @@ function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothin
 
 end
 
+"""
+    FugBubblePressure(kwargs...)  
+
+Function to compute [`bubble_pressure`](@ref) via fugacity coefficients. First it uses
+successive substitution to update the phase composition and a outer newtown
+loop to update the pressure. If no convergence is reached after `itmax_newton`
+iterations, the system is solved using a multidimensional non-linear
+system of equations.
+
+Inputs:
+- `y0 = nothing`: optional, initial guess for the vapor phase composition
+- `p0 = nothing`: optional, initial guess for the bubble pressure [`Pa`]
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `itmax_newton = 10`: optional, number of iterations to update the pressure using newton's method
+- `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
+- `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
+- `tol_p = 1e-8`: optional, tolerance to stop newton cycle
+- `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
+- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
+"""
 struct FugBubblePressure{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
     p0::Union{Nothing,T}
@@ -298,7 +318,7 @@ system of equations via fugacity coefficients.
 Inputs:
 model: equation of state model
 y: vapor phase composition
-p: pressure ['Pa']
+p: pressure [`Pa`]
 vol_cache: array used to update the phases' volumes
 
 
@@ -396,10 +416,10 @@ non-linear systems of equations.
 
 Inputs:
 - model: equation of state model
-- P: pressure ['Pa']
+- P: pressure [`Pa`]
 - x: liquid phase composition
 - y: initial guess for the vapor phase composition
-- T0: initial guess for the bubble temperature ['K']
+- T0: initial guess for the bubble temperature [`K`]
 - vol0: optional, initial guesses for the liquid and vapor phase volumes
 - itmax_newton: optional, number of iterations to update the temperature using newton's method
 - itmax_ss: optional, number of iterations to update the liquid phase composition using successive substitution
@@ -498,21 +518,22 @@ end
 """
     FugBubbleTemperature(kwargs...)
 
-Compute bubble temperature via fugacity coefficients. First it uses
+Method to compute [`bubble_temperature`](@ref) via fugacity coefficients. First it uses
 successive substitution to update the phase composition and a outer newtown
 loop to update the temperature. If no convergence is reached after
-itmax_newton iterations, the system is solved using a multidimensional
-non-linear systems of equations.
+`itmax_newton` iterations, the system is solved using a multidimensional
+non-linear system of equations.
 
 Inputs:
-- `y = nothing`: initial guess for the vapor phase composition.
-- `T0 = nothing`: initial guess for the bubble temperature [`K`].
+- `y = nothing`: optional, initial guess for the vapor phase composition.
+- `T0 = nothing`: optional, initial guess for the bubble temperature [`K`].
 - `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
 - `itmax_newton = 10`: optional, number of iterations to update the temperature using newton's method
 - `itmax_ss = 5`: optional, number of iterations to update the liquid phase composition using successive substitution
 - `tol_x = 1e-8`: optional, tolerance to stop successive substitution cycle
 - `tol_T = 1e-8`: optional, tolerance to stop newton cycle
 - `tol_of = 1e-8`: optional, tolerance to check if the objective function is zero.
+- `nonvolatiles = nothing`: optional, Vector of strings containing non volatile compounds. those will be set to zero on the vapour phase.
 """
 struct FugBubbleTemperature{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}

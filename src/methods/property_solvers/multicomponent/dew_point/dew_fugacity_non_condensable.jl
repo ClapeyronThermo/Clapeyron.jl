@@ -8,7 +8,7 @@ system of equations via fugacity coefficients.
 Inputs:
 model: equation of state model
 y: vapor phase composition
-T: temperature ['K']
+T: temperature [`K`]
 x: liquid composition array
 vol_cache: array used to update the phases' volumes
 condensable: array, bools of condensable molecules
@@ -111,10 +111,10 @@ systems of equations.
 
 Inputs:
 model: equation of state model
-T: dew temperature ['K']
+T: dew temperature [`K`]
 y: vapor phase composition
 x0: initial guess for the liquid phase composition
-p0: initial guess for the dew pressure ['Pa']
+p0: initial guess for the dew pressure [`Pa`]
 vol0: optional, initial guesses for the liquid and vapor phase volumes
 itmax_newton: optional, number of iterations to update the pressure using newton's method
 itmax_ss: optional, number of iterations to update the liquid phase composition using successive substitution
@@ -243,7 +243,7 @@ system of equations via fugacity coefficients.
 Inputs:
 model: equation of state model
 y: vapor phase composition
-P: pressure ['Pa']
+P: pressure [`Pa`]
 x: liquid composition array
 vol_cache: array used to update the phases' volumes
 condensable: array, bools of condensable molecules
@@ -345,10 +345,10 @@ non-linear systems of equations.
 
 Inputs:
 model: equation of state model
-P: pressure ['Pa']
+P: pressure [`Pa`]
 y: vapor phase composition
 x0: initial guess for the liquid phase composition
-T0: initial guess for the dew temperature ['K']
+T0: initial guess for the dew temperature [`K`]
 vol0: optional, initial guesses for the liquid and vapor phase volumes
 itmax_newton: optional, number of iterations to update the temperature using newton's method
 itmax_ss: optional, number of iterations to update the liquid phase composition using successive substitution
