@@ -136,9 +136,12 @@ function wilson_k_values(model::EoSModel,p,T,crit = nothing)
 end
 
 function bubbledew_check(vl,vv,zin,zout)
-    return !(isapprox(vl,vv) && isapprox(zin,zout))    
+    (isapprox(vl,vv) && isapprox(zin,zout)) && return false 
+    !all(isfinite,zout) && return false
+    !all(isfinite,(vl,vv)) && return false
+    return true
 end
-
+include("fugacity.jl")
 include("rachford_rice.jl")
 include("bubble_point.jl")
 include("dew_point.jl")

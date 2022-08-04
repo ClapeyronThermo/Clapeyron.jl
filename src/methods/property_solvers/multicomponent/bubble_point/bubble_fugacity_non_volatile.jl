@@ -146,19 +146,13 @@ function bubble_pressure_fug_volatile(model::EoSModel, T, x, y0, p0; vol0=(nothi
     OF = 1.
 
     # constructing non-volatile list
-    non_volatile = Bool.(zeros(nc))
-    non_volatiles_names_list = [x for x in non_volatile_list if x in model.components]
-    for i in 1:nc
-        component = model.components[i]
-        if component in non_volatiles_names_list
-            non_volatile[i] = true
-        end
-    end
-    volatile = .!non_volatile
-    """
+    volatile = [!in(x,non_volatile_list) for x in model.components]
+    non_volatile = .!volatile
+
+    #=
     # old api when using component index
     non_volatile[non_volatile_list] .= 1
-    """
+    =#
 
     for j in 1:itmax_newton
 
@@ -389,19 +383,12 @@ function bubble_temperature_fug_volatile(model::EoSModel, p, x, y0, T0; vol0=(no
     OF = 1.
 
     # constructing non-volatile list
-    non_volatile = Bool.(zeros(nc))
-    non_volatiles_names_list = [x for x in non_volatile_list if x in model.components]
-    for i in 1:nc
-        component = model.components[i]
-        if component in non_volatiles_names_list
-            non_volatile[i] = true
-        end
-    end
-    volatile = .!non_volatile
-    """
+    volatile = [!in(x,non_volatile_list) for x in model.components]
+    non_volatile = .!volatile
+    #=
     # old api when using component index
     non_volatile[non_volatile_list] .= 1
-    """
+    =#
 
 
     for j in 1:itmax_newton

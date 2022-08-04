@@ -13,82 +13,9 @@ vol_cache: array used to update the phases' volumes
 Returns: NLSolvers.NEqProblem
 """
 function OF_bubblepy!(model, x, T, vol_cache)
-# Objetive function to solve bubble point using multidimensional-Newton's method
-    function f!(F, inc)
-        volx, voly = vol_cache[:]
-        lnK = inc[1:end-1]
-        lnp = inc[end]
-        p = exp(lnp)
-
-        y = exp.(lnK) .* x
-
-        lnϕx, volx = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, voly = lnϕ(model, p, T, y, phase=:vapor, vol0=voly)
-
-        F[1:end-1] = lnK .+ lnϕy .- lnϕx
-        F[end] = sum(y .- x)
-
-        vol_cache[:] .= (volx, voly)
-        return F
-    end
-
-    function fj!(F,J,inc)
-        volx, voly = vol_cache[:]
-        lnK = inc[1:end-1]
-        lnp = inc[end]
-        K = exp.(lnK)
-        p = exp(lnp)
-
-        y = K .* x
-
-        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, phase=:vapor, vol0=voly)
-
-        F[1:end-1] = lnK .+ lnϕy .- lnϕx
-        F[end] = sum(y .- x)
-
-        J[diagind(J)] .= 1.
-        J[1:(end-1), 1:(end-1)] += (y .* ∂lnϕ∂ny)'
-        J[end, 1:(end-1)] = K .* x
-
-        J[1:(end-1), end] = p * (∂lnϕ∂Py .- ∂lnϕ∂Px)
-        J[end, end] = 0.
-        vol_cache[:] .= (volx, voly)
-        return F,J
-
-
-    end
-
-    function j!(J,inc)
-        volx, voly = vol_cache[:]
-        lnK = inc[1:end-1]
-        lnp = inc[end]
-        K = exp.(lnK)
-        p = exp(lnp)
-
-        y = K .* x
-
-        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, phase=:vapor, vol0=voly)
-
-        J[diagind(J)] .= 1.
-        J[1:(end-1), 1:(end-1)] += (y .* ∂lnϕ∂ny)'
-        J[end, 1:(end-1)] = K .* x
-
-        J[1:(end-1), end] = p * (∂lnϕ∂Py .- ∂lnϕ∂Px)
-        J[end, end] = 0.
-        vol_cache[:] .= (volx, voly)
-        return J
-
-    end
-
-    function jv!(inc)
-        return nothing
-    end
-
-    return Solvers.NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> Solvers.NLSolvers.NEqProblem
-
+   return generic_OF_fug(model,x, nothing, nothing, T, vol_cache,(:liquid,:vapor))
 end
+
 
 """
     bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothing),
@@ -186,7 +113,7 @@ function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothin
             break
         end
     end
-
+    
     if abs(OF) > tol_of
         lnK = lnϕx .- lnϕy
         inc0 = vcat(lnK, log(p))
@@ -202,7 +129,7 @@ function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothin
         volx, voly = vol_cache[:]
         # println("Second order method ", p, " ", y)
     end
-
+    #@show p,volx,voly,y
     return p, volx, voly, y
 
 end
@@ -326,81 +253,7 @@ Returns: NLSolvers.NEqProblem
 """
 function OF_bubbleTy!(model, x, p, vol_cache)
 # Objetive function to solve bubble point using multidimensional-Newton's method
-    function f!(F, inc)
-        volx, voly = vol_cache[:]
-        lnK = inc[1:end-1]
-        lnT = inc[end]
-        K = exp.(lnK)
-        T = exp(lnT)
-
-        y = K .* x
-
-        lnϕx, volx = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, voly = lnϕ(model, p, T, y, phase=:vapor, vol0=voly)
-
-        F[1:end-1] = lnK .+ lnϕy .- lnϕx
-        F[end] = sum(y .- x)
-
-        vol_cache[:] .= (volx, voly)
-        return F
-    end
-
-    function fj!(F,J,inc)
-        volx, voly = vol_cache[:]
-        lnK = inc[1:end-1]
-        lnT = inc[end]
-        K = exp.(lnK)
-        T = exp(lnT)
-
-        y = exp.(lnK) .* x
-
-        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=:vapor, vol0=voly)
-
-
-        F[1:end-1] = lnK .+ lnϕy .- lnϕx
-        F[end] = sum(y .- x)
-
-        J[diagind(J)] .= 1.
-        J[1:(end-1), 1:(end-1)] += (y .* ∂lnϕ∂ny)'
-        J[end, 1:(end-1)] = K.* x
-
-        J[1:(end-1), end] = T * (∂lnϕ∂Ty .- ∂lnϕ∂Tx)
-        J[end, end] = 0.
-        vol_cache[:] .= (volx, voly)
-        return F,J
-
-
-    end
-
-    function j!(J,inc)
-        volx, voly = vol_cache[:]
-        lnK = inc[1:end-1]
-        lnT = inc[end]
-        K = exp.(lnK)
-        T = exp(lnT)
-
-        y = exp.(lnK) .* x
-
-        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=:vapor, vol0=voly)
-
-        J[diagind(J)] .= 1.
-        J[1:(end-1), 1:(end-1)] += (y .* ∂lnϕ∂ny)'
-        J[end, 1:(end-1)] = K .* x
-
-        J[1:(end-1), end] = T * (∂lnϕ∂Ty .- ∂lnϕ∂Tx)
-        J[end, end] = 0.
-        vol_cache[:] .= (volx, voly)
-        return J
-
-    end
-
-    function jv!(inc)
-        return nothing
-    end
-
-    return Solvers.NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> Solvers.NLSolvers.NEqProblem
+   return generic_OF_fug(model,x, nothing, p, nothing, vol_cache,(:liquid,:vapor))
 end
 
 """

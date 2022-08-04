@@ -14,81 +14,7 @@ vol_cache: array used to update the phases' volumes
 Returns: NLSolvers.NEqProblem
 """
 function OF_dewPx!(model, y, T, vol_cache)
-
-    function f!(F, inc)
-        volx, voly = vol_cache[:]
-        lnK = inc[1:end-1]
-        lnp = inc[end]
-        K = exp.(lnK)
-        p = exp(lnp)
-
-        x = y./ K
-
-        lnϕx, volx = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, voly = lnϕ(model, p, T, y, phase=:vapor, vol0=voly)
-
-        F[1:end-1] = lnK .+ lnϕy .- lnϕx
-        F[end] = sum(y .- x)
-
-        vol_cache[:] .= (volx, voly)
-        return F
-    end
-
-    function fj!(F,J,inc)
-        volx, voly = vol_cache[:]
-        lnK = inc[1:end-1]
-        lnp = inc[end]
-        K = exp.(lnK)
-        p = exp(lnp)
-
-        x = y./ K
-
-        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=:vapor, vol0=voly)
-
-
-        F[1:end-1] = lnK .+ lnϕy .- lnϕx
-        F[end] = sum(y .- x)
-
-        J[diagind(J)] .= 1.
-        J[1:(end-1), 1:(end-1)] += (x .* ∂lnϕ∂nx)'
-        J[end, 1:(end-1)] = y ./ exp.(lnK)
-
-        J[1:(end-1), end] = p * (∂lnϕ∂Py .- ∂lnϕ∂Px)
-        J[end, end] = 0.
-        vol_cache[:] .= (volx, voly)
-        return F,J
-
-
-    end
-
-    function j!(J,inc)
-        volx, voly = vol_cache[:]
-        lnK = inc[1:end-1]
-        lnp = inc[end]
-        K = exp.(lnK)
-        p = exp(lnp)
-
-        x = y./ K
-
-        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=:vapor, vol0=voly)
-
-        J[diagind(J)] .= 1.
-        J[1:(end-1), 1:(end-1)] += (x .* ∂lnϕ∂nx)'
-        J[end, 1:(end-1)] = y ./ exp.(lnK)
-
-        J[1:(end-1), end] = p * (∂lnϕ∂Py .- ∂lnϕ∂Px)
-        J[end, end] = 0.
-        vol_cache[:] .= (volx, voly)
-        return J
-
-    end
-
-    function jv!(inc)
-        return nothing
-    end
-
+    return generic_OF_fug(model,nothing, y, nothing, T, vol_cache,(:liquid,:vapor))
     return Solvers.NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> Solvers.NLSolvers.NEqProblem
 end
 
@@ -191,19 +117,19 @@ function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
      # println(p, " ", volx, " ", voly, " ", x)
 
      if abs(OF) > tol_of
-         lnK = lnϕx .- lnϕy
-         inc0 = vcat(lnK, log(p))
-         vol_cache = [volx, voly]
-         problem = OF_dewPx!(model, y, T, vol_cache)
-         sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton()))
-         inc = Solvers.x_sol(sol)
-         lnK = inc[1:(end-1)]
-         lnp = inc[end]
+        lnK = lnϕx .- lnϕy
+        inc0 = vcat(lnK, log(p))
+        vol_cache = [volx, voly]
+        problem = OF_dewPx!(model, y, T, vol_cache)
+        sol = Solvers.nlsolve(problem, inc0, Solvers.LineSearch(Solvers.Newton()))
+        inc = Solvers.x_sol(sol)
+        lnK = inc[1:(end-1)]
+        lnp = inc[end]
 
-         x = y./ exp.(lnK)
-         p = exp(lnp)
-         volx, voly = vol_cache[:]
-         # println("Second order method ", p, " ", x, " ", volx, " ", voly)
+        x = y./ exp.(lnK)
+        p = exp(lnp)
+        volx, voly = vol_cache[:]
+        # println("Second order method ", p, " ", x, " ", volx, " ", voly)
      end
 
      return p, volx, voly, x
@@ -328,82 +254,7 @@ vol_cache: array used to update the phases' volumes
 Returns: NLSolvers.NEqProblem
 """
 function OF_dewTx!(model, y, p, vol_cache)
-
-    function f!(F, inc)
-        volx, voly = vol_cache[:]
-        lnK = inc[1:end-1]
-        lnT = inc[end]
-        K = exp.(lnK)
-        T = exp(lnT)
-
-        x = y./ K
-
-        lnϕx, volx = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, voly = lnϕ(model, p, T, y, phase=:vapor, vol0=voly)
-
-        F[1:end-1] = lnK .+ lnϕy .- lnϕx
-        F[end] = sum(y .- x)
-
-        vol_cache[:] .= (volx, voly)
-        return F
-    end
-
-    function fj!(F,J,inc)
-        volx, voly = vol_cache[:]
-        lnK = inc[1:end-1]
-        lnT = inc[end]
-        K = exp.(lnK)
-        T = exp(lnT)
-
-        x = y./ K
-
-        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=:vapor, vol0=voly)
-
-
-        F[1:end-1] = lnK .+ lnϕy .- lnϕx
-        F[end] = sum(y .- x)
-
-        J[diagind(J)] .= 1.
-        J[1:(end-1), 1:(end-1)] += (x .* ∂lnϕ∂nx)'
-        J[end, 1:(end-1)] = y ./ exp.(lnK)
-
-        J[1:(end-1), end] = T * (∂lnϕ∂Ty .- ∂lnϕ∂Tx)
-        J[end, end] = 0.
-        vol_cache[:] .= (volx, voly)
-        return F,J
-
-
-    end
-
-    function j!(J,inc)
-        volx, voly = vol_cache[:]
-        lnK = inc[1:end-1]
-        lnT = inc[end]
-        K = exp.(lnK)
-        T = exp(lnT)
-
-        x = y./ K
-
-        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=:vapor, vol0=voly)
-
-        J[diagind(J)] .= 1.
-        J[1:(end-1), 1:(end-1)] += (x .* ∂lnϕ∂nx)'
-        J[end, 1:(end-1)] = y ./ exp.(lnK)
-
-        J[1:(end-1), end] = T * (∂lnϕ∂Ty .- ∂lnϕ∂Tx)
-        J[end, end] = 0.
-        vol_cache[:] .= (volx, voly)
-        return J
-
-    end
-
-    function jv!(inc)
-        return nothing
-    end
-
-    return Solvers.NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> Solvers.NLSolvers.NEqProblem
+    return generic_OF_fug(model,nothing, y, p, nothing, vol_cache,(:liquid,:vapor))
 end
 
 """

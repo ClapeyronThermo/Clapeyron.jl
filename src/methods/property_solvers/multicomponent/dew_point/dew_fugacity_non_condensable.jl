@@ -148,15 +148,8 @@ function dew_pressure_fug_condensable(model::EoSModel, T, y, x0, p0; vol0=(nothi
      OF = 1.
 
      # constructing non-volatile list
-     non_condensable = Bool.(zeros(nc))
-     non_condensable_names_list = [x for x in non_condensable_list if x in model.components]
-     for i in 1:nc
-         component = model.components[i]
-         if component in non_condensable_names_list
-             non_condensable[i] = true
-         end
-     end
-     condensable = .!non_condensable
+     condensable = [!in(x,non_condensable_list) for x in model.components]
+     non_condensable = .!condensable
      """
      non_condensable[non_condensable_list] .= true
      """
@@ -383,18 +376,9 @@ function dew_temperature_fug_condensable(model::EoSModel, p, y, x0, T0; vol0=(no
      OF = 1.
 
      # constructing non-volatile list
-     non_condensable = Bool.(zeros(nc))
-     non_condensable_names_list = [x for x in non_condensable_list if x in model.components]
-     for i in 1:nc
-         component = model.components[i]
-         if component in non_condensable_names_list
-             non_condensable[i] = true
-         end
-     end
-     condensable = .!non_condensable
-     """
-     non_condensable[non_condensable_list] .= true
-     """
+     condensable = [!in(x,non_condensable_list) for x in model.components]
+     non_condensable = .!condensable
+
 
      for j in 1:itmax_newton
 
