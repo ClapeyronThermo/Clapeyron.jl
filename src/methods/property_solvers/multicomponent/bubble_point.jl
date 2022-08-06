@@ -279,7 +279,6 @@ end
 
 include("bubble_point/bubble_chempot.jl")
 include("bubble_point/bubble_fugacity.jl")
-include("bubble_point/bubble_fugacity_non_volatile.jl")
 
 #legacy
 function bubble_pressure(model::EoSModel,T,x;v0 = nothing)
