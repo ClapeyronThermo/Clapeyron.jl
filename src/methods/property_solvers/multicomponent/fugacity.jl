@@ -169,9 +169,8 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
         else
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(modelx, p, T, _x, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(modely, p, T, _y, phase=:vapor, vol0=voly)
-            ∂OF = sum(w.*(∂lnϕ∂Tx .- ∂lnϕ∂Ty))
             if _bubble
-                ∂OF = sum(w.*(∂lnϕ∂Tx[view] .- ∂lnϕ∂Ty))
+                ∂OF = sum(w.*(∂lnϕ∂Tx[_view] .- ∂lnϕ∂Ty))
             else
                 ∂OF = sum(w.*(∂lnϕ∂Tx .- ∂lnϕ∂Ty[_view]))
             end
