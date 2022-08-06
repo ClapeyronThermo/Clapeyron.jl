@@ -125,7 +125,6 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
         w .= x
         _x,_y = w,y
     end
-
     for j in 1:itmax_newton
         lnϕx, volx = lnϕ(modelx, p, T, _x, phase=:liquid, vol0=volx)
         lnϕy, voly = lnϕ(modely, p, T, _y, phase=:vapor, vol0=voly)
@@ -135,7 +134,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
             else
                 lnK .= lnϕx .- lnϕy[_view]
             end
-
+            
             K .= exp.(lnK)
             w_old .=  w
 
@@ -146,7 +145,6 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
                 w .= _y[_view] ./ K
                 w_calc .= w
             end
-
             w ./= sum(w)
             error = dnorm(w,w_old,Inf) #||x-x_old||∞
             if error < tol_xy
@@ -157,7 +155,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
             lnϕy, voly = lnϕ(modely, p, T, _y, phase=:vapor, vol0=voly)
 
         end
-
+       
         if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(modelx, p, T, _x, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(modely, p, T, _y, phase=:vapor, vol0=voly)
@@ -206,7 +204,7 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
             converged = true
             break
         end
-
+        
         if !isfinite(∂step) #error, fail early, the NaN propagation is handled upstream
             converged = true
             break

@@ -1,17 +1,18 @@
 """
     OF_bubblepy!(model::EoSModel,modely x, T, vol_cache)
-    OF_bubblepy!(modelx::EoSModel,modely::EoSModel x, T, vol_cache,_views)
+    OF_bubblepy!(modelx::EoSModel,modely::EoSModel x, T, vol_cache,volatile)
 
 Objective function to compute bubble pressure using a multidimensional
 system of equations via fugacity coefficients.
 
 Inputs:
-- `model`: liquid equation of state model
-- `modely`: vapour equation of state model, if any nonvolatile/noncondensable compounds are present
+- `model`: general equation of state model
+- `modelx`: liquid equation of state model
+- `modely`: vapour equation of state model, if any nonvolatile compounds are present
 - `x`: liquid phase composition
 - `T`: temperature [`K`]
 - `vol_cache`: array used to update the phases' volumes
-_ `_views`: component views, if any nonvolatile/noncondensable compounds are present
+_ `volatile`: volatile component indices, if any nonvolatile compounds are present
 
 Returns: NLSolvers.NEqProblem
 """
@@ -21,9 +22,8 @@ function OF_bubblepy!(model, x, T, vol_cache)
     return _fug_OF_neqsystem(model,x, nothing, nothing, T, vol_cache,true,true,(:liquid,:vapor))
 end
 
-function OF_bubblepy!(model,modely, x, T, vol_cache,_views)
-    #return OF_bubblepy_volatile!(model, x, T, zeros(length(x)), vol_cache, _views)
-    return _fug_OF_neqsystem(model, modely, x, nothing, nothing, T, vol_cache, true, true, (:liquid,:vapor), _views)
+function OF_bubblepy!(model,modely, x, T, vol_cache,volatile)
+    return _fug_OF_neqsystem(model, modely, x, nothing, nothing, T, vol_cache, true, true, (:liquid,:vapor), volatile)
 end
 
 """
@@ -71,6 +71,7 @@ function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothin
         volatiles = [!in(x,nonvolatiles) for x in model.components]
         model_y,volatiles = index_reduction(model,volatiles)
         y0 = y0[volatiles]
+        y0 = y0/sum(y0)
     else
         volatiles = fill(true,length(model))
         model_y = nothing
@@ -203,12 +204,13 @@ Objective function to compute bubble temperature using a multidimensional
 system of equations via fugacity coefficients.
 
 Inputs:
-- `model`: liquid equation of state model
-- `modely`: vapour equation of state model, if any nonvolatile/noncondensable compounds are present
+- `model`: general equation of state model
+- `modelx`: liquid equation of state model
+- `modely`: vapour equation of state model, if any nonvolatile compounds are present
 - `x`: liquid phase composition
 - `p`: pressure [`Pa`]
 - `vol_cache`: array used to update the phases' volumes
-_ `_views`: component views, if any nonvolatile/noncondensable compounds are present
+_ `volatile`: volatile component indices, if any nonvolatile compounds are present
 
 Returns: NLSolvers.NEqProblem
 """
@@ -218,8 +220,8 @@ function OF_bubbleTy!(model, x, p, vol_cache)
     return _fug_OF_neqsystem(model,x, nothing, p, nothing, vol_cache, true, false, (:liquid,:vapor))
 end
 
-function OF_bubbleTy!(model,modely, x, p, vol_cache,_views)
-    return _fug_OF_neqsystem(model, modely, x, nothing, p, nothing, vol_cache, true, false, (:liquid,:vapor), _views)
+function OF_bubbleTy!(model,modely, x, p, vol_cache,volatile)
+    return _fug_OF_neqsystem(model, modely, x, nothing, p, nothing, vol_cache, true, false, (:liquid,:vapor), volatile)
 end
 
 """
@@ -267,6 +269,7 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
         volatiles = [!in(x,nonvolatiles) for x in model.components]
         model_y,volatiles = index_reduction(model,volatiles)
         y0 = y0[volatiles]
+        y0 = y0/sum(y0)
     else
         volatiles = fill(true,length(model))
         model_y = nothing
