@@ -150,7 +150,6 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
             if error < tol_xy
                 break
             end
-
             lnϕx, volx = lnϕ(modelx, p, T, _x, phase=:liquid, vol0=volx)
             lnϕy, voly = lnϕ(modely, p, T, _y, phase=:vapor, vol0=voly)
 
@@ -330,7 +329,7 @@ function _select_xy(K,x,y,_bubble,_view)
     if _bubble
         return x, K .* x[_view]
     else
-        return y, K ./ y[_view]
+        return K ./ y[_view], y
     end
 end
 
@@ -342,6 +341,7 @@ function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel,_x, _y, _p, _T, vol
         K = exp.(lnK)
         p,T = _select_pT(inc,_p,_T,_pressure)
         x,y = _select_xy(K,_x,_y,_bubble,_view)
+
         lnϕx, volx = lnϕ(modelx, p, T, x, phase=_phase[1], vol0=volx)
         lnϕy, voly = lnϕ(modely, p, T, y, phase=_phase[2], vol0=voly)
 
@@ -358,11 +358,11 @@ function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel,_x, _y, _p, _T, vol
     end
 
     function fj!(F,J,inc)
-        volx, voly = vol_cache[:]
+        volx, voly = vol_cache
         lnK = inc[1:end-1]
         K = exp.(lnK)
         p,T = _select_pT(inc,_p,_T,_pressure)
-        x,y = _select_xy(K,_x,_y,_bubble,_view)
+        x,y = _select_xy(K,_x,_y,_bubble,_view)  
         J .= 0.0
         if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(modelx, p, T, x, phase=_phase[1], vol0=volx)

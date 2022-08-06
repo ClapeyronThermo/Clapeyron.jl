@@ -67,7 +67,7 @@ function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothin
     volx, voly = vol0
 
     #check if nonvolatiles are set
-    if !isnothing(nonvolatiles) || length(nonvolatiles) == 0
+    if !isnothing(nonvolatiles)
         volatiles = [!in(x,nonvolatiles) for x in model.components]
         model_y,volatiles = index_reduction(model,volatiles)
         y0 = y0[volatiles]
@@ -265,7 +265,7 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
     volx, voly = vol0
 
     #check if nonvolatiles are set
-    if !isnothing(nonvolatiles) || length(nonvolatiles) == 0
+    if !isnothing(nonvolatiles)
         volatiles = [!in(x,nonvolatiles) for x in model.components]
         model_y,volatiles = index_reduction(model,volatiles)
         y0 = y0[volatiles]

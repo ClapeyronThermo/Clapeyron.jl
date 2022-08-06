@@ -23,8 +23,8 @@ function OF_dewPx!(model, y, T, vol_cache)
     return _fug_OF_neqsystem(model, nothing, y, nothing, T, vol_cache, false, true, (:liquid,:vapor))
 end
 
-function OF_dewPx!(model,modely, x, T, vol_cache,condensable)
-    return _fug_OF_neqsystem(model, modely, nothing, y, nothing, T, vol_cache, false, true, (:liquid,:vapor), condensable)
+function OF_dewPx!(modelx,modely, y, T, vol_cache,condensable)
+    return _fug_OF_neqsystem(modelx, modely, nothing, y, nothing, T, vol_cache, false, true, (:liquid,:vapor), condensable)
 end
 
 """
@@ -67,7 +67,7 @@ function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
     volx, voly = vol0
 
     #check if noncondensables are set
-    if !isnothing(noncondensables) || length(noncondensables) == 0
+    if !isnothing(noncondensables)
         condensables = [!in(x,noncondensables) for x in model.components]
         model_x,condensables = index_reduction(model,condensables)
         x0 = x0[condensables]
@@ -80,6 +80,7 @@ function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
     converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,vol0,false,true,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p, tol_xy = tol_x, tol_of = tol_of)
     p,T,x,y,vol,lnK = res
     vl,vv = vol
+    @show p,T,x,y
     if converged
         return p,vl,vv,index_expansion(x,condensables)
     else
@@ -184,7 +185,7 @@ end
 
 
 function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
-    p0,vl,vv,x0 = bubble_pressure_init(model,T,y,method.vol0,method.p0,method.x0)
+    p0,vl,vv,x0 = dew_pressure_init(model,T,y,method.vol0,method.p0,method.x0)
     itmax_newton = method.itmax_newton
     itmax_ss = method.itmax_ss
     tol_x = method.tol_x
@@ -198,25 +199,6 @@ end
 ################# Dew temperature calculation
 
 """
-OF_dewTx!(model::EoSModel, y, p, vol_cache)
-
-Objective function to compute dew temperature using a multidimensional
-system of equations via fugacity coefficients.
-
-Inputs:
-model: equation of state model
-y: vapor phase composition
-P: pressure [`Pa`]
-vol_cache: array used to update the phases' volumes
-
-
-Returns: NLSolvers.NEqProblem
-"""
-function OF_dewTx!(model, y, p, vol_cache)
-    return _fug_OF_neqsystem(model,nothing, y, p, nothing, vol_cache,false,false,(:liquid,:vapor))
-end
-
-"""
     OF_dewTx!(model::EoSModel, y, p, vol_cache)
     OF_dewTx!(modelx::EoSModel,modely::EoSModel y, p, vol_cache,_views)
 
@@ -228,7 +210,6 @@ Inputs:
 - `modelx`: liquid equation of state model, if any noncondensable compounds are present
 - `modely`: vapour equation of state model
 - `P`: pressure [`Pa`]
-- `T`: temperature [`K`]
 - `vol_cache`: array used to update the phases' volumes
 _ `condensable`: condensable component indices, if any noncondensable compounds are present
 
@@ -240,7 +221,7 @@ function OF_dewTx!(model, y, p, vol_cache)
     return _fug_OF_neqsystem(model, nothing, y, p, nothing, vol_cache, false, false, (:liquid,:vapor))
 end
 
-function OF_dewTx!(model,modely, x, T, vol_cache,condensable)
+function OF_dewTx!(model,modely, y, p, vol_cache,condensable)
     return _fug_OF_neqsystem(model, modely, nothing, y, p, nothing, vol_cache, false, false, (:liquid,:vapor), condensable)
 end
 
@@ -283,7 +264,7 @@ function dew_temperature_fug(model::EoSModel, p, y, x0, T0; vol0=(nothing,nothin
     vol0 === nothing && (vol0 = (nothing,nothing))
     volx, voly = vol0
     #check if noncondensables are set
-    if !isnothing(noncondensables) || length(noncondensables) == 0
+    if !isnothing(noncondensables)
         condensables = [!in(x,noncondensables) for x in model.components]
         model_x,condensables = index_reduction(model,condensables)
         x0 = x0[condensables]
