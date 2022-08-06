@@ -1,120 +1,262 @@
-function _select_xy(K,x::Nothing,y)
-    return y./ K,y
-end
+##general successive substitution method to solve bubble/dew problems via fugacity coefficients
 
-function _select_xy(K,x,y::Nothing)
-    return x,K .* x
-end
-
-function _select_pT(inc,p,T::Nothing)
-    return p,exp(inc[end])
-end
-
-function _select_pT(inc,p::Nothing,T)
-    return exp(inc[end]),T
-end
-
-function _fug_J(J,_x,_y::Nothing,x,y,∂lnϕ∂nx,∂lnϕ∂ny)
-    J[diagind(J)] .= 1.
-    J[1:(end-1), 1:(end-1)] += (y .* ∂lnϕ∂ny)'
-    J[end, 1:(end-1)] = y
-    J[end, end] = 0.
-    return J
-end
-
-function _fug_J(J,_x::Nothing,_y,x,y,∂lnϕ∂nx,∂lnϕ∂ny)
-    J[diagind(J)] .= 1.
-    J[1:(end-1), 1:(end-1)] += (x .* ∂lnϕ∂nx)'
-    J[end, 1:(end-1)] = x
-    J[end, end] = 0.
-    return J
-end
-function _tasd()
-function f!(F, inc)
-    volx, voly = vol_cache[:]
-    lnK = inc[1:end-1]
-    lnp = inc[end]
-    p = exp(lnp)
-
-    y = exp.(lnK) .* x
+function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5, itmax_newton = 10,tol_pT = 1e-8,tol_xy = 1e-8,tol_of = 1e-8)
+    volx,voly = vol0
+    converged = false
 
     lnϕx, volx = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
     lnϕy, voly = lnϕ(model, p, T, y, phase=:vapor, vol0=voly)
 
-    F[1:end-1] = lnK .+ lnϕy .- lnϕx
-    F[end] = sum(y .- x)
+    n = length(model)
+    lnK = zeros(n)
+    K = zeros(n)
+    w = zeros(n)
+    w_old = zeros(n)
+    w_calc = zeros(n)
 
-    vol_cache[:] .= (volx, voly)
-    return F
+    if _bubble
+        w .= y
+        _x,_y = x,w
+    else
+        w .= x
+        _x,_y = w,y
+    end
+
+    for j in 1:itmax_newton
+        lnϕx, volx = lnϕ(model, p, T, _x, phase=:liquid, vol0=volx)
+        lnϕy, voly = lnϕ(model, p, T, _y, phase=:vapor, vol0=voly)
+
+        for i in 1:itmax_ss
+            lnK .= lnϕx .- lnϕy
+            K .= exp.(lnK)
+            w_old .=  w
+
+            if _bubble
+                w .= _x .* K
+                w_calc .= w
+            else
+                w .= _y ./ K
+                w_calc .= w
+            end
+
+            w ./= sum(w)
+            error = dnorm(w,w_old,Inf) #||x-x_old||∞
+
+            if error < tol_xy
+                break
+            end
+
+            lnϕx, volx = lnϕ(model, p, T, _x, phase=:liquid, vol0=volx)
+            lnϕy, voly = lnϕ(model, p, T, _y, phase=:vapor, vol0=voly)
+
+        end
+
+        if _pressure
+            lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, _x, phase=:liquid, vol0=volx)
+            lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, _y, phase=:vapor, vol0=voly)
+            ∂OF = sum(w.*(∂lnϕ∂Px .- ∂lnϕ∂Py))
+        else
+            lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, _x, phase=:liquid, vol0=volx)
+            lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, _y, phase=:vapor, vol0=voly)
+            ∂OF = sum(w.*(∂lnϕ∂Tx .- ∂lnϕ∂Ty))
+        end
+
+        if !_bubble
+            ∂OF = -∂OF
+        end
+
+        lnK .= lnϕx .- lnϕy
+        K .= exp.(lnK)
+
+        OF = sum(w_calc) - 1.0
+        ∂step = OF / ∂OF
+
+        if abs(∂step) < tol_pT || abs(OF) < tol_of
+            converged = true
+            break
+        end
+
+        if !isfinite(∂step) #error, fail early, the NaN propagation is handled upstream
+            converged = true
+            break
+        end
+
+        if _pressure
+            ∂step = min(∂step,0.4*p)
+            p -= ∂step
+        else
+            ∂step = min(∂step,0.2*T)
+            T -= ∂step
+        end
+    end
+
+    return converged,(p,T,_x,_y,(volx,voly),lnK)
 end
 
-function fj!(F,J,inc)
-    volx, voly = vol_cache[:]
-    lnK = inc[1:end-1]
-    lnp = inc[end]
-    K = exp.(lnK)
-    p = exp(lnp)
-
-    y = K .* x
-    J .= 0
-    lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, phase=:liquid, vol0=volx)
-    lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, phase=:vapor, vol0=voly)
-
-    F[1:end-1] = lnK .+ lnϕy .- lnϕx
-    F[end] = sum(y .- x)
-
-    J[diagind(J)] .= 1.
-    J[1:(end-1), 1:(end-1)] += (y .* ∂lnϕ∂ny)'
-    J[end, 1:(end-1)] = K .* x
-
-    J[1:(end-1), end] = p * (∂lnϕ∂Py .- ∂lnϕ∂Px)
-    J[end, end] = 0.
-    vol_cache[:] .= (volx, voly)
-
-    return F,J
-
-
+function _fug_OF_ss(modelx::EoSModel,modely::Nothing,p,T,x,y,vol0,_bubble,_pressure,_view;itmax_ss = 5, itmax_newton = 10,tol_pT = 1e-8,tol_xy = 1e-8,tol_of = 1e-8)
+    return _fug_OF_ss(modelx,p,T,x,y,vol0,_bubble,_pressure;itmax_ss, itmax_newton,tol_pT,tol_xy,tol_of)
 end
 
-function j!(J,inc)
-    volx, voly = vol_cache[:]
-    lnK = inc[1:end-1]
-    lnp = inc[end]
-    K = exp.(lnK)
-    p = exp(lnp)
+##general successive substitution method to solve bubble/dew problems via fugacity coefficients
+##support for nonvolatiles/noncondensables
 
-    y = K .* x
-    J .= 0
+function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pressure,_view;itmax_ss = 5, itmax_newton = 10,tol_pT = 1e-8,tol_xy = 1e-8,tol_of = 1e-8)
+    volx,voly = vol0
+    converged = false
 
-    lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, phase=:liquid, vol0=volx)
-    lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, phase=:vapor, vol0=voly)
+    lnϕx, volx = lnϕ(modelx, p, T, x, phase=:liquid, vol0=volx)
+    lnϕy, voly = lnϕ(modely, p, T, y, phase=:vapor, vol0=voly)
+    if _bubble
+        n = length(modely)
+    else
+        n = length(modelx)
+    end
 
-    J[diagind(J)] .= 1.
-    J[1:(end-1), 1:(end-1)] += (y .* ∂lnϕ∂ny)'
-    J[end, 1:(end-1)] = K .* x
+    lnK = zeros(n)
+    K = zeros(n)
+    w = zeros(n)
+    w_old = zeros(n)
+    w_calc = zeros(n)
 
-    J[1:(end-1), end] = p * (∂lnϕ∂Py .- ∂lnϕ∂Px)
-    J[end, end] = 0.
-    vol_cache[:] .= (volx, voly)
+    if _bubble
+        w .= y
+        _x,_y = x,w
+    else
+        w .= x
+        _x,_y = w,y
+    end
+
+    for j in 1:itmax_newton
+        lnϕx, volx = lnϕ(modelx, p, T, _x, phase=:liquid, vol0=volx)
+        lnϕy, voly = lnϕ(modely, p, T, _y, phase=:vapor, vol0=voly)
+        for i in 1:itmax_ss
+            if _bubble
+                lnK .= lnϕx[_view] .- lnϕy
+            else
+                lnK .= lnϕx .- lnϕy[_view]
+            end
+
+            K .= exp.(lnK)
+            w_old .=  w
+
+            if _bubble
+                w .= _x[_view] .* K
+                w_calc .= w
+            else
+                w .= _y[_view] ./ K
+                w_calc .= w
+            end
+
+            w ./= sum(w)
+            error = dnorm(w,w_old,Inf) #||x-x_old||∞
+            if error < tol_xy
+                break
+            end
+
+            lnϕx, volx = lnϕ(modelx, p, T, _x, phase=:liquid, vol0=volx)
+            lnϕy, voly = lnϕ(modely, p, T, _y, phase=:vapor, vol0=voly)
+
+        end
+
+        if _pressure
+            lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(modelx, p, T, _x, phase=:liquid, vol0=volx)
+            lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(modely, p, T, _y, phase=:vapor, vol0=voly)
+            if _bubble
+                ∂OF = sum(w.*(∂lnϕ∂Px[_view] .- ∂lnϕ∂Py))
+            else
+                ∂OF = sum(w.*(∂lnϕ∂Px .- ∂lnϕ∂Py[_view]))
+            end
+        else
+            lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(modelx, p, T, _x, phase=:liquid, vol0=volx)
+            lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(modely, p, T, _y, phase=:vapor, vol0=voly)
+            ∂OF = sum(w.*(∂lnϕ∂Tx .- ∂lnϕ∂Ty))
+            if _bubble
+                ∂OF = sum(w.*(∂lnϕ∂Tx[view] .- ∂lnϕ∂Ty))
+            else
+                ∂OF = sum(w.*(∂lnϕ∂Tx .- ∂lnϕ∂Ty[_view]))
+            end
+        end
+
+        if !_bubble
+            ∂OF = -∂OF
+        end
+
+        if _bubble
+            lnK .= lnϕx[_view] .- lnϕy
+        else
+            lnK .= lnϕx .- lnϕy[_view]
+        end
+        K .= exp.(lnK)
+
+        OF = sum(w_calc) - 1.0
+        ∂step = OF / ∂OF
+
+        if _pressure
+            #∂step = min(∂step,0.4*p)
+            if ∂step > p
+                ∂step = 0.4*p
+            end
+            p -= ∂step
+        else
+            if ∂step > T
+                ∂step = 0.2*T
+            end
+            T -= ∂step
+        end
+        if abs(∂step) < tol_pT || abs(OF) < tol_of
+            converged = true
+            break
+        end
+
+        if !isfinite(∂step) #error, fail early, the NaN propagation is handled upstream
+            converged = true
+            break
+        end
+    end
+
+    return converged,(p,T,_x,_y,(volx,voly),lnK)
+end
+
+##general multidimensional non linear system generator to solve bubble/dew problems via fugacity coefficients
+
+function _select_xy(K,x,y,_bubble)
+    if _bubble
+        return x, K .* x
+    else
+        return y, K ./ y
+    end
+end
+
+function _select_pT(inc,p,T,_pressure)
+    if _pressure
+        return exp(inc[end]),T
+    else
+        return p,exp(inc[end])
+    end
+end
+
+function _fug_J(J,x,y,∂lnϕ∂nx,∂lnϕ∂ny,_bubble)
+    if _bubble
+        J[diagind(J)] .= 1.
+        J[1:(end-1), 1:(end-1)] += (y .* ∂lnϕ∂ny)'
+        J[end, 1:(end-1)] = y
+        J[end, end] = 0.
+    else
+        J[diagind(J)] .= 1.
+        J[1:(end-1), 1:(end-1)] += (x .* ∂lnϕ∂nx)'
+        J[end, 1:(end-1)] = x
+        J[end, end] = 0.
+    end
     return J
-
 end
 
-function jv!(inc)
-    return nothing
-end
-
-return Solvers.NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> Solvers.NLSolvers.NEqProblem
-
-end
-
-function generic_OF_fug(model,_x, _y, _p, _T, vol_cache,_phase)
+function _fug_OF_neqsystem(model,_x, _y, _p, _T, vol_cache,_bubble,_pressure,_phase)
     function f!(F, inc)
-        volx, voly = vol_cache[:]
+        volx, voly = vol_cache
         lnK = inc[1:end-1]
         K = exp.(lnK)
-        p,T = _select_pT(inc,_p,_T)
-        x,y = _select_xy(K,_x,_y)
+        p,T = _select_pT(inc,_p,_T,_pressure)
+        x,y = _select_xy(K,_x,_y,_bubble)
 
         lnϕx, volx = lnϕ(model, p, T, x, phase=_phase[1], vol0=volx)
         lnϕy, voly = lnϕ(model, p, T, y, phase=_phase[2], vol0=voly)
@@ -122,7 +264,7 @@ function generic_OF_fug(model,_x, _y, _p, _T, vol_cache,_phase)
         F[1:end-1] = lnK .+ lnϕy .- lnϕx
         F[end] = sum(y)  - sum(x)
 
-        vol_cache[:] .= (volx, voly)
+        vol_cache .= (volx, voly)
         return F
     end
 
@@ -130,23 +272,23 @@ function generic_OF_fug(model,_x, _y, _p, _T, vol_cache,_phase)
         volx, voly = vol_cache[:]
         lnK = inc[1:end-1]
         K = exp.(lnK)
-        p,T = _select_pT(inc,_p,_T)
-        x,y = _select_xy(K,_x,_y)
+        p,T = _select_pT(inc,_p,_T,_pressure)
+        x,y = _select_xy(K,_x,_y,_bubble)
         J .= 0.0
-        if _T === nothing
-            lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=_phase[1], vol0=volx)
-            lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=_phase[2], vol0=voly)
-            J[1:(end-1), end] .= T .* (∂lnϕ∂Ty .- ∂lnϕ∂Tx)
-        else
+        if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, phase=_phase[1], vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, phase=_phase[2], vol0=voly)
             J[1:(end-1), end] .= p .* (∂lnϕ∂Py .- ∂lnϕ∂Px)
+        else
+            lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=_phase[1], vol0=volx)
+            lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=_phase[2], vol0=voly)
+            J[1:(end-1), end] .= T .* (∂lnϕ∂Ty .- ∂lnϕ∂Tx)
         end
 
         F[1:end-1] = lnK .+ lnϕy .- lnϕx
         F[end] = sum(y)  - sum(x)
-        _fug_J(J,_x,_y,x,y,∂lnϕ∂nx,∂lnϕ∂ny)
-        vol_cache[:] .= (volx, voly)
+        _fug_J(J,x,y,∂lnϕ∂nx,∂lnϕ∂ny,_bubble)
+        vol_cache .= (volx, voly)
         return F,J
     end
 
@@ -154,20 +296,20 @@ function generic_OF_fug(model,_x, _y, _p, _T, vol_cache,_phase)
         volx, voly = vol_cache[:]
         lnK = inc[1:end-1]
         K = exp.(lnK)
-        p,T = _select_pT(inc,_p,_T)
-        x,y = _select_xy(K,_x,_y)
+        p,T = _select_pT(inc,_p,_T,_pressure)
+        x,y = _select_xy(K,_x,_y,_bubble)
         J .= 0.0
-        if _T === nothing
-            lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=_phase[1], vol0=volx)
-            lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=_phase[2], vol0=voly)
-            J[1:(end-1), end] .= T .* (∂lnϕ∂Ty .- ∂lnϕ∂Tx)
-        else
+        if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x, phase=_phase[1], vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y, phase=_phase[2], vol0=voly)
             J[1:(end-1), end] .= p .* (∂lnϕ∂Py .- ∂lnϕ∂Px)
+        else
+            lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=_phase[1], vol0=volx)
+            lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=_phase[2], vol0=voly)
+            J[1:(end-1), end] .= T .* (∂lnϕ∂Ty .- ∂lnϕ∂Tx)
         end
-        _fug_J(J,_x,_y,x,y,∂lnϕ∂nx,∂lnϕ∂ny)
-        vol_cache[:] .= (volx, voly)
+        _fug_J(J,x,y,∂lnϕ∂nx,∂lnϕ∂ny,_bubble)
+        vol_cache .= (volx, voly)
         return J
     end
 
@@ -178,67 +320,112 @@ function generic_OF_fug(model,_x, _y, _p, _T, vol_cache,_phase)
     return Solvers.NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> Solvers.NLSolvers.NEqProblem
 end
 
-function generic_OF_fug(model_long::EoSModel,model_short::EoSModel,_x_long, _x_short, _p, _T, vol_cache,_phase,_view)
-    
+##general multidimensional non linear system generator to solve bubble/dew problems via fugacity coefficients
+##support for noncondensables/nonvolatiles
+
+#dispatch to simplified function
+function _fug_OF_neqsystem(modelx::EoSModel,modely::Nothing,_x, _y, _p, _T, vol_cache,_bubble,_pressure,_phase,_view)
+    return  _fug_OF_neqsystem(modelx,_x, _y, _p, _T, vol_cache,_bubble,_pressure,_phase)
+end
+
+#support for views
+function _select_xy(K,x,y,_bubble,_view)
+    if _bubble
+        return x, K .* x[_view]
+    else
+        return y, K ./ y[_view]
+    end
+end
+
+#main function
+function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel,_x, _y, _p, _T, vol_cache,_bubble,_pressure,_phase,_view)
     function f!(F, inc)
-        volx_long, volx_short = vol_cache[:]
+        volx, voly = vol_cache
         lnK = inc[1:end-1]
         K = exp.(lnK)
-        p,T = _select_pT(inc,_p,_T)
-        x_long,x_short,y = _select_xy(K,_x_long,_x_short)
-        lnϕx_long, volx_long = lnϕ(model_long, p, T, x_long, phase=_phase[1], vol0=volx_long)
-        lnϕx_short, volx_short = lnϕ(model_short, p, T, x_short, phase=_phase[2], vol0=volx_short)
-        lnϕx_long = lnϕx_long[_view]
-        F[1:end-1] = lnK .+ lnϕx_short .- lnϕx_long
+        p,T = _select_pT(inc,_p,_T,_pressure)
+        x,y = _select_xy(K,_x,_y,_bubble,_view)
+        lnϕx, volx = lnϕ(modelx, p, T, x, phase=_phase[1], vol0=volx)
+        lnϕy, voly = lnϕ(modely, p, T, y, phase=_phase[2], vol0=voly)
+
+        if _bubble
+            lnϕview = @view lnϕx[_view]
+            F[1:end-1] .= lnK .+ lnϕy .- lnϕview
+        else
+            lnϕview = @view lnϕy[_view]
+            F[1:end-1] .= lnK .+ lnϕview .- lnϕx
+        end
         F[end] = sum(y)  - sum(x)
-        vol_cache[:] .= (volx_long, volx_short)
+        vol_cache .= (volx, voly)
         return F
     end
 
     function fj!(F,J,inc)
-        volx_long, volx_short = vol_cache[:]
+        volx, voly = vol_cache[:]
         lnK = inc[1:end-1]
         K = exp.(lnK)
-        p,T = _select_pT(inc,_p,_T)
-        x_long,x_short,y = _select_xy(K,_x_long,_x_short)
-
-        if _T === nothing
-            lnϕx_long, ∂lnϕ∂nx_long, ∂lnϕ∂Px_long, ∂lnϕ∂Tx_long, volx_long = ∂lnϕ∂n∂P∂T(model, p, T, x_long, phase=_phase[1], vol0=volx_long)
-            lnϕx_short, ∂lnϕ∂nx_short, ∂lnϕ∂Px_short, ∂lnϕ∂Tx_short, volx_short = ∂lnϕ∂n∂P∂T(model, p, T, x_short, phase=_phase[2], vol0=volx_short)
-            J[1:(end-1), end] .= T .* (∂lnϕ∂Tx_short .- ∂lnϕ∂Tx_long[_view])
+        p,T = _select_pT(inc,_p,_T,_pressure)
+        x,y = _select_xy(K,_x,_y,_bubble,_view)
+        J .= 0.0
+        if _pressure
+            lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(modelx, p, T, x, phase=_phase[1], vol0=volx)
+            lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(modely, p, T, y, phase=_phase[2], vol0=voly)
+            if _bubble
+                J[1:(end-1), end] .= p .* (∂lnϕ∂Py .- @view(∂lnϕ∂Px[_view]))
+            else
+                J[1:(end-1), end] .= p .* (@view(∂lnϕ∂Py[_view]) .- ∂lnϕ∂Px)
+            end
         else
-            lnϕx_long, ∂lnϕ∂nx_long, ∂lnϕ∂Px_long, volx_long = ∂lnϕ∂n∂P(model, p, T, x_long, phase=_phase[1], vol0=volx_long)
-            lnϕx_short, ∂lnϕ∂nx_short, ∂lnϕ∂Px_short, volx_short = ∂lnϕ∂n∂P(model, p, T, x_short, phase=_phase[2], vol0=volx_short)
-            J[1:(end-1), end] .= p .* (∂lnϕ∂Px_short .- ∂lnϕ∂Px_long[_view])
+            lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(modelx, p, T, x, phase=_phase[1], vol0=volx)
+            lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(modely, p, T, y, phase=_phase[2], vol0=voly)
+            if _bubble
+                J[1:(end-1), end] .= T .* (∂lnϕ∂Ty .- @view(∂lnϕ∂Tx[_view]))
+            else
+                J[1:(end-1), end] .= T .* (@view(∂lnϕ∂Ty[_view]) .- ∂lnϕ∂Tx)
+            end
         end
 
-        lnϕx_long = lnϕx_long[_view]
-        F[1:end-1] = lnK .+ lnϕx_short .- lnϕx_long
+        if _bubble
+            lnϕview = @view lnϕx[_view]
+            F[1:end-1] = lnK .+ lnϕy .- lnϕview
+        else
+            lnϕview = @view lnϕy[_view]
+            F[1:end-1] = lnK .+ lnϕview .- lnϕx
+        end
         F[end] = sum(y)  - sum(x)
-        _fug_J(J,_x_long,_x_short,x_long,x_short,∂lnϕ∂nx_long,∂lnϕ∂nx_short)
-        vol_cache[:] .= (volx_long, volx_short)
+        _fug_J(J,x,y,∂lnϕ∂nx,∂lnϕ∂ny,_bubble)
+        vol_cache .= (volx, voly)
         return F,J
     end
 
     function j!(J,inc)
-        volx_long, volx_short = vol_cache[:]
+        volx, voly = vol_cache[:]
         lnK = inc[1:end-1]
         K = exp.(lnK)
-        p,T = _select_pT(inc,_p,_T)
-        x_long,x_short,y = _select_xy(K,_x_long,_x_short)
+        p,T = _select_pT(inc,_p,_T,_pressure)
+        x,y = _select_xy(K,_x,_y,_bubble,_view)
+        J .= 0.0
 
-        if _p === nothing
-            lnϕx_long, ∂lnϕ∂nx_long, ∂lnϕ∂Px_long, ∂lnϕ∂Tx_long, volx_long = ∂lnϕ∂n∂P∂T(model, p, T, x_long, phase=_phase[1], vol0=volx_long)
-            lnϕx_short, ∂lnϕ∂nx_short, ∂lnϕ∂Px_short, ∂lnϕ∂Tx_short, volx_short = ∂lnϕ∂n∂P∂T(model, p, T, x_short, phase=_phase[2], vol0=volx_short)
-            J[1:(end-1), end] .= T .* (∂lnϕ∂Tx_short .- ∂lnϕ∂Tx_long[_view])
+        if _pressure
+            lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(modelx, p, T, x, phase=_phase[1], vol0=volx)
+            lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(modely, p, T, y, phase=_phase[2], vol0=voly)
+            if _bubble
+                J[1:(end-1), end] .= p .* (∂lnϕ∂Py .- @view(∂lnϕ∂Px[_view]))
+            else
+                J[1:(end-1), end] .= p .* (@view(∂lnϕ∂Py[_view]) .- ∂lnϕ∂Px)
+            end
         else
-            lnϕx_long, ∂lnϕ∂nx_long, ∂lnϕ∂Px_long, volx_long = ∂lnϕ∂n∂P(model, p, T, x_long, phase=_phase[1], vol0=volx_long)
-            lnϕx_short, ∂lnϕ∂nx_short, ∂lnϕ∂Px_short, volx_short = ∂lnϕ∂n∂P(model, p, T, x_short, phase=_phase[2], vol0=volx_short)
-            J[1:(end-1), end] .= p .* (∂lnϕ∂Px_short .- ∂lnϕ∂Px_long[_view])
+            lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(modelx, p, T, x, phase=_phase[1], vol0=volx)
+            lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(modely, p, T, y, phase=_phase[2], vol0=voly)
+            if _bubble
+                J[1:(end-1), end] .= T .* (∂lnϕ∂Ty .- @view(∂lnϕ∂Tx[_view]))
+            else
+                J[1:(end-1), end] .= T .* (@view(∂lnϕ∂Ty[_view]) .- ∂lnϕ∂Tx)
+            end
         end
-        _fug_J(J,_x_long,_x_short,x_long,x_short,∂lnϕ∂nx_long,∂lnϕ∂nx_short)
 
-        vol_cache[:] .= (volx_long, volx_short)
+        _fug_J(J,x,y,∂lnϕ∂nx,∂lnϕ∂ny,_bubble)
+        vol_cache .= (volx, voly)
         return J
     end
 
@@ -247,47 +434,4 @@ function generic_OF_fug(model_long::EoSModel,model_short::EoSModel,_x_long, _x_s
     end
 
     return Solvers.NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> Solvers.NLSolvers.NEqProblem
-end
-
-
-function __x(model::EoSModel,p,T,x1,x2,_phases;itmax_ss = 5, itmax_newton = 10)
-    
-    for j in 1:itmax_newton
-        for i in 1:itmax_ss
-
-            lnK = lnϕx .- lnϕy
-            K = exp.(lnK)
-
-            y_old = 1. * y
-            y_calc = x .* K
-
-            # non-volalite
-            y_calc[non_volatile] .= 0.
-
-            y = y_calc / sum(y_calc)
-            error = sum(abs2, y_old - y)
-            # println(i, y, error)
-            if error < tol_y
-                break
-            end
-
-            lnϕx, volx = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
-            lnϕy, voly = lnϕ(model, p, T, y, phase=:vapor, vol0=voly)
-        end
-
-        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, x, phase=:liquid, vol0=volx)
-        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, y, phase=:vapor, vol0=voly)
-        lnK = lnϕx .- lnϕy
-        K = exp.(lnK)
-
-        OF = sum(y_calc) - 1.
-        dOFdT = sum((x.*K.*(∂lnϕ∂Tx .- ∂lnϕ∂Ty))[volatile])
-        dT = OF / dOFdT
-        # to avoid negative temperatures
-        if dT > T
-            dT = 0.2*T
-        end
-
-        T -= dT    
-    end
 end
