@@ -121,6 +121,13 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
         V0 = vol0
         V = _volume_compress(model,p,T,z,V0)
         return V
+    
+    if !isnothing(vol0)
+        if !isnan(vol0)
+            V0 = vol0
+            V = _volume_compress(model,p,T,z,V0)
+            return V
+        end
     end
 
     if phase != :unknown
