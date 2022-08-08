@@ -58,13 +58,6 @@ function ChemPotVSaturation(;log10vl = nothing,
     end
 end
 
-function NLSolvers.NEqOptions(sat::ChemPotVSaturation)
-    return NEqOptions(f_limit = sat.f_limit,
-                    f_abstol = sat.atol,
-                    f_reltol = sat.rtol,
-                    maxiter = sat.max_iters)
-end
-
 function saturation_pressure(model,T,V0::Union{Tuple,Vector} = x0_sat_pure(model,T))
     method = ChemPotVSaturation(V0)
     return saturation_pressure_impl(model,T,method)
