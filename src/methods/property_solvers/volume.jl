@@ -116,12 +116,7 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
     TYPE = typeof(p+T+first(z))
     nan = zero(TYPE)/zero(TYPE)
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
- 
-    if ~isnothing(vol0)
-        V0 = vol0
-        V = _volume_compress(model,p,T,z,V0)
-        return V
-    
+     
     if !isnothing(vol0)
         if !isnan(vol0)
             V0 = vol0

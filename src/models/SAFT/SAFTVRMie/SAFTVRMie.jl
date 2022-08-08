@@ -141,45 +141,6 @@ function ζ0123(model::SAFTVRMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params
     return ζ0,ζ1,ζ2,ζ3 
 end
 
-#=
-function x_S(model::SAFTVRMieModel, V, T, z, i)
-    m = model.params.segment.values
-    m̄ = dot(z,m)
-    return z[i]*m[i]/m̄
-end =#
-
-#=
-function d(model::SAFTVRMieModel, V, T, z, i)
-    ϵ = model.params.epsilon.values[i.i]
-    σ = model.params.sigma.values[i.i]
-    λr = model.params.lambda_r.values[i.i]
-    λa = model.params.lambda_a.values[i.i]
-    return @f(d,λa,λr,ϵ,σ)
-end
-
-function d(model::SAFTVRMieModel, V, T, z, i, j)
-    ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values
-    λr = model.params.lambda_r.values
-    λa = model.params.lambda_a.values
-    return (@f(d,λa[i,i],λr[i,i],ϵ[i,i],σ[i,i]) + @f(d,λa[j,j],λr[j,j],ϵ[j,j],σ[j,j]))/2
-end
-
-function C(model::SAFTVRMieModel, V, T, z, i, j)
-    λr = model.params.lambda_r.values[i,j]
-    λa = model.params.lambda_a.values[i,j]
-    return @f(Cλ,λa,λr)
-end
-
-function d(model::SAFTVRMieModel, V, T, z)
-    ϵ = model.params.epsilon.diagvalues
-    σ = model.params.sigma.diagvalues
-    λr = model.params.lambda_r.diagvalues
-    λa = model.params.lambda_a.diagvalues
-    return d.(model,V,T,Ref(z),λa,λr,ϵ,σ)
-end
-
-=#
 
 function d(model::SAFTVRMieModel, V, T, z)
     _ϵ = diagvalues(model.params.epsilon)
