@@ -97,6 +97,11 @@ function _fug_OF_ss(modelx::EoSModel,modely::Nothing,p,T,x,y,vol0,_bubble,_press
     return _fug_OF_ss(modelx,p,T,x,y,vol0,_bubble,_pressure;itmax_ss, itmax_newton,tol_pT,tol_xy,tol_of)
 end
 
+function _fug_OF_ss(modelx::Nothing,modely::EoSModel,p,T,x,y,vol0,_bubble,_pressure,_view;itmax_ss = 5, itmax_newton = 10,tol_pT = 1e-8,tol_xy = 1e-8,tol_of = 1e-8)
+    return _fug_OF_ss(modely,p,T,x,y,vol0,_bubble,_pressure;itmax_ss, itmax_newton,tol_pT,tol_xy,tol_of)
+end
+
+
 ##general successive substitution method to solve bubble/dew problems via fugacity coefficients
 ##support for nonvolatiles/noncondensables
 
@@ -219,7 +224,7 @@ function _select_xy(K,x,y,_bubble)
     if _bubble
         return x, K .* x
     else
-        return y, K ./ y
+        return y ./ K, y
     end
 end
 
@@ -253,7 +258,6 @@ function _fug_OF_neqsystem(model,_x, _y, _p, _T, vol_cache,_bubble,_pressure,_ph
         K = exp.(lnK)
         p,T = _select_pT(inc,_p,_T,_pressure)
         x,y = _select_xy(K,_x,_y,_bubble)
-
         lnϕx, volx = lnϕ(model, p, T, x, phase=_phase[1], vol0=volx)
         lnϕy, voly = lnϕ(model, p, T, y, phase=_phase[2], vol0=voly)
 
@@ -265,7 +269,7 @@ function _fug_OF_neqsystem(model,_x, _y, _p, _T, vol_cache,_bubble,_pressure,_ph
     end
 
     function fj!(F,J,inc)
-        volx, voly = vol_cache[:]
+        volx, voly = vol_cache
         lnK = inc[1:end-1]
         K = exp.(lnK)
         p,T = _select_pT(inc,_p,_T,_pressure)
@@ -289,7 +293,7 @@ function _fug_OF_neqsystem(model,_x, _y, _p, _T, vol_cache,_bubble,_pressure,_ph
     end
 
     function j!(J,inc)
-        volx, voly = vol_cache[:]
+        volx, voly = vol_cache
         lnK = inc[1:end-1]
         K = exp.(lnK)
         p,T = _select_pT(inc,_p,_T,_pressure)
@@ -324,12 +328,17 @@ function _fug_OF_neqsystem(modelx::EoSModel,modely::Nothing,_x, _y, _p, _T, vol_
     return  _fug_OF_neqsystem(modelx,_x, _y, _p, _T, vol_cache,_bubble,_pressure,_phase)
 end
 
+function _fug_OF_neqsystem(modelx::Nothing,modely::EoSModel,_x, _y, _p, _T, vol_cache,_bubble,_pressure,_phase,_view)
+    return  _fug_OF_neqsystem(modely,_x, _y, _p, _T, vol_cache,_bubble,_pressure,_phase)
+end
+
+
 #support for views
 function _select_xy(K,x,y,_bubble,_view)
     if _bubble
         return x, K .* x[_view]
     else
-        return K ./ y[_view], y
+        return y[_view] ./ K , y
     end
 end
 
@@ -344,7 +353,7 @@ function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel,_x, _y, _p, _T, vol
 
         lnϕx, volx = lnϕ(modelx, p, T, x, phase=_phase[1], vol0=volx)
         lnϕy, voly = lnϕ(modely, p, T, y, phase=_phase[2], vol0=voly)
-
+        
         if _bubble
             lnϕview = @view lnϕx[_view]
             F[1:end-1] .= lnK .+ lnϕy .- lnϕview
@@ -396,13 +405,12 @@ function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel,_x, _y, _p, _T, vol
     end
 
     function j!(J,inc)
-        volx, voly = vol_cache[:]
+        volx, voly = vol_cache
         lnK = inc[1:end-1]
         K = exp.(lnK)
         p,T = _select_pT(inc,_p,_T,_pressure)
         x,y = _select_xy(K,_x,_y,_bubble,_view)
         J .= 0.0
-
         if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(modelx, p, T, x, phase=_phase[1], vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(modely, p, T, y, phase=_phase[2], vol0=voly)

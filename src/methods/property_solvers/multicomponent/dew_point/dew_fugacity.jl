@@ -79,10 +79,9 @@ function dew_pressure_fug(model::EoSModel, T, y, x0, p0; vol0=(nothing,nothing),
 
     converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,vol0,false,true,condensables;itmax_ss = itmax_ss, itmax_newton = itmax_newton,tol_pT = tol_p, tol_xy = tol_x, tol_of = tol_of)
     p,T,x,y,vol,lnK = res
-    vl,vv = vol
-    @show p,T,x,y
+    volx,voly = vol
     if converged
-        return p,vl,vv,index_expansion(x,condensables)
+        return p,volx,voly,index_expansion(x,condensables)
     else
         inc0 = vcat(lnK, log(p))
         vol_cache = [volx, voly]

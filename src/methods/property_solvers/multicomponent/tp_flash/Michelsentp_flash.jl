@@ -212,11 +212,7 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
     if !isnothing(method.nonvolatiles) && length(method.nonvolatiles) > 0
         modified = true
     end
-    @show method.nonvolatiles
-    if !isnothing(method.noncondensables) && length(method.noncondensables) > 0
-        modified = true
-    end
-    @show modified
+
     if !modified
         x,y,β =  tp_flash_michelsen(model,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
                             x0 = method.x0, y0 = method.y0, vol0 = method.v0,
