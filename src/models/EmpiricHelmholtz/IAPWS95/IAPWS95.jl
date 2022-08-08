@@ -279,6 +279,9 @@ function x0_volume(model::IAPWS95,p,T,z=[1.0];phase = :unknown)
         return 1.1*saturated_water_vapor(T)
     elseif is_supercritical(phase)
         return model.consts.Vc
+    else
+        _0 = zero(p+T+first(z))
+        return _0/_0
     end
 end
 

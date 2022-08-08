@@ -6,8 +6,8 @@ function lb_volume(model::SAFTgammaMieModel, z = SA[1.0])
     vk  = model.groups.n_flattenedgroups
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
-    σᵢᵢ = model.params.sigma.diagvalues
-    val = π/6*N_A*sum(z[i]*sum(vk[i][k]*seg[k]*S[k]*σᵢᵢ[k]^3 for k in @groups(i)) for i in @comps)
+    σ = model.params.sigma.values
+    val = π/6*N_A*sum(z[i]*sum(vk[i][k]*seg[k]*S[k]*σ[k,k]^3 for k in @groups(i)) for i in @comps)
     return val
 end
 

@@ -115,8 +115,8 @@ function a_disp(model::PCSAFTModel, V, T, z,_data=@f(data))
 end
 
 function d(model::PCSAFTModel, V, T, z)
-    ϵᵢᵢ = model.params.epsilon.diagvalues
-    σᵢᵢ = model.params.sigma.diagvalues 
+    ϵᵢᵢ = diagvalues(model.params.epsilon)
+    σᵢᵢ = diagvalues(model.params.sigma) 
     return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
 end
 
@@ -271,7 +271,7 @@ end
 #Optimizations for Single Component PCSAFT
 
 function d(model::PCSAFT, V, T, z::SingleComp)
-    ϵ = only(model.params.epsilon.diagvalues)
-    σ = only(model.params.sigma.diagvalues)
+    ϵ = only(model.params.epsilon.values)
+    σ = only(model.params.sigma.values)
     return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
 end

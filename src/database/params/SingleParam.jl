@@ -47,19 +47,37 @@ end
 """
 const SingleParam{T} = SingleParameter{T,Vector{T}} where T
 
+#indexing
+
+Base.@propagate_inbounds Base.getindex(param::SingleParameter{T,<:AbstractVector{T}},i::Int) where T = param.values[i]
+Base.setindex!(param::SingleParameter,val,i) = setindex!(param.values,val,i)
+
+#broadcasting
+Base.size(param::SingleParameter) = size(param.values)
+Base.broadcastable(param::SingleParameter) = param.values
+Base.BroadcastStyle(::Type{<:SingleParameter}) = Broadcast.Style{SingleParameter}()
+
+#copyto!
+function Base.copyto!(dest::SingleParameter,src) #general, just copies the values, used in a .= f.(a)
+    Base.copyto!(dest.values,src)
+    return dest
+end
+
+function Base.copyto!(dest::SingleParameter,src::SingleParameter) #used to set params
+    #key check
+    dest.components == src.components || throw(DimensionMismatch("components of source and destination single parameters are not the same for $dest"))
+    copyto!(dest.values,src.values)
+    dest.ismissingvalues .= src.ismissingvalues
+    return dest
+end
+
+#linear algebra
+
+LinearAlgebra.dot(param::SingleParameter,x::Union{<:AbstractVector,<:Number}) = dot(param.values,x)
+LinearAlgebra.dot(x::Union{<:AbstractVector,<:Number},param::SingleParameter) = dot(x,param.values)
+
 SingleParam(name,components,values,missingvals,src,sourcecsv) = SingleParameter(name,components,values,missingvals,src,sourcecsv)
-function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})::SingleParam{String}
-    values = String.(param.values)
-    return (param.name,param.components,values,param.missingvals,param.src,param.sourcecsv)
-end
-function Base.show(io::IO, param::SingleParameter)
-    print(io, typeof(param), "(\"", param.name, "\")[")
-    for component in param.components
-        component != first(param.components) && print(io, ",")
-        print(io, "\"", component, "\"")
-    end
-    print(io, "]")
-end
+
 
 function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     len = length(param.values)
@@ -126,24 +144,14 @@ function SingleParam(
 end
 
 # If no value is provided, just initialise empty param.
-function SingleParam{T}(
+function SingleParam(
         name::String,
         components::Vector{String};
         sources = String[]
-    ) where T <: AbstractString
-    values = fill("", length(components))
+    ) 
+    values = fill(0.0, length(components))
     return SingleParam(name, components, values, String[], sources)
 end
-
-function SingleParam{T}(
-        name::String,
-        components::Vector{String};
-        sources = String[]
-    ) where T <: Number
-    values = zeros(T, length(components))
-    return SingleParam(name, components, values, String[], sources)
-end
-
 
 function SingleParam(x::SingleParameter, v::Vector)
     _values,_ismissingvalues = defaultmissing(v)
@@ -156,7 +164,7 @@ function Base.convert(::Type{SingleParam{Float64}},param::SingleParam{Int})
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
-function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{Int})
+function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{<:Union{Int,Float64}})
     @assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
@@ -168,8 +176,16 @@ function Base.convert(::Type{SingleParam{Int}},param::SingleParam{Float64})
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
-#broadcasting utilities
-Base.broadcastable(param::SingleParameter) = param.values
+function Base.convert(::Type{SingleParam{String}},param::SingleParam{<:AbstractString})
+    values = String.(param.values)
+    return SingleParameter(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
+end
+
+#trying to break stack overflow on julia 1.6
+function Base.convert(::Type{SingleParam{String}},param::SingleParam{String})
+    return param
+end
+
 
 #pack vectors
 

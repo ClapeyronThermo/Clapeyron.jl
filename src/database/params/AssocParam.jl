@@ -11,6 +11,18 @@ struct AssocParam{T} <: ClapeyronParam
     sources::Array{String,1}
 end
 
+function Base.copyto!(dest::AssocParam,src::AssocParam) #used to set params
+    #key check
+    dest.components == src.components || throw(DimensionMismatch("components of source and destination single parameters are not the same for $dest"))
+    copyto!(dest.values,src.values)
+    dest_sites = dest.sites
+    src_sites = src.sites
+    for (i,site) in enumerate(dest_sites)
+        copy!(site,src_sites[i]) #copy also changes size
+    end
+    return dest
+end
+
 function AssocParam(
         name::String,
         components::Vector{String},
@@ -47,7 +59,9 @@ end
 function Base.show(io::IO, mime::MIME"text/plain", param::AssocParam{T}) where T
     print(io, "AssocParam{", string(T), "}")
     print(io, param.components)
-    println(io, ") with values:")
+    l = length(param.values.values)
+    print(io, ") with ", l, " value",ifelse(l==1,"","s"),":")
+    l != 0 && println(io)
     comps = param.components
     vals = param.values
     sitenames = param.sites
@@ -59,7 +73,8 @@ function Base.show(io::IO, mime::MIME"text/plain", param::AssocParam{T}) where T
         print(io, " >=< ")
         print(io, "(\"", comps[j], "\", \"", s2, "\")")
         print(io, ": ")
-        println(io, vals.values[idx])
+        print(io, vals.values[idx])
+        l != idx && println(io)
         catch
         println("error at i = $i, j = $j a = $a, b = $b")
         end
@@ -70,19 +85,3 @@ function Base.show(io::IO, param::AssocParam)
     print(io, typeof(param), "(\"", param.name, "\")")
     print(io, param.values.values)
 end
-
-#= Operations
-function Base.:(+)(param::AssocParam, x::Number)
-    values = param.values + x
-    return AssocParam(param.name, param.components, values, param.sites ,param.sourcecsvs, param.sources)
-end
-
-function Base.:(*)(param::AssocParam, x::Number)
-    values = param.values * x
-    return AssocParam(param.name, param.components, values, param.sites, param.sourcecsvs, param.sources)
-end
-
-function Base.:(^)(param::AssocParam, x::Number)
-    values = param.values ^ x
-    return AssocParam(param.name, param.components, values, param.sites, param.sourcecsvs, param.sources)
-end =#

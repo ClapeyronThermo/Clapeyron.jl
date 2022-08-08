@@ -143,10 +143,10 @@ end
 
 
 function d(model::SAFTVRMieModel, V, T, z)
-    _ϵ = model.params.epsilon.diagvalues
-    _σ = model.params.sigma.diagvalues
-    _λa = model.params.lambda_a.diagvalues
-    _λr = model.params.lambda_r.diagvalues
+    _ϵ = diagvalues(model.params.epsilon)
+    _σ = diagvalues(model.params.sigma)
+    _λa = diagvalues(model.params.lambda_a)
+    _λr = diagvalues(model.params.lambda_r)
     u = SAFTVRMieconsts.u
     w = SAFTVRMieconsts.w
     _0 = zero(T)
@@ -337,8 +337,8 @@ function KHS_fdf(model::SAFTVRMieModel, V, T, z,ζ_X_,ρ_S_ = @f(ρ_S))
 end
 
 function ∂a_2╱∂ρ_S(model::SAFTVRMieModel,V, T, z, i)
-    λr = model.params.lambda_r.diagvalues
-    λa = model.params.lambda_a.diagvalues
+    λr = diagvalues(model.params.lambda_r)
+    λa = diagvalues(model.params.lambda_a)
     x_0ij = @f(x_0,i,i)
     ζ_X_ = @f(ζ_X)
     ρ_S_ = @f(ρ_S)

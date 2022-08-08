@@ -18,6 +18,16 @@ function x0_volume_gas(model,p,T,z)
 end
 
 """
+    x0_volume_solid(model,T,z)
+
+Returns an initial guess to the solid volume, dependent on temperature and composition. needs to be defined for EoS that support solid phase. by default returns NaN
+"""
+function x0_volume_solid(model,T,z)
+    _0 = zero(T+first(z))
+    return _0/_0
+end
+
+"""
     x0_volume(model,p,T,z; phase = :unknown)
 
 Returns an initial guess of the volume at a pressure, temperature, composition and suggested phase.
@@ -26,23 +36,31 @@ If the suggested phase is `:unkwown` or `:liquid`, calls [`x0_volume_liquid`](@r
 
 If the suggested phase is `:gas`, calls [`x0_volume_gas`](@ref).
 
+If the suggested phase is `solid`, calls [`x0_volume_solid`](@ref).
+
+Returns `NaN` otherwise
+
 """
-function x0_volume(model,p,T,z; phase = :unknown)
+function x0_volume(model, p, T, z = SA[1.0]; phase = :unknown)
     phase = Symbol(phase)
     if phase === :unknown || is_liquid(phase)
         return x0_volume_liquid(model,T,z)
     elseif is_vapour(phase)
         return x0_volume_gas(model,p,T,z)
     elseif is_supercritical(phase)
-     else
-        error("unreachable state on x0_volume")
+        return x0_volume_gas(model,p,T,z)
+    elseif is_solid(phase)
+        x0_volume_solid(model,T,z)
+    else
+        _0 = zero(p+T+first(z))
+        return _0/_0
     end
 end
 
 """
     lb_volume(model::EoSModel,z=SA[1.0])
 
-Returns the lower bound volume. 
+Returns the lower bound volume.
 
 It has different meanings depending on the Equation of State, but symbolizes the minimum allowable volume at a certain composition:
 
@@ -61,7 +79,7 @@ function lb_volume end
 """
     T_scale(model::EoS,z=SA[1.0])
 
-Represents a temperature scaling factor. 
+Represents a temperature scaling factor.
 
 On any EoS based on Critical parameters (Cubic or Empiric EoS), the temperature scaling factor is chosen to be the critical temperature.
 
@@ -76,12 +94,12 @@ function T_scale end
 
 Represents a pressure scaling factor
 
-On any EoS based on Critical parameters (Cubic or  
-Empiric EoS), the pressure scaling factor is    
+On any EoS based on Critical parameters (Cubic or
+Empiric EoS), the pressure scaling factor is
 chosen to be a function of the critical pressure.
 
-On SAFT or other molecular EoS, the temperature    
-scaling factor is chosen to a function of ∑(zᵢ*ϵᵢ*(σᵢᵢ)³)    
+On SAFT or other molecular EoS, the temperature
+scaling factor is chosen to a function of ∑(zᵢ*ϵᵢ*(σᵢᵢ)³)
 
 Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
 
@@ -108,7 +126,7 @@ antoine_coef(model) = nothing
 """
     x0_sat_pure(model::EoSModel,T,z=SA[1.0])
 
-Returns a 2-tuple corresponding to `(log10(Vₗ),log10(Vᵥ))`, where `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses. 
+Returns a 2-tuple corresponding to `(log10(Vₗ),log10(Vᵥ))`, where `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses.
 
 Used in [`saturation_pressure`](@ref) methods that require initial volume guesses.
 
@@ -119,7 +137,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
     #given T = Teos:
     #calculate B(Teos)
     PB = Peos = -2B
-    
+
     veos = volume_compress(model,PB,T)
     with a (P,V,T,B) pair, change to
     (P,V,a,b)
@@ -131,18 +149,18 @@ function x0_sat_pure(model,T,z=SA[1.0])
     _0 = zero(B)
     #virial volume below lower bound volume.
     #that means that we are way over the critical point
-    if -2B < lb_v 
+    if -2B < lb_v
         _nan = _0/_0
         return (_nan,_nan)
     end
-  
+
     p = -0.25*R̄*T/B
     vl = x0_volume(model,p,T,z,phase=:l)
     vl = _volume_compress(model,p,T,SA[1.0],vl)
     #=the basis is that p = RT/v-b - a/v2
     we have a (p,v,T) pair
     and B = 2nd virial coefficient = b-a/RT
-    with that, we solve for a and b 
+    with that, we solve for a and b
     as a and b are vdW, Pc and Tc can be calculated
     with Tc and Pc, we use [1] to calculate vl0 and vv0
     with Tc, we can also know in what regime we are.
@@ -154,11 +172,11 @@ function x0_sat_pure(model,T,z=SA[1.0])
     The van der Waals equation: analytical and approximate solutions
     =#
     γ = p*vl*vl/(R̄*T)
-    _c = vl*(vl + B - γ) 
+    _c = vl*(vl + B - γ)
     _b = γ - B - vl
     Δ = Solvers.det_22(_b,_b,4,_c)
     if isnan(vl) | (Δ < 0)
-         
+
         #fails on two ocassions:
         #near critical point, or too low.
         #old strategy
@@ -192,39 +210,39 @@ function x0_sat_pure(model,T,z=SA[1.0])
         return (log10(x0l),log10(x0v))
     end
     # if b1/b2 < -0.95, then T is near Tc.
-    #if b<lb_v then we are in trouble 
+    #if b<lb_v then we are in trouble
     #critical regime or something horribly wrong happened
     if (b1/b2 < -0.95) | (b<lb_v) | (Tr>0.99)
         x0l = 4*lb_v
         x0v = -2*B #gas volume as high as possible
-        return (log10(x0l),log10(x0v))   
+        return (log10(x0l),log10(x0v))
     end
     Vl0,Vv0 = vdw_x0_xat_pure(T,Tc,Pc,Vc)
     x0l = min(Vl0,vl)
     x0v = min(1e4*one(Vv0),Vv0) #cutoff volume
-    return (log10(x0l),log10(x0v)) 
+    return (log10(x0l),log10(x0v))
 end
 
 function vdw_x0_xat_pure(T,T_c,P_c,V_c)
     Tr = T/T_c
     Trm1 = 1.0-Tr
     Trmid = sqrt(Trm1)
-    if Tr >= 0.7 
+    if Tr >= 0.7
         c_l = 1.0+2.0*Trmid + 0.4*Trm1 - 0.52*Trmid*Trm1 +0.115*Trm1*Trm1 #Eq. 29
     else
         c_l = 1.5*(1+sqrt(1-(32/27)*Tr)) #Eq. 32
     end
 
     if Tr >= 0.46
-        #Eq. 30, valid in 0.46 < Tr < 1 
-        c_v = 1.0-2.0*Trmid + 0.4*Trm1 + 0.52*Trmid*Trm1 +0.207*Trm1*Trm1   
+        #Eq. 30, valid in 0.46 < Tr < 1
+        c_v = 1.0-2.0*Trmid + 0.4*Trm1 + 0.52*Trmid*Trm1 +0.207*Trm1*Trm1
     elseif Tr <= 0.33
         #Eq. 33, valid in 0 < Tr < 0.33
         c_v = (3*c_l/(ℯ*(3-c_l)))*exp(-(1/(1-c_l/3)))
 
     else
         #Eq. 31 valid in 0.25 < Tr < 1
-        mean_c = 1.0 + 0.4*Trm1 + 0.161*Trm1*Trm1     
+        mean_c = 1.0 + 0.4*Trm1 + 0.161*Trm1*Trm1
         c_v = 2*mean_c - c_l
     end
     #volumes predicted by vdW
@@ -308,7 +326,7 @@ end
 """
     x0_saturation_temperature(model::EoSModel,p)
 
-Returns a 3-tuple corresponding to `(T,Vₗ,Vᵥ)`, `T` is the initial guess for temperature and `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses. 
+Returns a 3-tuple corresponding to `(T,Vₗ,Vᵥ)`, `T` is the initial guess for temperature and `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses.
 Used in [`saturation_temperature`](@ref) with [`AntoineSaturation`](@ref).
 """
 function x0_saturation_temperature end
@@ -328,7 +346,7 @@ function x0_saturation_temperature(model::EoSModel,p,crit::Tuple)
     lnp̄ = log(p / Pc)
     T0 = Tc*(B/(A-lnp̄)-C)
     pii,vli,vvi = saturation_pressure(model,T0,ChemPotVSaturation(;crit))
-    
+
     if isnan(pii)
         nan = zero(p)/zero(p)
         return (nan,nan,nan)

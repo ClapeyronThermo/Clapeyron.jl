@@ -154,6 +154,6 @@ include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
 include("models/PeTS/PeTS.jl")
 include("models/UFTheory/UFTheory.jl")
-
+include("models/AnalyticalSLV/AnalyticalSLV.jl")
 include("utils/misc.jl")
 end # module
