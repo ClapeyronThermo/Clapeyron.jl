@@ -29,7 +29,7 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         _p,dpdV = p∂p∂V(model,_V,T,z)
         dpdV > 0 && return _nan #inline mechanical stability.
         abs(_p-pset) < 3eps(pset) && return zero(_V)
-        _Δ = (pset-_p)/(_V*dpdV)
+        _Δ = (pset-_p)/(_V*dpdV) #(_p - pset)*κ
         return _Δ
     end
     function f_fixpoint(_V)
