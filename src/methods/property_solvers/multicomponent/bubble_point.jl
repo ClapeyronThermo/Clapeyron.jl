@@ -277,6 +277,7 @@ function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
     end
 end
 
+include("bubble_point/bubble_activity.jl")
 include("bubble_point/bubble_chempot.jl")
 include("bubble_point/bubble_fugacity.jl")
 
