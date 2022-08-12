@@ -138,6 +138,6 @@ end
 const SAFTγMie = SAFTgammaMie
 export SAFTgammaMie,SAFTγMie
 
-SAFTVRMie(model::SAFTgammaMie) = model.vrmodel
+SAFTVRMie(model::SAFTgammaMieModel) = model.vrmodel
 
 include("equations.jl")
