@@ -159,8 +159,8 @@ end
    end
    
    function d(model::PCSAFTModel, V, T, z, i)
-       ϵii = model.params.epsilon.diagvalues[i]
-       σii = model.params.sigma.diagvalues[i]
+       ϵii = model.params.epsilon.values[i,i]
+       σii = model.params.sigma.values[i,i]
        return σii * (1 - 0.12exp(-3ϵii/T))
    end
    

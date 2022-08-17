@@ -68,7 +68,7 @@ function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], i
     return model
 end
 
-mw(model::SAFTVRQMieModel) = model.params.Mw.diagvalues .* 1e3
+mw(model::SAFTVRQMieModel) = diagvalues(model.params.Mw) .* 1e3
 
 function a_mono(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     _,_,vrdata = _data

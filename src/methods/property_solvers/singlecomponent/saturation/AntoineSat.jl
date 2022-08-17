@@ -26,13 +26,6 @@ struct AntoineSaturation{T,C} <: SaturationMethod
     max_iters::Int 
 end
 
-function NLSolvers.NEqOptions(sat::AntoineSaturation)
-    return NEqOptions(f_limit = sat.f_limit,
-                    f_abstol = sat.atol,
-                    f_reltol = sat.rtol,
-                    maxiter = sat.max_iters)
-end
-
 function AntoineSaturation(;T0 = nothing,
     vl = nothing,
     vv = nothing,

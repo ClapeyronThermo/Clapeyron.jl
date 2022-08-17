@@ -126,13 +126,6 @@ function ChemPotDensitySaturation(;vl = nothing,
     end
 end
 
-function NLSolvers.NEqOptions(sat::ChemPotDensitySaturation)
-    return NEqOptions(f_limit = sat.f_limit,
-                    f_abstol = sat.atol,
-                    f_reltol = sat.rtol,
-                    maxiter = sat.max_iters)
-end
-
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotDensitySaturation{Nothing})
     x0 = x0_sat_pure(model,T) .|> exp10
     vl,vv = x0

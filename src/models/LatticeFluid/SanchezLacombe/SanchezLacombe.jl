@@ -113,9 +113,9 @@ end
 
 function lb_volume(model::SanchezLacombe,z=SA[1.0])
     r = model.params.segment.values
-    v = model.params.vol.diagvalues
+    v = model.params.vol.values
     #v_r,ε_r = mix_vε(model,0.0,0.0,z,model.mixing,r̄,Σz)
-    return sum(r[i]*z[i]*v[i] for i in @comps)
+    return sum(r[i]*z[i]*v[i,i] for i in @comps)
 end
 
 function T_scale(model::SanchezLacombe,z=SA[1.0])

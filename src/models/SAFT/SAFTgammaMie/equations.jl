@@ -6,8 +6,8 @@ function lb_volume(model::SAFTgammaMieModel, z = SA[1.0])
     vk  = model.groups.n_flattenedgroups
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
-    σᵢᵢ = model.params.sigma.diagvalues
-    val = π/6*N_A*sum(z[i]*sum(vk[i][k]*seg[k]*S[k]*σᵢᵢ[k]^3 for k in @groups(i)) for i in @comps)
+    σ = model.params.sigma.values
+    val = π/6*N_A*sum(z[i]*sum(vk[i][k]*seg[k]*S[k]*σ[k,k]^3 for k in @groups(i)) for i in @comps)
     return val
 end
 
@@ -46,13 +46,14 @@ end
 function data(model::SAFTgammaMieModel, V, T, z)
     m̄ = dot(z, model.vrmodel.params.segment.values)
     X = @f(X_gc)
-    _d_gc = Clapeyron.d(model,V,T,X)
+    _d_gc = d(model,V,T,X)
     _d_gc_av = @f(d_gc_av,_d_gc)
     ζi = ζ0123(model,V,T,X,_d_gc,m̄)
     _ζ_X,σ3x = ζ_X_σ3(model,V,T,X,_d_gc,m̄)
     _ρ_S = N_A/V*m̄
     _ζst = _ζst = σ3x*_ρ_S*π/6
-    return (_d_gc,X,(_d_gc_av,_ρ_S,ζi,_ζ_X,_ζst,σ3x,m̄))
+    vrdata = (_d_gc_av,_ρ_S,ζi,_ζ_X,_ζst,σ3x,m̄)
+    return (_d_gc,X,vrdata)
 end
 
 function X_gc(model::SAFTgammaMieModel,V,T,z)
@@ -116,7 +117,6 @@ function a_chain(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     return a_chain(model.vrmodel,V,T,z,vrdata)
 end
 
-
 function a_assoc(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     _,_,vrdata = _data
     return a_assoc(model.vrmodel,V,T,z,vrdata)
@@ -153,3 +153,27 @@ const SAFTγMieconsts =(
                 4.65297446837297	    -0.00192518067137033 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0
                -0.867296219639940	     0	                 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0],
 )
+
+########
+#=
+Optimizations for single component SAFTgammaMieModel
+=#
+
+#######
+
+function d_gc_av(model::SAFTgammaMieModel,V,T,z::SingleComp,_d_gc = d(model,V,T,@f(X_gc)))
+    _0 = zero(eltype(_d_gc))
+    _z = only(model.groups.n_groups_cache)  
+    ∑zinv2 = 1/(sum(_z)^2)
+    di = _0
+    for k ∈ @groups
+        zk = _z[k]
+        iszero(zk) && continue
+        dk = _d_gc[k]
+        di += zk*zk*dk^3
+        for l ∈ 1:k - 1
+            di += 0.25*zk*_z[l]*(dk + _d_gc[l])^3 # 2*(di + dj/2)^3 = di 
+        end
+    end
+    return SA[cbrt(di*∑zinv2)]
+end

@@ -14,11 +14,7 @@ function crit_pure(model::EoSModel,x0=nothing;options = NEqOptions())
     end
     x01,x02 = x0
     T̄  = T_scale(model)*one(x01*one(x02))
-    if T̄ isa Base.IEEEFloat
-        x0 = MVector((x01,x02))
-    else
-        x0 = SizedVector{2,typeof(T̄)}((x01,x02))
-    end
+    x0 = vec2(x01,x02,T̄)
     f! = ObjCritPure(model,T̄)
     solver_res = Solvers.nlsolve(f!, x0, TrustRegion(Newton(), NWI()), options,ForwardDiff.Chunk{2}())
     r  = Solvers.x_sol(solver_res)

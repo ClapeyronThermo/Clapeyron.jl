@@ -103,6 +103,14 @@ Clapeyron.fugacity_coefficient
 ```@docs
 Clapeyron.mixing
 ```
+## Thermodynamic Method Dispatch types
+```@docs
+Clapeyron.ThermodynamicMethod
+Clapeyron.SaturationMethod
+Clapeyron.BubblePointMethod
+Clapeyron.DewPointMethod
+Clapeyron.TPFlashMethod
+```
 
 ## Single component properties
 
@@ -123,9 +131,17 @@ Clapeyron.acentric_factor
 
 ```@docs
 Clapeyron.bubble_pressure
+Clapeyron.ChemPotBubblePressure
+Clapeyron.FugBubblePressure
 Clapeyron.bubble_temperature
+Clapeyron.ChemPotBubbleTemperature
+Clapeyron.FugBubbleTemperature
 Clapeyron.dew_pressure
+Clapeyron.ChemPotDewPressure
+Clapeyron.FugDewPressure
 Clapeyron.dew_temperature
+Clapeyron.ChemPotDewTemperature
+Clapeyron.FugDewTemperature
 Clapeyron.azeotrope_pressure
 Clapeyron.azeotrope_temperature
 Clapeyron.LLE_pressure
@@ -166,6 +182,7 @@ Clapeyron.lb_volume
 Clapeyron.T_scale
 Clapeyron.p_scale
 Clapeyron.x0_volume
+Clapeyron.x0_volume_solid
 Clapeyron.x0_volume_liquid
 Clapeyron.x0_volume_gas
 Clapeyron.volume_virial
