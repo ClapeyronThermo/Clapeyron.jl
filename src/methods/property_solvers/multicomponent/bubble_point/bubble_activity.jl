@@ -209,29 +209,42 @@ function bubble_temperature_impl(model,p,x,method::ActivityBubbleTemperature)
     end
     
     Told = zero(Tmix)
+    pold = zero(Tmix)
+    pcalc = zero(Tmix)
     γ = zeros(eltype(μmix),length(pure))
     ΔHvap = VT_enthalpy.(pure,vv_pure,T_pure) .- VT_enthalpy.(pure,vl_pure,T_pure)
     
     for k in 1:method.itmax_ss
         for i in eachindex(γ)
             pᵢ = exp((ΔHvap[i]/R̄)*(1/T_pure[i] - 1/Tmix) + log(p)) #approximation for pi = psat(pure,Tmix)
-            vpureᵢ = vl_pure[i] #TODO: move from (p,Tpure) to (pi,Tmix) conditions
-            μᵢ = VT_gibbs_free_energy_res(pure[i],vpureᵢ,Tmix)
+            vpureᵢ = vl_pure[i]
+            #v0i = vl_pure[i]
+            #βi = VT_isothermal_compressibility(pure[i],v0i,T_pure[i])
+            #v1i  = v0i*exp(βi*(p - pᵢ))
+            #αi = VT_isobaric_expansivity(pure[i],v1i,T_pure[i])
+            #v2i = v1i*exp(αi*(Tmix - T_pure[i]))
+            #vpureᵢ = v2i
+            #μᵢ = VT_gibbs_free_energy_res(pure[i],vpureᵢ,Tmix)
             μᵢ = eos_res(pure[i],vpureᵢ,Tmix) + (pᵢ - RT/vpureᵢ)*vpureᵢ
-            #@show μᵢ - xx
-            ϕ̂ᵢ =  exp(μᵢ/RT - log(pᵢ*vpureᵢ/RT))
+            #p*vv = RTi
+            #vv = RTi/p
+            ##
+            vvᵢ = vv_pure[i]*(Tmix/T_pure[i])*(p/pᵢ)
+            μvᵢ = eos_res(pure[i],vvᵢ,Tmix) + (pᵢ - RT/vvᵢ)*vvᵢ
+            ϕ̂ᵢ =  exp(μvᵢ/RT - log(pᵢ*vvᵢ/RT))
             γ[i] = exp(log(vpureᵢ/vl) + (μmix[i] - μᵢ)/RT -  vpureᵢ*(p - pᵢ)/RT)
             ln𝒫 = vpureᵢ*(p-pᵢ)/RT
             𝒫 = exp(ln𝒫)
-            y[i] = x[i]*γ[i]*p*𝒫*ϕ̂ᵢ/ϕ[i]
+            y[i] = pᵢ*x[i]*γ[i]*𝒫*ϕ̂ᵢ/(ϕ[i])
         end
-
-        ∑y = sum(y)
-        y ./= ∑y
+        pold = pcalc
+        zi = pold*vv/RT
+        pcalc = sum(y) #pv = nRT, T = pv/R
+        #@show pcalc
+        y ./= pcalc
         if iszero(vv)
             vv = dot(y,vv_pure)
         end
-
         #actual stepping
         #on a two phase region, (H_l - H_v)/(S_l - S_v) = T
         Told = Tmix
@@ -243,18 +256,28 @@ function bubble_temperature_impl(model,p,x,method::ActivityBubbleTemperature)
         H_v = A_v - vv*∂A∂V_v - Tmix*∂A∂T_v
         S_l = - ∂A∂T_l
         S_v = - ∂A∂T_v
-        Tmix = (H_l - H_v)/(S_l - S_v)
+        Tcalc = (H_l - H_v)/(S_l - S_v)
+        #dT/dp = t - tcalc/p - calc
+        #dT/dp(p-pcalc) + tcalc = t
+        dTdP = Tcalc*(vl - vv)/(H_l - H_v)
+        Tmm = pcalc*vv/(R̄*zi) #pv = zRT
+        Tmix = Tcalc + dTdP*(p-pcalc)
+        #@show Tmm,Tmix
         RT = (R̄*Tmix)
         logϕ, vv = lnϕ(model,p,Tmix,y,phase = :vapor, vol0 = vv)
         vl = volume(model,p,Tmix,x,vol0 = vl)
         ϕ .= exp.(logϕ)
 
-        err = abs(Told-Tmix)/Tmix
+        err = abs(dTdP*(p-pcalc))
         μmix = VT_chemical_potential_res!(μmix,model,vl,Tmix,x)
         if err < method.rtol_ss
+            @show err
             break
         end
     end
+    @show pressure(model,vl,Tmix,x)
+    @show pressure(model,vv,Tmix,y)
+
     return Tmix,vl,vv,y
 end
 
@@ -265,3 +288,18 @@ end
 ## v(p) = vi*exp(-pi*κ) * exp(κ*p)
 ## ∫v(p)/RT dp = vi*exp(-pi*κ)/RT*∫exp(κ*p) dp = vi*exp(-pi*κ)*exp(κ*p)/κ 
 ## vi*exp(κ*(p-pi))/κRT  |from pi to pmix
+
+## move from v(p,Tpure) to v(pi,Tmix) conditions
+## strategy: v(p,Tpure) -> v(pi,Tpure) -> v(pi,Tmix)
+# v0 -> v1 -> v2
+# v1 = v0*exp(κ(p-pi))
+
+# to move from v1 to v2 we need isobaric expansivity:
+# dP = (α/β)dT - (1/βV)dV #dP = 0
+# (α/β)dT = (1/βV)dV # ∫, α,β =  α1,β1 (constant, equal to initial conditions)
+# (α1)(T2 - T1) = ln(V2/V1)
+# V2 = V1*exp(α1*(T2 - T1))
+
+#finally: 
+#v2 = v0*exp(κ(p-pi))*exp(α(Tmix-T))
+
