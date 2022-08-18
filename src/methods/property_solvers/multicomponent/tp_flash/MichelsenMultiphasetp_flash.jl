@@ -72,6 +72,9 @@ function multiphase_RR!(β, x, z, φmat)
     dfc = Optim.TwiceDifferentiableConstraints(lx, ux)
 
     res = Optim.optimize(df, dfc, β, Optim.IPNewton())
+    #=
+    res = Solvers.optimize(fun,β,NLSolvers.ActiveBox(),bounds = (lx,ux))
+    =#
     β .= res.minimizer
 
     E = multiphase_E(β, φmat)
@@ -91,7 +94,10 @@ function fixpoint_multiphase!(F, x, β, φmat, model, p, T, z)
     end
     F .= x .- xold
 end
-
+NEqOptions(f_limit = method.f_limit,
+f_abstol = method.atol,
+f_reltol = method.rtol,
+maxiter = method.max_iters)
 # φ will be an nxm matrix where n (rows) are phases, m (columns) are components
 function multiphase_flash_impl(model, p, T, z, x, β, abstol, outerSSiters, outerNewtoniters)
     φmat = zeros(size(x))
@@ -100,9 +106,12 @@ function multiphase_flash_impl(model, p, T, z, x, β, abstol, outerSSiters, oute
     end
 
     f!(F, x) = fixpoint_multiphase!(F, x, β, φmat, model, p, T, z)
+    #res = Solvers.nlsolve(f!, x, NLSolvers.Anderson(m=5),NEqOptions(f_abstol = abstol,maxiter = outerSSiters))
     res = NLsolve.nlsolve(f!, x, method=:anderson, m=5, ftol=abstol, iterations=outerSSiters)
+    
     if ~(res.x_converged || res.f_converged) # second order scheme
         # @info "SS did not converged in $outerSSiters successive substitution iterations, moving on to second order minimisation"
+        #res = Solvers.nlsolve(f!,Solvers.x_sol(res),TrustRegion(Newton(), DogLeg()),NEqOptions(f_abstol = abstol,maxiter = outerNewtoniters))
         res = NLsolve.nlsolve(f!, res.zero, method=:trust_region, autodiff=:forward, ftol=abstol, iterations=outerNewtoniters)
     end
     ~(res.x_converged || res.f_converged) && @warn "Flash calculation failed to converge in $outerSSiters successive substitution iterations and $outerNewtoniters Newton iterations"

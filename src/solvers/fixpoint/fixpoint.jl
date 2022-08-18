@@ -170,3 +170,16 @@ function _fixpoint(f!::F,
     !return_last && (xi .= nan)
     return xi
 end
+
+#just use the Anderson algorithm in NLSolvers.jl
+function _fixpoint(f!::F,
+    x0::X where {X <:AbstractVector{T}},
+    method::NLSolvers.Anderson,
+    atol::T = zero(T),
+    rtol::T =8*eps(T),
+    max_iters=100,
+    return_last = false) where {F,T<:Real}
+    
+    res = NLSolvers.fixedpoint!(f!,x0,method,f_abstol = atol,maxiter = max_iters)
+    sol = x_sol(res)
+end

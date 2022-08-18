@@ -13,14 +13,33 @@ To obtain the underlying solution vector, use [`x_sol`](@ref)
 To see available solvers and options, check `NLSolvers.jl`
 """
 function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
+    _nlsolve(f!,x0,method,options,chunk)
+end
+
+function _nlsolve(f!,x0,method,options::NEqOptions,chunk)
     vector_objective = autoVectorObjective(f!,x0,chunk)
     nl_problem = NEqProblem(vector_objective)
     return nlsolve(nl_problem, x0,method, options)
 end
 
-function nlsolve(nl_problem::NEqProblem,x0,method =TrustRegion(Newton(), NWI()),options=NEqOptions())
-    return NLSolvers.solve(nl_problem, x0,method, options)
+function _nlsolve(f!::F,x0,method::NLSolvers.Anderson,options::NEqOptions,chunk) where F
+    function g!(out,x)
+        f!(out,x)
+        out .+= x
+        return out
+    end
+    fixpoint(g!,x0,method,atol = options.f_abstol,max_iters = options.maxiter)
 end
+
+function nlsolve(nl_problem::NEqProblem,x0,method =TrustRegion(Newton(), NWI()),options=NEqOptions())
+    return _nlsolve(nl_problem, x0, method, options)
+end
+
+function _nlsolve(nl_problem::NEqProblem,x0,method,options::NEqOptions)
+    return NLSolvers.solve(nl_problem, x0, method, options)
+end
+
+
 
 function autoVectorObjective(f!,x0,chunk)
     Fcache = x0 .* false
