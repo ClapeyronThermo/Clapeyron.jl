@@ -3,7 +3,7 @@
 abstract type AbstractFixPoint end
 
 """
-  Solvers.fixpoint(f,x0::Real,method=SSFixPoint())
+    Solvers.fixpoint(f,x0::Real,method=SSFixPoint())
 does a fixpoint iteration convergence on a series of real numbers.
 f is a function that should 
 the following strategies:
@@ -11,7 +11,7 @@ the following strategies:
 α = `dampingfactor` is determines a buffer for each iteration, defined as `x1 = α*f(x1) + (1-α)*x1`
 
 - `Aitken()`: uses Aitken's delta-squared process to accelerate convergence of the series. recommended for harmonic iterates.
-
+- `Anderson(;memory = 5;delay = 0;)`
 """
 function fixpoint end
 
@@ -27,7 +27,7 @@ end
 
 struct AitkenFixPoint <: AbstractFixPoint end
 
-function promote_method(method::AitkenFixPoint,T)
+function promote_method(method,T)
     return method
 end
 
@@ -54,7 +54,7 @@ function convergence(xold,xi,atol,rtol)
 end
 
 function fixpoint(f,x0,
-    method::AbstractFixPoint = SSFixPoint();
+    method = SSFixPoint();
     atol=zero(eltype(x0)),
     rtol=8eps(one(eltype(x0))), 
     max_iters=100,
@@ -129,7 +129,7 @@ function _fixpoint(f::F,
 end
 
 function _fixpoint(f!::F,
-    x0::X where {X <:AbstractVector{T}},
+    x0::X where {X <:AbstractArray{T}},
     method::SSFixPoint,
     atol::T = zero(T),
     rtol::T =8*eps(T),
@@ -172,14 +172,39 @@ function _fixpoint(f!::F,
 end
 
 #just use the Anderson algorithm in NLSolvers.jl
-function _fixpoint(f!::F,
-    x0::X where {X <:AbstractVector{T}},
+function __fixpoint(f!::F,
+    x0::X where {X <:AbstractArray{T}},
     method::NLSolvers.Anderson,
     atol::T = zero(T),
     rtol::T =8*eps(T),
     max_iters=100,
     return_last = false) where {F,T<:Real}
+    g!(out,x) = vec(f!(vec(out),x))
+    t0 = time()
+    preres = NLSolvers.fixedpoint!(g!,vec(x0),method,f_abstol = atol,maxiter = max_iters)
     
-    res = NLSolvers.fixedpoint!(f!,x0,method,f_abstol = atol,maxiter = max_iters)
-    sol = x_sol(res)
+    #temporary fix until preres isa ConvergenceInfo (next release of NLSolvers)
+    return NLSolvers.ConvergenceInfo(
+            method,
+            (
+                solution = preres.x,
+                best_residual = preres.Fx,
+                ρF0 = Inf,
+                ρ2F0 = Inf,
+                iter = preres.acc_iter,
+                time = time() - t0
+            ),
+            NEqOptions(f_abstol = atol,maxiter = max_iters)
+    )
+end
+
+function _fixpoint(f!::F,
+    x0::X where {X <:AbstractArray{T}},
+    method::NLSolvers.Anderson,
+    atol::T = zero(T),
+    rtol::T =8*eps(T),
+    max_iters=100,
+    return_last = false) where {F,T<:Real}
+    res = __fixpoint(f!,x0,method,atol,rtol,max_iters,return_last)
+    return x_sol(res)
 end

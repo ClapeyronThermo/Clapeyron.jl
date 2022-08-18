@@ -28,7 +28,7 @@ function _nlsolve(f!::F,x0,method::NLSolvers.Anderson,options::NEqOptions,chunk)
         out .+= x
         return out
     end
-    fixpoint(g!,x0,method,atol = options.f_abstol,max_iters = options.maxiter)
+    __fixpoint(g!,x0,method,options.f_abstol,0.0,options.maxiter,true)
 end
 
 function nlsolve(nl_problem::NEqProblem,x0,method =TrustRegion(Newton(), NWI()),options=NEqOptions())
@@ -103,4 +103,86 @@ function NLSolvers.upto_gradient(meritobj::NLSolvers.MeritObjective, ∇f, x)
     return F,G
 end
 =#
+x_converged(ci::NLSolvers.ConvergenceInfo) = false
+f_converged(ci::NLSolvers.ConvergenceInfo) = false
+g_converged(ci::NLSolvers.ConvergenceInfo) = false
 
+function x_converged(ci::NLSolvers.ConvergenceInfo{<:NLSolvers.NelderMead,<:Any,<:NLSolvers.OptimizationOptions})
+    return ci.info.ρs <= ci.options.x_abstol
+end
+
+function x_converged(ci::NLSolvers.ConvergenceInfo{<:NLSolvers.SimulatedAnnealing,<:Any,<:NLSolvers.OptimizationOptions})
+    #don't know what to do do here, simulated annealing does not "converge" in the typical sense
+    return true
+end
+
+function x_converged(ci::NLSolvers.ConvergenceInfo{<:Any,<:Any,<:NLSolvers.OptimizationOptions})
+    info = ci.info
+    opt = ci.options
+    x_abstol = haskey(info, :ρs) && (info.ρ <= opt.x_abstol)
+    x_reltol = haskey(info, :ρs) && (info.ρs/info.ρx <= opt.x_reltol)
+    return x_abstol || x_reltol
+end
+
+function f_converged(ci::NLSolvers.ConvergenceInfo{<:Any,<:Any,<:NLSolvers.OptimizationOptions})
+    info = ci.info
+    opt = ci.options
+    f_limit = !isfinite(opt.f_limit) || (info.minimum <= opt.f_limit)
+    f_abstol = haskey(info, :fx) && (abs(info.fx - info.minimum) <= opt.f_abstol)
+    f_reltol = haskey(info, :fx) && (abs((info.fx - info.minimum)/info.fx) <= opt.f_reltol)
+    return f_limit || f_abstol || f_reltol
+end
+
+function f_converged(ci::NLSolvers.ConvergenceInfo{<:Any,<:Any,<:NLSolvers.NEqOptions})
+    info = ci.info
+    opt = ci.options
+    ρF = norm(ci.info.best_residual, Inf)
+    #ρFz = norm(ci.info.solution, 2)
+    f_abstol = ρF <= opt.f_abstol
+    return f_abstol
+end
+
+function g_converged(ci::NLSolvers.ConvergenceInfo{<:Any,<:Any,<:NLSolvers.OptimizationOptions})
+    info = ci.info
+    opt = ci.options
+    if haskey(info, :∇fz)
+        ρ∇f = opt.g_norm(info.∇fz)
+        g_abstol = ρP<=opt.g_abstol
+        g_reltol = ρ∇f/info.∇f0<=opt.g_reltol
+        if haskey(info, :prob) && hasbounds(info.prob)
+            ρP = opt.g_norm(
+                info.solution .- clamp.(info.solution .- info.∇fz, info.prob.bounds...),
+            )
+            gp_abstol = ρP <= opt.g_abstol
+        else
+            gp_abstol = false
+        end
+    else
+        g_abstol =  false
+        g_reltol = false
+    end
+    return g_abstol || g_reltol || gp_abstol
+end
+
+
+function converged(ci::NLSolvers.ConvergenceInfo)
+    opt = ci.options
+    info = ci.info
+    conv_flags = x_converged(ci) || f_converged(ci) || g_converged(ci)
+    if haskey(info, :Δ)
+        Δmin = ci.solver.Δupdate.Δmin isa Nothing ? 0 : ci.solver.Δupdate.Δmin
+        Δ = info.Δ <= Δmin
+        Δ_finite = isfinite(info.Δ)
+    else
+        Δ = false
+        Δ_finite = true
+    end
+    x = x_converged(ci)
+    f = f_converged(ci)
+    g = g_converged(ci)
+    #finite flags
+    x_finite = all(isfinite,x_sol(ci))
+    conv_flags = f || x || g || Δ
+    finite_flags = x_finite && Δ_finite #  && g_finite && f_finite
+    return conv_flags && finite_flags
+end 

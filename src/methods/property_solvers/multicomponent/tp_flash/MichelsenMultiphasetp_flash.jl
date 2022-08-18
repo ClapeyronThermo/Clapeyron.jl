@@ -72,9 +72,11 @@ function multiphase_RR!(β, x, z, φmat)
     dfc = Optim.TwiceDifferentiableConstraints(lx, ux)
 
     res = Optim.optimize(df, dfc, β, Optim.IPNewton())
-    #=
-    res = Solvers.optimize(fun,β,NLSolvers.ActiveBox(),bounds = (lx,ux))
-    =#
+    #fact(x) = cholesky(Solvers.PositiveFactorizations.Positive,x) 
+    #res1 = Solvers.optimize(fun,β,NLSolvers.ActiveBox(factorize = fact),bounds = (lx,ux))
+    #@show Solvers.x_sol(res1) - res.minimizer 
+    #@show res
+    #@show res1
     β .= res.minimizer
 
     E = multiphase_E(β, φmat)
@@ -85,6 +87,9 @@ function multiphase_RR!(β, x, z, φmat)
 end
 
 function fixpoint_multiphase!(F, x, β, φmat, model, p, T, z)
+    sφ = size(φmat) #at the moment, NLSolvers doesn't support arbitrary shapes :( https://github.com/JuliaNLSolvers/NLSolvers.jl/issues/25
+    x = reshape(x,sφ)
+    F = reshape(F,sφ)
     xold = copy(x)
     multiphase_RR!(β, x, z, φmat)
     # Recalculate fugacity coefficients
@@ -93,11 +98,9 @@ function fixpoint_multiphase!(F, x, β, φmat, model, p, T, z)
         φ_i .= fugacity_coefficient(model, p, T, x[i, :])
     end
     F .= x .- xold
+    return vec(F)
 end
-NEqOptions(f_limit = method.f_limit,
-f_abstol = method.atol,
-f_reltol = method.rtol,
-maxiter = method.max_iters)
+
 # φ will be an nxm matrix where n (rows) are phases, m (columns) are components
 function multiphase_flash_impl(model, p, T, z, x, β, abstol, outerSSiters, outerNewtoniters)
     φmat = zeros(size(x))
@@ -106,16 +109,31 @@ function multiphase_flash_impl(model, p, T, z, x, β, abstol, outerSSiters, oute
     end
 
     f!(F, x) = fixpoint_multiphase!(F, x, β, φmat, model, p, T, z)
-    #res = Solvers.nlsolve(f!, x, NLSolvers.Anderson(m=5),NEqOptions(f_abstol = abstol,maxiter = outerSSiters))
+    #neq_opts = NEqOptions(f_abstol = abstol,maxiter = outerSSiters)
+    #res1 = Solvers.nlsolve(f!, x, NLSolvers.Anderson(0,5,1.0,1e-10),neq_opts)
     res = NLsolve.nlsolve(f!, x, method=:anderson, m=5, ftol=abstol, iterations=outerSSiters)
-    
+    #@show res1
+    #@show res
+    #@show Solvers.x_sol(res1) - vec(res.zero)
+    #@show Solvers.x_sol(res1) - vec(x)
+    #@show res.f_converged
+    #@show res1
+    #if !Solvers.converged(res)
     if ~(res.x_converged || res.f_converged) # second order scheme
         # @info "SS did not converged in $outerSSiters successive substitution iterations, moving on to second order minimisation"
-        #res = Solvers.nlsolve(f!,Solvers.x_sol(res),TrustRegion(Newton(), DogLeg()),NEqOptions(f_abstol = abstol,maxiter = outerNewtoniters))
+        #res1 = Solvers.nlsolve(f!,vec(res.zero),TrustRegion(Newton(), Dogleg()),NEqOptions(f_abstol = abstol,maxiter = outerNewtoniters))
         res = NLsolve.nlsolve(f!, res.zero, method=:trust_region, autodiff=:forward, ftol=abstol, iterations=outerNewtoniters)
+        #@show Solvers.x_sol(res1) - vec(res.zero)
+        #@show res
     end
     ~(res.x_converged || res.f_converged) && @warn "Flash calculation failed to converge in $outerSSiters successive substitution iterations and $outerNewtoniters Newton iterations"
+    #!Solvers.converged(res) && @warn "Flash calculation failed to converge in $outerSSiters successive substitution iterations and $outerNewtoniters Newton iterations"
 
     return res.zero, β
 end
 
+struct MichelsenMultiTPFlash <: TPFlashMethod end
+
+function tp_flash_impl(model,p,T,z,method::MichelsenMultiTPFlash)
+    z, b = Michelsen_multiphase_tp_flash(model, p, T, z; abstol=1e-10, outerSSiters=30, outerNewtoniters=30)
+end
