@@ -8,7 +8,6 @@ const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 
 #for non allocating vectors of zeros and ones
 using FillArrays: FillArrays
-
 using Roots: Roots
 using NLSolvers
 using NLSolvers: NEqOptions
@@ -158,6 +157,6 @@ include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
 include("models/PeTS/PeTS.jl")
 include("models/UFTheory/UFTheory.jl")
-
+include("models/AnalyticalSLV/AnalyticalSLV.jl")
 include("utils/misc.jl")
 end # module

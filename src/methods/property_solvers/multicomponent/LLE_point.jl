@@ -85,7 +85,7 @@ end
 function x0_LLE_temperature(model::EoSModel,p,x)
     xx = Fractions.neg(x)
     pure = split_model(model)
-    sat = saturation_temperature.(pure,x)
+    sat = saturation_temperature.(pure,p)
     V_l_sat = getindex.(sat,2)
     V0_l = dot(x,V_l_sat)/sum(x)
     V0_ll = dot(xx,V_l_sat)

@@ -1,12 +1,13 @@
 
 """
-    SaturationMethod
+    SaturationMethod <: ThermodynamicMethod 
 
 Abstract type for `saturation_temperature` and `saturation_pressure` routines.
 
-"""
+Should at least support passing the `crit` keyword, containing the critical point, if available.
 
-abstract type SaturationMethod end
+"""
+abstract type SaturationMethod <: ThermodynamicMethod end
 
 
 """

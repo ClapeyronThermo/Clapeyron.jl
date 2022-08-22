@@ -1,3 +1,4 @@
+#=
 abstract type ClausiusTranslationModel <: TranslationModel end
 
 struct ClausiusTranslationParam <: EoSParam
@@ -58,8 +59,8 @@ function translation(model::CubicModel,V,T,z,translation_model::ClausiusTranslat
     for i ∈ @comps
         Tci = Tc[i]
         Pci = Pc[i]
-        ki = (1 - (Δ1+Δ2-1)*Ωbx[i])/3
-        c[i] = k*R̄*Tci/Pci - Vc[i]
+        ki = (1 + (Δ1+Δ2+1)*Ωbx[i])/3
+        c[i] = ki*R̄*Tci/Pci - Vc[i]
     end
     return c
-end
+end=#

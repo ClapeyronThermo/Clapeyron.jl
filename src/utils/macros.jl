@@ -128,7 +128,7 @@ macro newmodelgc(name, parent, paramstype)
         return eosshow(io, model)
     end
 
-    Base.length(model::$name) = Base.length(model.icomponents)
+    Base.length(model::$name) = Base.length(model.groups.components)
 
     molecular_weight(model::$name,z=SA[1.0]) = group_molecular_weight(model.groups,mw(model),z)
 
@@ -165,7 +165,7 @@ macro newmodel(name, parent, paramstype)
         return eosshow(io, model)
     end
     molecular_weight(model::$name,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
-    Base.length(model::$name) = Base.length(model.icomponents)
+    Base.length(model::$name) = Base.length(model.components)
     end |> esc
 end
 
@@ -192,7 +192,7 @@ macro newmodelsimple(name, parent, paramstype)
         return eosshow(io, model)
     end
 
-    Base.length(model::$name) = Base.length(model.icomponents)
+    Base.length(model::$name) = Base.length(model.components)
 
     end |> esc
 end

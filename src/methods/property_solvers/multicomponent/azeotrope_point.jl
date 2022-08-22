@@ -78,10 +78,3 @@ function Obj_azeotrope_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ts,p
     F[end] = (pressure(model,v_v,T,FractionVector(y)) - p)/ps
     return F
 end
-"""
-    x0_azeotrope_pressure(model::EoSModel,p)
-
-Initial point for `azeotrope_temperature(model,p)`.
-
-returns the initial guess temperature `[K]` for an azeotrope at a given pressure.
-"""

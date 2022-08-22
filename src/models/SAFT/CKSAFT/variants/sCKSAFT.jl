@@ -98,9 +98,9 @@ function a_disp(model::sCKSAFTModel, V, T, z)
 end
 
 function d(model::sCKSAFTModel, V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues
-    σ = model.params.sigma.diagvalues
-    res = σ[i] * (1 - 0.333exp(-3ϵ[i]/T))
+    ϵ = model.params.epsilon.values[i,i]
+    σ = model.params.sigma.values[i,i]
+    res = σ * (1 - 0.333exp(-3ϵ/T))
     return res
 end
 

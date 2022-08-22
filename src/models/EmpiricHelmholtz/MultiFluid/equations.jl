@@ -241,7 +241,7 @@ function x0_sat_pure(model::MultiFluidModel,T)
 end
 
 #Corresponding States
-function x0_psat(model::MultiFluidModel,T)
+function x0_psat(model::MultiFluidModel,T,crit=nothing)
     Ts = T_scale(model)
     T0 = 369.89*T/Ts
     Ps = p_scale(model)

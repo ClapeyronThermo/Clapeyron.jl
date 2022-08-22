@@ -105,8 +105,8 @@ function a_hs(model::SAFTVRSWModel, V, T, z)
 end
 
 function ζn(model::SAFTVRSWModel, V, T, z, n)
-    σ = model.params.sigma.diagvalues
-    return π/6*@f(ρ_S)*∑(@f(x_S,i)*σ[i]^n for i ∈ @comps)
+    σ = model.params.sigma.values
+    return π/6*@f(ρ_S)*∑(@f(x_S,i)*σ[i,i]^n for i ∈ @comps)
 end
 
 function ρ_S(model::SAFTVRSWModel, V, T, z)
@@ -196,8 +196,8 @@ function a_chain(model::SAFTVRSWModel, V, T, z)
 end
 
 function γSW(model::SAFTVRSWModel,V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues
-    return @f(gSW,i,i)*exp(-ϵ[i]/T)
+    ϵ = model.params.epsilon.values[i,i]
+    return @f(gSW,i,i)*exp(-ϵ/T)
 end
 
 function gSW(model::SAFTVRSWModel,V, T, z, i, j)

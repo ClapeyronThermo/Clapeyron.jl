@@ -47,6 +47,7 @@ end
 ## Common Definitions
 ```@docs
 Clapeyron.ab_premixing
+Clapeyron.mixing_rule
 ```
 
 ## Main Models
@@ -104,8 +105,6 @@ Clapeyron.MTTranslation
 
 ## Mixing Rule Models
 ```@docs
-Clapeyron.ab_premixing
-Clapeyron.mixing_rule
 Clapeyron.vdW1fRule
 Clapeyron.KayRule
 Clapeyron.HVRule
@@ -116,6 +115,7 @@ Clapeyron.WSRule
 Clapeyron.modWSRule
 Clapeyron.VTPRRule
 Clapeyron.PSRKRule
+Clapeyron.UMRRule
 Clapeyron.QCPRRule
 Clapeyron.PPR78Rule
 ```

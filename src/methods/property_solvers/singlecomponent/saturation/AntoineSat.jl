@@ -23,15 +23,7 @@ struct AntoineSaturation{T,C} <: SaturationMethod
     f_limit::Float64
     atol::Float64
     rtol::Float64
-    max_iters::Int
-    
-end
-
-function NLSolvers.NEqOptions(sat::AntoineSaturation)
-    return NEqOptions(f_limit = sat.f_limit,
-                    f_abstol = sat.atol,
-                    f_reltol = sat.rtol,
-                    maxiter = sat.max_iters)
+    max_iters::Int 
 end
 
 function AntoineSaturation(;T0 = nothing,
@@ -100,10 +92,10 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
         if isnothing(method.vl) && isnothing(method.vv)
             Vl,Vv = log10(Vl),log10(Vv)
         else
-            Vl,Vv = log10(method.Vl),log10(method.Vv)
+            Vl,Vv = log10(method.vl),log10(method.vv)
         end
     elseif isnothing(method.vl) && isnothing(method.vv)
-        Vl,Vv = x0_sat_pure(model,method.T) #exp10
+        Vl,Vv = x0_sat_pure(model,method.T0) #exp10
         T0 = method.T0
     else
         T0,Vl,Vv = method.T0,method.vl,method.vv
@@ -113,24 +105,43 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
     T0,Vl,Vv = promote(T0,Vl,Vv)
     nan = zero(T0)/zero(T0)
     fail = (nan,nan,nan)
+    
     if isnan(T0)
         return fail
     end
-
     res,converged = try_sat_temp(model,p,T0,Vl,Vv,scales,method)
     converged && return res
     #it could be that the critical point isn't run there
     T2,_,_ = res
+
     crit = method.crit
     if isnothing(crit)
         crit = crit_pure(model)
     end
+    
     Tc,pc,vc = crit
     p > pc && return fail
     T2 >= Tc && return fail
-    Vl2,Vv2 = x0_sat_pure_crit(model,0.99T2,Tc,pc,vc)
-    res,converged = try_sat_temp(model,p,0.99T2,Vl2,Vv2,scales,method)
-    converged && return res
+    
+    if 0.999pc > p > 0.95pc 
+        #you could still perform another iteration from a better initial point
+        Vl2,Vv2 = x0_sat_pure_crit(model,0.99T2,Tc,pc,vc)
+        res,converged = try_sat_temp(model,p,0.99T2,Vl2,Vv2,scales,method)
+        converged && return res
+    elseif p < 0.5pc
+        #very low pressure, we need a better aproximation. luckily we now have a better T
+        #TODO: look for a way to detect this case without looking at the critical point
+        Vl2,Vv2 = x0_sat_pure(model,T2)
+        res,converged = try_sat_temp(model,p,T2,Vl2,Vv2,scales,method)
+        converged && return res
+    end
+    
+    if p > 0.999pc
+    #almost no hope, only ClapeyronSat works in this range. 
+        crit_satmethod = ClapeyronSaturation(;crit)
+        return saturation_temperature(model,p,crit_satmethod)
+    end
+    
     return fail
 end
 
@@ -141,7 +152,7 @@ function try_sat_temp(model,p,T0,Vl,Vv,scales,method::AntoineSaturation)
         v0 = SizedVector{3,typeof(T0)}((T0,Vl,Vv))
     end
     f!(F,x) = Obj_Sat_Temp(model,F,x[1],exp10(x[2]),exp10(x[3]),p,scales,method)
-    r = Solvers.nlsolve(f!,v0, LineSearch(Newton()),NEqOptions(method))
+    r = Solvers.nlsolve(f!,v0, LineSearch(Newton()),NEqOptions(method),ForwardDiff.Chunk{3}())
     sol = Solvers.x_sol(r)
     T = sol[1]
     Vl = exp10(sol[2])

@@ -225,7 +225,7 @@ function x0_volume_liquid(model::PropaneRef,T,z = SA[1.0])
     return  1/_propaneref_rholsat(min(T,369.88889*one(T)))
 end
 
-x0_psat(model::PropaneRef,T) = _propaneref_psat(T)
+x0_psat(model::PropaneRef,T,crit=nothing) = _propaneref_psat(T)
 
 function x0_saturation_temperature(model::PropaneRef,p)
     T = _propaneref_tsat(p)
