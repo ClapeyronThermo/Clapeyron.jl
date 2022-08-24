@@ -333,3 +333,4 @@ function Base.:(^)(matrix::Compressed3DMatrix, x::Number)
     values = matrix.values .^ x
     return Compressed3DMatrix(values, matrix.outer_indices, matrix.inner_indices, matrix.outer_size, matrix.inner_size)
 end
+=#
