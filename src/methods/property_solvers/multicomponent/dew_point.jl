@@ -279,6 +279,7 @@ end
 
 include("dew_point/dew_chempot.jl")
 include("dew_point/dew_fugacity.jl") 
+include("dew_point/dew_activity.jl") 
 
 function dew_pressure(model::EoSModel,T,y;v0 = nothing)
     if isnothing(v0)
