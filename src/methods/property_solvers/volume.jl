@@ -19,10 +19,11 @@ end
 
 function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(p+T+first(z))
+    _1 = one(_0)
     isnan(V0) && return _0/_0
-    pset = one(_0)*p
+    pset = _1*p
     _nan = _0/_0
-    logV0 = log(V0)
+    logV0 = log(V0)*_1
     lb_v = lb_volume(model,z)
     function logstep(_V)
         _V < log(lb_v) && return zero(_V)/zero(_V)

@@ -68,6 +68,7 @@ end
     p = 1e5
     phases,tpds,symz,symw = Clapeyron.tpd(system,p,T,[0.5,0.5])
     @test tpds[1] ≈ -0.8370113547074933  rtol = 1e-6
+    GC.gc()
 end
 
 
@@ -82,11 +83,13 @@ end
         method = RRTPFlash()
         @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.539976318817461 rtol = 1e-6
     end
+    GC.gc()
 
     @testset "DE Algorithm" begin
         method = DETPFlash(numphases=3)
         @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.759674475174073 rtol = 1e-6
     end
+    GC.gc()
 
     @testset "Michelsen Algorithm" begin
 
@@ -98,6 +101,7 @@ end
         method2 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, second_order = true)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method2)[3] ≈ -7.577270350886795 rtol = 1e-6
     end
+    GC.gc()
 
     @testset "Michelsen Algorithm, nonvolatiles/noncondensables support" begin
 
@@ -112,21 +116,26 @@ end
         @test Clapeyron.tp_flash(system, p, T, z, method_normal)[1] ≈  
         [0.291924  0.306002  0.00222251  0.399851
         0.181195  0.158091  0.656644    0.00406898] rtol = 1e-6
+        GC.gc()
 
         method_nonvolatiles = MichelsenTPFlash(x0=x0, y0=y0, second_order=true, nonvolatiles = ["decane"])       
         @test Clapeyron.tp_flash(system, p, T, z, method_nonvolatiles)[1] ≈  
         [0.291667  0.305432  0.00223826  0.400663
         0.180861  0.15802   0.661119    0.0] rtol = 1e-6
+        GC.gc()
 
         method_noncondensables = MichelsenTPFlash(x0=x0, y0=y0, second_order=false, noncondensables = ["methane"])       
         @test Clapeyron.tp_flash(system, p, T, z, method_noncondensables)[1] ≈  
         [0.292185  0.306475  0.0      0.40134
         0.181452  0.158233  0.65623  0.00408481] rtol = 1e-6
+        GC.gc()
 
         method_both = MichelsenTPFlash(x0=x0, y0=y0, second_order=false, noncondensables = ["methane"],nonvolatiles = ["decane"])       
         @test Clapeyron.tp_flash(system, p, T, z, method_both)[1] ≈  
         [0.291928  0.3059    0.0       0.402171
         0.181116  0.158162  0.660722  0.0] rtol = 1e-6
+        GC.gc()
+
     end
 end
 
@@ -149,6 +158,7 @@ end
     p4b,vl4b,vv4b = Clapeyron.psat_chempot(model,T,vl,vv)
     @test p4 ≈ p rtol = 1e-6
     @test (p4 == p4b) && (vl4 == vl4b) && (vv4 == vv4b)
+    GC.gc()
 
     #test IsoFugacity, near criticality
     Tc_near = 0.95*647.096
@@ -156,16 +166,19 @@ end
     @test first(Clapeyron.saturation_pressure(model,Tc_near,IsoFugacitySaturation())) ≈ psat_Tcnear rtol = 1e-6
     #Test that IsoFugacity fails over critical point
     @test isnan(first(Clapeyron.saturation_pressure(model,1.1*647.096,IsoFugacitySaturation())))
+    GC.gc()
 
     #SuperAncSaturation
     p5,vl5,vv5 = Clapeyron.saturation_pressure_impl(model,T,SuperAncSaturation())
     @test p5 ≈ p rtol = 1e-6
     @test @inferred Clapeyron.saturation_pressure_impl(vdw,T,SuperAncSaturation())[1] ≈ px
+    GC.gc()
 
     #AntoineSat
     @test Clapeyron.saturation_temperature(model,p0,AntoineSaturation(T0 = 400.0))[1] ≈ 374.2401401001685 rtol = 1e-6
     @test Clapeyron.saturation_temperature(model,p0,AntoineSaturation(vl = vl5,vv = vv5))[1] ≈ 374.2401401001685 rtol = 1e-6
     @test_throws Any Clapeyron.saturation_temperature(model,p0,AntoineSaturation(vl = vl5,T0 = 400))
+    GC.gc()
 
     #ClapeyronSat
     @test Clapeyron.saturation_temperature(model,p0,ClapeyronSaturation())[1] ≈ 374.2401401001685 rtol = 1e-6
@@ -190,11 +203,13 @@ end
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ChemPotBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
+        GC.gc()
 
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure())[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure(y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
+        GC.gc()
 
     end
 
@@ -204,11 +219,13 @@ end
         @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.ChemPotBubbleTemperature(y0 = [0.7,0.3]))[1] ≈ Tres1 rtol = 1E-6
         @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.ChemPotBubbleTemperature(T0 = 450))[1] ≈ Tres1 rtol = 1E-6
         @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.ChemPotBubbleTemperature(T0 = 450,y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
+        GC.gc()
 
         @test_broken Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature())[1] ≈ Tres1 rtol = 1E-6
         @test_broken Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
         @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(T0 = 450))[1] ≈ Tres1 rtol = 1E-6
         @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(T0 = 450,y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
+        GC.gc()
 
     end
 
@@ -218,11 +235,13 @@ end
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ChemPotDewPressure(x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ChemPotDewPressure(p0 = 1.5e6))[1] ≈ pres2 rtol = 1E-6
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ChemPotDewPressure(p0 = 1.5e6,x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
+        GC.gc()
 
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure())[1] ≈ pres2 rtol = 1E-6
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure(x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure(p0 = 1.5e6))[1] ≈ pres2 rtol = 1E-6
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure(p0 = 1.5e6,x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
+        GC.gc()
 
     end
 
@@ -231,11 +250,14 @@ end
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.ChemPotDewTemperature(x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.ChemPotDewTemperature(T0 = 450))[1] ≈ Tres2 rtol = 1E-6
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.ChemPotDewTemperature(T0 = 450,x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
+        GC.gc()
 
         @test_broken Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature())[1] ≈ Tres2 rtol = 1E-6
         @test_broken Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(T0 = 450))[1] ≈ Tres2 rtol = 1E-6
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(T0 = 450,x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
+        GC.gc()
+
     end
 
     #nonvolatiles/noncondensables testing. it also test model splitting
@@ -258,6 +280,8 @@ end
         @test pa  ≈ pres1 rtol = 1E-6
         @test ya[4] == 0.0
     end
+    GC.gc()
+
 
     @testset "bubble temperature - nonvolatiles" begin
         (Ta,vla,vva,ya) = bubble_temperature(system2,p,x0,FugBubbleTemperature(y0 = y0,T0 = T,nonvolatiles = ["decane"]))
@@ -267,6 +291,8 @@ end
         @test Tb  ≈ Tres1 rtol = 1E-6
         @test yb[4] == 0.0
     end
+    GC.gc()
+
 
     @testset "dew pressure - noncondensables" begin
         (pa,vla,vva,xa) = dew_pressure(system2,T,y0,FugDewPressure(noncondensables = ["methane"],p0 = p,x0 = x0))
@@ -276,6 +302,7 @@ end
         @test pb  ≈ pres2 rtol = 1E-6
         @test xa[3] == 0.0
     end
+    GC.gc()
 
     @testset "dew temperature - noncondensables" begin
         (Ta,vla,vva,xa) = dew_temperature(system2,p,y0,FugDewTemperature(noncondensables = ["methane"],T0 = T,x0 = x0))
@@ -285,5 +312,6 @@ end
         @test Tb  ≈ Tres2 rtol = 1E-6
         @test xa[3] == 0.0
     end
+    GC.gc()
 
 end
