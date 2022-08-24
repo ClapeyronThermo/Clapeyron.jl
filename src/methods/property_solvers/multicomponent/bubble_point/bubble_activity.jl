@@ -5,6 +5,8 @@ struct ActivityBubblePressure{T} <: BubblePointMethod
     nonvolatiles::Union{Nothing,Vector{String}}
     itmax_ss::Int64
     rtol_ss::Float64
+    gas_fug::Bool
+    poynting::Bool
 end
 
 function ActivityBubblePressure(;vol0 = nothing,
@@ -12,34 +14,36 @@ function ActivityBubblePressure(;vol0 = nothing,
                                 y0 = nothing,
                                 nonvolatiles = nothing,
                                 itmax_ss = 40,
-                                rtol_ss = 1e-8)
+                                rtol_ss = 1e-8,
+                                gas_fug = true,
+                                poynting = true)
 
     if p0 == y0 == vol0 == nothing
-        return ActivityBubblePressure{Nothing}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubblePressure{Nothing}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     elseif (p0 == y0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return ActivityBubblePressure{typeof(vl)}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubblePressure{typeof(vl)}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     elseif (vol0 == y0 == nothing) && !isnothing(p0)
         p0 = float(p0)
-        return ActivityBubblePressure{typeof(p0)}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubblePressure{typeof(p0)}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     elseif (p0 == vol0 == nothing) && !isnothing(y0)
         T = eltype(y0)
-        return ActivityBubblePressure{T}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubblePressure{T}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(y0)
         vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ActivityBubblePressure{T}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubblePressure{T}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     elseif !isnothing(vol0) && !isnothing(y0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ActivityBubblePressure{T}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubblePressure{T}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     elseif  !isnothing(p0) && !isnothing(y0)
         p0,_ = promote(p0,first(y0))
         T = eltype(p0)
         y0 = convert(Vector{T},y0)
-        return ActivityBubblePressure{T}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubblePressure{T}(vol0,p0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     else
         throw(error("invalid specification for bubble pressure"))
     end
@@ -72,16 +76,19 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
 
     μmix = VT_chemical_potential_res(model,vl,T,x)
     ϕ = copy(μmix)
-    y = zeros(length(pure))
-    RT = (R̄*T)
+    y = x .* p_pure ./ pmix #raoult initialization
+    y ./= sum(y)
 
-    if isnothing(method.y0)
-        ϕ .= 1
-    else
+    if !isnothing(method.y0)
         y .= method.y0
-        if iszero(vv)
-            vv = dot(last.(sat),x)
-        end
+    end
+
+    if iszero(vv)
+        vv = dot(vv_pure,y)
+    end
+
+    RT = (R̄*T)
+    if method.gas_fug
         μv = VT_chemical_potential_res!(ϕ,model,vv,T,method.y0)
         ϕ .= exp.(μv ./ RT .- log.(pmix .* vv ./ RT))
     end
@@ -91,8 +98,12 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
     #pure part
     μpure = only.(VT_chemical_potential_res.(pure,vl_pure,T))
     ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vl_pure ./ RT))
-    κ = VT_isothermal_compressibility.(pure,vl_pure,T)
-    
+    if method.poynting
+        κ = VT_isothermal_compressibility.(pure,vl_pure,T)
+    else
+        κ = copy(ϕ)
+        κ .= 0.0
+    end
     for k in 1:method.itmax_ss
         for i in eachindex(γ)
             pᵢ = p_pure[i]
@@ -100,9 +111,14 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
             μᵢ = μpure[i]
             ϕ̂ᵢ =  ϕpure[i]
             γ[i] = exp(log(vpureᵢ/vl) + (μmix[i] - μᵢ)/RT -  vpureᵢ*(pmix -pᵢ)/RT)
-            ln𝒫 = vpureᵢ*expm1(κ[i]*(pmix-pᵢ))/(κ[i]*RT) #see end of file
-            𝒫 = exp(ln𝒫)
-            y[i] = x[i]*γ[i]*pᵢ*𝒫*ϕ̂ᵢ/ϕ[i]
+            if method.poynting
+                ln𝒫 = vpureᵢ*expm1(κ[i]*(pmix-pᵢ))/(κ[i]*RT) #see end of file
+                𝒫 = exp(ln𝒫)
+            else
+                𝒫 = one(pᵢ)
+            end
+            #y[i]*ϕ[i]*P = x[i]*γ[i]*pᵢ*ϕ̂ᵢ*𝒫
+            y[i] = x[i]*γ[i]*pᵢ*𝒫*ϕ̂ᵢ/ϕ[i] #really yᵢ*P, we normalize later
         end
         pold = pmix
         pmix = sum(y)
@@ -110,9 +126,13 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
         if iszero(vv)
             vv = dot(y,vv_pure)
         end
-        logϕ, vv = lnϕ(model,pmix,T,y,phase = :vapor, vol0 = vv)
         vl = volume(model,pmix,T,x,vol0 = vl)
-        ϕ .= exp.(logϕ)
+        if method.gas_fug
+            logϕ, vv = lnϕ(model,pmix,T,y,phase = :vapor, vol0 = vv)
+            ϕ .= exp.(logϕ)
+        else
+            vv = volume(model,pmix,T,y,phase =:vapor,vol0 = vv)
+        end
         err = abs(pold-pmix)/pmix
         μmix = VT_chemical_potential_res!(μmix,model,vl,T,x)
         if err < method.rtol_ss
@@ -129,6 +149,8 @@ struct ActivityBubbleTemperature{T} <: BubblePointMethod
     nonvolatiles::Union{Nothing,Vector{String}}
     itmax_ss::Int64
     rtol_ss::Float64
+    gas_fug::Bool
+    poynting::Bool
 end
 
 function ActivityBubbleTemperature(;vol0 = nothing,
@@ -136,34 +158,36 @@ function ActivityBubbleTemperature(;vol0 = nothing,
                                 y0 = nothing,
                                 nonvolatiles = nothing,
                                 itmax_ss = 40,
-                                rtol_ss = 1e-8)
+                                rtol_ss = 1e-8,
+                                gas_fug = true,
+                                poynting = true)
 
     if T0 == y0 == vol0 == nothing
-        return ActivityBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     elseif (T0 == y0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return ActivityBubbleTemperature{typeof(vl)}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubbleTemperature{typeof(vl)}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     elseif (vol0 == y0 == nothing) && !isnothing(T0)
         T0 = float(T0)
-        return ActivityBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     elseif (T0 == vol0 == nothing) && !isnothing(y0)
         T = eltype(y0)
-        return ActivityBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(y0)
         vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ActivityBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     elseif !isnothing(vol0) && !isnothing(y0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ActivityBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     elseif  !isnothing(T0) && !isnothing(y0)
         T0,_ = promote(T0,first(y0))
         T = eltype(T0)
         y0 = convert(Vector{T},y0)
-        return ActivityBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss)
+        return ActivityBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     else
         throw(error("invalid specification for bubble temperature"))
     end
