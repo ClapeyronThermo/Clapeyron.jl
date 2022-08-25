@@ -152,8 +152,9 @@ returns `∂²A/∂V²` and `∂³A/∂V³`, in a single ForwardDiff pass. used 
 
 """
 function ∂²³f(model,V,T,z=SA[1.0])
-    p(∂²A∂V²) =  pressure(model,∂²A∂V²,T,z)
-    f(∂A∂V) = Solvers.derivative(p,∂A∂V)
-    ∂²A∂V², ∂³A∂V³ = Solvers.f∂f(f,V)
+    f(∂V) = pressure(model,∂V,T,z)
+    _, ∂²A∂V², ∂³A∂V³ = Solvers.f∂f∂2f(f,V)
     return ∂²A∂V², ∂³A∂V³
 end
+
+const _d23f = ∂²³f

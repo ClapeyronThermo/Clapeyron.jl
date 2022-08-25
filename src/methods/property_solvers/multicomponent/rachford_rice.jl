@@ -27,7 +27,6 @@ function rr_vle_vapor_fraction(K,z)
     kmax = maximum(K)
     βmax = 1/(1-kmin) 
     βmin = 1/(1-kmax) 
-
     kmax < 1 && return (-_1/_0)
     kmin > 1 && return (_1/_0)
     if n_z <= 4
@@ -77,7 +76,7 @@ function rr_vle_vapor_fraction(K,z)
     t2 = b111*Ξ2 + 2*b12*N2 + b3*M2
     b4 = -(t1+t2)/M1
     βaprox = (b0+b1+b2+b3+b4) #β(ε=1)
-    βsol1 =  Solvers.ad_newton(x->rr_flash_eval(K,z,x),βaprox)
+    βsol1 =  rr_flash_refine(K,z,βaprox)
     βsol = βsol1
     #converged to -2.2e-16 or lower, practically 0
     if abs(βsol1) < eps(_1)
@@ -91,8 +90,8 @@ function rr_vle_vapor_fraction(K,z)
     elseif (βsol1 < β_near0) | (βsol1 > β_near1)     #in this case, we have two asymptotes really, really near one and zero  
         βaprox_near0 = near_mean
         βaprox_near1 = _1 - near_mean
-        βsol_near0 =  Solvers.ad_newton(x->rr_flash_eval(K,z,x),βaprox_near0)
-        βsol_near1 =  Solvers.ad_newton(x->rr_flash_eval(K,z,x),βaprox_near1)
+        βsol_near0 =  rr_flash_refine(K,z,βaprox_near0) 
+        βsol_near1 =  rr_flash_refine(K,z,βaprox_near1) 
         βsol_near0,βsol_near1
         if 0 <= βsol_near0 <= 1
             βsol = βsol_near0
@@ -280,4 +279,23 @@ function rr_flash_liquid!(x,k,z,β)
     end
     x .= f.(k,z)
     x
+end
+
+function rr_flash_refine(K,z,β) 
+    function FO(β̄ )
+        _0 = zero(first(z)+first(K)+first(β̄ ))
+        _1 = one(_0)
+        sumz = sum(z)
+        invsumz = _1/sumz
+        res,∂res,∂2res = _0,_0,_0
+        for i in 1:length(z)
+            Kim1 = K[i] - _1
+            KD = Kim1/(1+β̄ *Kim1)
+            res += invsumz*z[i]*KD
+            ∂res -= invsumz*z[i]*KD^2
+            ∂2res += 2*invsumz*z[i]*KD^3
+        end
+        return res,∂res,∂2res
+    end
+    return Solvers.halley(FO,β)
 end

@@ -100,22 +100,78 @@ Returns a tuple, containing:
 - Liquid composition `x₂`
 - Liquid composition `y`
 """
-function VLLE_temperature(model,p;T0 = nothing)
-    if T0 === nothing
-        T0 = x0_VLLE_temperature(model,p)
+function VLLE_temperature(model::EoSModel,p;v0=nothing)
+    if v0 === nothing
+        v0 = x0_VLLE_temperature(model,p)
     end
-    f(z) = Obj_VLLE_temperature(model,z,p)
-    fT = Roots.ZeroProblem(f,T0)
-    T = Roots.solve(fT,Roots.Order0())
-    P_sat, v_l, v_ll, v_v, x, xx, y = VLLE_pressure(model,T)
+    ts = T_scales(model)
+    pmix = p_scale(model,collect(FractionVector(v0[4])))
+    nx = length(model) -1 
+    x0 = vcat(v0...)
+    idx_x = 5:(nx+4)
+    idx_xx = (nx+5):(2nx+4)
+    idx_y = (2nx+5):length(x0)
+    f! = (F,z) -> @inbounds Obj_VLLE_temperature(model, F, p, z[1], 
+    exp10(z[2]), exp10(z[3]), exp10(z[4]), z[idx_x], z[idx_xx], z[idx_y],ts,pmix)
+    r  = Solvers.nlsolve(f!,x0,LineSearch(Newton()))
+    sol = Solvers.x_sol(r)
+    T   = sol[1]
+    v_l = exp10(sol[2])
+    v_ll = exp10(sol[3])
+    v_v = exp10(sol[4])
+    x = FractionVector(sol[idx_x])
+    xx = FractionVector(sol[idx_xx])
+    y = FractionVector(sol[idx_y])
     return T, v_l, v_ll, v_v, x, xx, y
 end
 
-function x0_VLLE_temperature(model,p)
-   return 1.7*sum(T_scales(model))/length(model)
+function x0_VLLE_temperature(model::EoSModel,p)
+    pure = split_model(model)
+    sat  = saturation_temperature.(pure,p)
+    y0 = Fractions.zeros(length(model))
+    T0 = 0.95*minimum(getindex.(sat,1))
+    x0    = [0.75,0.25] #if we change this, VLLE_pressure (and temperature) can be switched to more than two components.
+    xx0 = Fractions.neg(x0)
+    v_li = getindex.(sat,2)
+    v_vi = last.(sat)
+    v_l0  = dot(x0,v_li)
+    v_ll0 = dot(xx0,v_li)
+    v_v0  = dot(y0,v_vi)
+    return (T0,log10(v_l0),log10(v_ll0),log10(v_v0),x0[1:end-1],xx0[1:end-1],y0[1:end-1])
 end
 
-function Obj_VLLE_temperature(model,T,p)
-    p̃,v_l,v_ll,xx = VLLE_pressure(model,T)
-    return p̃-p
+function Obj_VLLE_temperature(model::EoSModel, F, p, T, v_l, v_ll, v_v, x, xx, y,ts,ps)
+    x   = FractionVector(x)
+    y   = FractionVector(y)
+    xx  = FractionVector(xx)
+    n_c = length(model)
+    μ_v = VT_chemical_potential(model,v_v,T,y)
+    
+    @inbounds for i in 1:n_c
+        F[i] = -μ_v[i]/(R̄*ts[i])
+        F[i+n_c] = -μ_v[i]/(R̄*ts[i])
+    end
+
+    μ_l = VT_chemical_potential!(μ_v,model,v_l,T,x)
+    @inbounds for i in 1:n_c
+        F[i] += μ_l[i]/(R̄*ts[i])
+    end
+    μ_ll = VT_chemical_potential!(μ_l,model,v_ll,T,xx)
+    @inbounds for i in 1:n_c
+        F[i+n_c] += (μ_ll[i])/(R̄*ts[i])
+    end
+
+    p_l   = pressure(model,v_l,T,x)
+    p_ll  = pressure(model,v_ll,T,xx)
+    p_v   = pressure(model,v_v,T,y)
+    
+    #for i in 1:n_c
+    #    F[i] = (μ_l[i]-μ_v[i])/(R̄*ts[i])
+    #    F[i+n_c] = (μ_ll[i]-μ_v[i])/(R̄*ts[i])
+    #end
+
+    F[end-2] = (p_l-p_v)/ps
+    F[end-1] = (p_ll-p_v)/ps
+    F[end]   = (p_l-p)/ps
+    return F
 end

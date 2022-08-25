@@ -41,8 +41,18 @@ function VT_gibbs_free_energy(model::EoSModel, V, T, z=SA[1.])
     return A - V*∂A∂V
 end
 
+function VT_gibbs_free_energy_res(model::EoSModel, V, T, z=SA[1.])
+    fun(x) = eos_res(model,x,T,z)
+    Ar,∂A∂Vr = Solvers.f∂f(fun,V)
+    return Ar - V*∂A∂Vr
+end
+
 function VT_helmholtz_free_energy(model::EoSModel, V, T, z=SA[1.])
     return eos(model,V,T,z)
+end
+
+function VT_helmholtz_free_energy_res(model::EoSModel, V, T, z=SA[1.])
+    return eos_res(model,V,T,z)
 end
 
 function VT_isochoric_heat_capacity(model::EoSModel, V, T, z=SA[1.])

@@ -59,7 +59,6 @@ function nonzero_extrema(K)
     return _min,_max
 end
 
-
 function assoc_site_matrix(model,V,T,z,data = nothing)
     if model.assoc_options.combining == :sparse_nocombining
         K = sparse_assoc_site_matrix(model,V,T,z,data)

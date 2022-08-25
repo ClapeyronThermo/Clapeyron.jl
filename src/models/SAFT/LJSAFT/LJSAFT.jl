@@ -46,7 +46,7 @@ abstract type LJSAFTModel <: SAFTModel end
 Perturbed-Chain SAFT (PC-SAFT)
 
 ## References
-1. Kraska, T., & Gubbins, K. E. (1996). Phase equilibria calculations with a modified SAFT equation of state. 1. Pure alkanes, alkanols, and water. Industrial & Engineering Chemistry Research, 35(12), 4727–4737. doi:10.1021/ie9602320
+1. Kraska, T., & Gubbins, K. E. (1996). Phase equilibria calculations with a modified SAFT equation of state. 1. Pure alkanes, alkanols, and water. Industrial & Engineering Chemistry Research, 35(12), 4727–4737. [doi:10.1021/ie9602320](https://doi.org/10.1021/ie9602320)
 """
 LJSAFT
 
@@ -82,24 +82,24 @@ end
 
 function lb_volume(model::LJSAFTModel, z = SA[1.0])
     seg = model.params.segment.values
-    b = model.params.b.diagvalues
-    val = π/6*sum(z[i]*seg[i]*b[i] for i in 1:length(z))
+    b = model.params.b.values
+    val = π/6*sum(z[i]*seg[i]*b[i,i] for i in 1:length(z))
     return val
 end
 
 function T_scale(model::LJSAFTModel,z=SA[1.0])
-    T̃ = model.params.T_tilde.diagvalues
-    return prod(T̃[i]^z[i] for i in 1:length(z))^(1/sum(z))
+    T̃ = model.params.T_tilde.values
+    return prod(T̃[i,i]^z[i] for i in 1:length(z))^(1/sum(z))
 end
 
 function T_scales(model::LJSAFTModel)
-    T̃ = model.params.T_tilde.diagvalues
+    T̃ = diagvalues(model.params.T_tilde)
 end
 
 function p_scale(model::LJSAFTModel,z=SA[1.0])
-    T̃ = model.params.T_tilde.diagvalues
-    b = model.params.b.diagvalues
-    val =  sum(z[i]*b[i]/T̃[i] for i in 1:length(z))/R̄
+    T̃ = model.params.T_tilde.values
+    b = model.params.b.values
+    val =  sum(z[i]*b[i,i]/T̃[i,i] for i in 1:length(z))/R̄
     return 1/val
 end
 
@@ -161,13 +161,12 @@ function a_chain(model::LJSAFTModel, V, T, z)
 end
 
 function g_LJ(model::LJSAFTModel, V, T, z, i)
-
     m = model.params.segment.values
-    b = model.params.b.diagvalues
-    T̃ = model.params.T_tilde.diagvalues
-    Tst = T/T̃[i]
+    b = model.params.b.values
+    T̃ = model.params.T_tilde.values
+    Tst = T/T̃[i,i]
     ρ = 1/V
-    ρ̄ = b[i]*m[i]*z[i]*ρ
+    ρ̄ = b[i,i]*m[i]*z[i]*ρ
     a = LJSAFTconsts.a::Matrix{Float64}
     return (1+sum(a[i,j]*ρ̄^i*Tst^(1-j) for i ∈ 1:5 for j ∈ 1:5))
 end

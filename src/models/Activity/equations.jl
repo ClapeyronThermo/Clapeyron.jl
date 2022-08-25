@@ -21,27 +21,31 @@ function test_activity_coefficient(model::ActivityModel,p,T,z)
     return exp.(ForwardDiff.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
 end
 
-function saturation_pressure(model::ActivityModel,T::Real,v0 = x0_sat_pure(model.puremodel[1],T))
-    return saturation_pressure(model.puremodel[1],T,v0)
+x0_sat_pure(model::ActivityModel,T) = x0_sat_pure(model.puremodel[1],T)
+
+function saturation_pressure(model::ActivityModel,T::Real,method::SaturationMethod)
+    return saturation_pressure(model.puremodel[1],T,method)
 end
 
 function eos(model::ActivityModel,V,T,z)
     Σz = sum(z)
     lnΣz = log(Σz)
-    g_E = excess_gibbs_free_energy(model,V,T,z)
+    
     pures = model.puremodel
-    p = sum(z[i]*pressure(pures[i],V,T) for i ∈ @comps)/Σz
+    p = sum(z[i]*pressure(pures[i],V/Σz,T) for i ∈ @comps)/Σz
+    g_E = excess_gibbs_free_energy(model,p,T,z)
     g_ideal = sum(z[i]*R̄*T*(log(z[i])-lnΣz) for i ∈ @comps)
-    g_pure = sum(z[i]*VT_gibbs_free_energy(pures[i],V,T) for i ∈ @comps)
+    g_pure = sum(z[i]*VT_gibbs_free_energy(pures[i],V/Σz,T) for i ∈ @comps)
+    
     return g_E+g_ideal+g_pure-p*V
 end
 
 function eos_res(model::ActivityModel,V,T,z)
     Σz = sum(z)
-    g_E = excess_gibbs_free_energy(model,V,T,z)
     pures = model.puremodel
-    g_pure_res = sum(VT_chemical_potential_res(pures[i],V,T)[1]*z[i] for i ∈ @comps)
+    g_pure_res = sum(z[i]*VT_gibbs_free_energy_res(pures[i],V/Σz,T) for i ∈ @comps)
     p = sum(z[i]*pressure(pures[i],V,T) for i ∈ @comps)/Σz
+    g_E = excess_gibbs_free_energy(model,p,T,z)
     p_res = p - Σz*R̄*T/V
     return g_E+g_pure_res-p_res*V
 end
@@ -52,10 +56,12 @@ function bubble_pressure(model::ActivityModel,T,x)
     γ     = activity_coefficient(model,1e-4,T,x)
     p     = sum(x.*γ.*p_sat)
     y     = x.*γ.*p_sat ./ p
-    return (p,y)
+    vl = volume(model.puremodel.model,p,T,x,phase = :l)
+    vv = volume(model.puremodel.model,p,T,y,phase = :v)
+    return (p,vl,vv,y)
 end
 
-function bubble_temperature(model::ActivityModel,p,x;T0=nothing)
+function bubble_temperature(model::ActivityModel,p,x)
     f(z) = Obj_bubble_temperature(model,z,p,x)
     if T0===nothing
         pure = model.puremodel
@@ -74,8 +80,8 @@ function bubble_temperature(model::ActivityModel,p,x;T0=nothing)
     else
         T = Roots.find_zero(f,T0)
     end
-    p,y = bubble_pressure(model,T,x)
-    return (T,y)
+    p,vl,vv,y = bubble_pressure(model,T,x)
+    return (T,vl,vv,y)
 end
 
 function Obj_bubble_temperature(model::ActivityModel,T,p,x)
@@ -110,7 +116,7 @@ function gibbs_solvation(model::ActivityModel,T)
     γ = activity_coefficient(model,p,T,z)
     K = v_v/v_l*γ[2]*p2/p   
     return -R̄*T*log(K)
-end    
+end
 
 function lb_volume(model::ActivityModel,z = SA[1.0])
     b = maximum([model.puremodel[i].params.b.values[1,1] for i ∈ @comps])
@@ -139,3 +145,37 @@ function p_scale(model::ActivityModel,z=SA[1.0])
     return a/ (b^2) # Pc mean
 end
 
+function x0_volume_liquid(model::ActivityModel,T,z = SA[1.0])
+    pures = model.puremodel
+    return sum(z[i]*x0_volume_liquid(pures[i],T,SA[1.0]) for i ∈ @comps)
+end
+
+function LLE(model::ActivityModel,T;v0=nothing)
+    if v0 === nothing
+        if length(model) == 2
+        v0 = [0.25,0.75]
+        else
+            throw(error("unable to provide an initial point for LLE pressure"))
+        end
+    end
+    
+    len = length(v0)
+
+    Fcache = zeros(eltype(v0),len)
+    f!(F,z) = Obj_LLE(model, F, T, z[1], z[2])
+    r  = Solvers.nlsolve(f!,v0,LineSearch(Newton()))
+    sol = Solvers.x_sol(r)
+    x = sol[1]
+    xx = sol[2]
+    return x,xx
+end
+
+function Obj_LLE(model::ActivityModel, F, T, x, xx)
+    x = Fractions.FractionVector(x)
+    xx = Fractions.FractionVector(xx)
+    γₐ = activity_coefficient(model,1e-3,T,x)
+    γᵦ = activity_coefficient(model,1e-3,T,xx)
+
+    F .= γᵦ.*xx-γₐ.*x
+    return F
+end

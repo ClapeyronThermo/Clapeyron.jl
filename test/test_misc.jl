@@ -1,4 +1,4 @@
-@testset "utils" begin
+@testset "misc" begin
     @printline
     model2 = PCSAFT(["water","ethanol"])
     model4 = SAFTgammaMie(["methane","butane","isobutane","pentane"])
@@ -23,10 +23,10 @@
         model4_split = Clapeyron.split_model(model4)
         @test model4_split[4].groups.n_groups[1][2] == 3
         @test model4_split[1].components[1] == "methane"
-        @test all(isone(length(model4_split[i].components)) for i in 1:4)
+        @test all(isone(length(model4_split[i])) for i in 1:4)
 
         gc3_split = Clapeyron.split_model(gc3)
-        @test all(isone(length(gc3_split[i].components)) for i in 1:3)
+        @test all(isone(length(gc3_split[i])) for i in 1:3)
         @test all(isone(length(gc3_split[i].puremodel)) for i in 1:3)
     end
 
@@ -69,5 +69,36 @@
         @test repr(simple1) == "PRAlpha(\"propane\")"
         @test repr("text/plain",simple1) == "PRAlpha with 1 component:\n \"propane\"\nContains parameters: acentricfactor"
     end
+
+    @testset "phase symbols" begin
+        @test Clapeyron.canonical_phase(:l) == :liquid
+        @test Clapeyron.canonical_phase(:v) == :vapour
+        @test Clapeyron.canonical_phase(:m) == :m
+    end
+
+    @testset "citing" begin
+        umr = UMRPR(["water"],idealmodel = WalkerIdeal)
+        #citations = ["10.1021/I160057A011", "10.1021/ie049580p", "10.1021/i260064a004", "10.1021/acs.jced.0c00723"] |> Set
+        citation_full = Clapeyron.cite(umr) |> Set
+        citation_top = Clapeyron.doi(umr) |> Set
+        citation_ideal = Clapeyron.cite(umr.idealmodel) |> Set
+        citation_mixing = Clapeyron.cite(umr.mixing) |> Set
+        citation_translation = Clapeyron.cite(umr.translation) |> Set
+        @test citation_ideal ⊆ citation_full
+        @test citation_top ⊆ citation_full
+        @test citation_mixing ⊆ citation_full
+        @test citation_translation ⊆ citation_full
+    end
     @printline
-end
+    
+    @testset "Reported errors" begin
+        #https://github.com/ypaul21/Clapeyron.jl/issues/104
+        @testset "#104" begin
+            model = VTPR(["carbon dioxide"])
+            p = 1e5
+            T = 273.15
+            @test fugacity_coefficient(model, p, T)[1] ≈ 0.9928244080356565 rtol = 1E-6
+            @test activity_coefficient(model, p, T)[1] ≈ 1.0
+        end
+    end
+ end

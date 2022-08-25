@@ -16,7 +16,7 @@ function Base.show(io::IO, mime::MIME"text/plain", params::EoSParam)
     end
     for name in names
         param = getfield(params, name)
-        print(io, "\n ", param.name, "::", typeof(param))
+        print(io, "\n ", name, "::", typeof(param))
     end
 end
 
@@ -42,6 +42,12 @@ include("params/GroupParam.jl")
 include("params/SiteParam.jl")
 include("params/AssocOptions.jl")
 
+const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
+function Base.show(io::IO,param::SingleOrPair)
+    print(io, typeof(param), "(\"", param.name, "\")")
+    show(io,param.components)
+end
+
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
 export AssocOptions
 
@@ -49,12 +55,18 @@ export AssocOptions
     diagvalues(x)
 A common function to retrieve the main diagonal values that work on both SingleParam and PairParam.
 """
-function diagvalues(x::SingleParam)
-    return x.values
+function diagvalues end
+
+function diagvalues(x::AbstractMatrix)
+    return view(x, diagind(x))
 end
 
-function diagvalues(x::PairParam)
-    return view(x.values, diagind(x.values))
+function diagvalues(x::AbstractVector)
+    return x
+end
+
+function diagvalues(x::SingleOrPair)
+    return diagvalues(x.values)
 end
 
 function _get_sources(x::Vector)::Vector{String}

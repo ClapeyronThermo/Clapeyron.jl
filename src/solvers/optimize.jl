@@ -35,8 +35,8 @@ function ADScalarObjective(f,x0::AbstractArray,chunk = autochunk(x0))
     h=h)
 end
 
-#=
-function ADScalarObjective(f,x0::Number)
+
+function ADScalarObjective(f,x0::Number,autochunk)
     function g(x)
         return derivative(f,x)
     end
@@ -62,15 +62,106 @@ function ADScalarObjective(f,x0::Number)
     fgh=fgh,
     h=h)
 end
-"""
-    function optimize(f,x0,method=LineSearch(Newton()), options=OptimizationOptions())
-"""
-=#
+#uses brent, the same default that Optim.jl uses
+function optimize(f,x0::NTuple{2,T},method=BrentMin(),options=OptimizationOptions()) where T<:Real
+    scalarobj = ADScalarObjective(f,first(x0),nothing)
+    optprob = OptimizationProblem(obj = scalarobj,bounds = x0, inplace=false)
+    res =  NLSolvers.solve(optprob,method,options)
+    return res
+end
+#general one, with support for ActiveBox
+function optimize(f,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
+    scalarobj = ADScalarObjective(f,x0,autochunk)
+    optprob = OptimizationProblem(obj = scalarobj,inplace = (x0 isa Number),bounds = bounds)
+    return NLSolvers.solve(optprob,x0,method,options)
+end
 
-function optimize(f,x0,method=LineSearch(Newton()),chunk =autochunk(x0),options=OptimizationOptions())
-    scalarobj = ADScalarObjective(f,x0,chunk)   
-    optprob = OptimizationProblem(scalarobj; inplace=false) 
-    return NLSolvers.solve(optprob, x0, method,options)
+function optimize(optprob::OptimizationProblem,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
+    return NLSolvers.solve(optprob,x0,method,options)
+end
+#build scalar objective -> Optimization Problem
+function optimize(scalarobj::ScalarObjective,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
+    optprob = OptimizationProblem(obj = scalarobj,inplace = (x0 isa Number),bounds = bounds)
+    return NLSolvers.solve(optprob,x0,method,options)
 end
 
 x_minimum(res::NLSolvers.ConvergenceInfo) = res.info.minimum
+#for BrentMin (should be fixed at NLSolvers 0.3)
+x_minimum(res::Tuple{<:Number,<:Number}) = last(res)
+
+#= only_fg!: Optim.jl legacy form:
+function fg!(F,G,x)
+  # do common computations here
+  # ...
+  if G != nothing
+    # code to compute gradient here
+    # writing the result to the vector G
+  end
+  if F != nothing
+    # value = ... code to compute objective function
+    return value
+  end
+end
+=#
+
+function only_fg!(fg!::T) where T
+    function f(x)
+        return fg!(true,nothing,x)
+    end
+
+    function g(df,x)
+        fg!(nothing,df,x)
+        return df
+    end
+    function fg(df,x)
+        fx = fg!(true,df,x)
+        return fx,df
+    end
+
+    return ScalarObjective(f=f,
+    g=g,
+    fg=fg,
+    fgh=nothing,
+    h=nothing)
+end
+
+#= only_fgh!: Optim.jl legacy form:
+function fgh!(F,G,H,x)
+  G == nothing || # compute gradient and store in G
+  H == nothing || # compute Hessian and store in H
+  F == nothing || return f(x)
+  nothing
+end
+=#
+
+function only_fgh!(fgh!::T) where T
+    function f(x)
+        return fgh!(true,nothing,nothing,x)
+    end
+
+    function g(df,x)
+        fgh!(nothing,df,nothing,x)
+        return df
+    end
+
+    function fg(df,x)
+        fx = fgh!(true,df,nothing,x)
+        return fx,df
+    end
+
+    function fgh(df,d2f,x)
+        fx = fgh!(true,df,d2f,x)
+        return fx,df,d2f
+    end
+
+    function h(df,d2f,x)
+        fgh!(nothing,nothing,d2f,x)
+        return d2f
+    end
+
+    return ScalarObjective(f=f,
+    g=g,
+    fg=fg,
+    fgh=fgh,
+    h=nothing)
+end

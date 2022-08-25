@@ -553,11 +553,9 @@ n-Butyric acid,107926,88.11
 isobutyric acid,79312,88.11
 benzoic acid,65850,122.12
 neon,,20.1797
-<<<<<<< HEAD
 sulfur hexafluoride,,146.055
 nitrous oxide,,44.013
 ammonia,,17.031 
-=======
 H3O+,,19
 Li+,,6.941
 Na+,,22.989769
@@ -583,4 +581,4 @@ sulfur hexafluoride,,146.055
 sulfur hexafluoride,,146.055
 [C2MIM],,111.1649
 [BF4],,86.81
->>>>>>> ElectrolyteModels
+helium,,4.003

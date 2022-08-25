@@ -49,8 +49,8 @@ export CKSAFT
 Chen and Kreglewski SAFT (CK-SAFT)
 
 ## References
-1. Huang, S. H., & Radosz, M. (1990). Equation of state for small, large, polydisperse, and associating molecules. Industrial & Engineering Chemistry Research, 29(11), 2284–2294. doi:10.1021/ie00107a014
-2. Huang, S. H., & Radosz, M. (1991). Equation of state for small, large, polydisperse, and associating molecules: extension to fluid mixtures. Industrial & Engineering Chemistry Research, 30(8), 1994–2005. doi:10.1021/ie00056a050
+1. Huang, S. H., & Radosz, M. (1990). Equation of state for small, large, polydisperse, and associating molecules. Industrial & Engineering Chemistry Research, 29(11), 2284–2294. [doi:10.1021/ie00107a014](https://doi.org/10.1021/ie00107a014)
+2. Huang, S. H., & Radosz, M. (1991). Equation of state for small, large, polydisperse, and associating molecules: extension to fluid mixtures. Industrial & Engineering Chemistry Research, 30(8), 1994–2005. [doi:10.1021/ie00056a050](https://doi.org/10.1021/ie00056a050)
 """
 CKSAFT
 
@@ -116,8 +116,8 @@ function a_disp(model::CKSAFTModel, V, T, z)
 end
 
 function d(model::CKSAFTModel, V, T,z, i)
-    ϵ = model.params.epsilon.diagvalues[i]
-    σ = model.params.sigma.diagvalues[i]
+    ϵ = model.params.epsilon.values[i,i]
+    σ = model.params.sigma.values[i,i]
     return σ * (1 - 0.12exp(-3ϵ/T))
 end
 

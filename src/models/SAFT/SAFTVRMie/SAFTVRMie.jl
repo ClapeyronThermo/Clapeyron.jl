@@ -51,8 +51,8 @@ abstract type SAFTVRMieModel <: SAFTModel end
 SAFT-VR with Mie potential
 
 ## References
-1. Lafitte, T., Apostolakou, A., Avendaño, C., Galindo, A., Adjiman, C. S., Müller, E. A., & Jackson, G. (2013). Accurate statistical associating fluid theory for chain molecules formed from Mie segments. The Journal of Chemical Physics, 139(15), 154504. doi:10.1063/1.4819786
-2. Dufal, S., Lafitte, T., Haslam, A. J., Galindo, A., Clark, G. N. I., Vega, C., & Jackson, G. (2015). The A in SAFT: developing the contribution of association to the Helmholtz free energy within a Wertheim TPT1 treatment of generic Mie fluids. Molecular Physics, 113(9–10), 948–984. doi:10.1080/00268976.2015.1029027
+1. Lafitte, T., Apostolakou, A., Avendaño, C., Galindo, A., Adjiman, C. S., Müller, E. A., & Jackson, G. (2013). Accurate statistical associating fluid theory for chain molecules formed from Mie segments. The Journal of Chemical Physics, 139(15), 154504. [doi:10.1063/1.4819786](https://doi.org/10.1063/1.4819786)
+2. Dufal, S., Lafitte, T., Haslam, A. J., Galindo, A., Clark, G. N. I., Vega, C., & Jackson, G. (2015). The A in SAFT: developing the contribution of association to the Helmholtz free energy within a Wertheim TPT1 treatment of generic Mie fluids. Molecular Physics, 113(9–10), 948–984. [doi:10.1080/00268976.2015.1029027](https://doi.org/10.1080/00268976.2015.1029027)
 """
 SAFTVRMie
 
@@ -113,21 +113,13 @@ function a_mono(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     return @f(a_hs,_data)+@f(a_disp,_data)
 end
 
-# function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
-#     return @f(a_1,_data)+@f(a_2,_data)+@f(a_3,_data)
-# end
-
 function a_hs(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     _,_,ζi,_,_,_,_ = _data
     ζ0,ζ1,ζ2,ζ3 = ζi
     N = N_A*∑(z)
     return 6*V/π/N*(3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
 end
-#=
-function ζn(model::SAFTVRMieModel, V, T, z, n)
-    return π/6*@f(ρ_S) * ∑(@f(x_S,i)*@f(d,i)^n for i ∈ @comps)
-end
-=#
+
 function ρ_S(model::SAFTVRMieModel, V, T, z, m̄ = dot(z,model.params.segment.values))
     return N_A/V*m̄
 end
@@ -149,54 +141,15 @@ function ζ0123(model::SAFTVRMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params
     return ζ0,ζ1,ζ2,ζ3 
 end
 
-#=
-function x_S(model::SAFTVRMieModel, V, T, z, i)
-    m = model.params.segment.values
-    m̄ = dot(z,m)
-    return z[i]*m[i]/m̄
-end =#
-
-#=
-function d(model::SAFTVRMieModel, V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues[i]
-    σ = model.params.sigma.diagvalues[i]
-    λr = model.params.lambda_r.diagvalues[i]
-    λa = model.params.lambda_a.diagvalues[i]
-    return @f(d,λa,λr,ϵ,σ)
-end
-
-function d(model::SAFTVRMieModel, V, T, z, i, j)
-    ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values
-    λr = model.params.lambda_r.values
-    λa = model.params.lambda_a.values
-    return (@f(d,λa[i,i],λr[i,i],ϵ[i,i],σ[i,i]) + @f(d,λa[j,j],λr[j,j],ϵ[j,j],σ[j,j]))/2
-end
-
-function C(model::SAFTVRMieModel, V, T, z, i, j)
-    λr = model.params.lambda_r.values[i,j]
-    λa = model.params.lambda_a.values[i,j]
-    return @f(Cλ,λa,λr)
-end
 
 function d(model::SAFTVRMieModel, V, T, z)
-    ϵ = model.params.epsilon.diagvalues
-    σ = model.params.sigma.diagvalues
-    λr = model.params.lambda_r.diagvalues
-    λa = model.params.lambda_a.diagvalues
-    return d.(model,V,T,Ref(z),λa,λr,ϵ,σ)
-end
-
-=#
-
-function d(model::SAFTVRMieModel, V, T, z)
-    _ϵ = model.params.epsilon.diagvalues
-    _σ = model.params.sigma.diagvalues
-    _λa = model.params.lambda_a.diagvalues
-    _λr = model.params.lambda_r.diagvalues
+    _ϵ = diagvalues(model.params.epsilon)
+    _σ = diagvalues(model.params.sigma)
+    _λa = diagvalues(model.params.lambda_a)
+    _λr = diagvalues(model.params.lambda_r)
     u = SAFTVRMieconsts.u
     w = SAFTVRMieconsts.w
-    _0 = zero(T+first(z))
+    _0 = zero(T)
     n = length(z)
     _d = zeros(typeof(_0),n)
     for k ∈ 1:n
@@ -225,7 +178,6 @@ function d(model::SAFTVRMieModel, V, T, z, λa,λr,ϵ,σ)
 end
 
 
- 
 function Cλ(model::SAFTVRMieModel, V, T, z, λa, λr)
     return (λr/(λr-λa))*(λr/λa)^(λa/(λr-λa))
 end
@@ -234,33 +186,7 @@ function ζ_X(model::SAFTVRMieModel, V, T, z,_d = @f(d))
     _ζ_X,σ3x = @f(ζ_X_σ3,_d)
     return _ζ_X
 end
-#=
-function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d), m̄ = dot(z,model.params.segment.values))
-    m = model.params.segment.values
-    m̄inv = 1/m̄
-    σ = model.params.sigma.values
-    ρS = N_A/V*m̄
-    comps = @comps
-    _ζ_X = zero(V+T+first(z))
-    kρS = ρS*π/6/8 
-    σ3_x = _ζ_X
-    for i ∈ comps
-        x_Si = z[i]*m[i]*m̄inv
-        σ3_x += x_Si*x_Si*σ[i,i]^3
-        _di = _d[i]
-        _ζ_X += x_Si*x_Si*_di^3
-        for j ∈ 1:(i-1)
-            x_Sj = z[j]*m[j]*m̄inv
-            σ3_x += 2*x_Si*x_Sj*(σ[i,j]^3)
-            dij = (_di + _d[j])
-            _ζ_X += 2*x_Si*x_Sj*dij^3          
-        end
-    end
 
-    #return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i)+@f(d,j))^3/8 for i ∈ comps for j ∈ comps)
-    return kρS*_ζ_X,σ3_x
-end
-=#
 function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d),m̄ = dot(z,model.params.segment.values))
     m = model.params.segment.values
     m̄ = dot(z, m)
@@ -286,71 +212,10 @@ function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d),m̄ = dot(z,model.pa
             _ζ_X += 2*r1
         end
     end
-    #=
-    r1 = 0.05314829686491562
-    r1 = 0.028255275694270134
-    r1 = 0.028255275694270134
-    r1 = 0.014947991797723954
-    =#
-    #return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i)+@f(d,j))^3/8 for i ∈ comps for j ∈ comps)
+   
     return _ζ_X,σ3_x
 end
 
-
-#=
-function a_1(model::SAFTVRMie, V, T, z,_data = @f(data))
-    _d,ρS,ζi,_ζ_X,_ζst,_ = _data
-    comps = @comps
-    l = length(comps)
-    ∑z = ∑(z)
-    m = model.params.segment.values
-    _ϵ = model.params.epsilon.values
-    _λr = model.params.lambda_r.values
-    _λa = model.params.lambda_a.values
-    _σ = model.params.sigma.values
-    m̄ = dot(z, m)
-    m̄inv = 1/m̄
-    a₁ = zero(V+T+first(z))
-    for i ∈ comps
-        for j ∈ comps
-            x_Si = z[i]*m[i]*m̄inv
-            x_Sj = z[j]*m[j]*m̄inv   
-            ϵ = _ϵ[i,j]
-            λa = _λa[i,j]
-            λr = _λr[i,j] 
-            σ = _σ[i,j]
-            _C = @f(Cλ,λa,λr)
-            dij = 0.5*(_d[i]+_d[j])
-            x_0ij = σ/dij
-            dij3 = dij^3
-            x_0ij = σ/dij
-            a1_ij = (2*π*ϵ*dij3)*_C*ρS*
-            (x_0ij^λa*(@f(aS_1,λa,_ζ_X)+@f(B,λa,x_0ij,_ζ_X)) - x_0ij^λr*(@f(aS_1,λr,_ζ_X)+@f(B,λr,x_0ij,_ζ_X)))
-            a₁ += 2*a1_ij*x_Si*x_Sj         
-        end
-    end
-    a₁ = a₁*m̄/T/∑z
-    return a₁
-end
-
-
-function a_1(model::SAFTVRMieModel, V, T, z)
-    comps = @comps
-    m = model.params.segment.values
-    m̄ = dot(z, m)/sum(x)
-    return m̄/T*sum(@f(x_S,i)*@f(x_S,j)*@f(a_1,i,j) for i ∈ comps for j ∈ comps)
-end
-
-function a_1(model::SAFTVRMieModel, V, T, z, i, j)
-    ϵ = model.params.epsilon.values
-    λr = model.params.lambda_r.values
-    λa = model.params.lambda_a.values
-    x_0ij = @f(x_0,i,j)
-    return 2*π*ϵ[i,j]*@f(d,i,j)^3*@f(C,i,j)*@f(ρ_S) *
-        ( x_0ij^λa[i,j]*(@f(aS_1,λa[i,j])+@f(B,λa[i,j],x_0ij)) -
-            x_0ij^λr[i,j]*(@f(aS_1,λr[i,j])+@f(B,λr[i,j],x_0ij)) )
-end
-=#
 function aS_1(model::SAFTVRMieModel, V, T, z, λ,ζ_X_= @f(ζ_X))
     ζeff_ = @f(ζeff,λ,ζ_X_)
     return -1/(λ-3)*(1-ζeff_/2)/(1-ζeff_)^3
@@ -367,65 +232,11 @@ function B(model::SAFTVRMieModel, V, T, z, λ, x_0,ζ_X_ = @f(ζ_X))
     J = (1-(λ-3)*x_0^(4-λ)+(λ-4)*x_0^(3-λ))/((λ-3)*(λ-4))
     return I*(1-ζ_X_/2)/(1-ζ_X_)^3-9*J*ζ_X_*(ζ_X_+1)/(2*(1-ζ_X_)^3)
 end
-#=
-function x_0(model::SAFTVRMieModel, V, T, z, i, j)
-    σ = model.params.sigma.values
-    return σ[i,j]/@f(d,i,j)
-end
 
-function a_2(model::SAFTVRMieModel, V, T, z,_data = @f(data))
-    comps = @comps
-    m = model.params.segment.values
-    m̄ = dot(x,m)/sum(z)
-    res =  m̄/T^2*∑(@f(x_S,i)*@f(x_S,j)*@f(a_2,i,j,_data) for i ∈ comps for j ∈ comps)
-    return res
-end
-
-function a_2(model::SAFTVRMieModel, V, T, z,i,j,_data=@f(data))
-    ϵ = model.params.epsilon.values
-    λr = model.params.lambda_r.values
-    λa = model.params.lambda_a.values
-    x_0ij = @f(x_0,i,j)
-    ζ_X_ = @f(ζ_X)
-    res = π*@f(KHS)*(1+@f(χ,i,j))*@f(ρ_S)*ϵ[i,j]^2*@f(d,i,j)^3*@f(C,i,j)^2 *
-        (x_0ij^(2*λa[i,j])*(@f(aS_1,2*λa[i,j])+@f(B,2*λa[i,j],x_0ij))
-        - 2*x_0ij^(λa[i,j]+λr[i,j])*(@f(aS_1,λa[i,j]+λr[i,j])+@f(B,λa[i,j]+λr[i,j],x_0ij))
-        + x_0ij^(2*λr[i,j])*(@f(aS_1,2*λr[i,j])+@f(B,2*λr[i,j],x_0ij)))
-    return res
-end
-
-=#
 function KHS(model::SAFTVRMieModel, V, T, z,ζ_X_ = @f(ζ_X),ρS=@f(ρ_S))
     return (1-ζ_X_)^4/(1+4ζ_X_+4ζ_X_^2-4ζ_X_^3+ζ_X_^4)
 end
 
-#=
-function χ(model::SAFTVRMieModel, V, T, z,i,j)
-    λr = model.params.lambda_r.values
-    λa = model.params.lambda_a.values
-    ζst_ = @f(ζst)
-    α = @f(C,i,j)*(1/(λa[i,j]-3)-1/(λr[i,j]-3))
-    return @f(f,α,1)*ζst_+@f(f,α,2)*ζst_^5+@f(f,α,3)*ζst_^8
-end
-
-function f(model::SAFTVRMieModel, V, T, z, α, m)
-    ϕ = SAFTVRMieconsts.ϕ
-    _f1 = zero(α)
-    _f2 = _f1
-    @inbounds for i ∈ 1:4
-        ϕi = ϕ[i]::NTuple{6,Float64}
-        ii = i-1
-        _f1 += ϕi[m]*α^ii
-    end
-    @inbounds for i ∈ 5:7
-        ϕi = ϕ[i]::NTuple{6,Float64}
-        ii = i-4
-        _f2 += ϕi[m]*α^ii
-    end
-    return  _f1/(1 + _f2)
-    #return sum(ϕ[i+1][m]*α^i for i ∈ 0:3)/(1+∑(ϕ[i+1][m]*α^(i-3) for i ∈ 4:6))
-end
-=#
 function f123456(model::SAFTVRMieModel, V, T, z, α)
     ϕ = SAFTVRMieconsts.ϕ
     _0 = zero(α)
@@ -467,35 +278,7 @@ function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma.values)
     #return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i)+@f(d,j))^3/8 for i ∈ comps for j ∈ comps)
     return kρS*_ζst
 end
-#=
-function a_3(model::SAFTVRMieModel, V, T, z)
-    comps = @comps
-    m = model.params.segment.values
-    m̄ = dot(z,m)/sum(z)
-    return m̄/T^3*∑(@f(x_S,i)*@f(x_S,j)*@f(a_3,i,j) for i ∈ comps for j ∈ comps)
-end
 
-function a_3(model::SAFTVRMieModel, V, T, z, i, j)
-    ϵ = model.params.epsilon.values
-    λr = model.params.lambda_r.values
-    λa = model.params.lambda_a.values
-    ζst_ = ζst(model, V, T, z)
-    α = @f(C,i,j)*(1/(λa[i,j]-3)-1/(λr[i,j]-3))
-    return -ϵ[i,j]^3*@f(f,α,4)*ζst_ * exp(@f(f,α,5)*ζst_+@f(f,α,6)*ζst_^2)
-end
-
-function a_chain(model::SAFTVRMieModel, V, T, z)
-    m = model.params.segment.values
-    return -∑(z[i]*(log(@f(g_Mie,i))*(m[i]-1)) for i ∈ @comps)/∑(z)
-end
-
-
-function g_Mie(model::SAFTVRMieModel, V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues
-    g_HSi = @f(g_HS,i)
-    return g_HSi*exp(ϵ[i]/T*@f(g_1,i)/g_HSi+(ϵ[i]/T)^2*@f(g_2,i)/g_HSi);
-end
-=#
 function g_HS(model::SAFTVRMieModel, V, T, z, x_0ij,ζ_X_ = @f(ζ_X))
     ζX3 = (1-ζ_X_)^3
     #evalpoly(ζ_X_,(0,42,-39,9,-2)) = (42ζ_X_-39ζ_X_^2+9ζ_X_^3-2ζ_X_^4)
@@ -508,22 +291,6 @@ function g_HS(model::SAFTVRMieModel, V, T, z, x_0ij,ζ_X_ = @f(ζ_X))
     return exp(k_0+x_0ij*k_1+x_0ij^2*k_2+x_0ij^3*k_3)
 end
 
-#=
-function g_1(model::SAFTVRMieModel, V, T, z, i)
-    λr = model.params.lambda_r.diagvalues
-    λa = model.params.lambda_a.diagvalues
-    x_0ij = @f(x_0,i,i)
-    return 3*@f(∂a_1╱∂ρ_S,i)-@f(C,i,i)*(λa[i]*x_0ij^λa[i]*(@f(aS_1,λa[i])+@f(B,λa[i],x_0ij))-λr[i]*x_0ij^λr[i]*(@f(aS_1,λr[i])+@f(B,λr[i],x_0ij)))
-end
-
-function ∂a_1╱∂ρ_S(model::SAFTVRMieModel, V, T, z, i)
-    λr  = model.params.lambda_r.diagvalues
-    λa  = model.params.lambda_a.diagvalues
-    x_0ij = @f(x_0,i,i)
-    return @f(C,i,i)*(x_0ij^λa[i]*(@f(∂aS_1╱∂ρ_S,λa[i])+@f(∂B╱∂ρ_S,λa[i],x_0ij))
-                      - x_0ij^λr[i]*(@f(∂aS_1╱∂ρ_S,λr[i])+@f(∂B╱∂ρ_S,λr[i],x_0ij)))
-end
-=#
 function ζeff_fdf(model::SAFTVRMieModel, V, T, z, λ,ζ_X_,ρ_S_)
     A = SAFTγMieconsts.A
     λ⁻¹ = one(λ)/λ
@@ -558,54 +325,7 @@ function B_fdf(model::SAFTVRMieModel, V, T, z, λ, x_0,ζ_X_= @f(ζ_X),ρ_S_ = @
         + ζ_X_*(1+ζ_X_)*3*ζX2)/(2*ζX6)))
     return _f,_df
 end
-#=
-function ∂aS_1╱∂ρ_S(model::SAFTVRMieModel, V, T, z, λ)
-    A  = SAFTVRMieconsts.A
-    ζ_X_ = @f(ζ_X)
-    ∂ζeff╱∂ρ_S = A * [1; 1/λ; 1/λ^2; 1/λ^3] ⋅ [1; 2ζ_X_; 3ζ_X_^2; 4ζ_X_^3] * ζ_X_/@f(ρ_S)
-    ζeff_  = @f(ζeff,λ)
-    return -1/(λ-3)*((1-ζeff_/2)/(1-ζeff_)^3
-                     + @f(ρ_S)*((3*(1-ζeff_/2)*(1-ζeff_)^2
-                                 - 0.5*(1-ζeff_)^3)/(1-ζeff_)^6)*∂ζeff╱∂ρ_S);
-end
 
-function ∂B╱∂ρ_S(model::SAFTVRMieModel, V, T, z, λ, x_0)
-    I = (1-x_0^(3-λ))/(λ-3)
-    J = (1-(λ-3)*x_0^(4-λ)+(λ-4)*x_0^(3-λ))/((λ-3)*(λ-4))
-    ζ_X_ = @f(ζ_X)
-    ρ_S_ = @f(ρ_S)
-    return ( ((1-ζ_X_/2)*I/(1-ζ_X_)^3-9*ζ_X_*(1+ζ_X_)*J/(2*(1-ζ_X_)^3))
-            + ζ_X_*( (3*(1-ζ_X_/2)*(1-ζ_X_)^2
-                - 0.5*(1-ζ_X_)^3)*I/(1-ζ_X_)^6
-                - 9*J*((1+2*ζ_X_)*(1-ζ_X_)^3
-                + ζ_X_*(1+ζ_X_)*3*(1-ζ_X_)^2)/(2*(1-ζ_X_)^6) ) );
-end
-
-function g_2(model::SAFTVRMieModel,V, T, z, i)
-    return (1+@f(γ_c,i))*@f(gMCA_2,i)
-end
-
-function γ_c(model::SAFTVRMieModel,V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues
-    λr = model.params.lambda_r.diagvalues
-    λa = model.params.lambda_a.diagvalues
-    ζst_ = @f(ζst)
-    α = @f(C,i,i)*(1/(λa[i]-3)-1/(λr[i]-3))
-    θ = exp(ϵ[i]/T)-1
-    return 10 * (-tanh(10*(0.57-α))+1) * ζst_*θ*exp(-6.7*ζst_-8ζst_^2)
-end
-
-function gMCA_2(model::SAFTVRMieModel, V, T, z, i)
-    λr  = model.params.lambda_r.diagvalues
-    λa  = model.params.lambda_a.diagvalues
-    x_0ij = @f(x_0,i,i)
-    ζ_X_  = @f(ζ_X)
-    return 3*@f(∂a_2╱∂ρ_S,i)-@f(KHS)*@f(C,i,i)^2 *
-    ( λr[i]*x_0ij^(2*λr[i])*(@f(aS_1,2*λr[i])+@f(B,2*λr[i],x_0ij))-
-        (λa[i]+λr[i])*x_0ij^(λa[i]+λr[i])*(@f(aS_1,λa[i]+λr[i])+@f(B,λa[i]+λr[i],x_0ij))+
-        λa[i]*x_0ij^(2*λa[i])*(@f(aS_1,2*λa[i])+@f(B,2*λa[i],x_0ij)))
-end
-=#
 function KHS_fdf(model::SAFTVRMieModel, V, T, z,ζ_X_,ρ_S_ = @f(ρ_S))
     ζX4 = (1-ζ_X_)^4
     denom1 = evalpoly(ζ_X_,(1,4,4,-4,1))
@@ -617,8 +337,8 @@ function KHS_fdf(model::SAFTVRMieModel, V, T, z,ζ_X_,ρ_S_ = @f(ρ_S))
 end
 
 function ∂a_2╱∂ρ_S(model::SAFTVRMieModel,V, T, z, i)
-    λr = model.params.lambda_r.diagvalues
-    λa = model.params.lambda_a.diagvalues
+    λr = diagvalues(model.params.lambda_r)
+    λa = diagvalues(model.params.lambda_a)
     x_0ij = @f(x_0,i,i)
     ζ_X_ = @f(ζ_X)
     ρ_S_ = @f(ρ_S)
@@ -999,3 +719,31 @@ const SAFTVRMieconsts = (
           4.65297446837297	    -0.00192518067137033 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0
          -0.867296219639940	     0	                 0	                 0	                   0	                0	                  0	                     0	                   0	                0	                 0],
 )
+
+########
+#=
+Optimizations for single component SAFTVRMieModel
+=#
+
+#######
+
+function d(model::SAFTVRMieModel, V, T, z::SingleComp)
+    _ϵ = model.params.epsilon.diagvalues
+    _σ = model.params.sigma.diagvalues
+    _λa = model.params.lambda_a.diagvalues
+    _λr = model.params.lambda_r.diagvalues
+    u = SAFTVRMieconsts.u
+    w = SAFTVRMieconsts.w
+    ϵ = _ϵ[1]
+    σ = _σ[1]
+    λa = _λa[1]
+    λr = _λr[1]
+    θ = Cλ(model,V,T,z,λa,λr)*ϵ/T
+    λrinv = 1/λr
+    λaλr = λa/λr
+    di = zero(T)
+    for j ∈ 1:5
+        di += w[j]*(θ/(θ+u[j]))^λrinv*(exp(θ*(1/(θ/(θ+u[j]))^λaλr-1))/(u[j]+θ)/λr)
+    end
+    return SA[σ*(1-di)]
+end
