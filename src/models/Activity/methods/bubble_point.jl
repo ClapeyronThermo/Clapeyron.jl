@@ -14,15 +14,19 @@ function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePre
     p_pure = first.(sat)
     vl_pure = getindex.(sat,2)
     vv_pure = last.(sat)
-    γ     = activity_coefficient(model,1e-4,T,x)
-    p     = sum(x.*γ.*p_pure)
-    y     = x.*γ.*p_pure ./ p
-    vl = volume(pmodel,p,T,x,phase = :l)
+    γ = activity_coefficient(model,1e-4,T,x)
+    y = x.*γ.*p_pure
+    p = sum(y)
+    y ./= p
+    if isnan(p)
+        return (p,p,p,y)
+    end
     vv = volume(pmodel,p,T,y,phase = :v)
     if !method.gas_fug && !method.poynting
+        vl = volume(pmodel,p,T,x,phase = :l)
         return (p,vl,vv,y)
     end
-    
+
     ϕ = copy(y)
     ϕ .= 1.0
     RT = R̄*T
@@ -50,7 +54,6 @@ function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePre
         pold = p
         p = sum(y)
         y ./= p
-        vl = volume(pmodel,p,T,x,phase = :liquid,vol0 = vl)
         if method.gas_fug
             logϕ, vv = lnϕ(pmodel,p,T,y,phase = :vapor, vol0 = vv)
             ϕ .= exp.(logϕ)
@@ -58,32 +61,20 @@ function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePre
             vv = volume(pmodel,p,T,y,phase = :vapor, vol0 = vv)
         end
         err = abs(pold-p)/p
-        if err < method.rtol_ss
-            break
-        end
+        !isfinite(err) && break
+        err < method.rtol_ss && break
     end
+    vl = volume(pmodel,p,T,x,phase = :l)
     return (p,vl,vv,y)
 end
 
 function bubble_temperature(model::ActivityModel,p,x)
     f(z) = Obj_bubble_temperature(model,z,p,x)
-    if T0===nothing
         pure = model.puremodel
         sat = saturation_temperature.(pure,p)
-        Ti   = zero(x)
-        for i ∈ 1:length(x)
-            if isnan(sat[i][1])
-                Tc,pc,vc = crit_pure(pure[i])
-                g(x) = p-pressure(pure[i],vc,x,[1.])
-                Ti[i] = Roots.find_zero(g,(Tc))
-            else
-                Ti[i] = sat[i][1]
-            end
-        end
-        T = Roots.find_zero(f,(minimum(Ti)*0.9,maximum(Ti)*1.1))
-    else
+        Ti   = first.(sat)
+        T0 = dot(Ti,x)
         T = Roots.find_zero(f,T0)
-    end
     p,vl,vv,y = bubble_pressure(model,T,x)
     return (T,vl,vv,y)
 end
