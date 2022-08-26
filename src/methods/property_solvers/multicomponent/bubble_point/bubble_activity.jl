@@ -200,6 +200,7 @@ function bubble_temperature_impl(model,p,x,method::ActivityBubbleTemperature)
     vl_pure = getindex.(sat,2)
     T_pure = first.(sat)
     vv_pure = last.(sat)
+
     if isnothing(method.vol0)
         vl = dot(vl_pure,x)
         vv = zero(vl)
@@ -211,32 +212,68 @@ function bubble_temperature_impl(model,p,x,method::ActivityBubbleTemperature)
         return vl,vl,vl,x
     end
 
+    dPdTsat = VT_entropy.(pure,vv_pure,T_pure) .- VT_entropy.(pure,vl_pure,T_pure) ./ (vv_pure .- vl_pure)
+    y = copy(dPdTsat)
+    ##initialization for T
     if isnothing(method.T0)
-        Tmix = dot(T_pure,x) #look for a better initial T0 ?
+        #= we solve the aproximate problem of finding T such as:
+        p = sum(xi*pi(T))
+        where pi ≈ p0 + dpdt(T-T0)
+        then: p = sum(xi*pi) = sum(xi*(p + dpdti*(T-Ti)))
+        p = sum(xi*p) + sum(xi*dpdti*(T-Ti)) # sum(xi*p) = p
+        0 = sum(xi*dpdti*(T-Ti))
+        0 = sum(xi*dpdti)*T - sum(xi*dpdti*Ti)
+        0 = T* ∑T - ∑Ti
+        T = ∑Ti/∑T
+        =#
+        
+        ∑T = zero(p+first(dPdTsat))
+        ∑Ti = zero(∑T)
+        for i in eachindex(dPdTsat)
+            ∑Ti += x[i]*dPdTsat[i]*(T_pure[i])
+            ∑T += x[i]*dPdTsat[i]
+        end        
+        Tmix = ∑Ti/∑T
     else
         Tmix = method.T0
     end
+    return Tmix,Tmix,Tmix,y
 
+    #restart pure initial points, Tmix is better than the saturation_temperature approach
+    sat .= saturation_pressure.(pure,Tmix)
+    vl_pure = getindex.(sat,2)
+    p_pure = first.(sat)
+    vv_pure .= last.(sat)
+    dPdTsat .= VT_entropy.(pure,vv_pure,T_pure) .- VT_entropy.(pure,vl_pure,T_pure) ./ (vv_pure .- vl_pure)
+        if isnothing(method.vol0)
+        vl = dot(vl_pure,x)
+        vv = zero(vl)
+    else
+        vl,vv = method.vol0
+    end
+    #initialization for y
+    y = copy(dPdTsat)
+    if isnothing(method.y0)
+        y .= x.* p_pure
+        y ./= sum(y)
+    else
+        y .= method.y0
+    end    
+    return Tmix,Tmix,Tmix,y
     μmix = VT_chemical_potential_res(model,vl,Tmix,x)
     ϕ = copy(μmix)
     y = zeros(length(pure))
     RT = (R̄*Tmix)
-    if isnothing(method.y0)
-        ϕ .= 1
-    else
-        y .= method.y0
-        if iszero(vv)
-            vv = dot(last.(sat),x)
-        end
-        μv = VT_chemical_potential_res!(ϕ,model,vv,Tmix,method.y0)
-        ϕ .= exp.(μv ./ RT .- log.(p .* vv ./ RT))
-    end
+  
+   # μv = VT_chemical_potential_res!(ϕ,model,vv,Tmix,method.y0)
+   # ϕ .= exp.(μv ./ RT .- log.(p .* vv ./ RT))
+
     
+
     Told = zero(Tmix)
     pold = zero(Tmix)
     pcalc = zero(Tmix)
     γ = zeros(eltype(μmix),length(pure))
-    ΔHvap = VT_enthalpy.(pure,vv_pure,T_pure) .- VT_enthalpy.(pure,vl_pure,T_pure)
     
     for k in 1:method.itmax_ss
         for i in eachindex(γ)
@@ -313,17 +350,11 @@ end
 ## ∫v(p)/RT dp = vi*exp(-pi*κ)/RT*∫exp(κ*p) dp = vi*exp(-pi*κ)*exp(κ*p)/κ 
 ## vi*exp(κ*(p-pi))/κRT  |from pi to pmix
 
-## move from v(p,Tpure) to v(pi,Tmix) conditions
-## strategy: v(p,Tpure) -> v(pi,Tpure) -> v(pi,Tmix)
-# v0 -> v1 -> v2
-# v1 = v0*exp(κ(p-pi))
+#=
+Problem:
+on bubble and dew temperature calculations, we need the saturation point at each Ti.
+calculating each point on each iteration can be really expensive.
 
-# to move from v1 to v2 we need isobaric expansivity:
-# dP = (α/β)dT - (1/βV)dV #dP = 0
-# (α/β)dT = (1/βV)dV # ∫, α,β =  α1,β1 (constant, equal to initial conditions)
-# (α1)(T2 - T1) = ln(V2/V1)
-# V2 = V1*exp(α1*(T2 - T1))
-
-#finally: 
-#v2 = v0*exp(κ(p-pi))*exp(α(Tmix-T))
+we start with saturation_t
+=#
 
