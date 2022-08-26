@@ -115,10 +115,27 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
     T2,_,_ = res
 
     crit = method.crit
+    if !isnothing(crit)
+        p > pc && return fail
+        T2 >= Tc && return fail
+    end
+
+    #try if we are too low or too high
+    #one (or two) saturation pressure calculations are normally faster than a crit pure calculation
+    (p2,vl2,vv2) = saturation_pressure(model,T2,ChemPotVSaturation(crit_retry = false))
+    if !isnan(p2) #nice, psat(T2) exists, we can now produce a really good estimate of the saturation temperature
+        ΔHvap = (VT_enthalpy(model,vv2,T2) - VT_enthalpy(model,vl2,T2))
+        #log(p/p2) = (ΔHvap/R̄)(1/T2 - 1/T)
+        #log(p/p2)*R̄/ΔHvap = 1/T - 1/T2
+        T3 = 1/(log(p2/p)*R̄/ΔHvap + 1/T2)
+        (_,vl3,vv3) = saturation_pressure(model,T2,ChemPotVSaturation(crit_retry = false))
+        res,converged = try_sat_temp(model,p,T3,log10(vl3),log10(vv3),scales,method)
+        converged && return res
+    end
+    #no luck here, we need to calculate the critical point
     if isnothing(crit)
         crit = crit_pure(model)
     end
-    
     Tc,pc,vc = crit
     p > pc && return fail
     T2 >= Tc && return fail
