@@ -116,6 +116,7 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
 
     crit = method.crit
     if !isnothing(crit)
+        Tc,pc,_ = crit
         p > pc && return fail
         T2 >= Tc && return fail
     end
