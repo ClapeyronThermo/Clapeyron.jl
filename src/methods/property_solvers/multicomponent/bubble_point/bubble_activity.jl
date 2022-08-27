@@ -54,9 +54,10 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
     
     pure = split_model(model)
     sat = saturation_pressure.(pure,T)
-    vl_pure = getindex.(sat,2)
     p_pure = first.(sat)
+    vl_pure = getindex.(sat,2)
     vv_pure = last.(sat)
+
     if isnothing(method.vol0)
         vl = dot(vl_pure,x)
         vv = zero(vl)
@@ -75,24 +76,22 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
     end
 
     μmix = VT_chemical_potential_res(model,vl,T,x)
+    @show μmix
     ϕ = copy(μmix)
-    y = x .* p_pure ./ pmix #raoult initialization
-    y ./= sum(y)
-
+    y = copy(μmix)
+    ϕ .= 1
+    #y = x .* p_pure #raoult initialization
+    #y ./= sum(y)
+    #@show y
     if !isnothing(method.y0)
         y .= method.y0
-    end
-
-    if iszero(vv)
-        vv = dot(vv_pure,y)
+        if method.gas_fug
+            μv = VT_chemical_potential_res!(ϕ,model,vv,T,y)
+            ϕ .= exp.(μv ./ RT .- log.(pmix .* vv ./ RT))
+        end
     end
 
     RT = (R̄*T)
-    if method.gas_fug
-        μv = VT_chemical_potential_res!(ϕ,model,vv,T,method.y0)
-        ϕ .= exp.(μv ./ RT .- log.(pmix .* vv ./ RT))
-    end
-
     pold = zero(pmix)
     γ = zeros(typeof(pmix),length(pure))
     #pure part
@@ -139,6 +138,7 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
             break
         end
     end
+    @show pmix,vl,vv,y
     return pmix,vl,vv,y
 end
 
