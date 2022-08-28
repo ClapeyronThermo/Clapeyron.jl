@@ -76,7 +76,6 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
     end
 
     μmix = VT_chemical_potential_res(model,vl,T,x)
-    @show μmix
     ϕ = copy(μmix)
     y = copy(μmix)
     ϕ .= 1
@@ -134,11 +133,9 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
         end
         err = abs(pold-pmix)/pmix
         μmix = VT_chemical_potential_res!(μmix,model,vl,T,x)
-        if err < method.rtol_ss
-            break
-        end
+        !isfinite(err) && break
+        err < method.rtol_ss && break
     end
-    @show pmix,vl,vv,y
     return pmix,vl,vv,y
 end
 
@@ -200,7 +197,6 @@ function bubble_temperature_impl(model,p,x,method::ActivityBubbleTemperature)
     vl_pure = getindex.(sat,2)
     T_pure = first.(sat)
     vv_pure = last.(sat)
-
     if isnothing(method.vol0)
         vl = dot(vl_pure,x)
         vv = zero(vl)
@@ -213,7 +209,6 @@ function bubble_temperature_impl(model,p,x,method::ActivityBubbleTemperature)
     end
 
     dPdTsat = VT_entropy.(pure,vv_pure,T_pure) .- VT_entropy.(pure,vl_pure,T_pure) ./ (vv_pure .- vl_pure)
-    y = copy(dPdTsat)
     ##initialization for T
     if isnothing(method.T0)
         #= we solve the aproximate problem of finding T such as:
@@ -237,20 +232,21 @@ function bubble_temperature_impl(model,p,x,method::ActivityBubbleTemperature)
     else
         Tmix = method.T0
     end
-    return Tmix,Tmix,Tmix,y
 
     #restart pure initial points, Tmix is better than the saturation_temperature approach
     sat .= saturation_pressure.(pure,Tmix)
     vl_pure = getindex.(sat,2)
     p_pure = first.(sat)
     vv_pure .= last.(sat)
-    dPdTsat .= VT_entropy.(pure,vv_pure,T_pure) .- VT_entropy.(pure,vl_pure,T_pure) ./ (vv_pure .- vl_pure)
-        if isnothing(method.vol0)
+    dPdTsat .= (VT_entropy.(pure,vv_pure,T_pure) .- VT_entropy.(pure,vl_pure,T_pure)) ./ (vv_pure .- vl_pure)
+    
+    if isnothing(method.vol0)
         vl = dot(vl_pure,x)
         vv = zero(vl)
     else
         vl,vv = method.vol0
     end
+    
     #initialization for y
     y = copy(dPdTsat)
     if isnothing(method.y0)
@@ -258,87 +254,91 @@ function bubble_temperature_impl(model,p,x,method::ActivityBubbleTemperature)
         y ./= sum(y)
     else
         y .= method.y0
-    end    
-    return Tmix,Tmix,Tmix,y
+    end
+    vv = volume(model,p,Tmix,y,phase = :vapor)
+
+    #return Tmix,Tmix,Tmix,y
     μmix = VT_chemical_potential_res(model,vl,Tmix,x)
     ϕ = copy(μmix)
+    ϕ .= 1.0
     y = zeros(length(pure))
     RT = (R̄*Tmix)
-  
+    
+    if iszero(vv)
+        vv = dot(y,vv_pure)
+    end
    # μv = VT_chemical_potential_res!(ϕ,model,vv,Tmix,method.y0)
    # ϕ .= exp.(μv ./ RT .- log.(p .* vv ./ RT))
-
-    
-
-    Told = zero(Tmix)
-    pold = zero(Tmix)
-    pcalc = zero(Tmix)
     γ = zeros(eltype(μmix),length(pure))
-    
+    μpure = only.(VT_chemical_potential_res.(pure,vl_pure,Tmix))
+    ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vl_pure ./ RT))
+    step = zero(Tmix)
+    pp = p
+    _inf = one(Tmix)/zero(Tmix)
+    pmin,pmax,Tmin,Tmax = -_inf,_inf,-_inf,_inf
     for k in 1:method.itmax_ss
-        for i in eachindex(γ)
-            pᵢ = exp((ΔHvap[i]/R̄)*(1/T_pure[i] - 1/Tmix) + log(p)) #approximation for pi = psat(pure,Tmix)
-            vpureᵢ = vl_pure[i]
-            #v0i = vl_pure[i]
-            #βi = VT_isothermal_compressibility(pure[i],v0i,T_pure[i])
-            #v1i  = v0i*exp(βi*(p - pᵢ))
-            #αi = VT_isobaric_expansivity(pure[i],v1i,T_pure[i])
-            #v2i = v1i*exp(αi*(Tmix - T_pure[i]))
-            #vpureᵢ = v2i
-            #μᵢ = VT_gibbs_free_energy_res(pure[i],vpureᵢ,Tmix)
-            μᵢ = eos_res(pure[i],vpureᵢ,Tmix) + (pᵢ - RT/vpureᵢ)*vpureᵢ
-            #p*vv = RTi
-            #vv = RTi/p
-            ##
-            vvᵢ = vv_pure[i]*(Tmix/T_pure[i])*(p/pᵢ)
-            μvᵢ = eos_res(pure[i],vvᵢ,Tmix) + (pᵢ - RT/vvᵢ)*vvᵢ
-            ϕ̂ᵢ =  exp(μvᵢ/RT - log(pᵢ*vvᵢ/RT))
-            γ[i] = exp(log(vpureᵢ/vl) + (μmix[i] - μᵢ)/RT -  vpureᵢ*(p - pᵢ)/RT)
-            ln𝒫 = vpureᵢ*(p-pᵢ)/RT
-            𝒫 = exp(ln𝒫)
-            y[i] = pᵢ*x[i]*γ[i]*𝒫*ϕ̂ᵢ/(ϕ[i])
+        for j in 1:2
+            for i in eachindex(γ)
+                pᵢ = p_pure[i]
+                vpureᵢ = vl_pure[i]
+                μᵢ = μpure[i]
+                vvᵢ = vv_pure[i]
+                ϕ̂ᵢ =  ϕpure[i]
+                γ[i] = (vpureᵢ/vl)*exp((μmix[i] - μᵢ - vpureᵢ*(pp - pᵢ))/RT)
+                ln𝒫 = vpureᵢ*(pp-pᵢ)/RT
+                𝒫 = exp(ln𝒫)
+                y[i] = pᵢ*x[i]*γ[i]*𝒫*ϕ̂ᵢ/(ϕ[i])
+            end
+            if iszero(vv)
+                vv = dot(y,vv_pure)
+            end
+            pp = sum(y)
+            y ./= pp
+            abs(pp - p)/p < method.rtol_ss && break
+            logϕ, vv = lnϕ(model,pp,Tmix,y,phase = :vapor, vol0 = vv)
+            ϕ .= exp.(logϕ)
+            vl = volume(model,pp,Tmix,x,vol0 = vl)
+            μmix = VT_chemical_potential_res!(μmix,model,vl,Tmix,x)  
         end
-        pold = pcalc
-        zi = pold*vv/RT
-        pcalc = sum(y) #pv = nRT, T = pv/R
-        #@show pcalc
-        y ./= pcalc
-        if iszero(vv)
-            vv = dot(y,vv_pure)
+        OF = pp - p
+        #∂OF = VT_entropy(model,vv,Tmix,y) - VT_entropy(model,vl,Tmix,x) / (vv - vl)
+        _∂OF(T) = VT_entropy(model,vv,T,y) - VT_entropy(model,vl,T,x) / (vv - vl)
+        ∂OF,∂2OF = Solvers.f∂f(_∂OF,Tmix)
+        raw_step = OF/∂OF
+        raw_step = 2*OF*∂OF/(2*∂OF*∂OF - OF*∂2OF)
+        damp = min(0.01*k,1.0)
+        step = __bt_new_step(Tmix,pp,raw_step,damp,(Tmin,Tmax),(pmin,pmax),0.05)
+        if pp > p
+            pmax = min(pmax,pp)
+            Tmax = min(Tmax,Tmix)
         end
-        #actual stepping
-        #on a two phase region, (H_l - H_v)/(S_l - S_v) = T
-        Told = Tmix
-        dA_l, A_l = ∂f(model,vl,Tmix,x)
-        dA_v, A_v = ∂f(model,vv,Tmix,y)
-        ∂A∂V_l, ∂A∂T_l = dA_l
-        ∂A∂V_v, ∂A∂T_v = dA_v
-        H_l = A_l - vl*∂A∂V_l - Tmix*∂A∂T_l
-        H_v = A_v - vv*∂A∂V_v - Tmix*∂A∂T_v
-        S_l = - ∂A∂T_l
-        S_v = - ∂A∂T_v
-        Tcalc = (H_l - H_v)/(S_l - S_v)
-        #dT/dp = t - tcalc/p - calc
-        #dT/dp(p-pcalc) + tcalc = t
-        dTdP = Tcalc*(vl - vv)/(H_l - H_v)
-        Tmm = pcalc*vv/(R̄*zi) #pv = zRT
-        Tmix = Tcalc + dTdP*(p-pcalc)
-        #@show Tmm,Tmix
+
+        if pp < p
+            pmin = max(pmin,pp)
+            Tmin = max(Tmin,Tmix)
+        end
+        
+        Tmix = Tmix - step
+        dpdT = ∂OF # = pp - pnew / Tmix - Tmixn
+        #pp = 
+        pnew = __bt_new_ff(Tmix,pp,(Tmin,Tmax),(pmin,pmax))
+        #@show k,pp,pnew,Tmix
+        pp = pnew
         RT = (R̄*Tmix)
-        logϕ, vv = lnϕ(model,p,Tmix,y,phase = :vapor, vol0 = vv)
-        vl = volume(model,p,Tmix,x,vol0 = vl)
+        logϕ, vv = lnϕ(model,pp,Tmix,y,phase = :vapor, vol0 = vv)
+        vl = volume(model,pp,Tmix,x,vol0 = vl)
         ϕ .= exp.(logϕ)
-
-        err = abs(dTdP*(p-pcalc))
+        sat = [saturation_pressure(purei,Tmix,ChemPotVSaturation(crit_retry = false,log10vl = log10(vli),log10vv = log10(vvi))) for (purei,vli,vvi) in zip(pure,vl_pure,vv_pure)]
+        p_pure .= first.(sat)
+        vl_pure .= getindex.(sat,2)
+        vv_pure .= last.(sat)
+        μpure .= only.(VT_chemical_potential_res.(pure,vl_pure,Tmix))
+        ϕpure .= exp.(μpure ./ RT .- log.(p_pure .* vl_pure ./ RT))
+        err = abs(OF/p)
         μmix = VT_chemical_potential_res!(μmix,model,vl,Tmix,x)
-        if err < method.rtol_ss
-            @show err
-            break
-        end
+        !isfinite(err) && break
+        err < method.rtol_ss && break
     end
-    @show pressure(model,vl,Tmix,x)
-    @show pressure(model,vv,Tmix,y)
-
     return Tmix,vl,vv,y
 end
 
@@ -357,4 +357,40 @@ calculating each point on each iteration can be really expensive.
 
 we start with saturation_t
 =#
+
+#a modified newton step, with all sorts of countermeasures if it jumps too fast
+#xnew is x - step
+function __bt_new_step(x,fx,raw_step,damp,xbounds,fxbounds,fixed = 0.01)
+    fxmin,fxmax = fxbounds
+    xmin,xmax = xbounds
+    valid_bounds = isfinite(xmin) && isfinite(xmax) && isfinite(fxmin) && isfinite(fxmax)
+    damp_step = raw_step*damp
+    if xmin < x - raw_step < xmax && valid_bounds
+        #println("raw, step = ",raw_step)
+        return raw_step
+    elseif xmin < x - damp_step < xmax && valid_bounds
+        #println("damped, step = ",damp_step)
+        return damp_step
+    elseif valid_bounds
+        #println("bounded")
+        xnew = xmin + (xmax - xmin)*(fx - fxmin)/(fxmax - fxmin)
+        #println("damped, step = ",x-xnew)
+        return x - xnew
+    else
+        #println("damped, step = ",sign(raw_step)*fixed*x)
+        return sign(raw_step)*fixed*x
+    end
+end
+
+function __bt_new_ff(x,fx,xbounds,fxbounds)
+    fxmin,fxmax = fxbounds
+    xmin,xmax = xbounds
+    valid_bounds = isfinite(xmin) && isfinite(xmax) && isfinite(fxmin) && isfinite(fxmax)
+    if valid_bounds
+        t = 
+        return fxmin + (fxmax - fxmin)*(x - xmin)/(xmax - xmin)
+    else
+        return fx
+    end
+end
 
