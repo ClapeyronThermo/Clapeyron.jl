@@ -33,7 +33,7 @@ function AntoineSaturation(;T0 = nothing,
     f_limit = 0.0,
     atol = 1e-8,
     rtol = 1e-12,
-    max_iters = 10^4)
+    max_iters = 10^2)
     C = typeof(crit)
     if T0 === vl === vv === nothing
         AntoineSaturation{Nothing,C}(nothing,nothing,nothing,crit,f_limit,atol,rtol,max_iters)
@@ -113,7 +113,7 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
     converged && return res
     #it could be that the critical point isn't run there
     T2,_,_ = res
-
+    
     crit = method.crit
     if !isnothing(crit)
         Tc,pc,_ = crit
