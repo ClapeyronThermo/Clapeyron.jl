@@ -6,6 +6,7 @@ version = "0.3.7"
 [deps]
 BlackBoxOptim = "a134a8b2-14d6-55f6-9291-3336d3ab0209"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+Debugger = "31a5f54b-26ea-5ae9-a837-f05ce5417438"
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
