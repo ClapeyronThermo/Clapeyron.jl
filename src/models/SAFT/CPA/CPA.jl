@@ -130,11 +130,7 @@ p_scale(model::CPAModel,z=SA[1.0]) = p_scale(model.cubicmodel,z)
 
 function x0_crit_pure(model::CPAModel)
     lb_v = lb_volume(model)
-    if isempty(model.params.epsilon_assoc.values[1,1])
-        [2.0, log10(lb_v/0.3)]
-    else
-        [2.75, log10(lb_v/0.3)]
-    end
+    return [1.0, log10(lb_v/0.3)]
 end
 
 function a_res(model::CPAModel, V, T, z)
