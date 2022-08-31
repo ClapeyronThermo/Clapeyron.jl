@@ -31,7 +31,7 @@ carbon dioxide,(O=)C=O,water,,-0.005927,10.1021/ie0003887
 carbon dioxide,(O=)C=O,water08,,-0.005927,10.1021/ie0003887
 1-chlorobutane,CCCC(Cl),hexane,CCCCCC,0.017,10.1021/ie0003887
 methanol,CO,isobutanol,,0.05,10.1021/ie010954d
-methanol,CO,cyclohexane,C1CCCCC1,0.,10.1021/ie010954d
+methanol,CO,cyclohexane,C1CCCCC1,0.051,10.1021/ie010954d
 methanol,CO,1-octanol,CCCCCCCCO,0.02,10.1021/ie010954d
 ethanol,CCO,butane,CCCC,0.,10.1021/ie010954d
 1-propanol,CCCO,benzene,c1ccccc1,0.,10.1021/ie010954d
