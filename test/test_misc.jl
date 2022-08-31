@@ -100,5 +100,9 @@
             @test fugacity_coefficient(model, p, T)[1] ≈ 0.9928244080356565 rtol = 1E-6
             @test activity_coefficient(model, p, T)[1] ≈ 1.0
         end
+        @testset "#112" begin
+            model = CPA(["methane"])
+            @test crit_pure(model)[1] ≈ 538.2329369300235 rtol = 1e-6
+        end
     end
  end
