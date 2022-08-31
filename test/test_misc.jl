@@ -101,7 +101,7 @@
             @test activity_coefficient(model, p, T)[1] ≈ 1.0
         end
         @testset "#112" begin
-            model = CPA(["methane"])
+            model = CPA(["methanol"])
             @test crit_pure(model)[1] ≈ 538.2329369300235 rtol = 1e-6
         end
     end
