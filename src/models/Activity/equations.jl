@@ -61,7 +61,7 @@ function bubble_pressure(model::ActivityModel,T,x)
     return (p,vl,vv,y)
 end
 
-function bubble_temperature(model::ActivityModel,p,x)
+function bubble_temperature(model::ActivityModel,p,x;T0=nothing)
     f(z) = Obj_bubble_temperature(model,z,p,x)
     if T0===nothing
         pure = model.puremodel
