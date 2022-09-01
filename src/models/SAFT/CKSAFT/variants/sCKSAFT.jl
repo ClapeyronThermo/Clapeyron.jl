@@ -69,7 +69,7 @@ function sCKSAFT(components::Vector{String};
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
     packagedparams = sCKSAFTParam(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/IE00107A014", "10.1021/ie00056a050","10.1021/ie00044a042"]
 

@@ -72,7 +72,7 @@ function LJSAFT(components;
     b.values .^= 3
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
     packagedparams = LJSAFTParam(Mw, segment, b, T_tilde, epsilon_assoc, bondvol)
     references = ["10.1021/ie9602320"]
 

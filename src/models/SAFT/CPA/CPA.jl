@@ -103,6 +103,7 @@ function CPA(components;
     b  = sigma_LorentzBerthelot(params["b"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
     packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)

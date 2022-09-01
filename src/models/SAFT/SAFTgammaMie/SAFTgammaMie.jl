@@ -113,6 +113,8 @@ function SAFTgammaMie(components;
     #GC to component model in association
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
+    gc_epsilon_assoc,gc_bondvol = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options) #combining rules for association
+
     comp_sites,idx_dict = gc_to_comp_sites(sites,groups)
     assoc_idx = gc_to_comp_assoc_idx(gc_bondvol,comp_sites,idx_dict)
     assoc_idxs,outer,inner,outer_size,inner_size = assoc_idx.values,assoc_idx.outer_indices,assoc_idx.inner_indices,assoc_idx.outer_size,assoc_idx.inner_size

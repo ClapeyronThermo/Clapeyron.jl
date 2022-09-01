@@ -67,6 +67,7 @@ function ogSAFT(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
 
     packagedparams = ogSAFTParam(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie00104a021","10.1016/0378-3812(89)80308-5"]

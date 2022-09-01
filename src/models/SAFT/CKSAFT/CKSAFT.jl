@@ -72,6 +72,7 @@ function CKSAFT(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bond_vol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
     packagedparams = CKSAFTParam(params["Mw"],segment, sigma, epsilon,c, epsilon_assoc, bondvol)
     references = ["10.1021/IE00107A014", "10.1021/ie00056a050"]
 

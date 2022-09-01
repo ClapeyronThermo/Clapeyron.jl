@@ -76,7 +76,7 @@ function bondvol_mix(bondvol::AssocParam,σ)
     mat = param.values
     for (idx,(i,j),(a,b)) in indices(mat)
         if iszero(mat.values[idx])
-            mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])*(σ[i,i]*σ[j,j]/σ[i,j])^3
+            mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])*(sqrt(σ[i,i]*σ[j,j])/σ[i,j])^3
         end
     end
     nonzero_idx = findall(!iszero,mat.values)
@@ -88,13 +88,19 @@ end
 
 function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions) 
     combining = assoc_options.combining
-    if combining in (:elliott_runtime,:esd_runtime,:nocombining)
+    if combining == :nocombining
         return bondvol,epsilon_assoc
+    elseif combining in (:elliott_runtime,:esd_runtime)
+        if assoc_options.dense
+            return bondvol,epsilon_assoc
+        else
+            throw(error("cannot use sparse solver with :elliot_runtime combining rule"))
+        end
     elseif combining in (:elliott,:esd)
         return bondvol_mix(bondvol,sigma),epsilon_assoc_mix(epsilon_assoc)
     elseif combining in (:cr1)
         return bondvol_mix(bondvol),epsilon_assoc_mix(epsilon_assoc)
     else
-        throw(error("incorrect combining argument",error_color(string(combining)),"passed to AssocOptions."))
+        throw(error("incorrect combining argument ",error_color(string(combining)),"passed to AssocOptions."))
     end
 end

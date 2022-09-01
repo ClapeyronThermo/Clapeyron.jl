@@ -73,6 +73,7 @@ function SAFTVRSW(components;
 
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
 
     packagedparams = SAFTVRSWParam(Mw, segment, sigma, lambda, epsilon, epsilon_assoc, bondvol)
     references = ["10.1063/1.473101"]

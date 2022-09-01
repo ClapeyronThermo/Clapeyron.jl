@@ -95,6 +95,7 @@ function pharmaPCSAFT(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     packagedparams = pharmaPCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
