@@ -98,9 +98,9 @@ function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions)
         end
     elseif combining in (:elliott,:esd)
         return bondvol_mix(bondvol,sigma),epsilon_assoc_mix(epsilon_assoc)
-    elseif combining in (:cr1)
+    elseif combining == :cr1
         return bondvol_mix(bondvol),epsilon_assoc_mix(epsilon_assoc)
     else
-        throw(error("incorrect combining argument ",error_color(string(combining)),"passed to AssocOptions."))
+        throw(error("incorrect combining argument ",error_color(string(combining))," passed to AssocOptions."))
     end
 end
