@@ -28,8 +28,10 @@ using Clapeyron, Test
     # Check that it detects the right sites.
 
     opts = Clapeyron.ParamOptions()
+    opts2 = Clapeyron.ParamOptions(ignore_missing_singleparams=["emptyparam","missingparam"])
     allparams,allnotfoundparams = Clapeyron.createparams(testspecies, filepath_normal, opts) #merge all found params
-    result, allcomponentsites = Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts) #generate ClapeyronParams
+    @test_throws ErrorException Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts) #generate ClapeyronParams
+    result, allcomponentsites = Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts2) #generate ClapeyronParams
 
     @test allcomponentsites == [[],
                                                                      [],

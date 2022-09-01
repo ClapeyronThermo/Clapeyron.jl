@@ -23,7 +23,6 @@ the combining option controls the type of combining rule applied to the associat
     Δ[i,j][a,b] = (ε[i,i][a,b] + ε[j,j][a,b])/2
     Δ[i,j][a,b] = √(Δ[i,i][a,b] * Δ[j,j][a,b]) 
     ```
-only returns a dense matrix
 
 !!! info "Association Scheme matters"
 

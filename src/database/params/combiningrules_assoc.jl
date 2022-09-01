@@ -84,4 +84,17 @@ function bondvol_mix(bondvol::AssocParam,σ)
     keepat!(mat.outer_indices,nonzero_idx)
     keepat!(mat.inner_indices,nonzero_idx)
     return param
-end 
+end
+
+function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions) 
+    combining = assoc_options.combining
+    if combining in (:elliott_runtime,:esd_runtime,:nocombining)
+        return bondvol,epsilon_assoc
+    elseif combining in (:elliott,:esd)
+        return bondvol_mix(bondvol,sigma),epsilon_assoc_mix(epsilon_assoc)
+    elseif combining in (:cr1)
+        return bondvol_mix(bondvol),epsilon_assoc_mix(epsilon_assoc)
+    else
+        throw(error("incorrect combining argument",error_color(string(combining)),"passed to AssocOptions."))
+    end
+end
