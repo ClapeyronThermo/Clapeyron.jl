@@ -1,7 +1,7 @@
 function assoc_extend(param::AssocParam)
     length(param.values.values) == 0 && return param
     _4dmatrix = assoc_extend(param.values,param.sites)
-    return AssocParam(param.name,param.components,_4dmatrix,sites,param.sourcecsvs,param.sources)
+    return AssocParam(param.name,param.components,_4dmatrix,param.sites,param.sourcecsvs,param.sources)
 end
 
 function assoc_extend(mat::Compressed4DMatrix,sites)
@@ -29,7 +29,7 @@ function assoc_extend(mat::Compressed4DMatrix,sites)
     sort!(idx)
     extended_vals = zeros(eltype(vals),length(idx))
     for (k,(i,j,a,b)) in enumerate(idx)
-        extended_vals[k] = param.values[i,j][a,b]
+        extended_vals[k] = mat[i,j][a,b]
     end
     extended_outer_indices = [(c[1],c[2]) for c ∈ idx]
     extended_inner_indices = [(c[3],c[4]) for c ∈ idx]
