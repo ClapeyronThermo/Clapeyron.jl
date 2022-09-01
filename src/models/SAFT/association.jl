@@ -89,7 +89,7 @@ function dense_assoc_site_matrix(model,V,T,z,data=nothing)
     nn = length(_n)
     K  = zeros(TT,nn,nn)
     count = 0
-    combining = model.assoc_options.combining == :elliott
+    combining = model.assoc_options.combining ∈ (:elliott_runtime,:esd_runtime)
 
     @inbounds for i ∈ 1:length(z) #for i ∈ comps 
         sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
