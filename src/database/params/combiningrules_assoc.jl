@@ -71,7 +71,7 @@ function epsilon_assoc_mix(epsilon_assoc::AssocParam)
 end
 
 function bondvol_mix(bondvol::AssocParam,σ)
-    length(bondvol.values) == 0 && return deepcopy(bondvol)
+    length(bondvol.values.values) == 0 && return deepcopy(bondvol)
     param = assoc_extend(bondvol)
     mat = param.values
     for (idx,(i,j),(a,b)) in indices(mat)
