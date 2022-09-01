@@ -182,7 +182,7 @@ function sparse_assoc_site_matrix(model,V,T,z,data=nothing)
             end
         end
     end
-    K = sparse(c1,c2,val)
+    K::SparseMatrixCSC{TT,Int} = sparse(c1,c2,val)
     return K
 end
 #Mx = a + b(x,x)
@@ -201,10 +201,10 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     max_iters = options.max_iters
     α = options.dampingfactor
 
-    if model.assoc_options.combining == :sparse_nocombining
-        K = sparse_assoc_site_matrix(model,V,T,z,data)
-    else
+    if model.assoc_options.dense
         K = dense_assoc_site_matrix(model,V,T,z,data)
+    else sparse_assoc_site_matrix
+        K = sparse_assoc_site_matrix(model,V,T,z,data)
     end
     Kmin,Kmax = nonzero_extrema(K)
     if Kmax > 1

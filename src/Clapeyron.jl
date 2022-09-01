@@ -43,6 +43,9 @@ include("database/ClapeyronParam.jl")
 #Combining Rules for Single and Pair Params.
 include("database/params/combiningrules.jl")
 
+#Combining Rules for Assoc Params
+include("database/params/combiningrules_assoc.jl")
+
 using CSV, Tables
 #getparams options
 include("database/ParamOptions.jl") 

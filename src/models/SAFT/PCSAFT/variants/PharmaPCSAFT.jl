@@ -76,7 +76,7 @@ function pharmaPCSAFT(components;
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
-    assoc_options = AssocOptions(combining = :elliott))
+    assoc_options = AssocOptions(combining = :elliott_runtime))
 
     params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; 
     userlocations=userlocations, 
