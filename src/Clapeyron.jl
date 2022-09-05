@@ -66,6 +66,10 @@ include("utils/split_model.jl")
 #Clapeyron methods (AD, property solvers, etc)
 include("methods/methods.jl")
 
+#misc
+include("utils/misc.jl")
+
+
 #=
 the dependency chain is the following:
 
@@ -158,5 +162,5 @@ include("models/ECS/variants/SPUNG.jl")
 include("models/PeTS/PeTS.jl")
 include("models/UFTheory/UFTheory.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
-include("utils/misc.jl")
+include("models/CPC/CPC.jl")
 end # module
