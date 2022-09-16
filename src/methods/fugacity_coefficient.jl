@@ -1,8 +1,9 @@
 # Function to compute fugacity coefficient
 function lnϕ(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing)
     RT = R̄*T
-    vol0 === nothing && (vol0 = x0_volume(model, p, T, z, phase = phase))
-    vol = _volume_compress(model,p,T,z,vol0)
+    # vol0 === nothing && (vol0 = x0_volume(model, p, T, z, phase = phase))
+    # vol = _volume_compress(model,p,T,z,vol0)
+    vol = volume(model, p, T, z, phase=phase, vol0=vol0)
     μ_res = VT_chemical_potential_res(model, vol, T, z)
     Z = p*vol/RT/sum(z)
     lnϕ = μ_res/RT .- log(Z)
