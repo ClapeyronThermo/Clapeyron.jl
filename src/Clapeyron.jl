@@ -63,6 +63,9 @@ include("utils/index_reduction.jl")
 #splitting models, useful for methods.
 include("utils/split_model.jl")
 
+# Gustavo: acceleration for successive substitution
+include("utils/acceleration_ss.jl")
+
 #Clapeyron methods (AD, property solvers, etc)
 include("methods/methods.jl")
 
