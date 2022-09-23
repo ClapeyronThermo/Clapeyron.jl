@@ -135,7 +135,6 @@ include("models/Activity/COSMOSAC/utils.jl")
 include("models/Activity/COSMOSAC/COSMOSAC02.jl")
 include("models/Activity/COSMOSAC/COSMOSAC10.jl")
 include("models/Activity/COSMOSAC/COSMOSACdsp.jl")
-include("models/Activity/COSMOSAC/COSMOSACna.jl")
 
 
 include("models/cubic/alphas/alphas.jl")
