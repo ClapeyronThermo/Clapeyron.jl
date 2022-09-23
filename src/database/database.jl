@@ -134,7 +134,7 @@ function findsites(data::Dict,components::Vector;verbose = false)
     verbose && @info("Found sites for $components are $(output).")
     return output
 end
-
+@nospecialize
 function createparams(components::Vector{String},
                     filepaths::Vector{String},
                     options::ParamOptions = DefaultOptions,
@@ -175,7 +175,7 @@ function createparams(components::Vector{String},
 
     return allparams,allnotfoundparams
 end
-
+@specialize
 function compile_params(components,allparams,allnotfoundparams,options)
     #Generate component sites with the RawParam tapes
     allcomponentsites = findsites(allparams,components)
@@ -253,7 +253,8 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
 
     csvtype = readcsvtype(filepath)
     grouptype = "" #TODO: actually parse this from csvs
-    df = CSV.File(filepath; header=3, pool=0,silencewarnings=true)
+    #df = CSV.File(filepath; header=3, pool=0,silencewarnings=true)
+    df = csv_table(filepath)
     csvheaders = String.(Tables.columnnames(df))
     normalised_components = normalisestring.(components,normalisecomponents)
     components_dict = Dict(v => k for (k,v) ∈ pairs(normalised_components))
@@ -288,7 +289,7 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
     #indices where data could be (they could be missing)
     #on pair and assoc, this is just the first component, we need to reduce the valid indices again
     found_indices0,comp_indices = _indexin(components_dict,species_list,component_delimiter,1:length(species_list))
-    dfR = Tables.rows(df)
+    dfR = Tables.rowtable(df)
     EMPTY_STR = ""
 
     if csvtype == singledata || ((csvtype == groupdata) && parsegroups)
@@ -320,8 +321,8 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
         l = length(found_indices2)
         if l != 0
             _data = dfR[found_indices2]
-            _site1 = getindex.(_data,lookupsitecolumnindex1)
-            _site2 = getindex.(_data,lookupsitecolumnindex2)
+            _site1 = identity.(getindex.(_data,lookupsitecolumnindex1))
+            _site2 = identity.(getindex.(_data,lookupsitecolumnindex2))
             _comp = [(components[c1],components[c2],String(s1),String(s2)) for (c1,c2,s1,s2) ∈ zip(comp_indices1,comp_indices2,_site1,_site2)]
             _sources = fill(EMPTY_STR,l)
             _csv = fill(String(filepath),l)
@@ -345,10 +346,10 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
         for (headerparam,idx) ∈ zip(headerparams,headerparams_indices)
             _vals = getindex.(_data,idx)
             s = findall(!ismissing,_vals) #filter nonmissing values
-            if !iszero(s)
-                __vals = [_vals[i] for i ∈ s] #removes the missing type and eliminates bitvectors
-                __sources = [_sources[i] for i ∈ s]
-                __csv = [_csv[i] for i ∈ s]
+            if !iszero(length(s))
+                __vals = concrete(_vals[s]) #removes the missing type and eliminates bitvectors
+                __sources = _sources[s]
+                __csv = _csv[s]
                 raw = RawParam(headerparam,_comp[s],__vals,__sources,__csv,csvtype,grouptype)
                 push!(foundvalues,raw)
             end

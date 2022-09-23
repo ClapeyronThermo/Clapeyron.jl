@@ -61,7 +61,7 @@ function ParamTable(type::Symbol,data;location::Union{String,Nothing} = nothing,
     $(name) $type Parameters
     """
     write(io,pretext)
-    CSV.write(io, data,append = true,header = true)
+    #CSV.write(io, data,append = true,header = true)
     close(io)
     return file
 end
