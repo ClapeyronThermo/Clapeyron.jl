@@ -1,26 +1,26 @@
 
-abstract type PPCSAFTModel <: SAFTModel end
+abstract type GEPCSAFTModel <: SAFTModel end
 
-const PPCSAFTParam = PCSAFTParam
+const GEPCSAFTParam = PCSAFTParam
 
-struct PPCSAFT{T <: IdealModel,γ} <: PPCSAFTModel
+struct GEPCSAFT{T <: IdealModel,γ} <: GEPCSAFTModel
     components::Array{String,1}
     icomponents::UnitRange{Int}
     sites::SiteParam
     activity::γ
-    params::PPCSAFTParam
+    params::GEPCSAFTParam
     idealmodel::T
     assoc_options::AssocOptions
     references::Array{String,1}
 end
 
-@registermodel PPCSAFT
+@registermodel GEPCSAFT
 
-PPCSAFT
+GEPCSAFT
 
 
-export PPCSAFT
-function PPCSAFT(components::Vector{String}; idealmodel=BasicIdeal,
+export GEPCSAFT
+function GEPCSAFT(components::Vector{String}; idealmodel=BasicIdeal,
     activity=UNIFAC,
     userlocations=String[], 
     ideal_userlocations=String[],
@@ -37,22 +37,22 @@ function PPCSAFT(components::Vector{String}; idealmodel=BasicIdeal,
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
 
-    packagedparams = PPCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
+    packagedparams = GEPCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_activity = activity(components;userlocations=activity_userlocations,verbose)
     icomponents = 1:length(components)
     references = String[""]
-    model = PPCSAFT(components,icomponents,sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
+    model = GEPCSAFT(components,icomponents,sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
     return model
 end
 
-function a_res(model::PPCSAFTModel, V, T, z)
+function a_res(model::GEPCSAFTModel, V, T, z)
     _data = @f(data)
     return @f(a_hc,_data) + @f(a_disp,_data) + @f(a_assoc,_data)
 end
 
-function data(model::PPCSAFTModel,V,T,z)
+function data(model::GEPCSAFTModel,V,T,z)
     _d = @f(d)
     ζ0,ζ1,ζ2,ζ3 = @f(ζ0123,_d)
     m = model.params.segment.values
@@ -60,24 +60,24 @@ function data(model::PPCSAFTModel,V,T,z)
     return (_d,ζ0,ζ1,ζ2,ζ3,m̄)
 end
 
-function a_hc(model::PPCSAFTModel, V, T, z , _data = @f(data))
+function a_hc(model::GEPCSAFTModel, V, T, z , _data = @f(data))
     _,_,_,_,η,m̄ = _data
     g_hs = (1-η/2)/(1-η)^3
     a_hs = (4η-3η^2)/(1-η)^2
     return m̄*a_hs - (m̄-1)*log(g_hs)
 end
 
-function g_hs(model::PPCSAFTModel, V, T, z,_data = @f(data))
+function g_hs(model::GEPCSAFTModel, V, T, z,_data = @f(data))
     _,_,_,_,η,_ = _data
     return (1-η/2)/(1-η)^3
 end
 
-function a_hs(model::PPCSAFTModel, V, T, z)
+function a_hs(model::GEPCSAFTModel, V, T, z)
     _,_,_,_,η,_ = _data
     return (4η-3η^2)/(1-η)^2
 end
 
-function Δ(model::PPCSAFTModel, V, T, z, i, j, a, b,_data = @f(data))
+function Δ(model::GEPCSAFTModel, V, T, z, i, j, a, b,_data = @f(data))
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
     κijab = model.params.bondvol.values[i,j][a,b]
     σij = model.params.sigma.values[i,j]
@@ -85,20 +85,20 @@ function Δ(model::PPCSAFTModel, V, T, z, i, j, a, b,_data = @f(data))
     return g_hs_*σij^3*(exp(ϵ_associjab/T)-1)*κijab
 end
 
-function a_disp(model::PPCSAFTModel, V, T, z,_data=@f(data))
+function a_disp(model::GEPCSAFTModel, V, T, z,_data=@f(data))
     di,ζ0,ζ1,ζ2,ζ3,m̄ = _data
     Σz = sum(z)
     m2ϵσ3₁,m2ϵσ3₂ = @f(m2ϵσ3,_data)
     return -2*π*N_A*Σz/V*@f(I,1,_data)*m2ϵσ3₁ - π*m̄*N_A*Σz/V*@f(C1,_data)*@f(I,2,_data)*m2ϵσ3₂
 end
 
-function d(model::PPCSAFTModel, V, T, z)
+function d(model::GEPCSAFTModel, V, T, z)
     ϵᵢᵢ = model.params.epsilon.diagvalues
     σᵢᵢ = model.params.sigma.diagvalues 
     return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
 end
 
-function ζ0123(model::PPCSAFTModel, V, T, z,_d)
+function ζ0123(model::GEPCSAFTModel, V, T, z,_d)
     m = model.params.segment.values
     ζ0 = zero(V+T+first(z))
     ζ1 = ζ0
@@ -123,12 +123,12 @@ function ζ0123(model::PPCSAFTModel, V, T, z,_d)
     return ζ0,ζ1,ζ2,ζ3
 end
 
-function C1(model::PPCSAFTModel, V, T, z,_data=@f(data))
+function C1(model::GEPCSAFTModel, V, T, z,_data=@f(data))
     _,_,_,_,η,m̄ = _data
     return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*(20η-27η^2+12η^3-2η^4)/((1-η)*(2-η))^2)^-1
 end
 
-function m2ϵσ3(model::PPCSAFTModel, V, T, z,_data=@f(data))
+function m2ϵσ3(model::GEPCSAFTModel, V, T, z,_data=@f(data))
     di,_,_,_,_,m̄ = _data
     m = model.params.segment.values
     σ = model.params.sigma.diagvalues
@@ -149,7 +149,7 @@ function m2ϵσ3(model::PPCSAFTModel, V, T, z,_data=@f(data))
     return m2ϵσ3₁,m2ϵσ3₂
 end
 
-function I(model::PPCSAFTModel, V, T, z, n , _data=@f(data))
+function I(model::GEPCSAFTModel, V, T, z, n , _data=@f(data))
     _,_,_,_,η,m̄ = _data
     if n == 1
         corr = PCSAFTconsts.corr1
@@ -166,7 +166,7 @@ function I(model::PPCSAFTModel, V, T, z, n , _data=@f(data))
     return res
 end
 
-function Ī(model::PPCSAFTModel, V, T, z, n , _data=@f(data))
+function Ī(model::GEPCSAFTModel, V, T, z, n , _data=@f(data))
     _,_,_,_,_,m̄ = _data
     if n == 1
         corr = PCSAFTconsts.corr1
@@ -182,7 +182,7 @@ function Ī(model::PPCSAFTModel, V, T, z, n , _data=@f(data))
     return res
 end
 
-function Ii(model::PPCSAFTModel, V, T, z, n , _data=@f(data))
+function Ii(model::GEPCSAFTModel, V, T, z, n , _data=@f(data))
     m = model.params.segment.values
     if n == 1
         corr = PCSAFTconsts.corr1
