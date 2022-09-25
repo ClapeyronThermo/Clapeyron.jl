@@ -348,6 +348,7 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
             s = findall(!ismissing,_vals) #filter nonmissing values
             if !iszero(length(s))
                 __vals = concrete(_vals[s]) #removes the missing type and eliminates bitvectors
+                eltype(__vals) === Any && (__vals = string.(__vals))
                 __sources = _sources[s]
                 __csv = _csv[s]
                 raw = RawParam(headerparam,_comp[s],__vals,__sources,__csv,csvtype,grouptype)
