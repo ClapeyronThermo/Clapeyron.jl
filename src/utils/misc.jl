@@ -19,12 +19,4 @@ function dnorm(x,y,p)
     return norm((xi-yi for (xi, yi) in zip(x, y)), p)
 end
 
-concrete(x::Vector{Float64}) = x 
-concrete(x::Vector{Int64}) = x
-concrete(x::Vector{String}) = x
-concrete(x::Vector{Bool}) = x 
-concrete(x) = convert(AbstractArray{mapreduce(typeof, promote_type, x)}, x);
-
-
-
 include("core_utils.jl")
