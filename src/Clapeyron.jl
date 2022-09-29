@@ -43,6 +43,9 @@ include("database/ClapeyronParam.jl")
 #Combining Rules for Single and Pair Params.
 include("database/params/combiningrules.jl")
 
+#Combining Rules for Assoc Params
+include("database/params/combiningrules_assoc.jl")
+
 using CSV, Tables
 #getparams options
 include("database/ParamOptions.jl") 
@@ -59,6 +62,9 @@ include("utils/index_reduction.jl")
 
 #splitting models, useful for methods.
 include("utils/split_model.jl")
+
+# Gustavo: acceleration for successive substitution
+include("utils/acceleration_ss.jl")
 
 #Clapeyron methods (AD, property solvers, etc)
 include("methods/methods.jl")

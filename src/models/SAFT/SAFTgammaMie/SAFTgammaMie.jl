@@ -113,11 +113,13 @@ function SAFTgammaMie(components;
     #GC to component model in association
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
+    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options) #combining rules for association
+
     comp_sites,idx_dict = gc_to_comp_sites(sites,groups)
     assoc_idx = gc_to_comp_assoc_idx(gc_bondvol,comp_sites,idx_dict)
     assoc_idxs,outer,inner,outer_size,inner_size = assoc_idx.values,assoc_idx.outer_indices,assoc_idx.inner_indices,assoc_idx.outer_size,assoc_idx.inner_size
-    _comp_bondvol = [gc_bondvol.values.values[i] for i ∈ assoc_idxs]
-    _comp_epsilon_assoc = [gc_epsilon_assoc.values.values[i] for i ∈ assoc_idxs]
+    _comp_bondvol = Float64[gc_bondvol.values.values[i] for i ∈ assoc_idxs]
+    _comp_epsilon_assoc = Float64[gc_epsilon_assoc.values.values[i] for i ∈ assoc_idxs]
     compval_bondvol = Compressed4DMatrix(_comp_bondvol,outer,inner,outer_size,inner_size)
     compval_epsilon_assoc = Compressed4DMatrix(_comp_epsilon_assoc,outer,inner,outer_size,inner_size)
     comp_bondvol = AssocParam{Float64}("epsilon assoc",components,compval_bondvol,comp_sites.sites,String[],String[])

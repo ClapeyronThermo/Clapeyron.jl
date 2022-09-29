@@ -244,6 +244,12 @@ function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
     end
 end
 
+# Gustavo: volume function for volume_impl to work with cubic models
+function volume(model::ABCubicModel,p,T,z=SA[1.0];phase=:unknown,threaded=true,vol0=nothing)
+    return volume_impl(model,p,T,z,phase,threaded,vol0)
+end
+
+
 function zero_pressure_impl(T,a,b,c,Δ1,Δ2,z)
     #0 = R̄*T/(v-b) - a/((v-Δ1*b)*(v-Δ2*b))
     #f(v) = ((v-Δ1*b)*(v-Δ2*b))*R̄*T - (v-b)*a

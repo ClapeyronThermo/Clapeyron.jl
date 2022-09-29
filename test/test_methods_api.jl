@@ -45,11 +45,11 @@
 end
 
 @testset "association" begin
-    no_comb = Clapeyron.AssocOptions()
-    no_comb_dense = Clapeyron.AssocOptions(combining = :dense_nocombining)
-    elliott = Clapeyron.AssocOptions(combining = :elliott)
+    no_comb_sparse = Clapeyron.AssocOptions(combining = :nocombining, dense = false)
+    no_comb_dense = Clapeyron.AssocOptions(combining = :nocombining, dense = true)
+    elliott = Clapeyron.AssocOptions(combining = :elliott_runtime)
 
-    model_no_comb = PCSAFT(["methanol","ethanol"],assoc_options = no_comb)
+    model_no_comb_sparse = PCSAFT(["methanol","ethanol"],assoc_options = no_comb_sparse)
     model_no_comb_dense = PCSAFT(["methanol","ethanol"],assoc_options = no_comb_dense)
     model_elliott_comb = PCSAFT(["methanol","ethanol"],assoc_options = elliott)
 
@@ -57,8 +57,8 @@ end
     T = 298.15
     z = [0.5,0.5]
     @test Clapeyron.nonzero_extrema(0:3) == (1, 3)
-    @test Clapeyron.a_assoc(model_no_comb,V,T,z) ≈ -4.667036481159167  rtol = 1E-6
-    @test Clapeyron.a_assoc(model_no_comb,V,T,z) ≈ Clapeyron.a_assoc(model_no_comb_dense,V,T,z)  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_no_comb_sparse,V,T,z) ≈ -4.667036481159167  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_no_comb_sparse,V,T,z) ≈ Clapeyron.a_assoc(model_no_comb_dense,V,T,z)  rtol = 1E-6
     @test Clapeyron.a_assoc(model_elliott_comb,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
 end
 

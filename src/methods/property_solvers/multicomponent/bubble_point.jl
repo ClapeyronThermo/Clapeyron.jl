@@ -289,8 +289,8 @@ function bubble_pressure(model::EoSModel,T,x;v0 = nothing)
         vl = exp10(v0[1])
         vv = exp10(v0[2])
         vol0 = (vl,vv)
-        y = v0[3:end]
-        bubble_pressure(model,T,x,ChemPotBubblePressure(;vol0,y))
+        y0 = v0[3:end]
+        bubble_pressure(model,T,x,ChemPotBubblePressure(;vol0,y0))
     end
 end
 
@@ -302,7 +302,7 @@ function bubble_temperature(model::EoSModel,p,x;v0 = nothing)
         vl = exp10(v0[2])
         vv = exp10(v0[3])
         vol0 = (vl,vv)
-        y = v0[4:end]
-        bubble_temperature(model,T,x,ChemPotBubbleTemperature(;T0,vol0,y))
+        y0 = v0[4:end]
+        bubble_temperature(model,T,x,ChemPotBubbleTemperature(;T0,vol0,y0))
     end
 end

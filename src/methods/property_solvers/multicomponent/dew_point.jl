@@ -288,8 +288,8 @@ function dew_pressure(model::EoSModel,T,y;v0 = nothing)
         vl = exp10(v0[1])
         vv = exp10(v0[2])
         vol0 = (vl,vv)
-        x = v0[3:end]
-        dew_pressure(model,T,y,ChemPotDewPressure(;vol0,x))
+        x0 = v0[3:end]
+        dew_pressure(model,T,y,ChemPotDewPressure(;vol0,x0))
     end
 end
 
@@ -301,7 +301,7 @@ function dew_temperature(model::EoSModel,p,y;v0 = nothing)
         vl = exp10(v0[2])
         vv = exp10(v0[3])
         vol0 = (vl,vv)
-        x = v0[4:end]
-        dew_temperature(model,p,y,ChemPotDewTemperature(;T0,vol0,x))
+        x0 = v0[4:end]
+        dew_temperature(model,p,y,ChemPotDewTemperature(;T0,vol0,x0))
     end
 end

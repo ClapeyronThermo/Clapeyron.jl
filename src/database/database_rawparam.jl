@@ -159,7 +159,11 @@ function compile_single(name,components,raw::RawParam,options)
 end
 
 function compile_single(name,components,type::CSVType,options)
-    return SingleParam(name,components)
+    if name ∈ options.ignore_missing_singleparams
+        return SingleParam(name,components)
+    else
+        error("cannot found any values for ", error_color(name), ".")
+    end
 end
 
 function compile_pair(name,components,raw::RawParam,options)
