@@ -27,7 +27,7 @@ Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 ```
 ## References
 
-1. Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. doi:10.1021/je60047a012
+1. Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. [doi:10.1021/je60047a012](https://doi.org/10.1021/je60047a012)
 
 """
 RackettTranslation

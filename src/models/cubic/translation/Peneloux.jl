@@ -29,7 +29,7 @@ Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 
 ## References
 
-1. Péneloux A, Rauzy E, Fréze R. (1982) A consistent correction for Redlich‐Kwong‐Soave volumes. Fluid Phase Equilibria 1, 8(1), 7–23. doi:10.1016/0378-3812(82)80002-2
+1. Péneloux A, Rauzy E, Fréze R. (1982) A consistent correction for Redlich‐Kwong‐Soave volumes. Fluid Phase Equilibria 1, 8(1), 7–23. [doi:10.1016/0378-3812(82)80002-2](https://doi.org/10.1016/0378-3812(82)80002-2)
 
 """
 PenelouxTranslation
@@ -42,6 +42,8 @@ function PenelouxTranslation(components::Vector{String}; userlocations::Vector{S
     model = PenelouxTranslation(packagedparams, verbose=verbose)
     return model
 end
+
+doi(::PenelouxTranslation) = ["10.1016/0378-3812(82)80002-2"]
 
 function translation(model::CubicModel,V,T,z,translation_model::PenelouxTranslation)
     Tc = model.params.Tc.values

@@ -1,6 +1,6 @@
 #nlsolve functionality
 """
-    function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),chunk = ForwardDiff.Chunk{2}() options=NEqOptions())
+    function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()), options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
 
 
 Given a function `f!(result,x)` that returns a system of equations,
@@ -12,7 +12,7 @@ To obtain the underlying solution vector, use [`x_sol`](@ref)
 
 To see available solvers and options, check `NLSolvers.jl`
 """
-function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),chunk = ForwardDiff.Chunk{2}(),options=NEqOptions();)
+function nlsolve(f!,x0,method=TrustRegion(Newton(), NWI()),options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
     vector_objective = autoVectorObjective(f!,x0,chunk)
     nl_problem = NEqProblem(vector_objective)
     return nlsolve(nl_problem, x0,method, options)
@@ -27,33 +27,16 @@ function autoVectorObjective(f!,x0,chunk)
     jconfig = ForwardDiff.JacobianConfig(f!,x0,x0,chunk)
     function j!(J,x)
         ForwardDiff.jacobian!(J,f!,Fcache,x,jconfig)
+        J
     end
     function fj!(F,J,x)
         ForwardDiff.jacobian!(J,f!,F,x,jconfig)
         F,J
     end
     function jv!(x)
-        function JacV(dy,v)
-            return jacvec!(dy,f!,x,v)
-        end
-        return LinearMap(JacV,length(x))
+        return nothing
     end
     return NLSolvers.VectorObjective(f!,j!,fj!,jv!)
-end
-
-#from SparseDiffTools.jl, but it happens to work on dense vectors as well
-
-struct DeivVecTag end
-
-function jacvec!(dy, f, x, v,
-                      cache1 = ForwardDiff.Dual{DeivVecTag}.(x, v),
-                      cache2 = ForwardDiff.Dual{DeivVecTag}.(x, v))
-    f(cache2,cache1)
-    dy .= ForwardDiff.partials.(cache2, 1)
-end
-
-function jacvec(f, x, v)
-    partials.(f(Dual{DeivVecTag}.(x, v)), 1)
 end
 
 #= only_fj!: NLsolve.jl legacy form:
@@ -90,3 +73,15 @@ function only_fj!(fj!::T) where T
     return NLSolvers.VectorObjective(_f!,_j!,_fj!,_jv!) |> NEqProblem
     # return NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> NEqProblem
 end
+
+#= 
+#trying to make nlsolve(f,x0,LineSearch(Newton(),HZAW())) work
+
+function NLSolvers.upto_gradient(meritobj::NLSolvers.MeritObjective, ∇f, x)
+    neq = meritobj.prob
+    G = neq.R.F(∇f, x)
+    F =  (norm(G)^2) / 2
+    return F,G
+end
+=#
+

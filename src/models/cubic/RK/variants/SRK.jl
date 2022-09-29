@@ -20,7 +20,7 @@ Soave-Redlich-Kwong equation of state. it uses the following models:
 - Mixing Rule Model: [`vdW1fRule`](@ref)
 
 ## References
-1. Soave, G. (1972). Equilibrium constants from a modified Redlich-Kwong equation of state. Chemical Engineering Science, 27(6), 1197–1203. doi:10.1016/0009-2509(72)80096-4
+1. Soave, G. (1972). Equilibrium constants from a modified Redlich-Kwong equation of state. Chemical Engineering Science, 27(6), 1197–1203. [doi:10.1016/0009-2509(72)80096-4](https://doi.org/10.1016/0009-2509(72)80096-4)
 """
 function SRK(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = SoaveAlpha,

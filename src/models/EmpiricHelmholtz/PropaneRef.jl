@@ -60,7 +60,7 @@ aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ
 parameters  `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 
 ## References
-1. Lemmon, E. W., McLinden, M. O., & Wagner, W. (2009). Thermodynamic properties of propane. III. A reference equation of state for temperatures from the melting line to 650 K and pressures up to 1000 MPa. Journal of Chemical and Engineering Data, 54(12), 3141–3180. doi:10.1021/je900217v
+1. Lemmon, E. W., McLinden, M. O., & Wagner, W. (2009). Thermodynamic properties of propane. III. A reference equation of state for temperatures from the melting line to 650 K and pressures up to 1000 MPa. Journal of Chemical and Engineering Data, 54(12), 3141–3180. [doi:10.1021/je900217v](https://doi.org/10.1021/je900217v)
 """
 PropaneRef
 
@@ -142,7 +142,6 @@ function _propaneref_rholsat(T)
     T>T_c && return zero(T)/zero(T)
     Tr = T/T_c
     θ = 1.0-Tr
-    #
     ρ_l = (1.0 + 1.82205*θ^0.345 + 0.65802*θ^0.74 + 0.21109*θ^2.6 + 0.083973*θ^7.2)*ρ_c
     return ρ_l
 end
@@ -226,10 +225,14 @@ function x0_volume_liquid(model::PropaneRef,T,z = SA[1.0])
     return  1/_propaneref_rholsat(min(T,369.88889*one(T)))
 end
 
-psat_init(model::PropaneRef,T) = _propaneref_psat(T)
+x0_psat(model::PropaneRef,T,crit=nothing) = _propaneref_psat(T)
 
-x0_saturation_temperature(model::PropaneRef,p) = _propaneref_tsat(p)
-
+function x0_saturation_temperature(model::PropaneRef,p)
+    T = _propaneref_tsat(p)
+    vl = 1.0/_propaneref_rholsat(T)
+    vv = 1.0/_propaneref_rhovsat(T)
+    return (T,vl,vv)
+end
 
 export PropaneRef
 

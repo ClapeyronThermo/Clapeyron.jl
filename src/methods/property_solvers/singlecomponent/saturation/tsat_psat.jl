@@ -15,7 +15,7 @@ function psat(model::EoSModel, T; p0=nothing, vol0=(nothing, nothing))
         # if no initial pressure is given solve by using equality of chemical potentials and pressure
         method = :chempot
     elseif p0 == nothing && vol_liq0 == nothing && vol_vap0 == nothing
-        # if no initial guess is given estimate by using psat_init function
+        # if no initial guess is given estimate by using x0_psat function
         init = true
         method = :fug
     elseif p0 != nothing # && vol_liq0 == nothing && vol_vap0 == nothing
@@ -27,7 +27,7 @@ function psat(model::EoSModel, T; p0=nothing, vol0=(nothing, nothing))
         # In the future the critical point should be computed only once
         # and then reused
         Tc, Pc, Vc = crit_pure(model)
-        p0 = psat_init(model, T, Tc, Vc)
+        p0 = x0_psat(model, T, Tc, Vc)
     end
 
     if method == :fug

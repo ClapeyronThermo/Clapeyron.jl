@@ -53,33 +53,28 @@ Returns a tuple, containing:
 - vapour volume at Azeotrope Point [`m³`]
 - Azeotrope composition
 """
-function azeotrope_temperature(model,p;T0 = nothing)
-    f(z) = Obj_azeotrope_temperature(model,z,p)
-    if T0 === nothing
-        T0 = x0_azeotrope_temperature(model,p)
+function azeotrope_temperature(model::EoSModel,p;v0=nothing)
+    ts = T_scales(model)
+    if v0 === nothing
+        v0 = x0_azeotrope_pressure(model,p)
     end
-    fT = Roots.ZeroProblem(f,T0)
-    T = Roots.solve(fT,Roots.Order0())
-    p,v_l,v_v,y = azeotrope_pressure(model,T)
-    return T,v_l,v_v,y
+    pmix = p_scale(model,v0)
+    w0 = x0_bubble_temperature(model,p,v0)
+    len = length(w0) - 1
+    Fcache = zeros(eltype(v0),len)
+    w0[4:end] = v0
+    f!(F,z) = Obj_azeotrope_temperature(model, F, p, z[1], exp10(z[2]), exp10(z[3]), z[4:end],z[4:end],ts,pmix)
+    r  = Solvers.nlsolve(f!,w0[1:end-1],LineSearch(Newton()))
+    sol = Solvers.x_sol(r)
+    T   = sol[1]
+    v_l = exp10(sol[2])
+    v_v = exp10(sol[3])
+    x = FractionVector(sol[4:end])
+    return T, v_l, v_v, x
 end
 
-function Obj_azeotrope_temperature(model,T,p)
-    p̃,v_l,v_ll,xx = azeotrope_pressure(model,T)
-    return p̃-p
+function Obj_azeotrope_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ts,ps)
+    F = μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), FractionVector(y),ts,ps)
+    F[end] = (pressure(model,v_v,T,FractionVector(y)) - p)/ps
+    return F
 end
-
-"""
-    x0_azeotrope_pressure(model::EoSModel,p)
-
-Initial point for `azeotrope_temperature(model,p)`.
-
-returns the initial guess temperature `[K]` for an azeotrope at a given pressure.
-"""
-function x0_azeotrope_temperature(model,p)
-    Ti = _sat_Ti(model,p)
-    Tmin,Tmax = extrema(Ti)
-    return (0.9*Tmin,1.1*Tmax)
-end
-
-

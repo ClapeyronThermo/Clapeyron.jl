@@ -14,6 +14,7 @@ Pages = ["saft.md"]
 Clapeyron.ogSAFT
 Clapeyron.CKSAFT
 Clapeyron.sCKSAFT
+Clapeyron.BACKSAFT
 Clapeyron.PCSAFT
 Clapeyron.sPCSAFT
 Clapeyron.pharmaPCSAFT

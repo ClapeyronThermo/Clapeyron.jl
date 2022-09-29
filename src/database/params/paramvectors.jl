@@ -44,8 +44,7 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     inner_size = (is1,is2)
 
     values = T[]
-    inner_indices = Tuple{Int,Int}[]
-    outer_indices = Tuple{Int,Int}[]
+    indices = Tuple{Int,Int,Int,Int}[]
 
     if iszero(os1) & iszero(os2)
         return Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
@@ -65,13 +64,17 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
                 for b in start:a2 #this includes (i,i)(a,a) (sCKSAFT)
                     if !_iszero(xi[a,b]) 
                         push!(values,xi[a,b])
-                        push!(outer_indices,(i,j))
-                        push!(inner_indices,(a,b))
+                        push!(indices,(i,j,a,b))
                     end
                 end
             end
         end
     end
+    idx =  sortperm(indices)
+    indices = indices[idx]
+    outer_indices = [(c[1],c[2]) for c ∈ indices]
+    inner_indices = [(c[3],c[4]) for c ∈ indices]
+    values = values[idx]
     return Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,outer_size,inner_size)
 end
 
@@ -210,7 +213,7 @@ function Base.show(io::IO,::MIME"text/plain",A::SparsePackedMofV)
     end
 end
 
-# Operations
+#= Operations
 function Base.:(+)(matrix::Compressed4DMatrix, x::Number)
     values = matrix.values .+ x
     return Compressed4DMatrix(values, matrix.outer_indices, matrix.inner_indices, matrix.outer_size, matrix.inner_size)
@@ -224,4 +227,4 @@ end
 function Base.:(^)(matrix::Compressed4DMatrix, x::Number)
     values = matrix.values .^ x
     return Compressed4DMatrix(values, matrix.outer_indices, matrix.inner_indices, matrix.outer_size, matrix.inner_size)
-end
+end =#

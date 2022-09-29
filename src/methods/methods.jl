@@ -1,3 +1,38 @@
+"""
+    ThermodynamicMethod
+
+Abstract type for all thermodynamic methods.
+
+normally, a thermodynamic method has the form: `property(model,state..,method::ThermodynamicMethod)`.
+All methods used in this way subtype `ThermodynamicMethod`.
+
+## Examples
+Saturation pressure:
+```julia
+model = PR(["water"])
+Tsat = 373.15
+saturation_pressure(model,Tsat) #using default method (chemical potential with volume base)
+saturation_pressure(model,Tsat,SuperAncSaturation()) #solve using cubic superancilliary
+```
+
+Bubble point pressure
+```julia
+model = PCSAFT(["methanol","cyclohexane"])
+T = 313.15
+z = [0.5,0.5]
+bubble_pressure(model,T,z) #using default method (chemical potential equality)
+bubble_pressure(model,T,z,FugBubblePressure(y0 =  = [0.6,0.4], p0 = 5e4)) #using isofugacity criteria with starting points
+```
+"""
+abstract type ThermodynamicMethod end
+
+function NLSolvers.NEqOptions(method::ThermodynamicMethod)
+    return NEqOptions(f_limit = method.f_limit,
+                    f_abstol = method.atol,
+                    f_reltol = method.rtol,
+                    maxiter = method.max_iters)
+end
+
 mw(model::EoSModel) = model.params.Mw.values
 
 function group_molecular_weight(groups::GroupParam,mw,z = @SVector [1.])
@@ -46,6 +81,18 @@ If a string is passed, it is converted to symbol.
 """
 is_supercritical(sym::Symbol) = sym in SUPERCRITICAL_STR
 is_supercritical(str::String) = is_vapour(Symbol(str))
+
+const SOLID_STR = (:solid,:SOLID,:s)
+"""
+    is_solid(x::Union{Symbol,String})
+
+Returns `true` if the symbol is in `(:solid,:SOLID,:s)`.
+
+If a string is passed, it is converted to symbol.
+"""
+is_solid(sym::Symbol) = sym in SOLID_STR
+is_solid(str::String) = is_vapour(Symbol(str))
+
 
 const VLE_STR = (:vle,:lve,:vl,:lv)
 """

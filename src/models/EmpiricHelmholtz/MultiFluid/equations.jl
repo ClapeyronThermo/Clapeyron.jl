@@ -241,7 +241,7 @@ function x0_sat_pure(model::MultiFluidModel,T)
 end
 
 #Corresponding States
-function psat_init(model::MultiFluidModel,T)
+function x0_psat(model::MultiFluidModel,T,crit=nothing)
     Ts = T_scale(model)
     T0 = 369.89*T/Ts
     Ps = p_scale(model)
@@ -263,4 +263,33 @@ mw(model::MultiFluidModel) = model.properties.Mw.values
 
 function x0_crit_pure(model::MultiFluidModel)
     return (1.,log10(_v_scale(model)*0.001))
+end
+
+function x0_saturation_temperature(model::MultiFluidModel,p)
+    p0 = p/p_scale(model)*4.2512e6
+    T0 = _propaneref_tsat(p0)
+    Ts = T_scale(model)
+    vs = _v_scale(model)*0.001 #remember, vc constants in L/mol
+    h = vs*5000.0
+    vl = (1.0/_propaneref_rholsat(T0))*h
+    vv = (1.0/_propaneref_rhovsat(T0))*h
+    T = Ts*T0/369.89
+    return (T,vl,vv)
+end
+
+#Optimization: does not calculate crit_pure for each value.
+function wilson_k_values(model::MultiFluidModel,p,T,crit = nothing)
+    n = length(model)
+    K0 = zeros(typeof(p+T),n)
+    pure = split_model.(model)
+    _Tc = model.properties.Tc.values
+    _Pc = model.properties.pc.values
+    for i ∈ 1:n
+        pure_i = pure[i]
+        Tc,pc = _Pc[i],_Tc[i]
+        ps = first(saturation_pressure(pure_i,0.7*Tc))
+        ω = -log10(ps/pc) - 1.0
+        K0[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
+    end
+    return K0
 end
