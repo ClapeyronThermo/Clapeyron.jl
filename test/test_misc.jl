@@ -107,9 +107,10 @@
         end
     end
     @printline
-
-    @testset "ambiguities" begin
-        ambiguities = Test.detect_ambiguities(Clapeyron)
-        @test length(ambiguities) <= 2 #should change to zero at the next release of StaticArrays.jl
+    if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
+        @testset "ambiguities" begin
+            ambiguities = Test.detect_ambiguities(Clapeyron)
+            @test length(ambiguities) == 0
+        end
     end
  end
