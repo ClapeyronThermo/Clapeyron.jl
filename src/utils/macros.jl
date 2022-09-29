@@ -284,7 +284,9 @@ function init_model(::Nothing,components,userlocations,verbose)
     return nothing
 end
 
-
+function init_model(::Type{model},components,userlocations,verbose) where model <: EoSModel
+    return model(components;userlocations,verbose)
+end
 """
     @registermodel(model)
 

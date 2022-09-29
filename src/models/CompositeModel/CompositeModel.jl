@@ -5,8 +5,8 @@
     gas = BasicIdeal,
     liquid = RackettLiquid,
     saturation = LeeKeslerSat,
-    gas_userlocations = String[]
-    liquid_userlocations = String[]
+    gas_userlocations = String[],
+    liquid_userlocations = String[],
     saturation_userlocations = String[]
 
 Composite Model. it is not consistent, but it can hold different correlations that
@@ -18,7 +18,25 @@ struct CompositeModel{NT} <: EoSModel
     models::NT
 end
 
-function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false)
+length(cmodel::CompositeModel) = length(cmodel.components)
+
+function CompositeModel(components;
+    gas = BasicIdeal,
+    liquid = RackettLiquid,
+    saturation = LeeKeslerSat,
+    gas_userlocations = String[],
+    liquid_userlocations = String[],
+    saturation_userlocations = String[],
+    verbose = false)
+
+    init_gas = init_model(gas,components,gas_userlocations,verbose)
+    init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+    init_sat = init_model(saturation,components,saturation_userlocations,verbose)
+    models = (gas = init_gas,liquid = init_liquid,saturation = init_sat)
+    return CompositeModel(components,models)
+end
+
+function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,vol = vol0)
     if is_liquid(phase)
         return volume(model.models.liquid,p,T,z;phase,threaded)
     elseif is_vapour(phase)
@@ -52,9 +70,24 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false)
     end
 end
 
-function saturation_pressure(model::CompositeModel,T,v0 = nothing)
+function saturation_pressure(model::CompositeModel,T)
+    if model.models.saturation isa SaturationModel
+        method = SaturationCorrelation()
+    else
+        method = ChemPotVSaturation()
+    end
+    return saturation_pressure(model,T,method)
+end
+
+function saturation_pressure_impl(model::SaturationModel,T,method::SaturationMethod)
+    throw(error("$method not supported by Saturation correlation models"))
+end
+
+
+function saturation_pressure(cmodel::CompositeModel,T,method::SaturationMethod)
+    model = cmodel.models
     nan = zero(T)/zero(T)
-    psat,_,_ = saturation_pressure(model.saturation,T)
+    psat,_,_ = saturation_pressure_impl(model.saturation,T,method)
     if !isnan(psat)
         vl = volume(model.liquid,psat,T,phase=:l)
         vv = volume(model.gas,psat,T,phase=:v)
@@ -68,11 +101,10 @@ function saturation_pressure(model::CompositeModel,T,v0 = nothing)
 end
 
 function crit_pure(model::CompositeModel)
-    return crit_pure(model.saturation)
+    return crit_pure(model.models.saturation)
 end
 
 include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
 
-
-
+export CompositeModel

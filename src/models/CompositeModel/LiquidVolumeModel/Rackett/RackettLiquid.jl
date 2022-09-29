@@ -22,9 +22,7 @@ function RackettLiquid(components::Vector{String}; userlocations::Vector{String}
     return model
 end
 
-export RackettLiquid 
-
-function volume_impl(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,threaded=false)
+function volume_impl(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0 = 0.0)
     tci = model.params.Tc.values
     pci = model.params.Pc.values
     zci = model.params.Zc.values
@@ -62,7 +60,7 @@ function volume_impl(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,thre
     return ∑z*R̄*Tcm*Pcm_inv*Zcm^(1+(1-Tr)^(2/7))
 end
 
-function volume_impl(model::RackettLiquidModel,p,T,z::SingleComp,phase=:unknown,threaded=false)
+function volume_impl(model::RackettLiquidModel,p,T,z::SingleComp,phase=:unknown,threaded=false,vol0 = 0.0)
     Tc = only(model.params.Tc.values)
     Pc = only(model.params.Pc.values)
     Pc_inv = 1/Pc
@@ -85,4 +83,4 @@ function YamadaGunnLiquid(components::Vector{String}; userlocations::Vector{Stri
     return model
 end
     
-export YamadaGunnLiquid
+export YamadaGunnLiquid,RackettLiquid

@@ -24,7 +24,7 @@ function crit_pure(model::LeeKeslerSatModel)
     return (tc,pc,NaN)
 end
 
-function saturation_pressure(model::LeeKeslerSatModel,T,v0=nothing)
+function saturation_pressure_impl(model::LeeKeslerSatModel,T,method::SaturationCorrelation)
     nan = zero(T)/zero(T)
     ω = only(model.params.acentricfactor.values)
     tc = only(model.params.Tc.values)
