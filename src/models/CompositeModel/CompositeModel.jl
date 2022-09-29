@@ -1,5 +1,6 @@
 #this model only holds a named tuple with all models.
-
+include("SaturationModel/SaturationModel.jl")
+include("LiquidVolumeModel/LiquidVolumeModel.jl")
 """
     CompositeModel(components;
     gas = BasicIdeal,
@@ -103,8 +104,5 @@ end
 function crit_pure(model::CompositeModel)
     return crit_pure(model.models.saturation)
 end
-
-include("SaturationModel/SaturationModel.jl")
-include("LiquidVolumeModel/LiquidVolumeModel.jl")
 
 export CompositeModel
