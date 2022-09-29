@@ -14,7 +14,7 @@ Array
 """
 parameterless_type(x) = parameterless_type(typeof(x))
 parameterless_type(x::Type) = __parameterless_type(x)
-
+#=
 """
     concrete(x)
 
@@ -24,4 +24,4 @@ concrete(x::Vector{Float64}) = x
 concrete(x::Vector{Int64}) = x
 concrete(x::Vector{String}) = x
 concrete(x::Vector{Bool}) = x 
-concrete(x) = convert(AbstractArray{mapreduce(typeof, promote_type, x)}, x);
+concrete(x) = convert(AbstractArray{mapreduce(typeof, promote_type, x)}, x)=#

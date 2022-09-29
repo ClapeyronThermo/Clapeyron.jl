@@ -63,9 +63,14 @@ Base.BroadcastStyle(::Type{<:PairParameter}) = Broadcast.Style{PairParameter}()
 
 #copyto!
 
-function Base.copyto!(param::PairParameter,x)
-    Base.copyto!(param.values,x)
-    return param
+function Base.copyto!(dest::PairParameter,src::Base.Broadcast.Broadcasted)
+    Base.copyto!(dest.values,src)
+    return dest
+end
+
+function Base.copyto!(dest::PairParameter,src::AbstractArray)
+    Base.copyto!(dest.values,src)
+    return dest
 end
 
 function Base.copyto!(dest::PairParameter,src::PairParameter) #used to set params

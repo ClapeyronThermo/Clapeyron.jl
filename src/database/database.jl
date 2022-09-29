@@ -253,8 +253,7 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
 
     csvtype = readcsvtype(filepath)
     grouptype = "" #TODO: actually parse this from csvs
-    #df = CSV.File(filepath; header=3, pool=0,silencewarnings=true)
-    df = csv_table(filepath)
+    df = CSV.File(filepath; header=3, pool=0,silencewarnings=true)
     csvheaders = String.(Tables.columnnames(df))
     normalised_components = normalisestring.(components,normalisecomponents)
     components_dict = Dict(v => k for (k,v) ∈ pairs(normalised_components))
@@ -347,8 +346,7 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
             _vals = getindex.(_data,idx)
             s = findall(!ismissing,_vals) #filter nonmissing values
             if !iszero(length(s))
-                __vals = concrete(_vals[s]) #removes the missing type and eliminates bitvectors
-                eltype(__vals) === Any && (__vals = string.(__vals))
+                __vals = _vals[s] #removes the missing type and eliminates bitvectors
                 __sources = _sources[s]
                 __csv = _csv[s]
                 raw = RawParam(headerparam,_comp[s],__vals,__sources,__csv,csvtype,grouptype)
