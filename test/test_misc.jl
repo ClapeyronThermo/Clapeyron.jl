@@ -106,6 +106,8 @@
             @test crit_pure(model)[1] ≈ 538.2329369300235 rtol = 1e-6
         end
     end
+    @printline
+
     @testset "ambiguities" begin
         ambiguities = Test.detect_ambiguities(Clapeyron)
         @test length(ambiguities) <= 2 #should change to zero at the next release of StaticArrays.jl
