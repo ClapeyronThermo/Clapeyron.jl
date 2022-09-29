@@ -144,6 +144,19 @@ macro newmodelgc(name, parent, paramstype)
 
         return build_model($name,params,groups,idealmodel;ideal_userlocations,references,assoc_options,verbose)
     end
+
+    function $name(params::$paramstype,
+        groups::GroupParam,
+        sites::SiteParam,
+        idealmodel::IDEALTYPE = BasicIdeal;
+        ideal_userlocations::Vector{String}=String[],
+        references::Vector{String}=String[],
+        assoc_options::AssocOptions = AssocOptions(),
+        verbose::Bool = false)
+
+        return build_model($name,params,groups,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
+    end
+
 end |> esc
 end
 
@@ -180,15 +193,26 @@ macro newmodel(name, parent, paramstype)
     Base.length(model::$name) = Base.length(model.components)
 
     function $name(params::$paramstype,
-            sites::SiteParam,
-            idealmodel::IDEALTYPE = BasicIdeal;
-            ideal_userlocations::Vector{String}=String[],
-            references::Vector{String}=String[],
-            assoc_options::AssocOptions = AssocOptions(),
-            verbose::Bool = false)
+        sites::SiteParam,
+        idealmodel::IDEALTYPE = BasicIdeal;
+        ideal_userlocations::Vector{String}=String[],
+        references::Vector{String}=String[],
+        assoc_options::AssocOptions = AssocOptions(),
+        verbose::Bool = false)
 
-            return build_model($name,params,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
-        end
+        return build_model($name,params,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
+    end
+
+    function $name(params::$paramstype,
+        idealmodel::IDEALTYPE = BasicIdeal;
+        ideal_userlocations::Vector{String}=String[],
+        references::Vector{String}=String[],
+        assoc_options::AssocOptions = AssocOptions(),
+        verbose::Bool = false)
+
+        return build_model($name,params,idealmodel;ideal_userlocations,references,assoc_options,verbose)
+    end
+
     end |> esc
 end
 

@@ -204,11 +204,11 @@ function info_color(text)
     reset = colors[:normal]
     return red * text * reset
 end
-
+#=
 function csv_table(path)
     mat,headers = DelimitedFiles.readdlm(path,',',header = true,skipstart = 2)
     replace!(mat,"" => missing)
     return Tables.table(mat,header = vec(headers))
     return table
-end
+end =#
 

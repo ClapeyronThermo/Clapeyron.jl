@@ -8,7 +8,6 @@ const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 #for non allocating vectors of zeros and ones
 using Roots: Roots
 
-using DelimitedFiles
 using Scratch 
 using Unitful
 import LogExpFunctions
@@ -46,7 +45,7 @@ include("database/params/combiningrules.jl")
 #Combining Rules for Assoc Params
 include("database/params/combiningrules_assoc.jl")
 
-using Tables#CSV 
+using Tables,CSV 
 #getparams options
 include("database/ParamOptions.jl") 
 #getparams definition
