@@ -58,7 +58,12 @@ Base.broadcastable(param::SingleParameter) = param.values
 Base.BroadcastStyle(::Type{<:SingleParameter}) = Broadcast.Style{SingleParameter}()
 
 #copyto!
-function Base.copyto!(dest::SingleParameter,src) #general, just copies the values, used in a .= f.(a)
+function Base.copyto!(dest::SingleParameter,src::Base.Broadcast.Broadcasted) #general, just copies the values, used in a .= f.(a)
+    Base.copyto!(dest.values,src)
+    return dest
+end
+
+function Base.copyto!(dest::SingleParameter,src::AbstractArray) #general, just copies the values, used in a .= f.(a)
     Base.copyto!(dest.values,src)
     return dest
 end

@@ -1,5 +1,4 @@
 module Clapeyron
-using StaticArrays
 using LinearAlgebra
 using SparseArrays
 #for the assoc solver and the sparse packed VofV
@@ -7,17 +6,17 @@ import PackedVectorsOfVectors
 const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 
 #for non allocating vectors of zeros and ones
-using FillArrays: FillArrays
 using Roots: Roots
-using NLSolvers
-using NLSolvers: NEqOptions
-import BlackBoxOptim
 
-using DiffResults, ForwardDiff
 using Scratch 
 using Unitful
 import LogExpFunctions
-
+using FillArrays: FillArrays
+import BlackBoxOptim
+using StaticArrays
+using NLSolvers
+using NLSolvers: NEqOptions
+using DiffResults, ForwardDiff
 include("solvers/Solvers.jl")
 using .Solvers
 using .Solvers: log, sqrt, log1p
@@ -46,7 +45,7 @@ include("database/params/combiningrules.jl")
 #Combining Rules for Assoc Params
 include("database/params/combiningrules_assoc.jl")
 
-using CSV, Tables
+using Tables,CSV 
 #getparams options
 include("database/ParamOptions.jl") 
 #getparams definition

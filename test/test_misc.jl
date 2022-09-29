@@ -48,6 +48,7 @@
         @test Clapeyron.@nan(Base.log(-1),3) == 3
         @test_throws MethodError Clapeyron.@nan(Base.log("s"),3)
     end
+
     using Clapeyron: has_sites,has_groups
     @testset "has_sites-has_groups" begin
         @test has_sites(typeof(gc3)) == false
@@ -103,6 +104,13 @@
         @testset "#112" begin
             model = CPA(["methanol"])
             @test crit_pure(model)[1] ≈ 538.2329369300235 rtol = 1e-6
+        end
+    end
+    @printline
+    if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
+        @testset "ambiguities" begin
+            ambiguities = Test.detect_ambiguities(Clapeyron)
+            @test length(ambiguities) == 0
         end
     end
  end

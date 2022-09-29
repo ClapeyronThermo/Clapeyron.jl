@@ -34,7 +34,7 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
 
 ```
 """
-function getpaths(location::AbstractString; relativetodatabase::Bool=false)
+function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vector{String}
     # We do not use realpath here directly because we want to make the .csv suffix optional.
     filepath = relativetodatabase ? normpath(dirname(pathof(Clapeyron)), "..", "database", location) : location
     isfile(filepath) && return [realpath(filepath)]
@@ -69,11 +69,11 @@ function getline(filepath::AbstractString, selectedline::Int)
     end
 end
 
-function normalisestring(str, isactivated::Bool=true; tofilter::Regex=r"[ \-\_]", changecase::Bool=true)
-    !isactivated && return string(str)
+function normalisestring(str, isactivated::Bool=true; tofilter::Regex=r"[ \-\_]", changecase::Bool=true)::String
+    !isactivated && return string(str)::String
     normalisedstring = replace(str, tofilter => "")
     changecase && (normalisedstring = lowercase(normalisedstring))
-    return normalisedstring
+    return normalisedstring::String
 end
 
 function _indexin(query,list,separator)
@@ -204,5 +204,11 @@ function info_color(text)
     reset = colors[:normal]
     return red * text * reset
 end
-
+#=
+function csv_table(path)
+    mat,headers = DelimitedFiles.readdlm(path,',',header = true,skipstart = 2)
+    replace!(mat,"" => missing)
+    return Tables.table(mat,header = vec(headers))
+    return table
+end =#
 
