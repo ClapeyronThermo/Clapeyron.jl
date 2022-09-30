@@ -122,7 +122,7 @@ function pure_cubic_zc(model::ABCCubicModel)
     return pc*Vc/(R̄*Tc)
 end
 
-function second_virial_coefficient(model::ABCubicModel,T::Real,z = SA[1.0])
+function second_virial_coefficient_impl(model::ABCubicModel,T,z = SA[1.0])
     a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T,z)
     return b-a/(R̄*T)
 end
