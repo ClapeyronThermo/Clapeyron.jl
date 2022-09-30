@@ -119,6 +119,10 @@ B = lim(V->∞)[ V^2/RT *  (∂Aᵣ∂V + V*∂²Aᵣ∂V²) ]
 where `Aᵣ` is the residual helmholtz energy.
 """
 function second_virial_coefficient(model::EoSModel, T, z=SA[1.])
+   return second_virial_coefficient_impl(model,T,z)
+end
+
+function second_virial_coefficient_impl(model::EoSModel,T , z = SA[1.0])
     TT = promote_type(eltype(z),typeof(T))
     V = 1/sqrt(eps(TT))
     fAᵣ(x) = eos_res(model,x,T,z)

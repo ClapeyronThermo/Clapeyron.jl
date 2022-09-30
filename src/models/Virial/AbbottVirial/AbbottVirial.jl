@@ -50,7 +50,7 @@ function AbbottVirial(components;
     return AbbottVirial(packagedparams, idealmodel; ideal_userlocations, references, verbose)
 end
 
-function second_virial_coefficient(model::AbbottVirial,T,z=SA[1.0])
+function second_virial_coefficient_impl(model::AbbottVirial,T,z=SA[1.0])
     B = zero(T+first(z))
     Tc = model.params.Tc.values
     ω = model.params.acentricfactor.values

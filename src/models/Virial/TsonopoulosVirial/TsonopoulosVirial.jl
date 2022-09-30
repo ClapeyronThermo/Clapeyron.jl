@@ -50,7 +50,7 @@ function TsonopoulosVirial(components;
     return TsonopoulosVirial(packagedparams, idealmodel; ideal_userlocations, references, verbose)
 end
 
-function second_virial_coefficient(model::TsonopoulosVirial,T,z=SA[1.0])
+function second_virial_coefficient_impl(model::TsonopoulosVirial,T,z=SA[1.0])
     B = zero(T+first(z))
     Tc = model.params.Tc.values
     ω = model.params.acentricfactor.values
