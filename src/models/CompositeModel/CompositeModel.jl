@@ -19,7 +19,7 @@ struct CompositeModel{NT} <: EoSModel
     models::NT
 end
 
-length(cmodel::CompositeModel) = length(cmodel.components)
+Base.length(cmodel::CompositeModel) = length(cmodel.components)
 
 function CompositeModel(components;
     gas = BasicIdeal,
@@ -35,6 +35,17 @@ function CompositeModel(components;
     init_sat = init_model(saturation,components,saturation_userlocations,verbose)
     models = (gas = init_gas,liquid = init_liquid,saturation = init_sat)
     return CompositeModel(components,models)
+end
+
+function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
+    println(io,"Composite Model:")
+    println(io," Liquid Model: ",model.models.liquid)
+    println(io," Gas Model: ",model.models.gas)
+    print(io," Saturation Model: ",model.models.saturation)
+end
+
+function Base.show(io::IO,model::CompositeModel)
+    print(io,string(typeof(model)),model.shape_model.components)
 end
 
 function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,vol = vol0)
@@ -71,7 +82,7 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
     end
 end
 
-function saturation_pressure(model::CompositeModel,T)
+function saturation_pressure(model::CompositeModel,T::Real)
     if model.models.saturation isa SaturationModel
         method = SaturationCorrelation()
     else
@@ -79,11 +90,6 @@ function saturation_pressure(model::CompositeModel,T)
     end
     return saturation_pressure(model,T,method)
 end
-
-function saturation_pressure_impl(model::SaturationModel,T,method::SaturationMethod)
-    throw(error("$method not supported by Saturation correlation models"))
-end
-
 
 function saturation_pressure(cmodel::CompositeModel,T,method::SaturationMethod)
     model = cmodel.models
