@@ -70,6 +70,10 @@ function saturation_pressure(model::EoSModel,T,V0::Union{Tuple,Vector})
     return saturation_pressure_impl(model,T,method)
 end
 
+function saturation_pressure(model::EoSModel,T)
+   saturation_pressure(model,T,ChemPotVSaturation())
+end
+
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{Nothing})
     log10vl,log10vv = x0_sat_pure(model,T)
     crit = method.crit

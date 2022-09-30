@@ -41,8 +41,8 @@ julia> saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)) #iso fug
 ```
 
 """
-function saturation_pressure(model,T,method::SaturationMethod)
-    !isone(length(model)) && throw(error("$model can only have one component."))
+function saturation_pressure(model::EoSModel,T,method::SaturationMethod)
+    single_component_check(saturation_pressure,model)
     T = T*(T/T)
     return saturation_pressure_impl(model,T,method)
 end
