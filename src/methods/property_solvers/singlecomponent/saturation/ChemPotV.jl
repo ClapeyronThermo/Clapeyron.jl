@@ -63,8 +63,10 @@ function ChemPotVSaturation(;log10vl = nothing,
     end
 end
 
-function saturation_pressure(model,T,V0::Union{Tuple,Vector} = x0_sat_pure(model,T))
+function saturation_pressure(model::EoSModel,T,V0::Union{Tuple,Vector})
+    single_component_check(saturation_pressure,model)
     method = ChemPotVSaturation(V0)
+    T = T*T/T
     return saturation_pressure_impl(model,T,method)
 end
 
