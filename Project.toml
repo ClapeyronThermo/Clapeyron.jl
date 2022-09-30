@@ -25,6 +25,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
 BlackBoxOptim = "^0.6.1"
+CSV = "0.10"
 DiffResults = "^1.1"
 FillArrays = "^0.12, 0.13"
 ForwardDiff = "^0.10"
