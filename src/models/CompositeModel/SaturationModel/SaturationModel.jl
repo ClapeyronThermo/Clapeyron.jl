@@ -1,5 +1,15 @@
+"""
+    SaturationModel <: EoSModel
+
+Abstract type for Saturation correlation models.
+"""
 abstract type SaturationModel <: EoSModel end
 
+"""
+    SaturationCorrelation <: SaturationMethod
+
+saturation method used for dispatch on saturation correlations.
+"""
 struct SaturationCorrelation <: SaturationMethod end
 
 function saturation_pressure(model::SaturationModel,T,method::SaturationMethod)

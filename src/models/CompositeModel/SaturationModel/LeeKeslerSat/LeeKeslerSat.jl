@@ -8,6 +8,41 @@ end
 
 @newmodelsimple LeeKeslerSat LeeKeslerSatModel LeeKeslerSatParam
 
+"""
+    LeeKeslerSat <: SaturationModel
+    
+    LeeKeslerSat(components::Vector{String};
+    userlocations::Vector{String}=String[],
+    verbose::Bool=false)
+
+## Input Parameters
+
+- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+- `pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+- `w`: Single Parameter (`Float64`) - acentric factor
+
+## Model Parameters
+
+- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+- `pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+- `acentricfactor`: Single Parameter (`Float64`) - acentric factor
+
+## Description
+
+Lee-Kesler correlation for saturation pressure:
+```
+psat(T) = f₀ + ω•f₁
+Tr = T/Tc
+f₀ = 5.92714 - 6.09648/Tr - 1.28862•log(Tr) + 0.169347•Tr⁶
+f₁ = 15.2518 - 15.6875/Tr - 13.4721•log(Tr) + 0.43577•Tr⁶
+```
+
+## References
+
+1. Lee, B. I., & Kesler, M. G. (1975). A generalized thermodynamic correlation based on three-parameter corresponding states. AIChE journal. American Institute of Chemical Engineers, 21(3), 510–527. [doi:10.1002/aic.690210313](https://doi.org/10.1002/aic.690210313)
+"""
+
+
 function LeeKeslerSat(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = SingleParam(params["w"],"acentric factor")
