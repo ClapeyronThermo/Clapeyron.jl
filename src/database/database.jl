@@ -431,7 +431,7 @@ function readcsvtype(filepath)
     words = split(lowercase(strip(getline(String(filepath), 2), ',')), ' ')
     foundkeywords = intersect(words, keywords)
     if isempty(foundkeywords)
-        error("Unable to determine type of database", filepath, ". Check that keyword is present on Line 2.")
+        error("Unable to determine type of database ", filepath, ". Check that keyword is present on Line 2.")
     end
     if length(foundkeywords) > 1
         error("Multiple keywords found ∈ database ", filepath, ": ", foundkeywords)

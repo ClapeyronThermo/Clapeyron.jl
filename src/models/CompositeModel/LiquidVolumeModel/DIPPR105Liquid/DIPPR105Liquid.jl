@@ -13,7 +13,7 @@ end
 @newmodelsimple DIPPR105Liquid DIPPR105LiquidModel DIPPR105LiquidParam
 
 function DIPPR105Liquid(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["volume_correlations/dippr105_like.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["Correlations/volume_correlations/dippr105_like.csv"]; userlocations=userlocations, verbose=verbose)
     A = params["A"]
     B = params["B"]
     C = params["C"]

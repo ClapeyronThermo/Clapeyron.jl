@@ -11,3 +11,4 @@ end
 eos(model,V,T,z=SA[1.0]) = not_eos_error(model)
 
 include("LeeKeslerSat/LeeKeslerSat.jl")
+include("DIPPR101Sat/DIPPR101Sat.jl")
