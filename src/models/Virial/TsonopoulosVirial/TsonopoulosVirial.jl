@@ -5,7 +5,7 @@ struct TsonopoulosVirialParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
-@newmodel TsonopoulosVirial VirialModel TsonopoulosVirialParam
+@newmodel TsonopoulosVirial SecondVirialModel TsonopoulosVirialParam
 
 
 """

@@ -1,14 +1,14 @@
-struct EoSVirial{I,T} <: VirialModel
+struct EoSVirial2{I,T} <: SecondVirialModel
     idealmodel::I
     model::T
 end
 
-@registermodel EoSVirial
+@registermodel EoSVirial2
 
-function EoSVirial(model;idealmodel = BasicIdeal())
-    return EoSVirial{typeof(idealmodel),typeof(model)}(idealmodel,model)
+function EoSVirial2(model;idealmodel = BasicIdeal())
+    return EoSVirial2{typeof(idealmodel),typeof(model)}(idealmodel,model)
 end
 
-second_virial_coefficient_impl(model::EoSVirial,T,z=SA[1.0]) =  second_virial_coefficient_impl(model.model,T,z)
+second_virial_coefficient_impl(model::EoSVirial2,T,z=SA[1.0]) =  second_virial_coefficient_impl(model.model,T,z)
 
 export EoSVirial

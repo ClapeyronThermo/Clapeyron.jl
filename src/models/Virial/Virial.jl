@@ -1,18 +1,18 @@
-abstract type VirialModel <: EoSModel end
+abstract type SecondVirialModel <: EoSModel end
 
-function a_res(model::VirialModel,V,T,z)
+function a_res(model::SecondVirialModel,V,T,z)
     B = second_virial_coefficient(model,T,z)
     return B/V #/a
 end
 
-lb_volume(model::VirialModel,z = SA[1.0]) = zero(eltype(z))
+lb_volume(model::SecondVirialModel,z = SA[1.0]) = zero(eltype(z))
 
-function volume_impl(model::VirialModel,p,T,z,phase,threaded,vol0)
+function volume_impl(model::SecondVirialModel,p,T,z,phase,threaded,vol0)
     B = second_virial_coefficient(model,T,z)
     return volume_virial(B,p,T,z)
 end
 
-function ∂f∂V(model::VirialModel,V,T,z=SA[1.0])
+function ∂f∂V(model::SecondVirialModel,V,T,z=SA[1.0])
     B = second_virial_coefficient(model,T,z)
     return -R̄*T*(1 + B/V)/V
 end

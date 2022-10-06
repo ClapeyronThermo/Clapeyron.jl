@@ -5,11 +5,11 @@ struct AbbottVirialParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
-@newmodel AbbottVirial VirialModel AbbottVirialParam
+@newmodel AbbottVirial SecondVirialModel AbbottVirialParam
 
 
 """
-    AbbottVirial <: VirialModel
+    AbbottVirial <: SecondVirialModel
     AbbottVirial(components::Array{String,1}; 
     userlocations::Array{String,1}=String[], 
     verbose=false)
