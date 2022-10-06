@@ -7,7 +7,7 @@ end
 
 lb_volume(model::VirialModel,z = SA[1.0]) = zero(eltype(z))
 
-function volume_impl(model::VirialModel,p,T,z,phase,threaded)
+function volume_impl(model::VirialModel,p,T,z,phase,threaded,vol0)
     B = second_virial_coefficient(model,T,z)
     return volume_virial(B,p,T,z)
 end
