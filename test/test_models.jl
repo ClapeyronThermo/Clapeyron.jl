@@ -493,4 +493,15 @@ end
         system = SanchezLacombe(["carbon dioxide","benzoic acid"],mixing = SLk0k1lMixingRule)
         @test Clapeyron.a_res(system, V, T, z) ≈ -5.579621796375229 rtol = 1e-6
     end
+
+    @testset "Saturation Correlations" begin
+        @testset "Lee-Kesler" begin
+            sat = LeeKeslerSat(["ethylbenzene"])
+            @test saturation_pressure(sat,347.2)[1] ≈ 12922.734855067636  rtol = 1e-6
+        end
+        @testset "DIPPR 101" begin
+            sat = DIPPR101Sat(["water"])
+            @test saturation_pressure(sat,373.5)[1] ≈ 102531.03016041711  rtol = 1e-6
+        end
+    end
 end

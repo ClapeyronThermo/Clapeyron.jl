@@ -162,9 +162,20 @@ function d(model::SAFTVRQMieModel, V, T, z,_σeff = @f(σeff))
     _d = zeros(typeof(T),length(z))
     for i ∈ 1:length(_d)
         _data = (_ϵ[i,i],_σ[i,i],_λr[i,i],_λa[i,i],_Mwij[i,i],_σeff[i,i])
-        _d = @f(d,i,_data)
+        _d[i] = @f(d,i,_data)
     end
     _d
+end
+
+#specialization, and solves ambiguity
+function d(model::SAFTVRQMieModel, V, T, z::SingleComp,_σeff = @f(σeff))
+    _ϵ = model.params.epsilon[1]
+    _σ = model.params.sigma[1]
+    _λr = model.params.lambda_r[1]
+    _λa = model.params.lambda_a[1]
+    _Mwij = model.params.Mw[1]
+    _data = (_ϵ,_σ,_λr,_λa,_Mwij,_σeff)
+    return SA[@f(d,1,_data)]
 end
 
 function σeff(model::SAFTVRQMieModel, V, T, z)

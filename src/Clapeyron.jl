@@ -1,5 +1,4 @@
 module Clapeyron
-using StaticArrays
 using LinearAlgebra
 using SparseArrays
 #for the assoc solver and the sparse packed VofV
@@ -7,17 +6,17 @@ import PackedVectorsOfVectors
 const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 
 #for non allocating vectors of zeros and ones
-using FillArrays: FillArrays
 using Roots: Roots
-using NLSolvers
-using NLSolvers: NEqOptions
-import BlackBoxOptim
 
-using DiffResults, ForwardDiff
 using Scratch 
 using Unitful
 import LogExpFunctions
-
+using FillArrays: FillArrays
+import BlackBoxOptim
+using StaticArrays
+using NLSolvers
+using NLSolvers: NEqOptions
+using DiffResults, ForwardDiff
 include("solvers/Solvers.jl")
 using .Solvers
 using .Solvers: log, sqrt, log1p
@@ -32,7 +31,12 @@ include("base/constants.jl")
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
 include("base/EoSModel.jl")
-include("models/types.jl") #type hierarchy
+
+#error handlers
+include("base/errors.jl")
+
+#type hierarchy
+include("models/types.jl")
 
 #show(model<:EoSModel)
 include("base/eosshow.jl")
@@ -46,7 +50,7 @@ include("database/params/combiningrules.jl")
 #Combining Rules for Assoc Params
 include("database/params/combiningrules_assoc.jl")
 
-using CSV, Tables
+using Tables,CSV 
 #getparams options
 include("database/ParamOptions.jl") 
 #getparams definition
@@ -155,6 +159,11 @@ include("models/cubic/PatelTeja/PatelTeja.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
+
+include("models/Virial/Virial.jl")
+
+#include("models/UFTheory/UFTheory.jl")
+include("models/CompositeModel/CompositeModel.jl")
 
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")

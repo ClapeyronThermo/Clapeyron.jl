@@ -78,30 +78,16 @@ function gibbs_solvation(model::ActivityModel,T)
 end
 
 function lb_volume(model::ActivityModel,z = SA[1.0])
-    b = maximum([model.puremodel[i].params.b.values[1,1] for i ∈ @comps])
+    b = sum(lb_volume(model.puremodel[i])*z[i] for i in @comps)
     return b
 end
 
 function T_scale(model::ActivityModel,z=SA[1.0])
-    n = sum(z)
-    invn2 = one(n)/(n*n)
-    Ωa,Ωb = ab_consts(model.puremodel[1])
-    _a = [model.puremodel[i].params.a.values[1,1] for i in @comps]
-    _b = [model.puremodel[i].params.b.values[1,1] for i in @comps]
-    a = dot(z, _a)*invn2/Ωa
-    b = dot(z, _b)*invn2/Ωb
-    return a/b/R̄
+    prod(T_scale(model.puremodel[i])^1/z[i] for i in @comps)^(sum(z))
 end
 
 function p_scale(model::ActivityModel,z=SA[1.0])
-    n = sum(z)
-    invn2 = (1/n)^2
-    Ωa,Ωb = ab_consts(model.puremodel[1])
-    _a = [model.puremodel[i].params.a.values[1,1] for i in @comps]
-    _b = [model.puremodel[i].params.b.values[1,1] for i in @comps]
-    a = dot(z, _a)*invn2/Ωa
-    b = dot(z, _b)*invn2/Ωb
-    return a/ (b^2) # Pc mean
+    0.33*R̄*T_scale(model,z)/lb_volume(model,z)
 end
 
 function x0_volume_liquid(model::ActivityModel,T,z = SA[1.0])

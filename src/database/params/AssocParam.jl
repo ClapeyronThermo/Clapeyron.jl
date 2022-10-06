@@ -30,7 +30,7 @@ function AssocParam(
         allcomponentsites,
         sourcecsvs,
         sources
-    ) where T
+    )
     _values = Compressed4DMatrix(values)
     return AssocParam(name, components, _values, allcomponentsites, sourcecsvs,sources)
 end
@@ -84,4 +84,43 @@ end
 function Base.show(io::IO, param::AssocParam)
     print(io, typeof(param), "(\"", param.name, "\")")
     print(io, param.values.values)
+end
+
+#convert utilities
+function Base.convert(::Type{AssocParam{Float64}},param::AssocParam{Int})
+    assoc_values = param.values
+    new_assoc_values = Float64.(assoc_values.values)
+    
+    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.outer_size,assoc_values.inner_size)
+    return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{AssocParam{Bool}},param::AssocParam{<:Union{Int,Float64}})
+    assoc_values = param.values
+    @assert all(z->(isone(z) | iszero(z)),assoc_values.values)
+    new_assoc_values = Array(Bool.(assoc_values.values))
+    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.outer_size,assoc_values.inner_size)
+
+    return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{AssocParam{Int}},param::AssocParam{Float64})
+    assoc_values = param.values
+    @assert all(z->isinteger(z),assoc_values.values)
+    new_assoc_values = Int.(assoc_values.values)
+    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.outer_size,assoc_values.inner_size)
+
+    return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{AssocParam{String}},param::AssocParam{<:AbstractString})
+    assoc_values = param.values
+    new_assoc_values = String.(assoc_values.values)
+    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.outer_size,assoc_values.inner_size)
+    return AssocParameter(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
+end
+
+#trying to break stack overflow on julia 1.6
+function Base.convert(::Type{AssocParam{String}},param::AssocParam{String})
+    return param
 end

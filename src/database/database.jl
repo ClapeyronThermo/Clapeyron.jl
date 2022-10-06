@@ -16,7 +16,7 @@ function getparams(components,
                     userlocations::Vector{String}=String[],
                     asymmetricparams::Vector{String}=String[],
                     ignore_missing_singleparams::Vector{String}=String[],
-                    ignore_headers::Vector{String} =  ["dipprnumber", "smiles"],
+                    ignore_headers::Vector{String} =  ["dipprnumber", "smiles", "cas"],
                     verbose::Bool=false,
                     species_columnreference::String="species",
                     source_columnreference::String="source",
@@ -134,7 +134,7 @@ function findsites(data::Dict,components::Vector;verbose = false)
     verbose && @info("Found sites for $components are $(output).")
     return output
 end
-
+@nospecialize
 function createparams(components::Vector{String},
                     filepaths::Vector{String},
                     options::ParamOptions = DefaultOptions,
@@ -175,7 +175,7 @@ function createparams(components::Vector{String},
 
     return allparams,allnotfoundparams
 end
-
+@specialize
 function compile_params(components,allparams,allnotfoundparams,options)
     #Generate component sites with the RawParam tapes
     allcomponentsites = findsites(allparams,components)
@@ -288,7 +288,7 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
     #indices where data could be (they could be missing)
     #on pair and assoc, this is just the first component, we need to reduce the valid indices again
     found_indices0,comp_indices = _indexin(components_dict,species_list,component_delimiter,1:length(species_list))
-    dfR = Tables.rows(df)
+    dfR = Tables.rowtable(df)
     EMPTY_STR = ""
 
     if csvtype == singledata || ((csvtype == groupdata) && parsegroups)
@@ -320,8 +320,8 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
         l = length(found_indices2)
         if l != 0
             _data = dfR[found_indices2]
-            _site1 = getindex.(_data,lookupsitecolumnindex1)
-            _site2 = getindex.(_data,lookupsitecolumnindex2)
+            _site1 = identity.(getindex.(_data,lookupsitecolumnindex1))
+            _site2 = identity.(getindex.(_data,lookupsitecolumnindex2))
             _comp = [(components[c1],components[c2],String(s1),String(s2)) for (c1,c2,s1,s2) ∈ zip(comp_indices1,comp_indices2,_site1,_site2)]
             _sources = fill(EMPTY_STR,l)
             _csv = fill(String(filepath),l)
@@ -345,7 +345,7 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
         for (headerparam,idx) ∈ zip(headerparams,headerparams_indices)
             _vals = getindex.(_data,idx)
             s = findall(!ismissing,_vals) #filter nonmissing values
-            if !iszero(s)
+            if !iszero(length(s))
                 __vals = [_vals[i] for i ∈ s] #removes the missing type and eliminates bitvectors
                 __sources = [_sources[i] for i ∈ s]
                 __csv = [_csv[i] for i ∈ s]
@@ -431,7 +431,7 @@ function readcsvtype(filepath)
     words = split(lowercase(strip(getline(String(filepath), 2), ',')), ' ')
     foundkeywords = intersect(words, keywords)
     if isempty(foundkeywords)
-        error("Unable to determine type of database", filepath, ". Check that keyword is present on Line 2.")
+        error("Unable to determine type of database ", filepath, ". Check that keyword is present on Line 2.")
     end
     if length(foundkeywords) > 1
         error("Multiple keywords found ∈ database ", filepath, ": ", foundkeywords)

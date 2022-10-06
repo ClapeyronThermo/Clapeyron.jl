@@ -1,3 +1,5 @@
+const IDEALTYPE = Union{T,Type{T}} where T<:EoSModel
+
 """
     arbitraryparam(params)
 
@@ -132,6 +134,29 @@ macro newmodelgc(name, parent, paramstype)
 
     molecular_weight(model::$name,z=SA[1.0]) = group_molecular_weight(model.groups,mw(model),z)
 
+    function $name(params::$paramstype,
+        groups::GroupParam,
+        idealmodel::IDEALTYPE = BasicIdeal;
+        ideal_userlocations::Vector{String}=String[],
+        references::Vector{String}=String[],
+        assoc_options::AssocOptions = AssocOptions(),
+        verbose::Bool = false)
+
+        return build_model($name,params,groups,idealmodel;ideal_userlocations,references,assoc_options,verbose)
+    end
+
+    function $name(params::$paramstype,
+        groups::GroupParam,
+        sites::SiteParam,
+        idealmodel::IDEALTYPE = BasicIdeal;
+        ideal_userlocations::Vector{String}=String[],
+        references::Vector{String}=String[],
+        assoc_options::AssocOptions = AssocOptions(),
+        verbose::Bool = false)
+
+        return build_model($name,params,groups,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
+    end
+
 end |> esc
 end
 
@@ -166,6 +191,28 @@ macro newmodel(name, parent, paramstype)
     end
     molecular_weight(model::$name,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
     Base.length(model::$name) = Base.length(model.components)
+
+    function $name(params::$paramstype,
+        sites::SiteParam,
+        idealmodel::IDEALTYPE = BasicIdeal;
+        ideal_userlocations::Vector{String}=String[],
+        references::Vector{String}=String[],
+        assoc_options::AssocOptions = AssocOptions(),
+        verbose::Bool = false)
+
+        return build_model($name,params,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
+    end
+
+    function $name(params::$paramstype,
+        idealmodel::IDEALTYPE = BasicIdeal;
+        ideal_userlocations::Vector{String}=String[],
+        references::Vector{String}=String[],
+        assoc_options::AssocOptions = AssocOptions(),
+        verbose::Bool = false)
+
+        return build_model($name,params,idealmodel;ideal_userlocations,references,assoc_options,verbose)
+    end
+
     end |> esc
 end
 
@@ -194,12 +241,16 @@ macro newmodelsimple(name, parent, paramstype)
 
     Base.length(model::$name) = Base.length(model.components)
 
+    function $name(params::$paramstype;
+            references::Vector{String}=String[],
+            verbose::Bool = false)
+
+        return build_model($name,params;references,verbose)
+    end
     end |> esc
 end
 
-const IDEALTYPE = Union{T,Type{T}} where T<:EoSModel
-
-function (::Type{model})(params::EoSParam,
+function build_model(::Type{model},params::EoSParam,
         groups::GroupParam,
         sites::SiteParam,
         idealmodel::IDEALTYPE = BasicIdeal;
@@ -217,7 +268,7 @@ function (::Type{model})(params::EoSParam,
     params, init_idealmodel, assoc_options, references)
 end
 
-function (::Type{model})(params::EoSParam,
+function build_model(::Type{model},params::EoSParam,
         groups::GroupParam,
         idealmodel::IDEALTYPE = BasicIdeal;
         ideal_userlocations::Vector{String}=String[],
@@ -230,7 +281,7 @@ function (::Type{model})(params::EoSParam,
 end
 
 #non GC
-function (::Type{model})(params::EoSParam,
+function build_model(::Type{model},params::EoSParam,
         sites::SiteParam,
         idealmodel::IDEALTYPE = BasicIdeal;
         ideal_userlocations::Vector{String}=String[],
@@ -248,7 +299,7 @@ end
 
 
 #normal macro model
-function (::Type{model})(params::EoSParam,
+function build_model(::Type{model},params::EoSParam,
         idealmodel::IDEALTYPE;
         ideal_userlocations::Vector{String}=String[],
         references::Vector{String}=String[],
@@ -261,7 +312,7 @@ function (::Type{model})(params::EoSParam,
     return model(params,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
 end
 
-function (::Type{model})(params::EoSParam;
+function build_model(::Type{model},params::EoSParam;
     references::Vector{String}=String[],
     verbose::Bool = false) where model <:EoSModel
     #if there isnt any params, just put empty values.
@@ -284,7 +335,9 @@ function init_model(::Nothing,components,userlocations,verbose)
     return nothing
 end
 
-
+function init_model(::Type{model},components,userlocations,verbose) where model <: EoSModel
+    return model(components;userlocations,verbose)
+end
 """
     @registermodel(model)
 

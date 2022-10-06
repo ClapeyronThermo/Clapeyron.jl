@@ -318,8 +318,8 @@ function group_pairmean(f,groups::GroupParam,p::AbstractMatrix)
     lgroups = 1:length(groups.i_flattenedgroups)
     lcomps = 1:length(groups.components)
     zz = groups.n_groups_cache
-    _0 = zero(eltype(p))
-    res = zeros(eltype(p),length(lcomps))
+    _0 = zero(eltype(p))/one(eltype(p)) #we want a float type
+    res = zeros(typeof(_0),length(lcomps))
     for i ∈ lcomps
         ẑ = zz[i]
         ∑ẑinv2 = 1/(sum(ẑ)^2)

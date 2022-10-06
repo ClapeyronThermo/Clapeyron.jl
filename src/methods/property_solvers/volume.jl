@@ -68,7 +68,6 @@ function volume_virial(B::Real,p,T,z=SA[1.0])
     b = -1
     c = -B
     Δ = b*b-4*a*c
-    n = sum(z)
     if Δ <= 0
         #virial approximation could not be calculated
         #return value at spinodal
