@@ -243,7 +243,7 @@ macro newmodelsimple(name, parent, paramstype)
 
     function $name(params::$paramstype;
             references::Vector{String}=String[],
-            verbose::Bool = false) where model <:EoSModel
+            verbose::Bool = false)
 
         return build_model($name,params;references,verbose)
     end

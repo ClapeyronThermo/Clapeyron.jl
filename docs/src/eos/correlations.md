@@ -34,3 +34,12 @@ Clapeyron.SaturationCorrelation
 Clapeyron.LeeKeslerSat
 Clapeyron.DIPPR101Sat
 ```
+
+# Liquid Volume Correlations
+Liquid Volume Correlations are any [`EoSModel`](@ref) that are subtypes of [`LiquidVolumeModel`](@ref). 
+They return `volume(model,p,T,z, phase = :liquid)`.
+
+# Virial Models
+
+Virial models are defined in terms of the second virial coefficient, `B(T,z)`. this allows for a fast calculation of `volume(model,p,T,z, phase = :gas)`. they cannot represent the liquid phase.
+

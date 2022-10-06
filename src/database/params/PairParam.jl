@@ -122,7 +122,7 @@ function PairParam(
         name::String,
         components::Vector{String};
         sources::Vector{String} = String[]
-    ) where T <: AbstractString
+    )
     values = fill(0.0, length(components), length(components))
     missingvals = fill(false, size(values))
     return PairParam(name, components, values, missingvals, String[], sources)
