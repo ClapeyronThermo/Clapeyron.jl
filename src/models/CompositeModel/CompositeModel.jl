@@ -14,45 +14,56 @@ Composite Model. it is not consistent, but it can hold different correlations th
 are faster than a volume or saturation pressure iteration.
 
 """
-struct CompositeModel{NT} <: EoSModel
+struct CompositeModel{𝕍,𝕃,𝕊,𝕃𝕍,𝕃𝕊} <: EoSModel
     components::Vector{String}
-    models::NT
+    gas::𝕍
+    liquid::𝕃
+    solid::𝕊
+    saturation::𝕃𝕍
+    melting::𝕃𝕊
 end
 
 Base.length(cmodel::CompositeModel) = length(cmodel.components)
 
 function CompositeModel(components;
-    gas = BasicIdeal,
     liquid = RackettLiquid,
+    gas = BasicIdeal,
+    solid = nothing,
     saturation = LeeKeslerSat,
+    melting = nothing,
     gas_userlocations = String[],
     liquid_userlocations = String[],
+    solid_userlocations = String[],
     saturation_userlocations = String[],
+    melting_userlocations = String[],
     verbose = false)
 
     init_gas = init_model(gas,components,gas_userlocations,verbose)
     init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+    init_solid = init_model(solid,components,solid_userlocations,verbose)
     init_sat = init_model(saturation,components,saturation_userlocations,verbose)
-    models = (gas = init_gas,liquid = init_liquid,saturation = init_sat)
-    return CompositeModel(components,models)
+    init_melt = init_model(melting,components,melting_userlocations,verbose)
+    return CompositeModel(components,init_gas,init_liquid,init_solid,init_sat,init_melt)
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
-    println(io,"Composite Model:")
-    println(io," Liquid Model: ",model.models.liquid)
-    println(io," Gas Model: ",model.models.gas)
-    print(io," Saturation Model: ",model.models.saturation)
+    print(io,"Composite Model:")
+    model.gas !== nothing && print(io,'\n'," Gas Model: ",model.gas)
+    model.liquid !== nothing && print(io,'\n'," Liquid Model: ",model.liquid)
+    model.solid !== nothing && println(io,'\n'," Solid Model: ",model.solid)
+    model.saturation !== nothing && print(io,'\n'," Saturation Model: ",model.saturation)
+    model.melting !== nothing && print(io,'\n'," Melting Model: ",model.melting)
 end
 
 function Base.show(io::IO,model::CompositeModel)
-    print(io,string(typeof(model)),model.shape_model.components)
+    eosshow(io,model)
 end
 
 function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,vol = vol0)
     if is_liquid(phase)
-        return volume(model.models.liquid,p,T,z;phase,threaded)
+        return volume(model.liquid,p,T,z;phase,threaded)
     elseif is_vapour(phase)
-        return volume(model.models.gas,p,T,z;phase,threaded)
+        return volume(model.gas,p,T,z;phase,threaded)
     else
         if length(model) == 1
             psat,vl,vv = saturation_pressure(model,T)
@@ -66,9 +77,9 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
                 tc,pc,vc = crit_pure(model)
                 if T > tc #supercritical conditions. ideally, we could go along the critical isochore, but we dont have that.
                     if p > pc # supercritical fluid
-                        return volume(model.models.liquid,p,T,z;phase,threaded)
+                        return volume(model.liquid,p,T,z;phase,threaded)
                     else #gas phase
-                        return volume(model.models.gas,p,T,z;phase,threaded)
+                        return volume(model.gas,p,T,z;phase,threaded)
                     end
                 else #something failed on saturation_pressure, not related to passing the critical point
                     @error "an error ocurred while determining saturation line division."
@@ -83,7 +94,7 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
 end
 
 function saturation_pressure(model::CompositeModel,T::Real)
-    if model.models.saturation isa SaturationModel
+    if model.saturation isa SaturationModel
         method = SaturationCorrelation()
     else
         method = ChemPotVSaturation()
@@ -91,8 +102,7 @@ function saturation_pressure(model::CompositeModel,T::Real)
     return saturation_pressure(model,T,method)
 end
 
-function saturation_pressure(cmodel::CompositeModel,T,method::SaturationMethod)
-    model = cmodel.models
+function saturation_pressure(model::CompositeModel,T,method::SaturationMethod)
     nan = zero(T)/zero(T)
     psat,_,_ = saturation_pressure_impl(model.saturation,T,method)
     if !isnan(psat)
