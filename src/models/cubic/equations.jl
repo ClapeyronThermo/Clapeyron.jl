@@ -122,7 +122,7 @@ function pure_cubic_zc(model::ABCCubicModel)
     return pc*Vc/(R̄*Tc)
 end
 
-function second_virial_coefficient(model::ABCubicModel,T::Real,z = SA[1.0])
+function second_virial_coefficient_impl(model::ABCubicModel,T,z = SA[1.0])
     a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T,z)
     return b-a/(R̄*T)
 end
@@ -162,6 +162,7 @@ end
 
 #works with models with a fixed (Tc,Pc) coordinate
 function crit_pure_tp(model)
+    single_component_check(crit_pure,model)
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
     Vc = volume(model,Pc,Tc,SA[1.])
@@ -169,6 +170,7 @@ function crit_pure_tp(model)
 end
 
 function crit_pure_tp(model::ABCCubicModel)
+    single_component_check(crit_pure,model)
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
     Vc = model.params.Vc.values[1]

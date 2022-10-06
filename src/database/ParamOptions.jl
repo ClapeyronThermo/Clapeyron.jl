@@ -30,7 +30,7 @@ Base.@kwdef struct ParamOptions
     usergrouplocations::Vector{String} = String[]
     asymmetricparams::Vector{String}= String[]
     ignore_missing_singleparams::Vector{String} = String[]
-    ignore_headers::Vector{String} = ["dipprnumber", "smiles"]
+    ignore_headers::Vector{String} = ["dipprnumber", "smiles", "cas"]
     verbose::Bool = false
     species_columnreference::String ="species"
     source_columnreference::String = "source"

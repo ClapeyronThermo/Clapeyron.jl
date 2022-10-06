@@ -30,7 +30,7 @@ function AssocParam(
         allcomponentsites,
         sourcecsvs,
         sources
-    ) where T
+    )
     _values = Compressed4DMatrix(values)
     return AssocParam(name, components, _values, allcomponentsites, sourcecsvs,sources)
 end

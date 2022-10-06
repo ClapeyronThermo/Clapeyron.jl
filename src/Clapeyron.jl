@@ -31,7 +31,12 @@ include("base/constants.jl")
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
 include("base/EoSModel.jl")
-include("models/types.jl") #type hierarchy
+
+#error handlers
+include("base/errors.jl")
+
+#type hierarchy
+include("models/types.jl")
 
 #show(model<:EoSModel)
 include("base/eosshow.jl")
@@ -154,6 +159,11 @@ include("models/cubic/PatelTeja/PatelTeja.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
+
+include("models/Virial/Virial.jl")
+
+#include("models/UFTheory/UFTheory.jl")
+include("models/CompositeModel/CompositeModel.jl")
 
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
