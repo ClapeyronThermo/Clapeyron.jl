@@ -2,8 +2,13 @@ function dew_pressure(model::ActivityModel,T,x)
     dew_pressure(model,T,x,ActivityDewPressure(gas_fug = false, poynting = false))
 end
 
-function dew_pressure_impl(model::ActivityModel,T,x,method::BubblePointMethod)
-    throw(error("$method not supported by Activity models"))
+function dew_pressure(model::ActivityModel, T, y, method::DewPointMethod)
+    if !(method isa ActivityDewPressure)
+        throw(error("$method not supported by Activity models"))
+    end
+    _T = typeof(T)
+    _y = typeof(y)
+    Base.invoke(dew_pressure,Tuple{EoSModel,_T,_y,DewPointMethod},model,T,y,method)
 end
 
 function dew_pressure_impl(model::ActivityModel,T,y,method::ActivityDewPressure)
@@ -32,15 +37,21 @@ function dew_pressure_impl(model::ActivityModel,T,y,method::ActivityDewPressure)
     else
         vv = volume(pmodel,p,T,y,phase = :vapor, vol0 = vv)
     end
-    μpure = only.(VT_chemical_potential_res.(pure,vl_pure,T))
-    ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vl_pure ./ RT))
+    #fugacity of pure component at saturation conditions
+    if method.gas_fug
+        μpure = only.(VT_chemical_potential_res.(pure,vv_pure,T))
+        ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
+    else
+        ϕpure = copy(ϕ)
+        ϕpure .= 1.0
+    end
     pold = zero(p)
     for k in 1:method.itmax_ss
         for i in eachindex(γ)
             pᵢ = p_pure[i]
             vpureᵢ = vl_pure[i]
             ϕ̂ᵢ =  ϕpure[i]
-            if method.poynting
+            if method.poynting && method.gas_fug
                 ln𝒫 = vpureᵢ*(p - pᵢ)/RT
                 𝒫 = exp(ln𝒫)
             else

@@ -45,7 +45,7 @@ function ActivityDewPressure(;vol0 = nothing,
         x0 = convert(Vector{T},x0)
         return ActivityDewPressure{T}(vol0,p0,x0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
     else
-        throw(error("invalid specification for bubble pressure"))
+        throw(error("invalid specification for dew pressure"))
     end
 end
 
@@ -150,3 +150,56 @@ function dew_pressure_impl(model,T,y,method::ActivityDewPressure)
     end
     return pmix,vl,vv,x
 end
+
+struct ActivityDewTemperature{T} <: DewPointMethod
+    vol0::Union{Nothing,Tuple{T,T}}
+    T0::Union{Nothing,T}
+    x0::Union{Nothing,Vector{T}}
+    nonvolatiles::Union{Nothing,Vector{String}}
+    itmax_ss::Int64
+    rtol_ss::Float64
+    gas_fug::Bool
+    poynting::Bool
+end
+
+function ActivityDewTemperature(;vol0 = nothing,
+                                T0 = nothing,
+                                x0 = nothing,
+                                nonvolatiles = nothing,
+                                itmax_ss = 40,
+                                rtol_ss = 1e-8,
+                                gas_fug = true,
+                                poynting = true)
+
+    if T0 == x0 == vol0 == nothing
+        return ActivityDewTemperature{Nothing}(vol0,T0,x0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
+    elseif (T0 == x0 == nothing) && !isnothing(vol0)
+        vl,vv = promote(vol0[1],vol0[2])
+        return ActivityDewTemperature{typeof(vl)}(vol0,T0,x0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
+    elseif (vol0 == x0 == nothing) && !isnothing(T0)
+        T0 = float(T0)
+        return ActivityDewTemperature{typeof(T0)}(vol0,T0,x0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
+    elseif (T0 == vol0 == nothing) && !isnothing(T0)
+        T = eltype(x0)
+        return ActivityDewTemperature{T}(vol0,T0,x0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
+    elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(x0)
+        vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(x0))
+        T = eltype(vl)
+        x0 = convert(Vector{T},x0)
+        return ActivityDewTemperature{T}(vol0,T0,x0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
+    elseif !isnothing(vol0) && !isnothing(x0)
+        vl,vv,_ = promote(vol0[1],vol0[2],first(x0))
+        T = eltype(vl)
+        x0 = convert(Vector{T},x0)
+        return ActivityDewTemperature{T}(vol0,T0,x0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
+    elseif  !isnothing(T0) && !isnothing(x0)
+        T0,_ = promote(T0,first(x0))
+        T = eltype(T0)
+        x0 = convert(Vector{T},x0)
+        return ActivityDewTemperature{T}(vol0,T0,x0,nonvolatiles,itmax_ss,rtol_ss,gas_fug,poynting)
+    else
+        throw(error("invalid specification for dew temperature"))
+    end
+end
+
+export ActivityDewPressure,ActivityDewTemperature

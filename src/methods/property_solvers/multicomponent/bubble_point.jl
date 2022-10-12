@@ -126,7 +126,7 @@ Returns a tuple, containing:
 
 By default, uses equality of chemical potentials, via [`ChemPotBubblePressure`](@ref)
 """
-function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
+function bubble_pressure(model::EoSModel, T, x, method::BubblePointMethod)
     x = x/sum(x)
     T = float(T)
     model_r,idx_r = index_reduction(model,x)
@@ -256,7 +256,7 @@ Returns a tuple, containing:
 
 By default, uses equality of chemical potentials, via [`ChemPotBubbleTemperature`](@ref)
 """
-function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
+function bubble_temperature(model::EoSModel, p , x, method::BubblePointMethod)
     x = x/sum(x)
     p = float(p)
     model_r,idx_r = index_reduction(model,x)

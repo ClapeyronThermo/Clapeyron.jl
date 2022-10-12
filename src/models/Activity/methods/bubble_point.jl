@@ -3,9 +3,15 @@ function bubble_pressure(model::ActivityModel,T,x)
     bubble_pressure(model,T,x,ActivityBubblePressure(gas_fug = false, poynting = false))
 end
 
-function bubble_pressure_impl(model::ActivityModel,T,x,method::BubblePointMethod)
-    throw(error("$method not supported by Activity models"))
+function bubble_pressure(model::ActivityModel, T, x, method::BubblePointMethod)
+    if !(method isa ActivityBubblePressure)
+        throw(error("$method not supported by Activity models"))
+    end
+    _T = typeof(T)
+    _x = typeof(x)
+    Base.invoke(bubble_pressure,Tuple{EoSModel,_T,_x,BubblePointMethod},model,T,x,method)
 end
+
 
 function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePressure)
     sat = saturation_pressure.(model.puremodel,T)
@@ -36,14 +42,20 @@ function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePre
     else
         vv = volume(pmodel,p,T,y,phase = :vapor, vol0 = vv)
     end
-    μpure = only.(VT_chemical_potential_res.(pure,vl_pure,T))
-    ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vl_pure ./ RT))
+    #fugacity of pure component at saturation conditions
+    if gas_fug
+        μpure = only.(VT_chemical_potential_res.(pure,vv_pure,T))
+        ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
+    else
+        ϕpure = copy(ϕ)
+        ϕpure .= 1.0
+    end
     for k in 1:method.itmax_ss
         for i in eachindex(γ)
             pᵢ = p_pure[i]
             vpureᵢ = vl_pure[i]
             ϕ̂ᵢ =  ϕpure[i]
-            if method.poynting
+            if method.poynting && method.gas_fug
                 ln𝒫 = vpureᵢ*(p - pᵢ)/RT
                 𝒫 = exp(ln𝒫)
             else
@@ -68,7 +80,20 @@ function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePre
     return (p,vl,vv,y)
 end
 
-function bubble_temperature(model::ActivityModel,p,x)
+function bubble_temperature(model::ActivityModel,T,x)
+    bubble_temperature(model,T,x,ActivityBubbleTemperature(gas_fug = false, poynting = false))
+end
+
+function bubble_temperature(model::ActivityModel, T, x, method::BubblePointMethod)
+    if !(method isa ActivityBubbleTemperature)
+        throw(error("$method not supported by Activity models"))
+    end
+    _T = typeof(T)
+    _x = typeof(x)
+    Base.invoke(bubble_temperature,Tuple{EoSModel,_T,_x,BubblePointMethod},model,T,x,method)
+end
+
+function bubble_temperature_impl(model::ActivityModel,p,x,method::ActivityBubbleTemperature)
     f(z) = Obj_bubble_temperature(model,z,p,x)
         pure = model.puremodel
         sat = saturation_temperature.(pure,p)

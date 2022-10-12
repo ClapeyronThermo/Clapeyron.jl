@@ -60,6 +60,8 @@ function Base.show(io::IO,model::CompositeModel)
 end
 
 function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,vol = vol0)
+    _0 = zero(p+T+first(z))
+    nan = _0/_0
     if is_liquid(phase)
         return volume(model.liquid,p,T,z;phase,threaded)
     elseif is_vapour(phase)
@@ -87,6 +89,9 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
                 end
 
             end
+            
+            return nan
+        else
             @error "A phase needs to be specified on multicomponent composite models."
             return nan
         end
@@ -120,5 +125,6 @@ end
 function crit_pure(model::CompositeModel)
     return crit_pure(model.models.saturation)
 end
+
 
 export CompositeModel
