@@ -37,14 +37,14 @@ function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePre
     ϕ .= 1.0
     RT = R̄*T
     if method.gas_fug
-        logϕ, vv = lnϕ(pmodel,p,T,y,phase = :vapor, vol0 = vv)
+        logϕ, vv = lnϕ(__gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
         ϕ .= exp.(logϕ)
     else
         vv = volume(pmodel,p,T,y,phase = :vapor, vol0 = vv)
     end
     #fugacity of pure component at saturation conditions
-    if gas_fug
-        μpure = only.(VT_chemical_potential_res.(pure,vv_pure,T))
+    if method.gas_fug
+        μpure = only.(VT_chemical_potential_res.(__gas_model.(pure),vv_pure,T))
         ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
     else
         ϕpure = copy(ϕ)
@@ -67,7 +67,7 @@ function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePre
         p = sum(y)
         y ./= p
         if method.gas_fug
-            logϕ, vv = lnϕ(pmodel,p,T,y,phase = :vapor, vol0 = vv)
+            logϕ, vv = lnϕ(__gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
             ϕ .= exp.(logϕ)
         else
             vv = volume(pmodel,p,T,y,phase = :vapor, vol0 = vv)
@@ -100,14 +100,14 @@ function bubble_temperature_impl(model::ActivityModel,p,x,method::ActivityBubble
         Ti   = first.(sat)
         T0 = dot(Ti,x)
         T = Roots.find_zero(f,T0)
-    p,vl,vv,y = bubble_pressure(model,T,x)
+    p,vl,vv,y = bubble_pressure(model,T,x,ActivityBubblePressure(gas_fug = method.gas_fug,poynting = method.poynting))
     return (T,vl,vv,y)
 end
 
 function Obj_bubble_temperature(model::ActivityModel,T,p,x)
     sat = saturation_pressure.(model.puremodel,T)
     p_sat = [tup[1] for tup in sat]
-    γ     = activity_coefficient(model,1e-4,T,x)
+    γ     = activity_coefficient(model,p,T,x)
     y     = x.*γ.*p_sat ./ p
     return sum(y)-1
 end

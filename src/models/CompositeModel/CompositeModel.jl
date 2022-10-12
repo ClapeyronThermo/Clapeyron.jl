@@ -59,6 +59,8 @@ function Base.show(io::IO,model::CompositeModel)
     eosshow(io,model)
 end
 
+__gas_model(model::CompositeModel) = model.gas
+
 function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,vol = vol0)
     _0 = zero(p+T+first(z))
     nan = _0/_0
@@ -125,6 +127,5 @@ end
 function crit_pure(model::CompositeModel)
     return crit_pure(model.models.saturation)
 end
-
 
 export CompositeModel
