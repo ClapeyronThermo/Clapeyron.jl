@@ -299,7 +299,7 @@ end
 @testset "Activity methods, multi-components" begin
     com = CompositeModel(["water","methanol"],liquid = DIPPR105Liquid,saturation = DIPPR101Sat,gas = PR)
     system = Wilson(["methanol","benzene"])
-    system2 = Wilson([["water","methanol"]],puremodel = com)
+    system2 = Wilson(["water","methanol"],puremodel = com)
     p = 1e5
     T = 298.15
     z = [0.5,0.5]
