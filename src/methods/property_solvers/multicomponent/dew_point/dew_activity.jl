@@ -1,3 +1,20 @@
+"""
+    ActivityDewPressure(kwargs...)
+
+Function to compute [`dew_pressure`](@ref) using Activity Coefficients.
+On activity coefficient models it solves the problem via succesive substitucion.
+On helmholtz-based models, it uses the Chapman approximation for activity coefficients.
+
+Inputs:
+- `gas_fug = true`: if the solver uses gas fugacity coefficients. on `ActivityModel` is set by default to `false`
+- `poynting = true`: if the solver use the poynting correction on the liquid fugacity coefficients. on `ActivityModel` is set by default to `false`
+- `x0 = nothing`: optional, initial guess for the liquid phase composition
+- `p0 = nothing`: optional, initial guess for the dew pressure [`Pa`]
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
+- `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
+- `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
+"""
 struct ActivityDewPressure{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
     p0::Union{Nothing,T}
@@ -77,6 +94,8 @@ function dew_pressure_impl(model,T,y,method::ActivityDewPressure)
     μmix = zeros(typeof(pmix),length(pure))
     ϕ = copy(μmix)
     x = copy(μmix)
+    ϕpure = copy(μmix)
+    ϕpure .= 1
     x .= y .* pmix ./ p_pure
     x ./= sum(x)
     
@@ -91,18 +110,20 @@ function dew_pressure_impl(model,T,y,method::ActivityDewPressure)
     μmix = VT_chemical_potential_res!(μmix,model,vl,T,x)
     RT = (R̄*T)
     ϕ .= 1
+    μpure = only.(VT_chemical_potential_res.(pure,vl_pure,T))
     if method.gas_fug
         if iszero(vv)
             vv = dot(last.(sat),y)
         end
         μv = VT_chemical_potential_res!(ϕ,model,vv,T,y)
         ϕ .= exp.(μv ./ RT .- log.(pmix .* vv ./ RT))
+        ϕpure .= exp.(μpure ./ RT .- log.(p_pure .* vl_pure ./ RT))
     end
     pold = zero(pmix)
     γ = zeros(typeof(pmix),length(pure))
     #pure part
-    μpure = only.(VT_chemical_potential_res.(pure,vl_pure,T))
-    ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vl_pure ./ RT))
+    
+    
     use_𝒫 = method.poynting
     if use_𝒫
         κ = VT_isothermal_compressibility.(pure,vl_pure,T)
@@ -151,6 +172,23 @@ function dew_pressure_impl(model,T,y,method::ActivityDewPressure)
     return pmix,vl,vv,x
 end
 
+"""
+    ActivityDewTemperature(kwargs...)
+
+Function to compute [`dew_temperature`](@ref) using Activity Coefficients.
+On activity coefficient models it solves the problem via succesive substitucion.
+On helmholtz-based models, it uses the Chapman approximation for activity coefficients.
+
+Inputs:
+- `gas_fug = true`: if the solver uses gas fugacity coefficients. on `ActivityModel` is set by default to `false`
+- `poynting = true`: if the solver use the poynting correction on the liquid fugacity coefficients. on `ActivityModel` is set by default to `false`
+- `x0 = nothing`: optional, initial guess for the liquid phase composition
+- `T0 = nothing`: optional, initial guess for the dew temperature [`K`]
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
+- `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
+- `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
+"""
 struct ActivityDewTemperature{T} <: DewPointMethod
     vol0::Union{Nothing,Tuple{T,T}}
     T0::Union{Nothing,T}

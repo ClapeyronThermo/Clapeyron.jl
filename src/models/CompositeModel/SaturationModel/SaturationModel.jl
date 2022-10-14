@@ -19,7 +19,7 @@ function saturation_pressure(model::SaturationModel,T,method::SaturationMethod)
 end
 
 function saturation_temperature(model::SaturationModel,p,method::SaturationMethod)
-    single_component_check(saturation_pressure,model)
+    single_component_check(saturation_temperature,model)
     p = p*(p/p)
     return saturation_temperature_impl(model,p,SaturationCorrelation())
 end

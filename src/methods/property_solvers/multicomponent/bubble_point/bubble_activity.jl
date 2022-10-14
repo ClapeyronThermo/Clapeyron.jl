@@ -1,3 +1,21 @@
+## Bubble pressure solver
+"""
+    ActivityBubblePressure(kwargs...)
+
+Function to compute [`bubble_pressure`](@ref) using Activity Coefficients.
+On activity coefficient models it solves the problem via succesive substitucion.
+On helmholtz-based models, it uses the Chapman approximation for activity coefficients.
+
+Inputs:
+- `gas_fug = true`: if the solver uses gas fugacity coefficients. on `ActivityModel` is set by default to `false`
+- `poynting = true`: if the solver use the poynting correction on the liquid fugacity coefficients. on `ActivityModel` is set by default to `false`
+- `y0 = nothing`: optional, initial guess for the vapor phase composition
+- `p0 = nothing`: optional, initial guess for the bubble pressure [`Pa`]
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
+- `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
+- `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
+"""
 struct ActivityBubblePressure{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
     p0::Union{Nothing,T}
@@ -51,7 +69,7 @@ end
 
 
 function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
-    
+
     pure = split_model(model)
     sat = saturation_pressure.(pure,T)
     p_pure = first.(sat)
@@ -64,7 +82,7 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
     else
         vl,vv = method.vol0
     end
-   
+
     if isnan(vl)
         return vl,vl,vl,x
     end
@@ -78,24 +96,30 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
     μmix = VT_chemical_potential_res(model,vl,T,x)
     ϕ = copy(μmix)
     y = copy(μmix)
+    ϕpure = copy(μmix)
     ϕ .= 1
+    ϕpure .= 1
     #y = x .* p_pure #raoult initialization
     #y ./= sum(y)
     #@show y
+    RT = (R̄*T)
     if !isnothing(method.y0)
         y .= method.y0
-        if method.gas_fug
-            μv = VT_chemical_potential_res!(ϕ,model,vv,T,y)
-            ϕ .= exp.(μv ./ RT .- log.(pmix .* vv ./ RT))
-        end
+        vv = dot(y,vv_pure)
+        #if method.gas_fug
+        #    μv = VT_chemical_potential_res!(ϕ,model,vv,T,y)
+        #    ϕ .= exp.(μv ./ RT .- log.(pmix .* vv ./ RT))
+        #end
     end
 
-    RT = (R̄*T)
+
     pold = zero(pmix)
     γ = zeros(typeof(pmix),length(pure))
     #pure part
     μpure = only.(VT_chemical_potential_res.(pure,vl_pure,T))
-    ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vl_pure ./ RT))
+    if method.gas_fug
+        ϕpure .= exp.(μpure ./ RT .- log.(p_pure .* vl_pure ./ RT))
+    end
     if method.poynting
         κ = VT_isothermal_compressibility.(pure,vl_pure,T)
     else
@@ -118,6 +142,7 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
             #y[i]*ϕ[i]*P = x[i]*γ[i]*pᵢ*ϕ̂ᵢ*𝒫
             y[i] = x[i]*γ[i]*pᵢ*𝒫*ϕ̂ᵢ/ϕ[i] #really yᵢ*P, we normalize later
         end
+
         pold = pmix
         pmix = sum(y)
         y ./= pmix
@@ -139,6 +164,24 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
     return pmix,vl,vv,y
 end
 
+## Bubble pressure solver
+"""
+    ActivityBubbleTemperature(kwargs...)
+
+Function to compute [`bubble_temperature`](@ref) using Activity Coefficients.
+On activity coefficient models it solves the problem via succesive substitucion.
+On helmholtz-based models, it uses the Chapman approximation for activity coefficients.
+
+Inputs:
+- `gas_fug = true`: if the solver uses gas fugacity coefficients. on `ActivityModel` is set by default to `false`
+- `poynting = true`: if the solver use the poynting correction on the liquid fugacity coefficients. on `ActivityModel` is set by default to `false`
+- `y0 = nothing`: optional, initial guess for the vapor phase composition
+- `T0 = nothing`: optional, initial guess for the bubble temperature [`K`]
+- `vol0 = nothing`: optional, initial guesses for the liquid and vapor phase volumes
+- `atol = 1e-8`: optional, absolute tolerance of the non linear system of equations
+- `rtol = 1e-12`: optional, relative tolerance of the non linear system of equations
+- `itmax_ss = 40`: optional, maximum number of sucesive substitution iterations
+"""
 struct ActivityBubbleTemperature{T} <: BubblePointMethod
     vol0::Union{Nothing,Tuple{T,T}}
     T0::Union{Nothing,T}

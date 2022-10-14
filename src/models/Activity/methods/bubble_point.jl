@@ -1,4 +1,3 @@
-
 function bubble_pressure(model::ActivityModel,T,x)
     bubble_pressure(model,T,x,ActivityBubblePressure(gas_fug = false, poynting = false))
 end

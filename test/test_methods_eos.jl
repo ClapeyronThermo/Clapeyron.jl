@@ -315,6 +315,10 @@ end
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.647133460465 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = true))[1] ≈ 23839.621459294547
         @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = false))[1] ≈ 23833.39094581393
+        @test Clapeyron.dew_pressure(system,500,z)[1] ≈ 4.157547787487126e6 rtol = 1E-6
+        @test Clapeyron.dew_pressure(system, T, z,ActivityDewPressure(gas_fug = true,poynting = true))[1] ≈ 4.134815222080148e6 rtol = 1e-6
+        @test Clapeyron.dew_pressure(system, T, z,ActivityDewPressure(gas_fug = true,poynting = false))[1] ≈ 4.1719716692694984e6 rtol = 1e-6
+        
     end
 end
 

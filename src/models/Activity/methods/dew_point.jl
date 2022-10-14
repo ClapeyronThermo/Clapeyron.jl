@@ -76,3 +76,51 @@ function dew_pressure_impl(model::ActivityModel,T,y,method::ActivityDewPressure)
     vl = volume(pmodel,p,T,x,phase = :liquid,vol0 = vl)
     return (p,vl,vv,x)
 end
+
+function dew_temperature(model::ActivityModel,T,x)
+    dew_temperature(model,T,x,ActivityDewTemperature(gas_fug = false, poynting = false))
+end
+
+function dew_temperature(model::ActivityModel, T, x, method::DewPointMethod)
+    if !(method isa ActivityDewTemperature)
+        throw(error("$method not supported by Activity models"))
+    end
+    _T = typeof(T)
+    _x = typeof(x)
+    Base.invoke(dew_temperature,Tuple{EoSModel,_T,_x,DewPointMethod},model,T,x,method)
+end
+
+function dew_temperature_impl(model::ActivityModel,p,y,method::ActivityDewTemperature)
+    f(z) = Obj_bubble_temperature(model,z,p,y)
+    pure = model.puremodel
+    sat = saturation_temperature.(pure,p)
+    Ti   = first.(sat)
+    T0 = dot(Ti,y)
+    sat0 = saturation_pressure.(pure,T0)
+    pi0 = first.(sat0)
+    x0 = y ./ pi0
+    x0 ./= sum(x0)
+    x0[end] = T0
+    f0(F,w) =  Obj_dew_temperature(F,model,p,y,w[1:end-1],w[end])
+    sol = Solvers.nlsolve(f0,x0,LineSearch(Newton()))
+    wsol = Solvers.x_sol(sol)
+    T = wsol[end]
+   
+    x = collect(FractionVector(wsol[1:end-1]))
+    vl = volume(pure.model,p,T,x,phase = :l)
+    vv = volume(pure.model,p,T,y,phase = :v)
+    return (T,vl,vv,x)
+    #p,vl,vv,y = bubble_pressure(model,T,x,ActivityBubblePressure(gas_fug = method.gas_fug,poynting = method.poynting))
+    #return (T,vl,vv,y)
+end
+
+function Obj_dew_temperature(F,model::ActivityModel,p,y,_x,T)
+    x = FractionVector(_x)
+    γ  = activity_coefficient(model,p,T,x)
+    sat = saturation_pressure.(model.puremodel,T) #TODO: AD rule for saturation pressure
+    for i in eachindex(F)
+        pᵢ = sat[i][1]
+        F[i] = x[i] - y[i]*p/(γ[i]*pᵢ)
+    end
+    return F
+end
