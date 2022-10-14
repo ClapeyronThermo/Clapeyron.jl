@@ -302,6 +302,7 @@ end
     system2 = Wilson(["water","methanol"],puremodel = com)
     p = 1e5
     T = 298.15
+    T2 = 320.15
     z = [0.5,0.5]
     z_bulk = [0.2,0.8]
     @testset "Bulk properties" begin
@@ -315,10 +316,14 @@ end
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.647133460465 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = true))[1] ≈ 23839.621459294547
         @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = false))[1] ≈ 23833.39094581393
-        @test Clapeyron.dew_pressure(system,500,z)[1] ≈ 4.157547787487126e6 rtol = 1E-6
-        @test Clapeyron.dew_pressure(system, T, z,ActivityDewPressure(gas_fug = true,poynting = true))[1] ≈ 4.134815222080148e6 rtol = 1e-6
-        @test Clapeyron.dew_pressure(system, T, z,ActivityDewPressure(gas_fug = true,poynting = false))[1] ≈ 4.1719716692694984e6 rtol = 1e-6
         
+        @test Clapeyron.bubble_temperature(system,23758.647133460465, z) ≈ T  rtol = 1E-6
+
+        @test Clapeyron.dew_pressure(system2, T2, z)[1] ≈ 19386.939256733036 rtol = 1E-6
+        @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = true))[1] ≈ 19393.924550078184 rtol = 1e-6
+        @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = false))[1] ≈ 19393.76058757084 rtol = 1e-6
+        
+        @test Clapeyron.dew_temperature(system2, 19386.939256733036, z)  ≈ T2 rtol = 1E-6
     end
 end
 

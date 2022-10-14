@@ -113,4 +113,10 @@
             @test length(ambiguities) == 0
         end
     end
+    #testset for equilibria bugs
+    @testset "challenging equilibria" begin
+        #@testset "dew_temperature N°1" begin
+        #    modelp = PCSAFT(["water","methanol"])
+        #end
+    end
  end

@@ -182,27 +182,57 @@ function __x0_dew_temperature(model::EoSModel,p,y)
         V_l_sat[i] = Vli
         V_v_sat[i] = Vvi
     end    
-    Tb = extrema(T_sat).*(0.9,1.1)
 
     V0_l = zero(p)
     V0_v = zero(p)
+    if !any(replaceP) #p < min(pci), proceed with entalphy aproximation:
+        dPdTsat = VT_entropy.(pure,V_v_sat,T_sat) .- VT_entropy.(pure,V_l_sat,T_sat) ./ (V_v_sat .- V_l_sat)
+        x = copy(dPdTsat)
+        ##initialization for T, dew form
+        #= we solve the aproximate problem of finding T such as:
+        p = sum(yi*pi(T))
+        where pi ≈ p + dpdt(T-T0)
+        for a dew specification:
+        sum(yi/(1 + dpdt(T-T0)/p)) - 1 = 0
+        =#
+        function f0p(T)
+            res = zero(T)
+            for i in eachindex(dPdTsat)
+                pr_i = 1 + dPdTsat[i]*(T-T_sat[i])/p
+                res += y[i]/pr_i
+            end
+            return res - 1
+        end
+        fTd = Roots.ZeroProblem(f0p,dot(T_sat,y))
+        T0 = Roots.solve(fTd,Roots.Order0())
+        sat = saturation_pressure.(pure,T0)
+        for i in 1:comps
+            V_l_sat[i] = sat[i][2]
+            V_v_sat[i] = sat[i][3]
+        end
+        x .= y ./ first.(sat)
+        x ./= sum(x) 
+    else
+        Tb = extrema(T_sat).*(0.9,1.1)
+        
+        f(T) = antoine_dew(pure,T,y,crit)[1]-p
+        fT = Roots.ZeroProblem(f,Tb)
+        T0 = Roots.solve(fT,Roots.Order0())
+        p,x = antoine_dew(pure,T0,y,crit)
+    end
+    V0_l = zero(p)
+    V0_v = zero(p)
 
-    f(T) = antoine_dew(pure,T,y,crit)[1]-p
-    fT = Roots.ZeroProblem(f,Tb)
-
-    T0 = Roots.solve(fT,Roots.Order0())
-    p,x = antoine_dew(pure,T0,y,crit)
-    for i in 1:length(y)
+    for i in 1:comps
         if !replaceP[i]
             V0_v += y[i]*V_v_sat[i]
             V0_l += x[i]*V_l_sat[i]
-        else 
+        else
             V0_v += y[i]*V_c[i]*1.2
             V0_l += x[i]*V_c[i]
         end
     end
     return T0,V0_l,V0_v,x
-   
 end
 
 function x0_dew_temperature(model::EoSModel,p,y)
