@@ -59,7 +59,11 @@ function Base.show(io::IO,model::CompositeModel)
     eosshow(io,model)
 end
 
+__gas_model(model::CompositeModel) = model.gas
+
 function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,vol = vol0)
+    _0 = zero(p+T+first(z))
+    nan = _0/_0
     if is_liquid(phase)
         return volume(model.liquid,p,T,z;phase,threaded)
     elseif is_vapour(phase)
@@ -87,6 +91,9 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
                 end
 
             end
+            
+            return nan
+        else
             @error "A phase needs to be specified on multicomponent composite models."
             return nan
         end
@@ -104,7 +111,7 @@ end
 
 function saturation_pressure(model::CompositeModel,T,method::SaturationMethod)
     nan = zero(T)/zero(T)
-    psat,_,_ = saturation_pressure_impl(model.saturation,T,method)
+    psat,_,_ = saturation_pressure(model.saturation,T,method)
     if !isnan(psat)
         vl = volume(model.liquid,psat,T,phase=:l)
         vv = volume(model.gas,psat,T,phase=:v)
@@ -119,6 +126,21 @@ end
 
 function crit_pure(model::CompositeModel)
     return crit_pure(model.models.saturation)
+end
+
+function saturation_temperature(model::CompositeModel,p,method::SaturationMethod)
+    nan = zero(p)/zero(p)
+    Tsat,_,_ = saturation_temperature(model.saturation,p,method)
+    if !isnan(Tsat)
+        vl = volume(model.liquid,p,Tsat,phase=:l)
+        vv = volume(model.gas,p,Tsat,phase=:v)
+        return Tsat,vl,vv
+    #if psat fails, there are two options:
+    #1- over critical point -> nan nan nan
+    #2- saturation failed -> nan nan nan
+    else 
+        return nan,nan,nan
+    end
 end
 
 export CompositeModel

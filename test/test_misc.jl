@@ -6,7 +6,7 @@
     gc2 = SAFTgammaMie([
         "ethanol",
         ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])])
-    
+
     ideal1 = WalkerIdeal(["hexane"])
     noparam1 = gc3.puremodel[1].translation
     simple1 = gc3.puremodel[1].alpha
@@ -71,6 +71,11 @@
         @test repr("text/plain",simple1) == "PRAlpha with 1 component:\n \"propane\"\nContains parameters: acentricfactor"
     end
 
+    @testset "Clapeyron Param show" begin
+        @test repr(model2.params) == "Clapeyron.PCSAFTParam"
+        @test repr("text/plain",model2.params) == "Clapeyron.PCSAFTParam for [\"water\", \"ethanol\"] with 6 params:\n Mw::SingleParam{Float64}\n segment::SingleParam{Float64}\n sigma::PairParam{Float64}\n epsilon::PairParam{Float64}\n epsilon_assoc::AssocParam{Float64}\n bondvol::AssocParam{Float64}"
+    end
+
     @testset "phase symbols" begin
         @test Clapeyron.canonical_phase(:l) == :liquid
         @test Clapeyron.canonical_phase(:v) == :vapour
@@ -91,7 +96,7 @@
         @test citation_translation ⊆ citation_full
     end
     @printline
-    
+
     @testset "Reported errors" begin
         #https://github.com/ypaul21/Clapeyron.jl/issues/104
         @testset "#104" begin
@@ -112,5 +117,11 @@
             ambiguities = Test.detect_ambiguities(Clapeyron)
             @test length(ambiguities) == 0
         end
+    end
+    #testset for equilibria bugs
+    @testset "challenging equilibria" begin
+        #@testset "dew_temperature N°1" begin
+        #    modelp = PCSAFT(["water","methanol"])
+        #end
     end
  end

@@ -116,32 +116,30 @@ Clapeyron.TPFlashMethod
 
 ```@docs
 Clapeyron.saturation_pressure
-Clapeyron.ChemPotVSaturation
-Clapeyron.ChemPotDensitySaturation
-Clapeyron.IsoFugacitySaturation
 Clapeyron.saturation_temperature
-Clapeyron.ClapeyronSaturation
-Clapeyron.AntoineSaturation
 Clapeyron.enthalpy_vap
 Clapeyron.crit_pure
 Clapeyron.acentric_factor
+```
+
+### Saturation methods
+
+```@docs
+Clapeyron.ChemPotVSaturation
+Clapeyron.ChemPotDensitySaturation
+Clapeyron.IsoFugacitySaturation
+Clapeyron.ClapeyronSaturation
+Clapeyron.AntoineSaturation
+Clapeyron.SaturationCorrelation
 ```
 
 ## Multi component properties
 
 ```@docs
 Clapeyron.bubble_pressure
-Clapeyron.ChemPotBubblePressure
-Clapeyron.FugBubblePressure
 Clapeyron.bubble_temperature
-Clapeyron.ChemPotBubbleTemperature
-Clapeyron.FugBubbleTemperature
 Clapeyron.dew_pressure
-Clapeyron.ChemPotDewPressure
-Clapeyron.FugDewPressure
 Clapeyron.dew_temperature
-Clapeyron.ChemPotDewTemperature
-Clapeyron.FugDewTemperature
 Clapeyron.azeotrope_pressure
 Clapeyron.azeotrope_temperature
 Clapeyron.LLE_pressure
@@ -152,6 +150,22 @@ Clapeyron.crit_mix
 Clapeyron.UCEP_mix
 Clapeyron.UCST_mix
 Clapeyron.gibbs_solvation
+```
+
+### Bubble/Dew methods
+```@docs
+Clapeyron.ChemPotBubblePressure
+Clapeyron.FugBubblePressure
+Clapeyron.ActivityBubblePressure
+Clapeyron.ChemPotBubbleTemperature
+Clapeyron.FugBubbleTemperature
+Clapeyron.ActivityBubbleTemperature
+Clapeyron.ChemPotDewPressure
+Clapeyron.FugDewPressure
+Clapeyron.ActivityDewPressure
+Clapeyron.ChemPotDewTemperature
+Clapeyron.FugDewTemperature
+Clapeyron.ActivityDewTemperature
 ```
 
 ## Consistency and Stability

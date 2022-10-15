@@ -30,6 +30,7 @@ function volume_impl(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,thre
     a = zero(eltype(z))
     b = zero(eltype(z)) 
     ∑z = sum(z)
+    checkbounds(tci,length(z))
     for i ∈ @comps
         zi = z[i]
         Tcᵢ = tci[i]

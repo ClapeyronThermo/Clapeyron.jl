@@ -260,7 +260,7 @@ function bubble_temperature_fug(model::EoSModel, p, x, y0, T0; vol0=(nothing,not
                          tol_T = 1e-8, tol_of = 1e-8,nonvolatiles = nothing)
 
     # Setting the initial guesses for volumes
-
+    
     vol0 === nothing && (vol0 = (nothing,nothing))
     volx, voly = vol0
 
@@ -345,35 +345,35 @@ function FugBubbleTemperature(;vol0 = nothing,
     itmax_newton = 10,
     itmax_ss = 5,
     tol_y = 1e-8,
-    tol_p = 1e-8,
+    tol_T = 1e-8,
     tol_of = 1e-8)
 
     if T0 == y0 == vol0 == nothing
-        return FugBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
     elseif (T0 == y0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return FugBubbleTemperature{typeof(vl)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubbleTemperature{typeof(vl)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
     elseif (vol0 == y0 == nothing) && !isnothing(T0)
         T0 = float(T0)
-        return FugBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
     elseif (T0 == vol0 == nothing) && !isnothing(y0)
         T = eltype(y0)
-        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
     elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(y0)
         vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
     elseif !isnothing(vol0) && !isnothing(y0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
     elseif  !isnothing(T0) && !isnothing(y0)
         T0,_ = promote(T0,first(y0))
         T = eltype(T0)
         y0 = convert(Vector{T},y0)
-        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_p,tol_of)
+        return FugBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,itmax_newton,itmax_ss,tol_y,tol_T,tol_of)
     else
         throw(error("invalid specification for bubble temperature"))
     end

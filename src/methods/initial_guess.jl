@@ -365,7 +365,7 @@ function x0_saturation_temperature(model::EoSModel,p,crit::Tuple)
 end
 
 """
-    x0_crit_pure(model::SAFTModel)
+    x0_crit_pure(model::EoSModel)
 
 Returns a 2-tuple corresponding to
     `(k,log10(Vc0))`, where `k` is `Tc0/T_scale(model,z)`

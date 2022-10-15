@@ -242,7 +242,7 @@ end
            system = EPPR78(["benzene","isooctane"])
            @test Clapeyron.a_res(system, V, T, z) ≈ -1.138852387092216 rtol = 1e-6
         end
-        
+
         @testset "PR w/ BMAlpha" begin
             system = PR(["ethane","undecane"];alpha = BMAlpha)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.244507550417118 rtol = 1e-6
@@ -257,7 +257,7 @@ end
             system = PR(["ethane","undecane"];alpha = MTAlpha)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2542333213442207 rtol = 1e-6
         end
-        
+
         @testset "PR w/ RackettTranslation" begin
             system = PR(["ethane","undecane"];translation = RackettTranslation)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2453840474643165 rtol = 1e-6
@@ -435,7 +435,7 @@ end
         #LNG paper, table 16
         T = 150.0
         V = 1/(18002.169)
-        z   = [0.6,0.4] 
+        z   = [0.6,0.4]
         system = EOS_LNG(["methane","butane"])
         @test Clapeyron.eos(system,V,T,z) ≈ -6020.0044 rtol = 5e-6
     end
@@ -494,14 +494,59 @@ end
         @test Clapeyron.a_res(system, V, T, z) ≈ -5.579621796375229 rtol = 1e-6
     end
 
-    @testset "Saturation Correlations" begin
-        @testset "Lee-Kesler" begin
-            sat = LeeKeslerSat(["ethylbenzene"])
-            @test saturation_pressure(sat,347.2)[1] ≈ 12922.734855067636  rtol = 1e-6
+    @testset "Correlations" begin
+        @testset "DIPPR101Sat" begin
+            system = DIPPR101Sat(["water"])
+            p0 = saturation_pressure(system,400.01)[1]
+            @test p0 ≈ 245338.15099198322 rtol = 1e-6
+            @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
         end
-        @testset "DIPPR 101" begin
-            sat = DIPPR101Sat(["water"])
-            @test saturation_pressure(sat,373.5)[1] ≈ 102531.03016041711  rtol = 1e-6
+    
+        @testset "LeeKeslerSat" begin
+            system = LeeKeslerSat(["water"])
+            p0 = saturation_pressure(system,400.01)[1]
+            @test p0 ≈ 231731.79240876858 rtol = 1e-6
+            @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
+        end
+    
+        @testset "COSTALD" begin
+            system = COSTALD(["water"])
+            @test volume(system,1e5,300.15) ≈ 1.8553472145724288e-5 rtol = 1e-6
+            system2 = COSTALD(["water","methanol"])
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 2.834714146558056e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.8553472145724288e-5 rtol = 1e-6
+        end
+    
+        @testset "RackettLiquid" begin
+            system = RackettLiquid(["water"])
+            @test volume(system,1e5,300.15) ≈ 1.6837207241594103e-5 rtol = 1e-6
+            system2 = RackettLiquid(["water","methanol"])
+            @test volume(system2,1e5,300.15,[0.5,0.5]) ≈ 3.2516352601748416e-5 rtol = 1e-6
+            @test volume(system2,1e5,300.15,[1.,0.]) ≈ 1.6837207241594103e-5 rtol = 1e-6
+        end
+    
+        
+        @testset "AbbottVirial" begin
+            system = AbbottVirial(["methane","ethane"])
+            @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.024820060368027988 rtol = 1e-6
+            #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
+            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0024543543773067693 rtol = 1e-6
+        end
+    
+        @testset "TsonopoulosVirial" begin
+            system = TsonopoulosVirial(["methane","ethane"])
+            @test volume(system,1e5,300,[0.5,0.5]) ≈ 0.02485310667780686 rtol = 1e-6
+            #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
+            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.0017990881811592349 rtol = 1e-6
+        end
+
+        @testset "EoSVirial2" begin
+            cub = PR(["methane","ethane"])
+            system = EoSVirial2(cub)
+            #exact equality here, as cubics have an exact second virial coefficient
+            @test volume(system,1e5,300,[0.5,0.5]) == Clapeyron.volume_virial(cub,1e5,300,[0.5,0.5])
+            #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
+            @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.002372835241601656 rtol = 1e-6
         end
     end
 end

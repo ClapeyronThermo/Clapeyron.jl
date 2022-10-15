@@ -47,11 +47,15 @@ end
 @testset "association" begin
     no_comb_sparse = Clapeyron.AssocOptions(combining = :nocombining, dense = false)
     no_comb_dense = Clapeyron.AssocOptions(combining = :nocombining, dense = true)
-    elliott = Clapeyron.AssocOptions(combining = :elliott_runtime)
-
+    esd = Clapeyron.AssocOptions(combining = :esd)
+    esd_r = Clapeyron.AssocOptions(combining = :elliott_runtime)
+    cr1 = Clapeyron.AssocOptions(combining = :cr1)
+    
     model_no_comb_sparse = PCSAFT(["methanol","ethanol"],assoc_options = no_comb_sparse)
     model_no_comb_dense = PCSAFT(["methanol","ethanol"],assoc_options = no_comb_dense)
-    model_elliott_comb = PCSAFT(["methanol","ethanol"],assoc_options = elliott)
+    model_cr1 = PCSAFT(["methanol","ethanol"],assoc_options = cr1)
+    model_esd = PCSAFT(["methanol","ethanol"],assoc_options = esd)
+    model_esd_r = PCSAFT(["methanol","ethanol"],assoc_options = esd_r)
 
     V = 5e-5
     T = 298.15
@@ -59,7 +63,9 @@ end
     @test Clapeyron.nonzero_extrema(0:3) == (1, 3)
     @test Clapeyron.a_assoc(model_no_comb_sparse,V,T,z) ≈ -4.667036481159167  rtol = 1E-6
     @test Clapeyron.a_assoc(model_no_comb_sparse,V,T,z) ≈ Clapeyron.a_assoc(model_no_comb_dense,V,T,z)  rtol = 1E-6
-    @test Clapeyron.a_assoc(model_elliott_comb,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_cr1,V,T,z) ≈ -5.323469194263458  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_esd,V,T,z) ≈ -5.323420343872591  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_esd_r,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
 end
 
 @testset "tpd" begin
@@ -209,6 +215,14 @@ end
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure(y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
+        #test multidimensional fugacity solver
+        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.FugBubblePressure(itmax_newton = 1))[1]  ≈ pres1 rtol = 1E-6
+        GC.gc()
+
+        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ActivityBubblePressure())[1] ≈ pres1 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ActivityBubblePressure(y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ActivityBubblePressure(p0 = 5e4))[1] ≈ pres1 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system1,T,z,Clapeyron.ActivityBubblePressure(p0 = 5e4,y0 = [0.6,0.4]))[1] ≈ pres1 rtol = 1E-6
         GC.gc()
 
     end
@@ -221,10 +235,11 @@ end
         @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.ChemPotBubbleTemperature(T0 = 450,y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
         GC.gc()
 
-        @test_broken Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature())[1] ≈ Tres1 rtol = 1E-6
-        @test_broken Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature())[1] ≈ Tres1 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
         @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(T0 = 450))[1] ≈ Tres1 rtol = 1E-6
         @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(T0 = 450,y0 = [0.75,0.25]))[1] ≈ Tres1 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system1,p2,z,Clapeyron.FugBubbleTemperature(itmax_newton = 1))[1] ≈ Tres1 rtol = 1E-6
         GC.gc()
 
     end
@@ -241,6 +256,14 @@ end
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure(x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure(p0 = 1.5e6))[1] ≈ pres2 rtol = 1E-6
         @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure(p0 = 1.5e6,x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-6
+        #for some reason, it requires 2 newton iterations.
+        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.FugDewPressure(itmax_newton = 2))[1] ≈ pres2 rtol = 1E-6
+        GC.gc()
+        #not exactly the same results, as activity coefficients are ultimately an aproximation of the real helmholtz function.
+        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure())[1] ≈ pres2 rtol = 1E-3
+        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure(x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-3
+        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure(p0 = 1.5e6))[1] ≈ pres2 rtol = 1E-3
+        @test Clapeyron.dew_pressure(system1,T2,z,Clapeyron.ActivityDewPressure(p0 = 1.5e6,x0 = [0.1,0.9]))[1] ≈ pres2 rtol = 1E-3
         GC.gc()
 
     end
@@ -252,10 +275,11 @@ end
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.ChemPotDewTemperature(T0 = 450,x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
         GC.gc()
 
-        @test_broken Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature())[1] ≈ Tres2 rtol = 1E-6
-        @test_broken Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature())[1] ≈ Tres2 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(T0 = 450))[1] ≈ Tres2 rtol = 1E-6
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(T0 = 450,x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(itmax_newton = 1))[1] ≈ Tres2 rtol = 1E-6
         GC.gc()
 
     end

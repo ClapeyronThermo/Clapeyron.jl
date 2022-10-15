@@ -1,4 +1,4 @@
-function  Δ(model::Union{SAFTModel,CPAModel}, V, T, z)
+function Δ(model::Union{SAFTModel,CPAModel}, V, T, z)
     κ = model.params.bondvol.values
     Δres = zero_assoc(κ,typeof(V+T+first(z)))
     for (idx,(i,j),(a,b)) in indices(Δres)
@@ -7,7 +7,7 @@ function  Δ(model::Union{SAFTModel,CPAModel}, V, T, z)
     return Δres
 end
 
-function  Δ(model::Union{SAFTModel,CPAModel}, V, T, z,data)
+function Δ(model::Union{SAFTModel,CPAModel}, V, T, z,data)
     κ = model.params.bondvol.values
     Δres = zero_assoc(κ,typeof(V+T+first(z)))
     for (idx,(i,j),(a,b)) in indices(Δres)
@@ -49,7 +49,7 @@ function nonzero_extrema(K)
     for k in K
         _max = max(k,_max)
         if iszero(_min)
-            _min = k 
+            _min = k
         else
             if !iszero(k)
             _min = min(_min,k)
@@ -77,21 +77,21 @@ function dense_assoc_site_matrix(model,V,T,z,data=nothing)
     _sites = model.sites.n_sites
     p = _sites.p
     ρ = N_A/V
-   
+
     _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
     _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
     _idx = 1:length(_ii)
     _Δ= delta.values
     TT = eltype(_Δ)
-    
+
     _n = model.sites.n_sites.v
-    
+
     nn = length(_n)
     K  = zeros(TT,nn,nn)
     count = 0
     combining = model.assoc_options.combining ∈ (:elliott_runtime,:esd_runtime)
 
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps 
+    @inbounds for i ∈ 1:length(z) #for i ∈ comps
         sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
         for a ∈ sitesᵢ #for a ∈ sites(comps(i))
             ia = compute_index(p,i,a)
@@ -109,15 +109,15 @@ function dense_assoc_site_matrix(model,V,T,z,data=nothing)
             end
         end
     end
-    
+
     if combining
         @inbounds for ia ∈ 1:nn
             i,a = inverse_index(p,ia)
             nia = _n[ia]
             for jb ∈ 1:ia
-                if iszero(K[ia,jb])               
+                if iszero(K[ia,jb])
                     j,b = inverse_index(p,jb)
-                    njb = _n[jb]               
+                    njb = _n[jb]
                     Δijab = sqrt(delta[i,i][a,b] * delta[j,j][a,b]) #elliott rule
                     if !iszero(Δijab)
                         K[ia,jb]  = ρ*njb*z[j]*Δijab
@@ -146,7 +146,7 @@ function sparse_assoc_site_matrix(model,V,T,z,data=nothing)
     _Δ= delta.values
     TT = eltype(_Δ)
     count = 0
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps 
+    @inbounds for i ∈ 1:length(z) #for i ∈ comps
         sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
         for a ∈ sitesᵢ #for a ∈ sites(comps(i))
             #ia = compute_index(pack_indices,i,a)
@@ -162,7 +162,7 @@ function sparse_assoc_site_matrix(model,V,T,z,data=nothing)
     val = zeros(TT,count)
     _n = model.sites.n_sites.v
     count = 0
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps 
+    @inbounds for i ∈ 1:length(z) #for i ∈ comps
         sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
         for a ∈ sitesᵢ #for a ∈ sites(comps(i))
             ia = compute_index(p,i,a)
@@ -194,7 +194,7 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     nn = length(bv.values)
     isone(nn) && return X_exact1(model,V,T,z,data)
     _1 = one(V+T+first(z))
-    TT = typeof(_1)    
+    TT = typeof(_1)
     options = model.assoc_options
     atol = options.atol
     rtol = options.rtol
@@ -212,16 +212,16 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
     else
         f = _1-Kmin
     end
-    
+
     idxs = model.sites.n_sites.p
     n = length(model.sites.n_sites.v)
     X0 = fill(f,n)
 
     function fX(out,in)
-        mul!(out,K,in) 
+        mul!(out,K,in)
         for i in 1:length(out)
             Kx = out[i]
-            out[i] = _1/(_1+Kx) 
+            out[i] = _1/(_1+Kx)
         end
         return out
     end
@@ -231,11 +231,11 @@ function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
 end
 
 #exact calculation of site non-bonded fraction when there is only one site
-function X_exact1(model,V,T,z,data=nothing)  
+function X_exact1(model,V,T,z,data=nothing)
     κ = model.params.bondvol.values
     i,j = κ.outer_indices[1]
     a,b = κ.inner_indices[1]
-    
+
     if data === nothing
         _Δ = @f(Δ,i,j,a,b)
     else
@@ -282,7 +282,7 @@ function _a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
     resᵢₐ = _0
     for i ∈ @comps
         ni = n[i]
-        iszero(length(ni)) && continue        
+        iszero(length(ni)) && continue
         Xᵢ = X_[i]
         resᵢₐ = _0
         for (a,nᵢₐ) ∈ pairs(ni)
@@ -290,7 +290,7 @@ function _a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
             nᵢₐ = ni[a]
             resᵢₐ +=  nᵢₐ* (log(Xᵢₐ) - Xᵢₐ/2 + 0.5)
         end
-        res += resᵢₐ*z[i] 
+        res += resᵢₐ*z[i]
     end
     return res/sum(z)
 end
@@ -305,7 +305,7 @@ function AX!(output,input,pack_indices,delta::Compressed4DMatrix{TT,VV} ,modelsi
     #n = modelsites
     _n::Vector{Int} = modelsites.v
     #pv.p[i]:pv.p[i+1]-1)
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps 
+    @inbounds for i ∈ 1:length(z) #for i ∈ comps
         sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
         for a ∈ sitesᵢ #for a ∈ sites(comps(i))
             ∑X = _0
@@ -348,7 +348,7 @@ Xia*(1+kia*Xia+kjb) = 1+kia*Xia #x = Xia
 x*(1+kia*x+kjb) = 1+kia*x
 x + kia*x*x + kjb*x - 1 - kia*x = 0
 kia*x*x + x(kjb-kia+1) - 1 = 0
-x = - (kjb-kia+1) + 
+x = - (kjb-kia+1) +
 
 x = 1/1+kiax
 x(1+kx) - 1 = 0
