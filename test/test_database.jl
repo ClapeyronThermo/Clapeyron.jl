@@ -1,4 +1,4 @@
-using Clapeyron, Test
+using Clapeyron, Test, LinearAlgebra
 
 @testset "database_lookup" begin
     params1 = Clapeyron.getparams(["water", "methanol"], ["SAFT/PCSAFT"],return_sites=false)
@@ -130,6 +130,7 @@ using Clapeyron, Test
     for i ∈ 1:5
         for j ∈ 1:5
             valij = assoc_param_values[i,j]
+            valji = assoc_param_values[j,i]
             s1,s2 = size(valij)
             testij = params["assocparam"].values[i,j]
             if iszero(s1*s2)
@@ -137,7 +138,16 @@ using Clapeyron, Test
             else
                 for a ∈ 1:s1
                     for b ∈ 1:s2
-                        @test valij[a,b] == testij[a,b]
+                        #this is to account for the symmetric nature of the CompressedAssoc4DMatrix
+                        #where as the original input matrix is asymmetric
+                        val_ij_ab = valij[a,b]
+                        val_ji_ba = valji[b,a]
+                        if !iszero(val_ij_ab)
+                            val = val_ij_ab
+                        else
+                            val = val_ji_ba
+                        end
+                        @test testij[a,b] == val
                     end
                 end
             end
@@ -238,7 +248,6 @@ using Clapeyron, Test
 
     param_gc = getparams(components_gc; userlocations=filepath_param_gc)
     @test param_gc["param1"].values == [1, 2, 3, 4]
-
 
     file = ParamTable(:single,(species = ["sp1"],userparam = [2]))
     param_user = getparams(testspecies,userlocations = [file],ignore_missing_singleparams=["userparam"])

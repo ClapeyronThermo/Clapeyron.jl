@@ -65,14 +65,14 @@ function second_virial_coefficient_impl(model::AbbottVirial,T,z=SA[1.0])
         B1 = 0.139 + 0.179*τ^4.2
         B +=  zi*zi*(B0+ ωi*B1)*R̄*Tci/Pci
         for j in 1:i-1
-            Tcj = Tc[i]
-            Pcj = Pc[i]
+            Tcj = Tc[j]
+            Pcj = Pc[j]
             ωj = ω[j]
             #mixing, todo: implement mixing at the EoS level, like cubics
             Tcij = sqrt(Tci*Tcj)
             Pcij = 0.5*(Pci+Pcj)
             ωij =  0.5*(ωi+ωj)
-            zi = z[i]
+            zj = z[j]
             τ = Tci/T
             B0 = 0.083 - 0.422*τ^1.6
             B1 = 0.139 + 0.179*τ^4.2

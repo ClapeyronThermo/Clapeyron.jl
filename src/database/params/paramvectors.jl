@@ -82,6 +82,9 @@ function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
     j,i = minmax(i,j)
     @inbounds begin
     idx = searchsorted(m.outer_indices,(i,j))
+    if iszero(idx)
+        idx = searchsorted(m.outer_indices,(j,i))
+    end
     return AssocView(view(m.values,idx),view(m.inner_indices,idx),m.inner_size)
     end
 end

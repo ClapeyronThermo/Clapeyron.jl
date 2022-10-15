@@ -19,4 +19,16 @@ function dnorm(x,y,p)
     return norm((xi-yi for (xi, yi) in zip(x, y)), p)
 end
 
+#this is never used in a critical path, so we just use a default copying method
+if VERSION >= v"1.7"
+    keepat!(a,inds) = Base.keepat!(a,inds)
+else
+    function keepat!(a,inds)
+        b = a[inds]
+        resize!(a,length(b))
+        a .= b
+        return a
+    end
+end
+
 include("core_utils.jl")
