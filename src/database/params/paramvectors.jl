@@ -79,7 +79,7 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
 end
 
 function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
-    i,j = minmax(i,j)
+    j,i = minmax(i,j)
     @inbounds begin
     idx = searchsorted(m.outer_indices,(i,j))
     return AssocView(view(m.values,idx),view(m.inner_indices,idx),m.inner_size)

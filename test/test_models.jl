@@ -242,7 +242,7 @@ end
            system = EPPR78(["benzene","isooctane"])
            @test Clapeyron.a_res(system, V, T, z) ≈ -1.138852387092216 rtol = 1e-6
         end
-        
+
         @testset "PR w/ BMAlpha" begin
             system = PR(["ethane","undecane"];alpha = BMAlpha)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.244507550417118 rtol = 1e-6
@@ -257,7 +257,7 @@ end
             system = PR(["ethane","undecane"];alpha = MTAlpha)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2542333213442207 rtol = 1e-6
         end
-        
+
         @testset "PR w/ RackettTranslation" begin
             system = PR(["ethane","undecane"];translation = RackettTranslation)
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2453840474643165 rtol = 1e-6
@@ -435,7 +435,7 @@ end
         #LNG paper, table 16
         T = 150.0
         V = 1/(18002.169)
-        z   = [0.6,0.4] 
+        z   = [0.6,0.4]
         system = EOS_LNG(["methane","butane"])
         @test Clapeyron.eos(system,V,T,z) ≈ -6020.0044 rtol = 5e-6
     end

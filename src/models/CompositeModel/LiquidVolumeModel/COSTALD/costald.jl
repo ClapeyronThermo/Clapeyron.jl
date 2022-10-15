@@ -29,7 +29,7 @@ function volume_impl(model::COSTALDModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
     Vc13 = zero(eltype(z))
     ω = zero(eltype(z))  
     Tc = zero(eltype(z))
-
+    checkbounds(Tci,length(z))
     for i ∈ @comps
         zi = z[i]
         ω += zi*ωi[i]

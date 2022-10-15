@@ -507,4 +507,27 @@ end
         @test p0 ≈ 245338.15099198322 rtol = 1e-6
         @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
     end
+
+    @testset "LeeKeslerSat" begin
+        system = LeeKeslerSat(["water"])
+        p0 = saturation_pressure(system,400.01)[1]
+        @test p0 ≈ 231731.79240876858 rtol = 1e-6
+        @test saturation_temperature(system,p0)[1] ≈ 400.01 rtol = 1e-6
+    end
+
+    @testset "COSTALD" begin
+        system = COSTALD(["water"])
+        @test volume(system,1e5,300.15) ≈ 1.8553472145724288e-5 rtol = 1e-6
+        system2 = COSTALD(["water","methanol"])
+        @test volume(system,1e5,300.15,[0.5,0.5]) ≈ 2.834714146558056e-5 rtol = 1e-6
+        @test volume(system,1e5,300.15,[1.,0.]) ≈ 1.8553472145724288e-5 rtol = 1e-6
+    end
+
+    @testset "RackettLiquid" begin
+        system = RackettLiquid(["water"])
+        @test volume(system,1e5,300.15) ≈ 1.6837207241594103e-5 rtol = 1e-6
+        system2 = RackettLiquid(["water","methanol"])
+        @test volume(system,1e5,300.15,[0.5,0.5]) ≈ 3.2516352601748416e-5 rtol = 1e-6
+        @test volume(system,1e5,300.15,[1.,0.]) ≈ 1.6837207241594103e-5 rtol = 1e-6
+    end
 end

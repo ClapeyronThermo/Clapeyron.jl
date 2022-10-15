@@ -208,7 +208,7 @@ using Clapeyron, Test
     floatbool[1,2] = 1000
     @test floatbool[2,1] == 1000
     floatbool[1,2,false] = 4000
-    @test floatbool[2,1] == 1000 
+    @test floatbool[2,1] == 1000
     floatbool[1] = 1.2
     @test floatbool[1,1] == 1.2
 
@@ -239,11 +239,10 @@ using Clapeyron, Test
     param_gc = getparams(components_gc; userlocations=filepath_param_gc)
     @test param_gc["param1"].values == [1, 2, 3, 4]
 
-    #test broken at the moment
-    #= 
+
     file = ParamTable(:single,(species = ["sp1"],userparam = [2]))
     param_user = getparams(testspecies,userlocations = [file],ignore_missing_singleparams=["userparam"])
     @test param_user["userparam"].values[1] === 2
-    =#
+
 end
 
