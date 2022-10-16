@@ -128,19 +128,19 @@ end
         0.181195  0.158091  0.656644    0.00406898] rtol = 1e-6
         GC.gc()
 
-        method_nonvolatiles = MichelsenTPFlash(x0=x0, y0=y0, second_order=true, nonvolatiles = ["decane"])       
+        method_nonvolatiles = MichelsenTPFlash(x0=x0, y0=y0, ss_iters = 1, second_order=true, nonvolatiles = ["decane"])       
         @test Clapeyron.tp_flash(system, p, T, z, method_nonvolatiles)[1] ≈  
         [0.291667  0.305432  0.00223826  0.400663
         0.180861  0.15802   0.661119    0.0] rtol = 1e-6
         GC.gc()
 
-        method_noncondensables = MichelsenTPFlash(x0=x0, y0=y0, second_order=false, noncondensables = ["methane"])       
+        method_noncondensables = MichelsenTPFlash(x0=x0, y0=y0,ss_iters = 1, second_order=false, noncondensables = ["methane"])       
         @test Clapeyron.tp_flash(system, p, T, z, method_noncondensables)[1] ≈  
         [0.292185  0.306475  0.0      0.40134
         0.181452  0.158233  0.65623  0.00408481] rtol = 1e-6
         GC.gc()
 
-        method_both = MichelsenTPFlash(x0=x0, y0=y0, second_order=false, noncondensables = ["methane"],nonvolatiles = ["decane"])       
+        method_both = MichelsenTPFlash(x0=x0, y0=y0, ss_iters = 1,second_order=false, noncondensables = ["methane"],nonvolatiles = ["decane"])       
         @test Clapeyron.tp_flash(system, p, T, z, method_both)[1] ≈  
         [0.291928  0.3059    0.0       0.402171
         0.181116  0.158162  0.660722  0.0] rtol = 1e-6
