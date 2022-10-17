@@ -63,7 +63,6 @@ Clapeyron.tpd
 
 ```@docs
 Clapeyron.tp_flash
-Clapeyron.TPFlashMethod
 Clapeyron.DETPFlash
 Clapeyron.RRTPFlash
 Clapeyron.MichelsenTPFlash

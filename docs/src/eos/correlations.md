@@ -48,7 +48,7 @@ Virial models are defined in terms of the second virial coefficient, `B(T,z)`. t
 To implement a virial model, it is necessary to overload `Clapeyron.second_virial_coefficient_impl(model::<:SecondVirialModel,T,z)`.
 
 ```@docs
-AbbbottVirial
+AbbottVirial
 TsonopoulosVirial
 EoSVirial2
 ```

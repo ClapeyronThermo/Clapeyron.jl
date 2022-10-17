@@ -78,15 +78,6 @@ Clapeyron.fugacity_coefficient
 Clapeyron.mixing
 ```
 
-## Thermodynamic Method Dispatch types
-```@docs
-Clapeyron.ThermodynamicMethod
-Clapeyron.SaturationMethod
-Clapeyron.BubblePointMethod
-Clapeyron.DewPointMethod
-Clapeyron.TPFlashMethod
-```
-
 ## Initial guess functions
 
 ```@docs
@@ -104,6 +95,3 @@ Clapeyron.x0_saturation_temperature
 Clapeyron.antoine_coef
 Clapeyron.x0_crit_pure
 ```
-
-
-

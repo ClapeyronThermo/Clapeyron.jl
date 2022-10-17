@@ -39,3 +39,12 @@ Clapeyron.∂2p
 Clapeyron.f_hess
 Clapeyron.∂²³f
 ```
+
+## Thermodynamic Method Dispatch types
+```@docs
+Clapeyron.ThermodynamicMethod
+Clapeyron.SaturationMethod
+Clapeyron.BubblePointMethod
+Clapeyron.DewPointMethod
+Clapeyron.TPFlashMethod
+```

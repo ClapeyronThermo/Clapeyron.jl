@@ -32,5 +32,4 @@ Clapeyron.ChemPotDensitySaturation
 Clapeyron.IsoFugacitySaturation
 Clapeyron.ClapeyronSaturation
 Clapeyron.AntoineSaturation
-Clapeyron.SaturationCorrelation
 ```
