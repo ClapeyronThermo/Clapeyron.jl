@@ -405,7 +405,7 @@ function X_exact1(model,V,T,z,data=nothing)
     return _X
 end
 
-const site_fractions = X
+const assoc_fractions = X
 
 
 function a_assoc_impl(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
