@@ -41,5 +41,14 @@ They return `volume(model,p,T,z, phase = :liquid)`.
 
 # Virial Models
 
-Virial models are defined in terms of the second virial coefficient, `B(T,z)`. this allows for a fast calculation of `volume(model,p,T,z, phase = :gas)`. they cannot represent the liquid phase.
+Virial models are defined in terms of the second virial coefficient, `B(T,z)`. the reduced residual helmholtz energy is defined as:
 
+``\frac{A_\mathrm{res}}{Nk_\mathrm{B}T} = \frac{B}{V}``,
+
+To implement a virial model, it is necessary to overload `Clapeyron.second_virial_coefficient_impl(model::<:SecondVirialModel,T,z)`.
+
+```@docs
+AbbbottVirial
+TsonopoulosVirial
+EoSVirial2
+```

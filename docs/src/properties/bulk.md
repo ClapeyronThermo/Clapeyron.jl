@@ -5,39 +5,13 @@ CurrentModule = Clapeyron
 ## Contents
 
 ```@contents
-Pages = ["properties.md"]
+Pages = ["bulk.md"]
 ```
 
 ## Index
 
 ```@index
-Pages = ["properties.md"]
-```
-
-## Primitive functions
-
-Almost all models in Clapeyron have at least one of the following functions defined.
-
-```@docs
-Clapeyron.eos
-Clapeyron.eos_res
-Clapeyron.idealmodel
-Clapeyron.a_res
-```
-
-## Automatic Differenciation functions
-
-All bulk properties in `Clapeyron` are calculated via a combination of these Automatic Differenciation Primitives over [`eos`](@ref) or [`eos_res`](@ref)
- 
-```@docs
-Clapeyron.∂f∂T
-Clapeyron.∂f∂V
-Clapeyron.∂f
-Clapeyron.p∂p∂V
-Clapeyron.∂2f
-Clapeyron.∂2p
-Clapeyron.f_hess
-Clapeyron.∂²³f
+Pages = ["bulk.md"]
 ```
 
 ## Volume-Temperature Based Properties
@@ -103,6 +77,7 @@ Clapeyron.fugacity_coefficient
 ```@docs
 Clapeyron.mixing
 ```
+
 ## Thermodynamic Method Dispatch types
 ```@docs
 Clapeyron.ThermodynamicMethod
@@ -110,83 +85,6 @@ Clapeyron.SaturationMethod
 Clapeyron.BubblePointMethod
 Clapeyron.DewPointMethod
 Clapeyron.TPFlashMethod
-```
-
-## Single component properties
-
-```@docs
-Clapeyron.saturation_pressure
-Clapeyron.saturation_temperature
-Clapeyron.enthalpy_vap
-Clapeyron.crit_pure
-Clapeyron.acentric_factor
-```
-
-### Saturation methods
-
-```@docs
-Clapeyron.ChemPotVSaturation
-Clapeyron.ChemPotDensitySaturation
-Clapeyron.IsoFugacitySaturation
-Clapeyron.ClapeyronSaturation
-Clapeyron.AntoineSaturation
-Clapeyron.SaturationCorrelation
-```
-
-## Multi component properties
-
-```@docs
-Clapeyron.bubble_pressure
-Clapeyron.bubble_temperature
-Clapeyron.dew_pressure
-Clapeyron.dew_temperature
-Clapeyron.azeotrope_pressure
-Clapeyron.azeotrope_temperature
-Clapeyron.LLE_pressure
-Clapeyron.LLE_temperature
-Clapeyron.VLLE_pressure
-Clapeyron.VLLE_temperature
-Clapeyron.crit_mix
-Clapeyron.UCEP_mix
-Clapeyron.UCST_mix
-Clapeyron.gibbs_solvation
-```
-
-### Bubble/Dew methods
-```@docs
-Clapeyron.ChemPotBubblePressure
-Clapeyron.FugBubblePressure
-Clapeyron.ActivityBubblePressure
-Clapeyron.ChemPotBubbleTemperature
-Clapeyron.FugBubbleTemperature
-Clapeyron.ActivityBubbleTemperature
-Clapeyron.ChemPotDewPressure
-Clapeyron.FugDewPressure
-Clapeyron.ActivityDewPressure
-Clapeyron.ChemPotDewTemperature
-Clapeyron.FugDewTemperature
-Clapeyron.ActivityDewTemperature
-```
-
-## Consistency and Stability
-
-```@docs
-Clapeyron.gibbs_duhem
-Clapeyron.isstable
-Clapeyron.mechanical_stability
-Clapeyron.diffusive_stability
-Clapeyron.tpd
-```
-
-## TP Flash
-
-```@docs
-Clapeyron.tp_flash
-Clapeyron.TPFlashMethod
-Clapeyron.DETPFlash
-Clapeyron.RRTPFlash
-Clapeyron.MichelsenTPFlash
-Clapeyron.numphases
 ```
 
 ## Initial guess functions
