@@ -7,12 +7,13 @@ end
 
 @newmodel TsonopoulosVirial SecondVirialModel TsonopoulosVirialParam
 
-
 """
-    TsonopoulosVirial <: VirialModel
-    TsonopoulosVirial(components::Array{String,1}; 
-    userlocations::Array{String,1}=String[], 
-    verbose=false)
+    TsonopoulosVirial <: SecondVirialModel
+    TsonopoulosVirial(components;
+            idealmodel=BasicIdeal,
+            userlocations=String[],
+            ideal_userlocations=String[],
+            verbose=false)
 
 ## Input parameters
 
@@ -28,9 +29,28 @@ end
 - `acentricfactor`: Single Parameter (`Float64`) - Acentric Factor
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 
+## Input models
+- `idealmodel`: Ideal Model
+
 ## Description
 
-Virial model using Corresponding State Principles
+Virial model using Corresponding State Principles:
+```
+B = ∑xᵢxⱼBᵢⱼ
+Bᵢⱼ = BrᵢⱼRTcᵢⱼ/Pcᵢⱼ
+Brᵢⱼ = B₀ + ωᵢⱼB₁
+B₀ = 0.1445 - 0.330/Trᵢⱼ - 0.1385/Trᵢⱼ^2 - 0.0121/Trᵢⱼ^3 - 0.000607/Trᵢⱼ^8
+B₁ = 0.0637 + 0.331/Trᵢⱼ - 0.423/Trᵢⱼ^2 - 0.423/Trᵢⱼ^3 - 0.008/Trᵢⱼ^8
+Trᵢⱼ = T/Tcᵢⱼ
+Tcᵢⱼ = √TcᵢTcⱼ
+Pcᵢⱼ = (Pcᵢ + Pcⱼ)/2
+ωᵢⱼ = (ωᵢ + ωⱼ)/2
+```
+
+## References
+
+1. Tsonopoulos, C. (1974). An empirical correlation of second virial coefficients. AIChE Journal. American Institute of Chemical Engineers, 20(2), 263–272. [doi:10.1002/aic.690200209](https://doi.org/10.1002/aic.690200209)
+
 """
 TsonopoulosVirial
 
@@ -46,7 +66,7 @@ function TsonopoulosVirial(components;
     Pc = params["pc"]
     acentricfactor = params["w"]
     packagedparams = TsonopoulosVirialParam(Tc,Pc,acentricfactor,Mw)
-    references = String[]
+    references = String["10.1002/aic.690200209"]
     return TsonopoulosVirial(packagedparams, idealmodel; ideal_userlocations, references, verbose)
 end
 
