@@ -33,7 +33,8 @@ function assoc_extend(mat::Compressed4DMatrix,sites)
     end
     extended_outer_indices = [(c[1],c[2]) for c ∈ idx]
     extended_inner_indices = [(c[3],c[4]) for c ∈ idx]
-    return Compressed4DMatrix(extended_vals,extended_outer_indices,extended_inner_indices,mat.outer_size,mat.inner_size)
+    #unsafe constructor
+    return Compressed4DMatrix(extended_vals,extended_outer_indices,extended_inner_indices,true)
 end
 
 bondvol_mix(bondvol::AssocParam) = bondvol_mix(bondvol,nothing)

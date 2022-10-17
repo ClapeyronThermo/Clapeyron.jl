@@ -1,8 +1,72 @@
 """
     Compressed4DMatrix{T,V<:AbstractVector{T}}
 
-struct used internally to store association data.
+Struct used to hold association data. as its name says, it is a compressed 4D matrix containing all the non-zero combinations of component-site pairs.
+The component-site pairs `(i,j,a,b)` are sorted lexicographically. the `(i,j)` pairs are stored in the `outer_indices` field, whereas the `(a,b)` pairs are stored in the `inner_indices` field. 
 
+Let's see an associating model:
+```julia-repl
+julia> model = PCSAFT(["water","methanol","ethane"],assoc_options = AssocOptions(combining = :esd))
+PCSAFT{BasicIdeal} with 3 components:
+ "water"
+ "methanol"
+ "ethane"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+```
+
+We check out the `bondvol` parameter. note how ethane does not appear in the list:
+
+```julia-repl
+julia> model.params.bondvol
+AssocParam{Float64}["water", "methanol", "ethane"]) with 4 values:
+("water", "e") >=< ("water", "H"): 0.034868
+("methanol", "e") >=< ("water", "H"): 0.03495053755004983
+("methanol", "H") >=< ("water", "e"): 0.03495053755004983
+("methanol", "e") >=< ("methanol", "H"): 0.035176
+```
+
+The underlying structure used to store `AssocParam` values is a `Compressed4DMatrix`:
+```julia-repl
+julia> vals = model.params.bondvol.values
+Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}} with 4 entries:
+ (1, 1) >=< (1, 2): 0.034868
+ (2, 1) >=< (1, 2): 0.03495053755004983
+ (2, 2) >=< (1, 1): 0.03495053755004983
+ (2, 1) >=< (2, 2): 0.035176
+
+julia> vals.values
+4-element Vector{Float64}:
+ 0.034868
+ 0.03495053755004983
+ 0.03495053755004983
+ 0.035176
+
+julia> vals.outer_indices
+4-element Vector{Tuple{Int64, Int64}}:
+ (1, 1)
+ (2, 1)
+ (2, 1)
+ (2, 2)
+
+julia> vals.inner_indices
+4-element Vector{Tuple{Int64, Int64}}:
+ (1, 2)
+ (1, 2)
+ (2, 1)
+ (1, 2)
+```
+If we check the indices:
+```julia-repl
+julia> idxs = [(ij...,ab...) for (ij,ab) in zip(vals.outer_indices,vals.inner_indices)]
+4-element Vector{NTuple{4, Int64}}:
+ (1, 1, 1, 2)
+ (2, 1, 1, 2)
+ (2, 1, 2, 1)
+ (2, 2, 1, 2)
+
+julia> issorted(idxs)
+true
+```
 """
 struct Compressed4DMatrix{T,V<:AbstractVector{T}} 
     values::V
@@ -78,6 +142,67 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     return Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,outer_size,inner_size)
 end
 
+"""
+    Compressed4DMatrix(vals::AbstractVector,idxs::AbstractVector)
+
+builds a `Compressed4DMatrix`, using a list of values and a list of `(i,j,a,b)::NTuple{4,Int}` indices:
+
+## Example:
+```
+julia> ijab, vals = [(1,1,1,2)], [3.0]
+([(1, 1, 1, 2)], [3.0])
+
+julia> Clapeyron.Compressed4DMatrix(vals,ijab)
+Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}} with 1 entry:
+ (1, 1) >=< (1, 2): 3.0
+```
+"""
+function Compressed4DMatrix(vals::AbstractVector,idxs::AbstractVector)
+    if issorted(idxs)
+        new_vals = copy(vals)
+        new_idxs = copy(idxs)
+    else
+        sort_idxs = sortperm(idxs)
+        new_idxs = idxs[sort_idxs]
+        new_vals = vals[sort_idxs]
+    end
+    ij = map(x -> (x[1],x[2]),new_idxs)
+    ab = map(x -> (x[3],x[4]),new_idxs)
+    return Compressed4DMatrix(new_vals,ij,ab,true)
+end
+
+"""
+    Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
+
+Builds a `Compressed4DMatrix`, using a list of values, a list of `ij:Tuple{Int,Int}` outer indices and a list of `ab:Tuple{Int,Int}` inner indices.
+
+If `unsafe` is true, `ij` and `ab` will be considered sorted, and will build a `Compressed4DMatrix` directly, using the same reference to `vals`, `ij` and `ab`:
+## Example:
+```julia-repl
+julia> ij, ab, vals = [(1,1)], [(1,2)], [3.0]
+([(1, 1)], [(1, 2)], [3.0])
+
+julia> assoc1,assoc2 = Clapeyron.Compressed4DMatrix(vals,ij,ab),Clapeyron.Compressed4DMatrix(vals,ij,ab,true)
+(Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}[3.0], Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}[3.0])
+
+julia> assoc1.values[1] = 100; (vals,assoc1.values[1])
+([3.0], 100.0)
+
+julia> assoc2.values[1] = 100; (vals,assoc2.values[1])
+([100.0], 100.0)
+```
+"""
+function Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
+    if !unsafe
+        ijab = [(ij...,ab...) for (ij,ab) in zip(ij,ab)] 
+        return Compressed4DMatrix(vals,ijab)
+    end
+    _ij_size = maximum(maximum(i) for i ∈ ij)
+    _ab_size = maximum(maximum(i) for i ∈ ab)
+    ij_size = (_ij_size,_ij_size)
+    ab_size = (_ab_size,_ab_size)
+    return Compressed4DMatrix(vals,ij,ab,ij_size,ab_size)
+end
 function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
     j,i = minmax(i,j)
     @inbounds begin
@@ -122,28 +247,24 @@ function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
     end
 end
 
-function zero_assoc(m::Compressed4DMatrix,::Type{T} = Float64) where T <:Number
-    newvalues = zeros(T,length(m.values))
+"""
+    assoc_similar(mat::Compressed4DMatrix)
+    assoc_similar(mat::Compressed4DMatrix,::Type{𝕋}) where 𝕋 <:Number)
+
+returns a `Clapeyron.Compressed4DMatrix` of the same shape as the input, with the same element type as `𝕋`
+"""
+function assoc_similar(m::Compressed4DMatrix,::Type{𝕋}) where 𝕋 <:Number
+    newvalues = similar(m.values,𝕋)
     return Compressed4DMatrix(newvalues,m.outer_indices,m.inner_indices,m.outer_size,m.inner_size)
 end
 
-function zero_assoc(m::Matrix{<:Matrix},a::Type{T} = Float64) where T <:Number
-    return zero_assoc(Compressed4DMatrix(m),a)
-end
+assoc_similar(mat::Compressed4DMatrix{T}) where T = assoc_similar(mat,T)
 
-#=
-function zero_assoc(m::Compressed4DMatrix,x::T = 0.0) where T <:Number
-    newvalues = fill(x,length(m.values))
-    return Compressed4DMatrix(newvalues,m.outer_indices,m.inner_indices,m.outer_size,m.inner_size)
-end
-=#
 function indices(x::Compressed4DMatrix)
     xin = x.outer_indices
     l = 1:length(xin) 
     return zip(l,xin,x.inner_indices)
 end
-
-
 
 """
     SparsePackedMofV{T,V<:AbstractVector{T}} <:SparseArrays.AbstractSparseMatrixCSC{E,Int}

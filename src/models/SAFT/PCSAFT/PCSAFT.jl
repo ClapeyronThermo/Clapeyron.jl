@@ -261,12 +261,13 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     σ = model.params.sigma.values
-    Δres = zero_assoc(κ,typeof(V+T+first(z)))
-    for (idx,(i,j),(a,b)) in indices(Δres)
+    Δout = assoc_similar(κ,typeof(V+T+first(z)))
+    Δout.values .= false  #fill with zeros, maybe it is not necessary?
+    for (idx,(i,j),(a,b)) in indices(Δout)
         gij = @f(g_hs,i,j,_data)
-        Δres[idx] = gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
+        Δout[idx] = gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
     end
-    return Δres
+    return Δout
 end
 
 #Optimizations for Single Component PCSAFT

@@ -209,38 +209,28 @@ end
 
 function compile_assoc(name,components,raw::RawParam,site_strings,options)
     EMPTY_STR = ""
-    vals = raw.data
-    c_12,s_12 = standarize_comp_info(raw.component_info,components,site_strings)
+    _ijab = standarize_comp_info(raw.component_info,components,site_strings)
     unique_sitepairs = unique(raw.component_info)
-    m = length(raw.data)
     l = length(unique_sitepairs)
     unique_dict = Dict{NTuple{4,String},Int}(unique_sitepairs[i] => i for i in 1:l)
     sources_csv = fill(EMPTY_STR,l)
     sources = fill(EMPTY_STR,l)
-    c12 = similar(c_12,l)
-    s12 = similar(s_12,l)
+    ijab = similar(_ijab,l)
     inner_values = similar(raw.data,l)
     for (j,k) ∈ enumerate(raw.component_info)
         i = unique_dict[k]
         inner_values[i] = raw.data[j]
-        c12[i] = c_12[j]
-        s12[i] = s_12[j]
+        ijab[i] = _ijab[j]
         sources[i] = raw.sources[j]
         sources_csv[i] = raw.csv[j]
     end
-
-    sort_value = [(c[1],c[2],s[1],s[2]) for (c,s) ∈ zip(c12,s12)] #join components and sites vector
-    idxs = sortperm(sort_value) #CompressedAssoc4DMatrix requires lexicographically sorted component-site idxs
+    
+    idxs = sortperm(ijab) #CompressedAssoc4DMatrix requires lexicographically sorted component-site idxs
+    ijab = ijab[idxs]
     inner_values = inner_values[idxs]
-    s12 = s12[idxs]
-    c12 = c12[idxs]
     sources = sources[idxs]
     sources_csv = sources_csv[idxs]
-    ij = maximum(maximum(i) for i ∈ c_12)
-    ab = maximum(maximum(i) for i ∈ s_12)
-    size_ij = (ij,ij)
-    size_ab =  (ab,ab)
-    values = Compressed4DMatrix(inner_values,c12,s12,size_ij,size_ab)
+    values = Compressed4DMatrix(inner_values,ijab)
     unique!(sources)
     unique!(sources_csv)
     filter!(!isequal(EMPTY_STR),sources)
@@ -250,17 +240,13 @@ function compile_assoc(name,components,raw::RawParam,site_strings,options)
 end
 
 function compile_assoc(name,components,raw::CSVType,site_strings,options)
-    vals = Float64[]
-    c_12 = Vector{Tuple{Int,Int}}(undef,0)
-    s_12 = Vector{Tuple{Int,Int}}(undef,0)
-    values = Compressed4DMatrix(vals,c_12,s_12,(0,0),(0,0))
+    values = Compressed4DMatrix{Float64}()
     return AssocParam(name,components,values,site_strings,String[],String[])
 end
 
 #Sort site tape, so that components are sorted by the input.
 function standarize_comp_info(component_info,components,site_strings)
-    c_12 = Vector{Tuple{Int,Int}}(undef,length(component_info))
-    s_12 = Vector{Tuple{Int,Int}}(undef,length(component_info))
+    ijab = Vector{Tuple{Int,Int,Int,Int}}(undef,length(component_info))
     l = length(components)
     for (i,val) ∈ pairs(component_info)
         c1,c2,s1,s2 = val
@@ -270,25 +256,22 @@ function standarize_comp_info(component_info,components,site_strings)
         idx22 = findfirst(isequal(s2), site_strings[idx2])
         if idx1 > idx2
             newval = (c2,c1,s2,s1)
-            c_12[i] = (idx2,idx1)
-            s_12[i] = (idx22,idx21)
+            ijab[i] = (idx2,idx1,idx22,idx21)
         elseif idx1 < idx2
             newval = val
-            c_12[i] = (idx1,idx2)
-            s_12[i] = (idx21,idx22)
+            ijab[i] = (idx1,idx2,idx21,idx22)
         else
-            c_12[i] = (idx1,idx2)
             if idx21 > idx22
-                s_12[i] = (idx22,idx21)
+                ijab[i] = (idx1,idx2,idx22,idx21)
                 newval = (c1,c1,s2,s1)
             else
-                s_12[i] = (idx21,idx22)
+                ijab[i] = (idx1,idx2,idx21,idx22)
                 newval = val
             end
         end
-        component_info[i]= newval
+        component_info[i] = newval
     end
-    return c_12,s_12
+    return ijab
 end
 #=check valid params
 For single params, it checks that there aren't missing values (can be overrided)

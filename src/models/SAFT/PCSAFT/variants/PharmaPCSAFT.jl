@@ -184,11 +184,12 @@ function  Δ(model::pharmaPCSAFT, V, T, z,_data=@f(data))
     k = water08_k(model)
     k = model.water[]
     Δσ = Δσh20(T)   
-    Δres = zero_assoc(κ,typeof(V+T+first(z)))
-    for (idx,(i,j),(a,b)) in indices(Δres)
+    Δout = assoc_similar(κ,typeof(V+T+first(z)))
+    Δout.values .= false #fill with zeros, maybe it is not necessary?
+    for (idx,(i,j),(a,b)) in indices(Δout)
         gij = @f(g_hs,i,j,_data)
         σij = σ[i,j] + 0.5*((k==i) + (k==j))*Δσ
-        Δres[idx] = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
+        Δout[idx] = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
     end
-    return Δres
+    return Δout
 end

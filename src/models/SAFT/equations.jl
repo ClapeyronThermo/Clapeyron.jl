@@ -34,4 +34,9 @@ function antoine_coef(model::SAFTModel)
     return A,B,C
 end    
 
+## Association overloads required to support association
+
+@inline function assoc_similar(model::Union{SAFTModel,CPAModel},::Type{𝕋}) where 𝕋
+    assoc_similar(model.params.bondvol.values,𝕋)
+end
 

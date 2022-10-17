@@ -1,20 +1,126 @@
-function Δ(model::Union{SAFTModel,CPAModel}, V, T, z)
-    κ = model.params.bondvol.values
-    Δres = zero_assoc(κ,typeof(V+T+first(z)))
-    for (idx,(i,j),(a,b)) in indices(Δres)
-        Δres[idx] =@f(Δ,i,j,a,b)
-    end
-    return Δres
+function a_assoc(model::EoSModel, V, T, z,data=nothing)
+    _0 = zero(V+T+first(z))
+    nn = assoc_pair_length(model)
+    iszero(nn) && return _0
+    X_ = @f(X,data)
+    return @f(a_assoc_impl,X_)
 end
 
-function Δ(model::Union{SAFTModel,CPAModel}, V, T, z,data)
-    κ = model.params.bondvol.values
-    Δres = zero_assoc(κ,typeof(V+T+first(z)))
-    for (idx,(i,j),(a,b)) in indices(Δres)
-        Δres[idx] =@f(Δ,i,j,a,b,data)
-    end
-    return Δres
+"""
+    assoc_pair_length(model::EoSModel)
+
+Indicates the number of pair combinations between the different sites in an association model.
+
+## Example:
+
+```julia-repl
+julia> model = PCSAFT(["water"])
+PCSAFT{BasicIdeal} with 1 component:
+ "water"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> model.params.bondvol
+AssocParam{Float64}["water"]) with 1 value:
+("water", "e") >=< ("water", "H"): 0.034868
+
+julia> Clapeyron.assoc_pair_length(model)
+1
+```
+"""
+@inline function assoc_pair_length(model::EoSModel)
+    return length(model.params.bondvol.values.values)
 end
+
+"""
+    assoc_strength(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
+    Δ(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
+Calculates the asssociation strength between component `i` at site `a` and component `j` at site `b`. 
+
+Any precomputed values can be passed along by calling `Clapeyron.data`.
+
+## Example
+```julia-repl
+julia> model = PCSAFT(["water"])
+PCSAFT{BasicIdeal} with 1 component:
+ "water"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> model.params.bondvol.values
+Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}} with 1 entry:
+ (1, 1) >=< (1, 2): 0.034868
+
+julia> Clapeyron.assoc_strength(model,2.5e-5,298.15,[1.0],1,1,1,2) #you can also use Clapeyron.Δ
+1.293144062056963e-26
+
+#PCSAFT precomputed data: (d,ζ₀,ζ₁,ζ₂,ζ₃,m̄)
+julia> _data = Clapeyron.data(model,2.5e-5,298.15,[1.0])
+([2.991688553098391e-10], 1.3440137996322956e28, 4.020870699566213e18, 1.2029192845380957e9, 0.3598759853853927, 1.0656)
+
+julia> Clapeyron.Δ(model,2.5e-5,298.15,[1.0],1,1,1,2,_data)
+1.293144062056963e-26
+```
+"""
+function Δ end
+const assoc_strength = Δ
+
+"""
+    Δ(model::EoSModel, V, T, z)
+    Δ(model::EoSModel, V, T, z,data)
+    assoc_strength(model::EoSModel, V, T, z)
+    assoc_strength(model::EoSModel, V, T, z,data)
+
+Returns a list of all combinations of non-zero association strength, calculated at V,T,z conditions. returns a `Clapeyron.Compressed4DMatrix`.
+By default, it calls `assoc_similar(model,𝕋)` (where 𝕋 is the promoted type of all the arguments) and fills the list using `Δ(model,V,T,z,i,j,a,b,data)`
+
+## Example
+```julia-repl
+julia> model = PCSAFT(["water"])
+PCSAFT{BasicIdeal} with 1 component:
+ "water"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> model.params.bondvol
+AssocParam{Float64}["water"]) with 1 value:
+("water", "e") >=< ("water", "H"): 0.034868
+
+julia> Clapeyron.assoc_strength(model,2.5e-5,298.15,[1.0],1,1,1,2) #you can also use Clapeyron.Δ
+1.293144062056963e-26
+
+#PCSAFT precomputed data: (d,ζ₀,ζ₁,ζ₂,ζ₃,m̄)
+julia> _data = Clapeyron.data(model,2.5e-5,298.15,[1.0])
+([2.991688553098391e-10], 1.3440137996322956e28, 4.020870699566213e18, 1.2029192845380957e9, 0.3598759853853927, 1.0656)
+
+julia> Clapeyron.Δ(model,2.5e-5,298.15,[1.0],1,1,1,2,_data)
+1.293144062056963e-26
+```
+"""
+function Δ(model::EoSModel, V, T, z)
+    Δout = assoc_similar(model,typeof(V+T+first(z)))
+    for (idx,(i,j),(a,b)) in indices(Δout)
+        Δout[idx] =@f(Δ,i,j,a,b)
+    end
+    return Δout
+end
+
+"""
+    assoc_options(model::EoSModel)
+
+Returns association options used in the association solver.
+
+"""
+@inline function assoc_options(model::EoSModel)
+    return model.assoc_options
+end
+
+function Δ(model::EoSModel, V, T, z,data)
+    Δout = assoc_similar(model,typeof(V+T+first(z)))
+    Δout.values .= false
+    for (idx,(i,j),(a,b)) in indices(Δout)
+        Δout[idx] =@f(Δ,i,j,a,b,data)
+    end
+    return Δout
+end
+
 function issite(i::Int,a::Int,ij::Tuple{Int,Int},ab::Tuple{Int,Int})::Bool
     ia = (i,a)
     i1,i2 = ij
@@ -60,7 +166,9 @@ function nonzero_extrema(K)
 end
 
 function assoc_site_matrix(model,V,T,z,data = nothing)
-    if model.assoc_options.combining == :sparse_nocombining
+    options = assoc_options(model)
+    combining = options.combining
+    if combining == :sparse_nocombining
         K = sparse_assoc_site_matrix(model,V,T,z,data)
     else
         K = dense_assoc_site_matrix(model,V,T,z,data)
@@ -89,7 +197,9 @@ function dense_assoc_site_matrix(model,V,T,z,data=nothing)
     nn = length(_n)
     K  = zeros(TT,nn,nn)
     count = 0
-    combining = model.assoc_options.combining ∈ (:elliott_runtime,:esd_runtime)
+    options = assoc_options(model)
+    combining = options.combining
+    runtime_combining = combining ∈ (:elliott_runtime,:esd_runtime)
 
     @inbounds for i ∈ 1:length(z) #for i ∈ comps
         sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
@@ -110,7 +220,7 @@ function dense_assoc_site_matrix(model,V,T,z,data=nothing)
         end
     end
 
-    if combining
+    if runtime_combining
         @inbounds for ia ∈ 1:nn
             i,a = inverse_index(p,ia)
             nia = _n[ia]
@@ -188,46 +298,74 @@ end
 #Mx = a + b(x,x)
 #Axx + x - 1 = 0
 #x = 1 - Axx
+"""
+    assoc_fractions(model::EoSModel, V, T, z,data = nothing)
 
-function X(model::Union{SAFTModel,CPAModel}, V, T, z,data = nothing)
-    bv = model.params.bondvol.values
-    nn = length(bv.values)
+Returns the solution for the association site fractions. used internally by all models that require association.
+The result is of type `PackedVectorsOfVectors.PackedVectorOfVectors`, with `length = length(model)`, and `x[i][a]` representing the empty fraction of the site `a` at component `i` 
+## Example:
+
+```
+julia> model = PCSAFT(["water","methanol","ethane"],assoc_options = AssocOptions(combining = :esd))
+PCSAFT{BasicIdeal} with 3 components:
+ "water"
+ "methanol"
+ "ethane"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> x = Clapeyron.assoc_fractions(model,2.6e-5,300.15,[0.3,0.3,0.4]) #you can also use `Clapeyron.X`
+3-element pack(::Vector{Vector{Float64}}):
+ [0.041396427041509046, 0.041396427041509046]
+ [0.018874664357682362, 0.018874664357682362]
+ 0-element view(::Vector{Float64}, 5:4) with eltype Float64
+```
+"""
+function X(model::EoSModel, V, T, z,data = nothing)
+    nn = assoc_pair_length(model)
     isone(nn) && return X_exact1(model,V,T,z,data)
-    _1 = one(V+T+first(z))
-    TT = typeof(_1)
-    options = model.assoc_options
-    atol = options.atol
-    rtol = options.rtol
-    max_iters = options.max_iters
-    α = options.dampingfactor
-
-    if model.assoc_options.dense
+    options = assoc_options(model)
+    if options.dense
         K = dense_assoc_site_matrix(model,V,T,z,data)
     else sparse_assoc_site_matrix
         K = sparse_assoc_site_matrix(model,V,T,z,data)
     end
-    Kmin,Kmax = nonzero_extrema(K)
-    if Kmax > 1
-        f = _1/Kmin
-    else
-        f = _1-Kmin
-    end
-
     idxs = model.sites.n_sites.p
-    n = length(model.sites.n_sites.v)
-    X0 = fill(f,n)
+    Xsol = assoc_matrix_solve(K,options)
+    return PackedVofV(idxs,Xsol)
+end
 
+function assoc_matrix_solve(K,options::AssocOptions)
+    atol = options.atol
+    rtol = options.rtol
+    max_iters = options.max_iters
+    α = options.dampingfactor
+    return assoc_matrix_solve(K, α, atol ,rtol, max_iters)
+end
+
+#TODO: define implicit AD here
+function assoc_matrix_solve(K, α, atol ,rtol, max_iters)
+    n = LinearAlgebra.checksquare(K) #size
+    #initialization procedure:
+    Kmin,Kmax = nonzero_extrema(K) #look for 0 < Amin < Amax
+    if Kmax > 1
+        f = true/Kmin
+    else
+        f = true-Kmin
+    end
+    X0 = fill(f,n) #initial point
+    
+    #function to solve
     function fX(out,in)
         mul!(out,K,in)
         for i in 1:length(out)
             Kx = out[i]
-            out[i] = _1/(_1+Kx)
+            out[i] = true/(true+Kx)
         end
         return out
     end
 
-    Xsol::Vector{TT} = Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(α),atol=atol,rtol = rtol,max_iters = max_iters)
-    return PackedVofV(idxs,Xsol)
+    #successive substitution until convergence
+    return Solvers.fixpoint(fX,X0,Solvers.SSFixPoint(α),atol=atol,rtol = rtol,max_iters = max_iters)
 end
 
 #exact calculation of site non-bonded fraction when there is only one site
@@ -267,15 +405,10 @@ function X_exact1(model,V,T,z,data=nothing)
     return _X
 end
 
-function a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,data=nothing)
-    _0 = zero(V+T+first(z))
-    nn = length(model.params.bondvol.values.values)
-    iszero(nn) && return _0
-    X_ = @f(X,data)
-    return @f(_a_assoc,X_)
-end
+const site_fractions = X
 
-function _a_assoc(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
+
+function a_assoc_impl(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
     _0 = zero(first(X_.v))
     n = model.sites.n_sites
     res = _0

@@ -90,7 +90,6 @@ end
 function Base.convert(::Type{AssocParam{Float64}},param::AssocParam{Int})
     assoc_values = param.values
     new_assoc_values = Float64.(assoc_values.values)
-    
     values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.outer_size,assoc_values.inner_size)
     return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
 end
