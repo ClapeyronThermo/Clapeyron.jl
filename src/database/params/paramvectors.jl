@@ -1,5 +1,7 @@
 """
     Compressed4DMatrix{T,V<:AbstractVector{T}}
+    Compressed4DMatrix(vals::AbstractVector,ijab::AbstractVector)
+    Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
 
 Struct used to hold association data. as its name says, it is a compressed 4D matrix containing all the non-zero combinations of component-site pairs.
 The component-site pairs `(i,j,a,b)` are sorted lexicographically. the `(i,j)` pairs are stored in the `outer_indices` field, whereas the `(a,b)` pairs are stored in the `inner_indices` field. 
@@ -66,6 +68,36 @@ julia> idxs = [(ij...,ab...) for (ij,ab) in zip(vals.outer_indices,vals.inner_in
 
 julia> issorted(idxs)
 true
+```
+
+You can build a `Compressed4DMatrix` in two ways:
+
+1. you can pass `values` and a list of `(i,j,a,b)::NTuple{4,Int}` indices:
+
+```julia-repl
+julia> ijab, vals = [(1,1,1,2)], [3.0]
+([(1, 1, 1, 2)], [3.0])
+
+julia> Clapeyron.Compressed4DMatrix(vals,ijab)
+Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}} with 1 entry:
+ (1, 1) >=< (1, 2): 3.0
+```
+
+2. Using a list of values, a list of `ij:Tuple{Int,Int}` outer indices and a list of `ab:Tuple{Int,Int}` inner indices. this last form accepts the optional argument `unsafe::Bool`.
+If `unsafe` is true, `ij` and `ab` will be considered sorted, and will build a `Compressed4DMatrix` directly, using the same reference to `vals`, `ij` and `ab`:
+
+```julia-repl
+julia> ij, ab, vals = [(1,1)], [(1,2)], [3.0]
+([(1, 1)], [(1, 2)], [3.0])
+
+julia> assoc1,assoc2 = Clapeyron.Compressed4DMatrix(vals,ij,ab),Clapeyron.Compressed4DMatrix(vals,ij,ab,true)
+(Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}[3.0], Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}[3.0])
+
+julia> assoc1.values[1] = 100; (vals,assoc1.values[1])
+([3.0], 100.0)
+
+julia> assoc2.values[1] = 100; (vals,assoc2.values[1])
+([100.0], 100.0)
 ```
 """
 struct Compressed4DMatrix{T,V<:AbstractVector{T}} 
@@ -142,21 +174,7 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     return Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,outer_size,inner_size)
 end
 
-"""
-    Compressed4DMatrix(vals::AbstractVector,idxs::AbstractVector)
 
-builds a `Compressed4DMatrix`, using a list of values and a list of `(i,j,a,b)::NTuple{4,Int}` indices:
-
-## Example:
-```
-julia> ijab, vals = [(1,1,1,2)], [3.0]
-([(1, 1, 1, 2)], [3.0])
-
-julia> Clapeyron.Compressed4DMatrix(vals,ijab)
-Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}} with 1 entry:
- (1, 1) >=< (1, 2): 3.0
-```
-"""
 function Compressed4DMatrix(vals::AbstractVector,idxs::AbstractVector)
     if issorted(idxs)
         new_vals = copy(vals)
@@ -171,27 +189,6 @@ function Compressed4DMatrix(vals::AbstractVector,idxs::AbstractVector)
     return Compressed4DMatrix(new_vals,ij,ab,true)
 end
 
-"""
-    Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
-
-Builds a `Compressed4DMatrix`, using a list of values, a list of `ij:Tuple{Int,Int}` outer indices and a list of `ab:Tuple{Int,Int}` inner indices.
-
-If `unsafe` is true, `ij` and `ab` will be considered sorted, and will build a `Compressed4DMatrix` directly, using the same reference to `vals`, `ij` and `ab`:
-## Example:
-```julia-repl
-julia> ij, ab, vals = [(1,1)], [(1,2)], [3.0]
-([(1, 1)], [(1, 2)], [3.0])
-
-julia> assoc1,assoc2 = Clapeyron.Compressed4DMatrix(vals,ij,ab),Clapeyron.Compressed4DMatrix(vals,ij,ab,true)
-(Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}[3.0], Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}[3.0])
-
-julia> assoc1.values[1] = 100; (vals,assoc1.values[1])
-([3.0], 100.0)
-
-julia> assoc2.values[1] = 100; (vals,assoc2.values[1])
-([100.0], 100.0)
-```
-"""
 function Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
     if !unsafe
         ijab = [(ij...,ab...) for (ij,ab) in zip(ij,ab)] 
