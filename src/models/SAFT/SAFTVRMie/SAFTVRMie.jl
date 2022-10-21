@@ -150,7 +150,7 @@ function d(model::SAFTVRMieModel, V, T, z)
     _λr = diagvalues(model.params.lambda_r)
     u = SAFTVRMieconsts.u
     w = SAFTVRMieconsts.w
-    _0 = zero(T)
+    _0 = zero(T*1.0)
     n = length(z)
     _d = zeros(typeof(_0),n)
     for k ∈ 1:n
@@ -742,7 +742,7 @@ function d(model::SAFTVRMieModel, V, T, z::SingleComp)
     θ = Cλ(model,V,T,z,λa,λr)*ϵ/T
     λrinv = 1/λr
     λaλr = λa/λr
-    di = zero(T)
+    di = zero(T*1.0)
     for j ∈ 1:5
         di += w[j]*(θ/(θ+u[j]))^λrinv*(exp(θ*(1/(θ/(θ+u[j]))^λaλr-1))/(u[j]+θ)/λr)
     end
