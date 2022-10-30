@@ -1,5 +1,11 @@
 const NumberOrString = Union{Union{T1,Missing},Union{T2,Missing}} where {T1 <: AbstractString, T2 <: Number}
+const DB_PATH = normpath(Base.pkgdir(Clapeyron),"database")
 
+const SHORT_PATHS = Dict{String,String}(
+    "DB" => DB_PATH
+)
+
+const SPECIAL_IDENTIFIERS = ["@REPLACE"]
 """
     getfileextension(filepath)
 
@@ -36,13 +42,44 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
 """
 function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vector{String}
     # We do not use realpath here directly because we want to make the .csv suffix optional.
-    filepath = relativetodatabase ? normpath(dirname(pathof(Clapeyron)), "..", "database", location) : location
+    if relativetodatabase 
+        new_loc = normpath("@DB",location)
+    else
+        new_loc = location
+    end
+    
+    return _getpaths(new_loc)    
+end
+
+function _getpaths(location,special_parse = true)
+    if special_parse && startswith(location,'@')
+        locs = splitpath(location)
+        first_identifier = locs[1]
+        if first_identifier ∈ SPECIAL_IDENTIFIERS #to filter for @REPLACE
+            popfirst!(locs)
+            paths = _getpaths(joinpath(locs))
+            return join.(first_identifier,paths)
+        end
+        if startswith(first_identifier,'@')
+            raw_first_identifier = chop(first_identifier,head = 1,tail = 0)
+            if haskey(SHORT_PATHS,raw_first_identifier)
+                locs[1] = SHORT_PATHS[raw_first_identifier]
+                return _getpaths(joinpath(locs))
+            else
+                return _getpaths(location,false)
+            end
+        end
+    end
+    filepath = location
     isfile(filepath) && return [realpath(filepath)]
     isfile(filepath * ".csv") && return [realpath(filepath * ".csv")]
+    #=
+    this should fail at the CSV reader stage
+
     if !isdir(filepath)
         relativetodatabase ? error("The path ", location, " does not exist in the Clapeyron database.") :
             error("The path ", location, " does not exist.")
-    end
+    end =# 
     files = joinpath.(filepath, readdir(filepath))
     return realpath.(files[isfile.(files) .& (getfileextension.(files) .== "csv")])
 end
@@ -204,11 +241,3 @@ function info_color(text)
     reset = colors[:normal]
     return red * text * reset
 end
-#=
-function csv_table(path)
-    mat,headers = DelimitedFiles.readdlm(path,',',header = true,skipstart = 2)
-    replace!(mat,"" => missing)
-    return Tables.table(mat,header = vec(headers))
-    return table
-end =#
-
