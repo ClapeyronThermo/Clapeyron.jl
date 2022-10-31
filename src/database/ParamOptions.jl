@@ -9,7 +9,6 @@ const DEFAULT_N_SITES = Dict{String,String}(
 
 """
     ParamOptions(;kwargs...)
-
 Struct containing all the options related to parameter parsing:
 * `userlocations::Vector{String} = String[]`: List of used-defined locations to search.
 * `usergrouplocations::Vector{String} = String[]`: List of used-defined group locations to search.
@@ -26,6 +25,8 @@ Struct containing all the options related to parameter parsing:
 * `component_delimiter::String = "~|~"`: When there are multiple component names to match, seperate them by this delimiter.
 """
 Base.@kwdef struct ParamOptions
+    userlocations::Vector{String} = String[]
+    usergrouplocations::Vector{String} = String[]
     asymmetricparams::Vector{String}= String[]
     ignore_missing_singleparams::Vector{String} = String[]
     ignore_headers::Vector{String} = ["dipprnumber", "smiles", "cas"]
@@ -40,6 +41,6 @@ Base.@kwdef struct ParamOptions
     component_delimiter::String = "~|~"
 end
 
-const DefaultParamOptions = ParamOptions()
+const DefaultOptions = ParamOptions()
 
-export ParamOptions, DefaultParamOptions
+export ParamOptions

@@ -1,81 +1,49 @@
+struct UNIFACParam <: EoSParam
+    A::PairParam{Float64}
+    B::PairParam{Float64}
+    C::PairParam{Float64}
+    R::SingleParam{Float64}
+    Q::SingleParam{Float64}
+end
+
 abstract type UNIFACModel <: ActivityModel end
 
-UNIFAC_SETUP = ModelOptions(
-        :UNIFAC;
-        supertype=UNIFACModel,
-        locations=["Activity/UNIFAC/UNIFAC_unlike.csv", "Activity/UNIFAC/UNIFAC_like.csv"],
-        grouplocations = ["Activity/UNIFAC/UNIFAC_groups.csv"],
-        inputparams=[
-            ParamField(:A, PairParam{Float64}),
-            ParamField(:B, PairParam{Float64}),
-            ParamField(:C, PairParam{Float64}),
-            ParamField(:R, SingleParam{Float64}),
-            ParamField(:Q, SingleParam{Float64}),
-        ],
-        params=[
-            ParamField(:A, PairParam{Float64}),
-            ParamField(:B, PairParam{Float64}),
-            ParamField(:C, PairParam{Float64}),
-            ParamField(:R, SingleParam{Float64}),
-            ParamField(:Q, SingleParam{Float64}),
-            # Above is groupwise params and bottom is componentwise params.
-            # Currently works only when #components == #groups.
-            ParamField(:r, SingleParam{Float64}),
-            ParamField(:q, SingleParam{Float64}),
-            ParamField(:q_p, SingleParam{Float64}),
-            ParamField(:m, SingleParam{Float64}),
-        ],
-        mappings=[
-            ModelMapping([:_groups, :R], :r, group_sum),
-            ModelMapping([:_groups, :Q], :q, group_sum),
-            ModelMapping([:_groups, :R], :q_p, (x -> x^(3/4)) ∘ group_sum),
-            ModelMapping([:_groups], :m, group_sum),
-        ],
-        has_groups = true,
-        param_options=ParamOptions(
-            asymmetricparams=["A", "B", "C"],
-            ignore_missing_singleparams=["A", "B", "C"],
-        ),
-        members=[
-            ModelMember(:puremodel, :PR; split=true),
-        ],
-        references=["10.1021/i260064a004"],
-    )
+struct UNIFAC{c<:EoSModel} <: UNIFACModel
+    components::Array{String,1}
+    icomponents::UnitRange{Int}
+    groups::GroupParam
+    params::UNIFACParam
+    puremodel::EoSVectorParam{c}
+    references::Array{String,1}
+    unifac_cache::UNIFACCache
+end
 
-createmodel(UNIFAC_SETUP; verbose=true)
+@registermodel UNIFAC
 const modUNIFAC = UNIFAC
 export UNIFAC
 
 """
     UNIFACModel <: ActivityModel
-
     UNIFAC(components::Vector{String};
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
     verbose = false)
-
 ## Input parameters
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
 - `A`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
 - `B`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
 - `C`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
-
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties
-
 ## Description
 UNIFAC (UNIQUAC Functional-group Activity Coefficients) activity model.
-
 Modified UNIFAC (Dortmund) implementation.
-
 The Combinatorial part corresponds to an GC-averaged modified [`UNIQUAC`](@ref) model. The residual part iterates over groups instead of components.
-
 ```
 Gᴱ = nRT(gᴱ(comb) + gᴱ(res))
 ```
-
 Combinatorial part:
 ```
 gᴱ(comb) = ∑[xᵢlog(Φ'ᵢ) + 5qᵢxᵢlog(θᵢ/Φᵢ)]
@@ -93,12 +61,34 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 Θₖ = QₖXₖ/∑QₖXₖ
 Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
 ```
-
 ## References
 1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. [doi:10.1021/i260064a004](https://doi.org/10.1021/i260064a004)
 2. Weidlich, U.; Gmehling, J. A modified UNIFAC model. 1. Prediction of VLE, hE, and.gamma..infin. Ind. Eng. Chem. Res. 1987, 26, 1372–1381.
 """
 UNIFAC
+
+function UNIFAC(components::Vector{String};
+    puremodel = PR,
+    userlocations = String[], 
+    pure_userlocations = String[],
+    verbose = false)
+    
+    groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; verbose=verbose)
+
+    params = getparams(groups, ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
+    A  = params["A"]
+    B  = params["B"]
+    C  = params["C"]
+    R  = params["R"]
+    Q  = params["Q"]
+    icomponents = 1:length(components)
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    packagedparams = UNIFACParam(A,B,C,R,Q)
+    references = String["10.1021/i260064a004"]
+    cache = UNIFACCache(groups,packagedparams)
+    model = UNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
+    return model
+end
 
 function activity_coefficient(model::UNIFACModel,V,T,z)
     return exp.(@f(lnγ_comb)+ @f(lnγ_res))
@@ -106,9 +96,9 @@ end
 
 function lnγ_comb(model::UNIFACModel,V,T,z)
     x = z ./ sum(z)
-    r = model.params.r.values
-    q = model.params.q.values
-    q_p = model.params.q_p.values
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+    q_p = model.unifac_cache.q_p
     Φ = r/dot(x,r)
     Φ_p = q_p/dot(x,q_p)
     θ = q/dot(x,q)
@@ -117,9 +107,12 @@ function lnγ_comb(model::UNIFACModel,V,T,z)
 end
 
 function lnγ_SG(model::UNIFACModel,V,T,z)
+
     x = z ./ sum(z)
-    r = model.params.r.values
-    q = model.params.q.values
+
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+
     Φ = r/dot(x,r)
     θ = q/dot(x,q)
     lnγ_SG = @. -5*q*(log(Φ/θ)+(1-Φ/θ))
@@ -131,13 +124,13 @@ function lnγ_res(model::UNIFACModel,V,T,z)
     _ψ = @f(Ψ)
     lnΓ_ = @f(lnΓ,_ψ)
     lnΓi_ = @f(lnΓi,_ψ)
-    lnγ_res_ = [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
+    lnγ_res_ =  [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
     return lnγ_res_
 end
 
 function lnΓ(model::UNIFACModel,V,T,z,ψ = @f(ψ))
     Q = model.params.Q.values
-    v = model.groups.n_flattenedgroups
+    v  = model.groups.n_flattenedgroups
     x = z ./ sum(z)
     X = sum(v[i][:]*x[i] for i ∈ @comps) ./ sum(sum(v[i][k]*x[i] for k ∈ @groups) for i ∈ @comps)
     θ = X.*Q / dot(X,Q)
@@ -147,7 +140,7 @@ end
 
 function lnΓi(model::UNIFACModel,V,T,z,ψ = @f(ψ))
     Q = model.params.Q.values
-    v = model.groups.n_flattenedgroups
+    v  = model.groups.n_flattenedgroups
     ψ = @f(Ψ)
     X = [v[i][:] ./ sum(v[i][k] for k ∈ @groups) for i ∈ @comps]
     θ = [X[i][:].*Q ./ sum(X[i][n]*Q[n] for n ∈ @groups) for i ∈ @comps]

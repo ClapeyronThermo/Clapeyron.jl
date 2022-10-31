@@ -1,17 +1,12 @@
 abstract type UMRRuleModel <: MixingRule end
 
-UMRRule_SETUP = ModelOptions(
-        :UMRRule;
-        supertype=UMRRuleModel,
-        has_params=false,
-        references=["10.1021/ie049580p"],
-        members=[
-            ModelMember(:activity, :UNIFAC),
-        ],
-    )
+struct UMRRule{γ} <: UMRRuleModel
+    components::Array{String,1}
+    activity::γ
+    references::Array{String,1}
+end
 
-createmodel(UMRRule_SETUP; verbose=true)
-export UMRRule
+@registermodel UMRRule
 
 """
     UMRRule{γ} <: UMRRuleModel
@@ -21,17 +16,11 @@ export UMRRule
     userlocations::Vector{String}=String[],
     activity_userlocations::Vector{String}=String[],
     verbose::Bool=false)
-
 ## Input Parameters
-
 None
-
 ## Input models 
-
 - `activity`: Activity Model
-
 ## Description
-
 Mixing Rule used by the Universal Mixing Rule Peng-Robinson [`UMRPR`](@ref) equation of state.
 ```
 aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
@@ -42,6 +31,14 @@ ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - [gᴱ/RT]/0.53)
 ```
 """
 UMRRule
+export UMRRule
+function UMRRule(components::Vector{String}; activity = UNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+    init_activity = activity(components;userlocations = activity_userlocations,verbose)   
+
+    references = ["10.1021/ie049580p"]
+    model = UMRRule(components, init_activity,references)
+    return model
+end
 
 function ab_premixing(::Type{<:PRModel},mixing::UMRRuleModel,Tc,pc,kij)
     Ωa, Ωb = ab_consts(PR)

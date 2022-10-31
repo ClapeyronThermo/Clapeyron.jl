@@ -2,7 +2,7 @@
     AssocParam{T}
 Struct holding association parameters.
 """
-struct AssocParam{T} <: ClapeyronDataParam
+struct AssocParam{T} <: ClapeyronParam
     name::String
     components::Array{String,1}
     values::Compressed4DMatrix{T,Vector{T}}

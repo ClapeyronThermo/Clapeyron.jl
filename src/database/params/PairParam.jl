@@ -1,13 +1,12 @@
-struct PairParameter{T,V<:AbstractMatrix{T}} <: ClapeyronDataParam
+struct PairParameter{T,V<:AbstractMatrix{T},D} <: ClapeyronParam
     name::String
     components::Array{String,1}
     values::V
-    symmetric::Bool
+    diagvalues::D
     ismissingvalues::Array{Bool,2}
     sourcecsvs::Array{String,1}
     sources::Array{String,1}
 end
-
 """
     PairParam{T}
 Struct designed to contain pair data. used a matrix as underlying data storage.
@@ -45,7 +44,7 @@ function alpha(model,x)
 end
 ```
 """
-const PairParam{T} = PairParameter{T,Matrix{T}} where T
+const PairParam{T} = PairParameter{T,Matrix{T},SubArray{T, 1, Vector{T}, Tuple{StepRange{Int64, Int64}}, true}} where T
 
 #indexing
 
@@ -95,26 +94,27 @@ Base.size(param::PairParameter) = size(param.values)
 PairParam(name,components,values,diagvals, missingvals,src,sourcecsv) = PairParameter(name,components,values,diagvals,missingvals,src,sourcecsv)
 
 #unsafe constructor
-function PairParam(name,components,values,symmetric = true)
+function PairParam(name,components,values)
     missingvals = fill(false,size(values))
+    diagvals = view(values, diagind(values))
     src = String[]
     sourcecsv = String[]
-    return PairParameter(name,components,values,symmetric,missingvals,src,sourcecsv)
+    return PairParam(name,components,values,diagvals, missingvals,src,sourcecsv)
 end
 
 function PairParam(name::String,
                     components::Array{String,1},
                     values::Array{T,2},
-                    symmetric = true,
                     ismissingvalues = fill(false,length(components),length(components)),
                     sourcecsvs::Array{String,1} = String[], 
                     sources::Array{String,1} = String[]) where T
     
     _values,_ismissingvalues = defaultmissing(values)
+    diagvalues = view(_values, diagind(_values))
     if !all(ismissingvalues)
         _ismissingvalues = ismissingvalues
     end
-    return PairParameter(name, components,_values, symmetric, _ismissingvalues, sourcecsvs, sources)
+    return PairParam(name, components,_values, diagvalues, _ismissingvalues, sourcecsvs, sources)
 end
 
 # If no value is provided, just initialise empty param.
@@ -125,18 +125,18 @@ function PairParam(
     )
     values = fill(0.0, length(components), length(components))
     missingvals = fill(false, size(values))
-    return PairParam(name, components, values, missingvals,true, String[], sources)
+    return PairParam(name, components, values, missingvals, String[], sources)
 end
 
 function PairParam(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources)
     if isdeepcopy
         values = deepcopy(x.values)
-        symmetric = x.symmetric
+        diagvalues = view(values, diagind(values))
         return PairParam(
             name,
             x.components,
             values,
-            symmetric,
+            diagvalues,
             deepcopy(x.ismissingvalues),
             x.sourcecsvs,
             sources
@@ -146,7 +146,7 @@ function PairParam(x::PairParam, name::String = x.name; isdeepcopy = true, sourc
         name,
         x.components,
         x.values,
-        x.symmetric,
+        x.diagvalues,
         x.ismissingvalues,
         x.sourcecsvs,
         sources
@@ -155,7 +155,7 @@ end
 
 PairParameter(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources) = PairParam(x, name; isdeepcopy, sources)
 
-function PairParam(x::SingleParam,name::String=x.name,symmetric = true)
+function PairParam(x::SingleParam,name::String=x.name)
     pairvalues = singletopair(x.values,missing)
     for i in 1:length(x.values)
         if x.ismissingvalues[i]
@@ -163,7 +163,8 @@ function PairParam(x::SingleParam,name::String=x.name,symmetric = true)
         end
     end
     _values,_ismissingvalues = defaultmissing(pairvalues)
-    return PairParam(name, x.components, _values,symmetric,_ismissingvalues,x.sourcecsvs, x.sources)
+    diagvalues = view(_values, diagind(_values))
+    return PairParam(name, x.components, _values,diagvalues,_ismissingvalues,x.sourcecsvs, x.sources)
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter) 
@@ -180,42 +181,43 @@ end
 #convert utilities
 function Base.convert(::Type{PairParam{Float64}},param::PairParam{Int})
     values = Float64.(param.values)
-    return PairParam(param.name,param.components,values,param.symmetric,param.ismissingvalues,param.sourcecsvs,param.sources)
+    diagvalues = view(values, diagind(values))
+    return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{PairParam{Bool}},param::PairParam{<:Union{Int,Float64}})
     @assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
-    return PairParam(param.name,param.components,values,param.symmetric,param.ismissingvalues,param.sourcecsvs,param.sources)
+    diagvalues = view(values, diagind(values))
+    return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{PairParam{Int}},param::PairParam{Float64})
     @assert all(z->isinteger(z),param.values)
     values = Int.(param.values)
-    return PairParam(param.name,param.components,values,param.symmetric,param.ismissingvalues,param.sourcecsvs,param.sources)
+    diagvalues = view(values, diagind(values))
+    return PairParam(param.name,param.components,values,diagvalues,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 function pack_vectors(param::PairParameter{<:AbstractVector})
     name,components,vals,missingvals,srccsv,src = param.name,param.components,param.values,param.ismissingvalues,param.sourcecsvs,param.sources
     vals = pack_vectors(vals)
-    return PairParam(name,components,vals,param.symmetric,missingvals,srccsv,src)
+    return PairParam(name,components,vals,nothing,missingvals,srccsv,src)
 end
 
 const PackedSparsePairParam{T} = Clapeyron.PairParameter{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}, SparsePackedMofV{SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, 
-true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}} where T
+true}, PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{T}, SubArray{T, 1, Vector{T}, Tuple{UnitRange{Int64}}, true}}}, Nothing} where T
 
 # Operations (seems that they are not needed)
 #=
 function Base.:(+)(param::PairParameter, x::Number)
     values = param.values .+ x
-    return PairParam(param.name, param.components, values, param.symmetric, param.ismissingvalues, param.sourcecsvs, param.sources)
+    return PairParam(param.name, param.components, values, param.ismissingvalues, param.sourcecsvs, param.sources)
 end
-
 function Base.:(*)(param::PairParameter, x::Number)
     values = param.values .* x
-    return PairParam(param.name, param.components, values, param.symmetric, param.ismissingvalues, param.sourcecsvs, param.sources)
+    return PairParam(param.name, param.components, values, param.diagvalues, param.ismissingvalues, param.sourcecsvs, param.sources)
 end
-
 function Base.:(^)(param::PairParameter, x::Number)
     values = param.values .^ x
     return PairParam(param.name, param.components, values, param.diagvalues, param.ismissingvalues, param.sourcecsvs, param.sources)

@@ -1,6 +1,5 @@
 """
     GroupParam
-
 Struct holding group parameters.contains:
 * `components`: a list of all components
 * `groups`: a list of groups names for each component
@@ -9,7 +8,6 @@ Struct holding group parameters.contains:
 * `flattenedgroups`: a list of all unique groups--the parameters correspond to this list
 * `n_flattenedgroups`: the group multiplicities corresponding to each group in `flattenedgroups`
 * `i_flattenedgroups`: an iterator that goes through the indices for each flattened group
-
 You can create a group param by passing a `Vector{Tuple{String, Vector{Pair{String, Int64}}}}.
 For example:
 ```julia-repl
@@ -17,13 +15,11 @@ julia> grouplist = [
            ("ethanol", ["CH3"=>1, "CH2"=>1, "OH"=>1]), 
            ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),
            ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])];
-
 julia> groups = GroupParam(grouplist)
 GroupParam with 3 components:
  "ethanol": "CH3" => 1, "CH2" => 1, "OH" => 1
  "nonadecanol": "CH3" => 1, "CH2" => 18, "OH" => 1    
  "ibuprofen": "CH3" => 3, "COOH" => 1, "aCCH" => 1, "aCCH2" => 1, "aCH" => 4
-
 julia> groups.flattenedgroups
 7-element Vector{String}:
  "CH3"
@@ -33,34 +29,28 @@ julia> groups.flattenedgroups
  "aCCH"
  "aCCH2"
  "aCH"
-
 julia> groups.i_groups
 3-element Vector{Vector{Int64}}:
  [1, 2, 3]
  [1, 2, 3]
  [1, 4, 5, 6, 7]
-
 julia> groups.n_groups
 3-element Vector{Vector{Int64}}:
  [1, 1, 1]
  [1, 18, 1]
  [3, 1, 1, 1, 4]
-
 julia> groups.n_flattenedgroups
  3-element Vector{Vector{Int64}}:
  [1, 1, 1, 0, 0, 0, 0]
  [1, 18, 1, 0, 0, 0, 0]
  [3, 0, 0, 1, 1, 1, 4]
 ```
-
 if you have CSV with group data, you can also pass those, to automatically query the missing groups in your input vector:
-
 ```julia-repl
 julia> grouplist = [
            "ethanol", 
            ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),
            ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])];
-
            julia> groups = GroupParam(grouplist, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"])
            GroupParam with 3 components:
             "ethanol": "CH2OH" => 1, "CH3" => 1
@@ -68,7 +58,6 @@ julia> grouplist = [
             "ibuprofen": "CH3" => 3, "COOH" => 1, "aCCH" => 1, "aCCH2" => 1, "aCH" => 4
 ```
 In this case, `SAFTGammaMie` files support the second order group `CH2OH`.
-
 """
 struct GroupParam <: ClapeyronParam
     components::Array{String,1}
@@ -144,14 +133,4 @@ function Base.show(io::IO, param::GroupParam)
         i != length(param.components) && print(io,", ")
     end
     print(io,"]")
-end
-
-struct GroupDefinition
-    component::String
-    groups::Vector{String}
-    multiplicities::Vector{Integer}
-end
-
-function GroupDefinition(component::String, groups_multiplicities::Vector{Pair{String,Integer}})
-    return Group(component, first.(groups_multiplicities), last.(groups_multiplicities))
 end

@@ -75,11 +75,9 @@ include("methods/methods.jl")
 
 #=
 the dependency chain is the following:
-
 base --> database(params)  -|-> split_model --> methods -|-> models                     
                             |-> macros ------------------|
 =#
-
 
 #Clapeyron EoS collection
 include("models/ideal/ideal.jl")
@@ -89,6 +87,10 @@ include("models/ideal/ReidIdeal.jl")
 include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
 
+#Basic utility EoS
+include("models/utility/SpecialComp.jl")
+include("models/utility/EoSVectorParam.jl")
+include("models/utility/ZeroResidual.jl")
 
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
@@ -168,4 +170,6 @@ include("models/PeTS/PeTS.jl")
 include("models/UFTheory/UFTheory.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
 include("utils/misc.jl")
+
+include("utils/estimation/estimation.jl")
 end # module

@@ -44,9 +44,14 @@ julia> saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)) #iso fug
 function saturation_pressure(model::EoSModel,T,method::SaturationMethod)
     single_component_check(saturation_pressure,model)
     T = T*(T/T)
-    return saturation_pressure_impl(model,T,method)
+    return saturation_pressure_impl(model,T,method)[1]
 end
 
+function saturation_liquid_density(model::EoSModel,T)
+    single_component_check(saturation_pressure,model)
+    T = T*(T/T)
+    return 1/saturation_pressure_impl(model,T,ChemPotVSaturation())[2]
+end
 """
     check_valid_sat_pure(model,P_sat,Vl,Vv,T,ε0 = 5e7)
 

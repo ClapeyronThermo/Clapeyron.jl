@@ -2,9 +2,7 @@ const NumberOrString = Union{Union{T1,Missing},Union{T2,Missing}} where {T1 <: A
 
 """
     getfileextension(filepath)
-
 A quick helper to get the file extension of any given path (without the dot).
-
 # Examples
 ```julia-repl
 julia> getfileextension("~/Desktop/text.txt")
@@ -19,11 +17,9 @@ end
 
 """
     getpaths(location; relativetodatabase=false)
-
 Returns database paths that is optionally relative to Clapeyron.jl directory.
 If path is a file, then return an Array containing a single path to that file.
 If path is a directory, then return an Array containing paths to all csv files in that directory.
-
 # Examples
 ```julia-repl
 julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
@@ -31,7 +27,6 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
  "/home/user/.julia/packages/Clapeyron.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_assoc.csv"
  "/home/user/.julia/packages/Clapeyron.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_like.csv"
  "/home/user/.julia/packages/Clapeyron.jl/xxxxx/database/SAFT/PCSAFT/data_PCSAFT_unlike.csv"
-
 ```
 """
 function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vector{String}
@@ -174,7 +169,6 @@ _iszero(t::AbstractString) = isempty(t)
 
 """
     singletopair(params::Vector,outputmissing=zero(T))
-
 Generates a square matrix, filled with "zeros" (considering the "zero" of a string, a empty string).
 The generated matrix will have the values of `params` in the diagonal.
 If missing is passed, the matrix will be filled with `missing`
@@ -211,4 +205,3 @@ function csv_table(path)
     return Tables.table(mat,header = vec(headers))
     return table
 end =#
-

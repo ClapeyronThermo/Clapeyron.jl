@@ -1,44 +1,19 @@
 abstract type PRModel <: ABCubicModel end
 
-PR_SETUP = ModelOptions(
-        :PR;
-        supertype=PRModel,
-        locations=["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"],
-        inputparams=[
-            ParamField(:k, PairParam{Float64}),
-            ParamField(:Tc, SingleParam{Float64}),
-            ParamField(:pc, SingleParam{Float64}),
-            ParamField(:Mw, SingleParam{Float64}),
-        ],
-        params=[
-            ParamField(:a, PairParam{Float64}),
-            ParamField(:b, PairParam{Float64}),
-            ParamField(:Tc, SingleParam{Float64}),
-            ParamField(:Pc, SingleParam{Float64}),
-            ParamField(:Mw, SingleParam{Float64}),
-        ],
-        mappings=[
-            ModelMapping([:pc], [:Pc], identity),
-            ModelMapping([:_model, :Tc, :pc, :k], [:a, :b], ab_premixing)
-        ],
-        members=[
-            ModelMember(:alpha, :PRAlpha;
-                typeconstraint=:AlphaModel
-            ),
-            ModelMember(:activity, :Nothing; nothing_allowed=true),
-            ModelMember(:mixing, :vdW1fRule),
-            ModelMember(:translation, :NoTranslation),
-            ModelMember(:idealmodel, :BasicIdeal;
-                groupcontribution_allowed=true,
-            ),
-        ],
-        references=["10.1021/I160057A011"],
-        inputparamstype=:ABCubicInputParam,
-        paramstype=:ABCubicParam,
-    )
+const PRParam = ABCubicParam
 
-createmodel(PR_SETUP; verbose=true)
-export PR
+struct PR{T <: IdealModel,α,c,γ} <:PRModel
+    components::Array{String,1}
+    icomponents::UnitRange{Int}
+    alpha::α
+    mixing::γ
+    translation::c
+    params::PRParam
+    idealmodel::T
+    references::Array{String,1}
+end
+
+@registermodel PR
 
 """
     PR(components::Vector{String}; idealmodel=BasicIdeal,
@@ -53,27 +28,23 @@ export PR
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
-
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `k`: Pair Parameter (`Float64`)
-
 ## Model Parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `a`: Pair Parameter (`Float64`)
 - `b`: Pair Parameter (`Float64`)
-
 ## Input models
 - `idealmodel`: Ideal Model
 - `alpha`: Alpha model
 - `mixing`: Mixing model
 - `activity`: Activity Model, used in the creation of the mixing model.
 - `translation`: Translation Model
-
 ## Description
 Peng-Robinson Equation of state.
 ```
@@ -81,7 +52,6 @@ P = RT/(V-Nb) + a•α(T)/(V-Nb₁)(V-Nb₂)
 b₁ = (1 + √2)b
 b₂ = (1 - √2)b
 ```
-
 ## References
 1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. [doi:10.1021/I160057A011](https://doi.org/10.1021/I160057A011)
 """

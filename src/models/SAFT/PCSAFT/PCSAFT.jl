@@ -1,56 +1,23 @@
+struct PCSAFTParam <: EoSParam
+    Mw::SingleParam{Float64}
+    segment::SingleParam{Float64}
+    sigma::PairParam{Float64}
+    epsilon::PairParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
+end
+
 abstract type PCSAFTModel <: SAFTModel end
-
-PCSAFT_SETUP = ModelOptions(
-        :PCSAFT;
-        supertype=PCSAFTModel,
-        locations=["SAFT/PCSAFT/","properties/molarmass.csv"],
-        inputparams=[
-              ParamField(:Mw, SingleParam{Float64}),
-              ParamField(:m, SingleParam{Float64}),
-              ParamField(:sigma, SingleParam{Float64}),
-              ParamField(:epsilon, SingleParam{Float64}),
-              ParamField(:k, PairParam{Float64}),
-              ParamField(:epsilon_assoc, AssocParam{Float64}),
-              ParamField(:bondvol, AssocParam{Float64}),
-        ],
-        params=[
-              ParamField(:Mw, SingleParam{Float64}),
-              ParamField(:segment, SingleParam{Float64}),
-              ParamField(:sigma, PairParam{Float64}),
-              ParamField(:epsilon, PairParam{Float64}),
-              ParamField(:epsilon_assoc, AssocParam{Float64}),
-              ParamField(:bondvol, AssocParam{Float64}),
-        ],
-        mappings=[
-              ModelMapping([:m], [:segment], identity),
-              ModelMapping([:sigma], [:sigma], sigma_LorentzBerthelot ∘ x -> x * 1E-10),
-              ModelMapping([:epsilon, :k], [:epsilon], epsilon_LorentzBerthelot),
-        ],
-        has_sites=true,
-        members=[
-            ModelMember(
-                :idealmodel,
-                :BasicIdeal;
-                typeconstraint=:IdealModel,
-                groupcontribution_allowed=true,
-            ),
-        ],
-        references=["10.1021/ie0003887", "10.1021/ie010954d"],
-    )
-
-createmodel(PCSAFT_SETUP; verbose=true)
-export PCSAFT
+@newmodel PCSAFT PCSAFTModel PCSAFTParam
 
 """
     PCSAFTModel <: SAFTModel
-
     PCSAFT(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
@@ -59,7 +26,6 @@ export PCSAFT
 - `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
-
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
@@ -67,14 +33,10 @@ export PCSAFT
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
-
 ## Input models
 - `idealmodel`: Ideal Model
-
 ## Description
-
 Perturbed-Chain SAFT (PC-SAFT)
-
 ## References
 1. Gross, J., & Sadowski, G. (2001). Perturbed-chain SAFT: An equation of state based on a perturbation theory for chain molecules. Industrial & Engineering Chemistry Research, 40(4), 1244–1260. [doi:10.1021/ie0003887](https://doi.org/10.1021/ie0003887)
 2. Gross, J., & Sadowski, G. (2002). Application of the perturbed-chain SAFT equation of state to associating systems. Industrial & Engineering Chemistry Research, 41(22), 5510–5515. [doi:10.1021/ie010954d](https://doi.org/10.1021/ie010954d)
@@ -278,12 +240,9 @@ const PCSAFTconsts = (
 
 #= 
 Especific PCSAFT optimizations
-
 This code is not generic, in the sense that is only used by PCSAFT and not any model <:PCSAFTModel
-
 but, because it is one of the more commonly used EoS,
 It can have some specific optimizations to make it faster.
-
 =#
 
 #Optimized Δ for PCSAFT

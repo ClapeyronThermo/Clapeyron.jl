@@ -1,13 +1,9 @@
 abstract type vdW1fRuleModel <: MixingRule end
 
-vdW1fRule_SETUP = ModelOptions(
-        :vdW1fRule;
-        supertype=vdW1fRuleModel,
-        has_components=false,
-        has_params=false,
-    )
+struct vdW1fRuleParam <: EoSParam
+end
 
-createmodel(vdW1fRule_SETUP; verbose=true)
+@newmodelsimple vdW1fRule vdW1fRuleModel vdW1fRuleParam
 export vdW1fRule
 
 """
@@ -16,15 +12,10 @@ export vdW1fRule
     vdW1fRule(components::Vector{String};
     userlocations::Vector{String}=String[],
     verbose::Bool=false)
-
 ## Input Parameters
-
 None
-
 ## Description
-
 van der Wals One-Fluid mixing rule for cubic parameters:
-
 ```
 aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
 bᵢⱼ = (bᵢ + bⱼ)/2
@@ -32,14 +23,16 @@ ā = ∑aᵢⱼxᵢxⱼ√(αᵢ(T)αⱼ(T))
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ```
-
 """
 vdW1fRule
 
-# For backwards compatibility
-function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
-    return vdW1fRule()
+function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+    packagedparams = vdW1fRuleParam()
+    model = vdW1fRule(packagedparams, verbose=verbose)
+    return model
 end
+
+vdW1fRule() = vdW1fRule(vdW1fRuleParam())
 
 function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b,c)
     n = sum(z)
@@ -66,5 +59,7 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a
     #dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
     return ā,b̄,c̄
 end
+
+
 
 is_splittable(::vdW1fRule) = false

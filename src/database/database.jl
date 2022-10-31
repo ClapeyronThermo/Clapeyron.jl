@@ -5,10 +5,8 @@ include("database_utils.jl")
 
 """
     params, sites = getparams(components,locations;kwargs...)
-
 returns a `Dict{String,ClapeyronParam}` containing all the parameters found for the list of components
 in the available CSVs. `locations` are the locations relative to `Clapeyron` database. the available keywords are the ones used ∈ [`ParamOptions`](@ref)
-
 if `return_sites` is set to false, `getparams` will only return the found params.
 """
 function getparams(components,
@@ -70,33 +68,8 @@ function getparams(components::Vector{String},locations::Vector{String},options:
     end
 end
 
-function getparams(
-        groups::GroupParam,
-        locations::Vector{String},
-        param_options::ParamOptions;
-        userlocations::Vector{String} = String[],
-        verbose::Bool = false,
-    )
-    return getparams(groups.flattenedgroups, locations, param_options; userlocations, verbose)
-end
-
-function getparams(
-        components::String,
-        locations::Vector{String},
-        param_options::ParamOptions;
-        userlocations::Vector{String} = String[],
-        verbose::Bool = false
-    )
-    return getparams([components], locations, param_options; userlocations, verbose)
-end
-
-function buildsites(
-        result,
-        components,
-        allcomponentsites,
-        param_options
-    )
-    n_sites_columns = param_options.n_sites_columns
+function buildsites(result,components,allcomponentsites,options)
+    n_sites_columns = options.n_sites_columns
     v = String[]
     for sitei ∈ allcomponentsites
         append!(v,sitei)
@@ -216,12 +189,8 @@ end
     throw(error("Header ", normalised_columnreference, " not found."))
 end
 
-function col_indices(
-        csvtype,
-        headernames,
-        param_options = DefaultParamOptions
-    )
-    columnreference = param_options.species_columnreference
+function col_indices(csvtype,headernames,options=DefaultOptions)
+    columnreference = options.species_columnreference
     normalised_columnreference = normalisestring(columnreference)
 
     idx_species = 0
@@ -237,7 +206,6 @@ function col_indices(
         idx_species = lookupcolumnindex
         if csvtype === groupdata
             groupcolumnreference = options.group_columnreference
-
             normalised_groupcolumnreference = normalisestring(groupcolumnreference)
             lookupgroupcolumnindex = findfirst(isequal(normalised_groupcolumnreference), headernames)
             isnothing(lookupgroupcolumnindex) && _col_indices_error(normalised_groupcolumnreference)
@@ -254,7 +222,7 @@ function col_indices(
         idx_species1 = lookupcolumnindex1
         idx_species2 = lookupcolumnindex2
         if csvtype == assocdata
-            sitecolumnreference = param_options.site_columnreference
+            sitecolumnreference = options.site_columnreference
             normalised_sitecolumnreference = normalisestring(sitecolumnreference)
             normalised_sitecolumnreference1 = normalised_sitecolumnreference * '1'
             normalised_sitecolumnreference2 = normalised_sitecolumnreference * '2'
@@ -275,10 +243,11 @@ end
 
 function findparamsincsv(components,filepath,options::ParamOptions = DefaultOptions,parsegroups = false)
 
-    headerparams = readheaderparams(filepath; param_options)
-    sourcecolumnreference = param_options.source_columnreference
-    normalisecomponents = param_options.normalisecomponents
-    component_delimiter = param_options.component_delimiter
+    headerparams = readheaderparams(filepath,options)
+    sourcecolumnreference = options.source_columnreference
+    verbose = options.verbose
+    normalisecomponents = options.normalisecomponents
+    component_delimiter = options.component_delimiter
 
     csvtype = readcsvtype(filepath)
     grouptype = "" #TODO: actually parse this from csvs
@@ -544,7 +513,7 @@ function GroupParam(gccomponents,
             gccomponents_parsed[i] = gccomponents[i]
         end
     end
-    return GroupParam(gccomponents_parsed, groupsourcecsvs)
+    return GroupParam(gccomponents_parsed,groupsourcecsvs)
 end
 
 function _parse_group_string(gc::String)
