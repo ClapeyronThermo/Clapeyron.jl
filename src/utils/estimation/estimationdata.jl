@@ -16,18 +16,6 @@ errortypes = [:error_abs, :error_rel, :error_std]
 
 # Copied from database.jl; methods that are common should be refactored into
 # separate files.
-function getline(filepath::AbstractString, selectedline::Int)
-    # Simple function to return text from filepath at selectedline.
-    open(filepath) do file
-        linecount = 1
-        for line ∈ eachline(file)
-            linecount == selectedline && return line
-            linecount += 1
-        end
-        error("Selected line number exceeds number of lines in file")
-    end
-end
-
 function extract_dataerror(df::CSV.File, csvheaders::Vector{String}, extract_headers::Vector{String})
     data = Vector{Vector{Union{Float64,Missing}}}(undef, length(extract_headers))
     error = Vector{Vector{Union{Float64,Missing}}}(undef, length(extract_headers))
@@ -96,5 +84,3 @@ end
 function Base.show(io::IO, data::EstimationData)
     print(io, "EstimationData{:" * String(data.method) * "}")
 end
-
-EstimationData(["saturation_p_rhoL.csv"])

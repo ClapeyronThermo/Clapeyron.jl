@@ -3,6 +3,7 @@ include("estimationdata.jl")
 struct ToEstimate
     params::Vector{Symbol}
     indices::Vector{Union{Vector{Integer},Nothing}}  # if nothing, use all
+    factor::Vector{Union{Float64,Nothing}}
     lower::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}
     upper::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}
     guess::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}  # if nothing, use current
@@ -11,12 +12,14 @@ end
 function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
     params = Vector{Symbol}(undef,0)
     indices = Vector{Union{Vector{Integer},Nothing}}(nothing,0)
+    factor = Vector{Union{Float64,Nothing}}(nothing,0)
     lower = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
     upper = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
     guess = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
     for dict in params_dict
         push!(params, dict[:param])
         push!(indices, get(dict, :indices, nothing))
+        push!(factor, get(dict, :factor, 1.))
         lower_ = get(dict, :lower, nothing)
         push!(lower, typeof(lower_) <: AbstractFloat ? [lower_] : lower_)
         upper_ = get(dict, :upper, nothing)
@@ -24,7 +27,7 @@ function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
         guess_ = get(dict, :guess, nothing)
         push!(guess, typeof(guess_) <: AbstractFloat ? [guess_] : guess_)
     end
-    return ToEstimate(params, indices, lower, upper, guess)
+    return ToEstimate(params, indices, factor, lower, upper, guess)
 end
 
 export Estimation
@@ -117,36 +120,71 @@ end
 export return_model
 function return_model(
         estimation::Estimation,
-        params::Vector{Symbol},
         values::Vector{T} where {T<:Any}) 
+    params = estimation.toestimate.params
+    factor = estimation.toestimate.factor
     model = deepcopy(estimation.model)
     for (i, param) in enumerate(params)
+        f = factor[i]
         current_param = getfield(model.params, param)
         if typeof(current_param) <: SingleParameter
             for (j, value) in enumerate(values[i])
-                current_param.values[j] = value
+                current_param.values[j] = value*f
             end
         end
         if typeof(current_param) <: PairParam
             for j = 1:length(model.components)
                 for k = 1:length(model.components)
-                    current_param.values[j,k] = values[i][j,k]
+                    current_param.values[j,k] = values[i][j,k]*f
                 end
             end
         end
         if typeof(current_param) <: AssocParam
             if typeof(values[i]) <: Compressed4DMatrix
                 for (j, value) in enumerate(values[i].values)
-                    current_param.values.values[j] = value
+                    current_param.values.values[j] = value*f
                 end
             else
                 for (j, value) in enumerate(values[i])
-                    current_param.values.values[j] = value
+                    current_param.values.values[j] = value*f
                 end
             end
         end
     end
     return model
+end
+
+export optimize!
+
+function optimize!(estimation::Estimation,Method=:random_search,MaxSteps=20000,PopulationSize=500)
+    f(x) = obj_fun(estimation,x)
+    nparams = length(estimation.toestimate.params)
+    bounds = [(estimation.toestimate.lower[i][1],estimation.toestimate.upper[i][1]) for i ∈ 1:nparams]
+    x0 = [estimation.toestimate.guess[i][1] for i ∈ 1:nparams]
+    x=BlackBoxOptim.bboptimize(f; SearchRange = bounds, NumDimensions=nparams, Method=Method, MaxSteps=MaxSteps, PopulationSize=PopulationSize);
+    model = return_model(estimation, BlackBoxOptim.best_candidate(x))
+    update_estimation!(estimation,model)
+end
+
+function obj_fun(estimation::Estimation,guesses)
+    F = 0
+    model = return_model(estimation, guesses)
+    for i ∈ 1:length(estimation.data)
+        property = getfield(Clapeyron,estimation.data[i].method)
+        inputs = estimation.data[i].inputs
+        output = estimation.data[i].outputs[1]
+        if isempty(inputs)
+            prediction =  property(model)
+        elseif length(inputs)==1
+            prediction =  property.(model,inputs[1])
+        elseif length(inputs)==2
+            prediction =  property.(model,inputs[1],inputs[2])
+        elseif length(inputs)==3
+            prediction =  property.(model,inputs[1],inputs[2],inputs[3])
+        end
+        F += sum(abs.((prediction.-output)./output))/length(output)
+    end
+    return F
 end
 
 toestimate = [
