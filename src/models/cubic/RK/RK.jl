@@ -3,7 +3,6 @@ abstract type RKModel <: ABCubicModel end
 
 struct RK{T <: IdealModel,α,c,M} <: RKModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     alpha::α
     mixing::M
     translation::c
@@ -60,32 +59,33 @@ P = RT/(V-Nb) + a•α(T)/(V(V+Nb))
 """
 RK
 
-function RK(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = RKAlpha,
-    mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[], 
-    ideal_userlocations=String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-     verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = params["k"]
+function RK(
+        components::Vector{String};
+        idealmodel = BasicIdeal,
+        alpha = RKAlpha,
+        mixing = vdW1fRule,
+        activity = nothing,
+        translation = NoTranslation,
+        userlocations = String[], 
+        ideal_userlocations = String[],
+        alpha_userlocations = String[],
+        mixing_userlocations = String[],
+        activity_userlocations = String[],
+        translation_userlocations = String[],
+        verbose=false, kwargs...)
+    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv", "SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    k = params["k"]
     pc = params["pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(RK,init_mixing,Tc,pc,k)
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    icomponents = 1:length(components)
-    packagedparams = RKParam(a,b,Tc,pc,Mw)
+    init_mixing = init_model(mixing, components, activity, mixing_userlocations, activity_userlocations, verbose)
+    a, b = ab_premixing(RK, init_mixing, Tc, pc, k)
+    init_idealmodel = init_model(idealmodel, components, ideal_userlocations, verbose)
+    init_alpha = init_model(alpha, components, alpha_userlocations, verbose)
+    init_translation = init_model(translation, components, translation_userlocations, verbose)
+    packagedparams = RKParam(a, b, Tc, pc, Mw)
     references = String["10.1021/cr60137a013"]
-    model = RK(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = RK(components, init_alpha, init_mixing, init_translation, packagedparams,init_idealmodel, references)
     return model
 end
 

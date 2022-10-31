@@ -1,12 +1,19 @@
 abstract type TwuAlphaModel <: AlphaModel end
 
-struct TwuAlphaParam <: EoSParam
-    M::SingleParam{Float64}
-    N::SingleParam{Float64}
-    L::SingleParam{Float64}
-end
+TwuAlpha_SETUP = ModelOptions(
+        :TwuAlpha;
+        supertype=TwuAlphaModel,
+        locations=["alpha/Twu/Twu_like.csv"],
+        params=[
+            ParamField(:M, SingleParam{Float64}),
+            ParamField(:N, SingleParam{Float64}),
+            ParamField(:L, SingleParam{Float64}),
+        ],
+        references=["10.1021/I160057A011"],
+    )
 
-@newmodelsimple TwuAlpha TwuAlphaModel TwuAlphaParam
+createmodel(TwuAlpha_SETUP; verbose=true)
+export TwuAlpha
 
 """
     TwuAlpha <: TwuAlphaModel

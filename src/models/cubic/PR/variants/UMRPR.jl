@@ -1,3 +1,22 @@
+abstract type UMRPRModel <: PRModel end
+
+UMRPR_SETUP = ModelOptions(
+        :UMRPR;
+        supertype=UMRPRModel,
+        parent=PR_SETUP,
+        members=[
+            ModelMember(:alpha, :MTAlpha),
+            ModelMember(:activity, :UNIFAC; groupcontribution_allowed=true),
+            ModelMember(:mixing, :UMRRule),
+            ModelMember(:translation, :MTTranslation),
+            ModelMember(:idealmodel, :BasicIdeal; groupcontribution_allowed=true),
+        ],
+        references=["10.1021/ie049580p"],
+    )
+
+createmodel(UMRPR_SETUP; verbose=true)
+export UMRPR
+
 """
     UMRPR(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = MTAlpha,
@@ -23,31 +42,3 @@ Universal Mixing Rule Peng Robinson equation of state. it uses the following mod
 1. Voutsas, E., Magoulas, K., & Tassios, D. (2004). Universal mixing rule for cubic equations of state applicable to symmetric and asymmetric systems: Results with the Peng−Robinson equation of state. Industrial & Engineering Chemistry Research, 43(19), 6238–6246. [doi:10.1021/ie049580p](https://doi.org/10.1021/ie049580p)
 
 """
-function UMRPR(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = MTAlpha,
-    mixing = UMRRule,
-    activity = UNIFAC,
-    translation=MTTranslation,
-    userlocations=String[], 
-    ideal_userlocations=String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    verbose=false)
-
-    return PR(components;
-    idealmodel = idealmodel,
-    alpha = alpha,
-    mixing=mixing,
-    activity = activity,
-    translation=translation,
-    userlocations = userlocations,
-    ideal_userlocations = ideal_userlocations,
-    alpha_userlocations = alpha_userlocations,
-    mixing_userlocations = mixing_userlocations,
-    activity_userlocations = activity_userlocations,
-    translation_userlocations = translation_userlocations,
-    verbose = verbose)
-end
-export UMRPR

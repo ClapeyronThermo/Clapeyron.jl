@@ -1,20 +1,44 @@
-
 abstract type PRModel <: ABCubicModel end
 
-const PRParam = ABCubicParam
+PR_SETUP = ModelOptions(
+        :PR;
+        supertype=PRModel,
+        locations=["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"],
+        inputparams=[
+            ParamField(:k, PairParam{Float64}),
+            ParamField(:Tc, SingleParam{Float64}),
+            ParamField(:pc, SingleParam{Float64}),
+            ParamField(:Mw, SingleParam{Float64}),
+        ],
+        params=[
+            ParamField(:a, PairParam{Float64}),
+            ParamField(:b, PairParam{Float64}),
+            ParamField(:Tc, SingleParam{Float64}),
+            ParamField(:Pc, SingleParam{Float64}),
+            ParamField(:Mw, SingleParam{Float64}),
+        ],
+        mappings=[
+            ModelMapping([:pc], [:Pc], identity),
+            ModelMapping([:_model, :Tc, :pc, :k], [:a, :b], ab_premixing)
+        ],
+        members=[
+            ModelMember(:alpha, :PRAlpha;
+                typeconstraint=:AlphaModel
+            ),
+            ModelMember(:activity, :Nothing; nothing_allowed=true),
+            ModelMember(:mixing, :vdW1fRule),
+            ModelMember(:translation, :NoTranslation),
+            ModelMember(:idealmodel, :BasicIdeal;
+                groupcontribution_allowed=true,
+            ),
+        ],
+        references=["10.1021/I160057A011"],
+        inputparamstype=:ABCubicInputParam,
+        paramstype=:ABCubicParam,
+    )
 
-struct PR{T <: IdealModel,α,c,γ} <:PRModel
-    components::Array{String,1}
-    icomponents::UnitRange{Int}
-    alpha::α
-    mixing::γ
-    translation::c
-    params::PRParam
-    idealmodel::T
-    references::Array{String,1}
-end
-
-@registermodel PR
+createmodel(PR_SETUP; verbose=true)
+export PR
 
 """
     PR(components::Vector{String}; idealmodel=BasicIdeal,

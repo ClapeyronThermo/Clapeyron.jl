@@ -51,7 +51,7 @@ for Peng-Robinson:
 WSRule
 
 export WSRule
-function WSRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function WSRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
     init_activity = activity(components;userlocations = activity_userlocations,verbose)
     
     references = ["10.1002/aic.690380505"]

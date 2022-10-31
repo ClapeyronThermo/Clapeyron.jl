@@ -1,10 +1,13 @@
 abstract type ConstantTranslationModel <: TranslationModel end
 
-struct ConstantTranslationParam <: EoSParam
-    c::SingleParam{Float64}
-end
+ConstantTranslation_SETUP = ModelOptions(
+        :ConstantTranslation;
+        supertype=ConstantTranslationModel,
+        params=[ParamField(:c, SingleParam{Float64})],
+    )
 
-@newmodelsimple ConstantTranslation ConstantTranslationModel ConstantTranslationParam
+createmodel(ConstantTranslation_SETUP; verbose=true)
+export ConstantTranslation
 
 """
 
@@ -30,16 +33,6 @@ It does not have parameters by default, the volume shifts must be user-supplied.
 
 """
 ConstantTranslation
-
-export ConstantTranslation
-
-function ConstantTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, String[]; userlocations=userlocations, verbose=verbose)
-    c = params["c"]
-    packagedparams = ConstantTranslationParam(c)
-    model = ConstantTranslation(packagedparams, verbose=verbose)
-    return model
-end
 
 function translation(model::CubicModel,V,T,z,translation_model::ConstantTranslationModel)
     return translation_model.params.c.values

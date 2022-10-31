@@ -1,4 +1,4 @@
-struct SingleParameter{T,V<:AbstractVector{T}} <: ClapeyronParam
+struct SingleParameter{T,V<:AbstractVector{T}} <: ClapeyronDataParam
     name::String
     components::Array{String,1}
     values::V

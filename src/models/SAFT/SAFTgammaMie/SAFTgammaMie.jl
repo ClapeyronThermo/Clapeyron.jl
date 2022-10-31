@@ -78,7 +78,7 @@ function SAFTgammaMie(components;
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
-    assoc_options = AssocOptions())
+    assoc_options = AssocOptions(), kwargs...)
 
     groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params,sites = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)

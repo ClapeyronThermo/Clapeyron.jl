@@ -1,3 +1,22 @@
+abstract type PR78Model <: PRModel end
+
+PR78_SETUP = ModelOptions(
+        :PR78;
+        supertype=PR78Model,
+        parent=PR_SETUP,
+        members=[
+            ModelMember(:alpha, :PR78Alpha),
+            ModelMember(:activity, :Nothing),
+            ModelMember(:mixing, :vdW1fRule),
+            ModelMember(:translation, :NoTranslation),
+            ModelMember(:idealmodel, :BasicIdeal; groupcontribution_allowed=true),
+        ],
+        references=["10.1021/I160057A011"],
+    )
+
+createmodel(PR78_SETUP; verbose=true)
+export PR78
+
 """
     PR78(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = PR78Alpha,
@@ -21,29 +40,3 @@ Peng Robinson (1978) equation of state. it uses the following models:
 
 1. Robinson DB, Peng DY. The characterization of the heptanes and heavier fractions for the GPA Peng-Robinson programs. Tulsa: Gas Processors Association; 1978
 """
-function PR78(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = PR78Alpha,
-    mixing = vdW1fRule,
-    activity = nothing,
-    translation=NoTranslation,
-    userlocations=String[], 
-    ideal_userlocations=String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    translation_userlocations = String[],
-    verbose=false)
-
-    return PR(components;
-    idealmodel = idealmodel,
-    alpha = alpha,
-    mixing=mixing,
-    activity = activity,
-    translation=translation,
-    userlocations = userlocations,
-    ideal_userlocations = ideal_userlocations,
-    alpha_userlocations = alpha_userlocations,
-    mixing_userlocations = mixing_userlocations,
-    translation_userlocations = translation_userlocations,
-    verbose = verbose)
-end
-export PR78

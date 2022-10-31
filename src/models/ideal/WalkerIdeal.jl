@@ -48,7 +48,7 @@ Cpᵢ(T)/R = (5+NRot)/2 ∑νᵢₖ∑gₖᵥ(θₖᵥ/T)^2*exp(θₖᵥ/T)/(1-e
 WalkerIdeal
 
 export WalkerIdeal
-function WalkerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
+function WalkerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false, kwargs...)
     groups = GroupParam(components,["ideal/WalkerIdeal_Groups.csv"], verbose=verbose)
     params = getparams(groups, ["ideal/WalkerIdeal.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]

@@ -1,14 +1,45 @@
-struct PCSAFTParam <: EoSParam
-    Mw::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    sigma::PairParam{Float64}
-    epsilon::PairParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
-end
-
 abstract type PCSAFTModel <: SAFTModel end
-@newmodel PCSAFT PCSAFTModel PCSAFTParam
+
+PCSAFT_SETUP = ModelOptions(
+        :PCSAFT;
+        supertype=PCSAFTModel,
+        locations=["SAFT/PCSAFT/","properties/molarmass.csv"],
+        inputparams=[
+              ParamField(:Mw, SingleParam{Float64}),
+              ParamField(:m, SingleParam{Float64}),
+              ParamField(:sigma, SingleParam{Float64}),
+              ParamField(:epsilon, SingleParam{Float64}),
+              ParamField(:k, PairParam{Float64}),
+              ParamField(:epsilon_assoc, AssocParam{Float64}),
+              ParamField(:bondvol, AssocParam{Float64}),
+        ],
+        params=[
+              ParamField(:Mw, SingleParam{Float64}),
+              ParamField(:segment, SingleParam{Float64}),
+              ParamField(:sigma, PairParam{Float64}),
+              ParamField(:epsilon, PairParam{Float64}),
+              ParamField(:epsilon_assoc, AssocParam{Float64}),
+              ParamField(:bondvol, AssocParam{Float64}),
+        ],
+        mappings=[
+              ModelMapping([:m], [:segment], identity),
+              ModelMapping([:sigma], [:sigma], sigma_LorentzBerthelot ∘ x -> x * 1E-10),
+              ModelMapping([:epsilon, :k], [:epsilon], epsilon_LorentzBerthelot),
+        ],
+        has_sites=true,
+        members=[
+            ModelMember(
+                :idealmodel,
+                :BasicIdeal;
+                typeconstraint=:IdealModel,
+                groupcontribution_allowed=true,
+            ),
+        ],
+        references=["10.1021/ie0003887", "10.1021/ie010954d"],
+    )
+
+createmodel(PCSAFT_SETUP; verbose=true)
+export PCSAFT
 
 """
     PCSAFTModel <: SAFTModel

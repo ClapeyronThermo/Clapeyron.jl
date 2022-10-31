@@ -37,5 +37,9 @@ the combining option controls the type of combining rule applied to the associat
     dense::Bool = true
 end
 
+const DefaultAssocOptions = AssocOptions()
+
+export AssocOptions, DefaultAssocOptions
+
 is_splittable(::AssocOptions) = false
 

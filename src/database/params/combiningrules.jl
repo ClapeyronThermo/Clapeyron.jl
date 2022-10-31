@@ -1,73 +1,4 @@
 """
-    kij_mix(f,p::ClapeyronParam,k::PairParam)::PairParam
-    kij_mix(f,p::ClapeyronParam)::PairParam
-
-General combining rule for pair parameter with a `kᵢⱼ` interaction parameter. returns a pair parameter with non diagonal entries equal to:
-```
-pᵢⱼ = f(pᵢ,pⱼ,kᵢⱼ)
-```
-Where `f` is a 'combining' function that follows the rules:
-```
-f(pᵢ,pⱼ,0) = f(pⱼ,pᵢ,0)
-f(pᵢ,pᵢ,0) = pᵢ
-```
-and `k` must follow:
-```
-kᵢᵢ = 0 
-```
-Ignores non-diagonal entries already set.
-
-If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `pᵢᵢ = pᵢ`.
-"""
-function kij_mix(f::F,param::ClapeyronParam,K = nothing) where F
-    N = length(param.components)
-    
-    out = PairParam(param)
-    p = out.values
-    if K === nothing
-        k = FillArrays.Zeros(N,N)
-        missingK = FillArrays.Fill(true,N,N)
-    else
-        k = K.values
-        missingK = K.ismissingvalues
-    end
-
-    kij_mix!(f,p,k,out.ismissingvalues)
-    #should consider the two.
-    out.ismissingvalues .= out.ismissingvalues .& missingK
-        
-    #but diagonals are all non-missing, by default:
-    for i in 1:N
-        out.ismissingvalues[i,i] = false
-    end
-    return out
-end
-
-#p,K: matrices
-#B: bool matrix
-function kij_mix!(f::F,p,K,B) where F
-    N = LinearAlgebra.checksquare(p)
-    for j ∈ 1:N
-        p_j = p[j,j]
-        for i ∈ 1:N
-            if B[j,i]
-                p_i = p[i,i]
-                p_ji = f(p_i,p_j,K[j,i])
-                p[j,i] = p_ji
-            end
-        end
-    end
-end
-### functions to use:
-mix_mean(p_i,p_j,k=0) = 0.5*(p_i+p_j)*(1-k)  
-mix_geomean(p_i,p_j,k=0) = sqrt(p_i*p_j)*(1-k) 
-mix_powmean(p_i,p_j,k=0,n=2) =(1-k)*(0.5*(p_i^n + p_j^n))^(1/n)
-
-##special lambda with custom k
-function mix_lambda(λ_i,λ_j,k)
-    return k + sqrt((λ_i - k) * (λ_j - k))
-end
-"""
     sigma_LorentzBerthelot(σ::ClapeyronParam,ζ::PairParam)::PairParam
     sigma_LorentzBerthelot(σ::ClapeyronParam)::PairParam
 
@@ -85,8 +16,13 @@ If a Single Parameter is passed as input, it will be converted to a Pair Paramet
 """
 function sigma_LorentzBerthelot end
 
-sigma_LorentzBerthelot(sigma::ClapeyronParam,zeta::PairParameter) = kij_mix(mix_mean,sigma,zeta)
-sigma_LorentzBerthelot(sigma::ClapeyronParam) = kij_mix(mix_mean,sigma)
+function sigma_LorentzBerthelot(sigma::SingleOrPair,zeta::PairParameter) 
+    return sigma_LorentzBerthelot!(PairParam(sigma),zeta)
+end
+
+function sigma_LorentzBerthelot(sigma::SingleOrPair) 
+    return sigma_LorentzBerthelot!(PairParam(sigma))
+end
 
 """
     epsilon_LorentzBerthelot(ϵ::ClapeyronParam,k::PairParam)::PairParam
@@ -106,66 +42,13 @@ If a Single Parameter is passed as input, it will be converted to a Pair Paramet
 """
 function epsilon_LorentzBerthelot end
 
-epsilon_LorentzBerthelot(epsilon::ClapeyronParam, k::PairParameter) = kij_mix(mix_geomean,epsilon,k)
-epsilon_LorentzBerthelot(epsilon::ClapeyronParam) = kij_mix(mix_geomean,epsilon)
-
-"""
-    pair_mix(g,P::ClapeyronParam,Q::ClapeyronParam)::PairParam
-    pair_mix(g,P::ClapeyronParam,Q::ClapeyronParam)::PairParam
-
-General combining rule for a pair and a single parameter. returns a pair parameter `P` with non diagonal entries equal to:
-```
-Pᵢⱼ = g(Pᵢ,Pⱼ,Qᵢ,Qⱼ,Qᵢⱼ)
-```
-Where `f` is a 'combining' function that follows the rules:
-```
-Pᵢⱼ = Pⱼᵢ = g(Pᵢ,Pⱼ,Qᵢ,Qⱼ,Qᵢⱼ) = g(Pⱼ,Pᵢ,Qⱼ,Qᵢ,Qᵢⱼ)
-g(Pᵢ,Pᵢ,Qᵢ,Qᵢ,Qᵢ) = Pᵢ
-```
-it is a more general form of `kij_mix`, where `kij_mix(f,P,Q) == pair_mix(g,P,Q)` is correct if:
-```
-f(Pᵢ,Pⱼ,Qᵢⱼ) = g(Pᵢ,Pⱼ,_,_,Qᵢⱼ)
-```
-"""
-function pair_mix(f::F,P::ClapeyronParam,Q::ClapeyronParam) where F
-    out = PairParam(P)
-    Q isa PairParameter || (Q = PairParam(Q))
-    p = out.values
-    q = Q.values
-    missingP = out.ismissingvalues
-    missingQ = Q.ismissingvalues
-    
-    pair_mix!(f,p,q,out.ismissingvalues)
-    #consider the two here:
-    out.ismissingvalues .= missingP .& missingQ
-    #but diagonals are all non-missing, by default:
-     for i in 1:size(out.ismissingvalues,1)
-        out.ismissingvalues[i,i] = false
-    end
-    #out.ismissingvalues .= false
-    return out
+function epsilon_LorentzBerthelot(epsilon::SingleOrPair, k::PairParameter)
+    return epsilon_LorentzBerthelot!(PairParam(epsilon),k)
 end
 
-function pair_mix!(f,p,q,B)
-    N = LinearAlgebra.checksquare(p)
-    for j ∈ 1:N
-        p_j = p[j,j]
-        q_j = q[j,j]
-        for i ∈ 1:N
-            if B[j,i]
-                p_i = p[i,i]
-                q_i = q[i,i]
-                q_ji =  q[j,i]
-                p_ji = f(p_j,p_i,q_j,q_i,q_ji)
-                p[j,i] = p_ji
-            end
-        end
-    end
-    return p
+function epsilon_LorentzBerthelot(epsilon::SingleOrPair)
+    return epsilon_LorentzBerthelot!(PairParam(epsilon))
 end
-
-mix_HudsenMcCoubrey(ϵᵢ,ϵⱼ,σᵢ,σⱼ,σᵢⱼ) = √(ϵᵢ*ϵⱼ)*(σᵢ^3 * σⱼ^3)/σᵢⱼ^6 
-mix_lambda_squarewell(λᵢ,λⱼ,σᵢ,σⱼ,σᵢⱼ) = (σᵢ*λᵢ + σⱼ*λⱼ)/(σᵢ + σⱼ)
 
 """
     epsilon_HudsenMcCoubrey(ϵ::ClapeyronParam,σ::PairParam)::PairParam
@@ -183,14 +66,14 @@ Ignores non-diagonal entries already set.
 
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `ϵᵢᵢ = ϵᵢ`.
 """
-function epsilon_HudsenMcCoubrey(epsilon::ClapeyronParam, sigma::PairParameter)
-    return pair_mix(mix_HudsenMcCoubrey,epsilon,sigma)
+function epsilon_HudsenMcCoubrey(epsilon::SingleOrPair, sigma::PairParameter)
+    return epsilon_HudsenMcCoubrey!(PairParam(epsilon),sigma)
 end
 
 epsilon_HudsenMcCoubrey(epsilon) = epsilon_LorentzBerthelot(epsilon)
 
 """
-    lambda_LorentzBerthelot(λ::ClapeyronParam,k = 3)::PairParam
+    lambda_LorentzBerthelot(λ::ClapeyronParam,k::Real = 3)::PairParam
 
 Combining rule for a single or pair parameter. returns a pair parameter with non diagonal entries equal to:
 ```
@@ -205,12 +88,11 @@ Ignores non-diagonal entries already set.
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `λᵢᵢ = λᵢ`.
 """
 function lambda_LorentzBerthelot(lambda::ClapeyronParam,k = 3)
-    f(λi,λj,m) = mix_lambda(λi,λj,k) 
-    return kij_mix(f,lambda)
+    return lambda_LorentzBerthelot!(PairParam(lambda),k)
 end
 
 """
-    lambda_squarewell(λ::ClapeyronParam,σ::PairParam)::PairParam
+    lambda_squarewell(λ::Union{PairParameter,SingleParameter},σ::PairParam)::PairParam
 
 Combining rule for a single or pair parameter. returns a pair parameter with non diagonal entries equal to:
 ```
@@ -222,8 +104,8 @@ If a Single Parameter is passed as input, it will be converted to a Pair Paramet
 """
 function lambda_squarewell end
 
-function lambda_squarewell(lambda::ClapeyronParam, sigma::Union{PairParameter,SingleParameter})
-    return pair_mix(mix_lambda_squarewell,lambda,sigma)
+function lambda_squarewell(lambda::Union{PairParameter,SingleParameter}, sigma::Union{PairParameter,SingleParameter})
+    return lambda_squarewell!(PairParam(lambda),sigma)
 end
 
 """
@@ -390,4 +272,3 @@ export epsilon_LorentzBerthelot
 export epsilon_HudsenMcCoubrey
 export lambda_LorentzBerthelot
 export lambda_squarewell
-export group_sum,group_pairmean

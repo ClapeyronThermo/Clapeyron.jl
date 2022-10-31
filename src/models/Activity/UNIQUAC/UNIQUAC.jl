@@ -10,7 +10,6 @@ abstract type UNIQUACModel <: ActivityModel end
 
 struct UNIQUAC{c<:EoSModel} <: UNIQUACModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::UNIQUACParam
     puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
@@ -62,7 +61,7 @@ function UNIQUAC(components::Vector{String};
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false, kwargs...)
 
     params = getparams(components, ["Activity/UNIQUAC/UNIQUAC_like.csv", "properties/molarmass.csv","Activity/UNIQUAC/UNIQUAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose=verbose)
     a  = params["a"]
@@ -70,12 +69,11 @@ function UNIQUAC(components::Vector{String};
     q  = params["q"]
     q_p = params["q_p"]
     Mw  = params["Mw"]
-    icomponents = 1:length(components)
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIQUACParam(a,r,q,q_p,Mw)
     references = String[]
-    model = UNIQUAC(components,icomponents,packagedparams,_puremodel,1e-12,references)
+    model = UNIQUAC(components,packagedparams,_puremodel,1e-12,references)
     return model
 end
 #=

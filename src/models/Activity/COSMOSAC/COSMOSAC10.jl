@@ -10,7 +10,6 @@ abstract type COSMOSAC10Model <: COSMOSAC02Model end
 
 struct COSMOSAC10{c<:EoSModel} <: COSMOSAC10Model
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::COSMOSAC10Param
     puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
@@ -24,7 +23,7 @@ function COSMOSAC10(components::Vector{String};
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose=false)
+    verbose=false, kwargs...)
 
     params = getparams(components, ["Activity/COSMOSAC/COSMOSAC10_like.csv"]; userlocations=userlocations, verbose=verbose)
     Pnhb  = COSMO_parse_Pi(params["Pnhb"])
@@ -32,12 +31,11 @@ function COSMOSAC10(components::Vector{String};
     POT  = COSMO_parse_Pi(params["POT"])
     A  = params["A"]
     V  = params["V"]
-    icomponents = 1:length(components)
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)    
     packagedparams = COSMOSAC10Param(Pnhb,POH,POT,V,A)
     references = String[]
-    model = COSMOSAC10(components,icomponents,packagedparams,_puremodel,1e-12,references)
+    model = COSMOSAC10(components,packagedparams,_puremodel,1e-12,references)
     return model
 end
 

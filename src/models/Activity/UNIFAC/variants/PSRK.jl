@@ -3,7 +3,6 @@ abstract type PSRKUNIFACModel <: UNIFACModel end
 
 struct PSRKUNIFAC{c<:EoSModel} <: PSRKUNIFACModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACParam
     puremodel::EoSVectorParam{c}
@@ -73,7 +72,7 @@ function PSRKUNIFAC(components::Vector{String};
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
-    verbose = false)
+    verbose = false, kwargs...)
 
     groups = GroupParam(components, ["Activity/UNIFAC/PSRK/PSRK_groups.csv"]; verbose=verbose)
 
@@ -83,12 +82,11 @@ function PSRKUNIFAC(components::Vector{String};
     C  = params["C"]
     R  = params["R"]
     Q  = params["Q"]
-    icomponents = 1:length(components)
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1021/i260064a004","10.1016/j.fluid.2004.11.002"]
     cache = UNIFACCache(groups,packagedparams)
-    model = PSRKUNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
+    model = PSRKUNIFAC(components,groups,packagedparams,_puremodel,references,cache)
     return model
 end

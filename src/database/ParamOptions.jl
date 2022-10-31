@@ -26,8 +26,6 @@ Struct containing all the options related to parameter parsing:
 * `component_delimiter::String = "~|~"`: When there are multiple component names to match, seperate them by this delimiter.
 """
 Base.@kwdef struct ParamOptions
-    userlocations::Vector{String} = String[]
-    usergrouplocations::Vector{String} = String[]
     asymmetricparams::Vector{String}= String[]
     ignore_missing_singleparams::Vector{String} = String[]
     ignore_headers::Vector{String} = ["dipprnumber", "smiles", "cas"]
@@ -42,6 +40,6 @@ Base.@kwdef struct ParamOptions
     component_delimiter::String = "~|~"
 end
 
-const DefaultOptions = ParamOptions()
+const DefaultParamOptions = ParamOptions()
 
-export ParamOptions
+export ParamOptions, DefaultParamOptions

@@ -13,7 +13,6 @@ include("mixing/mixing.jl")
 
 struct SanchezLacombe{T <: SLMixingRule,I<:IdealModel} <:SanchezLacombeModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     mixing::T
     params::SanchezLacombeParam
     idealmodel::I
@@ -71,7 +70,7 @@ function SanchezLacombe(components;
     userlocations=String[], 
     ideal_userlocations=String[], 
     mixing_userlocations = String[],
-    verbose=false)
+    verbose=false, kwargs...)
     params = getparams(components, ["LatticeFluid/SanchezLacombe","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     
     segment = params["segment"]
@@ -83,8 +82,7 @@ function SanchezLacombe(components;
     premixed_vol,premixed_epsilon = sl_mix(unmixed_vol,unmixed_epsilon,mixmodel)
     packagedparams = SanchezLacombeParam(Mw, segment, premixed_epsilon, premixed_vol)
     references = ["10.1016/S0378-3812(02)00176-0"]
-    icomponents = 1:length(components)
-    model = SanchezLacombe(components,icomponents,mixmodel,packagedparams,ideal,references)
+    model = SanchezLacombe(components,mixmodel,packagedparams,ideal,references)
     return model
 end
 

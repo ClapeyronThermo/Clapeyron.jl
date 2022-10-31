@@ -1,9 +1,14 @@
 abstract type NoAlphaModel <: AlphaModel end
 
-struct NoAlphaParam <: EoSParam
-end
+NoAlpha_SETUP = ModelOptions(
+        :NoAlpha;
+        supertype=NoAlphaModel,
+        has_components=false,
+        has_params=false,
+    )
 
-@newmodelsimple NoAlpha NoAlphaModel NoAlphaParam
+createmodel(NoAlpha_SETUP; verbose=true)
+
 export NoAlpha
 
 """
@@ -23,13 +28,6 @@ Cubic alpha `(α(T))` model. Default for [`vdW`](@ref) EoS
 
 """
 NoAlpha
-
-function NoAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    model = NoAlpha(NoAlphaParam())
-    return model
-end
-
-NoAlpha() = NoAlpha(NoAlphaParam())
 
 function α_function(model::CubicModel,V,T,z,alpha_model::NoAlphaModel)
    return FillArrays.Ones{Float64}(length(z))

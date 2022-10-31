@@ -1,3 +1,26 @@
+#==
+There are a lot of splitting mechanisms here. this is a sort of summary:
+
+- each_split_model: given an index, will return a param "slice" - oblivious of GC distinction
+- core_split_model: (core_split_model(x,i) for i in selected_splitter). differenciates between comp and GC models
+  on EoSModels defaults to split_model.
+- split_model: exposed function, only used by EoSModels. defaults to auto_split_model
+- auto_split_model: recursive split_model for EoSModels it uses core_split_model
+- simple_split_model: old option, reconstructs a model by calling the constructor each time, very slow.
+
+on recursive EoSModels there is the following recursion:
+    split_model
+    -> auto_split_model
+       -> core_split_model
+          -> split_model
+
+to allow splitting on an arbitrary struct, it is recommendable to overload core_split_model(struct::Struct,splitter::ModelSplitter)
+each_split_model is used on simple structs that allow a simple splitting, it is a good abstraction but it is not recomendable to overload.
+==#
+
+
+#=each_split_model=#
+
 function each_split_model(param::AbstractVector,I)
     val = param[I]
     eltype(param) <: AbstractArray && return deepcopy(val)
@@ -72,18 +95,14 @@ end
 
 function each_split_model(param::PairParameter,I)
     value = each_split_model(param.values,I)
-    if isnothing(param.diagvalues)
-        diagvalue = nothing
-    else
-        diagvalue = view(value,diagind(value))
-    end
+
     ismissingvalues = param.ismissingvalues[I,I]
     components = param.components[I]
     res = PairParameter(
             param.name,
             components,
             value,
-            diagvalue,
+            param.symmetric,
             ismissingvalues,
             param.sourcecsvs,
             param.sources
@@ -151,6 +170,21 @@ function each_split_model(param::GroupParam,I)
         i_flattenedgroups,
         sourcecsvs)
 end
+
+function each_split_model(param::SiteParam,I)
+    return SiteParam(
+    param.components[I],
+    param.sites[I],
+    each_split_model(param.n_sites,I),
+    param.i_sites[I],
+    param.flattenedsites,
+    param.n_flattenedsites[I],
+    param.i_flattenedsites[I],
+    param.sourcecsvs)
+end
+
+#=split_model=#
+
 """
     split_model(model::EoSModel)
 
@@ -184,61 +218,6 @@ is_splittable(null::Union{Nothing,Missing}) = false
 is_splittable(::Number) = false
 is_splittable(::String) = false
 
-function split_model(param::SingleParameter,
-    splitter =split_model(1:length(param.components)))
-    return [each_split_model(param,i) for i ∈ splitter]
-end
-
-#this conversion is lossy, as interaction between two or more components are lost.
-
-function split_model(param::PairParameter,
-    splitter = split_model(1:length(param.components)))
-    return [each_split_model(param,i) for i ∈ splitter]
-end
-
-function split_model(param::AbstractVector,splitter = ([i] for i ∈ 1:length(param)))
-    return [each_split_model(param,i) for i ∈ splitter]
-end
-
-function split_model(param::UnitRange{Int},splitter = ([i] for i ∈ 1:length(param)))
-    return [1:length(i) for i ∈ splitter]
-end
-
-#this conversion is lossy, as interaction between two or more components are lost.
-#also, this conversion stores the site values for other components. (those are not used)
-function split_model(param::AssocParam{T},
-    splitter = split_model(1:length(param.components))) where T
-    return [each_split_model(param,i) for i ∈ splitter]
-end
-
-#this param has a defined split form
-function split_model(groups::GroupParam,
-    splitter = split_model(collect(1:length(groups.components))))
-    return [each_split_model(groups,i) for i in splitter]
-end
-
-function split_model(param::SiteParam,
-    splitter = split_model(param.components))
-    function generator(I)
-        return SiteParam(
-            param.components[I],
-            param.sites[I],
-            each_split_model(param.n_sites,I),
-            param.i_sites[I],
-            param.flattenedsites,
-            param.n_flattenedsites[I],
-            param.i_flattenedsites[I],
-        param.sourcecsvs)
-    end
-    return [generator(i) for i ∈ splitter]
-end
-
-function split_model(Base.@nospecialize(params::EoSParam),splitter)
-    T = typeof(params)
-    split_paramsvals = (split_model(getfield(params,i),splitter) for i  ∈ fieldnames(T))
-    return T.(split_paramsvals...)
-end
-
 function group_splitter(group,splitted_groups)
     flattenedgroups = group.flattenedgroups
     res = Vector{Vector{Int64}}(undef,length(splitted_groups))
@@ -246,6 +225,90 @@ function group_splitter(group,splitted_groups)
         res[i] = indexin(groupi.flattenedgroups,flattenedgroups)
     end
     return res
+end
+
+#=ModelSplitter=#
+
+struct ModelSplitter
+    group::Vector{String}
+    comp::Vector{String}
+    group_splitter::Vector{Vector{Int}}
+    comp_splitter::Vector{Vector{Int}}
+end
+
+Base.length(model::ModelSplitter) = length(model.comp)
+
+function init_splitter(x,::Nothing)
+    raw_split = [[i] for i ∈ 1:length(x)]
+    return _init_splitter(x,raw_split)
+end
+
+init_splitter(x,i) = _init_splitter(x,i)
+
+function init_splitter(x::GroupParam,::Nothing)
+    raw_split = [[i] for i ∈ 1:length(x.components)]
+    return _init_splitter(x,raw_split)
+end
+
+function init_splitter(x,split::AbstractVector{<:Integer})
+    raw_split = [[i] for i ∈ 1:length(x)]
+    return _init_splitter(x,raw_split[split])
+end
+
+function _init_splitter(x::Vector{String},splitter)
+    group = comp = x
+    group_splitter = comp_splitter = splitter
+    all_fields = Dict{Symbol,Any}()
+    model_splitter = ModelSplitter(group,comp,group_splitter,comp_splitter)
+    return model_splitter,all_fields
+end
+
+function _init_splitter(groups::GroupParam,subset)
+    all_fields = Dict{Symbol,Any}()
+    gc_split = [each_split_model(groups,i) for i in subset]
+    group = groups.flattenedgroups
+    comp = groups.components
+    all_fields[:groups] = gc_split
+    all_fields[:components] = [each_split_model(comp,i) for i in subset]
+    _group_splitter = group_splitter(groups,gc_split)
+    comp_splitter = subset
+    model_splitter = ModelSplitter(group,comp,_group_splitter,comp_splitter)
+    return model_splitter,all_fields
+end
+
+#=core_split_model=#
+
+function splitter_index(val,splitter)
+    if has_groups(val)
+        return splitter.group_splitter
+    else
+        comps = components(val)
+        isnothing(comps) && return splitter.comp_splitter
+        if comps == splitter.group
+            return splitter.group_splitter
+        else
+            return splitter.comp_splitter
+        end
+    end
+end
+function core_split_model(param::ClapeyronParam,splitter::ModelSplitter)
+    idx = splitter_index(param,splitter)
+    return [each_split_model(param,i) for i in idx]
+end
+
+function core_split_model(param::EoSModel,splitter::ModelSplitter)
+    idx = splitter_index(param,splitter)
+    return split_model(param,idx)
+end
+
+function core_split_model(param::AbstractVector,splitter::ModelSplitter)
+    return [each_split_model(param,i) for i in splitter.comp_splitter]
+end
+
+function core_split_model(Base.@nospecialize(params),splitter::ModelSplitter)
+    T = typeof(params)
+    split_paramsvals = (core_split_model(getfield(params,i),splitter) for i  ∈ fieldnames(T))
+    return T.(split_paramsvals...)
 end
 
 split_model(model::EoSModel,subset=nothing) = auto_split_model(model,subset)
@@ -278,8 +341,17 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             allfields[:components] = split_model(model.groups.components,splitter)
             splitter = group_splitter(model.groups,gc_split)
         end
+        #==
+        model_splitter contains:
+        -comp: component keys
+        -group: group keys
+        -group_splitter: group indices
+        -comp_splitter: component indices
+        in the case of component models, group_splitter == comp_splitter
+        ==#
 
-        len = length(splitter)
+        model_splitter,allfields = init_splitter(init,subset)
+        len = length(model_splitter.comp_splitter)
         M = typeof(model)
         allfieldnames = fieldnames(M)
 
@@ -296,11 +368,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             if !haskey(allfields,modelkey)
                 modelx = getproperty(model,modelkey)
                 if is_splittable(modelx)
-                    if modelx isa EoSModel
-                        allfields[modelkey]= split_model(modelx,subset)
-                    else
-                        allfields[modelkey]= split_model(modelx,splitter)
-                    end
+                    allfields[modelkey]= core_split_model(modelx,model_splitter)
                 else
                     allfields[modelkey] = fill(modelx,len)
                 end
@@ -332,22 +400,3 @@ function simple_split_model(Base.@nospecialize(model::EoSModel),subset = nothing
 end
 
 export split_model
-
-#=
-function _split_model(groups::GroupParam)
-    len = length(groups.components)
-    function generator(i)
-        return GroupParam(
-        [groups.components[i]],
-        [groups.groups[i]],
-        [groups.n_groups[i]],
-        [collect(1:length(groups.n_groups[i]))],
-        groups.flattenedgroups[groups.i_groups[i]],
-        [groups.n_groups[i]],
-        each_split_model(groups.n_groups_cache,groups.i_groups[i]),
-        1:length(groups.n_groups[i]),
-        groups.sourcecsvs)
-    end
-    [generator(i) for i ∈ 1:len]
-end
-=#

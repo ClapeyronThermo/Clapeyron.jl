@@ -2,12 +2,17 @@
 
 function eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSModel))
     print(io, typeof(model))
-    length(model) == 1 && println(io, " with 1 component:")
-    length(model) > 1 && println(io, " with ", length(model), " components:")
-    for i in 1:length(model)
-        print(io, " \"", model.components[i], "\"")
-        i != length(model) && println(io)
+    if hasfield(typeof(model),:components)
+        length(model) == 1 && println(io, " with 1 component:")
+        length(model) > 1 && println(io, " with ", length(model), " components:")
+        for i in 1:length(model)
+            print(io, " \"", model.components[i], "\"")
+            i != length(model) && println(io)
+        end
+    else
+        print(io,"()")
     end
+
     if hasfield(typeof(model),:params)
         println(io)
         paramnames = fieldnames(typeof(model.params))
@@ -82,5 +87,4 @@ function show_references(io::IO,model)
     end
     return nothing
 end
-
 export eosshow

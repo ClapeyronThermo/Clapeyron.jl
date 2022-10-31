@@ -1,6 +1,14 @@
 abstract type sPCSAFTModel <: PCSAFTModel end
-@newmodel sPCSAFT sPCSAFTModel PCSAFTParam
 
+sPCSAFT_SETUP = ModelOptions(
+        :sPCSAFT;
+        supertype=sPCSAFTModel,
+        parent=PCSAFT_SETUP,
+        locations=["SAFT/PCSAFT/sPCSAFT/", "properties/molarmass.csv"],
+        references=["10.1021/ie020753p"],
+    )
+
+createmodel(sPCSAFT_SETUP; verbose=true)
 export sPCSAFT
 
 """

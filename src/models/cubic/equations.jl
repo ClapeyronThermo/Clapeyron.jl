@@ -1,3 +1,10 @@
+struct ABCubicInputParam <: EoSParam
+    k::PairParam{Float64}
+    Tc::SingleParam{Float64}
+    pc::SingleParam{Float64}
+    Mw::SingleParam{Float64}
+end
+
 struct ABCubicParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}

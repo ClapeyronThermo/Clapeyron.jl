@@ -1,17 +1,20 @@
 abstract type PPR78RuleModel <: MixingRule end
 
-struct PPR78Param <: EoSParam
-    A::PairParam{Float64}
-    B::PairParam{Float64}
-end
+PPR78Rule_SETUP = ModelOptions(
+        :PPR78Rule;
+        supertype=PPR78RuleModel,
+        locations=["cubic/EPPR78/EPPR78_unlike.csv"],
+        grouplocations=["cubic/EPPR78/EPPR78_groups.csv"],
+        params=[
+            ParamField(:A, PairParam{Float64}),
+            ParamField(:B, PairParam{Float64}),
+        ],
+        has_groups=true,
+        references=["10.1002/aic.12232","10.1016/j.fluid.2022.113456"],
+    )
 
-struct PPR78Rule <: PPR78RuleModel
-    groups::GroupParam
-    components::Vector{String}
-    params::PPR78Param
-    references::Vector{String}
-end
-@registermodel PPR78Rule
+createmodel(PPR78Rule_SETUP; verbose=true)
+export PPR78Rule
 
 """
     PPR78Rule <: PPR78RuleModel

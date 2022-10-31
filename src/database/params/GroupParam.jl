@@ -145,3 +145,13 @@ function Base.show(io::IO, param::GroupParam)
     end
     print(io,"]")
 end
+
+struct GroupDefinition
+    component::String
+    groups::Vector{String}
+    multiplicities::Vector{Integer}
+end
+
+function GroupDefinition(component::String, groups_multiplicities::Vector{Pair{String,Integer}})
+    return Group(component, first.(groups_multiplicities), last.(groups_multiplicities))
+end

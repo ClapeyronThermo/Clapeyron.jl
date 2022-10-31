@@ -1,3 +1,34 @@
+abstract type QCPRModel <: PRModel end
+
+QCPR_SETUP = ModelOptions(
+        :QCPR;
+        supertype=QCPRModel,
+        parent=PR_SETUP,
+        locations=[
+            "properties/critical.csv",
+            "cubic/QCPR/QCPR_critical.csv",
+            "cubic/QCPR/QCPR_unlike.csv",
+        ],
+        members=[
+            ModelMember(:alpha, :TwuAlpha;
+                overwritelocations=[
+                    "cubic/QCPR/Twu_QCPR.csv",
+                    "cubic/QCPR/QCPR_unlike.csv",
+                ]
+            ),
+            ModelMember(:activity, :Nothing),
+            ModelMember(:mixing, :QCPRRule),
+            ModelMember(:translation, :ConstantTranslation;
+                overwritelocations=["cubic/QCPR/QCPR_translation.csv"]
+            ),
+            ModelMember(:idealmodel, :BasicIdeal; groupcontribution_allowed=true),
+        ],
+        references=["10.1016/j.fluid.2020.112790"],
+    )
+
+createmodel(QCPR_SETUP; verbose=true)
+export QCPR
+
 """
     QCPR(components::Vector{String}; idealmodel=BasicIdeal,
         userlocations=String[], 

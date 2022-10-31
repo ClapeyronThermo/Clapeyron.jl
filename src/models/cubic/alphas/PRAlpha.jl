@@ -1,8 +1,19 @@
-struct PRAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+PRAlpha_SETUP = ModelOptions(
+        :PRAlpha;
+        supertype=SoaveAlphaModel,
+        locations=["properties/critical.csv"],
+        inputparams=[
+            ParamField(:w, SingleParam{Float64}),
+        ],
+        params=[
+            ParamField(:acentricfactor, SingleParam{Float64}),
+        ],
+        mappings=[
+            ModelMapping([:w], [:acentricfactor]),
+        ],
+    )
 
-@newmodelsimple PRAlpha SoaveAlphaModel PRAlphaParam
+createmodel(PRAlpha_SETUP; verbose=true)
 export PRAlpha
 
 """
@@ -31,13 +42,5 @@ mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
 
 """
 PRAlpha
-
-function PRAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    acentricfactor = SingleParam(params["w"],"acentric factor")
-    packagedparams = PRAlphaParam(acentricfactor)
-    model = PRAlpha(packagedparams, verbose=verbose)
-    return model
-end
 
 @inline α_m(model,::PRAlpha) = (0.37464,1.54226,-0.26992)
