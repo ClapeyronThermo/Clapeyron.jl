@@ -10,7 +10,6 @@ abstract type UNIFACModel <: ActivityModel end
 
 struct UNIFAC{c<:EoSModel} <: UNIFACModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACParam
     puremodel::EoSVectorParam{c}
@@ -90,12 +89,11 @@ function UNIFAC(components::Vector{String};
     C  = params["C"]
     R  = params["R"]
     Q  = params["Q"]
-    icomponents = 1:length(components)
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1021/i260064a004"]
     cache = UNIFACCache(groups,packagedparams)
-    model = UNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
+    model = UNIFAC(components,groups,packagedparams,_puremodel,references,cache)
     return model
 end
 

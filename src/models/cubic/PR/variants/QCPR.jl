@@ -49,10 +49,9 @@ function QCPR(components::Vector{String}; idealmodel=BasicIdeal,
     packagedparams = ConstantTranslationParam(c)
     init_translation = ConstantTranslation(packagedparams, verbose=verbose)
 
-    icomponents = 1:length(components)
     packagedparams = PRParam(a,b,Tc,pc,Mw)
     references = String["10.1021/I160057A011"]
-    model = PR(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = PR(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 

@@ -11,7 +11,6 @@ end
 
 struct Berthelot{T <: IdealModel,α,c,M} <: BerthelotModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     alpha::α
     mixing::M
     translation::c
@@ -102,10 +101,9 @@ function Berthelot(components::Vector{String}; idealmodel=BasicIdeal,
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    icomponents = 1:length(components)
     packagedparams = BerthelotParam(a,b,Tc,pc,Vc,Mw)
     references = String["10.1051/jphystap:018990080026300"]
-    model = Berthelot(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = Berthelot(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 
