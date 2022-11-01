@@ -17,7 +17,7 @@ struct RawParam{T}
     sources::Vector{String} # "Tape" of parsed sources
     csv::Vector{String} # "Tape" of origin csv
     type::CSVType #the type of data
-    grouptype::String #in the future, this could hold an "Options" type,generated per CSV
+    grouptype::Symbol #in the future, this could hold an "Options" type,generated per CSV
 end
 
 Base.eltype(raw::RawParam) = eltype(raw.data)

@@ -1,4 +1,4 @@
-@enum CSVType singledata pairdata assocdata groupdata
+@enum CSVType invaliddata singledata pairdata assocdata groupdata
 
 include("database_rawparam.jl")
 include("database_utils.jl")
@@ -149,11 +149,18 @@ function createparams(components::Vector{String},
             filepath = chop(filepath,head = 9, tail = 0)
         end
         
-        csvtype = readcsvtype(filepath)
+        csv_options = read_csv_options(filepath)
+        csvtype = csv_options.csvtype
         if csvtype == groupdata && !parsegroups
             continue
         end
-        foundparams, notfoundparams = findparamsincsv(components, filepath,options,parsegroups)
+        if csvtype == invaliddata
+            if verbose
+                __verbose_findparams_invaliddata(filepath)
+            end
+            continue
+        end
+        foundparams, notfoundparams = findparamsincsv(components,filepath,options,parsegroups,csv_options)
 
         #Merge found data
         for vv ∈ foundparams
@@ -256,7 +263,7 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
     return (_single,_pair,_assoc)
 end
 
-function findparamsincsv(components,filepath,options::ParamOptions = DefaultOptions,parsegroups = false)
+function findparamsincsv(components,filepath,options::ParamOptions = DefaultOptions,parsegroups = false,csv_file_options = read_csv_options(filepath))
 
     headerparams = readheaderparams(filepath,options)
     sourcecolumnreference = options.source_columnreference
@@ -264,8 +271,9 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
     normalisecomponents = options.normalisecomponents
     component_delimiter = options.component_delimiter
 
-    csvtype = readcsvtype(filepath)
-    grouptype = "" #TODO: actually parse this from csvs
+    grouptype = csv_file_options.grouptype
+    csvtype = csv_file_options.csvtype
+
     df = CSV.File(filepath; header=3, pool=0,silencewarnings=true)
     csvheaders = String.(Tables.columnnames(df))
     normalised_components = normalisestring.(components,normalisecomponents)
@@ -379,6 +387,10 @@ end
 
 #verbose functionality, is executed for each csv when verbose == true
 
+function __verbose_findparams_invaliddata(filepath)
+    @warn "Skipping $filepath, cannot infer correct csv type. Check line 2 of the CSV to see if it has valid information."
+end
+
 function __assoc_string(pair)
     "($(pair[1]),$(pair[3])) ⇋ ($(pair[2]), $(pair[4]))"
 end
@@ -438,21 +450,23 @@ end
 
 const readcsvtype_keywords  = ["like", "single", "unlike", "pair", "assoc", "group", "groups"]
 
-function readcsvtype(filepath)
+function read_csv_options(filepath)
+    line = getline(String(filepath), 2)
     # Searches for type from second line of CSV.
-    keywords = readcsvtype_keywords
-    words = split(lowercase(strip(getline(String(filepath), 2), ',')), ' ')
-    foundkeywords = intersect(words, keywords)
-    if isempty(foundkeywords)
-        error("Unable to determine type of database ", filepath, ". Check that keyword is present on Line 2.")
+    has_csv_options = false
+    if has_csv_options
+        return __get_options(line)
+    else
+        keywords = readcsvtype_keywords
+        words = split(lowercase(strip(line, ',')), ' ')
+        foundkeywords = intersect(words, keywords)
+        return (csvtype = _readcsvtype(foundkeywords),grouptype = :unknown)
     end
-    if length(foundkeywords) > 1
-        error("Multiple keywords found ∈ database ", filepath, ": ", foundkeywords)
-    end
-    _readcsvtype(only(foundkeywords))
 end
 
-function _readcsvtype(key)
+function _readcsvtype(keys)
+    length(keys) != 1 && return invaliddata
+    key = only(keys)
     key == "single" && return singledata
     key == "like" && return singledata
     key == "pair" && return pairdata
@@ -460,7 +474,12 @@ function _readcsvtype(key)
     key == "assoc" && return assocdata
     key == "group" && return groupdata
     key == "groups" && return groupdata
-    error("Unable to determine database type of $key")
+    return invaliddata
+end
+
+function __get_options(data::String)
+    #rx = r"(?<=\\()[^)]*?(?=\\))"
+    return (csvtype = invaliddata,grouptype = :unkwown)
 end
 
 function readheaderparams(filepath::AbstractString, options::ParamOptions = DefaultOptions,headerline::Int = 3)
@@ -516,6 +535,13 @@ function GroupParam(gccomponents,
     raw_groups = raw_result["groups"] #SingleParam{String}
     is_valid_param(raw_groups,options) #this will check if we actually found all params, via single missing detection.
     groupsourcecsvs = raw_groups.sourcecsvs
+    
+    ##TODO: extract groups
+    if haskey(allparams,"groups")
+        grouptype = allparams["groups"].grouptype
+    else
+        grouptype = :unknown
+    end
 
     gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(gccomponents))
     j = 0
@@ -528,7 +554,7 @@ function GroupParam(gccomponents,
             gccomponents_parsed[i] = gccomponents[i]
         end
     end
-    return GroupParam(gccomponents_parsed,groupsourcecsvs)
+    return GroupParam(gccomponents_parsed,grouptype,groupsourcecsvs)
 end
 
 function _parse_group_string(gc::String)
@@ -553,6 +579,6 @@ function _parse_group_string(gc::String)
     else
         throw(error("incorrect group format"))
     end
-
 end
+
 export getparams
