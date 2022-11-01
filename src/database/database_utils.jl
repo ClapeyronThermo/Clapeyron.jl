@@ -42,6 +42,14 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
 """
 function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vector{String}
     # We do not use realpath here directly because we want to make the .csv suffix optional.
+    if startswith(location,"@REPLACE")
+        locs = splitpath(location)
+        popfirst!(locs)
+        result = getpaths(joinpath(locs))
+        rr =  ["@REPLACE\\" * res for res in result] #TODO: look how to obtain the default path delimiter
+        return rr
+    end    
+
     if relativetodatabase 
         new_loc = normpath("@DB",location)
     else
@@ -55,11 +63,6 @@ function _getpaths(location,special_parse = true)
     if special_parse && startswith(location,'@')
         locs = splitpath(location)
         first_identifier = locs[1]
-        if first_identifier ∈ SPECIAL_IDENTIFIERS #to filter for @REPLACE
-            popfirst!(locs)
-            paths = _getpaths(joinpath(locs))
-            return join.(first_identifier,paths)
-        end
         if startswith(first_identifier,'@')
             raw_first_identifier = chop(first_identifier,head = 1,tail = 0)
             if haskey(SHORT_PATHS,raw_first_identifier)
@@ -81,7 +84,7 @@ function _getpaths(location,special_parse = true)
             error("The path ", location, " does not exist.")
     end =# 
     files = joinpath.(filepath, readdir(filepath))
-    return realpath.(files[isfile.(files) .& (getfileextension.(files) .== "csv")])
+    result = realpath.(files[isfile.(files) .& (getfileextension.(files) .== "csv")])
 end
 
 function flattenfilepaths(locations,userlocations)

@@ -143,6 +143,12 @@ function createparams(components::Vector{String},
     allparams = Dict{String,RawParam}()
     allnotfoundparams = Dict{String,CSVType}()
     for filepath ∈ filepaths
+        
+        _replace = startswith(filepath,"@REPLACE")
+        if _replace
+            filepath = chop(filepath,head = 9, tail = 0)
+        end
+        
         csvtype = readcsvtype(filepath)
         if csvtype == groupdata && !parsegroups
             continue
@@ -152,7 +158,8 @@ function createparams(components::Vector{String},
         #Merge found data
         for vv ∈ foundparams
             kk = vv.name
-            if haskey(allparams,kk)
+            #we merge if the filepath is not set to replace the current values
+            if haskey(allparams,kk) && !_replace
                 vv2 = allparams[kk]
                 vv = joindata!(vv2,vv)
             end
@@ -166,6 +173,12 @@ function createparams(components::Vector{String},
                 !success && error_clashing_headers(vv2,vv,kk) #Clashing headers error
             end
             allnotfoundparams[kk] = vv
+        end
+
+        if _replace #if the paramter is not found, that means that we want to erase that param.
+            for (kk,vv) ∈ pairs(notfoundparams)
+                delete!(allparams,kk)
+            end
         end
     end
     #delete all found params from allnotfoundparams
