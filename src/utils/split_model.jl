@@ -102,7 +102,7 @@ function each_split_model(param::PairParameter,I)
             param.name,
             components,
             value,
-            param.symmetric,
+            diagvalues(value),
             ismissingvalues,
             param.sourcecsvs,
             param.sources
