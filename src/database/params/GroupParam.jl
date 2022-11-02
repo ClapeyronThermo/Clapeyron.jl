@@ -4,6 +4,7 @@
 Struct holding group parameters.contains:
 * `components`: a list of all components
 * `groups`: a list of groups names for each component
+* `grouptype`: used to differenciate between different group models.
 * `i_groups`: a list containing the number of groups for each component
 * `n_groups`: a list of the group multiplicity of each group corresponding to each group in `i_groups`
 * `flattenedgroups`: a list of all unique groups--the parameters correspond to this list
@@ -19,7 +20,7 @@ julia> grouplist = [
            ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])];
 
 julia> groups = GroupParam(grouplist)
-GroupParam with 3 components:
+GroupParam(:unkwown) with 3 components:
  "ethanol": "CH3" => 1, "CH2" => 1, "OH" => 1
  "nonadecanol": "CH3" => 1, "CH2" => 18, "OH" => 1
  "ibuprofen": "CH3" => 3, "COOH" => 1, "aCCH" => 1, "aCCH2" => 1, "aCH" => 4
@@ -116,7 +117,7 @@ function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)
-    print(io,"GroupParam ")
+    print(io,"GroupParam(:",param.grouptype,") ")
     len = length(param.components)
     println(io,"with ", len, " component", ifelse(len==1, ":", "s:"))
 
