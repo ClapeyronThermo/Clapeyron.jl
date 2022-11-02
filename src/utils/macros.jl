@@ -14,8 +14,6 @@ function arbitraryparam(params)
      return fieldnames(paramstype)[idx] |> z->getfield(params,z)
 end
 
-
-
 """
     @groups
 
@@ -117,30 +115,30 @@ macro newmodelgc(name, parent, paramstype)
         references::Array{String,1}
     end
 
-    has_sites(::Type{<:$name}) = true
-    has_groups(::Type{<:$name}) = true
+    Clapeyron.has_sites(::Type{<:$name}) = true
+    Clapeyron.has_groups(::Type{<:$name}) = true
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
-        return gc_eosshow(io, mime, model)
+        return Clapeyron.gc_eosshow(io, mime, model)
     end
 
     function Base.show(io::IO, model::$name)
-        return eosshow(io, model)
+        return Clapeyron.eosshow(io, model)
     end
 
     Base.length(model::$name) = Base.length(model.groups.components)
 
-    molecular_weight(model::$name,z=SA[1.0]) = group_molecular_weight(model.groups,mw(model),z)
+    Clapeyron.molecular_weight(model::$name,z=SA[1.0]) = Clapeyron.group_molecular_weight(model.groups,Clapeyron.mw(model),z)
 
     function $name(params::$paramstype,
         groups::GroupParam,
         idealmodel::IDEALTYPE = BasicIdeal;
         ideal_userlocations::Vector{String}=String[],
         references::Vector{String}=String[],
-        assoc_options::AssocOptions = AssocOptions(),
+        assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
 
-        return build_model($name,params,groups,idealmodel;ideal_userlocations,references,assoc_options,verbose)
+        return Clapeyron.build_model($name,params,groups,idealmodel;ideal_userlocations,references,assoc_options,verbose)
     end
 
     function $name(params::$paramstype,
@@ -149,10 +147,10 @@ macro newmodelgc(name, parent, paramstype)
         idealmodel::IDEALTYPE = BasicIdeal;
         ideal_userlocations::Vector{String}=String[],
         references::Vector{String}=String[],
-        assoc_options::AssocOptions = AssocOptions(),
+        assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
 
-        return build_model($name,params,groups,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
+        return Clapeyron.build_model($name,params,groups,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
     end
 
 end |> esc
@@ -177,37 +175,37 @@ macro newmodel(name, parent, paramstype)
         assoc_options::AssocOptions
         references::Array{String,1}
     end
-    has_sites(::Type{<:$name}) = true
+    Clapeyron.has_sites(::Type{<:$name}) = true
    
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
-        return eosshow(io, mime, model)
+        return Clapeyron.eosshow(io, mime, model)
     end
 
     function Base.show(io::IO, model::$name)
-        return eosshow(io, model)
+        return Clapeyron.eosshow(io, model)
     end
-    molecular_weight(model::$name,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
+    Clapeyron.molecular_weight(model::$name,z=SA[1.0]) = Clapeyron.comp_molecular_weight(mw(model),z)
     Base.length(model::$name) = Base.length(model.components)
 
     function $name(params::$paramstype,
         sites::SiteParam,
-        idealmodel::IDEALTYPE = BasicIdeal;
+        idealmodel::IDEALTYPE = Clapeyron.BasicIdeal;
         ideal_userlocations::Vector{String}=String[],
         references::Vector{String}=String[],
-        assoc_options::AssocOptions = AssocOptions(),
+        assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
 
-        return build_model($name,params,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
+        return Clapeyron.build_model($name,params,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
     end
 
     function $name(params::$paramstype,
-        idealmodel::IDEALTYPE = BasicIdeal;
+        idealmodel::IDEALTYPE = Clapeyron.BasicIdeal;
         ideal_userlocations::Vector{String}=String[],
         references::Vector{String}=String[],
-        assoc_options::AssocOptions = AssocOptions(),
+        assoc_options::AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
 
-        return build_model($name,params,idealmodel;ideal_userlocations,references,assoc_options,verbose)
+        return Clapeyron.build_model($name,params,idealmodel;ideal_userlocations,references,assoc_options,verbose)
     end
 
     end |> esc
@@ -228,11 +226,11 @@ macro newmodelsimple(name, parent, paramstype)
     end
 
     function Base.show(io::IO, mime::MIME"text/plain", model::$name)
-        return eosshow(io, mime, model)
+        return Clapeyron.eosshow(io, mime, model)
     end
 
     function Base.show(io::IO, model::$name)
-        return eosshow(io, model)
+        return Clapeyron.eosshow(io, model)
     end
 
     Base.length(model::$name) = Base.length(model.components)
@@ -241,7 +239,7 @@ macro newmodelsimple(name, parent, paramstype)
             references::Vector{String}=String[],
             verbose::Bool = false)
 
-        return build_model($name,params;references,verbose)
+        return Clapeyron.build_model($name,params;references,verbose)
     end
     end |> esc
 end
@@ -406,3 +404,18 @@ return quote
 end
 
 export @newmodel, @f, @newmodelgc, @newmodelsimple
+#=
+function __newmodel(name, parent, paramstype,sites,idealmodel)
+    
+    if sites
+    struct $name{T <: IdealModel} <: $parent
+        components::Array{String,1}
+        groups::GroupParam
+        sites::SiteParam
+        params::$paramstype
+        idealmodel::T
+        assoc_options::AssocOptions
+        references::Array{String,1}
+    end
+
+end =#
