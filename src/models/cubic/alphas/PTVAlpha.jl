@@ -47,7 +47,7 @@ function α_function(model::CubicModel,V,T,z,alpha_model::PTVAlphaModel)
     Vc = model.params.Vc.values
     Zc = @. Vc*Pc/(R̄*Tc)
     ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(T),length(Tc))
+    α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         Zci = Vc[i]*Pc[i]/(R̄*Tc[i])
         coeff = (0.46283,3.58230*Zci,8.19417*Zci^2)

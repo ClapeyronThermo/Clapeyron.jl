@@ -47,7 +47,7 @@ end
 function α_function(model::CubicModel,V,T,z,alpha_model::PR78AlphaModel)
     Tc = model.params.Tc.values
     ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(T),length(Tc))
+    α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         ωi = ω[i]
         m = ifelse(ωi<=0.491,

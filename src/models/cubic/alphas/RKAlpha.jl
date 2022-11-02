@@ -43,7 +43,7 @@ RKAlpha() = RKAlpha(RKAlphaParam())
 
 function α_function(model::CubicModel,V,T,z,alpha_model::RKAlphaModel)
     Tc = model.params.Tc.values
-    α = zeros(typeof(T),length(Tc))
+    α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         Tr = T/Tc[i]
         α[i] = 1 /√(Tr)

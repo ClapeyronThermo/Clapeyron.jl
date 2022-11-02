@@ -57,7 +57,7 @@ end
 function α_function(model::RKModel,V,T,z,alpha_model::BMAlphaModel)
     Tc = model.params.Tc.values
     ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(T),length(Tc))
+    α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         ωi = ω[i]
         m = evalpoly(ωi,(0.480,1.547,-0.176))
