@@ -60,3 +60,5 @@ function PSRKUNIFAC(components::Vector{String};
     setreferences!(model,String["10.1021/i260064a004","10.1016/j.fluid.2004.11.002"])
     return model
 end
+
+export PSRKUNIFAC

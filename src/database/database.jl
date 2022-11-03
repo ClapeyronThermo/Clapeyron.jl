@@ -155,7 +155,7 @@ function createparams(components::Vector{String},
             continue
         end
         if csvtype == invaliddata
-            if verbose
+            if options.verbose
                 __verbose_findparams_invaliddata(filepath)
             end
             continue
@@ -452,10 +452,14 @@ const readcsvtype_keywords  = ["like", "single", "unlike", "pair", "assoc", "gro
 
 function read_csv_options(filepath)
     line = getline(String(filepath), 2)
+    re = r"\[.*\]"
+    maybe_opts = match(re,line)
+
     # Searches for type from second line of CSV.
-    has_csv_options = false
+    has_csv_options = !isnothing(maybe_opts)
     if has_csv_options
-        return __get_options(line)
+        opts = chop(maybe_opts.match,head = 1,tail = 1)
+        return __get_options(opts)
     else
         keywords = readcsvtype_keywords
         words = split(lowercase(strip(line, ',')), ' ')
@@ -464,9 +468,13 @@ function read_csv_options(filepath)
     end
 end
 
-function _readcsvtype(keys)
-    length(keys) != 1 && return invaliddata
-    key = only(keys)
+
+function _readcsvtype(collection)
+    length(collection) != 1 && return invaliddata
+    key = only(collection)
+    return _readcsvtype(key)
+end
+function _readcsvtype(key::AbstractString)
     key == "single" && return singledata
     key == "like" && return singledata
     key == "pair" && return pairdata
@@ -474,12 +482,20 @@ function _readcsvtype(keys)
     key == "assoc" && return assocdata
     key == "group" && return groupdata
     key == "groups" && return groupdata
+    key == "invalid" && return invaliddata
     return invaliddata
 end
 
-function __get_options(data::String)
-    #rx = r"(?<=\\()[^)]*?(?=\\))"
-    return (csvtype = invaliddata,grouptype = :unkwown)
+function __get_options(data)
+    opts = split(data,',')
+    opts_dict = Dict{String,String}()
+    for opt in opts
+        k,v = split(replace(opt,' ' => ""),'=')
+        opts_dict[k] = v
+    end
+    _csvtype = _readcsvtype(get(opts_dict,"csvtype","invalid"))
+    _grouptype = Symbol(get(opts_dict,"grouptype","unkwown"))
+    return (csvtype = _csvtype,grouptype = _grouptype)
 end
 
 function readheaderparams(filepath::AbstractString, options::ParamOptions = DefaultOptions,headerline::Int = 3)
