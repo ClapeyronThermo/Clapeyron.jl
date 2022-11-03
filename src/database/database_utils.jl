@@ -60,6 +60,7 @@ function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vec
 end
 
 function _getpaths(location,special_parse = true)
+    location == "@REMOVEDEFAULTS" && return ["@REMOVEDEFAULTS"]
     if special_parse && startswith(location,'@')
         locs = splitpath(location)
         first_identifier = locs[1]
@@ -88,13 +89,13 @@ function _getpaths(location,special_parse = true)
 end
 
 function flattenfilepaths(locations,userlocations)
-    res =
-                vcat(
-                    reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[]),
-                    reduce(vcat,getpaths.(userlocations),init = String[]),
-                    String[]
-                    )
-    return res
+    defaultpaths = reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[])
+    userpaths = reduce(vcat,getpaths.(userlocations),init = String[])
+    if "@REMOVEDEFAULTS" in userpaths
+        defaultpaths = String[]
+        popfirst!(userpaths)
+    end
+    return vcat(defaultpaths,userpaths,String[])
 end
 
 function getline(filepath::AbstractString, selectedline::Int)

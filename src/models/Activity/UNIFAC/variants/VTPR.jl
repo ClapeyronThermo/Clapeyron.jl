@@ -23,7 +23,7 @@ export VTPRUNIFAC
 
     VTPRUNIFAC(components::Vector{String};
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
@@ -47,7 +47,7 @@ The residual part iterates over groups instead of components.
 Gᴱ = nRT(gᴱ(res))
 gᴱ(res) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
 v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
-Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components 
+Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 Θₖ = QₖXₖ/∑QₖXₖ
 Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
 ```
@@ -61,11 +61,12 @@ VTPRUNIFAC
 
 function VTPRUNIFAC(components::Vector{String};
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
-    groups = GroupParam(components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"]; verbose=verbose)
+    groups = GroupParam(components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"];group_userlocations = group_userlocations, verbose=verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/VTPR/VTPR_like.csv", "Activity/UNIFAC/VTPR/VTPR_unlike.csv"]; userlocations=userlocations,  asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
     A  = params["A"]

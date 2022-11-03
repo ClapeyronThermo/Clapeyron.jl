@@ -1,3 +1,4 @@
+function PSRKUNIFAC end
 """
     function PSRK(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = SoaveAlpha,
@@ -28,7 +29,7 @@ function PSRK(components::Vector{String}; idealmodel=BasicIdeal,
     mixing = PSRKRule,
     activity = PSRKUNIFAC,
     translation=PenelouxTranslation,
-    userlocations=String[], 
+    userlocations = String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -36,17 +37,18 @@ function PSRK(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
     verbose=false)
 
-     return RK(components;
-     idealmodel = idealmodel,
-     alpha = alpha,
-     mixing=mixing,
-     activity = activity,
-     translation = translation,
-     ideal_userlocations = ideal_userlocations,
-     alpha_userlocations = alpha_userlocations,
-     mixing_userlocations = mixing_userlocations,
-     activity_userlocations = activity_userlocations,
-     translation_userlocations = translation_userlocations,
-     verbose = verbose)
+    return RK(components;
+    idealmodel = idealmodel,
+    alpha = alpha,
+    mixing=mixing,
+    activity = activity,
+    translation = translation,
+    userlocations = userlocations,
+    ideal_userlocations = ideal_userlocations,
+    alpha_userlocations = alpha_userlocations,
+    mixing_userlocations = mixing_userlocations,
+    activity_userlocations = activity_userlocations,
+    translation_userlocations = translation_userlocations,
+    verbose = verbose)
 end
 export PSRK

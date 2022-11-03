@@ -494,11 +494,11 @@ function readheaderparams(filepath::AbstractString, options::ParamOptions = Defa
 end
 
 function GroupParam(gccomponents::Vector,
-    grouplocations::Vector{String}=String[];
-    usergrouplocations::Vector{String}=String[],
+    group_locations::Vector{String}=String[];
+    group_userlocations::Vector{String}=String[],
     verbose::Bool=false)
-    options = ParamOptions(;usergrouplocations,verbose)
-    return GroupParam(gccomponents,grouplocations,options)
+    options = ParamOptions(;group_userlocations,verbose)
+    return GroupParam(gccomponents,group_locations,options)
 end
 
 function GroupParam(gccomponents,
@@ -527,7 +527,7 @@ function GroupParam(gccomponents,
         end
     end
     #using parsing machinery
-    usergrouplocations = options.usergrouplocations
+    usergrouplocations = options.group_userlocations
     componentstolookup = components[to_lookup]
     filepaths = flattenfilepaths(grouplocations,usergrouplocations)
     allparams,allnotfoundparams = createparams(componentstolookup, filepaths, options, true) #merge all found params

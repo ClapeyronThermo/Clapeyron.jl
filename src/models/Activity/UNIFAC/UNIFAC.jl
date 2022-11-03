@@ -77,11 +77,12 @@ UNIFAC
 
 function UNIFAC(components::Vector{String};
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
+    group_userlocations = String[], 
     pure_userlocations = String[],
     verbose = false)
     
-    groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; verbose=verbose)
+    groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
     A  = params["A"]

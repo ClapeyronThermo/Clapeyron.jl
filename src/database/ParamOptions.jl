@@ -12,7 +12,7 @@ const DEFAULT_N_SITES = Dict{String,String}(
 
 Struct containing all the options related to parameter parsing:
 * `userlocations::Vector{String} = String[]`: List of used-defined locations to search.
-* `usergrouplocations::Vector{String} = String[]`: List of used-defined group locations to search.
+* `group_userlocations::Vector{String} = String[]`: List of used-defined group locations to search.
 * `asymmetricparams::Vector{String} = String[]`: List of pair parameters that follow that `param[i,j] ≠ param[j,i]`. if not set on asymmetric pairs, the asymmetric values will be overwritten!
 * `ignore_headers::Vector{String} =  ["dipprnumber", "smiles"]`: List of ignored headers.
 * `ignore_missing_singleparams::Vector{String} = String[]`: List of parameters where checking for missing parameter values (in `SingleParam`) or the diagonal (on `PairParam`) are ignored.
@@ -27,7 +27,7 @@ Struct containing all the options related to parameter parsing:
 """
 Base.@kwdef struct ParamOptions
     userlocations::Vector{String} = String[]
-    usergrouplocations::Vector{String} = String[]
+    group_userlocations::Vector{String} = String[]
     asymmetricparams::Vector{String}= String[]
     ignore_missing_singleparams::Vector{String} = String[]
     ignore_headers::Vector{String} = ["dipprnumber", "smiles", "cas"]

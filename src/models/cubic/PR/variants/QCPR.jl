@@ -28,11 +28,11 @@ function QCPR(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
     verbose=false)
 
-QCPR_userlocations = vcat("@REPLACE/@DB/cubic/QCPR/QCPR_critical.csv", "@REPLACE/@DB/cubic/QCPR/QCPR_unlike.csv",userlocations)
-QCPR_alpha_userlocations = vcat("@REPLACE/@DB/cubic/QCPR/Twu_QCPR.csv",alpha_userlocations)
-QCPR_translation_userlocations = vcat("@REPLACE/@DB/cubic/QCPR/QCPR_translation.csv",translation_userlocations)
+QCPR_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_critical.csv", "@DB/cubic/QCPR/QCPR_unlike.csv",userlocations)
+QCPR_alpha_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/Twu_QCPR.csv",alpha_userlocations)
+QCPR_translation_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_translation.csv",translation_userlocations)
 
-return PR(components;
+model = PR(components;
     idealmodel = idealmodel,
     alpha = TwuAlpha,
     mixing = QCPRRule,
@@ -45,6 +45,8 @@ return PR(components;
     activity_userlocations = activity_userlocations,
     translation_userlocations = QCPR_translation_userlocations,
     verbose=false)
+    setreferences!(model,String["10.1021/I160057A011"])
+    return model
 end
 
 export QCPR

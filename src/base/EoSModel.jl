@@ -155,4 +155,9 @@ function cite(model::EoSModel)
     end
     return unique!(res)
 end
-    
+
+function setreferences!(model,references)
+    oldrefs = model.references
+    resize!(oldrefs,length(references))
+    oldrefs .= references
+end
