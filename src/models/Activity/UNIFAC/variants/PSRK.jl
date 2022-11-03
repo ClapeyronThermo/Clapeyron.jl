@@ -1,18 +1,3 @@
-#=
-abstract type PSRKUNIFACModel <: UNIFACModel end
-
-struct PSRKUNIFAC{c<:EoSModel} <: PSRKUNIFACModel
-    components::Array{String,1}
-    groups::GroupParam
-    params::UNIFACParam
-    puremodel::EoSVectorParam{c}
-    references::Array{String,1}
-    unifac_cache::UNIFACCache
-end
-
-@registermodel PSRKUNIFAC
-export PSRKUNIFAC =#
-
 """
     PSRKUNIFAC(components::Vector{String};
     puremodel = PR,
@@ -34,7 +19,7 @@ export PSRKUNIFAC =#
 ## Description
 UNIFAC (UNIQUAC Functional-group Activity Coefficients) activity model.
 
-Modified UNIFAC (Dortmund) implementation, with parameters tuned to the Predictive Soave-Redlich-Kwong (PSRK) EoS.
+Modified [UNIFAC](@ref) (Dortmund) implementation, with parameters tuned to the Predictive Soave-Redlich-Kwong (PSRK) EoS.
 
 ## References
 1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. [doi:10.1021/i260064a004](https://doi.org/10.1021/i260064a004)

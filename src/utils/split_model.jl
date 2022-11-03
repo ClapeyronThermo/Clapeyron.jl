@@ -104,6 +104,7 @@ function each_split_model(param::AssocParam,I)
 end
 
 function each_split_model(param::GroupParam,I)
+    grouptype = param.grouptype
     components = param.components[I]
     groups = param.groups[I]
     n_groups = param.n_groups[I]
@@ -143,6 +144,7 @@ function each_split_model(param::GroupParam,I)
     return GroupParam(
         components,
         groups,
+        grouptype,
         n_groups,
         i_groups,
         flattenedgroups,

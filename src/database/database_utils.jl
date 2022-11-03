@@ -46,7 +46,7 @@ function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vec
         locs = splitpath(location)
         popfirst!(locs)
         result = getpaths(joinpath(locs))
-        rr =  ["@REPLACE\\" * res for res in result] #TODO: look how to obtain the default path delimiter
+        rr =  ["@REPLACE" * Base.Filesystem.path_separator * res for res in result]
         return rr
     end    
 
@@ -68,7 +68,7 @@ function _getpaths(location,special_parse = true)
             raw_first_identifier = chop(first_identifier,head = 1,tail = 0)
             if haskey(SHORT_PATHS,raw_first_identifier)
                 locs[1] = SHORT_PATHS[raw_first_identifier]
-                return _getpaths(joinpath(locs))
+                return _getpaths(join(locs,Base.Filesystem.path_separator))
             else
                 return _getpaths(location,false)
             end
