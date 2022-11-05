@@ -7,6 +7,7 @@ struct ToEstimate
     lower::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}
     upper::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}
     guess::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}  # if nothing, use current
+    symmetric::Vector{Bool}
 end
 
 function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
@@ -16,6 +17,7 @@ function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
     lower = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
     upper = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
     guess = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
+    sym = Vector{Bool}(undef,0)
     for dict in params_dict
         push!(params, dict[:param])
         push!(indices, get(dict, :indices, nothing))
@@ -26,8 +28,10 @@ function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
         push!(upper, typeof(upper_) <: AbstractFloat ? [upper_] : upper_)
         guess_ = get(dict, :guess, nothing)
         push!(guess, typeof(guess_) <: AbstractFloat ? [guess_] : guess_)
+        _sym = get(dict,:symmetric,true)
+        push!(sym,_sym)
     end
-    return ToEstimate(params, indices, factor, lower, upper, guess)
+    return ToEstimate(params, indices, factor, lower, upper, guess, sym)
 end
 
 export Estimation
@@ -83,7 +87,8 @@ export update_estimation!
 function update_estimation!(
         estimation::Estimation,
         params::Vector{Symbol},
-        values::Vector{Any}) 
+        values::Vector{Any})
+
     model = estimation.model
     for (i, param) in enumerate(params)
         current_param = getfield(model.params, param)
@@ -124,19 +129,20 @@ function return_model(
         values::Vector{T} where {T<:Any}) 
     params = estimation.toestimate.params
     factor = estimation.toestimate.factor
+    sym = estimation.toestimate.symmetric
     model = deepcopy(model)
     for (i, param) in enumerate(params)
         f = factor[i]
         current_param = getfield(model.params, param)
         if typeof(current_param) <: SingleParameter
             for (j, value) in enumerate(values[i])
-                current_param.values[j] = value*f
+                current_param[j] = value*f
             end
         end
         if typeof(current_param) <: PairParam
             for j = 1:length(model.components)
                 for k = 1:length(model.components)
-                    current_param.values[j,k] = values[i][j,k]*f
+                    current_param[j,k,sym[i]] = values[i][j,k]*f
                 end
             end
         end
@@ -240,6 +246,8 @@ function obj_fun(estimation::Estimation,guesses)
             prediction =  property.(model,inputs[1],inputs[2])
         elseif length(inputs)==3
             prediction =  property.(model,inputs[1],inputs[2],inputs[3])
+        else
+            prediction = property.(model,inputs...)
         end
         F += √(sum(((prediction.-output)./output).^2)/length(output))
     end
