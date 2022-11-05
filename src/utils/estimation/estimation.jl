@@ -133,37 +133,38 @@ function return_model(
     model = deepcopy(model)
     for (i, param) in enumerate(params)
         f = factor[i]
-        current_param = getfield(model.params, param)
-        if typeof(current_param) <: SingleParameter
-            for (j, value) in enumerate(values[i])
-                current_param[j] = value*f
-            end
-        end
-        if typeof(current_param) <: PairParam
-            for j = 1:length(model.components)
-                for k = 1:length(model.components)
-                    current_param[j,k,sym[i]] = values[i][j,k]*f
-                end
-            end
-        end
-        if typeof(current_param) <: AssocParam
-            if typeof(values[i]) <: Compressed4DMatrix
-                for (j, value) in enumerate(values[i].values)
-                    current_param.values.values[j] = value*f
-                end
-            else
+        if isdefined(model.params,param)
+            current_param = getfield(model.params, param)
+            if typeof(current_param) <: SingleParameter
                 for (j, value) in enumerate(values[i])
-                    current_param.values.values[j] = value*f
+                    current_param[j] = value*f
+                end
+            end
+            if typeof(current_param) <: PairParam
+                for j = 1:length(model.components)
+                    for k = 1:length(model.components)
+                        current_param[j,k,sym[i]] = values[i][j,k]*f
+                    end
+                end
+            end
+            if typeof(current_param) <: AssocParam
+                if typeof(values[i]) <: Compressed4DMatrix
+                    for (j, value) in enumerate(values[i].values)
+                        current_param.values.values[j] = value*f
+                    end
+                else
+                    for (j, value) in enumerate(values[i])
+                        current_param.values.values[j] = value*f
+                    end
                 end
             end
         end
     end
-    # fields = fieldnames(model)
-    # for i ∈ fields
-    #     if fields <: EoSModel
-    #         return_model!(estimation,model.i,values)
-    #     end
-    # end
+    for i ∈ fieldnames(typeof(model))
+        if typeof(getfield(model,i)) <: EoSModel
+            return_model!(estimation,getfield(model,i),values)
+        end
+    end
     return model
 end
 
@@ -171,41 +172,43 @@ function return_model!(
     estimation::Estimation,
     model::EoSModel,
     values::Vector{T} where {T<:Any}) 
-params = estimation.toestimate.params
-factor = estimation.toestimate.factor
-for (i, param) in enumerate(params)
-    f = factor[i]
-    current_param = getfield(model.params, param)
-    if typeof(current_param) <: SingleParameter
-        for (j, value) in enumerate(values[i])
-            current_param.values[j] = value*f
-        end
-    end
-    if typeof(current_param) <: PairParam
-        for j = 1:length(model.components)
-            for k = 1:length(model.components)
-                current_param.values[j,k] = values[i][j,k]*f
+    params = estimation.toestimate.params
+    factor = estimation.toestimate.factor
+    sym = estimation.toestimate.symmetric
+    for (i, param) in enumerate(params)
+        f = factor[i]
+        if isdefined(model.params,param)
+            current_param = getfield(model.params, param)
+            if typeof(current_param) <: SingleParameter
+                for (j, value) in enumerate(values[i])
+                    current_param[j] = value*f
+                end
+            end
+            if typeof(current_param) <: PairParam
+                for j = 1:length(model.components)
+                    for k = 1:length(model.components)
+                        current_param[j,k,sym[i]] = values[i][j,k]*f
+                    end
+                end
+            end
+            if typeof(current_param) <: AssocParam
+                if typeof(values[i]) <: Compressed4DMatrix
+                    for (j, value) in enumerate(values[i].values)
+                        current_param.values.values[j] = value*f
+                    end
+                else
+                    for (j, value) in enumerate(values[i])
+                        current_param.values.values[j] = value*f
+                    end
+                end
             end
         end
     end
-    if typeof(current_param) <: AssocParam
-        if typeof(values[i]) <: Compressed4DMatrix
-            for (j, value) in enumerate(values[i].values)
-                current_param.values.values[j] = value*f
-            end
-        else
-            for (j, value) in enumerate(values[i])
-                current_param.values.values[j] = value*f
-            end
+    for i ∈ fieldnames(typeof(model))
+        if typeof(getfield(model,i)) <: EoSModel
+            return_model!(estimation,getfield(model,i),values)
         end
     end
-end
-# fields = fieldnames(model)
-# for i ∈ fields
-#     if fields <: EoSModel
-#         return_model!(estimation,model.i,values)
-#     end
-# end
 end
 
 function logger(status)
