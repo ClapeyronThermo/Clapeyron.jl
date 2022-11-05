@@ -1,4 +1,4 @@
-OpenSAFT Database File,
+Clapeyron Database File,
 test Groups [csvtype = groups,grouptype = test]
 species,groups
 test1,"[""grp1"" => 1, ""grp2"" => 2]"
