@@ -120,10 +120,11 @@ end
 export return_model
 function return_model(
         estimation::Estimation,
+        model::EoSModel,
         values::Vector{T} where {T<:Any}) 
     params = estimation.toestimate.params
     factor = estimation.toestimate.factor
-    model = deepcopy(estimation.model)
+    model = deepcopy(model)
     for (i, param) in enumerate(params)
         f = factor[i]
         current_param = getfield(model.params, param)
@@ -151,24 +152,82 @@ function return_model(
             end
         end
     end
+    # fields = fieldnames(model)
+    # for i ∈ fields
+    #     if fields <: EoSModel
+    #         return_model!(estimation,model.i,values)
+    #     end
+    # end
     return model
+end
+
+function return_model!(
+    estimation::Estimation,
+    model::EoSModel,
+    values::Vector{T} where {T<:Any}) 
+params = estimation.toestimate.params
+factor = estimation.toestimate.factor
+for (i, param) in enumerate(params)
+    f = factor[i]
+    current_param = getfield(model.params, param)
+    if typeof(current_param) <: SingleParameter
+        for (j, value) in enumerate(values[i])
+            current_param.values[j] = value*f
+        end
+    end
+    if typeof(current_param) <: PairParam
+        for j = 1:length(model.components)
+            for k = 1:length(model.components)
+                current_param.values[j,k] = values[i][j,k]*f
+            end
+        end
+    end
+    if typeof(current_param) <: AssocParam
+        if typeof(values[i]) <: Compressed4DMatrix
+            for (j, value) in enumerate(values[i].values)
+                current_param.values.values[j] = value*f
+            end
+        else
+            for (j, value) in enumerate(values[i])
+                current_param.values.values[j] = value*f
+            end
+        end
+    end
+end
+# fields = fieldnames(model)
+# for i ∈ fields
+#     if fields <: EoSModel
+#         return_model!(estimation,model.i,values)
+#     end
+# end
+end
+
+function logger(status)
+    iter = status.iteration
+    best = status.best_sol
+    neval = status.f_calls
+    println("Iter: "*string(iter)*", Evals: "*string(neval)*", Best: "*string(best))
 end
 
 export optimize!
 
-function optimize!(estimation::Estimation,Method=:random_search,MaxSteps=20000,PopulationSize=500)
-    f(x) = obj_fun(estimation,x)
+function optimize!(estimation::Estimation,Method=Metaheuristics.SA(N=500))
     nparams = length(estimation.toestimate.params)
-    bounds = [(estimation.toestimate.lower[i][1],estimation.toestimate.upper[i][1]) for i ∈ 1:nparams]
+
+    f(x) = obj_fun(estimation,x)
+
     x0 = [estimation.toestimate.guess[i][1] for i ∈ 1:nparams]
-    x=BlackBoxOptim.bboptimize(f; SearchRange = bounds, NumDimensions=nparams, Method=Method, MaxSteps=MaxSteps, PopulationSize=PopulationSize);
-    model = return_model(estimation, BlackBoxOptim.best_candidate(x))
+    upper = [estimation.toestimate.upper[i][1] for i ∈ 1:nparams]
+    lower = [estimation.toestimate.lower[i][1] for i ∈ 1:nparams]
+    bounds = [lower upper]'
+    r = Metaheuristics.optimize(f, bounds, Method,logger=logger)
+    model = return_model(estimation, estimation.model, Metaheuristics.minimizer(r))
     update_estimation!(estimation,model)
 end
 
 function obj_fun(estimation::Estimation,guesses)
     F = 0
-    model = return_model(estimation, guesses)
+    model = return_model(estimation, estimation.model, guesses)
     for i ∈ 1:length(estimation.data)
         property = getfield(Clapeyron,estimation.data[i].method)
         inputs = estimation.data[i].inputs
@@ -182,29 +241,11 @@ function obj_fun(estimation::Estimation,guesses)
         elseif length(inputs)==3
             prediction =  property.(model,inputs[1],inputs[2],inputs[3])
         end
-        F += sum(abs.((prediction.-output)./output))/length(output)
+        F += √(sum(((prediction.-output)./output).^2)/length(output))
     end
-    return F
+    if isnan(F)
+        return 1e4
+    else
+        return F
+    end
 end
-
-toestimate = [
-    Dict(
-        :param => :epsilon,
-        :indices => [1],
-        :lower => [3.7],
-        :upper => 5.0,
-        :guess => 3.0
-    ),
-    Dict(
-        :param => :sigma,
-        :lower => 3.3,
-        :upper => 3.8,
-        :guess => 3.5
-    ),
-    Dict(
-        :param => :lambda_r,
-        :lower => 12.0,
-        :upper => 16.0,
-        :guess => 16.0
-    )
-] 
