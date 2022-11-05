@@ -273,8 +273,12 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
 
     grouptype = csv_file_options.grouptype
     csvtype = csv_file_options.csvtype
+    if startswith(filepath,"Clapeyron Database File")
+        df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true)
+    else
+        df = CSV.File(filepath; header=3, pool=0,silencewarnings=true)
 
-    df = CSV.File(filepath; header=3, pool=0,silencewarnings=true)
+    end
     csvheaders = String.(Tables.columnnames(df))
     normalised_components = normalisestring.(components,normalisecomponents)
     components_dict = Dict(v => k for (k,v) ∈ pairs(normalised_components))
@@ -448,7 +452,7 @@ function __verbose_findparams_found(foundvalues)
     end
 end
 
-const readcsvtype_keywords  = ["like", "single", "unlike", "pair", "assoc", "group", "groups"]
+const readcsvtype_keywords  = ["like", "single", "unlike", "pair", "assoc", "association", "group", "groups"]
 
 function read_csv_options(filepath)
     line = getline(String(filepath), 2)

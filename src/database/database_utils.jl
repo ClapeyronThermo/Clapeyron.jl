@@ -6,6 +6,8 @@ const SHORT_PATHS = Dict{String,String}(
 )
 
 const SPECIAL_IDENTIFIERS = ["@REPLACE"]
+const SKIP_GETPATHS = ("Clapeyron Database File," #a raw CSV file
+                    ,"{")# a raw json file
 """
     getfileextension(filepath)
 
@@ -42,6 +44,7 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
 """
 function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vector{String}
     # We do not use realpath here directly because we want to make the .csv suffix optional.
+    any(startswith(location,kw) for kw in SKIP_GETPATHS) && return [location]
     if startswith(location,"@REPLACE")
         locs = splitpath(location)
         popfirst!(locs)
@@ -60,7 +63,7 @@ function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vec
 end
 
 function _getpaths(location,special_parse = true)
-    location == "@REMOVEDEFAULTS" && return ["@REMOVEDEFAULTS"]
+    location == "@REMOVEDEFAULTS" && return [location]
     if special_parse && startswith(location,'@')
         locs = splitpath(location)
         first_identifier = locs[1]
@@ -91,23 +94,31 @@ end
 function flattenfilepaths(locations,userlocations)
     defaultpaths = reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[])
     userpaths = reduce(vcat,getpaths.(userlocations),init = String[])
-    if "@REMOVEDEFAULTS" in userpaths
+    idx = findfirst(isequal("@REMOVEDEFAULTS"),userpaths)
+    if !isnothing(idx)
         defaultpaths = String[]
-        popfirst!(userpaths)
+        popat!(userpaths,idx)
     end
     return vcat(defaultpaths,userpaths,String[])
 end
 
 function getline(filepath::AbstractString, selectedline::Int)
+    startswith(filepath,"Clapeyron Database File") && return getline(IOBuffer(filepath),selectedline)
+    open(_getline,filepath) do file
+       _getline(file,selectedline)
+    end
+end
+
+getline(file::IOBuffer,selectedline::Int) = _getline(file,selectedline)
+
+function _getline(file, selectedline::Int)
     # Simple function to return text from filepath at selectedline.
-    open(filepath) do file
         linecount = 1
         for line ∈ eachline(file)
             linecount == selectedline && return line
             linecount += 1
         end
         error("Selected line number exceeds number of lines in file")
-    end
 end
 
 function normalisestring(str, isactivated::Bool=true; tofilter::Regex=r"[ \-\_]", changecase::Bool=true)::String
