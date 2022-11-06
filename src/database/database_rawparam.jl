@@ -61,8 +61,11 @@ end
 function joindata!(old::RawParam,new::RawParam)
     tnew,type_sucess = joindata!(old.type,new.type)
     if old.grouptype !== new.grouptype
-        error_different_grouptype(old,new)
+        if new.grouptype != :unkwown #for backwards compatibility
+            error_different_grouptype(old,new)
+        end
     end
+    
     if !type_sucess
         error_clashing_headers(old,new)
     end

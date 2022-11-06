@@ -9,7 +9,7 @@ end
 
 """
     HVRule{γ} <: HVRuleModel
-    
+
     HVRule(components::Vector{String};
     activity = Wilson,
     userlocations::Vector{String}=String[],
@@ -20,13 +20,13 @@ end
 
 None
 
-## Input models 
+## Input models
 
 - `activity`: Activity Model
 
 ## Description
 
-Huron-Vidal Mixing Rule 
+Huron-Vidal Mixing Rule
 ```
 aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
 bᵢⱼ = (bᵢ +bⱼ)/2
@@ -48,10 +48,9 @@ HVRule
 
 export HVRule
 function HVRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    init_activity = activity(components;userlocations = activity_userlocations,verbose)
-    
+    _activity = init_activity(activity,components;userlocations = activity_userlocations,verbose)
     references = ["10.1016/0378-3812(79)80001-1"]
-    model = HVRule(components, init_activity,references)
+    model = HVRule(components, _activity,references)
     return model
 end
 

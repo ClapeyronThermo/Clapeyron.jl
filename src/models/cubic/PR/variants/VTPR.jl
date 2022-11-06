@@ -1,10 +1,7 @@
 """
     VTPR(components::Vector{String}; idealmodel=BasicIdeal,
-    mixing = VTPRRule,
-    alpha = TwuAlpha,
-    translation = RackettTranslation,
-    activity = VTPRUNIFAC,
-    userlocations=String[], 
+    userlocations=String[],
+    group_userlocations = String[]
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -23,18 +20,27 @@ Volume-translated Peng Robinson equation of state. it uses the following models:
 
 """
 function VTPR(components::Vector{String}; idealmodel=BasicIdeal,
-    mixing = VTPRRule,
-    alpha = TwuAlpha,
-    translation = RackettTranslation,
-    activity = VTPRUNIFAC,
     userlocations=String[], 
+    group_userlocations = String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
+    activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
 
-    return PR(components;
+    activity = VTPRUNIFAC(components,
+            userlocations = activity_userlocations,
+            group_userlocations = group_userlocations,
+            verbose = verbose)
+
+    _components = activity.groups.components #extract pure component list
+
+    translation = RackettTranslation
+    alpha = TwuAlpha
+    mixing = VTPRRule
+
+    return PR(_components;
     idealmodel = idealmodel,
     alpha = alpha,
     mixing=mixing,

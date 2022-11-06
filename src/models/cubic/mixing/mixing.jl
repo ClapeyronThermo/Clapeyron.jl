@@ -42,6 +42,17 @@ end
 function infinite_pressure_gibbs_correction(model::vdWModel,z)
     return -1.0
 end
+
+function init_activity(activity::Type{<:EoSModel},components;userlocations = String[],verbose = false)
+    verbose && @info("""Now creating activity model:
+    $model""")
+    return activity(components;userlocations = activity_userlocations,verbose)
+end
+
+function init_activity(activity::EoSModel,components;userlocations = String[],verbose = false)
+    return activity
+end
+
 include("vdW1f.jl")
 include("Kay.jl")
 include("HV.jl")
