@@ -81,16 +81,11 @@ function _getpaths(location,special_parse = true)
     filepath = location
     isfile(filepath) && return [realpath(filepath)]
     
-    #=
-    what does this line do?
-    seems to parse the case /SAFT/PCSFT as it there is some file named PCSFT.csv directly?
-
-    isfile(filepath * ".csv") && return [realpath(filepath * ".csv")]
-    =#
-
+    #if we want to parse jsons, this is ambiguous.
+    #isfile(filepath * ".csv") && return [realpath(filepath * ".csv")]
+    
     #=
     this should fail at the CSV reader stage
-
     if !isdir(filepath)
         relativetodatabase ? error("The path ", location, " does not exist in the Clapeyron database.") :
             error("The path ", location, " does not exist.")
@@ -120,7 +115,7 @@ function getline(filepath::AbstractString, selectedline::Int)
     end
 end
 
-getline(file::IOBuffer,selectedline::Int) = _getline(file,selectedline)
+getline(file::IO,selectedline::Int) = _getline(file,selectedline)
 
 function _getline(file, selectedline::Int)
     # Simple function to return text from filepath at selectedline.

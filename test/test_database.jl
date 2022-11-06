@@ -14,11 +14,11 @@ using Clapeyron, Test, LinearAlgebra
                        "test_csvs/normal_single2_test.csv",
                        "test_csvs/normal_assoc2_test.csv"]
 
-    filepath_clashingheaders = ["test_csvs/headercollision_single_test",
-                                "test_csvs/headercollision_assoc_test"]
+    filepath_clashingheaders = ["test_csvs/headercollision_single_test.csv",
+                                "test_csvs/headercollision_assoc_test.csv"]
 
-    filepath_asymmetry = ["test_csvs/asymmetry_pair_test",
-                          "test_csvs/asymmetry_assoc_test"]
+    filepath_asymmetry = ["test_csvs/asymmetry_pair_test.csv",
+                          "test_csvs/asymmetry_assoc_test.csv"]
 
     filepath_multiple_identifiers = ["test_csvs/multiple_identifiers_single_test.csv",
                                      "test_csvs/multiple_identifiers_pair_test.csv",
@@ -265,7 +265,7 @@ using Clapeyron, Test, LinearAlgebra
     @test param_user2["userparam"].values[1] == 1000
 
     #@REPLACE keyword
-    param_user3 = Clapeyron.getparams(["sp1","sp2"],userlocations = ["@REPLACE/" * file, csv_string],ignore_missing_singleparams = ["userparam"])
+    param_user3 = Clapeyron.getparams(["sp1","sp2"],userlocations = [file, "@REPLACE/" * csv_string],ignore_missing_singleparams = ["userparam"])
     @test param_user3["userparam"].ismissingvalues[2] == true
 end
 
