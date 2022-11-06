@@ -249,9 +249,23 @@ using Clapeyron, Test, LinearAlgebra
     param_gc = getparams(components_gc; userlocations=filepath_param_gc)
     @test param_gc["param1"].values == [1, 2, 3, 4]
 
-    file = ParamTable(:single,(species = ["sp1"],userparam = [2]))
+    #reading external data, via ParamTable
+    file = ParamTable(:single,(species = ["sp1","sp2"],userparam = [2,10]))
     param_user = getparams(testspecies,userlocations = [file],ignore_missing_singleparams=["userparam"])
     @test param_user["userparam"].values[1] === 2
 
+    #reading external data, via direct CSV parsing:
+    csv_string = """Clapeyron Database File,
+       in memory like parameters
+       species,userparam,b,c
+       sp1,1000,0.05,4
+       sp2,,0.41,5
+       """
+    param_user2 = Clapeyron.getparams(["sp1","sp2"],userlocations = [csv_string],ignore_missing_singleparams=["userparam"])
+    @test param_user2["userparam"].values[1] == 1000
+
+    #@REPLACE keyword
+    param_user3 = Clapeyron.getparams(["sp1","sp2"],userlocations = ["@REPLACE/" * file, csv_string],ignore_missing_singleparams = ["userparam"])
+    @test param_user3["userparam"].ismissingvalues[2] == true
 end
 

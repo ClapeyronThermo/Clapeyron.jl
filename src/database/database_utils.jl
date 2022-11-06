@@ -1,4 +1,5 @@
 const NumberOrString = Union{Union{T1,Missing},Union{T2,Missing}} where {T1 <: AbstractString, T2 <: Number}
+
 const DB_PATH = normpath(Base.pkgdir(Clapeyron),"database")
 
 const SHORT_PATHS = Dict{String,String}(
@@ -6,8 +7,11 @@ const SHORT_PATHS = Dict{String,String}(
 )
 
 const SPECIAL_IDENTIFIERS = ["@REPLACE"]
-const SKIP_GETPATHS = ("Clapeyron Database File," #a raw CSV file
-                    ,"{")# a raw json file
+
+const SKIP_GETPATHS =   ("Clapeyron Database File", #a raw CSV file
+                        "{", # a raw json file
+                        )
+
 """
     getfileextension(filepath)
 
@@ -46,20 +50,17 @@ function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vec
     # We do not use realpath here directly because we want to make the .csv suffix optional.
     any(startswith(location,kw) for kw in SKIP_GETPATHS) && return [location]
     if startswith(location,"@REPLACE")
-        locs = splitpath(location)
-        popfirst!(locs)
-        result = getpaths(joinpath(locs))
+        filepath = chop(location,head = 9, tail = 0)
+        result = getpaths(filepath)
         rr =  ["@REPLACE" * Base.Filesystem.path_separator * res for res in result]
         return rr
-    end    
-
-    if relativetodatabase 
-        new_loc = normpath("@DB",location)
+    end
+    if relativetodatabase
+        new_loc = normpath("@DB",location) #we suppose that the database is never at the root of a windows drive
     else
         new_loc = location
     end
-    
-    return _getpaths(new_loc)    
+    return _getpaths(new_loc)
 end
 
 function _getpaths(location,special_parse = true)
@@ -79,16 +80,26 @@ function _getpaths(location,special_parse = true)
     end
     filepath = location
     isfile(filepath) && return [realpath(filepath)]
+    
+    #=
+    what does this line do?
+    seems to parse the case /SAFT/PCSFT as it there is some file named PCSFT.csv directly?
+
     isfile(filepath * ".csv") && return [realpath(filepath * ".csv")]
+    =#
+
     #=
     this should fail at the CSV reader stage
 
     if !isdir(filepath)
         relativetodatabase ? error("The path ", location, " does not exist in the Clapeyron database.") :
             error("The path ", location, " does not exist.")
-    end =# 
-    files = joinpath.(filepath, readdir(filepath))
-    result = realpath.(files[isfile.(files) .& (getfileextension.(files) .== "csv")])
+    end =#
+    files = readdir(filepath,join = true) #this returns the full (non-normalized) path
+    filter!(isfile,files) #remove folders, the reader is not recursive
+    filter!(f -> getfileextension(f) == "csv",files)
+    map!(realpath,files,files)
+    return files
 end
 
 function flattenfilepaths(locations,userlocations)
@@ -104,7 +115,7 @@ end
 
 function getline(filepath::AbstractString, selectedline::Int)
     startswith(filepath,"Clapeyron Database File") && return getline(IOBuffer(filepath),selectedline)
-    open(_getline,filepath) do file
+    open(filepath) do file
        _getline(file,selectedline)
     end
 end
@@ -113,12 +124,12 @@ getline(file::IOBuffer,selectedline::Int) = _getline(file,selectedline)
 
 function _getline(file, selectedline::Int)
     # Simple function to return text from filepath at selectedline.
-        linecount = 1
-        for line ∈ eachline(file)
-            linecount == selectedline && return line
-            linecount += 1
-        end
-        error("Selected line number exceeds number of lines in file")
+    linecount = 1
+    for line ∈ eachline(file)
+        linecount == selectedline && return line
+        linecount += 1
+    end
+    error("Selected line number exceeds number of lines in file")
 end
 
 function normalisestring(str, isactivated::Bool=true; tofilter::Regex=r"[ \-\_]", changecase::Bool=true)::String
