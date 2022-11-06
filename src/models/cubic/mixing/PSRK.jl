@@ -32,7 +32,7 @@ PSRKRule
 
 export PSRKRule
 function PSRKRule(components::Vector{String}; activity = PSRKUNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    _activity = init_activity(activity,components;userlocations = activity_userlocations,verbose)
+    _activity = init_model(activity,components,activity_userlocations,verbose)
     references = String["10.1016/0378-3812(91)85038-V"]
     model = PSRKRule(components, _activity,references)
     return model

@@ -47,7 +47,7 @@ VTPRRule
 
 export VTPRRule
 function VTPRRule(components::Vector{String}; activity = UNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    _activity = init_activity(activity,components;userlocations = activity_userlocations,verbose)
+    _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1016/S0378-3812(01)00626-4"]
     model = VTPRRule(components, _activity,references)
     return model

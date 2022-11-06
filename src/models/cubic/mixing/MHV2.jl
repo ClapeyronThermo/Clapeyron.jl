@@ -56,7 +56,7 @@ MHV2Rule
 
 export MHV2Rule
 function MHV2Rule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    _activity = init_activity(activity,components;userlocations = activity_userlocations,verbose)
+    _activity = init_model(activity,components,activity_userlocations,verbose)
 
     references = ["10.1016/0378-3812(90)85053-D"]
     model = MHV2Rule(components, _activity,references)

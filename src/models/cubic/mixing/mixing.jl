@@ -25,8 +25,9 @@ function init_model(model::MixingRule,components,activity,userlocations,activity
 end
 
 function init_model(model::Type{<:MixingRule},components,activity,userlocations,activity_userlocations,verbose)
-    verbose && @info("""Now creating mixing model:
-    $model""")
+    if verbose
+        @info "Building an instance of $(info_color(string(model))) with components $components"
+    end
     return model(components;activity,userlocations,activity_userlocations,verbose)
 end
 
@@ -41,16 +42,6 @@ end
 
 function infinite_pressure_gibbs_correction(model::vdWModel,z)
     return -1.0
-end
-
-function init_activity(activity::Type{<:EoSModel},components;userlocations = String[],verbose = false)
-    verbose && @info("""Now creating activity model:
-    $model""")
-    return activity(components;userlocations = activity_userlocations,verbose)
-end
-
-function init_activity(activity::EoSModel,components;userlocations = String[],verbose = false)
-    return activity
 end
 
 include("vdW1f.jl")

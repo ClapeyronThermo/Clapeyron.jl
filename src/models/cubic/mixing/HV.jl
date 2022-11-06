@@ -48,7 +48,7 @@ HVRule
 
 export HVRule
 function HVRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    _activity = init_activity(activity,components;userlocations = activity_userlocations,verbose)
+    _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1016/0378-3812(79)80001-1"]
     model = HVRule(components, _activity,references)
     return model

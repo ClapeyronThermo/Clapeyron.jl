@@ -52,7 +52,7 @@ modWSRule
 
 export modWSRule
 function modWSRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    _activity = init_activity(activity,components;userlocations = activity_userlocations,verbose)
+    _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1002/aic.690380505","10.1002/aic.690410325"]
     model = modWSRule(components, _activity,references)
     return model
