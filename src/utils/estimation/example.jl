@@ -1,29 +1,18 @@
 using Clapeyron, BlackBoxOptim
 
-model = SAFTVRMie(["helium"])
+model = UNIFAC(["methanol","benzene"])
 
 toestimate = [
     Dict(
-        :param => :epsilon,
-        :lower => 3.7,
-        :upper => 5.0,
-        :guess => 3.8
-    ),
-    Dict(
-        :param => :sigma,
-        :factor => 1e-10,
-        :lower => 3.3,
-        :upper => 3.8,
-        :guess => 3.5
-    ),
-    Dict(
-        :param => :lambda_r,
-        :lower => 12.0,
-        :upper => 18.0,
-        :guess => 16.0
+        :param => :A,
+        :indices => (1,2),
+        :symmetric => true,
+        :lower => 120.,
+        :upper => 200.,
+        :guess => 150.
     )
 ]
 
 e = Estimation(model,toestimate,["saturation_pressure.csv","saturation_liquid_density.csv"])
 
-optimize!(e)
+# optimize!(e,Clapeyron.Metaheuristics.SA(N=1000,tol_fun=1e-3))
