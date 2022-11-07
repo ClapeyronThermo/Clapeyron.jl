@@ -1,5 +1,5 @@
 """
-    VTPR(components::Vector{String}; idealmodel=BasicIdeal,
+    VTPR(components; idealmodel=BasicIdeal,
     userlocations=String[],
     group_userlocations = String[]
     ideal_userlocations=String[],
@@ -19,7 +19,8 @@ Volume-translated Peng Robinson equation of state. it uses the following models:
 1. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. [doi:10.1016/s0378-3812(01)00626-4](https://doi.org/10.1016/s0378-3812(01)00626-4)
 
 """
-function VTPR(components::Vector{String}; idealmodel=BasicIdeal,
+function VTPR(components;
+    idealmodel=BasicIdeal,
     userlocations=String[], 
     group_userlocations = String[],
     ideal_userlocations=String[],

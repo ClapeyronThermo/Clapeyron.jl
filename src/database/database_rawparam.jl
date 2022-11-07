@@ -81,12 +81,16 @@ function joindata!(old::RawParam,new::RawParam)
     return RawParam(old.name,component_info,data,sources,csv,tnew,old.grouptype)
 end
 
-@noinline function error_different_grouptype(old,new)
+error_different_grouptype(old::RawParam,new::RawParam) = error_different_grouptype(old.grouptype,new.grouptype)
+
+@noinline function error_different_grouptype(old::Symbol,new::Symbol)
     throw(error("""cannot join two databases with different group types:
-    current group type: $(old.grouptype)
-    incoming group type: $(new.grouptype)
+    current group type: $(old)
+    incoming group type: $(new)
     """))
 end
+
+
 
 @noinline function error_clashing_headers(old::RawParam,new::RawParam)
     told = Symbol(old.type)
