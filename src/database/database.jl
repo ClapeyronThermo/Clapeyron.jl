@@ -11,7 +11,7 @@ in the available CSVs. `locations` are the locations relative to `Clapeyron` dat
 
 if `return_sites` is set to false, `getparams` will only return the found params.
 
-## Parser Single to Pair promotion
+## Single to Pair promotion
 
 When reading multiple CSVs, if a parameter name appears in a single paramter file and in a pair parameter file, the single parameter values will be promoted to be the diagonal values of the pair interaction matrix:
 
@@ -89,25 +89,82 @@ sp2,700,0.41
 \"\"\"
 ```
 
+## CSV type detection and group type
 
-## CSV embedded options
-
+The second line of the csv is used for comments and to identify the type of CSV used. for example:
 ```
-julia> x = \"\"\"Clapeyron Database File,
+x = \"\"\"Clapeyron Database File
        in memory like parameters
        species,a,b
        sp1,1000,0.05
        sp2,700,0.41
        \"\"\"
-"Clapeyron Database File,\nin memory parameters [csvtype = like,grouptype = in_memory_read]\nspecies,a,b\nsp1,1000,0.05\nsp2,700,0.41\n"
-julia> Clapeyron.getparams(["sp1","sp2"],userlocations = [x])
-Dict{String, Clapeyron.ClapeyronParam} with 2 entries:
-  "b" => SingleParam{Float64}("b")["sp1", "sp2"]
-  "a" => SingleParam{Int64}("a")["sp1", "sp2"]
+```
+Will be parsed as a table with single parameter data. if you want more flexibility, you can instead pass the csvtype between brackets:
+
+x = \"\"\"Clapeyron Database File
+       i can write anything here, unlike, association [csvtype = like] but the csv type is already specified.
+       species,a,b
+       sp1,1000,0.05
+       sp2,700,0.41
+       \"\"\"
+```
+additionaly, there are some cases when you want to absolutely sure that your types don't clash with the default values. this is the case with different group parametrizations of UNIFAC (Dormund, VTPR, PSRK):
 
 ```
+julia> model = UNIFAC(["methanol","ethanol"])
+UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}} with 2 components:
+ "methanol": "CH3OH" => 1
+ "ethanol": "CH2" => 1, "CH3" => 1, "OH (P)" => 1
+Group Type: UNIFACDortmund
+Contains parameters: A, B, C, R, Q
+
+julia> model = PSRKUNIFAC(["methanol","ethanol"])
+UNIFAC{BasicIdeal} with 2 components:
+ "methanol": "CH3OH" => 1
+ "ethanol": "CH2" => 1, "CH3" => 1, "OH" => 1
+Group Type: PSRK
+Contains parameters: A, B, C, R, Q
+```
+The models are the same (`UNIFAC`), but the group parametrizations are different. this is specified with the `grouptype` keyword. for example, if we see `UNIFAC_groups.csv`, it starts with:
+
+```
+Clapeyron Database File,
+modified UNIFAC (Dortmund) Groups [csvtype = groups,grouptype = UNIFACDortmund]
+species,groups
+ethane,"[""CH3"" => 2]"
+propane,"[""CH3"" => 2, ""CH2"" => 1]"
+butane,"[""CH3"" => 2, ""CH2"" => 2]"
+...
+```
+
+For compatibility reasons, if you pass a CSV without grouptype, it will be accepted, but two CSV with different specified group types cannot be merged:
+
+x1 = \"\"\"Clapeyron Database File
+       paramterization 1 [csvtype = like,grouptype = param1]
+       species,a,b
+       sp1,1000,0.05
+       sp2,700,0.41
+       \"\"\"
+x2 = \"\"\"Clapeyron Database File
+       fitted to data [csvtype = like,grouptype = fitted]
+       species,a,b
+       sp1,912,0.067
+       sp2,616,0.432
+       \"\"\"
+```
+If we pass the same parameters, with different group types, the parser will fail
+```julia-repl
+julia> Clapeyron.getparams(["sp1","sp2"],userlocations = [x1,x2])
+ERROR: cannot join two databases with different group types:
+current group type: param1
+incoming group type: fitted
+```
+
+Note, that the parser will not fail if you pass different parameters with different group types (For example if `a` has `param1` group type and `b` has `fit` group type)
 
 """
+
 function getparams(components,
                     locations::Array{String,1}=String[];
                     userlocations::Vector{String}=String[],
