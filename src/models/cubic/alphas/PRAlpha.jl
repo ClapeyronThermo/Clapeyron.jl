@@ -33,7 +33,7 @@ mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
 PRAlpha
 
 function PRAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ["Tc","Pc","Vc"])
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = SingleParam(params["w"],"acentric factor")
     packagedparams = PRAlphaParam(acentricfactor)
     model = PRAlpha(packagedparams, verbose=verbose)

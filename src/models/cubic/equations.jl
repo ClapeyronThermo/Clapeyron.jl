@@ -16,6 +16,8 @@ struct ABCCubicParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
+const ONLY_VC = vcat(IGNORE_HEADERS,["Tc","Pc", "w"])
+const ONLY_ACENTRICFACTOR = vcat(IGNORE_HEADERS,["Tc", "Pc", "Vc"])
 """
     ab_premixing(model,mixing,Tc,pc,kij)
     ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel

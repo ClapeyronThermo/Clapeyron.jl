@@ -44,7 +44,7 @@ Zcᵢ = 0.289 - 0.0701ωᵢ - 0.0207ωᵢ^2
 MTTranslation
 
 function MTTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ["Tc","Pc","Vc"])
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = SingleParam(params["w"],"acentric factor")
     packagedparams = MTTranslationParam(acentricfactor)
     model = MTTranslation(packagedparams, verbose=verbose)

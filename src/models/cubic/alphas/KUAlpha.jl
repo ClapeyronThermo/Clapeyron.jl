@@ -42,7 +42,7 @@ For `Tr > 1` is a 6th order taylor expansion around `T = Tc`.
 KUAlpha
 
 function KUAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ["Tc","Pc","Vc"])
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = SingleParam(params["w"],"acentric factor")
     packagedparams = KUAlphaParam(acentricfactor)
     model = KUAlpha(packagedparams, verbose=verbose)
