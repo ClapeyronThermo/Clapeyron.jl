@@ -12,14 +12,14 @@ using Scratch
 using Unitful
 import LogExpFunctions
 using FillArrays: FillArrays
-import BlackBoxOptim
+import BlackBoxOptim, Metaheuristics
 using StaticArrays
 using NLSolvers
 using NLSolvers: NEqOptions
 using DiffResults, ForwardDiff
 include("solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log, sqrt, log1p
+using .Solvers: log, sqrt, log1p, ^
 ∂Tag = Solvers.∂Tag
 
 include("utils/fractions.jl")
