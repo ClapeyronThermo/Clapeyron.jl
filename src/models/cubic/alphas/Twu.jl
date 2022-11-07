@@ -45,7 +45,7 @@ TwuAlpha
 
 export TwuAlpha
 function TwuAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv","alpha/Twu/Twu_like.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["alpha/Twu/Twu_like.csv"]; userlocations=userlocations, verbose=verbose)
     M = params["M"]
     N = params["N"]
     L = params["L"]

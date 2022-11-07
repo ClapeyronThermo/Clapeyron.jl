@@ -18,8 +18,16 @@ Base.broadcastable(x::EoSVectorParam) = x.pure
 function init_puremodel(model,components,userlocations,verbose)
     verbose && @info("""Now creating pure model:
     $idealmodel""")
-    return EoSVectorParam(model(components;userlocations,verbose))
+    _model = init_model(model,components,userlocations,verbose)
+    if is_splittable(_model)
+        pure = split_model(_model)
+    else
+        pure = fill(_model,length(components))
+    end
+        return EoSVectorParam(components,_model,pure)
 end
+
+
 
 function init_puremodel(model::EoSModel,components,userlocations,verbose)
    return EoSVectorParam(model)

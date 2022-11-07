@@ -36,7 +36,7 @@ PenelouxTranslation
 
 export PenelouxTranslation
 function PenelouxTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ["Tc","Pc","w"])
     Vc = params["vc"]
     packagedparams = PenelouxTranslationParam(Vc)
     model = PenelouxTranslation(packagedparams, verbose=verbose)

@@ -47,7 +47,7 @@ for RK models:
 BMAlpha
 
 function BMAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ["Tc","Pc","Vc"])
     acentricfactor = SingleParam(params["w"],"acentric factor")
     packagedparams = BMAlphaParam(acentricfactor)
     model = BMAlpha(packagedparams, verbose=verbose)

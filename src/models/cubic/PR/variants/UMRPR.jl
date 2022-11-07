@@ -33,6 +33,7 @@ function UMRPR(components::Vector{String};
 
     
     activity = UNIFAC(components,
+                puremodel = BasicIdeal,
                 userlocations = activity_userlocations,
                 group_userlocations = group_userlocations,
                 verbose = verbose)

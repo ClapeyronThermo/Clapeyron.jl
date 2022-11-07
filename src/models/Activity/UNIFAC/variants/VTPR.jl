@@ -22,7 +22,7 @@ export VTPRUNIFAC
     VTPRUNIFACModel <: UNIFACModel
 
     VTPRUNIFAC(components::Vector{String};
-    puremodel = PR,
+    puremodel = BasicIdeal,
     userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
@@ -60,7 +60,7 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 VTPRUNIFAC
 
 function VTPRUNIFAC(components::Vector{String};
-    puremodel = PR,
+    puremodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],

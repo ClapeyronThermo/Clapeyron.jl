@@ -34,7 +34,7 @@ mᵢ = 0.46283 + 3.58230Zcᵢ*ωᵢ - 8.19417(Zcᵢ*ωᵢ)^2
 PTVAlpha
 
 function PTVAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ["Tc","Pc","Vc"])
     acentricfactor = SingleParam(params["w"],"acentric factor")
     packagedparams = PTVAlphaParam(acentricfactor)
     model = PTVAlpha(packagedparams, verbose=verbose)

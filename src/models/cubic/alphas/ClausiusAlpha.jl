@@ -33,7 +33,6 @@ Trᵢ = T/Tcᵢ
 ClausiusAlpha
 
 function ClausiusAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     packagedparams = ClausiusAlphaParam()
     model = ClausiusAlpha(packagedparams, verbose=verbose)
     return model
