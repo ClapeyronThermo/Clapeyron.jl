@@ -46,7 +46,7 @@ function ChemPotVSaturation(;log10vl = nothing,
                             f_limit = 0.0,
                             atol = 1e-8,
                             rtol = 1e-12,
-                            max_iters = 10^4)
+                            max_iters = 10000)
 
     if (log10vl === nothing) && (log10vv === nothing)
         return ChemPotVSaturation{Nothing,typeof(crit)}(nothing,nothing,crit,crit_retry,f_limit,atol,rtol,max_iters)
