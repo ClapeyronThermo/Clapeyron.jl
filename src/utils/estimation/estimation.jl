@@ -2,7 +2,7 @@ include("estimationdata.jl")
 
 struct ToEstimate
     params::Vector{Symbol}
-    indices::Vector{Union{Vector{Integer},Nothing}}  # if nothing, use all
+    indices::Vector{Union{Integer,Tuple{Integer,Integer},Nothing}}  # if nothing, use all
     factor::Vector{Union{Float64,Nothing}}
     lower::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}
     upper::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}
@@ -12,7 +12,7 @@ end
 
 function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
     params = Vector{Symbol}(undef,0)
-    indices = Vector{Union{Vector{Integer},Nothing}}(nothing,0)
+    indices = Vector{Union{Integer,Tuple{Integer,Integer},Nothing}}(nothing,0)
     factor = Vector{Union{Float64,Nothing}}(nothing,0)
     lower = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
     upper = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
@@ -20,7 +20,7 @@ function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
     sym = Vector{Bool}(undef,0)
     for dict in params_dict
         push!(params, dict[:param])
-        push!(indices, get(dict, :indices, nothing))
+        push!(indices, get(dict, :indices, (1,1)))
         push!(factor, get(dict, :factor, 1.))
         lower_ = get(dict, :lower, nothing)
         push!(lower, typeof(lower_) <: AbstractFloat ? [lower_] : lower_)
@@ -130,32 +130,22 @@ function return_model(
     params = estimation.toestimate.params
     factor = estimation.toestimate.factor
     sym = estimation.toestimate.symmetric
+    idx = estimation.toestimate.indices
     model = deepcopy(model)
     for (i, param) in enumerate(params)
         f = factor[i]
         if isdefined(model.params,param)
             current_param = getfield(model.params, param)
             if typeof(current_param) <: SingleParameter
-                for (j, value) in enumerate(values[i])
-                    current_param[j] = value*f
-                end
+                current_param[idx[i]] = values[i]*f
             end
             if typeof(current_param) <: PairParam
-                for j = 1:length(model.components)
-                    for k = 1:length(model.components)
-                        current_param[j,k,sym[i]] = values[i][j,k]*f
-                    end
-                end
+                current_param[idx[i][1],idx[i][2],sym[i]] = values[i]*f
             end
             if typeof(current_param) <: AssocParam
-                if typeof(values[i]) <: Compressed4DMatrix
-                    for (j, value) in enumerate(values[i].values)
-                        current_param.values.values[j] = value*f
-                    end
-                else
-                    for (j, value) in enumerate(values[i])
-                        current_param.values.values[j] = value*f
-                    end
+                current_param.values[idx[i][1][1],idx[i][1][2]][idx[i][2][1],idx[i][2][2]] = values[i]*f
+                if sym[i]
+                    current_param.values[idx[i][1][2],idx[i][1][1]][idx[i][2][2],idx[i][2][1]] = values[i]*f
                 end
             end
         end
@@ -175,30 +165,21 @@ function return_model!(
     params = estimation.toestimate.params
     factor = estimation.toestimate.factor
     sym = estimation.toestimate.symmetric
-    for (i, param) in enumerate(params)
-        f = factor[i]
-        if isdefined(model.params,param)
-            current_param = getfield(model.params, param)
-            if typeof(current_param) <: SingleParameter
-                for (j, value) in enumerate(values[i])
-                    current_param[j] = value*f
+    if isdefined(model,:params)
+        for (i, param) in enumerate(params)
+            f = factor[i]
+            if isdefined(model.params,param)
+                current_param = getfield(model.params, param)
+                if typeof(current_param) <: SingleParameter
+                    current_param[idx[i]] = values[i]*f
                 end
-            end
-            if typeof(current_param) <: PairParam
-                for j = 1:length(model.components)
-                    for k = 1:length(model.components)
-                        current_param[j,k,sym[i]] = values[i][j,k]*f
-                    end
+                if typeof(current_param) <: PairParam
+                    current_param[idx[i][1],idx[i][2],sym[i]] = values[i]*f
                 end
-            end
-            if typeof(current_param) <: AssocParam
-                if typeof(values[i]) <: Compressed4DMatrix
-                    for (j, value) in enumerate(values[i].values)
-                        current_param.values.values[j] = value*f
-                    end
-                else
-                    for (j, value) in enumerate(values[i])
-                        current_param.values.values[j] = value*f
+                if typeof(current_param) <: AssocParam
+                    current_param.values[idx[i][1][1],idx[i][1][2]][idx[i][2][1],idx[i][2][2]] = values[i]*f
+                    if sym[i]
+                        current_param.values[idx[i][1][2],idx[i][1][1]][idx[i][2][2],idx[i][2][1]] = values[i]*f
                     end
                 end
             end
