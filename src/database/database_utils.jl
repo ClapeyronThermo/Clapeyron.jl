@@ -127,11 +127,13 @@ function _getline(file, selectedline::Int)
     error("Selected line number exceeds number of lines in file")
 end
 
-function normalisestring(str, isactivated::Bool=true; tofilter::Regex=r"[ \-\_]", changecase::Bool=true)::String
-    !isactivated && return string(str)::String
-    normalisedstring = replace(str, tofilter => "")
-    changecase && (normalisedstring = lowercase(normalisedstring))
-    return normalisedstring::String
+function normalisestring(str, isactivated::Bool=true; tofilter::Regex=r"[ \-\_]")
+    if !isactivated
+        str isa String && return str::String
+        return string(str)::String
+    end
+    res = Base.Unicode.normalize(str,casefold=true,stripmark=true)
+    return replace(res, tofilter => "")
 end
 
 function _indexin(query,list,separator)
@@ -139,6 +141,57 @@ function _indexin(query,list,separator)
     return _indexin(querydict,list,separator,keys(list))
 end
 
+if isdefined(Base,:eachsplit)
+function _indexin(query,list,separator,indices)
+    kq = keys(query)
+    res = zeros(Int,0)
+    comp_res = zeros(Int,0)
+    sizehint!(res,2*length(kq))
+    sizehint!(comp_res,2*length(kq))
+    for k in indices
+        list_i = list[k]
+        for val in eachsplit(list_i,separator,keepempty = false)
+            if val in kq
+                push!(res,k)
+                push!(comp_res,query[val])
+            end
+        end
+    end
+    return res,comp_res
+end
+else
+    function _indexin(query,list,separator,indices)
+        kq = keys(query)
+        res = zeros(Int,0)
+        comp_res = zeros(Int,0)
+        sizehint!(res,2*length(kq))
+        sizehint!(comp_res,2*length(kq))
+        for k in indices
+            list_i = list[k]
+            if !occursin(separator,list_i) #simple format
+                if list_i in kq
+                    push!(res,k)
+                    push!(comp_res,query[list_i])
+                end
+            else #separator format
+                for ki in kq
+                    if startswith(list_i,ki * separator) #starts with string
+                        push!(res,k)
+                        push!(comp_res,query[ki])
+                    elseif endswith(list_i,separator * ki)  #ends with string
+                        push!(res,k)
+                        push!(comp_res,query[ki])
+                    elseif occursin(separator * ki * separator,list_i) #string in between
+                        push!(res,k)
+                        push!(comp_res,query[ki])
+                    end
+                end
+            end
+        end
+        return res,comp_res
+    end
+end
+#=
 function _indexin(query,list,separator,indices)
     kq = keys(query)
     res = zeros(Int,0)
@@ -168,8 +221,7 @@ function _indexin(query,list,separator,indices)
         end
     end
     return res,comp_res
-end
-
+end =#
 function defaultmissing(array::Array{<:Number},defaultvalue = zero(eltype(array)))
     return deepcopy(array),Array(ismissing.(array))
 end

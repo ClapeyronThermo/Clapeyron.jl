@@ -360,27 +360,43 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
     return (_single,_pair,_assoc)
 end
 
-function findparamsincsv(components,filepath,options::ParamOptions = DefaultOptions,parsegroups = false,csv_file_options = read_csv_options(filepath))
 
-    headerparams = readheaderparams(filepath,options)
+function read_csv(filepath)::CSV.File
+    #actual reading
+    if startswith(filepath,"Clapeyron Database File")
+        df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true)
+    else
+        df = CSV.File(filepath; header=3, pool=0,silencewarnings=true)
+    end
+    return df
+end
+
+function findparamsincsv(components,filepath,
+    options::ParamOptions = DefaultOptions,
+    parsegroups = false,
+    csv_file_options = read_csv_options(filepath) #we do a preliminar reading of the CSV here
+    )
+
     sourcecolumnreference = options.source_columnreference
     verbose = options.verbose
     normalisecomponents = options.normalisecomponents
     component_delimiter = options.component_delimiter
 
+    
     grouptype = csv_file_options.grouptype
     csvtype = csv_file_options.csvtype
-    if startswith(filepath,"Clapeyron Database File")
-        df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true)
-    else
-        df = CSV.File(filepath; header=3, pool=0,silencewarnings=true)
+    
+    df = read_csv(filepath)
 
-    end
     csvheaders = String.(Tables.columnnames(df))
+    headerparams = valid_headerparams(csvheaders,options) #removes all ignored header params
+
     normalised_components = normalisestring.(components,normalisecomponents)
     components_dict = Dict(v => k for (k,v) ∈ pairs(normalised_components))
+
     normalised_csvheaders = normalisestring.(csvheaders)
     normalised_headerparams = normalisestring.(headerparams)
+    
     if normalised_headerparams ⊈ normalised_csvheaders
         error("Headers ", setdiff(normalised_headerparams, normalised_csvheaders), " not present ∈ csv header.")
     end
@@ -394,88 +410,91 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
     if normalised_sourcecolumnreference ∈ normalised_csvheaders
         getsources = true
         sourcecolumn = findfirst(isequal(normalised_sourcecolumnreference), normalised_csvheaders)
+    else
+        sourcecolumn = 0
     end
 
     single_idx,pair_idx,assoc_idx = col_indices(csvtype,normalised_csvheaders,options)
     lookupcolumnindex,groupindex = single_idx
     lookupcolumnindex1,lookupcolumnindex2 = pair_idx
     lookupsitecolumnindex1,lookupsitecolumnindex2 = assoc_idx
-    headerparams_indices = [findfirst(isequal(i),normalised_csvheaders) for i ∈ normalised_headerparams]
+    headerparams_indices = zeros(Int,length(normalised_headerparams))
+    map!(i -> findfirst(isequal(i),normalised_csvheaders),headerparams_indices,normalised_headerparams)
+    #headerparams_indices = [findfirst(isequal(i),normalised_csvheaders) for i ∈ normalised_headerparams]
     lookupcolumnindex = max(lookupcolumnindex,lookupcolumnindex1)
 
-    verbose && __verbose_findparams_start(filepath,components,headerparams,parsegroups,csvtype)
+    verbose && __verbose_findparams_start(filepath,components,headerparams,parsegroups,csvtype,grouptype)
     #list of all species
-    species_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex),normalisecomponents)
+    species_list::Vector{String} = normalisestring.(Tables.getcolumn(df,lookupcolumnindex),normalisecomponents)
 
     #indices where data could be (they could be missing)
     #on pair and assoc, this is just the first component, we need to reduce the valid indices again
     found_indices0,comp_indices = _indexin(components_dict,species_list,component_delimiter,1:length(species_list))
-    dfR = Tables.rowtable(df)
+    dfR = df
     EMPTY_STR = ""
-
     if csvtype == singledata || ((csvtype == groupdata) && parsegroups)
         found_indices = found_indices0
         l = length(found_indices)
-        if l != 0
-            _data = dfR[found_indices]
-            _comp = [(components[c],EMPTY_STR,EMPTY_STR,EMPTY_STR) for c ∈ comp_indices]
-            _sources = fill(EMPTY_STR,l)
-            _csv = fill(String(filepath),l)
+        _data = dfR[found_indices]
+        _sources = fill(EMPTY_STR,l)
+        _csv = fill(filepath,l)
+        _comp = Vector{NTuple{4,String}}(undef,l)
+        for li ∈ 1:l
+            _c = components[comp_indices[li]]
+            _comp[li] = (_c,EMPTY_STR,EMPTY_STR,EMPTY_STR)
         end
+
     elseif csvtype == pairdata && !parsegroups
-        species2_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex2)[found_indices0],normalisecomponents)
+        species2_list::Vector{String} = normalisestring.(Tables.getcolumn(df,lookupcolumnindex2)[found_indices0],normalisecomponents)
         found_indices2,comp_indices2 = _indexin(components_dict,species2_list,component_delimiter,1:length(species2_list))
         comp_indices1 = comp_indices[found_indices2]
         found_indices2 = found_indices0[found_indices2]
         l = length(found_indices2)
-        if l != 0
-            _data = dfR[found_indices2]
-            _comp = [(components[c1],components[c2],EMPTY_STR,EMPTY_STR) for (c1,c2) ∈ zip(comp_indices1,comp_indices2)]
-            _sources = fill(EMPTY_STR,l)
-            _csv = fill(String(filepath),l)
-        end
+        _data = dfR[found_indices2]
+        _comp = [(components[c1],components[c2],EMPTY_STR,EMPTY_STR) for (c1,c2) ∈ zip(comp_indices1,comp_indices2)]
+        _sources = fill(EMPTY_STR,l)
+        _csv = fill(filepath,l)
     elseif csvtype == assocdata && !parsegroups
         species2_list = normalisestring.(Tables.getcolumn(df,lookupcolumnindex2)[found_indices0],normalisecomponents)
         found_indices2,comp_indices2 = _indexin(components_dict,species2_list,component_delimiter,1:length(species2_list))
         comp_indices1 = comp_indices[found_indices2]
         found_indices2 = found_indices0[found_indices2]
         l = length(found_indices2)
-        if l != 0
-            _data = dfR[found_indices2]
-            _site1 = identity.(getindex.(_data,lookupsitecolumnindex1))
-            _site2 = identity.(getindex.(_data,lookupsitecolumnindex2))
-            _comp = [(components[c1],components[c2],String(s1),String(s2)) for (c1,c2,s1,s2) ∈ zip(comp_indices1,comp_indices2,_site1,_site2)]
-            _sources = fill(EMPTY_STR,l)
-            _csv = fill(String(filepath),l)
+        _data = dfR[found_indices2]
+        _site1 = Vector{String}(undef,l)
+        _site2 = similar(_site1)
+        _comp = Vector{NTuple{4,String}}(undef,l)
+        for li ∈ 1:l
+            _s1 = _data[li][lookupsitecolumnindex1]
+            _s2 = _data[li][lookupsitecolumnindex2]
+            _c1 = components[comp_indices1[li]]
+            _c2 = components[comp_indices2[li]]
+            _site1[li] = _s1
+            _site2[li] = _s2
+            _comp[li] = (_c1,_c2,_s1,_s2)
         end
+        _sources = fill(EMPTY_STR,l)
+        _csv = fill(filepath,l)
+        
     elseif csvtype == groupdata && !parsegroups
         return foundvalues, notfoundvalues
     else
         error("File is of type ", String(csvtype), " and cannot be read with this function.")
     end
 
-    if l != 0
         #if getsources, then we actually put the sources ∈ inside the preallocated _sources vector
-        if getsources
-            _raw_sources = getindex.(_data,sourcecolumn)
-            for i ∈ eachindex(_sources)
-                source_i = _raw_sources[i]
-                !ismissing(source_i) && (_sources[i] = source_i)
-            end
-        end
-        #with the raw data preallocated, we now store it ∈ a RawParam.
-        for (headerparam,idx) ∈ zip(headerparams,headerparams_indices)
-            _vals = getindex.(_data,idx)
-            s = findall(!ismissing,_vals) #filter nonmissing values
-            if !iszero(length(s))
-                __vals = [_vals[i] for i ∈ s] #removes the missing type and eliminates bitvectors
-                __sources = [_sources[i] for i ∈ s]
-                __csv = [_csv[i] for i ∈ s]
-                raw = RawParam(headerparam,_comp[s],__vals,__sources,__csv,csvtype,grouptype)
-                push!(foundvalues,raw)
-            end
+    if getsources
+        _fill_sources!(_sources,getindex.(_data,sourcecolumn),EMPTY_STR)
+    end
+    #with the raw data preallocated, we now store it ∈ a RawParam.
+    for (headerparam,idx) ∈ zip(headerparams,headerparams_indices)
+        _vals = getindex.(_data,idx)
+        raw::Any = build_raw_param(headerparam,_comp,_vals,_sources,_csv,csvtype,grouptype)
+        if !iszero(length(raw))
+            push!(foundvalues,raw)
         end
     end
+    
     #store all headers that didn't had a result.
     for rawparam ∈ foundvalues
         delete!(notfoundvalues,rawparam.name)
@@ -486,6 +505,28 @@ function findparamsincsv(components,filepath,options::ParamOptions = DefaultOpti
     return foundvalues, notfoundvalues
 end
 
+function _fill_sources!(input,allsources,tofill)
+    for i in eachindex(input)
+        input[i] = coalesce(allsources[i],tofill)
+    end
+    return input
+end
+
+function build_raw_param(name,comps,vals,sources,csv,csvtype,grouptype)
+    s::Vector{Int} = findall(!ismissing,vals)
+    ls = length(s)
+    _vals = Vector{nonmissingtype(eltype(vals))}(undef,ls)
+    _sources = Vector{String}(undef,ls)
+    _comps = similar(comps,ls)
+    _csv = Vector{String}(undef,ls)
+    for i ∈ s
+        _comps[i] = comps[i]
+        _vals[i] = vals[i]
+        _sources[i] = sources[i]
+        _csv[i] = csv[i]
+    end
+    return RawParam(name,_comps,_vals,_sources,_csv,csvtype,grouptype)
+end
 #verbose functionality, is executed for each csv when verbose == true
 
 function __verbose_findparams_invaliddata(filepath)
@@ -496,7 +537,7 @@ function __assoc_string(pair)
     "($(pair[1]),$(pair[3])) ⇋ ($(pair[2]), $(pair[4]))"
 end
 
-function __verbose_findparams_start(filepath,components,headerparams,parsegroups,csvtype)
+function __verbose_findparams_start(filepath,components,headerparams,parsegroups,csvtype,grouptype)
     csv_string = Symbol(csvtype)
     if !parsegroups
         if csvtype == groupdata
@@ -510,6 +551,9 @@ function __verbose_findparams_start(filepath,components,headerparams,parsegroups
         else
             @info("Skipping $csv_string csv $filepath")
         end
+    end
+    if grouptype != :unkwown
+        @info("group type: $grouptype")
     end
 end
 
@@ -588,10 +632,10 @@ function _readcsvtype(key::AbstractString)
 end
 
 function __get_options(data)
-    opts = split(data,',')
+    opts = eachsplit(data,',')
     opts_dict = Dict{String,String}()
     for opt in opts
-        k,v = split(replace(opt,' ' => ""),'=')
+        k,v = _parse_kv(opt,"=")
         opts_dict[k] = v
     end
     _csvtype = _readcsvtype(get(opts_dict,"csvtype","invalid"))
@@ -599,15 +643,17 @@ function __get_options(data)
     return (csvtype = _csvtype,grouptype = _grouptype)
 end
 
-function readheaderparams(filepath::AbstractString, options::ParamOptions = DefaultOptions,headerline::Int = 3)
-    # Returns array of filtered header strings at line 3.
+function valid_headerparams(csvheaders, options::ParamOptions = DefaultOptions)
     ignorelist = deepcopy(options.ignore_headers)
     push!(ignorelist,options.species_columnreference)
     push!(ignorelist,options.source_columnreference)
     push!(ignorelist,options.site_columnreference)
-    headertext = getline(filepath, headerline)
-    headers = split(rstrip(headertext,','), ',',keepempty = false)
-    return String.(filter(x -> normalisestring(x; tofilter=r"[ \-\_\d]") ∉ ignorelist, headers))
+    map!(normalisestring,ignorelist,ignorelist)
+    result = filter(csvheaders) do header
+        norm_header = normalisestring(header)
+        #that regex allows to ignore things like "species1" or "SMILES1"
+        normalisestring(norm_header; tofilter=r"[ \-\_\d]") ∉ ignorelist
+    end
 end
 
 function GroupParam(gccomponents::Vector,
@@ -681,12 +727,10 @@ function _parse_group_string(gc::String)
         gcpairs = split(gc_without_brackets,",")
         result = Vector{Pair{String,Int}}(undef,length(gcpairs))
         for (i,gcpair) ∈ pairs(gcpairs)
-            x = split(strip(gcpair),"=>") # """ "__group__"__=>__number__"""
-            length(x) != 2 && throw(error("incorrect group format"))
-            raw_group_i = strip(x[1])
+            raw_group_i,raw_num = _parse_kv(gcpair,"=>")
             if startswith(raw_group_i,"\"") && endswith(raw_group_i,"\"")
                 group_i = chop(raw_group_i,head = 1,tail = 1)
-                num = parse(Int64,x[2])
+                num = parse(Int64,raw_num)
                 result[i] = group_i => num
             else
                 throw(error("incorrect group format"))

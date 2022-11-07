@@ -20,7 +20,8 @@ struct RawParam{T}
     grouptype::Symbol #in the future, this could hold an "Options" type,generated per CSV
 end
 
-Base.eltype(raw::RawParam) = eltype(raw.data)
+Base.eltype(raw::RawParam) = Base.eltype(raw.data)
+Base.length(raw::RawParam) = Base.length(raw.data)
 
 function Base.show(io::IO,param::RawParam)
     print(io,typeof(param))
@@ -103,7 +104,7 @@ end
 Base.@specialize
 
 @noinline function error_clashing_headers(old::CSVType,new::CSVType,header)
-    header = error_color(old.name)
+    header = error_color(header)
     ("Header ", header, " appear ∈ both loaded assoc and non-assoc files.")
 end
 #=
