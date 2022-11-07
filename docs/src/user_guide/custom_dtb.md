@@ -30,12 +30,17 @@ Within Clapeyron, we use CSV files to store our parameters. There are four types
   | species1                      | site1 | species2 | site2 | param |
   | water                         | H     | water    | e     | 1.234 |
   | water                         | H     | methanol | e     | 5.678 |
+  | methanol                      | H     | water    | e     | 5.678 |
 
   These are used for parameters which refer to a pair of species and sites (such as the association potential depth, `epsilon_assoc`, and bonding volume, `bondvol`). Note that this can be for associations between the same species and different sites, or different species and different sites (as shown above).
 
 Note that it is extremely important that the cell A2 has the word 'Like', 'Unlike' or 'Assoc' in it so that Clapeyron can identify the type of parameters in it.
 
 Feel free to check these out in the package to see some better examples!
+
+!!! note "Association Values are asymmetric!"
+
+    There are cases where the association values are asymmetric (for example, Water and acetonitrile), so if you are adding cross-association values for a component-site pair, remember to add the corresponding swapped value, like in the water - methanol example above.
 
 ## Using your own parameters
 
