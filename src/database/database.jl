@@ -781,6 +781,9 @@ function GroupParam(gccomponents,
     else
         
         _grouptype = fast_parse_grouptype(filepaths)
+        if _grouptype != grouptype
+            _grouptype = grouptype
+        end
         groupsourcecsvs = filepaths
     end
     gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(gccomponents))
