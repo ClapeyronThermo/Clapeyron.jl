@@ -14,10 +14,8 @@
         models2 = split_model(model2)
         @test models2[1].components[1] == model2.components[1]
         @test models2[2].components[1] == model2.components[2]
-        @test models2[1].icomponents == models2[2].icomponents == 1:1
 
         model2_unsplit = only(split_model(model2,[[1,2]]))
-        @test model2_unsplit.icomponents == model2.icomponents
         @test model2_unsplit.components == model2.components
 
         model4_split = Clapeyron.split_model(model4)
@@ -60,7 +58,7 @@
     @testset "eosshow" begin
         #@newmodelgc
         @test repr(ideal1) == "WalkerIdeal{BasicIdeal}(\"hexane\")"
-        @test repr("text/plain",ideal1) == "WalkerIdeal{BasicIdeal} with 1 component:\n \"hexane\": \"CH3\" => 2, \"CH2\" => 4\nContains parameters: Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4"
+        @test repr("text/plain",ideal1) == "WalkerIdeal{BasicIdeal} with 1 component:\n \"hexane\": \"CH3\" => 2, \"CH2\" => 4\nGroup Type: Walker\nContains parameters: Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4"
         #@newmodel
         @test repr(model2) == "PCSAFT{BasicIdeal}(\"water\", \"ethanol\")"
         @test repr("text/plain",model2) == "PCSAFT{BasicIdeal} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"

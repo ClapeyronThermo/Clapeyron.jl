@@ -1,5 +1,5 @@
 ﻿Clapeyron Database File,,,,,
-PSRK Unlike Parameters,,,,,
+PSRK Unlike Parameters  [csvtype = unlike,grouptype = PSRK]
 species1,SMILES1,species2,SMILES2,A,B,C,source
 CH3~|~CH2~|~CH~|~C,,CH2=CH~|~CH=CH~|~CH2=C~|~CH=C~|~C=C~|~H2C=CH2,,86.02,0,0,
 CH3~|~CH2~|~CH~|~C,,ACH~|~AC,,61.13,0,0,

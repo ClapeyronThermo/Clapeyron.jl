@@ -17,7 +17,8 @@ abstract type WalkerIdealModel <: IdealModel end
 """
     WalkerIdeal <: WalkerIdealModel
     WalkerIdeal(components::Array{String,1}; 
-    userlocations::Array{String,1}=String[], 
+    userlocations = String[],
+    group_userlocations = String[]
     verbose=false)
 
 ## Input parameters
@@ -48,8 +49,12 @@ Cpᵢ(T)/R = (5+NRot)/2 ∑νᵢₖ∑gₖᵥ(θₖᵥ/T)^2*exp(θₖᵥ/T)/(1-e
 WalkerIdeal
 
 export WalkerIdeal
-function WalkerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
-    groups = GroupParam(components,["ideal/WalkerIdeal_Groups.csv"], verbose=verbose)
+function WalkerIdeal(components::Array{String,1};
+    userlocations=String[],
+    group_userlocations = String[],
+    verbose=false)
+
+    groups = GroupParam(components,["ideal/WalkerIdeal_Groups.csv"], group_userlocations = group_userlocations, verbose=verbose)
     params = getparams(groups, ["ideal/WalkerIdeal.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     Nrot = params["Nrot"]

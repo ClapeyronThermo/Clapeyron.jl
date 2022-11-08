@@ -17,6 +17,10 @@ using StaticArrays
 using NLSolvers
 using NLSolvers: NEqOptions
 using DiffResults, ForwardDiff
+
+#compatibility and raw julia utilities
+include("utils/core_utils.jl")
+
 include("solvers/Solvers.jl")
 using .Solvers
 using .Solvers: log, sqrt, log1p

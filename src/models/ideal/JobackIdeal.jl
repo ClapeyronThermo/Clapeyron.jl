@@ -28,7 +28,6 @@ abstract type JobackIdealModel <: IdealModel end
 
 struct JobackIdeal <: JobackIdealModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     groups::GroupParam
     params::JobackIdealParam
     reidmodel::ReidIdeal
@@ -141,7 +140,7 @@ function JobackIdeal(components;userlocations=String[], verbose=false)
     end
     reidparam = ReidIdealParam(SingleParam("GC-averaged Reid Coefficients",groups.components,coeffs))
     reidmodel = ReidIdeal(reidparam)
-    model = JobackIdeal(groups.components,comps,groups,packagedparams,reidmodel,references)
+    model = JobackIdeal(groups.components,groups,packagedparams,reidmodel,references)
     return model
 end
 
