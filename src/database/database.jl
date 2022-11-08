@@ -1,5 +1,10 @@
 @enum CSVType invaliddata singledata pairdata assocdata groupdata
 
+const NO_KIJ = """@REPLACE Clapeyron Database File
+no Parameters [csvtype = unlike]
+species1,species2,k
+"""
+
 include("database_rawparam.jl")
 include("database_utils.jl")
 
