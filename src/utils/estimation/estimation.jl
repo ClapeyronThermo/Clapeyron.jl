@@ -8,6 +8,7 @@ struct ToEstimate
     upper::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}
     guess::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}  # if nothing, use current
     symmetric::Vector{Bool}
+    cross_assoc::Vector{Bool}
 end
 
 function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
@@ -18,6 +19,7 @@ function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
     upper = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
     guess = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
     sym = Vector{Bool}(undef,0)
+    cross_assoc = Vector{Bool}(undef,0)
     for dict in params_dict
         push!(params, dict[:param])
         push!(indices, get(dict, :indices, (1,1)))
@@ -30,8 +32,10 @@ function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
         push!(guess, typeof(guess_) <: AbstractFloat ? [guess_] : guess_)
         _sym = get(dict,:symmetric,true)
         push!(sym,_sym)
+        _cross_assoc = get(dict,:cross_assoc,false)
+        push!(cross_assoc,_cross_assoc)
     end
-    return ToEstimate(params, indices, factor, lower, upper, guess, sym)
+    return ToEstimate(params, indices, factor, lower, upper, guess, sym, cross_assoc)
 end
 
 export Estimation
@@ -130,22 +134,24 @@ function return_model(
     params = estimation.toestimate.params
     factor = estimation.toestimate.factor
     sym = estimation.toestimate.symmetric
+    cross_assoc = estimation.toestimate.cross_assoc
     idx = estimation.toestimate.indices
     model = deepcopy(model)
     for (i, param) in enumerate(params)
         f = factor[i]
+        id = idx[i]
         if isdefined(model.params,param)
             current_param = getfield(model.params, param)
             if typeof(current_param) <: SingleParameter
-                current_param[idx[i]] = values[i]*f
+                current_param[id] = values[i]*f
             end
             if typeof(current_param) <: PairParam
-                current_param[idx[i][1],idx[i][2],sym[i]] = values[i]*f
+                current_param[id[1],id[2],sym[i]] = values[i]*f
             end
             if typeof(current_param) <: AssocParam
-                current_param.values[idx[i][1][1],idx[i][1][2]][idx[i][2][1],idx[i][2][2]] = values[i]*f
-                if sym[i]
-                    current_param.values[idx[i][1][2],idx[i][1][1]][idx[i][2][2],idx[i][2][1]] = values[i]*f
+                current_param.values.values[id] = values[i]*f
+                if cross_assoc[i]
+                    current_param.values.values[id+1] = values[i]*f                
                 end
             end
         end
@@ -165,21 +171,24 @@ function return_model!(
     params = estimation.toestimate.params
     factor = estimation.toestimate.factor
     sym = estimation.toestimate.symmetric
+    cross_assoc = estimation.toestimate.cross_assoc
+    idx = estimation.toestimate.indices
     if isdefined(model,:params)
         for (i, param) in enumerate(params)
             f = factor[i]
+            id = idx[i]
             if isdefined(model.params,param)
                 current_param = getfield(model.params, param)
                 if typeof(current_param) <: SingleParameter
-                    current_param[idx[i]] = values[i]*f
+                    current_param[id] = values[i]*f
                 end
                 if typeof(current_param) <: PairParam
-                    current_param[idx[i][1],idx[i][2],sym[i]] = values[i]*f
+                    current_param[id[1],id[2],sym[i]] = values[i]*f
                 end
                 if typeof(current_param) <: AssocParam
-                    current_param.values[idx[i][1][1],idx[i][1][2]][idx[i][2][1],idx[i][2][2]] = values[i]*f
-                    if sym[i]
-                        current_param.values[idx[i][1][2],idx[i][1][1]][idx[i][2][2],idx[i][2][1]] = values[i]*f
+                    current_param.values.values[id] = values[i]*f
+                    if cross_assoc[i]
+                        current_param.values.values[id+1] = values[i]*f                
                     end
                 end
             end
