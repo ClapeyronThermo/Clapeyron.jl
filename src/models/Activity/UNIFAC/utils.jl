@@ -16,6 +16,3 @@ function UNIFACCache(groups::GroupParam,Q,R)
     m = group_sum(groups,nothing)
     return UNIFACCache(groups.components,r,q,q_p,m)
 end
-
-
-

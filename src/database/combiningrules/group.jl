@@ -1,3 +1,27 @@
+#implace base
+
+function _group_sum!(out,groups::GroupParam,param)
+    v = groups.n_groups_cache
+    for i in eachindex(out)
+        out[i] = dot(v[i],param)
+    end
+    return out
+end
+
+function group_sum!(out::SingleParameter,groups::GroupParam,param::SingleParameter)
+    _group_sum!(out.values,group,param)
+    out.ismissingvalues .= param.ismissingvalues
+    return out
+end
+
+function group_sum!(out,groups::GroupParam,param::Nothing)
+    return _group_sum!(out.values,group,false)
+end
+
+function group_sum!(out,groups::GroupParam,param)
+    return _group_sum!(out.values,group,param)
+end
+
 """
     group_sum(groups::GroupParam,P::SingleParameter)
 
@@ -9,14 +33,14 @@ where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
 function group_sum(groups::GroupParam,param::SingleParameter)
-    comp_vals = group_sum(groups,param.values)
-    ismissingval = [ismissing(vi) for vi in comp_vals]
-    return SingleParam(param.name,
+    ismissingval = param.ismissingvalues
+    out =  SingleParam(param.name,
                         groups.components,
-                        comp_vals,
-                        ismissingval,
+                        zeros(eltype(param.values),length(param.values)),
+                        param.ismissingvalues,
                         param.sources,
                         param.sourcecsvs)
+    return group_sum!(out,groups,param)
 end
 
 """
@@ -30,8 +54,8 @@ where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
 function group_sum(groups::GroupParam,param::AbstractVector)
-    v = groups.n_groups_cache
-    return [dot(vi,param) for vi in v]
+    out = similar(param)
+    return group_sum!(out,groups,param)
 end
 
 """
@@ -45,8 +69,8 @@ where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
 function group_sum(groups::GroupParam,::Nothing)
-    v = groups.n_groups_cache
-    return [sum(vi) for vi in v]
+    out = zeros(Float64,length(groups.components))
+    return group_sum!(out,groups)
 end
 
 function group_sum(groups::GroupParam)
@@ -82,16 +106,25 @@ function group_pairmean end
 
 group_pairmean(groups::GroupParam,param) = group_pairmean(mix_mean,groups,param)
 
-function group_pairmean(f::T,groups::GroupParam,param) where {T}
+function group_pairmean(f::T,groups::GroupParam,param::SingleOrPair) where {T}
     return SingleParam(param.name,groups.components,group_pairmean(f,groups,param.values))
 end
 
-function group_pairmean(f,groups::GroupParam,p::AbstractMatrix)
-    lgroups = 1:length(groups.i_flattenedgroups)
-    lcomps = 1:length(groups.components)
-    zz = groups.n_groups_cache
+
+function group_pairmean(f::T,groups::GroupParam,p::AbstractArray) where {T}
     _0 = zero(eltype(p))/one(eltype(p)) #we want a float type
-    res = zeros(typeof(_0),length(lcomps))
+    res = fill(_0,length(groups.components))
+    return group_pairmean!(f,_0,groups,p)
+end
+
+function group_pairmean!(res,f::T,groups::GroupParam,param::SingleOrPair) where {T}
+    return group_pairmean!(res,f,groups,param.values)
+end
+
+function group_pairmean!(res,f,groups::GroupParam,p::AbstractMatrix)
+    lgroups = 1:length(groups.i_flattenedgroups)
+    lcomps = 1:length(res)
+    zz = groups.n_groups_cache
     for i ∈ lcomps
         ẑ = zz[i]
         ∑ẑinv2 = 1/(sum(ẑ)^2)
@@ -110,12 +143,10 @@ function group_pairmean(f,groups::GroupParam,p::AbstractMatrix)
     return res
 end
 
-function group_pairmean(f::T,groups::GroupParam,p::AbstractVector) where {T}
+function group_pairmean!(res,f::T,groups::GroupParam,p::AbstractVector) where {T}
     lgroups = 1:length(groups.i_flattenedgroups)
     lcomps = 1:length(groups.components)
     zz = groups.n_groups_cache
-    _0 = zero(eltype(p))
-    res = zeros(eltype(p),length(lcomps))
     for i ∈ lcomps
         ẑ = zz[i]
         ∑ẑinv2 = 1/(sum(ẑ)^2)
