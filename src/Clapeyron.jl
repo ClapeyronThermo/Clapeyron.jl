@@ -48,11 +48,9 @@ include("base/eosshow.jl")
 #EoSParam, ClapeyronParam, All Params
 include("database/ClapeyronParam.jl")
 
-#Combining Rules for Single and Pair Params.
-include("database/params/combiningrules.jl")
+#Combining Rules for Clapeyron Params.
+include("database/combiningrules.jl")
 
-#Combining Rules for Assoc Params
-include("database/params/combiningrules_assoc.jl")
 
 using Tables,CSV 
 #getparams options
