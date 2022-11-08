@@ -19,7 +19,7 @@ Ignores non-diagonal entries already set.
 
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `pᵢᵢ = pᵢ`.
 """
-function kij_mix(f::F,param::PairParameter,K = nothing) where F
+function kij_mix(f::F,param::SingleOrPair,K = nothing) where F
     return kij_mix!(f,PairParam(param),K)
 end
 
