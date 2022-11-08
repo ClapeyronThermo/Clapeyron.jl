@@ -28,7 +28,7 @@ end
 # Creating a model struct called PCSAFT, which is a sub-type of PCSAFTModel, and uses parameters defined in PCSAFTParam
 @newmodel PCSAFT PCSAFTModel PCSAFTParam</code></pre><ol><li>The next step is to create an outer constructor for the model that you have just defined. It should have the same name as the struct above. It can take the following arguments, although these can be hard-coded if you so wish:<ul><li><code>components</code>: A list of strings that identify the components.</li><li><code>idealmodel</code>: An ideal model, but this can be left as an optional parameter.</li><li><code>userlocations</code>: A list of strings that are paths to the databases that you are using.</li><li><code>ideal_userlocations</code>: Same as above, but for ideal models.</li><li><code>verbose</code>: For when you want to print more information to the console.</li><li><code>assoc_options</code>: For use in the association sites solver.</li></ul></li></ol><pre><code class="language-Julia hljs">function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false,assoc_options = AssocOptions())
   	# Obtain a Dict of parameters. We pass in custom locations through the optional parameter userlocations.
-    params = getparams(components; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components; userlocations=userlocations, verbose=verbose)
   
     # For clarity, we assign the contents of the returned dict to their own variables.
     segment = params[&quot;m&quot;]
@@ -44,9 +44,8 @@ end
     epsilon_assoc = params[&quot;epsilon_assoc&quot;]
     bondvol = params[&quot;bondvol&quot;]
   
-    # Build the sites object for associating species. The input is a Dict that links the name of the site with the multiplicity.
-    sites = SiteParam(Dict(&quot;e&quot; =&gt; params[&quot;n_e&quot;], &quot;H&quot; =&gt; params[&quot;n_H&quot;]))
-  
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association. if you want to perform cross-association mixing, check the AssocOptions docs
+
     # Now we can create the parameter struct that we have defined.
     packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
   
@@ -126,4 +125,4 @@ end
 function a_hs(model::sPCSAFTModel, V, T, z)
     η = @f(ζ,3)
     return (4η-3η^2)/(1-η)^2
-end</code></pre></li></ul><p>The rest works exactly as it would with the <code>PCSAFT</code> example.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../custom_methods/">« Custom Methods</a><a class="docs-footer-nextpage" href="../../notebook_examples/">Notebook Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Friday 21 October 2022 04:58">Friday 21 October 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+end</code></pre></li></ul><p>The rest works exactly as it would with the <code>PCSAFT</code> example.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../custom_methods/">« Custom Methods</a><a class="docs-footer-nextpage" href="../../notebook_examples/">Notebook Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.23 on <span class="colophon-date" title="Tuesday 8 November 2022 04:30">Tuesday 8 November 2022</span>. Using Julia version 1.6.7.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
