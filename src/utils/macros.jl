@@ -24,7 +24,7 @@ This macro is an alias to
 `iflattenedgroups` is an iterator that goes through all groups in flattenedgroups.
 """
 macro groups()
-    return :($(esc(:(model.groups.i_flattenedgroups::UnitRange{Int64}))))
+    return :($(esc(:(1:length(model.flattenedgroups)::UnitRange{Int64}))))
 end
 
 """

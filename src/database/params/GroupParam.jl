@@ -80,7 +80,6 @@ struct GroupParam <: ClapeyronParam
     flattenedgroups::Array{String,1}
     n_flattenedgroups::Array{Array{Int,1},1}
     n_groups_cache::PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{Float64}, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}}
-    i_flattenedgroups::UnitRange{Int}
     sourcecsvs::Array{String,1}
 end
 
@@ -88,23 +87,85 @@ function GroupParam(imput::PARSED_GROUP_VECTOR_TYPE)
     return GroupParam(imput,:unknown,String[])
 end
 
+
+#given components, groups, n_groups, reconstitute GroupParam
+function recombine!(param::GroupParam)
+    components = param.components
+    groups = param.groups
+    n_groups = param.n_groups
+    ℂ = length(components)
+    𝔾 = length(groups)
+    #initialization of flattenedgroups
+    #flattenedgroups = unique!(reduce(vcat,groups))
+    
+    flattenedgroups = param.flattenedgroups
+    resize!(flattenedgroups,0)
+    for group ∈ groups
+        append!(flattenedgroups,group)
+    end
+    unique!(flattenedgroups)
+    #initialization of i_groups
+    #i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
+    i_groups = param.i_groups
+    resize!(i_groups,ℂ)
+    for i in 1:ℂ
+        group = groups[i]
+        if !isassigned(i_groups,i)
+            i_groups[i] = Int[]
+        end
+        i_group = i_groups[i]
+        resize!(i_group,length(group))
+        for j in eachindex(i_group)
+            i_group[j] = findfirst(isequal(group[j]), flattenedgroups)
+        end
+    end
+
+    #initialization of n_flattenedgroups, n_groups_cache
+    #n_flattenedgroups = [zeros(Int,len_flattenedgroups) for _ ∈ 1:length(input)]
+    #=for i in 1:length(input)
+        setindex!(n_flattenedgroups[i],n_groups[i],i_groups[i])
+        setindex!(n_groups_cache[i],n_groups[i],i_groups[i])
+    end =#
+    flat𝔾 = length(flattenedgroups)
+    n_flattenedgroups = param.n_flattenedgroups
+    
+    #resizing of Packed Vector of Vectors
+    n_groups_cache = param.n_groups_cache
+    _p,_v = n_groups_cache.p,n_groups_cache.v
+    resize!(_v,flat𝔾*ℂ)
+    resize!(_p,ℂ + 1)
+    resize!(n_flattenedgroups,ℂ)
+    fill!(_v,0.0)
+
+    for i in eachindex(_p)
+        _p[i] = 1 + (i-1)*flat𝔾
+    end
+
+    for i in 1:ℂ
+        if !isassigned(n_flattenedgroups,i)
+            n_flattenedgroups[i] = Float64[]
+        end
+        n_flatgroup = n_flattenedgroups[i]
+        resize!(n_flatgroup,flat𝔾)
+        n_flatgroup .= 0.0
+        setindex!(n_flatgroup,n_groups[i],i_groups[i])
+        setindex!(n_groups_cache[i],n_groups[i],i_groups[i])
+    end
+
+    return param
+end
+
 function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs::Vector{String})
     components = [first(i) for i ∈ input]
     raw_groups =  [last(i) for i ∈ input]
     groups = [first.(grouppairs) for grouppairs ∈ raw_groups]
     n_groups = [last.(grouppairs) for grouppairs ∈ raw_groups]
-    flattenedgroups = unique!(reduce(vcat,groups))
-    i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
-    len_flattenedgroups = length(flattenedgroups)
-    i_flattenedgroups = 1:len_flattenedgroups
-    n_flattenedgroups = [zeros(Int,len_flattenedgroups) for _ ∈ 1:length(input)]
-    n_groups_cache = PackedVectorsOfVectors.packed_fill(0.0,fill(len_flattenedgroups,length(input)))
-    for i in 1:length(input)
-        setindex!(n_flattenedgroups[i],n_groups[i],i_groups[i])
-        setindex!(n_groups_cache[i],n_groups[i],i_groups[i])
-    end
+    flattenedgroups = String[]
+    i_groups = Vector{Vector{Int}}(undef,0)
+    n_flattenedgroups = Vector{Vector{Int}}(undef,0)
+    n_groups_cache = PackedVofV(Int[],Float64[])
 
-    return GroupParam(components,
+    param =  GroupParam(components,
     groups,
     grouptype,
     n_groups,
@@ -112,8 +173,10 @@ function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs
     flattenedgroups,
     n_flattenedgroups,
     n_groups_cache,
-    i_flattenedgroups,
     sourcecsvs)
+    #do the rest of the work here
+    recombine!(param)
+    return param
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)

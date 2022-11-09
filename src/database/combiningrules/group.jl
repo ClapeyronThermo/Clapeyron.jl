@@ -2,8 +2,16 @@
 
 function _group_sum!(out,groups::GroupParam,param)
     v = groups.n_groups_cache
-    for i in eachindex(out)
-        out[i] = dot(v[i],param)
+    for (i,vi) in pairs(v)
+        out[i] = dot(vi,param)
+    end
+    return out
+end
+
+function _group_sum!(out,groups::GroupParam,param::Number)
+    v = groups.n_groups_cache
+    for (i,vi) in pairs(v)
+        out[i] = sum(vi)*param
     end
     return out
 end
@@ -15,11 +23,11 @@ function group_sum!(out::SingleParameter,groups::GroupParam,param::SingleParamet
 end
 
 function group_sum!(out,groups::GroupParam,param::Nothing)
-    return _group_sum!(out.values,group,false)
+    return _group_sum!(out,group,true)
 end
 
 function group_sum!(out,groups::GroupParam,param)
-    return _group_sum!(out.values,group,param)
+    return _group_sum!(out,groups,param)
 end
 
 """
@@ -33,10 +41,10 @@ where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
 function group_sum(groups::GroupParam,param::SingleParameter)
-    ismissingval = param.ismissingvalues
+    gc = length(groups.components)
     out =  SingleParam(param.name,
                         groups.components,
-                        zeros(eltype(param.values),length(param.values)),
+                        zeros(floattype(eltype(param.values)),gc),
                         param.ismissingvalues,
                         param.sources,
                         param.sourcecsvs)
@@ -54,7 +62,7 @@ where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
 function group_sum(groups::GroupParam,param::AbstractVector)
-    out = similar(param)
+    out = similar(param,length(groups.components))
     return group_sum!(out,groups,param)
 end
 
@@ -70,7 +78,7 @@ where `νᵢₖ` is the number of groups `k` at component `i`.
 """
 function group_sum(groups::GroupParam,::Nothing)
     out = zeros(Float64,length(groups.components))
-    return group_sum!(out,groups)
+    return group_sum!(out,groups,false)
 end
 
 function group_sum(groups::GroupParam)
