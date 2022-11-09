@@ -80,6 +80,8 @@ function CKSAFT(components;
     return model
 end
 
+recombine_impl!(model::CKSAFTModel) = recombine_saft!(model)
+
 function a_res(model::CKSAFTModel, V, T, z)
     return @f(a_seg) + @f(a_chain) + @f(a_assoc)
 end
