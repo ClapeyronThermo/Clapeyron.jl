@@ -72,6 +72,9 @@ function WalkerIdeal(components::Array{String,1};
     return model
 end
 
+recombine_impl!(model::WalkerIdealModel) = model
+
+
 function a_ideal(model::WalkerIdealModel,V,T,z)
     Mw = model.params.Mw.values
     Nrot = model.params.Nrot.values

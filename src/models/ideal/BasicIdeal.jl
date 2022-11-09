@@ -34,7 +34,7 @@ function BasicIdeal(; userlocations::Array{String,1}=String[], verbose=false)
     return BasicIdeal(BasicIdealParam())
 end
 is_splittable(::BasicIdeal) = false
-
+recombine_impl!(model::BasicIdeal) = model
 function a_ideal(model::BasicIdeal, V, T, z)
     N = ∑(z)
     #x = z/∑(z)

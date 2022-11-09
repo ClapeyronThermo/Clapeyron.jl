@@ -38,6 +38,9 @@ function MonomerIdeal(components::Array{String,1}; userlocations::Array{String,1
     return MonomerIdeal(packagedparams)
 end
 
+recombine_impl!(model::MonomerIdealModel) = model
+
+
 function a_ideal(model::MonomerIdealModel, V, T, z)
     Mw = model.params.Mw.values
     res = zero(V+T+first(z))
