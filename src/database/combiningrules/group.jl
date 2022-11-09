@@ -78,7 +78,7 @@ where `νᵢₖ` is the number of groups `k` at component `i`.
 """
 function group_sum(groups::GroupParam,::Nothing)
     out = zeros(Float64,length(groups.components))
-    return group_sum!(out,groups,false)
+    return group_sum!(out,groups,true)
 end
 
 function group_sum(groups::GroupParam)
