@@ -207,8 +207,7 @@ function compile_pair(name,components,raw::RawParam,options)
     sources_csv = unique!(vec(sources_csv))
     filter!(!isequal(EMPTY_STR),sources)
     filter!(!isequal(EMPTY_STR),sources_csv)
-    diagvals = diagvalues(values)
-    return PairParameter(name,components,values,diagvals,ismissingvals,sources_csv,sources)
+    return PairParameter(name,components,values,ismissingvals,sources_csv,sources)
 end
 
 function compile_pair(name,components,type::CSVType,options)

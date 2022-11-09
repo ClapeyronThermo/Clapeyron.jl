@@ -723,16 +723,16 @@ const SAFTVRMieconsts = (
 
 ########
 #=
-Optimizations for single component SAFTVRMieModel
+Optimizations for single component SAFTVRMie
 =#
 
 #######
 
-function d(model::SAFTVRMieModel, V, T, z::SingleComp)
-    _ϵ = model.params.epsilon.diagvalues
-    _σ = model.params.sigma.diagvalues
-    _λa = model.params.lambda_a.diagvalues
-    _λr = model.params.lambda_r.diagvalues
+function d(model::SAFTVRMie, V, T, z::SingleComp)
+    _ϵ = model.params.epsilon
+    _σ = model.params.sigma
+    _λa = model.params.lambda_a
+    _λr = model.params.lambda_r
     u = SAFTVRMieconsts.u
     w = SAFTVRMieconsts.w
     ϵ = _ϵ[1]
