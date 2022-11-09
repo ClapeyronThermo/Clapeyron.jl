@@ -139,6 +139,7 @@ end
 function recombine_impl!(model::JobackIdeal)
     coeffs = model.reidmodel.params.coeffs
     i_groups = model.groups.i_groups
+    n = model.groups.n_flattenedgroups
     a = model.params.a.values
     b = model.params.b.values
     c = model.params.c.values
