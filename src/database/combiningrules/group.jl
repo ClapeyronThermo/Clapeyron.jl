@@ -94,7 +94,7 @@ returns a matrix of size `(k,i)` with values νₖᵢ. when multiplied with a mo
 function group_matrix(groups::GroupParam)
     ng = groups.n_groups_cache
     comp = length(ng)
-    gc = length(groups.i_flattenedgroups)
+    gc = length(groups.flattenedgroups)
     return reshape(ng.v,(gc,comp))
 end
 
@@ -130,7 +130,7 @@ function group_pairmean!(res,f::T,groups::GroupParam,param::SingleOrPair) where 
 end
 
 function group_pairmean!(res,f,groups::GroupParam,p::AbstractMatrix)
-    lgroups = 1:length(groups.i_flattenedgroups)
+    lgroups = 1:length(groups.flattenedgroups)
     lcomps = 1:length(res)
     zz = groups.n_groups_cache
     for i ∈ lcomps
@@ -152,7 +152,7 @@ function group_pairmean!(res,f,groups::GroupParam,p::AbstractMatrix)
 end
 
 function group_pairmean!(res,f::T,groups::GroupParam,p::AbstractVector) where {T}
-    lgroups = 1:length(groups.i_flattenedgroups)
+    lgroups = 1:length(groups.flattenedgroups)
     lcomps = 1:length(groups.components)
     zz = groups.n_groups_cache
     for i ∈ lcomps

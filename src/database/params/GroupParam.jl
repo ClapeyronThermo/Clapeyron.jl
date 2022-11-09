@@ -9,7 +9,6 @@ Struct holding group parameters.contains:
 * `n_groups`: a list of the group multiplicity of each group corresponding to each group in `i_groups`
 * `flattenedgroups`: a list of all unique groups--the parameters correspond to this list
 * `n_flattenedgroups`: the group multiplicities corresponding to each group in `flattenedgroups`
-* `i_flattenedgroups`: an iterator that goes through the indices for each flattened group
 
 You can create a group param by passing a `Vector{Tuple{String, Vector{Pair{String, Int64}}}}.
 For example:

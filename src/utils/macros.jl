@@ -19,9 +19,8 @@ end
 
 This macro is an alias to
 
-    model.groups.i_flattenedgroups
+    1:length(model.groups.flattenedgroups)
 
-`iflattenedgroups` is an iterator that goes through all groups in flattenedgroups.
 """
 macro groups()
     return :($(esc(:(1:length(model.flattenedgroups)::UnitRange{Int64}))))

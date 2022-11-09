@@ -124,7 +124,6 @@ function each_split_model(param::GroupParam,I)
     _idx = view(idx,nonzero_idx)
 
     len_groups = length(_idx)
-    i_flattenedgroups = 1:len_groups
 
     flattenedgroups = param.flattenedgroups[_idx]
     i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
@@ -150,7 +149,6 @@ function each_split_model(param::GroupParam,I)
         flattenedgroups,
         n_flattenedgroups,
         n_groups_cache,
-        i_flattenedgroups,
         sourcecsvs)
 end
 """

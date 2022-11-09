@@ -243,7 +243,6 @@ using Clapeyron, Test, LinearAlgebra
     # Check that flattening of groups is correct.
     @test components_gc.flattenedgroups == ["grp1", "grp2", "grp3","grp4"]
     @test components_gc.n_flattenedgroups == [[1,2,0,0], [0,1,0,0 ], [2,2,3,5]]
-    @test components_gc.i_flattenedgroups == 1:4
     # Build param struct using the gc components above
 
     param_gc = getparams(components_gc; userlocations=filepath_param_gc)
