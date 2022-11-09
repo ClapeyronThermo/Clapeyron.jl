@@ -45,8 +45,12 @@ include("models/types.jl")
 #show(model<:EoSModel)
 include("base/eosshow.jl")
 
+
 #EoSParam, ClapeyronParam, All Params
 include("database/ClapeyronParam.jl")
+
+#recombine options
+include("utils/recombine.jl")
 
 #Combining Rules for Clapeyron Params.
 include("database/combiningrules.jl")

@@ -11,8 +11,3 @@ function recombine!(model::EoSModel)
     return model
 end
 
-
-function recombine!(param::SiteParam)
-
-end
-

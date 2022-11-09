@@ -156,6 +156,14 @@ function cite(model::EoSModel)
     return unique!(res)
 end
 
+"""
+    recombine!(model::EoSModel)
+
+Recalculate all mixing rules, combining rules and parameter caches inside an `EoSModel`.
+
+"""
+function recombine! end
+
 function setreferences!(model,references)
     oldrefs = model.references
     resize!(oldrefs,length(references))
