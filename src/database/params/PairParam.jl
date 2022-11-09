@@ -91,6 +91,7 @@ end
 
 Base.size(param::PairParameter) = size(param.values)
 
+Base.eltype(param::PairParameter{T}) where T = T
 
 #unsafe constructor
 function PairParam(name,components,values)
