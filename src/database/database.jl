@@ -5,6 +5,11 @@ no Parameters [csvtype = unlike]
 species1,species2,k
 """
 
+const NO_ASSOC = """@REPLACE Clapeyron Database File
+no Parameters [csvtype = assoc]
+species1,species2,site1,site2,epsilon_assoc,bondvol
+"""
+
 include("database_rawparam.jl")
 include("database_utils.jl")
 
@@ -472,7 +477,7 @@ function findparamsincsv(components,filepath,
 
     #function output
     foundvalues = Vector{RawParam}(undef,0)
-    notfoundvalues = Dict{String,CSVType}(headerparam => csvtype for headerparam ∈ headerparams)
+    notfoundvalues = Dict{String,CSVType}(strip(headerparam) => csvtype for headerparam ∈ headerparams)
 
     normalised_sourcecolumnreference = normalisestring(sourcecolumnreference)
     getsources = false
@@ -594,7 +599,7 @@ function build_raw_param(name,comps,vals,sources,csv,csvtype,grouptype)
         _sources[i] = sources[j]
         _csv[i] = csv[j]
     end
-    return RawParam(name,_comps,_vals,_sources,_csv,csvtype,grouptype)
+    return RawParam(string(strip(name)),_comps,_vals,_sources,_csv,csvtype,grouptype)
 end
 #verbose functionality, is executed for each csv when verbose == true
 

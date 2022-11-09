@@ -58,7 +58,6 @@ function PCSAFT(components;
     verbose=false,
     assoc_options = AssocOptions())
     params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    
     segment = params["m"]
     k = params["k"]
     Mw = params["Mw"]
