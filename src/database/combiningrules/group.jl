@@ -17,13 +17,13 @@ function _group_sum!(out,groups::GroupParam,param::Number)
 end
 
 function group_sum!(out::SingleParameter,groups::GroupParam,param::SingleParameter)
-    _group_sum!(out.values,group,param)
+    _group_sum!(out.values,groups,param)
     out.ismissingvalues .= param.ismissingvalues
     return out
 end
 
 function group_sum!(out,groups::GroupParam,param::Nothing)
-    return _group_sum!(out,group,true)
+    return _group_sum!(out,groups,true)
 end
 
 function group_sum!(out,groups::GroupParam,param)
@@ -122,7 +122,7 @@ end
 function group_pairmean(f::T,groups::GroupParam,p::AbstractArray) where {T}
     _0 = zero(eltype(p))/one(eltype(p)) #we want a float type
     res = fill(_0,length(groups.components))
-    return group_pairmean!(f,_0,groups,p)
+    return group_pairmean!(res,f,groups,p)
 end
 
 function group_pairmean!(res,f::T,groups::GroupParam,param::SingleOrPair) where {T}
@@ -132,6 +132,7 @@ end
 function group_pairmean!(res,f,groups::GroupParam,p::AbstractMatrix)
     lgroups = 1:length(groups.flattenedgroups)
     lcomps = 1:length(res)
+    _0 = zero(eltype(res))
     zz = groups.n_groups_cache
     for i ∈ lcomps
         ẑ = zz[i]
@@ -155,6 +156,7 @@ function group_pairmean!(res,f::T,groups::GroupParam,p::AbstractVector) where {T
     lgroups = 1:length(groups.flattenedgroups)
     lcomps = 1:length(groups.components)
     zz = groups.n_groups_cache
+    _0 = zero(eltype(res))
     for i ∈ lcomps
         ẑ = zz[i]
         ∑ẑinv2 = 1/(sum(ẑ)^2)
