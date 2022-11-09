@@ -40,3 +40,11 @@ end
     assoc_similar(model.params.bondvol.values,𝕋)
 end
 
+#recombine! utilities
+function recombine_saft!(model::SAFTModel)
+    sigma = model.params.sigma
+    epsilon = model.params.epsilon
+    sigma = sigma_LorentzBerthelot!(sigma)
+    epsilon = epsilon_LorentzBerthelot!(epsilon)
+    return model
+end

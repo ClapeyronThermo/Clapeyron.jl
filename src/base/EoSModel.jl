@@ -27,7 +27,7 @@ end
 """
     idealmodel(model::EoSModel)
     
-retrieves the ideal model from the input's model.
+retrieves the ideal model from the input's model. if the model is already an idealmodel, return `nothing`
 
 # Examples:
 
@@ -35,11 +35,15 @@ retrieves the ideal model from the input's model.
 julia> pr = PR(["water"],idealmodel=MonomerIdeal)
 PR{MonomerIdeal, PRAlpha, NoTranslation, vdW1fRule} with 1 component:
  "water"
-Contains parameters: a, b, Tc, Pc, Mw 
-julia> Clapeyron.idealmodel(pr)
+Contains parameters: a, b, Tc, Pc, Mw
+
+julia> ideal = idealmodel(pr)
 MonomerIdeal with 1 component:
  "water"
 Contains parameters: Mw
+
+julia> idealmodel(ideal) == nothing
+true
 ```
 """
 idealmodel(model::EoSModel) = model.idealmodel
