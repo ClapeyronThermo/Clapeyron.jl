@@ -83,6 +83,11 @@ function VTPRUNIFAC(components::Vector{String};
     return model
 end
 
+function recombine_unifac_cache!(cache::VTPRUNIFACCache,groups,params)
+    group_sum!(cache.m,groups,nothing)
+    return cache
+end
+
 function VTPRUNIFACCache(groups::GroupParam)
     m = group_sum(groups,nothing)
     return VTPRUNIFACCache(groups.components,m)

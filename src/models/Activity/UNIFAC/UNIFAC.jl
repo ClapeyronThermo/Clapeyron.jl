@@ -98,6 +98,11 @@ function UNIFAC(components::Vector{String};
     return model
 end
 
+function recombine_impl!(model::UNIFACModel)
+    recombine_unifac_cache!(model.unifaccache,model.groups,model.params)
+    recombine!(model.puremodel)
+end
+
 function activity_coefficient(model::UNIFACModel,V,T,z)
     return exp.(@f(lnγ_comb)+ @f(lnγ_res))
 end

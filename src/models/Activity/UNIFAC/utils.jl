@@ -16,3 +16,13 @@ function UNIFACCache(groups::GroupParam,Q,R)
     m = group_sum(groups,nothing)
     return UNIFACCache(groups.components,r,q,q_p,m)
 end
+
+function recombine_unifac_cache!(cache::UNIFACCache,groups,params)
+    Q = params.Q
+    R = params.R
+    group_sum!(cache.r,groups,R.values)
+    group_sum!(cache.q,groups,Q.values)
+    cache.q_p .= cache.r.^(3/4)
+    group_sum!(cache.m,groups,nothing)
+    return cache
+end

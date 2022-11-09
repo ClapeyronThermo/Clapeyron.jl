@@ -30,3 +30,9 @@ function init_puremodel(model::EoSModel,components,userlocations,verbose)
     end
     return EoSVectorParam(components,model,pure)
 end
+
+function recombine_impl!(model::EoSVectorParam)
+    recombine!(model.model)
+    model.pure .= split_model(model.model)
+    return model
+end
