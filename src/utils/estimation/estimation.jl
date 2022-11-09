@@ -143,15 +143,15 @@ function return_model(
         if isdefined(model.params,param)
             current_param = getfield(model.params, param)
             if typeof(current_param) <: SingleParameter
-                current_param[id] = values[i]*f
+                current_param[id[1]] = values[i]*f
             end
             if typeof(current_param) <: PairParam
                 current_param[id[1],id[2],sym[i]] = values[i]*f
             end
             if typeof(current_param) <: AssocParam
-                current_param.values.values[id] = values[i]*f
+                current_param.values.values[id[1]] = values[i]*f
                 if cross_assoc[i]
-                    current_param.values.values[id+1] = values[i]*f                
+                    current_param.values.values[id[1]+1] = values[i]*f                
                 end
             end
         end
@@ -180,15 +180,15 @@ function return_model!(
             if isdefined(model.params,param)
                 current_param = getfield(model.params, param)
                 if typeof(current_param) <: SingleParameter
-                    current_param[id] = values[i]*f
+                    current_param[id[1]] = values[i]*f
                 end
                 if typeof(current_param) <: PairParam
                     current_param[id[1],id[2],sym[i]] = values[i]*f
                 end
                 if typeof(current_param) <: AssocParam
-                    current_param.values.values[id] = values[i]*f
+                    current_param.values.values[id[1]] = values[i]*f
                     if cross_assoc[i]
-                        current_param.values.values[id+1] = values[i]*f                
+                        current_param.values.values[id[1]+1] = values[i]*f                
                     end
                 end
             end
@@ -242,7 +242,7 @@ function obj_fun(estimation::Estimation,guesses)
         else
             prediction = property.(model,inputs...)
         end
-        F += √(sum(((prediction.-output)./output).^2)/length(output))
+        F += sum(((prediction.-output)./output).^2)
     end
     if isnan(F)
         return 1e4
