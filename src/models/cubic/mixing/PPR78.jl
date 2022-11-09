@@ -76,7 +76,7 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
     A = mixing_model.params.A.values
     B = mixing_model.params.B.values
     groups = mixing_model.groups 
-    gc = @groups
+    gc = 1:length(groups.flattenedgroups)
     z̄n = groups.n_groups_cache
    
     for i ∈ @comps

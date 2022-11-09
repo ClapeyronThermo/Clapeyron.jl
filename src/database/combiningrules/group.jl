@@ -44,7 +44,7 @@ function group_sum(groups::GroupParam,param::SingleParameter)
     gc = length(groups.components)
     out =  SingleParam(param.name,
                         groups.components,
-                        zeros(floattype(eltype(param.values)),gc),
+                        zeros(float(eltype(param.values)),gc),
                         param.ismissingvalues,
                         param.sources,
                         param.sourcecsvs)
