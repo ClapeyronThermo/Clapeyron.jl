@@ -23,7 +23,7 @@ This macro is an alias to
 
 """
 macro groups()
-    return :($(esc(:(1:length(model.flattenedgroups)::UnitRange{Int64}))))
+    return :($(esc(:(1:length(model.groups.flattenedgroups)::UnitRange{Int64}))))
 end
 
 """
