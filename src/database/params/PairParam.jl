@@ -44,6 +44,7 @@ end
 ```
 """
 const PairParam{T} = PairParameter{T,Matrix{T}} where T
+PairParam(name,components,vals,missingvals,srccsv,src) = PairParameter(name,components,vals,missingvals,srccsv,src)
 
 #indexing
 
@@ -96,7 +97,7 @@ function PairParam(name,components,values)
     missingvals = fill(false,size(values))
     src = String[]
     sourcecsv = String[]
-    return PairParam(name,components,values,missingvals,src,sourcecsv)
+    return PairParameter(name,components,values,missingvals,src,sourcecsv)
 end
 
 function PairParam(name::String,
