@@ -76,6 +76,8 @@ function Base.copyto!(dest::SingleParameter,src::SingleParameter) #used to set p
     return dest
 end
 
+Base.eltype(param::SingleParameter{T}) where T = T
+
 #linear algebra
 
 LinearAlgebra.dot(param::SingleParameter,x::Union{<:AbstractVector,<:Number}) = dot(param.values,x)

@@ -64,7 +64,7 @@ export JobackIdeal
 - `eta_b`: Single Parameter (`Float64`)
 
 ## Description
-
+ 
 Joback Group Contribution Ideal Model. GC version of `ReidIdeal`. Helmholtz energy obtained via integration of specific heat capacity:
 
 ```
@@ -129,18 +129,30 @@ function JobackIdeal(components;userlocations=String[], verbose=false)
     i_groups = groups.i_groups
     n = groups.n_flattenedgroups
     coeffs = Vector{NTuple{4,Float64}}(undef,length(comps)) 
-    for i in comps
-        #res +=z[i]*(log(z[i]/V))/Σz
-        ni = n[i]
-        _a = ∑(a.values[j]*ni[j] for j in i_groups[i]) - 37.93
-        _b = ∑(b.values[j]*ni[j] for j in i_groups[i]) + 0.210
-        _c = ∑(c.values[j]*ni[j] for j in i_groups[i]) - 3.91e-4
-        _d = ∑(d.values[j]*ni[j] for j in i_groups[i]) + 2.06e-7
-        coeffs[i] = (_a,_b,_c,_d)
-    end
     reidparam = ReidIdealParam(SingleParam("GC-averaged Reid Coefficients",groups.components,coeffs))
     reidmodel = ReidIdeal(reidparam)
     model = JobackIdeal(groups.components,groups,packagedparams,reidmodel,references)
+    recombine!(model)
+    return model
+end
+
+function recombine_impl!(model::JobackIdeal)
+    coeffs = model.reidmodel.params.coeffs
+    i_groups = model.groups.i_groups
+    n = model.groups.n_flattenedgroups
+    a = model.params.a.values
+    b = model.params.b.values
+    c = model.params.c.values
+    d = model.params.d.values
+    for i in 1:length(model)
+        #res +=z[i]*(log(z[i]/V))/Σz
+        ni = n[i]
+        _a = ∑(a[j]*ni[j] for j in i_groups[i]) - 37.93
+        _b = ∑(b[j]*ni[j] for j in i_groups[i]) + 0.210
+        _c = ∑(c[j]*ni[j] for j in i_groups[i]) - 3.91e-4
+        _d = ∑(d[j]*ni[j] for j in i_groups[i]) + 2.06e-7
+        coeffs[i] = (_a,_b,_c,_d)
+    end
     return model
 end
 

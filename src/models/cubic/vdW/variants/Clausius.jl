@@ -119,8 +119,8 @@ function c_premixing(model::Type{<:ClausiusModel},mixing::MixingRule,Tc,pc,vc,ki
 end
 
 function cubic_Δ(model::ClausiusModel,z) 
-    b = model.params.b.diagvalues
-    c = model.params.c.diagvalues
+    b = diagvalues(model.params.b)
+    c = diagvalues(model.params.c)
     z⁻¹ = sum(z)^-1
     b̄ = dot(b,z)*z⁻¹
     c̄ = dot(c,z)*z⁻¹

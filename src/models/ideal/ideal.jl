@@ -18,3 +18,5 @@ end
 
 lb_volume(model::IdealModel,z=SA[1.0]) = zero(eltype(z))
 
+idealmodel(model::IdealModel) = nothing
+

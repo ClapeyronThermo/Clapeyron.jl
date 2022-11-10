@@ -58,7 +58,6 @@ function PCSAFT(components;
     verbose=false,
     assoc_options = AssocOptions())
     params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    
     segment = params["m"]
     k = params["k"]
     Mw = params["Mw"]
@@ -75,6 +74,8 @@ function PCSAFT(components;
     model = PCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
+
+recombine_impl!(model::PCSAFTModel) = recombine_saft!(model)
 
 function a_res(model::PCSAFTModel, V, T, z)
     _data = @f(data)

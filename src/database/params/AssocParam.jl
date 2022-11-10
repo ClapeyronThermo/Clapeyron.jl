@@ -23,6 +23,8 @@ function Base.copyto!(dest::AssocParam,src::AssocParam) #used to set params
     return dest
 end
 
+Base.eltype(param::AssocParam{T}) where T = T
+
 function AssocParam(
         name::String,
         components::Vector{String},

@@ -75,6 +75,8 @@ function BACKSAFT(components;
     return model
 end
 
+recombine_impl!(model::BACKSAFTModel) = recombine_saft!(model)
+
 
 function lb_volume(model::BACKSAFTModel,z)
     α = model.params.alpha.values[1]

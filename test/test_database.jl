@@ -118,7 +118,7 @@ using Clapeyron, Test, LinearAlgebra
                                               0.0  3.0  2.0  1.4  0.0
                                               0.0  0.0  0.0  0.0  1.5]
 
-    @test params["overwriteparam"].diagvalues == [1.6, 1.2, 1.3, 1.4, 1.5]
+    @test Clapeyron.diagvalues(params["overwriteparam"]) == [1.6, 1.2, 1.3, 1.4, 1.5]
 
     assoc_param_values =
     [[Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,3)          ]  [Array{Int64}(undef,0,2)]  [Array{Int64}(undef,0,3)       ]
@@ -243,7 +243,6 @@ using Clapeyron, Test, LinearAlgebra
     # Check that flattening of groups is correct.
     @test components_gc.flattenedgroups == ["grp1", "grp2", "grp3","grp4"]
     @test components_gc.n_flattenedgroups == [[1,2,0,0], [0,1,0,0 ], [2,2,3,5]]
-    @test components_gc.i_flattenedgroups == 1:4
     # Build param struct using the gc components above
 
     param_gc = getparams(components_gc; userlocations=filepath_param_gc)

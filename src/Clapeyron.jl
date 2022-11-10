@@ -45,14 +45,16 @@ include("models/types.jl")
 #show(model<:EoSModel)
 include("base/eosshow.jl")
 
+
 #EoSParam, ClapeyronParam, All Params
 include("database/ClapeyronParam.jl")
 
-#Combining Rules for Single and Pair Params.
-include("database/params/combiningrules.jl")
+#recombine options
+include("utils/recombine.jl")
 
-#Combining Rules for Assoc Params
-include("database/params/combiningrules_assoc.jl")
+#Combining Rules for Clapeyron Params.
+include("database/combiningrules.jl")
+
 
 using Tables,CSV 
 #getparams options

@@ -72,18 +72,12 @@ end
 
 function each_split_model(param::PairParameter,I)
     value = each_split_model(param.values,I)
-    if isnothing(param.diagvalues)
-        diagvalue = nothing
-    else
-        diagvalue = view(value,diagind(value))
-    end
     ismissingvalues = param.ismissingvalues[I,I]
     components = param.components[I]
     res = PairParameter(
             param.name,
             components,
             value,
-            diagvalue,
             ismissingvalues,
             param.sourcecsvs,
             param.sources
@@ -124,7 +118,6 @@ function each_split_model(param::GroupParam,I)
     _idx = view(idx,nonzero_idx)
 
     len_groups = length(_idx)
-    i_flattenedgroups = 1:len_groups
 
     flattenedgroups = param.flattenedgroups[_idx]
     i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
@@ -150,7 +143,6 @@ function each_split_model(param::GroupParam,I)
         flattenedgroups,
         n_flattenedgroups,
         n_groups_cache,
-        i_flattenedgroups,
         sourcecsvs)
 end
 """
