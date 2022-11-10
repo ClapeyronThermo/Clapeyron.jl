@@ -143,6 +143,7 @@ function recombine_impl!(model::JobackIdeal)
     a = model.params.a.values
     b = model.params.b.values
     c = model.params.c.values
+    d = model.params.d.values
     for i in 1:length(model)
         #res +=z[i]*(log(z[i]/V))/Σz
         ni = n[i]
