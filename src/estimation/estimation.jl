@@ -46,6 +46,7 @@ mutable struct Estimation{T<:EoSModel}
     toestimate::ToEstimate
     filepaths::Array{String}
     data::Vector{EstimationData}
+    ignorefield::Union{Nothing,Vector{Symbol}}
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", estimation::Estimation)
@@ -75,8 +76,8 @@ function Base.show(io::IO, estimation::Estimation)
     print(io, typeof(estimation))
 end
 
-function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Array{String})
-    return Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths))
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Array{String}, ignorefield::Union{Nothing,Vector{Symbol}}=nothing)
+    return Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths),ignorefield)
 end
 
 function reload_data(estimation::Estimation)
@@ -228,7 +229,7 @@ function obj_fun(estimation::Estimation,guesses)
     F = 0
     model = return_model(estimation, estimation.model, guesses)
     for i ∈ 1:length(estimation.data)
-        property = getfield(Clapeyron,estimation.data[i].method)
+        property = getfield(Main,estimation.data[i].method)
         inputs = estimation.data[i].inputs
         output = estimation.data[i].outputs[1]
         if isempty(inputs)

@@ -177,5 +177,5 @@ include("models/UFTheory/UFTheory.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
 include("utils/misc.jl")
 
-include("utils/estimation/estimation.jl")
+include("estimation/estimation.jl")
 end # module
