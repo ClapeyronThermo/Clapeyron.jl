@@ -87,8 +87,8 @@ function CPA(components;
     mixing_userlocations=String[],
     translation_userlocations=String[],
     verbose=false,
-    assoc_options = AssocOptions(), kwargs...)
-
+    assoc_options = AssocOptions())
+    
     params,sites = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
     k  = params["k"]

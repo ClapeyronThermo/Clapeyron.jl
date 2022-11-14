@@ -35,6 +35,7 @@ end
     SAFTVRSW(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
+    group_userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
@@ -76,11 +77,12 @@ SAFTgammaMie
 function SAFTgammaMie(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
+    group_userlocations = String[],
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions(), kwargs...)
 
-    groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
+    groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; group_userlocations = group_userlocations,verbose=verbose)
     params,sites = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     components = groups.components
     

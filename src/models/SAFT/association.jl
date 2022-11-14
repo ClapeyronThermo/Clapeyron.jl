@@ -298,6 +298,10 @@ end
 #Mx = a + b(x,x)
 #Axx + x - 1 = 0
 #x = 1 - Axx
+
+function X end
+const assoc_fractions = X
+
 """
     assoc_fractions(model::EoSModel, V, T, z,data = nothing)
 
@@ -354,7 +358,15 @@ function assoc_matrix_solve(K, α, atol ,rtol, max_iters)
     end
     X0 = fill(f,n) #initial point
     
-    #function to solve
+    #
+    #
+    #=
+    function to solve
+    find vector x that satisfies:
+    (A*x .* x) + x - 1 = 0
+    solved by reformulating in succesive substitution:
+    x .= 1 ./ (1 .+ A*x)
+    =#
     function fX(out,in)
         mul!(out,K,in)
         for i in 1:length(out)
@@ -404,9 +416,6 @@ function X_exact1(model,V,T,z,data=nothing)
     _X[i][a] = xia
     return _X
 end
-
-const assoc_fractions = X
-
 
 function a_assoc_impl(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
     _0 = zero(first(X_.v))

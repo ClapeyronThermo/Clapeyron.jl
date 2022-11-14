@@ -15,10 +15,11 @@ struct RawParam{T}
     sources::Vector{String} # "Tape" of parsed sources
     csv::Vector{String} # "Tape" of origin csv
     type::CSVType #the type of data
-    grouptype::String #in the future, this could hold an "Options" type,generated per CSV
+    grouptype::Symbol #in the future, this could hold an "Options" type,generated per CSV
 end
 
-Base.eltype(raw::RawParam) = eltype(raw.data)
+Base.eltype(raw::RawParam) = Base.eltype(raw.data)
+Base.length(raw::RawParam) = Base.length(raw.data)
 
 function Base.show(io::IO,param::RawParam)
     print(io,typeof(param))
@@ -59,8 +60,11 @@ end
 function joindata!(old::RawParam,new::RawParam)
     tnew,type_sucess = joindata!(old.type,new.type)
     if old.grouptype !== new.grouptype
-        error_different_grouptype(old,new)
+        if new.grouptype != :unkwown #for backwards compatibility
+            error_different_grouptype(old,new)
+        end
     end
+    
     if !type_sucess
         error_clashing_headers(old,new)
     end
@@ -75,12 +79,16 @@ function joindata!(old::RawParam,new::RawParam)
     return RawParam(old.name,component_info,data,sources,csv,tnew,old.grouptype)
 end
 
-@noinline function error_different_grouptype(old,new)
+error_different_grouptype(old::RawParam,new::RawParam) = error_different_grouptype(old.grouptype,new.grouptype)
+
+@noinline function error_different_grouptype(old::Symbol,new::Symbol)
     throw(error("""cannot join two databases with different group types:
-    current group type: $(old.grouptype)
-    incoming group type: $(new.grouptype)
+    current group type: $(old)
+    incoming group type: $(new)
     """))
 end
+
+
 
 @noinline function error_clashing_headers(old::RawParam,new::RawParam)
     told = Symbol(old.type)
@@ -98,7 +106,7 @@ end
 Base.@specialize
 
 @noinline function error_clashing_headers(old::CSVType,new::CSVType,header)
-    header = error_color(old.name)
+    header = error_color(header)
     ("Header ", header, " appear ∈ both loaded assoc and non-assoc files.")
 end
 #=
@@ -197,8 +205,7 @@ function compile_pair(name,components,raw::RawParam,options)
     sources_csv = unique!(vec(sources_csv))
     filter!(!isequal(EMPTY_STR),sources)
     filter!(!isequal(EMPTY_STR),sources_csv)
-    diagvals = diagvalues(values)
-    return PairParameter(name,components,values,diagvals,ismissingvals,sources_csv,sources)
+    return PairParameter(name,components,values,ismissingvals,sources_csv,sources)
 end
 
 function compile_pair(name,components,type::CSVType,options)

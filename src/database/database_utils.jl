@@ -1,5 +1,17 @@
 const NumberOrString = Union{Union{T1,Missing},Union{T2,Missing}} where {T1 <: AbstractString, T2 <: Number}
 
+const DB_PATH = normpath(Base.pkgdir(Clapeyron),"database")
+
+const SHORT_PATHS = Dict{String,String}(
+    "DB" => DB_PATH
+)
+
+const SPECIAL_IDENTIFIERS = ["@REPLACE"]
+
+const SKIP_GETPATHS =   ("Clapeyron Database File", #a raw CSV file
+                        "{", # a raw json file
+                        )
+
 """
     getfileextension(filepath)
 A quick helper to get the file extension of any given path (without the dot).
@@ -31,44 +43,92 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
 """
 function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vector{String}
     # We do not use realpath here directly because we want to make the .csv suffix optional.
-    filepath = relativetodatabase ? normpath(dirname(pathof(Clapeyron)), "..", "database", location) : location
+    any(startswith(location,kw) for kw in SKIP_GETPATHS) && return [location]
+    if startswith(location,"@REPLACE")
+        filepath = chop(location,head = 9, tail = 0)
+        result = getpaths(filepath)
+        rr =  ["@REPLACE" * Base.Filesystem.path_separator * res for res in result]
+        return rr
+    end
+    if relativetodatabase
+        new_loc = normpath("@DB",location) #we suppose that the database is never at the root of a windows drive
+    else
+        new_loc = location
+    end
+    return _getpaths(new_loc)
+end
+
+function _getpaths(location,special_parse = true)
+    location == "@REMOVEDEFAULTS" && return [location]
+    if special_parse && startswith(location,'@')
+        locs = splitpath(location)
+        first_identifier = locs[1]
+        if startswith(first_identifier,'@')
+            raw_first_identifier = chop(first_identifier,head = 1,tail = 0)
+            if haskey(SHORT_PATHS,raw_first_identifier)
+                locs[1] = SHORT_PATHS[raw_first_identifier]
+                return _getpaths(join(locs,Base.Filesystem.path_separator))
+            else
+                return _getpaths(location,false)
+            end
+        end
+    end
+    filepath = location
     isfile(filepath) && return [realpath(filepath)]
-    isfile(filepath * ".csv") && return [realpath(filepath * ".csv")]
+    
+    #if we want to parse jsons, this is ambiguous.
+    #isfile(filepath * ".csv") && return [realpath(filepath * ".csv")]
+    
+    #=
+    this should fail at the CSV reader stage
     if !isdir(filepath)
         relativetodatabase ? error("The path ", location, " does not exist in the Clapeyron database.") :
             error("The path ", location, " does not exist.")
-    end
-    files = joinpath.(filepath, readdir(filepath))
-    return realpath.(files[isfile.(files) .& (getfileextension.(files) .== "csv")])
+    end =#
+    files = readdir(filepath,join = true) #this returns the full (non-normalized) path
+    filter!(isfile,files) #remove folders, the reader is not recursive
+    filter!(f -> getfileextension(f) == "csv",files)
+    map!(realpath,files,files)
+    return files
 end
 
 function flattenfilepaths(locations,userlocations)
-    res =
-                vcat(
-                    reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[]),
-                    reduce(vcat,getpaths.(userlocations),init = String[]),
-                    String[]
-                    )
-    return res
+    defaultpaths = reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[])
+    userpaths = reduce(vcat,getpaths.(userlocations),init = String[])
+    idx = findfirst(isequal("@REMOVEDEFAULTS"),userpaths)
+    if !isnothing(idx)
+        defaultpaths = String[]
+        popat!(userpaths,idx)
+    end
+    return vcat(defaultpaths,userpaths,String[])
 end
 
 function getline(filepath::AbstractString, selectedline::Int)
-    # Simple function to return text from filepath at selectedline.
+    startswith(filepath,"Clapeyron Database File") && return getline(IOBuffer(filepath),selectedline)
     open(filepath) do file
-        linecount = 1
-        for line ∈ eachline(file)
-            linecount == selectedline && return line
-            linecount += 1
-        end
-        error("Selected line number exceeds number of lines in file")
+       _getline(file,selectedline)
     end
 end
 
-function normalisestring(str, isactivated::Bool=true; tofilter::Regex=r"[ \-\_]", changecase::Bool=true)::String
-    !isactivated && return string(str)::String
-    normalisedstring = replace(str, tofilter => "")
-    changecase && (normalisedstring = lowercase(normalisedstring))
-    return normalisedstring::String
+getline(file::IO,selectedline::Int) = _getline(file,selectedline)
+
+function _getline(file, selectedline::Int)
+    # Simple function to return text from filepath at selectedline.
+    linecount = 1
+    for line ∈ eachline(file)
+        linecount == selectedline && return line
+        linecount += 1
+    end
+    error("Selected line number exceeds number of lines in file")
+end
+
+function normalisestring(str, isactivated::Bool=true; tofilter::Regex=r"[ \-\_]")
+    if !isactivated
+        str isa String && return str::String
+        return string(str)::String
+    end
+    res = Base.Unicode.normalize(str,casefold=true,stripmark=true)
+    return replace(res, tofilter => "")
 end
 
 function _indexin(query,list,separator)
@@ -76,6 +136,57 @@ function _indexin(query,list,separator)
     return _indexin(querydict,list,separator,keys(list))
 end
 
+if isdefined(Base,:eachsplit)
+function _indexin(query,list,separator,indices)
+    kq = keys(query)
+    res = zeros(Int,0)
+    comp_res = zeros(Int,0)
+    sizehint!(res,2*length(kq))
+    sizehint!(comp_res,2*length(kq))
+    for k in indices
+        list_i = list[k]
+        for val in eachsplit(list_i,separator,keepempty = false)
+            if val in kq
+                push!(res,k)
+                push!(comp_res,query[val])
+            end
+        end
+    end
+    return res,comp_res
+end
+else
+    function _indexin(query,list,separator,indices)
+        kq = keys(query)
+        res = zeros(Int,0)
+        comp_res = zeros(Int,0)
+        sizehint!(res,2*length(kq))
+        sizehint!(comp_res,2*length(kq))
+        for k in indices
+            list_i = list[k]
+            if !occursin(separator,list_i) #simple format
+                if list_i in kq
+                    push!(res,k)
+                    push!(comp_res,query[list_i])
+                end
+            else #separator format
+                for ki in kq
+                    if startswith(list_i,ki * separator) #starts with string
+                        push!(res,k)
+                        push!(comp_res,query[ki])
+                    elseif endswith(list_i,separator * ki)  #ends with string
+                        push!(res,k)
+                        push!(comp_res,query[ki])
+                    elseif occursin(separator * ki * separator,list_i) #string in between
+                        push!(res,k)
+                        push!(comp_res,query[ki])
+                    end
+                end
+            end
+        end
+        return res,comp_res
+    end
+end
+#=
 function _indexin(query,list,separator,indices)
     kq = keys(query)
     res = zeros(Int,0)
@@ -105,8 +216,7 @@ function _indexin(query,list,separator,indices)
         end
     end
     return res,comp_res
-end
-
+end =#
 function defaultmissing(array::Array{<:Number},defaultvalue = zero(eltype(array)))
     return deepcopy(array),Array(ismissing.(array))
 end
@@ -198,10 +308,3 @@ function info_color(text)
     reset = colors[:normal]
     return red * text * reset
 end
-#=
-function csv_table(path)
-    mat,headers = DelimitedFiles.readdlm(path,',',header = true,skipstart = 2)
-    replace!(mat,"" => missing)
-    return Tables.table(mat,header = vec(headers))
-    return table
-end =#

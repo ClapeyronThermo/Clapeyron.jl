@@ -33,8 +33,8 @@ Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 RackettTranslation
 
 export RackettTranslation
-function RackettTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+function RackettTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_VC)
     Vc = params["vc"]
     packagedparams = RackettTranslationParam(Vc)
     model = RackettTranslation(packagedparams, verbose=verbose)

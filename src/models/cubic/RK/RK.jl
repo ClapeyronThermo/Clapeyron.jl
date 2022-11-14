@@ -78,14 +78,14 @@ function RK(
     pc = params["pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
-    init_mixing = init_model(mixing, components, activity, mixing_userlocations, activity_userlocations, verbose)
-    a, b = ab_premixing(RK, init_mixing, Tc, pc, k)
-    init_idealmodel = init_model(idealmodel, components, ideal_userlocations, verbose)
-    init_alpha = init_model(alpha, components, alpha_userlocations, verbose)
-    init_translation = init_model(translation, components, translation_userlocations, verbose)
-    packagedparams = RKParam(a, b, Tc, pc, Mw)
+    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
+    a,b = ab_premixing(RK,init_mixing,Tc,pc,k)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_translation = init_model(translation,components,translation_userlocations,verbose)
+    packagedparams = RKParam(a,b,Tc,pc,Mw)
     references = String["10.1021/cr60137a013"]
-    model = RK(components, init_alpha, init_mixing, init_translation, packagedparams,init_idealmodel, references)
+    model = RK(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 

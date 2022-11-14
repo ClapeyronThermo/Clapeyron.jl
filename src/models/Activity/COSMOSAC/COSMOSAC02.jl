@@ -53,6 +53,8 @@ function COSMOSAC02(components::Vector{String};
     Pi  = COSMO_parse_Pi(params["Pi"])
     A  = params["A"]
     V  = params["V"]
+
+
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSAC02Param(Pi,V,A)
     references = String["10.1021/ie001047w"]

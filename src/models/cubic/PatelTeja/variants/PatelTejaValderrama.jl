@@ -4,7 +4,6 @@ const PTVParam = ABCCubicParam
 
 struct PTV{T <: IdealModel,α,c,γ} <:PTVModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     alpha::α
     mixing::γ
     translation::c
@@ -96,10 +95,9 @@ function PTV(components::Vector{String}; idealmodel=BasicIdeal,
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    icomponents = 1:length(components)
     packagedparams = PTVParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1252/jcej.23.87"]
-    model = PTV(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = PTV(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 

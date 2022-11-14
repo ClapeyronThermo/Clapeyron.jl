@@ -17,7 +17,8 @@ end
     PPR78Rule <: PPR78RuleModel
     
     PPR78Rule(components;
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
+    group_userlocations = String[]
     verbose::Bool=false)
 ## Input Parameters
 - `A`: Pair Parameter (`Float64`) - Fitted Parameter `[K]`
@@ -40,8 +41,14 @@ PPR78Rule
 
 export PPR78Rule
 
-function PPR78Rule(components; activity = nothing, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    groups = GroupParam(components,["cubic/EPPR78/EPPR78_groups.csv"]; verbose=verbose)
+function PPR78Rule(components;
+    activity = nothing,
+    userlocations=String[],
+    group_userlocations = String[],
+    activity_userlocations=String[],
+    verbose::Bool=false)
+    
+    groups = GroupParam(components,["cubic/EPPR78/EPPR78_groups.csv"]; group_userlocations = group_userlocations,verbose=verbose)
     params = getparams(groups, ["cubic/EPPR78/EPPR78_unlike.csv"]; userlocations=userlocations, verbose=verbose, ignore_missing_singleparams=["A","B"])
     pkgparams = PPR78Param(params["A"],params["B"])
     references = ["10.1002/aic.12232","10.1016/j.fluid.2022.113456"]
@@ -63,7 +70,7 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
     A = mixing_model.params.A.values
     B = mixing_model.params.B.values
     groups = mixing_model.groups 
-    gc = groups.i_flattenedgroups
+    gc = 1:length(groups.flattenedgroups)
     z̄n = groups.n_groups_cache
    
     for i ∈ @comps

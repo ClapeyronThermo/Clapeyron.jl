@@ -76,6 +76,8 @@ function ogSAFT(components;
     return model
 end
 
+recombine_impl!(model::ogSAFTModel) = recombine_saft!(model)
+
 function a_res(model::ogSAFTModel, V, T, z)
     return @f(a_seg) + @f(a_chain) + @f(a_assoc)
 end

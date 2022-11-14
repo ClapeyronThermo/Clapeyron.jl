@@ -24,6 +24,7 @@ export ogUNIFAC
     ogUNIFAC(components::Vector{String};
     puremodel = PR, 
     userlocations = String[],
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
@@ -70,11 +71,12 @@ ogUNIFAC
 
 function ogUNIFAC(components::Vector{String};
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false, kwargs...)
 
-    groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"]; verbose=verbose)
+    groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"];group_userlocations = group_userlocations, verbose=verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_like.csv", "Activity/UNIFAC/ogUNIFAC/ogUNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose=verbose)
     A  = params["A"]

@@ -1,5 +1,5 @@
-OpenSAFT Database File,
-SAFTgammaMie Groups,
+Clapeyron Database File,
+test Groups [csvtype = groups,grouptype = test]
 species,groups
 test1,"[""grp1"" => 1, ""grp2"" => 2]"
 test2,"[""grp2"" => 1]"

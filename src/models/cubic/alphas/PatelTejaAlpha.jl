@@ -33,7 +33,7 @@ mᵢ = 0.452413 + 1.30982ωᵢ - 0.295937ωᵢ^2
 PatelTejaAlpha
 
 function PatelTejaAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = SingleParam(params["w"],"acentric factor")
     packagedparams = PatelTejaAlphaParam(acentricfactor)
     model = PatelTejaAlpha(packagedparams, verbose=verbose)

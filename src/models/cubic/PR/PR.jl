@@ -4,7 +4,6 @@ const PRParam = ABCubicParam
 
 struct PR{T <: IdealModel,α,c,γ} <:PRModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     alpha::α
     mixing::γ
     translation::c
@@ -82,10 +81,9 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    icomponents = 1:length(components)
     packagedparams = PRParam(a,b,Tc,pc,Mw)
     references = String["10.1021/I160057A011"]
-    model = PR(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = PR(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 

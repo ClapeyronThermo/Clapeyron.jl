@@ -1,8 +1,3 @@
-function init_model(idealmodel::Type{<:IdealModel},components,userlocations,verbose)
-    verbose && @info("""Now creating ideal model:
-    $idealmodel""")
-    return idealmodel(components;userlocations,verbose)
-end
 
 function eos(model::IdealModel, V, T, z=SA[1.0])
     negative_vt(V,T) && return nan_num(V,T,z)
@@ -22,4 +17,6 @@ function VT_chemical_potential_res(model::IdealModel, vol, T, z)
 end
 
 lb_volume(model::IdealModel,z=SA[1.0]) = zero(eltype(z))
+
+idealmodel(model::IdealModel) = nothing
 

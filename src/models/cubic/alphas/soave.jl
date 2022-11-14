@@ -35,8 +35,8 @@ to use different polynomial coefficients for `mᵢ`, overload `Clapeyron.α_m(::
 """
 SoaveAlpha
 
-function SoaveAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+function SoaveAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = SingleParam(params["w"],"acentric factor")
     packagedparams = SoaveAlphaParam(acentricfactor)
     model = SoaveAlpha(packagedparams, verbose=verbose)
@@ -50,7 +50,7 @@ end
 function α_function(model::CubicModel,V,T,z,alpha_model::SoaveAlphaModel)
     Tc = model.params.Tc.values
     ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(T),length(Tc))
+    α = zeros(typeof(T*1.0),length(Tc))
     coeff = α_m(model,alpha_model)
     for i in @comps
         ωi = ω[i]

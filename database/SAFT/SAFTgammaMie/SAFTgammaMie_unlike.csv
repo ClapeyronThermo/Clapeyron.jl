@@ -1,5 +1,5 @@
 Clapeyron Database File,,,,
-SAFTgammaMie Unlike Parameters,,,,
+SAFTgammaMie Unlike Parameters [csvtype = unlike,grouptype = SAFTgammaMie]
 species1,species2,epsilon,lambda_r,source
 CH3,CH2,350.77,,
 CH3,CH,387.48,,

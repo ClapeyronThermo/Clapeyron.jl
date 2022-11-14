@@ -120,34 +120,24 @@ function SiteParam(pairs::Dict{String,SingleParam{Int}},allcomponentsites)
     ncomps = length(components)
     sourcecsvs = String[]
     for x in values(pairs)
-        vcat(sourcecsvs,x.sourcecsvs)  
+        append!(sourcecsvs,x.sourcecsvs)  
     end
-    if length(sourcecsvs) >0
-        unique!(sourcecsvs)
-    end
+    unique!(sourcecsvs)
+
     n_sites = [[pairs[sites[i][j]].values[i] for j ∈ 1:length(sites[i])] for i ∈ 1:ncomps]  # or groupsites
-    length_sites = [length(componentsites) for componentsites ∈ sites]
-    i_sites = [1:length_sites[i] for i ∈ 1:ncomps]
-    flattenedsites = unique!(reduce(vcat,sites,init = String[]))
-    len_flattenedsites = length(flattenedsites)
-    #i_flattenedsites = 1:len_flattenedsites
-    n_flattenedsites = [zeros(Int,len_flattenedsites) for _ ∈ 1:ncomps]
-    i_flattenedsites = [zeros(Int,len_flattenedsites) for _ ∈ 1:ncomps]
-    for i in 1:ncomps
-        setindex!.(n_flattenedsites,n_sites,i_sites)
-        flatsites_i = i_flattenedsites[i]
-        for (aidx,a) in Base.pairs(i_sites[i])
-            flatsites_i[a] = aidx
-        end
-    end
-    return SiteParam(components, 
-    sites, 
-    PackedVectorsOfVectors.pack(n_sites),
-    i_sites, 
-    flattenedsites,
-    n_flattenedsites, 
-    i_flattenedsites,
-    sourcecsvs)
+    n_sites = PackedVectorsOfVectors.pack(n_sites)
+
+    param = SiteParam(components, 
+            sites, 
+            n_sites,
+            Vector{Vector{Int}}(undef,0), 
+            String[],
+            Vector{Vector{Int}}(undef,0),
+            Vector{Vector{Int}}(undef,0),
+            sourcecsvs)
+
+    recombine!(param)
+    return param
 end
 
 function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=String[])
@@ -155,27 +145,19 @@ function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=St
     raw_sites =  [last(i) for i ∈ input]
     sites = [first.(sitepairs) for sitepairs ∈ raw_sites]
     n_sites = [last.(sitepairs) for sitepairs ∈ raw_sites]
-    flattenedsites = unique!(reduce(vcat,sites,init = String[]))
-    i_sites = [[findfirst(isequal(site), flattenedsites) for site ∈ componentsites] for componentsites ∈ sites]
-    len_flattenedsites = length(flattenedsites)
-    i_flattenedsites = [zeros(Int,len_flattenedsites) for _ ∈ 1:length(input)]
-    n_flattenedsites = [zeros(Int,len_flattenedsites) for _ ∈ 1:length(input)]
-    for i in 1:length(input)
-        setindex!.(n_flattenedsites,n_sites,i_sites)
-        flatsites_i = i_flattenedsites[i]
-        for (aidx,a) in Base.pairs(i_sites[i])
-            flatsites_i[a] = aidx
-        end
-    end
+    n_sites = PackedVectorsOfVectors.pack(n_sites)
 
-    return SiteParam(components, 
-    sites, 
-    PackedVectorsOfVectors.pack(n_sites),
-    i_sites, 
-    flattenedsites,
-    n_flattenedsites, 
-    i_flattenedsites,
-    sourcecsvs)
+    param = SiteParam(components, 
+        sites, 
+        n_sites,
+        Vector{Vector{Int}}(undef,0), 
+        String[],
+        Vector{Vector{Int}}(undef,0),
+        Vector{Vector{Int}}(undef,0),
+        sourcecsvs)
+            
+    recombine!(param)
+    return param
 end
 
 function SiteParam(components::Vector{String})
@@ -189,4 +171,69 @@ function SiteParam(components::Vector{String})
     [Int[] for _ ∈ 1:n],
     [Int[] for _ ∈ 1:n],
     String[])
+end
+
+function recombine!(param::SiteParam)
+    components = param.components
+    sites = param.sites
+    n_sites = param.n_sites
+    ℂ = length(components)
+
+    #initialization of flattenedsites
+    #flattenedsites = unique!(reduce(vcat,sites))
+    
+    flattenedsites = param.flattenedsites
+    resize!(flattenedsites,0)
+    for site ∈ sites
+        append!(flattenedsites,site)
+    end
+    unique!(flattenedsites)
+    #initialization of i_sites
+    #i_sites = [[findfirst(isequal(site), flattenedsites) for site ∈ componentsites] for componentsites ∈ sites]
+
+    i_sites = param.i_sites
+    resize!(i_sites,ℂ)
+    for i in 1:ℂ
+        site = sites[i]
+        if !isassigned(i_sites,i)
+            i_sites[i] = Int[]
+        end
+        i_site = i_sites[i]
+        resize!(i_site,length(site))
+        for j in eachindex(i_site)
+            i_site[j] = findfirst(isequal(site[j]), flattenedsites)
+        end
+    end
+
+    #initialization of n_flattenedsites, i_flattenedsites
+
+    flat𝕊 = length(flattenedsites)
+    n_flattenedsites = param.n_flattenedsites
+    i_flattenedsites = param.i_flattenedsites
+    
+    resize!(n_flattenedsites,ℂ)
+    resize!(i_flattenedsites,ℂ)
+    
+    for i in 1:ℂ
+        if !isassigned(n_flattenedsites,i)
+            n_flattenedsites[i] = Int[]
+        end
+
+        if !isassigned(i_flattenedsites,i)
+            i_flattenedsites[i] = Int[]
+        end
+        n_flatsite = n_flattenedsites[i]
+        i_flatsite = i_flattenedsites[i]
+
+        resize!(n_flatsite,flat𝕊)
+        resize!(i_flatsite,flat𝕊)
+
+        n_flatsite .= 0
+        i_flatsite .= 0
+
+        setindex!(n_flatsite,n_sites[i],i_sites[i])
+        setindex!(i_flatsite,1:length(i_sites[i]),i_sites[i])
+    end
+
+    return param
 end

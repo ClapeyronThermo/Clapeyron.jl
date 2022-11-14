@@ -35,7 +35,7 @@ TwuAlpha
 
 export TwuAlpha
 function TwuAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv","alpha/Twu/Twu_like.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["alpha/Twu/Twu_like.csv"]; userlocations=userlocations, verbose=verbose)
     M = params["M"]
     N = params["N"]
     L = params["L"]
@@ -43,6 +43,7 @@ function TwuAlpha(components::Vector{String}; userlocations::Vector{String}=Stri
     model = TwuAlpha(packagedparams, verbose=verbose)
     return model
 end
+
 doi(::TwuAlpha) = ["10.1016/0378-3812(80)80003-3"]
 
 function α_function(model::CubicModel,V,T,z,alpha_model::TwuAlphaModel)
@@ -50,7 +51,7 @@ function α_function(model::CubicModel,V,T,z,alpha_model::TwuAlphaModel)
     _M  = alpha_model.params.M.values
     _N  = alpha_model.params.N.values
     _L  = alpha_model.params.L.values
-    α = zeros(typeof(T),length(Tc))
+    α = zeros(typeof(T*1.0),length(Tc))
     for i in @comps
         M = _M[i]
         N = _N[i]
@@ -59,4 +60,13 @@ function α_function(model::CubicModel,V,T,z,alpha_model::TwuAlphaModel)
         α[i] = Tr^(N*(M-1))*exp(L*(1-Tr^(N*M)))
     end
     return α
+end
+
+function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::TwuAlphaModel)
+    Tc = model.params.Tc.values[1]
+    M  = alpha_model.params.M.values[1]
+    N  = alpha_model.params.N.values[1]
+    L  = alpha_model.params.L.values[1]
+    Tr = T/Tc
+    α = Tr^(N*(M-1))*exp(L*(1-Tr^(N*M)))
 end

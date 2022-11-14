@@ -4,7 +4,6 @@ const ClausiusParam = ABCCubicParam
 
 struct Clausius{T <: IdealModel,α,c,γ} <:ClausiusModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     alpha::α
     mixing::γ
     translation::c
@@ -88,10 +87,9 @@ function Clausius(components::Vector{String}; idealmodel=BasicIdeal,
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    icomponents = 1:length(components)
     packagedparams = ClausiusParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1002/andp.18802450302"]
-    model = Clausius(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = Clausius(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 
@@ -121,8 +119,8 @@ function c_premixing(model::Type{<:ClausiusModel},mixing::MixingRule,Tc,pc,vc,ki
 end
 
 function cubic_Δ(model::ClausiusModel,z) 
-    b = model.params.b.diagvalues
-    c = model.params.c.diagvalues
+    b = diagvalues(model.params.b)
+    c = diagvalues(model.params.c)
     z⁻¹ = sum(z)^-1
     b̄ = dot(b,z)*z⁻¹
     c̄ = dot(c,z)*z⁻¹

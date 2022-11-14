@@ -13,7 +13,6 @@ end
 
 struct KU{T <: IdealModel,α,c,γ} <:KUModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     alpha::α
     mixing::γ
     translation::c
@@ -106,10 +105,9 @@ function KU(components::Vector{String}; idealmodel=BasicIdeal,
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    icomponents = 1:length(components)
     packagedparams = KUParam(a,b,omega_a,omega_b,Tc,pc,Vc,Mw)
     references = String["10.1016/j.ces.2020.116045"]
-    model = KU(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = KU(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 
