@@ -139,13 +139,12 @@ function m2ϵσ3(model::GEPCSAFTModel, V, T, z,_data=@f(data))
     _Ī = @f(Ī,1,_data)
     Iᵢ = @f(Ii,1,_data)
     A = 0.
-    Σlogη = sum(z[i]*log(md³/(m[i]*di[i]^3)) for i ∈ @comps)
     @inbounds for i ∈ @comps
         A+= z[i]*m[i]*σ[i]^3/di[i]^3*ϵ[i]/T*Iᵢ[i]
     end
     
     gₑ = excess_gibbs_free_energy(model.activity,V,T,z)/(R̄*T)
-    m2ϵσ3₁ = md³/_Ī*(A-(gₑ+Σlogη)/12)/Σz
+    m2ϵσ3₁ = md³/_Ī*(A-gₑ/12)/Σz
     m2ϵσ3₂ = (m2ϵσ3₁)^2/m²σ³
     return m2ϵσ3₁,m2ϵσ3₂
 end
