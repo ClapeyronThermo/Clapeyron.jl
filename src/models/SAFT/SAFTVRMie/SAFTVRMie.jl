@@ -84,6 +84,27 @@ function SAFTVRMie(components;
     return model
 end
 
+function recombine_impl!(model::SAFTVRMieModel)
+    assoc_options = model.assoc_options
+    sigma = model.params.sigma
+    epsilon = model.params.epsilon
+    lambda_a = model.params.lambda_a
+    lambda_r = model.params.lambda_r
+    
+    epsilon_assoc = model.params.epsilon_assoc
+    bondvol = model.params.bondvol
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
+
+    model.params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
+    model.params.bondvol.values.values[:] = bondvol.values.values
+
+    sigma = sigma_LorentzBerthelot!(sigma)
+    epsilon = epsilon_LorentzBerthelot!(epsilon)
+    lambda_a = lambda_LorentzBerthelot!(lambda_a)
+    lambda_r = lambda_LorentzBerthelot!(lambda_r)
+    return model
+end
+
 function x0_volume_liquid(model::SAFTVRMieModel,T,z)
     v_lb = lb_volume(model,z)
     return v_lb*1.5

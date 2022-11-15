@@ -122,6 +122,23 @@ function CPA(components;
     return model
 end
 
+function recombine_impl!(model::CPAModel)
+    assoc_options = model.assoc_options
+    a = model.params.a
+    b = model.params.b
+
+    a  = epsilon_LorentzBerthelot!(a)
+    b  = sigma_LorentzBerthelot!(b)
+
+    epsilon_assoc = model.params.epsilon_assoc
+    bondvol = model.params.bondvol
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options) #combining rules for association
+
+    model.params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
+    model.params.bondvol.values.values[:] = bondvol.values.values
+    return model
+end
+
 lb_volume(model::CPAModel,z = SA[1.0]) = lb_volume(model.cubicmodel,z)
 T_scale(model::CPAModel,z=SA[1.0]) = T_scale(model.cubicmodel,z)
 p_scale(model::CPAModel,z=SA[1.0]) = p_scale(model.cubicmodel,z)

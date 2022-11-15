@@ -404,3 +404,12 @@ function vdw_tv_mix(Tc,Vc,z)
 end
 
 antoine_coef(model::ABCubicModel) = (6.668322465137264,6.098791871032391,-0.08318016317721941)
+
+function recombine_impl!(model::ABCubicModel)
+    a = model.params.a
+    b = model.params.b
+
+    a  = epsilon_LorentzBerthelot!(a)
+    b  = sigma_LorentzBerthelot!(b)
+    return model
+end

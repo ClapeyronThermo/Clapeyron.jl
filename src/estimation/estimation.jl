@@ -9,6 +9,7 @@ struct ToEstimate
     guess::Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}  # if nothing, use current
     symmetric::Vector{Bool}
     cross_assoc::Vector{Bool}
+    recombine::Vector{Bool}
 end
 
 function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
@@ -19,6 +20,7 @@ function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
     upper = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
     guess = Vector{Union{Vector{Union{Float64,Nothing}},Nothing}}(nothing,0)
     sym = Vector{Bool}(undef,0)
+    recombine = Vector{Bool}(undef,0)
     cross_assoc = Vector{Bool}(undef,0)
     for dict in params_dict
         push!(params, dict[:param])
@@ -32,10 +34,12 @@ function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
         push!(guess, typeof(guess_) <: AbstractFloat ? [guess_] : guess_)
         _sym = get(dict,:symmetric,true)
         push!(sym,_sym)
+        _recombine = get(dict,:recombine,false)
+        push!(recombine,_recombine)
         _cross_assoc = get(dict,:cross_assoc,false)
         push!(cross_assoc,_cross_assoc)
     end
-    return ToEstimate(params, indices, factor, lower, upper, guess, sym, cross_assoc)
+    return ToEstimate(params, indices, factor, lower, upper, guess, sym, cross_assoc, recombine)
 end
 
 export Estimation
@@ -46,7 +50,7 @@ mutable struct Estimation{T<:EoSModel}
     toestimate::ToEstimate
     filepaths::Array{String}
     data::Vector{EstimationData}
-    ignorefield::Union{Nothing,Vector{Symbol}}
+    ignorefield::Union{Any,Vector{Symbol}}
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", estimation::Estimation)
@@ -76,8 +80,12 @@ function Base.show(io::IO, estimation::Estimation)
     print(io, typeof(estimation))
 end
 
-function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Array{String}, ignorefield::Union{Nothing,Vector{Symbol}}=nothing)
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Array{String}, ignorefield::Vector{Symbol})
     return Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths),ignorefield)
+end
+
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Array{String})
+    return Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths),[])
 end
 
 function reload_data(estimation::Estimation)
@@ -137,10 +145,12 @@ function return_model(
     sym = estimation.toestimate.symmetric
     cross_assoc = estimation.toestimate.cross_assoc
     idx = estimation.toestimate.indices
+    recombine = estimation.toestimate.recombine
     model = deepcopy(model)
     for (i, param) in enumerate(params)
         f = factor[i]
         id = idx[i]
+        recomb = recombine[i]
         if isdefined(model.params,param)
             current_param = getfield(model.params, param)
             if typeof(current_param) <: SingleParameter
@@ -148,6 +158,10 @@ function return_model(
             end
             if typeof(current_param) <: PairParam
                 current_param[id[1],id[2],sym[i]] = values[i]*f
+                if (id[1]==id[2]) & recomb
+                    current_param.ismissingvalues[id[1],:] .= true
+                    current_param.ismissingvalues[:,id[1]] .= true
+                end
             end
             if typeof(current_param) <: AssocParam
                 current_param.values.values[id[1]] = values[i]*f
@@ -158,10 +172,11 @@ function return_model(
         end
     end
     for i ∈ fieldnames(typeof(model))
-        if typeof(getfield(model,i)) <: EoSModel
+        if (typeof(getfield(model,i)) <: EoSModel) & !(i in estimation.ignorefield)
             return_model!(estimation,getfield(model,i),values)
         end
     end
+    recombine!(model)
     return model
 end
 
@@ -174,10 +189,12 @@ function return_model!(
     sym = estimation.toestimate.symmetric
     cross_assoc = estimation.toestimate.cross_assoc
     idx = estimation.toestimate.indices
+    recombine = estimation.toestimate.recombine
     if isdefined(model,:params)
         for (i, param) in enumerate(params)
             f = factor[i]
             id = idx[i]
+            recomb = recombine[i]
             if isdefined(model.params,param)
                 current_param = getfield(model.params, param)
                 if typeof(current_param) <: SingleParameter
@@ -185,6 +202,10 @@ function return_model!(
                 end
                 if typeof(current_param) <: PairParam
                     current_param[id[1],id[2],sym[i]] = values[i]*f
+                    if (id[1]==id[2]) & recomb
+                        current_param.ismissingvalues[id[1],:] .= true
+                        current_param.ismissingvalues[:,id[1]] .= true
+                    end
                 end
                 if typeof(current_param) <: AssocParam
                     current_param.values.values[id[1]] = values[i]*f
@@ -196,10 +217,11 @@ function return_model!(
         end
     end
     for i ∈ fieldnames(typeof(model))
-        if typeof(getfield(model,i)) <: EoSModel
+        if (typeof(getfield(model,i)) <: EoSModel) & !(i in estimation.ignorefield)
             return_model!(estimation,getfield(model,i),values)
         end
     end
+    recombine!(model)
 end
 
 function logger(status)
