@@ -26,7 +26,7 @@ Modified [UNIFAC](@ref) (Dortmund) implementation, with parameters tuned to the 
 2. Weidlich, U.; Gmehling, J. A modified UNIFAC model. 1. Prediction of VLE, hE, and.gamma..infin. Ind. Eng. Chem. Res. 1987, 26, 1372–1381.
 3. Horstmann, S., Jabłoniec, A., Krafczyk, J., Fischer, K., & Gmehling, J. (2005). PSRK group contribution equation of state: comprehensive revision and extension IV, including critical constants and α-function parameters for 1000 components. Fluid Phase Equilibria, 227(2), 157–164. [doi:10.1016/j.fluid.2004.11.002](https://doi.org/10.1016/j.fluid.2004.11.002)"
 """
-function PSRKUNIFAC(components::Vector{String};
+function PSRKUNIFAC(components;
     puremodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],

@@ -69,7 +69,7 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 """
 ogUNIFAC
 
-function ogUNIFAC(components::Vector{String};
+function ogUNIFAC(components;
     puremodel = PR,
     userlocations = String[],
     group_userlocations = String[],
@@ -83,11 +83,11 @@ function ogUNIFAC(components::Vector{String};
     R  = params["R"]
     Q  = params["Q"]
     
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    _puremodel = init_puremodel(puremodel,groups.components,pure_userlocations,verbose)
     packagedparams = ogUNIFACParam(A,R,Q)
     references = String[]
     cache = UNIFACCache(groups,packagedparams)
-    model = ogUNIFAC(components,groups,packagedparams,_puremodel,references,cache)
+    model = ogUNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
     return model
 end
 
