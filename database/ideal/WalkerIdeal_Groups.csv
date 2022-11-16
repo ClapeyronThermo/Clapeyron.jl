@@ -1,5 +1,5 @@
 Clapeyron Database File,
-Walker Groups,
+Walker Group list [csvtype = groups,grouptype = Walker]
 species,groups
 ethane,"[""CH3"" => 2]"
 propane,"[""CH3"" => 2, ""CH2"" => 1]"

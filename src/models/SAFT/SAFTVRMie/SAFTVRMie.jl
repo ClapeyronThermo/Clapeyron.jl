@@ -75,6 +75,7 @@ function SAFTVRMie(components;
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
 
     packagedparams = SAFTVRMieParam(Mw, segment, sigma, lambda_a, lambda_r, epsilon, epsilon_assoc, bondvol)
     references = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
@@ -149,7 +150,7 @@ function d(model::SAFTVRMieModel, V, T, z)
     _λr = diagvalues(model.params.lambda_r)
     u = SAFTVRMieconsts.u
     w = SAFTVRMieconsts.w
-    _0 = zero(T)
+    _0 = zero(T*1.0)
     n = length(z)
     _d = zeros(typeof(_0),n)
     for k ∈ 1:n
@@ -722,16 +723,16 @@ const SAFTVRMieconsts = (
 
 ########
 #=
-Optimizations for single component SAFTVRMieModel
+Optimizations for single component SAFTVRMie
 =#
 
 #######
 
-function d(model::SAFTVRMieModel, V, T, z::SingleComp)
-    _ϵ = model.params.epsilon.diagvalues
-    _σ = model.params.sigma.diagvalues
-    _λa = model.params.lambda_a.diagvalues
-    _λr = model.params.lambda_r.diagvalues
+function d(model::SAFTVRMie, V, T, z::SingleComp)
+    _ϵ = model.params.epsilon
+    _σ = model.params.sigma
+    _λa = model.params.lambda_a
+    _λr = model.params.lambda_r
     u = SAFTVRMieconsts.u
     w = SAFTVRMieconsts.w
     ϵ = _ϵ[1]
@@ -741,7 +742,7 @@ function d(model::SAFTVRMieModel, V, T, z::SingleComp)
     θ = Cλ(model,V,T,z,λa,λr)*ϵ/T
     λrinv = 1/λr
     λaλr = λa/λr
-    di = zero(T)
+    di = zero(T*1.0)
     for j ∈ 1:5
         di += w[j]*(θ/(θ+u[j]))^λrinv*(exp(θ*(1/(θ/(θ+u[j]))^λaλr-1))/(u[j]+θ)/λr)
     end

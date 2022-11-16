@@ -8,7 +8,6 @@ abstract type PeTSModel <: EoSModel end
 
 struct PeTS{T <: IdealModel} <:PeTSModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::PeTSParam
     idealmodel::T
     references::Array{String,1}
@@ -68,8 +67,7 @@ function PeTS(components;
 
     packagedparams = PeTSParam(Mw, segment, sigma, epsilon)
     references = ["10.1080/00268976.2018.1447153"]
-    icomponents = 1:length(components)
-    model = PeTS(components,icomponents,packagedparams,init_idealmodel,references)
+    model = PeTS(components,packagedparams,init_idealmodel,references)
     return model
 end
 

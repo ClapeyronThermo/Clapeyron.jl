@@ -27,7 +27,7 @@ end
 """
     idealmodel(model::EoSModel)
     
-retrieves the ideal model from the input's model.
+retrieves the ideal model from the input's model. if the model is already an idealmodel, return `nothing`
 
 # Examples:
 
@@ -35,11 +35,15 @@ retrieves the ideal model from the input's model.
 julia> pr = PR(["water"],idealmodel=MonomerIdeal)
 PR{MonomerIdeal, PRAlpha, NoTranslation, vdW1fRule} with 1 component:
  "water"
-Contains parameters: a, b, Tc, Pc, Mw 
-julia> Clapeyron.idealmodel(pr)
+Contains parameters: a, b, Tc, Pc, Mw
+
+julia> ideal = idealmodel(pr)
 MonomerIdeal with 1 component:
  "water"
 Contains parameters: Mw
+
+julia> idealmodel(ideal) == nothing
+true
 ```
 """
 idealmodel(model::EoSModel) = model.idealmodel
@@ -92,9 +96,9 @@ This macro is an alias to
     1:length(model)
 
 The caveat is that `model` has to exist in the local namespace.
-`model` is expected to be an EoSModel type that contains the `icomponents` field.
-`icomponents` is an iterator that goes through all component indices.
+`model` is expected to any struct that has length defined in terms of the amount of components.
 """
+
 macro comps()
     return quote
         1:length(model)
@@ -155,4 +159,17 @@ function cite(model::EoSModel)
     end
     return unique!(res)
 end
-    
+
+"""
+    recombine!(model::EoSModel)
+
+Recalculate all mixing rules, combining rules and parameter caches inside an `EoSModel`.
+
+"""
+function recombine! end
+
+function setreferences!(model,references)
+    oldrefs = model.references
+    resize!(oldrefs,length(references))
+    oldrefs .= references
+end

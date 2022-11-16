@@ -19,7 +19,6 @@ abstract type AnalyticalSLVModel <: EoSModel end
 
 struct AnalyticalSLV{T <: IdealModel} <:AnalyticalSLVModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::AnalyticalSLVParam
     idealmodel::T
     references::Array{String,1}
@@ -64,8 +63,7 @@ function AnalyticalSLV(components;
 
     packagedparams = AnalyticalSLVParam(Mw,Tc,Pc,Vc,a0,a1,a2,n,b0,b1,b2,m,c,d)
     references = ["10.1023/a:1024015729095"]
-    icomponents = 1:length(components)
-    model = AnalyticalSLV(components,icomponents,packagedparams,init_idealmodel,references)
+    model = AnalyticalSLV(components,packagedparams,init_idealmodel,references)
     return model
 end
 

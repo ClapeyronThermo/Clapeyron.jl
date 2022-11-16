@@ -67,6 +67,7 @@ function ogSAFT(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
 
     packagedparams = ogSAFTParam(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie00104a021","10.1016/0378-3812(89)80308-5"]
@@ -74,6 +75,8 @@ function ogSAFT(components;
     model = ogSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
+
+recombine_impl!(model::ogSAFTModel) = recombine_saft!(model)
 
 function a_res(model::ogSAFTModel, V, T, z)
     return @f(a_seg) + @f(a_chain) + @f(a_assoc)

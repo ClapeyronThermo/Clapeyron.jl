@@ -33,7 +33,6 @@ Trᵢ = T/Tcᵢ
 ClausiusAlpha
 
 function ClausiusAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     packagedparams = ClausiusAlphaParam()
     model = ClausiusAlpha(packagedparams, verbose=verbose)
     return model
@@ -43,7 +42,7 @@ ClausiusAlpha() = ClausiusAlpha(ClausiusAlphaParam())
 
 function α_function(model::CubicModel,V,T,z,alpha_model::ClausiusAlphaModel)
     Tc = model.params.Tc.values
-    α = zeros(typeof(T),length(Tc))
+    α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         α[i] = Tc[i]/T
     end

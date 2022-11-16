@@ -191,7 +191,7 @@ end
         GC.gc()
         @test Clapeyron.VLLE_pressure(system, T)[1] ≈ 54504.079665621306 rtol = 1E-6
         GC.gc()
-        @test Clapeyron.VLLE_temperature(system, 54504.079665621306)[1] ≈ 313.1499860368554 rtol = 1E-6
+        @test_broken Clapeyron.VLLE_temperature(system, 54504.079665621306)[1] ≈ 313.1499860368554 rtol = 1E-6
         GC.gc()
         @test Clapeyron.crit_mix(system,z)[1] ≈ 518.0004062881115 rtol = 1E-6
     end
@@ -297,9 +297,12 @@ end
 end
 
 @testset "Activity methods, multi-components" begin
+    com = CompositeModel(["water","methanol"],liquid = DIPPR105Liquid,saturation = DIPPR101Sat,gas = PR)
     system = Wilson(["methanol","benzene"])
+    system2 = Wilson(["water","methanol"],puremodel = com)
     p = 1e5
     T = 298.15
+    T2 = 320.15
     z = [0.5,0.5]
     z_bulk = [0.2,0.8]
     @testset "Bulk properties" begin
@@ -311,6 +314,16 @@ end
     @testset "VLE properties" begin
         @test Clapeyron.gibbs_solvation(system, T) ≈ -24707.145697543132 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.647133460465 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = true))[1] ≈ 23839.621459294547
+        @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = false))[1] ≈ 23833.39094581393
+        
+        @test Clapeyron.bubble_temperature(system,23758.647133460465, z)[1] ≈ T  rtol = 1E-6
+
+        @test Clapeyron.dew_pressure(system2, T2, z)[1] ≈ 19386.939256733036 rtol = 1E-6
+        @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = true))[1] ≈ 19393.924550078184 rtol = 1e-6
+        @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = false))[1] ≈ 19393.76058757084 rtol = 1e-6
+        
+        @test Clapeyron.dew_temperature(system2, 19386.939256733036, z)[1]  ≈ T2 rtol = 1E-6
     end
 end
 

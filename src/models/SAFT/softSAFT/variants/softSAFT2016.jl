@@ -11,7 +11,6 @@ abstract type softSAFT2016Model <: softSAFTModel end
 
 struct softSAFT2016{T} <: softSAFT2016Model
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     sites::SiteParam
     params::softSAFT2016Param
     idealmodel::T
@@ -78,11 +77,11 @@ function softSAFT2016(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     packagedparams = softSAFT2016Param(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1080/002689797170707","10.1063/1.4945000"]
-    icomponents = 1:length(components)
-    return softSAFT2016(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references, LJRefConsts())
+    return softSAFT2016(components,sites,packagedparams,init_idealmodel,assoc_options,references, LJRefConsts())
 end
 
 function a_LJ(model::softSAFT2016Model,V,T,z,_data = @f(data))

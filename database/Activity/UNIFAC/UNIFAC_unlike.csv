@@ -1,5 +1,5 @@
 ﻿Clapeyron Database File,,,,,,,
-UNIFAC Unlike Parameters,,,,,,,
+modified UNIFAC (Dortmund) Unlike Parameters [csvtype = unlike,grouptype = UNIFACDortmund]
 species1,SMILES1,species2,SMILES2,A,B,C,source
 CH3~|~CH2~|~CH~|~C,,CH2=CH~|~CH=CH~|~CH2=C~|~CH=C~|~C=C,,189.66,-0.27232,0,
 CH3~|~CH2~|~CH~|~C,,ACH~|~AC,,114.2,0.0933,0,

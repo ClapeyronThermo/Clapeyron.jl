@@ -4,10 +4,7 @@ struct IAPWS95Ideal <: IdealModel
 end
 
 IAPWS95Ideal() = IAPWS95Ideal(["water"],["IAPWS R6-95(2018)"])
-
-function init_model(idealmodel::Type{<:IAPWS95Ideal},components,userlocations,verbose)
-    verbose && @info("""Now creating ideal model:
-    $idealmodel""")
+function IAPWS95Ideal(components;userlocations = String[],verbose = false)
     return IAPWS95Ideal()
 end
 

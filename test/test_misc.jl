@@ -6,7 +6,7 @@
     gc2 = SAFTgammaMie([
         "ethanol",
         ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])])
-    
+
     ideal1 = WalkerIdeal(["hexane"])
     noparam1 = gc3.puremodel[1].translation
     simple1 = gc3.puremodel[1].alpha
@@ -14,10 +14,8 @@
         models2 = split_model(model2)
         @test models2[1].components[1] == model2.components[1]
         @test models2[2].components[1] == model2.components[2]
-        @test models2[1].icomponents == models2[2].icomponents == 1:1
 
         model2_unsplit = only(split_model(model2,[[1,2]]))
-        @test model2_unsplit.icomponents == model2.icomponents
         @test model2_unsplit.components == model2.components
 
         model4_split = Clapeyron.split_model(model4)
@@ -48,6 +46,7 @@
         @test Clapeyron.@nan(Base.log(-1),3) == 3
         @test_throws MethodError Clapeyron.@nan(Base.log("s"),3)
     end
+
     using Clapeyron: has_sites,has_groups
     @testset "has_sites-has_groups" begin
         @test has_sites(typeof(gc3)) == false
@@ -59,7 +58,7 @@
     @testset "eosshow" begin
         #@newmodelgc
         @test repr(ideal1) == "WalkerIdeal{BasicIdeal}(\"hexane\")"
-        @test repr("text/plain",ideal1) == "WalkerIdeal{BasicIdeal} with 1 component:\n \"hexane\": \"CH3\" => 2, \"CH2\" => 4\nContains parameters: Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4"
+        @test repr("text/plain",ideal1) == "WalkerIdeal{BasicIdeal} with 1 component:\n \"hexane\": \"CH3\" => 2, \"CH2\" => 4\nGroup Type: Walker\nContains parameters: Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4"
         #@newmodel
         @test repr(model2) == "PCSAFT{BasicIdeal}(\"water\", \"ethanol\")"
         @test repr("text/plain",model2) == "PCSAFT{BasicIdeal} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"
@@ -68,6 +67,11 @@
         @test repr("text/plain",noparam1) == "NoTranslation\n"
         @test repr(simple1) == "PRAlpha(\"propane\")"
         @test repr("text/plain",simple1) == "PRAlpha with 1 component:\n \"propane\"\nContains parameters: acentricfactor"
+    end
+
+    @testset "Clapeyron Param show" begin
+        @test repr(model2.params) == "Clapeyron.PCSAFTParam"
+        @test repr("text/plain",model2.params) == "Clapeyron.PCSAFTParam for [\"water\", \"ethanol\"] with 6 params:\n Mw::SingleParam{Float64}\n segment::SingleParam{Float64}\n sigma::PairParam{Float64}\n epsilon::PairParam{Float64}\n epsilon_assoc::AssocParam{Float64}\n bondvol::AssocParam{Float64}"
     end
 
     @testset "phase symbols" begin
@@ -90,7 +94,7 @@
         @test citation_translation ⊆ citation_full
     end
     @printline
-    
+
     @testset "Reported errors" begin
         #https://github.com/ypaul21/Clapeyron.jl/issues/104
         @testset "#104" begin
@@ -100,5 +104,22 @@
             @test fugacity_coefficient(model, p, T)[1] ≈ 0.9928244080356565 rtol = 1E-6
             @test activity_coefficient(model, p, T)[1] ≈ 1.0
         end
+        @testset "#112" begin
+            model = CPA(["methanol"])
+            @test crit_pure(model)[1] ≈ 538.2329369300235 rtol = 1e-6
+        end
+    end
+    @printline
+    if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
+        @testset "ambiguities" begin
+            ambiguities = Test.detect_ambiguities(Clapeyron)
+            @test length(ambiguities) == 0
+        end
+    end
+    #testset for equilibria bugs
+    @testset "challenging equilibria" begin
+        #@testset "dew_temperature N°1" begin
+        #    modelp = PCSAFT(["water","methanol"])
+        #end
     end
  end

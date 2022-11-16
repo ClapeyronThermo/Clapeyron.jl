@@ -1,6 +1,7 @@
 #aproximates liquid volume at a known pressure and t,
 #by using isothermal compressibility
-
+#dP = (α/β)dT - (1/βV)dV, dT = 0
+#dP = -(1/βV)dV
 
 """
     volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
@@ -67,7 +68,6 @@ function volume_virial(B::Real,p,T,z=SA[1.0])
     b = -1
     c = -B
     Δ = b*b-4*a*c
-    n = sum(z)
     if Δ <= 0
         #virial approximation could not be calculated
         #return value at spinodal

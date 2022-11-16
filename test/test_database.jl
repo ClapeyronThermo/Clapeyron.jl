@@ -1,4 +1,4 @@
-using Clapeyron, Test
+using Clapeyron, Test, LinearAlgebra
 
 @testset "database_lookup" begin
     params1 = Clapeyron.getparams(["water", "methanol"], ["SAFT/PCSAFT"],return_sites=false)
@@ -14,11 +14,11 @@ using Clapeyron, Test
                        "test_csvs/normal_single2_test.csv",
                        "test_csvs/normal_assoc2_test.csv"]
 
-    filepath_clashingheaders = ["test_csvs/headercollision_single_test",
-                                "test_csvs/headercollision_assoc_test"]
+    filepath_clashingheaders = ["test_csvs/headercollision_single_test.csv",
+                                "test_csvs/headercollision_assoc_test.csv"]
 
-    filepath_asymmetry = ["test_csvs/asymmetry_pair_test",
-                          "test_csvs/asymmetry_assoc_test"]
+    filepath_asymmetry = ["test_csvs/asymmetry_pair_test.csv",
+                          "test_csvs/asymmetry_assoc_test.csv"]
 
     filepath_multiple_identifiers = ["test_csvs/multiple_identifiers_single_test.csv",
                                      "test_csvs/multiple_identifiers_pair_test.csv",
@@ -28,8 +28,10 @@ using Clapeyron, Test
     # Check that it detects the right sites.
 
     opts = Clapeyron.ParamOptions()
+    opts2 = Clapeyron.ParamOptions(ignore_missing_singleparams=["emptyparam","missingparam"])
     allparams,allnotfoundparams = Clapeyron.createparams(testspecies, filepath_normal, opts) #merge all found params
-    result, allcomponentsites = Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts) #generate ClapeyronParams
+    @test_throws ErrorException Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts) #generate ClapeyronParams
+    result, allcomponentsites = Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts2) #generate ClapeyronParams
 
     @test allcomponentsites == [[],
                                                                      [],
@@ -116,7 +118,7 @@ using Clapeyron, Test
                                               0.0  3.0  2.0  1.4  0.0
                                               0.0  0.0  0.0  0.0  1.5]
 
-    @test params["overwriteparam"].diagvalues == [1.6, 1.2, 1.3, 1.4, 1.5]
+    @test Clapeyron.diagvalues(params["overwriteparam"]) == [1.6, 1.2, 1.3, 1.4, 1.5]
 
     assoc_param_values =
     [[Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,3)          ]  [Array{Int64}(undef,0,2)]  [Array{Int64}(undef,0,3)       ]
@@ -128,6 +130,7 @@ using Clapeyron, Test
     for i ∈ 1:5
         for j ∈ 1:5
             valij = assoc_param_values[i,j]
+            valji = assoc_param_values[j,i]
             s1,s2 = size(valij)
             testij = params["assocparam"].values[i,j]
             if iszero(s1*s2)
@@ -135,7 +138,16 @@ using Clapeyron, Test
             else
                 for a ∈ 1:s1
                     for b ∈ 1:s2
-                        @test valij[a,b] == testij[a,b]
+                        #this is to account for the symmetric nature of the CompressedAssoc4DMatrix
+                        #where as the original input matrix is asymmetric
+                        val_ij_ab = valij[a,b]
+                        val_ji_ba = valji[b,a]
+                        if !iszero(val_ij_ab)
+                            val = val_ij_ab
+                        else
+                            val = val_ji_ba
+                        end
+                        @test testij[a,b] == val
                     end
                 end
             end
@@ -206,7 +218,7 @@ using Clapeyron, Test
     floatbool[1,2] = 1000
     @test floatbool[2,1] == 1000
     floatbool[1,2,false] = 4000
-    @test floatbool[2,1] == 1000 
+    @test floatbool[2,1] == 1000
     floatbool[1] = 1.2
     @test floatbool[1,1] == 1.2
 
@@ -218,12 +230,12 @@ using Clapeyron, Test
 
     # GC test, 3 comps, 4 groups
 
-    components_gc = GroupParam(["test1", "test2", ("test3", ["grp1" => 2, "grp2" => 2, "grp3" => 3,"grp4" => 5])]; usergrouplocations=filepath_gc)
+    components_gc = GroupParam(["test1", "test2", ("test3", ["grp1" => 2, "grp2" => 2, "grp3" => 3,"grp4" => 5])]; group_userlocations=filepath_gc)
 
     #Printing: GroupParam
     @test repr(components_gc) == "GroupParam[\"test1\" => [\"grp1\" => 1, \"grp2\" => 2], \"test2\" => [\"grp2\" => 1], \"test3\" => [\"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5]]"
-    @test repr("text/plain",components_gc) == "GroupParam with 3 components:\n \"test1\": \"grp1\" => 1, \"grp2\" => 2\n \"test2\": \"grp2\" => 1\n \"test3\": \"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5"
-
+    @test repr("text/plain",components_gc) == "GroupParam(:test) with 3 components:\n \"test1\": \"grp1\" => 1, \"grp2\" => 2\n \"test2\": \"grp2\" => 1\n \"test3\": \"grp1\" => 2, \"grp2\" => 2, \"grp3\" => 3, \"grp4\" => 5"
+    @test components_gc.grouptype == :test
     @test components_gc.components == ["test1", "test2", "test3"]
     @test components_gc.groups == [["grp1","grp2"],["grp2"],["grp1","grp2","grp3","grp4"]]
     @test components_gc.n_groups == [[1,2], [1], [2,2,3,5]]
@@ -231,15 +243,28 @@ using Clapeyron, Test
     # Check that flattening of groups is correct.
     @test components_gc.flattenedgroups == ["grp1", "grp2", "grp3","grp4"]
     @test components_gc.n_flattenedgroups == [[1,2,0,0], [0,1,0,0 ], [2,2,3,5]]
-    @test components_gc.i_flattenedgroups == 1:4
     # Build param struct using the gc components above
 
     param_gc = getparams(components_gc; userlocations=filepath_param_gc)
     @test param_gc["param1"].values == [1, 2, 3, 4]
 
-    #ParamTable
-    file = ParamTable(:single,(species = ["sp1"],userparam = [2]))
+    #reading external data, via ParamTable
+    file = ParamTable(:single,(species = ["sp1","sp2"],userparam = [2,10]))
     param_user = getparams(testspecies,userlocations = [file],ignore_missing_singleparams=["userparam"])
     @test param_user["userparam"].values[1] === 2
+
+    #reading external data, via direct CSV parsing:
+    csv_string = """Clapeyron Database File,
+       in memory like parameters
+       species,userparam,b,c
+       sp1,1000,0.05,4
+       sp2,,0.41,5
+       """
+    param_user2 = Clapeyron.getparams(["sp1","sp2"],userlocations = [csv_string],ignore_missing_singleparams=["userparam"])
+    @test param_user2["userparam"].values[1] == 1000
+
+    #@REPLACE keyword
+    param_user3 = Clapeyron.getparams(["sp1","sp2"],userlocations = [file, "@REPLACE/" * csv_string],ignore_missing_singleparams = ["userparam"])
+    @test param_user3["userparam"].ismissingvalues[2] == true
 end
 

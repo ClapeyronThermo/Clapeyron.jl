@@ -17,11 +17,11 @@ function each_split_model(y::SparseMatrixCSC{<:AbstractVector},I)
 end
 
 function each_split_model(y::SparsePackedMofV,I)
-    idx = y.idx[I,I]     
+    idx = y.idx[I,I]
     if iszero(length(y.storage))
         return SparsePackedMofV(y.storage,idx)
     end
-    
+
     if iszero(nnz(idx))
         st = y.storage
         storage = PackedVofV([1],zeros(eltype(st.v),0))
@@ -41,7 +41,7 @@ end
 function each_split_model(assoc::Compressed4DMatrix{T},I) where T
     len = length(assoc.values)
     iszero(len) && return Compressed4DMatrix{T}()
-    old_idx = assoc.outer_indices 
+    old_idx = assoc.outer_indices
     idx_bool = findall(x -> (first(x) ∈ I)&(last(x) ∈ I),old_idx)
     iszero(length(idx_bool)) && return Compressed4DMatrix{T}()
     values = assoc.values[idx_bool]
@@ -72,18 +72,12 @@ end
 
 function each_split_model(param::PairParameter,I)
     value = each_split_model(param.values,I)
-    if isnothing(param.diagvalues)
-        diagvalue = nothing
-    else
-        diagvalue = view(value,diagind(value))
-    end
     ismissingvalues = param.ismissingvalues[I,I]
     components = param.components[I]
     res = PairParameter(
             param.name,
             components,
             value,
-            diagvalue,
             ismissingvalues,
             param.sourcecsvs,
             param.sources
@@ -91,7 +85,7 @@ function each_split_model(param::PairParameter,I)
     return res
 end
 
-function each_split_model(param::AssocParam,I)     
+function each_split_model(param::AssocParam,I)
     _value  = each_split_model(param.values,I)
     return AssocParam(
             param.name,
@@ -103,7 +97,8 @@ function each_split_model(param::AssocParam,I)
             )
 end
 
-function each_split_model(param::GroupParam,I) 
+function each_split_model(param::GroupParam,I)
+    grouptype = param.grouptype
     components = param.components[I]
     groups = param.groups[I]
     n_groups = param.n_groups[I]
@@ -121,10 +116,9 @@ function each_split_model(param::GroupParam,I)
     zero_idx = iszero.(idx)
     nonzero_idx = @. !zero_idx
     _idx = view(idx,nonzero_idx)
-    
+
     len_groups = length(_idx)
-    i_flattenedgroups = 1:len_groups
-    
+
     flattenedgroups = param.flattenedgroups[_idx]
     i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
     n_flattenedgroups = Vector{Vector{Int64}}(undef,length(I))
@@ -143,12 +137,12 @@ function each_split_model(param::GroupParam,I)
     return GroupParam(
         components,
         groups,
+        grouptype,
         n_groups,
         i_groups,
         flattenedgroups,
         n_flattenedgroups,
         n_groups_cache,
-        i_flattenedgroups,
         sourcecsvs)
 end
 """
@@ -244,7 +238,7 @@ function group_splitter(group,splitted_groups)
     res = Vector{Vector{Int64}}(undef,length(splitted_groups))
     for (i,groupi) in pairs(splitted_groups)
         res[i] = indexin(groupi.flattenedgroups,flattenedgroups)
-    end    
+    end
     return res
 end
 
@@ -259,7 +253,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
         #else
         #    raw_splitter = split_model(Vector(1:length(model.components)))
         #end
-        
+
         raw_splitter = split_model(Vector(1:length(model.components)))
 
         if subset === nothing
@@ -271,7 +265,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
         else
             throw("invalid type of subset.")
         end
-        
+
         if hasfield(typeof(model),:groups)
             gc_split = split_model(model.groups,splitter)
             allfields[:groups] = gc_split
@@ -282,7 +276,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
         len = length(splitter)
         M = typeof(model)
         allfieldnames = fieldnames(M)
-        
+
         #add here any special keys, that behave as non_splittable values
         for modelkey in [:references]
             if modelkey in allfieldnames

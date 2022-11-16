@@ -13,7 +13,6 @@ abstract type pharmaPCSAFTModel <: PCSAFTModel end
 
 struct pharmaPCSAFT{T <: IdealModel} <: pharmaPCSAFTModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     sites::SiteParam
     params::pharmaPCSAFTParam
     idealmodel::T
@@ -76,7 +75,7 @@ function pharmaPCSAFT(components;
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
-    assoc_options = AssocOptions(combining = :elliott))
+    assoc_options = AssocOptions(combining = :elliott_runtime))
 
     params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; 
     userlocations=userlocations, 
@@ -84,7 +83,6 @@ function pharmaPCSAFT(components;
     ignore_missing_singleparams = ["kT"])
     
     water = SpecialComp(components,["water08"])
-    icomponents = 1:length(components)
     segment = params["m"]
     k0 = params["k"]
     n = length(components)
@@ -95,12 +93,13 @@ function pharmaPCSAFT(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     packagedparams = pharmaPCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d","10.1016/j.cep.2007.02.034"]
 
-    model = pharmaPCSAFT(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references,water)
+    model = pharmaPCSAFT(components,sites,packagedparams,init_idealmodel,assoc_options,references,water)
     return model
 end
 
@@ -183,11 +182,12 @@ function  Δ(model::pharmaPCSAFT, V, T, z,_data=@f(data))
     k = water08_k(model)
     k = model.water[]
     Δσ = Δσh20(T)   
-    Δres = zero_assoc(κ,typeof(V+T+first(z)))
-    for (idx,(i,j),(a,b)) in indices(Δres)
+    Δout = assoc_similar(κ,typeof(V+T+first(z)))
+    Δout.values .= false #fill with zeros, maybe it is not necessary?
+    for (idx,(i,j),(a,b)) in indices(Δout)
         gij = @f(g_hs,i,j,_data)
         σij = σ[i,j] + 0.5*((k==i) + (k==j))*Δσ
-        Δres[idx] = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
+        Δout[idx] = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
     end
-    return Δres
+    return Δout
 end

@@ -1,6 +1,6 @@
 """
     vec2(x1,x2,opt=true)
-Generates a correct 2-length static array `[x1,x2]`, with support for non-isbits types 
+Generates a correct 2-length static array `[x1,x2]`, with support for non-isbits types
 """
 function vec2(x1,x2,opt = true)
     V01,V02,_ = promote(x1,x2,opt)
@@ -19,4 +19,19 @@ function dnorm(x,y,p)
     return norm((xi-yi for (xi, yi) in zip(x, y)), p)
 end
 
-include("core_utils.jl")
+"""
+    _parse_kv(str,dlm)
+
+Parses a key-value pair from a string, returns the key and the value:
+
+## Example
+```
+julia> Clapeyron._parse_kv("  a = b  ",'=')
+("a", "b")
+```
+
+"""
+function _parse_kv(str,dlm)
+    _k,_v = split_2(str,dlm)
+    return strip(_k),strip(_v)
+end

@@ -1,5 +1,4 @@
 module Clapeyron
-using StaticArrays
 using LinearAlgebra
 using SparseArrays
 #for the assoc solver and the sparse packed VofV
@@ -7,16 +6,20 @@ import PackedVectorsOfVectors
 const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 
 #for non allocating vectors of zeros and ones
-using FillArrays: FillArrays
 using Roots: Roots
-using NLSolvers
-using NLSolvers: NEqOptions
-import BlackBoxOptim
 
-using DiffResults, ForwardDiff
 using Scratch 
 using Unitful
 import LogExpFunctions
+using FillArrays: FillArrays
+import BlackBoxOptim
+using StaticArrays
+using NLSolvers
+using NLSolvers: NEqOptions
+using DiffResults, ForwardDiff
+
+#compatibility and raw julia utilities
+include("utils/core_utils.jl")
 
 include("solvers/Solvers.jl")
 using .Solvers
@@ -32,18 +35,28 @@ include("base/constants.jl")
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
 include("base/EoSModel.jl")
-include("models/types.jl") #type hierarchy
+
+#error handlers
+include("base/errors.jl")
+
+#type hierarchy
+include("models/types.jl")
 
 #show(model<:EoSModel)
 include("base/eosshow.jl")
 
+
 #EoSParam, ClapeyronParam, All Params
 include("database/ClapeyronParam.jl")
 
-#Combining Rules for Single and Pair Params.
-include("database/params/combiningrules.jl")
+#recombine options
+include("utils/recombine.jl")
 
-using CSV, Tables
+#Combining Rules for Clapeyron Params.
+include("database/combiningrules.jl")
+
+
+using Tables,CSV 
 #getparams options
 include("database/ParamOptions.jl") 
 #getparams definition
@@ -59,6 +72,9 @@ include("utils/index_reduction.jl")
 
 #splitting models, useful for methods.
 include("utils/split_model.jl")
+
+# Gustavo: acceleration for successive substitution
+include("utils/acceleration_ss.jl")
 
 #Clapeyron methods (AD, property solvers, etc)
 include("methods/methods.jl")
@@ -149,6 +165,11 @@ include("models/cubic/PatelTeja/PatelTeja.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
+
+include("models/Virial/Virial.jl")
+
+#include("models/UFTheory/UFTheory.jl")
+include("models/CompositeModel/CompositeModel.jl")
 
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
