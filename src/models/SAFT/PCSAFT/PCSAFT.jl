@@ -77,8 +77,7 @@ end
 
 recombine_impl!(model::PCSAFTModel) = recombine_saft!(model)
 
-function a_res(model::PCSAFTModel, V, T, z)
-    _data = @f(data)
+function a_res(model::PCSAFTModel, V, T, z, _data = @f(data))
     return @f(a_hc,_data) + @f(a_disp,_data) + @f(a_assoc,_data)
 end
 

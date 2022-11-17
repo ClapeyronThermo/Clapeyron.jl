@@ -5,9 +5,9 @@ end
 
 abstract type DHModel <: IonModel end
 
-struct DH{ϵ<:RSPModel} <: DHModel
+struct DH{ϵ} <: DHModel
     components::Array{String,1}
-    solvents::Array{String,1}
+    solvents::Union{Array{String,1},Array{Any,1}}
     ions::Array{String,1}
     icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
@@ -24,8 +24,8 @@ function DH(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocatio
     ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
 
     ions = ion_groups.flattenedgroups
-    components = deepcopy(solvents)
-    append!(components,ions)
+    components = deepcopy(ions)
+    prepend!(components,solvents)
     icomponents = 1:length(components)
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
@@ -47,23 +47,31 @@ function DH(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocatio
 
     references = String[]
 
-    init_RSPmodel = RSPmodel(solvents,salts)
+    if RSPmodel !== nothing
+        init_RSPmodel = RSPmodel(solvents,salts)
+    else
+        init_RSPmodel = nothing
+    end
 
     model = DH(components, solvents, ions, icomponents, isolvents, iions, packagedparams, init_RSPmodel, 1e-12,references)
     return model
 end
 
-function a_ion(model::ElectrolyteModel, V, T, z,ion::DHModel)
-    σ = ion.params.sigma.values
-    Z = ion.params.charge.values
-    ϵ_r = RSP(model,V,T,z,model.RSPmodel)
+function data(model::DHModel, V, T, z)
+    return dielectric_constant(model.rspmodel, V, T, z)
+end
+
+function a_res(model::DHModel, V, T, z,_data=@f(data))
+    ϵ_r = _data
+    σ = model.params.sigma.values
+    Z = model.params.charge.values
     ∑z = sum(z)
     #x = z ./ sum(z)
     ρ = N_A*sum(z)/V
 
     s = e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)
-    κ = (4π*s*ρ*sum(z[i]*Z[i]^2 for i ∈ ion.iions)/∑z)^(1/2)
+    κ = (4π*s*ρ*sum(z[i]*Z[i]^2 for i ∈ model.iions)/∑z)^(1/2)
     y = σ*κ
     χ = @. 3/y^3*(3/2+log1p(y)-2*(1+y)+1/2*(1+y)^2)
-    return -1/3*s*κ*sum(z[i]*Z[i]^2*χ[i] for i ∈ ion.iions)/∑z
+    return -1/3*s*κ*sum(z[i]*Z[i]^2*χ[i] for i ∈ model.iions)/∑z
 end

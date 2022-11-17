@@ -5,7 +5,7 @@ end
 
 struct ConstW <: ConstWModel
     components::Array{String,1}
-    solvents::Array{String,1}
+    solvents::Union{Array{String,1},Array{Any,1}}
     ions::Array{String,1}
     icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
@@ -34,7 +34,7 @@ function ConstW(solvents,salts; userlocations::Vector{String}=String[], verbose:
     return model
 end
 
-function RSP(electromodel::ElectrolyteModel,V,T,z,model::ConstWModel)
+function dielectric_constant(model::ConstWModel,V,T,z,_data=nothing)
     return 78.4
 end
 

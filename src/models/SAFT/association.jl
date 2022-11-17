@@ -14,6 +14,7 @@ function  Δ(model::AssociationModel, V, T, z,data)
         Δres[idx] =@f(Δ,i,j,a,b,data)
     end
     return Δres
+end
 
 function a_assoc(model::EoSModel, V, T, z,data=nothing)
     _0 = zero(V+T+first(z))

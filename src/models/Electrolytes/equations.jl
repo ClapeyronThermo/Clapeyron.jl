@@ -1,3 +1,5 @@
+pressure(model::ElectrolyteModel,V,T) = pressure(model,V,T,[0.5,0.5])
+
 function ElectrolyteFractionVector(model::ElectrolyteModel,M,z=[1.])
     ν = model.stoic_coeff
     Mw = model.puremodel.params.Mw.values.*1e-3
@@ -8,14 +10,39 @@ function ElectrolyteFractionVector(model::ElectrolyteModel,M,z=[1.])
     return append!(x_solv,x_ions)
 end
 
-function x0_volume(model::ElectrolyteModel,p,T,z; phase = :unknown)
-    phase = Symbol(phase)
-    if phase === :unknown || is_liquid(phase)
-        return 1.5*x0_volume_liquid(model.puremodel,T,z)
-    elseif is_vapour(phase)
-        return 1.5*x0_volume_gas(model.puremodel,p,T,z)
-    elseif is_supercritical(phase)
-     else
-        error("unreachable state on x0_volume")
-    end
+function FractionSalt(model::ElectrolyteModel,z)
+    salts = model.salts
+    isolv = model.isolvents
+    isalts = model.isalts
+    ν = model.stoic_coeff[:,1:length(salts)]
+
+    z_new = z[isolv]
+    z_ion  = z[isalts]
+
+    z_salts = z_ion*inv(ν)
+
+    append!(z_new,z_salts)
+    return z_new
+end
+
+function Obj_Sat(model::ElectrolyteModel, F, T, V_l, V_v,scales)
+    ν = model.stoic_coeff[1]
+    fun(_V) = eos(model, _V, T,[0.5,0.5])
+    A_l,Av_l = Solvers.f∂f(fun,V_l)
+    A_v,Av_v =Solvers.f∂f(fun,V_v)
+    μ_l = VT_chemical_potential(model,V_l,T,[0.5,0.5])
+    μ_v = VT_chemical_potential(model,V_v,T,[0.5,0.5])
+    (p_scale,μ_scale) = scales
+    F[1] = -(Av_l-Av_v)*p_scale
+    F[2] = sum((μ_l-μ_v).*ν)*μ_scale
+    return F
+end
+
+function check_valid_sat_pure(model::ElectrolyteModel,P_sat,V_l,V_v,T,ε0 = 5e7)
+    ε = abs(V_l-V_v)/(eps(typeof(V_l-V_v)))
+    ε <= ε0 && return false
+    _,dpdvl = p∂p∂V(model,V_l,T,[0.5,0.5])
+    _,dpdvv = p∂p∂V(model,V_v,T,[0.5,0.5])
+    return (dpdvl <= 0) && (dpdvv <= 0)
+    #if ΔV > ε then Vl and Vv are different values
 end

@@ -13,8 +13,8 @@ abstract type EmpiricHelmholtzModel <: EoSModel end
 abstract type SatPureAproximation <: EoSModel end
 abstract type AlphaModel <:EoSModel end
 abstract type ElectrolyteModel <: EoSModel end
-abstract type IonModel <: EoSModel end
-abstract type RSPModel <: EoSModel end
+abstract type IonModel <: ElectrolyteModel end
+abstract type RSPModel <: ElectrolyteModel end
 
 export SAFTModel,CubicModel,EmpiricHelmholtzModel
 export IdealModel
