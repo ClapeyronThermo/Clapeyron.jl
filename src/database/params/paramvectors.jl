@@ -4,7 +4,7 @@
     Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
 
 Struct used to hold association data. as its name says, it is a compressed 4D matrix containing all the non-zero combinations of component-site pairs.
-The component-site pairs `(i,j,a,b)` are sorted lexicographically. the `(i,j)` pairs are stored in the `outer_indices` field, whereas the `(a,b)` pairs are stored in the `inner_indices` field. 
+The component-site pairs `(i,j,a,b)` are sorted lexicographically. the `(i,j)` pairs are stored in the `outer_indices` field, whereas the `(a,b)` pairs are stored in the `inner_indices` field.
 
 Let's see an associating model:
 ```julia-repl
@@ -100,7 +100,7 @@ julia> assoc2.values[1] = 100; (vals,assoc2.values[1])
 ([100.0], 100.0)
 ```
 """
-struct Compressed4DMatrix{T,V<:AbstractVector{T}} 
+struct Compressed4DMatrix{T,V<:AbstractVector{T}}
     values::V
     outer_indices::Vector{Tuple{Int,Int}} #index of components
     inner_indices::Vector{Tuple{Int,Int}} #index of sites
@@ -158,9 +158,9 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     return Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,outer_size,inner_size)
 end
 
-function __getidx_assoc(mat::Matrix,i,j,val) 
-    res = mat[i,j] 
-    res,_iszero(res) 
+function __getidx_assoc(mat::Matrix,i,j,val)
+    res = mat[i,j]
+    res,_iszero(res)
 end
 __getidx_assoc(v::Vector,i,j,val) = (v[i],v[j]),false
 __getidx_assoc(v,i,j,val) = convert(eltype(val),0),false
@@ -180,9 +180,9 @@ function __set_idx_4d!(x,values,indices)
             end
             for a in 1:a1
                 start = ifelse(i == j,a,1)
-                for b in start:a2 #this includes (i,i)(a,a) (sCKSAFT)    
+                for b in start:a2 #this includes (i,i)(a,a) (sCKSAFT)
                     __val,is_zero = __getidx_assoc(xi,a,b,values)
-                    if !is_zero 
+                    if !is_zero
                         push!(values,__val)
                         push!(indices,(i,j,a,b))
                     end
@@ -209,7 +209,7 @@ end
 
 function Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
     if !unsafe
-        ijab = [(ij...,ab...) for (ij,ab) in zip(ij,ab)] 
+        ijab = [(ij...,ab...) for (ij,ab) in zip(ij,ab)]
         return Compressed4DMatrix(vals,ijab)
     end
     _ij_size = maximum(maximum(i) for i ∈ ij)
@@ -218,6 +218,15 @@ function Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
     ab_size = (_ab_size,_ab_size)
     return Compressed4DMatrix(vals,ij,ab,ij_size,ab_size)
 end
+
+function SparseArrays.dropzeros!(mat::Compressed4DMatrix)
+    nonzero_idx = findall(!iszero,mat.values)
+    keepat!(mat.values,nonzero_idx)
+    keepat!(mat.outer_indices,nonzero_idx)
+    keepat!(mat.inner_indices,nonzero_idx)
+    return mat
+end
+
 function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
     j,i = minmax(i,j)
     @inbounds begin
@@ -246,14 +255,21 @@ end
 
 
 
-Base.size(m::AssocView) = m.vec.size
+function Base.size(m::AssocView)
+    a,b = 0,0
+    for ab in view(m.vec.inner_indices,m.indices)
+        _a,_b = ab
+        a,b = max(a,_a),max(b,_b)
+    end
+    return a,b
+end
 Base.eltype(m::AssocView{T}) where T = T
 
 function validindex(m::AssocView{T},i::Int,j::Int) where T
     indices = view(m.vec.inner_indices,m.indices)
     @inbounds begin
         idxs = searchsorted(indices,(i,j))
-        if iszero(length(idxs)) 
+        if iszero(length(idxs))
             idxs = searchsorted(indices,(j,i))
             iszero(length(idxs)) &&  return 0
         end
@@ -296,7 +312,7 @@ assoc_similar(mat::Compressed4DMatrix{T}) where T = assoc_similar(mat,T)
 
 function indices(x::Compressed4DMatrix)
     xin = x.outer_indices
-    l = 1:length(xin) 
+    l = 1:length(xin)
     return zip(l,xin,x.inner_indices)
 end
 
@@ -342,7 +358,7 @@ end
 function Base.getindex(x::SparsePackedMofV,i::Int,j::Int)
     _idx = x.idx[i,j]
     iszero(_idx) && (return view(x.storage.v,1:0))
-    
+
     return x.storage[_idx]
 end
 @inline Base.size(x::SparsePackedMofV) = size(x.idx)
