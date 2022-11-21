@@ -207,40 +207,59 @@ function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
     if iszero(idx)
         idx = searchsorted(m.outer_indices,(j,i))
     end
-    return AssocView(view(m.values,idx),view(m.inner_indices,idx),m.inner_size)
+    #return AssocView(view(m.values,idx),view(m.inner_indices,idx),m.inner_size)
+    return AssocView(m,idx,(i,j))
     end
 end
 
 #Base.eltype(m::Compressed4DMatrix{T}) where T = T
 
-function Base.setindex!(m::Compressed4DMatrix,val,i::Int)
-    @inbounds begin
-        m.values[i] = val
+Base.setindex!(m::Compressed4DMatrix,val,i::Int) = Base.setindex!(m.values,val,i)
+
+struct AssocView{T,V<:Compressed4DMatrix{T},I} <: AbstractMatrix{T}
+    vec::V
+    indices::I
+    at::Tuple{Int,Int}
+    function AssocView(vec::Compressed4DMatrix{T},idx::I,at) where {T,I}
+        return new{T,typeof(vec),I}(vec,idx,at)
     end
 end
 
-struct AssocView{T,V,I} <: AbstractMatrix{T}
-    values::V
-    indices::I
-    size::Tuple{Int,Int}
-end
 
-function AssocView(V::Vi,I::Ii,s) where Ii where Vi <:AbstractVector{<:T} where T
-    return AssocView{T,Vi,Ii}(V,I,s)
-end
 
-Base.size(m::AssocView) = m.size
+
+Base.size(m::AssocView) = m.vec.size
 Base.eltype(m::AssocView{T}) where T = T
 
-function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
+function validindex(m::AssocView{T},i::Int,j::Int) where T
+    indices = view(m.vec.inner_indices,m.indices)
     @inbounds begin
-        idxs = searchsorted(m.indices,(i,j))
+        idxs = searchsorted(indices,(i,j))
         if iszero(length(idxs)) 
-            idxs = searchsorted(m.indices,(j,i))
-            iszero(length(idxs)) &&  return zero(T)
+            idxs = searchsorted(indices,(j,i))
+            iszero(length(idxs)) &&  return 0
         end
-        idx = first(idxs)
-        return m.values[idx]
+        return first(idxs)
+    end
+end
+
+function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
+    idx = validindex(m,i,j)
+    iszero(idx) && return _zero(T)
+    vals = view(m.vec.values,m.indices)
+    return vals[idx]
+end
+
+function Base.setindex!(m::AssocView{T},value,a::Int,b::Int,symmetric = true) where T
+    idx = validindex(m,a,b)
+    iszero(idx) && throw(BoundsError())
+    vals = view(m.vec.values,m.indices)
+    vals[idx] = value
+    if symmetric
+        i,j = m.at
+        if (i != j)
+            setindex!(m,value,b,a,false)
+        end
     end
 end
 
