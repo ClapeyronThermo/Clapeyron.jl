@@ -133,6 +133,7 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     outer_size = size(x)
     is1, is2 = 0, 0
     os1, os2 = outer_size
+    @assert os1 == os2
     for i in eachindex(x)
         _is1,_is2 = size(x[i])
         is1,is2 = max(_is1,is1),max(_is2,is2)
@@ -147,25 +148,8 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     end
 
     #self association
+    __set_idx_4d!(x,values,indices)
 
-    for i in 1:os1
-        for j in i:os2 #there can be self association
-            xi = x[i,j]
-            if iszero(length(xi))
-                continue
-            end
-            a1,a2 = size(xi)
-            for a in 1:a1
-                start = ifelse(i == j,a,1)
-                for b in start:a2 #this includes (i,i)(a,a) (sCKSAFT)
-                    if !_iszero(xi[a,b]) 
-                        push!(values,xi[a,b])
-                        push!(indices,(i,j,a,b))
-                    end
-                end
-            end
-        end
-    end
     idx =  sortperm(indices)
     indices = indices[idx]
     outer_indices = [(c[1],c[2]) for c ∈ indices]
@@ -174,6 +158,40 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     return Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,outer_size,inner_size)
 end
 
+function __getidx_assoc(mat::Matrix,i,j,val) 
+    res = mat[i,j] 
+    res,_iszero(res) 
+end
+__getidx_assoc(v::Vector,i,j,val) = (v[i],v[j]),false
+__getidx_assoc(v,i,j,val) = convert(eltype(val),0),false
+
+__size_assoc(mat::Matrix) = size(matrix)
+__size_assoc(tup::Tuple) = (length(first(tup)),length(last(tup)))
+__size_assoc(vec::Vector) = (length(vec),length(vec))
+
+function __set_idx_4d!(x,values,indices)
+    os1,os2 = __size_assoc(x)
+    for i in 1:os1
+        for j in i:os2 #there can be self association
+            xi,_ = __getidx_assoc(x,i,j,values)
+            a1,a2 = __size_assoc(xi)
+            if iszero(a1*a2)
+                continue
+            end
+            for a in 1:a1
+                start = ifelse(i == j,a,1)
+                for b in start:a2 #this includes (i,i)(a,a) (sCKSAFT)    
+                    __val,is_zero = __getidx_assoc(xi,a,b,values)
+                    if !is_zero 
+                        push!(values,__val)
+                        push!(indices,(i,j,a,b))
+                    end
+                end
+            end
+        end
+    end
+    return values,indices
+end
 
 function Compressed4DMatrix(vals::AbstractVector,idxs::AbstractVector)
     if issorted(idxs)
@@ -352,19 +370,3 @@ function Base.show(io::IO,::MIME"text/plain",A::SparsePackedMofV)
         end
     end
 end
-
-#= Operations
-function Base.:(+)(matrix::Compressed4DMatrix, x::Number)
-    values = matrix.values .+ x
-    return Compressed4DMatrix(values, matrix.outer_indices, matrix.inner_indices, matrix.outer_size, matrix.inner_size)
-end
-
-function Base.:(*)(matrix::Compressed4DMatrix, x::Number)
-    values = matrix.values .* x
-    return Compressed4DMatrix(values, matrix.outer_indices, matrix.inner_indices, matrix.outer_size, matrix.inner_size)
-end
-
-function Base.:(^)(matrix::Compressed4DMatrix, x::Number)
-    values = matrix.values .^ x
-    return Compressed4DMatrix(values, matrix.outer_indices, matrix.inner_indices, matrix.outer_size, matrix.inner_size)
-end =#

@@ -12,6 +12,8 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParam)
         end
     end
 
+
+
     flattened_comp_sitenames = collect(Iterators.flatten(sitenames))
     flattened_comp_nsites = collect(Iterators.flatten(sites.n_sites))
     siteidx = deepcopy(sites.i_sites)
@@ -39,8 +41,10 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParam)
         pairname,pairvec = pair
         filter!(x->!iszero(last(x)),pairvec)
     end
+    display(TextDisplay(stdout),MIME"text/plain"(),SiteParam(pairs))
+    display(TextDisplay(stdout),MIME"text/plain"(),sites)
 
-
+    
     return SiteParam(pairs),idxdict 
 end
 
@@ -49,6 +53,8 @@ end
 #of the old gc values, arranged by component instead.
 #that is, 
 function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
+    display(TextDisplay(stdout),MIME"text/plain"(),param)
+    display(TextDisplay(stdout),MIME"text/plain"(),idxdict)
     pvals = param.values
     vals,outer,inner = pvals.values, pvals.outer_indices,pvals.inner_indices
     ngc = length(vals)
@@ -58,7 +64,7 @@ function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
     site1 = Vector{Int64}(undef,ngc)
     site2 = Vector{Int64}(undef,ngc)
     assoc_idxdict = Dict{Tuple{Int,Int},Int}()
-
+    
     for ii in 1:ngc
         i,j = outer[ii]
         a,b = inner[ii]
