@@ -265,6 +265,7 @@ function Base.size(m::AssocView)
 end
 Base.eltype(m::AssocView{T}) where T = T
 
+#returns the absolute index. that is. it is directly indexable by the parent array
 function validindex(m::AssocView{T},i::Int,j::Int) where T
     indices = view(m.vec.inner_indices,m.indices)
     @inbounds begin
@@ -273,21 +274,20 @@ function validindex(m::AssocView{T},i::Int,j::Int) where T
             idxs = searchsorted(indices,(j,i))
             iszero(length(idxs)) &&  return 0
         end
-        return first(idxs)
+        return m.indices[first(idxs)]
     end
 end
 
 function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
     idx = validindex(m,i,j)
     iszero(idx) && return _zero(T)
-    vals = view(m.vec.values,m.indices)
-    return vals[idx]
+    return m.vec.values[idx]
 end
 
 function Base.setindex!(m::AssocView{T},value,a::Int,b::Int,symmetric = true) where T
     idx = validindex(m,a,b)
     iszero(idx) && throw(BoundsError())
-    vals = view(m.vec.values,m.indices)
+    vals = m.vec.values
     vals[idx] = value
     if symmetric
         i,j = m.at
