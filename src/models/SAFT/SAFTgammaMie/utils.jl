@@ -1,8 +1,19 @@
 function gc_to_comp_sites(sites::SiteParam,groups::GroupParam)
     #given some groups and some sites calculated over those groups
     #calculates "flattened" sites
-   
+
     comps = groups.components #component names
+
+    #each GC/GCsite pair encodes a tuple in GC space
+    #we use this traslator later to convert any assoc param into it's component equivalent
+    site_translator = Vector{Vector{Tuple{Int,Int}}}(undef,length(comps))
+
+    #shortcut for non-assoc case
+    if length(sites.n_sites.v) == 0
+        new_sites = SiteParam(groups.components)
+        return new_sites,site_translator
+    end
+
     sitenames = deepcopy(sites.sites) #group sites
     gcnames = groups.flattenedgroups #group names
     gc_groups = groups.groups
@@ -15,13 +26,11 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParam)
         end
     end
 
-    #now we fill our new component sites, 
+    #now we fill our new component sites,
     gc_n_sites = sites.n_sites.v #should be of the same size as flattened_comp_sitenames
     comp_n_sites = Vector{Vector{Int}}(undef,length(comps))
     comp_sites = Vector{Vector{String}}(undef,length(comps))
-    
-    #each GC/GCsite pair encodes a tuple in GC space
-    site_translator = Vector{Vector{Tuple{Int,Int}}}(undef,length(comps))
+
 
     for i in 1:length(comps)
         n_sites_i = Int[]
@@ -55,6 +64,12 @@ end
 
 
 function gc_to_comp_sites(param::AssocParam,sites::SiteParam,site_translator)
+
+    #shortcut for non-assoc case
+    if length(sites.n_sites.v) == 0
+        new_val = Compressed4DMatrix{eltype(param)}()
+        return AssocParam(param.name,sites.components,new_val,sites.sites,param.sourcecsvs,param.sources)
+    end
     new_val = assoc_similar(sites,eltype(param))
     for i in 1:length(sites.components)
         site_translator_i = site_translator[i]
@@ -66,7 +81,7 @@ function gc_to_comp_sites(param::AssocParam,sites::SiteParam,site_translator)
             for a in 1:length(site_translator_i)
                 i_gc,a_gc = site_translator_i[a]
                 for b in 1:length(site_translator_j)
-                    j_gc,b_gc = site_translator_j[b]           
+                    j_gc,b_gc = site_translator_j[b]
                     #absolute index, relative to the Compressed4DMatrix
                     idx = validindex(ij_pair,a,b)
                     if idx != 0 #if the index is valid
@@ -84,5 +99,5 @@ function gc_to_comp_sites(param::AssocParam,sites::SiteParam,site_translator)
 end
 
 
-    
-  
+
+
