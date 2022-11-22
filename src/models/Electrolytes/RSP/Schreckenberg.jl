@@ -29,8 +29,12 @@ function Schreckenberg(solvents,salts; userlocations::Vector{String}=String[], v
         stoichiometric_coeff[i,:] = ion_groups.n_flattenedgroups[i]
     end
 
-    components = deepcopy(salts)
-    append!(components,solvents)
+    if isempty(solvents)
+        components=deepcopy(salts)
+    else
+        components = cat(solvents,salts,dims=1)
+    end
+    
     icomponents = 1:length(components)
     isolvents = 1:length(solvents)
     isalts = (length(solvents)+1):length(components)
