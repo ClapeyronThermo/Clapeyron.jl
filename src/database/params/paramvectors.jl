@@ -212,8 +212,9 @@ function Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
         ijab = [(ij...,ab...) for (ij,ab) in zip(ij,ab)]
         return Compressed4DMatrix(vals,ijab)
     end
-    _ij_size = maximum(maximum(i) for i ∈ ij)
-    _ab_size = maximum(maximum(i) for i ∈ ab)
+
+    _ij_size = maximum((maximum(i) for i ∈ ij),init = 0)
+    _ab_size = maximum((maximum(i) for i ∈ ab),init = 0)
     ij_size = (_ij_size,_ij_size)
     ab_size = (_ab_size,_ab_size)
     return Compressed4DMatrix(vals,ij,ab,ij_size,ab_size)

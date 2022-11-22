@@ -56,7 +56,6 @@ end
 
 function gc_to_comp_sites(param::AssocParam,sites::SiteParam,site_translator)
     new_val = assoc_similar(sites,eltype(param))
-    x1 = AssocParam(param.name,sites.components,new_val,sites.sites,param.sourcecsvs,param.sources)
     for i in 1:length(sites.components)
         site_translator_i = site_translator[i]
         for j in 1:i
