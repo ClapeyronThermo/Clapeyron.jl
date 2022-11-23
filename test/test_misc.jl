@@ -108,6 +108,14 @@
             model = CPA(["methanol"])
             @test crit_pure(model)[1] ≈ 538.2329369300235 rtol = 1e-6
         end
+
+        @testset "DM - SAFTgammaMie 1" begin
+            #this constructor was failing on Clapeyron, 3.10-dev
+            model=SAFTgammaMie(["water","ethyl acetate"])
+            assocparam = model.vrmodel.params.bondvol
+            @test assocparam.sites[1] == ["H2O/H", "H2O/e1"]
+            @test assocparam.sites[2] == ["COO/e1"]
+        end
     end
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
