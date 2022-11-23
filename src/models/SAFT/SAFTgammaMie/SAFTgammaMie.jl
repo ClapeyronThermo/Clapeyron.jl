@@ -31,7 +31,6 @@ end
 
 """
     SAFTVRSWModel <: SAFTModel
-
     SAFTVRSW(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
@@ -39,7 +38,6 @@ end
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
@@ -50,7 +48,6 @@ end
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
-
 ## Model Parameters
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `shapefactor`: Single Parameter (`Float64`) - Shape factor for segment (no units)
@@ -60,14 +57,10 @@ end
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
-
 ## Input models
 - `idealmodel`: Ideal Model
-
 ## Description
-
 SAFT-γ-Mie EoS
-
 ## References
 1. Papaioannou, V., Lafitte, T., Avendaño, C., Adjiman, C. S., Jackson, G., Müller, E. A., & Galindo, A. (2014). Group contribution methodology based on the statistical associating fluid theory for heteronuclear molecules formed from Mie segments. The Journal of Chemical Physics, 140(5), 054107. [doi:10.1063/1.4851455](https://doi.org/10.1063/1.4851455)
 2. Dufal, S., Papaioannou, V., Sadeqzadeh, M., Pogiatzis, T., Chremos, A., Adjiman, C. S., … Galindo, A. (2014). Prediction of thermodynamic properties and phase behavior of fluids and mixtures with the SAFT-γ Mie group-contribution equation of state. Journal of Chemical and Engineering Data, 59(10), 3272–3288. [doi:10.1021/je500248h](https://doi.org/10.1021/je500248h)
@@ -117,16 +110,11 @@ function SAFTgammaMie(components;
     gc_bondvol = params["bondvol"]
     gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options) #combining rules for association
 
-    comp_sites,idx_dict = gc_to_comp_sites(sites,groups)
-    assoc_idx = gc_to_comp_assoc_idx(gc_bondvol,comp_sites,idx_dict)
-    assoc_idxs,outer,inner,outer_size,inner_size = assoc_idx.values,assoc_idx.outer_indices,assoc_idx.inner_indices,assoc_idx.outer_size,assoc_idx.inner_size
-    _comp_bondvol = Float64[gc_bondvol.values.values[i] for i ∈ assoc_idxs]
-    _comp_epsilon_assoc = Float64[gc_epsilon_assoc.values.values[i] for i ∈ assoc_idxs]
-    compval_bondvol = Compressed4DMatrix(_comp_bondvol,outer,inner,outer_size,inner_size)
-    compval_epsilon_assoc = Compressed4DMatrix(_comp_epsilon_assoc,outer,inner,outer_size,inner_size)
-    comp_bondvol = AssocParam{Float64}("epsilon assoc",components,compval_bondvol,comp_sites.sites,String[],String[])
-    comp_epsilon_assoc = AssocParam{Float64}("bondvol",components,compval_epsilon_assoc,comp_sites.sites,String[],String[])
-    
+    comp_sites,site_translator = gc_to_comp_sites(sites,groups)
+    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites,site_translator)
+    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites,site_translator)
+
+
     gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
     vrparams = SAFTVRMieParam(mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
     

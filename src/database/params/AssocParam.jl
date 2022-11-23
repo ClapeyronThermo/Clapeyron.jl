@@ -25,6 +25,17 @@ end
 
 Base.eltype(param::AssocParam{T}) where T = T
 
+function Base.getindex(param::AssocParam,i::Int) 
+    Base.checkbounds(param.components,i)
+    getindex(param.values,i,i)
+end
+
+function Base.getindex(param::AssocParam,i::Int,j::Int) 
+    Base.checkbounds(param.components,max(i,j))
+    getindex(param.values,i,j)
+end
+
+
 function AssocParam(
         name::String,
         components::Vector{String},

@@ -1,0 +1,13 @@
+Clapeyron Database File,,,,,,,,
+sPCSAFT Assoc Parameters,,,,,,,,
+species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
+water,O,H,water,O,e,2425.7,0.0451,10.1021/ie010954d
+acetonitrile,,e,water,,H,2264.613904,0.0035773553782836328,
+Na+,,H,water,,e,2425.7,0.0451,
+Li+,,H,water,,e,2425.7,0.0451,
+Cl-,,e,water,,H,2425.7,0.0451,
+Br-,,e,water,,H,2425.7,0.0451,
+[C2MIM]+,O,H,Ac-,,e,1500.7,0.0451,
+water,O,H,Ac-,,e,2500.7,0.0451,
+water,O,e,[C2MIM]+,,H,2500.7,0.0451,
+acetonitrile,,e,[C2MIM]+,,H,1000.613904,0.0035773553782836328,

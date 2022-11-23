@@ -3,7 +3,6 @@ a composition can be seen as a point in a Simplex manifold.
 for that reason, you can define some common operations that are useful.
 the 
 =#
-
 module Fractions
     frac(x) = x ./ Base.sum(x)
     sum(x1,x2) = frac(x1 .* x2)

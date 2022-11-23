@@ -122,7 +122,7 @@ function _getline(file, selectedline::Int)
     error("Selected line number exceeds number of lines in file")
 end
 
-function normalisestring(str, isactivated::Bool=true; tofilter::Regex=r"[ \-\_]")
+function normalisestring(str, isactivated::Bool=true; tofilter = ' ')
     if !isactivated
         str isa String && return str::String
         return string(str)::String
@@ -254,6 +254,7 @@ end
 function defaultmissing(array::Array{Any},defaultvalue="")
     return string.(coalesce.(array,defaultvalue)),Array(ismissing.(array))
 end
+
 function defaultmissing(array::Array{T},defaultvalue::T2) where T<:Union{T2,Missing} where T2
     coalesce.(array,Ref(defaultvalue)),Array(ismissing.(array))
 end

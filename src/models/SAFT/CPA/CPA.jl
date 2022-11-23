@@ -8,7 +8,6 @@ struct CPAParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
-abstract type CPAModel <: EoSModel end
 
 struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
     components::Array{String,1}

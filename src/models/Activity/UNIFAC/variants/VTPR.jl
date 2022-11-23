@@ -59,7 +59,7 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 """
 VTPRUNIFAC
 
-function VTPRUNIFAC(components::Vector{String};
+function VTPRUNIFAC(components;
     puremodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],
@@ -76,10 +76,10 @@ function VTPRUNIFAC(components::Vector{String};
     R = deepcopy(Q)
     R.values .= 0
     cache = VTPRUNIFACCache(groups)
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    _puremodel = init_puremodel(puremodel,groups.components,pure_userlocations,verbose)
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1016/S0378-3812(01)00626-4"]
-    model = VTPRUNIFAC(components,groups,packagedparams,_puremodel,references,cache)
+    model = VTPRUNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
     return model
 end
 
