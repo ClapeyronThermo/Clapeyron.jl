@@ -22,6 +22,7 @@ toestimate = [
     ),
     Dict(
         :param => :sigma,
+        :indices => (2,2),
         :factor => 1e-10,
         :lower => 3.4,
         :upper => 4.0,
@@ -36,6 +37,6 @@ toestimate = [
     )
 ]
 
-e = Estimation(model,toestimate,["saturation_pressure.csv","saturation_liquid_density.csv"])
+e = Estimation(model,toestimate,["saturation_pressure.csv","saturation_liquid_density.csv"],[:vrmodel])
 
 # optimize!(e,Clapeyron.Metaheuristics.ECA())
