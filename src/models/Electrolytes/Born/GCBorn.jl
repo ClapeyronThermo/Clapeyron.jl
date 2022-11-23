@@ -1,33 +1,40 @@
 abstract type GCBornModel <: EoSModel end
 
+struct GCBornParam <: EoSParam
+    shapefactor::SingleParam{Float64}
+    segment::SingleParam{Float64}
+    sigma_born::SingleParam{Float64}
+    gc_sigma_born::SingleParam{Float64}
+    charge::SingleParam{Float64}
+end
 struct GCBorn{ϵ} <: GCBornModel
     components::Array{String,1}
     groups::GroupParam
     icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
-    params::BornParam
+    params::GCBornParam
     RSPmodel::ϵ
     absolutetolerance::Float64
     references::Array{String,1}
 end
 
-@registermodel GCBorn
 export GCBorn
 function GCBorn(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], userlocations=String[], ideal_userlocations=String[], verbose=false)
     groups = GroupParam(cat(solvents,ions,dims=1), ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie/SAFTgammaMie_like.csv","SAFT/SAFTgammaMie/SAFTgammaMieE/","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     components = groups.components
 
-    gc_segment = params["vst"]
+    segment = params["vst"]
     shapefactor = params["S"]
 
-    mix_segment!(groups,shapefactor.values,gc_segment.values)
+    mix_segment!(groups,shapefactor.values,segment.values)
 
-    gc_sigma_born = params["sigma_born"]
-    gc_sigma_born.values .*= 1E-10
+    sigma_born = params["sigma_born"]
+    sigma_born.values .*= 1E-10
+    gc_sigma_born = deepcopy(sigma_born)
     gc_sigma_born.values .^= 3
-    gc_sigma_born.values .*= shapefactor.values .* gc_segment.values
+    gc_sigma_born.values .*= shapefactor.values .* segment.values
     gc_sigma_born.values .= cbrt.(gc_sigma_born.values)
 
     charge = params["charge"]
@@ -37,7 +44,7 @@ function GCBorn(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], us
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
     
-    packagedparams = BornParam(gc_sigma_born,charge)
+    packagedparams = GCBornParam(shapefactor,segment,sigma_born,gc_sigma_born,charge)
 
     references = String[]
     if RSPmodel !== nothing
@@ -47,6 +54,22 @@ function GCBorn(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], us
     end
 
     model = GCBorn(components, groups, icomponents, isolvents, iions, packagedparams, init_RSPmodel, 1e-12,references)
+    return model
+end
+
+function recombine_impl!(model::GCBornModel)
+    groups = model.groups
+    components = model.components
+
+    sigma_born = deepcopy(model.params.sigma_born)
+    segment = model.params.segment
+    shapefactor = model.params.shapefactor
+
+    sigma_born.values .^= 3
+    sigma_born.values .*= shapefactor.values .* segment.values
+    sigma_born.values .= cbrt.(sigma_born.values)
+
+    model.params.gc_sigma_born.values .= sigma_born.values
     return model
 end
 
