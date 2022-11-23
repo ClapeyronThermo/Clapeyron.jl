@@ -1,7 +1,10 @@
 using Clapeyron, Test, LinearAlgebra
 
 @testset "database_lookup" begin
-    params1 = Clapeyron.getparams(["water", "methanol"], ["SAFT/PCSAFT"]; return_sites=false)
+
+    @test Clapeyron.normalisestring("COO-") == "coo-" #before, it was coo, making a collision on Electrolyte SAFTgammaMie
+
+    params1 = Clapeyron.getparams(["water", "methanol"], ["SAFT/PCSAFT"],return_sites=false)
     @test haskey(params1, "sigma")
 
     @printline

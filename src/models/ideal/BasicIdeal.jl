@@ -22,13 +22,11 @@ Default Ideal Model. Constant specific heat capacity equal to `5R/2`. it's Helmh
 BasicIdeal
 
 export BasicIdeal
-function BasicIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
+function BasicIdeal(components::Vector; userlocations::Array{String,1}=String[], verbose=false)
     return BasicIdeal(BasicIdealParam())
 end
 
-function BasicIdeal(; userlocations::Array{String,1}=String[], verbose=false)
-    return BasicIdeal(BasicIdealParam())
-end
+
 is_splittable(::BasicIdeal) = false
 recombine_impl!(model::BasicIdeal) = model
 function a_ideal(model::BasicIdeal, V, T, z)
