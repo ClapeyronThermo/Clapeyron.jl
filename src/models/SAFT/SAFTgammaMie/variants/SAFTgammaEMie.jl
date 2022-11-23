@@ -87,24 +87,17 @@ end
 function x0_volume(model::SAFTgammaEMie,p,T,z; phase = :unknown)
     phase = Symbol(phase)
     if phase === :unknown || is_liquid(phase)
-        return 1.5*x0_volume_liquid(model.saftmodel,T,z)
+        return x0_volume_liquid(model.saftmodel,T,z)
     elseif is_vapour(phase)
-        return 1.5*x0_volume_gas(model.saftmodel,p,T,z)
+        return x0_volume_gas(model.saftmodel,p,T,z)
     elseif is_supercritical(phase)
      else
         error("unreachable state on x0_volume")
     end
 end
 
-function lb_volume(model::SAFTgammaEMie,z)
-    seg = model.saftmodel.params.segment.values
-    σ = model.saftmodel.params.sigma.values
-    val = π/6*N_A*sum(z[i]*seg[i]*σ[i,i]^3 for i in 1:length(z))
-    return val
-end
-
 function x0_sat_pure(model::SAFTgammaEMieModel,T,z=[0.5,0.5])
-    vl = x0_volume(model.saftmodel,T,z,phase=:l)
+    vl = x0_volume(model,1e5,T,z,phase=:l)
     return (log10(vl),10)
 end
 function scale_sat_pure(model::SAFTgammaEMieModel,z=[0.5,0.5])
