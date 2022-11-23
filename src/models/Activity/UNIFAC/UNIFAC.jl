@@ -23,7 +23,8 @@ export UNIFAC
 
 """
     UNIFACModel <: ActivityModel
-    UNIFAC(components::Vector{String};
+
+    UNIFAC(components;
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
@@ -66,7 +67,7 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 """
 UNIFAC
 
-function UNIFAC(components::Vector{String};
+function UNIFAC(components;
     puremodel = PR,
     userlocations = String[],
     group_userlocations = String[], 
@@ -81,11 +82,11 @@ function UNIFAC(components::Vector{String};
     C  = params["C"]
     R  = params["R"]
     Q  = params["Q"]
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    _puremodel = init_puremodel(puremodel,groups.components,pure_userlocations,verbose)
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1021/i260064a004"]
     cache = UNIFACCache(groups,packagedparams)
-    model = UNIFAC(components,groups,packagedparams,_puremodel,references,cache)
+    model = UNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
     return model
 end
 

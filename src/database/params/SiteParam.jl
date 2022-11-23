@@ -71,6 +71,23 @@ struct SiteParam <: ClapeyronParam
 end
 
 
+
+
+function SiteParam(components::Vector{String},sites::Array{Array{String,1},1},n_sites::Vector{Vector{Int}},sourcecsvs = String[])
+    n_sites = PackedVectorsOfVectors.pack(n_sites)
+    param = SiteParam(components, 
+    sites, 
+    n_sites,
+    Vector{Vector{Int}}(undef,0), 
+    String[],
+    Vector{Vector{Int}}(undef,0),
+    Vector{Vector{Int}}(undef,0),
+    sourcecsvs)
+        
+    recombine!(param)
+    return param
+end
+
 function Base.show(io::IO, mime::MIME"text/plain", param::SiteParam)
     print(io,"SiteParam ")
     len = length(param.components)
@@ -125,19 +142,7 @@ function SiteParam(pairs::Dict{String,SingleParam{Int}},allcomponentsites)
     unique!(sourcecsvs)
 
     n_sites = [[pairs[sites[i][j]].values[i] for j ∈ 1:length(sites[i])] for i ∈ 1:ncomps]  # or groupsites
-    n_sites = PackedVectorsOfVectors.pack(n_sites)
-
-    param = SiteParam(components, 
-            sites, 
-            n_sites,
-            Vector{Vector{Int}}(undef,0), 
-            String[],
-            Vector{Vector{Int}}(undef,0),
-            Vector{Vector{Int}}(undef,0),
-            sourcecsvs)
-
-    recombine!(param)
-    return param
+    return SiteParam(components,sites,n_sites,sourcecsvs)
 end
 
 function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=String[])
@@ -145,19 +150,7 @@ function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=St
     raw_sites =  [last(i) for i ∈ input]
     sites = [first.(sitepairs) for sitepairs ∈ raw_sites]
     n_sites = [last.(sitepairs) for sitepairs ∈ raw_sites]
-    n_sites = PackedVectorsOfVectors.pack(n_sites)
-
-    param = SiteParam(components, 
-        sites, 
-        n_sites,
-        Vector{Vector{Int}}(undef,0), 
-        String[],
-        Vector{Vector{Int}}(undef,0),
-        Vector{Vector{Int}}(undef,0),
-        sourcecsvs)
-            
-    recombine!(param)
-    return param
+    return SiteParam(components,sites,n_sites,sourcecsvs)
 end
 
 function SiteParam(components::Vector{String})
@@ -236,4 +229,23 @@ function recombine!(param::SiteParam)
     end
 
     return param
+end
+"""
+    assoc_similar(param::SiteParam)
+    assoc_similar(param::SiteParam,::Type{𝕋}) where 𝕋 <:Number)
+
+returns a `Clapeyron.Compressed4DMatrix` with the smae number of components as the input `AssocParam`, with the same element type as `𝕋`.
+All site combinations are filled.
+"""
+function assoc_similar(param::SiteParam,::Type{𝕋}) where 𝕋 <:Number
+    comps = 1:length(param.components)
+    indices = NTuple{4,Int}[]
+    values = 𝕋[]
+    _0 = zero(𝕋)
+    __set_idx_4d!(param.sites,values,indices)
+    Compressed4DMatrix(values,indices)
+end
+
+function Compressed4DMatrix(param::SiteParam)
+    return assoc_similar(param,Float64)
 end

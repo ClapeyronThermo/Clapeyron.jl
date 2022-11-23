@@ -82,7 +82,7 @@ julia> assoc2.values[1] = 100; (vals,assoc2.values[1])
 ([100.0], 100.0)
 ```
 """
-struct Compressed4DMatrix{T,V<:AbstractVector{T}} 
+struct Compressed4DMatrix{T,V<:AbstractVector{T}}
     values::V
     outer_indices::Vector{Tuple{Int,Int}} #index of components
     inner_indices::Vector{Tuple{Int,Int}} #index of sites
@@ -115,6 +115,7 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     outer_size = size(x)
     is1, is2 = 0, 0
     os1, os2 = outer_size
+    @assert os1 == os2
     for i in eachindex(x)
         _is1,_is2 = size(x[i])
         is1,is2 = max(_is1,is1),max(_is2,is2)
@@ -129,25 +130,8 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     end
 
     #self association
+    __set_idx_4d!(x,values,indices)
 
-    for i in 1:os1
-        for j in i:os2 #there can be self association
-            xi = x[i,j]
-            if iszero(length(xi))
-                continue
-            end
-            a1,a2 = size(xi)
-            for a in 1:a1
-                start = ifelse(i == j,a,1)
-                for b in start:a2 #this includes (i,i)(a,a) (sCKSAFT)
-                    if !_iszero(xi[a,b]) 
-                        push!(values,xi[a,b])
-                        push!(indices,(i,j,a,b))
-                    end
-                end
-            end
-        end
-    end
     idx =  sortperm(indices)
     indices = indices[idx]
     outer_indices = [(c[1],c[2]) for c ∈ indices]
@@ -156,6 +140,40 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     return Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,outer_size,inner_size)
 end
 
+function __getidx_assoc(mat::Matrix,i,j,val)
+    res = mat[i,j]
+    res,_iszero(res)
+end
+__getidx_assoc(v::Vector,i,j,val) = (v[i],v[j]),false
+__getidx_assoc(v,i,j,val) = convert(eltype(val),0),false
+
+__size_assoc(mat::Matrix) = size(matrix)
+__size_assoc(tup::Tuple) = (length(first(tup)),length(last(tup)))
+__size_assoc(vec::Vector) = (length(vec),length(vec))
+
+function __set_idx_4d!(x,values,indices)
+    os1,os2 = __size_assoc(x)
+    for i in 1:os1
+        for j in i:os2 #there can be self association
+            xi,_ = __getidx_assoc(x,i,j,values)
+            a1,a2 = __size_assoc(xi)
+            if iszero(a1*a2)
+                continue
+            end
+            for a in 1:a1
+                start = ifelse(i == j,a,1)
+                for b in start:a2 #this includes (i,i)(a,a) (sCKSAFT)
+                    __val,is_zero = __getidx_assoc(xi,a,b,values)
+                    if !is_zero
+                        push!(values,__val)
+                        push!(indices,(i,j,a,b))
+                    end
+                end
+            end
+        end
+    end
+    return values,indices
+end
 
 function Compressed4DMatrix(vals::AbstractVector,idxs::AbstractVector)
     if issorted(idxs)
@@ -173,15 +191,25 @@ end
 
 function Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
     if !unsafe
-        ijab = [(ij...,ab...) for (ij,ab) in zip(ij,ab)] 
+        ijab = [(ij...,ab...) for (ij,ab) in zip(ij,ab)]
         return Compressed4DMatrix(vals,ijab)
     end
-    _ij_size = maximum(maximum(i) for i ∈ ij)
-    _ab_size = maximum(maximum(i) for i ∈ ab)
+
+    _ij_size = maximum((maximum(i) for i ∈ ij),init = 0)
+    _ab_size = maximum((maximum(i) for i ∈ ab),init = 0)
     ij_size = (_ij_size,_ij_size)
     ab_size = (_ab_size,_ab_size)
     return Compressed4DMatrix(vals,ij,ab,ij_size,ab_size)
 end
+
+function SparseArrays.dropzeros!(mat::Compressed4DMatrix)
+    nonzero_idx = findall(!iszero,mat.values)
+    keepat!(mat.values,nonzero_idx)
+    keepat!(mat.outer_indices,nonzero_idx)
+    keepat!(mat.inner_indices,nonzero_idx)
+    return mat
+end
+
 function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
     j,i = minmax(i,j)
     @inbounds begin
@@ -189,40 +217,66 @@ function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
     if iszero(idx)
         idx = searchsorted(m.outer_indices,(j,i))
     end
-    return AssocView(view(m.values,idx),view(m.inner_indices,idx),m.inner_size)
+    #return AssocView(view(m.values,idx),view(m.inner_indices,idx),m.inner_size)
+    return AssocView(m,idx,(i,j))
     end
 end
 
 #Base.eltype(m::Compressed4DMatrix{T}) where T = T
 
-function Base.setindex!(m::Compressed4DMatrix,val,i::Int)
-    @inbounds begin
-        m.values[i] = val
+Base.setindex!(m::Compressed4DMatrix,val,i::Int) = Base.setindex!(m.values,val,i)
+
+struct AssocView{T,V<:Compressed4DMatrix{T},I} <: AbstractMatrix{T}
+    vec::V
+    indices::I
+    at::Tuple{Int,Int}
+    function AssocView(vec::Compressed4DMatrix{T},idx::I,at) where {T,I}
+        return new{T,typeof(vec),I}(vec,idx,at)
     end
 end
 
-struct AssocView{T,V,I} <: AbstractMatrix{T}
-    values::V
-    indices::I
-    size::Tuple{Int,Int}
-end
 
-function AssocView(V::Vi,I::Ii,s) where Ii where Vi <:AbstractVector{<:T} where T
-    return AssocView{T,Vi,Ii}(V,I,s)
-end
 
-Base.size(m::AssocView) = m.size
+
+function Base.size(m::AssocView)
+    a,b = 0,0
+    for ab in view(m.vec.inner_indices,m.indices)
+        _a,_b = ab
+        a,b = max(a,_a),max(b,_b)
+    end
+    return a,b
+end
 Base.eltype(m::AssocView{T}) where T = T
 
-function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
+#returns the absolute index. that is. it is directly indexable by the parent array
+function validindex(m::AssocView{T},i::Int,j::Int) where T
+    indices = view(m.vec.inner_indices,m.indices)
     @inbounds begin
-        idxs = searchsorted(m.indices,(i,j))
-        if iszero(length(idxs)) 
-            idxs = searchsorted(m.indices,(j,i))
-            iszero(length(idxs)) &&  return zero(T)
+        idxs = searchsorted(indices,(i,j))
+        if iszero(length(idxs))
+            idxs = searchsorted(indices,(j,i))
+            iszero(length(idxs)) &&  return 0
         end
-        idx = first(idxs)
-        return m.values[idx]
+        return m.indices[first(idxs)]
+    end
+end
+
+function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
+    idx = validindex(m,i,j)
+    iszero(idx) && return _zero(T)
+    return m.vec.values[idx]
+end
+
+function Base.setindex!(m::AssocView{T},value,a::Int,b::Int,symmetric = true) where T
+    idx = validindex(m,a,b)
+    iszero(idx) && throw(BoundsError())
+    vals = m.vec.values
+    vals[idx] = value
+    if symmetric
+        i,j = m.at
+        if (i != j)
+            setindex!(m,value,b,a,false)
+        end
     end
 end
 
@@ -240,7 +294,7 @@ assoc_similar(mat::Compressed4DMatrix{T}) where T = assoc_similar(mat,T)
 
 function indices(x::Compressed4DMatrix)
     xin = x.outer_indices
-    l = 1:length(xin) 
+    l = 1:length(xin)
     return zip(l,xin,x.inner_indices)
 end
 
@@ -284,7 +338,7 @@ end
 function Base.getindex(x::SparsePackedMofV,i::Int,j::Int)
     _idx = x.idx[i,j]
     iszero(_idx) && (return view(x.storage.v,1:0))
-    
+
     return x.storage[_idx]
 end
 @inline Base.size(x::SparsePackedMofV) = size(x.idx)
@@ -312,17 +366,3 @@ function Base.show(io::IO,::MIME"text/plain",A::SparsePackedMofV)
         end
     end
 end
-
-#= Operations
-function Base.:(+)(matrix::Compressed4DMatrix, x::Number)
-    values = matrix.values .+ x
-    return Compressed4DMatrix(values, matrix.outer_indices, matrix.inner_indices, matrix.outer_size, matrix.inner_size)
-end
-function Base.:(*)(matrix::Compressed4DMatrix, x::Number)
-    values = matrix.values .* x
-    return Compressed4DMatrix(values, matrix.outer_indices, matrix.inner_indices, matrix.outer_size, matrix.inner_size)
-end
-function Base.:(^)(matrix::Compressed4DMatrix, x::Number)
-    values = matrix.values .^ x
-    return Compressed4DMatrix(values, matrix.outer_indices, matrix.inner_indices, matrix.outer_size, matrix.inner_size)
-end =#

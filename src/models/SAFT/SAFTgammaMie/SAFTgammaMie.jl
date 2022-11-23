@@ -117,16 +117,11 @@ function SAFTgammaMie(components;
     gc_bondvol = params["bondvol"]
     gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options) #combining rules for association
 
-    comp_sites,idx_dict = gc_to_comp_sites(sites,groups)
-    assoc_idx = gc_to_comp_assoc_idx(gc_bondvol,comp_sites,idx_dict)
-    assoc_idxs,outer,inner,outer_size,inner_size = assoc_idx.values,assoc_idx.outer_indices,assoc_idx.inner_indices,assoc_idx.outer_size,assoc_idx.inner_size
-    _comp_bondvol = Float64[gc_bondvol.values.values[i] for i ∈ assoc_idxs]
-    _comp_epsilon_assoc = Float64[gc_epsilon_assoc.values.values[i] for i ∈ assoc_idxs]
-    compval_bondvol = Compressed4DMatrix(_comp_bondvol,outer,inner,outer_size,inner_size)
-    compval_epsilon_assoc = Compressed4DMatrix(_comp_epsilon_assoc,outer,inner,outer_size,inner_size)
-    comp_bondvol = AssocParam{Float64}("epsilon assoc",components,compval_bondvol,comp_sites.sites,String[],String[])
-    comp_epsilon_assoc = AssocParam{Float64}("bondvol",components,compval_epsilon_assoc,comp_sites.sites,String[],String[])
-    
+    comp_sites,site_translator = gc_to_comp_sites(sites,groups)
+    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites,site_translator)
+    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites,site_translator)
+
+
     gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
     vrparams = SAFTVRMieParam(mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
     
@@ -189,16 +184,11 @@ function recombine_impl!(model::SAFTgammaMieModel)
     model.params.epsilon_assoc.values.values[:] = gc_epsilon_assoc.values.values
 
 
-    comp_sites,idx_dict = gc_to_comp_sites(sites,groups)
-    assoc_idx = gc_to_comp_assoc_idx(gc_bondvol,comp_sites,idx_dict)
-    assoc_idxs,outer,inner,outer_size,inner_size = assoc_idx.values,assoc_idx.outer_indices,assoc_idx.inner_indices,assoc_idx.outer_size,assoc_idx.inner_size
-    _comp_bondvol = Float64[gc_bondvol.values.values[i] for i ∈ assoc_idxs]
-    _comp_epsilon_assoc = Float64[gc_epsilon_assoc.values.values[i] for i ∈ assoc_idxs]
-    compval_bondvol = Compressed4DMatrix(_comp_bondvol,outer,inner,outer_size,inner_size)
-    compval_epsilon_assoc = Compressed4DMatrix(_comp_epsilon_assoc,outer,inner,outer_size,inner_size)
-    comp_bondvol = AssocParam{Float64}("epsilon assoc",components,compval_bondvol,comp_sites.sites,String[],String[])
+    comp_sites,site_translator = gc_to_comp_sites(sites,groups)
+    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites,site_translator)
+    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites,site_translator)
+    
     model.vrmodel.params.bondvol.values.values[:] = comp_bondvol.values.values
-    comp_epsilon_assoc = AssocParam{Float64}("bondvol",components,compval_epsilon_assoc,comp_sites.sites,String[],String[])
     model.vrmodel.params.epsilon_assoc.values.values[:] = comp_epsilon_assoc.values.values
     return model
 end

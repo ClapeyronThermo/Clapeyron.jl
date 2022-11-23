@@ -48,10 +48,7 @@ function bondvol_mix(bondvol::AssocParam,::Nothing)
             mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])
         end
     end
-    nonzero_idx = findall(!iszero,mat.values)
-    keepat!(mat.values,nonzero_idx)
-    keepat!(mat.outer_indices,nonzero_idx)
-    keepat!(mat.inner_indices,nonzero_idx)
+    dropzeros!(mat)
     return param
 end
 
@@ -64,10 +61,7 @@ function epsilon_assoc_mix(epsilon_assoc::AssocParam)
             mat.values[idx] = (mat[i,i][a,b] + mat[j,j][a,b])/2
         end
     end
-    nonzero_idx = findall(!iszero,mat.values)
-    keepat!(mat.values,nonzero_idx)
-    keepat!(mat.outer_indices,nonzero_idx)
-    keepat!(mat.inner_indices,nonzero_idx)
+    dropzeros!(mat)
     return param
 end
 
@@ -80,14 +74,11 @@ function bondvol_mix(bondvol::AssocParam,σ)
             mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])*(sqrt(σ[i,i]*σ[j,j])/σ[i,j])^3
         end
     end
-    nonzero_idx = findall(!iszero,mat.values)
-    keepat!(mat.values,nonzero_idx)
-    keepat!(mat.outer_indices,nonzero_idx)
-    keepat!(mat.inner_indices,nonzero_idx)
+    dropzeros!(mat)
     return param
 end
 
-function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions) 
+function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions)
     combining = assoc_options.combining
     if combining == :nocombining
         return bondvol,epsilon_assoc
