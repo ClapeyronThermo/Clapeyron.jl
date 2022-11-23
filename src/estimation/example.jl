@@ -10,7 +10,8 @@ function saturation_rhol(model::EoSModel,T)
     return 1/sat[2]
 end
 
-model = SAFTVRMie(["methane"])
+model = SAFTgammaEMie([],[("Sodium Acetate",["Na+"=>1,"acetate"=>1])],
+                         [("Na+",["Na+"=>1]),("acetate",["CH3"=>1,"iCOO"=>1])])
 
 toestimate = [
     Dict(
@@ -37,4 +38,4 @@ toestimate = [
 
 e = Estimation(model,toestimate,["saturation_pressure.csv","saturation_liquid_density.csv"])
 
-optimize!(e,Clapeyron.Metaheuristics.ECA())
+# optimize!(e,Clapeyron.Metaheuristics.ECA())

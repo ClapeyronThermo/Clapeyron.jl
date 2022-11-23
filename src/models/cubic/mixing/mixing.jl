@@ -1,3 +1,4 @@
+abstract type MixingRule <:EoSModel end
 """
     mixing_rule(model::CubicModel,V,T,z,mixing_model::MixingRule,α,a,b,c)
 
