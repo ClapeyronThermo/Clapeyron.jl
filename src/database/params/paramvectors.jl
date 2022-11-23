@@ -3,8 +3,7 @@
     Compressed4DMatrix(vals::AbstractVector,ijab::AbstractVector)
     Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
 Struct used to hold association data. as its name says, it is a compressed 4D matrix containing all the non-zero combinations of component-site pairs.
-The component-site pairs `(i,j,a,b)` are sorted lexicographically. the `(i,j)` pairs are stored in the `outer_indices` field, whereas the `(a,b)` pairs are stored in the `inner_indices` field.
-
+The component-site pairs `(i,j,a,b)` are sorted lexicographically. the `(i,j)` pairs are stored in the `outer_indices` field, whereas the `(a,b)` pairs are stored in the `inner_indices` field. 
 Let's see an associating model:
 ```julia-repl
 julia> model = PCSAFT(["water","methanol","ethane"],assoc_options = AssocOptions(combining = :esd))

@@ -147,26 +147,28 @@ function return_model(
     idx = estimation.toestimate.indices
     recombine = estimation.toestimate.recombine
     model = deepcopy(model)
-    for (i, param) in enumerate(params)
-        f = factor[i]
-        id = idx[i]
-        recomb = recombine[i]
-        if isdefined(model.params,param)
-            current_param = getfield(model.params, param)
-            if typeof(current_param) <: SingleParameter
-                current_param[id[1]] = values[i]*f
-            end
-            if typeof(current_param) <: PairParam
-                current_param[id[1],id[2],sym[i]] = values[i]*f
-                if (id[1]==id[2]) & recomb
-                    current_param.ismissingvalues[id[1],:] .= true
-                    current_param.ismissingvalues[:,id[1]] .= true
+    if isdefined(model,:params)
+        for (i, param) in enumerate(params)
+            f = factor[i]
+            id = idx[i]
+            recomb = recombine[i]
+            if isdefined(model.params,param)
+                current_param = getfield(model.params, param)
+                if typeof(current_param) <: SingleParameter
+                    current_param[id[1]] = values[i]*f
                 end
-            end
-            if typeof(current_param) <: AssocParam
-                current_param.values.values[id[1]] = values[i]*f
-                if cross_assoc[i]
-                    current_param.values.values[id[1]+1] = values[i]*f                
+                if typeof(current_param) <: PairParam
+                    current_param[id[1],id[2],sym[i]] = values[i]*f
+                    if (id[1]==id[2]) & recomb
+                        current_param.ismissingvalues[id[1],:] .= true
+                        current_param.ismissingvalues[:,id[1]] .= true
+                    end
+                end
+                if typeof(current_param) <: AssocParam
+                    current_param.values.values[id[1]] = values[i]*f
+                    if cross_assoc[i]
+                        current_param.values.values[id[1]+1] = values[i]*f                
+                    end
                 end
             end
         end
