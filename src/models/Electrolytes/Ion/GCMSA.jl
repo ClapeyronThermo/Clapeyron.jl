@@ -1,33 +1,41 @@
 abstract type GCMSAModel <: IonModel end
 
+struct GCMSAParam <: EoSParam
+    shapefactor::SingleParam{Float64}
+    segment::SingleParam{Float64}
+    sigma::SingleParam{Float64}
+    gc_sigma::SingleParam{Float64}
+    charge::SingleParam{Float64}
+end
+
 struct GCMSA{ϵ} <: GCMSAModel
     components::Array{String,1}
     groups::GroupParam
     icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
-    params::MSAParam
+    params::GCMSAParam
     RSPmodel::ϵ
     absolutetolerance::Float64
     references::Array{String,1}
 end
 
-@registermodel GCMSA
 export GCMSA
 function GCMSA(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], userlocations=String[], ideal_userlocations=String[], verbose=false)
     groups = GroupParam(cat(solvents,ions,dims=1), ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie/SAFTgammaMie_like.csv","SAFT/SAFTgammaMie/SAFTgammaMieE/","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     components = groups.components
 
-    gc_segment = params["vst"]
+    segment = params["vst"]
     shapefactor = params["S"]
 
-    mix_segment!(groups,shapefactor.values,gc_segment.values)
+    mix_segment!(groups,shapefactor.values,segment.values)
 
-    gc_sigma = params["sigma"]
-    gc_sigma.values .*= 1E-10
+    sigma = params["sigma"]
+    sigma.values .*= 1E-10
+    gc_sigma = deepcopy(sigma)
     gc_sigma.values .^= 3
-    gc_sigma.values .*= shapefactor.values .* gc_segment.values
+    gc_sigma.values .*= shapefactor.values .* segment.values
     gc_sigma.values .= cbrt.(gc_sigma.values)
 
     charge = params["charge"]
@@ -37,7 +45,7 @@ function GCMSA(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], use
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
     
-    packagedparams = MSAParam(gc_sigma,charge)
+    packagedparams = GCMSAParam(shapefactor,segment,sigma,gc_sigma,charge)
 
     references = String[]
     if RSPmodel !== nothing
@@ -47,6 +55,22 @@ function GCMSA(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], use
     end
 
     model = GCMSA(components, groups, icomponents, isolvents, iions, packagedparams, init_RSPmodel, 1e-12,references)
+    return model
+end
+
+function recombine_impl!(model::GCMSAModel)
+    groups = model.groups
+    components = model.components
+
+    sigma = deepcopy(model.params.sigma)
+    segment = model.params.segment
+    shapefactor = model.params.shapefactor
+
+    sigma.values .^= 3
+    sigma.values .*= shapefactor.values .* segment.values
+    sigma.values .= cbrt.(sigma.values)
+
+    model.params.gc_sigma.values .= sigma.values
     return model
 end
 
@@ -74,7 +98,7 @@ function a_res(model::GCMSAModel, V, T, z, _data=@f(data))
     (zg, ∑zg), ϵ_r = _data
     ngroups = length(zg)
 
-    σ = model.params.sigma.values
+    σ = model.params.gc_sigma.values
     Z = model.params.charge.values
 
     ρg = N_A*sum(zg)/V
@@ -91,7 +115,7 @@ function screening_length(model::GCMSAModel,V,T,z, _data=@f(data))
     (zg, ∑zg), ϵ_r = _data
     ngroups = length(zg)
 
-    σ = model.params.sigma.values
+    σ = model.params.gc_sigma.values
     Z = model.params.charge.values
     #x = z ./ sum(z)
     ρg = N_A*∑zg/V
