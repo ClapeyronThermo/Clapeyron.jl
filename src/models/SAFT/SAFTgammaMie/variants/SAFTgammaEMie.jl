@@ -28,6 +28,7 @@ function SAFTgammaEMie(solvents,salts,ions; saftmodel=SAFTgammaMie,
     RSPmodel = Schreckenberg,
     bornmodel = GCBorn,
     userlocations=String[], 
+    rsp_userlocations=String[],
     ideal_userlocations=String[],
      verbose=false)
     
@@ -51,14 +52,14 @@ function SAFTgammaEMie(solvents,salts,ions; saftmodel=SAFTgammaMie,
     isalts = (nsolv+1):(nsolv+nsalts)
 
     init_idealmodel = init_model(idealmodel,cat(solvents,ions,dims=1),ideal_userlocations,verbose)
-    init_SAFTmodel = saftmodel(cat(solvents,ions,dims=1))
-    init_Ionicmodel = ionicmodel(solvents,salts,ions;RSPmodel=nothing,SAFTlocations=["SAFT/"*string(saftmodel)])
+    init_SAFTmodel = saftmodel(cat(solvents,ions,dims=1);userlocations=userlocations)
+    init_Ionicmodel = ionicmodel(solvents,salts,ions;RSPmodel=nothing,SAFTlocations=["SAFT/"*string(saftmodel)],userlocations=userlocations)
     if bornmodel !== nothing
-        init_bornmodel = bornmodel(solvents,salts,ions;RSPmodel=nothing,SAFTlocations=["SAFT/"*string(saftmodel)])
+        init_bornmodel = bornmodel(solvents,salts,ions;RSPmodel=nothing,SAFTlocations=["SAFT/"*string(saftmodel)],userlocations=userlocations)
     else
         init_bornmodel = nothing
     end
-    init_RSPmodel = RSPmodel(solvents,salts)
+    init_RSPmodel = RSPmodel(solvents,salts;userlocations=rsp_userlocations)
 
     solvents = solvent_groups.components
     salts = salt_groups.components
@@ -94,6 +95,13 @@ function x0_volume(model::SAFTgammaEMie,p,T,z; phase = :unknown)
      else
         error("unreachable state on x0_volume")
     end
+end
+
+mw(model::SAFTgammaEMieModel) = mw(model.saftmodel)
+
+
+function lb_volume(model::SAFTgammaEMieModel,z=[0.5,0.5])
+    return lb_volume(model.saftmodel,z)
 end
 
 function x0_sat_pure(model::SAFTgammaEMieModel,T,z=[0.5,0.5])
