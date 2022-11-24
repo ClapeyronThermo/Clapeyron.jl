@@ -3,6 +3,7 @@ abstract type GCBornModel <: EoSModel end
 struct GCBornParam <: EoSParam
     shapefactor::SingleParam{Float64}
     segment::SingleParam{Float64}
+    sigma::SingleParam{Float64}
     sigma_born::SingleParam{Float64}
     gc_sigma_born::SingleParam{Float64}
     charge::SingleParam{Float64}
@@ -22,16 +23,19 @@ end
 export GCBorn
 function GCBorn(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], userlocations=String[], ideal_userlocations=String[], verbose=false)
     groups = GroupParam(cat(solvents,ions,dims=1), ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
-    params = getparams(groups, ["SAFT/SAFTgammaMie/SAFTgammaMie_like.csv","SAFT/SAFTgammaMie/SAFTgammaMieE/","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(groups, ["SAFT/SAFTgammaMie/SAFTgammaMie_like.csv","SAFT/SAFTgammaMie/SAFTgammaMieE/","properties/molarmass_groups.csv"]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     components = groups.components
 
     segment = params["vst"]
     shapefactor = params["S"]
+    sigma = params["sigma"]
+    sigma.values .*= 1e-10
 
     mix_segment!(groups,shapefactor.values,segment.values)
 
     sigma_born = params["sigma_born"]
     sigma_born.values .*= 1E-10
+    sigma_born.values[sigma_born.ismissingvalues] .= 1.07.*sigma.values[sigma_born.ismissingvalues]
     gc_sigma_born = deepcopy(sigma_born)
     gc_sigma_born.values .^= 3
     gc_sigma_born.values .*= shapefactor.values .* segment.values
@@ -44,7 +48,7 @@ function GCBorn(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], us
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
     
-    packagedparams = GCBornParam(shapefactor,segment,sigma_born,gc_sigma_born,charge)
+    packagedparams = GCBornParam(shapefactor,segment,sigma,sigma_born,gc_sigma_born,charge)
 
     references = String[]
     if RSPmodel !== nothing
@@ -60,6 +64,8 @@ end
 function recombine_impl!(model::GCBornModel)
     groups = model.groups
     components = model.components
+
+    model.params.sigma_born.values[model.params.sigma_born.ismissingvalues] .= 1.07.*model.params.sigma.values[model.params.sigma_born.ismissingvalues]
 
     sigma_born = deepcopy(model.params.sigma_born)
     segment = model.params.segment
