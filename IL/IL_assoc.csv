@@ -1,0 +1,4 @@
+Clapeyron Database File,,,,,,
+SaftVRMie Assoc Parameters [csvtype = assoc,grouptype = SAFTgammaMie]
+species1,site1,species2,site2,epsilon_assoc,bondvol,source
+IM,H,BF4,e1,2500.,3.3961E-28,
