@@ -19,7 +19,7 @@ function FractionSalt(model::ElectrolyteModel,z)
     z_new = z[isolv]
     z_ion  = z[isalts]
 
-    z_salts = z_ion*inv(ν)
+    z_salts = (z_ion'*inv(ν))'
 
     append!(z_new,z_salts)
     return z_new
