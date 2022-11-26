@@ -1,11 +1,9 @@
 using Clapeyron
 
-function density(model::EoSModel,p,T)
-    return mass_density(model,p,T,[1.,1.])
-end
-
 model = SAFTgammaEMie([],[("BMIMBF4",["BMIM"=>1,"BF4"=>1])],
-                         [("BMIM",["CH3"=>2,"CH2"=>3,"IM"=>1]),("BF4",["BF4"=>1])];userlocations=["IL_like.csv"],rsp_userlocations=["Salt_like.csv"])
+                         [("BMIM",["CH3"=>2,"CH2"=>3,"IM"=>1]),("BF4",["BF4"=>1])];
+                         userlocations=["IL_like.csv","IL_assoc.csv"],
+                         rsp_userlocations=["Salt_like.csv"])
 
 toestimate = [
     Dict(
@@ -14,7 +12,7 @@ toestimate = [
         :recombine => true,
         :lower => 100.,
         :upper => 300.,
-        :guess => 500.
+        :guess => 200.
     ),
     Dict(
         :param => :epsilon,
@@ -29,7 +27,7 @@ toestimate = [
         :indices => (3,3),
         :recombine => true,
         :factor => 1e-10,
-        :lower => 3.3,
+        :lower => 3.0,
         :upper => 4.5,
         :guess => 3.7
     ),
@@ -38,12 +36,39 @@ toestimate = [
         :indices => (4,4),
         :recombine => true,
         :factor => 1e-10,
-        :lower => 3.3,
+        :lower => 3.0,
         :upper => 4.5,
         :guess => 3.7
+    ),
+    Dict(
+        :param => :shapefactor,
+        :indices => (3),
+        :lower => 0.5,
+        :upper => 1.5,
+        :guess => 1.0
+    ),
+    Dict(
+        :param => :epsilon_assoc,
+        :lower => 1000.,
+        :upper => 3000.,
+        :guess => 2500.
     )
 ]
 
-e = Estimation(model,toestimate,["density.csv"],[:vrmodel])
+function density(model::EoSModel,p,T)
+    return mass_density(model,p,T,[1.,1.])
+end
+
+function heat_capacity(model::EoSModel,p,T)
+    return isobaric_heat_capacity(model,p,T,[1.,1.])
+end
+
+e = Estimation(model,toestimate,["density_EMIMBF4.csv","heat_capacity_EMIMBF4.csv"],[:vrmodel])
 
 optimize!(e,Clapeyron.Metaheuristics.ECA(options = Clapeyron.Metaheuristics.Options(iterations=100)))
+
+model = e.model
+
+pred = density.(model,e.data[1].inputs[1],e.data[1].inputs[2])
+
+println(pred)
