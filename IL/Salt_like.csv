@@ -2,3 +2,4 @@ Clapeyron Database File,,,,,
 Schreckenberg Like Parameters,,,,,
 species,d_T,d_V,source
 BMIMBF4,10000.0,0.85025e-4,
+EMIMBF4,10000.0,0.85025e-4,
