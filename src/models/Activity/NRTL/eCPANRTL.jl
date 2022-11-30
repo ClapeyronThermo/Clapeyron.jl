@@ -14,7 +14,6 @@ abstract type eCPANRTLModel <: ActivityModel end
 
 struct eCPANRTL{c<:EoSModel} <: eCPANRTLModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::eCPANRTLParam
     puremodel::Vector{c}
     absolutetolerance::Float64
@@ -26,8 +25,10 @@ end
 export eCPANRTL
 
 function eCPANRTL(components::Vector{String}; puremodel=PR,
-    userlocations=String[], 
-     verbose=false)
+    userlocations=String[],
+    pure_userlocations = String[], 
+    verbose=false)
+
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/eCPANRTL/eCPANRTL_unlike.csv","SAFT/sCPA/sCPA_like.csv","SAFT/sCPA/sCPA_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
     A  = params["A"]
     B  = params["B"]
@@ -42,12 +43,11 @@ function eCPANRTL(components::Vector{String}; puremodel=PR,
     a  = epsilon_LorentzBerthelot(params["a"], k)
     b  = sigma_LorentzBerthelot(params["b"])
     
-    icomponents = 1:length(components)
     
-    init_puremodel = [puremodel([components[i]]) for i in icomponents]
+    pure = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = eCPANRTLParam(A,B,C,alpha,a,b,c1,Tc,Mw)
     references = String[]
-    model = eCPANRTL(components,icomponents,packagedparams,init_puremodel,1e-12,references)
+    model = eCPANRTL(components,packagedparams,pure,1e-12,references)
     return model
 end
 
