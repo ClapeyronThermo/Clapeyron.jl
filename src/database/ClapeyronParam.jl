@@ -40,7 +40,9 @@ include("params/PairParam.jl")
 include("params/AssocParam.jl")
 include("params/GroupParam.jl")
 include("params/SiteParam.jl")
+include("params/ElectrolyteParam.jl")
 include("params/AssocOptions.jl")
+
 
 const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
 function Base.show(io::IO,param::SingleOrPair)
@@ -48,7 +50,7 @@ function Base.show(io::IO,param::SingleOrPair)
     show(io,param.components)
 end
 
-export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
+export SingleParam, SiteParam, PairParam, AssocParam, GroupParam, ElectrolyteParam
 export AssocOptions
 
 """
