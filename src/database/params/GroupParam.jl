@@ -86,6 +86,12 @@ function GroupParam(imput::PARSED_GROUP_VECTOR_TYPE)
     return GroupParam(imput,:unknown,String[])
 end
 
+#utilities
+group_comp(val::Pair) = first(pair)
+group_comp(val::Tuple{<:Any,<:Any}) = first(pair)
+group_components(param::Vector{String}) = param
+group_components(param::GroupParam) = param.components
+group_components(param::Vector) = map(group_comp,param)
 
 #given components, groups, n_groups, reconstitute GroupParam
 function recombine!(param::GroupParam)
@@ -213,4 +219,28 @@ function Base.show(io::IO, param::GroupParam)
         i != length(param.components) && print(io,", ")
     end
     print(io,"]")
+end
+
+"""
+    grouppairs(groups::GroupParam)
+
+returns a `Vector{Pair{String,Vector{Pair{String,Int}}}}` containing the groups present in the `GroupParam`.
+
+"""
+function grouppairs(param::GroupParam)
+    comps = param.components
+    groups = param.groups
+    ngroups = param.n_groups
+    res = Vector{Pair{String,Vector{Pair{String,Int}}}}(undef,length(comps))
+    for i in 1:length(comps)
+        groups_i = groups[i]
+        ngroups_i = ngroups[i]
+        gc_i = Vector{Pair{String,Int}}(undef,length(groups_i))
+        comp_i = comps[i]
+        for k in 1:length(groups_i)
+            gc_i[k] = groups_i[k] => ngroups_i[k]
+        end
+        res[i] = comp_i => gc_i
+    end
+    return res
 end
