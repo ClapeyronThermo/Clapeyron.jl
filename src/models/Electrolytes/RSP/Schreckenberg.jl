@@ -9,7 +9,6 @@ struct Schreckenberg <: SchreckenbergModel
     components::Array{String,1}
     solvents::Union{Array{String,1},Array{Any,1}}
     salts::Array{String,1}
-    icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     isalts::UnitRange{Int}
     stoic_coeff::Array{Float64}
@@ -35,7 +34,6 @@ function Schreckenberg(solvents,salts; userlocations::Vector{String}=String[], v
         components = cat(solvents,salts,dims=1)
     end
     
-    icomponents = 1:length(components)
     isolvents = 1:length(solvents)
     isalts = (length(solvents)+1):length(components)
 
@@ -46,7 +44,7 @@ function Schreckenberg(solvents,salts; userlocations::Vector{String}=String[], v
 
     references = String[]
     
-    model = Schreckenberg(components, solvents, salts, icomponents, isolvents, isalts, stoichiometric_coeff, packagedparams, 1e-12,references)
+    model = Schreckenberg(components, solvents, salts, isolvents, isalts, stoichiometric_coeff, packagedparams, 1e-12,references)
     return model
 end
 
@@ -54,17 +52,27 @@ function dielectric_constant(model::SchreckenbergModel,V,T,z,_data=nothing)
         z_s = FractionSalt(model,z)
         d_T = model.params.d_T.values
         d_V = model.params.d_V.values
-
-        d = @. d_V*(d_T/T-1)
-
-        d = (d .+d')/2
+        #d = @. d_V*(d_T/T-1)
+        #d = (d .+d')/2
+        #x0 = z_s ./ n_solv
+        #d̄ = sum(sum(x0[i]*x0[j]*d[i,j] for j ∈ comps) for i ∈ comps)
 
         n_solv = sum(z_s)
         ρ_solv = n_solv / V
+        d̄ = zero(T+first(z_s))
 
-        x0 = z_s ./ n_solv 
+        for i in 1:length(model)
+            di = d_V[i]*(d_T[i]/T-1)
+            dij,zi = di,z_s[i]
+            d̄ += dij*zi*zi
+            for j in 1:(j-1)
+                dj = d_V[j]*(d_T[j]/T-1)
+                dij,zj = 0.5*(di+dj),z_s[j]
+                d̄ += 2*dij*zi*zj
+            end
+        end
 
-        d̄ = sum(sum(x0[i]*x0[j]*d[i,j] for j ∈ model.icomponents) for i ∈ model.icomponents)
+    d̄ = d̄/(n_solv*n_solv)
     return 1+ρ_solv*d̄
 end
 
