@@ -162,6 +162,9 @@ function return_model(
                     if (id[1]==id[2]) & recomb
                         current_param.ismissingvalues[id[1],:] .= true
                         current_param.ismissingvalues[:,id[1]] .= true
+                    elseif id[1]!=id[2]
+                        current_param.ismissingvalues[id[1],id[2]] = false
+                        current_param.ismissingvalues[id[2],id[1]] = false
                     end
                 end
                 if typeof(current_param) <: AssocParam
@@ -207,6 +210,9 @@ function return_model!(
                     if (id[1]==id[2]) & recomb
                         current_param.ismissingvalues[id[1],:] .= true
                         current_param.ismissingvalues[:,id[1]] .= true
+                    elseif id[1]!=id[2]
+                        current_param.ismissingvalues[id[1],id[2]] = false
+                        current_param.ismissingvalues[id[2],id[1]] = false
                     end
                 end
                 if typeof(current_param) <: AssocParam
