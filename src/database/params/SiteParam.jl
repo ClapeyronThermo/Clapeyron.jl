@@ -92,40 +92,18 @@ function Base.show(io::IO, mime::MIME"text/plain", param::SiteParam)
     print(io,"SiteParam ")
     len = length(param.components)
     println(io,"with ", len, " component", ifelse(len==1, ":", "s:"))
-    
-    for i in 1:length(param.components)
-        
-        print(io, " \"", param.components[i], "\": ")
-        firstloop = true
-        if length(param.n_sites[i]) == 0
-            print(io,"(no sites)")
-        end
-        for j in 1:length(param.n_sites[i])
-            firstloop == false && print(io, ", ")
-            print(io, "\"", param.sites[i][j], "\" => ", param.n_sites[i][j])
-            firstloop = false
-        end
-        i != length(param.components) && println(io)
-    end 
+    site_print_i(ii,val) = __show_group_i(ii,val,"(no sites)")
+    show_pairs(io,param.components,zip(param.sites,param.n_sites),": ",site_print_i)
 end
 
 function Base.show(io::IO, param::SiteParam)
     print(io,"SiteParam[")
-    len = length(param.components)
-    
-    for i in 1:length(param.components)
-        
-        print(io, "\"", param.components[i], "\" => [")
-        firstloop = true
-    
-        for j in 1:length(param.n_sites[i])
-            firstloop == false && print(io, ", ")
-            print(io, "\"", param.sites[i][j], "\" => ", param.n_sites[i][j])
-            firstloop = false
-        end
+    function wrap_print(io,val)
+        print(io,'[')
+        __show_group_i(io,val)
         print(io,']')
-        i != length(param.components) && print(io,", ")
     end
+    show_pairs(io,param.components,zip(param.sites,param.n_sites)," => ",wrap_print,pair_separator = ", ")
     print(io,"]")
 end
 

@@ -50,30 +50,23 @@ mutable struct Estimation{T<:EoSModel}
     toestimate::ToEstimate
     filepaths::Array{String}
     data::Vector{EstimationData}
-    ignorefield::Union{Any,Vector{Symbol}}
+    ignorefield::Union{Nothing,Vector{Symbol}}
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", estimation::Estimation)
     print(io, typeof(estimation))
     println(io, " with data for:")
-    firstloop = true
-    for data in estimation.data
-        !firstloop && println(io, "")
-        print(io, "  :" * String(data.method))
-        firstloop = false
-    end
+    show_pairs(io,(d.method for d in estimation.data),prekey = "  :",quote_string = false)
     println(io, "\n to estimate:")
-    firstloop = true
-    for (param, indices) in zip(
-            estimation.toestimate.params, estimation.toestimate.indices)
-        !firstloop && println(io, "")
-        print(io, "  :" * String(param))
-        if !(indices === nothing)
-            print(io, " with indices => " * "[" * 
-                  join(indices,",") * "]")
+    function val_print(io,val)
+        if val !== nothing
+            print(io, " with indices => ")
+            print('[')
+            show_pairs(io,val,nothing,quote_string = false,pair_separator = ',')
+            print(']')
         end
-        firstloop = false
     end
+    show_pairs(io,estimation.toestimate.params,estimation.toestimate.indices," ",val_print,quote_string = false,prekey = "  :")
 end
 
 function Base.show(io::IO, estimation::Estimation)
@@ -85,7 +78,7 @@ function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filep
 end
 
 function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Array{String})
-    return Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths),[])
+    return Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths),Symbol[])
 end
 
 function reload_data(estimation::Estimation)
@@ -139,7 +132,7 @@ export return_model
 function return_model(
         estimation::Estimation,
         model::EoSModel,
-        values::Vector{T} where {T<:Any}) 
+        values) 
     params = estimation.toestimate.params
     factor = estimation.toestimate.factor
     sym = estimation.toestimate.symmetric
@@ -188,7 +181,7 @@ end
 function return_model!(
     estimation::Estimation,
     model::EoSModel,
-    values::Vector{T} where {T<:Any}) 
+    values) 
     params = estimation.toestimate.params
     factor = estimation.toestimate.factor
     sym = estimation.toestimate.symmetric
@@ -241,11 +234,11 @@ end
 
 export optimize!
 
-function optimize!(estimation::Estimation,Method=Metaheuristics.SA(N=500))
+function optimize!(estimation::Estimation,Method=Metaheuristics.SA(N=500,information = Metaheuristics.Information(f_optimum = 0.0)))
     nparams = length(estimation.toestimate.params)
 
     f(x) = obj_fun(estimation,x)
-
+    
     x0 = [estimation.toestimate.guess[i][1] for i ∈ 1:nparams]
     upper = [estimation.toestimate.upper[i][1] for i ∈ 1:nparams]
     lower = [estimation.toestimate.lower[i][1] for i ∈ 1:nparams]

@@ -90,22 +90,9 @@ function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     len = length(param.values)
     print(io, "SingleParam{",eltype(param.values), "}(\"", param.name)
     println(io, "\") with ", len, " component", ifelse(len==1, ":", "s:"))
-    i = 0
-    for (name, val, miss) in zip(param.components, param.values, param.ismissingvalues)
-        i += 1
-        if i > 1
-            println(io)
-        end
-        if miss == false
-            if typeof(val) <: AbstractString
-                print(io, " \"", name, "\" => \"", val, "\"")
-            else
-                print(io, " \"", name, "\" => ", val)
-            end
-        else
-            print(io, " \"", name, " => -")
-        end
-    end
+    separator = " => "
+    vals = [ifelse(m,missing,v) for (m,v) in zip(param.ismissingvalues, param.values)]
+    show_pairs(io,param.components,vals,separator)
 end
 
 function SingleParam(x::SingleParam, name::String = x.name; isdeepcopy::Bool = true, sources::Vector{String} = x.sources)

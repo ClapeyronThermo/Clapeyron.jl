@@ -167,39 +167,22 @@ function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs
     return param
 end
 
+
+
 function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)
     print(io,"GroupParam(:",param.grouptype,") ")
     len = length(param.components)
     println(io,"with ", len, " component", ifelse(len==1, ":", "s:"))
-
-    for i in 1:length(param.components)
-
-        print(io, " \"", param.components[i], "\": ")
-        firstloop = true
-        for j in 1:length(param.n_groups[i])
-            firstloop == false && print(io, ", ")
-            print(io, "\"", param.groups[i][j], "\" => ", param.n_groups[i][j])
-            firstloop = false
-        end
-        i != length(param.components) && println(io)
-    end
+    show_groups(io,param)
 end
 
 function Base.show(io::IO, param::GroupParam)
     print(io,"GroupParam[")
-    len = length(param.components)
-
-    for i in 1:length(param.components)
-
-        print(io, "\"", param.components[i], "\" => [")
-        firstloop = true
-        for j in 1:length(param.n_groups[i])
-            firstloop == false && print(io, ", ")
-            print(io, "\"", param.groups[i][j], "\" => ", param.n_groups[i][j])
-            firstloop = false
-        end
+    function wrap_print(io,val)
+        print(io,'[')
+        __show_group_i(io,val)
         print(io,']')
-        i != length(param.components) && print(io,", ")
     end
+    show_pairs(io,param.components,zip(param.groups,param.n_groups)," => ",wrap_print,pair_separator = ", ")
     print(io,"]")
 end

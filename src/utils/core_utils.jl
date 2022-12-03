@@ -39,6 +39,30 @@ end
 split_2(str) = NTuple{2}(eachsplit(str, limit=2))
 split_2(str,dlm) = NTuple{2}(eachsplit(str,dlm, limit=2))
 
+
+function show_pairs(io,keys,vals=nothing,separator="",f_print = print;quote_string = true,pair_separator = '\n',prekey = ifelse(pair_separator === '\n'," ",""))
+    if length(keys) == 0
+        return nothing
+    end
+    if vals === nothing #useful for printing only keys
+        vals = Iterators.repeated("")
+    end
+    i = 0
+    for (k,v) in zip(keys,vals)
+        i += 1
+        if i > 1
+            print(io,pair_separator)
+        end
+        if quote_string
+            quot = '\"'
+            print(io,prekey,quot,k,quot,separator)
+        else
+            print(io,prekey,k,separator)
+        end
+        f_print(io,v)
+    end
+end
+
 #=
 """
     concrete(x)
