@@ -167,7 +167,7 @@ include("models/cubic/PR/variants/EPPR78.jl")
 include("models/cubic/PatelTeja/PatelTeja.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
-include("models/SAFT/PCSAFT/GEPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
 
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
