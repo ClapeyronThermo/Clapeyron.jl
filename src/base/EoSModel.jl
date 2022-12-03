@@ -4,7 +4,7 @@ export EoSModel
 """
     eos(model::EoSModel, V, T, z=SA[1.0])
 
-basic Clapeyron function, returns the total Helmholtz free energy.
+Returns the total Helmholtz free energy.
 
 # Inputs:
 - `model::EoSModel` Thermodynamic model to evaluate
@@ -13,13 +13,12 @@ basic Clapeyron function, returns the total Helmholtz free energy.
 - `z` mole amounts, in [mol], by default is `@SVector [1.0]`
 
 # Outputs:
-
 - Total Helmholtz free energy, in [J]
 
 by default, it calls `R̄*T*∑(z)*(a_ideal(ideal_model,V,T,z) + a_res(model,V,T,z))` where `ideal_model == idealmodel(model)`, where `a_res` is the reduced residual Helmholtz energy and `a_ideal` is the reduced ideal Helmholtz energy.
 You can mix and match ideal models if you provide:
-- `idealmodel(model)`: extracts the ideal model from your Thermodynamic model
-- `a_res(model,V,T,z)`: residual reduced Helmholtz free energy
+- `[idealmodel](@ref)(model)`: extracts the ideal model from your Thermodynamic model
+- `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz free energy
 
 """
 function eos(model::EoSModel, V, T, z=SA[1.0])
@@ -28,26 +27,31 @@ end
 """
     idealmodel(model::EoSModel)
     
-retrieves the ideal model from the input's model.
+retrieves the ideal model from the input's model. if the model is already an idealmodel, return `nothing`
 
 # Examples:
 
 ```julia-repl
-julia> pr = PR(["water"],idealmodel=IAPWS95Ideal)   
-PR{IAPWS95Ideal} with 1 component:
+julia> pr = PR(["water"],idealmodel=MonomerIdeal)
+PR{MonomerIdeal, PRAlpha, NoTranslation, vdW1fRule} with 1 component:
  "water"
-Contains parameters: a, b, acentricfactor, Tc, Mw   
-julia> Clapeyron.idealmodel(pr)
-IAPWS95Ideal()
-```
+Contains parameters: a, b, Tc, Pc, Mw
 
+julia> ideal = idealmodel(pr)
+MonomerIdeal with 1 component:
+ "water"
+Contains parameters: Mw
+
+julia> idealmodel(ideal) == nothing
+true
+```
 """
 idealmodel(model::EoSModel) = model.idealmodel
 
 """
     eos_res(model::EoSModel, V, T, z=SA[1.0])
 
-basic Clapeyron function, returns the residual Helmholtz free energy.
+Returns the residual Helmholtz free energy.
 
 # Inputs:
 - `model::EoSModel` Thermodynamic model to evaluate
@@ -56,15 +60,32 @@ basic Clapeyron function, returns the residual Helmholtz free energy.
 - `z` mole amounts, in [mol], by default is `@SVector [1.0]`
 
 # Outputs:
-
 - Residual Helmholtz free energy, in [J]
 
-by default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where `a_res` is the reduced residual Helmholtz energy.
+by default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where [`a_res`](@ref) is the reduced residual Helmholtz energy.
 """
 function eos_res(model::EoSModel, V, T, z=SA[1.0])
     return N_A*k_B*sum(z)*T*(a_res(model,V,T,z))
 end
 
+
+"""
+    a_res(model::EoSModel, V, T, z,args...)
+
+Reduced residual Helmholtz free energy.
+
+# Inputs:
+- `model::EoSModel` Thermodynamic model to evaluate
+- `V` Total volume, in [m³]
+- `T` Temperature, in [K]
+- `z` mole amounts, in [mol], by default is `@SVector [1.0]`
+
+# Outputs:
+- Residual Helmholtz free energy, no units
+
+You can define your own EoS by adding a method to `a_res` that accepts your custom model. 
+"""
+function a_res end
 Base.broadcastable(model::EoSModel) = Ref(model)
 
 """
@@ -75,9 +96,9 @@ This macro is an alias to
     1:length(model)
 
 The caveat is that `model` has to exist in the local namespace.
-`model` is expected to be an EoSModel type that contains the `icomponents` field.
-`icomponents` is an iterator that goes through all component indices.
+`model` is expected to any struct that has length defined in terms of the amount of components.
 """
+
 macro comps()
     return quote
         1:length(model)
@@ -138,4 +159,17 @@ function cite(model::EoSModel)
     end
     return unique!(res)
 end
-    
+
+"""
+    recombine!(model::EoSModel)
+
+Recalculate all mixing rules, combining rules and parameter caches inside an `EoSModel`.
+
+"""
+function recombine! end
+
+function setreferences!(model,references)
+    oldrefs = model.references
+    resize!(oldrefs,length(references))
+    oldrefs .= references
+end

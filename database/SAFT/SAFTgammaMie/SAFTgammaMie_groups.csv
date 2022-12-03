@@ -1,5 +1,5 @@
 Clapeyron Database File,
-SAFTgammaMie Groups,
+SAFTgammaMie Groups [csvtype = groups,grouptype = SAFTgammaMie]
 species,groups
 ethane,"[""CH3"" => 2]"
 propane,"[""CH3"" => 2, ""CH2"" => 1]"

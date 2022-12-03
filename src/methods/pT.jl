@@ -330,22 +330,16 @@ function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, th
     μ_res = VT_chemical_potential_res(model,V,T,z)
     φ = μ_res
     Z = p*V/R̄/T/sum(z)
-    for i ∈ @comps
-        φ[i] = exp(μ_res[i]/R̄/T)/Z
-    end
-    return φ
+    return exp.(μ_res ./ R̄ ./ T) ./ Z
 end
 
 function activity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
     pure   = split_model(model)
     μ_mixt = chemical_potential(model,p,T,z;phase,threaded)
-    γ_i = μ_mixt
-    for i ∈ @comps
-        μ_pure_i = chemical_potential(pure[i],p,T;phase,threaded)[1]
-        γ_i[i] = exp((μ_mixt[i]-μ_pure_i)/R̄/T)/z[i]
-    end
-    return γ_i
+    μ_pure = gibbs_free_energy.(pure,p,T;phase,threaded)
+    return exp.((μ_mixt .- μ_pure) ./ R̄ ./ T) ./z
 end
+
 """
     compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
 
@@ -445,15 +439,17 @@ end
 function excess(model::EoSModel,p,T,z,::typeof(gibbs_free_energy))
     TT = typeof(p+T+first(z))
     pure = split_model(model)
-    g_pure = gibbs_free_energy.(pure,p,T)
     g_mix = gibbs_free_energy(model,p,T,z)
     log∑z = log(sum(z))
-    x = z./sum(z)
+    v = volume(model,p,T,z)
     for i in 1:length(z)
-        g_mix -= z[i]*(gibbs_free_energy(pure[i],p,T) + R̄*T*(log(z[i]) - log∑z))
+        lnxi = R̄*T*(log(z[i]) - log∑z)
+        g_mix -= z[i]*(gibbs_free_energy(pure[i],p,T) + lnxi)
     end
+
     return g_mix::TT
 end
+
 
 """
     gibbs_solvation(model::EoSModel, T)

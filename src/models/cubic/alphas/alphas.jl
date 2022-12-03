@@ -13,17 +13,6 @@ end
 """
 function α_function end
 
-
-function init_model(model::AlphaModel,components,userlocations,verbose)
-    return model
-end
-
-function init_model(model::Type{<:AlphaModel},components,userlocations,verbose)
-    verbose && @info("""Now creating alpha model:
-    $model""")
-    return model(components;userlocations,verbose)
-end
-
 include("NoAlpha.jl")
 include("ClausiusAlpha.jl")
 include("RKAlpha.jl")

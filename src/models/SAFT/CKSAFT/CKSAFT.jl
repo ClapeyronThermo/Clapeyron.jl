@@ -72,12 +72,15 @@ function CKSAFT(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bond_vol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
     packagedparams = CKSAFTParam(params["Mw"],segment, sigma, epsilon,c, epsilon_assoc, bondvol)
     references = ["10.1021/IE00107A014", "10.1021/ie00056a050"]
 
     model = CKSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
+
+recombine_impl!(model::CKSAFTModel) = recombine_saft!(model)
 
 function a_res(model::CKSAFTModel, V, T, z)
     return @f(a_seg) + @f(a_chain) + @f(a_assoc)
@@ -116,8 +119,8 @@ function a_disp(model::CKSAFTModel, V, T, z)
 end
 
 function d(model::CKSAFTModel, V, T,z, i)
-    ϵ = model.params.epsilon.diagvalues[i]
-    σ = model.params.sigma.diagvalues[i]
+    ϵ = model.params.epsilon.values[i,i]
+    σ = model.params.sigma.values[i,i]
     return σ * (1 - 0.12exp(-3ϵ/T))
 end
 

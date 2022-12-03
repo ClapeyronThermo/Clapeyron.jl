@@ -1,5 +1,5 @@
 Clapeyron Database File,,,,,,,,,,,,,,,,
-Joback Ideal Like Parameters,,,,,,,,,,,,,,,,
+Joback Ideal Like Parameters [csvtype = like,grouptype = Joback] 
 species,T_c,P_c,V_c,T_b,T_m,H_form,G_form,a,b,c,d,H_fusion,H_vap,eta_a,eta_b,
 H2O,0.9725540967209461,0.05527786574464416,38.44807453383915,174.95,150.65,-242.0,-43.96,70.17,-0.20808,0.0004016,-2.096e-7,0.908,2.373,548.29,-1.719,
 -CH3,0.0141,-0.0012,65.0,23.58,-5.10,-76.45,-43.96,1.95E+1,-8.08E-3,1.53E-4,-9.67E-8,0.908,2.373,548.29,-1.719,

@@ -8,7 +8,6 @@ abstract type PeTSModel <: EoSModel end
 
 struct PeTS{T <: IdealModel} <:PeTSModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::PeTSParam
     idealmodel::T
     references::Array{String,1}
@@ -22,8 +21,7 @@ end
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
+    verbose=false)
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
@@ -56,8 +54,7 @@ function PeTS(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
+    verbose=false)
     params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     
     segment = params["m"]
@@ -70,8 +67,7 @@ function PeTS(components;
 
     packagedparams = PeTSParam(Mw, segment, sigma, epsilon)
     references = ["10.1080/00268976.2018.1447153"]
-    icomponents = 1:length(components)
-    model = PeTS(components,icomponents,packagedparams,init_idealmodel,references)
+    model = PeTS(components,packagedparams,init_idealmodel,references)
     return model
 end
 
@@ -88,37 +84,35 @@ function data(model::PeTSModel,V,T,z)
     ρ̃  = ρS*σ3
     d̃ = d_pets(T̃)
     η = π*ρ̃ *d̃^3 / 6
-    return (η,ρ̃ ,T̃)
+    return (η,ρ̃ ,T̃,m̄)
 end
-
 
 
 function d(model::PeTSModel, V, T, z,_data=@f(data))
     η,ρ̃ ,T̃ = _data
-    
     return d_pets(T̃)
 end
 
 function d_pets(T̃)
-    return 1 - 0.127112544*exp(-3.052785558/T̃)
+    #return 1 - 0.127112544*exp(-3.052785558/T̃)
     #log(0.127112544) = -2.0626824117148774
-    # return -expm1(-3.052785558/T̃ - 2.0626824117148774)
+    return -expm1(-3.052785558/T̃ - 2.0626824117148774)
 end
 
 a_hs(model::PeTSModel,V,T,z,_data=@f(data)) = a_ref(model,V,T,z,_data) 
 
 function a_ref(model::PeTSModel, V, T, z,_data=@f(data))
-    η,ρ̃ ,T̃ = _data
-    return (4η-3η^2)/(1-η)^2
+    η,ρ̃ ,T̃,_ = _data
+    return η*(4-3η)/(1-η)^2
 end
 
 function a_pert(model::PeTSModel, V, T, z,_data=@f(data))
-    η,ρ̃ ,T̃ = _data
+    η,ρ̃ ,T̃,_ = _data
     I1 = evalpoly(η,PeTS_A)
     I2 = evalpoly(η,PeTS_B)
-    ã1 = -2*π*ρ̃ *I1
-    ã2 = -π*ρ̃ *I2*(1 + (8η - 2η^2)/(1 - η)^4)^-1 / T̃
-    return (ã1 + ã2)/T̃
+    ã1 = -2*π*ρ̃ *I1/ T̃
+    ã2 = -π*ρ̃ *I2*(1 + 2*η*(4 - η)/(1 - η)^4)^-1 / T̃^2
+    return (ã1 + ã2)
 end
 
 const PeTS_A = (

@@ -4,7 +4,6 @@ const PatelTejaParam = ABCCubicParam
 
 struct PatelTeja{T <: IdealModel,α,c,γ} <:PatelTejaModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     alpha::α
     mixing::γ
     translation::c
@@ -94,10 +93,9 @@ function PatelTeja(components::Vector{String}; idealmodel=BasicIdeal,
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    icomponents = 1:length(components)
     packagedparams = PatelTejaParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1016/0009-2509(82)80099-7"]
-    model = PatelTeja(components,icomponents,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = PatelTeja(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     return model
 end
 
@@ -134,8 +132,8 @@ function c_premixing(model::Type{<:PatelTejaModel},mixing::MixingRule,Tc,pc,vc,k
 end
 
 function cubic_Δ(model::PatelTejaModel,z) 
-    b = model.params.b.diagvalues
-    c = model.params.c.diagvalues
+    b = diagvalues(model.params.b)
+    c = diagvalues(model.params.c)
     z⁻¹ = sum(z)^-1
     b̄ = dot(b,z)*z⁻¹
     c̄ = dot(c,z)*z⁻¹

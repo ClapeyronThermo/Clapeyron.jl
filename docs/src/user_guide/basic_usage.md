@@ -1,3 +1,6 @@
+```@meta
+CurrentModule = Clapeyron
+```
 Once Clapeyron is installed, it can be loaded using:
 
 ```julia

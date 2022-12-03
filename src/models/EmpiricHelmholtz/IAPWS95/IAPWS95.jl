@@ -244,7 +244,7 @@ function x0_saturation_temperature(model::IAPWS95,p)
     return (T,vl,vv)
 end
 
-x0_psat(model::IAPWS95,T) = water_p_sat(T)
+x0_psat(model::IAPWS95,T,crit=nothing) = water_p_sat(T)
 
 #from MoistAir.jl, liquid
 function saturated_water_liquid(Tk)
@@ -279,6 +279,9 @@ function x0_volume(model::IAPWS95,p,T,z=[1.0];phase = :unknown)
         return 1.1*saturated_water_vapor(T)
     elseif is_supercritical(phase)
         return model.consts.Vc
+    else
+        _0 = zero(p+T+first(z))
+        return _0/_0
     end
 end
 

@@ -5,27 +5,13 @@ CurrentModule = Clapeyron
 ## Contents
 
 ```@contents
-Pages = ["properties.md"]
+Pages = ["bulk.md"]
 ```
 
 ## Index
 
 ```@index
-Pages = ["properties.md"]
-```
-## Automatic Differenciation functions
-
-All bulk properties in `Clapeyron` are calculated via a combination of these Automatic Differenciation Primitives. 
- 
-```@docs
-Clapeyron.∂f∂T
-Clapeyron.∂f∂V
-Clapeyron.∂f
-Clapeyron.p∂p∂V
-Clapeyron.∂2f
-Clapeyron.∂2p
-Clapeyron.f_hess
-Clapeyron.∂²³f
+Pages = ["bulk.md"]
 ```
 
 ## Volume-Temperature Based Properties
@@ -92,61 +78,6 @@ Clapeyron.fugacity_coefficient
 Clapeyron.mixing
 ```
 
-## Single component properties
-
-```@docs
-Clapeyron.saturation_pressure
-Clapeyron.ChemPotVSaturation
-Clapeyron.ChemPotDensitySaturation
-Clapeyron.IsoFugacitySaturation
-Clapeyron.saturation_temperature
-Clapeyron.ClapeyronSaturation
-Clapeyron.AntoineSaturation
-Clapeyron.enthalpy_vap
-Clapeyron.crit_pure
-Clapeyron.acentric_factor
-```
-
-## Multi component properties
-
-```@docs
-Clapeyron.bubble_pressure
-Clapeyron.bubble_temperature
-Clapeyron.dew_pressure
-Clapeyron.dew_temperature
-Clapeyron.azeotrope_pressure
-Clapeyron.azeotrope_temperature
-Clapeyron.LLE_pressure
-Clapeyron.LLE_temperature
-Clapeyron.VLLE_pressure
-Clapeyron.VLLE_temperature
-Clapeyron.crit_mix
-Clapeyron.UCEP_mix
-Clapeyron.UCST_mix
-Clapeyron.gibbs_solvation
-```
-
-## Consistency and Stability
-
-```@docs
-Clapeyron.gibbs_duhem
-Clapeyron.isstable
-Clapeyron.mechanical_stability
-Clapeyron.diffusive_stability
-Clapeyron.tpd
-```
-
-## TP Flash
-
-```@docs
-Clapeyron.tp_flash
-Clapeyron.TPFlashMethod
-Clapeyron.DETPFlash
-Clapeyron.RRTPFlash
-Clapeyron.MichelsenTPFlash
-Clapeyron.numphases
-```
-
 ## Initial guess functions
 
 ```@docs
@@ -154,6 +85,7 @@ Clapeyron.lb_volume
 Clapeyron.T_scale
 Clapeyron.p_scale
 Clapeyron.x0_volume
+Clapeyron.x0_volume_solid
 Clapeyron.x0_volume_liquid
 Clapeyron.x0_volume_gas
 Clapeyron.volume_virial
@@ -163,6 +95,3 @@ Clapeyron.x0_saturation_temperature
 Clapeyron.antoine_coef
 Clapeyron.x0_crit_pure
 ```
-
-
-

@@ -15,7 +15,6 @@ abstract type COSMOSACdspModel <: COSMOSAC10Model end
 
 struct COSMOSACdsp{c<:EoSModel} <: COSMOSACdspModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::COSMOSACdspParam
     puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
@@ -42,12 +41,11 @@ function COSMOSACdsp(components::Vector{String};
     COOH = params["COOH"]
     hb_acc = params["hb_acc"]
     hb_don = params["hb_don"]
-    icomponents = 1:length(components)
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSACdspParam(Pnhb,POH,POT,epsilon,V,A,water,COOH,hb_acc,hb_don)
     references = String[]
-    model = COSMOSACdsp(components,icomponents,packagedparams,_puremodel,1e-12,references)
+    model = COSMOSACdsp(components,packagedparams,_puremodel,1e-12,references)
     return model
 end
 

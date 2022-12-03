@@ -10,7 +10,7 @@ end
 
 """
     LCVMRule{γ} <: LCVMRuleModel
-    
+
     LCVMRule(components::Vector{String};
     activity = Wilson,
     userlocations::Vector{String}=String[],
@@ -21,7 +21,7 @@ end
 
 None
 
-## Input models 
+## Input models
 
 - `activity`: Activity Model
 
@@ -47,9 +47,9 @@ LCVMRule
 
 export LCVMRule
 function LCVMRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    init_activity = activity(components;userlocations = activity_userlocations,verbose)
+    _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1016/0378-3812(94)80043-X"]
-    model = LCVMRule(components, init_activity,references)
+    model = LCVMRule(components, _activity,references)
     return model
 end
 
