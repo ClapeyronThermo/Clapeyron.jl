@@ -140,6 +140,8 @@ include("models/Activity/UNIQUAC/UNIQUAC.jl")
 include("models/Activity/UNIFAC/utils.jl")
 include("models/Activity/UNIFAC/UNIFAC.jl")
 include("models/Activity/UNIFAC/variants/ogUNIFAC.jl")
+include("models/Activity/UNIFAC/variants/UNIFACFV.jl")
+include("models/Activity/UNIFAC/variants/UNIFACFVPoly.jl")
 include("models/Activity/UNIFAC/variants/PSRK.jl")
 include("models/Activity/UNIFAC/variants/VTPR.jl")
 include("models/Activity/equations.jl")
@@ -148,6 +150,7 @@ include("models/Activity/COSMOSAC/utils.jl")
 include("models/Activity/COSMOSAC/COSMOSAC02.jl")
 include("models/Activity/COSMOSAC/COSMOSAC10.jl")
 include("models/Activity/COSMOSAC/COSMOSACdsp.jl")
+
 
 include("models/cubic/alphas/alphas.jl")
 include("models/cubic/mixing/mixing.jl")
@@ -163,6 +166,9 @@ include("models/cubic/PR/variants/QCPR.jl")
 include("models/cubic/PR/variants/EPPR78.jl")
 include("models/cubic/PatelTeja/PatelTeja.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
+
+include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
+
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
