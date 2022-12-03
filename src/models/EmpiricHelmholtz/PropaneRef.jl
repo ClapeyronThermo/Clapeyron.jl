@@ -60,7 +60,7 @@ aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ
 parameters  `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 
 ## References
-1. Lemmon, E. W., McLinden, M. O., & Wagner, W. (2009). Thermodynamic properties of propane. III. A reference equation of state for temperatures from the melting line to 650 K and pressures up to 1000 MPa. Journal of Chemical and Engineering Data, 54(12), 3141–3180. doi:10.1021/je900217v
+1. Lemmon, E. W., McLinden, M. O., & Wagner, W. (2009). Thermodynamic properties of propane. III. A reference equation of state for temperatures from the melting line to 650 K and pressures up to 1000 MPa. Journal of Chemical and Engineering Data, 54(12), 3141–3180. [doi:10.1021/je900217v](https://doi.org/10.1021/je900217v)
 """
 PropaneRef
 
@@ -112,8 +112,8 @@ function _fr1(model::PropaneRef,δ,τ)
     end
     return αᵣ
 end
-#ancillary equations for calculation of P_sat, rhovsat y rholsat
-function _propaneref_tsat(T)
+#ancillary equations for calculation of P_sat, T_sat rhovsat y rholsat
+function _propaneref_psat(T)
     T_c = 369.89
     P_c = 4.2512e6
     T>T_c && return zero(T)/zero(T)
@@ -124,13 +124,24 @@ function _propaneref_tsat(T)
     return Psat
 end
 
+function _propaneref_tsat(p)
+    P_c = 4.2512e6
+    p > P_c && return zero(p)/zero(p)
+    #first aproximation
+    A,B,C = 13.6515,1850.8,249.99-273.15
+    T0 = B/(A - log(p*1e-3)) - C
+    T0 > 369.89 && (T0 = 369.89*p/P_c)
+    f(T) = _propaneref_psat(T) - p
+    prob = Roots.ZeroProblem(f,T0)
+    return Roots.solve(prob,Roots.Order0())
+end
+
 function _propaneref_rholsat(T)
     T_c = 369.89
     ρ_c = 5000.0
     T>T_c && return zero(T)/zero(T)
     Tr = T/T_c
     θ = 1.0-Tr
-    #
     ρ_l = (1.0 + 1.82205*θ^0.345 + 0.65802*θ^0.74 + 0.21109*θ^2.6 + 0.083973*θ^7.2)*ρ_c
     return ρ_l
 end
@@ -189,18 +200,38 @@ function eos_res(model::PropaneRef,V,T,z=SA[1.0];phase=:unknown)
 end
 
 mw(model::PropaneRef) = SA[model.consts.Mw]
+
 molecular_weight(model::PropaneRef,z = @SVector [1.]) = model.consts.Mw*0.001
+
 T_scale(model::PropaneRef,z=SA[1.0]) = model.consts.T_c
+
 p_scale(model::PropaneRef,z=SA[1.0]) = model.consts.P_c
+
 lb_volume(model::PropaneRef,z=SA[1.0]) = 6.0647250138479785e-5 #calculated at 1000 MPa and 650 K
+
 Base.length(::PropaneRef) = 1
+
 function Base.show(io::IO,mime::MIME"text/plain",model::PropaneRef)
     print(io,"Propane Reference Equation of State")
 end
+
 function x0_sat_pure(model::PropaneRef,T,z=SA[1.0])
     log10vv = log10(1.0/_propaneref_rhovsat(T))
     log10vl = log10(1.0/_propaneref_rholsat(T))
-    return [log10vl,log10vv]
+    return (log10vl,log10vv)
+end
+
+function x0_volume_liquid(model::PropaneRef,T,z = SA[1.0])
+    return  1/_propaneref_rholsat(min(T,369.88889*one(T)))
+end
+
+x0_psat(model::PropaneRef,T,crit=nothing) = _propaneref_psat(T)
+
+function x0_saturation_temperature(model::PropaneRef,p)
+    T = _propaneref_tsat(p)
+    vl = 1.0/_propaneref_rholsat(T)
+    vv = 1.0/_propaneref_rhovsat(T)
+    return (T,vl,vv)
 end
 
 export PropaneRef

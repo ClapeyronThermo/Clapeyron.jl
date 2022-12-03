@@ -1,5 +1,5 @@
 Clapeyron Database File,
-Joback Groups,
+Joback Groups [csvtype = groups,grouptype = Joback]
 species,groups
 etane,"[""-CH3"" => 2]"
 water,"[""H2O"" => 1]"

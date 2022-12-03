@@ -10,7 +10,6 @@ abstract type UNIFACModel <: ActivityModel end
 
 struct UNIFAC{c<:EoSModel} <: UNIFACModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACParam
     puremodel::EoSVectorParam{c}
@@ -25,7 +24,7 @@ export UNIFAC
 """
     UNIFACModel <: ActivityModel
 
-    UNIFAC(components::Vector{String};
+    UNIFAC(components;
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
@@ -71,18 +70,19 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 ```
 
 ## References
-1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. doi:10.1021/i260064a004
+1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. [doi:10.1021/i260064a004](https://doi.org/10.1021/i260064a004)
 2. Weidlich, U.; Gmehling, J. A modified UNIFAC model. 1. Prediction of VLE, hE, and.gamma..infin. Ind. Eng. Chem. Res. 1987, 26, 1372–1381.
 """
 UNIFAC
 
-function UNIFAC(components::Vector{String};
+function UNIFAC(components;
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
+    group_userlocations = String[], 
     pure_userlocations = String[],
     verbose = false)
     
-    groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; verbose=verbose)
+    groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
     A  = params["A"]
@@ -90,13 +90,17 @@ function UNIFAC(components::Vector{String};
     C  = params["C"]
     R  = params["R"]
     Q  = params["Q"]
-    icomponents = 1:length(components)
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    _puremodel = init_puremodel(puremodel,groups.components,pure_userlocations,verbose)
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1021/i260064a004"]
     cache = UNIFACCache(groups,packagedparams)
-    model = UNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
+    model = UNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
     return model
+end
+
+function recombine_impl!(model::UNIFACModel)
+    recombine_unifac_cache!(model.unifaccache,model.groups,model.params)
+    recombine!(model.puremodel)
 end
 
 function activity_coefficient(model::UNIFACModel,V,T,z)

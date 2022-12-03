@@ -10,7 +10,6 @@ abstract type WilsonModel <: ActivityModel end
 
 struct Wilson{c<:EoSModel} <: WilsonModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::WilsonParam
     puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
@@ -48,7 +47,7 @@ Vᵢ = (RTcᵢ/Pcᵢ)(0.29056 - 0.08775ZRAᵢ)^(1 + (1-T/Tcᵢ)^2/7)
 ```
 
 ## References
-1. Wilson, G. M. (1964). Vapor-liquid equilibrium. XI. A new expression for the excess free energy of mixing. Journal of the American Chemical Society, 86(2), 127–130. doi:10.1021/ja01056a002
+1. Wilson, G. M. (1964). Vapor-liquid equilibrium. XI. A new expression for the excess free energy of mixing. Journal of the American Chemical Society, 86(2), 127–130. [doi:10.1021/ja01056a002](https://doi.org/10.1021/ja01056a002)
 
 """
 Wilson
@@ -67,12 +66,11 @@ function Wilson(components::Vector{String};
     ZRA       = SingleParam(params["w"],"acentric factor")
     ZRA.values .*= -0.08775
     ZRA.values .+= 0.29056
-    icomponents = 1:length(components)
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = WilsonParam(g,Tc,pc,ZRA,Mw)
     references = String["10.1021/ja01056a002"]
-    model = Wilson(components,icomponents,packagedparams,_puremodel,1e-12,references)
+    model = Wilson(components,packagedparams,_puremodel,1e-12,references)
     return model
 end
 

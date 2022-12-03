@@ -1,5 +1,5 @@
 ﻿Clapeyron Database File,,,
-VTPR Like Parameters,,,
+VTPR Like Parameters [csvtype = like,grouptype = VTPR]
 species,DIPPR Number,Q,source
 CH3,,1.2958,
 CH2,,0.9471,

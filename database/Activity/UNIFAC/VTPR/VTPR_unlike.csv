@@ -1,5 +1,5 @@
 ﻿Clapeyron Database File,,,,,
-VTPR Unlike Parameters,,,,,
+VTPR Unlike Parameters [csvtype = unlike,grouptype = VTPR]
 species1,SMILES1,species2,SMILES2,A,B,C,source
 CH3~|~CH2~|~CH~|~C,,ACCH3~|~ACCH2~|~ACCH,,17.268,-0.00698,0,
 CH3~|~CH2~|~CH~|~C,,ACOH,,2115.5,-2.2215,0,

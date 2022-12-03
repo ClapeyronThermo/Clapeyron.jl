@@ -129,7 +129,6 @@ is_splittable(::LJRefConsts) = false
 
 struct LJRef <: EmpiricHelmholtzModel
     components::Vector{String}
-    icomponents::UnitRange{Int}
     params::LJRefParam
     consts::LJRefConsts
     references::Vector{String}
@@ -189,7 +188,7 @@ parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 
 ## References
 
-1. Thol, M., Rutkai, G., Köster, A., Lustig, R., Span, R., & Vrabec, J. (2016). Equation of state for the Lennard-Jones fluid. Journal of physical and chemical reference data, 45(2), 023101. doi:10.1063/1.4945000
+1. Thol, M., Rutkai, G., Köster, A., Lustig, R., Span, R., & Vrabec, J. (2016). Equation of state for the Lennard-Jones fluid. Journal of physical and chemical reference data, 45(2), 023101. [doi:10.1063/1.4945000](https://doi.org/10.1063/1.4945000)
 
 """
 LJRef
@@ -205,9 +204,8 @@ function LJRef(components;
     segment = params["m"]
     params = LJRefParam(epsilon,sigma,segment,Mw)
     consts = LJRefConsts()
-    icomponents = 1:length(components)
     references = ["10.1063/1.4945000"]
-    return LJRef(components,icomponents,params,consts,references)
+    return LJRef(components,params,consts,references)
 end
 
 function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))

@@ -45,8 +45,8 @@ abstract type ogSAFTModel <: SAFTModel end
 (original) Statistical Associating Fluid Theory (og-SAFT) Equation of State
 
 ## References
-1. Chapman, W. G., Gubbins, K. E., Jackson, G., & Radosz, M. (1989). SAFT: Equation-of-state solution model for associating fluids. Fluid Phase Equilibria, 52, 31–38. doi:10.1016/0378-3812(89)80308-5
-2. Chapman, W. G., Gubbins, K. E., Jackson, G., & Radosz, M. (1990). New reference equation of state for associating liquids. Industrial & Engineering Chemistry Research, 29(8), 1709–1721. doi:10.1021/ie00104a021
+1. Chapman, W. G., Gubbins, K. E., Jackson, G., & Radosz, M. (1989). SAFT: Equation-of-state solution model for associating fluids. Fluid Phase Equilibria, 52, 31–38. [doi:10.1016/0378-3812(89)80308-5](https://doi.org/10.1016/0378-3812(89)80308-5)
+2. Chapman, W. G., Gubbins, K. E., Jackson, G., & Radosz, M. (1990). New reference equation of state for associating liquids. Industrial & Engineering Chemistry Research, 29(8), 1709–1721. [doi:10.1021/ie00104a021](https://doi.org/10.1021/ie00104a021)
 """
 ogSAFT
 
@@ -67,6 +67,7 @@ function ogSAFT(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
 
     packagedparams = ogSAFTParam(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie00104a021","10.1016/0378-3812(89)80308-5"]
@@ -74,6 +75,8 @@ function ogSAFT(components;
     model = ogSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
+
+recombine_impl!(model::ogSAFTModel) = recombine_saft!(model)
 
 function a_res(model::ogSAFTModel, V, T, z)
     return @f(a_seg) + @f(a_chain) + @f(a_assoc)
@@ -92,12 +95,12 @@ function a_chain(model::ogSAFTModel, V, T, z)
 end
 
 function d(model::ogSAFTModel, V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues
-    σ = model.params.sigma.diagvalues
+    ϵ = model.params.epsilon.values[i,i]
+    σ = model.params.sigma.values[i,i]
     m = model.params.segment.values
     fm = 0.0010477#+0.025337*(m[i]-1)/m[i]
-    f = (1+0.2977T/ϵ[i])/(1+0.33163T/ϵ[i]+fm*(T/ϵ[i])^2)
-    return σ[i] * f
+    f = (1+0.2977T/ϵ)/(1+0.33163T/ϵ+fm*(T/ϵ)^2)
+    return σ * f
 end
 
 # function dx(model::ogSAFTModel, V, T, z)

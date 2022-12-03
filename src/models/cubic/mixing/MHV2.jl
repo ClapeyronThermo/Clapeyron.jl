@@ -10,7 +10,7 @@ end
 
 """
     MHV2Rule{γ} <: MHV2RuleModel
-    
+
     MHV2Rule(components::Vector{String};
     activity = Wilson,
     userlocations::Vector{String}=String[],
@@ -21,7 +21,7 @@ end
 
 None
 
-## Input models 
+## Input models
 
 - `activity`: Activity Model
 
@@ -48,7 +48,7 @@ to use different values for `q₁` and `q₂`, overload `Clapeyron.MHV1q(::Cubic
 
 
 ## References
-1. Michelsen, M. L. (1990). A modified Huron-Vidal mixing rule for cubic equations of state. Fluid Phase Equilibria, 60(1–2), 213–219. doi:10.1016/0378-3812(90)85053-d
+1. Michelsen, M. L. (1990). A modified Huron-Vidal mixing rule for cubic equations of state. Fluid Phase Equilibria, 60(1–2), 213–219. [doi:10.1016/0378-3812(90)85053-d](https://doi.org/10.1016/0378-3812(90)85053-d)
 
 """
 MHV2Rule
@@ -56,10 +56,10 @@ MHV2Rule
 
 export MHV2Rule
 function MHV2Rule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    init_activity = activity(components;userlocations = activity_userlocations,verbose)
-    
+    _activity = init_model(activity,components,activity_userlocations,verbose)
+
     references = ["10.1016/0378-3812(90)85053-D"]
-    model = MHV2Rule(components, init_activity,references)
+    model = MHV2Rule(components, _activity,references)
     return model
 end
 
@@ -80,9 +80,9 @@ function mixing_rule(model::Union{PRModel,RKModel},V,T,z,mixing_model::MHV2RuleM
     Σab2 = Σab
     for i ∈ @comps
         ᾱ  = a[i,i]*α[i]/(b[i,i]*R̄*T)
-        zia = z[i]*ᾱ  
-        Σab += zia 
-        Σab2 += zia*ᾱ  
+        zia = z[i]*ᾱ
+        Σab += zia
+        Σab2 += zia*ᾱ
         Σlogb += z[i]*log(b̄/b[i,i])
     end
     Σab *= invn

@@ -25,7 +25,7 @@ struct MultiFluidSingleParam <: EoSParam
     c::PackedVectorSingleParam{Int}
 end
 
-const FIJ_TYPE = Clapeyron.PairParameter{Float64, SparseArrays.SparseMatrixCSC{Float64, Int64}, SubArray{Float64, 1, Base.ReshapedArray{Float64, 1, SparseArrays.SparseMatrixCSC{Float64, Int64}, Tuple{Base.MultiplicativeInverses.SignedMultiplicativeInverse{Int64}}}, Tuple{StepRange{Int64, Int64}}, false}} 
+const FIJ_TYPE = Clapeyron.PairParameter{Float64, SparseArrays.SparseMatrixCSC{Float64, Int64}}
 
 struct MultiFluidPairParam <: EoSParam
     nij::PackedSparsePairParam{Float64} #SparsePairParam #done
@@ -37,3 +37,14 @@ struct MultiFluidPairParam <: EoSParam
     eta_ij::PackedSparsePairParam{Float64} #SparsePairParam
     epsilon_ij::PackedSparsePairParam{Float64} #SparsePairParam
 end
+
+vals = """Clapeyron Database File
+like
+species,m     ,sigma, epsilon, Mw
+a1,     1     ,3.7039,150.03, 0
+a2,     1.6069,3.5206,191.42, 0
+a3,     2.0020,3.6184,208.11, 0
+"""
+
+unlike = NO_KIJ
+assoc = NO_ASSOC

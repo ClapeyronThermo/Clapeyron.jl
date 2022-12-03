@@ -8,7 +8,6 @@ abstract type COSMOSAC02Model <: ActivityModel end
 
 struct COSMOSAC02{c<:EoSModel} <: COSMOSAC02Model
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::COSMOSAC02Param
     puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
@@ -54,13 +53,12 @@ function COSMOSAC02(components::Vector{String};
     Pi  = COSMO_parse_Pi(params["Pi"])
     A  = params["A"]
     V  = params["V"]
-    icomponents = 1:length(components) 
 
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSAC02Param(Pi,V,A)
     references = String["10.1021/ie001047w"]
-    model = COSMOSAC02(components,icomponents,packagedparams,_puremodel,1e-12,references)
+    model = COSMOSAC02(components,packagedparams,_puremodel,1e-12,references)
     return model
 end
 

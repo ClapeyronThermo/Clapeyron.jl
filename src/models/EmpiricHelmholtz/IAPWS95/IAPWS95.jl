@@ -87,7 +87,7 @@ parameters `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`α`,`β`,`γ`,`ε`,`A`,`B`,`C`,`D` wh
 
 ## References
 
-1. Wagner, W., & Pruß, A. (2002). The IAPWS formulation 1995 for the thermodynamic properties of ordinary water substance for general and scientific use. Journal of physical and chemical reference data, 31(2), 387–535. doi:10.1063/1.1461829
+1. Wagner, W., & Pruß, A. (2002). The IAPWS formulation 1995 for the thermodynamic properties of ordinary water substance for general and scientific use. Journal of physical and chemical reference data, 31(2), 387–535. [doi:10.1063/1.1461829](https://doi.org/10.1063/1.1461829)
 2. IAPWS R6-95 (2018). Revised Release on the IAPWS Formulation 1995 for the Thermodynamic Properties of Ordinary Water Substance for General and Scientific Use
 
 """
@@ -106,7 +106,6 @@ function iapws_f0(model,δ,τ)
 end
 
 _f0(model::IAPWS95,δ,τ) = iapws_f0(model,δ,τ)
-
 
 function _fr(model::IAPWS95,δ,τ)
     n = model.consts.n::Vector{Float64}
@@ -238,6 +237,15 @@ function water_t_sat(p)
     return T
 end
 
+function x0_saturation_temperature(model::IAPWS95,p)
+    T = water_t_sat(p)
+    vl = saturated_water_liquid(T)
+    vv = saturated_water_vapor(T)
+    return (T,vl,vv)
+end
+
+x0_psat(model::IAPWS95,T,crit=nothing) = water_p_sat(T)
+
 #from MoistAir.jl, liquid
 function saturated_water_liquid(Tk)
     ρm= ( -0.2403360201e4 +
@@ -271,6 +279,9 @@ function x0_volume(model::IAPWS95,p,T,z=[1.0];phase = :unknown)
         return 1.1*saturated_water_vapor(T)
     elseif is_supercritical(phase)
         return model.consts.Vc
+    else
+        _0 = zero(p+T+first(z))
+        return _0/_0
     end
 end
 

@@ -12,7 +12,6 @@ abstract type CPAModel <: EoSModel end
 
 struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     cubicmodel::c
     params::CPAParam
     sites::SiteParam
@@ -69,7 +68,7 @@ end
 
 Cubic Plus Association (CPA) EoS
 ## References
-1. Kontogeorgis, G. M., Michelsen, M. L., Folas, G. K., Derawi, S., von Solms, N., & Stenby, E. H. (2006). Ten years with the CPA (cubic-plus-association) equation of state. Part 1. Pure compounds and self-associating systems. Industrial & Engineering Chemistry Research, 45(14), 4855–4868. doi:10.1021/ie051305v
+1. Kontogeorgis, G. M., Michelsen, M. L., Folas, G. K., Derawi, S., von Solms, N., & Stenby, E. H. (2006). Ten years with the CPA (cubic-plus-association) equation of state. Part 1. Pure compounds and self-associating systems. Industrial & Engineering Chemistry Research, 45(14), 4855–4868. [doi:10.1021/ie051305v](https://doi.org/10.1021/ie051305v)
 """
 CPA
 
@@ -90,8 +89,6 @@ function CPA(components;
     verbose=false,
     assoc_options = AssocOptions())
     
-    icomponents = 1:length(components)
-
     params,sites = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
     k  = params["k"]
@@ -103,6 +100,7 @@ function CPA(components;
     b  = sigma_LorentzBerthelot(params["b"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
     packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
@@ -116,11 +114,11 @@ function CPA(components;
         cubicparams = PRParam(a, b, params["Tc"],params["pc"],Mw)
     end
 
-    init_cubicmodel = cubicmodel(components,icomponents,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
+    init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
 
     references = ["10.1021/ie051305v"]
 
-    model = CPA(components, icomponents, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
+    model = CPA(components, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
     return model
 end
 
@@ -130,11 +128,7 @@ p_scale(model::CPAModel,z=SA[1.0]) = p_scale(model.cubicmodel,z)
 
 function x0_crit_pure(model::CPAModel)
     lb_v = lb_volume(model)
-    if isempty(model.params.epsilon_assoc.values[1,1])
-        [2.0, log10(lb_v/0.3)]
-    else
-        [2.75, log10(lb_v/0.3)]
-    end
+    return [1.0, log10(lb_v/0.3)]
 end
 
 function a_res(model::CPAModel, V, T, z)

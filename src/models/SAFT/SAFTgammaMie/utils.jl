@@ -1,117 +1,103 @@
 function gc_to_comp_sites(sites::SiteParam,groups::GroupParam)
     #given some groups and some sites calculated over those groups
     #calculates "flattened" sites
-    comps = groups.components
-    sitenames = deepcopy(sites.sites)
-    gcnames = groups.flattenedgroups
+
+    comps = groups.components #component names
+
+    #each GC/GCsite pair encodes a tuple in GC space
+    #we use this traslator later to convert any assoc param into it's component equivalent
+    site_translator = Vector{Vector{Tuple{Int,Int}}}(undef,length(comps))
+
+    #shortcut for non-assoc case
+    if length(sites.n_sites.v) == 0
+        new_sites = SiteParam(groups.components)
+        return new_sites,site_translator
+    end
+
+    sitenames = deepcopy(sites.sites) #group sites
+    gcnames = groups.flattenedgroups #group names
+    gc_groups = groups.groups
+    #with this, each site now has an unique name
     for i in 1:length(sitenames)
         gci = gcnames[i]
         sitei = sitenames[i]
         for a in 1:length(sitei)
-            sitei[a] = gci * '{' * sitei[a] * '}'
+            sitei[a] = gci * '/' * sitei[a]
         end
     end
 
-    flattened_comp_sitenames = collect(Iterators.flatten(sitenames))
-    flattened_comp_nsites = collect(Iterators.flatten(sites.n_sites))
-    siteidx = deepcopy(sites.i_sites)
-    for i in 1:length(siteidx)
-        sitei = siteidx[i]
-        for a in 1:length(sitei)
-            sitei[a] = i
-        end
-    end 
-    flattened_gcidx = collect(Iterators.flatten(siteidx))
-    flattened_comp_isites = collect(Iterators.flatten(sites.i_sites))
-    idxdict = Dict((flattened_gcidx[i],flattened_comp_isites[i]) => i for i in 1:length(flattened_gcidx) )
+    #now we fill our new component sites,
+    gc_n_sites = sites.n_sites.v #should be of the same size as flattened_comp_sitenames
+    comp_n_sites = Vector{Vector{Int}}(undef,length(comps))
+    comp_sites = Vector{Vector{String}}(undef,length(comps))
 
 
-    n_flattenedsites = Vector{Vector{Int}}(undef,length(comps))
-    flat_groups = groups.n_flattenedgroups
-    for i in 1:length(n_flattenedsites) 
-        n_flattenedsites[i] = flat_groups[i][flattened_gcidx] .* flattened_comp_nsites
-    end
-    k = length(flattened_comp_sitenames)
-    pairs = [(comps[i],[flattened_comp_sitenames[j] =>n_flattenedsites[i][j] for j in 1:k]) for i in 1:length(comps)]
-    n_flattenedsites
+    for i in 1:length(comps)
+        n_sites_i = Int[]
+        comp_n_sites[i] = n_sites_i
 
-    for pair in pairs
-        pairname,pairvec = pair
-        filter!(x->!iszero(last(x)),pairvec)
-    end
+        sites_i = String[]
+        comp_sites[i] = sites_i
+        site_translator_i = NTuple{2,Int}[]
+        site_translator[i] = site_translator_i
+        gc_name_i = gc_groups[i]
+        for k in 1:length(gc_name_i)
+            for (w,comp_gcname) in enumerate(Iterators.flatten(sitenames))
+                gcname_ik = gc_name_i[k]
+                lookup_cgname = gcname_ik * '/'
+                if startswith(comp_gcname,lookup_cgname)
+                    #fill sites, n_sites
+                    push!(sites_i,comp_gcname)
+                    push!(n_sites_i,gc_n_sites[w])
 
-
-    return SiteParam(pairs),idxdict 
-end
-
-
-#returns a compressed assoc matrix corresponding to the indices
-#of the old gc values, arranged by component instead.
-#that is, 
-function gc_to_comp_assoc_idx(param::AssocParam,sites::SiteParam,idxdict)
-    pvals = param.values
-    vals,outer,inner = pvals.values, pvals.outer_indices,pvals.inner_indices
-    ngc = length(vals)
-    nsites = length(sites.flattenedsites)
-    comps = sites.components
-    ncomps = length(comps)
-    site1 = Vector{Int64}(undef,ngc)
-    site2 = Vector{Int64}(undef,ngc)
-    assoc_idxdict = Dict{Tuple{Int,Int},Int}()
-
-    for ii in 1:ngc
-        i,j = outer[ii]
-        a,b = inner[ii]
-        s1 =  idxdict[(i,a)]
-        s2 = idxdict[(j,b)]
-        site1[ii] = s1
-        site2[ii] = s2
-        assoc_idxdict[(s1,s2)] = ii
-        assoc_idxdict[(s2,s1)] = ii
-    end
-
-    #return site1,site2
-    x = Matrix{Matrix{Int}}(undef,ncomps,ncomps)
-    for i = 1:ncomps
-        xi = zeros(Int,nsites,nsites)
-        for (a,b) in Iterators.product(sites.i_sites[i],sites.i_sites[i])
-            abval = get(assoc_idxdict,(a,b),0)
-            
-            xi[a,b] = abval
-            xi[b,a] = abval
-            
-        end
-        x[i,i] = xi
-        for j = 1:i-1
-            xi = zeros(Int,nsites,nsites)
-            for (a,b) in Iterators.product(sites.i_sites[i],sites.i_sites[j])
-                abval = get(assoc_idxdict,(a,b),0)
-                
-                xi[a,b] = abval
-                xi[b,a] = abval
+                    #fill translation between gc_gcsite combination and original indices for assoc
+                    gc_ik = findfirst(isequal(gcname_ik),groups.flattenedgroups)
+                    push!(site_translator_i,(gc_ik,length(n_sites_i)))
+                end
             end
-            x[i,j] = xi
-            x[j,i] = xi
         end
     end
-    val =  Compressed4DMatrix(x)
-    new_inneridx = val.inner_indices
-    for (idx,(i,j),(a,b)) ∈ indices(val)
-        _a = sites.i_flattenedsites[i][a]
-        _b = sites.i_flattenedsites[j][b]
-        new_inneridx[idx] = (_a,_b)
-    end
+    new_sites = SiteParam(comps,comp_sites,comp_n_sites,sites.sourcecsvs)
 
-    n = findall(!=((0,0)),new_inneridx)
-    values = val.values[n]
-    outer_indices = val.outer_indices[n]
-    inner_indices = new_inneridx[n]
-    outer_size = val.outer_size
-    inner_size = val.inner_size
-    newvals = Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
+    return new_sites,site_translator
+end
+
+
+function gc_to_comp_sites(param::AssocParam,sites::SiteParam,site_translator)
+
+    #shortcut for non-assoc case
+    if length(sites.n_sites.v) == 0
+        new_val = Compressed4DMatrix{eltype(param)}()
+        return AssocParam(param.name,sites.components,new_val,sites.sites,param.sourcecsvs,param.sources)
+    end
+    new_val = assoc_similar(sites,eltype(param))
+    for i in 1:length(sites.components)
+        site_translator_i = site_translator[i]
+        for j in 1:i
+            ij_pair = new_val[i,j]
+            #display(TextDisplay(stdout),MIME"text/plain"(),ij_pair)
+            site_translator_j = site_translator[j]
+            aa,bb = length(site_translator_i),length(site_translator_j)
+            for a in 1:length(site_translator_i)
+                i_gc,a_gc = site_translator_i[a]
+                for b in 1:length(site_translator_j)
+                    j_gc,b_gc = site_translator_j[b]
+                    #absolute index, relative to the Compressed4DMatrix
+                    idx = validindex(ij_pair,a,b)
+                    if idx != 0 #if the index is valid
+                        ijab_val = param[i_gc,j_gc][a_gc,b_gc]
+                        if !_iszero(ijab_val) #if the value is not zero
+                            ij_pair.vec.values[idx] =ijab_val
+                        end
+                    end
+                end
+            end
+        end
+    end
+    dropzeros!(new_val) #clean all zero values
+    return AssocParam(param.name,sites.components,new_val,sites.sites,param.sourcecsvs,param.sources)
 end
 
 
 
-    
-  
+

@@ -10,7 +10,7 @@ end
 
 """
     UMRRule{γ} <: UMRRuleModel
-    
+
     UMRRule(components::Vector{String};
     activity = UNIFAC,
     userlocations::Vector{String}=String[],
@@ -21,7 +21,7 @@ end
 
 None
 
-## Input models 
+## Input models
 
 - `activity`: Activity Model
 
@@ -39,14 +39,13 @@ ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - [gᴱ/RT]/0.53)
 UMRRule
 export UMRRule
 function UMRRule(components::Vector{String}; activity = UNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    init_activity = activity(components;userlocations = activity_userlocations,verbose)   
-
+    _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1021/ie049580p"]
-    model = UMRRule(components, init_activity,references)
+    model = UMRRule(components, _activity,references)
     return model
 end
 
-function ab_premixing(::Type{PR},mixing::UMRRuleModel,Tc,pc,kij)
+function ab_premixing(::Type{<:PRModel},mixing::UMRRuleModel,Tc,pc,kij)
     Ωa, Ωb = ab_consts(PR)
     _Tc = Tc.values
     _pc = pc.values
@@ -60,7 +59,7 @@ end
 
 UMR_g_E(model,V,T,z) = excess_gibbs_free_energy(model,V,T,z)
 
-function UMR_g_E(model::UNIFACModel,V,T,z) 
+function UMR_g_E(model::UNIFACModel,V,T,z)
     g_SG  = excess_g_SG(model,1e5,T,z)
     g_res = excess_g_res(model,1e5,T,z)
     return g_SG+g_res

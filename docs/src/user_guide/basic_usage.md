@@ -1,3 +1,6 @@
+```@meta
+CurrentModule = Clapeyron
+```
 Once Clapeyron is installed, it can be loaded using:
 
 ```julia
@@ -31,6 +34,8 @@ One can find out more about the information stored within these model objects in
 **Cubics**:
 
 - van der Waals ([`vdW`](@ref))
+  - Clausius ([`Clausius`](@ref))
+  - Berthelot ([`Berthelot`](@ref))
 - Redlich-Kwong ([`RK`](@ref))
   - Soave-Redlich-Kwong ([`SRK`](@ref))
   - Predictive Soave-Redlich-Kwong ([`PSRK`](@ref))
@@ -40,7 +45,9 @@ One can find out more about the information stored within these model objects in
   - Volume-Translated Peng-Robinson ([`VTPR`](@ref))
   - Quantum Corrected Peng-Robinson ([`QCPR`](@ref))
   - Enhanced Predictive Peng-Robinson (1978) ([`EPPR78`](@ref))
-
+- Patel-Teja ([`PatelTeja`](@ref))
+  - Patel-Teja-Valderrama ([`PTV`](@ref))
+- Kumar-Upadhyay ([`KU`](@ref))
 **SAFT**:
 
 - SAFT ([`ogSAFT`](@ref))
@@ -79,7 +86,10 @@ One can find out more about the information stored within these model objects in
 - Propane Reference ([`PropaneRef`](@ref))
 - Lennard Jones Reference from Thol et al. (2016) ([`LJRef`](@ref))
 
-We also support the [`SPUNG`](@ref) model. One can find out more about each of these equations of state within our background documentation. Nevertheless, all of these equations are compatible with all methods availble in our package. 
+**Extended Corresponding States ([`ECS`](@ref))**:
+- SPUNG ([`SPUNG`](@ref))
+
+One can find out more about each of these equations of state within our background documentation. Nevertheless, all of these equations are compatible with all methods availble in our package.
 
 There a few optional arguments available for these equations which will be explained below. One of these is specifying the location of the parameter databases, the details of which can be found in our Custom databases documentation.
 
@@ -114,7 +124,8 @@ The above model would be equivalent to a model built by SRK directly. We support
 - [`SoaveAlpha`](@ref): This is the default alpha function for SRK.
 - [`PRAlpha`](@ref): This is the default alpha function for regular PR.
 - [`PR78Alpha`](@ref): This is the default alpha function for PR78.
-- [`BMAlpha`](@ref): This is the modified alpha function proposed by Boston and Mathias designed to improve estimates above the critical point. This works for both PR and RK.
+- [`KUAlpha`](@ref): This is the default alpha function for KU
+- [`BMAlpha`](@ref): This is the modified alpha function proposed by Boston and Mathias designed to improve estimates above the critical point. This works for both PR and RK. 
 - [`TwuAlpha`](@ref): Proposed by Twu _et al._, this alpha function uses species-specific parameters rather than correlation and, thus, is slightly more accurate than regular alpha functions. It was intended to be used with PR and is used in VTPR.
 - [`MTAlpha`](@ref): Proposed by Magoulas and Tassios, this alpha function is essentially like the regular PR alpha function only to a higher order. It is used within UMRPR.
 
@@ -140,7 +151,7 @@ We currently support:
 - [`MHV2Rule`](@ref): The modified Huron-Vidal mixing rule proposed by Michelsen to second order. This is meant to be an improvement over the first order rule. Also needs an activity model to be specified.
 
 - [`WSRule`](@ref): The Wong-Sandler mixing rule which also relies on an activity model. The equations are slightly more complicated but it is meant to be an improvement compared to `HVRule`. Also needs an activity model to be specified.
-
+- [`modWSRule`](@ref): a a modified Wong-Sandler mixing rule, that reduces to vdW1f when there is no nonideal mixtures.
 - [`LCVMRule`](@ref): The Linear Combiniation of Vidal and Michelsen mixing rules is designed for asymmetric mixtures. Also needs an activity model to be specified.
 
 If one goes looking within the source code, they will also find [`VTPRRule`, [`PSRKRule`](@ref),[`PPR78Rule`](@ref), [`QCPRRule`](@ref) and [`UMRRule`](@ref); these are only intended for use in their respective models and shouldn't be used otherwise. However, it is still possible to toggle between them.

@@ -1,5 +1,5 @@
 Clapeyron Database File,
-EPPR78 Groups,
+EPPR78 Groups [csvtype = groups, grouptype = EPPR78]
 species,groups
 ethane,"[""CH3"" => 2]"
 propane,"[""CH3"" => 2, ""CH2"" => 1]"

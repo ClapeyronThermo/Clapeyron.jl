@@ -13,7 +13,6 @@ include("mixing/mixing.jl")
 
 struct SanchezLacombe{T <: SLMixingRule,I<:IdealModel} <:SanchezLacombeModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     mixing::T
     params::SanchezLacombeParam
     idealmodel::I
@@ -59,7 +58,7 @@ aᵣ = r̄*(- ρ̃ /T̃ + (1/ρ̃  - 1)*log(1 - ρ̃ ) + 1)
 ```
 
 ## References
-1. Neau, E. (2002). A consistent method for phase equilibrium calculation using the Sanchez–Lacombe lattice–fluid equation-of-state. Fluid Phase Equilibria, 203(1–2), 133–140. doi:10.1016/s0378-3812(02)00176-0
+1. Neau, E. (2002). A consistent method for phase equilibrium calculation using the Sanchez–Lacombe lattice–fluid equation-of-state. Fluid Phase Equilibria, 203(1–2), 133–140. [doi:10.1016/s0378-3812(02)00176-0](https://doi.org/10.1016/s0378-3812(02)00176-0)
 """
 SanchezLacombe
 
@@ -83,8 +82,7 @@ function SanchezLacombe(components;
     premixed_vol,premixed_epsilon = sl_mix(unmixed_vol,unmixed_epsilon,mixmodel)
     packagedparams = SanchezLacombeParam(Mw, segment, premixed_epsilon, premixed_vol)
     references = ["10.1016/S0378-3812(02)00176-0"]
-    icomponents = 1:length(components)
-    model = SanchezLacombe(components,icomponents,mixmodel,packagedparams,ideal,references)
+    model = SanchezLacombe(components,mixmodel,packagedparams,ideal,references)
     return model
 end
 
@@ -113,9 +111,9 @@ end
 
 function lb_volume(model::SanchezLacombe,z=SA[1.0])
     r = model.params.segment.values
-    v = model.params.vol.diagvalues
+    v = model.params.vol.values
     #v_r,ε_r = mix_vε(model,0.0,0.0,z,model.mixing,r̄,Σz)
-    return sum(r[i]*z[i]*v[i] for i in @comps)
+    return sum(r[i]*z[i]*v[i,i] for i in @comps)
 end
 
 function T_scale(model::SanchezLacombe,z=SA[1.0])
@@ -144,7 +142,7 @@ end
 function x0_volume_gas(model::SanchezLacombe,p,T,z)
     return sum(z)*R̄*T/p
 end
-
+#=
 function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
     Σz = sum(z)
     r = model.params.segment.values
@@ -167,5 +165,5 @@ function x0_sat_pure(model::SanchezLacombe,T,z=SA[1.0])
     end
     return (log10(vl),log10(vv))
 end
-
+=#
 export SL,SanchezLacombe

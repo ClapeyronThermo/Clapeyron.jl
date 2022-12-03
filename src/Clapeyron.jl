@@ -1,5 +1,4 @@
 module Clapeyron
-using StaticArrays
 using LinearAlgebra
 using SparseArrays
 #for the assoc solver and the sparse packed VofV
@@ -7,20 +6,24 @@ import PackedVectorsOfVectors
 const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 
 #for non allocating vectors of zeros and ones
-using FillArrays: FillArrays
-
 using Roots: Roots
-using NLSolvers
-import BlackBoxOptim
 
-using DiffResults, ForwardDiff
 using Scratch 
 using Unitful
 import LogExpFunctions
+using FillArrays: FillArrays
+import BlackBoxOptim
+using StaticArrays
+using NLSolvers
+using NLSolvers: NEqOptions
+using DiffResults, ForwardDiff
+
+#compatibility and raw julia utilities
+include("utils/core_utils.jl")
 
 include("solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log, sqrt
+using .Solvers: log, sqrt, log1p
 ∂Tag = Solvers.∂Tag
 
 include("utils/fractions.jl")
@@ -33,16 +36,27 @@ include("base/constants.jl")
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
 include("base/EoSModel.jl")
 
+#error handlers
+include("base/errors.jl")
+
+#type hierarchy
+include("models/types.jl")
+
 #show(model<:EoSModel)
 include("base/eosshow.jl")
+
 
 #EoSParam, ClapeyronParam, All Params
 include("database/ClapeyronParam.jl")
 
-#Combining Rules for Single and Pair Params.
-include("database/params/combiningrules.jl")
+#recombine options
+include("utils/recombine.jl")
 
-using CSV, Tables
+#Combining Rules for Clapeyron Params.
+include("database/combiningrules.jl")
+
+
+using Tables,CSV 
 #getparams options
 include("database/ParamOptions.jl") 
 #getparams definition
@@ -59,6 +73,9 @@ include("utils/index_reduction.jl")
 #splitting models, useful for methods.
 include("utils/split_model.jl")
 
+# Gustavo: acceleration for successive substitution
+include("utils/acceleration_ss.jl")
+
 #Clapeyron methods (AD, property solvers, etc)
 include("methods/methods.jl")
 
@@ -70,7 +87,6 @@ base --> database(params)  -|-> split_model --> methods -|-> models
 =#
 
 #Clapeyron EoS collection
-include("models/types.jl") #type hierarchy
 include("models/ideal/ideal.jl")
 include("models/ideal/BasicIdeal.jl")
 include("models/ideal/MonomerIdeal.jl")
@@ -92,9 +108,10 @@ include("models/EmpiricHelmholtz/LJRef/LJRefIdeal.jl")
 include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
 include("models/cubic/equations.jl")
-include("models/cubic/vdW.jl")
+include("models/cubic/vdW/vdW.jl")
 include("models/cubic/RK/RK.jl")
 include("models/cubic/PR/PR.jl")
+include("models/cubic/KU/KU.jl")
 
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
@@ -135,7 +152,8 @@ include("models/Activity/COSMOSAC/COSMOSACdsp.jl")
 include("models/cubic/alphas/alphas.jl")
 include("models/cubic/mixing/mixing.jl")
 include("models/cubic/translation/translation.jl")
-
+include("models/cubic/vdW/variants/Clausius.jl")
+include("models/cubic/vdW/variants/Berthelot.jl")
 include("models/cubic/RK/variants/SRK.jl")
 include("models/cubic/RK/variants/PSRK.jl")
 include("models/cubic/PR/variants/PR78.jl")
@@ -143,11 +161,20 @@ include("models/cubic/PR/variants/VTPR.jl")
 include("models/cubic/PR/variants/UMRPR.jl")
 include("models/cubic/PR/variants/QCPR.jl")
 include("models/cubic/PR/variants/EPPR78.jl")
+include("models/cubic/PatelTeja/PatelTeja.jl")
+include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
-include("models/SPUNG/SPUNG.jl")
-include("models/UFTheory/UFTheory.jl")
+include("models/Virial/Virial.jl")
 
+#include("models/UFTheory/UFTheory.jl")
+include("models/CompositeModel/CompositeModel.jl")
+
+include("models/ECS/ECS.jl")
+include("models/ECS/variants/SPUNG.jl")
+include("models/PeTS/PeTS.jl")
+include("models/UFTheory/UFTheory.jl")
+include("models/AnalyticalSLV/AnalyticalSLV.jl")
 include("utils/misc.jl")
 end # module

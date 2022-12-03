@@ -25,9 +25,23 @@ function init_model(model::MixingRule,components,activity,userlocations,activity
 end
 
 function init_model(model::Type{<:MixingRule},components,activity,userlocations,activity_userlocations,verbose)
-    verbose && @info("""Now creating mixing model:
-    $model""")
+    if verbose
+        @info "Building an instance of $(info_color(string(model))) with components $components"
+    end
     return model(components;activity,userlocations,activity_userlocations,verbose)
+end
+
+function infinite_pressure_gibbs_correction(model::CubicModel,z)
+    Δ1,Δ2 = cubic_Δ(model,z)
+    if Δ1==Δ2
+        return 1/(1-Δ1)
+    else
+        return -log((1-Δ1)/(1-Δ2))/(Δ1 - Δ2)
+    end
+end
+
+function infinite_pressure_gibbs_correction(model::vdWModel,z)
+    return -1.0
 end
 
 include("vdW1f.jl")
@@ -37,6 +51,7 @@ include("MHV1.jl")
 include("MHV2.jl")
 include("LCVM.jl")
 include("WS.jl")
+include("modWS.jl")
 include("PSRK.jl")
 include("VTPR.jl")
 include("UMR.jl")

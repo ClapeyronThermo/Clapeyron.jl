@@ -20,8 +20,8 @@ function mixture_critical_constraint(model,V,T,z)
     H(x) = ForwardDiff.hessian(f,x) #∂A/∂zᵢ∂zⱼ == ∂A/∂zⱼ∂zᵢ
     L(x) = det(Symmetric(H(x)))
     dL(x) = ForwardDiff.gradient(L,x)
-    HH = H(z)   
-    LL = det(HH)    
+    HH = H(z)
+    LL = det(HH)
     Mᵢ = @view(HH[end,:])
     Mᵢ .=  dL(z)
     MM = HH
@@ -48,8 +48,40 @@ function μp_equality(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     return F
 end
 
+#non-condensable/non-volatile version
+function μp_equality(model_long::EoSModel,model_short::EoSModel, F, T, v_long, v_short, x_long, x_short,ts_short,ps_long,short_view)
+    n_short = length(x_short)
+    n_long = length(x_long)
+    μ_long = similar(F,n_long)
+    μ_long = VT_chemical_potential!(μ_long,model_long,v_long,T,x_long)
+    μ_long_view = @view(μ_long[short_view])
+    for i in 1:n_short
+        F[i] = μ_long_view[i]
+    end
+    μ_short = resize!(μ_long,n_short)
+    μ_short = VT_chemical_potential!(μ_short,model_short,v_short,T,x_short)
+    for i in 1:n_short
+        μlong_i = F[i]
+        Δμ = (μlong_i -μ_short[i])/(R̄*ts_short[i])
+        F[i] = Δμ
+    end
+    p_long = pressure(model_long,v_long,T,x_long)
+    p_short = pressure(model_short,v_short,T,x_short)
+    F[n_short+1] = (p_long-p_short)/ps_long
+    return F
+end
+
+function μp_equality(model::EoSModel,::Nothing, F, T, v_l, v_v, x, y,ts,ps,_view)
+    return μp_equality(model,F,T,v_l,v_v,x,y,ts,ps)
+end
+
 function VT_chemical_potential!(result,model,V,T,z)
     fun(x) = eos(model,V,T,x)
+    return ForwardDiff.gradient!(result,fun,z)
+end
+
+function VT_chemical_potential_res!(result,model,V,T,z)
+    fun(x) = eos_res(model,V,T,x)
     return ForwardDiff.gradient!(result,fun,z)
 end
 
@@ -61,7 +93,7 @@ function PV_critical_temperature(model,p)
     return T
 end
 
-#returns saturation temperature if below crit_pure, if not, it returns  
+#returns saturation temperature if below crit_pure, if not, it returns
 function _sat_Ti(model,p)
     pure = split_model(model)
     n = length(pure)
@@ -75,31 +107,32 @@ function _sat_Ti(model,p)
     return Tsat
 end
 
-function _sat_Pi(model,p)
-    pure = split_model(model)
-    n = length(pure)
-    Tsat = first.(saturation_temperature.(pure,p))
-    for i ∈ 1:n
-        if isnan(Tsat[i])
-            T = PV_critical_temperature(pure[i],p)
-            Tsat[i] = T
-        end
+function aprox_psat(pure,T,crit)
+    coeff  = antoine_coef(pure)
+    if coeff !== nothing
+        A,B,C = coeff
+    else
+        A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941)
     end
-    return Tsat
+    Tc,Pc,Vc = crit
+    T̄ = T/Tc
+    if T > Tc
+        return pressure(pure,Vc,Tc)
+    else
+        return exp(A-B/(T̄+C))*Pc
+    end
 end
 
-function sat_T_equimix(model,p)
-    n = length(model)
-    return sum(_sat_Ti(model,p))/n
-end
-
-function wilson_k_values(model::EoSModel,p,T)
+function wilson_k_values(model::EoSModel,p,T,crit = nothing)
     n = length(model)
     pure = split_model.(model)
+    if crit === nothing
+        crit = crit_pure.(pure)
+    end
     K0 = zeros(typeof(p+T),n)
     for i ∈ 1:n
         pure_i = pure[i]
-        Tc,pc,_ = crit_pure(pure_i)
+        Tc,pc,_ = crit[i]
         ps = first(saturation_pressure(pure_i,0.7*Tc))
         ω = -log10(ps/pc) - 1.0
         K0[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
@@ -107,7 +140,13 @@ function wilson_k_values(model::EoSModel,p,T)
     return K0
 end
 
-
+function bubbledew_check(vl,vv,zin,zout)
+    (isapprox(vl,vv) && isapprox(zin,zout)) && return false 
+    !all(isfinite,zout) && return false
+    !all(isfinite,(vl,vv)) && return false
+    return true
+end
+include("fugacity.jl")
 include("rachford_rice.jl")
 include("bubble_point.jl")
 include("dew_point.jl")
@@ -118,6 +157,11 @@ include("crit_mix.jl")
 include("UCEP.jl")
 include("UCST_mix.jl")
 include("tp_flash.jl")
+
+export bubble_pressure_fug, bubble_temperature_fug, dew_temperature_fug, dew_pressure_fug
+
 export bubble_pressure,    dew_pressure,    LLE_pressure,    azeotrope_pressure, VLLE_pressure
 export bubble_temperature, dew_temperature, LLE_temperature, azeotrope_temperature, VLLE_temperature
+export dew_pressure_fug_condensable, dew_temperature_fug_condensable
+export bubble_pressure_fug_volatile, bubble_temperature_fug_volatile
 export crit_mix, UCEP_mix, UCST_mix

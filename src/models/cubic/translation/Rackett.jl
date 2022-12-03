@@ -27,14 +27,14 @@ Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 ```
 ## References
 
-1. Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. doi:10.1021/je60047a012
+1. Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. [doi:10.1021/je60047a012](https://doi.org/10.1021/je60047a012)
 
 """
 RackettTranslation
 
 export RackettTranslation
 function RackettTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_VC)
     Vc = params["vc"]
     packagedparams = RackettTranslationParam(Vc)
     model = RackettTranslation(packagedparams, verbose=verbose)

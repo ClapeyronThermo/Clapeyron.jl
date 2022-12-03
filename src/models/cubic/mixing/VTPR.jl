@@ -10,7 +10,7 @@ end
 
 """
     VTPRRule{γ} <: VTPRRuleModel
-    
+
     VTPRRule(components::Vector{String};
     activity = UNIFAC,
     userlocations::Vector{String}=String[],
@@ -21,7 +21,7 @@ end
 
 None
 
-## Input models 
+## Input models
 
 - `activity`: Activity Model
 
@@ -33,7 +33,7 @@ only works with activity models that define an excess residual gibbs energy func
 ```
 aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
 bᵢⱼ = ((bᵢ^(3/4) + bⱼ^(3/4))/2)^(4/3)
-log(γʳ)ᵢ = lnγ_res(model.activity,V,T,z) 
+log(γʳ)ᵢ = lnγ_res(model.activity,V,T,z)
 gᴱᵣₑₛ = ∑RTlog(γʳ)ᵢxᵢ
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
@@ -41,20 +41,19 @@ ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - gᴱᵣₑₛ/(0.53087RT))
 ```
 
 ## References
-1. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. doi:10.1016/s0378-3812(01)00626-4
+1. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. [doi:10.1016/s0378-3812(01)00626-4](https://doi.org/10.1016/s0378-3812(01)00626-4)
 """
 VTPRRule
 
 export VTPRRule
 function VTPRRule(components::Vector{String}; activity = UNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    init_activity = activity(components;userlocations = activity_userlocations,verbose)
-    
+    _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1016/S0378-3812(01)00626-4"]
-    model = VTPRRule(components, init_activity,references)
+    model = VTPRRule(components, _activity,references)
     return model
 end
 
-function ab_premixing(::Type{PR},mixing::VTPRRule,Tc,pc,kij)
+function ab_premixing(::Type{<:PRModel},mixing::VTPRRule,Tc,pc,kij)
     Ωa, Ωb = ab_consts(PR)
     _Tc = Tc.values
     _pc = pc.values
