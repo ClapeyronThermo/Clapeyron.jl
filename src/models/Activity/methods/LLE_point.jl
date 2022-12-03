@@ -27,3 +27,5 @@ function Obj_LLE(model::ActivityModel, F, T, x, xx)
     F .= γᵦ.*xx-γₐ.*x
     return F
 end
+
+export LLE

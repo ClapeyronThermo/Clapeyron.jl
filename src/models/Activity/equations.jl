@@ -90,38 +90,6 @@ function p_scale(model::ActivityModel,z=SA[1.0])
     0.33*R̄*T_scale(model,z)/lb_volume(model,z)
 end
 
-function LLE(model::ActivityModel,T;v0=nothing)
-    if v0 === nothing
-        if length(model) == 2
-        v0 = [0.25,0.75]
-        else
-            throw(error("unable to provide an initial point for LLE pressure"))
-        end
-    end
-    
-    len = length(v0)
-
-    Fcache = zeros(eltype(v0),len)
-    f!(F,z) = Obj_LLE(model, F, T, z[1], z[2])
-    r  = Solvers.nlsolve(f!,v0,LineSearch(Newton()))
-    sol = Solvers.x_sol(r)
-    x = sol[1]
-    xx = sol[2]
-    return x,xx
-end
-
-function Obj_LLE(model::ActivityModel, F, T, x, xx)
-    x = Fractions.FractionVector(x)
-    xx = Fractions.FractionVector(xx)
-    γₐ = activity_coefficient(model,1e-3,T,x)
-    γᵦ = activity_coefficient(model,1e-3,T,xx)
-
-    F .= γᵦ.*xx-γₐ.*x
-    return F
-end
-
-export LLE
-
 function x0_volume_liquid(model::ActivityModel,T,z = SA[1.0])
     pures = model.puremodel
     return sum(z[i]*x0_volume_liquid(pures[i],T,SA[1.0]) for i ∈ @comps)

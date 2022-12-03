@@ -93,8 +93,8 @@ function a_disp(model::GEPCSAFTModel, V, T, z,_data=@f(data))
 end
 
 function d(model::GEPCSAFTModel, V, T, z)
-    ϵᵢᵢ = model.params.epsilon.diagvalues
-    σᵢᵢ = model.params.sigma.diagvalues 
+    ϵᵢᵢ = diagvalues(model.params.epsilon)
+    σᵢᵢ = diagvalues(model.params.sigma) 
     return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
 end
 
@@ -131,8 +131,8 @@ end
 function m2ϵσ3(model::GEPCSAFTModel, V, T, z,_data=@f(data))
     di,_,_,_,_,m̄ = _data
     m = model.params.segment.values
-    σ = model.params.sigma.diagvalues
-    ϵ = model.params.epsilon.diagvalues
+    ϵ = diagvalues(model.params.epsilon)
+    σ = diagvalues(model.params.sigma) 
     Σz = sum(z)
     md³ = dot(z,m.*di.^3)/Σz
     m²σ³ = dot(z,m.^2 .*σ.^3)/Σz

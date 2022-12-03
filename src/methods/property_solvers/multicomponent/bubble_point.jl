@@ -331,6 +331,6 @@ function bubble_temperature(model::EoSModel,p,x;v0 = nothing)
         vv = exp10(v0[3])
         vol0 = (vl,vv)
         y0 = v0[4:end]
-        bubble_temperature(model,T,x,ChemPotBubbleTemperature(;T0,vol0,y0))
+        bubble_temperature(model,p,x,ChemPotBubbleTemperature(;T0,vol0,y0))
     end
 end
