@@ -27,7 +27,7 @@ function p_scale(model::SAFTModel,z=SA[1.0])
 end
 
 function packing_fraction(model::SAFTModel,V,T,z)
-    σ = model.params.sigma.diagvalues
+    σ = diagvalues(model.params.sigma)
     m = model.params.segment.values
     x = z ./ ∑(z)
 
