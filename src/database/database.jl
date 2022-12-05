@@ -173,7 +173,6 @@ incoming group type: fitted
 
 Note, that the parser will not fail if you pass different parameters with different group types (For example if `a` has `param1` group type and `b` has `fit` group type)
 """
-
 function getparams(components,
                     locations::Array{String,1}=String[];
                     userlocations::Vector{String}=String[],
