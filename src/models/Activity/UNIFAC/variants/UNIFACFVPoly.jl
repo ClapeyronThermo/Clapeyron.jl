@@ -14,7 +14,7 @@ function UNIFACFVPolyCache(groups::GroupParam,Q,R,Mw)
     r = group_sum(groups,R.values) ./ Mw
     q = group_sum(groups,Q.values) ./ Mw
     m = group_sum(groups,nothing)
-    
+
     return UNIFACFVPolyCache(groups.components,r,q,m,Mw)
 end
 
@@ -31,7 +31,6 @@ abstract type UNIFACFVPolyModel <: ActivityModel end
 
 struct UNIFACFVPoly{c<:EoSModel} <: UNIFACFVPolyModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACFVPolyParam
     puremodel::EoSVectorParam{c}
@@ -47,7 +46,7 @@ export UNIFACFVPoly
 
     UNIFACFVPoly(components::Vector{String};
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
@@ -82,7 +81,7 @@ Residual Part:
 ```
 gᴱ(residual) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
 v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
-Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components 
+Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 Θₖ = QₖXₖ/∑QₖXₖ
 Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
 ```
@@ -90,9 +89,9 @@ Free-volume Part:
 ```
 gᴱ(FV) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
 v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
-Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components 
+Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 Θₖ = QₖXₖ/∑QₖXₖ
-Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
+Ψₖₘ = exp(-(Aₖₘ)/T)
 ```
 
 ## References
@@ -102,14 +101,15 @@ UNIFACFVPoly
 
 function UNIFACFVPoly(components::Vector{String};
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
-    
-    params_species = getparams(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_like.csv"]; userlocations=userlocations, verbose=verbose)
-    
-    groups = GroupParam(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_groups.csv"]; verbose=verbose)
 
+    params_species = getparams(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_like.csv"]; userlocations=userlocations, verbose=verbose)
+
+    groups = GroupParam(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_groups.csv"]; group_userlocations = group_userlocations, verbose=verbose)
+    components = groups.components
     params = getparams(groups, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_like.csv", "Activity/UNIFAC/ogUNIFAC/ogUNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose=verbose)
     A  = params["A"]
     R  = params["R"]
@@ -191,7 +191,7 @@ function lnγ_FV(model::UNIFACFVPolyModel,V,T,z,_data=@f(data))
     r = model.UNIFACFVPoly_cache.r
 
     v̄  = @. v/(15.17*b*r)
-    v̄ₘ = sum(v.*w)/(15.17*b*sum(r.*w))
+    v̄ₘ = dot(v,w)/(15.17*b*dot(r,w))
 
     return @. 3*c*log((v̄^(1/3)-1)/(v̄ₘ^(1/3)-1))-c*((v̄/v̄ₘ-1)/(1-v̄^(-1/3)))
 end

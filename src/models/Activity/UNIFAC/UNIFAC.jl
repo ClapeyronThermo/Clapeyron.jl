@@ -26,7 +26,8 @@ export UNIFAC
 
     UNIFAC(components;
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
@@ -64,7 +65,7 @@ Residual Part:
 ```
 gᴱ(residual) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
 v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
-Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components 
+Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 Θₖ = QₖXₖ/∑QₖXₖ
 Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
 ```
@@ -78,10 +79,10 @@ UNIFAC
 function UNIFAC(components;
     puremodel = PR,
     userlocations = String[],
-    group_userlocations = String[], 
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
-    
+
     groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
