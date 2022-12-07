@@ -89,9 +89,10 @@ function PatelTeja(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components),length(components)))
-    b = PairParam("b",components,zeros(length(components),length(components)))
-    c = PairParam("c",components,zeros(length(components),length(components)))
+    n = length(components)
+    a = PairParam("a",components,zeros(n))
+    b = PairParam("b",components,zeros(n))
+    c = PairParam("c",components,zeros(n))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
@@ -102,23 +103,17 @@ function PatelTeja(components::Vector{String}; idealmodel=BasicIdeal,
     return model
 end
 
-function recombine_mixing!(model::PatelTejaModel,mixing::MixingRule,k = nothing,l = nothing)
-    recombine!(mixing_model)
-    ab_premixing(model,mixing,k,l)
-    c_premixing(model)
-    return mixing_model
-end
-
 function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
     _Tc = model.params.Tc
-    _pc = model.params.pc
+    _pc = model.params.Pc
     _Vc = model.params.Vc
     a = model.params.a
     b = model.params.b
-    _Zc = _pc.*_Vc./(R̄*_Tc)             
-    _poly = [(-_Zc[i]^3,3*_Zc[i]^2,2-3*_Zc[i],1.) for i ∈ 1:length(components)]
+    n = length(model)
+    _Zc = _pc .* _Vc ./ (R̄ .* _Tc)             
+    _poly = [(-_Zc[i]^3,3*_Zc[i]^2,2-3*_Zc[i],1.) for i ∈ 1:n]
     sols = Solvers.roots3.(_poly)
-    Ωb = [minimum(real.(sols[i][isreal.(sols[1]).*real.(sols[1]).>0])) for i ∈ 1:length(components)]
+    Ωb = [minimum(real.(sols[i][isreal.(sols[1]).*real.(sols[1]).>0])) for i ∈ 1:n]
     Ωa = @. 3*_Zc^2+3*(1-2*_Zc)*Ωb+Ωb^2+1-3*_Zc
     diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
     diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
@@ -129,10 +124,10 @@ end
 
 function c_premixing(model::PatelTejaModel)
     _Tc = model.params.Tc
-    _pc = model.params.pc
+    _pc = model.params.Pc
     _Vc = model.params.Vc
     c = model.params.c
-    _Zc = _pc.*_Vc./(R̄*_Tc)
+    _Zc = _pc .* _Vc ./ (R̄ .* _Tc)
     Ωc = @. 1-3*_Zc
     diagvalues(c) .= Ωc .* R̄ .*_Tc ./ _pc
     c = sigma_LorentzBerthelot!(c)

@@ -46,16 +46,21 @@ end
 
 function recombine_mixing!(model,mixing_model,k = nothing, l = nothing)
     recombine!(mixing_model)
-    ab_premixing(model,mixing,k,l)
+    ab_premixing(model,mixing_model,k,l)
     return mixing_model
 end
 
 
-function recombine_mixing!(model::ABCCubicModel,mixing,k = nothing,l = nothing)
+function recombine_mixing!(model::ABCCubicModel,mixing_model,k = nothing,l = nothing)
     recombine!(mixing_model)
-    ab_premixing(model,mixing,k,l)
+    ab_premixing(model,mixing_model,k,l)
     c_premixing(model)
     return mixing_model
+end
+
+function recombine_impl!(model::ActivityMixingRule)
+    recombine!(model.activity)
+    return model
 end
 
 include("vdW1f.jl")

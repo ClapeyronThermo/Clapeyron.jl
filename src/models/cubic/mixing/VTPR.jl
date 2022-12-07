@@ -1,4 +1,4 @@
-abstract type VTPRRuleModel <: MixingRule end
+abstract type VTPRRuleModel <: ActivityMixingRule end
 
 struct VTPRRule{γ} <: VTPRRuleModel
     components::Array{String,1}
@@ -56,7 +56,7 @@ end
 function ab_premixing(model::PRModel,mixing::VTPRRule,k = nothing,l = nothing)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
-    _pc = model.params.pc
+    _pc = model.params.Pc
     a = model.params.a
     b = model.params.b
     diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc

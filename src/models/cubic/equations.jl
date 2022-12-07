@@ -34,7 +34,7 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(model::CubicModel,mixing,k = nothing, l = nothing) 
+function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = nothing) 
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.Pc
@@ -54,7 +54,7 @@ function ab_premixing(model,mixing,Tc,Pc,kij,lij)
     Ωa, Ωb = ab_consts(model)
     comps = Tc.components
     n = length(Tc)
-    a = PairParam("a",comps,zeros(n,n))
+    a = PairParam("a",comps,zeros(n,n),)
     b = PairParam("b",comps,zeros(n,n))
     diagvalues(a) .= Ωa*R̄^2*_Tc^2/_pc
     diagvalues(b) .= Ωb*R̄*_Tc/_pc
@@ -72,7 +72,7 @@ function recombine_cubic!(model::CubicModel,k = nothing,l = nothing)
     recombine_alpha!(model,model.alpha)
     return model
 end
-function recombine_impl!(model::ABCCubicModel)
+function recombine_impl!(model::CubicModel)
     recombine_cubic!(model)
 end
 

@@ -104,8 +104,8 @@ function KU(components::Vector{String}; idealmodel=BasicIdeal,
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     
     n = length(components)
-    a = PairParam("a",components,zeros(n,n))
-    b = PairParam("b",components,zeros(n,n))
+    a = PairParam("a",components,zeros(n))
+    b = PairParam("b",components,zeros(n))
     omega_a = SingleParam("Ωa",components,zeros(n))
     omega_b = SingleParam("Ωb",components,zeros(n))
     
@@ -119,9 +119,9 @@ function KU(components::Vector{String}; idealmodel=BasicIdeal,
     return model
 end
 
-function ab_premixing(model::KUModel,mixing,k,l)
+function ab_premixing(model::KUModel,mixing::MixingRule,k,l)
     _Tc = model.params.Tc
-    _pc = model.params.pc
+    _pc = model.params.Pc
     _vc = model.params.Vc
     a = model.params.a
     b = model.params.b

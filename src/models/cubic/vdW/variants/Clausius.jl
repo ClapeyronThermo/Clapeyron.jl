@@ -83,9 +83,9 @@ function Clausius(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components),length(components)))
-    b = PairParam("b",components,zeros(length(components),length(components)))
-    c = PairParam("c",components,zeros(length(components),length(components)))
+    a = PairParam("a",components,zeros(length(components)))
+    b = PairParam("b",components,zeros(length(components)))
+    c = PairParam("c",components,zeros(length(components)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
@@ -98,7 +98,7 @@ end
 
 function ab_premixing(model::ClausiusModel,mixing::MixingRule,k=nothing,l=nothing)
     _Tc = model.params.Tc
-    _pc = model.params.pc
+    _pc = model.params.Pc
     _Vc = model.params.Vc
     a = model.params.a
     b = model.params.b
@@ -113,12 +113,12 @@ function ab_premixing(model::ClausiusModel,mixing::MixingRule,k=nothing,l=nothin
 end
 
 function c_premixing(model::ClausiusModel)
-    _Tc = Tc.values
-    _Vc = vc.values
-    _pc = pc.values
-    components = vc.components
- 
-    c = sigma_LorentzBerthelot(SingleParam("c",components, @. 3/8*R̄*_Tc/_pc-_Vc))
+    _Tc = model.params.Tc
+    _Vc = model.params.Vc
+    _pc = model.params.Pc
+    c = model.params.c
+    diagvalues(c) .=  @. 3/8*R̄*_Tc/_pc-_Vc
+    sigma_LorentzBerthelot!(c)
     #a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     #b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
     return c

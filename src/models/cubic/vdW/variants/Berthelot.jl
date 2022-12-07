@@ -98,8 +98,8 @@ function Berthelot(components::Vector{String}; idealmodel=BasicIdeal,
     Tc = params["Tc"]
     Vc = params["vc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components),length(components)))
-    b = PairParam("b",components,zeros(length(components),length(components)))
+    a = PairParam("a",components,zeros(length(components)))
+    b = PairParam("b",components,zeros(length(components)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
@@ -111,7 +111,7 @@ end
 
 function ab_premixing(model::BerthelotModel,mixing::MixingRule,k=nothing,l=nothing)
     #_Tc = model.params.Tc
-    _pc = model.params.pc
+    _pc = model.params.Pc
     _Vc = model.params.Vc
     a = model.params.a
     b = model.params.b

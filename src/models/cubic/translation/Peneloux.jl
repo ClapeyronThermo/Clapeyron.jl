@@ -45,7 +45,8 @@ export PenelouxTranslation
 function PenelouxTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_VC)
     Vc = params["vc"]
-    c = SingleParam("Volume shift",components,zeros(length(components)),fill(true,length(components)))
+    c = SingleParam("Volume shift",components,zeros(length(components)))
+    c.ismissingvalues .= true
     packagedparams = PenelouxTranslationParam(Vc,c)
     model = PenelouxTranslation(packagedparams, verbose=verbose)
     return model
@@ -75,6 +76,7 @@ end
 function translation!(model::CubicModel,V,T,z,translation_model::PenelouxTranslation,c)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
+    Vc = translation_model.params.Vc.values
     c = translation_model.params.c
     for i ∈ @comps
         Tci = Tc[i]

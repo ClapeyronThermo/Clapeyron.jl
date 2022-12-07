@@ -45,10 +45,10 @@ function UMRRule(components::Vector{String}; activity = UNIFAC, userlocations::V
     return model
 end
 
-function ab_premixing(::PRModel,mixing::UMRRuleModel,k = nothing, l = nothing)
+function ab_premixing(model::PRModel,mixing::UMRRuleModel,k = nothing, l = nothing)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
-    _pc = model.params.pc
+    _pc = model.params.Pc
     a = model.params.a
     b = model.params.b
     diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc

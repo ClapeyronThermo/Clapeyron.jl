@@ -91,9 +91,9 @@ function PTV(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components),length(components)))
-    b = PairParam("b",components,zeros(length(components),length(components)))
-    c = PairParam("c",components,zeros(length(components),length(components)))
+    a = PairParam("a",components,zeros(length(components)))
+    b = PairParam("b",components,zeros(length(components)))
+    c = PairParam("c",components,zeros(length(components)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
@@ -106,11 +106,11 @@ end
 
 function ab_premixing(model::PTVModel,mixing::MixingRule,k,l)
     _Tc = model.params.Tc
-    _pc = model.params.pc
+    _pc = model.params.Pc
     _Vc = model.params.Vc
     a = model.params.a
     b = model.params.b
-    _Zc = _pc.*_Vc./(R̄*_Tc)
+    _Zc = @. _pc.*_Vc./(R̄*_Tc)
     Ωa = @. 0.66121-0.76105*_Zc
     Ωb = @. 0.02207+0.20868*_Zc
     diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
@@ -122,10 +122,10 @@ end
 
 function c_premixing(model::PTVModel)
     _Tc = model.params.Tc
-    _pc = model.params.pc
+    _pc = model.params.Pc
     _Vc = model.params.Vc
     c = model.params.c
-    _Zc = _pc.*_Vc./(R̄*_Tc)
+    _Zc = @. _pc.*_Vc./(R̄*_Tc)
 
     Ωc = @. 0.57765-1.87080*_Zc
     diagvalues(c) .= Ωc .* R̄ .*_Tc ./ _pc

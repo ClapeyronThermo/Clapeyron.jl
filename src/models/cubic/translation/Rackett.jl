@@ -42,7 +42,8 @@ export RackettTranslation
 function RackettTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_VC)
     Vc = params["vc"]
-    c = SingleParam("Volume shift",components,zeros(length(components)),fill(true,length(components)))
+    c = SingleParam("Volume shift",components,zeros(length(components)))
+    c.ismissingvalues .= true
     packagedparams = RackettTranslationParam(Vc,c)
     model = RackettTranslation(packagedparams, verbose=verbose)
     return model
@@ -52,7 +53,6 @@ function translation!(model::CubicModel,V,T,z,translation_model::RackettTranslat
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = translation_model.params.Vc.values
-    c = zeros(eltype(Tc),length(Tc))
     for i ∈ @comps
         Tci = Tc[i]
         Pci = Pc[i]
