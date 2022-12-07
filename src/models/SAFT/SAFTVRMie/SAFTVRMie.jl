@@ -84,6 +84,18 @@ function SAFTVRMie(components;
     return model
 end
 
+function recombine_impl!(model::SAFTVRMieModel)
+    sigma = model.params.sigma
+    epsilon = model.params.epsilon
+    lambda_a = model.params.lambda_a
+    lambda_r = model.params.lambda_r
+    lambda_LorentzBerthelot!(lambda_a)
+    lambda_LorentzBerthelot!(lambda_r)
+    sigma = sigma_LorentzBerthelot!(sigma)
+    epsilon = epsilon_HudsenMcCoubrey!(epsilon,sigma)
+    return model
+end
+
 function x0_volume_liquid(model::SAFTVRMieModel,T,z)
     v_lb = lb_volume(model,z)
     return v_lb*1.5

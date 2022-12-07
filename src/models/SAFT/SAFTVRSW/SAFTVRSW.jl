@@ -82,6 +82,16 @@ function SAFTVRSW(components;
     return model
 end
 
+function recombine_impl!(model::SAFTVRSWModel)
+    sigma = model.params.sigma
+    epsilon = model.params.epsilon
+    lambda = model.params.lambda
+    sigma = sigma_LorentzBerthelot!(sigma)
+    epsilon = epsilon_LorentzBerthelot!(epsilon)
+    lambda_squarewell!(lambda,sigma)
+    return model
+end
+
 function a_res(model::SAFTVRSWModel, V, T, z)
     return @f(a_mono) + @f(a_chain) + @f(a_assoc)
 end
