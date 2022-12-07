@@ -84,7 +84,8 @@ function PTV(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = params["k"]
+    k  = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     pc = params["pc"]
     Vc = params["vc"]
     Mw = params["Mw"]

@@ -15,9 +15,7 @@ All cubic models in `Clapeyron.jl` follow a common evaluation order:
 
 function CubicModel(args...)
     #get params for database, initialize other models, etc
-    #we need Tc,pc and kij for the generation of the matrices aᵢⱼ and bᵢⱼ
-    a,b = a,b = ab_premixing(CubicModel,mixing_model,Tc,pc,k)
-    #rest of the initialization, return model
+    recombine!(model) #we calculate the mixing rules, caches for the translation models if necessary, etc.
 end
 
 function cubic_ab(model::CubicModel,V,T,z=SA[1.0])

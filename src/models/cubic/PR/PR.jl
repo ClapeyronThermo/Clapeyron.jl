@@ -78,18 +78,22 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     verbose=false)
     
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = params["k"]
+    k  = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     pc = params["pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(PR,init_mixing,Tc,pc,k)
+    a = PairParam("a",components,zeros(length(components),length(components)))
+    b = PairParam("b",components,zeros(length(components),length(components)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PRParam(a,b,Tc,pc,Mw)
     references = String["10.1021/I160057A011"]
     model = PR(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    ab_premixing(model,model.mixing,k,l)
+    recombine_translation!(model,model.translation)
     return model
 end
 

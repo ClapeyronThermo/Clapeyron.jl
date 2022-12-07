@@ -1,5 +1,6 @@
 abstract type MixingRule <:EoSModel end
-
+#this is used for some dispatches
+abstract type ActivityMixingRule <: MixingRule end
 """
 
     mixing_rule(model::CubicModel,V,T,z,mixing_model::MixingRule,α,a,b,c)
@@ -42,6 +43,12 @@ end
 
 function infinite_pressure_gibbs_correction(model::vdWModel,z)
     return -1.0
+end
+
+function recombine_mixing!(model,mixing_model)
+    recombine!(mixing_model)
+    ab_premixing(model,mixing)
+    return mixing_model
 end
 
 include("vdW1f.jl")

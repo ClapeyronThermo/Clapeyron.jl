@@ -19,12 +19,10 @@ end
 const ONLY_VC = vcat(IGNORE_HEADERS,["Tc","Pc", "w"])
 const ONLY_ACENTRICFACTOR = vcat(IGNORE_HEADERS,["Tc", "Pc", "Vc"])
 """
-    ab_premixing(model,mixing,Tc,pc,kij)
-    ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
-    ab_premixing(model,mixing,Tc,pc,vc,kij)
+    ab_premixing(model,mixing,kij = nothing,lij = nothing)
 
-given `Tc::SingleParam`, `pc::SingleParam`, `kij::PairParam` and `mixing <: MixingRule`, it will return 
-`PairParam`s `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the van der Wals One-Fluid mixing rule. that is:
+given a model::CubicModel, that has `a::PairParam`, `b::PairParam`, a mixing::MixingRule and `kij`,`lij` matrices, `ab_premixing` will perform an implace calculation
+to obtain the values of `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the van der Wals One-Fluid mixing rule. that is:
 ```
 aᵢⱼ = sqrt(aᵢ*aⱼ)*(1-kᵢⱼ)
 bᵢⱼ = (bᵢ + bⱼ)/2
@@ -32,15 +30,35 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(model,mixing,Tc,pc,kij) 
+function ab_premixing(model::CubicModel,mixing,kij = nothing, lij = nothing) 
     Ωa, Ωb = ab_consts(model)
-    _Tc = Tc.values
-    _pc = pc.values
-    components = Tc.components
-    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
-    b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
+    _Tc = model.params.Tc
+    _pc = model.params.pc
+    a = model.params.a
+    b = model.params.b
+    diagvalues(a) .= Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= Ωb*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a,k)
+    sigma_LorentzBerthelot!(b,l)
     return a,b
 end
+
+#legacy reasons
+function ab_premixing(model,mixing,Tc,Pc,kij,lij)
+    Ωa, Ωb = ab_consts(model)
+    comps = Tc.components
+    n = length(Tc)
+    a = PairParam("a",comps,zeros(n,n))
+    b = PairParam("b",comps,zeros(n,n))
+    diagvalues(a) .= Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= Ωb*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a,k)
+    sigma_LorentzBerthelot!(b,l)
+    return a,b
+end
+
+ab_premixing(model,mixing,Tc,pc,vc,kij,lij) = ab_premixing(model,mixing,Tc,pc,kij,lij) #ignores the Vc unless dispatch
+
 
 function recombine_impl!(model::ABCCubicModel)
     recombine_mixing!(model,model.mixing)
@@ -49,7 +67,6 @@ function recombine_impl!(model::ABCCubicModel)
     return model
 end
 
-ab_premixing(model,mixing,Tc,pc,vc,kij) = ab_premixing(model,mixing,Tc,pc,kij) #ignores the Vc unless dispatch
 
 function c_premixing end
 
