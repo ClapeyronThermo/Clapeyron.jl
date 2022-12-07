@@ -1,4 +1,3 @@
-abstract type MixingRule <:EoSModel end
 #this is used for some dispatches
 abstract type ActivityMixingRule <: MixingRule end
 """

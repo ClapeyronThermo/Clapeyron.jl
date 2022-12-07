@@ -1,3 +1,7 @@
+abstract type AlphaModel <:EoSModel end
+abstract type TranslationModel <:EoSModel end
+abstract type MixingRule <:EoSModel end
+
 struct ABCubicParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}
@@ -30,7 +34,7 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(model::CubicModel,mixing::MixingRule,kij = nothing, lij = nothing) 
+function ab_premixing(model::CubicModel,mixing,k = nothing, l = nothing) 
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.pc

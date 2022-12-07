@@ -19,11 +19,6 @@ end
 """
 function translation end
 
-abstract type TranslationModel <:EoSModel end
-
-#this is used to skip a database search later.
-init_translation(model,components,locations,verbose) = init_model(model,components,locations,verbose)
-
 include("NoTranslation.jl")
 include("Rackett.jl")
 include("Peneloux.jl")
