@@ -37,7 +37,7 @@ function ab_premixing end
 function ab_premixing(model::CubicModel,mixing,k = nothing, l = nothing) 
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
-    _pc = model.params.pc
+    _pc = model.params.Pc
     a = model.params.a
     b = model.params.b
     diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc

@@ -15,7 +15,7 @@ function α_function end
 
 #all alphas at the moment don't have any need for recombine!
 recombine_impl!(model::AlphaModel) = model
-
+recombine_alpha!(model::CubicModel,alpha::AlphaModel) = recombine!(alpha)
 
 include("NoAlpha.jl")
 include("ClausiusAlpha.jl")
