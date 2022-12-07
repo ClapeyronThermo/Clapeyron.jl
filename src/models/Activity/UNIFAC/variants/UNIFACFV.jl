@@ -18,6 +18,18 @@ function UNIFACFVCache(groups::GroupParam,Q,R,Mw)
     return UNIFACFVCache(groups.components,r,q,m,Mw)
 end
 
+function recombine_unifac_cache!(cache::UNIFACFVCache,groups,params)
+    Q = params.Q
+    R = params.R
+    Mw = params.Mw
+    group_sum!(cache.r,groups,R.values)
+    cache.r ./= Mw
+    group_sum!(cache.q,groups,Q.values)
+    cache.q ./= Mw
+    group_sum!(cache.m,groups,nothing)
+    return cache
+end
+
 struct UNIFACFVParam <: EoSParam
     v::SingleParam{Float64}
     A::PairParam{Float64}
@@ -122,6 +134,12 @@ function UNIFACFV(components;
     references = String["10.1021/i260064a004"]
     cache = UNIFACFVCache(groups,packagedparams)
     model = UNIFACFV(components,groups,packagedparams,_puremodel,references,cache)
+    return model
+end
+
+function recombine_impl!(model::UNIFACFVModel)
+    recombine_unifac_cache!(model.UNIFACFV_cache,model.groups,model.params)
+    recombine!(model.puremodel)
     return model
 end
 

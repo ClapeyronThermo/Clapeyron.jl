@@ -100,8 +100,9 @@ function UNIFAC(components;
 end
 
 function recombine_impl!(model::UNIFACModel)
-    recombine_unifac_cache!(model.unifaccache,model.groups,model.params)
+    recombine_unifac_cache!(model.unifac_cache,model.groups,model.params)
     recombine!(model.puremodel)
+    return model
 end
 
 function activity_coefficient(model::UNIFACModel,V,T,z)

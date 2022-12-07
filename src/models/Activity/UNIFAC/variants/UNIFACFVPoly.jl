@@ -18,6 +18,18 @@ function UNIFACFVPolyCache(groups::GroupParam,Q,R,Mw)
     return UNIFACFVPolyCache(groups.components,r,q,m,Mw)
 end
 
+function recombine_unifac_cache!(cache::UNIFACFVPolyCache,groups,params)
+    Q = params.Q
+    R = params.R
+    Mw = params.Mw
+    group_sum!(cache.r,groups,R.values)
+    cache.r ./= Mw
+    group_sum!(cache.q,groups,Q.values)
+    cache.q ./= Mw
+    group_sum!(cache.m,groups,nothing)
+    return cache
+end
+
 struct UNIFACFVPolyParam <: EoSParam
     v::SingleParam{Float64}
     c::SingleParam{Float64}
@@ -123,6 +135,12 @@ function UNIFACFVPoly(components::Vector{String};
     references = String["10.1021/i260064a004"]
     cache = UNIFACFVPolyCache(groups,packagedparams)
     model = UNIFACFVPoly(components,icomponents,groups,packagedparams,_puremodel,references,cache)
+    return model
+end
+
+function recombine_impl!(model::UNIFACFVPolyModel)
+    recombine_unifac_cache!(model.UNIFACFVPoly_cache,model.groups,model.params)
+    recombine!(model.puremodel)
     return model
 end
 
