@@ -42,6 +42,13 @@ function ab_premixing(model,mixing,Tc,pc,kij)
     return a,b
 end
 
+function recombine_impl!(model::ABCCubicModel)
+    recombine_mixing!(model,model.mixing)
+    recombine_translation!(model,model.translation)
+    recombine_alpha!(model,model.alpha)
+    return model
+end
+
 ab_premixing(model,mixing,Tc,pc,vc,kij) = ab_premixing(model,mixing,Tc,pc,kij) #ignores the Vc unless dispatch
 
 function c_premixing end

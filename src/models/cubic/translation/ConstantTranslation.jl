@@ -41,7 +41,8 @@ function ConstantTranslation(components::Vector{String}; userlocations::Vector{S
     return model
 end
 
+recombine_translation!(model::CubicModel,translation_model::ConstantTranslation) = translation_model
+
 function translation(model::CubicModel,V,T,z,translation_model::ConstantTranslationModel)
     return translation_model.params.c.values
 end
-

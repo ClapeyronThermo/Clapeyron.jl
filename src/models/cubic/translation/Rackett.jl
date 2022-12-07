@@ -2,6 +2,7 @@ abstract type RackettTranslationModel <: TranslationModel end
 
 struct RackettTranslationParam <: EoSParam
     Vc::SingleParam{Float64}
+    c::SingleParam{Float64}
 end
 
 @newmodelsimple RackettTranslation RackettTranslationModel RackettTranslationParam
@@ -16,6 +17,11 @@ end
 ## Input Parameters
 
 - `vc`: Single Parameter (`Float64`) - Critical Volume `[m³/mol]`
+
+## Model Parameters
+
+- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³/mol]`
+- `c`: Single Parameter (`Float64`) - Volume shift `[m³/mol]`
 
 ## Description
 
@@ -36,12 +42,13 @@ export RackettTranslation
 function RackettTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_VC)
     Vc = params["vc"]
-    packagedparams = RackettTranslationParam(Vc)
+    c = SingleParam("Volume shift",components,zeros(length(components)),fill(true,length(components)))
+    packagedparams = RackettTranslationParam(Vc,c)
     model = RackettTranslation(packagedparams, verbose=verbose)
     return model
 end
 
-function translation(model::CubicModel,V,T,z,translation_model::RackettTranslation)
+function translation!(model::CubicModel,V,T,z,translation_model::RackettTranslation,c)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = translation_model.params.Vc.values
@@ -54,4 +61,23 @@ function translation(model::CubicModel,V,T,z,translation_model::RackettTranslati
         c[i] = 0.40768*RT/Pci*(0.29441-Zc)
     end
     return c
+end
+
+function translation(model::CubicModel,V,T,z,translation_model::RackettTranslation)
+    c = translation_model.params.c
+    cmissing = c.ismissingvalues
+    if any(cmissing)
+        res = copy(c.values)
+        translation!(model,V,T,z,translation_model,c.values)
+    else
+        res = c
+    end
+    return res
+end
+
+function recombine_translation!(model::CubicModel,translation_model::RackettTranslation)
+    c = translation_model.params.c
+    translation!(model,0.0,0.0,0.0,translation_model,c.values)
+    c.ismissingvalues .= false
+    return translation_model
 end
