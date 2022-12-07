@@ -30,18 +30,20 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(model::CubicModel,mixing,kij = nothing, lij = nothing) 
+function ab_premixing(model::CubicModel,mixing::MixingRule,kij = nothing, lij = nothing) 
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.pc
     a = model.params.a
     b = model.params.b
-    diagvalues(a) .= Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= Ωb*R̄*_Tc/_pc
+    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
     epsilon_LorentzBerthelot!(a,k)
     sigma_LorentzBerthelot!(b,l)
     return a,b
 end
+
+ab_premixing(model,kij,lij) = ab_premixing(model,model.mixing,kij,lij)
 
 #legacy reasons
 function ab_premixing(model,mixing,Tc,Pc,kij,lij)
@@ -60,11 +62,14 @@ end
 ab_premixing(model,mixing,Tc,pc,vc,kij,lij) = ab_premixing(model,mixing,Tc,pc,kij,lij) #ignores the Vc unless dispatch
 
 
-function recombine_impl!(model::ABCCubicModel)
+function recombine_cubic!(model::CubicModel,k = nothing,l = nothing)
     recombine_mixing!(model,model.mixing)
     recombine_translation!(model,model.translation)
     recombine_alpha!(model,model.alpha)
     return model
+end
+function recombine_impl!(model::ABCCubicModel)
+    recombine_cubic!(model)
 end
 
 

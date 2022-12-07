@@ -45,16 +45,16 @@ function UMRRule(components::Vector{String}; activity = UNIFAC, userlocations::V
     return model
 end
 
-function ab_premixing(::PRModel,mixing::UMRRuleModel,kij = nothing, lij = nothing)
+function ab_premixing(::PRModel,mixing::UMRRuleModel,k = nothing, l = nothing)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.pc
     a = model.params.a
     b = model.params.b
-    diagvalues(a) .= Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= Ωb*R̄*_Tc/_pc
+    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
     epsilon_LorentzBerthelot!(a,k)
-    umr_mix(bi,bj,kij) = mix_powmean(bi,bj,0,0.5)
+    umr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,0.5)
     kij_mix!(umr_mix,b,l)
     return a,b
 end

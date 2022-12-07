@@ -45,9 +45,17 @@ function infinite_pressure_gibbs_correction(model::vdWModel,z)
     return -1.0
 end
 
-function recombine_mixing!(model,mixing_model)
+function recombine_mixing!(model,mixing_model,k = nothing, l = nothing)
     recombine!(mixing_model)
-    ab_premixing(model,mixing)
+    ab_premixing(model,mixing,k,l)
+    return mixing_model
+end
+
+
+function recombine_mixing!(model::ABCCubicModel,mixing,k = nothing,l = nothing)
+    recombine!(mixing_model)
+    ab_premixing(model,mixing,k,l)
+    c_premixing(model)
     return mixing_model
 end
 

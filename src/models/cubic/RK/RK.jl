@@ -86,8 +86,7 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     packagedparams = RKParam(a,b,Tc,pc,Mw)
     references = String["10.1021/cr60137a013"]
     model = RK(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
-    ab_premixing(model,model.mixing,k,l)
-    recombine_translation!(model,model.translation)
+    recombine_cubic!(model,k,l)
     return model
 end
 

@@ -13,6 +13,10 @@ end
 """
 function α_function end
 
+#all alphas at the moment don't have any need for recombine!
+recombine_impl!(model::AlphaModel) = model
+
+
 include("NoAlpha.jl")
 include("ClausiusAlpha.jl")
 include("RKAlpha.jl")

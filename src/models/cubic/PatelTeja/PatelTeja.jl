@@ -89,46 +89,53 @@ function PatelTeja(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(PatelTeja,init_mixing,Tc,pc,Vc,k)
-    c = c_premixing(PatelTeja,init_mixing,Tc,pc,Vc,k)
+    a = PairParam("a",components,zeros(length(components),length(components)))
+    b = PairParam("b",components,zeros(length(components),length(components)))
+    c = PairParam("c",components,zeros(length(components),length(components)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PatelTejaParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1016/0009-2509(82)80099-7"]
     model = PatelTeja(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    recombine_cubic!(model,k,l)
     return model
 end
 
-function ab_premixing(model::Type{<:PatelTejaModel},mixing::MixingRule,Tc,pc,vc,kij)
-    _Tc = Tc.values
-    _Vc = vc.values
-    _pc = pc.values
-    components = vc.components
-    _Zc = _pc.*_Vc./(R̄*_Tc)
-             
-    _poly = [(-_Zc[i]^3,3*_Zc[i]^2,2-3*_Zc[i],1.) for i ∈ 1:length(components)]
-    
-    sols = Solvers.roots3.(_poly)
+function recombine_mixing!(model::PatelTejaModel,mixing::MixingRule,k = nothing,l = nothing)
+    recombine!(mixing_model)
+    ab_premixing(model,mixing,k,l)
+    c_premixing(model)
+    return mixing_model
+end
 
+function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
+    _Tc = model.params.Tc
+    _pc = model.params.pc
+    _Vc = model.params.Vc
+    a = model.params.a
+    b = model.params.b
+    _Zc = _pc.*_Vc./(R̄*_Tc)             
+    _poly = [(-_Zc[i]^3,3*_Zc[i]^2,2-3*_Zc[i],1.) for i ∈ 1:length(components)]
+    sols = Solvers.roots3.(_poly)
     Ωb = [minimum(real.(sols[i][isreal.(sols[1]).*real.(sols[1]).>0])) for i ∈ 1:length(components)]
     Ωa = @. 3*_Zc^2+3*(1-2*_Zc)*Ωb+Ωb^2+1-3*_Zc
-    
-    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. R̄^2*_Tc^2/_pc*Ωa),kij)
-    b = sigma_LorentzBerthelot(SingleParam("b",components, @. R̄*_Tc/_pc*Ωb))
+    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a,k)
+    sigma_LorentzBerthelot!(b,l)
     return a,b
 end
 
-function c_premixing(model::Type{<:PatelTejaModel},mixing::MixingRule,Tc,pc,vc,kij)
-    _Tc = Tc.values
-    _Vc = vc.values
-    _pc = pc.values
-    components = vc.components
+function c_premixing(model::PatelTejaModel)
+    _Tc = model.params.Tc
+    _pc = model.params.pc
+    _Vc = model.params.Vc
+    c = model.params.c
     _Zc = _pc.*_Vc./(R̄*_Tc)
-
     Ωc = @. 1-3*_Zc
-
-    c = sigma_LorentzBerthelot(SingleParam("c",components, @. Ωc*R̄*_Tc/_pc))
+    diagvalues(c) .= Ωc .* R̄ .*_Tc ./ _pc
+    c = sigma_LorentzBerthelot!(c)
     return c
 end
 

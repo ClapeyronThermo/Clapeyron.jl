@@ -76,7 +76,7 @@ function PTV(components::Vector{String}; idealmodel=BasicIdeal,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -91,42 +91,45 @@ function PTV(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(PTV,init_mixing,Tc,pc,Vc,k)
-    c = c_premixing(PTV,init_mixing,Tc,pc,Vc,k)
+    a = PairParam("a",components,zeros(length(components),length(components)))
+    b = PairParam("b",components,zeros(length(components),length(components)))
+    c = PairParam("c",components,zeros(length(components),length(components)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PTVParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1252/jcej.23.87"]
     model = PTV(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    recombine_cubic!(model,k,l)
     return model
 end
 
-function ab_premixing(model::Type{<:PTVModel},mixing::MixingRule,Tc,pc,vc,kij)
-    _Tc = Tc.values
-    _Vc = vc.values
-    _pc = pc.values
-    components = vc.components
+function ab_premixing(model::PTVModel,mixing::MixingRule,k,l)
+    _Tc = model.params.Tc
+    _pc = model.params.pc
+    _Vc = model.params.Vc
+    a = model.params.a
+    b = model.params.b
     _Zc = _pc.*_Vc./(R̄*_Tc)
-             
     Ωa = @. 0.66121-0.76105*_Zc
     Ωb = @. 0.02207+0.20868*_Zc
-    
-    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. R̄^2*_Tc^2/_pc*Ωa),kij)
-    b = sigma_LorentzBerthelot(SingleParam("b",components, @. R̄*_Tc/_pc*Ωb))
+    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a,k)
+    sigma_LorentzBerthelot!(b,l)
     return a,b
 end
 
-function c_premixing(model::Type{<:PTVModel},mixing::MixingRule,Tc,pc,vc,kij)
-    _Tc = Tc.values
-    _Vc = vc.values
-    _pc = pc.values
-    components = vc.components
+function c_premixing(model::PTVModel)
+    _Tc = model.params.Tc
+    _pc = model.params.pc
+    _Vc = model.params.Vc
+    c = model.params.c
     _Zc = _pc.*_Vc./(R̄*_Tc)
 
     Ωc = @. 0.57765-1.87080*_Zc
-
-    c = sigma_LorentzBerthelot(SingleParam("c",components, @. Ωc*R̄*_Tc/_pc))
+    diagvalues(c) .= Ωc .* R̄ .*_Tc ./ _pc
+    c = sigma_LorentzBerthelot!(c)
     return c
 end
 #=

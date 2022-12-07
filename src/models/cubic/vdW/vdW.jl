@@ -92,8 +92,7 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     packagedparams = vdWParam(a,b,Tc,pc,Mw)
     references = String[]
     model = vdW(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
-    ab_premixing(model,model.mixing,k,l)
-    recombine_translation!(model,model.translation)
+    recombine_cubic!(model,k,l)
     return model
 end
 

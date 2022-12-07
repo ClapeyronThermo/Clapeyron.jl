@@ -92,8 +92,7 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     packagedparams = PRParam(a,b,Tc,pc,Mw)
     references = String["10.1021/I160057A011"]
     model = PR(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
-    ab_premixing(model,model.mixing,k,l)
-    recombine_translation!(model,model.translation)
+    recombine_cubic!(model,k,l)
     return model
 end
 
