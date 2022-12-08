@@ -47,10 +47,12 @@ function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = noth
     return a,b
 end
 
-ab_premixing(model,kij,lij) = ab_premixing(model,model.mixing,kij,lij)
+function ab_premixing(model::CubicModel,kij::K,lij::L) where K <: Union{Nothing,PairParameter,AbstractMatrix} where L <: Union{Nothing,PairParameter,AbstractMatrix} 
+    return ab_premixing(model,model.mixing,kij,lij)
+end
 
 #legacy reasons
-function ab_premixing(model,mixing,Tc,Pc,kij,lij)
+function ab_premixing(model::CubicModel,mixing::MixingRule,Tc,Pc,kij,lij)
     Ωa, Ωb = ab_consts(model)
     comps = Tc.components
     n = length(Tc)
@@ -63,11 +65,11 @@ function ab_premixing(model,mixing,Tc,Pc,kij,lij)
     return a,b
 end
 
-ab_premixing(model,mixing,Tc,pc,vc,kij,lij) = ab_premixing(model,mixing,Tc,pc,kij,lij) #ignores the Vc unless dispatch
+ab_premixing(model::CubicModel,mixing::MixingRule,Tc,pc,vc,kij,lij) = ab_premixing(model,mixing,Tc,pc,kij,lij) #ignores the Vc unless dispatch
 
 
 function recombine_cubic!(model::CubicModel,k = nothing,l = nothing)
-    recombine_mixing!(model,model.mixing)
+    recombine_mixing!(model,model.mixing,k,l)
     recombine_translation!(model,model.translation)
     recombine_alpha!(model,model.alpha)
     return model

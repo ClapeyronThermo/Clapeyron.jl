@@ -12,11 +12,11 @@ macro printline()  # useful in hunting for where tests get stuck
 end
 
 @testset "All tests" begin
-    #include("test_database.jl")
-    #include("test_solvers.jl")
-    #include("test_differentials.jl")
-    #include("test_misc.jl")
+    include("test_database.jl")
+    include("test_solvers.jl")
+    include("test_differentials.jl")
+    include("test_misc.jl")
     include("test_models.jl")
-    #include("test_methods_eos.jl")
-    #include("test_methods_api.jl")
+    include("test_methods_eos.jl")
+    include("test_methods_api.jl")
 end
