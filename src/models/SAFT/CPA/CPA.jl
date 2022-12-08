@@ -91,7 +91,7 @@ function CPA(components;
     
     params,sites = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
-    k  = params["k"]
+    get(params,"k",nothing)
     Tc = params["Tc"]
     c1 = params["c1"]
     params["a"].values .*= 1E-1

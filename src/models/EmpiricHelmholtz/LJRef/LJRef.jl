@@ -199,8 +199,9 @@ function LJRef(components;
     params,sites = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
+    k = get(params,"k",nothing)
     sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], params["k"])
+    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     segment = params["m"]
     params = LJRefParam(epsilon,sigma,segment,Mw)
     consts = LJRefConsts()

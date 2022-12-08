@@ -61,7 +61,7 @@ function BACKSAFT(components;
     params = getparams(components, ["SAFT/BACKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     c = params["c"]
-    k = params["k"]
+    get(params,"k",nothing)
     alpha = params["alpha"]
     sigma = params["vol"]
     sigma.values .*= 6/N_A/1e6/π

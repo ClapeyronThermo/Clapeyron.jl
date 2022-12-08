@@ -84,9 +84,9 @@ function pharmaPCSAFT(components;
     
     water = SpecialComp(components,["water08"])
     segment = params["m"]
-    k0 = params["k"]
+    k0 = get(params,"k",nothing)
     n = length(components)
-    k1 = get(params,"kT",PairParam("kT",components,zeros(n,n)))
+    k1 = get(params,"kT",PairParam("kT",components,zeros(n)))
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])

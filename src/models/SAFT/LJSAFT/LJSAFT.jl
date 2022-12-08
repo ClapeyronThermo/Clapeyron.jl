@@ -62,7 +62,7 @@ function LJSAFT(components;
 
     Mw = params["Mw"]
 
-    k = params["k"]
+    get(params,"k",nothing)
     zeta = params["zeta"]
     
     T_tilde = epsilon_LorentzBerthelot(params["T_tilde"], k)

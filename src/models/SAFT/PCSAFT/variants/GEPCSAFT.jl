@@ -27,7 +27,7 @@ function GEPCSAFT(components::Vector{String}; idealmodel=BasicIdeal,
      verbose=false)
     params,sites = getparams(components, ["SAFT/PCSAFT/PCSAFT_like.csv","SAFT/PCSAFT/PCSAFT_unlike.csv","SAFT/PCSAFT/PCSAFT_assoc.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
-    k = params["k"]
+    get(params,"k",nothing)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])

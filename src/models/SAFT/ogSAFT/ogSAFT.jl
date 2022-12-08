@@ -61,7 +61,7 @@ function ogSAFT(components;
 
     params,sites = getparams(components, ["SAFT/ogSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
-    k = params["k"]
+    get(params,"k",nothing)
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
