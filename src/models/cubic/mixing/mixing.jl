@@ -46,15 +46,22 @@ end
 
 function recombine_mixing!(model,mixing_model,k = nothing, l = nothing)
     recombine!(mixing_model)
-    ab_premixing(model,mixing_model,k,l)
+    a,b = ab_premixing(model,mixing_model,k,l)
+    #we set this again just in case
+    model.params.a .= a
+    model.params.b .= b
     return mixing_model
 end
 
 
 function recombine_mixing!(model::ABCCubicModel,mixing_model,k = nothing,l = nothing)
     recombine!(mixing_model)
-    ab_premixing(model,mixing_model,k,l)
-    c_premixing(model)
+    a,b = ab_premixing(model,mixing_model,k,l)
+    c = c_premixing(model) 
+     #we set this again just in case
+    model.params.a .= a
+    model.params.b .= b
+    model.params.c .= c
     return mixing_model
 end
 

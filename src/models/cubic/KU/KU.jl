@@ -136,7 +136,7 @@ function ab_premixing(model::KUModel,mixing::MixingRule,k,l)
     diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
     diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
     a = epsilon_LorentzBerthelot!(a,k)
-    b = sigma_LorentzBerthelot(b,l)
+    b = sigma_LorentzBerthelot!(b,l)
     return a,b
 end
 
