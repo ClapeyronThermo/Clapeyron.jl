@@ -64,7 +64,7 @@ function CKSAFT(components;
     params,sites = getparams(components, ["SAFT/CKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     c = params["c"]
-    get(params,"k",nothing)
+    k = get(params,"k",nothing)
     sigma = params["vol"]
     sigma.values .*= 6*0.74048/N_A/1e6/π
     sigma.values .^= 1/3

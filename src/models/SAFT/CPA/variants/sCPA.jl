@@ -82,7 +82,7 @@ function sCPA(components;
 
     params,sites = getparams(components, ["SAFT/CPA/sCPA/", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
-    get(params,"k",nothing)
+    k = get(params,"k",nothing)
     Tc = params["Tc"]
     c1 = params["c1"]
     params["a"].values .*= 1E-1
