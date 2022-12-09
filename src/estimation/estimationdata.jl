@@ -1,7 +1,7 @@
 using CSV, Tables
 
 struct EstimationData
-    method::Symbol
+    method::Function
     inputs_name::Vector{Symbol}
     outputs_name::Vector{Symbol}
     inputs::Vector{Vector{Union{Float64,Missing}}}
@@ -39,7 +39,7 @@ end
 function EstimationData(filepaths::Vector{String})
     estimationdata = Vector{EstimationData}()
     for filepath ∈ filepaths
-        method = Symbol(strip(getline(filepath, 2), [',']))
+        method = getfield(Main,Symbol(strip(getline(filepath, 2), [','])))
         df = CSV.File(filepath; header=3, pool=0, silencewarnings=true)
         csvheaders = String.(Tables.columnnames(df))
         outputs_headers = chop.(String.(filter(x -> startswith(x, "out_") && !any(endswith.(x, "_" .* String.(errortypes))), csvheaders)), head=4, tail=0)
@@ -67,7 +67,7 @@ function EstimationData(filepaths::Vector{String})
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", data::EstimationData)
-    println(io, "EstimationData{:" * String(data.method) * "}:")
+    println(io, "EstimationData{:" * String(Symbol(data.method)) * "}:")
     println(io, " Inputs:")
     for input in data.inputs_name
         println(io, "  :" * String(input))
@@ -82,5 +82,5 @@ function Base.show(io::IO, mime::MIME"text/plain", data::EstimationData)
 end
 
 function Base.show(io::IO, data::EstimationData)
-    print(io, "EstimationData{:" * String(data.method) * "}")
+    print(io, "EstimationData{:" * String(Symbol(data.method)) * "}")
 end

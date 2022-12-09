@@ -243,7 +243,7 @@ function optimize!(estimation::Estimation,Method=Metaheuristics.SA(N=500,informa
     upper = [estimation.toestimate.upper[i][1] for i ∈ 1:nparams]
     lower = [estimation.toestimate.lower[i][1] for i ∈ 1:nparams]
     bounds = [lower upper]'
-    r = Metaheuristics.optimize(f, bounds, Method,logger=logger)
+    r = Metaheuristics.optimize(f, bounds, Method)
     model = return_model(estimation, estimation.model, Metaheuristics.minimizer(r))
     update_estimation!(estimation,model)
 end
@@ -252,9 +252,9 @@ function obj_fun(estimation::Estimation,guesses)
     F = 0
     model = return_model(estimation, estimation.model, guesses)
     for i ∈ 1:length(estimation.data)
-        property = getfield(Main,estimation.data[i].method)
+        property = estimation.data[i].method
         inputs = estimation.data[i].inputs
-        output = estimation.data[i].outputs[1]
+        outputs = estimation.data[i].outputs
         if isempty(inputs)
             prediction =  property(model)
         elseif length(inputs)==1
@@ -266,7 +266,12 @@ function obj_fun(estimation::Estimation,guesses)
         else
             prediction = property.(model,inputs...)
         end
-        F += sum(((prediction.-output)./output).^2)
+
+        if length(outputs)==1
+            F += sum(((prediction.-outputs[1])./outputs[1]).^2)
+        else
+            F += sum([sum([((prediction[i][j].-outputs[j][i])./outputs[j][i]).^2 for j in 1:length(prediction[i])]) for i in 1:length(prediction)])
+        end
     end
     if isnan(F)
         return 1e4

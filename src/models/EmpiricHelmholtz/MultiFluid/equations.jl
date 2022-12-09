@@ -213,7 +213,6 @@ function a_res(model::MultiFluidModel, V, T, z=SA[1.0])
 end
 
 function eos(model::MultiFluidModel, V, T, z=SA[1.0])
-    eos_length_check(model,z)
     Σz = sum(z)
     invn = 1/Σz
     ρ = Σz*1.0e-3/V
@@ -223,7 +222,6 @@ function eos(model::MultiFluidModel, V, T, z=SA[1.0])
 end
 
 function eos_res(model::MultiFluidModel, V, T, z=SA[1.0])
-    eos_length_check(model,z)
     Σz = sum(z)
     invn = 1/Σz
     ρ = Σz*1.0e-3/V
