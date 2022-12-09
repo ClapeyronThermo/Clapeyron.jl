@@ -2,7 +2,7 @@ abstract type PenelouxTranslationModel <: TranslationModel end
 
 struct PenelouxTranslationParam <: EoSParam
     Vc::SingleParam{Float64}
-    c::SingleParam{Float64}
+    v_shift::SingleParam{Float64}
 end
 
 @newmodelsimple PenelouxTranslation PenelouxTranslationModel PenelouxTranslationParam
@@ -22,7 +22,7 @@ end
 ## Model Parameters
 
 - `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³/mol]`
-- `c`: Single Parameter (`Float64`) - Volume shift `[m³/mol]`
+- `v_shift`: Single Parameter (`Float64`) - Volume shift `[m³/mol]`
 
 
 ## Description
@@ -55,11 +55,11 @@ end
 doi(::PenelouxTranslation) = ["10.1016/0378-3812(82)80002-2"]
 
 function translation(model::CubicModel,V,T,z,translation_model::PenelouxTranslation)
-    c = translation_model.params.c
+    c = translation_model.params.v_shift
     cmissing = c.ismissingvalues
     if any(cmissing)
         res = copy(c.values)
-        translation!(model,V,T,z,translation_model,c.values)
+        translation!(model,V,T,z,translation_model,res)
     else
         res = c
     end
@@ -67,7 +67,7 @@ function translation(model::CubicModel,V,T,z,translation_model::PenelouxTranslat
 end
 
 function recombine_translation!(model::CubicModel,translation_model::PenelouxTranslation)
-    c = translation_model.params.c
+    c = translation_model.params.v_shift
     translation!(model,0.0,0.0,0.0,translation_model,c.values)
     c.ismissingvalues .= false
     return translation_model
@@ -77,7 +77,6 @@ function translation!(model::CubicModel,V,T,z,translation_model::PenelouxTransla
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = translation_model.params.Vc.values
-    c = translation_model.params.c
     for i ∈ @comps
         Tci = Tc[i]
         Pci = Pc[i]

@@ -2,7 +2,7 @@ abstract type RackettTranslationModel <: TranslationModel end
 
 struct RackettTranslationParam <: EoSParam
     Vc::SingleParam{Float64}
-    c::SingleParam{Float64}
+    v_shift::SingleParam{Float64}
 end
 
 @newmodelsimple RackettTranslation RackettTranslationModel RackettTranslationParam
@@ -21,7 +21,7 @@ end
 ## Model Parameters
 
 - `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³/mol]`
-- `c`: Single Parameter (`Float64`) - Volume shift `[m³/mol]`
+- `v_shift`: Single Parameter (`Float64`) - Volume shift `[m³/mol]`
 
 ## Description
 
@@ -64,11 +64,11 @@ function translation!(model::CubicModel,V,T,z,translation_model::RackettTranslat
 end
 
 function translation(model::CubicModel,V,T,z,translation_model::RackettTranslation)
-    c = translation_model.params.c
+    c = translation_model.params.v_shift
     cmissing = c.ismissingvalues
     if any(cmissing)
         res = copy(c.values)
-        translation!(model,V,T,z,translation_model,c.values)
+        translation!(model,V,T,z,translation_model,res)
     else
         res = c
     end
@@ -76,7 +76,7 @@ function translation(model::CubicModel,V,T,z,translation_model::RackettTranslati
 end
 
 function recombine_translation!(model::CubicModel,translation_model::RackettTranslation)
-    c = translation_model.params.c
+    c = translation_model.params.v_shift
     translation!(model,0.0,0.0,0.0,translation_model,c.values)
     c.ismissingvalues .= false
     return translation_model
