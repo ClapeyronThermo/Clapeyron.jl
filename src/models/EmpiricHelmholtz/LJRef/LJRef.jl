@@ -148,7 +148,7 @@ export LJRef
 - `sigma`: Single Parameter (`Float64`) - particle size [Å]
 - `epsilon`: Single Parameter (`Float64`) - dispersion energy [`K`]
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `k`: Pair Parameter (`Float64`) - `sigma` mixing coefficient
+- `k`: Pair Parameter (`Float64`) (optional) - `sigma` mixing coefficient
 
 ## Model Parameters
 

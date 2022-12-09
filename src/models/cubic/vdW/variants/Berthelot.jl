@@ -42,7 +42,7 @@ export Berthelot
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `vc`: Single Parameter (`Float64`) - Molar Volume `[m^3/mol]`
-- `k`: Pair Parameter (`Float64`)
+- `k`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
 - `a`: Pair Parameter (`Float64`)

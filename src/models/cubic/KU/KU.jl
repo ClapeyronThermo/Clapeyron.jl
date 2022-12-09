@@ -42,7 +42,8 @@ end
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `vc`: Single Parameter (`Float64`) - Critical Volume `[m^3]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `k`: Pair Parameter (`Float64`)
+- `k`: Pair Parameter (`Float64`) (optional)
+- `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
