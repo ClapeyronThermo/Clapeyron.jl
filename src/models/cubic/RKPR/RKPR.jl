@@ -55,9 +55,27 @@ export RKPR
 ## Description
 Redlich-Kwong-Peng-Robinson Equation of state.
 ```
-P = RT/(V-Nb) + a•α(T)/(V(V+Nb))
-```
+P = RT/(v-b) + a•α(T)/((v + Δ₁b)*(v + Δ₂b))
+Δ₁ = δ
+Δ₂ = (1 - δ)/(1 + δ)
+δ = ∑cᵢxᵢ
 
+aᵢᵢ = Ωaᵢ(R²Tcᵢ²/Pcᵢ)
+bᵢᵢ = Ωbᵢ(R²Tcᵢ/Pcᵢ)
+Ωaᵢ = (3*yᵢ^2 + 3yᵢdᵢ + dᵢ^2 + dᵢ - 1)/(3yᵢ + dᵢ - 1)^2
+Ωbᵢ = 1/(3yᵢ + dᵢ - 1)
+dᵢ = (1 + cᵢ^2)/(1 + cᵢ)
+yᵢ = 1 + (2(1 + cᵢ))^(1/3) + (4/(1 + cᵢ))^(1/3)
+```
+`cᵢ` is fitted to match:
+```
+if Zcᵢ[exp] > 0.29
+    cᵢ =  √2 - 1
+else
+    Zcᵢ = 1.168Zcᵢ[exp]
+    f(cᵢ) == 0
+    f(cᵢ) = Zcᵢ - yᵢ/(3yᵢ + dᵢ - 1)
+```
 ## References
 1. Cismondi, M., & Mollerup, J. (2005). Development and application of a three-parameter RK–PR equation of state. Fluid Phase Equilibria, 232(1–2), 74–89. [doi:10.1016/j.fluid.2005.03.020](https://doi.org/10.1016/j.fluid.2005.03.020)
 2. Tassin, N. G., Mascietti, V. A., & Cismondi, M. (2019). Phase behavior of multicomponent alkane mixtures and evaluation of predictive capacity for the PR and RKPR EoS’s. Fluid Phase Equilibria, 480, 53–65. [doi:10.1016/j.fluid.2018.10.005](https://doi.org/10.1016/j.fluid.2018.10.005)
