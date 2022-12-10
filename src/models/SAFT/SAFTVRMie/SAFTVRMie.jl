@@ -29,7 +29,7 @@ abstract type SAFTVRMieModel <: SAFTModel end
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
 
@@ -81,6 +81,18 @@ function SAFTVRMie(components;
     references = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
 
     model = SAFTVRMie(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
+    return model
+end
+
+function recombine_impl!(model::SAFTVRMieModel)
+    sigma = model.params.sigma
+    epsilon = model.params.epsilon
+    lambda_a = model.params.lambda_a
+    lambda_r = model.params.lambda_r
+    lambda_LorentzBerthelot!(lambda_a)
+    lambda_LorentzBerthelot!(lambda_r)
+    sigma = sigma_LorentzBerthelot!(sigma)
+    epsilon = epsilon_HudsenMcCoubrey!(epsilon,sigma)
     return model
 end
 

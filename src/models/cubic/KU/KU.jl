@@ -42,7 +42,8 @@ end
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `vc`: Single Parameter (`Float64`) - Critical Volume `[m^3]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `k`: Pair Parameter (`Float64`)
+- `k`: Pair Parameter (`Float64`) (optional)
+- `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -95,38 +96,49 @@ function KU(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = params["k"]
+    k  = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     pc = params["pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     Vc = params["vc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b,omega_a,omega_b = ab_premixing(KU,init_mixing,Tc,pc,Vc,k)
+    
+    n = length(components)
+    a = PairParam("a",components,zeros(n))
+    b = PairParam("b",components,zeros(n))
+    omega_a = SingleParam("Ωa",components,zeros(n))
+    omega_b = SingleParam("Ωb",components,zeros(n))
+    
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = KUParam(a,b,omega_a,omega_b,Tc,pc,Vc,Mw)
     references = String["10.1016/j.ces.2020.116045"]
     model = KU(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    recombine_cubic!(model,k,l)
     return model
 end
 
-function ab_premixing(model::Type{<:KUModel},mixing,Tc,pc,vc,kij)
-    _Tc = Tc.values
-    _pc = pc.values
-    _vc = vc.values
+function ab_premixing(model::KUModel,mixing::MixingRule,k,l)
+    _Tc = model.params.Tc
+    _pc = model.params.Pc
+    _vc = model.params.Vc
+    a = model.params.a
+    b = model.params.b
     Zc = _pc .* _vc ./ (R̄ .* _Tc)
     χ  = @. cbrt(sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Zc -20)/(32*sqrt(3)*Zc^2) 
     - (729*Zc^3 - 216*Zc + 8)/(1728*Zc^3))
     α  = @. (χ + (81*Zc^2 - 72*Zc + 4)/(144*χ*Zc^2) + (3*Zc - 2)/(12*Zc))
     Ωa = @. Zc*(1 + 1.6*α - 0.8*α^2)^2/(1 - α)^2/(2 + 1.6*α)
     Ωb = @. Zc*α
-    components = Tc.components
-    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2* _Tc^2 /_pc),kij)
-    b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
-    omega_a = SingleParam("Ωa",components,Ωa)
-    omega_b = SingleParam("Ωb",components,Ωb)
-    return a,b,omega_a,omega_b
+    model.params.omega_a .= Ωa
+    model.params.omega_b .= Ωb
+    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    a = epsilon_LorentzBerthelot!(a,k)
+    b = sigma_LorentzBerthelot!(b,l)
+    return a,b
 end
 
 ab_consts(model::KUModel) = model.params.omega_a.values,model.params.omega_b.values

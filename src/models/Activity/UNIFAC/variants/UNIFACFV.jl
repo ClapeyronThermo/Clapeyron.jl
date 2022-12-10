@@ -14,8 +14,20 @@ function UNIFACFVCache(groups::GroupParam,Q,R,Mw)
     r = group_sum(groups,R.values) ./ Mw
     q = group_sum(groups,Q.values) ./ Mw
     m = group_sum(groups,nothing)
-    
+
     return UNIFACFVCache(groups.components,r,q,m,Mw)
+end
+
+function recombine_unifac_cache!(cache::UNIFACFVCache,groups,params)
+    Q = params.Q
+    R = params.R
+    Mw = params.Mw
+    group_sum!(cache.r,groups,R.values)
+    cache.r ./= Mw
+    group_sum!(cache.q,groups,Q.values)
+    cache.q ./= Mw
+    group_sum!(cache.m,groups,nothing)
+    return cache
 end
 
 struct UNIFACFVParam <: EoSParam
@@ -30,7 +42,6 @@ abstract type UNIFACFVModel <: ActivityModel end
 
 struct UNIFACFV{c<:EoSModel} <: UNIFACFVModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACFVParam
     puremodel::EoSVectorParam{c}
@@ -44,9 +55,10 @@ export UNIFACFV
 """
     UNIFACFVModel <: ActivityModel
 
-    UNIFACFV(components::Vector{String};
+    UNIFACFV(components;
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
@@ -61,66 +73,47 @@ export UNIFACFV
 - `puremodel`: model to calculate pure pressure-dependent properties
 
 ## Description
-UNIFACFV (UNIFAC Free Volume) activity model.
+UNIFACFV (UNIFAC Free Volume) activity model. specialized for solvent-polymer mixtures
 
-The Combinatorial part corresponds to an GC-averaged modified [`UNIQUAC`](@ref) model. The residual part iterates over groups instead of components.
+The Combinatorial part corresponds to an GC-averaged modified [`UNIQUAC`](@ref) model.
 
 ```
 Gᴱ = nRT(gᴱ(comb) + gᴱ(res) + gᴱ(FV))
 ```
-
-Combinatorial part:
-```
-gᴱ(comb) = ∑[xᵢlog(Φᵢ) + 5qᵢxᵢlog(θᵢ/Φᵢ)]
-θᵢ = qᵢxᵢ/∑qᵢxᵢ
-Φᵢ = rᵢxᵢ/∑rᵢxᵢ
-rᵢ = ∑Rₖνᵢₖ for k ∈ groups
-qᵢ = ∑Qₖνᵢₖ for k ∈ groups
-```
-Residual Part:
-```
-gᴱ(residual) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
-v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
-Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components 
-Θₖ = QₖXₖ/∑QₖXₖ
-Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
-```
-Free-volume Part:
-```
-gᴱ(FV) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
-v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
-Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components 
-Θₖ = QₖXₖ/∑QₖXₖ
-Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
-```
-
 ## References
 
 """
 UNIFACFV
 
-function UNIFACFV(components::Vector{String};
+function UNIFACFV(components;
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
-    
-    params_species = getparams(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_like.csv"]; userlocations=userlocations, verbose=verbose)
-    
-    groups = GroupParam(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_groups.csv"]; verbose=verbose)
 
+    params_species = getparams(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_like.csv"]; userlocations=userlocations, verbose=verbose)
+
+    groups = GroupParam(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_groups.csv"]; group_userlocations = group_userlocations, verbose=verbose)
+    components = groups.components
     params = getparams(groups, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_like.csv", "Activity/UNIFAC/ogUNIFAC/ogUNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose=verbose)
+
     A  = params["A"]
     R  = params["R"]
     Q  = params["Q"]
     Mw = params["Mw"]
     v  = params_species["volume"]
-    icomponents = 1:length(components)
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIFACFVParam(v,A,R,Q,Mw)
     references = String["10.1021/i260064a004"]
     cache = UNIFACFVCache(groups,packagedparams)
-    model = UNIFACFV(components,icomponents,groups,packagedparams,_puremodel,references,cache)
+    model = UNIFACFV(components,groups,packagedparams,_puremodel,references,cache)
+    return model
+end
+
+function recombine_impl!(model::UNIFACFVModel)
+    recombine_unifac_cache!(model.UNIFACFV_cache,model.groups,model.params)
+    recombine!(model.puremodel)
     return model
 end
 
@@ -190,7 +183,7 @@ function lnγ_FV(model::UNIFACFVModel,V,T,z,_data=@f(data))
     r = model.UNIFACFV_cache.r
 
     v̄  = @. v/(15.17*b*r)
-    v̄ₘ = sum(v.*w)/(15.17*b*sum(r.*w))
+    v̄ₘ = dot(v,w)/(15.17*b*dot(r,w))
 
     return @. 3*c*log((v̄^(1/3)-1)/(v̄ₘ^(1/3)-1))-c*((v̄/v̄ₘ-1)/(1-v̄^(-1/3)))
 end

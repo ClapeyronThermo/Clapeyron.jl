@@ -69,3 +69,5 @@ function translation(model::CubicModel,V,T,z,translation_model::MTTranslation)
     end
     return c
 end
+
+recombine_translation!(model::CubicModel,translation_model::MTTranslation) = translation_model

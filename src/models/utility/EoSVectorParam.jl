@@ -33,6 +33,10 @@ end
 
 function recombine_impl!(model::EoSVectorParam)
     recombine!(model.model)
-    model.pure .= split_model(model.model)
+    if is_splittable(model.model)
+        model.pure .= split_model(model.model)
+    else
+        model.pure .= model.model
+    end
     return model
 end

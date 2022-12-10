@@ -115,6 +115,20 @@ function PairParam(name::String,
     return PairParameter(name, components,_values, _ismissingvalues, sourcecsvs, sources)
 end
 
+function PairParam(name::String,
+    components::Array{String,1},
+    values::Array{T,1},
+    ismissingvalues = map(!,diagm(fill(true,length(components)))),
+    sourcecsvs::Array{String,1} = String[], 
+    sources::Array{String,1} = String[]) where T
+
+_values,_ismissingvalues = defaultmissing(diagm(values))
+if !all(ismissingvalues)
+_ismissingvalues = ismissingvalues
+end
+return PairParameter(name, components,_values, _ismissingvalues, sourcecsvs, sources)
+end
+
 # If no value is provided, just initialise empty param.
 function PairParam(
         name::String,

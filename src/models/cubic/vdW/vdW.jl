@@ -34,7 +34,8 @@ export vdW
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `k`: Pair Parameter (`Float64`)
+- `k`: Pair Parameter (`Float64`) (optional)
+- `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -78,18 +79,22 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
     verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = params["k"]
+    k  = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     pc = params["pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(vdW,init_mixing,Tc,pc,k)
+    n = length(components)
+    a = PairParam("a",components,zeros(n))
+    b = PairParam("b",components,zeros(n))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     packagedparams = vdWParam(a,b,Tc,pc,Mw)
     references = String[]
     model = vdW(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    recombine_cubic!(model,k,l)
     return model
 end
 

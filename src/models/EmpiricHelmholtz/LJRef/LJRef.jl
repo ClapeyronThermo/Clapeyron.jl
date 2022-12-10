@@ -148,7 +148,7 @@ export LJRef
 - `sigma`: Single Parameter (`Float64`) - particle size [Å]
 - `epsilon`: Single Parameter (`Float64`) - dispersion energy [`K`]
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `k`: Pair Parameter (`Float64`) - `sigma` mixing coefficient
+- `k`: Pair Parameter (`Float64`) (optional) - `sigma` mixing coefficient
 
 ## Model Parameters
 
@@ -199,8 +199,9 @@ function LJRef(components;
     params,sites = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
+    k = get(params,"k",nothing)
     sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], params["k"])
+    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     segment = params["m"]
     params = LJRefParam(epsilon,sigma,segment,Mw)
     consts = LJRefConsts()

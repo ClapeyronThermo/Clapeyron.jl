@@ -46,8 +46,15 @@ julia> idealmodel(ideal) == nothing
 true
 ```
 """
-idealmodel(model::EoSModel) = model.idealmodel
+idealmodel(model::EoSModel) = __idealmodel(model::EoSModel)
 
+@generated function __idealmodel(model::EoSModel)
+    if hasfield(model,:idealmodel)
+        return :(getfield(model,:idealmodel))
+    else
+        return :(nothing)
+    end
+end
 """
     eos_res(model::EoSModel, V, T, z=SA[1.0])
 

@@ -1,4 +1,4 @@
-abstract type WSRuleModel <: MixingRule end
+abstract type WSRuleModel <: ActivityMixingRule end
 
 struct WSRule{γ} <: WSRuleModel
     components::Array{String,1}
