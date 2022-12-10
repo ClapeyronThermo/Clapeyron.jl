@@ -118,7 +118,7 @@ end
 
 function __rkpr_f0_δ(δ,Zc)
     δ2 = δ*δ
-    d1 = (1 + δ2)/(1+δ)
+    d1 = (1 + δ2)/(1 + δ)
     y = 1 + cbrt(2*(1+δ)) + cbrt(4/(1+δ))
     return Zc - y/(3*y + d1 - 1)
 end
@@ -134,7 +134,9 @@ function ab_premixing(model::RKPRModel,mixing::MixingRule,k  = nothing, l = noth
     for i in @comps
         pci,Tci,Vci = _pc[i],_Tc[i],_Vc[i]
         Zci = pci * Vci / (R̄ * Tci)
-        if Zci >  0.29
+        #Roots.find_zero(x -> Clapeyron.__rkpr_f0_δ(sqrt(2) - 1,1.168*x),0.29) 
+        #0.2897160510687658
+        if Zci >  0.2897160510687658
             δ = sqrt(2) - 1
         else
             Zci_eos = 1.168*Zci
