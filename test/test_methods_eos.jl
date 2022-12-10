@@ -270,7 +270,7 @@ end
     vc = volume(system,system.params.Pc[1],system.params.Tc[1]) #vc calculated via cubic_poly
     crit = crit_pure(system) #vc calculated via pure_cubic_zc
     @test vc ≈ crit[3] rtol = 1e-4
-    @test vc/system.params.Vc[1] ≈ 1.168 #if Zc_exp < 0.29, this should hold, by definition
+    @test vc/system.params.Vc[1] ≈ 1.168 rtol = 1e-4 #if Zc_exp < 0.29, this should hold, by definition
 end
 
 @testset "Cubic methods, multi-components" begin
