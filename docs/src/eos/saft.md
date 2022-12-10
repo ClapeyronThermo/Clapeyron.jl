@@ -18,6 +18,7 @@ Clapeyron.BACKSAFT
 Clapeyron.PCSAFT
 Clapeyron.sPCSAFT
 Clapeyron.pharmaPCSAFT
+Clapeyron.GEPCSAFT
 Clapeyron.LJSAFT
 Clapeyron.softSAFT
 Clapeyron.softSAFT2016

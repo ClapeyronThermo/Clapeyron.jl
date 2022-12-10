@@ -55,7 +55,7 @@ export UNIFACFV
 """
     UNIFACFVModel <: ActivityModel
 
-    UNIFACFV(components::Vector{String};
+    UNIFACFV(components;
     puremodel = PR,
     userlocations = String[],
     group_userlocations = String[],
@@ -73,39 +73,13 @@ export UNIFACFV
 - `puremodel`: model to calculate pure pressure-dependent properties
 
 ## Description
-UNIFACFV (UNIFAC Free Volume) activity model.
+UNIFACFV (UNIFAC Free Volume) activity model. specialized for solvent-polymer mixtures
 
-The Combinatorial part corresponds to an GC-averaged modified [`UNIQUAC`](@ref) model. The residual part iterates over groups instead of components.
+The Combinatorial part corresponds to an GC-averaged modified [`UNIQUAC`](@ref) model.
 
 ```
 Gᴱ = nRT(gᴱ(comb) + gᴱ(res) + gᴱ(FV))
 ```
-
-Combinatorial part:
-```
-gᴱ(comb) = ∑[xᵢlog(Φᵢ) + 5qᵢxᵢlog(θᵢ/Φᵢ)]
-θᵢ = qᵢxᵢ/∑qᵢxᵢ
-Φᵢ = rᵢxᵢ/∑rᵢxᵢ
-rᵢ = ∑Rₖνᵢₖ for k ∈ groups
-qᵢ = ∑Qₖνᵢₖ for k ∈ groups
-```
-Residual Part:
-```
-gᴱ(residual) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
-v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
-Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
-Θₖ = QₖXₖ/∑QₖXₖ
-Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
-```
-Free-volume Part:
-```
-gᴱ(FV) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
-v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
-Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
-Θₖ = QₖXₖ/∑QₖXₖ
-Ψₖₘ = exp(-Aₖₘ/T)
-```
-
 ## References
 
 """

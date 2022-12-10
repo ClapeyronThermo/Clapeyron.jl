@@ -308,6 +308,11 @@ end
         @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
     end
 
+    @testset "RKPR Models" begin
+        system = RKPR(["ethane","undecane"])
+        @test Clapeyron.a_res(system, V, T, z) ≈ -1.2714368353293777 rtol = 1e-6
+    end
+
     @testset "Patel Teja Models" begin
         @testset "Patel Teja" begin
             system = PatelTeja(["ethane","undecane"])

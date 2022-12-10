@@ -54,6 +54,7 @@ Clapeyron.vdW
 Clapeyron.Clausius
 Clapeyron.RK
 Clapeyron.PR
+Clapeyron.RKPR
 Clapeyron.PatelTeja
 Clapeyron.KU
 ```
@@ -88,6 +89,7 @@ Clapeyron.BMAlpha
 Clapeyron.TwuAlpha
 Clapeyron.PatelTejaAlpha
 Clapeyron.KUAlpha
+Clapeyron.RKPRAlpha
 ```
 
 ## Volume Translation Models

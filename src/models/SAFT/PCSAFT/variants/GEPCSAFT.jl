@@ -14,7 +14,44 @@ struct GEPCSAFT{T <: IdealModel,γ} <: GEPCSAFTModel
 end
 
 @registermodel GEPCSAFT
+"""
+    PCSAFTModel <: SAFTModel
 
+    PCSAFT(components;
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
+
+## Model Parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume
+
+## Input models
+- `idealmodel`: Ideal Model
+- `activity`: Activity model
+
+## Description
+
+Perturbed-Chain SAFT (PC-SAFT), with Gᴱ mixing rule.
+
+## References
+1. Walker, P. J. (2022). Toward advanced, predictive mixing rules in SAFT equations of state. Industrial & Engineering Chemistry Research. [doi:10.1021/acs.iecr.2c03464](https://doi.org/10.1021/acs.iecr.2c03464)
+"""
 GEPCSAFT
 
 export GEPCSAFT
@@ -24,7 +61,8 @@ function GEPCSAFT(components::Vector{String}; idealmodel=BasicIdeal,
     ideal_userlocations=String[],
     activity_userlocations = String[],
     assoc_options = AssocOptions(),
-     verbose=false)
+    verbose=false)
+
     params,sites = getparams(components, ["SAFT/PCSAFT/PCSAFT_like.csv","SAFT/PCSAFT/PCSAFT_unlike.csv","SAFT/PCSAFT/PCSAFT_assoc.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = get(params,"k",nothing)
@@ -39,7 +77,7 @@ function GEPCSAFT(components::Vector{String}; idealmodel=BasicIdeal,
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_activity = init_model(activity,components,activity_userlocations,verbose)
-    references = String["acs.iecr.2c03464"]
+    references = String["10.1021/acs.iecr.2c03464"]
     model = GEPCSAFT(components,sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
     return model
 end

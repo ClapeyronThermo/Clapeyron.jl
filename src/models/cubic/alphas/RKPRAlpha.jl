@@ -27,7 +27,7 @@ export RKPRAlpha
 Cubic alpha `(α(T))` model. Default for [`RKPR`](@ref) EoS.
 ```
 αᵢ = (3/(2 + Trᵢ))^kᵢ
-kᵢ = Pcᵢ*10^(1 - ωᵢ)
+kᵢ = (12.504Zc -2.7238) + (7.4513*Zc + 1.9681)ωᵢ + (-2.4407*Zc + 0.0017)ωᵢ^2
 Trᵢ = T/Tcᵢ
 ```
 """
@@ -41,7 +41,7 @@ function RKPRAlpha(components::Vector{String}; userlocations::Vector{String}=Str
     return model
 end
 #ideally, k should be fitted to Tr = 0.7
-function α_function(model::RKPRAlphaModel,V,T,z,alpha_model::RKPRAlphaModel)
+function α_function(model::CubicModel,V,T,z,alpha_model::RKPRAlphaModel)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
     Vc = model.params.Vc.values
