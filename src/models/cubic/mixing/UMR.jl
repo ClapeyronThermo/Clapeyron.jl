@@ -1,4 +1,4 @@
-abstract type UMRRuleModel <: MixingRule end
+abstract type UMRRuleModel <: ActivityMixingRule end
 
 struct UMRRule{γ} <: UMRRuleModel
     components::Array{String,1}
@@ -41,15 +41,17 @@ function UMRRule(components::Vector{String}; activity = UNIFAC, userlocations::V
     return model
 end
 
-function ab_premixing(::Type{<:PRModel},mixing::UMRRuleModel,Tc,pc,kij)
-    Ωa, Ωb = ab_consts(PR)
-    _Tc = Tc.values
-    _pc = pc.values
-    components = pc.components
-    a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
-    bi = @. Ωb*R̄*_Tc/_pc
-    umr_mix(bi,bj,kij) = mix_powmean(bi,bj,0,0.5)
-    b = kij_mix(umr_mix,SingleParam("b (covolume)",components,bi))
+function ab_premixing(model::PRModel,mixing::UMRRuleModel,k = nothing, l = nothing)
+    Ωa, Ωb = ab_consts(model)
+    _Tc = model.params.Tc
+    _pc = model.params.Pc
+    a = model.params.a
+    b = model.params.b
+    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a,k)
+    umr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,0.5)
+    kij_mix!(umr_mix,b,l)
     return a,b
 end
 

@@ -240,6 +240,7 @@ end
 split_model(model::EoSModel,subset=nothing) = auto_split_model(model,subset)
 
 function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
+        
     try
         allfields = Dict{Symbol,Any}()
         #if has_groups(typeof(model))

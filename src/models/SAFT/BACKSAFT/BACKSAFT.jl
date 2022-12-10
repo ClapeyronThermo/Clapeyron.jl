@@ -27,7 +27,7 @@ export BACKSAFT
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `vol`: Single Parameter (`Float64`) - Segment Volume [`dm^3`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K/mol]`
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `c`: Single Parameter (`Float64`) - Adjustable parameter (no units)
 - `alpha`: Single Parameter (`Float64`) - Non-spherical deviation (no units)
 
@@ -61,7 +61,7 @@ function BACKSAFT(components;
     params = getparams(components, ["SAFT/BACKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     c = params["c"]
-    k = params["k"]
+    k = get(params,"k",nothing)
     alpha = params["alpha"]
     sigma = params["vol"]
     sigma.values .*= 6/N_A/1e6/π

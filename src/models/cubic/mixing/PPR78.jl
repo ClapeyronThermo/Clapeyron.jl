@@ -56,6 +56,7 @@ function PPR78Rule(components;
     return model
 end
 
+recombine_impl!(model::PPR78Rule) = model
 
 function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
     n = sum(z)

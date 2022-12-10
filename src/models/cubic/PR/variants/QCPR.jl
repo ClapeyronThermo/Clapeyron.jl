@@ -78,7 +78,7 @@ function lb_volume(model::QCPRModel,z=SA[1.0])
 
     n = sum(z)
     invn = (one(n)/n)
-    c = model.translation.params.c.values
+    c = model.translation.params.v_shift.values
     c̄ = dot(c,z)
     b̄ = zero(first(z))
     for i in 1:length(z)

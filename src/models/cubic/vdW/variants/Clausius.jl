@@ -32,7 +32,8 @@ end
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `k`: Pair Parameter (`Float64`)
+- `k`: Pair Parameter (`Float64`) (optional)
+- `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -76,43 +77,49 @@ function Clausius(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = params["k"]
+    k  = get(params,"k",nothing)
+    l  = get(params,"l",nothing)
     pc = params["pc"]
     Vc = params["vc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(Clausius,init_mixing,Tc,pc,Vc,k)
-    c = c_premixing(Clausius,init_mixing,Tc,pc,Vc,k)
+    a = PairParam("a",components,zeros(length(components)))
+    b = PairParam("b",components,zeros(length(components)))
+    c = PairParam("c",components,zeros(length(components)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = ClausiusParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1002/andp.18802450302"]
     model = Clausius(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    recombine_cubic!(model,k,l)
     return model
 end
 
-function ab_premixing(model::Type{<:ClausiusModel},mixing::MixingRule,Tc,pc,vc,kij)
-    _Tc = Tc.values
-    _Vc = vc.values
-    _pc = pc.values
-    components = vc.components
-    
-    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. 27*R̄^2*_Tc^2/_pc/64),kij)
-    b = sigma_LorentzBerthelot(SingleParam("b",components, @. _Vc-1/4*R̄*_Tc/_pc))
+function ab_premixing(model::ClausiusModel,mixing::MixingRule,k=nothing,l=nothing)
+    _Tc = model.params.Tc
+    _pc = model.params.Pc
+    _Vc = model.params.Vc
+    a = model.params.a
+    b = model.params.b
+
+    diagvalues(a) .= @. 27*R̄^2*_Tc^2/_pc/64
+    diagvalues(b) .= @. _Vc-1/4*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a,k)
+    sigma_LorentzBerthelot!(b,l)
     #a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     #b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
     return a,b
 end
 
-function c_premixing(model::Type{<:ClausiusModel},mixing::MixingRule,Tc,pc,vc,kij)
-    _Tc = Tc.values
-    _Vc = vc.values
-    _pc = pc.values
-    components = vc.components
- 
-    c = sigma_LorentzBerthelot(SingleParam("c",components, @. 3/8*R̄*_Tc/_pc-_Vc))
+function c_premixing(model::ClausiusModel)
+    _Tc = model.params.Tc
+    _Vc = model.params.Vc
+    _pc = model.params.Pc
+    c = model.params.c
+    diagvalues(c) .=  @. 3/8*R̄*_Tc/_pc-_Vc
+    sigma_LorentzBerthelot!(c)
     #a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     #b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
     return c

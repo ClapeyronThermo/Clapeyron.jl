@@ -47,7 +47,7 @@ end
 - `a`: Single Parameter (`Float64`) - Atraction parameter
 - `b`: Single Parameter (`Float64`) - Covolume
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
@@ -91,7 +91,7 @@ function CPA(components;
     
     params,sites = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
-    k  = params["k"]
+    k = get(params,"k",nothing)
     Tc = params["Tc"]
     c1 = params["c1"]
     params["a"].values .*= 1E-1

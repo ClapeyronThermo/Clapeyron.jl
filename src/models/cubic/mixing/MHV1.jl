@@ -1,4 +1,4 @@
-abstract type MHV1RuleModel <: MixingRule end
+abstract type MHV1RuleModel <: ActivityMixingRule end
 
 struct MHV1Rule{γ} <: MHV1RuleModel
     components::Array{String,1}

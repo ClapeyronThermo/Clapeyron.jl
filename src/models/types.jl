@@ -8,9 +8,7 @@ abstract type ActivityModel <: EoSModel end
 abstract type IdealModel <: EoSModel end
 abstract type EmpiricHelmholtzModel <: EoSModel end
 abstract type SatPureAproximation <: EoSModel end
-abstract type AlphaModel <: EoSModel end
-abstract type MixingRule <: EoSModel end
-export SAFTModel, CubicModel, EmpiricHelmholtzModel
+export SAFTModel,CubicModel,EmpiricHelmholtzModel
 export IdealModel
 export AlphaModel
 

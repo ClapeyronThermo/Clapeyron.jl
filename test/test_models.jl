@@ -93,6 +93,14 @@ using Clapeyron, Test
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.1459701721909195 rtol = 1e-6
     end
 
+    @testset "GEPCSAFT" begin
+        system = GEPCSAFT(["propane", "methanol"])
+        z = [0.5, 0.5]
+        @test Clapeyron.a_hc(system, V, T, z) ≈ 1.6473483928460233 rtol = 1e-6
+        @test Clapeyron.a_disp(system, V, T, z) ≈ -3.271039575934372 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.9511233680313027 rtol = 1e-6
+    end
+
     @testset "SAFTVRMie" begin
         system = SAFTVRMie(["methanol", "water"])
         z = [0.5, 0.5]
@@ -298,6 +306,11 @@ end
         system = KU(["ethane","undecane"])
         @test Clapeyron.a_res(system, V, T, z) ≈ -1.2261554720898895 rtol = 1e-6
         @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
+    end
+
+    @testset "RKPR Models" begin
+        system = RKPR(["ethane","undecane"])
+        @test Clapeyron.a_res(system, V, T, z) ≈ -1.2714368353293777 rtol = 1e-6
     end
 
     @testset "Patel Teja Models" begin

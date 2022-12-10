@@ -42,7 +42,7 @@ export Berthelot
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `vc`: Single Parameter (`Float64`) - Molar Volume `[m^3/mol]`
-- `k`: Pair Parameter (`Float64`)
+- `k`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
 - `a`: Pair Parameter (`Float64`)
@@ -91,29 +91,34 @@ function Berthelot(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
     verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = params["k"]
+    k  = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     pc = params["pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     Vc = params["vc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(Berthelot,init_mixing,Tc,pc,Vc,k)
+    a = PairParam("a",components,zeros(length(components)))
+    b = PairParam("b",components,zeros(length(components)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     packagedparams = BerthelotParam(a,b,Tc,pc,Vc,Mw)
     references = String["10.1051/jphystap:018990080026300"]
     model = Berthelot(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
-    return model
+    recombine_cubic!(model,k,l)
 end
 
-function ab_premixing(model::Type{<:BerthelotModel},mixing::MixingRule,Tc,pc,vc,kij)
-    _Tc = Tc.values
-    _Vc = vc.values
-    _pc = pc.values
-    components = vc.components
-    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. 3*_pc*_Vc^2),kij)
-    b = sigma_LorentzBerthelot(SingleParam("b",components, @. _Vc/3))
+function ab_premixing(model::BerthelotModel,mixing::MixingRule,k=nothing,l=nothing)
+    #_Tc = model.params.Tc
+    _pc = model.params.Pc
+    _Vc = model.params.Vc
+    a = model.params.a
+    b = model.params.b
+    diagvalues(a) .=  @. 3*_pc*_Vc^2
+    diagvalues(b) .=  @. _Vc/3
+    epsilon_LorentzBerthelot!(a,k)
+    sigma_LorentzBerthelot!(b,l)
     #a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
     #b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
     return a,b

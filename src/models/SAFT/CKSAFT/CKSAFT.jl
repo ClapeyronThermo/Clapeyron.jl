@@ -27,7 +27,7 @@ export CKSAFT
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `vol`: Single Parameter (`Float64`) - Segment Volume [`dm^3`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `c`: Single Parameter (`Float64`) - Dispersion T-dependent parameter (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
@@ -64,7 +64,7 @@ function CKSAFT(components;
     params,sites = getparams(components, ["SAFT/CKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     c = params["c"]
-    k = params["k"]
+    k = get(params,"k",nothing)
     sigma = params["vol"]
     sigma.values .*= 6*0.74048/N_A/1e6/π
     sigma.values .^= 1/3

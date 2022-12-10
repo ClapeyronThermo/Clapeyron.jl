@@ -19,8 +19,6 @@ end
 """
 function translation end
 
-abstract type TranslationModel <:EoSModel end
-
 include("NoTranslation.jl")
 include("Rackett.jl")
 include("Peneloux.jl")

@@ -51,6 +51,8 @@ function QCPRRule(components::Vector{String}; activity = nothing, userlocations:
     return model
 end
 
+recombine_impl!(model::QCPRRule) = model
+
 function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
     n = sum(z)
     invn = (one(n)/n)

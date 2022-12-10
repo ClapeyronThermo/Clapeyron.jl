@@ -4,6 +4,9 @@ struct ABCubicInputParam <: EoSParam
     pc::SingleParam{Float64}
     Mw::SingleParam{Float64}
 end
+abstract type AlphaModel <:EoSModel end
+abstract type TranslationModel <:EoSModel end
+abstract type MixingRule <:EoSModel end
 
 struct ABCubicParam <: EoSParam
     a::PairParam{Float64}
@@ -26,12 +29,10 @@ end
 const ONLY_VC = vcat(IGNORE_HEADERS,["Tc","Pc", "w"])
 const ONLY_ACENTRICFACTOR = vcat(IGNORE_HEADERS,["Tc", "Pc", "Vc"])
 """
-    ab_premixing(model,mixing,Tc,pc,kij)
-    ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
-    ab_premixing(model,mixing,Tc,pc,vc,kij)
+    ab_premixing(model,mixing,kij = nothing,lij = nothing)
 
-given `Tc::SingleParam`, `pc::SingleParam`, `kij::PairParam` and `mixing <: MixingRule`, it will return 
-`PairParam`s `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the van der Wals One-Fluid mixing rule. that is:
+given a model::CubicModel, that has `a::PairParam`, `b::PairParam`, a mixing::MixingRule and `kij`,`lij` matrices, `ab_premixing` will perform an implace calculation
+to obtain the values of `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the van der Wals One-Fluid mixing rule. that is:
 ```
 aᵢⱼ = sqrt(aᵢ*aⱼ)*(1-kᵢⱼ)
 bᵢⱼ = (bᵢ + bⱼ)/2
@@ -39,17 +40,50 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(model,mixing,Tc,pc,kij) 
+function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = nothing) 
     Ωa, Ωb = ab_consts(model)
-    _Tc = Tc.values
-    _pc = pc.values
-    components = Tc.components
-    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
-    b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
+    _Tc = model.params.Tc
+    _pc = model.params.Pc
+    a = model.params.a
+    b = model.params.b
+    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a,k)
+    sigma_LorentzBerthelot!(b,l)
     return a,b
 end
 
-ab_premixing(model,mixing,Tc,pc,vc,kij) = ab_premixing(model,mixing,Tc,pc,kij) #ignores the Vc unless dispatch
+function ab_premixing(model::CubicModel,kij::K,lij::L) where K <: Union{Nothing,PairParameter,AbstractMatrix} where L <: Union{Nothing,PairParameter,AbstractMatrix} 
+    return ab_premixing(model,model.mixing,kij,lij)
+end
+
+#legacy reasons
+function ab_premixing(model::CubicModel,mixing::MixingRule,Tc,Pc,kij,lij)
+    Ωa, Ωb = ab_consts(model)
+    comps = Tc.components
+    n = length(Tc)
+    a = PairParam("a",comps,zeros(n,n),)
+    b = PairParam("b",comps,zeros(n,n))
+    diagvalues(a) .= Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= Ωb*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a,k)
+    sigma_LorentzBerthelot!(b,l)
+    return a,b
+end
+
+ab_premixing(model::CubicModel,mixing::MixingRule,Tc,pc,vc,kij,lij) = ab_premixing(model,mixing,Tc,pc,kij,lij) #ignores the Vc unless dispatch
+
+
+function recombine_cubic!(model::CubicModel,k = nothing,l = nothing)
+    recombine_mixing!(model,model.mixing,k,l)
+    recombine_translation!(model,model.translation)
+    recombine_alpha!(model,model.alpha)
+    return model
+end
+function recombine_impl!(model::CubicModel)
+    recombine_cubic!(model)
+end
+
 
 function c_premixing end
 

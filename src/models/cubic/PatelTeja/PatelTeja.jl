@@ -31,15 +31,19 @@ end
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+- `vc`: Single Parameter (`Float64`) - Critical Volume `[m3/mol]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `k`: Pair Parameter (`Float64`)
+- `k`: Pair Parameter (`Float64`) (optional)
+- `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m3/mol]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `a`: Pair Parameter (`Float64`)
 - `b`: Pair Parameter (`Float64`)
+- `c`: Pair Parameter (`Float64`)
 
 ## Description
 
@@ -82,52 +86,55 @@ function PatelTeja(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = params["k"]
+    k  = get(params,"k",nothing)
+    l = get(params,"l",nothing) 
     pc = params["pc"]
     Vc = params["vc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(PatelTeja,init_mixing,Tc,pc,Vc,k)
-    c = c_premixing(PatelTeja,init_mixing,Tc,pc,Vc,k)
+    n = length(components)
+    a = PairParam("a",components,zeros(n))
+    b = PairParam("b",components,zeros(n))
+    c = PairParam("c",components,zeros(n))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PatelTejaParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1016/0009-2509(82)80099-7"]
     model = PatelTeja(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    recombine_cubic!(model,k,l)
     return model
 end
 
-function ab_premixing(model::Type{<:PatelTejaModel},mixing::MixingRule,Tc,pc,vc,kij)
-    _Tc = Tc.values
-    _Vc = vc.values
-    _pc = pc.values
-    components = vc.components
-    _Zc = _pc.*_Vc./(R̄*_Tc)
-             
-    _poly = [(-_Zc[i]^3,3*_Zc[i]^2,2-3*_Zc[i],1.) for i ∈ 1:length(components)]
-    
+function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
+    _Tc = model.params.Tc
+    _pc = model.params.Pc
+    _Vc = model.params.Vc
+    a = model.params.a
+    b = model.params.b
+    n = length(model)
+    _Zc = _pc .* _Vc ./ (R̄ .* _Tc)             
+    _poly = [(-_Zc[i]^3,3*_Zc[i]^2,2-3*_Zc[i],1.) for i ∈ 1:n]
     sols = Solvers.roots3.(_poly)
-
-    Ωb = [minimum(real.(sols[i][isreal.(sols[1]).*real.(sols[1]).>0])) for i ∈ 1:length(components)]
+    Ωb = [minimum(real.(sols[i][isreal.(sols[1]).*real.(sols[1]).>0])) for i ∈ 1:n]
     Ωa = @. 3*_Zc^2+3*(1-2*_Zc)*Ωb+Ωb^2+1-3*_Zc
-    
-    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. R̄^2*_Tc^2/_pc*Ωa),kij)
-    b = sigma_LorentzBerthelot(SingleParam("b",components, @. R̄*_Tc/_pc*Ωb))
+    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a,k)
+    sigma_LorentzBerthelot!(b,l)
     return a,b
 end
 
-function c_premixing(model::Type{<:PatelTejaModel},mixing::MixingRule,Tc,pc,vc,kij)
-    _Tc = Tc.values
-    _Vc = vc.values
-    _pc = pc.values
-    components = vc.components
-    _Zc = _pc.*_Vc./(R̄*_Tc)
-
+function c_premixing(model::PatelTejaModel)
+    _Tc = model.params.Tc
+    _pc = model.params.Pc
+    _Vc = model.params.Vc
+    c = model.params.c
+    _Zc = _pc .* _Vc ./ (R̄ .* _Tc)
     Ωc = @. 1-3*_Zc
-
-    c = sigma_LorentzBerthelot(SingleParam("c",components, @. Ωc*R̄*_Tc/_pc))
+    diagvalues(c) .= Ωc .* R̄ .*_Tc ./ _pc
+    c = sigma_LorentzBerthelot!(c)
     return c
 end
 
