@@ -63,6 +63,38 @@ function show_pairs(io,keys,vals=nothing,separator="",f_print = print;quote_stri
     end
 end
 
+function _vecparser_eltype(vals)
+    for val in eachsplit(vals,' ')
+        if isnothing(tryparse(Int,val))
+            return Float64 
+        end
+    end
+    return Int
+end
+
+function _vecparser(T::Type{X},vals::String,dlm = ' ') where X <: Union{Int,Float64}
+    strip_vals = strip(vals,('[',']'))
+    res = Vector{T}(undef,0)
+    for strval in eachsplit(strip_vals,dlm,keepempty = false)
+        val = tryparse(T,strval)
+        if !isnothing(val)
+            push!(res,val)
+        else
+            colors = Base.text_colors
+            red = colors[:bold] * colors[:red]
+            reset = colors[:normal]
+            errval =  red * strval * reset
+            error("cannot parse $errval as a number in $vals")
+        end
+    end
+    return res
+end
+
+function _vecparser(vals::String,dlm = ' ')
+    strip_vals = strip(vals,('[',']'))
+    T = _vecparser_eltype(strip_vals)
+    return _vecparser(T,vals,dlm)
+end
 #=
 """
     concrete(x)
