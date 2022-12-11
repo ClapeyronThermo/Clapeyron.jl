@@ -1,4 +1,5 @@
-using Clapeyron
+#this file is meant to be loaded after Clapeyron itself is loaded.
+using Clapeyron, Metaheuristics
 
 function saturation_p(model::EoSModel,T)
     sat = saturation_pressure(model,T)

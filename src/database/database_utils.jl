@@ -9,8 +9,7 @@ const SHORT_PATHS = Dict{String,String}(
 const SPECIAL_IDENTIFIERS = ["@REPLACE"]
 
 const SKIP_GETPATHS =   ("Clapeyron Database File", #a raw CSV file
-                        "{", # a raw json file
-                        )
+                        "Clapeyron Estimator")
 
 """
     getfileextension(filepath)
@@ -43,7 +42,7 @@ julia> getpaths("SAFT/PCSAFT"; relativetodatabase=true)
 """
 function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vector{String}
     # We do not use realpath here directly because we want to make the .csv suffix optional.
-    any(startswith(location,kw) for kw in SKIP_GETPATHS) && return [location]
+    is_inline_csv(location) && return [location]
     if startswith(location,"@REPLACE")
         filepath = chop(location,head = 9, tail = 0)
         result = getpaths(filepath)
@@ -129,6 +128,10 @@ function normalisestring(str, isactivated::Bool=true; tofilter = ' ')
     end
     res = Base.Unicode.normalize(str,casefold=true,stripmark=true)
     return replace(res, tofilter => "")
+end
+
+function is_inline_csv(filepath)
+    return any(startswith(filepath,kw) for kw in SKIP_GETPATHS)
 end
 
 function _indexin(query,list,separator)
