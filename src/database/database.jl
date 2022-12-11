@@ -718,7 +718,7 @@ function __get_options(data)
     _csvtype = _readcsvtype(get(opts_dict,"csvtype","invalid"))
     _grouptype = Symbol(get(opts_dict,"grouptype","unkwown"))
     _estimator = Symbol(get(opts_dict,"estimator","error"))
-    return (csvtype = _csvtype,grouptype = _grouptype)
+    return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator)
 end
 
 function valid_headerparams(csvheaders, options::ParamOptions = DefaultOptions)

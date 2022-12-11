@@ -103,7 +103,7 @@ function flattenfilepaths(locations,userlocations)
 end
 
 function getline(filepath::AbstractString, selectedline::Int)
-    startswith(filepath,"Clapeyron Database File") && return getline(IOBuffer(filepath),selectedline)
+    is_inline_csv(filepath) && return getline(IOBuffer(filepath),selectedline)
     open(filepath) do file
        _getline(file,selectedline)
     end
