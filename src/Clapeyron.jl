@@ -12,7 +12,7 @@ using Scratch
 using Unitful
 import LogExpFunctions
 using FillArrays: FillArrays
-import BlackBoxOptim, Metaheuristics
+import BlackBoxOptim
 using StaticArrays
 using NLSolvers
 using NLSolvers: NEqOptions
