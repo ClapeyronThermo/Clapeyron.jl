@@ -41,7 +41,7 @@ abstract type SAFTVRQMieModel <: SAFTVRMieModel end
 
 ## Description
 
-Quantum-Corrected SAFT-VR Mie 
+Quantum-Corrected SAFT-VR Mie. In particular, it uses the second order Feynman–Hibbs corrections to the Mie Potential
 
 ## References
 1. Aasen, A., Hammer, M., Müller, E. A., & Wilhelmsen, Ø. (2020). Equation of state and force fields for Feynman-Hibbs-corrected Mie fluids. II. Application to mixtures of helium, neon, hydrogen, and deuterium. The Journal of Chemical Physics, 152(7), 074507. [doi:10.1063/1.5136079](https://doi.org/10.1063/1.5136079)
@@ -52,15 +52,21 @@ export SAFTVRQMie
 function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
     params = getparams(components, ["SAFT/SAFTVRQMie"]; userlocations=userlocations, verbose=verbose)
 
-    params["Mw"].values .*= 1E-3
-    Mw = sigma_LorentzBerthelot(params["Mw"])
+    Mw = params["Mw"]
+    Mw .*= 1E-3
+    mw_mix(mi,mj,k) = mix_powmean(mi,mj,k,-1) #mij = 0.5/(mi^-1 + mj^-1)
+    Mw = kij_mix(mw_mix,Mw)
     segment = params["m"]
+    k = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
+    sigma = sigma_LorentzBerthelot(params["sigma"],l)
     epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
-
+    if k !== nothing
+        epsilon .= epsilon .* (1 .- k)
+    end
     packagedparams = SAFTVRQMieParam(Mw, segment, sigma, lambda_a, lambda_r, epsilon)
     references = ["10.1063/1.5136079"]
 
@@ -222,7 +228,7 @@ function ϵeff(model::SAFTVRQMieModel, V, T, z)
     _σ = model.params.sigma.values
     _λr = model.params.lambda_r.values
     _λa = model.params.lambda_a.values
-    Mwij = model.params.Mw.values#[i] + model.params.Mw.values[j])/2 # check
+    Mwij = model.params.Mw.values
     #Dij = ħ^2/(12*k_B*T*Mwij/N_A*σ[i,j]^2)
 
     function fgh(x,λa,λr,σ,T,Mw)
@@ -231,7 +237,6 @@ function ϵeff(model::SAFTVRQMieModel, V, T, z)
         Q2λr = @f(Q2,λr)
         Q2λa = @f(Q2,λa)
         Dij = ħ^2/(12*k_B*T*Mw/N_A*σ^2)
-        
         xΔλ =x^(λr-λa)
         x2 = x*x
         x4 = x2*x2

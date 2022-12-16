@@ -1,5 +1,5 @@
 Clapeyron Database File,,,,,,,,,,
-SAFTVRMie Like Parameters,,,,,,,,,,
+SAFTVRQMie Like Parameters,,,,,,,,,,
 species,DIPPR Number,Mw,m,sigma,epsilon,lambda_r,lambda_a,n_H,n_e,source
 hydrogen,,2.01588,1,2.9195,55.729,20.0,6.0,0,0,
 deuterium,,4.0282035556,1,2.9897,36.913,12,6,0,0,
