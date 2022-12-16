@@ -134,6 +134,13 @@ end
     end
 end
 
+@testset "SAFT-VRQ Mie methods, single components" begin
+    system = SAFTVRQMie(["helium"])
+    @testset "VLE properties" begin
+        @test Clapeyron.saturation_pressure(system, 4)[1] ≈ 56761.2986265459 rtol = 1E-6
+    end
+end
+
 @testset "sCKSAFT methods, single component" begin
     system = sCKSAFT(["ethane"])
     tc_test,pc_test,vc_test = (321.00584034360014, 6.206975436514129e6, 0.0001515067748592245)
