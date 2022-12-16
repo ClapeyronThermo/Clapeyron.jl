@@ -164,7 +164,7 @@ function d(model::SAFTVRQMieModel, V, T, z,_σeff = @f(σeff))
     _λr = model.params.lambda_r.values
     _λa = model.params.lambda_a.values
     _Mwij = model.params.Mw.values
-    _d = zeros(typeof(T),length(z))
+    _d = zeros(typeof(1.0*T),length(z))
     for i ∈ 1:length(_d)
         _data = (_ϵ[i,i],_σ[i,i],_λr[i,i],_λa[i,i],_Mwij[i,i],_σeff[i,i])
         _d[i] = @f(d,i,_data)
