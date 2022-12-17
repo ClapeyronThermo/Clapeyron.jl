@@ -10,7 +10,16 @@ const gk21_w = [0.0116946388673718742781,0.0325581623079647274788,0.054755896574
 """
     integral21(f,a,b)
 
-Performs integration via a 21-point Gauss-Kronrod rule 
+Performs integration via a 21-point Gauss-Kronrod rule. ForwardDiff-friendly.
+
+## example
+```
+julia> integral21(exp,1,1.5) - (exp(1.5) - exp(1))
+0.0
+
+julia> integral21(abs2,2,5) - (125/3 - 8/3)
+-7.105427357601002e-15
+```
 """
 function integral21(Base.@specialize(f),a,b)
     w = gk21_w
@@ -23,10 +32,28 @@ function integral21(Base.@specialize(f),a,b)
     return 0.5*(b - a)*res
 end
 
+#=
+function __fd_choose(d1::ForwardDiff.Dual{T1},d2::ForwardDiff.Dual{T2}) where {T1,T2}
+    if ForwardDiff.<(T1,T2)
+        return T1
+    else
+        return T2
+    end
+end
+
+function __fd_choose(d1::ForwardDiff.Dual{T},d2::ForwardDiff.Dual{T}) where {T}
+    return T
+end
+
+function __fd_choose(d1,d2::ForwardDiff.Dual{T}) where {T}
+    return T
+end
+
 function integral21(@specialize(f),a::ForwardDiff.Dual{T},b) where {T}
     ā,b̄ = ForwardDiff.value(a),b
     f̄ = integral21(f,ā,b̄)
     df = -f(ā)
+    TT = __fd_choose(f̄,a)
     return ForwardDiff.dual_definition_retval(Val{T}(), f̄, df, ForwardDiff.partials(a))
 end
 
@@ -34,13 +61,18 @@ function integral21(@specialize(f),a,b::ForwardDiff.Dual{T}) where {T}
     ā,b̄ = a,ForwardDiff.value(b)
     f̄ = integral21(f,ā,b̄)
     df = f(b̄)
-    return ForwardDiff.dual_definition_retval(Val{T}(), f̄, df, ForwardDiff.partials(b))
+    TT = __fd_choose(f̄,b)
+    return ForwardDiff.dual_definition_retval(Val{TT}(), f̄, df, ForwardDiff.partials(b))
 end
+
+##this function is the one that fails with crit_pure. TODO:investigate
 
 function integral21(@specialize(f),a::ForwardDiff.Dual{T},b::ForwardDiff.Dual{T}) where {T}
     ā,b̄ = ForwardDiff.value(a),ForwardDiff.value(b)
     f̄ = integral21(f,ā,b̄)
     dfa = - f(ā)
-    dfb = f(b̄) 
-    return ForwardDiff.dual_definition_retval(Val{T}(), f̄, dfa, ForwardDiff.partials(a), dfb, ForwardDiff.partials(b))
+    dfb = f(b̄)
+    TT = __fd_choose(f̄,b)
+    return ForwardDiff.dual_definition_retval(Val{TT}(), f̄, dfa, ForwardDiff.partials(a), dfb, ForwardDiff.partials(b))
 end
+=#

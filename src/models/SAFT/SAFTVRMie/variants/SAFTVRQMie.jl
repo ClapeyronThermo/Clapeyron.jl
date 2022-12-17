@@ -78,7 +78,7 @@ mw(model::SAFTVRQMieModel) = diagvalues(model.params.Mw) .* 1e3
 
 function a_mono(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     _,_,vrdata = _data
-    ahs = @f(a_hs,vrdata)
+    ahs = @f(a_hs_eff,_data)
     adisp = @f(a_disp,_data)
     return ahs + adisp
 end
@@ -290,7 +290,7 @@ function ϵeff(model::SAFTVRQMieModel, V, T, z)
     return _ϵeff
 end
 
-function a_hs2(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
+function a_hs_eff(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     _σeff,_ϵff,vrdata= _data
     _d,_ρ_S,ζi,_ζ_X,_ζst,_,m̄  = vrdata
     d_na = zero(eltype(_d))
@@ -299,16 +299,19 @@ function a_hs2(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
         d_na += z[i]*_d[i,i]^3
     end
     d_na = cbrt(d_na/∑z)
-    η_na = N_A*∑z*(π*d_na^3)/V
+    η_na = N_A*∑z*(π*d_na^3)/V/6
     
     #B̄₂
     B̄₂ = zero(eltype(_σeff))
     for i in @comps
         for j in @comps
             B̄₂ += z[i]*z[j]*_d[i,j]^3
+            #m3 units
         end
     end
+    
     B̄₂ = 4*B̄₂/∑z/∑z
+    
     #B̄₃
     B̄₃ = zero(eltype(_σeff))
     _0 = zero(eltype(_σeff))
@@ -318,23 +321,24 @@ function a_hs2(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
                 dij = _d[i,j] # j
                 dik = _d[i,k] # k
                 djk = _d[j,k] # i
-                δ_kij = max(dik + djk - dij,_0)
+                δ_kij = max(dik + djk - dij,_0) #m units
                 δ_ijk = max(djk + dij - dik,_0)
                 δ_jik = max(dij + djk - djk,_0)
-                c_kij = δ_kij^3 + 1.5*δ_kij*δ_kij/dij * δ_ijk * δ_jik
+                c_kij = δ_kij^3 + 1.5*δ_kij*δ_kij/dij * δ_ijk * δ_jik #m3
                 c_ijk = δ_ijk^3 + 1.5*δ_ijk*δ_ijk/djk * δ_kij * δ_jik
                 c_jik = δ_jik^3 + 1.5*δ_jik*δ_jik/dik * δ_kij * δ_ijk
-                B̄_ijk = (c_kij*dij^3 + c_ijk*djk^3 + c_jik*dik^3)
-                B̄₃ += z[i]*z[j]*z[k]*B̄_ijk^3
+                B̄_ijk = (c_kij*dij^3 + c_ijk*djk^3 + c_jik*dik^3) #m6
+                B̄₃ += z[i]*z[j]*z[k]*B̄_ijk
             end
         end
     end
     B̄₃ = 4*B̄₃/(∑z*∑z*∑z)/3
-    @show B̄₃,B̄₂
-    A1 = 10*d_na^3 * B̄₂ - 4*B̄₃
-    @show 10*d_na^3 * B̄₂, 4*B̄₃
-    return @f(a_hs,vrdata)
-  end
+    A1 = (10*d_na^3 * B̄₂ - 4*B̄₃)/(6*d_na^6)
+    A2 = (B̄₃ - d_na^3 * B̄₂)/(6*d_na^6)
+    apure = (4*η_na - 3*η_na^2)/(1-η_na)^2
+    ahs = -log(1 - η_na)*A1 + apure*A2
+    return ahs
+end
 #=
 function a_1(model::SAFTVRQMieModel, V, T, z, i, j,_data = @f(data))
     _σeff,_ϵff,_d,_ρ_S,ζi,_ζ_X,_ζst = _data
