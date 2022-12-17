@@ -35,3 +35,16 @@ function _parse_kv(str,dlm)
     _k,_v = split_2(str,dlm)
     return strip(_k),strip(_v)
 end
+
+function doi2bib(doi::String)
+    headers = ["Accept" => "application/x-bibtex"]
+    url = "https://dx.doi.org/" * doi
+    @show url
+    out = IOBuffer()
+    r = Downloads.request(url, output = out, method = "GET",headers = headers)
+    if r.status == 200
+        res = String(take!(out))
+    else
+        return ""
+    end
+end
