@@ -78,7 +78,9 @@ mw(model::SAFTVRQMieModel) = diagvalues(model.params.Mw) .* 1e3
 
 function a_mono(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     _,_,vrdata = _data
-    return @f(a_hs,vrdata) + @f(a_disp,_data)
+    ahs = @f(a_hs,vrdata)
+    adisp = @f(a_disp,_data)
+    return ahs + adisp
 end
 
 function a_res(model::SAFTVRQMieModel, V, T, z)
@@ -107,7 +109,7 @@ function Q2(model::SAFTVRQMieModel, V, T, z, λ)
     return 1/2*(λ+2)*(λ+1)*λ*(λ-1)
 end
 
-function d(model::SAFTVRQMieModel, V, T, z, i,_data)
+function deff(model::SAFTVRQMieModel, V, T, z,_data)
     ϵ,σ,λr,λa,Mw,σeff = _data
 
     Di = ħ^2/(12*k_B*T*Mw/N_A*σ^2)
@@ -153,21 +155,25 @@ function d(model::SAFTVRQMieModel, V, T, z, i,_data)
     end
     x_min = Solvers.halley(fgh,one(1.0*T))
     σ_effi = σeff/σ
-    x = SAFTVRQMieconsts.x
-    w = SAFTVRQMieconsts.w
-    return σ*(σ_effi-(σ_effi-x_min)/2*sum(w[i]*f((σ_effi-x_min)/2*x[i]+(σ_effi+x_min)/2) for i in 1:21))
+    #Solvers.integral21 is an integral function, optimized to work with autodiff.    
+    return σ*(σ_effi - Solvers.integral21(f,x_min,σ_effi))
 end
 
 function d(model::SAFTVRQMieModel, V, T, z,_σeff = @f(σeff))
+    
     _ϵ = model.params.epsilon.values
     _σ = model.params.sigma.values
     _λr = model.params.lambda_r.values
     _λa = model.params.lambda_a.values
     _Mwij = model.params.Mw.values
-    _d = zeros(typeof(1.0*T),length(z))
+    _d = zeros(typeof(1.0*T),length(z),length(z))
     for i ∈ 1:length(_d)
-        _data = (_ϵ[i,i],_σ[i,i],_λr[i,i],_λa[i,i],_Mwij[i,i],_σeff[i,i])
-        _d[i] = @f(d,i,_data)
+        for j ∈ 1:i
+            _data = (_ϵ[i,j],_σ[i,j],_λr[i,j],_λa[i,j],_Mwij[i,j],_σeff[i,j])
+            dij = @f(deff,_data)
+            _d[i,j] = dij
+            _d[j,i] = dij
+        end
     end
     _d
 end
@@ -180,7 +186,7 @@ function d(model::SAFTVRQMieModel, V, T, z::SingleComp,_σeff = @f(σeff))
     _λa = model.params.lambda_a[1]
     _Mwij = model.params.Mw[1]
     _data = (_ϵ,_σ,_λr,_λa,_Mwij,_σeff[1,1])
-    return SA[@f(d,1,_data)]
+    return SA[@f(deff,_data)]
 end
 
 function σeff(model::SAFTVRQMieModel, V, T, z)
@@ -284,6 +290,51 @@ function ϵeff(model::SAFTVRQMieModel, V, T, z)
     return _ϵeff
 end
 
+function a_hs2(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
+    _σeff,_ϵff,vrdata= _data
+    _d,_ρ_S,ζi,_ζ_X,_ζst,_,m̄  = vrdata
+    d_na = zero(eltype(_d))
+    ∑z = sum(z)
+    for i in @comps
+        d_na += z[i]*_d[i,i]^3
+    end
+    d_na = cbrt(d_na/∑z)
+    η_na = N_A*∑z*(π*d_na^3)/V
+    
+    #B̄₂
+    B̄₂ = zero(eltype(_σeff))
+    for i in @comps
+        for j in @comps
+            B̄₂ += z[i]*z[j]*_d[i,j]^3
+        end
+    end
+    B̄₂ = 4*B̄₂/∑z/∑z
+    #B̄₃
+    B̄₃ = zero(eltype(_σeff))
+    _0 = zero(eltype(_σeff))
+    for i in @comps
+        for j in @comps
+            for k in @comps
+                dij = _d[i,j] # j
+                dik = _d[i,k] # k
+                djk = _d[j,k] # i
+                δ_kij = max(dik + djk - dij,_0)
+                δ_ijk = max(djk + dij - dik,_0)
+                δ_jik = max(dij + djk - djk,_0)
+                c_kij = δ_kij^3 + 1.5*δ_kij*δ_kij/dij * δ_ijk * δ_jik
+                c_ijk = δ_ijk^3 + 1.5*δ_ijk*δ_ijk/djk * δ_kij * δ_jik
+                c_jik = δ_jik^3 + 1.5*δ_jik*δ_jik/dik * δ_kij * δ_ijk
+                B̄_ijk = (c_kij*dij^3 + c_ijk*djk^3 + c_jik*dik^3)
+                B̄₃ += z[i]*z[j]*z[k]*B̄_ijk^3
+            end
+        end
+    end
+    B̄₃ = 4*B̄₃/(∑z*∑z*∑z)/3
+    @show B̄₃,B̄₂
+    A1 = 10*d_na^3 * B̄₂ - 4*B̄₃
+    @show 10*d_na^3 * B̄₂, 4*B̄₃
+    return @f(a_hs,vrdata)
+  end
 #=
 function a_1(model::SAFTVRQMieModel, V, T, z, i, j,_data = @f(data))
     _σeff,_ϵff,_d,_ρ_S,ζi,_ζ_X,_ζst = _data
@@ -405,7 +456,7 @@ function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
         j = i
         x_Si = z[i]*m[i]*m̄inv
         x_Sj = x_Si
-        ϵ,λa,λr,σ,di= _ϵ[i,j],_λa[i,i],_λr[i,i],_σ[i,i],_d[i]
+        ϵ,λa,λr,σ,di= _ϵ[i,j],_λa[i,i],_λr[i,i],_σ[i,i],_d[i,i]
         σeff,ϵff = _σeff[i,j],_ϵff[i,j]
         _C = @f(Cλ,λa,λr)
         dij3 = di^3
@@ -436,25 +487,25 @@ function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
             σcoeff^(4+λr)*Q2λr/(λr+1)))
         f1,f2,f3,f4,f5,f6 = @f(f123456,α)
          _χ = f1*_ζst+f2*_ζst5+f3*_ζst8
-        a2_ij = π*_KHS*(1+_χ)*_ρ_S*ϵ^2*dij3*_C^2*(x_0ij^(2*λa)*(@f(aS_1,2*λa)+@f(B,2*λa,x_0effij,_ζ_X))-
-            x_0ij^(λa+λr)*2*(@f(aS_1,λa+λr)+@f(B,λa+λr,x_0effij,_ζ_X))+
-            x_0ij^(2*λr)*(@f(aS_1,2*λr)+@f(B,2*λr,x_0effij,_ζ_X))+
-            x_0ij^(2*λa+2)*2*Q1λa*(@f(aS_1,2*λa+2)+@f(B,2*λa+2,x_0effij,_ζ_X))*Dij+
-            x_0ij^(2*λr+2)*2*Q1λr*(@f(aS_1,2*λr+2)+@f(B,2*λr+2,x_0effij,_ζ_X))*Dij-
-            x_0ij^(λa+λr+2)*2*(Q1λa+Q1λr)*(@f(aS_1,λa+λr+2)+@f(B,λa+λr+2,x_0effij,_ζ_X))*Dij+
+        a2_ij = π*_KHS*(1+_χ)*_ρ_S*ϵ^2*dij3*_C^2*
+            (x_0ij^(2*λa)*(@f(aS_1,2*λa,_ζ_X)+@f(B,2*λa,x_0effij,_ζ_X))-
+            x_0ij^(λa+λr)*2*(@f(aS_1,λa+λr,_ζ_X)+@f(B,λa+λr,x_0effij,_ζ_X))+
+            x_0ij^(2*λr)*(@f(aS_1,2*λr,_ζ_X)+@f(B,2*λr,x_0effij,_ζ_X))+
+            x_0ij^(2*λa+2)*2*Q1λa*(@f(aS_1,2*λa+2,_ζ_X)+@f(B,2*λa+2,x_0effij,_ζ_X))*Dij+
+            x_0ij^(2*λr+2)*2*Q1λr*(@f(aS_1,2*λr+2,_ζ_X)+@f(B,2*λr+2,x_0effij,_ζ_X))*Dij-
+            x_0ij^(λa+λr+2)*2*(Q1λa+Q1λr)*(@f(aS_1,λa+λr+2,_ζ_X)+@f(B,λa+λr+2,x_0effij,_ζ_X))*Dij+
             x_0ij^(2*λa+4)*Q1λa^2*(@f(aS_1,2*λa+4,_ζ_X)+@f(B,2*λa+4,x_0effij,_ζ_X))*Dij^2+
             x_0ij^(2*λr+4)*Q1λr^2*(@f(aS_1,2*λr+4,_ζ_X)+@f(B,2*λr+4,x_0effij,_ζ_X))*Dij^2-
             x_0ij^(λa+λr+4)*(2*Q1λa*Q1λr)*(@f(aS_1,λa+λr+4,_ζ_X)+@f(B,λa+λr+4,x_0effij,_ζ_X))*Dij^2+
             x_0ij^(2*λa+4)*2*Q2λa*(@f(aS_1,2*λa+4,_ζ_X)+@f(B,2*λa+4,x_0effij,_ζ_X))*Dij^2+
             x_0ij^(2*λr+4)*2*Q2λr*(@f(aS_1,2*λr+4,_ζ_X)+@f(B,2*λr+4,x_0effij,_ζ_X))*Dij^2-
             x_0ij^(λa+λr+4)*2*(Q2λa+Q2λr)*(@f(aS_1,λa+λr+4,_ζ_X)+@f(B,λa+λr+4,x_0effij,_ζ_X))*Dij^2+
-            x_0ij^(2*λa+6)*2*(Q1λa*Q2λa)*(@f(aS_1,2*λa+6)+@f(B,2*λa+6,x_0effij,_ζ_X))*Dij^3+
-            x_0ij^(2*λr+6)*2*(Q1λr*Q2λr)*(@f(aS_1,2*λr+6)+@f(B,2*λr+6,x_0effij,_ζ_X))*Dij^3-
-            x_0ij^(λa+λr+6)*2*(Q1λr*Q2λa+Q1λa*Q2λr)*(@f(aS_1,λa+λr+6)+@f(B,λa+λr+6,x_0effij,_ζ_X))*Dij^3+
+            x_0ij^(2*λa+6)*2*(Q1λa*Q2λa)*(@f(aS_1,2*λa+6,_ζ_X)+@f(B,2*λa+6,x_0effij,_ζ_X))*Dij^3+
+            x_0ij^(2*λr+6)*2*(Q1λr*Q2λr)*(@f(aS_1,2*λr+6,_ζ_X)+@f(B,2*λr+6,x_0effij,_ζ_X))*Dij^3-
+            x_0ij^(λa+λr+6)*2*(Q1λr*Q2λa+Q1λa*Q2λr)*(@f(aS_1,λa+λr+6,_ζ_X)+@f(B,λa+λr+6,x_0effij,_ζ_X))*Dij^3+
             x_0ij^(2*λa+8)*Q2λa^2*(@f(aS_1,2*λa+8,_ζ_X)+@f(B,2*λa+8,x_0effij,_ζ_X))*Dij^4+
             x_0ij^(2*λr+8)*Q2λr^2*(@f(aS_1,2*λr+8,_ζ_X)+@f(B,2*λr+8,x_0effij,_ζ_X))*Dij^4-
             x_0ij^(λa+λr+8)*(2*Q2λa*Q2λr)*(@f(aS_1,λa+λr+8,_ζ_X)+@f(B,λa+λr+8,x_0effij,_ζ_X))*Dij^4)
-    
         
         #calculations for a3 - diagonal
         a3_ij = -ϵff^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
@@ -462,12 +513,12 @@ function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
         a₁ += a1_ij*x_Si*x_Si
         a₂ += a2_ij*x_Si*x_Si
         a₃ += a3_ij*x_Si*x_Si
+        
         for j ∈ (i+1):l
             x_Sj = z[j]*m[j]*m̄inv   
-            ϵ,λa,λr,σ,dj= _ϵ[i,j],_λa[i,j],_λr[i,j],_σ[i,j],_d[j]
+            ϵ,λa,λr,σ,dij= _ϵ[i,j],_λa[i,j],_λr[i,j],_σ[i,j],_d[i,j]
             σeff,ϵff = _σeff[i,j],_ϵff[i,j]
             _C = @f(Cλ,λa,λr)
-            dij = 0.5*(di+dj)
             dij3 = dij^3
             x_0ij = σ/dij
             x_0effij = σeff/dij
@@ -521,7 +572,7 @@ function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
             #adding
             a₁ += 2*a1_ij*x_Si*x_Sj
             a₂ += 2*a2_ij*x_Si*x_Sj
-            a₃ += 2*a3_ij*x_Si*x_Sj            
+            a₃ += 2*a3_ij*x_Si*x_Sj   
         end
     end
     a₁ = a₁*m̄/T/∑z
@@ -530,12 +581,3 @@ function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     adisp =  a₁ + a₂ + a₃ 
     return adisp
 end
-
-const SAFTVRQMieconsts = (
-    x = [-0.9956571630258080807355,-0.973906528517171720078,-0.9301574913557082260012,-0.8650633666889845107321,-0.7808177265864168970637,-0.6794095682990244062343,-0.562757134668604683339,
-        -0.4333953941292471907993,-0.294392862701460198131,-0.1488743389816312108848,0,0.1488743389816312108848,0.2943928627014601981311,0.4333953941292471907993,
-        0.562757134668604683339,0.6794095682990244062343,0.7808177265864168970637,0.865063366688984510732,0.9301574913557082260012,0.973906528517171720078,0.9956571630258080807355],
-    w = [0.0116946388673718742781,0.0325581623079647274788,0.0547558965743519960314,0.075039674810919952767,0.093125454583697605535,0.1093871588022976418992,0.123491976262065851078,
-        0.134709217311473325928,0.142775938577060080797,0.1477391049013384913748,0.149445554002916905665,0.1477391049013384913748,0.1427759385770600807971,0.134709217311473325928,
-        0.123491976262065851078,0.109387158802297641899,0.093125454583697605535,0.075039674810919952767,0.05475589657435199603138,0.032558162307964727479,0.0116946388673718742781],
-)

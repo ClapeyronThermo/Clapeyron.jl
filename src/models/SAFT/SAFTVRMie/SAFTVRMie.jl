@@ -318,7 +318,7 @@ function aS_1_fdf(model::SAFTVRMieModel, V, T, z, λ,ζ_X_= @f(ζ_X),ρ_S_ = @f(
     ζeff3 = (1-ζeff_)^3
     _f =  -1/(λ-3)*(1-ζeff_/2)/ζeff3
     _df = -1/(λ-3)*((1-ζeff_/2)/ζeff3
-    + @f(ρ_S)*((3*(1-ζeff_/2)*(1-ζeff_)^2
+    + ρ_S_*((3*(1-ζeff_/2)*(1-ζeff_)^2
     - 0.5*ζeff3)/ζeff3^2)*∂ζeff_)
     return _f,_df
 end
