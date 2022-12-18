@@ -278,7 +278,6 @@ function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma.values)
     ρS = N_A/V*m̄
     comps = @comps
     _ζst = zero(V+T+first(z))
-    kρS = ρS* π/6
     for i ∈ comps
         x_Si = z[i]*m[i]*m̄inv
         _ζst += x_Si*x_Si*(_σ[i,i]^3)
@@ -289,7 +288,7 @@ function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma.values)
     end
 
     #return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i)+@f(d,j))^3/8 for i ∈ comps for j ∈ comps)
-    return kρS*_ζst
+    return _ζst*ρS* π/6
 end
 
 function g_HS(model::SAFTVRMieModel, V, T, z, x_0ij,ζ_X_ = @f(ζ_X))
