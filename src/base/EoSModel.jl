@@ -151,7 +151,7 @@ julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.cite(umr) #shou
 ```
 the `out` argument supports two values:
 - `:doi`: returns the stored values on each EoS. by default those are DOI identifiers.
-- `:bib`: returns BibTeX entries. to use this, an internet conexion is required.
+- `:bib`: returns BibTeX entries. to use this, an internet connection is required.
 
 ```julia-repl
 julia> model = SAFTVRQMie(["helium"])
