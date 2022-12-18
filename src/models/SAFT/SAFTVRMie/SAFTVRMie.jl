@@ -419,7 +419,6 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
         dij = _d[i]
         x_0ij = σ/dij
         dij3 = dij^3
-        x_0ij = σ/dij
         #calculations for a1 - diagonal
         aS_1_a,∂aS_1∂ρS_a = @f(aS_1_fdf,λa,_ζ_X,ρS)
         aS_1_r,∂aS_1∂ρS_r = @f(aS_1_fdf,λr,_ζ_X,ρS)
@@ -483,7 +482,6 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
             dij = 0.5*(_d[i]+_d[j])
             x_0ij = σ/dij
             dij3 = dij^3
-            x_0ij = σ/dij
             #calculations for a1
             a1_ij = (2*π*ϵ*dij3)*_C*ρS*
             (x_0ij^λa*(@f(aS_1,λa,_ζ_X)+@f(B,λa,x_0ij,_ζ_X)) - x_0ij^λr*(@f(aS_1,λr,_ζ_X)+@f(B,λr,x_0ij,_ζ_X)))
