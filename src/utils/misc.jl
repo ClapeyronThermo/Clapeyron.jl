@@ -36,15 +36,27 @@ function _parse_kv(str,dlm)
     return strip(_k),strip(_v)
 end
 
+DOI2BIB_CACHE = Dict{String,String}()
+
 function doi2bib(doi::String)
-    headers = ["Accept" => "application/x-bibtex"]
+
+    if haskey(DOI2BIB_CACHE,doi)
+        return DOI2BIB_CACHE[doi] #caching requests
+    end
+
+    headers = ["Accept"=>"application/x-bibtex",
+                "charset" => "utf-8",
+                "User-Agent" => "https://github.com/ypaul21/Clapeyron.jl"]
+    
+    
     url = "https://dx.doi.org/" * doi
-    @show url
     out = IOBuffer()
     r = Downloads.request(url, output = out, method = "GET",headers = headers)
     if r.status == 200
         res = String(take!(out))
-    else
-        return ""
+    else  
+        res =  ""
     end
+    DOI2BIB_CACHE[doi] = res
+    return res
 end
