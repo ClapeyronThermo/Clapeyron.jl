@@ -44,7 +44,8 @@ abstract type SAFTVRQMieModel <: SAFTVRMieModel end
 Quantum-Corrected SAFT-VR Mie. In particular, it uses the second order Feynman–Hibbs corrections to the Mie Potential
 
 ## References
-1. Aasen, A., Hammer, M., Müller, E. A., & Wilhelmsen, Ø. (2020). Equation of state and force fields for Feynman-Hibbs-corrected Mie fluids. II. Application to mixtures of helium, neon, hydrogen, and deuterium. The Journal of Chemical Physics, 152(7), 074507. [doi:10.1063/1.5136079](https://doi.org/10.1063/1.5136079)
+1. Aasen, A., Hammer, M., Ervik, Å., Müller, E. A., & Wilhelmsen, Ø. (2019). Equation of state and force fields for Feynman–Hibbs-corrected Mie fluids. I. Application to pure helium, neon, hydrogen, and deuterium. The Journal of Chemical Physics, 151(6), 064508. [doi:10.1063/1.5111364](https://doi.org/10.1063/1.5111364)
+2. Aasen, A., Hammer, M., Müller, E. A., & Wilhelmsen, Ø. (2020). Equation of state and force fields for Feynman-Hibbs-corrected Mie fluids. II. Application to mixtures of helium, neon, hydrogen, and deuterium. The Journal of Chemical Physics, 152(7), 074507. [doi:10.1063/1.5136079](https://doi.org/10.1063/1.5136079)
 """
 SAFTVRQMie
 
@@ -68,7 +69,7 @@ function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], i
         epsilon .= epsilon .* (1 .- k)
     end
     packagedparams = SAFTVRQMieParam(Mw, segment, sigma, lambda_a, lambda_r, epsilon)
-    references = ["10.1063/1.5136079"]
+    references = ["10.1063/1.5111364","10.1063/1.5136079"]
 
     model = SAFTVRQMie(packagedparams, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
     return model
@@ -311,7 +312,7 @@ function a_hs_eff(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     end
     
     B̄₂ = 4*B̄₂/∑z/∑z
-    
+
     #B̄₃
     B̄₃ = zero(eltype(_σeff))
     _0 = zero(eltype(_σeff))

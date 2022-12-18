@@ -160,7 +160,8 @@ SAFTVRQMie{BasicIdeal} with 1 component:
 Contains parameters: Mw, segment, sigma, lambda_a, lambda_r, epsilon
 
 julia> Clapeyron.cite(model,:bib)
-1-element Vector{String}:
+2-element Vector{String}:
+ "@article{Aasen_2019,\n\tdoi = {10" ⋯ 463 bytes ⋯ "Journal of Chemical Physics}\n}"
  "@article{Aasen_2020,\n\tdoi = {10" ⋯ 452 bytes ⋯ "Journal of Chemical Physics}\n}"
 ```
 

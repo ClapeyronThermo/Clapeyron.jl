@@ -62,15 +62,22 @@ function doi2bib(doi::String)
                 "charset" => "utf-8",
                 "User-Agent" => "https://github.com/ypaul21/Clapeyron.jl"]
     
-    
-    url = "https://dx.doi.org/" * doi
+    url = "https://api.crossref.org/v1/works/" * doi * "/transform"
     out = IOBuffer()
-    r = Downloads.request(url, output = out, method = "GET",headers = headers)
-    if r.status == 200
-        res = String(take!(out))
-    else  
-        res =  ""
+    try
+        r = Base.CoreLogging.with_logger(Base.CoreLogging.NullLogger()) do
+            Downloads.request(url, output = out, method = "GET",headers = headers)
+        end
+        if r.status == 200
+            res = String(take!(out))
+        else  
+            res =  ""
+        end
+        DOI2BIB_CACHE[doi] = res
+        return res
+    catch err
+        @show err
+        @warn "no internet connection"
+        return ""
     end
-    DOI2BIB_CACHE[doi] = res
-    return res
 end
