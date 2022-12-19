@@ -63,8 +63,14 @@ end
 
 function volume_virial(B::Real,p,T,z=SA[1.0])
     _0 = zero(B)
+
+    #=
+    PV/RT∑z = 1 + B/V // a = P/RT∑z, .*= V
+    aV2 = V + B 
+    aV2 - V - B = 0 
+    =#
     B > _0 && return _0/_0
-    a = p/(R̄*T)
+    a = p/(R̄*T*sum(z))
     b = -1
     c = -B
     Δ = b*b-4*a*c
@@ -74,14 +80,21 @@ function volume_virial(B::Real,p,T,z=SA[1.0])
         return -2*B
     end
     #only the left root has physical meaning
-    return (-b + sqrt(b*b-4*a*c))/(2*a)
+
+    #stable way of calculating quadratics, seems to matter here
+    if b >= 0
+        return 2*c/(- b - sqrt(Δ))
+    else
+        return (-b + sqrt(Δ))/(2*a)
+    end
 end
 
 #(z = pV/RT)
 #(RT/p = V/z)
 """
     volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
-calculates the volume (m³) of the compound modelled by `model` at a certain pressure,temperature and moles.
+
+Calculates the volume (m³) of the compound modelled by `model` at a certain pressure,temperature and moles.
 `phase` is a Symbol that determines the initial volume root to look for:
 - If `phase =:unknown` (Default), it will return the physically correct volume root with the least gibbs energy.
 - If `phase =:liquid`, it will return the volume of the phase using a liquid initial point.
