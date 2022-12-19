@@ -111,6 +111,8 @@ end
 """
     second_virial_coefficient(model::EoSModel, T, z=SA[1.])
 
+Default units: `[m^3]`
+
 Calculates the second virial coefficient `B`, defined as:
 
 ```julia
@@ -123,12 +125,91 @@ function second_virial_coefficient(model::EoSModel, T, z=SA[1.])
 end
 
 function second_virial_coefficient_impl(model::EoSModel,T , z = SA[1.0])
-    TT = promote_type(eltype(z),typeof(T))
+    TT = one(promote_type(eltype(z),typeof(1.0*T)))
     V = 1/sqrt(eps(TT))
     fAᵣ(x) = eos_res(model,x,T,z)
     Aᵣ,∂Aᵣ∂V,∂²Aᵣ∂V² = Solvers.f∂f∂2f(fAᵣ,V)
-    return V^2/(R̄*T)*(∂Aᵣ∂V+V*∂²Aᵣ∂V²)
+    return V^2/(R̄*T)*(∂Aᵣ∂V+V*∂²Aᵣ∂V²) #V*V/J * (J/V )
 end
+
+
+"""
+    cross_second_virial(model,T,z)
+
+Default units: `[m^3]`
+
+Calculates the second cross virial coefficient (B₁₂) of a binary mixture, using the definition:
+
+```julia
+B̄ = x₁^2*B₁₁ + 2x₁x₂B₁₂ + x₂^2*B₂₂
+B₁₂ = (B̄ - x₁^2*B₁₁ - x₂^2*B₂₂)/2x₁x₂
+```
+
+
+!!! info composition-dependent
+    The second cross virial coefficient calculated from a equation of state can present a dependency on composition [1], but normally, experiments for obtaining the second virial coefficient are made by mixing the same volume of two gases. you can calculate B12 in this way by using (Clapeyron.equivol_cross_second_virial)[@ref]
+
+## References
+1. Jäger, A., Breitkopf, C., & Richter, M. (2021). The representation of cross second virial coefficients by multifluid mixture models and other equations of state. Industrial & Engineering Chemistry Research, 60(25), 9286–9295. [doi:10.1021/acs.iecr.1c01186](https://doi.org/10.1021/acs.iecr.1c01186)
+"""
+function cross_second_virial(model,T,z)
+    B = second_virial_coefficient
+    n = length(model)
+    ∑z = sum(z)
+    if n == 1
+        return zero(T + first(z))
+    elseif n == 2
+        model1,model2 = split_model(model)
+        B̄ = B(model,T,z)/∑z #1 mol
+        B1,B2 = B(model1,T),B(model2,T) #1 mol by default
+        #@show B1,B2,B̄
+        x = z/∑z
+        #B̄ = (B1*x1^2 + B2*x2^2 + B12*x1*x2)
+        B12 = (B̄ - x[1]*x[1]*B1 - x[2]*x[2]*B2)/(2*x[1]*x[2])
+        return B12*∑z
+    else
+        throw(error("cross_second_virial is only for models with 2 components. got a model with $n conponents"))
+    end
+end
+
+"""
+    equivol_cross_second_virial(model::EoSModel,T,p_exp = 200000.0)
+
+calculates the second cross virial coefficient, by simulating the mixing of equal volumes of pure gas, at T,P conditions.
+The equal volume of each pure gas sets an specific molar amount for each component. Details of the experiment can be found at [1].
+
+## Example
+```
+model = SAFTVRQMie(["helium","neon"])
+B12 = equivol_cross_second_virial(model,)
+
+```
+## References
+1. Brewer, J., & Vaughn, G. W. (1969). Measurement and correlation of some interaction second virial coefficients from − 125° to 50°C. I. The Journal of Chemical Physics, 50(7), 2960–2968. [doi:10.1063/1.1671491](https://doi.org/10.1063/1.1671491)
+"""
+function equivol_cross_second_virial(model,T,p_exp = 200000.0)
+    @assert length(model) == 2 "this function only works with binary models"
+    #they do experiments at constant volume and temperature, so we are gonna need to calculate the mole fractions for that
+    m1,m2 = split_model(model)
+    B = second_virial_coefficient
+    B11,B22 = B(m1,T),B(m2,T)
+    v01,v02 = volume_virial(B11,p_exp,T),volume_virial(B22,p_exp,T)
+    v1,v2 = volume(m1,p_exp,T,vol0 = v01),volume(m1,p_exp,T,vol0 = v02) #we do this in case there is not a gas phase
+    if isnan(v1+v2)
+        return v1 + v2
+    end
+    #the test was done on equal volume chambers (300 cc), but mathematically it doesn't matter
+    v_test = 1.0
+    z1 = v_test/v1
+    z2 = v_test/v2
+    x = [z1,z2]
+    x ./= sum(x)
+    B̄ = B(model,T,x)
+    
+    B12 = (B̄ - x[1]*x[1]*B11 - x[2]*x[2]*B22)/(2*x[1]*x[2])    
+    return B12
+end
+
 
 function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.])
     p = pressure(model,V,T,z)
@@ -178,11 +259,5 @@ end
 VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos)
 VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos_res)
 
-
-
-
-
-
-
-export second_virial_coefficient,pressure
+export second_virial_coefficient,pressure,cross_second_virial,equivol_cross_second_virial
 
