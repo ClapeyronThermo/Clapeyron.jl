@@ -134,6 +134,13 @@ end
     end
 end
 
+@testset "SAFT-VRQ Mie methods, single component" begin
+    system = SAFTVRQMie(["helium"])
+    @testset "VLE properties" begin
+        @test Clapeyron.saturation_pressure(system, 4)[1] ≈ 56761.2986265459 rtol = 1E-6
+    end
+end
+
 @testset "sCKSAFT methods, single component" begin
     system = sCKSAFT(["ethane"])
     tc_test,pc_test,vc_test = (321.00584034360014, 6.206975436514129e6, 0.0001515067748592245)
@@ -196,6 +203,16 @@ end
         @test Clapeyron.crit_mix(system,z)[1] ≈ 518.0004062881115 rtol = 1E-6
     end
     @printline
+end
+
+@testset "SAFT-VRQ Mie methods, multicomponent" begin
+    system = SAFTVRQMie(["hydrogen","neon"])
+    T = -125 + 273.15
+    #brewer 1969 data for H2-Ne
+    #Texp = [50,25,0,-25,-50,-75,-100,-125] .+ 273.15
+    #B12exp = [14.81,14.23,13.69,13.03,12.29,11.23,9.98,8.20]
+    #there is a difference between brewer 1969 data and the exact value, but for some reason, their plots use a very thick linewidth...
+    @test Clapeyron.equivol_cross_second_virial(system, T)*1e6 ≈ 8.09 rtol = 1E-1
 end
 
 @testset "RK, single component" begin
