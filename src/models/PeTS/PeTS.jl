@@ -8,7 +8,6 @@ abstract type PeTSModel <: EoSModel end
 
 struct PeTS{T <: IdealModel} <:PeTSModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::PeTSParam
     idealmodel::T
     references::Array{String,1}
@@ -29,7 +28,7 @@ end
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
@@ -59,7 +58,7 @@ function PeTS(components;
     params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     
     segment = params["m"]
-    k = params["k"]
+    k = get(params,"k",nothing)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
@@ -68,8 +67,7 @@ function PeTS(components;
 
     packagedparams = PeTSParam(Mw, segment, sigma, epsilon)
     references = ["10.1080/00268976.2018.1447153"]
-    icomponents = 1:length(components)
-    model = PeTS(components,icomponents,packagedparams,init_idealmodel,references)
+    model = PeTS(components,packagedparams,init_idealmodel,references)
     return model
 end
 

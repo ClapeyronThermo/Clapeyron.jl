@@ -10,7 +10,11 @@ function random_csv_name(table_type)
     return "$(Symbol(table_type))_$(repr(rand(UInt))).csv"
 end
 """
-    ParamTable(type::Symbol,table,location = nothing,name = nothing, options = ParamOptions())
+    ParamTable(type::Symbol,table;
+    location = nothing,
+    name = nothing,
+    grouptype = :unkwown,
+    options = ParamOptions())
 
 Creates a clapeyron CSV file and returns the location of that file. the type determines the table type:
 - `:single` creates a table with single parameters
@@ -42,7 +46,11 @@ SingleParam{Float64}("Mw") with 2 components:
  "methanol" => 32.042
 ```
 """
-function ParamTable(type::Symbol,data;location::Union{String,Nothing} = nothing,name::Union{String,Nothing} = nothing,options::ParamOptions = DefaultOptions)
+function ParamTable(type::Symbol,data;
+    location::Union{String,Nothing} = nothing,
+    name::Union{String,Nothing} = nothing,
+    grouptype::Symbol = :unknown,
+    options::ParamOptions = DefaultOptions)
     if location === nothing
         location = generate_location!()
     end
@@ -58,7 +66,7 @@ function ParamTable(type::Symbol,data;location::Union{String,Nothing} = nothing,
     io = open(file,"w")
     pretext = 
     """Clapeyron Database File
-    $(name) $type Parameters
+    $(name) Parameters [csvtype = $type, grouptype = $grouptype]
     """
     write(io,pretext)
     CSV.write(io, data,append = true,header = true)

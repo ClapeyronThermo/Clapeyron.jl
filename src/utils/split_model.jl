@@ -80,29 +80,23 @@ function each_split_model(param::SingleParameter, I)
     )
 end
 
-function each_split_model(param::PairParameter, I)
-    value = each_split_model(param.values, I)
-    if isnothing(param.diagvalues)
-        diagvalue = nothing
-    else
-        diagvalue = view(value, diagind(value))
-    end
-    ismissingvalues = param.ismissingvalues[I, I]
+function each_split_model(param::PairParameter,I)
+    value = each_split_model(param.values,I)
+    ismissingvalues = param.ismissingvalues[I,I]
     components = param.components[I]
     res = PairParameter(
-        param.name,
-        components,
-        value,
-        diagvalue,
-        ismissingvalues,
-        param.sourcecsvs,
-        param.sources
-    )
+            param.name,
+            components,
+            value,
+            ismissingvalues,
+            param.sourcecsvs,
+            param.sources
+            )
     return res
 end
 
-function each_split_model(param::AssocParam, I)
-    _value = each_split_model(param.values, I)
+function each_split_model(param::AssocParam,I)
+    _value  = each_split_model(param.values,I)
     return AssocParam(
         param.name,
         param.components[I],
@@ -113,7 +107,8 @@ function each_split_model(param::AssocParam, I)
     )
 end
 
-function each_split_model(param::GroupParam, I)
+function each_split_model(param::GroupParam,I)
+    grouptype = param.grouptype
     components = param.components[I]
     groups = param.groups[I]
     n_groups = param.n_groups[I]
@@ -130,10 +125,9 @@ function each_split_model(param::GroupParam, I)
     end
     zero_idx = iszero.(idx)
     nonzero_idx = @. !zero_idx
-    _idx = view(idx, nonzero_idx)
+    _idx = view(idx,nonzero_idx)
 
     len_groups = length(_idx)
-    i_flattenedgroups = 1:len_groups
 
     flattenedgroups = param.flattenedgroups[_idx]
     i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
@@ -153,12 +147,12 @@ function each_split_model(param::GroupParam, I)
     return GroupParam(
         components,
         groups,
+        grouptype,
         n_groups,
         i_groups,
         flattenedgroups,
         n_flattenedgroups,
         n_groups_cache,
-        i_flattenedgroups,
         sourcecsvs)
 end
 """

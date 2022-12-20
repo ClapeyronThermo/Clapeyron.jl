@@ -27,7 +27,7 @@ end
 """
     idealmodel(model::EoSModel)
     
-retrieves the ideal model from the input's model.
+retrieves the ideal model from the input's model. if the model is already an idealmodel, return `nothing`
 
 # Examples:
 
@@ -35,15 +35,26 @@ retrieves the ideal model from the input's model.
 julia> pr = PR(["water"],idealmodel=MonomerIdeal)
 PR{MonomerIdeal, PRAlpha, NoTranslation, vdW1fRule} with 1 component:
  "water"
-Contains parameters: a, b, Tc, Pc, Mw 
-julia> Clapeyron.idealmodel(pr)
+Contains parameters: a, b, Tc, Pc, Mw
+
+julia> ideal = idealmodel(pr)
 MonomerIdeal with 1 component:
  "water"
 Contains parameters: Mw
+
+julia> idealmodel(ideal) == nothing
+true
 ```
 """
-idealmodel(model::EoSModel) = model.idealmodel
+idealmodel(model::EoSModel) = __idealmodel(model::EoSModel)
 
+@generated function __idealmodel(model::EoSModel)
+    if hasfield(model,:idealmodel)
+        return :(getfield(model,:idealmodel))
+    else
+        return :(nothing)
+    end
+end
 """
     eos_res(model::EoSModel, V, T, z=SA[1.0])
 
@@ -92,9 +103,9 @@ This macro is an alias to
     1:length(model)
 
 The caveat is that `model` has to exist in the local namespace.
-`model` is expected to be an EoSModel type that contains the `icomponents` field.
-`icomponents` is an iterator that goes through all component indices.
+`model` is expected to any struct that has length defined in terms of the amount of components.
 """
+
 macro comps()
     return quote
         1:length(model)
@@ -126,9 +137,9 @@ function doi(model)
 end
 
 """
-    cite(model)
+    cite(model,out = :doi)
 
-Returns a Vector of strings containing all bibliographic references of the model, in DOI format. this includes any nested models.
+Returns a Vector of strings containing all bibliographic references of the model, in the format indicated by the `out` argument. this includes any nested models.
 
 ```julia-repl
 julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.cite(umr) #should cite UMRPR, UNIFAC, WalkerIdeal
@@ -138,10 +149,25 @@ julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.cite(umr) #shou
  "10.1021/i260064a004"
  "10.1021/acs.jced.0c00723"
 ```
+the `out` argument supports two values:
+- `:doi`: returns the stored values on each EoS. by default those are DOI identifiers.
+- `:bib`: returns BibTeX entries. to use this, an internet connection is required.
+
+```julia-repl
+julia> model = SAFTVRQMie(["helium"])
+SAFTVRQMie{BasicIdeal} with 1 component:
+ "helium"
+Contains parameters: Mw, segment, sigma, lambda_a, lambda_r, epsilon
+
+julia> Clapeyron.cite(model,:bib)
+2-element Vector{String}:
+ "@article{Aasen_2019,\n\tdoi = {10" ⋯ 463 bytes ⋯ "Journal of Chemical Physics}\n}"
+ "@article{Aasen_2020,\n\tdoi = {10" ⋯ 452 bytes ⋯ "Journal of Chemical Physics}\n}"
+```
 
 This list will displayed by each `EoSModel` on future versions. you can enable/disable this by setting `ENV["CLAPEYRON_SHOW_REFERENCES"] = "TRUE"/"FALSE"`
 """
-function cite(model::EoSModel)
+function cite(model::EoSModel,out = :doi)
     keys = fieldnames(typeof(model))
     res = doi(model)
     
@@ -153,6 +179,26 @@ function cite(model::EoSModel)
             append!(res,val)
         end
     end
-    return unique!(res)
+    unique!(res)
+    if out == :doi
+        return res
+    elseif out == :bib
+        return doi2bib.(res)
+    else
+        error("invalid out value $(out)")
+    end
 end
-    
+
+"""
+    recombine!(model::EoSModel)
+
+Recalculate all mixing rules, combining rules and parameter caches inside an `EoSModel`.
+
+"""
+function recombine! end
+
+function setreferences!(model,references)
+    oldrefs = model.references
+    resize!(oldrefs,length(references))
+    oldrefs .= references
+end

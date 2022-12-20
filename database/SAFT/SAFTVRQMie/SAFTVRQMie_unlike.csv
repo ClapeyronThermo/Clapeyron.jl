@@ -1,0 +1,9 @@
+Clapeyron Database File
+SAFTVRMie unlike Parameters
+species1,species2,k,l
+hydrogen,deuterium,-0.04,0.0
+helium,deuterium,0.12,-0.05
+helium,hydrogen,0.15,-0.025
+neon,deuterium,0.14,0.0
+neon,hydrogen,0.105,0.0
+neon,helium,-0.06,0.0

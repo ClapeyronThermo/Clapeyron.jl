@@ -1,6 +1,5 @@
 struct GERG2008 <: MultiFluidModel
     components::Vector{String}
-    icomponents::UnitRange{Int}
     properties::MultiFluidPropertyParam
     ideal::MultiFluidIdealParam
     single::MultiFluidSingleParam
@@ -41,9 +40,8 @@ function GERG2008(components::Vector{String})
     beta_ij = each_split_model(params[:beta_ij],I) |> pack_vectors
     gamma_ij = each_split_model(params[:gamma_ij],I) |> pack_vectors
     pair = MultiFluidPairParam(nij,tij,dij,Fij,beta_ij,gamma_ij,eta_ij,epsilon_ij)
-    icomponents = 1:length(I)
     references = ["10.1021/je300655b"]
-    return GERG2008(components,icomponents,properties,ideal,single,pair,references)
+    return GERG2008(components,properties,ideal,single,pair,references)
 end
 
 export GERG2008

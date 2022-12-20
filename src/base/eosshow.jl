@@ -51,6 +51,8 @@ function gc_eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSMod
         end
         i != length(param.components) && println(io)
     end
+    println(io)
+    print(io,"Group Type: ",param.grouptype)
     fields = fieldnames(typeof(model.params))
     if length(fields) != 0
         println(io)

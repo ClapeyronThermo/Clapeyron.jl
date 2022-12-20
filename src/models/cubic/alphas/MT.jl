@@ -37,7 +37,7 @@ mᵢ = 0.384401 + 1.52276ωᵢ - 0.213808ωᵢ^2 + 0.034616ωᵢ^3 - 0.001976ω�
 MTAlpha
 
 function MTAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = SingleParam(params["w"],"acentric factor")
     packagedparams = MTAlphaParam(acentricfactor)
     model = MTAlpha(packagedparams, verbose=verbose)

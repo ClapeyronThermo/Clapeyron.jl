@@ -26,7 +26,7 @@ export sCKSAFT
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `vol`: Single Parameter (`Float64`) - Segment Volume [`dm^3`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
@@ -61,7 +61,7 @@ function sCKSAFT(components::Vector{String};
 
     params,sites = getparams(components, ["SAFT/sCKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
-    k = params["k"]
+    k = get(params,"k",nothing)
     sigma = params["vol"]
     sigma.values .*= 6*0.74048/N_A/1e6/π
     sigma.values .^= 1/3
@@ -69,7 +69,7 @@ function sCKSAFT(components::Vector{String};
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
     packagedparams = sCKSAFTParam(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/IE00107A014", "10.1021/ie00056a050","10.1021/ie00044a042"]
 

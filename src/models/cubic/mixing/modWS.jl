@@ -10,7 +10,7 @@ end
 
 """
     WSRule{γ} <: WSRuleModel
-    
+
     WSRule(components::Vector{String};
     activity = Wilson,
     userlocations::Vector{String}=String[],
@@ -21,7 +21,7 @@ end
 
 None
 
-## Input models 
+## Input models
 
 - `activity`: Activity Model
 
@@ -52,10 +52,9 @@ modWSRule
 
 export modWSRule
 function modWSRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    init_activity = activity(components;userlocations = activity_userlocations,verbose)
-    
+    _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1002/aic.690380505","10.1002/aic.690410325"]
-    model = modWSRule(components, init_activity,references)
+    model = modWSRule(components, _activity,references)
     return model
 end
 
@@ -63,11 +62,11 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::modWSRuleModel,α,a
     λ = WS_λ(mixing_model,model,z)
     n = sum(z)
     invn = (one(n)/n)
-    RT⁻¹ = 1/(R̄*T)      
+    RT⁻¹ = 1/(R̄*T)
     B̄ = zero(T+V+first(z))
     Σab = B̄
     for i in @comps
-        zi = z[i]   
+        zi = z[i]
         αi = α[i]
         ai = a[i,i]*αi
         bi = b[i,i]

@@ -439,15 +439,17 @@ end
 function excess(model::EoSModel, p, T, z, ::typeof(gibbs_free_energy))
     TT = typeof(p + T + first(z))
     pure = split_model(model)
-    g_pure = gibbs_free_energy.(pure, p, T)
-    g_mix = gibbs_free_energy(model, p, T, z)
+    g_mix = gibbs_free_energy(model,p,T,z)
     log∑z = log(sum(z))
-    x = z ./ sum(z)
+    v = volume(model,p,T,z)
     for i in 1:length(z)
-        g_mix -= z[i] * (gibbs_free_energy(pure[i], p, T) + R̄ * T * (log(z[i]) - log∑z))
+        lnxi = R̄*T*(log(z[i]) - log∑z)
+        g_mix -= z[i]*(gibbs_free_energy(pure[i],p,T) + lnxi)
     end
+
     return g_mix::TT
 end
+
 
 """
     gibbs_solvation(model::EoSModel, T)

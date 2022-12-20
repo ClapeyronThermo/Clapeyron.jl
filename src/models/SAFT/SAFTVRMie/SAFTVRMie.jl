@@ -29,7 +29,7 @@ abstract type SAFTVRMieModel <: SAFTModel end
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
 
@@ -75,11 +75,24 @@ function SAFTVRMie(components;
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
 
     packagedparams = SAFTVRMieParam(Mw, segment, sigma, lambda_a, lambda_r, epsilon, epsilon_assoc, bondvol)
     references = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
 
     model = SAFTVRMie(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
+    return model
+end
+
+function recombine_impl!(model::SAFTVRMieModel)
+    sigma = model.params.sigma
+    epsilon = model.params.epsilon
+    lambda_a = model.params.lambda_a
+    lambda_r = model.params.lambda_r
+    lambda_LorentzBerthelot!(lambda_a)
+    lambda_LorentzBerthelot!(lambda_r)
+    sigma = sigma_LorentzBerthelot!(sigma)
+    epsilon = epsilon_HudsenMcCoubrey!(epsilon,sigma)
     return model
 end
 
@@ -149,7 +162,7 @@ function d(model::SAFTVRMieModel, V, T, z)
     _λr = diagvalues(model.params.lambda_r)
     u = SAFTVRMieconsts.u
     w = SAFTVRMieconsts.w
-    _0 = zero(T)
+    _0 = zero(T*1.0)
     n = length(z)
     _d = zeros(typeof(_0),n)
     for k ∈ 1:n
@@ -265,7 +278,6 @@ function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma.values)
     ρS = N_A/V*m̄
     comps = @comps
     _ζst = zero(V+T+first(z))
-    kρS = ρS* π/6
     for i ∈ comps
         x_Si = z[i]*m[i]*m̄inv
         _ζst += x_Si*x_Si*(_σ[i,i]^3)
@@ -276,7 +288,7 @@ function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma.values)
     end
 
     #return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i)+@f(d,j))^3/8 for i ∈ comps for j ∈ comps)
-    return kρS*_ζst
+    return _ζst*ρS* π/6
 end
 
 function g_HS(model::SAFTVRMieModel, V, T, z, x_0ij,ζ_X_ = @f(ζ_X))
@@ -305,7 +317,7 @@ function aS_1_fdf(model::SAFTVRMieModel, V, T, z, λ,ζ_X_= @f(ζ_X),ρ_S_ = @f(
     ζeff3 = (1-ζeff_)^3
     _f =  -1/(λ-3)*(1-ζeff_/2)/ζeff3
     _df = -1/(λ-3)*((1-ζeff_/2)/ζeff3
-    + @f(ρ_S)*((3*(1-ζeff_/2)*(1-ζeff_)^2
+    + ρ_S_*((3*(1-ζeff_/2)*(1-ζeff_)^2
     - 0.5*ζeff3)/ζeff3^2)*∂ζeff_)
     return _f,_df
 end
@@ -407,7 +419,6 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
         dij = _d[i]
         x_0ij = σ/dij
         dij3 = dij^3
-        x_0ij = σ/dij
         #calculations for a1 - diagonal
         aS_1_a,∂aS_1∂ρS_a = @f(aS_1_fdf,λa,_ζ_X,ρS)
         aS_1_r,∂aS_1∂ρS_r = @f(aS_1_fdf,λr,_ζ_X,ρS)
@@ -471,7 +482,6 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
             dij = 0.5*(_d[i]+_d[j])
             x_0ij = σ/dij
             dij3 = dij^3
-            x_0ij = σ/dij
             #calculations for a1
             a1_ij = (2*π*ϵ*dij3)*_C*ρS*
             (x_0ij^λa*(@f(aS_1,λa,_ζ_X)+@f(B,λa,x_0ij,_ζ_X)) - x_0ij^λr*(@f(aS_1,λr,_ζ_X)+@f(B,λr,x_0ij,_ζ_X)))
@@ -722,16 +732,16 @@ const SAFTVRMieconsts = (
 
 ########
 #=
-Optimizations for single component SAFTVRMieModel
+Optimizations for single component SAFTVRMie
 =#
 
 #######
 
-function d(model::SAFTVRMieModel, V, T, z::SingleComp)
-    _ϵ = model.params.epsilon.diagvalues
-    _σ = model.params.sigma.diagvalues
-    _λa = model.params.lambda_a.diagvalues
-    _λr = model.params.lambda_r.diagvalues
+function d(model::SAFTVRMie, V, T, z::SingleComp)
+    _ϵ = model.params.epsilon
+    _σ = model.params.sigma
+    _λa = model.params.lambda_a
+    _λr = model.params.lambda_r
     u = SAFTVRMieconsts.u
     w = SAFTVRMieconsts.w
     ϵ = _ϵ[1]
@@ -741,7 +751,7 @@ function d(model::SAFTVRMieModel, V, T, z::SingleComp)
     θ = Cλ(model,V,T,z,λa,λr)*ϵ/T
     λrinv = 1/λr
     λaλr = λa/λr
-    di = zero(T)
+    di = zero(T*1.0)
     for j ∈ 1:5
         di += w[j]*(θ/(θ+u[j]))^λrinv*(exp(θ*(1/(θ/(θ+u[j]))^λaλr-1))/(u[j]+θ)/λr)
     end

@@ -105,11 +105,11 @@ end
 ```Julia
 function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false,assoc_options = AssocOptions())
   	# Obtain a Dict of parameters. We pass in custom locations through the optional parameter userlocations.
-    params = getparams(components; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components; userlocations=userlocations, verbose=verbose)
   
     # For clarity, we assign the contents of the returned dict to their own variables.
     segment = params["m"]
-    k = params["k"]
+    k = get(params,"k",nothing) #if k is not provided, it will be not be considered
     Mw = params["Mw"]
     # Here, we modify the values of the sigma parameter first.
     params["sigma"].values .*= 1E-10
@@ -121,9 +121,8 @@ function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
   
-    # Build the sites object for associating species. The input is a Dict that links the name of the site with the multiplicity.
-    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
-  
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association. if you want to perform cross-association mixing, check the AssocOptions docs
+
     # Now we can create the parameter struct that we have defined.
     packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
   

@@ -30,10 +30,17 @@ Within Clapeyron, we use CSV files to store our parameters. There are four types
   | species1                      | site1 | species2 | site2 | param |
   | water                         | H     | water    | e     | 1.234 |
   | water                         | H     | methanol | e     | 5.678 |
+  | methanol                      | H     | water    | e     | 5.678 |
 
   These are used for parameters which refer to a pair of species and sites (such as the association potential depth, `epsilon_assoc`, and bonding volume, `bondvol`). Note that this can be for associations between the same species and different sites, or different species and different sites (as shown above).
 
-Note that it is extremely important that the cell A2 has the word 'Like', 'Unlike' or 'Assoc' in it so that Clapeyron can identify the type of parameters in it. Feel free to check these out in the package to see some better examples!
+Note that it is extremely important that the cell A2 has the word 'Like', 'Unlike' or 'Assoc' in it so that Clapeyron can identify the type of parameters in it.
+
+Feel free to check these out in the package to see some better examples!
+
+!!! note "Association Values are asymmetric!"
+
+    There are cases where the association values are asymmetric (for example, Water and acetonitrile), so if you are adding cross-association values for a component-site pair, remember to add the corresponding swapped value, like in the water - methanol example above.
 
 ## Using your own parameters
 
@@ -44,13 +51,27 @@ model1 = PR(["your_species_1","your_species_2"];userlocations=["path/to/your/dat
 model2 = PCSAFT(["your_species_1","your_species_2"];userlocations=["dtb_like","dtb_unlike","dtb_assoc"],ideal_userlocations=["dtb_ideal"])
 ```
 
-The rest works exactly as it normally would! We recommend reading the background documentation for the various models to ensure the units of the parameters you provide are correct.
+The rest works exactly as it normally would! We recommend reading the background documentation for the various models, as well as the [`getparams`](@ref) docs, to ensure the units of the parameters you provide are correct and how those parameters are parsed into each model.
 
 You can create those parameters without leaving the julia REPL, by using [`Clapeyron.ParamTable`](@ref). this function will create a temporary location on where a CSV containing the table is created:
 
 ```julia
 data = (species = ["water"],Mw = [18.0])
 file = ParamTable(:single,data,name="water_mw")
-model = PR(["water"],user_locations = file)
-model.params.Mw.values[1] #18.0
+model = PR(["water"],user_locations = [file])
+model.params.Mw[1] #18.0
+```
+
+You can also write a CSV as a string an pass that directly:
+
+```julia
+#Any string that starts with `Clapeyron Database File` will be parsed as a CSV file directly.
+csv_data = """Clapeyron Database File,
+       my water like parameters
+       species,Mw
+       water,19.0
+       """
+
+model = PR(["water"],user_locations = [csv_data])
+model.params.Mw[1] #19.0
 ```

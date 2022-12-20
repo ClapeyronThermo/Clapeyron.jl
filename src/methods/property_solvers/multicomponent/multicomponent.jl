@@ -80,6 +80,11 @@ function VT_chemical_potential!(result,model,V,T,z)
     return ForwardDiff.gradient!(result,fun,z)
 end
 
+function VT_chemical_potential_res!(result,model,V,T,z)
+    fun(x) = eos_res(model,V,T,x)
+    return ForwardDiff.gradient!(result,fun,z)
+end
+
 function PV_critical_temperature(model,p)
     Tc,_,vc = crit_pure(model)
     g(T) = p - pressure(model,vc,T)
