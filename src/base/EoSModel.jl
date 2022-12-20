@@ -137,9 +137,9 @@ function doi(model)
 end
 
 """
-    cite(model)
+    cite(model,out = :doi)
 
-Returns a Vector of strings containing all bibliographic references of the model, in DOI format. this includes any nested models.
+Returns a Vector of strings containing all bibliographic references of the model, in the format indicated by the `out` argument. this includes any nested models.
 
 ```julia-repl
 julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.cite(umr) #should cite UMRPR, UNIFAC, WalkerIdeal
@@ -149,10 +149,25 @@ julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.cite(umr) #shou
  "10.1021/i260064a004"
  "10.1021/acs.jced.0c00723"
 ```
+the `out` argument supports two values:
+- `:doi`: returns the stored values on each EoS. by default those are DOI identifiers.
+- `:bib`: returns BibTeX entries. to use this, an internet connection is required.
+
+```julia-repl
+julia> model = SAFTVRQMie(["helium"])
+SAFTVRQMie{BasicIdeal} with 1 component:
+ "helium"
+Contains parameters: Mw, segment, sigma, lambda_a, lambda_r, epsilon
+
+julia> Clapeyron.cite(model,:bib)
+2-element Vector{String}:
+ "@article{Aasen_2019,\n\tdoi = {10" ⋯ 463 bytes ⋯ "Journal of Chemical Physics}\n}"
+ "@article{Aasen_2020,\n\tdoi = {10" ⋯ 452 bytes ⋯ "Journal of Chemical Physics}\n}"
+```
 
 This list will displayed by each `EoSModel` on future versions. you can enable/disable this by setting `ENV["CLAPEYRON_SHOW_REFERENCES"] = "TRUE"/"FALSE"`
 """
-function cite(model::EoSModel)
+function cite(model::EoSModel,out = :doi)
     keys = fieldnames(typeof(model))
     res = doi(model)
     
@@ -164,7 +179,14 @@ function cite(model::EoSModel)
             append!(res,val)
         end
     end
-    return unique!(res)
+    unique!(res)
+    if out == :doi
+        return res
+    elseif out == :bib
+        return doi2bib.(res)
+    else
+        error("invalid out value $(out)")
+    end
 end
 
 """

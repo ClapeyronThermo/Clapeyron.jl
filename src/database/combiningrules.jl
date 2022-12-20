@@ -65,7 +65,7 @@ Ignores non-diagonal entries already set.
 
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `ϵᵢᵢ = ϵᵢ`.
 """
-function epsilon_HudsenMcCoubrey(epsilon::SingleOrPair, sigma::PairParameter)
+function epsilon_HudsenMcCoubrey(epsilon::SingleOrPair, sigma::PairParameter;k = nothing)
     return pair_mix(mix_HudsenMcCoubrey,epsilon,sigma)
 end
 
