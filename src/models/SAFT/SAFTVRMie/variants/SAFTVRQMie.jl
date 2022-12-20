@@ -92,13 +92,33 @@ function data(model::SAFTVRQMieModel, V, T, z)
     _σeff = @f(σeff)
     _ϵff = @f(ϵeff)
     _d = @f(d,_σeff) #d here is a (comp x comp) matrix, instead of a (comp) vector, as all safts
-    ζi = @f(ζ0123,_d)
+    ζi = @f(ζ0123,diagvalues(_d))
     _ζst = @f(ζst,_σeff)
     ζₓ = @f(ζ_X,_d)
     _ρ_S = @f(ρ_S,m̄)
     σ3x = _ζst/(_ρ_S*π/6)
     vrdata = (_d,_ρ_S,ζi,ζₓ,_ζst,σ3x,m̄)
     return (_σeff,_ϵff,vrdata)
+end
+
+function x0_volume_liquid(model::SAFTVRQMieModel,T,z)
+    m = model.params.segment.values
+    m̄ = dot(z, m)
+    m̄inv = 1/m̄
+    comps = @comps
+    V = 0.0
+    _σ = @f(σeff)
+    ηmax = 0.55 #maximum CS
+    σ3 = zero(V+T+first(z))
+    for i ∈ comps
+        x_Si = z[i]*m[i]*m̄inv
+        σ3 += x_Si*x_Si*(_σ[i,i]^3)
+        for j ∈ 1:i-1
+            x_Sj = z[j]*m[j]*m̄inv
+            σ3 += 2*x_Si*x_Sj*(_σ[i,j]^3)           
+        end
+    end
+    return N_A/ηmax*m̄ * σ3 * π/6
 end
 
 function ζ_X(model::SAFTVRQMieModel, V, T, z,_d = @f(d))
