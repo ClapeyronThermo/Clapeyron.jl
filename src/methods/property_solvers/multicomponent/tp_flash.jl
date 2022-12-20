@@ -37,10 +37,11 @@ numphases(method::TPFlashMethod) = 2
 include("tp_flash/DifferentialEvolutiontp_flash.jl")
 include("tp_flash/RachfordRicetp_flash.jl")
 include("tp_flash/Michelsentp_flash.jl")
+include("tp_flash/MichelsenMultiphasetp_flash.jl")
 include("tp_flash/Michelsentp_flash_modified.jl")
+include("tp_flash/GuptaMultiphasetp_flash.jl")
 
-
-function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
+function tp_flash(model::EoSModel, p, T, n, method::TPFlashMethod=DETPFlash())
     numspecies = length(model)
     if numspecies != length(n)
         error("There are ", numspecies,
@@ -48,24 +49,26 @@ function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
             length(n))
     end
 
-    model_r,idx_r = index_reduction(model,n)
+    model_r, idx_r = index_reduction(model, n)
     n_r = n[idx_r]
     if length(model_r) == 1
-        V = volume(model_r,p,T,n_r)
+        V = volume(model_r, p, T, n_r)
         return (n, n / sum(n), VT_gibbs_free_energy(model_r, V, T, n_r))
     end
 
     if numphases(method) == 1
-        V = volume(model_r,p,T,n_r,phase =:stable)
+        V = volume(model_r, p, T, n_r, phase=:stable)
         return (n, n / sum(n), VT_gibbs_free_energy(model_r, V, T, n_r))
     end
 
-    xij_r,nij_r,g = tp_flash_impl(model_r,p,T,n_r,index_reduction(method,idx_r))
-    #TODO: perform stability check ritht here:
+    # xij_r, nij_r, g = tp_flash_impl(model_r, p, T, n_r, index_reduction(method, idx_r))
+    res = tp_flash_impl(model_r, p, T, n_r, index_reduction(method, idx_r))
+    return res
+    #TODO: perform stability check right here:
     #expand reduced model:
-    nij = index_expansion(nij_r,idx_r)
-    xij = index_expansion(xij_r,idx_r)
-    return xij,nij,g
+    nij = index_expansion(nij_r, idx_r)
+    xij = index_expansion(xij_r, idx_r)
+    return xij, nij, g
 end
 
 export tp_flash

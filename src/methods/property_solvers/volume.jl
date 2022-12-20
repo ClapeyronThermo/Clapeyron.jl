@@ -12,9 +12,9 @@ v[i+1] = v[i]*exp(β[i]*(p-p(v[i])))
 ```
 In the liquid root region, the iterations follow `v0 < v[i] < v[i+1] < v(p)`, allowing the calculation of the liquid root without entering the metastable region.
 """
-function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    p,T,V0 = promote(p,T,V0)
-    return _volume_compress(model,p,T,z,V0,max_iters)
+function volume_compress(model, p, T, z=SA[1.0]; V0=x0_volume(model, p, T, z, phase=:liquid), max_iters=100)
+    p, T, V0 = promote(p, T, V0)
+    return _volume_compress(model, p, T, z, V0, max_iters)
 end
 
 function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
@@ -26,7 +26,7 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
     logV0 = log(V0)*_1
     lb_v = lb_volume(model,z)
     function logstep(_V)
-        _V < log(lb_v) && return zero(_V)/zero(_V)
+        _V < log(lb_v) && return zero(_V) / zero(_V)
         _V = exp(_V)
         _p,dpdV = p∂p∂V(model,_V,T,z)
         dpdV > 0 && return _nan #inline mechanical stability.
@@ -39,7 +39,7 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         vv = _V + Δ
         return vv
     end
-    res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
+    res = @nan(Solvers.fixpoint(f_fixpoint, logV0, Solvers.SSFixPoint(), rtol=1e-12, max_iters=max_iters), _nan)
     return exp(res)
 end
 
@@ -56,12 +56,12 @@ If you pass an `EoSModel` as the first argument, `B` will be calculated from the
 """
 function volume_virial end
 
-function volume_virial(model::EoSModel,p,T,z=SA[1.0])
-    B = second_virial_coefficient(model,T,z)
-    return volume_virial(B,p,T,z)
+function volume_virial(model::EoSModel, p, T, z=SA[1.0])
+    B = second_virial_coefficient(model, T, z)
+    return volume_virial(B, p, T, z)
 end
 
-function volume_virial(B::Real,p,T,z=SA[1.0])
+function volume_virial(B::Real, p, T, z=SA[1.0])
     _0 = zero(B)
 
     #=
@@ -77,7 +77,7 @@ function volume_virial(B::Real,p,T,z=SA[1.0])
     if Δ <= 0
         #virial approximation could not be calculated
         #return value at spinodal
-        return -2*B
+        return -2 * B
     end
     #only the left root has physical meaning
 
@@ -140,8 +140,8 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
     end
 
     if phase != :unknown
-        V0 = x0_volume(model,p,T,z,phase=phase)
-        V = _volume_compress(model,p,T,z,V0)
+        V0 = x0_volume(model, p, T, z, phase=phase)
+        V = _volume_compress(model, p, T, z, V0)
         #isstable(model,V,T,z,phase) the user just wants that phase
         return V
     end

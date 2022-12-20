@@ -1,7 +1,7 @@
 module Solvers
 
 using LinearAlgebra
-using NLSolvers,Roots
+using NLSolvers, Roots
 using PositiveFactorizations
 using DiffResults, ForwardDiff
 using StaticArrays

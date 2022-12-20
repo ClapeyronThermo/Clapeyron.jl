@@ -135,32 +135,32 @@ function ObjSatPure(model,T)
     ObjSatPure(model,ps,mus,T)
 end
 
-function (f::ObjSatPure)(F,x)
+function (f::ObjSatPure)(F, x)
     model = f.model
-    scales = (f.ps,f.mus)
+    scales = (f.ps, f.mus)
     T = f.Tsat
-    return Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]),scales)
+    return Obj_Sat(model, F, T, exp10(x[1]), exp10(x[2]), scales)
 end
 #with the critical point, we can perform a
 #corresponding states approximation with the
 #propane reference equation of state
-function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
-    h = V_c*5000
-    T0 = 369.89*T/T_c
-    Vl0 = (1.0/_propaneref_rholsat(T0))*h
-    Vv0 = (1.0/_propaneref_rhovsat(T0))*h
+function x0_sat_pure_crit(model, T, T_c, P_c, V_c)
+    h = V_c * 5000
+    T0 = 369.89 * T / T_c
+    Vl0 = (1.0 / _propaneref_rholsat(T0)) * h
+    Vv0 = (1.0 / _propaneref_rhovsat(T0)) * h
     _1 = SA[1.0]
     #μ_l = only(VT_chemical_potential(model,Vl0,T,_1))
     #μ_v = only(VT_chemical_potential(model,Vv0,T,_1))
     #@show (μ_l < μ_v,T/T_c)
-    #if μ_l < μ_v
-      #@show μ_l,μ_v
+    #if μ_l < μ_v 
+    #@show μ_l,μ_v
     #end
     # _,dpdvv = p∂p∂V(model,Vv0,T,SA[1.0])
     # @show dpdvv*Vv0
     # _,dpdvv = p∂p∂V(model,2*Vv0,T,SA[1.0])
     # @show dpdvv*Vv0
-    return (log10(Vl0),log10(Vv0))
+    return (log10(Vl0), log10(Vv0))
 end
 
 function sat_pure(model,T,V0,method)
@@ -184,15 +184,15 @@ function sat_pure(f!::ObjSatPure,V0,method)
     return res,valid
 end
 
-function Obj_Sat(model::EoSModel, F, T, V_l, V_v,scales)
-    fun(_V) = eos(model, _V, T,SA[1.])
-    A_l,Av_l = Solvers.f∂f(fun,V_l)
-    A_v,Av_v =Solvers.f∂f(fun,V_v)
-    g_l = muladd(-V_l,Av_l,A_l)
-    g_v = muladd(-V_v,Av_v,A_v)
-    (p_scale,μ_scale) = scales
-    F[1] = -(Av_l-Av_v)*p_scale
-    F[2] = (g_l-g_v)*μ_scale
+function Obj_Sat(model::EoSModel, F, T, V_l, V_v, scales)
+    fun(_V) = eos(model, _V, T, SA[1.0])
+    A_l, Av_l = Solvers.f∂f(fun, V_l)
+    A_v, Av_v = Solvers.f∂f(fun, V_v)
+    g_l = muladd(-V_l, Av_l, A_l)
+    g_v = muladd(-V_v, Av_v, A_v)
+    (p_scale, μ_scale) = scales
+    F[1] = -(Av_l - Av_v) * p_scale
+    F[2] = (g_l - g_v) * μ_scale
     return F
 end
 

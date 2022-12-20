@@ -31,7 +31,7 @@ import .Fractions
 using .Fractions: FractionVector
 
 #Gas constant, Boltzmann Constant
-include("base/constants.jl") 
+include("base/constants.jl")
 
 #The Base of Clapeyron: EoSModel and eos(model,V,T,z)
 include("base/EoSModel.jl")
@@ -58,7 +58,7 @@ include("database/combiningrules.jl")
 
 using Tables,CSV 
 #getparams options
-include("database/ParamOptions.jl") 
+include("database/ParamOptions.jl")
 #getparams definition
 include("database/database.jl")
 #transform Tables.jl tables to Clapeyron csv files

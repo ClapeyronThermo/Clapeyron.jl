@@ -217,6 +217,11 @@ function gradient_type(V,T,z::FractionVector)
     return Vector{μ}
 end
 
+function gradient_type(V,T,z)
+    μ = typeof(V+T+first(z))
+    return Vector{μ}
+end
+
 include("initial_guess.jl")
 include("differentials.jl")
 include("VT.jl")

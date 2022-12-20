@@ -1,69 +1,79 @@
-function each_split_model(param::AbstractVector,I)
+# function split_model(mixmodel::EoSModel)
+#     modelType = Base.typename(typeof(mixmodel)).wrapper
+#     # pureModels = Vector{modelType}([])
+#     pureModels = Vector{Any}([])
+#     for comp in mixmodel.components
+#         push!(pureModels, modelType([comp]))
+#     end
+#     return pureModels
+# end
+
+function each_split_model(param::AbstractVector, I)
     val = param[I]
     eltype(param) <: AbstractArray && return deepcopy(val)
     return val
 end
 
-function each_split_model(param::AbstractMatrix,I)
-    val =  param[I,I]
+function each_split_model(param::AbstractMatrix, I)
+    val = param[I, I]
     eltype(param) <: AbstractArray && return deepcopy(val)
     return val
 end
 
-function each_split_model(y::SparseMatrixCSC{<:AbstractVector},I)
-    x = y[I,I]
-    m,n,colptr,rowval,nzval = x.m,x.n,x.colptr,x.rowval,x.nzval
-    return SparseMatrixCSC(m,n,colptr,rowval,nzval)
+function each_split_model(y::SparseMatrixCSC{<:AbstractVector}, I)
+    x = y[I, I]
+    m, n, colptr, rowval, nzval = x.m, x.n, x.colptr, x.rowval, x.nzval
+    return SparseMatrixCSC(m, n, colptr, rowval, nzval)
 end
 
-function each_split_model(y::SparsePackedMofV,I)
-    idx = y.idx[I,I]
+function each_split_model(y::SparsePackedMofV, I)
+    idx = y.idx[I, I]
     if iszero(length(y.storage))
-        return SparsePackedMofV(y.storage,idx)
+        return SparsePackedMofV(y.storage, idx)
     end
 
     if iszero(nnz(idx))
         st = y.storage
-        storage = PackedVofV([1],zeros(eltype(st.v),0))
-        return SparsePackedMofV(storage,idx)
+        storage = PackedVofV([1], zeros(eltype(st.v), 0))
+        return SparsePackedMofV(storage, idx)
     else
         str = y.storage[nnz(idx)]
         storage = PackedVectorsOfVectors.pack(str)
-        return SparsePackedMofV(storage,idx)
+        return SparsePackedMofV(storage, idx)
     end
 end
 
-function each_split_model(param::PackedVofV,I)
-    val =  PackedVectorsOfVectors.pack(param[I])
+function each_split_model(param::PackedVofV, I)
+    val = PackedVectorsOfVectors.pack(param[I])
     return val
 end
 
-function each_split_model(assoc::Compressed4DMatrix{T},I) where T
+function each_split_model(assoc::Compressed4DMatrix{T}, I) where {T}
     len = length(assoc.values)
     iszero(len) && return Compressed4DMatrix{T}()
     old_idx = assoc.outer_indices
-    idx_bool = findall(x -> (first(x) ∈ I)&(last(x) ∈ I),old_idx)
+    idx_bool = findall(x -> (first(x) ∈ I) & (last(x) ∈ I), old_idx)
     iszero(length(idx_bool)) && return Compressed4DMatrix{T}()
     values = assoc.values[idx_bool]
     outer_indices = assoc.outer_indices[idx_bool]
     inner_indices = assoc.inner_indices[idx_bool]
     out_val = length(I)
-    outer_size = (out_val,out_val)
+    outer_size = (out_val, out_val)
     inner_size = assoc.inner_size
     len2 = length(outer_indices)
     for i ∈ 1:len2
-        i1,j1 = outer_indices[i]
-        i2,j2 = findfirst(==(i1),I),findfirst(==(j1),I)
-        outer_indices[i] = (i2,j2)
+        i1, j1 = outer_indices[i]
+        i2, j2 = findfirst(==(i1), I), findfirst(==(j1), I)
+        outer_indices[i] = (i2, j2)
     end
-    return Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
+    return Compressed4DMatrix(values, outer_indices, inner_indices, outer_size, inner_size)
 end
 
-function each_split_model(param::SingleParameter,I)
+function each_split_model(param::SingleParameter, I)
     return SingleParameter(
         param.name,
         param.components[I],
-        each_split_model(param.values,I),
+        each_split_model(param.values, I),
         param.ismissingvalues[I],
         param.sourcecsvs,
         param.sources
@@ -88,13 +98,13 @@ end
 function each_split_model(param::AssocParam,I)
     _value  = each_split_model(param.values,I)
     return AssocParam(
-            param.name,
-            param.components[I],
-            _value,
-            param.sites[I],
-            param.sourcecsvs,
-            param.sources
-            )
+        param.name,
+        param.components[I],
+        _value,
+        param.sites[I],
+        param.sourcecsvs,
+        param.sources
+    )
 end
 
 function each_split_model(param::GroupParam,I)
@@ -105,11 +115,11 @@ function each_split_model(param::GroupParam,I)
     sourcecsvs = param.sourcecsvs
 
     #unique, but without allocating sets.
-    idx = zeros(Int,length(param.flattenedgroups))
+    idx = zeros(Int, length(param.flattenedgroups))
     for i in I
         group_i = param.groups[i]
         for k in 1:length(group_i)
-            j = findfirst(==(group_i[k]),param.flattenedgroups)
+            j = findfirst(==(group_i[k]), param.flattenedgroups)
             idx[j] = j
         end
     end
@@ -121,14 +131,14 @@ function each_split_model(param::GroupParam,I)
 
     flattenedgroups = param.flattenedgroups[_idx]
     i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
-    n_flattenedgroups = Vector{Vector{Int64}}(undef,length(I))
-    for (k,i) in pairs(I)
+    n_flattenedgroups = Vector{Vector{Int64}}(undef, length(I))
+    for (k, i) in pairs(I)
         pii = param.n_flattenedgroups[i]
         n_flattenedgroups[k] = pii[_idx]
     end
-    n_groups_cache  = PackedVectorsOfVectors.packed_fill(0.0,(length(ni) for ni in n_flattenedgroups))
+    n_groups_cache = PackedVectorsOfVectors.packed_fill(0.0, (length(ni) for ni in n_flattenedgroups))
 
-    for (k,i) in pairs(I)
+    for (k, i) in pairs(I)
         pii = param.n_groups_cache[i]
         true_n = @view(pii[_idx])
         n_groups_cache[k] .= true_n
@@ -179,73 +189,72 @@ is_splittable(::Number) = false
 is_splittable(::String) = false
 
 function split_model(param::SingleParameter,
-    splitter =split_model(1:length(param.components)))
-    return [each_split_model(param,i) for i ∈ splitter]
+    splitter=split_model(1:length(param.components)))
+    return [each_split_model(param, i) for i ∈ splitter]
 end
 
 #this conversion is lossy, as interaction between two or more components are lost.
 
 function split_model(param::PairParameter,
-    splitter = split_model(1:length(param.components)))
-    return [each_split_model(param,i) for i ∈ splitter]
+    splitter=split_model(1:length(param.components)))
+    return [each_split_model(param, i) for i ∈ splitter]
 end
 
-function split_model(param::AbstractVector,splitter = ([i] for i ∈ 1:length(param)))
-    return [each_split_model(param,i) for i ∈ splitter]
+function split_model(param::AbstractVector, splitter=([i] for i ∈ 1:length(param)))
+    return [each_split_model(param, i) for i ∈ splitter]
 end
 
-function split_model(param::UnitRange{Int},splitter = ([i] for i ∈ 1:length(param)))
+function split_model(param::UnitRange{Int}, splitter=([i] for i ∈ 1:length(param)))
     return [1:length(i) for i ∈ splitter]
 end
 
 #this conversion is lossy, as interaction between two or more components are lost.
 #also, this conversion stores the site values for other components. (those are not used)
 function split_model(param::AssocParam{T},
-    splitter = split_model(1:length(param.components))) where T
-    return [each_split_model(param,i) for i ∈ splitter]
+    splitter=split_model(1:length(param.components))) where {T}
+    return [each_split_model(param, i) for i ∈ splitter]
 end
 
 #this param has a defined split form
 function split_model(groups::GroupParam,
-    splitter = split_model(collect(1:length(groups.components))))
-    return [each_split_model(groups,i) for i in splitter]
+    splitter=split_model(collect(1:length(groups.components))))
+    return [each_split_model(groups, i) for i in splitter]
 end
 
 function split_model(param::SiteParam,
-    splitter = split_model(param.components))
+    splitter=split_model(param.components))
     function generator(I)
         return SiteParam(
             param.components[I],
             param.sites[I],
-            each_split_model(param.n_sites,I),
+            each_split_model(param.n_sites, I),
             param.i_sites[I],
             param.flattenedsites,
             param.n_flattenedsites[I],
             param.i_flattenedsites[I],
-        param.sourcecsvs)
+            param.sourcecsvs)
     end
     return [generator(i) for i ∈ splitter]
 end
 
-function split_model(Base.@nospecialize(params::EoSParam),splitter)
+function split_model(Base.@nospecialize(params::EoSParam), splitter)
     T = typeof(params)
-    split_paramsvals = (split_model(getfield(params,i),splitter) for i  ∈ fieldnames(T))
+    split_paramsvals = (split_model(getfield(params, i), splitter) for i ∈ fieldnames(T))
     return T.(split_paramsvals...)
 end
 
-function group_splitter(group,splitted_groups)
+function group_splitter(group, splitted_groups)
     flattenedgroups = group.flattenedgroups
-    res = Vector{Vector{Int64}}(undef,length(splitted_groups))
-    for (i,groupi) in pairs(splitted_groups)
-        res[i] = indexin(groupi.flattenedgroups,flattenedgroups)
+    res = Vector{Vector{Int64}}(undef, length(splitted_groups))
+    for (i, groupi) in pairs(splitted_groups)
+        res[i] = indexin(groupi.flattenedgroups, flattenedgroups)
     end
     return res
 end
 
-split_model(model::EoSModel,subset=nothing) = auto_split_model(model,subset)
+split_model(model::EoSModel, subset=nothing) = auto_split_model(model, subset)
 
-function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
-        
+function auto_split_model(Base.@nospecialize(model::EoSModel), subset=nothing)
     try
         allfields = Dict{Symbol,Any}()
         #if has_groups(typeof(model))
@@ -267,11 +276,11 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             throw("invalid type of subset.")
         end
 
-        if hasfield(typeof(model),:groups)
-            gc_split = split_model(model.groups,splitter)
+        if hasfield(typeof(model), :groups)
+            gc_split = split_model(model.groups, splitter)
             allfields[:groups] = gc_split
-            allfields[:components] = split_model(model.groups.components,splitter)
-            splitter = group_splitter(model.groups,gc_split)
+            allfields[:components] = split_model(model.groups.components, splitter)
+            splitter = group_splitter(model.groups, gc_split)
         end
 
         len = length(splitter)
@@ -281,23 +290,23 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
         #add here any special keys, that behave as non_splittable values
         for modelkey in [:references]
             if modelkey in allfieldnames
-                if !haskey(allfields,modelkey)
-                    allfields[modelkey] = fill(getproperty(model,modelkey),len)
+                if !haskey(allfields, modelkey)
+                    allfields[modelkey] = fill(getproperty(model, modelkey), len)
                 end
             end
         end
 
         for modelkey ∈ allfieldnames
-            if !haskey(allfields,modelkey)
-                modelx = getproperty(model,modelkey)
+            if !haskey(allfields, modelkey)
+                modelx = getproperty(model, modelkey)
                 if is_splittable(modelx)
                     if modelx isa EoSModel
-                        allfields[modelkey]= split_model(modelx,subset)
+                        allfields[modelkey] = split_model(modelx, subset)
                     else
-                        allfields[modelkey]= split_model(modelx,splitter)
+                        allfields[modelkey] = split_model(modelx, splitter)
                     end
                 else
-                    allfields[modelkey] = fill(modelx,len)
+                    allfields[modelkey] = fill(modelx, len)
                 end
             end
         end
@@ -312,16 +321,16 @@ end
 
 ##fallback,around 50 times slower if there is any need to read csvs
 
-function simple_split_model(Base.@nospecialize(model::EoSModel),subset = nothing)
+function simple_split_model(Base.@nospecialize(model::EoSModel), subset=nothing)
     MODEL = typeof(model)
-    pure = Vector{MODEL}(undef,0)
+    pure = Vector{MODEL}(undef, 0)
     if subset === nothing
         comps = model.components
     else
         comps = model.components[subset]
     end
     for comp ∈ comps
-        push!(pure,MODEL([comp]))
+        push!(pure, MODEL([comp]))
     end
     return pure
 end
