@@ -10,6 +10,7 @@ struct EstimationData{𝔽}
     outputs_error::Vector{Vector{Union{Float64,Missing}}}
     inputs_errortype::Vector{Union{Symbol,Nothing}}
     outputs_errortype::Vector{Union{Symbol,Nothing}}
+    weights::Vector{Float64}
 end
 
 ERRORTYPES = [:error_abs, :error_rel, :error_std]
@@ -61,7 +62,44 @@ function EstimationData(filepaths::Vector{String})
                 inputs_error,
                 outputs_error,
                 inputs_errortype,
-                outputs_errortype
+                outputs_errortype,
+                [1.]
+                )
+            )
+    end
+    return estimationdata
+end
+
+function EstimationData(filepaths_weights::Array{Tuple{Float64, String}})
+    filepaths = [filepaths_weights[i][2] for i in 1:length(filepaths_weights)]
+    weights = [filepaths_weights[i][1] for i in 1:length(filepaths_weights)]
+
+    filepaths = flattenfilepaths(String[],filepaths)
+    estimationdata = Vector{EstimationData}()
+    for i ∈  1:length(filepaths)
+        csv_method = read_csv_options(filepaths[i]).estimator
+        method = getfield(Main,csv_method)
+        df = read_csv(filepaths[i])
+        csvheaders = String.(Tables.columnnames(df))
+        outputs_headers = chop.(String.(filter(x -> startswith(x, "out_") && !any(endswith.(x, "_" .* String.(ERRORTYPES))), csvheaders)), head=4, tail=0)
+        inputs_headers = filter(x -> !startswith(x, "out_") && !any(endswith.(x, "_" .* String.(ERRORTYPES))), csvheaders)
+        inputs, inputs_error, inputs_errortype = extract_dataerror(
+            df, csvheaders, inputs_headers)
+        outputs, outputs_error, outputs_errortype = extract_dataerror(
+            df, csvheaders, "out_" .* outputs_headers)
+        push!(
+            estimationdata,
+            EstimationData(
+                method,
+                Symbol.(inputs_headers),
+                Symbol.(outputs_headers),
+                inputs,
+                outputs,
+                inputs_error,
+                outputs_error,
+                inputs_errortype,
+                outputs_errortype,
+                [weights[i]]
                 )
             )
     end

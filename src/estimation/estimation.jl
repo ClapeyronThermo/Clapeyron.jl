@@ -48,7 +48,6 @@ mutable struct Estimation{T<:EoSModel}
     model::T
     initial_model::T
     toestimate::ToEstimate
-    filepaths::Array{String}
     data::Vector{EstimationData}
     ignorefield::Union{Nothing,Vector{Symbol}}
 end
@@ -73,8 +72,8 @@ function Base.show(io::IO, estimation::Estimation)
     print(io, typeof(estimation))
 end
 
-function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Array{String}, ignorefield::Vector{Symbol})
-    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths),ignorefield)
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}}, ignorefield::Vector{Symbol})
+    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths),ignorefield)
     
     nparams = length(estimation.toestimate.params)
 
@@ -86,8 +85,8 @@ function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filep
     return estimation, objective, x0, upper, lower
 end
 
-function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Array{String})
-    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths),Symbol[])
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}})
+    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths),Symbol[])
     
     nparams = length(estimation.toestimate.params)
 
@@ -250,6 +249,7 @@ function objective_function(estimation::Estimation,guesses)
         property = estimation.data[i].method
         inputs = estimation.data[i].inputs
         outputs = estimation.data[i].outputs
+        weights = estimation.data[i].weights
         if isempty(inputs)
             prediction =  property(model)
         elseif length(inputs)==1
@@ -263,9 +263,9 @@ function objective_function(estimation::Estimation,guesses)
         end
 
         if length(outputs)==1
-            F += sum(((prediction.-outputs[1])./outputs[1]).^2)/length(outputs[1])
+            F += sum(((prediction.-outputs[1])./outputs[1]).^2)/length(outputs[1])*weights[1]
         else
-            F += sum([sum([((prediction[i][j].-outputs[j][i])./outputs[j][i]).^2 for j in 1:length(prediction[i])]) for i in 1:length(prediction)])/length(outputs[1])
+            F += sum([sum([((prediction[k][j].-outputs[j][i])./outputs[j][k]).^2 for j in 1:length(prediction[k])])*weights[1] for k in 1:length(prediction)])/length(outputs[1])
         end
     end
     if isnan(F)
