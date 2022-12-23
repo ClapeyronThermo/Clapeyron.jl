@@ -74,11 +74,29 @@ function Base.show(io::IO, estimation::Estimation)
 end
 
 function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Array{String}, ignorefield::Vector{Symbol})
-    return Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths),ignorefield)
+    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths),ignorefield)
+    
+    nparams = length(estimation.toestimate.params)
+
+    objective(x) = objective_function(estimation,x)     
+    
+    x0 = [estimation.toestimate.guess[i][1] for i ∈ 1:nparams]
+    upper = [estimation.toestimate.upper[i][1] for i ∈ 1:nparams]
+    lower = [estimation.toestimate.lower[i][1] for i ∈ 1:nparams]
+    return estimation, objective, x0, upper, lower
 end
 
 function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Array{String})
-    return Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths),Symbol[])
+    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), filepaths, EstimationData(filepaths),Symbol[])
+    
+    nparams = length(estimation.toestimate.params)
+
+    objective(x) = objective_function(estimation,x)
+    
+    x0 = [estimation.toestimate.guess[i][1] for i ∈ 1:nparams]
+    upper = [estimation.toestimate.upper[i][1] for i ∈ 1:nparams]
+    lower = [estimation.toestimate.lower[i][1] for i ∈ 1:nparams]
+    return estimation, objective, x0, upper, lower
 end
 
 function reload_data(estimation::Estimation)
@@ -225,30 +243,7 @@ function return_model!(
     recombine!(model)
 end
 
-function logger(status)
-    iter = status.iteration
-    best = status.best_sol
-    neval = status.f_calls
-    println("Iter: "*string(iter)*", Evals: "*string(neval)*", Best: "*string(best))
-end
-
-export optimize!
-
-function optimize!(estimation::Estimation,Method=Metaheuristics.SA(N=500,information = Metaheuristics.Information(f_optimum = 0.0)))
-    nparams = length(estimation.toestimate.params)
-
-    f(x) = obj_fun(estimation,x)
-    
-    x0 = [estimation.toestimate.guess[i][1] for i ∈ 1:nparams]
-    upper = [estimation.toestimate.upper[i][1] for i ∈ 1:nparams]
-    lower = [estimation.toestimate.lower[i][1] for i ∈ 1:nparams]
-    bounds = [lower upper]'
-    r = Metaheuristics.optimize(f, bounds, Method)
-    model = return_model(estimation, estimation.model, Metaheuristics.minimizer(r))
-    update_estimation!(estimation,model)
-end
-
-function obj_fun(estimation::Estimation,guesses)
+function objective_function(estimation::Estimation,guesses)
     F = 0
     model = return_model(estimation, estimation.model, guesses)
     for i ∈ 1:length(estimation.data)
@@ -268,9 +263,9 @@ function obj_fun(estimation::Estimation,guesses)
         end
 
         if length(outputs)==1
-            F += sum(((prediction.-outputs[1])./outputs[1]).^2)
+            F += sum(((prediction.-outputs[1])./outputs[1]).^2)/length(outputs[1])
         else
-            F += sum([sum([((prediction[i][j].-outputs[j][i])./outputs[j][i]).^2 for j in 1:length(prediction[i])]) for i in 1:length(prediction)])
+            F += sum([sum([((prediction[i][j].-outputs[j][i])./outputs[j][i]).^2 for j in 1:length(prediction[i])]) for i in 1:length(prediction)])/length(outputs[1])
         end
     end
     if isnan(F)
@@ -278,4 +273,5 @@ function obj_fun(estimation::Estimation,guesses)
     else
         return F
     end
+    return_model!(estimation,estimation.model,guesses)
 end
