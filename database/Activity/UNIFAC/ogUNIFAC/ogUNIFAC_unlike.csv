@@ -1,5 +1,5 @@
 ﻿Clapeyron Database File,,,,,
-ogUNIFAC Unlike Parameters,,,,,
+original UNIFAC Unlike Parameters [csvtype = unlike,grouptype = originalUNIFAC]
 species1,SMILES1,species2,SMILES2,A,source
 CH3~|~CH2~|~CH~|~C,,CH2=CH~|~CH=CH~|~CH2=C~|~CH=C~|~C=C,,86.02,
 CH3~|~CH2~|~CH~|~C,,ACH~|~AC,,61.13,

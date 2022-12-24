@@ -9,7 +9,6 @@ abstract type NRTLModel <: ActivityModel end
 
 struct NRTL{c<:EoSModel} <: NRTLModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::NRTLParam
     puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
@@ -59,12 +58,11 @@ function NRTL(components::Vector{String}; puremodel=PR,
     b  = params["b"]
     c  = params["c"]
     Mw  = params["Mw"]
-    icomponents = 1:length(components)
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = NRTLParam(a,b,c,Mw)
     references = String["10.1002/aic.690140124"]
-    model = NRTL(components,icomponents,packagedparams,_puremodel,1e-12,references)
+    model = NRTL(components,packagedparams,_puremodel,1e-12,references)
     return model
 end
 

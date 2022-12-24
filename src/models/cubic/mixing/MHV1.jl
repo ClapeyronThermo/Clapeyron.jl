@@ -1,4 +1,4 @@
-abstract type MHV1RuleModel <: MixingRule end
+abstract type MHV1RuleModel <: ActivityMixingRule end
 
 struct MHV1Rule{γ} <: MHV1RuleModel
     components::Array{String,1}
@@ -10,7 +10,7 @@ end
 
 """
     MHV1Rule{γ} <: MHV1RuleModel
-    
+
     MHV1Rule(components::Vector{String};
     activity = Wilson,
     userlocations::Vector{String}=String[],
@@ -21,13 +21,13 @@ end
 
 None
 
-## Input models 
+## Input models
 
 - `activity`: Activity Model
 
 ## Description
 
-Modified Huron-Vidal Mixing Rule, First Order 
+Modified Huron-Vidal Mixing Rule, First Order
 ```
 aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
 bᵢⱼ = (bᵢ + bⱼ)/2
@@ -52,9 +52,9 @@ MHV1Rule
 
 export MHV1Rule
 function MHV1Rule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    init_activity = activity(components;userlocations = activity_userlocations,verbose)
+    _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1016/0378-3812(90)85053-D"]
-    model = MHV1Rule(components, init_activity,references)
+    model = MHV1Rule(components, _activity,references)
     return model
 end
 

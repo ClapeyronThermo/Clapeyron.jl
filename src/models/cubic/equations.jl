@@ -1,3 +1,7 @@
+abstract type AlphaModel <:EoSModel end
+abstract type TranslationModel <:EoSModel end
+abstract type MixingRule <:EoSModel end
+
 struct ABCubicParam <: EoSParam
     a::PairParam{Float64}
     b::PairParam{Float64}
@@ -16,13 +20,13 @@ struct ABCCubicParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
+const ONLY_VC = vcat(IGNORE_HEADERS,["Tc","Pc", "w"])
+const ONLY_ACENTRICFACTOR = vcat(IGNORE_HEADERS,["Tc", "Pc", "Vc"])
 """
-    ab_premixing(model,mixing,Tc,pc,kij)
-    ab_premixing(::Type{T},mixing,Tc,pc,kij) where T <: ABCubicModel
-    ab_premixing(model,mixing,Tc,pc,vc,kij)
+    ab_premixing(model,mixing,kij = nothing,lij = nothing)
 
-given `Tc::SingleParam`, `pc::SingleParam`, `kij::PairParam` and `mixing <: MixingRule`, it will return 
-`PairParam`s `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the van der Wals One-Fluid mixing rule. that is:
+given a model::CubicModel, that has `a::PairParam`, `b::PairParam`, a mixing::MixingRule and `kij`,`lij` matrices, `ab_premixing` will perform an implace calculation
+to obtain the values of `a` and `b`, containing values aᵢⱼ and bᵢⱼ. by default, it performs the van der Wals One-Fluid mixing rule. that is:
 ```
 aᵢⱼ = sqrt(aᵢ*aⱼ)*(1-kᵢⱼ)
 bᵢⱼ = (bᵢ + bⱼ)/2
@@ -30,17 +34,50 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(model,mixing,Tc,pc,kij) 
+function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = nothing) 
     Ωa, Ωb = ab_consts(model)
-    _Tc = Tc.values
-    _pc = pc.values
-    components = Tc.components
-    a = epsilon_LorentzBerthelot(SingleParam("a",components, @. Ωa*R̄^2*_Tc^2/_pc),kij)
-    b = sigma_LorentzBerthelot(SingleParam("b",components, @. Ωb*R̄*_Tc/_pc))
+    _Tc = model.params.Tc
+    _pc = model.params.Pc
+    a = model.params.a
+    b = model.params.b
+    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a,k)
+    sigma_LorentzBerthelot!(b,l)
     return a,b
 end
 
-ab_premixing(model,mixing,Tc,pc,vc,kij) = ab_premixing(model,mixing,Tc,pc,kij) #ignores the Vc unless dispatch
+function ab_premixing(model::CubicModel,kij::K,lij::L) where K <: Union{Nothing,PairParameter,AbstractMatrix} where L <: Union{Nothing,PairParameter,AbstractMatrix} 
+    return ab_premixing(model,model.mixing,kij,lij)
+end
+
+#legacy reasons
+function ab_premixing(model::CubicModel,mixing::MixingRule,Tc,Pc,kij,lij)
+    Ωa, Ωb = ab_consts(model)
+    comps = Tc.components
+    n = length(Tc)
+    a = PairParam("a",comps,zeros(n,n),)
+    b = PairParam("b",comps,zeros(n,n))
+    diagvalues(a) .= Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= Ωb*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a,k)
+    sigma_LorentzBerthelot!(b,l)
+    return a,b
+end
+
+ab_premixing(model::CubicModel,mixing::MixingRule,Tc,pc,vc,kij,lij) = ab_premixing(model,mixing,Tc,pc,kij,lij) #ignores the Vc unless dispatch
+
+
+function recombine_cubic!(model::CubicModel,k = nothing,l = nothing)
+    recombine_mixing!(model,model.mixing,k,l)
+    recombine_translation!(model,model.translation)
+    recombine_alpha!(model,model.alpha)
+    return model
+end
+function recombine_impl!(model::CubicModel)
+    recombine_cubic!(model)
+end
+
 
 function c_premixing end
 
@@ -122,7 +159,7 @@ function pure_cubic_zc(model::ABCCubicModel)
     return pc*Vc/(R̄*Tc)
 end
 
-function second_virial_coefficient(model::ABCubicModel,T::Real,z = SA[1.0])
+function second_virial_coefficient_impl(model::ABCubicModel,T,z = SA[1.0])
     a,b,c = cubic_ab(model,1/sqrt(eps(float(T))),T,z)
     return b-a/(R̄*T)
 end
@@ -162,6 +199,7 @@ end
 
 #works with models with a fixed (Tc,Pc) coordinate
 function crit_pure_tp(model)
+    single_component_check(crit_pure,model)
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
     Vc = volume(model,Pc,Tc,SA[1.])
@@ -169,6 +207,7 @@ function crit_pure_tp(model)
 end
 
 function crit_pure_tp(model::ABCCubicModel)
+    single_component_check(crit_pure,model)
     Tc = model.params.Tc.values[1]
     Pc = model.params.Pc.values[1]
     Vc = model.params.Vc.values[1]

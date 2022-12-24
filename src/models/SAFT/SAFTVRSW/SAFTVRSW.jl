@@ -29,7 +29,7 @@ export SAFTVRSW
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `lambda`: Single Parameter (`Float64`) - Soft Well range parameter (no units)
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
@@ -64,7 +64,7 @@ function SAFTVRSW(components;
     params,sites = getparams(components, ["SAFT/SAFTVRSW","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
     segment = params["m"]
-    k = params["k"]
+    k = get(params,"k",nothing)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
@@ -73,11 +73,22 @@ function SAFTVRSW(components;
 
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
 
     packagedparams = SAFTVRSWParam(Mw, segment, sigma, lambda, epsilon, epsilon_assoc, bondvol)
     references = ["10.1063/1.473101"]
 
     model = SAFTVRSW(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
+    return model
+end
+
+function recombine_impl!(model::SAFTVRSWModel)
+    sigma = model.params.sigma
+    epsilon = model.params.epsilon
+    lambda = model.params.lambda
+    sigma = sigma_LorentzBerthelot!(sigma)
+    epsilon = epsilon_LorentzBerthelot!(epsilon)
+    lambda_squarewell!(lambda,sigma)
     return model
 end
 

@@ -8,7 +8,6 @@ abstract type ogUNIFACModel <: UNIFACModel end
 
 struct ogUNIFAC{c<:EoSModel} <: ogUNIFACModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     groups::GroupParam
     params::ogUNIFACParam
     puremodel::EoSVectorParam{c}
@@ -25,6 +24,7 @@ export ogUNIFAC
     ogUNIFAC(components::Vector{String};
     puremodel = PR, 
     userlocations = String[],
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
@@ -69,25 +69,25 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 """
 ogUNIFAC
 
-function ogUNIFAC(components::Vector{String};
+function ogUNIFAC(components;
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
-    groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"]; verbose=verbose)
+    groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"];group_userlocations = group_userlocations, verbose=verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_like.csv", "Activity/UNIFAC/ogUNIFAC/ogUNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose=verbose)
     A  = params["A"]
     R  = params["R"]
     Q  = params["Q"]
-    icomponents = 1:length(components)
     
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    _puremodel = init_puremodel(puremodel,groups.components,pure_userlocations,verbose)
     packagedparams = ogUNIFACParam(A,R,Q)
     references = String[]
     cache = UNIFACCache(groups,packagedparams)
-    model = ogUNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
+    model = ogUNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
     return model
 end
 

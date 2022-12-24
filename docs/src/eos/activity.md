@@ -36,6 +36,8 @@ Clapeyron.ogUNIFAC
 Clapeyron.UNIFAC
 Clapeyron.PSRKUNIFAC
 Clapeyron.VTPRUNIFAC
+Clapeyron.UNIFACFV
+Clapeyron.UNIFACFVPoly
 ```
 
 

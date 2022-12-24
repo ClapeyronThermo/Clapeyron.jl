@@ -1,4 +1,4 @@
-OpenSAFT Database File,,,,,,,,,,
+Clapeyron Database File,,,,,,,,,,
 test single parameters,,,,,,,,,,
 species,intparam,doubleparam,boolparam,stringparam,mixedparam,missingparam,emptyparam,overwriteparam,overwritestringparam,source
 sp3,7,4,1,test7,,,,,string,testsource19

@@ -126,7 +126,7 @@ Returns a tuple, containing:
 
 By default, uses equality of chemical potentials, via [`ChemPotBubblePressure`](@ref)
 """
-function bubble_pressure(model::EoSModel, T, x, method::ThermodynamicMethod)
+function bubble_pressure(model::EoSModel, T, x, method::BubblePointMethod)
     x = x/sum(x)
     T = float(T)
     model_r,idx_r = index_reduction(model,x)
@@ -167,23 +167,51 @@ function __x0_bubble_temperature(model::EoSModel,p,x)
         if !replaceP[i]
             Ti,Vli,Vvi = saturation_temperature(pure[i],p,AntoineSaturation(crit = crit_i))
         else
-
             Ti,Vli,Vvi = Tci,Vci,1.2*Vci
         end
         T_sat[i] = Ti
         V_l_sat[i] = Vli
         V_v_sat[i] = Vvi
     end
-    Tb = extrema(T_sat).*(0.9,1.1)
-
+    if !any(replaceP) #p < min(pci), proceed with entalphy aproximation:
+        dPdTsat = VT_entropy.(pure,V_v_sat,T_sat) .- VT_entropy.(pure,V_l_sat,T_sat) ./ (V_v_sat .- V_l_sat)
+        y = copy(dPdTsat)
+        ##initialization for T
+        #= we solve the aproximate problem of finding T such as:
+        p = sum(xi*pi(T))
+        where pi ≈ p + dpdt(T-T0)
+        then: p = sum(xi*pi) = sum(xi*(p + dpdti*(T-Ti)))
+        p = sum(xi*p) + sum(xi*dpdti*(T-Ti)) # sum(xi*p) = p
+        0 = sum(xi*dpdti*(T-Ti))
+        0 = sum(xi*dpdti)*T - sum(xi*dpdti*Ti)
+        0 = T* ∑T - ∑Ti
+        T = ∑Ti/∑T
+        =#
+        ∑T = zero(p+first(dPdTsat))
+        ∑Ti = zero(∑T)
+        for i in eachindex(dPdTsat)
+            ∑Ti += x[i]*dPdTsat[i]*(T_sat[i])
+            ∑T += x[i]*dPdTsat[i]
+        end        
+        T0 = ∑Ti/∑T
+        sat = saturation_pressure.(pure,T0)
+        for i in 1:comps
+            V_l_sat[i] = sat[i][2]
+            V_v_sat[i] = sat[i][3]
+        end
+        y .= x .* first.(sat)
+        y ./= sum(y) 
+    else
+        Tb = extrema(T_sat).*(0.9,1.1)
+        f(T) = antoine_bubble(pure,T,x,crit)[1]-p
+        fT = Roots.ZeroProblem(f,Tb)
+        T0 = Roots.solve(fT,Roots.Order0())
+        _,y = antoine_bubble(pure,T0,x,crit)
+    end
     V0_l = zero(p)
     V0_v = zero(p)
-    f(T) = antoine_bubble(pure,T,x,crit)[1]-p
-    fT = Roots.ZeroProblem(f,Tb)
 
-    T0 = Roots.solve(fT,Roots.Order0())
-    p,y = antoine_bubble(pure,T0,x,crit)
-    for i in 1:length(x)
+    for i in 1:comps
         if !replaceP[i]
             V0_v += y[i]*V_v_sat[i]
             V0_l += x[i]*V_l_sat[i]
@@ -256,7 +284,7 @@ Returns a tuple, containing:
 
 By default, uses equality of chemical potentials, via [`ChemPotBubbleTemperature`](@ref)
 """
-function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
+function bubble_temperature(model::EoSModel, p , x, method::BubblePointMethod)
     x = x/sum(x)
     p = float(p)
     model_r,idx_r = index_reduction(model,x)
@@ -277,6 +305,7 @@ function bubble_temperature(model::EoSModel, p , x, method::ThermodynamicMethod)
     end
 end
 
+include("bubble_point/bubble_activity.jl")
 include("bubble_point/bubble_chempot.jl")
 include("bubble_point/bubble_fugacity.jl")
 
@@ -288,8 +317,8 @@ function bubble_pressure(model::EoSModel,T,x;v0 = nothing)
         vl = exp10(v0[1])
         vv = exp10(v0[2])
         vol0 = (vl,vv)
-        y = v0[3:end]
-        bubble_pressure(model,T,x,ChemPotBubblePressure(;vol0,y))
+        y0 = v0[3:end]
+        bubble_pressure(model,T,x,ChemPotBubblePressure(;vol0,y0))
     end
 end
 
@@ -301,7 +330,7 @@ function bubble_temperature(model::EoSModel,p,x;v0 = nothing)
         vl = exp10(v0[2])
         vv = exp10(v0[3])
         vol0 = (vl,vv)
-        y = v0[4:end]
-        bubble_temperature(model,T,x,ChemPotBubbleTemperature(;T0,vol0,y))
+        y0 = v0[4:end]
+        bubble_temperature(model,p,x,ChemPotBubbleTemperature(;T0,vol0,y0))
     end
 end

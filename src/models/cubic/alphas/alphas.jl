@@ -13,16 +13,9 @@ end
 """
 function α_function end
 
-
-function init_model(model::AlphaModel,components,userlocations,verbose)
-    return model
-end
-
-function init_model(model::Type{<:AlphaModel},components,userlocations,verbose)
-    verbose && @info("""Now creating alpha model:
-    $model""")
-    return model(components;userlocations,verbose)
-end
+#all alphas at the moment don't have any need for recombine!
+recombine_impl!(model::AlphaModel) = model
+recombine_alpha!(model::CubicModel,alpha::AlphaModel) = recombine!(alpha)
 
 include("NoAlpha.jl")
 include("ClausiusAlpha.jl")
@@ -38,3 +31,5 @@ include("BM.jl")
 include("Twu.jl")
 include("MT.jl")
 include("KUAlpha.jl")
+include("RKPRAlpha.jl")
+

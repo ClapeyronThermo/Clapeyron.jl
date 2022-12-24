@@ -1,5 +1,5 @@
 ﻿Clapeyron Database File,,,,
-PSRK Like Parameters,,,,
+PSRK Like Parameters [csvtype = like,grouptype = PSRK]
 species,DIPPR Number,R,Q,source
 CH3,,0.9011,0.848
 CH2,,0.6744,0.54

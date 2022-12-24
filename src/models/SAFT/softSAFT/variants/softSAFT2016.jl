@@ -11,7 +11,6 @@ abstract type softSAFT2016Model <: softSAFTModel end
 
 struct softSAFT2016{T} <: softSAFT2016Model
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     sites::SiteParam
     params::softSAFT2016Param
     idealmodel::T
@@ -37,7 +36,7 @@ end
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
@@ -72,17 +71,17 @@ function softSAFT2016(components;
     params,sites = getparams(components, ["SAFT/softSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     
     segment = params["m"]
-    k = params["k"]
+    k = get(params,"k",nothing)
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     packagedparams = softSAFT2016Param(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1080/002689797170707","10.1063/1.4945000"]
-    icomponents = 1:length(components)
-    return softSAFT2016(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references, LJRefConsts())
+    return softSAFT2016(components,sites,packagedparams,init_idealmodel,assoc_options,references, LJRefConsts())
 end
 
 function a_LJ(model::softSAFT2016Model,V,T,z,_data = @f(data))

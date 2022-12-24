@@ -129,7 +129,6 @@ is_splittable(::LJRefConsts) = false
 
 struct LJRef <: EmpiricHelmholtzModel
     components::Vector{String}
-    icomponents::UnitRange{Int}
     params::LJRefParam
     consts::LJRefConsts
     references::Vector{String}
@@ -149,7 +148,7 @@ export LJRef
 - `sigma`: Single Parameter (`Float64`) - particle size [Å]
 - `epsilon`: Single Parameter (`Float64`) - dispersion energy [`K`]
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `k`: Pair Parameter (`Float64`) - `sigma` mixing coefficient
+- `k`: Pair Parameter (`Float64`) (optional) - `sigma` mixing coefficient
 
 ## Model Parameters
 
@@ -200,14 +199,14 @@ function LJRef(components;
     params,sites = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
+    k = get(params,"k",nothing)
     sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], params["k"])
+    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     segment = params["m"]
     params = LJRefParam(epsilon,sigma,segment,Mw)
     consts = LJRefConsts()
-    icomponents = 1:length(components)
     references = ["10.1063/1.4945000"]
-    return LJRef(components,icomponents,params,consts,references)
+    return LJRef(components,params,consts,references)
 end
 
 function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))

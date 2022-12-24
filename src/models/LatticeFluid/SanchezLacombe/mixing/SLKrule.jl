@@ -10,7 +10,7 @@ export SLKRule
     SLKRule(components; userlocations=String[], verbose=false)
      
 ## Input parameters
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Parameter (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 
 Constant Kᵢⱼ mixing rule for Sanchez-Lacombe:
 
