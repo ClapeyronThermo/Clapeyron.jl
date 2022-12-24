@@ -17,7 +17,7 @@ using StaticArrays
 using NLSolvers
 using NLSolvers: NEqOptions
 using DiffResults, ForwardDiff
-
+using Downloads #for bibtex
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
 

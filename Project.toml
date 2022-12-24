@@ -1,12 +1,13 @@
 name = "Clapeyron"
 uuid = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
 authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pwalker@mit.edu>", "Andrés Riedemann <andres.riedemann@gmail.com>"]
-version = "0.3.11"
+version = "0.3.12"
 
 [deps]
 BlackBoxOptim = "a134a8b2-14d6-55f6-9291-3336d3ab0209"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DiffResults = "163ba53b-c6d8-5494-b064-1a9d43ac40c5"
+Downloads = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -30,7 +31,7 @@ DiffResults = "^1.1"
 FillArrays = "^0.12, 0.13"
 ForwardDiff = "^0.10"
 LogExpFunctions = "^0.2,^0.3"
-NLSolvers = "0.3"
+NLSolvers = "0.4"
 PackedVectorsOfVectors = "^0.1.2"
 PositiveFactorizations = "^0.2"
 Roots = "^2.0.4"

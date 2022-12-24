@@ -287,7 +287,6 @@ function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma)
     ρS = N_A/V*m̄
     comps = @comps
     _ζst = zero(V+T+first(z))
-    kρS = ρS* π/6
     for i ∈ comps
         x_Si = z[i]*m[i]*m̄inv
         _ζst += x_Si*x_Si*(_σ[i,i]^3)
@@ -298,7 +297,7 @@ function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma)
     end
 
     #return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*(@f(d,i)+@f(d,j))^3/8 for i ∈ comps for j ∈ comps)
-    return kρS*_ζst
+    return _ζst*ρS* π/6
 end
 
 function g_HS(model::SAFTVRMieModel, V, T, z, x_0ij,ζ_X_ = @f(ζ_X))
@@ -327,7 +326,7 @@ function aS_1_fdf(model::SAFTVRMieModel, V, T, z, λ,ζ_X_= @f(ζ_X),ρ_S_ = @f(
     ζeff3 = (1-ζeff_)^3
     _f =  -1/(λ-3)*(1-ζeff_/2)/ζeff3
     _df = -1/(λ-3)*((1-ζeff_/2)/ζeff3
-    + @f(ρ_S)*((3*(1-ζeff_/2)*(1-ζeff_)^2
+    + ρ_S_*((3*(1-ζeff_/2)*(1-ζeff_)^2
     - 0.5*ζeff3)/ζeff3^2)*∂ζeff_)
     return _f,_df
 end
@@ -429,7 +428,6 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
         dij = _d[i]
         x_0ij = σ/dij
         dij3 = dij^3
-        x_0ij = σ/dij
         #calculations for a1 - diagonal
         aS_1_a,∂aS_1∂ρS_a = @f(aS_1_fdf,λa,_ζ_X,ρS)
         aS_1_r,∂aS_1∂ρS_r = @f(aS_1_fdf,λr,_ζ_X,ρS)
@@ -493,7 +491,6 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
             dij = 0.5*(_d[i]+_d[j])
             x_0ij = σ/dij
             dij3 = dij^3
-            x_0ij = σ/dij
             #calculations for a1
             a1_ij = (2*π*ϵ*dij3)*_C*ρS*
             (x_0ij^λa*(@f(aS_1,λa,_ζ_X)+@f(B,λa,x_0ij,_ζ_X)) - x_0ij^λr*(@f(aS_1,λr,_ζ_X)+@f(B,λr,x_0ij,_ζ_X)))
