@@ -1,5 +1,4 @@
-@enum CSVType invaliddata singledata pairdata assocdata groupdata
-
+@enum CSVType invaliddata singledata pairdata assocdata groupdata intragroupdata
 const NO_KIJ = """@REPLACE Clapeyron Database File
 no Parameters [csvtype = unlike]
 species1,species2,k
@@ -313,7 +312,7 @@ function createparams(components::Vector{String},
         
         csv_options = read_csv_options(filepath)
         csvtype = csv_options.csvtype
-        if csvtype == groupdata && !parsegroups
+        if csvtype ∈ (groupdata,intragroupdata) && !parsegroups
             continue
         end
         if csvtype == invaliddata
@@ -384,11 +383,11 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
     idx_sites1 = 0
     idx_sites2 = 0
 
-    if csvtype === singledata || csvtype === groupdata
+    if csvtype === singledata || csvtype ∈ (groupdata,intragroupdata)
         lookupcolumnindex = findfirst(isequal(normalised_columnreference), headernames)
         isnothing(lookupcolumnindex) && _col_indices_error(normalised_columnreference)
         idx_species = lookupcolumnindex
-        if csvtype === groupdata
+        if csvtype ∈ (groupdata,intragroupdata)
             groupcolumnreference = options.group_columnreference
             normalised_groupcolumnreference = normalisestring(groupcolumnreference)
             lookupgroupcolumnindex = findfirst(isequal(normalised_groupcolumnreference), headernames)
@@ -505,7 +504,7 @@ function findparamsincsv(components,filepath,
     found_indices0,comp_indices = _indexin(components_dict,species_list,component_delimiter,1:length(species_list))
     dfR = df
     EMPTY_STR = ""
-    if csvtype == singledata || ((csvtype == groupdata) && parsegroups)
+    if csvtype == singledata || ((csvtype ∈ (groupdata,intragroupdata)) && parsegroups)
         found_indices = found_indices0
         l = length(found_indices)
         _data = dfR[found_indices]
@@ -549,7 +548,7 @@ function findparamsincsv(components,filepath,
         _sources = fill(EMPTY_STR,l)
         _csv = fill(filepath,l)
         
-    elseif csvtype == groupdata && !parsegroups
+    elseif csvtype ∈ (groupdata,intragroupdata) && !parsegroups
         return foundvalues, notfoundvalues
     else
         error("File is of type ", String(csvtype), " and cannot be read with this function.")
@@ -613,7 +612,7 @@ end
 function __verbose_findparams_start(filepath,components,headerparams,parsegroups,csvtype,grouptype)
     csv_string = Symbol(csvtype)
     if !parsegroups
-        if csvtype == groupdata
+        if csvtype ∈ (groupdata,intragroupdata)
             @info("Skipping $csv_string csv $filepath")
         else
             @info("Searching for $csv_string headers $headerparams for query $components at $filepath ...")
@@ -621,6 +620,8 @@ function __verbose_findparams_start(filepath,components,headerparams,parsegroups
     else
         if csvtype == groupdata
             @info("Searching for groups for components $components at $filepath ...")
+        elseif csvtype == intragroupdata
+            @info("Searching for intragroup interactions for components $components at $filepath ...")
         else
             @info("Skipping $csv_string csv $filepath")
         end
@@ -662,11 +663,13 @@ function __verbose_findparams_found(foundvalues)
             @info("""Found group data:
             $vals
             """)
+        elseif v.type == intragroupdata
+            @info("TODO: parse intragroup data for debug")
         end
     end
 end
 
-const readcsvtype_keywords  = ["like", "single", "unlike", "pair", "assoc", "association", "group", "groups"]
+const readcsvtype_keywords  = ["like", "single", "unlike", "pair", "assoc", "association", "group", "groups","intragroup","intragroups"]
 
 function read_csv_options(filepath)
     line = getline(String(filepath), 2)
@@ -700,6 +703,8 @@ function _readcsvtype(key::AbstractString)
     key == "assoc" && return assocdata
     key == "group" && return groupdata
     key == "groups" && return groupdata
+    key == "intragroup" && return intragroupdata
+    key == "intragroups" && return intragroupdata
     key == "invalid" && return invaliddata
     return invaliddata
 end
@@ -835,16 +840,16 @@ function fast_parse_grouptype(filepaths::Vector{String})
 
 end
 
-function _parse_group_string(gc::String)
+function _parse_group_string(gc::String,gctype=String)
     gc_strip = strip(gc)
     if startswith(gc_strip,"[") && endswith(gc_strip,"]")
         gc_without_brackets = chop(gc_strip,head = 1,tail = 1)
         gcpairs = split(gc_without_brackets,",")
-        result = Vector{Pair{String,Int}}(undef,length(gcpairs))
+        result = Vector{Pair{gctype,Int}}(undef,length(gcpairs))
         for (i,gcpair) ∈ pairs(gcpairs)
             raw_group_i,raw_num = _parse_kv(gcpair,"=>")
             if startswith(raw_group_i,"\"") && endswith(raw_group_i,"\"")
-                group_i = chop(raw_group_i,head = 1,tail = 1)
+                group_i = _parse_group_string_key(raw_group_i,gctype)
                 num = parse(Int64,raw_num)
                 result[i] = group_i => num
             else
@@ -856,5 +861,90 @@ function _parse_group_string(gc::String)
         throw(error("incorrect group format"))
     end
 end
+
+#"CH3"
+function _parse_group_string_key(k,::Type{String})
+    return chop(k,head = 1,tail = 1)
+end
+
+#("CH3","CH2")
+function _parse_group_string_key(k,::Type{NTuple{2,String}})
+     kk = chop(strip(k),head = 1,tail = 1) #"CH3","CH2"
+     k1,k2 = _parse_kv(kk,',')
+     return (string(_parse_group_string_key(k1,String)),string(_parse_group_string_key(k2,String)))
+end
+
+function SecondOrderGroupParam(gccomponents,gcintracomponents,
+    grouplocations::Array{String,1}=String[],
+    intragrouplocations::Array{String,1} = String[],
+    options::ParamOptions = DefaultOptions,
+    grouptype = :unknown)
+
+    # The format for gccomponents is an arary of either the species name (if it
+    # available ∈ the Clapeyron database, or a tuple consisting of the species
+    # name, followed by a list of group => multiplicity pairs.  For example:
+    # gccomponents = ["ethane",
+    #                ("hexane", ["CH3" => 2, "CH2" => 4]),
+    #                ("octane", ["CH3" => 2, "CH2" => 6])]
+    components = Vector{String}(undef,length(gccomponents))
+
+    to_lookup = fill(false,length(components))
+    found_gcpairs = Vector{Vector{Pair{String,Int64}}}(undef,length(gccomponents))
+    for (i,gcpair) ∈ pairs(gccomponents)
+        if gcpair isa Tuple{String}
+            components[i]  = only(gcpair)
+            to_lookup[i] = true
+        elseif gcpair isa String
+            components[i]  = gcpair
+            to_lookup[i] = true
+        elseif (gcpair isa Tuple{String, Vector{Pair{String, Int64}}}) ||  (gcpair isa Pair{String, Vector{Pair{String, Int64}}})
+            components[i]  = first(gcpair)
+            found_gcpairs[i] = last(gcpair)
+        else
+            error("The format of the components is incorrect.")
+        end
+    end
+    usergrouplocations = options.group_userlocations
+    componentstolookup = components[to_lookup]
+    filepaths = flattenfilepaths(grouplocations,usergrouplocations)
+
+    #using parsing machinery
+    if any(to_lookup)
+        usergrouplocations = options.group_userlocations
+        componentstolookup = components[to_lookup]
+        filepaths = flattenfilepaths(grouplocations,usergrouplocations)
+        allparams,allnotfoundparams = createparams(componentstolookup, filepaths, options, true) #merge all found params
+        raw_result, _ = compile_params(componentstolookup,allparams,allnotfoundparams,options) #generate ClapeyronParams
+        raw_groups = raw_result["groups"] #SingleParam{String}
+        is_valid_param(raw_groups,options) #this will check if we actually found all params, via single missing detection.
+        groupsourcecsvs = raw_groups.sourcecsvs
+        
+        if haskey(allparams,"groups")
+            _grouptype = allparams["groups"].grouptype
+        else
+            _grouptype = grouptype
+        end
+    else
+        
+        _grouptype = fast_parse_grouptype(filepaths)
+        if _grouptype != grouptype
+            _grouptype = grouptype
+        end
+        groupsourcecsvs = filepaths
+    end
+    gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(gccomponents))
+    j = 0
+    for (i,needs_to_parse_group_i) ∈ pairs(to_lookup)
+        if needs_to_parse_group_i #we looked up this component, and if we are here, it exists.
+            j += 1
+            gcdata = _parse_group_string(raw_groups.values[j])
+            gccomponents_parsed[i] = (components[i],gcdata)
+        else
+            gccomponents_parsed[i] = (components[i],found_gcpairs[i])
+        end
+    end
+    return GroupParam(gccomponents_parsed,_grouptype,groupsourcecsvs)
+end
+
 
 export getparams

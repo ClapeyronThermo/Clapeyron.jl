@@ -1,3 +1,4 @@
+abstract type GroupParameter <: ClapeyronParam end
 """
     GroupParam
 
@@ -70,7 +71,7 @@ julia> grouplist = [
 In this case, `SAFTGammaMie` files support the second order group `CH2OH`.
 
 """
-struct GroupParam <: ClapeyronParam
+struct GroupParam <: GroupParameter
     components::Array{String,1}
     groups::Array{Array{String,1},1}
     grouptype::Symbol
@@ -213,4 +214,22 @@ function Base.show(io::IO, param::GroupParam)
         i != length(param.components) && print(io,", ")
     end
     print(io,"]")
+end
+
+#=
+
+Second order Group Param
+=#
+
+struct SecondOrderGroupParam <: GroupParameter
+    components::Vector{String}
+    groups::Vector{Vector{String}}
+    grouptype::Symbol
+    n_groups::Vector{Vector{Int}}
+    n_intergroups::Vector{Matrix{Int}}
+    i_groups::Vector{Vector{Int}}
+    flattenedgroups::Vector{String}
+    n_flattenedgroups::Vector{Vector{Int}}
+    n_groups_cache::PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{Float64}, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}}
+    sourcecsvs::Vector{String}
 end
