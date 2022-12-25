@@ -1,3 +1,7 @@
+function bubble_point(model::EoSModel,T,x)
+    return 1,1
+end
+
 @testset "estimation" begin
     model = SAFTgammaMie(["ethanol","water"])
     
@@ -33,10 +37,6 @@
         :upper => 4000.,
         :guess => 3500.
         )]
-    
-    function bubble_point(model::EoSModel,T,x)
-        return 1,1
-    end
 
     estimator,objective,initial,upper,lower = Estimation(model,toestimate,["../examples/data/bubble_point.csv"],[:vrmodel])
 
