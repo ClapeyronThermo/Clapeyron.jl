@@ -12,6 +12,24 @@ struct ToEstimate
     recombine::Vector{Bool}
 end
 
+"""
+    ToEstimate
+    ToEstimate(params_dict)
+## Input parameters: A dictionary with the following potential entries
+- `params`: The name of the parameter being fitted (`Symbol`)
+- `indices`: The index of the parameter being fitted (`Integer` or `Tuple{Integer,Integer}`)
+- `factor`: Factor to multiply parameter being fitted to have it in the correct units (`Float64`)
+- `symmetric`: For `PairParam`, if the parameter is symmetric or asymmetric (`Bool`)
+- `cross_assoc`: For `AssocParam`, if the parameter is for cross-association (`Bool`)
+- `recombine`: For `PairParam`, if the combining rules must be applied for unlike interactions (`Bool`)
+- `lower`: Lower bound for the parameter (`Float64`)
+- `upper`: Upper bound for the parameter (`Float64`)
+- `guess`: Initial guess for the parameter (`Float64`)
+## Output: 
+A `ToEstimate` struct
+## Description
+Turns the input parameter dictionary into a `ToEstimate` struct to be used within the parameter estimation.
+"""
 function ToEstimate(params_dict::Vector{Dict{Symbol,Any}})
     params = Vector{Symbol}(undef,0)
     indices = Vector{Union{Integer,Tuple{Integer,Integer},Nothing}}(nothing,0)
@@ -44,6 +62,29 @@ end
 
 export Estimation
 # Mutable for now to make it easy to just replace the model
+"""
+    Estimation
+    Estimation(model,toestimate,filepaths,ignorefield)
+## Input parameters:
+- ` model`: The initial model containing the species we wish to parameterise
+- `toestimate`: The dictionary of parameters being fitted
+- `filepaths` or `filepaths_weights`: The location of the data files used to fit. Can also contain the weights of each dataset
+- `ignorefield`: Specify which EoSModel fields to ignore in the main model
+## Output: 
+Estimator object which contains the following:
+- `model`: The model whose parameters will be varied
+- `initial_model`: The initial model before parameterisation
+- `toestimate`: ToEstimate struct which contains all the information on the parameters
+- `data`: Vector of `EstimationData` structs where all the information on the data is stored
+- `ignorefield`: Vector of fields to ignore in the parameter estimation
+The following objects are also output:
+- `objective`: The objective function which is used to fit the parameters
+- `x0`: Initial guesses for the parameters
+- `upper`: Upper bounds for the parameters
+- `lower`: Lower bounds for the parameters
+## Description
+Produces the estimator and other useful objects used within parameter estimation
+"""
 mutable struct Estimation{T<:EoSModel}
     model::T
     initial_model::T
@@ -145,6 +186,19 @@ function update_estimation!(estimation::Estimation, model::EoSModel)
     estimation.model = model
 end
 
+
+"""
+    return_model
+    return_model(estimation,model,params)
+## Input parameters:
+- `estimation`: The estimator object
+- `model`: The model whose parameters we are varying
+- `params`: The new parameters which we want to change
+## Output: 
+- `model`: The new model with the updated parameters
+## Description
+Based on the parameters provided and the estimator, a new model is produced from the input.
+"""
 export return_model
 function return_model(
         estimation::Estimation,
@@ -242,6 +296,16 @@ function return_model!(
     recombine!(model)
 end
 
+"""
+    objective_function
+    objective_function(estimation,params)
+## Input parameters:
+- `estimation`: The estimator object
+- `params`: The new parameters which we want to evaluate the objective function for
+## Output: The relate root mean square error given the data and parameters provided
+## Description
+The objective function used within parameter estimation.
+"""
 function objective_function(estimation::Estimation,guesses)
     F = 0
     model = return_model(estimation, estimation.model, guesses)

@@ -37,6 +37,22 @@ function extract_dataerror(df::CSV.File, csvheaders::Vector{String}, extract_hea
     return data, error, errortype
 end
 
+"""
+    EstimationData
+    EstimationData(filepaths)
+## Input parameters:
+- `filepaths` or `filepaths_weights`: The filepath of the data used in parameter estimation. Optionally, a tuple containing the weights of each dataset.
+## Output: 
+An `EstimationData` struct with the following fields:
+- `method`: The property estimation method which is used to obtain predictions for a given input
+- `inputs_name`: The variable names for the inputs
+- `outputs_name`: The variable names for the outputs 
+- `inputs`: Vector for each input
+- `outputs`: Vector for each output
+- `weights`: The weight for this particular dataset
+## Description
+For a given input data set, produce an `EstimationData` struct.
+"""
 function EstimationData(filepaths::Vector{String})
     filepaths = flattenfilepaths(String[],filepaths)
     estimationdata = Vector{EstimationData}()

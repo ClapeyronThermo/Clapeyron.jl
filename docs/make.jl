@@ -40,6 +40,7 @@ format = Documenter.HTML(
         "Parameters" => "api/parameters.md",
         "Macros" => "api/macros.md",
         "Association" => "api/association.md",
+        "Parameter Estimation" => "api/estimation.md",
         ]
         ])
 
