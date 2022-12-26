@@ -186,7 +186,7 @@ function update_estimation!(estimation::Estimation, model::EoSModel)
     estimation.model = model
 end
 
-
+export return_model
 """
     return_model
     return_model(estimation,model,params)
@@ -199,7 +199,6 @@ end
 ## Description
 Based on the parameters provided and the estimator, a new model is produced from the input.
 """
-export return_model
 function return_model(
         estimation::Estimation,
         model::EoSModel,
