@@ -1,9 +1,3 @@
-struct ABCubicInputParam <: EoSParam
-    k::PairParam{Float64}
-    Tc::SingleParam{Float64}
-    pc::SingleParam{Float64}
-    Mw::SingleParam{Float64}
-end
 abstract type AlphaModel <:EoSModel end
 abstract type TranslationModel <:EoSModel end
 abstract type MixingRule <:EoSModel end
