@@ -31,7 +31,7 @@ end
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `vc`: Single Parameter (`Float64`) - Critical Volume `[m3/mol]`
+- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m3/mol]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `k`: Pair Parameter (`Float64`) (optional)
 - `l`: Pair Parameter (`Float64`) (optional)
@@ -89,7 +89,7 @@ function PatelTeja(components::Vector{String}; idealmodel=BasicIdeal,
     k  = get(params,"k",nothing)
     l = get(params,"l",nothing) 
     pc = params["pc"]
-    Vc = params["vc"]
+    Vc = params["Vc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)

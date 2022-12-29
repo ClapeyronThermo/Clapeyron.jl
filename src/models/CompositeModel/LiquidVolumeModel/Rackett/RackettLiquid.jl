@@ -14,7 +14,7 @@ function RackettLiquid(components::Vector{String}; userlocations::Vector{String}
     acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]
     Pc = params["pc"]
-    vc = params["vc"]
+    vc = params["Vc"]
     _zc = Pc.values .* vc.values ./ (R̄ .* Tc.values)
     Zc = SingleParam("Critical Compressibility factor",components,_zc) 
     packagedparams = RackettLiquidParam(Tc,Pc,Zc)

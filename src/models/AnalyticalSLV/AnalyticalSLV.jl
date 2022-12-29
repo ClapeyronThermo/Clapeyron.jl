@@ -42,7 +42,7 @@ function AnalyticalSLV(components;
     Mw = params["Mw"]
     Tc = params["Tc"]
     Pc = params["pc"]
-    Vc = params["vc"]
+    Vc = params["Vc"]
 
     a0 = params["a0"]
     a1 = params["a1"]

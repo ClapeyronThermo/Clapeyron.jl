@@ -101,7 +101,7 @@ function KU(components::Vector{String}; idealmodel=BasicIdeal,
     pc = params["pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
-    Vc = params["vc"]
+    Vc = params["Vc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     
     n = length(components)

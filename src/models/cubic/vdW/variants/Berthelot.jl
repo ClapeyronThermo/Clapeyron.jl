@@ -41,7 +41,7 @@ export Berthelot
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `vc`: Single Parameter (`Float64`) - Molar Volume `[m^3/mol]`
+- `Vc`: Single Parameter (`Float64`) - Molar Volume `[m^3/mol]`
 - `k`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
@@ -96,7 +96,7 @@ function Berthelot(components::Vector{String}; idealmodel=BasicIdeal,
     pc = params["pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
-    Vc = params["vc"]
+    Vc = params["Vc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     a = PairParam("a",components,zeros(length(components)))
     b = PairParam("b",components,zeros(length(components)))
