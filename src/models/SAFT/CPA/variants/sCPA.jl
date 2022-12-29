@@ -100,9 +100,9 @@ function sCPA(components;
     init_translation = init_model(translation,components,translation_userlocations,verbose)
 
     if occursin("RK",string(cubicmodel))
-        cubicparams = RKParam(a, b, params["Tc"],params["pc"],Mw)
+        cubicparams = RKParam(a, b, params["Tc"],params["Pc"],Mw)
     elseif occursin("PR",string(cubicmodel))
-        cubicparams = PRParam(a, b, params["Tc"],params["pc"],Mw)
+        cubicparams = PRParam(a, b, params["Tc"],params["Pc"],Mw)
     end
 
     init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])

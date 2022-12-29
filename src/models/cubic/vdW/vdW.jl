@@ -81,7 +81,7 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = get(params,"k",nothing)
     l = get(params,"l",nothing)
-    pc = params["pc"]
+    pc = params["Pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)

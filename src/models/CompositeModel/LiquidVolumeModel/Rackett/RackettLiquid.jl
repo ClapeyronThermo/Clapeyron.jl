@@ -13,7 +13,7 @@ function RackettLiquid(components::Vector{String}; userlocations::Vector{String}
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]
-    Pc = params["pc"]
+    Pc = params["Pc"]
     vc = params["Vc"]
     _zc = Pc.values .* vc.values ./ (R̄ .* Tc.values)
     Zc = SingleParam("Critical Compressibility factor",components,_zc) 
@@ -76,7 +76,7 @@ function YamadaGunnLiquid(components::Vector{String}; userlocations::Vector{Stri
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]
-    Pc = params["pc"]
+    Pc = params["Pc"]
     _zc = 0.29056 .- 0.08775 .* acentricfactor.values
     Zc = SingleParam("Critical Compressibility factor",components,_zc) 
     packagedparams = RackettLiquidParam(Tc,Pc,Zc)

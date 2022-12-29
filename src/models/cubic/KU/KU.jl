@@ -98,7 +98,7 @@ function KU(components::Vector{String}; idealmodel=BasicIdeal,
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = get(params,"k",nothing)
     l = get(params,"l",nothing)
-    pc = params["pc"]
+    pc = params["Pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     Vc = params["Vc"]

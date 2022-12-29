@@ -63,7 +63,7 @@ function TsonopoulosVirial(components;
     params = getparams(components,["properties/critical.csv", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     Tc = params["Tc"]
-    Pc = params["pc"]
+    Pc = params["Pc"]
     acentricfactor = params["acentricfactor"]
     packagedparams = TsonopoulosVirialParam(Tc,Pc,acentricfactor,Mw)
     references = String["10.1002/aic.690200209"]

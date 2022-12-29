@@ -24,7 +24,7 @@ end
 ## Input Parameters
 
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `A`: Single Parameter (`Float64`)
 - `B`: Single Parameter (`Float64`)
 - `C`: Single Parameter (`Float64`)
@@ -61,7 +61,7 @@ DIPPR101Sat
 function DIPPR101Sat(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv","Correlations/saturation_correlations/dippr101_like.csv"]; userlocations=userlocations, verbose=verbose)
     Tc = params["Tc"]
-    Pc = params["pc"]
+    Pc = params["Pc"]
     A = params["A"]
     B = params["B"]
     C = params["C"]

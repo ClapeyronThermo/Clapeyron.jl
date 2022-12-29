@@ -55,7 +55,7 @@ function AbbottVirial(components;
     params = getparams(components,  ["properties/critical.csv", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     Tc = params["Tc"]
-    Pc = params["pc"]
+    Pc = params["Pc"]
     acentricfactor = params["acentricfactor"]
     packagedparams = AbbottVirialParam(Tc,Pc,acentricfactor,Mw)
     references = String[]
