@@ -216,9 +216,9 @@ function Base.show(io::IO,mime::MIME"text/plain",model::PropaneRef)
 end
 
 function x0_sat_pure(model::PropaneRef,T,z=SA[1.0])
-    log10vv = log10(1.0/_propaneref_rhovsat(T))
-    log10vl = log10(1.0/_propaneref_rholsat(T))
-    return (log10vl,log10vv)
+    vv = 1.0/_propaneref_rhovsat(T)
+    vl = 1.0/_propaneref_rholsat(T)
+    return (vl,vv)
 end
 
 function x0_volume_liquid(model::PropaneRef,T,z = SA[1.0])

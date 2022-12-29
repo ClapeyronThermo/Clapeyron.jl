@@ -391,7 +391,7 @@ function x0_sat_pure_lj(model,T)
     Tc = 1.32*T_scale(model)
     ρl =  ljref_rholsat(T/Tc)/(m̄*N_A*σ3)
     ρv =  ljref_rhovsat(T/Tc)/(m̄*N_A*σ3)
-    return (log10(1/ρl),log10(1/ρv))
+    return (1/ρl,1/ρv)
 end
 
 x0_sat_pure(model::LJRef,T) = x0_sat_pure_lj(model,T)
