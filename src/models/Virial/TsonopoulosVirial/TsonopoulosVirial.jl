@@ -64,7 +64,7 @@ function TsonopoulosVirial(components;
     Mw = params["Mw"]
     Tc = params["Tc"]
     Pc = params["pc"]
-    acentricfactor = params["w"]
+    acentricfactor = params["acentricfactor"]
     packagedparams = TsonopoulosVirialParam(Tc,Pc,acentricfactor,Mw)
     references = String["10.1002/aic.690200209"]
     return TsonopoulosVirial(packagedparams, idealmodel; ideal_userlocations, references, verbose)

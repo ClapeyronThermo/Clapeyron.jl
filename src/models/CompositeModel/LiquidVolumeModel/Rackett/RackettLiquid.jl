@@ -11,7 +11,7 @@ end
 
 function RackettLiquid(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    acentricfactor = SingleParam(params["w"],"acentric factor")
+    acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]
     Pc = params["pc"]
     vc = params["vc"]
@@ -74,7 +74,7 @@ end
 
 function YamadaGunnLiquid(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    acentricfactor = SingleParam(params["w"],"acentric factor")
+    acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]
     Pc = params["pc"]
     _zc = 0.29056 .- 0.08775 .* acentricfactor.values

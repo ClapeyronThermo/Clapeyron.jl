@@ -57,7 +57,7 @@ function Wilson(components::Vector{String};
     Tc        = params["Tc"]
     pc        = params["pc"]
     Mw        = params["Mw"]
-    ZRA       = SingleParam(params["w"],"acentric factor")
+    ZRA       = params["acentricfactor"]
     ZRA.values .*= -0.08775
     ZRA.values .+= 0.29056
     

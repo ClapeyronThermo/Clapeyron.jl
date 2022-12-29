@@ -13,7 +13,7 @@ function COSTALD(components::Vector{String}; userlocations::Vector{String}=Strin
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Tc = params["Tc"]
     Vc = params["vc"]
-    acentricfactor = SingleParam(params["w"],"acentric factor")
+    acentricfactor = params["acentricfactor"]
     packagedparams = COSTALDParam(Tc,Vc,acentricfactor)
     model = COSTALD(packagedparams;verbose)
     return model
