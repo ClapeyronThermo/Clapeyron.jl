@@ -1,6 +1,6 @@
 Clapeyron Database File,,,,,,,,,
 PCSAFT Like Parameters,,,,,,,,,
-species,DIPPR Number,Mw,m,c,vol,epsilon,n_H,n_e,source
+species,DIPPR Number,Mw,segment,c,vol,epsilon,n_H,n_e,source
 nitrogen,,,1,3,19.457,123.53,0,0,0
 argon,,,1,0,16.29,150.86,0,0,
 carbon monoxide,,,1.221,4.2,15.776,111.97,0,0,

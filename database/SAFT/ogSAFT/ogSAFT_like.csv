@@ -1,6 +1,6 @@
 Clapeyron Database File,,,,,,,,
 ogSAFT Like Parameters,,,,,,,,
-species,DIPPR Number,Mw,m,sigma,epsilon,n_e,n_H,source
+species,DIPPR Number,Mw,segment,sigma,epsilon,n_e,n_H,source
 water,,18,0.982,2.985,433.91,2,2,
 butane,,1,2.163,3.784,214.00,0,0,
 hexane,,1,2.739,3.911,230.03,0,0,
