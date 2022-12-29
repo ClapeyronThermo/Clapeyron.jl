@@ -25,7 +25,7 @@ export SAFTVRSW
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `lambda`: Single Parameter (`Float64`) - Soft Well range parameter (no units)
@@ -63,7 +63,7 @@ function SAFTVRSW(components;
 
     params,sites = getparams(components, ["SAFT/SAFTVRSW","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
-    segment = params["m"]
+    segment = params["segment"]
     k = get(params,"k",nothing)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10

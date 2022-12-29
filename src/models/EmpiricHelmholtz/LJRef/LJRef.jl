@@ -202,7 +202,7 @@ function LJRef(components;
     k = get(params,"k",nothing)
     sigma = sigma_LorentzBerthelot(params["sigma"])
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    segment = params["m"]
+    segment = params["segment"]
     params = LJRefParam(epsilon,sigma,segment,Mw)
     consts = LJRefConsts()
     references = ["10.1063/1.4945000"]

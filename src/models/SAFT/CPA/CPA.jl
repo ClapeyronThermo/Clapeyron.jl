@@ -43,7 +43,6 @@ end
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `a`: Single Parameter (`Float64`) - Atraction parameter
 - `b`: Single Parameter (`Float64`) - Covolume
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter
@@ -53,7 +52,6 @@ end
 
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter
 - `b`: Pair Parameter (`Float64`) - Mixed Covolume
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter

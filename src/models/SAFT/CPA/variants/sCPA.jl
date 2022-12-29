@@ -34,7 +34,7 @@ export sCPA
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `a`: Single Parameter (`Float64`) - Atraction Parameter
 - `b`: Single Parameter (`Float64`) - Covolume
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter
@@ -44,7 +44,7 @@ export sCPA
 
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter
 - `b`: Pair Parameter (`Float64`) - Mixed Covolume
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter
