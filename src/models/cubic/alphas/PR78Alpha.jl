@@ -13,17 +13,11 @@ export PR78Alpha
     PR78Alpha(components::Vector{String};
     userlocations::Vector{String}=String[],
     verbose::Bool=false)
-
 ## Input Parameters
-
 - `w`: Single Parameter (`Float64`)
-
 ## Model Parameters
-
 - `acentricfactor`: Single Parameter (`Float64`)
-
 ## Description
-
 Cubic alpha `(α(T))` model. Default for [`PR78`](@ref) and [`EPPR78`](@ref) EoS.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2

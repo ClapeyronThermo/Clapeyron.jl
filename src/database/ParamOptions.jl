@@ -9,7 +9,6 @@ const IGNORE_HEADERS = ["dipprnumber", "smiles", "cas"]
 
 """
     ParamOptions(;kwargs...)
-
 Struct containing all the options related to parameter parsing:
 * `userlocations::Vector{String} = String[]`: List of used-defined locations to search.
 * `group_userlocations::Vector{String} = String[]`: List of used-defined group locations to search.

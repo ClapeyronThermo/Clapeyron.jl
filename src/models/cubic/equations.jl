@@ -74,10 +74,10 @@ function recombine_cubic!(model::CubicModel,k = nothing,l = nothing)
     recombine_alpha!(model,model.alpha)
     return model
 end
+
 function recombine_impl!(model::CubicModel)
     recombine_cubic!(model)
 end
-
 
 function c_premixing end
 

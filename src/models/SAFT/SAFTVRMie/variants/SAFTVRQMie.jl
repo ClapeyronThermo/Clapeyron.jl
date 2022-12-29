@@ -50,7 +50,7 @@ Quantum-Corrected SAFT-VR Mie. In particular, it uses the second order Feynmanâ€
 SAFTVRQMie
 
 export SAFTVRQMie
-function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false, kwargs...)
     params = getparams(components, ["SAFT/SAFTVRQMie"]; userlocations=userlocations, verbose=verbose)
 
     Mw = params["Mw"]

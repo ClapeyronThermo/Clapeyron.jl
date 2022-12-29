@@ -78,7 +78,7 @@ function sCPA(components;
             mixing_userlocations=String[],
             translation_userlocations=String[],
             verbose=false,
-            assoc_options = AssocOptions())
+            assoc_options = AssocOptions(), kwargs...)
 
     params,sites = getparams(components, ["SAFT/CPA/sCPA/", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]

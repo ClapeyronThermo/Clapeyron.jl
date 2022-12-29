@@ -21,23 +21,19 @@ export Wilson
 
 """
     Wilson <: ActivityModel
-
     Wilson(components::Vector{String};
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
     verbose = false)
-
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `ZRA`: Single Parameter (`Float64`) - Rackett Compresibility factor
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `g`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
-
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties
-
 ## Description
 Wilson activity model, with Rackett correlation for liquid volume:
 ```
@@ -45,10 +41,8 @@ Gᴱ = nRT∑xᵢlog(∑xⱼjΛᵢⱼ)
 Λᵢⱼ = exp(-gᵢⱼ/T)*Vⱼ/Vᵢ
 Vᵢ = (RTcᵢ/Pcᵢ)(0.29056 - 0.08775ZRAᵢ)^(1 + (1-T/Tcᵢ)^2/7)
 ```
-
 ## References
 1. Wilson, G. M. (1964). Vapor-liquid equilibrium. XI. A new expression for the excess free energy of mixing. Journal of the American Chemical Society, 86(2), 127–130. [doi:10.1021/ja01056a002](https://doi.org/10.1021/ja01056a002)
-
 """
 Wilson
 

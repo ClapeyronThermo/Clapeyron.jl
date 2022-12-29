@@ -7,27 +7,21 @@ end
 @newmodelsimple ConstantTranslation ConstantTranslationModel ConstantTranslationParam
 
 """
-
     ConstantTranslation <: ConstantTranslationModel
-
     ConstantTranslation(components::Vector{String};
     userlocations::Vector{String}=String[],
     verbose::Bool=false)
-
 ## Input Parameters
 
 - `v_shift`: Single Parameter (`Float64`) - Volume shift `[m³/mol]`
 
 ## Description
-
 Constant Translation model for cubics:
 ```
 V = V₀ + mixing_rule(cᵢ)
 ```
 where `cᵢ` is constant. 
-
 It does not have parameters by default, the volume shifts must be user-supplied.
-
 """
 ConstantTranslation
 
