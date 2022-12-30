@@ -94,12 +94,10 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
         end
     elseif isnothing(method.vl) && isnothing(method.vv)
         Vl,Vv = x0_sat_pure(model,method.T0)
-        Vl,Vv = method.vl,method.vv
         T0 = method.T0
     else
         T0,Vl,Vv = method.T0,method.vl,method.vv
     end
-
     T0,Vl,Vv = promote(T0,Vl,Vv)
     nan = zero(T0)/zero(T0)
     fail = (nan,nan,nan)
