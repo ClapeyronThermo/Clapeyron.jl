@@ -126,7 +126,7 @@ antoine_coef(model) = nothing
 """
     x0_sat_pure(model::EoSModel,T,z=SA[1.0])
 
-Returns a 2-tuple corresponding to `(log10(Vₗ),log10(Vᵥ))`, where `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses.
+Returns a 2-tuple corresponding to `(Vₗ,Vᵥ)`, where `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses.
 
 Used in [`saturation_pressure`](@ref) methods that require initial volume guesses.
 
@@ -182,7 +182,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
         #old strategy
         x0l = 4*lb_v
         x0v = -2*B + 2*lb_v
-        return (log10(x0l),log10(x0v))
+        return (x0l,x0v)
     end
     Δsqrt = sqrt(Δ)
     b1 = 0.5*(-_b + Δsqrt)
@@ -207,7 +207,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
     if Tr >= 1
         x0l = 4*lb_v
         x0v = -2*B + 2*lb_v
-        return (log10(x0l),log10(x0v))
+        return (x0l,x0v)
     end
     # if b1/b2 < -0.95, then T is near Tc.
     #if b<lb_v then we are in trouble
@@ -215,12 +215,12 @@ function x0_sat_pure(model,T,z=SA[1.0])
     if (b1/b2 < -0.95) | (b<lb_v) | (Tr>0.99)
         x0l = 4*lb_v
         x0v = -2*B #gas volume as high as possible
-        return (log10(x0l),log10(x0v))
+        return (x0l,x0v)
     end
     Vl0,Vv0 = vdw_x0_xat_pure(T,Tc,Pc,Vc)
     x0l = min(Vl0,vl)
     x0v = min(1e4*one(Vv0),Vv0) #cutoff volume
-    return (log10(x0l),log10(x0v))
+    return (x0l,x0v)
 end
 
 function vdw_x0_xat_pure(T,T_c,P_c,V_c)

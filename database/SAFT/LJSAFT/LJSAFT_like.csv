@@ -1,6 +1,6 @@
 Clapeyron Database File,,,,,,,
 LJSAFT Like Parameters,,,,,,,
-species,DIPPR Number,m,b,T_tilde,n_H,n_e,source
+species,DIPPR Number,segment,b,T_tilde,n_H,n_e,source
 methane,,1.0569,0.02953,144.4354,0,0,
 ethane,,1.6025,0.02777,190.7260,0,0,
 propane,,2.0040,0.02949,209.3365,0,0,

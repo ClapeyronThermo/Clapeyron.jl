@@ -31,6 +31,7 @@ end
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+- `Vc`: Single Parameter (`Float64`) - Molar Volume `[m^3/mol]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `k`: Pair Parameter (`Float64`) (optional)
 - `l`: Pair Parameter (`Float64`) (optional)
@@ -38,6 +39,7 @@ end
 ## Model Parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+- `Vc`: Single Parameter (`Float64`) - Molar Volume `[m^3/mol]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `a`: Pair Parameter (`Float64`)
 - `b`: Pair Parameter (`Float64`)
@@ -79,8 +81,8 @@ function Clausius(components::Vector{String}; idealmodel=BasicIdeal,
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = get(params,"k",nothing)
     l  = get(params,"l",nothing)
-    pc = params["pc"]
-    Vc = params["vc"]
+    pc = params["Pc"]
+    Vc = params["Vc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)

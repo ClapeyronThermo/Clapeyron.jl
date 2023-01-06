@@ -37,7 +37,7 @@ ClausiusTranslation
 export ClausiusTranslation
 function ClausiusTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    Vc = params["vc"]
+    Vc = params["Vc"]
     packagedparams = ClausiusTranslationParam(Vc)
     model = ClausiusTranslation(packagedparams, verbose=verbose)
     return model

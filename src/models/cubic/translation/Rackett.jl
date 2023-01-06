@@ -16,7 +16,7 @@ end
 
 ## Input Parameters
 
-- `vc`: Single Parameter (`Float64`) - Critical Volume `[m³/mol]`
+- `Vc`: Single Parameter (`Float64`) - Critical Volume `[m³/mol]`
 
 ## Model Parameters
 
@@ -41,7 +41,7 @@ RackettTranslation
 export RackettTranslation
 function RackettTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_VC)
-    Vc = params["vc"]
+    Vc = params["Vc"]
     c = SingleParam("Volume shift",components,zeros(length(components)))
     c.ismissingvalues .= true
     packagedparams = RackettTranslationParam(Vc,c)

@@ -22,7 +22,7 @@ abstract type LJSAFTModel <: SAFTModel end
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `b`: Single Parameter (`Float64`) - Segment Volume [`dm^3/mol`]
 - `T_tilde`: Single Parameter (`Float64`) - Lennard-Jones attraction parameter  `[K]`
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater for energy(no units)
@@ -58,7 +58,7 @@ function LJSAFT(components;
     verbose=false,
     assoc_options = AssocOptions(), kwargs...)
     params,sites = getparams(components, ["SAFT/LJSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["m"]
+    segment = params["segment"]
 
     Mw = params["Mw"]
 

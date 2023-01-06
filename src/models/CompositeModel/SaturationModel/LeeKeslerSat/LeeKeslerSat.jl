@@ -18,13 +18,7 @@ end
 ## Input Parameters
 
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `w`: Single Parameter (`Float64`) - acentric factor
-
-## Model Parameters
-
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
+- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `acentricfactor`: Single Parameter (`Float64`) - acentric factor
 
 ## Description
@@ -45,9 +39,9 @@ LeeKeslerSat
 
 function LeeKeslerSat(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    acentricfactor = SingleParam(params["w"],"acentric factor")
+    acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]
-    Pc = params["pc"]
+    Pc = params["Pc"]
     packagedparams = LeeKeslerSatParam(Tc,Pc,acentricfactor)
     model = LeeKeslerSat(packagedparams, verbose=verbose)
     return model

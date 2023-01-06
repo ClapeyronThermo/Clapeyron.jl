@@ -42,7 +42,7 @@ end
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `shapefactor`: Single Parameter (`Float64`) - Shape factor for segment (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`

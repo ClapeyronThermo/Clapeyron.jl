@@ -52,7 +52,7 @@ end
 
 #if a number is provided as initial point, it will instead proceed to solve directly
 function saturation_temperature(model::EoSModel, p, T0::Number)
-    sat = x0_sat_pure(model,T0) .|> exp10
+    sat = x0_sat_pure(model,T0)
     T0,vl,vv = promote(T0,sat[1],sat[2])
     return saturation_temperature_impl(model,p,AntoineSaturation(;T0,vl,vv))
 end
@@ -78,7 +78,7 @@ function x0_saturation_temperature(model::EoSModel,p,::AntoineSaturation)
     A,B,C = antoine_coef(model)
     lnp̄ = log(p / p_scale(model))
     T0 = T_scale(model)*(B/(A-lnp̄)-C)
-    Vl,Vv = x0_sat_pure(model,T0) .|> exp10
+    Vl,Vv = x0_sat_pure(model,T0)
     return (T0,Vl,Vv)
 end
 
@@ -89,19 +89,15 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
     scales = scale_sat_pure(model)
     if isnothing(method.T0)
         T0,Vl,Vv = x0_saturation_temperature(model,p)
-        if isnothing(method.vl) && isnothing(method.vv)
-            Vl,Vv = log10(Vl),log10(Vv)
-        else
-            Vl,Vv = log10(method.vl),log10(method.vv)
+        if !(isnothing(method.vl) && isnothing(method.vv))
+            Vl,Vv = method.vl,method.vv
         end
     elseif isnothing(method.vl) && isnothing(method.vv)
-        Vl,Vv = x0_sat_pure(model,method.T0) #exp10
+        Vl,Vv = x0_sat_pure(model,method.T0)
         T0 = method.T0
     else
         T0,Vl,Vv = method.T0,method.vl,method.vv
-        Vl,Vv = log10(Vl),log10(Vv) 
     end
-
     T0,Vl,Vv = promote(T0,Vl,Vv)
     nan = zero(T0)/zero(T0)
     fail = (nan,nan,nan)
@@ -130,7 +126,7 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation)
         #log(p/p2)*R̄/ΔHvap = 1/T - 1/T2
         T3 = 1/(log(p2/p)*R̄/ΔHvap + 1/T2)
         (_,vl3,vv3) = saturation_pressure(model,T2,ChemPotVSaturation(crit_retry = false))
-        res,converged = try_sat_temp(model,p,T3,log10(vl3),log10(vv3),scales,method)
+        res,converged = try_sat_temp(model,p,T3,vl3,vv3,scales,method)
         converged && return res
     end
     #no luck here, we need to calculate the critical point
@@ -165,16 +161,17 @@ end
 
 function try_sat_temp(model,p,T0,Vl,Vv,scales,method::AntoineSaturation)
     if T0 isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
-        v0 = MVector((T0,Vl,Vv))
+        v0 = MVector((T0,log(Vl),log(Vv)))
     else
-        v0 = SizedVector{3,typeof(T0)}((T0,Vl,Vv))
+        v0 = SizedVector{3,typeof(T0)}((T0,log(Vl),log(Vv)))
     end
-    f!(F,x) = Obj_Sat_Temp(model,F,x[1],exp10(x[2]),exp10(x[3]),p,scales,method)
+    #we solve volumes in a log scale
+    f!(F,x) = Obj_Sat_Temp(model,F,x[1],exp(x[2]),exp(x[3]),p,scales,method)
     r = Solvers.nlsolve(f!,v0, LineSearch(Newton()),NEqOptions(method),ForwardDiff.Chunk{3}())
     sol = Solvers.x_sol(r)
     T = sol[1]
-    Vl = exp10(sol[2])
-    Vv = exp10(sol[3])
+    Vl = exp(sol[2])
+    Vv = exp(sol[3])
     converged = check_valid_sat_pure(model,p,Vl,Vv,T)
     return (T,Vl,Vv),converged
 end
