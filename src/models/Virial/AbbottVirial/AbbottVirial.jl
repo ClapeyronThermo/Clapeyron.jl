@@ -20,13 +20,6 @@ end
 
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `w`: Single Parameter (`Float64`) - Acentric Factor
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-
-## Model Parameters
-
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `acentricfactor`: Single Parameter (`Float64`) - Acentric Factor
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 
@@ -62,8 +55,8 @@ function AbbottVirial(components;
     params = getparams(components,  ["properties/critical.csv", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     Tc = params["Tc"]
-    Pc = params["pc"]
-    acentricfactor = params["w"]
+    Pc = params["Pc"]
+    acentricfactor = params["acentricfactor"]
     packagedparams = AbbottVirialParam(Tc,Pc,acentricfactor,Mw)
     references = String[]
     return AbbottVirial(packagedparams, idealmodel; ideal_userlocations, references, verbose)

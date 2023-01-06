@@ -16,9 +16,6 @@ export PTVAlpha
 
 ## Input Parameters
 
-- `w`: Single Parameter (`Float64`)
-
-## Model Parameters
 
 - `acentricfactor`: Single Parameter (`Float64`)
 
@@ -35,7 +32,7 @@ PTVAlpha
 
 function PTVAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = SingleParam(params["w"],"acentric factor")
+    acentricfactor = params["acentricfactor"]
     packagedparams = PTVAlphaParam(acentricfactor)
     model = PTVAlpha(packagedparams, verbose=verbose)
     return model

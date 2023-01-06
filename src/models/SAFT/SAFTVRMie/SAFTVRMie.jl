@@ -24,7 +24,7 @@ abstract type SAFTVRMieModel <: SAFTModel end
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
@@ -67,7 +67,7 @@ function SAFTVRMie(components;
     params,sites = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
     Mw = params["Mw"]
-    segment = params["m"]
+    segment = params["segment"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
     epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)

@@ -127,7 +127,7 @@ function ChemPotDensitySaturation(;vl = nothing,
 end
 
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotDensitySaturation{Nothing})
-    x0 = x0_sat_pure(model,T) .|> exp10
+    x0 = x0_sat_pure(model,T)
     vl,vv = x0
     method = ChemPotDensitySaturation(;vl,vv,method.crit)
     return saturation_pressure_impl(model,T,method)

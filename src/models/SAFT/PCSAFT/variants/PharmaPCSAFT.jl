@@ -36,7 +36,7 @@ export pharmaPCSAFT
     assoc_options = AssocOptions())
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `k`: Pair Parameter (`Float64`) (optional) - Constant binary Interaction Paramater (no units)
@@ -76,7 +76,7 @@ function pharmaPCSAFT(components;
     ignore_missing_singleparams = ["kT"])
     
     water = SpecialComp(components,["water08"])
-    segment = params["m"]
+    segment = params["segment"]
     k0 = get(params,"k",nothing)
     n = length(components)
     k1 = get(params,"kT",PairParam("kT",components,zeros(n)))

@@ -1,6 +1,6 @@
 Clapeyron database,,,,,,,,,
 SAFTVRSW Like Parameters,,,,,,,,,
-species,DIPPR Number,Mw,m,sigma,epsilon,lambda,n_e,n_H,source
+species,DIPPR Number,Mw,segment,sigma,epsilon,lambda,n_e,n_H,source
 methane,,16,1,4.069,157.4,1.444,0,0,
 ethane,,,1.33,4.233,224.8,1.449,0,0,
 propane,,,1.67,4.363,249.3,1.452,0,0,

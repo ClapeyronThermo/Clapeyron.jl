@@ -11,10 +11,11 @@ export PRAlpha
     PRAlpha(components::Vector{String};
     userlocations::Vector{String}=String[],
     verbose::Bool=false)
+
 ## Input Parameters
-- `w`: Single Parameter (`Float64`)
-## Model Parameters
+
 - `acentricfactor`: Single Parameter (`Float64`)
+
 ## Description
 Cubic alpha `(α(T))` model. Default for [`PR`](@ref) EoS.
 ```
@@ -27,7 +28,7 @@ PRAlpha
 
 function PRAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = SingleParam(params["w"],"acentric factor")
+    acentricfactor = params["acentricfactor"]
     packagedparams = PRAlphaParam(acentricfactor)
     model = PRAlpha(packagedparams, verbose=verbose)
     return model

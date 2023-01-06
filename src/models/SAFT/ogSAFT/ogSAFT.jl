@@ -22,7 +22,7 @@ abstract type ogSAFTModel <: SAFTModel end
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
@@ -60,7 +60,7 @@ function ogSAFT(components;
     assoc_options = AssocOptions(), kwargs...)
 
     params,sites = getparams(components, ["SAFT/ogSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["m"]
+    segment = params["segment"]
     k = get(params,"k",nothing)
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
