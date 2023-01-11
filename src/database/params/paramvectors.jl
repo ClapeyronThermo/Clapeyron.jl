@@ -2,10 +2,8 @@
     Compressed4DMatrix{T,V<:AbstractVector{T}}
     Compressed4DMatrix(vals::AbstractVector,ijab::AbstractVector)
     Compressed4DMatrix(vals,ij,ab,unsafe::Bool = false)
-
 Struct used to hold association data. as its name says, it is a compressed 4D matrix containing all the non-zero combinations of component-site pairs.
-The component-site pairs `(i,j,a,b)` are sorted lexicographically. the `(i,j)` pairs are stored in the `outer_indices` field, whereas the `(a,b)` pairs are stored in the `inner_indices` field.
-
+The component-site pairs `(i,j,a,b)` are sorted lexicographically. the `(i,j)` pairs are stored in the `outer_indices` field, whereas the `(a,b)` pairs are stored in the `inner_indices` field. 
 Let's see an associating model:
 ```julia-repl
 julia> model = PCSAFT(["water","methanol","ethane"],assoc_options = AssocOptions(combining = :esd))
@@ -15,9 +13,7 @@ PCSAFT{BasicIdeal} with 3 components:
  "ethane"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
 ```
-
 We check out the `bondvol` parameter. note how ethane does not appear in the list:
-
 ```julia-repl
 julia> model.params.bondvol
 AssocParam{Float64}["water", "methanol", "ethane"]) with 4 values:
@@ -26,7 +22,6 @@ AssocParam{Float64}["water", "methanol", "ethane"]) with 4 values:
 ("methanol", "H") >=< ("water", "e"): 0.03495053755004983
 ("methanol", "e") >=< ("methanol", "H"): 0.035176
 ```
-
 The underlying structure used to store `AssocParam` values is a `Compressed4DMatrix`:
 ```julia-repl
 julia> vals = model.params.bondvol.values
@@ -35,21 +30,18 @@ Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}} with 4 entries:
  (2, 1) >=< (1, 2): 0.03495053755004983
  (2, 2) >=< (1, 1): 0.03495053755004983
  (2, 1) >=< (2, 2): 0.035176
-
 julia> vals.values
 4-element Vector{Float64}:
  0.034868
  0.03495053755004983
  0.03495053755004983
  0.035176
-
 julia> vals.outer_indices
 4-element Vector{Tuple{Int64, Int64}}:
  (1, 1)
  (2, 1)
  (2, 1)
  (2, 2)
-
 julia> vals.inner_indices
 4-element Vector{Tuple{Int64, Int64}}:
  (1, 2)
@@ -65,37 +57,27 @@ julia> idxs = [(ij...,ab...) for (ij,ab) in zip(vals.outer_indices,vals.inner_in
  (2, 1, 1, 2)
  (2, 1, 2, 1)
  (2, 2, 1, 2)
-
 julia> issorted(idxs)
 true
 ```
-
 You can build a `Compressed4DMatrix` in two ways:
-
 1. you can pass `values` and a list of `(i,j,a,b)::NTuple{4,Int}` indices:
-
 ```julia-repl
 julia> ijab, vals = [(1,1,1,2)], [3.0]
 ([(1, 1, 1, 2)], [3.0])
-
 julia> Clapeyron.Compressed4DMatrix(vals,ijab)
 Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}} with 1 entry:
  (1, 1) >=< (1, 2): 3.0
 ```
-
 2. Using a list of values, a list of `ij:Tuple{Int,Int}` outer indices and a list of `ab:Tuple{Int,Int}` inner indices. this last form accepts the optional argument `unsafe::Bool`.
 If `unsafe` is true, `ij` and `ab` will be considered sorted, and will build a `Compressed4DMatrix` directly, using the same reference to `vals`, `ij` and `ab`:
-
 ```julia-repl
 julia> ij, ab, vals = [(1,1)], [(1,2)], [3.0]
 ([(1, 1)], [(1, 2)], [3.0])
-
 julia> assoc1,assoc2 = Clapeyron.Compressed4DMatrix(vals,ij,ab),Clapeyron.Compressed4DMatrix(vals,ij,ab,true)
 (Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}[3.0], Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}}[3.0])
-
 julia> assoc1.values[1] = 100; (vals,assoc1.values[1])
 ([3.0], 100.0)
-
 julia> assoc2.values[1] = 100; (vals,assoc2.values[1])
 ([100.0], 100.0)
 ```
@@ -301,7 +283,6 @@ end
 """
     assoc_similar(mat::Compressed4DMatrix)
     assoc_similar(mat::Compressed4DMatrix,::Type{𝕋}) where 𝕋 <:Number)
-
 returns a `Clapeyron.Compressed4DMatrix` of the same shape as the input, with the same element type as `𝕋`
 """
 function assoc_similar(m::Compressed4DMatrix,::Type{𝕋}) where 𝕋 <:Number
@@ -319,9 +300,7 @@ end
 
 """
     SparsePackedMofV{T,V<:AbstractVector{T}} <:SparseArrays.AbstractSparseMatrixCSC{E,Int}
-
 Sparse Matrix struct used internally to store a matrix of Vectors efficiently.
-
 """
 struct SparsePackedMofV{E,P<:PackedVofV}<:SparseArrays.AbstractSparseMatrixCSC{E,Int}
     storage::P

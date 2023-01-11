@@ -43,7 +43,6 @@ end
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `a`: Single Parameter (`Float64`) - Atraction parameter
 - `b`: Single Parameter (`Float64`) - Covolume
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter
@@ -53,7 +52,6 @@ end
 
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter
 - `b`: Pair Parameter (`Float64`) - Mixed Covolume
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter
@@ -109,9 +107,9 @@ function CPA(components;
     init_translation = init_model(translation,components,translation_userlocations,verbose)
 
     if occursin("RK",string(cubicmodel))
-        cubicparams = RKParam(a, b, params["Tc"],params["pc"],Mw)
+        cubicparams = RKParam(a, b, params["Tc"],params["Pc"],Mw)
     elseif occursin("PR",string(cubicmodel))
-        cubicparams = PRParam(a, b, params["Tc"],params["pc"],Mw)
+        cubicparams = PRParam(a, b, params["Tc"],params["Pc"],Mw)
     end
 
     init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
@@ -119,6 +117,23 @@ function CPA(components;
     references = ["10.1021/ie051305v"]
 
     model = CPA(components, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
+    return model
+end
+
+function recombine_impl!(model::CPAModel)
+    assoc_options = model.assoc_options
+    a = model.params.a
+    b = model.params.b
+
+    a  = epsilon_LorentzBerthelot!(a)
+    b  = sigma_LorentzBerthelot!(b)
+
+    epsilon_assoc = model.params.epsilon_assoc
+    bondvol = model.params.bondvol
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options) #combining rules for association
+
+    model.params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
+    model.params.bondvol.values.values[:] = bondvol.values.values
     return model
 end
 

@@ -22,7 +22,7 @@ abstract type SAFTVRQMieModel <: SAFTVRMieModel end
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`AÂ°`]
 - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
@@ -50,14 +50,14 @@ Quantum-Corrected SAFT-VR Mie. In particular, it uses the second order Feynmanâ€
 SAFTVRQMie
 
 export SAFTVRQMie
-function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false)
+function SAFTVRQMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false, kwargs...)
     params = getparams(components, ["SAFT/SAFTVRQMie"]; userlocations=userlocations, verbose=verbose)
 
     Mw = params["Mw"]
     Mw .*= 1E-3
     mw_mix(mi,mj,k) = mix_powmean(mi,mj,k,-1) #mij = 0.5/(mi^-1 + mj^-1)
     Mw = kij_mix(mw_mix,Mw)
-    segment = params["m"]
+    segment = params["segment"]
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     params["sigma"].values .*= 1E-10

@@ -1,6 +1,6 @@
 Clapeyron Database File,,,,,
 Critical Single Parameters,,,,,
-species,DIPPR Number,Tc,pc,vc,w
+species,DIPPR Number,Tc,Pc,Vc,acentricfactor
 Methane,74828,190.564,4.59E+06,9.92E-05,0.011
 Ethane,74840,305.32,4.85E+06,1.48E-04,0.098
 propane,74986,369.83,4.21E+06,2.03E-04,0.149

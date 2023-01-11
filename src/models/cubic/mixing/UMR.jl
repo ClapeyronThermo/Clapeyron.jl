@@ -16,17 +16,13 @@ end
     userlocations::Vector{String}=String[],
     activity_userlocations::Vector{String}=String[],
     verbose::Bool=false)
-
 ## Input Parameters
-
 None
 
 ## Input models
 
 - `activity`: Activity Model
-
 ## Description
-
 Mixing Rule used by the Universal Mixing Rule Peng-Robinson [`UMRPR`](@ref) equation of state.
 ```
 aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)

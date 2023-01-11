@@ -32,9 +32,9 @@ KayRule
 
 export KayRule
 
-function KayRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function KayRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
     #params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    #acentricfactor = SingleParam(params["w"],"acentric factor")
+    #acentricfactor = params["acentricfactor"]
     packagedparams = KayRuleParam()
     model = KayRule(packagedparams, verbose=verbose)
     return model

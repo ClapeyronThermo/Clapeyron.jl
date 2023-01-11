@@ -24,7 +24,7 @@ abstract type SAFTVRMieModel <: SAFTModel end
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
@@ -63,11 +63,11 @@ function SAFTVRMie(components;
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
-    assoc_options = AssocOptions())
+    assoc_options = AssocOptions(), kwargs...)
     params,sites = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
     Mw = params["Mw"]
-    segment = params["m"]
+    segment = params["segment"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
     epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
@@ -85,14 +85,23 @@ function SAFTVRMie(components;
 end
 
 function recombine_impl!(model::SAFTVRMieModel)
+    assoc_options = model.assoc_options
     sigma = model.params.sigma
     epsilon = model.params.epsilon
     lambda_a = model.params.lambda_a
     lambda_r = model.params.lambda_r
-    lambda_LorentzBerthelot!(lambda_a)
-    lambda_LorentzBerthelot!(lambda_r)
+    
+    epsilon_assoc = model.params.epsilon_assoc
+    bondvol = model.params.bondvol
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
+
+    model.params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
+    model.params.bondvol.values.values[:] = bondvol.values.values
+
     sigma = sigma_LorentzBerthelot!(sigma)
     epsilon = epsilon_HudsenMcCoubrey!(epsilon,sigma)
+    lambda_a = lambda_LorentzBerthelot!(lambda_a)
+    lambda_r = lambda_LorentzBerthelot!(lambda_r)
     return model
 end
 
@@ -102,7 +111,7 @@ function x0_volume_liquid(model::SAFTVRMieModel,T,z)
 end
 
 function data(model::SAFTVRMieModel, V, T, z)
-    m̄ = dot(z,model.params.segment.values)
+    m̄ = dot(z,model.params.segment)
     _d = @f(d)
     ζi = @f(ζ0123,_d)
     _ζ_X,σ3x = @f(ζ_X_σ3,_d,m̄)
@@ -138,7 +147,7 @@ function ρ_S(model::SAFTVRMieModel, V, T, z, m̄ = dot(z,model.params.segment.v
 end
 
 function ζ0123(model::SAFTVRMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params.segment.values))
-    m = model.params.segment.values
+    m = model.params.segment
     _0 = zero(V+T+first(z))
     ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
     for i ∈ 1:length(z)
@@ -204,7 +213,7 @@ function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d),m̄ = dot(z,model.pa
     m = model.params.segment.values
     m̄ = dot(z, m)
     m̄inv = 1/m̄
-    σ = model.params.sigma.values
+    σ = model.params.sigma
     ρS = N_A/V*m̄
     comps = 1:length(z)
     _ζ_X = zero(V+T+first(z))
@@ -271,7 +280,7 @@ function f123456(model::SAFTVRMieModel, V, T, z, α)
     #return sum(ϕ[i+1][m]*α^i for i ∈ 0:3)/(1+∑(ϕ[i+1][m]*α^(i-3) for i ∈ 4:6))
 end
 
-function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma.values)
+function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma)
     m = model.params.segment.values
     m̄ = dot(z, m)
     m̄inv = 1/m̄
@@ -380,7 +389,7 @@ function I(model::SAFTVRMieModel, V, T, z,TR,_data = @f(data))
 end
 
 function Δ(model::SAFTVRMieModel, V, T, z, i, j, a, b,_data = @f(data))
-    ϵ = model.params.epsilon.values
+    ϵ = model.params.epsilon
     TR = T/ϵ[i,j]
     _I = @f(I,TR,_data)
     ϵ_assoc = model.params.epsilon_assoc.values
@@ -394,11 +403,11 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
     _d,ρS,ζi,_ζ_X,_ζst,_,m̄ = _data
     comps = @comps
     ∑z = ∑(z)
-    m = model.params.segment.values
-    _ϵ = model.params.epsilon.values
-    _λr = model.params.lambda_r.values
-    _λa = model.params.lambda_a.values
-    _σ = model.params.sigma.values
+    m = model.params.segment
+    _ϵ = model.params.epsilon
+    _λr = model.params.lambda_r
+    _λa = model.params.lambda_a
+    _σ = model.params.sigma
     m̄inv = 1/m̄
     a₁ = zero(V+T+first(z))
     a₂ = a₁
@@ -517,11 +526,11 @@ function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     #but on GC models, @comps != @groups
     #if we pass Xgc instead of z, the equation is exactly the same.
     #we need to add the divide the result by sum(z) later.
-    m = model.params.segment.values
-    _ϵ = model.params.epsilon.values
-    _λr = model.params.lambda_r.values
-    _λa = model.params.lambda_a.values
-    _σ = model.params.sigma.values
+    m = model.params.segment
+    _ϵ = model.params.epsilon
+    _λr = model.params.lambda_r
+    _λa = model.params.lambda_a
+    _σ = model.params.sigma
     m̄inv = 1/m̄
     a₁ = zero(V+T+first(z))
     a₂ = a₁
@@ -615,11 +624,11 @@ function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     l = length(z)
     comps = 1:l
     ∑z = ∑(z)
-    m = model.params.segment.values
-    _ϵ = model.params.epsilon.values
-    _λr = model.params.lambda_r.values
-    _λa = model.params.lambda_a.values
-    _σ = model.params.sigma.values
+    m = model.params.segment
+    _ϵ = model.params.epsilon
+    _λr = model.params.lambda_r
+    _λa = model.params.lambda_a
+    _σ = model.params.sigma
     m̄inv = 1/m̄
     a₁ = zero(V+T+first(z))
     a₂ = a₁

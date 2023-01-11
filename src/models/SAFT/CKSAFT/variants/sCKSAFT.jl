@@ -23,7 +23,7 @@ export sCKSAFT
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `vol`: Single Parameter (`Float64`) - Segment Volume [`dm^3`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
@@ -57,10 +57,10 @@ function sCKSAFT(components::Vector{String};
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
-    assoc_options = AssocOptions())
+    assoc_options = AssocOptions(), kwargs...)
 
     params,sites = getparams(components, ["SAFT/sCKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["m"]
+    segment = params["segment"]
     k = get(params,"k",nothing)
     sigma = params["vol"]
     sigma.values .*= 6*0.74048/N_A/1e6/π

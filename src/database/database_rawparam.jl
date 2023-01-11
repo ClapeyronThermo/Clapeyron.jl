@@ -3,10 +3,8 @@ component info stores (comp1,comp2,site1,site2). on singleparams, comp = comp1
 on single and pair params, site1, site2, = ""
 data is a vector of data found
 sources is the sources for each point, same with csv
-
 the strategy is to check each csv and produce RawParams, with ONLY nonmissing values
 then we join the same params (joindata!) and finally, we "compile" the tapes (via compile_param)
-
 we calculate the sites with the parsed raw params, as they have all the necessary information
 For Clapeyron 0.4.0, this will also hold the group type, tapes with different group types cannot be merged.
 =#

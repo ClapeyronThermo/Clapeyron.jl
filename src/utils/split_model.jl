@@ -147,16 +147,13 @@ function each_split_model(param::GroupParam,I)
 end
 """
     split_model(model::EoSModel)
-
 Takes in a model for a multi-component system and returns a vector of model for each pure system.
-
 ## Example:
 ```julia-repl
 julia> gerg2 = GERG2008(["propane","pentane"])
 GERG008 model with 2 components:
 "propane"
 "pentane"
-
 julia> split_model(gerg2)
 2-element Vector{GERG2008}:
  GERG2008("propane")
@@ -167,10 +164,8 @@ function split_model end
 
 """
     is_splittable(model)::Bool
-
 Trait to determine if a `EoSModel` should be splitted by itself or can be simply filled into a vector.
 This is useful in the case of models without any parameters, as those models are impossible by definition to split, because they don't have any underlying data.
-
 The Default is `is_splittable(model) = true`.
 """
 is_splittable(model) = true

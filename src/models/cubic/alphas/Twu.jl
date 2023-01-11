@@ -14,32 +14,22 @@ end
     TwuAlpha(components::Vector{String};
     userlocations::Vector{String}=String[],
     verbose::Bool=false)
-
 ## Input Parameters
-
 - `M`: Single Parameter
 - `N`: Single Parameter
 - `L`: Single Parameter
-
 ## Model Parameters
-
 - `M`: Single Parameter
 - `N`: Single Parameter
 - `L`: Single Parameter
-
 ## Description
-
 Cubic alpha `(α(T))` model. Default for [`VTPR`](@ref) EoS.
 ```
-
 αᵢ = Trᵢ^(N*(M-1))*exp(L*(1-Trᵢ^(N*M))
 Trᵢ = T/Tcᵢ
 ```
-
 ## References
-
 1. Twu, C. H., Lee, L. L., & Starling, K. E. (1980). Improved analytical representation of argon thermodynamic behavior. Fluid Phase Equilibria, 4(1–2), 35–44. [doi:10.1016/0378-3812(80)80003-3](https://doi.org/10.1016/0378-3812(80)80003-3)
-
 """
 TwuAlpha
 

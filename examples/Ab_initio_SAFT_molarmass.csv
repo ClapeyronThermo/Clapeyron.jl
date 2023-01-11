@@ -3,10 +3,10 @@ Molar Mases Single Params,,
 species,DIPPR Number,Mw
 He_Aasen,,4.002602
 Ne_Aasen,,20.1797
-Ne_Dufal,,20
-Ar_Dufal,,40
-Kr_Dufal,,80
-Xe_Dufal,,80
+Ne_Dufal,,20.0
+Ar_Dufal,,40.0
+Kr_Dufal,,80.0
+Xe_Dufal,,80.0
 He_CCSD(T),,4.002602
 Ne_CCSD(T),,20.1797
 Ar_CCSD(T),,39.948

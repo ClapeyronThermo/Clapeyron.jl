@@ -23,7 +23,7 @@ include("utils/core_utils.jl")
 
 include("solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log, sqrt, log1p
+using .Solvers: log, sqrt, log1p, ^
 ∂Tag = Solvers.∂Tag
 
 include("utils/fractions.jl")
@@ -81,7 +81,6 @@ include("methods/methods.jl")
 
 #=
 the dependency chain is the following:
-
 base --> database(params)  -|-> split_model --> methods -|-> models                     
                             |-> macros ------------------|
 =#
@@ -185,4 +184,6 @@ include("models/PeTS/PeTS.jl")
 include("models/UFTheory/UFTheory.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
 include("utils/misc.jl")
+
+include("estimation/estimation.jl")
 end # module

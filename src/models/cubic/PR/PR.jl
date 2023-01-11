@@ -1,4 +1,3 @@
-
 abstract type PRModel <: ABCubicModel end
 
 const PRParam = ABCubicParam
@@ -28,7 +27,6 @@ end
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
-
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
@@ -42,14 +40,12 @@ end
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `a`: Pair Parameter (`Float64`)
 - `b`: Pair Parameter (`Float64`)
-
 ## Input models
 - `idealmodel`: Ideal Model
 - `alpha`: Alpha model
 - `mixing`: Mixing model
 - `activity`: Activity Model, used in the creation of the mixing model.
 - `translation`: Translation Model
-
 ## Description
 Peng-Robinson Equation of state.
 ```
@@ -57,7 +53,6 @@ P = RT/(V-Nb) + a•α(T)/(V-Nb₁)(V-Nb₂)
 b₁ = (1 + √2)b
 b₂ = (1 - √2)b
 ```
-
 ## References
 1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. [doi:10.1021/I160057A011](https://doi.org/10.1021/I160057A011)
 """
@@ -81,7 +76,7 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = get(params,"k",nothing)
     l = get(params,"l",nothing)
-    pc = params["pc"]
+    pc = params["Pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)

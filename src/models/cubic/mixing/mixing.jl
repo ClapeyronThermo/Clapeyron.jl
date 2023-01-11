@@ -1,7 +1,6 @@
 #this is used for some dispatches
 abstract type ActivityMixingRule <: MixingRule end
 """
-
     mixing_rule(model::CubicModel,V,T,z,mixing_model::MixingRule,α,a,b,c)
 
 Interface function used by cubic models. with matrices `a` and `b`, vectors `α` and `c`, a `model::CubicModel` and `mixing_model::MixingRule`, returns

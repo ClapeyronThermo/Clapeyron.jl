@@ -74,10 +74,10 @@ function recombine_cubic!(model::CubicModel,k = nothing,l = nothing)
     recombine_alpha!(model,model.alpha)
     return model
 end
+
 function recombine_impl!(model::CubicModel)
     recombine_cubic!(model)
 end
-
 
 function c_premixing end
 
@@ -335,7 +335,7 @@ function x0_sat_pure(model::ABCubicModel, T)
         _Δ = (pl0)/(vl_p0*dpdV)
         vl = vl_p0*exp(_Δ)
         vv = volume_virial(B,pl0,T) - c
-        return (log10(vl), log10(vv))
+        return (vl, vv)
     else 
         vc = zc*R̄*Tc/pc - c 
         pv0 = -0.25*R̄*T/B
@@ -351,9 +351,9 @@ function x0_sat_pure(model::ABCubicModel, T)
             vl = 0.5 * (vl + vlc)
             vv = 0.5 * (vv + vvc)
         end
-        return (log10(vl), log10(vv))
+        return (vl, vv)
     end
-    return (log10(vl), log10(vv))
+    return (vl, vv)
 end
 
 #=
