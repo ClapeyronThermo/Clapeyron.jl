@@ -176,7 +176,7 @@ function SecondOrderGroupParam(gccomponents,intragccomponents,
         error_different_grouptype(group1.grouptype,group1.grouptype)
     end
     
-    gccomponents_parsed = Vector{Pair{String,Vector{Pair{NTuple{2,String},Int}}}}(undef,length(gccomponents))
+    gccomponents_parsed = Vector{Tuple{String,Vector{Pair{NTuple{2,String},Int}}}}(undef,length(gccomponents))
     j = 0
     for (i,needs_to_parse_group_i) ∈ pairs(to_lookup)
         if needs_to_parse_group_i #we looked up this component, and if we are here, it exists.
