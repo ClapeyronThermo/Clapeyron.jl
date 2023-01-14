@@ -173,7 +173,7 @@ function m2ϵσ3(model::PCSAFTModel, V, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
-    m2ϵσ3₂ = zero(V+T+first(z))
+    m2ϵσ3₂ = zero(T+first(z))
     m2ϵσ3₁ = m2ϵσ3₂
     @inbounds for i ∈ @comps
         for j ∈ @comps
