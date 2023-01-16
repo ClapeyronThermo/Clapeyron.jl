@@ -452,10 +452,11 @@ function findparamsincsv(components,filepath,
     normalisecomponents = options.normalisecomponents
     component_delimiter = options.component_delimiter
 
+    csvtype = csv_file_options.csvtype
     no_parsegroups = parsegroups == :off
     correct_group = (parsegroups == :group && csvtype == groupdata) || (parsegroups == :intragroup && csvtype == intragroupdata)
     grouptype = csv_file_options.grouptype
-    csvtype = csv_file_options.csvtype
+    
     
     df = read_csv(filepath,options)
 
