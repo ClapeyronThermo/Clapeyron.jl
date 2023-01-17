@@ -126,6 +126,16 @@ using Clapeyron, Test
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.07550931466871749 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V_γMie, T, z) ≈ -0.8205840455850311 rtol = 1e-6
     end
+
+    @testset "structSAFTgammaMie" begin
+        species = [("ethanol",["CH3"=>1,"CH2OH"=>1]),("octane",["CH3"=>2,"CH2"=>6])]
+        bonds = [("ethanol",[("CH3","CH2OH")=>1]),("octane",[("CH3","CH2")=>2,("CH2","CH2")=>5])]
+
+        system = structSAFTgammaMie(species,bonds)
+        V_γMie = exp10(-3.5)
+        z = [0.5,0.5]
+        @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.11160851237651681 rtol = 1e-6
+    end
     @printline
 end
 

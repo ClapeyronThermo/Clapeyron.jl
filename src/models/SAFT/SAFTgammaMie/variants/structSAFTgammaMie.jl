@@ -22,7 +22,7 @@ function structSAFTgammaMie(components,intra_components;
     assoc_options = AssocOptions(), kwargs...)
 
     groups = SecondOrderGroupParam(components, intra_components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"])
-    params,sites = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(groups, ["SAFT/SAFTgammaMie/structSAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     components = groups.components
     
     gc_segment = params["vst"]
@@ -82,15 +82,16 @@ function a_res(model::structSAFTgammaMieModel, V, T, z)
     dgc,X,vrdata = _data
     _,ρS,ζi,_ζ_X,_ζst,σ3x,m̄ = vrdata
     vrdata_disp = (dgc,ρS,ζi,_ζ_X,_ζst,σ3x,m̄)
-    return @f(a_hs,_data) + a_disp(model,V,T,X,vrdata_disp)/sum(z) + @f(a_chain,vrdata) + @f(a_assoc,_data)
+    return @f(a_hs,_data) + a_disp(model,V,T,X,vrdata_disp)/sum(z) + @f(a_chain,_data) + @f(a_assoc,_data)
 end
 
 function a_chain(model::structSAFTgammaMieModel, V, T, z,_data = @f(data))
-    _d,ρS,ζi,_ζ_X,_ζst,_,m̄ = _data
+    _d,_,vrdata = _data
+    _,ρS,_,_ζ_X,_ζst,_,_ = vrdata
     l = length(z)
     ∑z = ∑(z)
 
-    ngroups = length(model.groups.n_groups)
+    ngroups = length(model.groups.flattenedgroups)
 
     _ϵ = model.params.epsilon
     _λr = model.params.lambda_r
