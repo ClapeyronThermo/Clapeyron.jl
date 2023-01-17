@@ -268,7 +268,7 @@ function __warning_no_site_vals(result,components)
     return SiteParam(components)
 end
 
-function getparams(groups::GroupParam, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
+function getparams(groups::GroupParameter, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
     return getparams(groups.flattenedgroups, locations,options)
 end
 

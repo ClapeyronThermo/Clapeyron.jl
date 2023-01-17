@@ -30,9 +30,9 @@ struct SAFTgammaMie{I,VR} <: SAFTgammaMieModel
 end
 
 """
-    SAFTVRSWModel <: SAFTModel
+    SAFTgammaMie <: SAFTModel
 
-    SAFTVRSW(components; 
+SAFTgammaMie(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
     group_userlocations=String[],

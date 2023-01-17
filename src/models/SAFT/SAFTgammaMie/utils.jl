@@ -1,4 +1,4 @@
-function gc_to_comp_sites(sites::SiteParam,groups::GroupParam)
+function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
     #given some groups and some sites calculated over those groups
     #calculates "flattened" sites
 

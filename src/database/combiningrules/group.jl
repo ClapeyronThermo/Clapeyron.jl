@@ -1,6 +1,6 @@
 #implace base
 
-function _group_sum!(out,groups::GroupParam,param)
+function _group_sum!(out,groups::GroupParameter,param)
     v = groups.n_groups_cache
     for (i,vi) in pairs(v)
         out[i] = dot(vi,param)
@@ -8,7 +8,7 @@ function _group_sum!(out,groups::GroupParam,param)
     return out
 end
 
-function _group_sum!(out,groups::GroupParam,param::Number)
+function _group_sum!(out,groups::GroupParameter,param::Number)
     v = groups.n_groups_cache
     for (i,vi) in pairs(v)
         out[i] = sum(vi)*param
@@ -16,17 +16,17 @@ function _group_sum!(out,groups::GroupParam,param::Number)
     return out
 end
 
-function group_sum!(out::SingleParameter,groups::GroupParam,param::SingleParameter)
+function group_sum!(out::SingleParameter,groups::GroupParameter,param::SingleParameter)
     _group_sum!(out.values,groups,param)
     out.ismissingvalues .= param.ismissingvalues
     return out
 end
 
-function group_sum!(out,groups::GroupParam,param::Nothing)
+function group_sum!(out,groups::GroupParameter,param::Nothing)
     return _group_sum!(out,groups,true)
 end
 
-function group_sum!(out,groups::GroupParam,param)
+function group_sum!(out,groups::GroupParameter,param)
     return _group_sum!(out,groups,param)
 end
 
@@ -40,7 +40,7 @@ pᵢ = ∑Pₖνᵢₖ
 where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
-function group_sum(groups::GroupParam,param::SingleParameter)
+function group_sum(groups::GroupParameter,param::SingleParameter)
     gc = length(groups.components)
     out =  SingleParam(param.name,
                         groups.components,
@@ -61,7 +61,7 @@ pᵢ = ∑Pₖνᵢₖ
 where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
-function group_sum(groups::GroupParam,param::AbstractVector)
+function group_sum(groups::GroupParameter,param::AbstractVector)
     out = similar(param,length(groups.components))
     return group_sum!(out,groups,param)
 end
@@ -76,12 +76,12 @@ pᵢ = ∑νᵢₖ
 where `νᵢₖ` is the number of groups `k` at component `i`.
 
 """
-function group_sum(groups::GroupParam,::Nothing)
+function group_sum(groups::GroupParameter,::Nothing)
     out = zeros(Float64,length(groups.components))
     return group_sum!(out,groups,true)
 end
 
-function group_sum(groups::GroupParam)
+function group_sum(groups::GroupParameter)
     return SingleParam("m",
                         groups.components,
                         group_sum(groups, nothing))
@@ -91,7 +91,7 @@ end
 
 returns a matrix of size `(k,i)` with values νₖᵢ. when multiplied with a molar amount, it returns the amount of moles of each group.
 """
-function group_matrix(groups::GroupParam)
+function group_matrix(groups::GroupParameter)
     ng = groups.n_groups_cache
     comp = length(ng)
     gc = length(groups.flattenedgroups)
@@ -112,24 +112,24 @@ where `νᵢₖ` is the number of groups `k` at component `i` and `P(i,j)` depen
 """
 function group_pairmean end
 
-group_pairmean(groups::GroupParam,param) = group_pairmean(mix_mean,groups,param)
+group_pairmean(groups::GroupParameter,param) = group_pairmean(mix_mean,groups,param)
 
-function group_pairmean(f::T,groups::GroupParam,param::SingleOrPair) where {T}
+function group_pairmean(f::T,groups::GroupParameter,param::SingleOrPair) where {T}
     return SingleParam(param.name,groups.components,group_pairmean(f,groups,param.values))
 end
 
 
-function group_pairmean(f::T,groups::GroupParam,p::AbstractArray) where {T}
+function group_pairmean(f::T,groups::GroupParameter,p::AbstractArray) where {T}
     _0 = zero(eltype(p))/one(eltype(p)) #we want a float type
     res = fill(_0,length(groups.components))
     return group_pairmean!(res,f,groups,p)
 end
 
-function group_pairmean!(res,f::T,groups::GroupParam,param::SingleOrPair) where {T}
+function group_pairmean!(res,f::T,groups::GroupParameter,param::SingleOrPair) where {T}
     return group_pairmean!(res,f,groups,param.values)
 end
 
-function group_pairmean!(res,f,groups::GroupParam,p::AbstractMatrix)
+function group_pairmean!(res,f,groups::GroupParameter,p::AbstractMatrix)
     lgroups = 1:length(groups.flattenedgroups)
     lcomps = 1:length(res)
     _0 = zero(eltype(res))
@@ -152,7 +152,7 @@ function group_pairmean!(res,f,groups::GroupParam,p::AbstractMatrix)
     return res
 end
 
-function group_pairmean!(res,f::T,groups::GroupParam,p::AbstractVector) where {T}
+function group_pairmean!(res,f::T,groups::GroupParameter,p::AbstractVector) where {T}
     lgroups = 1:length(groups.flattenedgroups)
     lcomps = 1:length(groups.components)
     zz = groups.n_groups_cache
@@ -186,7 +186,7 @@ modifies implace the field `n_groups_cache` (`μᵢₖ`) in the `GroupParam`:
 Where `S` is a shape factor parameter for each group and `vst` is the segment size for each group.
 used mainly for GC models (like `SAFTgammaMie`) in which the group fraction depends on segment size and shape factors.
 """
-function mix_segment!(groups::GroupParam,s = ones(length(groups.flattenedgroups)),segment = ones(length(groups.flattenedgroups)))
+function mix_segment!(groups::GroupParameter,s = ones(length(groups.flattenedgroups)),segment = ones(length(groups.flattenedgroups)))
     gc = 1:length(groups.flattenedgroups)
     comps = 1:length(groups.components)
     v = groups.n_groups_cache
