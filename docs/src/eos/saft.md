@@ -26,6 +26,7 @@ Clapeyron.SAFTVRSW
 Clapeyron.SAFTVRMie
 Clapeyron.SAFTVRQMie
 Clapeyron.SAFTgammaMie
+Clapeyron.structSAFTgammaMie
 ```
 
 ## CPA Models
