@@ -227,3 +227,10 @@ end
 function Compressed4DMatrix(param::SiteParam)
     return assoc_similar(param,Float64)
 end
+
+struct SiteTranslator <: ClapeyronParam
+    components::Vector{String}
+    site_translator::Vector{Vector{NTuple{2,Int}}}
+end
+
+is_splittable(::SiteTranslator) = true
