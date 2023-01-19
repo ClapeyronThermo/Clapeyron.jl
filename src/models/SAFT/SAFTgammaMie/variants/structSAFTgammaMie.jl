@@ -14,7 +14,7 @@ end
 """
     structSAFTgammaMie <: SAFTgammaMieModel
 
-    structSAFTgammaMie(components, bonds; 
+    structSAFTgammaMie(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
     group_userlocations=String[],
@@ -56,7 +56,7 @@ s-SAFT-γ-Mie EoS
 """
 structSAFTgammaMie
 
-function structSAFTgammaMie(components,bonds; 
+function structSAFTgammaMie(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
     group_userlocations = String[],
@@ -64,7 +64,7 @@ function structSAFTgammaMie(components,bonds;
     verbose=false,
     assoc_options = AssocOptions(), kwargs...)
 
-    groups = StructGroupParam(components, bonds, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"])
+    groups = StructGroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"])
     params,sites = getparams(groups, ["SAFT/SAFTgammaMie/structSAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     components = groups.components
     

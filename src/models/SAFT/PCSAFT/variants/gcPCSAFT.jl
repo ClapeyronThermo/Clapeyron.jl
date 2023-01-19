@@ -21,7 +21,7 @@ end
 
 """
     gcPCSAFTModel <: PCSAFTModel
-    gcPCSAFT(components,bonds; 
+    gcPCSAFT(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
@@ -53,14 +53,14 @@ Heterogeneous Group-contribution Perturbed-Chain SAFT (gc-PC-SAFT)
 gcPCSAFT
 
 export gcPCSAFT
-function gcPCSAFT(components,bonds =String[];
+function gcPCSAFT(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
 
-    groups = StructGroupParam(components, bonds, ["SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_groups.csv","SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_intragroups.csv"])
+    groups = StructGroupParam(components, ["SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_groups.csv","SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_intragroups.csv"])
     params,sites = getparams(groups, ["SAFT/PCSAFT/gcPCSAFT","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     
     components = groups.components
@@ -247,5 +247,3 @@ function  Δ(model::gcPCSAFT, V, T, z,_data=@f(data))
     end
     return Δout
 end
-
-include("utils.jl")

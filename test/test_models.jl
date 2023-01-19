@@ -102,10 +102,10 @@ using Clapeyron, Test
     end
 
     @testset "gcPCSAFT" begin
-        species = [("ethanol",["CH3"=>1,"CH2"=>1,"OH"=>1]),("hexane",["CH3"=>2,"CH2"=>4])]
-        bonds = [("ethanol",[("CH3","CH2")=>1,("OH","CH2")=>1]),("hexane",[("CH3","CH2")=>2,("CH2","CH2")=>3])]
+        sspecies = [("ethanol",["CH3"=>1,"CH2"=>1,"OH"=>1],[("CH3","CH2")=>1,("OH","CH2")=>1]),
+                   ("hexane",["CH3"=>2,"CH2"=>4],[("CH3","CH2")=>2,("CH2","CH2")=>3])]
 
-        system = gcPCSAFT(species,bonds)
+        system = gcPCSAFT(species)
         z = [0.5, 0.5]
         @test Clapeyron.a_hc(system, V, T, z) ≈ 5.485662509904188 rtol = 1e-6
         @test Clapeyron.a_disp(system, V, T, z) ≈ -10.594659479487497 rtol = 1e-6
@@ -139,10 +139,10 @@ using Clapeyron, Test
     end
 
     @testset "structSAFTgammaMie" begin
-        species = [("ethanol",["CH3"=>1,"CH2OH"=>1]),("octane",["CH3"=>2,"CH2"=>6])]
-        bonds = [("ethanol",[("CH3","CH2OH")=>1]),("octane",[("CH3","CH2")=>2,("CH2","CH2")=>5])]
+        species = [("ethanol",["CH3"=>1,"CH2OH"=>1],[("CH3","CH2OH")=>1]),
+                   ("octane",["CH3"=>2,"CH2"=>6],[("CH3","CH2")=>2,("CH2","CH2")=>5])]
 
-        system = structSAFTgammaMie(species,bonds)
+        system = structSAFTgammaMie(species)
         V_γMie = exp10(-3.5)
         z = [0.5,0.5]
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.11160851237651681 rtol = 1e-6

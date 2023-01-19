@@ -140,11 +140,17 @@ function GroupParam(gccomponents,
     return GroupParam(gccomponents_parsed,_grouptype,groupsourcecsvs)
 end
 
-function StructGroupParam(gccomponents,intragccomponents,
+function StructGroupParam(components,
     grouplocations::Array{String,1}=String[],
     options::ParamOptions = DefaultOptions,
     grouptype = :unknown)
 
+    gccomponents = Vector{Tuple{String,Vector{Pair{String,Int64}}}}(undef,2)
+    intragccomponents = Vector{Tuple{String,Vector{Pair{Tuple{String, String}, Int64}}}}(undef,2)
+    for i in 1:length(components)
+        gccomponents[i] = (components[i][1],components[i][2])
+        intragccomponents[i] = (components[i][1],components[i][3])
+    end
 
     group1 = GroupParam(gccomponents,grouplocations,options,grouptype)
     found_gcpairs = Vector{Union{Vector{Pair{Tuple{String, String}, Int64}},Nothing}}(undef,length(gccomponents))
