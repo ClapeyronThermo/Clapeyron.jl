@@ -307,18 +307,24 @@ function createparams(components::Vector{String},
         if _replace
             filepath = chop(filepath,head = 9, tail = 0)
         end
-        no_parsegroups = parsegroups == :off
         csv_options = read_csv_options(filepath)
         csvtype = csv_options.csvtype
-        if csvtype ∈ (groupdata,intragroupdata) && no_parsegroups
+        
+        if csvtype == groupdata && parsegroups != :group
             continue
         end
+        
+        if csvtype == intragroupdata && parsegroups != :intragroup
+            continue
+        end
+
         if csvtype == invaliddata
             if options.verbose
                 __verbose_findparams_invaliddata(filepath)
             end
             continue
         end
+        
         foundparams, notfoundparams = findparamsincsv(components,filepath,options,parsegroups,csv_options)
 
         #Merge found data
@@ -385,12 +391,14 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
         lookupcolumnindex = findfirst(isequal(normalised_columnreference), headernames)
         isnothing(lookupcolumnindex) && _col_indices_error(normalised_columnreference)
         idx_species = lookupcolumnindex
-        if csvtype ∈ (groupdata,intragroupdata)
+        if csvtype == groupdata
             groupcolumnreference = options.group_columnreference
             normalised_groupcolumnreference = normalisestring(groupcolumnreference)
             lookupgroupcolumnindex = findfirst(isequal(normalised_groupcolumnreference), headernames)
             isnothing(lookupgroupcolumnindex) && _col_indices_error(normalised_groupcolumnreference)
             idx_groups = lookupgroupcolumnindex
+        else
+            idx_groups = 0
         end
 
     elseif csvtype === pairdata || csvtype == assocdata
@@ -451,7 +459,6 @@ function findparamsincsv(components,filepath,
     verbose = options.verbose
     normalisecomponents = options.normalisecomponents
     component_delimiter = options.component_delimiter
-
     csvtype = csv_file_options.csvtype
     no_parsegroups = parsegroups == :off
     correct_group = (parsegroups == :group && csvtype == groupdata) || (parsegroups == :intragroup && csvtype == intragroupdata)
@@ -551,7 +558,7 @@ function findparamsincsv(components,filepath,
     elseif csvtype ∈ (groupdata,intragroupdata) && no_parsegroups
         return foundvalues, notfoundvalues
     else
-        error("File is of type ", String(csvtype), " and cannot be read with this function.")
+        error("Filepath $filepath is of type ", string(csvtype), " and cannot be read with this function.")
     end
 
         #if getsources, then we actually put the sources ∈ inside the preallocated _sources vector

@@ -29,11 +29,20 @@ function _parse_group_string(gc::String,gctype=String)
     gc_strip = strip(gc)
     if startswith(gc_strip,"[") && endswith(gc_strip,"]")
         gc_without_brackets = chop(gc_strip,head = 1,tail = 1)
-        gcpairs = split(gc_without_brackets,",")
+        if gctype == String
+            gcpairs = split(gc_without_brackets,",")
+        else
+            gc_without_brackets = replace(gc_without_brackets,",(" => ";;(")
+            gc_without_brackets = replace(gc_without_brackets,", (" => ";;(")
+            gc_without_brackets = replace(gc_without_brackets,",  (" => ";;(")
+
+            gcpairs = split(gc_without_brackets,";;")
+        end
         result = Vector{Pair{gctype,Int}}(undef,length(gcpairs))
         for (i,gcpair) ∈ pairs(gcpairs)
             raw_group_i,raw_num = _parse_kv(gcpair,"=>")
-            if startswith(raw_group_i,"\"") && endswith(raw_group_i,"\"")
+            if (startswith(raw_group_i,"\"") && endswith(raw_group_i,"\"")) ||
+                (startswith(raw_group_i,"(") && endswith(raw_group_i,")"))
                 group_i = _parse_group_string_key(raw_group_i,gctype)
                 num = parse(Int64,raw_num)
                 result[i] = group_i => num
@@ -138,23 +147,43 @@ function SecondOrderGroupParam(gccomponents,intragccomponents,
 
 
     group1 = GroupParam(gccomponents,grouplocations,options,grouptype)
+    found_gcpairs = Vector{Union{Vector{Pair{Tuple{String, String}, Int64}},Nothing}}(undef,length(gccomponents))
     if length(intragccomponents) == 0 && length(gccomponents) != 0
         components = group1.components
-        found_gcpairs = fill(nothing,length(components))
+        found_gcpairs = fill!(found_gcpairs,nothing)
         to_lookup = fill(true,length(components))
     elseif length(intragccomponents) == length(gccomponents)
         components = gc_get_comp.(intragccomponents)
-        found_gcpairs = gc_get_group.(intragccomponents)
+        found_gcpairs .= gc_get_group.(intragccomponents)
         to_lookup = isnothing.(intragccomponents)
     else
         throw(error("GC components and intra-GC components should have the same length when provided."))
     end
 
+    #we dont need intragroups if there is onlñy one group that appears one time. ej: water = ["H2O" => 1]
+    for i in eachindex(group1.components)
+        if length(group1.groups[i]) == 1
+            if only(group1.n_groups[i]) == 1 && to_lookup[i]
+                to_lookup[i] = false
+                found_gcpairs[i] = [(group1.groups[i][1],group1.groups[i][1]) => 0]
+            elseif only(group1.n_groups[i]) == 2 && to_lookup[i]
+                to_lookup[i] = false
+                found_gcpairs[i] = [(group1.groups[i][1],group1.groups[i][1]) => 1]
+            end
+        #we also don't need to look up for intragroups if there is only 2 groups with n_groupsi[k] == 1 
+        elseif length(group1.groups[i]) == 2
+            if group1.n_groups[i][1] == group1.n_groups[i][2] == 1 && to_lookup[i]
+                to_lookup[i] = false
+                found_gcpairs[i] = [(group1.groups[i][1],group1.groups[i][2]) => 1]
+            end
+        end
+    end
     usergrouplocations = options.group_userlocations
     componentstolookup = components[to_lookup]
     filepaths = flattenfilepaths(grouplocations,usergrouplocations)
 
     if any(to_lookup)
+
         allparams,allnotfoundparams = createparams(componentstolookup, filepaths, options, :intragroup)
         raw_result, _ = compile_params(componentstolookup,allparams,allnotfoundparams,options) #generate ClapeyronParams
         raw_groups = raw_result["intragroups"] #SingleParam{String}
@@ -171,9 +200,8 @@ function SecondOrderGroupParam(gccomponents,intragccomponents,
             _grouptype = grouptype
         end
     end
-
-    if _grouptype != group1.grouptype && _grouptype != :unkwown
-        error_different_grouptype(group1.grouptype,group1.grouptype)
+    if _grouptype != group1.grouptype && _grouptype != :unknown
+        error_different_grouptype(_grouptype,group1.grouptype)
     end
     
     gccomponents_parsed = Vector{Tuple{String,Vector{Pair{NTuple{2,String},Int}}}}(undef,length(gccomponents))

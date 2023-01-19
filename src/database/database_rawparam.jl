@@ -117,7 +117,7 @@ it also builds empty params, if you pass a CSVType instead of a RawParam
 Base.@nospecialize
 
 function compile_param(components,name,raw::RawParam,site_strings,options)
-    if raw.type == singledata || raw.type == groupdata
+    if raw.type == singledata || raw.type == groupdata || raw.type == intragroupdata
         return compile_single(name,components,raw,options)
     elseif raw.type == pairdata
         return compile_pair(name,components,raw,options)

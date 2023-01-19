@@ -61,8 +61,10 @@ function gcPCSAFT(components,bonds =String[];
     verbose=false,
     assoc_options = AssocOptions())
 
-    groups = SecondOrderGroupParam(components, bonds, ["SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_groups.csv"])
-    params,sites = getparams(groups, ["SAFT/PCSAFT/gcPCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    groups = SecondOrderGroupParam(components, bonds, ["SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_groups.csv","SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_intragroups.csv"])
+    @show groups.components
+    @show groups.flattenedgroups
+    params,sites = getparams(groups, ["SAFT/PCSAFT/gcPCSAFT","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     
     components = groups.components
     
