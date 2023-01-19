@@ -1,3 +1,12 @@
+struct gcPCSAFTParam <: EoSParam
+    Mw::SingleParam{Float64}
+    segment::SingleParam{Float64}
+    sigma::PairParam{Float64}
+    epsilon::PairParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
+end
+
 abstract type gcPCSAFTModel <: PCSAFTModel end
 
 struct gcPCSAFT{I} <: gcPCSAFTModel
@@ -5,7 +14,7 @@ struct gcPCSAFT{I} <: gcPCSAFTModel
     groups::SecondOrderGroupParam
     sites::SiteParam
     site_translator::SiteTranslator
-    params::PCSAFTParam
+    params::gcPCSAFTParam
     idealmodel::I
     assoc_options::AssocOptions
     references::Array{String,1}
@@ -72,7 +81,7 @@ function gcPCSAFT(components,bonds;
     comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites,site_translator)
     comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites,site_translator)
 
-    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, comp_epsilon_assoc, comp_bondvol)
+    packagedparams = gcPCSAFTParam(Mw, segment, sigma, epsilon, comp_epsilon_assoc, comp_bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
     site_trans = SiteTranslator(components,site_translator)
@@ -248,3 +257,4 @@ function  Δ(model::gcPCSAFT, V, T, z,_data=@f(data))
     return Δout
 end
 
+include("utils.jl")
