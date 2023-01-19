@@ -153,7 +153,6 @@ include("models/Activity/COSMOSAC/COSMOSAC02.jl")
 include("models/Activity/COSMOSAC/COSMOSAC10.jl")
 include("models/Activity/COSMOSAC/COSMOSACdsp.jl")
 
-
 include("models/cubic/alphas/alphas.jl")
 include("models/cubic/mixing/mixing.jl")
 include("models/cubic/translation/translation.jl")
@@ -170,6 +169,7 @@ include("models/cubic/PatelTeja/PatelTeja.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/gcPCSAFT.jl")
 
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")

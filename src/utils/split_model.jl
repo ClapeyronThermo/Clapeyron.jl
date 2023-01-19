@@ -276,6 +276,16 @@ function split_model(param::SiteParam,
     return [generator(i) for i ∈ splitter]
 end
 
+function split_model(param::SiteTranslator,
+    splitter = split_model(param.components))
+    function generator(I)
+        return SiteTranslator(
+            param.components[I],
+            param.site_translator[I])
+    end
+    return [generator(i) for i ∈ splitter]
+end
+
 function split_model(Base.@nospecialize(params::EoSParam),splitter)
     T = typeof(params)
     split_paramsvals = (split_model(getfield(params,i),splitter) for i  ∈ fieldnames(T))
