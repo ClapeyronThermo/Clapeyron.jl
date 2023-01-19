@@ -297,8 +297,10 @@ function gc_eosparam_split_model(Base.@nospecialize(params::EoSParam),groups::Gr
     function _split(parami::ClapeyronParam)
         if parami.components == groups.components
             return split_model(parami,comp_splitter)
-        else
+        elseif parami.components == groups.flattenedgroups
             return split_model(parami,gc_splitter)
+        else
+            throw(error("$parami is in a GC model, but does not have compatible component names for either component-based or group-based splitting."))
         end
     end
     _split(parami) = split_model(parami,gc_splitter)
@@ -390,8 +392,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
                     elseif modelx isa EoSParam && has_groups
                         allfields[modelkey] = gc_eosparam_split_model(modelx,model.groups,comp_splitter,gc_splitter)
                     else
-                        allfields[modelkey] = split_model(modelx,splitter)
-                        
+                        allfields[modelkey] = split_model(modelx,splitter)     
                     end
                 else
                     allfields[modelkey] = fill(modelx,len)
