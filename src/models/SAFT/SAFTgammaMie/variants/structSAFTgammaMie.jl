@@ -2,7 +2,7 @@ abstract type structSAFTgammaMieModel <: SAFTgammaMieModel end
 
 struct structSAFTgammaMie{I,VR} <: structSAFTgammaMieModel
     components::Vector{String}
-    groups::SecondOrderGroupParam
+    groups::StructGroupParam
     sites::SiteParam
     params::SAFTgammaMieParam
     idealmodel::I
@@ -64,7 +64,7 @@ function structSAFTgammaMie(components,bonds;
     verbose=false,
     assoc_options = AssocOptions(), kwargs...)
 
-    groups = SecondOrderGroupParam(components, bonds, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"])
+    groups = StructGroupParam(components, bonds, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"])
     params,sites = getparams(groups, ["SAFT/SAFTgammaMie/structSAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     components = groups.components
     

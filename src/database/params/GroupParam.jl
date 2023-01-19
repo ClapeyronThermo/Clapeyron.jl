@@ -194,7 +194,7 @@ end
 Second order Group Param
 =#
 
-struct SecondOrderGroupParam <: GroupParameter
+struct StructGroupParam <: GroupParameter
     components::Vector{String}
     groups::Vector{Vector{String}}
     grouptype::Symbol
@@ -207,7 +207,7 @@ struct SecondOrderGroupParam <: GroupParameter
     sourcecsvs::Vector{String}
 end
 
-function SecondOrderGroupParam(group::GroupParam,gccomponents_parsed,filepaths::Vector{String})
+function StructGroupParam(group::GroupParam,gccomponents_parsed,filepaths::Vector{String})
     groupnames = group.flattenedgroups
     n_gc = length(groupnames)
     n_comps = length(group.components)
@@ -224,7 +224,7 @@ function SecondOrderGroupParam(group::GroupParam,gccomponents_parsed,filepaths::
             n_mat[n2,n1] = val
         end
     end
-    return SecondOrderGroupParam(
+    return StructGroupParam(
         group.components,
         group.groups,
         group.grouptype,

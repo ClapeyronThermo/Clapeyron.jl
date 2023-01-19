@@ -11,7 +11,7 @@ abstract type gcPCSAFTModel <: PCSAFTModel end
 
 struct gcPCSAFT{I} <: gcPCSAFTModel
     components::Vector{String}
-    groups::SecondOrderGroupParam
+    groups::StructGroupParam
     sites::SiteParam
     params::gcPCSAFTParam
     idealmodel::I
@@ -60,7 +60,7 @@ function gcPCSAFT(components,bonds =String[];
     verbose=false,
     assoc_options = AssocOptions())
 
-    groups = SecondOrderGroupParam(components, bonds, ["SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_groups.csv","SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_intragroups.csv"])
+    groups = StructGroupParam(components, bonds, ["SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_groups.csv","SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_intragroups.csv"])
     params,sites = getparams(groups, ["SAFT/PCSAFT/gcPCSAFT","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     
     components = groups.components

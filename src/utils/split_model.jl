@@ -146,7 +146,7 @@ function each_split_model(param::GroupParam,I)
         sourcecsvs)
 end
 
-function each_split_model(param::SecondOrderGroupParam,I)
+function each_split_model(param::StructGroupParam,I)
     grouptype = param.grouptype
     components = param.components[I]
     groups = param.groups[I]
@@ -187,7 +187,7 @@ function each_split_model(param::SecondOrderGroupParam,I)
         n_groups_cache[k] .= true_n
     end
 
-    return SecondOrderGroupParam(
+    return StructGroupParam(
         components,
         groups,
         grouptype,

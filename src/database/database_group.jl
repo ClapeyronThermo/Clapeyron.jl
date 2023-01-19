@@ -140,7 +140,7 @@ function GroupParam(gccomponents,
     return GroupParam(gccomponents_parsed,_grouptype,groupsourcecsvs)
 end
 
-function SecondOrderGroupParam(gccomponents,intragccomponents,
+function StructGroupParam(gccomponents,intragccomponents,
     grouplocations::Array{String,1}=String[],
     options::ParamOptions = DefaultOptions,
     grouptype = :unknown)
@@ -215,5 +215,5 @@ function SecondOrderGroupParam(gccomponents,intragccomponents,
             gccomponents_parsed[i] = (components[i],found_gcpairs[i])
         end
     end
-    return SecondOrderGroupParam(group1,gccomponents_parsed,filepaths)
+    return StructGroupParam(group1,gccomponents_parsed,filepaths)
 end
