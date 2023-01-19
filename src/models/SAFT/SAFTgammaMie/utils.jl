@@ -11,7 +11,7 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
     #shortcut for non-assoc case
     if length(sites.n_sites.v) == 0
         new_sites = SiteParam(groups.components)
-        return new_sites,site_translator
+        return new_sites
     end
 
     sitenames = deepcopy(sites.sites) #group sites
