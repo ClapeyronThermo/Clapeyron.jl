@@ -263,6 +263,11 @@ end
 function split_model(param::SiteParam,
     splitter = split_model(param.components))
     function generator(I)
+        if param.site_translator === nothing
+            site_translator_i = nothing
+        else
+            site_translator_i = param.site_translator[I]
+        end
         return SiteParam(
             param.components[I],
             param.sites[I],
@@ -271,20 +276,12 @@ function split_model(param::SiteParam,
             param.flattenedsites,
             param.n_flattenedsites[I],
             param.i_flattenedsites[I],
-        param.sourcecsvs)
+            param.sourcecsvs,
+            site_translator_i)
     end
     return [generator(i) for i ∈ splitter]
 end
 
-function split_model(param::SiteTranslator,
-    splitter = split_model(param.components))
-    function generator(I)
-        return SiteTranslator(
-            param.components[I],
-            param.site_translator[I])
-    end
-    return [generator(i) for i ∈ splitter]
-end
 
 function split_model(Base.@nospecialize(params::EoSParam),splitter)
     T = typeof(params)
@@ -389,7 +386,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
                         else
                             throw(error("$modelx is in a GC model, but does not have compatible component names for either component-based or group-based splitting."))
                         end
-                    elseif modelx isa EoSParam && has_groups
+                    elseif modelx isa EoSParam && has_groups #we supppose a EoSParam has only one layer of splitting
                         allfields[modelkey] = gc_eosparam_split_model(modelx,model.groups,comp_splitter,gc_splitter)
                     else
                         allfields[modelkey] = split_model(modelx,splitter)     

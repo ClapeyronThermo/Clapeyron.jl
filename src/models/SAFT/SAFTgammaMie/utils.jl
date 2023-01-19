@@ -57,19 +57,20 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
             end
         end
     end
-    new_sites = SiteParam(comps,comp_sites,comp_n_sites,sites.sourcecsvs)
+    new_sites = SiteParam(comps,comp_sites,comp_n_sites,sites.sourcecsvs,site_translator)
 
-    return new_sites,site_translator
+    return new_sites
 end
 
 
-function gc_to_comp_sites(param::AssocParam,sites::SiteParam,site_translator)
+function gc_to_comp_sites(param::AssocParam,sites::SiteParam)
 
     #shortcut for non-assoc case
     if length(sites.n_sites.v) == 0
         new_val = Compressed4DMatrix{eltype(param)}()
         return AssocParam(param.name,sites.components,new_val,sites.sites,param.sourcecsvs,param.sources)
     end
+    site_translator = sites.site_translator
     new_val = assoc_similar(sites,eltype(param))
     for i in 1:length(sites.components)
         site_translator_i = site_translator[i]

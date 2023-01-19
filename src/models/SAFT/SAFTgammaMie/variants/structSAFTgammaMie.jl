@@ -99,9 +99,9 @@ function structSAFTgammaMie(components,bonds;
     gc_bondvol = params["bondvol"]
     gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options) #combining rules for association
 
-    comp_sites,site_translator = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites,site_translator)
-    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites,site_translator)
+    comp_sites = gc_to_comp_sites(sites,groups)
+    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
+    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
 
     gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
     vrparams = SAFTVRMieParam(mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)

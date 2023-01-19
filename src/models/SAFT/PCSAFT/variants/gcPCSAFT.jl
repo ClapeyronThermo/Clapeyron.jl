@@ -13,7 +13,6 @@ struct gcPCSAFT{I} <: gcPCSAFTModel
     components::Vector{String}
     groups::SecondOrderGroupParam
     sites::SiteParam
-    site_translator::SiteTranslator
     params::gcPCSAFTParam
     idealmodel::I
     assoc_options::AssocOptions
@@ -77,18 +76,17 @@ function gcPCSAFT(components,bonds =String[];
     gc_bondvol = params["bondvol"]
     gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options) #combining rules for association
 
-    comp_sites,site_translator = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites,site_translator)
-    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites,site_translator)
+    comp_sites = gc_to_comp_sites(sites,groups)
+    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
+    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
 
     packagedparams = gcPCSAFTParam(Mw, segment, sigma, epsilon, comp_epsilon_assoc, comp_bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
 
-    site_trans = SiteTranslator(components,site_translator)
 
     idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
 
-    model = gcPCSAFT(components,groups,comp_sites,site_trans,packagedparams, idmodel, assoc_options, references)
+    model = gcPCSAFT(components,groups,comp_sites,packagedparams, idmodel, assoc_options, references)
     return model
 end
 
@@ -223,13 +221,6 @@ function ζ0123(model::gcPCSAFTModel, V, T, z,_d)
     return ζ0,ζ1,ζ2,ζ3
 end
 
-function get_group_idx(m::SiteTranslator,i,j,a,b)
-    site_translator = m.site_translator
-    k,_ = site_translator[i][a]
-    l,_ =  site_translator[j][b]
-  return k,l
-end
-
 function Δ(model::gcPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     _0 = zero(V+T+first(z))
     ϵ_assoc = model.params.epsilon_assoc.values
@@ -237,7 +228,7 @@ function Δ(model::gcPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     κijab = κ[i,j][a,b] 
     iszero(κijab) && return _0
     σ = model.params.sigma.values
-    k,l = get_group_idx(model.site_translator,i,j,a,b)
+    k,l = get_group_idx(model,i,j,a,b)
     gkl = @f(g_hs,k,l,_data)
     res = gkl*σ[k,l]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κijab
     return res
@@ -250,7 +241,7 @@ function  Δ(model::gcPCSAFT, V, T, z,_data=@f(data))
     Δout = assoc_similar(κ,typeof(V+T+first(z)))
     Δout.values .= false  #fill with zeros, maybe it is not necessary?
     for (idx,(i,j),(a,b)) in indices(Δout)
-        k,l = get_group_idx(model.site_translator,i,j,a,b)
+        k,l = get_group_idx(model,i,j,a,b)
         gkl = @f(g_hs,k,l,_data)
         Δout[idx] = gkl*σ[k,l]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
     end
