@@ -292,6 +292,21 @@ function split_model(Base.@nospecialize(params::EoSParam),splitter)
     return T.(split_paramsvals...)
 end
 
+function gc_eosparam_split_model(Base.@nospecialize(params::EoSParam),groups::GroupParameter,comp_splitter,gc_splitter)
+    T = typeof(params)
+    function _split(parami::ClapeyronParam)
+        if parami.components == groups.components
+            return split_model(parami,comp_splitter)
+        else
+            return split_model(parami,gc_splitter)
+        end
+    end
+    _split(parami) = split_model(parami,gc_splitter)
+
+    split_paramsvals = (_split(getfield(params,i)) for i  ∈ fieldnames(T))
+    return T.(split_paramsvals...)
+end
+
 function group_splitter(group,splitted_groups)
     flattenedgroups = group.flattenedgroups
     res = Vector{Vector{Int64}}(undef,length(splitted_groups))
@@ -326,12 +341,22 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             throw("invalid type of subset.")
         end
 
-        if hasfield(typeof(model),:groups)
+        has_groups = hasfield(typeof(model),:groups)
+
+        if has_groups
             gc_split = split_model(model.groups,splitter)
             allfields[:groups] = gc_split
             allfields[:components] = split_model(model.groups.components,splitter)
-            splitter = group_splitter(model.groups,gc_split)
+            gc_splitter = group_splitter(model.groups,gc_split)
+            splitter = gc_splitter
+        else
+            comp_splitter = splitter
+            gc_splitter = splitter
         end
+
+
+
+
 
         len = length(splitter)
         M = typeof(model)
@@ -351,9 +376,22 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
                 modelx = getproperty(model,modelkey)
                 if is_splittable(modelx)
                     if modelx isa EoSModel
-                        allfields[modelkey]= split_model(modelx,subset)
+                        allfields[modelkey] = split_model(modelx,subset)
+                    elseif modelx isa ClapeyronParam && has_groups
+                        #in this particular case, we can suppose that we have the components field
+                        if modelx.components == model.groups.flattenedgroups
+                            allfields[modelkey] = split_model(modelx,gc_splitter)
+                        elseif modelx.components == model.groups.components
+                            allfields[modelkey] = split_model(modelx,comp_splitter)
+                        else
+                            throw(error("$modelx is in a GC model, but does not have compatible component names for either component-based or group-based splitting."))
+                        end
+                    elseif modelx isa EoSParam && has_groups
+                        allfields[modelkey] = gc_eosparam_split_model(modelx,model.groups,comp_splitter,gc_splitter)
                     else
-                        allfields[modelkey]= split_model(modelx,splitter)
+                        @show modelx,modelkey
+                        allfields[modelkey] = split_model(modelx,splitter)
+                        
                     end
                 else
                     allfields[modelkey] = fill(modelx,len)
