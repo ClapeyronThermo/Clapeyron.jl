@@ -347,6 +347,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             gc_split = split_model(model.groups,splitter)
             allfields[:groups] = gc_split
             allfields[:components] = split_model(model.groups.components,splitter)
+            comp_splitter = splitter
             gc_splitter = group_splitter(model.groups,gc_split)
             splitter = gc_splitter
         else
@@ -389,7 +390,6 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
                     elseif modelx isa EoSParam && has_groups
                         allfields[modelkey] = gc_eosparam_split_model(modelx,model.groups,comp_splitter,gc_splitter)
                     else
-                        @show modelx,modelkey
                         allfields[modelkey] = split_model(modelx,splitter)
                         
                     end
