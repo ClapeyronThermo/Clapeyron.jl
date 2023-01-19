@@ -102,7 +102,7 @@ using Clapeyron, Test
     end
 
     @testset "gcPCSAFT" begin
-        sspecies = [("ethanol",["CH3"=>1,"CH2"=>1,"OH"=>1],[("CH3","CH2")=>1,("OH","CH2")=>1]),
+        species = [("ethanol",["CH3"=>1,"CH2"=>1,"OH"=>1],[("CH3","CH2")=>1,("OH","CH2")=>1]),
                    ("hexane",["CH3"=>2,"CH2"=>4],[("CH3","CH2")=>2,("CH2","CH2")=>3])]
 
         system = gcPCSAFT(species)
