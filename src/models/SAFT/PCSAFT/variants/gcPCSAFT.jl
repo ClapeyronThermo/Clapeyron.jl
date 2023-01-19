@@ -54,7 +54,7 @@ Heterogeneous Group-contribution Perturbed-Chain SAFT (gc-PC-SAFT)
 gcPCSAFT
 
 export gcPCSAFT
-function gcPCSAFT(components,bonds;
+function gcPCSAFT(components,bonds =String[];
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
