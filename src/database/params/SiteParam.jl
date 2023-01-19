@@ -143,7 +143,8 @@ function SiteParam(components::Vector{String})
     String[],
     [Int[] for _ ∈ 1:n],
     [Int[] for _ ∈ 1:n],
-    String[])
+    String[],
+    nothing)
 end
 
 function recombine!(param::SiteParam)
