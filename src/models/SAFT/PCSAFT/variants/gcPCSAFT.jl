@@ -46,10 +46,10 @@ end
 ## Input models
 - `idealmodel`: Ideal Model
 ## Description
-Perturbed-Chain SAFT (PC-SAFT)
+Heterogeneous Group-contribution Perturbed-Chain SAFT (gc-PC-SAFT)
 ## References
-1. Gross, J., & Sadowski, G. (2001). Perturbed-chain SAFT: An equation of state based on a perturbation theory for chain molecules. Industrial & Engineering Chemistry Research, 40(4), 1244–1260. [doi:10.1021/ie0003887](https://doi.org/10.1021/ie0003887)
-2. Gross, J., & Sadowski, G. (2002). Application of the perturbed-chain SAFT equation of state to associating systems. Industrial & Engineering Chemistry Research, 41(22), 5510–5515. [doi:10.1021/ie010954d](https://doi.org/10.1021/ie010954d)
+1. Gross, J., Spuhl, O., Tumakaka, F. & Sadowski, G. (2003). Modeling Copolymer Systems Using the Perturbed-Chain SAFT Equation of State. Industrial & Engineering Chemistry Research, 42, 1266-1274. [doi:10.1021/ie020509y](https://doi.org/10.1021/ie020509y)
+2. Sauer, E., Stavrou, M. & Gross, J. (2014). Comparison between a Homo- and a Heterosegmented Group Contribution Approach Based on the Perturbed-Chain Polar Statistical Associating Fluid Theory Equation of State. Industrial & Engineering Chemistry Research, 53(38), 14854–14864. [doi:10.1021/ie502203w](https://doi.org/10.1021/ie502203w)
 """
 gcPCSAFT
 

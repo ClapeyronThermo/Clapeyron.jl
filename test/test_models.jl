@@ -101,6 +101,17 @@ using Clapeyron, Test
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.9511233680313027 rtol = 1e-6
     end
 
+    @testset "gcPCSAFT" begin
+        species = [("ethanol",["CH3"=>1,"CH2"=>1,"OH"=>1]),("hexane",["CH3"=>2,"CH2"=>4])]
+        bonds = [("ethanol",[("CH3","CH2")=>1,("OH","CH2")=>1]),("hexane",[("CH3","CH2")=>2,("CH2","CH2")=>3])]
+
+        system = gcPCSAFT(species,bonds)
+        z = [0.5, 0.5]
+        @test Clapeyron.a_hc(system, V, T, z) ≈ 5.485662509904188 rtol = 1e-6
+        @test Clapeyron.a_disp(system, V, T, z) ≈ -10.594659479487497 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -0.9528180944200482 rtol = 1e-6
+    end
+
     @testset "SAFTVRMie" begin
         system = SAFTVRMie(["methanol", "water"])
         z = [0.5, 0.5]
