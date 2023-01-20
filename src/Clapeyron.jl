@@ -128,6 +128,7 @@ include("models/SAFT/softSAFT/variants/softSAFT2016.jl")
 include("models/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
 include("models/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
+include("models/SAFT/SAFTgammaMie/variants/structSAFTgammaMie.jl")
 include("models/SAFT/CKSAFT/CKSAFT.jl")
 include("models/SAFT/CKSAFT/variants/sCKSAFT.jl")
 include("models/SAFT/BACKSAFT/BACKSAFT.jl")
@@ -152,7 +153,6 @@ include("models/Activity/COSMOSAC/COSMOSAC02.jl")
 include("models/Activity/COSMOSAC/COSMOSAC10.jl")
 include("models/Activity/COSMOSAC/COSMOSACdsp.jl")
 
-
 include("models/cubic/alphas/alphas.jl")
 include("models/cubic/mixing/mixing.jl")
 include("models/cubic/translation/translation.jl")
@@ -169,6 +169,7 @@ include("models/cubic/PatelTeja/PatelTeja.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/gcPCSAFT.jl")
 
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")

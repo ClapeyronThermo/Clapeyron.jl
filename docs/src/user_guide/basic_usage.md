@@ -27,6 +27,13 @@ model4 = SAFTgammaMie([
         ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])])
 ```
 
+In some group-contribution approaches, one may need to specify some structural information (such as gc-PC-SAFT), such as the number of bonds between groups. This can be done as follows:
+```julia
+model5 = gcPCSAFT([
+        ("ethanol", ["CH3" => 1, "CH2OH" => 1], [("CH3", "CH2OH") => 1])
+        ("octane", ["CH3" => 2, "CH2" => 6], [("CH3", "CH2") => 2, ("CH2", "CH2") => 5])])
+```
+
 ## Available models
 
 One can find out more about the information stored within these model objects in the API documentation. In terms of equations of state available, we have the following default models:
@@ -64,10 +71,12 @@ One can find out more about the information stored within these model objects in
 - Perturbed-Chain SAFT ([`PCSAFT`](@ref))
   - Simplified PC-SAFT ([`sPCSAFT`](@ref))
   - PC-SAFT with T-dependent kᵢⱼ and special correlation for water ([`pharmaPCSAFT`](@ref))
+  - Heterogeneous GC-PC-SAFT ([`gcPCSAFT`](@ref))
   - PC-SAFT with Gᴱ mixing rule ([`GEPCSAFT`](@ref))
 - SAFT-VR with Mie potential ([`SAFTVRMie`](@ref))
   - SAFT-VR with quantum corrected Mie potential ([`SAFTVRQMie`](@ref))
-- SAFT-γ-Mie ([`SAFTgammaMie`](@ref))
+- SAFT-γ Mie ([`SAFTgammaMie`](@ref))
+  - Structural SAFT-γ Mie ([`structSAFTgammaMie`](@ref))
 
 **Activity coefficient** (N.B. these models only provide VLE properties for mixtures):
 

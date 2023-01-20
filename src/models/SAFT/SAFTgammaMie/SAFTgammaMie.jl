@@ -30,9 +30,9 @@ struct SAFTgammaMie{I,VR} <: SAFTgammaMieModel
 end
 
 """
-    SAFTVRSWModel <: SAFTModel
+    SAFTgammaMie <: SAFTModel
 
-    SAFTVRSW(components; 
+SAFTgammaMie(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
     group_userlocations=String[],
@@ -117,9 +117,9 @@ function SAFTgammaMie(components;
     gc_bondvol = params["bondvol"]
     gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options) #combining rules for association
 
-    comp_sites,site_translator = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites,site_translator)
-    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites,site_translator)
+    comp_sites = gc_to_comp_sites(sites,groups)
+    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
+    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
 
 
     gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
@@ -137,7 +137,7 @@ end
 const SAFTγMie = SAFTgammaMie
 export SAFTgammaMie,SAFTγMie
 
-SAFTVRMie(model::SAFTgammaMie) = model.vrmodel
+SAFTVRMie(model::SAFTgammaMieModel) = model.vrmodel
 
 include("equations.jl")
 
@@ -184,9 +184,9 @@ function recombine_impl!(model::SAFTgammaMieModel)
     model.params.epsilon_assoc.values.values[:] = gc_epsilon_assoc.values.values
 
 
-    comp_sites,site_translator = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites,site_translator)
-    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites,site_translator)
+    comp_sites = gc_to_comp_sites(sites,groups)
+    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
+    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
     
     model.vrmodel.params.bondvol.values.values[:] = comp_bondvol.values.values
     model.vrmodel.params.epsilon_assoc.values.values[:] = comp_epsilon_assoc.values.values

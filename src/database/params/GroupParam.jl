@@ -1,3 +1,4 @@
+abstract type GroupParameter <: ClapeyronParam end
 """
     GroupParam
 Struct holding group parameters.contains:
@@ -59,7 +60,7 @@ julia> grouplist = [
 ```
 In this case, `SAFTGammaMie` files support the second order group `CH2OH`.
 """
-struct GroupParam <: ClapeyronParam
+struct GroupParam <: GroupParameter
     components::Array{String,1}
     groups::Array{Array{String,1},1}
     grouptype::Symbol
@@ -169,15 +170,16 @@ end
 
 
 
-function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)
-    print(io,"GroupParam(:",param.grouptype,") ")
+function Base.show(io::IO, mime::MIME"text/plain", param::GroupParameter)
+    
+    print(io,string(typeof(param)),"(:",param.grouptype,") ")
     len = length(param.components)
     println(io,"with ", len, " component", ifelse(len==1, ":", "s:"))
     show_groups(io,param)
 end
 
-function Base.show(io::IO, param::GroupParam)
-    print(io,"GroupParam[")
+function Base.show(io::IO, param::GroupParameter)
+    print(io,string(typeof(param)),"[")
     function wrap_print(io,val)
         print(io,'[')
         __show_group_i(io,val)
@@ -185,4 +187,53 @@ function Base.show(io::IO, param::GroupParam)
     end
     show_pairs(io,param.components,zip(param.groups,param.n_groups)," => ",wrap_print,pair_separator = ", ")
     print(io,"]")
+end
+
+#=
+
+Second order Group Param
+=#
+
+struct StructGroupParam <: GroupParameter
+    components::Vector{String}
+    groups::Vector{Vector{String}}
+    grouptype::Symbol
+    n_groups::Vector{Vector{Int}}
+    n_intergroups::Vector{Matrix{Int}}
+    i_groups::Vector{Vector{Int}}
+    flattenedgroups::Vector{String}
+    n_flattenedgroups::Vector{Vector{Int}}
+    n_groups_cache::PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{Float64}, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}}
+    sourcecsvs::Vector{String}
+end
+
+function StructGroupParam(group::GroupParam,gccomponents_parsed,filepaths::Vector{String})
+    groupnames = group.flattenedgroups
+    n_gc = length(groupnames)
+    n_comps = length(group.components)
+    n_intergroups = [zeros(n_gc,n_gc) for i in 1:n_comps]
+    for i in 1:length(gccomponents_parsed)
+        gc_pair_i = last(gccomponents_parsed[i])
+        n_mat = n_intergroups[i]
+        for pair_ik in gc_pair_i
+            k = first(pair_ik)
+            val = last(pair_ik)
+            k1,k2 = k
+            n1,n2 = findfirst(==(k1),groupnames),findfirst(==(k2),groupnames)
+            n_mat[n1,n2] = val
+            n_mat[n2,n1] = val
+        end
+    end
+    return StructGroupParam(
+        group.components,
+        group.groups,
+        group.grouptype,
+        group.n_groups,
+        n_intergroups,
+        group.i_groups,
+        group.flattenedgroups,
+        group.n_flattenedgroups,
+        group.n_groups_cache,
+        filepaths
+    )
 end

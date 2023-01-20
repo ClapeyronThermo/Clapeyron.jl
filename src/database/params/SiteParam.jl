@@ -68,12 +68,13 @@ struct SiteParam <: ClapeyronParam
     n_flattenedsites::Array{Array{Int,1},1}
     i_flattenedsites::Array{Array{Int,1},1}
     sourcecsvs::Array{String,1}
+    site_translator::Union{Nothing,Vector{Vector{NTuple{2,Int}}}}
 end
 
 
 
 
-function SiteParam(components::Vector{String},sites::Array{Array{String,1},1},n_sites::Vector{Vector{Int}},sourcecsvs = String[])
+function SiteParam(components::Vector{String},sites::Array{Array{String,1},1},n_sites::Vector{Vector{Int}},sourcecsvs = String[],site_translator = nothing)
     n_sites = PackedVectorsOfVectors.pack(n_sites)
     param = SiteParam(components, 
     sites, 
@@ -82,7 +83,8 @@ function SiteParam(components::Vector{String},sites::Array{Array{String,1},1},n_
     String[],
     Vector{Vector{Int}}(undef,0),
     Vector{Vector{Int}}(undef,0),
-    sourcecsvs)
+    sourcecsvs,
+    site_translator)
         
     recombine!(param)
     return param
@@ -141,7 +143,8 @@ function SiteParam(components::Vector{String})
     String[],
     [Int[] for _ ∈ 1:n],
     [Int[] for _ ∈ 1:n],
-    String[])
+    String[],
+    nothing)
 end
 
 function recombine!(param::SiteParam)
@@ -205,7 +208,9 @@ function recombine!(param::SiteParam)
         setindex!(n_flatsite,n_sites[i],i_sites[i])
         setindex!(i_flatsite,1:length(i_sites[i]),i_sites[i])
     end
-
+    #TODO: do something about site_translator
+    #but if anyone tries to change the components of a SiteParam in a GC-comp mixed context, they already are
+    #generating site_translator again.
     return param
 end
 """
@@ -227,3 +232,15 @@ end
 function Compressed4DMatrix(param::SiteParam)
     return assoc_similar(param,Float64)
 end
+
+function get_group_idx(model::EoSModel,i,j,a,b)
+    return get_group_idx(model.sites,i,j,a,b)
+end
+
+function get_group_idx(param::SiteParam,i,j,a,b)
+    site_translator::Vector{Vector{NTuple{2,Int}}} = param.site_translator
+    k,_ = site_translator[i][a]
+    l,_ =  site_translator[j][b]
+  return k,l
+end
+
