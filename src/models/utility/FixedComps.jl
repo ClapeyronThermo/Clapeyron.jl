@@ -5,7 +5,7 @@ struct FixedComps{𝕋,𝕍,𝕀} <: EoSModel
     n::Int
 end
 
-length(model::FixedComps) = length(model.indices)
+Base.length(model::FixedComps) = length(model.indices)
 
 
 function expand_compositions(fracmodel::FixedComps,z)
