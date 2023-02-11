@@ -148,7 +148,7 @@ antoine_coef(model) = nothing
 """
     x0_sat_pure(model::EoSModel,T,z=SA[1.0])
 
-Returns a 2-tuple corresponding to `(log10(Vₗ),log10(Vᵥ))`, where `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses.
+Returns a 2-tuple corresponding to `(Vₗ,Vᵥ)`, where `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses.
 
 Used in [`saturation_pressure`](@ref) methods that require initial volume guesses.
 
@@ -198,13 +198,12 @@ function x0_sat_pure(model,T,z=SA[1.0])
     _b = γ - B - vl
     Δ = Solvers.det_22(_b,_b,4,_c)
     if isnan(vl) | (Δ < 0)
-
         #fails on two ocassions:
         #near critical point, or too low.
         #old strategy
         x0l = 4*lb_v
         x0v = -2*B + 2*lb_v
-        return (log10(x0l),log10(x0v))
+        return (x0l,x0v)
     end
     Δsqrt = sqrt(Δ)
     b1 = 0.5*(-_b + Δsqrt)
@@ -229,20 +228,21 @@ function x0_sat_pure(model,T,z=SA[1.0])
     if Tr >= 1
         x0l = 4*lb_v
         x0v = -2*B + 2*lb_v
-        return (log10(x0l),log10(x0v))
+        return (x0l,x0v)
     end
+    #@show (Tc,Pc)
     # if b1/b2 < -0.95, then T is near Tc.
     #if b<lb_v then we are in trouble
     #critical regime or something horribly wrong happened
     if (b1/b2 < -0.95) | (b<lb_v) | (Tr>0.99)
         x0l = 4*lb_v
         x0v = -2*B #gas volume as high as possible
-        return (log10(x0l),log10(x0v))
+        return (x0l,x0v)
     end
     Vl0,Vv0 = vdw_x0_xat_pure(T,Tc,Pc,Vc)
     x0l = min(Vl0,vl)
     x0v = min(1e4*one(Vv0),Vv0) #cutoff volume
-    return (log10(x0l),log10(x0v))
+    return (x0l,x0v)
 end
 
 function vdw_x0_xat_pure(T,T_c,P_c,V_c)
@@ -268,8 +268,8 @@ function vdw_x0_xat_pure(T,T_c,P_c,V_c)
         c_v = 2*mean_c - c_l
     end
     #volumes predicted by vdW
-    Vl0 = (1/c_l)*V_c
-    Vv0 = (1/c_v)*V_c
+    Vl0 = V_c/c_l
+    Vv0 = V_c/c_v
     return (Vl0,Vv0)
 end
 
@@ -416,17 +416,4 @@ function T_scales(model)
     return res
 end
 
-function p_scales(model)
-    n = length(model)
-    x = zeros(n)
-    res = zeros(n)
-    for i = 1:n
-        x[i] = 1.0
-        res[i] = p_scale(model,x)
-        x[i] = 0.0
-    end
-    return res
-end
-
 T_scales(model,z) = T_scales(model)
-p_scales(model,z) = p_scales(model)

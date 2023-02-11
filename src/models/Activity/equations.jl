@@ -1,4 +1,9 @@
 #for use in models that have activity coefficient defined.
+function recombine_impl!(model::ActivityModel)
+    recombine!(model.puremodel)
+    return model
+end
+
 function excess_gibbs_free_energy(model::ActivityModel,p,T,z)
     γ = activity_coefficient(model,p,T,z)
     return sum(z[i]*R̄*T*log(γ[i]) for i ∈ @comps)

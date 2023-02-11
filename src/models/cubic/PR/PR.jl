@@ -1,4 +1,3 @@
-
 abstract type PRModel <: ABCubicModel end
 
 const PRParam = ABCubicParam
@@ -28,12 +27,12 @@ end
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
-
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `k`: Pair Parameter (`Float64`)
+- `k`: Pair Parameter (`Float64`) (optional)
+- `l`: Pair Parameter (`Float64`) (optional)
 
 ## Model Parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -41,14 +40,12 @@ end
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `a`: Pair Parameter (`Float64`)
 - `b`: Pair Parameter (`Float64`)
-
 ## Input models
 - `idealmodel`: Ideal Model
 - `alpha`: Alpha model
 - `mixing`: Mixing model
 - `activity`: Activity Model, used in the creation of the mixing model.
 - `translation`: Translation Model
-
 ## Description
 Peng-Robinson Equation of state.
 ```
@@ -56,7 +53,6 @@ P = RT/(V-Nb) + a•α(T)/(V-Nb₁)(V-Nb₂)
 b₁ = (1 + √2)b
 b₂ = (1 - √2)b
 ```
-
 ## References
 1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. [doi:10.1021/I160057A011](https://doi.org/10.1021/I160057A011)
 """
@@ -78,18 +74,21 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     verbose=false)
     
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = params["k"]
-    pc = params["pc"]
+    k  = get(params,"k",nothing)
+    l = get(params,"l",nothing)
+    pc = params["Pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a,b = ab_premixing(PR,init_mixing,Tc,pc,k)
+    a = PairParam("a",components,zeros(length(components)))
+    b = PairParam("b",components,zeros(length(components)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PRParam(a,b,Tc,pc,Mw)
     references = String["10.1021/I160057A011"]
     model = PR(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    recombine_cubic!(model,k,l)
     return model
 end
 

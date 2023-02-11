@@ -34,9 +34,9 @@ methanol,CO,isobutanol,,0.05,10.1021/ie010954d
 methanol,CO,cyclohexane,C1CCCCC1,0.051,10.1021/ie010954d
 methanol,CO,1-octanol,CCCCCCCCO,0.02,10.1021/ie010954d
 ethanol,CCO,butane,CCCC,0.028,10.1021/ie010954d
-1-propanol,CCCO,benzene,c1ccccc1,0.02,10.1021/ie010954d
+1-propanol,CCCO,benzene,c1ccccc1,0.,10.1021/ie010954d
 1-propanol,CCCO,ethylbenzene,c1ccccc1(CC),0.023,10.1021/ie010954d
-2-propanol,CC(O)C,benzene,c1ccccc1,0.021,10.1021/ie010954d
+2-propanol,CC(O)C,benzene,c1ccccc1,0.,10.1021/ie010954d
 1-butanol,CCCCO,butane,CCCC,0.015,10.1021/ie010954d
 1-pentanol,CCCCCO,benzene,c1ccccc1,0.0135,10.1021/ie010954d
 water,O,1-pentanol,CCCCCO,0.016,10.1021/ie010954d

@@ -173,11 +173,7 @@ function x0_sat_pure(model::ECS,T,z = SA[1.0])
     f,h = shape_factors(model,zero(T),T) 
     T0 = T/f
     v0l,v0v = x0_sat_pure(model.model_ref,T0)
-    lh = log10(h)
-    v0l = v0l + lh
-    v0v = v0v + lh
-    v0 = (v0l,v0v) 
-    return v0
+    return (v0l*h,v0v*h) 
 end
 
 function split_model(model::ECS,subset=nothing)

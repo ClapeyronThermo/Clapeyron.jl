@@ -237,7 +237,7 @@ function x0_sat_pure(model::MultiFluidModel,T)
     T0 = 369.89*T/Ts
     vl = (1.0/_propaneref_rholsat(T0))*h
     vv = (1.0/_propaneref_rhovsat(T0))*h
-    return (log10(vl),log10(vv)) 
+    return (vl,vv) 
 end
 
 #Corresponding States

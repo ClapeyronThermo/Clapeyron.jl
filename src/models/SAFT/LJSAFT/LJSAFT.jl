@@ -22,10 +22,10 @@ abstract type LJSAFTModel <: SAFTModel end
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `b`: Single Parameter (`Float64`) - Segment Volume [`dm^3/mol`]
 - `T_tilde`: Single Parameter (`Float64`) - Lennard-Jones attraction parameter  `[K]`
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater for energy(no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater for energy(no units)
 - `zeta`: Pair Parameter (`Float64`) - Binary Interaction Paramater for volume (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
@@ -56,13 +56,13 @@ function LJSAFT(components;
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
-    assoc_options = AssocOptions())
+    assoc_options = AssocOptions(), kwargs...)
     params,sites = getparams(components, ["SAFT/LJSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["m"]
+    segment = params["segment"]
 
     Mw = params["Mw"]
 
-    k = params["k"]
+    k = get(params,"k",nothing)
     zeta = params["zeta"]
     
     T_tilde = epsilon_LorentzBerthelot(params["T_tilde"], k)

@@ -44,8 +44,6 @@ struct IAPWS95Consts <: EoSParam
     end
 end
 
-
-
 struct IAPWS95 <: EmpiricHelmholtzModel
     components::Vector{String}
     consts::IAPWS95Consts
@@ -292,8 +290,7 @@ function x0_sat_pure(model::IAPWS95,T)
     else
         vl = saturated_water_liquid(T)
         vg = saturated_water_vapor(T)
-        x0  = (vl,vg)
-    return log10.(x0)
+        return (vl,vg)
     end
 end
 

@@ -31,6 +31,8 @@ Clapeyron.crit_mix
 Clapeyron.UCEP_mix
 Clapeyron.UCST_mix
 Clapeyron.gibbs_solvation
+Clapeyron.cross_second_virial
+Clapeyron.equivol_cross_second_virial
 ```
 
 ### Bubble/Dew methods
@@ -54,8 +56,9 @@ Clapeyron.ActivityDewTemperature
 ```@docs
 Clapeyron.gibbs_duhem
 Clapeyron.isstable
-Clapeyron.mechanical_stability
-Clapeyron.diffusive_stability
+Clapeyron.VT_mechanical_stability
+Clapeyron.VT_diffusive_stability
+Clapeyron.VT_chemical_stability
 Clapeyron.tpd
 ```
 

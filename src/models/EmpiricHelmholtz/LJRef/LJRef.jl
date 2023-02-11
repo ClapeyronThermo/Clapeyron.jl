@@ -148,7 +148,7 @@ export LJRef
 - `sigma`: Single Parameter (`Float64`) - particle size [Å]
 - `epsilon`: Single Parameter (`Float64`) - dispersion energy [`K`]
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `k`: Pair Parameter (`Float64`) - `sigma` mixing coefficient
+- `k`: Pair Parameter (`Float64`) (optional) - `sigma` mixing coefficient
 
 ## Model Parameters
 
@@ -199,9 +199,10 @@ function LJRef(components;
     params,sites = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
+    k = get(params,"k",nothing)
     sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], params["k"])
-    segment = params["m"]
+    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
+    segment = params["segment"]
     params = LJRefParam(epsilon,sigma,segment,Mw)
     consts = LJRefConsts()
     references = ["10.1063/1.4945000"]
@@ -390,7 +391,7 @@ function x0_sat_pure_lj(model,T)
     Tc = 1.32*T_scale(model)
     ρl =  ljref_rholsat(T/Tc)/(m̄*N_A*σ3)
     ρv =  ljref_rhovsat(T/Tc)/(m̄*N_A*σ3)
-    return (log10(1/ρl),log10(1/ρv))
+    return (1/ρl,1/ρv)
 end
 
 x0_sat_pure(model::LJRef,T) = x0_sat_pure_lj(model,T)

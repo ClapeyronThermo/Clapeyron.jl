@@ -17,13 +17,13 @@ using StaticArrays
 using NLSolvers
 using NLSolvers: NEqOptions
 using DiffResults, ForwardDiff
-
+using Downloads #for bibtex
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
 
 include("solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log, sqrt, log1p
+using .Solvers: log, sqrt, log1p, ^
 ∂Tag = Solvers.∂Tag
 
 include("utils/fractions.jl")
@@ -81,7 +81,6 @@ include("methods/methods.jl")
 
 #=
 the dependency chain is the following:
-
 base --> database(params)  -|-> split_model --> methods -|-> models                     
                             |-> macros ------------------|
 =#
@@ -113,6 +112,8 @@ include("models/cubic/vdW/vdW.jl")
 include("models/cubic/RK/RK.jl")
 include("models/cubic/PR/PR.jl")
 include("models/cubic/KU/KU.jl")
+include("models/cubic/RKPR/RKPR.jl")
+
 
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
@@ -128,6 +129,7 @@ include("models/SAFT/softSAFT/variants/softSAFT2016.jl")
 include("models/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
 include("models/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
+include("models/SAFT/SAFTgammaMie/variants/structSAFTgammaMie.jl")
 include("models/SAFT/CKSAFT/CKSAFT.jl")
 include("models/SAFT/CKSAFT/variants/sCKSAFT.jl")
 include("models/SAFT/BACKSAFT/BACKSAFT.jl")
@@ -141,6 +143,8 @@ include("models/Activity/UNIQUAC/UNIQUAC.jl")
 include("models/Activity/UNIFAC/utils.jl")
 include("models/Activity/UNIFAC/UNIFAC.jl")
 include("models/Activity/UNIFAC/variants/ogUNIFAC.jl")
+include("models/Activity/UNIFAC/variants/UNIFACFV.jl")
+include("models/Activity/UNIFAC/variants/UNIFACFVPoly.jl")
 include("models/Activity/UNIFAC/variants/PSRK.jl")
 include("models/Activity/UNIFAC/variants/VTPR.jl")
 include("models/Activity/equations.jl")
@@ -164,6 +168,10 @@ include("models/cubic/PR/variants/QCPR.jl")
 include("models/cubic/PR/variants/EPPR78.jl")
 include("models/cubic/PatelTeja/PatelTeja.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
+
+include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/gcPCSAFT.jl")
+
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
@@ -193,4 +201,6 @@ include("models/SAFT/SAFTgammaMie/variants/SAFTgammaEMie.jl")
 include("models/Electrolytes/ElectrolyteSAFT/eCPA.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
 include("utils/misc.jl")
+
+include("estimation/estimation.jl")
 end # module

@@ -93,6 +93,25 @@ using Clapeyron, Test
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.1459701721909195 rtol = 1e-6
     end
 
+    @testset "GEPCSAFT" begin
+        system = GEPCSAFT(["propane", "methanol"])
+        z = [0.5, 0.5]
+        @test Clapeyron.a_hc(system, V, T, z) ≈ 1.6473483928460233 rtol = 1e-6
+        @test Clapeyron.a_disp(system, V, T, z) ≈ -3.271039575934372 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.9511233680313027 rtol = 1e-6
+    end
+
+    @testset "gcPCSAFT" begin
+        species = [("ethanol",["CH3"=>1,"CH2"=>1,"OH"=>1],[("CH3","CH2")=>1,("OH","CH2")=>1]),
+                   ("hexane",["CH3"=>2,"CH2"=>4],[("CH3","CH2")=>2,("CH2","CH2")=>3])]
+
+        system = gcPCSAFT(species)
+        z = [0.5, 0.5]
+        @test Clapeyron.a_hc(system, V, T, z) ≈ 5.485662509904188 rtol = 1e-6
+        @test Clapeyron.a_disp(system, V, T, z) ≈ -10.594659479487497 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -0.9528180944200482 rtol = 1e-6
+    end
+
     @testset "SAFTVRMie" begin
         system = SAFTVRMie(["methanol", "water"])
         z = [0.5, 0.5]
@@ -117,6 +136,16 @@ using Clapeyron, Test
         @test Clapeyron.a_mono(system, V_γMie, T, z) ≈ -1.0400249396482548 rtol = 1e-6
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.07550931466871749 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V_γMie, T, z) ≈ -0.8205840455850311 rtol = 1e-6
+    end
+
+    @testset "structSAFTgammaMie" begin
+        species = [("ethanol",["CH3"=>1,"CH2OH"=>1],[("CH3","CH2OH")=>1]),
+                   ("octane",["CH3"=>2,"CH2"=>6],[("CH3","CH2")=>2,("CH2","CH2")=>5])]
+
+        system = structSAFTgammaMie(species)
+        V_γMie = exp10(-3.5)
+        z = [0.5,0.5]
+        @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.11160851237651681 rtol = 1e-6
     end
     @printline
 end
@@ -298,6 +327,11 @@ end
         system = KU(["ethane","undecane"])
         @test Clapeyron.a_res(system, V, T, z) ≈ -1.2261554720898895 rtol = 1e-6
         @test Clapeyron.cubic_p(system, V, T, z) ≈ Clapeyron.pressure(system, V, T, z) rtol = 1e-6
+    end
+
+    @testset "RKPR Models" begin
+        system = RKPR(["ethane","undecane"])
+        @test Clapeyron.a_res(system, V, T, z) ≈ -1.2714368353293777 rtol = 1e-6
     end
 
     @testset "Patel Teja Models" begin

@@ -116,6 +116,13 @@
             @test assocparam.sites[1] == ["H2O/H", "H2O/e1"]
             @test assocparam.sites[2] == ["COO/e1"]
         end
+
+        @testset "#140" begin
+        #FractionVector with length(x) == 0.
+            model = PCSAFT(["water","carbon dioxide"])
+            res = bubble_pressure(model,280,Clapeyron.FractionVector(0.01),ChemPotBubblePressure(nonvolatiles = ["water"]))
+            @test res[1] ≈ 4.0772545187410433e6 rtol = 1e-6
+        end
     end
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6

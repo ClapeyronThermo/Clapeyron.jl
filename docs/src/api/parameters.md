@@ -65,6 +65,7 @@ Clapeyron.index_reduction
 ```@docs
 Clapeyron.doi
 Clapeyron.cite
+Clapeyron.doi2bib
 ```
 
 

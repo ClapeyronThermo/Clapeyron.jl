@@ -1,6 +1,5 @@
 """
     SiteParam
-
 Struct holding site parameters.
 Is built by parsing all association parameters in the input CSV files.
 It has the following fields:
@@ -11,23 +10,18 @@ It has the following fields:
 * `i_sites`: an iterator that goes through the indices corresponding  to each site in `flattenedsites`
 * `n_flattenedsites`: the site multiplicities corresponding to each site in `flattenedsites`
 * `i_flattenedsites`: an iterator that goes through the indices for each flattened site
-
 Let's explore the sites in a 3-component `SAFTGammaMie` model:
-
 ```julia
-
 julia> model3 = SAFTgammaMie([    
                 "ethanol",
                 ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),     
                 ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])
                                ])
-
 SAFTgammaMie{BasicIdeal} with 3 components:
  "ethanol"
  "nonadecanol"
  "ibuprofen"
 Contains parameters: segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol 
-
 julia> model3.sites
 SiteParam with 8 sites:
  "CH2OH": "H" => 1, "e1" => 2     
@@ -38,13 +32,11 @@ SiteParam with 8 sites:
  "aCCH": (no sites)
  "aCCH2": (no sites)
  "aCH": (no sites)
-
 julia> model3.sites.flattenedsites
 3-element Vector{String}:
  "H"
  "e1"
  "e2"
-
 julia> model3.sites.i_sites       
 8-element Vector{Vector{Int64}}:
  [1, 2]
@@ -55,7 +47,6 @@ julia> model3.sites.i_sites
  []
  []
  []
-
 julia> model3.sites.n_sites       
 8-element Vector{Vector{Int64}}:
  [1, 2]
@@ -77,12 +68,13 @@ struct SiteParam <: ClapeyronParam
     n_flattenedsites::Array{Array{Int,1},1}
     i_flattenedsites::Array{Array{Int,1},1}
     sourcecsvs::Array{String,1}
+    site_translator::Union{Nothing,Vector{Vector{NTuple{2,Int}}}}
 end
 
 
 
 
-function SiteParam(components::Vector{String},sites::Array{Array{String,1},1},n_sites::Vector{Vector{Int}},sourcecsvs = String[])
+function SiteParam(components::Vector{String},sites::Array{Array{String,1},1},n_sites::Vector{Vector{Int}},sourcecsvs = String[],site_translator = nothing)
     n_sites = PackedVectorsOfVectors.pack(n_sites)
     param = SiteParam(components, 
     sites, 
@@ -91,7 +83,8 @@ function SiteParam(components::Vector{String},sites::Array{Array{String,1},1},n_
     String[],
     Vector{Vector{Int}}(undef,0),
     Vector{Vector{Int}}(undef,0),
-    sourcecsvs)
+    sourcecsvs,
+    site_translator)
         
     recombine!(param)
     return param
@@ -101,40 +94,18 @@ function Base.show(io::IO, mime::MIME"text/plain", param::SiteParam)
     print(io,"SiteParam ")
     len = length(param.components)
     println(io,"with ", len, " component", ifelse(len==1, ":", "s:"))
-    
-    for i in 1:length(param.components)
-        
-        print(io, " \"", param.components[i], "\": ")
-        firstloop = true
-        if length(param.n_sites[i]) == 0
-            print(io,"(no sites)")
-        end
-        for j in 1:length(param.n_sites[i])
-            firstloop == false && print(io, ", ")
-            print(io, "\"", param.sites[i][j], "\" => ", param.n_sites[i][j])
-            firstloop = false
-        end
-        i != length(param.components) && println(io)
-    end 
+    site_print_i(ii,val) = __show_group_i(ii,val,"(no sites)")
+    show_pairs(io,param.components,zip(param.sites,param.n_sites),": ",site_print_i)
 end
 
 function Base.show(io::IO, param::SiteParam)
     print(io,"SiteParam[")
-    len = length(param.components)
-    
-    for i in 1:length(param.components)
-        
-        print(io, "\"", param.components[i], "\" => [")
-        firstloop = true
-    
-        for j in 1:length(param.n_sites[i])
-            firstloop == false && print(io, ", ")
-            print(io, "\"", param.sites[i][j], "\" => ", param.n_sites[i][j])
-            firstloop = false
-        end
+    function wrap_print(io,val)
+        print(io,'[')
+        __show_group_i(io,val)
         print(io,']')
-        i != length(param.components) && print(io,", ")
     end
+    show_pairs(io,param.components,zip(param.sites,param.n_sites)," => ",wrap_print,pair_separator = ", ")
     print(io,"]")
 end
 
@@ -172,7 +143,8 @@ function SiteParam(components::Vector{String})
     String[],
     [Int[] for _ ∈ 1:n],
     [Int[] for _ ∈ 1:n],
-    String[])
+    String[],
+    nothing)
 end
 
 function recombine!(param::SiteParam)
@@ -236,7 +208,9 @@ function recombine!(param::SiteParam)
         setindex!(n_flatsite,n_sites[i],i_sites[i])
         setindex!(i_flatsite,1:length(i_sites[i]),i_sites[i])
     end
-
+    #TODO: do something about site_translator
+    #but if anyone tries to change the components of a SiteParam in a GC-comp mixed context, they already are
+    #generating site_translator again.
     return param
 end
 """
@@ -258,3 +232,15 @@ end
 function Compressed4DMatrix(param::SiteParam)
     return assoc_similar(param,Float64)
 end
+
+function get_group_idx(model::EoSModel,i,j,a,b)
+    return get_group_idx(model.sites,i,j,a,b)
+end
+
+function get_group_idx(param::SiteParam,i,j,a,b)
+    site_translator::Vector{Vector{NTuple{2,Int}}} = param.site_translator
+    k,_ = site_translator[i][a]
+    l,_ =  site_translator[j][b]
+  return k,l
+end
+

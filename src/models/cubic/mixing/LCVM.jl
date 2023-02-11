@@ -1,4 +1,4 @@
-abstract type LCVMRuleModel <: MixingRule end
+abstract type LCVMRuleModel <: ActivityMixingRule end
 
 struct LCVMRule{γ} <: LCVMRuleModel
     components::Array{String,1}

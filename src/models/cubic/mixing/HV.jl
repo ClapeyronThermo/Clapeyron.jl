@@ -1,4 +1,4 @@
-abstract type HVRuleModel <: MixingRule end
+abstract type HVRuleModel <: ActivityMixingRule end
 
 struct HVRule{γ} <: HVRuleModel
     components::Array{String,1}

@@ -7,17 +7,12 @@
         activity_userlocations = String[],
         translation_userlocations = String[],
         verbose=false)
-
 Quantum-corrected Peng Robinson equation of state. it uses the following models:
-
 - Translation Model: [`ConstantTranslation`](@ref)
 - Alpha Model: [`TwuAlpha`](@ref)
 - Mixing Rule Model: [`QCPRRule`](@ref)
-
 ## References
-
 1. Aasen, A., Hammer, M., Lasala, S., Jaubert, J.-N., & Wilhelmsen, Ø. (2020). Accurate quantum-corrected cubic equations of state for helium, neon, hydrogen, deuterium and their mixtures. Fluid Phase Equilibria, 524(112790), 112790. [doi:10.1016/j.fluid.2020.112790](https://doi.org/10.1016/j.fluid.2020.112790)
-
 """
 function QCPR(components::Vector{String}; idealmodel=BasicIdeal,
     userlocations=String[], 
@@ -83,7 +78,7 @@ function lb_volume(model::QCPRModel,z=SA[1.0])
 
     n = sum(z)
     invn = (one(n)/n)
-    c = model.translation.params.c.values
+    c = model.translation.params.v_shift.values
     c̄ = dot(c,z)
     b̄ = zero(first(z))
     for i in 1:length(z)
@@ -108,4 +103,3 @@ function lb_volume(model::QCPRModel,z=SA[1.0])
     end
     return invn*(b̄ - c̄)
 end
-

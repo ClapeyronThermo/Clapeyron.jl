@@ -19,4 +19,5 @@ end
     include("test_models.jl")
     include("test_methods_eos.jl")
     include("test_methods_api.jl")
+    include("test_estimation.jl")
 end

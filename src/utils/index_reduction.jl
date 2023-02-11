@@ -20,10 +20,16 @@ function index_reduction(model::EoSModel,z::AbstractVector,zmin = sum(z)*4*eps(e
     return index_reduction(model,idx)
 end
 
+#in case someone uses a number instead of a vector
+function index_reduction(model::EoSModel,z::Number,zmin = sum(z)*4*eps(eltype(z)))
+    idx = z > zmin
+    return index_reduction(model,BitVector((idx,)))
+end
+
 #to address arbitrary reduction techniques
 function index_reduction(model::EoSModel,bools::T) where T<:AbstractVector{Bool}
     idx = BitVector(bools)
-    !any(idx) && thow(error("index reduction resulted in an empty model."))
+    !any(idx) && throw(error("index reduction resulted in an empty model."))
     if all(idx) && length(model) === 1
         return model,BitVector((true,))
     elseif all(idx)

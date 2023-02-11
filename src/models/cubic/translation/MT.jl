@@ -17,10 +17,6 @@ MTTranslation <: MTTranslationModel
 
 ## Input Parameters
 
-- `w`: Single Parameter (`Float64`)
-
-## Model Parameters
-
 - `acentricfactor`: Single Parameter (`Float64`)
 
 ## Description
@@ -45,7 +41,7 @@ MTTranslation
 
 function MTTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = SingleParam(params["w"],"acentric factor")
+    acentricfactor = params["acentricfactor"]
     packagedparams = MTTranslationParam(acentricfactor)
     model = MTTranslation(packagedparams, verbose=verbose)
     return model
@@ -69,3 +65,5 @@ function translation(model::CubicModel,V,T,z,translation_model::MTTranslation)
     end
     return c
 end
+
+recombine_translation!(model::CubicModel,translation_model::MTTranslation) = translation_model

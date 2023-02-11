@@ -9,16 +9,13 @@ export BMAlpha
 
 """
     BMAlpha <: BMAlphaModel
-    
+
     MTAlpha(components::Vector{String};
     userlocations::Vector{String}=String[],
     verbose::Bool=false)
 
 ## Input Parameters
 
-- `w`: Single Parameter (`Float64`)
-
-## Model Parameters
 
 - `acentricfactor`: Single Parameter (`Float64`)
 
@@ -48,7 +45,7 @@ BMAlpha
 
 function BMAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = SingleParam(params["w"],"acentric factor")
+    acentricfactor = params["acentricfactor"]
     packagedparams = BMAlphaParam(acentricfactor)
     model = BMAlpha(packagedparams, verbose=verbose)
     return model

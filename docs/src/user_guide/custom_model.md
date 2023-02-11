@@ -108,8 +108,8 @@ function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal
     params,sites = getparams(components; userlocations=userlocations, verbose=verbose)
   
     # For clarity, we assign the contents of the returned dict to their own variables.
-    segment = params["m"]
-    k = params["k"]
+    segment = params["segment"]
+    k = get(params,"k",nothing) #if k is not provided, it will be not be considered
     Mw = params["Mw"]
     # Here, we modify the values of the sigma parameter first.
     params["sigma"].values .*= 1E-10

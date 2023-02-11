@@ -1,6 +1,6 @@
 Clapeyron Database File,,,,,,,,
 sCKSAFT Like Parameters,,,,,,,,
-species,DIPPR Number,Mw,m,vol,epsilon,n_H,n_e,source
+species,DIPPR Number,Mw,segment,vol,epsilon,n_H,n_e,source
 ethane,,,2.022,16.236,90.529,0,0,
 propane,,,2.735,16.507,92.571,0,0,
 butane,,,2.962,19.263,102.823,0,0,

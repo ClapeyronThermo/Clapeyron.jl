@@ -21,11 +21,9 @@ If a Single Parameter is passed as input, it will be converted to a Pair Paramet
 """
 function sigma_LorentzBerthelot end
 
-sigma_LorentzBerthelot(sigma::SingleOrPair,zeta::PairParameter) = kij_mix(mix_mean,sigma,zeta)
-sigma_LorentzBerthelot(sigma::SingleOrPair) = kij_mix(mix_mean,sigma)
+sigma_LorentzBerthelot(sigma::SingleOrPair,zeta = nothing) = kij_mix(mix_mean,sigma,zeta)
 
-sigma_LorentzBerthelot!(sigma::PairParameter,zeta::PairParameter) = kij_mix!(mix_mean,sigma,zeta)
-sigma_LorentzBerthelot!(sigma::PairParameter) = kij_mix!(mix_mean,sigma)
+sigma_LorentzBerthelot!(sigma::PairParameter,zeta = nothing) = kij_mix!(mix_mean,sigma,zeta)
 
 
 """
@@ -46,11 +44,9 @@ If a Single Parameter is passed as input, it will be converted to a Pair Paramet
 """
 function epsilon_LorentzBerthelot end
 
-epsilon_LorentzBerthelot(epsilon::SingleOrPair, k::PairParameter) = kij_mix(mix_geomean,epsilon,k)
-epsilon_LorentzBerthelot(epsilon::SingleOrPair) = kij_mix(mix_geomean,epsilon)
+epsilon_LorentzBerthelot(epsilon::SingleOrPair, k = nothing) = kij_mix(mix_geomean,epsilon,k)
 
-epsilon_LorentzBerthelot!(epsilon::PairParameter, k::PairParameter) = kij_mix!(mix_geomean,epsilon,k)
-epsilon_LorentzBerthelot!(epsilon::PairParameter) = kij_mix!(mix_geomean,epsilon)
+epsilon_LorentzBerthelot!(epsilon::PairParameter, k = nothing) = kij_mix!(mix_geomean,epsilon,k)
 
 
 """
@@ -69,11 +65,12 @@ Ignores non-diagonal entries already set.
 
 If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `ϵᵢᵢ = ϵᵢ`.
 """
-function epsilon_HudsenMcCoubrey(epsilon::SingleOrPair, sigma::PairParameter)
+function epsilon_HudsenMcCoubrey(epsilon::SingleOrPair, sigma::PairParameter;k = nothing)
     return pair_mix(mix_HudsenMcCoubrey,epsilon,sigma)
 end
 
 epsilon_HudsenMcCoubrey(epsilon) = epsilon_LorentzBerthelot(epsilon)
+epsilon_HudsenMcCoubrey(epsilon,::Nothing) = epsilon_LorentzBerthelot(epsilon)
 
 function epsilon_HudsenMcCoubrey!(epsilon::PairParameter, sigma::PairParameter)
     return pair_mix!(mix_HudsenMcCoubrey,epsilon,sigma)

@@ -22,17 +22,11 @@ end
     userlocations::Vector{String}=String[],
     activity_userlocations::Vector{String}=String[],
     verbose::Bool=false)
-
 ## Input Parameters
-
 None
-
 ## Input models 
-
 - `activity`: Activity Model
-
 ## Description
-
 Quantum-Corrected Mixing Rule, used by [`QCPR`](@ref) EoS:
 ```
 aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
@@ -43,10 +37,8 @@ ā = ∑aᵢⱼxᵢxⱼ√(αᵢ(T)αⱼ(T))
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ```
-
 ## References
 1. Aasen, A., Hammer, M., Lasala, S., Jaubert, J.-N., & Wilhelmsen, Ø. (2020). Accurate quantum-corrected cubic equations of state for helium, neon, hydrogen, deuterium and their mixtures. Fluid Phase Equilibria, 524(112790), 112790. [doi:10.1016/j.fluid.2020.112790](https://doi.org/10.1016/j.fluid.2020.112790)
-
 """
 QCPRRule
 
@@ -58,6 +50,8 @@ function QCPRRule(components::Vector{String}; activity = nothing, userlocations:
     model = QCPRRule(components, pkgparams ,references)
     return model
 end
+
+recombine_impl!(model::QCPRRule) = model
 
 function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
     n = sum(z)
@@ -95,6 +89,3 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
     #dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
     return ā,b̄,c̄
 end
-
-
-

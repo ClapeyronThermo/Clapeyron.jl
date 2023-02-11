@@ -10,7 +10,7 @@ export SLKRule
     SLKRule(components; userlocations=String[], verbose=false)
      
 ## Input parameters
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Parameter (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)
 
 Constant Kᵢⱼ mixing rule for Sanchez-Lacombe:
 
@@ -32,7 +32,7 @@ function sl_mix(unmixed_vol,unmixed_epsilon,mixmodel::SLKRule)
     return premixed_vol,premixed_epsilon
 end
 
-function SLKRule(components; userlocations=String[], verbose=false)
+function SLKRule(components; userlocations=String[], verbose=false, kwargs...)
     params = getparams(components, ["LatticeFluid/SanchezLacombe/mixing/k0k1l_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k = params["k0"]
     model = SLKRule(components,k)

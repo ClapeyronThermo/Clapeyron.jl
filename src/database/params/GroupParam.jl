@@ -1,6 +1,6 @@
+abstract type GroupParameter <: ClapeyronParam end
 """
     GroupParam
-
 Struct holding group parameters.contains:
 * `components`: a list of all components
 * `groups`: a list of groups names for each component
@@ -9,7 +9,6 @@ Struct holding group parameters.contains:
 * `n_groups`: a list of the group multiplicity of each group corresponding to each group in `i_groups`
 * `flattenedgroups`: a list of all unique groups--the parameters correspond to this list
 * `n_flattenedgroups`: the group multiplicities corresponding to each group in `flattenedgroups`
-
 You can create a group param by passing a `Vector{Tuple{String, Vector{Pair{String, Int64}}}}.
 For example:
 ```julia-repl
@@ -17,13 +16,11 @@ julia> grouplist = [
            ("ethanol", ["CH3"=>1, "CH2"=>1, "OH"=>1]),
            ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),
            ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])];
-
 julia> groups = GroupParam(grouplist)
 GroupParam(:unkwown) with 3 components:
  "ethanol": "CH3" => 1, "CH2" => 1, "OH" => 1
  "nonadecanol": "CH3" => 1, "CH2" => 18, "OH" => 1
  "ibuprofen": "CH3" => 3, "COOH" => 1, "aCCH" => 1, "aCCH2" => 1, "aCH" => 4
-
 julia> groups.flattenedgroups
 7-element Vector{String}:
  "CH3"
@@ -33,34 +30,28 @@ julia> groups.flattenedgroups
  "aCCH"
  "aCCH2"
  "aCH"
-
 julia> groups.i_groups
 3-element Vector{Vector{Int64}}:
  [1, 2, 3]
  [1, 2, 3]
  [1, 4, 5, 6, 7]
-
 julia> groups.n_groups
 3-element Vector{Vector{Int64}}:
  [1, 1, 1]
  [1, 18, 1]
  [3, 1, 1, 1, 4]
-
 julia> groups.n_flattenedgroups
  3-element Vector{Vector{Int64}}:
  [1, 1, 1, 0, 0, 0, 0]
  [1, 18, 1, 0, 0, 0, 0]
  [3, 0, 0, 1, 1, 1, 4]
 ```
-
 if you have CSV with group data, you can also pass those, to automatically query the missing groups in your input vector:
-
 ```julia-repl
 julia> grouplist = [
            "ethanol",
            ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),
            ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])];
-
            julia> groups = GroupParam(grouplist, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"])
            GroupParam with 3 components:
             "ethanol": "CH2OH" => 1, "CH3" => 1
@@ -68,9 +59,8 @@ julia> grouplist = [
             "ibuprofen": "CH3" => 3, "COOH" => 1, "aCCH" => 1, "aCCH2" => 1, "aCH" => 4
 ```
 In this case, `SAFTGammaMie` files support the second order group `CH2OH`.
-
 """
-struct GroupParam <: ClapeyronParam
+struct GroupParam <: GroupParameter
     components::Array{String,1}
     groups::Array{Array{String,1},1}
     grouptype::Symbol
@@ -184,63 +174,72 @@ function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs
     return param
 end
 
-function Base.show(io::IO, mime::MIME"text/plain", param::GroupParam)
-    print(io,"GroupParam(:",param.grouptype,") ")
+
+
+function Base.show(io::IO, mime::MIME"text/plain", param::GroupParameter)
+    
+    print(io,string(typeof(param)),"(:",param.grouptype,") ")
     len = length(param.components)
     println(io,"with ", len, " component", ifelse(len==1, ":", "s:"))
-
-    for i in 1:length(param.components)
-
-        print(io, " \"", param.components[i], "\": ")
-        firstloop = true
-        for j in 1:length(param.n_groups[i])
-            firstloop == false && print(io, ", ")
-            print(io, "\"", param.groups[i][j], "\" => ", param.n_groups[i][j])
-            firstloop = false
-        end
-        i != length(param.components) && println(io)
-    end
+    show_groups(io,param)
 end
 
-function Base.show(io::IO, param::GroupParam)
-    print(io,"GroupParam[")
-    len = length(param.components)
-
-    for i in 1:length(param.components)
-
-        print(io, "\"", param.components[i], "\" => [")
-        firstloop = true
-        for j in 1:length(param.n_groups[i])
-            firstloop == false && print(io, ", ")
-            print(io, "\"", param.groups[i][j], "\" => ", param.n_groups[i][j])
-            firstloop = false
-        end
+function Base.show(io::IO, param::GroupParameter)
+    print(io,string(typeof(param)),"[")
+    function wrap_print(io,val)
+        print(io,'[')
+        __show_group_i(io,val)
         print(io,']')
-        i != length(param.components) && print(io,", ")
     end
+    show_pairs(io,param.components,zip(param.groups,param.n_groups)," => ",wrap_print,pair_separator = ", ")
     print(io,"]")
 end
 
-"""
-    grouppairs(groups::GroupParam)
+#=
 
-returns a `Vector{Pair{String,Vector{Pair{String,Int}}}}` containing the groups present in the `GroupParam`.
+Second order Group Param
+=#
 
-"""
-function grouppairs(param::GroupParam)
-    comps = param.components
-    groups = param.groups
-    ngroups = param.n_groups
-    res = Vector{Pair{String,Vector{Pair{String,Int}}}}(undef,length(comps))
-    for i in 1:length(comps)
-        groups_i = groups[i]
-        ngroups_i = ngroups[i]
-        gc_i = Vector{Pair{String,Int}}(undef,length(groups_i))
-        comp_i = comps[i]
-        for k in 1:length(groups_i)
-            gc_i[k] = groups_i[k] => ngroups_i[k]
+struct StructGroupParam <: GroupParameter
+    components::Vector{String}
+    groups::Vector{Vector{String}}
+    grouptype::Symbol
+    n_groups::Vector{Vector{Int}}
+    n_intergroups::Vector{Matrix{Int}}
+    i_groups::Vector{Vector{Int}}
+    flattenedgroups::Vector{String}
+    n_flattenedgroups::Vector{Vector{Int}}
+    n_groups_cache::PackedVectorsOfVectors.PackedVectorOfVectors{Vector{Int64}, Vector{Float64}, SubArray{Float64, 1, Vector{Float64}, Tuple{UnitRange{Int64}}, true}}
+    sourcecsvs::Vector{String}
+end
+
+function StructGroupParam(group::GroupParam,gccomponents_parsed,filepaths::Vector{String})
+    groupnames = group.flattenedgroups
+    n_gc = length(groupnames)
+    n_comps = length(group.components)
+    n_intergroups = [zeros(n_gc,n_gc) for i in 1:n_comps]
+    for i in 1:length(gccomponents_parsed)
+        gc_pair_i = last(gccomponents_parsed[i])
+        n_mat = n_intergroups[i]
+        for pair_ik in gc_pair_i
+            k = first(pair_ik)
+            val = last(pair_ik)
+            k1,k2 = k
+            n1,n2 = findfirst(==(k1),groupnames),findfirst(==(k2),groupnames)
+            n_mat[n1,n2] = val
+            n_mat[n2,n1] = val
         end
-        res[i] = comp_i => gc_i
     end
-    return res
+    return StructGroupParam(
+        group.components,
+        group.groups,
+        group.grouptype,
+        group.n_groups,
+        n_intergroups,
+        group.i_groups,
+        group.flattenedgroups,
+        group.n_flattenedgroups,
+        group.n_groups_cache,
+        filepaths
+    )
 end

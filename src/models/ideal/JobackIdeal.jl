@@ -85,7 +85,7 @@ The estimated critical point of a single component can be obtained via `crit_pur
 """
 JobackIdeal
 
-function JobackIdeal(components;userlocations=String[], verbose=false)
+function JobackIdeal(components;userlocations=String[], verbose=false, kwargs...)
     groups = GroupParam(components,["ideal/JobackIdeal_Groups.csv"], verbose=verbose)
     params = getparams(groups, ["ideal/JobackIdeal.csv","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]::SingleParam{Float64}
