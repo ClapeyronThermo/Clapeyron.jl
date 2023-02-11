@@ -3,21 +3,23 @@ function rachfordrice(K, z; β0=nothing)
     K1 = K .- 1.
     g0 = dot(z, K) - 1.
     g1 = 1. - dot(z, 1. ./ K)
+    _1 = one(g1)
+    _0 = zero(g1)
     singlephase = false
 
     # Checking if the given K and z have solution
     if g0 < 0
-        β = 0.
+        β = _0
         D = fill!(similar(z), 1)
         singlephase = true
     elseif g1 > 0
-        β = 1.
+        β = _1
         D = 1 .+ K1
         singlephase = true
     end
 
-    βmin = max(0., minimum(((K.*z .- 1) ./ (K .-  1.))[K .> 1]))
-    βmax = min(1., maximum(((1 .- z) ./ (1. .- K))[K .< 1]))
+    βmin = minimum(((K.*z .- 1) ./ (K .-  1.))[K .> 1],init = _0)
+    βmax = maximum(((1 .- z) ./ (1. .- K))[K .< 1], init = _1)
 
     if isnothing(β0)
         β = (βmax + βmin)/2
@@ -27,8 +29,8 @@ function rachfordrice(K, z; β0=nothing)
 
     # Solving the phase fraction β using Halley's method
     it = 0
-    error_β = 1.
-    error_FO = 1.
+    error_β = _1
+    error_FO = _1
     while error_β > 1e-8 && error_FO > 1e-8 && it < 10 &&  ~singlephase
         it = it + 1
         D = 1. .+ β.*K1
