@@ -91,13 +91,15 @@ function data_msa(model::GCMSAModel, V, T, z)
 end
 
 function data_rsp(model::GCMSAModel, V, T, z)
-    return dielectric_constant(model.rspmodel, V, T, z)
+    return dielectric_constant(model.RSPmodel, V, T, z)
 end
 
 function a_res(model::GCMSAModel, V, T, z, _data=@f(data))
     (zg, ∑zg), ϵ_r = _data
     ngroups = length(zg)
-
+    if ngroups == 0
+        return zero(V+T+first(z))
+    end
     σ = model.params.gc_sigma.values
     Z = model.params.charge.values
 

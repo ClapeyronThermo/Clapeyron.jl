@@ -53,13 +53,15 @@ end
 a_res(::Nothing,V,T,z,_data=nothing) = 0.0
 
 function data(model::BornModel, V, T, z)
-    return dielectric_constant(model.rspmodel, V, T, z)
+    return dielectric_constant(model.RSPmodel, V, T, z)
 end
 
 function a_res(model::BornModel, V, T, z,_data=@f(data))
     σ_born = model.params.sigma_born.values
+    if length(model.iions) == 0
+        return zero(T+first(z))
+    end
     Z = model.params.charge.values
     ϵ_r = _data
-
     return -e_c^2/(4π*ϵ_0*k_B*T*sum(z))*(1-1/ϵ_r)*sum(z[i]*Z[i]^2/σ_born[i] for i ∈ model.iions)
 end

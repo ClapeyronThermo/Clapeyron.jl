@@ -96,7 +96,7 @@ function data_born(model::GCBornModel, V, T, z)
 end
 
 function data_rsp(model::GCBornModel, V, T, z)
-    return dielectric_constant(model.rspmodel, V, T, z)
+    return dielectric_constant(model.RSPmodel, V, T, z)
 end
 
 
@@ -105,6 +105,8 @@ function a_res(model::GCBornModel, V, T, z,_data=@f(data))
     Z = model.params.charge.values
     (zg,ng),ϵ_r = _data
     ngroups = length(zg)
-
+    if ngroups == 0
+        return zero(T+first(z))
+    end
     return -e_c^2/(4π*ϵ_0*k_B*T*sum(z))*(1-1/ϵ_r)*sum(zg[i]*Z[i]^2/σ_born[i] for i ∈ 1:ngroups)
 end

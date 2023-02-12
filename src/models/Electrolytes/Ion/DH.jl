@@ -58,10 +58,13 @@ function DH(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocatio
 end
 
 function data(model::DHModel, V, T, z)
-    return dielectric_constant(model.rspmodel, V, T, z)
+    return dielectric_constant(model.RSPmodel, V, T, z)
 end
 
-function a_res(model::DHModel, V, T, z,_data=@f(data))
+function a_res(model::DHModel, V, T, z,_data=@f(data))  
+    if length(model.iions) == 0
+        return zero(V+T+first(z))
+    end
     ϵ_r = _data
     σ = model.params.sigma.values
     Z = model.params.charge.values
