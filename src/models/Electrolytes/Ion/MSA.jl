@@ -50,10 +50,13 @@ function MSA(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocati
 end
 
 function data(model::MSAModel, V, T, z)
-    return dielectric_constant(model.rspmodel, V, T, z)
+    return dielectric_constant(model.RSPmodel, V, T, z)
 end
 
 function a_res(model::MSAModel, V, T, z, _data=@f(data))
+    if length(model.iions) == 0
+        return zero(V+T+first(z))
+    end
     σ = model.params.sigma.values
     Z = model.params.charge.values
     ϵ_r = _data

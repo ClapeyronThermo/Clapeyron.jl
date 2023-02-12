@@ -42,7 +42,7 @@ function MM1(solvents,salts; userlocations::Vector{String}=String[],assoc_userlo
     mu = params["mu"]
     params["polarizability"].values .*= 1e-40
     polarizability = params["polarizability"]
-    packagedparams = MM1Param(gamma,theta,coordz,mu,polarizability)
+    packagedparams = MM1Param(PairParam(gamma),PairParam(theta),PairParam(coordz),mu,polarizability)
 
     references = String[]
     
