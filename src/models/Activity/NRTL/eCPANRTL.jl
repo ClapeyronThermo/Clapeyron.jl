@@ -15,7 +15,7 @@ abstract type eCPANRTLModel <: ActivityModel end
 struct eCPANRTL{c<:EoSModel} <: eCPANRTLModel
     components::Array{String,1}
     params::eCPANRTLParam
-    puremodel::Vector{c}
+    puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
     references::Array{String,1}
 end

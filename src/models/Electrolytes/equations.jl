@@ -1,4 +1,4 @@
-pressure(model::ElectrolyteModel,V,T) = pressure(model,V,T,[0.5,0.5])
+#pressure(model::ElectrolyteModel,V,T) = pressure(model,V,T,[0.5,0.5])
 
 function ElectrolyteFractionVector(model::ElectrolyteModel,M,z=[1.])
     ν = model.stoic_coeff
@@ -25,6 +25,7 @@ function FractionSalt(model::ElectrolyteModel,z)
     return z_new
 end
 
+#=
 function Obj_Sat(model::ElectrolyteModel, F, T, V_l, V_v,scales)
     ν = model.stoic_coeff[1]
     fun(_V) = eos(model, _V, T,[0.5,0.5])
@@ -36,8 +37,9 @@ function Obj_Sat(model::ElectrolyteModel, F, T, V_l, V_v,scales)
     F[1] = -(Av_l-Av_v)*p_scale
     F[2] = sum((μ_l-μ_v).*ν)*μ_scale
     return F
-end
+end =#
 
+#=
 function check_valid_sat_pure(model::ElectrolyteModel,P_sat,V_l,V_v,T,ε0 = 5e7)
     ε = abs(V_l-V_v)/(eps(typeof(V_l-V_v)))
     ε <= ε0 && return false
@@ -45,4 +47,5 @@ function check_valid_sat_pure(model::ElectrolyteModel,P_sat,V_l,V_v,T,ε0 = 5e7)
     _,dpdvv = p∂p∂V(model,V_v,T,[0.5,0.5])
     return (dpdvl <= 0) && (dpdvv <= 0)
     #if ΔV > ε then Vl and Vv are different values
-end
+end =#
+

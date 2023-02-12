@@ -1,6 +1,6 @@
 abstract type eCPAModel <: ElectrolyteModel end
 
-struct eCPA{T<:IdealModel,c<:SAFTModel,i<:IonModel,b} <: eCPAModel
+struct eCPA{T<:IdealModel,c,i<:IonModel,b} <: eCPAModel
     components::Array{String,1}
     solvents::Array{String,1}
     salts::Array{String,1}
@@ -39,7 +39,7 @@ function eCPA(solvents,salts;
     translation_userlocations=String[],
      verbose=false)
     ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
-
+    salts = ion_groups.components
     ions = ion_groups.flattenedgroups
     components = deepcopy(solvents)
     append!(components,ions)
@@ -75,5 +75,10 @@ end
 function a_res(model::eCPAModel, V, T, z)
     n = sum(z)
     ā,b̄,c̄ = cubic_ab(model.puremodel.cubicmodel,V,T,z,n)
-    return a_res(model.puremodel,V,T,z)+a_ion(model,V+c̄*n,T,z,model.ionicmodel)+a_born(model,V+c̄*n,T,z,model.bornmodel)
+    return a_res(model.puremodel,V,T,z)+a_res(model.ionicmodel,V+c̄*n,T,z)+a_res(model.bornmodel,V+c̄*n,T,z)
 end
+
+#TODO: fix for salts
+lb_volume(model::eCPAModel,z = SA[1.0]) = lb_volume(model.puremodel,z)
+p_scale(model::eCPAModel,z = SA[1.0]) = p_scale(model.puremodel,z)
+T_scale(model::eCPAModel,z = SA[1.0]) = T_scale(model.puremodel,z)
