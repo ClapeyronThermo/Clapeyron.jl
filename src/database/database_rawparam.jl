@@ -60,7 +60,7 @@ end
 function joindata!(old::RawParam,new::RawParam)
     tnew,type_sucess = joindata!(old.type,new.type)
     if old.grouptype !== new.grouptype
-        if new.grouptype != :unkwown #for backwards compatibility
+        if !(new.grouptype == :unknown || new.grouptype == :unknown) #for backwards compatibility
             error_different_grouptype(old,new)
         end
     end

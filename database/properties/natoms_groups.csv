@@ -1,0 +1,83 @@
+Clapeyron Database File
+GC Single Data; number of atoms and number of hydrogens
+species,N_a,N_h
+-CH3,4,3
+-CH2-,3,2
+>CH-,2,1
+>C<,1,0
+=CH2,3,2
+=CH-,2,1
+=C<,1,0
+=C=,1,0
+CH,2,1
+C,1,0
+ring-CH2-,3,2
+ring>CH-,2,1
+ring>C<,1,0
+ring=CH-,2,1
+ring=C<,1,0
+-F,1,0
+-Cl,1,0
+-Br,1,0
+-I,1,0
+-OH (alcohol),2,1
+-OH (phenol),2,1
+-O- (non-ring),1,0
+-O- (ring),1,0
+>C=O (non-ring),2,0
+>C=O (ring),2,0
+O=CH- (aldehyde),3,1
+-COOH (acid),4,1
+-COO- (ester),3,0
+=O (other than above),1,0
+-NH2,3,2
+>NH (non-ring),2,1
+>NH (ring),2,1
+>N- (non-ring),1,0
+-N= (non-ring),1,0
+-N= (ring),1,0
+=NH,2,1
+-CN,2,0
+-NO2,3,0
+-SH,2,1
+-S- (non-ring),1,0
+-S- (ring),1,0
+CH3,4,3
+CH2,3,2
+CH,2,1
+C,1,0
+aCH,2,1
+aCCH2,4,2
+aCCH,3,1
+CH2=,3,2
+CH=,3,2
+cCH2,3,2
+COOH,4,1
+CH3COCH3,10,6
+COO,3,0
+H2O,3,1
+CH3OH,6,4
+CH4,5,1
+CO2,3,0
+OH,2,1
+CH2OH,5,3
+CHOH,4,2
+NH2,3,2
+NH,2,1
+N,1,0
+cNH,2,1
+cN,1,0
+C=,1,0
+aCCH3,5,3
+aCOH,3,1
+cCH,2,1
+cCHNH,4,2
+cCHN,3,1
+aCCOaC,4,0
+aCCOOH,5,1
+aCNHaC,4,1
+CH3CO,6,3
+[CH2][OCH2],7,4
+N2,2,0
+SF6,7,0
+OH (primary),2,1
