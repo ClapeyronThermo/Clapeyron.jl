@@ -145,8 +145,8 @@ function StructGroupParam(components,
     options::ParamOptions = DefaultOptions,
     grouptype = :unknown)
 
-    gccomponents = Vector{Tuple{String,Vector{Pair{String,Int64}}}}(undef,2)
-    intragccomponents = Vector{Tuple{String,Vector{Pair{Tuple{String, String}, Int64}}}}(undef,2)
+    gccomponents = Vector{Tuple{String,Vector{Pair{String,Int64}}}}(undef,length(components))
+    intragccomponents = Vector{Tuple{String,Vector{Pair{Tuple{String, String}, Int64}}}}(undef,length(components))
     for i in 1:length(components)
         gccomponents[i] = (components[i][1],components[i][2])
         intragccomponents[i] = (components[i][1],components[i][3])

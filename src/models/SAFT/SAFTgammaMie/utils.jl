@@ -28,6 +28,7 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
 
     #now we fill our new component sites,
     gc_n_sites = sites.n_sites.v #should be of the same size as flattened_comp_sitenames
+    gc_n_groups = groups.n_groups
     comp_n_sites = Vector{Vector{Int}}(undef,length(comps))
     comp_sites = Vector{Vector{String}}(undef,length(comps))
 
@@ -48,7 +49,7 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
                 if startswith(comp_gcname,lookup_cgname)
                     #fill sites, n_sites
                     push!(sites_i,comp_gcname)
-                    push!(n_sites_i,gc_n_sites[w])
+                    push!(n_sites_i,gc_n_sites[w]*gc_n_groups[i][k])
 
                     #fill translation between gc_gcsite combination and original indices for assoc
                     gc_ik = findfirst(isequal(gcname_ik),groups.flattenedgroups)
