@@ -60,8 +60,8 @@ end
 function joindata!(old::RawParam,new::RawParam)
     tnew,type_sucess = joindata!(old.type,new.type)
     if old.grouptype !== new.grouptype
-        if !(new.grouptype == :unknown || new.grouptype == :unknown) #for backwards compatibility
-            error_different_grouptype(old,new)
+        if old.grouptype != :unknown && new.grouptype != :unknown #for backwards compatibility
+            error_different_grouptype(old,new,old.name)
         end
     end
     
@@ -79,10 +79,15 @@ function joindata!(old::RawParam,new::RawParam)
     return RawParam(old.name,component_info,data,sources,csv,tnew,old.grouptype)
 end
 
-error_different_grouptype(old::RawParam,new::RawParam) = error_different_grouptype(old.grouptype,new.grouptype)
+error_different_grouptype(old::RawParam,new::RawParam) = error_different_grouptype(old.grouptype,new.grouptype,old.name)
 
-@noinline function error_different_grouptype(old::Symbol,new::Symbol)
-    throw(error("""cannot join two databases with different group types:
+@noinline function error_different_grouptype(old::Symbol,new::Symbol,name = "")
+    if name != ""
+        errorname = "parameter $name,"
+    else
+        errorname = ""
+    end
+    throw(error("""Cannot join $errorname two databases with different group types:
     current group type: $(old)
     incoming group type: $(new)
     """))
