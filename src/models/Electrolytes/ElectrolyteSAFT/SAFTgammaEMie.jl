@@ -80,7 +80,7 @@ end
 function data(model::SAFTgammaEMieModel, V, T, z)
     _data_saft = data(model.saftmodel,V,T,z)
     _data_msa = data_msa(model.ionicmodel,V,T,z)
-    _data_rsp = dielectric_constant(model.rspmodel,V,T,z,_data_saft)
+    _data_rsp = dielectric_constant(model.rspmodel,V,T,z,model.saftmodel)
     return (_data_saft,(_data_msa,_data_rsp))
 end
 

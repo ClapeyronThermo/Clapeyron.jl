@@ -8,27 +8,25 @@ struct MM1Param <: EoSParam
     polarizability::SingleParam{Float64}
 end
 
-struct MM1 <: MM1Model
+struct MM1{𝕊} <: MM1Model
     components::Array{String,1}
     solvents::Array{String,1}
     ions::Array{String,1}
-    icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
     params::MM1Param
-    absolutetolerance::Float64
+    assocmodel::𝕊
     references::Array{String,1}
 end
 
 @registermodel MM1
 export MM1
-function MM1(solvents,salts; userlocations::Vector{String}=String[],assoc_userlocations::Vector{String}=String[], verbose::Bool=false)
+function MM1(solvents,salts; assocmodel = nothing, userlocations::Vector{String}=String[],assoc_userlocations::Vector{String}=String[], verbose::Bool=false)
     ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
 
     ions = ion_groups.flattenedgroups
     components = deepcopy(solvents)
     append!(components,ions)
-    icomponents = 1:length(components)
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
 
@@ -43,17 +41,22 @@ function MM1(solvents,salts; userlocations::Vector{String}=String[],assoc_userlo
     params["polarizability"].values .*= 1e-40
     polarizability = params["polarizability"]
     packagedparams = MM1Param(PairParam(gamma),PairParam(theta),PairParam(coordz),mu,polarizability)
-
     references = String[]
-    
-    model = MM1(components, solvents, ions, icomponents, isolvents, iions, packagedparams, 1e-12,references)
+    init_assocmodel = init_model(assocmodel,components,assoc_userlocations,verbose)
+    model = MM1(components, solvents, ions, isolvents, iions, packagedparams, init_assocmodel,references)
     return model
 end
 
-function RSP(electromodel::ElectrolyteModel, V, T, z,model::MM1Model)
+
+#this allows to use MM1 in standalone mode, as well as in conjunction with another eos
+dielectric_constant(model::MM1Model,V,T,z) = dielectric_constant(model::MM1Model,V,T,z,model.assocmodel)
+dielectric_constant(model::MM1Model, V, T, z,::Nothing) = throw(error("MM1 RSP model requires an Association model to be passed as data, try dielectric_constant(mm1,V,T,z,assocmodel)"))
+
+#TODO: reuse the association values
+function dielectric_constant(model::MM1Model, V, T, z,_data::EoSModel)
     _1 = one(V+T+first(z))
     _0 = zero(V+T+first(z))
-    assocmodel = electromodel.puremodel
+    assocmodel = _data
     μ0 = model.params.mu.values
     γ = model.params.gamma.values
     θ = model.params.theta.values
@@ -63,19 +66,19 @@ function RSP(electromodel::ElectrolyteModel, V, T, z,model::MM1Model)
     sites = assocmodel.sites.i_sites
 
     x = z ./ sum(z)
-    ρ = Clapeyron.N_A*sum(z)/(V)
+    ρ = N_A*sum(z)/(V)
 
-    A = ρ/(3*Clapeyron.ϵ_0)*sum(x[i]*α[i] for i ∈ @Clapeyron.comps)
+    A = ρ/(3*ϵ_0)*sum(x[i]*α[i] for i ∈ @comps)
     ϵ_inf = (2*A+1)/(1-A)
 
-    X_ = Clapeyron.X(assocmodel,V,T,z)
+    X_ = X(assocmodel,V,T,z)
 
     P = [[_0 for i ∈ model.isolvents] for j ∈ model.isolvents]
     for i ∈ model.isolvents
         if !isempty(sites[i])
             for j ∈ model.isolvents
                 if !isempty(sites[j])
-                    P[i][j] = ρ/Clapeyron.N_A*x[j]*sum(sum(Clapeyron.Δ(model.assocmodel,V,T,z,i,j,a,b)*X_[i][a]*X_[j][b] for a ∈ sites[i]) for b ∈ sites[j])
+                    P[i][j] = ρ/N_A*x[j]*sum(sum(Δ(assocmodel,V,T,z,i,j,a,b)*X_[i][a]*X_[j][b] for a ∈ sites[i]) for b ∈ sites[j])
                 end
             end
         end

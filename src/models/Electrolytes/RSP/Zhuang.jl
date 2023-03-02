@@ -39,7 +39,7 @@ function Zhuang(solvents,salts; userlocations::Vector{String}=String[],assoc_use
     return model
 end
 
-function RSP(model::ZhuangModel, V, T, z)
+function dielectric_constant(model::ZhuangModel, V, T, z,_data = nothing)
     μ = model.params.mu.values
 
     β = 1/(T*k_B)

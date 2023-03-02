@@ -73,7 +73,7 @@ end
 
 function data(model::ElectrolyteSAFTModel, V, T, z)
     data_saft = data(model.saftmodel,V,T,z)
-    data_rsp = dielectric_constant(model.rspmodel,V,T,z,data_saft)
+    data_rsp = dielectric_constant(model.rspmodel,V,T,z,model.saftmodel)
     return (data_saft,data_rsp)
 end
 

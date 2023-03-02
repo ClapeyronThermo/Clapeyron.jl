@@ -11,17 +11,15 @@ end
 struct GCMSA{ϵ} <: GCMSAModel
     components::Array{String,1}
     groups::GroupParam
-    icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
     params::GCMSAParam
     RSPmodel::ϵ
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
 export GCMSA
-function GCMSA(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], userlocations=String[], ideal_userlocations=String[], verbose=false)
+function GCMSA(solvents,salts,ions; RSPmodel=ConstW, userlocations=String[], verbose=false)
     groups = GroupParam(cat(solvents,ions,dims=1), ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie/SAFTgammaMie_like.csv","SAFT/SAFTgammaMie/SAFTgammaMieE/","properties/molarmass_groups.csv"]; userlocations=userlocations,return_sites=false,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     components = groups.components
@@ -41,7 +39,6 @@ function GCMSA(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], use
     charge = params["charge"]
 
     components = groups.components
-    icomponents = 1:length(components)
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
     
@@ -54,7 +51,7 @@ function GCMSA(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], use
         init_RSPmodel = nothing
     end
 
-    model = GCMSA(components, groups, icomponents, isolvents, iions, packagedparams, init_RSPmodel, 1e-12,references)
+    model = GCMSA(components, groups, isolvents, iions, packagedparams, init_RSPmodel,references)
     return model
 end
 

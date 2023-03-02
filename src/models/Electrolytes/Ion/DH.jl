@@ -19,6 +19,19 @@ struct DH{ϵ} <: DHModel
 end
 
 @registermodel DH
+
+"""
+    DH(solvents,salts; 
+    RSPmodel=ConstW, 
+    SAFTlocations=String[], 
+    userlocations=String[], 
+    ideal_userlocations=String[], 
+    verbose=false)
+
+Debye-Hückel (DH) model for electrostatic interaction.
+"""
+DH
+
 export DH
 function DH(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocations=String[], ideal_userlocations=String[], verbose=false)
     ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)

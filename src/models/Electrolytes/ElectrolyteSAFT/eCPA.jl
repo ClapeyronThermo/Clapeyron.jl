@@ -37,7 +37,8 @@ function eCPA(solvents,salts;
     activity_userlocations=String[],
     mixing_userlocations=String[],
     translation_userlocations=String[],
-     verbose=false)
+    verbose=false)
+    
     ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
     salts = ion_groups.components
     ions = ion_groups.flattenedgroups

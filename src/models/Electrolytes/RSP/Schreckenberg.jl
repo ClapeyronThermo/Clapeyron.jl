@@ -13,7 +13,6 @@ struct Schreckenberg <: SchreckenbergModel
     isalts::UnitRange{Int}
     stoic_coeff::Array{Float64}
     params::SchreckenbergParam
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
@@ -44,7 +43,7 @@ function Schreckenberg(solvents,salts; userlocations::Vector{String}=String[], v
 
     references = String[]
     
-    model = Schreckenberg(components, solvents, salts, isolvents, isalts, stoichiometric_coeff, packagedparams, 1e-12,references)
+    model = Schreckenberg(components, solvents, salts, isolvents, isalts, stoichiometric_coeff, packagedparams,references)
     return model
 end
 
