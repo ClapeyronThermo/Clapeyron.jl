@@ -2,6 +2,7 @@ using CSV, Tables
 
 struct EstimationData{𝔽}
     method::𝔽
+    species::Vector{String}
     inputs_name::Vector{Symbol}
     outputs_name::Vector{Symbol}
     inputs::Vector{Vector{Union{Float64,Missing}}}
@@ -57,8 +58,12 @@ function EstimationData(filepaths::Vector{String})
     filepaths = flattenfilepaths(String[],filepaths)
     estimationdata = Vector{EstimationData}()
     for filepath ∈ filepaths 
-        csv_method = read_csv_options(filepath).estimator
-        method = getfield(Main,csv_method)
+        csv_method = read_csv_options(filepath)
+        method = getfield(Main,csv_method.estimator)
+        species = csv_method.species
+        if isempty(species)
+            species=["all"]
+        end
         df = read_csv(filepath)
         csvheaders = String.(Tables.columnnames(df))
         outputs_headers = chop.(String.(filter(x -> startswith(x, "out_") && !any(endswith.(x, "_" .* String.(ERRORTYPES))), csvheaders)), head=4, tail=0)
@@ -71,6 +76,7 @@ function EstimationData(filepaths::Vector{String})
             estimationdata,
             EstimationData(
                 method,
+                species,
                 Symbol.(inputs_headers),
                 Symbol.(outputs_headers),
                 inputs,

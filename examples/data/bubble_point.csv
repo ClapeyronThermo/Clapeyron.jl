@@ -1,5 +1,5 @@
 Clapeyron Estimator,,,
-bubble_point,,,
+[method = bubble_point, species = water ethanol],,,
 p,x,out_T,out_y
 101330,0.0225,366.86,0.2326
 101330,0.0646,360.9,0.385

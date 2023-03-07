@@ -309,26 +309,33 @@ function objective_function(estimation::Estimation,guesses)
     F = 0
     model = return_model(estimation, estimation.model, guesses)
     for i ∈ 1:length(estimation.data)
+        if estimation.data[i].species == ["all"]
+            model_r = model
+        else
+            idx_r = model.components .== estimation.data[i].species
+            model_r = index_reduction(model,idx_r)[1]
+        end
+
         property = estimation.data[i].method
         inputs = estimation.data[i].inputs
         outputs = estimation.data[i].outputs
         weights = estimation.data[i].weights
         if isempty(inputs)
-            prediction =  property(model)
+            prediction =  property(model_r)
         elseif length(inputs)==1
-            prediction =  property.(model,inputs[1])
+            prediction =  property.(Ref(model_r),inputs[1])
         elseif length(inputs)==2
-            prediction =  property.(model,inputs[1],inputs[2])
+            prediction =  property.(Ref(model_r),inputs[1],inputs[2])
         elseif length(inputs)==3
-            prediction =  property.(model,inputs[1],inputs[2],inputs[3])
+            prediction =  property.(Ref(model_r),inputs[1],inputs[2],inputs[3])
         else
-            prediction = property.(model,inputs...)
+            prediction = property.(Ref(model_r),inputs...)
         end
 
         if length(outputs)==1
             F += sum(((prediction.-outputs[1])./outputs[1]).^2)/length(outputs[1])*weights[1]
         else
-            F += sum([sum([((prediction[k][j].-outputs[j][i])./outputs[j][k]).^2 for j in 1:length(prediction[k])])*weights[1] for k in 1:length(prediction)])/length(outputs[1])
+            F += sum([sum([((prediction[k][j].-outputs[j][k])./outputs[j][k]).^2 for j in 1:length(prediction[k])])*weights[1] for k in 1:length(prediction)])/length(outputs[1])
         end
     end
     if isnan(F)
