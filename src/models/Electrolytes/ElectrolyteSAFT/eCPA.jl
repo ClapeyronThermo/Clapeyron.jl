@@ -1,11 +1,10 @@
 abstract type eCPAModel <: ElectrolyteModel end
 
-struct eCPA{T<:IdealModel,c,i<:IonModel,b} <: eCPAModel
+struct eCPA{T<:IdealModel,c,i<:IonModel,b,ϵ<:RSPModel} <: eCPAModel
     components::Array{String,1}
     solvents::Array{String,1}
     salts::Array{String,1}
     ions::Array{String,1}
-    icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
     stoic_coeff::Vector{Vector{Int64}}
@@ -13,7 +12,7 @@ struct eCPA{T<:IdealModel,c,i<:IonModel,b} <: eCPAModel
     puremodel::c
     ionicmodel::i
     bornmodel::b
-    absolutetolerance::Float64
+    rspmodel::ϵ
     references::Array{String,1}
 end
 
@@ -63,20 +62,29 @@ function eCPA(solvents,salts;
                         activity_userlocations=activity_userlocations,
                         mixing_userlocations=mixing_userlocations,
                         translation_userlocations=translation_userlocations)
-    init_Ionicmodel = ionicmodel(solvents,salts;RSPmodel=RSPmodel,SAFTlocations=["SAFT/"*string(puremodel)])
-    if bornmodel !== nothing
-        init_bornmodel = bornmodel(solvents,salts;RSPmodel=RSPmodel,SAFTlocations=["SAFT/"*string(puremodel)])
-    end
+    init_Ionicmodel = ionicmodel(solvents,salts;RSPmodel=nothing,SAFTlocations=["SAFT/"*string(puremodel)])
     
+    if bornmodel !== nothing
+        init_bornmodel = bornmodel(solvents,salts;RSPmodel=nothing,SAFTlocations=["SAFT/"*string(puremodel)])
+    end
+    init_RSPmodel = RSPmodel(solvents,salts)
     references = String[]
-    model = eCPA(components,solvents,salts,ions,icomponents,isolvents,iions,stoichiometric_coeff,init_idealmodel,init_SAFTmodel,init_Ionicmodel,init_bornmodel,1e-12,references)
+    model = eCPA(components,solvents,salts,ions,isolvents,iions,stoichiometric_coeff,init_idealmodel,init_SAFTmodel,init_Ionicmodel,init_bornmodel,init_RSPmodel,references)
     return model
 end
 
-function a_res(model::eCPAModel, V, T, z)
-    n = sum(z)
-    ā,b̄,c̄ = cubic_ab(model.puremodel.cubicmodel,V,T,z,n)
-    return a_res(model.puremodel,V,T,z)+a_res(model.ionicmodel,V+c̄*n,T,z)+a_res(model.bornmodel,V+c̄*n,T,z)
+function data(model::eCPAModel, V, T, z)
+    data_cpa = data(model.puremodel,V,T,z)
+    data_rsp = dielectric_constant(model.rspmodel,V,T,z,model.puremodel)
+    return (data_cpa,data_rsp)
+end
+
+
+function a_res(model::eCPAModel, V, T, z,_data = @f(data))
+    (data_cpa,data_rsp) = _data
+    n,ā,b̄,c̄ = data_cpa
+    return a_res(model.puremodel,V,T,z)+a_res(model.ionicmodel,V+c̄*n,T,z,data_rsp)+a_res(model.bornmodel,V+c̄*n,T,z,data_rsp)
+
 end
 
 #TODO: fix for salts

@@ -72,7 +72,7 @@ function recombine_impl!(model::GCMSAModel)
 end
 
 function data(model::GCMSAModel, V, T, z)
-    return @f(data_msa),@f(data_rsp)
+    return @f(data_rsp)
 end
 
 function data_msa(model::GCMSAModel, V, T, z)
@@ -81,7 +81,7 @@ function data_msa(model::GCMSAModel, V, T, z)
     Σz = sum(z)
     zg = zeros(eltype(sum(z)),ngroups)
     for k in 1:ngroups
-        zg[k] = sum([z[i]*v[i][k] for i ∈ model.icomponents])
+        zg[k] = sum([z[i]*v[i][k] for i ∈ length(model.groups.components)])
     end
     ng = sum(zg)
     return  zg, ng
@@ -93,15 +93,15 @@ end
 
 function a_res(model::GCMSAModel, V, T, z, _data=@f(data))
     (zg, ∑zg), ϵ_r = _data
-    ngroups = length(zg)
+    ngroups = length(model.groups.flattenedgroups)
     if ngroups == 0
         return zero(V+T+first(z))
     end
     σ = model.params.gc_sigma.values
     Z = model.params.charge.values
-
+    zg, ∑zg = data_msa(model,V,T,z)
     ρg = N_A*sum(zg)/V
-    Γ = @f(screening_length, _data)
+    Γ = @f(screening_length, ϵ_r, (zg, ∑zg))
     Δ = 1-π*ρg/6*sum(zg[i]*σ[i]^3 for i ∈ 1:ngroups)/∑zg
     Ω = 1+π*ρg/(2*Δ)*sum(zg[i]*σ[i]^3/(1+Γ*σ[i]) for i ∈ 1:ngroups)/∑zg
     Pn = ρg/Ω*sum(zg[i]*σ[i]*Z[i]/(1+Γ*σ[i]) for i ∈ 1:ngroups)/∑zg
@@ -110,8 +110,8 @@ function a_res(model::GCMSAModel, V, T, z, _data=@f(data))
     return (U_GCMSA+Γ^3*k_B*T*V/(3π))/(N_A*k_B*T*sum(z))
 end
 
-function screening_length(model::GCMSAModel,V,T,z, _data=@f(data))
-    (zg, ∑zg), ϵ_r = _data
+function screening_length(model::GCMSAModel,V,T,z, ϵ_r=@f(data),zgdata = @f(data_msa))
+    zg, ∑zg = zgdata
     ngroups = length(zg)
 
     σ = model.params.gc_sigma.values

@@ -2,10 +2,9 @@ abstract type SAFTgammaEMieModel <: ElectrolyteSAFTModel end
 
 struct SAFTgammaEMie{T<:IdealModel,c<:SAFTModel,i<:IonModel,b,r<:RSPModel} <: SAFTgammaEMieModel
     components::Array{String,1}
-    solvents::Union{Array{String,1},Array{Any,1}}
+    solvents::Array{String,1}
     salts::Array{String,1}
     ions::Array{String,1}
-    icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     isalts::UnitRange{Int}
     iions::UnitRange{Int}
@@ -15,7 +14,6 @@ struct SAFTgammaEMie{T<:IdealModel,c<:SAFTModel,i<:IonModel,b,r<:RSPModel} <: SA
     ionicmodel::i
     bornmodel::b
     rspmodel::r
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
@@ -30,7 +28,7 @@ function SAFTgammaEMie(solvents,salts,ions; saftmodel=SAFTgammaMie,
     userlocations=String[], 
     rsp_userlocations=String[],
     ideal_userlocations=String[],
-     verbose=false)
+    verbose=false)
     
     salt_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
     solvent_groups = GroupParam(solvents, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
@@ -44,8 +42,6 @@ function SAFTgammaEMie(solvents,salts,ions; saftmodel=SAFTgammaMie,
         stoichiometric_coeff[i,:] = salt_groups.n_flattenedgroups[i]
     end
 
-    components = deepcopy(salt_groups.components)
-    prepend!(components,solvent_groups.components)
 
     isolvents = 1:nsolv
     iions = (nsolv+1):(nsolv+nions)
@@ -66,10 +62,9 @@ function SAFTgammaEMie(solvents,salts,ions; saftmodel=SAFTgammaMie,
     ions = salt_groups.flattenedgroups
     components = deepcopy(salts)
     prepend!(components,solvents)
-    icomponents = 1:length(components)
 
     references = String[]
-    model = SAFTgammaEMie(components,solvents,salts,ions,icomponents,isolvents,isalts,iions,stoichiometric_coeff,init_idealmodel,init_SAFTmodel,init_Ionicmodel,init_bornmodel,init_RSPmodel,1e-12,references)
+    model = SAFTgammaEMie(components,solvents,salts,ions,isolvents,isalts,iions,stoichiometric_coeff,init_idealmodel,init_SAFTmodel,init_Ionicmodel,init_bornmodel,init_RSPmodel,references)
     return model
 end
 
@@ -80,9 +75,8 @@ end
 
 function data(model::SAFTgammaEMieModel, V, T, z)
     _data_saft = data(model.saftmodel,V,T,z)
-    _data_msa = data_msa(model.ionicmodel,V,T,z)
     _data_rsp = dielectric_constant(model.rspmodel,V,T,z,_data_saft)
-    return (_data_saft,(_data_msa,_data_rsp))
+    return (_data_saft,_data_rsp)
 end
 
 function x0_volume(model::SAFTgammaEMie,p,T,z; phase = :unknown)

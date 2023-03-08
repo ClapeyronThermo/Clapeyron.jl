@@ -7,7 +7,7 @@ abstract type MSAModel <: IonModel end
 
 struct MSA{ϵ} <: MSAModel
     components::Array{String,1}
-    solvents::Union{Array{String,1},Array{Any,1}}
+    solvents::Array{String,1}
     ions::Array{String,1}
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
@@ -38,7 +38,8 @@ function MSA(solvents,salts; RSPmodel=ConstW, userlocations=String[], RSP_userlo
 
     ions = ion_groups.flattenedgroups
     components = deepcopy(ions)
-    prepend!(components,solvents)
+    _solvents = group_components(solvents)
+    prepend!(components,_solvents)
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
 
@@ -56,7 +57,7 @@ function MSA(solvents,salts; RSPmodel=ConstW, userlocations=String[], RSP_userlo
         init_RSPmodel = nothing
     end
 
-    model = MSA(components, solvents, ions, isolvents, iions, packagedparams, init_RSPmodel, references)
+    model = MSA(components, _solvents, ions, isolvents, iions, packagedparams, init_RSPmodel, references)
     return model
 end
 
@@ -73,7 +74,7 @@ function a_res(model::MSAModel, V, T, z, _data=@f(data))
     ϵ_r = _data
     ∑z = sum(z)
     ρ = N_A*sum(z)/V
-    Γ = @f(screening_length)
+    Γ = @f(screening_length,ϵ_r)
     Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ model.iions)/∑z
     Ω = 1+π*ρ/(2*Δ)*sum(z[i]*σ[i]^3/(1+Γ*σ[i]) for i ∈ model.iions)/∑z
     Pn = ρ/Ω*sum(z[i]*σ[i]*Z[i]/(1+Γ*σ[i]) for i ∈ model.iions)/∑z
@@ -82,12 +83,10 @@ function a_res(model::MSAModel, V, T, z, _data=@f(data))
     return (U_MSA+Γ^3*k_B*T*V/(3π))/(N_A*k_B*T*sum(z))
 end
 
-function screening_length(model::MSAModel,V,T,z)
+function screening_length(model::MSAModel,V,T,z,ϵ_r = @f(data))
     σ = model.params.sigma.values
     Z = model.params.charge.values
-    ϵ_r = RSP(model.RSPmodel,V,T,z)
     ∑z = sum(z)
-    #x = z ./ sum(z)
     ρ = N_A*sum(z)/V
     Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ model.iions)/∑z
 

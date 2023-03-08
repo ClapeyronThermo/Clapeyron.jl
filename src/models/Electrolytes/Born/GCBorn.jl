@@ -11,12 +11,10 @@ end
 struct GCBorn{ϵ} <: GCBornModel
     components::Array{String,1}
     groups::GroupParam
-    icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
     params::GCBornParam
     RSPmodel::ϵ
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
@@ -57,7 +55,7 @@ function GCBorn(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], us
         init_RSPmodel = nothing
     end
 
-    model = GCBorn(components, groups, icomponents, isolvents, iions, packagedparams, init_RSPmodel, 1e-12,references)
+    model = GCBorn(components, groups, isolvents, iions, packagedparams, init_RSPmodel, references)
     return model
 end
 
@@ -80,16 +78,16 @@ function recombine_impl!(model::GCBornModel)
 end
 
 function data(model::GCBornModel, V, T, z)
-    return @f(data_born),@f(data_rsp)
+    return @f(data_rsp)
 end
 
 function data_born(model::GCBornModel, V, T, z)
-    ngroups = length(model.groups.flattenedgroups)
-    v = model.groups.n_flattenedgroups
-    Σz = sum(z)
+    groups = model.groups
+    ngroups = length(groups.flattenedgroups)
+    v = groups.n_flattenedgroups
     zg = zeros(eltype(sum(z)),ngroups)
     for k in 1:ngroups
-        zg[k] = sum([z[i]*v[i][k] for i ∈ model.icomponents])
+        zg[k] = sum([z[i]*v[i][k] for i ∈ 1:length(groups.components)])
     end
     ng = sum(zg)
     return  zg, ng
@@ -100,13 +98,15 @@ function data_rsp(model::GCBornModel, V, T, z)
 end
 
 
-function a_res(model::GCBornModel, V, T, z,_data=@f(data))
-    σ_born = model.params.sigma_born.values
-    Z = model.params.charge.values
-    (zg,ng),ϵ_r = _data
-    ngroups = length(zg)
+function a_res(model::GCBornModel, V, T, z,_data=@f(data))   
+    ngroups = length(model.groups.flattenedgroups)
     if ngroups == 0
         return zero(T+first(z))
     end
+    σ_born = model.params.sigma_born.values
+    Z = model.params.charge.values
+    ϵ_r = _data
+    zg, ng = data_born(model,V,T,z)
+
     return -e_c^2/(4π*ϵ_0*k_B*T*sum(z))*(1-1/ϵ_r)*sum(zg[i]*Z[i]^2/σ_born[i] for i ∈ 1:ngroups)
 end

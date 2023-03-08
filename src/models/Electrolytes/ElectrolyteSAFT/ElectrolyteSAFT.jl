@@ -2,10 +2,9 @@ abstract type ElectrolyteSAFTModel <: ElectrolyteModel end
 
 struct ElectrolyteSAFT{T<:IdealModel,c<:SAFTModel,i<:IonModel,b,r<:RSPModel} <: ElectrolyteSAFTModel
     components::Array{String,1}
-    solvents::Union{Array{String,1},Array{Any,1}}
+    solvents::Array{String,1}
     salts::Array{String,1}
     ions::Array{String,1}
-    icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     isalts::UnitRange{Int}
     iions::UnitRange{Int}
@@ -15,7 +14,6 @@ struct ElectrolyteSAFT{T<:IdealModel,c<:SAFTModel,i<:IonModel,b,r<:RSPModel} <: 
     ionicmodel::i
     bornmodel::b
     rspmodel::r
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
@@ -37,9 +35,9 @@ function ElectrolyteSAFT(solvents,salts; saftmodel=PCSAFT,
     for i in 1:length(salts)
         stoichiometric_coeff[i,:] = ion_groups.n_flattenedgroups[i]
     end
-
+    _solvents = group_components(solvents)
     components = deepcopy(ions)
-    prepend!(components,solvents)
+    prepend!(components,_solvents)
 
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):(length(solvents)+length(ions))
@@ -62,7 +60,7 @@ function ElectrolyteSAFT(solvents,salts; saftmodel=PCSAFT,
     icomponents = 1:length(components)
 
     references = String[]
-    model = ElectrolyteSAFT(components,solvents,salts,ions,icomponents,isolvents,isalts,iions,stoichiometric_coeff,init_idealmodel,init_SAFTmodel,init_Ionicmodel,init_bornmodel,init_RSPmodel,1e-12,references)
+    model = ElectrolyteSAFT(components,_solvents,salts,ions,isolvents,isalts,iions,stoichiometric_coeff,init_idealmodel,init_SAFTmodel,init_Ionicmodel,init_bornmodel,init_RSPmodel,references)
     return model
 end
 

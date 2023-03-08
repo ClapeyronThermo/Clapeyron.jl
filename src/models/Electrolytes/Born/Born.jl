@@ -7,14 +7,12 @@ abstract type BornModel <: EoSModel end
 
 struct Born{ϵ} <: BornModel
     components::Array{String,1}
-    solvents::Union{Array{String,1},Array{Any,1}}
+    solvents::Array{String,1}
     ions::Array{String,1}
-    icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
     params::BornParam
     RSPmodel::ϵ
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
@@ -22,16 +20,14 @@ end
 export Born
 function Born(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocations=String[], ideal_userlocations=String[], verbose=false)
     ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
-
+    _solvents = group_components(solvents)
     ions = ion_groups.flattenedgroups
     components = deepcopy(ions)
-    prepend!(components,solvents)
-    icomponents = 1:length(components)
+    prepend!(components,_solvents)
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
     
     params,sites = getparams(components, append!(["Electrolytes/Born/Born.csv","Electrolytes/properties/charges.csv","properties/molarmass.csv"],SAFTlocations); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
-    icomponents = 1:length(components)
     params["sigma_born"].values .*= 1E-10
     sigma_born = params["sigma_born"]
     charge = params["charge"]
@@ -46,7 +42,7 @@ function Born(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocat
         init_RSPmodel = nothing
     end
 
-    model = Born(components, solvents, ions, icomponents, isolvents, iions, packagedparams, init_RSPmodel, 1e-12,references)
+    model = Born(components, _solvents, ions, isolvents, iions, packagedparams, init_RSPmodel,references)
     return model
 end
 

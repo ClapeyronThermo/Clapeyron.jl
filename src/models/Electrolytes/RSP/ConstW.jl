@@ -1,37 +1,35 @@
 abstract type ConstWModel <: RSPModel end
 
-struct ConstWParam <: EoSParam
-end
-
 struct ConstW <: ConstWModel
     components::Array{String,1}
-    solvents::Union{Array{String,1},Array{Any,1}}
+    solvents::Array{String,1}
     ions::Array{String,1}
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
-    params::ConstWParam
+    value::Float64
     references::Array{String,1}
 end
 
 @registermodel ConstW
 export ConstW
-function ConstW(solvents,salts; userlocations::Vector{String}=String[], verbose::Bool=false)
+function ConstW(solvents,salts; userlocations::Vector{String}=String[], value =  78.4, verbose::Bool=false)
     ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
 
     ions = ion_groups.flattenedgroups
-    components = deepcopy(solvents)
+    _solvents = group_components(solvents)
+    components = deepcopy(_solvents)
     append!(components,ions)
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
 
     references = String[]
     
-    model = ConstW(components, solvents, ions, isolvents, iions, ConstWParam(),references)
+    model = ConstW(components, _solvents, ions, isolvents, iions, value ,references)
     return model
 end
 
 function dielectric_constant(model::ConstWModel,V,T,z,_data=nothing)
-    return 78.4
+    return model.value
 end
 
 is_splittable(::ConstW) = false

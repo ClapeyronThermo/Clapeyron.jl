@@ -7,14 +7,12 @@ abstract type DHModel <: IonModel end
 
 struct DH{ϵ} <: DHModel
     components::Array{String,1}
-    solvents::Union{Array{String,1},Array{Any,1}}
+    solvents::Array{String,1}
     ions::Array{String,1}
-    icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
     params::DHParam
     RSPmodel::ϵ
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
@@ -38,8 +36,8 @@ function DH(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocatio
 
     ions = ion_groups.flattenedgroups
     components = deepcopy(ions)
-    prepend!(components,solvents)
-    icomponents = 1:length(components)
+    _solvents = group_components(solvents)
+    prepend!(components,_solvents)
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
 
@@ -66,7 +64,7 @@ function DH(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocatio
         init_RSPmodel = nothing
     end
 
-    model = DH(components, solvents, ions, icomponents, isolvents, iions, packagedparams, init_RSPmodel, 1e-12,references)
+    model = DH(components, _solvents, ions, isolvents, iions, packagedparams, init_RSPmodel,references)
     return model
 end
 

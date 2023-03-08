@@ -7,7 +7,7 @@ end
 
 struct Schreckenberg <: SchreckenbergModel
     components::Array{String,1}
-    solvents::Union{Array{String,1},Array{Any,1}}
+    solvents::Array{String,1}
     salts::Array{String,1}
     isolvents::UnitRange{Int}
     isalts::UnitRange{Int}
@@ -29,8 +29,10 @@ function Schreckenberg(solvents,salts; userlocations::Vector{String}=String[], v
 
     if isempty(solvents)
         components=deepcopy(salts)
+        _solvents = String[]
     else
-        components = cat(solvents,salts,dims=1)
+        _solvents = group_components(solvents)
+        components = cat(_solvents,salts,dims=1)
     end
     
     isolvents = 1:length(solvents)
@@ -43,7 +45,7 @@ function Schreckenberg(solvents,salts; userlocations::Vector{String}=String[], v
 
     references = String[]
     
-    model = Schreckenberg(components, solvents, salts, isolvents, isalts, stoichiometric_coeff, packagedparams,references)
+    model = Schreckenberg(components, _solvents, salts, isolvents, isalts, stoichiometric_coeff, packagedparams,references)
     return model
 end
 
