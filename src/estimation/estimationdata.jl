@@ -99,8 +99,12 @@ function EstimationData(filepaths_weights::Array{Tuple{Float64, String}})
     filepaths = flattenfilepaths(String[],filepaths)
     estimationdata = Vector{EstimationData}()
     for i ∈  1:length(filepaths)
-        csv_method = read_csv_options(filepaths[i]).estimator
-        method = getfield(Main,csv_method)
+        csv_method = read_csv_options(filepaths[i])
+        method = getfield(Main,csv_method.estimator)
+        species = csv_method.species
+        if isempty(species)
+            species=["all"]
+        end
         df = read_csv(filepaths[i])
         csvheaders = String.(Tables.columnnames(df))
         outputs_headers = chop.(String.(filter(x -> startswith(x, "out_") && !any(endswith.(x, "_" .* String.(ERRORTYPES))), csvheaders)), head=4, tail=0)
@@ -113,6 +117,7 @@ function EstimationData(filepaths_weights::Array{Tuple{Float64, String}})
             estimationdata,
             EstimationData(
                 method,
+                species,
                 Symbol.(inputs_headers),
                 Symbol.(outputs_headers),
                 inputs,

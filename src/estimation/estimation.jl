@@ -312,7 +312,10 @@ function objective_function(estimation::Estimation,guesses)
         if estimation.data[i].species == ["all"]
             model_r = model
         else
-            idx_r = model.components .== estimation.data[i].species
+            idx_r = zeros(length(model))
+            for i in estimation.data[i].species
+                idx_r += model.components .== i
+            end
             model_r = index_reduction(model,idx_r)[1]
         end
 

@@ -56,9 +56,9 @@ end
     @test model2.params.epsilon_assoc.values.values[2] == initial[4] # Test that the association parameter was updated
     @test model2.params.epsilon_assoc.values.values[2] == model2.params.epsilon_assoc.values.values[3] # Test that the cross-association parameter was updated
 
-    @test objective(initial) ≈ 3.4477633699606574 rtol = 1e-6
+    @test objective(initial) ≈ 2.4184631612655836 rtol = 1e-6
 
     estimator,objective,initial,upper,lower = Estimation(model,toestimate,[(2.,"../examples/data/bubble_point.csv"),(1.,"../examples/data/bubble_point.csv")],[:vrmodel])
 
-    @test objective(initial) ≈ 9.456865829652054 rtol = 1e-6
+    @test objective(initial) ≈ 7.255389483796751 rtol = 1e-6
  end
