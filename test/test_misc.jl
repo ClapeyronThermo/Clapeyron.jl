@@ -123,6 +123,47 @@
             res = bubble_pressure(model,280,Clapeyron.FractionVector(0.01),ChemPotBubblePressure(nonvolatiles = ["water"]))
             @test res[1] ≈ 4.0772545187410433e6 rtol = 1e-6
         end
+
+        @testset "#145" begin
+            #incorrect indexing of gc_to_comp_sites when there is more than one assoc site.
+            like_data = """
+            Clapeyron Database File
+            SAFTgammaMie Like Parameters [csvtype = like,grouptype = SAFTgammaMie]
+            species,vst,S,lambda_r,lambda_a,sigma,epsilon,n_H,n_e1,n_e2,Mw
+            CH2_PEO,1,1,12,6,4,300,0,0,0,100
+            cO_1sit,1,1,12,6,4,300,0,1,0,100
+            """
+            
+            mw_data = """
+            Clapeyron Database File
+            SAFTgammaMie Like Parameters
+            species,Mw
+            CH2_PEO,100
+            cO_1sit,100
+            """
+            
+            assoc_data = """
+            Clapeyron Database File,,,,,,
+            SAFTgammaMie Assoc Parameters [csvtype = assoc,grouptype = SAFTgammaMie]
+            species1,site1,species2,site2,epsilon_assoc,bondvol,source
+            H2O,H,cO_1sit,e1,2193.2,5e-29,
+            CH2OH,H,cO_1sit,e1,1572.5,4.331e-28,
+            """
+            
+            group_data = """
+            Clapeyron Database File,
+            SAFTgammaMie Groups [csvtype = groups,grouptype = SAFTgammaMie]
+            species,groups
+            PEG_1sit,"[""CH2_PEO"" => 2000,""cO_1sit"" => 1000,""CH2OH"" => 2]"
+            """
+            
+            model = SAFTgammaMie(["water","PEG_1sit"],userlocations = [like_data,assoc_data,mw_data],group_userlocations = [group_data])
+            #in this case,because the groups are 1 to 1 correspondence to each molecule, the amount of groups should be the same 
+            @test length(model.vrmodel.params.epsilon_assoc.values.values) == length(model.params.epsilon_assoc.values.values)
+            #test if we got the number of sites right
+            @test model.vrmodel.sites.n_sites[2][1] == 1000 #1000 sites cO_1sit/e1 in PEG.
+        end
+
     end
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6

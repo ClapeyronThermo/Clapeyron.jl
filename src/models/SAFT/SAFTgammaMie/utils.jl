@@ -43,6 +43,12 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
         site_translator[i] = site_translator_i
         gc_name_i = gc_groups[i]
         for k in 1:length(gc_name_i)
+            #=
+            each gc group has it's own amount of sites.
+            to correctly translate those, we need an accumulator for each group
+            
+            =#
+            gc_site_count = 0
             for (w,comp_gcname) in enumerate(Iterators.flatten(sitenames))
                 gcname_ik = gc_name_i[k]
                 lookup_cgname = gcname_ik * '/'
@@ -50,10 +56,11 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
                     #fill sites, n_sites
                     push!(sites_i,comp_gcname)
                     push!(n_sites_i,gc_n_sites[w]*gc_n_groups[i][k])
-
                     #fill translation between gc_gcsite combination and original indices for assoc
+                    #we add one to the length of gc_site_count. this accounts for adding the next site.
+                    gc_site_count += 1
                     gc_ik = findfirst(isequal(gcname_ik),groups.flattenedgroups)
-                    push!(site_translator_i,(gc_ik,length(n_sites_i)))
+                    push!(site_translator_i,(gc_ik,gc_site_count))
                 end
             end
         end

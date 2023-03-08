@@ -87,7 +87,7 @@ JobackIdeal
 
 function JobackIdeal(components;userlocations=String[], verbose=false, kwargs...)
     groups = GroupParam(components,["ideal/JobackIdeal_Groups.csv"], verbose=verbose)
-    params = getparams(groups, ["ideal/JobackIdeal.csv","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(groups, ["ideal/JobackIdeal.csv","properties/molarmass_groups.csv","properties/natoms_groups.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]::SingleParam{Float64}
     N_a = params["N_a"]::SingleParam{Int}
     T_c = params["T_c"]::SingleParam{Float64}
