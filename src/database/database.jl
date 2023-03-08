@@ -729,7 +729,7 @@ function __get_options(data)
     _csvtype = _readcsvtype(get(opts_dict,"csvtype","invalid"))
     _grouptype = Symbol(get(opts_dict,"grouptype","unkwown"))
     _estimator = Symbol(get(opts_dict,"method","error"))
-    _species = String.(split(get(opts_dict,"species","none")," "))
+    _species = String.(split(get(opts_dict,"species","all")," "))
     return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator, species = _species)
 end
 
