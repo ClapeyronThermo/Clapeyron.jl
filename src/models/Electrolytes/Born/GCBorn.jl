@@ -23,6 +23,8 @@ function GCBorn(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], us
     groups = GroupParam(cat(solvents,ions,dims=1), ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie/SAFTgammaMie_like.csv","SAFT/SAFTgammaMie/SAFTgammaMieE/","properties/molarmass_groups.csv"]; userlocations=userlocations,return_sites=false,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     components = groups.components
+    isolvents = 1:length(solvents)
+    iions = (length(solvents)+1):length(components)
 
     segment = params["vst"]
     shapefactor = params["S"]
@@ -40,11 +42,6 @@ function GCBorn(solvents,salts,ions; RSPmodel=ConstW, SAFTlocations=String[], us
     gc_sigma_born.values .= cbrt.(gc_sigma_born.values)
 
     charge = params["charge"]
-
-    components = groups.components
-    icomponents = 1:length(components)
-    isolvents = 1:length(solvents)
-    iions = (length(solvents)+1):length(components)
     
     packagedparams = GCBornParam(shapefactor,segment,sigma,sigma_born,gc_sigma_born,charge)
 

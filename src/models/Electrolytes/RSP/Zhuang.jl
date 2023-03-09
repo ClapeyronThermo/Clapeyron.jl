@@ -8,11 +8,9 @@ struct Zhuang <: ZhuangModel
     components::Array{String,1}
     solvents::Array{String,1}
     ions::Array{String,1}
-    icomponents::UnitRange{Int}
     isolvents::UnitRange{Int}
     iions::UnitRange{Int}
     params::ZhuangParam
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
@@ -20,11 +18,9 @@ end
 export Zhuang
 function Zhuang(solvents,salts; userlocations::Vector{String}=String[],assoc_userlocations::Vector{String}=String[], verbose::Bool=false)
     ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
-
     ions = ion_groups.flattenedgroups
-    components = deepcopy(solvents)
+    components = deepcopy(group_components(solvents))
     append!(components,ions)
-    icomponents = 1:length(components)
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
 
@@ -35,7 +31,7 @@ function Zhuang(solvents,salts; userlocations::Vector{String}=String[],assoc_use
 
     references = String[]
     
-    model = Zhuang(components, solvents, ions, icomponents, isolvents, iions, packagedparams, 1e-12,references)
+    model = Zhuang(components, solvents, ions, isolvents, iions, packagedparams,references)
     return model
 end
 

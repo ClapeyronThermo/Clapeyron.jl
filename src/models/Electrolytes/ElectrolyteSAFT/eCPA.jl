@@ -44,7 +44,6 @@ function eCPA(solvents,salts;
     components = deepcopy(solvents)
     append!(components,ions)
     stoichiometric_coeff = ion_groups.n_flattenedgroups
-    icomponents = 1:length(components)
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
 
