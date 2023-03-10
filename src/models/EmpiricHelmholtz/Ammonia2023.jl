@@ -245,7 +245,7 @@ T_scale(model::Ammonia2023,z=SA[1.0]) = model.consts.T_c
 
 p_scale(model::Ammonia2023,z=SA[1.0]) = model.consts.P_c
 
-lb_volume(model::Ammonia2023,z=SA[1.0]) = 1/5313 #finally, an eos model that mentions it max density.
+lb_volume(model::Ammonia2023,z=SA[1.0]) = 1/53130 #finally, an eos model that mentions it max density.
 
 Base.length(::Ammonia2023) = 1
 
