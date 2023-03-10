@@ -81,3 +81,11 @@ function doi2bib(doi::String)
         return ""
     end
 end
+
+function evalexppoly(x,n,v)
+    res = zero(x*first(n)*first(v))
+    for i in eachindex(n)
+        res += n*x^v
+    end
+    return res
+end
