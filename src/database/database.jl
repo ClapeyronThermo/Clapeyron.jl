@@ -692,14 +692,10 @@ function read_csv_options(filepath)
     else
         keywords = readcsvtype_keywords
         words = split(lowercase(strip(line, ',')), ' ')
-        if length(words) == 1
-            _estimator = Symbol(only(words))
-        else
-            _estimator = :error
-        end
         foundkeywords = intersect(words, keywords)
-        
-        return (csvtype = _readcsvtype(foundkeywords),grouptype = :unknown,estimator = _estimator)
+        _species = intersect(words,["species"])
+        _estimator = intersect(words,["method"])
+        return (csvtype = _readcsvtype(foundkeywords),grouptype = :unknown,estimator = _estimator, species = _species)
     end
 end
 
@@ -732,8 +728,9 @@ function __get_options(data)
     end
     _csvtype = _readcsvtype(get(opts_dict,"csvtype","invalid"))
     _grouptype = Symbol(get(opts_dict,"grouptype","unkwown"))
-    _estimator = Symbol(get(opts_dict,"estimator","error"))
-    return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator)
+    _estimator = Symbol(get(opts_dict,"method","error"))
+    _species = String.(split(get(opts_dict,"species","all")," "))
+    return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator, species = _species)
 end
 
 function valid_headerparams(csvheaders, options::ParamOptions = DefaultOptions)
