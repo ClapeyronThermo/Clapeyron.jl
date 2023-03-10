@@ -442,6 +442,24 @@ end
     end
 end
 
+@testset "Ammonia2023 methods" begin
+    system = Ammonia2023()
+    #test for pressures here. we exclude the 0 density (obtained from paper's SI)
+    ps = [
+       27.63275
+       11.25287
+       0.4270652
+       5.96888
+       58.52754]
+    Tρ = [(320.0,35.0),(405.0,16.5),(275.0,0.2),(520.0,1.5),(620.0,14.0)]
+    for i in eachindex(ps)
+        T,rho = Tρ[i]
+        @test Clapeyron.pressure(system,0.001/rho,T)*1e-6 ≈ ps[i] rtol = 1e-6
+    end
+
+end
+
+
 @testset "LJRef methods" begin
     system = LJRef(["methane"])
     T = 1.051*Clapeyron.T_scale(system)
