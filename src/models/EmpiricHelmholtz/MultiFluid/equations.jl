@@ -145,7 +145,7 @@ function _fr1(model::MultiFluidModel,δ,τ,z)
 
         for (k,k_) ∈ zip(k2,kexp)
 
-            ai += nᵢ[k]*exp(lnδ*dᵢ[k] + lnτ*tᵢ[k]-δ^cᵢ[k_])
+            ai += nᵢ[k]*exp(lnδ*dᵢ[k] + lnτ*tᵢ[k] - δ^cᵢ[k_])
             #ai += nᵢ[k]*(δ^dᵢ[k])*(τ^tᵢ[k])*exp(-δ^cᵢ[k_])
         end  
         res += z[i]*ai 
@@ -185,10 +185,7 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
                 #aij += nᵢⱼ[k]*(δ^(dᵢⱼ[k]))*(τ^(tᵢⱼ[k]))
             end
             for (k,k_) ∈ zip(k2,kexp)
-                aij += nᵢⱼ[k]*(δ^(dᵢⱼ[k]))*(τ^(tᵢⱼ[k]))*
-                exp(-ηᵢⱼ[k_]*(δ - εᵢⱼ[k_])^2 - βᵢⱼ[k_]*(δ -γᵢⱼ[k_]))
-                #aij += nᵢⱼ[k]*exp(lnδ*dᵢⱼ[k] + lnτ*tᵢⱼ[k]
-                #-ηᵢⱼ[k_]*(δ - εᵢⱼ[k_])^2 - βᵢⱼ[k_]*(δ -γᵢⱼ[k_]))
+                aij += nᵢⱼ[k]*exp(lnδ*dᵢⱼ[k] + lnτ*tᵢⱼ[k] - ηᵢⱼ[k_]*(δ - εᵢⱼ[k_])^2 - βᵢⱼ[k_]*(δ -γᵢⱼ[k_]))
             end
            res +=z[i]*z[j]*Fᵢⱼ*aij
         end
