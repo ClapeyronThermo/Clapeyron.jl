@@ -381,6 +381,7 @@ function assoc_matrix_solve(K, α, atol ,rtol, max_iters)
 end
 
 #exact calculation of site non-bonded fraction when there is only one site
+
 function X_exact1(model,V,T,z,data=nothing)
     κ = model.params.bondvol.values
     i,j = κ.outer_indices[1]
@@ -394,8 +395,7 @@ function X_exact1(model,V,T,z,data=nothing)
     _1 = one(eltype(_Δ))
     idxs = model.sites.n_sites.p
     n = length(model.sites.n_sites.v)
-    Xsol = fill(_1,n)
-    _X = PackedVofV(idxs,Xsol)
+    
     ρ = N_A/V
     zi = z[i]
     zj = z[j]
@@ -412,10 +412,29 @@ function X_exact1(model,V,T,z,data=nothing)
     _c = -_1
     xia = -2*_c/(_b + sqrt(_b*_b - 4*_a*_c))
     xjb = _1/(1+kia*xia)
+    return pack_X_exact1(z,xia,xjb,i,j,a,b,n,idxs)
+end
+
+function pack_X_exact1(z,xia,xjb,i,j,a,b,n,idxs)
+    Xsol = fill(one(xia),n)
+    _X = PackedVofV(idxs,Xsol)
     _X[j][b] = xjb
     _X[i][a] = xia
     return _X
 end
+#=
+TODO: decide if this optimization is worthy.
+function pack_X_exact1(z::SingleComp,xia,xjb,i,j,a,b,n,idxs)
+    if (i,a) == (j,b)
+        Xsol = SA[xia,xia]
+    elseif  (i,a) > (j,b)
+        Xsol = SA[xjb,xia]
+    else
+        Xsol = SA[xia,xjb]
+    end
+    _X = PackedVofV(idxs,Xsol)
+    return _X
+end =#
 
 function a_assoc_impl(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
     _0 = zero(first(X_.v))
