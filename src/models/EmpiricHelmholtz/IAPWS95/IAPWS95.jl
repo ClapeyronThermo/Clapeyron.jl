@@ -111,13 +111,15 @@ function _fr(model::IAPWS95,δ,τ)
     t = model.consts.t::Vector{Float64}
     c = model.consts.c::Vector{Int64}
     res=zero(δ+τ)
+    logδ = log(δ)
+    logτ = log(τ)
     for i = 1:7
-        res += n[i]* (δ^d[i]) * (τ^t[i])
+        res += n[i] * exp(logδ*d[i] + logτ*t[i])
     end
 
     for i = 8:51
         ic = i-7
-        res += n[i]* (δ^d[i]) * (τ^t[i]) * exp(-δ^c[ic])
+        res += n[i]* exp(logδ*d[i] + logτ*t[i] -δ^c[ic])
     end
     
     nτt1,nτt2,nτt3 = (-0.31306260323435e2, 0.31546140237781e2*τ, -0.25213154341695e4*τ^4)

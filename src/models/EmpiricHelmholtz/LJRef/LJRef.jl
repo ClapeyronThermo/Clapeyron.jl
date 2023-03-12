@@ -235,18 +235,19 @@ function _fr(model::LJRef,δ,τ)
     γ = model.consts.gamma
     η = model.consts.eta
     ε = model.consts.epsilon   
-
+    logδ = log(δ)
+    logτ = log(τ)
     @inbounds begin
         for k ∈ 1:6
-            ai += n[k]*(δ^d[k])*(τ^t[k])
+            ai += n[k]*exp(logδ*d[i] + logτ*t[i])
         end
         for (k,k_) ∈ zip(7:12,1:6)
-            ai += n[k]*(δ^d[k])*(τ^t[k])*exp(-δ^c[k_])
+            ai += n[k]*exp(logδ*d[i] + logτ*t[i] -δ^c[k_])
         end
 
         for (k,k_) ∈ zip(13:23,1:11)
-            ai += n[k]*(δ^(d[k]))*(τ^(t[k]))*
-            exp(-η[k_]*(δ - ε[k_])^2 - β[k_]*(τ -γ[k_])^2)
+            ai += n[k]*
+            exp(logδ*d[i] + logτ*t[i] -η[k_]*(δ - ε[k_])^2 - β[k_]*(τ -γ[k_])^2)
         end
     end
     return ai
