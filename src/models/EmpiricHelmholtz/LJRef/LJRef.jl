@@ -46,55 +46,12 @@ function LJUnscaledRef()
     return EmpiricSingleFluid(type,components,properties,ancilliaries,ideal,residual,references)
 end
 
-
 struct LJRefParam <: EoSParam
     epsilon::PairParam{Float64}
     sigma::PairParam{Float64}
     segment::SingleParam{Float64}
     Mw::SingleParam{Float64}
 end
-
-struct LJRefConsts <: EoSParam
-    n::Vector{Float64}
-    t::Vector{Float64}
-    d::Vector{Int}
-    c::Vector{Int}
-    beta::Vector{Float64}
-    gamma::Vector{Float64}
-    eta::Vector{Float64}
-    epsilon::Vector{Float64}
-    function LJRefConsts()
-        n = [0.005208073, 2.186252, -2.161016, 1.4527, -2.041792, 0.18695286, -0.090988445, -0.4974561, 0.10901431, -0.80055922, -0.568839, -0.6208625, 
-        -1.4667177, 1.891469, -0.1383701, -0.3869645, 0.1265702, 0.605781, 1.179189, -0.47732679, -9.9218575, -0.5747932, 0.003772923]
-        
-        t = [1.0, 0.32, 0.505, 0.672, 0.843, 0.898, 1.294, 2.59, 1.786, 2.77, 1.786, 1.205, 2.83, 2.548, 4.65, 1.385, 1.46, 1.351, 0.66, 1.496, 1.83, 1.616, 4.97]
-       
-        d = [4, 1, 1, 2, 2, 3, 5, 2, 2, 3, 1, 1, 1, 1, 2, 3, 3, 2, 1, 2, 3, 1, 1]
-        
-        c = [1, 2, 1, 2, 2, 1]
-        g = [
-        2.067 0.625 0.710 0.2053
-        1.522 0.638 0.860 0.4090
-        8.820 3.910 1.940 0.6000
-        1.722 0.156 1.480 1.2030
-        0.679 0.157 1.490 1.8290
-        1.883 0.153 1.945 1.3970
-        3.925 1.160 3.020 1.3900
-        2.461 1.730 1.110 0.5390
-        28.20 383.0 1.170 0.9340
-        0.753 0.112 1.330 2.3690
-        0.820 0.119 0.240 2.4300]
-        
-        eta = g[:,1]
-        beta = g[:,2]
-        gamma = g[:,3]
-        epsilon = g[:,4]  
-        return new(n,t,d,c,beta,gamma,eta,epsilon)
-    end
-    
-end
-
-is_splittable(::LJRefConsts) = false
 
 struct LJRef{M} <: EmpiricHelmholtzModel
     components::Vector{String}
@@ -176,7 +133,7 @@ function LJRef(components;
     params = LJRefParam(epsilon,sigma,segment,Mw)
     unscaled_lj = LJUnscaledRef()
     references = ["10.1063/1.4945000"]
-    return LJRef(components,unscaled_lj,consts,references)
+    return LJRef(components,unscaled_lj,unscaled_lj,references)
 end
 
 function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
