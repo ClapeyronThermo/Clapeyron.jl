@@ -1,3 +1,52 @@
+function LJUnscaledRef()
+    type = nothing #standard multifluid
+
+    components = ["Leonard-Jones Fluid (unscaled)"]
+    Mw = 1. #g·mol-1
+    T_c = 1.32    #K
+    P_c = 0.13006 #Pa
+    rho_c = 0.31 # mol·m-3
+    lb_volume = 1/(π/6)
+    Ttp = NaN #K
+    ptp =  NaN
+    rhov_tp  = NaN 
+    rhol_tp = NaN
+    Rgas = R̄
+    acentric_factor = NaN
+    
+    properties = EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+    
+    a₁ = 6.262265814
+    a₂ = 1.515151515   
+    u = Float64[]
+    v = Float64[]
+    c0 = 2.5
+
+    ideal = EmpiricSingleFluidIdealParam(a₁,a₂,c0,u,v)
+
+    n = [0.005208073, 2.186252, -2.161016, 1.4527, -2.041792, 0.18695286, -0.090988445, -0.4974561, 0.10901431, -0.80055922, -0.568839, -0.6208625, 
+    -1.4667177, 1.891469, -0.1383701, -0.3869645, 0.1265702, 0.605781, 1.179189, -0.47732679, -9.9218575, -0.5747932, 0.003772923]
+    t = [1.0, 0.32, 0.505, 0.672, 0.843, 0.898, 1.294, 2.59, 1.786, 2.77, 1.786, 1.205, 2.83, 2.548, 4.65, 1.385, 1.46, 1.351, 0.66, 1.496, 1.83, 1.616, 4.97]
+    d = [4, 1, 1, 2, 2, 3, 5, 2, 2, 3, 1, 1, 1, 1, 2, 3, 3, 2, 1, 2, 3, 1, 1]  
+    l = [1, 2, 1, 2, 2, 1]   
+    η = [2.067, 1.522, 8.82, 1.722, 0.679, 1.883, 3.925, 2.461, 28.2, 0.753, 0.82]
+    β = [0.625, 0.638, 3.91, 0.156, 0.157, 0.153, 1.16, 1.73, 383.0, 0.112, 0.119]
+    γ = [0.71, 0.86, 1.94, 1.48, 1.49, 1.945, 3.02, 1.11, 1.17, 1.33, 0.24]
+    ε = [0.2053, 0.409, 0.6, 1.203, 1.829, 1.397, 1.39, 0.539, 0.934, 2.369, 2.43]  
+
+    residual = EmpiricSingleFluidParam(n,t,d,l,η,β,γ,ε)
+
+    ancilliary_gas = PolExpVapour(T_c,rho_c,[-0.69655e+1,-0.10331e+3,-0.20325e+1,-0.44481e+2,-0.18463e+2,-0.26070e+3],[1.320 ,19.24,0.360,8.780,4.040,41.60])
+    ancilliary_liquid = PolExpLiquid(T_c,rho_c,[0.1362e+1,0.2093e+1,-0.2110e+1,0.3290e0,0.1410e+1],[0.313 ,0.940,1.630,17.,2.4])
+    ancilliary_pressure = PolExpSat(T_c,P_c,[0.54000e+1,0.44704e01,-0.18530e+1,0.19890e0,-0.11250e+1],[1.,1.5,4.7,2.5,21.4])
+    ancilliaries = CompositeModel(components,gas = ancilliary_gas,liquid = ancilliary_liquid,saturation = ancilliary_pressure)
+
+    references = ["10.1063/1.4945000"]
+
+    return EmpiricSingleFluid(type,components,properties,ancilliaries,ideal,residual,references)
+end
+
+
 struct LJRefParam <: EoSParam
     epsilon::PairParam{Float64}
     sigma::PairParam{Float64}
@@ -15,94 +64,14 @@ struct LJRefConsts <: EoSParam
     eta::Vector{Float64}
     epsilon::Vector{Float64}
     function LJRefConsts()
-        n = [
-        0.52080730e-2,
-        0.21862520e+1,
-        -0.21610160e+1,
-        0.14527000e+1,
-        -0.20417920e+1,
-        0.18695286e0,
-        -0.90988445e-1,
-        -0.49745610e0,
-        0.10901431e0,
-        -0.80055922e0,
-        -0.56883900e0,
-        -0.62086250e0,
-        -0.14667177e+1,
-        0.18914690e+1,
-        -0.13837010e0,
-        -0.38696450e0,
-        0.12657020e0,
-        0.60578100e0,
-        0.11791890e+1,
-        -0.47732679e0,
-        -0.99218575e+1,
-        -0.57479320e0,
-        0.37729230e-2,
-        ]
+        n = [0.005208073, 2.186252, -2.161016, 1.4527, -2.041792, 0.18695286, -0.090988445, -0.4974561, 0.10901431, -0.80055922, -0.568839, -0.6208625, 
+        -1.4667177, 1.891469, -0.1383701, -0.3869645, 0.1265702, 0.605781, 1.179189, -0.47732679, -9.9218575, -0.5747932, 0.003772923]
         
-        t = [
-        1.000
-        0.320
-        0.505
-        0.672
-        0.843
-        0.898
-        1.294
-        2.590
-        1.786
-        2.770
-        1.786
-        1.205
-        2.830
-        2.548
-        4.650
-        1.385
-        1.460
-        1.351
-        0.660
-        1.496
-        1.830
-        1.616
-        4.970
-        ]
+        t = [1.0, 0.32, 0.505, 0.672, 0.843, 0.898, 1.294, 2.59, 1.786, 2.77, 1.786, 1.205, 2.83, 2.548, 4.65, 1.385, 1.46, 1.351, 0.66, 1.496, 1.83, 1.616, 4.97]
+       
+        d = [4, 1, 1, 2, 2, 3, 5, 2, 2, 3, 1, 1, 1, 1, 2, 3, 3, 2, 1, 2, 3, 1, 1]
         
-        d = [
-        4
-        1
-        1
-        2
-        2
-        3
-        5
-        2
-        2
-        3
-        1
-        1
-        1
-        1
-        2
-        3
-        3
-        2
-        1
-        2
-        3
-        1
-        1
-        ]
-        c = 
-        [
-        1
-        2
-        1
-        2
-        2
-        1
-        
-        ]
-        
+        c = [1, 2, 1, 2, 2, 1]
         g = [
         2.067 0.625 0.710 0.2053
         1.522 0.638 0.860 0.4090
@@ -127,12 +96,13 @@ end
 
 is_splittable(::LJRefConsts) = false
 
-struct LJRef <: EmpiricHelmholtzModel
+struct LJRef{M} <: EmpiricHelmholtzModel
     components::Vector{String}
     params::LJRefParam
-    consts::LJRefConsts
+    unscaled_lj::M
     references::Vector{String}
 end
+
 @registermodel LJRef
 
 export LJRef
@@ -182,7 +152,7 @@ aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ
 ```
 parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 
-!!! warning "Mutiple component warning"
+!!! warning "Multiple component warning"
 
     The original model was done with only one component in mind. to support multiple components, a VDW 1-fluid mixing rule (shown above) is implemented, but it is not tested.
 
@@ -204,9 +174,9 @@ function LJRef(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     segment = params["segment"]
     params = LJRefParam(epsilon,sigma,segment,Mw)
-    consts = LJRefConsts()
+    unscaled_lj = LJUnscaledRef()
     references = ["10.1063/1.4945000"]
-    return LJRef(components,params,consts,references)
+    return LJRef(components,unscaled_lj,consts,references)
 end
 
 function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
@@ -219,39 +189,13 @@ function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
         mᵢ = m[i]
         τᵢ = 1.32/(T/ϵ[i])  
         δᵢ = (mᵢ*N_A*ρ*σ[i]^3)/0.31
-        aᵢ = log(δᵢ) + 1.5*log(τᵢ) + 1.515151515*τᵢ + 6.262265814 
+        aᵢ = _f0(model.unscaled_lj,δᵢ,τᵢ)
         res += z[i]*(aᵢ + log(z[i]) - lnΣz)
     end
     return res
 end
 
-function _fr(model::LJRef,δ,τ)
-    ai = zero(δ+τ)
-    n = model.consts.n
-    t = model.consts.t
-    d = model.consts.d
-    c = model.consts.c
-    β = model.consts.beta
-    γ = model.consts.gamma
-    η = model.consts.eta
-    ε = model.consts.epsilon   
-    logδ = log(δ)
-    logτ = log(τ)
-    @inbounds begin
-        for k ∈ 1:6
-            ai += n[k]*exp(logδ*d[k] + logτ*t[k])
-        end
-        for (k,k_) ∈ zip(7:12,1:6)
-            ai += n[k]*exp(logδ*d[k] + logτ*t[k] -δ^c[k_])
-        end
-
-        for (k,k_) ∈ zip(13:23,1:11)
-            ai += n[k]*
-            exp(logδ*d[k] + logτ*t[k] -η[k_]*(δ - ε[k_])^2 - β[k_]*(τ -γ[k_])^2)
-        end
-    end
-    return ai
-end
+_fr(model::LJRef,δ,τ) = _fr(model.unscaled_lj,δ,τ)
 
 #TODO: better relations? EoSRef was done with one fluid in mind.
 #this is technically an unsafe extension.
@@ -373,7 +317,7 @@ function ljref_rholsat(Tr)
     n = (0.1362e+1,0.2093e+1,-0.2110e+1,0.3290e0,0.1410e+1)
     t = (0.313 ,0.940,1.630,17.,2.4)
     tr1 = one(Tr) - Tr
-    res = sum(ni*tr1^ti for (ni,ti) in zip(n,t))
+    res = evalexppoly(tr1,n,t)
     rhoc = 0.31
     return (1+res)*rhoc
 end
@@ -382,7 +326,7 @@ function ljref_rhovsat(Tr)
     n = (-0.69655e+1,-0.10331e+3,-0.20325e+1,-0.44481e+2,-0.18463e+2,-0.26070e+3)
     t = (1.320 ,19.24,0.360,8.780,4.040,41.60)
     tr1 = one(Tr) - Tr
-    res = sum(ni*tr1^ti for (ni,ti) in zip(n,t))
+    res = evalexppoly(tr1,n,t)
     rhoc = 0.31
     return exp(res)*rhoc
 end
@@ -396,7 +340,6 @@ function x0_sat_pure_lj(model,T)
 end
 
 x0_sat_pure(model::LJRef,T) = x0_sat_pure_lj(model,T)
-
 
 function p_scale(model::LJRef,z = SA[1.0])
     rhoc = 1/(_v_scale(model,z))

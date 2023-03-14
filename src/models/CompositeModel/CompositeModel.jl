@@ -1,6 +1,7 @@
 #this model only holds a named tuple with all models.
 include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
+include("PolExpVapour.jl")
 """
     CompositeModel(components;
     gas = BasicIdeal,

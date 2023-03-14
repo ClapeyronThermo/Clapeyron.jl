@@ -1,4 +1,3 @@
-
 """
     mixing_rule_asymetric(op, op_asym, x, p, A, A_asym)
 
@@ -83,7 +82,7 @@ function _v_scale(model::MultiFluidModel,z=SA[1.],Σz = sum(z))
 end
 
 function lb_volume(model::MultiFluidModel,z=SA[1.])
-    return dot(z,model.properties.lb_v.values)
+    return dot(z,model.properties.lb_volume.values)
 end
 
 function _delta(model::MultiFluidModel, rho, T, z=SA[1.],Σz = sum(z))
@@ -102,7 +101,7 @@ function _f0(model::MultiFluidModel, ρ, T, z=SA[1.], Σz = sum(z))
     _0 = zero(ρ + T + first(z))
     lnΣz = log(Σz)
     res = _0
-    vc = model.properties.vc.values
+    vc = model.properties.Vc.values
     Tc = model.properties.Tc.values
     ϑ = model.ideal.theta.values
     n0 = model.ideal.n0.values
@@ -138,16 +137,17 @@ function _fr1(model::MultiFluidModel,δ,τ,z)
     @inbounds for i ∈ @comps
         ai = _0
         k1,k2,kexp = ith_index(k_all,k_exp,i)
-        for k ∈ k1
-            ai += nᵢ[k]*exp(lnδ*dᵢ[k] + lnτ*tᵢ[k])
-            #ai += nᵢ[k]*(δ^dᵢ[k])*(τ^tᵢ[k])
-        end
-
-        for (k,k_) ∈ zip(k2,kexp)
-
-            ai += nᵢ[k]*exp(lnδ*dᵢ[k] + lnτ*tᵢ[k] - δ^cᵢ[k_])
-            #ai += nᵢ[k]*(δ^dᵢ[k])*(τ^tᵢ[k])*exp(-δ^cᵢ[k_])
-        end  
+        n_pol = view(n,k1)
+        t_pol = view(t,k1)
+        d_pol = view(d,k1)
+        ai += _fr1_pol(δ,τ,lnδ,lnτ,_0,n_pol,t_pol,d_pol)
+        
+        n_exp = view(n,k2)
+        t_exp = view(t,k2)
+        d_exp = view(d,k2)
+        c_exp = view(c,kexp)
+        ai += _fr1_exp(δ,τ,lnδ,lnτ,_0,n_exp,t_exp,d_exp,c_exp)
+ 
         res += z[i]*ai 
     end
     return res
@@ -179,14 +179,22 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
             i = rows[ii]
             Fᵢⱼ= Fij[ii]
             aij = _0
-            k1,k2,kexp = ith_index(k_all,k_exp,ii)
-            for k ∈ k1
-                aij += nᵢⱼ[k]*exp(lnδ*dᵢⱼ[k] + lnτ*tᵢⱼ[k])
-                #aij += nᵢⱼ[k]*(δ^(dᵢⱼ[k]))*(τ^(tᵢⱼ[k]))
-            end
-            for (k,k_) ∈ zip(k2,kexp)
-                aij += nᵢⱼ[k]*exp(lnδ*dᵢⱼ[k] + lnτ*tᵢⱼ[k] - ηᵢⱼ[k_]*(δ - εᵢⱼ[k_])^2 - βᵢⱼ[k_]*(δ -γᵢⱼ[k_]))
-            end
+            k1,k2,kgauss = ith_index(k_all,k_exp,ii)
+            
+            n = view(nᵢⱼ,k1)
+            t = view(tᵢⱼ,k1)
+            d = view(dᵢⱼ,k1)
+            ai += _fr1_pol(δ,τ,lnδ,lnτ,_0,n_pol,t_pol,d_pol)
+            
+            n_gauss = view(nᵢⱼ,k2)
+            t_gauss = view(tᵢⱼ,k2)
+            d_gauss = view(dᵢⱼ,k2)
+            η = view(ηᵢⱼ,kgauss)
+            β = view(βᵢⱼ,kgauss)
+            γ = view(γᵢⱼ,kgauss)
+            ε = view(εᵢⱼ,kgauss)
+            ai += _fr1_gauss(δ,τ,lnδ,lnτ,_0,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
+            
            res +=z[i]*z[j]*Fᵢⱼ*aij
         end
      end

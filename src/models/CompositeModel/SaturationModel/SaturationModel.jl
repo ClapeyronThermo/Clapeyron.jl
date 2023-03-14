@@ -39,17 +39,8 @@ function saturation_temperature_impl(model::SaturationModel,p,method::Saturation
     return sol,nan,nan
 end
 
-#=
-    tc = temperature(model,CriticalPoint())
-    pc = pressure(model,CriticalPoint())
-    t7 = 0.7*tc
-    p7 = pressure_impl(QuickStates.sat_t(),model,t7)
-    
-    h = 2.3333333333333335*log(pc/p7)
-    return 1/(1-log(p/pc)/h)*tc
-end
-=#
 eos(model,V,T,z=SA[1.0]) = not_eos_error(model)
 
 include("LeeKeslerSat/LeeKeslerSat.jl")
 include("DIPPR101Sat/DIPPR101Sat.jl")
+include("PolExpSat/PolExpSat.jl")

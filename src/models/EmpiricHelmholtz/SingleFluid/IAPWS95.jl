@@ -1,0 +1,153 @@
+struct IAPWS95Tag end
+
+"""
+    IAPWS95 <: EmpiricHelmholtzModel
+    IAPWS95()
+
+## Input parameters
+
+None
+
+## Description
+
+IAPWS95 (International Association for the Properties of Water and Steam) Pure water Model, 2018 update.
+
+```
+δ = ρ/ρc
+τ = T/Tc
+a⁰(δ,τ) = log(δ) + n⁰₁ + n⁰₂τ + n⁰₃log(τ) + ∑n⁰ᵢ(1-exp(-γ⁰ᵢτ)), i ∈ 4:8
+aʳ(δ,τ)  = aʳ₁+ aʳ₂ + aʳ₃ + aʳ₄
+aʳ₁(δ,τ)  =  ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:7
+aʳ₂(δ,τ)  =  ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 8:51
+aʳ₃(δ,τ)  =  ∑nᵢexp(-αᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 52:54
+aʳ₄(δ,τ) = ∑nᵢδΨΔ^(bᵢ), i ∈ 55:56
+Δ = θ^2 + Bᵢ[(δ - 1)^2]^aᵢ
+θ = (1 - τ) + Aᵢ[(δ - 1)^2]^(1/2βᵢ)
+Ψ = exp(-Cᵢ(δ - 1)^2 - Dᵢ(τ - 1)^2)
+```
+parameters `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`α`,`β`,`γ`,`ε`,`A`,`B`,`C`,`D` where obtained via fitting.
+
+## References
+
+1. Wagner, W., & Pruß, A. (2002). The IAPWS formulation 1995 for the thermodynamic properties of ordinary water substance for general and scientific use. Journal of physical and chemical reference data, 31(2), 387–535. [doi:10.1063/1.1461829](https://doi.org/10.1063/1.1461829)
+2. IAPWS R6-95 (2018). Revised Release on the IAPWS Formulation 1995 for the Thermodynamic Properties of Ordinary Water Substance for General and Scientific Use
+
+"""
+function IAPWS95() 
+    
+    type = IAPWS95Tag() #we use this to add the special IAPWS95 term
+
+    components = ["water"]
+    
+    Mw = 18.015268 #g·mol-1
+    T_c = 647.096  #K
+    P_c = 2.2064e7 #Pa
+    rho_c= 17873.72799560906 # mol·m-3, calculated from rho_c = 322 kg·m-3
+    lb_volume = 1.4393788065379039e-5
+    Ttp = 273.16 #K
+    ptp = 611.6548008968684 
+    rhov_tp  = NaN
+    rhol_tp = NaN
+    Rgas = 8.3143713575874
+    acentric_factor = 0.3442920843
+    
+    properties = EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+    
+    a₁ = -8.3204464837497
+    a₂ = 6.6832105275932
+    c0 = 4.00632
+    v = [0.012436, 0.97315, 1.2795, 0.96956, 0.24873]
+    u = [1.28728967, 3.53734222, 7.74073708, 9.24437796,27.5075105]
+    ideal = EmpiricSingleFluidIdealParam(a₁,a₂,c0,u,v)
+
+    n = [0.12533547935523e-1, 0.78957634722828e1, -0.87803203303561e1,
+    0.31802509345418, -0.26145533859358, -0.78199751687981e-2,
+    0.88089493102134e-2,
+    -0.66856572307965, 0.20433810950965, -0.66212605039687e-4,
+    -0.19232721156002, -0.25709043003438, 0.16074868486251,
+    -0.040092828925807, 0.39343422603254e-6, -0.75941377088144e-5,
+    0.56250979351888e-3, -0.15608652257135e-4, 0.11537996422951e-8,
+    .36582165144204e-6, -.13251180074668e-11, -.62639586912454e-9,
+    -0.10793600908932, 0.17611491008752e-1, 0.22132295167546,
+    -0.40247669763528, 0.58083399985759, 0.49969146990806e-2,
+    -0.31358700712549e-1, -0.74315929710341, 0.47807329915480,
+    0.20527940895948e-1, -0.13636435110343, 0.14180634400617e-1,
+    0.83326504880713e-2, -0.29052336009585e-1, 0.38615085574206e-1,
+    -0.20393486513704e-1, -0.16554050063734e-2, .19955571979541e-2,
+    0.15870308324157e-3, -0.16388568342530e-4, 0.43613615723811e-1,
+    0.34994005463765e-1, -0.76788197844621e-1, 0.22446277332006e-1,
+    -0.62689710414685e-4, -0.55711118565645e-9, -0.19905718354408,
+    0.31777497330738, -0.11841182425981,
+    -0.31306260323435e2, 0.31546140237781e2, -0.25213154341695e4]
+
+    t = [-0.5, 0.875, 1, 0.5, 0.75, 0.375, 1,
+    4, 6, 12, 1, 5, 4, 2, 13, 9, 3, 4, 11, 4, 13, 1, 7, 1, 9, 10, 10, 3, 7,
+    10, 10, 6, 10, 10, 1, 2, 3, 4, 8, 6, 9, 8, 16, 22, 23,23, 10, 50, 44, 46, 50,
+    0,1,4]
+
+    d = [1, 1, 1, 2, 2, 3, 4,
+    1, 1, 1, 2, 2, 3, 4, 4, 5, 7, 9, 10, 11, 13, 15, 1, 2, 2, 2, 3,
+    4, 4, 4, 5, 6, 6, 7, 9, 9, 9, 9, 9, 10, 10, 12, 3, 4, 4, 5, 14, 3, 6, 6, 6,
+    3,3,3]
+
+    l = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 6, 6,6, 6]
+
+
+    η = [20.0,20.0,20.0]
+    β = [150.0,150.0,150.0]
+    γ = [1.21,1.21,1.21]
+    ε = [1.,1.,1.]
+
+    residual = EmpiricSingleFluidParam(n,t,d,l,η,β,γ,ε)
+
+    ancilliary_gas = PolExpVapour(T_c,rho_c,[-2.03150240,-2.68302940,-5.38626492,-17.2991605,-44.7586581,-63.9201063],[2/6,4/6,8/6,18/6,37/6,71/6])
+    ancilliary_liquid = PolExpLiquid(T_c,rho_c,[1.99274064,1.09965342,-0.510839303,-1.75493479,-45.5170352,-6.74694450e5],[1/3,2/3,5/3,16/3,43/3,110/3])
+    ancilliary_pressure = PolExpSat(T_c,P_c,[-7.85951783,1.84408259,-11.7866497,22.6807411,-15.9618719,1.80122502],[1.0,1.5,3,3.5,4,7.5])
+    ancilliaries = CompositeModel(components,gas = ancilliary_gas,liquid = ancilliary_liquid,saturation = ancilliary_pressure)
+    
+    references = ["IAPWS R6-95(2018)"]
+
+    return EmpiricSingleFluid(type,components,properties,ancilliaries,ideal,residual,references)
+end
+
+function _frx(model::EmpiricSingleFluid{IAPWS95Tag}, δ, τ)
+    nδ1,nδ2 = (-0.14874640856724*δ, 0.31806110878444*δ)
+    _δ = (δ-1.0)^2
+    _τ = (τ-1.0)^2
+    Θ = (1.0-τ) + 0.32*_δ^(1.6666666666666667)
+    Δ = Θ^2 + 0.2*_δ^3.5
+    Ψ1 = exp(- 28*_δ - 700*_τ)
+    Ψ2 = exp(- 32*_δ - 800*_τ)
+    Δb1 = Δ^0.85
+    Δb2 = Δ^0.95
+    return nδ1*Δb1*Ψ1 + nδ2*Δb2*Ψ2
+end
+
+"""
+    IAPWS95Ideal <: IdealModel
+    IAPWS95Ideal(components; 
+    userlocations::Array{String,1}=String[], 
+    verbose=false)
+
+    IAPWS95Ideal()
+
+## Input parameters
+
+None
+
+## Description
+
+IAPWS95 ideal helmholtz model for use in other models. Only valid for water. Check [`IAPWS95`](@ref) for more information.
+
+## References
+
+1. Wagner, W., & Pruß, A. (2002). The IAPWS formulation 1995 for the thermodynamic properties of ordinary water substance for general and scientific use. Journal of physical and chemical reference data, 31(2), 387–535. [doi:10.1063/1.1461829](https://doi.org/10.1063/1.1461829)
+2. IAPWS R6-95 (2018). Revised Release on the IAPWS Formulation 1995 for the Thermodynamic Properties of Ordinary Water Substance for General and Scientific Use
+
+"""
+function IAPWS95Ideal()
+    return idealmodel(IAPWS95())
+end 
+
+export IAPWS95

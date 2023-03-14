@@ -3,10 +3,10 @@ abstract type MultiFluidModel <: EmpiricHelmholtzModel end
 struct MultiFluidPropertyParam <: EoSParam
     Mw::SingleParam{Float64} #SingleParam
     rhoc::SingleParam{Float64} #SingleParam
-    vc::SingleParam{Float64} #SingleParam
+    Vc::SingleParam{Float64} #SingleParam
     Tc::SingleParam{Float64} #SingleParam
     pc::SingleParam{Float64} #SingleParam
-    lb_v::SingleParam{Float64} #SingleParam
+    lb_volume::SingleParam{Float64} #SingleParam
 end
 
 struct MultiFluidIdealParam <: EoSParam

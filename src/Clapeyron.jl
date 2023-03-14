@@ -98,13 +98,18 @@ include("models/utility/SpecialComp.jl")
 include("models/utility/EoSVectorParam.jl")
 include("models/utility/ZeroResidual.jl")
 
+#Empiric Models uses CompositeModel
+include("models/CompositeModel/CompositeModel.jl")
+
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
+include("models/EmpiricHelmholtz/EmpiricHelmholtz.jl")
+include("models/EmpiricHelmholtz/SingleFluid/SingleFluid.jl")
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
 include("models/EmpiricHelmholtz/IAPWS95/IAPWS95Ideal.jl")
-include("models/EmpiricHelmholtz/PropaneRef.jl")
-include("models/EmpiricHelmholtz/Ammonia2023.jl")
-include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
-include("models/EmpiricHelmholtz/LJRef/LJRefIdeal.jl")
+include("models/EmpiricHelmholtz/SingleFluid/PropaneRef.jl")
+include("models/EmpiricHelmholtz/SingleFluid/Ammonia2023.jl")
+include("models/EmpiricHelmholtz/SingleFluid/LJRef/LJRef.jl")
+include("models/EmpiricHelmholtz/SingleFluid/LJRef/LJRefIdeal.jl")
 include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
 include("models/cubic/equations.jl")
@@ -113,7 +118,6 @@ include("models/cubic/RK/RK.jl")
 include("models/cubic/PR/PR.jl")
 include("models/cubic/KU/KU.jl")
 include("models/cubic/RKPR/RKPR.jl")
-
 
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
@@ -178,7 +182,6 @@ include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 include("models/Virial/Virial.jl")
 
 #include("models/UFTheory/UFTheory.jl")
-include("models/CompositeModel/CompositeModel.jl")
 
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")

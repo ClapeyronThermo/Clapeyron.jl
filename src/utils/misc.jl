@@ -82,10 +82,16 @@ function doi2bib(doi::String)
     end
 end
 
+"""
+    evalexppoly(x,n,v)
+
+Returns ∑nᵢx^vᵢ.
+"""
 function evalexppoly(x,n,v)
     res = zero(x*first(n)*first(v))
+    logx = log(x)
     for i in 1:length(n)
-        res += n[i]*x^v[i]
+        res += n[i]*exp(logx*v[i])
     end
     return res
 end
