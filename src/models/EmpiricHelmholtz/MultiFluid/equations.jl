@@ -68,7 +68,7 @@ function T_scales(model::MultiFluidModel,z=SA[1.])
 end
 
 function _v_scale(model::MultiFluidModel,z=SA[1.],Σz = sum(z))
-    vc = model.properties.vc.values
+    vc = model.properties.Vc.values
     #isone(length(z)) && return only(vc) 
     res = mixing_rule_asymetric(
         (a,b) -> ((cbrt(a) + cbrt(b))*0.5)^3,
@@ -137,15 +137,15 @@ function _fr1(model::MultiFluidModel,δ,τ,z)
     @inbounds for i ∈ @comps
         ai = _0
         k1,k2,kexp = ith_index(k_all,k_exp,i)
-        n_pol = view(n,k1)
-        t_pol = view(t,k1)
-        d_pol = view(d,k1)
+        n_pol = view(nᵢ,k1)
+        t_pol = view(tᵢ,k1)
+        d_pol = view(dᵢ,k1)
         ai += _fr1_pol(δ,τ,lnδ,lnτ,_0,n_pol,t_pol,d_pol)
         
-        n_exp = view(n,k2)
-        t_exp = view(t,k2)
-        d_exp = view(d,k2)
-        c_exp = view(c,kexp)
+        n_exp = view(nᵢ,k2)
+        t_exp = view(tᵢ,k2)
+        d_exp = view(dᵢ,k2)
+        c_exp = view(cᵢ,kexp)
         ai += _fr1_exp(δ,τ,lnδ,lnτ,_0,n_exp,t_exp,d_exp,c_exp)
  
         res += z[i]*ai 
