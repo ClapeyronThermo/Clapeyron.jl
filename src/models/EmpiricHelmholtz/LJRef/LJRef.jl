@@ -48,7 +48,7 @@ function TholLJ()
 
     references = ["10.1063/1.4945000"]
 
-    return EmpiricSingleFluid(type,components,properties,ancilliaries,ideal,residual,references)
+    return EmpiricSingleFluid(components,properties,ancilliaries,ideal,residual,references)
 end
 
 struct LJRefParam <: EoSParam

@@ -98,7 +98,17 @@ function IAPWS95()
     γ = [1.21,1.21,1.21]
     ε = [1.,1.,1.]
 
-    residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε)
+
+    NA_A = [0.32,0.32]
+    NA_B = [0.2,0.2]
+    NA_C = [28,32]
+    NA_D = [700,800]
+    NA_a = [3.5,3.5]
+    NA_b = [0.85,0.95]
+    NA_beta = [0.3,0.3]
+    NA_n = [-0.14874640856724,0.31806110878444]
+
+    residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε,Float64[],NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
 
     ancilliary_gas = PolExpVapour(T_c,rho_c,[-2.03150240,-2.68302940,-5.38626492,-17.2991605,-44.7586581,-63.9201063],[2/6,4/6,8/6,18/6,37/6,71/6])
     ancilliary_liquid = PolExpLiquid(T_c,rho_c,[1.99274064,1.09965342,-0.510839303,-1.75493479,-45.5170352,-6.74694450e5],[1/3,2/3,5/3,16/3,43/3,110/3])
@@ -107,7 +117,7 @@ function IAPWS95()
     
     references = ["IAPWS R6-95(2018)"]
 
-    return EmpiricSingleFluid(type,components,properties,ancilliaries,ideal,residual,references)
+    return EmpiricSingleFluid(components,properties,ancilliaries,ideal,residual,references)
 end
 
 function _frx(model::EmpiricSingleFluid{IAPWS95Tag}, δ, τ)

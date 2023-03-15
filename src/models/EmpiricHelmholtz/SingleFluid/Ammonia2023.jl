@@ -71,7 +71,7 @@ function Ammonia2023()
     
     references = ["10.1063/5.0128269"]
 
-    return EmpiricSingleFluid(type,components,properties,ancilliaries,ideal,residual,references)
+    return EmpiricSingleFluid(components,properties,ancilliaries,ideal,residual,references)
 end
 
 export Ammonia2023

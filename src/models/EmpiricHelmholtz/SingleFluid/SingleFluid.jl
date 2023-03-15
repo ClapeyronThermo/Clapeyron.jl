@@ -101,7 +101,6 @@ const ESFProperties = EmpiricSingleFluidProperties
 const ESFIdealParam = EmpiricSingleFluidIdealParam
 const ESFResidualParam = EmpiricSingleFluidResidualParam
 
-
 struct EmpiricSingleFluid{𝔸} <: EmpiricHelmholtzModel
     components::Vector{String}
     properties::ESFProperties
@@ -404,7 +403,7 @@ function _parse_ideal(id_data)
     np = Float64[]
     tp = Float64[]
     for id_data_i in id_data
-        if id_data_i[:type] == "IdealGasHelmholtzLead"
+        if id_data_i[:type] == "IdealGasHelmholtzLead" || id_data_i[:type] == "IdealGasHelmholtzEnthalpyEntropyOffset"
             a1 += id_data_i[:a1]
             a2 += id_data_i[:a2]
         elseif id_data_i[:type] == "IdealGasHelmholtzLogTau"
@@ -632,11 +631,11 @@ all ideal types
  "IdealGasHelmholtzLead" done
  "IdealGasHelmholtzLogTau" done
  "IdealGasHelmholtzPlanckEinstein" done
- "IdealGasHelmholtzEnthalpyEntropyOffset" not done, a lot of components have it
+ "IdealGasHelmholtzEnthalpyEntropyOffset" done, same as Lead
  "IdealGasHelmholtzPower" done
  "IdealGasHelmholtzPlanckEinsteinGeneralized" done
  "IdealGasHelmholtzCP0PolyT" done
- "IdealGasHelmholtzCP0AlyLee" #not done, only n-Heptane and D6 have it
+ "IdealGasHelmholtzCP0AlyLee" #not done, only n-Heptane and D6 have it, only 5 terms
  "IdealGasHelmholtzCP0Constant" done
 
 all residual types
