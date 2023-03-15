@@ -227,7 +227,7 @@ function _parse_residual(res_data)
     gao_b = GaoBTerm(n_gao,t_gao,d_gao,eta_gao,beta_gao,gamma_gao,epsilon_gao,b_gao)
 
     #non analytical term
-    na = NonAnalyticalTerm(NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
+    na = NonAnalyticTerm(NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
 
     
    return EmpiricSingleFluidResidualParam(_n,_t,_d,_l,_η,_β,_γ,_ε;gao_b,na)

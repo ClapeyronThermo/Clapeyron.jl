@@ -179,7 +179,7 @@ function eos_res(model::EmpiricSingleFluid,V,T,z=SA[1.0])
     rhoc = model.properties.rhoc
     N = only(z)
     rho = (N/V)
-    δ = rho/rho_c
+    δ = rho/rhoc
     τ = Tc/T
     return N*R*T*_fr1(model,δ,τ)
 end
@@ -197,7 +197,8 @@ lb_volume(model::EmpiricSingleFluid,z=SA[1.0]) = model.properties.lb_volume #fin
 Base.length(::EmpiricSingleFluid) = 1
 
 function Base.show(io::IO,mime::MIME"text/plain",model::EmpiricSingleFluid)
-    print(io,"Reference Equation of state for $(model.components[1])")
+    print(io,"MultiParameter Equation of state for $(model.components[1]):")
+
 end
 
 function x0_sat_pure(model::EmpiricSingleFluid,T,z=SA[1.0])
