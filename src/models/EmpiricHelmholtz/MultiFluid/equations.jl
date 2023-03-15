@@ -179,7 +179,10 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
             i = rows[ii]
             Fᵢⱼ= Fij[ii]
             aij = _0
-            k1,k2,kgauss = ith_index(k_all,k_exp,ii)
+            #GERG2008 uses a very particular set of terms
+            #instead of -η(δ-ε)^2 - β(τ-γ)^2
+            #uses -η(δ-ε)^2 - β(δ-γ)
+            k1,k2,kgerg = ith_index(k_all,k_exp,ii)
             
             n = view(nᵢⱼ,k1)
             t = view(tᵢⱼ,k1)
@@ -189,11 +192,11 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
             n_gauss = view(nᵢⱼ,k2)
             t_gauss = view(tᵢⱼ,k2)
             d_gauss = view(dᵢⱼ,k2)
-            η = view(ηᵢⱼ,kgauss)
-            β = view(βᵢⱼ,kgauss)
-            γ = view(γᵢⱼ,kgauss)
-            ε = view(εᵢⱼ,kgauss)
-            ai += _fr1_gauss(δ,τ,lnδ,lnτ,_0,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
+            η = view(ηᵢⱼ,kgerg)
+            β = view(βᵢⱼ,kgerg)
+            γ = view(γᵢⱼ,kgerg)
+            ε = view(εᵢⱼ,kgerg)
+            ai += _fr1_gerg2008(δ,τ,lnδ,lnτ,_0,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
             
            res +=z[i]*z[j]*Fᵢⱼ*aij
         end

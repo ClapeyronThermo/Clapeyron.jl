@@ -22,3 +22,5 @@ end
 
 Base.length(::PolExpLiquid) = 1
 is_splittable(::PolExpLiquid) = false
+
+export PolExpLiquid

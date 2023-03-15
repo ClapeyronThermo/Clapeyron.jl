@@ -99,7 +99,7 @@ function IAPWS95()
     γ = [1.21,1.21,1.21]
     ε = [1.,1.,1.]
 
-    residual = EmpiricSingleFluidParam(n,t,d,l,η,β,γ,ε)
+    residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε)
 
     ancilliary_gas = PolExpVapour(T_c,rho_c,[-2.03150240,-2.68302940,-5.38626492,-17.2991605,-44.7586581,-63.9201063],[2/6,4/6,8/6,18/6,37/6,71/6])
     ancilliary_liquid = PolExpLiquid(T_c,rho_c,[1.99274064,1.09965342,-0.510839303,-1.75493479,-45.5170352,-6.74694450e5],[1/3,2/3,5/3,16/3,43/3,110/3])

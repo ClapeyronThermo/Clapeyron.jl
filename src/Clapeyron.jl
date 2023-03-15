@@ -55,14 +55,20 @@ include("utils/recombine.jl")
 #Combining Rules for Clapeyron Params.
 include("database/combiningrules.jl")
 
+#general DB files
+using Tables,CSV
 
-using Tables,CSV 
+#used for reading multiparameter json files
+using JSON3
+
 #getparams options
 include("database/ParamOptions.jl") 
 #getparams definition
 include("database/database.jl")
 #transform Tables.jl tables to Clapeyron csv files
 include("database/UserReader.jl")
+
+
 
 #macros, used for defining models
 include("utils/macros.jl")
@@ -104,12 +110,11 @@ include("models/CompositeModel/CompositeModel.jl")
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
 include("models/EmpiricHelmholtz/EmpiricHelmholtz.jl")
 include("models/EmpiricHelmholtz/SingleFluid/SingleFluid.jl")
-include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
-include("models/EmpiricHelmholtz/IAPWS95/IAPWS95Ideal.jl")
+include("models/EmpiricHelmholtz/SingleFluid/IAPWS95.jl")
 include("models/EmpiricHelmholtz/SingleFluid/PropaneRef.jl")
 include("models/EmpiricHelmholtz/SingleFluid/Ammonia2023.jl")
-include("models/EmpiricHelmholtz/SingleFluid/LJRef/LJRef.jl")
-include("models/EmpiricHelmholtz/SingleFluid/LJRef/LJRefIdeal.jl")
+include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
+include("models/EmpiricHelmholtz/LJRef/LJRefIdeal.jl")
 include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
 include("models/cubic/equations.jl")

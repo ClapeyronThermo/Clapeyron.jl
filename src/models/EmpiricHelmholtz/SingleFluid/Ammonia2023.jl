@@ -62,7 +62,7 @@ function Ammonia2023()
     ε = [-0.0726,-0.1274,0.7527,0.57,2.2,-0.243,2.96,3.02,0.9574,0.9576,0.4478,0.44689]
     b = [1.244,0.6826]
 
-    residual = EmpiricSingleFluidParam(n,t,d,l,η,β,γ,ε,b)
+    residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε,b)
 
     ancilliary_gas = PolExpVapour(T_c,rho_c,[-0.089966,-3.8722,-8.1183,-25.293,-54.279,-400.83],[0.112,0.473,1.5,3.875,8.0,20.0])
     ancilliary_liquid = PolExpLiquid(T_c,rho_c,[0.051236,3.7925,-3.5929,4.6409,-1.9893,1.5978],[0.07,0.46,0.77,1.05,1.25,8.0])

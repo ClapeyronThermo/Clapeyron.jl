@@ -24,3 +24,5 @@ end
 
 Base.length(::PolExpSat) = false
 is_splittable(::PolExpSat) = false
+
+export PolExpSat

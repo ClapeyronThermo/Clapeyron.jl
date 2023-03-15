@@ -1,4 +1,4 @@
-function LJUnscaledRef()
+function TholLJ()
     type = nothing #standard multifluid
 
     components = ["Leonard-Jones Fluid (unscaled)"]
@@ -17,16 +17,21 @@ function LJUnscaledRef()
     properties = EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
     
     a₁ = 6.262265814
-    a₂ = 1.515151515   
+    a₂ = -1.515151515   
     u = Float64[]
     v = Float64[]
     c0 = 2.5
 
     ideal = EmpiricSingleFluidIdealParam(a₁,a₂,c0,u,v)
 
-    n = [0.005208073, 2.186252, -2.161016, 1.4527, -2.041792, 0.18695286, -0.090988445, -0.4974561, 0.10901431, -0.80055922, -0.568839, -0.6208625, 
-    -1.4667177, 1.891469, -0.1383701, -0.3869645, 0.1265702, 0.605781, 1.179189, -0.47732679, -9.9218575, -0.5747932, 0.003772923]
-    t = [1.0, 0.32, 0.505, 0.672, 0.843, 0.898, 1.294, 2.59, 1.786, 2.77, 1.786, 1.205, 2.83, 2.548, 4.65, 1.385, 1.46, 1.351, 0.66, 1.496, 1.83, 1.616, 4.97]
+    n = [0.005208073, 2.186252, -2.161016, 1.4527, -2.041792,
+        0.18695286, -0.090988445, -0.4974561, 0.10901431, -0.80055922,
+        -0.568839, -0.6208625, -1.4667177, 1.891469, -0.1383701,
+        -0.3869645, 0.1265702, 0.605781, 1.179189, -0.47732679,
+        -9.9218575, -0.5747932, 0.003772923]
+    t = [1.0, 0.32, 0.505, 0.672, 0.843, 0.898, 1.294, 2.59, 1.786, 2.77,
+        1.786, 1.205, 2.83, 2.548, 4.65, 1.385, 1.46, 1.351, 0.66, 1.496,
+        1.83, 1.616, 4.97]
     d = [4, 1, 1, 2, 2, 3, 5, 2, 2, 3, 1, 1, 1, 1, 2, 3, 3, 2, 1, 2, 3, 1, 1]  
     l = [1, 2, 1, 2, 2, 1]   
     η = [2.067, 1.522, 8.82, 1.722, 0.679, 1.883, 3.925, 2.461, 28.2, 0.753, 0.82]
@@ -34,7 +39,7 @@ function LJUnscaledRef()
     γ = [0.71, 0.86, 1.94, 1.48, 1.49, 1.945, 3.02, 1.11, 1.17, 1.33, 0.24]
     ε = [0.2053, 0.409, 0.6, 1.203, 1.829, 1.397, 1.39, 0.539, 0.934, 2.369, 2.43]  
 
-    residual = EmpiricSingleFluidParam(n,t,d,l,η,β,γ,ε)
+    residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε)
 
     ancilliary_gas = PolExpVapour(T_c,rho_c,[-0.69655e+1,-0.10331e+3,-0.20325e+1,-0.44481e+2,-0.18463e+2,-0.26070e+3],[1.320 ,19.24,0.360,8.780,4.040,41.60])
     ancilliary_liquid = PolExpLiquid(T_c,rho_c,[0.1362e+1,0.2093e+1,-0.2110e+1,0.3290e0,0.1410e+1],[0.313 ,0.940,1.630,17.,2.4])
@@ -131,9 +136,9 @@ function LJRef(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     segment = params["segment"]
     params = LJRefParam(epsilon,sigma,segment,Mw)
-    unscaled_lj = LJUnscaledRef()
+    unscaled_lj = TholLJ()
     references = ["10.1063/1.4945000"]
-    return LJRef(components,unscaled_lj,unscaled_lj,references)
+    return LJRef(components,params,unscaled_lj,references)
 end
 
 function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
@@ -152,7 +157,7 @@ function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
     return res
 end
 
-_fr(model::LJRef,δ,τ) = _fr(model.unscaled_lj,δ,τ)
+_fr1(model::LJRef,δ,τ) = _fr1(model.unscaled_lj,δ,τ)
 
 #TODO: better relations? EoSRef was done with one fluid in mind.
 #this is technically an unsafe extension.
@@ -228,7 +233,7 @@ function eos(model::LJRef,V,T,z = SA[1.0])
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
     δ = (ρ*V0)/0.31
-    αr =  m̄*_fr(model,δ,τ)
+    αr =  m̄*_fr1(model,δ,τ)
     x1 = R̄*T*Σz*αr 
     x2 =  R̄*T*α0
     return x1+x2
@@ -244,21 +249,19 @@ end
 function a_res(model::LJRef,V,T,z = SA[1.0])
     Σz = sum(z)
     ρ = Σz/V
-    α0 = _f0(model,ρ,T,Σz)
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
     δ = (ρ*V0)/0.31
-    return  m̄*_fr(model,δ,τ)
+    return  m̄*_fr1(model,δ,τ)
 end
 
 function eos_res(model::LJRef,V,T,z = SA[1.0])
     Σz = sum(z)
     ρ = Σz/V
-    α0 = _f0(model,ρ,T,Σz)
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
     δ = (ρ*V0)/0.31
-    αr =  m̄*_fr(model,δ,τ)
+    αr =  m̄*_fr1(model,δ,τ)
     return R̄*T*Σz*αr 
 end
 #=
@@ -296,7 +299,18 @@ function x0_sat_pure_lj(model,T)
     return (1/ρl,1/ρv)
 end
 
-x0_sat_pure(model::LJRef,T) = x0_sat_pure_lj(model,T)
+function x0_sat_pure(model::LJRef,T) 
+    @show x0_sat_pure_lj(model,T)
+    σ3, ϵ, m̄  = σϵ_m_vdw1f(model,1.0,1.0,SA[1.0])
+    Tc = T_scale(model)
+    vl0,vv0 = x0_sat_pure(model.unscaled_lj,T/Tc)
+    @show vl0,vv0
+    vl =  (m̄*N_A*σ3)*vl0
+    vv =  (m̄*N_A*σ3)*vv0
+    return vl,vv
+end    
+    
+    
 
 function p_scale(model::LJRef,z = SA[1.0])
     rhoc = 1/(_v_scale(model,z))

@@ -22,3 +22,5 @@ end
 
 Base.length(::PolExpVapour) = 1
 is_splittable(::PolExpVapour) = false
+
+export PolExpVapour
