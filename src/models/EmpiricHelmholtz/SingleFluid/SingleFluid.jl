@@ -159,8 +159,8 @@ function _f0(model::Union{EmpiricSingleFluid,IdealEmpiricSingleFluid},δ,τ)
     #Generalized Plank-Einstein terms
     if length(n) != 0
         t = model.ideal.t_gpe
-        c = model.ideal.c_ideal
-        d = model.ideal.d_ideal
+        c = model.ideal.c_gpe
+        d = model.ideal.d_gpe
         α₀ += _f0_gpe(τ,α₀,n,t,c,d)
     end
     #Power terms
@@ -271,8 +271,8 @@ end
 
 function eos_res(model::EmpiricSingleFluid,V,T,z=SA[1.0])
     R = R_gas(model)
-    Tc = model.consts.Tc
-    rhoc = model.consts.rhoc
+    Tc = model.properties.Tc
+    rhoc = model.properties.rhoc
     N = only(z)
     rho = (N/V)
     δ = rho/rho_c
@@ -282,7 +282,7 @@ end
 
 mw(model::EmpiricSingleFluid) = SA[model.properties.Mw]
 
-molecular_weight(model::EmpiricSingleFluid,z = @SVector [1.]) = model.consts.Mw*0.001
+molecular_weight(model::EmpiricSingleFluid,z = @SVector [1.]) = model.properties.Mw*0.001
 
 T_scale(model::EmpiricSingleFluid,z=SA[1.0]) = model.properties.Tc
 
@@ -303,7 +303,7 @@ function x0_sat_pure(model::EmpiricSingleFluid,T,z=SA[1.0])
 end
 
 function x0_volume_liquid(model::EmpiricSingleFluid,T,z = SA[1.0])
-    volume(model.ancilliaries.liquid,0.0,min(T,model.consts.T_c*one(T)),z)
+    volume(model.ancilliaries.liquid,0.0,min(T,model.properties.T_c*one(T)),z)
 end
 
 x0_psat(model::EmpiricSingleFluid,T,crit=nothing) = saturation_pressure(model.ancilliaries.saturation,T,SaturationCorrelation())[1]
@@ -628,23 +628,23 @@ end
 
 all ideal types
 
- "IdealGasHelmholtzLead" done
- "IdealGasHelmholtzLogTau" done
- "IdealGasHelmholtzPlanckEinstein" done
- "IdealGasHelmholtzEnthalpyEntropyOffset" done, same as Lead
- "IdealGasHelmholtzPower" done
- "IdealGasHelmholtzPlanckEinsteinGeneralized" done
- "IdealGasHelmholtzCP0PolyT" done
- "IdealGasHelmholtzCP0AlyLee" #not done, only n-Heptane and D6 have it, only 5 terms
- "IdealGasHelmholtzCP0Constant" done
+ `IdealGasHelmholtzLead` done
+ `IdealGasHelmholtzLogTau` done
+ `IdealGasHelmholtzPlanckEinstein` done
+ `IdealGasHelmholtzEnthalpyEntropyOffset` done, same as Lead
+ `IdealGasHelmholtzPower` done
+ `IdealGasHelmholtzPlanckEinsteinGeneralized` done
+ `IdealGasHelmholtzCP0PolyT` done
+ `IdealGasHelmholtzCP0AlyLee` #not done, only n-Heptane and D6 have it, only 5 terms
+ `IdealGasHelmholtzCP0Constant` done
 
 all residual types
 
- "ResidualHelmholtzPower" done
- "ResidualHelmholtzGaussian" done
- "ResidualHelmholtzGaoB" done
- "ResidualHelmholtzNonAnalytic" done, oly water have it, maybe optimize the heck out of it?
- "ResidualHelmholtzExponential" not done: (Fluorine,Propyne,R114,R13,R14,R21,RC318)
- "ResidualHelmholtzAssociating" not done, only methanol have it
- "ResidualHelmholtzLemmon2005" mpt done, only R125 have it
+ `ResidualHelmholtzPower` done
+ `ResidualHelmholtzGaussian` done
+ `ResidualHelmholtzGaoB` done
+ `ResidualHelmholtzNonAnalytic` done, oly water have it, maybe optimize the heck out of it?
+ `ResidualHelmholtzExponential` not done: (Fluorine,Propyne,R114,R13,R14,R21,RC318)
+ `ResidualHelmholtzAssociating` not done, only methanol have it
+ `ResidualHelmholtzLemmon2005` mpt done, only R125 have it
 =#
