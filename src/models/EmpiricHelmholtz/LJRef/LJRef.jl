@@ -22,7 +22,7 @@ function TholLJ()
     v = Float64[]
     c0 = 2.5
 
-    ideal = EmpiricSingleFluidIdealParam(a₁,a₂,c0,u,v)
+    ideal = EmpiricSingleFluidIdealParam(a₁,a₂,c0,v,u)
 
     n = [0.005208073, 2.186252, -2.161016, 1.4527, -2.041792,
         0.18695286, -0.090988445, -0.4974561, 0.10901431, -0.80055922,

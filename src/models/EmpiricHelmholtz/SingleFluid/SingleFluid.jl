@@ -2,8 +2,18 @@ struct EmpiricSingleFluidIdealParam <:EoSParam
     a1::Float64
     a2::Float64
     c0::Float64
-    u::Vector{Float64}
-    v::Vector{Float64}
+    n_gpe::Vector{Float64} #gpe (Generalized Plank-Einstein)
+    t_gpe::Vector{Float64}
+    c_gpe::Vector{Float64}
+    d_gpe::Vector{Float64}
+    n_p::Vector{Float64} #power term
+    t_p::Vector{Float64}
+
+    function EmpiricSingleFluidIdealParam(a1,a2,c0,n = Float64[],t = Float64[],c = ones(length(n)),d = fill(-1.0,length(n)),n_p = Float64[], t_p  = Float64[])
+        @assert length(n) == length(t) == length(c) == length(d)
+        @assert length(n_p) == length(t_p)
+        return new(a1,a2,c0,n,t,c,d)
+    end
 end
 
 struct EmpiricSingleFluidResidualParam <: EoSParam
@@ -17,9 +27,21 @@ struct EmpiricSingleFluidResidualParam <: EoSParam
     gamma::Vector{Float64}
     epsilon::Vector{Float64}
     b_assoc::Vector{Float64}
+    NA_A::Vector{Float64}
+    NA_B::Vector{Float64}
+    NA_C::Vector{Float64}
+    NA_D::Vector{Float64}
+    NA_a::Vector{Float64}
+    NA_b::Vector{Float64}
+    NA_beta::Vector{Float64}
+    NA_n::Vector{Float64}
 
-    function EmpiricSingleFluidResidualParam(n,t,d,l = Int[],eta = Float64[],beta = Float64[],gamma = Float64[], epsilon = Float64[],b_assoc = Float64[])
-        param = new(Vector{UnitRange{Int}}(undef,0),n,t,d,l,eta,beta,gamma,epsilon,b_assoc)
+    function EmpiricSingleFluidResidualParam(n,t,d,l = Int[],
+        eta = Float64[],beta = Float64[],gamma = Float64[], epsilon = Float64[],
+        b_assoc = Float64[],
+        NA_A = Float64[], NA_B = Float64[], NA_C = Float64[], NA_D = Float64[],
+        NA_a = Float64[],NA_b = Float64[], NA_beta = Float64[], NA_n = Float64[])
+        param = new(Vector{UnitRange{Int}}(undef,0),n,t,d,l,eta,beta,gamma,epsilon,b_assoc,NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
         _calc_iterators!(param)
         return param
     end
@@ -29,12 +51,16 @@ function _calc_iterators!(param::EmpiricSingleFluidResidualParam)
     n,t,d,l = param.n,param.t,param.d,param.l
     eta,beta,gamma,epsilon = param.eta,param.beta,param.gamma,param.epsilon
     b_assoc = param.b_assoc
+    NA_A,NA_B,NA_C,NA_D = param.NA_A,param.NA_B,param.NA_C,param.NA_D
+    NA_a,NA_b,NA_beta,NA_n = param.NA_a,param.NA_b,param.NA_beta,param.NA_n
 
     @assert length(n) == length(t) == length(d)
     @assert length(l) < length(d)
     @assert length(eta) == length(beta) == length(gamma) == length(epsilon)
     @assert length(b_assoc) < length(beta)
-
+    @assert length(NA_A) == length(NA_B) == length(NA_C) == length(NA_D)
+    @assert length(NA_A) == length(NA_a) == length(NA_b) == length(NA_beta)
+    @assert length(NA_A) == length(NA_n)
     #we start from the assoc term, backwards
     length_n = length(n)
     length_beta = length(beta)
@@ -76,8 +102,7 @@ const ESFIdealParam = EmpiricSingleFluidIdealParam
 const ESFResidualParam = EmpiricSingleFluidResidualParam
 
 
-struct EmpiricSingleFluid{𝔾,𝔸} <: EmpiricHelmholtzModel
-    type::𝔾
+struct EmpiricSingleFluid{𝔸} <: EmpiricHelmholtzModel
     components::Vector{String}
     properties::ESFProperties
     ancilliaries::𝔸
@@ -105,7 +130,6 @@ All parameters are fitted, to allow a equation of state of a single fluid with p
 EmpiricSingleFluid
 
 struct IdealEmpiricSingleFluid{𝔾} <: IdealModel
-    type::𝔾
     components::Vector{String}
     properties::EmpiricSingleFluidProperties
     ideal::EmpiricSingleFluidIdealParam
@@ -118,7 +142,7 @@ function recombine_impl!(model::EmpiricSingleFluid)
 end
 
 function IdealEmpiricSingleFluid(model::EmpiricSingleFluid)
-    return IdealEmpiricSingleFluid(model.type,model.components,model.properties,model.ideal,model.references)
+    return IdealEmpiricSingleFluid(model.components,model.properties,model.ideal,model.references)
 end
 
 idealmodel(model::EmpiricSingleFluid) = IdealEmpiricSingleFluid(model)
@@ -130,13 +154,21 @@ function _f0(model::Union{EmpiricSingleFluid,IdealEmpiricSingleFluid},δ,τ)
     a₁ = model.ideal.a1
     a₂ = model.ideal.a2
     c₀ = model.ideal.c0
-    α₀ = log(δ) + a₁ + a₂*τ + (c₀ - 1)*log(τ)
+    α₀ = log(δ) + a₁ + a₂*τ + c₀*log(τ)
 
-    u = model.ideal.u
-    length(u) == 0 && return α₀
-    v = model.ideal.v
-    for i in eachindex(u)
-        α₀ += v[i]*log(1 - exp(-u[i]*τ))
+    n = model.ideal.n_gpe
+    #Generalized Plank-Einstein terms
+    if length(n) != 0
+        t = model.ideal.t_gpe
+        c = model.ideal.c_ideal
+        d = model.ideal.d_ideal
+        α₀ += _f0_gpe(τ,α₀,n,t,c,d)
+    end
+    #Power terms
+    np = model.ideal.n_p
+    if length(np) != 0
+        tp = model.ideal.t_p
+        α₀ += _f0_power(τ,α₀,np,tp)
     end
     return α₀
 end
@@ -148,10 +180,8 @@ function _fr1(model::EmpiricSingleFluid,δ,τ,type = model.type)
     lnτ = log(τ)
 
     ℙ = model.residual
-
-    n,t,d,l,η,β,γ,ε,b = ℙ.n,ℙ.t,ℙ.d,ℙ.l,ℙ.eta,ℙ.beta,ℙ.gamma,ℙ.epsilon,ℙ.b_assoc
-
-    k_pol,k_exp,k_gauss,k_assoc = model.residual.iterators
+    n,t,d = ℙ.n,ℙ.t,ℙ.d
+    k_pol,k_exp,k_gauss,k_gao = model.residual.iterators
 
     #strategy for storing.
     #n, t, d, gauss values, always require views
@@ -163,34 +193,45 @@ function _fr1(model::EmpiricSingleFluid,δ,τ,type = model.type)
     d_pol = view(d,k_pol)
     αᵣ += _fr1_pol(δ,τ,lnδ,lnτ,αᵣ,n_pol,t_pol,d_pol)
 
-    #Exponential terms
-    length(k_exp) == 0 && return αᵣ
-    n_exp = view(n,k_exp)
-    t_exp = view(t,k_exp)
-    d_exp = view(d,k_exp)
-    αᵣ += _fr1_exp(δ,τ,lnδ,lnτ,αᵣ,n_exp,t_exp,d_exp,l)
-
+    #Exponential terms.
+    if length(k_exp) != 0
+        l = ℙ.l
+        n_exp = view(n,k_exp)
+        t_exp = view(t,k_exp)
+        d_exp = view(d,k_exp)
+        αᵣ += _fr1_exp(δ,τ,lnδ,lnτ,αᵣ,n_exp,t_exp,d_exp,l)
+    end
     #Gaussian-bell-shaped terms
-    length(k_gauss) == 0 && return αᵣ
-    n_gauss = view(n,k_gauss)
-    t_gauss = view(t,k_gauss)
-    d_gauss = view(d,k_gauss)
-    αᵣ += _fr1_gauss(δ,τ,lnδ,lnτ,αᵣ,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
-
+    η,β,γ,ε = ℙ.eta,ℙ.beta,ℙ.gamma,ℙ.epsilon
+    if length(k_gauss) != 0
+        n_gauss = view(n,k_gauss)
+        t_gauss = view(t,k_gauss)
+        d_gauss = view(d,k_gauss)
+        αᵣ += _fr1_gauss(δ,τ,lnδ,lnτ,αᵣ,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
+    end
     #association terms (new)
-    length(k_gao) == 0 && return αᵣ
-    lb = length(b)
-    lη = length(η)
-    k_gao2 = (lη - lb + 1):lη
-    n_gao = view(n,k_gao)
-    t_gao = view(t,k_gao)
-    d_gao = view(d,k_gao)
-    η_gao = view(η,k_gao2)
-    β_gao = view(β,k_gao2)
-    γ_gao = view(γ,k_gao2)
-    ε_gao = view(ε,k_gao2)
-    b_gao = b
-    αᵣ += _fr1_gao(δ,τ,lnδ,lnτ,αᵣ,n_gao,t_gao,d_gao,η_gao,β_gao,γ_gao,ε_gao,b_gao)
+    if length(k_gao) != 0
+        b = ℙ.b_assoc
+        lb = length(b)
+        lη = length(η)
+        k_gao2 = (lη - lb + 1):lη
+        n_gao = view(n,k_gao)
+        t_gao = view(t,k_gao)
+        d_gao = view(d,k_gao)
+        η_gao = view(η,k_gao2)
+        β_gao = view(β,k_gao2)
+        γ_gao = view(γ,k_gao2)
+        ε_gao = view(ε,k_gao2)
+        b_gao = b
+        αᵣ += _fr1_gao(δ,τ,lnδ,lnτ,αᵣ,n_gao,t_gao,d_gao,η_gao,β_gao,γ_gao,ε_gao,b_gao)
+    end
+    #Non-analytical terms
+    A = ℙ.NA_A
+    if length(A) != 0
+        B,C,D,aa,bb,ββ,nn = ℙ.NA_B,ℙ.NA_C,ℙ.NA_D,ℙ.NA_a,ℙ.NA_b,ℙ.NA_beta,ℙ.NA_n
+        αᵣ += _fr1_na(δ,τ,lnδ,lnτ,_0,A,B,C,D,aa,bb,ββ,nn)
+    end
+ 
     return αᵣ
 end
 
@@ -215,7 +256,7 @@ function a_res(model::EmpiricSingleFluid,V,T,z=SA[1.])
     rho = (N/V)
     δ = rho/rhoc
     τ = Tc/T
-    return  _fr1(model,δ,τ) + _frx(model,δ,τ)
+    return  _fr1(model,δ,τ)
 end
 
 function eos(model::EmpiricSingleFluid, V, T, z=SA[1.0])
@@ -226,7 +267,7 @@ function eos(model::EmpiricSingleFluid, V, T, z=SA[1.0])
     rho = (N/V)
     δ = rho/rhoc
     τ = Tc/T
-    return N*R*T*(_f0(model,δ,τ)+_fr1(model,δ,τ) + _frx(model,δ,τ))
+    return N*R*T*(_f0(model,δ,τ)+_fr1(model,δ,τ))
 end
 
 function eos_res(model::EmpiricSingleFluid,V,T,z=SA[1.0])
@@ -237,7 +278,7 @@ function eos_res(model::EmpiricSingleFluid,V,T,z=SA[1.0])
     rho = (N/V)
     δ = rho/rho_c
     τ = Tc/T
-    return N*R*T*_fr1(model,δ,τ) + _frx(model,δ,τ)
+    return N*R*T*_fr1(model,δ,τ)
 end
 
 mw(model::EmpiricSingleFluid) = SA[model.properties.Mw]
@@ -284,17 +325,26 @@ end
 
 function tryparse_units(val,unit)
     result = try
-        #unit_parsed = Unitful.@u_str($unit)
-        ThermoState.normalize_units(val*unit)
+        unit_parsed = Unitful.uparse(unit)
+        ThermoState.normalize_units(val*unit_parsed)
     catch
         val
     end
     return result
 end
 
-function xxxx(path::String)
+function fff(path::String)
     _path = only(flattenfilepaths(String[],path))
 
+    json_string = read(_path, String)
+    data = JSON3.read(json_string)
+end
+
+function SingleFluid(component::String;userlocations = String[])
+    _paths = flattenfilepaths(["Empiric","Empiric/test"],userlocations)
+    normalized_comp = normalisestring(component)
+    f0 = x -> normalisestring(last(splitdir(first(splitext(x))))) == normalized_comp
+    _path = last(filter(f0,_paths))
     json_string = read(_path, String)
     data = JSON3.read(json_string)
     #return data
@@ -308,7 +358,7 @@ function xxxx(path::String)
     crit = st_data[:critical]
     rhol_tp_data = st_data[:triple_liquid]
     rhov_tp_data = st_data[:triple_vapor]
-    Mw = tryparse_units(get(eos_data,:molar_mass,0.0),get(eos_data,:molar_mass_units,""))
+    Mw = 1000*tryparse_units(get(eos_data,:molar_mass,0.0),get(eos_data,:molar_mass_units,""))
     T_c = tryparse_units(get(crit,:T,NaN),get(crit,:T_units,""))
     P_c = tryparse_units(get(crit,:p,NaN),get(crit,:p_units,""))
     rho_c = tryparse_units(get(crit,:rhomolar,NaN),get(crit,:rhomolar_units,""))
@@ -324,10 +374,10 @@ function xxxx(path::String)
     acentric_factor = tryparse_units(get(eos_data,:acentric,NaN),get(eos_data,:acentric_units,""))
 
     #TODO: in the future, maybe max_density could be in the files?
-    lb_volume = 1/(1.25*rhol_tp)
-    if isnan(lb_volume)
-        lb_volume = 1/(3.25*rho_c)
-    end
+    
+    lb_volume = tryparse_units(get(crit,:rhomolar_max,NaN),get(crit,:rhomolar_max_units,""))
+    isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
+    isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
 
     properties = EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
     #ideal
@@ -340,30 +390,90 @@ function xxxx(path::String)
 
     references = [eos_data[:BibTeX_EOS]]
 
-    return EmpiricSingleFluid(nothing,components,properties,ancilliaries,ideal,residual,references)
+    return EmpiricSingleFluid(components,properties,ancilliaries,ideal,residual,references)
 end
 
 function _parse_ideal(id_data)
     a1 = 0.0
     a2 = 0.0
     c0 = 0.0
-    u = Float64[]
-    v = Float64[]
+    n = Float64[]
+    t = Float64[]
+    c = Float64[]
+    d = Float64[]
+    np = Float64[]
+    tp = Float64[]
     for id_data_i in id_data
         if id_data_i[:type] == "IdealGasHelmholtzLead"
             a1 += id_data_i[:a1]
             a2 += id_data_i[:a2]
         elseif id_data_i[:type] == "IdealGasHelmholtzLogTau"
-            c0 += id_data_i[:a] + 1
+            c0 += id_data_i[:a]
         elseif id_data_i[:type] == "IdealGasHelmholtzPlanckEinstein"
-            append!(v,id_data_i[:n])
-            append!(u,id_data_i[:t])
+            append!(n,id_data_i[:n])
+            append!(t,id_data_i[:t])
+            l = length(id_data_i[:n])
+            append!(c,fill(1.,l))
+            append!(d,fill(-1.,l))
+        elseif id_data_i[:type] == "IdealGasHelmholtzCP0Constant"
+            #c - cT0/Tc*τ - c*(log(τ/τ0))
+            #c - cT0/Tc*τ - c*(log(τ) - log(τ0))
+            #c + c*log(τ0) - cT0/Tc*τ - c*(log(τ))
+            cpi = id_data_i[:cp_over_R]
+            _T0 = id_data_i[:T0]
+            _Tc = id_data_i[:Tc]
+            τ0 = _T0/_Tc
+            a1 += cpi*(1 - log(τ0))
+            a2 += -cpi*_T0/_Tc
+            c0 += cpi
+        elseif id_data_i[:type] == "IdealGasHelmholtzCP0PolyT"
+            _T0 = id_data_i[:T0]
+            _Tc = id_data_i[:Tc]
+            cp_c = id_data_i[:c]
+            cp_t = id_data_i[:t]
+            τ0 = _T0/_Tc
+
+            for i in eachindex(cp_t)
+                ti = t[i]
+                cpi = cp_c[i]
+                if ti == 0
+                    a1 += cpi*(1 - log(τ0))
+                    a2 += -cpi*_T0/_Tc
+                    c0 += cpi
+                else
+                    T0t = _T0^ti
+                    a1 += (cpi*T0t)/t
+                    a2 += (-T0t*_T0)*cpi/(_Tc*(ti+1))
+                    push!(tp,-ti)
+                    push!(np,(c*(_Tc^ti))*(1/(ti+1) - 1/ti))
+                end
+            end
+        elseif id_data_i[:type] == "IdealGasHelmholtzPower"
+            t = id_data_i[:t]
+            n = id_data_i[:n]
+            for i in 1:length(t)
+                #workaround 1: it seems that sometinmes, people store lead as power
+                #it is more efficient if we transform from power to lead term, if possible
+                if t[i] == 0
+                    a1 += n[i]
+                elseif t[i] == 1
+                    a2 += n[i]
+                else
+                    push!(np,n[i])
+                    push!(tp,t[i])
+                end
+            end
+        elseif id_data_i[:type] == "IdealHelmholtzPlanckEinsteinGeneralized"
+            append!(n,id_data_i[:n])
+            append!(t,id_data_i[:t])
+            append!(c,id_data_i[:c])
+            append!(d,id_data_i[:d])
         else
             throw(error("Ideal: $(id_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
         end
     end
 
-    return EmpiricSingleFluidIdealParam(a1,a2,c0,u,v)
+    return EmpiricSingleFluidIdealParam(a1,a2,c0,n,t,c,d,np,tp)
 
 end
 
@@ -403,42 +513,46 @@ function _parse_residual(res_data)
    NA_beta = Float64[]
    NA_n = Float64[]
 
-   for res_data_i in res_data
-       if res_data_i[:type] == "ResidualHelmholtzPower"
-           append!(n,res_data_i[:n])
-           append!(t,res_data_i[:t])
-           append!(d,res_data_i[:d])
-           append!(l,res_data_i[:l])
-       elseif res_data_i[:type] == "ResidualHelmholtzGaussian"
-           append!(n_gauss,res_data_i[:n])
-           append!(t_gauss,res_data_i[:t])
-           append!(d_gauss,res_data_i[:d])
-           append!(eta,res_data_i[:eta])
-           append!(beta,res_data_i[:beta])
-           append!(gamma,res_data_i[:gamma])
-           append!(epsilon,res_data_i[:epsilon])
-       elseif res_data_i[:type] == "ResidualHelmholtzGaoB"
-           append!(n_gao,res_data_i[:n])
-           append!(t_gao,res_data_i[:t])
-           append!(d_gao,res_data_i[:d])
-           append!(eta_gao,res_data_i[:eta])
-           append!(beta_gao,res_data_i[:beta])
-           append!(gamma_gao,res_data_i[:gamma])
-           append!(epsilon_gao,res_data_i[:epsilon])
-           append!(b_gao,res_data_i[:b])
-       elseif res_data_i[:type] == "ResidualHelmholtzNonAnalytic"
-           append!(NA_A,res_data_i[:A])
-           append!(NA_B,res_data_i[:B])
-           append!(NA_C,res_data_i[:C])
-           append!(NA_D,res_data_i[:D])
-           append!(NA_a,res_data_i[:a])
-           append!(NA_b,res_data_i[:b])
-           append!(NA_beta,res_data_i[:beta])
-           append!(NA_n,res_data_i[:n])
-       else
-           throw(error("Residual: $(res_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
-       end
-   end
+    for res_data_i in res_data
+        if res_data_i[:type] == "ResidualHelmholtzPower"
+            append!(n,res_data_i[:n])
+            append!(t,res_data_i[:t])
+            append!(d,res_data_i[:d])
+            append!(l,res_data_i[:l])
+        elseif res_data_i[:type] == "ResidualHelmholtzGaussian"
+            append!(n_gauss,res_data_i[:n])
+            append!(t_gauss,res_data_i[:t])
+            append!(d_gauss,res_data_i[:d])
+            append!(eta,res_data_i[:eta])
+            append!(beta,res_data_i[:beta])
+            append!(gamma,res_data_i[:gamma])
+            append!(epsilon,res_data_i[:epsilon])
+        elseif res_data_i[:type] == "ResidualHelmholtzGaoB"
+            append!(n_gao,res_data_i[:n])
+            append!(t_gao,res_data_i[:t])
+            append!(d_gao,res_data_i[:d])
+            append!(eta_gao,res_data_i[:eta])
+            append!(beta_gao,res_data_i[:beta])
+            append!(gamma_gao,res_data_i[:gamma])
+            append!(epsilon_gao,res_data_i[:epsilon])
+            append!(b_gao,res_data_i[:b])
+        elseif res_data_i[:type] == "ResidualHelmholtzNonAnalytic"
+            append!(NA_A,res_data_i[:A])
+            append!(NA_B,res_data_i[:B])
+            append!(NA_C,res_data_i[:C])
+            append!(NA_D,res_data_i[:D])
+            append!(NA_a,res_data_i[:a])
+            append!(NA_b,res_data_i[:b])
+            append!(NA_beta,res_data_i[:beta])
+            append!(NA_n,res_data_i[:n])
+        elseif res_data_i[:type] == "ResidualHelmholtzExponential"
+            throw(error("Residual: $(res_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
+        elseif res_data_i[:type] == "ResidualHelmholtzAssociating"
+            throw(error("Residual: $(res_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
+        else
+            throw(error("Residual: $(res_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
+        end
+    end
 
    pol_vals = findall(iszero,l)
    exp_vals = findall(!iszero,l)
@@ -451,7 +565,7 @@ function _parse_residual(res_data)
    _γ = vcat(gamma,gamma_gao)
    _ε = vcat(gamma,gamma_gao)
    _b = b_gao
-   return EmpiricSingleFluidResidualParam(_n,_t,_d,_l,_η,_β,_γ,_ε,_b)
+   return EmpiricSingleFluidResidualParam(_n,_t,_d,_l,_η,_β,_γ,_ε,_b,NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
 end
 
 function _parse_ancilliaries(anc_data)
@@ -460,37 +574,78 @@ function _parse_ancilliaries(anc_data)
     rhol_data = anc_data[:rhoL]
     rhov_data = anc_data[:rhoV]
 
-    ps_anc = if p_data[:type] == "pV"
+    ps_anc = if p_data[:type] in ("pV","pL")
         T_c = p_data[:T_r]
         P_c = p_data[:reducing_value] * 1.0
-        n = p_data[:n]
-        t = p_data[:t]
+        n = Float64.(p_data[:n])
+        t = Float64.(p_data[:t])
         PolExpSat(T_c,P_c,n,t)
     else
-        throw(error("Ancilliary saturation pressure: $(id_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
+        throw(error("Ancilliary saturation pressure: $(p_data[:type]) not supported for the moment. open an issue in the repository for help."))
     end
 
     rhov_anc = if rhov_data[:type] == "rhoV"
         T_c = rhov_data[:T_r]
         rho_c = rhov_data[:reducing_value] * 1.0
-        n = rhov_data[:n]
-        t = rhov_data[:t]
+        n = Float64.(p_data[:n])
+        t = Float64.(p_data[:t])
         PolExpVapour(T_c,rho_c,n,t)
     else
-        throw(error("Ancilliary vapour density: $(id_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
+        throw(error("Ancilliary vapour density: $(rhov_data[:type]) not supported for the moment. open an issue in the repository for help."))
     end
 
     rhol_anc = if rhol_data[:type] == "rhoLnoexp"
         T_c = rhol_data[:T_r]
         rho_c = rhol_data[:reducing_value] * 1.0
-        n = rhol_data[:n]
-        t = rhol_data[:t]
+        n = Float64.(p_data[:n])
+        t = Float64.(p_data[:t])
         PolExpVapour(T_c,rho_c,n,t)
     else
-        throw(error("Ancilliary liquid density: $(id_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
+        throw(error("Ancilliary liquid density: $(rhol_data[:type]) not supported for the moment. open an issue in the repository for help."))
     end
 
     return CompositeModel(["ancilliaries"],gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
 end
 export EmpiricSingleFluid
 
+function allxxx()
+    _path = flattenfilepaths("Empiric/test",String[])
+    res = String[]
+    ct = 0
+    for p in _path
+        json_string = read(p, String)
+        data = JSON3.read(json_string)
+        a0data = data[:EOS][1][:alphar]
+        for a0 in a0data
+            a0type = a0[:type]
+            a0type == "ResidualHelmholtzNonAnalytic" && println(data[:INFO][:NAME])
+            push!(res,a0[:type])
+        end
+    end
+    return unique!(res)
+end
+
+#=
+
+all ideal types
+
+ "IdealGasHelmholtzLead" done
+ "IdealGasHelmholtzLogTau" done
+ "IdealGasHelmholtzPlanckEinstein" done
+ "IdealGasHelmholtzEnthalpyEntropyOffset" not done, a lot of components have it
+ "IdealGasHelmholtzPower" done
+ "IdealGasHelmholtzPlanckEinsteinGeneralized" done
+ "IdealGasHelmholtzCP0PolyT" done
+ "IdealGasHelmholtzCP0AlyLee" #not done, only n-Heptane and D6 have it
+ "IdealGasHelmholtzCP0Constant" done
+
+all residual types
+
+ "ResidualHelmholtzPower" done
+ "ResidualHelmholtzGaussian" done
+ "ResidualHelmholtzGaoB" done
+ "ResidualHelmholtzNonAnalytic" done, oly water have it, maybe optimize the heck out of it?
+ "ResidualHelmholtzExponential" not done: (Fluorine,Propyne,R114,R13,R14,R21,RC318)
+ "ResidualHelmholtzAssociating" not done, only methanol have it
+ "ResidualHelmholtzLemmon2005" mpt done, only R125 have it
+=#
