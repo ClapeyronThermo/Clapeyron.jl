@@ -1,5 +1,3 @@
-struct IAPWS95Tag end
-
 """
     IAPWS95 <: EmpiricHelmholtzModel
     IAPWS95()
@@ -35,8 +33,6 @@ parameters `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`α`,`β`,`γ`,`ε`,`A`,`B`,`C`,`D` wh
 """
 function IAPWS95() 
     
-    type = IAPWS95Tag() #we use this to add the special IAPWS95 term
-
     components = ["water"]
     
     Mw = 18.015268 #g·mol-1
@@ -107,8 +103,8 @@ function IAPWS95()
     NA_b = [0.85,0.95]
     NA_beta = [0.3,0.3]
     NA_n = [-0.14874640856724,0.31806110878444]
-
-    residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε,Float64[],NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
+    na_term = NonAnalyticTerm(NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
+    residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε,na = na_term)
 
     ancilliary_gas = PolExpVapour(T_c,rho_c,[-2.03150240,-2.68302940,-5.38626492,-17.2991605,-44.7586581,-63.9201063],[2/6,4/6,8/6,18/6,37/6,71/6])
     ancilliary_liquid = PolExpLiquid(T_c,rho_c,[1.99274064,1.09965342,-0.510839303,-1.75493479,-45.5170352,-6.74694450e5],[1/3,2/3,5/3,16/3,43/3,110/3])
@@ -120,18 +116,6 @@ function IAPWS95()
     return EmpiricSingleFluid(components,properties,ancilliaries,ideal,residual,references)
 end
 
-function _frx(model::EmpiricSingleFluid{IAPWS95Tag}, δ, τ)
-    nδ1,nδ2 = (-0.14874640856724*δ, 0.31806110878444*δ)
-    _δ = (δ-1.0)^2
-    _τ = (τ-1.0)^2
-    Θ = (1.0-τ) + 0.32*_δ^(1.6666666666666667)
-    Δ = Θ^2 + 0.2*_δ^3.5
-    Ψ1 = exp(- 28*_δ - 700*_τ)
-    Ψ2 = exp(- 32*_δ - 800*_τ)
-    Δb1 = Δ^0.85
-    Δb2 = Δ^0.95
-    return nδ1*Δb1*Ψ1 + nδ2*Δb2*Ψ2
-end
 
 """
     IAPWS95Ideal <: IdealModel
