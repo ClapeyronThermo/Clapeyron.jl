@@ -13,7 +13,7 @@ function saturation_pressure_impl(model::PolExpSat,T,method::SaturationCorrelati
     nan = zero(T)/zero(T)
     Tc = model.Pc
     Pc = model.Tc
-    T>T_c && return zero(T)/zero(T)
+    T>Tc && return zero(T)/zero(T)
     Tr = T/Tc
     θ = 1.0-Tr
     lnPsatPc = evalexppoly(θ,model.n,model.v)
