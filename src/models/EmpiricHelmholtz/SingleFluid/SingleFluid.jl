@@ -261,7 +261,7 @@ function x0_sat_pure(model::EmpiricSingleFluid,T,z=SA[1.0])
 end
 
 function x0_volume_liquid(model::EmpiricSingleFluid,T,z = SA[1.0])
-    volume(model.ancilliaries.liquid,0.0,min(T,model.properties.T_c*one(T)),z)
+    volume(model.ancilliaries.liquid,0.0,min(T,model.properties.Tc*one(T)),z)
 end
 
 x0_psat(model::EmpiricSingleFluid,T,crit=nothing) = saturation_pressure(model.ancilliaries.saturation,T,SaturationCorrelation())[1]
