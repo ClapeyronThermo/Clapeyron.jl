@@ -35,9 +35,10 @@ end
 
 mw(model::EoSModel) = model.params.Mw.values
 
-function group_molecular_weight(groups::GroupParam,mw,z = @SVector [1.])
+function group_molecular_weight(groups::GroupParameter,mw,z = @SVector [1.])
     res = zero(first(z))
-    for ni in groups.n_flattenedgroups
+    for i in 1:length(groups.n_flattenedgroups)
+        ni = groups.n_flattenedgroups[i]
         mwi = dot(ni,mw)
         res +=z[i]*mwi
     end

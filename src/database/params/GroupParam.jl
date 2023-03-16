@@ -78,7 +78,7 @@ end
 
 
 #given components, groups, n_groups, reconstitute GroupParam
-function recombine!(param::GroupParam)
+function recombine!(param::GroupParameter)
     components = param.components
     groups = param.groups
     n_groups = param.n_groups

@@ -9,15 +9,15 @@ function TholLJ()
     lb_volume = 1/(π/6)
     Ttp = NaN #K
     ptp =  NaN
-    rhov_tp  = NaN 
+    rhov_tp  = NaN
     rhol_tp = NaN
     Rgas = R̄
     acentric_factor = NaN
-    
+
     properties = EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
-    
+
     a₁ = 6.262265814
-    a₂ = -1.515151515   
+    a₂ = -1.515151515
     u = Float64[]
     v = Float64[]
     c0 = 2.5
@@ -32,12 +32,12 @@ function TholLJ()
     t = [1.0, 0.32, 0.505, 0.672, 0.843, 0.898, 1.294, 2.59, 1.786, 2.77,
         1.786, 1.205, 2.83, 2.548, 4.65, 1.385, 1.46, 1.351, 0.66, 1.496,
         1.83, 1.616, 4.97]
-    d = [4, 1, 1, 2, 2, 3, 5, 2, 2, 3, 1, 1, 1, 1, 2, 3, 3, 2, 1, 2, 3, 1, 1]  
-    l = [1, 2, 1, 2, 2, 1]   
+    d = [4, 1, 1, 2, 2, 3, 5, 2, 2, 3, 1, 1, 1, 1, 2, 3, 3, 2, 1, 2, 3, 1, 1]
+    l = [1, 2, 1, 2, 2, 1]
     η = [2.067, 1.522, 8.82, 1.722, 0.679, 1.883, 3.925, 2.461, 28.2, 0.753, 0.82]
     β = [0.625, 0.638, 3.91, 0.156, 0.157, 0.153, 1.16, 1.73, 383.0, 0.112, 0.119]
     γ = [0.71, 0.86, 1.94, 1.48, 1.49, 1.945, 3.02, 1.11, 1.17, 1.33, 0.24]
-    ε = [0.2053, 0.409, 0.6, 1.203, 1.829, 1.397, 1.39, 0.539, 0.934, 2.369, 2.43]  
+    ε = [0.2053, 0.409, 0.6, 1.203, 1.829, 1.397, 1.39, 0.539, 0.934, 2.369, 2.43]
 
     residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε)
 
@@ -74,54 +74,38 @@ export LJRef
     LJRef(components;
     userlocations=String[],
     verbose=false)
-
 ## Input parameters
-
 - `sigma`: Single Parameter (`Float64`) - particle size [Å]
 - `epsilon`: Single Parameter (`Float64`) - dispersion energy [`K`]
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `k`: Pair Parameter (`Float64`) (optional) - `sigma` mixing coefficient
-
 ## Model Parameters
-
 - `sigma`: Pair Parameter (`Float64`) - particle size [m]
 - `epsilon`: Pair Parameter (`Float64`) - dispersion energy [`K`]
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-
 ## Description
-
 Lennard-Jones Reference equation of state. valid from 0.5 < T/Tc < 7 and pressures up to p/pc = 500.
-
-
 ```
 σᵢⱼ = (σᵢ + σⱼ)/2
 ϵᵢⱼ = (1-kᵢⱼ)√(ϵⱼϵⱼ)
 σ^3 = Σxᵢxⱼσᵢⱼ^3
 ϵ = Σxᵢxⱼϵᵢⱼσᵢⱼ^3/σ^3
-
 τᵢ = 1.32ϵᵢ/T
 δᵢ = n(Nₐσᵢ^3)/0.31V
-a⁰ᵢ(δ,τ) = log(δᵢ) + 1.5log(τᵢ) + 1.515151515τᵢ + 6.262265814 
+a⁰ᵢ(δ,τ) = log(δᵢ) + 1.5log(τᵢ) + 1.515151515τᵢ + 6.262265814
 a⁰(δ,τ,z) = ∑xᵢ(a⁰ᵢ + log(xᵢ))
-
 τ = 1.32ϵ/T
 δ = n(Nₐσ^3)/0.31V
-
 aʳ(δ,τ)  = aʳ₁+ aʳ₂ + aʳ₃ + aʳ₄
 aʳ₁(δ,τ)  =  ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:6
 aʳ₂(δ,τ)  =  ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 7:12
 aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 13:23
 ```
 parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
-
 !!! warning "Multiple component warning"
-
     The original model was done with only one component in mind. to support multiple components, a VDW 1-fluid mixing rule (shown above) is implemented, but it is not tested.
-
 ## References
-
 1. Thol, M., Rutkai, G., Köster, A., Lustig, R., Span, R., & Vrabec, J. (2016). Equation of state for the Lennard-Jones fluid. Journal of physical and chemical reference data, 45(2), 023101. [doi:10.1063/1.4945000](https://doi.org/10.1063/1.4945000)
-
 """
 LJRef
 
@@ -149,7 +133,7 @@ function reduced_a_ideal(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
     res = zero(ρ+T+first(z))
     for i  ∈ @comps
         mᵢ = m[i]
-        τᵢ = 1.32/(T/ϵ[i])  
+        τᵢ = 1.32/(T/ϵ[i])
         δᵢ = (mᵢ*N_A*ρ*σ[i]^3)/0.31
         aᵢ = reduced_a_ideal(model.unscaled_lj,δᵢ,τᵢ)
         res += z[i]*(aᵢ + log(z[i]) - lnΣz)
@@ -234,7 +218,7 @@ function eos(model::LJRef,V,T,z = SA[1.0])
     τ = 1.32/(T/T0)
     δ = (ρ*V0)/0.31
     αr =  m̄*reduced_a_res(model,δ,τ)
-    x1 = R̄*T*Σz*αr 
+    x1 = R̄*T*Σz*αr
     x2 =  R̄*T*α0
     return x1+x2
 end
@@ -262,15 +246,15 @@ function eos_res(model::LJRef,V,T,z = SA[1.0])
     τ = 1.32/(T/T0)
     δ = (ρ*V0)/0.31
     αr =  m̄*reduced_a_res(model,δ,τ)
-    return R̄*T*Σz*αr 
+    return R̄*T*Σz*αr
 end
 #=
 function ljref_psat(Tr,pc)
     n = (0.54000e+1,0.44704e01,-0.18530e+1,0.19890e0,-0.11250e+1)
-    t = (1.,1.5,4.7,2.5,21.4)  
+    t = (1.,1.5,4.7,2.5,21.4)
     tr1 = one(Tr) - Tr
     res = sum(ni*tr1^ti for (ni,ti) in zip(n,t))
-    return exp(res/Tr)*pc 
+    return exp(res/Tr)*pc
 end
 =#
 function ljref_rholsat(Tr)
@@ -299,7 +283,7 @@ function x0_sat_pure_lj(model,T)
     return (1/ρl,1/ρv)
 end
 
-function x0_sat_pure(model::LJRef,T) 
+function x0_sat_pure(model::LJRef,T)
     @show x0_sat_pure_lj(model,T)
     σ3, ϵ, m̄  = σϵ_m_vdw1f(model,1.0,1.0,SA[1.0])
     Tc = T_scale(model)
@@ -308,16 +292,10 @@ function x0_sat_pure(model::LJRef,T)
     vl =  (m̄*N_A*σ3)*vl0
     vv =  (m̄*N_A*σ3)*vv0
     return vl,vv
-end    
-    
-    
+end
 
 function p_scale(model::LJRef,z = SA[1.0])
     rhoc = 1/(_v_scale(model,z))
     Tc = T_scale(model,z)
     return R̄*Tc*rhoc
 end
-
-
-
- 
