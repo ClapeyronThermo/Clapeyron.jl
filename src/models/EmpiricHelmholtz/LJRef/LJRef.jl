@@ -239,15 +239,15 @@ function _fr(model::LJRef,δ,τ)
     logτ = log(τ)
     @inbounds begin
         for k ∈ 1:6
-            ai += n[k]*exp(logδ*d[i] + logτ*t[i])
+            ai += n[k]*exp(logδ*d[k] + logτ*t[k])
         end
         for (k,k_) ∈ zip(7:12,1:6)
-            ai += n[k]*exp(logδ*d[i] + logτ*t[i] -δ^c[k_])
+            ai += n[k]*exp(logδ*d[k] + logτ*t[k] -δ^c[k_])
         end
 
         for (k,k_) ∈ zip(13:23,1:11)
             ai += n[k]*
-            exp(logδ*d[i] + logτ*t[i] -η[k_]*(δ - ε[k_])^2 - β[k_]*(τ -γ[k_])^2)
+            exp(logδ*d[k] + logτ*t[k] -η[k_]*(δ - ε[k_])^2 - β[k_]*(τ -γ[k_])^2)
         end
     end
     return ai
