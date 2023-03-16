@@ -153,7 +153,7 @@ function reduced_a_res(model::MultiFluidModel,δ,τ,z)
     return res
 end
 
-function _fr2(model::MultiFluidModel,δ,τ,z)
+function reduced_a_departure(model::MultiFluidModel,δ,τ,z)
     _0 = zero(promote_type(typeof(δ), typeof(τ), eltype(z)))
     isone(length(z)) && return _0
     F = model.pair.Fij.values
@@ -184,9 +184,9 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
             #uses -η(δ-ε)^2 - β(δ-γ)
             k1,k2,kgerg = ith_index(k_all,k_exp,ii)
             
-            n = view(nᵢⱼ,k1)
-            t = view(tᵢⱼ,k1)
-            d = view(dᵢⱼ,k1)
+            n_pol = view(nᵢⱼ,k1)
+            t_pol = view(tᵢⱼ,k1)
+            d_pol = view(dᵢⱼ,k1)
             aij += term_ar_pol(δ,τ,lnδ,lnτ,_0,n_pol,t_pol,d_pol)
             
             n_gauss = view(nᵢⱼ,k2)
@@ -217,7 +217,7 @@ function a_res(model::MultiFluidModel, V, T, z=SA[1.0])
     ρ = Σz*1.0e-3/V
     δ = _delta(model, ρ, T, z,Σz)
     τ = _tau(model, ρ, T, z,Σz)
-    return (reduced_a_res(model,δ,τ,z)*invn + _fr2(model,δ,τ,z)*invn2)
+    return (reduced_a_res(model,δ,τ,z)*invn + reduced_a_departure(model,δ,τ,z)*invn2)
 end
 
 function eos(model::MultiFluidModel, V, T, z=SA[1.0])
@@ -226,7 +226,7 @@ function eos(model::MultiFluidModel, V, T, z=SA[1.0])
     ρ = Σz*1.0e-3/V
     δ = _delta(model, ρ, T, z,Σz)
     τ = _tau(model, ρ, T, z,Σz)
-    return  R̄*T*(reduced_a_ideal(model,ρ,T,z,Σz) + reduced_a_res(model,δ,τ,z)+_fr2(model,δ,τ,z)*invn)
+    return  R̄*T*(reduced_a_ideal(model,ρ,T,z,Σz) + reduced_a_res(model,δ,τ,z)+reduced_a_departure(model,δ,τ,z)*invn)
 end
 
 function eos_res(model::MultiFluidModel, V, T, z=SA[1.0])
@@ -235,7 +235,7 @@ function eos_res(model::MultiFluidModel, V, T, z=SA[1.0])
     ρ = Σz*1.0e-3/V
     δ = _delta(model, ρ, T, z,Σz)
     τ = _tau(model, ρ, T, z,Σz)
-    return  R̄*T*(reduced_a_res(model,δ,τ,z)+_fr2(model,δ,τ,z)*invn)
+    return  R̄*T*(reduced_a_res(model,δ,τ,z)+reduced_a_departure(model,δ,τ,z)*invn)
 end
 
 function x0_sat_pure(model::MultiFluidModel,T)
