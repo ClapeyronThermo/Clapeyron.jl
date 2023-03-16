@@ -75,7 +75,7 @@ end
 #     return Tcmix / T
 # end
 
-function _f0(model::GERG2008, ρ, T, x)
+function reduced_a_ideal(model::GERG2008, ρ, T, x)
     RR = 8.314472 / 8.314510
     common_type = promote_type(typeof(ρ), typeof(T), eltype(x))
     _0 = zero(common_type)
@@ -156,7 +156,7 @@ function _f0(model::GERG2008, ρ, T, x)
     return res
 end
 
-function _f0(model::GERG2008, rho, T)
+function reduced_a_ideal(model::GERG2008, rho, T)
 
 
     RR = 8.314472 / 8.314510
@@ -215,7 +215,7 @@ function _f0(model::GERG2008, rho, T)
 end
 
 
-function _fr1(model::GERG2008, delta, tau) 
+function reduced_a_res(model::GERG2008, delta, tau) 
     common_type = promote_type(typeof(delta), typeof(tau))
     res = zero(common_type)
     res0 = zero(common_type)
@@ -237,7 +237,7 @@ function _fr1(model::GERG2008, delta, tau)
     return res
 end
 
-function _fr1(model::GERG2008, delta, tau,x)
+function reduced_a_res(model::GERG2008, delta, tau,x)
     common_type = promote_type(typeof(delta), typeof(tau), eltype(x))
     res = zero(common_type)
     res0 = zero(common_type)
@@ -311,9 +311,9 @@ function a_ideal(model::GERG2008, v, T, z=SA[1.0])
     x = z/N
     rho = 1.0e-3 / (v/N)
     if len == 1
-        return _f0(model, rho, T) 
+        return reduced_a_ideal(model, rho, T) 
     else
-        return _f0(model, rho, T, x)
+        return reduced_a_ideal(model, rho, T, x)
     end
 end
 
@@ -325,9 +325,9 @@ function a_res(model::GERG2008, v, T, z=SA[1.0])
     delta = _delta(model, rho, T, x)
     tau = _tau(model, rho, T, x)
     if len == 1
-        return _fr1(model, delta, tau) 
+        return reduced_a_res(model, delta, tau) 
     else
-        return (_fr1(model, delta, tau, x) + _fr2(model, delta, tau, x))
+        return (reduced_a_res(model, delta, tau, x) + _fr2(model, delta, tau, x))
     end
 end
 
@@ -341,9 +341,9 @@ function eos(model::GERG2008, v, T, z=SA[1.0])
     delta = _delta(model, rho, T, x)
     tau = _tau(model, rho, T, x)
     if len == 1
-        return N * R * T * (_f0(model, rho, T) + _fr1(model, delta, tau)) 
+        return N * R * T * (reduced_a_ideal(model, rho, T) + reduced_a_res(model, delta, tau)) 
     else
-        return N * R * T * (_f0(model, rho, T, x)+ _fr1(model, delta, tau, x) + _fr2(model, delta, tau, x))
+        return N * R * T * (reduced_a_ideal(model, rho, T, x)+ reduced_a_res(model, delta, tau, x) + _fr2(model, delta, tau, x))
     end
 end
 =#

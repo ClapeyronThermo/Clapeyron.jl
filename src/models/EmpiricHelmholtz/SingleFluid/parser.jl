@@ -1,3 +1,20 @@
+function tryparse_units(val,unit)
+    result = try
+        unit_parsed = Unitful.uparse(unit)
+        ThermoState.normalize_units(val*unit_parsed)
+    catch
+        val
+    end
+    return result
+end
+
+function fff(path::String)
+    _path = only(flattenfilepaths(String[],path))
+
+    json_string = read(_path, String)
+    data = JSON3.read(json_string)
+end
+
 function SingleFluid(component::String;userlocations = String[])
     _paths = flattenfilepaths(["Empiric","Empiric/test"],userlocations)
     normalized_comp = normalisestring(component)
@@ -136,40 +153,55 @@ function _parse_ideal(id_data)
 end
 
 function _parse_residual(res_data)
-   #polynomial y exp terms, we will separate those later
-   n = Float64[]
-   t = Float64[]
-   d = Int[]
-   l = Int[]
+    #polynomial y exp terms, we will separate those later
+    n = Float64[]
+    t = Float64[]
+    d = Int[]
+    l = Int[]
 
-   #gaussian terms
-   n_gauss = Float64[]
-   t_gauss = Float64[]
-   d_gauss = Int[]
-   eta = Float64[]
-   beta = Float64[]
-   gamma = Float64[]
-   epsilon = Float64[]
+    #modified exponential terms
+    exp_n = Float64[]
+    exp_t = Float64[]
+    exp_d = Float64[]
+    exp_l = Float64[]
+    exp_gamma = Float64[]
 
-   #gao association terms
-   n_gao = Float64[]
-   t_gao = Float64[]
-   d_gao = Int[]
-   eta_gao = Float64[]
-   beta_gao = Float64[]
-   gamma_gao = Float64[]
-   epsilon_gao = Float64[]
-   b_gao = Float64[]
+    #gaussian terms
+    n_gauss = Float64[]
+    t_gauss = Float64[]
+    d_gauss = Int[]
+    eta = Float64[]
+    beta = Float64[]
+    gamma = Float64[]
+    epsilon = Float64[]
 
-   #non-analytic terms for IAPWS95
-   NA_A = Float64[]
-   NA_B = Float64[]
-   NA_C = Int[]
-   NA_D = Float64[]
-   NA_a = Float64[]
-   NA_b = Float64[]
-   NA_beta = Float64[]
-   NA_n = Float64[]
+    #gao association terms
+    n_gao = Float64[]
+    t_gao = Float64[]
+    d_gao = Int[]
+    eta_gao = Float64[]
+    beta_gao = Float64[]
+    gamma_gao = Float64[]
+    epsilon_gao = Float64[]
+    b_gao = Float64[]
+
+    #non-analytic terms for IAPWS95
+    NA_A = Float64[]
+    NA_B = Float64[]
+    NA_C = Int[]
+    NA_D = Float64[]
+    NA_a = Float64[]
+    NA_b = Float64[]
+    NA_beta = Float64[]
+    NA_n = Float64[]
+
+    #assoc terms
+    assoc_epsilonbar = 0.0
+    assoc_kappabar = 0.0
+    assoc_a = 0.0 
+    assoc_m = 0.0
+    assoc_vbarn = 0.0
+    assoc = false
 
     for res_data_i in res_data
         if res_data_i[:type] == "ResidualHelmholtzPower"
@@ -204,9 +236,21 @@ function _parse_residual(res_data)
             append!(NA_beta,res_data_i[:beta])
             append!(NA_n,res_data_i[:n])
         elseif res_data_i[:type] == "ResidualHelmholtzExponential"
-            throw(error("Residual: $(res_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
+            append!(exp_n,res_data_i[:n])
+            append!(exp_t,res_data_i[:t])
+            append!(exp_d,res_data_i[:d])
+            append!(exp_l,res_data_i[:l])
+            append!(exp_gamma,res_data_i[:gamma])
         elseif res_data_i[:type] == "ResidualHelmholtzAssociating"
-            throw(error("Residual: $(res_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
+            if assoc == true
+                throw(error("Residual: $(res_data_i[:type]) we only support one Associating term."))
+            end
+            assoc = true
+            assoc_epsilonbar += res_data_i[:epsilonbar]
+            assoc_kappabar += res_data_i[:kappabar]
+            assoc_a += res_data_i[:a]
+            assoc_m += res_data_i[:m]
+            assoc_vbarn += res_data_i[:vbarn]
         else
             throw(error("Residual: $(res_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
         end
@@ -228,9 +272,14 @@ function _parse_residual(res_data)
 
     #non analytical term
     na = NonAnalyticTerm(NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
-
     
-   return EmpiricSingleFluidResidualParam(_n,_t,_d,_l,_η,_β,_γ,_ε;gao_b,na)
+    #assoc terms
+    assoc = Associating2BTerm(assoc_epsilonbar,assoc_kappabar,assoc_a,assoc_m,assoc_vbarn)
+    
+    #exponential term
+    exp = ExponentialTerm(exp_n,exp_t,exp_d,exp_l,exp_gamma)
+
+   return EmpiricSingleFluidResidualParam(_n,_t,_d,_l,_η,_β,_γ,_ε;gao_b,na,assoc,exp)
 end
 
 function _parse_ancilliaries(anc_data)

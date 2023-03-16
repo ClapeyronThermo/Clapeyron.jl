@@ -1,5 +1,5 @@
 #Always try to minimize ^ operations, those are really really costly.
-@inline function _fr1_pol(δ,τ,lnδ,lnτ,_0,n,t,d)
+@inline function term_ar_pol(δ,τ,lnδ,lnτ,_0,n,t,d)
     αᵣ = zero(_0)
     for k in eachindex(n)
         αᵣ += n[k]*exp(lnδ*d[k] + lnτ*t[k])
@@ -7,7 +7,7 @@
     return αᵣ
 end
 
-@inline function _fr1_exp(δ,τ,lnδ,lnτ,_0,n,t,d,l)
+@inline function term_ar_exp(δ,τ,lnδ,lnτ,_0,n,t,d,l)
     αᵣ = zero(_0)
     for k in eachindex(n)
         αᵣ += n[k]*exp(lnδ*d[k] + lnτ*t[k] - δ^l[k])
@@ -15,7 +15,7 @@ end
     return αᵣ
 end
 
-@inline function _fr1_gauss(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε)
+@inline function term_ar_gauss(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε)
     αᵣ = zero(_0)
     for k in eachindex(n)
         Δδ = δ-ε[k]
@@ -25,7 +25,7 @@ end
     return αᵣ
 end
 
-@inline function _fr1_gerg2008(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε)
+@inline function term_ar_gerg2008(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε)
     αᵣ = zero(_0)
     for k in eachindex(n)
         Δδ = δ-ε[k]
@@ -34,8 +34,8 @@ end
     return αᵣ
 end
 
-@inline function _fr1_gao(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε,b)
-    αᵣ = zero(_0)
+@inline function term_ar_gaob(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε,b)
+    αᵣ = zero(lnδ+lnτ)
     for k in eachindex(n)
         Δδ = δ-ε[k]
         Δτ = τ-γ[k]
@@ -45,7 +45,7 @@ end
     return αᵣ
 end
 
-@inline function _fr1_na(δ,τ,lnδ,lnτ,_0,A,B,C,D,a,b,β,n)
+@inline function term_ar_na(δ,τ,lnδ,lnτ,_0,A,B,C,D,a,b,β,n)
     αᵣ = zero(_0)
     Δδ = δ-1
     Δτ = τ-1
@@ -60,7 +60,23 @@ end
     return αᵣ
 end
 
-@inline function _f0_gpe(τ,lnτ,_0,n,t,c,d)
+function term_ar_assoc2b(δ,τ,lnδ,lnτ,_0,ε,κ,a,m,v̄ₙ)
+    η = v̄ₙ*δ
+    g = 0.5*(2 - η)/(1 - η)^3
+    Δ = g*(exp(ε*τ) - 1)*κ
+    X = 2 / (sqrt(1 + 4 * Δ * δ) + 1)
+    return m * a * ((log(X) - X / 2.0 + 0.5))
+end
+
+function term_ar_exp2(δ,τ,lnδ,lnτ,_0,n,t,d,l,γ)
+    αᵣ = zero(_0)
+    for k in eachindex(n)
+        αᵣ += n[k]*exp(lnδ*d[k] + lnτ*t[k] - γ[k]*δ^l[k])
+    end
+    return αᵣ
+end
+
+@inline function term_a0_gpe(τ,lnτ,_0,n,t,c,d)
     αᵣ = zero(_0)
     for k in eachindex(n)
         αᵣ += n[k]*log(c[k] + d[k]*exp(t[k]*τ))
@@ -68,7 +84,7 @@ end
     return αᵣ
 end
 
-@inline function _f0_power(τ,logτ,_0,n,t)
+@inline function term_a0_power(τ,logτ,_0,n,t)
     αᵣ = zero(_0)
     for k in eachindex(n)
         α₀ += n[k]*exp(logτ*t[k])

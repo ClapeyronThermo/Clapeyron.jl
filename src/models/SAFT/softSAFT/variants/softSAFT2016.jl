@@ -91,7 +91,7 @@ function a_LJ(model::softSAFT2016Model,V,T,z,_data = @f(data))
     τ = 1.32/(T/ϵ)
     Vx = V/sum(z)
     δ = (V0/Vx)/0.31 
-    ai = _fr1(model.lj,δ,τ)
+    ai = reduced_a_res(model.lj,δ,τ)
     return m̄*ai
 end
 

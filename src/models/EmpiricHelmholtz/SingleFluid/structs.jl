@@ -55,7 +55,40 @@ struct NonAnalyticTerm
     end
 end
 
+NonAnalyticTerm() = NonAnalyticTerm(Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[],Float64[])
 
+mutable struct Associating2BTerm #mutable because someone would want to fit this?
+    active::Bool
+    epsilonbar::Float64
+    kappabar::Float64
+    a::Float64
+    m::Float64
+    vbarn::Float64
+    function Associating2BTerm(epsilonbar,kappabar,a,m,vbarn)
+        active = (kappabar != 0.0)
+        return new(active,epsilonbar,kappabar,a,m,vbarn)
+    end
+end
+Associating2BTerm() = Associating2BTerm(0.0,0.0,0.0,0.0,0.0)
+
+struct ExponentialTerm
+    active::Bool
+    n::Vector{Float64}
+    t::Vector{Float64}
+    d::Vector{Float64}
+    l::Vector{Float64}
+    gamma::Vector{Float64}
+
+    function ExponentialTerm(n,t,d,l,gamma)
+        @assert length(n) == length(t) == length(d) == length(gamma) == length(l)
+        active = (length(n) != 0)
+        return new(active,n,t,d,l,gamma)
+    end
+end
+ExponentialTerm() = ExponentialTerm(Float64[],Float64[],Float64[],Float64[],Float64[])
+
+
+#we store power, exponential and gaussian terms inline, because those are the most used.
 struct EmpiricSingleFluidResidualParam <: EoSParam
     iterators::Vector{UnitRange{Int}}
     n::Vector{Float64}
@@ -68,10 +101,17 @@ struct EmpiricSingleFluidResidualParam <: EoSParam
     epsilon::Vector{Float64}
     gao_b::GaoBTerm
     na::NonAnalyticTerm
+    assoc::Associating2BTerm
+    exp::ExponentialTerm
+    
     function EmpiricSingleFluidResidualParam(n,t,d,l = Int[],
-        eta = Float64[],beta = Float64[],gamma = Float64[], epsilon = Float64[],
-        ;gao_b = GaoBTerm(),na = NonAnalyticTerm())
-        param = new(Vector{UnitRange{Int}}(undef,0),n,t,d,l,eta,beta,gamma,epsilon,gao_b,na)
+        eta = Float64[],beta = Float64[],gamma = Float64[], epsilon = Float64[]
+        ;gao_b = GaoBTerm(),
+        na = NonAnalyticTerm(),
+        assoc = Associating2BTerm(),
+        exp = ExponentialTerm())
+
+        param = new(Vector{UnitRange{Int}}(undef,0),n,t,d,l,eta,beta,gamma,epsilon,gao_b,na,assoc,exp)
         _calc_iterators!(param)
         return param
     end

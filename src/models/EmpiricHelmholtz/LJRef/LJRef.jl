@@ -141,7 +141,7 @@ function LJRef(components;
     return LJRef(components,params,unscaled_lj,references)
 end
 
-function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
+function reduced_a_ideal(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
     m = model.params.segment.values
@@ -151,14 +151,14 @@ function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
         mᵢ = m[i]
         τᵢ = 1.32/(T/ϵ[i])  
         δᵢ = (mᵢ*N_A*ρ*σ[i]^3)/0.31
-        aᵢ = _f0(model.unscaled_lj,δᵢ,τᵢ)
+        aᵢ = reduced_a_ideal(model.unscaled_lj,δᵢ,τᵢ)
         res += z[i]*(aᵢ + log(z[i]) - lnΣz)
     end
     return res
 end
 
-_fr1(model::LJRef,δ,τ) = _fr1(model.unscaled_lj,δ,τ)
-
+reduced_a_res(model::LJRef,δ,τ) = reduced_a_res(model.unscaled_lj,δ,τ)
+reduced_a_res
 #TODO: better relations? EoSRef was done with one fluid in mind.
 #this is technically an unsafe extension.
 function _v_scale(model::LJRef,z=SA[1.0])
@@ -229,11 +229,11 @@ end
 function eos(model::LJRef,V,T,z = SA[1.0])
     Σz = sum(z)
     ρ = Σz/V
-    α0 = _f0(model,ρ,T,Σz)
+    α0 = reduced_a_ideal(model,ρ,T,Σz)
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
     δ = (ρ*V0)/0.31
-    αr =  m̄*_fr1(model,δ,τ)
+    αr =  m̄*reduced_a_res(model,δ,τ)
     x1 = R̄*T*Σz*αr 
     x2 =  R̄*T*α0
     return x1+x2
@@ -242,7 +242,7 @@ end
 function a_ideal(model::LJRef,V,T,z = SA[1.0])
     Σz = sum(z)
     ρ = Σz/V
-    α0 = _f0(model,ρ,T,Σz)
+    α0 = reduced_a_ideal(model,ρ,T,Σz)
     return α0/Σz
 end
 
@@ -252,7 +252,7 @@ function a_res(model::LJRef,V,T,z = SA[1.0])
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
     δ = (ρ*V0)/0.31
-    return  m̄*_fr1(model,δ,τ)
+    return  m̄*reduced_a_res(model,δ,τ)
 end
 
 function eos_res(model::LJRef,V,T,z = SA[1.0])
@@ -261,7 +261,7 @@ function eos_res(model::LJRef,V,T,z = SA[1.0])
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
     δ = (ρ*V0)/0.31
-    αr =  m̄*_fr1(model,δ,τ)
+    αr =  m̄*reduced_a_res(model,δ,τ)
     return R̄*T*Σz*αr 
 end
 #=

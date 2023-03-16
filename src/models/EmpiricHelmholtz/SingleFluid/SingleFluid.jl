@@ -1,6 +1,63 @@
 
 include("structs.jl")
 
+#term dispatch. function definitions are in term_functions.jl
+
+function a_term(term::ExponentialTerm,δ,τ,lnδ,lnτ,_0)
+    if term.active    
+        n = term.n
+        t = term.t
+        d = term.d
+        l = term.l
+        γ = term.gamma
+        αᵣ = term_ar_exp2(δ,τ,lnδ,lnτ,_0,n,t,d,l,γ)
+    else
+        αᵣ = _0
+    end
+    return αᵣ
+end
+
+function a_term(term::NonAnalyticTerm,δ,τ,lnδ,lnτ,_0)
+    if term.active    
+        A,B,C,D,a,b,β,n = term.A,term.B,term.C,term.D,term.a,term.b,term.beta,term.n
+        αᵣ = term_ar_na(δ,τ,lnδ,lnτ,_0,A,B,C,D,a,b,β,n)
+    else
+        αᵣ = _0
+    end
+    return αᵣ
+end
+
+function a_term(term::GaoBTerm,δ,τ,lnδ,lnτ,_0)
+    if term.active    
+        n = term.n
+        t = term.t
+        d = term.d
+        η = term.eta
+        β = term.beta
+        γ = term.gamma
+        ε = term.epsilon
+        b = term.b
+        αᵣ = term_ar_gaob(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε,b)
+    else
+        αᵣ = _0
+    end
+    return αᵣ
+end
+
+function a_term(term::Associating2BTerm,δ,τ,lnδ,lnτ,_0)
+    if term.active    
+        ε = term.epsilonbar
+        κ = term.kappabar
+        a = term.a
+        m = term.m
+        v̄ₙ = term.vbarn
+        αᵣ = term_ar_assoc2b(δ,τ,lnδ,lnτ,_0,ε,κ,a,m,v̄ₙ)
+    else
+        αᵣ = _0
+    end
+    return αᵣ
+end
+
 struct EmpiricSingleFluid{𝔸} <: EmpiricHelmholtzModel
     components::Vector{String}
     properties::ESFProperties
@@ -49,42 +106,47 @@ idealmodel(model::EmpiricSingleFluid) = IdealEmpiricSingleFluid(model)
 R_gas(model::EmpiricSingleFluid) = model.properties.Rgas
 R_gas(model::IdealEmpiricSingleFluid) = model.properties.Rgas
 
-function _f0(model::Union{EmpiricSingleFluid,IdealEmpiricSingleFluid},δ,τ)
-    a₁ = model.ideal.a1
-    a₂ = model.ideal.a2
-    c₀ = model.ideal.c0
+reduced_a_ideal(model::EmpiricSingleFluid,δ,τ) = reduced_a_ideal(model.ideal,δ,τ)
+reduced_a_ideal(model::IdealEmpiricSingleFluid,δ,τ) = reduced_a_ideal(model.ideal,δ,τ)
+
+function reduced_a_ideal(model::EmpiricSingleFluidIdealParam,δ,τ)
+    a₁ = model.a1
+    a₂ = model.a2
+    c₀ = model.c0
     logδ = log(δ)
     logτ = log(τ)
     α₀ = logδ + a₁ + a₂*τ + c₀*logτ
-    n = model.ideal.n_gpe
+    n = model.n_gpe
     #Generalized Plank-Einstein terms
     
     if length(n) != 0
-        t = model.ideal.t_gpe
-        c = model.ideal.c_gpe
-        d = model.ideal.d_gpe
-        α₀ +=_f0_gpe(τ,logτ,α₀,n,t,c,d)
+        t = model.t_gpe
+        c = model.c_gpe
+        d = model.d_gpe
+        α₀ +=term_a0_gpe(τ,logτ,α₀,n,t,c,d)
     end
 
     #Power terms
-    np = model.ideal.n_p
+    np = model.n_p
     if length(np) != 0
         tp = model.ideal.t_p
-        α₀ +=_f0_power(τ,logτ,α₀,np,tp)
+        α₀ +=term_a0_power(τ,logτ,α₀,np,tp)
     end
 
     return α₀
 end
 
-function _fr1(model::EmpiricSingleFluid,δ,τ)
+reduced_a_res(model::EmpiricSingleFluid,δ,τ) = reduced_a_res(model.residual,δ,τ)
 
+function reduced_a_res(model::EmpiricSingleFluidResidualParam,δ,τ)
+    _0 = zero(δ+τ)
     αᵣ = zero(δ+τ)
     lnδ = log(δ)
     lnτ = log(τ)
-
-    ℙ = model.residual
+    
+    ℙ = model
     n,t,d = ℙ.n,ℙ.t,ℙ.d
-    k_pol,k_exp,k_gauss = model.residual.iterators
+    k_pol,k_exp,k_gauss = ℙ.iterators
 
     #strategy for storing.
     #n, t, d, gauss values, always require views
@@ -94,7 +156,7 @@ function _fr1(model::EmpiricSingleFluid,δ,τ)
     n_pol = view(n,k_pol)
     t_pol = view(t,k_pol)
     d_pol = view(d,k_pol)
-    αᵣ += _fr1_pol(δ,τ,lnδ,lnτ,αᵣ,n_pol,t_pol,d_pol)
+    αᵣ += term_ar_pol(δ,τ,lnδ,lnτ,αᵣ,n_pol,t_pol,d_pol)
 
     #Exponential terms.
     if length(k_exp) != 0
@@ -102,40 +164,31 @@ function _fr1(model::EmpiricSingleFluid,δ,τ)
         n_exp = view(n,k_exp)
         t_exp = view(t,k_exp)
         d_exp = view(d,k_exp)
-        αᵣ += _fr1_exp(δ,τ,lnδ,lnτ,αᵣ,n_exp,t_exp,d_exp,l)
+        αᵣ += term_ar_exp(δ,τ,lnδ,lnτ,αᵣ,n_exp,t_exp,d_exp,l)
     end
+
     #Gaussian-bell-shaped terms
     η,β,γ,ε = ℙ.eta,ℙ.beta,ℙ.gamma,ℙ.epsilon
     if length(k_gauss) != 0
         n_gauss = view(n,k_gauss)
         t_gauss = view(t,k_gauss)
         d_gauss = view(d,k_gauss)
-        αᵣ += _fr1_gauss(δ,τ,lnδ,lnτ,αᵣ,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
+        αᵣ += term_ar_gauss(δ,τ,lnδ,lnτ,αᵣ,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
     end
 
     #Especial terms are stored in structs.
 
-    #gaoB terms
-    if ℙ.gao_b.active
-        terms = ℙ.gao_b
-        n_gao = terms.n
-        t_gao = terms.t
-        d_gao = terms.d
-        η_gao = terms.eta
-        β_gao = terms.beta
-        γ_gao = terms.gamma
-        ε_gao = terms.epsilon
-        b_gao = terms.b
-        αᵣ += _fr1_gao(δ,τ,lnδ,lnτ,αᵣ,n_gao,t_gao,d_gao,η_gao,β_gao,γ_gao,ε_gao,b_gao)
-    end
+    #Modified Exponential terms.
+    αᵣ += a_term(ℙ.exp,δ,τ,lnδ,lnτ,_0)
 
+    #gaoB terms
+    αᵣ += a_term(ℙ.gao_b,δ,τ,lnδ,lnτ,_0)
+    
     #Non-analytical terms
-    if ℙ.na.active
-        NA = ℙ.na
-        A,B,C,D,aa,bb,ββ,nn = NA.A,NA.B,NA.C,NA.D,NA.a,NA.b,NA.beta,NA.n
-        αᵣ += _fr1_na(δ,τ,lnδ,lnτ,αᵣ,A,B,C,D,aa,bb,ββ,nn)
-        #αᵣ += iapws95_f0(δ,τ)
-    end
+    αᵣ += a_term(ℙ.na,δ,τ,lnδ,lnτ,_0)
+
+    #associating terms.
+    αᵣ += a_term(ℙ.assoc,δ,τ,lnδ,lnτ,_0)
  
     return αᵣ
 end
@@ -147,7 +200,7 @@ function a_ideal(model::IdealEmpiricSingleFluid,V,T,z=SA[1.])
     rho = (N/V)
     δ = rho/rhoc
     τ = Tc/T
-    return  _f0(model,δ,τ)
+    return  reduced_a_ideal(model,δ,τ)
 end
 
 a_ideal(model::EmpiricSingleFluid,V,T,z=SA[1.]) = a_ideal(idealmodel(model),V,T,z)
@@ -159,7 +212,7 @@ function a_res(model::EmpiricSingleFluid,V,T,z=SA[1.])
     rho = (N/V)
     δ = rho/rhoc
     τ = Tc/T
-    return _fr1(model,δ,τ)
+    return reduced_a_res(model,δ,τ)
 end
 
 function eos(model::EmpiricSingleFluid, V, T, z=SA[1.0])
@@ -170,7 +223,7 @@ function eos(model::EmpiricSingleFluid, V, T, z=SA[1.0])
     rho = (N/V)
     δ = rho/rhoc
     τ = Tc/T
-    return N*R*T*(_f0(model,δ,τ)+_fr1(model,δ,τ))
+    return N*R*T*(reduced_a_ideal(model,δ,τ)+reduced_a_res(model,δ,τ))
 end
 
 function eos_res(model::EmpiricSingleFluid,V,T,z=SA[1.0])
@@ -181,7 +234,7 @@ function eos_res(model::EmpiricSingleFluid,V,T,z=SA[1.0])
     rho = (N/V)
     δ = rho/rhoc
     τ = Tc/T
-    return N*R*T*_fr1(model,δ,τ)
+    return N*R*T*reduced_a_res(model,δ,τ)
 end
 
 mw(model::EmpiricSingleFluid) = SA[model.properties.Mw]
@@ -227,21 +280,5 @@ function crit_pure(model::EmpiricSingleFluid)
     return (Tc,Pc,Vc)
 end
 
-function tryparse_units(val,unit)
-    result = try
-        unit_parsed = Unitful.uparse(unit)
-        ThermoState.normalize_units(val*unit_parsed)
-    catch
-        val
-    end
-    return result
-end
-
-function fff(path::String)
-    _path = only(flattenfilepaths(String[],path))
-
-    json_string = read(_path, String)
-    data = JSON3.read(json_string)
-end
 
 include("parser.jl")

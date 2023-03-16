@@ -95,7 +95,7 @@ function _tau(model::MultiFluidModel, rho, T, z=SA[1.],Σz = sum(z))
     return Tcmix / T
 end
 
-function _f0(model::MultiFluidModel, ρ, T, z=SA[1.], Σz = sum(z))
+function reduced_a_ideal(model::MultiFluidModel, ρ, T, z=SA[1.], Σz = sum(z))
     RR = 8.314472 / 8.314510
     #common_type = promote_type(typeof(ρ), typeof(T), eltype(x))
     _0 = zero(ρ + T + first(z))
@@ -121,7 +121,7 @@ function _f0(model::MultiFluidModel, ρ, T, z=SA[1.], Σz = sum(z))
     return res
 end
 
-function _fr1(model::MultiFluidModel,δ,τ,z)
+function reduced_a_res(model::MultiFluidModel,δ,τ,z)
     _0 = zero(promote_type(typeof(δ), typeof(τ), eltype(z)))
     res = _0
     n  = model.single.n.values
@@ -140,13 +140,13 @@ function _fr1(model::MultiFluidModel,δ,τ,z)
         n_pol = view(nᵢ,k1)
         t_pol = view(tᵢ,k1)
         d_pol = view(dᵢ,k1)
-        ai += _fr1_pol(δ,τ,lnδ,lnτ,_0,n_pol,t_pol,d_pol)
+        ai += term_ar_pol(δ,τ,lnδ,lnτ,_0,n_pol,t_pol,d_pol)
         
         n_exp = view(nᵢ,k2)
         t_exp = view(tᵢ,k2)
         d_exp = view(dᵢ,k2)
         c_exp = view(cᵢ,kexp)
-        ai += _fr1_exp(δ,τ,lnδ,lnτ,_0,n_exp,t_exp,d_exp,c_exp)
+        ai += term_ar_exp(δ,τ,lnδ,lnτ,_0,n_exp,t_exp,d_exp,c_exp)
  
         res += z[i]*ai 
     end
@@ -187,7 +187,7 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
             n = view(nᵢⱼ,k1)
             t = view(tᵢⱼ,k1)
             d = view(dᵢⱼ,k1)
-            ai += _fr1_pol(δ,τ,lnδ,lnτ,_0,n_pol,t_pol,d_pol)
+            ai += term_ar_pol(δ,τ,lnδ,lnτ,_0,n_pol,t_pol,d_pol)
             
             n_gauss = view(nᵢⱼ,k2)
             t_gauss = view(tᵢⱼ,k2)
@@ -196,7 +196,7 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
             β = view(βᵢⱼ,kgerg)
             γ = view(γᵢⱼ,kgerg)
             ε = view(εᵢⱼ,kgerg)
-            ai += _fr1_gerg2008(δ,τ,lnδ,lnτ,_0,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
+            ai += term_ar_gerg2008(δ,τ,lnδ,lnτ,_0,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
             
            res +=z[i]*z[j]*Fᵢⱼ*aij
         end
@@ -207,7 +207,7 @@ end
 function a_ideal(model::MultiFluidModel, V, T, z=SA[1.0])
     Σz = sum(z)
     ρ = Σz*1.0e-3/V
-    _f0(model, ρ, T, z,Σz)/Σz
+    reduced_a_ideal(model, ρ, T, z,Σz)/Σz
 end
 
 function a_res(model::MultiFluidModel, V, T, z=SA[1.0])
@@ -217,7 +217,7 @@ function a_res(model::MultiFluidModel, V, T, z=SA[1.0])
     ρ = Σz*1.0e-3/V
     δ = _delta(model, ρ, T, z,Σz)
     τ = _tau(model, ρ, T, z,Σz)
-    return (_fr1(model,δ,τ,z)*invn + _fr2(model,δ,τ,z)*invn2)
+    return (reduced_a_res(model,δ,τ,z)*invn + _fr2(model,δ,τ,z)*invn2)
 end
 
 function eos(model::MultiFluidModel, V, T, z=SA[1.0])
@@ -226,7 +226,7 @@ function eos(model::MultiFluidModel, V, T, z=SA[1.0])
     ρ = Σz*1.0e-3/V
     δ = _delta(model, ρ, T, z,Σz)
     τ = _tau(model, ρ, T, z,Σz)
-    return  R̄*T*(_f0(model,ρ,T,z,Σz) + _fr1(model,δ,τ,z)+_fr2(model,δ,τ,z)*invn)
+    return  R̄*T*(reduced_a_ideal(model,ρ,T,z,Σz) + reduced_a_res(model,δ,τ,z)+_fr2(model,δ,τ,z)*invn)
 end
 
 function eos_res(model::MultiFluidModel, V, T, z=SA[1.0])
@@ -235,7 +235,7 @@ function eos_res(model::MultiFluidModel, V, T, z=SA[1.0])
     ρ = Σz*1.0e-3/V
     δ = _delta(model, ρ, T, z,Σz)
     τ = _tau(model, ρ, T, z,Σz)
-    return  R̄*T*(_fr1(model,δ,τ,z)+_fr2(model,δ,τ,z)*invn)
+    return  R̄*T*(reduced_a_res(model,δ,τ,z)+_fr2(model,δ,τ,z)*invn)
 end
 
 function x0_sat_pure(model::MultiFluidModel,T)
