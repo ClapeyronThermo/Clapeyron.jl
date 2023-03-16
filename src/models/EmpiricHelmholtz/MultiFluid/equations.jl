@@ -187,7 +187,7 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
             n = view(nᵢⱼ,k1)
             t = view(tᵢⱼ,k1)
             d = view(dᵢⱼ,k1)
-            ai += term_ar_pol(δ,τ,lnδ,lnτ,_0,n_pol,t_pol,d_pol)
+            aij += term_ar_pol(δ,τ,lnδ,lnτ,_0,n_pol,t_pol,d_pol)
             
             n_gauss = view(nᵢⱼ,k2)
             t_gauss = view(tᵢⱼ,k2)
@@ -196,7 +196,7 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
             β = view(βᵢⱼ,kgerg)
             γ = view(γᵢⱼ,kgerg)
             ε = view(εᵢⱼ,kgerg)
-            ai += term_ar_gerg2008(δ,τ,lnδ,lnτ,_0,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
+            aij += term_ar_gerg2008(δ,τ,lnδ,lnτ,_0,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
             
            res +=z[i]*z[j]*Fᵢⱼ*aij
         end

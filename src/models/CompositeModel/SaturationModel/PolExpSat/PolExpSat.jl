@@ -22,7 +22,7 @@ function saturation_pressure_impl(model::PolExpSat,T,method::SaturationCorrelati
     return psat,nan,nan
 end
 
-Base.length(::PolExpSat) = false
+Base.length(::PolExpSat) = 1
 is_splittable(::PolExpSat) = false
 
 export PolExpSat

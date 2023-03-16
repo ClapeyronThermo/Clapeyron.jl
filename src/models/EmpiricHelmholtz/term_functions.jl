@@ -1,4 +1,3 @@
-#Always try to minimize ^ operations, those are really really costly.
 @inline function term_ar_pol(δ,τ,lnδ,lnτ,_0,n,t,d)
     αᵣ = zero(_0)
     for k in eachindex(n)
@@ -79,7 +78,7 @@ end
 @inline function term_a0_gpe(τ,lnτ,_0,n,t,c,d)
     αᵣ = zero(_0)
     for k in eachindex(n)
-        αᵣ += n[k]*log(c[k] + d[k]*exp(t[k]*τ))
+        αᵣ += n[k]*log(muladd(d[k],exp(-t[k]*τ),c[k]))
     end
     return αᵣ
 end
