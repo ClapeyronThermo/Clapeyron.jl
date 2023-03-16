@@ -93,5 +93,7 @@ function x0_volume_liquid(model::XiangDeitersModel,T,z = SA[1.0])
     0.4*lb_v + 0.6*rackket_v
 end
 
-p_scale(model::XiangDeiters,z = SA[1.0]) = dot(model.params.Pc,z)
-T_scale(model::XiangDeiters,z = SA[1.0]) = dot(model.params.Tc,z)
+p_scale(model::XiangDeitersModel,z = SA[1.0]) = dot(model.params.Pc,z)
+T_scale(model::XiangDeitersModel,z = SA[1.0]) = dot(model.params.Tc,z)
+
+crit_pure(model::XiangDeitersModel) = model.params.Tc[1],model.params.Pc[1],model.params.Vc[1]
