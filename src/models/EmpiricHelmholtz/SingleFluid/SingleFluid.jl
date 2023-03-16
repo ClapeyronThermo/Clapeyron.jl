@@ -266,7 +266,7 @@ end
 
 x0_psat(model::EmpiricSingleFluid,T,crit=nothing) = saturation_pressure(model.ancilliaries.saturation,T,SaturationCorrelation())[1]
 
-function x0_saturation_temperature(model::EmpiricSingleFluid,p,z=SA[1.0])
+function x0_saturation_temperature(model::EmpiricSingleFluid,p)
     T = saturation_temperature(model.ancilliaries.saturation,p,SaturationCorrelation())[1]
     vl,vv = x0_sat_pure(model,T)
     return (vl,vv)
