@@ -72,4 +72,9 @@ function saturation_pressure_impl(model::LeeKeslerSatModel,T,method::SaturationC
     return psat,nan,nan
 end
 
+function LeeKeslerSat(model::EoSModel)
+    params = LeeKeslerSatParam(model.params.Tc,model.params.Pc,model.params.acentricfactor)
+    return LeeKeslerSat(model.components,params,model.references)
+end
+
 export LeeKeslerSat
