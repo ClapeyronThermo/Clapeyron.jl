@@ -11,15 +11,14 @@ end
 
 function saturation_pressure_impl(model::PolExpSat,T,method::SaturationCorrelation)
     nan = zero(T)/zero(T)
-    Tc = model.Pc
-    Pc = model.Tc
+    Tc = model.Tc
+    Pc = model.Pc
     T>Tc && return zero(T)/zero(T)
     Tr = T/Tc
     θ = 1.0-Tr
     lnPsatPc = evalexppoly(θ,model.n,model.v)
     Psat = exp(lnPsatPc)*Pc
-    return Psat
-    return psat,nan,nan
+    return Psat,nan,nan
 end
 
 Base.length(::PolExpSat) = 1

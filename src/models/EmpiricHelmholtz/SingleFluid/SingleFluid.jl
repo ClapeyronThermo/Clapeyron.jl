@@ -269,7 +269,7 @@ x0_psat(model::EmpiricSingleFluid,T,crit=nothing) = saturation_pressure(model.an
 function x0_saturation_temperature(model::EmpiricSingleFluid,p)
     T = saturation_temperature(model.ancilliaries.saturation,p,SaturationCorrelation())[1]
     vl,vv = x0_sat_pure(model,T)
-    return (vl,vv)
+    return (T,vl,vv)
 end
 
 function crit_pure(model::EmpiricSingleFluid)
@@ -279,6 +279,5 @@ function crit_pure(model::EmpiricSingleFluid)
 
     return (Tc,Pc,Vc)
 end
-
 
 include("parser.jl")
