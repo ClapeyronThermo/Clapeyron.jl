@@ -117,6 +117,43 @@ struct EmpiricSingleFluidResidualParam <: EoSParam
     end
 end
 
+function show_multiparameter_coeffs(io,param::EmpiricSingleFluidResidualParam)
+    res = String[]
+    k_pol,k_exp,k_gauss = param.iterators
+    if length(k_pol) != 0
+        push!(res,"Polynomial power terms: $(length(k_pol))")
+    end
+    if length(k_exp) != 0
+        push!(res,"Exponential terms: $(length(k_exp))")
+    end
+    if length(k_gauss) != 0
+        push!(res,"Gaussian bell-shaped terms: $(length(k_gauss))")
+    end
+    #special terms
+    if param.na.active
+        push!(res,"Non Analytic terms: $(length(param.na.beta))")
+    end
+
+    if param.exp.active
+        push!(res,"Modified Exponential terms: $(length(param.exp.n))")
+    end
+
+    if param.gao_b.active
+        push!(res,"Gao-b terms: $(length(param.gao_b.b))")
+    end
+
+    if param.assoc.active
+        push!(res,"Associating terms: $(length(param.assoc.a))")
+    end
+
+    show_pairs(io,res,quote_string = false)
+end
+
+function Base.show(io::IO,::MIME"text/plain",param::EmpiricSingleFluidResidualParam)
+    println("Residual MultiParameter coefficients:")
+    show_multiparameter_coeffs(io,param)
+end
+
 function _calc_iterators!(param::EmpiricSingleFluidResidualParam)
     n,t,d,l = param.n,param.t,param.d,param.l
     eta,beta,gamma,epsilon = param.eta,param.beta,param.gamma,param.epsilon

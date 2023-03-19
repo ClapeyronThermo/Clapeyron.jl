@@ -1,3 +1,49 @@
+const JSON_ALTERNATIVE_NAMES = Dict{String,String}(
+    "carbon dioxide" => "CarbonDioxide",
+    "hydrogen chloride" => "HydrogenChloride",
+    "hydrogen sulfide" => "HydrogenSulfide",
+    "nonane" => "n-Nonane",
+    "octane" => "n-Octane",
+    "heptane" => "n-Heptane",
+    "hexane" => "n-Hexane",
+    "pentane" => "n-Pentane",
+    "butane" => "n-Butane",
+    "propane" => "n-Propane",
+    "decane" => "n-Decane",
+    "undecane" => "n-Undecane",
+    "dodecane" => "n-Dodecane",
+)
+
+function coolprop_csv(component::String)
+    lib_handler = Base.Libc.Libdl.dlopen("libcoolprop";throw_error = false)
+    if !isnothing(lib_handler)
+       #libcoolprop is present.
+        buffer_length = 2<<12
+        message_buffer = Vector{UInt8}(undef,buffer_length)
+        method_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_fluid_param_string) 
+        err_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_global_param_string) 
+        val = 0
+        for i in 1:5
+            val = ccall(method_handler, Clong, (Cstring, Cstring, Ptr{UInt8}, Int), component, "JSON", message_buffer::Array{UInt8, 1}, buffer_length)
+            if val == 0
+                ccall(err_handler, Clong, (Cstring, Ptr{UInt8}, Int), "errstring", message_buffer::Array{UInt8, 1}, buffer_length)
+                err = unsafe_string(convert(Ptr{UInt8}, pointer(message_buffer::Array{UInt8, 1})))
+                if err == "Buffer size is too small"
+                    resize!(message_buffer,buffer_length<<1)
+                    buffer_length = length(message_buffer)
+                else
+                    return false,unsafe_string(convert(Ptr{UInt8}, pointer(message_buffer::Array{UInt8, 1})))
+                end
+            else
+                return true,unsafe_string(convert(Ptr{UInt8}, pointer(message_buffer::Array{UInt8, 1})))
+            end
+        end
+        return false,unsafe_string(convert(Ptr{UInt8}, pointer(message_buffer::Array{UInt8, 1})))
+    else
+        return false,""
+    end
+
+end
 function tryparse_units(val,unit)
     result = try
         unit_parsed = Unitful.uparse(unit)
@@ -15,46 +61,47 @@ function fff(path::String)
     data = JSON3.read(json_string)
 end
 
-function SingleFluid(component::String;userlocations = String[])
-    _paths = flattenfilepaths(["Empiric","Empiric/test"],userlocations)
-    normalized_comp = normalisestring(component)
-    f0 = x -> normalisestring(last(splitdir(first(splitext(x))))) == normalized_comp
-    _path = last(filter(f0,_paths))
-    json_string = read(_path, String)
-    data = JSON3.read(json_string)
-    #return data
+get_only_comp(x::Vector{String}) = only(x)
+get_only_comp(x::String) = x
 
-    #init properties
-    info = data[:INFO]
-    components = [info[:NAME]]
+function get_json_data(components;userlocations = String[], verbose = false)
+    component = get_only_comp(components)
 
-    eos_data = first(data[:EOS])
-    st_data = data[:STATES]
-    crit = st_data[:critical]
-    rhol_tp_data = st_data[:triple_liquid]
-    rhov_tp_data = st_data[:triple_vapor]
-    Mw = 1000*tryparse_units(get(eos_data,:molar_mass,0.0),get(eos_data,:molar_mass_units,""))
-    T_c = tryparse_units(get(crit,:T,NaN),get(crit,:T_units,""))
-    P_c = tryparse_units(get(crit,:p,NaN),get(crit,:p_units,""))
-    rho_c = tryparse_units(get(crit,:rhomolar,NaN),get(crit,:rhomolar_units,""))
-
-    Ttp = tryparse_units(get(eos_data,:Ttriple,NaN),get(eos_data,:Ttriple_units,""))
-    ptp =  tryparse_units(get(rhov_tp_data,:p,NaN),get(rhov_tp_data,:p_units,""))
-    if isnan(ptp)
-        ptp =  tryparse_units(get(rhol_tp_data,:p,NaN),get(rhov_tl_data,:p_units,""))
+    if first(component) != '{' #not json
+        _paths = flattenfilepaths(["Empiric"],userlocations)
+        norm_comp1 = normalisestring(component)
+        normalized_comp = normalisestring(get(JSON_ALTERNATIVE_NAMES,norm_comp1,norm_comp1))
+        f0 = x -> normalisestring(last(splitdir(first(splitext(x))))) == normalized_comp
+        found_paths = filter(f0,_paths)
+        if iszero(length(found_paths)) 
+            #try to extract from coolprop.
+            success,json_string = coolprop_csv(component)
+            if success
+                data = JSON3.read(json_string)[1]
+                return data
+            else
+                if length(json_string) == 0
+                    throw(error("cannot found component file $(component)."))
+                else
+                    throw(error("Coolprop: $(json_string)."))
+                end
+            end
+        end
+        _path = last(found_paths)
+        json_string = read(_path, String)
+        data = JSON3.read(json_string)
+    else
+        data = JSON3.read(component)
     end
-    rhol_tp  = tryparse_units(get(rhol_tp_data,:rhomolar,NaN),get(rhol_tp_data,:rhomolar_units,""))
-    rhov_tp = tryparse_units(get(rhov_tp_data,:rhomolar,NaN),get(rhov_tp_data,:rhomolar_units,""))
-    Rgas = tryparse_units(get(eos_data,:gas_constant,R̄),get(eos_data,:gas_constant_units,""))
-    acentric_factor = tryparse_units(get(eos_data,:acentric,NaN),get(eos_data,:acentric_units,""))
+    return data
+end
 
-    #TODO: in the future, maybe max_density could be in the files?
-    
-    lb_volume = tryparse_units(get(crit,:rhomolar_max,NaN),get(crit,:rhomolar_max_units,""))
-    isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
-    isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
-
-    properties = EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+function SingleFluid(components;userlocations = String[],verbose = false)
+    data = get_json_data(components;userlocations,verbose)
+    components = [get_only_comp(components)]
+    eos_data = first(data[:EOS])
+    #properties
+    properties = _parse_properties(data)
     #ideal
     ideal = _parse_ideal(eos_data[:alpha0])
     #residual
@@ -66,6 +113,61 @@ function SingleFluid(component::String;userlocations = String[])
     references = [eos_data[:BibTeX_EOS]]
 
     return EmpiricSingleFluid(components,properties,ancilliaries,ideal,residual,references)
+end
+
+function IdealSingleFluid(components;userlocations = String[],verbose = false)
+    data = get_json_data(components;userlocations,verbose)
+    components = [get_only_comp(components)]
+    eos_data = first(data[:EOS])
+    #properties
+    properties = _parse_properties(data)
+    #ideal
+    ideal = _parse_ideal(eos_data[:alpha0])
+
+    references = [eos_data[:BibTeX_EOS]]
+
+    return IdealEmpiricSingleFluid(components,properties,ideal,references)
+end
+
+
+function _parse_properties(data)
+    info = data[:INFO]
+    eos_data = first(data[:EOS])
+    st_data = data[:STATES]
+    crit = st_data[:critical]
+    Mw = 1000*tryparse_units(get(eos_data,:molar_mass,0.0),get(eos_data,:molar_mass_units,""))
+    T_c = tryparse_units(get(crit,:T,NaN),get(crit,:T_units,""))
+    P_c = tryparse_units(get(crit,:p,NaN),get(crit,:p_units,""))
+    rho_c = tryparse_units(get(crit,:rhomolar,NaN),get(crit,:rhomolar_units,""))
+
+    rhov_tp_data = get(st_data,:triple_liquid,nothing)
+    Ttp = tryparse_units(get(eos_data,:Ttriple,NaN),get(eos_data,:Ttriple_units,""))
+    if rhov_tp_data !== nothing
+        ptp =  tryparse_units(get(rhov_tp_data,:p,NaN),get(rhov_tp_data,:p_units,""))
+        rhov_tp = tryparse_units(get(rhov_tp_data,:rhomolar,NaN),get(rhov_tp_data,:rhomolar_units,""))
+    else
+        ptp,rhov_tp = NaN,NaN
+    end
+
+    rhol_tp_data = get(st_data,:triple_vapor,nothing)
+    if rhol_tp_data !== nothing
+        if isnan(ptp)
+            ptp =  tryparse_units(get(rhol_tp_data,:p,NaN),get(rhov_tl_data,:p_units,""))
+        end
+        rhol_tp  = tryparse_units(get(rhol_tp_data,:rhomolar,NaN),get(rhol_tp_data,:rhomolar_units,""))
+    else
+        rhol_tp = NaN
+    end
+    Rgas = tryparse_units(get(eos_data,:gas_constant,R̄),get(eos_data,:gas_constant_units,""))
+    acentric_factor = tryparse_units(get(eos_data,:acentric,NaN),get(eos_data,:acentric_units,""))
+
+    #TODO: in the future, maybe max_density could be in the files?
+    
+    lb_volume = tryparse_units(get(crit,:rhomolar_max,NaN),get(crit,:rhomolar_max_units,""))
+    isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
+    isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
+
+    return EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 end
 
 function _parse_ideal(id_data)
@@ -124,21 +226,21 @@ function _parse_ideal(id_data)
                 end
             end
         elseif id_data_i[:type] == "IdealGasHelmholtzPower"
-            t = id_data_i[:t]
-            n = id_data_i[:n]
+            t_pj = id_data_i[:t]
+            n_pj = id_data_i[:n]
             for i in 1:length(t)
                 #workaround 1: it seems that sometinmes, people store lead as power
                 #it is more efficient if we transform from power to lead term, if possible
-                if t[i] == 0
-                    a1 += n[i]
-                elseif t[i] == 1
-                    a2 += n[i]
+                if t_pj[i] == 0
+                    a1 += n_pj[i]
+                elseif t_pj[i] == 1
+                    a2 += n_pj[i]
                 else
-                    push!(np,n[i])
-                    push!(tp,t[i])
+                    push!(np,n_pj[i])
+                    push!(tp,t_pj[i])
                 end
             end
-        elseif id_data_i[:type] == "IdealHelmholtzPlanckEinsteinGeneralized"
+        elseif id_data_i[:type] == "IdealHelmholtzPlanckEinsteinGeneralized" || id_data_i[:type] == "IdealGasHelmholtzPlanckEinsteinGeneralized"
             append!(n,id_data_i[:n])
             append!(t,id_data_i[:t])
             append!(c,id_data_i[:c])
@@ -240,7 +342,7 @@ function _parse_residual(res_data)
             append!(exp_t,res_data_i[:t])
             append!(exp_d,res_data_i[:d])
             append!(exp_l,res_data_i[:l])
-            append!(exp_gamma,res_data_i[:gamma])
+            append!(exp_gamma,res_data_i[:g])
         elseif res_data_i[:type] == "ResidualHelmholtzAssociating"
             if assoc == true
                 throw(error("Residual: $(res_data_i[:type]) we only support one Associating term."))
@@ -325,16 +427,23 @@ export EmpiricSingleFluid
 function allxxx()
     _path = flattenfilepaths("Empiric/test",String[])
     res = String[]
-    ct = 0
+    
     for p in _path
         json_string = read(p, String)
         data = JSON3.read(json_string)
-        a0data = data[:EOS][1][:alphar]
-        for a0 in a0data
-            a0type = a0[:type]
-            a0type == "ResidualHelmholtzNonAnalytic" && println(data[:INFO][:NAME])
-            push!(res,a0[:type])
+        a0data = data[:ANCILLARIES]
+        if haskey(a0data,:pS)
+            !a0data[:pS][:using_tau_r] && println(data[:INFO][:NAME])
+            push!(res,a0data[:pS][:type])
+        else
+            #pV: "p'' = pc*exp(Tc/T*sum(n_i*theta^t_i))"
+            #
         end
+        #for a0 in a0data
+        #    a0type = a0[:type]
+        #    #a0type == "ResidualHelmholtzNonAnalytic" && println(data[:INFO][:NAME])
+        #    push!(res,a0[:type])
+        #end
     end
     return unique!(res)
 end
@@ -358,7 +467,7 @@ all residual types
  `ResidualHelmholtzPower` done
  `ResidualHelmholtzGaussian` done
  `ResidualHelmholtzGaoB` done
- `ResidualHelmholtzNonAnalytic` done, oly water have it, maybe optimize the heck out of it?
+ `ResidualHelmholtzNonAnalytic` done, only water have it, maybe optimize the heck out of it?
  `ResidualHelmholtzExponential` not done: (Fluorine,Propyne,R114,R13,R14,R21,RC318)
  `ResidualHelmholtzAssociating` not done, only methanol have it
  `ResidualHelmholtzLemmon2005` mpt done, only R125 have it

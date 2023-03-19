@@ -1,0 +1,114 @@
+
+{
+    "EOS": [
+    {
+        "BibTeX_CP0": "",
+        "BibTeX_EOS": "Thol-THESIS-2015",
+        "STATES": {
+        "reducing": {
+            "T": 1.32,
+            "T_units": "LJ units",
+            "rhomolar": 0.31,
+            "rhomolar_units": "LJ units"
+        }
+        },
+        "T_max": 1200,
+        "T_max_units": "LJ units",
+        "Ttriple": 0.661,
+        "Ttriple_units": "LJ units",
+        "alpha0": [
+        {
+            "a1": 6.262265814,
+            "a2": -1.515151515,
+            "type": "IdealGasHelmholtzLead"
+        },
+        {
+            "a": 2.5,
+            "type": "IdealGasHelmholtzLogTau"
+        }
+        ],
+        "alphar": [
+        {
+            "d": [4, 1, 1, 2, 2, 3, 1, 1, 3, 2, 2, 5],
+            "l": [0, 0, 0, 0, 0, 0, 1, 2, 2, 1, 2, 1],
+            "n": [0.52080730e-2, 0.21862520e+1, -0.21610160e+1, 0.14527000e+1, -0.20417920e+1, 0.18695286e+0, -0.62086250e+0, -0.56883900e+0, -0.80055922e+0, 0.10901431e+0, -0.49745610e+0, -0.90988445e-1],
+            "t": [1.000, 0.320, 0.505, 0.672, 0.843, 0.898, 1.205, 1.786, 2.770, 1.786, 2.590, 1.294],
+            "type": "ResidualHelmholtzPower"
+        },
+        {
+            "beta": [0.625, 0.638, 3.91, 0.156, 0.157, 0.153, 1.16, 1.73, 383, 0.112, 0.119],
+            "d": [1, 1, 2, 3, 3, 2, 1, 2, 3, 1, 1],
+            "epsilon": [ 0.2053, 0.409, 0.6, 1.203, 1.829, 1.397, 1.39, 0.539, 0.934, 2.369, 2.43],
+            "eta": [2.067, 1.522, 8.82, 1.722, 0.679, 1.883, 3.925, 2.461, 28.2, 0.753, 0.82],
+            "gamma": [0.71, 0.86, 1.94, 1.48, 1.49, 1.945, 3.02, 1.11, 1.17, 1.33, 0.24],
+            "n": [-0.14667177e+1, 0.18914690e+1, -0.13837010e+0, -0.38696450e+0, 0.12657020e+0, 0.60578100e+0, 0.11791890e+1, -0.47732679e+0, -0.99218575e-1, -0.57479320e+0, 0.37729230e-2],
+            "t": [2.830, 2.548, 4.650, 1.385, 1.460, 1.351, 0.660, 1.496, 1.830, 1.616, 4.970],
+            "type": "ResidualHelmholtzGaussian"
+        }
+        ],
+        "gas_constant": 1.0,
+        "gas_constant_units": "LJ units",
+        "molar_mass": 1.0,
+        "molar_mass_units": "LJ units",
+        "p_max": 100000,
+        "p_max_units": "LJ units",
+        "pseudo_pure": false
+    }
+    ],
+    "INFO":{
+    "NAME": "LennardJones",
+    "REFPROP_NAME": "LJF",
+    "CAS": "N/A"
+},
+"STATES": {
+    "critical": {
+        "T": 1.31,
+        "T_units": "LJ units",
+        "p": 0.13006,
+        "p_units": "LJ units",
+        "rhomolar": 0.31,
+        "rhomolar_units": "LJ units"
+    }
+
+    },
+    "ANCILLARIES": {
+        "pS": {
+          "T_r": 1.31,
+          "Tmax": 1.31,
+          "Tmin": 0.661,
+          "description": "p'' = pc*exp(Tc/T*sum(n_i*theta^t_i))",
+          "max_abserror_percentage": 100000000,
+          "n": [0.54000e+1,0.44704e01,-0.18530e+1,0.19890e0,-0.11250e+1],
+          "t": [1.0,1.5,4.7,2.5,21.4],
+          "reducing_value":  0.13006,
+          "type": "pV",
+          "using_tau_r": true
+        },
+        "rhoL": {
+            "T_r": 1.31,
+            "Tmax": 1.31,
+            "Tmin": 0.661,
+          "description": "rho' = rhoc*(1+sum(n_i*theta^t_i))",
+          "max_abserror_percentage": 100000000,
+          "n": [0.1362e+1,0.2093e+1,-0.2110e+1,0.3290e0,0.1410e+1],
+          "t": [0.313 ,0.940,1.630,17.0,2.4],
+          "reducing_value": 0.31,
+          "type": "rhoLnoexp",
+          "using_tau_r": false
+        },
+        "rhoV": {
+            "T_r": 1.31,
+            "Tmax": 1.31,
+            "Tmin": 0.661,
+          "description": "rho'' = rhoc*exp(Tc/T*sum(n_i*theta^t_i))",
+          "max_abserror_percentage": 100000000,
+          "n": [-0.69655e+1,-0.10331e+3,-0.20325e+1,-0.44481e+2,-0.18463e+2,-0.26070e+3],
+          "t": [1.320 ,19.24,0.360,8.780,4.040,41.60],         
+          "reducing_value": 0.31,
+          "type": "rhoV",
+          "using_tau_r": true
+        }
+      }
+}
+   
+        

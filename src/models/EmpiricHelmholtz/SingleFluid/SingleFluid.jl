@@ -167,7 +167,7 @@ function reduced_a_res(model::EmpiricSingleFluidResidualParam,δ,τ)
         αᵣ += term_ar_exp(δ,τ,lnδ,lnτ,αᵣ,n_exp,t_exp,d_exp,l)
     end
 
-    #Gaussian-bell-shaped terms
+    #Gaussian bell-shaped terms
     η,β,γ,ε = ℙ.eta,ℙ.beta,ℙ.gamma,ℙ.epsilon
     if length(k_gauss) != 0
         n_gauss = view(n,k_gauss)
@@ -250,7 +250,8 @@ lb_volume(model::EmpiricSingleFluid,z=SA[1.0]) = model.properties.lb_volume #fin
 Base.length(::EmpiricSingleFluid) = 1
 
 function Base.show(io::IO,mime::MIME"text/plain",model::EmpiricSingleFluid)
-    print(io,"MultiParameter Equation of state for $(model.components[1]):")
+    println(io,"MultiParameter Equation of state for $(model.components[1]):")
+    show_multiparameter_coeffs(io,model.residual)
 
 end
 

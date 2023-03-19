@@ -1,6 +1,4 @@
 function TholLJ()
-    type = nothing #standard multifluid
-
     components = ["Leonard-Jones Fluid (unscaled)"]
     Mw = 1. #g·mol-1
     T_c = 1.32    #K
@@ -142,7 +140,6 @@ function reduced_a_ideal(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
 end
 
 reduced_a_res(model::LJRef,δ,τ) = reduced_a_res(model.unscaled_lj,δ,τ)
-reduced_a_res
 #TODO: better relations? EoSRef was done with one fluid in mind.
 #this is technically an unsafe extension.
 function _v_scale(model::LJRef,z=SA[1.0])
@@ -284,11 +281,11 @@ function x0_sat_pure_lj(model,T)
 end
 
 function x0_sat_pure(model::LJRef,T)
-    @show x0_sat_pure_lj(model,T)
+    x0_sat_pure_lj(model,T)
     σ3, ϵ, m̄  = σϵ_m_vdw1f(model,1.0,1.0,SA[1.0])
     Tc = T_scale(model)
     vl0,vv0 = x0_sat_pure(model.unscaled_lj,T/Tc)
-    @show vl0,vv0
+    vl0,vv0
     vl =  (m̄*N_A*σ3)*vl0
     vv =  (m̄*N_A*σ3)*vv0
     return vl,vv
