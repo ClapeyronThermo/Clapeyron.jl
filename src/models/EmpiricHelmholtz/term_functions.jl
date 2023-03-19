@@ -23,12 +23,13 @@ end
     end
     return αᵣ
 end
-
+#TODO: transform to gauss form?
+#(described in EOS-LNG paper)
 @inline function term_ar_gerg2008(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε)
     αᵣ = zero(_0)
     for k in eachindex(n)
         Δδ = δ-ε[k]
-        αᵣ += n[k]*exp(lnδ*d[k] + lnτ*t[k] - η[k]*Δδ*Δδ  - β[k]*Δδ)
+        αᵣ += n[k]*exp(lnδ*d[k] + lnτ*t[k] - η[k]*Δδ*Δδ  - β[k]*(δ-γ[k]))
     end
     return αᵣ
 end
