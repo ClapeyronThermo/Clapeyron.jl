@@ -76,6 +76,8 @@ function term_ar_exp2(δ,τ,lnδ,lnτ,_0,n,t,d,l,γ)
     return αᵣ
 end
 
+#ideal terms
+
 @inline function term_a0_gpe(τ,lnτ,_0,n,t,c,d)
     αᵣ = zero(_0)
     for k in eachindex(n)
