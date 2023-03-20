@@ -462,8 +462,12 @@ function tp_flash_michelsen_modified(model::EoSModel, p, T, z; equilibrium=:vle,
         x = index_expansion(x,z_nonzero)
         y = index_expansion(y,z_nonzero)
     end
-
-    return x, y, β
+    vx,vy = vcache
+    if vx < vy #sort by increasing volume
+        return x, y, β
+    else
+        return y, x, 1 - β
+    end
 
 end
 

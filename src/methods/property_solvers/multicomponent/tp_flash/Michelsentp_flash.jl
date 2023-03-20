@@ -449,7 +449,12 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         y = index_expansion(y,z_nonzero)
     end
 
-    return x, y, β
+    vx,vy = vcache
+    if vx < vy #sort by increasing volume
+        return x, y, β
+    else
+        return y, x, 1 - β
+    end
 end
 
 export MichelsenTPFlash
