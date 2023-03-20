@@ -255,6 +255,12 @@ function Base.show(io::IO,mime::MIME"text/plain",model::EmpiricSingleFluid)
 
 end
 
+function Base.show(io::IO,mime::MIME"text/plain",model::IdealEmpiricSingleFluid)
+    println(io,"Ideal MultiParameter Equation of state for $(model.components[1]):")
+    show_multiparameter_coeffs(io,model.ideal)
+
+end
+
 function x0_sat_pure(model::EmpiricSingleFluid,T,z=SA[1.0])
     vv = volume(model.ancilliaries.gas,0.0,T,z)
     vl = volume(model.ancilliaries.liquid,0.0,T,z)

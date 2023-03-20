@@ -117,6 +117,20 @@ struct EmpiricSingleFluidResidualParam <: EoSParam
     end
 end
 
+function show_multiparameter_coeffs(io,param::EmpiricSingleFluidIdealParam)
+    res = String[]
+    push!(res,"Lead terms: $(param.a1) + $(param.a2)*τ + $(param.c0)*log(τ)")
+
+    if length(param.n_gpe) != 0
+        push!(res,"Plank-Einstein terms: $(length(param.n_gpe))")
+    end
+    if length(param.n_p) != 0
+        push!(res,"Exponential terms: $(length(param.n_p))")
+    end
+    show_pairs(io,res,quote_string = false)
+end
+
+
 function show_multiparameter_coeffs(io,param::EmpiricSingleFluidResidualParam)
     res = String[]
     k_pol,k_exp,k_gauss = param.iterators
@@ -145,8 +159,12 @@ function show_multiparameter_coeffs(io,param::EmpiricSingleFluidResidualParam)
     if param.assoc.active
         push!(res,"Associating terms: $(length(param.assoc.a))")
     end
-
     show_pairs(io,res,quote_string = false)
+end
+
+function Base.show(io::IO,::MIME"text/plain",param::EmpiricSingleFluidIdealParam)
+    println("Ideal MultiParameter coefficients:")
+    show_multiparameter_coeffs(io,param)
 end
 
 function Base.show(io::IO,::MIME"text/plain",param::EmpiricSingleFluidResidualParam)
