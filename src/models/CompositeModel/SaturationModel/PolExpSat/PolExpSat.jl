@@ -4,6 +4,7 @@ struct PolExpSat <: SaturationModel
     n::Vector{Float64}
     v::Vector{Float64}
 end
+#TODO: add Tmin here
 
 function crit_pure(model::PolExpSat)
     return (model.Tc,model.Pc,NaN)
@@ -16,7 +17,7 @@ function saturation_pressure_impl(model::PolExpSat,T,method::SaturationCorrelati
     T>Tc && return zero(T)/zero(T)
     Tr = T/Tc
     θ = 1.0-Tr
-    lnPsatPc = evalexppoly(θ,model.n,model.v)
+    lnPsatPc = evalexppoly(θ,model.n,model.v)/Tr
     Psat = exp(lnPsatPc)*Pc
     return Psat,nan,nan
 end

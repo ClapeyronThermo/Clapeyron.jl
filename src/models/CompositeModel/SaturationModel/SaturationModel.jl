@@ -33,7 +33,7 @@ function saturation_temperature_impl(model::SaturationModel,p,method::Saturation
     p_07,_,_ = saturation_pressure_impl(model,T_07,method)
     h = 2.3333333333333335*log(Pc/p_07)
     T0 = 1/(1-log(p/Pc)/h)*Tc
-    f0(T) = first(saturation_pressure_impl(model,T,method)) - p
+    f0(T) = log(first(saturation_pressure_impl(model,T,method))/p)
     prob = Roots.ZeroProblem(f0,T0)
     sol = Roots.solve(prob)
     return sol,nan,nan
