@@ -140,7 +140,7 @@ function _parse_properties(data)
     P_c = tryparse_units(get(crit,:p,NaN),get(crit,:p_units,""))
     rho_c = tryparse_units(get(crit,:rhomolar,NaN),get(crit,:rhomolar_units,""))
 
-    rhov_tp_data = get(st_data,:triple_liquid,nothing)
+    rhov_tp_data = get(st_data,:triple_vapor,nothing)
     Ttp = tryparse_units(get(eos_data,:Ttriple,NaN),get(eos_data,:Ttriple_units,""))
     if rhov_tp_data !== nothing
         ptp =  tryparse_units(get(rhov_tp_data,:p,NaN),get(rhov_tp_data,:p_units,""))
@@ -149,7 +149,7 @@ function _parse_properties(data)
         ptp,rhov_tp = NaN,NaN
     end
 
-    rhol_tp_data = get(st_data,:triple_vapor,nothing)
+    rhol_tp_data = get(st_data,:triple_liquid,nothing)
     if rhol_tp_data !== nothing
         if isnan(ptp)
             ptp =  tryparse_units(get(rhol_tp_data,:p,NaN),get(rhov_tl_data,:p_units,""))
@@ -163,10 +163,9 @@ function _parse_properties(data)
 
     #TODO: in the future, maybe max_density could be in the files?
     
-    lb_volume = tryparse_units(get(crit,:rhomolar_max,NaN),get(crit,:rhomolar_max_units,""))
+    lb_volume = 1/tryparse_units(get(crit,:rhomolar_max,NaN),get(crit,:rhomolar_max_units,""))
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
-
     return EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 end
 
@@ -403,8 +402,8 @@ function _parse_ancilliaries(anc_data)
     rhov_anc = if rhov_data[:type] == "rhoV"
         T_c = rhov_data[:T_r]
         rho_c = rhov_data[:reducing_value] * 1.0
-        n = Float64.(p_data[:n])
-        t = Float64.(p_data[:t])
+        n = Float64.(rhov_data[:n])
+        t = Float64.(rhov_data[:t])
         PolExpVapour(T_c,rho_c,n,t)
     else
         throw(error("Ancilliary vapour density: $(rhov_data[:type]) not supported for the moment. open an issue in the repository for help."))
@@ -413,8 +412,8 @@ function _parse_ancilliaries(anc_data)
     rhol_anc = if rhol_data[:type] == "rhoLnoexp"
         T_c = rhol_data[:T_r]
         rho_c = rhol_data[:reducing_value] * 1.0
-        n = Float64.(p_data[:n])
-        t = Float64.(p_data[:t])
+        n = Float64.(rhol_data[:n])
+        t = Float64.(rhol_data[:t])
         PolExpVapour(T_c,rho_c,n,t)
     else
         throw(error("Ancilliary liquid density: $(rhol_data[:type]) not supported for the moment. open an issue in the repository for help."))
