@@ -48,6 +48,9 @@ function Base.show(io::IO,param::SingleOrPair)
     show(io,param.components)
 end
 
+Base.iterate(param::SingleOrPair) = iterate(param.values) 
+Base.iterate(param::SingleOrPair,state) = iterate(param.values,state)
+
 export SingleParam, SiteParam, PairParam, AssocParam, GroupParam
 export AssocOptions
 
