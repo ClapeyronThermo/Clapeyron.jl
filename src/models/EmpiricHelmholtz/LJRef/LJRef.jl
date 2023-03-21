@@ -195,43 +195,8 @@ function eos_res(model::LJRef,V,T,z = SA[1.0])
     αr =  m̄*reduced_a_res(model,δ,τ)
     return R̄*T*Σz*αr
 end
-#=
-function ljref_psat(Tr,pc)
-    n = (0.54000e+1,0.44704e01,-0.18530e+1,0.19890e0,-0.11250e+1)
-    t = (1.,1.5,4.7,2.5,21.4)
-    tr1 = one(Tr) - Tr
-    res = sum(ni*tr1^ti for (ni,ti) in zip(n,t))
-    return exp(res/Tr)*pc
-end
 
-function ljref_rholsat(Tr)
-    n = (0.1362e+1,0.2093e+1,-0.2110e+1,0.3290e0,0.1410e+1)
-    t = (0.313 ,0.940,1.630,17.,2.4)
-    tr1 = one(Tr) - Tr
-    res = evalexppoly(tr1,n,t)
-    rhoc = 0.31
-    return (1+res)*rhoc
-end
-
-function ljref_rhovsat(Tr)
-    n = (-0.69655e+1,-0.10331e+3,-0.20325e+1,-0.44481e+2,-0.18463e+2,-0.26070e+3)
-    t = (1.320 ,19.24,0.360,8.780,4.040,41.60)
-    tr1 = one(Tr) - Tr
-    res = evalexppoly(tr1,n,t)
-    rhoc = 0.31
-    return exp(res)*rhoc
-end
-
-function x0_sat_pure_lj(model,T)
-    σ3, ϵ, m̄  = σϵ_m_vdw1f(model,1.0,1.0,SA[1.0])
-    Tc = 1.32*T_scale(model)
-    ρl =  ljref_rholsat(T/Tc)/(m̄*N_A*σ3)
-    ρv =  ljref_rhovsat(T/Tc)/(m̄*N_A*σ3)
-    return (1/ρl,1/ρv)
-end
-=#
 function x0_sat_pure(model::LJRef,T)
-    x0_sat_pure_lj(model,T)
     σ3, ϵ, m̄  = σϵ_m_vdw1f(model,1.0,1.0,SA[1.0])
     Tc = T_scale(model)
     vl0,vv0 = x0_sat_pure(model.unscaled_lj,T/Tc)
