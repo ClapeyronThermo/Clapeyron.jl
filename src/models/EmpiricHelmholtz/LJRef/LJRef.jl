@@ -73,21 +73,6 @@ function LJRef(components;
     return LJRef(components,params,unscaled_lj,references)
 end
 
-function reduced_a_ideal(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
-    ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values
-    m = model.params.segment.values
-    lnΣz = log(∑z)
-    res = zero(ρ+T+first(z))
-    for i  ∈ @comps
-        mᵢ = m[i]
-        τᵢ = 1.32/(T/ϵ[i])
-        δᵢ = (mᵢ*N_A*ρ*σ[i]^3)/0.31
-        aᵢ = reduced_a_ideal(model.unscaled_lj,δᵢ,τᵢ)
-        res += z[i]*(aᵢ + log(z[i]) - lnΣz)
-    end
-    return res
-end
 
 reduced_a_res(model::LJRef,δ,τ) = reduced_a_res(model.unscaled_lj,δ,τ)
 #TODO: better relations? EoSRef was done with one fluid in mind.
@@ -232,8 +217,23 @@ function LJRefIdeal(components;userlocations=String[], verbose=false)
     return LJRefIdeal(lj)
 end
 
-function a_ideal(model::LJRefIdeal,V,T,z)
-    return a_ideal(LJRef(model),V,T,z)
+function a_ideal(model::Union{LJRef,LJRefIdeal},V,T,z=SA[1.0])
+    ∑z = sum(z)
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    m = model.params.segment.values
+    lnΣz = log(∑z)
+    res = zero(V+T+first(z))
+    ρ = ∑z/V
+    for i  ∈ @comps
+        mᵢ = m[i]
+        τᵢ = 1.32/(T/ϵ[i])
+        δᵢ = (mᵢ*N_A*ρ*σ[i]^3)/0.31
+        aᵢ = reduced_a_ideal(model.unscaled_lj,δᵢ,τᵢ)
+        #(aᵢ + log(δᵢ) + log(z[i]) - lnΣz)
+        res += z[i]*(aᵢ + log(z[i]) - lnΣz)
+    end
+    return res/∑z
 end
 
 @registermodel LJRefIdeal
