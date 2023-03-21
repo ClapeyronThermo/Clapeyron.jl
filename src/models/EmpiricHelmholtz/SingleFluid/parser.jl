@@ -106,13 +106,13 @@ function SingleFluid(components;userlocations = String[],verbose = false)
     ideal = _parse_ideal(eos_data[:alpha0])
     #residual
     residual = _parse_residual(eos_data[:alphar])
-    #ancilliaries
-    ancilliaries = _parse_ancilliaries(data[:ANCILLARIES])
-    ancilliaries.components[1] = components[1]
+    #ancillaries
+    ancillaries = _parse_ancillaries(data[:ANCILLARIES])
+    ancillaries.components[1] = components[1]
 
     references = [eos_data[:BibTeX_EOS]]
 
-    return EmpiricSingleFluid(components,properties,ancilliaries,ideal,residual,references)
+    return EmpiricSingleFluid(components,properties,ancillaries,ideal,residual,references)
 end
 
 function IdealSingleFluid(components;userlocations = String[],verbose = false)
@@ -383,7 +383,7 @@ function _parse_residual(res_data)
    return EmpiricSingleFluidResidualParam(_n,_t,_d,_l,_η,_β,_γ,_ε;gao_b,na,assoc,exp)
 end
 
-function _parse_ancilliaries(anc_data)
+function _parse_ancillaries(anc_data)
     #saturation pressure
     p_data = anc_data[:pS]
     rhol_data = anc_data[:rhoL]
@@ -419,7 +419,7 @@ function _parse_ancilliaries(anc_data)
         throw(error("Ancilliary liquid density: $(rhol_data[:type]) not supported for the moment. open an issue in the repository for help."))
     end
 
-    return CompositeModel(["ancilliaries"],gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
+    return CompositeModel(["ancillaries"],gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
 end
 export EmpiricSingleFluid
 

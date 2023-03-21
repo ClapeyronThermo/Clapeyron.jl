@@ -109,14 +109,14 @@ function PropaneRef()
 
     residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε)
 
-    ancilliary_gas = PolExpVapour(T_c,rho_c,[-2.4887,-5.1069,-12.174,-30.495,-52.192,-134.89],[0.3785,1.07,2.7,5.5,10,20])
-    ancilliary_liquid = PolExpLiquid(T_c,rho_c,[1.82205,0.65802,0.21109,0.083973],[0.345,0.74,2.6,7.2])
-    ancilliary_pressure = PolExpSat(T_c,P_c,[-6.7722,1.6938,-1.3341,-3.1876,0.94937],[1.0,1.5,2.2,4.8,6.2])
-    ancilliaries = CompositeModel(components,gas = ancilliary_gas,liquid = ancilliary_liquid,saturation = ancilliary_pressure)
+    ancillary_gas = PolExpVapour(T_c,rho_c,[-2.4887,-5.1069,-12.174,-30.495,-52.192,-134.89],[0.3785,1.07,2.7,5.5,10,20])
+    ancillary_liquid = PolExpLiquid(T_c,rho_c,[1.82205,0.65802,0.21109,0.083973],[0.345,0.74,2.6,7.2])
+    ancillary_pressure = PolExpSat(T_c,P_c,[-6.7722,1.6938,-1.3341,-3.1876,0.94937],[1.0,1.5,2.2,4.8,6.2])
+    ancillaries = CompositeModel(components,gas = ancillary_gas,liquid = ancillary_liquid,saturation = ancillary_pressure)
 
     references = ["1021/je900217v"]
 
-    return EmpiricSingleFluid(components,properties,ancilliaries,ideal,residual,references)
+    return EmpiricSingleFluid(components,properties,ancillaries,ideal,residual,references)
 end
 
 export PropaneRef

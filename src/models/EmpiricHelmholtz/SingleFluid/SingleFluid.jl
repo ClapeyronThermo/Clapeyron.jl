@@ -61,7 +61,7 @@ end
 struct EmpiricSingleFluid{𝔸} <: EmpiricHelmholtzModel
     components::Vector{String}
     properties::ESFProperties
-    ancilliaries::𝔸
+    ancillaries::𝔸
     ideal::ESFIdealParam
     residual::ESFResidualParam
     references::Vector{String}
@@ -262,7 +262,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::IdealEmpiricSingleFluid)
 end
 
 function x0_sat_pure(model::EmpiricSingleFluid,T,z=SA[1.0])
-    vv = volume(model.ancilliaries.gas,0.0,T,z)
+    vv = volume(model.ancillaries.gas,0.0,T,z)
     vl = x0_volume_liquid(model,T,z)
     return (vl,vv)
 end
@@ -270,14 +270,14 @@ end
 function x0_volume_liquid(model::EmpiricSingleFluid,T,z = SA[1.0])
     lb_v = lb_volume(model)
     vl_tp = 1/model.properties.rhol_tp
-    vl_anc = volume(model.ancilliaries.liquid,0.0,min(T,model.properties.Tc*one(T)),z)
+    vl_anc = volume(model.ancillaries.liquid,0.0,min(T,model.properties.Tc*one(T)),z)
     return max(vl_tp,vl_anc,1.01*lb_v)
 end
 
-x0_psat(model::EmpiricSingleFluid,T,crit=nothing) = saturation_pressure(model.ancilliaries.saturation,T,SaturationCorrelation())[1]
+x0_psat(model::EmpiricSingleFluid,T,crit=nothing) = saturation_pressure(model.ancillaries.saturation,T,SaturationCorrelation())[1]
 
 function x0_saturation_temperature(model::EmpiricSingleFluid,p)
-    T = saturation_temperature(model.ancilliaries.saturation,p,SaturationCorrelation())[1]
+    T = saturation_temperature(model.ancillaries.saturation,p,SaturationCorrelation())[1]
     vl,vv = x0_sat_pure(model,T)
     return (T,vl,vv)
 end

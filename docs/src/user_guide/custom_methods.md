@@ -70,7 +70,7 @@ function Clapeyron.saturation_temperature_impl(model::EoSModel,T,method::DirectA
 end
 ```
 
-you can now call `saturation_pressure(model,T,method)` where `method = DirectAntoine(A,B,C)`. At the moment, the default algorithm iterates directly over volumes (`[ChemPotVSaturation](@ref)`), but we also have saturation via isofugacity (`[IsofugacitySaturation](@ref)`) and superancilliaries for cubics (`[SuperAncSaturation](@ref)`). the same thing can be done with `saturation_temperature`.
+you can now call `saturation_pressure(model,T,method)` where `method = DirectAntoine(A,B,C)`. At the moment, the default algorithm iterates directly over volumes (`[ChemPotVSaturation](@ref)`), but we also have saturation via isofugacity (`[IsofugacitySaturation](@ref)`) and superancillaries for cubics (`[SuperAncSaturation](@ref)`). the same thing can be done with `saturation_temperature`.
 
 ## Custom TP-Flash solver
 

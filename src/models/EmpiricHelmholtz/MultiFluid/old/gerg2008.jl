@@ -17,7 +17,7 @@ function Base.show(io::IO,model::GERG2008)
     return eosshow(io,model)
 end
 
-#uses extended corresponding states and the propane ancilliary eqs
+#uses extended corresponding states and the propane ancillary eqs
 #naively uses Tc as scaling factor
 #ideally we would use a eos-agnostic methodology, the noro-frenkel law could give us some insight
 #also,, if an eos agnostic shape factor is implemented, we could use GERG2008 as a provider of shape factors
