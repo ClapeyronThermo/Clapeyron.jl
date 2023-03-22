@@ -144,23 +144,16 @@ end
 
 function eos(model::LJRef,V,T,z = SA[1.0])
     Σz = sum(z)
-    ρ = Σz/V
-    α0 = reduced_a_ideal(model,ρ,T,Σz)
+    α0 = a_ideal(model,V,T,z)
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
-    δ = (ρ*V0)/0.31
+    δ = (Σz*V0)/(0.31*V)
     αr =  m̄*reduced_a_res(model,δ,τ)
     x1 = R̄*T*Σz*αr
     x2 =  R̄*T*α0
     return x1+x2
 end
 
-function a_ideal(model::LJRef,V,T,z = SA[1.0])
-    Σz = sum(z)
-    ρ = Σz/V
-    α0 = reduced_a_ideal(model,ρ,T,Σz)
-    return α0/Σz
-end
 
 function a_res(model::LJRef,V,T,z = SA[1.0])
     Σz = sum(z)

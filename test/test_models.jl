@@ -441,6 +441,7 @@ end
 @testset "Multi-parameter models" begin
     T = 298.15
     V = 1e-4
+    #warning, we are in the pseudo maxwell loop, those properties are nonsense, but they evaluate anyway.
     @printline
     @testset "IAPWS95" begin
         z = [1.]
@@ -449,7 +450,8 @@ end
         @test Clapeyron.a_ideal(system_ideal, V, T, z) ≈ 7.9322055699220435 rtol = 1e-6
         @test Clapeyron.a_ideal(system, V, T, z) ≈ 7.9322055699220435 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T, z) ≈ -2.1152889226862166e14 rtol = 1e-6
-        @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+        #because we are in this regime, numerical accuracy suffers. that is why big(V) is used instead.
+        @test Clapeyron.ideal_consistency(system,big(V),T,z) ≈ 0.0 atol = 1e-14
     end
 
     @testset "PropaneRef" begin
