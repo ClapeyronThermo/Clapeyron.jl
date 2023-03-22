@@ -414,7 +414,7 @@ function _parse_ancillaries(anc_data)
         rho_c = rhol_data[:reducing_value] * 1.0
         n = Float64.(rhol_data[:n])
         t = Float64.(rhol_data[:t])
-        PolExpVapour(T_c,rho_c,n,t)
+        PolExpLiquid(T_c,rho_c,n,t)
     else
         throw(error("Ancilliary liquid density: $(rhol_data[:type]) not supported for the moment. open an issue in the repository for help."))
     end
