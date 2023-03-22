@@ -271,6 +271,8 @@ function x0_volume_liquid(model::EmpiricSingleFluid,T,z = SA[1.0])
     lb_v = lb_volume(model)
     vl_tp = 1/model.properties.rhol_tp
     vl_anc = volume(model.ancillaries.liquid,0.0,min(T,model.properties.Tc*one(T)),z)
+    isnan(vl_tp) && (vl_tp = 0.0)
+    isnan(vl_anc) && (vl_anc = 0.0)
     return max(vl_tp,vl_anc,1.01*lb_v)
 end
 
