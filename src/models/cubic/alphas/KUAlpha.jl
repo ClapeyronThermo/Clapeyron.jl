@@ -11,7 +11,7 @@ export KUAlpha
     KUAlpha <: AlphaModel
     
     KUAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -37,7 +37,7 @@ For `Tr > 1` is a 6th order taylor expansion around `T = Tc`.
 """
 KUAlpha
 
-function KUAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function KUAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = params["acentricfactor"]
     packagedparams = KUAlphaParam(acentricfactor)

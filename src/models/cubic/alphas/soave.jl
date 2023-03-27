@@ -11,7 +11,7 @@ export SoaveAlpha
     SoaveAlpha <: SoaveAlphaModel
     
     SoaveAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -32,7 +32,7 @@ to use different polynomial coefficients for `mᵢ`, overload `Clapeyron.α_m(::
 """
 SoaveAlpha
 
-function SoaveAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function SoaveAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = params["acentricfactor"]
     packagedparams = SoaveAlphaParam(acentricfactor)

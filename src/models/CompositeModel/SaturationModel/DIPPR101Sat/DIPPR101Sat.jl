@@ -18,7 +18,7 @@ end
     DIPPR101Sat <: SaturationModel
     
     DIPPR101Sat(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -58,7 +58,7 @@ psat(T) = exp(A + B/T + C•log(T) + D•T^E)
 """
 DIPPR101Sat
 
-function DIPPR101Sat(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function DIPPR101Sat(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv","Correlations/saturation_correlations/dippr101_like.csv"]; userlocations=userlocations, verbose=verbose)
     Tc = params["Tc"]
     Pc = params["Pc"]

@@ -9,7 +9,7 @@ export PatelTejaAlpha
     PatelTejaAlpha <: SoaveAlphaModel
     
     PatelTejaAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -28,7 +28,7 @@ mᵢ = 0.452413 + 1.30982ωᵢ - 0.295937ωᵢ^2
 """
 PatelTejaAlpha
 
-function PatelTejaAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function PatelTejaAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = params["acentricfactor"]
     packagedparams = PatelTejaAlphaParam(acentricfactor)

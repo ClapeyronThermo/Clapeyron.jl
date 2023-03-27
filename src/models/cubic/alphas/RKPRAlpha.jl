@@ -11,7 +11,7 @@ export RKPRAlpha
     RKPRAlpha <: RKPRAlphaModel
     
     RKPRAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -30,7 +30,7 @@ Trᵢ = T/Tcᵢ
 """
 RKPRAlpha
 
-function RKPRAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function RKPRAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = params["acentricfactor"]
     packagedparams = RKPRAlphaParam(acentricfactor)

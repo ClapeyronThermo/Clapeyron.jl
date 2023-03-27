@@ -9,7 +9,7 @@ end
 """
     ConstantTranslation <: ConstantTranslationModel
     ConstantTranslation(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 ## Input Parameters
 
@@ -27,7 +27,7 @@ ConstantTranslation
 
 export ConstantTranslation
 
-function ConstantTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function ConstantTranslation(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, String[]; userlocations=userlocations, verbose=verbose)
     c = params["v_shift"]
     packagedparams = ConstantTranslationParam(c)

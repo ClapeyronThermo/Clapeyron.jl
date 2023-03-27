@@ -18,7 +18,7 @@ Cubic alpha `(α(T))` model. Default for [`vdW`](@ref) EoS
 """
 NoAlpha
 
-function NoAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function NoAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     model = NoAlpha(NoAlphaParam())
     return model
 end
