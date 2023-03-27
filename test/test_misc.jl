@@ -163,7 +163,31 @@
             #test if we got the number of sites right
             @test model.vrmodel.sites.n_sites[2][1] == 1000 #1000 sites cO_1sit/e1 in PEG.
         end
+        
+        @testset "#154" begin
+            #there was a problem when using the @newmodel macros outside the Clapeyron module. this should suffice as a test.
+            abstract type PCSAFTModel_test <: SAFTModel end
 
+            # Defining the parameters used by the model
+            struct PCSAFTParam_test <: EoSParam
+                Mw::SingleParam{Float64}
+                segment::SingleParam{Float64}
+                sigma::PairParam{Float64}
+                epsilon::PairParam{Float64}
+                epsilon_assoc::AssocParam{Float64}
+                bondvol::AssocParam{Float64}
+            end
+
+            # Creating a model struct called PCSAFT, which is a sub-type of PCSAFTModel, and uses parameters defined in PCSAFTParam
+            @newmodel PCSAFT_test PCSAFTModel_test PCSAFTParam_test
+            @newmodelsimple PCSAFT_testsimple PCSAFTModel_test PCSAFTParam_test
+            @newmodelgc PCSAFT_testgc PCSAFTModel_test PCSAFTParam_test
+
+            #test if the macros actually generate something
+            @test PCSAFT_test <: EoSModel #@newmodel
+            @test PCSAFT_testsimple <: EoSModel #@newmodelsimple
+            @test PCSAFT_testgc <: EoSModel #@newmodelgc
+        end
     end
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
