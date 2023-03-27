@@ -32,7 +32,7 @@ end
 
 Returns an initial guess of the volume at a pressure, temperature, composition and suggested phase.
 
-If the suggested phase is `:unkwown` or `:liquid`, calls [`x0_volume_liquid`](@ref).
+If the suggested phase is `:unknown` or `:liquid`, calls [`x0_volume_liquid`](@ref).
 
 If the suggested phase is `:gas`, calls [`x0_volume_gas`](@ref).
 

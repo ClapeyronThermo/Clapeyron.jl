@@ -1,5 +1,5 @@
 function fast_parse_grouptype(filepaths::Vector{String})
-    #only parses grouptype, if present in any CSV, is used. if not, return unkwown
+    #only parses grouptype, if present in any CSV, is used. if not, return unknown
     grouptype = :not_set
    
     for filepath ∈ filepaths
@@ -13,13 +13,13 @@ function fast_parse_grouptype(filepaths::Vector{String})
             grouptype = new_grouptype
         else
             if grouptype !== new_grouptype
-                if new_grouptype != :unkwown #for backwards compatibility
+                if new_grouptype != :unknown #for backwards compatibility
                     error_different_grouptype(grouptype,new_grouptype)
                 end
             end
         end
     end
-    grouptype == :not_set && (grouptype = :unkwown)
+    grouptype == :not_set && (grouptype = :unknown)
     return grouptype
 
 end

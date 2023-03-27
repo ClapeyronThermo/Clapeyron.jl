@@ -1,4 +1,4 @@
-@enum CSVType invaliddata singledata pairdata assocdata groupdata intragroupdata
+@enum CSVType invaliddata namedtupledata singledata pairdata assocdata groupdata structgroupdata
 const NO_KIJ = """@REPLACE Clapeyron Database File
 no Parameters [csvtype = unlike]
 species1,species2,k
@@ -315,7 +315,7 @@ function createparams(components::Vector{String},
             continue
         end
         
-        if csvtype == intragroupdata && parsegroups != :intragroup
+        if csvtype == structgroupdata && parsegroups != :intragroup
             continue
         end
 
@@ -355,8 +355,27 @@ function createparams(components::Vector{String},
         end
     end
 
-    if param.userlocations isa NamedTuple
-        println("here")
+    if options.userlocations isa NamedTuple
+        foundparams, notfoundparams = findparamsinnt(components,options,parsegroups,NT_CSV_OPTIONS)
+
+        for vv ∈ foundparams
+            kk = vv.name
+            #we merge if the filepath is not set to replace the current values
+            if haskey(allparams,kk) && !_replace
+                vv2 = allparams[kk]
+                vv = joindata!(vv2,vv)
+            end
+            allparams[kk] = vv
+        end
+        #Merge not found data
+        for (kk,vv) ∈ pairs(notfoundparams)
+            if haskey(allnotfoundparams,kk)
+                vv2 = allnotfoundparams[kk]
+                vv, success = joindata!(vv2,vv)
+                !success && error_clashing_headers(vv2,vv,kk) #Clashing headers error
+            end
+            allnotfoundparams[kk] = vv
+        end
     end
     #delete all found params from allnotfoundparams
     for (kk,vv) ∈ allparams
@@ -392,7 +411,7 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
     idx_sites1 = 0
     idx_sites2 = 0
 
-    if csvtype === singledata || csvtype ∈ (groupdata,intragroupdata)
+    if csvtype === singledata || csvtype ∈ (groupdata,structgroupdata)
         lookupcolumnindex = findfirst(isequal(normalised_columnreference), headernames)
         isnothing(lookupcolumnindex) && _col_indices_error(normalised_columnreference)
         idx_species = lookupcolumnindex
@@ -466,7 +485,7 @@ function findparamsincsv(components,filepath,
     component_delimiter = options.component_delimiter
     csvtype = csv_file_options.csvtype
     no_parsegroups = parsegroups == :off
-    correct_group = (parsegroups == :group && csvtype == groupdata) || (parsegroups == :intragroup && csvtype == intragroupdata)
+    correct_group = (parsegroups == :group && csvtype == groupdata) || (parsegroups == :intragroup && csvtype == structgroupdata)
     grouptype = csv_file_options.grouptype
     
     
@@ -560,7 +579,7 @@ function findparamsincsv(components,filepath,
         _sources = fill(EMPTY_STR,l)
         _csv = fill(filepath,l)
         
-    elseif csvtype ∈ (groupdata,intragroupdata) && no_parsegroups
+    elseif csvtype ∈ (groupdata,structgroupdata) && no_parsegroups
         return foundvalues, notfoundvalues
     else
         error("Filepath $filepath is of type ", string(csvtype), " and cannot be read with this function.")
@@ -587,6 +606,44 @@ function findparamsincsv(components,filepath,
     verbose && __verbose_findparams_found(foundvalues) #print all found values
 
     return foundvalues, notfoundvalues
+end
+
+#find params in named tuple, transforms form named tuple to Dict{RawParam}
+function findparamsinnt(components,
+    options::ParamOptions,
+    parsegroups = :off,
+    csv_file_options = NT_CSV_OPTIONS) #default options
+    verbose = options.verbose
+    nt = options.userlocations
+    foundvalues = Vector{RawParam}(undef,0)
+    notfoundvalues = Dict{String,CSVType}()
+    #this algorithm is less strict that what we have in CSVs. but allows us to parse named tuples
+    #VERY BIG TODO: parse assoc, how do we do that?
+    for (k,v) in pairs(nt)
+        ks = string(k)
+        if k == :groups && parsegroups == :groups
+            param = RawParam(ks,components,v,nothing,nothing,groupdata,:unknown)
+            push!(foundvalues,param)
+        elseif k == :intragroups && parsegroups == :structgroups
+            param = RawParam(ks,components,v,nothing,nothing,structgroupdata,:unknown)
+        elseif (k == :epsilon_assoc || k == :bondvol) && parsegroups == :off && v === nothing
+            notfoundvalues[ks] = assocdata
+        elseif v isa Vector && parsegroups == :off
+            param = RawParam(ks,components,v,nothing,nothing,singledata,:unknown)
+            push!(foundvalues,param)
+        elseif v isa Matrix && parsegroups == :off
+            param = RawParam(ks,components,vec(v),nothing,nothing,pairdata,:unknown)
+            push!(foundvalues,param)
+        else
+            throw(error("cannot parse combination key = $k, value = $v as a valid parameter."))
+        end
+    end
+
+    
+   # verbose && __verbose_findparams_found(foundvalues) #print all found values
+
+    return foundvalues, notfoundvalues
+    
 end
 
 function _fill_sources!(input,allsources,tofill)
@@ -625,7 +682,7 @@ function __verbose_findparams_start(filepath,components,headerparams,parsegroups
     csv_string = Symbol(csvtype)
     no_parsegroups = parsegroups != :off
     if no_parsegroups
-        if csvtype ∈ (groupdata,intragroupdata)
+        if csvtype ∈ (groupdata,structgroupdata)
             @info("Skipping $csv_string csv $filepath")
         else
             @info("Searching for $csv_string headers $headerparams for query $components at $filepath ...")
@@ -633,13 +690,13 @@ function __verbose_findparams_start(filepath,components,headerparams,parsegroups
     else
         if csvtype == groupdata
             @info("Searching for groups for components $components at $filepath ...")
-        elseif csvtype == intragroupdata
+        elseif csvtype == structgroupdata
             @info("Searching for intragroup interactions for components $components at $filepath ...")
         else
             @info("Skipping $csv_string csv $filepath")
         end
     end
-    if grouptype != :unkwown
+    if grouptype != :unknown
         @info("group type: $grouptype")
     end
 end
@@ -676,7 +733,7 @@ function __verbose_findparams_found(foundvalues)
             @info("""Found group data:
             $vals
             """)
-        elseif v.type == intragroupdata
+        elseif v.type == structgroupdata
             @info("TODO: parse intragroup data for debug")
         end
     end
@@ -704,6 +761,8 @@ function read_csv_options(filepath)
     end
 end
 
+const NT_CSV_OPTIONS = (csvtype = namedtupledata,grouptype = :unknown,estimator = :no_estimator, species = ["all"])
++
 function _readcsvtype(collection)
     length(collection) != 1 && return invaliddata
     key = only(collection)
@@ -718,8 +777,8 @@ function _readcsvtype(key::AbstractString)
     key == "assoc" && return assocdata
     key == "group" && return groupdata
     key == "groups" && return groupdata
-    key == "intragroup" && return intragroupdata
-    key == "intragroups" && return intragroupdata
+    key == "intragroup" && return structgroupdata
+    key == "intragroups" && return structgroupdata
     key == "invalid" && return invaliddata
     return invaliddata
 end
@@ -732,7 +791,7 @@ function __get_options(data)
         opts_dict[k] = v
     end
     _csvtype = _readcsvtype(get(opts_dict,"csvtype","invalid"))
-    _grouptype = Symbol(get(opts_dict,"grouptype","unkwown"))
+    _grouptype = Symbol(get(opts_dict,"grouptype","unknown"))
     _estimator = Symbol(get(opts_dict,"method","error"))
     _species = String.(split(get(opts_dict,"species","all")," "))
     return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator, species = _species)
