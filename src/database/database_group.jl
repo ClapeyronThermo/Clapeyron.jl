@@ -84,7 +84,7 @@ function GroupParam(gccomponents::Vector,
 end
 
 function GroupParam(gccomponents,
-    grouplocations::Array{String,1}=String[],
+    grouplocations=String[],
     options::ParamOptions = DefaultOptions,
     grouptype = :unknown)
 
