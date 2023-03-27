@@ -4,7 +4,7 @@ include("structs.jl")
 #term dispatch. function definitions are in term_functions.jl
 
 function a_term(term::ExponentialTerm,δ,τ,lnδ,lnτ,_0)
-    if term.active    
+    if term.active 
         n = term.n
         t = term.t
         d = term.d
@@ -84,6 +84,8 @@ aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - 1/(βᵢ*(τ -γᵢ)^2 + b�
 All parameters are fitted, to allow a equation of state of a single fluid with property calculations as close as possible to the experimental values.
 """
 EmpiricSingleFluid
+
+
 
 struct IdealEmpiricSingleFluid <: IdealModel
     components::Vector{String}

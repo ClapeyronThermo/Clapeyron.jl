@@ -187,7 +187,14 @@ function _parse_ideal(id_data)
             c0 += id_data_i[:a]
         elseif id_data_i[:type] == "IdealGasHelmholtzPlanckEinstein"
             append!(n,id_data_i[:n])
-            append!(t,id_data_i[:t])
+            append!(t,-id_data_i[:t])
+            l = length(id_data_i[:n])
+            append!(c,fill(1.,l))
+            append!(d,fill(-1.,l))
+        elseif id_data_i[:type] == "IdealGasHelmholtzPlanckEinsteinFunctionT"
+            _Tc = id_data_i[:Tcrit]
+            append!(n,id_data_i[:n])
+            append!(t, -id_data_i[:v] ./ _Tc)
             l = length(id_data_i[:n])
             append!(c,fill(1.,l))
             append!(d,fill(-1.,l))
@@ -200,7 +207,7 @@ function _parse_ideal(id_data)
             _Tc = id_data_i[:Tc]
             τ0 = _T0/_Tc
             a1 += cpi*(1 - log(τ0))
-            a2 += -cpi*_T0/_Tc
+            a2 += -cpi*τ0
             c0 += cpi
         elseif id_data_i[:type] == "IdealGasHelmholtzCP0PolyT"
             _T0 = id_data_i[:T0]
@@ -244,6 +251,30 @@ function _parse_ideal(id_data)
             append!(t,id_data_i[:t])
             append!(c,id_data_i[:c])
             append!(d,id_data_i[:d])
+        elseif res_data_i[:type] == "IdealGasHelmholtzCP0AlyLee"
+            alylee_data = res_data_i[:c]
+            _Tc = res_data_i[:Tc]
+            _T0 = res_data_i[:T0]
+        
+            @assert length(alylee_data) == 5 "aly-lee is defined with only 5 terms. add an additional ally lee term if you require more coefficients." 
+            A,B,C,D,E = alylee_data
+            
+            if !iszero(A)
+                τ0 = _T0/_Tc
+                a1 += A*(1 - log(τ0))
+                a2 += -A*_T0/_Tc
+                c0 += A
+            end
+
+            push!(n,B)
+            push!(t,-2*C/Tc)
+            push!(c,1)
+            push!(d,-1)
+
+            push!(n,-D)
+            push!(t,-2*E/Tc)
+            push!(c,1)
+            push!(d,1)
         else
             throw(error("Ideal: $(id_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
         end
@@ -458,7 +489,7 @@ all ideal types
  `IdealGasHelmholtzPower` done
  `IdealGasHelmholtzPlanckEinsteinGeneralized` done
  `IdealGasHelmholtzCP0PolyT` done
- `IdealGasHelmholtzCP0AlyLee` #not done, only n-Heptane and D6 have it, only 5 terms
+ `IdealGasHelmholtzCP0AlyLee` #not done, needed for GERG2008
  `IdealGasHelmholtzCP0Constant` done
 
 all residual types
@@ -470,4 +501,20 @@ all residual types
  `ResidualHelmholtzExponential` not done: (Fluorine,Propyne,R114,R13,R14,R21,RC318)
  `ResidualHelmholtzAssociating` not done, only methanol have it
  `ResidualHelmholtzLemmon2005` mpt done, only R125 have it
+=#
+
+#=
+AlyLee parser:
+
+[A,B,C,D,E]
+
+push!(n_gpe,B)
+push!(t_gpe,-2*C/Tc)
+push!(c_gpe,1)
+push!(d_gpe,-1)
+
+push!(n_gpe,-D)
+push!(t_gpe,-2*E/Tc)
+push!(c_gpe,1)
+push!(d_gpe,1)
 =#
