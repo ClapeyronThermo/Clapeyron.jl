@@ -172,7 +172,7 @@ Note, that the parser will not fail if you pass different parameters with differ
 """
 function getparams(components,
                     locations::Array{String,1}=String[];
-                    userlocations::Vector{String}=String[],
+                    userlocations=String[],
                     asymmetricparams::Vector{String}=String[],
                     ignore_missing_singleparams::Vector{String}=String[],
                     ignore_headers::Vector{String} =  IGNORE_HEADERS,
@@ -301,6 +301,7 @@ function createparams(components::Vector{String},
 
     allparams = Dict{String,RawParam}()
     allnotfoundparams = Dict{String,CSVType}()
+    
     for filepath ∈ filepaths
         
         _replace = startswith(filepath,"@REPLACE")
@@ -352,6 +353,10 @@ function createparams(components::Vector{String},
                 delete!(allparams,kk)
             end
         end
+    end
+
+    if param.userlocations isa NamedTuple
+        println("here")
     end
     #delete all found params from allnotfoundparams
     for (kk,vv) ∈ allparams

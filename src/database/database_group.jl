@@ -75,8 +75,8 @@ gc_get_group(x) = last(x)
 
 
 function GroupParam(gccomponents::Vector,
-    group_locations::Vector{String}=String[];
-    group_userlocations::Vector{String}=String[],
+    group_locations=String[];
+    group_userlocations=String[],
     verbose::Bool = false,
     grouptype = :unknown)
     options = ParamOptions(;group_userlocations,verbose)
