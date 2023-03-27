@@ -622,17 +622,17 @@ function findparamsinnt(components,
     for (k,v) in pairs(nt)
         ks = string(k)
         if k == :groups && parsegroups == :groups
-            param = RawParam(ks,components,v,nothing,nothing,groupdata,:unknown)
+            param = RawParam(ks,nothing,v,nothing,nothing,groupdata,:unknown)
             push!(foundvalues,param)
         elseif k == :intragroups && parsegroups == :structgroups
-            param = RawParam(ks,components,v,nothing,nothing,structgroupdata,:unknown)
+            param = RawParam(ks,nothing,v,nothing,nothing,structgroupdata,:unknown)
         elseif (k == :epsilon_assoc || k == :bondvol) && parsegroups == :off && v === nothing
             notfoundvalues[ks] = assocdata
         elseif v isa Vector && parsegroups == :off
-            param = RawParam(ks,components,v,nothing,nothing,singledata,:unknown)
+            param = RawParam(ks,nothing,v,nothing,nothing,singledata,:unknown)
             push!(foundvalues,param)
         elseif v isa Matrix && parsegroups == :off
-            param = RawParam(ks,components,vec(v),nothing,nothing,pairdata,:unknown)
+            param = RawParam(ks,nothing,vec(v),nothing,nothing,pairdata,:unknown)
             push!(foundvalues,param)
         else
             throw(error("cannot parse combination key = $k, value = $v as a valid parameter."))

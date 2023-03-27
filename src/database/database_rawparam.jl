@@ -10,7 +10,7 @@ For Clapeyron 0.4.0, this will also hold the group type, tapes with different gr
 =#
 struct RawParam{T}
     name::String
-    component_info::Union{Vector{NTuple{4,String}},Vector{String}}  # "Tape" for component data (component1,component2,site1,site2)
+    component_info::Union{Vector{NTuple{4,String}},Nothing}  # "Tape" for component data (component1,component2,site1,site2)
     data::Vector{T} # "Tape" of data
     sources::Union{Vector{String},Nothing} # "Tape" of parsed sources
     csv::Union{Vector{String},Nothing} # "Tape" of origin csv
@@ -145,16 +145,13 @@ end
 
 function compile_single(name,components,raw::RawParam,options)
     
-    if eltype(raw.component_info) == String
+    if eltype(raw.component_info) == String #build from named tuple
         return SingleParam(raw.name,components,raw.data)
     end
 
     EMPTY_STR = ""
     l = length(components)
     L = eltype(raw)
-    
-
-    
     if L <: Number
         values = zeros(L,l)
     else
@@ -187,7 +184,7 @@ end
 
 function compile_pair(name,components,raw::RawParam,options)
     
-    if eltype(raw.component_info) == String
+    if eltype(raw.component_info) == String #build from named tuple
         l = length(components)
         return PairParam(raw.name,components,reshape(raw.data,(l,l)))
     end
