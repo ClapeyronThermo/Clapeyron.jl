@@ -25,10 +25,10 @@ Cubic alpha `(α(T))` model. Default for `sCPA` EoS.
 sCPAAlpha
 
 export sCPAAlpha
-function sCPAAlpha(components::Vector{String}; userlocationskwargs...)
+function sCPAAlpha(components::Vector{String};userlocations = String[],verbose = false)
     params = getparams(components, ["SAFT/CPA/sCPA/sCPA_like.csv"]; userlocations=userlocations, ignore_missing_singleparams=["Mw"], verbose=verbose)
     c1 = params["c1"]
     packagedparams = CPAAlphaParam(c1)
-    model = sCPAAlpha(packagedparams, verbose=verbose)
+    model = sCPAAlpha(packagedparams,verbose = verbose)
     return model
 end
