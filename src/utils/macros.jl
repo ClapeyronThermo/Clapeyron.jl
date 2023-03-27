@@ -106,13 +106,13 @@ See the tutorial or browse the implementations to see how this is used.
 """
 macro newmodelgc(name, parent, paramstype)
     quote 
-    struct $name{T <: IdealModel} <: $parent
+    struct $name{T <: Clapeyron.IdealModel} <: $parent
         components::Array{String,1}
-        groups::GroupParam
-        sites::SiteParam
+        groups::Clapeyron.GroupParam
+        sites::Clapeyron.SiteParam
         params::$paramstype
         idealmodel::T
-        assoc_options::AssocOptions
+        assoc_options::Clapeyron.AssocOptions
         references::Array{String,1}
     end
 
@@ -132,8 +132,8 @@ macro newmodelgc(name, parent, paramstype)
     Clapeyron.molecular_weight(model::$name,z=SA[1.0]) = Clapeyron.group_molecular_weight(model.groups,Clapeyron.mw(model),z)
 
     function $name(params::$paramstype,
-        groups::GroupParam,
-        idealmodel::IDEALTYPE = BasicIdeal;
+        groups::Clapeyron.GroupParam,
+        idealmodel::Clapeyron.IDEALTYPE = Clapeyron.BasicIdeal;
         ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
@@ -143,9 +143,9 @@ macro newmodelgc(name, parent, paramstype)
     end
 
     function $name(params::$paramstype,
-        groups::GroupParam,
-        sites::SiteParam,
-        idealmodel::IDEALTYPE = BasicIdeal;
+        groups::Clapeyron.GroupParam,
+        sites::Clapeyron.SiteParam,
+        idealmodel::Clapeyron.IDEALTYPE = BasicIdeal;
         ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
@@ -170,10 +170,10 @@ macro newmodel(name, parent, paramstype)
     quote 
     struct $name{T <: IdealModel} <: $parent
         components::Array{String,1}
-        sites::SiteParam
+        sites::Clapeyron.SiteParam
         params::$paramstype
         idealmodel::T
-        assoc_options::AssocOptions
+        assoc_options::Clapeyron.AssocOptions
         references::Array{String,1}
     end
     Clapeyron.has_sites(::Type{<:$name}) = true
@@ -189,8 +189,8 @@ macro newmodel(name, parent, paramstype)
     Base.length(model::$name) = Base.length(model.components)
 
     function $name(params::$paramstype,
-        sites::SiteParam,
-        idealmodel::IDEALTYPE = Clapeyron.BasicIdeal;
+        sites::Clapeyron.SiteParam,
+        idealmodel::Clapeyron.IDEALTYPE = Clapeyron.BasicIdeal;
         ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
@@ -200,10 +200,10 @@ macro newmodel(name, parent, paramstype)
     end
 
     function $name(params::$paramstype,
-        idealmodel::IDEALTYPE = Clapeyron.BasicIdeal;
+        idealmodel::Clapeyron.IDEALTYPE = Clapeyron.BasicIdeal;
         ideal_userlocations=String[],
         references::Vector{String}=String[],
-        assoc_options::AssocOptions = Clapeyron.AssocOptions(),
+        assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
 
         return Clapeyron.build_model($name,params,idealmodel;ideal_userlocations,references,assoc_options,verbose)
