@@ -10,7 +10,7 @@ export vdW1fRule
     vdW1fRule <: vdW1fRuleModel
     
     vdW1fRule(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 ## Input Parameters
 None
@@ -26,7 +26,7 @@ c̄ = ∑cᵢxᵢ
 """
 vdW1fRule
 
-function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function vdW1fRule(components::Vector{String}; activity=nothing, userlocations=String[], activity_userlocations=String[], verbose::Bool=false)
     packagedparams = vdW1fRuleParam()
     model = vdW1fRule(packagedparams, verbose=verbose)
     return model
