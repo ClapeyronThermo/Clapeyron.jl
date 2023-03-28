@@ -95,6 +95,7 @@ Base.eltype(param::PairParameter{T}) where T = T
 
 #unsafe constructor
 function PairParam(name,components,values)
+    @assert length(components) == LinearAlgebra.checksquare(values)
     missingvals = fill(false,size(values))
     src = String[]
     sourcecsv = String[]
@@ -102,12 +103,13 @@ function PairParam(name,components,values)
 end
 
 function PairParam(name::String,
-                    components::Array{String,1},
-                    values::Array{T,2},
-                    ismissingvalues = fill(false,length(components),length(components)),
-                    sourcecsvs::Array{String,1} = String[], 
-                    sources::Array{String,1} = String[]) where T
+    components::Array{String,1},
+    values::Array{T,2},
+    ismissingvalues = fill(false,length(components),length(components)),
+    sourcecsvs::Array{String,1} = String[], 
+    sources::Array{String,1} = String[]) where T
     
+    @assert length(components) == LinearAlgebra.checksquare(values)
     _values,_ismissingvalues = defaultmissing(values)
     if !all(ismissingvalues)
         _ismissingvalues = ismissingvalues
@@ -121,12 +123,13 @@ function PairParam(name::String,
     ismissingvalues = map(!,diagm(fill(true,length(components)))),
     sourcecsvs::Array{String,1} = String[], 
     sources::Array{String,1} = String[]) where T
-
-_values,_ismissingvalues = defaultmissing(diagm(values))
-if !all(ismissingvalues)
-_ismissingvalues = ismissingvalues
-end
-return PairParameter(name, components,_values, _ismissingvalues, sourcecsvs, sources)
+    
+    @assert length(components) == length(values)
+    _values,_ismissingvalues = defaultmissing(diagm(values))
+    if !all(ismissingvalues)
+        _ismissingvalues = ismissingvalues
+    end
+    return PairParameter(name, components,_values, _ismissingvalues, sourcecsvs, sources)
 end
 
 # If no value is provided, just initialise empty param.
