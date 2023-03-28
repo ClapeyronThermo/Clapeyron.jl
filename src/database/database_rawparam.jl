@@ -145,7 +145,7 @@ end
 
 function compile_single(name,components,raw::RawParam,options)
     
-    if eltype(raw.component_info) == String #build from named tuple
+    if isnothing(raw.component_info) #build from named tuple
         return SingleParam(raw.name,components,raw.data)
     end
 
@@ -184,7 +184,7 @@ end
 
 function compile_pair(name,components,raw::RawParam,options)
     
-    if eltype(raw.component_info) == String #build from named tuple
+    if isnothing(raw.component_info) #build from named tuple
         l = length(components)
         return PairParam(raw.name,components,reshape(raw.data,(l,l)))
     end

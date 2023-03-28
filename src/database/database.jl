@@ -327,62 +327,43 @@ function createparams(components::Vector{String},
         end
         
         foundparams, notfoundparams = findparamsincsv(components,filepath,options,parsegroups,csv_options)
-
-        #Merge found data
-        for vv ∈ foundparams
-            kk = vv.name
-            #we merge if the filepath is not set to replace the current values
-            if haskey(allparams,kk) && !_replace
-                vv2 = allparams[kk]
-                vv = joindata!(vv2,vv)
-            end
-            allparams[kk] = vv
-        end
-        #Merge not found data
-        for (kk,vv) ∈ pairs(notfoundparams)
-            if haskey(allnotfoundparams,kk)
-                vv2 = allnotfoundparams[kk]
-                vv, success = joindata!(vv2,vv)
-                !success && error_clashing_headers(vv2,vv,kk) #Clashing headers error
-            end
-            allnotfoundparams[kk] = vv
-        end
-
-        if _replace #if the paramter is not found, that means that we want to erase that param.
-            for (kk,vv) ∈ pairs(notfoundparams)
-                delete!(allparams,kk)
-            end
-        end
+        merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,_replace)
     end
 
     if options.userlocations isa NamedTuple
         foundparams, notfoundparams = findparamsinnt(components,options,parsegroups,NT_CSV_OPTIONS)
-
-        for vv ∈ foundparams
-            kk = vv.name
-            #we merge if the filepath is not set to replace the current values
-            if haskey(allparams,kk) && !_replace
-                vv2 = allparams[kk]
-                vv = joindata!(vv2,vv)
-            end
-            allparams[kk] = vv
-        end
-        #Merge not found data
-        for (kk,vv) ∈ pairs(notfoundparams)
-            if haskey(allnotfoundparams,kk)
-                vv2 = allnotfoundparams[kk]
-                vv, success = joindata!(vv2,vv)
-                !success && error_clashing_headers(vv2,vv,kk) #Clashing headers error
-            end
-            allnotfoundparams[kk] = vv
-        end
-    end
-    #delete all found params from allnotfoundparams
-    for (kk,vv) ∈ allparams
-        delete!(allnotfoundparams,kk)
+        merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,false)
     end
 
     return allparams,allnotfoundparams
+end
+#helper function, merges params into the main list
+function merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,_replace)
+    for vv ∈ foundparams
+        kk = vv.name
+        #we merge if the filepath is not set to replace the current values
+        if haskey(allparams,kk) && !_replace
+            vv2 = allparams[kk]
+            vv = joindata!(vv2,vv)
+        end
+        allparams[kk] = vv
+    end
+    #Merge not found data
+    for (kk,vv) ∈ pairs(notfoundparams)
+        if haskey(allnotfoundparams,kk)
+            vv2 = allnotfoundparams[kk]
+            vv, success = joindata!(vv2,vv)
+            !success && error_clashing_headers(vv2,vv,kk) #Clashing headers error
+        end
+        allnotfoundparams[kk] = vv
+    end
+
+    if _replace #if the paramter is not found, that means that we want to erase that param.
+        for (kk,vv) ∈ pairs(notfoundparams)
+            delete!(allparams,kk)
+        end
+    end
+    return nothing
 end
 @specialize
 function compile_params(components,allparams,allnotfoundparams,options)
