@@ -620,6 +620,18 @@ function findparamsinnt(components,
         elseif v isa Matrix && parsegroups == :off
             param = RawParam(ks,nothing,vec(v),nothing,nothing,pairdata,:unknown)
             push!(foundvalues,param)
+        elseif v isa Dict{Tuple{Tuple{String,String},Tuple{String,String}}}
+            param = RawParam(ks,Vector{NTuple{4,String}}(undef,0),Vector{valtype(v)}(undef,0),String[],String[],assocdata,:unknown)
+            empty_string = ""
+            for (k_dict,v_dict) in pairs(v)
+                sp1,s1 = first(k_dict)
+                sp2,s2 = last(k_dict)
+                push!(param.component_info,(sp1,sp2,s1,s2))
+                push!(param.data,v_dict)
+                push!(param.sources,empty_string)
+                push!(param.csv,empty_string)
+                push!(foundvalues,param)
+            end
         else
             throw(error("cannot parse combination key = $k, value = $v as a valid parameter."))
         end
