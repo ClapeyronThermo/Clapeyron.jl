@@ -381,7 +381,7 @@ the necessary traits to make the model compatible with Clapeyron routines.
 
 """
 macro registermodel(model)
-    _model = getfield(@__MODULE__(),model)
+    _model = getfield(__module__,model)
     ∅ = :()
 
     _has_components = hasfield(_model,:components)
