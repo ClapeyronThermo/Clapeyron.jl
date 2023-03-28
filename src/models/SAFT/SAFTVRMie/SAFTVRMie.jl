@@ -164,7 +164,7 @@ function ζ0123(model::SAFTVRMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params
 end
 
 
-function d_vrmie(T,λa,λr,σ,ϵ,u = SAFTVRMieconsts.u,v = SAFTVRMieconsts.v)
+function d_vrmie(T,λa,λr,σ,ϵ,u = SAFTVRMieconsts.u,w = SAFTVRMieconsts.w)
     θ = Cλ_mie(λa, λr)*ϵ/T
     di = zero(T*1.0)
     λrinv = 1/λr
@@ -186,19 +186,15 @@ function d(model::SAFTVRMieModel, V, T, z)
     n = length(z)
     _d = fill(zero(T*1.0),n)
     for k ∈ 1:n
-        _d[k] = d_vrmie(T,λa[k],λr[k],σ[k],ϵ[k],u,v)
+        _d[k] = d_vrmie(T,λa[k],λr[k],σ[k],ϵ[k],u,w)
     end
     return _d
 end
 
 
 function d(model::SAFTVRMieModel, V, T, z, λa,λr,ϵ,σ)
-    u = SAFTVRMieconsts.u
-    w = SAFTVRMieconsts.w
-    θ = @f(Cλ,λa,λr)*ϵ/T
-    σ*(1-∑(w[j]*(θ/(θ+u[j]))^(1/λr)*(exp(θ*(1/(θ/(θ+u[j]))^(λa/λr)-1))/(u[j]+θ)/λr) for j ∈ 1:5))
+    d_vrmie(T,λa,λr,σ,ϵ,SAFTVRMieconsts.u,SAFTVRMieconsts.w)
 end
-
 
 function Cλ(model::SAFTVRMieModel, V, T, z, λa, λr)
     return Cλ_mie(λa, λr)
@@ -755,5 +751,5 @@ function d(model::SAFTVRMie, V, T, z::SingleComp)
     λr = model.params.lambda_r
     u = SAFTVRMieconsts.u
     w = SAFTVRMieconsts.w
-    return SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1],u,v)]
+    return SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1],u,w)]
 end
