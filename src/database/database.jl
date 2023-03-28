@@ -335,6 +335,11 @@ function createparams(components::Vector{String},
         merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,false)
     end
 
+    #clean not found params.
+    for (kk,vv) ∈ allparams
+        delete!(allnotfoundparams,kk)
+    end
+
     return allparams,allnotfoundparams
 end
 #helper function, merges params into the main list
