@@ -708,6 +708,9 @@ function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     return -achain/∑z
 end
 const SAFTVRMieconsts = (
+    # u: the quadrature points in the domain [0, ∞) for Gauss-Laguerre integration with 5 points 
+    # w: the weights associated with these quadrature points
+    # Note: Additional quadrature points can be generated with the python code at https://en.wikipedia.org/wiki/Gauss%E2%80%93Laguerre_quadrature
     u = (0.26356031971814109102031,1.41340305910651679221800,3.59642577104072208122300,7.08581000585883755692200,12.6408008442757826594300),
     w = (0.5217556105828086524759,0.3986668110831759274500,7.5942449681707595390e-2,3.6117586799220484545e-3,2.3369972385776227891e-5),
 
