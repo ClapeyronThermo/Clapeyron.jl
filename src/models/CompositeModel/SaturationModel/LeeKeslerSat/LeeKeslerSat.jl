@@ -12,7 +12,7 @@ end
     LeeKeslerSat <: SaturationModel
     
     LeeKeslerSat(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -37,7 +37,7 @@ f₁ = 15.2518 - 15.6875/Tr - 13.4721•log(Tr) + 0.43577•Tr⁶
 """
 LeeKeslerSat
 
-function LeeKeslerSat(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function LeeKeslerSat(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]

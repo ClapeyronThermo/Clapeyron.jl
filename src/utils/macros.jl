@@ -134,7 +134,7 @@ macro newmodelgc(name, parent, paramstype)
     function $name(params::$paramstype,
         groups::Clapeyron.GroupParam,
         idealmodel::Clapeyron.IDEALTYPE = Clapeyron.BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
@@ -146,7 +146,7 @@ macro newmodelgc(name, parent, paramstype)
         groups::Clapeyron.GroupParam,
         sites::Clapeyron.SiteParam,
         idealmodel::Clapeyron.IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
@@ -191,7 +191,7 @@ macro newmodel(name, parent, paramstype)
     function $name(params::$paramstype,
         sites::Clapeyron.SiteParam,
         idealmodel::Clapeyron.IDEALTYPE = Clapeyron.BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
@@ -201,7 +201,7 @@ macro newmodel(name, parent, paramstype)
 
     function $name(params::$paramstype,
         idealmodel::Clapeyron.IDEALTYPE = Clapeyron.BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
@@ -249,7 +249,7 @@ function build_model(::Type{model},params::EoSParam,
         groups::GroupParam,
         sites::SiteParam,
         idealmodel::IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
         verbose::Bool = false) where model <:EoSModel
@@ -265,7 +265,7 @@ end
 function build_model(::Type{model},params::EoSParam,
         groups::GroupParam,
         idealmodel::IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
         verbose::Bool = false) where model <:EoSModel
@@ -278,7 +278,7 @@ end
 function build_model(::Type{model},params::EoSParam,
         sites::SiteParam,
         idealmodel::IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
         verbose::Bool = false) where model <:EoSModel
@@ -294,7 +294,7 @@ end
 #normal macro model
 function build_model(::Type{model},params::EoSParam,
         idealmodel::IDEALTYPE;
-        ideal_userlocations::Vector{String}=String[],
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
         verbose::Bool = false) where model <:EoSModel
@@ -381,7 +381,7 @@ the necessary traits to make the model compatible with Clapeyron routines.
 
 """
 macro registermodel(model)
-    _model = getfield(@__MODULE__(),model)
+    _model = getfield(__module__,model)
     ∅ = :()
 
     _has_components = hasfield(_model,:components)

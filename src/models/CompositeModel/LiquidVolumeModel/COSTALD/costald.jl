@@ -9,7 +9,7 @@ end
 
 @newmodelsimple COSTALD COSTALDModel COSTALDParam
 
-function COSTALD(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function COSTALD(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Tc = params["Tc"]
     Vc = params["Vc"]

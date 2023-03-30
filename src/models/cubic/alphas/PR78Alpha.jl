@@ -11,7 +11,7 @@ export PR78Alpha
     PR78Alpha <: PR78AlphaModel
     
     PR78Alpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -31,7 +31,7 @@ else
 """
 PR78Alpha
 
-function PR78Alpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function PR78Alpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = params["acentricfactor"]
     packagedparams = PR78AlphaParam(acentricfactor)

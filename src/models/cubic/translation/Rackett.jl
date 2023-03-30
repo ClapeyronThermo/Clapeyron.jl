@@ -11,7 +11,7 @@ end
     RackettTranslation <: RackettTranslationModel
 
     RackettTranslation(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -39,7 +39,7 @@ Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 RackettTranslation
 
 export RackettTranslation
-function RackettTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function RackettTranslation(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_VC)
     Vc = params["Vc"]
     c = SingleParam("Volume shift",components,zeros(length(components)))

@@ -13,7 +13,7 @@ end
     ParamTable(type::Symbol,table;
     location = nothing,
     name = nothing,
-    grouptype = :unkwown,
+    grouptype = :unknown,
     options = ParamOptions())
 
 Creates a clapeyron CSV file and returns the location of that file. the type determines the table type:

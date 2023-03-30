@@ -12,7 +12,7 @@ end
     TwuAlpha <: TwuAlphaModel
     
     TwuAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 ## Input Parameters
 - `M`: Single Parameter
@@ -34,7 +34,7 @@ Trᵢ = T/Tcᵢ
 TwuAlpha
 
 export TwuAlpha
-function TwuAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function TwuAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["alpha/Twu/Twu_like.csv"]; userlocations=userlocations, verbose=verbose)
     M = params["M"]
     N = params["N"]

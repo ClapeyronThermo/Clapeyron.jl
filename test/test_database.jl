@@ -269,5 +269,25 @@ using Clapeyron, Test, LinearAlgebra
     #@REPLACE keyword
     param_user3 = Clapeyron.getparams(["sp1","sp2"],userlocations = [file, "@REPLACE/" * csv_string],ignore_missing_singleparams = ["userparam"])
     @test param_user3["userparam"].ismissingvalues[2] == true
+
+    #named tuple constructor:
+
+    model_nt = PCSAFT(["a1"],userlocations = (;
+        Mw = [1.],
+        epsilon = [2.],
+        sigma = [3.],
+        segment = [4.],
+        n_H = [1],
+        n_e = [1],
+        epsilon_assoc = Dict((("a1","e"),("a1","H")) => 1000.), 
+        bondvol = Dict((("a1","e"),("a1","H")) => 0.001)))
+    
+    
+    @test model_nt.params.Mw[1] == 1.
+    @test model_nt.params.epsilon[1] == 2.
+    @test model_nt.params.sigma[1] == 3e-10 #pcsaft multiplies sigma by 1e-10
+    @test model_nt.params.segment[1] == 4.
+    @test model_nt.params.epsilon_assoc.values.values[1] == 1000.
+    @test model_nt.params.bondvol.values.values[1] == 0.001
 end
 

@@ -13,8 +13,8 @@ end
 
     WSRule(components::Vector{String};
     activity = Wilson,
-    userlocations::Vector{String}=String[],
-    activity_userlocations::Vector{String}=String[],
+    userlocations=String[],
+    activity_userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -51,7 +51,7 @@ for Peng-Robinson:
 WSRule
 
 export WSRule
-function WSRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function WSRule(components::Vector{String}; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
     _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1002/aic.690380505"]
     model = WSRule(components, _activity,references)

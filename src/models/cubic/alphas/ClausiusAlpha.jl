@@ -10,7 +10,7 @@ export ClausiusAlpha
     ClausiusAlpha <: ClausiusAlphaModel
     
     ClausiusAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -32,7 +32,7 @@ Trᵢ = T/Tcᵢ
 """
 ClausiusAlpha
 
-function ClausiusAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function ClausiusAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     packagedparams = ClausiusAlphaParam()
     model = ClausiusAlpha(packagedparams, verbose=verbose)
     return model

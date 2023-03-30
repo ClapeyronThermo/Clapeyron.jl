@@ -9,7 +9,7 @@ end
 
 @newmodelsimple RackettLiquid RackettLiquidModel RackettLiquidParam
 
-function RackettLiquid(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function RackettLiquid(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]
@@ -72,7 +72,7 @@ function volume_impl(model::RackettLiquidModel,p,T,z::SingleComp,phase=:unknown,
 end
 
 
-function YamadaGunnLiquid(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function YamadaGunnLiquid(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]

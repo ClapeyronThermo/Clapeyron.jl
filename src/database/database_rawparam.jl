@@ -10,10 +10,10 @@ For Clapeyron 0.4.0, this will also hold the group type, tapes with different gr
 =#
 struct RawParam{T}
     name::String
-    component_info::Vector{NTuple{4,String}}  # "Tape" for component data (component1,component2,site1,site2)
+    component_info::Union{Vector{NTuple{4,String}},Nothing}  # "Tape" for component data (component1,component2,site1,site2)
     data::Vector{T} # "Tape" of data
-    sources::Vector{String} # "Tape" of parsed sources
-    csv::Vector{String} # "Tape" of origin csv
+    sources::Union{Vector{String},Nothing} # "Tape" of parsed sources
+    csv::Union{Vector{String},Nothing} # "Tape" of origin csv
     type::CSVType #the type of data
     grouptype::Symbol #in the future, this could hold an "Options" type,generated per CSV
 end
@@ -122,7 +122,7 @@ it also builds empty params, if you pass a CSVType instead of a RawParam
 Base.@nospecialize
 
 function compile_param(components,name,raw::RawParam,site_strings,options)
-    if raw.type == singledata || raw.type == groupdata || raw.type == intragroupdata
+    if raw.type == singledata || raw.type == groupdata || raw.type == structgroupdata
         return compile_single(name,components,raw,options)
     elseif raw.type == pairdata
         return compile_pair(name,components,raw,options)
@@ -144,6 +144,11 @@ function compile_param(components,name,raw::CSVType,site_strings,options)
 end
 
 function compile_single(name,components,raw::RawParam,options)
+    
+    if isnothing(raw.component_info) #build from named tuple
+        return SingleParam(raw.name,components,raw.data)
+    end
+
     EMPTY_STR = ""
     l = length(components)
     L = eltype(raw)
@@ -178,6 +183,12 @@ function compile_single(name,components,type::CSVType,options)
 end
 
 function compile_pair(name,components,raw::RawParam,options)
+    
+    if isnothing(raw.component_info) #build from named tuple
+        l = length(components)
+        return PairParam(raw.name,components,reshape(raw.data,(l,l)))
+    end
+    
     EMPTY_STR = ""
     symmetric = name ∉ options.asymmetricparams
     l = length(components)

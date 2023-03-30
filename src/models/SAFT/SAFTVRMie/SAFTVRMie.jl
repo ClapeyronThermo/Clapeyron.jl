@@ -164,45 +164,43 @@ function ζ0123(model::SAFTVRMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params
 end
 
 
+function d_vrmie(T,λa,λr,σ,ϵ,u = SAFTVRMieconsts.u,w = SAFTVRMieconsts.w)
+    θ = Cλ_mie(λa, λr)*ϵ/T
+    di = zero(T*1.0)
+    λrinv = 1/λr
+    λaλr = λa/λr
+    for j ∈ 1:5
+        θj = (θ/(θ+u[j]))
+        di += w[j] * θj^(1/λr + 1) * exp(θ*(θj^(-λa/λr)-1)) / (θ*λr)
+    end
+    return σ*(1-di)
+end
+
 function d(model::SAFTVRMieModel, V, T, z)
-    _ϵ = diagvalues(model.params.epsilon)
-    _σ = diagvalues(model.params.sigma)
-    _λa = diagvalues(model.params.lambda_a)
-    _λr = diagvalues(model.params.lambda_r)
+    ϵ = diagvalues(model.params.epsilon)
+    σ = diagvalues(model.params.sigma)
+    λa = diagvalues(model.params.lambda_a)
+    λr = diagvalues(model.params.lambda_r)
     u = SAFTVRMieconsts.u
     w = SAFTVRMieconsts.w
-    _0 = zero(T*1.0)
     n = length(z)
-    _d = zeros(typeof(_0),n)
+    _d = fill(zero(T*1.0),n)
     for k ∈ 1:n
-        ϵ = _ϵ[k]
-        σ = _σ[k]
-        λa = _λa[k]
-        λr = _λr[k]
-        θ = Cλ(model,V,T,z,λa,λr)*ϵ/T
-        di = _0
-        λrinv = 1/λr
-        λaλr = λa/λr
-        for j ∈ 1:5
-            di += w[j]*(θ/(θ+u[j]))^λrinv*(exp(θ*(1/(θ/(θ+u[j]))^λaλr-1))/(u[j]+θ)/λr)
-        end
-        _d[k] = σ*(1-di)
+        _d[k] = d_vrmie(T,λa[k],λr[k],σ[k],ϵ[k],u,w)
     end
     return _d
 end
 
 
 function d(model::SAFTVRMieModel, V, T, z, λa,λr,ϵ,σ)
-    u = SAFTVRMieconsts.u
-    w = SAFTVRMieconsts.w
-    θ = @f(Cλ,λa,λr)*ϵ/T
-    σ*(1-∑(w[j]*(θ/(θ+u[j]))^(1/λr)*(exp(θ*(1/(θ/(θ+u[j]))^(λa/λr)-1))/(u[j]+θ)/λr) for j ∈ 1:5))
+    d_vrmie(T,λa,λr,σ,ϵ,SAFTVRMieconsts.u,SAFTVRMieconsts.w)
 end
-
 
 function Cλ(model::SAFTVRMieModel, V, T, z, λa, λr)
-    return (λr/(λr-λa))*(λr/λa)^(λa/(λr-λa))
+    return Cλ_mie(λa, λr)
 end
+
+Cλ_mie(λa, λr) = (λr/(λr-λa))*(λr/λa)^(λa/(λr-λa))
 
 function ζ_X(model::SAFTVRMieModel, V, T, z,_d = @f(d))
     _ζ_X,σ3x = @f(ζ_X_σ3,_d)
@@ -750,22 +748,11 @@ Optimizations for single component SAFTVRMie
 #######
 
 function d(model::SAFTVRMie, V, T, z::SingleComp)
-    _ϵ = model.params.epsilon
-    _σ = model.params.sigma
-    _λa = model.params.lambda_a
-    _λr = model.params.lambda_r
+    ϵ = model.params.epsilon
+    σ = model.params.sigma
+    λa = model.params.lambda_a
+    λr = model.params.lambda_r
     u = SAFTVRMieconsts.u
     w = SAFTVRMieconsts.w
-    ϵ = _ϵ[1]
-    σ = _σ[1]
-    λa = _λa[1]
-    λr = _λr[1]
-    θ = Cλ(model,V,T,z,λa,λr)*ϵ/T
-    λrinv = 1/λr
-    λaλr = λa/λr
-    di = zero(T*1.0)
-    for j ∈ 1:5
-        di += w[j]*(θ/(θ+u[j]))^λrinv*(exp(θ*(1/(θ/(θ+u[j]))^λaλr-1))/(u[j]+θ)/λr)
-    end
-    return SA[σ*(1-di)]
+    return SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1],u,w)]
 end

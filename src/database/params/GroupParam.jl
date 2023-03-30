@@ -17,7 +17,7 @@ julia> grouplist = [
            ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),
            ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])];
 julia> groups = GroupParam(grouplist)
-GroupParam(:unkwown) with 3 components:
+GroupParam(:unknown) with 3 components:
  "ethanol": "CH3" => 1, "CH2" => 1, "OH" => 1
  "nonadecanol": "CH3" => 1, "CH2" => 18, "OH" => 1
  "ibuprofen": "CH3" => 3, "COOH" => 1, "aCCH" => 1, "aCCH2" => 1, "aCH" => 4

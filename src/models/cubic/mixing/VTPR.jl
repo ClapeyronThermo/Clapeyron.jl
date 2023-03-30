@@ -13,8 +13,8 @@ end
 
     VTPRRule(components::Vector{String};
     activity = UNIFAC,
-    userlocations::Vector{String}=String[],
-    activity_userlocations::Vector{String}=String[],
+    userlocations=String[],
+    activity_userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -46,7 +46,7 @@ ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - gᴱᵣₑₛ/(0.53087RT))
 VTPRRule
 
 export VTPRRule
-function VTPRRule(components::Vector{String}; activity = UNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function VTPRRule(components::Vector{String}; activity = UNIFAC, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
     _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1016/S0378-3812(01)00626-4"]
     model = VTPRRule(components, _activity,references)

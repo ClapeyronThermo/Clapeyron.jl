@@ -12,7 +12,7 @@ end
     PenelouxTranslation <: PenelouxTranslationModel
 
     PenelouxTranslation(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -42,7 +42,7 @@ Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 PenelouxTranslation
 
 export PenelouxTranslation
-function PenelouxTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function PenelouxTranslation(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_VC)
     Vc = params["Vc"]
     c = SingleParam("Volume shift",components,zeros(length(components)))
