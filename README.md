@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
 [![Build Status](https://github.com/ClapeyronThermo/Clapeyron.jl/workflows/CI/badge.svg)](https://github.com/ClapeyronThermo/Clapeyron.jl/actions)
-[![codecov](https://codecov.io/gh/ypaul21/Clapeyron.jl/branch/master/graph/badge.svg?token=ZVGGR4AAFB)](https://codecov.io/gh/ypaul21/Clapeyron.jl)
+[![codecov](https://codecov.io/gh/ClapeyronThermo/Clapeyron.jl/branch/master/graph/badge.svg?token=ZVGGR4AAFB)](https://codecov.io/gh/ClapeyronThermo/Clapeyron.jl)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://clapeyronthermo.github.io/Clapeyron.jl/dev)
 [![project chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://julialang.zulipchat.com/#narrow/stream/265161-Clapeyron.2Ejl)
 
