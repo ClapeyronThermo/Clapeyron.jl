@@ -37,9 +37,8 @@ IAPWS95Ideal
 function a_ideal(model::IAPWS95Ideal,V,T,z=SA[1.0])
     Σz = only(z) #single component
     v = V/Σz
-    mass_v =  v*1000.0*0.055508472036052976
-    rho = one(mass_v)/mass_v
-    δ = rho*0.003105590062111801 #/322
+    ρ = 1/v
+    δ = ρ/17873.72799560906
     τ = 647.096/T
     return 0.9999890238768239*iapws_f0(model,δ,τ)
 end

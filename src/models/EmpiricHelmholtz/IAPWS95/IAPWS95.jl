@@ -153,23 +153,18 @@ end
 function a_ideal(model::IAPWS95,V,T,z=SA[1.0])
     Σz = only(z) #single component
     v = V/Σz
-     mass_v =  v*1000.0*0.055508472036052976
-     rho = one(mass_v)/mass_v
-     δ = rho*0.003105590062111801 #/322
-     τ = 647.096/T
+    ρ = 1/v
+    δ = ρ/17873.72799560906
+    τ = 647.096/T
      return 0.9999890238768239*_f0(model,δ,τ)
 end
 
 function a_res(model::IAPWS95,V,T,z=SA[1.0])
     Σz = only(z) #single component
     v = V/Σz
-    #R value calculated from molecular weight and specific gas constant
-     #return 8.3143713575874*T*_f(model, molar_to_weight(1/v,[model.molecularWeight],[1.0]),T)
-     #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'
-     mass_v =  v*1000.0*0.055508472036052976
-     rho = one(mass_v)/mass_v
-     δ = rho*0.003105590062111801 #/322
-     τ = 647.096/T
+    ρ = 1/v
+    δ = ρ/17873.72799560906
+    τ = 647.096/T
      return 0.9999890238768239*_fr(model,δ,τ)
 end
 
@@ -177,26 +172,18 @@ end
 function eos(model::IAPWS95, V, T, z=SA[1.0])
     Σz = only(z) #single component
     v = V/Σz
-    #R value calculated from molecular weight and specific gas constant
-     #return 8.3143713575874*T*_f(model, molar_to_weight(1/v,[model.molecularWeight],[1.0]),T)
-     #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'
-     mass_v =  v*1000.0*0.055508472036052976
-     rho = one(mass_v)/mass_v
-     δ = rho*0.003105590062111801 #/322
-     τ = 647.096/T
+    ρ = 1/v
+    δ = ρ/17873.72799560906
+    τ = 647.096/T
     return R̄*Σz*T*0.9999890238768239*(_fr(model,δ,τ)+_f0(model,δ,τ))
 end
 
 function eos_res(model::IAPWS95, V, T, z=SA[1.0])
     Σz = only(z) #single component
     v = V/Σz
-    #R value calculated from molecular weight and specific gas constant
-     #return 8.3143713575874*T*_f(model, molar_to_weight(1/v,[model.molecularWeight],[1.0]),T)
-     #println(molar_to_weight(1/v,[model.molecularWeight],[1.0]))'
-     mass_v =  v*1000.0*0.055508472036052976
-     rho = one(mass_v)/mass_v
-     δ = rho*0.003105590062111801 #/322
-     τ = 647.096/T
+    ρ = 1/v
+    δ = ρ/17873.72799560906
+    τ = 647.096/T
     return R̄*Σz*T*0.9999890238768239*_fr(model,δ,τ)
 end
 
