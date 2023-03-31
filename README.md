@@ -36,17 +36,17 @@ We support many equations of state and properties. Some examples of figures you 
 
 To install Clapeyron, launch Julia with
 
-```julia
+```
 > julia
 ```
 
 Hit the ```]``` key to enter Pkg mode, then type
 
-```julia
+```
 Pkg> add Clapeyron
 ```
 Or to add the development version:
-```julia
+```
 Pkg> add https://github.com/ClapeyronThermo/Clapeyron.jl#master
 ```
 Exit Pkg mode by hitting backspace.
@@ -59,7 +59,7 @@ using Clapeyron
 
 To remove the package, hit the ```]``` key to enter Pkg mode, then type
 
-```julia
+```
 Pkg> rm Clapeyron
 ```
 ## Citing Clapeyron
