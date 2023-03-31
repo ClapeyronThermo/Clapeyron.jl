@@ -388,29 +388,29 @@ macro registermodel(model)
     _has_sites = hasfield(_model,:sites)
     _has_groups = hasfield(_model,:groups)
     
-    _sites = _has_sites ? :(has_sites(::Type{<:$model}) = true) : ∅
-    _groups = _has_groups ? :(has_groups(::Type{<:$model}) = true) : ∅
+    _sites = _has_sites ? :(Clapeyron.has_sites(::Type{<:$model}) = true) : ∅
+    _groups = _has_groups ? :(Clapeyron.has_groups(::Type{<:$model}) = true) : ∅
 
     _eos_show = 
     if _has_components
         if _has_groups
             quote
                 function Base.show(io::IO, mime::MIME"text/plain", model::$model)
-                    return gc_eosshow(io, mime, model)
+                    return Clapeyron.gc_eosshow(io, mime, model)
                 end
             
                 function Base.show(io::IO, model::$model)
-                    return gc_eosshow(io, model)
+                    return Clapeyron.gc_eosshow(io, model)
                 end
             end
         else
             quote
                 function Base.show(io::IO, mime::MIME"text/plain", model::$model)
-                    return eosshow(io, mime, model)
+                    return Clapeyron.eosshow(io, mime, model)
                 end
             
                 function Base.show(io::IO, model::$model)
-                    return eosshow(io, model)
+                    return Clapeyron.eosshow(io, model)
                 end
             end
         end
@@ -431,9 +431,9 @@ macro registermodel(model)
     _molecular_weight = 
     if _has_components
         if _has_groups 
-            :(molecular_weight(model::$model,z=SA[1.0]) =group_molecular_weight(model.groups,mw(model),z))
+            :(Clapeyron.molecular_weight(model::$model,z=SA[1.0]) =Clapeyron.group_molecular_weight(model.groups,Clapeyron.mw(model),z))
         else
-            :(molecular_weight(model::$model,z=SA[1.0]) =comp_molecular_weight(mw(model),z))
+            :(Clapeyron.molecular_weight(model::$model,z=SA[1.0]) =Clapeyron.comp_molecular_weight(Clapeyron.mw(model),z))
         end
     else
         ∅
