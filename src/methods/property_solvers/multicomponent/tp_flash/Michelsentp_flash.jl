@@ -63,40 +63,6 @@ function rachfordrice(K, z; β0=nothing)
     return β
 end
 
-
-function gibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny, vcache; F=nothing, G=nothing)
-    # Objetive Function to minimize the Gibbs Free Energy
-    # It computes the Gibbs free energy and its gradient
-    nx = z .- ny
-    x = nx ./ sum(nx)
-    y = ny ./ sum(ny)
-
-    # Volumes are set from local cache to reuse their values for following
-    # Iterations
-    volx,voly = vcache[]
-
-    lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
-    lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
-
-    ϕx = log.(x) .+ lnϕx
-    ϕy = log.(y) .+ lnϕy
-
-    #volumes are stored in the local cache
-    vcache[] = (volx,voly)
-    if G !== nothing
-        # Computing Gibbs Energy gradient
-        G .= ϕy .- ϕx
-    end
-
-    if F !== nothing
-        # Computing Gibbs Energy
-        FO = dot(ny,ϕy) + dot(nx,ϕx)
-        return FO
-    end
-
-end
-
-
 function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny, vcache; F=nothing, G=nothing, H=nothing)
     # Objetive Function to minimize the Gibbs Free Energy
     # It computes the Gibbs free energy, its gradient and its hessian
@@ -407,10 +373,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         error_lnK = sum(abs.(lnK - lnK_old))
     end
 
-    vt = volx,voly
-    vcache = Ref{typeof(vt)}(vt)
+    vcache = Ref((volx, voly))
 
-    
     # Stage 2: Minimization of Gibbs Free Energy
     if error_lnK > K_tol && it == itss &&  ~singlephase
         ny = β*y
@@ -421,8 +385,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             #sol = Optim.optimize(only_fgh!(dfgibbs!), ny, Optim.Newton())
             sol = Solvers.optimize(Solvers.only_fgh!(dfgibbs!), ny, LineSearch(Newton()))
         else
-            fgibbs!(F, G, ny) = gibbs_obj!(model, p, T, z, phasex, phasey,
-                                           ny,vcache; F, G=G)
+            dfgibbs!(F, G, H, ny) = dgibbs_obj!(model, p, T, z, phasex, phasey,
+                                             ny,vcache; F=F, G=G, H=nothing)
             sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny, LineSearch(BFGS()))
         end
         # Converting from moles to mole fractions

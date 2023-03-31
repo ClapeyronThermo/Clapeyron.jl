@@ -86,7 +86,7 @@ function modified_dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny_var,
 
     # Volumes are set from local cache to reuse their values for following
     # Iterations
-    volx,voly = vcache[:]
+    volx,voly = vcache[]
 
     if H !== nothing
         # Computing Gibbs Energy Hessian
@@ -113,7 +113,7 @@ function modified_dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny_var,
         lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
     end
     #volumes are stored in the local cache
-    vcache[:] .= (volx,voly)
+    vcache[] = (volx,voly)
 
     ϕx = log.(x) .+ lnϕx
     ϕy = log.(y) .+ lnϕy
@@ -134,53 +134,6 @@ function modified_dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny_var,
     end
 
 end
-
-
-function modified_gibbs_obj!(model::EoSModel, p, T, z, phasex, phasey, ny_var,
-                               vcache, nx, ny, in_equilibria, non_inx, non_iny;
-                               F=nothing, G=nothing)
-    # Objetive Function to minimize the Gibbs Free Energy
-    # It computes the Gibbs free energy, its gradient and its hessian
-
-    ny[in_equilibria] = ny_var
-    nx[in_equilibria] = z[in_equilibria] .- ny[in_equilibria]
-    # nx = z .- ny
-
-    nxsum = sum(nx)
-    nysum = sum(ny)
-    x = nx ./ nxsum
-    y = ny ./ nysum
-
-    # Volumes are set from local cache to reuse their values for following
-    # Iterations
-    volx,voly = vcache[:]
-
-    lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
-    lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
-
-    #volumes are stored in the local cache
-    vcache[:] .= (volx,voly)
-
-    ϕx = log.(x) .+ lnϕx
-    ϕy = log.(y) .+ lnϕy
-
-    # to avoid NaN in Gibbs energy
-    ϕx[non_inx] .= 0.
-    ϕy[non_iny] .= 0.
-
-    if G !== nothing
-        # Computing Gibbs Energy gradient
-        G .= (ϕy .- ϕx)[in_equilibria]
-    end
-
-    if F != nothing
-        # Computing Gibbs Energy
-        FO = dot(ny,ϕy) + dot(nx,ϕx)
-        return FO
-    end
-
-end
-
 
 function tp_flash_michelsen_modified(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothing,
                                      x0=nothing, y0=nothing, vol0=(nothing, nothing),
@@ -418,7 +371,7 @@ function tp_flash_michelsen_modified(model::EoSModel, p, T, z; equilibrium=:vle,
         nx[non_iny] = z[non_iny]
         nx[non_inx] .= 0.
 
-        vcache = [volx, voly]
+        vcache = Ref((volx, voly))
         ny_var0 = y[in_equilibria] * β
 
         if second_order
@@ -429,13 +382,11 @@ function tp_flash_michelsen_modified(model::EoSModel, p, T, z; equilibrium=:vle,
             sol = Solvers.optimize(Solvers.only_fgh!(dfgibbs!), ny_var0, Solvers.LineSearch(Solvers.Newton()))
         else
 
-            fgibbs!(F, G, H, ny_var) = modified_gibbs_obj!(model, p, T, z, phasex, phasey, ny_var, vcache,
-                                                           nx, ny, in_equilibria, non_inx, non_iny;
-                                                           F=F, G=G)
+            dfgibbs!(F, G, ny_var) = modified_dgibbs_obj!(model, p, T, z, phasex, phasey, ny_var, vcache,
+                                                 nx, ny, in_equilibria, non_inx, non_iny;
+                                                 F=F, G=G, H=nothing)
 
-            sol = Solvers.optimize(Solvers.only_fgh!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.Newton()))
-
-
+            sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.BFGS()))
         end
         ny_var = Solvers.x_sol(sol)
 
@@ -462,7 +413,7 @@ function tp_flash_michelsen_modified(model::EoSModel, p, T, z; equilibrium=:vle,
         x = index_expansion(x,z_nonzero)
         y = index_expansion(y,z_nonzero)
     end
-    vx,vy = vcache
+    vx,vy = vcache[]
     if vx < vy #sort by increasing volume
         return x, y, β
     else
