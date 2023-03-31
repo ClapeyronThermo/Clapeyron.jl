@@ -375,14 +375,14 @@ function tp_flash_michelsen_modified(model::EoSModel, p, T, z; equilibrium=:vle,
         ny_var0 = y[in_equilibria] * β
 
         if second_order
-            dfgibbs! = (F, G, H, ny_var) -> modified_dgibbs_obj!(model, p, T, z, phasex, phasey, ny_var, vcache,
+            fgibbs! = (F, G, H, ny_var) -> modified_dgibbs_obj!(model, p, T, z, phasex, phasey, ny_var, vcache,
                                                  nx, ny, in_equilibria, non_inx, non_iny;
                                                  F=F, G=G, H=H)
 
-            sol = Solvers.optimize(Solvers.only_fgh!(dfgibbs!), ny_var0, Solvers.LineSearch(Solvers.Newton()))
+            sol = Solvers.optimize(Solvers.only_fgh!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.Newton()))
         else
 
-            dfgibbs! = (F, G, ny_var) -> modified_dgibbs_obj!(model, p, T, z, phasex, phasey, ny_var, vcache,
+            fgibbs! = (F, G, ny_var) -> modified_dgibbs_obj!(model, p, T, z, phasex, phasey, ny_var, vcache,
                                                  nx, ny, in_equilibria, non_inx, non_iny;
                                                  F=F, G=G, H=nothing)
 

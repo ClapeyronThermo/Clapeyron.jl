@@ -380,12 +380,12 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         ny = β*y
         # minimizing Gibbs Free Energy
         if second_order
-            dfgibbs! = (F, G, H, ny) -> dgibbs_obj!(model, p, T, z, phasex, phasey,
+            fgibbs! = (F, G, H, ny) -> dgibbs_obj!(model, p, T, z, phasex, phasey,
                                              ny,vcache; F=F, G=G, H=H)
             #sol = Optim.optimize(only_fgh!(dfgibbs!), ny, Optim.Newton())
-            sol = Solvers.optimize(Solvers.only_fgh!(dfgibbs!), ny, LineSearch(Newton()))
+            sol = Solvers.optimize(Solvers.only_fgh!(fgibbs!), ny, LineSearch(Newton()))
         else
-            dfgibbs! = (F, G, ny) -> dgibbs_obj!(model, p, T, z, phasex, phasey,
+            fgibbs! = (F, G, ny) -> dgibbs_obj!(model, p, T, z, phasex, phasey,
                                              ny,vcache; F=F, G=G, H=nothing)
             sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny, LineSearch(BFGS()))
         end
