@@ -37,7 +37,6 @@ numphases(method::TPFlashMethod) = 2
 include("tp_flash/DifferentialEvolutiontp_flash.jl")
 include("tp_flash/RachfordRicetp_flash.jl")
 include("tp_flash/Michelsentp_flash.jl")
-include("tp_flash/Michelsentp_flash_modified.jl")
 
 
 function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
