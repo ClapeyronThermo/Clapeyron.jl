@@ -43,7 +43,7 @@ end
         @test_throws DimensionMismatch saturation_temperature(model,1e5)
         @test_throws DimensionMismatch acentric_factor(model)
         @test_throws DimensionMismatch enthalpy_vap(model,300.15)
-        @test_throws DimensionMismatch x0_sat_pure(model,300.15)
+        @test_throws DimensionMismatch Clapeyron.x0_sat_pure(model,300.15)
         @test_throws DimensionMismatch saturation_liquid_density(model,300.15)
     end
     

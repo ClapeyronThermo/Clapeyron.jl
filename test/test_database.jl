@@ -269,25 +269,45 @@ using Clapeyron, Test, LinearAlgebra
     #@REPLACE keyword
     param_user3 = Clapeyron.getparams(["sp1","sp2"],userlocations = [file, "@REPLACE/" * csv_string],ignore_missing_singleparams = ["userparam"])
     @test param_user3["userparam"].ismissingvalues[2] == true
+  
+    @testset "named tuple parsing" begin
 
-    #named tuple constructor:
+        model_nt = PCSAFT(["a1"],userlocations = (;
+            Mw = [1.],
+            epsilon = [2.],
+            sigma = [3.],
+            segment = [4.],
+            n_H = [1],
+            n_e = [1],
+            epsilon_assoc = Dict((("a1","e"),("a1","H")) => 1000.), 
+            bondvol = Dict((("a1","e"),("a1","H")) => 0.001)))
 
-    model_nt = PCSAFT(["a1"],userlocations = (;
-        Mw = [1.],
-        epsilon = [2.],
-        sigma = [3.],
-        segment = [4.],
-        n_H = [1],
-        n_e = [1],
-        epsilon_assoc = Dict((("a1","e"),("a1","H")) => 1000.), 
-        bondvol = Dict((("a1","e"),("a1","H")) => 0.001)))
-    
-    
-    @test model_nt.params.Mw[1] == 1.
-    @test model_nt.params.epsilon[1] == 2.
-    @test model_nt.params.sigma[1] == 3e-10 #pcsaft multiplies sigma by 1e-10
-    @test model_nt.params.segment[1] == 4.
-    @test model_nt.params.epsilon_assoc.values.values[1] == 1000.
-    @test model_nt.params.bondvol.values.values[1] == 0.001
+        @test model_nt.params.Mw[1] == 1.
+        @test model_nt.params.epsilon[1] == 2.
+        @test model_nt.params.sigma[1] == 3e-10 #pcsaft multiplies sigma by 1e-10
+        @test model_nt.params.segment[1] == 4.
+        @test model_nt.params.epsilon_assoc.values.values[1] == 1000.
+        @test model_nt.params.bondvol.values.values[1] == 0.001
+    end
+
+    @testset "misc database utils" begin
+        #iszero
+        @test Clapeyron._iszero(0.)
+        @test Clapeyron._iszero(missing)
+        @test Clapeyron._iszero("")
+
+        #zero
+        @test Clapeyron._zero(String) == ""
+        @test Clapeyron._zero(Missing) == ""
+        @test Clapeyron._zero(Int) == 0
+
+        #defaultmissing
+        @test Clapeyron.defaultmissing(["a","b","",missing])[2] == Bool[0, 0, 0, 1]
+        @test Clapeyron.defaultmissing(["a","b","","d"])[2] == Bool[0, 0, 0, 0]
+        @test Clapeyron.defaultmissing([true,false,missing])[2] == Bool[0, 0, 1]
+        @test all(Clapeyron.defaultmissing(fill(missing,4))[2])
+        @test Clapeyron.defaultmissing(["a",1,missing])[1] == ["a","1",""]
+        @test Clapeyron.defaultmissing(["a",1,missing])[2] == Bool[0, 0, 1]
+    end
 end
 
