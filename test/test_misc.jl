@@ -212,6 +212,21 @@
             @test PCSAFT_testsimple <: EoSModel #@newmodelsimple
             @test PCSAFT_testgc <: EoSModel #@newmodelgc
         end
+
+        @testset "#161" begin
+            struct PCSAFT161 <: Clapeyron.PCSAFTModel
+                components::Vector{String}
+                params::Clapeyron.PCSAFTParam
+                references::Vector{String}
+                weird_thing::Int
+            end
+
+            Clapeyron.@registermodel PCSAFT161
+            @test hasmethod(Base.length,Tuple{PCSAFT161})
+            @test hasmethod(Base.show,Tuple{IO,PCSAFT161})
+            @test hasmethod(Base.show,Tuple{IO,MIME"text/plain",PCSAFT161})
+            @test hasmethod(Clapeyron.molecular_weight,Tuple{PCSAFT161,Array{Float64}}) 
+        end
     end
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
