@@ -282,8 +282,8 @@ using Clapeyron, Test, LinearAlgebra
         #AssocParam: indexing
         @test eltype(assoc_float) == Float64
         @test assoc_float[1] == [0 1]
-        @test assoc_float[3] == [0 2 3]
-        @test size(assoc_float[1,2])
+        @test assoc_float[2] == [0 2 3]
+        @test iszero(prod(size(assoc_float[1,2])))
 
         #AssocParam: broadcasting
         assoc_float .= assoc_float .+ 2
@@ -329,10 +329,10 @@ using Clapeyron, Test, LinearAlgebra
         @test param_gc["param1"].values == [1, 2, 3, 4]
     end
 
+    paramtable_file = ParamTable(:single,(species = ["sp1","sp2"],userparam = [2,10]))
     @testset "ParamTable" begin
         #reading external data, via ParamTable
-        file = ParamTable(:single,(species = ["sp1","sp2"],userparam = [2,10]))
-        param_user = getparams(testspecies,userlocations = [file],ignore_missing_singleparams=["userparam"])
+        param_user = getparams(testspecies,userlocations = [paramtable_file],ignore_missing_singleparams=["userparam"])
         @test param_user["userparam"].values[1] === 2
     end
 
@@ -348,7 +348,7 @@ using Clapeyron, Test, LinearAlgebra
         @test param_user2["userparam"].values[1] == 1000
 
         #@REPLACE keyword
-        param_user3 = Clapeyron.getparams(["sp1","sp2"],userlocations = [file, "@REPLACE/" * csv_string],ignore_missing_singleparams = ["userparam"])
+        param_user3 = Clapeyron.getparams(["sp1","sp2"],userlocations = [paramtable_file, "@REPLACE/" * csv_string],ignore_missing_singleparams = ["userparam"])
         @test param_user3["userparam"].ismissingvalues[2] == true
     end
 
