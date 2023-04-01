@@ -63,7 +63,7 @@ export UNIFACFVPoly
     verbose = false)
 
 ## Input parameters
-- `v`: Single Parameter (`Float64`)  - specific volume of species
+- `volume`: Single Parameter (`Float64`)  - specific volume of species
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
 - `A`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
@@ -99,14 +99,14 @@ function UNIFACFVPoly(components;
     R  = params["R"]
     Q  = params["Q"]
     Mw = params["Mw"]
-    v  = params_species["volume"]
+    volume  = params_species["volume"]
     c  = params_species["c"]
     icomponents = 1:length(components)
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
-    packagedparams = UNIFACFVPolyParam(v,c,A,R,Q,Mw)
+    packagedparams = UNIFACFVPolyParam(volume,c,A,R,Q,Mw)
     references = String["10.1021/i260064a004"]
     cache = UNIFACFVPolyCache(groups,packagedparams)
-    model = UNIFACFVPoly(components,icomponents,groups,packagedparams,_puremodel,references,cache)
+    model = UNIFACFVPoly(components,groups,packagedparams,_puremodel,references,cache)
     return model
 end
 
@@ -177,7 +177,7 @@ function lnγ_FV(model::UNIFACFVPolyModel,V,T,z,_data=@f(data))
     w,x = _data
     c = model.params.c.values
     b = 1.28
-    v = model.params.v.values
+    v = model.params.volume.values
     r = model.UNIFACFVPoly_cache.r
 
     v̄  = @. v/(15.17*b*r)
