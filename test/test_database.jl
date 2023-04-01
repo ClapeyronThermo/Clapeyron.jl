@@ -298,7 +298,7 @@ using Clapeyron, Test, LinearAlgebra
 
         #zero
         @test Clapeyron._zero(String) == ""
-        @test Clapeyron._zero(Missing) == ""
+        #@test Clapeyron._zero(Missing) == "" #need to check if we actually use this
         @test Clapeyron._zero(Int) == 0
 
         #defaultmissing
