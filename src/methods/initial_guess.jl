@@ -133,6 +133,9 @@ Used in [`saturation_pressure`](@ref) methods that require initial volume guesse
 It can be overloaded to provide more accurate estimates if necessary.
 """
 function x0_sat_pure(model,T,z=SA[1.0])
+    
+    single_component_check(x0_sat_pure,model)
+    
     #=theory as follows
     #given T = Teos:
     #calculate B(Teos)
