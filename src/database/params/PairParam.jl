@@ -95,7 +95,7 @@ Base.eltype(param::PairParameter{T}) where T = T
 
 #unsafe constructor
 function PairParam(name,components,values)
-    @assert length(components) == LinearAlgebra.checksquare(values)
+    param_length_check(PairParam,name,length(components),LinearAlgebra.checksquare(values))
     missingvals = fill(false,size(values))
     src = String[]
     sourcecsv = String[]
@@ -109,7 +109,7 @@ function PairParam(name::String,
     sourcecsvs::Array{String,1} = String[], 
     sources::Array{String,1} = String[]) where T
     
-    @assert length(components) == LinearAlgebra.checksquare(values)
+    param_length_check(PairParam,name,length(components),LinearAlgebra.checksquare(values))
     _values,_ismissingvalues = defaultmissing(values)
     if !all(ismissingvalues)
         _ismissingvalues = ismissingvalues
@@ -124,7 +124,8 @@ function PairParam(name::String,
     sourcecsvs::Array{String,1} = String[], 
     sources::Array{String,1} = String[]) where T
     
-    @assert length(components) == length(values)
+    param_length_check(PairParam,name,length(components),length(values))
+
     _values,_ismissingvalues = defaultmissing(diagm(values))
     if !all(ismissingvalues)
         _ismissingvalues = ismissingvalues
@@ -196,13 +197,13 @@ function Base.convert(::Type{PairParam{Float64}},param::PairParam{Int})
 end
 
 function Base.convert(::Type{PairParam{Bool}},param::PairParam{<:Union{Int,Float64}})
-    @assert all(z->(isone(z) | iszero(z)),param.values)
+    #@assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
     return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{PairParam{Int}},param::PairParam{Float64})
-    @assert all(z->isinteger(z),param.values)
+    #@assert all(z->isinteger(z),param.values)
     values = Int.(param.values)
     return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end

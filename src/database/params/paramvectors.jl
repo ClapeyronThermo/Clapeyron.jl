@@ -137,17 +137,22 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     outer_indices = [(c[1],c[2]) for c ∈ indices]
     inner_indices = [(c[3],c[4]) for c ∈ indices]
     values = values[idx]
-    return Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,outer_size,inner_size)
+    result = Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,outer_size,inner_size)
+    return dropzeros!(result)
 end
 
 function __getidx_assoc(mat::Matrix,i,j,val)
-    res = mat[i,j]
-    res,_iszero(res)
+    if !iszero(prod(size(mat)))
+        res = mat[i,j]
+        res,false
+    else
+        return zero(eltype(mat)),true
+    end
 end
 __getidx_assoc(v::Vector,i,j,val) = (v[i],v[j]),false
 __getidx_assoc(v,i,j,val) = convert(eltype(val),0),false
 
-__size_assoc(mat::Matrix) = size(matrix)
+__size_assoc(mat::Matrix) = size(mat)
 __size_assoc(tup::Tuple) = (length(first(tup)),length(last(tup)))
 __size_assoc(vec::Vector) = (length(vec),length(vec))
 

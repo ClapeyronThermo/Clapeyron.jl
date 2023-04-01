@@ -84,7 +84,7 @@ LinearAlgebra.dot(param::SingleParameter,x::Union{<:AbstractVector,<:Number}) = 
 LinearAlgebra.dot(x::Union{<:AbstractVector,<:Number},param::SingleParameter) = dot(x,param.values)
 
 function SingleParam(name,components,values,missingvals,src,sourcecsv) 
-    @assert length(components) == length(values)
+    param_length_check(SingleParam,name,length(components),length(values))
     SingleParameter(name,components,values,missingvals,src,sourcecsv)
 end
 
@@ -128,7 +128,7 @@ function SingleParam(
         sourcecsvs = String[],
         sources = String[]
     ) where T
-    @assert length(components) == length(values)
+    param_length_check(SingleParam,name,length(components),length(values))
     if any(ismissing, values)
         _values,_ismissingvalues = defaultmissing(values)
         TT = eltype(_values)
@@ -152,7 +152,7 @@ end
 
 function SingleParam(oldparam::SingleParameter, v::Vector)
     _values,_ismissingvalues = defaultmissing(v)
-    @assert length(oldparam.components) == length(_values)
+    param_length_check(SingleParam,name,length(oldparam.components),length(_values))
     return SingleParam(oldparam.name, oldparam.components,_values, _ismissingvalues , oldparam.sourcecsvs, oldparam.sources)
 end
 
@@ -163,13 +163,13 @@ function Base.convert(::Type{SingleParam{Float64}},param::SingleParam{Int})
 end
 
 function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{<:Union{Int,Float64}})
-    @assert all(z->(isone(z) | iszero(z)),param.values)
+    #@assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{SingleParam{Int}},param::SingleParam{Float64})
-    @assert all(z->isinteger(z),param.values)
+    #@assert all(z->isinteger(z),param.values)
     values = Int.(param.values)
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
