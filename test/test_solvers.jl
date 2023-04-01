@@ -131,5 +131,8 @@ end
         @test ad.fgh(ones(2),ones(2,2),zeros(2))[3] == [2.0 0.0; 0.0 200.0]
     end
 
+    @testset "evalexppoly" begin
+        @test Clapeyron.evalexppoly(2,(1,2,3),(3,2,1)) == 22
+    end
 end
 @printline

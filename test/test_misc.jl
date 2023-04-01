@@ -28,6 +28,17 @@
         @test all(isone(length(gc3_split[i].puremodel)) for i in 1:3)
     end
 
+    @testset "single component error" begin
+        model = PCSAFT(["water","methane"])
+        @test_throws DimensionMismatch saturation_pressure(model,300.15)
+        @test_throws DimensionMismatch crit_pure(model)
+        @test_throws DimensionMismatch saturation_temperature(model,1e5)
+        @test_throws DimensionMismatch acentric_factor(model)
+        @test_throws DimensionMismatch enthalpy_vap(model,300.15)
+        @test_throws DimensionMismatch x0_sat_pure(model,300.15)
+        @test_throws DimensionMismatch saturation_liquid_density(model,300.15)
+    end
+    
     @testset "macros" begin
         comps(model) = Clapeyron.@comps
         groups(model) = Clapeyron.@groups
@@ -92,8 +103,21 @@
         @test citation_top ⊆ citation_full
         @test citation_mixing ⊆ citation_full
         @test citation_translation ⊆ citation_full
-    end
+        _io = Base.IOBuffer()
+        Clapeyron.show_references(_io,umr)
+        citation_show = String(take!(_io))
+        @test citation_show == "\nReferences: 10.1021/I160057A011, 10.1021/ie049580p, 10.1021/i260064a004, 10.1021/acs.jced.0c00723"
+        @test Clapeyron.doi2bib("10.1021/I160057A011") == "@article{Peng_1976,\n\tdoi = {10.1021/i160057a011},\n\turl = {https://doi.org/10.1021%2Fi160057a011},\n\tyear = 1976,\n\tmonth = {feb},\n\tpublisher = {American Chemical Society ({ACS})},\n\tvolume = {15},\n\tnumber = {1},\n\tpages = {59--64},\n\tauthor = {Ding-Yu Peng and Donald B. Robinson},\n\ttitle = {A New Two-Constant Equation of State},\n\tjournal = {Industrial {\\&}amp\$\\mathsemicolon\$ Engineering Chemistry Fundamentals}\n}"
     @printline
+
+    @testset "core utils" begin
+        @test Clapeyron.parameterless_type(typeof(rand(5))) === Array
+        @test Clapeyron._vecparser("1 2 3") == [1,2,3]
+        @test Clapeyron._vecparser("1 2 3.5") == [1,2,3.5]
+        @test_throws ErrorException Clapeyron._vecparser("not numbers")
+        @test Clapeyron.split_2("a b") == ("a","b")
+        @test Clapeyron.split_2("a|b",'|') == ("a","b")
+    end
 
     @testset "Reported errors" begin
         #https://github.com/ypaul21/Clapeyron.jl/issues/104
