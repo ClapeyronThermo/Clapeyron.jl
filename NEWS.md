@@ -1,8 +1,10 @@
-# v0.4.1
+# v0.4.9
 
 ## New Features
 
-- New Clapeyron Parameter `StructGroupParam`, that stores groups, as well as it's bonds between them, used in heteronuclear GC approaches
-- New EOS: structural SAFT-γ-Mie (`structSAFTgammaMie`)
-- New EOS: heteronuclear GC-PC-SAFT (`gcPCSAFT`)
-- in some limited cases, `split_model` can now differenciate between group and component parameters inside a model
+- `ideal_consistency(model,V,T,z)` that checks if `da0/dV + sum(z)/V` is zero (or as close to zero as the Floating Point Format allows it.)
+
+## Bug Fixes
+
+- proper namespaces in `@registermodel` ([#161](https://github.com/ClapeyronThermo/Clapeyron.jl/issues/161))
+- fixed bug in `MichelsenTPFlash` when using non-volatiles and `second_order = false`
