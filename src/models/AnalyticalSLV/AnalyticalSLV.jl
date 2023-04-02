@@ -183,16 +183,42 @@ function _pressure(model::AnalyticalSLVModel,V,T,z=SA[1.0])
     return R̄*T*(v-d̄)/(v-b̄)/(v-c̄) - ā/(v^2)
 end
 
+cubic_Δ(model::AnalyticalSLV,z) = (0.0,0.0)
+
 function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
     ā,b̄,c̄,d̄ = _data
     n = sum(z)
     RT⁻¹ = 1/(R̄*T)
+    
     ρ = n/V
+    Δ1,Δ2 = cubic_Δ(model,z)
+    ΔΔ = Δ2 - Δ1
+
     bd = (b̄ - d̄)
     dc = (d̄ - c̄)
     k1 =  bd*log(1-b̄*ρ)
     k2 =  dc*log(abs(1-c̄*ρ))
+    b̄ρt = b̄*ρ
+    
     #The integral of 1/x is log(abs(x))
     #On solid volumes, 1-c̄*ρ is negative, so the abs matters
-    return -(k1 + k2)/(b̄ - c̄) -  ā*ρ*RT⁻¹ - (d̄ - c̄)/(b̄ - c̄)
+    a₁ =  -(k1 + k2)/(b̄ - c̄) - (d̄ - c̄)/(b̄ - c̄)
+    if Δ1 == Δ2
+        return a₁ - ā*ρt*RT⁻¹/(1-Δ1*b̄ρt)
+    else
+        l1 = log1p(-Δ1*b̄ρt)
+        l2 = log1p(-Δ2*b̄ρt)
+        return a₁ - ā*RT⁻¹*(l1-l2)/(ΔΔ*b̄) 
+    end
+   #return -(k1 + k2)/(b̄ - c̄) -  ā*ρ*RT⁻¹ - (d̄ - c̄)/(b̄ - c̄)
 end
+
+#a_res(V,T,z) = -integral(V -> (z(V)-1)/V,Inf,V)
+#=
+
+Px = RT/(V-b) * (V-d)/(V-c)
+Zx = Tr(Vr - dr)/(Vr - br)/(Vr - cr)
+integral(z/V) = (Tr*Vc*(br - dr)*(log(V - br*Vc)) + (dr -cr)*log(V -cr*Vc))/(br - cr)
+
+
+=#
