@@ -70,7 +70,7 @@ using Clapeyron, Test, LinearAlgebra
                                     ["e", "e2", "H"]]
 
     end
-    params = Clapeyron.getparams(testspecies; userlocations=filepath_normal, ignore_missing_singleparams=["emptyparam","missingparam"],return_sites = false)
+    params = Clapeyron.getparams(testspecies; userlocations=filepath_normal, ignore_missing_singleparams=["emptyparam","missingparam"],return_sites = false, verbose = true)
     sites = Clapeyron.SiteParam(params["intparam"].components)
     
     @testset "params - printing" begin
@@ -359,6 +359,7 @@ using Clapeyron, Test, LinearAlgebra
             epsilon = [2.],
             sigma = [3.],
             segment = [4.],
+            k = fill(0.0,(1,1)),
             n_H = [1],
             n_e = [1],
             epsilon_assoc = Dict((("a1","e"),("a1","H")) => 1000.), 
@@ -370,6 +371,16 @@ using Clapeyron, Test, LinearAlgebra
         @test model_nt.params.segment[1] == 4.
         @test model_nt.params.epsilon_assoc.values.values[1] == 1000.
         @test model_nt.params.bondvol.values.values[1] == 0.001
+
+        model_nt2 = PCSAFT(["a1"],userlocations = (;
+            Mw = [1.],
+            epsilon = [2.],
+            sigma = [3.],
+            segment = [4.],
+            k = fill(0.0,(1,1)),
+            epsilon_assoc = nothing, 
+            bondvol = nothing))
+        @test length(model_nt2.params.bondvol.values.values) == 0
     end
 
     @testset "misc database utils" begin

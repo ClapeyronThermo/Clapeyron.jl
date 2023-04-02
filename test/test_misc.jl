@@ -237,8 +237,12 @@ end
         end
 
         @testset "#162" begin
+            #a longstanding problem, init_model didn't worked with functions. 
+            #a long time ago, SRK was a model, but now it is just a function that returns an RK model.
             model1 = Wilson(["water","ethanol"];puremodel=SRK)
             @test model1 isa Clapeyron.EoSModel
+
+            #this case is just for compatibility with the notebooks that were originally released.
             model2 = VTPR(["carbon monoxide","carbon dioxide"];alpha=BMAlpha)
             @test model2 isa Clapeyron.EoSModel
         end
