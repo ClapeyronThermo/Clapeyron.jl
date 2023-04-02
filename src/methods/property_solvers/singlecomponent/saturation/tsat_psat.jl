@@ -1,4 +1,6 @@
-#phasepy api
+#phasepy api, use saturation_pressure(model,T,method) and saturation_temperature(model,p,method) instead
+
+#=
 function psat(model::EoSModel, T; p0=nothing, vol0=(nothing, nothing))
     # Function to solve saturation pressure of a pure fluid
     # T = Saturation Temperature
@@ -46,4 +48,4 @@ function tsat(model::EoSModel, P, T0)
     # out = Saturation Temperature, vol liquid, vol vapor
 
     return saturation_temperature(model,P,T0)
-end
+end =#
