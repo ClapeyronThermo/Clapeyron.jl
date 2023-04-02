@@ -387,7 +387,12 @@ macro registermodel(model)
     _has_components = hasfield(_model,:components)
     _has_sites = hasfield(_model,:sites)
     _has_groups = hasfield(_model,:groups)
-    
+    _has_params = hasfield(_model,:params)
+    if _has_params
+        _has_Mw = hasfield(fieldtype(_model,:params),:Mw)
+    else
+        _has_Mw = false
+    end
     _sites = _has_sites ? :(Clapeyron.has_sites(::Type{<:$model}) = true) : ∅
     _groups = _has_groups ? :(Clapeyron.has_groups(::Type{<:$model}) = true) : ∅
 
@@ -429,7 +434,7 @@ macro registermodel(model)
     end
 
     _molecular_weight = 
-    if _has_components
+    if _has_Mw
         if _has_groups 
             :(Clapeyron.molecular_weight(model::$model,z=SA[1.0]) =Clapeyron.group_molecular_weight(model.groups,Clapeyron.mw(model),z))
         else
