@@ -156,6 +156,13 @@ end
     p0 = 1e5
     T = 373.15
     p,vl,vv = Clapeyron.saturation_pressure(model,T) #default
+
+    #legacy api,
+    @test Clapeyron.saturation_pressure(model,T,Clapeyron.ChemPotVSaturation((vl,vv)))[1] ==
+        Clapeyron.saturation_pressure(model,T,Clapeyron.ChemPotVSaturation([vl,vv]))[1] ==     
+        Clapeyron.saturation_pressure(model,T,[vl,vv])[1] == 
+        Clapeyron.saturation_pressure(model,T,(vl,vv))[1]
+
     px,vlx,vvx = Clapeyron.saturation_pressure(vdw,T) #vdw
 
     p1,vl1,vv1 = Clapeyron.saturation_pressure_impl(model,T,IsoFugacitySaturation())

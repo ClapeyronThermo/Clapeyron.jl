@@ -157,11 +157,12 @@ function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
     return Vl0,Vv0
 end
 
+#=
 function sat_pure(model,T,V0,method)
     f! = ObjSatPure(model,T)
     return sat_pure(f!,V0,method)
 end
-
+=#
 function sat_pure(f!::ObjSatPure,V0,method)
     model, T = f!.model, f!.Tsat
     nan = zero(eltype(V0))/zero(eltype(V0))
