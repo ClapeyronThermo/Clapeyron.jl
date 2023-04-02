@@ -132,6 +132,10 @@ function SAFTgammaMie(components;
     gmie = SAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,assoc_options,γmierefs)
     return gmie
 end
+
+mw(model::SAFTgammaMieModel) = mw(model.vrmodel)
+molecular_weight(model::SAFTgammaMieModel,z = SA[1.]) = molecular_weight(model.vrmodel,z)
+
 @registermodel SAFTgammaMie
 
 const SAFTγMie = SAFTgammaMie
