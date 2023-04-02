@@ -18,6 +18,7 @@ end
     ideal1 = WalkerIdeal(["hexane"])
     noparam1 = gc3.puremodel[1].translation
     simple1 = gc3.puremodel[1].alpha
+    model_structgc = structSAFTgammaMie(["ethanol","octane"])
     @testset "split_model" begin
         models2 = split_model(model2)
         @test models2[1].components[1] == model2.components[1]
@@ -34,6 +35,10 @@ end
         gc3_split = Clapeyron.split_model(gc3)
         @test all(isone(length(gc3_split[i])) for i in 1:3)
         @test all(isone(length(gc3_split[i].puremodel)) for i in 1:3)
+
+        structgc_split = Clapeyron.split_model(model_structgc)
+        @test structgc_split[1].groups.n_intergroups[1] == [0 1; 1 0]
+        @test structgc_split[2].groups.n_intergroups[1] == [0 2; 2 5]
     end
 
     @testset "single component error" begin

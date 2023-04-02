@@ -145,20 +145,30 @@ function StructGroupParam(components,
     options::ParamOptions = DefaultOptions,
     grouptype = :unknown)
 
-    gccomponents = Vector{Tuple{String,Vector{Pair{String,Int64}}}}(undef,length(components))
+    #gccomponents = Vector{Tuple{String,Vector{Pair{String,Int64}}}}(undef,length(components))
     intragccomponents = Vector{Tuple{String,Vector{Pair{Tuple{String, String}, Int64}}}}(undef,length(components))
+    intragccomponents_count = 0
+    __gccomponents = Vector{Any}(undef,length(components))
     for i in 1:length(components)
-        gccomponents[i] = (components[i][1],components[i][2])
-        intragccomponents[i] = (components[i][1],components[i][3])
-    end
+        if components[i] isa Tuple && length(components[i]) == 3
+            intragccomponents_count +=1
+            __gccomponents[i] = (components[i][1],components[i][2])
+            intragccomponents[i] = (components[i][1],components[i][3])
+        else
+            __gccomponents[i] = components[i]
+        end
+    end 
+    
+    #@show components
 
-    group1 = GroupParam(gccomponents,grouplocations,options,grouptype)
-    found_gcpairs = Vector{Union{Vector{Pair{Tuple{String, String}, Int64}},Nothing}}(undef,length(gccomponents))
-    if length(intragccomponents) == 0 && length(gccomponents) != 0
+    group1 = GroupParam(__gccomponents,grouplocations,options,grouptype)
+    found_gcpairs = Vector{Union{Vector{Pair{Tuple{String, String}, Int64}},Nothing}}(undef,length(components))
+    
+    if intragccomponents_count == 0 && length(components) != 0
         components = group1.components
         found_gcpairs = fill!(found_gcpairs,nothing)
         to_lookup = fill(true,length(components))
-    elseif length(intragccomponents) == length(gccomponents)
+    elseif length(intragccomponents) == intragccomponents_count
         components = gc_get_comp.(intragccomponents)
         found_gcpairs .= gc_get_group.(intragccomponents)
         to_lookup = isnothing.(intragccomponents)
@@ -210,7 +220,7 @@ function StructGroupParam(components,
         error_different_grouptype(_grouptype,group1.grouptype)
     end
     
-    gccomponents_parsed = Vector{Tuple{String,Vector{Pair{NTuple{2,String},Int}}}}(undef,length(gccomponents))
+    gccomponents_parsed = Vector{Tuple{String,Vector{Pair{NTuple{2,String},Int}}}}(undef,length(components))
     j = 0
     for (i,needs_to_parse_group_i) ∈ pairs(to_lookup)
         if needs_to_parse_group_i #we looked up this component, and if we are here, it exists.
