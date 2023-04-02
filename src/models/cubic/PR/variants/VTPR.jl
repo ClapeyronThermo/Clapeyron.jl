@@ -17,6 +17,7 @@ Volume-translated Peng Robinson equation of state. it uses the following models:
 """
 function VTPR(components;
     idealmodel=BasicIdeal,
+    alpha = TwuAlpha, #here just for compatibility with the notebooks.
     userlocations=String[], 
     group_userlocations = String[],
     ideal_userlocations=String[],
@@ -34,7 +35,6 @@ function VTPR(components;
     _components = activity.groups.components #extract pure component list
 
     translation = RackettTranslation
-    alpha = TwuAlpha
     mixing = VTPRRule
 
     return PR(_components;

@@ -228,12 +228,21 @@ end
         end
 
         @testset "#161" begin
+            #problems with registermodel
             Clapeyron.@registermodel PCSAFT161
             @test hasmethod(Base.length,Tuple{PCSAFT161})
             @test hasmethod(Base.show,Tuple{IO,PCSAFT161})
             @test hasmethod(Base.show,Tuple{IO,MIME"text/plain",PCSAFT161})
             @test hasmethod(Clapeyron.molecular_weight,Tuple{PCSAFT161,Array{Float64}}) 
         end
+
+        @testset "#162" begin
+            model1 = Wilson(["water","ethanol"];puremodel=SRK)
+            @test model1 isa Clapeyron.EoSModel
+            model2 = VTPR(["carbon monoxide","carbon dioxide"];alpha=BMAlpha)
+            @test model2 isa Clapeyron.EoSModel
+        end
+
     end
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6

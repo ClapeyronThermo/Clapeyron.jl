@@ -16,8 +16,7 @@ Base.eltype(x::EoSVectorParam{T}) where T = T
 Base.broadcastable(x::EoSVectorParam) = x.pure
 
 function init_puremodel(model,components,userlocations,verbose)
-    verbose && @info("""Now creating pure model:
-    $idealmodel""")
+    verbose && @info("Now creating pure model: " * info_color(string(model)))
     _model = init_model(model,components,userlocations,verbose)
     return init_puremodel(_model,components,userlocations,verbose)
 end

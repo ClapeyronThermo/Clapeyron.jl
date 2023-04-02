@@ -1,4 +1,4 @@
-const IDEALTYPE = Union{T,Type{T}} where T<:EoSModel
+#const IDEALTYPE = Union{T,Type{T}} where T<:EoSModel
 
 """
     arbitraryparam(params)
@@ -133,7 +133,7 @@ macro newmodelgc(name, parent, paramstype)
 
     function $name(params::$paramstype,
         groups::Clapeyron.GroupParam,
-        idealmodel::Clapeyron.IDEALTYPE = Clapeyron.BasicIdeal;
+        idealmodel = Clapeyron.BasicIdeal;
         ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
@@ -145,7 +145,7 @@ macro newmodelgc(name, parent, paramstype)
     function $name(params::$paramstype,
         groups::Clapeyron.GroupParam,
         sites::Clapeyron.SiteParam,
-        idealmodel::Clapeyron.IDEALTYPE = BasicIdeal;
+        idealmodel = BasicIdeal;
         ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
@@ -190,7 +190,7 @@ macro newmodel(name, parent, paramstype)
 
     function $name(params::$paramstype,
         sites::Clapeyron.SiteParam,
-        idealmodel::Clapeyron.IDEALTYPE = Clapeyron.BasicIdeal;
+        idealmodel = Clapeyron.BasicIdeal;
         ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
@@ -200,7 +200,7 @@ macro newmodel(name, parent, paramstype)
     end
 
     function $name(params::$paramstype,
-        idealmodel::Clapeyron.IDEALTYPE = Clapeyron.BasicIdeal;
+        idealmodel = Clapeyron.BasicIdeal;
         ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
@@ -248,7 +248,7 @@ end
 function build_model(::Type{model},params::EoSParam,
         groups::GroupParam,
         sites::SiteParam,
-        idealmodel::IDEALTYPE = BasicIdeal;
+        idealmodel = BasicIdeal;
         ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
@@ -264,7 +264,7 @@ end
 
 function build_model(::Type{model},params::EoSParam,
         groups::GroupParam,
-        idealmodel::IDEALTYPE = BasicIdeal;
+        idealmodel = BasicIdeal;
         ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
@@ -277,7 +277,7 @@ end
 #non GC
 function build_model(::Type{model},params::EoSParam,
         sites::SiteParam,
-        idealmodel::IDEALTYPE = BasicIdeal;
+        idealmodel = BasicIdeal;
         ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
@@ -293,7 +293,7 @@ end
 
 #normal macro model
 function build_model(::Type{model},params::EoSParam,
-        idealmodel::IDEALTYPE;
+        idealmodel;
         ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
@@ -372,6 +372,13 @@ function init_model(::Type{𝕄},components,userlocations=String[],verbose = fal
         @info "Building an instance of $(info_color(string(𝕄))) with components $components"
     end
     return 𝕄(components;userlocations,verbose)
+end
+
+function init_model(f::Function,components,userlocations=String[],verbose = false)
+    if verbose
+        @info "building an EoS model, using function $(info_color(string(f))) with components $components"
+    end
+    return f(components;userlocations,verbose)
 end
 """
     @registermodel(model)
