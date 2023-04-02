@@ -31,7 +31,7 @@ function recombine_unifac_cache!(cache::UNIFACFVPolyCache,groups,params)
 end
 
 struct UNIFACFVPolyParam <: EoSParam
-    v::SingleParam{Float64}
+    volume::SingleParam{Float64}
     c::SingleParam{Float64}
     A::PairParam{Float64}
     R::SingleParam{Float64}
@@ -63,7 +63,8 @@ export UNIFACFVPoly
     verbose = false)
 
 ## Input parameters
-- `volume`: Single Parameter (`Float64`)  - specific volume of species
+- `volume`: Single Parameter (`Float64`)  - specific volume of species `[g/cm^3]`
+- `c` Single Parameter  (`Float64`)  - number of external degrees of freedom per solvent molecule
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
 - `A`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
@@ -84,7 +85,7 @@ Gᴱ = nRT(gᴱ(comb) + gᴱ(res) + gᴱ(FV))
 UNIFACFVPoly
 
 function UNIFACFVPoly(components;
-    puremodel = PR,
+    puremodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],

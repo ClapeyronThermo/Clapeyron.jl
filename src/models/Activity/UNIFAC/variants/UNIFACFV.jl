@@ -63,7 +63,7 @@ export UNIFACFV
     verbose = false)
 
 ## Input parameters
-- `volume`: Single Parameter (`Float64`)  - specific volume of species
+- `volume`: Single Parameter (`Float64`)  - specific volume of species `[g/cm^3]`
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
 - `A`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
@@ -86,13 +86,13 @@ Gᴱ = nRT(gᴱ(comb) + gᴱ(res) + gᴱ(FV))
 UNIFACFV
 
 function UNIFACFV(components;
-    puremodel = PR,
+    puremodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
-    params_species = getparams(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_like.csv"]; userlocations=userlocations, verbose=verbose)
+    params_species = getparams(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_like.csv"]; userlocations=userlocations, verbose=verbose, ignore_headers = ["dipprnumber","smiles","c"])
 
     groups = GroupParam(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_groups.csv"]; group_userlocations = group_userlocations, verbose=verbose)
     components = groups.components
