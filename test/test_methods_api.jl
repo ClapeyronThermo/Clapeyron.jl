@@ -181,6 +181,7 @@ end
     #SuperAncSaturation
     p5,vl5,vv5 = Clapeyron.saturation_pressure_impl(model,T,SuperAncSaturation())
     @test p5 ≈ p rtol = 1e-6
+    @test Clapeyron.saturation_temperature_impl(model,p5,SuperAncSaturation())[1] ≈ T rtol = 1e-6
     @test @inferred Clapeyron.saturation_pressure_impl(vdw,T,SuperAncSaturation())[1] ≈ px
     GC.gc()
 
