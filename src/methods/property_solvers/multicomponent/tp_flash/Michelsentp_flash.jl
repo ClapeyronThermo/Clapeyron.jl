@@ -1,4 +1,4 @@
-
+abstract type MichelsenTPFlashMethod <: TPFlashMethod end
 """
     MichelsenTPFlash{T}(;kwargs...)
 
@@ -20,7 +20,7 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via t
 - `nonvolatiles` = arrays with names (strings) of components non allowed on the vapour phase. Not allowed with `lle` equilibria
 
 """
-struct MichelsenTPFlash{T} <: TPFlashMethod
+struct MichelsenTPFlash{T} <: MichelsenTPFlashMethod
     equilibrium::Symbol
     K0::Union{Vector{T},Nothing}
     x0::Union{Vector{T},Nothing}
@@ -32,24 +32,25 @@ struct MichelsenTPFlash{T} <: TPFlashMethod
     second_order::Bool
     noncondensables::Union{Nothing,Vector{String}}
     nonvolatiles::Union{Nothing,Vector{String}}
-
 end
 
+Base.eltype(method::MichelsenTPFlash{T}) where T = T
+
 function index_reduction(m::MichelsenTPFlash,idx::AbstractVector)
-    equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order,noncondensables,nonvolatiles = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.ss_iters,m.second_order,m.noncondensables,m.nonvolatiles
+    equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.ss_iters,m.nacc,m.second_order,m.noncondensables,m.nonvolatiles
     K0 !== nothing && (K0 = K0[idx])
     x0 !== nothing && (x0 = x0[idx])
     y0 !== nothing && (y0 = y0[idx])
-    return MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,second_order,noncondensables,nonvolatiles)
+    return MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)
 end
 
-numphases(::MichelsenTPFlash) = 2
+numphases(::MichelsenTPFlashMethod) = 2
 
 function MichelsenTPFlash(;equilibrium = :vle,
                         K0 = nothing, 
                         x0 = nothing,
-                        y0=nothing,
-                        v0=nothing,
+                        y0 = nothing,
+                        v0 = nothing,
                         K_tol = sqrt(eps(Float64)),
                         ss_iters = 21,
                         nacc = 5,
@@ -85,8 +86,8 @@ function MichelsenTPFlash(;equilibrium = :vle,
     return MichelsenTPFlash{T}(equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)
 end
 
-is_vle(method::MichelsenTPFlash) = is_vle(method.equilibrium)
-is_lle(method::MichelsenTPFlash) = is_lle(method.equilibrium)
+is_vle(method::MichelsenTPFlashMethod) = is_vle(method.equilibrium)
+is_lle(method::MichelsenTPFlashMethod) = is_lle(method.equilibrium)
 
 function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
     x,y,β =  tp_flash_michelsen(model,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
@@ -273,7 +274,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             ny[non_iny] .= 0.
             nx[non_iny] = z[non_iny]
         end
-
         
         ny_var0 = y[in_equilibria] * β
         fgibbs!(F, G, H, ny_var) = dgibbs_obj!(model, p, T, z, phasex, phasey,
