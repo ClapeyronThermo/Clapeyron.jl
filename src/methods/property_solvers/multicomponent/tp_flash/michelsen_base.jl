@@ -90,7 +90,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
             ∂ϕy ./= nysum
         for (i,idiag) in pairs(diagind(∂ϕy))
             ∂ϕx[idiag] += 1/nx[i]
-             [idiag] += 1/ny[i]
+            ∂ϕy[idiag] += 1/ny[i]
         end
 
         #∂ϕx = eye./nx .- 1/nxsum .+ ∂lnϕ∂nx/nxsum

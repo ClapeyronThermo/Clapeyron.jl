@@ -83,6 +83,11 @@ function MichelsenTPFlash(;equilibrium = :vle,
         end
     end
 
+    #check for nacc
+    if nacc in (1,2,3) || nacc < 0
+        throw(error("incorrect specification for nacc"))
+    end
+
     return MichelsenTPFlash{T}(equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)
 end
 
@@ -219,6 +224,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
 
     while error_lnK > K_tol && it < itss && !singlephase
         it += 1
+        itacc += 1
         lnK_old = lnK .* _1
 
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)

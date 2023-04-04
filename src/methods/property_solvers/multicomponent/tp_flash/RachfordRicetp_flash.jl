@@ -31,7 +31,7 @@ struct RRTPFlash{T} <: MichelsenTPFlashMethod
     nonvolatiles::Union{Nothing,Vector{String}}
 end
 
-function index_reduction(m::MichelsenTPFlash,idx::AbstractVector)
+function index_reduction(m::RRTPFlash,idx::AbstractVector)
     equilibrium,K0,x0,y0,v0,K_tol,max_iters,nacc,noncondensables,nonvolatiles = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.ss_iters,m.nacc,m.noncondensables,m.nonvolatiles
     K0 !== nothing && (K0 = K0[idx])
     x0 !== nothing && (x0 = x0[idx])
@@ -44,7 +44,7 @@ function RRTPFlash(;equilibrium = :vle,
     x0 = nothing,
     y0 = nothing,
     v0 = nothing,
-    K_tol = 1e-10
+    K_tol = 1e-10,
     max_iters = 100,
     nacc = 5,
     noncondensables = nothing,
