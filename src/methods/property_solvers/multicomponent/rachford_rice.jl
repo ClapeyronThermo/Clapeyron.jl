@@ -29,7 +29,7 @@ function rr_vle_vapor_fraction(K,z)
     βmin = 1/(1-kmax) 
     kmax < 1 && return (-_1/_0)
     kmin > 1 && return (_1/_0)
-    if n_z <= 4
+    if n_z <= 4 && all(Base.Fix2(>,0),z) #all z > 0
         return rr_vle_vapor_fraction_exact(K,z)
     end
     
@@ -220,7 +220,7 @@ function rr_find_strongest(K,z)
     else
         return _0/_0
     end
-    end
+end
     
 function rr_flash_eval(K,z,β,normalize=true)
         _0 = zero(first(z)+first(K)+first(β))
@@ -280,22 +280,33 @@ function rr_flash_liquid!(x,k,z,β)
     x .= f.(k,z)
     x
 end
-
-function rr_flash_refine(K,z,β) 
+#refines a rachford-rice result via Halley iterations
+function rr_flash_refine(K,z,β,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx) 
     function FO(β̄ )
         _0 = zero(first(z)+first(K)+first(β̄ ))
         _1 = one(_0)
         sumz = sum(z)
         invsumz = _1/sumz
+        _0βy = - 1. / (1. - β)
+        _0βx = 1. / β
         res,∂res,∂2res = _0,_0,_0
         for i in 1:length(z)
             Kim1 = K[i] - _1
-            KD = Kim1/(1+β̄ *Kim1)
+            # modification for non-in-y components Ki -> 0
+            if non_iny[i]
+                KD = _0βy
+            elseif non_inx[i]
+                KD = _0βx
+            else 
+            # modification for non-in-x components Ki -> ∞
+                KD = Kim1/(1+β̄ *Kim1)
+            end
             res += invsumz*z[i]*KD
             ∂res -= invsumz*z[i]*KD^2
             ∂2res += 2*invsumz*z[i]*KD^3
         end
-        return res,∂res,∂2res
+        return res,res/∂res,∂res/∂2res
     end
-    return Solvers.halley(FO,β)
+    prob = Roots.ZeroProblem(FO,β)
+    return Roots.solve(prob,Roots.Halley())
 end

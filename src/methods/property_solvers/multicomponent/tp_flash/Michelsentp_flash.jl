@@ -10,12 +10,14 @@ function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)
     # Checking if the given K and z have solution
     if g0 < 0
         β = _0
-        D = fill!(similar(z), 1)
         singlephase = true
     elseif g1 > 0
         β = _1
-        D = 1 .+ K1
         singlephase = true
+    end
+
+    if length(z) <= 4 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny)
+        return rr_vle_vapor_fraction_exact(K,z)
     end
 
     βmin =  _0
@@ -35,67 +37,8 @@ function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)
     else
         β = 1. * β0
     end
-
-    # Solving the phase fraction β using Halley's method
-    it = 0
-    error_β = _1
-    error_FO = _1
-
-    FOi = (K .- 1) ./ (1. .+ β .* (K .- 1))
-
-    while error_β > 1e-8 && error_FO > 1e-8 && it < 10 &&  ~singlephase
-        it = it + 1
-
-        FOi .= (K .- 1) ./ (1. .+ β .* (K .- 1))
-
-        _0βy = - 1. / (1. - β)
-        _0βx = 1. / β
-        for i in eachindex(z)
-            # modification for non-in-y components Ki -> 0
-            if non_iny[i]
-                FOi[i] = _0βy
-            end
-            # modification for non-in-x components Ki -> ∞
-            if non_inx[i]
-                FOi[i] = _0βx
-            end
-        end
-
-        FO = zero(eltype(FOi))
-        dFO = zero(FO)
-        d2FO = zero(FO)
-        
-        for i in eachindex(z)
-            FO_i = FOi[i]
-            zFOi = z[i]*FO_i
-            zFOi2 = zFOi*FO_i
-            zFOi3 = zFOi2*FO_i
-            FO += zFOi
-            dFO -= zFOi2
-            d2FO += 2*zFOi3
-        end
-
-        dβ = - (2*FO*dFO)/(2*dFO^2-FO*d2FO)
-
-        # restricted β space
-        if FO < 0.
-            βmax = β
-        elseif FO > 0.
-            βmin = β
-        end
-
-        #updatind β
-        βnew =  β + dβ
-        if βmin < βnew && βnew < βmax
-            β = βnew
-        else
-            dβ = (βmin + βmax) / 2 - β
-            β = dβ + β
-        end
-        error_β = abs(dβ)
-        error_FO = abs(FO)
-    end
-    return β
+    #halley refinement
+    return rr_flash_refine(K,z,β,non_inx,non_iny)
 end
 
 function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
