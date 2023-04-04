@@ -1,13 +1,10 @@
 
-function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx)
-    # Function to solve modified Rachdord-Rice mass balance
-    K1 = K .- 1.
+function rachfordrice_β0(K,z,β0 = nothing)
     g0 = dot(z, K) - 1.
     g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K))
     singlephase = false
     _1 = one(g1)
     _0 = zero(g1)
-    # Checking if the given K and z have solution
     if g0 < 0
         β = _0
         singlephase = true
@@ -16,10 +13,7 @@ function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)
         singlephase = true
     end
 
-    if length(z) <= 4 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny)
-        return rr_vle_vapor_fraction_exact(K,z)
-    end
-
+    β0 !== nothing && return β0,singlephase
     βmin =  _0
     βmax = _1
     for i in eachindex(K)
@@ -32,13 +26,26 @@ function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)
             βmax = max(βmax,(1 - zi)/(1 - Ki))
         end
     end
-    if isnothing(β0)
-        β = (βmax + βmin)/2
-    else
-        β = 1. * β0
+    
+    β = (βmax + βmin)/2
+
+    return β,singlephase
+end
+
+function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx)
+    # Function to solve Rachdord-Rice mass balance
+    β,singlephase = rachfordrice_β0(K,z,β0)
+    
+    if length(z) <= 4 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && !singlephase
+        return rr_vle_vapor_fraction_exact(K,z)
     end
+
     #halley refinement
-    return rr_flash_refine(K,z,β,non_inx,non_iny)
+    if !singlephase
+        return rr_flash_refine(K,z,β,non_inx,non_iny)
+    else
+        return β
+    end
 end
 
 function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
@@ -84,7 +91,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
             ∂ϕy ./= nysum
         for (i,idiag) in pairs(diagind(∂ϕy))
             ∂ϕx[idiag] += 1/nx[i]
-            ∂ϕy[idiag] += 1/ny[i]
+             [idiag] += 1/ny[i]
         end
 
         #∂ϕx = eye./nx .- 1/nxsum .+ ∂lnϕ∂nx/nxsum
@@ -227,6 +234,49 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
     return (X, nvals, G)
 end
 
+#updates lnK, returns lnK,volx,voly, gibbs if β != nothing
+function update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β = nothing)
+    lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
+    lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
+    lnK .= lnϕx - lnϕy
+    gibbs = zero(eltype(lnK))
+    if β !== nothing
+        for i in 1:length(y)
+            if iny[i]
+                gibbs += β*y[i]*log(y[i] + lnϕy[i])
+            end
+            if inx[i]
+                gibbs += (1-β)*x[i]*log(x[i] + lnϕx[i])
+            end
+        end
+    else
+        gibbs = gibbs/gibbs
+    end
+    return lnK,volx,voly,gibbs
+end
+
+#updates x,y after a sucessful rachford rice procedure
+function update_rr!(K,β,z,x,y,
+    non_inx=FillArrays.Fill(false,length(z)),non_iny=non_inx)    
+    x = rr_flash_liquid!(x,K,z,β)
+    y .= x .* K
+    for i in eachindex(z) 
+        # modification for non-in-y components Ki -> 0
+        if non_iny[i]
+            x[i] = z[i] / (1. - β)
+            y[i] = 0.
+        end
+        # modification for non-in-x components Ki -> ∞
+        if non_inx[i]
+            x[i] = 0.
+            y[i] = z[i] / β
+        end  
+    end
+    x ./= sum(x)
+    y ./= sum(y)
+    return x,y
+end
+
 function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothing,
                                      x0=nothing, y0=nothing, vol0=(nothing, nothing),
                                      K_tol=1e-8, itss=21, nacc=5, second_order=false,
@@ -291,15 +341,13 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     in_equilibria = inx .& iny
 
     # Computing the initial guess for the K vector
-    if ~isnothing(K0)
+    if !isnothing(K0)
         K = 1. * K0
         lnK = log.(K)
-    elseif ~isnothing(x0) && ~isnothing(y0)
+    elseif !isnothing(x0) && !isnothing(y0)
         x = x0
         y = y0
-        lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
-        lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
-        lnK = lnϕx - lnϕy
+        lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,nothing)
         K = exp.(lnK)
     elseif is_vle(equilibrium)
         # Wilson Correlation for K
@@ -313,12 +361,13 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
 
     _1 = one(p+T+first(z))
     # Initial guess for phase split
-    βmin = max(0., minimum(((K.*z .- 1) ./ (K .-  1.))[K .> 1]))
-    βmax = min(1., maximum(((1 .- z) ./ (1. .- K))[K .< 1]))
-    β = _1*(βmin + βmax)/2
+    β,singlephase = rachfordrice_β0(K0,z)
+    #=TODO:
+    there is a method used in TREND that tries to obtain adequate values of K
+    in the case of incorrect initialization.
+    =#
 
     # Stage 1: Successive Substitution
-    singlephase = false
     error_lnK = _1
     it = 0
 
@@ -339,47 +388,16 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     gibbs = one(_1)
     gibbs_dem = one(_1)
 
-    while error_lnK > K_tol && it < itss
+    while error_lnK > K_tol && it < itss && !singlephase
         it += 1
         lnK_old = lnK .* _1
 
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
 
-        singlephase = !(0 <= β <= 1)
-        x .= z ./ (1. .+ β .* (K .- 1))
-        y .= x .* K
-
-        # modification for non-in-y components Ki -> 0
-        if active_iny
-            x[non_iny] = z[non_iny] / (1. - β)
-            y[non_iny] .= 0.
-        end
-
-        # modification for non-in-x components Ki -> ∞
-        if active_inx
-            x[non_inx] .= 0.
-            y[non_inx] .= z[non_inx] / β
-        end
-
-        x ./= sum(x)
-        y ./= sum(y)
-
+        singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
+        x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
-        lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
-        lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
-        lnK .= lnϕx .- lnϕy
-        
-        # computing current Gibbs free energy
-    
-        gibbs = zero(eltype(lnK))
-        for i in 1:length(y)
-            if iny[i]
-                gibbs += β*y[i]*log(y[i] + lnϕy[i])
-            end
-            if inx[i]
-                gibbs += (1-β)*x[i]*log(x[i] + lnϕx[i])
-            end
-        end
+        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β)
     
         # acceleration step
         if itacc == (nacc - 2)
@@ -390,50 +408,18 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             itacc = 0
             lnK5 = 1. * lnK
             # acceleration using DEM (1 eigenvalues)
-            lnK_dem = dem!(lnK_dem,lnK5, lnK4, lnK3,(ΔlnK1,ΔlnK2))
+            lnK_dem = dem!(lnK_dem, lnK5, lnK4, lnK3,(ΔlnK1,ΔlnK2))
             K_dem .= exp.(lnK_dem)
-
             β_dem = rachfordrice(K_dem, z; β0=β, non_inx=non_inx, non_iny=non_iny)
-
-            x_dem = rr_flash_liquid!(similar(x),K_dem,z,β_dem)
-            y_dem .= x_dem .* K_dem
-
-            # modification for non-in-y components Ki -> 0
-            if active_iny
-                x_dem[non_iny] = z[non_iny] / (1. - β_dem)
-                y_dem[non_iny] .= 0.
-            end
-            # modification for non-in-x components Ki -> ∞
-            if active_inx
-                x_dem[non_inx] .= 0.
-                y_dem[non_inx] .= z[non_inx] / β_dem
-            end
-
-            x_dem ./= sum(x_dem)
-            y_dem ./= sum(y_dem)
-
-            lnϕx_dem, volx_dem = lnϕ(model, p, T, x_dem; phase=phasex, vol0=volx)
-            lnϕy_dem, voly_dem = lnϕ(model, p, T, y_dem; phase=phasey, vol0=voly)
-
-            # computing the extrapolated Gibbs free energy
-            gibbs_dem = zero(eltype(lnK_dem))
-            for i in 1:length(y)
-                if iny[i]
-                    gibbs_dem += β*y_dem[i]*log(y_dem[i] + lnϕy_dem[i])
-                end
-                if inx[i]
-                    gibbs_dem += (1-β)*x_dem[i]*log(x_dem[i] + lnϕx_dem[i])
-                end
-            end
-
+            x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
+            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,volx_dem,voly_dem,phasex,phasey,β)
             # only accelerate if the gibbs free energy is reduced
             if gibbs_dem < gibbs 
-                lnK = _1 * lnK_dem
+                lnK .= _1 * lnK_dem
                 volx = _1 * volx_dem
                 voly = _1 * voly_dem
                 β = _1 * β_dem
             end
-
         end
 
         K .= exp.(lnK)
@@ -446,7 +432,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     # Stage 2: Minimization of Gibbs Free Energy
     vcache = Ref((volx, voly))
 
-    if error_lnK > K_tol && it == itss &&  ~singlephase
+    if error_lnK > K_tol && it == itss &&  !singlephase
         # println("Second order minimization")
         nx = zeros(nc)
         ny = zeros(nc)
@@ -486,9 +472,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
 
     if singlephase
         β = zero(β)/zero(β)
-        # Gustavo: the fill! function was giving an error
-        # fill!(x,z)
-        # fill!(y,z)
         x .= z
         y .= z
     end
