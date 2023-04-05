@@ -19,25 +19,25 @@ function rr_vle_vapor_fraction(K,z)
     #on ε = 1 we have the real solution
     #ε*β_ℵ2(ε) ≈ ∑ci*ε^i
     #we obtain the coefficients and evaluate ε = 1.
-    #for n = length(z) <= 4, we return exact solutions. 
+    #for n = length(z) <= 4, we return exact solutions.
     n_z = length(z)
     _0 = zero(first(z)+first(K))
     _1 = one(_0)
     kmin = minimum(K)
     kmax = maximum(K)
-    βmax = 1/(1-kmin) 
-    βmin = 1/(1-kmax) 
+    βmax = 1/(1-kmin)
+    βmin = 1/(1-kmax)
     kmax < 1 && return (-_1/_0)
     kmin > 1 && return (_1/_0)
     if n_z <= 4 && all(Base.Fix2(>,0),z) #all z > 0
         return rr_vle_vapor_fraction_exact(K,z)
     end
-    
+
     #z_ℵ1 is normalized
     ℵ1,k_ℵ1,z_ℵ1 = Clapeyron.rr_find_strongest(K,z)
     β_near0,β_near1 = extrema(((_1/(_1 -k_ℵ1[1])),(_1/(_1 -k_ℵ1[2]))))
     near_mean = sqrt(abs(β_near0)*abs(_1-β_near1))
-    
+
     β0 = rr_vle_vapor_fraction_exact(k_ℵ1,z_ℵ1)
     b0 = β0
     M1,M2 = _0,_0
@@ -53,7 +53,7 @@ function rr_vle_vapor_fraction(K,z)
         μi = λi*γiinv
         νi = μi*γiinv
         ξi = νi*γiinv
-        if i in ℵ1    
+        if i in ℵ1
             M1 += μi
             N1 += νi
             Ξ1 += ξi
@@ -64,7 +64,7 @@ function rr_vle_vapor_fraction(K,z)
             Ξ2 += ξi
             Λ2 += λi
         end
-    end    
+    end
     b1 = -Λ2/M1
     b2 = -(b1*b1*N1 + b1*M2)/M1
     b11 = b1*b1
@@ -87,11 +87,11 @@ function rr_vle_vapor_fraction(K,z)
     elseif iszero(near_mean) #one βi is exacly zero or exactly one
         (rr_flash_eval(K,z,_1) < eps(_1)) && (βsol = _1)
         (rr_flash_eval(K,z,_0) < eps(_1)) && (βsol = _0)
-    elseif (βsol1 < β_near0) | (βsol1 > β_near1)     #in this case, we have two asymptotes really, really near one and zero  
+    elseif (βsol1 < β_near0) | (βsol1 > β_near1)     #in this case, we have two asymptotes really, really near one and zero
         βaprox_near0 = near_mean
         βaprox_near1 = _1 - near_mean
-        βsol_near0 =  rr_flash_refine(K,z,βaprox_near0) 
-        βsol_near1 =  rr_flash_refine(K,z,βaprox_near1) 
+        βsol_near0 =  rr_flash_refine(K,z,βaprox_near0)
+        βsol_near1 =  rr_flash_refine(K,z,βaprox_near1)
         βsol_near0,βsol_near1
         if 0 <= βsol_near0 <= 1
             βsol = βsol_near0
@@ -108,12 +108,12 @@ function rr_find_strongest(K,z)
     _1 = one(_0)
     (kmin,idmin) =  findmin(K)
     (kmax,idmax) =  findmax(K)
-    βmin = _1/(_1-kmax) 
-    βmax = _1/(_1-kmin) 
+    βmin = _1/(_1-kmax)
+    βmax = _1/(_1-kmin)
     idx = 0
     for i in 1:length(z)
         idx +=1
-        Ki = K[i] 
+        Ki = K[i]
         idx in (idmin,idmax) && continue
         βi = _1/(_1-Ki)
         if βmin <= βi <= 0
@@ -124,13 +124,13 @@ function rr_find_strongest(K,z)
             βmax = βi
         end
     end
-    
+
     #(4, 2, 1, 5)
     id1 = 0
     id2 = 0
 
     idx = 0
-    strong_zβ = (-_1,-_1) 
+    strong_zβ = (-_1,-_1)
     #find the strongest components, by zi/|βi|, ignoring βmin and βmax
     for i in 1:length(z)
         Ki = K[i]
@@ -147,8 +147,8 @@ function rr_find_strongest(K,z)
             strong_zβ = (zβi,zβ2)
             id1 = idx
         end
-    end 
-    
+    end
+
     #indices of the strongest components
     idxs = (idmin,idmax,id1,id2)
     sumz = z[idmin] + z[idmax] +z[id1] +z[id2]
@@ -158,7 +158,7 @@ function rr_find_strongest(K,z)
     ks = (K[idmin],K[idmax],K[id1],K[id2])
     return idxs,ks,zs
     end
-    
+
     function rr_vle_vapor_fraction_exact(K,z)
     #if this function is called, then we are sure that there is a solution in the interval [0,1]
     _0 = zero(first(K)+first(z))
@@ -176,7 +176,7 @@ function rr_find_strongest(K,z)
         z1,z2,z3 = z
         k1,k2,k3 = K
         b1,b2,b3 = 1/(1-k1),1/(1-k2),1/(1-k3)
-        a2 =(z1 + z2 + z3) 
+        a2 =(z1 + z2 + z3)
         a1 = -b1*(z2 + z3) - b2*(z1 + z3) - b3*(z1 + z2)
         a0 = b1*b2*z3 + b1*b3*z2 + b2*b3*z1
         Δ = a1*a1 - 4*a0*a2
@@ -198,7 +198,7 @@ function rr_find_strongest(K,z)
             kmax < 1 && return βmin
         else
             return _0/_0
-        end 
+        end
     elseif n == 4
         #0 = a0 + a1β + a2β^2 + a3β^3
         z1,z2,z3,z4 = z
@@ -221,7 +221,7 @@ function rr_find_strongest(K,z)
         return _0/_0
     end
 end
-    
+
 function rr_flash_eval(K,z,β,normalize=true)
         _0 = zero(first(z)+first(K)+first(β))
         _1 = one(_0)
@@ -238,9 +238,9 @@ function rr_flash_eval(K,z,β,normalize=true)
         end
     return res
 end
-   
+
 """
-    rr_flash_vapor(k,z,β) 
+    rr_flash_vapor(k,z,β)
 Returns the gas phase composition, given k-values `k`, the initial molar composition `z` and the molar vapor fraction ´β´.
 
 Each gas phase composition is calculated acording to:
@@ -253,7 +253,7 @@ end
 
 function rr_flash_vapor!(y,k,z,β)
     function f(ki,zi)
-    _1 = one(ki) 
+    _1 = one(ki)
         return ki*zi/(_1+β*(ki-_1))
     end
     y .= f.(k,z)
@@ -261,7 +261,7 @@ function rr_flash_vapor!(y,k,z,β)
 end
 
 """
-    rr_flash_liquid(k,z,β) 
+    rr_flash_liquid(k,z,β)
 Returns the liquid phase composition, given k-values `k`, the initial molar composition `z` and the molar vapor fraction ´β´.
 
 Each gas phase composition is calculated acording to:
@@ -274,7 +274,7 @@ end
 
 function rr_flash_liquid!(x,k,z,β)
     function f(ki,zi)
-        _1 = one(ki) 
+        _1 = one(ki)
         return zi/(_1+β*(ki-_1))
     end
     x .= f.(k,z)
@@ -289,7 +289,7 @@ function rr_βminmax(K,z)
     _0 = zero(_1)
     #βmin = max(0., minimum(((K.*z .- 1) ./ (K .-  1.))[K .> 1]))
     #βmax = min(1., maximum(((1 .- z) ./ (1. .- K))[K .< 1]))
-    
+
     for i in eachindex(K)
         Ki,zi = K[i],z[i]
         if Ki > 1
@@ -305,8 +305,8 @@ function rr_βminmax(K,z)
 end
 
 #refines a rachford-rice result via Halley iterations
-function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx,limits = rr_βminmax(K,z)) 
-    βmin,βmax = limits 
+function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx,limits = rr_βminmax(K,z))
+    βmin,βmax = limits
     _0 = zero(first(z)+first(K)+first(β0))
     _1 = one(_0)
     sumz = sum(z)
@@ -328,7 +328,7 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
                 KD = _0βx
             end
             # modification for non-in-x components Ki -> ∞
-            
+
             res += invsumz*z[i]*KD
             ∂res -= invsumz*z[i]*KD^2
             ∂2res += 2*invsumz*z[i]*KD^3
@@ -336,7 +336,7 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
 
         return res,res/∂res,∂res/∂2res
     end
-    
+
     prob = Roots.ZeroProblem(FO,β)
     return Roots.solve(prob,Roots.Halley())
     =#

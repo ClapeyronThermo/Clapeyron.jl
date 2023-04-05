@@ -101,9 +101,9 @@ function __tpflash_gibbs_reduced(model,p,T,x,y,β,eq)
 end
 
 function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
-    
+
     model_cached = __tpflash_cache_model(model,p,T,z)
-    
+
     x,y,β =  tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
             x0 = method.x0, y0 = method.y0, vol0 = method.v0,
             K_tol = method.K_tol,itss = method.ss_iters, nacc=method.nacc,
@@ -124,7 +124,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
                                      K_tol=1e-8, itss=21, nacc=5, second_order=false, use_opt_solver = true,
                                      non_inx_list=nothing, non_iny_list=nothing, reduced=false)
 
-        
+
     if !reduced
         model_full,z_full = model,z
         model,z_nonzero = index_reduction(model_full,z_full)
