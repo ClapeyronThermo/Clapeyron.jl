@@ -13,7 +13,7 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via t
 - `vol0` = optional, initial guesses for phase x and phase y volumes
 - `K_tol` = tolerance to stop the calculation
 - `max_iters` = number of Successive Substitution iterations to perform
-- `nacc` =  accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration. 
+- `nacc` =  accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
 - `noncondensables` = arrays with names (strings) of components non allowed on the liquid phase. Not allowed with `lle` equilibria
 - `nonvolatiles` = arrays with names (strings) of components non allowed on the vapour phase. Not allowed with `lle` equilibria
 
@@ -40,7 +40,7 @@ function index_reduction(m::RRTPFlash,idx::AbstractVector)
 end
 
 function RRTPFlash(;equilibrium = :vle,
-    K0 = nothing, 
+    K0 = nothing,
     x0 = nothing,
     y0 = nothing,
     v0 = nothing,
@@ -59,7 +59,7 @@ function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
     x,y,β =  tp_flash_michelsen(model,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
     x0 = method.x0, y0 = method.y0, vol0 = method.v0,
     K_tol = method.K_tol,itss = method.ss_iters, nacc=method.nacc,
-    non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles, 
+    non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
     reduced = true, use_opt_solver = false)
 
     G = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)

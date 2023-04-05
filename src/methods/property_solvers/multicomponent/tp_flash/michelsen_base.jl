@@ -25,7 +25,7 @@ function rachfordrice_β0(K,z,β0 = nothing)
             βmax = max(βmax,(1 - zi)/(1 - Ki))
         end
     end
-    
+
     β = (βmax + βmin)/2
 
     return β,singlephase
@@ -34,7 +34,7 @@ end
 function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx)
     # Function to solve Rachdord-Rice mass balance
     β,singlephase = rachfordrice_β0(K,z,β0)
-    
+
     if length(z) <= 4 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && !singlephase
         return rr_vle_vapor_fraction_exact(K,z)
     end
@@ -129,7 +129,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
 end
 
 #updates lnK, returns lnK,volx,voly, gibbs if β != nothing
-function update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β = nothing)
+function update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
     lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
     lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
     lnK .= lnϕx - lnϕy
@@ -151,10 +151,10 @@ end
 
 #updates x,y after a sucessful rachford rice procedure
 function update_rr!(K,β,z,x,y,
-    non_inx=FillArrays.Fill(false,length(z)),non_iny=non_inx)    
+    non_inx=FillArrays.Fill(false,length(z)),non_iny=non_inx)
     x = rr_flash_liquid!(x,K,z,β)
     y .= x .* K
-    for i in eachindex(z) 
+    for i in eachindex(z)
         # modification for non-in-y components Ki -> 0
         if non_iny[i]
             x[i] = z[i] / (1. - β)
@@ -164,7 +164,7 @@ function update_rr!(K,β,z,x,y,
         if non_inx[i]
             x[i] = 0.
             y[i] = z[i] / β
-        end  
+        end
     end
     x ./= sum(x)
     y ./= sum(y)

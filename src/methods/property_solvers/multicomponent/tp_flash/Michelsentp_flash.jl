@@ -14,7 +14,7 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via t
 - `vol0` = optional, initial guesses for phase x and phase y volumes
 - `K_tol` = tolerance to stop the calculation
 - `ss_iters` = number of Successive Substitution iterations to perform
-- `nacc` =  accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration. 
+- `nacc` =  accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
 - `second_order` = wheter to solve the gibbs energy minimization using the analytical hessian or not
 - `noncondensables` = arrays with names (strings) of components non allowed on the liquid phase. Not allowed with `lle` equilibria
 - `nonvolatiles` = arrays with names (strings) of components non allowed on the vapour phase. Not allowed with `lle` equilibria
@@ -47,7 +47,7 @@ end
 numphases(::MichelsenTPFlashMethod) = 2
 
 function MichelsenTPFlash(;equilibrium = :vle,
-                        K0 = nothing, 
+                        K0 = nothing,
                         x0 = nothing,
                         y0 = nothing,
                         v0 = nothing,
@@ -77,7 +77,7 @@ function MichelsenTPFlash(;equilibrium = :vle,
         if !isnothing(nonvolatiles) && length(nonvolatiles) > 0
             throw(error("LLE equilibria does not support setting nonvolatiles"))
         end
-    
+
         if !isnothing(noncondensables) && length(noncondensables) > 0
             throw(error("LLE equilibria does not support setting noncondensables"))
         end
@@ -97,7 +97,7 @@ is_lle(method::MichelsenTPFlashMethod) = is_lle(method.equilibrium)
 #hook to precalculate things with the activity model.
 __tpflash_cache_model(model::EoSModel,p,T,z) = model
 
-function __tpflash_gibbs_reduced(model,p,T,x,y,β)
+function __tpflash_gibbs_reduced(model,p,T,x,y,β,eq)
     (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
 end
 
@@ -107,9 +107,9 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
             x0 = method.x0, y0 = method.y0, vol0 = method.v0,
             K_tol = method.K_tol,itss = method.ss_iters, nacc=method.nacc,
             second_order = method.second_order,
-            non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles, 
+            non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
             reduced = true)
-    
+
     G = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
     X = hcat(x,y)'
     nvals = X.*[1-β
@@ -142,7 +142,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     vol0 === nothing && (vol0 = (nothing,nothing))
     volx, voly = vol0
 
-    nc = length(model)    
+    nc = length(model)
     # constructing non-in-x list
     if !isnothing(non_inx_list)
         non_inx_names_list = [x for x in non_inx_list if x in model.components]
@@ -174,7 +174,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
 
     inx = .!non_inx
     iny = .!non_iny
-    
+
     active_inx = !all(inx)
     active_iny = !all(iny)
 
@@ -240,8 +240,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
-        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β)
-    
+        lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β,inx,iny)
+
         # acceleration step
         if itacc == (nacc - 2)
             lnK3 = 1. * lnK
@@ -255,7 +255,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             K_dem .= exp.(lnK_dem)
             β_dem = rachfordrice(K_dem, z; β0=β, non_inx=non_inx, non_iny=non_iny)
             x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
-            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,volx,voly,phasex,phasey,β)
+            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,volx,voly,phasex,phasey,β,inx,iny)
             # only accelerate if the gibbs free energy is reduced
             if gibbs_dem < gibbs
                 lnK .= _1 * lnK_dem
@@ -280,7 +280,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         nx = zeros(nc)
         ny = zeros(nc)
 
-        if active_inx 
+        if active_inx
             ny[non_inx] = z[non_inx]
             nx[non_inx] .= 0.
         end
@@ -288,14 +288,14 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             ny[non_iny] .= 0.
             nx[non_iny] = z[non_iny]
         end
-        
+
         ny_var0 = y[in_equilibria] * β
         fgibbs!(F, G, H, ny_var) = dgibbs_obj!(model, p, T, z, phasex, phasey,
                                                         nx, ny, vcache, ny_var, in_equilibria, non_inx, non_iny;
                                                         F=F, G=G, H=H)
 
         fgibbs!(F, G, ny_var) = fgibbs!(F, G, nothing, ny_var)
-        
+
         if second_order
             sol = Solvers.optimize(Solvers.only_fgh!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.Newton()))
         else
