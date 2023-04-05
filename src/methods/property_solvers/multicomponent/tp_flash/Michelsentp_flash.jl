@@ -1,4 +1,3 @@
-abstract type MichelsenTPFlashMethod <: TPFlashMethod end
 """
     MichelsenTPFlash{T}(;kwargs...)
 
@@ -16,11 +15,11 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via t
 - `ss_iters` = number of Successive Substitution iterations to perform
 - `nacc` =  accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
 - `second_order` = wheter to solve the gibbs energy minimization using the analytical hessian or not
-- `noncondensables` = arrays with names (strings) of components non allowed on the liquid phase. Not allowed with `lle` equilibria
-- `nonvolatiles` = arrays with names (strings) of components non allowed on the vapour phase. Not allowed with `lle` equilibria
+- `noncondensables` = arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase
+- `nonvolatiles` = arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase
 
 """
-struct MichelsenTPFlash{T} <: MichelsenTPFlashMethod
+struct MichelsenTPFlash{T} <: TPFlashMethod
     equilibrium::Symbol
     K0::Union{Vector{T},Nothing}
     x0::Union{Vector{T},Nothing}
@@ -44,7 +43,7 @@ function index_reduction(m::MichelsenTPFlash,idx::AbstractVector)
     return MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)
 end
 
-numphases(::MichelsenTPFlashMethod) = 2
+numphases(::MichelsenTPFlash) = 2
 
 function MichelsenTPFlash(;equilibrium = :vle,
                         K0 = nothing,
@@ -62,7 +61,7 @@ function MichelsenTPFlash(;equilibrium = :vle,
         is_lle(equilibrium) && throw(error("""
         You need to provide either an initial guess for the partion constant K
         or for compositions of x and y for LLE"""))
-        T = nothing
+        T = Nothing
     else
         if !isnothing(K0) & isnothing(x0) & isnothing(y0) #K0 specified
             T = eltype(K0)
@@ -73,15 +72,15 @@ function MichelsenTPFlash(;equilibrium = :vle,
         end
     end
     #check for non-volatiles / non-condensables here
-    if is_lle(equilibrium)
-        if !isnothing(nonvolatiles) && length(nonvolatiles) > 0
-            throw(error("LLE equilibria does not support setting nonvolatiles"))
-        end
-
-        if !isnothing(noncondensables) && length(noncondensables) > 0
-            throw(error("LLE equilibria does not support setting noncondensables"))
-        end
-    end
+    #if is_lle(equilibrium)
+    #    if !isnothing(nonvolatiles) && length(nonvolatiles) > 0
+    #        throw(error("LLE equilibria does not support setting nonvolatiles"))
+    #    end
+    #
+    #    if !isnothing(noncondensables) && length(noncondensables) > 0
+    #        throw(error("LLE equilibria does not support setting noncondensables"))
+    #    end
+    #end
 
     #check for nacc
     if nacc in (1,2,3) || nacc < 0
@@ -91,8 +90,8 @@ function MichelsenTPFlash(;equilibrium = :vle,
     return MichelsenTPFlash{T}(equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,second_order,noncondensables,nonvolatiles)
 end
 
-is_vle(method::MichelsenTPFlashMethod) = is_vle(method.equilibrium)
-is_lle(method::MichelsenTPFlashMethod) = is_lle(method.equilibrium)
+is_vle(method::MichelsenTPFlash) = is_vle(method.equilibrium)
+is_lle(method::MichelsenTPFlash) = is_lle(method.equilibrium)
 
 #hook to precalculate things with the activity model.
 __tpflash_cache_model(model::EoSModel,p,T,z) = model
@@ -102,7 +101,9 @@ function __tpflash_gibbs_reduced(model,p,T,x,y,β,eq)
 end
 
 function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
+    
     model_cached = __tpflash_cache_model(model,p,T,z)
+    
     x,y,β =  tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
             x0 = method.x0, y0 = method.y0, vol0 = method.v0,
             K_tol = method.K_tol,itss = method.ss_iters, nacc=method.nacc,
@@ -121,9 +122,9 @@ end
 function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothing,
                                      x0=nothing, y0=nothing, vol0=(nothing, nothing),
                                      K_tol=1e-8, itss=21, nacc=5, second_order=false, use_opt_solver = true,
-                                     non_inx_list=String[], non_iny_list=String[], reduced=false)
+                                     non_inx_list=nothing, non_iny_list=nothing, reduced=false)
 
-
+        
     if !reduced
         model_full,z_full = model,z
         model,z_nonzero = index_reduction(model_full,z_full)
@@ -211,8 +212,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     error_lnK = _1
     it = 0
 
-    x = similar(z)
-    y = similar(z)
     x_dem = similar(z)
     y_dem = similar(z)
 
@@ -234,7 +233,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         lnK_old = lnK .* _1
 
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
-
         singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
