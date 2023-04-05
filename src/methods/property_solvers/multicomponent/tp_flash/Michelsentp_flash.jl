@@ -94,16 +94,23 @@ end
 is_vle(method::MichelsenTPFlashMethod) = is_vle(method.equilibrium)
 is_lle(method::MichelsenTPFlashMethod) = is_lle(method.equilibrium)
 
+#hook to precalculate things with the activity model.
+__tpflash_cache_model(model,p,T,z) = model
+
+function __tpflash_gibbs_reduced(model,p,T,x,y,β)
+    (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
+end
+
 function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
-    x,y,β =  tp_flash_michelsen(model,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
+    model_cached = __tpflash_cache_model(model,p,T,z)
+    x,y,β =  tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
             x0 = method.x0, y0 = method.y0, vol0 = method.v0,
             K_tol = method.K_tol,itss = method.ss_iters, nacc=method.nacc,
             second_order = method.second_order,
             non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles, 
             reduced = true)
     
-    G = (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
-
+    G = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
     X = hcat(x,y)'
     nvals = X.*[1-β
                 β] .* sum(z)
@@ -181,6 +188,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     elseif !isnothing(x0) && !isnothing(y0)
         x = x0
         y = y0
+        lnK = log.(x ./ y)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,nothing)
         K = exp.(lnK)
     elseif is_vle(equilibrium)
@@ -195,7 +203,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
 
     _1 = one(p+T+first(z))
     # Initial guess for phase split
-    β,singlephase = rachfordrice_β0(K0,z)
+    β,singlephase = rachfordrice_β0(K,z)
     #=TODO:
     there is a method used in TREND that tries to obtain adequate values of K
     in the case of incorrect initialization.
@@ -247,9 +255,9 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             K_dem .= exp.(lnK_dem)
             β_dem = rachfordrice(K_dem, z; β0=β, non_inx=non_inx, non_iny=non_iny)
             x_dem,y_dem = update_rr!(K_dem,β_dem,z,x_dem,y_dem,non_inx,non_iny)
-            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,volx_dem,voly_dem,phasex,phasey,β)
+            lnK_dem,volx_dem,voly_dem,gibbs_dem = update_K!(lnK_dem,model,p,T,x_dem,y_dem,volx,voly,phasex,phasey,β)
             # only accelerate if the gibbs free energy is reduced
-            if gibbs_dem < gibbs 
+            if gibbs_dem < gibbs
                 lnK .= _1 * lnK_dem
                 volx = _1 * volx_dem
                 voly = _1 * voly_dem

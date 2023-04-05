@@ -55,7 +55,6 @@ function eos_res(model::ActivityModel,V,T,z)
     return g_E+g_pure_res-p_res*V
 end
 
-
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
     df(x) = Solvers.derivative(f,x)

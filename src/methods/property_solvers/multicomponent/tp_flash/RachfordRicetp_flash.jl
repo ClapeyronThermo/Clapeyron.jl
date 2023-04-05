@@ -55,14 +55,14 @@ function RRTPFlash(;equilibrium = :vle,
     return RRTPFlash{eltype(m)}(m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.ss_iters,m.nacc,m.noncondensables,m.nonvolatiles)
 end
 
-function tp_flash_impl(model::EoSModel, p, T, n, method::RRTPFlash)
+function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
     x,y,β =  tp_flash_michelsen(model,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
     x0 = method.x0, y0 = method.y0, vol0 = method.v0,
     K_tol = method.K_tol,itss = method.ss_iters, nacc=method.nacc,
     non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles, 
     reduced = true, use_opt_solver = false)
 
-    G = (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
+    G = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
 
     X = hcat(x,y)'
     nvals = X.*[1-β
