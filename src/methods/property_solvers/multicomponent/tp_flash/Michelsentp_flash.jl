@@ -207,8 +207,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     there is a method used in TREND that tries to obtain adequate values of K
     in the case of incorrect initialization.
     =#
-    @show (x,y,β)
-    @show volx,voly
     # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
@@ -241,7 +239,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β,inx,iny)
-        @show (x,y,β)
         # acceleration step
         if itacc == (nacc - 2)
             lnK3 = 1. * lnK
