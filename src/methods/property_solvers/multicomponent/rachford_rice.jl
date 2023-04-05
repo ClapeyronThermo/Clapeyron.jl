@@ -214,6 +214,13 @@ function rr_find_strongest(K,z)
         clx1,clx2,clx3 = res1
         r1,r2,r3 = real(clx1),real(clx2),real(clx3)
         rsum = r1+r2+r3
+        if (r1 ≈ r2) && r1 > 1
+            return r3
+        elseif  (r1 ≈ r3) && r1 > 1
+            return r2
+        elseif (r2 ≈ r3) && r2 > 1
+            return r1
+        end
         rmax,rmin = extrema((r1,r2,r3))
         rmid = rsum - rmax - rmin
         return rmid
@@ -387,5 +394,6 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
         error_β = abs(dβ)
         error_FO = abs(FO)
     end
+
     return β
 end
