@@ -95,7 +95,7 @@ is_vle(method::MichelsenTPFlashMethod) = is_vle(method.equilibrium)
 is_lle(method::MichelsenTPFlashMethod) = is_lle(method.equilibrium)
 
 #hook to precalculate things with the activity model.
-__tpflash_cache_model(model,p,T,z) = model
+__tpflash_cache_model(model::EoSModel,p,T,z) = model
 
 function __tpflash_gibbs_reduced(model,p,T,x,y,β)
     (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T

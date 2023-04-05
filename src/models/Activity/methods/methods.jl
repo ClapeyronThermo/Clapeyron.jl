@@ -35,7 +35,7 @@ function ActivityPTFlashWrapper(model::ActivityModel,T::Number)
     return ActivityPTFlashWrapper(model.components,model,sats,crits,ϕpure)
 end
 
-__tpflash_cache_model(model,p,T,z) = ActivityPTFlashWrapper(model,T)
+__tpflash_cache_model(model::ActivityModel,p,T,z) = ActivityPTFlashWrapper(model,T)
 
 function update_K!(lnK,wrapper::ActivityPTFlashWrapper,p,T,x,y,volx,voly,phasex,phasey,β = nothing)
     model = wrapper.model
