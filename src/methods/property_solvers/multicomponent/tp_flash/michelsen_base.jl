@@ -12,32 +12,18 @@ function rachfordrice_β0(K,z,β0 = nothing)
         singlephase = true
     end
 
-    β0 !== nothing && return β0,singlephase
-    βmin =  Inf*_1
-    βmax = -Inf*_1
-    
-    #βmin = max(0., minimum(((K.*z .- 1) ./ (K .-  1.))[K .> 1]))
-    #βmax = min(1., maximum(((1 .- z) ./ (1. .- K))[K .< 1]))
-    
-    for i in eachindex(K)
-        Ki,zi = K[i],z[i]
-        if Ki > 1
-            βmin = min(βmin,(Ki*zi - 1)/(Ki - 1))
-        end
-        if Ki < 1
-            βmax = max(βmax,(1 - zi)/(1 - Ki))
-        end
+    βmin,βmax = rr_βminmax(K,z)
+    if β0 !== nothing
+        β = β0
+    else
+        β = (βmax + βmin)/2
     end
-    βmin = max(βmin,_0)
-    βmax = min(βmax,_1)
-    β = (βmax + βmin)/2
-
-    return β,singlephase
+    return β,singlephase,(βmin,βmax)
 end
 
 function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx)
     # Function to solve Rachdord-Rice mass balance
-    β,singlephase = rachfordrice_β0(K,z,β0)
+    β,singlephase,limits = rachfordrice_β0(K,z,β0)
 
     if length(z) <= 4 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && !singlephase
         return rr_vle_vapor_fraction_exact(K,z)
@@ -45,7 +31,7 @@ function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)
 
     #halley refinement
     if !singlephase
-        return rr_flash_refine(K,z,β,non_inx,non_iny)
+        return rr_flash_refine(K,z,β,non_inx,non_iny,limits)
     else
         return β
     end

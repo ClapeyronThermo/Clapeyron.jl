@@ -280,33 +280,112 @@ function rr_flash_liquid!(x,k,z,β)
     x .= f.(k,z)
     x
 end
+
+#obtains the minimum and maximum permissible value of β
+function rr_βminmax(K,z)
+    _1 = one(eltype(K))*one(eltype(z))
+    βmin =  Inf*_1
+    βmax = -Inf*_1
+    _0 = zero(_1)
+    #βmin = max(0., minimum(((K.*z .- 1) ./ (K .-  1.))[K .> 1]))
+    #βmax = min(1., maximum(((1 .- z) ./ (1. .- K))[K .< 1]))
+    
+    for i in eachindex(K)
+        Ki,zi = K[i],z[i]
+        if Ki > 1
+            βmin = min(βmin,(Ki*zi - 1)/(Ki - 1))
+        end
+        if Ki < 1
+            βmax = max(βmax,(1 - zi)/(1 - Ki))
+        end
+    end
+    βmin = max(βmin,_0)
+    βmax = min(βmax,_1)
+    return βmin,βmax
+end
+
 #refines a rachford-rice result via Halley iterations
-function rr_flash_refine(K,z,β,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx) 
+function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx,limits = rr_βminmax(K,z)) 
+    βmin,βmax = limits 
+    _0 = zero(first(z)+first(K)+first(β0))
+    _1 = one(_0)
+    sumz = sum(z)
+    invsumz = _1/sumz
+    β = β0
+    #=
     function FO(β̄ )
-        _0 = zero(first(z)+first(K)+first(β̄ ))
-        _1 = one(_0)
-        sumz = sum(z)
-        invsumz = _1/sumz
-        _0βy = - 1. / (1. - β)
-        _0βx = 1. / β
+        _0βy = - 1. / (1. - βₛ)
+        _0βx = 1. / βₛ
         res,∂res,∂2res = _0,_0,_0
         for i in 1:length(z)
             Kim1 = K[i] - _1
             # modification for non-in-y components Ki -> 0
+            KD = Kim1/(1+βₛ*Kim1)
             if non_iny[i]
                 KD = _0βy
-            elseif non_inx[i]
-                KD = _0βx
-            else 
-            # modification for non-in-x components Ki -> ∞
-                KD = Kim1/(1+β̄ *Kim1)
             end
+            if non_inx[i]
+                KD = _0βx
+            end
+            # modification for non-in-x components Ki -> ∞
+            
             res += invsumz*z[i]*KD
             ∂res -= invsumz*z[i]*KD^2
             ∂2res += 2*invsumz*z[i]*KD^3
         end
+
         return res,res/∂res,∂res/∂2res
     end
+    
     prob = Roots.ZeroProblem(FO,β)
     return Roots.solve(prob,Roots.Halley())
+    =#
+    it = 0
+    error_β = _1
+    error_FO = _1
+    while error_β > 1e-8 && error_FO > 1e-8 && it < 30
+        it = it + 1
+        _0βy = - 1. / (1. - β)
+        _0βx = 1. / β
+        res,∂res,∂2res = _0,_0,_0
+        FO,dFO,d2FO = _0,_0,_0
+        for i in 1:length(z)
+            Kim1 = K[i] - _1
+            KD = Kim1/(1+β*Kim1)
+            # modification for non-in-y components Ki -> 0
+            if non_iny[i]
+                KD = _0βy
+            end
+            # modification for non-in-x components Ki -> ∞
+            if non_inx[i]
+                KD = _0βx
+            end
+            FO_i = KD
+            zFOi = z[i]*FO_i
+            zFOi2 = zFOi*FO_i
+            zFOi3 = zFOi2*FO_i
+            FO += zFOi
+            dFO -= zFOi2
+            d2FO += 2*zFOi3
+        end
+        dβ = - (2*FO*dFO)/(2*dFO^2-FO*d2FO)
+        # restricted β space
+        if FO < 0.
+            βmax = β
+        elseif FO > 0.
+            βmin = β
+        end
+
+        #updatind β
+        βnew =  β + dβ
+        if βmin < βnew && βnew < βmax
+            β = βnew
+        else
+            dβ = (βmin + βmax) / 2 - β
+            β = dβ + β
+        end
+        error_β = abs(dβ)
+        error_FO = abs(FO)
+    end
+    return β
 end

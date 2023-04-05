@@ -203,7 +203,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     end
     _1 = one(p+T+first(z))
     # Initial guess for phase split
-    β,singlephase = rachfordrice_β0(K,z)
+    β,singlephase,_ = rachfordrice_β0(K,z)
     #=TODO:
     there is a method used in TREND that tries to obtain adequate values of K
     in the case of incorrect initialization.
