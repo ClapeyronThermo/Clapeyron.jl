@@ -14,11 +14,11 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via t
 - `K_tol` = tolerance to stop the calculation
 - `max_iters` = number of Successive Substitution iterations to perform
 - `nacc` =  accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
-- `noncondensables` = arrays with names (strings) of components non allowed on the liquid phase. Not allowed with `lle` equilibria
-- `nonvolatiles` = arrays with names (strings) of components non allowed on the vapour phase. Not allowed with `lle` equilibria
+- `noncondensables` = arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase
+- `nonvolatiles` = arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase
 
 """
-struct RRTPFlash{T} <: MichelsenTPFlashMethod
+struct RRTPFlash{T} <: TPFlashMethod
     equilibrium::Symbol
     K0::Union{Vector{T},Nothing}
     x0::Union{Vector{T},Nothing}
@@ -31,12 +31,17 @@ struct RRTPFlash{T} <: MichelsenTPFlashMethod
     nonvolatiles::Union{Nothing,Vector{String}}
 end
 
+Base.eltype(method::RRTPFlash{T}) where T = T
+
+is_vle(method::RRTPFlash) = is_vle(method.equilibrium)
+is_lle(method::RRTPFlash) = is_lle(method.equilibrium)
+
 function index_reduction(m::RRTPFlash,idx::AbstractVector)
     equilibrium,K0,x0,y0,v0,K_tol,max_iters,nacc,noncondensables,nonvolatiles = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.max_iters,m.nacc,m.noncondensables,m.nonvolatiles
     K0 !== nothing && (K0 = K0[idx])
     x0 !== nothing && (x0 = x0[idx])
     y0 !== nothing && (y0 = y0[idx])
-    return MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,max_iters,nacc,noncondensables,nonvolatiles)
+    return RRTPFlash{eltype(m)}(equilibrium,K0,x0,y0,v0,K_tol,max_iters,nacc,noncondensables,nonvolatiles)
 end
 
 function RRTPFlash(;equilibrium = :vle,
@@ -52,13 +57,16 @@ function RRTPFlash(;equilibrium = :vle,
     ss_iters = max_iters
     #we call Michelsen to check if the arguments are correct.
     m = MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,noncondensables,nonvolatiles)
-    return RRTPFlash{eltype(m)}(m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.ss_iters,m.nacc,m.noncondensables,m.nonvolatiles)
+    return RRTPFlash{eltype(m)}(m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,max_iters,m.nacc,m.noncondensables,m.nonvolatiles)
 end
 
 function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
-    x,y,β =  tp_flash_michelsen(model,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
-    x0 = method.x0, y0 = method.y0, vol0 = method.v0,
-    K_tol = method.K_tol,itss = method.ss_iters, nacc=method.nacc,
+    
+    model_cached = __tpflash_cache_model(model,p,T,z)
+    
+    x,y,β =  tp_flash_michelsen(model,p,T,z;equilibrium = method.equilibrium, 
+    K0 = method.K0, x0 = method.x0, y0 = method.y0, vol0 = method.v0,
+    K_tol = method.K_tol,itss = method.max_iters, nacc=method.nacc,
     non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
     reduced = true, use_opt_solver = false)
 
