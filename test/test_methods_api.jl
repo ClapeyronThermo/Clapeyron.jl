@@ -147,6 +147,30 @@ end
         GC.gc()
 
     end
+
+    @testset "Michelsen Algorithm, activities" begin
+    #example from https://github.com/ClapeyronThermo/Clapeyron.jl/issues/144
+        system = UNIFAC(["water", "hexane"])
+        alg1 = MichelsenTPFlash(
+            equilibrium = :lle, 
+            K0 = [0.00001/0.99999, 0.99999/0.00001],
+        )
+
+        flash1 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg1)
+        act_x1 = activity_coefficient(system, 101325, 303.15, flash1[1][1,:]) .* flash1[1][1,:]
+        act_y1 = activity_coefficient(system, 101325, 303.15, flash1[1][2,:]) .* flash1[1][2,:]
+        @test Clapeyron.dnorm(act_x1,act_y1) < 1e-8
+
+        alg2 = MichelsenTPFlash(
+            equilibrium = :lle, 
+            x0 = [0.99999, 0.00001],
+            y0 = [0.00001, 0.00009]
+        )
+        flash2 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg2)
+        act_x2 = activity_coefficient(system, 101325, 303.15, flash2[1][1,:]) .* flash2[1][1,:]
+        act_y2 = activity_coefficient(system, 101325, 303.15, flash2[1][2,:]) .* flash2[1][2,:]
+        @test Clapeyron.dnorm(act_x2,act_y2) < 1e-8
+    end
 end
 
 
