@@ -186,8 +186,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         K = 1. * K0
         lnK = log.(K)
     elseif !isnothing(x0) && !isnothing(y0)
-        x = x0
-        y = y0
+        x = x0 ./ sum(x0)
+        y = y0 ./ sum(y0)
         lnK = log.(x ./ y)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,nothing)
         K = exp.(lnK)
@@ -200,7 +200,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
                         or for compositions of x and y for LLE""")
         err()
     end
-
     _1 = one(p+T+first(z))
     # Initial guess for phase split
     β,singlephase = rachfordrice_β0(K,z)
@@ -241,7 +240,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β,inx,iny)
-
         # acceleration step
         if itacc == (nacc - 2)
             lnK3 = 1. * lnK
@@ -275,7 +273,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     # Stage 2: Minimization of Gibbs Free Energy
     vcache = Ref((volx, voly))
 
-    if error_lnK > K_tol && it == itss && !singlephase && use_opt_isolver
+    if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
         # println("Second order minimization")
         nx = zeros(nc)
         ny = zeros(nc)
