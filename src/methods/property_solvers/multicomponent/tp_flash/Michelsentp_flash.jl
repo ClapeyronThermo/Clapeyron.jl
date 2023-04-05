@@ -183,6 +183,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     in_equilibria = inx .& iny
 
     # Computing the initial guess for the K vector
+    x = similar(z)
+    y = similar(z)
     if !isnothing(K0)
         K = 1. * K0
         lnK = log.(K)
@@ -226,7 +228,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
 
     gibbs = one(_1)
     gibbs_dem = one(_1)
-
     while error_lnK > K_tol && it < itss && !singlephase
         it += 1
         itacc += 1
