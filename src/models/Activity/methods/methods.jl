@@ -37,6 +37,10 @@ end
 
 __tpflash_cache_model(model::ActivityModel,p,T,z) = ActivityPTFlashWrapper(model,T)
 
+function tp_flash_K0(wrapper::ActivityPTFlashWrapper,p,T)
+    return first.(wrapper.sat) ./ p
+end
+
 function update_K!(lnK,wrapper::ActivityPTFlashWrapper,p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
     model = wrapper.model
     pures = wrapper.model.puremodel.pure
@@ -70,7 +74,7 @@ function update_K!(lnK,wrapper::ActivityPTFlashWrapper,p,T,x,y,volx,voly,phasex,
             if iny[i]
                 ϕli = fug[i]
                 p_i = sats[i][1]
-                lnK[i] = log(γx*ϕli*exp(volx*(p - p_i)/RT)/exp(lnϕy[i])/p)
+                lnK[i] = log(γx[i]*p_i*ϕli/p) - lnϕy[i] + volx*(p - p_i)/RT
                 gibbs += β*y[i]*log(y[i] + lnϕy[i])
             end
         end
@@ -104,7 +108,7 @@ function __tpflash_gibbs_reduced(wrapper::ActivityPTFlashWrapper,p,T,x,y,β,eq)
     g_pure_x = sum(x[i]*VT_gibbs_free_energy(pures[i],wrapper.sat[i][2],T) for i ∈ 1:n)    
     gibbs = (g_E_x + g_ideal_x + g_pure_x)*(1-β)/RT
     if is_vle(eq)
-        gibbs += gibbs_free_energy(model.puremodel.model,p,T,y)*β/R̄/T
+        gibbs += gibbs_free_energy(model.puremodel.model,p,T,y,phase =:v)*β/R̄/T
     else #lle
         γy = activity_coefficient(model, p, T, y)
         g_E_y = sum(y[i]*RT*log(γy[i]) for i ∈ 1:n)
