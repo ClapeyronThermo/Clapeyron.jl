@@ -25,7 +25,7 @@ function rachfordrice(K, z; β0=nothing, non_inx=FillArrays.Fill(false,length(z)
     # Function to solve Rachdord-Rice mass balance
     β,singlephase,limits = rachfordrice_β0(K,z,β0)
 
-    if length(z) <= 4 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && !singlephase
+    if length(z) <= 3 && all(Base.Fix2(>,0),z) && all(!,non_inx) && all(!,non_iny) && !singlephase
         return rr_vle_vapor_fraction_exact(K,z)
     end
 
