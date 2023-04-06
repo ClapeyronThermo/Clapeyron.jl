@@ -23,7 +23,7 @@ function COSMOSAC10(components::Vector{String};
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose=false, kwargs...)
+    verbose=false)
 
     params = getparams(components, ["Activity/COSMOSAC/COSMOSAC10_like.csv"]; userlocations=userlocations, verbose=verbose)
     Pnhb  = COSMO_parse_Pi(params["Pnhb"])

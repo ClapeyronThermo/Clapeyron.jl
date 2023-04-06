@@ -61,7 +61,7 @@ function UNIQUAC(components::Vector{String};
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
-    verbose = false, kwargs...)
+    verbose = false)
 
     params = getparams(components, ["Activity/UNIQUAC/UNIQUAC_like.csv", "properties/molarmass.csv","Activity/UNIQUAC/UNIQUAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose=verbose)
     a  = params["a"]

@@ -31,7 +31,7 @@ function PSRKUNIFAC(components;
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
-    verbose = false, kwargs...)
+    verbose = false)
 
     PRSK_userlocations = vcat("@REMOVEDEFAULTS","@DB/Activity/UNIFAC/PSRK",userlocations)
     PRSK_group_userlocations = vcat("@REMOVEDEFAULTS","@DB/Activity/UNIFAC/PSRK/PSRK_groups.csv",group_userlocations)

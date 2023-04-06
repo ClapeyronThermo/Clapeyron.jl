@@ -119,3 +119,84 @@ function __tpflash_gibbs_reduced(wrapper::ActivityPTFlashWrapper,p,T,x,y,β,eq)
     return gibbs
     #(gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
 end
+
+function dgibbs_obj!(model::ActivityPTFlashWrapper, p, T, z, phasex, phasey,
+    nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
+    F=nothing, G=nothing, H=nothing)
+
+    # Objetive Function to minimize the Gibbs Free Energy
+    # It computes the Gibbs free energy, its gradient and its hessian
+    iv = 0
+    for i in eachindex(z)
+        if in_equilibria[i]
+            iv += 1
+            nyi = ny_var[iv]
+            ny[i] = nyi
+            nx[i] =z[i] - nyi
+        end
+    end    # nx = z .- ny
+
+    nxsum = sum(nx)
+    nysum = sum(ny)
+    x = nx ./ nxsum
+    y = ny ./ nysum
+
+    # Volumes are set from local cache to reuse their values for following
+    # Iterations
+    volx,voly = vcache[]
+    all_equilibria = all(in_equilibria)
+    if H !== nothing
+        # Computing Gibbs Energy Hessian
+        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x; phase=phasex, vol0=volx)
+        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y; phase=phasey, vol0=voly)
+
+        if !all_equilibria
+            ∂ϕx = ∂lnϕ∂nx[in_equilibria, in_equilibria]
+            ∂ϕy = ∂lnϕ∂ny[in_equilibria, in_equilibria]
+        else
+            #skip a copy if possible
+            ∂ϕx,∂ϕy = ∂lnϕ∂nx,∂lnϕ∂ny
+        end
+            ∂ϕx .-= 1
+            ∂ϕy .-= 1
+            ∂ϕx ./= nxsum
+            ∂ϕy ./= nysum
+        for (i,idiag) in pairs(diagind(∂ϕy))
+            ∂ϕx[idiag] += 1/nx[i]
+            ∂ϕy[idiag] += 1/ny[i]
+        end
+
+        #∂ϕx = eye./nx .- 1/nxsum .+ ∂lnϕ∂nx/nxsum
+        #∂ϕy = eye./ny .- 1/nysum .+ ∂lnϕ∂ny/nysum
+        H .= ∂ϕx .+ ∂ϕy
+    else
+        lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
+        lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
+    end
+    #volumes are stored in the local cache
+    vcache[] = (volx,voly)
+
+    ϕx = log.(x) .+ lnϕx
+    ϕy = log.(y) .+ lnϕy
+
+    # to avoid NaN in Gibbs energy
+    for i in eachindex(z)
+        non_iny[i] && (ϕy[i] = 0.)
+        non_inx[i] && (ϕx[i] = 0.)
+    end
+
+    if G !== nothing
+        # Computing Gibbs Energy gradient
+        if !all_equilibria
+            G .= (ϕy .- ϕx)[in_equilibria]
+        else
+            G .= ϕy .- ϕx
+        end
+    end
+
+    if F !== nothing
+        # Computing Gibbs Energy
+        FO = dot(ny,ϕy) + dot(nx,ϕx)
+        return FO
+    end
+end
