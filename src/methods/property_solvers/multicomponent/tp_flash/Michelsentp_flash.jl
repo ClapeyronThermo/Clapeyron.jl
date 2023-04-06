@@ -181,7 +181,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
 
     # components that are allowed to be in two phases
     in_equilibria = inx .& iny
-
     # Computing the initial guess for the K vector
     x = similar(z)
     y = similar(z)
@@ -196,8 +195,9 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         K = exp.(lnK)
     elseif is_vle(equilibrium)
         # Wilson Correlation for K
-        K = wilson_k_values(model,p,T)
+        K = tp_flash_K0(model,p,T)
         lnK = log.(K)
+       # volx,voly = NaN*_1,NaN*_1
     else
         err() = @error("""You need to provide either an initial guess for the partion constant K
                         or for compositions of x and y for LLE""")
@@ -213,7 +213,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
-
     x_dem = similar(z)
     y_dem = similar(z)
 
@@ -225,9 +224,9 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     lnK_dem = similar(lnK)
     ΔlnK1 = similar(lnK)
     ΔlnK2 = similar(lnK)
-
     gibbs = one(_1)
     gibbs_dem = one(_1)
+    vcache = Ref((_1, _1))
     while error_lnK > K_tol && it < itss && !singlephase
         it += 1
         itacc += 1
@@ -238,6 +237,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β,inx,iny)
+        vcache[] = (volx,voly)
         # acceleration step
         if itacc == (nacc - 2)
             lnK3 = 1. * lnK
@@ -257,6 +257,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
                 lnK .= _1 * lnK_dem
                 volx = _1 * volx_dem
                 voly = _1 * voly_dem
+                vcache[] = (volx,voly)
                 β = _1 * β_dem
             end
         end
@@ -267,10 +268,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(lnK,lnK_old,1)
     end
-
     # Stage 2: Minimization of Gibbs Free Energy
-    vcache = Ref((volx, voly))
-
+    
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
         # println("Second order minimization")
         nx = zeros(nc)

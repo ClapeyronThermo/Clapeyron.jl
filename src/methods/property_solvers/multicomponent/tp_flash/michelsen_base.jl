@@ -160,3 +160,5 @@ function update_rr!(K,β,z,x,y,
     y ./= sum(y)
     return x,y
 end
+
+tp_flash_K0(model,p,T) = wilson_k_values(model,p,T)
