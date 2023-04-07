@@ -12,36 +12,22 @@ include("dew_point.jl")
 include("LLE_point.jl")
 
 
-struct ActivityPTFlashWrapper{T,S,C,F} <: EoSModel
-    components::Vector{String}
-    model::T
-    sat::Vector{S}
-    crit::Vector{C}
-    fug::Vector{F}
-end
-
-Base.length(model::ActivityPTFlashWrapper) = length(model.model)
 
 
-function ActivityPTFlashWrapper(model::ActivityModel,T::Number) 
+function PTFlashWrapper(model::ActivityModel,T::Number) 
     pures = model.puremodel.pure
     sats = saturation_pressure.(pures,T)
-    crits = crit_pure.(pures)
     vv_pure = last.(sats)
     RT = R̄*T
     p_pure = first.(sats)
     μpure = only.(VT_chemical_potential_res.(__gas_model.(pures),vv_pure,T))
     ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
-    return ActivityPTFlashWrapper(model.components,model,sats,crits,ϕpure)
+    return PTFlashWrapper(model.components,model,sats,ϕpure)
 end
 
-__tpflash_cache_model(model::ActivityModel,p,T,z) = ActivityPTFlashWrapper(model,T)
+__tpflash_cache_model(model::ActivityModel,p,T,z) = PTFlashWrapper(model,T)
 
-function tp_flash_K0(wrapper::ActivityPTFlashWrapper,p,T)
-    return first.(wrapper.sat) ./ p
-end
-
-function update_K!(lnK,wrapper::ActivityPTFlashWrapper,p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
+function update_K!(lnK,wrapper::PTFlashWrapper{<:ActivityModel},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
     model = wrapper.model
     pures = wrapper.model.puremodel.pure
     sats = wrapper.sat
@@ -97,7 +83,7 @@ function update_K!(lnK,wrapper::ActivityPTFlashWrapper,p,T,x,y,volx,voly,phasex,
     return lnK,volx,voly,gibbs
 end
 
-function __tpflash_gibbs_reduced(wrapper::ActivityPTFlashWrapper,p,T,x,y,β,eq)
+function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:ActivityModel},p,T,x,y,β,eq)
     pures = wrapper.model.puremodel.pure
     model = wrapper.model
     γx = activity_coefficient(model, p, T, x)
@@ -120,7 +106,7 @@ function __tpflash_gibbs_reduced(wrapper::ActivityPTFlashWrapper,p,T,x,y,β,eq)
     #(gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
 end
 
-function dgibbs_obj!(model::ActivityPTFlashWrapper, p, T, z, phasex, phasey,
+function dgibbs_obj!(model::PTFlashWrapper{<:ActivityModel}, p, T, z, phasex, phasey,
     nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
     F=nothing, G=nothing, H=nothing)
 
