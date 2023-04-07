@@ -313,21 +313,22 @@ end
 
 #refines a rachford-rice result via Halley iterations
 function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx,limits = rr_βminmax(K,z))
+    
     βmin,βmax = limits
     _0 = zero(first(z)+first(K)+first(β0))
     _1 = one(_0)
     sumz = sum(z)
     invsumz = _1/sumz
     β = β0
-    #=
+    
     function FO(β̄ )
-        _0βy = - 1. / (1. - βₛ)
-        _0βx = 1. / βₛ
+        _0βy = - 1. / (1. - β̄ )
+        _0βx = 1. / β̄ 
         res,∂res,∂2res = _0,_0,_0
         for i in 1:length(z)
             Kim1 = K[i] - _1
             # modification for non-in-y components Ki -> 0
-            KD = Kim1/(1+βₛ*Kim1)
+            KD = Kim1/(1+β̄ *Kim1)
             if non_iny[i]
                 KD = _0βy
             end
@@ -344,9 +345,9 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
         return res,res/∂res,∂res/∂2res
     end
 
-    prob = Roots.ZeroProblem(FO,β)
-    return Roots.solve(prob,Roots.Halley())
-    =#
+    prob = Roots.ZeroProblem(FO,(βmin,βmax,β))
+    return Roots.solve(prob,ChebyshevBracket())
+   #=
     it = 0
     error_β = _1
     error_FO = _1
@@ -395,5 +396,5 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
         error_FO = abs(FO)
     end
 
-    return β
+    return β =#
 end
