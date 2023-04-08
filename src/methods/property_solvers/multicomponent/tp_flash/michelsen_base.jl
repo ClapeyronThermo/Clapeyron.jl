@@ -69,8 +69,8 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
     #volumes are stored in the local cache
     vcache[] = (volx,voly)
 
-    ϕx = log.(x) .+ lnϕx
-    ϕy = log.(y) .+ lnϕy
+    ϕx = log.(x) .+ lnϕx #log(xi*ϕxi)
+    ϕy = log.(y) .+ lnϕy #log(yi*ϕyi)
 
     # to avoid NaN in Gibbs energy
     for i in eachindex(z)
@@ -80,10 +80,12 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
 
     if G !== nothing
         # Computing Gibbs Energy gradient
-        if !all_equilibria
-            G .= (ϕy .- ϕx)[in_equilibria]
-        else
-            G .= ϕy .- ϕx
+        i0 = 0
+        for i in in_equilibria
+            if in_equilibria[i]
+                i0 += 1
+                G[i0] = ϕy[i] - ϕx[i]
+            end
         end
     end
 

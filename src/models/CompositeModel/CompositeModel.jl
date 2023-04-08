@@ -160,7 +160,7 @@ function PTFlashWrapper(model::CompositeModel,T::Number)
     p_pure = first.(sats)
     μpure = only.(VT_chemical_potential_res.(gases,vv_pure,T))
     ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
-    return PTFlashWrapper(model.components,model,sats,ϕpure)
+    return PTFlashWrapper(model.components,model,sats,ϕpure,μpure)
 end
 
 
