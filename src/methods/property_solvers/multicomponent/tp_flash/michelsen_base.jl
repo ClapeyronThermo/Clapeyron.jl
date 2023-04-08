@@ -81,7 +81,7 @@ function dgibbs_obj!(model::EoSModel, p, T, z, phasex, phasey,
     if G !== nothing
         # Computing Gibbs Energy gradient
         i0 = 0
-        for i in in_equilibria
+        for i in eachindex(in_equilibria)
             if in_equilibria[i]
                 i0 += 1
                 G[i0] = ϕy[i] - ϕx[i]
