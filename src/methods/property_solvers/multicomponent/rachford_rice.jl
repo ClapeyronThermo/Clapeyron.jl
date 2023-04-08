@@ -311,6 +311,30 @@ function rr_βminmax(K,z)
     return βmin,βmax
 end
 
+function rachfordrice_β0(K,z,β0 = nothing)
+    g0 = dot(z, K) - 1.
+    g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K))
+    singlephase = false
+    _1 = one(g1)
+    _0 = zero(g1)
+    if g0 < 0
+        β = _0
+        singlephase = true
+    elseif g1 > 0
+        β = _1
+        singlephase = true
+    end
+
+    βmin,βmax = rr_βminmax(K,z)
+    if β0 !== nothing
+        β = β0
+    else
+        β = (βmax + βmin)/2
+    end
+    return β,singlephase,(βmin,βmax)
+end
+
+
 #refines a rachford-rice result via Halley iterations
 function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx,limits = rr_βminmax(K,z))
     
