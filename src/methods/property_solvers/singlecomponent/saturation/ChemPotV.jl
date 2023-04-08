@@ -119,14 +119,13 @@ end
 struct ObjSatPure{M,T}
     model::M
     ps::T
-    mus::T
     Tsat::T
 end
 
 function ObjSatPure(model,T)
-    ps = 1/p_scale(model)
-    ps,ps,T = promote(ps,ps,T)
-    ObjSatPure(model,ps,ps,T)
+    ps = R̄*T/p_scale(model)
+    ps,T = promote(ps,T)
+    ObjSatPure(model,ps,T)
 end
 
 function (f::ObjSatPure)(F,x)
