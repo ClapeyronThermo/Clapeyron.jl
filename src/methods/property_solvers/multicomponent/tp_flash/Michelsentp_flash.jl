@@ -178,7 +178,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
 
     active_inx = !all(inx)
     active_iny = !all(iny)
-
     # components that are allowed to be in two phases
     in_equilibria = inx .& iny
     # Computing the initial guess for the K vector
@@ -215,7 +214,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     it = 0
     x_dem = similar(z)
     y_dem = similar(z)
-
     itacc = 0
     lnK3 = similar(lnK)
     lnK4 = similar(lnK)
@@ -231,7 +229,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         it += 1
         itacc += 1
         lnK_old = lnK .* _1
-
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
         singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
@@ -271,7 +268,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     # Stage 2: Minimization of Gibbs Free Energy
     
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
-        # println("Second order minimization")
         nx = zeros(nc)
         ny = zeros(nc)
 

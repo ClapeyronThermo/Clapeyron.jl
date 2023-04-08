@@ -48,7 +48,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:ActivityModel},p,T,x,y,volx,vol
             if inx[i]
                 g_E_x = x[i]*RT*log(γx[i])
                 g_ideal_x = x[i]*RT*log(x[i])
-                g_pure_x = x[i]*VT_gibbs_free_energy(pures[i],wrapper.sat[i][2],T)
+                g_pure_x = x[i]*VT_gibbs_free_energy(__gas_model(pures[i]),wrapper.sat[i][2],T)
                 gibbs += (g_E_x + g_ideal_x + g_pure_x)*(1-β)/RT
             end
         end
@@ -73,7 +73,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:ActivityModel},p,T,x,y,volx,vol
                 if iny[i]
                     g_E_y = y[i]*RT*log(γy[i])
                     g_ideal_y = y[i]*RT*(log(y[i]))
-                    g_pure_y = y[i]*VT_gibbs_free_energy(pures[i],wrapper.sat[i][2],T)
+                    g_pure_y = y[i]*VT_gibbs_free_energy(__gas_model(pures[i]),wrapper.sat[i][2],T)
                     gibbs += (g_E_y + g_ideal_y + g_pure_y)*β/RT
                 end
             end
@@ -91,7 +91,7 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:ActivityModel},p,T,x,
     n = length(model)
     g_E_x = sum(x[i]*RT*log(γx[i]) for i ∈ 1:n)
     g_ideal_x = sum(x[i]*RT*(log(x[i])) for i ∈ 1:n)
-    g_pure_x = sum(x[i]*VT_gibbs_free_energy(pures[i],wrapper.sat[i][2],T) for i ∈ 1:n)    
+    g_pure_x = sum(x[i]*VT_gibbs_free_energy(__gas_model(pures[i]),wrapper.sat[i][2],T) for i ∈ 1:n)    
     gibbs = (g_E_x + g_ideal_x + g_pure_x)*(1-β)/RT
     if is_vle(eq)
         gibbs += gibbs_free_energy(model.puremodel.model,p,T,y,phase =:v)*β/R̄/T
@@ -99,7 +99,7 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:ActivityModel},p,T,x,
         γy = activity_coefficient(model, p, T, y)
         g_E_y = sum(y[i]*RT*log(γy[i]) for i ∈ 1:n)
         g_ideal_y = sum(y[i]*R̄*T*(log(y[i])) for i ∈ 1:n)
-        g_pure_y = sum(y[i]*VT_gibbs_free_energy(pures[i],wrapper.sat[i][2],T) for i ∈ 1:n)    
+        g_pure_y = sum(y[i]*VT_gibbs_free_energy(__gas_model(pures[i]),wrapper.sat[i][2],T) for i ∈ 1:n)    
         gibbs += (g_E_y + g_ideal_y + g_pure_y)*β/RT
     end
     return gibbs

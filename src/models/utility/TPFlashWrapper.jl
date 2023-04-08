@@ -10,6 +10,5 @@ Base.length(model::PTFlashWrapper) = length(model.model)
 
 function tp_flash_K0(wrapper::PTFlashWrapper,p,T)
     K =  first.(wrapper.sat) ./ p
-    @show K
 end
 
