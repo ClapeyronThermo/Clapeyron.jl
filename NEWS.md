@@ -9,4 +9,7 @@
     - Activity + ideal gas: `Activity(components, puremodel = IdealModel)`
     - Activity + real gas: `Activity(components, puremodel = EosModel)` (`ActivityModel(components)` normally calls `ActivityModel(components,puremodel = PR)`)
 - `RRTPFlash` now supports acceleration, non-condensables, non-volatiles, activity models and `CompositeModel`. (the same operations that `MichelsenTPFlash` supports.)
+- `UNIFAC` models should be faster.
+- the default `saturation_pressure` algorithm should be slightly faster
+- the default `saturation_temperature` algorithm should be slightly faster
 
