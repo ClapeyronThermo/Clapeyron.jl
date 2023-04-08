@@ -1,9 +1,10 @@
 #wrapper used to cache results in case of activity models and CompositeModel
-struct PTFlashWrapper{T,S,F} <: EoSModel
+struct PTFlashWrapper{T,S,F,M} <: EoSModel
     components::Vector{String}
     model::T
     sat::Vector{S}
     fug::Vector{F}
+    μ::Vector{M}
 end
 
 Base.length(model::PTFlashWrapper) = length(model.model)
