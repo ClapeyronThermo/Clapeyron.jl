@@ -20,8 +20,7 @@ function fobj_psat!(model::EoSModel, T)
     # F = vector for objective function
     # J = matrix for objective function jacobian
 
-    ps = 1/p_scale(model)
-    μs = 1/R̄/T
+    ps,μs =  scale_sat_pure(model)
     function f!(F,x)
         ρ_liq, ρ_vap = x
         A_liq, ∂A_liq = ∂Helmholtz(model, ρ_liq, T)
@@ -97,11 +96,8 @@ end
                             atol = 1e-8,
                             rtol = 1e-12,
                             max_iters = 10^4)
-
 Saturation method for `saturation_pressure`. It uses equality of Chemical Potentials with a density basis. If no volumes are provided, it will use  [`x0_sat_pure`](@ref). 
-
 `vl`  and `vl` are initial guesses for the liquid and vapour volumes.
-
 `f_limit`, `atol`, `rtol`, `max_iters` are passed to the non linear system solver.
 """
 function ChemPotDensitySaturation(;vl = nothing,

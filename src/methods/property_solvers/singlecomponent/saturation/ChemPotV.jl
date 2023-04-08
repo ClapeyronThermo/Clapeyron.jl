@@ -10,13 +10,9 @@
                         atol = 1e-8,
                         rtol = 1e-12,
                         max_iters = 10^4)
-
 Default `saturation_pressure` Saturation method used by `Clapeyron.jl`. It uses equality of Chemical Potentials with a volume basis. If no volumes are provided, it will use  [`x0_sat_pure`](@ref).
-
 If those initial guesses fail and the specification is near critical point, it will try one more time, using Corresponding States instead.
-
 when `crit_retry` is true, if the initial solve fail, it will try to obtain a better estimate by calculating the critical point. 
-
 `f_limit`, `atol`, `rtol`, `max_iters` are passed to the non linear system solver.
 """
 struct ChemPotVSaturation{T,C} <: SaturationMethod
@@ -119,19 +115,21 @@ end
 struct ObjSatPure{M,T}
     model::M
     ps::T
+    mus::T
     Tsat::T
 end
 
 function ObjSatPure(model,T)
-    ps = R̄*T/p_scale(model)
-    ps,T = promote(ps,T)
-    ObjSatPure(model,ps,T)
+    ps,mus = scale_sat_pure(model)
+    ps,mus,T = promote(ps,mus,T)
+    ObjSatPure(model,ps,mus,T)
 end
 
 function (f::ObjSatPure)(F,x)
     model = f.model
+    scales = (f.ps,f.mus)
     T = f.Tsat
-    return Obj_Sat(model, F, T, exp(x[1]), exp(x[2]),f.ps)
+    return Obj_Sat(model, F, T, exp(x[1]), exp(x[2]),scales)
 end
 #with the critical point, we can perform a
 #corresponding states approximation with the
@@ -177,14 +175,15 @@ function sat_pure(f!::ObjSatPure,V0,method)
     return res,valid
 end
 
-function Obj_Sat(model::EoSModel, F, T, V_l, V_v,ps)
-    fun(_V) = a_res(model,_V, T,SA[1.])
-    A_lr,Av_lr = Solvers.f∂f(fun,V_l)
-    A_vr,Av_vr =Solvers.f∂f(fun,V_v)
-    g_l = A_lr - log(V_l) - Av_lr*V_l
-    g_v = A_vr - log(V_v) - Av_vr*V_v 
-    F[1] = -(Av_lr-Av_vr - 1/V_l + 1/V_v)*ps
-    F[2] = (g_l-g_v)
+function Obj_Sat(model::EoSModel, F, T, V_l, V_v,scales)
+    fun(_V) = eos(model, _V, T,SA[1.])
+    A_l,Av_l = Solvers.f∂f(fun,V_l)
+    A_v,Av_v =Solvers.f∂f(fun,V_v)
+    g_l = muladd(-V_l,Av_l,A_l)
+    g_v = muladd(-V_v,Av_v,A_v)
+    (p_scale,μ_scale) = scales
+    F[1] = -(Av_l-Av_v)*p_scale
+    F[2] = (g_l-g_v)*μ_scale
     return F
 end
 

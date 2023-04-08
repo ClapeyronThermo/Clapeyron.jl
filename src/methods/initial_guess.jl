@@ -1,6 +1,5 @@
 """
     x0_volume_liquid(model,T,z)
-
 Returns an initial guess to the liquid volume, dependent on temperature and composition. by default is 1.25 times [`lb_volume`](@ref).
 """
 function x0_volume_liquid(model,T,z)
@@ -10,7 +9,6 @@ end
 
 """
     x0_volume_gas(model,p,T,z)
-
 Returns an initial guess to the gas volume, depending of pressure, temperature and composition. by default uses [`volume_virial`](@ref)
 """
 function x0_volume_gas(model,p,T,z)
@@ -19,7 +17,6 @@ end
 
 """
     x0_volume_solid(model,T,z)
-
 Returns an initial guess to the solid volume, dependent on temperature and composition. needs to be defined for EoS that support solid phase. by default returns NaN
 """
 function x0_volume_solid(model,T,z)
@@ -29,17 +26,11 @@ end
 
 """
     x0_volume(model,p,T,z; phase = :unknown)
-
 Returns an initial guess of the volume at a pressure, temperature, composition and suggested phase.
-
 If the suggested phase is `:unknown` or `:liquid`, calls [`x0_volume_liquid`](@ref).
-
 If the suggested phase is `:gas`, calls [`x0_volume_gas`](@ref).
-
 If the suggested phase is `solid`, calls [`x0_volume_solid`](@ref).
-
 Returns `NaN` otherwise
-
 """
 function x0_volume(model, p, T, z = SA[1.0]; phase = :unknown)
     phase = Symbol(phase)
@@ -59,63 +50,46 @@ end
 
 """
     lb_volume(model::EoSModel,z=SA[1.0])
-
 Returns the lower bound volume.
-
 It has different meanings depending on the Equation of State, but symbolizes the minimum allowable volume at a certain composition:
-
 - SAFT EoS: the packing volume
 - Cubic EoS, covolume (b) parameter
-
 On empiric equations of state, the value is chosen to match the volume of the conditions at maximum pressure and minimum temperature
 , but the equation itself normally can be evaluated at lower volumes.
-
 On SAFT and Cubic EoS, volumes lower than `lb_volume` will likely error.
-
 The lower bound volume is used for guesses of liquid volumes at a certain pressure, saturated liquid volumes and critical volumes.
 """
 function lb_volume end
 
 """
     T_scale(model::EoS,z=SA[1.0])
-
 Represents a temperature scaling factor.
-
 On any EoS based on Critical parameters (Cubic or Empiric EoS), the temperature scaling factor is chosen to be the critical temperature.
-
 On SAFT or other molecular EoS, the temperature scaling factor is chosen to be a function of the potential depth ϵ.
-
 Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
 """
 function T_scale end
 
 """
     p_scale(model::SAFTModel,z=SA[1.0])
-
 Represents a pressure scaling factor
-
 On any EoS based on Critical parameters (Cubic or
 Empiric EoS), the pressure scaling factor is
 chosen to be a function of the critical pressure.
-
 On SAFT or other molecular EoS, the temperature
 scaling factor is chosen to a function of ∑(zᵢ*ϵᵢ*(σᵢᵢ)³)
-
 Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
-
 """
 function p_scale end
 
 """
     antoine_coef(model)
-
 should return a 3-Tuple containing reduced Antoine Coefficients. The Coefficients follow the correlation:
 ```
 lnp̄ = log(p / p_scale(model))
 T̃ = T/T_scale(model)
 lnp̄ = A - B/(T̄ + C))
 ```
-
 By default returns `nothing`. This is to use alternative methods in case Antoine coefficients aren't available. Used mainly in single and multicomponent temperature calculations.
 """
 function antoine_coef end
@@ -125,11 +99,8 @@ antoine_coef(model) = nothing
 
 """
     x0_sat_pure(model::EoSModel,T,z=SA[1.0])
-
 Returns a 2-tuple corresponding to `(Vₗ,Vᵥ)`, where `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses.
-
 Used in [`saturation_pressure`](@ref) methods that require initial volume guesses.
-
 It can be overloaded to provide more accurate estimates if necessary.
 """
 function x0_sat_pure(model,T,z=SA[1.0])
@@ -140,7 +111,6 @@ function x0_sat_pure(model,T,z=SA[1.0])
     #given T = Teos:
     #calculate B(Teos)
     PB = Peos = -2B
-
     veos = volume_compress(model,PB,T)
     with a (P,V,T,B) pair, change to
     (P,V,a,b)
@@ -254,16 +224,18 @@ function vdw_x0_xat_pure(T,T_c,P_c,V_c)
     return (Vl0,Vv0)
 end
 
+function scale_sat_pure(model,z=SA[1.0])
+    p    = 1/p_scale(model,z)
+    μ    = 1/R̄/T_scale(model,z)
+    return p,μ
+end
+
 """
     x0_psat(model::EoSModel, T,crit = nothing)
-
 Initial point for saturation pressure, given the temperature and V,T critical coordinates.
 On moderate pressures it will use a Zero Pressure initialization. On pressures near the critical point it will switch to spinodal finding.
-
 Used in [`saturation_pressure`](@ref) methods that require initial pressure guesses.
-
 if the initial temperature is over the critical point, it returns `NaN`.
-
 It can be overloaded to provide more accurate estimates if necessary.
 """
 function x0_psat(model,T,crit = nothing)
@@ -322,7 +294,6 @@ end
 
 """
     x0_saturation_temperature(model::EoSModel,p)
-
 Returns a 3-tuple corresponding to `(T,Vₗ,Vᵥ)`, `T` is the initial guess for temperature and `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses.
 Used in [`saturation_temperature`](@ref) with [`AntoineSaturation`](@ref).
 """
@@ -363,7 +334,6 @@ end
 
 """
     x0_crit_pure(model::EoSModel)
-
 Returns a 2-tuple corresponding to
     `(k,log10(Vc0))`, where `k` is `Tc0/T_scale(model,z)`
 """
