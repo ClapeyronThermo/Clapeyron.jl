@@ -99,4 +99,13 @@ function x0_volume_liquid(model::ActivityModel,T,z = SA[1.0])
     return sum(z[i]*x0_volume_liquid(pures[i],T,SA[1.0]) for i ∈ @comps)
 end
 
+function γdγdn(model::ActivityModel,p,T,z)
+    storage = DiffResults.JacobianResult(z)
+    γ(_z) = activity_coefficient(model,p,T,_z)
+    ForwardDiff.jacobian!(storage,γ,z)
+    γz = DiffResults.value(storage)
+    dyz = DiffResults.jacobian(storage)
+    return γz,dyz
+end
+
 include("methods/methods.jl")
