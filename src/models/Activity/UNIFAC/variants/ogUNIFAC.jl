@@ -91,21 +91,23 @@ function ogUNIFAC(components;
     return model
 end
 
-function lnγ_comb(model::ogUNIFACModel,V,T,z)
-    Q = model.params.Q.values
-    R = model.params.R.values
-
-    v  = model.groups.n_flattenedgroups
-
-    x = z ./ sum(z)
-
-    r =[sum(v[i][k]*R[k] for k in @groups) for i in @comps]
-    q =[sum(v[i][k]*Q[k] for k in @groups) for i in @comps]
-
-    Φ = r/sum(x[i]*r[i] for i ∈ @comps)
-    θ = q/sum(x[i]*q[i] for i ∈ @comps)
-    lnγ_comb = @. log(Φ)+(1-Φ)-5*q*(log(Φ/θ)+(1-Φ/θ))
-    return lnγ_comb
+function excess_g_comb(model::ogUNIFACModel,p,T,z=SA[1.0])
+    _0 = zero(eltype(z))
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+    q_p = model.unifac_cache.q_p
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    G_comp = _0
+    for i ∈ @comps
+        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        zi = z[i]
+        G_comp += zi*log(Φi) + 5*q[i]*zi*log(θi/Φi)
+    end
+    return G_comp
 end
 
 function Ψ(model::ogUNIFACModel,V,T,z)

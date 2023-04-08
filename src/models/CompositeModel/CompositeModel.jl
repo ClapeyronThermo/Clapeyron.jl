@@ -160,9 +160,10 @@ function PTFlashWrapper(model::CompositeModel,T::Number)
     p_pure = first.(sats)
     μpure = only.(VT_chemical_potential_res.(gases,vv_pure,T))
     ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
+    g_pure = [VT_gibbs_free_energy(gases[i],sats[i][2],T) for i in 1:length(model)]
+
     return PTFlashWrapper(model.components,model,sats,ϕpure,μpure)
 end
-
 
 function update_K!(lnK,wrapper::PTFlashWrapper{<:CompositeModel},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
     model = wrapper.model
@@ -193,7 +194,7 @@ end
 function dgibbs_obj!(model::PTFlashWrapper{<:CompositeModel}, p, T, z, phasex, phasey,
     nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
     F=nothing, G=nothing, H=nothing)
-    throw(error("CompositeModel does not support second order optimization in MichelsenTPFlash."))
+    throw(error("CompositeModel does not support gibbs energy optimization in MichelsenTPFlash."))
     #
 end
 

@@ -97,6 +97,96 @@ function recombine_impl!(model::UNIFACModel)
     return model
 end
 
+function Ψ(model::UNIFACModel,V,T,z)
+    A = model.params.A.values
+    B = model.params.B.values
+    C = model.params.C.values
+    return @. exp(-(A+B*T+C*T^2)/T)
+end
+
+#flory-huggins(FH) + Staverman-Guggenheim (SG) contributions
+function excess_g_comb(model::UNIFACModel,p,T,z=SA[1.0])
+    _0 = zero(eltype(z))
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+    q_p = model.unifac_cache.q_p
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    Φpm = dot(q_p,z)*invn
+    G_comp = _0
+    for i ∈ @comps
+        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        Φpi = q_p[i]/Φpm #technically xi[i]q_p[i]/θpm, but it gets cancelled out (log(Φpi/xi))
+        zi = z[i]
+        G_comp += zi*log(Φpi) + 5*q[i]*zi*log(θi/Φi)
+    end
+    return G_comp
+end
+
+#just Staverman-Guggenheim (SG) contribution, used for UMR
+function excess_g_SG(model::UNIFACModel,p,T,z)
+    _0 = zero(eltype(z))
+    r = model.params.r.values
+    q = model.params.q.values
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    G_comp = _0
+    for i ∈ @comps
+        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        G_comp += 5*q[i]*zi*log(θi/Φi)
+    end
+    return G_comp
+end
+
+# https://github.com/thermotools/thermopack/blob/main/doc/memo/UNIFAC/unifac.pdf
+function excess_g_res(model::UNIFACModel,p,T,z)
+    _0 = zero(T + first(z))
+    res = _0
+    V = _0
+    Ẽ = @f(Ψ)
+    v = model.groups.n_flattenedgroups
+    Q = model.params.Q.values
+    ∑vikQk = [dot(Q,vi) for vi in v]
+    X = group_matrix(model.groups)*z
+    Θ = X
+    Θ .= X.*Q / dot(X,Q)
+    for i in @comps
+        ∑QkΔΛk = _0
+        vi = v[i]
+        ∑vikQk⁻¹ = 1/∑vikQk[i] # 1/(sum(vik * Qk for k in groups))
+        zi = z[i]
+        #iszero(zi) && continue #causes problems with AD
+        for k in @groups
+            Λk = _0
+            Λki = _0
+            for j in @groups
+                Ẽjk = Ẽ[j,k]
+                Λk += Ẽjk*Θ[j]
+                Θij = Q[j]*vi[j]*∑vikQk⁻¹
+                Λki += Ẽjk*Θij
+            end
+            Λk = log(Λk)
+            Λki = log(Λki)
+            ∑QkΔΛk += vi[k]*Q[k]*(Λk - Λki)
+        end
+        res +=zi*∑QkΔΛk
+    end
+    return -res
+end
+
+function excess_gibbs_free_energy(model::UNIFACModel,p,T,z)
+    g_comp = excess_g_comb(model,p,T,z)
+    g_res = excess_g_res(model,p,T,z)
+    return (g_comp+g_res)*R̄*T 
+end 
+
+#=
 function activity_coefficient(model::UNIFACModel,V,T,z)
     return exp.(@f(lnγ_comb)+ @f(lnγ_res))
 end
@@ -113,13 +203,15 @@ function lnγ_comb(model::UNIFACModel,V,T,z)
     return lnγ_comb
 end
 
+function excess_g_comb(model::UNIFACModel,p,T,z)
+    lnγ = lnγ_comb(model,p,T,z)
+    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+end
+
 function lnγ_SG(model::UNIFACModel,V,T,z)
-
     x = z ./ sum(z)
-
     r =model.unifac_cache.r
     q =model.unifac_cache.q
-
     Φ = r/dot(x,r)
     θ = q/dot(x,q)
     lnγ_SG = @. -5*q*(log(Φ/θ)+(1-Φ/θ))
@@ -155,19 +247,13 @@ function lnΓi(model::UNIFACModel,V,T,z,ψ = @f(ψ))
     return lnΓi_
 end
 
-function Ψ(model::UNIFACModel,V,T,z)
-    A = model.params.A.values
-    B = model.params.B.values
-    C = model.params.C.values
-    return @. exp(-(A+B*T+C*T^2)/T)
+function excess_g_res(model::UNIFACModel,p,T,z)
+    lnγ = lnγ_res(model,p,T,z)
+    return sum(z[i]*R̄*T*lnγ[i] for i ∈ 1:length(model))
 end
 
 function excess_g_SG(model::UNIFACModel,p,T,z)
     lnγ = lnγ_SG(model,p,T,z)
     return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
-
-function excess_g_res(model::UNIFACModel,p,T,z)
-    lnγ = lnγ_res(model,p,T,z)
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
-end
+=#
