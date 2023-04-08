@@ -91,24 +91,7 @@ function ogUNIFAC(components;
     return model
 end
 
-function excess_g_comb(model::ogUNIFACModel,p,T,z=SA[1.0])
-    _0 = zero(eltype(z))
-    r =model.unifac_cache.r
-    q =model.unifac_cache.q
-    q_p = model.unifac_cache.q_p
-    n = sum(z)
-    invn = 1/n
-    Φm = dot(r,z)*invn
-    θm = dot(q,z)*invn
-    G_comp = _0
-    for i ∈ @comps
-        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
-        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
-        zi = z[i]
-        G_comp += zi*log(Φi) + 5*q[i]*zi*log(θi/Φi)
-    end
-    return G_comp
-end
+excess_g_comb(model::ogUNIFACModel,p,T,z=SA[1.0]) = excess_g_comb_original(model,p,T,z)
 
 function Ψ(model::ogUNIFACModel,V,T,z)
     A = model.params.A.values
