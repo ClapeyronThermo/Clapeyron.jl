@@ -351,19 +351,19 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
         res,∂res,∂2res = _0,_0,_0
         for i in 1:length(z)
             Kim1 = K[i] - _1
-            # modification for non-in-y components Ki -> 0
             KD = Kim1/(1+β̄ *Kim1)
+            # modification for non-in-y components Ki -> 0
             if non_iny[i]
                 KD = _0βy
             end
+            # modification for non-in-x components Ki -> ∞
             if non_inx[i]
                 KD = _0βx
             end
-            # modification for non-in-x components Ki -> ∞
-
-            res += invsumz*z[i]*KD
-            ∂res -= invsumz*z[i]*KD^2
-            ∂2res += 2*invsumz*z[i]*KD^3
+            zi = z[i]
+            res += invsumz*zi*KD
+            ∂res -= invsumz*zi*KD^2
+            ∂2res += 2*invsumz*zi*KD^3
         end
 
         return res,res/∂res,∂res/∂2res
@@ -371,54 +371,55 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
 
     prob = Roots.ZeroProblem(FO,(βmin,βmax,β))
     return Roots.solve(prob,ChebyshevBracket())
-   #=
-    it = 0
-    error_β = _1
-    error_FO = _1
-    while error_β > 1e-8 && error_FO > 1e-8 && it < 30
-        it = it + 1
-        _0βy = - 1. / (1. - β)
-        _0βx = 1. / β
-        res,∂res,∂2res = _0,_0,_0
-        FO,dFO,d2FO = _0,_0,_0
-        for i in 1:length(z)
-            Kim1 = K[i] - _1
-            KD = Kim1/(1+β*Kim1)
-            # modification for non-in-y components Ki -> 0
-            if non_iny[i]
-                KD = _0βy
-            end
-            # modification for non-in-x components Ki -> ∞
-            if non_inx[i]
-                KD = _0βx
-            end
-            FO_i = KD
-            zFOi = z[i]*FO_i
-            zFOi2 = zFOi*FO_i
-            zFOi3 = zFOi2*FO_i
-            FO += zFOi
-            dFO -= zFOi2
-            d2FO += 2*zFOi3
-        end
-        dβ = - (2*FO*dFO)/(2*dFO^2-FO*d2FO)
-        # restricted β space
-        if FO < 0.
-            βmax = β
-        elseif FO > 0.
-            βmin = β
-        end
+end
 
-        #updatind β
-        βnew =  β + dβ
-        if βmin < βnew && βnew < βmax
-            β = βnew
-        else
-            dβ = (βmin + βmax) / 2 - β
-            β = dβ + β
+#=
+it = 0
+error_β = _1
+error_FO = _1
+while error_β > 1e-8 && error_FO > 1e-8 && it < 30
+    it = it + 1
+    _0βy = - 1. / (1. - β)
+    _0βx = 1. / β
+    res,∂res,∂2res = _0,_0,_0
+    FO,dFO,d2FO = _0,_0,_0
+    for i in 1:length(z)
+        Kim1 = K[i] - _1
+        KD = Kim1/(1+β*Kim1)
+        # modification for non-in-y components Ki -> 0
+        if non_iny[i]
+            KD = _0βy
         end
-        error_β = abs(dβ)
-        error_FO = abs(FO)
+        # modification for non-in-x components Ki -> ∞
+        if non_inx[i]
+            KD = _0βx
+        end
+        FO_i = KD
+        zFOi = z[i]*FO_i
+        zFOi2 = zFOi*FO_i
+        zFOi3 = zFOi2*FO_i
+        FO += zFOi
+        dFO -= zFOi2
+        d2FO += 2*zFOi3
+    end
+    dβ = - (2*FO*dFO)/(2*dFO^2-FO*d2FO)
+    # restricted β space
+    if FO < 0.
+        βmax = β
+    elseif FO > 0.
+        βmin = β
     end
 
-    return β =#
+    #updatind β
+    βnew =  β + dβ
+    if βmin < βnew && βnew < βmax
+        β = βnew
+    else
+        dβ = (βmin + βmax) / 2 - β
+        β = dβ + β
+    end
+    error_β = abs(dβ)
+    error_FO = abs(FO)
 end
+
+return β =#
