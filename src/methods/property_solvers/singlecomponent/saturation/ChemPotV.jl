@@ -124,16 +124,15 @@ struct ObjSatPure{M,T}
 end
 
 function ObjSatPure(model,T)
-    ps,mus = scale_sat_pure(model)
-    ps,mus,T = promote(ps,mus,T)
-    ObjSatPure(model,ps,mus,T)
+    ps = 1/p_scale(model)
+    ps,ps,T = promote(ps,ps,T)
+    ObjSatPure(model,ps,ps,T)
 end
 
 function (f::ObjSatPure)(F,x)
     model = f.model
-    scales = (f.ps,f.mus)
     T = f.Tsat
-    return Obj_Sat(model, F, T, exp(x[1]), exp(x[2]),scales)
+    return Obj_Sat(model, F, T, exp(x[1]), exp(x[2]),f.ps)
 end
 #with the critical point, we can perform a
 #corresponding states approximation with the
@@ -179,15 +178,14 @@ function sat_pure(f!::ObjSatPure,V0,method)
     return res,valid
 end
 
-function Obj_Sat(model::EoSModel, F, T, V_l, V_v,scales)
-    fun(_V) = eos(model, _V, T,SA[1.])
-    A_l,Av_l = Solvers.f∂f(fun,V_l)
-    A_v,Av_v =Solvers.f∂f(fun,V_v)
-    g_l = muladd(-V_l,Av_l,A_l)
-    g_v = muladd(-V_v,Av_v,A_v)
-    (p_scale,μ_scale) = scales
-    F[1] = -(Av_l-Av_v)*p_scale
-    F[2] = (g_l-g_v)*μ_scale
+function Obj_Sat(model::EoSModel, F, T, V_l, V_v,ps)
+    fun(_V) = a_res(model,_V, T,SA[1.])
+    A_lr,Av_lr = Solvers.f∂f(fun,V_l)
+    A_vr,Av_vr =Solvers.f∂f(fun,V_v)
+    g_l = A_lr - log(V_l) - Av_lr*V_l
+    g_v = A_vr - log(V_v) - Av_vr*V_v 
+    F[1] = -(Av_lr-Av_vr - 1/V_l + 1/V_v)*ps
+    F[2] = (g_l-g_v)
     return F
 end
 
