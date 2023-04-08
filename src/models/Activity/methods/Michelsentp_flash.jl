@@ -92,6 +92,10 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:ActivityModel},p,T,x,
     #(gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
 end
 
+#=
+
+TODO: derive expressions for this
+
 function dgibbs_obj!(model::PTFlashWrapper{<:ActivityModel}, p, T, z, phasex, phasey,
     nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
     F=nothing, G=nothing, H=nothing)
@@ -171,4 +175,4 @@ function dgibbs_obj!(model::PTFlashWrapper{<:ActivityModel}, p, T, z, phasex, ph
         FO = dot(ny,ϕy) + dot(nx,ϕx)
         return FO
     end
-end
+end =#
