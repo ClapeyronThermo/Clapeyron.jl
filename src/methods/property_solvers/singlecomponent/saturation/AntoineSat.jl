@@ -57,7 +57,7 @@ function saturation_temperature(model::EoSModel, p, T0::Number)
     return saturation_temperature_impl(model,p,AntoineSaturation(;T0,vl,vv))
 end
 
-function Obj_Sat_Temp(model::EoSModel, F, T, V_l, V_v,p,scales,method::AntoineSaturation)
+function Obj_Sat_Temp(model::EoSModel, F, T, V_l, V_v,pr,p_scale,method::AntoineSaturation)
     fun(_V) = a_res(model,_V, T,SA[1.])
     A_lr,Av_lr = Solvers.f∂f(fun,V_l)
     A_vr,Av_vr =Solvers.f∂f(fun,V_v)
@@ -67,7 +67,7 @@ function Obj_Sat_Temp(model::EoSModel, F, T, V_l, V_v,p,scales,method::AntoineSa
     Δpv = Av_vr - 1/V_v + pr
     F[1] =Δpl*p_scale
     F[2] =Δpv*p_scale
-    F[3] = (g_l-g_v)*μ_scale
+    F[3] = (g_l-g_v)
     return F
 end
 
@@ -87,7 +87,7 @@ end
 #We aproximate to RK, use the cubic antoine, and perform refinement with one Clapeyron Saturation iteration 
 
 function saturation_temperature_impl(model,p,method::AntoineSaturation)    
-    scales = R̄*T/p_scale(model)
+    scales = 1/p_scale(model)
     if isnothing(method.T0)
         T0,Vl,Vv = x0_saturation_temperature(model,p)
         if !(isnothing(method.vl) && isnothing(method.vv))
@@ -167,7 +167,7 @@ function try_sat_temp(model,p,T0,Vl,Vv,scales,method::AntoineSaturation)
         v0 = SizedVector{3,typeof(T0)}((T0,log(Vl),log(Vv)))
     end
     #we solve volumes in a log scale
-    f!(F,x) = Obj_Sat_Temp(model,F,x[1],exp(x[2]),exp(x[3]),p/(R̄*T),scales,method)
+    f!(F,x) = Obj_Sat_Temp(model,F,x[1],exp(x[2]),exp(x[3]),p/(R̄*T0),scales,method)
     r = Solvers.nlsolve(f!,v0, LineSearch(Newton()),NEqOptions(method),ForwardDiff.Chunk{3}())
     sol = Solvers.x_sol(r)
     T = sol[1]
