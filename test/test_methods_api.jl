@@ -192,7 +192,7 @@ end
         [0.3618699659002134 0.6381300340997866
         0.17888243361092543 0.8211175663890746] rtol = 1e-6
 
-        @test_throws ErrorException Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash(ss_iters = 1))
+        @test_throws ErrorException Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash(ss_iters = 0))
     end
 end
 
