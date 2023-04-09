@@ -163,15 +163,49 @@ function ζ0123(model::SAFTVRMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params
     return ζ0,ζ1,ζ2,ζ3 
 end
 
+#=
+SAFT-VR-Mie diameter:
+Defined as:
+```
+C  = (λr/(λr-λa))*(λr/λa)^(λa/(λr-λa)) 
+u(r) = C*ϵ*(x^-λr - x^-λa)
+f(r) = exp(-u(r)/T)
+d = σ*(1-integral(f(r),0,1))
+```
 
+we use a mixed approach, depending on T⋆ = T/ϵ:
+
+if T⋆ < 1:
+    5-point gauss-laguerre. (the derivation is pending, i've been trying to find any paper where the exact derivation appears, with no avail.)
+
+else:
+    10-point modified gauss-legendre with cut.
+
+`f(r)`, is equal to 0 in floating point arithmetic, until a threshold value (rcut). is reached. the idea is to separate the integral in two parts:
+
+`integral(f(r),0,1) = integral(0,0,rcut) + integral(f,0,rcut) = integral(f,0,rcut)`
+
+
+Then, we proceed to integrate.
+
+
+=#
 function d_vrmie(T,λa,λr,σ,ϵ,u = SAFTVRMieconsts.u,w = SAFTVRMieconsts.w)
-    θ = Cλ_mie(λa, λr)*ϵ/T
-    di = zero(T*1.0)
+    Tx = T/ϵ
+    θ = Cλ_mie(λa, λr)/Tx
+    fi = zero(T*1.0)
     λrinv = 1/λr
     λaλr = λa/λr
-    for j ∈ 1:5
-        θj = (θ/(θ+u[j]))
-        di += w[j] * θj^(1/λr + 1) * exp(θ*(θj^(-λa/λr)-1)) / (θ*λr)
+    if Tx < 1
+        for j ∈ 1:5
+            θj = (θ/(θ+u[j]))
+            fi += w[j] * θj^(1/λr + 1) * exp(θ*(θj^(-λa/λr)-1)) / (θ*λr)
+        end
+    else
+        for j ∈ 1:5
+            θj = (θ/(θ+u[j]))
+            fi += w[j] * θj^(1/λr + 1) * exp(θ*(θj^(-λa/λr)-1)) / (θ*λr)
+        end
     end
     return σ*(1-di)
 end
