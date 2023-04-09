@@ -150,8 +150,8 @@ end
 #just Staverman-Guggenheim (SG) contribution, used for UMR
 function excess_g_SG(model::UNIFACModel,p,T,z)
     _0 = zero(eltype(z))
-    r = model.unifac_cache.r.values
-    q = model.unifac_cache.q.values
+    r = model.unifac_cache.r
+    q = model.unifac_cache.q
     n = sum(z)
     invn = 1/n
     Φm = dot(r,z)*invn
