@@ -160,7 +160,7 @@ function excess_g_SG(model::UNIFACModel,p,T,z)
     for i ∈ @comps
         Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
         θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
-        G_comp += 5*q[i]*zi*log(θi/Φi)
+        G_comp += 5*q[i]*z[i]*log(θi/Φi)
     end
     return G_comp
 end
@@ -174,9 +174,12 @@ function excess_g_res(model::UNIFACModel,p,T,z)
     v = model.groups.n_flattenedgroups
     Q = model.params.Q.values
     ∑vikQk = [dot(Q,vi) for vi in v]
+    #calculate Θ with the least amount of allocs possible
     X = group_matrix(model.groups)*z
+    ∑XQ⁻¹ = 1/dot(X,Q)
+    X .*= Q
+    X .*= ∑XQ⁻¹
     Θ = X
-    Θ .= X.*Q / dot(X,Q)
     for i in @comps
         ∑QkΔΛk = _0
         vi = v[i]
@@ -189,9 +192,10 @@ function excess_g_res(model::UNIFACModel,p,T,z)
             for j in @groups
                 Ẽjk = Ẽ[j,k]
                 Λk += Ẽjk*Θ[j]
-                Θij = Q[j]*vi[j]*∑vikQk⁻¹
+                Θij = Q[j]*vi[j]
                 Λki += Ẽjk*Θij
             end
+            Λki = Λki*∑vikQk⁻¹
             Λk = log(Λk)
             Λki = log(Λki)
             ∑QkΔΛk += vi[k]*Q[k]*(Λk - Λki)
