@@ -117,15 +117,15 @@ function excess_g_comb_dormund(model::UNIFACModel,p,T,z=SA[1.0])
     Φm = dot(r,z)*invn
     θm = dot(q,z)*invn
     Φpm = dot(q_p,z)*invn
-    G_comp = _0
+    G_comb = _0
     for i ∈ @comps
         Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
         θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
         Φpi = q_p[i]/Φpm #technically xi[i]q_p[i]/θpm, but it gets cancelled out (log(Φpi/xi))
         zi = z[i]
-        G_comp += zi*log(Φpi) + 5*q[i]*zi*log(θi/Φi)
+        G_comb += zi*log(Φpi) + 5*q[i]*zi*log(θi/Φi)
     end
-    return G_comp
+    return G_comb*R̄*T
 end
 
 function excess_g_comb_original(model::UNIFACModel,p,T,z=SA[1.0])
@@ -136,14 +136,14 @@ function excess_g_comb_original(model::UNIFACModel,p,T,z=SA[1.0])
     invn = 1/n
     Φm = dot(r,z)*invn
     θm = dot(q,z)*invn
-    G_comp = _0
+    G_comb = _0
     for i ∈ @comps
         Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
         θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
         zi = z[i]
-        G_comp += zi*log(Φi) + 5*q[i]*zi*log(θi/Φi)
+        G_comb += zi*log(Φi) + 5*q[i]*zi*log(θi/Φi)
     end
-    return G_comp
+    return G_comb*R̄*T
 end
 
 
@@ -156,19 +156,19 @@ function excess_g_SG(model::UNIFACModel,p,T,z)
     invn = 1/n
     Φm = dot(r,z)*invn
     θm = dot(q,z)*invn
-    G_comp = _0
+    G_SG = _0
     for i ∈ @comps
         Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
         θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
-        G_comp += 5*q[i]*z[i]*log(θi/Φi)
+        G_SG += 5*q[i]*z[i]*log(θi/Φi)
     end
-    return G_comp
+    return G_SG*R̄*T
 end
 
 # https://github.com/thermotools/thermopack/blob/main/doc/memo/UNIFAC/unifac.pdf
 function excess_g_res(model::UNIFACModel,p,T,z)
     _0 = zero(T + first(z))
-    res = _0
+    G_res = _0
     V = _0
     Ẽ = @f(Ψ)
     v = model.groups.n_flattenedgroups
@@ -200,16 +200,16 @@ function excess_g_res(model::UNIFACModel,p,T,z)
             Λki = log(Λki)
             ∑QkΔΛk += vi[k]*Q[k]*(Λk - Λki)
         end
-        res +=zi*∑QkΔΛk
+        G_res +=zi*∑QkΔΛk
     end
-    return -res
+    return -G_res*R̄*T
 end
 
 function excess_gibbs_free_energy(model::UNIFACModel,p,T,z)
-    g_comp = excess_g_comb(model,p,T,z)
+    g_comb = excess_g_comb(model,p,T,z)
     g_res = excess_g_res(model,p,T,z)
-    return (g_comp+g_res)*R̄*T 
-end 
+    return g_comb+g_res
+end
 
 #=
 function activity_coefficient(model::UNIFACModel,V,T,z)
