@@ -35,7 +35,7 @@ include("nlsolve.jl")
 include("fixpoint/fixpoint.jl")
 include("fixpoint/ADNewton.jl")
 include("optimize.jl")
-include("integral21.jl")
+include("integral.jl")
 
 
 # Order 3 bracketing method

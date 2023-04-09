@@ -15,7 +15,7 @@ abstract type SAFTVRMieModel <: SAFTModel end
 """
     SAFTVRMieModel <: SAFTModel
 
-    SAFTVRMie(components; 
+    SAFTVRMie(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
@@ -90,7 +90,7 @@ function recombine_impl!(model::SAFTVRMieModel)
     epsilon = model.params.epsilon
     lambda_a = model.params.lambda_a
     lambda_r = model.params.lambda_r
-    
+
     epsilon_assoc = model.params.epsilon_assoc
     bondvol = model.params.bondvol
     bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
@@ -116,7 +116,7 @@ function data(model::SAFTVRMieModel, V, T, z)
     ζi = @f(ζ0123,_d)
     _ζ_X,σ3x = @f(ζ_X_σ3,_d,m̄)
     _ρ_S = @f(ρ_S,m̄)
-    _ζst = σ3x*_ρ_S*π/6  
+    _ζst = σ3x*_ρ_S*π/6
     return (_d,_ρ_S,ζi,_ζ_X,_ζst,σ3x,m̄)
 end
 
@@ -160,14 +160,14 @@ function ζ0123(model::SAFTVRMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params
     end
     c = π/6*N_A*m̄/V
     ζ0,ζ1,ζ2,ζ3 = c*ζ0,c*ζ1,c*ζ2,c*ζ3
-    return ζ0,ζ1,ζ2,ζ3 
+    return ζ0,ζ1,ζ2,ζ3
 end
 
 #=
 SAFT-VR-Mie diameter:
 Defined as:
 ```
-C  = (λr/(λr-λa))*(λr/λa)^(λa/(λr-λa)) 
+C  = (λr/(λr-λa))*(λr/λa)^(λa/(λr-λa))
 u(r) = C*ϵ*(x^-λr - x^-λa)
 f(r) = exp(-u(r)/T)
 d = σ*(1-integral(f(r),0,1))
@@ -176,38 +176,20 @@ d = σ*(1-integral(f(r),0,1))
 we use a mixed approach, depending on T⋆ = T/ϵ:
 
 if T⋆ < 1:
-    5-point gauss-laguerre. (the derivation is pending, i've been trying to find any paper where the exact derivation appears, with no avail.)
-
+    5-point gauss-laguerre. we do the change of variables `y = r^-λr`
 else:
-    10-point modified gauss-legendre with cut.
-
-`f(r)`, is equal to 0 in floating point arithmetic, until a threshold value (rcut). is reached. the idea is to separate the integral in two parts:
-
-`integral(f(r),0,1) = integral(0,0,rcut) + integral(f,0,rcut) = integral(f,0,rcut)`
-
-
-Then, we proceed to integrate.
-
-
+    10-point modified gauss-legendre with cut. (pending)
 =#
-function d_vrmie(T,λa,λr,σ,ϵ,u = SAFTVRMieconsts.u,w = SAFTVRMieconsts.w)
+function d_vrmie(T,λa,λr,σ,ϵ)
     Tx = T/ϵ
-    θ = Cλ_mie(λa, λr)/Tx
-    fi = zero(T*1.0)
+    C = Cλ_mie(λa, λr)
+    θ = C/Tx
     λrinv = 1/λr
     λaλr = λa/λr
-    if Tx < 1
-        for j ∈ 1:5
-            θj = (θ/(θ+u[j]))
-            fi += w[j] * θj^(1/λr + 1) * exp(θ*(θj^(-λa/λr)-1)) / (θ*λr)
-        end
-    else
-        for j ∈ 1:5
-            θj = (θ/(θ+u[j]))
-            fi += w[j] * θj^(1/λr + 1) * exp(θ*(θj^(-λa/λr)-1)) / (θ*λr)
-        end
-    end
-    return σ*(1-di)
+    f_laguerre(x) = x^(-λrinv - 1)*exp(θ*x^(λaλr))*λrinv
+    ∑fi = Solvers.laguerre5(f_laguerre,θ,1.)
+    di = σ*(1-∑fi)
+    return di
 end
 
 function d(model::SAFTVRMieModel, V, T, z)
@@ -215,19 +197,17 @@ function d(model::SAFTVRMieModel, V, T, z)
     σ = diagvalues(model.params.sigma)
     λa = diagvalues(model.params.lambda_a)
     λr = diagvalues(model.params.lambda_r)
-    u = SAFTVRMieconsts.u
-    w = SAFTVRMieconsts.w
     n = length(z)
     _d = fill(zero(T*1.0),n)
     for k ∈ 1:n
-        _d[k] = d_vrmie(T,λa[k],λr[k],σ[k],ϵ[k],u,w)
+        _d[k] = d_vrmie(T,λa[k],λr[k],σ[k],ϵ[k])
     end
     return _d
 end
 
 
 function d(model::SAFTVRMieModel, V, T, z, λa,λr,ϵ,σ)
-    d_vrmie(T,λa,λr,σ,ϵ,SAFTVRMieconsts.u,SAFTVRMieconsts.w)
+    d_vrmie(T,λa,λr,σ,ϵ)
 end
 
 function Cλ(model::SAFTVRMieModel, V, T, z, λa, λr)
@@ -249,24 +229,24 @@ function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d),m̄ = dot(z,model.pa
     ρS = N_A/V*m̄
     comps = 1:length(z)
     _ζ_X = zero(V+T+first(z))
-    kρS = ρS* π/6/8 
+    kρS = ρS* π/6/8
     σ3_x = _ζ_X
 
     for i ∈ comps
         x_Si = z[i]*m[i]*m̄inv
         σ3_x += x_Si*x_Si*(σ[i,i]^3)
         di =_d[i]
-        r1 = kρS*x_Si*x_Si*(2*di)^3         
+        r1 = kρS*x_Si*x_Si*(2*di)^3
         _ζ_X += r1
         for j ∈ 1:(i-1)
             x_Sj = z[j]*m[j]*m̄inv
             σ3_x += 2*x_Si*x_Sj*(σ[i,j]^3)
             dij = (di + _d[j])
-            r1 = kρS*x_Si*x_Sj*dij^3         
+            r1 = kρS*x_Si*x_Sj*dij^3
             _ζ_X += 2*r1
         end
     end
-   
+
     return _ζ_X,σ3_x
 end
 
@@ -324,7 +304,7 @@ function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma)
         _ζst += x_Si*x_Si*(_σ[i,i]^3)
         for j ∈ 1:i-1
             x_Sj = z[j]*m[j]*m̄inv
-            _ζst += 2*x_Si*x_Sj*(_σ[i,j]^3)           
+            _ζst += 2*x_Si*x_Sj*(_σ[i,j]^3)
         end
     end
 
@@ -369,7 +349,7 @@ function B_fdf(model::SAFTVRMieModel, V, T, z, λ, x_0,ζ_X_= @f(ζ_X),ρ_S_ = @
     ζX2 = (1-ζ_X_)^2
     ζX3 = (1-ζ_X_)^3
     ζX6 = ζX3*ζX3
- 
+
     _f = I*(1-ζ_X_/2)/ζX3-9*J*ζ_X_*(ζ_X_+1)/(2*ζX3)
     _df = (((1-ζ_X_/2)*I/ζX3-9*ζ_X_*(1+ζ_X_)*J/(2*ζX3))
         + ζ_X_*( (3*(1-ζ_X_/2)*ζX2
@@ -454,7 +434,7 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
         x_Sj = x_Si
         ϵ = _ϵ[i,j]
         λa = _λa[i,j]
-        λr = _λr[i,j] 
+        λr = _λr[i,j]
         σ = _σ[i,j]
         _C = @f(Cλ,λa,λr)
         dij = _d[i]
@@ -482,7 +462,7 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
         (x_0ij^(2*λa)*(aS_1_2a+B_2a)
         - 2*x_0ij^(λa+λr)*(aS_1_ar+B_ar)
         + x_0ij^(2*λr)*(aS_1_2r+B_2r))
-        
+
         #calculations for a3 - diagonal
         a3_ij = -ϵ^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
         #adding - diagonal
@@ -505,7 +485,7 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
             + _KHS*(x_0ij^(2*λa)*(∂aS_1∂ρS_2a+∂B∂ρS_2a)
             - 2*x_0ij^(λa+λr)*(∂aS_1∂ρS_ar+∂B∂ρS_ar)
             + x_0ij^(2*λr)*(∂aS_1∂ρS_2r+∂B∂ρS_2r)))
-    
+
         gMCA2 = 3*∂a_2∂ρ_S-_KHS*_C^2 *
         (λr*x_0ij^(2*λr)*(aS_1_2r+B_2r)-
             (λa+λr)*x_0ij^(λa+λr)*(aS_1_ar+B_ar)+
@@ -514,10 +494,10 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
         g_Mie_ = g_HSi*exp(ϵ/T*g_1_/g_HSi+(ϵ/T)^2*g_2_/g_HSi)
         achain -=  z[i]*(log(g_Mie_)*(m[i]-1))
         for j ∈ 1:i-1
-            x_Sj = z[j]*m[j]*m̄inv   
+            x_Sj = z[j]*m[j]*m̄inv
             ϵ = _ϵ[i,j]
             λa = _λa[i,j]
-            λr = _λr[i,j] 
+            λr = _λr[i,j]
             σ = _σ[i,j]
             _C = @f(Cλ,λa,λr)
             dij = 0.5*(_d[i]+_d[j])
@@ -535,24 +515,24 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
             (x_0ij^(2*λa)*(@f(aS_1,2*λa,_ζ_X)+@f(B,2*λa,x_0ij,_ζ_X))
             - 2*x_0ij^(λa+λr)*(@f(aS_1,λa+λr,_ζ_X)+@f(B,λa+λr,x_0ij,_ζ_X))
             + x_0ij^(2*λr)*(@f(aS_1,2λr,_ζ_X)+@f(B,2*λr,x_0ij,_ζ_X)))
-            
+
             #calculations for a3
             a3_ij = -ϵ^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
             #adding
             a₁ += 2*a1_ij*x_Si*x_Sj
             a₂ += 2*a2_ij*x_Si*x_Sj
-            a₃ += 2*a3_ij*x_Si*x_Sj            
+            a₃ += 2*a3_ij*x_Si*x_Sj
         end
     end
     a₁ = a₁*m̄/T/∑z
     a₂ = a₂*m̄/(T*T)/∑z
     a₃ = a₃*m̄/(T*T*T)/∑z
-    adisp =  a₁ + a₂ + a₃ 
+    adisp =  a₁ + a₂ + a₃
     return adisp + achain/∑z
 end
 
 function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
-    _d,ρS,ζi,_ζ_X,_ζst,_,m̄ = _data 
+    _d,ρS,ζi,_ζ_X,_ζst,_,m̄ = _data
     comps = 1:length(z)
     #this is a magic trick. we normally (should) expect length(z) = length(model),
     #but on GC models, @comps != @groups
@@ -576,7 +556,7 @@ function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
         x_Sj = x_Si
         ϵ = _ϵ[i,j]
         λa = _λa[i,i]
-        λr = _λr[i,i] 
+        λr = _λr[i,i]
         σ = _σ[i,i]
         _C = @f(Cλ,λa,λr)
         dij = _d[i]
@@ -604,7 +584,7 @@ function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
         (x_0ij^(2*λa)*(aS_1_2a+B_2a)
         - 2*x_0ij^(λa+λr)*(aS_1_ar+B_ar)
         + x_0ij^(2*λr)*(aS_1_2r+B_2r))
-        
+
         #calculations for a3 - diagonal
         a3_ij = -ϵ^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
         #adding - diagonal
@@ -612,10 +592,10 @@ function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
         a₂ += a2_ij*x_Si*x_Si
         a₃ += a3_ij*x_Si*x_Si
         for j ∈ 1:(i-1)
-            x_Sj = z[j]*m[j]*m̄inv   
+            x_Sj = z[j]*m[j]*m̄inv
             ϵ = _ϵ[i,j]
             λa = _λa[i,j]
-            λr = _λr[i,j] 
+            λr = _λr[i,j]
             σ = _σ[i,j]
             _C = @f(Cλ,λa,λr)
             dij = 0.5*(_d[i]+_d[j])
@@ -634,20 +614,20 @@ function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
             (x_0ij^(2*λa)*(@f(aS_1,2*λa,_ζ_X)+@f(B,2*λa,x_0ij,_ζ_X))
             - 2*x_0ij^(λa+λr)*(@f(aS_1,λa+λr,_ζ_X)+@f(B,λa+λr,x_0ij,_ζ_X))
             + x_0ij^(2*λr)*(@f(aS_1,2λr,_ζ_X)+@f(B,2*λr,x_0ij,_ζ_X)))
-            
+
             #calculations for a3
             a3_ij = -ϵ^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
             #adding
             a₁ += 2*a1_ij*x_Si*x_Sj
             a₂ += 2*a2_ij*x_Si*x_Sj
-            a₃ += 2*a3_ij*x_Si*x_Sj            
+            a₃ += 2*a3_ij*x_Si*x_Sj
         end
     end
     a₁ = a₁*m̄/T #/sum(z)
     a₂ = a₂*m̄/(T*T)  #/sum(z)
     a₃ = a₃*m̄/(T*T*T)  #/sum(z)
     #@show (a₁,a₂,a₃)
-    adisp =  a₁ + a₂ + a₃ 
+    adisp =  a₁ + a₂ + a₃
     return adisp
 end
 
@@ -674,7 +654,7 @@ function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
         x_Sj = x_Si
         ϵ = _ϵ[i,i]
         λa = _λa[i,i]
-        λr = _λr[i,i] 
+        λr = _λr[i,i]
         σ = _σ[i,i]
         _C = @f(Cλ,λa,λr)
         dij = _d[i]
@@ -703,7 +683,7 @@ function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
         (x_0ij^(2*λa)*(aS_1_2a+B_2a)
         - 2*x_0ij^(λa+λr)*(aS_1_ar+B_ar)
         + x_0ij^(2*λr)*(aS_1_2r+B_2r))
-        
+
         #calculations for a3 - diagonal
         a3_ij = -ϵ^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
         #adding - diagonal
@@ -728,7 +708,7 @@ function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
             + _KHS*(x_0ij^(2*λa)*(∂aS_1∂ρS_2a+∂B∂ρS_2a)
             - 2*x_0ij^(λa+λr)*(∂aS_1∂ρS_ar+∂B∂ρS_ar)
             + x_0ij^(2*λr)*(∂aS_1∂ρS_2r+∂B∂ρS_2r)))
-    
+
         gMCA2 = 3*∂a_2∂ρ_S-_KHS*_C^2 *
         (λr*x_0ij^(2*λr)*(aS_1_2r+B_2r)-
             (λa+λr)*x_0ij^(λa+λr)*(aS_1_ar+B_ar)+
@@ -742,12 +722,6 @@ function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     return -achain/∑z
 end
 const SAFTVRMieconsts = (
-    # u: the quadrature points in the domain [0, ∞) for Gauss-Laguerre integration with 5 points 
-    # w: the weights associated with these quadrature points
-    # Note: Additional quadrature points can be generated with the python code at https://en.wikipedia.org/wiki/Gauss%E2%80%93Laguerre_quadrature
-    u = (0.26356031971814109102031,1.41340305910651679221800,3.59642577104072208122300,7.08581000585883755692200,12.6408008442757826594300),
-    w = (0.5217556105828086524759,0.3986668110831759274500,7.5942449681707595390e-2,3.6117586799220484545e-3,2.3369972385776227891e-5),
-
     A = SA[0.81096   1.7888  -37.578   92.284;
     1.02050  -19.341   151.26  -463.50;
     -1.90570   22.845  -228.14   973.92;
@@ -786,7 +760,5 @@ function d(model::SAFTVRMie, V, T, z::SingleComp)
     σ = model.params.sigma
     λa = model.params.lambda_a
     λr = model.params.lambda_r
-    u = SAFTVRMieconsts.u
-    w = SAFTVRMieconsts.w
-    return SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1],u,w)]
+    return SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1])]
 end
