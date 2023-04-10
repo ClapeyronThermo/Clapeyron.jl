@@ -55,7 +55,6 @@ function eos_res(model::ActivityModel,V,T,z)
     return g_E+g_pure_res-p_res*V
 end
 
-
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
     df(x) = Solvers.derivative(f,x)
@@ -98,6 +97,15 @@ end
 function x0_volume_liquid(model::ActivityModel,T,z = SA[1.0])
     pures = model.puremodel
     return sum(z[i]*x0_volume_liquid(pures[i],T,SA[1.0]) for i ∈ @comps)
+end
+
+function γdγdn(model::ActivityModel,p,T,z)
+    storage = DiffResults.JacobianResult(z)
+    γ(_z) = activity_coefficient(model,p,T,_z)
+    ForwardDiff.jacobian!(storage,γ,z)
+    γz = DiffResults.value(storage)
+    dyz = DiffResults.jacobian(storage)
+    return γz,dyz
 end
 
 include("methods/methods.jl")

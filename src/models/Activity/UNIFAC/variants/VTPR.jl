@@ -64,7 +64,7 @@ function VTPRUNIFAC(components;
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
-    verbose = false, kwargs...)
+    verbose = false)
 
     groups = GroupParam(components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"];group_userlocations = group_userlocations, verbose=verbose)
 
@@ -93,7 +93,6 @@ function VTPRUNIFACCache(groups::GroupParam)
     return VTPRUNIFACCache(groups.components,m)
 end
 
-function excess_gibbs_free_energy(model::VTPRUNIFACModel,V,T,z)
-    lnγ = lnγ_res(model,V,T,z)
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+function excess_gibbs_free_energy(model::VTPRUNIFACModel,p,T,z)
+    return excess_g_res(model,p,T,z)*R̄*T 
 end

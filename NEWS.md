@@ -1,20 +1,12 @@
-# v0.4.9
+# v0.4.10
 
 ## New Features
 
-- `ideal_consistency(model,V,T,z)` that checks if `da0/dV + sum(z)/V` is zero (or as close to zero as the Floating Point Format allows it.)
-- broadcasting on `AssocParam` is defined (`bondvol .= 1e-10 .* bondvol .^3`) 
-- you can pass functions that build models instead of  EoSModel types. for example, now you can do:
-    ```julia
-    function myvdW(components;userlocations = String[],verbose = false)
-        return vdW(components;userlocations = userlocations,verbose = verbose,alpha = SoaveAlpha)
-    end
-
-    model = Wilson(["water","ethanol"];puremodel=myvdW)
-    ```
-
-## Bug Fixes
-
-- proper namespaces in `@registermodel` ([#161](https://github.com/ClapeyronThermo/Clapeyron.jl/issues/161))
-- fixed bug in `MichelsenTPFlash` when using non-volatiles and `second_order = false`
-- fixed bug when building `UNIFACFVPoly`
+- `MichelsenTPFlash` now supports activity models, it also supports `CompositeModel` if they don't reach the multidimensional optimizer. with that, all combinations of 2-phase TP-Flash are supported in the following way:
+    - Raoult: `CompositeModel`
+    - Raoult with gas fugacity: `CompositeModel(components, gas = EoSModel)`
+    - fugacity: any Helmholtz model
+    - Activity + ideal gas: `Activity(components, puremodel = IdealModel)`
+    - Activity + real gas: `Activity(components, puremodel = EosModel)` (`ActivityModel(components)` normally calls `ActivityModel(components,puremodel = PR)`)
+- `RRTPFlash` now supports acceleration, non-condensables, non-volatiles, activity models and `CompositeModel`. (the same operations that `MichelsenTPFlash` supports.)
+- `UNIFAC` models should be faster.

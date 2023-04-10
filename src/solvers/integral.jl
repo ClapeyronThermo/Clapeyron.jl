@@ -32,47 +32,34 @@ function integral21(Base.@specialize(f),a,b)
     return 0.5*(b - a)*res
 end
 
-#=
-function __fd_choose(d1::ForwardDiff.Dual{T1},d2::ForwardDiff.Dual{T2}) where {T1,T2}
-    if ForwardDiff.<(T1,T2)
-        return T1
-    else
-        return T2
+# u: the quadrature points in the domain [0, ∞) for Gauss-Laguerre integration with 5 points 
+# w: the weights associated with these quadrature points
+# Note: Additional quadrature points can be generated with the python code at https://en.wikipedia.org/wiki/Gauss%E2%80%93Laguerre_quadrature
+const laguerre5_u = (0.26356031971814109102031,1.41340305910651679221800,3.59642577104072208122300,7.08581000585883755692200,12.6408008442757826594300)
+const laguerre5_w = (0.5217556105828086524759,0.3986668110831759274500,7.5942449681707595390e-2,3.6117586799220484545e-3,2.3369972385776227891e-5)
+
+
+"""
+    laguerre5(f,r = 1, a = 0)
+    
+Performs a 5-point translated gauss-laguerre integration of the form:
+
+```
+∫exp(-ry)f(y) dy,    y ∈ (a,∞)
+```
+"""
+function laguerre5(Base.@specialize(f),r = 1.,a = 0.)
+    k = exp(-r*a)/r
+    u = laguerre5_u
+    w = laguerre5_w
+    u1,w1 = u[1],w[1]
+    rinv = 1/r
+    x1 = u1*rinv + a
+    f1 = f(x1)
+    res = w1*f1
+    for i in 2:5
+        xi = u[i]*rinv + a
+        res += w[i]*f(xi)
     end
+    return res*k
 end
-
-function __fd_choose(d1::ForwardDiff.Dual{T},d2::ForwardDiff.Dual{T}) where {T}
-    return T
-end
-
-function __fd_choose(d1,d2::ForwardDiff.Dual{T}) where {T}
-    return T
-end
-
-function integral21(@specialize(f),a::ForwardDiff.Dual{T},b) where {T}
-    ā,b̄ = ForwardDiff.value(a),b
-    f̄ = integral21(f,ā,b̄)
-    df = -f(ā)
-    TT = __fd_choose(f̄,a)
-    return ForwardDiff.dual_definition_retval(Val{T}(), f̄, df, ForwardDiff.partials(a))
-end
-
-function integral21(@specialize(f),a,b::ForwardDiff.Dual{T}) where {T}
-    ā,b̄ = a,ForwardDiff.value(b)
-    f̄ = integral21(f,ā,b̄)
-    df = f(b̄)
-    TT = __fd_choose(f̄,b)
-    return ForwardDiff.dual_definition_retval(Val{TT}(), f̄, df, ForwardDiff.partials(b))
-end
-
-##this function is the one that fails with crit_pure. TODO:investigate
-
-function integral21(@specialize(f),a::ForwardDiff.Dual{T},b::ForwardDiff.Dual{T}) where {T}
-    ā,b̄ = ForwardDiff.value(a),ForwardDiff.value(b)
-    f̄ = integral21(f,ā,b̄)
-    dfa = - f(ā)
-    dfb = f(b̄)
-    TT = __fd_choose(f̄,b)
-    return ForwardDiff.dual_definition_retval(Val{TT}(), f̄, dfa, ForwardDiff.partials(a), dfb, ForwardDiff.partials(b))
-end
-=#
