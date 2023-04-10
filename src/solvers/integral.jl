@@ -38,6 +38,8 @@ end
 const laguerre5_u = (0.26356031971814109102031,1.41340305910651679221800,3.59642577104072208122300,7.08581000585883755692200,12.6408008442757826594300)
 const laguerre5_w = (0.5217556105828086524759,0.3986668110831759274500,7.5942449681707595390e-2,3.6117586799220484545e-3,2.3369972385776227891e-5)
 
+const laguerre10_u = (0.13779347054049243, 0.7294545495031705, 1.808342901740316, 3.4014336978548996, 5.552496140063804, 8.330152746764497, 11.843785837900066, 16.279257831378104, 21.99658581198076, 29.92069701227389)
+const laguerre10_w = (0.30844111576502015, 0.40111992915527356, 0.2180682876118094, 0.062087456098677746, 0.0095015169751811, 0.0007530083885875388, 2.8259233495995656e-5, 4.2493139849626863e-7, 1.8395648239796308e-9, 9.911827219609008e-13)
 
 """
     laguerre5(f,r = 1, a = 0)
@@ -49,17 +51,34 @@ Performs a 5-point translated gauss-laguerre integration of the form:
 ```
 """
 function laguerre5(Base.@specialize(f),r = 1.,a = 0.)
+   return _laguerrex(f,r,a,laguerre5_u,laguerre5_w)
+end
+
+"""
+    laguerre5(f,r = 1, a = 0)
+    
+Performs a 10-point translated gauss-laguerre integration of the form:
+
+```
+∫exp(-ry)f(y) dy,    y ∈ (a,∞)
+```
+"""
+function laguerre10(Base.@specialize(f),r = 1.,a = 0.)
+    return _laguerrex(f,r,a,laguerre10_u,laguerre10_w)
+ end
+function _laguerrex(Base.@specialize(f),r,a,u,w)
     k = exp(-r*a)/r
-    u = laguerre5_u
-    w = laguerre5_w
     u1,w1 = u[1],w[1]
     rinv = 1/r
     x1 = u1*rinv + a
     f1 = f(x1)
     res = w1*f1
-    for i in 2:5
+    l = length(u)
+    for i in 2:l
         xi = u[i]*rinv + a
         res += w[i]*f(xi)
     end
     return res*k
 end
+
+
