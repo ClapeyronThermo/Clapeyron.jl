@@ -189,7 +189,7 @@ function d_vrmie(T,λa,λr,σ,ϵ)
     f_laguerre(x) = x^(-λrinv - 1)*exp(θ*x^(λaλr))*λrinv
     ∑fi = Solvers.laguerre5(f_laguerre,θ,1.)
     #∑fi2 = Solvers.laguerre10(f_laguerre,θ,1.)
-    di = σ*(1-∑fi2)
+    di = σ*(1-∑fi)
     return di
 end
 
