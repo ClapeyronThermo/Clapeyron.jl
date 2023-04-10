@@ -77,7 +77,11 @@ function UNIFAC(components;
 
     groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
 
-    params = getparams(groups, ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
+    params = getparams(groups, ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"];
+                        userlocations=userlocations,
+                        asymmetricparams=["A","B","C"],
+                        ignore_missing_singleparams=["A","B","C"],
+                        verbose=verbose)
     A  = params["A"]
     B  = params["B"]
     C  = params["C"]
@@ -92,7 +96,9 @@ function UNIFAC(components;
 end
 
 function recombine_impl!(model::UNIFACModel)
-    recombine_unifac_cache!(model.unifac_cache,model.groups,model.params)
+    if hasfield(typeof(model),:unifac_cache)
+        recombine_unifac_cache!(model.unifac_cache,model.groups,model.params)
+    end
     recombine!(model.puremodel)
     return model
 end
