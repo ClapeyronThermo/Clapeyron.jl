@@ -147,6 +147,53 @@ end
         GC.gc()
 
     end
+
+    @testset "Michelsen Algorithm, activities" begin
+    #example from https://github.com/ClapeyronThermo/Clapeyron.jl/issues/144
+        system = UNIFAC(["water", "hexane"])
+        alg1 = MichelsenTPFlash(
+            equilibrium = :lle, 
+            K0 = [0.00001/0.99999, 0.99999/0.00001],
+        )
+
+        flash1 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg1)
+        act_x1 = activity_coefficient(system, 101325, 303.15, flash1[1][1,:]) .* flash1[1][1,:]
+        act_y1 = activity_coefficient(system, 101325, 303.15, flash1[1][2,:]) .* flash1[1][2,:]
+        @test Clapeyron.dnorm(act_x1,act_y1) < 1e-8
+
+        alg2 = MichelsenTPFlash(
+            equilibrium = :lle, 
+            x0 = [0.99999, 0.00001],
+            y0 = [0.00001, 0.00009]
+        )
+        flash2 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg2)
+        act_x2 = activity_coefficient(system, 101325, 303.15, flash2[1][1,:]) .* flash2[1][1,:]
+        act_y2 = activity_coefficient(system, 101325, 303.15, flash2[1][2,:]) .* flash2[1][2,:]
+        @test Clapeyron.dnorm(act_x2,act_y2) < 1e-8
+
+        #test combinations of Activity + CompositeModel
+        system_cc = UNIFAC(["water", "hexane"],puremodel = CompositeModel)
+        flash3 = tp_flash(system_cc, 101325, 303.15, [0.5, 0.5], alg2)
+        act_x3 = activity_coefficient(system_cc, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
+        act_y3 = activity_coefficient(system_cc, 101325, 303.15, flash3[1][2,:]) .* flash3[1][2,:]
+        @test Clapeyron.dnorm(act_x3,act_y3) < 1e-8
+
+        #running the vle part
+        model_vle = UNIFAC(["water", "ethanol"],puremodel = PCSAFT)
+        @test tp_flash(model_vle, 101325, 363.15, [0.5, 0.5], MichelsenTPFlash())[1] ≈
+        [0.6824441505154921 0.31755584948450793
+         0.3025308123759482 0.6974691876240517] rtol = 1e-6
+    end
+
+    @testset "Michelsen Algorithm, CompositeModel" begin
+        p,T,z = 101325.,85+273.,[0.2,0.8]
+        system = CompositeModel(["water","ethanol"]) #ideal gas + rackett + lee kesler saturation correlation
+        @test Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash())[1] ≈
+        [0.3618699659002134 0.6381300340997866
+        0.17888243361092543 0.8211175663890746] rtol = 1e-6
+
+        @test_throws ErrorException Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash(ss_iters = 0))
+    end
 end
 
 
@@ -156,6 +203,13 @@ end
     p0 = 1e5
     T = 373.15
     p,vl,vv = Clapeyron.saturation_pressure(model,T) #default
+
+    #legacy api,
+    @test Clapeyron.saturation_pressure(model,T,Clapeyron.ChemPotVSaturation((vl,vv)))[1] ==
+        Clapeyron.saturation_pressure(model,T,Clapeyron.ChemPotVSaturation([vl,vv]))[1] ==     
+        Clapeyron.saturation_pressure(model,T,[vl,vv])[1] == 
+        Clapeyron.saturation_pressure(model,T,(vl,vv))[1]
+
     px,vlx,vvx = Clapeyron.saturation_pressure(vdw,T) #vdw
 
     p1,vl1,vv1 = Clapeyron.saturation_pressure_impl(model,T,IsoFugacitySaturation())
@@ -181,6 +235,7 @@ end
     #SuperAncSaturation
     p5,vl5,vv5 = Clapeyron.saturation_pressure_impl(model,T,SuperAncSaturation())
     @test p5 ≈ p rtol = 1e-6
+    @test Clapeyron.saturation_temperature_impl(model,p5,SuperAncSaturation())[1] ≈ T rtol = 1e-6
     @test @inferred Clapeyron.saturation_pressure_impl(vdw,T,SuperAncSaturation())[1] ≈ px
     GC.gc()
 

@@ -91,7 +91,7 @@ function _getpaths(location,special_parse = true)
     return files
 end
 
-function flattenfilepaths(locations,userlocations)
+function flattenfilepaths(locations,userlocations::Vector{String})
     defaultpaths = reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[])
     userpaths = reduce(vcat,getpaths.(userlocations),init = String[])
     idx = findfirst(isequal("@REMOVEDEFAULTS"),userpaths)
@@ -101,6 +101,11 @@ function flattenfilepaths(locations,userlocations)
     end
     return vcat(defaultpaths,userpaths,String[])
 end
+Base.@nospecialize
+function flattenfilepaths(locations,userlocations::NamedTuple)
+    return String[]
+end
+Base.@specialize
 
 function getline(filepath::AbstractString, selectedline::Int)
     is_inline_csv(filepath) && return getline(IOBuffer(filepath),selectedline)
@@ -157,6 +162,7 @@ function _indexin(query,list,separator,indices)
     end
     return res,comp_res
 end
+
 else
     function _indexin(query,list,separator,indices)
         kq = keys(query)

@@ -36,7 +36,7 @@ V = (R̄Tc/Pc)Zc^(1+(1-Tr)^(2/7))
 ## References
 - Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. [doi:10.1021/je60047a012](https://doi.org/10.1021/je60047a012)
 """
-function RackettLiquid(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function RackettLiquid(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Tc = params["Tc"]
     Pc = params["Pc"]
@@ -129,7 +129,7 @@ V = (R̄Tc/Pc)Zc^(1+(1-Tr)^(2/7))
 - Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. [doi:10.1021/je60047a012](https://doi.org/10.1021/je60047a012)
 - Gunn, R. D., & Yamada, T. (1971). A corresponding states correlation of saturated liquid volumes. AIChE Journal. American Institute of Chemical Engineers, 17(6), 1341–1345. [doi:10.1002/aic.690170613](https://doi.org/10.1002/aic.690170613)
 """
-function YamadaGunnLiquid(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function YamadaGunnLiquid(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]

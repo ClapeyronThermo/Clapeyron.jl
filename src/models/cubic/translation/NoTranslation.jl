@@ -26,7 +26,7 @@ cᵢ = 0 ∀ i
 """
 NoTranslation
 
-function NoTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
+function NoTranslation(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     model = NoTranslation(NoTranslationParam())
     return model
 end

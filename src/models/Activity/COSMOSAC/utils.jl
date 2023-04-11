@@ -1,10 +1,12 @@
 function COSMO_parse_Pi(param::SingleParam{String})
     Vec = Vector{Vector{Float64}}(undef,0)
     n = length(param.components)
+    
+    
     default = Float64[]
     for i in 1:n
         if !param.ismissingvalues[i]
-            push!(Vec,parse.(Float64,split(param.values[i])))
+            push!(Vec,_vecparser(param.values[i]))
         else
             push!(Vec,default)
         end

@@ -167,13 +167,10 @@ end
 
 function assoc_site_matrix(model,V,T,z,data = nothing)
     options = assoc_options(model)
-    combining = options.combining
-    if combining == :sparse_nocombining
-        K = sparse_assoc_site_matrix(model,V,T,z,data)
-    else
-        K = dense_assoc_site_matrix(model,V,T,z,data)
+    if !options.dense
+        @warn "using sparse matrices for association is deprecated."
     end
-    return K
+    return dense_assoc_site_matrix(model,V,T,z,data)
 end
 
 function dense_assoc_site_matrix(model,V,T,z,data=nothing)
@@ -238,66 +235,8 @@ function dense_assoc_site_matrix(model,V,T,z,data=nothing)
         end
     end
 
-    return K
+    return K::Matrix{TT}
 end
-
-function sparse_assoc_site_matrix(model,V,T,z,data=nothing)
-    if data === nothing
-        delta = @f(Δ)
-    else
-        delta = @f(Δ,data)
-    end
-    _sites = model.sites.n_sites
-    p = _sites.p
-    ρ = N_A/V
-    _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
-    _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
-    _idx = 1:length(_ii)
-    _Δ= delta.values
-    TT = eltype(_Δ)
-    count = 0
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps
-        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
-        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            #ia = compute_index(pack_indices,i,a)
-            for idx ∈ _idx #iterating for all sites
-                ij = _ii[idx]
-                ab = _aa[idx]
-                issite(i,a,ij,ab) && (count += 1)
-            end
-        end
-    end
-    c1 = zeros(Int,count)
-    c2 = zeros(Int,count)
-    val = zeros(TT,count)
-    _n = model.sites.n_sites.v
-    count = 0
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps
-        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
-        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            ia = compute_index(p,i,a)
-            for idx ∈ _idx #iterating for all sites
-                ij = _ii[idx]
-                ab = _aa[idx]
-                if issite(i,a,ij,ab)
-                    j = complement_index(i,ij)
-                    b = complement_index(a,ab)
-                    jb = compute_index(p,j,b)
-                    njb = _n[jb]
-                    count += 1
-                    c1[count] = ia
-                    c2[count] = jb
-                    val[count] = ρ*njb*z[j]*_Δ[idx]
-                end
-            end
-        end
-    end
-    K::SparseMatrixCSC{TT,Int} = sparse(c1,c2,val)
-    return K
-end
-#Mx = a + b(x,x)
-#Axx + x - 1 = 0
-#x = 1 - Axx
 
 function X end
 const assoc_fractions = X
@@ -328,11 +267,7 @@ function X(model::EoSModel, V, T, z,data = nothing)
     nn = assoc_pair_length(model)
     isone(nn) && return X_exact1(model,V,T,z,data)
     options = assoc_options(model)
-    if options.dense
-        K = dense_assoc_site_matrix(model,V,T,z,data)
-    else sparse_assoc_site_matrix
-        K = sparse_assoc_site_matrix(model,V,T,z,data)
-    end
+    K = assoc_site_matrix(model,V,T,z,data)
     idxs = model.sites.n_sites.p
     Xsol = assoc_matrix_solve(K,options)
     return PackedVofV(idxs,Xsol)
@@ -386,7 +321,6 @@ function X_exact1(model,V,T,z,data=nothing)
     κ = model.params.bondvol.values
     i,j = κ.outer_indices[1]
     a,b = κ.inner_indices[1]
-
     if data === nothing
         _Δ = @f(Δ,i,j,a,b)
     else
@@ -395,7 +329,6 @@ function X_exact1(model,V,T,z,data=nothing)
     _1 = one(eltype(_Δ))
     idxs = model.sites.n_sites.p
     n = length(model.sites.n_sites.v)
-    
     ρ = N_A/V
     zi = z[i]
     zj = z[j]
@@ -422,8 +355,7 @@ function pack_X_exact1(z,xia,xjb,i,j,a,b,n,idxs)
     _X[i][a] = xia
     return _X
 end
-#=
-TODO: decide if this optimization is worthy.
+
 function pack_X_exact1(z::SingleComp,xia,xjb,i,j,a,b,n,idxs)
     if (i,a) == (j,b)
         Xsol = SA[xia,xia]
@@ -434,7 +366,7 @@ function pack_X_exact1(z::SingleComp,xia,xjb,i,j,a,b,n,idxs)
     end
     _X = PackedVofV(idxs,Xsol)
     return _X
-end =#
+end
 
 function a_assoc_impl(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
     _0 = zero(first(X_.v))
@@ -515,4 +447,64 @@ x = 1/1+kiax
 x(1+kx) - 1 = 0
 kx2 +x - 1 = 0
 end
+=#
+
+#=
+function sparse_assoc_site_matrix(model,V,T,z,data=nothing)
+    if data === nothing
+        delta = @f(Δ)
+    else
+        delta = @f(Δ,data)
+    end
+    _sites = model.sites.n_sites
+    p = _sites.p
+    ρ = N_A/V
+    _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
+    _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
+    _idx = 1:length(_ii)
+    _Δ= delta.values
+    TT = eltype(_Δ)
+    count = 0
+    @inbounds for i ∈ 1:length(z) #for i ∈ comps
+        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
+        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
+            #ia = compute_index(pack_indices,i,a)
+            for idx ∈ _idx #iterating for all sites
+                ij = _ii[idx]
+                ab = _aa[idx]
+                issite(i,a,ij,ab) && (count += 1)
+            end
+        end
+    end
+    c1 = zeros(Int,count)
+    c2 = zeros(Int,count)
+    val = zeros(TT,count)
+    _n = model.sites.n_sites.v
+    count = 0
+    @inbounds for i ∈ 1:length(z) #for i ∈ comps
+        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
+        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
+            ia = compute_index(p,i,a)
+            for idx ∈ _idx #iterating for all sites
+                ij = _ii[idx]
+                ab = _aa[idx]
+                if issite(i,a,ij,ab)
+                    j = complement_index(i,ij)
+                    b = complement_index(a,ab)
+                    jb = compute_index(p,j,b)
+                    njb = _n[jb]
+                    count += 1
+                    c1[count] = ia
+                    c2[count] = jb
+                    val[count] = ρ*njb*z[j]*_Δ[idx]
+                end
+            end
+        end
+    end
+    K::SparseMatrixCSC{TT,Int} = sparse(c1,c2,val)
+    return K
+end
+#Mx = a + b(x,x)
+#Axx + x - 1 = 0
+#x = 1 - Axx
 =#

@@ -10,7 +10,7 @@ export RKAlpha
     RKAlpha <: RKAlphaModel
     
     RKAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -32,7 +32,7 @@ Trᵢ = T/Tcᵢ
 """
 RKAlpha
 
-function RKAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function RKAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     packagedparams = RKAlphaParam()
     model = RKAlpha(packagedparams, verbose=verbose)
     return model

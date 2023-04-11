@@ -80,7 +80,7 @@ function SAFTgammaMie(components;
     group_userlocations = String[],
     ideal_userlocations=String[],
     verbose=false,
-    assoc_options = AssocOptions(), kwargs...)
+    assoc_options = AssocOptions())
 
     groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; group_userlocations = group_userlocations,verbose=verbose)
     params,sites = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
@@ -132,6 +132,10 @@ function SAFTgammaMie(components;
     gmie = SAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,assoc_options,γmierefs)
     return gmie
 end
+
+mw(model::SAFTgammaMieModel) = mw(model.vrmodel)
+molecular_weight(model::SAFTgammaMieModel,z = SA[1.]) = molecular_weight(model.vrmodel,z)
+
 @registermodel SAFTgammaMie
 
 const SAFTγMie = SAFTgammaMie

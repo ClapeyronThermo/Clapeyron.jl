@@ -1,4 +1,4 @@
-const IDEALTYPE = Union{T,Type{T}} where T<:EoSModel
+#const IDEALTYPE = Union{T,Type{T}} where T<:EoSModel
 
 """
     arbitraryparam(params)
@@ -106,13 +106,13 @@ See the tutorial or browse the implementations to see how this is used.
 """
 macro newmodelgc(name, parent, paramstype)
     quote 
-    struct $name{T <: IdealModel} <: $parent
+    struct $name{T <: Clapeyron.IdealModel} <: $parent
         components::Array{String,1}
-        groups::GroupParam
-        sites::SiteParam
+        groups::Clapeyron.GroupParam
+        sites::Clapeyron.SiteParam
         params::$paramstype
         idealmodel::T
-        assoc_options::AssocOptions
+        assoc_options::Clapeyron.AssocOptions
         references::Array{String,1}
     end
 
@@ -132,9 +132,9 @@ macro newmodelgc(name, parent, paramstype)
     Clapeyron.molecular_weight(model::$name,z=SA[1.0]) = Clapeyron.group_molecular_weight(model.groups,Clapeyron.mw(model),z)
 
     function $name(params::$paramstype,
-        groups::GroupParam,
-        idealmodel::IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        groups::Clapeyron.GroupParam,
+        idealmodel = Clapeyron.BasicIdeal;
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
@@ -143,10 +143,10 @@ macro newmodelgc(name, parent, paramstype)
     end
 
     function $name(params::$paramstype,
-        groups::GroupParam,
-        sites::SiteParam,
-        idealmodel::IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        groups::Clapeyron.GroupParam,
+        sites::Clapeyron.SiteParam,
+        idealmodel = BasicIdeal;
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
@@ -170,10 +170,10 @@ macro newmodel(name, parent, paramstype)
     quote 
     struct $name{T <: IdealModel} <: $parent
         components::Array{String,1}
-        sites::SiteParam
+        sites::Clapeyron.SiteParam
         params::$paramstype
         idealmodel::T
-        assoc_options::AssocOptions
+        assoc_options::Clapeyron.AssocOptions
         references::Array{String,1}
     end
     Clapeyron.has_sites(::Type{<:$name}) = true
@@ -189,9 +189,9 @@ macro newmodel(name, parent, paramstype)
     Base.length(model::$name) = Base.length(model.components)
 
     function $name(params::$paramstype,
-        sites::SiteParam,
-        idealmodel::IDEALTYPE = Clapeyron.BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        sites::Clapeyron.SiteParam,
+        idealmodel = Clapeyron.BasicIdeal;
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
@@ -200,10 +200,10 @@ macro newmodel(name, parent, paramstype)
     end
 
     function $name(params::$paramstype,
-        idealmodel::IDEALTYPE = Clapeyron.BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        idealmodel = Clapeyron.BasicIdeal;
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
-        assoc_options::AssocOptions = Clapeyron.AssocOptions(),
+        assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
         verbose::Bool = false)
 
         return Clapeyron.build_model($name,params,idealmodel;ideal_userlocations,references,assoc_options,verbose)
@@ -248,8 +248,8 @@ end
 function build_model(::Type{model},params::EoSParam,
         groups::GroupParam,
         sites::SiteParam,
-        idealmodel::IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        idealmodel = BasicIdeal;
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
         verbose::Bool = false) where model <:EoSModel
@@ -264,8 +264,8 @@ end
 
 function build_model(::Type{model},params::EoSParam,
         groups::GroupParam,
-        idealmodel::IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        idealmodel = BasicIdeal;
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
         verbose::Bool = false) where model <:EoSModel
@@ -277,8 +277,8 @@ end
 #non GC
 function build_model(::Type{model},params::EoSParam,
         sites::SiteParam,
-        idealmodel::IDEALTYPE = BasicIdeal;
-        ideal_userlocations::Vector{String}=String[],
+        idealmodel = BasicIdeal;
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
         verbose::Bool = false) where model <:EoSModel
@@ -293,8 +293,8 @@ end
 
 #normal macro model
 function build_model(::Type{model},params::EoSParam,
-        idealmodel::IDEALTYPE;
-        ideal_userlocations::Vector{String}=String[],
+        idealmodel;
+        ideal_userlocations=String[],
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
         verbose::Bool = false) where model <:EoSModel
@@ -373,6 +373,13 @@ function init_model(::Type{𝕄},components,userlocations=String[],verbose = fal
     end
     return 𝕄(components;userlocations,verbose)
 end
+
+function init_model(f::Function,components,userlocations=String[],verbose = false)
+    if verbose
+        @info "building an EoS model, using function $(info_color(string(f))) with components $components"
+    end
+    return f(components;userlocations,verbose)
+end
 """
     @registermodel(model)
 
@@ -381,36 +388,41 @@ the necessary traits to make the model compatible with Clapeyron routines.
 
 """
 macro registermodel(model)
-    _model = getfield(@__MODULE__(),model)
+    _model = getfield(__module__,model)
     ∅ = :()
 
     _has_components = hasfield(_model,:components)
     _has_sites = hasfield(_model,:sites)
     _has_groups = hasfield(_model,:groups)
-    
-    _sites = _has_sites ? :(has_sites(::Type{<:$model}) = true) : ∅
-    _groups = _has_groups ? :(has_groups(::Type{<:$model}) = true) : ∅
+    _has_params = hasfield(_model,:params)
+    if _has_params
+        _has_Mw = hasfield(fieldtype(_model,:params),:Mw)
+    else
+        _has_Mw = false
+    end
+    _sites = _has_sites ? :(Clapeyron.has_sites(::Type{<:$model}) = true) : ∅
+    _groups = _has_groups ? :(Clapeyron.has_groups(::Type{<:$model}) = true) : ∅
 
     _eos_show = 
     if _has_components
         if _has_groups
             quote
                 function Base.show(io::IO, mime::MIME"text/plain", model::$model)
-                    return gc_eosshow(io, mime, model)
+                    return Clapeyron.gc_eosshow(io, mime, model)
                 end
             
                 function Base.show(io::IO, model::$model)
-                    return gc_eosshow(io, model)
+                    return Clapeyron.gc_eosshow(io, model)
                 end
             end
         else
             quote
                 function Base.show(io::IO, mime::MIME"text/plain", model::$model)
-                    return eosshow(io, mime, model)
+                    return Clapeyron.eosshow(io, mime, model)
                 end
             
                 function Base.show(io::IO, model::$model)
-                    return eosshow(io, model)
+                    return Clapeyron.eosshow(io, model)
                 end
             end
         end
@@ -429,11 +441,11 @@ macro registermodel(model)
     end
 
     _molecular_weight = 
-    if _has_components
+    if _has_Mw
         if _has_groups 
-            :(molecular_weight(model::$model,z=SA[1.0]) =group_molecular_weight(model.groups,mw(model),z))
+            :(Clapeyron.molecular_weight(model::$model,z=SA[1.0]) =Clapeyron.group_molecular_weight(model.groups,Clapeyron.mw(model),z))
         else
-            :(molecular_weight(model::$model,z=SA[1.0]) =comp_molecular_weight(mw(model),z))
+            :(Clapeyron.molecular_weight(model::$model,z=SA[1.0]) =Clapeyron.comp_molecular_weight(Clapeyron.mw(model),z))
         end
     else
         ∅

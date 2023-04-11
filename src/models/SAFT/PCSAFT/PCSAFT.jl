@@ -111,8 +111,12 @@ end
 
 function d(model::PCSAFTModel, V, T, z)
     ϵᵢᵢ = diagvalues(model.params.epsilon)
-    σᵢᵢ = diagvalues(model.params.sigma) 
-    return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
+    σᵢᵢ = diagvalues(model.params.sigma)
+    di = zeros(eltype(T*1.),length(model))
+    for i in eachindex(di)
+        di[i] = σᵢᵢ[i]*(1 - 0.12*exp(-3ϵᵢᵢ[i]/ T))
+    end
+    return di
 end
 
 function ζ(model::PCSAFTModel, V, T, z, n , _d)

@@ -29,6 +29,7 @@ Base.length(cmodel::CompositeModel) = length(cmodel.components)
 function CompositeModel(components;
     liquid = RackettLiquid,
     gas = BasicIdeal,
+    userlocations = String[],
     solid = nothing,
     saturation = LeeKeslerSat,
     melting = nothing,
@@ -142,6 +143,60 @@ function saturation_temperature(model::CompositeModel,p,method::SaturationMethod
     else 
         return nan,nan,nan
     end
+end
+
+#Michelsen TPFlash and rachford rice tpflash support
+__tpflash_cache_model(model::CompositeModel,p,T,z) = PTFlashWrapper(model,T)
+
+function PTFlashWrapper(model::CompositeModel,T::Number) 
+    satmodels = split_model(model.saturation)
+    if is_splittable(model.gas)
+        gases = split_model(model.gas)
+    else
+        gases = fill(model.gas,length(model.components))
+    end
+    sats = saturation_pressure.(satmodels,T)
+    vv_pure = last.(sats)
+    RT = R̄*T
+    p_pure = first.(sats)
+    μpure = only.(VT_chemical_potential_res.(gases,vv_pure,T))
+    ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
+    g_pure = [VT_gibbs_free_energy(gases[i],sats[i][2],T) for i in 1:length(model)]
+
+    return PTFlashWrapper(model.components,model,sats,ϕpure,μpure)
+end
+
+function update_K!(lnK,wrapper::PTFlashWrapper{<:CompositeModel},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
+    model = wrapper.model
+    sats = wrapper.sat
+    #crits = wrapper.crit
+    fug = wrapper.fug
+    RT = R̄*T
+    volx = volume(model.liquid, p, T, x, phase = phasex, vol0 = volx)
+    lnϕy, voly = lnϕ(__gas_model(model), p, T, y; phase=phasey, vol0=voly)
+    if is_vapour(phasey)
+        for i in eachindex(lnK)
+            if iny[i]
+                ϕli = fug[i]
+                p_i = sats[i][1]
+                lnK[i] = log(p_i*ϕli/p) - lnϕy[i] + volx*(p - p_i)/RT
+            end
+        end
+    else
+        throw(error("CompositeModel does not support LLE equilibria."))
+    end
+    return lnK,volx,voly,NaN*one(T+p+first(x))
+end
+
+function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:CompositeModel},p,T,x,y,β,eq)
+    return NaN*one(T+p+first(x))
+end
+
+function dgibbs_obj!(model::PTFlashWrapper{<:CompositeModel}, p, T, z, phasex, phasey,
+    nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
+    F=nothing, G=nothing, H=nothing)
+    throw(error("CompositeModel does not support gibbs energy optimization in MichelsenTPFlash."))
+    #
 end
 
 export CompositeModel

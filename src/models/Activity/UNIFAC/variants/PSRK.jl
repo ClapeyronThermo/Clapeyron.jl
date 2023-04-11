@@ -1,3 +1,12 @@
+struct PSRKUNIFAC{c<:EoSModel} <: UNIFACModel
+    components::Array{String,1}
+    groups::GroupParam
+    params::UNIFACParam
+    puremodel::EoSVectorParam{c}
+    references::Array{String,1}
+    unifac_cache::UNIFACCache
+end
+
 """
     PSRKUNIFAC(components::Vector{String};
     puremodel = BasicIdeal,
@@ -31,19 +40,30 @@ function PSRKUNIFAC(components;
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
-    verbose = false, kwargs...)
+    verbose = false)
 
-    PRSK_userlocations = vcat("@REMOVEDEFAULTS","@DB/Activity/UNIFAC/PSRK",userlocations)
-    PRSK_group_userlocations = vcat("@REMOVEDEFAULTS","@DB/Activity/UNIFAC/PSRK/PSRK_groups.csv",group_userlocations)
-    model =  UNIFAC(components,
-    puremodel = puremodel,
-    userlocations = PRSK_userlocations,
-    group_userlocations = PRSK_group_userlocations,
-    pure_userlocations = pure_userlocations,
-    verbose = verbose
-    )
-    setreferences!(model,String["10.1021/i260064a004","10.1016/j.fluid.2004.11.002"])
+    groups = GroupParam(components, ["Activity/UNIFAC/PSRK/PSRK_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
+    params = getparams(groups, ["Activity/UNIFAC/PSRK/PSRK_like.csv", "Activity/UNIFAC/PSRK/PSRK_unlike.csv"];
+                        userlocations=userlocations,
+                        asymmetricparams=["A","B","C"],
+                        ignore_missing_singleparams=["A","B","C"],
+                        verbose=verbose)
+
+    A  = params["A"]
+    B  = params["B"]
+    C  = params["C"]
+    R  = params["R"]
+    Q  = params["Q"]
+    _puremodel = init_puremodel(puremodel,groups.components,pure_userlocations,verbose)
+    packagedparams = UNIFACParam(A,B,C,R,Q)
+    references = String["10.1021/i260064a004","10.1016/j.fluid.2004.11.002"]
+    cache = UNIFACCache(groups,packagedparams)
+    model = PSRKUNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
     return model
 end
+
+@registermodel PSRKUNIFAC
+
+#excess_g_comb(model::UNIFACModel,p,T,z=SA[1.0]) = excess_g_comb_original(model,p,T,z)
 
 export PSRKUNIFAC

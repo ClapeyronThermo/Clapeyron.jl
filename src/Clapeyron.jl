@@ -103,6 +103,7 @@ include("models/ideal/JobackIdeal.jl")
 include("models/utility/SpecialComp.jl")
 include("models/utility/EoSVectorParam.jl")
 include("models/utility/ZeroResidual.jl")
+include("models/utility/TPFlashWrapper.jl")
 
 #Empiric Models uses CompositeModel
 include("models/CompositeModel/CompositeModel.jl")

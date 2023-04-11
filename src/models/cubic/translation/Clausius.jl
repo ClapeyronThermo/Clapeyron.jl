@@ -11,7 +11,7 @@ end
     ClausiusTranslation <: ClausiusTranslationModel
 
     ClausiusTranslation(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations
     verbose::Bool=false)
 
 ## Input Parameters
@@ -35,7 +35,7 @@ where `kᵢ` is the Cubic EoS calculated critical compresibility factor
 ClausiusTranslation
 
 export ClausiusTranslation
-function ClausiusTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function ClausiusTranslation(components::Vector{String}; userlocations
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Vc = params["Vc"]
     packagedparams = ClausiusTranslationParam(Vc)

@@ -1,78 +1,81 @@
 """
-    RRTPFlash{T}(;K0 = nothing,rtol= 1e-10,atol = 1e-10,max_iters = 100)
+    RRTPFlash{T}(;kwargs...)
 
-Method to solve non-reactive multicomponent flash problem by using successive substitution in the Rachford-Rice equation.
+Method to solve non-reactive multicomponent flash problem by Rachford-Rice equation.
 
-Only two phases are supported. if K0 is `nothing`, it will be calculated via the Wilson correlation.
+Only two phases are supported. if `K0` is `nothing`, it will be calculated via the Wilson correlation.
 
-The optimizer will stop at `max_iters` evaluations, when the absolute tolerance is less than `atol` or when the relative tolerance is less than `rtol`
+### Keyword Arguments:
+- equilibrium = equilibrium type ":vle" for liquid vapor equilibria, ":lle" for liquid liquid equilibria
+- `K0` (optional), initial guess for the constants K
+- `x0` (optional), initial guess for the composition of phase x
+- `y0` = optional, initial guess for the composition of phase y
+- `vol0` = optional, initial guesses for phase x and phase y volumes
+- `K_tol` = tolerance to stop the calculation
+- `max_iters` = number of Successive Substitution iterations to perform
+- `nacc` =  accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
+- `noncondensables` = arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase
+- `nonvolatiles` = arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase
+
 """
-Base.@kwdef struct RRTPFlash{T} <: TPFlashMethod  
-    K0::T = nothing
-    rtol::Float64 = 1e-10
-    atol::Float64 = 1e-10
-    max_iters::Int = 100
-    spec::Symbol = :unknown
+struct RRTPFlash{T} <: TPFlashMethod
+    equilibrium::Symbol
+    K0::Union{Vector{T},Nothing}
+    x0::Union{Vector{T},Nothing}
+    y0::Union{Vector{T},Nothing}
+    v0::Union{Tuple{T,T},Nothing}
+    K_tol::Float64
+    max_iters::Int
+    nacc::Int
+    noncondensables::Union{Nothing,Vector{String}}
+    nonvolatiles::Union{Nothing,Vector{String}}
 end
 
-index_reduction(flash::RRTPFlash{Nothing},idx::AbstractVector) = flash
+Base.eltype(method::RRTPFlash{T}) where T = T
 
-function index_reduction(flash::RRTPFlash,idx::AbstractVector)
-    K02 = flash.K0[idx]
-    return RRTPFlash(K02,flash.rtol,flash.atol,flash.max_iters,flash.spec)
+is_vle(method::RRTPFlash) = is_vle(method.equilibrium)
+is_lle(method::RRTPFlash) = is_lle(method.equilibrium)
+
+function index_reduction(m::RRTPFlash,idx::AbstractVector)
+    equilibrium,K0,x0,y0,v0,K_tol,max_iters,nacc,noncondensables,nonvolatiles = m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,m.max_iters,m.nacc,m.noncondensables,m.nonvolatiles
+    K0 !== nothing && (K0 = K0[idx])
+    x0 !== nothing && (x0 = x0[idx])
+    y0 !== nothing && (y0 = y0[idx])
+    return RRTPFlash{eltype(m)}(equilibrium,K0,x0,y0,v0,K_tol,max_iters,nacc,noncondensables,nonvolatiles)
 end
 
-#z is the original feed composition, x is a matrix with molar fractions, n is a matrix with molar amounts
+function RRTPFlash(;equilibrium = :vle,
+    K0 = nothing,
+    x0 = nothing,
+    y0 = nothing,
+    v0 = nothing,
+    K_tol = 1e-10,
+    max_iters = 100,
+    nacc = 5,
+    noncondensables = nothing,
+    nonvolatiles = nothing)
+    ss_iters = max_iters
+    #we call Michelsen to check if the arguments are correct.
+    m = MichelsenTPFlash(;equilibrium,K0,x0,y0,v0,K_tol,ss_iters,nacc,noncondensables,nonvolatiles)
+    return RRTPFlash{eltype(m)}(m.equilibrium,m.K0,m.x0,m.y0,m.v0,m.K_tol,max_iters,m.nacc,m.noncondensables,m.nonvolatiles)
+end
 
-function tp_flash_impl(model::EoSModel, p, T, n, method::RRTPFlash)
+function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
     
-    if method.K0===nothing
-        K0 = wilson_k_values(model,p,T)
-    else 
-        K0 = method.K0
-    end
+    model_cached = __tpflash_cache_model(model,p,T,z)
     
-    atol = method.atol
-    rtol = method.rtol
-    max_iters = method.max_iters
+    x,y,β =  tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium, 
+    K0 = method.K0, x0 = method.x0, y0 = method.y0, vol0 = method.v0,
+    K_tol = method.K_tol,itss = method.max_iters, nacc=method.nacc,
+    non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
+    reduced = true, use_opt_solver = false)
 
-    x = zero(n)
-    y = zero(n)
-    α = zeros(eltype(K0),1)
-    φ_α = zero(K0)
-    φ_β = zero(K0)
-    f(Kout,Kin) = RR_fixpoint(Kout,Kin,model,p,T,n,x,y,φ_α,φ_β,α,method.spec)
+    G = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
 
-    Solvers.fixpoint(f,K0,Solvers.SSFixPoint();atol,rtol,max_iters)
-    α₀ = α[1]
-    G = (gibbs_free_energy(model,p,T,x)*(1-α₀)+gibbs_free_energy(model,p,T,y)*α₀)/R̄/T
-    
     X = hcat(x,y)'
-    nvals = X.*[1-α₀
-                α₀]  .* sum(n)
+    nvals = X.*[1-β
+            β] .* sum(z)
     return (X, nvals, G)
-end
-
-function RR_fixpoint(K1,K0,model,p,T,n,x,y,φ_α,φ_β,α,spec)
-    α₀ = rr_vle_vapor_fraction(K0,n)
-    α[1] = α₀
-    x = rr_flash_liquid!(x,K0,n,α₀)
-    y .= K0 .* x
-    if is_lle(spec)
-        phaseα = :l
-        phaseβ = :l
-    elseif is_vle(spec)
-        phaseα = :l
-        phaseβ = :v
-    else
-        phaseα = :unknown
-        phaseβ = :unknown
-    end
-
-    φ_α .= fugacity_coefficient(model,p,T,x,phase = phaseα)
-    φ_β .= fugacity_coefficient(model,p,T,y,phase = phaseβ)
-    K1 .= φ_α./φ_β
-    K1
 end
 
 export RRTPFlash

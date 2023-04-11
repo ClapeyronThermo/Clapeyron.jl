@@ -49,7 +49,7 @@ Cp(T) = ∑Cpᵢxᵢ
 ReidIdeal
 
 export ReidIdeal
-function ReidIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false, kwargs...)
+function ReidIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
     params = getparams(components, ["ideal/ReidIdeal.csv"]; userlocations=userlocations, verbose=verbose)
     a = params["a"]
     b = params["b"]

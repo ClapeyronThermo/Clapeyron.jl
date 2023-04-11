@@ -12,7 +12,7 @@ export MTTranslation
 MTTranslation <: MTTranslationModel
 
     MTTranslation(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -39,7 +39,7 @@ Zcᵢ = 0.289 - 0.0701ωᵢ - 0.0207ωᵢ^2
 """
 MTTranslation
 
-function MTTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function MTTranslation(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = params["acentricfactor"]
     packagedparams = MTTranslationParam(acentricfactor)

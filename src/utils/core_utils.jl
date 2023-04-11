@@ -22,7 +22,7 @@ parameterless_type(x) = parameterless_type(typeof(x))
 parameterless_type(x::Type) = __parameterless_type(x)
 
 #this is never used in a critical path, so we just use a default copying method
-if !isdefined(Base,:keepat!)
+@static if !isdefined(Base,:keepat!)
     function keepat!(a,inds)
         b = a[inds]
         resize!(a,length(b))
@@ -31,7 +31,7 @@ if !isdefined(Base,:keepat!)
     end
 end
 
-if !isdefined(Base,:eachsplit)
+@static if !isdefined(Base,:eachsplit)
     eachsplit(str::AbstractString, dlm; limit::Integer=0, keepempty::Bool=true) = split(str,dlm;limit,keepempty)
     eachsplit(str::AbstractString; limit::Integer=0, keepempty::Bool=false)  = split(str;limit,keepempty)
 end

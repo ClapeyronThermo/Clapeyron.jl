@@ -13,8 +13,8 @@ end
 
     MHV1Rule(components::Vector{String};
     activity = Wilson,
-    userlocations::Vector{String}=String[],
-    activity_userlocations::Vector{String}=String[],
+    userlocations=String[],
+    activity_userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -51,7 +51,7 @@ to use different values for `q`, overload `Clapeyron.MHV1q(::CubicModel,::MHV1Mo
 MHV1Rule
 
 export MHV1Rule
-function MHV1Rule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function MHV1Rule(components::Vector{String}; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
     _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1016/0378-3812(90)85053-D"]
     model = MHV1Rule(components, _activity,references)

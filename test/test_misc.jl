@@ -1,3 +1,11 @@
+#struct for testset "#161"
+struct PCSAFT161 <: Clapeyron.PCSAFTModel
+    components::Vector{String}
+    params::Clapeyron.PCSAFTParam
+    references::Vector{String}
+    weird_thing::Int
+end
+
 @testset "misc" begin
     @printline
     model2 = PCSAFT(["water","ethanol"])
@@ -10,6 +18,7 @@
     ideal1 = WalkerIdeal(["hexane"])
     noparam1 = gc3.puremodel[1].translation
     simple1 = gc3.puremodel[1].alpha
+    model_structgc = structSAFTgammaMie(["ethanol","octane"])
     @testset "split_model" begin
         models2 = split_model(model2)
         @test models2[1].components[1] == model2.components[1]
@@ -26,8 +35,23 @@
         gc3_split = Clapeyron.split_model(gc3)
         @test all(isone(length(gc3_split[i])) for i in 1:3)
         @test all(isone(length(gc3_split[i].puremodel)) for i in 1:3)
+
+        structgc_split = Clapeyron.split_model(model_structgc)
+        @test structgc_split[1].groups.n_intergroups[1] == [0 1; 1 0]
+        @test structgc_split[2].groups.n_intergroups[1] == [0 2; 2 5]
     end
 
+    @testset "single component error" begin
+        model = PCSAFT(["water","methane"])
+        @test_throws DimensionMismatch saturation_pressure(model,300.15)
+        @test_throws DimensionMismatch crit_pure(model)
+        @test_throws DimensionMismatch saturation_temperature(model,1e5)
+        @test_throws DimensionMismatch acentric_factor(model)
+        @test_throws DimensionMismatch enthalpy_vap(model,300.15)
+        @test_throws DimensionMismatch Clapeyron.x0_sat_pure(model,300.15)
+        @test_throws DimensionMismatch saturation_liquid_density(model,300.15)
+    end
+    
     @testset "macros" begin
         comps(model) = Clapeyron.@comps
         groups(model) = Clapeyron.@groups
@@ -92,8 +116,22 @@
         @test citation_top ⊆ citation_full
         @test citation_mixing ⊆ citation_full
         @test citation_translation ⊆ citation_full
+        _io = Base.IOBuffer()
+        Clapeyron.show_references(_io,umr)
+        citation_show = String(take!(_io))
+        @test citation_show == "\nReferences: 10.1021/I160057A011, 10.1021/ie049580p, 10.1021/i260064a004, 10.1021/acs.jced.0c00723"
+        @test Clapeyron.doi2bib("10.1021/I160057A011") == "@article{Peng_1976,\n\tdoi = {10.1021/i160057a011},\n\turl = {https://doi.org/10.1021%2Fi160057a011},\n\tyear = 1976,\n\tmonth = {feb},\n\tpublisher = {American Chemical Society ({ACS})},\n\tvolume = {15},\n\tnumber = {1},\n\tpages = {59--64},\n\tauthor = {Ding-Yu Peng and Donald B. Robinson},\n\ttitle = {A New Two-Constant Equation of State},\n\tjournal = {Industrial {\\&}amp\$\\mathsemicolon\$ Engineering Chemistry Fundamentals}\n}"
     end
     @printline
+
+    @testset "core utils" begin
+        @test Clapeyron.parameterless_type(typeof(rand(5))) === Array
+        @test Clapeyron._vecparser("1 2 3") == [1,2,3]
+        @test Clapeyron._vecparser("1 2 3.5") == [1,2,3.5]
+        @test_throws ErrorException Clapeyron._vecparser("not numbers")
+        @test Clapeyron.split_2("a b") == ("a","b")
+        @test Clapeyron.split_2("a|b",'|') == ("a","b")
+    end
 
     @testset "Reported errors" begin
         #https://github.com/ypaul21/Clapeyron.jl/issues/104
@@ -162,6 +200,51 @@
             @test length(model.vrmodel.params.epsilon_assoc.values.values) == length(model.params.epsilon_assoc.values.values)
             #test if we got the number of sites right
             @test model.vrmodel.sites.n_sites[2][1] == 1000 #1000 sites cO_1sit/e1 in PEG.
+        end
+        
+        @testset "#154" begin
+            #there was a problem when using the @newmodel macros outside the Clapeyron module. this should suffice as a test.
+            abstract type PCSAFTModel_test <: SAFTModel end
+
+            # Defining the parameters used by the model
+            struct PCSAFTParam_test <: EoSParam
+                Mw::SingleParam{Float64}
+                segment::SingleParam{Float64}
+                sigma::PairParam{Float64}
+                epsilon::PairParam{Float64}
+                epsilon_assoc::AssocParam{Float64}
+                bondvol::AssocParam{Float64}
+            end
+
+            # Creating a model struct called PCSAFT, which is a sub-type of PCSAFTModel, and uses parameters defined in PCSAFTParam
+            @newmodel PCSAFT_test PCSAFTModel_test PCSAFTParam_test
+            @newmodelsimple PCSAFT_testsimple PCSAFTModel_test PCSAFTParam_test
+            @newmodelgc PCSAFT_testgc PCSAFTModel_test PCSAFTParam_test
+
+            #test if the macros actually generate something
+            @test PCSAFT_test <: EoSModel #@newmodel
+            @test PCSAFT_testsimple <: EoSModel #@newmodelsimple
+            @test PCSAFT_testgc <: EoSModel #@newmodelgc
+        end
+
+        @testset "#161" begin
+            #problems with registermodel
+            Clapeyron.@registermodel PCSAFT161
+            @test hasmethod(Base.length,Tuple{PCSAFT161})
+            @test hasmethod(Base.show,Tuple{IO,PCSAFT161})
+            @test hasmethod(Base.show,Tuple{IO,MIME"text/plain",PCSAFT161})
+            @test hasmethod(Clapeyron.molecular_weight,Tuple{PCSAFT161,Array{Float64}}) 
+        end
+
+        @testset "#162" begin
+            #a longstanding problem, init_model didn't worked with functions. 
+            #a long time ago, SRK was a model, but now it is just a function that returns an RK model.
+            model1 = Wilson(["water","ethanol"];puremodel=SRK)
+            @test model1 isa Clapeyron.EoSModel
+
+            #this case is just for compatibility with the notebooks that were originally released.
+            model2 = VTPR(["carbon monoxide","carbon dioxide"];alpha=BMAlpha)
+            @test model2 isa Clapeyron.EoSModel
         end
 
     end

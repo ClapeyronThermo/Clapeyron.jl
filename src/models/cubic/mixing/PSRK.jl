@@ -11,8 +11,8 @@ end
 
     PSRKRule(components::Vector{String};
     activity = Wilson,
-    userlocations::Vector{String}=String[],
-    activity_userlocations::Vector{String}=String[],
+    userlocations=String[],
+    activity_userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -31,7 +31,7 @@ derived from the First Order modified Huron-Vidal Mixing Rule.
 PSRKRule
 
 export PSRKRule
-function PSRKRule(components::Vector{String}; activity = PSRKUNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function PSRKRule(components::Vector{String}; activity = PSRKUNIFAC, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
     _activity = init_model(activity,components,activity_userlocations,verbose)
     references = String["10.1016/0378-3812(91)85038-V"]
     model = PSRKRule(components, _activity,references)

@@ -386,6 +386,16 @@ end
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5133696314734384 rtol = 1e-6
     end
 
+    @testset "UNIFAC-FV" begin
+        system = UNIFACFV(["benzene","PS(1960)"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 0.2813003396669342 rtol = 1e-6
+    end
+
+    @testset "UNIFAC-FV-poly" begin
+        system = system = UNIFACFVPoly(["PMMA(6350)","PS(1390)"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 2.7045808205365796 rtol = 1e-6
+    end
+
     @testset "COSMOSAC02" begin
         system = COSMOSAC02(["water","ethanol"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.3871817962565904 rtol = 1e-6
@@ -426,6 +436,7 @@ end
 
     @testset "Walker" begin
         system = WalkerIdeal(["hexane"])
+        @test Clapeyron.molecular_weight(system)*1000 ≈ 86.21
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 179.51502015696653 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
     end
@@ -459,6 +470,7 @@ end
         system = PropaneRef()
         @test Clapeyron.a_ideal(system, V, T, z) ≈ 0.6426994942361217 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T, z) ≈ -2.436280448227229 rtol = 1e-6
+        @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
     end
 
     @testset "GERG2008" begin
@@ -471,6 +483,7 @@ end
         @test Clapeyron.a_ideal(system, V, T, z) ≈ 3.1135835641766594 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system, V, T, z) ≈ 0.0 rtol = 1e-14
         @test Clapeyron.a_res(system, V, T, z) ≈ -1.1706377677539772 rtol = 1e-6
+        @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
     end
 
     @testset "EOS-LNG" begin
@@ -489,6 +502,7 @@ end
         V = Clapeyron._v_scale(system)/0.673
         @test Clapeyron.a_ideal(system, V, T) ≈ 5.704213386278148 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T) ≈ -2.244730279521925 rtol = 1e-6
+        @test_broken Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
     end
 
     @printline

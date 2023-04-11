@@ -63,7 +63,7 @@ export PR
 function PR(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
+    activity = nothing,
     translation=NoTranslation,
     userlocations=String[], 
     ideal_userlocations=String[],

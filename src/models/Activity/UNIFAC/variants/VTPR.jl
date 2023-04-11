@@ -1,18 +1,11 @@
 abstract type VTPRUNIFACModel <: UNIFACModel end
 
-
-struct VTPRUNIFACCache <: EoSModel
-    components::Vector{String}
-    m::Vector{Float64}
-end
-
 struct VTPRUNIFAC{c<:EoSModel} <: VTPRUNIFACModel
     components::Array{String,1}
     groups::GroupParam
     params::UNIFACParam
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    unifac_cache::VTPRUNIFACCache
 end
 
 @registermodel VTPRUNIFAC
@@ -64,7 +57,7 @@ function VTPRUNIFAC(components;
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
-    verbose = false, kwargs...)
+    verbose = false)
 
     groups = GroupParam(components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"];group_userlocations = group_userlocations, verbose=verbose)
 
@@ -75,25 +68,13 @@ function VTPRUNIFAC(components;
     Q  = params["Q"]
     R = deepcopy(Q)
     R.values .= 0
-    cache = VTPRUNIFACCache(groups)
     _puremodel = init_puremodel(puremodel,groups.components,pure_userlocations,verbose)
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1016/S0378-3812(01)00626-4"]
-    model = VTPRUNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
+    model = VTPRUNIFAC(groups.components,groups,packagedparams,_puremodel,references)
     return model
 end
 
-function recombine_unifac_cache!(cache::VTPRUNIFACCache,groups,params)
-    group_sum!(cache.m,groups,nothing)
-    return cache
-end
-
-function VTPRUNIFACCache(groups::GroupParam)
-    m = group_sum(groups,nothing)
-    return VTPRUNIFACCache(groups.components,m)
-end
-
-function excess_gibbs_free_energy(model::VTPRUNIFACModel,V,T,z)
-    lnγ = lnγ_res(model,V,T,z)
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+function excess_gibbs_free_energy(model::VTPRUNIFACModel,p,T,z)
+    return excess_g_res(model,p,T,z)*R̄*T 
 end

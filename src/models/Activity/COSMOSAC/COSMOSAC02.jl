@@ -47,7 +47,7 @@ function COSMOSAC02(components::Vector{String};
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose=false, kwargs...)
+    verbose=false)
 
     params = getparams(components, ["Activity/COSMOSAC/COSMOSAC02_like.csv"]; userlocations=userlocations, verbose=verbose)
     Pi  = COSMO_parse_Pi(params["Pi"])

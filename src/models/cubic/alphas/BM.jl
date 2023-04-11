@@ -11,7 +11,7 @@ export BMAlpha
     BMAlpha <: BMAlphaModel
 
     MTAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -43,7 +43,7 @@ for RK models:
 """
 BMAlpha
 
-function BMAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
+function BMAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
     acentricfactor = params["acentricfactor"]
     packagedparams = BMAlphaParam(acentricfactor)

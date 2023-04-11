@@ -10,13 +10,9 @@
                         atol = 1e-8,
                         rtol = 1e-12,
                         max_iters = 10^4)
-
 Default `saturation_pressure` Saturation method used by `Clapeyron.jl`. It uses equality of Chemical Potentials with a volume basis. If no volumes are provided, it will use  [`x0_sat_pure`](@ref).
-
 If those initial guesses fail and the specification is near critical point, it will try one more time, using Corresponding States instead.
-
 when `crit_retry` is true, if the initial solve fail, it will try to obtain a better estimate by calculating the critical point. 
-
 `f_limit`, `atol`, `rtol`, `max_iters` are passed to the non linear system solver.
 """
 struct ChemPotVSaturation{T,C} <: SaturationMethod
@@ -157,11 +153,12 @@ function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
     return Vl0,Vv0
 end
 
+#=
 function sat_pure(model,T,V0,method)
     f! = ObjSatPure(model,T)
     return sat_pure(f!,V0,method)
 end
-
+=#
 function sat_pure(f!::ObjSatPure,V0,method)
     model, T = f!.model, f!.Tsat
     nan = zero(eltype(V0))/zero(eltype(V0))

@@ -62,9 +62,9 @@ function structSAFTgammaMie(components;
     group_userlocations = String[],
     ideal_userlocations=String[],
     verbose=false,
-    assoc_options = AssocOptions(), kwargs...)
+    assoc_options = AssocOptions())
 
-    groups = StructGroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"])
+    groups = StructGroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv","SAFT/SAFTgammaMie/structSAFTgammaMie/structSAFTgammaMie_intragroups.csv"])
     params,sites = getparams(groups, ["SAFT/SAFTgammaMie/structSAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     components = groups.components
     

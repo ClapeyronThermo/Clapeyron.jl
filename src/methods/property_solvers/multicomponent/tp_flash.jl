@@ -35,10 +35,9 @@ numphases(method::TPFlashMethod) = 2
 
 #default
 include("tp_flash/DifferentialEvolutiontp_flash.jl")
-include("tp_flash/RachfordRicetp_flash.jl")
+include("tp_flash/michelsen_base.jl")
 include("tp_flash/Michelsentp_flash.jl")
-include("tp_flash/Michelsentp_flash_modified.jl")
-
+include("tp_flash/RachfordRicetp_flash.jl")
 
 function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
     numspecies = length(model)
@@ -47,19 +46,17 @@ function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
             " species in the model, but the number of mole numbers specified is ",
             length(n))
     end
-
+    
     model_r,idx_r = index_reduction(model,n)
     n_r = n[idx_r]
     if length(model_r) == 1
         V = volume(model_r,p,T,n_r)
         return (n, n / sum(n), VT_gibbs_free_energy(model_r, V, T, n_r))
     end
-
     if numphases(method) == 1
         V = volume(model_r,p,T,n_r,phase =:stable)
         return (n, n / sum(n), VT_gibbs_free_energy(model_r, V, T, n_r))
     end
-
     xij_r,nij_r,g = tp_flash_impl(model_r,p,T,n_r,index_reduction(method,idx_r))
     #TODO: perform stability check ritht here:
     #expand reduced model:
