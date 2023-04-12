@@ -37,22 +37,25 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew; volw0=nothing,
     end
 end
 
-function tpd_ss(model::EoSModel, p, T, di, w, phasew; volw0=nothing,max_iters = 5)
+function tpd_ss(model::EoSModel, p, T, di, w0, phasew; volw0=nothing,max_iters = 5)
     # Function that minimizes the tpd function by Successive Substitution
-    volw0 === nothing && (volw0 = volume(model, p, T, w, phase = phasew))
+    volw0 === nothing && (volw0 = volume(model, p, T, w0, phase = phasew))
     volw = volw0
-    wres = copy(w)
-    lnw = copy(w)
+    w = copy(w0)
+    lnw = copy(w0)
+    tpd = zero(T+p+first(w0))
     for _ in 1:max_iters
-        lnϕw, volw = lnϕ(model, p, T, wres; phase=phasew, vol0=volw)
+        lnϕw, volw = lnϕ(model, p, T, w; phase=phasew, vol0=volw)
         lnw .= di .- lnϕw
-        wres .= exp.(lnw)
-        wres ./= sum(w)
+        w .= exp.(lnw)
+        w ./= sum(w)
+        dtpd = lnw + lnϕw - di
+        tpd = dot(w,dtpd) - sum(w) + 1
     end
-    return w, volw
+    return w, volw, tpd
 end
 
-function tpd_min(model::EoSModel, p, T, z, w, phasez, phasew; volz0=nothing, volw0=nothing)
+function tpd_min(model::EoSModel, p, T, z, w0, phasez, phasew; volz0=nothing, volw0=nothing)
     # Function that minimizes the tpd function first by Successive Substitution
     # and then by a Newton's method
     # out = minimized trial phase composition (w) and its tpd value
@@ -63,8 +66,11 @@ function tpd_min(model::EoSModel, p, T, z, w, phasez, phasew; volz0=nothing, vol
 
     volw = volw0
     # improving initial guess by Successive Substitution
-    w, volw = tpd_ss(model, p, T, di, w, phasew; volw0=nothing)
+    w, volw, tpd = tpd_ss(model, p, T, di, w0, phasew; volw0=nothing)
 
+    if tpd < 0. && !isapprox(z, w, atol=1e-3)
+        return w,tpd
+    end
     # change of variable to "number of moles"
     α0 = max.(2 .* sqrt.(w),one(eltype(w))*1e-2)
 
@@ -103,16 +109,15 @@ function all_tpd(model::EoSModel, p, T, z,phasepairs = ((:liquid,:vapour),(:liqu
     for (phasez,phasew) in phasepairs
         for i in 1:length(model)
             w0 = Id[i, :]
-            try
                 w, tpd = tpd_min(model,p,T,z,w0,phasez,phasew)
-                if tpd < 0. && ~isapprox(z, w, atol=1e-3)
+                if tpd < 0. && !isapprox(z, w, atol=1e-3)
                     if length(w_array) > 0
                         already_computed = false
                         for ws in w_array
                             # check if the minimum is already stored
                             already_computed = already_computed || isapprox(ws, w, atol=1e-3)
                         end
-                        if ~already_computed
+                        if !already_computed
                             push!(w_array, index_expansion(w,z_notzero))
                             push!(tpd_array, tpd)
                             push!(phasez_array, phasez)
@@ -127,13 +132,7 @@ function all_tpd(model::EoSModel, p, T, z,phasepairs = ((:liquid,:vapour),(:liqu
                         # println(i, ' ', phasez, ' ', phasew, ' ', w, ' ', tpd)
                     end
                 end
-            catch e
-                # If the minimization is not successful print this line
-                verbose && @warn("""Failed to minimize the TPD function for w0 = $(Id[i, :]),
-                        phasew = $phasew, phasez = $phasez at pressure p = $p [Pa],
-                        T = $T [K] and global composition = $z""")
             end
-        end
     end
     # sort the obtained tpd minimas
     index = sortperm(tpd_array)
