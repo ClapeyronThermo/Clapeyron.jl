@@ -135,6 +135,10 @@ function _parse_properties(data)
     eos_data = first(data[:EOS])
     st_data = data[:STATES]
     crit = st_data[:critical]
+    reducing = eos_data[:reducing]
+
+    Tr = tryparse_units(get(reducing,:T,NaN),get(reducing,:T_units,""))
+    rhor = tryparse_units(get(reducing,:rhomolar,NaN),get(reducing,:rhomolar_units,""))
     Mw = 1000*tryparse_units(get(eos_data,:molar_mass,0.0),get(eos_data,:molar_mass_units,""))
     T_c = tryparse_units(get(crit,:T,NaN),get(crit,:T_units,""))
     P_c = tryparse_units(get(crit,:p,NaN),get(crit,:p_units,""))
@@ -166,7 +170,7 @@ function _parse_properties(data)
     lb_volume = 1/tryparse_units(get(crit,:rhomolar_max,NaN),get(crit,:rhomolar_max_units,""))
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
-    return EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+    return EmpiricSingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 end
 
 function _parse_ideal(id_data)
@@ -435,7 +439,8 @@ function _parse_ancillaries(anc_data)
         rho_c = rhov_data[:reducing_value] * 1.0
         n = Float64.(rhov_data[:n])
         t = Float64.(rhov_data[:t])
-        PolExpVapour(T_c,rho_c,n,t)
+        tau_r = rhov_data[:using_tau_r]
+        PolExpVapour(T_c,rho_c,n,t,tau_r)
     else
         throw(error("Ancilliary vapour density: $(rhov_data[:type]) not supported for the moment. open an issue in the repository for help."))
     end
@@ -445,7 +450,10 @@ function _parse_ancillaries(anc_data)
         rho_c = rhol_data[:reducing_value] * 1.0
         n = Float64.(rhol_data[:n])
         t = Float64.(rhol_data[:t])
-        PolExpLiquid(T_c,rho_c,n,t)
+        tau_r = get(rhov_data,:using_tau_r,false)
+        PolExpLiquid(T_c,rho_c,n,t,tau_r)
+    elseif rhol_data[:type] == "rhoL"
+    
     else
         throw(error("Ancilliary liquid density: $(rhol_data[:type]) not supported for the moment. open an issue in the repository for help."))
     end

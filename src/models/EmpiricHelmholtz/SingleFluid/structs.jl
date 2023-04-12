@@ -195,11 +195,16 @@ function _calc_iterators!(param::EmpiricSingleFluidResidualParam)
 end
 
 struct EmpiricSingleFluidProperties <: EoSParam
+    #those 4 properties are the most important here:
     Mw::Float64 #Molecular Weight, g/mol
+    Tr::Float64 #reducing temperature, K
+    rhor::Float64 #reducing density, mol/m3
+    lb_volume::Float64 #lower bound volume, mol/m3
+
+    #the rest is optional, but recomended.
     Tc::Float64 #Critical temperature, K
     Pc::Float64 #Critical Pressure,Pa
     rhoc::Float64 #Critical density, mol/m3
-    lb_volume::Float64 #lower bound volume, mol/m3
     Ttp::Float64 #triple point temperature, K
     ptp::Float64 #triple point pressure, Pa
     rhov_tp::Float64 #triple point vapor volume, mol/m3
@@ -207,9 +212,11 @@ struct EmpiricSingleFluidProperties <: EoSParam
     acentricfactor::Float64 #acentric factor
     Rgas::Float64 #gas constant used
 
-    function EmpiricSingleFluidProperties(Mw,Tc,Pc,rhoc,lb_volume,
-        Ttp = NaN,ptp = NaN, rhov_tp = NaN,rhol_tp = NaN, acentric_factor = NaN, Rgas = R̄)
-        return new(Mw,Tc,Pc,rhoc,lb_volume, Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+    function EmpiricSingleFluidProperties(Mw,Tr,rhor,lb_volume,
+        Tc = NaN,Pc = NaN,rhoc = NaN,
+        Ttp = NaN,ptp = NaN, rhov_tp = NaN,rhol_tp = NaN,
+        acentric_factor = NaN, Rgas = R̄)
+        return new(Mw,Tr,rhor,lb_volume,Tc,Pc,rhoc,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
     end
 end
 
