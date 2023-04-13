@@ -1,32 +1,37 @@
 
-function tpd_obj!(model::EoSModel, p, T, di, α, phasew; volw0=nothing,
+function tpd_obj!(model::EoSModel, p, T, di, α, phasew, vcache;
                   F=nothing, G=nothing, H=nothing)
     # Function that computes the TPD function, its gradient and its hessian
     nc = length(model)
     w = α.^2 /4.
+    #sqrt(w) = 0.5*α
+    volw0 = vcache[]
     if H !== nothing
         # computing the hessian
         lnϕw, ∂lnϕ∂nw, ∂lnϕ∂Pw, volw = ∂lnϕ∂n∂P(model, p, T, w; phase=phasew, vol0=volw0)
-        if isnan(volw)
-            lnϕw, ∂lnϕ∂nw, ∂lnϕ∂Pw, volw = ∂lnϕ∂n∂P(model, p, T, w; phase=phasew, vol0=nothing)
-        end
-        dtpd = log.(w) + lnϕw - di
-        gi = dtpd.*(α./2)
-        eye = LinearAlgebra.I(nc)
-        #TODO: check that just using Identity without instantiation works
-        H .= eye .* (1. .+  (gi./α))  .+ sqrt.(w * w') .* ∂lnϕ∂nw
-    else
-        lnϕw, volw = lnϕ(model, p, T, w; phase=phasew, vol0=volw0)
-        if isnan(volw)
-            lnϕw, volw = lnϕ(model, p, T, w; phase=phasew, vol0=nothing)
-        end
-        dtpd = log.(w) + lnϕw - di
-        gi = dtpd.*(α./2)
-    end
+        for i in 1:nc
+            αi = α[i]
+            for j in 1:nc
+                αj = α[j]
+                δij = Int(i == j)
 
+                #=
+                from thermopack:
+                We see that ln Wi + lnφ(W) − di will be zero at the solution of the tangent plane minimisation.
+                It can therefore be removed from the second derivative, without affecting the convergence properties.
+                =#
+                
+                H[i,j] += δij + 0.25*αi*αj*∂lnϕ∂nw[i,j] #+ 0.5*αi*dtpd[i]
+            end
+        end
+    else
+        lnϕw, volw = lnϕ(model, p, T, w; phase=phasew, vol0=volw0)    
+    end
+    dtpd = log.(w) + lnϕw - di
+    vcache[] = volw
     if G !== nothing
         # computing the gradient
-         G .= gi
+         G .= dtpd.* ( α./ 2)
     end
     if F !== nothing
         # computing the TPD value
@@ -49,29 +54,35 @@ function tpd_ss(model::EoSModel, p, T, di, w0, phasew; volw0=nothing,max_iters =
         lnw .= di .- lnϕw
         w .= exp.(lnw)
         w ./= sum(w)
+        !isfinite(first(w)) && break
     end
     return w, volw
 end
 
-function tpd_min(model::EoSModel, p, T, z, w0, phasez, phasew; volz0=nothing, volw0=nothing)
+function tpd_min(model::EoSModel, p, T, di, z, w0, phasez, phasew; volz0=nothing, volw0=nothing)
     # Function that minimizes the tpd function first by Successive Substitution
     # and then by a Newton's method
     # out = minimized trial phase composition (w) and its tpd value
     nc = length(model)
-    # computing the di vector for the phase z (constant along the minimization)
-    lnϕz, volz = lnϕ(model, p, T, z; phase=phasez, vol0=volz0)
-    di = log.(z) + lnϕz
-
     volw = volw0
     # improving initial guess by Successive Substitution
     w, volw = tpd_ss(model, p, T, di, w0, phasew; volw0=nothing)
 
-    # change of variable to "number of moles"
-    α0 = max.(2 .* sqrt.(w),one(eltype(w))*1e-2)
+    if !isfinite(volw) || !isfinite(first(w)) #iteration returned non finite values
+        return w, zero(eltype(w))/zero(eltype(w))
+    end
 
+    if isapprox(z, w, atol=1e-3) #ss iteration converged to z
+        return w, zero(eltype(w))/zero(eltype(w))
+    end
+
+    # change of variable to "number of moles"
+    #α0 = max.(2 .* sqrt.(w),one(eltype(w))*1e-8)
+    α0 = 2 .* sqrt.(w)
+    vcache = Ref(volw)
     # minimizing the TPD by Newton's method
-    dftpd!(F, G, H, α) = tpd_obj!(model, p, T, di, α, phasew, volw0=volw, F=F, G=G, H=H)
-    sol = Solvers.optimize(Solvers.only_fgh!(dftpd!), α0) #, method=LineSearch(Newton()))#  , Optim.Newton())
+    dftpd!(F, G, H, α) = tpd_obj!(model, p, T, di, α, phasew, vcache, F=F, G=G, H=H)
+    sol = Solvers.optimize(Solvers.only_fgh!(dftpd!), α0,LineSearch(Newton())) #, method=LineSearch(Newton()))#  , Optim.Newton())
     # computing phase composition
     w = sol.info.solution.^2 / 4
     w ./= sum(w)
@@ -97,37 +108,60 @@ function all_tpd(model::EoSModel, p, T, z,phasepairs = ((:liquid,:vapour),(:liqu
     phasez_array = fill(:x,0)
     phasew_array = fill(:x,0)
 
+    #cache di
+    di_dict = Dict{Symbol,Vector{Float64}}()
+    #g_dict = Dict{Symbol,Float64}()
+    for (phasez,_) in phasepairs
+        if !haskey(di_dict,phasez)
+            lnϕz, volz = lnϕ(model, p, T, z; phase=phasez)
+            #g_dict[phasez] = VT_gibbs_free_energy(model,volz,T,z)
+            isnan(volz) && continue
+            di = log.(z) + lnϕz
+            add_to = true
+            for (phaseij,dij) in pairs(di_dict)
+                if isapprox(di,dij,rtol = 1e-5) #new similar phases
+                    add_to = false
+                end
+            end
+            if add_to
+                di_dict[phasez] = di
+            end
+        end
+    end
+
     #TODO for the future:
     #this operation is a "embarrasingly parallel" problem, multithreading will surely speed this up
     #but Base.@threads on julia 1.6 behaves on a static manner, on 1.8 onwards, there is Base.@threads :dynamic,
     #that allows nesting. Ideally, all Clapeyron operations should be multithread-friendly.
     for (phasez,phasew) in phasepairs
+        !haskey(di_dict,phasez) && continue
+        di = di_dict[phasez]
         for i in 1:length(model)
-            w0 = Id[i, :]
-                w, tpd = tpd_min(model,p,T,z,w0,phasez,phasew)
-                if tpd < 0. && !isapprox(z, w, atol=1e-3)
-                    if length(w_array) > 0
-                        already_computed = false
-                        for ws in w_array
-                            # check if the minimum is already stored
-                            already_computed = already_computed || isapprox(ws, w, atol=1e-3)
-                        end
-                        if !already_computed
-                            push!(w_array, index_expansion(w,z_notzero))
-                            push!(tpd_array, tpd)
-                            push!(phasez_array, phasez)
-                            push!(phasew_array, phasew)
-                            # println(i, ' ', phasez, ' ', phasew, ' ', w, ' ', tpd)
-                        end
-                    else
-                        push!(w_array, w)
-                        push!(tpd_array, tpd)
-                        push!(phasez_array, phasez)
-                        push!(phasew_array, phasew)
-                        # println(i, ' ', phasez, ' ', phasew, ' ', w, ' ', tpd)
-                    end
+            w0 = Id[i, :] #vector of single component
+            w, tpd = tpd_min(model,p,T,di,z,w0,phasez,phasew)
+            isnan(tpd) && continue
+            if tpd < 0. && !isapprox(z, w, atol=1e-3)
+                if length(w_array) == 0
+                    push!(w_array, w)
+                    push!(tpd_array, tpd)
+                    push!(phasez_array, phasez)
+                    push!(phasew_array, phasew)
+                    continue
+                end
+                already_computed = false
+                for ws in w_array
+                    # check if the minimum is already stored
+                    already_computed = already_computed || isapprox(ws, w, atol=1e-3)
+                end
+                if !already_computed
+                    push!(w_array, index_expansion(w,z_notzero))
+                    push!(tpd_array, tpd)
+                    push!(phasez_array, phasez)
+                    push!(phasew_array, phasew)
+                    # println(i, ' ', phasez, ' ', phasew, ' ', w, ' ', tpd)
                 end
             end
+        end
     end
     # sort the obtained tpd minimas
     index = sortperm(tpd_array)
@@ -160,17 +194,64 @@ function lle_init(model::EoSModel, p, T, z;verbose = false)
 end
 
 function K0_lle_init(model::EoSModel, p, T, z)
+    nc = length(model)
+    if nc == 2
+        z_test = [1. 1e-6; 1e-6 1.]
+    else
+        z_test = ones(Int64(nc*(1+(nc-1)/2)),nc).*1e-3
+        for i in 1:nc
+            z_test[i,i] = 1.
+        end
+        k = nc+1
+        for i in 1:nc-1
+            for j in i+1:nc
+                z_test[k,i] = 0.5
+                z_test[k,j] = 0.5
+                k += 1
+            end
+        end
+    end
+
+    z_test = z_test .* z'
+    z_test = z_test ./ sum(z_test;dims=2)
+
+    ntest = length(z_test[:,1])
+    γ = zeros(ntest,nc)
+    for i in 1:ntest
+        γ[i,:] = activity_coefficient(model,p,T,z_test[i,:])
+    end
+
+    err = ones(ntest,ntest)*Inf
+    for i in 1:ntest
+        for j in i+1:ntest
+            ϕi = (z_test[i,:].-z)./(z_test[i,:]-z_test[j,:])
+            ϕ = sum(ϕi[isfinite.(ϕi)])/sum(isfinite.(ϕi))
+            err[i,j] = sum(log.(γ[i,:].*z_test[i,:]).-log.(γ[j,:].*z_test[j,:])+log.(γ[i,:].*z_test[i,:]).*(ϕ*z_test[i,:]+(1-ϕ)*z_test[j,:].-z))
+        end
+    end
+
+    (val, idx) = findmin(err)
+
+    K0 = γ[idx[1],:]./γ[idx[2],:]
+    return K0
+end
+
+#=
+function K0_lle_init(model::EoSModel, p, T, z)
     w,_ = lle_init(model, p, T, z)
     #vlle, or other things
-    if length(w) != 2
-        _0 = zero(eltype(w))
-        return fill(_0/_0,length(w))
-    else
+    if length(w) == 2
         x1,x2 = w[1],w[2]
         return x1 ./ x2
+    elseif length(w) == 1
+        x1 = w[1]
+        x2 = Fractions.neg(x1)
+        return x1 ./ x2   
+    else
+        _0 = zero(eltype(w))
+        return fill(_0/_0,length(w))
     end
-    
-
 end
+=#
 
 export tpd
