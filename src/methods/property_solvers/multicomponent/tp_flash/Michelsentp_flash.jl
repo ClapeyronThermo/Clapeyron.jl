@@ -58,9 +58,7 @@ function MichelsenTPFlash(;equilibrium = :vle,
                         nonvolatiles = nothing)
     !(is_vle(equilibrium) | is_lle(equilibrium)) && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
     if K0 == x0 == y0 === v0 == nothing #nothing specified
-        is_lle(equilibrium) && throw(error("""
-        You need to provide either an initial guess for the partion constant K
-        or for compositions of x and y for LLE"""))
+        #is_lle(equilibrium)
         T = Nothing
     else
         if !isnothing(K0) & isnothing(x0) & isnothing(y0) #K0 specified
