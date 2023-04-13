@@ -159,18 +159,61 @@ function lle_init(model::EoSModel, p, T, z;verbose = false)
     return w_array, tpd_array
 end
 
-function K0_lle_init(model::EoSModel, p, T, z)
-    w,_ = lle_init(model, p, T, z)
-    #vlle, or other things
-    if length(w) != 2
-        _0 = zero(eltype(w))
-        return fill(_0/_0,length(w))
-    else
-        x1,x2 = w[1],w[2]
-        return x1 ./ x2
-    end
+# function K0_lle_init(model::EoSModel, p, T, z)
+#     w,_ = lle_init(model, p, T, z)
+#     #vlle, or other things
+#     if length(w) != 2
+#         _0 = zero(eltype(w))
+#         return fill(_0/_0,length(w))
+#     else
+#         x1,x2 = w[1],w[2]
+#         return x1 ./ x2
+#     end
     
 
+# end
+
+function K0_lle_init(model::EoSModel, p, T, z)
+    nc = length(model)
+    if nc == 2
+        z_test = [1. 1e-6; 1e-6 1.]
+    else
+        z_test = ones(Int64(nc*(1+(nc-1)/2)),nc).*1e-3
+        for i in 1:nc
+            z_test[i,i] = 1.
+        end
+        k = nc+1
+        for i in 1:nc-1
+            for j in i+1:nc
+                z_test[k,i] = 0.5
+                z_test[k,j] = 0.5
+                k += 1
+            end
+        end
+    end
+
+    z_test = z_test .* z'
+    z_test = z_test ./ sum(z_test;dims=2)
+
+    ntest = length(z_test[:,1])
+    γ = zeros(ntest,nc)
+    for i in 1:ntest
+        γ[i,:] = activity_coefficient(model,p,T,z_test[i,:])
+    end
+
+    err = ones(ntest,ntest)*Inf
+    for i in 1:ntest
+        for j in i+1:ntest
+            ϕi = (z_test[i,:].-z)./(z_test[i,:]-z_test[j,:])
+            ϕ = sum(ϕi[isfinite.(ϕi)])/sum(isfinite.(ϕi))
+            err[i,j] = sum(log.(γ[i,:].*z_test[i,:]).-log.(γ[j,:].*z_test[j,:])+log.(γ[i,:].*z_test[i,:]).*(ϕ*z_test[i,:]+(1-ϕ)*z_test[j,:].-z))
+        end
+    end
+
+    (val, idx) = findmin(err)
+
+    K0 = γ[idx[1],:]./γ[idx[2],:]
+    return K0
 end
 
 export tpd
