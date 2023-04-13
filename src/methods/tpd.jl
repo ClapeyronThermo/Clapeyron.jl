@@ -193,6 +193,20 @@ function lle_init(model::EoSModel, p, T, z;verbose = false)
     return w_array, tpd_array
 end
 
+# function K0_lle_init(model::EoSModel, p, T, z)
+#     w,_ = lle_init(model, p, T, z)
+#     #vlle, or other things
+#     if length(w) != 2
+#         _0 = zero(eltype(w))
+#         return fill(_0/_0,length(w))
+#     else
+#         x1,x2 = w[1],w[2]
+#         return x1 ./ x2
+#     end
+    
+
+# end
+
 function K0_lle_init(model::EoSModel, p, T, z)
     nc = length(model)
     if nc == 2
