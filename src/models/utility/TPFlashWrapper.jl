@@ -13,3 +13,7 @@ function tp_flash_K0(wrapper::PTFlashWrapper,p,T)
     K =  first.(wrapper.sat) ./ p
 end
 
+function K0_lle_init(model::PTFlashWrapper,p,T,z)
+    throw(error("""You need to provide either an initial guess for the partion constant K
+    or for compositions of x and y for LLE"""))
+end

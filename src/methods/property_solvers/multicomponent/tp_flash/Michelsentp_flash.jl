@@ -198,9 +198,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         lnK = log.(K)
        # volx,voly = NaN*_1,NaN*_1
     else
-        err() = @error("""You need to provide either an initial guess for the partion constant K
-                        or for compositions of x and y for LLE""")
-        err()
+        K = K0_lle_init(model,p,T,z)
+        lnK = log.(K)
     end
     _1 = one(p+T+first(z))
     # Initial guess for phase split

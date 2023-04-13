@@ -37,7 +37,7 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew; volw0=nothing,
     end
 end
 
-function tpd_ss(model::EoSModel, p, T, di, w0, phasew; volw0=nothing,max_iters = 5)
+function tpd_ss(model::EoSModel, p, T, di, w0, phasew; volw0=nothing,max_iters = 10)
     # Function that minimizes the tpd function by Successive Substitution
     volw0 === nothing && (volw0 = volume(model, p, T, w0, phase = phasew))
     volw = volw0
@@ -49,10 +49,8 @@ function tpd_ss(model::EoSModel, p, T, di, w0, phasew; volw0=nothing,max_iters =
         lnw .= di .- lnϕw
         w .= exp.(lnw)
         w ./= sum(w)
-        dtpd = lnw + lnϕw - di
-        tpd = dot(w,dtpd) - sum(w) + 1
     end
-    return w, volw, tpd
+    return w, volw
 end
 
 function tpd_min(model::EoSModel, p, T, z, w0, phasez, phasew; volz0=nothing, volw0=nothing)
@@ -66,11 +64,8 @@ function tpd_min(model::EoSModel, p, T, z, w0, phasez, phasew; volz0=nothing, vo
 
     volw = volw0
     # improving initial guess by Successive Substitution
-    w, volw, tpd = tpd_ss(model, p, T, di, w0, phasew; volw0=nothing)
+    w, volw = tpd_ss(model, p, T, di, w0, phasew; volw0=nothing)
 
-    if tpd < 0. && !isapprox(z, w, atol=1e-3)
-        return w,tpd
-    end
     # change of variable to "number of moles"
     α0 = max.(2 .* sqrt.(w),one(eltype(w))*1e-2)
 
@@ -162,6 +157,20 @@ tpd(model,p,T,z;verbose = false) = all_tpd(model,p,T,z;verbose = verbose)
 function lle_init(model::EoSModel, p, T, z;verbose = false) 
     w_array, tpd_array, _, _ = all_tpd(model,p,T,z,((:liquid,:liquid),);verbose = verbose)
     return w_array, tpd_array
+end
+
+function K0_lle_init(model::EoSModel, p, T, z)
+    w,_,lle_init(model, p, T, z)
+    #vlle, or other things
+    if length(w) != 2
+        _0 = zero(eltype(w))
+        return fill(_0/_0,length(w))
+    else
+        x1,x2 = w[1],w[2]
+        return x1 ./ x2
+    end
+    
+
 end
 
 export tpd
