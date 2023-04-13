@@ -214,7 +214,6 @@ function K0_lle_init(model::EoSModel, p, T, z)
 
     z_test = z_test .* z'
     z_test = z_test ./ sum(z_test;dims=2)
-
     ntest = length(z_test[:,1])
     γ = zeros(ntest,nc)
     for i in 1:ntest
@@ -226,13 +225,29 @@ function K0_lle_init(model::EoSModel, p, T, z)
         for j in i+1:ntest
             ϕi = (z_test[i,:].-z)./(z_test[i,:]-z_test[j,:])
             ϕ = sum(ϕi[isfinite.(ϕi)])/sum(isfinite.(ϕi))
-            err[i,j] = sum(log.(γ[i,:].*z_test[i,:]).-log.(γ[j,:].*z_test[j,:])+log.(γ[i,:].*z_test[i,:]).*(ϕ*z_test[i,:]+(1-ϕ)*z_test[j,:].-z))
+            err[i,j] = sum(log.(γ[i,:].*z_test[i,:]) .-log.(γ[j,:].*z_test[j,:])+log.(γ[i,:].*z_test[i,:]).*(ϕ*z_test[i,:]+(1-ϕ)*z_test[j,:].-z))
         end
     end
 
     (val, idx) = findmin(err)
 
     K0 = γ[idx[1],:]./γ[idx[2],:]
+    
+    #=
+    #extra step, reduce magnitudes if we aren't in a single phase
+    g0 = dot(z, K0) - 1.
+    g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K0))
+
+    if g0 < 0 && g1 <= 0 #we need to correct the value of g0
+        g0i = z .* K0
+        kz,idx = findmax(g0i)
+        #the maximum K value is too great
+    elseif g1 > 0 && g0 >= 0 #we need to correct the value of g1
+        g1i = z ./ K0
+
+    else #bail out here?
+    
+    end =#
     return K0
 end
 

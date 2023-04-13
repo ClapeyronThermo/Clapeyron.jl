@@ -103,3 +103,7 @@ function dgibbs_obj!(model::PTFlashWrapper{<:ActivityModel}, p, T, z, phasex, ph
     throw(error("Activity models don't support gibbs energy optimization in MichelsenTPFlash."))
 
 end
+
+function K0_lle_init(model::PTFlashWrapper{<:ActivityModel},p,T,z)
+    return K0_lle_init(model.model,p,T,z)
+end
