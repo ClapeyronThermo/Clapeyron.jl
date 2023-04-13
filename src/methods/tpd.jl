@@ -160,7 +160,7 @@ function lle_init(model::EoSModel, p, T, z;verbose = false)
 end
 
 function K0_lle_init(model::EoSModel, p, T, z)
-    w,_,lle_init(model, p, T, z)
+    w,_ = lle_init(model, p, T, z)
     #vlle, or other things
     if length(w) != 2
         _0 = zero(eltype(w))
