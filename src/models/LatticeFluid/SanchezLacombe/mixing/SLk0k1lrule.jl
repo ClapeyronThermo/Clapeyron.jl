@@ -28,7 +28,7 @@ vᵣ = ΣΣϕᵢϕⱼvᵢⱼ
 Where `δᵢⱼ` is `i == j ? 1 : 0`
 
 ## References
-1. Neau, E. (2002). A consistent method for phase equilibrium calculation using the Sanchez–Lacombe lattice–fluid equation-of-state. Fluid Phase Equilibria, 203(1–2), 133–140. doi:10.1016/s0378-3812(02)00176-0
+1. Neau, E. (2002). A consistent method for phase equilibrium calculation using the Sanchez–Lacombe lattice–fluid equation-of-state. Fluid Phase Equilibria, 203(1–2), 133–140. [doi:10.1016/s0378-3812(02)00176-0](https://doi.org/10.1016/s0378-3812(02)00176-0)
 """
 SLk0k1lMixingRule
 

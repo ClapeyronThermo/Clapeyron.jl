@@ -24,10 +24,10 @@ export BACKSAFT
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `vol`: Single Parameter (`Float64`) - Segment Volume [`dm^3`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K/mol]`
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `c`: Single Parameter (`Float64`) - Adjustable parameter (no units)
 - `alpha`: Single Parameter (`Float64`) - Non-spherical deviation (no units)
 
@@ -47,7 +47,7 @@ export BACKSAFT
 BACKSAFT
 
 ## References
-1. Mi, J.-G., Chen, J., Gao, G.-H., & Fei, W.-Y. (2002). Equation of state extended from SAFT with improved results for polar fluids across the critical point. Fluid Phase Equilibria, 201(2), 295–307. doi:10.1016/s0378-3812(02)00093-6
+1. Mi, J.-G., Chen, J., Gao, G.-H., & Fei, W.-Y. (2002). Equation of state extended from SAFT with improved results for polar fluids across the critical point. Fluid Phase Equilibria, 201(2), 295–307. [doi:10.1016/s0378-3812(02)00093-6](https://doi.org/10.1016/s0378-3812(02)00093-6)
 """
 BACKSAFT
 
@@ -59,9 +59,9 @@ function BACKSAFT(components;
     assoc_options = AssocOptions())
 
     params = getparams(components, ["SAFT/BACKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["m"]
+    segment = params["segment"]
     c = params["c"]
-    k = params["k"]
+    k = get(params,"k",nothing)
     alpha = params["alpha"]
     sigma = params["vol"]
     sigma.values .*= 6/N_A/1e6/π
@@ -75,14 +75,16 @@ function BACKSAFT(components;
     return model
 end
 
+recombine_impl!(model::BACKSAFTModel) = recombine_saft!(model)
+
 
 function lb_volume(model::BACKSAFTModel,z)
     α = model.params.alpha.values[1]
     pol(x) = evalpoly(x,(1.0,3α-2,3α*α - 3α +1 , -α*α))
     k = Solvers.ad_newton(pol,1.81)
     seg = model.params.segment.values
-    σᵢᵢ = model.params.sigma.diagvalues
-    val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i]^3 for i in 1:length(z)) #limit at η -> 0
+    σᵢᵢ = model.params.sigma.values
+    val = π/6*N_A*sum(z[i]*seg[i]*σᵢᵢ[i,i]^3 for i in 1:length(z)) #limit at η -> 0
     return k*val #only positive root of η 
 end
 
@@ -133,8 +135,8 @@ function a_disp(model::BACKSAFTModel, V, T, z)
 end
 
 function d(model::BACKSAFTModel, V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues[i]
-    σ = model.params.sigma.diagvalues[i]
+    ϵ = model.params.epsilon.values[i,i]
+    σ = model.params.sigma.values[i,i]
     return σ * (1 - 0.12exp(-3ϵ/T))
 end
 

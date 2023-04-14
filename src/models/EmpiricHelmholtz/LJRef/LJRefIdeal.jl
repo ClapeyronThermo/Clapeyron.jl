@@ -51,7 +51,7 @@ a⁰(δ,τ,z) = ∑xᵢ(a⁰ᵢ + log(xᵢ))
 
 ## References
 
-1. Thol, M., Rutkai, G., Köster, A., Lustig, R., Span, R., & Vrabec, J. (2016). Equation of state for the Lennard-Jones fluid. Journal of physical and chemical reference data, 45(2), 023101. doi:10.1063/1.4945000
+1. Thol, M., Rutkai, G., Köster, A., Lustig, R., Span, R., & Vrabec, J. (2016). Equation of state for the Lennard-Jones fluid. Journal of physical and chemical reference data, 45(2), 023101. [doi:10.1063/1.4945000](https://doi.org/10.1063/1.4945000)
 
 """
 LJRefIdeal

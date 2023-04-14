@@ -13,7 +13,6 @@ abstract type pharmaPCSAFTModel <: PCSAFTModel end
 
 struct pharmaPCSAFT{T <: IdealModel} <: pharmaPCSAFTModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     sites::SiteParam
     params::pharmaPCSAFTParam
     idealmodel::T
@@ -29,45 +28,38 @@ export pharmaPCSAFT
 
 """
     pharmaPCSAFTModel <: PCSAFTModel
-
     pharmaPCSAFT(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
-- `k`: Pair Parameter (`Float64`) - Constant binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Constant binary Interaction Paramater (no units)
 - `kT`: Pair Parameter (`Float64`) - T-dependent inary Interaction Paramater `[K^-1]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
-
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
-- `k`: Pair Parameter (`Float64`) - Constant binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Constant binary Interaction Paramater (no units)
 - `kT`: Pair Parameter (`Float64`) - T-dependent inary Interaction Paramater `[K^-1]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
-
 ## Input models
 - `idealmodel`: Ideal Model
-
 ## Description
-
 Perturbed-Chain SAFT (PC-SAFT), with T dependent kij and water correlation [2] for segment diameter.
 For using the water's sigma correlation, `water08` should be selected instead of `water`.
-
 ## References
-1. Paus, R., Ji, Y., Vahle, L., & Sadowski, G. (2015). Predicting the solubility advantage of amorphous pharmaceuticals: A novel thermodynamic approach. Molecular Pharmaceutics, 12(8), 2823–2833. doi:10.1021/mp500824d
-2. Cameretti, L. F., & Sadowski, G. (2008). Modeling of aqueous amino acid and polypeptide solutions with PC-SAFT. Genie Des Procedes [Chemical Engineering and Processing], 47(6), 1018–1025. doi:10.1016/j.cep.2007.02.034
+1. Paus, R., Ji, Y., Vahle, L., & Sadowski, G. (2015). Predicting the solubility advantage of amorphous pharmaceuticals: A novel thermodynamic approach. Molecular Pharmaceutics, 12(8), 2823–2833. [doi:10.1021/mp500824d](https://doi.org/10.1021/mp500824d)
+2. Cameretti, L. F., & Sadowski, G. (2008). Modeling of aqueous amino acid and polypeptide solutions with PC-SAFT. Genie Des Procedes [Chemical Engineering and Processing], 47(6), 1018–1025. [doi:10.1016/j.cep.2007.02.034](https://doi.org/10.1016/j.cep.2007.02.034)
 """
 pharmaPCSAFT
 
@@ -76,7 +68,7 @@ function pharmaPCSAFT(components;
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
-    assoc_options = AssocOptions(combining = :elliott))
+    assoc_options = AssocOptions(combining = :elliott_runtime))
 
     params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; 
     userlocations=userlocations, 
@@ -84,23 +76,23 @@ function pharmaPCSAFT(components;
     ignore_missing_singleparams = ["kT"])
     
     water = SpecialComp(components,["water08"])
-    icomponents = 1:length(components)
-    segment = params["m"]
-    k0 = params["k"]
+    segment = params["segment"]
+    k0 = get(params,"k",nothing)
     n = length(components)
-    k1 = get(params,"kT",PairParam("kT",components,zeros(n,n)))
+    k1 = get(params,"kT",PairParam("kT",components,zeros(n)))
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
     epsilon = epsilon_LorentzBerthelot(params["epsilon"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     packagedparams = pharmaPCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d","10.1016/j.cep.2007.02.034"]
 
-    model = pharmaPCSAFT(components,icomponents,sites,packagedparams,init_idealmodel,assoc_options,references,water)
+    model = pharmaPCSAFT(components,sites,packagedparams,init_idealmodel,assoc_options,references,water)
     return model
 end
 
@@ -112,14 +104,14 @@ end
 @inline water08_k(model::pharmaPCSAFTModel) = model.water[]
 
 function d(model::pharmaPCSAFTModel, V, T, z)
-    ϵᵢᵢ = model.params.epsilon.diagvalues
-    σᵢᵢ = model.params.sigma.diagvalues 
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values 
     _d = zeros(typeof(T),length(z))
     Δσ = Δσh20(T)
     k = water08_k(model)
     for i ∈ @comps
-        σᵢ = σᵢᵢ[i] + (k==i)*Δσ
-        _d[i] = σᵢ*(1 - 0.12*exp(-3ϵᵢᵢ[i]/T))
+        σᵢ = σ[i,i] + (k==i)*Δσ
+        _d[i] = σᵢ*(1 - 0.12*exp(-3ϵ[i,i]/T))
     end
 
     return _d
@@ -183,11 +175,12 @@ function  Δ(model::pharmaPCSAFT, V, T, z,_data=@f(data))
     k = water08_k(model)
     k = model.water[]
     Δσ = Δσh20(T)   
-    Δres = zero_assoc(κ,typeof(V+T+first(z)))
-    for (idx,(i,j),(a,b)) in indices(Δres)
+    Δout = assoc_similar(κ,typeof(V+T+first(z)))
+    Δout.values .= false #fill with zeros, maybe it is not necessary?
+    for (idx,(i,j),(a,b)) in indices(Δout)
         gij = @f(g_hs,i,j,_data)
         σij = σ[i,j] + 0.5*((k==i) + (k==j))*Δσ
-        Δres[idx] = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
+        Δout[idx] = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
     end
-    return Δres
+    return Δout
 end

@@ -17,7 +17,8 @@ abstract type WalkerIdealModel <: IdealModel end
 """
     WalkerIdeal <: WalkerIdealModel
     WalkerIdeal(components::Array{String,1}; 
-    userlocations::Array{String,1}=String[], 
+    userlocations = String[],
+    group_userlocations = String[]
     verbose=false)
 
 ## Input parameters
@@ -42,14 +43,18 @@ Cpᵢ(T)/R = (5+NRot)/2 ∑νᵢₖ∑gₖᵥ(θₖᵥ/T)^2*exp(θₖᵥ/T)/(1-e
 
 ## References
 
-1. Walker, P. J., & Haslam, A. J. (2020). A new predictive group-contribution ideal-heat-capacity model and its influence on second-derivative properties calculated using a free-energy equation of state. Journal of Chemical and Engineering Data, 65(12), 5809–5829. doi:10.1021/acs.jced.0c00723
+1. Walker, P. J., & Haslam, A. J. (2020). A new predictive group-contribution ideal-heat-capacity model and its influence on second-derivative properties calculated using a free-energy equation of state. Journal of Chemical and Engineering Data, 65(12), 5809–5829. [doi:10.1021/acs.jced.0c00723](https://doi.org/10.1021/acs.jced.0c00723)
 
 """
 WalkerIdeal
 
 export WalkerIdeal
-function WalkerIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
-    groups = GroupParam(components,["ideal/WalkerIdeal_Groups.csv"], verbose=verbose)
+function WalkerIdeal(components::Array{String,1};
+    userlocations=String[],
+    group_userlocations = String[],
+    verbose=false)
+
+    groups = GroupParam(components,["ideal/WalkerIdeal_Groups.csv"], group_userlocations = group_userlocations, verbose=verbose)
     params = getparams(groups, ["ideal/WalkerIdeal.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     Nrot = params["Nrot"]
@@ -66,6 +71,9 @@ function WalkerIdeal(components::Array{String,1}; userlocations::Array{String,1}
     model = WalkerIdeal(packagedparams, groups, BasicIdeal, references=references, verbose=verbose)
     return model
 end
+
+recombine_impl!(model::WalkerIdealModel) = model
+
 
 function a_ideal(model::WalkerIdealModel,V,T,z)
     Mw = model.params.Mw.values

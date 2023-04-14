@@ -10,7 +10,6 @@ abstract type UNIFACModel <: ActivityModel end
 
 struct UNIFAC{c<:EoSModel} <: UNIFACModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACParam
     puremodel::EoSVectorParam{c}
@@ -25,33 +24,27 @@ export UNIFAC
 """
     UNIFACModel <: ActivityModel
 
-    UNIFAC(components::Vector{String};
+    UNIFAC(components;
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
-
 ## Input parameters
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
 - `A`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
 - `B`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
 - `C`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
-
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties
-
 ## Description
 UNIFAC (UNIQUAC Functional-group Activity Coefficients) activity model.
-
 Modified UNIFAC (Dortmund) implementation.
-
 The Combinatorial part corresponds to an GC-averaged modified [`UNIQUAC`](@ref) model. The residual part iterates over groups instead of components.
-
 ```
 Gᴱ = nRT(gᴱ(comb) + gᴱ(res))
 ```
-
 Combinatorial part:
 ```
 gᴱ(comb) = ∑[xᵢlog(Φ'ᵢ) + 5qᵢxᵢlog(θᵢ/Φᵢ)]
@@ -65,40 +58,166 @@ Residual Part:
 ```
 gᴱ(residual) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
 v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
-Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components 
+Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 Θₖ = QₖXₖ/∑QₖXₖ
 Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
 ```
-
 ## References
-1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. doi:10.1021/i260064a004
+1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. [doi:10.1021/i260064a004](https://doi.org/10.1021/i260064a004)
 2. Weidlich, U.; Gmehling, J. A modified UNIFAC model. 1. Prediction of VLE, hE, and.gamma..infin. Ind. Eng. Chem. Res. 1987, 26, 1372–1381.
 """
 UNIFAC
 
-function UNIFAC(components::Vector{String};
+function UNIFAC(components;
     puremodel = PR,
-    userlocations = String[], 
+    userlocations = String[],
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
-    
-    groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; verbose=verbose)
 
-    params = getparams(groups, ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
+    groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
+
+    params = getparams(groups, ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"];
+                        userlocations=userlocations,
+                        asymmetricparams=["A","B","C"],
+                        ignore_missing_singleparams=["A","B","C"],
+                        verbose=verbose)
     A  = params["A"]
     B  = params["B"]
     C  = params["C"]
     R  = params["R"]
     Q  = params["Q"]
-    icomponents = 1:length(components)
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    _puremodel = init_puremodel(puremodel,groups.components,pure_userlocations,verbose)
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1021/i260064a004"]
     cache = UNIFACCache(groups,packagedparams)
-    model = UNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
+    model = UNIFAC(groups.components,groups,packagedparams,_puremodel,references,cache)
     return model
 end
 
+function recombine_impl!(model::UNIFACModel)
+    if hasfield(typeof(model),:unifac_cache)
+        recombine_unifac_cache!(model.unifac_cache,model.groups,model.params)
+    end
+    recombine!(model.puremodel)
+    return model
+end
+
+function Ψ(model::UNIFACModel,V,T,z)
+    A = model.params.A.values
+    B = model.params.B.values
+    C = model.params.C.values
+    return @. exp(-(A+B*T+C*T^2)/T)
+end
+
+excess_g_comb(model::UNIFACModel,p,T,z=SA[1.0]) = excess_g_comb_dormund(model,p,T,z)
+
+#flory-huggins(FH) + Staverman-Guggenheim (SG) contributions
+function excess_g_comb_dormund(model::UNIFACModel,p,T,z=SA[1.0])
+    _0 = zero(eltype(z))
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+    q_p = model.unifac_cache.q_p
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    Φpm = dot(q_p,z)*invn
+    G_comb = _0
+    for i ∈ @comps
+        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        Φpi = q_p[i]/Φpm #technically xi[i]q_p[i]/θpm, but it gets cancelled out (log(Φpi/xi))
+        zi = z[i]
+        G_comb += zi*log(Φpi) + 5*q[i]*zi*log(θi/Φi)
+    end
+    return G_comb*R̄*T
+end
+
+function excess_g_comb_original(model::UNIFACModel,p,T,z=SA[1.0])
+    _0 = zero(eltype(z))
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    G_comb = _0
+    for i ∈ @comps
+        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        zi = z[i]
+        G_comb += zi*log(Φi) + 5*q[i]*zi*log(θi/Φi)
+    end
+    return G_comb*R̄*T
+end
+
+
+#just Staverman-Guggenheim (SG) contribution, used for UMR
+function excess_g_SG(model::UNIFACModel,p,T,z)
+    _0 = zero(eltype(z))
+    r = model.unifac_cache.r
+    q = model.unifac_cache.q
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    G_SG = _0
+    for i ∈ @comps
+        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        G_SG += 5*q[i]*z[i]*log(θi/Φi)
+    end
+    return G_SG*R̄*T
+end
+
+# https://github.com/thermotools/thermopack/blob/main/doc/memo/UNIFAC/unifac.pdf
+function excess_g_res(model::UNIFACModel,p,T,z)
+    _0 = zero(T + first(z))
+    G_res = _0
+    V = _0
+    Ẽ = @f(Ψ)
+    v = model.groups.n_flattenedgroups
+    Q = model.params.Q.values
+    ∑vikQk = [dot(Q,vi) for vi in v]
+    #calculate Θ with the least amount of allocs possible
+    X = group_matrix(model.groups)*z
+    ∑XQ⁻¹ = 1/dot(X,Q)
+    X .*= Q
+    X .*= ∑XQ⁻¹
+    Θ = X
+    for i in @comps
+        ∑QkΔΛk = _0
+        vi = v[i]
+        ∑vikQk⁻¹ = 1/∑vikQk[i] # 1/(sum(vik * Qk for k in groups))
+        zi = z[i]
+        #iszero(zi) && continue #causes problems with AD
+        for k in @groups
+            Λk = _0
+            Λki = _0
+            for j in @groups
+                Ẽjk = Ẽ[j,k]
+                Λk += Ẽjk*Θ[j]
+                Θij = Q[j]*vi[j]
+                Λki += Ẽjk*Θij
+            end
+            Λki = Λki*∑vikQk⁻¹
+            Λk = log(Λk)
+            Λki = log(Λki)
+            ∑QkΔΛk += vi[k]*Q[k]*(Λk - Λki)
+        end
+        G_res +=zi*∑QkΔΛk
+    end
+    return -G_res*R̄*T
+end
+
+function excess_gibbs_free_energy(model::UNIFACModel,p,T,z)
+    g_comb = excess_g_comb(model,p,T,z)
+    g_res = excess_g_res(model,p,T,z)
+    return g_comb+g_res
+end
+
+#=
 function activity_coefficient(model::UNIFACModel,V,T,z)
     return exp.(@f(lnγ_comb)+ @f(lnγ_res))
 end
@@ -115,13 +234,15 @@ function lnγ_comb(model::UNIFACModel,V,T,z)
     return lnγ_comb
 end
 
+function excess_g_comb(model::UNIFACModel,p,T,z)
+    lnγ = lnγ_comb(model,p,T,z)
+    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+end
+
 function lnγ_SG(model::UNIFACModel,V,T,z)
-
     x = z ./ sum(z)
-
     r =model.unifac_cache.r
     q =model.unifac_cache.q
-
     Φ = r/dot(x,r)
     θ = q/dot(x,q)
     lnγ_SG = @. -5*q*(log(Φ/θ)+(1-Φ/θ))
@@ -157,19 +278,13 @@ function lnΓi(model::UNIFACModel,V,T,z,ψ = @f(ψ))
     return lnΓi_
 end
 
-function Ψ(model::UNIFACModel,V,T,z)
-    A = model.params.A.values
-    B = model.params.B.values
-    C = model.params.C.values
-    return @. exp(-(A+B*T+C*T^2)/T)
+function excess_g_res(model::UNIFACModel,p,T,z)
+    lnγ = lnγ_res(model,p,T,z)
+    return sum(z[i]*R̄*T*lnγ[i] for i ∈ 1:length(model))
 end
 
 function excess_g_SG(model::UNIFACModel,p,T,z)
     lnγ = lnγ_SG(model,p,T,z)
     return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
-
-function excess_g_res(model::UNIFACModel,p,T,z)
-    lnγ = lnγ_res(model,p,T,z)
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
-end
+=#

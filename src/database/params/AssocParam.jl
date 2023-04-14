@@ -11,43 +11,91 @@ struct AssocParam{T} <: ClapeyronParam
     sources::Array{String,1}
 end
 
+function AssocParam(name::String,components::Vector{String},vals::Compressed4DMatrix{T},sites = nothing,sourcecsvs = String[], sources = String[]) where T
+    _sites = if sites === nothing
+        ss = [String[] for _ in 1:length(components)]
+        for (idx, (i,j), (a,b)) in indices(vals)
+            s_i = ss[i]
+            s_j = ss[j]
+            if length(s_i) < a
+                resize!(s_i,a)
+            end
+
+            if length(s_j) < b
+                resize!(s_j,b)
+            end
+            s_i[a] = "$(components[i])/site $a"
+            s_j[b] = "$(components[j])/site $b"
+        end
+        ss
+    else
+        sites
+    end
+
+    vals_length = maximum(maximum,vals.outer_indices)
+    param_length_check(AssocParam,name,length(components),vals_length)
+
+    return AssocParam{T}(name,components,vals,_sites,sourcecsvs,sources)
+end
+
+function Base.copyto!(dest::AssocParam,src::Base.Broadcast.Broadcasted)
+    Base.copyto!(dest.values.values,src)
+    return dest
+end
+
+Base.broadcastable(param::AssocParam) = param.values.values
+Base.BroadcastStyle(::Type{<:AssocParam}) = Broadcast.Style{AssocParam}()
+
+
+function Base.copyto!(dest::AssocParam,src::AbstractArray)
+    Base.copyto!(dest.values.values,src)
+    return dest
+end
+
+function Base.copyto!(dest::AssocParam,src::AssocParam) #used to set params
+    #key check
+    dest.components == src.components || throw(DimensionMismatch("components of source and destination single parameters are not the same for $dest"))
+    copyto!(dest.values,src.values)
+    dest_sites = dest.sites
+    src_sites = src.sites
+    for (i,site) in enumerate(dest_sites)
+        copy!(site,src_sites[i]) #copy also changes size
+    end
+    return dest
+end
+
+Base.eltype(param::AssocParam{T}) where T = T
+
+Base.size(param::AssocParam) = size(param.values.values)
+
+function Base.getindex(param::AssocParam,i::Int) 
+    Base.checkbounds(param.components,i)
+    getindex(param.values,i,i)
+end
+
+function Base.getindex(param::AssocParam,i::Int,j::Int) 
+    Base.checkbounds(param.components,max(i,j))
+    getindex(param.values,i,j)
+end
+
 function AssocParam(
         name::String,
         components::Vector{String},
         values::MatrixofMatrices,
-        allcomponentsites,
-        sourcecsvs,
-        sources
-    ) where T
+        allcomponentsites = nothing,
+        sourcecsvs = String[],
+        sources = String[]
+    )
     _values = Compressed4DMatrix(values)
     return AssocParam(name, components, _values, allcomponentsites, sourcecsvs,sources)
-end
-
-function AssocParam(x::AssocParam, name::String = x.name; isdeepcopy = true, sources = x.sources)
-    if isdeepcopy
-        return AssocParam(
-            name,
-            x.components,
-            deepcopy(x.values),
-            x.sites,
-            x.sourcecsvs,
-            sources
-        )
-    end
-    return AssocParam(
-        name,
-        x.components,
-        x.values,
-        x.sites,
-        x.sourcecsvs,
-        sources
-    )
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", param::AssocParam{T}) where T
     print(io, "AssocParam{", string(T), "}")
     print(io, param.components)
-    println(io, ") with values:")
+    l = length(param.values.values)
+    print(io, ") with ", l, " value",ifelse(l==1,"","s"),":")
+    l != 0 && println(io)
     comps = param.components
     vals = param.values
     sitenames = param.sites
@@ -59,7 +107,8 @@ function Base.show(io::IO, mime::MIME"text/plain", param::AssocParam{T}) where T
         print(io, " >=< ")
         print(io, "(\"", comps[j], "\", \"", s2, "\")")
         print(io, ": ")
-        println(io, vals.values[idx])
+        print(io, vals.values[idx])
+        l != idx && println(io)
         catch
         println("error at i = $i, j = $j a = $a, b = $b")
         end
@@ -71,18 +120,40 @@ function Base.show(io::IO, param::AssocParam)
     print(io, param.values.values)
 end
 
-# Operations
-function Base.:(+)(param::AssocParam, x::Number)
-    values = param.values + x
-    return AssocParam(param.name, param.components, values, param.sites ,param.sourcecsvs, param.sources)
+#convert utilities
+function Base.convert(::Type{AssocParam{Float64}},param::AssocParam{Int})
+    assoc_values = param.values
+    new_assoc_values = Float64.(assoc_values.values)
+    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.outer_size,assoc_values.inner_size)
+    return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
 end
 
-function Base.:(*)(param::AssocParam, x::Number)
-    values = param.values * x
-    return AssocParam(param.name, param.components, values, param.sites, param.sourcecsvs, param.sources)
+function Base.convert(::Type{AssocParam{Bool}},param::AssocParam{<:Union{Int,Float64}})
+    assoc_values = param.values
+    #@assert all(z->(isone(z) | iszero(z)),assoc_values.values)
+    new_assoc_values = Array(Bool.(assoc_values.values))
+    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.outer_size,assoc_values.inner_size)
+
+    return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
 end
 
-function Base.:(^)(param::AssocParam, x::Number)
-    values = param.values ^ x
-    return AssocParam(param.name, param.components, values, param.sites, param.sourcecsvs, param.sources)
+function Base.convert(::Type{AssocParam{Int}},param::AssocParam{Float64})
+    assoc_values = param.values
+    #@assert all(z->isinteger(z),assoc_values.values)
+    new_assoc_values = Int.(assoc_values.values)
+    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.outer_size,assoc_values.inner_size)
+
+    return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
+end
+
+function Base.convert(::Type{AssocParam{String}},param::AssocParam{<:AbstractString})
+    assoc_values = param.values
+    new_assoc_values = String.(assoc_values.values)
+    values = Compressed4DMatrix(new_assoc_values,assoc_values.outer_indices,assoc_values.inner_indices,assoc_values.outer_size,assoc_values.inner_size)
+    return AssocParam(param.name,param.components,values,param.sites,param.sourcecsvs,param.sources)
+end
+
+#trying to break stack overflow on julia 1.6
+function Base.convert(::Type{AssocParam{String}},param::AssocParam{String})
+    return param
 end

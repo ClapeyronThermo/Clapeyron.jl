@@ -1,0 +1,11 @@
+Clapeyron Database File,,
+structural SAFTgammaMie Unlike Parameters,,
+species1,species2,epsilon
+CH3,CH2,343.78
+CH3,CH,415.41
+CH3,C,209.26
+CH2,CH,300.23
+CH2,C,110.41
+CH,C,23.03
+CH3,CH2OH,328.174
+CH2,CH2OH,339.612

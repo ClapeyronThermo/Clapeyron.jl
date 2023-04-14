@@ -1,4 +1,4 @@
-abstract type VTPRRuleModel <: MixingRule end
+abstract type VTPRRuleModel <: ActivityMixingRule end
 
 struct VTPRRule{γ} <: VTPRRuleModel
     components::Array{String,1}
@@ -10,18 +10,18 @@ end
 
 """
     VTPRRule{γ} <: VTPRRuleModel
-    
+
     VTPRRule(components::Vector{String};
     activity = UNIFAC,
-    userlocations::Vector{String}=String[],
-    activity_userlocations::Vector{String}=String[],
+    userlocations=String[],
+    activity_userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
 
 None
 
-## Input models 
+## Input models
 
 - `activity`: Activity Model
 
@@ -33,7 +33,7 @@ only works with activity models that define an excess residual gibbs energy func
 ```
 aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
 bᵢⱼ = ((bᵢ^(3/4) + bⱼ^(3/4))/2)^(4/3)
-log(γʳ)ᵢ = lnγ_res(model.activity,V,T,z) 
+log(γʳ)ᵢ = lnγ_res(model.activity,V,T,z)
 gᴱᵣₑₛ = ∑RTlog(γʳ)ᵢxᵢ
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
@@ -41,28 +41,29 @@ ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - gᴱᵣₑₛ/(0.53087RT))
 ```
 
 ## References
-1. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. doi:10.1016/s0378-3812(01)00626-4
+1. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. [doi:10.1016/s0378-3812(01)00626-4](https://doi.org/10.1016/s0378-3812(01)00626-4)
 """
 VTPRRule
 
 export VTPRRule
-function VTPRRule(components::Vector{String}; activity = UNIFAC, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    init_activity = activity(components;userlocations = activity_userlocations,verbose)
-    
+function VTPRRule(components::Vector{String}; activity = UNIFAC, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+    _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1016/S0378-3812(01)00626-4"]
-    model = VTPRRule(components, init_activity,references)
+    model = VTPRRule(components, _activity,references)
     return model
 end
 
-function ab_premixing(::Type{PR},mixing::VTPRRule,Tc,pc,kij)
-    Ωa, Ωb = ab_consts(PR)
-    _Tc = Tc.values
-    _pc = pc.values
-    components = pc.components
-    a = epsilon_LorentzBerthelot(SingleParam(pc, @. Ωa*R̄^2*_Tc^2/_pc),kij)
-    bi = @. Ωb*R̄*_Tc/_pc
-    vtpr_mix(bi,bj,kij) = mix_powmean(bi,bj,0,3/4)
-    b = kij_mix(vtpr_mix,SingleParam("b (covolume)",components,bi))
+function ab_premixing(model::PRModel,mixing::VTPRRule,k = nothing,l = nothing)
+    Ωa, Ωb = ab_consts(model)
+    _Tc = model.params.Tc
+    _pc = model.params.Pc
+    a = model.params.a
+    b = model.params.b
+    diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
+    diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
+    epsilon_LorentzBerthelot!(a,k)
+    vtpr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,3/4)
+    kij_mix!(vtpr_mix,b,l)
     return a,b
 end
 

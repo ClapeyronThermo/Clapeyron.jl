@@ -60,6 +60,10 @@ function ReidIdeal(components::Array{String,1}; userlocations::Array{String,1}=S
     return ReidIdeal(packagedparams; references=references)
 end
 
+#TODO,add a dependency of a,b,c,d parameters
+recombine_impl!(model::ReidIdealModel) = model
+
+
 function a_ideal(model::ReidIdealModel, V, T, z)
     #x = z/sum(z)
     polycoeff = model.params.coeffs.values

@@ -8,20 +8,17 @@ Checks:
  - diffusive stability: all eigenvalues of `∂²A/∂n²` are positive.
  
 """
-function isstable(model,V,T,z,phase=:stable)
-    if phase != :stable
-        return true
-    end
+function isstable(model,V,T,z)
     stable = true
-    if !mechanical_stability(model,V,T,z)
+    if !VT_mechanical_stability(model,V,T,z)
         @warn "StabilityWarning: Phase is mechanically unstable"
         stable = false
     end
-    if !diffusive_stability(model,V,T,z)
+    if !VT_diffusive_stability(model,V,T,z)
         @warn "StabilityWarning: Phase is diffusively unstable"
         stable = false
     end
-    if !chemical_stability(model,V,T,z)
+    if !VT_chemical_stability(model,V,T,z)
         @warn "StabilityWarning: Phase is chemically unstable"
         stable = false
     end
@@ -29,22 +26,22 @@ function isstable(model,V,T,z,phase=:stable)
 end
 
 """
-    mechanical_stability(model,V,T,z)::Bool
+    VT_mechanical_stability(model,V,T,z)::Bool
 
 Performs a mechanical stability for a (V,T,z) pair, returns `true/false`.
 Checks if isothermal compressibility is not negative. 
 """
-function mechanical_stability(model,V,T,z)
+function VT_mechanical_stability(model,V,T,z)
     return VT_isothermal_compressibility(model,V,T,z) >= 0
 end
 
 """
-    diffusive_stability(model,V,T,z)::Bool
+    VT_diffusive_stability(model,V,T,z)::Bool
 
 Performs a diffusive stability for a (V,T,z) pair, returns `true/false`.
 Checks if all eigenvalues of `∂²A/∂n²` are positive.
 """
-function diffusive_stability(model,V,T,z)
+function VT_diffusive_stability(model,V,T,z)
     isone(length(model)) && return true
     A(x) = eos(model,V,T,x)
     Hf = ForwardDiff.hessian(A,z)
@@ -72,11 +69,34 @@ function gibbs_duhem(model,V,T,z=SA[1.0])
 end
 
 """
-    chemical_stability(model,V,T,z)::Bool
+    ideal_consistency(model,V,T,z=[1.0])
+performs a ideal model consistency check:
+```
+∂a₀∂V + 1/V ≈ 0
+```
+Where `∂a₀∂V` is the derivative of `a_ideal` respect to `V`. it can help diagnose if a user-defined ideal model is consistent.
+return |∂a₀∂V + 1/V| at the specified conditions.
+If the model is not an `IdealModel`, then `Clapeyron.idealmodel(model)` will be called to obtain the respective ideal model.
+"""
+
+function ideal_consistency(model,V,T,z =SA[1.0])
+    id = idealmodel(model)
+    if id === nothing
+        f(∂V) = a_ideal(model,∂V,T,z)
+        ∂f0∂V = Solvers.derivative(f,V)
+        n = sum(z)
+        return abs(∂f0∂V + 1/V)
+    else
+        return ideal_consistency(id,V,T,z)
+    end
+end
+
+"""
+    VT_chemical_stability(model,V,T,z)::Bool
 
 Performs a chemical stability check using the tangent plane distance criterion, starting with the wilson correlation for K-values.
 """
-function chemical_stability(model::EoSModel,V,T,z)
+function VT_chemical_stability(model::EoSModel,V,T,z)
     # Generate vapourlike and liquidlike initial guesses
     # Currently using Wilson correlation
 
@@ -85,7 +105,7 @@ function chemical_stability(model::EoSModel,V,T,z)
         return pure_chemical_instability(model,V/sum(z),T) 
     end
     p = pressure(model,V,T,z)
-    Kʷ = wilson_k_values(model,p,T)
+    Kʷ = tp_flash_K0(model,p,T)
     z = z./sum(z)
     w_vap = Kʷ.*z
     w_liq = z./Kʷ
@@ -126,5 +146,5 @@ function tangent_plane_distance(model,p,T,z,phase,w)
 end
 
 export isstable
-export mechanical_stability, diffusive_stability,chemical_stability
+export VT_mechanical_stability, VT_diffusive_stability,VT_chemical_stability
 export gibbs_duhem

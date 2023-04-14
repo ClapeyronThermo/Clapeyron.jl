@@ -1,7 +1,7 @@
 [![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
-[![Build Status](https://github.com/ypaul21/Clapeyron.jl/workflows/CI/badge.svg)](https://github.com/ypaul21/Clapeyron.jl/actions)
-[![codecov](https://codecov.io/gh/ypaul21/Clapeyron.jl/branch/master/graph/badge.svg?token=ZVGGR4AAFB)](https://codecov.io/gh/ypaul21/Clapeyron.jl)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://ypaul21.github.io/Clapeyron.jl/dev)
+[![Build Status](https://github.com/ClapeyronThermo/Clapeyron.jl/workflows/CI/badge.svg)](https://github.com/ClapeyronThermo/Clapeyron.jl/actions)
+[![codecov](https://codecov.io/gh/ClapeyronThermo/Clapeyron.jl/branch/master/graph/badge.svg?token=ZVGGR4AAFB)](https://codecov.io/gh/ClapeyronThermo/Clapeyron.jl)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://clapeyronthermo.github.io/Clapeyron.jl/dev)
 [![project chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://julialang.zulipchat.com/#narrow/stream/265161-Clapeyron.2Ejl)
 
 ![Clapeyron_logo](docs/Clapeyron_logo.svg)
@@ -36,18 +36,18 @@ We support many equations of state and properties. Some examples of figures you 
 
 To install Clapeyron, launch Julia with
 
-```julia
+```
 > julia
 ```
 
 Hit the ```]``` key to enter Pkg mode, then type
 
-```julia
+```
 Pkg> add Clapeyron
 ```
 Or to add the development version:
-```julia
-Pkg> add https://github.com/ypaul21/Clapeyron.jl#master
+```
+Pkg> add https://github.com/ClapeyronThermo/Clapeyron.jl#master
 ```
 Exit Pkg mode by hitting backspace.
 
@@ -59,7 +59,7 @@ using Clapeyron
 
 To remove the package, hit the ```]``` key to enter Pkg mode, then type
 
-```julia
+```
 Pkg> rm Clapeyron
 ```
 ## Citing Clapeyron
@@ -71,9 +71,9 @@ If you are using Clapeyron for your research work, please cite the following:
     title={Clapeyron.jl: An Extensible, Open-Source Fluid Thermodynamics Toolkit},
     author={Pierre J. Walker, Hon-Wa Yew, and Andrés Riedemann},
     journal={Ind. Eng. Chem. Res.},
-    volume={XX},
-    number={XX},
-    pages={XX--XX},
+    volume={61},
+    number={20},
+    pages={7130--7153},
     year={2022},
     publisher={American Chemical Society},
     doi={doi/10.1021/acs.iecr.2c00326},

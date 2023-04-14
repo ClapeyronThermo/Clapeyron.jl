@@ -1,6 +1,6 @@
 Clapeyron Database File,,,,,,,,
 sPCSAFT Like Parameters,,,,,,,,
-species,DIPPR Number,Mw,m,sigma,epsilon,n_H,n_e,source
+species,DIPPR Number,Mw,segment,sigma,epsilon,n_H,n_e,source
 methane,1,16.04,1,3.7039,150.03,0,0,10.1021/ie0003887
 ethane,2,30.07,1.6069,3.5206,191.42,0,0,10.1021/ie0003887
 propane,3,44.1,2.002,3.6184,208.11,0,0,10.1021/ie0003887

@@ -10,7 +10,6 @@ abstract type UNIQUACModel <: ActivityModel end
 
 struct UNIQUAC{c<:EoSModel} <: UNIQUACModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     params::UNIQUACParam
     puremodel::EoSVectorParam{c}
     absolutetolerance::Float64
@@ -53,7 +52,7 @@ gᴱ(res) = -∑xᵢqᵖᵢlog(∑θᵖⱼτⱼᵢ)
 
 ## References
 
-1. Abrams, D. S., & Prausnitz, J. M. (1975). Statistical thermodynamics of liquid mixtures: A new expression for the excess Gibbs energy of partly or completely miscible systems. AIChE journal. American Institute of Chemical Engineers, 21(1), 116–128. doi:10.1002/aic.690210115
+1. Abrams, D. S., & Prausnitz, J. M. (1975). Statistical thermodynamics of liquid mixtures: A new expression for the excess Gibbs energy of partly or completely miscible systems. AIChE journal. American Institute of Chemical Engineers, 21(1), 116–128. [doi:10.1002/aic.690210115](https://doi.org/10.1002/aic.690210115)
 
 """
 UNIQUAC
@@ -70,12 +69,11 @@ function UNIQUAC(components::Vector{String};
     q  = params["q"]
     q_p = params["q_p"]
     Mw  = params["Mw"]
-    icomponents = 1:length(components)
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIQUACParam(a,r,q,q_p,Mw)
     references = String[]
-    model = UNIQUAC(components,icomponents,packagedparams,_puremodel,1e-12,references)
+    model = UNIQUAC(components,packagedparams,_puremodel,1e-12,references)
     return model
 end
 #=

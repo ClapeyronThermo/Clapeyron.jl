@@ -50,8 +50,8 @@ end
     # Finance", p. 51
     #does not converge in NLSolve.jl converges here with NLSolvers.jl
     @testset "nlsolve" begin
-        res = SOL.nlsolve(f_diffmcp!,[0.0],TrustRegion(Newton()),ForwardDiff.Chunk{1}())
-        res2 = SOL.nlsolve(f_diffmcp!,[0.0],LineSearch(Newton()),ForwardDiff.Chunk{1}())
+        res = SOL.nlsolve(f_diffmcp!,[0.0],TrustRegion(Newton()),SOL.NLSolvers.NEqOptions(),ForwardDiff.Chunk{1}())
+        res2 = SOL.nlsolve(f_diffmcp!,[0.0],LineSearch(Newton()),SOL.NLSolvers.NEqOptions(),ForwardDiff.Chunk{1}())
         @test SOL.x_sol(res) isa Vector
         @test SOL.x_sol(res2) isa Vector
         solution = SOL.x_sol(res)
@@ -69,7 +69,7 @@ end
             10.319129068837443, 9.001962137200403, 4.565198737490148, 340.69153314749224, 269.09234343328467,
             21.858385052861507]
     @test Clapeyron.rr_vle_vapor_fraction(Ks,zs) == Inf
-    
+
     #here are some tests, from the paper.
     #the paper has errors, z2 has 10 components, 9 and 10 repeated.
     #and after that, they dont include the bmax,bmin in their selected pair.
@@ -100,7 +100,7 @@ end
     β_3 = 0.6907302627738544
     β_3_sol = Clapeyron.rr_vle_vapor_fraction(Ks_3,zs_3)
     @test  β_3_sol ≈ β_3
-    @test Clapeyron.rr_flash_eval(Ks_3,zs_3,β_3_sol) <= 4*eps(β_3)  
+    @test Clapeyron.rr_flash_eval(Ks_3,zs_3,β_3_sol) <= 4*eps(β_3)
     @test Clapeyron.rr_flash_vapor(Ks_3,zs_3,β_3_sol) ≈ ys_3
     @test Clapeyron.rr_flash_liquid(Ks_3,zs_3,β_3_sol) ≈ xs_3
 
@@ -122,14 +122,17 @@ end
         @test SOL.det_22(1,2,3,4) == a1*a2 - a3*a4
     end
     @testset "AD - misc" begin
-        @test SOL.gradient2(fg_2,1,1) == [6,12] 
-        @test eltype(SOL.gradient2(fg_2,1.0,1)) == Float64 
+        @test SOL.gradient2(fg_2,1,1) == [6,12]
+        @test eltype(SOL.gradient2(fg_2,1.0,1)) == Float64
         @test eltype.(SOL.∂2(fg_2,1.0,1)) == (Float64, Float64, Float64)
         ad = SOL.ADScalarObjective(rosenbrock,zeros(2))
         @test ad.f(zeros(2)) == 1.0
         @test ad.fg(ones(2),zeros(2))[2] == [-2.0,0.0]
         @test ad.fgh(ones(2),ones(2,2),zeros(2))[3] == [2.0 0.0; 0.0 200.0]
     end
-    
+
+    @testset "evalexppoly" begin
+        @test Clapeyron.evalexppoly(2,(1,2,3),(3,2,1)) == 22
+    end
 end
 @printline

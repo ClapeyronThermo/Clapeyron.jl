@@ -21,13 +21,3 @@ function mix_vε(model::SanchezLacombe,V,T,z,mix::SLKRule,r̄,Σz = sum(z))
 ```
 """
 function mix_vε end
-
-function init_model(model::SLMixingRule,components,userlocations,verbose)
-    return model
-end
-
-function init_model(model::Type{<:SLMixingRule},components,userlocations,verbose)
-    verbose && @info("""Now creating Sanchez-Lacombe mixing rule:
-    $model""")
-    return model(components;userlocations,verbose)
-end

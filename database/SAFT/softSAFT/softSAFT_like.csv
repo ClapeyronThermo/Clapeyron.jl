@@ -1,6 +1,6 @@
 Clapeyron Database File,,,,,,,
 softSAFT Like Parameters,,,,,,,
-species,DIPPR Number,m,sigma,epsilon,n_H,n_e,source
+species,DIPPR Number,segment,sigma,epsilon,n_H,n_e,source
 methane,,1,3.728,147.2,0,0,
 ethane,,1.392,3.756,202.5,0,0,
 propane,,1.776,3.811,219.5,0,0,

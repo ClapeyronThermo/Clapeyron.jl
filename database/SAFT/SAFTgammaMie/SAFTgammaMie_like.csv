@@ -1,5 +1,5 @@
 Clapeyron Database File,,,,,,,,,,
-SAFTgammaMie Like Parameters,,,,,,,,,,
+SAFTgammaMie Like Parameters [csvtype = like,grouptype = SAFTgammaMie]
 species,vst,S,lambda_r,lambda_a,sigma,epsilon,n_H,n_e1,n_e2,source
 CH3,1,0.57255,15.05,6,4.0772,256.77,0,0,0,
 CH2,1,0.22932,19.871,6,4.8801,473.39,0,0,0,

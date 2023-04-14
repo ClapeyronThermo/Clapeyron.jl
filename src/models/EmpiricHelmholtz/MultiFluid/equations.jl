@@ -145,7 +145,7 @@ function _fr1(model::MultiFluidModel,δ,τ,z)
 
         for (k,k_) ∈ zip(k2,kexp)
 
-            ai += nᵢ[k]*exp(lnδ*dᵢ[k] + lnτ*tᵢ[k]-δ^cᵢ[k_])
+            ai += nᵢ[k]*exp(lnδ*dᵢ[k] + lnτ*tᵢ[k] - δ^cᵢ[k_])
             #ai += nᵢ[k]*(δ^dᵢ[k])*(τ^tᵢ[k])*exp(-δ^cᵢ[k_])
         end  
         res += z[i]*ai 
@@ -185,10 +185,7 @@ function _fr2(model::MultiFluidModel,δ,τ,z)
                 #aij += nᵢⱼ[k]*(δ^(dᵢⱼ[k]))*(τ^(tᵢⱼ[k]))
             end
             for (k,k_) ∈ zip(k2,kexp)
-                aij += nᵢⱼ[k]*(δ^(dᵢⱼ[k]))*(τ^(tᵢⱼ[k]))*
-                exp(-ηᵢⱼ[k_]*(δ - εᵢⱼ[k_])^2 - βᵢⱼ[k_]*(δ -γᵢⱼ[k_]))
-                #aij += nᵢⱼ[k]*exp(lnδ*dᵢⱼ[k] + lnτ*tᵢⱼ[k]
-                #-ηᵢⱼ[k_]*(δ - εᵢⱼ[k_])^2 - βᵢⱼ[k_]*(δ -γᵢⱼ[k_]))
+                aij += nᵢⱼ[k]*exp(lnδ*dᵢⱼ[k] + lnτ*tᵢⱼ[k] - ηᵢⱼ[k_]*(δ - εᵢⱼ[k_])^2 - βᵢⱼ[k_]*(δ -γᵢⱼ[k_]))
             end
            res +=z[i]*z[j]*Fᵢⱼ*aij
         end
@@ -237,7 +234,15 @@ function x0_sat_pure(model::MultiFluidModel,T)
     T0 = 369.89*T/Ts
     vl = (1.0/_propaneref_rholsat(T0))*h
     vv = (1.0/_propaneref_rhovsat(T0))*h
-    return (log10(vl),log10(vv)) 
+    return (vl,vv) 
+end
+
+#Corresponding States
+function x0_psat(model::MultiFluidModel,T,crit=nothing)
+    Ts = T_scale(model)
+    T0 = 369.89*T/Ts
+    Ps = p_scale(model)
+    return Ps*_propaneref_psat(T0)/4.2512e6
 end
 
 function x0_volume_liquid(model::MultiFluidModel,T,z)
@@ -250,8 +255,38 @@ function x0_volume_gas(model::MultiFluidModel,p,T,z=SA[1.])
 end
 
 molecular_weight(model::MultiFluidModel,z=SA[1.0]) = comp_molecular_weight(mw(model),z)
+
 mw(model::MultiFluidModel) = model.properties.Mw.values
 
 function x0_crit_pure(model::MultiFluidModel)
     return (1.,log10(_v_scale(model)*0.001))
+end
+
+function x0_saturation_temperature(model::MultiFluidModel,p)
+    p0 = p/p_scale(model)*4.2512e6
+    T0 = _propaneref_tsat(p0)
+    Ts = T_scale(model)
+    vs = _v_scale(model)*0.001 #remember, vc constants in L/mol
+    h = vs*5000.0
+    vl = (1.0/_propaneref_rholsat(T0))*h
+    vv = (1.0/_propaneref_rhovsat(T0))*h
+    T = Ts*T0/369.89
+    return (T,vl,vv)
+end
+
+#Optimization: does not calculate crit_pure for each value.
+function wilson_k_values(model::MultiFluidModel,p,T,crit = nothing)
+    n = length(model)
+    K0 = zeros(typeof(p+T),n)
+    pure = split_model.(model)
+    _Tc = model.properties.Tc.values
+    _Pc = model.properties.pc.values
+    for i ∈ 1:n
+        pure_i = pure[i]
+        Tc,pc = _Pc[i],_Tc[i]
+        ps = first(saturation_pressure(pure_i,0.7*Tc))
+        ω = -log10(ps/pc) - 1.0
+        K0[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
+    end
+    return K0
 end

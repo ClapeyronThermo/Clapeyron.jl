@@ -1,6 +1,5 @@
 struct EOS_LNG <: MultiFluidModel
     components::Vector{String}
-    icomponents::UnitRange{Int}
     properties::MultiFluidPropertyParam
     ideal::MultiFluidIdealParam
     single::MultiFluidSingleParam
@@ -42,9 +41,8 @@ function EOS_LNG(components::Vector{String})
     beta_ij = each_split_model(params[:beta_ij],I) |> pack_vectors
     gamma_ij = each_split_model(params[:gamma_ij],I) |> pack_vectors
     pair = MultiFluidPairParam(nij,tij,dij,Fij,beta_ij,gamma_ij,eta_ij,epsilon_ij)
-    icomponents = 1:length(I)
     references = ["10.1021/je300655b"]
-    return EOS_LNG(components,icomponents,properties,ideal,single,pair,references)
+    return EOS_LNG(components,properties,ideal,single,pair,references)
 end
 
 export EOS_LNG
@@ -137,7 +135,7 @@ It uses the same functional form as [`GERG2008`](@ref).
 
 ## References
 
-1. Thol, M., Richter, M., May, E. F., Lemmon, E. W., & Span, R. (2019). EOS-LNG: A fundamental equation of state for the calculation of thermodynamic properties of liquefied natural gases. Journal of Physical and Chemical Reference Data, 48(3), 033102. doi:10.1063/1.5093800
-2. Kunz, O., & Wagner, W. (2012). The GERG-2008 wide-range equation of state for natural gases and other mixtures: An expansion of GERG-2004. Journal of Chemical and Engineering Data, 57(11), 3032–3091. doi:10.1021/je300655b
+1. Thol, M., Richter, M., May, E. F., Lemmon, E. W., & Span, R. (2019). EOS-LNG: A fundamental equation of state for the calculation of thermodynamic properties of liquefied natural gases. Journal of Physical and Chemical Reference Data, 48(3), 033102. [doi:10.1063/1.5093800](https://doi.org/10.1063/1.5093800)
+2. Kunz, O., & Wagner, W. (2012). The GERG-2008 wide-range equation of state for natural gases and other mixtures: An expansion of GERG-2004. Journal of Chemical and Engineering Data, 57(11), 3032–3091. [doi:10.1021/je300655b](https://doi.org/10.1021/je300655b)
 """
 EOS_LNG

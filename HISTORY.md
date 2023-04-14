@@ -1,0 +1,346 @@
+# v0.4.9
+
+## New Features
+
+- `ideal_consistency(model,V,T,z)` that checks if `da0/dV + sum(z)/V` is zero (or as close to zero as the Floating Point Format allows it.)
+- broadcasting on `AssocParam` is defined (`bondvol .= 1e-10 .* bondvol .^3`) 
+- you can pass functions that build models instead of  EoSModel types. for example, now you can do:
+    ```julia
+    function myvdW(components;userlocations = String[],verbose = false)
+        return vdW(components;userlocations = userlocations,verbose = verbose,alpha = SoaveAlpha)
+    end
+
+    model = Wilson(["water","ethanol"];puremodel=myvdW)
+    ```
+
+## Bug Fixes
+
+- proper namespaces in `@registermodel` ([#161](https://github.com/ClapeyronThermo/Clapeyron.jl/issues/161))
+- fixed bug in `MichelsenTPFlash` when using non-volatiles and `second_order = false`
+- fixed bug when building `UNIFACFVPoly`
+
+# v0.4.8
+
+## New Features
+- you can pass a named tuple to `userlocations` and its variants to build a model directly from those parameters (#156). for example, with PCSAFT:
+```
+julia> model = PCSAFT(["a1"],userlocations = (;
+        Mw = [1.],
+        epsilon = [2.],
+        sigma = [3.],
+        segment = [4.],
+        k = [0.0;;], #matrix
+        n_H = [1],
+        n_e = [1],
+        epsilon_assoc = Dict((("a1","e"),("a1","H")) => 1000.),
+        bondvol = Dict((("a1","e"),("a1","H")) => 0.001)))
+PCSAFT{BasicIdeal} with 1 component:
+ "a1"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+```
+- The `dense` option in `AssocOptions` is deprecated and it will be removed on 0.5.0. the sparse solver is not used anymore, the dense solver has performance advantages in all cases.
+## Bug Fixes
+- bug in `@registermodel` (#157) 
+
+# v0.4.7
+
+## bug fixes
+- `@newmodel`,`@newmodelsimple` and`@newmodelgc` macros had a bug where some structs and types didn't have the proper namespace (#154)
+
+# v0.4.6
+
+## Bug fixes
+fixed bug on Michelsen TP flash introduced in the last release.
+
+# v0.4.5
+
+## Bug fixes
+`DETPFlash` now returns results sorted by increasing molar volume (heavy liquid ->light liquid -> vapour) (fixes #151)
+
+# v0.4.4
+
+## New Features
+- New EoS: Ammonia2023, an Empiric EoS with a new term (https://doi.org/10.1063/5.0128269)
+- Speed improvements on some Empiric EoS
+- Estimation Framework: the method is now specified as a csv option instead of just the title.
+- Estimation Framework: support for setting species to be estimated.
+## Bug fixes
+- some references in the `SAFTVRMie`'s csv were incorrect.
+- `recombine!` now works with `StructGroupParam`.
+
+# v0.4.3
+
+## Bug fixes
+- incorrect indexing of sites when doing group-to-component transformation (e.g SAFTgammaMie) with more than one association site per molecule.
+- better error handling when incorrect group types are assigned.
+
+# v0.4.2
+
+## Bug Fixes
+- Typo in `assoc_translator` field when creating assoc sites with groups that have multiple association groups.
+- Correct initialization of `β` in `rachfordrice`
+
+# v0.4.1
+
+## New Features
+
+- New Clapeyron Parameter `StructGroupParam`, that stores groups, as well as it's bonds between them, used in heteronuclear GC approaches
+- New EOS: structural SAFT-γ-Mie (`structSAFTgammaMie`)
+- New EOS: heteronuclear GC-PC-SAFT (`gcPCSAFT`)
+- in some limited cases, `split_model` can now differenciate between group and component parameters inside a model
+
+# v0.4.0
+
+## New Features
+
+- New estimation framework, to fit new model parameters from known data. at the moment of this release, it should support all SAFTs, Cubics, Activity models and models that don't require any special pre-computed cache.
+
+- `Base.transpose(model::EoSModel)` is defined. now this is valid code:
+```julia
+T = 300:350
+comp = ["water"]
+models = [m(comp) for m in (PR,PCSAFT,SAFTVRMie)]
+saturation_pressure.(transpose(models),T) #produces a 51×3 Matrix{Tuple{Float64, Float64, Float64}}:
+```
+
+## Breaking Changes
+- `x0_sat_pure` now returns `Vl` and `Vv` (in `[m^3]`) instead of `log10(Vl)` and `log10(Vv)`.
+- in databases, `segment` is used instead of `m`
+- in databases, `Vc` is used instead of `vc`
+- in databases, `Pc` is used instead of `pc`
+- in databases, `acentricfactor` is used instead of `w`
+
+
+# v0.3.12
+
+## new features
+- new EoS: RKPR (`RKPR`)
+- new functions: `cross_second_virial` and `equivol_cross_second_virial`, to calculate B12, at specified z conditions, or by setting equivolumetric mixing.
+- cubic EoS now support `recombine!`
+- `PenelouxTranslation` and `RackettTranslation` now cache their results, resulting in a speed up when using volume translated EoS.
+- `Clapeyron.cite` now accepts the optional argument `out`, that can be `doi` (current default, DOI) or `:bib` (for BibTeX)
+- 
+## Bug fixes
+- various bug fixes in SAFT-VRQ-Mie. the Hard sphere term now performs the non-additive mixing rule for the multicomponent case. initializations with integer values are fixed.
+
+# v0.3.11
+
+## new features
+
+- new EoS: PCSAFT with activity mixing rules (`GEPCSAFT(components; activity)`) (https://doi.org/10.1021/acs.iecr.2c03464)
+- new EoS: UNIFAC-FV (`UNIFACFV`)
+- new EoS UNIFAC-FV-poly (`UNIFACFVPoly`)
+- `getparams` now supports inline csvs, custom locations and the ability to replace or swap out certain parameters, check `getparams` docs for more information
+- new function: `recombine!` to recalculate combining and mixing rules after one parameter is modified. at the moment, SAFT and activity models have this defined.
+- all quadratic mixing rules have an implace version (`sigma_LorentzBerthelot(sigma,zeta)` ->  `sigma_LorentzBerthelot!(sigma,zeta)`)
+- `AssocParam` has `getindex`/`setindex!` methods defined.
+- `GroupParam` has a new field, `grouptype`, to differenciate group parametrizations
+- 
+## Deprecations
+
+- `icomponents` was removed, use `Clapeyron.@comps` or `1:length(model)` instead
+- `PairParam.diagvalues` was removed, use `Clapeyron.diagvalues(param)` instead
+
+# v0.3.10
+
+## New features
+- `dew_pressure` and `dew_temperature` can now by calculated with `ActivityModel`s. options available can be passed via the new methods `ActivityBubblePressure`, `ActivityBubblwTemperature`, `ActivityDewPressure`, `ActivityDewTemperature`. helmholtz-based models also support solving `bubble_pressure` and `dew_pressure` using those methods (http://dx.doi.org/10.1021/acs.iecr.1c03800). 
+- There is support for γ-ϕ equilibria on `bubble_pressure` and `dew_pressure` with activity models, that is:, solving `yᵢϕᵢp = γᵢp₀ᵢϕ₀ᵢ𝒫ᵢ`
+- New Correlation models: `LeeKeslerSat`, `DIPPR101Sat` for saturation pressure and temperature, `COSTALD`, `RackettLiquid`,`DIPPR105Liquid`, for saturated liquid volume.
+- New models: Second Virial models (`AbbottVirial`,`TsonopoulosVirial` and `EoSVirial2`)
+- New model: `CompositeModel`, used to hold saturation, liquid and vapor correlations. For example, instantiating an Activity Model, that uses Peng-Robinson for a gas model, DIPPR 101 for saturation and COSTALD for liquid volume, with a wilson activity coefficient, can be written as:
+    ```
+    julia> com = CompositeModel(["water","methanol"],liquid = COSTALD,saturation = DIPPR101Sat,gas = PR)
+    Composite Model:
+    Gas Model: PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}("water", "methanol")
+    Liquid Model: COSTALD("water", "methanol")
+    Saturation Model: DIPPR101Sat("water", "methanol")
+
+    # Wilson activity model, using the composite model as the pure model
+    julia> model = Wilson(["water","methanol"],puremodel = com) 
+    Wilson{CompositeModel{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}, COSTALD, Nothing, DIPPR101Sat, Nothing}} with 2 components:       
+    "water"
+    "methanol"
+    Contains parameters: g, Tc, Pc, ZRA, Mw
+    ```
+- Improved initial points for `bubble_temperature` and `dew_temperature`.
+- `MichelsenTPFlash` no uses an accelerated successive substitution method.
+
+## Bug fixes
+
+- cross-association weren't counted in some cases.
+- incorrect initialization on `FugBubbleTemperature`
+- `Clapeyron.lnϕ` uses the specialized algorithm for volume instead of the general one.
+
+# v0.3.9
+
+## New features
+- New combining rules that are done at model creation time instead of runtime: `:cr1` and `:esd`/`elliott`. the old `elliott` combining rule was renamed to `elliott_runtime` (it is only used on `PharmaPCSAFT`, where is required)
+## Bug fixes
+
+- `crit_pure` on CPA was failing ([#112](https://github.com/ypaul21/Clapeyron.jl/issues/112), [#113](https://github.com/ypaul21/Clapeyron.jl/issues/113))
+- error on bubble/dew pressure/temperature when using the `v0` starting point ([#113](https://github.com/ypaul21/Clapeyron.jl/issues/113))
+- `crit_pure` was slower than expected on julia 1.8
+- add error path on `SingleParam` when all data is missing
+
+# v0.3.8
+
+## New features
+
+- `bubble_pressure`, `bubble_temperature`, `dew_pressure`, and `dew_temperature` can now support custom methods. (subtyping `BubblePointMethod` or `DewPointMethod`). the default methods are now named `ChemPotBubblePressure`, `ChemPotBubbleTemperature`,`ChemPotDewPressure`,`ChemPotDewTemperature`. you can provide some or all necessary initial conditions to those new methods:
+    ```
+    res = bubble_pressure(model,T,x,ChemPotBubblePressure(;y0;p0;vol0))
+    ```
+- New bubble/dew methods based on isofugacity conditions: `FugtBubblePressure`, `FugBubbleTemperature`,`FugDewPressure`,`FugtDewTemperature`.
+
+- All bubble methods now support leaving some components out of the bubble phase,via the `nonvolatiles` keyword, supported by all available bubble solvers. similarly, all dew methods support the `noncondensables` keyword to leave some components out of the dew phase.
+
+- `MichelsenTPFlash` can support both `nonvolatiles` and `noncondensables`.
+
+- `SingleParam` and `PairParam` support indexing and broadcasting. `PairParam` has a modified indexing scheme, where `param[i]` will return the diagonal elements, `param[i,j]` will return off-diagonal elements. `setindex!` on `PairParam` is symmetric by default, that is, `param[i,j] = k` will also set `param[j,i]`. you can opt out of this by doing `param[i,j,false] = k`
+
+- New function: `diagvalues`, for obtaining a vector view of the diagonal elements of a Pair or Single Parameter.
+
+- New functions: `VT_gibbs_free_energy_res` and `VT_helmholtz_free_energy_res`
+
+- New saturation method: `saturation_temperature(model,p,::SuperAncSaturation)`
+
+- `index_reduction(model,x::AbstractVector{Bool})` will return a reduced model, according to the true values of the vector `x`. Passing another vector will perform the index reduction based on non-empty values, as usual.
+
+- Initial (and optional) support for solid phase volume solving, via `x0_volume_solid`
+
+- New EoS (experimental): `AnalyticalSLV`, that supports solid, liquid and vapour phases in one continous helmholtz functional.
+
+- the database parser is faster and has better verbose reporting.
+
+- `SAFTVRMie` and `SAFTGammaMie` should be a little faster on single component evaluations
+
+## Bug Fixes
+
+- `activity_coefficient` and `fugacity_coefficient` now works with `SVector` [#104](https://github.com/ypaul21/Clapeyron.jl/issues/104)
+- there was a bug on calculating the length of GC models that went under `split_model`
+
+## Deprecations
+
+- `model.params.param.diagvalues` is not longer used in the codebase and it will be removed at the next breaking version. use `diagvalues(model.params.param)` or `model.params.param[i]` instead.
+
+- `model.icomponents` is not longer used in the codebase and it will be removed at the next breaking version. `1:length(model)` or `Clapeyron.@comps` instead.
+
+# v0.3.7
+
+## New features
+- You can now define custom saturation (temperature or pressure) solvers, via subtyping `SaturationMethod`. The default solver is now named `ChemPotVSaturation`.
+- New methods for saturation pressure: `IsoFugacitySaturation`, `ChemPotDensitySaturation`, `SuperAncSaturation` (for cubics)
+- All saturation methods support passing the `crit` keyword, to allow using precomputed critical points.
+- All saturation methods that use a non linear solver support passing convergence options.
+- The default solver for `saturation_temperature` was changed (now named `AntoineSaturation`). The new model is much faster and with a similar reliability. the old one is available via `ClapeyronSaturation`.
+- New method for TP-Flash: `MichelsenTPFlash`
+- New function: `tpd`, that tries to find all negative tangent plane distances
+- New function: `lle_init`, that tries to find good LLE starting points, via `tpd`
+- New function: `x0_saturation_temperature(model,p)`, that returns starting points for `saturation_temperature`.
+- New function: `x0_psat(model,p)`, that returns starting points for `IsoFugacitySaturation`.
+- New function: `antoine_coef` for reduced antoine coefficients. used to accelerate initial points, if available.
+- New function: `cite(model)` returns all references used in the evaluation of a model.
+- `bubble_temperature`, `dew_temperature`, `lle_temperature`, `azeotrope_temperature` and `vlle_temperature` methods now iterate directly over the extended-with-temperature non linear system that their pressure cointerparts. 
+- Cubics were revamped and generalized even more. those changes opened the way to introduce more non-standard cubics, all while being compatible with the initial guess procedures, advanced mixing rules and other Clapeyron optimizations for cubics.
+- New cubic EoS: `Clausius`
+- New cubic EoS: `Berthelot`
+- New cubic EoS: Patel-Teja (`PatelTeja`)
+- New cubic EoS: Patel-Teja-Valderrama (`PatelTeja`)
+- New cubic EoS: Kumar-Upadhyay two parameter EoS (`KU`)
+- New mixing rule: Modified Wong-Sandler (`ModWS`)
+- `SoaveAlpha` now works with `vdW` and `PR` (returning the same value of `PRAlpha`)
+- New EoS: Perturbed, truncated and shifted LJ EoS (`PeTS`)
+- SPUNG is now a constructor for the new `ECS` model.
+- `volume` now accepts a `vol0` initial point.
+- `PCSAFT` should be a little bit faster for single component cases
+
+# v0.3.6
+
+## New Features
+
+- `ZeroResidual` model (`a_res = 0`)
+
+## Bug fixes
+
+- `HVRule` uses the original rule instead of the modified one.
+- `ismissingvalues` is preserved when a combining rule is applied. this allows us to track inputed parameters vs calculated ones.
+
+In particular, this release is the one used in the `Clapeyron.jl` paper. and it's results should be reproducible by locking the version to v0.3.6.
+
+# v0.3.5
+
+## New Features
+- new functions: `VT_mass_density`, `VT_mol_density`
+- `vdW`, `RK` and `PR` models and variants use now `ABCubicParam`. `vdWParam`, `RKParam` and `PRParam` are now just aliases to  `ABCubicParam`.
+- Roots.jl updated to 2.0
+## Fixes
+- fixes to UNIFAC models
+- fixes to  `split_model` on groups
+
+# v0.3.4
+
+## New Features
+- New EoS: Enhanced Predictive Peng Robinson 1978 (2022) (`EPPR78`)
+- New EoS: Quantum Corrected Peng Robinson (2022) (`QCPR`)
+- New EoS: Modified PCSAFT with T-dependent σ for water (passing `water08`) and k0 + k1T mixing rule (`pharmaPCSAFT`). 
+- New function: `index_reduction(model,z)` that removes components with compositions near zero. useful to reduce the dimensionality on multicomponent solvers.
+- New function: `isstable(model,V,T,z)` to check for stability at the input conditions.
+- New function: `gibbs_duhem(model,V,T,z)` to check if the Gibbs-Duhem relations holds for the input model at the specified conditions.
+- New function: `kij_mix` and `pair_mix` for arbitrary pair combining rules
+- volume solver can now perform aditional stability checks by passing `phase = :stable`, before only mechanical stability checks were done.
+- association solver supports Elliot rule for combining rules, passed via `assoc_options(combining = :elliott`)
+- association solver supports dense association matrix, passed via `assoc_options(combining = :dense_nocombining`)
+- Faster `crit_pure`, `saturation_pressure`
+- Faster `GERG2008` and `EOS_LNG`
+- some cubic α-functions are faster for single component models
+- improved initial saturation point for cubics
+- `CPA` and `sCPA` now accept `AssocOptions`
+- new mixing `SLKRule` for `SanchesLacombe`
+- easier constructors for some empty models: `NoTranslation()` instead of `NoTranslation(NoTranslationParam())`
+
+## Error fixes
+- GC models can now be splitted in arbitrary component subsets
+- `absolutetolerance` fields removed from almost all EoS (except COSMO models)
+-  `second_virial_coefficient` now works with `SanchezLacombe`
+- some starting points for `softSAFT` (original) and `BACKSAFT` were wrong. ``softSAFT2016` was not affected.
+- `volume_compress` now accepts integer pressures, they are converted internally.
+- `volume` for cubics now propagates the pressure type
+
+# v0.3.3
+
+## New Features
+- `gibbs_solvation(model,T)` : For calculation of the solvation energy in a binary model
+- speed up for activity coefficients and excess gibbs free energies for `NRTL`, `Wilson`, `UNIQUAC` and `UNIFAC`
+- new EoS model: `softSAFT2016`, that uses the LJ helmholtz energy from thol et al. (2016)
+- new utility function: `correct_composition_derivative`, that returns `∑xᵢμᵢ - G`. it should be zero or near zero for correctly written models.
+## Error Fixes
+- fix error in parameters for `softSAFT`
+- fix errors in use of units. tests added.
+- fix error on isobaric expansivity.
+
+# v0.3.2
+
+- fixes in volume solver
+- fixes in initial guesses for `MultiFuidModel` and `CPA` 
+- all multicomponent solvers now accept an initial guess
+
+# v0.3.1
+
+Model fixes;
+- `WSRule`
+- `MonomerIdeal`
+new functions:
+`assoc_site_matrix(model::Union{SAFTModel,CPAModel},V,T,z)` to instantiate the association matrix
+`ReidIdeal(model::JacobianIdeal)` to obtain a Reid ideal model from a Joback Ideal model
+faster `crit_pure` on cubics
+
+# v0.3.0
+
+- Differential Evolution and Rachford-Rice Tp-flash algorithms have been implemented
+- AssocOptions has been added to all SAFT equations
+- Further speed-up to cubics
+- sat_pure has been renamed saturation_pressure
+- Numerous new multi-component VLE functions have been added (dew_pressure, bubble_temperature, VLLE_temperature etc.)
+- New models: Full CPA, sCPA and ogUNIFAC
+

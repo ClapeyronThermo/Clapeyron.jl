@@ -2,7 +2,6 @@ abstract type sCPAModel <: CPAModel end
 
 struct sCPA{T <: IdealModel,c <: CubicModel} <: sCPAModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     cubicmodel::c
     params::CPAParam
     sites::SiteParam
@@ -35,17 +34,17 @@ export sCPA
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `a`: Single Parameter (`Float64`) - Atraction Parameter
 - `b`: Single Parameter (`Float64`) - Covolume
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter
 - `b`: Pair Parameter (`Float64`) - Mixed Covolume
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter
@@ -61,7 +60,7 @@ export sCPA
 simplified CPA
 
 ## References
-1. Kontogeorgis, G. M., Michelsen, M. L., Folas, G. K., Derawi, S., von Solms, N., & Stenby, E. H. (2006). Ten years with the CPA (cubic-plus-association) equation of state. Part 1. Pure compounds and self-associating systems. Industrial & Engineering Chemistry Research, 45(14), 4855–4868. doi:10.1021/ie051305v
+1. Kontogeorgis, G. M., Michelsen, M. L., Folas, G. K., Derawi, S., von Solms, N., & Stenby, E. H. (2006). Ten years with the CPA (cubic-plus-association) equation of state. Part 1. Pure compounds and self-associating systems. Industrial & Engineering Chemistry Research, 45(14), 4855–4868. [doi:10.1021/ie051305v](https://doi.org/10.1021/ie051305v)
 """
 sCPA
 
@@ -81,10 +80,9 @@ function sCPA(components;
             verbose=false,
             assoc_options = AssocOptions())
 
-    icomponents = 1:length(components)
     params,sites = getparams(components, ["SAFT/CPA/sCPA/", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     Mw  = params["Mw"]
-    k  = params["k"]
+    k = get(params,"k",nothing)
     Tc = params["Tc"]
     c1 = params["c1"]
     params["a"].values .*= 1E-1
@@ -93,6 +91,7 @@ function sCPA(components;
     b  = sigma_LorentzBerthelot(params["b"])
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
     packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
@@ -101,16 +100,16 @@ function sCPA(components;
     init_translation = init_model(translation,components,translation_userlocations,verbose)
 
     if occursin("RK",string(cubicmodel))
-        cubicparams = RKParam(a, b, params["Tc"],params["pc"],Mw)
+        cubicparams = RKParam(a, b, params["Tc"],params["Pc"],Mw)
     elseif occursin("PR",string(cubicmodel))
-        cubicparams = PRParam(a, b, params["Tc"],params["pc"],Mw)
+        cubicparams = PRParam(a, b, params["Tc"],params["Pc"],Mw)
     end
 
-    init_cubicmodel = cubicmodel(components,icomponents,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
+    init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
 
     references = ["10.1021/ie051305v"]
 
-    model = sCPA(components, icomponents, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
+    model = sCPA(components, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
     return model
 end
 

@@ -1,5 +1,5 @@
 ﻿Clapeyron Database File,,,,
-UNIFAC Like Parameters,,,,
+modified UNIFAC (Dortmund) Like Parameters  [csvtype = like,grouptype = UNIFACDortmund]
 species,DIPPR Number,R,Q,source
 CH3,,0.6325,1.0608,
 CH2,,0.6325,0.7081,

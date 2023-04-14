@@ -10,15 +10,11 @@
     mixing_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
-
 Peng Robinson (1978) equation of state. it uses the following models:
-
 - Translation Model: [`NoTranslation`](@ref)
 - Alpha Model: [`PR78Alpha`](@ref)
 - Mixing Rule Model: [`vdW1fRule`](@ref)
-
 ## References
-
 1. Robinson DB, Peng DY. The characterization of the heptanes and heavier fractions for the GPA Peng-Robinson programs. Tulsa: Gas Processors Association; 1978
 """
 function PR78(components::Vector{String}; idealmodel=BasicIdeal,

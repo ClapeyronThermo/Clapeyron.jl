@@ -6,101 +6,136 @@ using PositiveFactorizations
 using DiffResults, ForwardDiff
 using StaticArrays
 
-    function cholesky_linsolve(d,B,∇f)
-        cholesky!(Positive, B)
-        Bchol = Cholesky(B,'L',0)
-        d .=  Bchol\∇f
-    end
+function cholesky_linsolve(d,B,∇f)
+    cholesky!(Positive, B)
+    Bchol = Cholesky(B,'L',0)
+    d .=  Bchol\∇f
+end
 
-    function cholesky_linsolve(B,∇f)
-        Bchol =cholesky(Positive, B)
-        Bchol\∇f
-    end
+function cholesky_linsolve(B,∇f)
+    Bchol =cholesky(Positive, B)
+    Bchol\∇f
+end
 
-    #
-    Base.summary(::NLSolvers.Newton{<:Direct, typeof(cholesky_linsolve)}) = "Newton's method with Cholesky linsolve"
-    CholeskyNewton() = NLSolvers.Newton(linsolve=cholesky_linsolve)
-    export CholeskyNewton
+Base.summary(::NLSolvers.Newton{<:Direct, typeof(cholesky_linsolve)}) = "Newton's method with Cholesky linsolve"
+CholeskyNewton() = NLSolvers.Newton(linsolve=cholesky_linsolve)
+export CholeskyNewton
 
-    """
-        det_22(a,b,c,d)
-
-    Calculates `a*b - c*d` without less rounding error than doing it naively
-    """
-    function det_22(a,b,c,d)
-        t = c*d
-        e = muladd(c,d,-t) #cd - cd
-        f = muladd(a,b,-t) #ab - cd
-        return f-e  #ab - cd + cd - cd
-    end
-
-    function solve_cubic_eq(poly::AbstractVector{T}) where {T<:Real}
-        tup = (poly[1],poly[2],poly[3],poly[4])
-        return solve_cubic_eq(tup)
-    end
+"""
+    x_sol(res::NLSolvers.ConvergenceInfo)
     
-    function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
-        # copied from PolynomialRoots.jl, adapted to be AD friendly
-        # Cubic equation solver for complex polynomial (degree=3)
-        # http://en.wikipedia.org/wiki/Cubic_function   Lagrange's method
-        # poly = (a,b,c,d) that represents ax3 + bx2 + cx2 + d 
+Returns the scalar or vector x that solves the system of equations or is the minimizer of an optimization procedure.
+"""
+x_sol(res) = NLSolvers.solution(res)
 
-        _1 = one(T)
-        third = _1/3
-        a1  =  complex(one(T) / poly[4])
-        E1  = -poly[3]*a1
-        E2  =  poly[2]*a1
-        E3  = -poly[1]*a1
-        s0  =  E1
-        E12 =  E1*E1
-        A   =  det_22(2*E1,E12,9*E1,E2) + 27*E3
-        #A   =  2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
-        B = det_22(E1,E1,3,E2)
-        #B   =  E12 - 3*E2                 # = s1 s2
-        # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
-        Δ2 = det_22(A,A,4*B*B,B)
-        Δ = Base.sqrt(Δ2)
-        #Δ = (A*A - 4*B*B*B)^0.5
-        if real(conj(A)*Δ)>=0 # scalar product to decide the sign yielding bigger magnitude
-            s1 = exp(log(0.5 * (A + Δ)) * third)
-        else
-            s1 = exp(log(0.5 * (A - Δ)) * third)
+include("poly.jl")
+include("ad.jl")
+include("nanmath.jl")
+include("nlsolve.jl")
+include("fixpoint/fixpoint.jl")
+include("fixpoint/ADNewton.jl")
+include("optimize.jl")
+include("integral.jl")
+
+
+# Order 3 bracketing method
+#https://github.com/JuliaMath/Roots.jl/issues/359
+using Roots
+import Roots: @set!, bracket, adjust_bracket, NullTracks, isissue, log_message
+struct ChebyshevBracket <: Roots.AbstractBracketingMethod end
+Roots.fn_argout(::ChebyshevBracket) = 3
+struct ChebyshevBracketState{T,S} <: Roots.AbstractUnivariateZeroState{T,S}
+    xn1::T
+    xn0::T
+    fxn1::S
+    fxn0::S
+end
+
+# use xatol, xrtol only, but give some breathing room over the strict ones and cap number of steps
+function Roots.default_tolerances(::ChebyshevBracket, ::Type{T}, ::Type{S}) where {T,S}
+    xatol = eps(real(T)) * oneunit(real(T))
+    xrtol = 2eps(real(T))  # unitless
+    atol = 4 * eps(real(float(S))) * oneunit(real(S))
+    rtol = 4 * eps(real(float(S))) * one(real(S))
+    maxevals = 40
+    strict = false
+    (xatol, xrtol, atol, rtol, maxevals, strict)
+end
+
+
+function Roots.init_state(M::ChebyshevBracket, F::Roots.Callable_Function, x)
+    x₀, x₁ = adjust_bracket(x)
+    fx₀, fx₁ = first(F(x₀)), first(F(x₁))
+    state = Roots.init_state(M, F, x₀, x₁, fx₀, fx₁)
+end
+
+function Roots.init_state(L::ChebyshevBracket, F, x₀, x₁, fx₀, fx₁)
+    # keep xn1 the smallest of fxn1, fxn0
+    if abs(fx₀) > abs(fx₁)
+        state = ChebyshevBracketState(x₁, x₀, fx₁, fx₀)
+    else
+        state = ChebyshevBracketState(x₀, x₁, fx₀, fx₁)
+    end
+    state
+end
+
+# bracketed Chebyshev
+function Roots.update_state(
+    M::ChebyshevBracket,
+    F,
+    o::ChebyshevBracketState{T,S},
+    options,
+    l=NullTracks(),
+) where {T,S}
+
+    c,b,fc,fb = o.xn1, o.xn0, o.fxn1, o.fxn0
+    if c < b
+        a, fa = c, fc
+    else
+        a,b,fa,fc = b,c,fb,fc
+    end
+
+    fc::S, (Δ, Δ₂) = F(c)
+
+    if isissue(Δ)
+        log_message(l, "Issue with computing `Δ`")
+        return (o, true)
+    end
+
+    # try chebyshev
+    # if issue, then newton
+    # if issue, then secant
+    # if issue, then bisection
+    x = c - Δ - 1/2 * Δ^2/Δ₂
+    if !(a < x < b)
+        x = c - Δ
+    end
+
+    if a < x < b
+        fx,_ = F(x)
+        ā,b̄,c,fā,fb̄,fc = bracket(a,b,x,fa,fb,fx)
+    else
+        # secant step
+        x = a - fa * (b-a)/(fb-fa)
+        if x - a < 0.0001 * (b-a) || b-x < 0.0001 * (b-a)
+            x = a + (b-a)*0.5
         end
-        if s1 == 0
-            s2 = s1
-        else
-            s2 = B / s1
-        end
-        zeta1 = complex(-0.5, sqrt(T(3.0))*0.5)
-        zeta2 = conj(zeta1)
-        return (third*(s0 + s1 + s2), third*(s0 + s1*zeta2 + s2*zeta1), third*(s0 + s1*zeta1 + s2*zeta2))
+
+        fx,_ = F(x)
+        ā,b̄,c,fā,fb̄,fc = bracket(a,b,x,fa,fb,fx)
     end
+    c, fc = abs(fā) < abs(fb̄) ? (ā,fā) : (b̄, fb̄)
 
-    """
-        roots3(pol)
-    solves a cubic equation of the form pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3
-    """
-    function roots3(pol) 
-        return SVector(solve_cubic_eq(pol))
-    end
+    a,b,fa,fb = ā, b̄, fā, fb̄
 
-    function roots3(a,b,c,d) 
-        x = (a,b,c,d)
-        return roots3(x)
-    end
+    @set! o.xn0 = a == c ? b : a
+    @set! o.xn1 = c
+    @set! o.fxn0 = a == c ? fb : fa
+    @set! o.fxn1 = fc
 
+    return o, false
+end
 
-    """
-    function x_sol(res::NLSolvers.ConvergenceInfo)
-        
-        Returns the scalar or vector x that solves the system of equations or is the minimizer of an optimization procedure.
-    """
-    x_sol(res) = NLSolvers.solution(res)
+export ChebyshevBracket
 
-    include("ad.jl")
-    include("nanmath.jl")
-    include("nlsolve.jl")
-    include("fixpoint/fixpoint.jl")
-    include("fixpoint/ADNewton.jl")
-    include("optimize.jl")
 end # module

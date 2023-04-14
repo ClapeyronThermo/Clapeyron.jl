@@ -105,11 +105,11 @@ end
 ```Julia
 function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false,assoc_options = AssocOptions())
   	# Obtain a Dict of parameters. We pass in custom locations through the optional parameter userlocations.
-    params = getparams(components; userlocations=userlocations, verbose=verbose)
+    params,sites = getparams(components; userlocations=userlocations, verbose=verbose)
   
     # For clarity, we assign the contents of the returned dict to their own variables.
-    segment = params["m"]
-    k = params["k"]
+    segment = params["segment"]
+    k = get(params,"k",nothing) #if k is not provided, it will be not be considered
     Mw = params["Mw"]
     # Here, we modify the values of the sigma parameter first.
     params["sigma"].values .*= 1E-10
@@ -121,9 +121,8 @@ function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
   
-    # Build the sites object for associating species. The input is a Dict that links the name of the site with the multiplicity.
-    sites = SiteParam(Dict("e" => params["n_e"], "H" => params["n_H"]))
-  
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association. if you want to perform cross-association mixing, check the AssocOptions docs
+
     # Now we can create the parameter struct that we have defined.
     packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
   
@@ -140,12 +139,14 @@ end
 
 3. Define all of the model equations. We encourage you to use the full range of Unicode characters where it makes your code clearer to read!
 
-   As convention, the first four arguments should be `model`, `V`, `T` and `z`; any other variables should come after them.
+   As convention, the first four arguments should be `model`, `V`, `T` and `z`; any other variables should come after.
 
    If we obey that convention, we may use the `@f` macro, which automatically substitutes the first four parameters for compactness. For example, `@f(func,i,j)` is equivalent to calling `func(model,V,T,z,i,j)`.
 
+    Clapeyron obtains all the properties of a model by differenciating the total helmoltz energy ([`eos`](@ref)) or the residual helmoltz energy ([`eos_res`](@ref)).  `eos` and `eos_res` themselves are defined in terms of the reduced ideal helmholtz energy ([`a_res`](@ref)). In this case, we are going to define `a_res` for our own model:
+
    ```julia
-   function a_res(model::PCSAFTModel, V, T, z)
+   function Clapeyron.a_res(model::PCSAFTModel, V, T, z)
        return @f(a_hc) + @f(a_disp) + @f(a_assoc)
    end
    
@@ -157,8 +158,8 @@ end
    end
    
    function d(model::PCSAFTModel, V, T, z, i)
-       ϵii = model.params.epsilon.diagvalues[i]
-       σii = model.params.sigma.diagvalues[i]
+       ϵii = model.params.epsilon.values[i,i]
+       σii = model.params.sigma.values[i,i]
        return σii * (1 - 0.12exp(-3ϵii/T))
    end
    
@@ -206,8 +207,6 @@ end
    
    (p_sat, V_l_sat, V_v_sat) = saturation_pressure(model,T_sat)
    ```
-
-   
 
 ## sPC-SAFT Example
 

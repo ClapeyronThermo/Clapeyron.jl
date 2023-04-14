@@ -25,7 +25,7 @@ struct MultiFluidSingleParam <: EoSParam
     c::PackedVectorSingleParam{Int}
 end
 
-const FIJ_TYPE = Clapeyron.PairParameter{Float64, SparseArrays.SparseMatrixCSC{Float64, Int64}, SubArray{Float64, 1, Base.ReshapedArray{Float64, 1, SparseArrays.SparseMatrixCSC{Float64, Int64}, Tuple{Base.MultiplicativeInverses.SignedMultiplicativeInverse{Int64}}}, Tuple{StepRange{Int64, Int64}}, false}} 
+const FIJ_TYPE = Clapeyron.PairParameter{Float64, SparseArrays.SparseMatrixCSC{Float64, Int64}}
 
 struct MultiFluidPairParam <: EoSParam
     nij::PackedSparsePairParam{Float64} #SparsePairParam #done

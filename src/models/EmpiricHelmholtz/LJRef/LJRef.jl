@@ -129,7 +129,6 @@ is_splittable(::LJRefConsts) = false
 
 struct LJRef <: EmpiricHelmholtzModel
     components::Vector{String}
-    icomponents::UnitRange{Int}
     params::LJRefParam
     consts::LJRefConsts
     references::Vector{String}
@@ -149,7 +148,7 @@ export LJRef
 - `sigma`: Single Parameter (`Float64`) - particle size [Å]
 - `epsilon`: Single Parameter (`Float64`) - dispersion energy [`K`]
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `k`: Pair Parameter (`Float64`) - `sigma` mixing coefficient
+- `k`: Pair Parameter (`Float64`) (optional) - `sigma` mixing coefficient
 
 ## Model Parameters
 
@@ -189,7 +188,7 @@ parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 
 ## References
 
-1. Thol, M., Rutkai, G., Köster, A., Lustig, R., Span, R., & Vrabec, J. (2016). Equation of state for the Lennard-Jones fluid. Journal of physical and chemical reference data, 45(2), 023101. doi:10.1063/1.4945000
+1. Thol, M., Rutkai, G., Köster, A., Lustig, R., Span, R., & Vrabec, J. (2016). Equation of state for the Lennard-Jones fluid. Journal of physical and chemical reference data, 45(2), 023101. [doi:10.1063/1.4945000](https://doi.org/10.1063/1.4945000)
 
 """
 LJRef
@@ -200,14 +199,14 @@ function LJRef(components;
     params,sites = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
+    k = get(params,"k",nothing)
     sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], params["k"])
-    segment = params["m"]
+    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
+    segment = params["segment"]
     params = LJRefParam(epsilon,sigma,segment,Mw)
     consts = LJRefConsts()
-    icomponents = 1:length(components)
     references = ["10.1063/1.4945000"]
-    return LJRef(components,icomponents,params,consts,references)
+    return LJRef(components,params,consts,references)
 end
 
 function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
@@ -218,9 +217,9 @@ function _f0(model::LJRef,ρ,T,z=SA[1.0],∑z = sum(z))
     res = zero(ρ+T+first(z))
     for i  ∈ @comps
         mᵢ = m[i]
-        τᵢ = 1.32/(T/ϵ[i])  
+        τᵢ = 1.32*ϵ[i]/T  
         δᵢ = (mᵢ*N_A*ρ*σ[i]^3)/0.31
-        aᵢ = log(δᵢ) + 1.5*log(τᵢ) + 1.515151515*τᵢ + 6.262265814 
+        aᵢ = log(δᵢ) + 1.5*log(τᵢ) - 1.515151515*τᵢ + 6.262265814 
         res += z[i]*(aᵢ + log(z[i]) - lnΣz)
     end
     return res
@@ -236,18 +235,19 @@ function _fr(model::LJRef,δ,τ)
     γ = model.consts.gamma
     η = model.consts.eta
     ε = model.consts.epsilon   
-
+    logδ = log(δ)
+    logτ = log(τ)
     @inbounds begin
         for k ∈ 1:6
-            ai += n[k]*(δ^d[k])*(τ^t[k])
+            ai += n[k]*exp(logδ*d[k] + logτ*t[k])
         end
         for (k,k_) ∈ zip(7:12,1:6)
-            ai += n[k]*(δ^d[k])*(τ^t[k])*exp(-δ^c[k_])
+            ai += n[k]*exp(logδ*d[k] + logτ*t[k] -δ^c[k_])
         end
 
         for (k,k_) ∈ zip(13:23,1:11)
-            ai += n[k]*(δ^(d[k]))*(τ^(t[k]))*
-            exp(-η[k_]*(δ - ε[k_])^2 - β[k_]*(τ -γ[k_])^2)
+            ai += n[k]*
+            exp(logδ*d[k] + logτ*t[k] -η[k_]*(δ - ε[k_])^2 - β[k_]*(τ -γ[k_])^2)
         end
     end
     return ai
@@ -343,7 +343,6 @@ end
 function a_res(model::LJRef,V,T,z = SA[1.0])
     Σz = sum(z)
     ρ = Σz/V
-    α0 = _f0(model,ρ,T,Σz)
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
     δ = (ρ*V0)/0.31
@@ -353,7 +352,6 @@ end
 function eos_res(model::LJRef,V,T,z = SA[1.0])
     Σz = sum(z)
     ρ = Σz/V
-    α0 = _f0(model,ρ,T,Σz)
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
     δ = (ρ*V0)/0.31
@@ -392,7 +390,7 @@ function x0_sat_pure_lj(model,T)
     Tc = 1.32*T_scale(model)
     ρl =  ljref_rholsat(T/Tc)/(m̄*N_A*σ3)
     ρv =  ljref_rhovsat(T/Tc)/(m̄*N_A*σ3)
-    return (log10(1/ρl),log10(1/ρv))
+    return (1/ρl,1/ρv)
 end
 
 x0_sat_pure(model::LJRef,T) = x0_sat_pure_lj(model,T)

@@ -25,11 +25,11 @@ export SAFTVRSW
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `lambda`: Single Parameter (`Float64`) - Soft Well range parameter (no units)
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
@@ -50,7 +50,7 @@ export SAFTVRSW
 SAFT, Variable Range (VR) ,Square Well (SW)
 
 ## References
-1. Gil-Villegas, A., Galindo, A., Whitehead, P. J., Mills, S. J., Jackson, G., & Burgess, A. N. (1997). Statistical associating fluid theory for chain molecules with attractive potentials of variable range. The Journal of chemical physics, 106(10), 4168–4186. doi:10.1063/1.473101
+1. Gil-Villegas, A., Galindo, A., Whitehead, P. J., Mills, S. J., Jackson, G., & Burgess, A. N. (1997). Statistical associating fluid theory for chain molecules with attractive potentials of variable range. The Journal of chemical physics, 106(10), 4168–4186. [doi:10.1063/1.473101](https://doi.org/10.1063/1.473101)
 """
 SAFTVRSW
 
@@ -63,8 +63,8 @@ function SAFTVRSW(components;
 
     params,sites = getparams(components, ["SAFT/SAFTVRSW","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
 
-    segment = params["m"]
-    k = params["k"]
+    segment = params["segment"]
+    k = get(params,"k",nothing)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
@@ -73,11 +73,22 @@ function SAFTVRSW(components;
 
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
 
     packagedparams = SAFTVRSWParam(Mw, segment, sigma, lambda, epsilon, epsilon_assoc, bondvol)
     references = ["10.1063/1.473101"]
 
     model = SAFTVRSW(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
+    return model
+end
+
+function recombine_impl!(model::SAFTVRSWModel)
+    sigma = model.params.sigma
+    epsilon = model.params.epsilon
+    lambda = model.params.lambda
+    sigma = sigma_LorentzBerthelot!(sigma)
+    epsilon = epsilon_LorentzBerthelot!(epsilon)
+    lambda_squarewell!(lambda,sigma)
     return model
 end
 
@@ -105,8 +116,8 @@ function a_hs(model::SAFTVRSWModel, V, T, z)
 end
 
 function ζn(model::SAFTVRSWModel, V, T, z, n)
-    σ = model.params.sigma.diagvalues
-    return π/6*@f(ρ_S)*∑(@f(x_S,i)*σ[i]^n for i ∈ @comps)
+    σ = model.params.sigma.values
+    return π/6*@f(ρ_S)*∑(@f(x_S,i)*σ[i,i]^n for i ∈ @comps)
 end
 
 function ρ_S(model::SAFTVRSWModel, V, T, z)
@@ -196,8 +207,8 @@ function a_chain(model::SAFTVRSWModel, V, T, z)
 end
 
 function γSW(model::SAFTVRSWModel,V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues
-    return @f(gSW,i,i)*exp(-ϵ[i]/T)
+    ϵ = model.params.epsilon.values[i,i]
+    return @f(gSW,i,i)*exp(-ϵ/T)
 end
 
 function gSW(model::SAFTVRSWModel,V, T, z, i, j)

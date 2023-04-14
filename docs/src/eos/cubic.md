@@ -15,9 +15,7 @@ All cubic models in `Clapeyron.jl` follow a common evaluation order:
 
 function CubicModel(args...)
     #get params for database, initialize other models, etc
-    #we need Tc,pc and kij for the generation of the matrices aᵢⱼ and bᵢⱼ
-    a,b = a,b = ab_premixing(CubicModel,mixing_model,Tc,pc,k)
-    #rest of the initialization, return model
+    recombine!(model) #we calculate the mixing rules, caches for the translation models if necessary, etc.
 end
 
 function cubic_ab(model::CubicModel,V,T,z=SA[1.0])
@@ -30,8 +28,8 @@ function cubic_ab(model::CubicModel,V,T,z=SA[1.0])
     return ā ,b̄, c̄
 end
 
-function a_res(model::CubicModel,V,T,z)
-    ā ,b̄, c̄ = cubic_ab(model,V,T,z)
+function a_res(model::CubicModel,V,T,z,data = (sum(z),cubic_ab(model,V,T,z)))
+    n, ā ,b̄, c̄ = data
     #depends on the specific EoS
     return result
 end
@@ -44,18 +42,30 @@ end
 
 - The same Mixing rule, given `aᵢⱼ`, `bᵢⱼ`, `αᵢ(T)` and `cᵢ` returns the the mixture values of `ā`, `b̄` and `c̄` that are then used by the corresponding cubic model. a Mixing Rule can contain activity models to participate in the mixing (for example, Huron-Vidal rules)
 
+## Common Definitions
+```@docs
+Clapeyron.ab_premixing
+Clapeyron.mixing_rule
+```
+
 ## Main Models
 ```@docs
 Clapeyron.vdW
+Clapeyron.Clausius
 Clapeyron.RK
 Clapeyron.PR
+Clapeyron.RKPR
+Clapeyron.PatelTeja
+Clapeyron.KU
 ```
 
 ## Variant Models
 ```@docs
+Clapeyron.Berthelot
 Clapeyron.SRK
 Clapeyron.PSRK
 Clapeyron.PR78
+Clapeyron.PTV
 Clapeyron.EPPR78
 Clapeyron.UMRPR
 Clapeyron.VTPR
@@ -67,6 +77,7 @@ Clapeyron.QCPR
 ```@docs
 Clapeyron.α_function
 Clapeyron.NoAlpha
+Clapeyron.ClausiusAlpha
 Clapeyron.RKAlpha
 Clapeyron.SoaveAlpha
 Clapeyron.PRAlpha
@@ -76,6 +87,9 @@ Clapeyron.sCPAAlpha
 Clapeyron.MTAlpha
 Clapeyron.BMAlpha
 Clapeyron.TwuAlpha
+Clapeyron.PatelTejaAlpha
+Clapeyron.KUAlpha
+Clapeyron.RKPRAlpha
 ```
 
 ## Volume Translation Models
@@ -91,8 +105,6 @@ Clapeyron.MTTranslation
 
 ## Mixing Rule Models
 ```@docs
-Clapeyron.ab_premixing
-Clapeyron.mixing_rule
 Clapeyron.vdW1fRule
 Clapeyron.KayRule
 Clapeyron.HVRule
@@ -100,8 +112,10 @@ Clapeyron.MHV1Rule
 Clapeyron.MHV2Rule
 Clapeyron.LCVMRule
 Clapeyron.WSRule
+Clapeyron.modWSRule
 Clapeyron.VTPRRule
 Clapeyron.PSRKRule
+Clapeyron.UMRRule
 Clapeyron.QCPRRule
 Clapeyron.PPR78Rule
 ```

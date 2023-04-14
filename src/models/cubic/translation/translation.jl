@@ -19,19 +19,9 @@ end
 """
 function translation end
 
-abstract type TranslationModel <:EoSModel end
-function init_model(model::TranslationModel,components,userlocations,verbose)
-    return model
-end
-
-function init_model(model::Type{<:TranslationModel},components,userlocations,verbose)
-    verbose && @info("""Now creating mixing model:
-    $model""")
-    return model(components;userlocations,verbose)
-end
-
 include("NoTranslation.jl")
 include("Rackett.jl")
 include("Peneloux.jl")
 include("MT.jl")
 include("ConstantTranslation.jl")
+#include("Clausius.jl")

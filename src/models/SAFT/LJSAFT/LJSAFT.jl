@@ -22,10 +22,10 @@ abstract type LJSAFTModel <: SAFTModel end
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `b`: Single Parameter (`Float64`) - Segment Volume [`dm^3/mol`]
 - `T_tilde`: Single Parameter (`Float64`) - Lennard-Jones attraction parameter  `[K]`
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater for energy(no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater for energy(no units)
 - `zeta`: Pair Parameter (`Float64`) - Binary Interaction Paramater for volume (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
@@ -46,7 +46,7 @@ abstract type LJSAFTModel <: SAFTModel end
 Perturbed-Chain SAFT (PC-SAFT)
 
 ## References
-1. Kraska, T., & Gubbins, K. E. (1996). Phase equilibria calculations with a modified SAFT equation of state. 1. Pure alkanes, alkanols, and water. Industrial & Engineering Chemistry Research, 35(12), 4727–4737. doi:10.1021/ie9602320
+1. Kraska, T., & Gubbins, K. E. (1996). Phase equilibria calculations with a modified SAFT equation of state. 1. Pure alkanes, alkanols, and water. Industrial & Engineering Chemistry Research, 35(12), 4727–4737. [doi:10.1021/ie9602320](https://doi.org/10.1021/ie9602320)
 """
 LJSAFT
 
@@ -58,11 +58,11 @@ function LJSAFT(components;
     verbose=false,
     assoc_options = AssocOptions())
     params,sites = getparams(components, ["SAFT/LJSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["m"]
+    segment = params["segment"]
 
     Mw = params["Mw"]
 
-    k = params["k"]
+    k = get(params,"k",nothing)
     zeta = params["zeta"]
     
     T_tilde = epsilon_LorentzBerthelot(params["T_tilde"], k)
@@ -72,7 +72,7 @@ function LJSAFT(components;
     b.values .^= 3
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options) #combining rules for association
     packagedparams = LJSAFTParam(Mw, segment, b, T_tilde, epsilon_assoc, bondvol)
     references = ["10.1021/ie9602320"]
 
@@ -82,24 +82,24 @@ end
 
 function lb_volume(model::LJSAFTModel, z = SA[1.0])
     seg = model.params.segment.values
-    b = model.params.b.diagvalues
-    val = π/6*sum(z[i]*seg[i]*b[i] for i in 1:length(z))
+    b = model.params.b.values
+    val = π/6*sum(z[i]*seg[i]*b[i,i] for i in 1:length(z))
     return val
 end
 
 function T_scale(model::LJSAFTModel,z=SA[1.0])
-    T̃ = model.params.T_tilde.diagvalues
-    return prod(T̃[i]^z[i] for i in 1:length(z))^(1/sum(z))
+    T̃ = model.params.T_tilde.values
+    return prod(T̃[i,i]^z[i] for i in 1:length(z))^(1/sum(z))
 end
 
 function T_scales(model::LJSAFTModel)
-    T̃ = model.params.T_tilde.diagvalues
+    T̃ = diagvalues(model.params.T_tilde)
 end
 
 function p_scale(model::LJSAFTModel,z=SA[1.0])
-    T̃ = model.params.T_tilde.diagvalues
-    b = model.params.b.diagvalues
-    val =  sum(z[i]*b[i]/T̃[i] for i in 1:length(z))/R̄
+    T̃ = model.params.T_tilde.values
+    b = model.params.b.values
+    val =  sum(z[i]*b[i,i]/T̃[i,i] for i in 1:length(z))/R̄
     return 1/val
 end
 
@@ -161,13 +161,12 @@ function a_chain(model::LJSAFTModel, V, T, z)
 end
 
 function g_LJ(model::LJSAFTModel, V, T, z, i)
-
     m = model.params.segment.values
-    b = model.params.b.diagvalues
-    T̃ = model.params.T_tilde.diagvalues
-    Tst = T/T̃[i]
+    b = model.params.b.values
+    T̃ = model.params.T_tilde.values
+    Tst = T/T̃[i,i]
     ρ = 1/V
-    ρ̄ = b[i]*m[i]*z[i]*ρ
+    ρ̄ = b[i,i]*m[i]*z[i]*ρ
     a = LJSAFTconsts.a::Matrix{Float64}
     return (1+sum(a[i,j]*ρ̄^i*Tst^(1-j) for i ∈ 1:5 for j ∈ 1:5))
 end

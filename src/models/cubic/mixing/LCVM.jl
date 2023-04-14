@@ -1,4 +1,4 @@
-abstract type LCVMRuleModel <: MixingRule end
+abstract type LCVMRuleModel <: ActivityMixingRule end
 
 struct LCVMRule{γ} <: LCVMRuleModel
     components::Array{String,1}
@@ -10,18 +10,18 @@ end
 
 """
     LCVMRule{γ} <: LCVMRuleModel
-    
+
     LCVMRule(components::Vector{String};
     activity = Wilson,
-    userlocations::Vector{String}=String[],
-    activity_userlocations::Vector{String}=String[],
+    userlocations=String[],
+    activity_userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
 
 None
 
-## Input models 
+## Input models
 
 - `activity`: Activity Model
 
@@ -40,16 +40,16 @@ ā = b̄RT(-1.827[gᴱ/RT - 0.3∑log(bᵢᵢ/b̄)] + Σᾱᵢxᵢ)
 
 ## References
 
-1. Boukouvalas, C., Spiliotis, N., Coutsikos, P., Tzouvaras, N., & Tassios, D. (1994). Prediction of vapor-liquid equilibrium with the LCVM model: a linear combination of the Vidal and Michelsen mixing rules coupled with the original UNIFAC. Fluid Phase Equilibria, 92, 75–106. doi:10.1016/0378-3812(94)80043-x
+1. Boukouvalas, C., Spiliotis, N., Coutsikos, P., Tzouvaras, N., & Tassios, D. (1994). Prediction of vapor-liquid equilibrium with the LCVM model: a linear combination of the Vidal and Michelsen mixing rules coupled with the original UNIFAC. Fluid Phase Equilibria, 92, 75–106. [doi:10.1016/0378-3812(94)80043-x](https://doi.org/10.1016/0378-3812(94)80043-x)
 
 """
 LCVMRule
 
 export LCVMRule
-function LCVMRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    init_activity = activity(components;userlocations = activity_userlocations,verbose)
+function LCVMRule(components::Vector{String}; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+    _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1016/0378-3812(94)80043-X"]
-    model = LCVMRule(components, init_activity,references)
+    model = LCVMRule(components, _activity,references)
     return model
 end
 

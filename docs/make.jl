@@ -25,13 +25,22 @@ format = Documenter.HTML(
         "Activity Models" => "eos/activity.md"
         "SAFT and CPA Models"  => "eos/saft.md"
         "Empiric Helmholtz Models" => "eos/empiric.md"
+        "Property Correlations" =>  "eos/correlations.md"
         "Other Models" => "eos/misc.md"
         ],
         
+        "Available Properties" => [
+            "Basic Properties" => "properties/basic.md",
+            "Bulk Properties" => "properties/bulk.md",
+            "Single phase Properties" => "properties/single.md",
+            "Multiphase Properties"  => "properties/multi.md",
+            ],
+
         "API" => Any[
         "Parameters" => "api/parameters.md",
         "Macros" => "api/macros.md",
-        "Properties" => "api/properties.md",
+        "Association" => "api/association.md",
+        "Parameter Estimation" => "api/estimation.md",
         ]
         ])
 

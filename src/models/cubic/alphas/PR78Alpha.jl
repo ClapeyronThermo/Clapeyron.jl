@@ -11,15 +11,10 @@ export PR78Alpha
     PR78Alpha <: PR78AlphaModel
     
     PR78Alpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
-
-- `w`: Single Parameter (`Float64`)
-
-## Model Parameters
-
 - `acentricfactor`: Single Parameter (`Float64`)
 
 ## Description
@@ -36,9 +31,9 @@ else
 """
 PR78Alpha
 
-function PR78Alpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    acentricfactor = SingleParam(params["w"],"acentric factor")
+function PR78Alpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
+    acentricfactor = params["acentricfactor"]
     packagedparams = PR78AlphaParam(acentricfactor)
     model = PR78Alpha(packagedparams, verbose=verbose)
     return model
@@ -47,7 +42,7 @@ end
 function α_function(model::CubicModel,V,T,z,alpha_model::PR78AlphaModel)
     Tc = model.params.Tc.values
     ω  = alpha_model.params.acentricfactor.values
-    α = zeros(typeof(T),length(Tc))
+    α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         ωi = ω[i]
         m = ifelse(ωi<=0.491,

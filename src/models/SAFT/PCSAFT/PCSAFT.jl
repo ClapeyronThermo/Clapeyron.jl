@@ -12,23 +12,20 @@ abstract type PCSAFTModel <: SAFTModel end
 
 """
     PCSAFTModel <: SAFTModel
-
     PCSAFT(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
-
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
@@ -36,17 +33,13 @@ abstract type PCSAFTModel <: SAFTModel end
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
-
 ## Input models
 - `idealmodel`: Ideal Model
-
 ## Description
-
 Perturbed-Chain SAFT (PC-SAFT)
-
 ## References
-1. Gross, J., & Sadowski, G. (2001). Perturbed-chain SAFT: An equation of state based on a perturbation theory for chain molecules. Industrial & Engineering Chemistry Research, 40(4), 1244–1260. doi:10.1021/ie0003887
-2. Gross, J., & Sadowski, G. (2002). Application of the perturbed-chain SAFT equation of state to associating systems. Industrial & Engineering Chemistry Research, 41(22), 5510–5515. doi:10.1021/ie010954d
+1. Gross, J., & Sadowski, G. (2001). Perturbed-chain SAFT: An equation of state based on a perturbation theory for chain molecules. Industrial & Engineering Chemistry Research, 40(4), 1244–1260. [doi:10.1021/ie0003887](https://doi.org/10.1021/ie0003887)
+2. Gross, J., & Sadowski, G. (2002). Application of the perturbed-chain SAFT equation of state to associating systems. Industrial & Engineering Chemistry Research, 41(22), 5510–5515. [doi:10.1021/ie010954d](https://doi.org/10.1021/ie010954d)
 """
 PCSAFT
 
@@ -58,15 +51,15 @@ function PCSAFT(components;
     verbose=false,
     assoc_options = AssocOptions())
     params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    
-    segment = params["m"]
-    k = params["k"]
+    segment = params["segment"]
+    k = get(params,"k",nothing)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     sigma = sigma_LorentzBerthelot(params["sigma"])
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
 
     packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
@@ -74,6 +67,8 @@ function PCSAFT(components;
     model = PCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
     return model
 end
+
+recombine_impl!(model::PCSAFTModel) = recombine_saft!(model)
 
 function a_res(model::PCSAFTModel, V, T, z)
     _data = @f(data)
@@ -115,9 +110,13 @@ function a_disp(model::PCSAFTModel, V, T, z,_data=@f(data))
 end
 
 function d(model::PCSAFTModel, V, T, z)
-    ϵᵢᵢ = model.params.epsilon.diagvalues
-    σᵢᵢ = model.params.sigma.diagvalues 
-    return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
+    ϵᵢᵢ = diagvalues(model.params.epsilon)
+    σᵢᵢ = diagvalues(model.params.sigma)
+    di = zeros(eltype(T*1.),length(model))
+    for i in eachindex(di)
+        di[i] = σᵢᵢ[i]*(1 - 0.12*exp(-3ϵᵢᵢ[i]/ T))
+    end
+    return di
 end
 
 function ζ(model::PCSAFTModel, V, T, z, n , _d)
@@ -178,7 +177,7 @@ function m2ϵσ3(model::PCSAFTModel, V, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
-    m2ϵσ3₂ = zero(V+T+first(z))
+    m2ϵσ3₂ = zero(T+first(z))
     m2ϵσ3₁ = m2ϵσ3₂
     @inbounds for i ∈ @comps
         for j ∈ @comps
@@ -224,21 +223,6 @@ function Δ(model::PCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     return res
 end
 
-#optimized version, reduces memory allocations, but is specific to this PCSAFT
-#thats why it is bound to the specific PCSAFT struct
-#instead of the more general PCSAFTModel
-function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
-    ϵ_assoc = model.params.epsilon_assoc.values
-    κ = model.params.bondvol.values
-    σ = model.params.sigma.values
-    Δres = zero_assoc(κ,typeof(V+T+first(z)))
-    for (idx,(i,j),(a,b)) in indices(Δres)
-        gij = @f(g_hs,i,j,_data)
-        Δres[idx] = gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
-    end
-    return Δres
-end
-
 const PCSAFTconsts = (
     corr1 =
     [(0.9105631445,-0.3084016918, -0.0906148351),
@@ -258,3 +242,33 @@ const PCSAFTconsts = (
     (206.55133841, -161.82646165, 93.626774077),
     (-355.60235612, -165.20769346, -29.666905585)]
 )
+
+#= 
+Especific PCSAFT optimizations
+This code is not generic, in the sense that is only used by PCSAFT and not any model <:PCSAFTModel
+but, because it is one of the more commonly used EoS,
+It can have some specific optimizations to make it faster.
+=#
+
+#Optimized Δ for PCSAFT
+
+function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
+    ϵ_assoc = model.params.epsilon_assoc.values
+    κ = model.params.bondvol.values
+    σ = model.params.sigma.values
+    Δout = assoc_similar(κ,typeof(V+T+first(z)))
+    Δout.values .= false  #fill with zeros, maybe it is not necessary?
+    for (idx,(i,j),(a,b)) in indices(Δout)
+        gij = @f(g_hs,i,j,_data)
+        Δout[idx] = gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
+    end
+    return Δout
+end
+
+#Optimizations for Single Component PCSAFT
+
+function d(model::PCSAFT, V, T, z::SingleComp)
+    ϵ = only(model.params.epsilon.values)
+    σ = only(model.params.sigma.values)
+    return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
+end

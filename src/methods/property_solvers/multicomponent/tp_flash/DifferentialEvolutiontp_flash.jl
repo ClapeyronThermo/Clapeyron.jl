@@ -55,8 +55,8 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     x = zeros(TYPE,numphases, numspecies)
     nvals = zeros(TYPE,numphases, numspecies)
     logspace = method.logspace
-
-    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,logspace)
+    vcache = zeros(TYPE,numphases)
+    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace)
     #Minimize Gibbs Free Energy
     
     #=
@@ -94,11 +94,11 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
         dividers .= exp.(dividers)
     end
     partition!(dividers,n,x,nvals)
-    
-    return (x, nvals, best_f)
+    idxs = sortperm(vcache)
+    return (x[idxs,:],nvals[idxs,:], best_f)
 end
 """
-    Obj_de_tp_flash(model,p,T,z,dividers,numphases,logspace = false)
+    Obj_de_tp_flash(model,p,T,z,dividers,numphases,vcache,logspace = false)
 
 Function to calculate Gibbs Free Energy for given partition of moles between phases.
 This is a little tricky. 
@@ -115,8 +115,9 @@ each species. We then scale these numbers systematically in order to partition
 the species between the phases. Each set of (numphases - 1) numbers
 will result in a unique partition of the species into the numphases
 phases.
+vcache stores the current volumes for each phase
 """
-function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,logspace = false)
+function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace = false)
     _0 = zero(p+T+first(n))
     numspecies = length(n)
     TYPE  = typeof(_0) 
@@ -139,7 +140,10 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,logspace = false
     #by DE Algorithm
     G = _0
     for i ∈ 1:numphases
-            G += gibbs_free_energy(model, p, T, @view(nvals[i, :])) 
+            xi = @view(nvals[i, :])
+            vi = volume(model,p,T,xi)
+            vcache[i] = vi
+            G += VT_gibbs_free_energy(model, vi, T, xi) 
             #calling with PTn calls the internal volume solver
             #if it returns an error, is a bug in our part.
     end

@@ -1,8 +1,11 @@
 Clapeyron Database File,,,,,,,,
 SaftVRMie Assoc Parameters,,,,,,,,
 species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
+ethanol,CCO,H,ethanol,CCO,e,2833.7,0.34558,10.1063/1.4819786
+1-propanol,CCCO,H,1-propanol,CCCO,e,2097.9,6.2309E-29,10.1016/j.fluid.2015.12.041
+1-butanol,CCCCO,H,1-butanol,CCCCO,e,2097.9,6.2309E-29,10.1016/j.fluid.2015.12.041
 water,O,H,water,O,e,1985.4,1.0169E-28,10.1080/00268976.2015.1029027
 methanol,CO,H,methanol,CO,e,2062.1,1.0657E-28,10.1016/j.fluid.2015.12.041
-methanol,CO,H,water,O,e,1993.5,1.0411E-28,10.1016/j.fluid.2015.12.042
-methanol,CO,e,water,CO,H,1993.5,1.0411E-28,10.1016/j.fluid.2015.12.043
-water,O,e,carbon dioxide,O=C(=O),H,1398.1,9.1419E-29,10.1016/j.fluid.2015.12.044
+methanol,CO,H,water,O,e,1993.5,1.0411E-28,10.1016/j.fluid.2015.12.041
+methanol,CO,e,water,O,H,1993.5,1.0411E-28,10.1016/j.fluid.2015.12.041
+water,O,e,carbon dioxide,O=C(=O),H,1398.1,9.1419E-29,10.1016/j.fluid.2015.12.041

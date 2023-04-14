@@ -1,5 +1,5 @@
 Clapeyron Database File,
-SAFTgammaMie Groups,
+VTPR Groups, [csvtype = groups,grouptype = VTPR]
 species,groups
 ethane,"[""CH3"" => 2]"
 propane,"[""CH3"" => 2, ""CH2"" => 1]"
@@ -33,3 +33,4 @@ acetic acid,"[""CH3""=>1,""COOH""=>1]"
 water,"[""H2O""=>1]"
 benzene,"[""ACH"" => 6]"
 carbon monoxide,"[""CO""=>1]"
+2-propanol,"[""CH3""=>2,""OH (secondary)""=>1,""CH""=>1]"

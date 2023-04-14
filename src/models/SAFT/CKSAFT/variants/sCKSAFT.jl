@@ -23,10 +23,10 @@ export sCKSAFT
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `m`: Single Parameter (`Float64`) - Number of segments (no units)
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `vol`: Single Parameter (`Float64`) - Segment Volume [`dm^3`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
-- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
@@ -46,9 +46,9 @@ export sCKSAFT
 Simplified Chen and Kreglewski SAFT (sCK-SAFT)
 
 ## References
-1. Huang, S. H., & Radosz, M. (1990). Equation of state for small, large, polydisperse, and associating molecules. Industrial & Engineering Chemistry Research, 29(11), 2284–2294. doi:10.1021/ie00107a014
-2. Huang, S. H., & Radosz, M. (1991). Equation of state for small, large, polydisperse, and associating molecules: extension to fluid mixtures. Industrial & Engineering Chemistry Research, 30(8), 1994–2005. doi:10.1021/ie00056a050
-3. Fu, Y.-H., & Sandler, S. I. (1995). A simplified SAFT equation of state for associating compounds and mixtures. Industrial & Engineering Chemistry Research, 34(5), 1897–1909. doi:10.1021/ie00044a042
+1. Huang, S. H., & Radosz, M. (1990). Equation of state for small, large, polydisperse, and associating molecules. Industrial & Engineering Chemistry Research, 29(11), 2284–2294. [doi:10.1021/ie00107a014](https://doi.org/10.1021/ie00107a014)
+2. Huang, S. H., & Radosz, M. (1991). Equation of state for small, large, polydisperse, and associating molecules: extension to fluid mixtures. Industrial & Engineering Chemistry Research, 30(8), 1994–2005. [doi:10.1021/ie00056a050](https://doi.org/10.1021/ie00056a050)
+3. Fu, Y.-H., & Sandler, S. I. (1995). A simplified SAFT equation of state for associating compounds and mixtures. Industrial & Engineering Chemistry Research, 34(5), 1897–1909. [doi:10.1021/ie00044a042](https://doi.org/10.1021/ie00044a042)
 """
 sCKSAFT
 
@@ -60,8 +60,8 @@ function sCKSAFT(components::Vector{String};
     assoc_options = AssocOptions())
 
     params,sites = getparams(components, ["SAFT/sCKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["m"]
-    k = params["k"]
+    segment = params["segment"]
+    k = get(params,"k",nothing)
     sigma = params["vol"]
     sigma.values .*= 6*0.74048/N_A/1e6/π
     sigma.values .^= 1/3
@@ -69,7 +69,7 @@ function sCKSAFT(components::Vector{String};
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
     packagedparams = sCKSAFTParam(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1021/IE00107A014", "10.1021/ie00056a050","10.1021/ie00044a042"]
 
@@ -98,9 +98,9 @@ function a_disp(model::sCKSAFTModel, V, T, z)
 end
 
 function d(model::sCKSAFTModel, V, T, z, i)
-    ϵ = model.params.epsilon.diagvalues
-    σ = model.params.sigma.diagvalues
-    res = σ[i] * (1 - 0.333exp(-3ϵ[i]/T))
+    ϵ = model.params.epsilon.values[i,i]
+    σ = model.params.sigma.values[i,i]
+    res = σ * (1 - 0.333exp(-3ϵ/T))
     return res
 end
 

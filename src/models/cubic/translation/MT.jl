@@ -12,14 +12,10 @@ export MTTranslation
 MTTranslation <: MTTranslationModel
 
     MTTranslation(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
-
-- `w`: Single Parameter (`Float64`)
-
-## Model Parameters
 
 - `acentricfactor`: Single Parameter (`Float64`)
 
@@ -38,14 +34,14 @@ Zcᵢ = 0.289 - 0.0701ωᵢ - 0.0207ωᵢ^2
 
 ## References
 
-1. Magoulas, K., & Tassios, D. (1990). Thermophysical properties of n-Alkanes from C1 to C20 and their prediction for higher ones. Fluid Phase Equilibria, 56, 119–140. doi:10.1016/0378-3812(90)85098-u
+1. Magoulas, K., & Tassios, D. (1990). Thermophysical properties of n-Alkanes from C1 to C20 and their prediction for higher ones. Fluid Phase Equilibria, 56, 119–140. [doi:10.1016/0378-3812(90)85098-u](https://doi.org/10.1016/0378-3812(90)85098-u)
 
 """
 MTTranslation
 
-function MTTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    acentricfactor = SingleParam(params["w"],"acentric factor")
+function MTTranslation(components::Vector{String}; userlocations=String[], verbose::Bool=false)
+    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
+    acentricfactor = params["acentricfactor"]
     packagedparams = MTTranslationParam(acentricfactor)
     model = MTTranslation(packagedparams, verbose=verbose)
     return model
@@ -69,3 +65,5 @@ function translation(model::CubicModel,V,T,z,translation_model::MTTranslation)
     end
     return c
 end
+
+recombine_translation!(model::CubicModel,translation_model::MTTranslation) = translation_model

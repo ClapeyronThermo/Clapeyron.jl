@@ -1,19 +1,11 @@
 abstract type VTPRUNIFACModel <: UNIFACModel end
 
-
-struct VTPRUNIFACCache <: EoSModel
-    components::Vector{String}
-    m::Vector{Float64}
-end
-
 struct VTPRUNIFAC{c<:EoSModel} <: VTPRUNIFACModel
     components::Array{String,1}
-    icomponents::UnitRange{Int}
     groups::GroupParam
     params::UNIFACParam
     puremodel::EoSVectorParam{c}
     references::Array{String,1}
-    unifac_cache::VTPRUNIFACCache
 end
 
 @registermodel VTPRUNIFAC
@@ -23,8 +15,8 @@ export VTPRUNIFAC
     VTPRUNIFACModel <: UNIFACModel
 
     VTPRUNIFAC(components::Vector{String};
-    puremodel = PR,
-    userlocations = String[], 
+    puremodel = BasicIdeal,
+    userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
@@ -48,25 +40,26 @@ The residual part iterates over groups instead of components.
 Gᴱ = nRT(gᴱ(res))
 gᴱ(res) = -v̄∑XₖQₖlog(∑ΘₘΨₘₖ)
 v̄ = ∑∑xᵢνᵢₖ for k ∈ groups,  for i ∈ components
-Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components 
+Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 Θₖ = QₖXₖ/∑QₖXₖ
 Ψₖₘ = exp(-(Aₖₘ + BₖₘT + CₖₘT²)/T)
 ```
 
 ## References
-1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. doi:10.1021/i260064a004
+1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. "doi:[10.1021/i260064a004](https://doi.org/10.1021/i260064a004)"
 2. Weidlich, U.; Gmehling, J. A modified UNIFAC model. 1. Prediction of VLE, hE, and.gamma..infin. Ind. Eng. Chem. Res. 1987, 26, 1372–1381.
-3. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. doi:10.1016/s0378-3812(01)00626-4
+3. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. [doi:10.1016/s0378-3812(01)00626-4](https://doi.org/10.1016/s0378-3812(01)00626-4)
 """
 VTPRUNIFAC
 
-function VTPRUNIFAC(components::Vector{String};
-    puremodel = PR,
-    userlocations = String[], 
+function VTPRUNIFAC(components;
+    puremodel = BasicIdeal,
+    userlocations = String[],
+    group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
-    groups = GroupParam(components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"]; verbose=verbose)
+    groups = GroupParam(components, ["Activity/UNIFAC/VTPR/VTPR_groups.csv"];group_userlocations = group_userlocations, verbose=verbose)
 
     params = getparams(groups, ["Activity/UNIFAC/VTPR/VTPR_like.csv", "Activity/UNIFAC/VTPR/VTPR_unlike.csv"]; userlocations=userlocations,  asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
     A  = params["A"]
@@ -75,21 +68,13 @@ function VTPRUNIFAC(components::Vector{String};
     Q  = params["Q"]
     R = deepcopy(Q)
     R.values .= 0
-    icomponents = 1:length(components)
-    cache = VTPRUNIFACCache(groups)
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
+    _puremodel = init_puremodel(puremodel,groups.components,pure_userlocations,verbose)
     packagedparams = UNIFACParam(A,B,C,R,Q)
     references = String["10.1016/S0378-3812(01)00626-4"]
-    model = VTPRUNIFAC(components,icomponents,groups,packagedparams,_puremodel,references,cache)
+    model = VTPRUNIFAC(groups.components,groups,packagedparams,_puremodel,references)
     return model
 end
 
-function VTPRUNIFACCache(groups::GroupParam)
-    m = group_sum(groups,nothing)
-    return VTPRUNIFACCache(groups.components,m)
-end
-
-function excess_gibbs_free_energy(model::VTPRUNIFACModel,V,T,z)
-    lnγ = lnγ_res(model,V,T,z)
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+function excess_gibbs_free_energy(model::VTPRUNIFACModel,p,T,z)
+    return excess_g_res(model,p,T,z)*R̄*T 
 end

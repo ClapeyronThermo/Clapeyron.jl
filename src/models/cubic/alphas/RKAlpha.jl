@@ -10,7 +10,7 @@ export RKAlpha
     RKAlpha <: RKAlphaModel
     
     RKAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -32,8 +32,7 @@ Trᵢ = T/Tcᵢ
 """
 RKAlpha
 
-function RKAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+function RKAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
     packagedparams = RKAlphaParam()
     model = RKAlpha(packagedparams, verbose=verbose)
     return model
@@ -43,7 +42,7 @@ RKAlpha() = RKAlpha(RKAlphaParam())
 
 function α_function(model::CubicModel,V,T,z,alpha_model::RKAlphaModel)
     Tc = model.params.Tc.values
-    α = zeros(typeof(T),length(Tc))
+    α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         Tr = T/Tc[i]
         α[i] = 1 /√(Tr)
