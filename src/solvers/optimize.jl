@@ -75,6 +75,7 @@ function optimize(f,x0,method=LineSearch(Newton()),options=OptimizationOptions()
     optprob = OptimizationProblem(obj = scalarobj,inplace = (x0 isa Number),bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end
+ 
 
 function optimize(optprob::OptimizationProblem,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
     return NLSolvers.solve(optprob,x0,method,options)

@@ -124,10 +124,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     end
     X0 = vec(reshape(ℳˢ[:,1:nc-1],(1,nps*(nc-1))))
     X0 = append!(X0,ℳˢ[:,end])
-    X0 = append!(X0,1/nps*ones(nps))
-    X0 = append!(X0,λ₀)
-    X0 = append!(X0,1.)
-
+    
     g(x) = Obj_HELD_tp_flash(model,p,T,n,x,nps)
     
     #Default options, feel free to change any of those
@@ -153,11 +150,11 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     x = reshape(X[1:nps*(nc-1)],(nps,nc-1))
     x = Clapeyron.Fractions.FractionVector.(eachrow(x))
     V = 10 .^X[nps*(nc-1)+1:nps*nc]
-    ϕ = X[nps*nc+1:nps*(nc+1)]
-    λ = X[nps*(nc+1)+1:end]
-    if any(abs.(λ).<method.eps_μ) & method.verbose==true
-        println("Mass balance could not be satisfied.")
-    end
+    # ϕ = X[nps*nc+1:nps*(nc+1)]
+    # λ = X[nps*(nc+1)+1:end]
+    # if any(abs.(λ).<method.eps_μ) & method.verbose==true
+    #     println("Mass balance could not be satisfied.")
+    # end
     test_G = UBDⱽ-G
     test_G = (UBDⱽ-G)
     μ = VT_chemical_potential.(model,V,T,x)/R̄/T
@@ -166,6 +163,8 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::HELDTPFlash)
     @show test_μ
     @show test_G
     #test_μ = [abs((μ[j][i]-μ[j+1][i])/μ[j][i])<method.eps_μ for i ∈ 1:nc for j ∈ 1:nps-1]
+    println(x)
+    println(G)
     if (test_G >=method.eps_g) & all(<(method.eps_μ),test_μ)
         if method.verbose == true
             println("HELD has successfully converged to a solution. Terminating algorithm.")
@@ -187,8 +186,8 @@ function HELD_stage_II(model,p,T,n,ℳ,G,LV,UBDⱽ,λᴸ,λᵁ,method,k)
         println("-------------------------------------------------------")
     end
     OPₓᵥ = Model(HiGHS.Optimizer)
-    set_optimizer_attribute(OPₓᵥ, "log_to_console", "false")
-    set_optimizer_attribute(OPₓᵥ, "output_flag", "false")
+    set_optimizer_attribute(OPₓᵥ, "log_to_console", false)
+    set_optimizer_attribute(OPₓᵥ, "output_flag", false)
     @variable(OPₓᵥ, v)
     @variable(OPₓᵥ, λ[1:nc-1])
     @constraint(OPₓᵥ,v<=UBDⱽ)
@@ -306,16 +305,23 @@ end
 function Obj_HELD_tp_flash(model,p,T,x₀,X,np)
     nc = length(x₀)
     x = reshape(X[1:np*(nc-1)],(np,nc-1))
-    V = 10 .^X[np*(nc-1)+1:np*nc]
-    ϕ = X[np*nc+1:np*(nc+1)]
-    λ = X[np*(nc+1)+1:end]
 
-    g = vec(λ[1:end-1]'*(ϕ'*x-x₀[1:nc-1]))[1]
-    h = λ[end]*(sum(ϕ)-1)
+    V = 10 .^X[np*(nc-1)+1:np*nc]
+    if np == 2
+        ϕ = [(x₀[1]-x[1,1])/(x[2,1]-x[1,1]),(x₀[1]-x[2,1])/(x[1,1]-x[2,1])]
+    elseif np==3
+        ϕ = [0,
+            ((x₀[1]-x[1,1])/(x[3,1]-x[1,1])-(x₀[2]-x[1,2])/(x[3,2]-x[1,2]))/((x[2,1]-x[1,1])/(x[3,1]-x[1,1])-(x[2,2]-x[1,2])/(x[3,2]-x[1,2])),
+            ((x₀[1]-x[1,1])/(x[2,1]-x[1,1])-(x₀[2]-x[1,2])/(x[2,2]-x[1,2]))/((x[3,1]-x[1,1])/(x[2,1]-x[1,1])-(x[3,2]-x[1,2])/(x[2,2]-x[1,2]))]
+        ϕ[1] = 1-sum(ϕ[2:3])
+    end
+
     x = Clapeyron.Fractions.FractionVector.(eachrow(x))
+
     A = Clapeyron.eos.(model,V,T,x)
-    f = sum(ϕ'*(A+p*V))/Clapeyron.R̄/T
-    F = f+g+h
+    f = sum(ϕ.*(A+p*V)./sum.(x))/Clapeyron.R̄/T
+    F = f
+    return F
 end
 
 export HELDTPFlash
