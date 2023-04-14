@@ -171,6 +171,7 @@ function all_tpd(model::EoSModel, p, T, z,phasepairs = ((:liquid,:vapour),(:liqu
     phasew_array = phasew_array[index]    
     return w_array, tpd_array, phasez_array, phasew_array
 end
+
 """
     tpd(model,p,T,z;verbose=false)
 
@@ -203,8 +204,6 @@ end
 #         x1,x2 = w[1],w[2]
 #         return x1 ./ x2
 #     end
-    
-
 # end
 
 function K0_lle_init(model::EoSModel, p, T, z)
