@@ -1,1 +1,7 @@
 Manifest.toml
+docs/build/
+docs/site/
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+lcov.info
