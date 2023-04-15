@@ -202,6 +202,25 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     _1 = one(p+T+first(z))
     # Initial guess for phase split
     β,singlephase,_ = rachfordrice_β0(K,z)
+
+
+    #if we obtain singlephase, we try to solve one iter as bubble of dew point
+    if β == 0 && singlephase #bubble point or lower
+        singlephase = false
+        β += 0.0001
+        g̃0 = dot(z, K)
+        x .= z
+        y .= z .* K ./ g̃0
+    elseif β == 1 && singlephase
+        β -= 0.0001
+        singlephase = false
+        g̃1 = sum(zi/Ki for (zi,Ki) in zip(z,K))
+        y .= z
+        x .= z ./ K ./ g̃1
+    end
+
+    @show singlephase
+
     #=TODO:
     there is a method used in TREND that tries to obtain adequate values of K
     in the case of incorrect initialization.
@@ -297,7 +316,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         nysum = sum(ny)
         x = nx ./ nxsum
         y = ny ./ nysum
-        β = sum(ny)
+        K .= y ./ x
+        _,singlephase = rachfordrice_β0(K,z) #we perform a single phase mass balance to check if the values are right
     end
 
     if singlephase
