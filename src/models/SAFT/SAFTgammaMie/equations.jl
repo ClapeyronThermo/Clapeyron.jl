@@ -28,6 +28,8 @@ function p_scale(model::SAFTgammaMieModel,z=SA[1.0])
     return 1/val
 end
 
+getsites(model::SAFTgammaMieModel) = model.vrmodel.sites
+
 function a_res(model::SAFTgammaMieModel, V, T, z)
     _data = @f(data)
     dgc,X,vrdata = _data
