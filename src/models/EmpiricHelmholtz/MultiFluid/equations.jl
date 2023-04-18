@@ -283,7 +283,7 @@ function wilson_k_values(model::MultiFluidModel,p,T,crit = nothing)
     _Pc = model.properties.pc.values
     for i ∈ 1:n
         pure_i = pure[i]
-        Tc,pc = _Pc[i],_Tc[i]
+        Tc,pc = _Tc[i],_Pc[i]
         ps = first(saturation_pressure(pure_i,0.7*Tc))
         ω = -log10(ps/pc) - 1.0
         K0[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))

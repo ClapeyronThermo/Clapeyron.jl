@@ -198,4 +198,8 @@ function dgibbs_obj!(model::PTFlashWrapper{<:CompositeModel}, p, T, z, phasex, p
     #
 end
 
+function K0_lle_init(model::PTFlashWrapper{<:CompositeModel},p,T,z)
+    throw(error("CompositeModel does not support LLE equilibria."))
+end
+
 export CompositeModel

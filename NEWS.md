@@ -9,4 +9,5 @@
     - Activity + ideal gas: `Activity(components, puremodel = IdealModel)`
     - Activity + real gas: `Activity(components, puremodel = EosModel)` (`ActivityModel(components)` normally calls `ActivityModel(components,puremodel = PR)`)
 - `RRTPFlash` now supports acceleration, non-condensables, non-volatiles, activity models and `CompositeModel`. (the same operations that `MichelsenTPFlash` supports.)
+- `MichelsenTPFlash` and `RRTPFlash` provide initial guesses for LLE equilibria. `tp_flash(model,p,T,z,MichelsenTPFlash(equilibrium = :lle))` should suffice to calculate LLE flashes.
 - `UNIFAC` models should be faster.
