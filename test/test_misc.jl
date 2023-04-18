@@ -261,6 +261,7 @@ end
             res_split = Clapeyron.eos(model_split,1.013e6,298.15) #should work
             @test res_pure ≈ res_split
         end
+    end
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
         @testset "ambiguities" begin
