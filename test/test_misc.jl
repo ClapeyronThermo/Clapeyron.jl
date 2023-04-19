@@ -39,6 +39,11 @@ end
         structgc_split = Clapeyron.split_model(model_structgc)
         @test structgc_split[1].groups.n_intergroups[1] == [0 1; 1 0]
         @test structgc_split[2].groups.n_intergroups[1] == [0 2; 2 5]
+
+        #from notebooks, #173
+        nb_test = SAFTgammaMie(["methane","nitrogen","carbon dioxide","ethane","propane","butane","isobutane",
+        "pentane","isopentane","hexane","heptane","octane"])
+        @test length(split_model(nb_test)) == 12
     end
 
     @testset "single component error" begin
