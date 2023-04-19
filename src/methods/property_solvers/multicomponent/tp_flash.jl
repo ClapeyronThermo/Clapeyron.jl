@@ -23,23 +23,12 @@ Outputs - Tuple containing:
  - nᵢⱼ, Array of mole numbers of species j in phase i, [mol]
  - G, Gibbs Free Energy of Equilibrium Mixture [J]
 """
-function tp_flash end
+function tp_flash(model::EoSModel, p, T, n;kwargs...)
+    method = init_preferred_method(tp_flash,model,kwargs)
+    return tp_flash(model, p, T, n,method)
+end
 
-"""
-    numphases(method::TPFlashMethod)
-
-return the number of phases supported by the TP flash method. by default its set to 2.
-it the method allows it, you can set the number of phases by doing `method(;numphases = n)`.
-"""
-numphases(method::TPFlashMethod) = 2
-
-#default
-include("tp_flash/DifferentialEvolutiontp_flash.jl")
-include("tp_flash/michelsen_base.jl")
-include("tp_flash/Michelsentp_flash.jl")
-include("tp_flash/RachfordRicetp_flash.jl")
-
-function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
+function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod)
     numspecies = length(model)
     if numspecies != length(n)
         error("There are ", numspecies,
@@ -63,6 +52,30 @@ function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod = DETPFlash())
     nij = index_expansion(nij_r,idx_r)
     xij = index_expansion(xij_r,idx_r)
     return xij,nij,g
+end
+
+"""
+    numphases(method::TPFlashMethod)
+
+return the number of phases supported by the TP flash method. by default its set to 2.
+it the method allows it, you can set the number of phases by doing `method(;numphases = n)`.
+"""
+numphases(method::TPFlashMethod) = 2
+
+#default
+include("tp_flash/DifferentialEvolutiontp_flash.jl")
+include("tp_flash/michelsen_base.jl")
+include("tp_flash/Michelsentp_flash.jl")
+include("tp_flash/RachfordRicetp_flash.jl")
+
+function init_preferred_method(method::typeof(tp_flash),model::EoSModel,kwargs)
+    if haskey(kwargs,:equilibrium) || haskey(kwargs,:K0) || haskey(kwargs,:y0) || haskey(kwargs,:x0)
+        return MichelsenTPFlash(;kwargs...)
+    elseif haskey(kwargs,:numphases)
+        return DETPFlash(;kwargs...)
+    else
+        return DETPFlash(;kwargs...)
+    end
 end
 
 export tp_flash

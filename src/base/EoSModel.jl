@@ -19,6 +19,7 @@ You can mix and match ideal models if you provide:
 function eos(model::EoSModel, V, T, z=SA[1.0])
     return N_A*k_B*sum(z)*T * (a_ideal(idealmodel(model),V,T,z)+a_res(model,V,T,z))
 end
+
 """
     idealmodel(model::EoSModel)
     
@@ -80,12 +81,11 @@ Base.broadcastable(model::EoSModel) = Ref(model)
 Base.transpose(model::EoSModel) = model
 """
     @comps
-This macro is an alias to
-    1:length(model)
+
+This macro is an alias to `1:length(model)`
 The caveat is that `model` has to exist in the local namespace.
 `model` is expected to any struct that has length defined in terms of the amount of components.
 """
-
 macro comps()
     return quote
         1:length(model)

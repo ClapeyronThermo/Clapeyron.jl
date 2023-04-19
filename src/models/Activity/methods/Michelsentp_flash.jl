@@ -1,4 +1,7 @@
 #special support for activity models with the michelsen tp flash method.
+function init_preferred_method(method::typeof(tp_flash),model::ActivityModel,kwargs)
+    return RRTPFlash(;kwargs...)
+end
 
 function PTFlashWrapper(model::ActivityModel,T::Number) 
     pures = model.puremodel.pure
