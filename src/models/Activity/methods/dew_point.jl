@@ -82,7 +82,7 @@ end
 function init_preferred_method(method::typeof(dew_temperature),model::ActivityModel,kwargs)
     gas_fug = get(kwargs,gas_fug,false)
     poynting = get(poynting,gas_fug,false)
-    return ActivityDewPressure(;gas_fug,poynting,kwargs...)
+    return ActivityDewTemperature(;gas_fug,poynting,kwargs...)
 end
 
 function dew_temperature(model::ActivityModel, T, x, method::DewPointMethod)
@@ -114,8 +114,6 @@ function dew_temperature_impl(model::ActivityModel,p,y,method::ActivityDewTemper
     vl = volume(pure.model,p,T,x,phase = :l)
     vv = volume(pure.model,p,T,y,phase = :v)
     return (T,vl,vv,x)
-    #p,vl,vv,y = bubble_pressure(model,T,x,ActivityBubblePressure(gas_fug = method.gas_fug,poynting = method.poynting))
-    #return (T,vl,vv,y)
 end
 
 function Obj_dew_temperature(F,model::ActivityModel,p,y,_x,T)
