@@ -1,5 +1,7 @@
-function bubble_pressure(model::ActivityModel,T,x)
-    bubble_pressure(model,T,x,ActivityBubblePressure(gas_fug = false, poynting = false))
+function init_preferred_method(method::typeof(bubble_pressure),model::ActivityModel,kwargs)
+    gas_fug = get(kwargs,:gas_fug,false)
+    poynting = get(kwargs,:poynting,false)
+    return ActivityBubblePressure(;gas_fug,poynting,kwargs...)
 end
 
 function bubble_pressure(model::ActivityModel, T, x, method::BubblePointMethod)
@@ -8,9 +10,9 @@ function bubble_pressure(model::ActivityModel, T, x, method::BubblePointMethod)
     end
     _T = typeof(T)
     _x = typeof(x)
+    #this is done to reuse the index_reduction strategy done in the main function.
     Base.invoke(bubble_pressure,Tuple{EoSModel,_T,_x,BubblePointMethod},model,T,x,method)
 end
-
 
 function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePressure)
     sat = saturation_pressure.(model.puremodel,T)
@@ -79,8 +81,10 @@ function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePre
     return (p,vl,vv,y)
 end
 
-function bubble_temperature(model::ActivityModel,T,x)
-    bubble_temperature(model,T,x,ActivityBubbleTemperature(gas_fug = false, poynting = false))
+function init_preferred_method(method::typeof(bubble_temperature),model::ActivityModel,kwargs)
+    gas_fug = get(kwargs,:gas_fug,false)
+    poynting = get(kwargs,:poynting,false)
+    return ActivityBubbleTemperature(;gas_fug,poynting,kwargs...)
 end
 
 function bubble_temperature(model::ActivityModel, T, x, method::BubblePointMethod)
