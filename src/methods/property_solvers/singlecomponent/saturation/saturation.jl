@@ -111,6 +111,11 @@ julia> saturation_pressure(pr,Ts)
 (100000.00004314569, 2.269760164804427e-5, 0.03084938795785433)
 ```
 """
+function saturation_temperature(model,p;kwargs...)
+    method = init_preferred_method(saturation_temperature,model,kwargs)
+    return saturation_temperature(model,p,method)
+end
+
 function saturation_temperature(model,p,method::SaturationMethod)
     single_component_check(crit_pure,model)
     p = p*p/p

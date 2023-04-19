@@ -50,6 +50,9 @@ function ChemPotVSaturation(;vl = nothing,
     end
 end
 
+ChemPotVSaturation(x::Tuple) = ChemPotVSaturation(vl = first(x),vv = last(x))
+ChemPotVSaturation(x::Vector) = ChemPotVSaturation(vl = first(x),vv = last(x))
+
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{Nothing})
     vl,vv = x0_sat_pure(model,T)
     crit = method.crit

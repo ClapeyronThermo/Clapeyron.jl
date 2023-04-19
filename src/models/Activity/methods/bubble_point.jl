@@ -1,6 +1,6 @@
 function init_preferred_method(method::typeof(bubble_pressure),model::ActivityModel,kwargs)
-    gas_fug = get(kwargs,gas_fug,false)
-    poynting = get(poynting,gas_fug,false)
+    gas_fug = get(kwargs,:gas_fug,false)
+    poynting = get(kwargs,:poynting,false)
     return ActivityBubblePressure(;gas_fug,poynting,kwargs...)
 end
 
@@ -82,8 +82,8 @@ function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePre
 end
 
 function init_preferred_method(method::typeof(bubble_temperature),model::ActivityModel,kwargs)
-    gas_fug = get(kwargs,gas_fug,false)
-    poynting = get(poynting,gas_fug,false)
+    gas_fug = get(kwargs,:gas_fug,false)
+    poynting = get(kwargs,:poynting,false)
     return ActivityBubbleTemperature(;gas_fug,poynting,kwargs...)
 end
 

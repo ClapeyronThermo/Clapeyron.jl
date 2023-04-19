@@ -166,9 +166,5 @@ function try_sat_temp(model,p,T0,Vl,Vv,scales,method::AntoineSaturation)
     return (T,Vl,Vv),converged
 end
 
-#Default!
-function saturation_temperature(model,p)
-    return saturation_temperature(model,p,AntoineSaturation())
-end
 
 export AntoineSaturation
