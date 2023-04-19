@@ -76,15 +76,24 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
     vl_pure = getindex.(sat,2)
     vv_pure = last.(sat)
 
+    _0  =zero(eltype(p_pure))
+    nan = _0/_0
+
     if isnothing(method.vol0)
         vl = dot(vl_pure,x)
         vv = zero(vl)
     else
         vl,vv = method.vol0
     end
-
+   
     if isnan(vl)
-        return vl,vl,vl,x
+        return _0,_0,_0,x
+    end
+
+    if any(isnan,p_pure)
+        _0  =zero(eltype(p_pure))
+        nan = 
+        return _0,_0,_0,x
     end
 
     if isnothing(method.p0)
