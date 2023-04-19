@@ -26,8 +26,6 @@ struct ChemPotVSaturation{T,C} <: SaturationMethod
     max_iters::Int
 end
 
-ChemPotVSaturation(x::Tuple) = ChemPotVSaturation(vl = first(x),vv = last(x))
-ChemPotVSaturation(x::Vector) = ChemPotVSaturation(vl = first(x),vv = last(x))
 
 function ChemPotVSaturation(;vl = nothing,
                             vv = nothing,
@@ -53,16 +51,7 @@ function ChemPotVSaturation(;vl = nothing,
     end
 end
 
-function saturation_pressure(model::EoSModel,T,V0::Union{Tuple,Vector})
-    single_component_check(saturation_pressure,model)
-    method = ChemPotVSaturation(V0)
-    T = T*T/T
-    return saturation_pressure_impl(model,T,method)
-end
 
-function saturation_pressure(model::EoSModel,T)
-   saturation_pressure(model,T,ChemPotVSaturation())
-end
 
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{Nothing})
     vl,vv = x0_sat_pure(model,T)

@@ -47,13 +47,6 @@ function AntoineSaturation(;T0 = nothing,
     end
 end
 
-#if a number is provided as initial point, it will instead proceed to solve directly
-function saturation_temperature(model::EoSModel, p, T0::Number)
-    sat = x0_sat_pure(model,T0)
-    T0,vl,vv = promote(T0,sat[1],sat[2])
-    return saturation_temperature_impl(model,p,AntoineSaturation(;T0,vl,vv))
-end
-
 function Obj_Sat_Temp(model::EoSModel, F, T, V_l, V_v,p,scales,method::AntoineSaturation)
     fun(_V) = eos(model, _V, T,SA[1.])
     A_l,Av_l = Solvers.f∂f(fun,V_l)

@@ -7,7 +7,6 @@ Should at least support passing the `crit` keyword, containing the critical poin
 """
 abstract type SaturationMethod <: ThermodynamicMethod end
 
-
 """
     saturation_pressure(model::EoSModel, T)
     saturation_pressure(model::EoSModel,T,method::SaturationMethod)
@@ -44,6 +43,21 @@ function saturation_pressure(model::EoSModel,T,method::SaturationMethod)
     return saturation_pressure_impl(model,T,method)
 end
 
+function saturation_pressure(model::EoSModel,T;kwargs...)
+    method = init_preferred_method(saturation_pressure,model,kwargs)
+    return saturation_pressure(model,T,method)
+end
+
+function saturation_pressure(model::EoSModel,T,V0::Union{Tuple,Vector})
+    single_component_check(saturation_pressure,model)
+    vl = first(V0)
+    vv = last(V0)
+    kwargs = (;vl,vv)
+    method = init_preferred_method(saturation_pressure,model,kwargs)
+    return saturation_pressure(model,T,method)
+end
+
+
 """
     check_valid_sat_pure(model,P_sat,Vl,Vv,T,ε0 = 5e7)
 
@@ -61,9 +75,9 @@ function check_valid_sat_pure(model,P_sat,V_l,V_v,T,ε0 = 5e7)
 end
 
 """
-    saturation_pressure(model::EoSModel, p)
-    saturation_pressure(model::EoSModel, p, method::SaturationMethod)
-    saturation_pressure(model, p, T0::Number)
+    saturation_temperature(model::EoSModel, p, kwargs...)
+    saturation_temperature(model::EoSModel, p, method::SaturationMethod)
+    saturation_temperature(model, p, T0::Number)
 
 Performs a single component saturation temperature equilibrium calculation, at the specified pressure `T`, of one mol of pure sustance specified by `model`
 
@@ -92,6 +106,13 @@ function saturation_temperature(model,p,method::SaturationMethod)
     single_component_check(crit_pure,model)
     p = p*p/p
     return saturation_temperature_impl(model,p,method)
+end
+
+#if a number is provided as initial point, it will instead proceed to solve directly
+function saturation_temperature(model::EoSModel, p, T0::Number)
+    kwargs = (;T0)
+    method = init_preferred_method(saturation_temperature,model,kwargs)
+    saturation_temperature(model,p,method)
 end
 
 include("ChemPotV.jl")
@@ -143,6 +164,20 @@ function saturation_liquid_density(model::EoSModel,T,satmethod = ChemPotVSaturat
     return saturation_pressure(model,T,satmethod)[2]
 end
 
-#tsat, psat interface
-include("tsat_psat.jl")
+#default initializers for saturation pressure and saturation temperature
 
+function init_preferred_method(method::typeof(saturation_pressure),model::EoSModel,kwargs)
+    if keys(kwargs) == (:v0,)
+        nt_kwargs = NamedTuple(kwargs)
+        v0 = nt_kwargs.v0
+        vl = first(v0)
+        vv = last(v0)
+        return ChemPotVSaturation(;vl,vv)
+    else
+        return ChemPotVSaturation(;kwargs...)
+    end
+end
+
+function init_preferred_method(method::typeof(saturation_temperature),model::EoSModel,kwargs)
+    return AntoineSaturation(;kwargs...)
+end
