@@ -126,6 +126,22 @@ Returns a tuple, containing:
 
 By default, uses equality of chemical potentials, via [`ChemPotBubblePressure`](@ref)
 """
+function bubble_pressure(model::EoSModel,T,x;kwargs...)
+    if keys(kwargs) == (:v0,)
+        nt_kwargs = NamedTuple(kwargs)
+        v0 = nt_kwargs.v0
+        vl = exp10(v0[1])
+        vv = exp10(v0[2])
+        vol0 = (vl,vv)
+        y0 = v0[3:end]
+        _kwargs = (;vol0,y0)
+        method = init_preferred_method(bubble_pressure,model,_kwargs)
+    else
+        method = init_preferred_method(bubble_pressure,model,kwargs)
+    end
+    return bubble_pressure(model, T, x, method)
+end
+
 function bubble_pressure(model::EoSModel, T, x, method::BubblePointMethod)
     x = x/sum(x)
     T = float(T)
@@ -284,6 +300,23 @@ Returns a tuple, containing:
 
 By default, uses equality of chemical potentials, via [`ChemPotBubbleTemperature`](@ref)
 """
+function bubble_temperature(model::EoSModel,p,x;kwargs...)
+    if keys(kwargs) == (:v0,)
+        nt_kwargs = NamedTuple(kwargs)
+        v0 = nt_kwargs.v0
+        T0 = v0[1]
+        vl = exp10(v0[2])
+        vv = exp10(v0[3])
+        vol0 = (vl,vv)
+        y0 = v0[4:end]
+        _kwargs = (;T0,vol0,y0)
+        method = init_preferred_method(bubble_temperature,model,_kwargs)
+    else
+        method = init_preferred_method(bubble_temperature,model,kwargs)
+    end
+    return bubble_temperature(model,p,x,ChemPotBubbleTemperature(;T0,vol0,y0))
+end
+
 function bubble_temperature(model::EoSModel, p , x, method::BubblePointMethod)
     x = x/sum(x)
     p = float(p)
@@ -305,32 +338,26 @@ function bubble_temperature(model::EoSModel, p , x, method::BubblePointMethod)
     end
 end
 
+function bubble_temperature(model::EoSModel, p , x, T0::Number)
+    kwargs = (;T0)
+    method = init_preferred_method(bubble_temperature,model,kwargs)
+    return bubble_temperature(model,p,x,method)
+end
+
+
+
+
 include("bubble_point/bubble_activity.jl")
 include("bubble_point/bubble_chempot.jl")
 include("bubble_point/bubble_fugacity.jl")
 
-#legacy
-function bubble_pressure(model::EoSModel,T,x;v0 = nothing)
-    if isnothing(v0)
-        return bubble_pressure(model,T,x,ChemPotBubblePressure())
-    else
-        vl = exp10(v0[1])
-        vv = exp10(v0[2])
-        vol0 = (vl,vv)
-        y0 = v0[3:end]
-        bubble_pressure(model,T,x,ChemPotBubblePressure(;vol0,y0))
-    end
+
+#default initializers
+
+function init_preferred_method(method::typeof(bubble_pressure),model::EoSModel,kwargs)
+    return ChemPotBubblePressure(;kwargs...) 
 end
 
-function bubble_temperature(model::EoSModel,p,x;v0 = nothing)
-    if isnothing(v0)
-        return bubble_temperature(model,p,x,ChemPotBubbleTemperature())
-    else
-        T0 = v0[1]
-        vl = exp10(v0[2])
-        vv = exp10(v0[3])
-        vol0 = (vl,vv)
-        y0 = v0[4:end]
-        bubble_temperature(model,p,x,ChemPotBubbleTemperature(;T0,vol0,y0))
-    end
+function init_preferred_method(method::typeof(bubble_temperature),model::EoSModel,kwargs)
+    return ChemPotBubbleTemperature(;kwargs...) 
 end
