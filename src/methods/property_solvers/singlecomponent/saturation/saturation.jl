@@ -44,7 +44,16 @@ function saturation_pressure(model::EoSModel,T,method::SaturationMethod)
 end
 
 function saturation_pressure(model::EoSModel,T;kwargs...)
-    method = init_preferred_method(saturation_pressure,model,kwargs)
+    if keys(kwargs) == (:v0,)
+        nt_kwargs = NamedTuple(kwargs)
+        v0 = nt_kwargs.v0
+        vl = first(v0)
+        vv = last(v0)
+        _kwargs = (;vl,vv)
+        method = init_preferred_method(saturation_pressure,model,_kwargs)
+    else
+        method = init_preferred_method(saturation_pressure,model,kwargs)
+    end
     return saturation_pressure(model,T,method)
 end
 
@@ -167,15 +176,7 @@ end
 #default initializers for saturation pressure and saturation temperature
 
 function init_preferred_method(method::typeof(saturation_pressure),model::EoSModel,kwargs)
-    if keys(kwargs) == (:v0,)
-        nt_kwargs = NamedTuple(kwargs)
-        v0 = nt_kwargs.v0
-        vl = first(v0)
-        vv = last(v0)
-        return ChemPotVSaturation(;vl,vv)
-    else
-        return ChemPotVSaturation(;kwargs...)
-    end
+    ChemPotVSaturation(;kwargs...)
 end
 
 function init_preferred_method(method::typeof(saturation_temperature),model::EoSModel,kwargs)

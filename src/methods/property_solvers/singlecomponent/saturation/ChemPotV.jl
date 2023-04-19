@@ -26,7 +26,6 @@ struct ChemPotVSaturation{T,C} <: SaturationMethod
     max_iters::Int
 end
 
-
 function ChemPotVSaturation(;vl = nothing,
                             vv = nothing,
                             crit = nothing,
@@ -50,8 +49,6 @@ function ChemPotVSaturation(;vl = nothing,
         return ChemPotVSaturation(vl,vv,crit,crit_retry,f_limit,atol,rtol,max_iters)
     end
 end
-
-
 
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{Nothing})
     vl,vv = x0_sat_pure(model,T)
