@@ -101,11 +101,11 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
     end
 end
 
-function init_preferred_method(method::typeof(saturation_pressure),model::SaturationModel,kwargs)
+function init_preferred_method(method::typeof(saturation_pressure),model::CompositeModel,kwargs)
     return init_preferred_method(saturation_pressure,model.saturation,kwargs)
 end
 
-function init_preferred_method(method::typeof(saturation_temperature),model::SaturationModel,kwargs)
+function init_preferred_method(method::typeof(saturation_temperature),model::CompositeModel,kwargs)
     return init_preferred_method(saturation_temperature,model.saturation,kwargs)
 end
 
