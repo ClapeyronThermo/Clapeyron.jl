@@ -127,6 +127,22 @@ Returns a tuple, containing:
 
 By default, uses equality of chemical potentials, via [`ChemPotDewPressure`](@ref)
 """
+function dew_pressure(model::EoSModel,T,x;kwargs...)
+    if keys(kwargs) == (:v0,)
+        nt_kwargs = NamedTuple(kwargs)
+        v0 = nt_kwargs.v0
+        vl = exp10(v0[1])
+        vv = exp10(v0[2])
+        vol0 = (vl,vv)
+        x0 = v0[3:end]
+        _kwargs = (;vol0,x0)
+        method = init_preferred_method(dew_pressure,model,_kwargs)
+    else
+        method = init_preferred_method(dew_pressure,model,kwargs)
+    end
+    return dew_pressure(model, T, x, method)
+end
+
 function dew_pressure(model::EoSModel, T, y,method::DewPointMethod)
     y = y/sum(y)
     T = float(T)
@@ -286,6 +302,29 @@ Returns a tuple, containing:
 
 By default, uses equality of chemical potentials, via [`ChemPotDewTemperature`](@ref)
 """
+function dew_temperature(model::EoSModel,p,x;kwargs...)
+    if keys(kwargs) == (:v0,)
+        nt_kwargs = NamedTuple(kwargs)
+        v0 = nt_kwargs.v0
+        T0 = v0[1]
+        vl = exp10(v0[2])
+        vv = exp10(v0[3])
+        vol0 = (vl,vv)
+        x0 = v0[4:end]
+        _kwargs = (;T0,vol0,x0)
+        method = init_preferred_method(dew_temperature,model,_kwargs)
+    else
+        method = init_preferred_method(dew_temperature,model,kwargs)
+    end
+    return dew_temperature(model,p,x,method)
+end
+
+function dew_temperature(model::EoSModel, p , x, T0::Number)
+    kwargs = (;T0)
+    method = init_preferred_method(dew_temperature,model,kwargs)
+    return dew_temperature(model,p,x,method)
+end
+
 function dew_temperature(model::EoSModel,p,y,method::DewPointMethod)
     y = y/sum(y)
     p = float(p)
@@ -309,29 +348,13 @@ end
 
 include("dew_point/dew_chempot.jl")
 include("dew_point/dew_fugacity.jl") 
-include("dew_point/dew_activity.jl") 
+include("dew_point/dew_activity.jl")
 
-function dew_pressure(model::EoSModel,T,y;v0 = nothing)
-    if isnothing(v0)
-        return dew_pressure(model,T,y,ChemPotDewPressure())
-    else
-        vl = exp10(v0[1])
-        vv = exp10(v0[2])
-        vol0 = (vl,vv)
-        x0 = v0[3:end]
-        dew_pressure(model,T,y,ChemPotDewPressure(;vol0,x0))
-    end
+function init_preferred_method(method::typeof(dew_pressure),model::EoSModel,kwargs)
+    return ChemPotDewPressure(;kwargs...) 
 end
 
-function dew_temperature(model::EoSModel,p,y;v0 = nothing)
-    if isnothing(v0)
-        return dew_temperature(model,p,y,ChemPotDewTemperature())
-    else
-        T0 = v0[1]
-        vl = exp10(v0[2])
-        vv = exp10(v0[3])
-        vol0 = (vl,vv)
-        x0 = v0[4:end]
-        dew_temperature(model,p,y,ChemPotDewTemperature(;T0,vol0,x0))
-    end
+function init_preferred_method(method::typeof(dew_temperature),model::EoSModel,kwargs)
+    return ChemPotDewTemperature(;kwargs...) 
 end
+

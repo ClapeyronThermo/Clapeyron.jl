@@ -1,5 +1,7 @@
-function dew_pressure(model::ActivityModel,T,x)
-    dew_pressure(model,T,x,ActivityDewPressure(gas_fug = false, poynting = false))
+function init_preferred_method(method::typeof(dew_pressure),model::ActivityModel,kwargs)
+    gas_fug = get(kwargs,gas_fug,false)
+    poynting = get(poynting,gas_fug,false)
+    return ActivityDewPressure(;gas_fug,poynting,kwargs...)
 end
 
 function dew_pressure(model::ActivityModel, T, y, method::DewPointMethod)
@@ -77,8 +79,10 @@ function dew_pressure_impl(model::ActivityModel,T,y,method::ActivityDewPressure)
     return (p,vl,vv,x)
 end
 
-function dew_temperature(model::ActivityModel,T,x)
-    dew_temperature(model,T,x,ActivityDewTemperature(gas_fug = false, poynting = false))
+function init_preferred_method(method::typeof(dew_temperature),model::ActivityModel,kwargs)
+    gas_fug = get(kwargs,gas_fug,false)
+    poynting = get(poynting,gas_fug,false)
+    return ActivityDewPressure(;gas_fug,poynting,kwargs...)
 end
 
 function dew_temperature(model::ActivityModel, T, x, method::DewPointMethod)

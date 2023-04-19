@@ -317,6 +317,12 @@ function bubble_temperature(model::EoSModel,p,x;kwargs...)
     return bubble_temperature(model,p,x,ChemPotBubbleTemperature(;T0,vol0,y0))
 end
 
+function bubble_temperature(model::EoSModel, p , x, T0::Number)
+    kwargs = (;T0)
+    method = init_preferred_method(bubble_temperature,model,kwargs)
+    return bubble_temperature(model,p,x,method)
+end
+
 function bubble_temperature(model::EoSModel, p , x, method::BubblePointMethod)
     x = x/sum(x)
     p = float(p)
@@ -337,15 +343,6 @@ function bubble_temperature(model::EoSModel, p , x, method::BubblePointMethod)
         return (nan,nan,nan,y)
     end
 end
-
-function bubble_temperature(model::EoSModel, p , x, T0::Number)
-    kwargs = (;T0)
-    method = init_preferred_method(bubble_temperature,model,kwargs)
-    return bubble_temperature(model,p,x,method)
-end
-
-
-
 
 include("bubble_point/bubble_activity.jl")
 include("bubble_point/bubble_chempot.jl")
