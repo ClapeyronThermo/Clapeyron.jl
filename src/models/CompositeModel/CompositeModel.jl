@@ -144,6 +144,10 @@ function saturation_temperature(model::CompositeModel,p,method::SaturationMethod
 end
 
 #Michelsen TPFlash and rachford rice tpflash support
+function init_preferred_method(method::typeof(tp_flash),model::CompositeModel,kwargs)
+    return RRTPFlash(;kwargs...)
+end
+
 __tpflash_cache_model(model::CompositeModel,p,T,z) = PTFlashWrapper(model,T)
 
 function PTFlashWrapper(model::CompositeModel,T::Number) 
