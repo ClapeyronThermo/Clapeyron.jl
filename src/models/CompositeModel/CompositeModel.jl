@@ -101,13 +101,12 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
     end
 end
 
-function saturation_pressure(model::CompositeModel,T::Real)
-    if model.saturation isa SaturationModel
-        method = SaturationCorrelation()
-    else
-        method = ChemPotVSaturation()
-    end
-    return saturation_pressure(model,T,method)
+function init_preferred_method(method::typeof(saturation_pressure),model::SaturationModel,kwargs)
+    return init_preferred_method(saturation_pressure,model.saturation,kwargs)
+end
+
+function init_preferred_method(method::typeof(saturation_temperature),model::SaturationModel,kwargs)
+    return init_preferred_method(saturation_temperature,model.saturation,kwargs)
 end
 
 function saturation_pressure(model::CompositeModel,T,method::SaturationMethod)
@@ -120,7 +119,7 @@ function saturation_pressure(model::CompositeModel,T,method::SaturationMethod)
     #if psat fails, there are two options:
     #1- over critical point -> nan nan nan
     #2- saturation failed -> nan nan nan
-    else 
+    else
         return nan,nan,nan
     end
 end
