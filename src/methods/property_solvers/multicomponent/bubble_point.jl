@@ -314,7 +314,7 @@ function bubble_temperature(model::EoSModel,p,x;kwargs...)
     else
         method = init_preferred_method(bubble_temperature,model,kwargs)
     end
-    return bubble_temperature(model,p,x,ChemPotBubbleTemperature(;T0,vol0,y0))
+    return bubble_temperature(model,p,x,method)
 end
 
 function bubble_temperature(model::EoSModel, p , x, T0::Number)
