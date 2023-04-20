@@ -293,6 +293,8 @@ end
 
 @testset "Cubic methods, multi-components" begin
     system = RK(["ethane","undecane"])
+    system2 = VTPR(["carbon monoxide","carbon dioxide"])
+
     p = 1e7
     T = 298.15
     z = [0.5,0.5]
@@ -305,6 +307,8 @@ end
         @test Clapeyron.crit_mix(system, z)[1] ≈ 575.622237585033 rtol = 1E-6
         srksystem  = SRK(["ethane","undecane"])
         @test Clapeyron.wilson_k_values(srksystem,p,T) ≈ [0.420849235562207, 1.6163027384311e-5] rtol = 1E-6
+        #see https://github.com/ClapeyronThermo/Clapeyron.jl/issues/173
+        @test Clapeyron.bubble_pressure(system2,218.15,[1e-5,1-1e-5])[1] ≈ 1.1373024916997014e6 rtol = 1e-4
     end
 end
 
