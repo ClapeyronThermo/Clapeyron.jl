@@ -475,6 +475,11 @@ function gibbs_solvation(model::EoSModel,T)
     return -R̄*T*log(K)
 end    
 
+function partial_property(model::EoSModel,p,T,z,property::ℜ;phase = :unknown,threaded=true) where {ℜ}
+    V = volume(model,p,T,z;phase,threaded)
+    return VT_partial_property(model,V,T,z,property)
+end
+
 export entropy, chemical_potential, internal_energy, enthalpy, gibbs_free_energy
 export helmholtz_free_energy, isochoric_heat_capacity, isobaric_heat_capacity
 export isothermal_compressibility, isentropic_compressibility, speed_of_sound
