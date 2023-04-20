@@ -63,7 +63,6 @@ function group_sum(groups::GroupParameter,param::SingleParameter)
                         fill(false,gc),
                         param.sources,
                         param.sourcecsvs)
-    @show gc
     return group_sum!(out,groups,param)
 end
 

@@ -141,7 +141,7 @@ function compute_index(idxs,i,a)::Int
 end
 
 function inverse_index(idxs,o)
-    i = findfirst(>=(o-1),idxs)
+    i = findfirst(>=(o-1),idxs)::Int
     a = o + 1 - idxs[i]
     return i,a
 end
