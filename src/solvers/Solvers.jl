@@ -27,7 +27,9 @@ export CholeskyNewton
 Returns the scalar or vector x that solves the system of equations or is the minimizer of an optimization procedure.
 """
 x_sol(res) = NLSolvers.solution(res)
-
+function x_sol(res::NLSolvers.ConvergenceInfo{NLSolvers.BrentMin{Float64}})
+    return res.info.x
+end
 include("poly.jl")
 include("ad.jl")
 include("nanmath.jl")
