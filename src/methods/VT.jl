@@ -256,12 +256,6 @@ function VT_partial_property(model::EoSModel,V,T,z,property::ℜ) where {ℜ}
     return ForwardDiff.gradient(fun,z)::TT
 end
 
-function VT_partial_property(model::EoSModel,V,T,z,property::typeof(volume))
-    _,dpdv = p∂p∂V(model,V,T,z)
-    dpdni = VT_partial_property(model,V,T,z,pressure)
-    return -dpdni ./ dpdv
-end
-
 VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos)
 VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos_res)
 

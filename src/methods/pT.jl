@@ -480,6 +480,13 @@ function partial_property(model::EoSModel,p,T,z,property::ℜ;phase = :unknown,t
     return VT_partial_property(model,V,T,z,property)
 end
 
+#special dispatch for volume here
+function VT_partial_property(model::EoSModel,V,T,z,property::typeof(volume))
+    _,dpdv = p∂p∂V(model,V,T,z)
+    dpdni = VT_partial_property(model,V,T,z,pressure)
+    return -dpdni ./ dpdv
+end
+
 export entropy, chemical_potential, internal_energy, enthalpy, gibbs_free_energy
 export helmholtz_free_energy, isochoric_heat_capacity, isobaric_heat_capacity
 export isothermal_compressibility, isentropic_compressibility, speed_of_sound
