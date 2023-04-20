@@ -39,7 +39,7 @@ model = PR(components;
     mixing_userlocations = mixing_userlocations,
     activity_userlocations = activity_userlocations,
     translation_userlocations = QCPR_translation_userlocations,
-    verbose=false)
+    verbose=verbose)
     setreferences!(model,String["10.1021/I160057A011"])
     return model
 end
