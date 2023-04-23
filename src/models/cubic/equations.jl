@@ -234,11 +234,11 @@ function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
     vvv = extrema(real.(xx))
     zl,zg = vvv
     vvl,vvg = nRTp*zl,nRTp*zg
-    err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
+    #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if !isfinite(vvl) && !isfinite(vvg) && phase != :unknown
         V0 = x0_volume(model, p, T, z; phase)
         v = _volume_compress(model, p, T, z, V0)
-        isnan(v) && err()
+        #isnan(v) && err()
         return v
     end
     if sum(isreal) == 3 #3 roots
@@ -252,7 +252,7 @@ function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
     elseif sum(isreal) == 0
         V0 = x0_volume(model, p, T, z; phase)
         v = _volume_compress(model, p, T, z, V0)
-        isnan(v) && err()
+        #isnan(v) && err()
         return v
     end
 
