@@ -23,57 +23,44 @@ function index_reduction(method::BubblePointMethod,idx_r)
     return method
 end
 
-function __x0_bubble_pressure(model::EoSModel,T,x)
-    #check each T with T_scale, if treshold is over, replace Pi with inf
-    comps = length(model)
-    pure = split_model(model)
-    crit = crit_pure.(pure)
-    T_c = first.(crit)
-    V_c = last.(crit)
-    _0 = zero(T+first(x))
-    nan = _0/_0
-    sat_nan = (nan,nan,nan)
-    replaceP = T_c .< T
-    sat = fill(sat_nan,comps)
-    for i in 1:comps
-        if !replaceP[i]
-        sat[i] = saturation_pressure(pure[i],T,ChemPotVSaturation(crit = crit[i]))
-        end
-    end
-    P_sat = [tup[1] for tup in sat]
-    V_l_sat = [tup[2] for tup in sat]
-    V_v_sat = [tup[3] for tup in sat]
-
-    P = zero(T)
-    V0_l = zero(T)
-    V0_v = zero(T)
-    Pi   = zero(x)
-    for i in 1:length(x)
-        if !replaceP[i]
-            Pi[i] = P_sat[i]
-            P+=x[i]*Pi[i]
-            V0_l += x[i]*V_l_sat[i]
-        else
-            Pi[i] = pressure(pure[i],V_c[i],T)
-            P+=x[i]*Pi[i]
-            V0_l += x[i]*V_c[i]
-        end
-    end
-
-    y = @. x*Pi/P
-    ysum = 1/∑(y)
-    y    = y.*ysum
-
-    for i in 1:length(x)
-        if !replaceP[i]
-            V0_v += y[i]*V_v_sat[i]
-        else
-            V0_v += y[i]*V_c[i]*1.2
-        end
-    end
-    #prepend!(y,log10.([V0_l,V0_v]))
-    return P,V0_l,V0_v,y
+function initial_points_bd_T(pure,T)
+    #try without critical point information
+    sat = saturation_pressure(pure,T,crit_retry = false)
+    !isnan(first(sat)) && return sat
+    
+    #calculate critical point, try again
+    crit = crit_pure(pure)
+    sat = saturation_pressure(pure,T,crit = crit)
+    !isnan(first(sat)) && return sat
+    
+    Tc,Pc,Vc = crit
+    #create initial point from critical values:
+    p0 = pressure(pure,Vc,T)
+    vl0 = Vc
+    vv0 = 1.2Vc
+    return p0,vl0,vv0
 end
+
+function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing)
+    #check each T with T_scale, if treshold is over, replace Pi with inf
+    pure = split_model(model)
+    pure_vals = initial_points_bd_T.(pure,T) #saturation, or aproximation via critical point.
+    p0 = first.(pure_vals)
+    vli = getindex.(pure_vals,2)
+    vvi = getindex.(pure_vals,3)
+    xipi = p0 .* x
+    p = sum(xipi)
+    if isnothing(y0)
+        y = xipi
+        y ./= p
+    else
+        y = y0
+    end
+    vl0  = dot(vli,x)
+    vv0 = dot(vvi,y)
+    return p,vl0,vv0,y
+end
+
 
 function x0_bubble_pressure(model,T,x)
     p,V0_l,V0_v,y = __x0_bubble_pressure(model,T,x)
