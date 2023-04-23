@@ -23,23 +23,37 @@ function QCPR(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
     verbose=false)
 
-QCPR_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_critical.csv", "@DB/cubic/QCPR/QCPR_unlike.csv",userlocations)
-QCPR_alpha_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/Twu_QCPR.csv",alpha_userlocations)
-QCPR_translation_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_translation.csv",translation_userlocations)
+    if userlocations isa NamedTuple
+        QCPR_userlocations = userlocations
+    else
+        QCPR_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_critical.csv", "@DB/cubic/QCPR/QCPR_unlike.csv",userlocations)
+    end
 
-model = PR(components;
-    idealmodel = idealmodel,
-    alpha = TwuAlpha,
-    mixing = QCPRRule,
-    activity = nothing,
-    translation = ConstantTranslation,
-    userlocations = QCPR_userlocations,
-    ideal_userlocations= ideal_userlocations,
-    alpha_userlocations = QCPR_alpha_userlocations,
-    mixing_userlocations = mixing_userlocations,
-    activity_userlocations = activity_userlocations,
-    translation_userlocations = QCPR_translation_userlocations,
-    verbose=verbose)
+    if userlocations isa NamedTuple
+        QCPR_alpha_userlocations = alpha_userlocations
+    else
+        QCPR_alpha_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/Twu_QCPR.csv",alpha_userlocations)
+    end
+
+    if userlocations isa NamedTuple
+        QCPR_translation_userlocations = translation_userlocations
+    else
+        QCPR_translation_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_translation.csv",translation_userlocations)
+    end
+
+    model = PR(components;
+        idealmodel = idealmodel,
+        alpha = TwuAlpha,
+        mixing = QCPRRule,
+        activity = nothing,
+        translation = ConstantTranslation,
+        userlocations = QCPR_userlocations,
+        ideal_userlocations= ideal_userlocations,
+        alpha_userlocations = QCPR_alpha_userlocations,
+        mixing_userlocations = mixing_userlocations,
+        activity_userlocations = activity_userlocations,
+        translation_userlocations = QCPR_translation_userlocations,
+        verbose=verbose)
     setreferences!(model,String["10.1021/I160057A011"])
     return model
 end
