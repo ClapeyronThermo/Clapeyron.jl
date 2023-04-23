@@ -425,12 +425,13 @@ end
         @testset "PCSAFT - 1" begin
             #=
             really near critical temperature of the mixture
+            seems that was fixed by passing the initial point to the x0_bubble_pressure function
             =#
             x = [0.96611,0.01475,0.01527,0.00385]
             T = 202.694
             v0 = [-4.136285855713797, -4.131888756537859, 0.9673991775701574, 0.014192499147585259, 0.014746430039492817, 0.003661893242764558]
             model = PCSAFT(["methane","butane","isobutane","pentane"])
-            @test_broken  bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
+            @test bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
         end
     end
     
