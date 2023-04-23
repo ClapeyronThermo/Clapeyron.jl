@@ -39,7 +39,8 @@ function μp_equality(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
     μ_v = VT_chemical_potential!(μ_l,model,v_v,T,y)
     for i in 1:n_c
         μli = F[i]
-        Δμ = (μli -μ_v[i])/(R̄*ts[i])
+        μvi = μ_v[i]
+        Δμ = (μli - μ_v[i])/μli
         F[i] = Δμ
     end
     p_l = pressure(model,v_l,T,x)
@@ -62,7 +63,7 @@ function μp_equality(model_long::EoSModel,model_short::EoSModel, F, T, v_long, 
     μ_short = VT_chemical_potential!(μ_short,model_short,v_short,T,x_short)
     for i in 1:n_short
         μlong_i = F[i]
-        Δμ = (μlong_i -μ_short[i])/(R̄*ts_short[i])
+        Δμ = (μlong_i - μ_short[i])/μlong_i
         F[i] = Δμ
     end
     p_long = pressure(model_long,v_long,T,x_long)
