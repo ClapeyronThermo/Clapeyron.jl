@@ -30,10 +30,11 @@ function initial_points_bd_T(pure,T)
     
     #calculate critical point, try again
     crit = crit_pure(pure)
-    sat = saturation_pressure(pure,T,crit = crit)
-    !isnan(first(sat)) && return sat
-    
     Tc,Pc,Vc = crit
+    if T < Tc
+        sat = saturation_pressure(pure,T,crit = crit)
+        !isnan(first(sat)) && return sat
+    end
     #create initial point from critical values:
     p0 = pressure(pure,Vc,T)
     vl0 = Vc
