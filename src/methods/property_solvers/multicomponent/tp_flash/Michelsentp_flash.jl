@@ -294,19 +294,18 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         nysum = sum(ny)
         x = nx ./ nxsum
         y = ny ./ nysum
-        β = sum(ny)
+        β = sum(ny) 
         
-        K .= x ./ y
     end
-
+    K .= x ./ y
     #convergence checks (TODO, seems to fail with activity models)
-    #_,singlephase,_ = rachfordrice_β0(K,z)
+    _,singlephase,_ = rachfordrice_β0(K,z)
     vx,vy = vcache[]
     #@show vx,vy
-    # maybe azeotrope, do nothing in this case
-    #if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
-    #    singlephase = false
-    #end
+    #maybe azeotrope, do nothing in this case
+    if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
+        singlephase = false
+    end
     if singlephase
         β = zero(β)/zero(β)
         x .= z
