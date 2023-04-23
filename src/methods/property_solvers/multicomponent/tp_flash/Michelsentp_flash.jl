@@ -263,7 +263,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         error_lnK = dnorm(lnK,lnK_old,1)
     end
     # Stage 2: Minimization of Gibbs Free Energy
-    
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
         nx = zeros(nc)
         ny = zeros(nc)
@@ -291,14 +290,18 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         end
         ny_var = Solvers.x_sol(sol)
         ny[in_equilibria] = ny_var
-        nx[in_equilibria] = z[in_equilibria] .- ny[in_equilibria]
-
+        nx[in_equilibria] = z[in_equilibria] .- ny[in_equilibria]  
         nxsum = sum(nx)
         nysum = sum(ny)
         x = nx ./ nxsum
         y = ny ./ nysum
         β = sum(ny)
+        K .= x ./ y
     end
+
+    #convergence checks
+    _,singlephase,_ = rachfordrice_β0(K,z)
+
 
     if singlephase
         β = zero(β)/zero(β)
@@ -310,6 +313,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         x = index_expansion(x,z_nonzero)
         y = index_expansion(y,z_nonzero)
     end
+    
     vx,vy = vcache[]
     if vx < vy #sort by increasing volume
         return x, y, β
