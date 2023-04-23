@@ -62,7 +62,7 @@ function dew_pressure_init(model,T,y,vol0,p0,x0)
                 vl,vv = vol0
                 p0 = pressure(model,vv,T,y)
             else
-                p0,vl0,vv0,_ = __x0_dew_pressure(model,T,y)
+                p0,vl0,vv0,_ = __x0_dew_pressure(model,T,y,x0)
                 vl = min(vl0,volume(model,p0,T,x0,phase = :l))
                 vv = max(vv0,volume(model,p0,T,y,phase =:v))
             end

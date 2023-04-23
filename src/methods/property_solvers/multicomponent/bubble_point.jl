@@ -82,7 +82,7 @@ function bubble_pressure_init(model,T,x,vol0,p0,y0)
                 vl,vv = vol0
                 p0 = pressure(model,vv,T,y0)
             else
-                p0,_,_,_ = __x0_bubble_pressure(model,T,x)
+                p0,_,_,_ = __x0_bubble_pressure(model,T,x,y0)
                 vl = volume(model,p0,T,x,phase = :l)
                 vv = volume(model,p0,T,y0,phase =:v)
             end
