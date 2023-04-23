@@ -302,7 +302,12 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     #convergence checks
     _,singlephase,_ = rachfordrice_β0(K,z)
 
-
+    vx,vy = vcache[]
+    # maybe azeotrope, do nothing in this case
+    if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
+        
+        singlephase = false
+    end
     if singlephase
         β = zero(β)/zero(β)
         x .= z
@@ -313,8 +318,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         x = index_expansion(x,z_nonzero)
         y = index_expansion(y,z_nonzero)
     end
-    
-    vx,vy = vcache[]
+
     if vx < vy #sort by increasing volume
         return x, y, β
     else
