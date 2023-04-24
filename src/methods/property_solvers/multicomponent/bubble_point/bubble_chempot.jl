@@ -179,7 +179,6 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     pmix = p_scale(model,x)
     f!(F,z) = Obj_bubble_temperature(model,model_y, F, p, z[1], exp10(z[2]), exp10(z[3]), x, z[4:end],pmix,volatiles)
     r  = Solvers.nlsolve(f!,v0,LineSearch(Newton()),NLSolvers.NEqOptions(method))
-    display(r)
     sol = Solvers.x_sol(r)
     T   = sol[1]
     v_l = exp10(sol[2])
