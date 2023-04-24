@@ -27,13 +27,12 @@ function LLE_pressure(model::EoSModel, T, x; v0 =nothing)
         error("There is no LLE for a pure component")
     end
     x_r = x[idx_r]
-    ts = T_scales(model_r)
     pmix = p_scale(model_r,x_r)
     if v0 === nothing
         v0 = x0_LLE_pressure(model_r,T,x_r)
     end
-    
-    f! = (F,z) -> Obj_bubble_pressure(model_r, F, T, exp10(z[1]), exp10(z[2]), x_r,z[3:end],ts,pmix)
+
+    f! = (F,z) -> Obj_bubble_pressure(model_r, F, T, exp10(z[1]), exp10(z[2]), x_r,z[3:end],pmix)
     r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     v_l = exp10(sol[1])
@@ -62,15 +61,12 @@ function LLE_temperature(model::EoSModel,p,x;v0=nothing)
         error("There is no LLE for a pure component")
     end
     x_r = x[idx_r]
-    ts = T_scales(model_r)
     pmix = p_scale(model_r,x_r)
     if v0 === nothing
         v0 = x0_LLE_temperature(model_r,p,x_r)
     end
-    
-    len = length(v0[1:end-1])
-    Fcache = zeros(eltype(v0[1:end-1]),len)
-    f!(F,z) = Obj_bubble_temperature(model_r, F, p, z[1], exp10(z[2]), exp10(z[3]), x_r, z[4:end],ts,pmix)
+
+    f!(F,z) = Obj_bubble_temperature(model_r, F, p, z[1], exp10(z[2]), exp10(z[3]), x_r, z[4:end],pmix)
     r  =Solvers.nlsolve(f!,v0[1:end-1],LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     T   = sol[1]
@@ -98,7 +94,7 @@ end
 function presents_LLE(model,p,T)
     pure = split_model(model)
     g_pure = gibbs_free_energy.(pure,p,T)
-    
+
     function mixing_gibbs(x1)
         z = FractionVector(x1)
         log∑z = log(sum(z))

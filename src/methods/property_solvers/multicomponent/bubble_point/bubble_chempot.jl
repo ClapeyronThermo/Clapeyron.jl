@@ -1,8 +1,8 @@
 ## Bubble pressure solver
 """
-    ChemPotBubblePressure(kwargs...)  
+    ChemPotBubblePressure(kwargs...)
 
-Function to compute [`bubble_pressure`](@ref) via chemical potentials. 
+Function to compute [`bubble_pressure`](@ref) via chemical potentials.
 It directly solves the equality of chemical potentials system of equations.
 
 Inputs:
@@ -71,15 +71,13 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
         volatiles = [!in(x,method.nonvolatiles) for x in model.components]
         model_y,volatiles = index_reduction(model,volatiles)
         y0 = y0[volatiles]
-        ts = T_scales(model_y,y0)
     else
         volatiles = fill(true,length(model))
         model_y = nothing
-        ts = T_scales(model)
     end
-    v0 = vcat(log10(vl),log10(vv),y0[1:end-1])    
+    v0 = vcat(log10(vl),log10(vv),y0[1:end-1])
     pmix = p_scale(model,x)
-    f!(F,z) = Obj_bubble_pressure(model,model_y, F, T, exp10(z[1]),exp10(z[2]),x,z[3:end],ts,pmix,volatiles)
+    f!(F,z) = Obj_bubble_pressure(model,model_y, F, T, exp10(z[1]),exp10(z[2]),x,z[3:end],pmix,volatiles)
     r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
     v_l = exp10(sol[1])
@@ -91,13 +89,13 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
 end
 
 
-function Obj_bubble_pressure(model::EoSModel, model_y, F, T, v_l, v_v, x, y,ts,ps,_view)
-    return μp_equality(model,model_y ,F, T, v_l, v_v, x, FractionVector(y),ts,ps,_view)
+function Obj_bubble_pressure(model::EoSModel, model_y, F, T, v_l, v_v, x, y,ps,_view)
+    return μp_equality(model,model_y ,F, T, v_l, v_v, x, FractionVector(y),ps,_view)
 end
 
 #used by LLE_pressure
-function Obj_bubble_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
-    return Obj_bubble_pressure(model, nothing, F, T, v_l, v_v, x, y,ts,ps,nothing)
+function Obj_bubble_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ps)
+    return Obj_bubble_pressure(model, nothing, F, T, v_l, v_v, x, y,ps,nothing)
 end
 
 
@@ -113,9 +111,9 @@ struct ChemPotBubbleTemperature{T} <: BubblePointMethod
 end
 
 """
-    ChemPotBubbleTemperature(kwargs...)  
+    ChemPotBubbleTemperature(kwargs...)
 
-Function to compute [`bubble_temperature`](@ref) via chemical potentials. 
+Function to compute [`bubble_temperature`](@ref) via chemical potentials.
 It directly solves the equality of chemical potentials system of equations.
 
 Inputs:
@@ -173,16 +171,15 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
         volatiles = [!in(x,method.nonvolatiles) for x in model.components]
         model_y,volatiles = index_reduction(model,volatiles)
         y0 = y0[volatiles]
-        ts = T_scales(model_y,y0)
     else
         volatiles = fill(true,length(model))
         model_y = nothing
-        ts = T_scales(model)
     end
-    v0 = vcat(T0,log10(vl),log10(vv),y0[1:end-1])    
+    v0 = vcat(T0,log10(vl),log10(vv),y0[1:end-1])
     pmix = p_scale(model,x)
-    f!(F,z) = Obj_bubble_temperature(model,model_y, F, p, z[1], exp10(z[2]), exp10(z[3]), x, z[4:end],ts,pmix,volatiles)
-    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()),NLSolvers.NEqOptions(method))
+    f!(F,z) = Obj_bubble_temperature(model,model_y, F, p, z[1], exp10(z[2]), exp10(z[3]), x, z[4:end],pmix,volatiles)
+    r  = Solvers.nlsolve(f!,v0,LineSearch(Newton()),NLSolvers.NEqOptions(method))
+    display(r)
     sol = Solvers.x_sol(r)
     T   = sol[1]
     v_l = exp10(sol[2])
@@ -192,15 +189,15 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     return T, v_l, v_v, y
 end
 
-function Obj_bubble_temperature(model::EoSModel,model_y, F, p, T, v_l, v_v, x, y,ts,ps,_view)
-    F = μp_equality(model::EoSModel, model_y, F, T, v_l, v_v, x, FractionVector(y),ts,ps,_view)
+function Obj_bubble_temperature(model::EoSModel,model_y, F, p, T, v_l, v_v, x, y,ps,_view)
+    F = μp_equality(model::EoSModel, model_y, F, T, v_l, v_v, x, FractionVector(y),ps,_view)
     F[end] = (pressure(model,v_l,T,x) - p)/ps
     return F
 end
 
 #used by LLE_temperature
-function Obj_bubble_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ts,ps)
-    return Obj_bubble_temperature(model,nothing, F, p, T, v_l, v_v, x, y,ts,ps,nothing)
+function Obj_bubble_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ps)
+    return Obj_bubble_temperature(model,nothing, F, p, T, v_l, v_v, x, y,ps,nothing)
 end
 
 export ChemPotBubblePressure, ChemPotBubbleTemperature
