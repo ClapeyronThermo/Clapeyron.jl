@@ -156,6 +156,45 @@ function bubbledew_check(vl,vv,zin,zout)
     !all(isfinite,(vl,vv)) && return false
     return true
 end
+
+#generator for candidate fractions, given an initial composition, method by Pereira et al. (2010).
+function initial_candidate_fractions(n)
+    
+    nc = length(n)
+    x̂ = [zeros(nc) for i in 1:nc-1]
+    x̄ = [zeros(nc) for i in 1:nc-1]
+    
+    for i ∈ 1:nc-1
+        x̂i = x̂[i]
+        x̄i = x̄[i]
+        x̂i[i] = n[i]/2
+        x̄i[i] = (1+n[i])/2
+        for k ∈ 1:nc-1
+            if k != i
+                x̂i[k] = (1-x̂i[i])/(nc-1)
+                x̄i[k] = (1-x̄i[i])/(nc-1)
+            end
+        end
+        x̂i[nc] = 1 - sum(x̂i)
+        x̄i[nc] = 1 - sum(x̄i)
+    end
+    x = vcat(x̂,x̄)
+    return x
+end
+
+#when we have a candidate fraction, we generate points closer to that point.
+function near_candidate_fractions(n,k = 0.5*minimum(n))
+    nc = length(n)
+    x = [zeros(nc) for i in 1:nc]
+    for i in eachindex(x)
+        xi = x[i]
+        xi .= n
+        xi[i] += k*n[i]
+        xi ./= sum(xi)
+    end
+    return x
+end
+
 include("fugacity.jl")
 include("rachford_rice.jl")
 include("bubble_point.jl")
