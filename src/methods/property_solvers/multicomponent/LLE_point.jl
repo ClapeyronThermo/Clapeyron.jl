@@ -1,13 +1,44 @@
+#general initial point
+
+function x0_lle_init(model::EoSModel, p, T, z,z0 = nothing)
+    nc = length(model)
+    if z0 == nothing
+        z_test = initial_candidate_fractions(z)
+    else
+        z_test = near_candidate_fractions(z0,0.25)
+    end
+    ntest = length(z_test)
+    γz = zeros(ntest,nc)
+    for i in 1:ntest
+        γz[i,:] = activity_coefficient(model,p,T,z_test[i]) .* z_test[i]
+    end
+    γz0 = activity_coefficient(model,p,T,z)  .* z
+    err = ones(ntest)*Inf
+    for i in 1:ntest
+        #divided by norm to penalize points too close of the initial point
+        err[i] = dnorm(γz0,γz[i])/dnorm(z_test[i],z)
+    end
+    (val, idx) = findmin(err)
+    return z_test[idx]
+end
+
 ## LLE pressure solver
-function x0_LLE_pressure(model::EoSModel,T,x)
-    xx = Fractions.neg(x)
+
+function x0_LLE_pressure(model::EoSModel,T,x,p0 = nothing)
     pure = split_model(model)
     sat = saturation_pressure.(pure,T)
-    V_l_sat = getindex.(sat,2)
-    V0_l = dot(x,V_l_sat)/sum(x)
-    V0_ll = dot(xx,V_l_sat)
-    prepend!(xx,log10.((V0_l,V0_ll)))
-    return xx[1:end-1]
+    vi = getindex.(sat,2)
+    vlx = dot(vi,x)
+    if p0 == nothing
+        p0x = pressure(model,vlx,T,x)
+    else
+        p0x = p0
+    end
+    w = x0_lle_init(model,p0x,T,x)
+    w2 = x0_lle_init(model,p0x,T,x,w)
+    vlw = dot(vi,w2)
+    prepend!(w2,log10.((vlx,vlw)))
+    return w2[1:end-1]
 end
 
 """
@@ -33,7 +64,9 @@ function LLE_pressure(model::EoSModel, T, x; v0 =nothing)
     end
 
     f! = (F,z) -> Obj_bubble_pressure(model_r, F, T, exp10(z[1]), exp10(z[2]), x_r,z[3:end],pmix)
-    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()))
+    options = NLSolvers.NEqOptions(maxiter = 1000) #this should converge in very few iters
+    #putting the limit here allows to faster bail-out in case of unsucessful iteration
+    r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()),options)
     sol = Solvers.x_sol(r)
     v_l = exp10(sol[1])
     v_ll = exp10(sol[2])
@@ -65,9 +98,11 @@ function LLE_temperature(model::EoSModel,p,x;v0=nothing)
     if v0 === nothing
         v0 = x0_LLE_temperature(model_r,p,x_r)
     end
-
-    f!(F,z) = Obj_bubble_temperature(model_r, F, p, z[1], exp10(z[2]), exp10(z[3]), x_r, z[4:end],pmix)
-    r  =Solvers.nlsolve(f!,v0[1:end-1],LineSearch(Newton()))
+    nc = length(model_r)
+    f!(F,z) = Obj_bubble_temperature(model_r, F, p, z[1], exp10(z[2]), exp10(z[3]), x_r, z[4:nc+2],pmix)
+    options = NLSolvers.NEqOptions(maxiter = 1000) #this should converge in very few iters
+    #putting the limit here allows to faster bail-out in case of unsucessful iteration
+    r  =Solvers.nlsolve(f!,v0[1:nc+2],LineSearch(Newton()),options)
     sol = Solvers.x_sol(r)
     T   = sol[1]
     v_l = exp10(sol[2])
@@ -79,18 +114,18 @@ function LLE_temperature(model::EoSModel,p,x;v0=nothing)
 end
 
 function x0_LLE_temperature(model::EoSModel,p,x)
-    xx = Fractions.neg(x)
+    #xx = Fractions.neg(x)
     pure = split_model(model)
     sat = saturation_temperature.(pure,p)
-    V_l_sat = getindex.(sat,2)
-    V0_l = dot(x,V_l_sat)/sum(x)
-    V0_ll = dot(xx,V_l_sat)
-    T0 = 0.95*minimum(getindex.(sat,1))
-    prepend!(xx,log10.((V0_l,V0_ll)))
-    prepend!(xx,T0)
-    return xx
-end
+    T0 = 0.92*minimum(getindex.(sat,1)) #TODO: LLE points cannot be determined by pure data alone
+    v0 = x0_LLE_pressure(model,T0,x,p)
+    vi = 1-sum(v0[3:end])
+    push!(v0,vi)
+    prepend!(v0,T0)
+    return v0
 
+end
+#=
 function presents_LLE(model,p,T)
     pure = split_model(model)
     g_pure = gibbs_free_energy.(pure,p,T)
@@ -109,4 +144,4 @@ function presents_LLE(model,p,T)
     prob = Roots.ZeroProblem(f0,(0.9))
     res = Roots.solve(prob)
     return (res,mixing_gibbs(res))
-end
+end=#

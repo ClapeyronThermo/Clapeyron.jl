@@ -187,9 +187,16 @@ end
         GC.gc()
         @test Clapeyron.dew_temperature(system,p2,z)[1] ≈ 453.0056727580934 rtol = 1E-6
         GC.gc()
-        @test Clapeyron.LLE_pressure(system,T,z2)[1] ≈ 737971.7522006684 rtol = 1E-6
+        res_LLE_p = Clapeyron.LLE_pressure(system,T,z2)
+        @test res_LLE_p[1] ≈ 737971.7522006684 rtol = 1E-6
+        @test Clapeyron.pressure(system,res_LLE_p[2],T,z2) ≈ Clapeyron.pressure(system,res_LLE_p[3],T,res_LLE_p[end]) rtol = 1E-6
+        @test Clapeyron.pressure(system,res_LLE_p[2],T,z2) ≈ res_LLE_p[1] rtol = 1E-6
         GC.gc()
-        @test Clapeyron.LLE_temperature(system,p,z2)[1] ≈ 312.9523684945214 rtol = 1E-6
+        res_LLE_T = Clapeyron.LLE_temperature(system,p,z2)
+        T_LLE = res_LLE_T[1]
+        @test res_LLE_T[1] ≈ 312.9523684945214  rtol = 1E-6
+        @test Clapeyron.pressure(system,res_LLE_T[2],T_LLE,z2) ≈ Clapeyron.pressure(system,res_LLE_T[3],T_LLE,res_LLE_T[end]) rtol = 1E-6
+        @test Clapeyron.pressure(system,res_LLE_T[2],T_LLE,z2) ≈ p rtol = 1E-6
         GC.gc()
         @test Clapeyron.azeotrope_pressure(system,T2)[1] ≈ 2.4435462800998255e6 rtol = 1E-6
         GC.gc()
