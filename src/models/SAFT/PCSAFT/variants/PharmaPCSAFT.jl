@@ -117,6 +117,16 @@ function d(model::pharmaPCSAFTModel, V, T, z)
     return _d
 end
 
+function d(model::pharmaPCSAFT, V, T, z::SingleComp)
+    ϵ = only(model.params.epsilon.values)
+    σ = only(model.params.sigma.values)
+    k = water08_k(model)
+    if k == 1
+        σ += Δσh20(T)
+    end
+    return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
+end
+
 function m2ϵσ3(model::pharmaPCSAFTModel, V, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
