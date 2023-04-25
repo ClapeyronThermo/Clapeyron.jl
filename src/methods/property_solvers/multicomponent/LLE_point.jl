@@ -1,4 +1,5 @@
 #general initial point
+
 function x0_lle_init(model::EoSModel, p, T, z,z0 = nothing)
     nc = length(model)
     if z0 == nothing
@@ -21,10 +22,7 @@ function x0_lle_init(model::EoSModel, p, T, z,z0 = nothing)
     return z_test[idx]
 end
 
-
-
 ## LLE pressure solver
-
 
 function x0_LLE_pressure(model::EoSModel,T,x,p0 = nothing)
     pure = split_model(model)
@@ -104,7 +102,7 @@ function LLE_temperature(model::EoSModel,p,x;v0=nothing)
     f!(F,z) = Obj_bubble_temperature(model_r, F, p, z[1], exp10(z[2]), exp10(z[3]), x_r, z[4:nc+2],pmix)
     options = NLSolvers.NEqOptions(maxiter = 1000) #this should converge in very few iters
     #putting the limit here allows to faster bail-out in case of unsucessful iteration
-    r  =Solvers.nlsolve(f!,v0[1:nc+2],LineSearch(Newton()),options)    
+    r  =Solvers.nlsolve(f!,v0[1:nc+2],LineSearch(Newton()),options)
     sol = Solvers.x_sol(r)
     T   = sol[1]
     v_l = exp10(sol[2])
