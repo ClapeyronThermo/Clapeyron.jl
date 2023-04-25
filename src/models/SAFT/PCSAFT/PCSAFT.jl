@@ -119,7 +119,7 @@ function d(model::PCSAFTModel, V, T, z)
     return di
 end
 
-function ζ(model::PCSAFTModel, V, T, z, n , _d)
+function ζ(model::PCSAFTModel, V, T, z, n , _d = @f(d))
     m = model.params.segment.values
     res = zero(V+T+first(z))
     for i ∈ @comps
@@ -130,7 +130,7 @@ function ζ(model::PCSAFTModel, V, T, z, n , _d)
     return res
 end
 
-function ζ0123(model::PCSAFTModel, V, T, z,_d)
+function ζ0123(model::PCSAFTModel, V, T, z,_d = @f(d))
     m = model.params.segment.values
     ζ0 = zero(V+T+first(z))
     ζ1 = ζ0

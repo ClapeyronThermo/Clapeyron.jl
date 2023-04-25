@@ -85,6 +85,12 @@ using Clapeyron, Test
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.6216064387201956 rtol = 1e-6
     end
 
+    @testset "PPCSAFT" begin
+        system = PPCSAFT(["acetone", "butane","DMSO"])
+        z = [0.333, 0.333,0.333]
+        @test Clapeyron.a_polar(system, V, T, z) ≈ -0.6555426582666268 rtol = 1e-6
+    end
+
     @testset "sPCSAFT" begin
         system = sPCSAFT(["propane", "methanol"])
         z = [0.5, 0.5]
