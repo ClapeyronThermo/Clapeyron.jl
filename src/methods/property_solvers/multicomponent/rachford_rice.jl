@@ -370,7 +370,7 @@ function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_i
     end
 
     prob = Roots.ZeroProblem(FO,(βmin,βmax,β))
-    return Roots.solve(prob,ChebyshevBracket())
+    return Roots.solve(prob,Roots.BracketedHalley())
 end
 
 #=
