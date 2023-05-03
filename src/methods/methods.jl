@@ -224,7 +224,8 @@ end
 Returns the preferred method for a combination of model and function, with the specified kwargs.
 
 """
-function __preferred_method(method,model) end
+function init_preferred_method(method,model) end
+
 
 include("initial_guess.jl")
 include("differentials.jl")
