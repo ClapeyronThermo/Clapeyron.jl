@@ -34,7 +34,7 @@ We support many equations of state and properties. Some examples of figures you 
 
 # Installing Clapeyron
 
-Clapeyron requires Julia version 1.6. To install Clapeyron, launch Julia with
+The minimum supported version is Julia 1.6. To install Clapeyron, launch Julia with
 
 ```
 > julia
