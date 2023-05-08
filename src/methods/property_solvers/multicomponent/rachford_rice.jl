@@ -337,38 +337,58 @@ end
 
 #refines a rachford-rice result via Halley iterations
 function rr_flash_refine(K,z,β0,non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx,limits = rr_βminmax(K,z))
-    
     βmin,βmax = limits
     _0 = zero(first(z)+first(K)+first(β0))
     _1 = one(_0)
     sumz = sum(z)
     invsumz = _1/sumz
     β = β0
-    
     function FO(β̄ )
         _0βy = - 1. / (1. - β̄ )
+        if iszero(β̄ )
+            
+        end
         _0βx = 1. / β̄ 
         res,∂res,∂2res = _0,_0,_0
+        res_KD2 = _0
         for i in 1:length(z)
-            Kim1 = K[i] - _1
-            KD = Kim1/(1+β̄ *Kim1)
+            Ki = K[i]
+            Kim1 = Ki - 1
+            #we separate (K-1)/(1-βK) into K/(1-βK) and 1/(1-βK) for numerical reasons.
+            #see;    
+            #Ks_eps_0 = [1.2566703532018493e-21, 3.35062752053393, 1.0300675710905643e-23, 1.706258568414198e-39, 1.6382855298440747e-20]
+            #zs_eps_0 = [0.13754371891028325, 0.2984515568715462, 0.2546683930289046, 0.08177453852283137, 0.22756179266643456]
+
+            detKi = 1/(1+β̄ *Kim1)
+            KD1 = Ki*detKi
+            KD2 = -detKi
+            KD = KD1 + KD2
             # modification for non-in-y components Ki -> 0
             if non_iny[i]
                 KD = _0βy
+                KD2 = -_1
+                KD1 = _0βy - KD2
             end
             # modification for non-in-x components Ki -> ∞
             if non_inx[i]
                 KD = _0βx
+                KD1 = _0βx
+                KD2 = _0
             end
             zi = z[i]
-            res += invsumz*zi*KD
-            ∂res -= invsumz*zi*KD^2
-            ∂2res += 2*invsumz*zi*KD^3
+            res += zi*KD1
+            res_KD2 += zi*KD2
+            ∂res -= zi*KD^2
+            ∂2res += 2*zi*KD^3
         end
+        res += res_KD2
+        res *= invsumz
+        ∂res *= invsumz
+        ∂2res *= invsumz
+
 
         return res,res/∂res,∂res/∂2res
     end
-
     prob = Roots.ZeroProblem(FO,(βmin,βmax,β))
     return Roots.solve(prob,Roots.BracketedHalley())
 end
