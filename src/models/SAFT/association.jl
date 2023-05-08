@@ -342,12 +342,13 @@ function X_exact1(model,V,T,z,data=nothing)
     ρ = N_A/V
     kia = na*zi*ρ*_Δ
     kjb = nb*zj*ρ*_Δ
-    #kia*x*x + x(kjb-kia+1) - 1 = 0
     _a = kia
-    _b = _1 -kia + kjb
+    _b = _1 - kia + kjb
     _c = -_1
-    xia = -2*_c/(_b + sqrt(_b*_b - 4*_a*_c))
-    xjb = _1/(1+kia*xia)
+    denom = _b + sqrt(_b*_b - 4*_a*_c)
+    xia = -2*_c/denom
+    xk_ia = kia*xia
+    xjb = (1- xk_ia)/(1 - xk_ia*xk_ia)
     return pack_X_exact1(z,xia,xjb,i,j,a,b,n,idxs)
 end
 
