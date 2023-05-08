@@ -259,7 +259,8 @@ end
 function ζeff(model::SAFTVRMieModel, V, T, z, λ,ζ_X_= @f(ζ_X))
     A = SAFTγMieconsts.A
     λ⁻¹ = one(λ)/λ
-    return A * SA[one(λ); λ⁻¹; λ⁻¹*λ⁻¹; λ⁻¹*λ⁻¹*λ⁻¹] * SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4]
+    Aλ⁻¹ = A * SA[one(λ); λ⁻¹; λ⁻¹*λ⁻¹; λ⁻¹*λ⁻¹*λ⁻¹]
+    return dot(Aλ⁻¹,SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4])
 end
 
 function B(model::SAFTVRMieModel, V, T, z, λ, x_0,ζ_X_ = @f(ζ_X))
@@ -456,7 +457,7 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
         x_0ij_2λa = x_0ij^(2*λa)
         x_0ij_2λr = x_0ij^(2*λr)
         x_0ij_λaλr = x_0ij^(λa + λr)
-        
+
         #calculations for a1 - diagonal
         aS₁_a,∂aS₁∂ρS_a = @f(aS_1_fdf,λa,ζₓ,ρS)
         aS₁_r,∂aS₁∂ρS_r = @f(aS_1_fdf,λr,ζₓ,ρS)
