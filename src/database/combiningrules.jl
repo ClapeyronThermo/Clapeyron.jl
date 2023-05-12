@@ -76,8 +76,36 @@ function epsilon_HudsenMcCoubrey!(epsilon::PairParameter, sigma::PairParameter)
     return pair_mix!(mix_HudsenMcCoubrey,epsilon,sigma)
 end
 
-epsilon_HudsenMcCoubrey(epsilon::PairParameter) = epsilon_LorentzBerthelot!(epsilon)
+epsilon_HudsenMcCoubreysqrt(epsilon::PairParameter) = epsilon_LorentzBerthelot!(epsilon)
 
+"""
+    epsilon_HudsenMcCoubreysqrt(ϵ::SingleOrPair,σ::PairParam)::PairParam
+    epsilon_HudsenMcCoubreysqrt(ϵ::SingleOrPair)::PairParam
+
+Combining rule for a single or pair parameter. returns a pair parameter with non diagonal entries equal to:
+```
+ϵᵢⱼ = √(ϵᵢϵⱼ* σᵢᵢ^3 * σⱼⱼ^3)/σᵢⱼ^3
+```
+If `σᵢⱼ` is not defined, the definition is reduced to a simple geometric mean:
+```
+ϵᵢⱼ = √(ϵᵢϵⱼ)
+```
+Ignores non-diagonal entries already set.
+
+If a Single Parameter is passed as input, it will be converted to a Pair Parameter with `ϵᵢᵢ = ϵᵢ`.
+"""
+function epsilon_HudsenMcCoubreysqrt(epsilon::SingleOrPair, sigma::PairParameter;k = nothing)
+    return pair_mix(mix_HudsenMcCoubreysqrt,epsilon,sigma)
+end
+
+epsilon_HudsenMcCoubreysqrt(epsilon) = epsilon_LorentzBerthelot(epsilon)
+epsilon_HudsenMcCoubreysqrt(epsilon,::Nothing) = epsilon_LorentzBerthelot(epsilon)
+
+function epsilon_HudsenMcCoubreysqrt!(epsilon::PairParameter, sigma::PairParameter)
+    return pair_mix!(mix_HudsenMcCoubreysqrt,epsilon,sigma)
+end
+
+epsilon_HudsenMcCoubrey(epsilon::PairParameter) = epsilon_LorentzBerthelot!(epsilon)
 
 function lambda_LorentzBerthelot!(lambda::PairParameter,k = 3)
     f(λi,λj,m) = mix_lambda(λi,λj,k) 
