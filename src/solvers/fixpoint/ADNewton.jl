@@ -16,7 +16,7 @@ function ad_newton(f::F,x0::T;
     rtol= (eps(one(T)))^(4/5),
     atol=rtol*oneunit(T),
     max_iters = 100) where {F,T}
-    fdf(x) =  f∂f(f,x)
+    fdf = f∂f(f)
     f0(x) = newton_fixpoint(fdf,x,atol)
     return fixpoint(f0,x0;rtol,atol,max_iters)
 end

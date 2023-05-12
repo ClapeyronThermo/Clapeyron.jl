@@ -33,6 +33,8 @@ returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.j
     return ForwardDiff.value(out),  ForwardDiff.extract_derivative(T, out)
 end
 
+f∂f(f::F) where F = Base.Fix1(f∂f,f)
+
 """
     f∂f∂2f(f,x)
 
@@ -47,6 +49,8 @@ returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.j
     d2fx = ForwardDiff.partials(_df).values[1]
     return (fx,dfx,d2fx)
 end
+
+f∂f∂2f(f::F) where F = Base.Fix1(f∂f∂2f,f)
 
 """
     fgradf2(f,x1,x2)
