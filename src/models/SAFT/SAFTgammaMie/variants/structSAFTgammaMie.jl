@@ -7,6 +7,7 @@ struct structSAFTgammaMie{I,VR} <: structSAFTgammaMieModel
     params::SAFTgammaMieParam
     idealmodel::I
     vrmodel::VR
+    epsilon_mixing::Symbol
     assoc_options::AssocOptions
     references::Array{String,1}
 end
@@ -118,7 +119,7 @@ function structSAFTgammaMie(components;
     
     vr = SAFTVRMie(vrparams, comp_sites, idmodel; ideal_userlocations, verbose, assoc_options)
     γmierefs = ["10.1063/1.4851455", "10.1021/je500248h"]
-    gmie = structSAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,epsilon_mixing, assoc_options,γmierefs)
+    gmie = structSAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,epsilon_mixing,assoc_options,γmierefs)
     return gmie
 end
 @registermodel structSAFTgammaMie
