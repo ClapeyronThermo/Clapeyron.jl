@@ -1,8 +1,4 @@
 
-include("utils.jl")
-#just a holder for the z partitions.
-#to allow split_model to work correctly
-
 abstract type SAFTgammaMieModel <: SAFTVRMieModel end
 
 
