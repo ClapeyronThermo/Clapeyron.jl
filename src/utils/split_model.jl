@@ -225,7 +225,9 @@ The Default is `is_splittable(model) = true`.
 is_splittable(model) = true
 is_splittable(null::Union{Nothing,Missing}) = false
 is_splittable(::Number) = false
-is_splittable(::String) = false
+is_splittable(::AbstractString) = false
+is_splittable(::Symbol) = false
+is_splittable(::Tuple) = false
 
 function split_model(param::SingleParameter,
     splitter =split_model(1:length(param.components)))
