@@ -308,11 +308,23 @@ function gc_eosparam_split_model(Base.@nospecialize(params::EoSParam),groups::Gr
     return T.(split_paramsvals...)
 end
 
+function recalc_site_translator!(params::Vector{SiteParam},gc_splitter)
+    return nothing
+    #=for param in params
+        st = param.site_translator::Vector{NTuple{2,Int}}
+        for sti in st
+            k,_ = sti   
+        end
+    end=#
+end
+
 function group_splitter(group,splitted_groups)
     flattenedgroups = group.flattenedgroups
-    res = Vector{Vector{Int64}}(undef,length(splitted_groups))
-    for (i,groupi) in pairs(splitted_groups)
-        res[i] = indexin(groupi.flattenedgroups,flattenedgroups)
+    res = Vector{Vector{Int64}}[]
+    sizehint!(res,length(splitted_groups))
+    bdict = Dict{String,Int}()
+    for groupi in splitted_groups
+        push!(res,cached_indexin(groupi.flattenedgroups,flattenedgroups,bdict))
     end
     return res
 end
@@ -320,22 +332,14 @@ end
 split_model(model::EoSModel,subset=nothing) = auto_split_model(model,subset)
 
 function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
-        
+
     try
         allfields = Dict{Symbol,Any}()
-        #if has_groups(typeof(model))
-        #    raw_splitter = model.groups.i_groups
-        #    subset !== nothing && throw("using subsets is not supported with Group Contribution models")
-        #else
-        #    raw_splitter = split_model(Vector(1:length(model.components)))
-        #end
-
-        raw_splitter = split_model(Vector(1:length(model.components)))
 
         if subset === nothing
-            splitter = raw_splitter
+            splitter = [[i] for i in 1:length(model.components)]
         elseif eltype(subset) <: Integer
-            splitter = raw_splitter[subset]
+            splitter = [[i] for i in subset]
         elseif eltype(subset) <: AbstractVector
             splitter = subset
         else
@@ -356,16 +360,12 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             gc_splitter = splitter
         end
 
-
-
-
-
         len = length(splitter)
         M = typeof(model)
         allfieldnames = fieldnames(M)
 
         #add here any special keys, that behave as non_splittable values
-        for modelkey in [:references]
+        for modelkey in (:references,)
             if modelkey in allfieldnames
                 if !haskey(allfields,modelkey)
                     allfields[modelkey] = fill(getproperty(model,modelkey),len)
@@ -378,7 +378,8 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
                 modelx = getproperty(model,modelkey)
                 if is_splittable(modelx)
                     if modelx isa EoSModel
-                        allfields[modelkey] = split_model(modelx,subset)
+                        allfields[modelkey] = split_model(modelx,comp_splitter)
+                        #perform specialized splitting. site_translator has a mix of component and group data
                     elseif modelx isa ClapeyronParam && has_groups
                         #in this particular case, we can suppose that we have the components field
                         if modelx.components == model.groups.flattenedgroups
@@ -388,10 +389,15 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
                         else
                             throw(error("$modelx is in a GC model, but does not have compatible component names for either component-based or group-based splitting."))
                         end
+                        #recalculate site_translator
+                        if modelx isa SiteParam && has_groups && modelx.site_translator !== nothing
+                            sites = allfields[modelkey]
+                            recalc_site_translator!(sites,gc_splitter)
+                        end
                     elseif modelx isa EoSParam && has_groups #we supppose a EoSParam has only one layer of splitting
                         allfields[modelkey] = gc_eosparam_split_model(modelx,model.groups,comp_splitter,gc_splitter)
                     else
-                        allfields[modelkey] = split_model(modelx,splitter)     
+                        allfields[modelkey] = split_model(modelx,splitter)
                     end
                 else
                     allfields[modelkey] = fill(modelx,len)
