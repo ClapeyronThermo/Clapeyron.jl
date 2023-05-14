@@ -91,7 +91,7 @@ function evalexppoly(x,n,v)
 end
 
 function cached_indexin(a, b, bdict)
-    #inds = keys(b)
+    inds = keys(b)
     #bdict = Dict{eltype(b),eltype(inds)}()
     empty!(bdict)
     for (val, ind) in zip(b, inds)
