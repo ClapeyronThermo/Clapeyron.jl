@@ -53,7 +53,7 @@ function each_split_model(assoc::Compressed4DMatrix{T},I) where T
     len2 = length(outer_indices)
     for i ∈ 1:len2
         i1,j1 = outer_indices[i]
-        i2,j2 = findfirst(==(i1),I),findfirst(==(j1),I)
+        i2,j2 = findfirst(==(i1),I)::Int,findfirst(==(j1),I)::Int
         outer_indices[i] = (i2,j2)
     end
     return Compressed4DMatrix(values,outer_indices,inner_indices,outer_size,inner_size)
@@ -97,7 +97,7 @@ function each_split_model(param::AssocParam,I)
             )
 end
 
-function each_split_model(param::GroupParam,I)
+function gc_each_split_model(param::GroupParam,I)
     grouptype = param.grouptype
     components = param.components[I]
     groups = param.groups[I]
@@ -105,22 +105,19 @@ function each_split_model(param::GroupParam,I)
     sourcecsvs = param.sourcecsvs
 
     #unique, but without allocating sets.
-    idx = zeros(Int,length(param.flattenedgroups))
+    _idx = zeros(Bool,length(param.flattenedgroups))
     for i in I
         group_i = param.groups[i]
         for k in 1:length(group_i)
-            j = findfirst(==(group_i[k]),param.flattenedgroups)
-            idx[j] = j
+            j = findfirst(==(group_i[k]),param.flattenedgroups)::Int
+            _idx[j] = true
         end
     end
-    zero_idx = iszero.(idx)
-    nonzero_idx = @. !zero_idx
-    _idx = view(idx,nonzero_idx)
 
     len_groups = length(_idx)
 
     flattenedgroups = param.flattenedgroups[_idx]
-    i_groups = [[findfirst(isequal(group), flattenedgroups) for group ∈ componentgroups] for componentgroups ∈ groups]
+    i_groups = [[findfirst(isequal(group), flattenedgroups)::Int for group ∈ componentgroups] for componentgroups ∈ groups]
     n_flattenedgroups = Vector{Vector{Int64}}(undef,length(I))
     for (k,i) in pairs(I)
         pii = param.n_flattenedgroups[i]
@@ -130,11 +127,11 @@ function each_split_model(param::GroupParam,I)
 
     for (k,i) in pairs(I)
         pii = param.n_groups_cache[i]
-        true_n = @view(pii[_idx])
+        true_n = (pii[_idx])
         n_groups_cache[k] .= true_n
     end
 
-    return GroupParam(
+    return _idx,GroupParam(
         components,
         groups,
         grouptype,
@@ -146,7 +143,7 @@ function each_split_model(param::GroupParam,I)
         sourcecsvs)
 end
 
-function each_split_model(param::StructGroupParam,I)
+function gc_each_split_model(param::StructGroupParam,I)
     grouptype = param.grouptype
     components = param.components[I]
     groups = param.groups[I]
@@ -154,17 +151,14 @@ function each_split_model(param::StructGroupParam,I)
     sourcecsvs = param.sourcecsvs
 
     #unique, but without allocating sets.
-    idx = zeros(Int,length(param.flattenedgroups))
+    _idx = zeros(Bool,length(param.flattenedgroups))
     for i in I
         group_i = param.groups[i]
         for k in 1:length(group_i)
-            j = findfirst(==(group_i[k]),param.flattenedgroups)
-            idx[j] = j
+            j::Int = findfirst(==(group_i[k]),param.flattenedgroups)::Int
+            _idx[j] = true
         end
     end
-    zero_idx = iszero.(idx)
-    nonzero_idx = @. !zero_idx
-    _idx = view(idx,nonzero_idx)
 
     len_groups = length(_idx)
 
@@ -187,7 +181,7 @@ function each_split_model(param::StructGroupParam,I)
         n_groups_cache[k] .= true_n
     end
 
-    return StructGroupParam(
+    return _idx,StructGroupParam(
         components,
         groups,
         grouptype,
@@ -198,6 +192,11 @@ function each_split_model(param::StructGroupParam,I)
         n_flattenedgroups,
         n_groups_cache,
         sourcecsvs)
+end
+
+function each_split_model(group::GroupParameter,I)
+    _,gi = gc_each_split_model(group,I)
+    return gi
 end
 """
     split_model(model::EoSModel)
@@ -262,14 +261,12 @@ function split_model(groups::GroupParameter,
     return [each_split_model(groups,i) for i in splitter]
 end
 
+__split_site_translator(::Nothing,I) = nothing
+__split_site_translator(s::Vector{Vector{NTuple{2,Int}}},I) = s[I] 
+
 function split_model(param::SiteParam,
-    splitter = split_model(param.components))
+    splitter = split_model(1:length(param.components)))
     function generator(I)
-        if param.site_translator === nothing
-            site_translator_i = nothing
-        else
-            site_translator_i = param.site_translator[I]
-        end
         return SiteParam(
             param.components[I],
             param.sites[I],
@@ -279,7 +276,7 @@ function split_model(param::SiteParam,
             param.n_flattenedsites[I],
             param.i_flattenedsites[I],
             param.sourcecsvs,
-            site_translator_i)
+            __split_site_translator(param.site_translator,I))
     end
     return [generator(i) for i ∈ splitter]
 end
@@ -290,6 +287,10 @@ function split_model(Base.@nospecialize(params::EoSParam),splitter)
     split_paramsvals = (split_model(getfield(params,i),splitter) for i  ∈ fieldnames(T))
     return T.(split_paramsvals...)
 end
+
+#=
+Specializations for splitting with groups
+=#
 
 function gc_eosparam_split_model(Base.@nospecialize(params::EoSParam),groups::GroupParameter,comp_splitter,gc_splitter)
     T = typeof(params)
@@ -308,61 +309,99 @@ function gc_eosparam_split_model(Base.@nospecialize(params::EoSParam),groups::Gr
     return T.(split_paramsvals...)
 end
 
-function recalc_site_translator!(params::Vector{SiteParam},gc_splitter)
-    return nothing
-    #=for param in params
-        st = param.site_translator::Vector{NTuple{2,Int}}
-        for sti in st
-            k,_ = sti   
-        end
-    end=#
-end
-
-function group_splitter(group,splitted_groups)
+function group_splitter(group::T,splitter) where T <: GroupParameter
+    n = length(splitter)
+    group_split = Vector{T}(undef,n)
+    idx_split = Vector{Vector{Bool}}(undef,n)
     flattenedgroups = group.flattenedgroups
-    res = Vector{Vector{Int64}}[]
-    sizehint!(res,length(splitted_groups))
-    bdict = Dict{String,Int}()
-    for groupi in splitted_groups
-        push!(res,cached_indexin(groupi.flattenedgroups,flattenedgroups,bdict))
+    gc_splitter = Vector{Vector{Int}}(undef,n)
+    m = length(group.flattenedgroups)
+    for i in 1:n
+        idxi,gi = gc_each_split_model(group,splitter[i])
+        idx_split[i] = idxi
+        group_split[i] = gi
+        gc_splitter_i = Int[]
+        sizehint!(gc_splitter_i,m)
+        k = 0
+        for j in 1:m
+            if idxi[j]
+                k+=1
+                push!(gc_splitter_i,k)
+            end
+        end
+        gc_splitter[i] = gc_splitter_i
     end
-    return res
+    return group_split,idx_split,gc_splitter
 end
 
+function recalculate_site_translator!(sites::Vector{SiteParam},idx_splitter)
+    bool_to_int = Int[]
+    for i in 1:length(idx_splitter)
+        site_translator_i = sites[i].site_translator::Vector{Vector{NTuple{2,Int}}}
+        #the tuple is (ki,site_kia) where ki is the position of the group, and site_ki is the site number in GC based sites
+        #DO NOT use the second number. if you really need it, store the original SiteParam instead.
+        #the first number is used to reference the gc pair at an specific component, via get_group_idx
+        
+        idxi = idx_splitter[i]
+        resize!(bool_to_int,length(idxi))
+        bool_to_int .= 0
+        wk = 0
+        for w in 1:length(idxi)
+            if idxi[w]
+                wk += 1
+                bool_to_int[w] = wk
+            end
+        end
+        for (l,s0) in pairs(site_translator_i)
+            si = copy(s0)
+            iszero(length(si)) && continue
+            for a in 1:length(si)
+                ki,_ = si[a]
+                ki_new = bool_to_int[ki] #splitted group new index, if not zero
+                si[a] = (ki_new,0)
+
+            end
+            site_translator_i[l] = filter!(x -> !iszero(first(x)),si)
+        end
+        
+    end
+end
+#=
+Start of EoSModel split_model functions
+=#
 split_model(model::EoSModel,subset=nothing) = auto_split_model(model,subset)
 
 function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
 
     try
         allfields = Dict{Symbol,Any}()
+        
+        M = typeof(model)
+        allfieldnames = fieldnames(M)
 
         if subset === nothing
             splitter = [[i] for i in 1:length(model.components)]
         elseif eltype(subset) <: Integer
-            splitter = [[i] for i in subset]
+            splitter = [[Int(i)] for i in subset]
         elseif eltype(subset) <: AbstractVector
             splitter = subset
         else
             throw("invalid type of subset.")
         end
 
-        has_groups = hasfield(typeof(model),:groups)
+        len = length(splitter)
+        has_groups = hasfield(M,:groups)
 
         if has_groups
-            gc_split = split_model(model.groups,splitter)
+            gc_split,idx_splitter,gc_splitter = group_splitter(model.groups,splitter)
             allfields[:groups] = gc_split
-            allfields[:components] = split_model(model.groups.components,splitter)
+            allfields[:components] = split_model(model.groups.components::Vector{String},splitter)
             comp_splitter = splitter
-            gc_splitter = group_splitter(model.groups,gc_split)
             splitter = gc_splitter
         else
             comp_splitter = splitter
             gc_splitter = splitter
         end
-
-        len = length(splitter)
-        M = typeof(model)
-        allfieldnames = fieldnames(M)
 
         #add here any special keys, that behave as non_splittable values
         for modelkey in (:references,)
@@ -377,9 +416,11 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             if !haskey(allfields,modelkey)
                 modelx = getproperty(model,modelkey)
                 if is_splittable(modelx)
-                    if modelx isa EoSModel
-                        allfields[modelkey] = split_model(modelx,comp_splitter)
-                        #perform specialized splitting. site_translator has a mix of component and group data
+                    if modelx isa SiteParam && has_groups && modelx.site_translator !== nothing
+                        #process site_translator
+                        split_sites = split_model(modelx,comp_splitter)
+                        recalculate_site_translator!(split_sites,idx_splitter)
+                        allfields[modelkey] = split_sites
                     elseif modelx isa ClapeyronParam && has_groups
                         #in this particular case, we can suppose that we have the components field
                         if modelx.components == model.groups.flattenedgroups
@@ -389,15 +430,12 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
                         else
                             throw(error("$modelx is in a GC model, but does not have compatible component names for either component-based or group-based splitting."))
                         end
-                        #recalculate site_translator
-                        if modelx isa SiteParam && has_groups && modelx.site_translator !== nothing
-                            sites = allfields[modelkey]
-                            recalc_site_translator!(sites,gc_splitter)
-                        end
-                    elseif modelx isa EoSParam && has_groups #we supppose a EoSParam has only one layer of splitting
+                    elseif modelx isa EoSParam && has_groups
+                        #we supppose a EoSParam has only one layer of splitting
                         allfields[modelkey] = gc_eosparam_split_model(modelx,model.groups,comp_splitter,gc_splitter)
                     else
-                        allfields[modelkey] = split_model(modelx,splitter)
+                        #we suppose that this can splitted on his own (EoSModels are here.)
+                        allfields[modelkey] = split_model(modelx,comp_splitter)
                     end
                 else
                     allfields[modelkey] = fill(modelx,len)
@@ -405,7 +443,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             end
         end
 
-        return [M((allfields[k][i] for k ∈ fieldnames(M))...) for i ∈ 1:len]::Vector{M}
+        return [M((allfields[k][i] for k ∈ allfieldnames)...) for i ∈ 1:len]::Vector{M}
     catch e
         M = typeof(model)
         @error "$M cannot be splitted"
