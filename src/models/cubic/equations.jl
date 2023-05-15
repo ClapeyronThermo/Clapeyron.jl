@@ -246,7 +246,7 @@ function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
         _vl = vvl
         vl = ifelse(_vl > lb_v, _vl, vg) #catch case where solution is unphysical
     elseif sum(isreal) == 1
-        i = findfirst(imagfilter, sols)
+        i = findfirst(imagfilter, sols)::Int
         vl = real(sols[i]) * nRTp
         vg = real(sols[i]) * nRTp
     elseif sum(isreal) == 0

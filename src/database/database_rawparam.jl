@@ -161,7 +161,7 @@ function compile_single(name,components,raw::RawParam,options)
     sources = fill(EMPTY_STR,l)
     sources_csv = fill(EMPTY_STR,l)
     for (k,v,ss,sc) ∈ zip(raw.component_info,raw.data,raw.sources,raw.csv)
-        i = findfirst(==(k[1]),components)
+        i = findfirst(==(k[1]),components)::Int
         values[i] = v
         ismissingvals[i] = false
         sources[i] = ss
@@ -203,9 +203,9 @@ function compile_pair(name,components,raw::RawParam,options)
     sources_csv = fill(EMPTY_STR,(l,l))
     for (k,v,ss,sc) ∈ zip(raw.component_info,raw.data,raw.sources,raw.csv)
         c1,c2,_,_ = k
-        i = findfirst(==(c1),components)
+        i = findfirst(==(c1),components)::Int
         #if the second component is null, it comes from a single param, then i = (i,i)
-        j = k[2] == "" ? i : findfirst(==(c2),components)
+        j::Int = k[2] == "" ? i : findfirst(==(c2),components)
         values[i,j] = v
         ismissingvals[i,j] = false
         sources[i,j] = ss
@@ -271,10 +271,10 @@ function standarize_comp_info(component_info,components,site_strings)
     l = length(components)
     for (i,val) ∈ pairs(component_info)
         c1,c2,s1,s2 = val
-        idx1 = findfirst(isequal(c1), components)
-        idx2 = findfirst(isequal(c2), components)
-        idx21 = findfirst(isequal(s1), site_strings[idx1])
-        idx22 = findfirst(isequal(s2), site_strings[idx2])
+        idx1 = findfirst(isequal(c1), components)::Int
+        idx2 = findfirst(isequal(c2), components)::Int
+        idx21 = findfirst(isequal(s1), site_strings[idx1])::Int
+        idx22 = findfirst(isequal(s2), site_strings[idx2])::Int
         if idx1 > idx2
             newval = (c2,c1,s2,s1)
             ijab[i] = (idx2,idx1,idx22,idx21)

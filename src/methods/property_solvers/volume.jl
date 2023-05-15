@@ -192,7 +192,7 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
     if valid == 0 #no possible volumes
         return nan
     elseif valid == 1 #only one possible volume
-        idx = findfirst(!isnan,volumes)
+        idx = findfirst(!isnan,volumes)::Int
         v = volumes[idx]
         _v_stable(model,v,T,z,phase)
         return v        

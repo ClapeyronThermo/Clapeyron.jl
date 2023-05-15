@@ -175,7 +175,7 @@ function recombine!(param::SiteParam)
         i_site = i_sites[i]
         resize!(i_site,length(site))
         for j in eachindex(i_site)
-            i_site[j] = findfirst(isequal(site[j]), flattenedsites)
+            i_site[j] = findfirst(isequal(site[j]), flattenedsites)::Int
         end
     end
 
@@ -294,7 +294,7 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
                     #fill translation between gc_gcsite combination and original indices for assoc
                     #we add one to the length of gc_site_count. this accounts for adding the next site.
                     gc_site_count += 1
-                    gc_ik = findfirst(isequal(gcname_ik),groups.flattenedgroups)
+                    gc_ik = findfirst(isequal(gcname_ik),groups.flattenedgroups)::Int
                     push!(site_translator_i,(gc_ik,gc_site_count))
                 end
             end

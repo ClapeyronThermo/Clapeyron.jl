@@ -630,8 +630,8 @@ function getnames_gerg2008(components::Vector{String})
     names = normalisestring.(GERG2008_names)
     @assert allunique(comps)
     res = indexin(comps,names)
-    if any(isnothing,res)
-        idx = findfirst(isnothing,res)
+    idx = findfirst(isnothing,res)
+    if idx !== nothing
         throw(error("component $(components[idx]) could not be found"))
     end
     return res

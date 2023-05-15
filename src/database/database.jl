@@ -498,7 +498,7 @@ function findparamsincsv(components,filepath,
     getsources = false
     if normalised_sourcecolumnreference ∈ normalised_csvheaders
         getsources = true
-        sourcecolumn = findfirst(isequal(normalised_sourcecolumnreference), normalised_csvheaders)
+        sourcecolumn = findfirst(isequal(normalised_sourcecolumnreference), normalised_csvheaders)::Int
     else
         sourcecolumn = 0
     end
@@ -508,7 +508,7 @@ function findparamsincsv(components,filepath,
     lookupcolumnindex1,lookupcolumnindex2 = pair_idx
     lookupsitecolumnindex1,lookupsitecolumnindex2 = assoc_idx
     headerparams_indices = zeros(Int,length(normalised_headerparams))
-    map!(i -> findfirst(isequal(i),normalised_csvheaders),headerparams_indices,normalised_headerparams)
+    map!(i -> findfirst(isequal(i),normalised_csvheaders)::Int,headerparams_indices,normalised_headerparams)
     #headerparams_indices = [findfirst(isequal(i),normalised_csvheaders) for i ∈ normalised_headerparams]
     lookupcolumnindex = max(lookupcolumnindex,lookupcolumnindex1)
 
