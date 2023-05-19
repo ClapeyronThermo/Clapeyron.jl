@@ -53,11 +53,11 @@ Gᵢⱼ exp(-αᵢⱼτᵢⱼ)
 """
 aspenNRTL
 
-function NRTL(components::Vector{String}; puremodel=PR,
+function aspenNRTL(components::Vector{String}; puremodel=PR,
     userlocations = String[], 
     pure_userlocations = String[],
     verbose=false)
-    params = getparams(components, String[]; userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b"], verbose=verbose)
+    params = getparams(components, String["Activity/NRTL/aspenNRTL/aspenNRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b"], verbose=verbose)
     a0  = params["a0"]
     a1  = params["a1"]
     t0  = params["t0"]
@@ -84,15 +84,15 @@ function aspenNRTL(model::NRTL)
     t1 .= 0
     t2 .= 0
     packagedparams = aspenNRTLParam(a0,a1,t0,t1,t2,t3)
-    return NRTL(model.components,packagedparams,model.puremodel,model.references)
+    return aspenNRTL(model.components,packagedparams,model.puremodel,model.references)
 end
 function excess_gibbs_free_energy(model::aspenNRTLModel,p,T,z)
-    a₀ = model.params.a.values
-    a₁  = model.params.b.values
-    t₀  = model.params.c.values
-    t₁  = model.params.c.values
-    t₂  = model.params.c.values
-    t₃  = model.params.c.values
+    a₀ = model.params.a0.values
+    a₁  = model.params.a1.values
+    t₀  = model.params.t0.values
+    t₁  = model.params.t1.values
+    t₂  = model.params.t2.values
+    t₃  = model.params.t3.values
 
     _0 = zero(T+first(z))
     n = sum(z)

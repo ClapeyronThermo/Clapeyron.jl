@@ -1,4 +1,5 @@
-
+using PrecompileTools
+using Preferences
 """
     precompile_clapeyron!(val = true)
 
@@ -12,8 +13,8 @@ export precompile_clapeyron!
 
 @static if Base.VERSION >= v"1.9" #only precompile with 1.9 onwards
 function precompile_clapeyron!(val = true)
-    Preferences.set_preferences!(MyPackage, "precompile_workload" => val; force=true)
-    @info "Clapeyron's precompilation workload has been set to $val. this change will take effect on the next julia session."
+    Preferences.set_preferences!(Clapeyron, "precompile_workload" => val; force=true)
+    @info "Clapeyron's precompilation workload has been set to $(info_color(string(val))). this change will take effect on the next julia session."
 end
 @setup_workload begin
 

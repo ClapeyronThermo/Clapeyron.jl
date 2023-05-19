@@ -52,7 +52,7 @@ function NRTL(components::Vector{String}; puremodel=PR,
     userlocations = String[], 
     pure_userlocations = String[],
     verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/NRTL/NRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b"], verbose=verbose)
+    params = getparams(components, ["properties/molarmass.csv","Activity/NRTL/NRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b"], verbose=verbose)
     a  = params["a"]
     b  = params["b"]
     c  = params["c"]
