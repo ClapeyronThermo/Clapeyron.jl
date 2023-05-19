@@ -9,7 +9,7 @@ end
 
 abstract type aspenNRTLModel <: NRTLModel end
 
-struct aspenNRTL{c<:EoSModel} <: NRTLModel
+struct aspenNRTL{c<:EoSModel} <: aspenNRTLModel
     components::Array{String,1}
     params::aspenNRTLParam
     puremodel::EoSVectorParam{c}
