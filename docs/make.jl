@@ -41,8 +41,8 @@ format = Documenter.HTML(
         "Macros" => "api/macros.md",
         "Association" => "api/association.md",
         "Parameter Estimation" => "api/estimation.md",
-        ]
-        ])
+        ],
+        "Developer Guide" => "dev.md"])
 
         deploydocs(;
     repo="github.com/ypaul21/Clapeyron.jl.git",
