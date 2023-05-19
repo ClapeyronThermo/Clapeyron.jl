@@ -140,6 +140,7 @@ include("models/SAFT/association.jl")
 
 include("models/Activity/Wilson/Wilson.jl")
 include("models/Activity/NRTL/NRTL.jl")
+include("models/Activity/NRTL/variants/aspenNRTL.jl")
 include("models/Activity/UNIQUAC/UNIQUAC.jl")
 include("models/Activity/UNIFAC/utils.jl")
 include("models/Activity/UNIFAC/UNIFAC.jl")

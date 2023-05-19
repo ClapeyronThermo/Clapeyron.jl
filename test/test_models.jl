@@ -373,6 +373,11 @@ end
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5309354738922405 rtol = 1e-6
     end
 
+    @testset "aspen-NRTL" begin
+        system = aspenNRTL(["methanol","benzene"])
+        @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.5309354738922405 rtol = 1e-6
+    end
+
     @testset "UNIQUAC" begin
         system = UNIQUAC(["methanol","benzene"])
         @test Clapeyron.activity_coefficient(system,p,T,z)[1] ≈ 1.3630421218486388 rtol = 1e-6

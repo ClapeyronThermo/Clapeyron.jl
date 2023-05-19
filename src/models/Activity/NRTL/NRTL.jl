@@ -11,7 +11,6 @@ struct NRTL{c<:EoSModel} <: NRTLModel
     components::Array{String,1}
     params::NRTLParam
     puremodel::EoSVectorParam{c}
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
@@ -62,7 +61,7 @@ function NRTL(components::Vector{String}; puremodel=PR,
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = NRTLParam(a,b,c,Mw)
     references = String["10.1002/aic.690140124"]
-    model = NRTL(components,packagedparams,_puremodel,1e-12,references)
+    model = NRTL(components,packagedparams,_puremodel,references)
     return model
 end
 
