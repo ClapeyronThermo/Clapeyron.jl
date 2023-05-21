@@ -57,7 +57,7 @@ function aspenNRTL(components::Vector{String}; puremodel=PR,
     userlocations = String[], 
     pure_userlocations = String[],
     verbose=false)
-    params = getparams(components, String["Activity/NRTL/aspenNRTL/aspenNRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b"], verbose=verbose)
+    params = getparams(components, String["Activity/NRTL/aspenNRTL/aspenNRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["t0","t1","t2","t3"], ignore_missing_singleparams=asymmetricparams=["t0","t1","t2","t3"], verbose=verbose)
     a0  = params["a0"]
     a1  = params["a1"]
     t0  = params["t0"]
@@ -74,15 +74,15 @@ end
 
 function aspenNRTL(model::NRTL)
     params = model.params
-    a0 = copy(params.c)
-    a1 = copy(params.a)
+    a0 = deepcopy(params.c)
+    a1 = deepcopy(params.a)
     a1 .= 0
-    t0 = copy(params.a)
-    t1 = copy(params.b)
-    t2 = copy(params.a)
-    t3 = copy(params.a)
-    t1 .= 0
+    t0 = deepcopy(params.a)
+    t1 = deepcopy(params.b)
+    t2 = deepcopy(params.a)
+    t3 = deepcopy(params.a)
     t2 .= 0
+    t3 .= 0
     packagedparams = aspenNRTLParam(a0,a1,t0,t1,t2,t3)
     return aspenNRTL(model.components,packagedparams,model.puremodel,model.references)
 end
