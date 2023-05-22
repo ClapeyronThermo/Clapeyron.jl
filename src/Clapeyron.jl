@@ -24,7 +24,6 @@ include("utils/core_utils.jl")
 include("solvers/Solvers.jl")
 using .Solvers
 using .Solvers: log, sqrt, log1p, ^
-∂Tag = Solvers.∂Tag
 
 include("utils/fractions.jl")
 import .Fractions
