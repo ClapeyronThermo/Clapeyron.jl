@@ -56,10 +56,6 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
     model.melting !== nothing && print(io,'\n'," Melting Model: ",model.melting)
 end
 
-function Base.show(io::IO,model::CompositeModel)
-    eosshow(io,model)
-end
-
 __gas_model(model::CompositeModel) = model.gas
 
 function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,vol = vol0)

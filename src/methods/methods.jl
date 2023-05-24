@@ -47,6 +47,15 @@ end
 
 comp_molecular_weight(mw,z = @SVector [1.]) = 0.001*dot(mw,z)
 
+function molecular_weight(model::EoSModel,z=SA[1.0])
+    MW = mw(model)
+    if has_groups(model)
+        return group_molecular_weight(model.groups,MW,z)
+    else
+        return comp_molecular_weight(MW,z)
+    end
+end
+
 const LIQUID_STR = (:liquid,:LIQUID,:L,:l)
 
 """

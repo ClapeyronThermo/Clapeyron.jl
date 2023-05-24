@@ -293,14 +293,6 @@ end
 
 Base.length(::IAPWS95) = 1
 
-function Base.show(io::IO,model::IAPWS95)
-    return eosshow(io,model)
-end
-
-function Base.show(io::IO,mime::MIME"text/plain",model::IAPWS95)
-    return eosshow(io,mime,model)
-end
-
 lb_volume(model::IAPWS95, z=SA[1.0]; phase = :unknown) = 1.4393788065379039e-5
 
 export IAPWS95,IAPWS95Ideal

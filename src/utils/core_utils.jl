@@ -3,9 +3,18 @@ This file contains functionalities present in newer versions of julia, but not o
 that are used by this package.
 =#
 
+@static if isdefined(Base,Symbol("@assume_effects"))
+    macro pure(ex)
+        esc(:(Base.@assume_effects :foldable $ex))
+    end
+else
+    macro pure(ex)
+        esc(:(Base.@pure $ex))
+    end
+end
 
 #Copied from ArrayInterfaceCore.jl
-Base.@pure __parameterless_type(T) = Base.typename(T).wrapper
+@pure __parameterless_type(T) = Base.typename(T).wrapper
 
 """
     parameterless_type(x)
@@ -95,6 +104,10 @@ function _vecparser(vals::String,dlm = ' ')
     T = _vecparser_eltype(strip_vals)
     return _vecparser(T,vals,dlm)
 end
+
+show_default(io::IO,arg) = Base.show_default(io,arg)
+show_default(io::IO,mime::MIME"text/plain",arg) = invoke(Base.show,Tuple{typeof(io),typeof(mime),Any},io,mime,arg)
+
 #=
 """
     concrete(x)
