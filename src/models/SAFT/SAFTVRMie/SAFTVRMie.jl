@@ -136,10 +136,9 @@ function a_mono(model::SAFTVRMieModel, V, T, z,_data = @f(data))
 end
 
 function a_hs(model::SAFTVRMieModel, V, T, z,_data = @f(data))
-    _,_,ζi,_,_,_,_ = _data
+    _,_,ζi,_,_,_,m̄ = _data
     ζ0,ζ1,ζ2,ζ3 = ζi
-    N = N_A*∑(z)
-    return 6*V/π/N*(3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
+    return m̄*bmcs_hs(ζ0,ζ1,ζ2,ζ3)
 end
 
 function ρ_S(model::SAFTVRMieModel, V, T, z, m̄ = dot(z,model.params.segment.values))

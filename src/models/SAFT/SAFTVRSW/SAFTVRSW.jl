@@ -112,7 +112,7 @@ function a_hs(model::SAFTVRSWModel, V, T, z)
     Σz = sum(z)
     m = model.params.segment.values
     m̄ = dot(z, m)/Σz
-    return m̄*6/π/@f(ρ_S)*(3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
+    return m̄*bmcs_hs(ζ0,ζ1,ζ2,ζ3)
 end
 
 function ζn(model::SAFTVRSWModel, V, T, z, n)
