@@ -47,7 +47,7 @@ function a_ideal(model::MonomerIdealModel, V, T, z)
     for i in @comps
         Mwᵢ = Mw[i]*0.001
         Λᵢ = h/√(k_B*T*Mwᵢ/N_A)
-        res +=  z[i]*log(z[i]*N_A/V*Λᵢ^3)
+        res += xlogx(z[i],N_A/V*Λᵢ^3)
     end
     return res/sum(z) - 1
 end

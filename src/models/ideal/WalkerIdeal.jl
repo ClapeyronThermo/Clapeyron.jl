@@ -91,13 +91,13 @@ function a_ideal(model::WalkerIdealModel,V,T,z)
     n = model.groups.n_flattenedgroups
     res = zero(V+T+first(z))
     Σz = sum(z)
-    x = z/Σz
     @inbounds for i in @comps
         ni = n[i]
         Mwi = sum(ni[k]*Mw[k] for k in @groups(i))
         Nroti = sum(ni[k]*Nrot[k] for k in @groups(i))/sum(ni[k] for k in @groups(i))
-        Λ   = h/√(k_B*T*Mwi/N_A)
-        res +=x[i]*(log(z[i]*N_A/V*Λ^3)-Nroti/2*log(T)+sum(ni[k]*sum(g_vib[v][k]*(θ_vib[v][k]/2/T+log(1-exp(-θ_vib[v][k]/T))) for v in 1:4) for k in @groups(i)))
+        Λ = h/√(k_B*T*Mwi/N_A)
+        res += xlogx(z[i],N_A/V*Λ^3)
+        res += z[i]*(-Nroti/2*log(T)+sum(ni[k]*sum(g_vib[v][k]*(θ_vib[v][k]/2/T+log(1-exp(-θ_vib[v][k]/T))) for v in 1:4) for k in @groups(i)))
     end
-    return res - 1.
+    return res/Σz - 1.
 end

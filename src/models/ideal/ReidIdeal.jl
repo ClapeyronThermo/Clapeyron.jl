@@ -69,7 +69,7 @@ function a_ideal(model::ReidIdealModel, V, T, z)
     polycoeff = model.params.coeffs.values
     #return sum(x[i]*(log(z[i]/V) + 1/(R̄*T)*(sum(polycoeff[k][i]/k*(T^k-298^k) for k in 1:4)) -
     #    1/R̄*((polycoeff[k][1]-R̄)*log(T/298)+sum(polycoeff[k][i]/(k-1)*(T^(k-1)-298^(k-1)) for k in 2:4))) for i in @comps)
-
+    V⁻¹ = 1/V
     res = zero(V+T+first(z))
     Σz = sum(z)
     @inbounds for i in @comps
@@ -82,11 +82,11 @@ function a_ideal(model::ReidIdealModel, V, T, z)
         R̄⁻¹= 1/R̄
         pol1 = ci ./ div1
         pol2 = cii ./ div2
-        lnV = log(z[i]/V)
         lnT = (1 - c0*R̄⁻¹)*(log(T/298))
         H = (evalpoly(T,pol1) - 298*evalpoly(298,pol1)/T)*R̄⁻¹
         TS = (T*evalpoly(T,pol2) - 298*evalpoly(298,pol2))*R̄⁻¹
-        res += z[i]*(lnV+lnT+H-TS)
+        res += z[i]*(lnT+H-TS)
+        res += xlogx(z[i],V⁻¹)
         #res +=x[i]*(log(z[i]/V) + 1/(R̄*T)*(sum(polycoeff[k]/k*(T^k-298^k) for k in 1:4)) -
         #1/R̄*((polycoeff[1]-R̄)*log(T/298)+sum(polycoeff[k]/(k-1)*(T^(k-1)-298^(k-1)) for k in 2:4)))
     end
