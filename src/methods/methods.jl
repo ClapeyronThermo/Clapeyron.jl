@@ -156,12 +156,12 @@ function ∑(iterator)
     return sum(iterator)
 end
 
-∑(x::AbstractArray) = sum(x,init = zero(eltype(x)))
-∑(f,x::AbstractArray) = sum(f,x,init = zero(eltype(x)))
+∑(x::AbstractArray) = sum(x)
+∑(f,x::AbstractArray) = sum(f,x)
 
 function ∑(fn,iterator)
     len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
-    hastype =  (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
+    hastype = (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
     local _0
     if hastype
         _0 = zero(eltype(iterator))
