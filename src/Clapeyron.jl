@@ -21,11 +21,15 @@ using Downloads #for bibtex
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
 
-include("solvers/Solvers.jl")
+include("modules/solvers/Solvers.jl")
 using .Solvers
 using .Solvers: log, sqrt, log1p, ^
 
-include("utils/fractions.jl")
+#misc functions, useful for EoS, don't depend on models
+include("modules/eosfunctions/EoSFunctions.jl")
+using .EoSFunctions
+
+include("modules/fractions/Fractions.jl")
 import .Fractions
 using .Fractions: FractionVector
 

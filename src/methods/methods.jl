@@ -156,6 +156,9 @@ function ∑(iterator)
     return sum(iterator)
 end
 
+∑(x::AbstractArray) = sum(x,init = zero(eltype(x)))
+∑(f,x::AbstractArray) = sum(f,x,init = zero(eltype(x)))
+
 function ∑(fn,iterator)
     len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
     hastype =  (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
@@ -168,18 +171,6 @@ function ∑(fn,iterator)
     len && iszero(length(iterator)) && return _0
     !len && return mapreduce(fn,Base.add_sum,iterator,init=_0)
     return sum(fn,iterator)
-end
-
-"""
-    xlogx(x::Real)
-Return `x * log(x)` for `x ≥ 0`, handling ``x = 0`` by taking the downward limit.
-
-copied from LogExpFunctions.jl
-"""
-function xlogx(x::Real)
-    _0 = zero(x)
-    iszero(x) && return _0
-    ifelse(x >= _0,x*Base.log(max(_0,x)),_0/_0)
 end
 
 @inline function nan_num(V,T,z)
