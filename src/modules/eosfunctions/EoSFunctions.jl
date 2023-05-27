@@ -1,4 +1,5 @@
 module EoSFunctions
+using ..Solvers
 """
     bmcs_hs(ζ0,ζ1,ζ2,ζ3)
 
@@ -10,7 +11,7 @@ Boublík-Mansoori-Leeland-Carnahan-Starling hard sphere term:
 function bmcs_hs(ζ0,ζ1,ζ2,ζ3)
     ζ3m1 = (1-ζ3)
     ζ3m1² = ζ3m1*ζ3m1
-    return 1/ζ0 * (3ζ1*ζ2/ζ3m1 + ζ2^3/(ζ3*ζ3m1²) + (ζ2^3/ζ3^2-ζ0)*log1p(-ζ3))
+    return 1/ζ0 * (3ζ1*ζ2/ζ3m1 + ζ2^3/(ζ3*ζ3m1²) + (ζ2^3/ζ3^2-ζ0)*Solvers.log1p(-ζ3))
 end
 
 """
