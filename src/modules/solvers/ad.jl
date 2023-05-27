@@ -115,3 +115,45 @@ function autochunk(x)
     k = ForwardDiff.pickchunksize(length(x))
     return ForwardDiff.Chunk{k}()
 end
+
+"""
+    primalval(x::Real)
+
+returns the primal value of a value. strips all duals from `ForwardDiff`. useful in debugging:
+
+## Example
+```julia
+function f(x)
+    x1 = primalval(x[1])
+    @show x1
+    @show x[1]
+    sum(x)*exp(x[1]) + log(x[end])
+end
+
+julia> ForwardDiff.hessian(f,[1.0,2.0,3.0])
+x1 = 1.0
+x[1] = Dual{ForwardDiff.Tag{typeof(f), Float64}}(Dual{ForwardDiff.Tag{typeof(f), Float64}}(1.0,1.0,0.0,0.0),Dual{ForwardDiff.Tag{typeof(f), Float64}}(1.0,0.0,0.0,0.0),Dual{ForwardDiff.Tag{typeof(f), Float64}}(0.0,0.0,0.0,0.0),Dual{ForwardDiff.Tag{typeof(f), Float64}}(0.0,0.0,0.0,0.0))
+3×3 Matrix{Float64}:
+ 21.7463   2.71828   2.71828
+  2.71828  0.0       0.0
+  2.71828  0.0      -0.111111
+```
+
+"""
+primalval(x) = x
+primalval(x::ForwardDiff.Dual) = primalval(ForwardDiff.value(x))
+
+
+#primaltype(::Type{T}) where T = T
+#primaltype(::Type{<:ForwardDiff.Dual{T,R}}) where {T,R} = primaltype(R)
+
+#arrays overload
+primalval(x::AbstractArray{T}) where T = x
+
+function primalval(x::AbstractArray{T}) where T <: ForwardDiff.Dual
+    return primalval.(x)
+end
+
+
+
+
