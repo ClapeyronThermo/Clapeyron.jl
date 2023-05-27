@@ -371,3 +371,9 @@ function Base.show(io::IO,::MIME"text/plain",A::SparsePackedMofV)
         end
     end
 end
+
+function Solvers.primalval(x::Compressed4DMatrix{T}) where T <: ForwardDiff.Dual
+    vals = x.values
+    vals₀ = Solvers.primalval(vals)
+    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
+end

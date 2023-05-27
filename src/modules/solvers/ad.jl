@@ -140,16 +140,16 @@ x[1] = Dual{ForwardDiff.Tag{typeof(f), Float64}}(Dual{ForwardDiff.Tag{typeof(f),
 ```
 
 """
+#fallback
 primalval(x) = x
-primalval(x::ForwardDiff.Dual) = primalval(ForwardDiff.value(x))
 
+#scalar
+primalval(x::ForwardDiff.Dual) = primalval(ForwardDiff.value(x))
 
 #primaltype(::Type{T}) where T = T
 #primaltype(::Type{<:ForwardDiff.Dual{T,R}}) where {T,R} = primaltype(R)
 
 #arrays overload
-primalval(x::AbstractArray{T}) where T = x
-
 function primalval(x::AbstractArray{T}) where T <: ForwardDiff.Dual
     return primalval.(x)
 end
