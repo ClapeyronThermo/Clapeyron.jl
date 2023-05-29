@@ -261,7 +261,7 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
     Δout.values .= false  #fill with zeros, maybe it is not necessary?
     for (idx,(i,j),(a,b)) in indices(Δout)
         gij = @f(g_hs,i,j,_data)
-        Δout[idx] = gij*σ[i,j]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
+        Δout[idx] = gij*σ[i,j]^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κ[i,j][a,b]
     end
     return Δout
 end
