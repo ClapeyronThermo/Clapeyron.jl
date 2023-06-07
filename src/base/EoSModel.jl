@@ -1,6 +1,10 @@
 abstract type EoSModel end
-export EoSModel
 
+function a_eos(model::EoSModel, V, T, z=SA[1.0])
+    maybe_ideal = idealmodel(model)
+    ideal = maybe_ideal !== nothing ? maybe_ideal : model
+    return a_ideal(ideal,V,T,z) + a_res(model,V,T,z)
+end
 """
     eos(model::EoSModel, V, T, z=SA[1.0])
 Returns the total Helmholtz free energy.
@@ -17,8 +21,9 @@ You can mix and match ideal models if you provide:
 - `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz free energy
 """
 function eos(model::EoSModel, V, T, z=SA[1.0])
-    return N_A*k_B*sum(z)*T * (a_ideal(idealmodel(model),V,T,z)+a_res(model,V,T,z))
+    return N_A*k_B*sum(z)*T * a_eos(model,V,T,z)
 end
+
 """
     idealmodel(model::EoSModel)
     
@@ -80,22 +85,43 @@ Base.broadcastable(model::EoSModel) = Ref(model)
 Base.transpose(model::EoSModel) = model
 """
     @comps
-This macro is an alias to
-    1:length(model)
+
+This macro is an alias to `1:length(model)`
 The caveat is that `model` has to exist in the local namespace.
 `model` is expected to any struct that has length defined in terms of the amount of components.
 """
-
 macro comps()
     return quote
         1:length(model)
     end |> esc
 end
 
-has_sites(::Type{<:EoSModel}) = false
-has_groups(::Type{<:EoSModel}) = false
-has_sites(::T) where T<:EoSModel = has_sites(T)
-has_groups(::T) where T<:EoSModel = has_groups(T)
+has_sites(::T) where T <: EoSModel = has_sites(T)
+has_sites(::Type{T}) where T <: EoSModel = _has_sites(T)
+
+@pure function _has_sites(::Type{T}) where T <: EoSModel
+    s1 = hasfield(T,:sites)
+    if s1
+       return fieldtype(T,:sites) == SiteParam 
+    end
+    return false
+end
+
+has_groups(::T) where T <: EoSModel = has_groups(T)
+has_groups(::Type{T}) where T <: EoSModel = _has_groups(T)
+
+@pure function _has_groups(::Type{T}) where T <: EoSModel
+    s1 = hasfield(T,:groups)
+    if s1
+       return fieldtype(T,:groups) <: GroupParameter 
+    end
+    return false
+end
+
+Base.length(model::T) where T <:EoSModel = _eos_length(model,Val(has_groups(model)))
+
+_eos_length(model::EoSModel,::Val{true}) = length(model.groups.components)
+_eos_length(model::EoSModel,::Val{false}) = length(model.components)
 
 """
     doi(model)
@@ -178,3 +204,5 @@ function setreferences!(model,references)
     resize!(oldrefs,length(references))
     oldrefs .= references
 end
+
+export EoSModel, eos, has_groups, has_sites

@@ -3,7 +3,7 @@ function bubble_point(model::EoSModel,T,x)
 end
 
 @testset "estimation" begin
-    model = SAFTgammaMie(["ethanol","water"])
+    model = SAFTgammaMie(["ethanol","water"],epsilon_mixing = :hudsen_mccoubrey)
     
     toestimate = [Dict(
         :param => :epsilon,

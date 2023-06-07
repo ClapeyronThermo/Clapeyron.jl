@@ -1,4 +1,7 @@
 #special support for activity models with the michelsen tp flash method.
+function init_preferred_method(method::typeof(tp_flash),model::ActivityModel,kwargs)
+    return RRTPFlash(;kwargs...)
+end
 
 function PTFlashWrapper(model::ActivityModel,T::Number) 
     pures = model.puremodel.pure
@@ -102,4 +105,8 @@ function dgibbs_obj!(model::PTFlashWrapper{<:ActivityModel}, p, T, z, phasex, ph
     F=nothing, G=nothing, H=nothing)
     throw(error("Activity models don't support gibbs energy optimization in MichelsenTPFlash."))
 
+end
+
+function K0_lle_init(model::PTFlashWrapper{<:ActivityModel},p,T,z)
+    return K0_lle_init(model.model,p,T,z)
 end

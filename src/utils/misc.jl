@@ -95,3 +95,18 @@ function evalexppoly(x,n,v)
     end
     return res
 end
+
+function cached_indexin(a, b, bdict)
+    inds = keys(b)
+    #bdict = Dict{eltype(b),eltype(inds)}()
+    empty!(bdict)
+    for (val, ind) in zip(b, inds)
+        get!(bdict, val, ind)
+    end
+    return Union{eltype(inds), Nothing}[
+        get(bdict, i, nothing) for i in a
+    ]
+end
+
+
+

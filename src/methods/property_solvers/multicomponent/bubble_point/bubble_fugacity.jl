@@ -82,6 +82,8 @@ function bubble_pressure_fug(model::EoSModel, T, x, y0, p0; vol0=(nothing,nothin
     volx,voly = vol
     if converged
         return p,volx,voly,index_expansion(y,volatiles)
+    elseif isnan(volx) || isnan(voly)
+        return p,volx,voly,index_expansion(y,volatiles)
     else
         inc0 = vcat(lnK, log(p))
         vol_cache = [volx, voly]

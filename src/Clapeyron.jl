@@ -21,12 +21,15 @@ using Downloads #for bibtex
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
 
-include("solvers/Solvers.jl")
+include("modules/solvers/Solvers.jl")
 using .Solvers
 using .Solvers: log, sqrt, log1p, ^
-∂Tag = Solvers.∂Tag
 
-include("utils/fractions.jl")
+#misc functions, useful for EoS, don't depend on models
+include("modules/eosfunctions/EoSFunctions.jl")
+using .EoSFunctions
+
+include("modules/fractions/Fractions.jl")
 import .Fractions
 using .Fractions: FractionVector
 
@@ -150,6 +153,7 @@ include("models/SAFT/association.jl")
 
 include("models/Activity/Wilson/Wilson.jl")
 include("models/Activity/NRTL/NRTL.jl")
+include("models/Activity/NRTL/variants/aspenNRTL.jl")
 include("models/Activity/UNIQUAC/UNIQUAC.jl")
 include("models/Activity/UNIFAC/utils.jl")
 include("models/Activity/UNIFAC/UNIFAC.jl")
@@ -182,6 +186,7 @@ include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/PPCSAFT.jl")
 
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
@@ -198,4 +203,7 @@ include("models/AnalyticalSLV/AnalyticalSLV.jl")
 include("utils/misc.jl")
 
 include("estimation/estimation.jl")
+
+#precompile workload. should be loaded at the end
+include("precompile.jl")
 end # module

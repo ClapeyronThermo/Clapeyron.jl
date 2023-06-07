@@ -141,7 +141,7 @@ function compute_index(idxs,i,a)::Int
 end
 
 function inverse_index(idxs,o)
-    i = findfirst(>=(o-1),idxs)
+    i = findfirst(>=(o-1),idxs)::Int
     a = o + 1 - idxs[i]
     return i,a
 end
@@ -179,7 +179,8 @@ function dense_assoc_site_matrix(model,V,T,z,data=nothing)
     else
         delta = @f(Δ,data)
     end
-    _sites = model.sites.n_sites
+    sitesparam = getsites(model)
+    _sites = sitesparam.n_sites
     p = _sites.p
     ρ = N_A/V
 
@@ -189,7 +190,7 @@ function dense_assoc_site_matrix(model,V,T,z,data=nothing)
     _Δ= delta.values
     TT = eltype(_Δ)
 
-    _n = model.sites.n_sites.v
+    _n = sitesparam.n_sites.v
 
     nn = length(_n)
     K  = zeros(TT,nn,nn)
@@ -268,7 +269,8 @@ function X(model::EoSModel, V, T, z,data = nothing)
     isone(nn) && return X_exact1(model,V,T,z,data)
     options = assoc_options(model)
     K = assoc_site_matrix(model,V,T,z,data)
-    idxs = model.sites.n_sites.p
+    sitesparam = getsites(model)
+    idxs = sitesparam.n_sites.p
     Xsol = assoc_matrix_solve(K,options)
     return PackedVofV(idxs,Xsol)
 end
@@ -327,24 +329,26 @@ function X_exact1(model,V,T,z,data=nothing)
         _Δ = @f(Δ,i,j,a,b,data)
     end
     _1 = one(eltype(_Δ))
-    idxs = model.sites.n_sites.p
-    n = length(model.sites.n_sites.v)
+    sitesparam = getsites(model)
+    idxs = sitesparam.n_sites.p
+    n = length(sitesparam.n_sites.v)
     ρ = N_A/V
     zi = z[i]
     zj = z[j]
-    ni = model.sites.n_sites[i]
+    ni = sitesparam.n_sites[i]
     na = ni[a]
-    nj = model.sites.n_sites[j]
+    nj = sitesparam.n_sites[j]
     nb = nj[b]
     ρ = N_A/V
     kia = na*zi*ρ*_Δ
     kjb = nb*zj*ρ*_Δ
-    #kia*x*x + x(kjb-kia+1) - 1 = 0
     _a = kia
-    _b = _1 -kia + kjb
+    _b = _1 - kia + kjb
     _c = -_1
-    xia = -2*_c/(_b + sqrt(_b*_b - 4*_a*_c))
-    xjb = _1/(1+kia*xia)
+    denom = _b + sqrt(_b*_b - 4*_a*_c)
+    xia = -2*_c/denom
+    xk_ia = kia*xia
+    xjb = (1- xk_ia)/(1 - xk_ia*xk_ia)
     return pack_X_exact1(z,xia,xjb,i,j,a,b,n,idxs)
 end
 
@@ -355,7 +359,8 @@ function pack_X_exact1(z,xia,xjb,i,j,a,b,n,idxs)
     _X[i][a] = xia
     return _X
 end
-
+#=
+#Disabled. see #171
 function pack_X_exact1(z::SingleComp,xia,xjb,i,j,a,b,n,idxs)
     if (i,a) == (j,b)
         Xsol = SA[xia,xia]
@@ -366,11 +371,18 @@ function pack_X_exact1(z::SingleComp,xia,xjb,i,j,a,b,n,idxs)
     end
     _X = PackedVofV(idxs,Xsol)
     return _X
-end
+end =#
+
+
+#helper function to get the sites. in almost all cases, this is model.sites
+#but SAFTgammaMie uses model.vrmodel.sites instead
+
+getsites(model) = model.sites
 
 function a_assoc_impl(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
     _0 = zero(first(X_.v))
-    n = model.sites.n_sites
+    sites = getsites(model)
+    n = sites.n_sites
     res = _0
     resᵢₐ = _0
     for i ∈ @comps

@@ -23,57 +23,45 @@ function index_reduction(method::BubblePointMethod,idx_r)
     return method
 end
 
-function __x0_bubble_pressure(model::EoSModel,T,x)
-    #check each T with T_scale, if treshold is over, replace Pi with inf
-    comps = length(model)
-    pure = split_model(model)
-    crit = crit_pure.(pure)
-    T_c = first.(crit)
-    V_c = last.(crit)
-    _0 = zero(T+first(x))
-    nan = _0/_0
-    sat_nan = (nan,nan,nan)
-    replaceP = T_c .< T
-    sat = fill(sat_nan,comps)
-    for i in 1:comps
-        if !replaceP[i]
-        sat[i] = saturation_pressure(pure[i],T,ChemPotVSaturation(crit = crit[i]))
-        end
+function initial_points_bd_T(pure,T)
+    #try without critical point information
+    sat = saturation_pressure(pure,T,crit_retry = false)
+    !isnan(first(sat)) && return sat
+    
+    #calculate critical point, try again
+    crit = crit_pure(pure)
+    Tc,Pc,Vc = crit
+    if T < Tc
+        sat = saturation_pressure(pure,T,crit = crit)
+        !isnan(first(sat)) && return sat
     end
-    P_sat = [tup[1] for tup in sat]
-    V_l_sat = [tup[2] for tup in sat]
-    V_v_sat = [tup[3] for tup in sat]
-
-    P = zero(T)
-    V0_l = zero(T)
-    V0_v = zero(T)
-    Pi   = zero(x)
-    for i in 1:length(x)
-        if !replaceP[i]
-            Pi[i] = P_sat[i]
-            P+=x[i]*Pi[i]
-            V0_l += x[i]*V_l_sat[i]
-        else
-            Pi[i] = pressure(pure[i],V_c[i],T)
-            P+=x[i]*Pi[i]
-            V0_l += x[i]*V_c[i]
-        end
-    end
-
-    y = @. x*Pi/P
-    ysum = 1/∑(y)
-    y    = y.*ysum
-
-    for i in 1:length(x)
-        if !replaceP[i]
-            V0_v += y[i]*V_v_sat[i]
-        else
-            V0_v += y[i]*V_c[i]*1.2
-        end
-    end
-    #prepend!(y,log10.([V0_l,V0_v]))
-    return P,V0_l,V0_v,y
+    #create initial point from critical values (TODO: use pseudocritical_pressure instead?)
+    p0 = pressure(pure,Vc,T)
+    vl0 = Vc
+    vv0 = 1.2Vc
+    return p0,vl0,vv0
 end
+
+function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing)
+    #check each T with T_scale, if treshold is over, replace Pi with inf
+    pure = split_model(model)
+    pure_vals = initial_points_bd_T.(pure,T) #saturation, or aproximation via critical point.
+    p0 = first.(pure_vals)
+    vli = getindex.(pure_vals,2)
+    vvi = getindex.(pure_vals,3)
+    xipi = p0 .* x
+    p = sum(xipi)
+    if isnothing(y0)
+        y = xipi
+        y ./= p
+    else
+        y = y0
+    end
+    vl0  = dot(vli,x)
+    vv0 = dot(vvi,y)
+    return p,vl0,vv0,y
+end
+
 
 function x0_bubble_pressure(model,T,x)
     p,V0_l,V0_v,y = __x0_bubble_pressure(model,T,x)
@@ -95,7 +83,7 @@ function bubble_pressure_init(model,T,x,vol0,p0,y0)
                 vl,vv = vol0
                 p0 = pressure(model,vv,T,y0)
             else
-                p0,_,_,_ = __x0_bubble_pressure(model,T,x)
+                p0,_,_,_ = __x0_bubble_pressure(model,T,x,y0)
                 vl = volume(model,p0,T,x,phase = :l)
                 vv = volume(model,p0,T,y0,phase =:v)
             end
@@ -126,6 +114,22 @@ Returns a tuple, containing:
 
 By default, uses equality of chemical potentials, via [`ChemPotBubblePressure`](@ref)
 """
+function bubble_pressure(model::EoSModel,T,x;kwargs...)
+    if keys(kwargs) == (:v0,)
+        nt_kwargs = NamedTuple(kwargs)
+        v0 = nt_kwargs.v0
+        vl = exp10(v0[1])
+        vv = exp10(v0[2])
+        vol0 = (vl,vv)
+        y0 = v0[3:end]
+        _kwargs = (;vol0,y0)
+        method = init_preferred_method(bubble_pressure,model,_kwargs)
+    else
+        method = init_preferred_method(bubble_pressure,model,kwargs)
+    end
+    return bubble_pressure(model, T, x, method)
+end
+
 function bubble_pressure(model::EoSModel, T, x, method::BubblePointMethod)
     x = x/sum(x)
     T = float(T)
@@ -284,6 +288,29 @@ Returns a tuple, containing:
 
 By default, uses equality of chemical potentials, via [`ChemPotBubbleTemperature`](@ref)
 """
+function bubble_temperature(model::EoSModel,p,x;kwargs...)
+    if keys(kwargs) == (:v0,)
+        nt_kwargs = NamedTuple(kwargs)
+        v0 = nt_kwargs.v0
+        T0 = v0[1]
+        vl = exp10(v0[2])
+        vv = exp10(v0[3])
+        vol0 = (vl,vv)
+        y0 = v0[4:end]
+        _kwargs = (;T0,vol0,y0)
+        method = init_preferred_method(bubble_temperature,model,_kwargs)
+    else
+        method = init_preferred_method(bubble_temperature,model,kwargs)
+    end
+    return bubble_temperature(model,p,x,method)
+end
+
+function bubble_temperature(model::EoSModel, p , x, T0::Number)
+    kwargs = (;T0)
+    method = init_preferred_method(bubble_temperature,model,kwargs)
+    return bubble_temperature(model,p,x,method)
+end
+
 function bubble_temperature(model::EoSModel, p , x, method::BubblePointMethod)
     x = x/sum(x)
     p = float(p)
@@ -309,28 +336,13 @@ include("bubble_point/bubble_activity.jl")
 include("bubble_point/bubble_chempot.jl")
 include("bubble_point/bubble_fugacity.jl")
 
-#legacy
-function bubble_pressure(model::EoSModel,T,x;v0 = nothing)
-    if isnothing(v0)
-        return bubble_pressure(model,T,x,ChemPotBubblePressure())
-    else
-        vl = exp10(v0[1])
-        vv = exp10(v0[2])
-        vol0 = (vl,vv)
-        y0 = v0[3:end]
-        bubble_pressure(model,T,x,ChemPotBubblePressure(;vol0,y0))
-    end
+
+#default initializers
+
+function init_preferred_method(method::typeof(bubble_pressure),model::EoSModel,kwargs)
+    return ChemPotBubblePressure(;kwargs...) 
 end
 
-function bubble_temperature(model::EoSModel,p,x;v0 = nothing)
-    if isnothing(v0)
-        return bubble_temperature(model,p,x,ChemPotBubbleTemperature())
-    else
-        T0 = v0[1]
-        vl = exp10(v0[2])
-        vv = exp10(v0[3])
-        vol0 = (vl,vv)
-        y0 = v0[4:end]
-        bubble_temperature(model,p,x,ChemPotBubbleTemperature(;T0,vol0,y0))
-    end
+function init_preferred_method(method::typeof(bubble_temperature),model::EoSModel,kwargs)
+    return ChemPotBubbleTemperature(;kwargs...) 
 end

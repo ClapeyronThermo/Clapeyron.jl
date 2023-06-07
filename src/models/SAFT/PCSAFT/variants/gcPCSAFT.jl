@@ -127,7 +127,7 @@ function a_hc(model::gcPCSAFTModel, V, T, z,_data=@f(data))
     c1 = 1/(1-ζ3)
     c2 = 3ζ2/(1-ζ3)^2
     c3 = 2ζ2^2/(1-ζ3)^3
-    a_hs = 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
+    a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
     g_hs = zero(V+T+first(z))*zeros(ngroups,ngroups)
     for k ∈ @groups
         dₖ = _d[k]

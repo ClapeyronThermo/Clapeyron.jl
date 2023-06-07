@@ -105,7 +105,7 @@ function recombine!(param::GroupParameter)
         i_group = i_groups[i]
         resize!(i_group,length(group))
         for j in eachindex(i_group)
-            i_group[j] = findfirst(isequal(group[j]), flattenedgroups)
+            i_group[j] = findfirst(isequal(group[j]), flattenedgroups)::Int
         end
     end
 
@@ -219,7 +219,7 @@ function StructGroupParam(group::GroupParam,gccomponents_parsed,filepaths::Vecto
             k = first(pair_ik)
             val = last(pair_ik)
             k1,k2 = k
-            n1,n2 = findfirst(==(k1),groupnames),findfirst(==(k2),groupnames)
+            n1,n2 = findfirst(==(k1),groupnames)::Int,findfirst(==(k2),groupnames)::Int
             n_mat[n1,n2] = val
             n_mat[n2,n1] = val
         end

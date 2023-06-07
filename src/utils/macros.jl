@@ -116,21 +116,6 @@ macro newmodelgc(name, parent, paramstype)
         references::Array{String,1}
     end
 
-    Clapeyron.has_sites(::Type{<:$name}) = true
-    Clapeyron.has_groups(::Type{<:$name}) = true
-
-    function Base.show(io::IO, mime::MIME"text/plain", model::$name)
-        return Clapeyron.gc_eosshow(io, mime, model)
-    end
-
-    function Base.show(io::IO, model::$name)
-        return Clapeyron.eosshow(io, model)
-    end
-
-    Base.length(model::$name) = Base.length(model.groups.components)
-
-    Clapeyron.molecular_weight(model::$name,z=SA[1.0]) = Clapeyron.group_molecular_weight(model.groups,Clapeyron.mw(model),z)
-
     function $name(params::$paramstype,
         groups::Clapeyron.GroupParam,
         idealmodel = Clapeyron.BasicIdeal;
@@ -176,17 +161,6 @@ macro newmodel(name, parent, paramstype)
         assoc_options::Clapeyron.AssocOptions
         references::Array{String,1}
     end
-    Clapeyron.has_sites(::Type{<:$name}) = true
-   
-    function Base.show(io::IO, mime::MIME"text/plain", model::$name)
-        return Clapeyron.eosshow(io, mime, model)
-    end
-
-    function Base.show(io::IO, model::$name)
-        return Clapeyron.eosshow(io, model)
-    end
-    Clapeyron.molecular_weight(model::$name,z=SA[1.0]) = Clapeyron.comp_molecular_weight(mw(model),z)
-    Base.length(model::$name) = Base.length(model.components)
 
     function $name(params::$paramstype,
         sites::Clapeyron.SiteParam,
@@ -225,16 +199,6 @@ macro newmodelsimple(name, parent, paramstype)
         params::$paramstype
         references::Array{String,1}
     end
-
-    function Base.show(io::IO, mime::MIME"text/plain", model::$name)
-        return Clapeyron.eosshow(io, mime, model)
-    end
-
-    function Base.show(io::IO, model::$name)
-        return Clapeyron.eosshow(io, model)
-    end
-
-    Base.length(model::$name) = Base.length(model.components)
 
     function $name(params::$paramstype;
             references::Vector{String}=String[],
@@ -388,76 +352,7 @@ the necessary traits to make the model compatible with Clapeyron routines.
 
 """
 macro registermodel(model)
-    _model = getfield(__module__,model)
-    ∅ = :()
-
-    _has_components = hasfield(_model,:components)
-    _has_sites = hasfield(_model,:sites)
-    _has_groups = hasfield(_model,:groups)
-    _has_params = hasfield(_model,:params)
-    if _has_params
-        _has_Mw = hasfield(fieldtype(_model,:params),:Mw)
-    else
-        _has_Mw = false
-    end
-    _sites = _has_sites ? :(Clapeyron.has_sites(::Type{<:$model}) = true) : ∅
-    _groups = _has_groups ? :(Clapeyron.has_groups(::Type{<:$model}) = true) : ∅
-
-    _eos_show = 
-    if _has_components
-        if _has_groups
-            quote
-                function Base.show(io::IO, mime::MIME"text/plain", model::$model)
-                    return Clapeyron.gc_eosshow(io, mime, model)
-                end
-            
-                function Base.show(io::IO, model::$model)
-                    return Clapeyron.gc_eosshow(io, model)
-                end
-            end
-        else
-            quote
-                function Base.show(io::IO, mime::MIME"text/plain", model::$model)
-                    return Clapeyron.eosshow(io, mime, model)
-                end
-            
-                function Base.show(io::IO, model::$model)
-                    return Clapeyron.eosshow(io, model)
-                end
-            end
-        end
-    else
-        ∅
-    end
-  
-
-    _length =
-    if _has_groups
-    :(Base.length(model::$model) = Base.length(model.groups.components))
-    elseif _has_components
-        :(Base.length(model::$model) = Base.length(model.components))
-    else
-        ∅
-    end
-
-    _molecular_weight = 
-    if _has_Mw
-        if _has_groups 
-            :(Clapeyron.molecular_weight(model::$model,z=SA[1.0]) =Clapeyron.group_molecular_weight(model.groups,Clapeyron.mw(model),z))
-        else
-            :(Clapeyron.molecular_weight(model::$model,z=SA[1.0]) =Clapeyron.comp_molecular_weight(Clapeyron.mw(model),z))
-        end
-    else
-        ∅
-    end
-
-return quote 
-    $_eos_show
-    $_sites
-    $_groups
-    $_length
-    $_molecular_weight
-    end |> esc
+    esc(model)
 end
 
 export @newmodel, @f, @newmodelgc, @newmodelsimple

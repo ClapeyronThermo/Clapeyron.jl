@@ -23,57 +23,23 @@ function index_reduction(method::DewPointMethod,idx_r)
     return method
 end
 
-function __x0_dew_pressure(model::EoSModel,T,y)
-    comps = length(model)
+function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing)
     pure = split_model(model)
-    crit = crit_pure.(pure)
-    
-    T_c = [tup[1] for tup in crit]
-    V_c = [tup[3] for tup in crit]
-    _0 = zero(T+first(y))
-    nan = _0/_0 
-    sat_nan = (nan,nan,nan)
-    sat = fill(sat_nan,comps)
-    replaceP = T_c .< T
-    for i in 1:comps
-        if !replaceP[i]
-        sat[i] = saturation_pressure(pure[i],T,ChemPotVSaturation(crit = crit[i]))
-        end
+    pure_vals = initial_points_bd_T.(pure,T) #saturation, or aproximation via critical point.
+    p0 = first.(pure_vals)
+    vli = getindex.(pure_vals,2)
+    vvi = getindex.(pure_vals,3)
+    yipi = y ./ p0
+    p = 1/sum(yipi)
+    if isnothing(x0)
+        x = yipi
+        x .*= p
+    else
+        x = x0
     end
-    
-    P_sat = [tup[1] for tup in sat]
-    V_l_sat = [tup[2] for tup in sat]
-    V_v_sat = [tup[3] for tup in sat]
-    P⁻¹ = zero(T)
-    V0_l = zero(T)
-    V0_v = zero(T)
-    Pi   = zero(y)
-    for i in 1:length(y)
-        if !replaceP[i]
-            Pi[i] = P_sat[i][1]
-            P⁻¹+=y[i]/Pi[i]
-            V0_v += y[i]*V_v_sat[i]
-        else 
-            Pi[i] = pressure(pure[i],V_c[i],T)
-            P⁻¹+=y[i]/Pi[i]
-            V0_v += y[i]*V_c[i]*1.2
-        end
-    end
-    P = 1/P⁻¹
-    x = @. y*P/Pi
-    xsum = 1/∑(x)
-    x    = x.*xsum
-    
-    for i in 1:length(y)
-        if !replaceP[i]
-            V0_l += x[i]*V_l_sat[i]
-        else
-            V0_l += x[i]*V_c[i]
-        end
-    end
-    return P,V0_l,V0_v,x
-    #prepend!(x,log10.([V0_l,V0_v]))
-    #return x
+    vl0  = dot(vli,x)
+    vv0 = dot(vvi,y)
+    return p,vl0,vv0,x
 end
 
 function x0_dew_pressure(model::EoSModel,T,y)
@@ -96,7 +62,7 @@ function dew_pressure_init(model,T,y,vol0,p0,x0)
                 vl,vv = vol0
                 p0 = pressure(model,vv,T,y)
             else
-                p0,vl0,vv0,_ = __x0_dew_pressure(model,T,y)
+                p0,vl0,vv0,_ = __x0_dew_pressure(model,T,y,x0)
                 vl = min(vl0,volume(model,p0,T,x0,phase = :l))
                 vv = max(vv0,volume(model,p0,T,y,phase =:v))
             end
@@ -127,6 +93,22 @@ Returns a tuple, containing:
 
 By default, uses equality of chemical potentials, via [`ChemPotDewPressure`](@ref)
 """
+function dew_pressure(model::EoSModel,T,x;kwargs...)
+    if keys(kwargs) == (:v0,)
+        nt_kwargs = NamedTuple(kwargs)
+        v0 = nt_kwargs.v0
+        vl = exp10(v0[1])
+        vv = exp10(v0[2])
+        vol0 = (vl,vv)
+        x0 = v0[3:end]
+        _kwargs = (;vol0,x0)
+        method = init_preferred_method(dew_pressure,model,_kwargs)
+    else
+        method = init_preferred_method(dew_pressure,model,kwargs)
+    end
+    return dew_pressure(model, T, x, method)
+end
+
 function dew_pressure(model::EoSModel, T, y,method::DewPointMethod)
     y = y/sum(y)
     T = float(T)
@@ -174,8 +156,7 @@ function __x0_dew_temperature(model::EoSModel,p,y)
         Tci,Pci,Vci = crit_i
         if !replaceP[i]
             Ti,Vli,Vvi = saturation_temperature(pure[i],p,AntoineSaturation(crit = crit_i))
-        else
-            
+        else 
             Ti,Vli,Vvi = Tci,Vci,1.2*Vci  
         end
         T_sat[i] = Ti
@@ -286,6 +267,29 @@ Returns a tuple, containing:
 
 By default, uses equality of chemical potentials, via [`ChemPotDewTemperature`](@ref)
 """
+function dew_temperature(model::EoSModel,p,x;kwargs...)
+    if keys(kwargs) == (:v0,)
+        nt_kwargs = NamedTuple(kwargs)
+        v0 = nt_kwargs.v0
+        T0 = v0[1]
+        vl = exp10(v0[2])
+        vv = exp10(v0[3])
+        vol0 = (vl,vv)
+        x0 = v0[4:end]
+        _kwargs = (;T0,vol0,x0)
+        method = init_preferred_method(dew_temperature,model,_kwargs)
+    else
+        method = init_preferred_method(dew_temperature,model,kwargs)
+    end
+    return dew_temperature(model,p,x,method)
+end
+
+function dew_temperature(model::EoSModel, p , x, T0::Number)
+    kwargs = (;T0)
+    method = init_preferred_method(dew_temperature,model,kwargs)
+    return dew_temperature(model,p,x,method)
+end
+
 function dew_temperature(model::EoSModel,p,y,method::DewPointMethod)
     y = y/sum(y)
     p = float(p)
@@ -309,29 +313,13 @@ end
 
 include("dew_point/dew_chempot.jl")
 include("dew_point/dew_fugacity.jl") 
-include("dew_point/dew_activity.jl") 
+include("dew_point/dew_activity.jl")
 
-function dew_pressure(model::EoSModel,T,y;v0 = nothing)
-    if isnothing(v0)
-        return dew_pressure(model,T,y,ChemPotDewPressure())
-    else
-        vl = exp10(v0[1])
-        vv = exp10(v0[2])
-        vol0 = (vl,vv)
-        x0 = v0[3:end]
-        dew_pressure(model,T,y,ChemPotDewPressure(;vol0,x0))
-    end
+function init_preferred_method(method::typeof(dew_pressure),model::EoSModel,kwargs)
+    return ChemPotDewPressure(;kwargs...) 
 end
 
-function dew_temperature(model::EoSModel,p,y;v0 = nothing)
-    if isnothing(v0)
-        return dew_temperature(model,p,y,ChemPotDewTemperature())
-    else
-        T0 = v0[1]
-        vl = exp10(v0[2])
-        vv = exp10(v0[3])
-        vol0 = (vl,vv)
-        x0 = v0[4:end]
-        dew_temperature(model,p,y,ChemPotDewTemperature(;T0,vol0,x0))
-    end
+function init_preferred_method(method::typeof(dew_temperature),model::EoSModel,kwargs)
+    return ChemPotDewTemperature(;kwargs...) 
 end
+

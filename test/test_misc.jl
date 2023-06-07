@@ -39,6 +39,11 @@ end
         structgc_split = Clapeyron.split_model(model_structgc)
         @test structgc_split[1].groups.n_intergroups[1] == [0 1; 1 0]
         @test structgc_split[2].groups.n_intergroups[1] == [0 2; 2 5]
+
+        #from notebooks, #173
+        nb_test = SAFTgammaMie(["methane","nitrogen","carbon dioxide","ethane","propane","butane","isobutane",
+        "pentane","isopentane","hexane","heptane","octane"])
+        @test length(split_model(nb_test)) == 12
     end
 
     @testset "single component error" begin
@@ -247,6 +252,20 @@ end
             @test model2 isa Clapeyron.EoSModel
         end
 
+        @testset "#171" begin
+            #=
+            This is a problem that occurs in an intersection between split_model and cross-association sites
+            a single component model created from scratch don't have any cross association sites,
+            but a single component model created from split_model does have those sites.
+            we neet to check if the results of both are equal.
+            =#
+            model = SAFTgammaMie(["water","acetone"])
+            model_split = split_model(model)[2]
+            model_pure = SAFTgammaMie(["acetone"])
+            res_pure = Clapeyron.eos(model_pure,1.013e6,298.15) #works
+            res_split = Clapeyron.eos(model_split,1.013e6,298.15) #should work
+            @test res_pure ≈ res_split
+        end
     end
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
@@ -254,11 +273,5 @@ end
             ambiguities = Test.detect_ambiguities(Clapeyron)
             @test length(ambiguities) == 0
         end
-    end
-    #testset for equilibria bugs
-    @testset "challenging equilibria" begin
-        #@testset "dew_temperature N°1" begin
-        #    modelp = PCSAFT(["water","methanol"])
-        #end
     end
  end

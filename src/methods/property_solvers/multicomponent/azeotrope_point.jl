@@ -9,15 +9,12 @@ Returns a tuple, containing:
 - Azeotrope composition
 """
 function azeotrope_pressure(model::EoSModel, T; v0 = nothing)
-    ts = T_scales(model)
     if v0 === nothing
         v0 = x0_azeotrope_pressure(model,T)
     end
     pmix = p_scale(model,v0)
     w0 = x0_bubble_pressure(model,T,v0)
-    len = length(w0) - 1
-    Fcache = zeros(eltype(v0),len)
-    f! = (F,z) -> Obj_az_pressure(model, F, T, exp10(z[1]), exp10(z[2]), z[3:end],z[3:end],ts,pmix)
+    f! = (F,z) -> Obj_az_pressure(model, F, T, exp10(z[1]), exp10(z[2]), z[3:end],z[3:end],pmix)
     r  =Solvers.nlsolve(f!,w0[1:end-1],LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     v_l = exp10(sol[1])
@@ -39,8 +36,8 @@ function x0_azeotrope_pressure(model,T)
     return Fractions.zeros(n)
 end
 
-function Obj_az_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ts,ps)
-    return μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), FractionVector(y),ts,ps)
+function Obj_az_pressure(model::EoSModel, F, T, v_l, v_v, x, y,ps)
+    return μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), FractionVector(y),ps)
 end
 
 """
@@ -54,16 +51,14 @@ Returns a tuple, containing:
 - Azeotrope composition
 """
 function azeotrope_temperature(model::EoSModel,p;v0=nothing)
-    ts = T_scales(model)
     if v0 === nothing
         v0 = x0_azeotrope_pressure(model,p)
     end
     pmix = p_scale(model,v0)
     w0 = x0_bubble_temperature(model,p,v0)
     len = length(w0) - 1
-    Fcache = zeros(eltype(v0),len)
     w0[4:end] = v0
-    f!(F,z) = Obj_azeotrope_temperature(model, F, p, z[1], exp10(z[2]), exp10(z[3]), z[4:end],z[4:end],ts,pmix)
+    f!(F,z) = Obj_azeotrope_temperature(model, F, p, z[1], exp10(z[2]), exp10(z[3]), z[4:end],z[4:end],pmix)
     r  = Solvers.nlsolve(f!,w0[1:end-1],LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     T   = sol[1]
@@ -73,8 +68,8 @@ function azeotrope_temperature(model::EoSModel,p;v0=nothing)
     return T, v_l, v_v, x
 end
 
-function Obj_azeotrope_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ts,ps)
-    F = μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), FractionVector(y),ts,ps)
+function Obj_azeotrope_temperature(model::EoSModel, F, p, T, v_l, v_v, x, y,ps)
+    F = μp_equality(model::EoSModel, F, T, v_l, v_v, FractionVector(x), FractionVector(y),ps)
     F[end] = (pressure(model,v_v,T,FractionVector(y)) - p)/ps
     return F
 end

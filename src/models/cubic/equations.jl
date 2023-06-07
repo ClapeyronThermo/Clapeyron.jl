@@ -34,7 +34,7 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = nothing) 
+function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = nothing)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.Pc
@@ -47,7 +47,7 @@ function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = noth
     return a,b
 end
 
-function ab_premixing(model::CubicModel,kij::K,lij::L) where K <: Union{Nothing,PairParameter,AbstractMatrix} where L <: Union{Nothing,PairParameter,AbstractMatrix} 
+function ab_premixing(model::CubicModel,kij::K,lij::L) where K <: Union{Nothing,PairParameter,AbstractMatrix} where L <: Union{Nothing,PairParameter,AbstractMatrix}
     return ab_premixing(model,model.mixing,kij,lij)
 end
 
@@ -117,7 +117,7 @@ function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     else
         l1 = log1p(-Δ1*b̄ρt)
         l2 = log1p(-Δ2*b̄ρt)
-        return a₁ - ā*RT⁻¹*(l1-l2)/(ΔΔ*b̄) 
+        return a₁ - ā*RT⁻¹*(l1-l2)/(ΔΔ*b̄)
     end
 end
 
@@ -230,17 +230,15 @@ function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
     x1, x2, x3 = sols
     sols = (x1, x2, x3)
     xx = (x1, x2, x3)
-    
     isreal = imagfilter.(xx)
     vvv = extrema(real.(xx))
     zl,zg = vvv
     vvl,vvg = nRTp*zl,nRTp*zg
-    err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
-    
+    #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if !isfinite(vvl) && !isfinite(vvg) && phase != :unknown
         V0 = x0_volume(model, p, T, z; phase)
         v = _volume_compress(model, p, T, z, V0)
-        isnan(v) && err()
+        #isnan(v) && err()
         return v
     end
     if sum(isreal) == 3 #3 roots
@@ -248,13 +246,13 @@ function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
         _vl = vvl
         vl = ifelse(_vl > lb_v, _vl, vg) #catch case where solution is unphysical
     elseif sum(isreal) == 1
-        i = findfirst(imagfilter, sols)
+        i = findfirst(imagfilter, sols)::Int
         vl = real(sols[i]) * nRTp
         vg = real(sols[i]) * nRTp
     elseif sum(isreal) == 0
         V0 = x0_volume(model, p, T, z; phase)
         v = _volume_compress(model, p, T, z, V0)
-        isnan(v) && err()
+        #isnan(v) && err()
         return v
     end
 
@@ -320,7 +318,6 @@ function x0_sat_pure(model::ABCubicModel, T)
 
     a, b, c = cubic_ab(model, 1 / sqrt(eps(float(T))), T)
     data = (1.0, a, b, c)
-  
     pc = model.params.Pc.values[1]
     zc = pure_cubic_zc(model)
     Δ1,Δ2 = cubic_Δ(model,SA[1.0])
@@ -336,8 +333,8 @@ function x0_sat_pure(model::ABCubicModel, T)
         vl = vl_p0*exp(_Δ)
         vv = volume_virial(B,pl0,T) - c
         return (vl, vv)
-    else 
-        vc = zc*R̄*Tc/pc - c 
+    else
+        vc = zc*R̄*Tc/pc - c
         pv0 = -0.25*R̄*T/B
         vl = vl_max
         pc = model.params.Pc.values[1]
@@ -391,6 +388,8 @@ function wilson_k_values(model::ABCubicModel, p, T, crit = nothing)
 
     if hasfield(typeof(model.alpha.params), :acentricfactor)
         ω = model.alpha.params.acentricfactor.values
+    elseif hasfield(typeof(model.params), :acentricfactor)
+        ω = model.params.acentricfactor.values
     else
         pure = split_model(model)
         ω = zero(Tc)

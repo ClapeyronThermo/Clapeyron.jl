@@ -5,6 +5,8 @@ the
 =#
 
 module Fractions
+
+    import ..Solvers
     frac(x) = x ./ Base.sum(x)
     sum(x1,x2) = frac(x1 .* x2)
     mul(x1,λ)  = frac(x1 .^λ)
@@ -64,5 +66,11 @@ module Fractions
     end
     
     Base.IndexStyle(::Type{<:FractionVector}) = IndexLinear()
+
+    function Solvers.primalval(v::FractionVector)
+        vec₀ = Solvers.primalval(v.vec)
+        val₀ = Solvers.primalval(v.val)
+        return FractionVector(vec₀,val₀)
+    end
 end
 

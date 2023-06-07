@@ -108,7 +108,7 @@ function VT_chemical_stability(model::EoSModel,V,T,z)
         return pure_chemical_instability(model,V/sum(z),T) 
     end
     p = pressure(model,V,T,z)
-    Kʷ = wilson_k_values(model,p,T)
+    Kʷ = tp_flash_K0(model,p,T)
     z = z./sum(z)
     w_vap = Kʷ.*z
     w_liq = z./Kʷ

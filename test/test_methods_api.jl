@@ -171,6 +171,14 @@ end
         act_y2 = activity_coefficient(system, 101325, 303.15, flash2[1][2,:]) .* flash2[1][2,:]
         @test Clapeyron.dnorm(act_x2,act_y2) < 1e-8
 
+        #test K0_lle_init initialization
+        alg3 = MichelsenTPFlash(
+            equilibrium = :lle)
+        flash3 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg3)
+        act_x3 = activity_coefficient(system, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
+        act_y3 = activity_coefficient(system, 101325, 303.15, flash3[1][2,:]) .* flash3[1][2,:]
+        @test Clapeyron.dnorm(act_x3,act_y3) < 1e-8
+
         #test combinations of Activity + CompositeModel
         system_cc = UNIFAC(["water", "hexane"],puremodel = CompositeModel)
         flash3 = tp_flash(system_cc, 101325, 303.15, [0.5, 0.5], alg2)
@@ -397,4 +405,37 @@ end
     end
     GC.gc()
 
+
+    #testset for equilibria bugs
+    
 end
+
+#test for really really difficult equilibria.
+@testset "challenging equilibria" begin
+       
+    #see https://github.com/ClapeyronThermo/Clapeyron.jl/issues/173
+    @testset "VTPR - 1" begin
+        #=
+        carbon monoxide is supercritical.
+        =#
+
+        system = VTPR(["carbon monoxide","carbon dioxide"])
+        @test_broken Clapeyron.bubble_pressure(system,218.15,[1e-5,1-1e-5])[1] ≈ 1.1373024916997014e6 rtol = 1e-4
+    end
+
+
+
+    #see https://github.com/ClapeyronThermo/Clapeyron.jl/issues/172
+    @testset "PCSAFT - 1" begin
+        #=
+        really near critical temperature of the mixture
+        seems that was fixed by passing the initial point to the x0_bubble_pressure function
+        =#
+        x = [0.96611,0.01475,0.01527,0.00385]
+        T = 202.694
+        v0 = [-4.136285855713797, -4.131888756537859, 0.9673991775701574, 0.014192499147585259, 0.014746430039492817, 0.003661893242764558]
+        model = PCSAFT(["methane","butane","isobutane","pentane"])
+        @test_broken bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
+    end
+end
+

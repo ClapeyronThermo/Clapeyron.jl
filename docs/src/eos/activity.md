@@ -31,6 +31,7 @@ Where ``\mu_i`` and ``\mu^{0}_i `` are the mixture and pure chemical potentials 
 ```@docs
 Clapeyron.Wilson
 Clapeyron.NRTL
+Clapeyron.aspenNRTL
 Clapeyron.UNIQUAC
 Clapeyron.ogUNIFAC
 Clapeyron.UNIFAC

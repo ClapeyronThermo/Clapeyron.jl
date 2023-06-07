@@ -99,7 +99,7 @@ function a_hs(model::CKSAFTModel, V, T, z)
     ζ1 = @f(ζ,1)
     ζ2 = @f(ζ,2)
     ζ3 = @f(ζ,3)
-    return 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
+    return bmcs_hs(ζ0,ζ1,ζ2,ζ3)
 end
 
 function a_disp(model::CKSAFTModel, V, T, z)

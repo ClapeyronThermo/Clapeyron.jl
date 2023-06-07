@@ -1,7 +1,7 @@
 """
-    ChemPotDewPressure(kwargs...)  
+    ChemPotDewPressure(kwargs...)
 
-Function to compute [`dew_pressure`](@ref) via chemical potentials. 
+Function to compute [`dew_pressure`](@ref) via chemical potentials.
 It directly solves the equality of chemical potentials system of equations.
 
 Inputs:
@@ -70,15 +70,13 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
         condensables = [!in(x,method.noncondensables) for x in model.components]
         model_x,condensables = index_reduction(model,condensables)
         x0 = x0[condensables]
-        ts = T_scales(model_x)
     else
         condensables = fill(true,length(model))
         model_x = nothing
-        ts = T_scales(model)
     end
     v0 = vcat(log10(vl),log10(vv),x0[1:end-1])
     pmix = p_scale(model,y)
-    f!(F,z) = Obj_dew_pressure(model,model_x, F, T, exp10(z[1]), exp10(z[2]), z[3:end],y,ts,pmix,condensables)
+    f!(F,z) = Obj_dew_pressure(model,model_x, F, T, exp10(z[1]), exp10(z[2]), z[3:end],y,pmix,condensables)
     r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
     v_l = exp10(sol[1])
@@ -89,14 +87,14 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
     return (P_sat, v_l, v_v, x)
 end
 
-function Obj_dew_pressure(model::EoSModel,model_x, F, T, v_l, v_v, x, y,ts,ps,_view)
-    return μp_equality(model,model_x, F, T, v_v, v_l, y,FractionVector(x) ,ts,ps,_view)
+function Obj_dew_pressure(model::EoSModel,model_x, F, T, v_l, v_v, x, y,ps,_view)
+    return μp_equality(model,model_x, F, T, v_v, v_l, y,FractionVector(x),ps,_view)
 end
 
 """
-    ChemPotDewTemperature(kwargs...)  
+    ChemPotDewTemperature(kwargs...)
 
-Function to compute [`temperature`](@ref) via chemical potentials. 
+Function to compute [`temperature`](@ref) via chemical potentials.
 It directly solves the equality of chemical potentials system of equations.
 
 Inputs:
@@ -165,15 +163,13 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
         condensables = [!in(x,method.noncondensables) for x in model.components]
         model_x,condensables = index_reduction(model,condensables)
         x0 = x0[condensables]
-        ts = T_scales(model_x)
     else
         condensables = fill(true,length(model))
         model_x = nothing
-        ts = T_scales(model)
     end
     v0 = vcat(T0,log10(vl),log10(vv),x0[1:end-1])
     pmix = p_scale(model,y)
-    f!(F,z) = Obj_dew_temperature(model,model_x, F, p, z[1], exp10(z[2]), exp10(z[3]), z[4:end],y, ts, pmix, condensables)
+    f!(F,z) = Obj_dew_temperature(model,model_x, F, p, z[1], exp10(z[2]), exp10(z[3]), z[4:end],y, pmix, condensables)
     r  =Solvers.nlsolve(f!,v0,LineSearch(Newton()),NLSolvers.NEqOptions(method))
     sol = Solvers.x_sol(r)
     T   = sol[1]
@@ -184,8 +180,8 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
     return T, v_l, v_v, x
 end
 
-function Obj_dew_temperature(model::EoSModel,model_x, F, p, T, v_l, v_v, x, y, ts, ps, _view)
-    F = μp_equality(model, model_x, F, T, v_v, v_l, y, FractionVector(x), ts, ps, _view)
+function Obj_dew_temperature(model::EoSModel,model_x, F, p, T, v_l, v_v, x, y, ps, _view)
+    F = μp_equality(model, model_x, F, T, v_v, v_l, y, FractionVector(x), ps, _view)
     F[end] = (pressure(model,v_v,T,y) - p)/ps
     return F
 end

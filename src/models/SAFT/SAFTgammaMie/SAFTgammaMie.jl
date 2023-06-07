@@ -1,8 +1,4 @@
 
-include("utils.jl")
-#just a holder for the z partitions.
-#to allow split_model to work correctly
-
 abstract type SAFTgammaMieModel <: SAFTVRMieModel end
 
 
@@ -25,6 +21,7 @@ struct SAFTgammaMie{I,VR} <: SAFTgammaMieModel
     params::SAFTgammaMieParam
     idealmodel::I
     vrmodel::VR
+    epsilon_mixing::Symbol
     assoc_options::AssocOptions
     references::Array{String,1}
 end
@@ -32,18 +29,19 @@ end
 """
     SAFTgammaMie <: SAFTModel
 
-SAFTgammaMie(components; 
+SAFTgammaMie(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
     group_userlocations=String[],
     ideal_userlocations=String[],
+    epsilon_mixing = :default
     verbose=false,
     assoc_options = AssocOptions())
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `shapefactor`: Single Parameter (`Float64`) - Shape factor for segment (no units)
+- `vst`: Single Parameter (`Float64`) - Number of segments (no units)
+- `S`: Single Parameter (`Float64`) - Shape factor for segment (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
@@ -68,50 +66,61 @@ SAFTgammaMie(components;
 
 SAFT-γ-Mie EoS
 
+!! info
+    You can choose between the Hudsen-McCoubrey combining rule (`√(ϵᵢ*ϵⱼ)*(σᵢ^3 * σⱼ^3)/σᵢⱼ^6`) or the default rule (`√(ϵᵢ*ϵⱼ*(σᵢ^3 * σⱼ^3))/σᵢⱼ^3`) by passing the `epsilon_mixing` argument.
+    with arguments `:default` or `:hudsen_mccoubrey`
+
 ## References
 1. Papaioannou, V., Lafitte, T., Avendaño, C., Adjiman, C. S., Jackson, G., Müller, E. A., & Galindo, A. (2014). Group contribution methodology based on the statistical associating fluid theory for heteronuclear molecules formed from Mie segments. The Journal of Chemical Physics, 140(5), 054107. [doi:10.1063/1.4851455](https://doi.org/10.1063/1.4851455)
 2. Dufal, S., Papaioannou, V., Sadeqzadeh, M., Pogiatzis, T., Chremos, A., Adjiman, C. S., … Galindo, A. (2014). Prediction of thermodynamic properties and phase behavior of fluids and mixtures with the SAFT-γ Mie group-contribution equation of state. Journal of Chemical and Engineering Data, 59(10), 3272–3288. [doi:10.1021/je500248h](https://doi.org/10.1021/je500248h)
 """
 SAFTgammaMie
 
-function SAFTgammaMie(components; 
+function SAFTgammaMie(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
     group_userlocations = String[],
     ideal_userlocations=String[],
     verbose=false,
+    epsilon_mixing = :default,
     assoc_options = AssocOptions())
 
     groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; group_userlocations = group_userlocations,verbose=verbose)
     params,sites = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
     components = groups.components
-    
+
     gc_segment = params["vst"]
     shapefactor = params["S"]
 
     mw = group_sum(groups,params["Mw"])
-    
+
     mix_segment!(groups,shapefactor.values,gc_segment.values)
-    
+
     segment = SingleParam("segment",components,group_sum(groups,nothing))
-    
-    gc_sigma = sigma_LorentzBerthelot(params["sigma"])  
+
+    gc_sigma = sigma_LorentzBerthelot(params["sigma"])
     gc_sigma.values .*= 1E-10
     gc_sigma3 = PairParam(gc_sigma)
     gc_sigma3.values .^= 3
     sigma3 = group_pairmean(groups,gc_sigma3)
     sigma3.values .= cbrt.(sigma3.values)
     sigma = sigma_LorentzBerthelot(sigma3)
-
-    gc_epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], gc_sigma)
-    epsilon = epsilon_HudsenMcCoubrey(group_pairmean(groups,gc_epsilon),sigma)
     
+    if epsilon_mixing == :default
+        gc_epsilon = epsilon_HudsenMcCoubreysqrt(params["epsilon"], gc_sigma)
+        epsilon = epsilon_HudsenMcCoubreysqrt(group_pairmean(groups,gc_epsilon),sigma)
+    elseif epsilon_mixing == :hudsen_mccoubrey
+        gc_epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], gc_sigma)
+        epsilon = epsilon_HudsenMcCoubrey(group_pairmean(groups,gc_epsilon),sigma)
+    else
+        throw(error("invalid specification of ",error_color(epsilon_mixing),". available values are :default and :hudsen_mccoubrey"))
+    end
     gc_lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     gc_lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
 
     lambda_a = group_pairmean(groups,gc_lambda_a) |> lambda_LorentzBerthelot
     lambda_r = group_pairmean(groups,gc_lambda_r) |> lambda_LorentzBerthelot
- 
+
     #GC to component model in association
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
@@ -124,12 +133,12 @@ function SAFTgammaMie(components;
 
     gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
     vrparams = SAFTVRMieParam(mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
-    
+
     idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    
+
     vr = SAFTVRMie(vrparams, comp_sites, idmodel; ideal_userlocations, verbose, assoc_options)
     γmierefs = ["10.1063/1.4851455", "10.1021/je500248h"]
-    gmie = SAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,assoc_options,γmierefs)
+    gmie = SAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,epsilon_mixing,assoc_options,γmierefs)
     return gmie
 end
 
@@ -172,6 +181,11 @@ function recombine_impl!(model::SAFTgammaMieModel)
     model.vrmodel.params.sigma.values[:] = comp_sigma.values
 
     gc_epsilon = epsilon_HudsenMcCoubrey!(gc_epsilon, gc_sigma)
+    if model.epsilon_mixing == :default
+        gc_epsilon = epsilon_HudsenMcCoubreysqrt!(gc_epsilon, gc_sigma)
+    else
+        gc_epsilon = epsilon_HudsenMcCoubrey!(gc_epsilon, gc_sigma)
+    end
     comp_epsilon = epsilon_HudsenMcCoubrey(group_pairmean(groups,gc_epsilon),model.vrmodel.params.sigma)
     model.vrmodel.params.epsilon.values[:] = comp_epsilon.values
 
@@ -191,7 +205,7 @@ function recombine_impl!(model::SAFTgammaMieModel)
     comp_sites = gc_to_comp_sites(sites,groups)
     comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
     comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-    
+
     model.vrmodel.params.bondvol.values.values[:] = comp_bondvol.values.values
     model.vrmodel.params.epsilon_assoc.values.values[:] = comp_epsilon_assoc.values.values
     return model

@@ -136,10 +136,9 @@ function a_mono(model::SAFTVRMieModel, V, T, z,_data = @f(data))
 end
 
 function a_hs(model::SAFTVRMieModel, V, T, z,_data = @f(data))
-    _,_,ζi,_,_,_,_ = _data
+    _,_,ζi,_,_,_,m̄ = _data
     ζ0,ζ1,ζ2,ζ3 = ζi
-    N = N_A*∑(z)
-    return 6*V/π/N*(3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
+    return m̄*bmcs_hs(ζ0,ζ1,ζ2,ζ3)
 end
 
 function ρ_S(model::SAFTVRMieModel, V, T, z, m̄ = dot(z,model.params.segment.values))
@@ -186,8 +185,8 @@ function d_vrmie(T,λa,λr,σ,ϵ)
     θ = C/Tx
     λrinv = 1/λr
     λaλr = λa/λr
-    f_laguerre(x) = x^(-λrinv - 1)*exp(θ*x^(λaλr))*λrinv
-    ∑fi = Solvers.laguerre5(f_laguerre,θ,1.)
+    f_laguerre(x) = x^(-λrinv)*exp(θ*x^(λaλr))*λrinv/x
+    ∑fi = Solvers.laguerre5(f_laguerre,θ,one(θ))
     #∑fi2 = Solvers.laguerre10(f_laguerre,θ,1.)
     di = σ*(1-∑fi)
     return di
@@ -259,13 +258,16 @@ end
 function ζeff(model::SAFTVRMieModel, V, T, z, λ,ζ_X_= @f(ζ_X))
     A = SAFTγMieconsts.A
     λ⁻¹ = one(λ)/λ
-    return A * SA[one(λ); λ⁻¹; λ⁻¹*λ⁻¹; λ⁻¹*λ⁻¹*λ⁻¹] ⋅ SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4]
+    Aλ⁻¹ = A * SA[one(λ); λ⁻¹; λ⁻¹*λ⁻¹; λ⁻¹*λ⁻¹*λ⁻¹]
+    return dot(Aλ⁻¹,SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4])
 end
 
 function B(model::SAFTVRMieModel, V, T, z, λ, x_0,ζ_X_ = @f(ζ_X))
-    I = (1-x_0^(3-λ))/(λ-3)
-    J = (1-(λ-3)*x_0^(4-λ)+(λ-4)*x_0^(3-λ))/((λ-3)*(λ-4))
-    return I*(1-ζ_X_/2)/(1-ζ_X_)^3-9*J*ζ_X_*(ζ_X_+1)/(2*(1-ζ_X_)^3)
+    x_0_3λ = x_0^(3-λ)
+    ζ_X_m13 = (1-ζ_X_)^3
+    I = (1-x_0_3λ)/(λ-3)
+    J = (1-(λ-3)*x_0^(4-λ)+(λ-4)*x_0_3λ)/((λ-3)*(λ-4))
+    return I*(1-ζ_X_/2)/ζ_X_m13-9*J*ζ_X_*(ζ_X_+1)/(2*ζ_X_m13)
 end
 
 function KHS(model::SAFTVRMieModel, V, T, z,ζ_X_ = @f(ζ_X),ρS=@f(ρ_S))
@@ -322,31 +324,33 @@ function g_HS(model::SAFTVRMieModel, V, T, z, x_0ij,ζ_X_ = @f(ζ_X))
     k_2 = -3*ζ_X_^2/(8*(1-ζ_X_)^2)
     #(-ζ_X_^4+3*ζ_X_^2+3*ζ_X_) = evalpoly(ζ_X_,(0,3,3,0,-1))
     k_3 = evalpoly(ζ_X_,(0,3,3,0,-1))/(6*ζX3)
-    return exp(k_0+x_0ij*k_1+x_0ij^2*k_2+x_0ij^3*k_3)
+    return exp(evalpoly(x_0ij,(k_0,k_1,k_2,k_3)))
 end
 
 function ζeff_fdf(model::SAFTVRMieModel, V, T, z, λ,ζ_X_,ρ_S_)
     A = SAFTγMieconsts.A
     λ⁻¹ = one(λ)/λ
     Aλ⁻¹ = A * SA[one(λ); λ⁻¹; λ⁻¹*λ⁻¹; λ⁻¹*λ⁻¹*λ⁻¹]
-    _f =  Aλ⁻¹ ⋅ SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4]
-    _df = Aλ⁻¹ ⋅  SA[1; 2ζ_X_; 3ζ_X_^2; 4ζ_X_^3] * ζ_X_/ρ_S_
+    _f =  dot(Aλ⁻¹,SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4])
+    _df = dot(Aλ⁻¹,SA[1; 2ζ_X_; 3ζ_X_^2; 4ζ_X_^3]) * ζ_X_/ρ_S_
     return _f,_df
 end
 
-function aS_1_fdf(model::SAFTVRMieModel, V, T, z, λ,ζ_X_= @f(ζ_X),ρ_S_ = @f(ρ_S))
+function aS_1_fdf(model::SAFTVRMieModel, V, T, z, λ, ζ_X_= @f(ζ_X),ρ_S_ = @f(ρ_S))
     ζeff_,∂ζeff_ = @f(ζeff_fdf,λ,ζ_X_,ρ_S_)
     ζeff3 = (1-ζeff_)^3
-    _f =  -1/(λ-3)*(1-ζeff_/2)/ζeff3
-    _df = -1/(λ-3)*((1-ζeff_/2)/ζeff3
-    + ρ_S_*((3*(1-ζeff_/2)*(1-ζeff_)^2
-    - 0.5*ζeff3)/ζeff3^2)*∂ζeff_)
+    ζeffm1 = (1-ζeff_*0.5)
+    ζf = ζeffm1/ζeff3
+    λf = -1/(λ-3)
+    _f =  λf * ζf
+    _df = λf * (ζf + ρ_S_*∂ζeff_*((3*ζeffm1*(1-ζeff_)^2 - 0.5*ζeff3)/ζeff3^2))
     return _f,_df
 end
 
 function B_fdf(model::SAFTVRMieModel, V, T, z, λ, x_0,ζ_X_= @f(ζ_X),ρ_S_ = @f(ρ_S))
-    I = (1-x_0^(3-λ))/(λ-3)
-    J = (1-(λ-3)*x_0^(4-λ)+(λ-4)*x_0^(3-λ))/((λ-3)*(λ-4))
+    x_0_λ = x_0^(3-λ)
+    I = (1-x_0_λ)/(λ-3)
+    J = (1-(λ-3)*x_0^(4-λ)+(λ-4)*x_0_λ)/((λ-3)*(λ-4))
     ζX2 = (1-ζ_X_)^2
     ζX3 = (1-ζ_X_)^3
     ζX6 = ζX3*ζX3
@@ -388,32 +392,35 @@ function ∂a_2╱∂ρ_S(model::SAFTVRMieModel,V, T, z, i)
               + x_0ij^(2*λr[i])*(@f(∂aS_1╱∂ρ_S,2*λr[i])+@f(∂B╱∂ρ_S,2*λr[i],x_0ij))))
 end
 
-function I(model::SAFTVRMieModel, V, T, z,TR,_data = @f(data))
+function I(model::SAFTVRMieModel, V, T, z,Tr,_data = @f(data))
     _d,ρS,ζi,_ζ_X,_ζst,σ3_x = _data
     c  = SAFTVRMieconsts.c
     res = zero(_ζst)
-    ρR = ρS*σ3_x
+    ρr = ρS*σ3_x
     @inbounds for n ∈ 0:10
+        ρrn = ρr^n
+        res_m = zero(res)
         for m ∈ 0:(10-n)
-            res += c[n+1,m+1]*ρR^n*TR^m
+            res_m += c[n+1,m+1]*Tr^m
         end
+        res += res_m*ρrn
     end
     return res
 end
 
 function Δ(model::SAFTVRMieModel, V, T, z, i, j, a, b,_data = @f(data))
     ϵ = model.params.epsilon
-    TR = T/ϵ[i,j]
-    _I = @f(I,TR,_data)
+    Tr = T/ϵ[i,j]
+    _I = @f(I,Tr,_data)
     ϵ_assoc = model.params.epsilon_assoc.values
     K = model.params.bondvol.values
-    F = (exp(ϵ_assoc[i,j][a,b]/T)-1)
+    F = expm1(ϵ_assoc[i,j][a,b]/T)
     return F*K[i,j][a,b]*_I
 end
 
 #optimized functions for maximum speed on default SAFTVRMie
 function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
-    _d,ρS,ζi,_ζ_X,_ζst,_,m̄ = _data
+    _d,ρS,ζi,ζₓ,_ζst,_,m̄ = _data
     comps = @comps
     ∑z = ∑(z)
     m = model.params.segment
@@ -428,10 +435,11 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
     achain = a₁
     _ζst5 = _ζst^5
     _ζst8 = _ζst^8
-    _KHS,_∂KHS = @f(KHS_fdf,_ζ_X,ρS)
+    _KHS,_∂KHS = @f(KHS_fdf,ζₓ,ρS)
     for i ∈ comps
         j = i
-        x_Si = z[i]*m[i]*m̄inv
+        mi = m[i]
+        x_Si = z[i]*mi*m̄inv
         x_Sj = x_Si
         ϵ = _ϵ[i,j]
         λa = _λa[i,j]
@@ -441,59 +449,75 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
         dij = _d[i]
         x_0ij = σ/dij
         dij3 = dij^3
+        τ = ϵ/T
+        #precalculate exponentials of x_0ij
+        x_0ij_λa = x_0ij^λa
+        x_0ij_λr = x_0ij^λr
+        x_0ij_2λa = x_0ij^(2*λa)
+        x_0ij_2λr = x_0ij^(2*λr)
+        x_0ij_λaλr = x_0ij^(λa + λr)
+
         #calculations for a1 - diagonal
-        aS_1_a,∂aS_1∂ρS_a = @f(aS_1_fdf,λa,_ζ_X,ρS)
-        aS_1_r,∂aS_1∂ρS_r = @f(aS_1_fdf,λr,_ζ_X,ρS)
-        B_a,∂B∂ρS_a = @f(B_fdf,λa,x_0ij,_ζ_X,ρS)
-        B_r,∂B∂ρS_r = @f(B_fdf,λr,x_0ij,_ζ_X,ρS)
+        aS₁_a,∂aS₁∂ρS_a = @f(aS_1_fdf,λa,ζₓ,ρS)
+        aS₁_r,∂aS₁∂ρS_r = @f(aS_1_fdf,λr,ζₓ,ρS)
+        B_a,∂B∂ρS_a = @f(B_fdf,λa,x_0ij,ζₓ,ρS)
+        B_r,∂B∂ρS_r = @f(B_fdf,λr,x_0ij,ζₓ,ρS)
         a1_ij = (2*π*ϵ*dij3)*_C*ρS*
-        (x_0ij^λa*(aS_1_a+B_a) - x_0ij^λr*(aS_1_r+B_r))
+        (x_0ij_λa*(aS₁_a+B_a) - x_0ij_λr*(aS₁_r+B_r))
 
         #calculations for a2 - diagonal
-        aS_1_2a,∂aS_1∂ρS_2a = @f(aS_1_fdf,2*λa,_ζ_X,ρS)
-        aS_1_2r,∂aS_1∂ρS_2r = @f(aS_1_fdf,2*λr,_ζ_X,ρS)
-        aS_1_ar,∂aS_1∂ρS_ar = @f(aS_1_fdf,λa+λr,_ζ_X,ρS)
-        B_2a,∂B∂ρS_2a = @f(B_fdf,2*λa,x_0ij,_ζ_X,ρS)
-        B_2r,∂B∂ρS_2r = @f(B_fdf,2*λr,x_0ij,_ζ_X,ρS)
-        B_ar,∂B∂ρS_ar = @f(B_fdf,λr+λa,x_0ij,_ζ_X,ρS)
+        aS₁_2a,∂aS₁∂ρS_2a = @f(aS_1_fdf,2*λa,ζₓ,ρS)
+        aS₁_2r,∂aS₁∂ρS_2r = @f(aS_1_fdf,2*λr,ζₓ,ρS)
+        aS₁_ar,∂aS₁∂ρS_ar = @f(aS_1_fdf,λa+λr,ζₓ,ρS)
+        B_2a,∂B∂ρS_2a = @f(B_fdf,2*λa,x_0ij,ζₓ,ρS)
+        B_2r,∂B∂ρS_2r = @f(B_fdf,2*λr,x_0ij,ζₓ,ρS)
+        B_ar,∂B∂ρS_ar = @f(B_fdf,λr+λa,x_0ij,ζₓ,ρS)
         α = _C*(1/(λa-3)-1/(λr-3))
         f1,f2,f3,f4,f5,f6 = @f(f123456,α)
-        _χ = f1*_ζst+f2*_ζst5+f3*_ζst8
+        _χ = f1*_ζst + f2*_ζst5 + f3*_ζst8
         a2_ij = π*_KHS*(1+_χ)*ρS*ϵ^2*dij3*_C^2 *
-        (x_0ij^(2*λa)*(aS_1_2a+B_2a)
-        - 2*x_0ij^(λa+λr)*(aS_1_ar+B_ar)
-        + x_0ij^(2*λr)*(aS_1_2r+B_2r))
+                (x_0ij_2λa*(aS₁_2a+B_2a)
+                    - 2*x_0ij_λaλr*(aS₁_ar+B_ar)
+                    + x_0ij_2λr*(aS₁_2r+B_2r)
+                )
 
         #calculations for a3 - diagonal
-        a3_ij = -ϵ^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
+        a3_ij = -ϵ^3*f4*_ζst*exp(_ζst*(f5 + f6*_ζst))
         #adding - diagonal
         a₁ += a1_ij*x_Si*x_Sj
         a₂ += a2_ij*x_Si*x_Sj
         a₃ += a3_ij*x_Si*x_Sj
 
-        g_HSi = @f(g_HS,x_0ij,_ζ_X)
+        g_HSi = @f(g_HS,x_0ij,ζₓ)
 
-        ∂a_1∂ρ_S = _C*(x_0ij^λa*(∂aS_1∂ρS_a+∂B∂ρS_a)
-                      - x_0ij^λr*(∂aS_1∂ρS_r+∂B∂ρS_r))
+        ∂a_1∂ρ_S = _C*(x_0ij_λa*(∂aS₁∂ρS_a+∂B∂ρS_a)
+                    - x_0ij_λr*(∂aS₁∂ρS_r+∂B∂ρS_r)
+                    )
         #calculus for g1
-        g_1_ = 3*∂a_1∂ρ_S-_C*(λa*x_0ij^λa*(aS_1_a+B_a)-λr*x_0ij^λr*(aS_1_r+B_r))
-        θ = exp(ϵ/T)-1
-        γc =  10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
+        g_1_ = 3*∂a_1∂ρ_S - _C*(λa*x_0ij_λa*(aS₁_a + B_a) - λr*x_0ij_λr*(aS₁_r + B_r))
+        θ = expm1(τ)
+        γc =  10 * (-tanh(10*(0.57 - α)) + 1) * _ζst*θ*exp(_ζst*(-6.7 - 8*_ζst))
+        
         ∂a_2∂ρ_S = 0.5*_C^2 *
-            (ρS*_∂KHS*(x_0ij^(2*λa)*(aS_1_2a+B_2a)
-            - 2*x_0ij^(λa+λr)*(aS_1_ar+B_ar)
-            + x_0ij^(2*λr)*(aS_1_2r+B_2r))
-            + _KHS*(x_0ij^(2*λa)*(∂aS_1∂ρS_2a+∂B∂ρS_2a)
-            - 2*x_0ij^(λa+λr)*(∂aS_1∂ρS_ar+∂B∂ρS_ar)
-            + x_0ij^(2*λr)*(∂aS_1∂ρS_2r+∂B∂ρS_2r)))
+                (ρS*_∂KHS*(x_0ij_2λa*(aS₁_2a+B_2a)
+                        - 2*x_0ij_λaλr*(aS₁_ar+B_ar)
+                        + x_0ij_2λr*(aS₁_2r+B_2r)
+                    )
+                + _KHS*(x_0ij_2λa*(∂aS₁∂ρS_2a + ∂B∂ρS_2a)
+                        - 2*x_0ij_λaλr*(∂aS₁∂ρS_ar + ∂B∂ρS_ar)
+                        + x_0ij_2λr*(∂aS₁∂ρS_2r + ∂B∂ρS_2r)
+                    )
+                )
 
         gMCA2 = 3*∂a_2∂ρ_S-_KHS*_C^2 *
-        (λr*x_0ij^(2*λr)*(aS_1_2r+B_2r)-
-            (λa+λr)*x_0ij^(λa+λr)*(aS_1_ar+B_ar)+
-            λa*x_0ij^(2*λa)*(aS_1_2a+B_2a))
-        g_2_ = (1+γc)*gMCA2
-        g_Mie_ = g_HSi*exp(ϵ/T*g_1_/g_HSi+(ϵ/T)^2*g_2_/g_HSi)
-        achain -=  z[i]*(log(g_Mie_)*(m[i]-1))
+                (λr*x_0ij_2λr*(aS₁_2r+B_2r) -
+                    (λa+λr)*x_0ij_λaλr*(aS₁_ar+B_ar) +
+                    λa*x_0ij_2λa*(aS₁_2a+B_2a)
+                )
+
+        g_2_ = (1 + γc)*gMCA2
+        g_Mie_ = g_HSi*exp(τ*g_1_/g_HSi+τ^2*g_2_/g_HSi)
+        achain -= z[i]*(log(g_Mie_)*(mi - 1))
         for j ∈ 1:i-1
             x_Sj = z[j]*m[j]*m̄inv
             ϵ = _ϵ[i,j]
@@ -506,19 +530,19 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
             dij3 = dij^3
             #calculations for a1
             a1_ij = (2*π*ϵ*dij3)*_C*ρS*
-            (x_0ij^λa*(@f(aS_1,λa,_ζ_X)+@f(B,λa,x_0ij,_ζ_X)) - x_0ij^λr*(@f(aS_1,λr,_ζ_X)+@f(B,λr,x_0ij,_ζ_X)))
+            (x_0ij^λa*(@f(aS_1,λa,ζₓ)+@f(B,λa,x_0ij,ζₓ)) - x_0ij^λr*(@f(aS_1,λr,ζₓ)+@f(B,λr,x_0ij,ζₓ)))
 
             #calculations for a2
             α = _C*(1/(λa-3)-1/(λr-3))
             f1,f2,f3,f4,f5,f6 = @f(f123456,α)
             _χ = f1*_ζst+f2*_ζst5+f3*_ζst8
             a2_ij = π*_KHS*(1+_χ)*ρS*ϵ^2*dij3*_C^2 *
-            (x_0ij^(2*λa)*(@f(aS_1,2*λa,_ζ_X)+@f(B,2*λa,x_0ij,_ζ_X))
-            - 2*x_0ij^(λa+λr)*(@f(aS_1,λa+λr,_ζ_X)+@f(B,λa+λr,x_0ij,_ζ_X))
-            + x_0ij^(2*λr)*(@f(aS_1,2λr,_ζ_X)+@f(B,2*λr,x_0ij,_ζ_X)))
+            (x_0ij^(2*λa)*(@f(aS_1,2*λa,ζₓ)+@f(B,2*λa,x_0ij,ζₓ))
+            - 2*x_0ij^(λa+λr)*(@f(aS_1,λa+λr,ζₓ)+@f(B,λa+λr,x_0ij,ζₓ))
+            + x_0ij^(2*λr)*(@f(aS_1,2λr,ζₓ)+@f(B,2*λr,x_0ij,ζₓ)))
 
             #calculations for a3
-            a3_ij = -ϵ^3*f4*_ζst * exp(f5*_ζst+f6*_ζst^2)
+            a3_ij = -ϵ^3*f4*_ζst * exp(_ζst*(f5+f6*_ζst))
             #adding
             a₁ += 2*a1_ij*x_Si*x_Sj
             a₂ += 2*a2_ij*x_Si*x_Sj
@@ -728,13 +752,13 @@ const SAFTVRMieconsts = (
     -1.90570   22.845  -228.14   973.92;
     1.08850  -6.1962   106.98  -677.64],
 
-    ϕ = [(7.5365557, -359.440,  1550.9, -1.199320, -1911.2800,  9236.9),
+    ϕ = ((7.5365557, -359.440,  1550.9, -1.199320, -1911.2800,  9236.9),
         (-37.604630,  1825.60, -5070.1,  9.063632,  21390.175, -129430.0),
         (71.745953, -3168.00,  6534.6, -17.94820, -51320.700,  357230.0),
         (-46.835520,  1884.20, -3288.7,  11.34027,  37064.540, -315530.0),
         (-2.4679820,- 0.82376, -2.7171,  20.52142,  1103.7420,  1390.2),
         (-0.5027200, -3.19350,  2.0883, -56.63770, -3264.6100, -4518.2),
-        (8.0956883,  3.70900,  0.0000,  40.53683,  2556.1810,  4241.6)],
+        (8.0956883,  3.70900,  0.0000,  40.53683,  2556.1810,  4241.6)),
 
     c  = [0.0756425183020431	-0.128667137050961	 0.128350632316055	-0.0725321780970292	   0.0257782547511452  -0.00601170055221687	  0.000933363147191978  -9.55607377143667e-05  6.19576039900837e-06 -2.30466608213628e-07 3.74605718435540e-09
           0.134228218276565	    -0.182682168504886 	 0.0771662412959262	-0.000717458641164565 -0.00872427344283170	0.00297971836051287	 -0.000484863997651451	 4.35262491516424e-05 -2.07789181640066e-06	4.13749349344802e-08 0

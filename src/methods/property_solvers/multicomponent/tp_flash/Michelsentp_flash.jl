@@ -58,9 +58,7 @@ function MichelsenTPFlash(;equilibrium = :vle,
                         nonvolatiles = nothing)
     !(is_vle(equilibrium) | is_lle(equilibrium)) && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
     if K0 == x0 == y0 === v0 == nothing #nothing specified
-        is_lle(equilibrium) && throw(error("""
-        You need to provide either an initial guess for the partion constant K
-        or for compositions of x and y for LLE"""))
+        #is_lle(equilibrium)
         T = Nothing
     else
         if !isnothing(K0) & isnothing(x0) & isnothing(y0) #K0 specified
@@ -198,9 +196,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         lnK = log.(K)
        # volx,voly = NaN*_1,NaN*_1
     else
-        err() = @error("""You need to provide either an initial guess for the partion constant K
-                        or for compositions of x and y for LLE""")
-        err()
+        K = K0_lle_init(model,p,T,z)
+        lnK = log.(K)
     end
     _1 = one(p+T+first(z))
     # Initial guess for phase split
@@ -258,7 +255,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
                 β = _1 * β_dem
             end
         end
-
         K .= exp.(lnK)
 
         # Computing error
@@ -266,7 +262,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         error_lnK = dnorm(lnK,lnK_old,1)
     end
     # Stage 2: Minimization of Gibbs Free Energy
-    
     if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
         nx = zeros(nc)
         ny = zeros(nc)
@@ -294,15 +289,23 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         end
         ny_var = Solvers.x_sol(sol)
         ny[in_equilibria] = ny_var
-        nx[in_equilibria] = z[in_equilibria] .- ny[in_equilibria]
-
+        nx[in_equilibria] = z[in_equilibria] .- ny[in_equilibria]  
         nxsum = sum(nx)
         nysum = sum(ny)
         x = nx ./ nxsum
         y = ny ./ nysum
-        β = sum(ny)
+        β = sum(ny) 
+        
     end
-
+    K .= x ./ y
+    #convergence checks (TODO, seems to fail with activity models)
+    _,singlephase,_ = rachfordrice_β0(K,z)
+    vx,vy = vcache[]
+    #@show vx,vy
+    #maybe azeotrope, do nothing in this case
+    if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
+        singlephase = false
+    end
     if singlephase
         β = zero(β)/zero(β)
         x .= z
@@ -313,7 +316,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         x = index_expansion(x,z_nonzero)
         y = index_expansion(y,z_nonzero)
     end
-    vx,vy = vcache[]
+
     if vx < vy #sort by increasing volume
         return x, y, β
     else

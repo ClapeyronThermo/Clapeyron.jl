@@ -12,16 +12,12 @@ saturation method used for dispatch on saturation correlations.
 """
 struct SaturationCorrelation <: SaturationMethod end
 
-function saturation_pressure(model::SaturationModel,T,method::SaturationMethod)
-    single_component_check(saturation_pressure,model)
-    T = T*(T/T)
-    return saturation_pressure_impl(model,T,SaturationCorrelation())
+function init_preferred_method(method::typeof(saturation_pressure),model::SaturationModel,kwargs)
+    return SaturationCorrelation()
 end
 
-function saturation_temperature(model::SaturationModel,p,method::SaturationMethod)
-    single_component_check(saturation_temperature,model)
-    p = p*(p/p)
-    return saturation_temperature_impl(model,p,SaturationCorrelation())
+function init_preferred_method(method::typeof(saturation_temperature),model::SaturationModel,kwargs)
+    return SaturationCorrelation()
 end
  
 function saturation_temperature_impl(model::SaturationModel,p,method::SaturationCorrelation)
