@@ -1,4 +1,41 @@
-#this model only holds a named tuple with all models.
+struct GenericAncEvaluator
+    n::Vector{Float64}
+    t::Vector{Float64}
+    input_r::Float64 #reducer over input
+    output_r::Float64 #reducer over output
+    type::Symbol #type of evaluator
+    using_input_r::Bool #on certain types,a input/input_r is used.
+end
+
+function _eval_generic_anc(data::GenericAncEvaluator,input)
+    type = data.type
+    input_r = data.input_r
+    output_r = data.output_r
+    xr = input/input_r
+    use_xr = data.use_input_r
+    xr > 1 && return zero(xr)/zero(xr)
+    n = data.n
+    v = data.v
+    θ = 1.0-xr
+    if type == :exp
+        ∑nθt = evalexppoly(θ,n,v)
+        if use_xr
+            ∑nθt *= xr
+        end
+        return output_r*exp(∑nθt)
+    elseif type == :noexp
+        ∑nθt = evalexppoly(θ,n,v)
+        return output_r*(∑nθt + 1)
+    elseif type == :rational
+        ∑a = evalpoly(input,n)
+        ∑b = evalpoly(input,v)
+        return ∑a/∑b
+    else
+        @error ("unrecognized type: " * string(type))
+        return zero(input)/zero(input)
+    end
+end
+
 include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
 include("PolExpVapour.jl")
@@ -197,45 +234,6 @@ function dgibbs_obj!(model::PTFlashWrapper{<:CompositeModel}, p, T, z, phasex, p
     throw(error("CompositeModel does not support gibbs energy optimization in MichelsenTPFlash."))
     #
 end
-
-struct GenericAncEvaluator
-    n::Vector{Float64}
-    t::Vector{Float64}
-    input_r::Float64 #reducer over input
-    output_r::Float64 #reducer over output
-    type::Symbol #type of evaluator
-    using_input_r::Bool #on certain types,a input/input_r is used.
-end
-
-function _eval_generic_anc(data::GenericAncEvaluator,input)
-    type = data.type
-    input_r = data.input_r
-    output_r = data.output_r
-    xr = input/input_r
-    use_xr = data.use_input_r
-    xr > 1 && return zero(xr)/zero(xr)
-    n = data.n
-    v = data.v
-    θ = 1.0-xr
-    if type == :exp
-        ∑nθt = evalexppoly(θ,n,v)
-        if use_xr
-            ∑nθt *= xr
-        end
-        return output_r*exp(∑nθt)
-    elseif type == :noexp
-        ∑nθt = evalexppoly(θ,n,v)
-        return output_r*(∑nθt + 1)
-    elseif type == :rational
-        ∑a = evalpoly(input,n)
-        ∑b = evalpoly(input,v)
-        return ∑a/∑b
-    else
-        @error ("unrecognized type: " * string(type))
-        return zero(input)/zero(input)
-    end
-end
-
 
 function K0_lle_init(model::PTFlashWrapper{<:CompositeModel},p,T,z)
     throw(error("CompositeModel does not support LLE equilibria."))

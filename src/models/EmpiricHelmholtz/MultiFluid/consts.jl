@@ -637,14 +637,69 @@ function getnames_gerg2008(components::Vector{String})
     return res
 end
 
-function f(s)
-    state = zeros(Int, 2)
-    state = state
-    code = Meta.parse.(s)
-    for c in code
-        println(@macroexpand(@eval($c))) 
-        
-    end
-    return state
-end
+function gerg_json()
+    params = getparams_gerg2008()
+    nn = GERG2008_names
+    n0 = params[:n0].values
+    theta = params[:theta].values
 
+    n = params[:n].values
+    t = params[:t].values
+    d = params[:d].values
+    l = params[:c].values
+    for i in 1:length(nn)
+        data = Dict()
+        json_data = get_json_data(nn[i])
+        data[:ANCILLARIES] = json_data[:ANCILLARIES]
+        data[:INFO] = json_data[:INFO]
+        data[:STATES] = json_data[:STATES]
+        
+        eos_data_json = json_data[:EOS][1]
+        EOS = [Dict()]
+        data[:EOS] = EOS
+        eos_data = only(EOS)
+        
+        #build alpha0
+        n1,n2,n3,n4,n5,n6,n7 = n0
+        v1,v2,v3,v4 = theta
+        alpha0 = []
+        push!(alpha0,Dict(:type => "IdealGasHelmholtzLead", :a1 => n1, :a2 => n2))
+        push!(alpha0,Dict(:type => "IdealGasHelmholtzLogTau", :a => n3))
+        push!(alpha0,Dict(:type => "IdealGasClapeyronJLGerg2008", :n => [n1,n2,n3,n4],:v =>[n1,n2,n3,n4]))
+        push!(alpha0,Dict(:type => "IdealGasClapeyronJLR0", :R0 =>  8.314510, :R0_units =>"J/mol/K"))
+        #alphar,
+        eos_data[:alpha0] = alpha0
+
+
+        #build alphar
+        ni = n[i]
+        li = l[i]
+        len_ni = length(ni)
+        ll = vcat(zeros(length(ni) - length(li)),li)
+        alphar = []
+        push!(alphar,Dict(
+        :type => "ResidualHelmholtzPower",
+        :n => ni,
+        :t => t[i],
+        :d => d[i],
+        :l => ll,
+        ))
+
+        eos_data[:alphar] = alphar
+        #references
+        eos_data[:BibTeX_EOS] = "Kunz2012"
+        eos_data[:BibTeX_CP0] = "Kunz2012"
+        for ii in [ :Ttriple_units, :T_max_units, :molar_mass, :pseudo_pure, :acentric, :STATES, :gas_constant_units, :p_max_units, :acentric_units, :gas_constant, :T_max, :Ttriple, :molar_mass_units, :p_max]
+            eos_data[ii] = eos_data_json[ii]
+        end
+        eos_data[:rhomolar_max] = 1/params[:lb_v].values[i]
+        eos_data[:rhomolar_max_units] = "mol/m^3"
+        file = DB_PATH * "/Empiric/GERG2008/" * replace(nn[i]," "=>"_") * ".json"
+        #_paths = only(flattenfilepaths([file],String[]))
+        open(file, "w") do io
+            JSON3.pretty(io,data, JSON3.AlignmentContext(indent=2))
+        end
+    end
+
+
+end

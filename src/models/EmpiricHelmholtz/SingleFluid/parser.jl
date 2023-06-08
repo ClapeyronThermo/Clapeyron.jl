@@ -1,7 +1,8 @@
-const JSON_ALTERNATIVE_NAMES = Dict{String,String}(
+JSON_ALTERNATIVE_NAMES = Dict{String,String}(
     "carbon dioxide" => "CarbonDioxide",
     "hydrogen chloride" => "HydrogenChloride",
     "hydrogen sulfide" => "HydrogenSulfide",
+    "isopentane" => "ISOPENTANE",
     "nonane" => "n-Nonane",
     "octane" => "n-Octane",
     "heptane" => "n-Heptane",
@@ -12,6 +13,8 @@ const JSON_ALTERNATIVE_NAMES = Dict{String,String}(
     "decane" => "n-Decane",
     "undecane" => "n-Undecane",
     "dodecane" => "n-Dodecane",
+    "carbonmonoxide" => "CARBONMONOXIDE",
+    "hydrogensulfide" => "HydrogenSulfide",
 )
 
 function coolprop_csv(component::String)
@@ -54,28 +57,21 @@ function tryparse_units(val,unit)
     return result
 end
 
-function fff(path::String)
-    _path = only(flattenfilepaths(String[],path))
-
-    json_string = read(_path, String)
-    data = JSON3.read(json_string)
-end
-
 get_only_comp(x::Vector{String}) = only(x)
 get_only_comp(x::String) = x
 
 function get_json_data(components;userlocations = String[], verbose = false)
     component = get_only_comp(components)
-
     if first(component) != '{' #not json
         _paths = flattenfilepaths(["Empiric"],userlocations)
         norm_comp1 = normalisestring(component)
-        normalized_comp = normalisestring(get(JSON_ALTERNATIVE_NAMES,norm_comp1,norm_comp1))
+        alternative_comp = get(JSON_ALTERNATIVE_NAMES,norm_comp1,norm_comp1)
+        normalized_comp = normalisestring(alternative_comp)
         f0 = x -> normalisestring(last(splitdir(first(splitext(x))))) == normalized_comp
         found_paths = filter(f0,_paths)
         if iszero(length(found_paths)) 
             #try to extract from coolprop.
-            success,json_string = coolprop_csv(component)
+            success,json_string = coolprop_csv(alternative_comp)
             if success
                 data = JSON3.read(json_string)[1]
                 return data
@@ -167,7 +163,7 @@ function _parse_properties(data)
 
     #TODO: in the future, maybe max_density could be in the files?
     
-    lb_volume = 1/tryparse_units(get(crit,:rhomolar_max,NaN),get(crit,:rhomolar_max_units,""))
+    lb_volume = 1/tryparse_units(get(crit,:,NaN),get(crit,:rhomolar_max_units,""))
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
     return EmpiricSingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
@@ -177,12 +173,15 @@ function _parse_ideal(id_data)
     a1 = 0.0
     a2 = 0.0
     c0 = 0.0
+    R0 = 0.0
     n = Float64[]
     t = Float64[]
     c = Float64[]
     d = Float64[]
     np = Float64[]
     tp = Float64[]
+    n_gerg = Float64[]
+    v_gerg = Float64[]
     for id_data_i in id_data
         if id_data_i[:type] == "IdealGasHelmholtzLead" || id_data_i[:type] == "IdealGasHelmholtzEnthalpyEntropyOffset"
             a1 += id_data_i[:a1]
@@ -279,12 +278,17 @@ function _parse_ideal(id_data)
             push!(t,-2*E/Tc)
             push!(c,1)
             push!(d,1)
+        elseif id_data_i[:type] == "IdealGasClapeyronJLGerg2008"
+            append!(n_gerg,id_data_i[:n])
+            append!(v_gerg,id_data_i[:v])
+        elseif id_data_i[:type] == "IdealGasClapeyronJLR0"
+            R0 = id_data_i[:R0]
         else
             throw(error("Ideal: $(id_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
         end
     end
 
-    return EmpiricSingleFluidIdealParam(a1,a2,c0,n,t,c,d,np,tp)
+    return EmpiricSingleFluidIdealParam(a1,a2,c0,n,t,c,d,np,tp,n_gerg,v_gerg,R0)
 
 end
 

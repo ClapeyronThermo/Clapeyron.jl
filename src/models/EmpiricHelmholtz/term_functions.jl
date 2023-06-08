@@ -79,18 +79,29 @@ end
 #ideal terms
 
 @inline function term_a0_gpe(τ,lnτ,_0,n,t,c,d)
-    αᵣ = zero(_0)
+    α₀ = zero(_0)
     for k in eachindex(n) 
         #αᵣ += n[k]*log(muladd(d[k],exp(-t[k]*τ),c[k]))
-        αᵣ += n[k]*log(d[k]*exp(t[k]*τ) + c[k])
+        α₀ += n[k]*log(d[k]*exp(t[k]*τ) + c[k])
     end
-    return αᵣ
+    return α₀
 end
 
 @inline function term_a0_power(τ,logτ,_0,n,t)
-    αᵣ = zero(_0)
+    α₀ = zero(_0)
     for k in eachindex(n)
         α₀ += n[k]*exp(logτ*t[k])
     end
-    return αᵣ
+    return α₀
+end
+
+@inline function term_a0_gerg2008(τ,logτ,_0,n,v)
+    α₀ = zero(_0)
+    n₁,n₂,n₃,n₄ = n[1],n[2],n[3],n[4]
+    ϑ₁,ϑ₂,ϑ₃,ϑ₄ = v[1],v[2],v[3],v[4]
+    iszero(n₁) || (α₀ += n₁*LogExpFunctions.logabssinh(ϑ₁*τ))
+    iszero(n₂) || (α₀ -= n₂*LogExpFunctions.logcosh(ϑ₂*τ))
+    iszero(n₃) || (α₀ += n₃*LogExpFunctions.logabssinh(ϑ₃*τ))
+    iszero(n₄) || (α₀ -= n₄*LogExpFunctions.logcosh(ϑ₄*τ))
+    return α₀
 end

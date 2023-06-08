@@ -118,9 +118,9 @@ function reduced_a_ideal(model::EmpiricSingleFluidIdealParam,δ,τ)
     logδ = log(δ)
     logτ = log(τ)
     α₀ = logδ + a₁ + a₂*τ + c₀*logτ
-    n = model.n_gpe
+   
     #Generalized Plank-Einstein terms
-    
+    n = model.n_gpe
     if length(n) != 0
         t = model.t_gpe
         c = model.c_gpe
@@ -132,7 +132,14 @@ function reduced_a_ideal(model::EmpiricSingleFluidIdealParam,δ,τ)
     np = model.n_p
     if length(np) != 0
         tp = model.ideal.t_p
-        α₀ +=term_a0_power(τ,logτ,α₀,np,tp)
+        α₀ += term_a0_power(τ,logτ,α₀,np,tp)
+    end
+
+    #GERG-2008 terms
+    n_gerg = model.n_gerg
+    if length(n_gerg) != 0
+        v_gerg = model.v_gerg
+        α₀ += term_a0_gerg2008(τ,logτ,α₀,n_gerg,v_gerg)
     end
 
     return α₀
@@ -195,18 +202,27 @@ function reduced_a_res(model::EmpiricSingleFluidResidualParam,δ,τ)
     return αᵣ
 end
 
-function a_ideal(model::IdealEmpiricSingleFluid,V,T,z=SA[1.])
+function a_ideal(model::IdealEmpiricSingleFluid,V,T,z=SA[1.],k = 1.0)
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
     N = only(z)
     rho = (N/V)
     δ = rho/rhoc
     τ = Tc/T
-    return  reduced_a_ideal(model,δ,τ)
+    α0 = reduced_a_ideal(model,δ,τ)
+    return k*α0
 end
 
-a_ideal(model::EmpiricSingleFluid,V,T,z=SA[1.]) = a_ideal(idealmodel(model),V,T,z)
-
+function a_ideal(model::EmpiricSingleFluid,V,T,z=SA[1.])
+    id = idealmodel(model)
+    R0 = id.R0
+    if !iszero(R0)
+        k = R_gas(model)/R0
+    else
+        k = one(R0)
+    end
+    a_ideal(idealmodel(model),V,T,z,k)
+end
 function a_res(model::EmpiricSingleFluid,V,T,z=SA[1.])
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc

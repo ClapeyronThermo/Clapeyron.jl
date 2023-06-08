@@ -8,11 +8,18 @@ struct EmpiricSingleFluidIdealParam <:EoSParam
     d_gpe::Vector{Float64}
     n_p::Vector{Float64} #power terms
     t_p::Vector{Float64}
-
-    function EmpiricSingleFluidIdealParam(a1,a2,c0,n = Float64[],t = Float64[],c = fill(1.0,length(n)),d = fill(-1.0,length(n)),n_p = Float64[], t_p  = Float64[])
+    
+    #GERG-2008 terms. while teorethically, they can be converted into power terms, in practice, thanks to the existence
+    #of LogExpFunctions.logcosh and LogExpFunctions.logabssinh, we save evaluations.
+    n_gerg::Vector{Float64}
+    v_gerg::Vector{Float64}
+    R0::Float64
+    
+    function EmpiricSingleFluidIdealParam(a1,a2,c0,n = Float64[],t = Float64[],c = fill(1.0,length(n)),d = fill(-1.0,length(n)),n_p = Float64[], t_p  = Float64[],n_gerg = Float64[],v_gerg = Float64[],R0 = 0.0)
+        @assert length(n_gerg) == length(v_gerg)
         @assert length(n) == length(t) == length(c) == length(d)
         @assert length(n_p) == length(t_p)
-        return new(a1,a2,c0,n,t,c,d,n_p,t_p)
+        return new(a1,a2,c0,n,t,c,d,n_p,t_p,n_gerg,v_gerg,R0)
     end
 end
 
