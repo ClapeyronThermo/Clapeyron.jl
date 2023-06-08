@@ -8,6 +8,7 @@ abstract type EoSParam end
 export EoSParam
 
 function Base.show(io::IO, mime::MIME"text/plain", params::EoSParam)
+    !custom_show(typeof(params)) && return show_default(io,mime,params)
     names = fieldnames(typeof(params))
     if length(names) == 1
         print(io, typeof(params), " for ", getfield(params, first(names)).components, " with ", length(names), " param:")

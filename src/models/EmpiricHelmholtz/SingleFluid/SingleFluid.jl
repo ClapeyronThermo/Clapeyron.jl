@@ -85,8 +85,6 @@ All parameters are fitted, to allow a equation of state of a single fluid with p
 """
 EmpiricSingleFluid
 
-
-
 struct IdealEmpiricSingleFluid <: IdealModel
     components::Vector{String}
     properties::EmpiricSingleFluidProperties
@@ -108,16 +106,15 @@ idealmodel(model::EmpiricSingleFluid) = IdealEmpiricSingleFluid(model)
 R_gas(model::EmpiricSingleFluid) = model.properties.Rgas
 R_gas(model::IdealEmpiricSingleFluid) = model.properties.Rgas
 
-reduced_a_ideal(model::EmpiricSingleFluid,δ,τ) = reduced_a_ideal(model.ideal,δ,τ)
-reduced_a_ideal(model::IdealEmpiricSingleFluid,δ,τ) = reduced_a_ideal(model.ideal,δ,τ)
+reduced_a_ideal(model::EmpiricSingleFluid,τ) = reduced_a_ideal(model.ideal,τ)
+reduced_a_ideal(model::IdealEmpiricSingleFluid,τ) = reduced_a_ideal(model.ideal,τ)
 
-function reduced_a_ideal(model::EmpiricSingleFluidIdealParam,δ,τ)
+function reduced_a_ideal(model::EmpiricSingleFluidIdealParam,τ)
     a₁ = model.a1
     a₂ = model.a2
     c₀ = model.c0
-    logδ = log(δ)
     logτ = log(τ)
-    α₀ = logδ + a₁ + a₂*τ + c₀*logτ
+    α₀ = a₁ + a₂*τ + c₀*logτ
    
     #Generalized Plank-Einstein terms
     n = model.n_gpe
@@ -202,27 +199,29 @@ function reduced_a_res(model::EmpiricSingleFluidResidualParam,δ,τ)
     return αᵣ
 end
 
-function a_ideal(model::IdealEmpiricSingleFluid,V,T,z=SA[1.],k = 1.0)
+function __get_k_alpha0(model)
+    R0 = model.ideal.R0
+    if iszero(R0)
+        return 1.0
+    else
+        R = model.properties.Rgas
+        return R0/R
+    end
+end
+
+function a_ideal(model::IdealEmpiricSingleFluid,V,T,z=SA[1.],k = __get_k_alpha0(model))
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
     N = only(z)
     rho = (N/V)
     δ = rho/rhoc
     τ = Tc/T
-    α0 = reduced_a_ideal(model,δ,τ)
-    return k*α0
+    α0 = reduced_a_ideal(model,τ)
+    return k*α0 + log(δ)
 end
 
-function a_ideal(model::EmpiricSingleFluid,V,T,z=SA[1.])
-    id = idealmodel(model)
-    R0 = id.R0
-    if !iszero(R0)
-        k = R_gas(model)/R0
-    else
-        k = one(R0)
-    end
-    a_ideal(idealmodel(model),V,T,z,k)
-end
+a_ideal(model::EmpiricSingleFluid,V,T,z=SA[1.]) = a_ideal(idealmodel(model),V,T,z)
+
 function a_res(model::EmpiricSingleFluid,V,T,z=SA[1.])
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
@@ -241,7 +240,8 @@ function eos(model::EmpiricSingleFluid, V, T, z=SA[1.0])
     rho = (N/V)
     δ = rho/rhoc
     τ = Tc/T
-    return N*R*T*(reduced_a_ideal(model,δ,τ)+reduced_a_res(model,δ,τ))
+    k = __get_k_alpha0(model)
+    return N*R*T*(log(δ) + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ))
 end
 
 function eos_res(model::EmpiricSingleFluid,V,T,z=SA[1.0])

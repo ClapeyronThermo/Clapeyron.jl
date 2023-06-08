@@ -1,3 +1,6 @@
+
+#check http://www.coolprop.org/_static/doxygen/html/class_cool_prop_1_1_saturation_ancillary_function.html
+
 struct GenericAncEvaluator
     n::Vector{Float64}
     t::Vector{Float64}
@@ -12,10 +15,10 @@ function _eval_generic_anc(data::GenericAncEvaluator,input)
     input_r = data.input_r
     output_r = data.output_r
     xr = input/input_r
-    use_xr = data.use_input_r
+    use_xr = data.using_input_r
     xr > 1 && return zero(xr)/zero(xr)
     n = data.n
-    v = data.v
+    v = data.t
     θ = 1.0-xr
     if type == :exp
         ∑nθt = evalexppoly(θ,n,v)

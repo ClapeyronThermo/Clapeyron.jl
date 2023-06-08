@@ -131,7 +131,7 @@ function _parse_properties(data)
     eos_data = first(data[:EOS])
     st_data = data[:STATES]
     crit = st_data[:critical]
-    reducing = eos_data[:reducing]
+    reducing = eos_data[:STATES][:reducing]
 
     Tr = tryparse_units(get(reducing,:T,NaN),get(reducing,:T_units,""))
     rhor = tryparse_units(get(reducing,:rhomolar,NaN),get(reducing,:rhomolar_units,""))
@@ -254,10 +254,10 @@ function _parse_ideal(id_data)
             append!(t,id_data_i[:t])
             append!(c,id_data_i[:c])
             append!(d,id_data_i[:d])
-        elseif res_data_i[:type] == "IdealGasHelmholtzCP0AlyLee"
-            alylee_data = res_data_i[:c]
-            _Tc = res_data_i[:Tc]
-            _T0 = res_data_i[:T0]
+        elseif id_data_i[:type] == "IdealGasHelmholtzCP0AlyLee"
+            alylee_data = id_data_i[:c]
+            _Tc = id_data_i[:Tc]
+            _T0 = id_data_i[:T0]
         
             @assert length(alylee_data) == 5 "aly-lee is defined with only 5 terms. add an additional ally lee term if you require more coefficients." 
             A,B,C,D,E = alylee_data
@@ -422,46 +422,34 @@ function _parse_residual(res_data)
    return EmpiricSingleFluidResidualParam(_n,_t,_d,_l,_η,_β,_γ,_ε;gao_b,na,assoc,exp)
 end
 
+function _parse_ancilliary_func(anc,input_key,output_key)
+    anc_typemap = Dict(
+    "pV" => :exp,
+    "pL" => :exp,
+    "rhoV" => :exp,
+    "rhoLnoexp" => :noexp,
+    "rhoVnoexp" => :noexp,
+    "rational" => :rational,
+    )
+    
+    input_r = anc[input_key] * 1.0
+    output_r = anc[output_key] * 1.0
+    n = Float64.(anc[:n])
+    t = Float64.(anc[:t])
+    using_input_r = get(anc,:using_tau_r,false)
+    type = get(anc_typemap,anc[:type],Symbol(anc[:type]))
+    return GenericAncEvaluator(n,t,input_r,output_r,type,using_input_r)
+end
+
 function _parse_ancillaries(anc_data)
     #saturation pressure
     p_data = anc_data[:pS]
     rhol_data = anc_data[:rhoL]
     rhov_data = anc_data[:rhoV]
 
-    ps_anc = if p_data[:type] in ("pV","pL")
-        T_c = p_data[:T_r]
-        P_c = p_data[:reducing_value] * 1.0
-        n = Float64.(p_data[:n])
-        t = Float64.(p_data[:t])
-        PolExpSat(T_c,P_c,n,t)
-    else
-        throw(error("Ancilliary saturation pressure: $(p_data[:type]) not supported for the moment. open an issue in the repository for help."))
-    end
-
-    rhov_anc = if rhov_data[:type] == "rhoV"
-        T_c = rhov_data[:T_r]
-        rho_c = rhov_data[:reducing_value] * 1.0
-        n = Float64.(rhov_data[:n])
-        t = Float64.(rhov_data[:t])
-        tau_r = rhov_data[:using_tau_r]
-        PolExpVapour(T_c,rho_c,n,t,tau_r)
-    else
-        throw(error("Ancilliary vapour density: $(rhov_data[:type]) not supported for the moment. open an issue in the repository for help."))
-    end
-
-    rhol_anc = if rhol_data[:type] == "rhoLnoexp"
-        T_c = rhol_data[:T_r]
-        rho_c = rhol_data[:reducing_value] * 1.0
-        n = Float64.(rhol_data[:n])
-        t = Float64.(rhol_data[:t])
-        tau_r = get(rhov_data,:using_tau_r,false)
-        PolExpLiquid(T_c,rho_c,n,t,tau_r)
-    elseif rhol_data[:type] == "rhoL"
-    
-    else
-        throw(error("Ancilliary liquid density: $(rhol_data[:type]) not supported for the moment. open an issue in the repository for help."))
-    end
-
+    ps_anc = PolExpSat(_parse_ancilliary_func(p_data,:T_r,:reducing_value))
+    rhov_anc = PolExpVapour(_parse_ancilliary_func(rhov_data,:T_r,:reducing_value))
+    rhol_anc = PolExpVapour(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
     return CompositeModel(["ancillaries"],gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
 end
 export EmpiricSingleFluid
@@ -501,7 +489,7 @@ all ideal types
  `IdealGasHelmholtzPower` done
  `IdealGasHelmholtzPlanckEinsteinGeneralized` done
  `IdealGasHelmholtzCP0PolyT` done
- `IdealGasHelmholtzCP0AlyLee` #not done, needed for GERG2008
+ `IdealGasHelmholtzCP0AlyLee` done, needed for GERG2008, but instead our own type is used.
  `IdealGasHelmholtzCP0Constant` done
 
 all residual types

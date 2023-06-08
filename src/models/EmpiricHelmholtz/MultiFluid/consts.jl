@@ -660,12 +660,12 @@ function gerg_json()
         eos_data = only(EOS)
         
         #build alpha0
-        n1,n2,n3,n4,n5,n6,n7 = n0
-        v1,v2,v3,v4 = theta
+        n1,n2,n3,n4,n5,n6,n7 = n0[i]
+        v1,v2,v3,v4 = theta[i]
         alpha0 = []
         push!(alpha0,Dict(:type => "IdealGasHelmholtzLead", :a1 => n1, :a2 => n2))
         push!(alpha0,Dict(:type => "IdealGasHelmholtzLogTau", :a => n3))
-        push!(alpha0,Dict(:type => "IdealGasClapeyronJLGerg2008", :n => [n1,n2,n3,n4],:v =>[n1,n2,n3,n4]))
+        push!(alpha0,Dict(:type => "IdealGasClapeyronJLGerg2008", :n => [n4,n5,n6,n7],:v =>[v1,v2,v3,v4]))
         push!(alpha0,Dict(:type => "IdealGasClapeyronJLR0", :R0 =>  8.314510, :R0_units =>"J/mol/K"))
         #alphar,
         eos_data[:alpha0] = alpha0
@@ -689,9 +689,10 @@ function gerg_json()
         #references
         eos_data[:BibTeX_EOS] = "Kunz2012"
         eos_data[:BibTeX_CP0] = "Kunz2012"
-        for ii in [ :Ttriple_units, :T_max_units, :molar_mass, :pseudo_pure, :acentric, :STATES, :gas_constant_units, :p_max_units, :acentric_units, :gas_constant, :T_max, :Ttriple, :molar_mass_units, :p_max]
+        for ii in [ :Ttriple_units, :T_max_units, :molar_mass, :pseudo_pure, :acentric, :STATES, :gas_constant_units, :p_max_units, :acentric_units, :T_max, :Ttriple, :molar_mass_units, :p_max]
             eos_data[ii] = eos_data_json[ii]
         end
+        eos_data[:gas_constant] = 8.314472
         eos_data[:rhomolar_max] = 1/params[:lb_v].values[i]
         eos_data[:rhomolar_max_units] = "mol/m^3"
         file = DB_PATH * "/Empiric/GERG2008/" * replace(nn[i]," "=>"_") * ".json"

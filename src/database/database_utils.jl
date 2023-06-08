@@ -101,6 +101,9 @@ function flattenfilepaths(locations,userlocations::Vector{String})
     end
     return vcat(defaultpaths,userpaths,String[])
 end
+
+flattenfilepaths(locations,userlocations::String) = flattenfilepaths(locations,[userlocations])
+
 Base.@nospecialize
 function flattenfilepaths(locations,userlocations::NamedTuple)
     return String[]

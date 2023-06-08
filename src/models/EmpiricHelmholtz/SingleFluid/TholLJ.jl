@@ -39,9 +39,14 @@ function TholLJ()
 
     residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε)
 
-    ancillary_gas = PolExpVapour(T_c,rho_c,[-0.69655e+1,-0.10331e+3,-0.20325e+1,-0.44481e+2,-0.18463e+2,-0.26070e+3],[1.320 ,19.24,0.360,8.780,4.040,41.60])
-    ancillary_liquid = PolExpLiquid(T_c,rho_c,[0.1362e+1,0.2093e+1,-0.2110e+1,0.3290e0,0.1410e+1],[0.313 ,0.940,1.630,17.,2.4])
-    ancillary_pressure = PolExpSat(T_c,P_c,[0.54000e+1,0.44704e01,-0.18530e+1,0.19890e0,-0.11250e+1],[1.,1.5,4.7,2.5,21.4])
+
+    anc_gas_fn = GenericAncEvaluator([-0.69655e+1,-0.10331e+3,-0.20325e+1,-0.44481e+2,-0.18463e+2,-0.26070e+3],[1.320 ,19.24,0.360,8.780,4.040,41.60],T_c,rho_c,:exp,false)
+    anc_liquid_fn = GenericAncEvaluator([0.1362e+1,0.2093e+1,-0.2110e+1,0.3290e0,0.1410e+1],[0.313 ,0.940,1.630,17.,2.4],T_c,rho_c,:noexp,false)
+    anc_ps_fn = GenericAncEvaluator([0.54000e+1,0.44704e01,-0.18530e+1,0.19890e0,-0.11250e+1],[1.,1.5,4.7,2.5,21.4],T_c,P_c,:exp,true)
+
+    ancillary_gas = PolExpVapour(anc_gas_fn)
+    ancillary_liquid = PolExpLiquid(anc_liquid_fn)
+    ancillary_pressure = PolExpSat(anc_ps_fn)
     ancillaries = CompositeModel(components,gas = ancillary_gas,liquid = ancillary_liquid,saturation = ancillary_pressure)
 
     references = ["10.1063/1.4945000"]
