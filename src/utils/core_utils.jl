@@ -106,7 +106,7 @@ function _vecparser(vals::String,dlm = ' ')
 end
 
 show_default(io::IO,arg) = Base.show_default(io,arg)
-show_default(io::IO,mime::MIME"text/plain",arg) = invoke(Base.show,Tuple{typeof(io),typeof(mime),Any},io,mime,arg)
+show_default(io::IO,mime::MIME"text/plain",arg) = Base.show_default(io,arg)
 
 #=
 """

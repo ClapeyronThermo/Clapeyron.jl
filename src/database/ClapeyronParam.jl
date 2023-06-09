@@ -7,8 +7,15 @@ abstract type ClapeyronParam end
 abstract type EoSParam end
 export EoSParam
 
+custom_show(param::EoSParam) = _custom_show_param(typeof(param))
+
+function _custom_show_param(::Type{T}) where T <: EoSParam
+    types = fieldtypes(T)
+    return all(x -> x <: ClapeyronParam,types)
+end
+
 function Base.show(io::IO, mime::MIME"text/plain", params::EoSParam)
-    !custom_show(typeof(params)) && return show_default(io,mime,params)
+    !custom_show(params) && return show_default(io,mime,params)
     names = fieldnames(typeof(params))
     if length(names) == 1
         print(io, typeof(params), " for ", getfield(params, first(names)).components, " with ", length(names), " param:")
