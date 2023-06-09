@@ -222,7 +222,7 @@ function a_ideal(model::Union{LJRef,LJRefIdeal},V,T,z=SA[1.0])
         mᵢ = m[i]
         τᵢ = 1.32/(T/ϵ[i])
         δᵢ = (mᵢ*N_A*ρ*σ[i]^3)/0.31
-        aᵢ = reduced_a_ideal(model.unscaled_lj,δᵢ,τᵢ)
+        aᵢ = reduced_a_ideal(model.unscaled_lj,τᵢ) + log(δᵢ)
         #(aᵢ + log(δᵢ) + log(z[i]) - lnΣz)
         res += z[i]*(aᵢ + log(z[i]) - lnΣz)
     end
