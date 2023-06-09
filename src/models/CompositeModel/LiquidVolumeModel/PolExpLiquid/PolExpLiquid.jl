@@ -7,8 +7,6 @@ function _rho_sat(model::PolExpLiquid,T)
 end
 
 function volume_impl(model::PolExpLiquid,p,T,z::SingleComp,phase=:unknown,threaded=false,vol0 = 0.0)
-    println("sda")
-    @show T
     return 1/_rho_sat(model,T)
 end
 
