@@ -165,6 +165,7 @@ function x0_crit_pure(model::BerthelotModel)
 end
 
 function crit_pure(model::BerthelotModel) 
+    single_component_check(crit_pure,model)
     Tc = model.params.Tc.values[1]
     Vc = model.params.Vc.values[1]
     Pc = pressure(model,Vc,Tc)

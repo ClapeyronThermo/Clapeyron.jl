@@ -162,7 +162,8 @@ function saturation_pressure(model::CompositeModel,T,method::SaturationMethod)
 end
 
 function crit_pure(model::CompositeModel)
-    return crit_pure(model.models.saturation)
+    single_component_check(crit_pure,model)
+    return crit_pure(model.saturation)
 end
 
 function saturation_temperature(model::CompositeModel,p,method::SaturationMethod)

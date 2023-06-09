@@ -75,6 +75,7 @@ function DIPPR101Sat(components::Vector{String}; userlocations=String[], verbose
 end 
 
 function crit_pure(model::DIPPR101SatModel)
+    single_component_check(crit_pure,model)
     tc = only(model.params.Tc.values)
     pc = only(model.params.Pc.values)
     return (tc,pc,NaN)

@@ -3,7 +3,9 @@ struct PolExpSat <: SaturationModel
 end
   
 function crit_pure(model::PolExpSat)
-    return (model.data.input_r,model.output_r,NaN)
+    single_component_check(crit_pure,model)
+    anc = model.data
+    return (anc.input_r,anc.output_r,NaN)
 end
 
 function saturation_pressure_impl(model::PolExpSat,T,method::SaturationCorrelation)

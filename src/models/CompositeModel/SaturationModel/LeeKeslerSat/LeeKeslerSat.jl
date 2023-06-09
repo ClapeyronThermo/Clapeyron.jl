@@ -48,6 +48,7 @@ function LeeKeslerSat(components::Vector{String}; userlocations=String[], verbos
 end 
 
 function crit_pure(model::LeeKeslerSatModel)
+    single_component_check(crit_pure,model)
     tc = only(model.params.Tc.values)
     pc = only(model.params.Pc.values)
     return (tc,pc,NaN)

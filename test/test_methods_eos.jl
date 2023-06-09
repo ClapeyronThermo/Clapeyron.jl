@@ -333,12 +333,15 @@ end
     com = CompositeModel(["water","methanol"],liquid = DIPPR105Liquid,saturation = DIPPR101Sat,gas = PR)
     system = Wilson(["methanol","benzene"])
     system2 = Wilson(["water","methanol"],puremodel = com)
+    com1 = split_model(com)[1]
     p = 1e5
     T = 298.15
     T2 = 320.15
     z = [0.5,0.5]
     z_bulk = [0.2,0.8]
+    
     @testset "Bulk properties" begin
+        @test crit_pure(com1)[1] ≈ 647.13
         @test Clapeyron.volume(system, p, T, z_bulk) ≈ 8.602344040626639e-5 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T, z_bulk) ≈ 1371.9014493149134 rtol = 1e-6
         @test Clapeyron.mixing(system, p, T, z_bulk, Clapeyron.gibbs_free_energy) ≈ -356.86007792929263 rtol = 1e-6

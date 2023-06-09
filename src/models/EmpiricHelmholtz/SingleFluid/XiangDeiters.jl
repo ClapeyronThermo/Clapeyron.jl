@@ -96,8 +96,10 @@ end
 p_scale(model::XiangDeitersModel,z = SA[1.0]) = dot(model.params.Pc,z)
 T_scale(model::XiangDeitersModel,z = SA[1.0]) = dot(model.params.Tc,z)
 
-crit_pure(model::XiangDeitersModel) = model.params.Tc[1],model.params.Pc[1],model.params.Vc[1]
-
+function crit_pure(model::XiangDeitersModel) 
+    single_component_check(crit_pure,model)
+    return (model.params.Tc[1],model.params.Pc[1],model.params.Vc[1])
+end
 function methane_a_ideal(δi,τi)
 #gerg v2 part
     n0 = (19.597508817,

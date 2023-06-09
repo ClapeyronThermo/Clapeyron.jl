@@ -306,7 +306,6 @@ function crit_pure(model::EmpiricSingleFluid)
     Tc = model.properties.Tc
     Vc = 1/model.properties.rhoc
     Pc = model.properties.Pc
-
     return (Tc,Pc,Vc)
 end
 
