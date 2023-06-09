@@ -82,16 +82,16 @@ function PropaneRef()
     rho_c= 5000.0 # mol·m-3
     lb_volume = 1/53130
     Ttp = 85.525 #K
-    ptp =  0.00017 
-    rhov_tp  = 2.4e-07 
+    ptp =  0.00017
+    rhov_tp  = 2.4e-07
     rhol_tp = 16626.0
     Rgas = 8.314472
-    acentric_factor = NaN
-    
-    properties = EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
-    
+    acentric_factor = 0.1521
+
+    properties = EmpiricSingleFluidProperties(Mw,T_c,rho_c,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+
     a₁ = -4.970583
-    a₂ = 4.29352   
+    a₂ = 4.29352
     u = -[1.062478, 3.344237,5.363757,11.762957]
     v = [3.043,5.874,9.337,7.922]
     c0 = 4.0 - 1

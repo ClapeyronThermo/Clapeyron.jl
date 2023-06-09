@@ -12,7 +12,7 @@ function TholLJ()
     Rgas = 1.0
     acentric_factor = NaN
 
-    properties = EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+    properties = EmpiricSingleFluidProperties(Mw,T_c,rho_c,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 
     a₁ = 6.262265814
     a₂ = -1.515151515

@@ -24,8 +24,8 @@ parameters  `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained vi
 ## References
 1. Gao, K., Wu, J., Bell, I. H., Harvey, A. H., & Lemmon, E. W. (2023). A reference equation of state with an associating term for the thermodynamic properties of ammonia. Journal of Physical and Chemical Reference Data, 52(1), 013102. [doi:10.1063/5.0128269](https://doi.org/10.1063/5.0128269)
 """
-function Ammonia2023() 
-    
+function Ammonia2023()
+
     components = ["ammonia"]
 
     Mw = 17.03052 #g·mol-1
@@ -34,16 +34,16 @@ function Ammonia2023()
     rho_c= 13696.0 # mol·m-3
     lb_volume = 1/53130
     Ttp = 195.49 #K
-    ptp = 6.05339e3 
-    rhov_tp  = 0.003740e3 
+    ptp = 6.05339e3
+    rhov_tp  = 0.003740e3
     rhol_tp = 43.091e3
     Rgas = 8.314462618
     acentric_factor = NaN
-    
-    properties = EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
-    
+
+    properties = EmpiricSingleFluidProperties(Mw,T_c,rho_c,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+
     a₁ = -6.59406093943886
-    a₂ = 5.601011519879   
+    a₂ = 5.601011519879
     u = -[4.0585856593352405, 9.776605187888352, 17.829667620080876]
     v = [2.224,3.148,0.9579]
     c0 = 4.0 - 1
@@ -61,7 +61,7 @@ function Ammonia2023()
 
     gaob_n = [-1.6909858,0.93739074]
     gaob_t = [4.3315,4.015]
-    gaob_d = [1.,1.]   
+    gaob_d = [1.,1.]
     gaob_eta = [-2.8452,-2.8342]
     gaob_beta = [0.3696,0.2962]
     gaob_gamma = [1.108,1.313]
@@ -76,7 +76,7 @@ function Ammonia2023()
     ancillary_liquid = GenericAncEvaluator([0.051236,3.7925,-3.5929,4.6409,-1.9893,1.5978],[0.07,0.46,0.77,1.05,1.25,8.0],T_c,rho_c,:noexp,false) |> PolExpLiquid
     ancillary_pressure = GenericAncEvaluator([-7.3128,3.8888,-2.9908,-2.8636],[1.0,1.5,1.6,3.7],T_c,P_c,:exp,true) |> PolExpSat
     ancillaries = CompositeModel(components,gas = ancillary_gas,liquid = ancillary_liquid,saturation = ancillary_pressure)
-    
+
     references = ["10.1063/5.0128269"]
 
     return EmpiricSingleFluid(components,properties,ancillaries,ideal,residual,references)

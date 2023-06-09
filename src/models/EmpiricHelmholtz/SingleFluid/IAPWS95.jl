@@ -31,10 +31,10 @@ parameters `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`α`,`β`,`γ`,`ε`,`A`,`B`,`C`,`D` wh
 2. IAPWS R6-95 (2018). Revised Release on the IAPWS Formulation 1995 for the Thermodynamic Properties of Ordinary Water Substance for General and Scientific Use
 
 """
-function IAPWS95() 
-    
+function IAPWS95()
+
     components = ["water"]
-    
+
     Mw = 18.015268 #g·mol-1
     T_c = 647.096  #K
     P_c = 2.2064e7 #Pa
@@ -43,14 +43,14 @@ function IAPWS95()
     rhor = rho_c
     lb_volume = 1.4393788065379039e-5
     Ttp = 273.16 #K
-    ptp = 611.6548008968684 
-    rhov_tp  = NaN
-    rhol_tp = NaN
+    ptp = 611.6548008968684
+    rhov_tp  = 0.2694716052752858
+    rhol_tp = 55496.95513999978
     Rgas = 8.3143713575874
     acentric_factor = 0.3442920843
-    
-    properties = EmpiricSingleFluidProperties(Mw,T_c,P_c,rho_c,lb_volume,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
-    
+
+    properties = EmpiricSingleFluidProperties(Mw,T_c,rho_c,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+
     a₁ = -8.3204464837497
     a₂ = 6.6832105275932
     c0 = 4.00632 - 1
@@ -108,11 +108,11 @@ function IAPWS95()
     na_term = NonAnalyticTerm(NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
     residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε,na = na_term)
 
-    ancillary_gas = ([0.9791749335365787, -2.6190679042770215, -3.9166443712365235, -20.313306821636637, 16.497589490043744, -125.36580458432083],[0.21, 0.262, 0.701, 3.909, 4.076, 17.459],T_c,rho_c,:exp,true) |> PolExpVapour
-    ancillary_liquid = ([0.8157021355019343, 2.0434712177006693, -78.58278372496308, 1026.4273940070307, -2290.5642779377695, 8420.141408210317],[0.276, 0.455, 7.127, 9.846, 11.707, 17.805],T_c,rho_c,:noexp,false) |> PolExpLiquid
-    ancillary_pressure = ([-9.75639641045262, 3.3357600887120102, -1.10029278432831, 0.02037617155190105, -2.6668589845604367, 6.676721087238668],[1.018, 1.206, 2.327, 5.753, 4.215, 14.951],T_c,P_c,:exp,true) |> PolExpSat
+    ancillary_gas = GenericAncEvaluator([0.9791749335365787, -2.6190679042770215, -3.9166443712365235, -20.313306821636637, 16.497589490043744, -125.36580458432083],[0.21, 0.262, 0.701, 3.909, 4.076, 17.459],T_c,rho_c,:exp,true) |> PolExpVapour
+    ancillary_liquid = GenericAncEvaluator([0.8157021355019343, 2.0434712177006693, -78.58278372496308, 1026.4273940070307, -2290.5642779377695, 8420.141408210317],[0.276, 0.455, 7.127, 9.846, 11.707, 17.805],T_c,rho_c,:noexp,false) |> PolExpLiquid
+    ancillary_pressure = GenericAncEvaluator([-9.75639641045262, 3.3357600887120102, -1.10029278432831, 0.02037617155190105, -2.6668589845604367, 6.676721087238668],[1.018, 1.206, 2.327, 5.753, 4.215, 14.951],T_c,P_c,:exp,true) |> PolExpSat
     ancillaries = CompositeModel(components,gas = ancillary_gas,liquid = ancillary_liquid,saturation = ancillary_pressure)
-    
+
     references = ["IAPWS R6-95(2018)"]
 
     return EmpiricSingleFluid(components,properties,ancillaries,ideal,residual,references)
@@ -121,8 +121,8 @@ end
 
 """
     IAPWS95Ideal <: IdealModel
-    IAPWS95Ideal(components; 
-    userlocations::Array{String,1}=String[], 
+    IAPWS95Ideal(components;
+    userlocations::Array{String,1}=String[],
     verbose=false)
 
     IAPWS95Ideal()
@@ -143,6 +143,6 @@ IAPWS95 ideal helmholtz model for use in other models. Only valid for water. Che
 """
 function IAPWS95Ideal()
     return idealmodel(IAPWS95())
-end 
+end
 
 export IAPWS95
