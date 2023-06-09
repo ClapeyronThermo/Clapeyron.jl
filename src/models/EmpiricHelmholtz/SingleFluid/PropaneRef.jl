@@ -109,9 +109,12 @@ function PropaneRef()
 
     residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε)
 
-    ancillary_gas = PolExpVapour(T_c,rho_c,[-2.4887,-5.1069,-12.174,-30.495,-52.192,-134.89],[0.3785,1.07,2.7,5.5,10,20])
-    ancillary_liquid = PolExpLiquid(T_c,rho_c,[1.82205,0.65802,0.21109,0.083973],[0.345,0.74,2.6,7.2])
-    ancillary_pressure = PolExpSat(T_c,P_c,[-6.7722,1.6938,-1.3341,-3.1876,0.94937],[1.0,1.5,2.2,4.8,6.2])
+    anc_gas_fn = GenericAncEvaluator([-2.4887,-5.1069,-12.174,-30.495,-52.192,-134.89],[0.3785,1.07,2.7,5.5,10,20],T_c,rho_c,:exp,false)
+    anc_liquid_fn = GenericAncEvaluator([1.82205,0.65802,0.21109,0.083973],[0.345,0.74,2.6,7.2],T_c,rho_c,:noexp,false)
+    anc_ps_fn = GenericAncEvaluator([-6.7722,1.6938,-1.3341,-3.1876,0.94937],[1.0,1.5,2.2,4.8,6.2],T_c,P_c,:exp,true)
+    ancillary_gas = PolExpVapour(anc_gas_fn)
+    ancillary_liquid = PolExpLiquid(anc_liquid_fn)
+    ancillary_pressure = PolExpSat(anc_ps_fn)
     ancillaries = CompositeModel(components,gas = ancillary_gas,liquid = ancillary_liquid,saturation = ancillary_pressure)
 
     references = ["1021/je900217v"]

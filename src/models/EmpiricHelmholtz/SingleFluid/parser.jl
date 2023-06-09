@@ -427,17 +427,29 @@ function _parse_ancilliary_func(anc,input_key,output_key)
     "pV" => :exp,
     "pL" => :exp,
     "rhoV" => :exp,
+    "rhoL" => :exp,
     "rhoLnoexp" => :noexp,
     "rhoVnoexp" => :noexp,
     "rational" => :rational,
+    )
+
+    anc_using_r_map = Dict(
+    "pV" => true,
+    "pL" => true,
+    "rhoV" => false,
+    "rhoL" => false,
+    "rhoLnoexp" => false,
+    "rhoVnoexp" => false,
+    "rational" => false,
     )
     
     input_r = anc[input_key] * 1.0
     output_r = anc[output_key] * 1.0
     n = Float64.(anc[:n])
     t = Float64.(anc[:t])
-    using_input_r = get(anc,:using_tau_r,false)
-    type = get(anc_typemap,anc[:type],Symbol(anc[:type]))
+    type_str = anc[:type]
+    using_input_r = get(anc,:using_tau_r,anc_using_r_map[type_str])
+    type = get(anc_typemap,anc[:type],Symbol(type_str))
     return GenericAncEvaluator(n,t,input_r,output_r,type,using_input_r)
 end
 

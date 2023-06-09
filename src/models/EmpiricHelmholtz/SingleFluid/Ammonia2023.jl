@@ -72,9 +72,9 @@ function Ammonia2023()
 
     residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε,gao_b = gao_b_term)
 
-    ancillary_gas = PolExpVapour(T_c,rho_c,[-0.089966,-3.8722,-8.1183,-25.293,-54.279,-400.83],[0.112,0.473,1.5,3.875,8.0,20.0])
-    ancillary_liquid = PolExpLiquid(T_c,rho_c,[0.051236,3.7925,-3.5929,4.6409,-1.9893,1.5978],[0.07,0.46,0.77,1.05,1.25,8.0])
-    ancillary_pressure = PolExpSat(T_c,P_c,[-7.3128,3.8888,-2.9908,-2.8636],[1.0,1.5,1.6,1.7])
+    ancillary_gas = GenericAncEvaluator([-0.089966,-3.8722,-8.1183,-25.293,-54.279,-400.83],[0.112,0.473,1.5,3.875,8.0,20.0],T_c,rho_c,:exp,false) |> PolExpVapour
+    ancillary_liquid = GenericAncEvaluator([0.051236,3.7925,-3.5929,4.6409,-1.9893,1.5978],[0.07,0.46,0.77,1.05,1.25,8.0],T_c,rho_c,:noexp,false) |> PolExpLiquid
+    ancillary_pressure = GenericAncEvaluator([-7.3128,3.8888,-2.9908,-2.8636],[1.0,1.5,1.6,3.7],T_c,P_c,:exp,true) |> PolExpSat
     ancillaries = CompositeModel(components,gas = ancillary_gas,liquid = ancillary_liquid,saturation = ancillary_pressure)
     
     references = ["10.1063/5.0128269"]

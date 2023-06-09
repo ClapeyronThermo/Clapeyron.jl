@@ -108,9 +108,9 @@ function IAPWS95()
     na_term = NonAnalyticTerm(NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
     residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε,na = na_term)
 
-    ancillary_gas = PolExpVapour(T_c,rho_c,[-2.03150240,-2.68302940,-5.38626492,-17.2991605,-44.7586581,-63.9201063],[2/6,4/6,8/6,18/6,37/6,71/6],true)
-    ancillary_liquid = PolExpLiquid(T_c,rho_c,[1.99274064,1.09965342,-0.510839303,-1.75493479,-45.5170352,-6.74694450e5],[1/3,2/3,5/3,16/3,43/3,110/3])
-    ancillary_pressure = PolExpSat(T_c,P_c,[-7.85951783,1.84408259,-11.7866497,22.6807411,-15.9618719,1.80122502],[1.0,1.5,3,3.5,4,7.5])
+    ancillary_gas = ([0.9791749335365787, -2.6190679042770215, -3.9166443712365235, -20.313306821636637, 16.497589490043744, -125.36580458432083],[0.21, 0.262, 0.701, 3.909, 4.076, 17.459],T_c,rho_c,:exp,true) |> PolExpVapour
+    ancillary_liquid = ([0.8157021355019343, 2.0434712177006693, -78.58278372496308, 1026.4273940070307, -2290.5642779377695, 8420.141408210317],[0.276, 0.455, 7.127, 9.846, 11.707, 17.805],T_c,rho_c,:noexp,false) |> PolExpLiquid
+    ancillary_pressure = ([-9.75639641045262, 3.3357600887120102, -1.10029278432831, 0.02037617155190105, -2.6668589845604367, 6.676721087238668],[1.018, 1.206, 2.327, 5.753, 4.215, 14.951],T_c,P_c,:exp,true) |> PolExpSat
     ancillaries = CompositeModel(components,gas = ancillary_gas,liquid = ancillary_liquid,saturation = ancillary_pressure)
     
     references = ["IAPWS R6-95(2018)"]
