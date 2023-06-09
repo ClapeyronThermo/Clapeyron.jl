@@ -23,7 +23,7 @@ function _eval_generic_anc(data::GenericAncEvaluator,input)
     if type == :exp
         ∑nθt = evalexppoly(θ,n,v)
         if use_xr
-            ∑nθt *= xr
+            ∑nθt /= xr
         end
         return output_r*exp(∑nθt)
     elseif type == :noexp
@@ -34,8 +34,7 @@ function _eval_generic_anc(data::GenericAncEvaluator,input)
         ∑b = evalpoly(input,v)
         return ∑a/∑b
     else
-        @error ("unrecognized type: " * string(type))
-        return zero(input)/zero(input)
+        throw(error("unrecognized type: " * string(type)))
     end
 end
 
