@@ -65,6 +65,16 @@ function EmpiricMultiFluid(components;
     return EmpiricMultiFluid(components,params,pures,mixing,departure,Rgas,references)
 end
 
+function reduced_delta(model,V,T,z,Σz = sum(z))
+    Vᵣ = v_scale(model,V,T,z,∑z)
+    Σz * Vᵣ/V
+end
+
+function reduced_tau(model,V,T,z,Σz = sum(z))
+    Tᵣ = T_scale(model,V,T,z,∑z)
+    Tᵣ / T
+end
+
 function a_ideal(model::EmpiricMultiFluid,V,T,z,∑z = sum(z))
     #log(δi) = log(ρ * vc[i]) = -log(V) + log(sum(z)) + log(vc[i])
     res = zero(V+T+first(z))
@@ -87,8 +97,8 @@ end
 
 function a_res(model::EmpiricMultiFluid,V,T,z)
     ∑z = sum(z)
-    δ = v_scale(model,V,T,z,∑z)
-    τ = T_scale(model,V,T,z,∑z)
+    δ = reduced_delta(model,V,T,z,∑z)
+    τ = reduced_tau(model,V,T,z,∑z)
     return multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
 end
 
