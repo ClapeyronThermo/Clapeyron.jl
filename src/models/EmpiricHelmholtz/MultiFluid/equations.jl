@@ -50,7 +50,7 @@ function _T_scale(model::MultiFluidModel,z=SA[1.],Σz = sum(z))
     Tc = model.properties.Tc.values
     #isone(length(z)) && return only(Tc) 
     return mixing_rule_asymetric(
-        (a,b)->sqrt(a * b),
+        mix_geomean,
         _gerg_asymetric_mix_rule,
         z,
         Tc,
@@ -71,7 +71,7 @@ function _v_scale(model::MultiFluidModel,z=SA[1.],Σz = sum(z))
     vc = model.properties.Vc.values
     #isone(length(z)) && return only(vc) 
     res = mixing_rule_asymetric(
-        (a,b) -> ((cbrt(a) + cbrt(b))*0.5)^3,
+        mix_mean3,
         _gerg_asymetric_mix_rule,
         z,
         vc,

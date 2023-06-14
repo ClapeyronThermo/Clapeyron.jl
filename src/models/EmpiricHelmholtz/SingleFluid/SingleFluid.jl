@@ -144,12 +144,9 @@ end
 
 reduced_a_res(model::EmpiricSingleFluid,δ,τ) = reduced_a_res(model.residual,δ,τ)
 
-function reduced_a_res(model::EmpiricSingleFluidResidualParam,δ,τ)
+function reduced_a_res(model::EmpiricSingleFluidResidualParam,δ,τ,lnδ = log(δ),lnτ = log(τ))
     _0 = zero(δ+τ)
-    αᵣ = zero(δ+τ)
-    lnδ = log(δ)
-    lnτ = log(τ)
-    
+    αᵣ = _0
     ℙ = model
     n,t,d = ℙ.n,ℙ.t,ℙ.d
     k_pol,k_exp,k_gauss = ℙ.iterators
@@ -270,7 +267,6 @@ Base.length(::EmpiricSingleFluid) = 1
 function Base.show(io::IO,mime::MIME"text/plain",model::EmpiricSingleFluid)
     println(io,"MultiParameter Equation of state for $(model.components[1]):")
     show_multiparameter_coeffs(io,model.residual)
-
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",model::IdealEmpiricSingleFluid)
