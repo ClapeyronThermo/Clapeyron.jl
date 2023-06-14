@@ -33,7 +33,7 @@ function multiparameter_a_res(model,V,T,z,departure::GEDeparture,δ,τ,∑z = su
     Vᵣ = δ*V*∑z⁻¹
     _0 = zero(aᵣ)
     isone(length(z)) && return aᵣ
-    gᴱ = excess_gibbs_free_energy(departure.activity,V,T,z)
+    gᴱ = excess_g_res(departure.activity,V,T,z)
     vref = departure.params.vref.values
     v̄ref = dot(z,vref)*∑z⁻¹
     ρref = 1/v̄ref

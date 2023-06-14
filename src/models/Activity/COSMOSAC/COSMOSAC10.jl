@@ -39,6 +39,11 @@ function COSMOSAC10(components::Vector{String};
     return model
 end
 
+function excess_g_res(model::COSMOSAC10Model,V,T,z)
+    lnγ = @f(lnγ_res)
+    sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+end
+
 function lnγ_res(model::COSMOSAC10Model,V,T,z)
     x = z ./ sum(z)
 

@@ -53,6 +53,11 @@ function activity_coefficient(model::COSMOSACdspModel,V,T,z)
     return exp.(@f(lnγ_comb) .+@f(lnγ_res).+@f(lnγ_dsp))
 end
 
+function excess_g_res(model::COSMOSACdspModel,V,T,z)
+    lnγ = @f(lnγ_res)
+    sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+end
+
 function lnγ_dsp(model::COSMOSACdspModel,V,T,z)
     x = z./sum(z)
     if model.params.water.values[1]==1 && model.params.hb_acc.values[2]==1 && model.params.hb_don.values[2]==0
