@@ -5,6 +5,17 @@ function a_eos(model::EoSModel, V, T, z=SA[1.0])
     ideal = maybe_ideal !== nothing ? maybe_ideal : model
     return a_ideal(ideal,V,T,z) + a_res(model,V,T,z)
 end
+
+"""
+    Rgas(model)
+
+Returns the gas constant used by the model.
+
+By default, uses `Clapeyron.N_A * Clapeyron.k_B`, being `N_A` and `k_B` the avogadro and boltzmann constants, respectively. this amounts to a value of `R̄` = 
+
+"""
+Rgas(model) = R̄
+
 """
     eos(model::EoSModel, V, T, z=SA[1.0])
 Returns the total Helmholtz free energy.
@@ -21,7 +32,7 @@ You can mix and match ideal models if you provide:
 - `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz free energy
 """
 function eos(model::EoSModel, V, T, z=SA[1.0])
-    return N_A*k_B*sum(z)*T * a_eos(model,V,T,z)
+    return Rgas(model)*sum(z)*T * a_eos(model,V,T,z)
 end
 
 """
@@ -64,7 +75,7 @@ Returns the residual Helmholtz free energy.
 by default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where [`a_res`](@ref) is the reduced residual Helmholtz energy.
 """
 function eos_res(model::EoSModel, V, T, z=SA[1.0])
-    return N_A*k_B*sum(z)*T*(a_res(model,V,T,z))
+    return Rgas(model)*sum(z)*T*a_res(model,V,T,z)
 end
 
 
@@ -93,6 +104,18 @@ The caveat is that `model` has to exist in the local namespace.
 macro comps()
     return quote
         1:length(model)
+    end |> esc
+end
+
+"""
+    R̄
+
+This macro is an alias to `Rgas(model)`
+The caveat is that `model` has to exist in the local namespace.
+"""
+macro R̄()
+    return quote
+        1:Rgas(model)
     end |> esc
 end
 
