@@ -92,33 +92,47 @@ function get_json_data(components;userlocations = String[], verbose = false)
     return data
 end
 
-function SingleFluid(components;userlocations = String[],verbose = false)
+function SingleFluid(components;
+        userlocations = String[],
+        ancillaries = nothing,
+        xiang_deiters = false,
+        Rgas = nothing,
+        verbose = false)
+
     data = get_json_data(components;userlocations,verbose)
     components = [get_only_comp(components)]
     eos_data = first(data[:EOS])
     #properties
-    properties = _parse_properties(data)
+    properties = _parse_properties(data,Rgas,verbose)
     #ideal
-    ideal = _parse_ideal(eos_data[:alpha0])
+    ideal = _parse_ideal(eos_data[:alpha0],verbose)
     #residual
-    residual = _parse_residual(eos_data[:alphar])
+    residual = _parse_residual(eos_data[:alphar],verbose)
     #ancillaries
-    ancillaries = _parse_ancillaries(data[:ANCILLARIES])
-    ancillaries.components[1] = components[1]
-
+    if ancillaries === nothing
+        init_ancillaries = _parse_ancillaries(data[:ANCILLARIES],verbose)
+        ancillaries.components[1] = components[1]
+    else
+        init_model(ancillaries,components,ancillaries_userlocations,verbose)
+    end
+    
     references = [eos_data[:BibTeX_EOS]]
 
     return EmpiricSingleFluid(components,properties,ancillaries,ideal,residual,references)
 end
 
-function IdealSingleFluid(components;userlocations = String[],verbose = false)
+function IdealSingleFluid(components;
+    userlocations = String[],
+    Rgas = nothing,
+    verbose = false)
+
     data = get_json_data(components;userlocations,verbose)
     components = [get_only_comp(components)]
     eos_data = first(data[:EOS])
     #properties
-    properties = _parse_properties(data)
+    properties = _parse_properties(data,Rgas,verbose)
     #ideal
-    ideal = _parse_ideal(eos_data[:alpha0])
+    ideal = _parse_ideal(eos_data[:alpha0],verbose)
 
     references = [eos_data[:BibTeX_EOS]]
 
@@ -126,7 +140,7 @@ function IdealSingleFluid(components;userlocations = String[],verbose = false)
 end
 
 
-function _parse_properties(data)
+function _parse_properties(data,Rgas0 = nothing, barverbose = false)
     info = data[:INFO]
     eos_data = first(data[:EOS])
     st_data = data[:STATES]
@@ -158,7 +172,11 @@ function _parse_properties(data)
     else
         rhol_tp = NaN
     end
-    Rgas = tryparse_units(get(eos_data,:gas_constant,R̄),get(eos_data,:gas_constant_units,""))
+    if  Rgas0 === nothing
+        Rgas = tryparse_units(get(eos_data,:gas_constant,R̄),get(eos_data,:gas_constant_units,""))
+    else
+        Rgas = Rgas0
+    end
     acentric_factor = tryparse_units(get(eos_data,:acentric,NaN),get(eos_data,:acentric_units,""))
 
     #TODO: in the future, maybe max_density could be in the files?
@@ -169,7 +187,7 @@ function _parse_properties(data)
     return EmpiricSingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 end
 
-function _parse_ideal(id_data)
+function _parse_ideal(id_data,verbose = false)
     a1 = 0.0
     a2 = 0.0
     c0 = 0.0
@@ -292,7 +310,7 @@ function _parse_ideal(id_data)
 
 end
 
-function _parse_residual(res_data)
+function _parse_residual(res_data, verbose = false)
     #polynomial y exp terms, we will separate those later
     n = Float64[]
     t = Float64[]
@@ -453,7 +471,7 @@ function _parse_ancilliary_func(anc,input_key,output_key)
     return GenericAncEvaluator(n,t,input_r,output_r,type,using_input_r)
 end
 
-function _parse_ancillaries(anc_data)
+function _parse_ancillaries(anc_data,verbose = false)
     #saturation pressure
     p_data = anc_data[:pS]
     rhol_data = anc_data[:rhoL]
