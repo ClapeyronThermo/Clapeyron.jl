@@ -40,6 +40,7 @@ Clapeyron.AssocOptions
 ```@docs
 Clapeyron.kij_mix
 Clapeyron.pair_mix
+Clapeyron.mirror_pair
 Clapeyron.sigma_LorentzBerthelot
 Clapeyron.epsilon_LorentzBerthelot
 Clapeyron.epsilon_HudsenMcCoubrey
