@@ -122,6 +122,15 @@ include("models/EmpiricHelmholtz/SingleFluid/XiangDeiters.jl")
 include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
 include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
+#multifluid models
+include("models/EmpiricHelmholtz/MultiFluid/multifluid2.jl")
+include("models/EmpiricHelmholtz/MultiFluid/mixing/mixing.jl")
+include("models/EmpiricHelmholtz/MultiFluid/departure/departure.jl")
+include("models/EmpiricHelmholtz/MultiFluid/GERG2008/GERG2008.jl")
+include("models/EmpiricHelmholtz/MultiFluid/EOS_LNG/EOS_LNG.jl")
+include("models/EmpiricHelmholtz/MultiFluid/TillnerRothFriend/TillnerRothFriend.jl")
+
+#cubic models
 include("models/cubic/equations.jl")
 include("models/cubic/vdW/vdW.jl")
 include("models/cubic/RK/RK.jl")
@@ -205,5 +214,5 @@ include("utils/misc.jl")
 include("estimation/estimation.jl")
 
 #precompile workload. should be loaded at the end
-include("precompile.jl")
+#include("precompile.jl")
 end # module

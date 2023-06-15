@@ -17,9 +17,9 @@ function EmpiricMultiFluidParam(components,pures)
     return EmpiricMultiFluidParam(Mw,Tc,Pc,Vc,acentricfactor,lb_volume)
 end
 
-struct EmpiricMultiFluid{𝔸,𝕄} <: EmpiricHelmholtzModel
+struct EmpiricMultiFluid{𝔸,𝕄,ℙ} <: EmpiricHelmholtzModel
     components::Vector{String}
-    params::EmpiricMultiFluidProperties
+    params::EmpiricMultiFluidParam
     pures::Vector{EmpiricSingleFluid{𝔸}}
     mixing::𝕄
     departure::ℙ
@@ -27,21 +27,23 @@ struct EmpiricMultiFluid{𝔸,𝕄} <: EmpiricHelmholtzModel
     references::Vector{String}
 end
 
-Rgas(model) = model.Rgas
+Rgas(model::EmpiricMultiFluid) = model.Rgas
 
 function EmpiricMultiFluid(components;
-    pure_userlocations = String[],
-    mixing = EmpiricDeparture,
+    userlocations = String[],
+    mixing = AsymmetricMixing,
+    departure = nothing, #TODO: change
     mixing_userlocations = String[],
+    departure_userlocations = String[],
     estimate_pures = false,
     estimate_mixture = false,
     Rgas = nothing,
     verbose = false,
     )
     
-    pures = [SingleFluid(comp;userlocations = pure_userlocations,verbose = verbose, xiang_deiters = estimate_pures, Rgas = Rgas) for comp in components]
-    mixing = init_model(components,mixing,mixing_userlocations,verbose)
-    departure = init_model(components,departure,departure_userlocations,verbose)
+    pures = [SingleFluid(comp;userlocations = userlocations,verbose = verbose, xiang_deiters = estimate_pures, Rgas = Rgas) for comp in components]
+    mixing = init_model(mixing,components,mixing_userlocations,verbose)
+    departure = init_model(departure,components,departure_userlocations,verbose)
     
     #set Rgas
     if Rgas === nothing
@@ -60,9 +62,11 @@ function EmpiricMultiFluid(components;
     end
 
     params = EmpiricMultiFluidParam(components,pures)
-    calculate_missing_mixing!(params,mixing)
     references = unique!(reduce(vcat,pure.references for pure in pures))
-    return EmpiricMultiFluid(components,params,pures,mixing,departure,Rgas,references)
+    model = EmpiricMultiFluid(components,params,pures,mixing,departure,Rgas,references)
+    recombine_mixing!(model,model.mixing)
+    recombine_departure!(model,model.departure)
+    return model
 end
 
 function reduced_delta(model,V,T,z,Σz = sum(z))

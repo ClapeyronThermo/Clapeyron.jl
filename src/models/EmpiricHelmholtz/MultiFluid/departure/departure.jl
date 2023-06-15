@@ -1,4 +1,4 @@
-abstract type MultiFluidDepartureModel <: EosModel end
+abstract type MultiFluidDepartureModel <: EoSModel end
 
 #returns ∑xᵢ*arᵢ(δ,τ)
 function multiparameter_a_res0(model,V,T,z,δ,τ,lnδ = log(δ),lnτ = log(τ),∑z = sum(z))
@@ -10,3 +10,8 @@ function multiparameter_a_res0(model,V,T,z,δ,τ,lnδ = log(δ),lnτ = log(τ),�
     end
     return aᵣ/∑z
 end
+
+recombine_departure!(model::EmpiricMultiFluid,mixing) = nothing
+
+include("GEDeparture.jl")
+include("EmpiricDeparture.jl")

@@ -78,23 +78,6 @@ mutable struct Associating2BTerm #mutable because someone would want to fit this
 end
 Associating2BTerm() = Associating2BTerm(0.0,0.0,0.0,0.0,0.0)
 
-struct ExponentialTerm
-    active::Bool
-    n::Vector{Float64}
-    t::Vector{Float64}
-    d::Vector{Float64}
-    l::Vector{Float64}
-    gamma::Vector{Float64}
-
-    function ExponentialTerm(n,t,d,l,gamma)
-        @assert length(n) == length(t) == length(d) == length(gamma) == length(l)
-        active = (length(n) != 0)
-        return new(active,n,t,d,l,gamma)
-    end
-end
-ExponentialTerm() = ExponentialTerm(Float64[],Float64[],Float64[],Float64[],Float64[])
-
-
 #we store power, exponential and gaussian terms inline, because those are the most used.
 struct EmpiricSingleFluidResidualParam <: EoSParam
     iterators::Vector{UnitRange{Int}}
@@ -102,6 +85,7 @@ struct EmpiricSingleFluidResidualParam <: EoSParam
     t::Vector{Float64}
     d::Vector{Int}
     l::Vector{Int}
+    g::Vector{Float64}
     eta::Vector{Float64}
     beta::Vector{Float64}
     gamma::Vector{Float64}
@@ -109,16 +93,14 @@ struct EmpiricSingleFluidResidualParam <: EoSParam
     gao_b::GaoBTerm
     na::NonAnalyticTerm
     assoc::Associating2BTerm
-    exp::ExponentialTerm
     
-    function EmpiricSingleFluidResidualParam(n,t,d,l = Int[],
-        eta = Float64[],beta = Float64[],gamma = Float64[], epsilon = Float64[]
+    function EmpiricSingleFluidResidualParam(n,t,d,l = Int[],g = ones(length(l)),
+        eta = Float64[],beta = Float64[],gamma = Float64[], epsilon = Float64[],
         ;gao_b = GaoBTerm(),
         na = NonAnalyticTerm(),
-        assoc = Associating2BTerm(),
-        exp = ExponentialTerm())
+        assoc = Associating2BTerm())
 
-        param = new(Vector{UnitRange{Int}}(undef,0),n,t,d,l,eta,beta,gamma,epsilon,gao_b,na,assoc,exp)
+        param = new(Vector{UnitRange{Int}}(undef,0),n,t,d,l,g,eta,beta,gamma,epsilon,gao_b,na,assoc)
         _calc_iterators!(param)
         return param
     end
@@ -155,10 +137,6 @@ function show_multiparameter_coeffs(io,param::EmpiricSingleFluidResidualParam)
         push!(res,"Non Analytic terms: $(length(param.na.beta))")
     end
 
-    if param.exp.active
-        push!(res,"Modified Exponential terms: $(length(param.exp.n))")
-    end
-
     if param.gao_b.active
         push!(res,"Gao-b terms: $(length(param.gao_b.b))")
     end
@@ -179,12 +157,14 @@ function Base.show(io::IO,::MIME"text/plain",param::EmpiricSingleFluidResidualPa
     show_multiparameter_coeffs(io,param)
 end
 
-function _calc_iterators!(param::EmpiricSingleFluidResidualParam)
+function _calc_iterators!(param)
     n,t,d,l = param.n,param.t,param.d,param.l
+    g = param.g
     eta,beta,gamma,epsilon = param.eta,param.beta,param.gamma,param.epsilon
 
     @assert length(n) == length(t) == length(d)
     @assert length(l) < length(d)
+    @assert length(g) == length(l)
     @assert length(eta) == length(beta) == length(gamma) == length(epsilon)
     #we start from the assoc term, backwards
     length_n = length(n)

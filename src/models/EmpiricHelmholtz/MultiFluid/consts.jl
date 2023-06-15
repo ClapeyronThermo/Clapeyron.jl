@@ -704,3 +704,195 @@ function gerg_json()
 
 
 end
+
+function departure_data()
+    
+    
+    pp = ["methane,nitrogen,",
+    "methane,carbon dioxide,",
+    "methane,ethane,",
+    "methane,propane,",
+    "nitrogen,carbon dioxide,",
+    "nitrogen,ethane,",
+    "methane,hydrogen,",
+    "TODO,TODO,",
+    ]
+
+    F =[1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        -40,
+    ]
+
+    deps = [
+        [1 1 0.000 -0.98038985517335e-2 NaN NaN NaN NaN
+        2 4 1.850 0.42487270143005e-3 NaN NaN NaN NaN
+        3 1 7.850 -0.34800214576142e-1 1.000 0.5 1.000 0.5
+        4 2 5.400 -0.13333813013896 1.000 0.5 1.000 0.5
+        5 2 0.000 -0.11993694974627e-1 0.250 0.5 2.500 0.5
+        6 2 0.750 0.69243379775168e-1 0.000 0.5 3.000 0.5
+        7 2 2.800 -0.31022508148249 0.000 0.5 3.000 0.5
+        8 2 4.450 0.24495491753226 0.000 0.5 3.000 0.5
+        9 3 4.250 0.22369816716981 0.000 0.5 3.000 0.5],
+
+        [1 1 2.600 -0.10859387354942 NaN NaN NaN NaN
+        2 2 1.950 0.80228576727389e-1 NaN NaN NaN NaN 
+        3 3 0.000 -0.93303985115717e-2 NaN NaN NaN NaN
+        4 1 3.950 0.40989274005848e-1 1.000 0.5 1.000 0.5
+        5 2 7.950 -0.24338019772494 0.500 0.5 2.000 0.5
+        6 3 8.000 0.23855347281124 0.000 0.5 3.000 0.5],
+
+
+        [1 3 0.650 -0.80926050298746e-3 NaN NaN NaN NaN
+        2 4 1.550 -0.75381925080059e-3 NaN NaN NaN NaN
+        3 1 3.100 -0.41618768891219e-1 1.000 0.5 1.000 0.5
+        4 2 5.900 -0.23452173681569 1.000 0.5 1.000 0.5
+        5 2 7.050 0.14003840584586 1.000 0.5 1.000 0.5
+        6 2 3.350 0.63281744807738e-1 0.875 0.5 1.250 0.5
+        7 2 1.200 -0.34660425848809e-1 0.750 0.5 1.500 0.5
+        8 2 5.800 -0.23918747334251 0.500 0.5 2.000 0.5
+        9 2 2.700 0.19855255066891e-2 0.000 0.5 3.000 0.5
+        10 3 0.450 0.61777746171555e+1 0.000 0.5 3.000 0.5
+        11 3 0.550 -0.69575358271105e+1 0.000 0.5 3.000 0.5
+        12 3 1.950 0.10630185306388e+1 0.000 0.5 3.000 0.5],
+
+
+        [1 3 1.850 0.13746429958576e-1 NaN NaN NaN NaN
+        2 3 3.950 -0.74425012129552e-2 NaN NaN NaN NaN
+        3 4 0.000 -0.45516600213685e-2 NaN NaN NaN NaN
+        4 4 1.850 -0.54546603350237e-2 NaN NaN NaN NaN
+        5 4 3.850 0.23682016824471e-2 NaN NaN NaN NaN
+        6 1 5.250 0.18007763721438 0.250 0.5 0.750 0.5
+        7 1 3.850 -0.44773942932486 0.250 0.5 1.000 0.5
+        8 1 0.200 0.19327374888200e-1 0.000 0.5 2.000 0.5
+        9 2 6.500 -0.30632197804624 0.000 0.5 3.000 0.5],
+
+        [1 2 1.850 0.28661625028399 NaN NaN NaN NaN
+        2 3 1.400 -0.10919833861247 NaN NaN NaN NaN
+        3 1 3.200 -0.11374032082270e+1 0.250 0.5 0.750 0.5
+        4 1 2.500 0.76580544237358 0.250 0.5 1.000 0.5
+        5 1 8.000 0.42638000926819e-2 0.000 0.5 2.000 0.5
+        6 2 3.750 0.17673538204534 0.000 0.5 3.000 0.5],
+
+        [1 2 0.000 -0.47376518126608 NaN NaN NaN NaN
+        2 2 0.050 0.48961193461001 NaN NaN NaN NaN
+        3 3 0.000 -0.57011062090535e-2 NaN NaN NaN NaN
+        4 1 3.650 -0.19966820041320 1.000 0.5 1.000 0.5
+        5 2 4.900 -0.69411103101723 1.000 0.5 1.000 0.5
+        6 2 4.450 0.69226192739021 0.875 0.5 1.250 0.5
+        ],
+
+        [1 1 2.000 -0.25157134971934 NaN NaN NaN NaN
+        2 3 -1.000 -0.62203841111983e-2 NaN NaN NaN NaN
+        3 3 1.750 0.88850315184396e-1 NaN NaN NaN NaN
+        4 4 1.400 -0.35592212573239e-1 NaN NaN NaN NaN
+        ],
+
+        [1 1 1.000 0.25574776844118e+1 NaN NaN NaN NaN
+2 1 1.550 -0.79846357136353e+1 NaN NaN NaN NaN
+3 1 1.700 0.47859131465806e+1 NaN NaN NaN NaN
+4 2 0.250 -0.73265392369587 NaN NaN NaN NaN
+5 2 1.350 0.13805471345312e+1 NaN NaN NaN NaN
+6 3 0.000 0.28349603476365 NaN NaN NaN NaN
+7 3 1.250 -0.49087385940425 NaN NaN NaN NaN
+8 4 0.000 -0.10291888921447 NaN NaN NaN NaN
+9 4 0.700 0.11836314681968 NaN NaN NaN NaN
+10 4 5.400 0.55527385721943e-4 NaN NaN NaN NaN]
+    ]
+
+
+    io = IOBuffer()
+    for i in 1:7
+        print(io,replace(pp[i],"," =>"|~|"))
+        print(io,F[i])
+        print(io,"|~|")
+        println(io,mat_to_departure_json(deps[i]))
+    end
+
+    pp2 = [
+        "methane,isobutane,",
+        "ethane,propane,",
+        "ethane,butane,",
+        "ethane,isobutane,",
+        "propane,butane,",
+        "propane,isobutane,",
+        "butane,isobutane,"
+    ]
+
+    F2 = [0.771035405688,
+    0.130424765150,
+    0.281570073085,
+    0.260632376098,
+    0.312572600489e-1,
+    -0.551609771024e-1,
+    -0.551240293009e-1
+    ]
+
+    j8 = mat_to_departure_json(deps[8])
+    for i in 1:7
+        print(io,replace(pp2[i],"," =>"|~|"))
+        print(io,F2[i])
+        print(io,"|~|")
+        println(io,j8)
+    end
+
+    csv = String(take!(io))
+    file = DB_PATH * "/Empiric/GERG2008/departure/GERG2008_departure_unlike.csv"
+    #_paths = only(flattenfilepaths([file],String[]))
+    open(file, "w") do io2
+        println(io2,csv)
+    end
+
+end
+
+function mat_to_departure_json(mat)
+    cols = collect(eachcol(mat))
+    n_pow = count(isnan,cols[end])
+    len = length(cols[end])
+    n_gerg = len - n_pow
+    
+    t = cols[3]
+    d = cols[2]
+    n = cols[4]
+    l = zeros(length(n))
+    eta = cols[5]
+    epsilon = cols[6]
+    beta = cols[7]
+    gamma = cols[8]
+    res = []
+
+    if n_pow != 0
+        push!(res,
+            Dict(
+            :type => "ResidualHelmholtzPower",
+            :n => n[1:n_pow],
+            :t => t[1:n_pow],
+            :d => d[1:n_pow],
+            :l => l[1:n_pow],
+            )
+        )
+    end
+
+    if n_gerg != 0
+        push!(res,
+        Dict(
+        :type => "ResidualHelmholtzGERG2008",
+        :n => n[(n_pow+1):len],
+        :t => t[(n_pow+1):len],
+        :d => d[(n_pow+1):len],
+        :eta => eta[(n_pow+1):len],
+        :beta => beta[(n_pow+1):len],
+        :gamma => gamma[(n_pow+1):len],
+        :epsilon => epsilon[(n_pow+1):len],
+        )
+    )
+    
+    end
+    io = IOBuffer()
+    JSON3.write(io,res)
+    return String(take!(io))
+end

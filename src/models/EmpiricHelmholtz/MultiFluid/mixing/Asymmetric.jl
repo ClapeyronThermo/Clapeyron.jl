@@ -5,7 +5,7 @@ struct AsymmetricMixingParam <: EoSParam
     beta_v::PairParam{Float64}
 end
 
-@newmodelsimple AsymmetricMixing MixingRuleModel AsymmetricMixingParam
+@newmodelsimple AsymmetricMixing MixingRule AsymmetricMixingParam
 
 function AsymmetricMixing(components;userlocations = String[],verbose = false)
     params = getparams(components,["Empiric/mixing/AsymmetricMixing/AsymmetricMixing_unlike.csv"]; asymmetricparams = ["beta_v","beta_T"],userlocations=userlocations, verbose=verbose)

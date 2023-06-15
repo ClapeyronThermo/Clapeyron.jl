@@ -3,20 +3,6 @@ include("structs.jl")
 
 #term dispatch. function definitions are in term_functions.jl
 
-function a_term(term::ExponentialTerm,δ,τ,lnδ,lnτ,_0)
-    if term.active 
-        n = term.n
-        t = term.t
-        d = term.d
-        l = term.l
-        γ = term.gamma
-        αᵣ = term_ar_exp2(δ,τ,lnδ,lnτ,_0,n,t,d,l,γ)
-    else
-        αᵣ = _0
-    end
-    return αᵣ
-end
-
 function a_term(term::NonAnalyticTerm,δ,τ,lnδ,lnτ,_0)
     if term.active    
         A,B,C,D,a,b,β,n = term.A,term.B,term.C,term.D,term.a,term.b,term.beta,term.n
@@ -163,11 +149,11 @@ function reduced_a_res(model::EmpiricSingleFluidResidualParam,δ,τ,lnδ = log(�
 
     #Exponential terms.
     if length(k_exp) != 0
-        l = ℙ.l
+        l,g = ℙ.l,ℙ.g
         n_exp = view(n,k_exp)
         t_exp = view(t,k_exp)
         d_exp = view(d,k_exp)
-        αᵣ += term_ar_exp(δ,τ,lnδ,lnτ,αᵣ,n_exp,t_exp,d_exp,l)
+        αᵣ += term_ar_exp(δ,τ,lnδ,lnτ,αᵣ,n_exp,t_exp,d_exp,l,g)
     end
 
     #Gaussian bell-shaped terms
@@ -180,9 +166,6 @@ function reduced_a_res(model::EmpiricSingleFluidResidualParam,δ,τ,lnδ = log(�
     end
 
     #Especial terms are stored in structs.
-
-    #Modified Exponential terms.
-    αᵣ += a_term(ℙ.exp,δ,τ,lnδ,lnτ,_0)
 
     #gaoB terms
     αᵣ += a_term(ℙ.gao_b,δ,τ,lnδ,lnτ,_0)

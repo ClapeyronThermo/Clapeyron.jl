@@ -1,6 +1,5 @@
 abstract type AlphaModel <:EoSModel end
 abstract type TranslationModel <:EoSModel end
-abstract type MixingRule <:EoSModel end
 
 struct ABCubicParam <: EoSParam
     a::PairParam{Float64}

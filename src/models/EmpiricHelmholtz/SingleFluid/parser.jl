@@ -95,6 +95,7 @@ end
 function SingleFluid(components;
         userlocations = String[],
         ancillaries = nothing,
+        ancillaries_userlocations = String[],
         xiang_deiters = false,
         Rgas = nothing,
         verbose = false)
@@ -109,7 +110,7 @@ function SingleFluid(components;
     #residual
     residual = _parse_residual(eos_data[:alphar],verbose)
     #ancillaries
-    if ancillaries === nothing
+    if ancillaries !== nothing
         init_ancillaries = _parse_ancillaries(data[:ANCILLARIES],verbose)
         ancillaries.components[1] = components[1]
     else
@@ -316,14 +317,8 @@ function _parse_residual(res_data, verbose = false)
     t = Float64[]
     d = Int[]
     l = Int[]
-
-    #modified exponential terms
-    exp_n = Float64[]
-    exp_t = Float64[]
-    exp_d = Float64[]
-    exp_l = Float64[]
-    exp_gamma = Float64[]
-
+    g = Float64[]
+    
     #gaussian terms
     n_gauss = Float64[]
     t_gauss = Float64[]
@@ -367,6 +362,7 @@ function _parse_residual(res_data, verbose = false)
             append!(t,res_data_i[:t])
             append!(d,res_data_i[:d])
             append!(l,res_data_i[:l])
+            append!(g,ones(length(res_data_i[:l])))
         elseif res_data_i[:type] == "ResidualHelmholtzGaussian"
             append!(n_gauss,res_data_i[:n])
             append!(t_gauss,res_data_i[:t])
@@ -394,11 +390,11 @@ function _parse_residual(res_data, verbose = false)
             append!(NA_beta,res_data_i[:beta])
             append!(NA_n,res_data_i[:n])
         elseif res_data_i[:type] == "ResidualHelmholtzExponential"
-            append!(exp_n,res_data_i[:n])
-            append!(exp_t,res_data_i[:t])
-            append!(exp_d,res_data_i[:d])
-            append!(exp_l,res_data_i[:l])
-            append!(exp_gamma,res_data_i[:g])
+            append!(n,res_data_i[:n])
+            append!(t,res_data_i[:t])
+            append!(d,res_data_i[:d])
+            append!(l,res_data_i[:l])
+            append!(g,res_data_i[:g])
         elseif res_data_i[:type] == "ResidualHelmholtzAssociating"
             if assoc == true
                 throw(error("Residual: $(res_data_i[:type]) we only support one Associating term."))
@@ -420,6 +416,7 @@ function _parse_residual(res_data, verbose = false)
     _t = vcat(t[pol_vals],t[exp_vals],t_gauss)
     _d = vcat(d[pol_vals],d[exp_vals],d_gauss)
     _l = l[exp_vals]
+    _g = g[exp_vals]
     _η = eta
     _β = beta
     _γ = gamma
@@ -435,9 +432,8 @@ function _parse_residual(res_data, verbose = false)
     assoc = Associating2BTerm(assoc_epsilonbar,assoc_kappabar,assoc_a,assoc_m,assoc_vbarn)
     
     #exponential term
-    exp = ExponentialTerm(exp_n,exp_t,exp_d,exp_l,exp_gamma)
 
-   return EmpiricSingleFluidResidualParam(_n,_t,_d,_l,_η,_β,_γ,_ε;gao_b,na,assoc,exp)
+   return EmpiricSingleFluidResidualParam(_n,_t,_d,_l,_g,_η,_β,_γ,_ε;gao_b,na,assoc)
 end
 
 function _parse_ancilliary_func(anc,input_key,output_key)

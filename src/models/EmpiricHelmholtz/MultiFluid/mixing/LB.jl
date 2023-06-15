@@ -1,9 +1,9 @@
-struct LorentzBerthelotMixingParam <: MixingRuleModel
+struct LorentzBerthelotMixingParam <: MixingRule
     k::PairParam{Float64}
     l::PairParam{Float64}
 end
 
-@newmodelsimple LorentzBerthelotMixing MixingRuleModel AsymmetricMixingParam
+@newmodelsimple LorentzBerthelotMixing MixingRule LorentzBerthelotMixingParam
 
 function LorentzBerthelotMixing(components;userlocations = String[],verbose = false)
     params = getparams(components,["Empiric/mixing/LorentzBerthelotMixing/LorentzBerthelotMixing_unlike.csv"]; userlocations=userlocations, verbose=verbose)

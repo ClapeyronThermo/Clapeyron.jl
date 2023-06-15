@@ -6,14 +6,6 @@
     return αᵣ
 end
 
-@inline function term_ar_exp(δ,τ,lnδ,lnτ,_0,n,t,d,l)
-    αᵣ = zero(_0)
-    for k in eachindex(n)
-        αᵣ += n[k]*exp(lnδ*d[k] + lnτ*t[k] - δ^l[k])
-    end
-    return αᵣ
-end
-
 @inline function term_ar_gauss(δ,τ,lnδ,lnτ,_0,n,t,d,η,β,γ,ε)
     αᵣ = zero(_0)
     for k in eachindex(n)
@@ -68,10 +60,10 @@ function term_ar_assoc2b(δ,τ,lnδ,lnτ,_0,ε,κ,a,m,v̄ₙ)
     return m * a * ((log(X) - X / 2.0 + 0.5))
 end
 
-function term_ar_exp2(δ,τ,lnδ,lnτ,_0,n,t,d,l,γ)
+function term_ar_exp(δ,τ,lnδ,lnτ,_0,n,t,d,l,g)
     αᵣ = zero(_0)
     for k in eachindex(n)
-        αᵣ += n[k]*exp(lnδ*d[k] + lnτ*t[k] - γ[k]*δ^l[k])
+        αᵣ += n[k]*exp(lnδ*d[k] + lnτ*t[k] - g[k]*δ^l[k])
     end
     return αᵣ
 end
