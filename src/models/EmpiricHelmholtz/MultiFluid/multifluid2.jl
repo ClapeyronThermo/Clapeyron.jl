@@ -32,7 +32,7 @@ Rgas(model::EmpiricMultiFluid) = model.Rgas
 function EmpiricMultiFluid(components;
     userlocations = String[],
     mixing = AsymmetricMixing,
-    departure = nothing, #TODO: change
+    departure = EmpiricDeparture, #TODO: change
     mixing_userlocations = String[],
     departure_userlocations = String[],
     estimate_pures = false,
@@ -70,12 +70,12 @@ function EmpiricMultiFluid(components;
 end
 
 function reduced_delta(model,V,T,z,Σz = sum(z))
-    Vᵣ = v_scale(model,V,T,z,∑z)
+    Vᵣ = v_scale(model,z,Σz)
     Σz * Vᵣ/V
 end
 
 function reduced_tau(model,V,T,z,Σz = sum(z))
-    Tᵣ = T_scale(model,V,T,z,∑z)
+    Tᵣ = T_scale(model,z,Σz)
     Tᵣ / T
 end
 
@@ -109,22 +109,23 @@ end
 function eos(model::EmpiricMultiFluid,V,T,z)
     ∑z = sum(z)
     a₀ = a_ideal(model,V,T,z,∑z)
-    δ = v_scale(model,V,T,z,∑z)
-    τ = T_scale(model,V,T,z,∑z)
+    δ = reduced_delta(model,V,T,z,∑z)
+    τ = reduced_tau(model,V,T,z,∑z)
     aᵣ = multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
-    return ∑z*@R̄()*T*(a₀+aᵣ)
+    R = Rgas(model)
+    return ∑z*R*T*(a₀+aᵣ)
 end
 
 function eos_res(model::EmpiricMultiFluid,V,T,z)
     ∑z = sum(z)
-    δ = v_scale(model,V,T,z,∑z)
-    τ = T_scale(model,V,T,z,∑z)
+    δ = reduced_delta(model,V,T,z,∑z)
+    τ = reduced_tau(model,V,T,z,∑z)
     aᵣ = multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
     return ∑z*@R̄()*T*aᵣ
 end
 
-v_scale(model::EmpiricMultiFluid,V,T,z,∑z = sum(z)) = v_scale(model,V,T,z,model.mixing,∑z)
-T_scale(model::EmpiricMultiFluid,V,T,z,∑z = sum(z)) = T_scale(model,V,T,z,model.mixing,∑z)
+v_scale(model::EmpiricMultiFluid,z = SA[1.0],∑z = sum(z)) = v_scale(model,z,model.mixing,∑z)
+T_scale(model::EmpiricMultiFluid,z = SA[1.0],∑z = sum(z)) = T_scale(model,z,model.mixing,∑z)
 
 p_scale(model::EmpiricMultiFluid,z=SA[1.]) = dot(z,model.params.Pc.values)/sum(z)
  

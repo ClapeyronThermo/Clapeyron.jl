@@ -13,7 +13,7 @@ function LorentzBerthelotMixing(components;userlocations = String[],verbose = fa
     return LorentzBerthelotMixing(pkgparams, verbose = verbose)
 end
 
-function v_scale(model::EmpiricMultiFluid,V,T,z,mixing::LorentzBerthelotMixing,∑z = sum(z))
+function v_scale(model::EmpiricMultiFluid,z,mixing::LorentzBerthelotMixing,∑z)
     Vc = model.params.Tc.values
     l = mixing.params.l
     res = zero(∑z)*1.0
@@ -30,7 +30,7 @@ function v_scale(model::EmpiricMultiFluid,V,T,z,mixing::LorentzBerthelotMixing,�
     return res/(∑z*∑z)
 end
 
-function T_scale(model::EmpiricMultiFluid,V,T,z,mixing::LorentzBerthelotMixing,∑z = sum(z))
+function T_scale(model::EmpiricMultiFluid,z,mixing::LorentzBerthelotMixing,∑z)
     Tc = model.params.Tc.values
     k = mixing.params.k
     res = zero(∑z)*1.0
@@ -46,3 +46,5 @@ function T_scale(model::EmpiricMultiFluid,V,T,z,mixing::LorentzBerthelotMixing,�
     end
     return res/(∑z*∑z)
 end
+
+export LorentzBerthelotMixing

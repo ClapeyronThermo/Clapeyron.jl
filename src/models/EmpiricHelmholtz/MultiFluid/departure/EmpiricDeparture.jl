@@ -31,8 +31,9 @@ function EmpiricDeparture(components;userlocations = String[],verbose = false)
     params = getparams(components,["Empiric/departure/Empiric_departure_unlike.csv"],asymmetricparams = ["F","parameters"],userlocations = userlocations,verbose = verbose)
     raw_parameters = params["parameters"]
     F = params["F"]
-    parsed_parameters = similar(F.values,EmpiricDepartureValues)
+
     s1,s2 = size(F.values)
+    parsed_parameters = SparseMatrixCSC{EmpiricDepartureValues,Int}(undef, s1, s2)
     #parse JSON string to create EmpiricDepartureValues
     for i in 1:s1
         for j in 1:s2
@@ -47,7 +48,7 @@ function EmpiricDeparture(components;userlocations = String[],verbose = false)
         end
     end
     #compress
-    parameters = PairParameter(raw_parameters.name,components,parsed_parameters,raw_parameters.ismissingvalues,raw_parameters.sourcecsvs,raw_parameters.sources)
+    parameters = PairParameter(raw_parameters.name,components,parsed_parameters,raw_parameters.ismissingvalues,raw_parameters.sourcecsvs,raw_parameters.sources)    
     pkgparams = EmpiricDepartureParam(F,parameters)
     return EmpiricDeparture(pkgparams,verbose = verbose)
 end
@@ -55,10 +56,11 @@ end
 function multiparameter_a_res(model::EmpiricMultiFluid,V,T,z,departure::EmpiricDeparture,δ,τ,∑z = sum(z)) 
     lnδ = log(δ)
     lnτ = log(τ)
-    aᵣ = multiparameter_a_res0(model,V,T,z,δ,τ,lnτ,∑z)
+    aᵣ = multiparameter_a_res0(model,V,T,z,δ,τ,lnδ,lnτ,∑z)
     _0 = zero(aᵣ)
     ℙ = departure.params.parameters.values
     ℙ_nonzeros = nonzeros(ℙ)
+    rows = rowvals(ℙ)
     isone(length(z)) && return aᵣ
     iszero(nnz(ℙ)) && return aᵣ
 
@@ -199,3 +201,5 @@ function _parse_departure(json_string::String,Fij::Float64,verbose = false)
     
    return EmpiricDepartureValues(Fij,_n,_t,_d,_l,_g,_η,_β,_γ,_ε)
 end
+
+export EmpiricDeparture

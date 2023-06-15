@@ -25,20 +25,20 @@ function calculate_missing_mixing!(params,mixing::AsymmetricMixing)
     #TODO
 end
 
-function v_scale(model::EmpiricMultiFluid,V,T,z,mixing::AsymmetricMixing,∑z = sum(z))
+function v_scale(model::EmpiricMultiFluid,z,mixing::AsymmetricMixing,∑z)
     vc = model.params.Vc.values
     res = mixing_rule_asymetric(
         mix_mean3,
         _gerg_asymetric_mix_rule,
         z,
         vc,
-        model.mixing.gamma_v.values,
-        model.mixing.beta_v.values,
+        mixing.params.gamma_v.values,
+        mixing.params.beta_v.values,
     )
-    return res/(Σz*Σz)
+    return res/(∑z*∑z)
 end
 
-function T_scale(model::EmpiricMultiFluid,V,T,z,mixing::AsymmetricMixing,∑z = sum(z))
+function T_scale(model::EmpiricMultiFluid,z,mixing::AsymmetricMixing,∑z)
     Tc = model.params.Tc.values
     #isone(length(z)) && return only(Tc)
     return mixing_rule_asymetric(
@@ -46,7 +46,9 @@ function T_scale(model::EmpiricMultiFluid,V,T,z,mixing::AsymmetricMixing,∑z = 
         _gerg_asymetric_mix_rule,
         z,
         Tc,
-        model.mixing.gamma_T.values,
-        model.mixing.beta_T.values,
-    )/(Σz*Σz)
+        mixing.params.gamma_T.values,
+        mixing.params.beta_T.values,
+    )/(∑z*∑z)
 end
+
+export AsymmetricMixing

@@ -110,16 +110,16 @@ function SingleFluid(components;
     #residual
     residual = _parse_residual(eos_data[:alphar],verbose)
     #ancillaries
-    if ancillaries !== nothing
+    if ancillaries === nothing
         init_ancillaries = _parse_ancillaries(data[:ANCILLARIES],verbose)
-        ancillaries.components[1] = components[1]
+        init_ancillaries.components[1] = components[1]
     else
-        init_model(ancillaries,components,ancillaries_userlocations,verbose)
+        init_ancillaries = init_model(ancillaries,components,ancillaries_userlocations,verbose)
     end
     
     references = [eos_data[:BibTeX_EOS]]
 
-    return EmpiricSingleFluid(components,properties,ancillaries,ideal,residual,references)
+    return EmpiricSingleFluid(components,properties,init_ancillaries,ideal,residual,references)
 end
 
 function IdealSingleFluid(components;

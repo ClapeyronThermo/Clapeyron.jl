@@ -128,7 +128,7 @@ function reduced_a_ideal(model::EmpiricSingleFluidIdealParam,τ)
     return α₀
 end
 
-reduced_a_res(model::EmpiricSingleFluid,δ,τ) = reduced_a_res(model.residual,δ,τ)
+reduced_a_res(model::EmpiricSingleFluid,δ,τ,lnδ = log(δ),lnτ = log(τ)) = reduced_a_res(model.residual,δ,τ,lnδ,lnτ)
 
 function reduced_a_res(model::EmpiricSingleFluidResidualParam,δ,τ,lnδ = log(δ),lnτ = log(τ))
     _0 = zero(δ+τ)
