@@ -441,7 +441,7 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
 end
 
 
-function read_csv(filepath,options::ParamOptions = DefaultOptions)::CSV.File
+function read_csv(filepath,options::ParamOptions = DefaultOptions,sep = :comma)::CSV.File
     #actual reading
     ignorelist = deepcopy(options.ignore_headers)
     map!(normalisestring,ignorelist,ignorelist)
@@ -450,11 +450,12 @@ function read_csv(filepath,options::ParamOptions = DefaultOptions)::CSV.File
         norm_header = normalisestring(string(name))
         normalisestring(norm_header; tofilter=r"[ \-\_\d]") ∈ ignorelist
     end
-    
+    _delims = (comma = ',',space = ' ')
+    _delim = get(_delims,sep,string(sep))
     if is_inline_csv(filepath)
-        df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String)
+        df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String, delim = _delim)
     else
-        df = CSV.File(filepath; header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String)
+        df = CSV.File(filepath; header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String,delim = _delim)
     end
     return df
 end
@@ -474,8 +475,8 @@ function findparamsincsv(components,filepath,
     correct_group = (parsegroups == :group && csvtype == groupdata) || (parsegroups == :intragroup && csvtype == structgroupdata)
     grouptype = csv_file_options.grouptype
     
-    
-    df = read_csv(filepath,options)
+    sep = get(csv_file_options,:sep,:comma)
+    df = read_csv(filepath,options,sep)
 
     csvheaders = String.(Tables.columnnames(df))
     headerparams = valid_headerparams(csvheaders,options) #removes all ignored header params
@@ -755,11 +756,11 @@ function read_csv_options(filepath)
         foundkeywords = intersect(words, keywords)
         _species = intersect(words,["species"])
         _estimator = intersect(words,["method"])
-        return (csvtype = _readcsvtype(foundkeywords),grouptype = :unknown,estimator = _estimator, species = _species)
+        return (csvtype = _readcsvtype(foundkeywords),grouptype = :unknown,estimator = _estimator, species = _species,sep = :comma)
     end
 end
 
-const NT_CSV_OPTIONS = (csvtype = namedtupledata,grouptype = :unknown,estimator = :no_estimator, species = ["all"])
+const NT_CSV_OPTIONS = (csvtype = namedtupledata,grouptype = :unknown,estimator = :no_estimator, species = ["all"],sep = :comma)
 +
 function _readcsvtype(collection)
     length(collection) != 1 && return invaliddata
@@ -791,8 +792,10 @@ function __get_options(data)
     _csvtype = _readcsvtype(get(opts_dict,"csvtype","invalid"))
     _grouptype = Symbol(get(opts_dict,"grouptype","unknown"))
     _estimator = Symbol(get(opts_dict,"method","error"))
+    _estimator = Symbol(get(opts_dict,"method","error"))
     _species = String.(split(get(opts_dict,"species","all")," "))
-    return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator, species = _species)
+    _sep = Symbol(get(opts_dict,"sep","comma"))
+    return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator, species = _species, sep = _sep)
 end
 
 function valid_headerparams(csvheaders, options::ParamOptions = DefaultOptions)
