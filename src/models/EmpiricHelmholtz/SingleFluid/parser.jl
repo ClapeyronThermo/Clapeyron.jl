@@ -17,14 +17,19 @@ JSON_ALTERNATIVE_NAMES = Dict{String,String}(
     "hydrogensulfide" => "HydrogenSulfide",
 )
 
+function is_coolprop_loaded()
+    lib_handler = Base.Libc.Libdl.dlopen("libcoolprop";throw_error = false)
+    !isnothing(lib_handler)
+end
+
 function coolprop_csv(component::String)
     lib_handler = Base.Libc.Libdl.dlopen("libcoolprop";throw_error = false)
     if !isnothing(lib_handler)
        #libcoolprop is present.
         buffer_length = 2<<12
         message_buffer = Vector{UInt8}(undef,buffer_length)
-        method_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_fluid_param_string) 
-        err_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_global_param_string) 
+        method_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_fluid_param_string)
+        err_handler = Base.Libc.Libdl.dlsym(lib_handler,:get_global_param_string)
         val = 0
         for i in 1:5
             val = ccall(method_handler, Clong, (Cstring, Cstring, Ptr{UInt8}, Int), component, "JSON", message_buffer::Array{UInt8, 1}, buffer_length)
@@ -60,17 +65,29 @@ end
 get_only_comp(x::Vector{String}) = only(x)
 get_only_comp(x::String) = x
 
-function get_json_data(components;userlocations = String[], verbose = false)
+function get_json_data(components;
+    userlocations = String[],
+    coolprop_userlocations = true,
+    verbose = false,
+    )
+
     component = get_only_comp(components)
     if first(component) != '{' #not json
         _paths = flattenfilepaths(["Empiric"],userlocations)
         norm_comp1 = normalisestring(component)
+
+
         alternative_comp = get(JSON_ALTERNATIVE_NAMES,norm_comp1,norm_comp1)
+
         normalized_comp = normalisestring(alternative_comp)
         f0 = x -> normalisestring(last(splitdir(first(splitext(x))))) == normalized_comp
+
         found_paths = filter(f0,_paths)
-        if iszero(length(found_paths)) 
+        if iszero(length(found_paths))
             #try to extract from coolprop.
+            !coolprop_userlocations && throw(error("cannot found component file $(component)."))
+            !is_coolprop_loaded() && throw(error("cannot found component file $(component). Try loading the CoolProp library by loading it."))
+
             success,json_string = coolprop_csv(alternative_comp)
             if success
                 data = JSON3.read(json_string)[1]
@@ -96,12 +113,22 @@ function SingleFluid(components;
         userlocations = String[],
         ancillaries = nothing,
         ancillaries_userlocations = String[],
-        xiang_deiters = false,
+        estimate_pure = false,
+        coolprop_userlocations = true,
         Rgas = nothing,
         verbose = false)
 
-    data = get_json_data(components;userlocations,verbose)
+
     components = [get_only_comp(components)]
+    data = try
+        get_json_data(components;userlocations,coolprop_userlocations,verbose)
+        catch e
+            !estimate_pure && rethrow(e)
+            nothing
+        end
+    if data === nothing && estimate pure
+        return XiangDeiters(components;userlocations,verbose = verbose)
+    end
     eos_data = first(data[:EOS])
     #properties
     properties = _parse_properties(data,Rgas,verbose)
@@ -116,7 +143,7 @@ function SingleFluid(components;
     else
         init_ancillaries = init_model(ancillaries,components,ancillaries_userlocations,verbose)
     end
-    
+
     references = [eos_data[:BibTeX_EOS]]
 
     return EmpiricSingleFluid(components,properties,init_ancillaries,ideal,residual,references)
@@ -125,9 +152,10 @@ end
 function IdealSingleFluid(components;
     userlocations = String[],
     Rgas = nothing,
-    verbose = false)
+    verbose = false,
+    coolprop_userlocations = true)
 
-    data = get_json_data(components;userlocations,verbose)
+    data = get_json_data(components;userlocations,coolprop_userlocations,verbose)
     components = [get_only_comp(components)]
     eos_data = first(data[:EOS])
     #properties
@@ -141,7 +169,7 @@ function IdealSingleFluid(components;
 end
 
 
-function _parse_properties(data,Rgas0 = nothing, barverbose = false)
+function _parse_properties(data,Rgas0 = nothing, verbose = false)
     info = data[:INFO]
     eos_data = first(data[:EOS])
     st_data = data[:STATES]
@@ -181,7 +209,7 @@ function _parse_properties(data,Rgas0 = nothing, barverbose = false)
     acentric_factor = tryparse_units(get(eos_data,:acentric,NaN),get(eos_data,:acentric_units,""))
 
     #TODO: in the future, maybe max_density could be in the files?
-    
+
     lb_volume = 1/tryparse_units(get(crit,:,NaN),get(crit,:rhomolar_max_units,""))
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
@@ -277,10 +305,10 @@ function _parse_ideal(id_data,verbose = false)
             alylee_data = id_data_i[:c]
             _Tc = id_data_i[:Tc]
             _T0 = id_data_i[:T0]
-        
-            @assert length(alylee_data) == 5 "aly-lee is defined with only 5 terms. add an additional ally lee term if you require more coefficients." 
+
+            @assert length(alylee_data) == 5 "aly-lee is defined with only 5 terms. add an additional ally lee term if you require more coefficients."
             A,B,C,D,E = alylee_data
-            
+
             if !iszero(A)
                 τ0 = _T0/_Tc
                 a1 += A*(1 - log(τ0))
@@ -318,7 +346,7 @@ function _parse_residual(res_data, verbose = false)
     d = Int[]
     l = Int[]
     g = Float64[]
-    
+
     #gaussian terms
     n_gauss = Float64[]
     t_gauss = Float64[]
@@ -351,7 +379,7 @@ function _parse_residual(res_data, verbose = false)
     #assoc terms
     assoc_epsilonbar = 0.0
     assoc_kappabar = 0.0
-    assoc_a = 0.0 
+    assoc_a = 0.0
     assoc_m = 0.0
     assoc_vbarn = 0.0
     assoc = false
@@ -421,16 +449,16 @@ function _parse_residual(res_data, verbose = false)
     _β = beta
     _γ = gamma
     _ε = epsilon
-    
+
     #gao_b term
     gao_b = GaoBTerm(n_gao,t_gao,d_gao,eta_gao,beta_gao,gamma_gao,epsilon_gao,b_gao)
 
     #non analytical term
     na = NonAnalyticTerm(NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
-    
+
     #assoc terms
     assoc = Associating2BTerm(assoc_epsilonbar,assoc_kappabar,assoc_a,assoc_m,assoc_vbarn)
-    
+
     #exponential term
 
    return EmpiricSingleFluidResidualParam(_n,_t,_d,_l,_g,_η,_β,_γ,_ε;gao_b,na,assoc)
@@ -456,7 +484,7 @@ function _parse_ancilliary_func(anc,input_key,output_key)
     "rhoVnoexp" => false,
     "rational" => false,
     )
-    
+
     input_r = anc[input_key] * 1.0
     output_r = anc[output_key] * 1.0
     n = Float64.(anc[:n])
@@ -483,7 +511,7 @@ export EmpiricSingleFluid
 function allxxx()
     _path = flattenfilepaths("Empiric/test",String[])
     res = String[]
-    
+
     for p in _path
         json_string = read(p, String)
         data = JSON3.read(json_string)

@@ -1,6 +1,7 @@
 
 include("structs.jl")
 
+const EmpiricAncillary = CompositeModel{PolExpVapour, PolExpVapour, Nothing, PolExpSat, Nothing}
 #term dispatch. function definitions are in term_functions.jl
 
 function a_term(term::NonAnalyticTerm,δ,τ,lnδ,lnτ,_0)
@@ -288,4 +289,5 @@ function crit_pure(model::EmpiricSingleFluid)
     return (Tc,Pc,Vc)
 end
 
+export EmpiricAncillary
 include("parser.jl")

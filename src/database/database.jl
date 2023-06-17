@@ -99,7 +99,8 @@ sp2,700,0.41
 ## CSV type detection and group type
 
 The second line of the csv is used for comments and to identify the type of CSV used. for example:
-```
+
+    ```
 x = \"\"\"Clapeyron Database File
        in memory like parameters
        species,a,b
@@ -109,6 +110,7 @@ x = \"\"\"Clapeyron Database File
 ```
 Will be parsed as a table with single parameter data. if you want more flexibility, you can instead pass the csvtype between brackets:
 
+```
 x = \"\"\"Clapeyron Database File
        i can write anything here, unlike, association [csvtype = like] but the csv type is already specified.
        species,a,b
@@ -133,6 +135,7 @@ UNIFAC{BasicIdeal} with 2 components:
 Group Type: PSRK
 Contains parameters: A, B, C, R, Q
 ```
+
 The models are the same (`UNIFAC`), but the group parametrizations are different. this is specified with the `grouptype` keyword. for example, if we see `UNIFAC_groups.csv`, it starts with:
 
 ```
@@ -147,6 +150,7 @@ butane,"[""CH3"" => 2, ""CH2"" => 2]"
 
 For compatibility reasons, if you pass a CSV without grouptype, it will be accepted, but two CSV with different specified group types cannot be merged:
 
+```
 x1 = \"\"\"Clapeyron Database File
        paramterization 1 [csvtype = like,grouptype = param1]
        species,a,b
@@ -160,7 +164,9 @@ x2 = \"\"\"Clapeyron Database File
        sp2,616,0.432
        \"\"\"
 ```
+
 If we pass the same parameters, with different group types, the parser will fail
+
 ```julia-repl
 julia> Clapeyron.getparams(["sp1","sp2"],userlocations = [x1,x2])
 ERROR: cannot join two databases with different group types:

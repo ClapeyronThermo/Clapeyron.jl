@@ -29,19 +29,28 @@ end
 
 Rgas(model::EmpiricMultiFluid) = model.Rgas
 
-function EmpiricMultiFluid(components;
-    userlocations = String[],
+function MultiFluid(components;
+    pure_userlocations = String[],
     mixing = AsymmetricMixing,
     departure = EmpiricDeparture, #TODO: change
     mixing_userlocations = String[],
     departure_userlocations = String[],
-    estimate_pures = false,
+    estimate_pure = false,
     estimate_mixture = false,
+    coolprop_userlocations = true,
     Rgas = nothing,
     verbose = false,
     )
     
-    pures = [SingleFluid(comp;userlocations = userlocations,verbose = verbose, xiang_deiters = estimate_pures, Rgas = Rgas) for comp in components]
+    pures = [
+        SingleFluid(comp;
+        userlocations = pure_userlocations,
+        verbose = verbose, 
+        estimate_pure = estimate_pure, 
+        Rgas = Rgas,
+        coolprop_userlocations = coolprop_userlocations,
+        ) 
+        for comp in components]
     mixing = init_model(mixing,components,mixing_userlocations,verbose)
     departure = init_model(departure,components,departure_userlocations,verbose)
     
@@ -186,3 +195,5 @@ function wilson_k_values(model::EmpiricMultiFluid,p,T,crit = nothing)
     end
     return K0
 end
+
+export MultiFluid
