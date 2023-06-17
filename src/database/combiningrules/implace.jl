@@ -97,10 +97,12 @@ function mirror_pair!(p::AbstractMatrix,missing_matrix::AbstractMatrix{Bool},f)
     s1,s2 = size(p)
     for i in 1:s2
         for j in 1:s1
-            if missing_matrix[i,j]
-                pji = f(p[i,j])
-                p[i,j] = pji
-                missing_matrix[j,i] = false
+            if !missing_matrix[i,j]
+                if missing_matrix[j,i]
+                    pji = f(p[i,j])
+                    p[j,i] = pji
+                    missing_matrix[j,i] = false
+                end
             end
         end
     end

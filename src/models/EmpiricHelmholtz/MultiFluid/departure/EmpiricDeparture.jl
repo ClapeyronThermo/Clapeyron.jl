@@ -31,9 +31,10 @@ function EmpiricDeparture(components;userlocations = String[],verbose = false)
     params = getparams(components,["Empiric/departure/Empiric_departure_unlike.csv"],asymmetricparams = ["F","parameters"],userlocations = userlocations,verbose = verbose)
     raw_parameters = params["parameters"]
     F = params["F"]
-
     s1,s2 = size(F.values)
-    parsed_parameters = SparseMatrixCSC{EmpiricDepartureValues,Int}(undef, s1, s2)
+    𝕊 = sparse((!).(raw_parameters.ismissingvalues))
+    dropzeros!(𝕊)
+    parsed_parameters = SparseMatrixCSC{EmpiricDepartureValues,Int}(𝕊.m, 𝕊.n, 𝕊.colptr, 𝕊.rowval, similar(𝕊.nzval,EmpiricDepartureValues))
     #parse JSON string to create EmpiricDepartureValues
     for i in 1:s1
         for j in 1:s2
@@ -42,7 +43,7 @@ function EmpiricDeparture(components;userlocations = String[],verbose = false)
                 if !iszero(Fij)
                     parsed_parameters[i,j] = _parse_departure(raw_parameters[i,j],Fij,verbose)
                 else
-                    raw_parameters.ismissingvalues[i,j] = true
+                    #raw_parameters.ismissingvalues[i,j] = true
                 end
             end
         end

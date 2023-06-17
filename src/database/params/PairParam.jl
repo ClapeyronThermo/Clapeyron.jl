@@ -140,8 +140,8 @@ function PairParam(
         sources::Vector{String} = String[]
     )
     values = fill(0.0, length(components), length(components))
-    missingvals = fill(false, size(values))
-    return PairParam(name, components, values, missingvals, String[], sources)
+    missingvals = fill(true, size(values))
+    return PairParameter(name, components, values, missingvals, String[], sources)
 end
 
 function PairParam(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources)
@@ -156,7 +156,7 @@ function PairParam(x::PairParam, name::String = x.name; isdeepcopy = true, sourc
             sources
         )
     end
-    return PairParam(
+    return PairParameter(
         name,
         x.components,
         x.values,

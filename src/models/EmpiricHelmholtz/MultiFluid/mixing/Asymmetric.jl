@@ -27,9 +27,9 @@ end
 
 function v_scale(model::EmpiricMultiFluid,z,mixing::AsymmetricMixing,∑z)
     vc = model.params.Vc.values
-    res = mixing_rule_asymetric(
+    res = mixing_rule_asymmetric(
         mix_mean3,
-        _gerg_asymetric_mix_rule,
+        _gerg_asymmetric_mix_rule,
         z,
         vc,
         mixing.params.gamma_v.values,
@@ -41,14 +41,46 @@ end
 function T_scale(model::EmpiricMultiFluid,z,mixing::AsymmetricMixing,∑z)
     Tc = model.params.Tc.values
     #isone(length(z)) && return only(Tc)
-    return mixing_rule_asymetric(
+    return mixing_rule_asymmetric(
         mix_geomean,
-        _gerg_asymetric_mix_rule,
+        _gerg_asymmetric_mix_rule,
         z,
         Tc,
         mixing.params.gamma_T.values,
         mixing.params.beta_T.values,
     )/(∑z*∑z)
 end
+
+"""
+    mixing_rule_asymmetric(op, op_asym, x, p, A, A_asym)
+
+returns an efficient implementation of:
+` sum(A[i,j] * x[i] * x[j] * op(p[i],p[j]) * op_asym(x[i],x[j],A_asym[i,j])) for i = 1:n , j = 1:n)`
+where `op(p[i],p[j]) == op(p[j],p[i])` , op_asym doesn't follow this symmetry.
+
+""" 
+function mixing_rule_asymmetric(op, op_asym, x, p, A, A_asym)
+    N = length(x)
+    checkbounds(A, N, N)
+    checkbounds(A_asym, N, N)
+    @boundscheck checkbounds(p, N)
+    @inbounds begin
+        res1 = zero(eltype(x))
+        for i = 1:N
+            xi = x[i]
+            xi != 0 && begin
+                p_i = p[i]
+                res1 += p_i * xi^2
+                for j = 1:i - 1
+                    res1 += 2*xi*x[j]*op(p_i, p[j])*A[i, j]*op_asym(xi, x[j], A_asym[i, j])
+                end
+            end
+        end
+    end
+    
+    return res1
+end
+
+_gerg_asymmetric_mix_rule(xi, xj, b) = b * (xi + xj) / (xi * b^2 + xj)
 
 export AsymmetricMixing
