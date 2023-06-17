@@ -121,8 +121,7 @@ function eos(model::EmpiricMultiFluid,V,T,z)
     δ = reduced_delta(model,V,T,z,∑z)
     τ = reduced_tau(model,V,T,z,∑z)
     aᵣ = multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
-    R = Rgas(model)
-    return ∑z*R*T*(a₀+aᵣ)
+    return ∑z*@R̄()*T*(a₀+aᵣ)
 end
 
 function eos_res(model::EmpiricMultiFluid,V,T,z)

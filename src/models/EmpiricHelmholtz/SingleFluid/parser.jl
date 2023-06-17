@@ -74,20 +74,17 @@ function get_json_data(components;
     component = get_only_comp(components)
     if first(component) != '{' #not json
         _paths = flattenfilepaths(["Empiric"],userlocations)
+        
         norm_comp1 = normalisestring(component)
-
-
-        alternative_comp = get(JSON_ALTERNATIVE_NAMES,norm_comp1,norm_comp1)
-
-        normalized_comp = normalisestring(alternative_comp)
-        f0 = x -> normalisestring(last(splitdir(first(splitext(x))))) == normalized_comp
+        f0 = x -> normalisestring(last(splitdir(first(splitext(x))))) == norm_comp1
 
         found_paths = filter(f0,_paths)
         if iszero(length(found_paths))
             #try to extract from coolprop.
             !coolprop_userlocations && throw(error("cannot found component file $(component)."))
             !is_coolprop_loaded() && throw(error("cannot found component file $(component). Try loading the CoolProp library by loading it."))
-
+            
+            alternative_comp = get(JSON_ALTERNATIVE_NAMES,norm_comp1,norm_comp1)
             success,json_string = coolprop_csv(alternative_comp)
             if success
                 data = JSON3.read(json_string)[1]

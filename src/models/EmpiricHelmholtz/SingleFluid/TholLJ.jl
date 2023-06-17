@@ -37,7 +37,7 @@ function TholLJ()
     γ = [0.71, 0.86, 1.94, 1.48, 1.49, 1.945, 3.02, 1.11, 1.17, 1.33, 0.24]
     ε = [0.2053, 0.409, 0.6, 1.203, 1.829, 1.397, 1.39, 0.539, 0.934, 2.369, 2.43]
 
-    residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε)
+    residual = EmpiricSingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε)
 
 
     anc_gas_fn = GenericAncEvaluator([-0.69655e+1,-0.10331e+3,-0.20325e+1,-0.44481e+2,-0.18463e+2,-0.26070e+3],[1.320 ,19.24,0.360,8.780,4.040,41.60],T_c,rho_c,:exp,false)

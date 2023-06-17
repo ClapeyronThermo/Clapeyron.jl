@@ -115,7 +115,7 @@ The caveat is that `model` has to exist in the local namespace.
 """
 macro R̄()
     return quote
-        1:Rgas(model)
+        Rgas(model)
     end |> esc
 end
 

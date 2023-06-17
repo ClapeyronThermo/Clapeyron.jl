@@ -146,7 +146,7 @@ function reduced_a_res(model::MultiFluidModel,δ,τ,z)
         t_exp = view(tᵢ,k2)
         d_exp = view(dᵢ,k2)
         c_exp = view(cᵢ,kexp)
-        ai += term_ar_exp(δ,τ,lnδ,lnτ,_0,n_exp,t_exp,d_exp,c_exp)
+        ai += term_ar_exp(δ,τ,lnδ,lnτ,_0,n_exp,t_exp,d_exp,c_exp,FillArrays.Ones(k2))
  
         res += z[i]*ai 
     end

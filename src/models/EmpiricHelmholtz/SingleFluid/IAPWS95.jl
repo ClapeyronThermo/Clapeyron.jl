@@ -106,7 +106,7 @@ function IAPWS95()
     NA_beta = [0.3,0.3]
     NA_n = [-0.14874640856724,0.31806110878444]
     na_term = NonAnalyticTerm(NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
-    residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε,na = na_term)
+    residual = EmpiricSingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε,na = na_term)
 
     ancillary_gas = GenericAncEvaluator([0.9791749335365787, -2.6190679042770215, -3.9166443712365235, -20.313306821636637, 16.497589490043744, -125.36580458432083],[0.21, 0.262, 0.701, 3.909, 4.076, 17.459],T_c,rho_c,:exp,true) |> PolExpVapour
     ancillary_liquid = GenericAncEvaluator([0.8157021355019343, 2.0434712177006693, -78.58278372496308, 1026.4273940070307, -2290.5642779377695, 8420.141408210317],[0.276, 0.455, 7.127, 9.846, 11.707, 17.805],T_c,rho_c,:noexp,false) |> PolExpLiquid

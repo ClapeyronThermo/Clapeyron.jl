@@ -70,7 +70,7 @@ function Ammonia2023()
 
     gao_b_term = GaoBTerm(gaob_n,gaob_t,gaob_d,gaob_eta,gaob_beta,gaob_gamma,gaob_epsilon,gaob_b)
 
-    residual = EmpiricSingleFluidResidualParam(n,t,d,l,η,β,γ,ε,gao_b = gao_b_term)
+    residual = EmpiricSingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε,gao_b = gao_b_term)
 
     ancillary_gas = GenericAncEvaluator([-0.089966,-3.8722,-8.1183,-25.293,-54.279,-400.83],[0.112,0.473,1.5,3.875,8.0,20.0],T_c,rho_c,:exp,false) |> PolExpVapour
     ancillary_liquid = GenericAncEvaluator([0.051236,3.7925,-3.5929,4.6409,-1.9893,1.5978],[0.07,0.46,0.77,1.05,1.25,8.0],T_c,rho_c,:noexp,false) |> PolExpLiquid
