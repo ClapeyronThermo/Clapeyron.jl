@@ -60,13 +60,15 @@ function MultiFluid(components;
         R1 = first(Rgases)
         for Ri in Rgases
             if Ri != R1
-                throw(error("unequal Rgas defined."))
+                @warn "unequal Rgas defined. defaulting to R = $(R̄). pass kwarg Rgas to set the value."
+                R1 = R̄
+                break
             end
         end
         Rgas = R1
     else
         for i in eachindex(pures)
-            pures[i] = __set_Rgas(pure[i],Rgas)
+            pures[i] = __set_Rgas(pures[i],Rgas)
         end
     end
 

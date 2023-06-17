@@ -64,7 +64,7 @@ function multiparameter_a_res(model::EmpiricMultiFluid,V,T,z,departure::EmpiricD
     rows = rowvals(ℙ)
     isone(length(z)) && return aᵣ
     iszero(nnz(ℙ)) && return aᵣ
-
+    Δa = zero(aᵣ)
     @inbounds for j ∈ @comps
         zⱼ = z[j]
         for ii ∈ nzrange(ℙ, j)
@@ -81,7 +81,7 @@ function multiparameter_a_res(model::EmpiricMultiFluid,V,T,z,departure::EmpiricD
             n_pol = view(n,k_pol)
             t_pol = view(t,k_pol)
             d_pol = view(d,k_pol)
-            αᵣ += term_ar_pol(δ,τ,lnδ,lnτ,αᵣ,n_pol,t_pol,d_pol)
+            Δa += term_ar_pol(δ,τ,lnδ,lnτ,αᵣ,n_pol,t_pol,d_pol)
 
             #Exponential terms.
             if length(k_exp) != 0
@@ -89,7 +89,7 @@ function multiparameter_a_res(model::EmpiricMultiFluid,V,T,z,departure::EmpiricD
                 n_exp = view(n,k_exp)
                 t_exp = view(t,k_exp)
                 d_exp = view(d,k_exp)
-                αᵣ += term_ar_exp(δ,τ,lnδ,lnτ,αᵣ,n_exp,t_exp,d_exp,l,g)
+                Δa += term_ar_exp(δ,τ,lnδ,lnτ,αᵣ,n_exp,t_exp,d_exp,l,g)
             end
 
             #Gaussian bell-shaped terms
@@ -99,13 +99,13 @@ function multiparameter_a_res(model::EmpiricMultiFluid,V,T,z,departure::EmpiricD
                 n_gauss = view(n,k_gauss)
                 t_gauss = view(t,k_gauss)
                 d_gauss = view(d,k_gauss)
-                αᵣ += term_ar_gauss(δ,τ,lnδ,lnτ,αᵣ,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
+                Δa += term_ar_gauss(δ,τ,lnδ,lnτ,αᵣ,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
             end
             
-            aᵣ +=z[i]*zⱼ*Fᵢⱼ*aij
+            Δa +=z[i]*zⱼ*Fᵢⱼ*aij
         end
      end
-    return aᵣ
+    return aᵣ + Δa/(∑z*∑z)
 end
 
 function _parse_departure(json_string::String,Fij::Float64,verbose = false)

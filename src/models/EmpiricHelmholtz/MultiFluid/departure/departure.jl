@@ -11,7 +11,7 @@ function multiparameter_a_res0(model,V,T,z,δ,τ,lnδ = log(δ),lnτ = log(τ),�
     return aᵣ/∑z
 end
 
-recombine_departure!(model::EmpiricMultiFluid,mixing) = nothing
+recombine_departure!(model::EmpiricMultiFluid,mixing::MultiFluidDepartureModel) = nothing
 
 include("GEDeparture.jl")
 include("EmpiricDeparture.jl")

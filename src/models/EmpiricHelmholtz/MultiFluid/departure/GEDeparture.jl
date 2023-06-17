@@ -9,14 +9,18 @@ struct GEDeparture{𝔸} <: MultiFluidDepartureModel
     references::Vector{String}
 end
 
-function GEDeparture(f::F) where F <: Union{Function,ActivityModel}
+function GEDeparture_constructor(f)
     function departure(components;userlocations = String[],verbose = false)
         return GEDeparture(components;activity = f,userlocations = userlocations,verbose = verbose)
     end
     return departure
 end
 
-function GEDeparture(components; activity = Wilson, userlocations=String[], verbose::Bool=false)
+GEDeparture(f::Function) = GEDeparture_constructor(f)
+GEDeparture(f::ActivityModel) = GEDeparture_constructor(f)
+GEDeparture(f::Type{T}) where T <:ActivityModel = GEDeparture_constructor(T)
+
+function GEDeparture(components::AbstractVector; activity = UNIFAC, userlocations=String[], verbose::Bool=false)
     init_activity = init_model(activity,components,userlocations,verbose)
     comps = init_activity.components
     vref = SingleParam("reference volume",comps)
@@ -25,7 +29,7 @@ function GEDeparture(components; activity = Wilson, userlocations=String[], verb
     return GEDeparture(comps,pkgparams,init_activity,references)
 end
 
-function multiparameter_a_res(model,V,T,z,departure::GEDeparture,δ,τ,∑z = sum(z)) 
+function multiparameter_a_res(model,V,T,z,departure::GEDeparture,δ,τ,∑z = sum(z))
     lnδ = log(δ)
     lnτ = log(τ)
     ∑z⁻¹ = 1/∑z
@@ -63,3 +67,20 @@ function lb_volume(model::EmpiricMultiFluid{A,M,GEDeparture},z = SA[1.0]) where 
     v̄ref = dot(z,vref)/sum(z)
     return 0.8547008547008548*v̄ref
 end
+
+function recombine_departure!(model::EmpiricMultiFluid,dep::GEDeparture)
+    m = model.pures
+    for i in 1:length(m)
+        mi = m[i]
+        p_atm = 101325.0
+        pref = p_atm
+        p_triple = mi.properties.ptp
+        if p_triple > p_atm
+            pref = p_triple + 100.0
+        end
+        sat = saturation_temperature(mi,pref)
+        dep.params.vref[i] = sat[2]
+    end
+end
+
+export GEDeparture

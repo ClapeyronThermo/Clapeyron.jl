@@ -19,9 +19,10 @@ function AsymmetricMixing(components;userlocations = String[],verbose = false)
     return AsymmetricMixing(pkgparams,verbose = verbose)
 end
 
-function calculate_missing_mixing!(params,mixing::AsymmetricMixing)
-    Vc = params.Vc.values
-    Tc = params.Tc.values
+function recombine_mixing!(model::EmpiricMultiFluid,mixing::AsymmetricMixing)
+    Vc = model.params.Vc.values
+    Tc = model.params.Tc.values
+    nothing
     #TODO
 end
 

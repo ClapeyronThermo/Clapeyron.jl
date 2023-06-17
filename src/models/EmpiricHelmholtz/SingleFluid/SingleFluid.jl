@@ -190,6 +190,10 @@ function __get_k_alpha0(model)
     end
 end
 
+function __set_Rgas(pure,Rgas)
+    Roots.Setfield.@set pure.properties.Rgas = Rgas
+end
+
 function a_ideal(model::IdealEmpiricSingleFluid,V,T,z=SA[1.],k = __get_k_alpha0(model))
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
