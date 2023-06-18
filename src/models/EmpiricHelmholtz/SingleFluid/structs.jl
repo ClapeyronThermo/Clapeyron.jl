@@ -163,7 +163,7 @@ function _calc_iterators!(param)
     eta,beta,gamma,epsilon = param.eta,param.beta,param.gamma,param.epsilon
 
     @assert length(n) == length(t) == length(d)
-    @assert length(l) < length(d)
+    @assert length(l) <= length(d)
     @assert length(g) == length(l)
     @assert length(eta) == length(beta) == length(gamma) == length(epsilon)
     #we start from the assoc term, backwards

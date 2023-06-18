@@ -20,6 +20,10 @@ struct EmpiricDepartureValues
     end
 end
 
+Base.zero(x::EmpiricDepartureValues) = zero(typeof(x))
+Base.zero(::Type{EmpiricDepartureValues}) = EmpiricDepartureValues(0.,Float64[],Float64[],Int[],Int[])
+
+Base.show(io::IO,x::EmpiricDepartureValues) = show(io,x.epsilon)
 struct EmpiricDepartureParam <: EoSParam
     F::PairParam{Float64}
     parameters::PairParameter{EmpiricDepartureValues, SparseArrays.SparseMatrixCSC{EmpiricDepartureValues, Int64}}
@@ -70,7 +74,8 @@ function multiparameter_a_res(model::EmpiricMultiFluid,V,T,z,departure::EmpiricD
         for ii ∈ nzrange(ℙ, j)
             i = rows[ii]
             ℙᵢⱼ = ℙ_nonzeros[ii]
-            k_pol,k_exp,k_gauss = ℙ.iterators 
+            Δaᵢⱼ = zero(Δa)
+            k_pol,k_exp,k_gauss = ℙᵢⱼ.iterators 
             Fᵢⱼ = ℙᵢⱼ.F
             n,t,d = ℙᵢⱼ.n,ℙᵢⱼ.t,ℙᵢⱼ.d
             #strategy for storing.
@@ -81,28 +86,25 @@ function multiparameter_a_res(model::EmpiricMultiFluid,V,T,z,departure::EmpiricD
             n_pol = view(n,k_pol)
             t_pol = view(t,k_pol)
             d_pol = view(d,k_pol)
-            Δa += term_ar_pol(δ,τ,lnδ,lnτ,αᵣ,n_pol,t_pol,d_pol)
-
+            Δaᵢⱼ += term_ar_pol(δ,τ,lnδ,lnτ,Δaᵢⱼ,n_pol,t_pol,d_pol)
             #Exponential terms.
             if length(k_exp) != 0
                 l,g = ℙᵢⱼ.l,ℙᵢⱼ.g
                 n_exp = view(n,k_exp)
                 t_exp = view(t,k_exp)
                 d_exp = view(d,k_exp)
-                Δa += term_ar_exp(δ,τ,lnδ,lnτ,αᵣ,n_exp,t_exp,d_exp,l,g)
+                Δaᵢⱼ += term_ar_exp(δ,τ,lnδ,lnτ,Δaᵢⱼ,n_exp,t_exp,d_exp,l,g)
             end
 
             #Gaussian bell-shaped terms
-            
             if length(k_gauss) != 0
                 η,β,γ,ε = ℙᵢⱼ.eta,ℙᵢⱼ.beta,ℙᵢⱼ.gamma,ℙᵢⱼ.epsilon
                 n_gauss = view(n,k_gauss)
                 t_gauss = view(t,k_gauss)
                 d_gauss = view(d,k_gauss)
-                Δa += term_ar_gauss(δ,τ,lnδ,lnτ,αᵣ,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
+                Δaᵢⱼ += term_ar_gauss(δ,τ,lnδ,lnτ,Δaᵢⱼ,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
             end
-            
-            Δa +=z[i]*zⱼ*Fᵢⱼ*aij
+            Δa +=z[i]*zⱼ*Fᵢⱼ*Δaᵢⱼ
         end
      end
     return aᵣ + Δa/(∑z*∑z)
@@ -174,9 +176,9 @@ function _parse_departure(json_string::String,Fij::Float64,verbose = false)
                     ξ = ν/(2*ηij)
                     ξg = ξ |> Float64
                     ni_new = ng[i]*exp(ω + ηij*ξ*ξ) |> Float64
-                    push!(n,ni_new)
-                    push!(t,tg[i])
-                    push!(d,dg[i])
+                    push!(n_gauss,ni_new)
+                    push!(t_gauss,tg[i])
+                    push!(d_gauss,dg[i])
                     push!(eta,ηg[i])
                     push!(beta,0)
                     push!(gamma,0)

@@ -207,7 +207,8 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
 
     #TODO: in the future, maybe max_density could be in the files?
 
-    lb_volume = 1/tryparse_units(get(crit,:,NaN),get(crit,:rhomolar_max_units,""))
+    lb_volume = 1/tryparse_units(get(crit,:rhomolar_max,NaN),get(crit,:rhomolar_max_units,""))
+    isnan(lb_volume) && (lb_volume = 1/tryparse_units(get(eos_data,:rhomolar_max,NaN),get(eos_data,:rhomolar_max_units,"")))
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
     return EmpiricSingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
