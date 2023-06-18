@@ -20,10 +20,20 @@ struct EmpiricDepartureValues
     end
 end
 
+#for showing in SparseMatrix context.
 Base.zero(x::EmpiricDepartureValues) = zero(typeof(x))
 Base.zero(::Type{EmpiricDepartureValues}) = EmpiricDepartureValues(0.,Float64[],Float64[],Int[],Int[])
 
-Base.show(io::IO,x::EmpiricDepartureValues) = show(io,x.epsilon)
+function Base.show(io::IO,x::EmpiricDepartureValues)
+    print(io,"aij(")
+    k_pol,k_exp,k_gauss = x.iterators
+    l_pol,l_exp,l_gauss = length(k_pol),length(k_exp),length(k_gauss)
+    l_pol != 0 && print(io,"pol=$l_pol")
+    l_exp != 0 && print(io,"exp=$l_exp")
+    l_gauss != 0 && print(io,"gauss=$l_gauss")
+    print(io,")")
+end
+
 struct EmpiricDepartureParam <: EoSParam
     F::PairParam{Float64}
     parameters::PairParameter{EmpiricDepartureValues, SparseArrays.SparseMatrixCSC{EmpiricDepartureValues, Int64}}
