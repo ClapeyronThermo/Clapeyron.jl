@@ -106,6 +106,51 @@ function get_json_data(components;
     return data
 end
 
+"""
+    SingleFluid(components;
+            userlocations = String[],
+            ancillaries = nothing,
+            ancillaries_userlocations = String[],
+            estimate_pure = false,
+            coolprop_userlocations = true,
+            Rgas = nothing,
+            verbose = false)
+
+## Input parameters
+- JSON data (CoolProp and teqp format)
+
+## Input models
+- `ancillaries`: a model that provides initial guesses for saturation calculations. if `nothing`, then they will be parsed from the input JSON.
+
+## Description
+
+Instantiates a single-component Empiric EoS model. `Rgas` can be used to set the value of the gas constant that is used during property calculations.
+
+If `coolprop_userlocations` is true, then Clapeyron will try to look if the fluid is present in the CoolProp library.
+
+The properties, ideal and residual terms can be accessed via the `properties`, `ideal` and `residual` fields respectively:
+
+```julia-repl
+julia> model = SingleFluid("water")
+MultiParameter Equation of state for water:
+ Polynomial power terms: 7
+ Exponential terms: 44
+ Gaussian bell-shaped terms: 3
+ Non Analytic terms: 2
+
+julia> model.ideal
+Ideal MultiParameter coefficients:
+ Lead terms: -8.3204464837497 + 6.6832105275932*τ + 3.00632*log(τ)
+ Plank-Einstein terms: 5
+
+julia> model.residual
+Residual MultiParameter coefficients:
+ Polynomial power terms: 7
+ Exponential terms: 44
+ Gaussian bell-shaped terms: 3
+ Non Analytic terms: 2
+```
+"""
 function SingleFluid(components;
         userlocations = String[],
         ancillaries = nothing,
@@ -131,8 +176,8 @@ function SingleFluid(components;
     properties = _parse_properties(data,Rgas,verbose)
     #ideal
     ideal = _parse_ideal(eos_data[:alpha0],verbose)
-    #residual
-    residual = _parse_residual(eos_data[:alphar],verbose)
+    #residual. it can also parse departures, that's why we pass SingleFluidResidualParam as an arg
+    residual = _parse_residual(SingleFluidResidualParam,eos_data[:alphar];verbose = verbose)
     #ancillaries
     if ancillaries === nothing
         init_ancillaries = _parse_ancillaries(data[:ANCILLARIES],verbose)
@@ -146,6 +191,41 @@ function SingleFluid(components;
     return SingleFluid(components,properties,init_ancillaries,ideal,residual,references)
 end
 
+
+"""
+    SingleFluidIdeal(components;
+        userlocations = String[],
+        Rgas = nothing,
+        verbose = false,
+        coolprop_userlocations = true)
+
+## Input parameters
+- JSON data (CoolProp and teqp format)
+
+## Input models
+- `ancillaries`: a model that provides initial guesses for saturation calculations. if `nothing`, then they will be parsed from the input JSON.
+
+## Description
+
+Instantiates the ideal part of a single-component Empiric EoS model. `Rgas` can be used to set the value of the gas constant that is used during property calculations.
+
+If `coolprop_userlocations` is true, then Clapeyron will try to look if the fluid is present in the CoolProp library.
+
+The properties and ideal terms can be accessed via the `properties` and `ideal` fields respectively:
+
+```julia-repl
+julia> model = SingleFluidIdeal("water")
+Ideal MultiParameter Equation of state for water:
+ Lead terms: -8.3204464837497 + 6.6832105275932*τ + 3.00632*log(τ)
+ Plank-Einstein terms: 5
+
+julia> model.ideal
+Ideal MultiParameter coefficients:
+ Lead terms: -8.3204464837497 + 6.6832105275932*τ + 3.00632*log(τ)
+ Plank-Einstein terms: 5
+```
+
+"""
 function SingleFluidIdeal(components;
     userlocations = String[],
     Rgas = nothing,
@@ -164,7 +244,6 @@ function SingleFluidIdeal(components;
 
     return SingleFluidIdeal(components,properties,ideal,references)
 end
-
 
 function _parse_properties(data,Rgas0 = nothing, verbose = false)
     info = data[:INFO]
@@ -337,7 +416,7 @@ function _parse_ideal(id_data,verbose = false)
 
 end
 
-function _parse_residual(res_data, verbose = false)
+function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
     #polynomial y exp terms, we will separate those later
     n = Float64[]
     t = Float64[]
@@ -354,6 +433,7 @@ function _parse_residual(res_data, verbose = false)
     gamma = Float64[]
     epsilon = Float64[]
 
+    
     #gao association terms
     n_gao = Float64[]
     t_gao = Float64[]
@@ -367,7 +447,7 @@ function _parse_residual(res_data, verbose = false)
     #non-analytic terms for IAPWS95
     NA_A = Float64[]
     NA_B = Float64[]
-    NA_C = Int[]
+    NA_C = Float64[]
     NA_D = Float64[]
     NA_a = Float64[]
     NA_b = Float64[]
@@ -381,6 +461,9 @@ function _parse_residual(res_data, verbose = false)
     assoc_m = 0.0
     assoc_vbarn = 0.0
     assoc = false
+    
+
+    full = (out === SingleFluidResidualParam)
 
     for res_data_i in res_data
         if res_data_i[:type] == "ResidualHelmholtzPower"
@@ -397,7 +480,7 @@ function _parse_residual(res_data, verbose = false)
             append!(beta,res_data_i[:beta])
             append!(gamma,res_data_i[:gamma])
             append!(epsilon,res_data_i[:epsilon])
-        elseif res_data_i[:type] == "ResidualHelmholtzGaoB"
+        elseif res_data_i[:type] == "ResidualHelmholtzGaoB" && full
             append!(n_gao,res_data_i[:n])
             append!(t_gao,res_data_i[:t])
             append!(d_gao,res_data_i[:d])
@@ -406,7 +489,7 @@ function _parse_residual(res_data, verbose = false)
             append!(gamma_gao,res_data_i[:gamma])
             append!(epsilon_gao,res_data_i[:epsilon])
             append!(b_gao,res_data_i[:b])
-        elseif res_data_i[:type] == "ResidualHelmholtzNonAnalytic"
+        elseif res_data_i[:type] == "ResidualHelmholtzNonAnalytic" && full
             append!(NA_A,res_data_i[:A])
             append!(NA_B,res_data_i[:B])
             append!(NA_C,res_data_i[:C])
@@ -421,7 +504,7 @@ function _parse_residual(res_data, verbose = false)
             append!(d,res_data_i[:d])
             append!(l,res_data_i[:l])
             append!(g,res_data_i[:g])
-        elseif res_data_i[:type] == "ResidualHelmholtzAssociating"
+        elseif res_data_i[:type] == "ResidualHelmholtzAssociating"  && full
             if assoc == true
                 throw(error("Residual: $(res_data_i[:type]) we only support one Associating term."))
             end
@@ -431,11 +514,49 @@ function _parse_residual(res_data, verbose = false)
             assoc_a += res_data_i[:a]
             assoc_m += res_data_i[:m]
             assoc_vbarn += res_data_i[:vbarn]
+        elseif res_data_i[:type] == "ResidualHelmholtzGERG2008"
+            #we do the conversion, as detailed in the EOS-LNG paper
+            ng = res_data_i[:n]
+            tg = res_data_i[:t]
+            dg = res_data_i[:d]
+            ηg = res_data_i[:eta]
+            βg = res_data_i[:beta]
+            γg = res_data_i[:gamma]
+            εg = res_data_i[:epsilon]
+            len = length(ηg)
+            for i in 1:len
+                #convert to bigfloat precision, better parsing.
+                εij = big(εg[i])
+                ηij = big(ηg[i])
+                βij = big(βg[i])
+                γij = big(γg[i])
+                ω = βij*γij - ηij*εij*εij
+                if ηg[i] == 0 #simple exponential term
+                    ni_new = ng[i]*exp(ω) |> Float64
+                    push!(n,ni_new)
+                    push!(t,tg[i])
+                    push!(d,dg[i])
+                    push!(l,1)
+                    push!(g,βg[i])
+                else #convert to gaussian term
+                    ν = 2*ηij*εij - βij
+                    ξ = ν/(2*ηij)
+                    ξg = ξ |> Float64
+                    ni_new = ng[i]*exp(ω + ηij*ξ*ξ) |> Float64
+                    push!(n_gauss,ni_new)
+                    push!(t_gauss,tg[i])
+                    push!(d_gauss,dg[i])
+                    push!(eta,ηg[i])
+                    push!(beta,0)
+                    push!(gamma,0)
+                    push!(epsilon,ξg)
+                end
+            end
         else
-            throw(error("Residual: $(res_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
+            paramtype = full ?  "Residual" : "Departure"
+            throw(error("$paramtype: $(res_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
         end
     end
-
     pol_vals = findall(iszero,l)
     exp_vals = findall(!iszero,l)
     _n = vcat(n[pol_vals],n[exp_vals],n_gauss)
@@ -448,6 +569,10 @@ function _parse_residual(res_data, verbose = false)
     _γ = gamma
     _ε = epsilon
 
+    if !full
+        return out(Fij,_n,_t,_d,_l,_g,_η,_β,_γ,_ε)
+    end
+    
     #gao_b term
     gao_b = GaoBTerm(n_gao,t_gao,d_gao,eta_gao,beta_gao,gamma_gao,epsilon_gao,b_gao)
 
@@ -504,69 +629,5 @@ function _parse_ancillaries(anc_data,verbose = false)
     rhol_anc = PolExpVapour(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
     return CompositeModel(["ancillaries"],gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
 end
-export SingleFluid
 
-function allxxx()
-    _path = flattenfilepaths("Empiric/test",String[])
-    res = String[]
-
-    for p in _path
-        json_string = read(p, String)
-        data = JSON3.read(json_string)
-        a0data = data[:ANCILLARIES]
-        if haskey(a0data,:pS)
-            !a0data[:pS][:using_tau_r] && println(data[:INFO][:NAME])
-            push!(res,a0data[:pS][:type])
-        else
-            #pV: "p'' = pc*exp(Tc/T*sum(n_i*theta^t_i))"
-            #
-        end
-        #for a0 in a0data
-        #    a0type = a0[:type]
-        #    #a0type == "ResidualHelmholtzNonAnalytic" && println(data[:INFO][:NAME])
-        #    push!(res,a0[:type])
-        #end
-    end
-    return unique!(res)
-end
-
-#=
-
-all ideal types
-
- `IdealGasHelmholtzLead` done
- `IdealGasHelmholtzLogTau` done
- `IdealGasHelmholtzPlanckEinstein` done
- `IdealGasHelmholtzEnthalpyEntropyOffset` done, same as Lead
- `IdealGasHelmholtzPower` done
- `IdealGasHelmholtzPlanckEinsteinGeneralized` done
- `IdealGasHelmholtzCP0PolyT` done
- `IdealGasHelmholtzCP0AlyLee` done, needed for GERG2008, but instead our own type is used.
- `IdealGasHelmholtzCP0Constant` done
-
-all residual types
-
- `ResidualHelmholtzPower` done
- `ResidualHelmholtzGaussian` done
- `ResidualHelmholtzGaoB` done
- `ResidualHelmholtzNonAnalytic` done, only water have it, maybe optimize the heck out of it?
- `ResidualHelmholtzExponential` not done: (Fluorine,Propyne,R114,R13,R14,R21,RC318)
- `ResidualHelmholtzAssociating` not done, only methanol have it
- `ResidualHelmholtzLemmon2005` mpt done, only R125 have it
-=#
-
-#=
-AlyLee parser:
-
-[A,B,C,D,E]
-
-push!(n_gpe,B)
-push!(t_gpe,-2*C/Tc)
-push!(c_gpe,1)
-push!(d_gpe,-1)
-
-push!(n_gpe,-D)
-push!(t_gpe,-2*E/Tc)
-push!(c_gpe,1)
-push!(d_gpe,1)
-=#
+export SingleFluid, SingleFluidIdeal

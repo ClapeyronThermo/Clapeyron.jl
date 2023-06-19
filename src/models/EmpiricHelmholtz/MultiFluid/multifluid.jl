@@ -29,14 +29,41 @@ end
 
 Rgas(model::MultiFluid) = model.Rgas
 
+"""
+    MultiFluid(components;
+        pure_userlocations = String[],
+        mixing = AsymmetricMixing,
+        departure = EmpiricDeparture,
+        mixing_userlocations = String[],
+        departure_userlocations = String[],
+        estimate_pure = false,
+        coolprop_userlocations = true,
+        Rgas = R̄,
+        verbose = false,
+        )
+## Input parameters
+- JSON data (CoolProp and teqp format)
+
+## Input models
+- `mixing`: mixing model for temperature and volume.
+- `departure`: departure model
+
+## Description
+
+Instantiates a multi-component Empiric EoS model. `Rgas` can be used to set the value of the gas constant that is used during property calculations.
+
+If `coolprop_userlocations` is true, then Clapeyron will try to look if the fluid is present in the CoolProp library.
+
+If `estimate_pure` is true, then, if a JSON is not found, the pure model will be estimated, using the `XiangDeiters` model
+
+"""
 function MultiFluid(components;
     pure_userlocations = String[],
     mixing = AsymmetricMixing,
-    departure = EmpiricDeparture, #TODO: change
+    departure = EmpiricDeparture,
     mixing_userlocations = String[],
     departure_userlocations = String[],
     estimate_pure = false,
-    estimate_mixture = false,
     coolprop_userlocations = true,
     Rgas = R̄,
     verbose = false,
@@ -77,7 +104,6 @@ function a_ideal(model::MultiFluid,V,T,z,∑z = sum(z))
     Tinv = 1/T
     Tc = model.params.Tc
     vc = model.params.Vc
-    Rinv = 1/Rgas(model)
     for i in 1:length(model)
         m₀ᵢ = m₀[i]
         a₀ᵢ = __get_k_alpha0(m₀ᵢ)*reduced_a_ideal(m₀ᵢ,Tc[i] * Tinv)

@@ -41,6 +41,34 @@ end
 
 @newmodelsimple EmpiricDeparture MultiFluidDepartureModel EmpiricDepartureParam
 
+"""
+GEDeparture <: MultiFluidDepartureModel
+    GEDeparture(components;
+    activity = UNIFAC,
+    userlocations=String[],
+    verbose=false)
+
+## Input parameters
+none
+- `F`: Pair Parameter (`Float64`) - binary interaction parameter (no units)
+- `parameters`: Pair Parameter (`String`) - JSON data containing the departure terms for the binary pair
+
+## Description
+
+Departure that uses empiric departure functions:
+
+```
+aᵣ = ∑xᵢaᵣᵢ(δ,τ) + Δa
+Δa = ∑xᵢxⱼFᵢⱼaᵣᵢⱼ(δ,τ)
+
+aᵣᵢⱼ = ∑nᵢⱼ₋ₖδ^(dᵢⱼ₋ₖ)*τ^(tᵢⱼ₋ₖ) + 
+    ∑nᵢⱼ₋ₖδ^(dᵢⱼ₋ₖ)τ^(tᵢⱼ₋ₖ)*exp(-gᵢⱼ₋ₖδ^lᵢⱼ₋ₖ) +
+    ∑nᵢⱼ₋ₖδ^(dᵢⱼ₋ₖ)τ^(tᵢⱼ₋ₖ)*exp(ηᵢⱼ₋ₖ(δ-εᵢⱼ₋ₖ)^2 + βᵢⱼ₋ₖ(τ-γᵢⱼ₋ₖ)^2)
+
+```
+
+
+"""
 function EmpiricDeparture(components;userlocations = String[],verbose = false)
     params = getparams(components,["Empiric/departure/empiric_departure_unlike.csv"],asymmetricparams = ["F","parameters"],userlocations = userlocations,verbose = verbose)
     raw_parameters = params["parameters"]
@@ -55,7 +83,7 @@ function EmpiricDeparture(components;userlocations = String[],verbose = false)
             if !raw_parameters.ismissingvalues[i,j]
                 Fij = F[i,j]
                 if !iszero(Fij)
-                    parsed_parameters[i,j] = _parse_departure(raw_parameters[i,j],Fij,verbose)
+                    parsed_parameters[i,j] = _parse_residual(EmpiricDepartureValues,raw_parameters[i,j];verbose,Fij)
                 else
                     #raw_parameters.ismissingvalues[i,j] = true
                 end
@@ -118,101 +146,6 @@ function multiparameter_a_res(model::MultiFluid,V,T,z,departure::EmpiricDepartur
         end
      end
     return aᵣ + Δa/(∑z*∑z)
-end
-
-function _parse_departure(json_string::String,Fij::Float64,verbose = false)
-    res_data = JSON3.read(json_string)
-    n = Float64[]
-    t = Float64[]
-    d = Int[]
-    l = Int[]
-    g = Float64[]
-    #gaussian terms
-    n_gauss = Float64[]
-    t_gauss = Float64[]
-    d_gauss = Int[]
-    eta = Float64[]
-    beta = Float64[]
-    gamma = Float64[]
-    epsilon = Float64[]
-
-    for res_data_i in res_data
-        if res_data_i[:type] == "ResidualHelmholtzPower"
-            append!(n,res_data_i[:n])
-            append!(t,res_data_i[:t])
-            append!(d,res_data_i[:d])
-            append!(l,res_data_i[:l])
-            append!(g,ones(length(res_data_i[:l])))
-        elseif res_data_i[:type] == "ResidualHelmholtzGaussian"
-            append!(n_gauss,res_data_i[:n])
-            append!(t_gauss,res_data_i[:t])
-            append!(d_gauss,res_data_i[:d])
-            append!(eta,res_data_i[:eta])
-            append!(beta,res_data_i[:beta])
-            append!(gamma,res_data_i[:gamma])
-            append!(epsilon,res_data_i[:epsilon])
-        elseif res_data_i[:type] == "ResidualHelmholtzExponential"
-            append!(n,res_data_i[:n])
-            append!(t,res_data_i[:t])
-            append!(d,res_data_i[:d])
-            append!(l,res_data_i[:l])
-            append!(g,res_data_i[:g])
-        elseif res_data_i[:type] == "ResidualHelmholtzGERG2008"
-            #we do the conversion, as detailed in the EOS-LNG paper
-            ng = res_data_i[:n]
-            tg = res_data_i[:t]
-            dg = res_data_i[:d]
-            ηg = res_data_i[:eta]
-            βg = res_data_i[:beta]
-            γg = res_data_i[:gamma]
-            εg = res_data_i[:epsilon]
-            len = length(ηg)
-            for i in 1:len
-                #convert to bigfloat precision, better parsing.
-                εij = big(εg[i])
-                ηij = big(ηg[i])
-                βij = big(βg[i])
-                γij = big(γg[i])
-                ω = βij*γij - ηij*εij*εij
-                if ηg[i] == 0 #simple exponential term
-                    ni_new = ng[i]*exp(ω) |> Float64
-                    push!(n,ni_new)
-                    push!(t,tg[i])
-                    push!(d,dg[i])
-                    push!(l,1)
-                    push!(g,βg[i])
-                else #convert to gaussian term
-                    ν = 2*ηij*εij - βij
-                    ξ = ν/(2*ηij)
-                    ξg = ξ |> Float64
-                    ni_new = ng[i]*exp(ω + ηij*ξ*ξ) |> Float64
-                    push!(n_gauss,ni_new)
-                    push!(t_gauss,tg[i])
-                    push!(d_gauss,dg[i])
-                    push!(eta,ηg[i])
-                    push!(beta,0)
-                    push!(gamma,0)
-                    push!(epsilon,ξg)
-                end
-            end
-        else
-            throw(error("Departure: $(res_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
-        end
-    end
-
-    pol_vals = findall(iszero,l)
-    exp_vals = findall(!iszero,l)
-    _n = vcat(n[pol_vals],n[exp_vals],n_gauss)
-    _t = vcat(t[pol_vals],t[exp_vals],t_gauss)
-    _d = vcat(d[pol_vals],d[exp_vals],d_gauss)
-    _l = l[exp_vals]
-    _g = g[exp_vals]
-    _η = eta
-    _β = beta
-    _γ = gamma
-    _ε = epsilon
-    
-   return EmpiricDepartureValues(Fij,_n,_t,_d,_l,_g,_η,_β,_γ,_ε)
 end
 
 export EmpiricDeparture
