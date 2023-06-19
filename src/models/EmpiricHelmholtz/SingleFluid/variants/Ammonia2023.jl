@@ -40,14 +40,14 @@ function Ammonia2023()
     Rgas = 8.314462618
     acentric_factor = NaN
 
-    properties = EmpiricSingleFluidProperties(Mw,T_c,rho_c,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+    properties = SingleFluidProperties(Mw,T_c,rho_c,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 
     a₁ = -6.59406093943886
     a₂ = 5.601011519879
     u = -[4.0585856593352405, 9.776605187888352, 17.829667620080876]
     v = [2.224,3.148,0.9579]
     c0 = 4.0 - 1
-    ideal = EmpiricSingleFluidIdealParam(a₁,a₂,c0,v,u)
+    ideal = SingleFluidIdealParam(a₁,a₂,c0,v,u)
 
     n = [0.006132232,1.7395866,-2.2261792,-0.30127553,0.08967023,-0.076387037,-0.84063963,-0.27026327,6.212578,-5.7844357,2.4817542,-2.3739168,0.01493697,-3.7749264,0.0006254348,
     -1.7359e-05,-0.13462033,0.07749072839]
@@ -70,7 +70,7 @@ function Ammonia2023()
 
     gao_b_term = GaoBTerm(gaob_n,gaob_t,gaob_d,gaob_eta,gaob_beta,gaob_gamma,gaob_epsilon,gaob_b)
 
-    residual = EmpiricSingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε,gao_b = gao_b_term)
+    residual = SingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε,gao_b = gao_b_term)
 
     ancillary_gas = GenericAncEvaluator([-0.089966,-3.8722,-8.1183,-25.293,-54.279,-400.83],[0.112,0.473,1.5,3.875,8.0,20.0],T_c,rho_c,:exp,false) |> PolExpVapour
     ancillary_liquid = GenericAncEvaluator([0.051236,3.7925,-3.5929,4.6409,-1.9893,1.5978],[0.07,0.46,0.77,1.05,1.25,8.0],T_c,rho_c,:noexp,false) |> PolExpLiquid
@@ -79,7 +79,7 @@ function Ammonia2023()
 
     references = ["10.1063/5.0128269"]
 
-    return EmpiricSingleFluid(components,properties,ancillaries,ideal,residual,references)
+    return SingleFluid(components,properties,ancillaries,ideal,residual,references)
 end
 
 export Ammonia2023

@@ -12,7 +12,7 @@ function TholLJ()
     Rgas = 1.0
     acentric_factor = NaN
 
-    properties = EmpiricSingleFluidProperties(Mw,T_c,rho_c,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+    properties = SingleFluidProperties(Mw,T_c,rho_c,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 
     a₁ = 6.262265814
     a₂ = -1.515151515
@@ -20,7 +20,7 @@ function TholLJ()
     v = Float64[]
     c0 = 2.5
 
-    ideal = EmpiricSingleFluidIdealParam(a₁,a₂,c0,v,u)
+    ideal = SingleFluidIdealParam(a₁,a₂,c0,v,u)
 
     n = [0.005208073, 2.186252, -2.161016, 1.4527, -2.041792,
         0.18695286, -0.090988445, -0.4974561, 0.10901431, -0.80055922,
@@ -37,7 +37,7 @@ function TholLJ()
     γ = [0.71, 0.86, 1.94, 1.48, 1.49, 1.945, 3.02, 1.11, 1.17, 1.33, 0.24]
     ε = [0.2053, 0.409, 0.6, 1.203, 1.829, 1.397, 1.39, 0.539, 0.934, 2.369, 2.43]
 
-    residual = EmpiricSingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε)
+    residual = SingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε)
 
 
     anc_gas_fn = GenericAncEvaluator([-0.69655e+1,-0.10331e+3,-0.20325e+1,-0.44481e+2,-0.18463e+2,-0.26070e+3],[1.320 ,19.24,0.360,8.780,4.040,41.60],T_c,rho_c,:exp,false)
@@ -51,7 +51,7 @@ function TholLJ()
 
     references = ["10.1063/1.4945000"]
 
-    return EmpiricSingleFluid(components,properties,ancillaries,ideal,residual,references)
+    return SingleFluid(components,properties,ancillaries,ideal,residual,references)
 end
 
 

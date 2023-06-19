@@ -1,4 +1,4 @@
-struct EmpiricSingleFluidIdealParam <:EoSParam
+struct SingleFluidIdealParam <:EoSParam
     a1::Float64
     a2::Float64
     c0::Float64
@@ -15,7 +15,7 @@ struct EmpiricSingleFluidIdealParam <:EoSParam
     v_gerg::Vector{Float64}
     R0::Float64
     
-    function EmpiricSingleFluidIdealParam(a1,a2,c0,n = Float64[],t = Float64[],c = fill(1.0,length(n)),d = fill(-1.0,length(n)),n_p = Float64[], t_p  = Float64[],n_gerg = Float64[],v_gerg = Float64[],R0 = 0.0)
+    function SingleFluidIdealParam(a1,a2,c0,n = Float64[],t = Float64[],c = fill(1.0,length(n)),d = fill(-1.0,length(n)),n_p = Float64[], t_p  = Float64[],n_gerg = Float64[],v_gerg = Float64[],R0 = 0.0)
         @assert length(n_gerg) == length(v_gerg)
         @assert length(n) == length(t) == length(c) == length(d)
         @assert length(n_p) == length(t_p)
@@ -79,7 +79,7 @@ end
 Associating2BTerm() = Associating2BTerm(0.0,0.0,0.0,0.0,0.0)
 
 #we store power, exponential and gaussian terms inline, because those are the most used.
-struct EmpiricSingleFluidResidualParam <: EoSParam
+struct SingleFluidResidualParam <: EoSParam
     iterators::Vector{UnitRange{Int}}
     n::Vector{Float64}
     t::Vector{Float64}
@@ -94,7 +94,7 @@ struct EmpiricSingleFluidResidualParam <: EoSParam
     na::NonAnalyticTerm
     assoc::Associating2BTerm
     
-    function EmpiricSingleFluidResidualParam(n,t,d,l = Int[],g = ones(length(l)),
+    function SingleFluidResidualParam(n,t,d,l = Int[],g = ones(length(l)),
         eta = Float64[],beta = Float64[],gamma = Float64[], epsilon = Float64[],
         ;gao_b = GaoBTerm(),
         na = NonAnalyticTerm(),
@@ -106,7 +106,7 @@ struct EmpiricSingleFluidResidualParam <: EoSParam
     end
 end
 
-function show_multiparameter_coeffs(io,param::EmpiricSingleFluidIdealParam)
+function show_multiparameter_coeffs(io,param::SingleFluidIdealParam)
     res = String[]
     push!(res,"Lead terms: $(param.a1) + $(param.a2)*τ + $(param.c0)*log(τ)")
 
@@ -120,7 +120,7 @@ function show_multiparameter_coeffs(io,param::EmpiricSingleFluidIdealParam)
 end
 
 
-function show_multiparameter_coeffs(io,param::EmpiricSingleFluidResidualParam)
+function show_multiparameter_coeffs(io,param::SingleFluidResidualParam)
     res = String[]
     k_pol,k_exp,k_gauss = param.iterators
     if length(k_pol) != 0
@@ -147,12 +147,12 @@ function show_multiparameter_coeffs(io,param::EmpiricSingleFluidResidualParam)
     show_pairs(io,res,quote_string = false)
 end
 
-function Base.show(io::IO,::MIME"text/plain",param::EmpiricSingleFluidIdealParam)
+function Base.show(io::IO,::MIME"text/plain",param::SingleFluidIdealParam)
     println("Ideal MultiParameter coefficients:")
     show_multiparameter_coeffs(io,param)
 end
 
-function Base.show(io::IO,::MIME"text/plain",param::EmpiricSingleFluidResidualParam)
+function Base.show(io::IO,::MIME"text/plain",param::SingleFluidResidualParam)
     println("Residual MultiParameter coefficients:")
     show_multiparameter_coeffs(io,param)
 end
@@ -181,7 +181,7 @@ function _calc_iterators!(param)
     return param
 end
 
-struct EmpiricSingleFluidProperties <: EoSParam
+struct SingleFluidProperties <: EoSParam
     #those 4 properties are the most important here:
     Mw::Float64 #Molecular Weight, g/mol
     Tr::Float64 #reducing temperature, K
@@ -199,7 +199,7 @@ struct EmpiricSingleFluidProperties <: EoSParam
     acentricfactor::Float64 #acentric factor
     Rgas::Float64 #gas constant used
 
-    function EmpiricSingleFluidProperties(Mw,Tr,rhor,lb_volume,
+    function SingleFluidProperties(Mw,Tr,rhor,lb_volume,
         Tc = NaN,Pc = NaN,rhoc = NaN,
         Ttp = NaN,ptp = NaN, rhov_tp = NaN,rhol_tp = NaN,
         acentric_factor = NaN, Rgas = R̄)
@@ -207,6 +207,6 @@ struct EmpiricSingleFluidProperties <: EoSParam
     end
 end
 
-const ESFProperties = EmpiricSingleFluidProperties
-const ESFIdealParam = EmpiricSingleFluidIdealParam
-const ESFResidualParam = EmpiricSingleFluidResidualParam
+const ESFProperties = SingleFluidProperties
+const ESFIdealParam = SingleFluidIdealParam
+const ESFResidualParam = SingleFluidResidualParam

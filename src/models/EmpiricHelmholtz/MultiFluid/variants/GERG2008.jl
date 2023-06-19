@@ -52,7 +52,7 @@ end
 
 
 """
-    GERG2008::EmpiricMultiFluid
+    GERG2008::MultiFluid
     GERG2008(components::Vector{String})
 
 ## Imput Parameters
@@ -86,7 +86,7 @@ aʳᵢⱼ = ∑nᵢⱼ₋ₖδ^(dᵢⱼ₋ₖ)τ^(tᵢⱼ₋ₖ)  + ∑nᵢⱼ�
 
 1. Kunz, O., & Wagner, W. (2012). The GERG-2008 wide-range equation of state for natural gases and other mixtures: An expansion of GERG-2004. Journal of Chemical and Engineering Data, 57(11), 3032–3091. [doi:10.1021/je300655b](https://doi.org/10.1021/je300655b)
 """
-function GERG2008(components::Vector{String};verbose = false)
+function GERG2008(components::Vector{String};verbose = false,Rgas = 8.314771)
     return MultiFluid(components;
     mixing = AsymmetricMixing,
     departure = EmpiricDeparture,
@@ -94,7 +94,7 @@ function GERG2008(components::Vector{String};verbose = false)
     mixing_userlocations  = String["@REMOVEDEFAULTS","@DB/Empiric/GERG2008/mixing/GERG2008_mixing_unlike.csv"],
     departure_userlocations = String["@REMOVEDEFAULTS","@DB/Empiric/GERG2008/departure/GERG2008_departure_unlike.csv"],
     coolprop_userlocations = false,
-    verbose = verbose)
-
+    verbose = verbose
+    Rgas = Rgas)
 end
 export GERG2008

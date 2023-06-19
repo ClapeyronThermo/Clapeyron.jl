@@ -49,14 +49,14 @@ function IAPWS95()
     Rgas = 8.3143713575874
     acentric_factor = 0.3442920843
 
-    properties = EmpiricSingleFluidProperties(Mw,T_c,rho_c,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+    properties = SingleFluidProperties(Mw,T_c,rho_c,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 
     a₁ = -8.3204464837497
     a₂ = 6.6832105275932
     c0 = 4.00632 - 1
     n_pe = [0.012436, 0.97315, 1.2795, 0.96956, 0.24873]
     t_pe = -[1.28728967, 3.53734222, 7.74073708, 9.24437796,27.5075105]
-    ideal = EmpiricSingleFluidIdealParam(a₁,a₂,c0,n_pe,t_pe)
+    ideal = SingleFluidIdealParam(a₁,a₂,c0,n_pe,t_pe)
 
     n = [0.12533547935523e-1, 0.78957634722828e1, -0.87803203303561e1,
     0.31802509345418, -0.26145533859358, -0.78199751687981e-2,
@@ -106,7 +106,7 @@ function IAPWS95()
     NA_beta = [0.3,0.3]
     NA_n = [-0.14874640856724,0.31806110878444]
     na_term = NonAnalyticTerm(NA_A,NA_B,NA_C,NA_D,NA_a,NA_b,NA_beta,NA_n)
-    residual = EmpiricSingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε,na = na_term)
+    residual = SingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε,na = na_term)
 
     ancillary_gas = GenericAncEvaluator([0.9791749335365787, -2.6190679042770215, -3.9166443712365235, -20.313306821636637, 16.497589490043744, -125.36580458432083],[0.21, 0.262, 0.701, 3.909, 4.076, 17.459],T_c,rho_c,:exp,true) |> PolExpVapour
     ancillary_liquid = GenericAncEvaluator([0.8157021355019343, 2.0434712177006693, -78.58278372496308, 1026.4273940070307, -2290.5642779377695, 8420.141408210317],[0.276, 0.455, 7.127, 9.846, 11.707, 17.805],T_c,rho_c,:noexp,false) |> PolExpLiquid
@@ -115,7 +115,7 @@ function IAPWS95()
 
     references = ["IAPWS R6-95(2018)"]
 
-    return EmpiricSingleFluid(components,properties,ancillaries,ideal,residual,references)
+    return SingleFluid(components,properties,ancillaries,ideal,residual,references)
 end
 
 

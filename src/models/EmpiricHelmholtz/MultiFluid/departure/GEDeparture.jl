@@ -62,13 +62,13 @@ function multiparameter_a_res(model,V,T,z,departure::GEDeparture,δ,τ,∑z = su
     return aᵣ + lnb*(gᴱ/(R*T) - Δa)
 end
 
-function lb_volume(model::EmpiricMultiFluid{A,M,GEDeparture},z = SA[1.0]) where {A,M}
+function lb_volume(model::MultiFluid{A,M,GEDeparture},z = SA[1.0]) where {A,M}
     vref = model.departure.vref
     v̄ref = dot(z,vref)/sum(z)
     return 0.8547008547008548*v̄ref
 end
 
-function recombine_departure!(model::EmpiricMultiFluid,dep::GEDeparture)
+function recombine_departure!(model::MultiFluid,dep::GEDeparture)
     m = model.pures
     for i in 1:length(m)
         mi = m[i]

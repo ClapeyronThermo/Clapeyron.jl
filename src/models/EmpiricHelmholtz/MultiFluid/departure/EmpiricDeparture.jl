@@ -42,7 +42,7 @@ end
 @newmodelsimple EmpiricDeparture MultiFluidDepartureModel EmpiricDepartureParam
 
 function EmpiricDeparture(components;userlocations = String[],verbose = false)
-    params = getparams(components,["Empiric/departure/Empiric_departure_unlike.csv"],asymmetricparams = ["F","parameters"],userlocations = userlocations,verbose = verbose)
+    params = getparams(components,["Empiric/departure/empiric_departure_unlike.csv"],asymmetricparams = ["F","parameters"],userlocations = userlocations,verbose = verbose)
     raw_parameters = params["parameters"]
     F = params["F"]
     s1,s2 = size(F.values)
@@ -68,7 +68,7 @@ function EmpiricDeparture(components;userlocations = String[],verbose = false)
     return EmpiricDeparture(pkgparams,verbose = verbose)
 end
 
-function multiparameter_a_res(model::EmpiricMultiFluid,V,T,z,departure::EmpiricDeparture,δ,τ,∑z = sum(z)) 
+function multiparameter_a_res(model::MultiFluid,V,T,z,departure::EmpiricDeparture,δ,τ,∑z = sum(z)) 
     lnδ = log(δ)
     lnτ = log(τ)
     aᵣ = multiparameter_a_res0(model,V,T,z,δ,τ,lnδ,lnτ,∑z)

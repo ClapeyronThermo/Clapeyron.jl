@@ -45,7 +45,7 @@ function a_term(term::Associating2BTerm,δ,τ,lnδ,lnτ,_0)
     return αᵣ
 end
 
-struct EmpiricSingleFluid{𝔸} <: EmpiricHelmholtzModel
+struct SingleFluid{𝔸} <: EmpiricHelmholtzModel
     components::Vector{String}
     properties::ESFProperties
     ancillaries::𝔸
@@ -70,33 +70,33 @@ aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - 1/(βᵢ*(τ -γᵢ)^2 + b�
 
 All parameters are fitted, to allow a equation of state of a single fluid with property calculations as close as possible to the experimental values.
 """
-EmpiricSingleFluid
+SingleFluid
 
-struct IdealEmpiricSingleFluid <: IdealModel
+struct SingleFluidIdeal <: IdealModel
     components::Vector{String}
-    properties::EmpiricSingleFluidProperties
-    ideal::EmpiricSingleFluidIdealParam
+    properties::SingleFluidProperties
+    ideal::SingleFluidIdealParam
     references::Vector{String}
 end
 
-function recombine_impl!(model::EmpiricSingleFluid)
+function recombine_impl!(model::SingleFluid)
     _calc_iterators!(model.residual)
     return model
 end
 
-function IdealEmpiricSingleFluid(model::EmpiricSingleFluid)
-    return IdealEmpiricSingleFluid(model.components,model.properties,model.ideal,model.references)
+function SingleFluidIdeal(model::SingleFluid)
+    return SingleFluidIdeal(model.components,model.properties,model.ideal,model.references)
 end
 
-idealmodel(model::EmpiricSingleFluid) = IdealEmpiricSingleFluid(model)
+idealmodel(model::SingleFluid) = SingleFluidIdeal(model)
 
-R_gas(model::EmpiricSingleFluid) = model.properties.Rgas
-R_gas(model::IdealEmpiricSingleFluid) = model.properties.Rgas
+R_gas(model::SingleFluid) = model.properties.Rgas
+R_gas(model::SingleFluidIdeal) = model.properties.Rgas
 
-reduced_a_ideal(model::EmpiricSingleFluid,τ) = reduced_a_ideal(model.ideal,τ)
-reduced_a_ideal(model::IdealEmpiricSingleFluid,τ) = reduced_a_ideal(model.ideal,τ)
+reduced_a_ideal(model::SingleFluid,τ) = reduced_a_ideal(model.ideal,τ)
+reduced_a_ideal(model::SingleFluidIdeal,τ) = reduced_a_ideal(model.ideal,τ)
 
-function reduced_a_ideal(model::EmpiricSingleFluidIdealParam,τ)
+function reduced_a_ideal(model::SingleFluidIdealParam,τ)
     a₁ = model.a1
     a₂ = model.a2
     c₀ = model.c0
@@ -129,9 +129,9 @@ function reduced_a_ideal(model::EmpiricSingleFluidIdealParam,τ)
     return α₀
 end
 
-reduced_a_res(model::EmpiricSingleFluid,δ,τ,lnδ = log(δ),lnτ = log(τ)) = reduced_a_res(model.residual,δ,τ,lnδ,lnτ)
+reduced_a_res(model::SingleFluid,δ,τ,lnδ = log(δ),lnτ = log(τ)) = reduced_a_res(model.residual,δ,τ,lnδ,lnτ)
 
-function reduced_a_res(model::EmpiricSingleFluidResidualParam,δ,τ,lnδ = log(δ),lnτ = log(τ))
+function reduced_a_res(model::SingleFluidResidualParam,δ,τ,lnδ = log(δ),lnτ = log(τ))
     _0 = zero(δ+τ)
     αᵣ = _0
     ℙ = model
@@ -194,7 +194,7 @@ function __set_Rgas(pure,Rgas)
     Roots.Setfield.@set pure.properties.Rgas = Rgas
 end
 
-function a_ideal(model::IdealEmpiricSingleFluid,V,T,z=SA[1.],k = __get_k_alpha0(model))
+function a_ideal(model::SingleFluidIdeal,V,T,z=SA[1.],k = __get_k_alpha0(model))
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
     N = only(z)
@@ -205,9 +205,9 @@ function a_ideal(model::IdealEmpiricSingleFluid,V,T,z=SA[1.],k = __get_k_alpha0(
     return k*α0 + log(δ)
 end
 
-a_ideal(model::EmpiricSingleFluid,V,T,z=SA[1.]) = a_ideal(idealmodel(model),V,T,z)
+a_ideal(model::SingleFluid,V,T,z=SA[1.]) = a_ideal(idealmodel(model),V,T,z)
 
-function a_res(model::EmpiricSingleFluid,V,T,z=SA[1.])
+function a_res(model::SingleFluid,V,T,z=SA[1.])
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
     N = only(z)
@@ -217,7 +217,7 @@ function a_res(model::EmpiricSingleFluid,V,T,z=SA[1.])
     return reduced_a_res(model,δ,τ)
 end
 
-function eos(model::EmpiricSingleFluid, V, T, z=SA[1.0])
+function eos(model::SingleFluid, V, T, z=SA[1.0])
     R = R_gas(model)
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
@@ -229,7 +229,7 @@ function eos(model::EmpiricSingleFluid, V, T, z=SA[1.0])
     return N*R*T*(log(δ) + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ))
 end
 
-function eos_res(model::EmpiricSingleFluid,V,T,z=SA[1.0])
+function eos_res(model::SingleFluid,V,T,z=SA[1.0])
     R = R_gas(model)
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
@@ -240,36 +240,36 @@ function eos_res(model::EmpiricSingleFluid,V,T,z=SA[1.0])
     return N*R*T*reduced_a_res(model,δ,τ)
 end
 
-mw(model::EmpiricSingleFluid) = SA[model.properties.Mw]
+mw(model::SingleFluid) = SA[model.properties.Mw]
 
-molecular_weight(model::EmpiricSingleFluid,z = @SVector [1.]) = model.properties.Mw*0.001
+molecular_weight(model::SingleFluid,z = @SVector [1.]) = model.properties.Mw*0.001
 
-T_scale(model::EmpiricSingleFluid,z=SA[1.0]) = model.properties.Tc
+T_scale(model::SingleFluid,z=SA[1.0]) = model.properties.Tc
 
-p_scale(model::EmpiricSingleFluid,z=SA[1.0]) = model.properties.Pc
+p_scale(model::SingleFluid,z=SA[1.0]) = model.properties.Pc
 
-lb_volume(model::EmpiricSingleFluid,z=SA[1.0]) = model.properties.lb_volume #finally, an eos model that mentions it max density.
+lb_volume(model::SingleFluid,z=SA[1.0]) = model.properties.lb_volume #finally, an eos model that mentions it max density.
 
-Base.length(::EmpiricSingleFluid) = 1
+Base.length(::SingleFluid) = 1
 
-function Base.show(io::IO,mime::MIME"text/plain",model::EmpiricSingleFluid)
+function Base.show(io::IO,mime::MIME"text/plain",model::SingleFluid)
     println(io,"MultiParameter Equation of state for $(model.components[1]):")
     show_multiparameter_coeffs(io,model.residual)
 end
 
-function Base.show(io::IO,mime::MIME"text/plain",model::IdealEmpiricSingleFluid)
+function Base.show(io::IO,mime::MIME"text/plain",model::SingleFluidIdeal)
     println(io,"Ideal MultiParameter Equation of state for $(model.components[1]):")
     show_multiparameter_coeffs(io,model.ideal)
 
 end
 
-function x0_sat_pure(model::EmpiricSingleFluid,T,z=SA[1.0])
+function x0_sat_pure(model::SingleFluid,T,z=SA[1.0])
     vv = volume(model.ancillaries.gas,0.0,T,z)
     vl = x0_volume_liquid(model,T,z)
     return (vl,vv)
 end
 
-function x0_volume_liquid(model::EmpiricSingleFluid,T,z = SA[1.0])
+function x0_volume_liquid(model::SingleFluid,T,z = SA[1.0])
     lb_v = lb_volume(model)
     vl_tp = 1/model.properties.rhol_tp
     vl_anc = volume(model.ancillaries.liquid,0.0,min(T,model.properties.Tc*one(T)),z)
@@ -278,15 +278,15 @@ function x0_volume_liquid(model::EmpiricSingleFluid,T,z = SA[1.0])
     return max(vl_tp,vl_anc,1.01*lb_v)
 end
 
-x0_psat(model::EmpiricSingleFluid,T,crit=nothing) = saturation_pressure(model.ancillaries.saturation,T,SaturationCorrelation())[1]
+x0_psat(model::SingleFluid,T,crit=nothing) = saturation_pressure(model.ancillaries.saturation,T,SaturationCorrelation())[1]
 
-function x0_saturation_temperature(model::EmpiricSingleFluid,p)
+function x0_saturation_temperature(model::SingleFluid,p)
     T = saturation_temperature(model.ancillaries.saturation,p,SaturationCorrelation())[1]
     vl,vv = x0_sat_pure(model,T)
     return (T,vl,vv)
 end
 
-function crit_pure(model::EmpiricSingleFluid)
+function crit_pure(model::SingleFluid)
     Tc = model.properties.Tc
     Vc = 1/model.properties.rhoc
     Pc = model.properties.Pc

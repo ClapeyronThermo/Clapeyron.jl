@@ -143,10 +143,10 @@ function SingleFluid(components;
 
     references = [eos_data[:BibTeX_EOS]]
 
-    return EmpiricSingleFluid(components,properties,init_ancillaries,ideal,residual,references)
+    return SingleFluid(components,properties,init_ancillaries,ideal,residual,references)
 end
 
-function IdealSingleFluid(components;
+function SingleFluidIdeal(components;
     userlocations = String[],
     Rgas = nothing,
     verbose = false,
@@ -162,7 +162,7 @@ function IdealSingleFluid(components;
 
     references = [eos_data[:BibTeX_EOS]]
 
-    return IdealEmpiricSingleFluid(components,properties,ideal,references)
+    return SingleFluidIdeal(components,properties,ideal,references)
 end
 
 
@@ -211,7 +211,7 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     isnan(lb_volume) && (lb_volume = 1/tryparse_units(get(eos_data,:rhomolar_max,NaN),get(eos_data,:rhomolar_max_units,"")))
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
-    return EmpiricSingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+    return SingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 end
 
 function _parse_ideal(id_data,verbose = false)
@@ -333,7 +333,7 @@ function _parse_ideal(id_data,verbose = false)
         end
     end
 
-    return EmpiricSingleFluidIdealParam(a1,a2,c0,n,t,c,d,np,tp,n_gerg,v_gerg,R0)
+    return SingleFluidIdealParam(a1,a2,c0,n,t,c,d,np,tp,n_gerg,v_gerg,R0)
 
 end
 
@@ -459,7 +459,7 @@ function _parse_residual(res_data, verbose = false)
 
     #exponential term
 
-   return EmpiricSingleFluidResidualParam(_n,_t,_d,_l,_g,_η,_β,_γ,_ε;gao_b,na,assoc)
+   return SingleFluidResidualParam(_n,_t,_d,_l,_g,_η,_β,_γ,_ε;gao_b,na,assoc)
 end
 
 function _parse_ancilliary_func(anc,input_key,output_key)
@@ -504,7 +504,7 @@ function _parse_ancillaries(anc_data,verbose = false)
     rhol_anc = PolExpVapour(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
     return CompositeModel(["ancillaries"],gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
 end
-export EmpiricSingleFluid
+export SingleFluid
 
 function allxxx()
     _path = flattenfilepaths("Empiric/test",String[])

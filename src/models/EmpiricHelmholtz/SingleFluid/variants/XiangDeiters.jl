@@ -9,7 +9,7 @@ function XiangDeitersConsts(ω,θ)
     a2 = [-8.1680511E+01, 4.6384732E+02,  -2.7970850E+02, 2.9317364E+01, -2.2324825E+01, -5.0932691E-02, -7.2836590E+00,
     -2.2063100E+02, -3.0435126E+02, 5.8514719E+00,  1.7995451E+02, -1.0178400E+02, 4.0848053E+01,  1.2411984E+01]
     n = a0 .+ a1 .* ω + a2 .* θ
-    return EmpiricSingleFluidResidualParam(n,t,d,l)
+    return SingleFluidResidualParam(n,t,d,l)
 end
 
 function XiangDeiters(components;
@@ -38,11 +38,11 @@ function XiangDeiters(components;
     properties = ESFProperties(Mw,Tc,rhoc,lb_volume,Tc,Pc,rhoc,NaN,NaN,NaN,NaN,acentricfactor,Rgas)
     ancillaries = propane_ancillary_cs(components,Tc,Pc,Vc)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,false)
-    ideal = EmpiricSingleFluidIdealParamBuilder(init_idealmodel,properties)
-    EmpiricSingleFluid(components,properties,ancillaries,ideal,residual,String["10.1016/j.ces.2007.11.029"])
+    ideal = SingleFluidIdealParamBuilder(init_idealmodel,properties)
+    SingleFluid(components,properties,ancillaries,ideal,residual,String["10.1016/j.ces.2007.11.029"])
 end
 
-function EmpiricSingleFluidIdealParamBuilder(model::EoSModel,props)
+function SingleFluidIdealParamBuilder(model::EoSModel,props)
     return _parse_ideal(ideal_dict_format(model,props))    
 end
 

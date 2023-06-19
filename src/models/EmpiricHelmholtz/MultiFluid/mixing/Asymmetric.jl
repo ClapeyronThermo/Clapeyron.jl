@@ -8,7 +8,7 @@ end
 @newmodelsimple AsymmetricMixing MixingRule AsymmetricMixingParam
 
 function AsymmetricMixing(components;userlocations = String[],verbose = false)
-    params = getparams(components,["Empiric/mixing/AsymmetricMixing/AsymmetricMixing_unlike.csv"]; asymmetricparams = ["beta_v","beta_T"],userlocations=userlocations, verbose=verbose)
+    params = getparams(components,["Empiric/mixing/AsymmetricMixing/asymmetric_mixing_unlike.csv"]; asymmetricparams = ["beta_v","beta_T"],userlocations=userlocations, verbose=verbose)
     beta_v = params["beta_v"]
     gamma_v = params["gamma_v"]
     beta_T = params["beta_T"]
@@ -19,14 +19,33 @@ function AsymmetricMixing(components;userlocations = String[],verbose = false)
     return AsymmetricMixing(pkgparams,verbose = verbose)
 end
 
-function recombine_mixing!(model::EmpiricMultiFluid,mixing::AsymmetricMixing)
+function recombine_mixing!(model::MultiFluid,mixing::AsymmetricMixing)
     Vc = model.params.Vc.values
     Tc = model.params.Tc.values
-    nothing
-    #TODO
+    n = length(model)
+    γT = mixing.params.gamma_T
+    γv = mixing.params.gamma_v
+    βT = mixing.params.beta_T
+    βv = mixing.params.beta_v
+    for i in 1:n
+        for j in 1:n
+            if γT.ismissingvalues[i,j]
+                γT[i,j] = 0.5*(Tc[i]+Tc[j])/sqrt(Tc[i]*Tc[j])
+            end
+            if γv.ismissingvalues[i,j]
+                γv[i,j] = 0.25*(Vc[i]+Vc[j])/(cbrt(Vc[i])+cbrt(Vc[j])^3)
+            end
+            if βT.ismissingvalues[i,j]
+                βT[i,j] = 1.0
+            end
+            if βv.ismissingvalues[i,j]
+                βv[i,j] = 1.0
+            end
+        end
+    end
 end
 
-function v_scale(model::EmpiricMultiFluid,z,mixing::AsymmetricMixing,∑z)
+function v_scale(model::MultiFluid,z,mixing::AsymmetricMixing,∑z)
     vc = model.params.Vc.values
     res = mixing_rule_asymmetric(
         mix_mean3,
@@ -39,7 +58,7 @@ function v_scale(model::EmpiricMultiFluid,z,mixing::AsymmetricMixing,∑z)
     return res/(∑z*∑z)
 end
 
-function T_scale(model::EmpiricMultiFluid,z,mixing::AsymmetricMixing,∑z)
+function T_scale(model::MultiFluid,z,mixing::AsymmetricMixing,∑z)
     Tc = model.params.Tc.values
     #isone(length(z)) && return only(Tc)
     return mixing_rule_asymmetric(

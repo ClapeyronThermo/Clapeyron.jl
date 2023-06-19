@@ -7,13 +7,15 @@ end
 
 function LorentzBerthelotMixing(components;userlocations = String[],verbose = false)
     params = getparams(components,["Empiric/mixing/LorentzBerthelotMixing/LorentzBerthelotMixing_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    l = params["l"]
-    k = params["k"]
+    l = get(params,"l",nothing)
+    k = get(params,"k",nothing)
+    k === nothing && (k = PairParam("k",components))
+    l === nothing && (l = PairParam("l",components))
     pkgparams = LorentzBerthelotMixingParam(k,l)
     return LorentzBerthelotMixing(pkgparams, verbose = verbose)
 end
 
-function v_scale(model::EmpiricMultiFluid,z,mixing::LorentzBerthelotMixing,∑z)
+function v_scale(model::MultiFluid,z,mixing::LorentzBerthelotMixing,∑z)
     Vc = model.params.Tc.values
     l = mixing.params.l
     res = zero(∑z)*1.0
@@ -30,7 +32,7 @@ function v_scale(model::EmpiricMultiFluid,z,mixing::LorentzBerthelotMixing,∑z)
     return res/(∑z*∑z)
 end
 
-function T_scale(model::EmpiricMultiFluid,z,mixing::LorentzBerthelotMixing,∑z)
+function T_scale(model::MultiFluid,z,mixing::LorentzBerthelotMixing,∑z)
     Tc = model.params.Tc.values
     k = mixing.params.k
     res = zero(∑z)*1.0

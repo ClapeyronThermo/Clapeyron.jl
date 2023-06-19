@@ -13,7 +13,7 @@ function QuadraticDeparture(components::AbstractVector, userlocations=String[], 
     k1 === nothing && (k1 = PairParam("k0",components))
     pkgparams = QuadraticDepartureParam(k0,k1)
     references = ["10.1021/acs.iecr.1c01186","10.1016/j.fluid.2018.04.015"]
-    return QuadraticDepartureParam(pkgparams)
+    return QuadraticDeparture(pkgparams,references)
 end
 
 function multiparameter_a_res(model,V,T,z,departure::QuadraticDeparture,δ,τ,∑z = sum(z))
@@ -23,8 +23,10 @@ function multiparameter_a_res(model,V,T,z,departure::QuadraticDeparture,δ,τ,�
     n = length(model)
     aᵣₖ = fill(_0,length(model))
     m = model.pures
+    Rinv = 1/Rgas(model)
     for i in 1:n
-        aᵣᵢ[i] = reduced_a_res(m[i],δ,τ,lnδ,lnτ)
+        mᵢ = m[i]
+        aᵣᵢ[i] = reduced_a_res(mᵢ,δ,τ,lnδ,lnτ)*Rinv*Rgas(mᵢ)
     end
     k₀ = departure.params.k0
     k₁ = departure.params.k1

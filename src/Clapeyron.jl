@@ -120,10 +120,9 @@ include("models/EmpiricHelmholtz/SingleFluid/variants/Ammonia2023.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/TholLJ.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/XiangDeiters.jl")
 include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
-include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 
 #multifluid models
-include("models/EmpiricHelmholtz/MultiFluid/multifluid2.jl")
+include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
 include("models/EmpiricHelmholtz/MultiFluid/mixing/mixing.jl")
 include("models/EmpiricHelmholtz/MultiFluid/departure/departure.jl")
 include("models/EmpiricHelmholtz/MultiFluid/variants/GERG2008.jl")

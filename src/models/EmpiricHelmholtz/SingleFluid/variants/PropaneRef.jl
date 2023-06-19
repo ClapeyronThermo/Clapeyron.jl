@@ -88,7 +88,7 @@ function PropaneRef()
     Rgas = 8.314472
     acentric_factor = 0.1521
 
-    properties = EmpiricSingleFluidProperties(Mw,T_c,rho_c,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
+    properties = SingleFluidProperties(Mw,T_c,rho_c,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 
     a₁ = -4.970583
     a₂ = 4.29352
@@ -96,7 +96,7 @@ function PropaneRef()
     v = [3.043,5.874,9.337,7.922]
     c0 = 4.0 - 1
 
-    ideal = EmpiricSingleFluidIdealParam(a₁,a₂,c0,v,u)
+    ideal = SingleFluidIdealParam(a₁,a₂,c0,v,u)
 
     n = [0.042910051, 1.7313671, -2.4516524, 0.34157466, -0.46047898, -0.66847295, 0.20889705, 0.19421381, -0.22917851, -0.60405866, 0.066680654, 0.017534618, 0.33874242, 0.22228777, -0.23219062, -0.09220694, -0.47575718, -0.017486824]
     t = [1.0, 0.33, 0.8, 0.43, 0.9, 2.46, 2.09, 0.88, 1.09, 3.25, 4.62, 0.76, 2.5, 2.75, 3.05, 2.55, 8.4, 6.75]
@@ -107,7 +107,7 @@ function PropaneRef()
     γ = [0.684,0.829,1.419,0.817,1.500,1.426,1.093]
     ε = [1.283,0.6936,0.788,0.473,0.8577,0.271,0.948]
 
-    residual = EmpiricSingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε)
+    residual = SingleFluidResidualParam(n,t,d,l,ones(length(l)),η,β,γ,ε)
 
     anc_gas_fn = GenericAncEvaluator([-2.4887,-5.1069,-12.174,-30.495,-52.192,-134.89],[0.3785,1.07,2.7,5.5,10,20],T_c,rho_c,:exp,false)
     anc_liquid_fn = GenericAncEvaluator([1.82205,0.65802,0.21109,0.083973],[0.345,0.74,2.6,7.2],T_c,rho_c,:noexp,false)
@@ -119,7 +119,7 @@ function PropaneRef()
 
     references = ["1021/je900217v"]
 
-    return EmpiricSingleFluid(components,properties,ancillaries,ideal,residual,references)
+    return SingleFluid(components,properties,ancillaries,ideal,residual,references)
 end
 
 function propane_ancillary_cs(components,T_c,P_c,Vc)
