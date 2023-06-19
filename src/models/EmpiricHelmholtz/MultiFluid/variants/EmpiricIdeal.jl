@@ -18,21 +18,40 @@ end
 
 Rgas(m::EmpiricIdealModel) = m.Rgas
 
-function EmpiricIdeal(components;
+"""
+    EmpiricIdeal(components;
     pure_userlocations = String[],
     estimate_pure = false,
     coolprop_userlocations = true,
     Rgas = R̄,
     verbose = false,
     )
-    
+## Input parameters
+- JSON data (CoolProp and teqp format)
+
+## Description
+
+Instantiates the ideal part of a multi-component Empiric EoS model. `Rgas` can be used to set the value of the gas constant that is used during property calculations.
+
+If `coolprop_userlocations` is true, then Clapeyron will try to look if the fluid is present in the CoolProp library.
+
+If `estimate_pure` is true, then, if a JSON is not found, the pure model will be estimated, using the `XiangDeiters` model
+
+"""
+function EmpiricIdeal(components;
+    pure_userlocations = String[],
+    userlocations = String[],
+    coolprop_userlocations = true,
+    Rgas = R̄,
+    verbose = false,
+    )
+
     pures = [
         SingleFluidIdeal(comp;
-        userlocations = pure_userlocations,
-        verbose = verbose, 
-        estimate_pure = estimate_pure, 
+        userlocations = userlocations,
+        verbose = verbose,
         coolprop_userlocations = coolprop_userlocations,
-        ) 
+        )
         for comp in components]
     params = MultiFluidParam(components,pures)
     references = unique!(reduce(vcat,pure.references for pure in pures))
@@ -44,5 +63,26 @@ function idealmodel(m::MultiFluid)
     EmpiricIdealfromMulti(m.components,m.params,m.pures,m.Rgas,m.references)
 end
 
+function a_ideal(model::EmpiricIdealModel,V,T,z,∑z = sum(z))
+    #log(δi) = log(ρ * vc[i]) = -log(V) + log(sum(z)) + log(vc[i])
+    res = zero(V+T+first(z))
+    m₀ = model.pures
+    Tinv = 1/T
+    Tc = model.params.Tc
+    vc = model.params.Vc
+    for i in 1:length(model)
+        m₀ᵢ = m₀[i]
+        a₀ᵢ = __get_k_alpha0(m₀ᵢ)*reduced_a_ideal(m₀ᵢ,Tc[i] * Tinv)
+        zᵢ = z[i]
+        res += zᵢ*a₀ᵢ
+        res += xlogx(zᵢ,vc[i])
+        res
+    end
+    res /= ∑z
+    res -= log(V)
+    return res
+end
+
+export EmpiricIdeal
 
 
