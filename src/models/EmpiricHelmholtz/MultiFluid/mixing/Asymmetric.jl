@@ -7,6 +7,44 @@ end
 
 @newmodelsimple AsymmetricMixing MixingRule AsymmetricMixingParam
 
+
+"""
+    QuadraticDeparture <: MultiFluidDepartureModel
+    QuadraticDeparture(components; 
+    userlocations=String[],
+    verbose=false)
+
+## Input parameters
+- `beta_v`: Pair Parameter (`Float64`) - binary interaction parameter  (no units)
+- `gamma_v`: Pair Parameter (`Float64`) - binary interaction parameter  (no units)
+- `beta_T`: Pair Parameter (`Float64`) - binary interaction parameter  (no units)
+- `gamma_T`: Pair Parameter (`Float64`) - binary interaction parameter  (no units)
+
+## Description
+Asymmetric mixing rule for MultiParameter EoS models:
+
+```
+τ = T̄/T
+δ = V̄/V
+V̄ = ∑xᵢxⱼ * βᵛᵢⱼ * γᵛᵢⱼ * (xᵢ + xⱼ)/(xᵢ*βᵛᵢⱼ^2 + xⱼ) * Vᵣᵢⱼ
+T̄ = ∑xᵢxⱼ * βᵛᵢⱼ * γᵀᵢⱼ * (xᵢ + xⱼ)/(xᵢ*βᵀᵢⱼ^2 + xⱼ) * Tᵣᵢⱼ
+Vᵣᵢⱼ = 0.125*(∛Vcᵢ + ∛Vcⱼ)^3
+Tᵣᵢⱼ = √(Tcᵢ*Tcⱼ)
+```
+
+With the asymmetry present in the β parameters:
+```
+βᵛᵢⱼ = 1/βᵛⱼᵢ
+βᵀᵢⱼ = 1/βᵀⱼᵢ
+```
+
+If there is no data present, the parameters can be estimated:
+```
+βᵛᵢⱼ = βᵛᵢⱼ = 1
+γᵛᵢⱼ = 4*(Vcᵢ + Vcⱼ)/(∛Vcᵢ + ∛Vcⱼ)^3
+γᵀᵢⱼ = 0.5*(Tcᵢ + Tcⱼ)/√(Tcᵢ*Tcⱼ)
+```
+"""
 function AsymmetricMixing(components;userlocations = String[],verbose = false)
     params = getparams(components,["Empiric/mixing/AsymmetricMixing/asymmetric_mixing_unlike.csv"]; asymmetricparams = ["beta_v","beta_T"],userlocations=userlocations, verbose=verbose)
     beta_v = params["beta_v"]

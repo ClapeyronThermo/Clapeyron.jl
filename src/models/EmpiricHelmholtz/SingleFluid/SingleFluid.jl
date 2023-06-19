@@ -54,24 +54,6 @@ struct SingleFluid{𝔸} <: EmpiricHelmholtzModel
     references::Vector{String}
 end
 
-"""
-Single Multiparameter Fluid Equation of state.
-
-```
-δ = ρ/ρc
-τ = T/Tc
-a⁰(δ,τ)   =  log(δ) + a₁ + a₂τ + (c₀ - 1)*log(τ) + ∑vᵢ(1-exp(uᵢτ))
-aʳ(δ,τ)   =  aʳ₁+ aʳ₂ + aʳ₃
-aʳ₁(δ,τ)  =  ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ k_pol
-aʳ₂(δ,τ)  =  ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ k_exp
-aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ k_gauss
-aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - 1/(βᵢ*(τ -γᵢ)^2 + bᵢ))δ^(dᵢ)τ^(tᵢ), i ∈ k_assoc
-```
-
-All parameters are fitted, to allow a equation of state of a single fluid with property calculations as close as possible to the experimental values.
-"""
-SingleFluid
-
 struct SingleFluidIdeal <: IdealModel
     components::Vector{String}
     properties::SingleFluidProperties

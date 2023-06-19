@@ -5,15 +5,39 @@ end
 
 @newmodelsimple QuadraticDeparture MultiFluidDepartureModel QuadraticDepartureParam
 
-function QuadraticDeparture(components::AbstractVector, userlocations=String[], verbose::Bool=false)
-    params = getparams(components,["Empiric/departure/Quadratic_departure_unlike.csv"];userlocations = userlocations,verbose = verbose)
+
+
+"""
+    QuadraticDeparture <: MultiFluidDepartureModel
+    QuadraticDeparture(components; 
+    userlocations=String[],
+    verbose=false)
+
+## Input parameters
+- `k0`: Pair Parameter (`Float64`) - binary interaction parameter  (no units)
+- `k1`: Pair Parameter (`Float64`) - binary, T-dependent interaction parameter `[K^-1]`
+
+## Description
+
+Departure that uses a quadratic mixing rule:
+
+```
+aᵣ = ∑xᵢxⱼaᵣᵢⱼ
+aᵣᵢⱼ = 0.5*(aᵣᵢ + aᵣⱼ)*(1 - (k₀ + k₁T))
+```
+
+## References
+1. Jäger, A., Breitkopf, C., & Richter, M. (2021). The representation of cross second virial coefficients by multifluid mixture models and other equations of state. Industrial & Engineering Chemistry Research, 60(25), 9286–9295. [doi:10.1021/acs.iecr.1c01186](https://doi.org/10.1021/acs.iecr.1c01186)
+"""
+function QuadraticDeparture(components; userlocations=String[], verbose::Bool=false)
+    params = getparams(components,["Empiric/departure/quadratic_departure_unlike.csv"];userlocations = userlocations,verbose = verbose)
     k0 = get(params,"k0",nothing)
     k1 = get(params,"k1",nothing)
     k0 === nothing && (k0 = PairParam("k0",components))
     k1 === nothing && (k1 = PairParam("k0",components))
     pkgparams = QuadraticDepartureParam(k0,k1)
     references = ["10.1021/acs.iecr.1c01186","10.1016/j.fluid.2018.04.015"]
-    return QuadraticDeparture(pkgparams,references)
+    return QuadraticDeparture(pkgparams;references)
 end
 
 function multiparameter_a_res(model,V,T,z,departure::QuadraticDeparture,δ,τ,∑z = sum(z))
@@ -41,3 +65,5 @@ function multiparameter_a_res(model,V,T,z,departure::QuadraticDeparture,δ,τ,�
     end
     return aᵣ/(∑z*∑z)
 end
+
+export QuadraticDeparture
