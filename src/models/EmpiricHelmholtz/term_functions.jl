@@ -91,9 +91,9 @@ end
     α₀ = zero(_0)
     n₁,n₂,n₃,n₄ = n[1],n[2],n[3],n[4]
     ϑ₁,ϑ₂,ϑ₃,ϑ₄ = v[1],v[2],v[3],v[4]
-    iszero(n₁) || (α₀ += n₁*LogExpFunctions.logabssinh(ϑ₁*τ))
-    iszero(n₂) || (α₀ -= n₂*LogExpFunctions.logcosh(ϑ₂*τ))
-    iszero(n₃) || (α₀ += n₃*LogExpFunctions.logabssinh(ϑ₃*τ))
-    iszero(n₄) || (α₀ -= n₄*LogExpFunctions.logcosh(ϑ₄*τ))
+    iszero(n₁) || (α₀ += n₁*EoSFunctions.logabssinh(ϑ₁*τ))
+    iszero(n₂) || (α₀ -= n₂*EoSFunctions.logcosh(ϑ₂*τ))
+    iszero(n₃) || (α₀ += n₃*EoSFunctions.logabssinh(ϑ₃*τ))
+    iszero(n₄) || (α₀ -= n₄*EoSFunctions.logcosh(ϑ₄*τ))
     return α₀
 end
