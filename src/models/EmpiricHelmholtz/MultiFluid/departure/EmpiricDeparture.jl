@@ -5,14 +5,14 @@ struct EmpiricDepartureValues
     F::Float64
     n::Vector{Float64}
     t::Vector{Float64}
-    d::Vector{Int}
-    l::Vector{Int}
+    d::Vector{Float64}
+    l::Vector{Float64}
     g::Vector{Float64}
     eta::Vector{Float64}
     beta::Vector{Float64}
     gamma::Vector{Float64}
     epsilon::Vector{Float64}
-    function EmpiricDepartureValues(F,n,t,d,l = Int[],g = ones(length(l)),
+    function EmpiricDepartureValues(F,n,t,d,l = Float64[],g = ones(length(l)),
         eta = Float64[],beta = Float64[],gamma = Float64[], epsilon = Float64[])
         param = new(Vector{UnitRange{Int}}(undef,0),F,n,t,d,l,g,eta,beta,gamma,epsilon)
         _calc_iterators!(param)
@@ -83,7 +83,7 @@ function EmpiricDeparture(components;userlocations = String[],verbose = false)
             if !raw_parameters.ismissingvalues[i,j]
                 Fij = F[i,j]
                 if !iszero(Fij)
-                    parsed_parameters[i,j] = _parse_residual(EmpiricDepartureValues,raw_parameters[i,j];verbose,Fij)
+                    parsed_parameters[i,j] = _parse_residual(EmpiricDepartureValues,JSON3.read(raw_parameters[i,j]);verbose,Fij)
                 else
                     #raw_parameters.ismissingvalues[i,j] = true
                 end

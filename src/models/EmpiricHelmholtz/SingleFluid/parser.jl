@@ -420,14 +420,14 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
     #polynomial y exp terms, we will separate those later
     n = Float64[]
     t = Float64[]
-    d = Int[]
-    l = Int[]
+    d = Float64[]
+    l = Float64[]
     g = Float64[]
 
     #gaussian terms
     n_gauss = Float64[]
     t_gauss = Float64[]
-    d_gauss = Int[]
+    d_gauss = Float64[]
     eta = Float64[]
     beta = Float64[]
     gamma = Float64[]
@@ -464,7 +464,6 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
     
 
     full = (out === SingleFluidResidualParam)
-
     for res_data_i in res_data
         if res_data_i[:type] == "ResidualHelmholtzPower"
             append!(n,res_data_i[:n])

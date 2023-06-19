@@ -83,8 +83,8 @@ struct SingleFluidResidualParam <: EoSParam
     iterators::Vector{UnitRange{Int}}
     n::Vector{Float64}
     t::Vector{Float64}
-    d::Vector{Int}
-    l::Vector{Int}
+    d::Vector{Float64}
+    l::Vector{Float64}
     g::Vector{Float64}
     eta::Vector{Float64}
     beta::Vector{Float64}
@@ -94,7 +94,7 @@ struct SingleFluidResidualParam <: EoSParam
     na::NonAnalyticTerm
     assoc::Associating2BTerm
     
-    function SingleFluidResidualParam(n,t,d,l = Int[],g = ones(length(l)),
+    function SingleFluidResidualParam(n,t,d,l = Float64[],g = ones(length(l)),
         eta = Float64[],beta = Float64[],gamma = Float64[], epsilon = Float64[],
         ;gao_b = GaoBTerm(),
         na = NonAnalyticTerm(),

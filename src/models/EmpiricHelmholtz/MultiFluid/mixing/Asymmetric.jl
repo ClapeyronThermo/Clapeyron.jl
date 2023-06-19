@@ -44,6 +44,9 @@ If there is no data present, the parameters can be estimated:
 γᵛᵢⱼ = 4*(Vcᵢ + Vcⱼ)/(∛Vcᵢ + ∛Vcⱼ)^3
 γᵀᵢⱼ = 0.5*(Tcᵢ + Tcⱼ)/√(Tcᵢ*Tcⱼ)
 ```
+
+## References
+1. R. Klimeck, Ph.D. dissertation, Ruhr-Universit¨at Bochum, 2000
 """
 function AsymmetricMixing(components;userlocations = String[],verbose = false)
     params = getparams(components,["Empiric/mixing/AsymmetricMixing/asymmetric_mixing_unlike.csv"]; asymmetricparams = ["beta_v","beta_T"],userlocations=userlocations, verbose=verbose)
@@ -54,7 +57,8 @@ function AsymmetricMixing(components;userlocations = String[],verbose = false)
     mirror_pair!(beta_T,inv)
     mirror_pair!(beta_v,inv)
     pkgparams = AsymmetricMixingParam(gamma_T,gamma_v,beta_T,beta_v)
-    return AsymmetricMixing(pkgparams,verbose = verbose)
+    references = ["Klimeck, Ph.D. dissertation"]
+    return AsymmetricMixing(pkgparams,verbose = verbose,references = references)
 end
 
 function recombine_mixing!(model::MultiFluid,mixing::AsymmetricMixing)
