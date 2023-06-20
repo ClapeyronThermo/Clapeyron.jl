@@ -104,9 +104,14 @@ function a_ideal(model::MultiFluid,V,T,z,∑z = sum(z))
     Tinv = 1/T
     Tc = model.params.Tc
     vc = model.params.Vc
+    Rinv = 1/Rgas(model)
     for i in 1:length(model)
         m₀ᵢ = m₀[i]
-        a₀ᵢ = __get_k_alpha0(m₀ᵢ)*reduced_a_ideal(m₀ᵢ,Tc[i] * Tinv)
+        a₀ᵢ = reduced_a_ideal(m₀ᵢ,Tc[i] * Tinv)
+        R₀ = m₀ᵢ.ideal.R0
+        if !iszero(R₀)
+            a₀ᵢ *=Rinv*R₀
+        end
         zᵢ = z[i]
         res += zᵢ*a₀ᵢ
         res += xlogx(zᵢ,vc[i])
@@ -124,7 +129,7 @@ function a_res(model::MultiFluid,V,T,z)
     return multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
 end
 
-function eos(model::MultiFluid,V,T,z)
+function eos(model::MultiFluid,V,T,z = SA[1.0])
     ∑z = sum(z)
     a₀ = a_ideal(model,V,T,z,∑z)
     δ = reduced_delta(model,V,T,z,∑z)
@@ -133,7 +138,7 @@ function eos(model::MultiFluid,V,T,z)
     return ∑z*@R̄()*T*(a₀+aᵣ)
 end
 
-function eos_res(model::MultiFluid,V,T,z)
+function eos_res(model::MultiFluid,V,T,z = SA[1.0])
     ∑z = sum(z)
     δ = reduced_delta(model,V,T,z,∑z)
     τ = reduced_tau(model,V,T,z,∑z)

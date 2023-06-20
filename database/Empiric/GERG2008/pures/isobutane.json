@@ -2,39 +2,39 @@
   "STATES": {
     "triple_liquid": {
       "rhomolar_units": "mol/m^3",
-      "rhomolar": 12737.624458353645,
-      "smolar_units": "J/mol/K",
-      "hmolar_units": "J/mol",
-      "hmolar": -6531.616406954191,
-      "smolar": -39.51403685940225,
-      "p": 0.022890839011893836,
       "T": 113.73,
       "T_units": "K",
-      "p_units": "Pa"
+      "p": 0.022890839011893836,
+      "rhomolar": 12737.624458353645,
+      "hmolar": -6531.616406954191,
+      "p_units": "Pa",
+      "smolar_units": "J/mol/K",
+      "hmolar_units": "J/mol",
+      "smolar": -39.51403685940225
     },
     "critical": {
       "rhomolar_units": "mol/m^3",
-      "rhomolar": 3879.756788283995,
-      "smolar_units": "J/mol/K",
-      "hmolar_units": "J/mol",
-      "hmolar": 36847.01527077499,
-      "smolar": 129.37661215361217,
-      "p": 3629000,
       "T": 407.817,
       "T_units": "K",
-      "p_units": "Pa"
+      "p": 3629000,
+      "rhomolar": 3860.1429399999997,
+      "hmolar": 36847.01527077499,
+      "p_units": "Pa",
+      "smolar_units": "J/mol/K",
+      "hmolar_units": "J/mol",
+      "smolar": 129.37661215361217
     },
     "triple_vapor": {
       "rhomolar_units": "mol/m^3",
-      "rhomolar": 2.420743019201048e-5,
-      "smolar_units": "J/mol/K",
-      "hmolar_units": "J/mol",
-      "hmolar": 21407.563324517243,
-      "smolar": 206.14831899632148,
-      "p": 0.022890660531902304,
       "T": 113.73,
       "T_units": "K",
-      "p_units": "Pa"
+      "p": 0.022890660531902304,
+      "rhomolar": 2.420743019201048e-5,
+      "hmolar": 21407.563324517243,
+      "p_units": "Pa",
+      "smolar_units": "J/mol/K",
+      "hmolar_units": "J/mol",
+      "smolar": 206.14831899632148
     }
   },
   "INFO": {
@@ -74,51 +74,51 @@
       "STATES": {
         "hs_anchor": {
           "rhomolar_units": "mol/m^3",
-          "rhomolar": 3491.7811094555955,
-          "smolar_units": "J/mol/K",
-          "hmolar_units": "J/mol",
-          "hmolar": 43954.82224114979,
-          "smolar": 144.56367156827787,
-          "p": 5.887949640936111e6,
           "T": 448.59100000000007,
           "T_units": "K",
-          "p_units": "Pa"
-        },
-        "sat_min_liquid": {
-          "rhomolar_units": "mol/m^3",
-          "rhomolar": 12737.624458353645,
+          "p": 5.887949640936111e6,
+          "rhomolar": 3491.7811094555955,
+          "hmolar": 43954.82224114979,
+          "p_units": "Pa",
           "smolar_units": "J/mol/K",
           "hmolar_units": "J/mol",
-          "hmolar": -6531.616406954191,
-          "smolar": -39.51403685940225,
-          "p": 0.022890839011893836,
-          "T": 113.73,
-          "T_units": "K",
-          "p_units": "Pa"
+          "smolar": 144.56367156827787
         },
         "reducing": {
           "rhomolar_units": "mol/m^3",
-          "rhomolar": 3879.756788283995,
+          "T": 407.817,
+          "T_units": "K",
+          "p": 3629000,
+          "rhomolar": 3860.1429399999997,
+          "hmolar": 36852.07931209799,
+          "p_units": "Pa",
           "smolar_units": "J/mol/K",
           "hmolar_units": "J/mol",
-          "hmolar": 36852.07931209799,
-          "smolar": 129.387717698842,
-          "p": 3629000,
-          "T": 407.81,
+          "smolar": 129.387717698842
+        },
+        "sat_min_liquid": {
+          "rhomolar_units": "mol/m^3",
+          "T": 113.73,
           "T_units": "K",
-          "p_units": "Pa"
+          "p": 0.022890839011893836,
+          "rhomolar": 12737.624458353645,
+          "hmolar": -6531.616406954191,
+          "p_units": "Pa",
+          "smolar_units": "J/mol/K",
+          "hmolar_units": "J/mol",
+          "smolar": -39.51403685940225
         },
         "sat_min_vapor": {
           "rhomolar_units": "mol/m^3",
-          "rhomolar": 2.420743019201048e-5,
-          "smolar_units": "J/mol/K",
-          "hmolar_units": "J/mol",
-          "hmolar": 21407.563324517243,
-          "smolar": 206.14831899632148,
-          "p": 0.022890660531902304,
           "T": 113.73,
           "T_units": "K",
-          "p_units": "Pa"
+          "p": 0.022890660531902304,
+          "rhomolar": 2.420743019201048e-5,
+          "hmolar": 21407.563324517243,
+          "p_units": "Pa",
+          "smolar_units": "J/mol/K",
+          "hmolar_units": "J/mol",
+          "smolar": 206.14831899632148
         }
       },
       "alphar": [
@@ -222,8 +222,8 @@
         }
       ],
       "p_max_units": "Pa",
-      "BibTeX_EOS": "Kunz2012",
-      "BibTeX_CP0": "Kunz2012",
+      "BibTeX_EOS": "Kunz-JCED-2012",
+      "BibTeX_CP0": "Kunz-JCED-2012",
       "Ttriple": 113.73,
       "gas_constant": 8.314472,
       "rhomolar_max": 13281.074264503975,

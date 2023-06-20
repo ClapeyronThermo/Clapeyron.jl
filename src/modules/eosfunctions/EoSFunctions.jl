@@ -34,15 +34,15 @@ logabssinh(x) = LogExpFunctions.logabssinh(x)
 logcosh(x) = LogExpFunctions.logcosh(x)
 
 function logabssinh(d::ForwardDiff.Dual{T}) where {T}
-    x = logabssinh(ForwardDiff.value(x))
+    x = logabssinh(ForwardDiff.value(d))
     dx = coth(x)
-    return Dual{T}(x, dx * partials(d))
+    return ForwardDiff.Dual{T}(x, dx * ForwardDiff.partials(d))
 end
 
-function logcosh(x::ForwardDiff.Dual{T}) where {T}
-    x = logcosh(ForwardDiff.value(x))
+function logcosh(d::ForwardDiff.Dual{T}) where {T}
+    x = logcosh(ForwardDiff.value(d))
     dx = tanh(x)
-    return Dual{T}(x, dx * partials(d))
+    return ForwardDiff.Dual{T}(x, dx * ForwardDiff.partials(d))
 end
 
 export bmcs_hs,xlogx
