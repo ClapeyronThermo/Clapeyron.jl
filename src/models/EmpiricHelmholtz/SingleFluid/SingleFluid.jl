@@ -113,10 +113,9 @@ end
 
 reduced_a_res(model::SingleFluid,δ,τ,lnδ = log(δ),lnτ = log(τ)) = reduced_a_res(model.residual,δ,τ,lnδ,lnτ)
 
-function reduced_a_res(model::SingleFluidResidualParam,δ,τ,lnδ = log(δ),lnτ = log(τ))
+function reduced_a_res(ℙ::MultiParameterParam,δ,τ,lnδ = log(δ),lnτ = log(τ))
     _0 = zero(δ+τ)
     αᵣ = _0
-    ℙ = model
     n,t,d = ℙ.n,ℙ.t,ℙ.d
     k_pol,k_exp,k_gauss = ℙ.iterators
 
@@ -149,7 +148,8 @@ function reduced_a_res(model::SingleFluidResidualParam,δ,τ,lnδ = log(δ),lnτ
     end
 
     #Especial terms are stored in structs.
-
+    __has_extra_params(ℙ) || return αᵣ
+    
     #gaoB terms
     αᵣ += a_term(ℙ.gao_b,δ,τ,lnδ,lnτ,_0)
     

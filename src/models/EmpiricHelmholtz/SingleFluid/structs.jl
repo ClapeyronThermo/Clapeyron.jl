@@ -1,4 +1,6 @@
-struct SingleFluidIdealParam <:EoSParam
+abstract type MultiParameterParam <: EoSParam end
+
+struct SingleFluidIdealParam <:MultiParameterParam
     a1::Float64
     a2::Float64
     c0::Float64
@@ -79,7 +81,8 @@ end
 Associating2BTerm() = Associating2BTerm(0.0,0.0,0.0,0.0,0.0)
 
 #we store power, exponential and gaussian terms inline, because those are the most used.
-struct SingleFluidResidualParam <: EoSParam
+
+struct SingleFluidResidualParam <: MultiParameterParam
     iterators::Vector{UnitRange{Int}}
     n::Vector{Float64}
     t::Vector{Float64}
@@ -106,54 +109,83 @@ struct SingleFluidResidualParam <: EoSParam
     end
 end
 
-function show_multiparameter_coeffs(io,param::SingleFluidIdealParam)
+__has_extra_params(x::MultiParameterParam) = __has_extra_params(typeof(x))
+__has_extra_params(x) = false
+__has_extra_params(ℙ::Type{SingleFluidResidualParam}) = true
+__has_extra_params(ℙ::Type{SingleFluidIdealParam}) = false
+
+__type_string(x::MultiParameterParam) = __type_string(typeof(x))
+__type_string(::Type{T}) where T <:MultiParameterParam = "Struct"
+__type_string(ℙ::Type{SingleFluidResidualParam}) = "Residual"
+__type_string(ℙ::Type{SingleFluidIdealParam}) = "Ideal"
+
+function show_multiparameter_coeffs(io,param::MultiParameterParam)
     res = String[]
-    push!(res,"Lead terms: $(param.a1) + $(param.a2)*τ + $(param.c0)*log(τ)")
 
-    if length(param.n_gpe) != 0
-        push!(res,"Plank-Einstein terms: $(length(param.n_gpe))")
+    if hasfield(typeof(param),:a1) && hasfield(typeof(param),:a2) && hasfield(typeof(param),:a3)
+        push!(res,"Lead terms: $(param.a1) + $(param.a2)*τ + $(param.c0)*log(τ)")
     end
-    if length(param.n_p) != 0
-        push!(res,"Exponential terms: $(length(param.n_p))")
-    end
-    show_pairs(io,res,quote_string = false)
-end
 
+    if hasfield(typeof(param),:n_gpe)
+        if length(param.n_gpe) != 0
+            push!(res,"Plank-Einstein terms: $(length(param.n_gpe))")
+        end
+    end
 
-function show_multiparameter_coeffs(io,param::SingleFluidResidualParam)
-    res = String[]
-    k_pol,k_exp,k_gauss = param.iterators
-    if length(k_pol) != 0
-        push!(res,"Polynomial power terms: $(length(k_pol))")
+    if hasfield(typeof(param),:n_p)
+        if length(param.n_p) != 0
+            push!(res,"Ideal Exponential terms: $(length(param.n_p))")
+        end
     end
-    if length(k_exp) != 0
-        push!(res,"Exponential terms: $(length(k_exp))")
+
+    if hasfield(typeof(param),:n_gerg)
+        if length(param.n_gerg) != 0
+            push!(res,"GERG-2008 ideal terms: $(length(param.n_gerg))")
+        end
     end
-    if length(k_gauss) != 0
-        push!(res,"Gaussian bell-shaped terms: $(length(k_gauss))")
+    if hasfield(typeof(param),:F)
+        push!(res,"Fij: $(param.F)")
+    end
+
+    if hasfield(typeof(param),:iterators)
+        k_pol,k_exp,k_gauss = param.iterators
+        if length(k_pol) != 0
+            push!(res,"Polynomial power terms: $(length(k_pol))")
+        end
+        if length(k_exp) != 0
+            push!(res,"Exponential terms: $(length(k_exp))")
+        end
+        if length(k_gauss) != 0
+            push!(res,"Gaussian bell-shaped terms: $(length(k_gauss))")
+        end
+    end
+
+    if !__has_extra_params(param)
+        show_pairs(io,res,quote_string = false)
+        return nothing
     end
     #special terms
-    if param.na.active
-        push!(res,"Non Analytic terms: $(length(param.na.beta))")
+    if hasfield(typeof(param),:na)
+        if param.na.active
+            push!(res,"Non Analytic terms: $(length(param.na.beta))")
+        end
     end
 
-    if param.gao_b.active
-        push!(res,"Gao-b terms: $(length(param.gao_b.b))")
+    if hasfield(typeof(param),:gao_b)
+        if param.gao_b.active
+            push!(res,"Gao-b terms: $(length(param.gao_b.b))")
+        end
     end
-
-    if param.assoc.active
-        push!(res,"Associating terms: $(length(param.assoc.a))")
+    if hasfield(typeof(param),:assoc)
+        if param.assoc.active
+            push!(res,"Associating terms: $(length(param.assoc.a))")
+        end
     end
     show_pairs(io,res,quote_string = false)
 end
 
-function Base.show(io::IO,::MIME"text/plain",param::SingleFluidIdealParam)
-    println("Ideal MultiParameter coefficients:")
-    show_multiparameter_coeffs(io,param)
-end
-
-function Base.show(io::IO,::MIME"text/plain",param::SingleFluidResidualParam)
-    println("Residual MultiParameter coefficients:")
+function Base.show(io::IO,::MIME"text/plain",param::MultiParameterParam)
+    println(io,__type_string(param)," MultiParameter coefficients:")
     show_multiparameter_coeffs(io,param)
 end
 

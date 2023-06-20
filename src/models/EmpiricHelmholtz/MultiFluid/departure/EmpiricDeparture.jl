@@ -1,6 +1,6 @@
 const FIJ_TYPE = Clapeyron.PairParameter{Float64, SparseArrays.SparseMatrixCSC{Float64, Int64}}
 
-struct EmpiricDepartureValues
+struct EmpiricDepartureValues <: MultiParameterParam
     iterators::Vector{UnitRange{Int}}
     F::Float64
     n::Vector{Float64}
@@ -19,6 +19,7 @@ struct EmpiricDepartureValues
         return param
     end
 end
+__type_string(ℙ::Type{EmpiricDepartureValues}) = "Departure"
 
 #for showing in SparseMatrix context.
 Base.zero(x::EmpiricDepartureValues) = zero(typeof(x))
@@ -28,9 +29,13 @@ function Base.show(io::IO,x::EmpiricDepartureValues)
     print(io,"aij(")
     k_pol,k_exp,k_gauss = x.iterators
     l_pol,l_exp,l_gauss = length(k_pol),length(k_exp),length(k_gauss)
-    l_pol != 0 && print(io,"pol=$l_pol")
-    l_exp != 0 && print(io,"exp=$l_exp")
-    l_gauss != 0 && print(io,"gauss=$l_gauss")
+    text = String[]
+    vals = Int[]
+
+    l_pol != 0 && (push!(text,"pow"),push!(vals,l_pol))
+    l_exp != 0 &&  (push!(text,"exp"),push!(vals,l_exp))
+    l_gauss != 0 && (push!(text,"gauss"),push!(vals,l_gauss))
+    show_pairs(io,text,vals,"=",quote_string = false,pair_separator = ", ",)
     print(io,")")
 end
 
@@ -42,9 +47,8 @@ end
 @newmodelsimple EmpiricDeparture MultiFluidDepartureModel EmpiricDepartureParam
 
 """
-GEDeparture <: MultiFluidDepartureModel
-    GEDeparture(components;
-    activity = UNIFAC,
+EmpiricDeparture <: MultiFluidDepartureModel
+    EmpiricDeparture(components;
     userlocations=String[],
     verbose=false)
 
@@ -66,7 +70,6 @@ aᵣᵢⱼ = ∑nᵢⱼ₋ₖδ^(dᵢⱼ₋ₖ)*τ^(tᵢⱼ₋ₖ) +
     ∑nᵢⱼ₋ₖδ^(dᵢⱼ₋ₖ)τ^(tᵢⱼ₋ₖ)*exp(ηᵢⱼ₋ₖ(δ-εᵢⱼ₋ₖ)^2 + βᵢⱼ₋ₖ(τ-γᵢⱼ₋ₖ)^2)
 
 ```
-
 
 """
 function EmpiricDeparture(components;userlocations = String[],verbose = false)
@@ -112,37 +115,9 @@ function multiparameter_a_res(model::MultiFluid,V,T,z,departure::EmpiricDepartur
         for ii ∈ nzrange(ℙ, j)
             i = rows[ii]
             ℙᵢⱼ = ℙ_nonzeros[ii]
-            Δaᵢⱼ = zero(Δa)
-            k_pol,k_exp,k_gauss = ℙᵢⱼ.iterators 
             Fᵢⱼ = ℙᵢⱼ.F
-            n,t,d = ℙᵢⱼ.n,ℙᵢⱼ.t,ℙᵢⱼ.d
-            #strategy for storing.
-            #n, t, d, gauss values, always require views
-            #l, b does not require views. they are used just once.
-
-            #Polynomial terms
-            n_pol = view(n,k_pol)
-            t_pol = view(t,k_pol)
-            d_pol = view(d,k_pol)
-            Δaᵢⱼ += term_ar_pol(δ,τ,lnδ,lnτ,Δaᵢⱼ,n_pol,t_pol,d_pol)
-            #Exponential terms.
-            if length(k_exp) != 0
-                l,g = ℙᵢⱼ.l,ℙᵢⱼ.g
-                n_exp = view(n,k_exp)
-                t_exp = view(t,k_exp)
-                d_exp = view(d,k_exp)
-                Δaᵢⱼ += term_ar_exp(δ,τ,lnδ,lnτ,Δaᵢⱼ,n_exp,t_exp,d_exp,l,g)
-            end
-
-            #Gaussian bell-shaped terms
-            if length(k_gauss) != 0
-                η,β,γ,ε = ℙᵢⱼ.eta,ℙᵢⱼ.beta,ℙᵢⱼ.gamma,ℙᵢⱼ.epsilon
-                n_gauss = view(n,k_gauss)
-                t_gauss = view(t,k_gauss)
-                d_gauss = view(d,k_gauss)
-                Δaᵢⱼ += term_ar_gauss(δ,τ,lnδ,lnτ,Δaᵢⱼ,n_gauss,t_gauss,d_gauss,η,β,γ,ε)
-            end
-            Δa +=z[i]*zⱼ*Fᵢⱼ*Δaᵢⱼ
+            aᵢⱼ = reduced_a_res(ℙᵢⱼ,δ,τ,lnδ,lnτ)
+            Δa +=z[i]*zⱼ*Fᵢⱼ*aᵢⱼ
         end
      end
     return aᵣ + Δa/(∑z*∑z)

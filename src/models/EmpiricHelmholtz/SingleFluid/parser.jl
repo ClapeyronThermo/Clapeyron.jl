@@ -80,6 +80,8 @@ function get_json_data(components;
 
         found_paths = filter(f0,_paths)
         if iszero(length(found_paths))
+            verbose && @info "JSON for $(info_color(component)) not found in supplied paths"
+            verbose && coolprop_userlocations && @info "trying to look JSON for $(info_color(component)) in CoolProp"
             #try to extract from coolprop.
             !coolprop_userlocations && throw(error("cannot found component file $(component)."))
             !is_coolprop_loaded() && throw(error("cannot found component file $(component). Try loading the CoolProp library by loading it."))
@@ -98,9 +100,12 @@ function get_json_data(components;
             end
         end
         _path = last(found_paths)
+        verbose && @info "JSON found: $_path"
+
         json_string = read(_path, String)
         data = JSON3.read(json_string)
     else
+        verbose && @info "parsing supplied JSON data."
         data = JSON3.read(component)
     end
     return data
@@ -168,7 +173,7 @@ function SingleFluid(components;
             !estimate_pure && rethrow(e)
             nothing
         end
-    if data === nothing && estimate pure
+    if data === nothing && estimate_pure
         return XiangDeiters(components;userlocations,verbose = verbose)
     end
     eos_data = first(data[:EOS])
@@ -246,6 +251,7 @@ function SingleFluidIdeal(components;
 end
 
 function _parse_properties(data,Rgas0 = nothing, verbose = false)
+    verbose && @info "Starting parsing of properties from JSON."
     info = data[:INFO]
     eos_data = first(data[:EOS])
     st_data = data[:STATES]
@@ -306,6 +312,8 @@ function _parse_ideal(id_data,verbose = false)
     tp = Float64[]
     n_gerg = Float64[]
     v_gerg = Float64[]
+    paramtype = "ideal"
+    verbose && @info "Starting parsing of $(paramtype) JSON."
     for id_data_i in id_data
         if id_data_i[:type] == "IdealGasHelmholtzLead" || id_data_i[:type] == "IdealGasHelmholtzEnthalpyEntropyOffset"
             a1 += id_data_i[:a1]
@@ -411,7 +419,9 @@ function _parse_ideal(id_data,verbose = false)
             throw(error("Ideal: $(id_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
         end
     end
+    verbose && __verbose_found_json_terms(id_data)
 
+    verbose && @info "Creating SingleFluidIdealParam from JSON."
     return SingleFluidIdealParam(a1,a2,c0,n,t,c,d,np,tp,n_gerg,v_gerg,R0)
 
 end
@@ -463,7 +473,9 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
     assoc = false
     
 
-    full = (out === SingleFluidResidualParam)
+    full = __has_extra_params(out)
+    paramtype = __type_string(out)
+    verbose && @info "Starting parsing of $(paramtype) JSON."
     for res_data_i in res_data
         if res_data_i[:type] == "ResidualHelmholtzPower"
             append!(n,res_data_i[:n])
@@ -552,10 +564,13 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
                 end
             end
         else
-            paramtype = full ?  "Residual" : "Departure"
+            
             throw(error("$paramtype: $(res_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
         end
     end
+
+    verbose && __verbose_found_json_terms(res_data)
+
     pol_vals = findall(iszero,l)
     exp_vals = findall(!iszero,l)
     _n = vcat(n[pol_vals],n[exp_vals],n_gauss)
@@ -568,6 +583,7 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
     _γ = gamma
     _ε = epsilon
 
+    verbose && @info "Creating $(string(out)) from JSON."
     if !full
         return out(Fij,_n,_t,_d,_l,_g,_η,_β,_γ,_ε)
     end
@@ -584,6 +600,34 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
     #exponential term
 
    return SingleFluidResidualParam(_n,_t,_d,_l,_g,_η,_β,_γ,_ε;gao_b,na,assoc)
+end
+
+function __verbose_found_json_terms(data)
+    res = String[]
+    push!(res,"JSON types:")
+    for data_i in data
+        type = data_i[:type]
+        additional = 
+        if type == "ResidualHelmholtzGERG2008"
+            " Converting to power, exponential and gaussian bell-shaped terms"
+        elseif type == "IdealGasHelmholtzPlanckEinstein" || type == "IdealGasHelmholtzPlanckEinsteinFunctionT"
+            " Converting to Generalized Plank-Einstein terms."
+        elseif type == "IdealGasHelmholtzCP0Constant"
+            " Converting to lead and LogTau terms."
+        elseif type == "IdealGasHelmholtzCP0PolyT"
+            " Converting to lead, LogTau and power terms."
+        elseif type == "IdealGasHelmholtzCP0AlyLee"
+            " Converting to lead, LogTau and Plank-Einstein terms."
+        else
+            ""
+        end
+    
+    push!(res,"found $(info_color(type)) terms.$(additional)")
+    end
+    io = IOBuffer()
+    show_pairs(io,res,quote_string = false)
+    r = io |> take! |> String
+    @info r
 end
 
 function _parse_ancilliary_func(anc,input_key,output_key)
