@@ -685,7 +685,7 @@ end
 
 function __verbose_findparams_start(filepath,components,headerparams,parsegroups,csvtype,grouptype)
     csv_string = Symbol(csvtype)
-    no_parsegroups = parsegroups != :off
+    no_parsegroups = parsegroups == :off
     if no_parsegroups
         if csvtype ∈ (groupdata,structgroupdata)
             @info("Skipping $csv_string csv $filepath")
@@ -710,22 +710,28 @@ end
 function __verbose_findparams_found(foundvalues)
     for v ∈ foundvalues
         if v.type == singledata
-            vdict = Dict(pair[1] => val for (pair,val) ∈ zip(v.component_info,v.data))
+            io = IOBuffer()
+            show_pairs(io,first.(v.component_info),v.data," => ",quote_string = false)
+            vals = String(take!(io))
             kk = info_color(v.name)
             @info("""Found single component data: $kk with values:
-            $vdict
+            $vals
             """)
         elseif v.type == pairdata
-            vdict = Dict((pair[1],pair[2]) => val for (pair,val) ∈ zip(v.component_info,v.data))
+            io = IOBuffer()
+            show_pairs(io,first.(v.component_info,2),v.data," => ",quote_string = false)
+            vals = String(take!(io))
             kk = info_color(v.name)
             @info("""Found pair component data: $kk with values:
-            $vdict
+            $vals
             """)
         elseif v.type == assocdata
-            vdict = Dict(__assoc_string(pair) => val for (pair,val) ∈ zip(v.component_info,v.data))
+            io = IOBuffer()
+            show_pairs(io,__assoc_string.(v.component_info),v.data," => ",quote_string = false)
+            vals = String(take!(io))
             kk = info_color(v.name)
             @info("""Found association component data: $kk with values:
-            $vdict
+            $vals
             """)
         elseif v.type == groupdata
             #println(val) for val ∈ v.data)
