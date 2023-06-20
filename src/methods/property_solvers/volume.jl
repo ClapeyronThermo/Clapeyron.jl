@@ -70,7 +70,7 @@ function volume_virial(B::Real,p,T,z=SA[1.0])
     aV2 - V - B = 0 
     =#
     B > _0 && return _0/_0
-    a = p/(R̄*T*sum(z))
+    a = p/(Rgas(model)*T*sum(z))
     b = -1
     c = -B
     Δ = b*b-4*a*c
