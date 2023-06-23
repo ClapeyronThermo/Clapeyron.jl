@@ -191,7 +191,7 @@
       "gas_constant_units": "J/mol/K",
       "T_max": 1000,
       "pseudo_pure": false,
-      "molar_mass": 0.00201588,
+      "molar_mass": 0.0020158800000000003,
       "Ttriple_units": "K",
       "T_max_units": "K",
       "acentric": -0.219,
