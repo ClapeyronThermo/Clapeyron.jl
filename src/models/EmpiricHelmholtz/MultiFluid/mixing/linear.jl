@@ -30,7 +30,7 @@ function LinearMixing(components;userlocations = String[],verbose = false)
 end
 
 function v_scale(model::MultiFluid,z,mixing::LinearMixing,∑z)
-    Vc = model.params.Tc.values
+    Vc = model.params.Vc.values
     dot(Vc,z)/∑z
 end
 

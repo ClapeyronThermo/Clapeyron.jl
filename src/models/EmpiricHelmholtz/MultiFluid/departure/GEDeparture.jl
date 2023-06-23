@@ -17,9 +17,22 @@ function GEDeparture_constructor(f)
 end
 
 GEDeparture(f::Function) = GEDeparture_constructor(f)
-GEDeparture(f::ActivityModel) = GEDeparture_constructor(f)
+
 GEDeparture(f::Type{T}) where T <:ActivityModel = GEDeparture_constructor(T)
 
+#activity is already initialized, construct directly
+function GEDeparture(act::ActivityModel)
+    init_activity = act
+    if has_groups(init_activity)
+        components = init_activity.groups.components
+    else
+        components = init_activity.components
+    end
+    vref = SingleParam("reference volume",components)
+    pkgparams = GEDepartureParam(vref)
+    references = ["10.1021/acs.iecr.1c01186","10.1016/j.fluid.2018.04.015"]
+    return GEDeparture(components,pkgparams,init_activity,references)
+end
 """
 GEDeparture <: MultiFluidDepartureModel
     GEDeparture(components;
@@ -65,10 +78,9 @@ function multiparameter_a_res(model,V,T,z,departure::GEDeparture,δ,τ,∑z = su
     lnτ = log(τ)
     ∑z⁻¹ = 1/∑z
     aᵣ = multiparameter_a_res0(model,V,T,z,δ,τ,lnδ,lnτ,∑z)
-    Vᵣ = δ*V*∑z⁻¹
+    Vᵣ = v_scale(model,z,model.mixing,∑z)
     _0 = zero(aᵣ)
     isone(length(z)) && return aᵣ
-    gᴱ = excess_g_res(departure.activity,V,T,z)
     vref = departure.params.vref.values
     v̄ref = dot(z,vref)*∑z⁻¹
     ρref = 1/v̄ref
@@ -83,14 +95,15 @@ function multiparameter_a_res(model,V,T,z,departure::GEDeparture,δ,τ,∑z = su
     for i in @comps
         mᵢ = m[i]
         τᵢ = Tc[i]*Tinv
-        δrefᵢ = Vc[i]*v̄ref
-        Δa += z[i]*(reduced_a_res(mᵢ,δref,τ,lnδref,lnτ) - reduced_a_res(mᵢ,δrefᵢ,τᵢ))
+        δrefᵢ = Vc[i]/vref[i]
+        Δa += z[i]*(reduced_a_res(mᵢ,δref,τ) - reduced_a_res(mᵢ,δrefᵢ,τᵢ))
     end
     Δa *= ∑z⁻¹
     R = Rgas(model)
     ρ = ∑z/V
+    gᴱ = excess_g_res(departure.activity,V,T,z)
     lnb = log1p(b*ρ)/log1p(b*ρref)
-    return aᵣ + lnb*(gᴱ/(R*T) - Δa)
+    return aᵣ + lnb*(gᴱ*∑z⁻¹/(R*T) - Δa)
 end
 
 function lb_volume(model::MultiFluid{A,M,GEDeparture},z = SA[1.0]) where {A,M}

@@ -87,6 +87,7 @@ Clapeyron.TholLJ
 Clapeyron.LJRef
 Clapeyron.GERG2008
 Clapeyron.EOS_LNG
+Clapeyron.HelmAct
 ```
 
 ## Mixing models
