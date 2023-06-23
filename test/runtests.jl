@@ -1,4 +1,4 @@
-using Test, Unitful
+using Test, Unitful, CoolProp
 
 t1 = @elapsed using Clapeyron
 @info "Loading Clapeyron took $(round(t1,digits = 2)) seconds"

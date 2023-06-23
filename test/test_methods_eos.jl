@@ -487,6 +487,18 @@ end
 
 end
 
+@testset "Helmholtz + Activity" begin
+    model = HelmAct(["water","ethanol"])
+    p = 12666.0
+    x1 = Clapeyron.FractionVector( 0.00350)
+    bubble_temperature(model,p,x1)[4][1] ≈ 0.198 rtol = 1e-2
+end
+
+@testset "SingleFluid - CoolProp" begin
+    #methanol, uses assoc term
+    @test saturation_pressure(SingleFluid("methanol"),300.15)[1] ≈ PropsSI("P","T",300.15,"Q",1.,"methanol") rtol = 1e-6
+end
+
 
 @testset "LJRef methods" begin
     system = LJRef(["methane"])
