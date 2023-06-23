@@ -298,6 +298,13 @@ end
     @test vc/system.params.Vc[1] ≈ 1.168 rtol = 1e-4 #if Zc_exp < 0.29, this should hold, by definition
 end
 
+@testset "EPPR78, single component" begin
+    system = EPPR78(["carbon dioxide"])
+    T = 400u"K"
+    @test Clapeyron.volume(system, 3311.0u"bar", T) ≈ 3.363139140634349e-5u"m^3"
+    @test Clapeyron.molar_density(system, 3363.1u"bar", T) ≈ 29810.118127751106u"mol*m^-3"
+end
+
 @testset "Cubic methods, multi-components" begin
     system = RK(["ethane","undecane"])
     p = 1e7

@@ -214,24 +214,14 @@ function crit_pure_tp(model::ABCCubicModel)
 end
 
 function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0=nothing)
-    lb_v   =lb_volume(model,z)
+    lb_v = lb_volume(model,z)
     if iszero(p)
         vl,_ = zero_pressure_impl(model,T,z)
         return vl
     end
     nRTp = sum(z)*R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
-    sols = Solvers.roots3(_poly)
-    function imagfilter(x)
-        absx = abs(imag(x))
-        return absx < 8 * eps(typeof(absx))
-    end
-    x1, x2, x3 = sols
-    sols = (x1, x2, x3)
-    xx = (x1, x2, x3)
-    isreal = imagfilter.(xx)
-    vvv = extrema(real.(xx))
-    zl,zg = vvv
+    num_isreal, zl, zg = Solvers.real_roots3(_poly)
     vvl,vvg = nRTp*zl,nRTp*zg
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if !isfinite(vvl) && !isfinite(vvg) && phase != :unknown
@@ -240,19 +230,12 @@ function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
         #isnan(v) && err()
         return v
     end
-    if sum(isreal) == 3 #3 roots
+    if num_isreal == 3 # 3 real roots
         vg = vvg
         _vl = vvl
         vl = ifelse(_vl > lb_v, _vl, vg) #catch case where solution is unphysical
-    elseif sum(isreal) == 1
-        i = findfirst(imagfilter, sols)::Int
-        vl = real(sols[i]) * nRTp
-        vg = real(sols[i]) * nRTp
-    elseif sum(isreal) == 0
-        V0 = x0_volume(model, p, T, z; phase)
-        v = _volume_compress(model, p, T, z, V0)
-        #isnan(v) && err()
-        return v
+    else # 1 real root (or 2 with the second one degenerate)
+        vg = vl = zl * nRTp
     end
 
     function gibbs(v)
