@@ -372,11 +372,17 @@ end
 
 @testset "GERG2008 methods, single components" begin
     system = GERG2008(["water"])
+    met = GERG2008(["methane"])
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 1.8067969591040684e-5 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1484.0034692716843 rtol = 1e-6
+        #EOS-LNG, table 15
+        V1,T1 = 1/27406.6102,100.0
+        @test Clapeyron.pressure(met,V1,T1)  ≈ 1.0e6 rtol = 1e-6
+        @test Clapeyron.VT_speed_of_sound(met,V1,T1) ≈ 1464.5158 rtol = 1e-6
+        @test Clapeyron.pressure(met,1/28000,140) ≈ 86.944725e6  rtol = 1e-6
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3184.83242429761 rtol = 1E-6
@@ -405,12 +411,16 @@ end
 
 @testset "EOS-LNG methods, multi-components" begin
     @testset "Bulk properties" begin
+        #EOS-LNG paper, table 16
         system = EOS_LNG(["methane","isobutane"])
         z = [0.6,0.4]
-        V = 1/17241.868
-        @test Clapeyron.VT_speed_of_sound(system,1e16,210.0,z) ≈ 252.48363281981858
-        @test Clapeyron.volume(system,5e6,160.0,z) ≈ 5.9049701669337714e-5
-        @test Clapeyron.pressure(system,0.01,350,z) ≈ 287244.4789047023
+        T1,V1 = 160.0,1/17241.868
+        T2,V2 = 350.0,1/100
+
+        @test Clapeyron.VT_speed_of_sound(system,V1,T1,z) ≈ 1331.9880 rtol = 1e-6
+        @test Clapeyron.VT_speed_of_sound(system,V2,T2,z) ≈ 314.72845 rtol = 1e-6
+        @test Clapeyron.volume(system,5e6,T1,z) ≈ V1
+        @test Clapeyron.pressure(system,V2,T2,z) ≈ 0.28707693e6 rtol = 1e6 
     end
 end
 
