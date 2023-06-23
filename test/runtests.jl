@@ -1,8 +1,9 @@
-using Test, Unitful, CoolProp
+using Test, Unitful
 
 t1 = @elapsed using Clapeyron
+using CoolProp
 @info "Loading Clapeyron took $(round(t1,digits = 2)) seconds"
-@info "Coolprop: $(is_coolprop_loaded())"
+@info "Coolprop: $(Clapeyron.is_coolprop_loaded())"
 #Disable showing citations
 ENV["CLAPEYRON_SHOW_REFERENCES"] = "FALSE"
 
