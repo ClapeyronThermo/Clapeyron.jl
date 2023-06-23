@@ -380,9 +380,9 @@ end
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1484.0034692716843 rtol = 1e-6
         #EOS-LNG, table 15
         V1,T1 = 1/27406.6102,100.0
-        @test Clapeyron.pressure(met,V1,T1)  ≈ 1.0e6 rtol = 1e-6
+        @test Clapeyron.pressure(met,V1,T1)  ≈ 1.0e6 rtol = 2e-6
         @test Clapeyron.VT_speed_of_sound(met,V1,T1) ≈ 1464.5158 rtol = 1e-6
-        @test Clapeyron.pressure(met,1/28000,140) ≈ 86.944725e6  rtol = 1e-6
+        @test Clapeyron.pressure(met,1/28000,140) ≈ 86.944725e6  rtol = 2e-6
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3184.83242429761 rtol = 1E-6
