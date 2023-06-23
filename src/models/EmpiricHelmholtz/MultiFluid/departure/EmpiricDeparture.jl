@@ -73,7 +73,7 @@ aᵣᵢⱼ = ∑nᵢⱼ₋ₖδ^(dᵢⱼ₋ₖ)*τ^(tᵢⱼ₋ₖ) +
 
 """
 function EmpiricDeparture(components;userlocations = String[],verbose = false)
-    params = getparams(components,["Empiric/departure/empiric_departure_unlike.csv"],asymmetricparams = ["F","parameters"],userlocations = userlocations,verbose = verbose)
+    params = getparams(components,["Empiric/departure/empiric_unlike.csv"],asymmetricparams = ["F","parameters"],userlocations = userlocations,verbose = verbose)
     raw_parameters = params["parameters"]
     F = params["F"]
     s1,s2 = size(F.values)
