@@ -17,13 +17,31 @@ JSON_ALTERNATIVE_NAMES = Dict{String,String}(
     "hydrogensulfide" => "HydrogenSulfide",
 )
 
-function is_coolprop_loaded()
-    lib_handler = Base.Libc.Libdl.dlopen("libcoolprop";throw_error = false)
-    !isnothing(lib_handler)
+
+function coolprop_handler()
+    #for some reason, this does not work on linux/mac
+    lib_handler1 = Base.Libc.Libdl.dlopen(:libcoolprop;throw_error = false)
+    #return lib_handler1
+    lib_handler1 !== nothing && return lib_handler1
+    if !Sys.iswindows()
+        #search on all dynamic libs, filter libCoolProp. TODO: find something faster.
+        dllist = Base.Libc.Libdl.dllist()
+        x =findall(z->occursin("libCoolProp",z),dllist)
+        length(x) == 0 && return nothing
+        t = dllist[x[1]]
+        lib_handler2 = Base.Libc.Libdl.dlopen(t;throw_error = false)
+        return lib_handler2
+    else
+        return lib_handler1
+    end
 end
 
-function coolprop_csv(component::String)
-    lib_handler = Base.Libc.Libdl.dlopen("libcoolprop";throw_error = false)
+function is_coolprop_loaded()
+    return coolprop_handler() !== nothing
+end
+
+function coolprop_csv(component::String,comp = "")
+    lib_handler = coolprop_handler()
     if !isnothing(lib_handler)
        #libcoolprop is present.
         buffer_length = 2<<12
@@ -48,7 +66,7 @@ function coolprop_csv(component::String)
         end
         return false,unsafe_string(convert(Ptr{UInt8}, pointer(message_buffer::Array{UInt8, 1})))
     else
-        return false,""
+        throw(error("cannot found component file $(comp). Try loading the CoolProp library by loading it."))
     end
 
 end
@@ -84,10 +102,8 @@ function get_json_data(components;
             verbose && coolprop_userlocations && @info "trying to look JSON for $(info_color(component)) in CoolProp"
             #try to extract from coolprop.
             !coolprop_userlocations && throw(error("cannot found component file $(component)."))
-            !is_coolprop_loaded() && throw(error("cannot found component file $(component). Try loading the CoolProp library by loading it."))
-            
             alternative_comp = get(JSON_ALTERNATIVE_NAMES,norm_comp1,norm_comp1)
-            success,json_string = coolprop_csv(alternative_comp)
+            success,json_string = coolprop_csv(alternative_comp,component)
             if success
                 data = JSON3.read(json_string)[1]
                 return data
