@@ -492,8 +492,11 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
     full = __has_extra_params(out)
     paramtype = __type_string(out)
     verbose && @info "Starting parsing of $(paramtype) JSON."
-    for res_data_i in res_data
-        if res_data_i[:type] == "ResidualHelmholtzPower"
+    
+    #this is to be compatible with CoolProp departure form.
+    vec_data = res_data isa AbstractVector ? res_data : (res_data,)
+    for res_data_i in vec_data
+        if res_data_i[:type] == "ResidualHelmholtzPower" || res_data_i[:type] == "Exponential"
             append!(n,res_data_i[:n])
             append!(t,res_data_i[:t])
             append!(d,res_data_i[:d])
@@ -541,7 +544,7 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
             assoc_a += res_data_i[:a]
             assoc_m += res_data_i[:m]
             assoc_vbarn += res_data_i[:vbarn]
-        elseif res_data_i[:type] == "ResidualHelmholtzGERG2008"
+        elseif res_data_i[:type] == "ResidualHelmholtzGERG2008" || (res_data_i[:type] == "GERG-2008" && vec_data isa Tuple)
             #we do the conversion, as detailed in the EOS-LNG paper
             ng = res_data_i[:n]
             tg = res_data_i[:t]
@@ -552,31 +555,68 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
             εg = res_data_i[:epsilon]
             len = length(ηg)
             for i in 1:len
-                #convert to bigfloat precision, better parsing.
-                εij = big(εg[i])
-                ηij = big(ηg[i])
-                βij = big(βg[i])
-                γij = big(γg[i])
-                ω = βij*γij - ηij*εij*εij
-                if ηg[i] == 0 #simple exponential term
-                    ni_new = ng[i]*exp(ω) |> Float64
-                    push!(n,ni_new)
+                if iszero(ηg[i]) && iszero(βg[i]) && iszero(γg[i]) && iszero(εg[i])
+                    #power terms
+                    push!(n,ng[i])
                     push!(t,tg[i])
                     push!(d,dg[i])
-                    push!(l,1)
-                    push!(g,βg[i])
-                else #convert to gaussian term
-                    ν = 2*ηij*εij - βij
-                    ξ = ν/(2*ηij)
-                    ξg = ξ |> Float64
-                    ni_new = ng[i]*exp(ω + ηij*ξ*ξ) |> Float64
-                    push!(n_gauss,ni_new)
-                    push!(t_gauss,tg[i])
-                    push!(d_gauss,dg[i])
-                    push!(eta,ηg[i])
-                    push!(beta,0)
-                    push!(gamma,0)
-                    push!(epsilon,ξg)
+                    push!(l,0)
+                    push!(g,1)
+                else
+                    #parse as gaussian + exponential
+                    #convert to bigfloat precision, better parsing.
+                    εij = big(εg[i])
+                    ηij = big(ηg[i])
+                    βij = big(βg[i])
+                    γij = big(γg[i])
+                    ω = βij*γij - ηij*εij*εij
+                    if ηg[i] == 0 #simple exponential term
+                        ni_new = ng[i]*exp(ω) |> Float64
+                        push!(n,ni_new)
+                        push!(t,tg[i])
+                        push!(d,dg[i])
+                        push!(l,1)
+                        push!(g,βg[i])
+                    else #convert to gaussian term
+                        ν = 2*ηij*εij - βij
+                        ξ = ν/(2*ηij)
+                        ξg = ξ |> Float64
+                        ni_new = ng[i]*exp(ω + ηij*ξ*ξ) |> Float64
+                        push!(n_gauss,ni_new)
+                        push!(t_gauss,tg[i])
+                        push!(d_gauss,dg[i])
+                        push!(eta,ηg[i])
+                        push!(beta,0)
+                        push!(gamma,0)
+                        push!(epsilon,ξg)
+                    end
+                end
+            end
+        elseif res_data_i[:type] == "Gaussian+Exponential" && vec_data isa Tuple
+            len = length(res_data_i[:n])
+            ni = res_data_i[:n]
+            ti = res_data_i[:t]
+            di = res_data_i[:d]
+            ηi = res_data_i[:eta]
+            βi = res_data_i[:beta]
+            γi = res_data_i[:gamma]
+            εi = res_data_i[:epsilon]
+            li = res_data_i[:l]
+            for i in 1:len
+                if ηi[i] == βi[i] == γi[i] == εi[i] == 0.0
+                    push!(n,ni[i])
+                    push!(t,ti[i])
+                    push!(d,di[i])
+                    push!(l,li[i])
+                    push!(g,1)
+                else
+                    push!(n_gauss,ni[i])
+                    push!(t_gauss,ti[i])
+                    push!(d_gauss,di[i])
+                    push!(eta,ηi[i])
+                    push!(beta,βi[i])
+                    push!(gamma,γi[i])
+                    push!(epsilon,εi[i])
                 end
             end
         else
@@ -585,7 +625,7 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
         end
     end
 
-    verbose && __verbose_found_json_terms(res_data)
+    verbose && __verbose_found_json_terms(vec_data)
 
     pol_vals = findall(iszero,l)
     exp_vals = findall(!iszero,l)
@@ -624,7 +664,7 @@ function __verbose_found_json_terms(data)
     for data_i in data
         type = data_i[:type]
         additional = 
-        if type == "ResidualHelmholtzGERG2008"
+        if type == "ResidualHelmholtzGERG2008" || type == "GERG-2008"
             " Converting to power, exponential and gaussian bell-shaped terms"
         elseif type == "IdealGasHelmholtzPlanckEinstein" || type == "IdealGasHelmholtzPlanckEinsteinFunctionT"
             " Converting to Generalized Plank-Einstein terms."
@@ -634,6 +674,8 @@ function __verbose_found_json_terms(data)
             " Converting to lead, LogTau and power terms."
         elseif type == "IdealGasHelmholtzCP0AlyLee"
             " Converting to lead, LogTau and Plank-Einstein terms."
+        elseif type == "Gaussian+Exponential"
+            " Converting to power, exponential and gaussian bell-shaped terms."
         else
             ""
         end
