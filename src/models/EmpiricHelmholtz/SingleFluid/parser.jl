@@ -727,7 +727,7 @@ function _parse_ancillaries(anc_data,verbose = false)
 
     ps_anc = PolExpSat(_parse_ancilliary_func(p_data,:T_r,:reducing_value))
     rhov_anc = PolExpVapour(_parse_ancilliary_func(rhov_data,:T_r,:reducing_value))
-    rhol_anc = PolExpVapour(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
+    rhol_anc = PolExpLiquid(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
     return CompositeModel(["ancillaries"],gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
 end
 
