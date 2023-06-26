@@ -1,7 +1,5 @@
-
-
 """
-
+    HelmAct::MultiFluid
     HelmAct(components;
         pure_userlocations = String[],
         activity = PSRKUNIFAC,
@@ -48,7 +46,7 @@ function HelmAct(components;
     Rgas = R̄,
     verbose = false,
     )
-    
+
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     if has_groups(init_activity)
         components = init_activity.groups.components

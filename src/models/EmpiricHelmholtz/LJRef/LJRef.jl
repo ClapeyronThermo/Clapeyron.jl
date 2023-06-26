@@ -251,7 +251,7 @@ Lennard-Jones Reference equation of state. Ideal Part. valid from 0.5 < T/Tc < 7
 ```
 τᵢ = 1.32ϵᵢ/T
 δᵢ = n(Nₐσᵢ^3)/0.31V
-a⁰ᵢ(δ,τ) = log(δᵢ) + 1.5log(τᵢ) - 1.515151515τᵢ + 6.262265814 
+a⁰ᵢ(δ,τ) = log(δᵢ) + 1.5log(τᵢ) - 1.515151515τᵢ + 6.262265814
 a⁰(δ,τ,z) = ∑xᵢ(a⁰ᵢ + log(xᵢ))
 
 ```

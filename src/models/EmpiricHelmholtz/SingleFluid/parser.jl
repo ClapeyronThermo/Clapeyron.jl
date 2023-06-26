@@ -92,10 +92,8 @@ function get_json_data(components;
     component = get_only_comp(components)
     if first(component) != '{' #not json
         _paths = flattenfilepaths(["Empiric"],userlocations)
-        
         norm_comp1 = normalisestring(component)
         f0 = x -> normalisestring(last(splitdir(first(splitext(x))))) == norm_comp1
-
         found_paths = filter(f0,_paths)
         if iszero(length(found_paths))
             verbose && @info "JSON for $(info_color(component)) not found in supplied paths"
@@ -459,7 +457,7 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
     gamma = Float64[]
     epsilon = Float64[]
 
-    
+
     #gao association terms
     n_gao = Float64[]
     t_gao = Float64[]
@@ -487,12 +485,12 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
     assoc_m = 0.0
     assoc_vbarn = 0.0
     assoc = false
-    
+
 
     full = __has_extra_params(out)
     paramtype = __type_string(out)
     verbose && @info "Starting parsing of $(paramtype) JSON."
-    
+
     #this is to be compatible with CoolProp departure form.
     vec_data = res_data isa AbstractVector ? res_data : (res_data,)
     for res_data_i in vec_data
@@ -620,7 +618,7 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
                 end
             end
         else
-            
+
             throw(error("$paramtype: $(res_data_i[:type]) not supported for the moment. open an issue in the repository for help."))
         end
     end
@@ -643,7 +641,7 @@ function _parse_residual(out,res_data; verbose = false, Fij = 1.0)
     if !full
         return out(Fij,_n,_t,_d,_l,_g,_η,_β,_γ,_ε)
     end
-    
+
     #gao_b term
     gao_b = GaoBTerm(n_gao,t_gao,d_gao,eta_gao,beta_gao,gamma_gao,epsilon_gao,b_gao)
 
@@ -663,7 +661,7 @@ function __verbose_found_json_terms(data)
     push!(res,"JSON types:")
     for data_i in data
         type = data_i[:type]
-        additional = 
+        additional =
         if type == "ResidualHelmholtzGERG2008" || type == "GERG-2008"
             " Converting to power, exponential and gaussian bell-shaped terms"
         elseif type == "IdealGasHelmholtzPlanckEinstein" || type == "IdealGasHelmholtzPlanckEinsteinFunctionT"
@@ -679,7 +677,7 @@ function __verbose_found_json_terms(data)
         else
             ""
         end
-    
+
     push!(res,"found $(info_color(type)) terms.$(additional)")
     end
     io = IOBuffer()

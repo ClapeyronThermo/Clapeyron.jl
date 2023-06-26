@@ -5,7 +5,7 @@ const EmpiricAncillary = CompositeModel{PolExpVapour, PolExpLiquid, Nothing, Pol
 #term dispatch. function definitions are in term_functions.jl
 
 function a_term(term::NonAnalyticTerm,δ,τ,lnδ,lnτ,_0)
-    if term.active    
+    if term.active
         A,B,C,D,a,b,β,n = term.A,term.B,term.C,term.D,term.a,term.b,term.beta,term.n
         αᵣ = term_ar_na(δ,τ,lnδ,lnτ,_0,A,B,C,D,a,b,β,n)
     else
@@ -15,7 +15,7 @@ function a_term(term::NonAnalyticTerm,δ,τ,lnδ,lnτ,_0)
 end
 
 function a_term(term::GaoBTerm,δ,τ,lnδ,lnτ,_0)
-    if term.active    
+    if term.active
         n = term.n
         t = term.t
         d = term.d
@@ -32,7 +32,7 @@ function a_term(term::GaoBTerm,δ,τ,lnδ,lnτ,_0)
 end
 
 function a_term(term::Associating2BTerm,δ,τ,lnδ,lnτ,_0)
-    if term.active    
+    if term.active
         ε = term.epsilonbar
         κ = term.kappabar
         a = term.a
@@ -84,7 +84,7 @@ function reduced_a_ideal(model::SingleFluidIdealParam,τ)
     c₀ = model.c0
     logτ = log(τ)
     α₀ = a₁ + a₂*τ + c₀*logτ
-   
+
     #Generalized Plank-Einstein terms
     n = model.n_gpe
     if length(n) != 0
@@ -149,16 +149,16 @@ function reduced_a_res(ℙ::MultiParameterParam,δ,τ,lnδ = log(δ),lnτ = log(
 
     #Especial terms are stored in structs.
     __has_extra_params(ℙ) || return αᵣ
-    
+
     #gaoB terms
     αᵣ += a_term(ℙ.gao_b,δ,τ,lnδ,lnτ,_0)
-    
+
     #Non-analytical terms
     αᵣ += a_term(ℙ.na,δ,τ,lnδ,lnτ,_0)
 
     #associating terms.
     αᵣ += a_term(ℙ.assoc,δ,τ,lnδ,lnτ,_0)
- 
+
     return αᵣ
 end
 

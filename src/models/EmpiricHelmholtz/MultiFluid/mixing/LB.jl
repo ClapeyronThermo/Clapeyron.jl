@@ -1,52 +1,46 @@
-struct LorentzBerthelotMixingParam <: MixingRule
-    k::PairParam{Float64}
-    l::PairParam{Float64}
-end
+"""
+    LorentzBerthelotMixing::AsymmetricMixing
+    LorentzBerthelotMixing(components;
+    userlocations=String[],
+    verbose=false)
 
-@newmodelsimple LorentzBerthelotMixing MixingRule LorentzBerthelotMixingParam
+## Input parameters
+- `k`: Pair Parameter (`Float64`) - binary interaction parameter for temperature  (no units)
+- `l`: Pair Parameter (`Float64`) - binary interaction parameter for volume (no units)
 
+## Description
+Lorentz-Berthelot Mixing for MultiParameter EoS models:
+
+```
+τ = T̄/T
+δ = V̄/V
+V̄ = ∑xᵢxⱼ * Vᵣᵢⱼ * (1 - lᵢⱼ)
+T̄ = ∑xᵢxⱼ * Tᵣᵢⱼ * (1 - kᵢⱼ)
+Vᵣᵢⱼ = 0.125*(∛Vcᵢ + ∛Vcⱼ)^3
+Tᵣᵢⱼ = √(Tcᵢ*Tcⱼ)
+```
+missing parameters will be assumed `kᵢⱼ = lᵢⱼ = 0`
+"""
 function LorentzBerthelotMixing(components;userlocations = String[],verbose = false)
     params = getparams(components,["Empiric/mixing/LorentzBerthelotMixing/LorentzBerthelotMixing_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     l = get(params,"l",nothing)
     k = get(params,"k",nothing)
-    k === nothing && (k = PairParam("k",components))
-    l === nothing && (l = PairParam("l",components))
-    pkgparams = LorentzBerthelotMixingParam(k,l)
-    return LorentzBerthelotMixing(pkgparams, verbose = verbose)
-end
-
-function v_scale(model::MultiFluid,z,mixing::LorentzBerthelotMixing,∑z)
-    Vc = model.params.Tc.values
-    l = mixing.params.l
-    res = zero(∑z)*1.0
-    for i in @comps
-        Vci = Vc[i]
-        zi = z[i]
-        res += zi*zi*Vci
-        for j in 1:(i-1)
-            Vcj = Vc[j]
-            zi = z[j]
-            res += zi*zj*mix_mean3(Vci,Vcj,l[i,j])
-        end
-    end
-    return res/(∑z*∑z)
-end
-
-function T_scale(model::MultiFluid,z,mixing::LorentzBerthelotMixing,∑z)
-    Tc = model.params.Tc.values
-    k = mixing.params.k
-    res = zero(∑z)*1.0
-    for i in @comps
-        Tci = Vc[i]
-        zi = z[i]
-        res += zi*zi*Tci
-        for j in 1:(i-1)
-            Tcj = Vc[j]
-            zi = z[j]
-            res += zi*zj*mix_geomean(Tci,Tcj,k[i,j])
-        end
-    end
-    return res/(∑z*∑z)
+    k === nothing && (k = PairParam("gamma_T",components))
+    l === nothing && (l = PairParam("gamma_v",components))
+    k .= 1 .- k #invert
+    l .= 1 .- l
+    beta_v = PairParam("beta_v",components)
+    beta_T = PairParam("beta_T",components)
+    beta_v .= 1
+    beta_T .= 1
+    pkgparams = AsymmetricMixingParam(k,l,beta_T,beta_v)
+    n = length(components)
+    k.ismissingvalues .= false
+    l.ismissingvalues .= false
+    beta_v.ismissingvalues .= false
+    beta_T.ismissingvalues .= false
+    references = ["Klimeck, Ph.D. dissertation"]
+    return AsymmetricMixing(pkgparams,verbose = verbose,references = references)
 end
 
 export LorentzBerthelotMixing

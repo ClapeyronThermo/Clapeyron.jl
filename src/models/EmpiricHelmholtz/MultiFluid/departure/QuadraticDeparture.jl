@@ -5,11 +5,9 @@ end
 
 @newmodelsimple QuadraticDeparture MultiFluidDepartureModel QuadraticDepartureParam
 
-
-
 """
     QuadraticDeparture <: MultiFluidDepartureModel
-    QuadraticDeparture(components; 
+    QuadraticDeparture(components;
     userlocations=String[],
     verbose=false)
 

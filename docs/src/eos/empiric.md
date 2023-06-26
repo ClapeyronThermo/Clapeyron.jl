@@ -94,11 +94,14 @@ Clapeyron.HelmAct
 ```@docs
 Clapeyron.LinearMixing
 Clapeyron.AsymmetricMixing
+Clapeyron.LorentzBerthelotMixing
 ```
 
 ## Departure models
 ```@docs
 Clapeyron.EmpiricDeparture
+Clapeyron.departure_functions
+Clapeyron.create_departure
 Clapeyron.GEDeparture
 Clapeyron.QuadraticDeparture
 ```

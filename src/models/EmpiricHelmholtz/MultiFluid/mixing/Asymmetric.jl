@@ -9,8 +9,8 @@ end
 
 
 """
-    QuadraticDeparture <: MultiFluidDepartureModel
-    QuadraticDeparture(components; 
+    AsymmetricMixing <: MultiFluidDepartureModel
+    AsymmetricMixing(components;
     userlocations=String[],
     verbose=false)
 
@@ -39,10 +39,17 @@ With the asymmetry present in the β parameters:
 ```
 
 If there is no data present, the parameters can be estimated:
+
+- Linear estimation:
 ```
 βᵛᵢⱼ = βᵛᵢⱼ = 1
 γᵛᵢⱼ = 4*(Vcᵢ + Vcⱼ)/(∛Vcᵢ + ∛Vcⱼ)^3
 γᵀᵢⱼ = 0.5*(Tcᵢ + Tcⱼ)/√(Tcᵢ*Tcⱼ)
+```
+
+- Lorentz-Berthelot Estimation:
+```
+βᵛᵢⱼ = βᵛᵢⱼ = γᵛᵢⱼ = γᵀᵢⱼ = 1
 ```
 
 ## References
@@ -61,7 +68,7 @@ function AsymmetricMixing(components;userlocations = String[],verbose = false)
     return AsymmetricMixing(pkgparams,verbose = verbose,references = references)
 end
 
-function recombine_mixing!(model::MultiFluid,mixing::AsymmetricMixing)
+function recombine_mixing!(model::MultiFluid,mixing::AsymmetricMixing,estimate)
     Vc = model.params.Vc.values
     Tc = model.params.Tc.values
     n = length(model)
@@ -69,22 +76,44 @@ function recombine_mixing!(model::MultiFluid,mixing::AsymmetricMixing)
     γv = mixing.params.gamma_v
     βT = mixing.params.beta_T
     βv = mixing.params.beta_v
+
     for i in 1:n
         for j in 1:n
+            i == j && continue
             if γT.ismissingvalues[i,j]
-                γT[i,j] = 0.5*(Tc[i]+Tc[j])/sqrt(Tc[i]*Tc[j])
+                estimate == :off && __error_estimate_multifluid(i,j)
+                if estimate == :lb
+                    γT[i,j] = 1.0
+                elseif estimate == :linear
+                    γT[i,j] = 0.5*(Tc[i]+Tc[j])/sqrt(Tc[i]*Tc[j])
+                else
+                    throw(error("invalid estimate $estimate"))
+                end
             end
             if γv.ismissingvalues[i,j]
+                estimate == :off && __error_estimate_multifluid(i,j)
+                if estimate == :lb
+                    γT[i,j] = 1.0
+                elseif estimate == :linear
                 γv[i,j] = 0.25*(Vc[i]+Vc[j])/(cbrt(Vc[i])+cbrt(Vc[j])^3)
+                else
+                    throw(error("invalid estimate $estimate"))
+                end
             end
             if βT.ismissingvalues[i,j]
+                estimate == :off && __error_estimate_multifluid(i,j)
                 βT[i,j] = 1.0
             end
             if βv.ismissingvalues[i,j]
+                estimate == :off && __error_estimate_multifluid(i,j)
                 βv[i,j] = 1.0
             end
         end
     end
+end
+
+function __error_estimate_multifluid(i,j)
+    throw(error("estimate was set to off, but there are missing values at ($i),($j). you can pass force_estimate = :lb or force_estimate = :linear to calculate mixing values."))
 end
 
 function v_scale(model::MultiFluid,z,mixing::AsymmetricMixing,∑z)
@@ -120,7 +149,7 @@ returns an efficient implementation of:
 ` sum(A[i,j] * x[i] * x[j] * op(p[i],p[j]) * op_asym(x[i],x[j],A_asym[i,j])) for i = 1:n , j = 1:n)`
 where `op(p[i],p[j]) == op(p[j],p[i])` , op_asym doesn't follow this symmetry.
 
-""" 
+"""
 function mixing_rule_asymmetric(op, op_asym, x, p, A, A_asym)
     N = length(x)
     checkbounds(A, N, N)
@@ -139,7 +168,7 @@ function mixing_rule_asymmetric(op, op_asym, x, p, A, A_asym)
             end
         end
     end
-    
+
     return res1
 end
 

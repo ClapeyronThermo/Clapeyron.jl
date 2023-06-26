@@ -39,7 +39,6 @@ If `estimate_pure` is true, then, if a JSON is not found, the pure model will be
 
 """
 function EmpiricIdeal(components;
-    pure_userlocations = String[],
     userlocations = String[],
     coolprop_userlocations = true,
     Rgas = R̄,

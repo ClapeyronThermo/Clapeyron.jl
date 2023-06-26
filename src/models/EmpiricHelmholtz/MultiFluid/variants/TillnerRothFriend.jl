@@ -19,7 +19,7 @@ function TillnerRothFriend(components = ["water","ammonia"],Rgas =  R̄, verbose
     water = findfirst(isequal("water"),components)
     watermodel = IAPWS95()
     ammoniamodel = SingleFluid("ammonia",userlocations = ["@DB/Empiric/TLF/ammonia.json"],coolprop_userlocations = false)
-     
+
     if water == 1
         pures = [watermodel,ammoniamodel]
     else
