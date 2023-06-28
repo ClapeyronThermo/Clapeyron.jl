@@ -33,7 +33,7 @@ function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
 # copied from PolynomialRoots.jl, adapted to be AD friendly
 # Cubic equation solver for complex polynomial (degree=3)
 # http://en.wikipedia.org/wiki/Cubic_function   Lagrange's method
-# poly = (a,b,c,d) that represents ax3 + bx2 + cx2 + d 
+# poly = (a,b,c,d) that represents a + bx + cx3 + dx4
 
 _1 = one(T)
 third = _1/3
@@ -78,3 +78,43 @@ function roots3(a,b,c,d)
 x = (a,b,c,d)
 return roots3(x)
 end
+
+"""
+    real_roots3(pol::NTuple{4,T}) where {T<:Real}
+
+Given a cubic real polynom of the form `pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3`,
+return `(n, zl, zg)` where `n` is the number of real roots and:
+- if `n == 1`, `zl` and `zg` are equal to the only real root, the other two are complex.
+- if `n == 2`, `zl` is the single real root and `zg` is the double (degenerate) real root.
+- if `n == 3`, `zl` is the lowest real root and `zg` the greatest real root.
+
+!!! info
+    If there is a single root triply degenerate, e.g. with `pol == (1,3,3,1)` corresponding
+    to `(x+1)^3`, this will return `n == 2` and `zl == zg` equal to the root.
+"""
+function real_roots3(pol::NTuple{4,T}) where {T<:Real}
+    z1, z2, z3 = sort(roots3(pol); by=real)
+    x1, x2, x3 = real(z1), real(z2), real(z3)
+    mid12 = (x1 + x2)/2
+    mid23 = (x2 + x3)/2
+    between1 = evalpoly(mid12, pol)
+    between2 = evalpoly(mid23, pol)
+    if abs(between1) <  eps(typeof(between1))
+        (2, x3, mid12) # first the single root, then the double root
+    elseif abs(between2) < eps(typeof(between2))
+        (2, x1, mid23) # first the single root, then the double root
+    else
+        sign1 = signbit(between1)
+        sign2 = signbit(between2)
+        if sign1 == sign2 # only one root
+            if sign1 ⊻ (pol[4] > 0)
+                (1, x1, x1)
+            else
+                (1, x3, x3)
+            end
+        else # three distinct roots
+            (3, x1, x3)
+        end
+    end
+end
+real_roots3(a,b,c,d) = real_roots3((a,b,c,d))
