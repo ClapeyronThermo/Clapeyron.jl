@@ -253,7 +253,7 @@ end
 function VT_partial_property(model::EoSModel,V,T,z,property::ℜ) where {ℜ}
     fun(x) = property(model,V,T,x)
     TT = gradient_type(V,T,z)
-    return ForwardDiff.gradient(fun,z)::TT
+    return Solvers.gradient(fun,z)::TT
 end
 
 VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos)
