@@ -48,8 +48,8 @@ function x_sol(res::NLSolvers.ConvergenceInfo{NLSolvers.BrentMin{Float64}})
     return res.info.x
 end
 include("poly.jl")
-include("ad.jl")
 include("nanmath.jl")
+include("ad.jl")
 include("nlsolve.jl")
 include("fixpoint/fixpoint.jl")
 include("fixpoint/ADNewton.jl")

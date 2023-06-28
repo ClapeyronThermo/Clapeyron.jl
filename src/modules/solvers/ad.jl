@@ -6,6 +6,14 @@ struct ∂Tag end
     return ForwardDiff.derivative(f,x)
 end
 
+@inline function gradient(f::F, x) where {F}
+    return ForwardDiff.gradient(f,x)
+end
+
+@inline function hessian(f::F, x) where {F}
+    return ForwardDiff.hessian(f,x)
+end
+
 @inline function gradient2(f::F, x1::R,x2::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
     _1 = one(R)

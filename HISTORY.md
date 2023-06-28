@@ -1,3 +1,11 @@
+# v0.4.12
+
+## New Features
+
+- `@registermodel` macro is now a no-op. custom models that have a `components::Vector{String}` automatically support the printing interface and if they have `model.params.Mw`, they support molecular weight calculations.
+
+- Cubic roots now use a real solver. this allows more stability and correctness in challenging EoS
+
 # v0.4.11
 
 ## New Features

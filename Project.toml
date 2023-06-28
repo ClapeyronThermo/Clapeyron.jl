@@ -1,7 +1,7 @@
 name = "Clapeyron"
 uuid = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
 authors = ["Hon Wa Yew <yewhonwa@gmail.com>", "Pierre Walker <pwalker@mit.edu>", "Andrés Riedemann <andres.riedemann@gmail.com>"]
-version = "0.4.12"
+version = "0.4.13"
 
 [deps]
 BlackBoxOptim = "a134a8b2-14d6-55f6-9291-3336d3ab0209"
@@ -41,12 +41,20 @@ Preferences = "1"
 Roots = "^2.0.14"
 Scratch = "^1.1"
 StaticArrays = "^1.5.9"
+Symbolics = "5"
 Tables = "^1.8"
 ThermoState = "^0.5"
 Unitful = "^1.12"
 julia = "1.6"
 
+[weakdeps]
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
+
+[extensions]
+ClapeyronSymbolicsExt = "Symbolics"
+
 [extras]
+Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]

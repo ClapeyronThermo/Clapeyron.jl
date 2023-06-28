@@ -196,5 +196,5 @@ include("utils/misc.jl")
 include("estimation/estimation.jl")
 
 #precompile workload. should be loaded at the end
-include("precompile.jl")
+#include("precompile.jl")
 end # module
