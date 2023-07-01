@@ -86,7 +86,7 @@ function aspenNRTL(model::NRTL)
     packagedparams = aspenNRTLParam(a0,a1,t0,t1,t2,t3)
     return aspenNRTL(model.components,packagedparams,model.puremodel,model.references)
 end
-function excess_gibbs_free_energy(model::aspenNRTLModel,p,T,z)
+function excess_g_res(model::aspenNRTLModel,p,T,z)
     a₀ = model.params.a0.values
     a₁  = model.params.a1.values
     t₀  = model.params.t0.values
