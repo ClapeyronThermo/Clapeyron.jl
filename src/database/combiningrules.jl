@@ -153,6 +153,21 @@ function lambda_squarewell!(lambda::PairParameter, sigma::Union{PairParameter,Si
     return pair_mix!(mix_lambda_squarewell,lambda,sigma)
 end
 
+function mirror_pair!(param::PairParameter,f = identity)
+    mirror_pair!(param.values,param.ismissingvalues,f)
+    return param
+end
+
+
+"""
+    mirror_pair(param::PairParam,f = identity)
+
+performs an operation `f` over the indices of `p` such as `p[j,i] = f(p[i,j])`. by default, `f = identity` (a symmetric matrix). 
+One key difference is that it sets the `ismissingvalues` field for each modified index to `false`
+"""
+mirror_pair(param::PairParameter,f = identity) = mirror_pair!(deepcopy(param),f)
+
+
 export kij_mix, pair_mix
 export sigma_LorentzBerthelot
 export epsilon_LorentzBerthelot

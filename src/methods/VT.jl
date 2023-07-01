@@ -129,7 +129,7 @@ function second_virial_coefficient_impl(model::EoSModel,T , z = SA[1.0])
     V = 1/sqrt(eps(TT))
     fAᵣ(x) = eos_res(model,x,T,z)
     Aᵣ,∂Aᵣ∂V,∂²Aᵣ∂V² = Solvers.f∂f∂2f(fAᵣ,V)
-    return V^2/(R̄*T)*(∂Aᵣ∂V+V*∂²Aᵣ∂V²) #V*V/J * (J/V )
+    return V^2/(Rgas(model)*T)*(∂Aᵣ∂V+V*∂²Aᵣ∂V²) #V*V/J * (J/V )
 end
 
 
@@ -213,7 +213,7 @@ end
 
 function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.])
     p = pressure(model,V,T,z)
-    return p*V/(sum(z)*R̄*T)
+    return p*V/(sum(z)*Rgas(model)*T)
 end
 
 """

@@ -1,6 +1,8 @@
-#this model only holds a named tuple with all models.
+
+include("GenericAncEvaluator.jl")
 include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
+include("PolExpVapour.jl")
 """
     CompositeModel(components;
     gas = BasicIdeal,
@@ -121,7 +123,20 @@ function saturation_pressure(model::CompositeModel,T,method::SaturationMethod)
 end
 
 function crit_pure(model::CompositeModel)
-    return crit_pure(model.models.saturation)
+    single_component_check(crit_pure,model)
+    return crit_pure(model.saturation)
+end
+
+function x0_sat_pure(model::CompositeModel,T)
+    p = x0_psat(model,T)
+    vl = volume(model.liquid,p,T,phase=:l)
+    vv = volume(model.gas,p,T,phase=:v)
+    return vl,vv
+end
+
+function x0_psat(model::CompositeModel,T)
+    ps,_,_ = saturation_pressure(model.saturation,T)
+    return ps
 end
 
 function saturation_temperature(model::CompositeModel,p,method::SaturationMethod)

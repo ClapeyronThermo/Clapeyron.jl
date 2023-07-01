@@ -99,7 +99,8 @@ sp2,700,0.41
 ## CSV type detection and group type
 
 The second line of the csv is used for comments and to identify the type of CSV used. for example:
-```
+
+    ```
 x = \"\"\"Clapeyron Database File
        in memory like parameters
        species,a,b
@@ -109,6 +110,7 @@ x = \"\"\"Clapeyron Database File
 ```
 Will be parsed as a table with single parameter data. if you want more flexibility, you can instead pass the csvtype between brackets:
 
+```
 x = \"\"\"Clapeyron Database File
        i can write anything here, unlike, association [csvtype = like] but the csv type is already specified.
        species,a,b
@@ -133,6 +135,7 @@ UNIFAC{BasicIdeal} with 2 components:
 Group Type: PSRK
 Contains parameters: A, B, C, R, Q
 ```
+
 The models are the same (`UNIFAC`), but the group parametrizations are different. this is specified with the `grouptype` keyword. for example, if we see `UNIFAC_groups.csv`, it starts with:
 
 ```
@@ -147,6 +150,7 @@ butane,"[""CH3"" => 2, ""CH2"" => 2]"
 
 For compatibility reasons, if you pass a CSV without grouptype, it will be accepted, but two CSV with different specified group types cannot be merged:
 
+```
 x1 = \"\"\"Clapeyron Database File
        paramterization 1 [csvtype = like,grouptype = param1]
        species,a,b
@@ -160,7 +164,9 @@ x2 = \"\"\"Clapeyron Database File
        sp2,616,0.432
        \"\"\"
 ```
+
 If we pass the same parameters, with different group types, the parser will fail
+
 ```julia-repl
 julia> Clapeyron.getparams(["sp1","sp2"],userlocations = [x1,x2])
 ERROR: cannot join two databases with different group types:
@@ -441,7 +447,7 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
 end
 
 
-function read_csv(filepath,options::ParamOptions = DefaultOptions)::CSV.File
+function read_csv(filepath,options::ParamOptions = DefaultOptions,sep = :comma)::CSV.File
     #actual reading
     ignorelist = deepcopy(options.ignore_headers)
     map!(normalisestring,ignorelist,ignorelist)
@@ -450,11 +456,12 @@ function read_csv(filepath,options::ParamOptions = DefaultOptions)::CSV.File
         norm_header = normalisestring(string(name))
         normalisestring(norm_header; tofilter=r"[ \-\_\d]") ∈ ignorelist
     end
-    
+    _delims = (comma = ',',space = ' ')
+    _delim = get(_delims,sep,string(sep))
     if is_inline_csv(filepath)
-        df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String)
+        df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String, delim = _delim, ntasks  = 1)
     else
-        df = CSV.File(filepath; header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String)
+        df = CSV.File(filepath; header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String,delim = _delim, ntasks  = 1)
     end
     return df
 end
@@ -474,8 +481,8 @@ function findparamsincsv(components,filepath,
     correct_group = (parsegroups == :group && csvtype == groupdata) || (parsegroups == :intragroup && csvtype == structgroupdata)
     grouptype = csv_file_options.grouptype
     
-    
-    df = read_csv(filepath,options)
+    sep = get(csv_file_options,:sep,:comma)
+    df = read_csv(filepath,options,sep)
 
     csvheaders = String.(Tables.columnnames(df))
     headerparams = valid_headerparams(csvheaders,options) #removes all ignored header params
@@ -678,7 +685,7 @@ end
 
 function __verbose_findparams_start(filepath,components,headerparams,parsegroups,csvtype,grouptype)
     csv_string = Symbol(csvtype)
-    no_parsegroups = parsegroups != :off
+    no_parsegroups = parsegroups == :off
     if no_parsegroups
         if csvtype ∈ (groupdata,structgroupdata)
             @info("Skipping $csv_string csv $filepath")
@@ -703,22 +710,28 @@ end
 function __verbose_findparams_found(foundvalues)
     for v ∈ foundvalues
         if v.type == singledata
-            vdict = Dict(pair[1] => val for (pair,val) ∈ zip(v.component_info,v.data))
+            io = IOBuffer()
+            show_pairs(io,first.(v.component_info),v.data," => ",quote_string = false)
+            vals = String(take!(io))
             kk = info_color(v.name)
             @info("""Found single component data: $kk with values:
-            $vdict
+            $vals
             """)
         elseif v.type == pairdata
-            vdict = Dict((pair[1],pair[2]) => val for (pair,val) ∈ zip(v.component_info,v.data))
+            io = IOBuffer()
+            show_pairs(io,first.(v.component_info,2),v.data," => ",quote_string = false)
+            vals = String(take!(io))
             kk = info_color(v.name)
             @info("""Found pair component data: $kk with values:
-            $vdict
+            $vals
             """)
         elseif v.type == assocdata
-            vdict = Dict(__assoc_string(pair) => val for (pair,val) ∈ zip(v.component_info,v.data))
+            io = IOBuffer()
+            show_pairs(io,__assoc_string.(v.component_info),v.data," => ",quote_string = false)
+            vals = String(take!(io))
             kk = info_color(v.name)
             @info("""Found association component data: $kk with values:
-            $vdict
+            $vals
             """)
         elseif v.type == groupdata
             #println(val) for val ∈ v.data)
@@ -755,11 +768,11 @@ function read_csv_options(filepath)
         foundkeywords = intersect(words, keywords)
         _species = intersect(words,["species"])
         _estimator = intersect(words,["method"])
-        return (csvtype = _readcsvtype(foundkeywords),grouptype = :unknown,estimator = _estimator, species = _species)
+        return (csvtype = _readcsvtype(foundkeywords),grouptype = :unknown,estimator = _estimator, species = _species,sep = :comma)
     end
 end
 
-const NT_CSV_OPTIONS = (csvtype = namedtupledata,grouptype = :unknown,estimator = :no_estimator, species = ["all"])
+const NT_CSV_OPTIONS = (csvtype = namedtupledata,grouptype = :unknown,estimator = :no_estimator, species = ["all"],sep = :comma)
 +
 function _readcsvtype(collection)
     length(collection) != 1 && return invaliddata
@@ -791,8 +804,10 @@ function __get_options(data)
     _csvtype = _readcsvtype(get(opts_dict,"csvtype","invalid"))
     _grouptype = Symbol(get(opts_dict,"grouptype","unknown"))
     _estimator = Symbol(get(opts_dict,"method","error"))
+    _estimator = Symbol(get(opts_dict,"method","error"))
     _species = String.(split(get(opts_dict,"species","all")," "))
-    return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator, species = _species)
+    _sep = Symbol(get(opts_dict,"sep","comma"))
+    return (csvtype = _csvtype,grouptype = _grouptype,estimator = _estimator, species = _species, sep = _sep)
 end
 
 function valid_headerparams(csvheaders, options::ParamOptions = DefaultOptions)

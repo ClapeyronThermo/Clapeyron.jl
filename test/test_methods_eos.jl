@@ -340,12 +340,15 @@ end
     com = CompositeModel(["water","methanol"],liquid = DIPPR105Liquid,saturation = DIPPR101Sat,gas = PR)
     system = Wilson(["methanol","benzene"])
     system2 = Wilson(["water","methanol"],puremodel = com)
+    com1 = split_model(com)[1]
     p = 1e5
     T = 298.15
     T2 = 320.15
     z = [0.5,0.5]
     z_bulk = [0.2,0.8]
+    
     @testset "Bulk properties" begin
+        @test crit_pure(com1)[1] ≈ 647.13
         @test Clapeyron.volume(system, p, T, z_bulk) ≈ 8.602344040626639e-5 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T, z_bulk) ≈ 1371.9014493149134 rtol = 1e-6
         @test Clapeyron.mixing(system, p, T, z_bulk, Clapeyron.gibbs_free_energy) ≈ -356.86007792929263 rtol = 1e-6
@@ -369,11 +372,17 @@ end
 
 @testset "GERG2008 methods, single components" begin
     system = GERG2008(["water"])
+    met = GERG2008(["methane"])
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 1.8067969591040684e-5 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T) ≈ 1484.0034692716843 rtol = 1e-6
+        #EOS-LNG, table 15
+        V1,T1 = 1/27406.6102,100.0
+        @test Clapeyron.pressure(met,V1,T1)  ≈ 1.0e6 rtol = 2e-6
+        @test Clapeyron.VT_speed_of_sound(met,V1,T1) ≈ 1464.5158 rtol = 1e-6
+        @test Clapeyron.pressure(met,1/28000,140) ≈ 86.944725e6  rtol = 2e-6
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 3184.83242429761 rtol = 1E-6
@@ -402,12 +411,16 @@ end
 
 @testset "EOS-LNG methods, multi-components" begin
     @testset "Bulk properties" begin
+        #EOS-LNG paper, table 16
         system = EOS_LNG(["methane","isobutane"])
         z = [0.6,0.4]
-        V = 1/17241.868
-        @test Clapeyron.VT_speed_of_sound(system,1e16,210.0,z) ≈ 252.48363281981858
-        @test Clapeyron.volume(system,5e6,160.0,z) ≈ 5.9049701669337714e-5
-        @test Clapeyron.pressure(system,0.01,350,z) ≈ 287244.4789047023
+        T1,V1 = 160.0,1/17241.868
+        T2,V2 = 350.0,1/100
+
+        @test Clapeyron.VT_speed_of_sound(system,V1,T1,z) ≈ 1331.9880 rtol = 1e-6
+        @test Clapeyron.VT_speed_of_sound(system,V2,T2,z) ≈ 314.72845 rtol = 1e-6
+        @test Clapeyron.volume(system,5e6,T1,z) ≈ V1
+        @test Clapeyron.pressure(system,V2,T2,z) ≈ 0.28707693e6 rtol = 1e6 
     end
 end
 
@@ -472,6 +485,18 @@ end
         @test Clapeyron.pressure(system,0.001/rho,T)*1e-6 ≈ ps[i] rtol = 1e-6
     end
 
+end
+
+@testset "Helmholtz + Activity" begin
+    model = HelmAct(["water","ethanol"])
+    p = 12666.0
+    x1 = Clapeyron.FractionVector( 0.00350)
+    @test bubble_temperature(model,p,x1)[4][1] ≈ 0.00198 rtol = 1e-2
+end
+
+@testset "SingleFluid - CoolProp" begin
+    #methanol, uses assoc term
+    @test saturation_pressure(SingleFluid("methanol"),300.15)[1] ≈ PropsSI("P","T",300.15,"Q",1.,"methanol") rtol = 1e-6
 end
 
 
