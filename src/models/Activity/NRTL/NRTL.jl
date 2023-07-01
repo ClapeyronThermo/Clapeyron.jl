@@ -104,3 +104,5 @@ function excess_gibbs_free_energy(model::NRTLModel,p,T,z)
     end
     return n*res*R̄*T
 end
+
+excess_g_res(model::NRTLModel,p,T,z) = excess_gibbs_free_energy(model,p,T,z)
