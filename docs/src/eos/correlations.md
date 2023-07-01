@@ -39,6 +39,12 @@ Clapeyron.DIPPR101Sat
 Liquid Volume Correlations are any [`EoSModel`](@ref) that are subtypes of [`LiquidVolumeModel`](@ref). 
 They return `volume(model,p,T,z, phase = :liquid)`.
 
+```@docs
+RackettLiquid
+YamadaGunnLiquid
+COSTALD
+```
+
 # Virial Models
 
 Virial models are defined in terms of the second virial coefficient, `B(T,z)`. the reduced residual helmholtz energy is defined as:

@@ -1,8 +1,8 @@
 ### functions to use:
 mix_mean(p_i,p_j,k=0) = 0.5*(p_i+p_j)*(1-k)
 mix_geomean(p_i,p_j,k=0) = sqrt(p_i*p_j)*(1-k)
-mix_powmean(p_i,p_j,k=0,n=2) =(1-k)*(0.5*(p_i^n + p_j^n))^(1/n)
-
+mix_powmean(p_i,p_j,k=0,n=2) = (1-k)*(0.5*(p_i^n + p_j^n))^(1/n)
+mix_mean3(p_i,p_j,k=0) = (1-k)*(0.5*(cbrt(p_i) + cbrt(p_j)))^3
 ##special lambda with custom k
 function mix_lambda(λ_i,λ_j,k)
     return k + sqrt((λ_i - k) * (λ_j - k))

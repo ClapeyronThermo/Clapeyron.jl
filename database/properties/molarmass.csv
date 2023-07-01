@@ -30,6 +30,7 @@ neopentane,9,72.15
 "2,2-dimethylbutane",14,86.18
 "2,3-dimethylbutane",15,86.18
 2-methylpentane,12,86.18
+isohexane,12,86.18
 3-methylpentane,13,86.18
 "2,3-dimethylpentane",22,100.2
 "2,2,3-trimethylbutane",25,100.2
@@ -211,21 +212,21 @@ ethylbenzene,504,106.17
 m-xylene,506,106.17
 o-xylene,505,106.17
 p-xylene,507,106.17
-"1,3,5-trimethyl benzene",516,120.19
-"1,2,3-trimethyl benzene",514,120.19
-"1,2,4-trimethyl benzene",515,120.19
+"1,3,5-trimethylbenzene",516,120.19
+"1,2,3-trimethylbenzene",514,120.19
+"1,2,4-trimethylbenzene",515,120.19
 cumene,510,120.19
-1-methyl-3-ethyl benzene,512,120.19
-1-ethyl-2-methyl benzene,511,120.19
-1-ethyl-4-methyl benzene,513,120.19
+1-methyl-3-ethylbenzene,512,120.19
+1-ethyl-2-methylbenzene,511,120.19
+1-ethyl-4-methylbenzene,513,120.19
 n-propyl benzene,509,120.19
 tetralin,701,132.21
-tert-butyl benzene,521,134.22
+tert-butylbenzene,521,134.22
 p-cymene,524,134.22
 m-cymene,523,134.22
 o-cymene,522,134.22
-m-diethyl benzene,525,134.22
-o-diethyl benzene,526,134.22
+m-diethylbenzene,525,134.22
+o-diethylbenzene,526,134.22
 p-diethylbenzene,527,134.22
 2-ethyl-m-xylene,576,134.22
 2-ethyl-p-xylene,577,134.22
@@ -236,23 +237,23 @@ sec-butyl benzene,520,134.22
 "1,2,4,5-tetramethyl benzene",532,134.22
 "1-ethyl-2,3-dimethylbenzene",580,134.22
 2-methylpropyl benzene,519,134.22
-n-butyl benzene,518,134.22
-n-pentyl benzene,567,148.24
+n-butylbenzene,518,134.22
+n-pentylbenzene,567,148.24
 biphenyl,558,154.21
 p-tert-butyl styrene,621,160.26
 n-hexylbenzene,568,162.27
-n-heptyl benzene,549,176.3
-n-octyl benzene,569,190.32
-n-nonyl benzene,570,204.35
-n-decyl benzene,554,218.38
-n-undecyl benzene,571,232.4
-n-dodecyl benzene,574,246.43
-n-tridecyl benzene,572,260.46
-n-tetradecyl benzene,573,274.48
-n-pentadecyl benzene,2575,288.51
-n-hexadecyl benzene,2576,302.54
-n-heptadecyl benzene,2577,316.56
-n-octadecyl benzene,2578,330.59
+n-heptylbenzene,549,176.3
+n-octylbenzene,569,190.32
+n-nonylbenzene,570,204.35
+n-decylbenzene,554,218.38
+n-undecylbenzene,571,232.4
+n-dodecylbenzene,574,246.43
+n-tridecylbenzene,572,260.46
+n-tetradecylbenzene,573,274.48
+n-pentadecylbenzene,2575,288.51
+n-hexadecylbenzene,2576,302.54
+n-heptadecylbenzene,2577,316.56
+n-octadecylbenzene,2578,330.59
 indene,803,116.16
 indane,820,118.18
 naphthalene,701,128.17
@@ -518,6 +519,7 @@ n-octyl mercaptan,1809,146.29
 n-nonyl mercaptan,1808,160.32
 n-decyl mercaptan,1826,174.35
 hydrogen,902,2.02
+deuterium,,4.0282035556
 carbon monoxide,908,28.01
 nitrogen,905,28.01
 oxygen,901,32

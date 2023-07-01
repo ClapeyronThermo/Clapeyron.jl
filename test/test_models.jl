@@ -466,16 +466,17 @@ end
 @testset "Multi-parameter models" begin
     T = 298.15
     V = 1e-4
+    #warning, we are in the pseudo maxwell loop, those properties are nonsense, but they evaluate anyway.
     @printline
     @testset "IAPWS95" begin
         z = [1.]
         system = IAPWS95()
         system_ideal = Clapeyron.idealmodel(system)
-        @test Clapeyron.a_ideal(system_ideal, V, T, z) ≈ 7.932118505056652 rtol = 1e-6
-        @test Clapeyron.a_ideal(system, V, T, z) ≈ 7.932118505056652 rtol = 1e-6
-        @test Clapeyron.a_res(system, V, T, z) ≈ -2.1152657050144347e14 rtol = 1e-6
+        @test Clapeyron.a_ideal(system_ideal, V, T, z) ≈ 7.9322055699220435 rtol = 1e-6
+        @test Clapeyron.a_ideal(system, V, T, z) ≈ 7.9322055699220435 rtol = 1e-6
+        @test Clapeyron.a_res(system, V, T, z) ≈ -2.1152889226862166e14 rtol = 1e-6
         #because we are in this regime, numerical accuracy suffers. that is why big(V) is used instead.
-        @test_broken Clapeyron.ideal_consistency(system,big(V),T,z) ≈ 0.0 atol = 1e-14
+        @test Clapeyron.ideal_consistency(system,big(V),T,z) ≈ 0.0 atol = 1e-14
     end
 
     @testset "PropaneRef" begin
@@ -489,11 +490,12 @@ end
     @testset "GERG2008" begin
         z   = [1.]
         system = GERG2008(["water"])
-        @test Clapeyron.a_ideal(system, V, T, z) ≈ 4.500099760879548 rtol = 1e-6
+        @test Clapeyron.a_ideal(system, V, T, z) ≈ 4.500151936577565 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T, z) ≈ -10.122119572808764 rtol = 1e-6
         z   = [0.25,0.25,0.25,0.25]
         system = GERG2008(["water","carbon dioxide","hydrogen sulfide","argon"])
-        @test Clapeyron.a_ideal(system, V, T, z) ≈ 3.1135835641766594 rtol = 1e-6
+        @test Clapeyron.a_ideal(system, V, T, z) ≈ 3.1136322215343917 rtol = 1e-6
+        @test Clapeyron.ideal_consistency(system, V, T, z) ≈ 0.0 rtol = 1e-14
         @test Clapeyron.a_res(system, V, T, z) ≈ -1.1706377677539772 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
     end
@@ -512,7 +514,7 @@ end
         T = 1.051*Clapeyron.T_scale(system)
         p = 0.035*Clapeyron.p_scale(system)
         V = Clapeyron._v_scale(system)/0.673
-        @test Clapeyron.a_ideal(system, V, T) ≈ 5.476323741574683 rtol = 1e-6
+        @test Clapeyron.a_ideal(system, V, T) ≈ 5.704213386278148 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T) ≈ -2.244730279521925 rtol = 1e-6
         @test_broken Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
     end

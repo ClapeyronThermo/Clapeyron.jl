@@ -70,12 +70,15 @@ end
 
 """
     ideal_consistency(model,V,T,z=[1.0])
+
 performs a ideal model consistency check:
 ```
 ∂a₀∂V + 1/V ≈ 0
 ```
 Where `∂a₀∂V` is the derivative of `a_ideal` respect to `V`. it can help diagnose if a user-defined ideal model is consistent.
-return |∂a₀∂V + 1/V| at the specified conditions.
+
+Return |∂a₀∂V + 1/V| at the specified conditions.
+
 If the model is not an `IdealModel`, then `Clapeyron.idealmodel(model)` will be called to obtain the respective ideal model.
 """
 

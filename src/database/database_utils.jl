@@ -86,7 +86,7 @@ function _getpaths(location,special_parse = true)
     end =#
     files = readdir(filepath,join = true) #this returns the full (non-normalized) path
     filter!(isfile,files) #remove folders, the reader is not recursive
-    filter!(f -> getfileextension(f) == "csv",files)
+    filter!(f -> getfileextension(f) in ("csv","json"),files)
     map!(realpath,files,files)
     return files
 end
@@ -101,6 +101,9 @@ function flattenfilepaths(locations,userlocations::Vector{String})
     end
     return vcat(defaultpaths,userpaths,String[])
 end
+
+flattenfilepaths(locations,userlocations::String) = flattenfilepaths(locations,[userlocations])
+
 Base.@nospecialize
 function flattenfilepaths(locations,userlocations::NamedTuple)
     return String[]

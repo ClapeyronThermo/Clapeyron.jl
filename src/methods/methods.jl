@@ -12,7 +12,7 @@ Saturation pressure:
 model = PR(["water"])
 Tsat = 373.15
 saturation_pressure(model,Tsat) #using default method (chemical potential with volume base)
-saturation_pressure(model,Tsat,SuperAncSaturation()) #solve using cubic superancilliary
+saturation_pressure(model,Tsat,SuperAncSaturation()) #solve using cubic superancillary
 ```
 
 Bubble point pressure

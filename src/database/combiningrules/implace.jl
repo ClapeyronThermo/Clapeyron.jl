@@ -53,30 +53,25 @@ end
 
 ## pair_mix!
 
-function pair_mix!(f::F,out::PairParameter,Q::PairParameter) where F
+function pair_mix!(f::F,out::PairParameter,Q::SingleOrPair) where F
     out_missing = out.ismissingvalues
+    q = Q.values
     pair_mix!(f,out.values,Q.values,out_missing)
     #consider the two here:
-    out_missing .= out_missing .& Q.ismissingvalues
+    if ndims(q) == 2
+        out_missing .= out_missing .& Q.ismissingvalues
+    end
     #but diagonals are all non-missing, by default:
-     for i in diagind(out_missing)
+    for i in diagind(out_missing)
         out_missing[i] = false
     end
     return out
 end
 
-function pair_mix!(f::F,out::PairParameter,Q::SingleParameter) where F
-    out_missing = out.ismissingvalues
-    pair_mix!(f,out.values,Q.values,out_missing)
-    #Q is single, so all diagonal values are zero, not set
-    #out_missing .= out_missing .& Q.ismissingvalues
-    #but diagonals are all non-missing, by default:
-    diagvalues(out_missing) .= false
-    return out
-end
+#dispatch for single vectors, so q[i] -> q[i,i]
+pair_mix!(f,p::AbstractMatrix,q::AbstractVector,B::AbstractMatrix) = pair_mix!(f,p,Diagonal(q),B)
 
-
-#f: function of the form f(pi,pk,k)
+#f: function of the form f(pi,pk,qi,qj,k)
 #p: property matrix, symmetric with set diagonal values and maybe-set symmetric non-diagonal entries
 #Q: qij matrix, symmetric
 #B: bool matrix, indicates which of the non diagonal entries of p are not set.
@@ -96,4 +91,19 @@ function pair_mix!(f,p::AbstractMatrix,q::AbstractMatrix,B::AbstractMatrix)
         end
     end
     return p
+end
+
+function mirror_pair!(p::AbstractMatrix,missing_matrix::AbstractMatrix{Bool},f)
+    s1,s2 = size(p)
+    for i in 1:s2
+        for j in 1:s1
+            if !missing_matrix[i,j]
+                if missing_matrix[j,i]
+                    pji = f(p[i,j])
+                    p[j,i] = pji
+                    missing_matrix[j,i] = false
+                end
+            end
+        end
+    end
 end

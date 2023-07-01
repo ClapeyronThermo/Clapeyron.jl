@@ -58,14 +58,20 @@ include("utils/recombine.jl")
 #Combining Rules for Clapeyron Params.
 include("database/combiningrules.jl")
 
+#general DB files
+using Tables,CSV
 
-using Tables,CSV 
+#used for reading multiparameter json files
+using JSON3
+
 #getparams options
 include("database/ParamOptions.jl") 
 #getparams definition
 include("database/database.jl")
 #transform Tables.jl tables to Clapeyron csv files
 include("database/UserReader.jl")
+
+
 
 #macros, used for defining models
 include("utils/macros.jl")
@@ -102,22 +108,37 @@ include("models/utility/EoSVectorParam.jl")
 include("models/utility/ZeroResidual.jl")
 include("models/utility/TPFlashWrapper.jl")
 
-#softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
-include("models/EmpiricHelmholtz/IAPWS95/IAPWS95.jl")
-include("models/EmpiricHelmholtz/IAPWS95/IAPWS95Ideal.jl")
-include("models/EmpiricHelmholtz/PropaneRef.jl")
-include("models/EmpiricHelmholtz/Ammonia2023.jl")
-include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
-include("models/EmpiricHelmholtz/LJRef/LJRefIdeal.jl")
-include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
+#Empiric Models uses CompositeModel
+include("models/CompositeModel/CompositeModel.jl")
 
+#softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
+include("models/EmpiricHelmholtz/term_functions.jl")
+include("models/EmpiricHelmholtz/SingleFluid/SingleFluid.jl")
+include("models/EmpiricHelmholtz/SingleFluid/variants/IAPWS95.jl")
+include("models/EmpiricHelmholtz/SingleFluid/variants/PropaneRef.jl")
+include("models/EmpiricHelmholtz/SingleFluid/variants/Ammonia2023.jl")
+include("models/EmpiricHelmholtz/SingleFluid/variants/TholLJ.jl")
+include("models/EmpiricHelmholtz/SingleFluid/variants/XiangDeiters.jl")
+include("models/EmpiricHelmholtz/LJRef/LJRef.jl")
+
+#multifluid models
+include("models/EmpiricHelmholtz/MultiFluid/multifluid.jl")
+include("models/EmpiricHelmholtz/MultiFluid/mixing/mixing.jl")
+include("models/EmpiricHelmholtz/MultiFluid/departure/departure.jl")
+include("models/EmpiricHelmholtz/MultiFluid/variants/GERG2008.jl")
+include("models/EmpiricHelmholtz/MultiFluid/variants/EOS_LNG.jl")
+include("models/EmpiricHelmholtz/MultiFluid/variants/TillnerRothFriend.jl")
+include("models/EmpiricHelmholtz/MultiFluid/variants/HelmAct.jl")
+include("models/EmpiricHelmholtz/MultiFluid/variants/HelmActRes.jl")
+include("models/EmpiricHelmholtz/MultiFluid/variants/EmpiricIdeal.jl")
+
+#cubic models
 include("models/cubic/equations.jl")
 include("models/cubic/vdW/vdW.jl")
 include("models/cubic/RK/RK.jl")
 include("models/cubic/PR/PR.jl")
 include("models/cubic/KU/KU.jl")
 include("models/cubic/RKPR/RKPR.jl")
-
 
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
@@ -184,7 +205,6 @@ include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 include("models/Virial/Virial.jl")
 
 #include("models/UFTheory/UFTheory.jl")
-include("models/CompositeModel/CompositeModel.jl")
 
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")

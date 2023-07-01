@@ -9,14 +9,14 @@ end
 
 abstract type softSAFT2016Model <: softSAFTModel end
 
-struct softSAFT2016{T} <: softSAFT2016Model
+struct softSAFT2016{T,LJ} <: softSAFT2016Model
     components::Array{String,1}
     sites::SiteParam
     params::softSAFT2016Param
     idealmodel::T
     assoc_options::AssocOptions
     references::Array{String,1}
-    lj::LJRefConsts
+    lj::LJ
 end
 
 @registermodel softSAFT2016
@@ -81,39 +81,17 @@ function softSAFT2016(components;
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     packagedparams = softSAFT2016Param(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1080/002689797170707","10.1063/1.4945000"]
-    return softSAFT2016(components,sites,packagedparams,init_idealmodel,assoc_options,references, LJRefConsts())
+    return softSAFT2016(components,sites,packagedparams,init_idealmodel,assoc_options,references, TholLJ())
 end
 
 function a_LJ(model::softSAFT2016Model,V,T,z,_data = @f(data))
     σ3,ϵ,m̄,_ = _data
     V0 = m̄*N_A*σ3
     T0 = ϵ
-    τ = 1.32/(T/T0)
+    τ = 1.32/(T/ϵ)
     Vx = V/sum(z)
     δ = (V0/Vx)/0.31 
-    ai = zero(δ+τ)
-    n = model.lj.n
-    t = model.lj.t
-    d = model.lj.d
-    c = model.lj.c
-    β = model.lj.beta
-    γ = model.lj.gamma
-    η = model.lj.eta
-    ε = model.lj.epsilon   
-
-    @inbounds begin
-        for k ∈ 1:6
-            ai += n[k]*(δ^d[k])*(τ^t[k])
-        end
-        for (k,k_) ∈ zip(7:12,1:6)
-            ai += n[k]*(δ^d[k])*(τ^t[k])*exp(-δ^c[k_])
-        end
-
-        for (k,k_) ∈ zip(13:23,1:11)
-            ai += n[k]*(δ^(d[k]))*(τ^(t[k]))*
-            exp(-η[k_]*(δ - ε[k_])^2 - β[k_]*(τ -γ[k_])^2)
-        end
-    end
+    ai = reduced_a_res(model.lj,δ,τ)
     return m̄*ai
 end
 

@@ -66,6 +66,11 @@ function activity_coefficient(model::COSMOSAC02Model,V,T,z)
     return exp.(@f(lnγ_comb) .+ @f(lnγ_res))
 end
 
+function excess_g_res(model::COSMOSAC02Model,V,T,z)
+    lnγ = @f(lnγ_res)
+    sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+end
+
 function lnγ_comb(model::COSMOSAC02Model,p,T,z)
     r0 = 66.69
     q0 = 79.53

@@ -1,5 +1,9 @@
 module EoSFunctions
 using ..Solvers
+using ForwardDiff
+import LogExpFunctions
+
+
 """
     bmcs_hs(ζ0,ζ1,ζ2,ζ3)
 
@@ -26,6 +30,21 @@ function xlogx(x::Real,k = one(x))
     ifelse(x > _0,x*Base.log(max(_0,k*x)),_0/_0)
 end
 
+logabssinh(x) = LogExpFunctions.logabssinh(x)
+logcosh(x) = LogExpFunctions.logcosh(x)
+
+#=function logabssinh(d::ForwardDiff.Dual{T}) where {T}
+    x = logabssinh(ForwardDiff.value(d))
+    dx = coth(x)
+    return ForwardDiff.Dual{T}(x, dx * ForwardDiff.partials(d))
+end
+
+function logcosh(d::ForwardDiff.Dual{T}) where {T}
+    x = logcosh(ForwardDiff.value(d))
+    dx = tanh(x)
+    return ForwardDiff.Dual{T}(x, dx * ForwardDiff.partials(d))
+end
+=#
 export bmcs_hs,xlogx
 
 end #module
