@@ -460,6 +460,37 @@ end
         @test Clapeyron.a_ideal(system,V,T,z) ≈ -10.00711774776317 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
     end
+
+    @testset "Empiric" begin
+        #Empiric Ideal from JSON
+        system = EmpiricIdeal(["water"])
+        #
+        @test Clapeyron.a_ideal(system,V,T,z) ≈ 7.932205569922042 rtol = 1e-6
+        @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+
+        #Empiric Ideal from already existing MultiFluid model
+        system = EmpiricIdeal(MultiFluid(["water"]))
+        @test Clapeyron.a_ideal(system,V,T,z) ≈ 7.932205569922042 rtol = 1e-6
+        @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+
+        #Empiric Ideal from already existing single fluid model
+        system = EmpiricIdeal(system.pures[1])
+        @test Clapeyron.a_ideal(system,V,T,z) ≈ 7.932205569922042 rtol = 1e-6
+        @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+    end
+
+    @testset "Aly-Lee" begin
+        system = AlyLeeIdeal(["methane"])
+        @test Clapeyron.a_ideal(system,V,T,z) ≈ 9.239701647126086 rtol = 1e-6
+        @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+
+        #we use the default GERG 2008 parameters for methane, test if the Cp is equal
+        system_gerg = EmpiricIdeal(GERG2008(["methane"], Rgas = Rgas()))
+        Cp_system = Clapeyron.VT_isobaric_heat_capacity(system,V,T,z)
+        Cp_gerg = Clapeyron.VT_isobaric_heat_capacity(system_gerg,V,T,z)
+
+        @test Cp_system ≈ Cp_gerg rtol = 5e-5
+    end
     @printline
 end
 

@@ -95,12 +95,18 @@ base --> database(params)  -|-> split_model --> methods -|-> models
 =#
 
 #Clapeyron EoS collection
+
+
 include("models/ideal/ideal.jl")
 include("models/ideal/BasicIdeal.jl")
 include("models/ideal/MonomerIdeal.jl")
 include("models/ideal/ReidIdeal.jl")
 include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
+
+#AlyLee Ideal uses gerg 2008 terms
+include("models/EmpiricHelmholtz/term_functions.jl")
+include("models/ideal/AlyLeeIdeal.jl")
 
 #Basic utility EoS
 include("models/utility/SpecialComp.jl")
@@ -112,7 +118,6 @@ include("models/utility/TPFlashWrapper.jl")
 include("models/CompositeModel/CompositeModel.jl")
 
 #softSAFT2016 uses LJRef. softSAFT uses x0_sat_pure with LJ correlations (from LJRef)
-include("models/EmpiricHelmholtz/term_functions.jl")
 include("models/EmpiricHelmholtz/SingleFluid/SingleFluid.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/IAPWS95.jl")
 include("models/EmpiricHelmholtz/SingleFluid/variants/PropaneRef.jl")
