@@ -550,6 +550,11 @@ end
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
     end
 
+    @testset "Xiang-Deiters" begin
+        system = XiangDeiters(["water"])
+        @test Clapeyron.a_ideal(system, V, T, z) ≈ 1.764485388990734 rtol = 1e-6
+        @test Clapeyron.a_res(system, V, T)  ≈ -34.16747927719535 rtol = 1e-6
+    end
     @printline
 end
 

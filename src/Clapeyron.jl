@@ -103,6 +103,7 @@ include("models/ideal/MonomerIdeal.jl")
 include("models/ideal/ReidIdeal.jl")
 include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
+include("models/ideal/CPLNGEstIdeal.jl")
 
 #AlyLee Ideal uses gerg 2008 terms
 include("models/EmpiricHelmholtz/term_functions.jl")

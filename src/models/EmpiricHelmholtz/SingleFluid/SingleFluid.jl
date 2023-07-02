@@ -97,7 +97,7 @@ function reduced_a_ideal(model::SingleFluidIdealParam,τ)
     #Power terms
     np = model.n_p
     if length(np) != 0
-        tp = model.ideal.t_p
+        tp = model.t_p
         α₀ += term_a0_power(τ,logτ,α₀,np,tp)
     end
 

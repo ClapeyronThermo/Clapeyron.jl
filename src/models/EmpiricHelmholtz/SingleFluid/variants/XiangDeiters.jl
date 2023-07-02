@@ -67,38 +67,12 @@ function XiangDeiters(components;
     else
         R = Rgas
     end
-    properties = ESFProperties(Mw,Tc,rhoc,lb_volume,Tc,Pc,rhoc,NaN,NaN,NaN,NaN,acentricfactor,Rgas)
+    properties = SingleFluidProperties(Mw,Tc,rhoc,lb_volume,Tc,Pc,rhoc,NaN,NaN,NaN,NaN,acentricfactor,R)
     ancillaries = propane_ancillary_cs(components,Tc,Pc,Vc)
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,false)
-    ideal = SingleFluidIdealParamBuilder(init_idealmodel,properties)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    ideal_dict_data = Clapeyron.idealmodel_to_json_data(init_idealmodel; Tr = Tc, Vr = Vc)
+    ideal = _parse_ideal(ideal_dict_data,verbose)
     SingleFluid(components,properties,ancillaries,ideal,residual,String["10.1016/j.ces.2007.11.029"])
 end
 
-function SingleFluidIdealParamBuilder(model::EoSModel,props)
-    return _parse_ideal(ideal_dict_format(model,props))    
-end
-
-function ideal_dict_format(model::BasicIdealModel,props)
-    [
-        Dict(:type => "IdealGasHelmholtzLead",
-        :a1 => -1.0,
-        :a2 => 0.0
-        ),
-
-        Dict(:type => "IdealGasHelmholtzLogTau",
-        :a => -1.5
-        ),
-    ]
-end
-
-function ideal_dict_format(model::ReidIdealModel,props)
-    Tc = props.Tc
-    [
-        Dict(:type => "IdealGasHelmholtzCP0PolyT",
-        :c => [model.params.coeffs[1]...]
-        :t => [0,1,2,3]
-        :Tc => Tc
-        :T0 => 298.15
-        )
-    ]
-end
+export XiangDeiters
