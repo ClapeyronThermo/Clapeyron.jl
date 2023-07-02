@@ -230,4 +230,4 @@ function setreferences!(model,references)
     oldrefs .= references
 end
 
-export EoSModel, eos, has_groups, has_sites
+export EoSModel, eos, has_groups, has_sites, Rgas

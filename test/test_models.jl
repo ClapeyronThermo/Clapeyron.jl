@@ -469,12 +469,12 @@ end
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
 
         #Empiric Ideal from already existing MultiFluid model
-        system = EmpiricIdeal(MultiFluid(["water"]))
+        system = Clapeyron.idealmodel(MultiFluid(["water"]))
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 7.932205569922042 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
 
         #Empiric Ideal from already existing single fluid model
-        system = EmpiricIdeal(system.pures[1])
+        system = Clapeyron.idealmodel(system.pures[1])
         @test Clapeyron.a_ideal(system,V,T,z) ≈ 7.932205569922042 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
     end
