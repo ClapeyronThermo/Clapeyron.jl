@@ -193,7 +193,7 @@ function a_res(model::SingleFluid,V,T,z=SA[1.])
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
     N = sum(z)
-    δ = V/(rhoc*N)
+    δ = N/(rhoc*V)
     τ = Tc/T
     return reduced_a_res(model,δ,τ)
 end
@@ -203,7 +203,7 @@ function eos(model::SingleFluid, V, T, z=SA[1.0])
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
     N = sum(z)
-    δ = V/(rhoc*N)
+    δ = N/(rhoc*V)
     τ = Tc/T
     k = __get_k_alpha0(model)
     logδ = log(δ)
@@ -214,9 +214,8 @@ function eos_res(model::SingleFluid,V,T,z=SA[1.0])
     R = R_gas(model)
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
-    N = only(z)
-    rho = (N/V)
-    δ = rho/rhoc
+    N = sum(z)
+    δ = N/(rhoc*V)
     τ = Tc/T
     return N*R*T*reduced_a_res(model,δ,τ)
 end
