@@ -275,5 +275,7 @@ function crit_pure(model::SingleFluid)
     return (Tc,Pc,Vc)
 end
 
-export EmpiricAncillary
 include("parser.jl")
+include("ideal_transform.jl")
+
+export EmpiricAncillary, SingleFluid, SingleFluidIdeal
