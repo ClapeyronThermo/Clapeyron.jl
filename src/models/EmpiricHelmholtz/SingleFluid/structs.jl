@@ -122,7 +122,7 @@ __type_string(ℙ::Type{SingleFluidIdealParam}) = "Ideal"
 function show_multiparameter_coeffs(io,param::MultiParameterParam)
     res = String[]
 
-    if hasfield(typeof(param),:a1) && hasfield(typeof(param),:a2) && hasfield(typeof(param),:a3)
+    if hasfield(typeof(param),:a1) && hasfield(typeof(param),:a2) && hasfield(typeof(param),:c0)
         push!(res,"Lead terms: $(param.a1) + $(param.a2)*τ + $(param.c0)*log(τ)")
     end
 
