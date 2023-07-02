@@ -547,7 +547,7 @@ end
         V = Clapeyron._v_scale(system)/0.673
         @test Clapeyron.a_ideal(system, V, T) ≈ 5.704213386278148 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T) ≈ -2.244730279521925 rtol = 1e-6
-        @test_broken Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+        @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
     end
 
     @printline

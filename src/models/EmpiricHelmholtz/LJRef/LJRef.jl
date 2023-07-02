@@ -221,12 +221,16 @@ function a_ideal(model::Union{LJRef,LJRefIdeal},V,T,z=SA[1.0])
     for i  ∈ @comps
         mᵢ = m[i]
         τᵢ = 1.32/(T/ϵ[i])
-        δᵢ = (mᵢ*N_A*ρ*σ[i]^3)/0.31
-        aᵢ = reduced_a_ideal(model.unscaled_lj,τᵢ) + log(δᵢ)
-        #(aᵢ + log(δᵢ) + log(z[i]) - lnΣz)
-        res += z[i]*(aᵢ + log(z[i]) - lnΣz)
+        #δᵢ = (mᵢ*N_A*ρ*σ[i]^3)/0.31
+        vᵣᵢ = mᵢ*N_A*σ[i]^3 / 0.31
+        zᵢ = z[i]
+        a₀ᵢ = reduced_a_ideal(model.unscaled_lj,τᵢ)
+        res += zᵢ*a₀ᵢ
+        res += xlogx(zᵢ,vᵣᵢ)
     end
-    return res/∑z
+    res /= ∑z
+    res -= log(V)
+    return res
 end
 
 @registermodel LJRefIdeal
