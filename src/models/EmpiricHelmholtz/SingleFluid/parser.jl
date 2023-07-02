@@ -366,7 +366,7 @@ function _parse_ideal(id_data,verbose = false)
             τ0 = _T0/_Tc
 
             for i in eachindex(cp_t)
-                ti = t[i]
+                ti = cp_t[i]
                 cpi = cp_c[i]
                 if ti == 0
                     a1 += cpi*(1 - log(τ0))
@@ -374,10 +374,10 @@ function _parse_ideal(id_data,verbose = false)
                     c0 += cpi
                 else
                     T0t = _T0^ti
-                    a1 += (cpi*T0t)/t
+                    a1 += (cpi*T0t)/ti
                     a2 += (-T0t*_T0)*cpi/(_Tc*(ti+1))
                     push!(tp,-ti)
-                    push!(np,(c*(_Tc^ti))*(1/(ti+1) - 1/ti))
+                    push!(np,(cpi*(_Tc^ti))*(1/(ti+1) - 1/ti))
                 end
             end
         elseif id_data_i[:type] == "IdealGasHelmholtzPower"
