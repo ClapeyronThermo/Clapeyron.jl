@@ -192,9 +192,8 @@ a_ideal(model::SingleFluid,V,T,z=SA[1.]) = a_ideal(idealmodel(model),V,T,z)
 function a_res(model::SingleFluid,V,T,z=SA[1.])
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
-    N = only(z)
-    rho = (N/V)
-    δ = rho/rhoc
+    N = sum(z)
+    δ = V/(rhoc*N)
     τ = Tc/T
     return reduced_a_res(model,δ,τ)
 end
@@ -204,9 +203,10 @@ function eos(model::SingleFluid, V, T, z=SA[1.0])
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
     N = sum(z)
+    δ = V/(rhoc*N)
     τ = Tc/T
     k = __get_k_alpha0(model)
-    logδ = log(N/rhoc) - log(V)
+    logδ = log(δ)
     return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ))
 end
 
@@ -241,7 +241,6 @@ end
 function Base.show(io::IO,mime::MIME"text/plain",model::SingleFluidIdeal)
     println(io,"Ideal MultiParameter Equation of state for $(model.components[1]):")
     show_multiparameter_coeffs(io,model.ideal)
-
 end
 
 function x0_sat_pure(model::SingleFluid,T,z=SA[1.0])
