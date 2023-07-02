@@ -179,12 +179,12 @@ end
 function a_ideal(model::SingleFluidIdeal,V,T,z=SA[1.],k = __get_k_alpha0(model))
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
-    N = only(z)
-    rho = (N/V)
-    δ = rho/rhoc
+    N = sum(z)
     τ = Tc/T
     α0 = reduced_a_ideal(model,τ)
-    return k*α0 + log(δ)
+    #this form separates the dependency of z from the dependency of V, allowing for precise derivatives of the ideal part.
+    logδ = log(N/rhoc) - log(V)
+    return k*α0 + logδ
 end
 
 a_ideal(model::SingleFluid,V,T,z=SA[1.]) = a_ideal(idealmodel(model),V,T,z)
@@ -203,12 +203,11 @@ function eos(model::SingleFluid, V, T, z=SA[1.0])
     R = R_gas(model)
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc
-    N = only(z)
-    rho = (N/V)
-    δ = rho/rhoc
+    N = sum(z)
     τ = Tc/T
     k = __get_k_alpha0(model)
-    return N*R*T*(log(δ) + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ))
+    logδ = log(N/rhoc) - log(V)
+    return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ))
 end
 
 function eos_res(model::SingleFluid,V,T,z=SA[1.0])

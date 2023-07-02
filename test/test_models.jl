@@ -485,7 +485,7 @@ end
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
 
         #we use the default GERG 2008 parameters for methane, test if the Cp is equal
-        system_gerg = EmpiricIdeal(GERG2008(["methane"], Rgas = Rgas()))
+        system_gerg = EmpiricIdeal(GERG2008(["methane"]))
         Cp_system = Clapeyron.VT_isobaric_heat_capacity(system,V,T,z)
         Cp_gerg = Clapeyron.VT_isobaric_heat_capacity(system_gerg,V,T,z)
 
@@ -519,6 +519,8 @@ end
     end
 
     @testset "GERG2008" begin
+        T = 298.15
+        V = 1e-4
         z   = [1.]
         system = GERG2008(["water"])
         @test Clapeyron.a_ideal(system, V, T, z) ≈ 4.500151936577565 rtol = 1e-6
@@ -545,12 +547,16 @@ end
         T = 1.051*Clapeyron.T_scale(system)
         p = 0.035*Clapeyron.p_scale(system)
         V = Clapeyron._v_scale(system)/0.673
+        z = [1.]
         @test Clapeyron.a_ideal(system, V, T) ≈ 5.704213386278148 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T) ≈ -2.244730279521925 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
     end
 
     @testset "Xiang-Deiters" begin
+        z = [1.]
+        T = 298.15
+        V = 1e-4
         system = XiangDeiters(["water"])
         @test Clapeyron.a_ideal(system, V, T, z) ≈ 1.764485388990734 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T)  ≈ -34.16747927719535 rtol = 1e-6
