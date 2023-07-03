@@ -116,7 +116,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
     (P,V,a,b)
     =#
 
-
+    R̄ = Rgas(model)
     B = second_virial_coefficient(model,T,SA[1.0])
     lb_v = lb_volume(model,SA[1.0])*one(T)
     _0 = zero(B)
@@ -226,7 +226,7 @@ end
 
 function scale_sat_pure(model,z=SA[1.0])
     p    = 1/p_scale(model,z)
-    μ    = 1/R̄/T_scale(model,z)
+    μ    = 1/Rgas(model)/T_scale(model,z)
     return p,μ
 end
 

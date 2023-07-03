@@ -69,7 +69,7 @@ end
 
 
 function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
-
+    R̄ = Rgas(model)
     pure = split_model(model)
     sat = saturation_pressure.(pure,T)
     p_pure = first.(sat)

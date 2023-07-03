@@ -16,3 +16,21 @@ function single_component_error(method,model)
     msg = string(method," only supports single component models, ",model," has ",l," components.")
     throw(DimensionMismatch(msg))
 end
+
+"""
+    binary_component_check(method,model)
+
+Checks if a model is a single component model, throws an error otherwise.
+"""
+function binary_component_check(method,model)
+    l = length(model)
+    l == 2 && return nothing
+    binary_component_error(method,model)
+end
+
+function binary_component_error(method,model)
+    l = length(model)
+    msg = string(method," only supports binary component models, ",model," has ",l," components.")
+    throw(DimensionMismatch(msg))
+end
+

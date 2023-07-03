@@ -466,6 +466,7 @@ g_solv = -R̄*T*log(K)
 where the first component is the solvent and second is the solute.
 """
 function gibbs_solvation(model::EoSModel,T)
+    binary_component_check(gibbs_solvation,model)
     pure = split_model(model)
     z = [1.0,1e-30]
     

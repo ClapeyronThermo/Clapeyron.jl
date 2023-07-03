@@ -16,7 +16,7 @@ M := ℍ(a) for rows ∈ 1:n-1
 ```
 """
 function mixture_critical_constraint(model,V,T,z)
-    f(x) = eos(model,V,T,x)/(R̄*T)
+    f(x) = eos(model,V,T,x)/(Rgas(model)*T)
     H(x) = ForwardDiff.hessian(f,x) #∂A/∂zᵢ∂zⱼ == ∂A/∂zⱼ∂zᵢ
     L(x) = det(Symmetric(H(x)))
     dL(x) = ForwardDiff.gradient(L,x)
@@ -44,7 +44,7 @@ function μp_equality(model::EoSModel, F, T, v_l, v_v, x, y,ps)
     for i in 1:n_c
         F[i] = μ_l[i]
     end
-    RT⁻¹ = 1/R̄*T
+    RT⁻¹ = 1/(Rgas(model)*T)
     μ_v = VT_chemical_potential!(μ_l,model,v_v,T,y)
     for i in 1:n_c
         μli = F[i]
@@ -64,7 +64,7 @@ function μp_equality(model_long::EoSModel,model_short::EoSModel, F, T, v_long, 
     μ_long = VT_chemical_potential!(μ_long,model_long,v_long,T,x_long)
     p_long = pressure(model_long,v_long,T,x_long)
     p_short = pressure(model_short,v_short,T,x_short)
-    RT⁻¹ = 1/R̄*T
+    RT⁻¹ = 1/(Rgas(model_long)*T)
     μ_long_view = @view(μ_long[short_view])
     for i in 1:n_short
         F[i] = μ_long_view[i]

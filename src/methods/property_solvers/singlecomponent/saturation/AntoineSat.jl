@@ -75,7 +75,8 @@ end
 #in case that there isn't any antoine coefficients:
 #We aproximate to RK, use the cubic antoine, and perform refinement with one Clapeyron Saturation iteration 
 
-function saturation_temperature_impl(model,p,method::AntoineSaturation)    
+function saturation_temperature_impl(model,p,method::AntoineSaturation)   
+    R̄ = Rgas(model) 
     scales = scale_sat_pure(model)
     if isnothing(method.T0)
         T0,Vl,Vv = x0_saturation_temperature(model,p)

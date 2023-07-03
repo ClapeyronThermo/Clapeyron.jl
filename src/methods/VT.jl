@@ -158,7 +158,8 @@ function cross_second_virial(model,T,z)
     ∑z = sum(z)
     if n == 1
         return zero(T + first(z))
-    elseif n == 2
+    else
+        binary_component_check(cross_second_virial,model)
         model1,model2 = split_model(model)
         B̄ = B(model,T,z)/∑z #1 mol
         B1,B2 = B(model1,T),B(model2,T) #1 mol by default
@@ -167,8 +168,6 @@ function cross_second_virial(model,T,z)
         #B̄ = (B1*x1^2 + B2*x2^2 + B12*x1*x2)
         B12 = (B̄ - x[1]*x[1]*B1 - x[2]*x[2]*B2)/(2*x[1]*x[2])
         return B12*∑z
-    else
-        throw(error("cross_second_virial is only for models with 2 components. got a model with $n conponents"))
     end
 end
 
@@ -188,7 +187,7 @@ B12 = equivol_cross_second_virial(model,)
 1. Brewer, J., & Vaughn, G. W. (1969). Measurement and correlation of some interaction second virial coefficients from − 125° to 50°C. I. The Journal of Chemical Physics, 50(7), 2960–2968. [doi:10.1063/1.1671491](https://doi.org/10.1063/1.1671491)
 """
 function equivol_cross_second_virial(model,T,p_exp = 200000.0)
-    @assert length(model) == 2 "this function only works with binary models"
+    binary_component_check(cross_second_virial,model)
     #they do experiments at constant volume and temperature, so we are gonna need to calculate the mole fractions for that
     m1,m2 = split_model(model)
     B = second_virial_coefficient

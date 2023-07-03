@@ -95,7 +95,7 @@ is_lle(method::MichelsenTPFlash) = is_lle(method.equilibrium)
 __tpflash_cache_model(model::EoSModel,p,T,z) = model
 
 function __tpflash_gibbs_reduced(model,p,T,x,y,β,eq)
-    (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/R̄/T
+    (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/Rgas(model)/T
 end
 
 function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)

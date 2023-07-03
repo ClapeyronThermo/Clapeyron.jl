@@ -150,6 +150,7 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
     if logspace
         dividers .= log.(dividers)
     end
+    R̄ = Rgas(model)
     return ifelse(isnan(G),bignum,G/R̄/T)
 end
 
