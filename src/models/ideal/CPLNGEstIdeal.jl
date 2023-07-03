@@ -39,17 +39,28 @@ d = 3.1474e-8  * γ₀ -2.8396e-8
 """
 CPLNGEstIdeal
 
-export CPLNGEstIdeal
-function CPLNGEstIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
+function CPLNGEstIdeal(components::Array{String,1}; userlocations=String[], verbose=false)
     params = getparams(components, ["properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]   
     γ₀ = Mw ./ 28.9647
+    for i in 1:length(components)
+        if !(0.55 < γ₀[i] < 1)
+            @warn "this correlation was made for (0.55 < γ₀ < 1), but γ₀($(components[i])) = $(γ₀[i])"
+        end
+    end
     a = -10.9602   .* γ₀ .+ 25.9033
     b = 2.1517e-1  .* γ₀ .- 6.8687e-2 
     c = -1.3337e-4 .* γ₀ .+ 8.6387e-5
     d = 3.1474e-8  .* γ₀ .- 2.8396e-8
     reid = ReidIdealParam(a,b,c,d,components)
-    packagedparams = CPLNGEstIdealParam(Mw,reid.coeffs)
+    packagedparams = CPLNGEstIdealParam(reid.coeffs,Mw)
     references = String["10.1016/j.jngse.2014.04.011"]
     return CPLNGEstIdeal(packagedparams; references=references)
 end
+
+export CPLNGEstIdeal
+
+#=
+a1 = CPLNGEstIdeal(["a1"],userlocations = (;Mw = [20.5200706797]))
+
+=#
