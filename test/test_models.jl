@@ -497,8 +497,6 @@ end
         system = CPLNGEstIdeal(["a1"],userlocations = (;Mw = [20.5200706797]))
         #test at 324.33 K, paper says Cp = 44.232, but the calculations in the paper seem off
         @test Clapeyron.VT_isobaric_heat_capacity(a1,0.03,324.33) ≈ 44.231 rtol = 5e-4
-        #to test the warning.
-        system = CPLNGEstIdeal(["a2"],userlocations = (;Mw = [30.]))
     end
 
     @printline

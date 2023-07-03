@@ -43,11 +43,6 @@ function CPLNGEstIdeal(components::Array{String,1}; userlocations=String[], verb
     params = getparams(components, ["properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]   
     γ₀ = Mw ./ 28.9647
-    for i in 1:length(components)
-        if !(0.55 < γ₀[i] < 1)
-            @warn "this correlation was made for (0.55 < γ₀ < 1), but γ₀($(components[i])) = $(γ₀[i])"
-        end
-    end
     a = -10.9602   .* γ₀ .+ 25.9033
     b = 2.1517e-1  .* γ₀ .- 6.8687e-2 
     c = -1.3337e-4 .* γ₀ .+ 8.6387e-5
