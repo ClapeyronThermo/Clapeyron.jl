@@ -189,7 +189,8 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
 end
 
 function Obj_bubble_temperature(model::EoSModel,model_y, F, p, T, v_l, v_v, x, y,ps,_view)
-    F = μp_equality(model::EoSModel, model_y, F, T, v_l, v_v, x, FractionVector(y),ps,_view)
+    Ts = T_scale(model,x)
+    F = μp_equality(model::EoSModel, model_y, F, T, v_l, v_v, x, FractionVector(y),ps,_view,Ts)
     F[end] = (pressure(model,v_l,T,x) - p)/ps
     return F
 end

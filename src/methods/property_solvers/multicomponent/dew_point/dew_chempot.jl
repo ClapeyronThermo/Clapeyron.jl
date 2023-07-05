@@ -181,7 +181,8 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
 end
 
 function Obj_dew_temperature(model::EoSModel,model_x, F, p, T, v_l, v_v, x, y, ps, _view)
-    F = μp_equality(model, model_x, F, T, v_v, v_l, y, FractionVector(x), ps, _view)
+    Ts = T_scale(model,x)
+    F = μp_equality(model, model_x, F, T, v_v, v_l, y, FractionVector(x), ps, _view, Ts)
     F[end] = (pressure(model,v_v,T,y) - p)/ps
     return F
 end
