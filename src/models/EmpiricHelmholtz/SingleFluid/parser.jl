@@ -313,10 +313,30 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     return SingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 end
 
+function _Cp0_constant_parse(c,Tc,T0)
+    #c - cT0/Tc*τ - c*(log(τ/τ0))
+    #c - cT0/Tc*τ - c*(log(τ) - log(τ0))
+    #c + c*log(τ0) - cT0/Tc*τ - c*(log(τ))
+    τ0 = T0/Tc
+    a1 = c*(1 - log(τ0))
+    a2 = -c*τ0
+    c0 = c
+    return a1,a2,c0
+end
+
+function _Cpi_power_parse(c,t,Tc,T0)
+    a1 = c*(T0^t)/t
+    a2 = -c * (T0^(t+1)) / (Tc * (t + 1))
+    ni = -c * (Tc^t) / (t * (t + 1))
+    ti = -t
+    return a1,a2,ni,ti
+end
+
 function _parse_ideal(id_data,verbose = false)
-    a1 = 0.0
-    a2 = 0.0
-    c0 = 0.0
+    a1 = 0.0 #a1
+    a2 = 0.0 #a2*τ
+    c0 = 0.0 #c0*log(τ)
+    c1 = 0.0 #c1*τ*log(τ) (appears in one specific case)
     R0 = 0.0
     n = Float64[]
     t = Float64[]
@@ -348,36 +368,45 @@ function _parse_ideal(id_data,verbose = false)
             append!(c,fill(1.,l))
             append!(d,fill(-1.,l))
         elseif id_data_i[:type] == "IdealGasHelmholtzCP0Constant"
-            #c - cT0/Tc*τ - c*(log(τ/τ0))
-            #c - cT0/Tc*τ - c*(log(τ) - log(τ0))
-            #c + c*log(τ0) - cT0/Tc*τ - c*(log(τ))
-            cpi = id_data_i[:cp_over_R]
-            _T0 = id_data_i[:T0]
-            _Tc = id_data_i[:Tc]
-            τ0 = _T0/_Tc
-            a1 += cpi*(1 - log(τ0))
-            a2 += -cpi*τ0
-            c0 += cpi
+            _a1,_a2,_c0 = _Cp0_constant_parse(id_data_i[:cp_over_R],id_data_i[:Tc],id_data_i[:T0])
+            a1 += _a1
+            a2 += _a2
+            c0 += _c0
         elseif id_data_i[:type] == "IdealGasHelmholtzCP0PolyT"
             _T0 = id_data_i[:T0]
             _Tc = id_data_i[:Tc]
             cp_c = id_data_i[:c]
             cp_t = id_data_i[:t]
-            τ0 = _T0/_Tc
-
             for i in eachindex(cp_t)
                 ti = cp_t[i]
-                cpi = cp_c[i]
-                if ti == 0
-                    a1 += cpi*(1 - log(τ0))
-                    a2 += -cpi*_T0/_Tc
-                    c0 += cpi
+                ci = cp_c[i]
+                if abs(ti) <= eps(Float64) #t ≈ 0
+                    #=
+                    c - c * tau / tau0 + c * log(tau) ;
+                    c(1 - log(tau0)) - c/tau0 * tau + c*log(tau)
+                    =#
+                    _a1,_a2,_c0 = _Cp0_constant_parse(ci,_Tc,_T0)
+                    a1 += _a1
+                    a2 += _a2
+                    c0 += _c0
+                elseif abs(ti + 1) <= eps(Float64) #t ≈ -1
+                    #=
+                    c * τ / Tc * log(τ0 / τ) + (c/Tc)*τ - (c / Tc)*τ0
+                    τ*(c/Tc)*(log(τ0) - log(τ)) + (c/Tc)*τ - (c / Tc)*τ0
+                    (c/Tc)*log(τ0)*τ + (c/Tc)*τ - (c / Tc)*τ0  - (c/Tc)*τ*log(τ)
+                    (c/Tc)*(log(τ0) + 1)*τ - (c / Tc)*τ0  - (c/Tc)*τ*log(τ)
+                    =#
+                    ctc = ci/_Tc
+                    tau0 = _Tc/_T0
+                    a1 += -ctc*tau0
+                    a2 += ctc*(log(tau0) + 1)
+                    c1 += -ctc
                 else
-                    T0t = _T0^ti
-                    a1 += (cpi*T0t)/ti
-                    a2 += (-T0t*_T0)*cpi/(_Tc*(ti+1))
-                    push!(tp,-ti)
-                    push!(np,(cpi*(_Tc^ti))*(1/(ti+1) - 1/ti))
+                    _a1,_a2,_npi,_tpi = _Cpi_power_parse(ci,ti,_Tc,_T0)
+                    push!(np,_npi)
+                    push!(tp,_tpi)
+                    a1 += _a1
+                    a2 += _a2
                 end
             end
         elseif id_data_i[:type] == "IdealGasHelmholtzPower"
@@ -409,12 +438,11 @@ function _parse_ideal(id_data,verbose = false)
             A,B,C,D,E = alylee_data
 
             if !iszero(A)
-                τ0 = _T0/_Tc
-                a1 += A*(1 - log(τ0))
-                a2 += -A*_T0/_Tc
-                c0 += A
+                _a1,_a2,_c0 = _Cp0_constant_parse(ci,_Tc,_T0)
+                a1 += _a1
+                a2 += _a2
+                c0 += _c0
             end
-
             push!(n,B)
             push!(t,-2*C/Tc)
             push!(c,1)

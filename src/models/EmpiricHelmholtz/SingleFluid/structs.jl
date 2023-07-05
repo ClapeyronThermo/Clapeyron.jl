@@ -1,14 +1,18 @@
 abstract type MultiParameterParam <: EoSParam end
 
 struct SingleFluidIdealParam <:MultiParameterParam
-    a1::Float64
-    a2::Float64
-    c0::Float64
-    n_gpe::Vector{Float64} #gpe terms (Generalized Plank-Einstein)
+    a1::Float64 #a1
+    a2::Float64 #a2*τ
+    c0::Float64 #c0*log(τ)
+
+    #gpe terms (Generalized Plank-Einstein)
+    n_gpe::Vector{Float64} 
     t_gpe::Vector{Float64}
     c_gpe::Vector{Float64}
     d_gpe::Vector{Float64}
-    n_p::Vector{Float64} #power terms
+    
+    #power terms ni*τ^ti
+    n_p::Vector{Float64} 
     t_p::Vector{Float64}
     
     #GERG-2008 terms. while teorethically, they can be converted into power terms, in practice, thanks to the existence
@@ -16,12 +20,15 @@ struct SingleFluidIdealParam <:MultiParameterParam
     n_gerg::Vector{Float64}
     v_gerg::Vector{Float64}
     R0::Float64
+
+    #c1 term: c1*τ*log(τ) . appears in IdealGasHelmholtzCP0PolyT when t = -1
+    c1::Float64
     
-    function SingleFluidIdealParam(a1,a2,c0,n = Float64[],t = Float64[],c = fill(1.0,length(n)),d = fill(-1.0,length(n)),n_p = Float64[], t_p  = Float64[],n_gerg = Float64[],v_gerg = Float64[],R0 = 0.0)
+    function SingleFluidIdealParam(a1,a2,c0,n = Float64[],t = Float64[],c = fill(1.0,length(n)),d = fill(-1.0,length(n)),n_p = Float64[], t_p  = Float64[],n_gerg = Float64[],v_gerg = Float64[],R0 = 0.0,c1 = 0.0)
         @assert length(n_gerg) == length(v_gerg)
         @assert length(n) == length(t) == length(c) == length(d)
         @assert length(n_p) == length(t_p)
-        return new(a1,a2,c0,n,t,c,d,n_p,t_p,n_gerg,v_gerg,R0)
+        return new(a1,a2,c0,n,t,c,d,n_p,t_p,n_gerg,v_gerg,R0,c1)
     end
 end
 
@@ -123,7 +130,13 @@ function show_multiparameter_coeffs(io,param::MultiParameterParam)
     res = String[]
 
     if hasfield(typeof(param),:a1) && hasfield(typeof(param),:a2) && hasfield(typeof(param),:c0)
-        push!(res,"Lead terms: $(param.a1) + $(param.a2)*τ + $(param.c0)*log(τ)")
+        def_terms = "Lead terms: $(param.a1) + $(param.a2)*τ + $(param.c0)*log(τ)"
+        if hasfield(typeof(param),:c1)
+            if param.c1 != 0
+                def_terms = def_terms * " + $(param.c1)*τ*log(τ)" 
+            end
+        end
+        push!(res,def_terms)
     end
 
     if hasfield(typeof(param),:n_gpe)

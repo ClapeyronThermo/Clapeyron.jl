@@ -82,9 +82,12 @@ function reduced_a_ideal(model::SingleFluidIdealParam,τ)
     a₁ = model.a1
     a₂ = model.a2
     c₀ = model.c0
+    c₁ = model.c1
     logτ = log(τ)
     α₀ = a₁ + a₂*τ + c₀*logτ
-
+    if !iszero(c₁)
+        α₀ += c₁*τ*logτ
+    end
     #Generalized Plank-Einstein terms
     n = model.n_gpe
     if length(n) != 0
