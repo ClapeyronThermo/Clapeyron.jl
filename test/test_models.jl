@@ -496,7 +496,7 @@ end
         #Mw to obtain γ₀ = 0.708451
         system = CPLNGEstIdeal(["a1"],userlocations = (;Mw = [20.5200706797]))
         #test at 324.33 K, paper says Cp = 44.232, but the calculations in the paper seem off
-        @test Clapeyron.VT_isobaric_heat_capacity(a1,0.03,324.33) ≈ 44.231 rtol = 5e-4
+        @test Clapeyron.VT_isobaric_heat_capacity(system,0.03,324.33) ≈ 44.231 rtol = 5e-4
     end
 
     @printline
