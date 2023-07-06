@@ -22,7 +22,7 @@ end
     @testset "split_model" begin
         models2 = split_model(model2)
 
-        @test_throws split_model(si)
+        @test_throws ArgumentError split_model(si)
         @test models2[1].components[1] == model2.components[1]
         @test models2[2].components[1] == model2.components[2]
 
