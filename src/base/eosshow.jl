@@ -11,13 +11,13 @@ function _custom_show(Base.@nospecialize(model))
 end 
 
 function show_params(io,model)
-    if hasfield(typeof(model),:params)
-        println(io)
-        paramnames = fieldnames(typeof(model.params))
-        len_params = length(paramnames)
-        !iszero(len_params) && print(io,"Contains parameters: ")
-        show_pairs(io,paramnames,pair_separator = ", ",quote_string = false)
-    end
+    hasfield(typeof(model),:params) || return nothing
+    iszero(fieldcount(typeof(model.params))) && return nothing
+    println(io)
+    paramnames = fieldnames(typeof(model.params))
+    len_params = length(paramnames)
+    !iszero(len_params) && print(io,"Contains parameters: ")
+    show_pairs(io,paramnames,pair_separator = ", ",quote_string = false)
 end
 
 function may_show_references(io::IO,model)
