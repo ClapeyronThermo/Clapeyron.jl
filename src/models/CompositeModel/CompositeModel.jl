@@ -163,11 +163,7 @@ __tpflash_cache_model(model::CompositeModel,p,T,z) = PTFlashWrapper(model,T)
 
 function PTFlashWrapper(model::CompositeModel,T::Number) 
     satmodels = split_model(model.saturation)
-    if is_splittable(model.gas)
-        gases = split_model(model.gas)
-    else
-        gases = fill(model.gas,length(model.components))
-    end
+    gases = split_model(model.gas,1:length(model))
     sats = saturation_pressure.(satmodels,T)
     vv_pure = last.(sats)
     RT = R̄*T

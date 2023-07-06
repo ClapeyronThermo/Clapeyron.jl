@@ -374,6 +374,16 @@ split_model(model::EoSModel,subset=nothing) = auto_split_model(model,subset)
 function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
 
     try
+
+        model_splittable = is_splittable(model)
+
+        if !model_splittable && subset !== nothing
+            len = length(subset)
+            return fill(model,len)
+        else
+            throw(ArgumentError("Invalid type of subset. a non-splittable model needs to specify the splitter (split_model(model,splitter))"))
+        end
+
         allfields = Dict{Symbol,Any}()
         
         M = typeof(model)
@@ -386,11 +396,13 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
         elseif eltype(subset) <: AbstractVector
             splitter = subset
         else
-            throw("invalid type of subset.")
+            throw(ArgumentError("Invalid type of subset. Expected subset::AbstractVector{Union{Int,AbstractVector{Int}}} or subset::Nothing"))
         end
 
         len = length(splitter)
         _has_groups = has_groups(M)
+        #shortcut for directly non-splittable models
+
 
         if _has_groups
             gc_split,idx_splitter,gc_splitter = group_splitter(model.groups,splitter)
