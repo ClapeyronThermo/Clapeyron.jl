@@ -81,8 +81,8 @@ function μp_equality(model_long::EoSModel,model_short::EoSModel, F, T, v_long, 
     return F
 end
 
-function μp_equality(model::EoSModel,::Nothing, F, T, v_l, v_v, x, y,ps,_view)
-    return μp_equality(model,F,T,v_l,v_v,x,y,ps)
+function μp_equality(model::EoSModel,::Nothing, F, T, v_l, v_v, x, y,ps,_view,Ts = T)
+    return μp_equality(model,F,T,v_l,v_v,x,y,ps,Ts)
 end
 
 function VT_chemical_potential!(result,model,V,T,z)

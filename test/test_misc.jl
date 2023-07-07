@@ -43,7 +43,7 @@ end
         @test structgc_split[2].groups.n_intergroups[1] == [0 2; 2 5]
 
         noparam1_split = split_model(noparam1,1:5)
-        @test length(noparam1_split)
+        @test length(noparam1_split) == 5
         @test noparam1_split[1] == noparam1
         @test_throws ArgumentError split_model(noparam1)
 
@@ -100,7 +100,7 @@ end
         @test repr("text/plain",model2) == "PCSAFT{BasicIdeal} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"
         #@newmodelsimple
         @test repr(noparam1) == "NoTranslation()"
-        @test repr("text/plain",noparam1) == "NoTranslation\n"
+        @test repr("text/plain",noparam1) == "NoTranslation"
         @test repr(simple1) == "PRAlpha(\"propane\")"
         @test repr("text/plain",simple1) == "PRAlpha with 1 component:\n \"propane\"\nContains parameters: acentricfactor"
     end
