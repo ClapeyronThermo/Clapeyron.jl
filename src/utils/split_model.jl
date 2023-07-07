@@ -377,11 +377,13 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
 
         model_splittable = is_splittable(model)
 
-        if !model_splittable && subset !== nothing
-            len = length(subset)
-            return fill(model,len)
-        else
-            throw(ArgumentError("Invalid type of subset. a non-splittable model needs to specify the splitter (split_model(model,splitter))"))
+        if !model_splittable
+            if subset !== nothing
+                len = length(subset)
+                return fill(model,len)
+            else
+                throw(ArgumentError("Invalid type of subset. a non-splittable model needs to specify the splitter (split_model(model,splitter))"))
+            end
         end
 
         allfields = Dict{Symbol,Any}()
