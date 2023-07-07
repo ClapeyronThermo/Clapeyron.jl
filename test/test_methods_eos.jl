@@ -151,6 +151,22 @@ end
     @test vc ≈ vc_test rtol = 1E-3
 end
 
+@testset "ideal model parsing to JSON" begin
+    m1 = BasicIdeal(["water"])
+    m2 = MonomerIdeal(["water"])
+    #m3 = ReidIdeal(["water"])
+
+    for mi in (m1,m2)#,m3)
+        mxd = XiangDeiters(["water"], idealmodel = mi)
+        T0 = 300.15
+        V0 = 0.03
+        #parsed and reconstituted idealmodel
+        cp1 = Clapeyron.VT_isobaric_heat_capacity(Clapeyron.idealmodel(mxd),V0,T0)
+        #original
+        cp2 = Clapeyron.VT_isobaric_heat_capacity(mi,V0,T0)
+        @test cp1 ≈ cp2 rtol = 1e-6
+    end
+end
 
 @testset "SAFT methods, multi-components" begin
     @printline
@@ -346,7 +362,7 @@ end
     T2 = 320.15
     z = [0.5,0.5]
     z_bulk = [0.2,0.8]
-    
+
     @testset "Bulk properties" begin
         @test crit_pure(com1)[1] ≈ 647.13
         @test Clapeyron.volume(system, p, T, z_bulk) ≈ 8.602344040626639e-5 rtol = 1e-6
@@ -359,13 +375,13 @@ end
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.647133460465 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = true))[1] ≈ 23839.621459294547
         @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = false))[1] ≈ 23833.39094581393
-        
+
         @test Clapeyron.bubble_temperature(system,23758.647133460465, z)[1] ≈ T  rtol = 1E-6
 
         @test Clapeyron.dew_pressure(system2, T2, z)[1] ≈ 19386.939256733036 rtol = 1E-6
         @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = true))[1] ≈ 19393.924550078184 rtol = 1e-6
         @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = false))[1] ≈ 19393.76058757084 rtol = 1e-6
-        
+
         @test Clapeyron.dew_temperature(system2, 19386.939256733036, z)[1]  ≈ T2 rtol = 1E-6
     end
 end
@@ -420,7 +436,7 @@ end
         @test Clapeyron.VT_speed_of_sound(system,V1,T1,z) ≈ 1331.9880 rtol = 1e-6
         @test Clapeyron.VT_speed_of_sound(system,V2,T2,z) ≈ 314.72845 rtol = 1e-6
         @test Clapeyron.volume(system,5e6,T1,z) ≈ V1
-        @test Clapeyron.pressure(system,V2,T2,z) ≈ 0.28707693e6 rtol = 1e6 
+        @test Clapeyron.pressure(system,V2,T2,z) ≈ 0.28707693e6 rtol = 1e6
     end
 end
 

@@ -31,6 +31,8 @@ Rgas(model::MultiFluid) = model.Rgas
 
 """
     MultiFluid(components;
+        idealmodel = nothing,
+        ideal_userlocations = String[],
         pure_userlocations = String[],
         mixing = AsymmetricMixing,
         departure = EmpiricDeparture,
@@ -46,6 +48,7 @@ Rgas(model::MultiFluid) = model.Rgas
 - JSON data (CoolProp and teqp format)
 
 ## Input models
+- `idealmodel`: Ideal Model. if it is `nothing`, then it will parse the ideal model from the input JSON.
 - `mixing`: mixing model for temperature and volume.
 - `departure`: departure model
 
@@ -65,7 +68,9 @@ If `estimate_pure` is true, then, if a JSON is not found, the pure model will be
 `Rgas` sets the value of the gas constant to be used by the multifluid. defaults to `Clapeyron.R̄ = Rgas() = 8.31446261815324` (2019 defined constant value)
  """
 function MultiFluid(components;
+    idealmodel = nothing,
     pure_userlocations = String[],
+    ideal_userlocations = String[],
     mixing = AsymmetricMixing,
     departure = EmpiricDeparture,
     mixing_userlocations = String[],
@@ -76,15 +81,23 @@ function MultiFluid(components;
     Rgas = R̄,
     verbose = false,
     )
-    
+
+    if idealmodel === nothing
+        idealmodels = FillArrays.Fill(nothing,length(components))
+    else
+        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        idealmodels = split_model(init_idealmodel,1:length(components))
+    end
+
     pures = [
         SingleFluid(comp;
         userlocations = pure_userlocations,
-        verbose = verbose, 
-        estimate_pure = estimate_pure, 
+        idealmodel = idealmodels[i],
+        verbose = verbose,
+        estimate_pure = estimate_pure,
         coolprop_userlocations = coolprop_userlocations,
-        ) 
-        for comp in components]
+        )
+        for (i,comp) in pairs(components)]
     mixing = init_model(mixing,components,mixing_userlocations,verbose)
     departure = init_model(departure,components,departure_userlocations,verbose)
     params = MultiFluidParam(components,pures)
@@ -123,7 +136,7 @@ function a_ideal(model::MultiFluid,V,T,z,∑z = sum(z))
         zᵢ = z[i]
         res += zᵢ*a₀ᵢ
         res += xlogx(zᵢ,vc[i])
-        res 
+        res
     end
     res /= ∑z
     res -= log(V)
@@ -158,7 +171,7 @@ v_scale(model::MultiFluid,z = SA[1.0],∑z = sum(z)) = v_scale(model,z,model.mix
 T_scale(model::MultiFluid,z = SA[1.0],∑z = sum(z)) = T_scale(model,z,model.mixing,∑z)
 
 p_scale(model::MultiFluid,z=SA[1.]) = dot(z,model.params.Pc.values)/sum(z)
- 
+
 T_scales(model::MultiFluid,z=SA[1.]) = model.properties.Tc.values
 
 #single functions, dispatch to pure

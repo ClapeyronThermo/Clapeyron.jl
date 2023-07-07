@@ -177,7 +177,9 @@ function SingleFluid(components;
         estimate_pure = false,
         coolprop_userlocations = true,
         Rgas = nothing,
-        verbose = false)
+        verbose = false,
+        idealmodel = nothing,
+        ideal_userlocations = String[])
 
 
     components = [get_only_comp(components)]
@@ -188,13 +190,20 @@ function SingleFluid(components;
             nothing
         end
     if data === nothing && estimate_pure
-        return XiangDeiters(components;userlocations,verbose = verbose)
+        return XiangDeiters(components;userlocations,verbose = verbose,idealmodel = idealmodel,ideal_userlocations = ideal_userlocations)
     end
     eos_data = first(data[:EOS])
     #properties
     properties = _parse_properties(data,Rgas,verbose)
     #ideal
-    ideal = _parse_ideal(eos_data[:alpha0],verbose)
+    if idealmodel === nothing
+        ideal_data = eos_data[:alpha0]
+    else
+        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        ideal_data = Clapeyron.idealmodel_to_json_data(init_idealmodel; Tr = properties.Tr, Vr = 1/properties.rhor)    
+    end
+
+    ideal = _parse_ideal(ideal_data,verbose)
     #residual. it can also parse departures, that's why we pass SingleFluidResidualParam as an arg
     residual = _parse_residual(SingleFluidResidualParam,eos_data[:alphar];verbose = verbose)
     #ancillaries
@@ -249,16 +258,23 @@ function SingleFluidIdeal(components;
     userlocations = String[],
     Rgas = nothing,
     verbose = false,
-    coolprop_userlocations = true)
+    coolprop_userlocations = true,
+    idealmodel = nothing,
+    ideal_userlocations = String[])
 
     data = get_json_data(components;userlocations,coolprop_userlocations,verbose)
     components = [get_only_comp(components)]
     eos_data = first(data[:EOS])
     #properties
     properties = _parse_properties(data,Rgas,verbose)
-    #ideal
-    ideal = _parse_ideal(eos_data[:alpha0],verbose)
 
+    if idealmodel === nothing
+        ideal_data = eos_data[:alpha0]
+    else
+        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        ideal_data = Clapeyron.idealmodel_to_json_data(init_idealmodel; Tr = properties.Tr, Vr = 1/properties.rhor)    
+    end
+    ideal = _parse_ideal(ideal_data,verbose)
     references = [eos_data[:BibTeX_EOS]]
 
     return SingleFluidIdeal(components,properties,ideal,references)
@@ -756,4 +772,93 @@ function _parse_ancillaries(anc_data,verbose = false)
     rhol_anc = PolExpLiquid(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
     return CompositeModel(["ancillaries"],gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
 end
+
+#converting Clapeyron ideal models into SingleFluidParams
+
+"""
+    idealmodel_to_json_data(model::EoSModel;Tr = 1.0,T0 = 298.15, Vr = 1.0)
+
+Transforms an `model::IdealModel` into a vector of dictionaries containing valid ideal multiparameter helmholtz terms.
+`Tr` is the reducing temperature, `T0` is the reference temperature, `Vr` is the reducing volume.
+## Example 
+```
+julia> id = BasicIdeal(["water"])
+BasicIdeal(Clapeyron.BasicIdealParam)
+
+julia> Clapeyron.idealmodel_to_json_data(id)
+1-element Vector{Dict{Symbol, Any}}:
+ Dict(:T0 => 298.15, :type => "IdealGasHelmholtzCP0Constant", :cp_over_R => 2.5, :Tc => 1.0)
+
+```
+"""
+function idealmodel_to_json_data(model;Tr = 1.0,T0 = 298.15,Vr = 1.0)
+    return idealmodel_to_json_data(model,Tr,T0,Vr)
+end
+
+function idealmodel_to_json_data(model::BasicIdealModel,Tr,T0,Vr)
+    [
+        Dict(:type => "IdealGasHelmholtzLead",
+            :a1 => - log(Vr) - 1.5*log(Tr) - 1,
+            :a2 => 0,
+        )
+        Dict(
+            :type => "IdealGasHelmholtzLogTau",
+            :a => 1.5,
+        )
+    ]
+end
+
+function idealmodel_to_json_data(model::ReidIdealModel,Tr,T0,Vr)
+    single_component_check(idealmodel_to_json_data,model)
+    coeffs = model.params.coeffs[1] ./ Rgas(model)
+    [
+        Dict(
+            :type => "IdealGasHelmholtzLead",
+            :a1 => -log(Vr),
+            :a2 => 0,
+        ),
+        Dict(
+            :type => "IdealGasHelmholtzCP0PolyT",
+            :T0 => 298.0,
+            :Tc => Tr,
+            :c => [coeffs...],
+            :t => [0,1,1,3],
+        ),
+    ]
+end
+
+function idealmodel_to_json_data(model::JobackIdealModel,Tr,T0,Vr)
+    single_component_check(idealmodel_to_json_data,model)
+    return idealmodel_to_json_data(ReidIdeal(model),Tr,T0,Vr)
+end
+
+function idealmodel_to_json_data(model::MonomerIdealModel,Tr,T0,Vr)
+    single_component_check(idealmodel_to_json_data,model)
+    Mwᵢ = model.params.Mw[1]*0.001
+    Λᵢ = h/√(k_B*Mwᵢ/N_A) # * T^(-1/2)
+    kᵢ = N_A*Λᵢ^3 #T^(-3/2)
+    # monomer: a = ∑ xi * [log(xi*ki*T^-1.5/v)] - 1
+    # ∑ xi * [log(xi) +  1.5*log(ki*T/v)]
+    # ∑ xi * [log(xi) +  a0i(v,T)]
+    #a0i(v,T) = log(ki) - log(v) + 1.5*log(Tinv)
+    #a0i(v,T) = log(ki) - log(v) + log(vr) - log(vr) + 1.5*log(Tinv) + 1.5*log(Tr) - 1.5*log(Tr)
+    #a0i(v,T) = log(ki) + log(vr/v) - log(vr)  - 1.5*log(Tr) + 1.5*log(Tr/Tinv)
+    #a0i(v,T) = log(vr/v)  + log(ki)- log(vr) - 1.5*log(Tr) + 1.5*log(Tr/Tinv)
+    #a1 = log(ki) - log(vr) - 1.5*log(Tr)
+    #a2 = 1.5
+    a1 = log(kᵢ) - log(Vr) - 1.5*log(Tr)
+    [
+        Dict(
+            :type => "IdealGasHelmholtzLead",
+            :a1 => a1 - 1,
+            :a2 => 0.0,
+            ),
+        Dict(
+            :type => "IdealGasHelmholtzLogTau",
+            :a => 1.5,
+            )
+    ]
+end
+
+
 

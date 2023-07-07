@@ -41,6 +41,8 @@ function HelmAct(components;
     pure_userlocations = String[],
     activity = PSRKUNIFAC,
     activity_userlocations = String[],
+    idealmodel = nothing,
+    ideal_userlocations = String[],
     estimate_pure = false,
     coolprop_userlocations = true,
     Rgas = R̄,
@@ -62,6 +64,8 @@ function HelmAct(components;
         coolprop_userlocations = coolprop_userlocations,
         Rgas = Rgas,
         verbose = false,
+        idealmodel = idealmodel,
+        ideal_userlocations = ideal_userlocations,
         )
 end
 
