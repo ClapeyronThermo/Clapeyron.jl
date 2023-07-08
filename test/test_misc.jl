@@ -21,8 +21,9 @@ end
     model_structgc = structSAFTgammaMie(["ethanol","octane"])
     @testset "split_model" begin
         models2 = split_model(model2)
-
-        @test_throws ArgumentError split_model(simple1)
+        @info "The following 2 error messages are expected:"
+        @test_throws ArgumentError split_model(noparam1)
+        @test_throws ArgumentError split_model(model2,missing)
         @test models2[1].components[1] == model2.components[1]
         @test models2[2].components[1] == model2.components[2]
 

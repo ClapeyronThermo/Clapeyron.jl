@@ -566,7 +566,8 @@ end
         T = 298.15
         V = 1e-4
         system = XiangDeiters(["water"])
-        @test Clapeyron.a_ideal(system, V, T, z) ≈ 1.764485388990734 rtol = 1e-6
+        #equal to Clapeyron.a_ideal(BasicIdeal(["water"]), V, T, z)
+        @test Clapeyron.a_ideal(system, V, T, z) ≈ -0.33605470137749016 rtol = 1e-6
         @test Clapeyron.a_res(system, V, T)  ≈ -34.16747927719535 rtol = 1e-6
     end
     @printline

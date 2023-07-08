@@ -330,12 +330,13 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
 end
 
 function _Cp0_constant_parse(c,Tc,T0)
-    #c - cT0/Tc*τ - c*(log(τ/τ0))
-    #c - cT0/Tc*τ - c*(log(τ) - log(τ0))
-    #c + c*log(τ0) - cT0/Tc*τ - c*(log(τ))
-    τ0 = T0/Tc
+    #c - cT0/Tc*τ + c*(log(τ/τ0))
+    #c - c*τ/τ0 + c*(log(τ) - log(τ0))
+    #c - c*log(τ0)
+    #c*(1 - log(τ0)) - (c/τ0)* τ + c*log(τ)
+    τ0 = Tc/T0
     a1 = c*(1 - log(τ0))
-    a2 = -c*τ0
+    a2 = -c/τ0
     c0 = c
     return a1,a2,c0
 end
@@ -822,7 +823,7 @@ function idealmodel_to_json_data(model::ReidIdealModel,Tr,T0,Vr)
             :T0 => 298.0,
             :Tc => Tr,
             :c => [coeffs...],
-            :t => [0,1,1,3],
+            :t => [0,1,2,3],
         ),
     ]
 end
@@ -859,6 +860,3 @@ function idealmodel_to_json_data(model::MonomerIdealModel,Tr,T0,Vr)
             )
     ]
 end
-
-
-
