@@ -152,19 +152,26 @@ end
 end
 
 @testset "ideal model parsing to JSON" begin
-    m1 = BasicIdeal(["water"])
-    m2 = MonomerIdeal(["water"])
-    #m3 = ReidIdeal(["water"])
-
-    for mi in (m1,m2)#,m3)
-        mxd = XiangDeiters(["water"], idealmodel = mi)
-        T0 = 300.15
-        V0 = 0.03
+    comp = ["hexane"]
+    idealmodels = []
+    push!(idealmodels,BasicIdeal(comp))
+    push!(idealmodels,MonomerIdeal(comp))
+    #push!(idealmodels,JobackIdeal(comp))
+    push!(idealmodels,WalkerIdeal(comp))
+    T0 = 400.15
+    V0 = 0.03
+    for mi in idealmodels
+        mxd = XiangDeiters(comp, idealmodel = mi)
+        id_mxd = Clapeyron.idealmodel(mxd)
+       
         #parsed and reconstituted idealmodel
-        cp1 = Clapeyron.VT_isobaric_heat_capacity(Clapeyron.idealmodel(mxd),V0,T0)
+        cp1 = Clapeyron.VT_isobaric_heat_capacity(id_mxd,V0,T0)
         #original
+        a1 = Clapeyron.a_ideal(id_mxd,V0,T0,Clapeyron.SA[1.0])
+        a2 = Clapeyron.a_ideal(mi,V0,T0,Clapeyron.SA[1.0])
         cp2 = Clapeyron.VT_isobaric_heat_capacity(mi,V0,T0)
         @test cp1 ≈ cp2 rtol = 1e-6
+        @test a1 ≈ a2 rtol = 1e-6
     end
 end
 

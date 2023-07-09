@@ -200,7 +200,7 @@ function SingleFluid(components;
         ideal_data = eos_data[:alpha0]
     else
         init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-        ideal_data = Clapeyron.idealmodel_to_json_data(init_idealmodel; Tr = properties.Tr, Vr = 1/properties.rhor)    
+        ideal_data = Clapeyron.idealmodel_to_json_data(init_idealmodel; Tr = properties.Tr, Vr = 1/properties.rhor)
     end
 
     ideal = _parse_ideal(ideal_data,verbose)
@@ -272,7 +272,7 @@ function SingleFluidIdeal(components;
         ideal_data = eos_data[:alpha0]
     else
         init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-        ideal_data = Clapeyron.idealmodel_to_json_data(init_idealmodel; Tr = properties.Tr, Vr = 1/properties.rhor)    
+        ideal_data = Clapeyron.idealmodel_to_json_data(init_idealmodel; Tr = properties.Tr, Vr = 1/properties.rhor)
     end
     ideal = _parse_ideal(ideal_data,verbose)
     references = [eos_data[:BibTeX_EOS]]
@@ -781,7 +781,7 @@ end
 
 Transforms an `model::IdealModel` into a vector of dictionaries containing valid ideal multiparameter helmholtz terms.
 `Tr` is the reducing temperature, `T0` is the reference temperature, `Vr` is the reducing volume.
-## Example 
+## Example
 ```
 julia> id = BasicIdeal(["water"])
 BasicIdeal(Clapeyron.BasicIdealParam)
@@ -860,3 +860,82 @@ function idealmodel_to_json_data(model::MonomerIdealModel,Tr,T0,Vr)
             )
     ]
 end
+
+function idealmodel_to_json_data(model::WalkerIdealModel,Tr,T0,Vr)
+    single_component_check(idealmodel_to_json_data,model)
+    ni = model.groups.n_flattenedgroups[1]
+    groups_i = model.groups.i_groups[1]
+    Mwᵢ = sum(ni[k]*model.params.Mw[k] for k in groups_i)
+    Nrot = model.params.Nrot.values
+    Λᵢ = h/√(k_B*Mwᵢ/N_A) # * T^(-1/2)
+    kᵢ = N_A*Λᵢ^3 #T^(-3/2)
+    # monomer: a = ∑ xi * [log(xi*ki*T^-1.5/v)] - 1
+    # ∑ xi * [log(xi) +  1.5*log(ki*T/v)]
+    # ∑ xi * [log(xi) +  a0i(v,T)]
+    #a0i(v,T) = log(ki) - log(v) + 1.5*log(Tinv)
+    #a0i(v,T) = log(ki) - log(v) + log(vr) - log(vr) + 1.5*log(Tinv) + 1.5*log(Tr) - 1.5*log(Tr)
+    #a0i(v,T) = log(ki) + log(vr/v) - log(vr)  - 1.5*log(Tr) + 1.5*log(Tr/Tinv)
+    #a0i(v,T) = log(vr/v)  + log(ki)- log(vr) - 1.5*log(Tr) + 1.5*log(Tr/Tinv)
+    #a1 = log(ki) - log(vr) - 1.5*log(Tr)
+    #a2 = 1.5
+    Nroti = sum(ni[k]*Nrot[k] for k in groups_i)/sum(ni[k] for k in groups_i)
+    a1 = log(kᵢ) - log(Vr) - (1.5 + Nroti/2)*log(Tr)
+
+    θ1 = model.params.theta1.values
+    θ2 = model.params.theta2.values
+    θ3 = model.params.theta3.values
+    θ4 = model.params.theta4.values
+    g1 = model.params.deg1.values
+    g2 = model.params.deg2.values
+    g3 = model.params.deg3.values
+    g4 = model.params.deg4.values
+    θ_vib = (θ1, θ2, θ3, θ4)
+    g_vib = (g1, g2, g3, g4)
+
+    n_pe = Float64[]
+    t_pe = Float64[]
+    c_pe = Float64[]
+    d_pe = Float64[]
+    n_power =Float64[]
+    t_power = Float64[]
+    for k in groups_i
+        nik = ni[k]
+        for v in 1:4
+            gvk = g_vib[v][k]
+            θvk = θ_vib[v][k]
+            push!(n_power,nik*gvk*θvk/2/Tr)
+            push!(t_power,1)
+            push!(n_pe,gvk*nik)
+            push!(t_pe,-θvk/Tr)
+            push!(c_pe,1)
+            push!(d_pe,-1)
+        end
+    end
+    #res += z[i]*(
+    #    sum(ni[k]*sum(g_vib[v][k]*(θ_vib[v][k]/2/T+log(1-exp(-θ_vib[v][k]/T))) for v in 1:4)
+    #    for k in @groups(i)))
+    [
+        Dict(
+            :type => "IdealGasHelmholtzLead",
+            :a1 => a1 - 1,
+            :a2 => 0.0,
+            ),
+        Dict(
+            :type => "IdealGasHelmholtzLogTau",
+            :a => 1.5 + Nroti/2,
+            ),
+        Dict(
+            :type => "IdealHelmholtzPlanckEinsteinGeneralized",
+            :n => n_pe,
+            :t => t_pe,
+            :c => c_pe,
+            :d => d_pe,
+            ),
+        Dict(
+            :type => "IdealGasHelmholtzPower",
+            :n => n_power,
+            :t => t_power,
+            ),
+    ]
+end
+
