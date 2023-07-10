@@ -87,7 +87,10 @@ function a_ideal(model::AlyLeeIdealModel,V,T,z=SA[1.0])
         Ai,Bi,Ci,Di,Ei,Fi,Gi,Hi,Ii = A[i],B[i],C[i],D[i],E[i],F[i],G[i],H[i],I[i]
         #integrate constant:
         #Tc,T0 = 1.0,298.15
-        a₁,a₂,c₀ = _Cp0_constant_parse(Ai,1.0,298.15)
+        #a₁,a₂,c₀ = _Cp0_constant_parse(Ai,1.0,298.15)
+        a₁ = Ai*-4.697596715569115 #(1 - log(τ0))
+        a₂ = -Ai*298.15 #T0/Tc
+        c₀ = (Ai - 1)
         ai = a₁ + a₂*τi + c₀*logτi
         zi = z[i]
         ni = (Bi,Di,Fi,Hi)

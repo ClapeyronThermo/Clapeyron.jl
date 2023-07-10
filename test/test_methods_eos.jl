@@ -156,7 +156,7 @@ end
     idealmodels = []
     push!(idealmodels,BasicIdeal(comp))
     push!(idealmodels,MonomerIdeal(comp))
-    #push!(idealmodels,JobackIdeal(comp))
+    push!(idealmodels,JobackIdeal(comp))
     push!(idealmodels,WalkerIdeal(comp))
     push!(idealmodels,AlyLeeIdeal(comp))
 
