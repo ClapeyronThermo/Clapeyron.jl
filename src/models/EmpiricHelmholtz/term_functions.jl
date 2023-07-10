@@ -87,13 +87,35 @@ end
     return α₀
 end
 
+#we use the specific GERG term instead of transforming into power terms because
+#`logcosh` and `logabssinh` are one eval,vs 4 evals resulting in the transformation.
 @inline function term_a0_gerg2008(τ,logτ,_0,n,v)
     α₀ = zero(_0)
-    n₁,n₂,n₃,n₄ = n[1],n[2],n[3],n[4]
-    ϑ₁,ϑ₂,ϑ₃,ϑ₄ = v[1],v[2],v[3],v[4]
-    iszero(n₁) || (α₀ += n₁*EoSFunctions.logabssinh(ϑ₁*τ))
-    iszero(n₂) || (α₀ -= n₂*EoSFunctions.logcosh(ϑ₂*τ))
-    iszero(n₃) || (α₀ += n₃*EoSFunctions.logabssinh(ϑ₃*τ))
-    iszero(n₄) || (α₀ -= n₄*EoSFunctions.logcosh(ϑ₄*τ))
+    @inbounds for i in 2:2:length(n)
+        nᵢ, ϑᵢ = n[i], v[i] #even terms
+        nⱼ, ϑⱼ = n[i-1], v[i-1] #odd terms
+        iszero(nᵢ) || (α₀ += nᵢ*EoSFunctions.logcosh(ϑᵢ*τ))
+        iszero(nⱼ) || (α₀ += nⱼ*EoSFunctions.logabssinh(ϑⱼ*τ))
+    end
     return α₀
+end
+
+function _Cp0_constant_parse(c,Tc,T0)
+    #c - cT0/Tc*τ + c*(log(τ/τ0))
+    #c - c*τ/τ0 + c*(log(τ) - log(τ0))
+    #c - c*log(τ0)
+    #c*(1 - log(τ0)) - (c/τ0)* τ + c*log(τ)
+    τ0 = Tc/T0
+    a1 = c*(1 - log(τ0))
+    a2 = -c/τ0
+    c0 = c
+    return a1,a2,c0
+end
+
+function _Cpi_power_parse(c,t,Tc,T0)
+    a1 = c*(T0^t)/t
+    a2 = -c * (T0^(t+1)) / (Tc * (t + 1))
+    ni = -c * (Tc^t) / (t * (t + 1))
+    ti = -t
+    return a1,a2,ni,ti
 end

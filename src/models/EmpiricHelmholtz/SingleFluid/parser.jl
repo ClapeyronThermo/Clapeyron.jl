@@ -329,26 +329,6 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     return SingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 end
 
-function _Cp0_constant_parse(c,Tc,T0)
-    #c - cT0/Tc*τ + c*(log(τ/τ0))
-    #c - c*τ/τ0 + c*(log(τ) - log(τ0))
-    #c - c*log(τ0)
-    #c*(1 - log(τ0)) - (c/τ0)* τ + c*log(τ)
-    τ0 = Tc/T0
-    a1 = c*(1 - log(τ0))
-    a2 = -c/τ0
-    c0 = c
-    return a1,a2,c0
-end
-
-function _Cpi_power_parse(c,t,Tc,T0)
-    a1 = c*(T0^t)/t
-    a2 = -c * (T0^(t+1)) / (Tc * (t + 1))
-    ni = -c * (Tc^t) / (t * (t + 1))
-    ti = -t
-    return a1,a2,ni,ti
-end
-
 function _parse_ideal(id_data,verbose = false)
     a1 = 0.0 #a1
     a2 = 0.0 #a2*τ
@@ -455,20 +435,15 @@ function _parse_ideal(id_data,verbose = false)
             A,B,C,D,E = alylee_data
 
             if !iszero(A)
-                _a1,_a2,_c0 = _Cp0_constant_parse(ci,_Tc,_T0)
+                _a1,_a2,_c0 = _Cp0_constant_parse(A,_Tc,_T0)
                 a1 += _a1
                 a2 += _a2
                 c0 += _c0
             end
-            push!(n,B)
-            push!(t,-2*C/Tc)
-            push!(c,1)
-            push!(d,-1)
-
-            push!(n,-D)
-            push!(t,-2*E/Tc)
-            push!(c,1)
-            push!(d,1)
+            n_alylee = (B,D)
+            v_alylee = (C/_Tc,E/_Tc)
+            append!(n_gerg,n_alylee)
+            append!(v_gerg,v_alylee)
         elseif id_data_i[:type] == "IdealGasClapeyronJLGerg2008"
             append!(n_gerg,id_data_i[:n])
             append!(v_gerg,id_data_i[:v])
@@ -793,6 +768,9 @@ julia> Clapeyron.idealmodel_to_json_data(id)
 ```
 """
 function idealmodel_to_json_data(model;Tr = 1.0,T0 = 298.15,Vr = 1.0)
+    if is_splittable(model)
+        single_component_check(idealmodel_to_json_data,model)
+    end
     return idealmodel_to_json_data(model,Tr,T0,Vr)
 end
 
@@ -810,7 +788,6 @@ function idealmodel_to_json_data(model::BasicIdealModel,Tr,T0,Vr)
 end
 
 function idealmodel_to_json_data(model::ReidIdealModel,Tr,T0,Vr)
-    single_component_check(idealmodel_to_json_data,model)
     coeffs = model.params.coeffs[1] ./ Rgas(model)
     [
         Dict(
@@ -829,12 +806,10 @@ function idealmodel_to_json_data(model::ReidIdealModel,Tr,T0,Vr)
 end
 
 function idealmodel_to_json_data(model::JobackIdealModel,Tr,T0,Vr)
-    single_component_check(idealmodel_to_json_data,model)
     return idealmodel_to_json_data(ReidIdeal(model),Tr,T0,Vr)
 end
 
 function idealmodel_to_json_data(model::MonomerIdealModel,Tr,T0,Vr)
-    single_component_check(idealmodel_to_json_data,model)
     Mwᵢ = model.params.Mw[1]*0.001
     Λᵢ = h/√(k_B*Mwᵢ/N_A) # * T^(-1/2)
     kᵢ = N_A*Λᵢ^3 #T^(-3/2)
@@ -862,7 +837,6 @@ function idealmodel_to_json_data(model::MonomerIdealModel,Tr,T0,Vr)
 end
 
 function idealmodel_to_json_data(model::WalkerIdealModel,Tr,T0,Vr)
-    single_component_check(idealmodel_to_json_data,model)
     ni = model.groups.n_flattenedgroups[1]
     groups_i = model.groups.i_groups[1]
     Mwᵢ = sum(ni[k]*model.params.Mw[k] for k in groups_i)
@@ -939,3 +913,34 @@ function idealmodel_to_json_data(model::WalkerIdealModel,Tr,T0,Vr)
     ]
 end
 
+function idealmodel_to_json_data(model::AlyLeeIdealModel,Tr,T0,Vr)
+    A = model.params.A.values[1]
+    B = model.params.B.values[1]
+    C = model.params.C.values[1]
+    D = model.params.D.values[1]
+    E = model.params.E.values[1]
+    F = model.params.F.values[1]
+    G = model.params.G.values[1]
+    H = model.params.H.values[1]
+    I = model.params.I.values[1]
+
+    [
+        Dict(
+            :type => "IdealGasHelmholtzCP0AlyLee",
+            :Tc => Tr,
+            :T0 => 298.15,
+            :c => [A,B,C,D,E]
+            ),
+        Dict(
+            :type => "IdealGasHelmholtzCP0AlyLee",
+            :Tc => Tr,
+            :T0 => 298.15,
+            :c => [0.0,F,G,H,I]
+            ),
+        Dict(
+        :type => "IdealGasHelmholtzLead",
+        :a1 => - log(Vr),
+        :a2 => 0.0,
+        ),
+    ]
+end

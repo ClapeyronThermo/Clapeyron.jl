@@ -158,6 +158,8 @@ end
     push!(idealmodels,MonomerIdeal(comp))
     #push!(idealmodels,JobackIdeal(comp))
     push!(idealmodels,WalkerIdeal(comp))
+    push!(idealmodels,AlyLeeIdeal(comp))
+
     T0 = 400.15
     V0 = 0.03
     for mi in idealmodels
