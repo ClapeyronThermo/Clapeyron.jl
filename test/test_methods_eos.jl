@@ -172,13 +172,11 @@ end
         a1 = Clapeyron.a_ideal(id_mxd,V0,T0,Clapeyron.SA[1.0])
         a2 = Clapeyron.a_ideal(mi,V0,T0,Clapeyron.SA[1.0])
         cp2 = Clapeyron.VT_isobaric_heat_capacity(mi,V0,T0)
-        @testset string(typeof(mi)) begin
-            @test cp1 ≈ cp2 rtol = 1e-6
-            if mi isa AlyLeeIdeal
-                @test_broken a1 ≈ a2 rtol = 1e-6
-            else
-                @test a1 ≈ a2 rtol = 1e-6
-            end
+        @test cp1 ≈ cp2 rtol = 1e-6
+        if mi isa AlyLeeIdeal
+            @test_broken a1 ≈ a2 rtol = 1e-6
+        else
+            @test a1 ≈ a2 rtol = 1e-6
         end
     end
 end
