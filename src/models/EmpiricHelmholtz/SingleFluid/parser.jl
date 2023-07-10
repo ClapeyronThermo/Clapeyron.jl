@@ -691,7 +691,7 @@ function __verbose_found_json_terms(data)
         elseif type == "IdealGasHelmholtzCP0PolyT"
             " Converting to lead, LogTau and power terms."
         elseif type == "IdealGasHelmholtzCP0AlyLee"
-            " Converting to lead, LogTau and Plank-Einstein terms."
+            " Converting to lead, LogTau and GERG-2004 terms."
         elseif type == "Gaussian+Exponential"
             " Converting to power, exponential and gaussian bell-shaped terms."
         else

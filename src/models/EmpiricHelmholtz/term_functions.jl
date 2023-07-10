@@ -94,7 +94,7 @@ end
     @inbounds for i in 2:2:length(n)
         nᵢ, ϑᵢ = n[i], v[i] #even terms
         nⱼ, ϑⱼ = n[i-1], v[i-1] #odd terms
-        iszero(nᵢ) || (α₀ += nᵢ*EoSFunctions.logcosh(ϑᵢ*τ))
+        iszero(nᵢ) || (α₀ -= nᵢ*EoSFunctions.logcosh(ϑᵢ*τ))
         iszero(nⱼ) || (α₀ += nⱼ*EoSFunctions.logabssinh(ϑⱼ*τ))
     end
     return α₀
@@ -102,12 +102,11 @@ end
 
 function _Cp0_constant_parse(c,Tc,T0)
     #c - cT0/Tc*τ + c*(log(τ/τ0))
-    #c - c*τ/τ0 + c*(log(τ) - log(τ0))
-    #c - c*log(τ0)
-    #c*(1 - log(τ0)) - (c/τ0)* τ + c*log(τ)
-    τ0 = Tc/T0
-    a1 = c*(1 - log(τ0))
-    a2 = -c/τ0
+    #c - c*τ0inv*τ + c*log(τ*τ0inv)
+    #c - c*τ0inv*τ + c*log(τ) + c*(τ0inv)
+    τ0inv = T0/Tc
+    a1 = c*(1 + log(τ0inv))
+    a2 = -c*τ0inv
     c0 = c
     return a1,a2,c0
 end

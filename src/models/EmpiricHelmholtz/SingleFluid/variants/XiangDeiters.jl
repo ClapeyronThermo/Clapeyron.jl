@@ -13,7 +13,8 @@ function XiangDeitersConsts(ω,θ)
 end
 
 """
-    XiangDeiters(components;
+    XiangDeiters::SingleFluid
+    XiangDeiters(component;
         idealmodel = BasicIdeal,
         userlocations = String[],
         ideal_userlocations = String[],
@@ -44,12 +45,14 @@ aᵣ = a₀(δ,τ) + ω*a₁(δ,τ) + θ*a₂(δ,τ)
 ## references
 1. Xiang, H. W., & Deiters, U. K. (2008). A new generalized corresponding-states equation of state for the extension of the Lee–Kesler equation to fluids consisting of polar and larger nonpolar molecules. Chemical Engineering Science, 63(6), 1490–1496. [doi:10.1016/j.ces.2007.11.029](https://doi.org/10.1016/j.ces.2007.11.029)
 """
-function XiangDeiters(components;
+function XiangDeiters(component;
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],
     Rgas = nothing,
     verbose = false)
+
+    components = [get_only_comp(component)]
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     Pc = params["Pc"][1]
     Vc = params["Vc"][1]

@@ -153,7 +153,7 @@ function show_multiparameter_coeffs(io,param::MultiParameterParam)
 
     if hasfield(typeof(param),:n_gerg)
         if length(param.n_gerg) != 0
-            push!(res,"GERG-2008 ideal terms: $(length(param.n_gerg))")
+            push!(res,"GERG-2004 ideal terms: $(length(param.n_gerg))")
         end
     end
     if hasfield(typeof(param),:F)
