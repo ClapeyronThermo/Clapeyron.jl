@@ -168,6 +168,7 @@ include("models/SAFT/association.jl")
 
 
 include("models/Activity/Wilson/Wilson.jl")
+include("models/Activity/Wilson/variants/tcPRWilson.jl")
 include("models/Activity/NRTL/NRTL.jl")
 include("models/Activity/NRTL/variants/aspenNRTL.jl")
 include("models/Activity/UNIQUAC/UNIQUAC.jl")
@@ -196,6 +197,7 @@ include("models/cubic/PR/variants/PR78.jl")
 include("models/cubic/PR/variants/VTPR.jl")
 include("models/cubic/PR/variants/UMRPR.jl")
 include("models/cubic/PR/variants/QCPR.jl")
+include("models/cubic/PR/variants/tcPR.jl")
 include("models/cubic/PR/variants/EPPR78.jl")
 include("models/cubic/PatelTeja/PatelTeja.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
@@ -203,7 +205,6 @@ include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/PPCSAFT.jl")
-
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 

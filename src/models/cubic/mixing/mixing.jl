@@ -82,3 +82,5 @@ include("VTPR.jl")
 include("UMR.jl")
 include("QCPR.jl")
 include("PPR78.jl")
+include("tcPRact.jl")
+

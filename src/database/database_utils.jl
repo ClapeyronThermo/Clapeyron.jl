@@ -91,6 +91,8 @@ function _getpaths(location,special_parse = true)
     return files
 end
 
+flattenfilepaths(locations) = flattenfilepaths(locations,String[])
+
 function flattenfilepaths(locations,userlocations::Vector{String})
     defaultpaths = reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[])
     userpaths = reduce(vcat,getpaths.(userlocations),init = String[])

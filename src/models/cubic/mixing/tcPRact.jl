@@ -1,15 +1,15 @@
-abstract type ActResRuleModel <: ActivityMixingRule end
+abstract type tcPRactRuleModel <: ActivityMixingRule end
 
-struct ActResRule{γ} <: ActResRuleModel
+struct tcPRactRule{γ} <: tcPRactRuleModel
     components::Array{String,1}
     activity::γ
     references::Array{String,1}
 end
 
 """
-    ActResRule{γ} <: ActResRuleModel
+    tcPRactRule{γ} <: tcPRactRuleModel
 
-    ActResRule(components::Vector{String};
+    tcPRactRule(components::Vector{String};
     activity = Wilson,
     userlocations=String[],
     activity_userlocations=String[],
@@ -39,24 +39,24 @@ if the model is Redlich-Kwong:
     q = 0.593
 ```
 
-to use different values for `q`, overload `Clapeyron.ActResq(::CubicModel,::ActResModel) = q`
+to use different values for `q`, overload `Clapeyron.tcPRactq(::CubicModel,::tcPRactModel) = q`
 
 
 ## References
 1. Michelsen, M. L. (1990). A modified Huron-Vidal mixing rule for cubic equations of state. Fluid Phase Equilibria, 60(1–2), 213–219. [doi:10.1016/0378-3812(90)85053-d](https://doi.org/10.1016/0378-3812(90)85053-d)
 
 """
-ActResRule
+tcPRactRule
 
-export ActResRule
-function ActResRule(components::Vector{String}; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+export tcPRactRule
+function tcPRactRule(components::Vector{String}; activity = tcPRWilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
     _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1016/0378-3812(90)85053-D"]
-    model = ActResRule(components, _activity,references)
+    model = tcPRactRule(components, _activity,references)
     return model
 end
 
-function ab_premixing(model::PRModel,mixing::ActResRuleModel,k = nothing, l = nothing)
+function ab_premixing(model::PRModel,mixing::tcPRactRuleModel,k = nothing, l = nothing)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.Pc
@@ -65,8 +65,8 @@ function ab_premixing(model::PRModel,mixing::ActResRuleModel,k = nothing, l = no
     diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
     diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
     epsilon_LorentzBerthelot!(a,k)
-    actres_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,2/3)
-    kij_mix!(actres_mix,b,l)
+    tcPRact_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,2/3)
+    kij_mix!(tcPRact_mix,b,l)
     return a,b
 end
 
@@ -77,7 +77,7 @@ function __excess_g_res(model::WilsonModel,p,T,z,b,c)
     return excess_g_res_wilson(model,p,T,z,V)
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::ActResRuleModel,α,a,b,c)
+function mixing_rule(model::PRModel,V,T,z,mixing_model::tcPRactRuleModel,α,a,b,c)
     n = sum(z)
     #x = z./n
     invn = (one(n)/n)
