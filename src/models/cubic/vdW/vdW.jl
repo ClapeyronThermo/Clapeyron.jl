@@ -78,8 +78,11 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = get(params,"k",nothing)
+    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
+        userlocations=userlocations,
+        verbose=verbose,
+        ignore_missing_singleparams = ["Vc"])
+    k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     pc = params["Pc"]
     Mw = params["Mw"]
