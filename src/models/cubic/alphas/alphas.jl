@@ -17,6 +17,30 @@ function α_function end
 recombine_impl!(model::AlphaModel) = model
 recombine_alpha!(model::CubicModel,alpha::AlphaModel) = recombine!(alpha)
 
+struct SimpleAlphaParam <: EoSParam
+    acentricfactor::SingleParam{Float64}
+end
+
+function can_build_alpha_w(::Type{T}) where T <: AlphaModel
+    if hasfield(T,:params)
+        if fieldtype(T,:params) == SingleAlphaParam
+            return true
+        end
+    end
+    return false
+end
+
+can_build_alpha_w(T) = false
+
+function init_alpha(alpha,components,w = nothing,userlocations = String[],verbose = [])
+    if alpha <: AlphaModel
+        if can_build_alpha_w(alpha) && w !== nothing
+            param = SingleAlphaParam(w)
+            return alpha(param,verbose = verbose)
+        end
+    end  
+    return init_model(alpha,components,userlocations,verbose)
+end
 include("NoAlpha.jl")
 include("ClausiusAlpha.jl")
 include("RKAlpha.jl")

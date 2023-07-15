@@ -1,6 +1,4 @@
-struct PatelTejaAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+const PatelTejaAlphaParam = SimpleAlphaParam
 
 @newmodelsimple PatelTejaAlpha SoaveAlphaModel PatelTejaAlphaParam
 export PatelTejaAlpha

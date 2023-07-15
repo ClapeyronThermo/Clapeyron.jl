@@ -1,8 +1,6 @@
 abstract type SoaveAlphaModel <: AlphaModel end
 
-struct SoaveAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+const SoaveAlphaParam = SimpleAlphaParam
 
 @newmodelsimple SoaveAlpha SoaveAlphaModel SoaveAlphaParam
 export SoaveAlpha

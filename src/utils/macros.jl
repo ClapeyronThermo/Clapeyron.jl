@@ -24,7 +24,7 @@ This macro is an alias to
 """
 macro groups()
     return quote
-            (1:length(model.groups.flattenedgroups))::UnitRange{Int64}            
+            (1:length(model.groups.flattenedgroups))::UnitRange{Int64}
     end |> esc
 end
 
@@ -59,7 +59,7 @@ end
     @f(func,a,b,c,...)
 
 This macro is an alias to
-    
+
     func(model, V, T, z, a, b, c, ...)
 
 where `func` is the name of the function, `model` is the model struct,
@@ -105,7 +105,7 @@ The Struct consists of the following fields:
 See the tutorial or browse the implementations to see how this is used.
 """
 macro newmodelgc(name, parent, paramstype)
-    quote 
+    quote
     struct $name{T <: Clapeyron.IdealModel} <: $parent
         components::Array{String,1}
         groups::Clapeyron.GroupParam
@@ -152,7 +152,7 @@ The sites are associated to the main component rather than the groups,
 and the respective fieldnames are named correspondingly.
 """
 macro newmodel(name, parent, paramstype)
-    quote 
+    quote
     struct $name{T <: IdealModel} <: $parent
         components::Array{String,1}
         sites::Clapeyron.SiteParam
@@ -193,7 +193,7 @@ Even simpler model, primarily for the ideal models.
 Contains neither sites nor ideal models.
 """
 macro newmodelsimple(name, parent, paramstype)
-    quote 
+    quote
     struct $name <: $parent
         components::Array{String,1}
         params::$paramstype
@@ -246,7 +246,7 @@ function build_model(::Type{model},params::EoSParam,
         references::Vector{String}=String[],
         assoc_options::AssocOptions = AssocOptions(),
         verbose::Bool = false) where model <:EoSModel
-    
+
     components = sites.components
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
@@ -286,10 +286,10 @@ end
     init_model(model::EoSModel,components,userlocations=String[],verbose = false)
     init_model(::Type{𝕄},components,userlocations=String[],verbose = false) where 𝕄 <: EoSModel
 
-Utility for building simple models. if a model instance is passed, it will return that instance. 
+Utility for building simple models. if a model instance is passed, it will return that instance.
 otherwise, it will build the model from the input components and user locations.
 
-It is normally used for models that don't have additional submodels (like ideal models) 
+It is normally used for models that don't have additional submodels (like ideal models)
 or when such submodels are not used at all (like the pure model part of an Activity model when used in an Advanced mixing rule Cubic model)
 
 ## Example
@@ -347,7 +347,7 @@ end
 """
     @registermodel(model)
 
-given an existing model, composed of Clapeyron EoS models, ClapeyronParams or EoSParams, it will generate 
+given an existing model, composed of Clapeyron EoS models, ClapeyronParams or EoSParams, it will generate
 the necessary traits to make the model compatible with Clapeyron routines.
 
 """
@@ -358,7 +358,7 @@ end
 export @newmodel, @f, @newmodelgc, @newmodelsimple
 #=
 function __newmodel(name, parent, paramstype,sites,idealmodel)
-    
+
     if sites
     struct $name{T <: IdealModel} <: $parent
         components::Array{String,1}

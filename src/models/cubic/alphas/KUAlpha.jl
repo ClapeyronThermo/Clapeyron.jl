@@ -1,8 +1,6 @@
 abstract type KUAlphaModel <: AlphaModel end
 
-struct KUAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+const KUAlphaParam = SimpleAlphaParam
 
 @newmodelsimple KUAlpha KUAlphaModel KUAlphaParam
 export KUAlpha

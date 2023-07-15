@@ -1,6 +1,4 @@
-struct PRAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+const PRAlphaParam = SimpleAlphaParam
 
 @newmodelsimple PRAlpha SoaveAlphaModel PRAlphaParam
 export PRAlpha

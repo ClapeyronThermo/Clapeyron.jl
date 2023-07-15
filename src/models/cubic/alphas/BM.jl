@@ -1,10 +1,8 @@
 abstract type BMAlphaModel <: AlphaModel end
 
-struct BMAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+const BMAlphaParam = SimpleAlphaParam
 
-@newmodelsimple BMAlpha BMAlphaModel BMAlphaParam
+@newmodelsimple BMAlpha BMAlphaModel SimpleAlphaParam
 export BMAlpha
 
 """
