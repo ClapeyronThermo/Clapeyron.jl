@@ -275,6 +275,11 @@ end
         end
 
         @testset "#188" begin
+            #=
+            in cubics, we do a separation between the alpha model and the main model. while this allows for unprecedented
+            flexibility, this also complicates the case of the default model. there is also an unrelated error, about needing to pass Vc,
+            because our database has all the critical parameters in one file
+            =#
                 data = (
                     species = ["A", "B"],
                     Tc = [18.0, 3.5],

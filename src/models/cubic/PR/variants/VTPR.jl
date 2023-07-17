@@ -8,6 +8,7 @@
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
+
 Volume-translated Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`RackettTranslation`](@ref)
 - Alpha Model: [`TwuAlpha`](@ref)

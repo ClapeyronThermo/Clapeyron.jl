@@ -1,12 +1,13 @@
 """
     QCPR(components::Vector{String}; idealmodel=BasicIdeal,
-        userlocations=String[], 
+        userlocations=String[],
         ideal_userlocations=String[],
         alpha_userlocations = String[],
         mixing_userlocations = String[],
         activity_userlocations = String[],
         translation_userlocations = String[],
         verbose=false)
+
 Quantum-corrected Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`ConstantTranslation`](@ref)
 - Alpha Model: [`TwuAlpha`](@ref)
@@ -15,7 +16,7 @@ Quantum-corrected Peng Robinson equation of state. it uses the following models:
 1. Aasen, A., Hammer, M., Lasala, S., Jaubert, J.-N., & Wilhelmsen, Ø. (2020). Accurate quantum-corrected cubic equations of state for helium, neon, hydrogen, deuterium and their mixtures. Fluid Phase Equilibria, 524(112790), 112790. [doi:10.1016/j.fluid.2020.112790](https://doi.org/10.1016/j.fluid.2020.112790)
 """
 function QCPR(components::Vector{String}; idealmodel=BasicIdeal,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -56,7 +57,7 @@ function cubic_ab(model::QCPRModel,V,T,z=SA[1.0],n=sum(z))
     c = @f(translation,model.translation)
     if length(z)>1
     ā,b̄,c̄ = @f(mixing_rule,model.mixing,α,a,b,c)
-    else 
+    else
         ā = a[1,1]*α[1]
         A = model.mixing.params.A.values[1,1]
         B = model.mixing.params.B.values[1,1]
@@ -97,7 +98,7 @@ function lb_volume(model::QCPRModel,z=SA[1.0])
             Aj = A[j]
             βj = (1 + min(0,Aj/Bj))^3 / (1 + Aj/(Tc[j] + Bj))^3
             bqj = βj*b[j,j]
-            
+
             b̄ += zij*(bqi+bqj)*(1-l[i,j]) #2 * zij * 0.5(bi + bj)
         end
     end

@@ -1,12 +1,13 @@
 """
-QCPR(components::Vector{String}; idealmodel=BasicIdeal,
-userlocations=String[],
-ideal_userlocations=String[],
-alpha_userlocations = String[],
-mixing_userlocations = String[],
-activity_userlocations = String[],
-translation_userlocations = String[],
-verbose=false)
+    tcPR(components::Vector{String}; idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    alpha_userlocations = String[],
+    mixing_userlocations = String[],
+    activity_userlocations = String[],
+    translation_userlocations = String[],
+    verbose=false)
+
 translated and consistent Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`ConstantTranslation`](@ref)
 - Alpha Model: [`TwuAlpha`](@ref)
@@ -107,7 +108,7 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
                 if !zra.ismissingvalues[i]
                     cc[i] = RTp*(0.1398 - 0.5294*zra[i])
                 elseif !w.ismissingvalues[i]
-                    cc[i] = RTp*(0.0065 + 0.0172*w[i])
+                    cc[i] = RTp*(-0.0065 + 0.0198*w[i])
                 else
                     throw(error("cannot initialize translation in tcPR. acentric factor or ZRA not provided"))
                 end

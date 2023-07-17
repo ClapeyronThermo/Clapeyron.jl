@@ -8,6 +8,7 @@
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
+
 Universal Mixing Rule Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`MTTranslation`](@ref)
 - Alpha Model: [`MTAlpha`](@ref)
