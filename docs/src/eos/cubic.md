@@ -64,11 +64,14 @@ Clapeyron.KU
 Clapeyron.Berthelot
 Clapeyron.SRK
 Clapeyron.PSRK
+Clapeyron.tcRK
 Clapeyron.PR78
 Clapeyron.PTV
 Clapeyron.EPPR78
 Clapeyron.UMRPR
 Clapeyron.VTPR
+Clapeyron.tcPR
+Clapeyron.cPR
 Clapeyron.QCPR
 ```
 
@@ -87,6 +90,7 @@ Clapeyron.sCPAAlpha
 Clapeyron.MTAlpha
 Clapeyron.BMAlpha
 Clapeyron.TwuAlpha
+Clapeyron.Twu88Alpha
 Clapeyron.PatelTejaAlpha
 Clapeyron.KUAlpha
 Clapeyron.RKPRAlpha
