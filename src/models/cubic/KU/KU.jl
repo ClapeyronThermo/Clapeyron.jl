@@ -88,7 +88,7 @@ function KU(components::Vector{String}; idealmodel=BasicIdeal,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -103,15 +103,17 @@ function KU(components::Vector{String}; idealmodel=BasicIdeal,
     Tc = params["Tc"]
     Vc = params["Vc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    
+
     n = length(components)
     a = PairParam("a",components,zeros(n))
     b = PairParam("b",components,zeros(n))
     omega_a = SingleParam("Ωa",components,zeros(n))
     omega_b = SingleParam("Ωb",components,zeros(n))
-    
+    acentricfactor = get(params,"acentricfactor",nothing)
+
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
+
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = KUParam(a,b,omega_a,omega_b,Tc,pc,Vc,Mw)
     references = String["10.1016/j.ces.2020.116045"]
@@ -127,7 +129,7 @@ function ab_premixing(model::KUModel,mixing::MixingRule,k,l)
     a = model.params.a
     b = model.params.b
     Zc = _pc .* _vc ./ (R̄ .* _Tc)
-    χ  = @. cbrt(sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Zc -20)/(32*sqrt(3)*Zc^2) 
+    χ  = @. cbrt(sqrt(1458*Zc^3 - 1701*Zc^2 + 540*Zc -20)/(32*sqrt(3)*Zc^2)
     - (729*Zc^3 - 216*Zc + 8)/(1728*Zc^3))
     α  = @. (χ + (81*Zc^2 - 72*Zc + 4)/(144*χ*Zc^2) + (3*Zc - 2)/(12*Zc))
     Ωa = @. Zc*(1 + 1.6*α - 0.8*α^2)^2/(1 - α)^2/(2 + 1.6*α)

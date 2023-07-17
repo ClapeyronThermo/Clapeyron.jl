@@ -336,7 +336,7 @@ function createparams(components::Vector{String},
         merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,_replace)
     end
 
-    if options.userlocations isa NamedTuple
+    if options.userlocations isa Union{NamedTuple,AbstractDict}
         foundparams, notfoundparams = findparamsinnt(components,options,parsegroups,NT_CSV_OPTIONS)
         merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,false)
     end

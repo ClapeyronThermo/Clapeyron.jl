@@ -78,7 +78,7 @@ function PatelTeja(components::Vector{String}; idealmodel=BasicIdeal,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -87,18 +87,19 @@ function PatelTeja(components::Vector{String}; idealmodel=BasicIdeal,
      verbose=false)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = get(params,"k",nothing)
-    l = get(params,"l",nothing) 
+    l = get(params,"l",nothing)
     pc = params["Pc"]
     Vc = params["Vc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
+    acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     n = length(components)
     a = PairParam("a",components,zeros(n))
     b = PairParam("b",components,zeros(n))
     c = PairParam("c",components,zeros(n))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PatelTejaParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1016/0009-2509(82)80099-7"]
@@ -114,7 +115,7 @@ function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
     a = model.params.a
     b = model.params.b
     n = length(model)
-    _Zc = _pc .* _Vc ./ (R̄ .* _Tc)             
+    _Zc = _pc .* _Vc ./ (R̄ .* _Tc)
     _poly = [(-_Zc[i]^3,3*_Zc[i]^2,2-3*_Zc[i],1.) for i ∈ 1:n]
     sols = Solvers.roots3.(_poly)
     Ωb = [minimum(real.(sols[i][isreal.(sols[1]).*real.(sols[1]).>0])) for i ∈ 1:n]
@@ -138,7 +139,7 @@ function c_premixing(model::PatelTejaModel)
     return c
 end
 
-function cubic_Δ(model::PatelTejaModel,z) 
+function cubic_Δ(model::PatelTejaModel,z)
     b = diagvalues(model.params.b)
     c = diagvalues(model.params.c)
     z⁻¹ = sum(z)^-1

@@ -29,7 +29,7 @@ export Berthelot
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -83,7 +83,7 @@ function Berthelot(components::Vector{String}; idealmodel=BasicIdeal,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -97,12 +97,14 @@ function Berthelot(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     Tc = params["Tc"]
     Vc = params["Vc"]
+    acentricfactor = get(params,"acentricfactor",nothing)
+
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     a = PairParam("a",components,zeros(length(components)))
     b = PairParam("b",components,zeros(length(components)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     packagedparams = BerthelotParam(a,b,Tc,pc,Vc,Mw)
     references = String["10.1051/jphystap:018990080026300"]
     model = Berthelot(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
@@ -147,7 +149,7 @@ function a_res(model::BerthelotModel, V, T, z,_data = data(model,V,T,z))
     return (-log(1+(c̄-b̄)*ρ) - ā*ρt*RT⁻¹)
     #
     #return -log(V-n*b̄) - ā*n/(R̄*T*V) + log(V)
-end   
+end
 
 function T_scale(model::BerthelotModel,z = SA[1.0])
     comps = 1:length(z)
@@ -164,7 +166,7 @@ function x0_crit_pure(model::BerthelotModel)
     (1.1, log10(lb_v*3))
 end
 
-function crit_pure(model::BerthelotModel) 
+function crit_pure(model::BerthelotModel)
     single_component_check(crit_pure,model)
     Tc = model.params.Tc.values[1]
     Vc = model.params.Vc.values[1]
@@ -175,7 +177,7 @@ end
 
 
 #=
-z = PV/RT = 1/(1 - b/v) - a/RT2V2 
+z = PV/RT = 1/(1 - b/v) - a/RT2V2
 P = RT/(v - b)  - a/TV
 
 =#

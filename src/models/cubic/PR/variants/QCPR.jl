@@ -23,23 +23,9 @@ function QCPR(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
     verbose=false)
 
-    if userlocations isa NamedTuple
-        QCPR_userlocations = userlocations
-    else
-        QCPR_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_critical.csv", "@DB/cubic/QCPR/QCPR_unlike.csv",userlocations)
-    end
-
-    if userlocations isa NamedTuple
-        QCPR_alpha_userlocations = alpha_userlocations
-    else
-        QCPR_alpha_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/Twu_QCPR.csv",alpha_userlocations)
-    end
-
-    if userlocations isa NamedTuple
-        QCPR_translation_userlocations = translation_userlocations
-    else
-        QCPR_translation_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_translation.csv",translation_userlocations)
-    end
+    QCPR_userlocations = userlocation_merge(["@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_critical.csv", "@DB/cubic/QCPR/QCPR_unlike.csv"],userlocations)
+    QCPR_alpha_userlocations = userlocation_merge(["@REMOVEDEFAULTS","@DB/cubic/QCPR/Twu_QCPR.csv"],alpha_userlocations)
+    QCPR_translation_userlocations = userlocation_merge(["@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_translation.csv"],translation_userlocations)
 
     model = PR(components;
         idealmodel = idealmodel,

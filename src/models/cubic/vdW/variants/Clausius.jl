@@ -71,7 +71,7 @@ function Clausius(components::Vector{String}; idealmodel=BasicIdeal,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -85,12 +85,14 @@ function Clausius(components::Vector{String}; idealmodel=BasicIdeal,
     Vc = params["Vc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
+    acentricfactor = get(params,"acentricfactor",nothing)
+
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     a = PairParam("a",components,zeros(length(components)))
     b = PairParam("b",components,zeros(length(components)))
     c = PairParam("c",components,zeros(length(components)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = ClausiusParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1002/andp.18802450302"]
@@ -127,7 +129,7 @@ function c_premixing(model::ClausiusModel)
     return c
 end
 
-function cubic_Δ(model::ClausiusModel,z) 
+function cubic_Δ(model::ClausiusModel,z)
     b = diagvalues(model.params.b)
     c = diagvalues(model.params.c)
     z⁻¹ = sum(z)^-1

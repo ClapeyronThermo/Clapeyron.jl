@@ -1,6 +1,6 @@
 """
 QCPR(components::Vector{String}; idealmodel=BasicIdeal,
-userlocations=String[], 
+userlocations=String[],
 ideal_userlocations=String[],
 alpha_userlocations = String[],
 mixing_userlocations = String[],
@@ -22,30 +22,31 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
     mixing = vdW1fRule,
     activity = nothing,
     translation=ConstantTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
-    
+
 
     #just read once if allowed.
 
     userlocations_tcpr = String[]
     append!(userlocations_tcpr,userlocations)
     if alpha === TwuAlpha
-        append!(userlocations_tcpr,userlocations)
-    end
-    if translation == ConstantTranslation
-        append!(userlocations_tcpr,translation_userlocations)
+        userlocations_tcpr = userlocation_merge(userlocations_tcpr,userlocations)
     end
 
-    params = getparams(components, ["cubic/tcPR/tcPR_single.csv"]; 
-    userlocations=userlocations_tcpr, 
+    if translation == ConstantTranslation
+        userlocations_tcpr = userlocation_merge(userlocations_tcpr,translation_userlocations)
+    end
+
+    params = getparams(components, ["cubic/tcPR/tcPR_single.csv"];
+    userlocations=userlocations_tcpr,
     verbose=verbose,
-    ignore_missing_singleparams = ["v_shift","ZRA"])
+    ignore_missing_singleparams = ["v_shift","ZRA","acentricfactor","M","N","L"])
 
     n = length(components)
     k  = get(params,"k",nothing)
@@ -62,7 +63,7 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
     zra = params["ZRA"]
 
     if alpha !== TwuAlpha
-        init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+        init_alpha = init_alphamodel(alpha,components,w,alpha_userlocations,verbose)
     else
         M = params["M"]
         N = params["N"]
@@ -77,10 +78,10 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
                     N[i] = 2
                     M[i] = Mi
                 else
-                    throw(error("cannot initialize TwuAlpha in tcPR. acentric factor not provided"))
+                    throw(error("cannot initialize TwuAlpha in tc-PR. acentric factor not provided"))
                 end
             elseif !M.ismissingvalues[i] && !N.ismissingvalues[i] && !L.ismissingvalues[i]
-                
+                #default
             else
                 throw(error("invalid specification for TwuAlpha in tc-PR."))
             end
@@ -126,12 +127,25 @@ function tcPRact(components::Vector{String}; idealmodel=BasicIdeal,
     mixing = vdW1fRule,
     activity = nothing,
     translation=ConstantTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
+    verbose=false)
+
+    return tcPR(components; idealmodel=idealmodel,
+    alpha = alpha,
+    mixing = mixing,
+    activity = activity,
+    translation=translation,
+    userlocations=userlocations,
+    ideal_userlocations=ideal_userlocations,
+    alpha_userlocations = alpha_userlocations,
+    mixing_userlocations = mixing_userlocations,
+    activity_userlocations = activity_userlocations,
+    translation_userlocations = translation_userlocations,
     verbose=false)
 end
 

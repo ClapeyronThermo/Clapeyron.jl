@@ -1,5 +1,5 @@
 """
-    α_function(model::CubicModel,V,T,z,αmodel::AlphaModel)  
+    α_function(model::CubicModel,V,T,z,αmodel::AlphaModel)
 
 Interface function used in cubic models. it should return a vector of αᵢ(T).
 
@@ -23,7 +23,7 @@ end
 
 function can_build_alpha_w(::Type{T}) where T <: AlphaModel
     if hasfield(T,:params)
-        if fieldtype(T,:params) == SingleAlphaParam
+        if fieldtype(T,:params) == SimpleAlphaParam
             return true
         end
     end
@@ -32,15 +32,16 @@ end
 
 can_build_alpha_w(T) = false
 
-function init_alpha(alpha,components,w = nothing,userlocations = String[],verbose = [])
+function init_alphamodel(alpha,components,w = nothing,userlocations = String[],verbose = [])
     if alpha <: AlphaModel
-        if can_build_alpha_w(alpha) && w !== nothing
-            param = SingleAlphaParam(w)
+        if can_build_alpha_w(alpha) && w !== nothing && isempty(userlocations)
+            param = SimpleAlphaParam(w)
             return alpha(param,verbose = verbose)
         end
-    end  
+    end
     return init_model(alpha,components,userlocations,verbose)
 end
+
 include("NoAlpha.jl")
 include("ClausiusAlpha.jl")
 include("RKAlpha.jl")
