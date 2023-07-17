@@ -273,6 +273,11 @@ end
             @test Clapeyron.a_res(system1, V, 25, [1.0])  ≈ a1
         end
 
+        @testset "cPR" begin
+            system = cPR(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2438131230434413 rtol = 1e-6
+        end
+
         @testset "tcPR" begin
             system = tcPR(["ethane","undecane"])
             @test Clapeyron.a_res(system, V, T, z) ≈ -1.2511531799294142 rtol = 1e-6

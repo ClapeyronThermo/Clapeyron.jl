@@ -122,3 +122,5 @@ function tcRK(components::Vector{String}; idealmodel=BasicIdeal,
     recombine_cubic!(model,k,l)
     return model
 end
+
+export tcRK
