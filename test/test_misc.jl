@@ -51,6 +51,11 @@ end
         nb_test = SAFTgammaMie(["methane","nitrogen","carbon dioxide","ethane","propane","butane","isobutane",
         "pentane","isopentane","hexane","heptane","octane"])
         @test length(split_model(nb_test)) == 12
+
+        #weird error found on splitting groups
+        model0 = SAFTgammaMie(["ethane"])
+        model0_split = SAFTgammaMie(["methane","ethane"]) |> split_model |> last
+        @test model0.params.epsilon.values[1,1] == model0_split.params.epsilon.values[1,1]
     end
 
     @testset "single component error" begin

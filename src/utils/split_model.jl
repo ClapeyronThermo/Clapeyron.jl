@@ -320,16 +320,7 @@ function group_splitter(group::T,splitter) where T <: GroupParameter
         idxi,gi = gc_each_split_model(group,splitter[i])
         idx_split[i] = idxi
         group_split[i] = gi
-        gc_splitter_i = Int[]
-        sizehint!(gc_splitter_i,m)
-        k = 0
-        for j in 1:m
-            if idxi[j]
-                k+=1
-                push!(gc_splitter_i,k)
-            end
-        end
-        gc_splitter[i] = gc_splitter_i
+        gc_splitter[i] = findall(isone,idxi)::Vector{Int}
     end
     return group_split,idx_split,gc_splitter
 end
@@ -405,7 +396,6 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
         _has_groups = has_groups(M)
         #shortcut for directly non-splittable models
 
-
         if _has_groups
             gc_split,idx_splitter,gc_splitter = group_splitter(model.groups,splitter)
             allfields[:groups] = gc_split
@@ -416,7 +406,6 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
             comp_splitter = splitter
             gc_splitter = splitter
         end
-
         #add here any special keys, that behave as non_splittable values
         for modelkey in (:references,)
             if modelkey in allfieldnames
