@@ -178,7 +178,7 @@ function __x0_bubble_temperature(model::EoSModel,p,x)
         V_v_sat[i] = Vvi
     end
     if !any(replaceP) #p < min(pci), proceed with entalphy aproximation:
-        dPdTsat = VT_entropy.(pure,V_v_sat,T_sat) .- VT_entropy.(pure,V_l_sat,T_sat) ./ (V_v_sat .- V_l_sat)
+        dPdTsat = (VT_entropy.(pure,V_v_sat,T_sat) .- VT_entropy.(pure,V_l_sat,T_sat)) ./ (V_v_sat .- V_l_sat)
         y = copy(dPdTsat)
         ##initialization for T
         #= we solve the aproximate problem of finding T such as:
