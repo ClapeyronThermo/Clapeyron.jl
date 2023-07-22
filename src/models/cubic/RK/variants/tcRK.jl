@@ -16,7 +16,9 @@ translated and consistent Redlich-Kwong equation of state. it uses the following
 If Twu parameters are not provided, they can be estimated from the acentric factor (`acentricfactor`). If translation is not provided, it can be estimated, using Rackett compresibility Factor (`ZRA`) or the acentric factor (`acentricfactor`).
 
 ## References
-1. Le Guennec, Y., Privat, R., & Jaubert, J.-N. (2016). Development of the translated-consistent tc-RK and tc-RK cubic equations of state for a safe and accurate prediction of volumetric, energetic and saturation properties of pure compounds in the sub- and super-critical domains. Fluid Phase Equilibria, 429, 301–312. [doi:10.1016/j.fluid.2016.09.003](http://dx.doi.org/10.1016/j.fluid.2016.09.003)
+1. Le Guennec, Y., Privat, R., & Jaubert, J.-N. (2016). Development of the translated-consistent tc-PR and tc-RK cubic equations of state for a safe and accurate prediction of volumetric, energetic and saturation properties of pure compounds in the sub- and super-critical domains. Fluid Phase Equilibria, 429, 301–312. [doi:10.1016/j.fluid.2016.09.003](http://dx.doi.org/10.1016/j.fluid.2016.09.003)
+2. Pina-Martinez, A., Le Guennec, Y., Privat, R., Jaubert, J.-N., & Mathias, P. M. (2018). Analysis of the combinations of property data that are suitable for a safe estimation of consistent twu α-function parameters: Updated parameter values for the translated-consistent tc-PR and tc-RK cubic equations of state. Journal of Chemical and Engineering Data, 63(10), 3980–3988. [doi:10.1021/acs.jced.8b00640](http://dx.doi.org/10.1021/acs.jced.8b00640)
+3. Piña-Martinez, A., Privat, R., & Jaubert, J.-N. (2022). Use of 300,000 pseudo‐experimental data over 1800 pure fluids to assess the performance of four cubic equations of state: SRK , PR , tc ‐RK , and tc ‐PR. AIChE Journal. American Institute of Chemical Engineers, 68(2). [doi:10.1002/aic.17518](https://doi.org/10.1021/acs.iecr.1c03003)
 """
 function tcRK(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = TwuAlpha,
@@ -73,8 +75,8 @@ function tcRK(components::Vector{String}; idealmodel=BasicIdeal,
             if M.ismissingvalues[i] && N.ismissingvalues[i] && L.ismissingvalues[i]
                 if !w.ismissingvalues[i]
                     wi = w[i]
-                    Li = 0.0947*wi*wi + 0.6871*wi + 0.1508
-                    Mi =  0.1615*wi*wi - 0.2349*wi + 0.8876
+                    Li = 0.0611*wi*wi + 0.7535*wi + 0.1359
+                    Mi =  0.1709*wi*wi - 0.2063*wi + 0.8787
                     L[i] = Li
                     N[i] = 2
                     M[i] = Mi
@@ -106,9 +108,9 @@ function tcRK(components::Vector{String}; idealmodel=BasicIdeal,
                 R = Rgas()
                 RTp = (R*Tci/Pci)
                 if !zra.ismissingvalues[i]
-                    cc[i] = RTp*(0.1487 - 0.5052*zra[i])
+                    cc[i] = RTp*(0.2150 - 0.7314*zra[i])
                 elseif !w.ismissingvalues[i]
-                    cc[i] = RTp*(0.0096 + 0.0172*w[i])
+                    cc[i] = RTp*(0.0227 + 0.0093*w[i])
                 else
                     throw(error("cannot initialize translation in tcRK. acentric factor or ZRA not provided"))
                 end
@@ -117,7 +119,7 @@ function tcRK(components::Vector{String}; idealmodel=BasicIdeal,
     end
 
     packagedparams = RKParam(a,b,Tc,pc,Mw)
-    references = String["10.1016/j.fluid.2016.09.003"]
+    references = String["10.1016/j.fluid.2016.09.003","10.1021/acs.jced.8b00640","10.1002/aic.17518","10.1021/acs.iecr.1c03003"]
     model = RK(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model

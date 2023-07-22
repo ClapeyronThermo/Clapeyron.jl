@@ -17,6 +17,8 @@ If Twu parameters are not provided, they can be estimated from the acentric fact
 
 ## References
 1. Le Guennec, Y., Privat, R., & Jaubert, J.-N. (2016). Development of the translated-consistent tc-PR and tc-RK cubic equations of state for a safe and accurate prediction of volumetric, energetic and saturation properties of pure compounds in the sub- and super-critical domains. Fluid Phase Equilibria, 429, 301–312. [doi:10.1016/j.fluid.2016.09.003](http://dx.doi.org/10.1016/j.fluid.2016.09.003)
+2. Pina-Martinez, A., Le Guennec, Y., Privat, R., Jaubert, J.-N., & Mathias, P. M. (2018). Analysis of the combinations of property data that are suitable for a safe estimation of consistent twu α-function parameters: Updated parameter values for the translated-consistent tc-PR and tc-RK cubic equations of state. Journal of Chemical and Engineering Data, 63(10), 3980–3988. [doi:10.1021/acs.jced.8b00640](http://dx.doi.org/10.1021/acs.jced.8b00640)
+3. Piña-Martinez, A., Privat, R., & Jaubert, J.-N. (2022). Use of 300,000 pseudo‐experimental data over 1800 pure fluids to assess the performance of four cubic equations of state: SRK , PR , tc ‐RK , and tc ‐PR. AIChE Journal. American Institute of Chemical Engineers, 68(2). [doi:10.1002/aic.17518](https://doi.org/10.1021/acs.iecr.1c03003)
 """
 function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = TwuAlpha,
@@ -73,8 +75,9 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
             if M.ismissingvalues[i] && N.ismissingvalues[i] && L.ismissingvalues[i]
                 if !w.ismissingvalues[i]
                     wi = w[i]
-                    Li = 0.1290*wi*wi + 0.6039*wi + 0.0877
-                    Mi =  0.1760*wi*wi - 0.2600*wi + 0.8884
+                    #tc-PR-2020 parameters
+                    Li = 0.0297*wi*wi +0.7536*wi + 0.0544
+                    Mi = 0.1401*wi*wi - 0.1785*wi + 0.8678
                     L[i] = Li
                     N[i] = 2
                     M[i] = Mi
@@ -117,7 +120,7 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
     end
 
     packagedparams = PRParam(a,b,Tc,pc,Mw)
-    references = String["10.1016/j.fluid.2016.09.003"]
+    references = String["10.1016/j.fluid.2016.09.003","10.1021/acs.jced.8b00640","10.1002/aic.17518","10.1021/acs.iecr.1c03003"]
     model = PR(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
