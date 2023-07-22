@@ -83,6 +83,7 @@ Clapeyron.NoAlpha
 Clapeyron.ClausiusAlpha
 Clapeyron.RKAlpha
 Clapeyron.SoaveAlpha
+Clapeyron.Soave2019Alpha
 Clapeyron.PRAlpha
 Clapeyron.PR78Alpha
 Clapeyron.CPAAlpha

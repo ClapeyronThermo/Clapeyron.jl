@@ -1,6 +1,5 @@
 # v0.5.0
 
-
 ## New Features
 
 - Rework of MultiParameter EoS. there are two new `EoSModels` that represent Empiric, Multiparameter EoS:
@@ -19,7 +18,7 @@
 - New model: translated-and-consistent Redlich-Kwong (`tcRK`)
 - New model: consistent PR - Twu (`cPR`)
 - New alpha function: Twu-88 (`Twu88Alpha`)
- 
+ - New alpha function: soave-2019 (`Soave2019Alpha`)
 ## Breaking changes
 -  `IAPWS95`, `PropaneRef`, `Ammonia2023` are now of type `SingleFluid{EmpiricAncillary}`.
 - `GERG2008`, `EOS-LNG` are now of type `MultiFluid{EmpiricAncillary,AsymmetricMixing,EmpiricDeparture}`

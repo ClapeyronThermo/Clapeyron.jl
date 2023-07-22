@@ -150,6 +150,7 @@ The above model would be equivalent to a model built by SRK directly. We support
 - [`TwuAlpha`](@ref): Proposed by Twu _et al._, this alpha function uses species-specific parameters rather than correlation and, thus, is slightly more accurate than regular alpha functions. It was intended to be used with PR and is used in VTPR, tcPR, cPR and tcRK.
 - [`Twu88Alpha`](@ref): An earlier version of `TwuAlpha`, that uses 2 parameters instead of 3.
 - [`MTAlpha`](@ref): Proposed by Magoulas and Tassios, this alpha function is essentially like the regular PR alpha function only to a higher order. It is used within UMRPR.
+- [`Soave2019Alpha`](@ref): Updated soave correlations for `PR` and (s)`RK` models.
 
 ## Specifying a mixing rule
 
