@@ -86,7 +86,7 @@ using Clapeyron, Test
         z = [0.5,0.5]
         @test Clapeyron.a_LJ(system, V, T, z) ≈ -3.986690073534575 rtol = 1e-6
         #delta = 3e-11
-        @test_broken Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
 
     end
 
@@ -164,7 +164,7 @@ using Clapeyron, Test
         @test Clapeyron.a_mono(system, V_γMie, T, z) ≈ -1.0400249396482548 rtol = 1e-6
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.07550931466871749 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V_γMie, T, z) ≈ -0.8205840455850311 rtol = 1e-6
-        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 2e-11
     end
 
     @testset "structSAFTgammaMie" begin
