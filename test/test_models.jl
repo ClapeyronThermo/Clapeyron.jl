@@ -10,6 +10,7 @@ using Clapeyron, Test
         @test Clapeyron.a_seg(system, V, T, z) ≈ -2.0332062924093366 rtol = 1e-6
         @test Clapeyron.a_chain(system, V, T, z) ≈ -0.006317441684202759 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -4.034042081699316 rtol = 1e-6
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "CKSAFT" begin
@@ -18,6 +19,7 @@ using Clapeyron, Test
         @test Clapeyron.a_seg(system, V, T, z) ≈ -1.24586302917188 rtol = 1e-6
         @test Clapeyron.a_chain(system, V, T, z) ≈ -0.774758615408493 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.2937079004096872 rtol = 1e-6
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "sCKSAFT" begin
@@ -25,6 +27,7 @@ using Clapeyron, Test
         z = [0.5, 0.5]
         @test Clapeyron.a_seg(system, V, T, z) ≈ -3.1809330810925256 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -3.3017434376105514 rtol = 1e-6
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "BACKSAFT" begin
@@ -33,6 +36,7 @@ using Clapeyron, Test
         @test Clapeyron.a_hcb(system, V, T, z) ≈ 1.0118842111801198 rtol = 1e-6
         @test Clapeyron.a_chain(system, V, T, z) ≈ -0.14177009317268635 rtol = 1e-6
         @test Clapeyron.a_disp(system, V, T, z) ≈ -2.4492518566426296 rtol = 1e-6
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "LJSAFT" begin
@@ -41,12 +45,15 @@ using Clapeyron, Test
         @test Clapeyron.a_seg(system, V, T, z) ≈ -2.207632433058473 rtol = 1e-6
         @test Clapeyron.a_chain(system, V, T, z) ≈ -0.04577483379871112 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.3009761155167205 rtol = 1e-6
+        #TODO: check a_seg term
+        @test_broken Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "CPA" begin
         system = CPA(["ethanol","benzene"])
         z = [0.5, 0.5]
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.1575210505284332 rtol = 1e-6
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "sCPA" begin
@@ -61,6 +68,7 @@ using Clapeyron, Test
         @test Clapeyron.a_mono(system, V, T, z) ≈ -1.4367205951569462 rtol = 1e-6
         @test Clapeyron.a_chain(system, V, T, z) ≈ 0.024000058201261557 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -0.5238154638538838 rtol = 1e-6
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "softSAFT" begin
@@ -69,12 +77,17 @@ using Clapeyron, Test
         @test Clapeyron.a_LJ(system, V, T, z) ≈ -3.960728242264164 rtol = 1e-6
         @test Clapeyron.a_chain(system, V, T, z) ≈ 0.3736728407455211 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -2.0461376618069034 rtol = 1e-6
+        #delta =8e-10
+        @test_broken Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "softSAFT2016" begin
         system = softSAFT2016(["hexane","1-propanol"])
         z = [0.5,0.5]
         @test Clapeyron.a_LJ(system, V, T, z) ≈ -3.986690073534575 rtol = 1e-6
+        #delta = 3e-11
+        @test_broken Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
+
     end
 
     @testset "PCSAFT" begin
@@ -83,12 +96,15 @@ using Clapeyron, Test
         @test Clapeyron.a_hc(system, V, T, z) ≈ 3.1148229872928654 rtol = 1e-6
         @test Clapeyron.a_disp(system, V, T, z) ≈ -6.090736508783152 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.6216064387201956 rtol = 1e-6
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "PPCSAFT" begin
         system = PPCSAFT(["acetone", "butane","DMSO"])
         z = [0.333, 0.333,0.333]
         @test Clapeyron.a_polar(system, V, T, z) ≈ -0.6555426582666268 rtol = 1e-6
+        #tol = 1-8e-11
+        @test_broken Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "sPCSAFT" begin
@@ -97,6 +113,7 @@ using Clapeyron, Test
         @test Clapeyron.a_hc(system, V, T, z) ≈ 2.024250583187793 rtol = 1e-6
         @test Clapeyron.a_disp(system, V, T, z) ≈ -4.138653131750594 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.1459701721909195 rtol = 1e-6
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "GEPCSAFT" begin
@@ -105,6 +122,7 @@ using Clapeyron, Test
         @test Clapeyron.a_hc(system, V, T, z) ≈ 1.6473483928460233 rtol = 1e-6
         @test Clapeyron.a_disp(system, V, T, z) ≈ -3.271039575934372 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.9511233680313027 rtol = 1e-6
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "gcPCSAFT" begin
@@ -116,6 +134,8 @@ using Clapeyron, Test
         @test Clapeyron.a_hc(system, V, T, z) ≈ 5.485662509904188 rtol = 1e-6
         @test Clapeyron.a_disp(system, V, T, z) ≈ -10.594659479487497 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -0.9528180944200482 rtol = 1e-6
+        #delta = 1.4e-11
+        @test_broken Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "SAFTVRMie" begin
@@ -127,12 +147,14 @@ using Clapeyron, Test
         @test _a_chain ≈ -0.02834738013535014 rtol = 1e-6
         @test Clapeyron.a_dispchain(system,V,T,z) - _a_chain ≈ _a_disp rtol = 1e-6
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -4.180807072390184 rtol = 1e-6
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "SAFTVRQMie" begin
         system = SAFTVRQMie(["helium"])
         z = [1.]
         @test Clapeyron.a_mono(system, V, T, z) ≈ 0.12286776703976324 rtol = 1e-6
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "SAFTgammaMie" begin
@@ -142,6 +164,7 @@ using Clapeyron, Test
         @test Clapeyron.a_mono(system, V_γMie, T, z) ≈ -1.0400249396482548 rtol = 1e-6
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.07550931466871749 rtol = 1e-6
         @test Clapeyron.a_assoc(system, V_γMie, T, z) ≈ -0.8205840455850311 rtol = 1e-6
+        @test Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
 
     @testset "structSAFTgammaMie" begin
@@ -152,6 +175,8 @@ using Clapeyron, Test
         V_γMie = exp10(-3.5)
         z = [0.5,0.5]
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.11160851237651681 rtol = 1e-6
+        #delta = 1.7e-11
+        @test_broken Clapeyron.gibbs_duhem(system, V, T, z)[1] ≈ 0.0 atol = 1e-11
     end
     @printline
 end
