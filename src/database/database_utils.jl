@@ -346,3 +346,6 @@ function userlocation_merge(loc1,loc2)
         throw(ArgumentError("invalid userlocations combination: old: $loc1, new: $loc2"))
     end
 end
+
+critical_data() = ["properties/critical.csv"]
+mw_data() = ["properties/molarmass.csv"]

@@ -61,8 +61,7 @@ using Clapeyron, Test, LinearAlgebra
     end
     
     @printline
-    result = Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts2) #generate ClapeyronParams
-    allcomponentsites = result["sites"]
+    result,allcomponentsites = Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts2) #generate ClapeyronParams
     @testset "params - sites" begin
         @test allcomponentsites == [[],
                                     [],

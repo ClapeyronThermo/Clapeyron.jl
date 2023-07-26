@@ -28,14 +28,7 @@ Cubic alpha `(α(T))` model. Default for `CPA` EoS.
 
 """
 CPAAlpha
-
-function CPAAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["SAFT/CPA/CPA_like.csv"]; userlocations=userlocations, ignore_missing_singleparams=["Mw"], verbose=verbose)
-    c1 = params["c1"]
-    packagedparams = CPAAlphaParam(c1)
-    model = CPAAlpha(packagedparams, verbose=verbose)
-    return model
-end
+default_locations(::Type{CPAAlpha}) = ["SAFT/CPA/CPA_like.csv"]
 
 function α_function(model::CubicModel,V,T,z,alpha_model::CPAAlphaModel)
     Tc = model.params.Tc.values

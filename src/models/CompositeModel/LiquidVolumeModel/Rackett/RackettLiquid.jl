@@ -11,7 +11,7 @@ end
 
 """
     RackettLiquid(components::Vector{String};
-    userlocations::Vector{String}=String[], 
+    userlocations::Vector{String}=String[],
     verbose::Bool=false)
 
 ## Input parameters
@@ -36,17 +36,17 @@ V = (R̄Tc/Pc)Zc^(1+(1-Tr)^(2/7))
 ## References
 - Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. [doi:10.1021/je60047a012](https://doi.org/10.1021/je60047a012)
 """
-function RackettLiquid(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+RackettLiquid
+default_locations(::Type{RackettLiquid}) = critical_data()
+default_references(::Type{RackettLiquid}) = ["10.1021/je60047a012"]
+function transform_params(::Type{RackettLiquid},params)
     Tc = params["Tc"]
     Pc = params["Pc"]
     vc = params["Vc"]
     _zc = Pc.values .* vc.values ./ (R̄ .* Tc.values)
-    Zc = SingleParam("Critical Compressibility factor",components,_zc) 
-    packagedparams = RackettLiquidParam(Tc,Pc,Zc)
-    references = ["10.1021/je60047a012"]
-    model = RackettLiquid(packagedparams;references,verbose)
-    return model
+    Zc = SingleParam("Critical Compressibility factor",components,_zc)
+    params["Zc"] = Zc
+    return params
 end
 
 function volume_impl(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0 = 0.0)
@@ -55,7 +55,7 @@ function volume_impl(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,thre
     zci = model.params.Zc.values
     Zcm = zero(eltype(z))
     a = zero(eltype(z))
-    b = zero(eltype(z)) 
+    b = zero(eltype(z))
     ∑z = sum(z)
     checkbounds(tci,length(z))
     for i ∈ @comps
@@ -100,8 +100,8 @@ end
 
 
 """
-    YamadaGunnLiquid(components::Vector{String}; 
-                userlocations::Vector{String}=String[], 
+    YamadaGunnLiquid(components::Vector{String};
+                userlocations::Vector{String}=String[],
                 verbose::Bool=false)
 
 ## Input parameters
@@ -135,11 +135,11 @@ function YamadaGunnLiquid(components::Vector{String}; userlocations=String[], ve
     Tc = params["Tc"]
     Pc = params["Pc"]
     _zc = 0.29056 .- 0.08775 .* acentricfactor.values
-    Zc = SingleParam("Critical Compressibility factor",components,_zc) 
+    Zc = SingleParam("Critical Compressibility factor",components,_zc)
     packagedparams = RackettLiquidParam(Tc,Pc,Zc)
     references =["10.1021/je60047a012","10.1002/aic.690170613"]
     model = RackettLiquid(packagedparams;references,verbose)
     return model
 end
-    
+
 export YamadaGunnLiquid,RackettLiquid

@@ -27,15 +27,8 @@ Trᵢ = T/Tcᵢ
 ```
 """
 RKPRAlpha
+default_locations(::Type{RKPRAlpha}) = critical_data()
 
-function RKPRAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = RKPRAlphaParam(acentricfactor)
-    model = RKPRAlpha(packagedparams, verbose=verbose)
-    return model
-end
-#ideally, k should be fitted to Tr = 0.7
 function α_function(model::CubicModel,V,T,z,alpha_model::RKPRAlphaModel)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values

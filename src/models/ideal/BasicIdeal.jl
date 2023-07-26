@@ -2,9 +2,7 @@ struct BasicIdealParam <: EoSParam
 end
 
 abstract type BasicIdealModel <: IdealModel end
-struct BasicIdeal <: BasicIdealModel
-    params::BasicIdealParam
-end
+struct BasicIdeal <: BasicIdealModel end
 
 """
     BasicIdeal <: IdealModel
@@ -23,9 +21,8 @@ BasicIdeal
 
 export BasicIdeal
 function BasicIdeal(components::Vector; userlocations::Array{String,1}=String[], verbose=false)
-    return BasicIdeal(BasicIdealParam())
+    return BasicIdeal()
 end
-
 
 is_splittable(::BasicIdeal) = false
 recombine_impl!(model::BasicIdeal) = model

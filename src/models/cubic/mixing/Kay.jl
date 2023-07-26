@@ -32,14 +32,6 @@ KayRule
 
 export KayRule
 
-function KayRule(components::Vector{String}; activity=nothing, userlocations=String[], activity_userlocations=String[], verbose::Bool=false)
-    #params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    #acentricfactor = params["acentricfactor"]
-    packagedparams = KayRuleParam()
-    model = KayRule(packagedparams, verbose=verbose)
-    return model
-end
-
 function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b,c)
     n = sum(z)
     invn = (one(n)/n)
@@ -68,4 +60,4 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b
     return ā,b̄,c̄
 end
 
-is_splittable(::KayRule) = false
+#is_splittable(::KayRule) = false

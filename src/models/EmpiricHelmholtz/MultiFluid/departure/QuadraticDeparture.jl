@@ -27,15 +27,17 @@ aᵣᵢⱼ = 0.5*(aᵣᵢ + aᵣⱼ)*(1 - (k₀ + k₁T))
 ## References
 1. Jäger, A., Breitkopf, C., & Richter, M. (2021). The representation of cross second virial coefficients by multifluid mixture models and other equations of state. Industrial & Engineering Chemistry Research, 60(25), 9286–9295. [doi:10.1021/acs.iecr.1c01186](https://doi.org/10.1021/acs.iecr.1c01186)
 """
-function QuadraticDeparture(components; userlocations=String[], verbose::Bool=false)
-    params = getparams(components,["Empiric/departure/quadratic_departure_unlike.csv"];userlocations = userlocations,verbose = verbose)
+QuadraticDeparture
+default_locations(::Type{QuadraticDeparture}) = ["Empiric/departure/quadratic_departure_unlike.csv"]
+default_references(::Type{QuadraticDeparture}) = ["10.1021/acs.iecr.1c01186","10.1016/j.fluid.2018.04.015"]
+function transform_params(::Type{QuadraticDeparture},params)
     k0 = get(params,"k0",nothing)
     k1 = get(params,"k1",nothing)
     k0 === nothing && (k0 = PairParam("k0",components))
     k1 === nothing && (k1 = PairParam("k0",components))
-    pkgparams = QuadraticDepartureParam(k0,k1)
-    references = ["10.1021/acs.iecr.1c01186","10.1016/j.fluid.2018.04.015"]
-    return QuadraticDeparture(pkgparams;references)
+    params["k0"] = k0
+    params["k1"] = k1
+    return params
 end
 
 function multiparameter_a_res(model,V,T,z,departure::QuadraticDeparture,δ,τ,∑z = sum(z))

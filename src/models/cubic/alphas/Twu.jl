@@ -34,15 +34,7 @@ Trᵢ = T/Tcᵢ
 TwuAlpha
 
 export TwuAlpha
-function TwuAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["alpha/Twu/Twu_like.csv"]; userlocations=userlocations, verbose=verbose)
-    M = params["M"]
-    N = params["N"]
-    L = params["L"]
-    packagedparams = TwuAlphaParam(M,N,L)
-    model = TwuAlpha(packagedparams, verbose=verbose)
-    return model
-end
+default_locations(::Type{SoaveAlpha}) = ["alpha/Twu/Twu_like.csv"]
 
 doi(::TwuAlpha) = ["10.1016/0378-3812(80)80003-3"]
 

@@ -49,18 +49,8 @@ Cp(T) = ∑Cpᵢxᵢ
 ReidIdeal
 
 export ReidIdeal
-function ReidIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["ideal/ReidIdeal.csv"]; userlocations=userlocations, verbose=verbose)
-    a = params["a"]
-    b = params["b"]
-    c = params["c"]
-    d = params["d"]
-    packagedparams = ReidIdealParam(a, b, c, d)
-    references = String[] #  Fill this up.
-    return ReidIdeal(packagedparams; references=references)
-end
+default_locations(::Type{ReidIdeal}) = ["ideal/ReidIdeal.csv"]
 
-#TODO,add a dependency of a,b,c,d parameters
 recombine_impl!(model::ReidIdealModel) = model
 
 

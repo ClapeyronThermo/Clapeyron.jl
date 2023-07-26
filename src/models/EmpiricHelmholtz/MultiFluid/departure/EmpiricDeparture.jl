@@ -122,8 +122,10 @@ aᵣᵢⱼ = ∑nᵢⱼ₋ₖδ^(dᵢⱼ₋ₖ)*τ^(tᵢⱼ₋ₖ) +
 ```
 
 """
-function EmpiricDeparture(components;userlocations = String[],verbose = false)
-    params = getparams(components,["Empiric/departure/empiric_unlike.csv"],asymmetricparams = ["F","parameters"],userlocations = userlocations,verbose = verbose)
+EmpiricDeparture
+default_locations(::Type{EmpiricDeparture}) = ["Empiric/departure/empiric_unlike.csv"]
+default_getparams_arguments(::Type{EmpiricDeparture},userlocations,verbose) = ParamOptions(;userlocations,verbose,asymmetricparams = ["F","parameters"])
+function transform_params(::Type{EmpiricDeparture},params)
     raw_parameters = params["parameters"]
     F = params["F"]
     s1,s2 = size(F.values)
@@ -145,8 +147,8 @@ function EmpiricDeparture(components;userlocations = String[],verbose = false)
     end
     #compress
     parameters = PairParameter(raw_parameters.name,components,parsed_parameters,raw_parameters.ismissingvalues,raw_parameters.sourcecsvs,raw_parameters.sources)
-    pkgparams = EmpiricDepartureParam(F,parameters)
-    return EmpiricDeparture(pkgparams,verbose = verbose)
+    params["parameters"] = parameters
+    return params
 end
 
 function multiparameter_a_res(model::MultiFluid,V,T,z,departure::EmpiricDeparture,δ,τ,∑z = sum(z))

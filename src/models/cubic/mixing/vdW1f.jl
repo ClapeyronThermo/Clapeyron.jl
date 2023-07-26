@@ -26,14 +26,6 @@ c̄ = ∑cᵢxᵢ
 """
 vdW1fRule
 
-function vdW1fRule(components::Vector{String}; activity=nothing, userlocations=String[], activity_userlocations=String[], verbose::Bool=false)
-    packagedparams = vdW1fRuleParam()
-    model = vdW1fRule(packagedparams, verbose=verbose)
-    return model
-end
-
-vdW1fRule() = vdW1fRule(vdW1fRuleParam())
-
 function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b,c)
     n = sum(z)
     invn = (one(n)/n)
@@ -62,4 +54,4 @@ end
 
 
 
-is_splittable(::vdW1fRule) = false
+#is_splittable(::vdW1fRule) = false

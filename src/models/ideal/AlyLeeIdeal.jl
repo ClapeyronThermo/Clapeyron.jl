@@ -44,23 +44,9 @@ Cpᵢ(T)/R = A + B(CT⁻¹/sinh(CT⁻¹))² + D(ET⁻¹/cosh(ET⁻¹))² + F(GT�
 
 1. Aly, F. A., & Lee, L. L. (1981). Self-consistent equations for calculating the ideal gas heat capacity, enthalpy, and entropy. Fluid Phase Equilibria, 6(3–4), 169–179. [doi:10.1016/0378-3812(81)85002-9](https://doi.org/10.1016/0378-3812(81)85002-9)
 """
-
-function AlyLeeIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["ideal/AlyLeeIdeal.csv"]; userlocations=userlocations, verbose=verbose, ignore_missing_singleparams = ["B","C","D","E","F","G","H","I"])
-    A = params["A"]
-    B = params["B"]
-    C = params["C"]
-    D = params["D"]
-    E = params["E"]
-    F = params["F"]
-    G = params["G"]
-    H = params["H"]
-    I = params["I"]
-    packagedparams = AlyLeeIdealParam(A,B,C,D,E,F,G,H,I)
-    references = ["10.1016/0378-3812(81)85002-9"]
-    return AlyLeeIdeal(packagedparams;references,verbose)
-end
-
+AlyLeeIdeal
+default_locations(::Type{AlyLeeIdeal}) = ["ideal/AlyLeeIdeal.csv"]
+default_references(::Type{AlyLeeIdeal}) = ["10.1016/0378-3812(81)85002-9"]
 
 function a_ideal(model::AlyLeeIdealModel,V,T,z=SA[1.0])
     #we transform from AlyLee terms to GERG2008 terms.

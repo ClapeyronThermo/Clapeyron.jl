@@ -32,14 +32,6 @@ Trᵢ = T/Tcᵢ
 """
 RKAlpha
 
-function RKAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    packagedparams = RKAlphaParam()
-    model = RKAlpha(packagedparams, verbose=verbose)
-    return model
-end
-
-RKAlpha() = RKAlpha(RKAlphaParam())
-
 function α_function(model::CubicModel,V,T,z,alpha_model::RKAlphaModel)
     Tc = model.params.Tc.values
     α = zeros(typeof(1.0*T),length(Tc))
@@ -56,4 +48,4 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::RKAlphaMod
     α = 1 /√(Tr)
 end
 
-is_splittable(::RKAlpha) = false
+#is_splittable(::RKAlpha) = false

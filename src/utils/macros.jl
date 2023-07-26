@@ -197,19 +197,30 @@ Even simpler model, primarily for the ideal models.
 Contains neither sites nor ideal models.
 """
 macro newmodelsimple(name, parent, paramstype)
-    quote
-    struct $name <: $parent
-        components::Array{String,1}
-        params::$paramstype
-        references::Array{String,1}
-    end
 
-    function $name(params::$paramstype;
-            references::Vector{String}=String[],
-            verbose::Bool = false)
+    if parent == :nothing
+        noargs = quote
+            $name() = name(String[],nothing,String[])
 
-        return Clapeyron.build_model($name,params;references,verbose)
+            is_splittable(::$name) = false
+        end
+    else
+        noargs = quote end
     end
+    
+    return quote
+        struct $name <: $parent
+            components::Array{String,1}
+            params::$paramstype
+            references::Array{String,1}
+        end
+
+        function $name(components;userlocations = String[],verbose = false)
+            build_eosmodel($name,components,nothing,userlocations,nothing,nothing,verbose,nothing)
+        end
+
+        $noargs
+
     end |> esc
 end
 
@@ -354,6 +365,7 @@ end
 given an existing model, composed of Clapeyron EoS models, ClapeyronParams or EoSParams, it will generate
 the necessary traits to make the model compatible with Clapeyron routines.
 
+
 """
 macro registermodel(model)
     esc(model)
@@ -361,9 +373,14 @@ end
 
 function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options = nothing) where M <: EoSModel
 
+    paramtype = fieldtype(M,:params)
+
+    if paramtype === nothing
+        return M()
+    end
     result = Dict{Symbol,Any}()
 
-    options = default_getparams_arguments(T,userlocations,verbose)
+    options = default_getparams_arguments(M,userlocations,verbose)
     if has_groups(M)
         groups =  init_groups(M,components,group_userlocations,verbose)
         params_in = getparams(groups, default_locations(M),options)
@@ -380,7 +397,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         assoc_mix!(params_out,assoc_options)
     end
 
-    pkgparam = build_eosparam(M,params_out)
+    pkgparam = build_eosparam(paramtype,params_out)
     result[:params] = pkgparam
 
     if has_sites(M)

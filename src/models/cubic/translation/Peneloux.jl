@@ -42,14 +42,13 @@ Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 PenelouxTranslation
 
 export PenelouxTranslation
-function PenelouxTranslation(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_VC)
-    Vc = params["Vc"]
-    c = SingleParam("Volume shift",components,zeros(length(components)))
-    c.ismissingvalues .= true
-    packagedparams = PenelouxTranslationParam(Vc,c)
-    model = PenelouxTranslation(packagedparams, verbose=verbose)
-    return model
+default_locations(::Type{PenelouxTranslation}) = critical_data()
+default_references(::Type{PenelouxTranslation}) = ["10.1016/0378-3812(82)80002-2"]
+function transform_params(::Type{PenelouxTranslation},params)
+    v_shift = SingleParam("Volume shift",components,zeros(length(components)))
+    v_shift.ismissingvalues .= true
+    params["v_shift"] = v_shift
+    return params
 end
 
 doi(::PenelouxTranslation) = ["10.1016/0378-3812(82)80002-2"]

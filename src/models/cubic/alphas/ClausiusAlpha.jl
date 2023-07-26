@@ -32,14 +32,6 @@ Trᵢ = T/Tcᵢ
 """
 ClausiusAlpha
 
-function ClausiusAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    packagedparams = ClausiusAlphaParam()
-    model = ClausiusAlpha(packagedparams, verbose=verbose)
-    return model
-end
-
-ClausiusAlpha() = ClausiusAlpha(ClausiusAlphaParam())
-
 function α_function(model::CubicModel,V,T,z,alpha_model::ClausiusAlphaModel)
     Tc = model.params.Tc.values
     α = zeros(typeof(1.0*T),length(Tc))
@@ -54,4 +46,4 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::ClausiusAl
     α = Tc/T
 end
 
-is_splittable(::ClausiusAlpha) = false
+#is_splittable(::ClausiusAlpha) = false

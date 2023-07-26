@@ -55,17 +55,16 @@ If there is no data present, the parameters can be estimated:
 ## References
 1. R. Klimeck, Ph.D. dissertation, Ruhr-Universit¨at Bochum, 2000
 """
-function AsymmetricMixing(components;userlocations = String[],verbose = false)
-    params = getparams(components,["Empiric/mixing/AsymmetricMixing/asymmetric_mixing_unlike.csv"]; asymmetricparams = ["beta_v","beta_T"],userlocations=userlocations, verbose=verbose)
+AsymmetricMixing
+default_locations(::Type{AsymmetricMixing}) = ["Empiric/departure/empiric_unlike.csv"]
+default_references(::Type{AsymmetricMixing}) = ["Klimeck, Ph.D. dissertation"]
+default_getparams_arguments(::Type{EmpiricDeparture},userlocations,verbose) = ParamOptions(;userlocations,verbose,asymmetricparams = ["beta_v","beta_T"])
+function transform_params(::Type{EmpiricDeparture},params)
     beta_v = params["beta_v"]
-    gamma_v = params["gamma_v"]
     beta_T = params["beta_T"]
-    gamma_T = params["gamma_T"]
     mirror_pair!(beta_T,inv)
     mirror_pair!(beta_v,inv)
-    pkgparams = AsymmetricMixingParam(gamma_T,gamma_v,beta_T,beta_v)
-    references = ["Klimeck, Ph.D. dissertation"]
-    return AsymmetricMixing(pkgparams,verbose = verbose,references = references)
+    return params
 end
 
 function recombine_mixing!(model::MultiFluid,mixing::AsymmetricMixing,estimate)

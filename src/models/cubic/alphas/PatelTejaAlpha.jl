@@ -25,13 +25,7 @@ mᵢ = 0.452413 + 1.30982ωᵢ - 0.295937ωᵢ^2
 
 """
 PatelTejaAlpha
+default_locations(::Type{PatelTejaAlpha}) = critical_data()
 
-function PatelTejaAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = PatelTejaAlphaParam(acentricfactor)
-    model = PatelTejaAlpha(packagedparams, verbose=verbose)
-    return model
-end
 
 @inline α_m(model,::PatelTejaAlpha) = (0.452413,1.30982,-0.295937)

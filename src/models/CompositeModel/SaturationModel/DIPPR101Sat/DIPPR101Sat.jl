@@ -57,22 +57,7 @@ psat(T) = exp(A + B/T + C•log(T) + D•T^E)
 1. Design Institute for Physical Properties, 1996. DIPPR Project 801 DIPPR/AIChE
 """
 DIPPR101Sat
-
-function DIPPR101Sat(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv","Correlations/saturation_correlations/dippr101_like.csv"]; userlocations=userlocations, verbose=verbose)
-    Tc = params["Tc"]
-    Pc = params["Pc"]
-    A = params["A"]
-    B = params["B"]
-    C = params["C"]
-    D = params["D"]
-    E = params["E"]
-    Tmin = params["Tmin"]
-    Tmax = params["Tmax"]
-    packagedparams = DIPPR101SatParam(Tc,Pc,A,B,C,D,E,Tmin,Tmax)
-    model = DIPPR101Sat(packagedparams, verbose=verbose)
-    return model
-end 
+default_locations(::Type{DIPPR101Sat}) = ["properties/critical.csv","Correlations/saturation_correlations/dippr101_like.csv"]
 
 function crit_pure(model::DIPPR101SatModel)
     single_component_check(crit_pure,model)
