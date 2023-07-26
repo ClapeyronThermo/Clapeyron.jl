@@ -55,8 +55,8 @@ function PeTS(components;
     userlocations=String[],
     ideal_userlocations=String[],
     verbose=false)
-    params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    
+    params = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    sites = params["sites"]
     segment = params["segment"]
     k = get(params,"k",nothing)
     Mw = params["Mw"]
