@@ -359,7 +359,7 @@ macro registermodel(model)
     esc(model)
 end
 
-function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options = nothing) where T <: EoSModel
+function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options = nothing) where M <: EoSModel
 
     result = Dict{Symbol,Any}()
 

@@ -71,11 +71,10 @@ function pharmaPCSAFT(components;
     assoc_options = AssocOptions(combining = :elliott_runtime))
 
     params = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; 
-    sites = params["sites"]
     userlocations=userlocations, 
     verbose=verbose,
     ignore_missing_singleparams = ["kT"])
-    
+    sites = params["sites"]
     water = SpecialComp(components,["water08"])
     segment = params["segment"]
     k0 = get(params,"k",nothing)
