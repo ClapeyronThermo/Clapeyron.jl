@@ -58,8 +58,8 @@ If there is no data present, the parameters can be estimated:
 AsymmetricMixing
 default_locations(::Type{AsymmetricMixing}) = ["Empiric/departure/empiric_unlike.csv"]
 default_references(::Type{AsymmetricMixing}) = ["Klimeck, Ph.D. dissertation"]
-default_getparams_arguments(::Type{EmpiricDeparture},userlocations,verbose) = ParamOptions(;userlocations,verbose,asymmetricparams = ["beta_v","beta_T"])
-function transform_params(::Type{EmpiricDeparture},params)
+default_getparams_arguments(::Type{AsymmetricMixing},userlocations,verbose) = ParamOptions(;userlocations,verbose,asymmetricparams = ["beta_v","beta_T"])
+function transform_params(::Type{AsymmetricMixing},params)
     beta_v = params["beta_v"]
     beta_T = params["beta_T"]
     mirror_pair!(beta_T,inv)

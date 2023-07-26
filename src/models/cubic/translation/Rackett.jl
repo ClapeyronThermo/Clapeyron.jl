@@ -47,7 +47,7 @@ function transform_params(::Type{RackettTranslation},params)
     return params
 end
 
-doi(::PenelouxTranslation) = ["10.1016/0378-3812(82)80002-2"]
+doi(::RackettTranslation) = ["10.1016/0378-3812(82)80002-2"]
 
 function translation!(model::CubicModel,V,T,z,translation_model::RackettTranslation,c)
     Tc = model.params.Tc.values

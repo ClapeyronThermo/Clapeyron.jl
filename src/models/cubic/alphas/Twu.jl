@@ -34,7 +34,7 @@ Trᵢ = T/Tcᵢ
 TwuAlpha
 
 export TwuAlpha
-default_locations(::Type{SoaveAlpha}) = ["alpha/Twu/Twu_like.csv"]
+default_locations(::Type{TwuAlpha}) = ["alpha/Twu/Twu_like.csv"]
 
 doi(::TwuAlpha) = ["10.1016/0378-3812(80)80003-3"]
 
