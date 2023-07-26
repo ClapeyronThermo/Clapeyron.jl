@@ -61,8 +61,8 @@ function gcPCSAFT(components;
     assoc_options = AssocOptions())
 
     groups = StructGroupParam(components, ["SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_groups.csv","SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_intragroups.csv"])
-    params,sites = getparams(groups, ["SAFT/PCSAFT/gcPCSAFT","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
-    
+    params = getparams(groups, ["SAFT/PCSAFT/gcPCSAFT","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    sites = params[:sites]
     components = groups.components
     
     segment = params["segment"]

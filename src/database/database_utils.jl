@@ -94,6 +94,9 @@ end
 flattenfilepaths(locations) = flattenfilepaths(locations,String[])
 
 function flattenfilepaths(locations,userlocations::Vector{String})
+    if length(locations) == 0 && length(userlocations) == 0
+        return String[]
+    end
     defaultpaths = reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[])
     userpaths = reduce(vcat,getpaths.(userlocations),init = String[])
     idx = findfirst(isequal("@REMOVEDEFAULTS"),userpaths)

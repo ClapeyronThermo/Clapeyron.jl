@@ -78,7 +78,11 @@ macro f(func, args...)
     end |> esc
 end
 
-
+default_references(M) = String[]
+default_locations(M) = String[]
+default_getparams_arguments(model,userlocations,verbose) = ParamOptions(;verbose,userlocations)
+init_groups(M,components,userlocations,verbose) = GroupParam(components,String[];userlocations,verbose)
+transform_params(M,params) = params
 """
     @newmodelgc modelname parent paramstype
 
@@ -353,6 +357,48 @@ the necessary traits to make the model compatible with Clapeyron routines.
 """
 macro registermodel(model)
     esc(model)
+end
+
+function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options = nothing) where T <: EoSModel
+
+    result = Dict{Symbol,Any}()
+
+    options = default_getparams_arguments(T,userlocations,verbose)
+    if has_groups(M)
+        groups =  init_groups(M,components,group_userlocations,verbose)
+        params_in = getparams(groups, default_locations(M),options)
+        result[:groups] = groups
+        result[:components] = groups.components
+    else
+        groups = nothing
+        params_in = getparams(components, default_locations(M),options)
+        result[:components] = components
+    end
+
+    params_out = transform_params(M,params_in)
+    if has_sites(M)
+        assoc_mix!(params_out,assoc_options)
+    end
+
+    pkgparam = build_eosparam(M,params_out)
+    result[:params] = pkgparam
+
+    if has_sites(M)
+        result[:sites] = params_out[:data]
+        result[:assoc_options] = assoc_options
+    end
+
+    if hasfield(M,:references)
+        references = default_references(M)
+        result[:references] = references
+    end
+
+    if hasfield(M,:idealmodel)
+        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        result[:idealmodel] = init_idealmodel
+    end
+
+    return M((result[k] for k in fieldnames(M))...)
 end
 
 export @newmodel, @f, @newmodelgc, @newmodelsimple

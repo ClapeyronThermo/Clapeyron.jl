@@ -57,7 +57,8 @@ function LJSAFT(components;
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-    params,sites = getparams(components, ["SAFT/LJSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/LJSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    sites = params[:sites]
     segment = params["segment"]
 
     Mw = params["Mw"]

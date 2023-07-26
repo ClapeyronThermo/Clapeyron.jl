@@ -61,7 +61,8 @@ function CKSAFT(components;
     verbose=false,
     assoc_options = AssocOptions())
 
-    params,sites = getparams(components, ["SAFT/CKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/CKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    sites = params[:sites]
     segment = params["segment"]
     c = params["c"]
     k = get(params,"k",nothing)

@@ -64,8 +64,8 @@ function SAFTVRMie(components;
     ideal_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-    params,sites = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-
+    params = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    sites = params[:sites]
     Mw = params["Mw"]
     segment = params["segment"]
     params["sigma"].values .*= 1E-10

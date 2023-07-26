@@ -80,7 +80,8 @@ function sCPA(components;
             verbose=false,
             assoc_options = AssocOptions())
 
-    params,sites = getparams(components, ["SAFT/CPA/sCPA/", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/CPA/sCPA/", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    sites = params[:sites]
     Mw  = params["Mw"]
     k = get(params,"k",nothing)
     Tc = params["Tc"]

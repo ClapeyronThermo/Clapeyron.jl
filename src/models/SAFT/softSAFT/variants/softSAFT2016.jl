@@ -68,8 +68,8 @@ function softSAFT2016(components;
     verbose=false,
     assoc_options = AssocOptions())
 
-    params,sites = getparams(components, ["SAFT/softSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    
+    params = getparams(components, ["SAFT/softSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    sites = params[:sites]
     segment = params["segment"]
     k = get(params,"k",nothing)
     params["sigma"].values .*= 1E-10

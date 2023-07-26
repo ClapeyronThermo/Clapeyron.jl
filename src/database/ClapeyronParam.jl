@@ -32,6 +32,11 @@ function Base.show(io::IO, params::EoSParam)
     print(io, typeof(params))
 end
 
+function build_eosparam(::Type{T},data) where T <: EoSParam
+    names = fieldnames(T)
+    return T((data[name] for name in names)...)
+end
+
 const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
 function pack_vectors(x::AbstractVector{<:AbstractVector})
