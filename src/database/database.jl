@@ -336,7 +336,7 @@ function createparams(components::Vector{String},
         merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,_replace)
     end
 
-    if options.userlocations isa NamedTuple
+    if options.userlocations isa Union{NamedTuple,AbstractDict}
         foundparams, notfoundparams = findparamsinnt(components,options,parsegroups,NT_CSV_OPTIONS)
         merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,false)
     end
@@ -447,7 +447,7 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
 end
 
 
-function read_csv(filepath,options::ParamOptions = DefaultOptions,sep = :comma)::CSV.File
+function read_csv(filepath,options::ParamOptions = DefaultOptions,sep = :auto)::CSV.File
     #actual reading
     ignorelist = deepcopy(options.ignore_headers)
     map!(normalisestring,ignorelist,ignorelist)
@@ -456,8 +456,16 @@ function read_csv(filepath,options::ParamOptions = DefaultOptions,sep = :comma):
         norm_header = normalisestring(string(name))
         normalisestring(norm_header; tofilter=r"[ \-\_\d]") ∈ ignorelist
     end
+    if sep == :auto
+        sep = read_csv_options(filepath)[:sep]
+    end
+    
     _delims = (comma = ',',space = ' ')
-    _delim = get(_delims,sep,string(sep))
+    if sep isa Symbol
+        _delim = get(_delims,sep,string(sep))
+    else
+        _delim = sep
+    end
     if is_inline_csv(filepath)
         df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String, delim = _delim, ntasks  = 1)
     else

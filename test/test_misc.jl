@@ -278,6 +278,31 @@ end
             res_split = Clapeyron.eos(model_split,1.013e6,298.15) #should work
             @test res_pure ≈ res_split
         end
+   
+        @testset "#188" begin
+            #=
+            in cubics, we do a separation between the alpha model and the main model. while this allows for unprecedented
+            flexibility, this also complicates the case of the default model. there is also an unrelated error, about needing to pass Vc,
+            because our database has all the critical parameters in one file
+            =#
+            data = (
+                species = ["A", "B"],
+                Tc = [18.0, 3.5],
+                Pc = [2.3, 0.1],
+                Mw = [1.0, 1.0],
+                acentricfactor = [0.1, 0.3]
+            )
+
+            file = ParamTable(
+                :single, 
+                data,
+                name="db1"
+            )
+
+            system = PR(["A", "B"], userlocations = [file])
+            @test system.params.Tc[2] == 3.5
+
+        end
     end
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6

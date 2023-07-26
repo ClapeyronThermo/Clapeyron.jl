@@ -91,6 +91,8 @@ function _getpaths(location,special_parse = true)
     return files
 end
 
+flattenfilepaths(locations) = flattenfilepaths(locations,String[])
+
 function flattenfilepaths(locations,userlocations::Vector{String})
     defaultpaths = reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[])
     userpaths = reduce(vcat,getpaths.(userlocations),init = String[])
@@ -105,7 +107,7 @@ end
 flattenfilepaths(locations,userlocations::String) = flattenfilepaths(locations,[userlocations])
 
 Base.@nospecialize
-function flattenfilepaths(locations,userlocations::NamedTuple)
+function flattenfilepaths(locations,userlocations::Union{NamedTuple,AbstractDict})
     return String[]
 end
 Base.@specialize
@@ -320,4 +322,24 @@ function info_color(text)
     red = colors[:bold] * colors[:cyan]
     reset = colors[:normal]
     return red * text * reset
+end
+
+function userlocation_merge(loc1,loc2)
+    if isempty(loc2)
+        return loc1
+    elseif loc1 isa Vector{String} && loc2 isa Vector{String}
+        return append!(loc1,loc2)
+    elseif loc1 isa Vector{String} && length(loc1) == 0
+        return loc2
+    elseif loc1 isa Vector{String} && loc2 isa Union{NamedTuple,AbstractDict}
+        return loc2
+    elseif loc1 isa Union{NamedTuple,AbstractDict} && loc1 isa Union{NamedTuple,AbstractDict}
+        loc0 = Dict(pairs(loc1))
+        for k in keys(loc2)
+            loc0[k] = loc2[k]
+        end
+        return loc0
+    else
+        throw(ArgumentError("invalid userlocations combination: old: $loc1, new: $loc2"))
+    end
 end

@@ -1,5 +1,5 @@
 """
-    α_function(model::CubicModel,V,T,z,αmodel::AlphaModel)  
+    α_function(model::CubicModel,V,T,z,αmodel::AlphaModel)
 
 Interface function used in cubic models. it should return a vector of αᵢ(T).
 
@@ -16,6 +16,39 @@ function α_function end
 #all alphas at the moment don't have any need for recombine!
 recombine_impl!(model::AlphaModel) = model
 recombine_alpha!(model::CubicModel,alpha::AlphaModel) = recombine!(alpha)
+
+struct SimpleAlphaParam <: EoSParam
+    acentricfactor::SingleParam{Float64}
+end
+
+function can_build_alpha_w(::Type{T}) where T <: AlphaModel
+    if hasfield(T,:params)
+        if fieldtype(T,:params) == SimpleAlphaParam
+            return true
+        end
+    end
+    return false
+end
+
+function __ignored_crit_params(alpha)
+    if can_build_alpha_w(alpha)
+        return ["Vc"]
+    else
+        return ["Vc","acentricfactor"]
+    end
+end
+
+can_build_alpha_w(T) = false
+
+function init_alphamodel(alpha,components,w = nothing,userlocations = String[],verbose = [])
+    if alpha <: AlphaModel
+        if can_build_alpha_w(alpha) && w !== nothing && isempty(userlocations)
+            param = SimpleAlphaParam(w)
+            return alpha(param,verbose = verbose)
+        end
+    end
+    return init_model(alpha,components,userlocations,verbose)
+end
 
 include("NoAlpha.jl")
 include("ClausiusAlpha.jl")

@@ -1,6 +1,4 @@
-struct MTAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+const MTAlphaParam = SimpleAlphaParam
 
 @newmodelsimple MTAlpha SoaveAlphaModel MTAlphaParam
 export MTAlpha

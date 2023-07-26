@@ -92,13 +92,15 @@ function PatelTeja(components::Vector{String}; idealmodel=BasicIdeal,
     Vc = params["Vc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
+    acentricfactor = get(params,"acentricfactor",nothing)
+
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     n = length(components)
     a = PairParam("a",components,zeros(n))
     b = PairParam("b",components,zeros(n))
     c = PairParam("c",components,zeros(n))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PatelTejaParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1016/0009-2509(82)80099-7"]

@@ -61,7 +61,7 @@ function doi2bib(doi::String)
     headers = ["Accept"=>"application/x-bibtex",
                 "charset" => "utf-8",
                 "User-Agent" => "https://github.com/ypaul21/Clapeyron.jl"]
-    
+
     url = "https://api.crossref.org/v1/works/" * doi * "/transform"
     out = IOBuffer()
     try
@@ -70,7 +70,7 @@ function doi2bib(doi::String)
         end
         if r.status == 200
             res = String(take!(out))
-        else  
+        else
             res =  ""
         end
         DOI2BIB_CACHE[doi] = res

@@ -1,8 +1,6 @@
 abstract type PTVAlphaModel <: AlphaModel end
 
-struct PTVAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+struct PTVAlphaParam = SimpleAlphaParam
 
 @newmodelsimple PTVAlpha PTVAlphaModel PTVAlphaParam
 export PTVAlpha

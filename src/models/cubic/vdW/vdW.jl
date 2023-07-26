@@ -22,7 +22,7 @@ export vdW
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -71,26 +71,31 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
+        userlocations=userlocations,
+        verbose=verbose,
+        ignore_missing_singleparams = __ignored_crit_params(alpha))
+
     k  = get(params,"k",nothing)
     l = get(params,"l",nothing)
     pc = params["Pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
+    acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     n = length(components)
     a = PairParam("a",components,zeros(n))
     b = PairParam("b",components,zeros(n))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     packagedparams = vdWParam(a,b,Tc,pc,Mw)
     references = String[]
     model = vdW(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
@@ -114,7 +119,7 @@ function a_res(model::vdWModel, V, T, z,_data = data(model,V,T,z))
     return -log(1+(c̄-b̄)*ρ) - ā*ρt*RT⁻¹
     #
     #return -log(V-n*b̄) - ā*n/(R̄*T*V) + log(V)
-end   
+end
 
 crit_pure(model::vdWModel) = crit_pure_tp(model)
 
