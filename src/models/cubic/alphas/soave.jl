@@ -1,6 +1,6 @@
 abstract type SoaveAlphaModel <: AlphaModel end
 
-const SoaveAlphaParam = SimpleAlphaParam
+struct SoaveAlphaParam = SimpleAlphaParam
 
 @newmodelsimple SoaveAlpha SoaveAlphaModel SoaveAlphaParam
 export SoaveAlpha

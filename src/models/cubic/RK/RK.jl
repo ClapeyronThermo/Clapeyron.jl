@@ -75,15 +75,14 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
         userlocations=userlocations,
         verbose=verbose,
-        ignore_missing_singleparams = ["Vc"])
+        ignore_missing_singleparams = __ignored_crit_params(alpha))
 
-    k  = get(params,"k",nothing)
+    k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     pc = params["Pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     acentricfactor = get(params,"acentricfactor",nothing)
-
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     a = PairParam("a",components,zeros(length(components)))
     b = PairParam("b",components,zeros(length(components)))

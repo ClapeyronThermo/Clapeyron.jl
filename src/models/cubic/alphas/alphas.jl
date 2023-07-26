@@ -30,6 +30,14 @@ function can_build_alpha_w(::Type{T}) where T <: AlphaModel
     return false
 end
 
+function __ignored_crit_params(alpha)
+    if can_build_alpha_w(alpha)
+        return ["Vc"]
+    else
+        return ["Vc","acentricfactor"]
+    end
+end
+
 can_build_alpha_w(T) = false
 
 function init_alphamodel(alpha,components,w = nothing,userlocations = String[],verbose = [])

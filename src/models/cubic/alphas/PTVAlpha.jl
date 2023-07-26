@@ -1,6 +1,6 @@
 abstract type PTVAlphaModel <: AlphaModel end
 
-const PTVAlphaParam = SimpleAlphaParam
+struct PTVAlphaParam = SimpleAlphaParam
 
 @newmodelsimple PTVAlpha PTVAlphaModel PTVAlphaParam
 export PTVAlpha

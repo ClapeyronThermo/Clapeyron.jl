@@ -1,8 +1,6 @@
 abstract type RKPRAlphaModel <: AlphaModel end
 
-struct RKPRAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+struct RKPRAlphaParam = SimpleAlphaParam
 
 @newmodelsimple RKPRAlpha RKPRAlphaModel RKPRAlphaParam
 export RKPRAlpha

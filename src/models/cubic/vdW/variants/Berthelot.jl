@@ -98,7 +98,6 @@ function Berthelot(components::Vector{String}; idealmodel=BasicIdeal,
     Tc = params["Tc"]
     Vc = params["Vc"]
     acentricfactor = get(params,"acentricfactor",nothing)
-
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     a = PairParam("a",components,zeros(length(components)))
     b = PairParam("b",components,zeros(length(components)))
