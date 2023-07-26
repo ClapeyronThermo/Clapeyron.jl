@@ -88,7 +88,7 @@ function CPA(components;
     assoc_options = AssocOptions())
     
     params = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    sites = params[:sites]
+    sites = params["sites"]
     Mw  = params["Mw"]
     k = get(params,"k",nothing)
     Tc = params["Tc"]

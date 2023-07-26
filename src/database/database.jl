@@ -230,8 +230,8 @@ function getparams(components::Vector{String},locations::Vector{String},options:
     end
     if any(x isa AssocParam for x ∈ values(result))
         sites = buildsites(result,components,allcomponentsites,options)
-        if !haskey(result,:sites)
-            result[:sites] = sites
+        if !haskey(result,"sites")
+            result["sites"] = sites
             return result
         else
             throw(error("cannot overwrite \"sites\" key, already exists!"))

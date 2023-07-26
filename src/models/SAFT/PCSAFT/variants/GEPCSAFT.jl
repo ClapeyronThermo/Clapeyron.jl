@@ -64,7 +64,7 @@ function GEPCSAFT(components::Vector{String}; idealmodel=BasicIdeal,
     verbose=false)
 
     params = getparams(components, ["SAFT/PCSAFT/PCSAFT_like.csv","SAFT/PCSAFT/PCSAFT_unlike.csv","SAFT/PCSAFT/PCSAFT_assoc.csv"]; userlocations=userlocations, verbose=verbose)
-    sites = params[:sites]
+    sites = params["sites"]
     segment = params["segment"]
     k = get(params,"k",nothing)
     Mw = params["Mw"]

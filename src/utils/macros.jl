@@ -384,7 +384,11 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     result[:params] = pkgparam
 
     if has_sites(M)
-        result[:sites] = params_out[:data]
+        _sites = get(params_out,"sites",nothing)
+        if isnothing(_sites)
+            _sites = SiteParam(components)
+        end
+        result[:sites] = _sites
         result[:assoc_options] = assoc_options
     end
 

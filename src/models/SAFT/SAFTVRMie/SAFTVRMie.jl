@@ -65,7 +65,7 @@ function SAFTVRMie(components;
     verbose=false,
     assoc_options = AssocOptions())
     params = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    sites = params[:sites]
+    sites = params["sites"]
     Mw = params["Mw"]
     segment = params["segment"]
     params["sigma"].values .*= 1E-10

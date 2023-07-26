@@ -60,7 +60,7 @@ function sCKSAFT(components::Vector{String};
     assoc_options = AssocOptions())
 
     params = getparams(components, ["SAFT/sCKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    sites = params[:sites]
+    sites = params["sites"]
     segment = params["segment"]
     k = get(params,"k",nothing)
     sigma = params["vol"]

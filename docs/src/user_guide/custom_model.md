@@ -106,7 +106,7 @@ end
 function PCSAFT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false,assoc_options = AssocOptions())
   	# Obtain a Dict of parameters. We pass in custom locations through the optional parameter userlocations.
     params = getparams(components; userlocations=userlocations, verbose=verbose)
-    sites = params[:sites]
+    sites = params["sites"]
     # For clarity, we assign the contents of the returned dict to their own variables.
     segment = params["segment"]
     k = get(params,"k",nothing) #if k is not provided, it will be not be considered

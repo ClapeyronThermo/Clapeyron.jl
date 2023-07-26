@@ -34,7 +34,7 @@ end
 
 function build_eosparam(::Type{T},data) where T <: EoSParam
     names = fieldnames(T)
-    return T((data[name] for name in names)...)
+    return T((data[string(name)] for name in names)...)
 end
 
 const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
