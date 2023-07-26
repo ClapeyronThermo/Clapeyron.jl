@@ -1,6 +1,6 @@
 abstract type PR78AlphaModel <: AlphaModel end
 
-struct PR78AlphaParam = SimpleAlphaParam
+const PR78AlphaParam = SimpleAlphaParam
 
 @newmodelsimple PR78Alpha PR78AlphaModel PR78AlphaParam
 export PR78Alpha

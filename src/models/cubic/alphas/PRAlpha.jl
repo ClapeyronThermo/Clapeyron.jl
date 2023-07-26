@@ -1,4 +1,4 @@
-PRAlphaParam = SimpleAlphaParam
+const PRAlphaParam = SimpleAlphaParam
 
 @newmodelsimple PRAlpha SoaveAlphaModel PRAlphaParam
 export PRAlpha

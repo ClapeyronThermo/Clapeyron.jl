@@ -2,8 +2,6 @@ abstract type KUAlphaModel <: AlphaModel end
 
 const KUAlphaParam = SimpleAlphaParam
 
-SimpleAlphaParam
-
 @newmodelsimple KUAlpha KUAlphaModel KUAlphaParam
 export KUAlpha
 

@@ -1,6 +1,6 @@
 abstract type RKPRAlphaModel <: AlphaModel end
 
-struct RKPRAlphaParam = SimpleAlphaParam
+const RKPRAlphaParam = SimpleAlphaParam
 
 @newmodelsimple RKPRAlpha RKPRAlphaModel RKPRAlphaParam
 export RKPRAlpha
