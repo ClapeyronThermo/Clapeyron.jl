@@ -167,7 +167,7 @@ function __x0_dew_temperature(model::EoSModel,p,y)
     V0_l = zero(p)
     V0_v = zero(p)
     if !any(replaceP) #p < min(pci), proceed with entalphy aproximation:
-        dPdTsat = VT_entropy.(pure,V_v_sat,T_sat) .- VT_entropy.(pure,V_l_sat,T_sat) ./ (V_v_sat .- V_l_sat)
+	    dPdTsat = (VT_entropy.(pure,V_v_sat,T_sat) .- VT_entropy.(pure,V_l_sat,T_sat)) ./ (V_v_sat .- V_l_sat)
         x = copy(dPdTsat)
         ##initialization for T, dew form
         #= we solve the aproximate problem of finding T such as:

@@ -138,7 +138,7 @@ end
 function a_hs(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     _,_,ζi,_,_,_,m̄ = _data
     ζ0,ζ1,ζ2,ζ3 = ζi
-    return m̄*bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    return m̄*bmcs_hs(ζ0,ζ1,ζ2,ζ3)/sum(z)
 end
 
 function ρ_S(model::SAFTVRMieModel, V, T, z, m̄ = dot(z,model.params.segment.values))

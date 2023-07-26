@@ -25,6 +25,11 @@ function GERG2008(components::Vector{String};verbose = false)
     Rgas = Clapeyron.R̄)
 end
 
+function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
+    _,G,∑μᵢzᵢ = Clapeyron.gibbs_duhem(model,V,T,z)
+    @test G ≈ ∑μᵢzᵢ rtol = rtol
+end
+
 @testset "All tests" begin
     include("test_database.jl")
     include("test_solvers.jl")
