@@ -80,8 +80,8 @@ end
 
 default_references(M) = String[]
 default_locations(M) = String[]
-default_getparams_arguments(model,userlocations,verbose) = ParamOptions(;verbose,userlocations)
-init_groups(M,components,userlocations,verbose) = GroupParam(components,String[];userlocations,verbose)
+default_gclocations(M) = String[]
+default_getparams_arguments(M,userlocations,verbose) = ParamOptions(;verbose,userlocations)
 transform_params(M,params) = params
 """
     @newmodelgc modelname parent paramstype
@@ -374,15 +374,21 @@ end
 function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options = nothing) where M <: EoSModel
 
     paramtype = fieldtype(M,:params)
-
-    if paramtype === nothing
+    
+    #non-splittable
+    if paramtype === Nothing
         return M()
+    #we don't need to parse params.
+    elseif Base.issingletontype(paramtype)
+        return M(components,paramtype(),default_references(M))
     end
+    #all fields of the model.
     result = Dict{Symbol,Any}()
 
+    #parse params from database.
     options = default_getparams_arguments(M,userlocations,verbose)
     if has_groups(M)
-        groups =  init_groups(M,components,group_userlocations,verbose)
+        groups =  GroupParam(components,default_gclocations(M);userlocations,verbose)
         params_in = getparams(groups, default_locations(M),options)
         result[:groups] = groups
         result[:components] = groups.components
@@ -391,15 +397,18 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         params_in = getparams(components, default_locations(M),options)
         result[:components] = components
     end
-
+    #perform any transformations
     params_out = transform_params(M,params_in)
+    
+    #mix sites
     if has_sites(M)
         assoc_mix!(params_out,assoc_options)
     end
-
+    #build EoSParam
     pkgparam = build_eosparam(paramtype,params_out)
     result[:params] = pkgparam
 
+    #build SiteParam, if needed
     if has_sites(M)
         _sites = get(params_out,"sites",nothing)
         if isnothing(_sites)
@@ -409,16 +418,19 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         result[:assoc_options] = assoc_options
     end
 
+    #add references, if needed
     if hasfield(M,:references)
         references = default_references(M)
         result[:references] = references
     end
 
+    #build idealmodel, if needed
     if hasfield(M,:idealmodel)
         init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
         result[:idealmodel] = init_idealmodel
     end
 
+    #build model
     return M((result[k] for k in fieldnames(M))...)
 end
 

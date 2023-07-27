@@ -1,9 +1,7 @@
 abstract type vdW1fRuleModel <: MixingRule end
 
-struct vdW1fRuleParam <: EoSParam
-end
+struct vdW1fRule <: vdW1fRuleModel end
 
-@newmodelsimple vdW1fRule vdW1fRuleModel vdW1fRuleParam
 export vdW1fRule
 
 """
@@ -25,6 +23,10 @@ c̄ = ∑cᵢxᵢ
 ```
 """
 vdW1fRule
+
+function vdW1fRule(components; activity = nothing, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+    vdW1fRule()
+end
 
 function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b,c)
     n = sum(z)
@@ -52,6 +54,4 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a
     return ā,b̄,c̄
 end
 
-
-
-#is_splittable(::vdW1fRule) = false
+is_splittable(::vdW1fRule) = false

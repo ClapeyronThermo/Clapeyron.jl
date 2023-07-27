@@ -1,9 +1,6 @@
 abstract type ClausiusAlphaModel <: AlphaModel end
 
-struct ClausiusAlphaParam <: EoSParam
-end
-
-@newmodelsimple ClausiusAlpha ClausiusAlphaModel ClausiusAlphaParam
+@newmodelsimple ClausiusAlpha ClausiusAlphaModel NoParam
 export ClausiusAlpha
 
 """
@@ -45,5 +42,3 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::ClausiusAl
     Tc = model.params.Tc.values[1]
     α = Tc/T
 end
-
-#is_splittable(::ClausiusAlpha) = false

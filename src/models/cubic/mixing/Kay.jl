@@ -1,9 +1,6 @@
 abstract type KayRuleModel <: MixingRule end
 
-struct KayRuleParam <: EoSParam
-end
-
-@newmodelsimple KayRule KayRuleModel KayRuleParam
+struct KayRule <: KayRuleModel end
 
 """
     KayRule <: KayRuleModel
@@ -29,6 +26,10 @@ c̄ = ∑cᵢxᵢ
 ```
 """
 KayRule
+
+function KayRule(components; activity = nothing, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+    KayRule()
+end
 
 export KayRule
 
@@ -60,4 +61,5 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b
     return ā,b̄,c̄
 end
 
-#is_splittable(::KayRule) = false
+is_splittable(::KayRule) = false
+

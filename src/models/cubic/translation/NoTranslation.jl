@@ -1,9 +1,7 @@
 abstract type NoTranslationModel <: TranslationModel end
 
-struct NoTranslationParam <: EoSParam
-end
 
-@newmodelsimple NoTranslation NoTranslationModel NoTranslationParam
+@newmodelsimple NoTranslation NoTranslationModel NoParam
 
 export NoTranslation
 
@@ -31,6 +29,3 @@ function translation(model::CubicModel,V,T,z,translation_model::NoTranslation)
 end
 
 recombine_translation!(model::CubicModel,translation_model::NoTranslation) = translation_model
-
-
-#is_splittable(::NoTranslation) = false

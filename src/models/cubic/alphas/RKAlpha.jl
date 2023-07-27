@@ -1,9 +1,6 @@
 abstract type RKAlphaModel <: AlphaModel end
 
-struct RKAlphaParam <: EoSParam
-end
-
-@newmodelsimple RKAlpha RKAlphaModel RKAlphaParam
+@newmodelsimple RKAlpha RKAlphaModel NoParam
 export RKAlpha
 
 """
@@ -47,5 +44,3 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::RKAlphaMod
     Tr = T/Tc
     α = 1 /√(Tr)
 end
-
-#is_splittable(::RKAlpha) = false

@@ -45,6 +45,7 @@ export PenelouxTranslation
 default_locations(::Type{PenelouxTranslation}) = critical_data()
 default_references(::Type{PenelouxTranslation}) = ["10.1016/0378-3812(82)80002-2"]
 function transform_params(::Type{PenelouxTranslation},params)
+    components = params["Vc"].components
     v_shift = SingleParam("Volume shift",components,zeros(length(components)))
     v_shift.ismissingvalues .= true
     params["v_shift"] = v_shift
