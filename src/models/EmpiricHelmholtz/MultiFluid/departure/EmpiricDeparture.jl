@@ -125,7 +125,7 @@ aᵣᵢⱼ = ∑nᵢⱼ₋ₖδ^(dᵢⱼ₋ₖ)*τ^(tᵢⱼ₋ₖ) +
 EmpiricDeparture
 default_locations(::Type{EmpiricDeparture}) = ["Empiric/departure/empiric_unlike.csv"]
 default_getparams_arguments(::Type{EmpiricDeparture},userlocations,verbose) = ParamOptions(;userlocations,verbose,asymmetricparams = ["F","parameters"])
-function transform_params(::Type{EmpiricDeparture},params)
+function transform_params(::Type{EmpiricDeparture},params,components)
     raw_parameters = params["parameters"]
     F = params["F"]
     s1,s2 = size(F.values)

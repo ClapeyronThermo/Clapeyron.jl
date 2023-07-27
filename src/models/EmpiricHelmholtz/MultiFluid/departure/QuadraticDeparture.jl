@@ -30,7 +30,7 @@ aᵣᵢⱼ = 0.5*(aᵣᵢ + aᵣⱼ)*(1 - (k₀ + k₁T))
 QuadraticDeparture
 default_locations(::Type{QuadraticDeparture}) = ["Empiric/departure/quadratic_departure_unlike.csv"]
 default_references(::Type{QuadraticDeparture}) = ["10.1021/acs.iecr.1c01186","10.1016/j.fluid.2018.04.015"]
-function transform_params(::Type{QuadraticDeparture},params)
+function transform_params(::Type{QuadraticDeparture},params,components)
     k0 = get(params,"k0",nothing)
     k1 = get(params,"k1",nothing)
     k0 === nothing && (k0 = PairParam("k0",components))

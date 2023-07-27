@@ -39,7 +39,7 @@ V = (R̄Tc/Pc)Zc^(1+(1-Tr)^(2/7))
 RackettLiquid
 default_locations(::Type{RackettLiquid}) = critical_data()
 default_references(::Type{RackettLiquid}) = ["10.1021/je60047a012"]
-function transform_params(::Type{RackettLiquid},params)
+function transform_params(::Type{RackettLiquid},params,components)
     Tc = params["Tc"]
     Pc = params["Pc"]
     vc = params["Vc"]

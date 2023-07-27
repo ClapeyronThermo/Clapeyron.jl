@@ -82,7 +82,7 @@ default_references(M) = String[]
 default_locations(M) = String[]
 default_gclocations(M) = String[]
 default_getparams_arguments(M,userlocations,verbose) = ParamOptions(;verbose,userlocations)
-transform_params(M,params) = params
+transform_params(M,params,components) = params
 """
     @newmodelgc modelname parent paramstype
 
@@ -398,7 +398,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         result[:components] = components
     end
     #perform any transformations
-    params_out = transform_params(M,params_in)
+    params_out = transform_params(M,params_in,components)
     
     #mix sites
     if has_sites(M)

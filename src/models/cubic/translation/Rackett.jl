@@ -40,8 +40,7 @@ RackettTranslation
 
 export RackettTranslation
 default_locations(::Type{RackettTranslation}) = critical_data()
-function transform_params(::Type{RackettTranslation},params)
-    components = params["Vc"].components
+function transform_params(::Type{RackettTranslation},params,components)
     v_shift = SingleParam("Volume shift",components,zeros(length(components)))
     v_shift.ismissingvalues .= true
     params["v_shift"] = v_shift
