@@ -16,7 +16,7 @@ end
         ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])])
 
     ideal1 = WalkerIdeal(["hexane"])
-    noparam1 = gc3.puremodel[1].translation
+    noparam1 = BasicIdeal()
     simple1 = gc3.puremodel[1].alpha
     model_structgc = structSAFTgammaMie(["ethanol","octane"])
     @testset "split_model" begin

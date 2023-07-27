@@ -77,12 +77,70 @@ macro f(func, args...)
         $func(model,V,T,z,$(args...))
     end |> esc
 end
+"""
+    default_locations(::Type{T}) where T <: EoSModel
 
-default_references(M) = String[]
+Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros. 
+
+Defines the default locations used for parsing the parameters for the input `EoSModel` type, relative to the database location.
+"""
+default_locations(m::EoSModel) = default_locations(parameterless_type(m))
 default_locations(M) = String[]
+
+"""
+    default_gclocations(::Type{T}) where T <: EoSModel
+
+Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros. 
+
+Defines the default locations used for parsing groups for the input `EoSModel` type, relative to the database location.
+"""
+default_gclocations(m::EoSModel) = default_gclocations(parameterless_type(m))
 default_gclocations(M) = String[]
+
+"""
+    default_getparams_arguments(::Type{T},userlocations,verbose) where T <: EoSModel
+
+Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros. 
+
+Defines the `ParamsOptions` object that is passed as arguments to `getparams`, when building the input `EoSModel`. 
+"""
 default_getparams_arguments(M,userlocations,verbose) = ParamOptions(;verbose,userlocations)
-transform_params(M,params,components) = params
+
+"""
+    transform_params(::Type{T},params) where T <: EoSModel
+    transform_params(::Type{T},params,components) where T <: EoSModel
+    transform_params(::Type{T},params,components,verbose) where T <: EoSModel
+
+Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros. 
+
+Given a collection of params, with `(keytype(params)) isa String`, returns a modified collection with all the parameters necessary to build the `params` field contained in the `EoSModel`.
+
+You can overload the 2, 3 or 4-argument version, depending on the need of a components vector, or if you want to customize the `verbose` message.
+
+## Example
+
+For the PC-SAFT equation of state, we perform Lorentz-Berthelot mixing of `epsilon` and `sigma`, and we scale the `sigma` parameters:
+```julia
+function transform_params(::Type{PCSAFT},params)
+    segment = params["segment"]
+        k = get(params,"k",nothing)
+        params["sigma"].values .*= 1E-10
+        sigma = sigma_LorentzBerthelot(params["sigma"])
+        epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
+        params["sigma"] = sigma
+        params["epsilon"] = epsilon
+        return params
+    end
+```
+"""
+function transform_params end
+
+transform_params(M,params) = params
+transform_params(M,params,components) = transform_params(M,params)
+function transform_params(M,params,components,verbose)
+    verbose && @info "generating parameters for $M"
+    transform_params(M,params,components)
+end
 """
     @newmodelgc modelname parent paramstype
 
@@ -197,16 +255,6 @@ Even simpler model, primarily for the ideal models.
 Contains neither sites nor ideal models.
 """
 macro newmodelsimple(name, parent, paramstype)
-
-    if parent == :nothing
-        noargs = quote
-            $name() = name(String[],nothing,String[])
-
-            is_splittable(::$name) = false
-        end
-    else
-        noargs = quote end
-    end
     
     return quote
         struct $name <: $parent
@@ -216,11 +264,8 @@ macro newmodelsimple(name, parent, paramstype)
         end
 
         function $name(components;userlocations = String[],verbose = false)
-            build_eosmodel($name,components,nothing,userlocations,nothing,nothing,verbose,nothing)
+            Clapeyron.build_eosmodel($name,components,nothing,userlocations,nothing,nothing,verbose,nothing)
         end
-
-        $noargs
-
     end |> esc
 end
 
@@ -398,7 +443,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         result[:components] = components
     end
     #perform any transformations
-    params_out = transform_params(M,params_in,components)
+    params_out = transform_params(M,params_in,components,verbose)
     
     #mix sites
     if has_sites(M)

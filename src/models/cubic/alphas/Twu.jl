@@ -36,7 +36,7 @@ TwuAlpha
 export TwuAlpha
 default_locations(::Type{TwuAlpha}) = ["alpha/Twu/Twu_like.csv"]
 
-doi(::TwuAlpha) = ["10.1016/0378-3812(80)80003-3"]
+default_references(::Type{TwuAlpha}) = ["10.1016/0378-3812(80)80003-3"]
 
 function α_function(model::CubicModel,V,T,z,alpha_model::TwuAlphaModel)
     Tc = model.params.Tc.values

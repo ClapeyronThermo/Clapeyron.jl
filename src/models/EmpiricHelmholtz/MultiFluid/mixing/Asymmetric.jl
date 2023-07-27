@@ -59,7 +59,7 @@ AsymmetricMixing
 default_locations(::Type{AsymmetricMixing}) = ["Empiric/departure/empiric_unlike.csv"]
 default_references(::Type{AsymmetricMixing}) = ["Klimeck, Ph.D. dissertation"]
 default_getparams_arguments(::Type{AsymmetricMixing},userlocations,verbose) = ParamOptions(;userlocations,verbose,asymmetricparams = ["beta_v","beta_T"])
-function transform_params(::Type{AsymmetricMixing},params,components)
+function transform_params(::Type{AsymmetricMixing},params)
     beta_v = params["beta_v"]
     beta_T = params["beta_T"]
     mirror_pair!(beta_T,inv)

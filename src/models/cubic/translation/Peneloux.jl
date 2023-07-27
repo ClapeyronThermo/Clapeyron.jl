@@ -51,7 +51,7 @@ function transform_params(::Type{PenelouxTranslation},params,components)
     return params
 end
 
-doi(::PenelouxTranslation) = ["10.1016/0378-3812(82)80002-2"]
+default_references(::Type{PenelouxTranslation}) = ["10.1016/0378-3812(82)80002-2"]
 
 function translation(model::CubicModel,V,T,z,translation_model::PenelouxTranslation)
     c = translation_model.params.v_shift
