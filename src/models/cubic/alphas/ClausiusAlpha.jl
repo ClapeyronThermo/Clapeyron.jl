@@ -1,6 +1,5 @@
 abstract type ClausiusAlphaModel <: AlphaModel end
-
-@newmodelsimple ClausiusAlpha ClausiusAlphaModel NoParam
+@newmodelsingleton ClausiusAlpha ClausiusAlphaModel
 export ClausiusAlpha
 
 """

@@ -1,5 +1,6 @@
 abstract type vdW1fRuleModel <: MixingRule end
 
+#we don't use newmodelsingleton here, the default constructor requires passing activity as a param.
 struct vdW1fRule <: vdW1fRuleModel end
 
 export vdW1fRule

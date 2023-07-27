@@ -19,6 +19,7 @@ Pages = ["macros.md"]
 Clapeyron.@newmodelgc
 Clapeyron.@newmodel
 Clapeyron.@newmodelsimple
+Clapeyron.@newmodelsingleton
 Clapeyron.@registermodel
 ```
 

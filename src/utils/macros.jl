@@ -80,7 +80,7 @@ end
 """
     default_locations(::Type{T}) where T <: EoSModel
 
-Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros. 
+Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros.
 
 Defines the default locations used for parsing the parameters for the input `EoSModel` type, relative to the database location.
 """
@@ -90,7 +90,7 @@ default_locations(M) = String[]
 """
     default_gclocations(::Type{T}) where T <: EoSModel
 
-Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros. 
+Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros.
 
 Defines the default locations used for parsing groups for the input `EoSModel` type, relative to the database location.
 """
@@ -100,9 +100,9 @@ default_gclocations(M) = String[]
 """
     default_getparams_arguments(::Type{T},userlocations,verbose) where T <: EoSModel
 
-Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros. 
+Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros.
 
-Defines the `ParamsOptions` object that is passed as arguments to `getparams`, when building the input `EoSModel`. 
+Defines the `ParamsOptions` object that is passed as arguments to `getparams`, when building the input `EoSModel`.
 """
 default_getparams_arguments(M,userlocations,verbose) = ParamOptions(;verbose,userlocations)
 
@@ -111,7 +111,7 @@ default_getparams_arguments(M,userlocations,verbose) = ParamOptions(;verbose,use
     transform_params(::Type{T},params,components) where T <: EoSModel
     transform_params(::Type{T},params,components,verbose) where T <: EoSModel
 
-Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros. 
+Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros.
 
 Given a collection of params, with `(keytype(params)) isa String`, returns a modified collection with all the parameters necessary to build the `params` field contained in the `EoSModel`.
 
@@ -255,7 +255,7 @@ Even simpler model, primarily for the ideal models.
 Contains neither sites nor ideal models.
 """
 macro newmodelsimple(name, parent, paramstype)
-    
+
     return quote
         struct $name <: $parent
             components::Array{String,1}
@@ -268,6 +268,22 @@ macro newmodelsimple(name, parent, paramstype)
         end
     end |> esc
 end
+
+"""
+    @newmodelsingleton name parent
+
+A macro that defines an EoSModel without any fields (\"singleton\" struct.). useful for defining EoS that don't use any parameters, while being composable with other `EoSModels`.
+"""
+macro newmodelsingleton(name,parent)
+    quote
+    struct $name <: $parent end
+    Clapeyron.is_splittable(::$name) = false
+    function $name(components;userlocations = String[],verbose = false)
+        return $name()
+    end
+    end |> esc
+end
+
 
 function build_model(::Type{model},params::EoSParam,
         groups::GroupParam,
@@ -410,7 +426,8 @@ end
 given an existing model, composed of Clapeyron EoS models, ClapeyronParams or EoSParams, it will generate
 the necessary traits to make the model compatible with Clapeyron routines.
 
-
+!!! info
+    This macro is a no-op from Clapeyron 0.5 onwards.
 """
 macro registermodel(model)
     esc(model)
@@ -419,7 +436,7 @@ end
 function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options = nothing) where M <: EoSModel
 
     paramtype = fieldtype(M,:params)
-    
+
     #non-splittable
     if paramtype === Nothing
         return M()
@@ -444,7 +461,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     end
     #perform any transformations
     params_out = transform_params(M,params_in,components,verbose)
-    
+
     #mix sites
     if has_sites(M)
         assoc_mix!(params_out,assoc_options)
@@ -479,7 +496,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     return M((result[k] for k in fieldnames(M))...)
 end
 
-export @newmodel, @f, @newmodelgc, @newmodelsimple
+export @newmodel, @f, @newmodelgc, @newmodelsimple, @newmodelsingleton
 #=
 function __newmodel(name, parent, paramstype,sites,idealmodel)
 

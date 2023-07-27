@@ -1,7 +1,6 @@
 abstract type RKAlphaModel <: AlphaModel end
 
-struct RKAlpha <: RKAlphaModel end
-is_splittable(::RKAlpha) = false
+@newmodelsingleton RKAlpha RKAlphaModel
 
 """
     RKAlpha <: RKAlphaModel
@@ -27,9 +26,7 @@ Trᵢ = T/Tcᵢ
 ```
 
 """
-function RKAlpha(components;userlocations = String[],verbose = false)
-    return RKAlpha()
-end
+RKAlpha
 
 function α_function(model::CubicModel,V,T,z,alpha_model::RKAlphaModel)
     Tc = model.params.Tc.values

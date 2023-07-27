@@ -7,9 +7,6 @@ abstract type ClapeyronParam end
 abstract type EoSParam end
 export EoSParam
 
-struct NoParam <: EoSParam end
-is_splittable(::NoParam) = false
-
 custom_show(param::EoSParam) = _custom_show_param(typeof(param))
 
 function _custom_show_param(::Type{T}) where T <: EoSParam

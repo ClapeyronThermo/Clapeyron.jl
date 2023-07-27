@@ -1,9 +1,5 @@
 abstract type NoTranslationModel <: TranslationModel end
-
-struct NoTranslation <: NoTranslationModel end
-
-is_splittable(::NoTranslation) = false
-
+@newmodelsingleton NoTranslation NoTranslationModel
 export NoTranslation
 
 """
@@ -23,9 +19,7 @@ cᵢ = 0 ∀ i
 ```
 
 """
-function NoTranslation(components;userlocations = String[],verbose = false)
-    return NoTranslation()
-end
+NoTranslation
 
 function translation(model::CubicModel,V,T,z,translation_model::NoTranslation)
     return FillArrays.Zeros{Float64}(length(z))

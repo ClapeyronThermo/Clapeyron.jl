@@ -1,5 +1,6 @@
 abstract type KayRuleModel <: MixingRule end
 
+#we don't use newmodelsingleton here, the default constructor requires passing activity as a param.
 struct KayRule <: KayRuleModel end
 
 """
