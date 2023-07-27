@@ -16,7 +16,7 @@ end
         ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])])
 
     ideal1 = WalkerIdeal(["hexane"])
-    noparam1 = BasicIdeal()
+    noparam1 = gc3.puremodel[1].translation
     simple1 = gc3.puremodel[1].alpha
     model_structgc = structSAFTgammaMie(["ethanol","octane"])
     @testset "split_model" begin
@@ -105,7 +105,7 @@ end
         @test repr("text/plain",model2) == "PCSAFT{BasicIdeal} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"
         #@newmodelsimple
         @test repr(noparam1) == "NoTranslation()"
-        @test repr("text/plain",noparam1) == "NoTranslation"
+        @test repr("text/plain",noparam1) == "NoTranslation()"
         @test repr(simple1) == "PRAlpha(\"propane\")"
         @test repr("text/plain",simple1) == "PRAlpha with 1 component:\n \"propane\"\nContains parameters: acentricfactor"
     end
