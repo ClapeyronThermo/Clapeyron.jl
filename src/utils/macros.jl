@@ -142,22 +142,20 @@ function transform_params(M,params,components_or_groups,verbose)
     transform_params(M,params,components_or_groups)
 end
 """
-    @newmodelgc modelname parent paramstype
+    @newmodelgc modelname parent paramstype [sitemodel = true, use_struct_param = false]
 
 This is a data type that contains all the information needed to use an EoS model.
 It also functions as an identifier to ensure that the right functions are called.
 
-The user is expected to create an outter constructor that takes this signature
+You can pass an optional 4th `Bool` argument  indicating if you want to use sites with this model or not. defaults to `true`
 
-    function modelname(components::Array{String,1})
-
-It should then return name(params::paramtype, groups::GroupParam, sites::SiteParam, idealmodel::IdealModel)
+You can also pass another optional 5th `Bool` argument indicating if a second order GroupParam (`StructGroupParam`) is used or not. defaults to `false`
 
 = Fields =
 The Struct consists of the following fields:
 
 * components: a string lists of components
-* groups: a [`GroupParam`](@ref)
+* groups: a [`GroupParam`](@ref) or [`StructGroupParam`](@ref)
 * sites: a [`SiteParam`](@ref)
 * params: the Struct paramstype that contains all parameters in the model
 * idealmodel: the IdealModel struct that determines which ideal model to use
@@ -166,12 +164,19 @@ The Struct consists of the following fields:
 
 See the tutorial or browse the implementations to see how this is used.
 """
-macro newmodelgc(name, parent, paramstype,sitemodel = true)
+macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = false)
+    
+    if use_struct_param
+        grouptype = :GroupParam
+    else
+        grouptype = :StructGroupParam
+    end
+
     res = if sitemodel
         quote
             struct $name{T <: IdealModel} <: $parent
                 components::Array{String,1}
-                groups::Clapeyron.GroupParam
+                groups::Clapeyron.$grouptype
                 sites::Clapeyron.SiteParam
                 params::$paramstype
                 idealmodel::T
@@ -184,7 +189,7 @@ macro newmodelgc(name, parent, paramstype,sitemodel = true)
                 userlocations = String[],
                 group_userlocations = String[],
                 ideal_userlocations = String[],
-                assoc_options = Clapeyron.AssocOptions(),
+                assoc_options = Clapeyron.default_assoc_options($name),
                 verbose = false)
 
                 Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options)
@@ -194,7 +199,7 @@ macro newmodelgc(name, parent, paramstype,sitemodel = true)
         quote
             struct $name{T <: IdealModel} <: $parent
                 components::Array{String,1}
-                groups::Clapeyron.GroupParam
+                groups::Clapeyron.$grouptype
                 params::$paramstype
                 idealmodel::T
                 references::Array{String,1}
@@ -261,7 +266,7 @@ macro newmodel(name, parent, paramstype,sitemodel = true)
                 idealmodel = Clapeyron.BasicIdeal,
                 userlocations = String[],
                 ideal_userlocations = String[],
-                assoc_options = Clapeyron.AssocOptions(),
+                assoc_options = Clapeyron.default_assoc_options($name),
                 verbose = false)
 
                 Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,nothing,ideal_userlocations,verbose,assoc_options)
@@ -324,79 +329,6 @@ macro newmodelsingleton(name,parent)
         return $name()
     end
     end |> esc
-end
-
-function build_model(::Type{model},params::EoSParam,
-        groups::GroupParam,
-        sites::SiteParam,
-        idealmodel = BasicIdeal;
-        ideal_userlocations=String[],
-        references::Vector{String}=String[],
-        assoc_options::AssocOptions = AssocOptions(),
-        verbose::Bool = false) where model <:EoSModel
-
-    components = groups.components
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    return model(components,
-    groups,
-    sites,
-    params, init_idealmodel, assoc_options, references)
-end
-
-function build_model(::Type{model},params::EoSParam,
-        groups::GroupParam,
-        idealmodel = BasicIdeal;
-        ideal_userlocations=String[],
-        references::Vector{String}=String[],
-        assoc_options::AssocOptions = AssocOptions(),
-        verbose::Bool = false) where model <:EoSModel
-
-    sites = SiteParam(groups.components)
-    return model(params,groups,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
-end
-
-#non GC
-function build_model(::Type{model},params::EoSParam,
-        sites::SiteParam,
-        idealmodel = BasicIdeal;
-        ideal_userlocations=String[],
-        references::Vector{String}=String[],
-        assoc_options::AssocOptions = AssocOptions(),
-        verbose::Bool = false) where model <:EoSModel
-
-    components = sites.components
-
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    return model(components,
-    sites, params, init_idealmodel, assoc_options, references)
-end
-
-
-#normal macro model
-function build_model(::Type{model},params::EoSParam,
-        idealmodel;
-        ideal_userlocations=String[],
-        references::Vector{String}=String[],
-        assoc_options::AssocOptions = AssocOptions(),
-        verbose::Bool = false) where model <:EoSModel
-
-    arbparam = arbitraryparam(params)
-    components = arbparam.components
-    sites = SiteParam(components)
-    return model(params,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
-end
-
-function build_model(::Type{model},params::EoSParam;
-    references::Vector{String}=String[],
-    verbose::Bool = false) where model <:EoSModel
-    #if there isnt any params, just put empty values.
-    if Base.issingletontype(typeof(params))
-        components = String[]
-    else
-        arbparam = arbitraryparam(params)
-        components = arbparam.components
-    end
-    return model(components,params,references)
 end
 
 """
@@ -488,6 +420,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     #all fields of the model.
     result = Dict{Symbol,Any}()
 
+
     #parse params from database.
     options = default_getparams_arguments(M,userlocations,verbose)
     if has_groups(M)
@@ -500,8 +433,22 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         params_in = getparams(components, default_locations(M),options)
         result[:components] = components
     end
-    #perform any transformations
-    params_out = transform_params(M,params_in,components,verbose)
+    
+    #put AssocOptions inside params, so it can be used in transform_params
+    if has_sites(M)
+        if !haskey(params_in,"assoc_options")
+            params_in["assoc_options"] = assoc_options
+        else
+            throw(error("cannot overwrite \"assoc_options\" key, already exists!"))
+        end
+    end
+
+    #perform any transformations, pass components or groups
+    if has_groups(M)
+        params_out = transform_params(M,params_in,groups,verbose)
+    else
+        params_out = transform_params(M,params_in,components,verbose)
+    end
 
     #mix sites
     if has_sites(M)

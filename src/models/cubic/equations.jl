@@ -369,25 +369,25 @@ function wilson_k_values(model::ABCubicModel, p, T, crit = nothing)
     Tc = model.params.Tc.values
     α = typeof(model.alpha)
 
-    w1 = getparam(model.alpha,:acentricfactor)
-    if w1 !== nothing
-        return w1.values
-    end
+    w1 = getparam(model,:acentricfactor)
+    w2 = getparam(model.alpha,:acentricfactor)
 
-    w2 = getparam(model,:acentricfactor)
-    if w2 !== nothing
-        return w1.values
-    end
     #we can find stored acentric factor values, so we calculate those
-    pure = split_model(model)
-    ω = zero(Tc)
-    for i in 1:length(Tc)
-        ps = first(saturation_pressure(pure[i], 0.7 * Tc[i]))
-        ω[i] = -log10(ps / Pc[i]) - 1.0
+    if w1 !== nothing
+        ω = w1.values
+    elseif w2 !== nothing
+        ω = w2.values
+    else
+        pure = split_model(model)
+        ω = zero(Tc)
+        for i in 1:length(Tc)
+            ps = first(saturation_pressure(pure[i], 0.7 * Tc[i]))
+            ω[i] = -log10(ps / Pc[i]) - 1.0
+        end
     end
-
 
     return @. Pc / p * exp(5.373 * (1 + ω) * (1 - Tc / T))
+
 end
 
 function vdw_tv_mix(Tc,Vc,z)

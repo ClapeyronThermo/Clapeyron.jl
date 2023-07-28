@@ -9,8 +9,8 @@ end
 
 abstract type ogSAFTModel <: SAFTModel end
 @newmodel ogSAFT ogSAFTModel ogSAFTParam
-default_references(::Type{ogSAFT}) = ["10.1021/IE00107A014", "10.1021/ie00056a050"]
-default_locations(::Type{ogSAFT}) = ["SAFT/CKSAFT","properties/molarmass.csv"]
+default_references(::Type{ogSAFT}) = ["10.1021/ie00104a021","10.1016/0378-3812(89)80308-5"]
+default_locations(::Type{ogSAFT}) = ["SAFT/ogSAFT","properties/molarmass.csv"]
 function transform_params(::Type{ogSAFT},params)
     sigma = params["sigma"]
     sigma.values .*= 1E-10

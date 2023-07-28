@@ -8,7 +8,8 @@ struct BACKSAFTParam <: EoSParam
 end
 
 abstract type BACKSAFTModel <: SAFTModel end
-@newmodel BACKSAFT BACKSAFTModel BACKSAFTParam
+#BACKSAFT does not define association.
+@newmodel BACKSAFT BACKSAFTModel BACKSAFTParam false
 default_references(::Type{BACKSAFT}) = ["10.1016/s0378-3812(02)00093-6"]
 default_locations(::Type{BACKSAFT}) = ["SAFT/BACKSAFT","properties/molarmass.csv"]
 function transform_params(::Type{BACKSAFT},params)

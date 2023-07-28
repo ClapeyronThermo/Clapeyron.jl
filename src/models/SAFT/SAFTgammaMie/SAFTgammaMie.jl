@@ -136,8 +136,7 @@ function SAFTgammaMie(components;
     vrparams = SAFTVRMieParam(mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
 
     idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-
-    vr = SAFTVRMie(vrparams, comp_sites, idmodel; ideal_userlocations, verbose, assoc_options)
+    vr = SAFTVRMie(components,comp_sites,vrparams,idmodel,assoc_options,default_references(SAFTVRMie))
     γmierefs = ["10.1063/1.4851455", "10.1021/je500248h"]
     gmie = SAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,epsilon_mixing,assoc_options,γmierefs)
     return gmie
@@ -145,8 +144,6 @@ end
 
 mw(model::SAFTgammaMieModel) = mw(model.vrmodel)
 molecular_weight(model::SAFTgammaMieModel,z = SA[1.]) = molecular_weight(model.vrmodel,z)
-
-@registermodel SAFTgammaMie
 
 const SAFTγMie = SAFTgammaMie
 export SAFTgammaMie,SAFTγMie

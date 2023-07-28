@@ -48,9 +48,7 @@ function transform_params(::Type{CPLNGEstIdeal},params,components)
     b = 2.1517e-1  .* γ₀ .- 6.8687e-2 
     c = -1.3337e-4 .* γ₀ .+ 8.6387e-5
     d = 3.1474e-8  .* γ₀ .- 2.8396e-8
-    reid = ReidIdealParam(a,b,c,d,components)
-    coeffs = reid.coeffs
-    params["coeffs"] = coeffs
+    params["coeffs"] = reid_coeffs(a,b,c,d,components)
     return params
 end
 

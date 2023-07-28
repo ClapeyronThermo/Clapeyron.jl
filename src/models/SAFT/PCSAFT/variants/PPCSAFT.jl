@@ -13,7 +13,7 @@ abstract type PPCSAFTModel <: PCSAFTModel end
 @newmodel PPCSAFT PPCSAFTModel PPCSAFTParam
 default_references(::Type{PPCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 default_locations(::Type{PPCSAFT}) = ["SAFT/PCSAFT/PPCSAFT/","properties/molarmass.csv"]
-function transform_params(::Type{PPCSAFT},params)
+function transform_params(::Type{PPCSAFT},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
     params = saft_lorentz_berthelot(params)

@@ -56,7 +56,7 @@ If there is no data present, the parameters can be estimated:
 1. R. Klimeck, Ph.D. dissertation, Ruhr-Universit¨at Bochum, 2000
 """
 AsymmetricMixing
-default_locations(::Type{AsymmetricMixing}) = ["Empiric/departure/empiric_unlike.csv"]
+default_locations(::Type{AsymmetricMixing}) = ["Empiric/mixing/AsymmetricMixing/asymmetric_mixing_unlike.csv"]
 default_references(::Type{AsymmetricMixing}) = ["Klimeck, Ph.D. dissertation"]
 default_getparams_arguments(::Type{AsymmetricMixing},userlocations,verbose) = ParamOptions(;userlocations,verbose,asymmetricparams = ["beta_v","beta_T"])
 function transform_params(::Type{AsymmetricMixing},params)
@@ -112,7 +112,7 @@ function recombine_mixing!(model::MultiFluid,mixing::AsymmetricMixing,estimate)
 end
 
 function __error_estimate_multifluid(i,j)
-    throw(error("estimate was set to off, but there are missing values at ($i),($j). you can pass force_estimate = :lb or force_estimate = :linear to calculate mixing values."))
+    throw(error("estimate was set to off, but there are missing values at ($i),($j). you can pass estimate_mixing = :lb or estimate_mixing = :linear to calculate mixing values."))
 end
 
 function v_scale(model::MultiFluid,z,mixing::AsymmetricMixing,∑z)

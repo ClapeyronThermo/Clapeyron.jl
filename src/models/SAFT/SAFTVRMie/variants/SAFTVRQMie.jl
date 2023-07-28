@@ -8,7 +8,8 @@ struct SAFTVRQMieParam <: EoSParam
 end
 
 abstract type SAFTVRQMieModel <: SAFTVRMieModel end
-@newmodel SAFTVRQMie SAFTVRQMieModel SAFTVRQMieParam
+#SAFT-VRQ-Mie does not have sites.
+@newmodel SAFTVRQMie SAFTVRQMieModel SAFTVRQMieParam false
 default_references(::Type{SAFTVRQMie}) = ["10.1063/1.5111364","10.1063/1.5136079"]
 default_locations(::Type{SAFTVRQMie}) = ["SAFT/SAFTVRQMie"]
 function transform_params(::Type{SAFTVRQMie},params)

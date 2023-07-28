@@ -2,19 +2,21 @@ struct ReidIdealParam <: EoSParam
     coeffs::SingleParam{NTuple{4,Float64}}
 end
 
-function ReidIdealParam(a::SingleParam,b::SingleParam,c::SingleParam,d::SingleParam)
+
+
+function reid_coeffs(a::SingleParam,b::SingleParam,c::SingleParam,d::SingleParam)
     comps = a.components
     a = a.values
     b = b.values
     c = c.values
     d = d.values
-    return ReidIdealParam(a,b,c,d,comps)
+    return reid_coeffs(a,b,c,d,comps)
 end
 
-function ReidIdealParam(a,b,c,d,comps)
+function reid_coeffs(a,b,c,d,comps)
     n = length(a)
     coeffs = [(a[i],b[i],c[i],d[i]) for i in 1:n]
-    ReidIdealParam(SingleParam("Reid Coefficients",comps,coeffs))
+    SingleParam("Reid Coefficients",comps,coeffs)
 end
 
 abstract type ReidIdealModel <: IdealModel end
