@@ -8,15 +8,26 @@ struct gcPCSAFTParam <: EoSParam
 end
 
 abstract type gcPCSAFTModel <: PCSAFTModel end
+@newmodelgc gcPCSAFT gcPCSAFTModel gcPCSAFTParam true true
+default_references(::Type{gcPCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
+default_locations(::Type{gcPCSAFT}) = ["SAFT/PCSAFT/gcPCSAFT","properties/molarmass_groups.csv"]
+default_gclocations(::Type{gcPCSAFT}) = ["SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_groups.csv","SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_intragroups.csv"]
+function transform_params(::Type{gcPCSAFT},params,groups)
+    sigma = params["sigma"]
+    sigma.values .*= 1E-10
+    params = saft_lorentz_berthelot(params)
+    
+    sigma = params["sigma"]
+    comp_sites = gc_to_comp_sites(sites,groups)
+    params["sites"] = comp_sites
+    gc_epsilon_assoc = params["epsilon_assoc"]
+    gc_bondvol = params["bondvol"]
+    assoc_options = params["assoc_options"]
 
-struct gcPCSAFT{I} <: gcPCSAFTModel
-    components::Vector{String}
-    groups::StructGroupParam
-    sites::SiteParam
-    params::gcPCSAFTParam
-    idealmodel::I
-    assoc_options::AssocOptions
-    references::Array{String,1}
+    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options) #combining rules for association
+    params["bondvol"] = gc_to_comp_sites(gc_bondvol,comp_sites)
+    params["epsilon_assoc"] = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
+    return params
 end
 
 """
@@ -53,44 +64,6 @@ Heterogeneous Group-contribution Perturbed-Chain SAFT (gc-PC-SAFT)
 gcPCSAFT
 
 export gcPCSAFT
-function gcPCSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
-
-    groups = StructGroupParam(components, ["SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_groups.csv","SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_intragroups.csv"])
-    params = getparams(groups, ["SAFT/PCSAFT/gcPCSAFT","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
-    sites = params["sites"]
-    components = groups.components
-    
-    segment = params["segment"]
-    k = get(params,"k",nothing)
-    Mw = params["Mw"]
-    params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-
-    gc_epsilon_assoc = params["epsilon_assoc"]
-    gc_bondvol = params["bondvol"]
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options) #combining rules for association
-
-    comp_sites = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
-    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-
-    packagedparams = gcPCSAFTParam(Mw, segment, sigma, epsilon, comp_epsilon_assoc, comp_bondvol)
-    references = ["10.1021/ie0003887", "10.1021/ie010954d"]
-
-
-    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-
-    model = gcPCSAFT(components,groups,comp_sites,packagedparams, idmodel, assoc_options, references)
-    return model
-end
-
-@registermodel gcPCSAFT
 
 function lb_volume(model::gcPCSAFTModel, z = SA[1.0])
     vk  = model.groups.n_flattenedgroups
