@@ -17,13 +17,14 @@ function transform_params(::Type{gcPCSAFT},params,groups)
     sigma.values .*= 1E-10
     params = saft_lorentz_berthelot(params)
     
-    sigma = params["sigma"]
+    sites = params["sites"]
     comp_sites = gc_to_comp_sites(sites,groups)
     params["sites"] = comp_sites
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
     assoc_options = params["assoc_options"]
-
+    
+    sigma = params["sigma"]
     gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options) #combining rules for association
     params["bondvol"] = gc_to_comp_sites(gc_bondvol,comp_sites)
     params["epsilon_assoc"] = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)

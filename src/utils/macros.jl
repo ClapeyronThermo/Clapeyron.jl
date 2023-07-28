@@ -156,7 +156,7 @@ The Struct consists of the following fields:
 
 * components: a string lists of components
 * groups: a [`GroupParam`](@ref) or [`StructGroupParam`](@ref)
-* sites: a [`SiteParam`](@ref)
+* sites: a [`SiteParam`](@ref) (optional)
 * params: the Struct paramstype that contains all parameters in the model
 * idealmodel: the IdealModel struct that determines which ideal model to use
 * assoc_options: struct containing options for the association solver. see [`AssocOptions`](@ref)
@@ -167,9 +167,9 @@ See the tutorial or browse the implementations to see how this is used.
 macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = false)
     
     if use_struct_param
-        grouptype = :GroupParam
-    else
         grouptype = :StructGroupParam
+    else
+        grouptype = :GroupParam
     end
 
     res = if sitemodel
@@ -424,7 +424,8 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     #parse params from database.
     options = default_getparams_arguments(M,userlocations,verbose)
     if has_groups(M)
-        groups =  GroupParam(components,default_gclocations(M);group_userlocations,verbose)
+        G = fieldtype(gcPCSAFT,:groups)
+        groups =  G(components,default_gclocations(M);group_userlocations,verbose)
         params_in = getparams(groups, default_locations(M),options)
         result[:groups] = groups
         result[:components] = groups.components

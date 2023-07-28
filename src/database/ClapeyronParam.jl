@@ -60,6 +60,7 @@ include("params/AssocParam.jl")
 include("params/GroupParam.jl")
 include("params/SiteParam.jl")
 include("params/AssocOptions.jl")
+include("params/SpecialComp.jl")
 
 const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
 function Base.show(io::IO,param::SingleOrPair)
