@@ -18,7 +18,7 @@ default_assoc_options(::Type{pharmaPCSAFT}) = AssocOptions(combining = :elliott_
 function transform_params(::Type{pharmaPCSAFT},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
-    params["kT"] = get(params,"kT",PairParam("kT",components,zeros(n)))
+    params["kT"] = get(params,"kT",PairParam("kT",components,zeros(length(components))))
     params["water"] = SpecialComp(components,["water08"])
     return saft_lorentz_berthelot(params)
 end

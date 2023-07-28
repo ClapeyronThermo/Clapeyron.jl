@@ -149,7 +149,7 @@ function StructGroupParam(gccomponents::Vector,
     return StructGroupParam(gccomponents,group_locations,options,grouptype)
 end
 
-function StructGroupParam(components,
+function StructGroupParam(components::Vector,
     grouplocations::Array{String,1}=String[],
     options::ParamOptions = DefaultOptions,
     grouptype = :unknown)
