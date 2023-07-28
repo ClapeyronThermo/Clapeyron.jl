@@ -6,8 +6,6 @@ struct UMRRule{γ} <: UMRRuleModel
     references::Array{String,1}
 end
 
-@registermodel UMRRule
-
 """
     UMRRule{γ} <: UMRRuleModel
 

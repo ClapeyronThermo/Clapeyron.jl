@@ -18,7 +18,6 @@ struct Berthelot{T <: IdealModel,α,c,M} <: BerthelotModel
     idealmodel::T
     references::Array{String,1}
 end
-@registermodel Berthelot
 
 export Berthelot
 

@@ -15,7 +15,6 @@ struct ogUNIFAC{c<:EoSModel} <: ogUNIFACModel
     unifac_cache::UNIFACCache
 end
 
-@registermodel ogUNIFAC
 export ogUNIFAC
 
 """

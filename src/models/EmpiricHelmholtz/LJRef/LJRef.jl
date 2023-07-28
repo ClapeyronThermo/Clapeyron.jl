@@ -13,8 +13,6 @@ struct LJRef{M} <: EmpiricHelmholtzModel
     references::Vector{String}
 end
 
-@registermodel LJRef
-
 export LJRef
 
 """
@@ -232,8 +230,6 @@ function a_ideal(model::Union{LJRef,LJRefIdeal},V,T,z=SA[1.0])
     res -= log(V)
     return res
 end
-
-@registermodel LJRefIdeal
 
 """
     LJRefIdeal <: IdealModel

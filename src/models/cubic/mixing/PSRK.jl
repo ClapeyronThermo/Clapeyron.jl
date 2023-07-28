@@ -4,8 +4,6 @@ struct PSRKRule{γ} <: MHV1RuleModel
     references::Array{String,1}
 end
 
-@registermodel PSRKRule
-
 """
     PSRKRule{γ} <: MHV1RuleModel
 

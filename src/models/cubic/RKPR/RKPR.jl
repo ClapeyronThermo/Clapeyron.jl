@@ -11,7 +11,6 @@ struct RKPR{T <: IdealModel,α,c,M} <: RKPRModel
     references::Array{String,1}
 end
 
-@registermodel RKPR
 export RKPR
 
 """

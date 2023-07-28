@@ -12,8 +12,6 @@ struct PR{T <: IdealModel,α,c,γ} <:PRModel
     references::Array{String,1}
 end
 
-@registermodel PR
-
 """
     PR(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = PRAlpha,

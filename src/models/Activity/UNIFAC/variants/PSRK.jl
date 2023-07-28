@@ -62,8 +62,6 @@ function PSRKUNIFAC(components;
     return model
 end
 
-@registermodel PSRKUNIFAC
-
 #excess_g_comb(model::UNIFACModel,p,T,z=SA[1.0]) = excess_g_comb_original(model,p,T,z)
 
 export PSRKUNIFAC

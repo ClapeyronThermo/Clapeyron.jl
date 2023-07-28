@@ -12,7 +12,6 @@ struct PTV{T <: IdealModel,α,c,γ} <:PTVModel
     references::Array{String,1}
 end
 
-@registermodel PTV
 """
     PTV(components::Vector{String};
     idealmodel=BasicIdeal,

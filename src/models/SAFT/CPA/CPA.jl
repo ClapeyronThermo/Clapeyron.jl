@@ -20,8 +20,6 @@ struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
     references::Array{String,1}
 end
 
-@registermodel CPA
-
 """
     CPAModel <: EoSModel
 

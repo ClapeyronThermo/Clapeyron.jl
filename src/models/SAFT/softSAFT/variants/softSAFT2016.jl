@@ -19,8 +19,6 @@ struct softSAFT2016{T,LJ} <: softSAFT2016Model
     lj::LJ
 end
 
-@registermodel softSAFT2016
-
 """
     softSAFT2016Model <: softSAFTModel
 

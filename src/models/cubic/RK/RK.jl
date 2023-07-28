@@ -11,7 +11,6 @@ struct RK{T <: IdealModel,α,c,M} <: RKModel
     references::Array{String,1}
 end
 
-@registermodel RK
 export RK
 
 """

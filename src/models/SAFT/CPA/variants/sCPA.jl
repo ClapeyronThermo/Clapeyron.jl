@@ -10,7 +10,6 @@ struct sCPA{T <: IdealModel,c <: CubicModel} <: sCPAModel
     references::Array{String,1}
 end
 
-@registermodel sCPA
 export sCPA
 
 """

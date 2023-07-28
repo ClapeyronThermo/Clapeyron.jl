@@ -13,7 +13,6 @@ struct GEPCSAFT{T <: IdealModel,γ} <: GEPCSAFTModel
     references::Array{String,1}
 end
 
-@registermodel GEPCSAFT
 """
     PCSAFTModel <: SAFTModel
 

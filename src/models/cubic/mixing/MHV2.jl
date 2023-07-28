@@ -6,8 +6,6 @@ struct MHV2Rule{γ} <: MHV2RuleModel
     references::Array{String,1}
 end
 
-@registermodel MHV2Rule
-
 """
     MHV2Rule{γ} <: MHV2RuleModel
 
