@@ -15,15 +15,15 @@ export sCPA
 """
     sCPAModel <: CPAModel
 
-    function sCPA(components; 
-        idealmodel=BasicIdeal, 
-        cubicmodel=RK, 
-        alpha=sCPAAlpha, 
+    function sCPA(components;
+        idealmodel=BasicIdeal,
+        cubicmodel=RK,
+        alpha=sCPAAlpha,
         mixing=vdW1fRule,
         activity=nothing,
-        translation=NoTranslation, 
-        userlocations=String[], 
-        ideal_userlocations=String[], 
+        translation=NoTranslation,
+        userlocations=String[],
+        ideal_userlocations=String[],
         alpha_userlocations=String[],
         activity_userlocations=String[],
         mixing_userlocations=String[],
@@ -63,15 +63,15 @@ simplified CPA
 """
 sCPA
 
-function sCPA(components; 
-            idealmodel=BasicIdeal, 
-            cubicmodel=RK, 
-            alpha=sCPAAlpha, 
+function sCPA(components;
+            idealmodel=BasicIdeal,
+            cubicmodel=RK,
+            alpha=sCPAAlpha,
             mixing=vdW1fRule,
             activity=nothing,
-            translation=NoTranslation, 
-            userlocations=String[], 
-            ideal_userlocations=String[], 
+            translation=NoTranslation,
+            userlocations=String[],
+            ideal_userlocations=String[],
             alpha_userlocations=String[],
             activity_userlocations=String[],
             mixing_userlocations=String[],
@@ -98,13 +98,7 @@ function sCPA(components;
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-
-    if occursin("RK",string(cubicmodel))
-        cubicparams = RKParam(a, b, params["Tc"],params["Pc"],Mw)
-    elseif occursin("PR",string(cubicmodel))
-        cubicparams = PRParam(a, b, params["Tc"],params["Pc"],Mw)
-    end
-
+    cubicparams = ABCubicParam(a, b, params["Tc"],params["Pc"],Mw) #PR, RK, vdW
     init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
 
     references = ["10.1021/ie051305v"]

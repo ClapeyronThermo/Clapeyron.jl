@@ -33,3 +33,5 @@ species,Mw
 ## Breaking changes
 -  `IAPWS95`, `PropaneRef`, `Ammonia2023` are now of type `SingleFluid{EmpiricAncillary}`.
 - `GERG2008`, `EOS-LNG` are now of type `MultiFluid{EmpiricAncillary,AsymmetricMixing,EmpiricDeparture}`
+- `@newmodel` macros don't require defining external constructors anymore.
+- `SpecialComp` (used by `pharmaPCSAFT`) is now a `ClapeyronParam` instead of an `EoSModel`

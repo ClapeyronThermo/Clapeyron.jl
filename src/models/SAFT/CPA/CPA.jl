@@ -23,15 +23,15 @@ end
 """
     CPAModel <: EoSModel
 
-    function CPA(components; 
-        idealmodel=BasicIdeal, 
-        cubicmodel=RK, 
-        alpha=sCPAAlpha, 
+    function CPA(components;
+        idealmodel=BasicIdeal,
+        cubicmodel=RK,
+        alpha=sCPAAlpha,
         mixing=vdW1fRule,
         activity=nothing,
-        translation=NoTranslation, 
-        userlocations=String[], 
-        ideal_userlocations=String[], 
+        translation=NoTranslation,
+        userlocations=String[],
+        ideal_userlocations=String[],
         alpha_userlocations=String[],
         activity_userlocations=String[],
         mixing_userlocations=String[],
@@ -69,22 +69,22 @@ Cubic Plus Association (CPA) EoS
 CPA
 
 export CPA
-function CPA(components; 
-    idealmodel=BasicIdeal, 
-    cubicmodel=RK, 
-    alpha=CPAAlpha, 
+function CPA(components;
+    idealmodel=BasicIdeal,
+    cubicmodel=RK,
+    alpha=CPAAlpha,
     mixing=vdW1fRule,
     activity=nothing,
-    translation=NoTranslation, 
-    userlocations=String[], 
-    ideal_userlocations=String[], 
+    translation=NoTranslation,
+    userlocations=String[],
+    ideal_userlocations=String[],
     alpha_userlocations=String[],
     activity_userlocations=String[],
     mixing_userlocations=String[],
     translation_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-    
+
     params = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     sites = params["sites"]
     Mw  = params["Mw"]
@@ -104,13 +104,7 @@ function CPA(components;
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-
-    if occursin("RK",string(cubicmodel))
-        cubicparams = RKParam(a, b, params["Tc"],params["Pc"],Mw)
-    elseif occursin("PR",string(cubicmodel))
-        cubicparams = PRParam(a, b, params["Tc"],params["Pc"],Mw)
-    end
-
+    cubicparams = ABCubicParam(a, b, params["Tc"],params["Pc"],Mw) #PR, RK, vdW
     init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
 
     references = ["10.1021/ie051305v"]

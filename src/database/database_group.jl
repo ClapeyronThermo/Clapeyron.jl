@@ -140,7 +140,7 @@ function GroupParam(gccomponents,
     return GroupParam(gccomponents_parsed,_grouptype,groupsourcecsvs)
 end
 
-function StructGroupParam(gccomponents::Vector,
+function StructGroupParam(gccomponents,
     group_locations=String[];
     group_userlocations=String[],
     verbose::Bool = false,
