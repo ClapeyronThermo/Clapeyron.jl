@@ -12,8 +12,10 @@ struct WalkerIdealParam <: EoSParam
 end
 
 abstract type WalkerIdealModel <: IdealModel end
-@newmodelgc WalkerIdeal WalkerIdealModel WalkerIdealParam
-
+@newmodelgc WalkerIdeal WalkerIdealModel WalkerIdealParam false
+default_references(::Type{WalkerIdeal}) = ["10.1021/acs.jced.0c00723"]
+default_locations(::Type{WalkerIdeal}) = ["ideal/WalkerIdeal.csv"]
+default_gclocations(::Type{WalkerIdeal}) = ["ideal/WalkerIdeal_Groups.csv"]
 """
     WalkerIdeal <: WalkerIdealModel
     WalkerIdeal(components::Array{String,1}; 
@@ -49,31 +51,6 @@ Cpᵢ(T)/R = (5+NRot)/2 ∑νᵢₖ∑gₖᵥ(θₖᵥ/T)^2*exp(θₖᵥ/T)/(1-e
 WalkerIdeal
 
 export WalkerIdeal
-function WalkerIdeal(components::Array{String,1};
-    userlocations=String[],
-    group_userlocations = String[],
-    verbose=false)
-
-    groups = GroupParam(components,["ideal/WalkerIdeal_Groups.csv"], group_userlocations = group_userlocations, verbose=verbose)
-    params = getparams(groups, ["ideal/WalkerIdeal.csv"]; userlocations=userlocations, verbose=verbose)
-    Mw = params["Mw"]
-    Nrot = params["Nrot"]
-    theta1 = params["theta_1"]
-    theta2 = params["theta_2"]
-    theta3 = params["theta_3"]
-    theta4 = params["theta_4"]
-    deg1 = params["deg_1"]
-    deg2 = params["deg_2"]
-    deg3 = params["deg_3"]
-    deg4 = params["deg_4"]
-    packagedparams = WalkerIdealParam(Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4)
-    references = ["10.1021/acs.jced.0c00723"]
-    model = WalkerIdeal(packagedparams, groups, BasicIdeal, references=references, verbose=verbose)
-    return model
-end
-
-recombine_impl!(model::WalkerIdealModel) = model
-
 
 function a_ideal(model::WalkerIdealModel,V,T,z)
     Mw = model.params.Mw.values

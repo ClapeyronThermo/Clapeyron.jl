@@ -10,6 +10,18 @@ end
 
 abstract type CKSAFTModel <: SAFTModel end
 @newmodel CKSAFT CKSAFTModel CKSAFTParam
+default_references(::Type{CKSAFT}) = ["10.1021/IE00107A014", "10.1021/ie00056a050"]
+default_locations(::Type{CKSAFT}) = ["SAFT/CKSAFT","properties/molarmass.csv"]
+function transform_params(::Type{CKSAFT},params)
+    k = get(params,"k",nothing)
+    sigma = params["vol"]
+    sigma.values .*= 6*0.74048/N_A/1e6/π
+    sigma.values .^= 1/3
+    epsilon = params["epsilon"]
+    params["sigma"] = sigma_LorentzBerthelot(sigma)
+    params["epsilon"] = epsilon_LorentzBerthelot(epsilon, k)
+    return params
+end
 
 export CKSAFT
 """
@@ -53,33 +65,6 @@ Chen and Kreglewski SAFT (CK-SAFT)
 2. Huang, S. H., & Radosz, M. (1991). Equation of state for small, large, polydisperse, and associating molecules: extension to fluid mixtures. Industrial & Engineering Chemistry Research, 30(8), 1994–2005. [doi:10.1021/ie00056a050](https://doi.org/10.1021/ie00056a050)
 """
 CKSAFT
-
-function CKSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
-
-    params = getparams(components, ["SAFT/CKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    sites = params["sites"]
-    segment = params["segment"]
-    c = params["c"]
-    k = get(params,"k",nothing)
-    sigma = params["vol"]
-    sigma.values .*= 6*0.74048/N_A/1e6/π
-    sigma.values .^= 1/3
-    sigma = sigma_LorentzBerthelot(sigma)
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bond_vol"]
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
-    packagedparams = CKSAFTParam(params["Mw"],segment, sigma, epsilon,c, epsilon_assoc, bondvol)
-    references = ["10.1021/IE00107A014", "10.1021/ie00056a050"]
-
-    model = CKSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
-    return model
-end
 
 recombine_impl!(model::CKSAFTModel) = recombine_saft!(model)
 

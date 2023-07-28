@@ -5,7 +5,9 @@ struct TsonopoulosVirialParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
-@newmodel TsonopoulosVirial SecondVirialModel TsonopoulosVirialParam
+@newmodel TsonopoulosVirial SecondVirialModel TsonopoulosVirialParam false
+default_locations(::Type{TsonopoulosVirial}) = ["properties/critical.csv", "properties/molarmass.csv"]
+default_references(::Type{TsonopoulosVirial}) = ["10.1002/aic.690200209"]
 
 """
     TsonopoulosVirial <: SecondVirialModel
@@ -55,20 +57,6 @@ Pcᵢⱼ = (Pcᵢ + Pcⱼ)/2
 TsonopoulosVirial
 
 export TsonopoulosVirial
-function TsonopoulosVirial(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false)
-    params = getparams(components,["properties/critical.csv", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    Pc = params["Pc"]
-    acentricfactor = params["acentricfactor"]
-    packagedparams = TsonopoulosVirialParam(Tc,Pc,acentricfactor,Mw)
-    references = String["10.1002/aic.690200209"]
-    return TsonopoulosVirial(packagedparams, idealmodel; ideal_userlocations, references, verbose)
-end
 
 function second_virial_coefficient_impl(model::TsonopoulosVirial,T,z=SA[1.0])
     B = zero(T+first(z))

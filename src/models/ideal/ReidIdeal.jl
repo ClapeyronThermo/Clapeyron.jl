@@ -50,7 +50,11 @@ ReidIdeal
 
 export ReidIdeal
 default_locations(::Type{ReidIdeal}) = ["ideal/ReidIdeal.csv"]
-
+function transform_params(::Type{ReidIdeal},params)
+    a,b,c,d = params["a"],params["b"],params["c"],params["d"]
+    params["coeffs"] = ReidIdealParam(a,b,c,d).coeffs
+    return params
+end
 recombine_impl!(model::ReidIdealModel) = model
 
 

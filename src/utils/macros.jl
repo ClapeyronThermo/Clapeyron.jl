@@ -108,14 +108,14 @@ default_getparams_arguments(M,userlocations,verbose) = ParamOptions(;verbose,use
 
 """
     transform_params(::Type{T},params) where T <: EoSModel
-    transform_params(::Type{T},params,components) where T <: EoSModel
-    transform_params(::Type{T},params,components,verbose) where T <: EoSModel
+    transform_params(::Type{T},params,components_or_groups) where T <: EoSModel
+    transform_params(::Type{T},params,components_or_groups,verbose) where T <: EoSModel
 
 Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros.
 
 Given a collection of params, with `(keytype(params)) isa String`, returns a modified collection with all the parameters necessary to build the `params` field contained in the `EoSModel`.
 
-You can overload the 2, 3 or 4-argument version, depending on the need of a components vector, or if you want to customize the `verbose` message.
+You can overload the 2, 3 or 4-argument version, depending on the need of a components vector (or `GroupParam` in a GC model), or if you want to customize the `verbose` message.
 
 ## Example
 
@@ -136,10 +136,10 @@ function transform_params(::Type{PCSAFT},params)
 function transform_params end
 
 transform_params(M,params) = params
-transform_params(M,params,components) = transform_params(M,params)
-function transform_params(M,params,components,verbose)
+transform_params(M,params,components_or_groups) = transform_params(M,params)
+function transform_params(M,params,components_or_groups,verbose)
     verbose && @info "generating parameters for $M"
-    transform_params(M,params,components)
+    transform_params(M,params,components_or_groups)
 end
 """
     @newmodelgc modelname parent paramstype
@@ -166,86 +166,128 @@ The Struct consists of the following fields:
 
 See the tutorial or browse the implementations to see how this is used.
 """
-macro newmodelgc(name, parent, paramstype)
-    quote
-    struct $name{T <: Clapeyron.IdealModel} <: $parent
-        components::Array{String,1}
-        groups::Clapeyron.GroupParam
-        sites::Clapeyron.SiteParam
-        params::$paramstype
-        idealmodel::T
-        assoc_options::Clapeyron.AssocOptions
-        references::Array{String,1}
+macro newmodelgc(name, parent, paramstype,sitemodel = true)
+    res = if sitemodel
+        quote
+            struct $name{T <: IdealModel} <: $parent
+                components::Array{String,1}
+                groups::Clapeyron.GroupParam
+                sites::Clapeyron.SiteParam
+                params::$paramstype
+                idealmodel::T
+                assoc_options::Clapeyron.AssocOptions
+                references::Array{String,1}
+            end
+
+            function $name(components;
+                idealmodel = Clapeyron.BasicIdeal,
+                userlocations = String[],
+                group_userlocations = String[],
+                ideal_userlocations = String[],
+                assoc_options = Clapeyron.AssocOptions(),
+                verbose = false)
+
+                Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options)
+            end
+        end
+    else
+        quote
+            struct $name{T <: IdealModel} <: $parent
+                components::Array{String,1}
+                groups::Clapeyron.GroupParam
+                params::$paramstype
+                idealmodel::T
+                references::Array{String,1}
+            end
+
+            function $name(components;
+                idealmodel = Clapeyron.BasicIdeal,
+                userlocations = String[],
+                group_userlocations = String[],
+                ideal_userlocations = String[],
+                verbose = false)
+
+                Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,nothing)
+            end
+        end
     end
 
-    function $name(params::$paramstype,
-        groups::Clapeyron.GroupParam,
-        idealmodel = Clapeyron.BasicIdeal;
-        ideal_userlocations=String[],
-        references::Vector{String}=String[],
-        assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
-        verbose::Bool = false)
-
-        return Clapeyron.build_model($name,params,groups,idealmodel;ideal_userlocations,references,assoc_options,verbose)
-    end
-
-    function $name(params::$paramstype,
-        groups::Clapeyron.GroupParam,
-        sites::Clapeyron.SiteParam,
-        idealmodel = BasicIdeal;
-        ideal_userlocations=String[],
-        references::Vector{String}=String[],
-        assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
-        verbose::Bool = false)
-
-        return Clapeyron.build_model($name,params,groups,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
-    end
-
-end |> esc
+    return res |> esc
 end
 
 """
 
-    @newmodel name parent paramstype
+    @newmodel name parent paramstype [sitemodel = true]
 
 This is exactly the same as the above but for non-GC models.
 All group parameters are absent in this struct.
 The sites are associated to the main component rather than the groups,
 and the respective fieldnames are named correspondingly.
+
+You can pass an optional bool indicating if you want to use sites with this model or not. defaults to `true`
+
+## Example
+```julia
+struct MySAFTParam
+    a::SingleParam{Float64}
+    b::SingleParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
+end
+
+@newmodel MySAFT SAFTModel MySAFTParam #defines a model, with association sites
+
+struct MyModelParam
+    a::SingleParam{Float64}
+    b::SingleParam{Float64}
+end
+
+@newmodel MyModel EoSModel MyModelParam false #defines a model without sites
+```
 """
-macro newmodel(name, parent, paramstype)
-    quote
-    struct $name{T <: IdealModel} <: $parent
-        components::Array{String,1}
-        sites::Clapeyron.SiteParam
-        params::$paramstype
-        idealmodel::T
-        assoc_options::Clapeyron.AssocOptions
-        references::Array{String,1}
+macro newmodel(name, parent, paramstype,sitemodel = true)
+    res = if sitemodel
+        quote
+            struct $name{T <: IdealModel} <: $parent
+                components::Array{String,1}
+                sites::Clapeyron.SiteParam
+                params::$paramstype
+                idealmodel::T
+                assoc_options::Clapeyron.AssocOptions
+                references::Array{String,1}
+            end
+
+            function $name(components;
+                idealmodel = Clapeyron.BasicIdeal,
+                userlocations = String[],
+                ideal_userlocations = String[],
+                assoc_options = Clapeyron.AssocOptions(),
+                verbose = false)
+
+                Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,nothing,ideal_userlocations,verbose,assoc_options)
+            end
+        end
+    else
+        quote
+            struct $name{T <: IdealModel} <: $parent
+                components::Array{String,1}
+                params::$paramstype
+                idealmodel::T
+                references::Array{String,1}
+            end
+
+            function $name(components;
+                idealmodel = Clapeyron.BasicIdeal,
+                userlocations = String[],
+                ideal_userlocations = String[],
+                verbose = false)
+
+                Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,nothing,ideal_userlocations,verbose,nothing)
+            end
+        end
     end
 
-    function $name(params::$paramstype,
-        sites::Clapeyron.SiteParam,
-        idealmodel = Clapeyron.BasicIdeal;
-        ideal_userlocations=String[],
-        references::Vector{String}=String[],
-        assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
-        verbose::Bool = false)
-
-        return Clapeyron.build_model($name,params,sites,idealmodel;ideal_userlocations,references,assoc_options,verbose)
-    end
-
-    function $name(params::$paramstype,
-        idealmodel = Clapeyron.BasicIdeal;
-        ideal_userlocations=String[],
-        references::Vector{String}=String[],
-        assoc_options::Clapeyron.AssocOptions = Clapeyron.AssocOptions(),
-        verbose::Bool = false)
-
-        return Clapeyron.build_model($name,params,idealmodel;ideal_userlocations,references,assoc_options,verbose)
-    end
-
-    end |> esc
+    return res |> esc
 end
 
 """
@@ -283,7 +325,6 @@ macro newmodelsingleton(name,parent)
     end
     end |> esc
 end
-
 
 function build_model(::Type{model},params::EoSParam,
         groups::GroupParam,
@@ -450,7 +491,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     #parse params from database.
     options = default_getparams_arguments(M,userlocations,verbose)
     if has_groups(M)
-        groups =  GroupParam(components,default_gclocations(M);userlocations,verbose)
+        groups =  GroupParam(components,default_gclocations(M);group_userlocations,verbose)
         params_in = getparams(groups, default_locations(M),options)
         result[:groups] = groups
         result[:components] = groups.components

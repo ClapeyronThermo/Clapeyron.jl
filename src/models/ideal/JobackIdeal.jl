@@ -130,7 +130,7 @@ function JobackIdeal(components;userlocations=String[], verbose=false)
     n = groups.n_flattenedgroups
     coeffs = Vector{NTuple{4,Float64}}(undef,length(comps)) 
     reidparam = ReidIdealParam(SingleParam("GC-averaged Reid Coefficients",groups.components,coeffs))
-    reidmodel = ReidIdeal(reidparam)
+    reidmodel = ReidIdeal(components,reidparam,default_references(ReidIdeal))
     model = JobackIdeal(groups.components,groups,packagedparams,reidmodel,references)
     recombine!(model)
     return model

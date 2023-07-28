@@ -11,7 +11,21 @@ end
 
 abstract type SAFTVRMieModel <: SAFTModel end
 @newmodel SAFTVRMie SAFTVRMieModel SAFTVRMieParam
-
+default_references(::Type{SAFTVRMie}) = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
+default_locations(::Type{SAFTVRMie}) = ["SAFT/SAFTVRMie", "properties/molarmass.csv"]
+function transform_params(::Type{SAFTVRMie},params)
+    sigma = params["sigma"]
+    sigma.values .*= 1E-10
+    sigma = sigma_LorentzBerthelot(sigma)
+    epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
+    lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
+    lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
+    params["sigma"] = sigma
+    params["epsilon"] = epsilon
+    params["lambda_a"] = lambda_a
+    params["lambda_r"] = lambda_r
+    return params
+end
 """
     SAFTVRMieModel <: SAFTModel
 
@@ -57,32 +71,6 @@ SAFT-VR with Mie potential
 SAFTVRMie
 
 export SAFTVRMie
-
-function SAFTVRMie(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
-    params = getparams(components, ["SAFT/SAFTVRMie", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    sites = params["sites"]
-    Mw = params["Mw"]
-    segment = params["segment"]
-    params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
-    lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
-    lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bondvol"]
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
-
-    packagedparams = SAFTVRMieParam(Mw, segment, sigma, lambda_a, lambda_r, epsilon, epsilon_assoc, bondvol)
-    references = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
-
-    model = SAFTVRMie(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
-    return model
-end
 
 function recombine_impl!(model::SAFTVRMieModel)
     assoc_options = model.assoc_options

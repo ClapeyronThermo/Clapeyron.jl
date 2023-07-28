@@ -10,6 +10,14 @@ function x0_crit_pure(model::SAFTModel)
     (2.0, log10(lb_v/0.3))
 end
 
+function saft_lorentz_berthelot(params)
+    k = get(params,"k",nothing)
+    sigma,epsilon = params["sigma"],params["epsilon"]
+    params["sigma"] = sigma_LorentzBerthelot(sigma)
+    params["epsilon"] = epsilon_LorentzBerthelot(epsilon, k)
+    return params
+end
+
 function T_scale(model::SAFTModel,z=SA[1.0])
     ϵ = model.params.epsilon.values
     return prod(ϵ[i,i]^z[i] for i in 1:length(z))^(1/sum(z))
