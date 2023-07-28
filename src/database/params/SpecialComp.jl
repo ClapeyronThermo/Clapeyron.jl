@@ -5,10 +5,10 @@ Auxiliary model that just stores the index of one component. faster than looking
 
 Used mainly for applying specific correlations in presence of a certain compound.
 """
-struct SpecialComp <: EoSModel
+struct SpecialComp <: ClapeyronParam
     components::Vector{String}
     idx::Int
-    references::Vector{String}
+    defaults::Vector{String}
 end
 
 function SpecialComp(components::Vector{String},defaults=["water08"])
@@ -17,14 +17,22 @@ function SpecialComp(components::Vector{String},defaults=["water08"])
     return SpecialComp(components,idx,defaults)
 end
 
-function split_model(model::SpecialComp,subset=nothing)
-    splitted = auto_split_model(model,subset)
-    defaults = model.references
-    for i in 1:length(splitted)
-        splitted[i] = SpecialComp(splitted[i].components,defaults)
-    end
-    return splitted
+function each_split_model(param::SpecialComp,I)
+    components = param.components[I]
+    defaults = param.defaults
+    idx = findfirst(in(defaults),components)
+    idx === nothing && (idx = 0)
+    return SpecialComp(components,idx,copy(defaults))
 end
 
 Base.getindex(model::SpecialComp) = model.idx
 
+function Base.show(io::IO,param::SpecialComp)
+    idx = param.idx
+    if iszero(idx)
+        print(io,"SpecialComp()")
+    else
+        comp = param.components[param.idx]
+        print(io,"SpecialComp($comp)")
+    end
+end
