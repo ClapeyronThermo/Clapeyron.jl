@@ -16,6 +16,7 @@ abstract type WalkerIdealModel <: IdealModel end
 default_references(::Type{WalkerIdeal}) = ["10.1021/acs.jced.0c00723"]
 default_locations(::Type{WalkerIdeal}) = ["ideal/WalkerIdeal.csv"]
 default_gclocations(::Type{WalkerIdeal}) = ["ideal/WalkerIdeal_Groups.csv"]
+
 """
     WalkerIdeal <: WalkerIdealModel
     WalkerIdeal(components::Array{String,1}; 

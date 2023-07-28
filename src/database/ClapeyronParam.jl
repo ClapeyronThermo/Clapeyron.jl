@@ -67,6 +67,18 @@ function Base.show(io::IO,param::SingleOrPair)
     show(io,param.components)
 end
 
+#internal utility function
+#shortcut for model.params.val, but returns nothing if the val is not found.
+@pure function getparam(model::EoSModel,val::Symbol)
+    M = typeof(model)
+    if hasfield(M,:params)
+        if hasfield(typeof(model.params),val)
+            return getfield(model.params,val)
+        end
+    end
+    return nothing
+end
+
 Base.iterate(param::SingleOrPair) = iterate(param.values) 
 Base.iterate(param::SingleOrPair,state) = iterate(param.values,state)
 

@@ -367,19 +367,25 @@ vl = b + sqrt(0.5RTb3/2a) - c
 function wilson_k_values(model::ABCubicModel, p, T, crit = nothing)
     Pc = model.params.Pc.values
     Tc = model.params.Tc.values
+    α = typeof(model.alpha)
 
-    if hasfield(typeof(model.alpha.params), :acentricfactor)
-        ω = model.alpha.params.acentricfactor.values
-    elseif hasfield(typeof(model.params), :acentricfactor)
-        ω = model.params.acentricfactor.values
-    else
-        pure = split_model(model)
-        ω = zero(Tc)
-        for i in 1:length(Tc)
-            ps = first(saturation_pressure(pure[i], 0.7 * Tc[i]))
-            ω[i] = -log10(ps / Pc[i]) - 1.0
-        end
+    w1 = getparam(model.alpha,:acentricfactor)
+    if w1 !== nothing
+        return w1.values
     end
+
+    w2 = getparam(model,:acentricfactor)
+    if w2 !== nothing
+        return w1.values
+    end
+    #we can find stored acentric factor values, so we calculate those
+    pure = split_model(model)
+    ω = zero(Tc)
+    for i in 1:length(Tc)
+        ps = first(saturation_pressure(pure[i], 0.7 * Tc[i]))
+        ω[i] = -log10(ps / Pc[i]) - 1.0
+    end
+
 
     return @. Pc / p * exp(5.373 * (1 + ω) * (1 - Tc / T))
 end
