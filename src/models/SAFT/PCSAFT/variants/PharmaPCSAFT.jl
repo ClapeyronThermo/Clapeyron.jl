@@ -67,7 +67,7 @@ pharmaPCSAFT
 #https://doi.org/10.1016/j.cep.2007.02.034
 Δσh20(T) = (10.1100*exp(-0.01775*T)-1.41700*exp(-0.01146*T))*1e-10
 @inline water08_k(model::PCSAFTModel) = 0
-@inline water08_k(model::pharmaPCSAFTModel) = model.water[]
+@inline water08_k(model::pharmaPCSAFTModel) = model.params.water[]
 
 function d(model::pharmaPCSAFTModel, V, T, z)
     ϵ = model.params.epsilon.values
@@ -149,7 +149,7 @@ function  Δ(model::pharmaPCSAFT, V, T, z,_data=@f(data))
     κ = model.params.bondvol.values
     σ = model.params.sigma.values
     k = water08_k(model)
-    k = model.water[]
+    k = model.params.water[]
     Δσ = Δσh20(T)
     Δout = assoc_similar(κ,typeof(V+T+first(z)))
     Δout.values .= false #fill with zeros, maybe it is not necessary?
