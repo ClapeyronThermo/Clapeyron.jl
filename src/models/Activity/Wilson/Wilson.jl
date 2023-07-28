@@ -12,11 +12,9 @@ struct Wilson{c<:EoSModel} <: WilsonModel
     components::Array{String,1}
     params::WilsonParam
     puremodel::EoSVectorParam{c}
-    absolutetolerance::Float64
     references::Array{String,1}
 end
 
-@registermodel Wilson
 export Wilson
 
 """
@@ -64,7 +62,7 @@ function Wilson(components::Vector{String};
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = WilsonParam(g,Tc,pc,ZRA,Mw)
     references = String["10.1021/ja01056a002"]
-    model = Wilson(components,packagedparams,_puremodel,1e-12,references)
+    model = Wilson(components,packagedparams,_puremodel,references)
     return model
 end
 
