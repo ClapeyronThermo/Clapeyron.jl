@@ -150,9 +150,9 @@ function StructGroupParam(gccomponents,
 end
 
 function StructGroupParam(components::Vector,
-    grouplocations::Array{String,1}=String[],
-    options::ParamOptions = DefaultOptions,
-    grouptype = :unknown)
+    grouplocations::Array{String,1},
+    options::ParamOptions,
+    grouptype::Symbol)
 
     #gccomponents = Vector{Tuple{String,Vector{Pair{String,Int64}}}}(undef,length(components))
     intragccomponents = Vector{Tuple{String,Vector{Pair{Tuple{String, String}, Int64}}}}(undef,length(components))
