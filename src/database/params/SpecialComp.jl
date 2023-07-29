@@ -27,12 +27,3 @@ end
 
 Base.getindex(model::SpecialComp) = model.idx
 
-function Base.show(io::IO,param::SpecialComp)
-    idx = param.idx
-    if iszero(idx)
-        print(io,"SpecialComp()")
-    else
-        comp = param.components[param.idx]
-        print(io,"SpecialComp($comp)")
-    end
-end
