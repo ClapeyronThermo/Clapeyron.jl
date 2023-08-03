@@ -212,6 +212,7 @@ function getparams(components,
     # ignore_missingsingleparams gives users the option to disable component existence check ∈ single params.
     return getparams(components,locations,options)
 end
+
 function getparams(components::Vector{String},locations::Vector{String},options::ParamOptions)
     #generate one string of params
     filepaths = flattenfilepaths(locations,options.userlocations)
@@ -229,7 +230,12 @@ function getparams(components::Vector{String},locations::Vector{String},options:
     end
     if any(x isa AssocParam for x ∈ values(result))
         sites = buildsites(result,components,allcomponentsites,options)
-        return result,sites
+        if !haskey(result,"sites")
+            result["sites"] = sites
+            return result
+        else
+            throw(error("cannot overwrite \"sites\" key, already exists!"))
+        end
     else
         return result
     end

@@ -5,7 +5,6 @@ struct SLk0k1lMixingRule <: SLMixingRule
     l::PairParam{Float64}
 end
 
-@registermodel SLk0k1lMixingRule
 export SLk0k1lMixingRule
 
 """

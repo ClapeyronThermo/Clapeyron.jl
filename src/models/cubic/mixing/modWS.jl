@@ -6,8 +6,6 @@ struct modWSRule{γ} <: WSRuleModel
     references::Array{String,1}
 end
 
-@registermodel modWSRule
-
 """
     WSRule{γ} <: WSRuleModel
 

@@ -1,9 +1,7 @@
 abstract type KayRuleModel <: MixingRule end
 
-struct KayRuleParam <: EoSParam
-end
-
-@newmodelsimple KayRule KayRuleModel KayRuleParam
+#we don't use newmodelsingleton here, the default constructor requires passing activity as a param.
+struct KayRule <: KayRuleModel end
 
 """
     KayRule <: KayRuleModel
@@ -30,15 +28,11 @@ c̄ = ∑cᵢxᵢ
 """
 KayRule
 
-export KayRule
-
-function KayRule(components::Vector{String}; activity=nothing, userlocations=String[], activity_userlocations=String[], verbose::Bool=false)
-    #params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    #acentricfactor = params["acentricfactor"]
-    packagedparams = KayRuleParam()
-    model = KayRule(packagedparams, verbose=verbose)
-    return model
+function KayRule(components; activity = nothing, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+    KayRule()
 end
+
+export KayRule
 
 function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b,c)
     n = sum(z)
@@ -69,3 +63,4 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b
 end
 
 is_splittable(::KayRule) = false
+

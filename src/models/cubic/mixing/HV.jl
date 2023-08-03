@@ -5,7 +5,6 @@ struct HVRule{γ} <: HVRuleModel
     activity::γ
     references::Array{String,1}
 end
-@registermodel HVRule
 
 """
     HVRule{γ} <: HVRuleModel

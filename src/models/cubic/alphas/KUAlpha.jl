@@ -34,14 +34,7 @@ For `Tr > 1` is a 6th order taylor expansion around `T = Tc`.
 
 """
 KUAlpha
-
-function KUAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = KUAlphaParam(acentricfactor)
-    model = KUAlpha(packagedparams, verbose=verbose)
-    return model
-end
+default_locations(::Type{KUAlpha}) = critical_data()
 
 function taylor_alpha_kumar(Tr,m,n)
     t1 = m*n

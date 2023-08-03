@@ -18,8 +18,6 @@ struct SanchezLacombe{T <: SLMixingRule,I<:IdealModel} <:SanchezLacombeModel
     idealmodel::I
     references::Array{String,1}
 end
-@registermodel SanchezLacombe
-
 
 """
     SanchezLacombe(components::Vector{String}; 

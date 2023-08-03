@@ -68,7 +68,8 @@ function structSAFTgammaMie(components;
     assoc_options = AssocOptions())
 
     groups = StructGroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv","SAFT/SAFTgammaMie/structSAFTgammaMie/structSAFTgammaMie_intragroups.csv"])
-    params,sites = getparams(groups, ["SAFT/SAFTgammaMie/structSAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(groups, ["SAFT/SAFTgammaMie/structSAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    sites = params["sites"]
     components = groups.components
     
     gc_segment = params["vst"]
@@ -117,12 +118,11 @@ function structSAFTgammaMie(components;
     
     idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     
-    vr = SAFTVRMie(vrparams, comp_sites, idmodel; ideal_userlocations, verbose, assoc_options)
+    vr = SAFTVRMie(components,comp_sites,vrparams,idmodel,assoc_options,default_references(SAFTVRMie))
     γmierefs = ["10.1063/1.4851455", "10.1021/je500248h"]
     gmie = structSAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,epsilon_mixing,assoc_options,γmierefs)
     return gmie
 end
-@registermodel structSAFTgammaMie
 
 const sSAFTγMie = structSAFTgammaMie
 const sSAFTgammaMie = structSAFTgammaMie

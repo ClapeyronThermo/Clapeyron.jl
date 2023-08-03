@@ -16,8 +16,6 @@ struct aspenNRTL{c<:EoSModel} <: aspenNRTLModel
     references::Array{String,1}
 end
 
-@registermodel aspenNRTL
-
 export aspenNRTL
 """
     aspenNRTL <: ActivityModel

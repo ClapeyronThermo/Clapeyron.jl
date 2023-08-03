@@ -2,19 +2,21 @@ struct ReidIdealParam <: EoSParam
     coeffs::SingleParam{NTuple{4,Float64}}
 end
 
-function ReidIdealParam(a::SingleParam,b::SingleParam,c::SingleParam,d::SingleParam)
+
+
+function reid_coeffs(a::SingleParam,b::SingleParam,c::SingleParam,d::SingleParam)
     comps = a.components
     a = a.values
     b = b.values
     c = c.values
     d = d.values
-    return ReidIdealParam(a,b,c,d,comps)
+    return reid_coeffs(a,b,c,d,comps)
 end
 
-function ReidIdealParam(a,b,c,d,comps)
+function reid_coeffs(a,b,c,d,comps)
     n = length(a)
     coeffs = [(a[i],b[i],c[i],d[i]) for i in 1:n]
-    ReidIdealParam(SingleParam("Reid Coefficients",comps,coeffs))
+    SingleParam("Reid Coefficients",comps,coeffs)
 end
 
 abstract type ReidIdealModel <: IdealModel end
@@ -49,18 +51,12 @@ Cp(T) = ∑Cpᵢxᵢ
 ReidIdeal
 
 export ReidIdeal
-function ReidIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false)
-    params = getparams(components, ["ideal/ReidIdeal.csv"]; userlocations=userlocations, verbose=verbose)
-    a = params["a"]
-    b = params["b"]
-    c = params["c"]
-    d = params["d"]
-    packagedparams = ReidIdealParam(a, b, c, d)
-    references = String[] #  Fill this up.
-    return ReidIdeal(packagedparams; references=references)
+default_locations(::Type{ReidIdeal}) = ["ideal/ReidIdeal.csv"]
+function transform_params(::Type{ReidIdeal},params)
+    a,b,c,d = params["a"],params["b"],params["c"],params["d"]
+    params["coeffs"] = reid_coeffs(a,b,c,d)
+    return params
 end
-
-#TODO,add a dependency of a,b,c,d parameters
 recombine_impl!(model::ReidIdealModel) = model
 
 

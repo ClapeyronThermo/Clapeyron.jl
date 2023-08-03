@@ -12,7 +12,6 @@ struct vdW{T <: IdealModel,α,c,M} <: vdWModel
     references::Array{String,1}
 end
 
-@registermodel vdW
 export vdW
 
 """

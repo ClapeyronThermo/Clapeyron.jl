@@ -9,6 +9,19 @@ end
 
 abstract type sCKSAFTModel <: CKSAFTModel end
 @newmodel sCKSAFT sCKSAFTModel sCKSAFTParam
+default_references(::Type{sCKSAFT}) = ["10.1021/IE00107A014", "10.1021/ie00056a050","10.1021/ie00044a042"]
+default_locations(::Type{sCKSAFT}) = ["SAFT/sCKSAFT","properties/molarmass.csv"]
+function transform_params(::Type{sCKSAFT},params)
+    k = get(params,"k",nothing)
+    sigma = params["vol"]
+    sigma.values .*= 6*0.74048/N_A/1e6/π
+    sigma.values .^= 1/3
+    epsilon = params["epsilon"]
+    params["sigma"] = sigma_LorentzBerthelot(sigma)
+    params["epsilon"] = epsilon_LorentzBerthelot(epsilon, k)
+    return params
+end
+
 export sCKSAFT
 
 """
@@ -51,31 +64,6 @@ Simplified Chen and Kreglewski SAFT (sCK-SAFT)
 3. Fu, Y.-H., & Sandler, S. I. (1995). A simplified SAFT equation of state for associating compounds and mixtures. Industrial & Engineering Chemistry Research, 34(5), 1897–1909. [doi:10.1021/ie00044a042](https://doi.org/10.1021/ie00044a042)
 """
 sCKSAFT
-
-function sCKSAFT(components::Vector{String};
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
-
-    params,sites = getparams(components, ["SAFT/sCKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["segment"]
-    k = get(params,"k",nothing)
-    sigma = params["vol"]
-    sigma.values .*= 6*0.74048/N_A/1e6/π
-    sigma.values .^= 1/3
-    sigma = sigma_LorentzBerthelot(sigma)
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bondvol"]
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
-    packagedparams = sCKSAFTParam(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
-    references = ["10.1021/IE00107A014", "10.1021/ie00056a050","10.1021/ie00044a042"]
-
-    model = sCKSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
-    return model
-end
 
 function x0_crit_pure(model::sCKSAFTModel)
     lb_v = lb_volume(model)

@@ -5,8 +5,8 @@ struct AbbottVirialParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
-@newmodel AbbottVirial SecondVirialModel AbbottVirialParam
-
+@newmodel AbbottVirial SecondVirialModel AbbottVirialParam false
+default_locations(::Type{AbbottVirial}) = ["properties/critical.csv", "properties/molarmass.csv"]
 
 """
     AbbottVirial <: SecondVirialModel
@@ -46,21 +46,6 @@ Pcᵢⱼ = (Pcᵢ + Pcⱼ)/2
 AbbottVirial
 
 export AbbottVirial
-function AbbottVirial(components;
-        idealmodel=BasicIdeal,
-        userlocations=String[],
-        ideal_userlocations=String[],
-        verbose=false)
-        
-    params = getparams(components,  ["properties/critical.csv", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    Pc = params["Pc"]
-    acentricfactor = params["acentricfactor"]
-    packagedparams = AbbottVirialParam(Tc,Pc,acentricfactor,Mw)
-    references = String[]
-    return AbbottVirial(packagedparams, idealmodel; ideal_userlocations, references, verbose)
-end
 
 function second_virial_coefficient_impl(model::AbbottVirial,T,z=SA[1.0])
     B = zero(T+first(z))

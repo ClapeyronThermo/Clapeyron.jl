@@ -21,8 +21,6 @@ struct KU{T <: IdealModel,α,c,γ} <:KUModel
     references::Array{String,1}
 end
 
-@registermodel KU
-
 """
     KU(components::Vector{String}; idealmodel=BasicIdeal,
     alpha = KUAlpha,

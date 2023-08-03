@@ -6,8 +6,6 @@ struct VTPRRule{γ} <: VTPRRuleModel
     references::Array{String,1}
 end
 
-@registermodel VTPRRule
-
 """
     VTPRRule{γ} <: VTPRRuleModel
 

@@ -17,7 +17,6 @@ struct UNIFAC{c<:EoSModel} <: UNIFACModel
     unifac_cache::UNIFACCache
 end
 
-@registermodel UNIFAC
 const modUNIFAC = UNIFAC
 export UNIFAC
 

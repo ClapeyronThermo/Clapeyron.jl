@@ -1,9 +1,8 @@
 abstract type vdW1fRuleModel <: MixingRule end
 
-struct vdW1fRuleParam <: EoSParam
-end
+#we don't use newmodelsingleton here, the default constructor requires passing activity as a param.
+struct vdW1fRule <: vdW1fRuleModel end
 
-@newmodelsimple vdW1fRule vdW1fRuleModel vdW1fRuleParam
 export vdW1fRule
 
 """
@@ -26,13 +25,9 @@ c̄ = ∑cᵢxᵢ
 """
 vdW1fRule
 
-function vdW1fRule(components::Vector{String}; activity=nothing, userlocations=String[], activity_userlocations=String[], verbose::Bool=false)
-    packagedparams = vdW1fRuleParam()
-    model = vdW1fRule(packagedparams, verbose=verbose)
-    return model
+function vdW1fRule(components; activity = nothing, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+    vdW1fRule()
 end
-
-vdW1fRule() = vdW1fRule(vdW1fRuleParam())
 
 function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b,c)
     n = sum(z)
@@ -59,7 +54,5 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a
     #dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
     return ā,b̄,c̄
 end
-
-
 
 is_splittable(::vdW1fRule) = false

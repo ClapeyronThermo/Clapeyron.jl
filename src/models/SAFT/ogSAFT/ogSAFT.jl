@@ -9,11 +9,18 @@ end
 
 abstract type ogSAFTModel <: SAFTModel end
 @newmodel ogSAFT ogSAFTModel ogSAFTParam
+default_references(::Type{ogSAFT}) = ["10.1021/ie00104a021","10.1016/0378-3812(89)80308-5"]
+default_locations(::Type{ogSAFT}) = ["SAFT/ogSAFT","properties/molarmass.csv"]
+function transform_params(::Type{ogSAFT},params)
+    sigma = params["sigma"]
+    sigma.values .*= 1E-10
+    return saft_lorentz_berthelot(params)
+end
 
 """
     ogSAFTModel <: SAFTModel
 
-    ogSAFT(components; 
+    ogSAFT(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
@@ -50,31 +57,7 @@ abstract type ogSAFTModel <: SAFTModel end
 """
 ogSAFT
 
-
 export ogSAFT
-function ogSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
-
-    params,sites = getparams(components, ["SAFT/ogSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["segment"]
-    k = get(params,"k",nothing)
-    params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bondvol"]
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
-
-    packagedparams = ogSAFTParam(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
-    references = ["10.1021/ie00104a021","10.1016/0378-3812(89)80308-5"]
-
-    model = ogSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
-    return model
-end
 
 recombine_impl!(model::ogSAFTModel) = recombine_saft!(model)
 

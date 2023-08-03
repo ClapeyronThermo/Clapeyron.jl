@@ -19,8 +19,6 @@ struct softSAFT2016{T,LJ} <: softSAFT2016Model
     lj::LJ
 end
 
-@registermodel softSAFT2016
-
 """
     softSAFT2016Model <: softSAFTModel
 
@@ -68,8 +66,8 @@ function softSAFT2016(components;
     verbose=false,
     assoc_options = AssocOptions())
 
-    params,sites = getparams(components, ["SAFT/softSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    
+    params = getparams(components, ["SAFT/softSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    sites = params["sites"]
     segment = params["segment"]
     k = get(params,"k",nothing)
     params["sigma"].values .*= 1E-10

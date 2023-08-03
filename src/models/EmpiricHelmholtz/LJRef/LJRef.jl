@@ -13,8 +13,6 @@ struct LJRef{M} <: EmpiricHelmholtzModel
     references::Vector{String}
 end
 
-@registermodel LJRef
-
 export LJRef
 
 """
@@ -60,7 +58,7 @@ LJRef
 function LJRef(components;
     userlocations=String[],
     verbose=false)
-    params,sites = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     k = get(params,"k",nothing)
@@ -232,8 +230,6 @@ function a_ideal(model::Union{LJRef,LJRefIdeal},V,T,z=SA[1.0])
     res -= log(V)
     return res
 end
-
-@registermodel LJRefIdeal
 
 """
     LJRefIdeal <: IdealModel

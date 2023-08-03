@@ -4,16 +4,16 @@ struct PeTSParam <: EoSParam
     sigma::PairParam{Float64}
     epsilon::PairParam{Float64}
 end
+
 abstract type PeTSModel <: EoSModel end
-
-struct PeTS{T <: IdealModel} <:PeTSModel
-    components::Array{String,1}
-    params::PeTSParam
-    idealmodel::T
-    references::Array{String,1}
+@newmodel PeTS PeTSModel PeTSParam false
+default_locations(::Type{PeTS}) = ["SAFT/PCSAFT","properties/molarmass.csv"]
+default_references(::Type{PeTS}) = ["10.1080/00268976.2018.1447153"]
+function transform_params(::Type{PeTS},params)
+    sigma = params["sigma"]
+    sigma.values .*= 1E-10
+    return saft_lorentz_berthelot(params)
 end
-
-@registermodel PeTS
 """
     PeTSModel <: EoSModel
 
@@ -49,27 +49,6 @@ Perturbed, Truncated and Shifted (PeTS) Equation of State.
 PeTS
 
 export PeTS
-
-function PeTS(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false)
-    params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    
-    segment = params["segment"]
-    k = get(params,"k",nothing)
-    Mw = params["Mw"]
-    params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-
-    packagedparams = PeTSParam(Mw, segment, sigma, epsilon)
-    references = ["10.1080/00268976.2018.1447153"]
-    model = PeTS(components,packagedparams,init_idealmodel,references)
-    return model
-end
 
 function a_res(model::PeTSModel, V, T, z)
     _data = @f(data)

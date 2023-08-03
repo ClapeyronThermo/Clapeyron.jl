@@ -11,6 +11,16 @@ end
 
 abstract type PPCSAFTModel <: PCSAFTModel end
 @newmodel PPCSAFT PPCSAFTModel PPCSAFTParam
+default_references(::Type{PPCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
+default_locations(::Type{PPCSAFT}) = ["SAFT/PCSAFT/PPCSAFT/","properties/molarmass.csv"]
+function transform_params(::Type{PPCSAFT},params,components)
+    sigma = params["sigma"]
+    sigma.values .*= 1E-10
+    params = saft_lorentz_berthelot(params)
+    μ,m = params["dipole"],params["segment"]
+    params["dipole2"] = SingleParam("Dipole squared",components, μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3))
+    return params
+end
 
 """
     PPCSAFTModel <: SAFTModel
@@ -50,37 +60,7 @@ Polar Perturbed-Chain SAFT (PPC-SAFT)
 PPCSAFT
 
 export PPCSAFT
-function PPCSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
 
-    params,sites = getparams(components, ["SAFT/PCSAFT/PPCSAFT/","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["segment"]
-    k = get(params,"k",nothing)
-    Mw = params["Mw"]
-    params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bondvol"]
-
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
-
-    dipole = params["dipole"]
-    μ,m = dipole,segment
-    dipole2 = SingleParam("Dipole squared",components, μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3))
-    packagedparams = PPCSAFTParam(Mw,segment,sigma,epsilon,dipole,dipole2,epsilon_assoc,bondvol)
-    references = ["10.1021/ie0003887", "10.1021/ie010954d"]
-
-    model = PPCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
-    return model
-end
-
-
-#
 function recombine_impl!(model ::PPCSAFTModel)
     μ,m = model.params.dipole,model.params.segment
     model.params.dipole2 .= μ.^2 ./ m ./ k_B * 1e-36*(1e-10*1e-3)

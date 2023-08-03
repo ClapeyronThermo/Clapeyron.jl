@@ -150,7 +150,7 @@ _eos_length(model::EoSModel,::Val{false}) = length(model.components)
 
 """
     doi(model)
-Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format.
+Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format. if there isn't a `references` field, it defaults to `default_references(model)` 
 ```julia-repl
 julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.doi(umr)
 1-element Vector{String}:
@@ -161,9 +161,18 @@ function doi(model)
     if hasfield(typeof(model),:references)
         return model.references
     else
-        return String[]
+        return default_references(model)
     end
 end
+"""
+    default_references(::Type{<:EoSModel})::Vector{String}
+
+Return the default references of a model. If you are using the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros, define this function to set the references for the defined EoS.
+
+"""
+function default_references end
+default_references(m::EoSModel) = default_references(parameterless_type(m))
+default_references(M) = String[]
 
 """
     cite(model,out = :doi)

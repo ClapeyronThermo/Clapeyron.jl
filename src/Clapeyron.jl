@@ -110,7 +110,6 @@ include("models/EmpiricHelmholtz/term_functions.jl")
 include("models/ideal/AlyLeeIdeal.jl")
 
 #Basic utility EoS
-include("models/utility/SpecialComp.jl")
 include("models/utility/EoSVectorParam.jl")
 include("models/utility/ZeroResidual.jl")
 include("models/utility/TPFlashWrapper.jl")

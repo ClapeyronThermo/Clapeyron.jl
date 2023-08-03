@@ -11,7 +11,6 @@ struct PPR78Rule <: PPR78RuleModel
     params::PPR78Param
     references::Vector{String}
 end
-@registermodel PPR78Rule
 
 """
     PPR78Rule <: PPR78RuleModel

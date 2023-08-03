@@ -12,60 +12,25 @@ struct AnalyticalSLVParam <: EoSParam
     b2::SingleParam{Float64}
     m::SingleParam{Float64}
     c::SingleParam{Float64}
-    d::SingleParam{Float64} 
+    d::SingleParam{Float64}
 end
 
 abstract type AnalyticalSLVModel <: EoSModel end
-
-struct AnalyticalSLV{T <: IdealModel} <:AnalyticalSLVModel
-    components::Array{String,1}
-    params::AnalyticalSLVParam
-    idealmodel::T
-    references::Array{String,1}
-end
-
-@registermodel AnalyticalSLV
-
-export AnalyticalSLV
-
-function AnalyticalSLV(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false)
-    params = getparams(components, ["properties/critical.csv", 
-                                    "properties/molarmass.csv",
-                                    "AnalyticalSLV/SLV_Like.csv"];
-                                    userlocations=userlocations,
-                                    verbose=verbose)
-    
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    Pc = params["Pc"]
-    Vc = params["Vc"]
-
-    a0 = params["a0"]
-    a1 = params["a1"]
-    a2 = params["a2"]
-    n =  params["n"]
-
-    b0 = params["b0"]
-    b1 = params["b1"]
-    b2 = params["b2"]
-    m =  params["m"]
+@newmodel AnalyticalSLV AnalyticalSLVModel AnalyticalSLVParam false
+default_locations(::Type{AnalyticalSLV}) = ["properties/critical.csv","properties/molarmass.csv","AnalyticalSLV/SLV_Like.csv"]
+default_references(::Type{AnalyticalSLV}) = ["10.1023/a:1024015729095"]
+function transform_params(::Type{AnalyticalSLV},params)
     c = params["cr"]
     d = params["dr"]
-
+    Vc = params["Vc"]
     c.values .= c.values .* Vc.values
     d.values .= d.values .* Vc.values
-
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-
-    packagedparams = AnalyticalSLVParam(Mw,Tc,Pc,Vc,a0,a1,a2,n,b0,b1,b2,m,c,d)
-    references = ["10.1023/a:1024015729095"]
-    model = AnalyticalSLV(components,packagedparams,init_idealmodel,references)
-    return model
+    params["c"] = c
+    params["d"] = d
+    return params
 end
+
+export AnalyticalSLV
 
 function abcd(model::AnalyticalSLVModel,V,T,z=SA[1.0])
     ∑z = sum(z)
@@ -189,7 +154,7 @@ function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
     ā,b̄,c̄,d̄ = _data
     n = sum(z)
     RT⁻¹ = 1/(R̄*T)
-    
+
     ρ = n/V
     Δ1,Δ2 = cubic_Δ(model,z)
     ΔΔ = Δ2 - Δ1
@@ -199,7 +164,7 @@ function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
     k1 =  bd*log(1-b̄*ρ)
     k2 =  dc*log(abs(1-c̄*ρ))
     b̄ρt = b̄*ρ
-    
+
     #The integral of 1/x is log(abs(x))
     #On solid volumes, 1-c̄*ρ is negative, so the abs matters
     a₁ =  -(k1 + k2)/(b̄ - c̄) - (d̄ - c̄)/(b̄ - c̄)
@@ -208,7 +173,7 @@ function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
     else
         l1 = log1p(-Δ1*b̄ρt)
         l2 = log1p(-Δ2*b̄ρt)
-        return a₁ - ā*RT⁻¹*(l1-l2)/(ΔΔ*b̄) 
+        return a₁ - ā*RT⁻¹*(l1-l2)/(ΔΔ*b̄)
     end
    #return -(k1 + k2)/(b̄ - c̄) -  ā*ρ*RT⁻¹ - (d̄ - c̄)/(b̄ - c̄)
 end

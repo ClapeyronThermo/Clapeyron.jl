@@ -94,6 +94,9 @@ end
 flattenfilepaths(locations) = flattenfilepaths(locations,String[])
 
 function flattenfilepaths(locations,userlocations::Vector{String})
+    if length(locations) == 0 && length(userlocations) == 0
+        return String[]
+    end
     defaultpaths = reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[])
     userpaths = reduce(vcat,getpaths.(userlocations),init = String[])
     idx = findfirst(isequal("@REMOVEDEFAULTS"),userpaths)
@@ -343,3 +346,6 @@ function userlocation_merge(loc1,loc2)
         throw(ArgumentError("invalid userlocations combination: old: $loc1, new: $loc2"))
     end
 end
+
+critical_data() = ["properties/critical.csv"]
+mw_data() = ["properties/molarmass.csv"]
