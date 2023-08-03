@@ -98,11 +98,13 @@ function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions)
 end
 
 function assoc_mix!(data,assoc_options = AssocOptions())
-    bondvol = data["bondvol"]
-    epsilon_assoc = data["epsilon_assoc"]
-    sigma = get(data,"sigma",nothing)
-    bondvol, epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
-    data["bondvol"] = bondvol
-    data["epsilon_assoc"] = epsilon_assoc
+    if haskey(data,"bondvol") && haskey(data,"epsilon_assoc")  
+        bondvol = data["bondvol"]
+        epsilon_assoc = data["epsilon_assoc"]
+        sigma = get(data,"sigma",nothing)
+        bondvol, epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
+        data["bondvol"] = bondvol
+        data["epsilon_assoc"] = epsilon_assoc
+    end
     return data
 end

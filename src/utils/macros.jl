@@ -442,6 +442,14 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         else
             throw(error("cannot overwrite \"assoc_options\" key, already exists!"))
         end
+
+        #legacy case: the model has a SiteParam, but it does not have association parameters.
+        #we just build an empty one
+        if !haskey(params_in,"sites")
+            #todo: check how this interact with GC, but i suspect that with our new Approach
+            #we always want component-based sites
+            params_in["sites"] = SiteParam(result[:components])
+        else
     end
 
     #perform any transformations, pass components or groups
