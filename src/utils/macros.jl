@@ -449,7 +449,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
             #todo: check how this interact with GC, but i suspect that with our new Approach
             #we always want component-based sites
             params_in["sites"] = SiteParam(result[:components])
-        else
+        end
     end
 
     #perform any transformations, pass components or groups
