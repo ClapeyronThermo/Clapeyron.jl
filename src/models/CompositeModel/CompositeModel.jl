@@ -2,28 +2,8 @@
 include("GenericAncEvaluator.jl")
 include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
+include("SolidModel/SolidSolubility.jl")
 include("PolExpVapour.jl")
-"""
-    CompositeModel(components;
-    gas = BasicIdeal,
-    liquid = RackettLiquid,
-    saturation = LeeKeslerSat,
-    gas_userlocations = String[],
-    liquid_userlocations = String[],
-    saturation_userlocations = String[]
-
-Composite Model. it is not consistent, but it can hold different correlations that
-are faster than a volume or saturation pressure iteration.
-
-"""
-struct CompositeModel{𝕍,𝕃,𝕊,𝕃𝕍,𝕃𝕊} <: EoSModel
-    components::Vector{String}
-    gas::𝕍
-    liquid::𝕃
-    solid::𝕊
-    saturation::𝕃𝕍
-    melting::𝕃𝕊
-end
 
 Base.length(cmodel::CompositeModel) = length(cmodel.components)
 
