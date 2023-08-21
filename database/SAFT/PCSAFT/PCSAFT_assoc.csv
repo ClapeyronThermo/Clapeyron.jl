@@ -23,4 +23,12 @@ ethylamine,CCN,H,ethylamine,CCN,e,854.7,0.017275,10.1021/ie010954d
 aniline,,H,aniline,,e,1351.6,0.074883,10.1021/ie010954d
 acetic acid,CC(=O)O,H,acetic acid,CC(=O)O,e,3044.4,0.07555,10.1021/ie010954d
 acetonitrile,,e,water,,H,2264.61,0.0183
+paracetamol,e,paracetamol,H,2003.76,0.01
+thymol,,e,thymol,,H,3504.46,0.04510
+menthol,,e,menthol,,H,3530.68,0.05660
+menthol,,e,thymol,,H,3517.56,0.05052
+menthol,,H,thymol,,e,3517.56,0.05052
+1-decanol,,e,thymol,,H,3215.3,0.00901
+1-decanol,,H,thymol,,e,3215.3,0.00901
+1-decanol,,e,1-decanol,,H,2926.14,0.00180
 
