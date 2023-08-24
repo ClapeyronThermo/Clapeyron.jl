@@ -35,6 +35,7 @@ FillArrays = "^0.12, 0.13, 1"
 ForwardDiff = "^0.10"
 JSON3 = "1"
 LogExpFunctions = "^0.3.24"
+Measurements = "2 - 2.8"
 NLSolvers = "0.4"
 PackedVectorsOfVectors = "^0.1.2"
 PositiveFactorizations = "^0.2"
@@ -51,11 +52,14 @@ julia = "1.6"
 
 [weakdeps]
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
+Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
 
 [extensions]
 ClapeyronSymbolicsExt = "Symbolics"
+ClapeyronMeasurementsExt = "Measurements"
 
 [extras]
+Measurements = "eff96d63-e80a-5855-80a2-b1b0885c5ab7"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 CoolProp = "e084ae63-2819-5025-826e-f8e611a84251"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
