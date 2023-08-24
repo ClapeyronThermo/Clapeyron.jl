@@ -9,7 +9,7 @@ end
 """
     HVRule{γ} <: HVRuleModel
 
-    HVRule(components::Vector{String};
+    HVRule(components;
     activity = Wilson,
     userlocations=String[],
     activity_userlocations=String[],
@@ -46,10 +46,10 @@ for Peng-Robinson:
 HVRule
 
 export HVRule
-function HVRule(components::Vector{String}; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+function HVRule(components; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
     _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1016/0378-3812(79)80001-1"]
-    model = HVRule(components, _activity,references)
+    model = HVRule(format_components(components), _activity,references)
     return model
 end
 

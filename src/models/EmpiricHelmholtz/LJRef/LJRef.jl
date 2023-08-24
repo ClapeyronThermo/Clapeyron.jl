@@ -58,6 +58,8 @@ LJRef
 function LJRef(components;
     userlocations=String[],
     verbose=false)
+
+    components = format_components(components)
     params = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10

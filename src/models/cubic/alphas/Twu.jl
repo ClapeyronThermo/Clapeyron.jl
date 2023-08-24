@@ -11,7 +11,7 @@ end
 """
     TwuAlpha <: TwuAlphaModel
     
-    TwuAlpha(components::Vector{String};
+    TwuAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 ## Input Parameters

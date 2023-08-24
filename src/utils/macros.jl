@@ -410,17 +410,19 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
 
     paramtype = fieldtype(M,:params)
 
+    _components = format_components(components)
+
     #non-splittable
     if paramtype === Nothing
         return M()
     #we don't need to parse params.
     elseif Base.issingletontype(paramtype)
-        return M(components,paramtype(),default_references(M))
+        return M(_components,paramtype(),default_references(M))
     end
     #all fields of the model.
     result = Dict{Symbol,Any}()
-
-
+    result[:components] = _components
+    
     #parse params from database.
     options = default_getparams_arguments(M,userlocations,verbose)
     if has_groups(M)
@@ -428,11 +430,9 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         groups =  G(components,default_gclocations(M);group_userlocations,verbose)
         params_in = getparams(groups, default_locations(M),options)
         result[:groups] = groups
-        result[:components] = groups.components
     else
         groups = nothing
-        params_in = getparams(components, default_locations(M),options)
-        result[:components] = components
+        params_in = getparams(_components, default_locations(M),options)
     end
     
     #put AssocOptions inside params, so it can be used in transform_params
@@ -448,7 +448,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         if !haskey(params_in,"sites")
             #todo: check how this interact with GC, but i suspect that with our new Approach
             #we always want component-based sites
-            params_in["sites"] = SiteParam(result[:components])
+            params_in["sites"] = SiteParam(_components)
         end
     end
 
@@ -456,7 +456,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     if has_groups(M)
         params_out = transform_params(M,params_in,groups,verbose)
     else
-        params_out = transform_params(M,params_in,components,verbose)
+        params_out = transform_params(M,params_in,_components,verbose)
     end
 
     #mix sites
@@ -471,7 +471,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     if has_sites(M)
         _sites = get(params_out,"sites",nothing)
         if isnothing(_sites)
-            _sites = SiteParam(components)
+            _sites = SiteParam(_components)
         end
         result[:sites] = _sites
         result[:assoc_options] = assoc_options

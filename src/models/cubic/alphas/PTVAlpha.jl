@@ -8,7 +8,7 @@ export PTVAlpha
 """
     PTVAlpha <: PTVAlphaModel
     
-    PTVAlpha(components::Vector{String};
+    PTVAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 

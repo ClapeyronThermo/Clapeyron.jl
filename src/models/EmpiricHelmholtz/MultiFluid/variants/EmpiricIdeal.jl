@@ -44,7 +44,7 @@ function EmpiricIdeal(components;
     Rgas = R̄,
     verbose = false,
     )
-
+    components = format_components(components)
     pures = [
         SingleFluidIdeal(comp;
         userlocations = userlocations,

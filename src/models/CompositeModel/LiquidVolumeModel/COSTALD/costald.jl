@@ -9,7 +9,7 @@ end
 
 @newmodelsimple COSTALD COSTALDModel COSTALDParam
 """
-    COSTALD(components::Vector{String}; 
+    COSTALD(components; 
                 userlocations::Vector{String}=String[], 
                 verbose::Bool=false)
 

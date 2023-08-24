@@ -11,7 +11,7 @@ end
 
     PenelouxTranslation <: PenelouxTranslationModel
 
-    PenelouxTranslation(components::Vector{String};
+    PenelouxTranslation(components;
     userlocations=String[],
     verbose::Bool=false)
 

@@ -15,7 +15,7 @@ end
 """
     QCPRRule <: MHV2RuleModel
     
-    QCPRRule(components::Vector{String};
+    QCPRRule(components;
     activity = Wilson,
     userlocations=String[],
     activity_userlocations=String[],
@@ -41,11 +41,11 @@ c̄ = ∑cᵢxᵢ
 QCPRRule
 
 
-function QCPRRule(components::Vector{String}; activity = nothing, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+function QCPRRule(components; activity = nothing, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["cubic/QCPR/QCPR_like.csv","cubic/QCPR/QCPR_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     references = String["10.1016/j.fluid.2020.112790"]
     pkgparams = QCPRRuleParam(params["A"],params["B"],params["l"])
-    model = QCPRRule(components, pkgparams ,references)
+    model = QCPRRule(format_components(components), pkgparams ,references)
     return model
 end
 

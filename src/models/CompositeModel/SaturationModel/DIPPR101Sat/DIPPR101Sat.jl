@@ -17,7 +17,7 @@ end
 """
     DIPPR101Sat <: SaturationModel
     
-    DIPPR101Sat(components::Vector{String};
+    DIPPR101Sat(components;
     userlocations=String[],
     verbose::Bool=false)
 

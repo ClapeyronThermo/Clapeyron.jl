@@ -54,6 +54,7 @@ Base.setindex!(param::SingleParameter,val,i) = setindex!(param.values,val,i)
 
 #broadcasting
 Base.size(param::SingleParameter) = size(param.values)
+Base.length(param::SingleParameter) = length(param.values)
 Base.broadcastable(param::SingleParameter) = param.values
 Base.BroadcastStyle(::Type{<:SingleParameter}) = Broadcast.Style{SingleParameter}()
 

@@ -6,7 +6,7 @@ export PatelTejaAlpha
 """
     PatelTejaAlpha <: SoaveAlphaModel
     
-    PatelTejaAlpha(components::Vector{String};
+    PatelTejaAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 

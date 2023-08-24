@@ -17,7 +17,7 @@ Peng Robinson (1978) equation of state. it uses the following models:
 ## References
 1. Robinson DB, Peng DY. The characterization of the heptanes and heavier fractions for the GPA Peng-Robinson programs. Tulsa: Gas Processors Association; 1978
 """
-function PR78(components::Vector{String}; idealmodel=BasicIdeal,
+function PR78(components; idealmodel=BasicIdeal,
     alpha = PR78Alpha,
     mixing = vdW1fRule,
     activity = nothing,

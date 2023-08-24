@@ -182,9 +182,11 @@ function SingleFluid(components;
         ideal_userlocations = String[])
 
 
-    components = [get_only_comp(components)]
+    _components = format_components(components)
+    single_component_check(SingleFluid,_components)
+
     data = try
-        get_json_data(components;userlocations,coolprop_userlocations,verbose)
+        get_json_data(_components;userlocations,coolprop_userlocations,verbose)
         catch e
             !estimate_pure && rethrow(e)
             nothing
@@ -209,14 +211,14 @@ function SingleFluid(components;
     #ancillaries
     if ancillaries === nothing
         init_ancillaries = _parse_ancillaries(data[:ANCILLARIES],verbose)
-        init_ancillaries.components[1] = components[1]
+        init_ancillaries.components[1] = only(_components)
     else
         init_ancillaries = init_model(ancillaries,components,ancillaries_userlocations,verbose)
     end
 
     references = [eos_data[:BibTeX_EOS]]
 
-    return SingleFluid(components,properties,init_ancillaries,ideal,residual,references)
+    return SingleFluid(_components,properties,init_ancillaries,ideal,residual,references)
 end
 
 
@@ -262,8 +264,10 @@ function SingleFluidIdeal(components;
     idealmodel = nothing,
     ideal_userlocations = String[])
 
-    data = get_json_data(components;userlocations,coolprop_userlocations,verbose)
-    components = [get_only_comp(components)]
+
+    _components = format_components(components)
+    single_component_check(SingleFluidIdeal,_components)
+    data = get_json_data(_components;userlocations,coolprop_userlocations,verbose)
     eos_data = first(data[:EOS])
     #properties
     properties = _parse_properties(data,Rgas,verbose)
@@ -277,7 +281,7 @@ function SingleFluidIdeal(components;
     ideal = _parse_ideal(ideal_data,verbose)
     references = [eos_data[:BibTeX_EOS]]
 
-    return SingleFluidIdeal(components,properties,ideal,references)
+    return SingleFluidIdeal(_components,properties,ideal,references)
 end
 
 function _parse_properties(data,Rgas0 = nothing, verbose = false)
