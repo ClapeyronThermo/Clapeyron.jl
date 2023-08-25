@@ -112,7 +112,7 @@ format_components(str::String) = [str]
 format_components(str::Vector{String}) = str
 format_components(str) = map(format_component_i,str)
 format_component_i(str::String) = str
-format_component_i(x::Tuple) = first(tuple)
+format_component_i(x::Tuple) = first(x)
 format_component_i(x::Pair) = first(x)
 
 
