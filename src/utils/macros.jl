@@ -422,7 +422,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     #all fields of the model.
     result = Dict{Symbol,Any}()
     result[:components] = _components
-    
+
     #parse params from database.
     options = default_getparams_arguments(M,userlocations,verbose)
     if has_groups(M)
@@ -493,19 +493,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     return M((result[k] for k in fieldnames(M))...)
 end
 
+
+
+
 export @newmodel, @f, @newmodelgc, @newmodelsimple, @newmodelsingleton
-#=
-function __newmodel(name, parent, paramstype,sites,idealmodel)
-
-    if sites
-    struct $name{T <: IdealModel} <: $parent
-        components::Array{String,1}
-        groups::GroupParam
-        sites::SiteParam
-        params::$paramstype
-        idealmodel::T
-        assoc_options::AssocOptions
-        references::Array{String,1}
-    end
-
-end =#

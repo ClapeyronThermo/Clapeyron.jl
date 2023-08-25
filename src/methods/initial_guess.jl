@@ -211,14 +211,6 @@ function x0_sat_pure(model,T,z=SA[1.0])
         return (x0l,x0v)
     end
 
-    #normally, at low temperatures, the critical point is overestimated.
-    #assuming sero pressure is better.
-    if Tr < 0.15
-        return x0_sat_volume_near0(model,T)
-    else
-        Vl0,Vv0 = vdw_x0_xat_pure(T,Tc,Pc,Vc)
-    end
-    
     Vl0,Vv0 = vdw_x0_xat_pure(T,Tc,Pc,Vc)
     x0l = min(Vl0,vl)
     x0v = min(1e4*one(Vv0),Vv0) #cutoff volume
