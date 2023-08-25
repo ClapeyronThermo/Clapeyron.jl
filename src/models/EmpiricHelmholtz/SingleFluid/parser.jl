@@ -17,23 +17,27 @@ JSON_ALTERNATIVE_NAMES = Dict{String,String}(
     "hydrogensulfide" => "HydrogenSulfide",
 )
 
-
-function coolprop_handler()
-    #for some reason, this does not work on linux/mac
-    lib_handler1 = Base.Libc.Libdl.dlopen(:libcoolprop;throw_error = false)
-    #return lib_handler1
-    lib_handler1 !== nothing && return lib_handler1
-    if !Sys.iswindows()
-        #search on all dynamic libs, filter libCoolProp. TODO: find something faster.
-        dllist = Base.Libc.Libdl.dllist()
-        x =findall(z->occursin("libCoolProp",z),dllist)
-        length(x) == 0 && return nothing
-        t = dllist[x[1]]
-        lib_handler2 = Base.Libc.Libdl.dlopen(t;throw_error = false)
-        return lib_handler2
-    else
-        return lib_handler1
+@static if !isdefined(Base,:get_extension)
+    function coolprop_handler()
+        #for some reason, this does not work on linux/mac
+        lib_handler1 = Base.Libc.Libdl.dlopen(:libcoolprop;throw_error = false)
+        #return lib_handler1
+        lib_handler1 !== nothing && return lib_handler1
+        if !Sys.iswindows()
+            #search on all dynamic libs, filter libCoolProp. TODO: find something faster.
+            dllist = Base.Libc.Libdl.dllist()
+            x =findall(z->occursin("libCoolProp",z),dllist)
+            length(x) == 0 && return nothing
+            t = dllist[x[1]]
+            lib_handler2 = Base.Libc.Libdl.dlopen(t;throw_error = false)
+            return lib_handler2
+        else
+            return lib_handler1
+        end
     end
+else
+    #defined in ClapeyronCoolPropExt
+    function coolprop_handler end
 end
 
 function is_coolprop_loaded()

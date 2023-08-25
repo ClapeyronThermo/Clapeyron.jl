@@ -91,14 +91,14 @@ function MultiFluid(components;
     end
 
     pures = [
-        SingleFluid(_components;
+        SingleFluid(comp;
         userlocations = pure_userlocations,
         idealmodel = idealmodels[i],
         verbose = verbose,
         estimate_pure = estimate_pure,
         coolprop_userlocations = coolprop_userlocations,
         )
-        for (i,comp) in pairs(components)]
+        for (i,comp) in pairs(_components)]
     mixing = init_model(mixing,components,mixing_userlocations,verbose)
     departure = init_model(departure,components,departure_userlocations,verbose)
     params = MultiFluidParam(_components,pures)
