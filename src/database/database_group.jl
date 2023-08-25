@@ -121,7 +121,7 @@ function GroupParam(gccomponents,
     else
         
         _grouptype = fast_parse_grouptype(filepaths)
-        if _grouptype != grouptype
+        if _grouptype != grouptype && grouptype != :unknown 
             _grouptype = grouptype
         end
         groupsourcecsvs = filepaths
@@ -221,7 +221,7 @@ function StructGroupParam(components::Vector,
         end
     else
         _grouptype = fast_parse_grouptype(filepaths)
-        if _grouptype != grouptype
+        if _grouptype != grouptype && grouptype != :unknown
             _grouptype = grouptype
         end
     end
