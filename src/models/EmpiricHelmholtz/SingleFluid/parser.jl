@@ -41,7 +41,10 @@ else
 end
 
 function is_coolprop_loaded()
-    return coolprop_handler() !== nothing
+    handler = coolprop_handler()
+    res = handler !== nothing
+    Base.Libc.Libdl.dlclose(handler)
+    return res
 end
 
 function coolprop_csv(component::String,comp = "")
@@ -62,14 +65,18 @@ function coolprop_csv(component::String,comp = "")
                     resize!(message_buffer,buffer_length<<1)
                     buffer_length = length(message_buffer)
                 else
+                    Base.Libc.Libdl.dlclose(lib_handler)
                     return false,unsafe_string(convert(Ptr{UInt8}, pointer(message_buffer::Array{UInt8, 1})))
                 end
             else
+                Base.Libc.Libdl.dlclose(lib_handler)
                 return true,unsafe_string(convert(Ptr{UInt8}, pointer(message_buffer::Array{UInt8, 1})))
             end
         end
+        Base.Libc.Libdl.dlclose(lib_handler)
         return false,unsafe_string(convert(Ptr{UInt8}, pointer(message_buffer::Array{UInt8, 1})))
     else
+        Base.Libc.Libdl.dlclose(lib_handler)
         throw(error("cannot found component file $(comp). Try loading the CoolProp library by loading it."))
     end
 
