@@ -145,8 +145,9 @@ function x0_sat_pure(model,T,z=SA[1.0])
     end
 
     p = -0.25*R̄*T/B
-    vl = x0_volume(model,p,T,z,phase=:l)
-    vl = _volume_compress(model,p,T,SA[1.0],vl)
+    vl_x0 = x0_volume(model,p,T,z,phase=:l)
+    vl = _volume_compress(model,p,T,SA[1.0],vl_x0)
+
     #=the basis is that p = RT/v-b - a/v2
     we have a (p,v,T) pair
     and B = 2nd virial coefficient = b-a/RT
@@ -168,13 +169,8 @@ function x0_sat_pure(model,T,z=SA[1.0])
     if isnan(vl) | (Δ < 0)
         #fails on two ocassions:
         #near critical point, or too low.
-        #apply same strategy as if isnan(B), but now we know B, so we can use that to improve the gas estimate
-        px = pressure(model,x0l,T)
-        if px < 0 #low pressure
-            return x0_sat_volume_near0(model,T)
-        else #high pressure
-            return 4*lb_v,-2*B + 2*lb_v
-        end
+        #return high pressure estimate
+        return 4*lb_v,-2*B + 2*lb_v
     end
     Δsqrt = sqrt(Δ)
     b1 = 0.5*(-_b + Δsqrt)
