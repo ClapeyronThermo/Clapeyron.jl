@@ -6,8 +6,6 @@ struct LCVMRule{γ} <: LCVMRuleModel
     references::Array{String,1}
 end
 
-@registermodel LCVMRule
-
 """
     LCVMRule{γ} <: LCVMRuleModel
 

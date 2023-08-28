@@ -12,7 +12,6 @@ struct PatelTeja{T <: IdealModel,α,c,γ} <:PatelTejaModel
     references::Array{String,1}
 end
 
-@registermodel PatelTeja
 """
     PatelTeja(components::Vector{String};
     idealmodel=BasicIdeal,

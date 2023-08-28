@@ -14,7 +14,6 @@ struct COSMOSAC02{c<:EoSModel} <: COSMOSAC02Model
     references::Array{String,1}
 end
 
-@registermodel COSMOSAC02
 export COSMOSAC02
 @doc """
 COSMOSAC02(components::Vector{String};

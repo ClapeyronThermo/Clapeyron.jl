@@ -57,15 +57,6 @@ EmpiricDeparture with 2 components:
 Contains parameters: F, parameters
 ```
 
-
-```@docs
-Clapeyron.IAPWS95
-Clapeyron.PropaneRef
-Clapeyron.LJRef
-Clapeyron.GERG2008
-Clapeyron.EOS_LNG
-```
-
 ## Generic Models
 ```
 Clapeyron.SingleFluid

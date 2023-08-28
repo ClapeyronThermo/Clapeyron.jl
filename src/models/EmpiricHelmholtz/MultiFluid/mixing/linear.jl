@@ -1,7 +1,5 @@
 
-struct LinearMixing <: MixingRule end
-
-is_splittable(::LinearMixing) = false
+@newmodelsingleton LinearMixing MixingRule
 
 """
     LinearMixing <: MultiFluidDepartureModel
@@ -22,9 +20,7 @@ V̄ = ∑xᵢVcⱼ
 T̄ = ∑xᵢTcᵢ
 ```
 """
-function LinearMixing(components;userlocations = String[],verbose = false)
-    LinearMixing()
-end
+LinearMixing
 
 function v_scale(model::MultiFluid,z,mixing::LinearMixing,∑z)
     Vc = model.params.Vc.values

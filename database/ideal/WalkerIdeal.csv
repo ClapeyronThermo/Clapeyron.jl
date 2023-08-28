@@ -1,6 +1,6 @@
 Clapeyron Database File,,,,,,,,,,,
 Walker Ideal Like Parameters  [csvtype = like,grouptype = Walker]
-species,Mw,Nrot,theta_1,theta_2,theta_3,theta_4,deg_1,deg_2,deg_3,deg_4,source
+species,Mw,Nrot,theta1,theta2,theta3,theta4,deg1,deg2,deg3,deg4,source
 CH4,16.04,3,4624.17,1694.28,3887.35,2269.83,1,2,3,3,10.1021/acs.jced.0c00723
 H2O,18.015,3,4805.23,2313.46,5295.66,1000,1,1,1,0,10.1021/acs.jced.0c00723
 CO2,44.01,2,1960.63,3280.47,957.22,1000,1,1,2,0,10.1021/acs.jced.0c00723

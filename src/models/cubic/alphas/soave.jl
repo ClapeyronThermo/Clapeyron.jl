@@ -1,6 +1,6 @@
 abstract type SoaveAlphaModel <: AlphaModel end
 
-struct SoaveAlphaParam = SimpleAlphaParam
+const SoaveAlphaParam = SimpleAlphaParam
 
 @newmodelsimple SoaveAlpha SoaveAlphaModel SoaveAlphaParam
 export SoaveAlpha
@@ -29,14 +29,7 @@ to use different polynomial coefficients for `mᵢ`, overload `Clapeyron.α_m(::
 
 """
 SoaveAlpha
-
-function SoaveAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = SoaveAlphaParam(acentricfactor)
-    model = SoaveAlpha(packagedparams, verbose=verbose)
-    return model
-end
+default_locations(::Type{SoaveAlpha}) = critical_data()
 
 @inline α_m(model::RKModel,::SoaveAlpha) = (0.480,1.547,-0.176)
 @inline α_m(model::PRModel,::SoaveAlpha) = (0.37464,1.54226,-0.26992) #equal to PRAlpha

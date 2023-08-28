@@ -7,6 +7,9 @@ struct TwuAlphaParam <: EoSParam
 end
 
 @newmodelsimple TwuAlpha TwuAlphaModel TwuAlphaParam
+default_locations(::Type{TwuAlpha}) = ["alpha/Twu/Twu_like.csv"]
+default_references(::Type{TwuAlpha}) = ["10.1016/0378-3812(80)80003-3"]
+export TwuAlpha
 
 """
     TwuAlpha <: TwuAlphaModel
@@ -32,16 +35,6 @@ Trᵢ = T/Tcᵢ
 1. Twu, C. H., Lee, L. L., & Starling, K. E. (1980). Improved analytical representation of argon thermodynamic behavior. Fluid Phase Equilibria, 4(1–2), 35–44. [doi:10.1016/0378-3812(80)80003-3](https://doi.org/10.1016/0378-3812(80)80003-3)
 """
 TwuAlpha
-
-function TwuAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["alpha/Twu/Twu_like.csv"]; userlocations=userlocations, verbose=verbose)
-    M = params["M"]
-    N = params["N"]
-    L = params["L"]
-    packagedparams = TwuAlphaParam(M,N,L)
-    model = TwuAlpha(packagedparams, verbose=verbose)
-    return model
-end
 
 const Twu91Alpha = TwuAlpha
 
@@ -87,8 +80,6 @@ function Twu88Alpha(components::Vector{String}; userlocations=String[], verbose:
     model = TwuAlpha(packagedparams, verbose=verbose)
     return model
 end
-
-doi(::TwuAlpha) = ["10.1016/0378-3812(80)80003-3"]
 
 function α_function(model::CubicModel,V,T,z,alpha_model::TwuAlphaModel)
     Tc = model.params.Tc.values

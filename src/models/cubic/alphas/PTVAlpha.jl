@@ -1,6 +1,6 @@
 abstract type PTVAlphaModel <: AlphaModel end
 
-struct PTVAlphaParam = SimpleAlphaParam
+const PTVAlphaParam = SimpleAlphaParam
 
 @newmodelsimple PTVAlpha PTVAlphaModel PTVAlphaParam
 export PTVAlpha
@@ -27,14 +27,7 @@ mᵢ = 0.46283 + 3.58230Zcᵢ*ωᵢ - 8.19417(Zcᵢ*ωᵢ)^2
 ```
 """
 PTVAlpha
-
-function PTVAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = PTVAlphaParam(acentricfactor)
-    model = PTVAlpha(packagedparams, verbose=verbose)
-    return model
-end
+default_locations(::Type{PTVAlpha}) = critical_data()
 
 function α_function(model::CubicModel,V,T,z,alpha_model::PTVAlphaModel)
     Tc = model.params.Tc.values

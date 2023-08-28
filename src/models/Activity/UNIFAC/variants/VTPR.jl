@@ -8,7 +8,6 @@ struct VTPRUNIFAC{c<:EoSModel} <: VTPRUNIFACModel
     references::Array{String,1}
 end
 
-@registermodel VTPRUNIFAC
 export VTPRUNIFAC
 
 """

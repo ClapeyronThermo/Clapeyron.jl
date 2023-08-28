@@ -12,8 +12,6 @@ struct QCPRRule <: QCPRRuleModel
     references::Array{String,1}
 end
 
-@registermodel QCPRRule
-
 """
     QCPRRule <: MHV2RuleModel
     

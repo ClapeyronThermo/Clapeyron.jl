@@ -21,19 +21,32 @@ struct JobackIdealParam <: EoSParam
     H_vap::SingleParam{Float64}
     eta_a::SingleParam{Float64}
     eta_b::SingleParam{Float64}
+    coeffs::SingleParam{NTuple{4,Float64}}
 end
 
-
-abstract type JobackIdealModel <: IdealModel end
-
-struct JobackIdeal <: JobackIdealModel
-    components::Array{String,1}
-    groups::GroupParam
-    params::JobackIdealParam
-    reidmodel::ReidIdeal
-    references::Array{String,1}
+abstract type JobackIdealModel <: ReidIdealModel end
+@newmodelgc JobackIdeal JobackIdealModel JobackIdealParam false
+default_references(::Type{JobackIdeal}) = ["10.1080/00986448708960487"]
+default_locations(::Type{JobackIdeal}) = ["ideal/JobackIdeal.csv","properties/molarmass_groups.csv","properties/natoms_groups.csv"]
+default_gclocations(::Type{JobackIdeal}) = ["ideal/JobackIdeal_Groups.csv"]
+function transform_params(::Type{JobackIdeal},params,groups)
+    components = groups.components
+    n = groups.n_flattenedgroups
+    l = length(components)
+    i_groups = groups.i_groups
+    a,b,c,d = params["a"],params["b"],params["c"],params["d"]
+    _a,_b,_c,_d = zeros(l),zeros(l),zeros(l),zeros(l)
+    for i in 1:l
+        #res +=z[i]*(log(z[i]/V))/Σz
+        ni = n[i]
+        _a[i] = ∑(a[j]*ni[j] for j in i_groups[i]) - 37.93
+        _b[i] = ∑(b[j]*ni[j] for j in i_groups[i]) + 0.210
+        _c[i] = ∑(c[j]*ni[j] for j in i_groups[i]) - 3.91e-4
+        _d[i] = ∑(d[j]*ni[j] for j in i_groups[i]) + 2.06e-7
+    end
+    params["coeffs"] = reid_coeffs(_a,_b,_c,_d,components)
+    return params
 end
-@registermodel JobackIdeal
 
 export JobackIdeal
 
@@ -85,59 +98,8 @@ The estimated critical point of a single component can be obtained via `crit_pur
 """
 JobackIdeal
 
-function JobackIdeal(components;userlocations=String[], verbose=false)
-    groups = GroupParam(components,["ideal/JobackIdeal_Groups.csv"], verbose=verbose)
-    params = getparams(groups, ["ideal/JobackIdeal.csv","properties/molarmass_groups.csv","properties/natoms_groups.csv"]; userlocations=userlocations, verbose=verbose)
-    Mw = params["Mw"]::SingleParam{Float64}
-    N_a = params["N_a"]::SingleParam{Int}
-    T_c = params["T_c"]::SingleParam{Float64}
-    P_c = params["P_c"]::SingleParam{Float64}
-    V_c = params["V_c"]::SingleParam{Float64}
-    T_b = params["T_b"]::SingleParam{Float64}
-    T_m = params["T_m"]::SingleParam{Float64}
-    H_form = params["H_form"]::SingleParam{Float64}
-    G_form = params["G_form"]::SingleParam{Float64}
-    a = params["a"]::SingleParam{Float64}
-    b = params["b"]::SingleParam{Float64}
-    c = params["c"]::SingleParam{Float64}
-    d = params["d"]::SingleParam{Float64}
-    H_fusion = params["H_fusion"]::SingleParam{Float64}
-    H_vap = params["H_vap"]::SingleParam{Float64}
-    eta_a = params["eta_a"]::SingleParam{Float64}
-    eta_b = params["eta_b"]::SingleParam{Float64}
-    packagedparams = JobackIdealParam(
-    Mw,
-    N_a,
-    T_c,
-    P_c,
-    V_c,
-    T_b,
-    T_m,
-    H_form,
-    G_form,
-    a,
-    b,
-    c,
-    d,
-    H_fusion,
-    H_vap,
-    eta_a,
-    eta_b)
-    references = ["10.1080/00986448708960487"]
-    
-    comps = 1:length(groups.components)
-    i_groups = groups.i_groups
-    n = groups.n_flattenedgroups
-    coeffs = Vector{NTuple{4,Float64}}(undef,length(comps)) 
-    reidparam = ReidIdealParam(SingleParam("GC-averaged Reid Coefficients",groups.components,coeffs))
-    reidmodel = ReidIdeal(reidparam)
-    model = JobackIdeal(groups.components,groups,packagedparams,reidmodel,references)
-    recombine!(model)
-    return model
-end
-
 function recombine_impl!(model::JobackIdeal)
-    coeffs = model.reidmodel.params.coeffs
+    coeffs = model.params.coeffs
     i_groups = model.groups.i_groups
     n = model.groups.n_flattenedgroups
     a = model.params.a.values
@@ -156,11 +118,7 @@ function recombine_impl!(model::JobackIdeal)
     return model
 end
 
-ReidIdeal(model::JobackIdeal) = model.reidmodel
-
-function VT_isobaric_heat_capacity(model::JobackIdeal,V,T,z=SA[1.])
-    return VT_isobaric_heat_capacity(model.reidmodel,V,T,z)
-end
+ReidIdeal(model::JobackIdeal) = ReidIdeal(model.components,ReidIdealParam(model.params.coeffs),model.references)
 
 function T_b(model::JobackIdeal)
     n = model.groups.n_flattenedgroups
@@ -229,41 +187,4 @@ function crit_pure(model::JobackIdeal)
     return (T_c(model),P_c(model),V_c(model))
 end
 
-function a_ideal(model::JobackIdealModel, V, T, z)
-    return a_ideal(model.reidmodel,V,T,z)
-end
-
 export JobackIdeal
-
-
-##utilities
-#=
-function reid_to_joback(a,b,c,d)
-    _a = a + 37.93
-    _b = b - 0.210
-    _c = c + 3.91e-4
-    _d = d - 2.06e-7
-    return (_a,_b,_c,_d)
-end
-
-#Vc = 5.594807453383915e-5
-#Tc = 647.096
-#Pc = 2.2064e7
-#Tb = 373.15
-function crit_to_joback(Tb,Tc,Pc,Vc,na)
-    tb = Tb - 198.2
-    vc = Vc*1e6 - 17.5
-    Tx = Tc/Tb
-    Tx = 1/Tx - 0.584 #(0.965Ti(1 - Ti))
-    Tx = Tx/0.965
-    #Tx = Ti(1-Ti), #-Ti2 + Ti - Tx = 0, Ti2 - Ti + Tx = 0 
-    tc = (1 + sqrt(1 -4Tx))/2
-    fxt(t) = Tb*(0.584 + 0.965*t - t*t)^-1 - Tc
-    tc = Roots.find_zero(fxt,tc)
-    fxp(p) = (0.113 + 0.0032*na - p)^-2 - 1e-5*Pc
-    pc = sqrt(abs(1/(Pc*Pc*1e-10) -0.113 - 0.0032*na)) 
-    @show pc
-    pc = Roots.find_zero(fxp,pc)
-    return (tc,pc,vc,tb)
-end
-=#

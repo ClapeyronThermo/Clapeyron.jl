@@ -49,7 +49,6 @@ struct UNIFACFV{c<:EoSModel} <: UNIFACFVModel
     UNIFACFV_cache::UNIFACFVCache
 end
 
-@registermodel UNIFACFV
 export UNIFACFV
 
 """

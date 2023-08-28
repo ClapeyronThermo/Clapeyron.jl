@@ -50,7 +50,6 @@ struct UNIFACFVPoly{c<:EoSModel} <: UNIFACFVPolyModel
     UNIFACFVPoly_cache::UNIFACFVPolyCache
 end
 
-@registermodel UNIFACFVPoly
 export UNIFACFVPoly
 
 """

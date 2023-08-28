@@ -16,7 +16,6 @@ struct COSMOSAC10{c<:EoSModel} <: COSMOSAC10Model
     references::Array{String,1}
 end
 
-@registermodel COSMOSAC10
 export COSMOSAC10
 
 function COSMOSAC10(components::Vector{String};

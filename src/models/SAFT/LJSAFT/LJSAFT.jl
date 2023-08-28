@@ -9,11 +9,26 @@ end
 
 abstract type LJSAFTModel <: SAFTModel end
 @newmodel LJSAFT LJSAFTModel LJSAFTParam
-
+default_references(::Type{LJSAFT}) = ["10.1021/IE00107A014", "10.1021/ie00056a050","10.1021/ie00044a042"]
+default_locations(::Type{LJSAFT}) = ["SAFT/LJSAFT","properties/molarmass.csv"]
+function transform_params(::Type{LJSAFT},params)
+    k = get(params,"k",nothing)
+    zeta = params["zeta"]
+    T_tilde = epsilon_LorentzBerthelot(params["T_tilde"], k)
+    params["T_tilde"] = T_tilde
+    b = params["b"]
+    b.values .*= 1E-3
+    b.values .^= 1/3
+    b = sigma_LorentzBerthelot(b,zeta)
+    params["sigma"] = deepcopy(b)
+    b.values .^= 3
+    params["b"] = b
+    return params
+end
 """
     LJSAFTModel <: SAFTModel
 
-    LJSAFT(components; 
+    LJSAFT(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
@@ -51,34 +66,6 @@ Perturbed-Chain SAFT (PC-SAFT)
 LJSAFT
 
 export LJSAFT
-function LJSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
-    params,sites = getparams(components, ["SAFT/LJSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["segment"]
-
-    Mw = params["Mw"]
-
-    k = get(params,"k",nothing)
-    zeta = params["zeta"]
-    
-    T_tilde = epsilon_LorentzBerthelot(params["T_tilde"], k)
-    params["b"].values .*= 1E-3
-    params["b"].values .^= 1/3
-    b = sigma_LorentzBerthelot(params["b"],zeta)
-    b.values .^= 3
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bondvol"]
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options) #combining rules for association
-    packagedparams = LJSAFTParam(Mw, segment, b, T_tilde, epsilon_assoc, bondvol)
-    references = ["10.1021/ie9602320"]
-
-    model = LJSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
-    return model
-end
 
 function lb_volume(model::LJSAFTModel, z = SA[1.0])
     seg = model.params.segment.values
@@ -114,7 +101,7 @@ function a_seg(model::LJSAFTModel, V, T, z)
     C1 = LJSAFTconsts.C1
     C2 = LJSAFTconsts.C2
     C4 = LJSAFTconsts.C4
-  
+
     Σz = ∑(z)
     m = model.params.segment.values
 
@@ -202,5 +189,5 @@ const LJSAFTconsts = (
     C0 = [2.01546797,-28.17881636,28.28313847,-10.42402873],
     C1 = [-19.58371655,75.62340289,-120.70586598,93.92740328,-27.37737354],
     C2 = [29.34470520,-112.35356937,170.64908980,-123.06669187,34.42288969],
-    C4 = [-13.37031968,65.38059570,-115.09233113,88.91973082,-25.62099890]    
+    C4 = [-13.37031968,65.38059570,-115.09233113,88.91973082,-25.62099890]
    )

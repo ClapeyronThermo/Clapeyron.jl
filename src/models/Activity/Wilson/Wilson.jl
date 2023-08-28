@@ -15,7 +15,6 @@ struct Wilson{c<:EoSModel} <: WilsonModel
     references::Array{String,1}
 end
 
-@registermodel Wilson
 export Wilson
 
 """

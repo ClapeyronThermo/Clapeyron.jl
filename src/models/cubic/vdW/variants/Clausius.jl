@@ -12,7 +12,6 @@ struct Clausius{T <: IdealModel,α,c,γ} <:ClausiusModel
     references::Array{String,1}
 end
 
-@registermodel Clausius
 """
     Clausius(components::Vector{String};
     idealmodel=BasicIdeal,

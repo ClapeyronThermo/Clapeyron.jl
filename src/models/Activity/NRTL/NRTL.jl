@@ -14,7 +14,6 @@ struct NRTL{c<:EoSModel} <: NRTLModel
     references::Array{String,1}
 end
 
-@registermodel NRTL
 
 export NRTL
 """

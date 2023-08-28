@@ -12,10 +12,9 @@ struct UNIQUAC{c<:EoSModel} <: UNIQUACModel
     components::Array{String,1}
     params::UNIQUACParam
     puremodel::EoSVectorParam{c}
-    absolutetolerance::Float64
     references::Array{String,1}
 end
-@registermodel UNIQUAC
+
 export UNIQUAC
 
 """
@@ -73,7 +72,7 @@ function UNIQUAC(components::Vector{String};
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIQUACParam(a,r,q,q_p,Mw)
     references = String[]
-    model = UNIQUAC(components,packagedparams,_puremodel,1e-12,references)
+    model = UNIQUAC(components,packagedparams,_puremodel,references)
     return model
 end
 #=

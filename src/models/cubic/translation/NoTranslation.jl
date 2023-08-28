@@ -1,10 +1,5 @@
 abstract type NoTranslationModel <: TranslationModel end
-
-struct NoTranslationParam <: EoSParam
-end
-
-@newmodelsimple NoTranslation NoTranslationModel NoTranslationParam
-
+@newmodelsingleton NoTranslation NoTranslationModel
 export NoTranslation
 
 """
@@ -26,18 +21,8 @@ cᵢ = 0 ∀ i
 """
 NoTranslation
 
-function NoTranslation(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    model = NoTranslation(NoTranslationParam())
-    return model
-end
-
-NoTranslation() = NoTranslation(NoTranslationParam())
-
 function translation(model::CubicModel,V,T,z,translation_model::NoTranslation)
     return FillArrays.Zeros{Float64}(length(z))
 end
 
 recombine_translation!(model::CubicModel,translation_model::NoTranslation) = translation_model
-
-
-is_splittable(::NoTranslation) = false

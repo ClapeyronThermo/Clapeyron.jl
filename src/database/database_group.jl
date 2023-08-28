@@ -140,10 +140,19 @@ function GroupParam(gccomponents,
     return GroupParam(gccomponents_parsed,_grouptype,groupsourcecsvs)
 end
 
-function StructGroupParam(components,
-    grouplocations::Array{String,1}=String[],
-    options::ParamOptions = DefaultOptions,
+function StructGroupParam(gccomponents,
+    group_locations=String[];
+    group_userlocations=String[],
+    verbose::Bool = false,
     grouptype = :unknown)
+    options = ParamOptions(;group_userlocations,verbose)
+    return StructGroupParam(gccomponents,group_locations,options,grouptype)
+end
+
+function StructGroupParam(components::Vector,
+    grouplocations::Array{String,1},
+    options::ParamOptions,
+    grouptype::Symbol)
 
     #gccomponents = Vector{Tuple{String,Vector{Pair{String,Int64}}}}(undef,length(components))
     intragccomponents = Vector{Tuple{String,Vector{Pair{Tuple{String, String}, Int64}}}}(undef,length(components))

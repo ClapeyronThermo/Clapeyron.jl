@@ -21,7 +21,6 @@ struct COSMOSACdsp{c<:EoSModel} <: COSMOSACdspModel
     references::Array{String,1}
 end
 
-@registermodel COSMOSACdsp
 export COSMOSACdsp
 
 function COSMOSACdsp(components::Vector{String};

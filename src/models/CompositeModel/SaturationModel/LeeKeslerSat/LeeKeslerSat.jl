@@ -36,16 +36,7 @@ f₁ = 15.2518 - 15.6875/Tr - 13.4721•log(Tr) + 0.43577•Tr⁶
 1. Lee, B. I., & Kesler, M. G. (1975). A generalized thermodynamic correlation based on three-parameter corresponding states. AIChE journal. American Institute of Chemical Engineers, 21(3), 510–527. [doi:10.1002/aic.690210313](https://doi.org/10.1002/aic.690210313)
 """
 LeeKeslerSat
-
-function LeeKeslerSat(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    acentricfactor = params["acentricfactor"]
-    Tc = params["Tc"]
-    Pc = params["Pc"]
-    packagedparams = LeeKeslerSatParam(Tc,Pc,acentricfactor)
-    model = LeeKeslerSat(packagedparams, verbose=verbose)
-    return model
-end 
+default_locations(::Type{LeeKeslerSat}) = critical_data()
 
 function crit_pure(model::LeeKeslerSatModel)
     single_component_check(crit_pure,model)

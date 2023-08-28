@@ -1,6 +1,6 @@
 Clapeyron Database File,,,,,,,,,,
 SAFTVRMie Ideal and Like Parameters,,,,,,,,,,
-species,DIPPR Number,Mw,m,sigma,epsilon,lambda_a,lambda_r,n_H,n_e,nu,source
+species,DIPPR Number,Mw,segment,sigma,epsilon,lambda_a,lambda_r,n_H,n_e,nu,source
 He_Aasen,,4.002602,1.,2.5490,10.952,6,13,0,0,0,
 Ne_Aasen,,20.1797,1.,2.7760,37.716,6,13,0,0,0,
 Ne_Dufal,,20.0,1.,2.8019,29.875,6,9.6977,0,0,0,

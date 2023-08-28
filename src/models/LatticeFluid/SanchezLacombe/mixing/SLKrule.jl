@@ -3,7 +3,6 @@ struct SLKRule <: SLMixingRule
     k::PairParam{Float64}
 end
 
-@registermodel SLKRule
 export SLKRule
 
 """

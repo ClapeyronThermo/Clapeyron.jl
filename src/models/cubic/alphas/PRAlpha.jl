@@ -1,4 +1,4 @@
-PRAlphaParam = SimpleAlphaParam
+const PRAlphaParam = SimpleAlphaParam
 
 @newmodelsimple PRAlpha SoaveAlphaModel PRAlphaParam
 export PRAlpha
@@ -23,13 +23,6 @@ mᵢ = 0.37464 + 1.54226ωᵢ - 0.26992ωᵢ^2
 ```
 """
 PRAlpha
-
-function PRAlpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = PRAlphaParam(acentricfactor)
-    model = PRAlpha(packagedparams, verbose=verbose)
-    return model
-end
+default_locations(::Type{PRAlpha}) = critical_data()
 
 @inline α_m(model,::PRAlpha) = (0.37464,1.54226,-0.26992)
