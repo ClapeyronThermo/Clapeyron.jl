@@ -202,6 +202,7 @@ include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/PPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/uPCSAFT.jl")
 
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
