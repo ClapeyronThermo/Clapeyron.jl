@@ -35,7 +35,6 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
 
 
     #just read once if allowed.
-
     userlocations_tcpr = String[]
     append!(userlocations_tcpr,userlocations)
     if alpha === TwuAlpha
@@ -91,7 +90,7 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
             end
         end
         packagedparams = TwuAlphaParam(M,N,L)
-        init_alpha = TwuAlpha(packagedparams, verbose=verbose)
+        init_alpha = TwuAlpha(components,packagedparams,default_references(TwuAlpha))
     end
 
     if translation !== ConstantTranslation
@@ -99,7 +98,7 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
     else
         c = params["v_shift"]
         packagedparams = ConstantTranslationParam(c)
-        init_translation = ConstantTranslation(packagedparams, verbose=verbose)
+        init_translation = ConstantTranslation(components,packagedparams,String[])
         #try to initialize translation if missing
         cc = init_translation.params.v_shift
         for i in 1:n
@@ -154,3 +153,4 @@ function tcPRact(components::Vector{String}; idealmodel=BasicIdeal,
 end
 
 export tcPR
+
