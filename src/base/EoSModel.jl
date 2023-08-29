@@ -96,6 +96,7 @@ You can define your own EoS by adding a method to `a_res` that accepts your cust
 function a_res end
 Base.broadcastable(model::EoSModel) = Ref(model)
 Base.transpose(model::EoSModel) = model
+Base.eltype(model::EoSModel) = eltype(model.params)
 """
     @comps
 

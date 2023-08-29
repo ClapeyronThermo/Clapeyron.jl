@@ -1,7 +1,6 @@
 module ClapeyronMeasurementsExt
 using Clapeyron
 using Clapeyron.ForwardDiff
-import Clapeyron: uPCSAFT
 using Measurements
 
 using Measurements: Measurement
@@ -11,8 +10,6 @@ using ForwardDiff: Dual
 if !hasmethod(Base.promote_rule,Tuple{Type{Measurement},Type{Dual}})
     include("ClapeyronMeasurementsExt/rules.jl")
 end
-
-export uPCSAFT
 
 #=
 add more code here.

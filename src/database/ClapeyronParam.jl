@@ -37,6 +37,8 @@ function build_eosparam(::Type{T},data) where T <: EoSParam
     return T((data[string(name)] for name in names)...)
 end
 
+Base.eltype(p::EoSParam) = Float64
+
 const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
 function pack_vectors(x::AbstractVector{<:AbstractVector})
