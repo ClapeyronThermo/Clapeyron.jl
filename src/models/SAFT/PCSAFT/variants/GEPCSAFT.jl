@@ -54,7 +54,7 @@ Perturbed-Chain SAFT (PC-SAFT), with Gᴱ mixing rule.
 GEPCSAFT
 
 export GEPCSAFT
-function GEPCSAFT(components::Vector{String}; idealmodel=BasicIdeal,
+function GEPCSAFT(components; idealmodel=BasicIdeal,
     activity=UNIFAC,
     userlocations=String[],
     ideal_userlocations=String[],
@@ -78,7 +78,7 @@ function GEPCSAFT(components::Vector{String}; idealmodel=BasicIdeal,
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     references = String["10.1021/acs.iecr.2c03464"]
-    model = GEPCSAFT(components,sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
+    model = GEPCSAFT(format_components(components),sites,init_activity,packagedparams,init_idealmodel,assoc_options,references)
     return model
 end
 

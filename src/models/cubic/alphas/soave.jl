@@ -8,7 +8,7 @@ export SoaveAlpha
 """
     SoaveAlpha <: SoaveAlphaModel
     
-    SoaveAlpha(components::Vector{String};
+    SoaveAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 

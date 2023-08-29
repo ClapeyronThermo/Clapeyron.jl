@@ -8,7 +8,7 @@ struct PSRKUNIFAC{c<:EoSModel} <: UNIFACModel
 end
 
 """
-    PSRKUNIFAC(components::Vector{String};
+    PSRKUNIFAC(components;
     puremodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],

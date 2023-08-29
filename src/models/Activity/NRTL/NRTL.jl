@@ -19,7 +19,7 @@ export NRTL
 """
     NRTL <: ActivityModel
 
-    function NRTL(components::Vector{String};
+    function NRTL(components;
     puremodel=PR,
     userlocations=String[],
     pure_userlocations = String[],
@@ -47,11 +47,13 @@ Gᵢⱼ exp(-cᵢⱼτᵢⱼ)
 """
 NRTL
 
-function NRTL(components::Vector{String}; puremodel=PR,
+function NRTL(components; puremodel=PR,
     userlocations = String[], 
     pure_userlocations = String[],
     verbose=false)
-    params = getparams(components, ["properties/molarmass.csv","Activity/NRTL/NRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b"], verbose=verbose)
+
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["properties/molarmass.csv","Activity/NRTL/NRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b"], verbose=verbose)
     a  = params["a"]
     b  = params["b"]
     c  = params["c"]
@@ -60,7 +62,7 @@ function NRTL(components::Vector{String}; puremodel=PR,
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = NRTLParam(a,b,c,Mw)
     references = String["10.1002/aic.690140124"]
-    model = NRTL(components,packagedparams,_puremodel,references)
+    model = NRTL(formatted_components,packagedparams,_puremodel,references)
     return model
 end
 

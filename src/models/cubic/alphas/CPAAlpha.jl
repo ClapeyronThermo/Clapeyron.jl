@@ -10,7 +10,7 @@ export CPAAlpha
 """
     CPAAlpha <: CPAAlphaModel
     
-    CPAAlpha(components::Vector{String};
+    CPAAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 

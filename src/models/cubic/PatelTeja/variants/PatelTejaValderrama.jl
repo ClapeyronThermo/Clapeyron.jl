@@ -13,7 +13,7 @@ struct PTV{T <: IdealModel,α,c,γ} <:PTVModel
 end
 
 """
-    PTV(components::Vector{String};
+    PTV(components;
     idealmodel=BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
@@ -74,7 +74,7 @@ Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
 PTV
 
 export PTV
-function PTV(components::Vector{String}; idealmodel=BasicIdeal,
+function PTV(components; idealmodel=BasicIdeal,
     alpha = PTVAlpha,
     mixing = vdW1fRule,
     activity=nothing,
@@ -85,7 +85,9 @@ function PTV(components::Vector{String}; idealmodel=BasicIdeal,
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-     verbose=false)
+    verbose=false)
+    
+    formatted_components = format_components(components)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = get(params,"k",nothing)
     l = get(params,"l",nothing)
@@ -95,15 +97,15 @@ function PTV(components::Vector{String}; idealmodel=BasicIdeal,
     Tc = params["Tc"]
     acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components)))
-    b = PairParam("b",components,zeros(length(components)))
-    c = PairParam("c",components,zeros(length(components)))
+    a = PairParam("a",formatted_components,zeros(length(Tc)))
+    b = PairParam("b",formatted_components,zeros(length(Tc)))
+    c = PairParam("c",formatted_components,zeros(length(Tc)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PTVParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1252/jcej.23.87"]
-    model = PTV(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = PTV(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end

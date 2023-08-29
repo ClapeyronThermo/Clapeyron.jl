@@ -8,7 +8,7 @@ export vdW1fRule
 """
     vdW1fRule <: vdW1fRuleModel
     
-    vdW1fRule(components::Vector{String};
+    vdW1fRule(components;
     userlocations=String[],
     verbose::Bool=false)
 ## Input Parameters

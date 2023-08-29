@@ -8,7 +8,7 @@ export PR78Alpha
 """
     PR78Alpha <: PR78AlphaModel
     
-    PR78Alpha(components::Vector{String};
+    PR78Alpha(components;
     userlocations=String[],
     verbose::Bool=false)
 

@@ -6,7 +6,7 @@ struct KayRule <: KayRuleModel end
 """
     KayRule <: KayRuleModel
     
-    KayRule(components::Vector{String};
+    KayRule(components;
     userlocations=String[],
     verbose::Bool=false)
 

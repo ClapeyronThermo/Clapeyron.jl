@@ -10,7 +10,7 @@ end
 @newmodelsimple RackettLiquid RackettLiquidModel RackettLiquidParam
 
 """
-    RackettLiquid(components::Vector{String};
+    RackettLiquid(components;
     userlocations::Vector{String}=String[],
     verbose::Bool=false)
 
@@ -100,7 +100,7 @@ end
 
 
 """
-    YamadaGunnLiquid(components::Vector{String};
+    YamadaGunnLiquid(components;
                 userlocations::Vector{String}=String[],
                 verbose::Bool=false)
 
@@ -129,16 +129,17 @@ V = (R̄Tc/Pc)Zc^(1+(1-Tr)^(2/7))
 - Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. [doi:10.1021/je60047a012](https://doi.org/10.1021/je60047a012)
 - Gunn, R. D., & Yamada, T. (1971). A corresponding states correlation of saturated liquid volumes. AIChE Journal. American Institute of Chemical Engineers, 17(6), 1341–1345. [doi:10.1002/aic.690170613](https://doi.org/10.1002/aic.690170613)
 """
-function YamadaGunnLiquid(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+function YamadaGunnLiquid(components; userlocations=String[], verbose::Bool=false)
+    _components = format_components(components)
+    params = getparams(_components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]
     Pc = params["Pc"]
     _zc = 0.29056 .- 0.08775 .* acentricfactor.values
-    Zc = SingleParam("Critical Compressibility factor",components,_zc)
+    Zc = SingleParam("Critical Compressibility factor",_components,_zc)
     packagedparams = RackettLiquidParam(Tc,Pc,Zc)
     references =["10.1021/je60047a012","10.1002/aic.690170613"]
-    model = RackettLiquid(packagedparams;references,verbose)
+    model = RackettLiquid(_components,packagedparams,references)
     return model
 end
 

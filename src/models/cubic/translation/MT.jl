@@ -11,7 +11,7 @@ export MTTranslation
 
 MTTranslation <: MTTranslationModel
 
-    MTTranslation(components::Vector{String};
+    MTTranslation(components;
     userlocations=String[],
     verbose::Bool=false)
 

@@ -22,7 +22,7 @@ struct KU{T <: IdealModel,α,c,γ} <:KUModel
 end
 
 """
-    KU(components::Vector{String}; idealmodel=BasicIdeal,
+    KU(components; idealmodel=BasicIdeal,
     alpha = KUAlpha,
     mixing = vdW1fRule,
     activity=nothing,
@@ -81,7 +81,7 @@ export KU
 
 #another alternative would be to store the Ωa, Ωb in the mixing struct.
 
-function KU(components::Vector{String}; idealmodel=BasicIdeal,
+function KU(components; idealmodel=BasicIdeal,
     alpha = KUAlpha,
     mixing = vdW1fRule,
     activity=nothing,
@@ -94,7 +94,8 @@ function KU(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
     verbose=false)
 
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     pc = params["Pc"]
@@ -103,17 +104,17 @@ function KU(components::Vector{String}; idealmodel=BasicIdeal,
     Vc = params["Vc"]
     acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    n = length(components)
-    a = PairParam("a",components,zeros(n))
-    b = PairParam("b",components,zeros(n))
-    omega_a = SingleParam("Ωa",components,zeros(n))
-    omega_b = SingleParam("Ωb",components,zeros(n))
+    n = length(formatted_components)
+    a = PairParam("a",formatted_components,zeros(n))
+    b = PairParam("b",formatted_components,zeros(n))
+    omega_a = SingleParam("Ωa",formatted_components,zeros(n))
+    omega_b = SingleParam("Ωb",formatted_components,zeros(n))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = KUParam(a,b,omega_a,omega_b,Tc,pc,Vc,Mw)
     references = String["10.1016/j.ces.2020.116045"]
-    model = KU(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = KU(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end

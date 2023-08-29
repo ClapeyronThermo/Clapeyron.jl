@@ -8,7 +8,7 @@ end
 
 """
     ConstantTranslation <: ConstantTranslationModel
-    ConstantTranslation(components::Vector{String};
+    ConstantTranslation(components;
     userlocations=String[],
     verbose::Bool=false)
 ## Input Parameters

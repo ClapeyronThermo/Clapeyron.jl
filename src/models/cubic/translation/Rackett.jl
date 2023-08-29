@@ -10,7 +10,7 @@ end
 """
     RackettTranslation <: RackettTranslationModel
 
-    RackettTranslation(components::Vector{String};
+    RackettTranslation(components;
     userlocations=String[],
     verbose::Bool=false)
 

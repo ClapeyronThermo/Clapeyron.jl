@@ -119,6 +119,23 @@ function x0_sat_pure(model,T,z=SA[1.0])
     R̄ = Rgas(model)
     B = second_virial_coefficient(model,T,SA[1.0])
     lb_v = lb_volume(model,SA[1.0])*one(T)
+    #=
+    some very complicated models, like DAPT, fail on the calculation of the second virial coefficient.
+    while this is a numerical problem in the model itself, it is better to catch this early.
+    
+    while a volume calculation is harder
+    =#
+    if isnan(B)
+        x0l = 3*lb_v
+        px = pressure(model,x0l,T)
+        if px < 0 #low pressure
+            return x0_sat_volume_near0(model,T)
+        else #high pressure?
+            return 4*lb_v,20*lb_v
+        end
+    end
+
+    
     _0 = zero(B)
     #virial volume below lower bound volume.
     #that means that we are way over the critical point
@@ -128,8 +145,9 @@ function x0_sat_pure(model,T,z=SA[1.0])
     end
 
     p = -0.25*R̄*T/B
-    vl = x0_volume(model,p,T,z,phase=:l)
-    vl = _volume_compress(model,p,T,SA[1.0],vl)
+    vl_x0 = x0_volume(model,p,T,z,phase=:l)
+    vl = _volume_compress(model,p,T,SA[1.0],vl_x0)
+
     #=the basis is that p = RT/v-b - a/v2
     we have a (p,v,T) pair
     and B = 2nd virial coefficient = b-a/RT
@@ -151,10 +169,8 @@ function x0_sat_pure(model,T,z=SA[1.0])
     if isnan(vl) | (Δ < 0)
         #fails on two ocassions:
         #near critical point, or too low.
-        #old strategy
-        x0l = 4*lb_v
-        x0v = -2*B + 2*lb_v
-        return (x0l,x0v)
+        #return high pressure estimate
+        return 4*lb_v,-2*B + 2*lb_v
     end
     Δsqrt = sqrt(Δ)
     b1 = 0.5*(-_b + Δsqrt)
@@ -190,10 +206,23 @@ function x0_sat_pure(model,T,z=SA[1.0])
         x0v = -2*B #gas volume as high as possible
         return (x0l,x0v)
     end
+
     Vl0,Vv0 = vdw_x0_xat_pure(T,Tc,Pc,Vc)
     x0l = min(Vl0,vl)
     x0v = min(1e4*one(Vv0),Vv0) #cutoff volume
     return (x0l,x0v)
+end
+
+function x0_sat_volume_near0(model, T)
+    R̄ = Rgas(model)
+    z = SA[1.0]
+    vl0 = volume(model,zero(T),T,phase =:liquid)
+    ares = a_res(model, vl0, T, z)
+    lnϕ_liq0 = ares - 1 + log(R̄*T/vl0)
+    P0 = exp(lnϕ_liq0)
+    vl = volume(model,P0,T,z,vol0 = vl0)
+    vv = R̄*T/P0
+    return vl,vv
 end
 
 function vdw_x0_xat_pure(T,T_c,P_c,V_c)
