@@ -96,8 +96,9 @@ You can define your own EoS by adding a method to `a_res` that accepts your cust
 function a_res end
 Base.broadcastable(model::EoSModel) = Ref(model)
 Base.transpose(model::EoSModel) = model
-@pure function Base.eltype(model::EoSModel)
-    if hasfield(model,:params)
+Base.eltype(model::EoSModel) = __eltype(model)
+@pure function __eltype(model::T) where T <:EoSModel
+    if hasfield(T,:params)
         return eltype(model.params)
     else
         return Float64
