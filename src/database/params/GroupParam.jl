@@ -76,6 +76,7 @@ function GroupParam(imput::PARSED_GROUP_VECTOR_TYPE)
     return GroupParam(imput,:unknown,String[])
 end
 
+format_components(g::GroupParameter) = g
 
 #given components, groups, n_groups, reconstitute GroupParam
 function recombine!(param::GroupParameter)

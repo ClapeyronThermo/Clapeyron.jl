@@ -20,7 +20,7 @@ export UNIQUAC
 """
     UNIQUACModel <: ActivityModel
 
-    UNIQUAC(components::Vector{String};
+    UNIQUAC(components;
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
@@ -56,13 +56,14 @@ gᴱ(res) = -∑xᵢqᵖᵢlog(∑θᵖⱼτⱼᵢ)
 """
 UNIQUAC
 
-function UNIQUAC(components::Vector{String};
+function UNIQUAC(components;
     puremodel = PR,
     userlocations = String[], 
     pure_userlocations = String[],
     verbose = false)
 
-    params = getparams(components, ["Activity/UNIQUAC/UNIQUAC_like.csv", "properties/molarmass.csv","Activity/UNIQUAC/UNIQUAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose=verbose)
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["Activity/UNIQUAC/UNIQUAC_like.csv", "properties/molarmass.csv","Activity/UNIQUAC/UNIQUAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose=verbose)
     a  = params["a"]
     r  = params["r"]
     q  = params["q"]
@@ -72,7 +73,7 @@ function UNIQUAC(components::Vector{String};
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = UNIQUACParam(a,r,q,q_p,Mw)
     references = String[]
-    model = UNIQUAC(components,packagedparams,_puremodel,references)
+    model = UNIQUAC(formatted_components,packagedparams,_puremodel,references)
     return model
 end
 #=

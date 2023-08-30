@@ -23,7 +23,7 @@ function ZeroResidual(components;
     verbose=false,
     )
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    return ZeroResidual(components,init_idealmodel)
+    return ZeroResidual(format_components(components),init_idealmodel)
 end
 
 a_res(model::ZeroResidual,V,T,z) = 0.0

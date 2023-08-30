@@ -9,7 +9,7 @@ end
 """
     MHV1Rule{γ} <: MHV1RuleModel
 
-    MHV1Rule(components::Vector{String};
+    MHV1Rule(components;
     activity = Wilson,
     userlocations=String[],
     activity_userlocations=String[],
@@ -49,10 +49,10 @@ to use different values for `q`, overload `Clapeyron.MHV1q(::CubicModel,::MHV1Mo
 MHV1Rule
 
 export MHV1Rule
-function MHV1Rule(components::Vector{String}; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+function MHV1Rule(components; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
     _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1016/0378-3812(90)85053-D"]
-    model = MHV1Rule(components, _activity,references)
+    model = MHV1Rule(format_components(components), _activity,references)
     return model
 end
 

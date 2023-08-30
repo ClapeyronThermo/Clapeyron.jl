@@ -8,7 +8,7 @@ export RKPRAlpha
 """
     RKPRAlpha <: RKPRAlphaModel
     
-    RKPRAlpha(components::Vector{String};
+    RKPRAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 

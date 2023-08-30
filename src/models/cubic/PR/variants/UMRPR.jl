@@ -1,5 +1,6 @@
 """
-    UMRPR(components::Vector{String}; idealmodel=BasicIdeal,
+    UMRPR(components;
+    idealmodel=BasicIdeal,
     userlocations=String[],
     group_userlocations = String[],
     ideal_userlocations=String[],
@@ -26,7 +27,7 @@ function UMRPR(components;
     translation_userlocations = String[],
     verbose=false)
 
-    
+
     activity = UNIFAC(components,
                 puremodel = BasicIdeal,
                 userlocations = activity_userlocations,
@@ -34,7 +35,7 @@ function UMRPR(components;
                 verbose = verbose)
 
     _components = activity.groups.components #extract pure component list
-    
+
     translation = MTTranslation
     alpha = MTAlpha
     mixing = UMRRule

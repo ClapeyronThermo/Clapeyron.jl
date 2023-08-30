@@ -6,12 +6,11 @@ export MTAlpha
 """
     MTAlpha <: MTAlphaModel
     
-    MTAlpha(components::Vector{String};
+    MTAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
-
 
 - `acentricfactor`: Single Parameter (`Float64`)
 

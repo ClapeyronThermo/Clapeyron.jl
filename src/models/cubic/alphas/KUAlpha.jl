@@ -8,7 +8,7 @@ export KUAlpha
 """
     KUAlpha <: AlphaModel
     
-    KUAlpha(components::Vector{String};
+    KUAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 

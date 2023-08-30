@@ -13,7 +13,8 @@ struct PR{T <: IdealModel,α,c,γ} <:PRModel
 end
 
 """
-    PR(components::Vector{String}; idealmodel=BasicIdeal,
+    PR(components;
+    idealmodel=BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
     activity=nothing,
@@ -25,6 +26,7 @@ end
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
+    
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
@@ -58,7 +60,7 @@ PR
 
 
 export PR
-function PR(components::Vector{String}; idealmodel=BasicIdeal,
+function PR(components; idealmodel=BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
     activity = nothing,
@@ -70,8 +72,8 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
-
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
         userlocations=userlocations,
         verbose=verbose,
         ignore_missing_singleparams = __ignored_crit_params(alpha))
@@ -83,14 +85,14 @@ function PR(components::Vector{String}; idealmodel=BasicIdeal,
     Tc = params["Tc"]
     acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components)))
-    b = PairParam("b",components,zeros(length(components)))
+    a = PairParam("a",formatted_components,zeros(length(Tc)))
+    b = PairParam("b",formatted_components,zeros(length(Tc)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = PRParam(a,b,Tc,pc,Mw)
+    packagedparams = ABCubicParam(a,b,Tc,pc,Mw)
     references = String["10.1021/I160057A011"]
-    model = PR(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = PR(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end

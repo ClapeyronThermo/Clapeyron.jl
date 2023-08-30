@@ -20,7 +20,7 @@ export ogUNIFAC
 """
     ogUNIFACModel <: UNIFACModel
 
-    ogUNIFAC(components::Vector{String};
+    ogUNIFAC(components;
     puremodel = PR, 
     userlocations = String[],
     group_userlocations = String[],

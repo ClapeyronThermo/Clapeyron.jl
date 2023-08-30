@@ -6,7 +6,7 @@ abstract type sCPAAlphaModel <: CPAAlphaModel end
 """
     sCPAAlpha <: sCPAAlphaModel
     
-    CPAAlpha(components::Vector{String};
+    CPAAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 

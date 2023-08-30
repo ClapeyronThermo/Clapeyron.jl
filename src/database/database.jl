@@ -210,7 +210,7 @@ function getparams(components,
     # If parameters exist ∈ multiple files, Clapeyron gives priority to files ∈ later paths.
     # asymmetricparams is a list of parameters for which matrix reflection is disabled.
     # ignore_missingsingleparams gives users the option to disable component existence check ∈ single params.
-    return getparams(components,locations,options)
+    return getparams(format_components(components),locations,options)
 end
 
 function getparams(components::Vector{String},locations::Vector{String},options::ParamOptions)
@@ -282,10 +282,6 @@ end
 
 function getparams(groups::GroupParameter, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
     return getparams(groups.flattenedgroups, locations,options)
-end
-
-function getparams(components::String, locations::Vector{String}=String[],options::ParamOptions=DefaultOptions)
-    return getparams([components],locations,options)
 end
 
 function findsites(data::Dict,components::Vector;verbose = false)
@@ -640,6 +636,9 @@ function findparamsinnt(components,
             push!(foundvalues,param)
         elseif v isa Matrix && parsegroups == :off
             param = RawParam(ks,nothing,vec(v),nothing,nothing,pairdata,:unknown)
+            push!(foundvalues,param)
+        elseif v isa Number && parsegroups == :off && length(components) == 1
+            param = RawParam(ks,nothing,[v],nothing,nothing,singledata,:unknown)
             push!(foundvalues,param)
         elseif v isa Dict{Tuple{Tuple{String,String},Tuple{String,String}}}
             param = RawParam(ks,Vector{NTuple{4,String}}(undef,0),Vector{valtype(v)}(undef,0),String[],String[],assocdata,:unknown)

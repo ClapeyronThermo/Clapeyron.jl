@@ -141,6 +141,29 @@ function transform_params(M,params,components_or_groups,verbose)
     verbose && @info "generating parameters for $M"
     transform_params(M,params,components_or_groups)
 end
+
+
+function __struct_expr!(name,paramstype,idealmodel = true)
+    if idealmodel
+        struct_expr = :($name{I <: IdealModel})
+    elseif !idealmodel && paramstype isa Symbol
+        struct_expr = name
+    else
+        struct_expr = :($name{XX})
+        popat!(struct_expr.args,length(struct_expr.args))
+    end
+    if paramstype isa Expr && paramstype.head == :curly
+        append!(struct_expr.args,paramstype.args[2:end])
+        curly_args = paramstype.args
+        for i in 1:length(curly_args)
+            if curly_args[i] isa Expr && curly_args[i].head == :<:
+                curly_args[i] = curly_args[i].args[1]
+            end
+        end
+    end
+    return struct_expr
+end
+
 """
     @newmodelgc modelname parent paramstype [sitemodel = true, use_struct_param = false]
 
@@ -172,14 +195,15 @@ macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = fa
         grouptype = :GroupParam
     end
 
+    struct_expr = __struct_expr!(name,paramstype)
     res = if sitemodel
         quote
-            struct $name{T <: IdealModel} <: $parent
+            struct $struct_expr <: $parent
                 components::Array{String,1}
                 groups::Clapeyron.$grouptype
                 sites::Clapeyron.SiteParam
                 params::$paramstype
-                idealmodel::T
+                idealmodel::I
                 assoc_options::Clapeyron.AssocOptions
                 references::Array{String,1}
             end
@@ -197,11 +221,11 @@ macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = fa
         end
     else
         quote
-            struct $name{T <: IdealModel} <: $parent
+            struct $struct_expr <: $parent
                 components::Array{String,1}
                 groups::Clapeyron.$grouptype
                 params::$paramstype
-                idealmodel::T
+                idealmodel::I
                 references::Array{String,1}
             end
 
@@ -251,13 +275,16 @@ end
 ```
 """
 macro newmodel(name, parent, paramstype,sitemodel = true)
+    
+    struct_expr = __struct_expr!(name,paramstype)
+
     res = if sitemodel
         quote
-            struct $name{T <: IdealModel} <: $parent
+            struct $struct_expr <: $parent
                 components::Array{String,1}
                 sites::Clapeyron.SiteParam
                 params::$paramstype
-                idealmodel::T
+                idealmodel::I
                 assoc_options::Clapeyron.AssocOptions
                 references::Array{String,1}
             end
@@ -274,10 +301,10 @@ macro newmodel(name, parent, paramstype,sitemodel = true)
         end
     else
         quote
-            struct $name{T <: IdealModel} <: $parent
+            struct $struct_expr <: $parent
                 components::Array{String,1}
                 params::$paramstype
-                idealmodel::T
+                idealmodel::I
                 references::Array{String,1}
             end
 
@@ -302,9 +329,9 @@ Even simpler model, primarily for the ideal models.
 Contains neither sites nor ideal models.
 """
 macro newmodelsimple(name, parent, paramstype)
-
+    struct_expr = __struct_expr!(name,paramstype,false)
     return quote
-        struct $name <: $parent
+        struct $struct_expr <: $parent
             components::Array{String,1}
             params::$paramstype
             references::Array{String,1}
@@ -410,16 +437,18 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
 
     paramtype = fieldtype(M,:params)
 
+    _components = format_components(components)
+
     #non-splittable
     if paramtype === Nothing
         return M()
     #we don't need to parse params.
     elseif Base.issingletontype(paramtype)
-        return M(components,paramtype(),default_references(M))
+        return M(_components,paramtype(),default_references(M))
     end
     #all fields of the model.
     result = Dict{Symbol,Any}()
-
+    result[:components] = _components
 
     #parse params from database.
     options = default_getparams_arguments(M,userlocations,verbose)
@@ -428,11 +457,9 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         groups =  G(components,default_gclocations(M);group_userlocations,verbose)
         params_in = getparams(groups, default_locations(M),options)
         result[:groups] = groups
-        result[:components] = groups.components
     else
         groups = nothing
-        params_in = getparams(components, default_locations(M),options)
-        result[:components] = components
+        params_in = getparams(_components, default_locations(M),options)
     end
     
     #put AssocOptions inside params, so it can be used in transform_params
@@ -448,7 +475,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         if !haskey(params_in,"sites")
             #todo: check how this interact with GC, but i suspect that with our new Approach
             #we always want component-based sites
-            params_in["sites"] = SiteParam(result[:components])
+            params_in["sites"] = SiteParam(_components)
         end
     end
 
@@ -456,12 +483,13 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     if has_groups(M)
         params_out = transform_params(M,params_in,groups,verbose)
     else
-        params_out = transform_params(M,params_in,components,verbose)
+        params_out = transform_params(M,params_in,_components,verbose)
     end
 
     #mix sites
     if has_sites(M)
         assoc_mix!(params_out,assoc_options)
+        
     end
     #build EoSParam
     pkgparam = build_eosparam(paramtype,params_out)
@@ -471,7 +499,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     if has_sites(M)
         _sites = get(params_out,"sites",nothing)
         if isnothing(_sites)
-            _sites = SiteParam(components)
+            _sites = SiteParam(_components)
         end
         result[:sites] = _sites
         result[:assoc_options] = assoc_options
@@ -493,19 +521,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     return M((result[k] for k in fieldnames(M))...)
 end
 
+
+
+
 export @newmodel, @f, @newmodelgc, @newmodelsimple, @newmodelsingleton
-#=
-function __newmodel(name, parent, paramstype,sites,idealmodel)
-
-    if sites
-    struct $name{T <: IdealModel} <: $parent
-        components::Array{String,1}
-        groups::GroupParam
-        sites::SiteParam
-        params::$paramstype
-        idealmodel::T
-        assoc_options::AssocOptions
-        references::Array{String,1}
-    end
-
-end =#

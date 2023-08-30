@@ -6,7 +6,7 @@ export PRAlpha
 """
     PRAlpha <: SoaveAlphaModel
     
-    PRAlpha(components::Vector{String};
+    PRAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 

@@ -5,7 +5,7 @@ export ClausiusAlpha
 """
     ClausiusAlpha <: ClausiusAlphaModel
     
-    ClausiusAlpha(components::Vector{String};
+    ClausiusAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 

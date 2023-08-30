@@ -191,20 +191,14 @@ function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter)
 end
 
 #convert utilities
-function Base.convert(::Type{PairParam{Float64}},param::PairParam{Int})
-    values = Float64.(param.values)
+function Base.convert(::Type{PairParam{T1}},param::PairParam{T2}) where {T1<:Number,T2<:Number}
+    values = T1.(param.values)
     return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{PairParam{Bool}},param::PairParam{<:Union{Int,Float64}})
     #@assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
-    return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function Base.convert(::Type{PairParam{Int}},param::PairParam{Float64})
-    #@assert all(z->isinteger(z),param.values)
-    values = Int.(param.values)
     return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
