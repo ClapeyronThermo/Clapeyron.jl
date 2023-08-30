@@ -329,7 +329,7 @@ Even simpler model, primarily for the ideal models.
 Contains neither sites nor ideal models.
 """
 macro newmodelsimple(name, parent, paramstype)
-    struct_expr = __struct_expr!(name,paramstype)
+    struct_expr = __struct_expr!(name,paramstype,false)
     return quote
         struct $struct_expr <: $parent
             components::Array{String,1}
