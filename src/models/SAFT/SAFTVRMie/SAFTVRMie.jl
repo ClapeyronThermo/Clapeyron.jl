@@ -24,6 +24,8 @@ function SAFTVRMieParam(Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc
     return SAFTVRMieParam{T}(Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol) 
 end
 
+Base.eltype(p::SAFTVRMieParam{T}) where T = T
+
 abstract type SAFTVRMieModel <: SAFTModel end
 @newmodel SAFTVRMie SAFTVRMieModel SAFTVRMieParam
 default_references(::Type{SAFTVRMie}) = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
@@ -784,9 +786,10 @@ Optimizations for single component SAFTVRMie
 #######
 
 function d(model::SAFTVRMie, V, T, z::SingleComp)
+    d = zero(V+T+first(z)+one(eltype(model)))
     ϵ = model.params.epsilon
     σ = model.params.sigma
     λa = model.params.lambda_a
     λr = model.params.lambda_r
-    return SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1])]
+    return d .+ SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1])]
 end
