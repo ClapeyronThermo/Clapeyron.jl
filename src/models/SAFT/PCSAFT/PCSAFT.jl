@@ -120,7 +120,7 @@ end
 
 function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     m = model.params.segment.values
-    res = zero(V+T+first(z))
+    res = zero(V+T+first(z)+one(eltype(model)))
     for i ∈ @comps
         dᵢ = _d[i]
         res += z[i]*m[i]*dᵢ^n
@@ -131,7 +131,7 @@ end
 
 function ζ0123(model::PCSAFTModel, V, T, z, _d = @f(d))
     m = model.params.segment.values
-    ζ0 = zero(V+T+first(z))
+    ζ0 = zero(V+T+first(z)+one(eltype(model)))
     ζ1 = ζ0
     ζ2 = ζ0
     ζ3 = ζ0
@@ -212,7 +212,7 @@ function I(model::PCSAFTModel, V, T, z, n, _data=@f(data))
 end
  
 function Δ(model::PCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
-    _0 = zero(V+T+first(z))
+    _0 = zero(V+T+first(z)+one(eltype(model)))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     κijab = κ[i,j][a,b] 
