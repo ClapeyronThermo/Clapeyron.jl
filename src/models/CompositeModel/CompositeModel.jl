@@ -2,7 +2,6 @@
 include("GenericAncEvaluator.jl")
 include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
-include("SolidModel/SolidSolubility.jl")
 include("PolExpVapour.jl")
 
 Base.length(cmodel::CompositeModel) = length(cmodel.components)
