@@ -637,6 +637,9 @@ function findparamsinnt(components,
         elseif v isa Matrix && parsegroups == :off
             param = RawParam(ks,nothing,vec(v),nothing,nothing,pairdata,:unknown)
             push!(foundvalues,param)
+        elseif v isa Number && parsegroups == :off && length(components) == 1
+            param = RawParam(ks,nothing,[v],nothing,nothing,singledata,:unknown)
+            push!(foundvalues,param)
         elseif v isa Dict{Tuple{Tuple{String,String},Tuple{String,String}}}
             param = RawParam(ks,Vector{NTuple{4,String}}(undef,0),Vector{valtype(v)}(undef,0),String[],String[],assocdata,:unknown)
             empty_string = ""
