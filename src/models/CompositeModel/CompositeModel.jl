@@ -3,22 +3,34 @@ include("GenericAncEvaluator.jl")
 include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
 include("PolExpVapour.jl")
+include("SolidModel/SolidHfus.jl")
 
 Base.length(cmodel::CompositeModel) = length(cmodel.components)
 
 function CompositeModel(components;
     liquid = RackettLiquid,
     gas = BasicIdeal,
+    fluid=nothing,
     userlocations = String[],
     solid = nothing,
     saturation = LeeKeslerSat,
     melting = nothing,
     gas_userlocations = String[],
     liquid_userlocations = String[],
+    fluid_userlocations = String[],
     solid_userlocations = String[],
     saturation_userlocations = String[],
     melting_userlocations = String[],
     verbose = false)
+
+    if fluid !== nothing
+        gas = fluid
+        liquid = fluid
+        saturation = fluid
+        gas_userlocations = fluid_userlocations
+        liquid_userlocations = fluid_userlocations
+        saturation_userlocations = fluid_userlocations
+    end
 
     init_gas = init_model(gas,components,gas_userlocations,verbose)
     init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
