@@ -11,7 +11,7 @@ end
 """
     LeeKeslerSat <: SaturationModel
     
-    LeeKeslerSat(components::Vector{String};
+    LeeKeslerSat(components;
     userlocations=String[],
     verbose::Bool=false)
 

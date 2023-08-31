@@ -1,13 +1,30 @@
-struct SAFTVRMieParam <: EoSParam
-    Mw::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    sigma::PairParam{Float64}
-    lambda_a::PairParam{Float64}
-    lambda_r::PairParam{Float64}
-    epsilon::PairParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
+struct SAFTVRMieParam{T} <: EoSParam
+    Mw::SingleParam{T}
+    segment::SingleParam{T}
+    sigma::PairParam{T}
+    lambda_a::PairParam{T}
+    lambda_r::PairParam{T}
+    epsilon::PairParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
 end
+
+function SAFTVRMieParam(Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol)
+    el(x) = eltype(x.values)
+    el(x::AssocParam) = eltype(x.values.values)
+    T = mapreduce(el,promote_type,(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol))
+    Mw = convert(SingleParam{T},Mw)
+    segment = convert(SingleParam{T},segment)
+    sigma = convert(PairParam{T},sigma)
+    epsilon = convert(PairParam{T},epsilon)
+    lambda_a = convert(PairParam{T},lambda_a)
+    lambda_r = convert(PairParam{T},lambda_r)
+    epsilon_assoc = convert(AssocParam{T},epsilon_assoc)
+    bondvol = convert(AssocParam{T},bondvol)
+    return SAFTVRMieParam{T}(Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol) 
+end
+
+Base.eltype(p::SAFTVRMieParam{T}) where T = T
 
 abstract type SAFTVRMieModel <: SAFTModel end
 @newmodel SAFTVRMie SAFTVRMieModel SAFTVRMieParam
@@ -135,7 +152,7 @@ end
 
 function ζ0123(model::SAFTVRMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params.segment.values))
     m = model.params.segment
-    _0 = zero(V+T+first(z))
+    _0 = zero(V+T+first(z)+one(eltype(model)))
     ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
     for i ∈ 1:length(z)
         di =_d[i]
@@ -186,7 +203,7 @@ function d(model::SAFTVRMieModel, V, T, z)
     λa = diagvalues(model.params.lambda_a)
     λr = diagvalues(model.params.lambda_r)
     n = length(z)
-    _d = fill(zero(T*1.0),n)
+    _d = fill(zero(V+T+first(z)+one(eltype(model))),n)
     for k ∈ 1:n
         _d[k] = d_vrmie(T,λa[k],λr[k],σ[k],ϵ[k])
     end
@@ -216,7 +233,7 @@ function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d),m̄ = dot(z,model.pa
     σ = model.params.sigma
     ρS = N_A/V*m̄
     comps = 1:length(z)
-    _ζ_X = zero(V+T+first(z))
+    _ζ_X = zero(V+T+first(z)+one(eltype(model)))
     kρS = ρS* π/6/8
     σ3_x = _ζ_X
 
@@ -289,7 +306,7 @@ function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma)
     m̄inv = 1/m̄
     ρS = N_A/V*m̄
     comps = @comps
-    _ζst = zero(V+T+first(z))
+    _ζst = zero(V+T+first(z)+one(eltype(model)))
     for i ∈ comps
         x_Si = z[i]*m[i]*m̄inv
         _ζst += x_Si*x_Si*(_σ[i,i]^3)
@@ -417,7 +434,7 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
     _λa = model.params.lambda_a
     _σ = model.params.sigma
     m̄inv = 1/m̄
-    a₁ = zero(V+T+first(z))
+    a₁ = zero(V+T+first(z)+one(eltype(model)))
     a₂ = a₁
     a₃ = a₁
     achain = a₁
@@ -557,7 +574,7 @@ function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     _λa = model.params.lambda_a
     _σ = model.params.sigma
     m̄inv = 1/m̄
-    a₁ = zero(V+T+first(z))
+    a₁ = zero(V+T+first(z)+one(eltype(model)))
     a₂ = a₁
     a₃ = a₁
     _ζst5 = _ζst^5
@@ -655,7 +672,7 @@ function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     _λa = model.params.lambda_a
     _σ = model.params.sigma
     m̄inv = 1/m̄
-    a₁ = zero(V+T+first(z))
+    a₁ = zero(V+T+first(z)+one(eltype(model)))
     a₂ = a₁
     a₃ = a₁
     achain = a₁
@@ -769,9 +786,10 @@ Optimizations for single component SAFTVRMie
 #######
 
 function d(model::SAFTVRMie, V, T, z::SingleComp)
+    d = zero(V+T+first(z)+one(eltype(model)))
     ϵ = model.params.epsilon
     σ = model.params.sigma
     λa = model.params.lambda_a
     λr = model.params.lambda_r
-    return SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1])]
+    return d .+ SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1])]
 end

@@ -15,7 +15,7 @@ end
 export vdW
 
 """
-    vdW(components::Vector{String};
+    vdW(components;
     idealmodel=BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
@@ -65,7 +65,7 @@ P = RT/(V-Nb) + a•α(T)/V²
 """
 vdW
 
-function vdW(components::Vector{String}; idealmodel=BasicIdeal,
+function vdW(components; idealmodel=BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
     activity=nothing,
@@ -77,12 +77,13 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
         userlocations=userlocations,
         verbose=verbose,
         ignore_missing_singleparams = __ignored_crit_params(alpha))
 
-    k  = get(params,"k",nothing)
+    k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     pc = params["Pc"]
     Mw = params["Mw"]
@@ -90,15 +91,14 @@ function vdW(components::Vector{String}; idealmodel=BasicIdeal,
     acentricfactor = get(params,"acentricfactor",nothing)
 
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    n = length(components)
-    a = PairParam("a",components,zeros(n))
-    b = PairParam("b",components,zeros(n))
+    a = PairParam("a",formatted_components,zeros(length(Tc)))
+    b = PairParam("b",formatted_components,zeros(length(Tc)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
-    packagedparams = vdWParam(a,b,Tc,pc,Mw)
+    init_translation = init_model(translation,components,translation_userlocations,verbose)
+    packagedparams = ABCubicParam(a,b,Tc,pc,Mw)
     references = String[]
-    model = vdW(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = vdW(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end

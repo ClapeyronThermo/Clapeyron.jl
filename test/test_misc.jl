@@ -101,8 +101,8 @@ end
         @test repr(ideal1) == "WalkerIdeal{BasicIdeal}(\"hexane\")"
         @test repr("text/plain",ideal1) == "WalkerIdeal{BasicIdeal} with 1 component:\n \"hexane\": \"CH3\" => 2, \"CH2\" => 4\nGroup Type: Walker\nContains parameters: Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4"
         #@newmodel
-        @test repr(model2) == "PCSAFT{BasicIdeal}(\"water\", \"ethanol\")"
-        @test repr("text/plain",model2) == "PCSAFT{BasicIdeal} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"
+        @test repr(model2) == "PCSAFT{BasicIdeal, Float64}(\"water\", \"ethanol\")"
+        @test repr("text/plain",model2) == "PCSAFT{BasicIdeal, Float64} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"
         #@newmodelsimple
         @test repr(noparam1) == "NoTranslation()"
         @test repr("text/plain",noparam1) == "NoTranslation()"
@@ -111,8 +111,8 @@ end
     end
 
     @testset "Clapeyron Param show" begin
-        @test repr(model2.params) == "Clapeyron.PCSAFTParam"
-        @test repr("text/plain",model2.params) == "Clapeyron.PCSAFTParam for [\"water\", \"ethanol\"] with 6 params:\n Mw::SingleParam{Float64}\n segment::SingleParam{Float64}\n sigma::PairParam{Float64}\n epsilon::PairParam{Float64}\n epsilon_assoc::AssocParam{Float64}\n bondvol::AssocParam{Float64}"
+        @test repr(model2.params) == "Clapeyron.PCSAFTParam{Float64}"
+        @test repr("text/plain",model2.params) == "Clapeyron.PCSAFTParam{Float64} for [\"water\", \"ethanol\"] with 6 params:\n Mw::SingleParam{Float64}\n segment::SingleParam{Float64}\n sigma::PairParam{Float64}\n epsilon::PairParam{Float64}\n epsilon_assoc::AssocParam{Float64}\n bondvol::AssocParam{Float64}"
     end
 
     @testset "phase symbols" begin

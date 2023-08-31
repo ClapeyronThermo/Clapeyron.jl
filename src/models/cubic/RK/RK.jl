@@ -14,7 +14,8 @@ end
 export RK
 
 """
-    RK(components::Vector{String}; idealmodel=BasicIdeal,
+    RK(components; 
+    idealmodel=BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
     activity=nothing,
@@ -59,7 +60,7 @@ P = RT/(V-Nb) + a•α(T)/(V(V+Nb))
 """
 RK
 
-function RK(components::Vector{String}; idealmodel=BasicIdeal,
+function RK(components; idealmodel=BasicIdeal,
     alpha = RKAlpha,
     mixing = vdW1fRule,
     activity=nothing,
@@ -71,7 +72,8 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     activity_userlocations = String[],
     translation_userlocations = String[],
      verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
         userlocations=userlocations,
         verbose=verbose,
         ignore_missing_singleparams = __ignored_crit_params(alpha))
@@ -83,14 +85,14 @@ function RK(components::Vector{String}; idealmodel=BasicIdeal,
     Tc = params["Tc"]
     acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components)))
-    b = PairParam("b",components,zeros(length(components)))
+    a = PairParam("a",formatted_components,zeros(length(Tc)))
+    b = PairParam("b",formatted_components,zeros(length(Tc)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = RKParam(a,b,Tc,pc,Mw)
+    packagedparams = ABCubicParam(a,b,Tc,pc,Mw)
     references = String["10.1021/cr60137a013"]
-    model = RK(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = RK(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end

@@ -23,13 +23,14 @@ end
 
 export COSMOSACdsp
 
-function COSMOSACdsp(components::Vector{String};
+function COSMOSACdsp(components;
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
     verbose=false)
 
-    params = getparams(components, ["Activity/COSMOSAC/COSMOSAC10_like.csv","Activity/COSMOSAC/COSMOSACdsp_like.csv"]; userlocations=userlocations, verbose=verbose)
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["Activity/COSMOSAC/COSMOSAC10_like.csv","Activity/COSMOSAC/COSMOSACdsp_like.csv"]; userlocations=userlocations, verbose=verbose)
     Pnhb  = COSMO_parse_Pi(params["Pnhb"])
     POH  = COSMO_parse_Pi(params["POH"])
     POT  = COSMO_parse_Pi(params["POT"])
@@ -40,11 +41,11 @@ function COSMOSACdsp(components::Vector{String};
     COOH = params["COOH"]
     hb_acc = params["hb_acc"]
     hb_don = params["hb_don"]
-    
+
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSACdspParam(Pnhb,POH,POT,epsilon,V,A,water,COOH,hb_acc,hb_don)
     references = String[]
-    model = COSMOSACdsp(components,packagedparams,_puremodel,1e-12,references)
+    model = COSMOSACdsp(formatted_components,packagedparams,_puremodel,1e-12,references)
     return model
 end
 

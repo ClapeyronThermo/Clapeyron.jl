@@ -19,7 +19,7 @@ export Wilson
 
 """
     Wilson <: ActivityModel
-    Wilson(components::Vector{String};
+    Wilson(components;
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
@@ -44,13 +44,14 @@ Vᵢ = (RTcᵢ/Pcᵢ)(0.29056 - 0.08775ZRAᵢ)^(1 + (1-T/Tcᵢ)^2/7)
 """
 Wilson
 
-function Wilson(components::Vector{String};
+function Wilson(components;
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
-
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","Activity/Wilson/Wilson_unlike.csv"]; userlocations=userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g"], verbose=verbose)
+    
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","Activity/Wilson/Wilson_unlike.csv"]; userlocations=userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g"], verbose=verbose)
     g  = params["g"]
     Tc        = params["Tc"]
     pc        = params["Pc"]
@@ -62,7 +63,7 @@ function Wilson(components::Vector{String};
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = WilsonParam(g,Tc,pc,ZRA,Mw)
     references = String["10.1021/ja01056a002"]
-    model = Wilson(components,packagedparams,_puremodel,references)
+    model = Wilson(formatted_components,packagedparams,_puremodel,references)
     return model
 end
 

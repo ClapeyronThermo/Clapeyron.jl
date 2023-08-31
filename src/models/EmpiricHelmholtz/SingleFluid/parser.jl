@@ -17,27 +17,34 @@ JSON_ALTERNATIVE_NAMES = Dict{String,String}(
     "hydrogensulfide" => "HydrogenSulfide",
 )
 
-
-function coolprop_handler()
-    #for some reason, this does not work on linux/mac
-    lib_handler1 = Base.Libc.Libdl.dlopen(:libcoolprop;throw_error = false)
-    #return lib_handler1
-    lib_handler1 !== nothing && return lib_handler1
-    if !Sys.iswindows()
-        #search on all dynamic libs, filter libCoolProp. TODO: find something faster.
-        dllist = Base.Libc.Libdl.dllist()
-        x =findall(z->occursin("libCoolProp",z),dllist)
-        length(x) == 0 && return nothing
-        t = dllist[x[1]]
-        lib_handler2 = Base.Libc.Libdl.dlopen(t;throw_error = false)
-        return lib_handler2
-    else
-        return lib_handler1
+@static if !isdefined(Base,:get_extension)
+    function coolprop_handler()
+        #for some reason, this does not work on linux/mac
+        lib_handler1 = Base.Libc.Libdl.dlopen(:libcoolprop;throw_error = false)
+        #return lib_handler1
+        lib_handler1 !== nothing && return lib_handler1
+        if !Sys.iswindows()
+            #search on all dynamic libs, filter libCoolProp. TODO: find something faster.
+            dllist = Base.Libc.Libdl.dllist()
+            x =findall(z->occursin("libCoolProp",z),dllist)
+            length(x) == 0 && return nothing
+            t = dllist[x[1]]
+            lib_handler2 = Base.Libc.Libdl.dlopen(t;throw_error = false)
+            return lib_handler2
+        else
+            return lib_handler1
+        end
     end
+else
+    #defined in ClapeyronCoolPropExt
+    function coolprop_handler end
 end
 
 function is_coolprop_loaded()
-    return coolprop_handler() !== nothing
+    handler = coolprop_handler()
+    res = handler !== nothing
+    Base.Libc.Libdl.dlclose(handler)
+    return res
 end
 
 function coolprop_csv(component::String,comp = "")
@@ -58,14 +65,18 @@ function coolprop_csv(component::String,comp = "")
                     resize!(message_buffer,buffer_length<<1)
                     buffer_length = length(message_buffer)
                 else
+                    Base.Libc.Libdl.dlclose(lib_handler)
                     return false,unsafe_string(convert(Ptr{UInt8}, pointer(message_buffer::Array{UInt8, 1})))
                 end
             else
+                Base.Libc.Libdl.dlclose(lib_handler)
                 return true,unsafe_string(convert(Ptr{UInt8}, pointer(message_buffer::Array{UInt8, 1})))
             end
         end
+        Base.Libc.Libdl.dlclose(lib_handler)
         return false,unsafe_string(convert(Ptr{UInt8}, pointer(message_buffer::Array{UInt8, 1})))
     else
+        Base.Libc.Libdl.dlclose(lib_handler)
         throw(error("cannot found component file $(comp). Try loading the CoolProp library by loading it."))
     end
 
@@ -182,9 +193,11 @@ function SingleFluid(components;
         ideal_userlocations = String[])
 
 
-    components = [get_only_comp(components)]
+    _components = format_components(components)
+    single_component_check(SingleFluid,_components)
+
     data = try
-        get_json_data(components;userlocations,coolprop_userlocations,verbose)
+        get_json_data(_components;userlocations,coolprop_userlocations,verbose)
         catch e
             !estimate_pure && rethrow(e)
             nothing
@@ -209,14 +222,14 @@ function SingleFluid(components;
     #ancillaries
     if ancillaries === nothing
         init_ancillaries = _parse_ancillaries(data[:ANCILLARIES],verbose)
-        init_ancillaries.components[1] = components[1]
+        init_ancillaries.components[1] = only(_components)
     else
         init_ancillaries = init_model(ancillaries,components,ancillaries_userlocations,verbose)
     end
 
     references = [eos_data[:BibTeX_EOS]]
 
-    return SingleFluid(components,properties,init_ancillaries,ideal,residual,references)
+    return SingleFluid(_components,properties,init_ancillaries,ideal,residual,references)
 end
 
 
@@ -262,8 +275,10 @@ function SingleFluidIdeal(components;
     idealmodel = nothing,
     ideal_userlocations = String[])
 
-    data = get_json_data(components;userlocations,coolprop_userlocations,verbose)
-    components = [get_only_comp(components)]
+
+    _components = format_components(components)
+    single_component_check(SingleFluidIdeal,_components)
+    data = get_json_data(_components;userlocations,coolprop_userlocations,verbose)
     eos_data = first(data[:EOS])
     #properties
     properties = _parse_properties(data,Rgas,verbose)
@@ -277,7 +292,7 @@ function SingleFluidIdeal(components;
     ideal = _parse_ideal(ideal_data,verbose)
     references = [eos_data[:BibTeX_EOS]]
 
-    return SingleFluidIdeal(components,properties,ideal,references)
+    return SingleFluidIdeal(_components,properties,ideal,references)
 end
 
 function _parse_properties(data,Rgas0 = nothing, verbose = false)

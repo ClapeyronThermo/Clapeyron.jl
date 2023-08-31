@@ -20,7 +20,7 @@ export aspenNRTL
 """
     aspenNRTL <: ActivityModel
 
-    function aspenNRTL(components::Vector{String};
+    function aspenNRTL(components;
     puremodel=PR,
     userlocations=String[],
     pure_userlocations = String[],
@@ -51,11 +51,13 @@ Gᵢⱼ exp(-αᵢⱼτᵢⱼ)
 """
 aspenNRTL
 
-function aspenNRTL(components::Vector{String}; puremodel=PR,
+function aspenNRTL(components; puremodel=PR,
     userlocations = String[], 
     pure_userlocations = String[],
     verbose=false)
-    params = getparams(components, String["Activity/NRTL/aspenNRTL/aspenNRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["t0","t1","t2","t3"], ignore_missing_singleparams=asymmetricparams=["t0","t1","t2","t3"], verbose=verbose)
+
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, String["Activity/NRTL/aspenNRTL/aspenNRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["t0","t1","t2","t3"], ignore_missing_singleparams=asymmetricparams=["t0","t1","t2","t3"], verbose=verbose)
     a0  = params["a0"]
     a1  = params["a1"]
     t0  = params["t0"]
@@ -66,7 +68,7 @@ function aspenNRTL(components::Vector{String}; puremodel=PR,
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = aspenNRTLParam(a0,a1,t0,t1,t2,t3)
     references = String["10.1002/aic.690140124"]
-    model = aspenNRTL(components,packagedparams,_puremodel,references)
+    model = aspenNRTL(formatted_components,packagedparams,_puremodel,references)
     return model
 end
 

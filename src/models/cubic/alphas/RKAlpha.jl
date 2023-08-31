@@ -5,7 +5,7 @@ abstract type RKAlphaModel <: AlphaModel end
 """
     RKAlpha <: RKAlphaModel
     
-    RKAlpha(components::Vector{String};
+    RKAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 

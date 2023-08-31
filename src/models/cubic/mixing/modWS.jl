@@ -9,7 +9,7 @@ end
 """
     WSRule{γ} <: WSRuleModel
 
-    WSRule(components::Vector{String};
+    WSRule(components;
     activity = Wilson,
     userlocations=String[],
     activity_userlocations=String[],
@@ -49,10 +49,10 @@ for Peng-Robinson:
 modWSRule
 
 export modWSRule
-function modWSRule(components::Vector{String}; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+function modWSRule(components; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
     _activity = init_model(activity,components,activity_userlocations,verbose)
     references = ["10.1002/aic.690380505","10.1002/aic.690410325"]
-    model = modWSRule(components, _activity,references)
+    model = modWSRule(format_components(components), _activity,references)
     return model
 end
 

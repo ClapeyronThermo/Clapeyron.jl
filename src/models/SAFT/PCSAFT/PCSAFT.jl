@@ -1,14 +1,29 @@
-struct PCSAFTParam <: EoSParam
-    Mw::SingleParam{Float64}
-    segment::SingleParam{Float64}
-    sigma::PairParam{Float64}
-    epsilon::PairParam{Float64}
-    epsilon_assoc::AssocParam{Float64}
-    bondvol::AssocParam{Float64}
+struct PCSAFTParam{T} <: EoSParam
+    Mw::SingleParam{T}
+    segment::SingleParam{T}
+    sigma::PairParam{T}
+    epsilon::PairParam{T}
+    epsilon_assoc::AssocParam{T}
+    bondvol::AssocParam{T}
 end
 
+function PCSAFTParam(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
+    el(x) = eltype(x.values)
+    el(x::AssocParam) = eltype(x.values.values)
+    T = mapreduce(el,promote_type,(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol))
+    Mw = convert(SingleParam{T},Mw)
+    segment = convert(SingleParam{T},segment)
+    sigma = convert(PairParam{T},sigma)
+    epsilon = convert(PairParam{T},epsilon)
+    epsilon_assoc = convert(AssocParam{T},epsilon_assoc)
+    bondvol = convert(AssocParam{T},bondvol)
+    return PCSAFTParam{T}(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol) 
+end
+
+Base.eltype(p::PCSAFTParam{T}) where T = T
+
 abstract type PCSAFTModel <: SAFTModel end
-@newmodel PCSAFT PCSAFTModel PCSAFTParam
+@newmodel PCSAFT PCSAFTModel PCSAFTParam{T}
 default_references(::Type{PCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 default_locations(::Type{PCSAFT}) = ["SAFT/PCSAFT","properties/molarmass.csv"]
 function transform_params(::Type{PCSAFT},params)
@@ -96,7 +111,7 @@ end
 function d(model::PCSAFTModel, V, T, z)
     ϵᵢᵢ = diagvalues(model.params.epsilon)
     σᵢᵢ = diagvalues(model.params.sigma)
-    di = zeros(eltype(T*1.),length(model))
+    di = zeros(eltype(T+one(eltype(model))),length(model))
     for i in eachindex(di)
         di[i] = σᵢᵢ[i]*(1 - 0.12*exp(-3ϵᵢᵢ[i]/ T))
     end
@@ -105,7 +120,7 @@ end
 
 function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     m = model.params.segment.values
-    res = zero(V+T+first(z))
+    res = zero(V+T+first(z)+one(eltype(model)))
     for i ∈ @comps
         dᵢ = _d[i]
         res += z[i]*m[i]*dᵢ^n
@@ -116,7 +131,7 @@ end
 
 function ζ0123(model::PCSAFTModel, V, T, z, _d = @f(d))
     m = model.params.segment.values
-    ζ0 = zero(V+T+first(z))
+    ζ0 = zero(V+T+first(z)+one(eltype(model)))
     ζ1 = ζ0
     ζ2 = ζ0
     ζ3 = ζ0
@@ -160,7 +175,7 @@ function m2ϵσ3(model::PCSAFTModel, V, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
-    m2ϵσ3₂ = zero(T+first(z))
+    m2ϵσ3₂ = zero(T+first(z)+one(eltype(model)))
     m2ϵσ3₁ = m2ϵσ3₂
     @inbounds for i ∈ @comps
         for j ∈ @comps
@@ -197,7 +212,7 @@ function I(model::PCSAFTModel, V, T, z, n, _data=@f(data))
 end
  
 function Δ(model::PCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
-    _0 = zero(V+T+first(z))
+    _0 = zero(V+T+first(z)+one(eltype(model)))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     κijab = κ[i,j][a,b] 
@@ -241,7 +256,7 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     σ = model.params.sigma.values
-    Δout = assoc_similar(κ,typeof(V+T+first(z)))
+    Δout = assoc_similar(κ,typeof(V+T+first(z)+one(eltype(model))))
     Δout.values .= false  #fill with zeros, maybe it is not necessary?
     for (idx,(i,j),(a,b)) in indices(Δout)
         gij = @f(g_hs,i,j,_data)
@@ -257,3 +272,4 @@ function d(model::PCSAFT, V, T, z::SingleComp)
     σ = only(model.params.sigma.values)
     return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
 end
+

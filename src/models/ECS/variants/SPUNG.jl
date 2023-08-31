@@ -2,7 +2,7 @@
 
 """
 
-    function function SPUNG(components::Vector{String},
+    function function SPUNG(components,
         refmodel=PropaneRef(),
         shapemodel=SRK(components),
         shaperef = SRK(refmodel.components))

@@ -82,11 +82,12 @@ function MultiFluid(components;
     verbose = false,
     )
 
+    _components = format_components(components)
     if idealmodel === nothing
-        idealmodels = FillArrays.Fill(nothing,length(components))
+        idealmodels = FillArrays.Fill(nothing,length(_components))
     else
         init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-        idealmodels = split_model(init_idealmodel,1:length(components))
+        idealmodels = split_model(init_idealmodel,1:length(_components))
     end
 
     pures = [
@@ -97,12 +98,12 @@ function MultiFluid(components;
         estimate_pure = estimate_pure,
         coolprop_userlocations = coolprop_userlocations,
         )
-        for (i,comp) in pairs(components)]
+        for (i,comp) in pairs(_components)]
     mixing = init_model(mixing,components,mixing_userlocations,verbose)
     departure = init_model(departure,components,departure_userlocations,verbose)
-    params = MultiFluidParam(components,pures)
+    params = MultiFluidParam(_components,pures)
     references = unique!(reduce(vcat,pure.references for pure in pures))
-    model = MultiFluid(components,params,pures,mixing,departure,Rgas,references)
+    model = MultiFluid(_components,params,pures,mixing,departure,Rgas,references)
     recombine_mixing!(model,model.mixing,estimate_mixing)
     recombine_departure!(model,model.departure)
     return model

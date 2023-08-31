@@ -44,7 +44,7 @@ function init_alphamodel(alpha,components,w = nothing,userlocations = String[],v
     if alpha <: AlphaModel
         if can_build_alpha_w(alpha) && w !== nothing && isempty(userlocations)
             param = SimpleAlphaParam(w)
-            return alpha(components,param,default_references(typeof(alpha)))
+            return alpha(format_components(components),param,default_references(typeof(alpha)))
         end
     end
     return init_model(alpha,components,userlocations,verbose)

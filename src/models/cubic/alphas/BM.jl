@@ -8,7 +8,7 @@ export BMAlpha
 """
     BMAlpha <: BMAlphaModel
 
-    MTAlpha(components::Vector{String};
+    MTAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
 

@@ -13,7 +13,7 @@ export VTPRUNIFAC
 """
     VTPRUNIFACModel <: UNIFACModel
 
-    VTPRUNIFAC(components::Vector{String};
+    VTPRUNIFAC(components;
     puremodel = BasicIdeal,
     userlocations = String[],
     pure_userlocations = String[],

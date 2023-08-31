@@ -144,6 +144,7 @@ include("models/cubic/PR/PR.jl")
 include("models/cubic/KU/KU.jl")
 include("models/cubic/RKPR/RKPR.jl")
 
+#SAFT models
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/PharmaPCSAFT.jl")
@@ -154,7 +155,6 @@ include("models/SAFT/SAFTVRSW/SAFTVRSW.jl")
 include("models/SAFT/LJSAFT/LJSAFT.jl")
 include("models/SAFT/softSAFT/softSAFT.jl")
 include("models/SAFT/softSAFT/variants/softSAFT2016.jl")
-
 include("models/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
 include("models/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
@@ -165,7 +165,7 @@ include("models/SAFT/BACKSAFT/BACKSAFT.jl")
 include("models/SAFT/equations.jl")
 include("models/SAFT/association.jl")
 
-
+#Activity models
 include("models/Activity/Wilson/Wilson.jl")
 include("models/Activity/Wilson/variants/tcPRWilson.jl")
 include("models/Activity/NRTL/NRTL.jl")
@@ -185,6 +185,7 @@ include("models/Activity/COSMOSAC/COSMOSAC02.jl")
 include("models/Activity/COSMOSAC/COSMOSAC10.jl")
 include("models/Activity/COSMOSAC/COSMOSACdsp.jl")
 
+#Cubic variants
 include("models/cubic/alphas/alphas.jl")
 include("models/cubic/mixing/mixing.jl")
 include("models/cubic/translation/translation.jl")

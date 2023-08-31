@@ -54,6 +54,7 @@ Base.setindex!(param::SingleParameter,val,i) = setindex!(param.values,val,i)
 
 #broadcasting
 Base.size(param::SingleParameter) = size(param.values)
+Base.length(param::SingleParameter) = length(param.values)
 Base.broadcastable(param::SingleParameter) = param.values
 Base.BroadcastStyle(::Type{<:SingleParameter}) = Broadcast.Style{SingleParameter}()
 
@@ -157,20 +158,14 @@ function SingleParam(oldparam::SingleParameter, v::Vector)
 end
 
 #convert utilities
-function Base.convert(::Type{SingleParam{Float64}},param::SingleParam{Int})
-    values = Float64.(param.values)
+function Base.convert(::Type{SingleParam{T1}},param::SingleParam{T2}) where {T1<:Number,T2<:Number}
+    values = T1.(param.values)
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{<:Union{Int,Float64}})
     #@assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
-    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function Base.convert(::Type{SingleParam{Int}},param::SingleParam{Float64})
-    #@assert all(z->isinteger(z),param.values)
-    values = Int.(param.values)
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
