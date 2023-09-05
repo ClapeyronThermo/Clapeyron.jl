@@ -208,6 +208,7 @@ include("UCST_mix.jl")
 include("tp_flash.jl")
 include("krichevskii_parameter.jl")
 include("solids/sle_solubility.jl")
+include("solids/slle_solubility.jl")
 include("solids/eutectic_point.jl")
 
 export bubble_pressure_fug, bubble_temperature_fug, dew_temperature_fug, dew_pressure_fug

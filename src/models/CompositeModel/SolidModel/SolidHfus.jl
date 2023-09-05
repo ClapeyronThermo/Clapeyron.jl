@@ -8,7 +8,7 @@ end
 @newmodelsimple SolidHfus SolidHfusModel SolidHfusParam
 
 SolidHfus
-default_locations(::Type{SolidHfus}) = String[]
+default_locations(::Type{SolidHfus}) = ["solids/fusion.csv"]
 default_references(::Type{SolidHfus}) = String[]
 
 function chemical_potential(model::SolidHfusModel, p, T, z)
