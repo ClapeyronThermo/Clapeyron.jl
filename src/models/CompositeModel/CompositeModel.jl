@@ -24,6 +24,9 @@ function CompositeModel(components;
     verbose = false)
 
     if fluid !== nothing
+        if fluid <: ActivityModel
+            error("Activity models only represent the liquid phase. Please specify a gas phase model.")
+        end
         gas = fluid
         liquid = fluid
         saturation = fluid
@@ -33,10 +36,16 @@ function CompositeModel(components;
     end
 
     init_gas = init_model(gas,components,gas_userlocations,verbose)
-    init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+    if liquid <: ActivityModel
+        init_liquid = liquid(components;userlocations=liquid_userlocations,puremodel=gas,verbose)
+    else
+        init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+    end
     init_solid = init_model(solid,components,solid_userlocations,verbose)
     init_sat = init_model(saturation,components,saturation_userlocations,verbose)
     init_melt = init_model(melting,components,melting_userlocations,verbose)
+
+    components = format_components(components)
     return CompositeModel(components,init_gas,init_liquid,init_solid,init_sat,init_melt)
 end
 
