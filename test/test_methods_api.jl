@@ -410,6 +410,29 @@ end
     
 end
 
+@testset "Solid Phase Equilibria" begin
+    @testset "Solid-Liquid Equilibria" begin
+        model = CompositeModel([("1-decanol",["CH3"=>1,"CH2"=>9,"OH (P)"=>1]),("thymol",["ACCH3"=>1,"ACH"=>3,"ACOH"=>1,"ACCH"=>1,"CH3"=>2])];liquid=UNIFAC,solid=SolidHfus,saturation=nothing)
+        T = 275.
+        p = 1e5
+        s1 = sle_solubility(model,p,T,[1.,1.];solute=["1-decanol"])
+        s2 = sle_solubility(model,p,T,[1.,1.];solute=["thymol"])
+        @test s1[2] ≈ 0.21000625991669147 rtol = 1e-6
+        @test s2[2] ≈ 0.3767736790387135 rtol = 1e-6
+
+        (TE,xE) = eutectic_point(model)
+        @test TE ≈ 271.97967645045804 rtol = 1e-6
+    end
+   
+    @testset "Solid-Liquid-Liquid Equilibria" begin
+        model = CompositeModel(["water","ethanol",("ibuprofen",["ACH"=>4,"ACCH2"=>1,"ACCH"=>1,"CH3"=>3,"COOH"=>1,"CH"=>1])];liquid=UNIFAC,solid=SolidHfus,saturation=nothing)
+        p = 1e5
+        T = 323.15
+        (s1,s2) = slle_solubility(model,p,T)
+        @test s1[3] ≈ 0.0015804179997257882 rtol = 1e-6
+    end
+end
+
 #test for really really difficult equilibria.
 @testset "challenging equilibria" begin
        
