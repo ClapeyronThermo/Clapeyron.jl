@@ -9,7 +9,7 @@ function slle_solubility(model::CompositeModel,p,T;x0=nothing)
         x0 = x0_slle_solubility(model,p,T,μsol)
     end
     f!(F,x) = obj_slle_solubility(F,model.liquid,p,T,[exp10(x[1]),1-exp10(x[1])-exp10(x[2]),exp10(x[2])],[exp10(x[3]),1-exp10(x[3])-exp10(x[4]),exp10(x[4])],μsol)
-    results = Solvers.nlsolve(f!,x0)
+    results = Solvers.nlsolve(f!,x0,LineSearch(Newton()))
     sol = exp10.(Solvers.x_sol(results))
     x1 = [sol[1],1-sol[1]-sol[2],sol[2]]
     x2 = [sol[3],1-sol[3]-sol[4],sol[4]]
@@ -23,13 +23,12 @@ function obj_slle_solubility(F,liquid,p,T,x1,x2,μsol)
     γliq2 = activity_coefficient(liquid,p,T,x2)
     μliq2 = @. Rgas()*T*log(γliq2*x2)
 
-    F[1] = μliq1[end] - μsol[1]
-    F[2:nc+1] = @. μliq2 - μliq1
+    F[1] = (μliq1[end] - μsol[1])/Rgas()/T
+    F[2:nc+1] = @. (μliq2 - μliq1)/Rgas()/T
     return F
 end
 
 function x0_slle_solubility(model,p,T,μsol)
-    z0 = [0.5,0.5,1e-10]
     x0 = zeros(length(model),2)
     for i in 1:length(model)-1
         z∞ = ones(length(model))*1e-3
@@ -49,17 +48,8 @@ function x0_slle_solubility(model,p,T,μsol)
 
         x0[:,i] = x
     end
-    println(x0)
-
-    K0 = x0[:,1]./x0[:,2]
-    z0 = (x0[:,1]+x0[:,2])/2
-    println(z0)
-    println(K0)
-
-    (x,n,G) = tp_flash(model.liquid,p,T,z0,RRTPFlash(K0=K0,equilibrium=:lle))
-    x0 = zeros(2*(length(model)-1))
-    x0[1:2] = [x[1,1],x[1,3]]
-    x0[3:end] = [x[2,1],x[2,3]]
+    
+    x0 = [x0[1,1],x0[3,1],x0[1,2],x0[3,2]]
 
     return log10.(x0)
 end
