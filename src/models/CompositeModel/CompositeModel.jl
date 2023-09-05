@@ -36,11 +36,16 @@ function CompositeModel(components;
     end
 
     init_gas = init_model(gas,components,gas_userlocations,verbose)
-    if liquid <: ActivityModel
-        init_liquid = liquid(components;userlocations=liquid_userlocations,puremodel=gas,verbose)
-    else
+    if typeof(liquid) <: EoSModel
         init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+    else
+        if liquid <: ActivityModel
+            init_liquid = liquid(components;userlocations=liquid_userlocations,puremodel=gas,verbose)
+        else
+            init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+        end
     end
+
     init_solid = init_model(solid,components,solid_userlocations,verbose)
     init_sat = init_model(saturation,components,saturation_userlocations,verbose)
     init_melt = init_model(melting,components,melting_userlocations,verbose)
