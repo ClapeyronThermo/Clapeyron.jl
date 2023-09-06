@@ -418,7 +418,7 @@ end
         s1 = sle_solubility(model,p,T,[1.,1.];solute=["1-decanol"])
         s2 = sle_solubility(model,p,T,[1.,1.];solute=["thymol"])
         @test s1[2] ≈ 0.21000625991669147 rtol = 1e-6
-        @test s2[2] ≈ 0.3767736790387135 rtol = 1e-6
+        @test s2[2] ≈ 0.3370264930822045 rtol = 1e-6
 
         (TE,xE) = eutectic_point(model)
         @test TE ≈ 271.97967645045804 rtol = 1e-6

@@ -693,7 +693,7 @@ end
         @testset "SolidHfus" begin
             model = SolidHfus(["water"])
             
-            @test chemical_potential(model,1e5,298.15,[1.]) ≈ 549.1488193300384 rtol = 1e-6
+            @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
         end
     end
 end
