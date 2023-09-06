@@ -58,3 +58,11 @@ AbbottVirial
 TsonopoulosVirial
 EoSVirial2
 ```
+
+# Solid Models
+
+Solid models provide simple approximations to the excess chemical potential in the solid phase. Intended to be used in conjuction with a liquid model within a CompositeModel
+
+```@docs
+SolidHfus
+```

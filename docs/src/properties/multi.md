@@ -33,6 +33,9 @@ Clapeyron.UCST_mix
 Clapeyron.gibbs_solvation
 Clapeyron.cross_second_virial
 Clapeyron.equivol_cross_second_virial
+Clapeyron.sle_solubility
+Clapeyron.slle_solubility
+Clapeyron.eutectic_point
 ```
 
 ### Bubble/Dew methods
