@@ -138,20 +138,26 @@ function init_preferred_method(method::typeof(tp_flash),model::CompositeModel,kw
     return RRTPFlash(;kwargs...)
 end
 
-__tpflash_cache_model(model::CompositeModel,p,T,z) = PTFlashWrapper(model,T)
+__tpflash_cache_model(model::CompositeModel,p,T,z) = PTFlashWrapper(model,p,T)
 
-function PTFlashWrapper(model::CompositeModel,T::Number) 
-    satmodels = split_model(model.saturation)
+function PTFlashWrapper(model::CompositeModel,p,T::Number) 
+    satmodels = split_model(model.saturation,1:length(model))
     gases = split_model(model.gas,1:length(model))
-    sats = saturation_pressure.(satmodels,T)
-    vv_pure = last.(sats)
     RT = R̄*T
+    if isnothing(model.saturation)
+        vv = RT/p
+        sats = fill((p,vv,vv),length(model))
+    else
+        sats = saturation_pressure.(satmodels,T)
+        
+    end
+    
     p_pure = first.(sats)
+    vv_pure = volume.(gases,first.(sats),T,phase = :v) #gas model != sat model
     μpure = only.(VT_chemical_potential_res.(gases,vv_pure,T))
     ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
-    g_pure = [VT_gibbs_free_energy(gases[i],sats[i][2],T) for i in 1:length(model)]
-
-    return PTFlashWrapper(model.components,model,sats,ϕpure,μpure)
+    g_pure = [VT_gibbs_free_energy(gases[i],vv_pure[i],T) for i in 1:length(model)]
+    return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure)
 end
 
 function update_K!(lnK,wrapper::PTFlashWrapper{<:CompositeModel},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
