@@ -99,9 +99,6 @@ function excess_g_res_wilson(model::WilsonModel,p,T,z,V = wilson_volume(model,T)
 end
 
 function excess_g_wilson(model::WilsonModel,p,T,z,V = wilson_volume(model,T))
-    ZRA = model.params.ZRA.values
-    Tc  = model.params.Tc.values
-    Pc  = model.params.Pc.values
     g = model.params.g.values
     _0 = zero(T+first(z))
     n = sum(z)
