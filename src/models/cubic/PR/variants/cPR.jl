@@ -61,7 +61,7 @@ function cPR(components::Vector{String}; idealmodel=BasicIdeal,
         N = params["N"]
         L = params["L"]
         packagedparams = TwuAlphaParam(M,N,L)
-        init_alpha = TwuAlpha(packagedparams, verbose=verbose)
+        init_alpha = TwuAlpha(components,packagedparams,default_references(TwuAlpha))
     end
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PRParam(a,b,Tc,pc,Mw)
