@@ -2,16 +2,33 @@
 CurrentModule = Clapeyron
 ```
 # Clapeyron.jl
-A [Julia](http://julialang.org) package for the modelling of fluids using thermodynamic equations of state. These include the standard cubics (van der Waals, Redlich-Kwong, Peng-Robinson, _etc._), SAFT-type equations (PC-SAFT, SAFT-VR Mie, SAFT-$\gamma$ Mie, _etc._), empirical equations (GERG2008, IAWPS95) and many more.
+An extensible [Julia](http://julialang.org) package for the modelling of fluids using thermodynamic equations of state. These include the standard cubics (van der Waals, Redlich-Kwong, Peng-Robinson, _etc._), SAFT-type equations (PC-SAFT, SAFT-VR Mie, SAFT-$\gamma$ Mie, _etc._), empirical equations (GERG2008, IAWPS95), Activity coefficient models (NRTL, UNIFAC, COSMO-SAC, _etc._) and many more.
 
 The documentation is laid out as follows:
 
-- **Background**: Find more information about the origin and differences for each equation of state provided in this package, as well as some of the methods used to obtain the various thermodynamic properties.
-- **Basic Usage**: Find out how to use the equations of state provided in the package.
-- **Customization**: how to use your own parameters, implement your own equation of state or algorithm.
-- **Notebook Examples**: A list of available notebooks showcasing different functionalities of the package.
-- **Available Models**: A list of all available Equations of State present in the package.
-- **API**: A list of all available methods.
+0. **Installation**
+1. **Model construction**
+1.1 Ideal gas models
+1.2 Cubic equations of state
+1.3 SAFT equations of state
+1.4 Empirical equations of state
+1.5 Activity coefficient models
+1.6 Composite Models
+1.A Available groups
+2. **Property Estimation**
+2.1 Bulk Properties
+2.2 Phase Equilibria
+2.3 Flash Calculations
+3. **Parameter Estimation**
+4. **Extensions**
+4.1 CoolProp
+4.2 Symbolics
+4.3 Measurements
+5. **Package Development**
+5.1 Developing new methods
+5.2 Developing new models
+5.3 Contributing to the package
+6. **API**
 
 ### Authors
 
@@ -21,15 +38,7 @@ The documentation is laid out as follows:
 
 ### License
 
-Clapeyron.jl is licensed under the [MIT license](https://github.com/ypaul21/Clapeyron.jl/blob/master/LICENSE.md).
-
-### Installation
-
-Clapeyron.jl is a registered package, it can be installed from the general registry by:
-
-```
-pkg> add Clapeyron
-```
+Clapeyron.jl is licensed under the [MIT license](https://github.com/ClapeyronThermo/Clapeyron.jl/blob/master/LICENSE.md).
 
 ## Citing `Clapeyron.jl`
 
@@ -40,9 +49,9 @@ If you are using Clapeyron for your research work, please cite the following:
     title={Clapeyron.jl: An Extensible, Open-Source Fluid Thermodynamics Toolkit},
     author={Pierre J. Walker, Hon-Wa Yew, and Andrés Riedemann},
     journal={Ind. Eng. Chem. Res.},
-    volume={XX},
-    number={XX},
-    pages={XX--XX},
+    volume={61},
+    number={20},
+    pages={7130--7153},
     year={2022},
     publisher={American Chemical Society},
     doi={doi/10.1021/acs.iecr.2c00326},
