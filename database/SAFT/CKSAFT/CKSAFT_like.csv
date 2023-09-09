@@ -1,5 +1,5 @@
 Clapeyron Database File,,,,,,,,,
-PCSAFT Like Parameters,,,,,,,,,
+CKSAFT Like Parameters,,,,,,,,,
 species,DIPPR Number,Mw,segment,c,vol,epsilon,n_H,n_e,source
 nitrogen,,,1,3,19.457,123.53,0,0,0
 argon,,,1,0,16.29,150.86,0,0,
@@ -58,7 +58,7 @@ dimethyl ether,,,2.799,10,11.536,207.83,0,0,
 methyl ethyl ether,,,3.54,10,10.065,203.54,0,0,
 methyl n-propyl ether,,,4.069,10,10.224,208.13,0,0,
 diethyl ether,,,4.43,10,10.22,191.92,0,0,
-phenyl ether,,,6.358,10,12.1,276.13,0,0,
+diphenyl ether,,,6.358,10,12.1,276.13,0,0,
 acetone,,,4.504,10,7.765,210.92,0,0,
 methyl ethyl ketone,,,4.193,10,11.871,229.99,0,0,
 methyl n-propyl ketone,,,4.644,10,11.653,230.4,0,0,
