@@ -40,7 +40,7 @@ An activity coefficient model using molecular solvation based on the COSMO-RS me
 
 """ COSMOSAC02
 
-
+default_locations(::Type{COSMOSAC02}) = ["Activity/COSMOSAC/COSMOSAC02_like.csv"]
 
 function COSMOSAC02(components;
     puremodel = PR,
@@ -48,7 +48,7 @@ function COSMOSAC02(components;
     pure_userlocations = String[],
     verbose=false)
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["Activity/COSMOSAC/COSMOSAC02_like.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(formatted_components, default_locations(COSMOSAC02); userlocations=userlocations, verbose=verbose)
     Pi  = COSMO_parse_Pi(params["Pi"])
     A  = params["A"]
     V  = params["V"]

@@ -56,6 +56,8 @@ gᴱ(res) = -∑xᵢqᵖᵢlog(∑θᵖⱼτⱼᵢ)
 """
 UNIQUAC
 
+default_locations(::Type{UNIQUAC}) = ["Activity/UNIQUAC/UNIQUAC_like.csv", "properties/molarmass.csv","Activity/UNIQUAC/UNIQUAC_unlike.csv"]
+
 function UNIQUAC(components;
     puremodel = PR,
     userlocations = String[], 
@@ -63,7 +65,7 @@ function UNIQUAC(components;
     verbose = false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["Activity/UNIQUAC/UNIQUAC_like.csv", "properties/molarmass.csv","Activity/UNIQUAC/UNIQUAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose=verbose)
+    params = getparams(formatted_components, default_locations(UNIQUAC); userlocations=userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose=verbose)
     a  = params["a"]
     r  = params["r"]
     q  = params["q"]

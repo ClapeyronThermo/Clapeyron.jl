@@ -44,6 +44,8 @@ Vᵢ = (RTcᵢ/Pcᵢ)(0.29056 - 0.08775ZRAᵢ)^(1 + (1-T/Tcᵢ)^2/7)
 """
 Wilson
 
+default_locations(::Type{Wilson}) = ["properties/critical.csv", "properties/molarmass.csv","Activity/Wilson/Wilson_unlike.csv"]
+
 function Wilson(components;
     puremodel = PR,
     userlocations = String[],
@@ -51,7 +53,7 @@ function Wilson(components;
     verbose = false)
     
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","Activity/Wilson/Wilson_unlike.csv"]; userlocations=userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g"], verbose=verbose)
+    params = getparams(formatted_components, default_locations(Wilson); userlocations=userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g"], verbose=verbose)
     g  = params["g"]
     Tc        = params["Tc"]
     pc        = params["Pc"]

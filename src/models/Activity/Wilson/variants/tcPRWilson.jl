@@ -19,13 +19,16 @@ export tcPRWilson
     userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
+
 ## Input parameters
 - `g`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
 - `v`: Single Parameter (`Float64`) - individual volumes.
+
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties
+
 ## Description
-tc-PR-Wilson activity model, meant to used in combination with a cubic EoS:
+tc-PR-Wilson activity model, meant to used in combination with the tc-PR cubic EoS:
 ```
 Gᴱ = nRT∑xᵢlog(∑xⱼjΛᵢⱼ)
 Λᵢⱼ = exp(-gᵢⱼ/T)*Vⱼ/Vᵢ
@@ -36,13 +39,16 @@ Gᴱ = nRT∑xᵢlog(∑xⱼjΛᵢⱼ)
 """
 tcPRWilson
 
+default_locations(::Type{tcPRWilson}) = ["Activity/tcPRWilson/tcPRWilson_unlike.csv"]
+
+
 function tcPRWilson(components::Vector{String};
     puremodel = BasicIdeal,
     userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
-    params = getparams(components, ["Activity/tcPRWilson/tcPRWilson_unlike.csv"]; userlocations=userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g","V"], verbose=verbose)
+    params = getparams(components, default_locations(tcPRWilson); userlocations=userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g","V"], verbose=verbose)
     g = params["g"]
     V = params["V"]
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
