@@ -958,7 +958,7 @@ CAS;species;SMILES
 624-29-3;cis-1,4-dimethylcyclohexane;C1[C@@](C)([H])(CC[C@]([H])(C)(C1))
 565-48-0;cis-1,8-terpin;C1(C)(O)CCC(C(C)(C)(O))CC1
 766-90-5;cis-1-propenylbenzene;c1ccccc1/C=C\C
-590-18-1;(z)-2-butene~|~cis-2-butene;C/C=C\C
+590-18-1;2-butene~|~(z)-2-butene~|~cis-2-butene;C/C=C\C
 6117-80-2;cis-2-butene-1,4-diol;OC/C=C\CO
 20348-51-0;cis-2-decene~|~trans-2-decene;C/C=C\CCCCCCC
 7206-26-0;cis-2-dodecene;C/C=C\CCCCCCCCC
@@ -1103,7 +1103,7 @@ CAS;species;SMILES
 112-54-9;dodecanal;CCCCCCCCCCCC=O
 112-40-3;dodecane~|~n-dodecane;CCCCCCCCCCCC
 693-23-2;dodecanedioicacid;OC(=O)CCCCCCCCCCC(=O)O
-143-07-7;dodecanoic acid;CCCCCCCCCCCC(=O)O
+143-07-7;dodecanoic acid~|~n-dodecanoic acid;CCCCCCCCCCCC(=O)O
 111-82-0;methyl dodecanoate~|~dodecanoicacidmethylester;CCCCCCCCCCCC(=O)OC
 112-53-8;dodecanol~|~1-dodecanol~|~dodecan-1-ol;CCCCCCCCCCCCO
 123-01-3;dodecylbenzene~|~n-dodecylbenzene;c1ccccc1(CCCCCCCCCCCC)
@@ -1374,7 +1374,7 @@ CAS;species;SMILES
 1805-22-7;perfluoromethylcyclopentane~|~nonafluoro(trifluoromethyl)-cyclopentane;C(F)(F)(F)C1(F)C(F)(F)C(F)(F)C(F)(F)C1(F)(F)
 124-19-6;nonanal~|~1-nonanal;CCCCCCCCC=O
 123-99-9;azelaic acid~|~nonanedioicacid;OC(=O)CCCCCCCC(=O)O
-112-05-0;nonanoic acid;CCCCCCCCC(=O)O
+112-05-0;nonanoic acid~|~n-nonanoic acid;CCCCCCCCC(=O)O
 1081-77-2;nonylbenzene~|~n-nonylbenzene;c1ccccc1(CCCCCCCCC)
 279-23-2;norbornane~|~bicyclo[2.2.1]heptane;C1C2CCC1CC2
 2050-92-2;diamylamine~|~pentyl-1-pentanamine~|~n-pentyl-1-pentanamine;CCCCCNCCCCC
@@ -1581,7 +1581,7 @@ CAS;species;SMILES
 375-85-9;perfluoroheptanoic acid~|~tridecafluoroheptanoicacid;C(F)(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(F)(F)C(=O)O
 10486-19-8;tridecanal~|~n-tridecylaldehyde;CCCCCCCCCCCCC=O
 629-50-5;tridecane~|~n-tridecane;CCCCCCCCCCCCC
-638-53-9;tridecanoic acid;CCCCCCCCCCCCC(=O)O
+638-53-9;tridecanoic acid~|~n-tridecanoic acid;CCCCCCCCCCCCC(=O)O
 123-02-4;tridecylbenzene~|~n-tridecylbenzene;c1ccccc1(CCCCCCCCCCCCC)
 102-71-6;triethanolamine;OCCN(CCO)CCO
 121-44-8;triethylamine;CCN(CC)CC
@@ -2079,3 +2079,4 @@ propenyl_cyclohexene;propenyl cyclohexene~|~1-[(e)-prop-1-enyl]-cyclohexene;C/C=
 22204-53-1;naproxen;O=C(O)C(C1=CC=C2C=C(OC)C=CC2=C1)C
 5104-49-4;flurbiprofen;O=C(O)C(C=1C=CC(=C(F)C1)C=2C=CC=CC2)C
 22071-15-4;ketoprofen;O=C(O)C(C=1C=CC=C(C1)C(=O)C=2C=CC=CC2)C
+4181-95-7;tetracontane~|~c40;CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC

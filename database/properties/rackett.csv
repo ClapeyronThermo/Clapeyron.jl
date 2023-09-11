@@ -736,7 +736,7 @@ n-decylbenzene~|~decylbenzene,0.2467
 n-decylcyclohexane~|~decylcyclohexane,0.247
 n-docosane~|~docosane,0.2299
 n-dodecane~|~dodecane,0.2466
-n-dodecanoic acid~|~dodecanoic acid,0.2408
+n-dodecanoic acid~|~n-dodecanoic acid~|~dodecanoic acid~|~n-dodecanoic acid,0.2408
 n-dotriacontane~|~dotriacontane,0.2229
 n-eicosane~|~eicosane,0.2335
 neon,0.3004

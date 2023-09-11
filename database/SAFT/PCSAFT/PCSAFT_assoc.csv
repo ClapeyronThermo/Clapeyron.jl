@@ -3,32 +3,31 @@ PCSAFT Assoc Parameters,,,,,,,,
 species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
 methanol,CO,H,methanol,CO,e,2899.5,0.035176,10.1021/ie010954d
 ethanol,CCO,H,ethanol,CCO,e,2653.4,0.032384,10.1021/ie010954d
-1-propanol,CCCO,H,1-propanol,CCCO,e,2276.8,0.015268,10.1021/ie010954d
-1-butanol,CCCCO,H,1-butanol,CCCCO,e,2544.6,0.006692,10.1021/ie010954d
-1-pentanol,CCCCCO,H,1-pentanol,CCCCCO,e,2252.1,0.010319,10.1021/ie010954d
-1-hexanol,CCCCCCO,H,1-hexanol,CCCCCCO,e,2538.9,0.005747,10.1021/ie010954d
-1-heptanol,CCCCCCCO,H,1-heptanol,CCCCCCCO,e,2878.5,0.001155,10.1021/ie010954d
-1-octanol,CCCCCCCCO,H,1-octanol,CCCCCCCCO,e,2754.8,0.002197,10.1021/ie010954d
-1-nonanol,CCCCCCCCCO,H,1-nonanol,CCCCCCCCCO,e,2941.9,0.001427,10.1021/ie010954d
-2-propanol,CC(O)C,H,2-propanol,CC(O)C,e,2253.9,0.024675,10.1021/ie010954d
-2-methyl-2-butanol,CC(O)(C)CC,H,2-methyl-2-butanol,CC(O)(C)CC,e,2618.8,0.001863,10.1021/ie010954d
+propanol~|~1-propanol~|~propan-1-ol,CCCO,H,propanol~|~1-propanol~|~propan-1-ol,CCCO,e,2276.8,0.015268,10.1021/ie010954d
+butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,CCCCO,H,butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,CCCCO,e,2544.6,0.006692,10.1021/ie010954d
+1-pentanol~|~pentan-1-ol,CCCCCO,H,1-pentanol~|~pentan-1-ol,CCCCCO,e,2252.1,0.010319,10.1021/ie010954d
+1-hexanol~|~hexan-1-ol,CCCCCCO,H,1-hexanol~|~hexan-1-ol,CCCCCCO,e,2538.9,0.005747,10.1021/ie010954d
+1-heptanol~|~heptan-1-ol,CCCCCCCO,H,1-heptanol~|~heptan-1-ol,CCCCCCCO,e,2878.5,0.001155,10.1021/ie010954d
+1-octanol~|~octan-1-ol,CCCCCCCCO,H,1-octanol~|~octan-1-ol,CCCCCCCCO,e,2754.8,0.002197,10.1021/ie010954d
+1-nonanol~|~nonan-1-ol,CCCCCCCCCO,H,1-nonanol~|~nonan-1-ol,CCCCCCCCCO,e,2941.9,0.001427,10.1021/ie010954d
+2-propanol~|~propan-2-ol~|~isopropanol,CC(O)C,H,2-propanol~|~propan-2-ol~|~isopropanol,CC(O)C,e,2253.9,0.024675,10.1021/ie010954d
+2-methyl-2-butanol~|~2-methylbutan-2-ol,CC(O)(C)CC,H,2-methyl-2-butanol~|~2-methylbutan-2-ol,CC(O)(C)CC,e,2618.8,0.001863,10.1021/ie010954d
 water,O,H,water,O,e,2500.7,0.034868,10.1021/ie010954d
 ethanol,O,H,water,O,e,2577.05,0.03356196748232913,10.1021/ie010954d
 water,O,H,ethanol,O,e,2577.05,0.03356196748232913,10.1021/ie010954d
 water08,O,H,water08,O,e,2425.6714,0.04509,10.1016/j.cep.2007.02.034
-methylamine,CN,H,methylamine,CN,e,684.3,0.095103,10.1021/ie010954d
-ethylamine,CCN,H,ethylamine,CCN,e,854.7,0.017275,10.1021/ie010954d
-1-propylamine,CCCN,H,1-propylamine,CCCN,e,1028.1,0.022674,10.1021/ie010954d
-2-propylamine,CC(N)C,H,2-propylamine,CC(N)C,e,932.2,0.02134,10.1021/ie010954d
+methylamine~|~methanamine,CN,H,methylamine~|~methanamine,CN,e,684.3,0.095103,10.1021/ie010954d
+ethylamine~|~ethanamine,CCN,H,ethylamine~|~ethanamine,CCN,e,854.7,0.017275,10.1021/ie010954d
+propylamine~|~n-propylamine~|~1-propylamine~|~propan-1-amine,CCCN,H,propylamine~|~n-propylamine~|~1-propylamine~|~propan-1-amine,CCCN,e,1028.1,0.022674,10.1021/ie010954d
+2-propylamine~|~2-propanamine~|~isopropylamine,CC(N)C,H,2-propylamine~|~2-propanamine~|~isopropylamine,CC(N)C,e,932.2,0.02134,10.1021/ie010954d
 aniline,,H,aniline,,e,1351.6,0.074883,10.1021/ie010954d
 acetic acid,CC(=O)O,H,acetic acid,CC(=O)O,e,3044.4,0.07555,10.1021/ie010954d
-acetonitrile,,e,water,,H,2264.61,0.0183
-paracetamol,,e,paracetamol,,H,2003.76,0.01
-thymol,,e,thymol,,H,3504.46,0.04510
-menthol,,e,menthol,,H,3530.68,0.05660
-menthol,,e,thymol,,H,3517.56,0.05052
-menthol,,H,thymol,,e,3517.56,0.05052
-1-decanol,,e,thymol,,H,3215.3,0.00901
-1-decanol,,H,thymol,,e,3215.3,0.00901
-1-decanol,,e,1-decanol,,H,2926.14,0.00180
-
+acetonitrile,,e,water,,H,2264.61,0.0183,
+paracetamol~|~acetaminophen,,e,paracetamol~|~acetaminophen,,H,2003.76,0.01,
+thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,,e,thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,,H,3504.46,0.0451,
+menthol,,e,menthol,,H,3530.68,0.0566,
+menthol,,e,thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,,H,3517.56,0.05052,
+menthol,,H,thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,,e,3517.56,0.05052,
+1-decanol~|~decan-1-ol,,e,thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,,H,3215.3,0.00901,
+1-decanol~|~decan-1-ol,,H,thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,,e,3215.3,0.00901,
+1-decanol~|~decan-1-ol,,e,1-decanol~|~decan-1-ol,,H,2926.14,0.0018,

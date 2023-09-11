@@ -1,7 +1,7 @@
 Clapeyron Database File,,,,,
 ogSAFT Unlike Parameters,,,,,
 species1,SMILES1,species2,SMILES2,k,source
-water,,ethylene glycol,,0.0302,
-hexane,,TEG,,0.139,
-water,,propylene glycol,,0.0128,
-butane,,methanol,,0.0009,
+water,,"glycol~|~1,2-ethanediol~|~ethylene glycol",,0.0302,
+hexane~|~n-hexane,,teg~|~triethylene glycol,,0.139,
+water,,"propyleneglycol~|~1,2-propanediol~|~1,2-propylene glycol",,0.0128,
+butane~|~n-butane,,methanol,,0.0009,

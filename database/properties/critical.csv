@@ -1,238 +1,238 @@
 Clapeyron Database File,,,,,
 Critical Single Parameters,,,,,
 species,DIPPR Number,Tc,Pc,Vc,acentricfactor
-Methane,74828,190.564,4.59E+06,9.92E-05,0.011
-Ethane,74840,305.32,4.85E+06,1.48E-04,0.098
-propane,74986,369.83,4.21E+06,2.03E-04,0.149
-butane,106978,425.12,3.77E+06,2.55E-04,0.197
-pentane,109660,469.7,3.36E+06,3.04E-04,0.251
-hexane,110543,507.6,3.04E+06,4.32E-04,0.304
-heptane,142825,540.2,2.72E+06,3.70E-04,0.346
-octane,111659,568.7,2.47E+06,4.92E-04,0.396
-nonane,111842,594.6,2.31E+06,6.58E-04,0.446
-decane,124185,617.7,2.09E+06,7.55E-04,0.488
-undecane,1120214,639,1.95E+06,8.37E-04,0.53
-dodecane,112403,658,1.82E+06,9.24E-04,0.577
-tridecane,629505,675,1.68E+06,1.03E-03,0.617
-tetradecane,629594,693,1.57E+06,1.13E-03,0.643
-pentadecane,629629,708,1.47E+06,1.23E-03,0.685
-hexadecane,544763,723,1.41E+06,1.31E-03,0.721
-heptadecane,629787,736,1.34E+06,1.40E-03,0.771
-octadecane,593453,747,1.26E+06,1.52E-03,0.806
-nonadecane,629925,758,1.21E+06,1.60E-03,0.851
-eicosane,112958,768,1.17E+06,1.68E-03,0.912
-isobutane,75285,408.14,3.62E+06,2.88E-04,0.177
-isopentane,78784,460.43,3.37E+06,3.49E-04,0.226
-isooctane,,543.9,25.7e5,0.468e-3,0.301
-"2,3-Dimethylbutane",79298,499.98,3.13E+06,4.08E-04,0.246
-2-Methylpentane,107835,497.5,3.02E+06,4.21E-04,0.279
-"2,3-Dimethylpentane",565593,537.35,2.88E+06,4.77E-04,0.292
-"2,3,3-Trimethylpentane",560214,573.5,2.81E+06,5.22E-04,0.289
-"2,2,4-Trimethylpentane",540841,543.96,2.56E+06,5.43E-04,0.301
-ethylene,74851,282.34,5.03E+06,1.43E-04,0.086
-propylene,115071,365.57,4.63E+06,2.02E-04,0.137
-1-Butene,106989,419.95,4.04E+06,2.66E-04,0.19
-cis-2-Butene,590181,435.58,4.24E+06,2.63E-04,0.204
-trans-2-Butene,624646,428.63,4.08E+06,2.68E-04,0.216
-1-Pentene,109671,464.78,3.56E+06,3.34E-04,0.236
-hexene,592416,504.03,3.14E+06,4.10E-04,0.28
-1-Heptene,592767,537.29,2.82E+06,4.87E-04,0.33
-1-Octene,111660,566.65,2.57E+06,5.64E-04,0.377
-1-Nonene,124118,593.25,2.33E+06,6.51E-04,0.417
-1-Decene,872059,616.4,2.21E+06,7.13E-04,0.478
-2-Methylpropene,115117,417.9,3.98E+06,2.68E-04,0.192
-2-Methyl-1-butene,563462,465,3.45E+06,3.44E-04,0.237
-2-Methyl-2-butene,513359,471,3.38E+06,3.56E-04,0.272
-"1,2-Butadiene",590192,452,4.36E+06,2.65E-04,0.166
-"1,3-Butadiene",106990,425.17,4.30E+06,2.53E-04,0.192
-"2-Methyl-1,3-butadiene",78795,484,3.85E+06,3.21E-04,0.158
-Acetylene,74862,308.32,6.15E+06,1.28E-04,0.188
-Methylacetylene,74997,402.39,5.62E+06,1.83E-04,0.216
-Dimethylacetylene,503173,473.2,4.87E+06,2.48E-04,0.239
-3-Methyl-1-butyne,598232,463.2,4.20E+06,2.82E-04,0.308
-1-Pentyne,627190,481.2,4.17E+06,2.95E-04,0.29
-2-Pentyne,627214,519,4.02E+06,3.30E-04,0.174
-1-Hexyne,693027,516.2,3.64E+06,3.62E-04,0.335
-2-Hexyne,764352,549,3.53E+06,3.97E-04,0.221
-3-Hexyne,928494,544,3.54E+06,3.93E-04,0.219
-1-Heptyne,628717,559,3.13E+06,4.56E-04,0.272
-1-Octyne,629050,585,2.82E+06,5.30E-04,0.323
-Vinylacetylene,689974,454,4.89E+06,2.37E-04,0.109
-Cyclopentane,287923,511.76,4.50E+06,2.91E-04,0.196
-Methylcyclopentane,96377,532.79,3.78E+06,3.60E-04,0.23
-Ethylcyclopentane,1640897,569.52,3.40E+06,4.28E-04,0.271
-Cyclohexane,110827,553.58,4.10E+06,3.08E-04,0.212
-Methylcyclohexane,108872,572.19,3.48E+06,4.20E-04,0.236
-"1,1-Dimethylcyclohexane",590669,591.15,2.94E+06,5.14E-04,0.233
-Ethylcyclohexane,1678917,609.15,3.04E+06,5.12E-04,0.246
-Cyclopentene,142290,507,4.81E+06,2.69E-04,0.196
-1-Methylcyclopentene,693890,542,4.13E+06,3.35E-04,0.232
-Cyclohexene,110838,560.4,4.39E+06,3.26E-04,0.216
-Benzene,71432,562.16,4.88E+06,2.59E-04,0.209
-Toluene,108883,591.8,4.10E+06,3.16E-04,0.262
-o-Xylene,95476,630.33,3.74E+06,3.69E-04,0.311
-m-Xylene,108383,617.05,3.53E+06,3.76E-04,0.325
-p-Xylene,106423,616.23,3.50E+06,3.79E-04,0.32
-ethylbenzene,100414,617.2,3.60E+06,4.38E-04,0.301
-propylbenzene,103651,638.32,3.20E+06,5.10E-04,0.344
-"1,2,4-trimethylbenzene",95636,649.13,3.25E+06,5.10E-04,0.38
-isopropylbenzene,98828,631.1,3.18E+06,5.07E-04,0.322
-"1,3,5-trimethylbenzene",108678,637.36,3.11E+06,5.24E-04,0.397
-p-isopropyltoluene,99876,653.15,2.80E+06,5.96E-04,0.366
-Naphthalene,91203,748.35,3.99E+06,4.79E-04,0.296
-Biphenyl,92524,789.26,3.86E+06,5.23E-04,0.367
-Styrene,100425,636,3.82E+06,4.26E-04,0.295
-m-Terphenyl,92068,924.85,3.53E+06,6.70E-04,0.561
-methanol,67561,512.64,8.14E+06,1.18E-04,0.566
-Ethanol,64175,513.92,6.12E+06,1.67E-04,0.643
-1-Propanol,71238,536.78,5.12E+06,2.68E-04,0.617
-1-Butanol,71363,563.05,4.34E+06,3.32E-04,0.585
-2-Butanol,78922,536.05,4.20E+06,3.26E-04,0.574
-2-Propanol,67630,508.3,4.79E+06,2.71E-04,0.67
-2-Methyl-2-propanol,75650,506.21,3.99E+06,3.24E-04,0.613
-1-Pentanol,71410,586.15,3.87E+06,3.87E-04,0.592
-2-Methyl-1-butanol,137326,565,3.87E+06,3.73E-04,0.678
-3-Methyl-1-butanol,123513,577.2,3.90E+06,3.78E-04,0.586
-1-Hexanol,111273,611.35,3.46E+06,4.52E-04,0.572
-1-Heptanol,111706,631.9,3.18E+06,5.08E-04,0.592
-Cyclohexanol,108930,650,4.25E+06,3.91E-04,0.371
-Ethylene glycol,107211,719.7,7.71E+06,2.39E-04,0.487
-"1,2-Propylene glycol",57556,626,6.04E+06,2.65E-04,1.102
-Phenol,108952,694.25,6.06E+06,2.93E-04,0.438
-o-Cresol,95487,697.55,5.06E+06,3.52E-04,0.438
-in-Cresol,108394,705.85,4.52E+06,3.99E-04,0.444
-p-Cresol,106445,704.65,5.15E+06,3.50E-04,0.507
-Dimethyl ether,115106,400.1,5.27E+06,1.94E-04,0.192
-Methyl ethyl ether,540670,437.8,4.47E+06,2.50E-04,0.229
-Methyl n-propyl ether,557175,476.3,3.77E+06,3.23E-04,0.264
-Methyl isopropyl ether,598538,464.5,3.89E+06,3.05E-04,0.28
-Methyl n-butyl ether,628284,510,3.31E+06,3.94E-04,0.335
-Methyl isobutyl ether,625445,497,3.41E+06,3.72E-04,0.31
-Methyl tert-butyl ether,1634044,497.1,3.41E+06,3.73E-04,0.264
-Diethyl ether,60297,466.7,3.64E+06,3.28E-04,0.281
-Ethyl propyl ether,628320,500.23,3.37E+06,3.79E-04,0.347
-Ethyl isopropyl ether,625547,489,3.41E+06,3.66E-04,0.306
-Methyl phenyl ether,100663,645.6,4.27E+06,3.86E-04,0.353
-Diphenyl ether,101848,766.8,3.10E+06,6.32E-04,0.441
-Formaldehyde,50000,408,6.59E+06,1.58E-04,0.282
-Acetaldehyde,75070,466,5.57E+06,2.14E-04,0.292
-1-Propanal,123386,504.4,4.92E+06,2.62E-04,0.256
-1-Butanal,123728,537.2,4.32E+06,3.18E-04,0.278
-1-Pentanal,110623,566.1,3.97E+06,3.64E-04,0.347
-1-Hexanal,66251,591,3.46E+06,4.37E-04,0.387
-1-Heptanal,111717,617,3.18E+06,4.96E-04,0.427
-1-Octanal,124130,638.1,2.97E+06,5.49E-04,0.474
-1-Nonanal,124196,658,2.74E+06,6.14E-04,0.514
-1-Decanal,112312,674.2,2.60E+06,6.63E-04,0.582
-Acetone,67641,508.2,4.71E+06,2.76E-04,0.307
-Methyl ethyl ketone,78933,535.5,4.12E+06,3.32E-04,0.32
-2-Pentanone,107879,561.08,3.71E+06,3.87E-04,0.345
-Methyl isopropyl ketone,563804,553,3.84E+06,3.68E-04,0.349
-2-Hexanone,591786,587.05,3.31E+06,4.53E-04,0.395
-Methyl isobutyl ketone,108101,571.4,3.27E+06,4.47E-04,0.389
-3-Methyl-2-pentanone,565617,573,3.32E+06,4.41E-04,0.386
-3-Pentanone,96220,560.95,3.70E+06,3.87E-04,0.34
-Ethyl isopropyl ketone,565695,567,3.34E+06,4.34E-04,0.394
-Diisopropyl ketone,565800,576,3.06E+06,4.81E-04,0.411
-Cyclohexanone,108941,653,4.01E+06,4.16E-04,0.308
-Methyl phenyl ketone,98862,709.5,3.85E+06,4.71E-04,0.365
-Formic acid,64186,588,5.81E+06,2.59E-04,0.317
-Acetic acid,64197,591.95,5.74E+06,2.64E-04,0.463
-Propionic acid,79094,600.81,4.61E+06,3.33E-04,0.574
-n-Butyric acid,107926,615.7,4.07E+06,3.87E-04,0.682
-Isobutyric acid,79312,605,3.68E+06,4.20E-04,0.612
-Benzoic acid,65850,751,4.47E+06,4.29E-04,0.603
-Acetic anhydride,108247,606,3.97E+06,3.90E-04,0.45
-Methyl formate,107313,487.2,5.98E+06,2.08E-04,0.254
-Methyl acetate,79209,506.55,4.69E+06,2.76E-04,0.326
-Methyl propionate,554121,530.6,4.03E+06,3.36E-04,0.349
-Methyl n-butyrate,623427,554.5,3.48E+06,4.07E-04,0.378
-Ethyl formate,109944,508.4,4.71E+06,2.76E-04,0.282
-Ethyl acetate,141786,523.3,3.85E+06,3.47E-04,0.363
-Ethyl propionate,105373,546,3.34E+06,4.18E-04,0.391
-Ethyl n-butyrate,105544,571,2.94E+06,4.96E-04,0.399
-n-Propyl formate,110747,538,4.03E+06,3.41E-04,0.31
-n-Propyl acetate,109604,549.73,3.37E+06,4.17E-04,0.39
-n-Butyl acetate,123864,579.15,3.11E+06,4.76E-04,0.41
-Methyl benzoate,93583,693,3.59E+06,4.93E-04,0.421
-Ethyl benzoate,93890,698,3.22E+06,5.54E-04,0.477
-Vinyl acetate,108054,519.13,3.93E+06,3.38E-04,0.348
-Methylamine,74895,430.05,7.41E+06,1.48E-04,0.279
-Dimethylamine,124403,437.2,5.26E+06,2.12E-04,0.293
-Trimethylamine,75503,433.25,4.10E+06,2.70E-04,0.21
-Ethylamine,75047,456.15,5.59E+06,2.09E-04,0.283
-Diethylamine,109897,496.6,3.67E+06,3.46E-04,0.3
-Triethylamine,121448,535.15,3.04E+06,4.50E-04,0.316
-n-Propylamine,107108,496.95,4.74E+06,2.68E-04,0.28
-di-n-Propylamine,142847,550,3.11E+06,4.52E-04,0.446
-Isopropylamine,75310,471.85,4.54E+06,2.66E-04,0.276
-Diisopropylamine,108189,523.1,3.20E+06,4.18E-04,0.388
-Aniline,62533,699,5.35E+06,3.34E-04,0.381
-N-Methylaniline,100618,701.55,5.19E+06,3.45E-04,0.48
-"N,N-Dimethylaniline",121697,687.15,3.63E+06,4.84E-04,0.403
-Ethylene oxide,75218,469.15,7.26E+06,1.65E-04,0.201
-Furan,110009,490.15,5.55E+06,2.26E-04,0.205
-Thiophene,110021,579.35,5.71E+06,2.59E-04,0.195
-Pyridine,110861,619.95,5.64E+06,2.81E-04,0.239
-Formamide,75127,771,7.75E+06,2.54E-04,0.41
-"N,N-Dimethylformamide",68122,649.6,4.37E+06,3.80E-04,0.312
-Acetamide,60355,761,6.57E+06,2.96E-04,0.419
-N-Methylacetamide,79163,718,5.00E+06,3.67E-04,0.437
-Acetonitrile,75058,545.5,4.85E+06,2.87E-04,0.34
-Propionitrile,107120,564.4,4.19E+06,3.44E-04,0.325
-n-Butyronitrile,109740,582.25,3.79E+06,3.93E-04,0.371
-Benzonitrile,100470,699.35,4.21E+06,4.25E-04,0.352
-Methyl mercaptan,74931,469.95,7.23E+06,1.66E-04,0.158
-Ethyl mercaptan,75081,499.15,5.49E+06,2.32E-04,0.188
-n-Propyl mercaptan,107039,536.6,4.63E+06,2.96E-04,0.232
-n-Butyl mercaptan,109795,570.1,3.97E+06,3.67E-04,0.272
-Isobutyl mercaptan,513440,559,4.06E+06,3.52E-04,0.253
-sec-Butyl mercaptan,513531,554,4.06E+06,3.49E-04,0.251
-Dimethyl sulfide,75183,503.04,5.53E+06,2.32E-04,0.194
-Methyl ethyl sulfide,624895,533,4.26E+06,3.20E-04,0.209
-Diethyl sulfide,352932,557.15,3.96E+06,3.60E-04,0.294
-Fluoromethane,593533,317.28,5.90E+06,1.37E-04,0.198
-Chloromethane,74873,416.25,6.69E+06,1.59E-04,0.154
-Trichloromethane,67663,536.4,5.55E+06,2.47E-04,0.228
-Tetrachloromethane,56235,556.35,4.54E+06,3.13E-04,0.191
-Bromomethane,74839,467,8.00E+06,1.49E-04,0.192
-Fluoroethane,353366,375.31,5.01E+06,1.91E-04,0.218
-Chloroethane,75003,460.35,5.46E+06,2.15E-04,0.206
-Bromoethane,74964,503.8,6.29E+06,2.05E-04,0.259
-1-Chloropropane,540545,503.15,4.58E+06,2.81E-04,0.228
-2-Chloropropane,75296,489,4.51E+06,2.77E-04,0.196
-"1,1-Dichloropropane",78999,560,4.24E+06,3.38E-04,0.253
-"1,2-Dichloropropane",78875,572,4.23E+06,3.46E-04,0.256
-Vinyl chloride,75014,432,5.75E+06,1.92E-04,0.106
-Fluorobenzene,462066,560.09,4.54E+06,3.15E-04,0.247
-Chlorobenzene,108907,632.35,4.53E+06,3.57E-04,0.251
-1-chlorobutane,,542.,1e6,3e-5,0.
-Bromobenzene,108861,670.15,4.52E+06,3.79E-04,0.251
-Air,132259100,132.45,3.79E+06,8.93E-05,0
-Hydrogen,1333740,33.19,1.32E+06,6.43E-05,-0.215
-helium,7440597,5.2,2.30E+05,5.78E-05,-0.388
-Neon,7440019,44.4,2.67E+06,4.25E-05,-0.038
-Argon,7440371,150.86,4.90E+06,7.87E-05,0
-Fluorine,7782414,144.12,5.17E+06,7.12E-05,0.053
-Chlorine,7782505,417.15,7.79E+06,1.37E-04,0.073
-Bromine,7726956,584.15,1.03E+07,1.45E-04,0.128
-Oxygen,7782447,154.58,5.02E+06,7.87E-05,0.02
-Nitrogen,7727379,126.2,3.39E+06,9.51E-05,0.037
-Ammonia,7664417,405.65,1.13E+07,7.25E-05,0.253
-Hydrazine,302012,653.15,1.47E+07,1.14E-04,0.315
-Nitrous oxide,10024972,309.57,7.28E+06,1.09E-04,0.143
-Nitric oxide,10102439,180.15,6.52E+06,7.06E-05,0.585
-Cyanogen,460195,400.15,5.94E+06,1.72E-04,0.276
-Carbon monoxide,630080,132.92,3.49E+06,9.32E-05,0.048
-Carbon dioxide,124389,304.21,7.39E+06,9.39E-05,0.224
-Carbon disulfide,75150,552,8.04E+06,1.60E-04,0.118
-Hydrogen fluoride,7664393,461.15,6.49E+06,1.82E-04,0.383
-Hydrogen chloride,7647010,324.65,8.36E+06,9.92E-05,0.134
-Hydrogen bromide,10035106,363.15,8.46E+06,1.10E-04,0.069
-Hydrogen cyanide,74908,456.65,5.35E+06,2.18E-04,0.407
-Hydrogen sulfide,7783064,373.53,9.00E+06,1.06E-04,0.096
-Sulfur dioxide,7446095,430.75,7.86E+06,1.40E-04,0.244
-Sulfur trioxide,7446119,490.85,8.19E+06,1.53E-04,0.423
-water,7732185,647.13,2.19E+07,5.71E-05,0.343
-Krypton,,209.48,5.53E+06,9.68E-05,0
-sulfur hexafluoride,,318.733,3.75455e6,0.19636e-3,0.21
+methane,74828,190.564,4.59e6,9.92e-5,0.011
+ethane,74840,305.32,4.85e6,0.000148,0.098
+propane~|~n-propane,74986,369.83,4.21e6,0.000203,0.149
+butane~|~n-butane,106978,425.12,3.77e6,0.000255,0.197
+pentane~|~n-pentane,109660,469.7,3.36e6,0.000304,0.251
+hexane~|~n-hexane,110543,507.6,3.04e6,0.000432,0.304
+heptane~|~n-heptane,142825,540.2,2.72e6,0.00037,0.346
+octane~|~n-octane,111659,568.7,2.47e6,0.000492,0.396
+nonane~|~n-nonane,111842,594.6,2.31e6,0.000658,0.446
+decane~|~n-decane,124185,617.7,2.09e6,0.000755,0.488
+undecane~|~n-undecane,1120214,639.0,1.95e6,0.000837,0.53
+dodecane~|~n-dodecane,112403,658.0,1.82e6,0.000924,0.577
+tridecane~|~n-tridecane,629505,675.0,1.68e6,0.00103,0.617
+tetradecane~|~n-tetradecane,629594,693.0,1.57e6,0.00113,0.643
+pentadecane~|~n-pentadecane,629629,708.0,1.47e6,0.00123,0.685
+hexadecane~|~n-hexadecane,544763,723.0,1.41e6,0.00131,0.721
+heptadecane~|~n-heptadecane,629787,736.0,1.34e6,0.0014,0.771
+octadecane~|~n-octadecane,593453,747.0,1.26e6,0.00152,0.806
+nonadecane~|~n-nonadecane,629925,758.0,1.21e6,0.0016,0.851
+eicosane~|~n-eicosane,112958,768.0,1.17e6,0.00168,0.912
+isobutane~|~2-methylpropane,75285,408.14,3.62e6,0.000288,0.177
+isopentane~|~methylbutane~|~2-methylbutane,78784,460.43,3.37e6,0.000349,0.226
+"isooctane~|~2,2,4-trimethylpentane",,543.9,2.57e6,0.000468,0.301
+"2,3-dimethylbutane",79298,499.98,3.13e6,0.000408,0.246
+isohexane~|~2-methylpentane,107835,497.5,3.02e6,0.000421,0.279
+"2,3-dimethylpentane",565593,537.35,2.88e6,0.000477,0.292
+"2,3,3-trimethylpentane",560214,573.5,2.81e6,0.000522,0.289
+"isooctane~|~2,2,4-trimethylpentane",540841,543.96,2.56e6,0.000543,0.301
+ethene~|~ethylene~|~1-ethylene,74851,282.34,5.03e6,0.000143,0.086
+propene~|~propylene,115071,365.57,4.63e6,0.000202,0.137
+butene~|~1-butene,106989,419.95,4.04e6,0.000266,0.19
+2-butene~|~(z)-2-butene~|~cis-2-butene,590181,435.58,4.24e6,0.000263,0.204
+(e)-2-butene~|~trans-2-butene,624646,428.63,4.08e6,0.000268,0.216
+pentene~|~1-pentene,109671,464.78,3.56e6,0.000334,0.236
+hexene~|~1-hexene~|~hex-1-ene,592416,504.03,3.14e6,0.00041,0.28
+1-heptene,592767,537.29,2.82e6,0.000487,0.33
+octene~|~1-octene~|~oct-1-ene,111660,566.65,2.57e6,0.000564,0.377
+1-nonene,124118,593.25,2.33e6,0.000651,0.417
+1-decene,872059,616.4,2.21e6,0.000713,0.478
+isobutene~|~isobutylene~|~2-methylpropene,115117,417.9,3.98e6,0.000268,0.192
+2-methyl-1-butene,563462,465.0,3.45e6,0.000344,0.237
+2-methyl-2-butene,513359,471.0,3.38e6,0.000356,0.272
+"1,2-butadiene",590192,452.0,4.36e6,0.000265,0.166
+"butadiene~|~1,3-butadiene",106990,425.17,4.3e6,0.000253,0.192
+"isoprene~|~2-methyl-1,3-butadiene",78795,484.0,3.85e6,0.000321,0.158
+acetylene,74862,308.32,6.15e6,0.000128,0.188
+propyne~|~1-propyne~|~methylacetylene,74997,402.39,5.62e6,0.000183,0.216
+2-butyne~|~dimethylacetylene,503173,473.2,4.87e6,0.000248,0.239
+3-methyl-1-butyne,598232,463.2,4.2e6,0.000282,0.308
+pentyne~|~1-pentyne,627190,481.2,4.17e6,0.000295,0.29
+2-pentyne,627214,519.0,4.02e6,0.00033,0.174
+hexyne~|~1-hexyne,693027,516.2,3.64e6,0.000362,0.335
+2-hexyne,764352,549.0,3.53e6,0.000397,0.221
+3-hexyne,928494,544.0,3.54e6,0.000393,0.219
+1-heptyne,628717,559.0,3.13e6,0.000456,0.272
+octyne~|~1-octyne,629050,585.0,2.82e6,0.00053,0.323
+butenyne~|~1-buten-3-yne~|~vinylacetylene,689974,454.0,4.89e6,0.000237,0.109
+cyclopentane,287923,511.76,4.5e6,0.000291,0.196
+methylcyclopentane,96377,532.79,3.78e6,0.00036,0.23
+ethylcyclopentane,1640897,569.52,3.4e6,0.000428,0.271
+cyclohexane,110827,553.58,4.1e6,0.000308,0.212
+methylcyclohexane,108872,572.19,3.48e6,0.00042,0.236
+"1,1-dimethylcyclohexane",590669,591.15,2.94e6,0.000514,0.233
+ethylcyclohexane,1678917,609.15,3.04e6,0.000512,0.246
+cyclopentene,142290,507.0,4.81e6,0.000269,0.196
+methylcyclopentene~|~1-methylcyclopentene,693890,542.0,4.13e6,0.000335,0.232
+cyclohexene,110838,560.4,4.39e6,0.000326,0.216
+benzene,71432,562.16,4.88e6,0.000259,0.209
+toluene,108883,591.8,4.1e6,0.000316,0.262
+"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95476,630.33,3.74e6,0.000369,0.311
+"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108383,617.05,3.53e6,0.000376,0.325
+"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106423,616.23,3.5e6,0.000379,0.32
+ethylbenzene,100414,617.2,3.6e6,0.000438,0.301
+propylbenzene~|~n-propylbenzene,103651,638.32,3.2e6,0.00051,0.344
+"1,2,4-trimethylbenzene",95636,649.13,3.25e6,0.00051,0.38
+cumene~|~isopropylbenzene,98828,631.1,3.18e6,0.000507,0.322
+"mesitylene~|~1,3,5-trimethylbenzene",108678,637.36,3.11e6,0.000524,0.397
+p-cymene~|~p-isopropyltoluene~|~1-methyl-4-isopropylbenzene~|~1-(1-methylethyl)-4-methylbenzene,99876,653.15,2.8e6,0.000596,0.366
+naphthalene,91203,748.35,3.99e6,0.000479,0.296
+biphenyl,92524,789.26,3.86e6,0.000523,0.367
+styrene,100425,636.0,3.82e6,0.000426,0.295
+m-terphenyl,92068,924.85,3.53e6,0.00067,0.561
+methanol,67561,512.64,8.14e6,0.000118,0.566
+ethanol,64175,513.92,6.12e6,0.000167,0.643
+propanol~|~1-propanol~|~propan-1-ol,71238,536.78,5.12e6,0.000268,0.617
+butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,71363,563.05,4.34e6,0.000332,0.585
+2-butanol~|~butan-2-ol,78922,536.05,4.2e6,0.000326,0.574
+2-propanol~|~propan-2-ol~|~isopropanol,67630,508.3,4.79e6,0.000271,0.67
+tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,75650,506.21,3.99e6,0.000324,0.613
+1-pentanol~|~pentan-1-ol,71410,586.15,3.87e6,0.000387,0.592
+2-methyl-1-butanol,137326,565.0,3.87e6,0.000373,0.678
+isopentanol~|~3-methylbutan-1-ol~|~3-methyl-1-butanol,123513,577.2,3.9e6,0.000378,0.586
+1-hexanol~|~hexan-1-ol,111273,611.35,3.46e6,0.000452,0.572
+1-heptanol~|~heptan-1-ol,111706,631.9,3.18e6,0.000508,0.592
+cyclohexanol,108930,650.0,4.25e6,0.000391,0.371
+"glycol~|~1,2-ethanediol~|~ethylene glycol",107211,719.7,7.71e6,0.000239,0.487
+"propyleneglycol~|~1,2-propanediol~|~1,2-propylene glycol",57556,626.0,6.04e6,0.000265,1.102
+phenol,108952,694.25,6.06e6,0.000293,0.438
+o-cresol~|~2-methylphenol,95487,697.55,5.06e6,0.000352,0.438
+m-cresol~|~in-cresol~|~3-methylphenol~|~3-hydroxytoluene,108394,705.85,4.52e6,0.000399,0.444
+p-cresol~|~4-methylphenol,106445,704.65,5.15e6,0.00035,0.507
+dimethyl ether,115106,400.1,5.27e6,0.000194,0.192
+methylethylether~|~ethyl methyl ether,540670,437.8,4.47e6,0.00025,0.229
+1-methoxypropane~|~methylpropyl ether~|~methyl-n-propylether~|~methyl n-propyl ether,557175,476.3,3.77e6,0.000323,0.264
+methylisopropylether~|~isopropyl methyl ether,598538,464.5,3.89e6,0.000305,0.28
+methylbutyl ether~|~butyl methyl ether~|~methyl-n-butylether~|~methyl n-butyl ether,628284,510.0,3.31e6,0.000394,0.335
+methylisobutylether,625445,497.0,3.41e6,0.000372,0.31
+methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,1634044,497.1,3.41e6,0.000373,0.264
+diethyl ether,60297,466.7,3.64e6,0.000328,0.281
+ethyl propyl ether,628320,500.23,3.37e6,0.000379,0.347
+2-ethoxy-propane~|~ethyl isopropyl ether,625547,489.0,3.41e6,0.000366,0.306
+anisole~|~methyl phenyl ether,100663,645.6,4.27e6,0.000386,0.353
+diphenyl ether,101848,766.8,3.1e6,0.000632,0.441
+methanal~|~formaldehyde,50000,408.0,6.59e6,0.000158,0.282
+ethanal~|~acetaldehyde,75070,466.0,5.57e6,0.000214,0.292
+propanal~|~1-propanal~|~propionaldehyde,123386,504.4,4.92e6,0.000262,0.256
+butanal~|~1-butanal~|~butyraldehyde,123728,537.2,4.32e6,0.000318,0.278
+pentanal~|~1-pentanal~|~valeraldehyde,110623,566.1,3.97e6,0.000364,0.347
+hexanal~|~1-hexanal,66251,591.0,3.46e6,0.000437,0.387
+heptanal~|~1-heptanal,111717,617.0,3.18e6,0.000496,0.427
+octanal~|~1-octanal,124130,638.1,2.97e6,0.000549,0.474
+nonanal~|~1-nonanal,124196,658.0,2.74e6,0.000614,0.514
+decanal~|~1-decanal,112312,674.2,2.6e6,0.000663,0.582
+acetone~|~propanone,67641,508.2,4.71e6,0.000276,0.307
+butanone~|~2-butanone~|~methyl ethyl ketone,78933,535.5,4.12e6,0.000332,0.32
+2-pentanone~|~pentan-2-one~|~methyln-propylketone,107879,561.08,3.71e6,0.000387,0.345
+3-methyl-2-butanone~|~methyl isopropyl ketone,563804,553.0,3.84e6,0.000368,0.349
+2-hexanone,591786,587.05,3.31e6,0.000453,0.395
+4-methylpentan-2-one~|~4-methyl-2-pentanone~|~methyl isobutyl ketone,108101,571.4,3.27e6,0.000447,0.389
+3-methyl-2-pentanone,565617,573.0,3.32e6,0.000441,0.386
+3-pentanone~|~pentan-3-one~|~diethylketone,96220,560.95,3.7e6,0.000387,0.34
+2-methyl-3-pentanone~|~ethyl isopropyl ketone,565695,567.0,3.34e6,0.000434,0.394
+"diisopropyl ketone~|~di-isopropyl ketone~|~2,4-dimethyl-3-pentanone",565800,576.0,3.06e6,0.000481,0.411
+cyclohexanone,108941,653.0,4.01e6,0.000416,0.308
+acetophenone~|~methyl phenyl ketone,98862,709.5,3.85e6,0.000471,0.365
+formicacid~|~methanoicacid,64186,588.0,5.81e6,0.000259,0.317
+acetic acid,64197,591.95,5.74e6,0.000264,0.463
+propionicacid~|~propanoic acid~|~n-propanoicacid,79094,600.81,4.61e6,0.000333,0.574
+butyricacid~|~butanoic acid~|~n-butyric acid~|~n-butanoicacid,107926,615.7,4.07e6,0.000387,0.682
+isobutyricacid~|~2-methylpropanoic acid,79312,605.0,3.68e6,0.00042,0.612
+benzoic acid,65850,751.0,4.47e6,0.000429,0.603
+acetic anhydride~|~ethanoic anhydride,108247,606.0,3.97e6,0.00039,0.45
+methylformate~|~methyl methanoate,107313,487.2,5.98e6,0.000208,0.254
+methylacetate~|~methyl ethanoate,79209,506.55,4.69e6,0.000276,0.326
+methylpropionate~|~methyl propanoate,554121,530.6,4.03e6,0.000336,0.349
+methylbutyrate~|~methyl butanoate~|~methyl n-butyrate,623427,554.5,3.48e6,0.000407,0.378
+ethylformate~|~ethyl methanoate,109944,508.4,4.71e6,0.000276,0.282
+ethylacetate~|~ethyl ethanoate,141786,523.3,3.85e6,0.000347,0.363
+ethylpropionate~|~ethyl propanoate,105373,546.0,3.34e6,0.000418,0.391
+ethylbutyrate~|~ethyl butanoate~|~ethyl n-butyrate,105544,571.0,2.94e6,0.000496,0.399
+propylformate~|~n-propylformate~|~propyl methanoate~|~n-propylmethanoate,110747,538.0,4.03e6,0.000341,0.31
+propylacetate~|~n-propylacetate~|~propyl ethanoate~|~n-propylethanoate,109604,549.73,3.37e6,0.000417,0.39
+butylacetate~|~n-butylacetate~|~butyl ethanoate~|~n-butylethanoate,123864,579.15,3.11e6,0.000476,0.41
+methyl benzoate,93583,693.0,3.59e6,0.000493,0.421
+ethyl benzoate,93890,698.0,3.22e6,0.000554,0.477
+vinyl acetate,108054,519.13,3.93e6,0.000338,0.348
+methylamine~|~methanamine,74895,430.05,7.41e6,0.000148,0.279
+dimethylamine,124403,437.2,5.26e6,0.000212,0.293
+trimethylamine,75503,433.25,4.1e6,0.00027,0.21
+ethylamine~|~ethanamine,75047,456.15,5.59e6,0.000209,0.283
+diethylamine,109897,496.6,3.67e6,0.000346,0.3
+triethylamine,121448,535.15,3.04e6,0.00045,0.316
+propylamine~|~n-propylamine~|~1-propylamine~|~propan-1-amine,107108,496.95,4.74e6,0.000268,0.28
+dipropylamine~|~1-propanamine~|~di-n-propylamine,142847,550.0,3.11e6,0.000452,0.446
+2-propylamine~|~2-propanamine~|~isopropylamine,75310,471.85,4.54e6,0.000266,0.276
+diisopropylamine~|~di-isopropyl amine,108189,523.1,3.2e6,0.000418,0.388
+aniline,62533,699.0,5.35e6,0.000334,0.381
+methylaniline~|~n-methylaniline,100618,701.55,5.19e6,0.000345,0.48
+"n,n-dimethylaniline~|~n n-dimethylaniline",121697,687.15,3.63e6,0.000484,0.403
+oxirane~|~ethyleneoxide,75218,469.15,7.26e6,0.000165,0.201
+furan,110009,490.15,5.55e6,0.000226,0.205
+thiophene,110021,579.35,5.71e6,0.000259,0.195
+pyridine,110861,619.95,5.64e6,0.000281,0.239
+formamide,75127,771.0,7.75e6,0.000254,0.41
+"dimethylformamide~|~n,n-dimethylformamide",68122,649.6,4.37e6,0.00038,0.312
+acetamide~|~ethanamide,60355,761.0,6.57e6,0.000296,0.419
+methylacetamide~|~n-methylacetamide,79163,718.0,5.0e6,0.000367,0.437
+acetonitrile,75058,545.5,4.85e6,0.000287,0.34
+propionitrile~|~propanenitrile,107120,564.4,4.19e6,0.000344,0.325
+butyronitrile~|~butanenitrile~|~n-butyronitrile,109740,582.25,3.79e6,0.000393,0.371
+benzonitrile,100470,699.35,4.21e6,0.000425,0.352
+methanethiol~|~methyl mercaptan,74931,469.95,7.23e6,0.000166,0.158
+ethyl mercaptan,75081,499.15,5.49e6,0.000232,0.188
+1-propanethiol~|~propyl mercaptan~|~n-propyl mercaptan,107039,536.6,4.63e6,0.000296,0.232
+butanethiol~|~1-butanethiol~|~butyl mercaptan~|~n-butyl mercaptan,109795,570.1,3.97e6,0.000367,0.272
+isobutyl mercaptan~|~2-methyl-1-propanethiol,513440,559.0,4.06e6,0.000352,0.253
+2-butanethiol~|~sec-butyl mercaptan,513531,554.0,4.06e6,0.000349,0.251
+2-thiapropane~|~dimethylsulfide,75183,503.04,5.53e6,0.000232,0.194
+2-thiabutane~|~(methylthio)-ethane~|~methyl ethyl sulfide,624895,533.0,4.26e6,0.00032,0.209
+3-thiapentane~|~diethylsulfide,352932,557.15,3.96e6,0.00036,0.294
+r41~|~fluoromethane~|~methyl fluoride,593533,317.28,5.9e6,0.000137,0.198
+r40~|~chloromethane~|~methyl chloride,74873,416.25,6.69e6,0.000159,0.154
+chcl3~|~chloroform~|~trichloromethane,67663,536.4,5.55e6,0.000247,0.228
+ccl4~|~tetrachloromethane~|~carbon tetrachloride,56235,556.35,4.54e6,0.000313,0.191
+ch3br~|~bromomethane,74839,467.0,8.0e6,0.000149,0.192
+r161~|~fluoroethane~|~ethyl fluoride,353366,375.31,5.01e6,0.000191,0.218
+chloroethane~|~ethyl chloride,75003,460.35,5.46e6,0.000215,0.206
+bromoethane,74964,503.8,6.29e6,0.000205,0.259
+propyl chloride~|~1-chloropropane,540545,503.15,4.58e6,0.000281,0.228
+2-chloropropane~|~isopropyl chloride,75296,489.0,4.51e6,0.000277,0.196
+"1,1-dichloropropane",78999,560.0,4.24e6,0.000338,0.253
+"1,2-dichloropropane",78875,572.0,4.23e6,0.000346,0.256
+chloroethene~|~vinyl chloride,75014,432.0,5.75e6,0.000192,0.106
+fluorobenzene,462066,560.09,4.54e6,0.000315,0.247
+chlorobenzene~|~monochlorobenzene,108907,632.35,4.53e6,0.000357,0.251
+1-chlorobutane~|~n-butyl chloride,,542.0,1.0e6,3.0e-5,0.0
+bromobenzene,108861,670.15,4.52e6,0.000379,0.251
+air,132259100,132.45,3.79e6,8.93e-5,0.0
+hydrogen~|~para-hydrogen,1333740,33.19,1.32e6,6.43e-5,-0.215
+helium~|~helium-4,7440597,5.2,230000.0,5.78e-5,-0.388
+neon,7440019,44.4,2.67e6,4.25e-5,-0.038
+argon,7440371,150.86,4.9e6,7.87e-5,0.0
+fluorine,7782414,144.12,5.17e6,7.12e-5,0.053
+cl2~|~chlorine,7782505,417.15,7.79e6,0.000137,0.073
+bromine,7726956,584.15,1.03e7,0.000145,0.128
+oxygen,7782447,154.58,5.02e6,7.87e-5,0.02
+nitrogen,7727379,126.2,3.39e6,9.51e-5,0.037
+ammonia,7664417,405.65,1.13e7,7.25e-5,0.253
+hydrazine,302012,653.15,1.47e7,0.000114,0.315
+nitrous oxide,10024972,309.57,7.28e6,0.000109,0.143
+nitric oxide~|~nitrogen oxide (no),10102439,180.15,6.52e6,7.06e-5,0.585
+cyanogen~|~ethanedinitrile,460195,400.15,5.94e6,0.000172,0.276
+carbon monoxide,630080,132.92,3.49e6,9.32e-5,0.048
+carbon dioxide,124389,304.21,7.39e6,9.39e-5,0.224
+cs2~|~carbon disulfide,75150,552.0,8.04e6,0.00016,0.118
+hydrogen fluoride,7664393,461.15,6.49e6,0.000182,0.383
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647010,324.65,8.36e6,9.92e-5,0.134
+hydrogen bromide,10035106,363.15,8.46e6,0.00011,0.069
+hydrogen cyanide,74908,456.65,5.35e6,0.000218,0.407
+hydrogen sulfide,7783064,373.53,9.0e6,0.000106,0.096
+sulfur dioxide,7446095,430.75,7.86e6,0.00014,0.244
+sulfur trioxide,7446119,490.85,8.19e6,0.000153,0.423
+water,7732185,647.13,2.19e7,5.71e-5,0.343
+krypton,,209.48,5.53e6,9.68e-5,0.0
+sulfur hexafluoride,,318.733,3.75455e6,0.00019636,0.21
