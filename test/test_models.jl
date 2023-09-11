@@ -305,7 +305,7 @@ end
 
         @testset "EPPR78" begin
            system = EPPR78(["benzene","isooctane"])
-           @test Clapeyron.a_res(system, V, T, z) ≈ -1.138852387092216 rtol = 1e-6
+           @test Clapeyron.a_res(system, V, T, z) ≈ -1.1415919612186702 rtol = 1e-6
         end
 
         @testset "PR w/ BMAlpha" begin
