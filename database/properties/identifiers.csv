@@ -30,7 +30,7 @@ CAS;species;SMILES
 110-16-7;maleic acid~|~(z)-2-butenedioicacid;C(=O)(O)/C=C\C(=O)O
 105-76-0;dibutyl maleate~|~(z)-2-butenedioicaciddibutylester;CCCCOC(=O)/C=C\C(=O)OCCCC
 503-64-0;2-butenoic acid~|~(z)-2-butenoicacid;C/C=C\C(=O)O
-7688-21-3;cis-2-hexene~|~(z)-2-hexene;C/C=C\CCC
+7688-21-3;(z)-2-hexene~|~cis-2-hexene;C/C=C\CCC
 623-36-9;2-methyl-2-pentenal~|~(z)-2-methyl-2-pentenal;O=CC(C)=CCC
 7642-04-8;(z)-2-octene;C/C=C\CCCCC
 627-20-3;2-pentene~|~(z)-2-pentene~|~cis-2-pentene;C/C=C\CC
@@ -92,7 +92,7 @@ CAS;species;SMILES
 39972-78-6;1,1-dimethylethyl-2-propenylperoxide;CC(C)(C)OOCC=C
 612-00-0;1,1-diphenylethane;c1ccccc1C(C)c2ccccc2
 542-10-9;ethylidene diacetate~|~ethylidene diethanoate~|~1,1-ethanedioldiacetate;CC(=O)OC(C)OC(=O)C
-110-97-4;n-(2-hydroxypropyl)-2-hydroxy-1-propanamine;CC(O)CNCC(O)C
+110-97-4;1,1'-iminobis-2-propanol~|~n-(2-hydroxypropyl)-2-hydroxy-1-propanamine;CC(O)CNCC(O)C
 112-36-7;1,1'-oxybis-2-ethoxy-ethane~|~diethylene glycol diethyl ether;CCOCCOCCOCC
 628-55-7;diisobutyl ether~|~1,1'-oxybis2-methylpropane;CC(C)COCC(C)C
 629-82-3;di-n-octyl ether~|~1,1'-oxybis-octane;CCCCCCCCOCCCCCCCC
@@ -316,9 +316,9 @@ CAS;species;SMILES
 693-89-0;methylcyclopentene~|~1-methylcyclopentene;C1(C)=CCCC1
 767-59-9;1-methylindene;C1=CC=C2C(=C1)C=CC2C
 90-12-0;1-methylnaphthalene;c1(C)cccc2ccccc21
-120-94-5;n-methylpyrrolidine;C1CCCN1(C)
+120-94-5;n-methylpyrrolidine~|~1-methyl-pyrrolidine;C1CCCN1(C)
 1559-81-5;1-methyltetralin~|~1-methyl-tetralin;C1C(C)c2ccccc2CC1
-1634-09-9;1-butylnaphthalene~|~1-butyl naphthalene;c1(CCCC)cccc2ccccc21
+1634-09-9;1-butylnaphthalene~|~1-n-butylnaphthalene;c1(CCCC)cccc2ccccc21
 26438-27-7;1-decyl naphthalene~|~1-n-decylnaphthalene;c1(CCCCCCCCCC)cccc2ccccc21
 2876-53-1;1-hexyl naphthalene~|~1-n-hexylnaphthalene;c1(CCCCCC)cccc2ccccc21
 98-46-4;3-nitrobenzotrifluoride~|~1-nitro-3-(trifluoromethyl)-benzene;c1(C(F)(F)F)cc(N(=O)=O)ccc1
@@ -350,7 +350,7 @@ CAS;species;SMILES
 1961-96-2;1-phenyl-1h-indene;C1=CC=C2C(=C1)C=CC2C1=CC=CC=C1
 3071-32-7;1-phenylethylhydroperoxide~|~ethylbenzene hydroperoxide;c1ccccc1(C(C)OO)
 605-02-7;1-phenylnaphthalene;c1(c2ccccc2)cccc2ccccc21
-140-31-8;n-(.beta.-aminoethyl)piperazine)~|~n-(.beta.-aminoethyl)piperazine);C1CNCCN1CCN
+140-31-8;1-piperazineethanamine~|~n-(.beta.-aminoethyl)piperazine);C1CNCCN1CCN
 103-76-4;1-piperazineethanol~|~n-(2-hydroxyethyl)piperazine;C1CNCCN1(CCO)
 107-03-9;1-propanethiol~|~propyl mercaptan~|~n-propyl mercaptan;CCCS
 1569-01-3;1-propoxy-2-propanol~|~propylene glycol n-propyl ether;CC(O)COCCC
@@ -368,7 +368,7 @@ CAS;species;SMILES
 112-42-5;1-undecanol;CCCCCCCCCCCO
 821-95-4;1-undecene;C=CCCCCCCCCC
 929-06-6;2-aminoethoxyethanol~|~2-(2-aminoethoxy)ethanol;NCCOCCO
-111-41-1;n-aminoethyl ethanolamine~|~n-(2-aminoethyl)ethanolamine;NCCNCCO
+111-41-1;n-aminoethyl ethanolamine~|~n-(2-aminoethyl)ethanolamine~|~2-(2-aminoethyl)aminoethanol;NCCNCCO
 124-17-4;2-(2-butoxyethoxy)ethanolacetate~|~diethylene glycol monobutyl ether acetate;CCCCOCCOCCOC(=O)C
 112-15-2;2-(2-ethoxyethoxy)ethyl acetate~|~2-(2-ethoxyethoxy)-ethanolacetate~|~diethylene glycol ethyl ether acetate;CCOCCOCCOC(=O)C
 1559-35-9;2-(2-ethylhexyl)oxyethanol;CCCCC(CC)COCCO
@@ -377,12 +377,12 @@ CAS;species;SMILES
 6881-94-3;2-(2-propoxyethoxy)ethanol~|~diethylene glycol monopropyl ether;CCCOCCOCCO
 857237-25-3;2-(alpha-methylbenzyloxy)-1-propanol;c1(C(C)OC(C)CO)ccccc1
 100-37-8;(diethylamino)ethanol~|~2-(diethylamino)-ethanol;CCN(CC)CCO
-108-01-0;dimethylethanolamine~|~2-(n,n-dimethylamino)ethanol;CN(C)CCO
+108-01-0;dimethylethanolamine~|~2-(dimethylamino)-ethanol~|~2-(n,n-dimethylamino)ethanol;CN(C)CCO
 14290-92-7;ethyl-t-butyl sulfide~|~ethyl t-butyl sulfide~|~2,2-dimethyl-3-thiapentane~|~2-(ethylthio)-2-methylpropane;CC(C)(C)SCC
 110-77-0;2-(ethylthio)ethanol~|~2-(ethylthio)-ethanol;OCCSCC
 109-83-1;methylethanolamine~|~2-(methylamino)ethanol~|~2-(methylamino)-ethanol;CNCCO
 3603-45-0;2-(n-morpholino)-2'-hydroxydiethylether;N1(CCOCCO)CCOCC1
-105-59-9;methyl diethanolamine~|~n-methyldiethanolamine;CN(CCO)CCO
+105-59-9;methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol;CN(CCO)CCO
 354-38-1;trifluoroacetamide~|~2,2,2-trifluoro-acetamide;NC(=O)C(F)(F)(F)
 594-82-1;2,2,3,3-tetramethylbutane;CC(C)(C)C(C)(C)C
 13475-81-5;2,2,3,3-tetramethylhexane;CC(C)(C)C(C)(C)CCC
@@ -522,7 +522,7 @@ CAS;species;SMILES
 578-54-1;o-ethylaniline~|~2-ethylaniline~|~2-ethylbenzeneamine;c1(N)c(CC)cccc1
 88-09-5;2-ethylbutyricacid~|~2-ethylbutanoic acid;CCC(CC)C(=O)O
 123-05-7;2-ethyl-hexanal~|~2-ethyl hexanal;CCCCC(CC)C=O
-149-57-5;2-ethylhexanoic acid;CCCCC(CC)C(=O)O
+149-57-5;2-ethylhexanoic acid~|~2-ethyl-hexanoicacid;CCCCC(CC)C(=O)O
 106-20-7;di-2-ethylhexylamine~|~2-ethyl-n-(2-ethylhexyl)-1-hexanamine;CCCCC(CC)CNCC(CC)CCCC
 939-27-5;2-ethylnaphthalene;c1cccc2c1(cc(CC)cc2)
 90-00-6;2-ethylphenol~|~o-ethylphenol;c1(O)c(CC)cccc1
@@ -540,7 +540,7 @@ CAS;species;SMILES
 594-61-6;alpha-hydroxyisobutyric acid~|~2-hydroxy-2-methylpropanoicacid;CC(C)(O)C(=O)O
 119-36-8;methyl 2-hydroxybenzoate~|~2-hydroxy-benzoicacidmethylester;c1cc(C(=O)OC)c(O)cc1
 6064-63-7;hydroxycaproic acid~|~2-hydroxyhexanoicacid;CCCCC(O)C(=O)O
-97-64-3;ethyl lactate~|~dl-ethyl lactate;CC(O)C(=O)OCC
+97-64-3;ethyl lactate~|~dl-ethyl lactate~|~2-hydroxypropanoicacidethylester;CC(O)C(=O)OCC
 547-64-8;methyl lactate~|~methyl 2-hydroxypropanoate~|~2-hydroxy-propanoicacid-methylester;CC(O)C(=O)OC
 999-61-1;2-hydroxypropylacrylate;O=C(OCC(O)C)C=C
 923-26-2;2-hydroxypropylmethacrylate;CC(O)COC(=O)C(C)=C
@@ -684,7 +684,7 @@ CAS;species;SMILES
 107-05-1;3-chloropropene~|~3-chloro-1-propene;C=CC(Cl)
 624-65-7;3-chloropropyne~|~propargyl chloride;C#CCCl
 100-50-5;3-cyclohexene-1-carboxaldehyde~|~1,2,3,6-tetrahydrobenzaldehyde;O=CC1CCC=CC1
-109-55-7;n,n-dimethyl-1,3-propanediamine;NCCCN(C)C
+109-55-7;3-dimethylaminopropylamine~|~n,n-dimethyl-1,3-propanediamine;NCCCN(C)C
 121-32-4;ethyl vanillin~|~3-ethoxy-4-hydroxybenzaldehyde;c1(O)c(OCC)cc(C=O)cc1
 3525-25-5;3-ethyl-1-heptanol;CCCCC(CC)CCO
 3404-58-8;3-ethyl-1-hexene;C=CC(CC)CCC
@@ -730,7 +730,7 @@ CAS;species;SMILES
 590-86-3;3-methylbutanal~|~3-methylbutyraldehyde;CC(C)CC(=O)
 659-70-1;isopentyl isovalerate~|~3-methylbutyl 3-methylbutanoate~|~3-methyl-butanoicacid-3-methylbutylester;CC(C)CC(=O)OCCC(C)C
 108-64-5;ethyl isovalerate~|~3-methylbutanoicacidethylester;CC(C)CC(=O)OCC
-922-62-3;3-methyl-cis-2-pentene~|~(z)-3-methyl-2-pentene;C/C=C(C)\CC
+922-62-3;(z)-3-methyl-2-pentene~|~3-methyl-cis-2-pentene;C/C=C(C)\CC
 1120-62-3;3-methylcyclopentene;C1=CC(C)CC1
 555-10-2;beta-phellandrene~|~3-methylene-6-(1-methylethyl)cyclohexene;CC(C)C1C=CC(=C)CC1
 1632-16-2;2-ethyl-1-hexene~|~3-methyleneheptane;C=C(CC)CCCC
@@ -958,7 +958,7 @@ CAS;species;SMILES
 624-29-3;cis-1,4-dimethylcyclohexane;C1[C@@](C)([H])(CC[C@]([H])(C)(C1))
 565-48-0;cis-1,8-terpin;C1(C)(O)CCC(C(C)(C)(O))CC1
 766-90-5;cis-1-propenylbenzene;c1ccccc1/C=C\C
-590-18-1;cis-2-butene~|~(z)-2-butene;C/C=C\C
+590-18-1;(z)-2-butene~|~cis-2-butene;C/C=C\C
 6117-80-2;cis-2-butene-1,4-diol;OC/C=C\CO
 20348-51-0;cis-2-decene~|~trans-2-decene;C/C=C\CCCCCCC
 7206-26-0;cis-2-dodecene;C/C=C\CCCCCCCCC
@@ -967,13 +967,13 @@ CAS;species;SMILES
 6434-77-1;cis-2-nonene;C/C=C\CCCCCC
 7642-10-6;cis-3-heptene;CC/C=C\CCC
 5454-79-5;cis-3-methylcyclohexanol;C1[C@](O)([H])(C[C@](C)([H])(CC1))
-691-38-3;cis-4-methyl-2-pentene~|~4-methyl-cis-2-pentene~|~(z)-4-methyl-2-pentene;C/C=C\C(C)C
+691-38-3;cis-4-methyl-2-pentene~|~(z)-4-methyl-2-pentene~|~4-methyl-cis-2-pentene;C/C=C\C(C)C
 7731-28-4;cis-4-methylcyclohexanol;C1[C@](O)([H])(CC[C@](C)([H])(C1))
-7642-15-1;cis-4-octene~|~(z)-4-octene;CCC/C=C\CCC
-112-80-1;(z)-9-octadecenoic acid~|~(z)-9-octadecenoic acid;CCCCCCCC/C=C\CCCCCCCC(=O)O
+7642-15-1;(z)-4-octene~|~cis-4-octene;CCC/C=C\CCC
+112-80-1;cis-9-octadecenoicacid~|~(z)-9-octadecenoic acid;CCCCCCCC/C=C\CCCCCCCC(=O)O
 15798-64-8;2-butenal~|~cis-crotonaldehyde;C/C=C\C=O
 493-01-6;cis-decalin~|~decahydronaphthalene~|~cis-decahydronaphthalene;C1C[C@]2(CCCC[C@]2(CC1)([H]))([H])
-645-49-8;(z)-1,2-diphenylethene;c1ccccc1/C=C\c2ccccc2
+645-49-8;cis-stilbene~|~(z)-1,2-diphenylethene;c1ccccc1/C=C\c2ccccc2
 498-23-7;citraconicacid;OC(=O)/C=C(C)\C(=O)O
 7782-50-5;cl2~|~chlorine;ClCl
 630-08-0;carbon monoxide;[C+]#[O-]
@@ -1050,7 +1050,7 @@ CAS;species;SMILES
 60-29-7;diethyl ether;CCOCC
 141-05-9;diethylmaleate;CCOC(=O)/C=C\C(=O)OCC
 105-53-3;diethylmalonate~|~diethyl 1,3-propanedioate;CCOC(=O)CC(=O)OCC
-616-39-7;n,n-diethylmethylamine;CCN(C)CC
+616-39-7;diethylmethylamine~|~n,n-diethylmethylamine;CCN(C)CC
 84-66-2;diethylphthalate~|~diethyl 1,2-benzenedioate;c1(C(=O)OCC)c(C(=O)OCC)cccc1
 352-93-2;3-thiapentane~|~diethylsulfide;CCSCC
 111-96-6;diglyme~|~2,5,8-trioxanonane~|~diethylene glycol dimethyl ether;COCCOCCOC
@@ -1152,7 +1152,7 @@ CAS;species;SMILES
 26158-99-6;ethyln-pentylsulfide;CCSCCCCC
 4110-50-3;3-thiahexane~|~ethyln-propylsulfide~|~ethyl propyl sulfide;CCSCCC
 106-32-1;ethyl octanoate;O=C(OCC)CCCCCCC
-111-62-6;ethyl-oleate~|~ethyl oleate~|~ethyl (z)-9-octadeceneoate;O=C(OCC)CCCCCCCC=CCCCCCCCC
+111-62-6;ethyl oleate~|~ethyl-oleate~|~ethyl (z)-9-octadeceneoate;O=C(OCC)CCCCCCCC=CCCCCCCCC
 95-92-1;ethyloxalat~|~diethyl ethanedioate;CCOC(=O)C(=O)OCC
 101-97-3;ethyl phenylacetate;c1ccccc1CC(=O)OCC
 105-37-3;ethylpropionate~|~ethyl propanoate;CCC(=O)OCC
@@ -1300,7 +1300,7 @@ CAS;species;SMILES
 628-28-4;methylbutyl ether~|~butyl methyl ether~|~methyl-n-butylether~|~methyl n-butyl ether;CCCCOC
 694-92-8;methylnorbornene;C1CC2CC1C(=C2)C
 557-17-5;1-methoxypropane~|~methylpropyl ether~|~methyl-n-propylether~|~methyl n-propyl ether;COCCC
-111-11-5;methyl caprylate~|~methyl octanoate;O=C(OC)CCCCCCC
+111-11-5;methyl octanoate~|~methyl caprylate;O=C(OC)CCCCCCC
 112-62-9;methyloleate~|~methyl cis-9-octadecenoate;CCCCCCCC/C=C\CCCCCCCC(=O)OC
 1120-25-8;methyl-palmitoleate~|~methyl palmitoleate;C(CCC\C=C/CCCCCC)CCCC(OC)=O
 1741-83-9;2-thiaheptane~|~methylpentylsulfide;CSCCCCC
@@ -1310,7 +1310,7 @@ CAS;species;SMILES
 1634-04-4;methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane;COC(C)(C)C
 994-05-8;methyl-tert-amylether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane;COC(C)(C)CC
 124-10-7;methyl myristate~|~methyl tetradecanoate;COC(=O)CCCCCCCCCCCCC
-616-44-4;3-methyl thiophene;S1C=C(C)C=C1
+616-44-4;methylthiophene~|~3-methyl thiophene;S1C=C(C)C=C1
 620-14-4;m-ethyltoluene~|~1-methyl-3-ethylbenzene~|~1-ethyl-3-methylbenzene;c1(CC)cc(C)ccc1
 598-50-5;methylurea~|~monomethyl urea;NC(=O)NC
 107-25-5;methylvinylether~|~vinyl methyl ether;C=COC
@@ -1320,14 +1320,14 @@ CAS;species;SMILES
 110-91-8;morpholine~|~tetrahydro-1,4-oxazine;C1NCCOC1
 92-06-8;m-terphenyl;c1ccccc1(c2cc(c3ccccc3)ccc2)
 111-40-0;diethylenetriamine~|~di(2-aminoethyl)amine~|~(2-aminoethyl)-1,2-ethanediamine~|~n-(2-aminoethyl)-1,2-ethanediamine;NCCNCCN
-110-18-9;tetramethylethylenediamine~|~n,n,n',n'-tetramethyl-1,2-diaminoethane;CN(C)CCN(C)C
-112-24-3;triethylenetetramine~|~1,2-ethanediamine, n,n'-bis(2-aminoethyl)-;NCCNCCNCCN
+110-18-9;tetramethylethylenediamine~|~n,n,n',n'-tetramethyl-1,2-diaminoethane~|~n,n,n',n'-tetramethyl-1,2-ethanediamine;CN(C)CCN(C)C
+112-24-3;triethylenetetramine~|~n,n'-bis(2-aminoethyl)-1,2-ethanediamine~|~1,2-ethanediamine, n,n'-bis(2-aminoethyl)-;NCCNCCNCCN
 102-70-5;triallylamine~|~n,n-di-2-propenyl-2-propen-1-amine;C=CCN(CC=C)CC=C
-91-66-7;n,n-diethylaniline~|~n,n-diethylaniline;c1ccccc1N(CC)CC
-927-62-8;n,n-dimethylbutanamine~|~n,n-dimethylbutanamine;CCCCN(C)C
-127-19-5;n,n-dimethylethanamide;CC(=O)N(C)C
-121-69-7;n n-dimethylaniline~|~n,n-dimethylaniline;c1(N(C)C)ccccc1
-96-31-1;1,3-dimethyl urea;CNC(=O)NC
+91-66-7;n,n-diethylaniline~|~n,n-diethyl-benzeneamine;c1ccccc1N(CC)CC
+927-62-8;n,n-dimethylbutanamine~|~n,n-dimethyl-1-butanamine;CCCCN(C)C
+127-19-5;n,n-dimethylacetamide~|~n,n-dimethylethanamide;CC(=O)N(C)C
+121-69-7;n,n-dimethylaniline~|~n n-dimethylaniline;c1(N(C)C)ccccc1
+96-31-1;1,3-dimethyl urea~|~n,n'-dimethylurea;CNC(=O)NC
 1116-76-3;trioctylamine~|~tri-n-octylamine~|~n,n-dioctyl-1-octanamine;CCCCCCCCN(CCCCCCCC)CCCCCCCC
 621-77-2;triamylamine~|~n,n-dipentyl-1-pentanamine;CCCCCN(CCCCC)CCCCC
 102-69-2;tripropylamine~|~n,n-dipropyl-1-propanamine;CCCN(CCC)CCC
@@ -1341,16 +1341,16 @@ CAS;species;SMILES
 4813-50-7;butylhydroperoxide~|~n-butylhydroperoxide;OOCCCC
 590-01-2;butylpropionate~|~butyl propanoate~|~n-butylpropionate;CCC(=O)OCCCC
 628-08-0;crotylacetate~|~n-crotylacetate;CC=CCOC(=O)C
-101-83-7;cyclohexylcyclohexaneamine~|~n-cyclohexylcyclohexanamine;N(C1CCCCC1)(C2CCCCC2)
+101-83-7;cyclohexylcyclohexaneamine~|~n-cyclohexylcyclohexanamine~|~n-cyclohexylcyclohexaneamine;N(C1CCCCC1)(C2CCCCC2)
 124-18-5;decane~|~n-decane;CCCCCCCCCC
 463-82-1;neopentane~|~2,2-dimethylpropane;CC(C)(C)C
 18328-90-0;n-ethyl-2-methylallylamine~|~ethyl-2-methyl-2-prope1-amine~|~n-ethyl-2-methyl-2-propen-1-amine;CC(=C)CNCC
-103-69-5;n-ethylaminobenzene~|~n-ethylaminobenzene;c1(NCC)ccccc1
+103-69-5;ethylaniline~|~n-ethylaniline~|~n-ethylaminobenzene;c1(NCC)ccccc1
 100-74-3;ethyl-morpholine~|~n-ethylmorpholine~|~4-ethylmorpholine~|~n-ethyl-morpholine;N1(CC)CCOCC1
 4394-85-8;formylmorpholine~|~n-formylmorpholine;N1(C=O)CCOCC1
 7664-41-7;ammonia;N
 142-82-5;heptane~|~n-heptane;CCCCCCC
-111-14-8;heptanoic acid;CCCCCCC(=O)O
+111-14-8;heptanoic acid~|~n-heptanoicacid;CCCCCCC(=O)O
 1078-71-3;heptylbenzene~|~n-heptylbenzene;c1(CCCCCCC)ccccc1
 544-76-3;hexadecane~|~n-hexadecane;CCCCCCCCCCCCCCCC
 142-62-1;hexanoicacid~|~n-hexanoicacid~|~n-pentyl formate;CCCCCC(=O)O
@@ -1359,10 +1359,10 @@ CAS;species;SMILES
 98-95-3;nitrobenzene;c1([N+](=O)[O-])ccccc1
 79-24-3;nitroethane;CC[N+](=O)[O-]
 75-52-5;nitromethane;C[N+](=O)[O-]
-872-50-4;n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone;C1CCC(=O)N1(C)
-79-16-3;n-methylacetamide;CC(=O)NC
+872-50-4;n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone~|~n-methyl-2-pyrrolidinone;C1CCC(=O)N1(C)
+79-16-3;methylacetamide~|~n-methylacetamide;CC(=O)NC
 100-61-8;methylaniline~|~n-methylaniline;c1(NC)ccccc1
-100-60-7;n-methylcyclohexylamine~|~n-methylcyclohexylamine;C1(NC)CCCCC1
+100-60-7;methylcyclohexanamine~|~n-methylcyclohexanamine~|~n-methylcyclohexylamine;C1(NC)CCCCC1
 111-84-2;nonane~|~n-nonane;CCCCCCCCC
 5451-92-3;nonyl-formate~|~n-nonyl-formate~|~n-nonyl formate;CCCCCCCCCOC=O
 65185-89-9;nonyl-undecyl-phthalate~|~n-nonyl-n-undecyl-phthalate~|~n-nonyl n-undecyl phthalate;c1c(C(=O)OCCCCCCCCC)c(C(=O)OCCCCCCCCCCC)ccc1
@@ -1549,13 +1549,13 @@ CAS;species;SMILES
 822-50-4;trans-1,2-dimethylcyclopentane~|~1,trans-2-dimethylcyclopentane;C1[C@](C)([H])([C@]([H])(C)(CC1))
 10061-02-6;trans-1,3-dichloropropene;C(Cl)/C=C/Cl
 2207-03-6;trans-1,3-dimethylcyclohexane;C1[C@](C)([H])(C[C@]([H])(C)(CC1))
-1759-58-6;(1r,3r)-1,3-dimethylcyclopentane;C1[C@](C)([H])(C[C@]([H])(C)(C1))
+1759-58-6;trans-1,3-dimethylcyclopentane~|~(1r,3r)-1,3-dimethylcyclopentane;C1[C@](C)([H])(C[C@]([H])(C)(C1))
 13990-93-7;trans-1,4-diethylcyclohexane;C1(CC)CCC(CC)CC1
 2207-04-7;1,4-dimethylcyclohexane~|~trans-1,4-dimethylcyclohexane;C1[C@](C)([H])(CC[C@]([H])(C)(C1))
 565-50-4;trans-1,8-terpin;C1(C)(O)CCC(C(C)(C)(O))CC1
 873-66-5;1-propenylbenzene~|~trans-1-propenylbenzene;c1ccccc1/C=C/C
 27656-49-1;trans-2,2,4,6,6-pentamethyl-3-heptene;C(C\C(=C\C(C)(C)C)C)(C)(C)C
-624-64-6;(e)-2-butene~|~(e)-2-butene;C/C=C/C
+624-64-6;(e)-2-butene~|~trans-2-butene;C/C=C/C
 821-11-4;trans-2-butene-1,4-diol;OC/C=C/CO
 42448-85-1;trans-2-eicosene;C/C=C/CCCCCCCCCCCCCCCCC
 14686-13-6;trans-2-heptene~|~2-heptene, (e)-;C/C=C/CCCC
@@ -1563,11 +1563,11 @@ CAS;species;SMILES
 6434-78-2;trans-2-nonene;C/C=C/CCCCCC
 13389-42-9;(e)-2-octene~|~trans-2-octene;C/C=C/CCCCC
 74392-36-2;trans-2-pentadecene;C/C=C/CCCCCCCCCCCC
-646-04-8;(e)-2-pentene;C/C=C/CC
+646-04-8;(e)-2-pentene~|~trans-2-pentene;C/C=C/CC
 21956-56-9;trans-3,5-dimethoxystilbene;c1ccccc1/C=C/c2cc(OC)cc(OC)c2
 14686-14-7;3-heptene~|~trans-3-heptene;CC/C=C/CCC
 13269-52-8;cis-3-hexene~|~(e)-3-hexene~|~trans-3-hexene;CC/C=C/CC
-14919-01-8;(e)-3-octene;CC/C=C/CCCC
+14919-01-8;(e)-3-octene~|~trans-3-octene;CC/C=C/CCCC
 7731-29-5;trans-4-methylcyclohexanol;C1[C@](O)([H])(CC[C@@](C)([H])(C1))
 123-73-9;trans-crotonaldehyde;C/C=C/C=O
 107-93-7;trans-crotonic-acid~|~trans-crotonic acid;C/C=C/C(=O)O
@@ -1631,7 +1631,7 @@ CAS;species;SMILES
 7440-01-9;neon;[Ne]
 7782-41-4;fluorine;FF
 10024-97-2;nitrous oxide;N#[N+][O-]
-10102-43-9;nitrogen oxide (no);[N]=O
+10102-43-9;nitric oxide~|~nitrogen oxide (no);[N]=O
 460-19-5;cyanogen~|~ethanedinitrile;C(#N)C#N
 7664-39-3;hydrogen fluoride;F
 7647-01-0;hcl~|~hydrogen chloride~|~hydrochloric acid;Cl
@@ -1642,9 +1642,9 @@ CAS;species;SMILES
 2551-62-4;sulfur hexafluoride;FS(F)(F)(F)(F)F
 2207-01-4;cis-1,2-dimethylcyclohexane;CC1CCCCC1C
 591-21-9;cis-1,3-dimethylcyclohexane~|~trans-1,3-dimethylcyclohexane;CC1CCCC(C1)C
-493-02-7;trans-decahydronaphthalene;C1CCC2CCCCC2C1
+493-02-7;trans-decalin~|~trans-decahydronaphthalene;C1CCC2CCCCC2C1
 463-49-0;propadiene~|~1,2-propadiene;C=C=C
-504-60-9;(e)-1,3-pentadiene;C/C=C/C=C
+504-60-9;(e)-1,3-pentadiene~|~trans-1,3-pentadiene;C/C=C/C=C
 591-93-5;1,4-pentadiene;C=CCC=C
 591-95-7;1,2-pentadiene;CCC=C=C
 591-96-8;2,3-pentadiene;CC=C=CC
@@ -1669,9 +1669,9 @@ CAS;species;SMILES
 359-35-3;1,1,2,2-tetrafluoroethane;C(C(F)F)(F)F
 434-64-0;perfluorotoluene~|~octafluorotoluene;C1(=C(C(=C(C(=C1F)F)F)F)F)C(F)(F)F
 163702-05-4;nonafluorobutyl ethyl ether~|~1-ethoxy-1,1,2,2,3,3,4,4,4-nonafluorobutane;CCOC(C(C(C(F)(F)F)(F)F)(F)F)(F)F 
-335-65-9;1h-perfluorooctane;C(C(C(C(C(C(C(C(F)(F)F)(F)F)(F)F)(F)F)(F)F)(F)F)(F)F)(F)F
+335-65-9;1h-perfluorooctane~|~1h-perfluoro-n-octane;C(C(C(C(C(C(C(C(F)(F)F)(F)F)(F)F)(F)F)(F)F)(F)F)(F)F)(F)F
 306-94-5;perfluorodecalin;C12(C(C(C(C(C1(F)F)(F)F)(F)F)(F)F)(C(C(C(C2(F)F)(F)F)(F)F)(F)F)F)F
-423-55-2;1br-perfluoro-n-octane~|~1-bromoperfluorooctane;C(C(C(C(C(F)(F)Br)(F)F)(F)F)(F)F)(C(C(C(F)(F)F)(F)F)(F)F)(F)F
+423-55-2;1-bromoperfluorooctane~|~1br-perfluoro-n-octane;C(C(C(C(C(F)(F)Br)(F)F)(F)F)(F)F)(C(C(C(F)(F)F)(F)F)(F)F)(F)F
 509-14-8;tetranitromethane;C([N+](=O)[O-])([N+](=O)[O-])([N+](=O)[O-])[N+](=O)[O-]
 108-55-4;glutaric anhydride;C1CC(=O)OC(=O)C1
 123-62-6;propionic anhydride~|~propanoic anhydride;CCC(=O)OC(=O)CC
@@ -1814,7 +1814,7 @@ CAS;species;SMILES
 260-94-6;acridine;C1=CC=C2C(=C1)C=C3C=CC=CC3=N2
 5809-59-6;acrolein cyanohydrin;C=C(C#N)O
 132259-10-0;air;
-39972-78-6;allyl-tert-butylperoxide;CC(C)(C)OOCC=C
+39972-78-6;allyl-tert-butylperoxide~|~1,1-dimethylethyl-2-propenylperoxide;CC(C)(C)OOCC=C
 13027-88-8;alpha-hydroxyisobutyramide;CC(C)(C(=O)N)O
 4221-98-1;alpha-phellandrene;CC1=CCC(C=C1)C(C)C
 540-61-4;aminoacetonitrile;C(C#N)N
@@ -1904,8 +1904,8 @@ CAS;species;SMILES
 122-66-7;hydrazobenzene;C1=CC=C(C=C1)NNC2=CC=CC=C2
 10034-85-2;hydrogen iodide;I
 7783-07-5;hydrogen selenide;[SeH2]
-288-32-4;1h-imidazole;C1=CN=CN1
-120-72-9;1h-indole;C1=CC=C2C(=C1)C=CN2
+288-32-4;imidazole~|~1h-imidazole;C1=CN=CN1
+120-72-9;indole~|~1h-indole;C1=CC=C2C(=C1)C=CN2
 13463-40-6;iron pentacarbonyl;[C-]#[O+].[C-]#[O+].[C-]#[O+].[C-]#[O+].[C-]#[O+].[Fe]
 558-43-0;isobutylene glycol;CC(C)(CO)O
 78-82-0;isobutyronitrile~|~2-methylpropanenitrile;CC(C)C#N
@@ -1917,7 +1917,7 @@ CAS;species;SMILES
 609-06-3;l-arabinose;C(C(C(C(C=O)O)O)O)O
 498-07-7;levoglucosan;C1[C@@H]2[C@H]([C@@H]([C@H]([C@H](O1)O2)O)O)O
 2197-37-7;linoleic acid;CCCCCC=CCC=CCCCCCCCC(=O)O
-2216-51-5;dl-menthol;C[C@@H]1CC[C@H]([C@@H](C1)O)C(C)C
+2216-51-5;l-menthol~|~dl-menthol;C[C@@H]1CC[C@H]([C@@H](C1)O)C(C)C
 108-31-6;maleic anhydride;C1=CC(=O)OC1=O
 118-71-8;maltol;CC1=C(C(=O)C=CO1)O
 618-46-2;m-chlorobenzoyl chloride;C1=CC(=CC(=C1)Cl)C(=O)Cl
@@ -1930,7 +1930,7 @@ COC1CCOC=C1;methoxydihydropyran;COC1CCOC=C1
 78-98-8;methyl glyoxal;CC(=O)C=O
 624-83-9;methyl isocyanate;CN=C=O
 100-68-5;methyl phenyl sulfide~|~1-phenyl-1-thiaethane;CSC1=CC=CC=C1
-141-24-2;[r]-methyl 12-hydroxy-9-octadecenoate;CCCCCCC(CC=CCCCCCCCC(=O)OC)O
+141-24-2;methyl ricinoleate~|~[r]-methyl 12-hydroxy-9-octadecenoate;CCCCCCC(CC=CCCCCCCCC(=O)OC)O
 681-84-5;methyl silicate~|~silicon tetramethoxide;CO[Si](OC)(OC)OC
 124-70-9;methyl vinyl dichlorosilane;C[Si](C=C)(Cl)Cl
 594-11-6;methylcyclopropane;CC1CC1
@@ -2049,7 +2049,7 @@ COC1CCOC=C1;methoxydihydropyran;COC1CCOC=C1
 16883-48-0;1-cis-2-trans-4-trimethylcyclopentane~|~1,cis-2,trans-4-trimethylcyclopentane;C[C@H]1CC(C[C@@H]1C)C
 1839-63-0;1,3,5-trimethylcyclohexane~|~1-trans-3,5-trimethylcyclohexane;CC1CC(CC(C1)C)C
 7440-70-2;calcium;[Ca]
-86-74-8;9h-carbazole;C1=CC=C2C(=C1)C3=CC=CC=C3N2
+86-74-8;9h-carbazole~|~dibenzopyrrole;C1=CC=C2C(=C1)C3=CC=CC=C3N2
 3822-68-2;pentafluorodimethyl ether ~|~(difluoromethoxy)trifluoromethane~|~difluoromethyl trifluoromethyl ether;C(OC(F)(F)F)(F)F
 563-43-9;ethyl aluminum dichloride;CC[Al](Cl)Cl
 7758-94-3;ferrous chloride;Cl[Fe]Cl
@@ -2065,14 +2065,14 @@ propenyl_cyclohexene;propenyl cyclohexene~|~1-[(e)-prop-1-enyl]-cyclohexene;C/C=
 10545-99-0;sulfur dichloride;S(Cl)Cl
 78-10-4;tetraethoxysilane;CCO[Si](OCC)(OCC)OCC
 7440-62-2;vanadium;[V]
-103-90-2;paracetamol;O=C(NC1=CC=C(O)C=C1)C
+103-90-2;paracetamol~|~acetaminophen;O=C(NC1=CC=C(O)C=C1)C
 89-78-1;menthol;OC1CC(C)CCC1C(C)C
 7783-61-1;tetrafluorosilane~|~silicon tetrafluoride;[Si](F)(F)(F)F
 85-44-9;phthalic anhydride;O=C1OC(=O)C=2C=CC=CC12
 359-11-5;r1123~|~trifluoroethene~|~trifluoroethylene;C(=C(F)F)F
 116-15-4;r1216~|~perfluoropropene~|~hexafluoropropene~|~hexafluoropropylene;FC(F)=C(F)C(F)(F)F
 7098-22-8;c44~|~tetratetracontane;CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-110-58-7 ;1-pentylamine;CCCCCN
+110-58-7 ;1-pentylamine~|~1-pentanamine;CCCCCN
 544-10-5;1-chlorohexane;CCCCCCCl
 3741-00-2;pentylcyclopentane;CCCCCC1CCCC1
 75330-75-5;lovastatin;O=C1OC(CCC2C(C=CC3=CC(C)CC(OC(=O)C(C)CC)C32)C)CC(O)C1
