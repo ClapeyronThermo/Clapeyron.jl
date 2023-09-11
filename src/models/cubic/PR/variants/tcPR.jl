@@ -1,5 +1,6 @@
 """
-    tcPR(components::Vector{String}; idealmodel=BasicIdeal,
+    tcPR(components;
+    idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
@@ -127,3 +128,5 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
     recombine_cubic!(model,k,l)
     return model
 end
+
+export tcPR

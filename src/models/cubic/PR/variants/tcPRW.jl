@@ -1,5 +1,6 @@
 """
-    tcPR(components::Vector{String}; idealmodel=BasicIdeal,
+    tcPR(components;
+    idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
@@ -51,4 +52,3 @@ function tcPRW(components; idealmodel=BasicIdeal,
 end
 
 export tcPRW
-
