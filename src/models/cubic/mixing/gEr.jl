@@ -1,15 +1,15 @@
-abstract type tcPRactRuleModel <: ActivityMixingRule end
+abstract type gErRuleModel <: ActivityMixingRule end
 
-struct tcPRactRule{γ} <: tcPRactRuleModel
+struct gErRule{γ} <: gErRuleModel
     components::Array{String,1}
     activity::γ
     references::Array{String,1}
 end
 
 """
-    tcPRactRule{γ} <: tcPRactRuleModel
+    gErRule{γ} <: gErRuleModel
 
-    tcPRactRule(components::Vector{String};
+    gErRule(components;
     activity = Wilson,
     userlocations=String[],
     activity_userlocations=String[],
@@ -32,31 +32,25 @@ b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ā = b̄RT*(∑xᵢaᵢ/bᵢ + gᴱᵣ/Λ
 Λ = 1/(r₂ - r₁) * log((1 - r₂)/(1 - r₁))
-
-if the model is Peng-Robinson:
-    q = 0.53
-if the model is Redlich-Kwong:
-    q = 0.593
 ```
 
-to use different values for `q`, overload `Clapeyron.tcPRactq(::CubicModel,::tcPRactModel) = q`
-
-
 ## References
-1. Michelsen, M. L. (1990). A modified Huron-Vidal mixing rule for cubic equations of state. Fluid Phase Equilibria, 60(1–2), 213–219. [doi:10.1016/0378-3812(90)85053-d](https://doi.org/10.1016/0378-3812(90)85053-d)
+1. Piña-Martinez, A., Privat, R., Nikolaidis, I. K., Economou, I. G., & Jaubert, J.-N. (2021). What is the optimal activity coefficient model to be combined with the translated–consistent Peng–Robinson equation of state through advanced mixing rules? Cross-comparison and grading of the Wilson, UNIQUAC, and NRTL aE models against a benchmark database involving 200 binary systems. Industrial & Engineering Chemistry Research, 60(47), 17228–17247. [doi:10.1021/acs.iecr.1c03003](https://doi.org/10.1021/acs.iecr.1c03003)
 
 """
-tcPRactRule
+gErRule
 
-export tcPRactRule
-function tcPRactRule(components::Vector{String}; activity = tcPRWilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
-    _activity = init_model(activity,components,activity_userlocations,verbose)
-    references = ["10.1016/0378-3812(90)85053-D"]
-    model = tcPRactRule(components, _activity,references)
+default_references(::Type{gErRule}) =  ["10.1016/0378-3812(90)85053-D"]
+
+export gErRule
+function gErRule(components; activity = NRTL, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+    _components = format_components(components)
+    _activity = init_model(activity,_components,activity_userlocations,verbose)
+    model = gErRule(_components, _activity,default_references(gErRule))
     return model
 end
 
-function ab_premixing(model::PRModel,mixing::tcPRactRuleModel,k = nothing, l = nothing)
+function ab_premixing(model::PRModel,mixing::gErRuleModel,k = nothing, l = nothing)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.Pc
@@ -65,11 +59,10 @@ function ab_premixing(model::PRModel,mixing::tcPRactRuleModel,k = nothing, l = n
     diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
     diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
     epsilon_LorentzBerthelot!(a,k)
-    tcPRact_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,2/3)
-    kij_mix!(tcPRact_mix,b,l)
+    gEr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,2/3)
+    kij_mix!(gEr_mix,b,l)
     return a,b
 end
-
 
 __excess_g_res(model,p,T,z,b,c) = excess_g_res(model,p,T,z)
 function __excess_g_res(model::WilsonModel,p,T,z,b,c)
@@ -77,7 +70,7 @@ function __excess_g_res(model::WilsonModel,p,T,z,b,c)
     return excess_g_res_wilson(model,p,T,z,V)
 end
 
-function mixing_rule(model::PRModel,V,T,z,mixing_model::tcPRactRuleModel,α,a,b,c)
+function mixing_rule(model::PRModel,V,T,z,mixing_model::gErRuleModel,α,a,b,c)
     n = sum(z)
     #x = z./n
     invn = (one(n)/n)

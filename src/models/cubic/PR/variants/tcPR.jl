@@ -61,8 +61,8 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
     b = PairParam("b",components,zeros(length(components)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
 
-    w = params["acentricfactor"]
-    zra = params["ZRA"]
+    w = get(params,"acentricfactor",nothing)
+    zra = get(params,"ZRA",nothing)
 
     if alpha !== TwuAlpha
         init_alpha = init_alphamodel(alpha,components,w,alpha_userlocations,verbose)
@@ -71,7 +71,7 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
         N = params["N"]
         L = params["L"]
         for i in 1:n
-            if M.ismissingvalues[i] && N.ismissingvalues[i] && L.ismissingvalues[i]
+            if M.ismissingvalues[i] && N.ismissingvalues[i] && L.ismissingvalues[i] && w !== nothing
                 if !w.ismissingvalues[i]
                     wi = w[i]
                     #tc-PR-2020 parameters
@@ -97,19 +97,22 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
         init_translation = init_model(translation,components,translation_userlocations,verbose)
     else
         c = params["v_shift"]
+
         packagedparams = ConstantTranslationParam(c)
         init_translation = ConstantTranslation(components,packagedparams,String[])
         #try to initialize translation if missing
         cc = init_translation.params.v_shift
         for i in 1:n
-            if cc.ismissingvalues[i]
+            if cc.ismissingvalues[i] 
+                
                 Tci = Tc[i]
                 Pci = Pc[i]
                 R = Rgas()
                 RTp = (R*Tci/Pci)
-                if !zra.ismissingvalues[i]
+                if zra !== nothing && !zra.ismissingvalues[i]
                     cc[i] = RTp*(0.1398 - 0.5294*zra[i])
-                elseif !w.ismissingvalues[i]
+                
+                elseif w !== nothing && !w.ismissingvalues[i]
                     cc[i] = RTp*(-0.0065 + 0.0198*w[i])
                 else
                     throw(error("cannot initialize translation in tcPR. acentric factor or ZRA not provided"))
@@ -124,33 +127,3 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
     recombine_cubic!(model,k,l)
     return model
 end
-
-function tcPRact(components::Vector{String}; idealmodel=BasicIdeal,
-    alpha = TwuAlpha,
-    mixing = vdW1fRule,
-    activity = nothing,
-    translation=ConstantTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    alpha_userlocations = String[],
-    mixing_userlocations = String[],
-    activity_userlocations = String[],
-    translation_userlocations = String[],
-    verbose=false)
-
-    return tcPR(components; idealmodel=idealmodel,
-    alpha = alpha,
-    mixing = mixing,
-    activity = activity,
-    translation=translation,
-    userlocations=userlocations,
-    ideal_userlocations=ideal_userlocations,
-    alpha_userlocations = alpha_userlocations,
-    mixing_userlocations = mixing_userlocations,
-    activity_userlocations = activity_userlocations,
-    translation_userlocations = translation_userlocations,
-    verbose=false)
-end
-
-export tcPR
-

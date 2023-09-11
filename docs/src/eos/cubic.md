@@ -71,6 +71,7 @@ Clapeyron.EPPR78
 Clapeyron.UMRPR
 Clapeyron.VTPR
 Clapeyron.tcPR
+Clapeyron.tcPRW
 Clapeyron.cPR
 Clapeyron.QCPR
 ```
@@ -123,4 +124,5 @@ Clapeyron.PSRKRule
 Clapeyron.UMRRule
 Clapeyron.QCPRRule
 Clapeyron.PPR78Rule
+Clapeyron.gErRule
 ```
