@@ -16,7 +16,7 @@ consistent Peng Robinson equation of state. it uses the following models:
 ## References
 1. Bell, I. H., Satyro, M., & Lemmon, E. W. (2018). Consistent twu parameters for more than 2500 pure fluids from critically evaluated experimental data. Journal of Chemical and Engineering Data, 63(7), 2402–2409. [doi:10.1021/acs.jced.7b00967](https://doi.org/10.1021/acs.jced.7b00967)
 """
-function cPR(components::Vector{String}; idealmodel=BasicIdeal,
+function cPR(components; idealmodel=BasicIdeal,
     alpha = TwuAlpha,
     mixing = vdW1fRule,
     activity = nothing,
@@ -29,7 +29,7 @@ function cPR(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
     verbose=false)
 
-
+    formatted_components = format_components(components)
     #just read once if allowed.
 
     userlocations_cpr = String[]
@@ -38,7 +38,7 @@ function cPR(components::Vector{String}; idealmodel=BasicIdeal,
         userlocations_cpr = userlocation_merge(userlocations_cpr,userlocations)
     end
 
-    params = getparams(components, ["cubic/cPR/cPR_single.csv"];
+    params = getparams(formatted_components, ["cubic/cPR/cPR_single.csv"];
     userlocations=userlocations_cpr,
     verbose=verbose,
     ignore_missing_singleparams = ["v_shift","ZRA","acentricfactor"])
@@ -50,23 +50,23 @@ function cPR(components::Vector{String}; idealmodel=BasicIdeal,
     Tc = params["Tc"]
 
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components)))
-    b = PairParam("b",components,zeros(length(components)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    a = PairParam("a",formatted_components,zeros(length(formatted_components)))
+    b = PairParam("b",formatted_components,zeros(length(formatted_components)))
+    init_idealmodel = init_model(idealmodel,formatted_components,ideal_userlocations,verbose)
 
     if alpha !== TwuAlpha
-        init_alpha = init_alphamodel(alpha,components,w,alpha_userlocations,verbose)
+        init_alpha = init_alphamodel(alpha,formatted_components,w,alpha_userlocations,verbose)
     else
         M = params["M"]
         N = params["N"]
         L = params["L"]
         packagedparams = TwuAlphaParam(M,N,L)
-        init_alpha = TwuAlpha(components,packagedparams,default_references(TwuAlpha))
+        init_alpha = TwuAlpha(formatted_components,packagedparams,default_references(TwuAlpha))
     end
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
+    init_translation = init_model(translation,formatted_components,translation_userlocations,verbose)
     packagedparams = PRParam(a,b,Tc,pc,Mw)
     references = String["10.1021/acs.jced.7b00967"]
-    model = PR(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = PR(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end
