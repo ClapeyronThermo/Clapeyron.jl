@@ -300,7 +300,12 @@ end
 
         @testset "tcPR" begin
             system = tcPR(["ethane","undecane"])
-            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2511531799294142 rtol = 1e-6
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.254188808138175 rtol = 1e-6
+        end
+
+        @testset "tcPR + Wilson (Res)" begin
+            system = tcPRW(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2106258705853445 rtol = 1e-6
         end
 
         @testset "EPPR78" begin

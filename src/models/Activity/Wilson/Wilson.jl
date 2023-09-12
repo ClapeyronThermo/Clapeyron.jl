@@ -89,7 +89,7 @@ function excess_g_res(model::WilsonModel,p,T,z)
 end
 
 function excess_g_res_wilson(model::WilsonModel,p,T,z,V = wilson_volume(model,T))
-    g_E = excess_gibbs_wilson(model,p,T,z,V)
+    g_E = excess_g_wilson(model,p,T,z,V)
     g_comb = zero(g_E)
     zV = dot(z,V)
     zVinv = 1/zV

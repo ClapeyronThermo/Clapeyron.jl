@@ -98,7 +98,6 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
         init_translation = init_model(translation,components,translation_userlocations,verbose)
     else
         c = params["v_shift"]
-
         packagedparams = ConstantTranslationParam(c)
         init_translation = ConstantTranslation(components,packagedparams,String[])
         #try to initialize translation if missing
