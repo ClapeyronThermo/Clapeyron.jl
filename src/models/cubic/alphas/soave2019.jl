@@ -3,7 +3,7 @@ export Soave2019Alpha
 
 """
     Soave2019Alpha <: SoaveAlphaModel
-    
+
     Soave2019Alpha(components::Vector{String};
     userlocations=String[],
     verbose::Bool=false)
@@ -13,7 +13,7 @@ export Soave2019Alpha
 - `acentricfactor`: Single Parameter (`Float64`)
 
 ## Description
-Cubic alpha `(α(T))` model. updated m(ω) correlations for `PR` and `SRK` with better results for heavy molecules. 
+Cubic alpha `(α(T))` model. updated m(ω) correlations for `PR` and `SRK` with better results for heavy molecules.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
@@ -33,14 +33,7 @@ mᵢ =  0.4810 + 1.5963ωᵢ - 0.2963ωᵢ^2 + 0.1223ωᵢ^3
 """
 Soave2019Alpha
 
-function Soave2019Alpha(components::Vector{String}; userlocations=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = SimpleAlphaParam(acentricfactor)
-    references = ["10.1016/j.fluid.2018.12.007"]
-    model = Soave2019Alpha(packagedparams, verbose=verbose,references = references)
-    return model
-end
-
+default_locations(::Type{Soave2019Alpha}) = critical_data()
+default_references(::Type{Soave2019Alpha}) = ["10.1016/j.fluid.2018.12.007"]
 @inline α_m(model::PRModel,::Soave2019Alpha) = (0.3919,1.4996,-0.2721,0.1063)
 @inline α_m(model::RKModel,::Soave2019Alpha) = (0.4810,1.5963,-0.2963,0.1223)

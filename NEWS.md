@@ -1,10 +1,28 @@
-# v0.5.1
+# v0.5.3
+- Databases were standarized according to CAS. almost all components present in Clapeyron.jl databases are present in `@DB/properties/identifiers.csv`.
 - New model: translated-and-consistent Peng-Robinson (`tcPR`)
+- New model: translated-and-consistent Peng-Robinson, with Wilson and gE-res mixing rule (`tcPRW`)
 - New model: translated-and-consistent Redlich-Kwong (`tcRK`)
+- New Mixing Rule: residual (excess) gibbs energy mixing rule (`gErRule`)
 - New model: consistent PR - Twu (`cPR`)
 - New alpha function: Twu-88 (`Twu88Alpha`)
- - New alpha function: soave-2019 (`Soave2019Alpha`)
- 
+- New alpha function: soave-2019 (`Soave2019Alpha`)
+
+# v0.5.2
+
+## New Features
+- Support for solid models (`Clapeyron.sle_solubility`, `Clapeyron.slle_solubility` and `Clapeyron.eutectic_point`).
+
+## Bug fixes
+- `eltype(::SAFTVRMieParam)` is defined.
+
+# v0.5.1
+
+## New Features
+- Experimental support models with diferent types of parameters (that aren't `Float64`). This allows, among other things, creating models that have uncertainty in their parameters, and track that uncertainty across property calculations. `PCSAFT` and `SAFTVRMie` support this. (uncertainty support via `Measurements.jl` + `ForwardDiffOverMeasurements.jl` for autodiff rules)
+- Models built automatically via the `@newmodel`, `@newmodelgc` and `newmodelsingle` macros now allow to pass single components as a string (`PR("water")`). There is also more compatibility with Group Contribution models `PCSAFT(["water" => ["H2O"=>1]],idealmodel = WalkerIdeal)`.
+- minor inprovement on `x0_sat_pure` when the model cannot provide a virial coefficient.
+
 # v0.5.0
 
 ## New Features

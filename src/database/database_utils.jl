@@ -368,3 +368,9 @@ function cas(components)
     params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["SMILES"])
     return params["CAS"].values
 end
+
+function SMILES(components)
+    components = format_components(components)
+    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
+    return params["SMILES"].values
+end
