@@ -843,7 +843,7 @@ CAS;species;SMILES
 591-87-7;allyl acetate~|~aceticacid-2-propenylester;CC(=O)OCC=C
 622-45-7;cyclohexyl acetate~|~cyclohexyl ethanoate~|~aceticacidcyclohexylester;C1(OC(=O)C)CCCCC1
 112-17-4;decyl acetate~|~n-decyl acetate~|~aceticaciddecylester;CC(=O)OCCCCCCCCCC
-112-06-1;n-heptyl acetate~|~heptyl ethanoate~|~aceticacidheptylester;CC(=O)OCCCCCCC
+112-06-1;heptyl acetate~|~n-heptyl acetate~|~heptyl ethanoate~|~aceticacidheptylester;CC(=O)OCCCCCCC
 143-13-5;n-nonyl acetate~|~aceticacidnonylester;CC(=O)OCCCCCCCCC
 112-14-1;n-octyl acetate~|~octyl ethanoate~|~aceticacidoctylester;CC(=O)OCCCCCCCC
 140-11-4;benzyl acetate~|~benzyl ethanoate~|~aceticacidphenylmethylester;CC(=O)OCc1ccccc1
