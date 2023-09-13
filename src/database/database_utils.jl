@@ -365,7 +365,7 @@ end
 
 function cas(components)
     components = format_components(components)
-    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["SMILES"])
+    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["SMILES"],ignore_missing_singleparams = ["CAS"])
     return params["CAS"].values
 end
 

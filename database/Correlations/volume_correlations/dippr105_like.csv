@@ -302,7 +302,7 @@ CAS,species,A,B,C,D,Tmin,Tmax
 1111-74-6,dimethylsilane,1021.4,0.26351,402.0,0.28421,122.93,402.0
 1120-21-4,undecane~|~n-undecane,367.03,0.24876,639.0,0.28571,247.57,639.0
 1120-62-3,3-methylcyclopentene,910.9,0.276,526.0,0.26756,115.0,526.0
-1333-74-0,hydrogen~|~para-hydrogen,5414.0,0.34893,33.19,0.2706,13.95,33.19
+1333-74-0,hydrogen,5414.0,0.34893,33.19,0.2706,13.95,33.19
 1455-21-6,1-nonanethiol~|~nonyl mercaptan~|~n-nonyl mercaptan,473.77,0.27052,681.0,0.30284,253.05,681.0
 1551-21-9,3-methyl-2-thiabutane~|~methyl isopropyl sulfide,789.12,0.25915,553.1,0.26512,171.64,553.1
 1569-69-3,cyclohexanethiol~|~cyclohexyl mercaptan,785.78,0.27882,664.0,0.31067,189.64,664.0
