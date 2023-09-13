@@ -16,7 +16,7 @@ At this stage, we point out that all values within Clapeyron are in SI units, un
 
 From here, we will now consider how `model`s are constructed in different equations of state and how users can implement their own parameters.
 
-## Generic models
+## Generic Models
 Although `BasicIdeal` does provide the universal definition for the ideal gas model, it does fall short in one aspect: accounting for modes of motion beyond translation, such as rotations and vibrations. Accounting for these contributions does involve providing chemical-specific parameters. Thankfully, Clapeyron has a built-in databank of parameters for all supported equations of state. As an example, we consider carbon-dioxide modelled by the `ReidIdeal` model, as opposed to the basic ideal model:
 ```julia
 julia> model1 = BasicIdeal(["carbon dioxide"])
@@ -74,7 +74,7 @@ SingleParam{NTuple{4, Float64}}("Reid Coefficients") with 2 components:
 ```
 Ideal gas models are by far the simplest case to consider when building models. Other equations of state have additional features which will be discussed next. Of interest to general users may be the [group-contribution models](#group-contribution-models) and how to construct models [from user-defined parameters](#user-defined-parameters).
 
-## Cubic models
+## Cubic Models
 At the surface, cubic models are quite simple as well. As an example, consider a mixture of methanol and benzene in Peng-Robinson (`PR`):
 ```julia
 julia> model = PR(["methanol","benzene"])
@@ -160,12 +160,65 @@ Contains parameters: Vc, v_shift
     Group Type: UNIFACDortmund
     Contains parameters: A, B, C, R, Q
     ```
-Whilst one could combine all the parts listed above in endless ways, there are some default combinations which we provide. These are typically referred to as predictive cubics: Predictive SRK (`PSRK`) and Volume-Translate PR (`VTPR`).
+Whilst one could combine all the parts listed above in endless ways, there are some default combinations which we provide. These are typically referred to as predictive cubics: Predictive SRK (`PSRK`) and Volume-Translated PR (`VTPR`).
 
-## SAFT models
+## SAFT Models
+Where most models use either single or binary parameters, SAFT models introduce a third type of parameter: association parameters. These can be best seen when building the model:
+```julia
+julia> model = PCSAFT(["water","1-propanol"])
+PCSAFT{BasicIdeal, Float64} with 2 components:
+ "water"
+ "1-propanol"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
 
-## Activity Coefficient models
+julia> model.sites
+SiteParam with 2 components:
+ "water": "e" => 1, "H" => 1
+ "1-propanol": "e" => 1, "H" => 1
 
-## Group contribution models
+julia> model.params.epsilon_assoc
+AssocParam{Float64}["water", "1-propanol"]) with 2 values:
+("water", "e") >=< ("water", "H"): 2500.7
+("1-propanol", "e") >=< ("1-propanol", "H"): 2276.8
+```
+When adding association, we allow for interactions between sites on species, hence why the `sites` field has been added. The association parameters are also stored in a slightly different way as well. 
 
-## User-defined parameters
+One thing to note is that, unless cross-associating parameters are provided within the database, Clapeyron will not assume any other association interactions. To include these, one can use the `AssocOptions` struct where, as well as other numerical settings, users can specify to use a combining rule:
+```julia
+julia> model = PCSAFT(["water","1-propanol"];assoc_options=AssocOptions(combining=:esd))
+PCSAFT{BasicIdeal, Float64} with 2 components:
+ "water"
+ "1-propanol"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> model.params.epsilon_assoc
+AssocParam{Float64}["water", "1-propanol"]) with 4 values:
+("water", "e") >=< ("water", "H"): 2500.7
+("1-propanol", "e") >=< ("water", "H"): 2388.75
+("1-propanol", "H") >=< ("water", "e"): 2388.75
+("1-propanol", "e") >=< ("1-propanol", "H"): 2276.8
+```
+This may be important when trying to obtain accurate predictions for mixtures.
+
+### Cubic Plus Association
+Another class of equation of state that doesn't really fit in either cubics or SAFT equations is CPA, where the two approaches are combined. As a result, the features available in both appraoches are extended to CPA:
+```julia
+julia> model = CPA(["methanol","ethane"])
+CPA{BasicIdeal, RK{BasicIdeal, CPAAlpha, NoTranslation, vdW1fRule}} with 2 components:
+ "methanol"
+ "ethane"
+Contains parameters: a, b, c1, Tc, epsilon_assoc, bondvol, Mw
+
+julia> model = CPA(["methanol","ethane"];cubicmodel=PR,mixing=HVRule,activity=UNIFAC)
+CPA{BasicIdeal, PR{BasicIdeal, CPAAlpha, NoTranslation, HVRule{UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}}}} with 2 components:
+ "methanol"
+ "ethane"
+Contains parameters: a, b, c1, Tc, epsilon_assoc, bondvol, Mw
+```
+Making our CPA implementation one of the most-extensible available.
+
+## Activity Coefficient Models
+
+## Group-Contribution Models
+
+## User-Defined Parameters
