@@ -147,7 +147,7 @@ function Obj_VLLE_temperature(model::EoSModel, F, p, T, v_l, v_ll, v_v, x, xx, y
     n_c = length(model)
     μ_v = VT_chemical_potential(model,v_v,T,y)
     R̄ = Rgas(model)
-    Ts = (dot(ts,y) + dot(ts,x) + dot(Ts,xx))/3
+    Ts = sum(ts)/3
     @inbounds for i in 1:n_c
         F[i] = -μ_v[i]/(R̄*Ts)
         F[i+n_c] = -μ_v[i]/(R̄*Ts)
