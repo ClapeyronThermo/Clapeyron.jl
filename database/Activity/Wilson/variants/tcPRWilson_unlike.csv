@@ -1,0 +1,403 @@
+Clapeyron Database File,,,,,
+tc-PR Wilson(res) Unlike Parameters
+species1,species2,g
+methane,ethane,27.37
+methane,propane~|~n-propane,52.89
+methane,butane~|~n-butane,19.33
+methane,hexane~|~n-hexane,-4.57
+methane,heptane~|~n-heptane,11.43
+methane,decane~|~n-decane,-38.22
+methane,c24~|~tetracosane~|~n-tetracosane,90.08
+nitrogen,methane,47.3
+nitrogen,ethane,78.7
+nitrogen,pentane~|~n-pentane,87.8
+nitrogen,decane~|~n-decane,53.59
+ethene~|~ethylene~|~1-ethylene,xenon,7.8
+ethane,propane~|~n-propane,-16.06
+ethane,heptane~|~n-heptane,126.72
+ethane,hexatriacontane~|~n-hexatriacontane,36.33
+argon,methane,14.81
+propane~|~n-propane,isopentane~|~methylbutane~|~2-methylbutane,-98.13
+benzene,cyclohexane,13.25
+benzene,toluene,82.01
+benzene,heptane~|~n-heptane,205.14
+cyclohexane,methylcyclohexane,143.55
+cyclohexane,chlorobenzene~|~monochlorobenzene,163.85
+hexane~|~n-hexane,cyclohexane,-32.09
+"dichloroethane~|~1,2-dichloroethane",toluene,-122.39
+"dichloroethane~|~1,2-dichloroethane",ccl4~|~tetrachloromethane~|~carbon tetrachloride,123.58
+heptane~|~n-heptane,chlorobenzene~|~monochlorobenzene,158.4
+hydrogen sulfide,methane,202.74
+carbon dioxide,methane,152.81
+carbon dioxide,nitrogen,65.92
+carbon dioxide,ethene~|~ethylene~|~1-ethylene,3.08
+carbon dioxide,ethane,167.78
+carbon dioxide,propane~|~n-propane,232.44
+carbon dioxide,butane~|~n-butane,175.68
+carbon dioxide,cyclopentane,246.77
+carbon dioxide,toluene,187.97
+carbon dioxide,decane~|~n-decane,132.06
+carbon dioxide,dotriacontane~|~n-dotriacontane,212.38
+acetone~|~propanone,pentane~|~n-pentane,319.43
+acetone~|~propanone,benzene,60.36
+acetone~|~propanone,cyclohexane,550.29
+acetone~|~propanone,hexane~|~n-hexane,524.86
+butanone~|~2-butanone~|~methyl ethyl ketone,benzene,9.66
+butanone~|~2-butanone~|~methyl ethyl ketone,hexane~|~n-hexane,168.64
+methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,toluene,15.02
+methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,heptane~|~n-heptane,111.53
+methyl-tert-amylether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,heptane~|~n-heptane,50.05
+"dioxane~|~p-dioxane~|~1,4-dioxane",ccl4~|~tetrachloromethane~|~carbon tetrachloride,-240.55
+ethylacetate~|~ethyl ethanoate,toluene,-56.05
+n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone~|~n-methyl-2-pyrrolidinone,benzene,-273.67
+chinoline~|~quinoline,"tetralin~|~1,2,3,4-tetrahydronaphthalene",-73.92
+r32~|~difluoromethane,propane~|~n-propane,521.65
+r23~|~trifluoromethane,ethane,472.85
+r23~|~trifluoromethane,r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,113.61
+ch2cl2~|~dichloromethane,ethene~|~ethylene~|~1-ethylene,903.29
+ch2cl2~|~dichloromethane,pentane~|~n-pentane,272.3
+ch2cl2~|~dichloromethane,ccl4~|~tetrachloromethane~|~carbon tetrachloride,205.36
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,nitrogen,260.49
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,propene~|~propylene,20.58
+r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,245.65
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,r12~|~dichlorodifluoromethane,76.1
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",r161~|~fluoroethane~|~ethyl fluoride,-26.49
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",r116~|~perfluoroethane~|~hexafluoroethane,122.51
+chcl3~|~chloroform~|~trichloromethane,benzene,-183.82
+chcl3~|~chloroform~|~trichloromethane,hexane~|~n-hexane,89.88
+chcl3~|~chloroform~|~trichloromethane,heptane~|~n-heptane,230.28
+chcl3~|~chloroform~|~trichloromethane,"dichloroethane~|~1,2-dichloroethane",269.98
+chcl3~|~chloroform~|~trichloromethane,ccl4~|~tetrachloromethane~|~carbon tetrachloride,64.22
+"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene","r143a~|~1,1,1-trifluoroethane",47.76
+r125~|~pentafluoroethane,propane~|~n-propane,288.08
+"r365mfc~|~1,1,1,3,3-pentafluorobutane",perfluorobutane~|~decafluorobutane~|~n-perfluorobutane,649.41
+carbon monoxide,carbon dioxide,257.37
+carbon dioxide,oxygen,190.09
+carbon dioxide,hydrogen sulfide,216.78
+carbon dioxide,dimethyl ether,111.48
+carbon dioxide,cs2~|~carbon disulfide,453.45
+carbon dioxide,ethylacetate~|~ethyl ethanoate,155.23
+carbon dioxide,dimethyl carbonate,-115.79
+dimethyl ether,sulfur dioxide,-425.71
+r32~|~difluoromethane,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",2.42
+r23~|~trifluoromethane,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,-46.02
+"butoxide~|~ethyloxirane~|~1,2-epoxybutane",dimethyl carbonate,35.21
+thf~|~tetrahydrofuran,"dimethylformamide~|~n,n-dimethylformamide",2.6
+diethyl ether,acetone~|~propanone,17.11
+cs2~|~carbon disulfide,acetone~|~propanone,337.1
+thiophene,sulfolane,514.49
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",203.93
+ethylacetate~|~ethyl ethanoate,"dioxane~|~p-dioxane~|~1,4-dioxane",-47.2
+dimethyl carbonate,diethyl carbonate,85.13
+triethylamine,"dioxane~|~p-dioxane~|~1,4-dioxane",132.17
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane","r152a~|~difluoroethane~|~1,1-difluoroethane",4.26
+butylacetate~|~n-butylacetate~|~butyl ethanoate~|~n-butylethanoate,"dimethylformamide~|~n,n-dimethylformamide",-61.73
+r125~|~pentafluoroethane,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",-7.73
+ammonia,nitrogen,1163.61
+water,nitrogen,1320.39
+water,ethane,2889.92
+water,butane~|~n-butane,2672.85
+water,benzene,1262.47
+methanol,ethane,111.88
+methanol,propane~|~n-propane,135.65
+methanol,benzene,1088.29
+methanol,hexane~|~n-hexane,1824.34
+ethanol,benzene,940.45
+ethanol,heptane~|~n-heptane,1469.38
+propanol~|~1-propanol~|~propan-1-ol,ethane,-1.65
+propanol~|~1-propanol~|~propan-1-ol,benzene,662.6
+propanol~|~1-propanol~|~propan-1-ol,hexane~|~n-hexane,185.03
+2-propanol~|~propan-2-ol~|~isopropanol,"isooctane~|~2,2,4-trimethylpentane",911.75
+diethylamine,benzene,106.82
+diethylamine,chlorobenzene~|~monochlorobenzene,-145.94
+2-butanol~|~butan-2-ol,cyclohexane,700.39
+r32~|~difluoromethane,carbon dioxide,-151.34
+r32~|~difluoromethane,sulfur dioxide,-3.17
+r32~|~difluoromethane,dimethyl ether,218.95
+r23~|~trifluoromethane,cs2~|~carbon disulfide,875.38
+"r143a~|~1,1,1-trifluoroethane",dimethyl ether,-212.47
+ch2cl2~|~dichloromethane,cs2~|~carbon disulfide,200.09
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,carbon dioxide,266.66
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,cs2~|~carbon disulfide,301.56
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,dimethyl ether,-578.17
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",carbon dioxide,-140.8
+chcl3~|~chloroform~|~trichloromethane,acetone~|~propanone,879.27
+chcl3~|~chloroform~|~trichloromethane,thf~|~tetrahydrofuran,-646.29
+chcl3~|~chloroform~|~trichloromethane,methylacetate~|~methyl ethanoate,971.43
+chcl3~|~chloroform~|~trichloromethane,ethylacetate~|~ethyl ethanoate,-350.06
+chcl3~|~chloroform~|~trichloromethane,dipropyl ether~|~di-n-propylether,1005.01
+chcl3~|~chloroform~|~trichloromethane,diisopropyl ether~|~di-isopropyl ether,962.64
+chcl3~|~chloroform~|~trichloromethane,1-ethoxybutane~|~butyl ethyl ether~|~n-butyl ethyl ether,1150.15
+r125~|~pentafluoroethane,dimethyl ether,-552.21
+trichloroethene~|~trichloroethylene,ethylacetate~|~ethyl ethanoate,-276.98
+"r236fa~|~1,1,1,3,3,3-hexafluoropropane",dimethyl ether,-115.95
+"1,1,2,2-tetrachloroethane",3-pentanone~|~pentan-3-one~|~diethylketone,-297.63
+"1,1,2,2-tetrachloroethane",cyclopentanone,-261.88
+"1,1,2,2-tetrachloroethane",ethylacetate~|~ethyl ethanoate,1286.97
+"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",carbon dioxide,-16.05
+"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",sulfur dioxide,214.62
+methanol,"halothane~|~2-bromo-2-chloro-1,1,1-trifluoroethane~|~1-bromo-1-chloro-2,2,2-trifluoroethane",1051.56
+acetonitrile,hexyne~|~1-hexyne,-283.07
+acetonitrile,chcl3~|~chloroform~|~trichloromethane,-468.0
+ethanol,1-heptyne,589.93
+ethanol,chcl3~|~chloroform~|~trichloromethane,783.74
+acetic acid,chcl3~|~chloroform~|~trichloromethane,-317.9
+2-propanol~|~propan-2-ol~|~isopropanol,chcl3~|~chloroform~|~trichloromethane,461.9
+2-propanol~|~propan-2-ol~|~isopropanol,trichloroethene~|~trichloroethylene,1338.05
+propanol~|~1-propanol~|~propan-1-ol,trichloroethene~|~trichloroethylene,1143.96
+propanol~|~1-propanol~|~propan-1-ol,chcl3~|~chloroform~|~trichloromethane,-51.99
+ethylformate~|~ethyl methanoate,chcl3~|~chloroform~|~trichloromethane,644.95
+butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,chcl3~|~chloroform~|~trichloromethane,-18.01
+butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,trichloroethene~|~trichloroethylene,-175.97
+2-butanol~|~butan-2-ol,trichloroethene~|~trichloroethylene,789.8
+2-methoxyethanol~|~2-methoxyethan-1-ol,trichloroethene~|~trichloroethylene,-176.71
+propylformate~|~n-propylformate~|~propyl methanoate~|~n-propylmethanoate,"1,1,2,2-tetrachloroethane",1185.41
+water,carbon dioxide,537.56
+water,dimethyl ether,99.6
+water,acetone~|~propanone,-368.79
+methanol,carbon monoxide,100.68
+methanol,carbon dioxide,37.56
+methanol,acetone~|~propanone,199.55
+methanol,thiophene,1082.12
+methanol,"dioxane~|~p-dioxane~|~1,4-dioxane",312.15
+methanol,ethylacetate~|~ethyl ethanoate,382.91
+methanol,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,778.69
+methanol,diisopropyl ether~|~di-isopropyl ether,5390.25
+methanol,butylacetate~|~n-butylacetate~|~butyl ethanoate~|~n-butylethanoate,469.01
+acetonitrile,"dioxane~|~p-dioxane~|~1,4-dioxane",-6.68
+ethanol,carbon dioxide,175.04
+ethanol,acetone~|~propanone,144.3
+ethanol,butanone~|~2-butanone~|~methyl ethyl ketone,202.81
+ethanol,diethyl ether,-54.83
+ethanol,ethylacetate~|~ethyl ethanoate,416.26
+ethanol,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,571.16
+ethanol,dibutyl ether~|~di-n-butylether,1255.32
+2-propanol~|~propan-2-ol~|~isopropanol,diisopropyl ether~|~di-isopropyl ether,528.9
+diethylamine,ethylacetate~|~ethyl ethanoate,256.71
+diethylamine,triethylamine,310.82
+isobutanol~|~2-methyl-1-propanol,carbon dioxide,602.61
+tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,-250.67
+1-pentanol~|~pentan-1-ol,carbon dioxide,332.04
+ammonia,water,-283.82
+ammonia,acetonitrile,0.47
+water,acetonitrile,931.82
+water,2-propenol~|~2-propen-1-ol~|~allyl alcohol,635.76
+water,"ethylenediamine~|~1,2-diaminoethane~|~ethane-1,2-diamine",-326.27
+water,1-pentanol~|~pentan-1-ol,1009.97
+water,1-methoxy2-propanol~|~1-methoxy-2-propanol~|~propylene glycol monomethyl ether,725.89
+water,phenol,249.78
+water,2-butoxyethanol~|~2-butoxyethan-1-ol,676.2
+methanol,water,-513.2
+methanol,ethanol,46.53
+methanol,propanol~|~1-propanol~|~propan-1-ol,131.07
+methanol,butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,143.82
+methanol,isopentanol~|~3-methylbutan-1-ol~|~3-methyl-1-butanol,534.39
+ethanol,water,-456.71
+ethanol,acetic acid,386.99
+ethanol,ethylformate~|~ethyl methanoate,312.04
+ethanol,isopentanol~|~3-methylbutan-1-ol~|~3-methyl-1-butanol,-60.61
+methylformate~|~methyl methanoate,methanol,71.91
+2-propanol~|~propan-2-ol~|~isopropanol,water,-211.5
+tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,-146.16
+nitromethane,butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,852.8
+ethylformate~|~ethyl methanoate,water,320.81
+ethane,methane,22.71
+propane~|~n-propane,methane,12.03
+butane~|~n-butane,methane,8.48
+hexane~|~n-hexane,methane,-0.08
+heptane~|~n-heptane,methane,-4.9
+decane~|~n-decane,methane,76.22
+c24~|~tetracosane~|~n-tetracosane,methane,-574.11
+methane,nitrogen,27.66
+ethane,nitrogen,151.94
+pentane~|~n-pentane,nitrogen,57.17
+decane~|~n-decane,nitrogen,241.99
+xenon,ethene~|~ethylene~|~1-ethylene,50.95
+propane~|~n-propane,ethane,7.93
+heptane~|~n-heptane,ethane,35.86
+hexatriacontane~|~n-hexatriacontane,ethane,-771.25
+methane,argon,38.72
+isopentane~|~methylbutane~|~2-methylbutane,propane~|~n-propane,239.43
+cyclohexane,benzene,188.94
+toluene,benzene,-52.54
+heptane~|~n-heptane,benzene,35.18
+methylcyclohexane,cyclohexane,-110.15
+chlorobenzene~|~monochlorobenzene,cyclohexane,216.49
+cyclohexane,hexane~|~n-hexane,136.91
+toluene,"dichloroethane~|~1,2-dichloroethane",284.42
+ccl4~|~tetrachloromethane~|~carbon tetrachloride,"dichloroethane~|~1,2-dichloroethane",132.62
+chlorobenzene~|~monochlorobenzene,heptane~|~n-heptane,144.8
+methane,hydrogen sulfide,382.98
+methane,carbon dioxide,232.19
+nitrogen,carbon dioxide,310.24
+ethene~|~ethylene~|~1-ethylene,carbon dioxide,164.89
+ethane,carbon dioxide,299.82
+propane~|~n-propane,carbon dioxide,132.14
+butane~|~n-butane,carbon dioxide,245.65
+cyclopentane,carbon dioxide,-26.35
+toluene,carbon dioxide,5.64
+decane~|~n-decane,carbon dioxide,1974.91
+dotriacontane~|~n-dotriacontane,carbon dioxide,686.9
+pentane~|~n-pentane,acetone~|~propanone,499.76
+benzene,acetone~|~propanone,57.95
+cyclohexane,acetone~|~propanone,312.86
+hexane~|~n-hexane,acetone~|~propanone,350.74
+benzene,butanone~|~2-butanone~|~methyl ethyl ketone,27.22
+hexane~|~n-hexane,butanone~|~2-butanone~|~methyl ethyl ketone,417.87
+toluene,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,5.4
+heptane~|~n-heptane,methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,63.16
+heptane~|~n-heptane,methyl-tert-amylether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,35.3
+ccl4~|~tetrachloromethane~|~carbon tetrachloride,"dioxane~|~p-dioxane~|~1,4-dioxane",446.69
+toluene,ethylacetate~|~ethyl ethanoate,158.08
+benzene,n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone~|~n-methyl-2-pyrrolidinone,609.59
+"tetralin~|~1,2,3,4-tetrahydronaphthalene",chinoline~|~quinoline,198.65
+propane~|~n-propane,r32~|~difluoromethane,336.72
+ethane,r23~|~trifluoromethane,291.03
+r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,r23~|~trifluoromethane,308.54
+ethene~|~ethylene~|~1-ethylene,ch2cl2~|~dichloromethane,-485.58
+pentane~|~n-pentane,ch2cl2~|~dichloromethane,181.7
+ccl4~|~tetrachloromethane~|~carbon tetrachloride,ch2cl2~|~dichloromethane,63.04
+nitrogen,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,-156.73
+propene~|~propylene,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,85.17
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,223.63
+r12~|~dichlorodifluoromethane,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,71.2
+r161~|~fluoroethane~|~ethyl fluoride,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",7.94
+r116~|~perfluoroethane~|~hexafluoroethane,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",351.28
+benzene,chcl3~|~chloroform~|~trichloromethane,130.87
+hexane~|~n-hexane,chcl3~|~chloroform~|~trichloromethane,206.82
+heptane~|~n-heptane,chcl3~|~chloroform~|~trichloromethane,195.84
+"dichloroethane~|~1,2-dichloroethane",chcl3~|~chloroform~|~trichloromethane,-172.19
+ccl4~|~tetrachloromethane~|~carbon tetrachloride,chcl3~|~chloroform~|~trichloromethane,37.31
+"r143a~|~1,1,1-trifluoroethane","r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",-33.67
+propane~|~n-propane,r125~|~pentafluoroethane,270.16
+perfluorobutane~|~decafluorobutane~|~n-perfluorobutane,"r365mfc~|~1,1,1,3,3-pentafluorobutane",169.26
+carbon dioxide,carbon monoxide,0.54
+oxygen,carbon dioxide,110.52
+hydrogen sulfide,carbon dioxide,115.17
+dimethyl ether,carbon dioxide,-220.81
+cs2~|~carbon disulfide,carbon dioxide,193.84
+ethylacetate~|~ethyl ethanoate,carbon dioxide,-263.35
+dimethyl carbonate,carbon dioxide,192.36
+sulfur dioxide,dimethyl ether,-193.18
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",r32~|~difluoromethane,38.35
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,r23~|~trifluoromethane,141.35
+dimethyl carbonate,"butoxide~|~ethyloxirane~|~1,2-epoxybutane",79.47
+"dimethylformamide~|~n,n-dimethylformamide",thf~|~tetrahydrofuran,215.42
+acetone~|~propanone,diethyl ether,257.29
+acetone~|~propanone,cs2~|~carbon disulfide,529.78
+sulfolane,thiophene,-276.59
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,-143.13
+"dioxane~|~p-dioxane~|~1,4-dioxane",ethylacetate~|~ethyl ethanoate,103.07
+diethyl carbonate,dimethyl carbonate,-19.29
+"dioxane~|~p-dioxane~|~1,4-dioxane",triethylamine,226.82
+"r152a~|~difluoroethane~|~1,1-difluoroethane","r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",-20.72
+"dimethylformamide~|~n,n-dimethylformamide",butylacetate~|~n-butylacetate~|~butyl ethanoate~|~n-butylethanoate,276.07
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",r125~|~pentafluoroethane,24.71
+nitrogen,ammonia,2358.41
+nitrogen,water,6963.37
+ethane,water,15054.07
+butane~|~n-butane,water,2701.68
+benzene,water,1361.42
+ethane,methanol,1900.68
+propane~|~n-propane,methanol,1514.71
+benzene,methanol,47.8
+hexane~|~n-hexane,methanol,440.16
+benzene,ethanol,122.58
+heptane~|~n-heptane,ethanol,336.57
+ethane,propanol~|~1-propanol~|~propan-1-ol,652.42
+benzene,propanol~|~1-propanol~|~propan-1-ol,167.32
+hexane~|~n-hexane,propanol~|~1-propanol~|~propan-1-ol,1199.76
+"isooctane~|~2,2,4-trimethylpentane",2-propanol~|~propan-2-ol~|~isopropanol,175.67
+benzene,diethylamine,57.49
+chlorobenzene~|~monochlorobenzene,diethylamine,251.11
+cyclohexane,2-butanol~|~butan-2-ol,219.87
+carbon dioxide,r32~|~difluoromethane,341.18
+sulfur dioxide,r32~|~difluoromethane,38.82
+dimethyl ether,r32~|~difluoromethane,-256.94
+cs2~|~carbon disulfide,r23~|~trifluoromethane,863.99
+dimethyl ether,"r143a~|~1,1,1-trifluoroethane",328.18
+cs2~|~carbon disulfide,ch2cl2~|~dichloromethane,149.56
+carbon dioxide,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,-291.06
+cs2~|~carbon disulfide,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,321.9
+dimethyl ether,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,1856.02
+carbon dioxide,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",1549.36
+acetone~|~propanone,chcl3~|~chloroform~|~trichloromethane,-556.09
+thf~|~tetrahydrofuran,chcl3~|~chloroform~|~trichloromethane,781.35
+methylacetate~|~methyl ethanoate,chcl3~|~chloroform~|~trichloromethane,-524.42
+ethylacetate~|~ethyl ethanoate,chcl3~|~chloroform~|~trichloromethane,160.0
+dipropyl ether~|~di-n-propylether,chcl3~|~chloroform~|~trichloromethane,-622.6
+diisopropyl ether~|~di-isopropyl ether,chcl3~|~chloroform~|~trichloromethane,-685.23
+1-ethoxybutane~|~butyl ethyl ether~|~n-butyl ethyl ether,chcl3~|~chloroform~|~trichloromethane,-654.06
+dimethyl ether,r125~|~pentafluoroethane,1504.8
+ethylacetate~|~ethyl ethanoate,trichloroethene~|~trichloroethylene,427.68
+dimethyl ether,"r236fa~|~1,1,1,3,3,3-hexafluoropropane",-80.75
+3-pentanone~|~pentan-3-one~|~diethylketone,"1,1,2,2-tetrachloroethane",-20.38
+cyclopentanone,"1,1,2,2-tetrachloroethane",-170.41
+ethylacetate~|~ethyl ethanoate,"1,1,2,2-tetrachloroethane",-604.27
+carbon dioxide,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",301.77
+sulfur dioxide,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",268.5
+"halothane~|~2-bromo-2-chloro-1,1,1-trifluoroethane~|~1-bromo-1-chloro-2,2,2-trifluoroethane",methanol,-342.41
+hexyne~|~1-hexyne,acetonitrile,682.1
+chcl3~|~chloroform~|~trichloromethane,acetonitrile,609.29
+1-heptyne,ethanol,-12.21
+chcl3~|~chloroform~|~trichloromethane,ethanol,-102.66
+chcl3~|~chloroform~|~trichloromethane,acetic acid,1377.18
+chcl3~|~chloroform~|~trichloromethane,2-propanol~|~propan-2-ol~|~isopropanol,-31.76
+trichloroethene~|~trichloroethylene,2-propanol~|~propan-2-ol~|~isopropanol,-11.01
+trichloroethene~|~trichloroethylene,propanol~|~1-propanol~|~propan-1-ol,-32.51
+chcl3~|~chloroform~|~trichloromethane,propanol~|~1-propanol~|~propan-1-ol,492.5
+chcl3~|~chloroform~|~trichloromethane,ethylformate~|~ethyl methanoate,-417.63
+chcl3~|~chloroform~|~trichloromethane,butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,396.24
+trichloroethene~|~trichloroethylene,butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,6477.74
+trichloroethene~|~trichloroethylene,2-butanol~|~butan-2-ol,-20.86
+trichloroethene~|~trichloroethylene,2-methoxyethanol~|~2-methoxyethan-1-ol,927.77
+"1,1,2,2-tetrachloroethane",propylformate~|~n-propylformate~|~propyl methanoate~|~n-propylmethanoate,-511.55
+carbon dioxide,water,4766.83
+dimethyl ether,water,1082.06
+acetone~|~propanone,water,1078.64
+carbon monoxide,methanol,1235.25
+carbon dioxide,methanol,521.33
+acetone~|~propanone,methanol,52.25
+thiophene,methanol,56.12
+"dioxane~|~p-dioxane~|~1,4-dioxane",methanol,70.36
+ethylacetate~|~ethyl ethanoate,methanol,45.23
+methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,methanol,-299.74
+diisopropyl ether~|~di-isopropyl ether,methanol,-197.49
+butylacetate~|~n-butylacetate~|~butyl ethanoate~|~n-butylethanoate,methanol,-18.19
+"dioxane~|~p-dioxane~|~1,4-dioxane",acetonitrile,-11.92
+carbon dioxide,ethanol,338.61
+acetone~|~propanone,ethanol,178.59
+butanone~|~2-butanone~|~methyl ethyl ketone,ethanol,112.2
+diethyl ether,ethanol,540.84
+ethylacetate~|~ethyl ethanoate,ethanol,13.33
+methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,ethanol,-115.89
+dibutyl ether~|~di-n-butylether,ethanol,17.29
+diisopropyl ether~|~di-isopropyl ether,2-propanol~|~propan-2-ol~|~isopropanol,-34.42
+ethylacetate~|~ethyl ethanoate,diethylamine,-93.43
+triethylamine,diethylamine,-113.72
+carbon dioxide,isobutanol~|~2-methyl-1-propanol,346.14
+methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane,tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,701.22
+carbon dioxide,1-pentanol~|~pentan-1-ol,-183.44
+water,ammonia,-184.45
+acetonitrile,ammonia,343.1
+acetonitrile,water,7475.21
+2-propenol~|~2-propen-1-ol~|~allyl alcohol,water,95.64
+"ethylenediamine~|~1,2-diaminoethane~|~ethane-1,2-diamine",water,1957.19
+1-pentanol~|~pentan-1-ol,water,679.12
+1-methoxy2-propanol~|~1-methoxy-2-propanol~|~propylene glycol monomethyl ether,water,-399.35
+phenol,water,1928.57
+2-butoxyethanol~|~2-butoxyethan-1-ol,water,203.07
+water,methanol,580.28
+ethanol,methanol,-1.38
+propanol~|~1-propanol~|~propan-1-ol,methanol,-134.94
+butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,methanol,-164.45
+isopentanol~|~3-methylbutan-1-ol~|~3-methyl-1-butanol,methanol,-533.35
+water,ethanol,982.96
+acetic acid,ethanol,-83.74
+ethylformate~|~ethyl methanoate,ethanol,348.94
+isopentanol~|~3-methylbutan-1-ol~|~3-methyl-1-butanol,ethanol,391.13
+methanol,methylformate~|~methyl methanoate,451.59
+water,2-propanol~|~propan-2-ol~|~isopropanol,955.99
+butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,-0.34
+butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,nitromethane,578.42
+water,ethylformate~|~ethyl methanoate,1537.21

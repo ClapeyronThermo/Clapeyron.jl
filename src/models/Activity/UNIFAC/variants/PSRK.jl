@@ -7,6 +7,9 @@ struct PSRKUNIFAC{c<:EoSModel} <: UNIFACModel
     unifac_cache::UNIFACCache
 end
 
+default_locations(::Type{PSRKUNIFAC}) = ["Activity/UNIFAC/PSRK/PSRK_like.csv", "Activity/UNIFAC/PSRK/PSRK_unlike.csv"]
+
+
 """
     PSRKUNIFAC(components;
     puremodel = BasicIdeal,
@@ -43,7 +46,7 @@ function PSRKUNIFAC(components;
     verbose = false)
 
     groups = GroupParam(components, ["Activity/UNIFAC/PSRK/PSRK_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
-    params = getparams(groups, ["Activity/UNIFAC/PSRK/PSRK_like.csv", "Activity/UNIFAC/PSRK/PSRK_unlike.csv"];
+    params = getparams(groups, default_locations(PSRKUNIFAC);
                         userlocations=userlocations,
                         asymmetricparams=["A","B","C"],
                         ignore_missing_singleparams=["A","B","C"],

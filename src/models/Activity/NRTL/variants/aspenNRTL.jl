@@ -51,13 +51,15 @@ Gᵢⱼ exp(-αᵢⱼτᵢⱼ)
 """
 aspenNRTL
 
+default_locations(::Type{aspenNRTL}) = ["Activity/NRTL/aspenNRTL/aspenNRTL_unlike.csv"]
+
 function aspenNRTL(components; puremodel=PR,
     userlocations = String[], 
     pure_userlocations = String[],
     verbose=false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, String["Activity/NRTL/aspenNRTL/aspenNRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["t0","t1","t2","t3"], ignore_missing_singleparams=asymmetricparams=["t0","t1","t2","t3"], verbose=verbose)
+    params = getparams(formatted_components, default_locations(aspenNRTL); userlocations=userlocations, asymmetricparams=["t0","t1","t2","t3"], ignore_missing_singleparams=asymmetricparams=["t0","t1","t2","t3"], verbose=verbose)
     a0  = params["a0"]
     a1  = params["a1"]
     t0  = params["t0"]

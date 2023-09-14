@@ -68,6 +68,8 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 """
 ogUNIFAC
 
+default_locations(::Type{ogUNIFAC}) = ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_like.csv", "Activity/UNIFAC/ogUNIFAC/ogUNIFAC_unlike.csv"]
+
 function ogUNIFAC(components;
     puremodel = PR,
     userlocations = String[],
@@ -77,7 +79,7 @@ function ogUNIFAC(components;
 
     groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"];group_userlocations = group_userlocations, verbose=verbose)
 
-    params = getparams(groups, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_like.csv", "Activity/UNIFAC/ogUNIFAC/ogUNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose=verbose)
+    params = getparams(groups, default_locations(ogUNIFAC); userlocations=userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose=verbose)
     A  = params["A"]
     R  = params["R"]
     Q  = params["Q"]

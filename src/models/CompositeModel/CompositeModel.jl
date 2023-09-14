@@ -164,9 +164,9 @@ function init_preferred_method(method::typeof(tp_flash),model::CompositeModel,kw
     return RRTPFlash(;kwargs...)
 end
 
-__tpflash_cache_model(model::CompositeModel,p,T,z) = PTFlashWrapper(model,T)
+__tpflash_cache_model(model::CompositeModel,p,T,z) = PTFlashWrapper(model,p,T)
 
-function PTFlashWrapper(model::CompositeModel,T::Number) 
+function PTFlashWrapper(model::CompositeModel,p,T::Number) 
     satmodels = split_model(model.saturation)
     gases = split_model(model.gas,1:length(model))
     sats = saturation_pressure.(satmodels,T)
@@ -176,7 +176,6 @@ function PTFlashWrapper(model::CompositeModel,T::Number)
     μpure = only.(VT_chemical_potential_res.(gases,vv_pure,T))
     ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
     g_pure = [VT_gibbs_free_energy(gases[i],sats[i][2],T) for i in 1:length(model)]
-
     return PTFlashWrapper(model.components,model,sats,ϕpure,μpure)
 end
 

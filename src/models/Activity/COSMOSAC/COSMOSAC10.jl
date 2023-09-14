@@ -18,6 +18,8 @@ end
 
 export COSMOSAC10
 
+default_locations(::Type{COSMOSAC10}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv"]
+
 function COSMOSAC10(components;
     puremodel = PR,
     userlocations = String[],
@@ -25,7 +27,7 @@ function COSMOSAC10(components;
     verbose=false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["Activity/COSMOSAC/COSMOSAC10_like.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations=userlocations, verbose=verbose)
     Pnhb  = COSMO_parse_Pi(params["Pnhb"])
     POH  = COSMO_parse_Pi(params["POH"])
     POT  = COSMO_parse_Pi(params["POT"])
