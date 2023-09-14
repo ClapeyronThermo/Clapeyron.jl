@@ -3,6 +3,6 @@ UNIQUAC Like Parameters,,,,
 species,DIPPR Number,r,q,q_p,source
 methanol,,1.43,1.43,1.43,
 benzene,,3.19,2.4,2.4,
-acetone,,2.57,2.34,2.34,
-water,,0.92,1.4,1.,
+acetone~|~propanone,,2.57,2.34,2.34,
+water,,0.92,1.4,1.0,
 ethanol,,2.11,1.97,0.92,

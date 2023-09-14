@@ -17,6 +17,8 @@ JSON_ALTERNATIVE_NAMES = Dict{String,String}(
     "hydrogensulfide" => "HydrogenSulfide",
 )
 
+function coolprop_crit_data end
+
 @static if !isdefined(Base,:get_extension)
     function coolprop_handler()
         #for some reason, this does not work on linux/mac

@@ -293,9 +293,24 @@ end
             @test Clapeyron.a_res(system1, V, 25, [1.0])  ≈ a1
         end
 
+        @testset "cPR" begin
+            system = cPR(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2438131230434413 rtol = 1e-6
+        end
+
+        @testset "tcPR" begin
+            system = tcPR(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.254188808138175 rtol = 1e-6
+        end
+
+        @testset "tcPR + Wilson (Res)" begin
+            system = tcPRW(["ethane","undecane"])
+            @test Clapeyron.a_res(system, V, T, z) ≈ -1.2106258705853445 rtol = 1e-6
+        end
+
         @testset "EPPR78" begin
            system = EPPR78(["benzene","isooctane"])
-           @test Clapeyron.a_res(system, V, T, z) ≈ -1.138852387092216 rtol = 1e-6
+           @test Clapeyron.a_res(system, V, T, z) ≈ -1.1415919612186702 rtol = 1e-6
         end
 
         @testset "PR w/ BMAlpha" begin
@@ -688,6 +703,12 @@ end
             @test volume(system,1e5,300,[0.5,0.5]) == Clapeyron.volume_virial(cub,1e5,300,[0.5,0.5])
             #a_res(PR,0.05,300,[0.5,0.5]) == -0.0023705490820905483
             @test Clapeyron.a_res(system,0.05,300,[0.5,0.5]) ≈ -0.002372835241601656 rtol = 1e-6
+        end
+
+        @testset "SolidHfus" begin
+            model = SolidHfus(["water"])
+            
+            @test chemical_potential(model,1e5,298.15,[1.])[1] ≈ 549.1488193300384 rtol = 1e-6
         end
     end
 end

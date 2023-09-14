@@ -17,6 +17,7 @@ struct UNIFAC{c<:EoSModel} <: UNIFACModel
     unifac_cache::UNIFACCache
 end
 
+default_locations(::Type{UNIFAC}) = ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]
 const modUNIFAC = UNIFAC
 export UNIFAC
 
@@ -76,7 +77,7 @@ function UNIFAC(components;
 
     groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
 
-    params = getparams(groups, ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"];
+    params = getparams(groups, default_locations(UNIFAC);
                         userlocations=userlocations,
                         asymmetricparams=["A","B","C"],
                         ignore_missing_singleparams=["A","B","C"],

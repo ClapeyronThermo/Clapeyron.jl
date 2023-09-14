@@ -77,7 +77,7 @@ function PatelTeja(components; idealmodel=BasicIdeal,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -89,13 +89,12 @@ function PatelTeja(components; idealmodel=BasicIdeal,
     formatted_components = format_components(components)
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = get(params,"k",nothing)
-    l = get(params,"l",nothing) 
+    l = get(params,"l",nothing)
     pc = params["Pc"]
     Vc = params["Vc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     acentricfactor = get(params,"acentricfactor",nothing)
-
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     n = length(Tc)
     a = PairParam("a",formatted_components,zeros(n))
@@ -118,7 +117,7 @@ function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
     a = model.params.a
     b = model.params.b
     n = length(model)
-    _Zc = _pc .* _Vc ./ (R̄ .* _Tc)             
+    _Zc = _pc .* _Vc ./ (R̄ .* _Tc)
     _poly = [(-_Zc[i]^3,3*_Zc[i]^2,2-3*_Zc[i],1.) for i ∈ 1:n]
     sols = Solvers.roots3.(_poly)
     Ωb = [minimum(real.(sols[i][isreal.(sols[1]).*real.(sols[1]).>0])) for i ∈ 1:n]
@@ -142,7 +141,7 @@ function c_premixing(model::PatelTejaModel)
     return c
 end
 
-function cubic_Δ(model::PatelTejaModel,z) 
+function cubic_Δ(model::PatelTejaModel,z)
     b = diagvalues(model.params.b)
     c = diagvalues(model.params.c)
     z⁻¹ = sum(z)^-1

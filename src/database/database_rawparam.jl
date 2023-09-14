@@ -178,7 +178,7 @@ function compile_single(name,components,type::CSVType,options)
     if name ∈ options.ignore_missing_singleparams
         return SingleParam(name,components)
     else
-        error("cannot found any values for ", error_color(name), ".")
+        error("cannot found values of ", error_color(name), " for all input components.")
     end
 end
 
@@ -303,7 +303,9 @@ function is_valid_param(param::SingleParameter,options)
     missingvals = param.ismissingvalues
     if param.name ∉ options.ignore_missing_singleparams && any(missingvals)
         vals = [ifelse(missingvals[i],missing,param.values[i]) for i ∈ 1:length(missingvals)]
-        error("Missing values exist ∈ single parameter ", error_color(param.name), ": ", vals, ".")
+        idx = findall(param.ismissingvalues)
+        comps = param.components[idx]
+        error("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")
     end
     return nothing
 end

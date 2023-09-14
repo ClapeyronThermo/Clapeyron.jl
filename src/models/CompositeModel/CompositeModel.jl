@@ -3,28 +3,54 @@ include("GenericAncEvaluator.jl")
 include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
 include("PolExpVapour.jl")
+include("SolidModel/SolidHfus.jl")
 
 Base.length(cmodel::CompositeModel) = length(cmodel.components)
 
 function CompositeModel(components;
     liquid = RackettLiquid,
     gas = BasicIdeal,
+    fluid=nothing,
     userlocations = String[],
     solid = nothing,
     saturation = LeeKeslerSat,
     melting = nothing,
     gas_userlocations = String[],
     liquid_userlocations = String[],
+    fluid_userlocations = String[],
     solid_userlocations = String[],
     saturation_userlocations = String[],
     melting_userlocations = String[],
     verbose = false)
 
+    if fluid !== nothing
+        if fluid <: ActivityModel
+            error("Activity models only represent the liquid phase. Please specify a gas phase model.")
+        end
+        gas = fluid
+        liquid = fluid
+        saturation = fluid
+        gas_userlocations = fluid_userlocations
+        liquid_userlocations = fluid_userlocations
+        saturation_userlocations = fluid_userlocations
+    end
+
     init_gas = init_model(gas,components,gas_userlocations,verbose)
-    init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+    if typeof(liquid) <: EoSModel
+        init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+    else
+        if liquid <: ActivityModel
+            init_liquid = liquid(components;userlocations=liquid_userlocations,puremodel=gas,verbose)
+        else
+            init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+        end
+    end
+
     init_solid = init_model(solid,components,solid_userlocations,verbose)
     init_sat = init_model(saturation,components,saturation_userlocations,verbose)
     init_melt = init_model(melting,components,melting_userlocations,verbose)
+
+    components = format_components(components)
     return CompositeModel(components,init_gas,init_liquid,init_solid,init_sat,init_melt)
 end
 
@@ -138,9 +164,9 @@ function init_preferred_method(method::typeof(tp_flash),model::CompositeModel,kw
     return RRTPFlash(;kwargs...)
 end
 
-__tpflash_cache_model(model::CompositeModel,p,T,z) = PTFlashWrapper(model,T)
+__tpflash_cache_model(model::CompositeModel,p,T,z) = PTFlashWrapper(model,p,T)
 
-function PTFlashWrapper(model::CompositeModel,T::Number) 
+function PTFlashWrapper(model::CompositeModel,p,T::Number) 
     satmodels = split_model(model.saturation)
     gases = split_model(model.gas,1:length(model))
     sats = saturation_pressure.(satmodels,T)
@@ -150,7 +176,6 @@ function PTFlashWrapper(model::CompositeModel,T::Number)
     μpure = only.(VT_chemical_potential_res.(gases,vv_pure,T))
     ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
     g_pure = [VT_gibbs_free_energy(gases[i],sats[i][2],T) for i in 1:length(model)]
-
     return PTFlashWrapper(model.components,model,sats,ϕpure,μpure)
 end
 

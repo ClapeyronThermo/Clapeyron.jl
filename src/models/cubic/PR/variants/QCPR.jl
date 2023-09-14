@@ -7,6 +7,7 @@
         activity_userlocations = String[],
         translation_userlocations = String[],
         verbose=false)
+
 Quantum-corrected Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`ConstantTranslation`](@ref)
 - Alpha Model: [`TwuAlpha`](@ref)
@@ -23,23 +24,9 @@ function QCPR(components; idealmodel=BasicIdeal,
     translation_userlocations = String[],
     verbose=false)
 
-    if userlocations isa NamedTuple
-        QCPR_userlocations = userlocations
-    else
-        QCPR_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_critical.csv", "@DB/cubic/QCPR/QCPR_unlike.csv",userlocations)
-    end
-
-    if userlocations isa NamedTuple
-        QCPR_alpha_userlocations = alpha_userlocations
-    else
-        QCPR_alpha_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/Twu_QCPR.csv",alpha_userlocations)
-    end
-
-    if userlocations isa NamedTuple
-        QCPR_translation_userlocations = translation_userlocations
-    else
-        QCPR_translation_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_translation.csv",translation_userlocations)
-    end
+    QCPR_userlocations = userlocation_merge(["@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_critical.csv", "@DB/cubic/QCPR/QCPR_unlike.csv"],userlocations)
+    QCPR_alpha_userlocations = userlocation_merge(["@REMOVEDEFAULTS","@DB/cubic/QCPR/Twu_QCPR.csv"],alpha_userlocations)
+    QCPR_translation_userlocations = userlocation_merge(["@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_translation.csv"],translation_userlocations)
 
     model = PR(components;
         idealmodel = idealmodel,
@@ -70,7 +57,7 @@ function cubic_ab(model::QCPRModel,V,T,z=SA[1.0],n=sum(z))
     c = @f(translation,model.translation)
     if length(z)>1
     ā,b̄,c̄ = @f(mixing_rule,model.mixing,α,a,b,c)
-    else 
+    else
         ā = a[1,1]*α[1]
         A = model.mixing.params.A.values[1,1]
         B = model.mixing.params.B.values[1,1]
@@ -111,7 +98,7 @@ function lb_volume(model::QCPRModel,z=SA[1.0])
             Aj = A[j]
             βj = (1 + min(0,Aj/Bj))^3 / (1 + Aj/(Tc[j] + Bj))^3
             bqj = βj*b[j,j]
-            
+
             b̄ += zij*(bqi+bqj)*(1-l[i,j]) #2 * zij * 0.5(bi + bj)
         end
     end

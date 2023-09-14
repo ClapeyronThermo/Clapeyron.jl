@@ -2,7 +2,7 @@ abstract type BMAlphaModel <: AlphaModel end
 
 const BMAlphaParam = SimpleAlphaParam
 
-@newmodelsimple BMAlpha BMAlphaModel BMAlphaParam
+@newmodelsimple BMAlpha BMAlphaModel SimpleAlphaParam
 export BMAlpha
 
 """

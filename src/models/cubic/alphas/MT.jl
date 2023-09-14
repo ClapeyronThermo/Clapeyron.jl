@@ -1,5 +1,4 @@
 const MTAlphaParam = SimpleAlphaParam
-
 @newmodelsimple MTAlpha SoaveAlphaModel MTAlphaParam
 export MTAlpha
 

@@ -786,7 +786,6 @@ Optimizations for single component SAFTVRMie
 #######
 
 function d(model::SAFTVRMie, V, T, z::SingleComp)
-    d = zero(V+T+first(z)+one(eltype(model)))
     ϵ = model.params.epsilon
     σ = model.params.sigma
     λa = model.params.lambda_a
