@@ -312,6 +312,15 @@ end
             @test system.params.Tc[2] == 3.5
 
         end
+
+        @testset "#201" begin
+            #=
+            Ternary LLE
+            =#
+            @test aspenNRTL(["water", "acetone", "dichloromethane"],puremodel = PR) isa EoSModel
+            @test UNIFAC(["water", "acetone", "dichloromethane"]) isa EoSModel
+            
+        end
     end
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
