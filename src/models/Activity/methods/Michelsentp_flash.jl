@@ -3,19 +3,24 @@ function init_preferred_method(method::typeof(tp_flash),model::ActivityModel,kwa
     return RRTPFlash(;kwargs...)
 end
 
-function PTFlashWrapper(model::ActivityModel,T::Number) 
+function PTFlashWrapper(model::ActivityModel,p,T::Number) 
     pures = model.puremodel.pure
-    sats = saturation_pressure.(pures,T)
-    vv_pure = last.(sats)
     RT = R̄*T
+    if model.puremodel.model isa IdealModel
+        vv = RT/p
+        sats = fill((p,vv,vv),length(model))
+    else
+        sats = saturation_pressure.(pures,T)
+    end
+    vv_pure = last.(sats)
     p_pure = first.(sats)
     μpure = only.(VT_chemical_potential_res.(__gas_model.(pures),vv_pure,T))
     ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
-    g_pure = [VT_gibbs_free_energy(__gas_model(pures[i]),sats[i][2],T) for i in 1:length(model)]
+    g_pure = [VT_gibbs_free_energy(__gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
     return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure)
 end
 
-__tpflash_cache_model(model::ActivityModel,p,T,z) = PTFlashWrapper(model,T)
+__tpflash_cache_model(model::ActivityModel,p,T,z) = PTFlashWrapper(model,p,T)
 
 function update_K!(lnK,wrapper::PTFlashWrapper{<:ActivityModel},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
     model = wrapper.model

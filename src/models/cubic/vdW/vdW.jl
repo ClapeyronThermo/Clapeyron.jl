@@ -89,6 +89,7 @@ function vdW(components; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     Tc = params["Tc"]
     acentricfactor = get(params,"acentricfactor",nothing)
+
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     a = PairParam("a",formatted_components,zeros(length(Tc)))
     b = PairParam("b",formatted_components,zeros(length(Tc)))

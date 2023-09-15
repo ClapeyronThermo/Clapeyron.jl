@@ -23,6 +23,8 @@ end
 
 export COSMOSACdsp
 
+default_locations(::Type{COSMOSACdsp}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv","Activity/COSMOSAC/COSMOSACdsp_like.csv"]
+
 function COSMOSACdsp(components;
     puremodel = PR,
     userlocations = String[],
@@ -30,7 +32,7 @@ function COSMOSACdsp(components;
     verbose=false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["Activity/COSMOSAC/COSMOSAC10_like.csv","Activity/COSMOSAC/COSMOSACdsp_like.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations=userlocations, verbose=verbose)
     Pnhb  = COSMO_parse_Pi(params["Pnhb"])
     POH  = COSMO_parse_Pi(params["POH"])
     POT  = COSMO_parse_Pi(params["POT"])

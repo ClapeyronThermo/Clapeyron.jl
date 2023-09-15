@@ -47,13 +47,15 @@ Gᵢⱼ exp(-cᵢⱼτᵢⱼ)
 """
 NRTL
 
+default_locations(::Type{NRTL}) = ["properties/molarmass.csv","Activity/NRTL/NRTL_unlike.csv"]
+
 function NRTL(components; puremodel=PR,
     userlocations = String[], 
     pure_userlocations = String[],
     verbose=false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/molarmass.csv","Activity/NRTL/NRTL_unlike.csv"]; userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b"], verbose=verbose)
+    params = getparams(formatted_components, default_locations(NRTL); userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b"], verbose=verbose)
     a  = params["a"]
     b  = params["b"]
     c  = params["c"]

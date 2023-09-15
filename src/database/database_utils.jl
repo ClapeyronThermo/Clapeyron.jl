@@ -349,3 +349,28 @@ end
 
 critical_data() = ["properties/critical.csv"]
 mw_data() = ["properties/molarmass.csv"]
+
+function by_cas(caslist)
+    cas = format_components(caslist)
+    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[])
+    species = params["species"].values
+    for (i,sp) in pairs(species)
+        if occursin("~|~",sp)
+            x,_ = eachsplit(sp,"~|~")
+            species[i] = x
+        end
+    end
+    return species
+end
+
+function cas(components)
+    components = format_components(components)
+    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["SMILES"],ignore_missing_singleparams = ["CAS"])
+    return params["CAS"].values
+end
+
+function SMILES(components)
+    components = format_components(components)
+    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
+    return params["SMILES"].values
+end

@@ -766,7 +766,10 @@ end
 const readcsvtype_keywords  = ["like", "single", "unlike", "pair", "assoc", "association", "group", "groups","intragroup","intragroups"]
 
 function read_csv_options(filepath)
-    line = getline(String(filepath), 2)
+    return _read_csv_options(getline(String(filepath), 2))
+end
+
+function _read_csv_options(line::String)
     re = r"\[.*\]"
     maybe_opts = match(re,line)
 
