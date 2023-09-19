@@ -45,15 +45,14 @@ function COSMOSACdsp(components;
     hb_don = params["hb_don"]
 
     if any(V.values .==0)
-        complist = Base.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/complist.txt")
-        df = CSV.File(complist,delim=" ",silencewarnings=true)
+        CAS, INCHIKEY = get_cosmo_comps()
         for i in 1:length(components)
             if V.values[i]==0
                 id = cas(components[i])
-                ids = df["CAS#"].==uppercase(id[1])
-                dbname = df.INCHIKEY[ids]
-                file = Base.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma3/"*dbname[1]*".sigma")
-                lines = readlines(file)
+                ids = CAS.==uppercase(id[1])
+                dbname = INCHIKEY[ids]
+                file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma/"*dbname[1]*".sigma", IOBuffer())))
+                lines = split(file,r"\n")
                 meta = lines[1][9:end]
                 json = JSON3.read(meta)
                 A.values[i] = json["area [A^2]"]
