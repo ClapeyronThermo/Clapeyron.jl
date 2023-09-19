@@ -61,7 +61,7 @@ function COSMOSAC10(components;
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)    
     packagedparams = COSMOSAC10Param(Pnhb,POH,POT,V,A)
-    references = String[]
+    references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360"]
     model = COSMOSAC10(formatted_components,packagedparams,_puremodel,1e-12,references)
     return model
 end

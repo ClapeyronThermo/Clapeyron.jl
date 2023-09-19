@@ -80,7 +80,7 @@ function COSMOSAC02(components;
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSAC02Param(Pi,V,A)
-    references = String["10.1021/ie001047w"]
+    references = String["10.1021/ie001047w","10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360"]
     model = COSMOSAC02(formatted_components,packagedparams,_puremodel,1e-12,references)
     return model
 end

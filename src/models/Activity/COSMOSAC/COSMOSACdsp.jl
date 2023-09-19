@@ -119,7 +119,7 @@ function COSMOSACdsp(components;
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSACdspParam(Pnhb,POH,POT,epsilon,V,A,water,COOH,hb_acc,hb_don)
-    references = String[]
+    references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360"]
     model = COSMOSACdsp(formatted_components,packagedparams,_puremodel,1e-12,references)
     return model
 end
