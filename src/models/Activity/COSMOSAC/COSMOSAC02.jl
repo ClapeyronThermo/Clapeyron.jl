@@ -48,10 +48,39 @@ function COSMOSAC02(components;
     pure_userlocations = String[],
     verbose=false)
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(COSMOSAC02); userlocations=userlocations, verbose=verbose)
-    Pi  = COSMO_parse_Pi(params["Pi"])
-    A  = params["A"]
-    V  = params["V"]
+    Pi = []
+    A = []
+    V = []
+    try
+        params = getparams(formatted_components, default_locations(COSMOSAC02); userlocations=userlocations, verbose=verbose)
+        Pi  = COSMO_parse_Pi(params["Pi"])
+        A  = params["A"]
+        V  = params["V"]
+    catch
+        complist = Base.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/complist.txt")
+        df = CSV.File(complist,delim=" ",silencewarnings=true)
+        
+        V = zeros(length(components))
+        A = zeros(length(components))
+        Pi = [zeros(51) for i in 1:length(components)]
+
+        for i in 1:length(components)
+            ids = df.NAME.==uppercase(components[i])
+            dbname = df.INCHIKEY[ids]
+            file = Base.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma/"*dbname[1]*".sigma")
+            lines = readlines(file)
+            meta = lines[1][9:end]
+            json = JSON3.read(meta)
+
+            A[i] = json["area [A^2]"]
+            V[i] = json["volume [A^3]"]
+            Pi[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
+        end
+
+        V = SingleParam("V",components,V)
+        A = SingleParam("A",components,A)
+        Pi = SingleParam("Pi",components,Pi)
+    end
 
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
