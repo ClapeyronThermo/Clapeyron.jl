@@ -32,7 +32,7 @@ function COSMOSACdsp(components;
     verbose=false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations=userlocations, verbose=verbose)
+    params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V","epsilon","water","COOH","hb_acc","hb_don"], verbose=verbose)
     Pnhb  = COSMO_parse_Pi(params["Pnhb"])
     POH  = COSMO_parse_Pi(params["POH"])
     POT  = COSMO_parse_Pi(params["POT"])
@@ -43,6 +43,80 @@ function COSMOSACdsp(components;
     COOH = params["COOH"]
     hb_acc = params["hb_acc"]
     hb_don = params["hb_don"]
+
+    if any(V.values .==0)
+        complist = Base.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/complist.txt")
+        df = CSV.File(complist,delim=" ",silencewarnings=true)
+        for i in 1:length(components)
+            if V.values[i]==0
+                id = cas(components[i])
+                ids = df["CAS#"].==uppercase(id[1])
+                dbname = df.INCHIKEY[ids]
+                file = Base.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma3/"*dbname[1]*".sigma")
+                lines = readlines(file)
+                meta = lines[1][9:end]
+                json = JSON3.read(meta)
+                A.values[i] = json["area [A^2]"]
+                A.ismissingvalues[i] = false
+                V.values[i] = json["volume [A^3]"]
+                V.ismissingvalues[i] = false
+                Pnhb.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
+                Pnhb.ismissingvalues[i] = false
+                POH.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 55:105]
+                POH.ismissingvalues[i] = false
+                POT.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 106:156]
+                POT.ismissingvalues[i] = false
+                epsilon.values[i] = json["disp. e/kB [K]"]
+                epsilon.ismissingvalues[i] = false
+                if json["disp. flag"] == "NHB"
+                    COOH.values[i] = 0
+                    COOH.ismissingvalues[i] = false
+                    hb_acc.values[i] = 0
+                    hb_acc.ismissingvalues[i] = false
+                    hb_don.values[i] = 0
+                    hb_don.ismissingvalues[i] = false
+                    water.values[i] = 0
+                    water.ismissingvalues[i] = false
+                elseif json["disp. flag"] == "COOH"
+                    COOH.values[i] = 1
+                    COOH.ismissingvalues[i] = false
+                    hb_acc.values[i] = 0
+                    hb_acc.ismissingvalues[i] = false
+                    hb_don.values[i] = 0
+                    hb_don.ismissingvalues[i] = false
+                    water.values[i] = 0
+                    water.ismissingvalues[i] = false
+                elseif json["disp. flag"] == "HB-DONOR-ACCEPTOR"
+                    COOH.values[i] = 0
+                    COOH.ismissingvalues[i] = false
+                    hb_acc.values[i] = 1
+                    hb_acc.ismissingvalues[i] = false
+                    hb_don.values[i] = 1
+                    hb_don.ismissingvalues[i] = false
+                    water.values[i] = 0
+                    water.ismissingvalues[i] = false
+                elseif json["disp. flag"] == "HB-ACCEPTOR"
+                    COOH.values[i] = 0
+                    COOH.ismissingvalues[i] = false
+                    hb_acc.values[i] = 1
+                    hb_acc.ismissingvalues[i] = false
+                    hb_don.values[i] = 0
+                    hb_don.ismissingvalues[i] = false
+                    water.values[i] = 0
+                    water.ismissingvalues[i] = false
+                elseif json["disp. flag"] == "HB-DONOR"
+                    COOH.values[i] = 0
+                    COOH.ismissingvalues[i] = false
+                    hb_acc.values[i] = 0
+                    hb_acc.ismissingvalues[i] = false
+                    hb_don.values[i] = 1
+                    hb_don.ismissingvalues[i] = false
+                    water.values[i] = 0
+                    water.ismissingvalues[i] = false
+                end
+            end
+        end
+    end
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSACdspParam(Pnhb,POH,POT,epsilon,V,A,water,COOH,hb_acc,hb_don)

@@ -51,35 +51,31 @@ function COSMOSAC02(components;
     Pi = []
     A = []
     V = []
-    try
-        params = getparams(formatted_components, default_locations(COSMOSAC02); userlocations=userlocations, verbose=verbose)
-        Pi  = COSMO_parse_Pi(params["Pi"])
-        A  = params["A"]
-        V  = params["V"]
-    catch
+    params = getparams(formatted_components, default_locations(COSMOSAC02); userlocations=userlocations, ignore_missing_singleparams=["Pi","A","V"], verbose=verbose)
+    Pi  = COSMO_parse_Pi(params["Pi"])
+    A  = params["A"]
+    V  = params["V"]
+
+    if any(V.values .==0)
         complist = Base.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/complist.txt")
         df = CSV.File(complist,delim=" ",silencewarnings=true)
-        
-        V = zeros(length(components))
-        A = zeros(length(components))
-        Pi = [zeros(51) for i in 1:length(components)]
-
         for i in 1:length(components)
-            ids = df.NAME.==uppercase(components[i])
-            dbname = df.INCHIKEY[ids]
-            file = Base.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma/"*dbname[1]*".sigma")
-            lines = readlines(file)
-            meta = lines[1][9:end]
-            json = JSON3.read(meta)
-
-            A[i] = json["area [A^2]"]
-            V[i] = json["volume [A^3]"]
-            Pi[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
+            if V.values[i]==0
+                id = cas(components[i])
+                ids = df["CAS#"].==uppercase(id[1])
+                dbname = df.INCHIKEY[ids]
+                file = Base.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma/"*dbname[1]*".sigma")
+                lines = readlines(file)
+                meta = lines[1][9:end]
+                json = JSON3.read(meta)
+                A.values[i] = json["area [A^2]"]
+                A.ismissingvalues[i] = false
+                V.values[i] = json["volume [A^3]"]
+                V.ismissingvalues[i] = false
+                Pi.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
+                Pi.ismissingvalues[i] = false
+            end
         end
-
-        V = SingleParam("V",components,V)
-        A = SingleParam("A",components,A)
-        Pi = SingleParam("Pi",components,Pi)
     end
 
 

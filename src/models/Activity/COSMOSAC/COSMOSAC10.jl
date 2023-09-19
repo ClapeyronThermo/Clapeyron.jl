@@ -27,12 +27,38 @@ function COSMOSAC10(components;
     verbose=false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations=userlocations, verbose=verbose)
+    params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V"], verbose=verbose)
     Pnhb  = COSMO_parse_Pi(params["Pnhb"])
     POH  = COSMO_parse_Pi(params["POH"])
     POT  = COSMO_parse_Pi(params["POT"])
     A  = params["A"]
     V  = params["V"]
+
+    if any(V.values .==0)
+        complist = Base.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/complist.txt")
+        df = CSV.File(complist,delim=" ",silencewarnings=true)
+        for i in 1:length(components)
+            if V.values[i]==0
+                id = cas(components[i])
+                ids = df["CAS#"].==uppercase(id[1])
+                dbname = df.INCHIKEY[ids]
+                file = Base.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma3/"*dbname[1]*".sigma")
+                lines = readlines(file)
+                meta = lines[1][9:end]
+                json = JSON3.read(meta)
+                A.values[i] = json["area [A^2]"]
+                A.ismissingvalues[i] = false
+                V.values[i] = json["volume [A^3]"]
+                V.ismissingvalues[i] = false
+                Pnhb.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
+                Pnhb.ismissingvalues[i] = false
+                POH.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 55:105]
+                POH.ismissingvalues[i] = false
+                POT.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 106:156]
+                POT.ismissingvalues[i] = false
+            end
+        end
+    end
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)    
     packagedparams = COSMOSAC10Param(Pnhb,POH,POT,V,A)
