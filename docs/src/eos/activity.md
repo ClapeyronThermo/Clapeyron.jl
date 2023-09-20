@@ -40,6 +40,9 @@ Clapeyron.VTPRUNIFAC
 Clapeyron.UNIFACFV
 Clapeyron.UNIFACFVPoly
 Clapeyron.tcPRWilsonRes
+Clapeyron.COSMOSAC02
+Clapeyron.COSMOSAC10
+Clapeyron.COSMOSACdsp
 ```
 
 
