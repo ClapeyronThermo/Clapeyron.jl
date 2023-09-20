@@ -1,4 +1,4 @@
-# Solid-liquid equilibrium phase diagrams
+# Solid-liquid equilibrium
 
 ## Thymol and 1-decanol
 
