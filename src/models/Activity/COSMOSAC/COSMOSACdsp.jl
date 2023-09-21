@@ -29,92 +29,87 @@ function COSMOSACdsp(components;
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
+    use_nist_database = false,
     verbose=false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V","epsilon","water","COOH","hb_acc","hb_don"], verbose=verbose)
-    Pnhb  = COSMO_parse_Pi(params["Pnhb"])
-    POH  = COSMO_parse_Pi(params["POH"])
-    POT  = COSMO_parse_Pi(params["POT"])
-    A  = params["A"]
-    V  = params["V"]
-    epsilon  = params["epsilon"]
-    water = params["water"]
-    COOH = params["COOH"]
-    hb_acc = params["hb_acc"]
-    hb_don = params["hb_don"]
 
-    if any(V.values .==0)
+    if use_nist_database
+        @warn "using parameters from the nistgov/COSMOSAC database, check their license before usage."
         CAS, INCHIKEY = get_cosmo_comps()
+        A = zeros(length(components))
+        V = zeros(length(components))
+        Pnhb = [zeros(51) for i in 1:length(components)]
+        POH = [zeros(51) for i in 1:length(components)]
+        POT = [zeros(51) for i in 1:length(components)]
         for i in 1:length(components)
-            if V.values[i]==0
-                id = cas(components[i])
-                ids = CAS.==uppercase(id[1])
-                dbname = INCHIKEY[ids]
-                file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma/"*dbname[1]*".sigma", IOBuffer())))
-                lines = split(file,r"\n")
-                meta = lines[1][9:end]
-                json = JSON3.read(meta)
-                A.values[i] = json["area [A^2]"]
-                A.ismissingvalues[i] = false
-                V.values[i] = json["volume [A^3]"]
-                V.ismissingvalues[i] = false
-                Pnhb.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
-                Pnhb.ismissingvalues[i] = false
-                POH.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 55:105]
-                POH.ismissingvalues[i] = false
-                POT.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 106:156]
-                POT.ismissingvalues[i] = false
-                epsilon.values[i] = json["disp. e/kB [K]"]
-                epsilon.ismissingvalues[i] = false
-                if json["disp. flag"] == "NHB"
-                    COOH.values[i] = 0
-                    COOH.ismissingvalues[i] = false
-                    hb_acc.values[i] = 0
-                    hb_acc.ismissingvalues[i] = false
-                    hb_don.values[i] = 0
-                    hb_don.ismissingvalues[i] = false
-                    water.values[i] = 0
-                    water.ismissingvalues[i] = false
-                elseif json["disp. flag"] == "COOH"
-                    COOH.values[i] = 1
-                    COOH.ismissingvalues[i] = false
-                    hb_acc.values[i] = 0
-                    hb_acc.ismissingvalues[i] = false
-                    hb_don.values[i] = 0
-                    hb_don.ismissingvalues[i] = false
-                    water.values[i] = 0
-                    water.ismissingvalues[i] = false
-                elseif json["disp. flag"] == "HB-DONOR-ACCEPTOR"
-                    COOH.values[i] = 0
-                    COOH.ismissingvalues[i] = false
-                    hb_acc.values[i] = 1
-                    hb_acc.ismissingvalues[i] = false
-                    hb_don.values[i] = 1
-                    hb_don.ismissingvalues[i] = false
-                    water.values[i] = 0
-                    water.ismissingvalues[i] = false
-                elseif json["disp. flag"] == "HB-ACCEPTOR"
-                    COOH.values[i] = 0
-                    COOH.ismissingvalues[i] = false
-                    hb_acc.values[i] = 1
-                    hb_acc.ismissingvalues[i] = false
-                    hb_don.values[i] = 0
-                    hb_don.ismissingvalues[i] = false
-                    water.values[i] = 0
-                    water.ismissingvalues[i] = false
-                elseif json["disp. flag"] == "HB-DONOR"
-                    COOH.values[i] = 0
-                    COOH.ismissingvalues[i] = false
-                    hb_acc.values[i] = 0
-                    hb_acc.ismissingvalues[i] = false
-                    hb_don.values[i] = 1
-                    hb_don.ismissingvalues[i] = false
-                    water.values[i] = 0
-                    water.ismissingvalues[i] = false
-                end
+            id = cas(formatted_components[i])
+            ids = CAS.==uppercase(id[1])
+            dbname = INCHIKEY[ids]
+            file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma/"*dbname[1]*".sigma", IOBuffer())))
+            lines = split(file,r"\n")
+            meta = lines[1][9:end]
+            json = JSON3.read(meta)
+            A[i] = json["area [A^2]"]
+            V[i] = json["volume [A^3]"]
+            Pnhb[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
+            POH[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 55:105]
+            POT[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 106:156]
+            epsilon[i] = json["disp. e/kB [K]"]
+            if json["disp. flag"] == "NHB"
+                COOH[i] = 0
+                hb_acc[i] = 0
+                hb_don[i] = 0
+                water[i] = 0
+            elseif json["disp. flag"] == "COOH"
+                COOH[i] = 1
+                hb_acc[i] = 0
+                hb_don[i] = 0
+                water[i] = 0
+            elseif json["disp. flag"] == "HB-DONOR-ACCEPTOR"
+                COOH[i] = 0
+                hb_acc[i] = 1
+                hb_don[i] = 1
+                water[i] = 0
+            elseif json["disp. flag"] == "HB-ACCEPTOR"
+                COOH[i] = 0
+                hb_acc[i] = 1
+                hb_don[i] = 0
+                water[i] = 0
+            elseif json["disp. flag"] == "HB-DONOR"
+                COOH[i] = 0
+                hb_acc[i] = 0
+                hb_don[i] = 1
+                water[i] = 0
+            elseif json["disp. flag"] == "WATER"
+                COOH[i] = 0
+                hb_acc[i] = 0
+                hb_don[i] = 0
+                water[i] = 1
             end
         end
+        A = SingleParam("A",formatted_components,A)
+        V = SingleParam("V",formatted_components,V)
+        Pnhb = SingleParam("Pnhb",formatted_components,Pnhb)
+        POH = SingleParam("POH",formatted_components,POH)
+        POT = SingleParam("POT",formatted_components,POT)
+        epsilon = SingleParam("epsilon",formatted_components,epsilon)
+        COOH = SingleParam("COOH",formatted_components,COOH)
+        hb_acc = SingleParam("hb_acc",formatted_components,hb_acc)
+        hb_don = SingleParam("hb_don",formatted_components,hb_don)
+        water = SingleParam("water",formatted_components,water)
+    else
+        params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V","epsilon","water","COOH","hb_acc","hb_don"], verbose=verbose)
+        Pnhb  = COSMO_parse_Pi(params["Pnhb"])
+        POH  = COSMO_parse_Pi(params["POH"])
+        POT  = COSMO_parse_Pi(params["POT"])
+        A  = params["A"]
+        V  = params["V"]
+        epsilon  = params["epsilon"]
+        water = params["water"]
+        COOH = params["COOH"]
+        hb_acc = params["hb_acc"]
+        hb_don = params["hb_don"]
     end
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)

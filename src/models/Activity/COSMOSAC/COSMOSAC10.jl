@@ -24,39 +24,45 @@ function COSMOSAC10(components;
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
+    use_nist_database = false,
     verbose=false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V"], verbose=verbose)
-    Pnhb  = COSMO_parse_Pi(params["Pnhb"])
-    POH  = COSMO_parse_Pi(params["POH"])
-    POT  = COSMO_parse_Pi(params["POT"])
-    A  = params["A"]
-    V  = params["V"]
 
-    if any(V.values .==0)
+    if use_nist_database
+        @warn "using parameters from the nistgov/COSMOSAC database, check their license before usage."
         CAS, INCHIKEY = get_cosmo_comps()
+        A = zeros(length(components))
+        V = zeros(length(components))
+        Pnhb = [zeros(51) for i in 1:length(components)]
+        POH = [zeros(51) for i in 1:length(components)]
+        POT = [zeros(51) for i in 1:length(components)]
         for i in 1:length(components)
-            if V.values[i]==0
-                id = cas(components[i])
-                ids = CAS.==uppercase(id[1])
-                dbname = INCHIKEY[ids]
-                file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma/"*dbname[1]*".sigma", IOBuffer())))
-                lines = split(file,r"\n")
-                meta = lines[1][9:end]
-                json = JSON3.read(meta)
-                A.values[i] = json["area [A^2]"]
-                A.ismissingvalues[i] = false
-                V.values[i] = json["volume [A^3]"]
-                V.ismissingvalues[i] = false
-                Pnhb.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
-                Pnhb.ismissingvalues[i] = false
-                POH.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 55:105]
-                POH.ismissingvalues[i] = false
-                POT.values[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 106:156]
-                POT.ismissingvalues[i] = false
-            end
+            id = cas(formatted_components[i])
+            ids = CAS.==uppercase(id[1])
+            dbname = INCHIKEY[ids]
+            file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma/"*dbname[1]*".sigma", IOBuffer())))
+            lines = split(file,r"\n")
+            meta = lines[1][9:end]
+            json = JSON3.read(meta)
+            A[i] = json["area [A^2]"]
+            V[i] = json["volume [A^3]"]
+            Pnhb[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
+            POH[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 55:105]
+            POT[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 106:156]
         end
+        A = SingleParam("A",formatted_components,A)
+        V = SingleParam("V",formatted_components,V)
+        Pnhb = SingleParam("Pnhb",formatted_components,Pnhb)
+        POH = SingleParam("POH",formatted_components,POH)
+        POT = SingleParam("POT",formatted_components,POT)
+    else
+        params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V"], verbose=verbose)
+        Pnhb  = COSMO_parse_Pi(params["Pnhb"])
+        POH  = COSMO_parse_Pi(params["POH"])
+        POT  = COSMO_parse_Pi(params["POT"])
+        A  = params["A"]
+        V  = params["V"]
     end
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)    
