@@ -61,10 +61,10 @@ function RRTPFlash(;equilibrium = :vle,
 end
 
 function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
-    
-    model_cached = __tpflash_cache_model(model,p,T,z)
-    
-    x,y,β =  tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium, 
+
+    model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
+
+    x,y,β =  tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium,
     K0 = method.K0, x0 = method.x0, y0 = method.y0, vol0 = method.v0,
     K_tol = method.K_tol,itss = method.max_iters, nacc=method.nacc,
     non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
