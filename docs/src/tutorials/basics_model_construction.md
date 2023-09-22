@@ -215,7 +215,8 @@ SingleParam{Vector{Float64}}("Pi") with 2 components:
  "water" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.104369  …  2.153543, 0.524173, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
  "ethanol" => [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.294716  …  0.755815, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 ```
-Note that, in comparison to other activity coefficient models, COSMO-SAC models will be quite a bit slower. Furthermore, due to the size of the sigma profiles, we do not store a full database of parameters locally. The parameters are usually obtained from the [NIST database](https://github.com/usnistgov/COSMOSAC).
+Note that, in comparison to other activity coefficient models, COSMO-SAC models will be quite a bit slower. Furthermore, due to the size of the sigma profiles, we do not store a full database of parameters locally. The parameters are usually obtained from the [NIST database](https://github.com/usnistgov/COSMOSAC) by specifying the `use_nist_database=true` optional argument. Please verify the NIST database's license before usage.
+
 ## SAFT Models
 !!! tip A full list of SAFT equations of state is available (see [SAFT and CPA Models](@ref)).
 
@@ -272,6 +273,20 @@ CPA{BasicIdeal, PR{BasicIdeal, CPAAlpha, NoTranslation, HVRule{UNIFAC{PR{BasicId
 Contains parameters: a, b, c1, Tc, epsilon_assoc, bondvol, Mw
 ```
 Making our CPA implementation one of the most-extensible available.
+
+## Empirical Equations of State
+Clapeyron also supports high-accuracy, empirical equations of state. These differ from the previous equations of state primarily because of large number of parameters needed to model a single species. An example of this would be IAPWS-95 (for water):
+```julia
+julia> model = IAPWS95()
+MultiParameter Equation of state for water:
+ Polynomial power terms: 7
+ Exponential terms: 44
+ Gaussian bell-shaped terms: 3
+ Non Analytic terms: 2
+```
+As these equations of state typically have common terms, rather than specifying the parameters, we highlight what terms the equation of state is made up of, as shown above.
+
+!!! tip A full list of Empirical equations of state is available (see [Empirical Helmholtz Models](@ref)). The list of available systems can be expanded by includeing the CoolProp.jl extension (see [Extension - CoolProp](@ref)).
 
 ## Composite Models
 Not every equation of state provides a global representation of the phase space of a system (for example, activity coefficient models only consider the liquid phase). In these cases, we need to combine various models together to obtain the 'full' representation. `CompositeModels` allows users to mix-and-match all of our available models. In the most general case, five models must be specified:
