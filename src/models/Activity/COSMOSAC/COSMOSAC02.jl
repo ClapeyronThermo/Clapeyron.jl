@@ -46,17 +46,42 @@ function COSMOSAC02(components;
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
+    use_nist_database = false,
     verbose=false)
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(COSMOSAC02); userlocations=userlocations, verbose=verbose)
-    Pi  = COSMO_parse_Pi(params["Pi"])
-    A  = params["A"]
-    V  = params["V"]
+
+    if use_nist_database
+        @warn "using parameters from the nistgov/COSMOSAC database, check their license before usage."
+        CAS, INCHIKEY = get_cosmo_comps()
+        A = zeros(length(components))
+        V = zeros(length(components))
+        Pi = [zeros(51) for i in 1:length(components)]
+        for i in 1:length(components)
+            id = cas(formatted_components[i])
+            ids = CAS.==uppercase(id[1])
+            dbname = INCHIKEY[ids]
+            file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma/"*dbname[1]*".sigma", IOBuffer())))
+            lines = split(file,r"\n")
+            meta = lines[1][9:end]
+            json = JSON3.read(meta)
+            A[i] = json["area [A^2]"]
+            V[i] = json["volume [A^3]"]
+            Pi[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
+        end
+        A = SingleParam("A",formatted_components,A)
+        V = SingleParam("V",formatted_components,V)
+        Pi = SingleParam("Pi",formatted_components,Pi)
+    else
+        params = getparams(formatted_components, default_locations(COSMOSAC02); userlocations=userlocations, verbose=verbose)
+        Pi  = COSMO_parse_Pi(params["Pi"])
+        A  = params["A"]
+        V  = params["V"]
+    end
 
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSAC02Param(Pi,V,A)
-    references = String["10.1021/ie001047w"]
+    references = String["10.1021/ie001047w","10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360"]
     model = COSMOSAC02(formatted_components,packagedparams,_puremodel,1e-12,references)
     return model
 end
