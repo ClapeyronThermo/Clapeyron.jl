@@ -15,11 +15,9 @@ function COSMO_parse_Pi(param::SingleParam{String})
 end
 
 function get_cosmo_comps()
-    file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/complist.txt",IOBuffer())))
-    lines = split(file,r"\n")
-    words = split.(lines," ")
-    CAS = [words[i][3] for i in 2:2263]
-    INCHIKEY = [words[i][7] for i in 2:2263]
+    file = CSV.File(DB_PATH*"/Activity/COSMOSAC/cosmo_inchikey.csv")
+    CAS = file["CAS#"]
+    INCHIKEY = file["INCHIKEY"]
     return CAS, INCHIKEY
 end
 
