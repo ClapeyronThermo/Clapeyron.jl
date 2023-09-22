@@ -61,6 +61,27 @@ Heterogeneous Group-contribution Perturbed-Chain SAFT (gc-PC-SAFT)
 ## References
 1. Gross, J., Spuhl, O., Tumakaka, F. & Sadowski, G. (2003). Modeling Copolymer Systems Using the Perturbed-Chain SAFT Equation of State. Industrial & Engineering Chemistry Research, 42, 1266-1274. [doi:10.1021/ie020509y](https://doi.org/10.1021/ie020509y)
 2. Sauer, E., Stavrou, M. & Gross, J. (2014). Comparison between a Homo- and a Heterosegmented Group Contribution Approach Based on the Perturbed-Chain Polar Statistical Associating Fluid Theory Equation of State. Industrial & Engineering Chemistry Research, 53(38), 14854–14864. [doi:10.1021/ie502203w](https://doi.org/10.1021/ie502203w)
+
+## List of available groups
+|Name            |SMARTS                                              |Description    |
+|----------------|----------------------------------------------------|---------------|
+|CH3             |[CX4H3]                                             |Methyl         |
+|CH2             |[!R;CX4H2]                                          |Methylene      |
+|CH              |[!R;CX4H]                                           |               |
+|C               |[!R;CX4H0]                                          |               |
+|CH2=            |[CX3H2]                                             |Terminal alkene|
+|CH=             |[!R;CX3H1;!$([CX3H1](=O))]                          |               |
+|=C<             |[\$([!R;#6X3H0]);!\$([!R;#6X3H0]=[#8])]               |               |
+|C#CH            |[CX2;H1]#[CX2;H0]                                   |Terminal alkyne|
+|cCH2_pen        |[CH2;R1;$(C1CCCC1)]                                 |Cyclic pentane group|
+|cCH_pen         |[CH1;R1;$(C1CCCC1)]                                 |               |
+|cCH2_hex        |[CH2;R1;$(C1CCCCC1)]                                |Cyclic hexane group|
+|cCH_hex         |[CH1;R1;$(C1CCCCC1)]                                |               |
+|aCH             |[cX3;H1]                                            |Aromatic group |
+|aCH             |[cX3;H0]                                            |               |
+|OH              |[OX2H;!\$([OX2H]-[#6]=[O]);!$([OX2H]-a)]             |Hydroxyl group |
+|NH2             |[NX3H2]                                             |Amine group    |
+
 """
 gcPCSAFT
 
