@@ -1,6 +1,6 @@
-# 0. Installation
+# Installation
 This section provides instruction on installing the Julia language and Clapeyron, and provides recommendations on packages users might need to use in conjunction with Clapeyron.
-## 0.1 Installing Julia
+## Installing Julia
 The latest version of Julia can be downloaded [here](https://julialang.org/downloads/), with additional instructions specific to the OS used provided [here](https://julialang.org/downloads/platform). Clapeyron should function on all OS.
 
 If users are unfamiliar with Julia, we recommend some helpful guides to become familiar:
@@ -9,7 +9,7 @@ If users are unfamiliar with Julia, we recommend some helpful guides to become f
 
 For basic usage of Clapeyron, one does not need an in-depth knowledge of Julia. However, if one wishes to implement their own methods or model, it might be worth familiarising oneself with concepts such as multiple dispatch and broadcasting.
 
-## 0.2 Installing Clapeyron
+## Installing Clapeyron
 Clapeyron.jl is a registered package on JuliaHub. Installing it can be done with a simple command within the Julia REPL:
 ```julia
 julia> using Pkg
@@ -22,7 +22,7 @@ julia> using Pkg
 
 julia> Pkg.update("Clapeyron")
 ```
-## 0.3 Recommended packages
+## Recommended packages
 In order to fully utilise Clapeyron, users may need certain features not included in the package. Here is a list of packages the developers of Clapeyron recommend using:
 * Plotting: The default package for plotting in Julia is [Plots.jl](https://github.com/JuliaPlots/Plots.jl) and can be installed the same way as Clapeyron. However, if users are more-familiar with matplotlib, [PyPlot.jl](https://github.com/JuliaPy/PyPlot.jl) is also available but is trickier to install.
 * Data storage and manipulation: The default packages in Julia are [DataFrames.jl](https://github.com/JuliaData/DataFrames.jl) and [Tables.jl](https://github.com/JuliaData/Tables.jl). Both of these make it easy to store values and then export them into various data types.

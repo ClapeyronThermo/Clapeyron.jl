@@ -11,7 +11,7 @@ warnonly = Documenter.except(),
     authors = "Pierre J. Walker, Hon Wa Yew and Andrés Riedemann.",
     pages = [
         "Home" => "index.md",
-        "Background" => "theory/background.md",
+        "Installation"=>"installation.md",
         "Tuorials" => ["Getting Started - Model Construction"=>"tutorials/basics_model_construction.md",
                        "User-defined Parameters"=>"tutorials/user_defined_parameters.md",
                        "Bulk Properties"=>"tutorials/bulk_properties.md",
@@ -23,11 +23,9 @@ warnonly = Documenter.except(),
                        "pT Projections"=>"tutorials/pT_projections.md",
                        "Ternary Phase Diagrams"=>"tutorials/ternary_phase_diagrams.md",
                        "SLE Phase Diagrams"=>"tutorials/sle_phase_diagrams.md"],
-        "How to Guides" => ["Implement your own Methods"=>"user_guide/custom_methods.md",
-                            "Implement your own Models"=>"user_guide/custom_model.md"],
+        # "How-to Guides" => ["Implement your own Methods"=>"user_guide/custom_methods.md",
+        #                     "Implement your own Models"=>"user_guide/custom_model.md"],
         "Notebook Examples" => "notebook_examples.md",
-        "To-do list" => "to-do_list.md",
-        
         "Available EoS" => ["Ideal Models" => "eos/ideal.md"
                             "Cubic Models" => "eos/cubic.md"
                             "Activity Models" => "eos/activity.md"
@@ -35,7 +33,6 @@ warnonly = Documenter.except(),
                             "Empiric Helmholtz Models" => "eos/empiric.md"
                             "Property Correlations" =>  "eos/correlations.md"
                             "Other Models" => "eos/misc.md"],
-        
         "Available Properties" => ["Basic Properties" => "properties/basic.md",
                                    "Bulk Properties" => "properties/bulk.md",
                                    "Single phase Properties" => "properties/single.md",
@@ -44,7 +41,8 @@ warnonly = Documenter.except(),
         "API" => ["Parameters" => "api/parameters.md",
                   "Macros" => "api/macros.md",
                   "Association" => "api/association.md",
-                  "Parameter Estimation" => "api/estimation.md"]]
+                  "Parameter Estimation" => "api/estimation.md"],
+        "To-do list" => "to-do_list.md"]
                   )
 
         deploydocs(;
