@@ -1,5 +1,8 @@
 # v0.5.3
 - Databases were standarized according to CAS. almost all components present in Clapeyron.jl databases are present in `@DB/properties/identifiers.csv`.
+- COSMOSAC-2002 (`COSMOSAC02`),COSMOSAC-2010 (`COSMOSAC10`) and COSMOSAC-dispersion (`COSMOSACdsp`) can now read files from the NIST database found at https://github.com/usnistgov/COSMOSAC . to use those parameters, pass the keyword `use_nist_database = true`
+- New model: doubly association perturbation theory (`DAPT`)
+- New model: PCSAFT with association dependent hard sphere diameter (`ADPCSAFT`)
 - New model: translated-and-consistent Peng-Robinson (`tcPR`)
 - New model: translated-and-consistent Peng-Robinson, with Wilson and gE-res mixing rule (`tcPRW`)
 - New model: translated-and-consistent Redlich-Kwong (`tcRK`)
@@ -7,6 +10,7 @@
 - New model: consistent PR - Twu (`cPR`)
 - New alpha function: Twu-88 (`Twu88Alpha`)
 - New alpha function: soave-2019 (`Soave2019Alpha`)
+- `DETPFlash` now supports the `equilibrium = :lle` option, to only find liquid phases.
 
 # v0.5.2
 
