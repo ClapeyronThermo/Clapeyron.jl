@@ -26,11 +26,11 @@ export COSMOSACdsp
 default_locations(::Type{COSMOSACdsp}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv","Activity/COSMOSAC/COSMOSACdsp_like.csv"]
 
 """
-COSMOSACdsp(components;
-puremodel = PR,
-userlocations = String[],
-pure_userlocations = String[],
-verbose = false)
+    COSMOSACdsp(components;
+    puremodel = PR,
+    userlocations = String[],
+    pure_userlocations = String[],
+    verbose = false)
 
 ## Input parameters:
 - `Pnhb` :Single Parameter{String} 

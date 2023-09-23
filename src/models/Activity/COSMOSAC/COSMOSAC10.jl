@@ -21,11 +21,11 @@ export COSMOSAC10
 default_locations(::Type{COSMOSAC10}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv"]
 
 """
-COSMOSAC10(components;
-puremodel = PR,
-userlocations = String[],
-pure_userlocations = String[],
-verbose = false)
+    COSMOSAC10(components;
+    puremodel = PR,
+    userlocations = String[],
+    pure_userlocations = String[],
+    verbose = false)
 
 ## Input parameters:
 - `Pnhb` :Single Parameter{String} 

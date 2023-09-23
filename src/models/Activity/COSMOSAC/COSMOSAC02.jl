@@ -16,11 +16,11 @@ end
 
 export COSMOSAC02
 """
-COSMOSAC02(components;
-puremodel = PR,
-userlocations = String[],
-pure_userlocations = String[],
-verbose = false)
+    COSMOSAC02(components;
+    puremodel = PR,
+    userlocations = String[],
+    pure_userlocations = String[],
+    verbose = false)
 
 ## Input parameters:
 - `Pi` :Single Parameter{String} 
