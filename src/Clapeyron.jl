@@ -144,7 +144,10 @@ include("models/cubic/PR/PR.jl")
 include("models/cubic/KU/KU.jl")
 include("models/cubic/RKPR/RKPR.jl")
 
+
 #SAFT models
+include("models/SAFT/association.jl")
+include("models/SAFT/equations.jl")
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/PharmaPCSAFT.jl")
@@ -162,9 +165,8 @@ include("models/SAFT/SAFTgammaMie/variants/structSAFTgammaMie.jl")
 include("models/SAFT/CKSAFT/CKSAFT.jl")
 include("models/SAFT/CKSAFT/variants/sCKSAFT.jl")
 include("models/SAFT/BACKSAFT/BACKSAFT.jl")
-include("models/SAFT/equations.jl")
-include("models/SAFT/association.jl")
-
+include("models/SAFT/PCSAFT/variants/ADPCSAFT.jl")
+include("models/SAFT/DAPT/DAPT.jl")
 #Activity models
 include("models/Activity/Wilson/Wilson.jl")
 include("models/Activity/Wilson/variants/tcPRWilsonRes.jl")

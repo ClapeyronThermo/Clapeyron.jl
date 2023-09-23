@@ -1,0 +1,4 @@
+Clapeyron Database File,,,,,,,,,,,,
+DAPT Like Parameters,,,,,,,,,,,,
+species,DIPPR Number,Mw,segment,sigma,epsilon,r_c,c1,c2,c3,n_H,n_e,source
+water,,18.01,1.0,2.771,367.351,1.8242,0.08154,-0.04284,0.02788,2,2,10.1002/aic.17342
