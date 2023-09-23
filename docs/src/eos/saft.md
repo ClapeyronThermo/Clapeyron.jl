@@ -21,6 +21,7 @@ Clapeyron.sPCSAFT
 Clapeyron.pharmaPCSAFT
 Clapeyron.GEPCSAFT
 Clapeyron.gcPCSAFT
+Clapeyron.ADPCSAFT
 Clapeyron.LJSAFT
 Clapeyron.softSAFT
 Clapeyron.softSAFT2016
@@ -29,6 +30,7 @@ Clapeyron.SAFTVRMie
 Clapeyron.SAFTVRQMie
 Clapeyron.SAFTgammaMie
 Clapeyron.structSAFTgammaMie
+Clapeyron.DAPT
 ```
 
 ## CPA Models
