@@ -7,11 +7,13 @@ format = Documenter.HTML(
     canonical = "https://ypaul21.github.io/Clapeyron.jl/",
     assets = ["assets/logo.ico"],
 ),
+warnonly = Documenter.except(),
     authors = "Pierre J. Walker, Hon Wa Yew and Andrés Riedemann.",
     pages = [
         "Home" => "index.md",
         "Background" => "theory/background.md",
         "Tuorials" => ["Getting Started - Model Construction"=>"tutorials/basics_model_construction.md",
+                       "User-defined Parameters"=>"tutorials/user_defined_parameters.md",
                        "Bulk Properties"=>"tutorials/bulk_properties.md",
                        "Mixing and Excess Functions"=>"tutorials/mixing_functions.md",
                        "Pure Saturation Properties"=>"tutorials/pure_saturation_curves.md",
@@ -42,7 +44,8 @@ format = Documenter.HTML(
         "API" => ["Parameters" => "api/parameters.md",
                   "Macros" => "api/macros.md",
                   "Association" => "api/association.md",
-                  "Parameter Estimation" => "api/estimation.md"]])
+                  "Parameter Estimation" => "api/estimation.md"]]
+                  )
 
         deploydocs(;
     repo="github.com/ypaul21/Clapeyron.jl.git",
