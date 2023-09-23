@@ -90,8 +90,12 @@ function I(model::DAPTModel, V, T, z, l_c = model.params.r_c.values[1])
     k1 = cbrt(2*η*f)
     #a lot of numerical error in this exact expression, rewritten to minimize said error
     k2 = sqrt(evalpoly(η,(9,18,3,-6,3)))/f
-    y_1 = k1*cbrt(k2+1)
-    y_2 = k1*cbrt(k2-1)
+
+    #y_1 = k1*cbrt(k2+1)
+    #y_2 = k1*cbrt(k2-1)
+    y_1 = k1*EoSFunctions.cbrtp1(k2)
+    y_2 = k1*EoSFunctions.cbrtm1(k2)
+
     z_d = y_1 - y_2
     z_s = y_1 + y_2
     A = (-2*η + z_d)/(1-η)
