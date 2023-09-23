@@ -185,7 +185,7 @@ You can, of course, not use the macro, if your model depends itself on other mod
 
    If we obey that convention, we may use the `@f` macro, which automatically substitutes the first four parameters for compactness. For example, `@f(func,i,j)` is equivalent to calling `func(model,V,T,z,i,j)`.
 
-    Clapeyron obtains all the properties of a model by differenciating the total helmoltz energy ([`eos`](@ref)) or the residual helmoltz energy ([`eos_res`](@ref)).  `eos` and `eos_res` themselves are defined in terms of the reduced ideal helmholtz energy ([`a_res`](@ref)). In this case, we are going to define `a_res` for our own model:
+    Clapeyron obtains all the properties of a model by differenciating the total helmoltz energy ([`eos`](@ref)) or the residual helmoltz energy (`eos_res`).  `eos` and `eos_res` themselves are defined in terms of the reduced ideal helmholtz energy (`a_res`). In this case, we are going to define `a_res` for our own model:
 
    ```julia
    function Clapeyron.a_res(model::PCSAFTModel, V, T, z)

@@ -102,7 +102,7 @@ One can find out more about the information stored within these model objects in
   - IAPWS-95 Water reference ([`IAPWS95`](@ref))
   - Propane Reference ([`PropaneRef`](@ref))
   - Lennard Jones Reference from Thol et al. (2016) ([`LJRef`](@ref))
-  - Ammonia Reference (2023) ([`Amonnia2023`](@ref))
+  - Ammonia Reference (2023) ([`Ammonia2023`](@ref))
   - Multiparameter EoS + Activity ([`HelmAct`](@ref))
 **Extended Corresponding States ([`ECS`](@ref))**:
 - SPUNG ([`SPUNG`](@ref))

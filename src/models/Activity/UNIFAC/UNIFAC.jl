@@ -67,100 +67,100 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 2. Weidlich, U.; Gmehling, J. A modified UNIFAC model. 1. Prediction of VLE, hE, and.gamma..infin. Ind. Eng. Chem. Res. 1987, 26, 1372–1381.
 
 ## List of groups available
-|Name      |SMARTS                                           |Description            |
-|----------|-------------------------------------------------|-----------------------|
-|CH3       |[CX4;H3;!R]                                      |Methyl group           |
-|CH2       |[CX4;H2;!R]                                      |Methylene group        |
-|CH        |[CX4;H1;!R]                                      |                       |
-|C         |[CX4;H0;!R]                                      |                       |
-|CH2=CH    |[CX3;H2]=[CX3;H1]                                |                       |
-|CH=CH     |[CX3;H1]=[CX3;H1]                                |                       |
-|CH2=C     |[CX3;H2]=[CX3;H0]                                |                       |
-|CH=C      |[CX3;H1]=[CX3;H0]                                |                       |
-|ACH       |[cX3;H1]                                         |Aromatic CH            |
-|AC        |[cX3;H0]                                         |                       |
-|ACCH3     |[cX3;H0][CX4;H3]                                 |                       |
-|ACCH2     |[cX3;H0][CX4;H2]                                 |                       |
-|ACCH      |[cX3;H0][CX4;H1]                                 |                       |
-|OH (P)    |[OH1;$([OH1][CX4H2])]                            |Primary alcohol        |
-|CH3OH     |[CX4;H3][OX2;H1]                                 |Methanol               |
-|H2O       |[OH2]                                            |Water                  |
-|ACOH      |[cX3;H0;R][OX2;H1]                               |                       |
-|CH3CO     |[CX4;H3][CX3](=O)                                |Methyl ketone          |
-|CH2CO     |[CX4;H2][CX3](=O)                                |Methylene ketone       |
-|CHO       |[CX3H1](=O)                                      |                       |
-|CH3COO    |[CH3][CX3;H0](=[O])[O]                           |Acetate group          |
-|CH2COO    |[CX4;H2][CX3](=[OX1])[OX2]                       |                       |
-|HCOO      |[CX3;H1](=[OX1])[OX2]                            |                       |
-|CH3O      |[CH3;!R][OH0;!R]                                 |Methoxy group          |
-|CH2O      |[CH2;!R][OH0;!R]                                 |                       |
-|CHO       |[C;H1;!R][OH0;!R]                                |                       |
-|THF       |[CX4;H2;R][OX2;R][CX4;H2;R]                      |Tetrahydrofuran        |
-|CH3NH2    |[CX4;H3][NX3;H2]                                 |Methylamine            |
-|CH2NH2    |[CX4;H2][NX3;H2]                                 |                       |
-|CHNH2     |[CX4;H1][NX3;H2]                                 |                       |
-|CH3NH     |[CX4;H3][NX3;H1]                                 |                       |
-|CH2NH     |[CX4;H2][NX3;H1]                                 |                       |
-|CHNH      |[CX4;H1][NX3;H1]                                 |                       |
-|CH3N      |[CX4;H3][NX3;H0]                                 |                       |
-|CH2N      |[CX4;H2][NX3;H0]                                 |                       |
-|ACNH2     |[c][NX3;H2]                                      |                       |
-|AC2H2N    |[cX3H1][n][cX3H1]                                |                       |
-|AC2HN     |[cX3H0][n][cX3H1]                                |                       |
-|AC2N      |[cX3H0][n][cX3H0]                                |                       |
-|CH3CN     |[CX4;H3][CX2]#[NX1]                              |Acetonitrile           |
-|CH2CN     |[CX4;H2][CX2]#[NX1]                              |                       |
-|COO       |[CX3,cX3](=[OX1])[OX2H0,oX2H0]                   |Ester group            |
-|COOH      |[CX3](=[OX1])[O;H1]                              |Carboxylate group      |
-|HCOOH     |[CX3;H1](=[OX1])[OX2;H1]                         |Formic acid            |
-|CH2CL     |[CX4;H2;!$(C(Cl)(Cl))](Cl)                       |                       |
-|CHCL      |[CX4;H1;!$(C(Cl)(Cl))](Cl)                       |                       |
-|CCL       |[CX4;H0](Cl)                                     |                       |
-|CH2CL2    |[CX4;H2;!$(C(Cl)(Cl)(Cl))](Cl)(Cl)               |Dichloromethane        |
-|CHCL2     |[CX4;H1;!$(C(Cl)(Cl)(Cl))](Cl)(Cl)               |                       |
-|CCL2      |[CX4;H0;!$(C(Cl)(Cl)(Cl))](Cl)(Cl)               |                       |
-|CHCL3     |[CX4;H1;!$([CX4;H0](Cl)(Cl)(Cl)(Cl))](Cl)(Cl)(Cl)|Chloroform             |
-|CCL3      |[CX4;H0;!$([CX4;H0](Cl)(Cl)(Cl)(Cl))](Cl)(Cl)(Cl)|                       |
-|CCL4      |[CX4;H0]([Cl])([Cl])([Cl])([Cl])                 |Carbon tetrachloride   |
-|ACCL      |[c][Cl]                                          |                       |
-|CH3NO2    |[CX4;H3][NX3](=[OX1])([OX1])                     |Nitromethane           |
-|CH2NO2    |[CX4;H2][NX3](=[OX1])([OX1])                     |                       |
-|CHNO2     |[CX4;H1][NX3](=[OX1])([OX1])                     |                       |
-|ACNO2     |[cX3][NX3](=[OX1])([OX1])                        |                       |
-|CS2       |C(=S)=S                                          |Carbon disulfide       |
-|CH3SH     |[SX2H][CX4;H3]                                   |Methanethiol           |
-|CH2SH     |[SX2H][CX4;H2]                                   |                       |
-|FURFURAL  |c1cc(oc1)C=O                                     |Furfural               |
-|DOH       |[OX2;H1][CX4;H2][CX4;H2][OX2;H1]                 |                       |
-|I         |[I]                                              |Iodine group           |
-|BR        |[Br]                                             |Bromine group          |
-|CH=-C     |[CX2;H1]#[CX2;H0]                                |                       |
-|C=-C      |[CX2;H0]#[CX2;H0]                                |                       |
-|DMSO      |[SX3H0](=[OX1])([CX4;H3])[CX4;H3]                |Dimethyl sulfoxide     |
-|ACRY      |[CX3;H2]=[CX3;H1][CX2;H0]#[NX1;H0]               |Acrylate               |
-|CL-(C=C)  |[$([Cl;H0]([C]=[C]))]                            |                       |
-|C=C       |[CX3;H0]=[CX3;H0]                                |                       |
-|ACF       |[cX3][F]                                         |                       |
-|DMF       |[CX4;H3][N]([CX4;H3])[CX3;H1]=[O]                |Dimethylformamide      |
-|HCON(CH2)2|[NX3]([CX4;H2])([CX4;H2])[CX3;H1](=[OX1])        |                       |
-|CF3       |C(F)(F)F                                         |                       |
-|CF2       |C(F)F                                            |                       |
-|CF        |C(F)                                             |                       |
-|CY-CH2    |[CH2;R]                                          |Cycloalkane group      |
-|CY-CH     |[CH1;R]                                          |                       |
-|CY-C      |[CH0;R]                                          |                       |
-|OH (S)    |[OH1;$([OH1][CX4H1])]                            |Second hydroxyl group  |
-|OH (T)    |[OH1;$([OH1][CX4H0])]                            |Tertiary hydroxyl group|
-|CY-CH2O   |[CX4H2;R][OX2;R]                                 |                       |
-|TRIOXAN   |[CX4H2;R][OX2;R]                                 |Trioxane               |
-|CNH2      |[CX4H0][NH2]                                     |                       |
-|NMP       |[OX1H0]=[C;R][NX3H0;R][CH3]                      |N-Methylpyrrolidone    |
-|NEP       |[OX1H0]=[CH0X3;R][H0;R][CH2]                     |                       |
-|NIPP      |[OX1H0;!R]=[CX3H0;R][NX3H0;R][C;!R]              |                       |
-|NTBP      |[OX1H0;!R]=[CH0X3;R][NX3H0;R][CH0;!R]            |                       |
-|CONH2     |[CX3H0](=[OX1H0])[NX3H2]                         |                       |
-|CONHCH3   |[OX1H0;!R]=[CX3H0;!R][NH1X3;!R][CH3;!R]          |                       |
-|CONHCH2)  |[CH2X4;!R][NH1X3;!R][CX3H0;!R]=[OX1H0;!R]        |                       |
+|Name      |Description            |
+|----------|-----------------------|
+|CH3       |Methyl group           |
+|CH2       |Methylene group        |
+|CH        |                       |
+|C         |                       |
+|CH2=CH    |                       |
+|CH=CH     |                       |
+|CH2=C     |                       |
+|CH=C      |                       |
+|ACH       |Aromatic CH            |
+|AC        |                       |
+|ACCH3     |                       |
+|ACCH2     |                       |
+|ACCH      |                       |
+|OH (P)    |Primary alcohol        |
+|CH3OH     |Methanol               |
+|H2O       |Water                  |
+|ACOH      |                       |
+|CH3CO     |Methyl ketone          |
+|CH2CO     |Methylene ketone       |
+|CHO       |                       |
+|CH3COO    |Acetate group          |
+|CH2COO    |                       |
+|HCOO      |                       |
+|CH3O      |Methoxy group          |
+|CH2O      |                       |
+|CHO       |                       |
+|THF       |Tetrahydrofuran        |
+|CH3NH2    |Methylamine            |
+|CH2NH2    |                       |
+|CHNH2     |                       |
+|CH3NH     |                       |
+|CH2NH     |                       |
+|CHNH      |                       |
+|CH3N      |                       |
+|CH2N      |                       |
+|ACNH2     |                       |
+|AC2H2N    |                       |
+|AC2HN     |                       |
+|AC2N      |                       |
+|CH3CN     |Acetonitrile           |
+|CH2CN     |                       |
+|COO       |Ester group            |
+|COOH      |Carboxylate group      |
+|HCOOH     |Formic acid            |
+|CH2CL     |                       |
+|CHCL      |                       |
+|CCL       |                       |
+|CH2CL2    |Dichloromethane        |
+|CHCL2     |                       |
+|CCL2      |                       |
+|CHCL3     |Chloroform             |
+|CCL3      |                       |
+|CCL4      |Carbon tetrachloride   |
+|ACCL      |                       |
+|CH3NO2    |Nitromethane           |
+|CH2NO2    |                       |
+|CHNO2     |                       |
+|ACNO2     |                       |
+|CS2       |Carbon disulfide       |
+|CH3SH     |Methanethiol           |
+|CH2SH     |                       |
+|FURFURAL  |Furfural               |
+|DOH       |                       |
+|I         |Iodine group           |
+|BR        |Bromine group          |
+|CH=-C     |                       |
+|C=-C      |                       |
+|DMSO      |Dimethyl sulfoxide     |
+|ACRY      |Acrylate               |
+|CL-(C=C)  |                       |
+|C=C       |                       |
+|ACF       |                       |
+|DMF       |Dimethylformamide      |
+|HCON(CH2)2|                       |
+|CF3       |                       |
+|CF2       |                       |
+|CF        |                       |
+|CY-CH2    |Cycloalkane group      |
+|CY-CH     |                       |
+|CY-C      |                       |
+|OH (S)    |Second hydroxyl group  |
+|OH (T)    |Tertiary hydroxyl group|
+|CY-CH2O   |                       |
+|TRIOXAN   |Trioxane               |
+|CNH2      |                       |
+|NMP       |N-Methylpyrrolidone    |
+|NEP       |                       |
+|NIPP      |                       |
+|NTBP      |                       |
+|CONH2     |                       |
+|CONHCH3   |                       |
+|CONHCH2  |                       |
 """
 UNIFAC
 

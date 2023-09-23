@@ -95,49 +95,49 @@ The estimated critical point of a single component can be obtained via `crit_pur
 1. Joback, K. G., & Reid, R. C. (1987). Estimation of pure-component properties from group-contributions. Chemical Engineering Communications, 57(1–6), 233–243. [doi:10.1080/00986448708960487](https://doi.org/10.1080/00986448708960487)
 
 ## List of available groups
-|Name            |SMARTS                                              |Description    |
-|----------------|----------------------------------------------------|---------------|
-|-CH3           |[CX4H3]                                             |Methyl         |
-|-CH2-           |[!R;CX4H2]                                          |Methylene      |
-|>CH-            |[!R;CX4H]                                           |               |
-|>C<             |[!R;CX4H0]                                          |               |
-|CH2=CH-         |[CX3H2][CX3H1]                                      |               |
-|-CH=CH-         |[CX3H1][CX3H1]                                      |               |
-|=C<             |[\$([!R;#6X3H0]);!\$([!R;#6X3H0]=[#8])]               |               |
-|=C=             |[\$([CX2H0](=*)=*)]                                  |               |
-|CH              |[\$([CX2H1]#[!#7])]                                  |               |
-|C               |[\$([CX2H0]#[!#7])]                                  |               |
-|ring-CH2-       |[R;CX4H2]                                           |Cyclic alkane  |
-|ring>CH-        |[R;CX4H]                                            |               |
-|ring>C<         |[R;CX4H0]                                           |               |
-|ring=CH-        |[R;CX3H1,cX3H1]                                     |Aromatic group |
-|ring=C<         |[\$([R;#6X3H0]);!\$([R;#6X3H0]=[#8])]                 |               |
-|-F             |[F]                                                 |Fluoride       |
-|-Cl            |[Cl]                                                |Chloride       |
-|-Br            |[Br]                                                |Bromide        |
-|-I             |[I]                                                 |Iodide         |
-|-OH (alcohol)  |[OX2H;!\$([OX2H]-[#6]=[O]);!\$([OX2H]-a)]             |Hydroxyl group |
-|-OH (phenol)   |[O;H1;\$(O-!@c)]                                     |               |
-|-O- (non-ring) |[OX2H0;!R;!\$([OX2H0]-[#6]=[#8])]                    |               |
-|-O- (ring)     |[#8X2H0;R;!\$([#8X2H0]~[#6]=[#8])]                   |               |
-|>C=O (non-ring) |[\$([CX3H0](=[OX1]));!\$([CX3](=[OX1])-[OX2]);!R]=O   |Ketone         |
-|>C=O (ring)     |[\$([#6X3H0](=[OX1]));!\$([#6X3](=[#8X1])~[#8X2]);R]=O|               |
-|O=CH- (aldehyde)|[CH;D2](=O)                                         |Aldehyde       |
-|-COOH (acid)   |[OX2H]-[C]=O                                        |Carboxylic acid|
-|-COO- (ester)  |[#6X3H0;!\$([#6X3H0](~O)(~O)(~O))](=[#8X1])[#8X2H0]  |Ester          |
-|O (other than above)|[OX1H0;!\$([OX1H0]~[#6X3]);!\$([OX1H0]~[#7X3]~[#8])]  |Ketone         |
-|-NH2           |[NX3H2]                                             |Amine          |
-|>NH (non-ring)  |[NX3H1;!R]                                          |               |
-|>NH (ring)      |[#7X3H1;R]                                          |               |
-|>N- (non-ring)  |[#7X3H0;!\$([#7](~O)~O)]                             |               |
-|-N= (non-ring) |[#7X2H0;!R]                                         |               |
-|-N= (ring)     |[#7X2H0;R]                                          |               |
-|=NH            |[#7X2H1]                                            |               |
-|-CN            |[#6X2]#[#7X1H0]                                     |Nitrile        |
-|-NO3           |[\$([#7X3,#7X3+][!#8])](=[O])~[O-]                   |Nitroxide      |
-|-SH            |[SX2H]                                              |               |
-|-S- (non-ring) |[#16X2H0;!R]                                        |               |
-|-S- (ring)     |[#16X2H0;R]                                         |               |
+|Name    |Description         |
+|--------|--------------------|
+|-CH3   |Methyl              |
+|-CH2-   |Methylene           |
+|>CH-    |                    |
+|>C<     |                    |
+|CH2=CH- |                    |
+|-CH=CH- |                    |
+|=C<     |                    |
+|=C=     |                    |
+|CH      |                    |
+|C       |                    |
+|ring-CH2-|Cyclic alkane       |
+|ring>CH-|                    |
+|ring>C< |                    |
+|ring=CH-|Aromatic group      |
+|ring=C< |                    |
+|-F     |Fluoride            |
+|-Cl    |Chloride            |
+|-Br    |Bromide             |
+|-I     |Iodide              |
+|-OH (alcohol)|Hydroxyl group      |
+|-OH (phenol)|                    |
+|-O- (non-ring)|                    |
+|-O- (ring)|                    |
+|>C=O (non-ring)|Ketone              |
+|>C=O (ring)|                    |
+|O=CH- (aldehyde)|Aldehyde            |
+|-COOH (acid)|Carboxylic acid     |
+|-COO- (ester)|Ester               |
+|O (other than above)|Ketone              |
+|-NH2   |Amine               |
+|>NH (non-ring)|                    |
+|>NH (ring)|                    |
+|>N- (non-ring)|                    |
+|-N= (non-ring)|                    |
+|-N= (ring)|                    |
+|=NH    |                    |
+|-CN    |Nitrile             |
+|-NO3   |Nitroxide           |
+|-SH    |                    |
+|-S- (non-ring)|                    |
+|-S- (ring)|                    |
 """
 JobackIdeal
 

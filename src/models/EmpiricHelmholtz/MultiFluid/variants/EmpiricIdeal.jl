@@ -38,6 +38,8 @@ If `coolprop_userlocations` is true, then Clapeyron will try to look if the flui
 If `estimate_pure` is true, then, if a JSON is not found, the pure model will be estimated, using the `XiangDeiters` model
 
 """
+EmpiricIdeal
+
 function EmpiricIdeal(components;
     userlocations = String[],
     coolprop_userlocations = true,

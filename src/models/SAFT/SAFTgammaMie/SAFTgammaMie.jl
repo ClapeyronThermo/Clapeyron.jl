@@ -75,40 +75,40 @@ SAFT-γ-Mie EoS
 2. Dufal, S., Papaioannou, V., Sadeqzadeh, M., Pogiatzis, T., Chremos, A., Adjiman, C. S., … Galindo, A. (2014). Prediction of thermodynamic properties and phase behavior of fluids and mixtures with the SAFT-γ Mie group-contribution equation of state. Journal of Chemical and Engineering Data, 59(10), 3272–3288. [doi:10.1021/je500248h](https://doi.org/10.1021/je500248h)
 
 ## List of available groups
-|Name      |SMARTS                                           |Description            |
-|----------|-------------------------------------------------|-----------------------|
-|CH3       |[CX4H3]                                          |Methyl                 |
-|CH2       |[!R;CX4H2]                                       |Methylene              |
-|CH        |[!R;CX4H]                                        |                       |
-|C         |[!R;CX4H0]                                       |                       |
-|aCH       |[cX3;H1]                                         |Aromatic CH            |
-|aCCH2     |[cX3;H0][CX4;H2]                                 |                       |
-|aCCH      |[cX3;H0][CX4;H1]                                 |                       |
-|CH2=      |[CX3H2]                                          |Alkene group           |
-|CH=       |[!R;CX3H1;!$([CX3H1](=O))]                       |                       |
-|cCH2      |[CH2;R]                                          |Cyclic alkane group    |
-|COOH      |[OX2H]-[C]=O                                     |Carboxylic acid group  |
-|COO       |[#6X3H0;!\$([#6X3H0](~O)(~O)(~O))](=[#8X1])[#8X2H0]|Ester group            |
-|OH        |[OX2H;!\$([OX2H]-[#6]=[O]);!$([OX2H]-a)]         |Hydroxyl               |
-|CH2OH     |[CX4;H2;!R][OH1]                                 |Methylene hydroxyl group|
-|CHOH      |[CX4;H1;!R][OH1]                                 |                       |
-|NH2       |[NX3H2]                                          |Amine group            |
-|NH        |[NX3H1;!R]                                       |                       |
-|N         |[#7X3H0;!\$([#7](~O)~O)]                         |                       |
-|cNH       |[#7X3H1;R]                                       |                       |
-|cN        |[#7X3H0;R]                                       |                       |
-|CH=       |[!R;CX3H0;!$([CX3H0](=O))]                       |                       |
-|aCCH3     |[cX3;H0][CX4;H3]                                 |                       |
-|aCOH      |[cX3;H0;R][OX2;H1]                               |                       |
-|cCH       |[CH1;R]                                          |                       |
-|cCHNH     |[CH1;R][NH1;!R]                                  |                       |
-|cCHN      |[CH1;R][NH0;!R]                                  |                       |
-|aCCOaC    |[cH0][C;!R](=O)[cH0]                             |                       |
-|aCCOOH    |[OX2H]-[C](=O)[cH0]                              |                       |
-|aCNHaC    |[cH0][NH1;!R][cH0]                               |                       |
-|CH3CO     |[CH3][CX3](=O)                                   |                       |
-|eO        |[OH0;!R;$([OH0;!R][CH3;!R]);$([OH0;!R][CH2;!R])] |End ether oxygen       |
-|cO        |[OH0;!R;$([OH0;!R][CH2;!R])]                     |Center ether oxygen    |
+|Name    |Description         |
+|--------|--------------------|
+|CH3     |Methyl              |
+|CH2     |Methylene           |
+|CH      |                    |
+|C       |                    |
+|aCH     |Aromatic CH         |
+|aCCH2   |                    |
+|aCCH    |                    |
+|CH2=    |Alkene group        |
+|CH=     |                    |
+|cCH2    |Cyclic alkane group |
+|COOH    |Carboxylic acid group|
+|COO     |Ester group         |
+|OH      |Hydroxyl            |
+|CH2OH   |Methylene hydroxyl group|
+|CHOH    |                    |
+|NH2     |Amine group         |
+|NH      |                    |
+|N       |                    |
+|cNH     |                    |
+|cN      |                    |
+|CH=     |                    |
+|aCCH3   |                    |
+|aCOH    |                    |
+|cCH     |                    |
+|cCHNH   |                    |
+|cCHN    |                    |
+|aCCOaC  |                    |
+|aCCOOH  |                    |
+|aCNHaC  |                    |
+|CH3CO   |                    |
+|eO      |End ether oxygen    |
+|cO      |Center ether oxygen |
 """
 SAFTgammaMie
 

@@ -64,6 +64,7 @@ idealmodel(model::EoSModel) = __idealmodel(model::EoSModel)
         return :(nothing)
     end
 end
+
 """
     eos_res(model::EoSModel, V, T, z=SA[1.0])
 Returns the residual Helmholtz free energy.
@@ -94,6 +95,7 @@ Reduced residual Helmholtz free energy.
 You can define your own EoS by adding a method to `a_res` that accepts your custom model. 
 """
 function a_res end
+
 Base.broadcastable(model::EoSModel) = Ref(model)
 Base.transpose(model::EoSModel) = model
 Base.eltype(model::EoSModel) = __eltype(model)

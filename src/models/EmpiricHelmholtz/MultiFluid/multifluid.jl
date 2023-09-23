@@ -67,6 +67,8 @@ If `estimate_pure` is true, then, if a JSON is not found, the pure model will be
 
 `Rgas` sets the value of the gas constant to be used by the multifluid. defaults to `Clapeyron.R̄ = Rgas() = 8.31446261815324` (2019 defined constant value)
  """
+MultiFluid
+
 function MultiFluid(components;
     idealmodel = nothing,
     pure_userlocations = String[],
