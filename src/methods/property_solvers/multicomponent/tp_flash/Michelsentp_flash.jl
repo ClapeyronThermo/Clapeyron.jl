@@ -92,7 +92,7 @@ is_vle(method::MichelsenTPFlash) = is_vle(method.equilibrium)
 is_lle(method::MichelsenTPFlash) = is_lle(method.equilibrium)
 
 #hook to precalculate things with the activity model.
-__tpflash_cache_model(model::EoSModel,p,T,z) = model
+__tpflash_cache_model(model::EoSModel,p,T,z,equilibrium) = model
 
 function __tpflash_gibbs_reduced(model,p,T,x,y,β,eq)
     (gibbs_free_energy(model,p,T,x)*(1-β)+gibbs_free_energy(model,p,T,y)*β)/Rgas(model)/T
@@ -100,7 +100,7 @@ end
 
 function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
 
-    model_cached = __tpflash_cache_model(model,p,T,z)
+    model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
 
     x,y,β =  tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
             x0 = method.x0, y0 = method.y0, vol0 = method.v0,
@@ -289,13 +289,13 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         end
         ny_var = Solvers.x_sol(sol)
         ny[in_equilibria] = ny_var
-        nx[in_equilibria] = z[in_equilibria] .- ny[in_equilibria]  
+        nx[in_equilibria] = z[in_equilibria] .- ny[in_equilibria]
         nxsum = sum(nx)
         nysum = sum(ny)
         x = nx ./ nxsum
         y = ny ./ nysum
-        β = sum(ny) 
-        
+        β = sum(ny)
+
     end
     K .= x ./ y
     #convergence checks (TODO, seems to fail with activity models)

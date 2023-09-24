@@ -134,6 +134,15 @@ using Clapeyron, Test
         test_gibbs_duhem(system,V,T,z)
     end
 
+    @testset "ADPCSAFT" begin
+        system = ADPCSAFT(["water"])
+        z = [1.0]
+        @test Clapeyron.a_hs(system, V, T, z) ≈ 0.3130578789492178 rtol = 1e-6
+        @test Clapeyron.a_disp(system, V, T, z) ≈ -1.2530666693292463 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -3.805796041192079 rtol = 1e-6
+        test_gibbs_duhem(system,V,T,z)
+    end
+
     @testset "SAFTVRMie" begin
         system = SAFTVRMie(["methanol", "water"])
         z = [0.5, 0.5]
@@ -172,6 +181,15 @@ using Clapeyron, Test
         z = [0.5,0.5]
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.11160851237651681 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z,rtol = 1e-12)
+    end
+
+    @testset "DAPT" begin
+        system = DAPT(["water"])
+        z = [1.0]
+        @test Clapeyron.a_hs(system, V, T, z) ≈ 0.35240995905438116 rtol = 1e-6
+        @test Clapeyron.a_disp(system, V, T, z) ≈ -1.7007754776344663 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.815041612389342 rtol = 1e-6
+        test_gibbs_duhem(system,V,T,z)
     end
     @printline
 end
