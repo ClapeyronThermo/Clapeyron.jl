@@ -163,7 +163,7 @@ end
 
 #indirection to allow overloading this evaluation in activity models
 function __eval_G_DETPFlash(model::EoSModel,p,T,xi,equilibrium)
-    phase = is_lle(equilibrium) ? :unknown : :liquid
+    phase = is_lle(equilibrium) ? :liquid : :unknown
     vi = volume(model,p,T,xi;phase = phase)
     g = VT_gibbs_free_energy(model, vi, T, xi)
     return g,vi
