@@ -150,7 +150,7 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
             xi = @view(nvals[i, :])
             vi = volume(model,p,T,xi)
             vcache[i] = vi
-            G += __eval_G_DETPFlash(model,p,T,xi,equilibrium)
+            G += __eval_G_DETPFlash(model,p,T,xi,vcache,equilibrium)
             #calling with PTn calls the internal volume solver
             #if it returns an error, is a bug in our part.
     end
