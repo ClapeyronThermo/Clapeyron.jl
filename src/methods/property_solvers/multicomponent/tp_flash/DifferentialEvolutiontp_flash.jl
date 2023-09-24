@@ -148,9 +148,9 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
     G = _0
     for i ∈ 1:numphases
             xi = @view(nvals[i, :])
-            vi = volume(model,p,T,xi)
+            gi,vi = __eval_G_DETPFlash(model,p,T,xi,equilibrium)
             vcache[i] = vi
-            G += __eval_G_DETPFlash(model,p,T,xi,vcache,equilibrium)
+            G += gi
             #calling with PTn calls the internal volume solver
             #if it returns an error, is a bug in our part.
     end
@@ -162,11 +162,11 @@ function Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace 
 end
 
 #indirection to allow overloading this evaluation in activity models
-function __eval_G_DETPFlash(model::EoSModel,p,T,xi,vcache,equilibrium)
+function __eval_G_DETPFlash(model::EoSModel,p,T,xi,equilibrium)
     phase = is_lle(equilibrium) ? :unknown : :liquid
     vi = volume(model,p,T,xi;phase = phase)
-    vcache[i] = vi
-    return VT_gibbs_free_energy(model, vi, T, xi)
+    g = VT_gibbs_free_energy(model, vi, T, xi)
+    return g,vi
 end
 
 numphases(method::DETPFlash) = method.numphases

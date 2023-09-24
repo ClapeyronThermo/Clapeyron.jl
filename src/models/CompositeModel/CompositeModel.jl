@@ -216,7 +216,7 @@ function K0_lle_init(model::PTFlashWrapper{<:CompositeModel},p,T,z)
     throw(error("CompositeModel does not support LLE equilibria."))
 end
 
-function __eval_G_DETPFlash(model::PTFlashWrapper{<:CompositeModel},p,T,xi,vcache,equilibrium)
+function __eval_G_DETPFlash(model::PTFlashWrapper{<:CompositeModel},p,T,xi,equilibrium)
     throw(error("CompositeModel does not support DETPFlash."))
 end
 
