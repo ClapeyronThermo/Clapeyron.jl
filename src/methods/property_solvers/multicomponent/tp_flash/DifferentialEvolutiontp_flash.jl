@@ -55,7 +55,7 @@ end
 end
 
 function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
-    model = __tpflash_cache_model(model,p,T,z,method.equilibrium)
+    model = __tpflash_cache_model(model,p,T,n,method.equilibrium)
     numspecies = length(model)
     TYPE = typeof(p+T+first(n))
     numphases = method.numphases
