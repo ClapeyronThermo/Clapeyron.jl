@@ -56,10 +56,10 @@ end
 - `idealmodel`: Ideal Model
 
 ## Description
-Doubly-Associated Perturbation Theory model.
+Doubly-Associated Perturbation Theory model. Currently only works for water.
 
-!!! note "single component model"
-    Currently, this model only works for water.
+!!! warning "numerically unstable"
+    Due to its functional form, DAPT is numerically unstable. Please use `big` Floats for most calculations.
 
 ## References
 1. Marshall, B. D. (2019). A doubly associated reference perturbation theory for water. Fluid Phase Equilibria, 500(112252), 112252. [doi:10.1016/j.fluid.2019.112252](https://doi.org/10.1016/j.fluid.2019.112252) 

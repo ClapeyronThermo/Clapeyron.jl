@@ -64,10 +64,10 @@ end
 - `idealmodel`: Ideal Model
 
 ## Description
-modified Perturbed-Chain SAFT (PC-SAFT) with an association dependent hard sphere diameter.
+modified Perturbed-Chain SAFT (PC-SAFT) with an association dependent hard sphere diameter.Currently only works for water.
 
-!!! note "single component model"
-    Currently, this model only works for water.
+!!! warning "numerically unstable"
+    Due to its functional form, DAPT is numerically unstable. Please use `big` Floats for most calculations.
 
 ## References
 1. Marshall, B. D. (2021). A modified perturbed chain‐statistical associating fluid theory equation of state for water which includes an association dependent hard sphere diameter. AIChE Journal. American Institute of Chemical Engineers, 67(10). [doi:10.1002/aic.17342](https://doi.org/10.1002/aic.17342)
