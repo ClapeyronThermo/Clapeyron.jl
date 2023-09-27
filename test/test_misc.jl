@@ -58,6 +58,38 @@ end
         @test model0.params.epsilon.values[1,1] == model0_split.params.epsilon.values[1,1]
     end
 
+    @testset "export_model" begin
+        @testset "SAFT Model" begin
+            model = PCSAFT(["water","ethanol"])
+            export_model(model)
+            model2 = PCSAFT(["water","ethanol"]; userlocations = ["singledata_PCSAFT.csv","pairdata_PCSAFT.csv","assocdata_PCSAFT.csv"])
+
+            @test model.params.segment.values == model2.params.segment.values
+            @test model.params.epsilon.values == model2.params.epsilon.values
+            @test model.params.epsilon_assoc.values.values == model2.params.epsilon_assoc.values.values
+        end
+
+        @testset "Cubic Model" begin
+            model = PR(["water","ethanol"])
+            export_model(model)
+            model2 = PR(["water","ethanol"]; userlocations = ["singledata_PR.csv","pairdata_PR.csv"],
+                                       alpha_userlocations = ["singledata_PRAlpha.csv"])
+
+            @test model.params.a.values == model2.params.a.values
+            @test model.alpha.params.acentricfactor.values == model2.alpha.params.acentricfactor.values
+        end
+
+        @testset "Activity & GC Model" begin
+            model = UNIFAC(["water","ethanol"])
+            export_model(model)
+            model2 = UNIFAC(["water","ethanol"]; userlocations = ["singledata_UNIFAC.csv","pairdata_UNIFAC.csv"])
+
+            @test model.params.Q.values == model2.params.Q.values
+            @test model.params.A.values == model2.params.A.values
+        end
+
+    end
+
     @testset "single component error" begin
         model = PCSAFT(["water","methane"])
         @test_throws DimensionMismatch saturation_pressure(model,300.15)
