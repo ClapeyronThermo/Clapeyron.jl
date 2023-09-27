@@ -1,6 +1,11 @@
 using OrderedCollections
 
-# Export generic models
+"""
+    export_model(model::EoSModel,name="";location=".")
+Exports model parameters to CSVs. Unless the `name` kwarg is specified, the name of the files will follow the convention `singledata_EoS`, `pairdata_EoS` and `assocdata_EoS`. Files will be saved within the current directory unless the `location` argument is specified.
+
+Note that it will export all submodel parameters (e.g. Alpha function parameters for cubic EoS).
+"""
 function export_model(model::EoSModel,name="";location=".")
     M = typeof(model)
     model_name = String(split(string(M),"{")[1])
@@ -141,6 +146,59 @@ function export_unlike(model::ActivityModel,params,name,location,species,ncomps)
                 append!(binary,getfield(model.params,params[i]).values[j,1:end .!=j])
             end
             merge!(unlike,Dict(Symbol(params[i])=>binary))
+        end
+    end
+
+    if name==""
+        name = model_name
+    else
+        name=name*"_"*model_name
+    end
+
+    if length(unlike) != 2
+        ParamTable(:unlike, Tables.columntable(unlike); name=name, location=location)
+    end
+end
+
+function export_unlike(model::ABCubicModel,params,name,location,species,ncomps)
+    M = typeof(model)
+    model_name = String(split(string(M),"{")[1])
+
+    species1 = Vector{String}()
+    species2 = Vector{String}()
+
+    for i in 1:ncomps-1
+        append!(species1,fill(species[i],ncomps-i))
+        append!(species2,species[i+1:end])
+    end
+
+    unlike = OrderedDict{Symbol,AbstractVector}()
+    merge!(unlike,Dict(Symbol("species1")=>species1))
+    merge!(unlike,Dict(Symbol("species2")=>species2))
+
+    for i in 1:length(params)
+        if typeof(getfield(model.params,params[i])) <: PairParam
+            if params[i] == :a
+                binary = Vector{Float64}()
+                for j in 1:ncomps-1
+                    aij = getfield(model.params,params[i]).values[j+1:end,j]
+                    aj = getfield(model.params,params[i]).values[j,j]
+                    ai = diagvalues(getfield(model.params,params[i]).values)[j+1:end]
+                    kij = @. 1-aij/(sqrt(ai*aj))
+                    append!(binary,kij)
+                end
+                merge!(unlike,Dict(Symbol(:k)=>binary))
+            elseif params[i] == :b
+                binary = Vector{Float64}()
+                for j in 1:ncomps-1
+                    bij = getfield(model.params,params[i]).values[j+1:end,j]
+                    bj = getfield(model.params,params[i]).values[j,j]
+                    bi = diagvalues(getfield(model.params,params[i]).values)[j+1:end]
+                    lij = @. 1-2*bij/(bi+bj)
+                    append!(binary,lij)
+                end
+                merge!(unlike,Dict(Symbol(:l)=>binary))
+            end
         end
     end
 
