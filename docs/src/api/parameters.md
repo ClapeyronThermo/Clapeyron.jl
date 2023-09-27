@@ -62,6 +62,11 @@ Clapeyron.is_splittable
 Clapeyron.index_reduction
 ```
 
+## Model Exporting
+```@docs
+Clapeyron.export_model
+```
+
 ## Model Citing
 ```@docs
 Clapeyron.doi
