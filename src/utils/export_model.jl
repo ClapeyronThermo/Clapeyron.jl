@@ -1,3 +1,5 @@
+using OrderedCollections
+
 # Export generic models
 function export_model(model::EoSModel,name="")
     M = typeof(model)
@@ -12,7 +14,7 @@ function export_model(model::EoSModel,name="")
     end
 
 
-    like = Dict{Symbol,AbstractVector}()
+    like = OrderedDict{Symbol,AbstractVector}()
     merge!(like,Dict(Symbol("species")=>species))
 
     species1 = Vector{String}()
@@ -23,11 +25,11 @@ function export_model(model::EoSModel,name="")
         append!(species2,species[i+1:end])
     end
 
-    unlike = Dict{Symbol,AbstractVector}()
+    unlike = OrderedDict{Symbol,AbstractVector}()
     merge!(unlike,Dict(Symbol("species1")=>species1))
     merge!(unlike,Dict(Symbol("species2")=>species2))
 
-    assoc = Dict{Symbol,AbstractVector}()
+    assoc = OrderedDict{Symbol,AbstractVector}()
 
     if hasfield(M,:params)
         P = typeof(model.params)
@@ -70,13 +72,13 @@ function export_model(model::EoSModel,name="")
                     vals[j] = mat.values[j]
                 end
 
-                merge!(assoc,Dict(Symbol(params[i])=>vals))
                 if !any(keys(assoc).==:species1)
                     merge!(assoc,Dict(Symbol("species1")=>spe1))
-                    merge!(assoc,Dict(Symbol("species2")=>spe2))
                     merge!(assoc,Dict(Symbol("site1")=>site1))
+                    merge!(assoc,Dict(Symbol("species2")=>spe2))
                     merge!(assoc,Dict(Symbol("site2")=>site2))
                 end
+                merge!(assoc,Dict(Symbol(params[i])=>vals))
             end
         end
     end
