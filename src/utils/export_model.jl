@@ -1,7 +1,7 @@
 using OrderedCollections
 
 # Export generic models
-function export_model(model::EoSModel,name="")
+function export_model(model::EoSModel,name="";location=".")
     M = typeof(model)
     model_name = String(split(string(M),"{")[1])
 
@@ -16,23 +16,23 @@ function export_model(model::EoSModel,name="")
     if hasfield(M,:params)
         P = typeof(model.params)
         params = fieldnames(P)
-        export_like(model,params,name,species,ncomps)
-        export_unlike(model,params,name,species,ncomps)
-        export_assoc(model,params,name,species,ncomps)
+        export_like(model,params,name,location,species,ncomps)
+        export_unlike(model,params,name,location,species,ncomps)
+        export_assoc(model,params,name,location,species,ncomps)
     end
 
 
     f = fieldnames(M)
     for i in f
         if typeof(getfield(model,i))<:EoSModel && hasfield(typeof(getfield(model,i)),:components) && i!=:vrmodel
-            export_model(getfield(model,i),name)
+            export_model(getfield(model,i),name;location=location)
         end
     end
 end
 
 export export_model
 
-function export_like(model::EoSModel,params,name,species,ncomps)
+function export_like(model::EoSModel,params,name,location,species,ncomps)
     M = typeof(model)
     model_name = String(split(string(M),"{")[1])
 
@@ -67,11 +67,11 @@ function export_like(model::EoSModel,params,name,species,ncomps)
     end
 
     if length(like) != 1
-        ParamTable(:like, Tables.columntable(like); name=name, location=".")
+        ParamTable(:like, Tables.columntable(like); name=name, location=location)
     end
 end
 
-function export_unlike(model::EoSModel,params,name,species,ncomps)
+function export_unlike(model::EoSModel,params,name,location,species,ncomps)
     M = typeof(model)
     model_name = String(split(string(M),"{")[1])
 
@@ -110,11 +110,11 @@ function export_unlike(model::EoSModel,params,name,species,ncomps)
     end
 
     if length(unlike) != 2
-        ParamTable(:unlike, Tables.columntable(unlike); name=name, location=".")
+        ParamTable(:unlike, Tables.columntable(unlike); name=name, location=location)
     end
 end
 
-function export_unlike(model::ActivityModel,params,name,species,ncomps)
+function export_unlike(model::ActivityModel,params,name,location,species,ncomps)
     M = typeof(model)
     model_name = String(split(string(M),"{")[1])
 
@@ -138,7 +138,7 @@ function export_unlike(model::ActivityModel,params,name,species,ncomps)
         if typeof(getfield(model.params,params[i])) <: PairParam
             binary = Vector{Float64}()
             for j in 1:ncomps
-                append!(binary,getfield(model.params,params[i]).values[1:end .!=j,j])
+                append!(binary,getfield(model.params,params[i]).values[j,1:end .!=j])
             end
             merge!(unlike,Dict(Symbol(params[i])=>binary))
         end
@@ -151,11 +151,11 @@ function export_unlike(model::ActivityModel,params,name,species,ncomps)
     end
 
     if length(unlike) != 2
-        ParamTable(:unlike, Tables.columntable(unlike); name=name, location=".")
+        ParamTable(:unlike, Tables.columntable(unlike); name=name, location=location)
     end
 end
 
-function export_assoc(model::EoSModel,params,name,species,ncomps)
+function export_assoc(model::EoSModel,params,name,location,species,ncomps)
     M = typeof(model)
     model_name = String(split(string(M),"{")[1])
 
@@ -199,6 +199,6 @@ function export_assoc(model::EoSModel,params,name,species,ncomps)
     end
 
     if !isempty(assoc)
-        ParamTable(:assoc, Tables.columntable(assoc); name=name, location=".")
+        ParamTable(:assoc, Tables.columntable(assoc); name=name, location=location)
     end
 end
