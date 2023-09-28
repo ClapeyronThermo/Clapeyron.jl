@@ -60,32 +60,32 @@ end
 
     @testset "export_model" begin
         @testset "SAFT Model" begin
-            model = PCSAFT(["water","ethanol"])
+            model_og = PCSAFT(["water","ethanol"])
             export_model(model)
-            model2 = PCSAFT(["water","ethanol"]; userlocations = ["singledata_PCSAFT.csv","pairdata_PCSAFT.csv","assocdata_PCSAFT.csv"])
+            model_ex = PCSAFT(["water","ethanol"]; userlocations = ["singledata_PCSAFT.csv","pairdata_PCSAFT.csv","assocdata_PCSAFT.csv"])
 
-            @test model.params.segment.values == model2.params.segment.values
-            @test model.params.epsilon.values == model2.params.epsilon.values
-            @test model.params.epsilon_assoc.values.values == model2.params.epsilon_assoc.values.values
+            @test model_og.params.segment.values == model_ex.params.segment.values
+            @test model_og.params.epsilon.values == model_ex.params.epsilon.values
+            @test model_og.params.epsilon_assoc.values.values == model_ex.params.epsilon_assoc.values.values
         end
 
         @testset "Cubic Model" begin
-            model = PR(["water","ethanol"])
+            model_og = PR(["water","ethanol"])
             export_model(model)
-            model2 = PR(["water","ethanol"]; userlocations = ["singledata_PR.csv","pairdata_PR.csv"],
+            model_ex = PR(["water","ethanol"]; userlocations = ["singledata_PR.csv","pairdata_PR.csv"],
                                        alpha_userlocations = ["singledata_PRAlpha.csv"])
 
-            @test model.params.a.values == model2.params.a.values
-            @test model.alpha.params.acentricfactor.values == model2.alpha.params.acentricfactor.values
+            @test model_og.params.a.values == model_ex.params.a.values
+            @test model_og.alpha.params.acentricfactor.values == model_ex.alpha.params.acentricfactor.values
         end
 
         @testset "Activity & GC Model" begin
-            model = UNIFAC(["water","ethanol"])
+            model_og = UNIFAC(["water","ethanol"])
             export_model(model)
-            model2 = UNIFAC(["water","ethanol"]; userlocations = ["singledata_UNIFAC.csv","pairdata_UNIFAC.csv"])
+            model_ex = UNIFAC(["water","ethanol"]; userlocations = ["singledata_UNIFAC.csv","pairdata_UNIFAC.csv"])
 
-            @test model.params.Q.values == model2.params.Q.values
-            @test model.params.A.values == model2.params.A.values
+            @test model_og.params.Q.values == model_ex.params.Q.values
+            @test model_og.params.A.values == model_ex.params.A.values
         end
 
     end
