@@ -117,7 +117,7 @@ function Base.show(io::IO, estimation::Estimation)
 end
 
 function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}}, ignorefield::Vector{Symbol}, objective_form::Function = mse(pred,exp) = ((pred-exp)/exp)^2)
-    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths), objective_form,ignorefield)
+    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths),ignorefield,objective_form)
     
     nparams = length(estimation.toestimate.params)
 
