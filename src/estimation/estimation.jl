@@ -90,6 +90,7 @@ mutable struct Estimation{T<:EoSModel}
     initial_model::T
     toestimate::ToEstimate
     data::Vector{EstimationData}
+    objective_form::Function
     ignorefield::Union{Nothing,Vector{Symbol}}
 end
 
@@ -113,8 +114,8 @@ function Base.show(io::IO, estimation::Estimation)
     print(io, typeof(estimation))
 end
 
-function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}}, ignorefield::Vector{Symbol})
-    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths),ignorefield)
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}}, ignorefield::Vector{Symbol}, objective_form::Function = mse(pred,exp) = ((pred-exp)/exp)^2)
+    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths), objective_form,ignorefield)
     
     nparams = length(estimation.toestimate.params)
 
@@ -126,8 +127,8 @@ function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filep
     return estimation, objective, x0, upper, lower
 end
 
-function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}})
-    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths),Symbol[])
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}}, objective_form::Function = mse(pred,exp) = ((pred-exp)/exp)^2)
+    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths), Symbol[], objective_form)
     
     nparams = length(estimation.toestimate.params)
 
@@ -308,6 +309,7 @@ The objective function used within parameter estimation.
 function objective_function(estimation::Estimation,guesses)
     F = 0
     model = return_model(estimation, estimation.model, guesses)
+    objective_form = estimation.objective_form
     for i ∈ 1:length(estimation.data)
         if estimation.data[i].species == ["all"]
             model_r = model
@@ -336,9 +338,9 @@ function objective_function(estimation::Estimation,guesses)
         end
 
         if length(outputs)==1
-            F += sum(((prediction.-outputs[1])./outputs[1]).^2)/length(outputs[1])*weights[1]
+            F += sum(objective_form.(prediction,outputs[1]))/length(outputs[1])*weights[1]
         else
-            F += sum([sum([((prediction[k][j].-outputs[j][k])./outputs[j][k]).^2 for j in 1:length(prediction[k])])*weights[1] for k in 1:length(prediction)])/length(outputs[1])
+            F += sum([sum([objective_form.(prediction[k][j],outputs[j][k]) for j in 1:length(prediction[k])])*weights[1] for k in 1:length(prediction)])/length(outputs[1])
         end
     end
     if isnan(F)
