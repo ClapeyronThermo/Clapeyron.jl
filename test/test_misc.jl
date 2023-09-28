@@ -61,7 +61,7 @@ end
     @testset "export_model" begin
         @testset "SAFT Model" begin
             model_og = PCSAFT(["water","ethanol"])
-            export_model(model)
+            export_model(model_og)
             model_ex = PCSAFT(["water","ethanol"]; userlocations = ["singledata_PCSAFT.csv","pairdata_PCSAFT.csv","assocdata_PCSAFT.csv"])
 
             @test model_og.params.segment.values == model_ex.params.segment.values
@@ -71,7 +71,7 @@ end
 
         @testset "Cubic Model" begin
             model_og = PR(["water","ethanol"])
-            export_model(model)
+            export_model(model_og)
             model_ex = PR(["water","ethanol"]; userlocations = ["singledata_PR.csv","pairdata_PR.csv"],
                                        alpha_userlocations = ["singledata_PRAlpha.csv"])
 
@@ -81,7 +81,7 @@ end
 
         @testset "Activity & GC Model" begin
             model_og = UNIFAC(["water","ethanol"])
-            export_model(model)
+            export_model(model_og)
             model_ex = UNIFAC(["water","ethanol"]; userlocations = ["singledata_UNIFAC.csv","pairdata_UNIFAC.csv"])
 
             @test model_og.params.Q.values == model_ex.params.Q.values
