@@ -351,7 +351,7 @@ structSAFTgammaMie{BasicIdeal, SAFTVRMie{BasicIdeal}} with 1 component:
 Group Type: SAFTgammaMie
 Contains parameters: segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol
 ```
-Note how we must now provide the number of types each group is bonded with one another. The only other equation of state which requires this is `gcPCSAFT`.
+Note how we must now provide the number of times each group is bonded with one another. The only other equation of state which requires this is `gcPCSAFT`.
 
 !!! note "External Packages"
     This process can get quite tedious when dealing with larger species. As such, we are currently developping a new package to automate this process. We hope to register [GCIdentifier.jl](https://github.com/ClapeyronThermo/GCIdentifier.jl) soon.
