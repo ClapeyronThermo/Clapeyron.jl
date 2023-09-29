@@ -46,7 +46,7 @@ function COSMOSACdsp(components;
             id = cas(formatted_components[i])
             ids = CAS.==uppercase(id[1])
             dbname = INCHIKEY[ids]
-            file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma/"*dbname[1]*".sigma", IOBuffer())))
+            file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma3/"*dbname[1]*".sigma", IOBuffer())))
             lines = split(file,r"\n")
             meta = lines[1][9:end]
             json = JSON3.read(meta)
