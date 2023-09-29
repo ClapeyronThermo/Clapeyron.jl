@@ -104,6 +104,9 @@ Base.eltype(model::EoSModel) = __eltype(model)
         return Float64
     end
 end
+
+Base.summary(model::EoSModel) = string(parameterless_type(model))
+
 """
     @comps
 
