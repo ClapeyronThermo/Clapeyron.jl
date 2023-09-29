@@ -1,4 +1,4 @@
-PARAM_LOCATION = "" 
+PARAM_LOCATION = ""
 import UUIDs
 const PKG_UUID = parse(UUIDs.UUID,"7c7805af-46cc-48c9-995b-ed0ed2dc909a")
 
@@ -21,8 +21,9 @@ Creates a clapeyron CSV file and returns the location of that file. the type det
 - `:pair` creates a table with pair parameters
 - `:assoc` creates a table with association parameters
 - `:group` creates a table with association parameters
-By default, the name is generated randomly, and the table is stored as a temporary scratch space (provided by Scratch.jl). 
-You can clean said scratch space by using `Clapeyron.cleartemp!()`. 
+By default, the name is generated randomly, and the table is stored as a temporary scratch space (provided by Scratch.jl).
+You can clean said scratch space by using `Clapeyron.cleartemp!()`.
+
 ## Examples:
 ```julia-repl
 julia> data = (species = ["water"],Mw = [18.03]) #it could be a Dict, a named tuple, or any Tables.jl compatible table
@@ -59,7 +60,7 @@ function ParamTable(type::Symbol,data;
     _,_,_ = col_indices(table_type,normalised_headers,options) #basically to check the schema
     file = joinpath(location,csvname)
     io = open(file,"w")
-    pretext = 
+    pretext =
     """Clapeyron Database File
     $(name) Parameters [csvtype = $type, grouptype = $grouptype]
     """
@@ -70,7 +71,7 @@ function ParamTable(type::Symbol,data;
 end
 
 function generate_location!()
-    if PARAM_LOCATION === "" 
+    if PARAM_LOCATION === ""
         global PARAM_LOCATION = @get_scratch!("ParamTables")
     end
     return PARAM_LOCATION
