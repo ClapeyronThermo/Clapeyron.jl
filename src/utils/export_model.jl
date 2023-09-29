@@ -8,7 +8,7 @@ Note that it will export all submodel parameters (e.g. Alpha function parameters
 """
 function export_model(model::EoSModel,name="";location=".")
     M = typeof(model)
-    model_name = String(split(string(M),"{")[1])
+    model_name = summary(M)
 
     if hasfield(M,:groups)
         species = model.groups.flattenedgroups
@@ -29,7 +29,7 @@ function export_model(model::EoSModel,name="";location=".")
 
     f = fieldnames(M)
     for i in f
-        if typeof(getfield(model,i))<:EoSModel && hasfield(typeof(getfield(model,i)),:components) && i!=:vrmodel
+        if fieldtype(model,i) <: EoSModel && hasfield(fieldtype(model,i),:components) && i!=:vrmodel
             export_model(getfield(model,i),name;location=location)
         end
     end
@@ -39,19 +39,23 @@ export export_model
 
 function export_like(model::EoSModel,params,name,location,species,ncomps)
     M = typeof(model)
-    model_name = String(split(string(M),"{")[1])
+    P = typeof(model.params)
+    model_name = summary(M)
 
     like = OrderedDict{Symbol,AbstractVector}()
-    merge!(like,Dict(Symbol("species")=>species))
+    like[:species] = species
 
     for i in 1:length(params)
-        if typeof(getfield(model.params,params[i])) <: SingleParam
-            merge!(like,Dict(Symbol(params[i])=>getfield(model.params,params[i]).values))
-        elseif typeof(getfield(model.params,params[i])) <: PairParam
-            if params[i] == :sigma
-                merge!(like,Dict(Symbol(params[i])=>diagvalues(getfield(model.params,params[i]).values)*1e10))
-            elseif all(diagvalues(getfield(model.params,params[i]).values).!=0)
-                merge!(like,Dict(Symbol(params[i])=>diagvalues(getfield(model.params,params[i]).values)))
+        paramtype = fieldtype(P,i)
+        paramname = params[i]
+        paramvalue = getfield(model.params,params[i])
+        if paramtype <: SingleParam
+            like[paramname] = paramvalue.values
+        elseif paramtype <: PairParam
+            if paramname == :sigma
+                like[:sigma] = paramvalue.values * 1e10
+            elseif all(!iszero,diagvalues(paramvalue.values)) #all nonzero diagonal values
+                like[paramname] = paramvalue.values
             end
         end
     end
@@ -61,7 +65,7 @@ function export_like(model::EoSModel,params,name,location,species,ncomps)
         n_flatsites = model.sites.n_flattenedsites
         for i in 1:length(site_types)
             nsites = [n_flatsites[j][i] for j in 1:ncomps]
-            merge!(like,Dict(Symbol("n_"*site_types[i])=>nsites))
+            like[Symbol("n_"*site_types[i])] = nsites
         end
     end
 
@@ -78,7 +82,8 @@ end
 
 function export_unlike(model::EoSModel,params,name,location,species,ncomps)
     M = typeof(model)
-    model_name = String(split(string(M),"{")[1])
+    P = typeof(model.params)
+    model_name = summary(M)
 
     species1 = Vector{String}()
     species2 = Vector{String}()
@@ -89,22 +94,26 @@ function export_unlike(model::EoSModel,params,name,location,species,ncomps)
     end
 
     unlike = OrderedDict{Symbol,AbstractVector}()
-    merge!(unlike,Dict(Symbol("species1")=>species1))
-    merge!(unlike,Dict(Symbol("species2")=>species2))
+    unlike[:species1] = species1
+    unlike[:species2] = species2
 
     for i in 1:length(params)
-        if typeof(getfield(model.params,params[i])) <: PairParam
+        paramtype = fieldtype(P,i)
+        paramname = params[i]
+        paramvalue = getfield(model.params,params[i])
+
+        if paramtype <: PairParam
             binary = Vector{Float64}()
             if params[i] == :sigma
                 for j in 1:ncomps-1
-                    append!(binary,getfield(model.params,params[i]).values[j+1:end,j]*1e10)
+                    append!(binary,paramvalue.values[j+1:end,j]*1e10)
                 end
             else
                 for j in 1:ncomps-1
-                    append!(binary,getfield(model.params,params[i]).values[j+1:end,j])
+                    append!(binary,paramvalue.values[j+1:end,j])
                 end
             end
-            merge!(unlike,Dict(Symbol(params[i])=>binary))
+            unlike[paramname] = binary
         end
     end
 
@@ -121,7 +130,7 @@ end
 
 function export_unlike(model::ActivityModel,params,name,location,species,ncomps)
     M = typeof(model)
-    model_name = String(split(string(M),"{")[1])
+    model_name = summary(M)
 
     species1 = Vector{String}()
     species2 = Vector{String}()
@@ -136,16 +145,19 @@ function export_unlike(model::ActivityModel,params,name,location,species,ncomps)
     end
 
     unlike = OrderedDict{Symbol,AbstractVector}()
-    merge!(unlike,Dict(Symbol("species1")=>species1))
-    merge!(unlike,Dict(Symbol("species2")=>species2))
+    unlike[:species1] = species1
+    unlike[:species2] = species2
 
     for i in 1:length(params)
-        if typeof(getfield(model.params,params[i])) <: PairParam
+        paramtype = fieldtype(P,i)
+        paramname = params[i]
+        paramvalue = getfield(model.params,params[i])
+        if paramtype <: PairParam
             binary = Vector{Float64}()
             for j in 1:ncomps
-                append!(binary,getfield(model.params,params[i]).values[j,1:end .!=j])
+                append!(binary,paramvalue.values[j,1:end .!=j])
             end
-            merge!(unlike,Dict(Symbol(params[i])=>binary))
+            unlike[paramname] = binary
         end
     end
 
@@ -162,7 +174,7 @@ end
 
 function export_unlike(model::ABCubicModel,params,name,location,species,ncomps)
     M = typeof(model)
-    model_name = String(split(string(M),"{")[1])
+    model_name = summary(M)
 
     species1 = Vector{String}()
     species2 = Vector{String}()
@@ -173,31 +185,34 @@ function export_unlike(model::ABCubicModel,params,name,location,species,ncomps)
     end
 
     unlike = OrderedDict{Symbol,AbstractVector}()
-    merge!(unlike,Dict(Symbol("species1")=>species1))
-    merge!(unlike,Dict(Symbol("species2")=>species2))
+    unlike[:species1] = species1
+    unlike[:species2] = species2
 
     for i in 1:length(params)
-        if typeof(getfield(model.params,params[i])) <: PairParam
+        paramtype = fieldtype(P,i)
+        paramname = params[i]
+        paramvalue = getfield(model.params,params[i])
+        if paramtype <: PairParam
             if params[i] == :a
                 binary = Vector{Float64}()
                 for j in 1:ncomps-1
-                    aij = getfield(model.params,params[i]).values[j+1:end,j]
-                    aj = getfield(model.params,params[i]).values[j,j]
-                    ai = diagvalues(getfield(model.params,params[i]).values)[j+1:end]
+                    aij = paramvalue.values[j+1:end,j]
+                    aj = paramvalue.values[j,j]
+                    ai = diagvalues(paramvalue.values)[j+1:end]
                     kij = @. 1-aij/(sqrt(ai*aj))
                     append!(binary,kij)
                 end
-                merge!(unlike,Dict(Symbol(:k)=>binary))
+                unlike[paramname] = binary
             elseif params[i] == :b
                 binary = Vector{Float64}()
                 for j in 1:ncomps-1
-                    bij = getfield(model.params,params[i]).values[j+1:end,j]
-                    bj = getfield(model.params,params[i]).values[j,j]
-                    bi = diagvalues(getfield(model.params,params[i]).values)[j+1:end]
+                    bij = paramvalue.values[j+1:end,j]
+                    bj = paramvalue.values[j,j]
+                    bi = diagvalues(paramvalue.values)[j+1:end]
                     lij = @. 1-2*bij/(bi+bj)
                     append!(binary,lij)
                 end
-                merge!(unlike,Dict(Symbol(:l)=>binary))
+                unlike[paramname] = binary
             end
         end
     end
@@ -215,14 +230,17 @@ end
 
 function export_assoc(model::EoSModel,params,name,location,species,ncomps)
     M = typeof(model)
-    model_name = String(split(string(M),"{")[1])
+    model_name = summary(M)
 
     assoc = OrderedDict{Symbol,AbstractVector}()
 
     for i in 1:length(params)
-        if typeof(getfield(model.params,params[i])) <: AssocParam
+        paramtype = fieldtype(P,i)
+        paramname = params[i]
+        paramvalue = getfield(model.params,params[i])
+        if paramtype <: AssocParam
             site_types = model.sites.flattenedsites
-            mat = getfield(model.params,params[i]).values
+            mat = paramvalue.values
             nassoc = length(mat.values)
             spe1 = Vector{String}()
             spe2 = Vector{String}()
@@ -240,13 +258,13 @@ function export_assoc(model::EoSModel,params,name,location,species,ncomps)
             end
 
             if !any(keys(assoc).==:species1)
-                merge!(assoc,Dict(Symbol("species1")=>spe1))
-                merge!(assoc,Dict(Symbol("site1")=>site1))
-                merge!(assoc,Dict(Symbol("species2")=>spe2))
-                merge!(assoc,Dict(Symbol("site2")=>site2))
+                assoc[:species1] = spe1
+                assoc[:species2] = spe2
+                assoc[:site1] = site1
+                assoc[:site2] = site2
             end
 
-            merge!(assoc,Dict(Symbol(params[i])=>vals))
+            assoc[paramname] = vals
         end
     end
 
