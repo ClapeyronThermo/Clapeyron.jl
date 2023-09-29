@@ -8,7 +8,7 @@ Note that it will export all submodel parameters (e.g. Alpha function parameters
 """
 function export_model(model::EoSModel,name="";location=".")
     M = typeof(model)
-    model_name = summary(M)
+    model_name = summary(model)
 
     if hasfield(M,:groups)
         species = model.groups.flattenedgroups
@@ -29,7 +29,7 @@ function export_model(model::EoSModel,name="";location=".")
 
     f = fieldnames(M)
     for i in f
-        if fieldtype(model,i) <: EoSModel && hasfield(fieldtype(model,i),:components) && i!=:vrmodel
+        if fieldtype(M,i) <: EoSModel && hasfield(fieldtype(M,i),:components) && i!=:vrmodel
             export_model(getfield(model,i),name;location=location)
         end
     end
@@ -40,7 +40,7 @@ export export_model
 function export_like(model::EoSModel,params,name,location,species,ncomps)
     M = typeof(model)
     P = typeof(model.params)
-    model_name = summary(M)
+    model_name = summary(model)
 
     like = OrderedDict{Symbol,AbstractVector}()
     like[:species] = species
@@ -53,9 +53,9 @@ function export_like(model::EoSModel,params,name,location,species,ncomps)
             like[paramname] = paramvalue.values
         elseif paramtype <: PairParam
             if paramname == :sigma
-                like[:sigma] = paramvalue.values * 1e10
+                like[:sigma] = diagvalues(paramvalue.values) * 1e10
             elseif all(!iszero,diagvalues(paramvalue.values)) #all nonzero diagonal values
-                like[paramname] = paramvalue.values
+                like[paramname] = diagvalues(paramvalue.values)
             end
         end
     end
@@ -83,7 +83,7 @@ end
 function export_unlike(model::EoSModel,params,name,location,species,ncomps)
     M = typeof(model)
     P = typeof(model.params)
-    model_name = summary(M)
+    model_name = summary(model)
 
     species1 = Vector{String}()
     species2 = Vector{String}()
@@ -130,7 +130,8 @@ end
 
 function export_unlike(model::ActivityModel,params,name,location,species,ncomps)
     M = typeof(model)
-    model_name = summary(M)
+    P = typeof(model.params)
+    model_name = summary(model)
 
     species1 = Vector{String}()
     species2 = Vector{String}()
@@ -174,7 +175,8 @@ end
 
 function export_unlike(model::ABCubicModel,params,name,location,species,ncomps)
     M = typeof(model)
-    model_name = summary(M)
+    P = typeof(model.params)
+    model_name = summary(model)
 
     species1 = Vector{String}()
     species2 = Vector{String}()
@@ -230,7 +232,8 @@ end
 
 function export_assoc(model::EoSModel,params,name,location,species,ncomps)
     M = typeof(model)
-    model_name = summary(M)
+    P = typeof(model.params)
+    model_name = summary(model)
 
     assoc = OrderedDict{Symbol,AbstractVector}()
 
