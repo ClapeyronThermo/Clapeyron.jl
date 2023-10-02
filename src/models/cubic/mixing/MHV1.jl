@@ -27,8 +27,7 @@ None
 
 Modified Huron-Vidal Mixing Rule, First Order
 ```
-aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
-bᵢⱼ = (bᵢ + bⱼ)/2
+bᵢⱼ = (1 - lᵢⱼ)(bᵢ + bⱼ)/2
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - [gᴱ/RT + ∑log(bᵢᵢ/b̄)]/q)

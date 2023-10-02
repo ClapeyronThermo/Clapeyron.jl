@@ -102,6 +102,23 @@ function data(model::ABCubicModel, V, T, z)
     return n, ā, b̄, c̄
 end
 
+function cubic_get_k end
+function cubic_get_l end
+
+get_k(model::CubicModel) = cubic_get_k(model,model.mixing,model.params)
+get_l(model::CubicModel) = cubic_get_l(model,model.mixing,model.params)
+
+function set_k!(model::CubicModel,k)
+    n = length(model)
+    recombine_mixing!(model,model.mixing,k,FillArrays.Zeros(Int, n, n))
+end
+
+function set_l!(model::CubicModel,l)
+    n = length(model)
+    recombine_mixing!(model,model.mixing,FillArrays.Zeros(Int, n, n),l)
+end
+
+
 function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
     Δ1,Δ2 = cubic_Δ(model,z)

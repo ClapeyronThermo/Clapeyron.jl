@@ -16,8 +16,8 @@ None
 ## Description
 van der Wals One-Fluid mixing rule for cubic parameters:
 ```
-aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
-bᵢⱼ = (bᵢ + bⱼ)/2
+aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
+bᵢⱼ = (1 - lᵢⱼ)(bᵢ + bⱼ)/2
 ā = ∑aᵢⱼxᵢxⱼ√(αᵢ(T)αⱼ(T))
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
