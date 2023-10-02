@@ -1,12 +1,15 @@
 """
-    tcRK(components::Vector{String}; idealmodel=BasicIdeal,
-    userlocations=String[],
+    tcRK(components::Vector{String};
+    idealmodel = BasicIdeal,
+    userlocations = String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    verbose = false,
+    estimate_alpha = true,
+    estimate_translation = true)
 
 translated and consistent Redlich-Kwong equation of state. it uses the following models:
 - Translation Model: [`ConstantTranslation`](@ref)
@@ -14,6 +17,8 @@ translated and consistent Redlich-Kwong equation of state. it uses the following
 - Mixing Rule Model: [`vdW1fRule`](@ref)
 
 If Twu parameters are not provided, they can be estimated from the acentric factor (`acentricfactor`). If translation is not provided, it can be estimated, using Rackett compresibility Factor (`ZRA`) or the acentric factor (`acentricfactor`).
+
+The use of estimates for the alpha function and volume translation can be turned off by passing `estimate_alpha = false` or `estimate_translation = false`.
 
 ## References
 1. Le Guennec, Y., Privat, R., & Jaubert, J.-N. (2016). Development of the translated-consistent tc-PR and tc-RK cubic equations of state for a safe and accurate prediction of volumetric, energetic and saturation properties of pure compounds in the sub- and super-critical domains. Fluid Phase Equilibria, 429, 301–312. [doi:10.1016/j.fluid.2016.09.003](http://dx.doi.org/10.1016/j.fluid.2016.09.003)
@@ -31,7 +36,8 @@ function tcRK(components::Vector{String}; idealmodel=BasicIdeal,
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    estimate_alpha = true,
+    estimate_translation = true)
 
 
     #just read once if allowed.
@@ -73,6 +79,11 @@ function tcRK(components::Vector{String}; idealmodel=BasicIdeal,
         L = params["L"]
         for i in 1:n
             if M.ismissingvalues[i] && N.ismissingvalues[i] && L.ismissingvalues[i]
+                if !estimate_alpha
+                    any(M.ismissingvalues) && SingleMissingError(M)
+                    any(L.ismissingvalues) && SingleMissingError(L)
+                    any(N.ismissingvalues) && SingleMissingError(N)
+                end
                 if !w.ismissingvalues[i]
                     wi = w[i]
                     Li = 0.0611*wi*wi + 0.7535*wi + 0.1359
@@ -107,6 +118,7 @@ function tcRK(components::Vector{String}; idealmodel=BasicIdeal,
                 Pci = Pc[i]
                 R = Rgas()
                 RTp = (R*Tci/Pci)
+                !estimate_translation && SingleMissingError(c)
                 if !zra.ismissingvalues[i]
                     cc[i] = RTp*(0.2150 - 0.7314*zra[i])
                 elseif !w.ismissingvalues[i]

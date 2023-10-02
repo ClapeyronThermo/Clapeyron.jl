@@ -1,13 +1,15 @@
 """
     tcPR(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    verbose=false,
+    estimate_alpha = true,
+    estimate_translation = true)
 
 translated and consistent Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`ConstantTranslation`](@ref)
@@ -32,7 +34,9 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    verbose=false,
+    estimate_alpha = true,
+    estimate_translation = true)
 
 
     #just read once if allowed.
@@ -73,6 +77,11 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
         L = params["L"]
         for i in 1:n
             if M.ismissingvalues[i] && N.ismissingvalues[i] && L.ismissingvalues[i] && w !== nothing
+                if !estimate_alpha
+                    any(M.ismissingvalues) && SingleMissingError(M)
+                    any(L.ismissingvalues) && SingleMissingError(L)
+                    any(N.ismissingvalues) && SingleMissingError(N)
+                end
                 if !w.ismissingvalues[i]
                     wi = w[i]
                     #tc-PR-2020 parameters

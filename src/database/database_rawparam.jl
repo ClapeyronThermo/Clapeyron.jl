@@ -313,10 +313,23 @@ end
 function is_valid_param(param::PairParameter,options)
     diag = diagvalues(param.ismissingvalues)
     if param.name ∉ options.ignore_missing_singleparams && !all(diag) && any(diag)
-        vals = [ifelse(diag[i],missing,param.values[i]) for i ∈ 1:length(diag)]
-        throw(MissingException("Partial missing values exist ∈ diagonal of pair parameter ",error_color(param.name), ": ", vals, "."))
+        PairMissingError(param)
     end
     return nothing
+end
+
+function SingleMissingError(param::SingleParameter)
+    missingvals = param.ismissingvalues
+    idx = findall(param.ismissingvalues)
+    comps = param.components[idx]
+    throw(MissingException("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, "."))
+end
+
+function PairMissingError(param::PairParameter)
+    diag = diagvalues(param.ismissingvalues)
+    idx = findall(diag)
+    comps = param.components[idx]
+    throw(MissingException("Partial missing values exist ∈ diagonal of pair parameter ",error_color(param.name), ": ", comps, "."))
 end
 
 function is_valid_param(param::AssocParam,options)
