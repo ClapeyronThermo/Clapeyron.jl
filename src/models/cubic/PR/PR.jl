@@ -14,18 +14,18 @@ end
 
 """
     PR(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    verbose = false)
     
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -54,11 +54,12 @@ b₁ = (1 + √2)b
 b₂ = (1 - √2)b
 ```
 
-## Building Examples
+## Model Construction Examples
 ```julia
 #using the default database
 model = PR("water") #single input
-model = PR(["water","ethanol"]) #multiple components 
+model = PR(["water","ethanol"]) #multiple components
+model = PR(["water","ethanol"], idealmodel = ReidIdeal) #modifying ideal model
 model = PR(["water","ethanol"],alpha = Soave2019) #modifying alpha function
 model = PR(["water","ethanol"],translation = RackettTranslation) #modifying translation
 model = PR(["water","ethanol"],mixing = KayRule) #using another mixing rule
@@ -66,7 +67,8 @@ model = PR(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced
 
 #passing a prebuilt model
 
-my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(acentricfactor => [0.1,0.2]))
+my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
+model = model = PR(["ethane","butane"],alpha = my_alpha)
 
 #using user-provided parameters
 
