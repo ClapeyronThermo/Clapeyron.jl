@@ -353,6 +353,15 @@ end
             @test UNIFAC(["water", "acetone", "dichloromethane"]) isa EoSModel
             
         end
+
+        @testset "#Cubic with alpha" begin
+            #=
+            introduced in 0.5 (by me, sorry)
+            init_alphamodel didn't accept fully built models before.
+            =#
+            my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
+            @test model = PR(["ethane","butane"],alpha = my_alpha) isa EoSModel            
+        end
     end
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6

@@ -53,6 +53,37 @@ P = RT/(V-Nb) + a•α(T)/(V-Nb₁)(V-Nb₂)
 b₁ = (1 + √2)b
 b₂ = (1 - √2)b
 ```
+
+## Building Examples
+```julia
+#using the default database
+model = PR("water") #single input
+model = PR(["water","ethanol"]) #multiple components 
+model = PR(["water","ethanol"],alpha = Soave2019) #modifying alpha function
+model = PR(["water","ethanol"],translation = RackettTranslation) #modifying translation
+model = PR(["water","ethanol"],mixing = KayRule) #using another mixing rule
+model = PR(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced EoS+gᴱ mixing rule
+
+#passing a prebuilt model
+
+my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(acentricfactor => [0.1,0.2]))
+
+#using user-provided parameters
+
+#passing files or folders
+model = PR(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])
+
+#passing parameters directly
+
+model = PR(["neon","hydrogen"];
+        userlocations = (;Tc = [44.492,33.19],
+                        Pc = [2679000, 1296400],
+                        Mw = [4.0, 4],
+                        acentricfactor = [-0.03,-0.21]
+                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        l = [0. 0.01; 0.01 0.])
+                    )
+```
 ## References
 1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. [doi:10.1021/I160057A011](https://doi.org/10.1021/I160057A011)
 """
