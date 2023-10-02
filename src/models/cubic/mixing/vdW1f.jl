@@ -22,6 +22,14 @@ ā = ∑aᵢⱼxᵢxⱼ√(αᵢ(T)αⱼ(T))
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ```
+
+## Model Construction Examples
+```
+# Because this model does not have parameters, all those constructors are equivalent:
+mixing = vdW1fRule()
+mixing = vdW1fRule("water")
+mixing = vdW1fRule(["water","carbon dioxide"])
+```
 """
 vdW1fRule
 

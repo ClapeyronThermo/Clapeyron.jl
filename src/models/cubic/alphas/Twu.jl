@@ -17,14 +17,12 @@ export TwuAlpha
     TwuAlpha(components;
     userlocations=String[],
     verbose::Bool=false)
+
 ## Input Parameters
 - `M`: Single Parameter
 - `N`: Single Parameter
 - `L`: Single Parameter
-## Model Parameters
-- `M`: Single Parameter
-- `N`: Single Parameter
-- `L`: Single Parameter
+
 ## Description
 Cubic alpha `(α(T))` model. Default for [`VTPR`](@ref) EoS. Also known as Twu-91 alpha
 ```

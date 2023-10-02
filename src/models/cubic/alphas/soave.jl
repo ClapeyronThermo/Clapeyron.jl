@@ -29,18 +29,17 @@ To use different polynomial coefficients for `mᵢ`, overload `Clapeyron.α_m(::
 
 ## Model Construction Examples
 ```
-#using the default database
+# Using the default database
 alpha = SoaveAlpha("water") #single input
 alpha = SoaveAlpha(["water","ethanol"]) #multiple components
 
-#using user-provided parameters
+# Using user-provided parameters
 
-#passing files or folders
-model = SoaveAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/acentric.csv"])
+# Passing files or folders
+alpha = SoaveAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/acentric.csv"])
 
-#passing parameters directly
-model = SoaveAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
-
+# Passing parameters directly
+alpha = SoaveAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
 ```
 
 """
