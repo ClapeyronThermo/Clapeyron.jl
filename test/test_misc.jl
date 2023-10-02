@@ -58,6 +58,38 @@ end
         @test model0.params.epsilon.values[1,1] == model0_split.params.epsilon.values[1,1]
     end
 
+    @testset "export_model" begin
+        @testset "SAFT Model" begin
+            model_og = PCSAFT(["water","ethanol"])
+            export_model(model_og)
+            model_ex = PCSAFT(["water","ethanol"]; userlocations = ["singledata_PCSAFT.csv","pairdata_PCSAFT.csv","assocdata_PCSAFT.csv"])
+
+            @test model_og.params.segment.values == model_ex.params.segment.values
+            @test model_og.params.epsilon.values == model_ex.params.epsilon.values
+            @test model_og.params.epsilon_assoc.values.values == model_ex.params.epsilon_assoc.values.values
+        end
+
+        @testset "Cubic Model" begin
+            model_og = PR(["water","ethanol"])
+            export_model(model_og)
+            model_ex = PR(["water","ethanol"]; userlocations = ["singledata_PR.csv","pairdata_PR.csv"],
+                                       alpha_userlocations = ["singledata_PRAlpha.csv"])
+
+            @test model_og.params.a.values == model_ex.params.a.values
+            @test model_og.alpha.params.acentricfactor.values == model_ex.alpha.params.acentricfactor.values
+        end
+
+        @testset "Activity & GC Model" begin
+            model_og = UNIFAC(["water","ethanol"])
+            export_model(model_og)
+            model_ex = UNIFAC(["water","ethanol"]; userlocations = ["singledata_UNIFAC.csv","pairdata_UNIFAC.csv"])
+
+            @test model_og.params.Q.values == model_ex.params.Q.values
+            @test model_og.params.A.values == model_ex.params.A.values
+        end
+
+    end
+
     @testset "single component error" begin
         model = PCSAFT(["water","methane"])
         @test_throws DimensionMismatch saturation_pressure(model,300.15)
@@ -311,6 +343,15 @@ end
             system = PR(["A", "B"], userlocations = [file])
             @test system.params.Tc[2] == 3.5
 
+        end
+
+        @testset "#201" begin
+            #=
+            Ternary LLE
+            =#
+            @test aspenNRTL(["water", "acetone", "dichloromethane"],puremodel = PR) isa EoSModel
+            @test UNIFAC(["water", "acetone", "dichloromethane"]) isa EoSModel
+            
         end
     end
     @printline

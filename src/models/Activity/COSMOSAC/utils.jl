@@ -14,5 +14,12 @@ function COSMO_parse_Pi(param::SingleParam{String})
     SingleParam(param.name,param.components,Vec,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
+function get_cosmo_comps()
+    file = CSV.File(DB_PATH*"/Activity/COSMOSAC/cosmo_inchikey.csv")
+    CAS = file["CAS#"]
+    INCHIKEY = file["INCHIKEY"]
+    return CAS, INCHIKEY
+end
+
 cosmo_tol(_new,_old) = mapreduce((x,y) -> abs(x/y -1.0),+,_new,_old)
 

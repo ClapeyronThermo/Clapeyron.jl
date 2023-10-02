@@ -3,24 +3,33 @@ function init_preferred_method(method::typeof(tp_flash),model::ActivityModel,kwa
     return RRTPFlash(;kwargs...)
 end
 
-function PTFlashWrapper(model::ActivityModel,p,T::Number) 
+function PTFlashWrapper(model::ActivityModel,p,T::Number,equilibrium::Symbol)
+    #check that we can actually solve the equilibria
+    if model.puremodel.model isa IdealModel && !is_lle(equilibrium)
+        throw(DomainError(model,"solving Vapor-liquid equilibria with activity models requires a pure model that is capable of providing saturation properties"))
+    end
     pures = model.puremodel.pure
     RT = R̄*T
     if model.puremodel.model isa IdealModel
         vv = RT/p
-        sats = fill((p,vv,vv),length(model))
+        nan = zero(vv)/zero(vv)
+        sats = fill((nan,nan,vv),length(model))
+        ϕpure = fill(one(vv),length(model))
+        g_pure = [VT_gibbs_free_energy(__gas_model(pures[i]),vv,T) for i in 1:length(model)]
+        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure)
     else
         sats = saturation_pressure.(pures,T)
+        vv_pure = last.(sats)
+        p_pure = first.(sats)
+        μpure = only.(VT_chemical_potential_res.(__gas_model.(pures),vv_pure,T))
+        ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
+        g_pure = [VT_gibbs_free_energy(__gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
+        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure)
     end
-    vv_pure = last.(sats)
-    p_pure = first.(sats)
-    μpure = only.(VT_chemical_potential_res.(__gas_model.(pures),vv_pure,T))
-    ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
-    g_pure = [VT_gibbs_free_energy(__gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
-    return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure)
+
 end
 
-__tpflash_cache_model(model::ActivityModel,p,T,z) = PTFlashWrapper(model,p,T)
+__tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
 
 function update_K!(lnK,wrapper::PTFlashWrapper{<:ActivityModel},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
     model = wrapper.model
@@ -48,7 +57,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:ActivityModel},p,T,x,y,volx,vol
             end
         end
     end
-    
+
     if is_vapour(phasey)
         lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
         for i in eachindex(lnK)
@@ -74,7 +83,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:ActivityModel},p,T,x,y,volx,vol
             end
         end
     end
-    
+
     return lnK,volx,voly,gibbs
 end
 

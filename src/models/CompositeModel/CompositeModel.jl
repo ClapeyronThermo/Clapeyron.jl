@@ -95,7 +95,7 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
                 end
 
             end
-            
+
             return nan
         else
             @error "A phase needs to be specified on multicomponent composite models."
@@ -154,7 +154,7 @@ function saturation_temperature(model::CompositeModel,p,method::SaturationMethod
     #if psat fails, there are two options:
     #1- over critical point -> nan nan nan
     #2- saturation failed -> nan nan nan
-    else 
+    else
         return nan,nan,nan
     end
 end
@@ -164,9 +164,9 @@ function init_preferred_method(method::typeof(tp_flash),model::CompositeModel,kw
     return RRTPFlash(;kwargs...)
 end
 
-__tpflash_cache_model(model::CompositeModel,p,T,z) = PTFlashWrapper(model,p,T)
+__tpflash_cache_model(model::CompositeModel,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
 
-function PTFlashWrapper(model::CompositeModel,p,T::Number) 
+function PTFlashWrapper(model::CompositeModel,p,T::Number,equilibrium::Symbol)
     satmodels = split_model(model.saturation)
     gases = split_model(model.gas,1:length(model))
     sats = saturation_pressure.(satmodels,T)
@@ -214,6 +214,10 @@ end
 
 function K0_lle_init(model::PTFlashWrapper{<:CompositeModel},p,T,z)
     throw(error("CompositeModel does not support LLE equilibria."))
+end
+
+function __eval_G_DETPFlash(model::PTFlashWrapper{<:CompositeModel},p,T,xi,equilibrium)
+    throw(error("CompositeModel does not support DETPFlash."))
 end
 
 export CompositeModel

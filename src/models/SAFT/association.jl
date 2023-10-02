@@ -34,7 +34,7 @@ end
 """
     assoc_strength(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
     Δ(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
-Calculates the asssociation strength between component `i` at site `a` and component `j` at site `b`. 
+Calculates the asssociation strength between component `i` at site `a` and component `j` at site `b`.
 
 Any precomputed values can be passed along by calling `Clapeyron.data`.
 
@@ -246,7 +246,7 @@ const assoc_fractions = X
     assoc_fractions(model::EoSModel, V, T, z,data = nothing)
 
 Returns the solution for the association site fractions. used internally by all models that require association.
-The result is of type `PackedVectorsOfVectors.PackedVectorOfVectors`, with `length = length(model)`, and `x[i][a]` representing the empty fraction of the site `a` at component `i` 
+The result is of type `PackedVectorsOfVectors.PackedVectorOfVectors`, with `length = length(model)`, and `x[i][a]` representing the empty fraction of the site `a` at component `i`
 ## Example:
 
 ```
@@ -294,7 +294,7 @@ function assoc_matrix_solve(K, α, atol ,rtol, max_iters)
         f = true-Kmin
     end
     X0 = fill(f,n) #initial point
-    
+
     #
     #
     #=
@@ -379,7 +379,7 @@ end =#
 
 getsites(model) = model.sites
 
-function a_assoc_impl(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
+function a_assoc_impl(model::EoSModel, V, T, z,X_)
     _0 = zero(first(X_.v))
     sites = getsites(model)
     n = sites.n_sites
@@ -398,6 +398,59 @@ function a_assoc_impl(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
         res += resᵢₐ*z[i]
     end
     return res/sum(z)
+end
+
+
+"""
+    @assoc_loop(Xold,Xnew,expr)
+Solves an association problem, given an expression for the calculation of the fraction of non-bonded sites `X`.
+The macro takes care of creating the appropiate shaped vectors, and passing the appropiate iteration parameters from `AssocOptions`
+Expects the following variable names in scope:
+- `model` : EoS Model used
+- `V`,`T`,`z` : Total volume, Temperature, mol amounts
+`Xold` and `Xnew` are Vectors of Vectors, that can be indexed by component and site (`X[i][a]`).
+## Example
+```julia
+function X(model::DAPTModel, V, T, z)
+    _1 = one(V+T+first(z))
+    σ = model.params.sigma.values[1][1]
+    θ_c = model.params.theta_c.values[1,1][2,1]
+    κ = (1 - cos(θ_c*π/180))^2/4
+    ε_as = model.params.epsilon_assoc.values[1,1][2,1]
+    f = exp(ε_as/(T))-1
+    ρ = N_A*∑(z)/V
+    Irc = @f(I)
+    Xsol = @association_loop X_old X_new for i ∈ @comps, a ∈ @sites(i)
+            X4 = (1-X_old[i][a])^4
+            c_A = 8*π*κ*σ^3*f*(ρ*X_old[i][a]*(Irc*(1-X4) + X4/(π*ρ*σ^3)) + 2*ρ*(X_old[i][a]^2)*((1 - X_old[i][a])^3)*(Irc - 1/(π*ρ*σ^3)) )
+            X_new[i][a] =1/(1+c_A)
+    end
+    return Xsol
+end
+```
+"""
+macro assoc_loop(Xold,Xnew,expr)
+    return quote
+        __sites = model.sites
+        idxs = __sites.n_sites.p
+        X0 = fill(one(V+T+first(z)),length(__sites.n_sites.v))
+
+        function x_assoc_iter!(__X_new_i,__X_old_i)
+            $Xold = PackedVofV(idxs,__X_old_i)
+            $Xnew = PackedVofV(idxs,__X_old_i)
+            $expr
+            return __X_new_i
+        end
+
+        options = model.assoc_options
+        atol = options.atol
+        rtol = options.rtol
+        max_iters = options.max_iters
+        α = options.dampingfactor
+
+        Xsol = Clapeyron.Solvers.fixpoint(x_assoc_iter!,X0,Clapeyron.Solvers.SSFixPoint(α),atol=atol,rtol = rtol,max_iters = max_iters)
+        Xsol
+    end |> esc
 end
 #=
 function AX!(output,input,pack_indices,delta::Compressed4DMatrix{TT,VV} ,modelsites,ρ,z) where {TT,VV}

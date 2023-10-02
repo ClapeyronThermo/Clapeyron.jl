@@ -449,7 +449,7 @@ function col_indices(csvtype,headernames,options=DefaultOptions)
 end
 
 
-function read_csv(filepath,options::ParamOptions = DefaultOptions,sep = :auto)::CSV.File
+function read_csv(filepath,options::ParamOptions,sep = :auto)::CSV.File
     #actual reading
     ignorelist = deepcopy(options.ignore_headers)
     map!(normalisestring,ignorelist,ignorelist)
@@ -474,6 +474,11 @@ function read_csv(filepath,options::ParamOptions = DefaultOptions,sep = :auto)::
         df = CSV.File(filepath; header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String,delim = _delim, ntasks  = 1)
     end
     return df
+end
+
+function read_csv(path;relativetodatabase = true)
+    path_norm = getpath(path;relativetodatabase)
+    return read_csv(path_norm,ParamOptions(ignore_headers = String[]))
 end
 
 function findparamsincsv(components,filepath,
@@ -840,5 +845,6 @@ function valid_headerparams(csvheaders, options::ParamOptions = DefaultOptions)
 end
 
 include("database_group.jl")
+include("database_writer.jl")
 
 export getparams

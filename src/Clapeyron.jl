@@ -82,6 +82,9 @@ include("utils/index_reduction.jl")
 #splitting models, useful for methods.
 include("utils/split_model.jl")
 
+#exportting models, useful for parameter estimation.
+include("utils/export_model.jl")
+
 # Gustavo: acceleration for successive substitution
 include("utils/acceleration_ss.jl")
 
@@ -144,7 +147,10 @@ include("models/cubic/PR/PR.jl")
 include("models/cubic/KU/KU.jl")
 include("models/cubic/RKPR/RKPR.jl")
 
+
 #SAFT models
+include("models/SAFT/association.jl")
+include("models/SAFT/equations.jl")
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/PharmaPCSAFT.jl")
@@ -162,9 +168,8 @@ include("models/SAFT/SAFTgammaMie/variants/structSAFTgammaMie.jl")
 include("models/SAFT/CKSAFT/CKSAFT.jl")
 include("models/SAFT/CKSAFT/variants/sCKSAFT.jl")
 include("models/SAFT/BACKSAFT/BACKSAFT.jl")
-include("models/SAFT/equations.jl")
-include("models/SAFT/association.jl")
-
+include("models/SAFT/PCSAFT/variants/ADPCSAFT.jl")
+include("models/SAFT/DAPT/DAPT.jl")
 #Activity models
 include("models/Activity/Wilson/Wilson.jl")
 include("models/Activity/Wilson/variants/tcPRWilsonRes.jl")
