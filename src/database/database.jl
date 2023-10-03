@@ -309,7 +309,8 @@ function createparams(components::Vector{String},
 
     allparams = Dict{String,RawParam}()
     allnotfoundparams = Dict{String,CSVType}()
-    
+    #in case of NamedTuple or Dict user-provided params, the filepath string should be empty.
+    #but if its not, parse those anyway.
     for filepath ∈ filepaths
         
         _replace = startswith(filepath,"@REPLACE")
@@ -621,12 +622,13 @@ function findparamsinnt(components,
     options::ParamOptions,
     parsegroups = :off,
     csv_file_options = NT_CSV_OPTIONS) #default options
+
     verbose = options.verbose
     nt = options.userlocations
     foundvalues = Vector{RawParam}(undef,0)
     notfoundvalues = Dict{String,CSVType}()
     #this algorithm is less strict that what we have in CSVs. but allows us to parse named tuples
-    #VERY BIG TODO: parse assoc, how do we do that?
+
     for (k,v) in pairs(nt)
         ks = string(k)
         if k == :groups && parsegroups == :groups
@@ -662,11 +664,9 @@ function findparamsinnt(components,
         end
     end
 
-    
    # verbose && __verbose_findparams_found(foundvalues) #print all found values
 
     return foundvalues, notfoundvalues
-    
 end
 
 function _fill_sources!(input,allsources,tofill)

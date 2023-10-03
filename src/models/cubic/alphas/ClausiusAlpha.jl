@@ -11,11 +11,7 @@ export ClausiusAlpha
 
 ## Input Parameters
 
-- `w`: Single Parameter (`Float64`)
-
-## Model Parameters
-
-- `acentricfactor`: Single Parameter (`Float64`)
+- none
 
 ## Description
 
@@ -25,6 +21,13 @@ Cubic alpha `(α(T))` model. Default for [`Clausius`](@ref)  and [`Berthelot`]
 Trᵢ = T/Tcᵢ
 ```
 
+## Model Construction Examples
+```
+# Because this model does not have parameters, all those constructors are equivalent:
+alpha = ClausiusAlpha()
+alpha = ClausiusAlpha("water")
+alpha = ClausiusAlpha(["water","carbon dioxide"])
+```
 """
 ClausiusAlpha
 

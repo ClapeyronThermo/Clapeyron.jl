@@ -40,23 +40,23 @@ using Clapeyron, Test, LinearAlgebra
         @test haskey(params1, "sigma")
         
         #this fails, because there are missing params
-        @test_throws ErrorException Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts) #generate ClapeyronParams
+        @test_throws MissingException Clapeyron.compile_params(testspecies,allparams,allnotfoundparams,opts) #generate ClapeyronParams
         
         # Check that it throws an error if ignore_missing_singleparams is not set to true.
-        @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_normal,return_sites = false)
+        @test_throws MissingException Clapeyron.getparams(testspecies; userlocations=filepath_normal,return_sites = false)
     
         # Clashing headers between association and non-association parameters are not allowed
         @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_clashingheaders)
 
         # If parameter is not tagged as ignore_missing_singleparams, incomplete diagonal will throw an error
         #ignore_missing_singleparams=["asymmetricpair"]
-        @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry,return_sites = false)
+        @test_throws MissingException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry,return_sites = false)
 
 
         # Also, since a non-missing value exists on the diagonal of "asymmetricpair",
         # and the diagonal contains missing values, it should throw an error
         # when parameter is not in ignore_missing_singleparams
-        @test_throws ErrorException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"])
+        @test_throws MissingException Clapeyron.getparams(testspecies; userlocations=filepath_asymmetry, asymmetricparams=["asymmetricpair", "asymmetricassoc"])
 
     end
     

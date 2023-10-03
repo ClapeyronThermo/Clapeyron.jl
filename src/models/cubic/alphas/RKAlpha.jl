@@ -11,11 +11,7 @@ abstract type RKAlphaModel <: AlphaModel end
 
 ## Input Parameters
 
-- `w`: Single Parameter (`Float64`)
-
-## Model Parameters
-
-- `acentricfactor`: Single Parameter (`Float64`)
+- none
 
 ## Description
 
@@ -25,6 +21,13 @@ Cubic alpha `(α(T))` model. Default for [`RK`](@ref) EoS.
 Trᵢ = T/Tcᵢ
 ```
 
+## Model Construction Examples
+```
+# Because this model does not have parameters, all those constructors are equivalent:
+alpha = RKAlpha()
+alpha = RKAlpha("water")
+alpha = RKAlpha(["water","carbon dioxide"])
+```
 """
 RKAlpha
 

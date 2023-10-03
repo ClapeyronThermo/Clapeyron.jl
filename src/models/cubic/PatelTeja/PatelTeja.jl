@@ -64,6 +64,39 @@ Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
 Δ₁ =  -(ϵ + √δ)/2
 Δ₂ =  -(ϵ - √δ)/2
 ```
+
+## Model Construction Examples
+```julia
+# Using the default database
+model = PatelTeja("water") #single input
+model = PatelTeja(["water","ethanol"]) #multiple components
+model = PatelTeja(["water","ethanol"], idealmodel = ReidIdeal) #modifying ideal model
+model = PatelTeja(["water","ethanol"],alpha = TwuAlpha) #modifying alpha function
+model = PatelTeja(["water","ethanol"],translation = RackettTranslation) #modifying translation
+model = PatelTeja(["water","ethanol"],mixing = KayRule) #using another mixing rule
+model = PatelTeja(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced EoS+gᴱ mixing rule
+
+# Passing a prebuilt model
+
+my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
+model =  PatelTeja(["ethane","butane"],alpha = my_alpha)
+
+# User-provided parameters, passing files or folders
+model = PatelTeja(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])
+
+# User-provided parameters, passing parameters directly
+
+model = PatelTeja(["neon","hydrogen"];
+        userlocations = (;Tc = [44.492,33.19],
+                        Pc = [2679000, 1296400],
+                        Vc = [4.25e-5, 6.43e-5],
+                        Mw = [20.17, 2.],
+                        acentricfactor = [-0.03,-0.21]
+                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        l = [0. 0.01; 0.01 0.])
+                    )
+```
+
 ## References
 
 1. Patel, N. C., & Teja, A. S. (1982). A new cubic equation of state for fluids and fluid mixtures. Chemical Engineering Science, 37(3), 463–473. [doi:10.1016/0009-2509(82)80099-7](https://doi.org/10.1016/0009-2509(82)80099-7)

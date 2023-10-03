@@ -13,7 +13,7 @@ export Soave2019Alpha
 - `acentricfactor`: Single Parameter (`Float64`)
 
 ## Description
-Cubic alpha `(α(T))` model. updated m(ω) correlations for `PR` and `SRK` with better results for heavy molecules.
+Cubic alpha `(α(T))` model. Updated m(ω) correlations for `PR` and `SRK` with better results for heavy molecules.
 ```
 αᵢ = (1+mᵢ(1-√(Trᵢ)))^2
 Trᵢ = T/Tcᵢ
@@ -26,6 +26,21 @@ mᵢ =  0.3919 + 1.4996ωᵢ - 0.2721ωᵢ^2 + 0.1063ωᵢ^3
 and, for Redlich-Kwong:
 ```
 mᵢ =  0.4810 + 1.5963ωᵢ - 0.2963ωᵢ^2 + 0.1223ωᵢ^3
+```
+
+## Model Construction Examples
+```
+# Using the default database
+alpha = Soave2019Alpha("water") #single input
+alpha = Soave2019Alpha(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = Soave2019Alpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/acentric.csv"])
+
+# Passing parameters directly
+alpha = Soave2019Alpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
 ```
 
 ## References

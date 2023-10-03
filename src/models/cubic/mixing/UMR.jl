@@ -23,8 +23,8 @@ None
 ## Description
 Mixing Rule used by the Universal Mixing Rule Peng-Robinson [`UMRPR`](@ref) equation of state.
 ```
-aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
-bᵢⱼ = ((√bᵢ +√bⱼ)/2)^2
+aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
+bᵢⱼ = (1 - lᵢⱼ)((√bᵢ +√bⱼ)/2)^2
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - [gᴱ/RT]/0.53)

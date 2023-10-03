@@ -27,8 +27,6 @@ None
 
 Huron-Vidal Mixing Rule
 ```
-aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
-bᵢⱼ = (bᵢ +bⱼ)/2
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ā = b̄(∑[xᵢaᵢᵢαᵢ/(bᵢᵢ)] - gᴱ/λ)

@@ -26,6 +26,21 @@ if ωᵢ ≤ 0.491
 else
     mᵢ = 0.379642 + 1.487503ωᵢ - 0.164423ωᵢ^2 - 0.016666ωᵢ^3
 ```
+
+## Model Construction Examples
+```
+# Using the default database
+alpha = PR78Alpha("water") #single input
+alpha = PR78Alpha(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = PR78Alpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/acentric.csv"])
+
+# Passing parameters directly
+alpha = PR78Alpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
+```
 """
 PR78Alpha
 default_locations(::Type{PR78Alpha}) = critical_data()
