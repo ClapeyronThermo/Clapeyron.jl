@@ -109,6 +109,8 @@ end
 
 flattenfilepaths(locations,userlocations::String) = flattenfilepaths(locations,[userlocations])
 
+getpath(location;relativetodatabase = true) = only(getpaths(location; relativetodatabase))
+
 Base.@nospecialize
 function flattenfilepaths(locations,userlocations::Union{NamedTuple,AbstractDict})
     return String[]

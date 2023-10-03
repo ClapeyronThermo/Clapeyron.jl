@@ -1,0 +1,4 @@
+Clapeyron Database File,,,,,,,,
+DAPT Assoc Parameters,,,,,,,,
+species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,theta_c,source
+water,O,H,water,O,e,1938.36,26.404,10.1002/aic.17342

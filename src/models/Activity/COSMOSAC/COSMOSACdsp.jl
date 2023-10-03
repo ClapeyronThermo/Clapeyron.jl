@@ -56,24 +56,92 @@ function COSMOSACdsp(components;
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
+    use_nist_database = false,
     verbose=false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations=userlocations, verbose=verbose)
-    Pnhb  = COSMO_parse_Pi(params["Pnhb"])
-    POH  = COSMO_parse_Pi(params["POH"])
-    POT  = COSMO_parse_Pi(params["POT"])
-    A  = params["A"]
-    V  = params["V"]
-    epsilon  = params["epsilon"]
-    water = params["water"]
-    COOH = params["COOH"]
-    hb_acc = params["hb_acc"]
-    hb_don = params["hb_don"]
+
+    if use_nist_database
+        @warn "using parameters from the nistgov/COSMOSAC database, check their license before usage."
+        CAS, INCHIKEY = get_cosmo_comps()
+        A = zeros(length(components))
+        V = zeros(length(components))
+        Pnhb = [zeros(51) for i in 1:length(components)]
+        POH = [zeros(51) for i in 1:length(components)]
+        POT = [zeros(51) for i in 1:length(components)]
+        for i in 1:length(components)
+            id = cas(formatted_components[i])
+            ids = CAS.==uppercase(id[1])
+            dbname = INCHIKEY[ids]
+            file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma3/"*dbname[1]*".sigma", IOBuffer())))
+            lines = split(file,r"\n")
+            meta = lines[1][9:end]
+            json = JSON3.read(meta)
+            A[i] = json["area [A^2]"]
+            V[i] = json["volume [A^3]"]
+            Pnhb[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
+            POH[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 55:105]
+            POT[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 106:156]
+            epsilon[i] = json["disp. e/kB [K]"]
+            if json["disp. flag"] == "NHB"
+                COOH[i] = 0
+                hb_acc[i] = 0
+                hb_don[i] = 0
+                water[i] = 0
+            elseif json["disp. flag"] == "COOH"
+                COOH[i] = 1
+                hb_acc[i] = 0
+                hb_don[i] = 0
+                water[i] = 0
+            elseif json["disp. flag"] == "HB-DONOR-ACCEPTOR"
+                COOH[i] = 0
+                hb_acc[i] = 1
+                hb_don[i] = 1
+                water[i] = 0
+            elseif json["disp. flag"] == "HB-ACCEPTOR"
+                COOH[i] = 0
+                hb_acc[i] = 1
+                hb_don[i] = 0
+                water[i] = 0
+            elseif json["disp. flag"] == "HB-DONOR"
+                COOH[i] = 0
+                hb_acc[i] = 0
+                hb_don[i] = 1
+                water[i] = 0
+            elseif json["disp. flag"] == "WATER"
+                COOH[i] = 0
+                hb_acc[i] = 0
+                hb_don[i] = 0
+                water[i] = 1
+            end
+        end
+        A = SingleParam("A",formatted_components,A)
+        V = SingleParam("V",formatted_components,V)
+        Pnhb = SingleParam("Pnhb",formatted_components,Pnhb)
+        POH = SingleParam("POH",formatted_components,POH)
+        POT = SingleParam("POT",formatted_components,POT)
+        epsilon = SingleParam("epsilon",formatted_components,epsilon)
+        COOH = SingleParam("COOH",formatted_components,COOH)
+        hb_acc = SingleParam("hb_acc",formatted_components,hb_acc)
+        hb_don = SingleParam("hb_don",formatted_components,hb_don)
+        water = SingleParam("water",formatted_components,water)
+    else
+        params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V","epsilon","water","COOH","hb_acc","hb_don"], verbose=verbose)
+        Pnhb  = COSMO_parse_Pi(params["Pnhb"])
+        POH  = COSMO_parse_Pi(params["POH"])
+        POT  = COSMO_parse_Pi(params["POT"])
+        A  = params["A"]
+        V  = params["V"]
+        epsilon  = params["epsilon"]
+        water = params["water"]
+        COOH = params["COOH"]
+        hb_acc = params["hb_acc"]
+        hb_don = params["hb_don"]
+    end
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSACdspParam(Pnhb,POH,POT,epsilon,V,A,water,COOH,hb_acc,hb_don)
-    references = String[]
+    references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360"]
     model = COSMOSACdsp(formatted_components,packagedparams,_puremodel,1e-12,references)
     return model
 end
