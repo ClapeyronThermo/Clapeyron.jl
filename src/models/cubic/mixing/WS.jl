@@ -42,8 +42,35 @@ for Peng-Robinson:
 ```
 
 `λ` is a coefficient indicating the relation between `gᴱ` and `gᴱ(cubic)` at infinite pressure. see [1] for more information. it can be customized by defining `WS_λ(::WSRuleModel,::CubicModel)`
-## References
 
+## Model Construction Examples
+```
+# Using the default database
+mixing = WSRule(["water","carbon dioxide"]) #default: Wilson Activity Coefficient.
+mixing = WSRule(["water","carbon dioxide"],activity = NRTL) #passing another Activity Coefficient Model.
+mixing = WSRule([("ethane",["CH3" => 2]),("butane",["CH2" => 2,"CH3" => 2])],activity = UNIFAC) #passing a GC Activity Coefficient Model.
+
+# Passing a prebuilt model
+
+act_model = NRTL(["water","ethanol"],userlocations = (a = [0.0 3.458; -0.801 0.0],b = [0.0 -586.1; 246.2 0.0], c = [0.0 0.3; 0.3 0.0]))
+mixing = WSRule(["water","ethanol"],activity = act_model)
+
+# Using user-provided parameters
+
+# Passing files or folders
+mixing = WSRule(["water","ethanol"]; activity = NRTL, activity_userlocations = ["path/to/my/db","nrtl_ge.csv"])
+
+# Passing parameters directly
+mixing = WSRule(["water","ethanol"];
+                activity = NRTL,
+                userlocations = (a = [0.0 3.458; -0.801 0.0],
+                    b = [0.0 -586.1; 246.2 0.0],
+                    c = [0.0 0.3; 0.3 0.0])
+                )
+```
+
+
+## References
 1. Wong, D. S. H., & Sandler, S. I. (1992). A theoretically correct mixing rule for cubic equations of state. AIChE journal. American Institute of Chemical Engineers, 38(5), 671–680. [doi:10.1002/aic.690380505](https://doi.org/10.1002/aic.690380505)
 """
 WSRule

@@ -55,10 +55,10 @@ mixing = HVRule(["water","ethanol"],activity = act_model)
 # Using user-provided parameters
 
 # Passing files or folders
-alpha = HVRule(["water","ethanol"]; activity = NRTL, activity_userlocations = ["path/to/my/db","nrtl_ge.csv"])
+mixing = HVRule(["water","ethanol"]; activity = NRTL, activity_userlocations = ["path/to/my/db","nrtl_ge.csv"])
 
 # Passing parameters directly
-alpha = sCPAAlpha(["water","ethanol"];
+mixing = HVRule(["water","ethanol"];
                 activity = NRTL,
                 userlocations = (a = [0.0 3.458; -0.801 0.0],
                     b = [0.0 -586.1; 246.2 0.0],
