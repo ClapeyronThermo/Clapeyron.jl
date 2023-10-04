@@ -26,10 +26,10 @@ export NRTL
     verbose=false)
 
 ## Input parameters
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
 - `b`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
 - `c`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
+- `Mw`: Single Parameter (`Float64`) (Optional) - Molecular Weight `[g/mol]`
 
 ## Input models
 - `puremodel`: model to calculate pure pressure-dependent properties
@@ -55,11 +55,11 @@ function NRTL(components; puremodel=PR,
     verbose=false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(NRTL); userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b"], verbose=verbose)
+    params = getparams(formatted_components, default_locations(NRTL); userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b","Mw"], verbose=verbose)
     a  = params["a"]
     b  = params["b"]
     c  = params["c"]
-    Mw  = params["Mw"]
+    Mw  = get(params,"Mw",SingleParam("Mw",formatted_components))
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = NRTLParam(a,b,c,Mw)
