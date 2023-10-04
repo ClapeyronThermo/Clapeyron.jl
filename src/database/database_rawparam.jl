@@ -322,14 +322,14 @@ function SingleMissingError(param::SingleParameter)
     missingvals = param.ismissingvalues
     idx = findall(param.ismissingvalues)
     comps = param.components[idx]
-    throw(MissingException("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, "."))
+    throw(MissingException(string("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")))
 end
 
 function PairMissingError(param::PairParameter)
     diag = diagvalues(param.ismissingvalues)
     idx = findall(diag)
     comps = param.components[idx]
-    throw(MissingException("Partial missing values exist ∈ diagonal of pair parameter ",error_color(param.name), ": ", comps, "."))
+    throw(MissingException(string("Partial missing values exist ∈ diagonal of pair parameter ",error_color(param.name), ": ", comps, ".")))
 end
 
 function is_valid_param(param::AssocParam,options)
