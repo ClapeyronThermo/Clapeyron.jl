@@ -38,7 +38,7 @@ alpha = CPAAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","cpa/alph
 
 # Passing parameters directly
 alpha = CPAAlpha(["water","carbon dioxide"];userlocations = (;c1 = [0.67,0.76]))
-
+```
 """
 CPAAlpha
 default_locations(::Type{CPAAlpha}) = ["SAFT/CPA/CPA_like.csv"]

@@ -1,6 +1,5 @@
 abstract type sCPAAlphaModel <: CPAAlphaModel end
 
-
 @newmodelsimple sCPAAlpha sCPAAlphaModel CPAAlphaParam
 
 """
