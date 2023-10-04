@@ -40,12 +40,38 @@ for Peng-Robinson:
 ## References
 1. Huron, M.-J., & Vidal, J. (1979). New mixing rules in simple equations of state for representing vapour-liquid equilibria of strongly non-ideal mixtures. Fluid Phase Equilibria, 3(4), 255–271. [doi:10.1016/0378-3812(79)80001-1](https://doi.org/10.1016/0378-3812(79)80001-1)
 
+## Model Construction Examples
+```
+# Using the default database
+mixing = HVRule(["water","carbon dioxide"]) #default: Wilson Activity Coefficient.
+mixing = HVRule(["water","carbon dioxide"],activity = NRTL) #passing another Activity Coefficient Model.
+mixing = HVRule([("ethane",["CH3" => 2]),("butane",["CH2" => 2,"CH3" => 2])],activity = UNIFAC) #passing a GC Activity Coefficient Model.
+
+# Passing a prebuilt model
+
+act_model = NRTL(["water","ethanol"],userlocations = (a = [0.0 3.458; -0.801 0.0],b = [0.0 -586.1; 246.2 0.0], c = [0.0 0.3; 0.3 0.0]))
+mixing = HVRule(["water","ethanol"],activity = act_model)
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = HVRule(["water","ethanol"]; activity = NRTL, activity_userlocations = ["path/to/my/db","nrtl_ge.csv"])
+
+# Passing parameters directly
+alpha = sCPAAlpha(["water","ethanol"];
+                activity = NRTL,
+                userlocations = (a = [0.0 3.458; -0.801 0.0],
+                    b = [0.0 -586.1; 246.2 0.0],
+                    c = [0.0 0.3; 0.3 0.0])
+                )
+```
+
 """
 HVRule
 
 export HVRule
 function HVRule(components; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
-    _activity = init_model(activity,components,activity_userlocations,verbose)
+    _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
     references = ["10.1016/0378-3812(79)80001-1"]
     model = HVRule(format_components(components), _activity,references)
     return model

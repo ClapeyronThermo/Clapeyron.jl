@@ -50,7 +50,7 @@ WSRule
 
 export WSRule
 function WSRule(components; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
-    _activity = init_model(activity,components,activity_userlocations,verbose)
+    _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
     references = ["10.1002/aic.690380505"]
     model = WSRule(format_components(components), _activity,references)
     return model

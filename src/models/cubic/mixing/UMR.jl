@@ -33,7 +33,7 @@ ā = b̄RT(∑[xᵢaᵢᵢαᵢ/(RTbᵢᵢ)] - [gᴱ/RT]/0.53)
 UMRRule
 export UMRRule
 function UMRRule(components; activity = UNIFAC, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
-    _activity = init_model(activity,components,activity_userlocations,verbose)
+    _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
     references = ["10.1021/ie049580p"]
     model = UMRRule(format_components(components), _activity,references)
     return model

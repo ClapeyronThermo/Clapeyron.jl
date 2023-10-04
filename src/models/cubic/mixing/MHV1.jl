@@ -49,7 +49,7 @@ MHV1Rule
 
 export MHV1Rule
 function MHV1Rule(components; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
-    _activity = init_model(activity,components,activity_userlocations,verbose)
+    _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
     references = ["10.1016/0378-3812(90)85053-D"]
     model = MHV1Rule(format_components(components), _activity,references)
     return model

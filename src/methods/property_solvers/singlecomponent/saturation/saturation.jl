@@ -20,20 +20,20 @@ If the calculation fails, returns  `(NaN, NaN, NaN)`
 By default, it uses [`ChemPotVSaturation`](@ref)
 
 ## Examples:
-julia-repl
-```
+
+```julia-repl
 julia> pr = PR(["water"])
 PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule} with 1 component:
   "water"
 Contains parameters: a, b, Tc, Pc, Mw
 
-julia> saturation_pressure(pr,373.15) #default, uses Clapeyron.ChemPotVSaturation
+julia> p,vl,vv = saturation_pressure(pr,373.15) #default, uses Clapeyron.ChemPotVSaturation
 (96099.38979351855, 2.2674781912892906e-5, 0.03201681565699426)
 
-julia> saturation_pressure(pr,373.15,IsoFugacitySaturation()) #iso fugacity
+julia>  p,vl,vv = saturation_pressure(pr,373.15,IsoFugacitySaturation()) #iso fugacity
 (96099.38979351871, 2.2674781912892933e-5, 0.03201681565699359)
 
-julia> saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)) #iso fugacity, with starting point
+julia>  p,vl,vv = saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)) #iso fugacity, with starting point
 (96099.38979351871, 2.2674781912892933e-5, 0.03201681565699547)
 ```
 """

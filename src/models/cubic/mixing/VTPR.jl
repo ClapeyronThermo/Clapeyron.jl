@@ -45,7 +45,7 @@ VTPRRule
 
 export VTPRRule
 function VTPRRule(components; activity = UNIFAC, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
-    _activity = init_model(activity,components,activity_userlocations,verbose)
+    _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
     references = ["10.1016/S0378-3812(01)00626-4"]
     model = VTPRRule(format_components(components), _activity,references)
     return model
