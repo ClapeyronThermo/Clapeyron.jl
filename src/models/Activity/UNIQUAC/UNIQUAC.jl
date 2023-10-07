@@ -68,10 +68,12 @@ model = UNIQUAC(["water","ethanol"];userlocations = ["path/to/my/db","uniquac_ge
 
 # Passing parameters directly
 model = UNIQUAC(["water","ethanol"],
-userlocations = (a = [0.0 3.458; -0.801 0.0],
-                b = [0.0 -586.1; 246.2 0.0],
-                c = [0.0 0.3; 0.3 0.0])
-            )
+        userlocations = (a = [0.0 378.1; 258.4 0.0], 
+                        r = [0.92, 2.11],
+                        q = [1.4, 1.97],
+                        q_p = [1.0, 0.92],
+                        Mw = [18.015, 46.069])
+                    )
 ```
 
 ## References

@@ -47,6 +47,27 @@ Reid Ideal Model. Helmholtz energy obtained via integration of specific heat cap
 Cpᵢ(T) = aᵢ  + bᵢT + cᵢT^2 + dᵢT^3
 Cp(T) = ∑Cpᵢxᵢ
 ```
+
+## Model Construction Examples
+```
+# Using the default database
+idealmodel = ReidIdeal("water") #single input
+idealmodel = ReidIdeal(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+idealmodel = ReidIdeal(["neon","hydrogen"]; userlocations = ["path/to/my/db","reid.csv"])
+
+# Passing parameters directly
+idealmodel = ReidIdeal(["water","butane"];
+            userlocations = (a = [32.24, 9.487], 
+                        b = [0.00192, 0.3313], 
+                        c = [1.06e-5, -0.0001108],
+                        d = [-3.6e-9, -2.822e-9])
+                        )
+```
+
 """
 ReidIdeal
 

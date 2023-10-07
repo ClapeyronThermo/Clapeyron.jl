@@ -302,10 +302,7 @@ values are zero, ∈ this case is ommited (can also be overrided)
 function is_valid_param(param::SingleParameter,options)
     missingvals = param.ismissingvalues
     if param.name ∉ options.ignore_missing_singleparams && any(missingvals)
-        vals = [ifelse(missingvals[i],missing,param.values[i]) for i ∈ 1:length(missingvals)]
-        idx = findall(param.ismissingvalues)
-        comps = param.components[idx]
-        throw(MissingException("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, "."))
+        SingleMissingError(param)
     end
     return nothing
 end
