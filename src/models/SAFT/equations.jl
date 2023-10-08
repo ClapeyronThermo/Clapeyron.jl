@@ -1,7 +1,7 @@
 function lb_volume(model::SAFTModel, z = SA[1.0])
-    seg = model.params.segment.values
+    m = model.params.segment.values
     σ = model.params.sigma.values
-    val = π/6*N_A*sum(z[i]*seg[i]*σ[i,i]^3 for i in 1:length(z))
+    val = π/6*N_A*sum(z[i]*m[i]*σ[i,i]^3 for i in 1:length(z))
     return val
 end
 

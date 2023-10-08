@@ -81,4 +81,16 @@ function _laguerrex(Base.@specialize(f),r,a,u,w)
     return res*k
 end
 
+"""
+    evalpolyint(x0,p)
+
+Evaluates the indefinite integral of ∑x^(k-1)*p[k] at a point x0.
+
+"""
+function evalpolyint(x,p)
+    f(x) = x[2]/x[1]
+    p_integral = map(f,enumerate(p))
+    return evalpoly(x,p_integral)*x
+end
+
 
