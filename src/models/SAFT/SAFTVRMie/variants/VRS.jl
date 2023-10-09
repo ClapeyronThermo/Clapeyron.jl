@@ -101,12 +101,7 @@ function Zhs_hall(model::VRSModel,V,T,z)
     return Zhs_hall(γ,α)
 end
 
-
-
-
-
 function g_hs(model,η,d,r,J) #eq 11
-    r > 3.3*d && one(η+d+r+J) #mean-field correction
     g_hs₁ = g_hs_1(model,η,d,r,J)
     g_hsᵢ = g_hs_2_n(model,η,d,r)
     return g_hs₁ + g_hsᵢ
@@ -225,8 +220,10 @@ function a_1(model::VRSModel,V,T,z,_data = @f(data))
     return 2*π*ρS*a₁/T
 end
 
-function Wri_integral(λa,λr,T)
-     #TODO
+function Wri_integral(λa,λr,T,V,n)
+    λ = cbrt(sqrt(2)*V/sum(z))
+
+    #TODO
 end
 function a_chain(model::VRSModel,V,T,z,_data = @f(data))
     m̄,d,η,ρS,ρ0,Z,J̄ = _data
@@ -249,8 +246,25 @@ function a_chain(model::VRSModel,V,T,z,_data = @f(data))
     return achain/sum(z)
 end
 
-function d(model::VRSModel,V,T,z)
-    #TODO
+#TODO: this is a sketch
+function d_vrs(model::VRSModel,V,T,z,i)
+    dB_f(r) = 1 - exp(-V₀(r)/T)
+    dB = Solvers.integral21(dB_f,0,λ)
+    δ_f(r)  = derivative(r -> exp(-V₀(r)/T))*(r/dB -1)^2
+    δ = Solvers.integral21(δ_f,0,λ)
+    #iteration 0: d = dB
+    d = dB
+    for i in 1:5 
+        y_hs,dy_hs =  y∂y_hs(model::VRSModel,V,T,z,d,d)
+        σ₀ = y_hs
+        σ₁ = 2*σ₀ + dy_hs
+        d = dB*(1 + δ*σ₁/(2*σ₀))
+    end
+    return d
+end
+
+function y∂y_hs(model::VRSModel,V,T,z,r,d)
+
 end
 
 #SA, Table 1
