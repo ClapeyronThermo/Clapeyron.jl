@@ -97,38 +97,92 @@ function Zhs_hall(model::VRSModel,V,T,z)
     ρS = N_A/V*m̄
     ρ0 = 1 #TODO
     γ = 4*(1 - ρs/ρ0)
-    α = ρ0ρs - 1
+    α = ρ0/ρs - 1
     return Zhs_hall(γ,α)
 end
 
-function g_hs(model,η,d,r,J) #eq 11
-    g_hs₁ = g_hs_1(model,η,d,r,J)
-    g_hsᵢ = g_hs_2_n(model,η,d,r)
+function g_hs(model::VRSModel,η,d,r,J,r₁d = r1_d(η),k₁ = K1(model,η),k₂ = K2(model,η),k = K(model,η)) #eq 11
+    g_hs₁ = g_hs_1(model,η,d,r,J,r₁d,k₁,k₂)
+    g_hsᵢ = g_hs_i(model,η,d,r,k)
     return g_hs₁ + g_hsᵢ
 end
 
-function g_hs_1(model::VRSModel,η,d,r,J) #eq 12
+function g_hs_fdf(model::VRSModel,V,T,z,d,r,i::Int) #eq 11, used in the context of the evaluation of d
+    mᵢ = model.params.segment[i]
+    η = (π/6*N_A*mᵢ/V)*d*d*d
+    ηc = 0.740480489693061
+    ρs = z[i]*mᵢ*N_A/V #is this ok?
+    ρ0 = 6*ηc/(π*d*d*d)
+    γ = 4*(1 - ρs/ρ0)
+    α = ρ0/ρs - 1
+    Z = Zhs_hall(γ,α)
+    r₁d = r1_d(η)
     k₁ = K1(model,η)
     k₂ = K2(model,η)
-    _k12 = (-k₁*(1-r1d))^2
-    _k24 = (-k₂*(1-r1d))^4
+    k = K(model,η)
+    J = g_hs_Ji(model,_d[i],η,Z,k₁,k₂,r₁d,k)
+    g_hs₁,∂g_hs₁ = g_hs_1_fdf(model,η,d,r,J,r1d,k₁,k₂)
+    g_hsᵢ,∂g_hsᵢ = g_hs_i_fdf(model,η,d,r,k)
+    return g_hs₁ + g_hsᵢ, ∂g_hs₁ + ∂g_hsᵢ
+end
+
+#eq 12
+function g_hs_1(model::VRSModel,η,d,r,J,r1d = r1_d(η),k₁ = K1(model,η),k₂ = K2(model,η)) 
+    rd = r/d
+    _k12 = (-k₁*(rd-r1d))^2
+    _k24 = (-k₂*(rd-r1d))^4
     (J*d/r)*exp(_k12+_k24)
 end
 
-function g_hs_2_n(model::VRSModel,η,d,r) #eq 13
-    k = K(model,η)
+#eq 12 + derivative, used in calculation of d
+function g_hs_1_fdf(model::VRSModel,η,d,r,J,r1d = r1_d(η),k₁ = K1(model,η),k₂ = K2(model,η))
+    rd = r/d
+    δr = (rd-r1d)
+    _k12 = (-k₁*δr)^2
+    _k24 = (-k₂*δr)^4
+    _exp = exp(_k12+_k24)
+    g = (J*d/r)*_exp
+    ∂g = (-g + (J*((2*k₁*k₁*δr) + (4*k₂*(k₂*δr)^3))*_exp))/r
+    return g,∂g
+end
+
+function g_hs_i(model::VRSModel,η,d,r,k = K(model::VRSModel,η)) #eq 13
     n = VRSConsts.r_fcc
-    g = zero(typeof(η))
+    g = zero(η+d+r)
     rd = r/d
     dr = d/r
     v₀ = π*d^3/(6*η)
     d₀ = cbrt(sqrt(2)*v₀)
     for rᵢd₀2 in 2:length(g) #(rᵢ/d₀)^2
-        rᵢ = sqrt(rᵢd₀2)*d₀
         nᵢ = n[rᵢd₀2]
-        g += (dr*(d/rᵢ)*K*nᵢ*/(sqrt(π)*24*η))*exp(-(k*(rd - rᵢ/d))^2)
+        nᵢ != 0 && begin
+            rᵢ = sqrt(rᵢd₀2)*d₀
+            g += (dr*(d/rᵢ)*K*nᵢ*/(sqrt(π)*24*η))*exp(-(k*(rd - rᵢ/d))^2)
+        end
     end
     return g
+end
+
+function g_hs_i_fdf(model::VRSModel,η,d,r,k = K(model::VRSModel,η)) #eq 13
+    n = VRSConsts.r_fcc
+    g = zero(η+d+r)
+    ∂g = zero(η+d+r)
+    rd = r/d
+    dr = d/r
+    v₀ = π*d^3/(6*η)
+    d₀ = cbrt(sqrt(2)*v₀)
+    for rᵢd₀2 in 2:length(g) #(rᵢ/d₀)^2
+        nᵢ = n[rᵢd₀2]
+        nᵢ != 0 && begin
+            rᵢ = sqrt(rᵢd₀2)*d₀
+            δr = rd - rᵢ/d
+            _expᵢ = exp(-(k*δr)^2)
+            C = (d/rᵢ)*K*nᵢ/(sqrt(π)*24*η) #independent of d/r
+            g += dr*C*_expᵢ
+            ∂g += (-g + (C*((2*k*k*δr))*_exp))/r
+        end
+    end
+    return g,∂g
 end
 
 function r1_d(η) #SA, eq 1
@@ -142,17 +196,18 @@ end
 function J(model::VRSModel,V,T,z,_d = @f(d),η = @f(ζ3,_d),Z = @f(Zhs_hall))
     #=
     g_hs(1,η) = (z-1)/(4*η)
-    g_hs_1(1,η) + g_hs_2_n(1,η) = (z-1)/(4*η)
-    g_hs_1(1,η) = (z-1)/(4*η) - g_hs_2_n(1,η)
-    J*ghs_1_divJ(1,η) =  (z-1)/(4*η) - g_hs_2_n(1,η)
+    g_hs_1(1,η) + g_hs_i(1,η) = (z-1)/(4*η)
+    g_hs_1(1,η) = (z-1)/(4*η) - g_hs_i(1,η)
+    J*ghs_1_divJ(1,η) =  (z-1)/(4*η) - g_hs_i(1,η)
     J = 
     =#
-    r1d = r1_d(η)
-    k₁ = K1(model,η)
-    k₂ = K2(model,η)
     J̄ = zeros(length(model),V+T+first(z))
     for i in @comps
-        J̄[i] = g_hs_Ji(model,_d[i],η,Z,k₁,k₂,r1d)
+        r1d = r1_d(η)
+        k₁ = K1(model,η)
+        k₂ = K2(model,η)
+        k = K(model,η)
+        J̄[i] = g_hs_Ji(model,_d[i],η,Z,k₁,k₂,r1d,k)
     end
     return J̄
 end
@@ -162,11 +217,12 @@ function J(model::VRSModel,V,T,z::SingleComp,_d = @f(d),η = @f(ζ3,_d),Z = @f(Z
     r1d = r1_d(η)
     k₁ = K1(model,η)
     k₂ = K2(model,η)
-    return SA[g_hs_Ji(model,_d[i],η,Z,k₁,k₂,r1d)]
+    k = K(model,η)
+    return SA[g_hs_Ji(model,_d[i],η,Z,k₁,k₂,r1d,k)]
 end
 
-function g_hs_Ji(model::VRSModel,di,η,Z,k₁,k₂,r1d)
-    ghs_at_1 = g_hs_2_n(model,η,di,di)
+function g_hs_Ji(model::VRSModel,di,η,Z,k₁,k₂,r1d,k)
+    ghs_at_1 = g_hs_i(model,η,di,di,k)
     _k12 = (-k₁*(1-r1d))^2
     _k24 = (-k₂*(1-r1d))^4
     ghs_1_divJ = exp(_k12+_k24)
@@ -198,9 +254,13 @@ function a_1(model::VRSModel,V,T,z,_data = @f(data))
     for i ∈ @comps
         xsᵢ = z[i]*m[i]*m̄inv
         dᵢᵢ = d[i]
+        r₁dᵢ = r1_d(η)
+        k₁ᵢ = K1(model,η)
+        k₂ᵢ = K2(model,η)
+        kᵢ = K(model,η)
         ghsWrᵢ = r -> begin 
             _Wr = 1 #TODO: W(r)
-            g_hs(model,η,dᵢᵢ,r,J̄[i])*r*r*_Wr
+            g_hs(model,ηᵢ,dᵢᵢ,r,J̄[i],r₁dᵢ,k₁ᵢ,k₂ᵢ,kᵢ)*r*r*_Wr
         end
         Wrᵢ = r -> begin
             one(dᵢᵢ)*r*r #TODO: W(r)
@@ -222,7 +282,6 @@ end
 
 function Wri_integral(λa,λr,T,V,n)
     λ = cbrt(sqrt(2)*V/sum(z))
-
     #TODO
 end
 function a_chain(model::VRSModel,V,T,z,_data = @f(data))
@@ -246,16 +305,56 @@ function a_chain(model::VRSModel,V,T,z,_data = @f(data))
     return achain/sum(z)
 end
 
+function d(model::VRSModel,V,T,z)
+
+end
+
+function d(model::VRSModel,V,T,z::SingleComp)
+    return SA[d_vrs(model::VRSModel,V,T,z,1)]
+end
+
 #TODO: this is a sketch
-function d_vrs(model::VRSModel,V,T,z,i)
-    dB_f(r) = 1 - exp(-V₀(r)/T)
-    dB = Solvers.integral21(dB_f,0,λ)
-    δ_f(r)  = derivative(r -> exp(-V₀(r)/T))*(r/dB -1)^2
-    δ = Solvers.integral21(δ_f,0,λ)
+function d_vrs(model::VRSModel,V,T,z,i::Int)
+    _0 = zero(V+T+first(z))
+    mᵢ = model.params.segment[i]
+    vᵢ = V/sum(z)*z[i]/mᵢ/N_A #vol per molecule
+    λ = cbrt(sqrt(2)*vᵢ)*one(T)
+
+    λa,λr = model.params.lambda_a[i],model.params.lambda_r[i]
+    Cᵢ = Cλ_mie(λa, λr)
+    β = 1/T
+    ϵ = model.params.epsilon[i]
+
+    function V₀(r)
+        if r > λ
+            return _0
+        else
+            σr⁻¹ = (σ/λ)
+            σr⁻² = σr⁻¹/λ
+            #du/dr at r = λ
+            ∂uλ = λa*(σr⁻²)*(σr⁻¹^(λa - 1)) - λr*(σr⁻²)*(σr⁻¹^(λr - 1))
+            return Cᵢ*ϵ*∂uλ*(λ - r)
+        end
+    end
+
+    dB_f(r) = -expm1(-β*V₀(r))
+    dB = Solvers.integral21(dB_f,_0,λ)
+    #TODO: derivate this
+    δ_f(r)  = derivative(r -> exp(-β*V₀(r)))*(r/dB -1)^2
+    δ = Solvers.integral21(δ_f,_0,λ)
     #iteration 0: d = dB
     d = dB
-    for i in 1:5 
-        y_hs,dy_hs =  y∂y_hs(model::VRSModel,V,T,z,d,d)
+    
+    for l in 1:5 #TODO: find how many iterations are enough
+        g_hs,∂g_hs = g_hs_fdf(model,V,T,z,d,d,i)
+        #=TODO 
+        is d > λ ? if so, y_hs = g_hs and it would simplify this calculation a lot
+        =#
+        V₀ = d > λ ? zero(λ) : 
+        expV₀ = exp(-V₀(d)/T)
+        ∂expV₀ = 1 #TODO
+        y_hs = g_hs*expV0
+        dy_hs = g_hs*∂expV₀ + ∂g_hs*expV₀
         σ₀ = y_hs
         σ₁ = 2*σ₀ + dy_hs
         d = dB*(1 + δ*σ₁/(2*σ₀))
@@ -263,13 +362,9 @@ function d_vrs(model::VRSModel,V,T,z,i)
     return d
 end
 
-function y∂y_hs(model::VRSModel,V,T,z,r,d)
-
-end
-
 #SA, Table 1
 #note: idx = [14,30,46,56,62] are missing.
 #for purposes of wiping out an MVE, those values are replaced with 1
 VRSConsts = (;
-    r_fcc = [12, 6, 24, 12, 24, 8, 48, 6, 36, 24, 24, 24, 72, 1, 48, 12, 48, 30, 72, 24, 48, 24, 48, 8, 84, 24, 96, 48, 24, 1, 96, 6, 96, 48, 48, 36, 120, 24, 48, 24, 48, 48, 120, 24, 120, 1, 96, 24, 108, 30, 48, 72, 72, 32, 144, 1, 96, 72, 72, 48, 120, 1, 144, 12, 48],
+    r_fcc = [12, 6, 24, 12, 24, 8, 48, 6, 36, 24, 24, 24, 72, 0, 48, 12, 48, 30, 72, 24, 48, 24, 48, 8, 84, 24, 96, 48, 24, 0, 96, 6, 96, 48, 48, 36, 120, 24, 48, 24, 48, 48, 120, 24, 120, 0, 96, 24, 108, 30, 48, 72, 72, 32, 144, 0, 96, 72, 72, 48, 120, 0, 144, 12, 48],
     )
