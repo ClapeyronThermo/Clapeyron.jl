@@ -56,6 +56,8 @@ Polar Perturbed-Chain SAFT (PPC-SAFT)
 
 ## References
 1. Gross, J., & Vrabec, J. (2005). An equation-of-state contribution for polar components: Dipolar molecules. AIChE Journal, 52(3), 856-1282. [doi:10.1002/aic.10683](https://doi.org/10.1002/aic.10683)
+2. Gross, J. (2005). An equation-of-state contribution for polar components: Quadrupolar molecules. AIChE Journal, 51(9), 2556-2568. [doi:10.1002/aic.10502](https://doi.org/10.1002/aic.10502)
+3. Gross, J., & Vrabec, J. (2008). Vapor−Liquid Equilibria Simulation and an Equation of State Contribution for Dipole−Quadrupole Interactions. J. Phys. Chem. B, 112(1), 51-60. [doi:10.1021/jp072619u](https://doi.org/10.1021/jp072619u)
 """
 PPCSAFT
 
@@ -144,6 +146,7 @@ function a_3(model ::PPCSAFTModel, V, T, z, _data=@f(data))
 end
 
 function J2(model, V, T, z, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵ = model.params.epsilon.values)
+    println("η: ",η)
     corr_a = PPCSAFTconsts.corr_a
     corr_b = PPCSAFTconsts.corr_b
     m̄ = min(sqrt(m[i]*m[j]),2*one(η))
