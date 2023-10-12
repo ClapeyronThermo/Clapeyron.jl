@@ -1,0 +1,3 @@
+Clapeyron Database File,,,,,,,,
+GCsPCSAFT Assoc Parameters [csvtype = assoc,grouptype = GCsPCSAFT]
+species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
