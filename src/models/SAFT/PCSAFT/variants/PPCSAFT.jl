@@ -5,6 +5,8 @@ struct PPCSAFTParam <: EoSParam
     epsilon::PairParam{Float64}
     dipole::SingleParam{Float64}
     dipole2::SingleParam{Float64}
+    quadrupole::SingleParam{Float64}
+    quadrupole2::SingleParam{Float64}
     epsilon_assoc::AssocParam{Float64}
     bondvol::AssocParam{Float64}
 end
@@ -17,8 +19,9 @@ function transform_params(::Type{PPCSAFT},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
     params = saft_lorentz_berthelot(params)
-    μ,m = params["dipole"],params["segment"]
+    μ,m,Q = params["dipole"],params["segment"],params["quadrupole"]
     params["dipole2"] = SingleParam("Dipole squared",components, μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3))
+    params["quadrupole2"] = SingleParam("Quadrupole squared",components, Q.^2 ./ m ./ k_B*1e-19)
     return params
 end
 
@@ -37,6 +40,7 @@ end
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
+- `quadrupole`: Single Parameter (`Float64`) - Quadrupole moment `[DA°]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
@@ -64,8 +68,9 @@ PPCSAFT
 export PPCSAFT
 
 function recombine_impl!(model ::PPCSAFTModel)
-    μ,m = model.params.dipole,model.params.segment
+    μ,Q,m = model.params.dipole,model.params.quadrupole,model.params.segment
     model.params.dipole2 .= μ.^2 ./ m ./ k_B * 1e-36*(1e-10*1e-3)
+    model.params.quadrupole2 .= Q.^2 ./ m ./ k_B * 1e-19
     recombine_saft!(model)
 end
 
@@ -75,17 +80,40 @@ function a_res(model ::PPCSAFTModel, V, T, z)
 end
 
 function a_polar(model ::PPCSAFTModel, V, T, z, _data=@f(data))
-    dipole = model.params.dipole.values
-    if all(iszero,dipole)
-        return zero(V+T+first(z))
-    end
-    a₂ = @f(a_2,_data)
-    iszero(a₂) && return zero(a₂)
-    a₃ = @f(a_3,_data)
-    return a₂^2/(a₂-a₃)
+    μ̄² = model.params.dipole2.values
+    Q̄² = model.params.quadrupole2.values
+    has_dp = !all(iszero, μ̄²)
+    has_qp = !all(iszero, Q̄²)
+    if !has_dp && !has_qp return 0. end
+    a_p_total = 0.
+    a_p_total += has_dp && @f(a_dd,_data)
+    a_p_total += has_qp && @f(a_qq,_data)
+    a_p_total += has_dp && has_qp && @f(a_dq,_data)
+    return a_p_total
 end
 
-function a_2(model ::PPCSAFTModel, V, T, z, _data=@f(data))
+function a_mp(model ::PPCSAFTModel, V, T, z, type, _data=@f(data))
+    if !(type ∈ ["DD","QQ","DQ"])
+        throw(ArgumentError("Invalid type: $type"))
+    end
+    a₂ = @f(a_2,type,_data)
+    iszero(a₂) && return zero(a₂)
+    a₃ = @f(a_3,type,_data)
+    return a₂^2/(a₂-a₃)
+end
+function a_dd(model ::PPCSAFTModel, V, T, z, _data=@f(data))
+    return @f(a_mp,"DD",_data)
+end
+function a_qq(model ::PPCSAFTModel, V, T, z, _data=@f(data))
+    return @f(a_mp,"QQ",_data)
+end
+function a_dq(model ::PPCSAFTModel, V, T, z, _data=@f(data))
+    return @f(a_mp,"DQ",_data)
+end
+
+function a_2(model ::PPCSAFTModel, V, T, z, type, _data=@f(data))
+    rel_comps = @f(relevant_comps,type)
+    if isempty(rel_comps) return 0. end
     _,_,_,_,η,_ = _data
     ∑z = sum(z)
     ρ = N_A*∑z/V
@@ -96,12 +124,12 @@ function a_2(model ::PPCSAFTModel, V, T, z, _data=@f(data))
     σ = model.params.sigma.values
     μ̄² = model.params.dipole2.values
     @inbounds for i ∈ 1:nc
-        _J2_ii = @f(J2,i,i,η,m,ϵ)
+        _J2_ii = @f(J2,type,i,i,η,m,ϵ)
         zᵢ = z[i]
         μ̄²ᵢ = μ̄²[i]
         _a_2 +=zᵢ^2*μ̄²ᵢ^2/σ[i,i]^3*_J2_ii
         for j ∈ (i+1):nc
-            _J2_ij = @f(J2,i,j,η,m,ϵ)
+            _J2_ij = @f(J2,type,i,j,η,m,ϵ)
             _a_2 += 2*zᵢ*z[j]*μ̄²ᵢ*μ̄²[j]/σ[i,j]^3*_J2_ij
         end
     end
@@ -109,7 +137,9 @@ function a_2(model ::PPCSAFTModel, V, T, z, _data=@f(data))
     return _a_2
 end
 
-function a_3(model ::PPCSAFTModel, V, T, z, _data=@f(data))
+function a_3(model ::PPCSAFTModel, V, T, z, type, _data=@f(data))
+    rel_comps = @f(relevant_comps,type)
+    if isempty(rel_comps) return 0. end
     ∑z = sum(z)
     ρ = N_A*∑z/V
     _,_,_,_,η,_ = _data
@@ -121,7 +151,7 @@ function a_3(model ::PPCSAFTModel, V, T, z, _data=@f(data))
     nc = length(model)
 
     @inbounds for i ∈ 1:nc
-        _J3_iii = @f(J3,i,i,i,η,m)
+        _J3_iii = @f(J3,type,i,i,i,η,m)
         zi,μ̄²i = z[i],μ̄²[i]
         a_3_i = zi*μ̄²i/σ[i,i]
         _a_3 += a_3_i^3*_J3_iii
@@ -131,12 +161,12 @@ function a_3(model ::PPCSAFTModel, V, T, z, _data=@f(data))
             a_3_iij = zi*μ̄²i*σij⁻¹
             a_3_ijj = zj*μ̄²j*σij⁻¹
             a_3_j = zj*μ̄²j/σ[j,j]
-            _J3_iij = @f(J3,i,i,j,η,m)
-            _J3_ijj = @f(J3,i,j,j,η,m)
+            _J3_iij = @f(J3,type,i,i,j,η,m)
+            _J3_ijj = @f(J3,type,i,j,j,η,m)
             _a_3 += 3*a_3_iij*a_3_ijj*(a_3_i*_J3_iij + a_3_j*_J3_ijj)
             for k ∈ j+1:nc
                 zk,μ̄²k = z[k],μ̄²[k]
-                _J3_ijk = @f(J3,i,j,k,η,m)
+                _J3_ijk = @f(J3,type,i,j,k,η,m)
                 _a_3 += 6*zi*zj*zk*μ̄²i*μ̄²j*μ̄²k*σij⁻¹/σ[i,k]/σ[j,k]*_J3_ijk
             end
         end
@@ -145,21 +175,51 @@ function a_3(model ::PPCSAFTModel, V, T, z, _data=@f(data))
     return _a_3
 end
 
-function J2(model, V, T, z, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵ = model.params.epsilon.values)
-    println("η: ",η)
-    corr_a = PPCSAFTconsts.corr_a
-    corr_b = PPCSAFTconsts.corr_b
-    m̄ = min(sqrt(m[i]*m[j]),2*one(η))
+function relevant_comps(model, V, T, z, type)
+    μ̄² = model.params.dipole2.values
+    Q̄² = model.params.quadrupole2.values
+    dipole_comps = []
+    quadrupole_comps = []
+    for i in @comps
+        if !iszero(μ̄²[i]) push!(dipole_comps,i) end
+        if !iszero(Q̄²[i]) push!(quadrupole_comps,i) end
+    end
+    if type == "DQ"
+        if isempty(dipole_comps) || isempty(quadrupole_comps)
+            return []
+        else
+            return vcat(dipole_comps,quadrupole_comps)
+        end
+    elseif type == "DD"
+        return dipole_comps
+    elseif type == "QQ"
+        return quadrupole_comps
+    end
+    return []
+end
+
+function J2(model, V, T, z, type, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵ = model.params.epsilon.values)
     ϵT = ϵ[i,j]/T
-    aij = _ppcsaft_corr_poly(corr_a,m̄)
-    bij = _ppcsaft_corr_poly(corr_b,m̄)
+    m̄ = sqrt(m[i]*m[j])
+    if type == "DD" m̄ = min(m̄,2*one(η)) end
+    consts = eval(Symbol(type*"_consts"))
+    aij = _ppcsaft_corr_poly(consts.corr_a,m̄)
+    bij = _ppcsaft_corr_poly(consts.corr_b,m̄)
     cij = aij .+ bij .* ϵT
     return evalpoly(η,cij)
 end
 
-function J3(model, V, T, z, i, j, k, η = @f(ζ,3),m = model.params.segment.values)
-    corr_c = PPCSAFTconsts.corr_c
-    m̄ = min(cbrt(m[i]*m[j]*m[k]),2*one(η))
+function J3(model, V, T, z, type, i, j, k, η = @f(ζ,3),m = model.params.segment.values)
+    corr_c = eval(Symbol(type*"_consts")).corr_c
+    m̄ = cbrt(m[i]*m[j]*m[k])
+    if type == "DD" m̄ = min(m̄,2*one(η)) end
+    if type == "DQ"
+        m̄1 = 1.
+        m̄2 = (m̄-1)/m̄
+        m̄i = (m̄1,m̄2)
+        cijk = NTuple{5}(dot(m̄i,ci) for ci in corr)
+        return evalpoly(η,cijk)
+    end
     cijk = _ppcsaft_corr_poly(corr_c,m̄)
     return evalpoly(η,cijk)
 end
@@ -201,4 +261,70 @@ const PPCSAFTconsts = (
     (-0.8087562,-2.3802636,1.6542783),
     (0.6902849,-0.2701261,-3.4396744),
     (0.,0.,0.))
+)
+
+const DD_consts = (
+    corr_a =
+    ((0.3043504,0.9534641,-1.161008),
+    (-0.1358588,-1.8396383,4.5258607),
+    (1.4493329,2.013118,0.9751222),
+    (0.3556977,-7.3724958,-12.281038),
+    (-2.0653308,8.2374135,5.9397575)),
+
+    corr_b =
+    ((0.2187939,-0.5873164,3.4869576),
+    (-1.1896431,1.2489132,-14.915974),
+    (1.1626889,-0.508528,15.372022),
+    (0.,0.,0.),
+    (0.,0.,0.)),
+
+    corr_c =
+    ((-0.0646774,-0.9520876,-0.6260979),
+    (0.1975882,2.9924258,1.2924686),
+    (-0.8087562,-2.3802636,1.6542783),
+    (0.6902849,-0.2701261,-3.4396744),
+    (0.,0.,0.))
+)
+
+const QQ_consts = (
+    corr_a = 
+    ((1.2378308, 1.2854109,	1.7942954),
+    (2.4355031,	-11.465615,	0.7695103),
+    (1.6330905,	22.086893,	7.2647923),
+    (-1.6118152, 7.4691383,	94.486699),
+    (6.9771185,	-17.197772,	-77.148458)),
+
+    corr_b = 
+    ((0.4542718, -0.813734, 6.8682675),
+    (-4.5016264, 10.06403, -5.1732238),
+    (3.5858868,	-10.876631, -17.240207),
+    (0., 0., 0.),
+    (0., 0., 0.)),
+
+    corr_c =
+    ((-0.5000437, 2.0002094, 3.1358271),
+    (6.5318692, -6.7838658, 7.2475888),
+    (-16.01478, 20.383246, 3.0759478),
+    (14.42597, -10.895984, 0.),
+    (0., 0., 0.))    
+)
+
+const DQ_consts = (
+    corr_a =
+    ((0.697095, -0.6734593, 0.6703408),
+    (-0.6335541, -1.4258991, -4.3384718),
+    (2.945509, 4.1944139, 7.2341684),
+    (-1.4670273, 1.0266216, 0.)),
+
+    corr_b =
+    ((-0.4840383, 0.6765101, -1.1675601),
+    (1.9704055, -3.0138675, 2.1348843),
+    (-2.1185727, 0.4674266, 0.),
+    (0.,	0.,	0.)),
+
+    corr_c =
+    ((7.846431, -20.72202),
+    (33.427, -58.63904),
+    (4.689111, -1.764887),
+    (0., 0.))
 )
