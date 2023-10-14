@@ -579,7 +579,7 @@ guaiacol~|~2-methoxyphenol,124.052,3.87582,3.43228,289.66653,0.0,2,1,,ASSOCIATIV
 n-methylpiperidine,99.105,2.6654,3.93397,287.14191,0.92,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "acetylacetone~|~2,4-pentanedione",100.052,2.14449,4.07412,348.86452,3.0,2,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "resorcinol~|~1,3-benzenediol~|~1,3-dihydroxybenzene",110.037,2.39189,3.88105,386.93484,0.0,2,2,,ASSOCIATIVE,OK
-mtbe,88.089,2.94782,3.70393,233.07331,1.36,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
+methyl-t-butylether~|~methyl tert-butyl ether~|~2-methoxy-2-methylpropane~|~methyl tert-butyl ether~|~mtbe,88.089,2.94782,3.70393,233.07331,1.36,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "1,4-pentadiene",68.063,2.54223,3.68026,233.50921,0.0,0,0,,NONPOLAR,OK
 1-methoxypropane~|~methylpropyl ether~|~methyl-n-propylether~|~methyl n-propyl ether,74.073,2.84575,3.53881,228.63459,1.24,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 methylisopropylether~|~isopropyl methyl ether,74.073,2.825,3.54669,223.17478,1.25,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
@@ -600,7 +600,7 @@ m-chloroaniline~|~3-chlorobenzenamine~|~3-chlorobenzeneamine,127.019,3.34104,3.5
 2-nitroaniline~|~o-nitroaniline~|~2-nitrobenzeneamine,138.043,1.79764,4.5,353.48273,0.0,3,1,,ASSOCIATIVE,sigma: higher
 m-nitroaniline~|~3-nitrobenzenamine~|~3-aminonitrobenzene,138.043,3.16452,3.65361,289.8472,0.0,3,1,,ASSOCIATIVE,OK
 p-nitroaniline~|~4-aminonitrobenzene,138.043,11.0606,2.17166,144.01604,0.0,3,1,,ASSOCIATIVE,OK
-tame,102.104,3.28595,3.73161,239.9998,0.0,1,0,,NONPOLAR,OK
+tame~|~methyl-tert-amylether~|~methyl tert-amyl ether~|~methyl tert-pentyl ether~|~2-methoxy-2-methylbutane,102.104,3.28595,3.73161,239.9998,0.0,1,0,,NONPOLAR,OK
 (e)-2-octene~|~trans-2-octene,112.125,3.55856,3.87157,252.60601,0.0,0,0,,NONPOLAR,OK
 (e)-4-octene~|~trans-4-octene,112.125,3.91463,3.74717,238.27112,0.0,0,0,,NONPOLAR,OK
 d-(+)-limonene~|~(r)-1-methyl-4-(1-methylethenyl)cyclohexene,136.125,3.72303,3.91098,280.38514,0.0,0,0,,NONPOLAR,OK
