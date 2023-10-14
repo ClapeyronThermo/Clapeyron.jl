@@ -8,7 +8,7 @@ Can only function when solid and liquid models are specified within a CompositeM
 """
 function slle_solubility(model::CompositeModel,p,T)
     p = p*one(eltype(model))
-    T = p*one(eltype(model))
+    T = T*one(eltype(model))
     if length(model.components) != 3
         error("SLLE can only be obtained for ternary systems")
     end

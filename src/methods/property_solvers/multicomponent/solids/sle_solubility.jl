@@ -11,7 +11,7 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing)
         solute = model.components
     end
     p = p*one(eltype(model))
-    T = p*one(eltype(model))
+    T = T*one(eltype(model))
     sol = zeros(length(solute),length(model.components))
 
     for i in 1:length(solute)
