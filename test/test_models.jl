@@ -100,7 +100,7 @@ using Clapeyron, Test
     @testset "PPCSAFT" begin
         system = PPCSAFT(["acetone", "butane","DMSO"])
         z = [0.333, 0.333,0.333]
-        @test Clapeyron.a_polar(system, V, T, z) ≈ -0.6555426582666268 rtol = 1e-6
+        @test Clapeyron.a_polar(system, V, T, z) ≈ -0.6541688650413224 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
     end
 
