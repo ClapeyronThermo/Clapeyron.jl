@@ -82,6 +82,9 @@ include("utils/index_reduction.jl")
 #splitting models, useful for methods.
 include("utils/split_model.jl")
 
+#exportting models, useful for parameter estimation.
+include("utils/export_model.jl")
+
 # Gustavo: acceleration for successive substitution
 include("utils/acceleration_ss.jl")
 
