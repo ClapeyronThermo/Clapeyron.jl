@@ -7,6 +7,7 @@ Returns a tuple containing the eutectic temperature and the composition at the e
 Can only function when solid and liquid models are specified within a CompositeModel.
 """
 function eutectic_point(model::CompositeModel,p=1e5)
+    p = p*one(eltype(model))
     if length(model.components) != 2
         error("Eutectic point only defined for binary systems")
     end
