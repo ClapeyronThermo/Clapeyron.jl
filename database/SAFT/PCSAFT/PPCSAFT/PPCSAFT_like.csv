@@ -716,7 +716,7 @@ cis-3-heptene,98.11,3.34582,3.7832,243.01149,0.0,0,0,,NONPOLAR,OK
 "3,5-dimethylpyridine",107.073,3.147,3.69438,308.94165,2.6,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "1,3-dioxane",88.052,2.54632,3.57448,299.98979,2.06,2,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "butyl benzoate~|~n-butyl benzoate~|~benzoicacidbutylester~|~benzoic acid, butyl ester",178.099,4.94338,3.69356,282.43251,1.81,2,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
-"cis-1,4-dimethylcyclohexane~|~trans-1,4-dimethylcyclohexane",112.125,2.78307,4.13972,285.82244,0.0,0,0,,NONPOLAR,OK
+"trans-1,4-dimethylcyclohexane",112.125,2.78307,4.13972,285.82244,0.0,0,0,,NONPOLAR,OK
 di-tert-butyl ether,130.136,3.58624,3.95209,237.30769,1.21,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 diisopentyl ether~|~di-(3-methylbutyl) ether,158.167,4.56289,3.92369,244.17154,0.0,1,0,,NONPOLAR,OK
 "trioctylamine~|~tri-n-octylamine~|~n,n-dioctyl-1-octanamine",353.402,9.70525,3.98243,247.57669,0.0,1,0,,NONPOLAR,OK
@@ -910,7 +910,7 @@ methylcyclopentene~|~1-methylcyclopentene,82.078,2.74654,3.68159,262.00979,0.0,0
 4-methylcyclohexene,96.094,1.98782,4.3506,338.26484,0.0,0,0,,NONPOLAR,OK
 "trans-1,3-dimethylcyclohexane",112.125,2.53693,4.25073,304.4257,0.0,0,0,,NONPOLAR,OK
 "cis-1,3-dimethylcyclohexane",112.125,2.91375,4.06102,282.12994,0.0,0,0,,NONPOLAR,OK
-"cis-1,4-dimethylcyclohexane~|~trans-1,4-dimethylcyclohexane",112.125,2.75019,4.15108,292.22771,0.0,0,0,,NONPOLAR,OK
+"cis-1,4-dimethylcyclohexane",112.125,2.75019,4.15108,292.22771,0.0,0,0,,NONPOLAR,OK
 propylcyclohexane~|~n-propylcyclohexane~|~1-cyclohexylpropane,126.141,3.32724,4.0282,283.39012,0.0,0,0,,NONPOLAR,OK
 "2,3-dimethylpyridine",107.073,3.33875,3.60308,293.64986,2.07,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 "2,5-dimethylpyridine",107.073,3.52066,3.55164,281.70977,2.16,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK

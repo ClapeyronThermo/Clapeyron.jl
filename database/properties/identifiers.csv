@@ -1802,7 +1802,7 @@ CAS;species;SMILES;inchikey
 1207-12-1;4,6-dimethyldibenzothiophene;CC1=CC=CC2=C1SC3=C2C=CC=C3C;MYAQZIAVOLKEGW-UHFFFAOYSA-N
 7372-88-5;4-methyl dibenzothiophene;CC1=CC=CC2=C1SC3=CC=CC=C23;NICUQYHIOMMFGV-UHFFFAOYSA-N
 93-51-6;4-methylguaiacol;CC1=CC(=C(C=C1)O)OC;PETRWTHZSKVLRE-UHFFFAOYSA-N
-67-47-0;5-hydroxymethylfurfural~|~5-(hydroxymethyl) furfural~|~5-(hydroxymethyl)furan-2-carbaldehyde;C1=C(OC(=C1)C=O)CO;NOEGNKMFWQHSLB-UHFFFAOYSA-N
+67-47-0;HMF~|~5-hydroxymethylfurfural~|~5-(hydroxymethyl) furfural~|~5-(hydroxymethyl)furan-2-carbaldehyde;C1=C(OC(=C1)C=O)CO;NOEGNKMFWQHSLB-UHFFFAOYSA-N
 620-02-0;5-methylfurfural;CC1=CC=C(O1)C=O;OUDFNZMQXZILJD-UHFFFAOYSA-N
 107-29-9;acetaldoxime;CC=NO;FZENGILVLUJGJX-NSCUHMNNSA-N
 103-90-2;acetaminophen;CC(=O)NC1=CC=C(C=C1)O;RZVAJINKPMORJF-UHFFFAOYSA-N
@@ -1845,7 +1845,6 @@ CAS;species;SMILES;inchikey
 79-38-9;chlorotrifluoroethylene~|~1-chloro-1,2,2-trifluroethene;C(=C(F)Cl)(F)F;UUAGAQFQZIEFAH-UHFFFAOYSA-N
 542-75-6;cis-1,3-dichloropropene;C(C=CCl)Cl;UOORRWUZONOOLO-OWOJBTEDSA-N
 2453-00-1;cis-1,3-dimethylcyclopentane;CC1CCC(C1)C;XAZKFISIRYLAEE-UHFFFAOYSA-N
-2207-04-7;cis-1,4-dimethylcyclohexane~|~trans-1,4-dimethylcyclohexane;CC1CCC(CC1)C;QRMPKOFEUHIBNM-UHFFFAOYNA-N
 3724-65-0;cis-crotonic acid;CC=CC(=O)O;LDHQCZJRKDOVOX-NSCUHMNNSA-N
 1190-76-7;cis-crotonitrile;C/C=C/C#N;CHCCYIXMVDPEGI-UHFFFAOYSA-N
 506-77-4;cyanogen chloride;C(#N)Cl;QPJDMGCKMHUXFD-UHFFFAOYSA-N
@@ -2080,7 +2079,6 @@ propenyl_cyclohexene;propenyl cyclohexene~|~1-[(e)-prop-1-enyl]-cyclohexene;C/C=
 5104-49-4;flurbiprofen;O=C(O)C(C=1C=CC(=C(F)C1)C=2C=CC=CC2)C;SYTBZMRGLBWNTM-JTQLQIEISA-N
 22071-15-4;ketoprofen;O=C(O)C(C=1C=CC=C(C1)C(=O)C=2C=CC=CC2)C;DKYWVDODHFEZIM-UHFFFAOYSA-N
 4181-95-7;c40~|~tetracontane;CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC;KUPLEGDPSCCPJI-UHFFFAOYSA-N
-2207-03-6;trans-1,3-dimethylcyclohexane;C[C@@H]1CCC[C@H](C1)C;SGVUHPSBDNVHKL-UHFFFAOYSA-N
 781-17-9;4,5,9,10-tetrahydropyrene;C1CC2=C3C(=CC=C2)CCC4=CC=CC1=C43;XDFUNRTWHPWCKO-UHFFFAOYSA-N
 625-74-1;1-nitro-2-methylpropane;CC(C)C[N+](=O)[O-];XFXRMDNWSGXSNJ-UHFFFAOYSA-N
 428-73-9;trichloromethyl 2,2-dichloro-1,1,2-trifluoroethyl ether;C(C(F)(Cl)Cl)(OC(Cl)(Cl)Cl)(F)F;RYVYLYKKFUWOGA-UHFFFAOYSA-N
@@ -3059,7 +3057,6 @@ propenyl_cyclohexene;propenyl cyclohexene~|~1-[(e)-prop-1-enyl]-cyclohexene;C/C=
 5145-99-3;2-methyl-3-thiapentane;CCSC(C)C;NZUQQADVSXWVNW-UHFFFAOYSA-N
 598-76-5;1,1-dichloro-2-methylpropane;CC(C)C(Cl)Cl;JVHKSSIDGAUKGK-UHFFFAOYSA-N
 121-45-9;trimethyl phosphite;COP(OC)OC;CYTQBVOFDCPGCX-UHFFFAOYSA-N
-;trans-1,3-dimethylcyclohexane;CC1CCCC(C1)C;SGVUHPSBDNVHKL-HTQZYQBOSA-N
 123-66-0;ethyl hexanoate~|~hexanoic acid ethyl ester;CCCCCC(=O)OCC;SHZIWNPUGXLXDT-UHFFFAOYSA-N
 ;1-tert-butyl-2-isopropyl-5-methylcyclohexane;CC1CCC(C(C1)C(C)(C)C)C(C)C;CLRHMJMFEKSASH-UHFFFAOYSA-N
 589-16-2;4-ethylbenzenamine;CCC1=CC=C(C=C1)N;HRXZRAXKKNUKRF-UHFFFAOYSA-N
