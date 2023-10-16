@@ -21,7 +21,7 @@ function transform_params(::Type{PPCSAFT},params,components)
     params = saft_lorentz_berthelot(params)
     μ,m,Q = params["dipole"],params["segment"],params["quadrupole"]
     params["dipole2"] = SingleParam("Dipole squared",components, μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3))
-    params["quadrupole2"] = SingleParam("Quadrupole squared",components, Q.^2 ./ m ./ k_B*1e-19)
+    params["quadrupole2"] = SingleParam("Quadrupole squared",components, Q.^2 ./ m ./ k_B*1e-52*(1e-10*1e-3))
     return params
 end
 
@@ -70,7 +70,7 @@ export PPCSAFT
 function recombine_impl!(model ::PPCSAFTModel)
     μ,Q,m = model.params.dipole,model.params.quadrupole,model.params.segment
     model.params.dipole2 .= μ.^2 ./ m ./ k_B * 1e-36*(1e-10*1e-3)
-    model.params.quadrupole2 .= Q.^2 ./ m ./ k_B * 1e-19
+    model.params.quadrupole2 .= Q.^2 ./ m ./ k_B * 1e-56*(1e-10*1e-3)
     recombine_saft!(model)
 end
 
@@ -93,9 +93,6 @@ function a_polar(model ::PPCSAFTModel, V, T, z, _data=@f(data))
 end
 
 function a_mp(model ::PPCSAFTModel, V, T, z, type, _data=@f(data))
-    if !(type ∈ ["DD","QQ","DQ"])
-        throw(ArgumentError("Invalid type: $type"))
-    end
     a₂ = @f(a_2,type,_data)
     iszero(a₂) && return zero(a₂)
     a₃ = @f(a_3,type,_data)
@@ -108,38 +105,166 @@ function a_qq(model ::PPCSAFTModel, V, T, z, _data=@f(data))
     return @f(a_mp,"QQ",_data)
 end
 function a_dq(model ::PPCSAFTModel, V, T, z, _data=@f(data))
-    return @f(a_mp,"DQ",_data)
+    a₂ = @f(a_2_dq,_data)
+    iszero(a₂) && return zero(a₂)
+    a₃ = @f(a_3_dq,_data)
+    return a₂^2/(a₂-a₃)
 end
 
+# Deals only with DD & QQ
 function a_2(model ::PPCSAFTModel, V, T, z, type, _data=@f(data))
-    rel_comps = @f(relevant_comps,type)
-    if isempty(rel_comps) return 0. end
+    dp_comps, qp_comps = @f(polar_comps)
+    P̄² = []
+    p_comps = []
+    p = 0
+    coeff = 0.
+    if type == "DD"
+        if isempty(dp_comps) return 0. end
+        P̄² = model.params.dipole2.values
+        p_comps = dp_comps
+        p = 3
+        coeff = 1.
+    end
+    if type == "QQ"
+        if isempty(qp_comps) return 0. end
+        P̄² = model.params.quadrupole2.values
+        p_comps = qp_comps
+        p = 7
+        coeff = 9/16
+    end
     _,_,_,_,η,_ = _data
     ∑z = sum(z)
     ρ = N_A*∑z/V
     _a_2 = zero(T+V+first(z))
-    nc = length(model)
+    # nc = length(model)
     m = model.params.segment.values
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
-    μ̄² = model.params.dipole2.values
-    @inbounds for i ∈ 1:nc
+    # μ̄² = model.params.dipole2.values
+    # Q̄² = model.params.quadrupole2.values
+    @inbounds for (idx, i) ∈ enumerate(p_comps)
         _J2_ii = @f(J2,type,i,i,η,m,ϵ)
         zᵢ = z[i]
-        μ̄²ᵢ = μ̄²[i]
-        _a_2 +=zᵢ^2*μ̄²ᵢ^2/σ[i,i]^3*_J2_ii
-        for j ∈ (i+1):nc
+        P̄²ᵢ = P̄²[i]
+        _a_2 +=zᵢ^2*P̄²ᵢ^2/σ[i,i]^p*_J2_ii
+        for j ∈ p_comps[idx+1:end]
             _J2_ij = @f(J2,type,i,j,η,m,ϵ)
-            _a_2 += 2*zᵢ*z[j]*μ̄²ᵢ*μ̄²[j]/σ[i,j]^3*_J2_ij
+            _a_2 += 2*zᵢ*z[j]*P̄²ᵢ*P̄²[j]/σ[i,j]^p*_J2_ij
         end
     end
-    _a_2 *= -π*ρ/(T*T)/(∑z*∑z)
+    # @inbounds for i ∈ 1:nc
+    #     _J2_ii = @f(J2,type,i,i,η,m,ϵ)
+    #     zᵢ = z[i]
+    #     μ̄²ᵢ = μ̄²[i]
+    #     _a_2 +=zᵢ^2*μ̄²ᵢ^2/σ[i,i]^3*_J2_ii
+    #     for j ∈ (i+1):nc
+    #         _J2_ij = @f(J2,type,i,j,η,m,ϵ)
+    #         _a_2 += 2*zᵢ*z[j]*μ̄²ᵢ*μ̄²[j]/σ[i,j]^3*_J2_ij
+    #     end
+    # end
+    _a_2 *= -π*coeff*ρ/(T*T)/(∑z*∑z)
+    return _a_2
+end
+
+function a_2_dq(model ::PPCSAFTModel, V, T, z, _data=@f(data))
+    dp_comps, qp_comps = @f(polar_comps)
+    Q̄² = model.params.quadrupole2.values
+    μ̄² = model.params.dipole2.values
+    _,_,_,_,η,_ = _data
+    ∑z = sum(z)
+    ρ = N_A*∑z/V
+    _a_2 = zero(T+V+first(z))
+    m = model.params.segment.values
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    @inbounds for i in dp_comps
+        for j ∈ qp_comps
+            _J2_ij = @f(J2,type,i,j,η,m,ϵ)
+            _a_2 += z[i]*z[j]*μ̄²[i]*Q̄²[j]/σ[i,j]^5*_J2_ij
+        end
+    end
+    _a_2 *= -π*9/4*ρ/(T*T)/(∑z*∑z)
     return _a_2
 end
 
 function a_3(model ::PPCSAFTModel, V, T, z, type, _data=@f(data))
-    rel_comps = @f(relevant_comps,type)
-    if isempty(rel_comps) return 0. end
+    dp_comps, qp_comps = @f(polar_comps)
+    P̄² = []
+    p_comps = []
+    p = 0
+    coeff = 0.
+    if type == "DD"
+        if isempty(dp_comps) return 0. end
+        P̄² = model.params.dipole2.values
+        p_comps = dp_comps
+        p = 1
+        coeff = -4*π^2/3
+    end
+    if type == "QQ"
+        if isempty(qp_comps) return 0. end
+        P̄² = model.params.quadrupole2.values
+        p_comps = qp_comps
+        p = 3
+        coeff = 9*π^2/16
+    end
+
+    ∑z = sum(z)
+    ρ = N_A*∑z/V
+    _,_,_,_,η,_ = _data
+    _a_3 = zero(T+V+first(z))
+    m = model.params.segment.values
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    # μ̄² = model.params.dipole2.values
+    # nc = length(model)
+    @inbounds for (idx_i,i) ∈ enumerate(p_comps)
+        _J3_iii = @f(J3,type,i,i,i,η,m)
+        zi,P̄²i = z[i],P̄²[i]
+        a_3_i = zi*P̄²i/σ[i,i]^p
+        _a_3 += a_3_i^3*_J3_iii
+        for (idx_j,j) ∈ enumerate(p_comps[idx_i+1:end])
+            zj,P̄²j = z[j],P̄²[j]
+            σij⁻ᵖ = 1/σ[i,j]^p
+            a_3_iij = zi*P̄²i*σij⁻ᵖ
+            a_3_ijj = zj*P̄²j*σij⁻ᵖ
+            a_3_j = zj*P̄²j/σ[j,j]^p
+            _J3_iij = @f(J3,type,i,i,j,η,m)
+            _J3_ijj = @f(J3,type,i,j,j,η,m)
+            _a_3 += 3*a_3_iij*a_3_ijj*(a_3_i*_J3_iij + a_3_j*_J3_ijj)
+            for k ∈ p_comps[idx_i+idx_j+1:end]
+                zk,P̄²k = z[k],P̄²[k]
+                _J3_ijk = @f(J3,type,i,j,k,η,m)
+                _a_3 += 6*zi*zj*zk*P̄²i*P̄²j*P̄²k*σij⁻ᵖ/(σ[i,k]*σ[j,k])^p*_J3_ijk
+            end
+        end
+    end
+    # @inbounds for i ∈ 1:nc
+    #     _J3_iii = @f(J3,type,i,i,i,η,m)
+    #     zi,μ̄²i = z[i],μ̄²[i]
+    #     a_3_i = zi*μ̄²i/σ[i,i]
+    #     _a_3 += a_3_i^3*_J3_iii
+    #     for j ∈ i+1:nc
+    #         zj,μ̄²j = z[j],μ̄²[j]
+    #         σij⁻¹ = 1/σ[i,j]
+    #         a_3_iij = zi*μ̄²i*σij⁻¹
+    #         a_3_ijj = zj*μ̄²j*σij⁻¹
+    #         a_3_j = zj*μ̄²j/σ[j,j]
+    #         _J3_iij = @f(J3,type,i,i,j,η,m)
+    #         _J3_ijj = @f(J3,type,i,j,j,η,m)
+    #         _a_3 += 3*a_3_iij*a_3_ijj*(a_3_i*_J3_iij + a_3_j*_J3_ijj)
+    #         for k ∈ j+1:nc
+    #             zk,μ̄²k = z[k],μ̄²[k]
+    #             _J3_ijk = @f(J3,type,i,j,k,η,m)
+    #             _a_3 += 6*zi*zj*zk*μ̄²i*μ̄²j*μ̄²k*σij⁻¹/σ[i,k]/σ[j,k]*_J3_ijk
+    #         end
+    #     end
+    # end
+    _a_3 *= coeff*ρ^2/(T*T*T)/(∑z*∑z*∑z)
+    return _a_3
+end
+
+
+function a_3_original(model ::PPCSAFTModel, V, T, z, type, _data=@f(data))
     ∑z = sum(z)
     ρ = N_A*∑z/V
     _,_,_,_,η,_ = _data
@@ -151,7 +276,7 @@ function a_3(model ::PPCSAFTModel, V, T, z, type, _data=@f(data))
     nc = length(model)
 
     @inbounds for i ∈ 1:nc
-        _J3_iii = @f(J3,type,i,i,i,η,m)
+        _J3_iii = @f(J3,"DD",i,i,i,η,m)
         zi,μ̄²i = z[i],μ̄²[i]
         a_3_i = zi*μ̄²i/σ[i,i]
         _a_3 += a_3_i^3*_J3_iii
@@ -161,12 +286,12 @@ function a_3(model ::PPCSAFTModel, V, T, z, type, _data=@f(data))
             a_3_iij = zi*μ̄²i*σij⁻¹
             a_3_ijj = zj*μ̄²j*σij⁻¹
             a_3_j = zj*μ̄²j/σ[j,j]
-            _J3_iij = @f(J3,type,i,i,j,η,m)
-            _J3_ijj = @f(J3,type,i,j,j,η,m)
+            _J3_iij = @f(J3,"DD",i,i,j,η,m)
+            _J3_ijj = @f(J3,"DD",i,j,j,η,m)
             _a_3 += 3*a_3_iij*a_3_ijj*(a_3_i*_J3_iij + a_3_j*_J3_ijj)
             for k ∈ j+1:nc
                 zk,μ̄²k = z[k],μ̄²[k]
-                _J3_ijk = @f(J3,type,i,j,k,η,m)
+                _J3_ijk = @f(J3,"DD",i,j,k,η,m)
                 _a_3 += 6*zi*zj*zk*μ̄²i*μ̄²j*μ̄²k*σij⁻¹/σ[i,k]/σ[j,k]*_J3_ijk
             end
         end
@@ -175,7 +300,33 @@ function a_3(model ::PPCSAFTModel, V, T, z, type, _data=@f(data))
     return _a_3
 end
 
-function relevant_comps(model, V, T, z, type)
+function a_3_dq(model ::PPCSAFTModel, V, T, z, _data=@f(data))
+    dp_comps, qp_comps = @f(polar_comps)
+    μ̄² = model.params.dipole2.values
+    Q̄² = model.params.quadrupole2.values
+    _,_,_,_,η,_ = _data
+    ∑z = sum(z)
+    ρ = N_A*∑z/V
+    _a_3 = zero(T+V+first(z))
+    m = model.params.segment.values
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    @inbounds for i ∈ dp_comps
+        for j ∈ union(dp_comps, qp_comps)
+            for k ∈ qp_comps
+                _J3_ijk = @f(J3,type,i,j,k,η,m)
+                _a_3 += z[i]*z[j]*z[k]*σ[i,i]/
+                    (σ[k,k]*(σ[i,j]*σ[i,k]*σ[j,k])^2)*
+                    μ̄²[i]*Q̄²[k]*(σ[j,j]*μ̄²[j]+1.19374/σ[j,j]*Q̄²[j])*_J3_ijk
+            end
+        end
+    end
+    _a_3 *= -ρ^2/(T*T*T)/(∑z*∑z*∑z)
+    return _a_3
+end
+
+# Returns [Dipole Comp idxs], [Quadrupole Comp idxs]
+function polar_comps(model, V, T, z)
     μ̄² = model.params.dipole2.values
     Q̄² = model.params.quadrupole2.values
     dipole_comps = []
@@ -184,19 +335,9 @@ function relevant_comps(model, V, T, z, type)
         if !iszero(μ̄²[i]) push!(dipole_comps,i) end
         if !iszero(Q̄²[i]) push!(quadrupole_comps,i) end
     end
-    if type == "DQ"
-        if isempty(dipole_comps) || isempty(quadrupole_comps)
-            return []
-        else
-            return vcat(dipole_comps,quadrupole_comps)
-        end
-    elseif type == "DD"
-        return dipole_comps
-    elseif type == "QQ"
-        return quadrupole_comps
-    end
-    return []
+    return dipole_comps, quadrupole_comps
 end
+
 
 function J2(model, V, T, z, type, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵ = model.params.epsilon.values)
     ϵT = ϵ[i,j]/T
