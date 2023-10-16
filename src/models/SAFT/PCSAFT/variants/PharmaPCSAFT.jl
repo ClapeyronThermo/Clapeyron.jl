@@ -72,7 +72,7 @@ pharmaPCSAFT
 function d(model::pharmaPCSAFTModel, V, T, z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
-    _d = zeros(typeof(T),length(z))
+    _d = zeros(typeof(T*one(eltype(model))),length(z))
     Δσ = Δσh20(T)
     k = water08_k(model)
     for i ∈ @comps
