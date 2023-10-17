@@ -100,7 +100,7 @@ end
         @test_throws DimensionMismatch Clapeyron.x0_sat_pure(model,300.15)
         @test_throws DimensionMismatch saturation_liquid_density(model,300.15)
     end
-    
+
     @testset "macros" begin
         comps(model) = Clapeyron.@comps
         groups(model) = Clapeyron.@groups
@@ -170,7 +170,7 @@ end
         citation_show = String(take!(_io))
         @test citation_show == "\nReferences: 10.1021/I160057A011, 10.1021/ie049580p, 10.1021/i260064a004, 10.1021/acs.jced.0c00723"
         @test Clapeyron.doi2bib("10.1021/I160057A011") == "@article{Peng_1976,\n\tdoi = {10.1021/i160057a011},\n\turl = {https://doi.org/10.1021%2Fi160057a011},\n\tyear = 1976,\n\tmonth = {feb},\n\tpublisher = {American Chemical Society ({ACS})},\n\tvolume = {15},\n\tnumber = {1},\n\tpages = {59--64},\n\tauthor = {Ding-Yu Peng and Donald B. Robinson},\n\ttitle = {A New Two-Constant Equation of State},\n\tjournal = {Industrial {\\&}amp\$\\mathsemicolon\$ Engineering Chemistry Fundamentals}\n}"
-    
+
     end
 
     @testset "alternative input" begin
@@ -179,7 +179,7 @@ end
         @test PCSAFT("water") isa EoSModel
         @test PCSAFT(["water" => ["H2O"=>1]]) isa EoSModel
     end
-    
+
     @printline
 
     @testset "core utils" begin
@@ -229,7 +229,7 @@ end
             CH2_PEO,1,1,12,6,4,300,0,0,0,100
             cO_1sit,1,1,12,6,4,300,0,1,0,100
             """
-            
+
             mw_data = """
             Clapeyron Database File
             SAFTgammaMie Like Parameters
@@ -237,7 +237,7 @@ end
             CH2_PEO,100
             cO_1sit,100
             """
-            
+
             assoc_data = """
             Clapeyron Database File,,,,,,
             SAFTgammaMie Assoc Parameters [csvtype = assoc,grouptype = SAFTgammaMie]
@@ -245,21 +245,21 @@ end
             H2O,H,cO_1sit,e1,2193.2,5e-29,
             CH2OH,H,cO_1sit,e1,1572.5,4.331e-28,
             """
-            
+
             group_data = """
             Clapeyron Database File,
             SAFTgammaMie Groups [csvtype = groups,grouptype = SAFTgammaMie]
             species,groups
             PEG_1sit,"[""CH2_PEO"" => 2000,""cO_1sit"" => 1000,""CH2OH"" => 2]"
             """
-            
+
             model = SAFTgammaMie(["water","PEG_1sit"],userlocations = [like_data,assoc_data,mw_data],group_userlocations = [group_data])
-            #in this case,because the groups are 1 to 1 correspondence to each molecule, the amount of groups should be the same 
+            #in this case,because the groups are 1 to 1 correspondence to each molecule, the amount of groups should be the same
             @test length(model.vrmodel.params.epsilon_assoc.values.values) == length(model.params.epsilon_assoc.values.values)
             #test if we got the number of sites right
             @test model.vrmodel.sites.n_sites[2][1] == 1000 #1000 sites cO_1sit/e1 in PEG.
         end
-        
+
         @testset "#154" begin
             #there was a problem when using the @newmodel macros outside the Clapeyron module. this should suffice as a test.
             abstract type PCSAFTModel_test <: SAFTModel end
@@ -291,11 +291,11 @@ end
             @test hasmethod(Base.length,Tuple{PCSAFT161})
             @test hasmethod(Base.show,Tuple{IO,PCSAFT161})
             @test hasmethod(Base.show,Tuple{IO,MIME"text/plain",PCSAFT161})
-            @test hasmethod(Clapeyron.molecular_weight,Tuple{PCSAFT161,Array{Float64}}) 
+            @test hasmethod(Clapeyron.molecular_weight,Tuple{PCSAFT161,Array{Float64}})
         end
 
         @testset "#162" begin
-            #a longstanding problem, init_model didn't worked with functions. 
+            #a longstanding problem, init_model didn't worked with functions.
             #a long time ago, SRK was a model, but now it is just a function that returns an RK model.
             model1 = Wilson(["water","ethanol"];puremodel=SRK)
             @test model1 isa Clapeyron.EoSModel
@@ -319,7 +319,7 @@ end
             res_split = Clapeyron.eos(model_split,1.013e6,298.15) #should work
             @test res_pure ≈ res_split
         end
-   
+
         @testset "#188" begin
             #=
             in cubics, we do a separation between the alpha model and the main model. while this allows for unprecedented
@@ -335,7 +335,7 @@ end
             )
 
             file = ParamTable(
-                :single, 
+                :single,
                 data,
                 name="db1"
             )
@@ -351,7 +351,18 @@ end
             =#
             @test aspenNRTL(["water", "acetone", "dichloromethane"],puremodel = PR) isa EoSModel
             @test UNIFAC(["water", "acetone", "dichloromethane"]) isa EoSModel
-            
+
+        end
+
+        @testset "#212" begin
+            #=
+            Polar PCSAFT
+            it uses `a` and `b` as site names
+            =#
+            model = PPCSAFT("water")
+            @test model isa EoSModel
+            @test "a" in model.sites.flattenedsites
+            @test "b" in model.sites.flattenedsites
         end
     end
     @printline

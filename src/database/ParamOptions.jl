@@ -1,9 +1,4 @@
-const DEFAULT_N_SITES = Dict{String,String}(
-    "e" => "n_e",
-    "e1" => "n_e1",
-    "e2" => "n_e2",
-    "H" => "n_H"
-)
+const DEFAULT_N_SITES = Dict{String,String}()
 
 const IGNORE_HEADERS = ["dipprnumber", "smiles", "cas"]
 
