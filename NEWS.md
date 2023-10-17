@@ -1,7 +1,7 @@
-# v0.5.5
+# v0.5.6
 
 ## New Features
-- Polar PC-SAFT now uses the Esper et al. (2023) parameters.
+- `Clapeyron.diagvalues` now accepts `x::Number` (returning the same number)
 
 ## Bug Fixes
-- added promotion of types for solid solvers and `pharmaPCSAFT` (#212)
+- more flexible sites parser (#214). Before, some site names where hardcoded.
