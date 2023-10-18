@@ -106,6 +106,10 @@ function diagvalues(x::SingleOrPair)
     return diagvalues(x.values)
 end
 
+function diagvalues(x::Number)
+    return x
+end
+
 function _get_sources(x::Vector)::Vector{String}
     return collect(Set(r for y ∈ x for r ∈ y.sources))
 end

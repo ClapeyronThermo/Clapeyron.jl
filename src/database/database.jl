@@ -242,14 +242,27 @@ function getparams(components::Vector{String},locations::Vector{String},options:
 end
 
 function buildsites(result,components,allcomponentsites,options)
-    n_sites_columns = options.n_sites_columns
+    
+
     v = String[]
     for sitei ∈ allcomponentsites
         append!(v,sitei)
     end
     unique!(v)
+    #no sites encountered in assoc params
     iszero(length(v)) && return SiteParam(components)
-    if !any(haskey(result,n_sites_columns[vi]) for vi ∈ v)
+    
+    #=
+    build our own dict, by using the transformation X => n_X
+    =#
+    if isempty(options.n_sites_columns)
+        n_sites_columns = Dict{String,String}(vi => string("n_",vi) for vi in v)
+    else
+        n_sites_columns = options.n_sites_columns
+    end
+
+    #check for missing number of sites
+    if !any(haskey(result,get(n_sites_columns,vi,"")) for vi ∈ v)
        return __warning_no_site_vals(result,components)
     end
 

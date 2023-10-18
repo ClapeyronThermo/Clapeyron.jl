@@ -158,7 +158,8 @@ using Clapeyron, Test, LinearAlgebra
                                                 0.0  0.0  0.0  0.0  1.5]
 
         @test Clapeyron.diagvalues(params["overwriteparam"]) == [1.6, 1.2, 1.3, 1.4, 1.5]
-
+        @test Clapeyron.diagvalues(1.23) == 1.23
+         
         assoc_param_values =
         [[Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,3)          ]  [Array{Int64}(undef,0,2)]  [Array{Int64}(undef,0,3)       ]
         [Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,0)]  [Array{Int64}(undef,0,3)          ]  [Array{Int64}(undef,0,2)]  [Array{Int64}(undef,0,3)       ]
