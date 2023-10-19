@@ -6,3 +6,4 @@ docs/site/
 *.jl.mem
 lcov.info
 LocalPreferences.toml
+*.ipynb

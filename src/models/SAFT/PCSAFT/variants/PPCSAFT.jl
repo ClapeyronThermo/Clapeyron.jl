@@ -21,7 +21,7 @@ function transform_params(::Type{PPCSAFT},params,components)
     params = saft_lorentz_berthelot(params)
     μ,m,Q = params["dipole"],params["segment"],params["quadrupole"]
     params["dipole2"] = SingleParam("Dipole squared",components, μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3))
-    params["quadrupole2"] = SingleParam("Quadrupole squared",components, Q.^2 ./ m ./ k_B*1e-52*(1e-10*1e-3))
+    params["quadrupole2"] = SingleParam("Quadrupole squared",components, Q.^2 ./ m ./ k_B*1e-56*(1e-10*1e-3))
     return params
 end
 
