@@ -20,7 +20,12 @@ function transform_params(::Type{pharmaPCSAFT},params,components)
     sigma.values .*= 1E-10
     params["kT"] = get(params,"kT",PairParam("kT",components,zeros(length(components))))
     params["water"] = SpecialComp(components,["water08"])
-    return saft_lorentz_berthelot(params)
+    #k needs to be fully instantiated here, because it is stored as a parameter
+    params["k"] = get(params,"k",PairParam("k",components,zeros(length(components))))
+    sigma,epsilon = params["sigma"],params["epsilon"]
+    params["sigma"] = sigma_LorentzBerthelot(sigma)
+    params["epsilon"] = epsilon_LorentzBerthelot(epsilon) #the mixing is done at runtime
+    return params
 end
 
 export pharmaPCSAFT

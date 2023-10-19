@@ -39,4 +39,5 @@ end
     include("test_methods_eos.jl")
     include("test_methods_api.jl")
     include("test_estimation.jl")
+    include("test_issues.jl")
 end
