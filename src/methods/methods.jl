@@ -218,6 +218,7 @@ function gradient_type(V,T,z::FractionVector)
     return Vector{μ}
 end
 
+
 """
     init_preferred_method(method,model,kwargs)
 

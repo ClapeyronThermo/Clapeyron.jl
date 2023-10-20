@@ -134,6 +134,11 @@ function aprox_psat(pure,T,crit)
 end
 
 function wilson_k_values(model::EoSModel,p,T,crit = nothing)
+    K = zeros(typeof(p+T+one(eltype(model))),length(model))
+    return wilson_k_values!(K,model,p,T,crit)
+end
+
+function wilson_k_values!(K,model::EoSModel,p,T,crit = nothing)
     n = length(model)
     pure = split_model.(model)
     if crit === nothing

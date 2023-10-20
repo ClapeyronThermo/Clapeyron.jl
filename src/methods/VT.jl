@@ -255,8 +255,14 @@ function VT_partial_property(model::EoSModel,V,T,z,property::ℜ) where {ℜ}
     return Solvers.gradient(fun,z)::TT
 end
 
+function VT_partial_property!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F,ℜ}
+    fun(x) = property(model,V,T,x)
+    return Solvers.gradient!(fx,fun,z)::F
+end
+
 VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos)
 VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos_res)
+VT_chemical_potential_res!(r,model::EoSModel, V, T, z=SA[1.]) = VT_partial_property!(r,model,V,T,z,eos_res)
 
 export second_virial_coefficient,pressure,cross_second_virial,equivol_cross_second_virial
 
