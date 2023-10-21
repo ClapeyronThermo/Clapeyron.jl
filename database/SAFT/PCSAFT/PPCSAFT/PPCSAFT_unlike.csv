@@ -1,4 +1,9 @@
-Clapeyron Database File,,,,,
+slapeyron Database File,,,,,
 PCSAFT Unlike Parameters,,,,,
 species1,SMILES1,species2,SMILES2,k,source
 acetone~|~propanone,C,butane~|~n-butane,CCCC,0.037,
+carbon dioxide_LQ,(O=)C=O,benzene,c1ccccc1,0.042,10.1002/aic.10502
+carbon dioxide_LQ,(O=)C=O,n-butane,CCCC,0.036,10.1002/aic.10502
+acetylene_LQ,,r152a_E,,-0.090,10.1021/jp072619u
+carbon dioxide_LQ,(O=)C=O,r12_A,CF2Cl2,0.073,10.1021/jp072619u
+carbon dioxide,(O=)C=O,r12_A,CF2Cl2,0.073,10.1021/jp072619u

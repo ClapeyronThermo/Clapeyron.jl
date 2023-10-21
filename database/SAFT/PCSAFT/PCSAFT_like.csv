@@ -551,3 +551,5 @@ thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,,15
 1-decanol~|~decan-1-ol,,158.28,4.8225,3.8281,267.4,1,1,
 menthol,,156.27,3.038,4.2442,217.551,1,1,
 lj,,1.0,1.0,1.0,1.0,0,0,
+benzene_PPCTEST,,78.114,2.2463,3.7852,296.24,0,0,10.1002/aic.10502
+carbon dioxide_PPCTEST,,44.01,1.5131,3.1869,163.33,0,0,10.1002/aic.10502
