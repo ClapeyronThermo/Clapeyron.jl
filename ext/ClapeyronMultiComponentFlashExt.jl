@@ -115,6 +115,8 @@ module ClapeyronMultiComponentFlashExt
         r ./= phi_v
         K .*= r
         ϵ = mapreduce(ri -> abs(1-ri), max ,r)
+        V = C.rachfordrice(K, z; β0=V)
         return (V, ϵ)::Tuple{F, F}
-    end
+    end    
 end #module
+
