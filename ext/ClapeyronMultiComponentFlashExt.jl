@@ -4,6 +4,7 @@ module ClapeyronMultiComponentFlashExt
     const C = Clapeyron
     const M = MultiComponentFlash
     const S = C.StaticArrays
+    const ForwardDiff = C.ForwardDiff
 
     struct CubicWrapper{T} <: C.EoSModel
         model::T
@@ -37,7 +38,7 @@ module ClapeyronMultiComponentFlashExt
         TT = typeof(cond.p+cond.T+one(eltype(eos)))
         splt = C.split_model(eos)
         out[:split_model] = splt
-        out[:forces] = nothing #a/b ?
+        out[:forces] = nothing
         out[:crit] = C.crit_pure.(splt)
         if static_size
             alloc_vec = () -> C.StaticArrays.@MVector zeros(TT,n)
@@ -53,18 +54,21 @@ module ClapeyronMultiComponentFlashExt
         out[:buffer1] = alloc_vec()
         out[:buffer2] = alloc_vec()
         if inc_jac
-            flash_storage_internal_newton!(out, eos, cond, method, static_size = static_size; kwarg...)
+            M.flash_storage_internal_newton!(out, eos, cond, method, static_size = static_size; kwarg...)
         end
         return out
     end
 
+    #this is only defined with cubic EoS.
     M.force_coefficients(eos::C.EoSModel, cond) = nothing
     M.force_scalars(eos::C.EoSModel, cond, forces) = nothing
+    M.force_coefficients!(forces, eos::C.EoSModel, c) = nothing
 
     function M.mixture_fugacities!(f, eos::C.EoSModel, cond, forces = M.force_coefficients(eos, cond), scalars = M.force_scalars(eos, cond, forces))
-        C.fugacity_coefficient!(f,eos,cond.p,cond.T,cond.z)
+        phase::Symbol = get(cond,:phase,:unknown)
+        C.fugacity_coefficient!(f,eos,cond.p,cond.T,cond.z,phase = phase)
         f .*= cond.p
-        f .*= cond.z
+        f .= f .* cond.z
         return f
     end
     #TODO: this could be removed
@@ -74,8 +78,8 @@ module ClapeyronMultiComponentFlashExt
         f_xy = storage.buffer2
         x, y = storage.x, storage.y
         z, p, T = c.z, c.p, c.T
-        liquid = (p = p, T = T, z = x)
-        vapor = (p = p, T = T, z = y)
+        liquid = (p = p, T = T, z = x, phase = :liquid)
+        vapor = (p = p, T = T, z = y,phase = :vapor)
         # Update fugacities for current conditions used in both tests
         M.mixture_fugacities!(f_z, eos, c, forces)
         #props = eos.mixture.properties
@@ -93,6 +97,7 @@ module ClapeyronMultiComponentFlashExt
         return stable
     end
 
+
     function M.flash_update!(K, storage, type::M.SSIFlash, eos::C.EoSModel, cond, forces, V::F, iteration) where F
         z = cond.z
         x, y = storage.x, storage.y
@@ -101,8 +106,8 @@ module ClapeyronMultiComponentFlashExt
         y = M.vapor_mole_fraction!(y, x, K)
         phi_l = storage.phi_l
         phi_v = storage.phi_v
-        liquid = (p = p, T = T, z = x)
-        vapor = (p = p, T = T, z = y)
+        liquid = (p = p, T = T, z = x,phase = :liquid)
+        vapor = (p = p, T = T, z = y,phase = :vapor)
         ϵ = zero(F)
         M.mixture_fugacities!(phi_l, eos, liquid, forces)
         M.mixture_fugacities!(phi_v, eos, vapor, forces)
@@ -111,5 +116,5 @@ module ClapeyronMultiComponentFlashExt
         K .*= r
         ϵ = mapreduce(ri -> abs(1-ri), max ,r)
         return (V, ϵ)::Tuple{F, F}
-    end 
+    end
 end #module
