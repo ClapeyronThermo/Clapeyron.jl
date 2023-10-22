@@ -14,7 +14,7 @@ end
 abstract type PPCSAFTModel <: PCSAFTModel end
 @newmodel PPCSAFT PPCSAFTModel PPCSAFTParam
 default_references(::Type{PPCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
-default_locations(::Type{PPCSAFT}) = ["SAFT/PCSAFT/PPCSAFT/","properties/molarmass.csv"]
+default_locations(::Type{PPCSAFT}) = ["SAFT/PCSAFT/QPPCSAFT/","properties/molarmass.csv"]
 function transform_params(::Type{PPCSAFT},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
@@ -246,7 +246,7 @@ function a_3_dq(model ::PPCSAFTModel, V, T, z, _data=@f(data))
                 _J3_ijk = @f(J3,:DQ,i,j,k,η,m)
                 _a_3 += z[i]*z[j]*z[k]*σ[i,i]/
                     (σ[k,k]*(σ[i,j]*σ[i,k]*σ[j,k])^2)*
-                    μ̄²[i]*Q̄²[k]*(σ[j,j]*μ̄²[j]+1.19374/σ[j,j]*Q̄²[j])*_J3_ijk
+                    μ̄²[i]*Q̄²[k]*(σ[j,j]*μ̄²[j]+1.1937350/σ[j,j]*Q̄²[j])*_J3_ijk
             end
         end
     end
@@ -377,8 +377,8 @@ const DQ_consts = (
     (0.,	0.,	0.)),
 
     corr_c =
-    ((7.846431, -20.72202),
-    (33.427, -58.63904),
-    (4.689111, -1.764887),
+    ((0.7846431, -2.072202),
+    (3.3427, -5.863904),
+    (0.4689111, -0.1764887),
     (0., 0.))
 )
