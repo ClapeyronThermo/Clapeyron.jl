@@ -219,7 +219,7 @@ function wilson_k_values!(K,model::MultiFluid,p,T,crit = nothing)
     n = length(model)
     pure = split_model.(model)
     _Tc = model.params.Tc.values
-    _Pc = model.params.pc.values
+    _Pc = model.params.Pc.values
     for i ∈ 1:n
         pure_i = pure[i]
         Tc,pc = _Tc[i],_Pc[i]
