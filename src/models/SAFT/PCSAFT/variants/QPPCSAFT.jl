@@ -97,7 +97,7 @@ function a_mp(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
     a_mp_total = _0
     a_mp_total += has_dp && @f(a_dd,_data)
     a_mp_total += has_qp && @f(a_qq,_data)
-    # a_mp_total += has_dp && has_qp && @f(a_dq,_data)
+    a_mp_total += has_dp && has_qp && @f(a_dq,_data)
     return a_mp_total
 end
 
@@ -307,8 +307,8 @@ const DQ_consts = (
     (0., 0., 0.)),
 
     corr_c =
-    ((7.846431, -20.72202),
-    (33.427, -58.63904),
-    (4.689111, -1.764887),
+    ((0.7846431, -2.072202),
+    (3.3427, -5.863904),
+    (0.4689111, -0.1764887),
     (0., 0.))
 )
