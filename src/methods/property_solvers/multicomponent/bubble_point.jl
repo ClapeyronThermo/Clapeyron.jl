@@ -340,7 +340,7 @@ include("bubble_point/bubble_fugacity.jl")
 #default initializers
 
 function init_preferred_method(method::typeof(bubble_pressure),model::EoSModel,kwargs)
-    return ChemPotBubblePressure(;kwargs...) 
+    return ChemPotBubblePressure(;kwargs...)
 end
 
 function init_preferred_method(method::typeof(bubble_temperature),model::EoSModel,kwargs)
