@@ -14,7 +14,7 @@ end
 abstract type QPPCSAFTModel <: PPCSAFTModel end
 @newmodel QPPCSAFT QPPCSAFTModel QPPCSAFTParam
 default_references(::Type{QPPCSAFT}) = ["10.1002/aic.10502","10.1021/jp072619u"]
-default_locations(::Type{QPPCSAFT}) = ["SAFT/PCSAFT/PPCSAFT/","properties/molarmass.csv"] # Needs to add data for QPPCSAFT
+default_locations(::Type{QPPCSAFT}) = ["SAFT/PCSAFT/QPPCSAFT/","properties/molarmass.csv"] # Needs to add data for QPPCSAFT
 function transform_params(::Type{QPPCSAFT},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
