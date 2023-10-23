@@ -97,7 +97,7 @@ function a_mp(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
     a_mp_total = _0
     a_mp_total += has_dp && @f(a_dd,_data)
     a_mp_total += has_qp && @f(a_qq,_data)
-    a_mp_total += has_dp && has_qp && @f(a_dq,_data)
+    # a_mp_total += has_dp && has_qp && @f(a_dq,_data)
     return a_mp_total
 end
 
@@ -239,7 +239,7 @@ function polar_comps(model, V, T, z)
 end
 
 
-function J2(model::QPPCSAFTModel, V, T, z, type, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵ = model.params.epsilon.values)
+function J2(model::QPPCSAFTModel, V, T, z, type::Symbol, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵ = model.params.epsilon.values)
     ϵT⁻¹ = ϵ[i,j]/T
     m̄ = sqrt(m[i]*m[j])
     consts = type == :QQ ? QQ_consts : DQ_consts
@@ -254,7 +254,7 @@ function J2(model::QPPCSAFTModel, V, T, z, type, i, j, η = @f(ζ,3),m = model.p
     return evalpoly(η,cij)
 end
 
-function J3(model::QPPCSAFTModel, V, T, z, type, i, j, k, η = @f(ζ,3),m = model.params.segment.values)
+function J3(model::QPPCSAFTModel, V, T, z, type::Symbol, i, j, k, η = @f(ζ,3),m = model.params.segment.values)
     m̄ = cbrt(m[i]*m[j]*m[k])
     corr_c = type == :QQ ? QQ_consts.corr_c : DQ_consts.corr_c
     m̄1 = 1.
