@@ -161,7 +161,7 @@ end
 function C.compressibility_factor(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.])
     st = standarize(model,v,T,z)
     _v,_T,_z = state_to_vt(model,st)
-    res = VT_compressibility_factor(model, _v, _T,_z)
+    res = C.VT_compressibility_factor(model, _v, _T,_z)
     return res
 end
 
@@ -184,7 +184,7 @@ end
 function C.pip(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.])
     st = standarize(model,v,T,z)
     _v,_T,_z = state_to_vt(model,st)
-    res = pip(model, _v, _T,_z)
+    res = C.pip(model, _v, _T,_z)
     return res
 end
 
