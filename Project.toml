@@ -75,4 +75,4 @@ MultiComponentFlash = "35e5bd01-9722-4017-9deb-64a5d32478ff"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["CoolProp", "Test", "Unitful"]
+test = ["CoolProp", "Test", "Unitful", "MultiComponentFlash"]

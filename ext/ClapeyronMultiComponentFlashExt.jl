@@ -12,8 +12,8 @@ module ClapeyronMultiComponentFlashExt
 
     C.can_nt(x::M.GenericCubicEOS) = true
     C.to_nt(x::M.GenericCubicEOS) = C.to_nt(x.mixture)
-    
-    function C.to_nt(x::M.MultiComponentMixture) 
+
+    function C.to_nt(x::M.MultiComponentMixture)
         res = Dict{Symbol,Any}()
         if x.binary_interaction !== nothing
             res[:k] = x.binary_interaction
@@ -101,8 +101,8 @@ module ClapeyronMultiComponentFlashExt
         p, T = cond.p, cond.T
         x = M.liquid_mole_fraction!(x, z, K, V)
         y = M.vapor_mole_fraction!(y, x, K)
-        phi_l = storage.phi_l
-        phi_v = storage.phi_v
+        phi_l = storage.buffer1
+        phi_v = storage.buffer2
         liquid = (p = p, T = T, z = x,phase = :liquid)
         vapor = (p = p, T = T, z = y,phase = :vapor)
         ϵ = zero(F)
@@ -114,6 +114,43 @@ module ClapeyronMultiComponentFlashExt
         ϵ = mapreduce(ri -> abs(1-ri), max ,r)
         V = C.rachfordrice(K, z; β0=V)
         return (V, ϵ)::Tuple{F, F}
-    end    
+    end
+
+    #support for tp_flash interface
+
+    function C.MCFlashJL(;method = M.SSIFlash(),
+        storage = nothing,
+        V = NaN,
+        K = nothing,
+        tolerance = 1e-8,
+        maxiter = 20000,
+        verbose = false,
+        check = true,
+        z_min = nothing,
+        update_forces = true)
+        kwargs = (;tolerance,maxiter,verbose,check,z_min,update_forces)
+        return C.MCFlashJL(method,storage,K,V,kwargs)
+    end
+
+    function M.flash_storage(model::C.EoSModel,p,T,z,method::C.MCFlashJL)
+        cond = (p = p,T = T,z = z)
+        mcf_method = method.method
+        M.flash_storage(model,cond;method = mcf_method,method.kwarg...)
+    end
+
+    function C.tp_flash_impl(model,p,T,z,method::C.MCFlashJL)
+        S = method.storage == nothing ? M.flash_storage(model,p,T,z,method) : method.storage
+        K = method.K === nothing ? C.wilson_k_values!(zeros(typeof(p+T+one(eltype(model))),length(model)),model,p,T,S.crit) : method.K
+        
+        conditions = (p = p, T = T,z = z)
+        V = M.flash_2ph!(S,K,model,conditions,method = method.method)
+        x = M.liquid_mole_fraction!(S.x, z, K, V)
+        y = M.vapor_mole_fraction!(S.y, x, K)
+        G = C.__tpflash_gibbs_reduced(model,p,T,x,y,V,:vle)
+        X = hcat(x,y)'
+        nvals = X.*[1-V
+                V] .* sum(z)
+        return (X, nvals, G)
+    end
 end #module
 
