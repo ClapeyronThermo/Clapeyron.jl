@@ -143,7 +143,7 @@ module ClapeyronMultiComponentFlashExt
         K = method.K === nothing ? C.wilson_k_values!(zeros(typeof(p+T+one(eltype(model))),length(model)),model,p,T,S.crit) : method.K
         
         conditions = (p = p, T = T,z = z)
-        V = M.flash_2ph!(S,K,model,conditions,method = method.method)
+        V = M.flash_2ph!(S,K,model,conditions;method = method.method,method.kwarg...)
         x = M.liquid_mole_fraction!(S.x, z, K, V)
         y = M.vapor_mole_fraction!(S.y, x, K)
         G = C.__tpflash_gibbs_reduced(model,p,T,x,y,V,:vle)
