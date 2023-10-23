@@ -24,7 +24,6 @@ Scratch = "6c6a2e73-6563-6170-7368-637461726353"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
-ThermoState = "e7b6519d-fdf7-4a33-b544-2b37a9c1234a"
 UUIDs = "cf7118a7-6976-5b1a-9a39-7adc72f591a4"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
@@ -47,7 +46,6 @@ Scratch = "^1.1"
 StaticArrays = "^1.5.9"
 Symbolics = "5"
 Tables = "^1.8"
-ThermoState = "^0.5"
 Unitful = "^1.12"
 julia = "1.6"
 LinearAlgebra = "1"
@@ -59,12 +57,14 @@ Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 CoolProp = "e084ae63-2819-5025-826e-f8e611a84251"
 Metaheuristics = "bcdb8e00-2c21-11e9-3065-2b553b22f898"
 MultiComponentFlash = "35e5bd01-9722-4017-9deb-64a5d32478ff"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [extensions]
 ClapeyronSymbolicsExt = "Symbolics"
 ClapeyronCoolPropExt = "CoolProp"
 ClapeyronMetaheuristicsExt = "Metaheuristics"
 ClapeyronMultiComponentFlashExt = "MultiComponentFlash"
+ClapeyronUnitfulExt = "Unitful"
 
 [extras]
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
@@ -72,6 +72,7 @@ CoolProp = "e084ae63-2819-5025-826e-f8e611a84251"
 Metaheuristics = "bcdb8e00-2c21-11e9-3065-2b553b22f898"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 MultiComponentFlash = "35e5bd01-9722-4017-9deb-64a5d32478ff"
+Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["CoolProp", "Test"]
+test = ["CoolProp", "Test", "Unitful"]

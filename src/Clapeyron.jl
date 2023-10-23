@@ -9,7 +9,6 @@ const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 using Roots: Roots
 
 using Scratch 
-using Unitful
 import LogExpFunctions
 using FillArrays: FillArrays
 import BlackBoxOptim
@@ -18,6 +17,11 @@ using NLSolvers
 using NLSolvers: NEqOptions
 using DiffResults, ForwardDiff
 using Downloads #for bibtex
+
+#transition from dependency to ext
+if !isdefined(Base,:get_extension)
+    include("../ext/ClapeyronUnitfulExt.jl")
+end
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
 
