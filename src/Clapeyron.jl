@@ -18,10 +18,6 @@ using NLSolvers: NEqOptions
 using DiffResults, ForwardDiff
 using Downloads #for bibtex
 
-#transition from dependency to ext
-if !isdefined(Base,:get_extension)
-    include("../ext/ClapeyronUnitfulExt.jl")
-end
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
 
@@ -95,6 +91,10 @@ include("utils/acceleration_ss.jl")
 #Clapeyron methods (AD, property solvers, etc)
 include("methods/methods.jl")
 
+#Unitful support, transition from dependency to ext
+if !isdefined(Base,:get_extension)
+    include("../ext/ClapeyronUnitfulExt.jl")
+end
 #=
 the dependency chain is the following:
 base --> database(params)  -|-> split_model --> methods -|-> models                     
