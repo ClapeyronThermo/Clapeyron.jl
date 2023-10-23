@@ -83,7 +83,7 @@ _pressure(x::Number) = x
 _pressure(x::Unitful.Pressure) = ustrip(x)
 
 function state_to_vt(model,st::StdState)
-    v = total_volume(model,st.x,st.z)
+    V = total_volume(model,st.x,st.z)
     T = st.T
     z = st.z
     return V,T,z
@@ -99,7 +99,7 @@ end
 function C.pressure(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=u"Pa")
     st = standarize(model,v,T,z)
     _v,_T,_z = state_to_vt(model,st)
-    res = pressure(model, _v, _T,_z)*u"Pa"
+    res = C.pressure(model, _v, _T,_z)*u"Pa"
     return uconvert(output, res)
 end
 
