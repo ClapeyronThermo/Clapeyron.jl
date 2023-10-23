@@ -48,9 +48,6 @@ module ClapeyronMultiComponentFlashExt
         out[:x] = alloc_vec()
         out[:y] = alloc_vec()
         #for fugacities
-        out[:phi_l] = alloc_vec()
-        out[:phi_v] = alloc_vec()
-
         out[:buffer1] = alloc_vec()
         out[:buffer2] = alloc_vec()
         if inc_jac
