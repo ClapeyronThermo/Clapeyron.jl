@@ -20,11 +20,6 @@ struct StdState{XS,TS,ZS}
     z::ZS
 end
 
-const VTState{TS,ZS} = StdState{VS,TS,ZS} where VS <: __VolumeKind
-const PTState{TS,ZS} = StdState{PS,TS,ZS} where PS <: Unitful.Pressure
-const XTState{TS,ZS} = StdState{XS,TS,ZS} where XS <: Unitful.Quantity
-const numTState{TS,ZS} = StdState{XS,TS,ZS} where XS <: Number
-
 function standarize(model,x,T,z)
     xs = standarize(x,nothing)
     ts = standarize(T,1u"K")
