@@ -2,7 +2,7 @@ using Test
 t1 = @elapsed using Clapeyron
 using CoolProp #CoolProp ext
 using Unitful #Unitful ext
-using MultiComponentFlash
+using MultiComponentFlash: MultiComponentFlash
 
 @info "Loading Clapeyron took $(round(t1,digits = 2)) seconds"
 @info "Coolprop: $(Clapeyron.is_coolprop_loaded())"
