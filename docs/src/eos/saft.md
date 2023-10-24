@@ -17,7 +17,10 @@ Clapeyron.sCKSAFT
 Clapeyron.BACKSAFT
 Clapeyron.PCSAFT
 Clapeyron.PPCSAFT
+Clapeyron.QPPCSAFT
+Clapeyron.gcPPCSAFT
 Clapeyron.sPCSAFT
+Clapeyron.gcsPCSAFT
 Clapeyron.pharmaPCSAFT
 Clapeyron.GEPCSAFT
 Clapeyron.gcPCSAFT
