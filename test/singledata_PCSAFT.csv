@@ -1,5 +1,0 @@
-Clapeyron Database File
-PCSAFT Parameters [csvtype = like, grouptype = unknown]
-species,Mw,segment,sigma,epsilon,n_e,n_H
-water,18.015,1.0656,3.0007,366.51,1,1
-ethanol,46.069,2.3827,3.1771,198.24,1,1
