@@ -10,6 +10,10 @@ end
     return ForwardDiff.gradient(f,x)
 end
 
+@inline function gradient!(fx::R,f::F, x) where {R,F}
+    return ForwardDiff.gradient!(fx,f,x)::R
+end
+
 @inline function hessian(f::F, x) where {F}
     return ForwardDiff.hessian(f,x)
 end

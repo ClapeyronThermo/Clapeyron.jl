@@ -314,6 +314,15 @@ function findsites(data::Dict,components::Vector;verbose = false)
     verbose && @info("Found sites for $components are $(output).")
     return output
 end
+
+#hooks to transform arbitrary data formats into namedtuples or dicts
+to_nt(x) = x
+
+#hook to check if a struct can be transformed into a named tuple
+can_nt(x) = false
+can_nt(x::AbstractDict) = true
+can_nt(x::NamedTuple) = true
+
 @nospecialize
 function createparams(components::Vector{String},
                     filepaths::Vector{String},
@@ -351,7 +360,7 @@ function createparams(components::Vector{String},
         merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,_replace)
     end
 
-    if options.userlocations isa Union{NamedTuple,AbstractDict}
+    if can_nt(options.userlocations)
         foundparams, notfoundparams = findparamsinnt(components,options,parsegroups,NT_CSV_OPTIONS)
         merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,false)
     end
@@ -629,13 +638,14 @@ function findparamsincsv(components,filepath,
     return foundvalues, notfoundvalues
 end
 
+
 #find params in named tuple, transforms form named tuple to Dict{RawParam}
 function findparamsinnt(components,
     options::ParamOptions,
     parsegroups = :off,
     csv_file_options = NT_CSV_OPTIONS) #default options
     verbose = options.verbose
-    nt = options.userlocations
+    nt = to_nt(options.userlocations)
     foundvalues = Vector{RawParam}(undef,0)
     notfoundvalues = Dict{String,CSVType}()
     #this algorithm is less strict that what we have in CSVs. but allows us to parse named tuples

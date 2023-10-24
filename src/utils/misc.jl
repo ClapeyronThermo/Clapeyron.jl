@@ -122,3 +122,5 @@ format_component_i(x::Pair) = first(x)
 format_gccomponents(str::Tuple) = [str]
 format_gccomponents(str::Pair) = [str]
 format_gccomponents(str) = str
+
+#used by MultiComponentFlash extension

@@ -364,11 +364,10 @@ vl = b + sqrt(0.5RTb3/2a) - c
 =#
 
 
-function wilson_k_values(model::ABCubicModel, p, T, crit = nothing)
+function wilson_k_values!(K,model::ABCubicModel, p, T, crit = nothing)
     Pc = model.params.Pc.values
     Tc = model.params.Tc.values
     α = typeof(model.alpha)
-
     w1 = getparam(model,:acentricfactor)
     w2 = getparam(model.alpha,:acentricfactor)
 
@@ -386,7 +385,7 @@ function wilson_k_values(model::ABCubicModel, p, T, crit = nothing)
         end
     end
 
-    return @. Pc / p * exp(5.373 * (1 + ω) * (1 - Tc / T))
+    return @.K .= Pc / p * exp(5.373 * (1 + ω) * (1 - Tc / T))
 
 end
 
