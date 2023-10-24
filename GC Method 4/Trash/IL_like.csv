@@ -1,6 +1,0 @@
-Clapeyron Database File,,,,,,,,,,,,,,,
-SaftVRMie like Parameters [csvtype=like],,,,,,,,,,,,,,,
-species,Mw,N_a,N_h,vst,S,lambda_r,lambda_a,sigma,sigma_born,epsilon,charge,n_H,n_e1,n_e2,source
-IM,66.077,5,3,1,1,27,6,4.64,,10,1,0,0,0,
-BF4,86.81,5,0,1,1,14.65,6,3.76,,2000,-1,0,0,0,
-Br,79.904,5,0,1,1,12,6,3.64,4.174,107.38,-1,0,0,0,
