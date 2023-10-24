@@ -1,0 +1,7 @@
+Clapeyron Database File
+UNIFAC Parameters [csvtype = like, grouptype = unknown]
+species,R,Q
+H2O,1.7334,2.4561
+CH2,0.6325,0.7081
+CH3,0.6325,1.0608
+OH (P),1.2302,0.8927

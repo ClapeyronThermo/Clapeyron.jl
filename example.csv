@@ -1,0 +1,5 @@
+Clapeyron Database File,,,,,
+Critical Single Parameters,,,,,
+species,DIPPR Number,Tc,Pc,Vc,acentricfactor
+chloroform,74828,537.,5.37,2.433e-4,0.218
+dichloromethane,,510.,6.08,1.93e-4,0.199

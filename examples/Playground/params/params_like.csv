@@ -1,0 +1,4 @@
+Clapeyron Database File,,,,,,,,,,
+SAFTgammaMie Like Parameters,,,,,,,,,,
+species,vst,S,lambda_r,lambda_a,sigma,epsilon,n_H,n_e1,n_e2,source
+NH3,1,1,36.832,6.0,3.3309,276.92,3,1,0,
