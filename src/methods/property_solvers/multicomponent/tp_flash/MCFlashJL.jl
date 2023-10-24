@@ -20,7 +20,7 @@ Uses `MultiComponentFlash.jl` two-phase flash solver. allows passing storage to 
 `MultiComponentFlash.flash_storage(model,p,T,z,method::MCFlashJL)`
 
 !!! note
-    This method requires `MultiComponentFlash` to be loaded in the current session (`using MultiComponentFlash`)
+    This method requires `MultiComponentFlash` to be loaded in the current session (`using MultiComponentFlash`) and julia >= v1.9
 """
 MCFlashJL
 supports_reduction(::MCFlashJL) = false

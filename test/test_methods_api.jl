@@ -86,11 +86,16 @@ end
     z = [0.333, 0.333, 0.334]
 
     @testset "RR Algorithm" begin
-        #TODO: fix the discrepancy
         method = RRTPFlash()
         @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.539976318817461 rtol = 1e-6
-        mcf = MCFlashJL()
-        test Clapeyron.tp_flash(system, p, T, z, mcf)[3] ≈ -6.490030777308265 rtol = 1e-6
+        
+    end
+
+    if isdefined(Base,:get_extension)
+        @testset "RR Algorithm - MultiComponentFlash.jl" begin
+            mcf = MCFlashJL()
+            @test Clapeyron.tp_flash(system, p, T, z, mcf)[3] ≈ -6.490030777308265 rtol = 1e-6
+        end
     end
     GC.gc()
 
