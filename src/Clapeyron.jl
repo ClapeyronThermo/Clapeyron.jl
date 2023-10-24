@@ -158,6 +158,7 @@ include("models/SAFT/PCSAFT/variants/PharmaPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/ADPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/PPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/QPPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/homo_gcPPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")
@@ -215,9 +216,6 @@ include("models/cubic/PatelTeja/PatelTeja.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
-include("models/SAFT/PCSAFT/variants/gcPCSAFT.jl")
-include("models/SAFT/PCSAFT/variants/PPCSAFT.jl")
-include("models/SAFT/PCSAFT/variants/QPPCSAFT.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
