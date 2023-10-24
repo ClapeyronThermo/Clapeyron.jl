@@ -37,6 +37,7 @@ export gcPPCSAFT
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+- `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
 - `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
@@ -45,14 +46,15 @@ export gcPPCSAFT
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
 ## Input models
 - `idealmodel`: Ideal Model
 ## Description
-Simplified Perturbed-Chain SAFT (sPC-SAFT)
+Homosegmented Group-contribution Polar Perturbed-Chain SAFT (gcPPC-SAFT)
 ## References
-1. von Solms, N., Michelsen, M. L., & Kontogeorgis, G. M. (2003). Computational and physical performance of a modified PC-SAFT equation of state for highly asymmetric and associating mixtures. Industrial & Engineering Chemistry Research, 42(5), 1098–1105. [doi:10.1021/ie020753p](https://doi.org/10.1021/ie020753p)
+1. Sauer, E., Stavrou, M., Gross, J. (2014). Comparison between a Homo- and a Heterosegmented Group Contribution Approach Based on the Perturbed-Chain Polar Statistical Associating Fluid Theory Equation of State. Industrial & Engineering Chemistry Research, 53(38), 14854-14864. [doi:10.1021/ie502203w](https://doi.org/10.1021/ie502203w)
 """
 gcPPCSAFT
 

@@ -48,9 +48,9 @@ export gcsPCSAFT
 ## Input models
 - `idealmodel`: Ideal Model
 ## Description
-Simplified Perturbed-Chain SAFT (sPC-SAFT)
+Group-contribution version of Simplified Perturbed-Chain SAFT (sPC-SAFT)
 ## References
-1. von Solms, N., Michelsen, M. L., & Kontogeorgis, G. M. (2003). Computational and physical performance of a modified PC-SAFT equation of state for highly asymmetric and associating mixtures. Industrial & Engineering Chemistry Research, 42(5), 1098–1105. [doi:10.1021/ie020753p](https://doi.org/10.1021/ie020753p)
+1. Tihic, A., Kontogeorgis, G.M., von Solms, N., Michelsen, M.L. (2008). A predictive group-contribution simplified PC-SAFT equation of state: Application to polymer systems. Industrial & Engineering Chemistry Research, 47(15), 5092-5101. [doi:10.1021/ie0710768](https://doi.org/10.1021/ie0710768)
 """
 gcsPCSAFT
 
