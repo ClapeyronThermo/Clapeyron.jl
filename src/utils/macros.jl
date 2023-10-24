@@ -98,13 +98,31 @@ default_gclocations(m::EoSModel) = default_gclocations(parameterless_type(m))
 default_gclocations(M) = String[]
 
 """
+    default_ignore_missing_singleparams(::Type{T}) where T <: EoSModel
+
+Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros.
+
+Defines the default parameters to ignore when constructing a model.
+"""
+default_ignore_missing_singleparams(M) = String[]
+
+"""
+    default_asymmetricparams(::Type{T}) where T <: EoSModel
+
+Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros.
+
+Defines the default asymmetric parameters when constructing a model.
+"""
+default_asymmetricparams(M) = String[]
+
+"""
     default_getparams_arguments(::Type{T},userlocations,verbose) where T <: EoSModel
 
 Used for models defined via the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros.
 
 Defines the `ParamsOptions` object that is passed as arguments to `getparams`, when building the input `EoSModel`.
 """
-default_getparams_arguments(M,userlocations,verbose) = ParamOptions(;verbose,userlocations)
+default_getparams_arguments(M,userlocations,verbose) = ParamOptions(;verbose,userlocations, ignore_missing_singleparams=default_ignore_missing_singleparams(M), asymmetricparams=default_asymmetricparams(M))
 
 """
     transform_params(::Type{T},params) where T <: EoSModel
