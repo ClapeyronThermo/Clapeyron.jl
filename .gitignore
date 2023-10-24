@@ -8,3 +8,5 @@ lcov.info
 LocalPreferences.toml
 *.ipynb
 /notebooks
+examples/Playground/*
+.DS_Store
