@@ -47,7 +47,7 @@ module ClapeyronMultiComponentFlashExt
         convert(X,C.mass_density(model,p,T,ph.Z))
     end
 
-    function mass_densities(model::C.EoSModel, p, T, f::FlashedMixture2Phase{X}) where X
+    function mass_densities(model::C.EoSModel, p, T, f::M.FlashedMixture2Phase{X}) where X
         state = f.state
         # @assert state != unknown_phase_state_lv "Phase state is not known. Cannot compute densities. Has flash been called?."
         if M.liquid_phase_present(state)
