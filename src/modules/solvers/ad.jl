@@ -192,7 +192,7 @@ Base.size(x::GradᵢVector) = size(x.vector)
 function grad_at_i(f::F,x::X,i,TT = eltype(x)) where {F,X <: AbstractVector{R}} where R
     T = typeof(ForwardDiff.Tag(f, TT))
     xᵢ = TT(x[i])
-    ∂xᵢ = ForwardDiff.Dual{T}(xᵢ, one(xᵢ))
+    ∂xᵢ = ForwardDiff.Dual{T}(xᵢ, oneunit(xᵢ))
     ∂x = GradᵢVector(i,∂xᵢ,x)
     fx = f(∂x)
     return ForwardDiff.extract_derivative(T, fx)
