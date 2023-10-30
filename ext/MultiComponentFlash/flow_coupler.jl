@@ -1,3 +1,14 @@
+function M.FlashedMixture2Phase(eos::C.EoSModel, T = Float64, T_num = Float64)
+    n = M.number_of_components(eos)
+    V = zero(T)
+    # K values are always doubles
+    K = zeros(T_num, n)
+    liquid = M.FlashedPhase(n, T)
+    vapor = M.FlashedPhase(n, T)
+
+    return M.FlashedMixture2Phase(M.unknown_phase_state_lv, K, V, liquid, vapor)
+end
+
 function _label_and_volumes(model::C.EoSModel,cond)
     #gibbs comparison, the phase with the least amount of gibbs energy is the most stable.
     p,T,z = cond.p,cond.T,cond.z

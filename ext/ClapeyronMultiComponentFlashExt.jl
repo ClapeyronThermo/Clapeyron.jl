@@ -50,7 +50,7 @@ module ClapeyronMultiComponentFlashExt
     end
 
     #this is only defined with cubic EoS.
-    M.force_coefficients(eos::C.EoSModel, cond) = nothing
+    M.force_coefficients(eos::C.EoSModel, cond;static_size = false) = nothing
     M.force_scalars(eos::C.EoSModel, cond, forces) = nothing
     M.force_coefficients!(forces, eos::C.EoSModel, c) = nothing
 
