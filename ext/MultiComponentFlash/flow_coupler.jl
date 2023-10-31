@@ -5,7 +5,6 @@ function M.FlashedMixture2Phase(eos::C.EoSModel, T = Float64, T_num = Float64)
     K = zeros(T_num, n)
     liquid = M.FlashedPhase(n, T)
     vapor = M.FlashedPhase(n, T)
-
     return M.FlashedMixture2Phase(M.unknown_phase_state_lv, K, V, liquid, vapor)
 end
 
@@ -31,8 +30,6 @@ function M.single_phase_label(model::C.EoSModel,cond)
     V,_,_ = _label_and_volumes(model,cond)
     return V
 end
-
-
 
 function M.flashed_mixture_2ph(eos::C.EoSModel, cond, _K = nothing; method = M.SSIFlash(), kwarg...)
     # Convenience function for getting flashed phases
@@ -100,20 +97,4 @@ function M.mass_density(model::C.EoSModel, p, T, ph::M.FlashedPhase{X}) where X
     v = Z*C.Rgas(model)*T/p
     molar_weight = C.molecular_weight(model,ph.mole_fractions)
     return convert(X,molar_weight/v)
-end
-
-function mass_densities(model::C.EoSModel, p, T, f::M.FlashedMixture2Phase{X}) where X
-    state = f.state
-    # @assert state != unknown_phase_state_lv "Phase state is not known. Cannot compute densities. Has flash been called?."
-    if M.liquid_phase_present(state)
-        l = C.mass_density(model,p,T,f.liquid,phase =:l)::X
-    else
-        l = zero(X)
-    end
-    if M.vapor_phase_present(state)
-        v = C.mass_density(model,p,T,f.vapor,phase = :v)::X
-    else
-        v = zero(X)
-    end
-    return (ρ_l = l::X, ρ_v = v::X)
 end
