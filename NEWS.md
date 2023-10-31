@@ -1,12 +1,25 @@
-# v0.5.7
+# v0.5.8
 
 ## New Features
-- New EoS: Polar PCSAFT with Quadrupolar interactions (`QPPCSAFT`)
-- New EoS: Group-Contribution simplified PC-SAFT (`gcsPCSAFT`)
-- New EoS: Group-Contribution homosegmented polar PC-SAFT (`gcPPCSAFT`)
-- `Unitful.jl` support has been moved into an extension.
-- `MultiComponentFlash.jl` support via extension: you can pass `model::EoSModel` to `MultiComponentFlash.flash_2ph`. there is also a new `MCFlashJL` method that calls `flash_2ph` using the `Clapeyron.tp_flash` interface.
-- custom types can be passed to the `userlocations` keyword argument, defining `Clapeyron.can_nt(::datatype) = true` and `Clapeyron.to_nt(x::datatype)::Union{AbstractDict,NamedTuple}`
+- `Base.getindex` and `Base.setindex` with `SingleParam`, `PairParam` and `AssocParam` now works with strings. the strings are compared with the components (or groups) stored in each param. in particular `AssocParam` allows set/get index methods if you pass a `Tuple{String,String}`:
+```julia
+julia> model = PPCSAFT(["water","ethanol"],assoc_options = AssocOptions(combining = :esd))
+PPCSAFT{BasicIdeal} with 2 components:
+ "water"
+ "ethanol"
+Contains parameters: Mw, segment, sigma, epsilon, dipole, dipole2, epsilon_assoc, bondvol
+
+julia> model.params.bondvol[("water","a"),("water","b")]
+0.35319
+
+julia> model.params.bondvol[("water","a"),("water","b")] = 0.36
+0.36
+
+julia> model.params.bondvol[("water","a"),("water","b")]
+0.36
+```
+- `PCPSAFT` is defined (alias for `PPCSAFT`)
 
 ## Bug Fixes
-- bug in `pharmaPCSAFT` mixing rules
+- bug in ether and aldehyde parameters in UNIFAC (https://github.com/ClapeyronThermo/Clapeyron.jl/issues/225)
+
