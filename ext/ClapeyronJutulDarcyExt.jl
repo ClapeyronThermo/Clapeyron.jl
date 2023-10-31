@@ -45,17 +45,29 @@ module ClapeyronJutulDarcyExt
         @. y = Z
         V = M.single_phase_label(eos, c)
         if V > 0.5
-             phase_state = MultiComponentFlash.single_phase_v
-             Z_V = J.get_compressibility_factor(forces, eos, P, T, Z,phase=:v)
+            phase_state = MultiComponentFlash.single_phase_v
+            Z_V = J.get_compressibility_factor(forces, eos, P, T, Z, :v)
             Z_L = Z_V
         else
             phase_state = MultiComponentFlash.single_phase_l
-            Z_L = J.get_compressibility_factor(forces, eos, P, T, Z,phase=:l)
+            Z_L = J.get_compressibility_factor(forces, eos, P, T, Z, :l)
             Z_V = Z_L
         end
         V = convert(AD, V)
         out = (Z_L::AD, Z_V::AD, V::AD, phase_state::M.PhaseState2Phase)
         return out
+    end
+
+    @inline function J.two_phase_update!(S, P, T, Z, x, y, K, vapor_frac, forces, eos::C.EoSModel, c)
+        AD = Base.promote_type(typeof(P), eltype(Z), typeof(T))
+        @. x = J.liquid_mole_fraction(Z, K, vapor_frac)
+        @. y = J.vapor_mole_fraction(x, K)
+        V = J.two_phase_pre!(S, P, T, Z, x, y, vapor_frac, eos, c)
+        Z_L = J.get_compressibility_factor(forces, eos, P, T, x, :l)
+        Z_V = J.get_compressibility_factor(forces, eos, P, T, y, :v)
+        phase_state = MultiComponentFlash.two_phase_lv
+    
+        return (Z_L::AD, Z_V::AD, V::AD, phase_state)
     end
 
 end #module

@@ -72,6 +72,7 @@ end
 @inline function M.two_phase_vapor_saturation(eos::C.EoSModel, p, Temp, f::M.FlashedMixture2Phase{T}) where T
     state = f.state
     # A faster definition that doesn't go via molar volume, but assumes no shifts:
+    V = f.V
     Z_l = f.liquid.Z
     Z_v = f.vapor.Z
     S_v = Z_v*V/(Z_l*(1-V) + Z_v*V)
