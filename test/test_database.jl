@@ -237,7 +237,7 @@ using Clapeyron, Test, LinearAlgebra
         @test convert(SingleParam{Int},floatbool) isa SingleParam{Int}
         #SingleParam - indexing
         @test intbool["aa"] == 1
-        intbool["bb"] == 2
+        intbool["bb"] = 2
         @test intbool["bb"] == 2
         @test_throws BoundsError intbool["cc"]
         @test_throws BoundsError setindex!(intbool,2,"cc")
