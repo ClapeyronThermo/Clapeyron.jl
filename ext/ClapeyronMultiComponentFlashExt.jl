@@ -75,6 +75,9 @@ module ClapeyronMultiComponentFlashExt
         ϕᵢ = exp(μᵢ/RT)/Z
         return ϕᵢ*p*z[i]
     end
+    M.eostype(model::C.EoSModel) = Base.summary(model)
+    M.molar_masses(model::C.EoSModel) = C.mw(model) .* 0.001
+    M.component_names(model::C.EoSModel) = model.components #TODO: we need an abstraction of this type on our code
 
     include("MultiComponentFlash/stability.jl")
     include("MultiComponentFlash/flash.jl")
