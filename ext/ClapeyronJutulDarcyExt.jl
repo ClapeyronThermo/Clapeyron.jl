@@ -40,15 +40,17 @@ module ClapeyronJutulDarcyExt
     J.get_compressibility_factor(forces, eos::C.EoSModel, P, T, Z,phase = :unknown) = C.compressibility_factor(eos, P, T, Z,phase = phase)
     @inline function J.single_phase_update!(P, T, Z, x, y, forces, eos::C.EoSModel, c)
         AD = Base.promote_type(eltype(Z), typeof(P), typeof(T))
-        Z_L = J.get_compressibility_factor(forces, eos, P, T, Z)
-        Z_V = Z_L
         @. x = Z
         @. y = Z
         V = M.single_phase_label(eos, c)
         if V > 0.5
             phase_state = MultiComponentFlash.single_phase_v
+            Z_V = J.get_compressibility_factor(forces, eos, P, T, Z,phase=:v)
+            Z_L = Z_V
         else
             phase_state = MultiComponentFlash.single_phase_l
+            Z_L = J.get_compressibility_factor(forces, eos, P, T, Z,phase=:l)
+            Z_V = Z_L
         end
         V = convert(AD, V)
         out = (Z_L::AD, Z_V::AD, V::AD, phase_state::M.PhaseState2Phase)
