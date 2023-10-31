@@ -229,12 +229,19 @@ using Clapeyron, Test, LinearAlgebra
         substr_single = SingleParam("int to bool",comps,chop.(["111","222"]))
 
         @test size(floatbool) == (2,)
+        #SingleParam - conversion
         @test convert(SingleParam{Bool},floatbool) isa SingleParam{Bool}
         @test convert(SingleParam{String},str_single) isa SingleParam{String}
         @test convert(SingleParam{String},substr_single) isa SingleParam{String}
-
         @test convert(SingleParam{Float64},intbool) isa SingleParam{Float64}
         @test convert(SingleParam{Int},floatbool) isa SingleParam{Int}
+        #SingleParam - indexing
+        @test intbool["aa"] == 1
+        intbool["bb"] == 2
+        @test intbool["bb"] == 2
+        @test_throws BoundsError intbool["cc"]
+        @test_throws BoundsError setindex!(intbool,2,"cc")
+        
         floatbool .= exp.(1.1 .+ floatbool)
         @test_throws InexactError convert(SingleParam{Int},floatbool)
 
@@ -255,7 +262,13 @@ using Clapeyron, Test, LinearAlgebra
         @test floatbool[2,1] == 1000
         floatbool[1] = 1.2
         @test floatbool[1,1] == 1.2
-
+        @test floatbool["aa","bb"] == 4000
+        @test floatbool["aa"] == 1.2
+        @test floatbool["aa","aa"] == 1.2
+        @test floatbool["bb","aa"] == 1000
+        @test_throws BoundsError floatbool["cc"]
+        @test_throws BoundsError floatbool["cc","aa"]
+        @test_throws BoundsError floatbool["aa","cc"]
         #pack vectors
         s1 = SingleParam("s1",comps,[1,2])
         s2 = SingleParam("s2",comps,[10,20])
