@@ -57,7 +57,7 @@ function Base.getindex(param::SingleParameter{T,<:AbstractVector{T}},i::Abstract
     return param[idx::Int]
 end
 
-Base.setindex!(param::SingleParameter,val,i) = setindex!(param.values,val,i)
+Base.setindex!(param::SingleParameter,val,i::Integer) = setindex!(param.values,val,i)
 function Base.setindex!(param::SingleParameter,val,i::AbstractString)
     idx = findfirst(isequal(i),param.components)
     isnothing(idx) && throw(BoundsError(param,-1))

@@ -92,7 +92,7 @@ function Base.setindex!(param::PairParameter,val,i::AbstractString,j::AbstractSt
     end
 end
 
-function Base.setindex!(param::SingleParameter,val,i::AbstractString)
+function Base.setindex!(param::PairParameter,val,i::AbstractString)
     idx = findfirst(isequal(i),param.components)
     isnothing(idx) && throw(BoundsError(param.values,(-1,-1)))
     setindex!(param,val,idx::Int)
