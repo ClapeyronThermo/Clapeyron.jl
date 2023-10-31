@@ -38,7 +38,7 @@ function M.flashed_mixture_2ph(eos::C.EoSModel, cond, _K = nothing; method = M.S
     # Convenience function for getting flashed phases
     S = M.flash_storage(eos, cond, method = method)
     p,T,z = cond.p,cond.T,cond.z
-    K = _K === nothing ? C.wilson_k_values!(zeros(typeof(p+T+one(eltype(model))),length(model)),model,p,T,S.crit) : _K
+    K = _K === nothing ? C.wilson_k_values!(zeros(typeof(p+T+one(eltype(eos))),length(eos)),eos,p,T,S.crit) : _K
     return M.flashed_mixture_2ph!(S, eos, cond, K; method = method, kwarg...)
 end
 
@@ -65,7 +65,7 @@ function M.flashed_mixture_2ph!(storage, eos::C.EoSModel, conditions, K; kwarg..
         end
         Z_L,Z_V = Zx,Zx
     else
-        state = two_phase_lv
+        state = M.two_phase_lv
         Z_L = C.compressibility_factor(eos, p, T, x, phase = :l)
         Z_V = C.compressibility_factor(eos, p, T, y, phase = :v)
     end
@@ -90,11 +90,16 @@ end
 end
 
 function M.molar_volume(model::C.EoSModel, p, T, ph::M.FlashedPhase{X}) where X
-    convert(X,C.volume(model,p,T,ph.Z))
+    Z = ph.Z
+    v = convert(X,Z*C.Rgas(model)*T/p)
+    return v
 end
 
 function M.mass_density(model::C.EoSModel, p, T, ph::M.FlashedPhase{X}) where X
-    convert(X,C.mass_density(model,p,T,ph.Z))
+    Z = ph.Z
+    v = Z*C.Rgas(model)*T/p
+    molar_weight = C.molecular_weight(model,ph.mole_fractions)
+    return convert(X,molar_weight/v)
 end
 
 function mass_densities(model::C.EoSModel, p, T, f::M.FlashedMixture2Phase{X}) where X
