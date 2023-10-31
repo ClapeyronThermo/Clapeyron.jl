@@ -101,13 +101,15 @@ function gcPPCSAFT(components,mixing=:homosegmented;
 
     gc_epsilon_assoc = gc_params["epsilon_assoc"]
     gc_bondvol = gc_params["bondvol"]
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,[],assoc_options) #combining rules for association
 
     comp_sites = gc_to_comp_sites(sites,groups)
     bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
     epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
 
-    gcparams = hogcPPCSAFTParam(gc_mw, gc_segment, gc_sigma, gc_epsilon, gc_dipole, gc_dipole2, gc_epsilon_assoc,gc_bondvol)
+
+
+    gcparams = hogcPPCSAFTParam(gc_mw, gc_segment, gc_params["sigma"], gc_params["epsilon"], gc_dipole, gc_dipole2, gc_epsilon_assoc,gc_bondvol)
     params = PPCSAFTParam(mw, segment, sigma, epsilon, dipole, dipole2, epsilon_assoc, bondvol)
     
     idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
