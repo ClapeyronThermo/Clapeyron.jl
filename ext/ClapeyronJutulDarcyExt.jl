@@ -45,11 +45,11 @@ module ClapeyronJutulDarcyExt
         V = M.single_phase_label(eos, c)
         if V > 0.5
             phase_state = MultiComponentFlash.single_phase_v
-            Z_V = J.get_compressibility_factor(forces, eos, P, T, Z,phase=:v)
+            Z_V = J.get_compressibility_factor(forces, eos, P, T, Z, :v)
             Z_L = Z_V
         else
             phase_state = MultiComponentFlash.single_phase_l
-            Z_L = J.get_compressibility_factor(forces, eos, P, T, Z,phase=:l)
+            Z_L = J.get_compressibility_factor(forces, eos, P, T, Z, :l)
             Z_V = Z_L
         end
         V = convert(AD, V)
