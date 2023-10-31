@@ -73,9 +73,29 @@ function Base.getindex(param::AssocParam,i::Int)
     getindex(param.values,i,i)
 end
 
+function Base.getindex(param::AssocParam,i::AbstractString)
+    idx = findfirst(isequal(i),param.components)
+    isnothing(idx) && throw(BoundsError(param,-1))
+    getindex(param.values,idx,idx)
+end
+
 function Base.getindex(param::AssocParam,i::Int,j::Int) 
     Base.checkbounds(param.components,max(i,j))
     getindex(param.values,i,j)
+end
+
+function Base.getindex(param::AssocParam,i::AbstractString,j::AbstractString)
+    idx_i = findfirst(isequal(i),param.components)
+    idx_j = findfirst(isequal(j),param.components)
+    if idx_i === nothing && idx_j === nothing
+        throw(BoundsError(param,(-1,-1)))
+    elseif idx_i === nothing
+        throw(BoundsError(param,(-1,idx_j)))
+    elseif idx_j === nothing
+        throw(BoundsError(param,(idx_i,-1)))
+    else
+       return param[idx_i::Int,idx_j::Int]
+    end
 end
 
 function AssocParam(
