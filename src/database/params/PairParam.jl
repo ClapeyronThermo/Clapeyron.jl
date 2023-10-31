@@ -52,49 +52,30 @@ Base.@propagate_inbounds Base.getindex(param::PairParameter{T},i::Int) where T =
 Base.@propagate_inbounds Base.getindex(param::PairParameter{T},i::Int,j::Int) where T = param.values[i,j]
 
 function Base.getindex(param::PairParameter{T},i::AbstractString) where T
-    idx = findfirst(isequal(i),param.components)
-    isnothing(idx) && throw(BoundsError(param,-1))
-    return param[idx::Int]::T
+    idx = _str_to_idx(param,i)
+    return param[idx]
 end
 
 function Base.getindex(param::PairParameter{T},i::AbstractString,j::AbstractString) where T
-    idx_i = findfirst(isequal(i),param.components)
-    idx_j = findfirst(isequal(j),param.components)
-    if idx_i === nothing && idx_j === nothing
-        throw(BoundsError(param,(-1,-1)))
-    elseif idx_i === nothing
-        throw(BoundsError(param,(-1,idx_j)))
-    elseif idx_j === nothing
-        throw(BoundsError(param,(idx_i,-1)))
-    else
-       return param[idx_i::Int,idx_j::Int]::T
-    end
+    idx_i,idx_j = _str_to_idx(param,i,j)
+    return param[idx_i,idx_j]
 end
 
 Base.setindex!(param::PairParameter,val,i) = setindex!(param,val,i,i,false)
+
 function Base.setindex!(param::PairParameter,val,i,j,symmetric = true) 
     setindex!(param.values,val,i,j)
     symmetric && setindex!(param.values,val,j,i)
 end
 
 function Base.setindex!(param::PairParameter,val,i::AbstractString,j::AbstractString,symmetric = true) 
-    idx_i = findfirst(isequal(i),param.components)
-    idx_j = findfirst(isequal(j),param.components)
-    if idx_i === nothing && idx_j === nothing
-        throw(BoundsError(param,(-1,-1)))
-    elseif idx_i === nothing
-        throw(BoundsError(param,(-1,idx_j)))
-    elseif idx_j === nothing
-        throw(BoundsError(param,(idx_i,-1)))
-    else
-        setindex!(param.values,val,idx_i::Int,idx_j::Int)
-        symmetric && setindex!(param,val,idx_j::Int,idx_i::Int)
-    end
+    idx_i,idx_j = _str_to_idx(param,i,j)
+    setindex!(param.values,val,idx_i,idx_j)
+    symmetric && setindex!(param,val,idx_j,idx_i)
 end
 
 function Base.setindex!(param::PairParameter,val,i::AbstractString)
-    idx = findfirst(isequal(i),param.components)
-    isnothing(idx) && throw(BoundsError(param.values,(-1,-1)))
+    idx = _str_to_idx(param,i)
     setindex!(param,val,idx::Int)
 end
 

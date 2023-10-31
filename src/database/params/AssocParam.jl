@@ -98,6 +98,35 @@ function Base.getindex(param::AssocParam,i::AbstractString,j::AbstractString)
     end
 end
 
+function Base.getindex(param::AssocParam,i::NTuple{2,String},j::NTuple{2,String})
+    ii = first(i)
+    jj = first(j)
+    aa = last(i)
+    bb = last(j)
+    idx_i,idx_j = _str_to_idx(param,ii,jj)
+    sites_i,sites_j = param.sites[idx_i],param.sites[idx_j]
+    _idx_a = findfirst(isequal(aa),sites_i)
+    _idx_b = findfirst(isequal(bb),sites_j)
+    idx_a = _idx_a === nothing ? 0 : _idx_a
+    idx_b = _idx_b === nothing ? 0 : _idx_b
+    param[idx_i::Int,idx_j::Int][idx_a::Int,idx_b::Int]
+end
+
+function Base.setindex!(param::AssocParam,val,i::NTuple{2,String},j::NTuple{2,String})
+    ii = first(i)
+    jj = first(j)
+    aa = last(i)
+    bb = last(j)
+    idx_i,idx_j = _str_to_idx(param,ii,jj)
+    sites_i,sites_j = param.sites[idx_i],param.sites[idx_j]
+    _idx_a = findfirst(isequal(aa),sites_i)
+    _idx_b = findfirst(isequal(bb),sites_j)
+    idx_a = _idx_a === nothing ? 0 : _idx_a
+    idx_b = _idx_b === nothing ? 0 : _idx_b
+    assoc_view = param[idx_i::Int,idx_j::Int]
+    setindex!(assoc_view,val,idx_a::Int,idx_b::Int)
+end
+
 function AssocParam(
         name::String,
         components::Vector{String},
