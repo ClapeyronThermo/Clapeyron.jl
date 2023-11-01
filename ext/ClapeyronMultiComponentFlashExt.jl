@@ -126,7 +126,7 @@ module ClapeyronMultiComponentFlashExt
         Pc = model.params.Pc.values
         Mw = C.mw(model)
         @inbounds for i in 1:length(model)
-            mw = Mw[i]
+            mw = Mw[i]/1000.
             T_c = Tc[i]
             p_c = Pc[i]
             zi = z[i]
@@ -138,7 +138,7 @@ module ClapeyronMultiComponentFlashExt
             else
                 mu_i = 34e-5*T_r^(0.94)
             end
-            tmp = sqrt(mw)*zi
+            tmp = sqrt(1000.0*mw)*zi
             a += tmp*mu_i/e_i
             b += tmp
         end
