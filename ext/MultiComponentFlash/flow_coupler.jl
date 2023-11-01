@@ -58,7 +58,7 @@ function M.flashed_mixture_2ph!(storage, eos::C.EoSModel, conditions, K; kwarg..
             Zx = Vl*p/C.Rgas(model)/T/sum(z)
         else
             state = single_phase_v
-            Zx = Vl*p/C.Rgas(model)/T/sum(z)
+            Zx = Vv*p/C.Rgas(model)/T/sum(z)
         end
         Z_L,Z_V = Zx,Zx
     else
