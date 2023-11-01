@@ -138,7 +138,7 @@ module ClapeyronMultiComponentFlashExt
             else
                 mu_i = 34e-5*T_r^(0.94)
             end
-            tmp = sqrt(1000.0*mw)*zi
+            tmp = sqrt(mw)*zi
             a += tmp*mu_i/e_i
             b += tmp
         end
