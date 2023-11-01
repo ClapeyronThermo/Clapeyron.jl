@@ -113,9 +113,25 @@ module ClapeyronMultiComponentFlashExt
 
     function M.pseudo_critical_properties(model::C.EoSModel, z::V) where V<:AbstractVector{T} where T
         mw = C.molecular_weight(model,z)
-        Tc = C.dot(model.params.Tc.values,z)
-        Pc = C.dot(model.params.Pc.values,z)
-        Vc = C.volume(model,Pc,Tc,z) #we calculate the critical volume of the EoS instead of doing it component wise?
+        pure = C.split_model(model)
+        crit = C.crit_pure.(pure)
+        tc = [crit[i][1] for i in 1:length(model)]
+        pc = [crit[i][2] for i in 1:length(model)]
+        vc = [crit[i][3] for i in 1:length(model)]
+        Tc = C.dot(tc,z)
+        Pc = C.dot(pc,z)
+        Vc = C.dot(vc,z)
+        return mw,Pc,Tc,Vc 
+    end
+
+    function M.pseudo_critical_properties(model::C.MultiFluid, z::V) where V<:AbstractVector{T} where T
+        mw = C.molecular_weight(model,z)
+        tc = model.params.Tc.values
+        pc = model.params.Pc.values
+        vc = model.params.Vc.values
+        Tc = C.dot(tc,z)
+        Pc = C.dot(pc,z)
+        Vc = C.dot(vc,z)
         return mw,Pc,Tc,Vc 
     end
 
