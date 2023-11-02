@@ -8,26 +8,8 @@ function M.FlashedMixture2Phase(eos::C.EoSModel, T = Float64, T_num = Float64)
     return M.FlashedMixture2Phase(M.unknown_phase_state_lv, K, V, liquid, vapor)
 end
 
-function _label_and_volumes(model::C.EoSModel,cond)
-    #gibbs comparison, the phase with the least amount of gibbs energy is the most stable.
-    p,T,z = cond.p,cond.T,cond.z
-    Vl = C.volume(model,p,T,z,phase =:l)
-    Vv = C.volume(model,p,T,z,phase =:v)
-    function gibbs(fV)
-        isnan(fV) && return one(fV)/zero(fV)
-        _df,_f =  C.∂f(model,fV,T,z)
-        dV,_ = _df
-        return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
-    end
-    isnan(Vl) && return 1,Vv,Vv #could not converge on gas volume, assuming stable liquid phase
-    isnan(Vv) && return 0,Vl,Vl #could not converge on liquid volume, assuming stable gas phase
-    gl,gv = gibbs(Vl),gibbs(Vv)
-    V = gv < gl ? 1 : 0
-    return V,Vl,Vv
-end
-
 function M.single_phase_label(model::C.EoSModel,cond)
-    V,_,_ = _label_and_volumes(model,cond)
+    V,_,_ = C._label_and_volumes(model,cond)
     return V
 end
 
@@ -52,7 +34,7 @@ function M.flashed_mixture_2ph!(storage, eos::C.EoSModel, conditions, K; kwarg..
     instead of Li correlation, we just check the gibbs energies of the mixtures.
     we do this anyway in the volume calculation, so it better to be more explicit.
     =#
-        V,Vl,Vv = _label_and_volumes(eos, conditions)
+        V,Vl,Vv = C._label_and_volumes(eos, conditions)
         if V == 0
             state = single_phase_l
             Zx = Vl*p/C.Rgas(model)/T/sum(z)
