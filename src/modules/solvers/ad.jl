@@ -166,6 +166,36 @@ function primalval(x::AbstractArray{T}) where T <: ForwardDiff.Dual
     return primalval.(x)
 end
 
+#=
+gradient at index i
 
+=#
+
+struct GradᵢVector{T,V} <: AbstractVector{T}
+    i::Int
+    val::T
+    vector::V
+end
+
+function Base.getindex(x::GradᵢVector{T,V},i) where {T,V}
+    idx = x.i
+    if idx == i
+        return x.val
+    else
+        return convert(T,x.vector[i])
+    end
+end
+
+Base.length(x::GradᵢVector) = length(x.vector)
+Base.size(x::GradᵢVector) = size(x.vector)
+
+function grad_at_i(f::F,x::X,i,TT = eltype(x)) where {F,X <: AbstractVector{R}} where R
+    T = typeof(ForwardDiff.Tag(f, TT))
+    xᵢ = TT(x[i])
+    ∂xᵢ = ForwardDiff.Dual{T}(xᵢ, oneunit(xᵢ))
+    ∂x = GradᵢVector(i,∂xᵢ,x)
+    fx = f(∂x)
+    return ForwardDiff.extract_derivative(T, fx)
+end
 
 

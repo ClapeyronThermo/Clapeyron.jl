@@ -58,6 +58,7 @@ CoolProp = "e084ae63-2819-5025-826e-f8e611a84251"
 Metaheuristics = "bcdb8e00-2c21-11e9-3065-2b553b22f898"
 MultiComponentFlash = "35e5bd01-9722-4017-9deb-64a5d32478ff"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+JutulDarcy = "82210473-ab04-4dce-b31b-11573c4f8e0a"
 
 [extensions]
 ClapeyronSymbolicsExt = "Symbolics"
@@ -65,6 +66,7 @@ ClapeyronCoolPropExt = "CoolProp"
 ClapeyronMetaheuristicsExt = "Metaheuristics"
 ClapeyronMultiComponentFlashExt = "MultiComponentFlash"
 ClapeyronUnitfulExt = "Unitful"
+ClapeyronJutulDarcyExt = "JutulDarcy"
 
 [extras]
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
@@ -73,6 +75,7 @@ Metaheuristics = "bcdb8e00-2c21-11e9-3065-2b553b22f898"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 MultiComponentFlash = "35e5bd01-9722-4017-9deb-64a5d32478ff"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+JutulDarcy = "82210473-ab04-4dce-b31b-11573c4f8e0a"
 
 [targets]
 test = ["CoolProp", "Test", "Unitful", "MultiComponentFlash"]
