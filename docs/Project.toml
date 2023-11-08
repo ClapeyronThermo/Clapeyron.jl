@@ -3,4 +3,4 @@ Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Clapeyron = "7c7805af-46cc-48c9-995b-ed0ed2dc909a"
 
 [compat]
-Documenter = "0.27"
+Documenter = "1"
