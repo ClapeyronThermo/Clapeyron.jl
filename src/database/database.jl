@@ -242,14 +242,27 @@ function getparams(components::Vector{String},locations::Vector{String},options:
 end
 
 function buildsites(result,components,allcomponentsites,options)
-    n_sites_columns = options.n_sites_columns
+    
+
     v = String[]
     for sitei ∈ allcomponentsites
         append!(v,sitei)
     end
     unique!(v)
+    #no sites encountered in assoc params
     iszero(length(v)) && return SiteParam(components)
-    if !any(haskey(result,n_sites_columns[vi]) for vi ∈ v)
+    
+    #=
+    build our own dict, by using the transformation X => n_X
+    =#
+    if isempty(options.n_sites_columns)
+        n_sites_columns = Dict{String,String}(vi => string("n_",vi) for vi in v)
+    else
+        n_sites_columns = options.n_sites_columns
+    end
+
+    #check for missing number of sites
+    if !any(haskey(result,get(n_sites_columns,vi,"")) for vi ∈ v)
        return __warning_no_site_vals(result,components)
     end
 
@@ -301,6 +314,15 @@ function findsites(data::Dict,components::Vector;verbose = false)
     verbose && @info("Found sites for $components are $(output).")
     return output
 end
+
+#hooks to transform arbitrary data formats into namedtuples or dicts
+to_nt(x) = x
+
+#hook to check if a struct can be transformed into a named tuple
+can_nt(x) = false
+can_nt(x::AbstractDict) = true
+can_nt(x::NamedTuple) = true
+
 @nospecialize
 function createparams(components::Vector{String},
                     filepaths::Vector{String},
@@ -339,7 +361,7 @@ function createparams(components::Vector{String},
         merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,_replace)
     end
 
-    if options.userlocations isa Union{NamedTuple,AbstractDict}
+    if can_nt(options.userlocations)
         foundparams, notfoundparams = findparamsinnt(components,options,parsegroups,NT_CSV_OPTIONS)
         merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,false)
     end
@@ -617,6 +639,7 @@ function findparamsincsv(components,filepath,
     return foundvalues, notfoundvalues
 end
 
+
 #find params in named tuple, transforms form named tuple to Dict{RawParam}
 function findparamsinnt(components,
     options::ParamOptions,
@@ -624,7 +647,7 @@ function findparamsinnt(components,
     csv_file_options = NT_CSV_OPTIONS) #default options
 
     verbose = options.verbose
-    nt = options.userlocations
+    nt = to_nt(options.userlocations)
     foundvalues = Vector{RawParam}(undef,0)
     notfoundvalues = Dict{String,CSVType}()
     #this algorithm is less strict that what we have in CSVs. but allows us to parse named tuples

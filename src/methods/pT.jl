@@ -334,6 +334,17 @@ function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, th
     return exp.(μ_res ./ R̄ ./ T) ./ Z
 end
 
+function fugacity_coefficient!(φ,model::EoSModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
+    V = volume(model,p,T,z;phase,threaded)
+    φ = VT_chemical_potential_res!(φ,model,V,T,z)
+    R̄ = Rgas(model)
+    Z = p*V/R̄/T/sum(z)
+    φ ./= (R̄*T)
+    φ .= exp.(φ)
+    φ ./= Z
+    return φ
+end
+
 function activity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
     pure   = split_model(model)
     μ_mixt = chemical_potential(model,p,T,z;phase,threaded)

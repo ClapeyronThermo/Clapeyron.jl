@@ -55,6 +55,26 @@ function param_length_check(paramtype,name,comp_length,val_length)
     end
 end
 
+function _str_to_idx(param,i,j)
+    idx_i = findfirst(isequal(i),param.components)
+    idx_j = findfirst(isequal(j),param.components)
+    if idx_i === nothing && idx_j === nothing
+        throw(BoundsError(param,(-1,-1)))
+    elseif idx_i === nothing
+        throw(BoundsError(param,(-1,idx_j)))
+    elseif idx_j === nothing
+        throw(BoundsError(param,(idx_i,-1)))
+    else
+       return (idx_i::Int,idx_j::Int)
+    end
+end
+
+function _str_to_idx(param,i)
+    idx = findfirst(isequal(i),param.components)
+    isnothing(idx) && throw(BoundsError(param,-1))
+    return idx::Int
+end
+
 include("params/paramvectors.jl")
 include("params/SingleParam.jl")
 include("params/PairParam.jl")
@@ -104,6 +124,10 @@ end
 
 function diagvalues(x::SingleOrPair)
     return diagvalues(x.values)
+end
+
+function diagvalues(x::Number)
+    return x
 end
 
 function _get_sources(x::Vector)::Vector{String}

@@ -9,7 +9,6 @@ const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 using Roots: Roots
 
 using Scratch 
-using Unitful
 import LogExpFunctions
 using FillArrays: FillArrays
 import BlackBoxOptim
@@ -18,6 +17,7 @@ using NLSolvers
 using NLSolvers: NEqOptions
 using DiffResults, ForwardDiff
 using Downloads #for bibtex
+
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
 
@@ -91,6 +91,10 @@ include("utils/acceleration_ss.jl")
 #Clapeyron methods (AD, property solvers, etc)
 include("methods/methods.jl")
 
+#Unitful support, transition from dependency to ext
+if !isdefined(Base,:get_extension)
+    include("../ext/ClapeyronUnitfulExt.jl")
+end
 #=
 the dependency chain is the following:
 base --> database(params)  -|-> split_model --> methods -|-> models                     
@@ -153,7 +157,13 @@ include("models/SAFT/association.jl")
 include("models/SAFT/equations.jl")
 include("models/SAFT/PCSAFT/PCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/sPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/gcsPCSAFT.jl")
 include("models/SAFT/PCSAFT/variants/PharmaPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/ADPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/gcPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/PPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/QPPCSAFT.jl")
+include("models/SAFT/PCSAFT/variants/homo_gcPPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")
 include("models/SAFT/CPA/variants/sCPA.jl")
@@ -168,7 +178,6 @@ include("models/SAFT/SAFTgammaMie/variants/structSAFTgammaMie.jl")
 include("models/SAFT/CKSAFT/CKSAFT.jl")
 include("models/SAFT/CKSAFT/variants/sCKSAFT.jl")
 include("models/SAFT/BACKSAFT/BACKSAFT.jl")
-include("models/SAFT/PCSAFT/variants/ADPCSAFT.jl")
 include("models/SAFT/DAPT/DAPT.jl")
 #Activity models
 include("models/Activity/Wilson/Wilson.jl")
@@ -211,8 +220,6 @@ include("models/cubic/PatelTeja/PatelTeja.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
-include("models/SAFT/PCSAFT/variants/gcPCSAFT.jl")
-include("models/SAFT/PCSAFT/variants/PPCSAFT.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 

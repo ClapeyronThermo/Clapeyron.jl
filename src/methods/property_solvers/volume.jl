@@ -205,4 +205,25 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
     end
 end
 
+#=
+used by MultiComponentFlash.jl extension
+=#
+function _label_and_volumes(model::EoSModel,cond)
+    #gibbs comparison, the phase with the least amount of gibbs energy is the most stable.
+    p,T,z = cond.p,cond.T,cond.z
+    Vl = volume(model,p,T,z,phase =:l)
+    Vv = volume(model,p,T,z,phase =:v)
+    function gibbs(fV)
+        isnan(fV) && return one(fV)/zero(fV)
+        _df,_f =  ∂f(model,fV,T,z)
+        dV,_ = _df
+        return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
+    end
+    isnan(Vl) && return 1,Vv,Vv #could not converge on gas volume, assuming stable liquid phase
+    isnan(Vv) && return 0,Vl,Vl #could not converge on liquid volume, assuming stable gas phase
+    gl,gv = gibbs(Vl),gibbs(Vv)
+    V = gv < gl ? 1 : 0
+    return V,Vl,Vv
+end
+
 export volume

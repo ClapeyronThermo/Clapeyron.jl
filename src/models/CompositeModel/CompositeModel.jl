@@ -24,7 +24,11 @@ function CompositeModel(components;
     verbose = false)
 
     if fluid !== nothing
-        if fluid <: ActivityModel
+        if typeof(fluid) <: EoSModel
+            if typeof(fluid) <: ActivityModel
+                error("Activity models only represent the liquid phase. Please specify a gas phase model.")
+            end
+        elseif fluid <: ActivityModel
             error("Activity models only represent the liquid phase. Please specify a gas phase model.")
         end
         gas = fluid

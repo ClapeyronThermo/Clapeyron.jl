@@ -50,8 +50,17 @@ const SingleParam{T} = SingleParameter{T,Vector{T}} where T
 #indexing
 
 Base.@propagate_inbounds Base.getindex(param::SingleParameter{T,<:AbstractVector{T}},i::Int) where T = param.values[i]
-Base.setindex!(param::SingleParameter,val,i) = setindex!(param.values,val,i)
 
+function Base.getindex(param::SingleParameter{T,<:AbstractVector{T}},i::AbstractString) where T
+    idx = _str_to_idx(param,i)
+    return param[idx]
+end
+
+Base.setindex!(param::SingleParameter,val,i::Integer) = setindex!(param.values,val,i)
+function Base.setindex!(param::SingleParameter,val,i::AbstractString)
+    idx = _str_to_idx(param,i)
+    setindex!(param,val,idx)
+end
 #broadcasting
 Base.size(param::SingleParameter) = size(param.values)
 Base.length(param::SingleParameter) = length(param.values)

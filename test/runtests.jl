@@ -1,7 +1,9 @@
-using Test, Unitful
-
+using Test
 t1 = @elapsed using Clapeyron
-using CoolProp
+using CoolProp #CoolProp ext
+using Unitful #Unitful ext
+using MultiComponentFlash: MultiComponentFlash
+
 @info "Loading Clapeyron took $(round(t1,digits = 2)) seconds"
 @info "Coolprop: $(Clapeyron.is_coolprop_loaded())"
 #Disable showing citations
@@ -39,4 +41,5 @@ end
     include("test_methods_eos.jl")
     include("test_methods_api.jl")
     include("test_estimation.jl")
+    include("test_issues.jl")
 end

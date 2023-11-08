@@ -11,6 +11,16 @@ end
 
 abstract type PPCSAFTModel <: PCSAFTModel end
 @newmodel PPCSAFT PPCSAFTModel PPCSAFTParam
+
+#=
+at the moment, we use the Gross-Vrabec polar term
+and the technically correct name is PCPSAFT
+so, for the moment, we alias that.
+=#
+const PCPSAFTModel = PPCSAFTModel
+const PCPSAFTParam = PPCSAFTParam
+const PCPSAFT = PPCSAFT
+
 default_references(::Type{PPCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 default_locations(::Type{PPCSAFT}) = ["SAFT/PCSAFT/PPCSAFT/","properties/molarmass.csv"]
 function transform_params(::Type{PPCSAFT},params,components)
@@ -24,6 +34,7 @@ end
 
 """
     PPCSAFTModel <: SAFTModel
+    const PCPSAFT = PPCSAFT
     PPCSAFT(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
@@ -58,8 +69,8 @@ Polar Perturbed-Chain SAFT (PPC-SAFT)
 1. Gross, J., & Vrabec, J. (2005). An equation-of-state contribution for polar components: Dipolar molecules. AIChE Journal, 52(3), 856-1282. [doi:10.1002/aic.10683](https://doi.org/10.1002/aic.10683)
 """
 PPCSAFT
-
-export PPCSAFT
+@doc (@doc PPCSAFT) PCPSAFT
+export PPCSAFT,PCPSAFT
 
 function recombine_impl!(model ::PPCSAFTModel)
     μ,m = model.params.dipole,model.params.segment

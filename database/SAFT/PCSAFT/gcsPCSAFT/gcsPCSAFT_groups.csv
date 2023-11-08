@@ -1,0 +1,18 @@
+Clapeyron Database File,
+GCsPCSAFT Groups [csvtype = groups,grouptype = GCsPCSAFT]
+species,groups
+ethane,"[""CH3"" => 2]"
+water,"[""H2O"" => 1]"
+propane,"[""CH3"" => 2,""CH2"" => 1]"
+butane,"[""CH3"" => 2,""CH2"" => 2]"
+pentane,"[""CH3"" => 2,""CH2"" => 3]"
+hexane,"[""CH3"" => 2,""CH2"" => 4]"
+heptane,"[""CH3"" => 2, ""CH2"" => 5]"
+octane,"[""CH3"" => 2, ""CH2"" => 6]"
+nonane,"[""CH3"" => 2, ""CH2"" => 7]"
+decane,"[""CH3"" => 2, ""CH2"" => 8]"
+pentadecane,"[""CH3"" => 2, ""CH2"" => 13]"
+eicosane,"[""CH3"" => 2, ""CH2"" => 18]"
+pentacosane,"[""CH3"" => 2, ""CH2"" => 23]"
+triacontane,"[""CH3"" => 2, ""CH2"" => 28]"
+acetone,"[""CH3CO"" => 1, ""CH3"" => 1]"
