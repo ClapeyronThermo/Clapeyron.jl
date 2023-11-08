@@ -15,30 +15,25 @@ struct COSMOSAC02{c<:EoSModel} <: COSMOSAC02Model
 end
 
 export COSMOSAC02
-@doc """
-COSMOSAC02(components;
-puremodel = PR,
-userlocations = String[],
-pure_userlocations = String[],
-verbose = false)
-
-COSMOSAC02 EoS
+"""
+    COSMOSAC02(components;
+    puremodel = PR,
+    userlocations = String[],
+    pure_userlocations = String[],
+    verbose = false)
 
 ## Input parameters:
 - `Pi` :Single Parameter{String} 
 - `V`: Single Parameter{Float64}
 - `A`: Single Parameter{Float64}
 
-
-## Model Parameters:
-- Pi::SingleParam{Vector{Float64}}
-- V::SingleParam{Float64}
-- A::SingleParam{Float64}
-
 ## Description
 An activity coefficient model using molecular solvation based on the COSMO-RS method.
 
-""" COSMOSAC02
+## References
+1. Lin, S-T. & Sandler, S.I. (2002). A priori phase equilibrium prediction from a segment contribution solvation model. Industrial & Engineering Chemistry Research, 41(5), 899–913. [doi:10.1021/ie001047w](https://doi.org/10.1021/ie001047w)
+"""
+COSMOSAC02
 
 default_locations(::Type{COSMOSAC02}) = ["Activity/COSMOSAC/COSMOSAC02_like.csv"]
 

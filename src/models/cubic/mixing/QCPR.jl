@@ -28,7 +28,7 @@ None
 Quantum-Corrected Mixing Rule, used by [`QCPR`](@ref) EoS:
 ```
 aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
-bᵢⱼ = (1-lᵢⱼ)(bqᵢ + bqⱼ)/2
+bᵢⱼ = (1 - lᵢⱼ)(bqᵢ + bqⱼ)/2
 bqᵢ = bᵢβᵢ(T)
 βᵢ(T) = (1 + Aᵢ/(T + Bᵢ))^3 / (1 + Aᵢ/(Tcᵢ + Bᵢ))^3
 ā = ∑aᵢⱼxᵢxⱼ√(αᵢ(T)αⱼ(T))
