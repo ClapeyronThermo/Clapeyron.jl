@@ -1,5 +1,5 @@
 @testset "Reported errors" begin
-    #https://github.com/ypaul21/Clapeyron.jl/issues/104
+    #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/104
     @testset "#104" begin
         model = VTPR(["carbon dioxide"])
         p = 1e5

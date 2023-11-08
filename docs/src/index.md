@@ -21,7 +21,7 @@ The documentation is laid out as follows:
 
 ### License
 
-Clapeyron.jl is licensed under the [MIT license](https://github.com/ypaul21/Clapeyron.jl/blob/master/LICENSE.md).
+Clapeyron.jl is licensed under the [MIT license](https://github.com/ClapeyronThermo/Clapeyron.jl/blob/master/LICENSE.md).
 
 ### Installation
 

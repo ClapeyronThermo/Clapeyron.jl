@@ -60,7 +60,7 @@ function doi2bib(doi::String)
 
     headers = ["Accept"=>"application/x-bibtex",
                 "charset" => "utf-8",
-                "User-Agent" => "https://github.com/ypaul21/Clapeyron.jl"]
+                "User-Agent" => "https://github.com/ClapeyronThermo/Clapeyron.jl"]
 
     url = "https://api.crossref.org/v1/works/" * doi * "/transform"
     out = IOBuffer()
