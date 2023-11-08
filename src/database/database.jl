@@ -242,7 +242,7 @@ function getparams(components::Vector{String},locations::Vector{String},options:
 end
 
 function buildsites(result,components,allcomponentsites,options)
-    
+
 
     v = String[]
     for sitei ∈ allcomponentsites
@@ -251,7 +251,7 @@ function buildsites(result,components,allcomponentsites,options)
     unique!(v)
     #no sites encountered in assoc params
     iszero(length(v)) && return SiteParam(components)
-    
+
     #=
     build our own dict, by using the transformation X => n_X
     =#
@@ -334,18 +334,18 @@ function createparams(components::Vector{String},
     #in case of NamedTuple or Dict user-provided params, the filepath string should be empty.
     #but if its not, parse those anyway.
     for filepath ∈ filepaths
-        
+
         _replace = startswith(filepath,"@REPLACE")
         if _replace
             filepath = chop(filepath,head = 9, tail = 0)
         end
         csv_options = read_csv_options(filepath)
         csvtype = csv_options.csvtype
-        
+
         if csvtype == groupdata && parsegroups != :group
             continue
         end
-        
+
         if csvtype == structgroupdata && parsegroups != :intragroup
             continue
         end
@@ -356,7 +356,7 @@ function createparams(components::Vector{String},
             end
             continue
         end
-        
+
         foundparams, notfoundparams = findparamsincsv(components,filepath,options,parsegroups,csv_options)
         merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,_replace)
     end
@@ -484,7 +484,7 @@ function read_csv(filepath,options::ParamOptions,sep = :auto)::CSV.File
     if sep == :auto
         sep = read_csv_options(filepath)[:sep]
     end
-    
+
     _delims = (comma = ',',space = ' ')
     if sep isa Symbol
         _delim = get(_delims,sep,string(sep))
@@ -518,7 +518,7 @@ function findparamsincsv(components,filepath,
     no_parsegroups = parsegroups == :off
     correct_group = (parsegroups == :group && csvtype == groupdata) || (parsegroups == :intragroup && csvtype == structgroupdata)
     grouptype = csv_file_options.grouptype
-    
+
     sep = get(csv_file_options,:sep,:comma)
     df = read_csv(filepath,options,sep)
 
@@ -530,7 +530,7 @@ function findparamsincsv(components,filepath,
 
     normalised_csvheaders = normalisestring.(csvheaders)
     normalised_headerparams = normalisestring.(headerparams)
-    
+
     if normalised_headerparams ⊈ normalised_csvheaders
         error("Headers ", setdiff(normalised_headerparams, normalised_csvheaders), " not present ∈ csv header.")
     end
@@ -609,7 +609,7 @@ function findparamsincsv(components,filepath,
         end
         _sources = fill(EMPTY_STR,l)
         _csv = fill(filepath,l)
-        
+
     elseif csvtype ∈ (groupdata,structgroupdata) && no_parsegroups
         return foundvalues, notfoundvalues
     else
@@ -628,7 +628,7 @@ function findparamsincsv(components,filepath,
             push!(foundvalues,raw)
         end
     end
-    
+
     #store all headers that didn't had a result.
     for rawparam ∈ foundvalues
         delete!(notfoundvalues,rawparam.name)

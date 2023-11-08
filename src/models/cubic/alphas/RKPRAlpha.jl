@@ -76,4 +76,3 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::RKPRAlphaM
     ki = evalpoly(ω,(12.504*Zc -2.7238,7.4513*Zc + 1.9681,-2.4407*Zc + 0.0017))
     return (3/(2 + Tr))^ki
 end
-

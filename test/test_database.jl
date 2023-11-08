@@ -417,4 +417,3 @@ using Clapeyron, Test, LinearAlgebra
         @test Clapeyron.defaultmissing(["a",1,missing])[2] == Bool[0, 0, 1]
     end
 end
-

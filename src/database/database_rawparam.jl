@@ -178,7 +178,7 @@ function compile_single(name,components,type::CSVType,options)
     if name ∈ options.ignore_missing_singleparams
         return SingleParam(name,components)
     else
-        throw(MissingException("cannot found values of ", error_color(name), " for all input components."))
+        throw(MissingException("cannot found values of " * error_color(name) * " for all input components."))
     end
 end
 
