@@ -73,6 +73,42 @@ SAFT-γ-Mie EoS
 ## References
 1. Papaioannou, V., Lafitte, T., Avendaño, C., Adjiman, C. S., Jackson, G., Müller, E. A., & Galindo, A. (2014). Group contribution methodology based on the statistical associating fluid theory for heteronuclear molecules formed from Mie segments. The Journal of Chemical Physics, 140(5), 054107. [doi:10.1063/1.4851455](https://doi.org/10.1063/1.4851455)
 2. Dufal, S., Papaioannou, V., Sadeqzadeh, M., Pogiatzis, T., Chremos, A., Adjiman, C. S., … Galindo, A. (2014). Prediction of thermodynamic properties and phase behavior of fluids and mixtures with the SAFT-γ Mie group-contribution equation of state. Journal of Chemical and Engineering Data, 59(10), 3272–3288. [doi:10.1021/je500248h](https://doi.org/10.1021/je500248h)
+
+## List of available groups
+|Name    |Description         |
+|--------|--------------------|
+|CH3     |Methyl              |
+|CH2     |Methylene           |
+|CH      |                    |
+|C       |                    |
+|aCH     |Aromatic CH         |
+|aCCH2   |                    |
+|aCCH    |                    |
+|CH2=    |Alkene group        |
+|CH=     |                    |
+|cCH2    |Cyclic alkane group |
+|COOH    |Carboxylic acid group|
+|COO     |Ester group         |
+|OH      |Hydroxyl            |
+|CH2OH   |Methylene hydroxyl group|
+|CHOH    |                    |
+|NH2     |Amine group         |
+|NH      |                    |
+|N       |                    |
+|cNH     |                    |
+|cN      |                    |
+|CH=     |                    |
+|aCCH3   |                    |
+|aCOH    |                    |
+|cCH     |                    |
+|cCHNH   |                    |
+|cCHN    |                    |
+|aCCOaC  |                    |
+|aCCOOH  |                    |
+|aCNHaC  |                    |
+|CH3CO   |                    |
+|eO      |End ether oxygen    |
+|cO      |Center ether oxygen |
 """
 SAFTgammaMie
 

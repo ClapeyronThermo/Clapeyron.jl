@@ -75,5 +75,5 @@ function VTPRUNIFAC(components;
 end
 
 function excess_gibbs_free_energy(model::VTPRUNIFACModel,p,T,z)
-    return excess_g_res(model,p,T,z)*R̄*T 
+    return excess_g_res(model,p,T,z)
 end

@@ -196,7 +196,7 @@ You can also pass another optional 5th `Bool` argument indicating if a second or
 The Struct consists of the following fields:
 
 * components: a string lists of components
-* groups: a [`GroupParam`](@ref) or [`StructGroupParam`](@ref)
+* groups: a [`GroupParam`](@ref)
 * sites: a [`SiteParam`](@ref) (optional)
 * params: the Struct paramstype that contains all parameters in the model
 * idealmodel: the IdealModel struct that determines which ideal model to use

@@ -105,6 +105,11 @@ function Base.show(io::IO,m::Compressed4DMatrix{T}) where T
     print(io,typeof(m))
     print(io,m.values)
 end
+
+function Base.:(==)(p1::Compressed4DMatrix,p2::Compressed4DMatrix)
+    return (p1.values == p2.values) & (p1.outer_indices == p2.outer_indices) && (p1.inner_indices == p2.inner_indices)
+end
+
 function Compressed4DMatrix{T}() where T
     return Compressed4DMatrix(T[],Tuple{Int,Int}[],Tuple{Int,Int}[],(0,0),(0,0))
 end

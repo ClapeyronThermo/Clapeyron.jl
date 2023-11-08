@@ -25,7 +25,22 @@ Cubic alpha `(α(T))` model. Default for [`SRK`](@ref) EoS.
 Trᵢ = T/Tcᵢ
 mᵢ = 0.480 + 1.547ωᵢ - 0.176ωᵢ^2
 ```
-to use different polynomial coefficients for `mᵢ`, overload `Clapeyron.α_m(::CubicModel,::SoaveAlphaModel) = (c₁,c₂,...cₙ)`
+To use different polynomial coefficients for `mᵢ`, overload `Clapeyron.α_m(::CubicModel,::SoaveAlphaModel) = (c₁,c₂,...cₙ)`
+
+## Model Construction Examples
+```
+# Using the default database
+alpha = SoaveAlpha("water") #single input
+alpha = SoaveAlpha(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = SoaveAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/acentric.csv"])
+
+# Passing parameters directly
+alpha = SoaveAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
+```
 
 """
 SoaveAlpha
@@ -60,4 +75,3 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::SoaveAlpha
 end
 
 const SRKModel = RK{I,SoaveAlpha,M,T} where {I,M,T}
-
