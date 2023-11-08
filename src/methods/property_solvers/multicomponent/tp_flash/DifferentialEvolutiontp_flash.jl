@@ -1,7 +1,7 @@
 #=
 Original code by Thomas Moore
 @denbigh
-included in https://github.com/ypaul21/Clapeyron.jl/pull/56
+included in https://github.com/ClapeyronThermo/Clapeyron.jl/pull/56
 =#
 """
     DETPFlash(;numphases = 2;

@@ -40,6 +40,14 @@ The documentation is laid out as follows:
 
 Clapeyron.jl is licensed under the [MIT license](https://github.com/ClapeyronThermo/Clapeyron.jl/blob/master/LICENSE.md).
 
+### Installation
+
+Clapeyron.jl is a registered package, it can be installed from the general registry by:
+
+```
+pkg> add Clapeyron
+```
+
 ## Citing `Clapeyron.jl`
 
 If you are using Clapeyron for your research work, please cite the following:

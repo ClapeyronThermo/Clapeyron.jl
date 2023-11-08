@@ -4,7 +4,7 @@ using Documenter,Clapeyron
 makedocs(sitename = "Clapeyron.jl",
 format = Documenter.HTML(
     # Use clean URLs, unless built as a "local" build
-    canonical = "https://ypaul21.github.io/Clapeyron.jl/",
+    canonical = "https://ClapeyronThermo.github.io/Clapeyron.jl/",
     assets = ["assets/logo.ico"],
 ),
 warnonly = Documenter.except(),
@@ -46,5 +46,5 @@ warnonly = Documenter.except(),
                   )
 
         deploydocs(;
-    repo="github.com/ypaul21/Clapeyron.jl.git",
+    repo="github.com/ClapeyronThermo/Clapeyron.jl.git",
 )
