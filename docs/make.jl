@@ -7,6 +7,7 @@ format = Documenter.HTML(
     canonical = "https://ypaul21.github.io/Clapeyron.jl/",
     assets = ["assets/logo.ico"],
 ),
+warnonly = Documenter.except(),
     authors = "Pierre J. Walker, Hon Wa Yew and Andrés Riedemann.",
     pages = [
         "Home" => "index.md",
