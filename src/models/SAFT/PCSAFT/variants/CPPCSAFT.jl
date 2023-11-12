@@ -10,12 +10,48 @@ end
 
 abstract type CPPCSAFTModel <: PCSAFTModel end
 @newmodel CPPCSAFT CPPCSAFTModel CPPCSAFTParam
-default_references(::Type{CPPCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
-default_locations(::Type{CPPCSAFT}) = ["SAFT/PCSAFT/CPPCSAFT/", "properties/molarmass.csv", "properties/critical.csv"]
+export CPPCSAFT
+
+"""
+    PCSAFTModel <: SAFTModel
+    PCSAFT(components; 
+    idealmodel=BasicIdeal,
+    userlocations=String[],
+    ideal_userlocations=String[],
+    verbose=false,
+    assoc_options = AssocOptions())
+## Input parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
+- `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
+- `delta`: Single Parameter (`Float64`) - Critical volume displacement (no units)
+- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
+## Model Parameters
+- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `segment`: Pair Parameter (`Float64`) - Number of segments (no units)
+- `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
+- `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `delta`: Single Parameter (`Float64`) - Critical volume displacement (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `bondvol`: Association Parameter (`Float64`) - Association Volume
+## Input models
+- `idealmodel`: Ideal Model
+## Description
+Critical Point-Based PC-SAFT (CP-PC-SAFT)
+## References
+1. Polishuk, I. (2014). Standardized critical point-based numerical solution of statistical association fluid theory parameters: The perturbed chain-statistical association fluid theory equation of state revisited. Industrial & Engineering Chemistry Research, 53(36), 14127–14141. [doi:10.1021/ie502633e](https://doi.org/10.1021/ie502633e)
+"""
+CPPCSAFT
+default_references(::Type{CPPCSAFT}) = ["10.1021/ie502633e"]
+default_locations(::Type{CPPCSAFT}) = ["SAFT/PCSAFT/CPPCSAFT/", "properties/molarmass.csv"]
 function transform_params(::Type{CPPCSAFT},params,components)
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     sigma,epsilon,segment = params["sigma"],params["epsilon"],params["segment"]
+    sigma.values .*= 1E-10
     params["sigma"] = sigma_LorentzBerthelot(sigma)
     params["segment"] = sigma_LorentzBerthelot(segment, l)
     params["epsilon"] = epsilon_LorentzBerthelot(epsilon, k)
@@ -28,10 +64,10 @@ function a_res(model::CPPCSAFTModel, V, T, z)
 end
 
 function data(model::CPPCSAFTModel, V, T, z)
-    m = model.params.segment
+    m = model.params.segment.values
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
-    m̄ = dot(z,diagvalues(m))
+    m̄ = sum(z[i]*m[i,i] for i in @comps) #TODO: check why dot(z,diagvalues(m)) allocates
     ϵmix = zero(eltype(model))
     σmix = zero(eltype(model))
     for i in @comps
@@ -48,50 +84,44 @@ function data(model::CPPCSAFTModel, V, T, z)
     end
     σmix = cbrt(σmix/(m̄*m̄)) #no units
     ϵmix = ϵmix/(σmix*σmix*σmix*m̄*m̄)
+    m̄ = m̄/sum(z)
+    _d = @f(d)
+    ζ0,ζ1,ζ2,ζ3 = @f(ζ0123,_d)
     (_d,ζ0,ζ1,ζ2,ζ3,m̄,ϵmix,σmix)
 end
 
 function a_hs(model::CPPCSAFTModel,V,T,z,_data = @f(data))
     _d,ζ0,ζ1,ζ2,ζ3,m̄,ϵmix,σmix = _data
     θ = CPPCSAFT_theta(T,ϵmix)
-    onemζ3 = 1 - ζ3
-    RT = Rgas(model)*T
-    Ahs = (
-        RT * m̄ / ζ0
-        * (
-            3 * ζ1 * ζ2 / onemζ3
-            + ζ2^3 / (ζ3 * onemζ3^2)
-            + (ζ2^3 / ζ3^2 - ζ₀) * log1p(-ζ3)
-        ) * sqrt(onemζ3 / (1 - ζ3 / θ^3))
-    )
-    return Ahs
+    _a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
+    return _a_hs*sqrt((1 - ζ3) / (1 - ζ3 / θ^3))
 end
 
-function a_hc(model::PCSAFTModel, V, T, z,_data=@f(data))
+function a_hc(model::CPPCSAFTModel, V, T, z,_data=@f(data))
     dii,ζ0,ζ1,ζ2,ζ3,m̄,_,_ = _data
     m = model.params.segment.values
     Σz = sum(z)
     c1 = 1/(1-ζ3)
     c2 = 3ζ2/(1-ζ3)^2
     c3 = 2ζ2^2/(1-ζ3)^3
-    a_hs = @f(a_hs,_data)
-    res = zero(a_hs)
+    _a_hs = @f(a_hs,_data)
+    _a_disp = zero(_a_hs)
     for i ∈ @comps
         dᵢ = dii[i]
         zᵢ = z[i]
         xdᵢ = dᵢ/2
         g_hsᵢᵢ = c1 + c2*xdᵢ + c3*xdᵢ*xdᵢ
-        res += zᵢ*zᵢ*(m[i,i]-1)*log(g_hsᵢᵢ)
+        _a_disp += zᵢ*zᵢ*(m[i,i]-1)*log(g_hsᵢᵢ)
         for j ∈ 1:(i-1)
             zⱼ = z[j]
             dⱼ = dii[j]
             xdᵢⱼ = dᵢ*dⱼ/(dᵢ+dⱼ)
             g_hsᵢⱼ = c1 + c2*xdᵢⱼ + c3*xdᵢ*xdᵢⱼ
-            res += zᵢ*zⱼ*(m[i,j]-1)*log(g_hsᵢⱼ)
+            _a_disp += zᵢ*zⱼ*(m[i,j]-1)*log(g_hsᵢⱼ)
         end
     end
     #return  m̄*@f(a_hs) - ∑(z[i]*(m[i]-1)*log(@f(g_hs,i,i)) for i ∈ @comps)/Σz
-    return a_hs/Σz - res/(Σz*Σz)
+    return m̄*_a_hs - _a_disp/(Σz*Σz)
 end
 
 function a_disp(model::CPPCSAFTModel, V, T, z,_data=@f(data))
@@ -100,7 +130,7 @@ function a_disp(model::CPPCSAFTModel, V, T, z,_data=@f(data))
     m2ϵσ3 = m̄*m̄*ϵ*σ*σ*σ
     πNAρ = π*N_A*Σz/V
     C₁ = C1(model, V, T, z, ζ3, m̄)
-    return -2*πNAρ*@f(I,1,_data)*m2ϵσ3 - m̄*πNAρ*C₁*@f(I,2,_data)*m2ϵσ3/T
+    return -πNAρ*m2ϵσ3*(2*@f(I,1,_data)/T + C₁*m̄*ϵ*@f(I,2,_data)/(T*T))
 end
 
 function d(model::CPPCSAFTModel, V, T, z)
@@ -114,9 +144,9 @@ function d(model::CPPCSAFTModel, V, T, z)
 end
 
 function d(model::CPPCSAFTModel, V, T, z::SingleComp)
-    ϵᵢᵢ = diagvalues(model.params.epsilon)[1]
-    σᵢᵢ = diagvalues(model.params.sigma)[1]
-    return SA[σᵢᵢ*CPPCSAFT_theta(T,ϵᵢᵢ)]
+    ϵ = only(model.params.epsilon.values)
+    σ = only(model.params.sigma.values)
+    return SA[σ*CPPCSAFT_theta(T,ϵ)]
 end
 
 function CPPCSAFT_theta(T,ϵ)
@@ -124,8 +154,8 @@ function CPPCSAFT_theta(T,ϵ)
     (1 + 0.2977 * Tr) / (1 + Tr * (0.33163 + Tr * 0.0010477))
 end
 
-function I(model::PCSAFTModel, V, T, z, n, _data=@f(data))
-    dii,ζ0,ζ1,ζ2,ζ3,m̄,_,_ = _data
+function I(model::CPPCSAFTModel, V, T, z, n, _data=@f(data))
+    dii,ζ0,ζ1,ζ2,η,m̄,_,_ = _data
     if n == 1
         corr = CPPCSAFTconsts.corr1
     elseif n == 2
