@@ -58,6 +58,16 @@ function transform_params(::Type{CPPCSAFT},params,components)
     return params
 end
 
+function recombine_impl!(model::CPPCSAFTModel)
+    sigma = model.params.sigma
+    epsilon = model.params.epsilon
+    segment = model.params.segment
+    sigma = sigma_LorentzBerthelot!(sigma)
+    segment = sigma_LorentzBerthelot!(segment)
+    epsilon = epsilon_LorentzBerthelot!(epsilon)
+    return model
+end
+
 function a_res(model::CPPCSAFTModel, V, T, z)
     _data = @f(data)
     return @f(a_hc,_data) + @f(a_disp,_data) + @f(a_assoc,_data)
