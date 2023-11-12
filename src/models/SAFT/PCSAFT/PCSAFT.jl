@@ -105,7 +105,8 @@ function a_disp(model::PCSAFTModel, V, T, z,_data=@f(data))
     di,ζ0,ζ1,ζ2,ζ3,m̄ = _data
     Σz = sum(z)
     m2ϵσ3₁,m2ϵσ3₂ = @f(m2ϵσ3)
-    return -2*π*N_A*Σz/V*@f(I,1,_data)*m2ϵσ3₁ - π*m̄*N_A*Σz/V*@f(C1,_data)*@f(I,2,_data)*m2ϵσ3₂
+    πNAρ = π*N_A*Σz/V
+    return -2*πNAρ*@f(I,1,_data)*m2ϵσ3₁ - m̄*πNAρ*@f(C1,_data)*@f(I,2,_data)*m2ϵσ3₂
 end
 
 function d(model::PCSAFTModel, V, T, z)
@@ -168,6 +169,10 @@ end
 
 function C1(model::PCSAFTModel, V, T, z, _data=@f(data))
     _,_,_,_,η,m̄ = _data
+    return C1(model, V, T, z, η, m̄)
+end
+
+function C1(model::PCSAFTModel, V, T, z, η, m̄)
     return (1 + m̄*(8η-2η^2)/(1-η)^4 + (1-m̄)*evalpoly(η,(0,20,-27,12,-2))/((1-η)*(2-η))^2)^-1
 end
 
