@@ -12,8 +12,9 @@ end
 
 function saft_lorentz_berthelot(params)
     k = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     sigma,epsilon = params["sigma"],params["epsilon"]
-    params["sigma"] = sigma_LorentzBerthelot(sigma)
+    params["sigma"] = sigma_LorentzBerthelot(sigma, l)
     params["epsilon"] = epsilon_LorentzBerthelot(epsilon, k)
     return params
 end
