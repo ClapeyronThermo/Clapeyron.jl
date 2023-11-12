@@ -67,6 +67,8 @@ If `estimate_pure` is true, then, if a JSON is not found, the pure model will be
 
 `Rgas` sets the value of the gas constant to be used by the multifluid. defaults to `Clapeyron.R̄ = Rgas() = 8.31446261815324` (2019 defined constant value)
  """
+MultiFluid
+
 function MultiFluid(components;
     idealmodel = nothing,
     pure_userlocations = String[],
@@ -215,20 +217,19 @@ function x0_volume_liquid(model::MultiFluid,T,z)
     return v0
 end
 
-function wilson_k_values(model::MultiFluid,p,T,crit = nothing)
+function wilson_k_values!(K,model::MultiFluid,p,T,crit = nothing)
     n = length(model)
-    K0 = zeros(typeof(p+T),n)
     pure = split_model.(model)
     _Tc = model.params.Tc.values
-    _Pc = model.params.pc.values
+    _Pc = model.params.Pc.values
     for i ∈ 1:n
         pure_i = pure[i]
         Tc,pc = _Tc[i],_Pc[i]
         ps = first(saturation_pressure(pure_i,0.7*Tc))
         ω = -log10(ps/pc) - 1.0
-        K0[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
+        K[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
     end
-    return K0
+    return K
 end
 
 export MultiFluid

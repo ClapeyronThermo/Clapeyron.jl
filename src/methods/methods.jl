@@ -218,6 +218,7 @@ function gradient_type(V,T,z::FractionVector)
     return Vector{μ}
 end
 
+
 """
     init_preferred_method(method,model,kwargs)
 
@@ -226,6 +227,42 @@ Returns the preferred method for a combination of model and function, with the s
 """
 function init_preferred_method(method,model) end
 
+"""
+    get_k(model)::VarArg{Matrix}
+
+Returns a matrix of "k-values" binary interaction parameters used by the input `model`. Returns `nothing` if the model cannot return the k-values matrix.
+In the case of multiple k-values (as is the case in T-dependent values, i.e: k(T) = k1 + k2*T), it will return a tuple of matrices corresponding to each term in the k-value expression.
+Note that some models do not store the k-value matrix directly, but they contain the value in an indirect manner. for example, cubic EoS store `a[i,j] = f(a[i],a[j],k[i,j])`, where `f` depends on the mixing rule.
+
+"""
+get_k(model::EoSModel) = nothing
+
+"""
+    get_l(model)::VarArg{Matrix}
+
+returns a matrix of "l-values" binary interaction parameters used by the input `model`. Returns `nothing` if the model cannot return the l-values matrix.
+In the case of multiple l-values (as is the case in T-dependent values, i.e: l(T) = l1 + l2*T), it will return a tuple of matrices corresponding to each term in the l-value expression.
+Note that some models do not store the l-value matrix directly, but they contain the value in an indirect manner. for example, cubic EoS store `b[i,j] = f(b[i],b[j],l[i,j])`, where `f` depends on the mixing rule.
+"""
+get_l(model::EoSModel) = nothing
+
+"""
+    set_k!(model,k)
+    set_k!(model,ki...)
+
+Sets the model "k-values" binary interaction parameter to the input matrix `k`. If the input model requires multiple k-matrices (as is the case for T-dependent values, i.e: k(T) = k1 + k2*T), then you must call `set_k!` with all the matrices as input (`set_k!(model,k1,k2)`).
+
+"""
+set_k!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting k-values"))
+
+"""
+    set_l!(model,l)
+    set_l!(model,li...)
+
+Sets the model "l-values" binary interaction parameter to the input matrix `l`. If the input model requires multiple l-matrices (as is the case for T-dependent values, i.e: l(T) = l1 + l2*T), then you must call `set_l!` with all the matrices as input (`set_l!(model,l1,l2)`).
+
+"""
+set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting k-values"))
 
 include("initial_guess.jl")
 include("differentials.jl")
@@ -235,5 +272,3 @@ include("property_solvers/property_solvers.jl")
 include("tpd.jl")
 include("stability.jl")
 include("pT.jl")
-include("unitful_base.jl")
-include("unitful_methods.jl")

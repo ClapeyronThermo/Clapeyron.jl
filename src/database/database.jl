@@ -242,7 +242,7 @@ function getparams(components::Vector{String},locations::Vector{String},options:
 end
 
 function buildsites(result,components,allcomponentsites,options)
-    
+
 
     v = String[]
     for sitei ∈ allcomponentsites
@@ -251,7 +251,7 @@ function buildsites(result,components,allcomponentsites,options)
     unique!(v)
     #no sites encountered in assoc params
     iszero(length(v)) && return SiteParam(components)
-    
+
     #=
     build our own dict, by using the transformation X => n_X
     =#
@@ -314,6 +314,15 @@ function findsites(data::Dict,components::Vector;verbose = false)
     verbose && @info("Found sites for $components are $(output).")
     return output
 end
+
+#hooks to transform arbitrary data formats into namedtuples or dicts
+to_nt(x) = x
+
+#hook to check if a struct can be transformed into a named tuple
+can_nt(x) = false
+can_nt(x::AbstractDict) = true
+can_nt(x::NamedTuple) = true
+
 @nospecialize
 function createparams(components::Vector{String},
                     filepaths::Vector{String},
@@ -322,20 +331,21 @@ function createparams(components::Vector{String},
 
     allparams = Dict{String,RawParam}()
     allnotfoundparams = Dict{String,CSVType}()
-    
+    #in case of NamedTuple or Dict user-provided params, the filepath string should be empty.
+    #but if its not, parse those anyway.
     for filepath ∈ filepaths
-        
+
         _replace = startswith(filepath,"@REPLACE")
         if _replace
             filepath = chop(filepath,head = 9, tail = 0)
         end
         csv_options = read_csv_options(filepath)
         csvtype = csv_options.csvtype
-        
+
         if csvtype == groupdata && parsegroups != :group
             continue
         end
-        
+
         if csvtype == structgroupdata && parsegroups != :intragroup
             continue
         end
@@ -346,12 +356,12 @@ function createparams(components::Vector{String},
             end
             continue
         end
-        
+
         foundparams, notfoundparams = findparamsincsv(components,filepath,options,parsegroups,csv_options)
         merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,_replace)
     end
 
-    if options.userlocations isa Union{NamedTuple,AbstractDict}
+    if can_nt(options.userlocations)
         foundparams, notfoundparams = findparamsinnt(components,options,parsegroups,NT_CSV_OPTIONS)
         merge_allparams!(allparams,allnotfoundparams,foundparams,notfoundparams,false)
     end
@@ -474,7 +484,7 @@ function read_csv(filepath,options::ParamOptions,sep = :auto)::CSV.File
     if sep == :auto
         sep = read_csv_options(filepath)[:sep]
     end
-    
+
     _delims = (comma = ',',space = ' ')
     if sep isa Symbol
         _delim = get(_delims,sep,string(sep))
@@ -508,7 +518,7 @@ function findparamsincsv(components,filepath,
     no_parsegroups = parsegroups == :off
     correct_group = (parsegroups == :group && csvtype == groupdata) || (parsegroups == :intragroup && csvtype == structgroupdata)
     grouptype = csv_file_options.grouptype
-    
+
     sep = get(csv_file_options,:sep,:comma)
     df = read_csv(filepath,options,sep)
 
@@ -520,7 +530,7 @@ function findparamsincsv(components,filepath,
 
     normalised_csvheaders = normalisestring.(csvheaders)
     normalised_headerparams = normalisestring.(headerparams)
-    
+
     if normalised_headerparams ⊈ normalised_csvheaders
         error("Headers ", setdiff(normalised_headerparams, normalised_csvheaders), " not present ∈ csv header.")
     end
@@ -599,7 +609,7 @@ function findparamsincsv(components,filepath,
         end
         _sources = fill(EMPTY_STR,l)
         _csv = fill(filepath,l)
-        
+
     elseif csvtype ∈ (groupdata,structgroupdata) && no_parsegroups
         return foundvalues, notfoundvalues
     else
@@ -618,7 +628,7 @@ function findparamsincsv(components,filepath,
             push!(foundvalues,raw)
         end
     end
-    
+
     #store all headers that didn't had a result.
     for rawparam ∈ foundvalues
         delete!(notfoundvalues,rawparam.name)
@@ -629,17 +639,19 @@ function findparamsincsv(components,filepath,
     return foundvalues, notfoundvalues
 end
 
+
 #find params in named tuple, transforms form named tuple to Dict{RawParam}
 function findparamsinnt(components,
     options::ParamOptions,
     parsegroups = :off,
     csv_file_options = NT_CSV_OPTIONS) #default options
+
     verbose = options.verbose
-    nt = options.userlocations
+    nt = to_nt(options.userlocations)
     foundvalues = Vector{RawParam}(undef,0)
     notfoundvalues = Dict{String,CSVType}()
     #this algorithm is less strict that what we have in CSVs. but allows us to parse named tuples
-    #VERY BIG TODO: parse assoc, how do we do that?
+
     for (k,v) in pairs(nt)
         ks = string(k)
         if k == :groups && parsegroups == :groups
@@ -675,11 +687,9 @@ function findparamsinnt(components,
         end
     end
 
-    
    # verbose && __verbose_findparams_found(foundvalues) #print all found values
 
     return foundvalues, notfoundvalues
-    
 end
 
 function _fill_sources!(input,allsources,tofill)

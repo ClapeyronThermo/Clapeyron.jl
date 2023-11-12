@@ -178,7 +178,7 @@ function compile_single(name,components,type::CSVType,options)
     if name ∈ options.ignore_missing_singleparams
         return SingleParam(name,components)
     else
-        error("cannot found values of ", error_color(name), " for all input components.")
+        throw(MissingException("cannot found values of " * error_color(name) * " for all input components."))
     end
 end
 
@@ -302,10 +302,7 @@ values are zero, ∈ this case is ommited (can also be overrided)
 function is_valid_param(param::SingleParameter,options)
     missingvals = param.ismissingvalues
     if param.name ∉ options.ignore_missing_singleparams && any(missingvals)
-        vals = [ifelse(missingvals[i],missing,param.values[i]) for i ∈ 1:length(missingvals)]
-        idx = findall(param.ismissingvalues)
-        comps = param.components[idx]
-        error("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")
+        SingleMissingError(param)
     end
     return nothing
 end
@@ -313,10 +310,23 @@ end
 function is_valid_param(param::PairParameter,options)
     diag = diagvalues(param.ismissingvalues)
     if param.name ∉ options.ignore_missing_singleparams && !all(diag) && any(diag)
-        vals = [ifelse(diag[i],missing,param.values[i]) for i ∈ 1:length(diag)]
-        error("Partial missing values exist ∈ diagonal of pair parameter ",error_color(param.name), ": ", vals, ".")
+        PairMissingError(param)
     end
     return nothing
+end
+
+function SingleMissingError(param::SingleParameter)
+    missingvals = param.ismissingvalues
+    idx = findall(param.ismissingvalues)
+    comps = param.components[idx]
+    throw(MissingException(string("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")))
+end
+
+function PairMissingError(param::PairParameter)
+    diag = diagvalues(param.ismissingvalues)
+    idx = findall(diag)
+    comps = param.components[idx]
+    throw(MissingException(string("Partial missing values exist ∈ diagonal of pair parameter ",error_color(param.name), ": ", comps, ".")))
 end
 
 function is_valid_param(param::AssocParam,options)

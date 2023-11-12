@@ -1,4 +1,4 @@
-Clapeyron Database File,
+Clapeyron Database File
 original UNIFAC Groups,[csvtype = groups,grouptype = originalUNIFAC]
 species,groups
 ethane,"[""CH3"" => 2]"

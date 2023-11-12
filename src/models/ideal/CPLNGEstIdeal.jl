@@ -34,6 +34,21 @@ d = 3.1474e-8  * γ₀ -2.8396e-8
 γ₀ = Mw/Mw(air)
 ```
 
+## Model Construction Examples
+```
+# Using the default database
+idealmodel = CPLNGEstIdeal("water") #single input
+idealmodel = CPLNGEstIdeal(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+idealmodel = CPLNGEstIdeal(["neon","hydrogen"]; userlocations = ["path/to/my/db","mw.csv"])
+
+# Passing parameters directly
+idealmodel = CPLNGEstIdeal(["neon","hydrogen"];userlocations = (;Mw = [20.17, 2.]))
+```
+
 ## References
 1. Kareem, L. A., Iwalewa, T. M., & Omeke, J. E. (2014). Isobaric specific heat capacity of natural gas as a function of specific gravity, pressure and temperature. Journal of Natural Gas Science and Engineering, 19, 74–83. [doi:10.1016/j.jngse.2014.04.011]("http://doi.org/10.1016/j.jngse.2014.04.011")
 """

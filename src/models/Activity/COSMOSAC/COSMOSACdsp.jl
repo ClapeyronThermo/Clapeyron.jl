@@ -25,6 +25,33 @@ export COSMOSACdsp
 
 default_locations(::Type{COSMOSACdsp}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv","Activity/COSMOSAC/COSMOSACdsp_like.csv"]
 
+"""
+    COSMOSACdsp(components;
+    puremodel = PR,
+    userlocations = String[],
+    pure_userlocations = String[],
+    verbose = false)
+
+## Input parameters:
+- `Pnhb` :Single Parameter{String} 
+- `POH` :Single Parameter{String} 
+- `POT` :Single Parameter{String} 
+- `V`: Single Parameter{Float64}
+- `A`: Single Parameter{Float64}
+- `epsilon`: Single Parameter{Float64}
+- `COOH`: Single Parameter{Float64}
+- `water`: Single Parameter{Float64}
+- `hb_acc`: Single Parameter{Float64}
+- `hb_don`: Single Parameter{Float64}
+
+## Description
+An activity coefficient model using molecular solvation based on the COSMO-RS method. Sigma profiles are now split by non-hydrogen bonding, hydrogen acceptor and hydrogen donor. A dispersive correction is included.
+
+## References
+1. Hsieh, C-H., Lin, S-T. & Vrabec, J. (2014). Considering the dispersive interactions in the COSMO-SAC model for more accurate predictions of fluid phase behavior. Fluid Phase Equilibria, 367, 109-116. [doi:10.1016/j.fluid.2014.01.032](https://doi.org/10.1016/j.fluid.2014.01.032)
+"""
+COSMOSACdsp
+
 function COSMOSACdsp(components;
     puremodel = PR,
     userlocations = String[],

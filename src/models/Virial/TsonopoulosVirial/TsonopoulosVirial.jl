@@ -21,13 +21,6 @@ default_references(::Type{TsonopoulosVirial}) = ["10.1002/aic.690200209"]
 
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `w`: Single Parameter (`Float64`) - Acentric Factor
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-
-## Model Parameters
-
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `acentricfactor`: Single Parameter (`Float64`) - Acentric Factor
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 
@@ -47,6 +40,31 @@ Trᵢⱼ = T/Tcᵢⱼ
 Tcᵢⱼ = √TcᵢTcⱼ
 Pcᵢⱼ = (Pcᵢ + Pcⱼ)/2
 ωᵢⱼ = (ωᵢ + ωⱼ)/2
+```
+
+## Model Construction Examples
+```julia
+# Using the default database
+model = TsonopoulosVirial("water") #single input
+model = TsonopoulosVirial(["water","ethanol"]) #multiple components
+model = TsonopoulosVirial(["water","ethanol"], idealmodel = ReidIdeal) #modifying ideal model
+
+# Passing a prebuilt model
+
+my_idealmodel = MonomerIdeal(["neon","hydrogen"];userlocations = (;Mw = [20.17, 2.]))
+model = TsonopoulosVirial(["neon","hydrogen"],idealmodel = my_idealmodel)
+
+# User-provided parameters, passing files or folders
+model = TsonopoulosVirial(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical.csv"])
+
+# User-provided parameters, passing parameters directly
+
+model = TsonopoulosVirial(["neon","hydrogen"];
+        userlocations = (;Tc = [44.492,33.19],
+                        Pc = [2679000, 1296400],
+                        Mw = [20.17, 2.],
+                        acentricfactor = [-0.03,-0.21])
+                    )
 ```
 
 ## References

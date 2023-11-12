@@ -13,6 +13,14 @@ Default Ideal Model. Constant specific heat capacity equal to `5R/2`. it's Helmh
 ```
     a₀ = A₀/nRT =  ∑(xᵢlog(nxᵢ/V)) - 1 - 1.5log(T)
 ```
+
+## Model Construction Examples
+```
+# Because this model does not have parameters, all those constructors are equivalent:
+idealmodel = BasicIdeal()
+idealmodel = BasicIdeal("water")
+idealmodel = BasicIdeal(["water","carbon dioxide"])
+```
 """
 BasicIdeal
 

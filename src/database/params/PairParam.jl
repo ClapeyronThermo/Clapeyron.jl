@@ -48,12 +48,35 @@ PairParam(name,components,vals,missingvals,srccsv,src) = PairParameter(name,comp
 
 #indexing
 
-Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T}},i::Int) where T = param.values[i,i]
-Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T}},i::Int,j::Int) where T = param.values[i,j]
+Base.@propagate_inbounds Base.getindex(param::PairParameter{T},i::Int) where T = param.values[i,i]
+Base.@propagate_inbounds Base.getindex(param::PairParameter{T},i::Int,j::Int) where T = param.values[i,j]
+
+function Base.getindex(param::PairParameter{T},i::AbstractString) where T
+    idx = _str_to_idx(param,i)
+    return param[idx]
+end
+
+function Base.getindex(param::PairParameter{T},i::AbstractString,j::AbstractString) where T
+    idx_i,idx_j = _str_to_idx(param,i,j)
+    return param[idx_i,idx_j]
+end
+
 Base.setindex!(param::PairParameter,val,i) = setindex!(param,val,i,i,false)
+
 function Base.setindex!(param::PairParameter,val,i,j,symmetric = true) 
     setindex!(param.values,val,i,j)
     symmetric && setindex!(param.values,val,j,i)
+end
+
+function Base.setindex!(param::PairParameter,val,i::AbstractString,j::AbstractString,symmetric = true) 
+    idx_i,idx_j = _str_to_idx(param,i,j)
+    setindex!(param.values,val,idx_i,idx_j)
+    symmetric && setindex!(param,val,idx_j,idx_i)
+end
+
+function Base.setindex!(param::PairParameter,val,i::AbstractString)
+    idx = _str_to_idx(param,i)
+    setindex!(param,val,idx::Int)
 end
 
 #Broadcasting

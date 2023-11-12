@@ -102,6 +102,23 @@ function data(model::ABCubicModel, V, T, z)
     return n, ā, b̄, c̄
 end
 
+function cubic_get_k end
+function cubic_get_l end
+
+get_k(model::CubicModel) = cubic_get_k(model,model.mixing,model.params)
+get_l(model::CubicModel) = cubic_get_l(model,model.mixing,model.params)
+
+function set_k!(model::CubicModel,k)
+    n = length(model)
+    recombine_mixing!(model,model.mixing,k,FillArrays.Zeros(Int, n, n))
+end
+
+function set_l!(model::CubicModel,l)
+    n = length(model)
+    recombine_mixing!(model,model.mixing,FillArrays.Zeros(Int, n, n),l)
+end
+
+
 function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
     Δ1,Δ2 = cubic_Δ(model,z)
@@ -364,11 +381,10 @@ vl = b + sqrt(0.5RTb3/2a) - c
 =#
 
 
-function wilson_k_values(model::ABCubicModel, p, T, crit = nothing)
+function wilson_k_values!(K,model::ABCubicModel, p, T, crit = nothing)
     Pc = model.params.Pc.values
     Tc = model.params.Tc.values
     α = typeof(model.alpha)
-
     w1 = getparam(model,:acentricfactor)
     w2 = getparam(model.alpha,:acentricfactor)
 
@@ -386,7 +402,7 @@ function wilson_k_values(model::ABCubicModel, p, T, crit = nothing)
         end
     end
 
-    return @. Pc / p * exp(5.373 * (1 + ω) * (1 - Tc / T))
+    return @.K .= Pc / p * exp(5.373 * (1 + ω) * (1 - Tc / T))
 
 end
 

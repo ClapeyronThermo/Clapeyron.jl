@@ -41,7 +41,8 @@ end
 can_build_alpha_w(T) = false
 
 function init_alphamodel(alpha,components,w = nothing,userlocations = String[],verbose = [])
-    if alpha <: AlphaModel
+    #Base.Callable = Union{Type,Function}
+    if alpha isa Base.Callable && alpha <: AlphaModel
         if can_build_alpha_w(alpha) && w !== nothing && isempty(userlocations)
             param = SimpleAlphaParam(w)
             return alpha(format_components(components),param,default_references(typeof(alpha)))

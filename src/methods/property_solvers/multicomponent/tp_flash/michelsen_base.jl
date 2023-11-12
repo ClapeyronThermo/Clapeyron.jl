@@ -139,12 +139,9 @@ function update_rr!(K,β,z,x,y,
     return x,y
 end
 
-tp_flash_K0(model,p,T) = wilson_k_values(model,p,T)
-
-function pushcol!(x,col)
-    sc,sr = size(x)
-    @assert sc == length(col)
-    v = reshape(x,(sc*sr))
-    append!(v,col)
-    return reshape(v,(sc,sr+1))
+function tp_flash_K0(model,p,T)
+    K = zeros(typeof(p+T+one(eltype(model))),length(model))
+    return tp_flash_K0!(K,model,p,T)
 end
+
+tp_flash_K0!(K,model,p,T) = wilson_k_values!(K,model,p,T)

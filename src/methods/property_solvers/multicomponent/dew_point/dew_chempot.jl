@@ -94,7 +94,7 @@ end
 """
     ChemPotDewTemperature(kwargs...)
 
-Function to compute [`temperature`](@ref) via chemical potentials.
+Function to compute [`dew_temperature`](@ref) via chemical potentials.
 It directly solves the equality of chemical potentials system of equations.
 
 Inputs:

@@ -49,6 +49,33 @@ gᴱ(res) = -∑xᵢqᵖᵢlog(∑θᵖⱼτⱼᵢ)
 τᵢⱼ = exp(-aᵢⱼ/T)
 ```
 
+## Model Construction Examples
+```
+# Using the default database
+model = UNIQUAC(["water","ethanol"]) #Default pure model: PR
+model = UNIQUAC(["water","ethanol"],puremodel = BasicIdeal) #Using Ideal Gas for pure model properties
+model = UNIQUAC(["water","ethanol"],puremodel = PCSAFT) #Using Real Gas model for pure model properties
+
+# Passing a prebuilt model
+
+my_puremodel = AbbottVirial(["water","ethanol"]; userlocations = ["path/to/my/db","critical.csv"])
+mixing = UNIQUAC(["water","ethanol"],puremodel = my_puremodel)
+
+# Using user-provided parameters
+
+# Passing files or folders
+model = UNIQUAC(["water","ethanol"];userlocations = ["path/to/my/db","uniquac_ge.csv"])
+
+# Passing parameters directly
+model = UNIQUAC(["water","ethanol"],
+        userlocations = (a = [0.0 378.1; 258.4 0.0], 
+                        r = [0.92, 2.11],
+                        q = [1.4, 1.97],
+                        q_p = [1.0, 0.92],
+                        Mw = [18.015, 46.069])
+                    )
+```
+
 ## References
 
 1. Abrams, D. S., & Prausnitz, J. M. (1975). Statistical thermodynamics of liquid mixtures: A new expression for the excess Gibbs energy of partly or completely miscible systems. AIChE journal. American Institute of Chemical Engineers, 21(1), 116–128. [doi:10.1002/aic.690210115](https://doi.org/10.1002/aic.690210115)
