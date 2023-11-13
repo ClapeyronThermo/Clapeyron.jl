@@ -98,7 +98,7 @@ using Clapeyron, Test
     end
 
     @testset "PPCSAFT" begin
-        system = PPCSAFT(["acetone", "butane","DMSO"])
+        system = PPCSAFT(["acetone", "butane", "DMSO"])
         z = [0.333, 0.333,0.333]
         @test Clapeyron.a_polar(system, V, T, z) ≈ -0.6541688650413224 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
@@ -132,6 +132,14 @@ using Clapeyron, Test
     @testset "gcsPCSAFT" begin
         z = [0.5, 0.5]
         system = gcsPCSAFT(["acetone", "ethane"])
+        test_gibbs_duhem(system,V,T,z)
+    end
+
+    @testset "CP-PCSAFT" begin
+        system = CPPCSAFT(["butane", "propane"])
+        z = [0.5, 0.5]
+        @test Clapeyron.a_hc(system, V, T, z) ≈ 3.8972592754549327 rtol = 1e-6
+        @test Clapeyron.a_disp(system, V, T, z) ≈ -6.620200672209108 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
     end
 
