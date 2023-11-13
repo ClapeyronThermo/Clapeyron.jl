@@ -1,3 +1,24 @@
 Clapeyron Database File
 CP-PC-SAFT Assoc Parameters
 species1,site1,species2,site2,epsilon_assoc,bondvol,source
+water,H,water,e,2070.00,0.22800,10.1002/aic.15715
+water,H,benzene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,toluene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,ethylbenzene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,n-propylbenzene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,o-xylene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,p-xylene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,mesitylene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,m-diethylbenzene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,p-diisopropylbenzene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,tetralin,BR,1242.0,0.228,10.1002/aic.15715
+water,H,naphthalene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,methylnaphthalene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,1-chloronaphthalene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,biphenyl,BR,1242.0,0.228,10.1002/aic.15715
+water,H,diphenylmethane,BR,1242.0,0.228,10.1002/aic.15715
+water,H,"1,2-diphenylethane",BR,1242.0,0.228,10.1002/aic.15715
+water,H,diphenyl ether,BR,1242.0,0.228,10.1002/aic.15715
+water,H,benzophenone,BR,1242.0,0.228,10.1002/aic.15715
+water,H,indene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,cis-Decalin,BR,1242.0,0.228,10.1002/aic.15715
