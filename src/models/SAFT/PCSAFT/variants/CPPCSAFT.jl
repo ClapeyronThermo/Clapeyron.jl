@@ -13,8 +13,8 @@ abstract type CPPCSAFTModel <: PCSAFTModel end
 export CPPCSAFT
 
 """
-    PCSAFTModel <: SAFTModel
-    PCSAFT(components; 
+    CPPCSAFTModel <: PCSAFTModel
+    CPPCSAFT(components; 
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
@@ -202,3 +202,42 @@ const CPPCSAFTconsts = (
     (206.55133841, -161.82646165, 93.626774077),
     (-355.60235612, -165.20769346, -29.666905585)]
 )
+
+function Δ(model::CPPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
+    _0 = zero(V+T+first(z)+one(eltype(model)))
+    _d = first(_data)
+    ϵ_assoc = model.params.epsilon_assoc.values
+    κ = model.params.bondvol.values
+    κijab = κ[i,j][a,b] 
+    σ = model.params.sigma.values
+    ϵ = model.params.epsilon.values
+    iszero(κijab) && return _0
+    if i == j #use precalculated values
+        dij = _d[i]
+    else
+        dij = σ[i,j]*CPPCSAFT_theta(T,ϵ[i,j])
+    end
+    gij = @f(g_hs,i,j,_data)
+    res = gij*dij^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κijab
+    return res
+end
+
+function  Δ(model::CPPCSAFT, V, T, z,_data=@f(data))
+    ϵ_assoc = model.params.epsilon_assoc.values
+    κ = model.params.bondvol.values
+    σ = model.params.sigma.values
+    ϵ = model.params.epsilon.values
+    _d = first(_data)
+    Δout = assoc_similar(κ,typeof(V+T+first(z)+one(eltype(model))))
+    Δout.values .= false  #fill with zeros, maybe it is not necessary?
+    for (idx,(i,j),(a,b)) in indices(Δout)
+        gij = @f(g_hs,i,j,_data)
+        if i == j #use precalculated values
+            dij = _d[i]
+        else
+            dij = σ[i,j]*CPPCSAFT_theta(T,ϵ[i,j])
+        end
+        Δout[idx] = gij*dij^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κ[i,j][a,b]
+    end
+    return Δout
+end

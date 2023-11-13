@@ -1,0 +1,24 @@
+Clapeyron Database File
+CP-PCSAFT Like Parameters (sites)
+species,n_H,n_e,n_BR
+water,2,2,0
+benzene,0,0,1
+toluene,0,0,1
+ethylbenzene,0,0,1
+n-propylbenzene,0,0,1
+o-xylene,0,0,1
+p-xylene,0,0,1
+mesitylene,0,0,1
+m-diethylbenzene,0,0,1
+p-diisopropylbenzene,0,0,1
+tetralin,0,0,2
+naphthalene,0,0,2
+methylnaphthalene,0,0,2
+1-chloronaphthalene,0,0,2
+biphenyl,0,0,2
+diphenylmethane,0,0,2
+"1,2-diphenylethane",0,0,2
+diphenyl ether,0,0,2
+benzophenone,0,0,2
+indene,0,0,2
+cis-Decalin,0,0,2
