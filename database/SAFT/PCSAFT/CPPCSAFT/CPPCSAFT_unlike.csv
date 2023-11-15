@@ -1,0 +1,6 @@
+Clapeyron Database File
+CP-PCSAFT Pair Parameters
+species1,species2,k,l,source
+carbon dioxide,[C4mim][MeSO4],0.027,0.0,10.1016/j.molliq.2020.113266
+carbon dioxide,[C2mim][EtSO4],0.027,0.0,10.1016/j.molliq.2020.113266
+carbon dioxide,[C2mim][MeSO3],0.027,0.0,10.1016/j.molliq.2020.113266
