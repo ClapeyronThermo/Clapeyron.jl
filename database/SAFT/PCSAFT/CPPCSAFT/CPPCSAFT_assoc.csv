@@ -22,3 +22,6 @@ water,H,diphenyl ether,BR,1242.0,0.228,10.1002/aic.15715
 water,H,benzophenone,BR,1242.0,0.228,10.1002/aic.15715
 water,H,indene,BR,1242.0,0.228,10.1002/aic.15715
 water,H,cis-Decalin,BR,1242.0,0.228,10.1002/aic.15715
+ammonia,H,ammonia,e,985.00,0.63900,10.1016/j.molliq.2020.113266
+methanol,H,methanol,e,2900.0,0.06300,10.1016/j.molliq.2020.113266
+ethanol,H,ethanol,e,2650.0,0.07870,10.1016/j.molliq.2020.113266
