@@ -75,4 +75,3 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::SoaveAlpha
 end
 
 const SRKModel = RK{I,SoaveAlpha,M,T} where {I,M,T}
-

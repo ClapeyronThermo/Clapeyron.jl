@@ -39,7 +39,7 @@ end
 
 """
     idealmodel(model::EoSModel)
-    
+
 retrieves the ideal model from the input's model. if the model is already an idealmodel, return `nothing`
 # Examples:
 ```julia-repl
@@ -92,7 +92,7 @@ Reduced residual Helmholtz free energy.
 - `z` mole amounts, in [mol], by default is `@SVector [1.0]`
 # Outputs:
 - Residual Helmholtz free energy, no units
-You can define your own EoS by adding a method to `a_res` that accepts your custom model. 
+You can define your own EoS by adding a method to `a_res` that accepts your custom model.
 """
 function a_res end
 
@@ -140,7 +140,7 @@ has_sites(::Type{T}) where T <: EoSModel = _has_sites(T)
 @pure function _has_sites(::Type{T}) where T <: EoSModel
     s1 = hasfield(T,:sites)
     if s1
-       return fieldtype(T,:sites) == SiteParam 
+       return fieldtype(T,:sites) == SiteParam
     end
     return false
 end
@@ -151,7 +151,7 @@ has_groups(::Type{T}) where T <: EoSModel = _has_groups(T)
 @pure function _has_groups(::Type{T}) where T <: EoSModel
     s1 = hasfield(T,:groups)
     if s1
-       return fieldtype(T,:groups) <: GroupParameter 
+       return fieldtype(T,:groups) <: GroupParameter
     end
     return false
 end
@@ -163,7 +163,7 @@ _eos_length(model::EoSModel,::Val{false}) = length(model.components)
 
 """
     doi(model)
-Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format. if there isn't a `references` field, it defaults to `default_references(model)` 
+Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format. if there isn't a `references` field, it defaults to `default_references(model)`
 ```julia-repl
 julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.doi(umr)
 1-element Vector{String}:
@@ -221,7 +221,7 @@ This list will displayed by each `EoSModel` on future versions. you can enable/d
 function cite(model::EoSModel,out = :doi)
     keys = fieldnames(typeof(model))
     res = doi(model)
-    
+
     for key in keys
         val = getfield(model,key)
         if val isa EoSModel

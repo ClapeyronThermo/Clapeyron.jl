@@ -112,4 +112,3 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::modWSRuleModel,α,a
     c̄ = dot(z,c)*invn
     return ā,b̄,c̄
 end
-

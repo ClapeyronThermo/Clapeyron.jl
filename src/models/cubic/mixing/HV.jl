@@ -91,4 +91,3 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,
     ā = b̄*(∑ab-gᴱ/_λ)
     return ā,b̄,c̄
 end
-

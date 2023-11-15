@@ -71,4 +71,3 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b
 end
 
 is_splittable(::KayRule) = false
-

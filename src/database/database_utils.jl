@@ -107,12 +107,12 @@ function flattenfilepaths(locations,userlocations::Vector{String})
     return vcat(defaultpaths,userpaths,String[])
 end
 
-flattenfilepaths(locations,userlocations::String) = flattenfilepaths(locations,[userlocations])
+flattenfilepaths(locations,userlocations::AbstractString) = flattenfilepaths(locations,[userlocations])
 
 getpath(location;relativetodatabase = true) = only(getpaths(location; relativetodatabase))
 
 Base.@nospecialize
-function flattenfilepaths(locations,userlocations::Union{NamedTuple,AbstractDict})
+function flattenfilepaths(locations,userlocations)
     return String[]
 end
 Base.@specialize

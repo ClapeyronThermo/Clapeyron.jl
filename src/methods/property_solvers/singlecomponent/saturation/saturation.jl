@@ -30,10 +30,10 @@ Contains parameters: a, b, Tc, Pc, Mw
 julia> p,vl,vv = saturation_pressure(pr,373.15) #default, uses Clapeyron.ChemPotVSaturation
 (96099.38979351855, 2.2674781912892906e-5, 0.03201681565699426)
 
-julia>  p,vl,vv = saturation_pressure(pr,373.15,IsoFugacitySaturation()) #iso fugacity
+julia> p,vl,vv = saturation_pressure(pr,373.15,IsoFugacitySaturation()) #iso fugacity
 (96099.38979351871, 2.2674781912892933e-5, 0.03201681565699359)
 
-julia>  p,vl,vv = saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)) #iso fugacity, with starting point
+julia> p,vl,vv = saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)) #iso fugacity, with starting point
 (96099.38979351871, 2.2674781912892933e-5, 0.03201681565699547)
 ```
 """

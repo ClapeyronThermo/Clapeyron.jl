@@ -73,9 +73,58 @@ function Base.getindex(param::AssocParam,i::Int)
     getindex(param.values,i,i)
 end
 
+function Base.getindex(param::AssocParam,i::AbstractString)
+    idx = findfirst(isequal(i),param.components)
+    isnothing(idx) && throw(BoundsError(param,-1))
+    getindex(param.values,idx,idx)
+end
+
 function Base.getindex(param::AssocParam,i::Int,j::Int) 
     Base.checkbounds(param.components,max(i,j))
     getindex(param.values,i,j)
+end
+
+function Base.getindex(param::AssocParam,i::AbstractString,j::AbstractString)
+    idx_i = findfirst(isequal(i),param.components)
+    idx_j = findfirst(isequal(j),param.components)
+    if idx_i === nothing && idx_j === nothing
+        throw(BoundsError(param,(-1,-1)))
+    elseif idx_i === nothing
+        throw(BoundsError(param,(-1,idx_j)))
+    elseif idx_j === nothing
+        throw(BoundsError(param,(idx_i,-1)))
+    else
+       return param[idx_i::Int,idx_j::Int]
+    end
+end
+
+function Base.getindex(param::AssocParam,i::NTuple{2,String},j::NTuple{2,String})
+    ii = first(i)
+    jj = first(j)
+    aa = last(i)
+    bb = last(j)
+    idx_i,idx_j = _str_to_idx(param,ii,jj)
+    sites_i,sites_j = param.sites[idx_i],param.sites[idx_j]
+    _idx_a = findfirst(isequal(aa),sites_i)
+    _idx_b = findfirst(isequal(bb),sites_j)
+    idx_a = _idx_a === nothing ? 0 : _idx_a
+    idx_b = _idx_b === nothing ? 0 : _idx_b
+    param[idx_i::Int,idx_j::Int][idx_a::Int,idx_b::Int]
+end
+
+function Base.setindex!(param::AssocParam,val,i::NTuple{2,String},j::NTuple{2,String})
+    ii = first(i)
+    jj = first(j)
+    aa = last(i)
+    bb = last(j)
+    idx_i,idx_j = _str_to_idx(param,ii,jj)
+    sites_i,sites_j = param.sites[idx_i],param.sites[idx_j]
+    _idx_a = findfirst(isequal(aa),sites_i)
+    _idx_b = findfirst(isequal(bb),sites_j)
+    idx_a = _idx_a === nothing ? 0 : _idx_a
+    idx_b = _idx_b === nothing ? 0 : _idx_b
+    assoc_view = param[idx_i::Int,idx_j::Int]
+    setindex!(assoc_view,val,idx_a::Int,idx_b::Int)
 end
 
 function AssocParam(
