@@ -93,6 +93,10 @@ function ab_premixing(model::PRModel,mixing::VTPRRule,k = nothing,l = nothing)
     return a,b
 end
 
+function cubic_get_l(model::CubicModel,mixing::VTPRRuleModel,params)
+    return get_k_powmean(params.b.values,3/4)
+end
+
 function mixing_rule(model::PRModel,V,T,z,mixing_model::VTPRRuleModel,α,a,b,c)
     n = sum(z)
     invn = (one(n)/n)

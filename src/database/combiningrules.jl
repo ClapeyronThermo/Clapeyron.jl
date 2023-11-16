@@ -3,6 +3,7 @@ include("combiningrules/implace.jl")
 include("combiningrules/outplace.jl")
 include("combiningrules/group.jl")
 include("combiningrules/assoc.jl")
+include("combiningrules/get_k.jl")
 """
     sigma_LorentzBerthelot(σ::SingleOrPair,ζ::PairParam)::PairParam
     sigma_LorentzBerthelot(σ::SingleOrPair)::PairParam

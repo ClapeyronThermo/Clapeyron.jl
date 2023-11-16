@@ -76,10 +76,14 @@ function ab_premixing(model::PRModel,mixing::UMRRuleModel,k = nothing, l = nothi
     b = model.params.b
     diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
     diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
-    epsilon_LorentzBerthelot!(a,k)
+    epsilon_LorentzBerthelot!(a)
     umr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,0.5)
     kij_mix!(umr_mix,b,l)
     return a,b
+end
+
+function cubic_get_l(model::CubicModel,mixing::UMRRuleModel,params)
+    return get_k_powmean(params.b.values,0.5)
 end
 
 UMR_g_E(model,V,T,z) = excess_gibbs_free_energy(model,V,T,z)
