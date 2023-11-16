@@ -117,3 +117,11 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::WSRuleModel,α,a,b,
     c̄ = dot(z,c)*invn
     return ā,b̄,c̄
 end
+
+function cubic_get_k(model::CubicModel,mixing::WSRuleModel,params)
+    return get_k_geomean(params.a.values)
+end
+
+function cubic_get_l(model::CubicModel,mixing::WSRuleModel,params)
+    return get_k_mean(params.b.values)
+end

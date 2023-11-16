@@ -84,10 +84,14 @@ function ab_premixing(model::PRModel,mixing::gErRuleModel,k = nothing, l = nothi
     b = model.params.b
     diagvalues(a) .= @. Ωa*R̄^2*_Tc^2/_pc
     diagvalues(b) .= @. Ωb*R̄*_Tc/_pc
-    epsilon_LorentzBerthelot!(a,k)
+    epsilon_LorentzBerthelot!(a)
     gEr_mix(bi,bj,lij) = mix_powmean(bi,bj,lij,2/3)
     kij_mix!(gEr_mix,b,l)
     return a,b
+end
+
+function cubic_get_l(model::CubicModel,mixing::gErRuleModel,params)
+    return get_k_powmean(params.b.values,2/3)
 end
 
 __excess_g_res(model,p,T,z,b,c) = excess_g_res(model,p,T,z)
