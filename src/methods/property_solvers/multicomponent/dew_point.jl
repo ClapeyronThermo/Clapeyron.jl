@@ -23,9 +23,9 @@ function index_reduction(method::DewPointMethod,idx_r)
     return method
 end
 
-function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing)
+function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)))
     pure = split_model(model)
-    pure_vals = initial_points_bd_T.(pure,T) #saturation, or aproximation via critical point.
+    pure_vals = initial_points_bd_T.(pure,T,condensables,false) #saturation, or aproximation via critical point.
     p0 = first.(pure_vals)
     vli = getindex.(pure_vals,2)
     vvi = getindex.(pure_vals,3)
@@ -37,6 +37,7 @@ function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing)
     else
         x = x0
     end
+    fix_vi!(pure,vvi,p,T,condensables,:v) #calculate volumes if not-condensables present
     vl0  = dot(vli,x)
     vv0 = dot(vvi,y)
     return p,vl0,vv0,x
@@ -48,7 +49,7 @@ function x0_dew_pressure(model::EoSModel,T,y)
     return x
 end
 
-function dew_pressure_init(model,T,y,vol0,p0,x0)
+function dew_pressure_init(model,T,y,vol0,p0,x0,condensables)
     if !isnothing(x0)
         if !isnothing(p0)
             if !isnothing(vol0)
@@ -62,13 +63,13 @@ function dew_pressure_init(model,T,y,vol0,p0,x0)
                 vl,vv = vol0
                 p0 = pressure(model,vv,T,y)
             else
-                p0,vl0,vv0,_ = __x0_dew_pressure(model,T,y,x0)
+                p0,vl0,vv0,_ = __x0_dew_pressure(model,T,y,x0,condensables)
                 vl = min(vl0,volume(model,p0,T,x0,phase = :l))
                 vv = max(vv0,volume(model,p0,T,y,phase =:v))
             end
         end
     else
-        p00,vl0,vv0,x0 = __x0_dew_pressure(model,T,y)
+        p00,vl0,vv0,x0 = __x0_dew_pressure(model,T,y,nothing,condensables)
         if !isnothing(p0)
             vl = min(vl0,volume(model,p0,T,x0,phase = :l))
             vv = max(vv0,volume(model,p0,T,y,phase = :v))

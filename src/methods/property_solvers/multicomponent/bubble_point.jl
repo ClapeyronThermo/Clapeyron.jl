@@ -23,13 +23,17 @@ function index_reduction(method::BubblePointMethod,idx_r)
     return method
 end
 
-function initial_points_bd_T(pure,T,volatile = true)
+function initial_points_bd_T(pure,T,volatile = true, bubble = true)
     #try without critical point information
     if !volatile
         #the component is not volatile. its gas volume is 0
         vv = zero(one(eltype(pure))+T)
         vl = zero(vv)
-        p = zero(vv)
+        if bubble
+            p = zero(vv)
+        else
+            p = one(vv)/zero(vv) #inf
+        end
         return p,vl,vv
     end
     sat = saturation_pressure(pure,T,crit_retry = false)
@@ -49,11 +53,10 @@ function initial_points_bd_T(pure,T,volatile = true)
     return p0,vl0,vv0
 end
 
-function fix_vli!(pure,vli,p,T,volatiles)
+function fix_vi!(pure,vli,p,T,volatiles,phase)
     for i in eachindex(vli)
         if !volatiles[i]
-            vlii = volume(pure[i],p,T,phase =:l)
-            vli[i] = volume(pure[i],p,T,phase =:l)
+            vli[i] = volume(pure[i],p,T,phase = phase)
         end
     end
 end
@@ -61,7 +64,7 @@ end
 function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillArrays.Fill(true,length(model)))
     #check each T with T_scale, if treshold is over, replace Pi with inf
     pure = split_model(model)
-    pure_vals = initial_points_bd_T.(pure,T,volatiles) #saturation, or aproximation via critical point.
+    pure_vals = initial_points_bd_T.(pure,T,volatiles,true) #saturation, or aproximation via critical point.
     p0 = first.(pure_vals)
     vli = getindex.(pure_vals,2)
     vvi = getindex.(pure_vals,3)
@@ -73,7 +76,7 @@ function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillA
     else
         y = y0
     end
-    fix_vli!(pure,vli,p,T,volatiles) #calculate volumes if not-volatiles present
+    fix_vi!(pure,vli,p,T,volatiles,:l) #calculate volumes if not-volatiles present
     vl0  = dot(vli,x)
     vv0 = dot(vvi,y)
     return p,vl0,vv0,y
