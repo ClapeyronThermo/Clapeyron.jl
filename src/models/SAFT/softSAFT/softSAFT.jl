@@ -17,6 +17,14 @@ function transform_params(::Type{softSAFT},params)
     return saft_lorentz_berthelot(params)
 end
 
+function get_k(model::softSAFTModel)   
+    return get_k_geomean(model.params.epsilon)
+end
+
+function get_l(model::softSAFTModel)   
+    return get_k_mean(model.params.sigma)
+end
+
 """
     softSAFTModel <: SAFTModel
 

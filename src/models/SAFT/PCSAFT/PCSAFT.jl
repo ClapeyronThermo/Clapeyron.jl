@@ -26,10 +26,21 @@ abstract type PCSAFTModel <: SAFTModel end
 @newmodel PCSAFT PCSAFTModel PCSAFTParam{T}
 default_references(::Type{PCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 default_locations(::Type{PCSAFT}) = ["SAFT/PCSAFT","properties/molarmass.csv"]
+
 function transform_params(::Type{PCSAFT},params)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
     return saft_lorentz_berthelot(params)
+end
+
+function get_k(model::PCSAFTModel)   
+    has_groups(model) && return nothing
+    return get_k_geomean(model.params.epsilon)
+end
+
+function get_l(model::PCSAFTModel)   
+    has_groups(model) && return nothing
+    return get_k_mean(model.params.sigma)
 end
 
 """

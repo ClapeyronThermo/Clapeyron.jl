@@ -58,6 +58,10 @@ function transform_params(::Type{CPPCSAFT},params,components)
     return params
 end
 
+function get_l(model::CPPCSAFTModel)   
+    return get_k_mean(model.params.segment)
+end
+
 function recombine_impl!(model::CPPCSAFTModel)
     sigma = model.params.sigma
     epsilon = model.params.epsilon

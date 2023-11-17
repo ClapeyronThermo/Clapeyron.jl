@@ -14,13 +14,22 @@ default_references(::Type{CKSAFT}) = ["10.1021/IE00107A014", "10.1021/ie00056a05
 default_locations(::Type{CKSAFT}) = ["SAFT/CKSAFT","properties/molarmass.csv"]
 function transform_params(::Type{CKSAFT},params)
     k = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     sigma = params["vol"]
     sigma.values .*= 6*0.74048/N_A/1e6/π
     sigma.values .^= 1/3
     epsilon = params["epsilon"]
-    params["sigma"] = sigma_LorentzBerthelot(sigma)
+    params["sigma"] = sigma_LorentzBerthelot(sigma, l)
     params["epsilon"] = epsilon_LorentzBerthelot(epsilon, k)
     return params
+end
+
+function get_k(model::CKSAFT)   
+    return get_k_geomean(model.params.epsilon)
+end
+
+function get_l(model::CKSAFT)   
+    return get_k_mean(model.params.sigma)
 end
 
 export CKSAFT
