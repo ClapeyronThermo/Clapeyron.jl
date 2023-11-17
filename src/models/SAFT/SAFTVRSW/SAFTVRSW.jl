@@ -14,8 +14,9 @@ default_references(::Type{SAFTVRSW}) = ["10.1063/1.473101"]
 default_locations(::Type{SAFTVRSW}) = ["SAFT/SAFTVRSW","properties/molarmass.csv"]
 function transform_params(::Type{SAFTVRSW},params)
     k = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
+    sigma = sigma_LorentzBerthelot(params["sigma"], l)
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     lambda = lambda_squarewell(params["lambda"], sigma)
     params["sigma"] = sigma
@@ -43,6 +44,7 @@ export SAFTVRSW
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `lambda`: Single Parameter (`Float64`) - Soft Well range parameter (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
+- `l`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
@@ -75,6 +77,14 @@ function recombine_impl!(model::SAFTVRSWModel)
     epsilon = epsilon_LorentzBerthelot!(epsilon)
     lambda_squarewell!(lambda,sigma)
     return model
+end
+
+function get_k(model::SAFTVRSWModel)   
+    return get_k_geomean(model.params.epsilon)
+end
+
+function get_l(model::SAFTVRSWModel)   
+    return get_k_mean(model.params.sigma)
 end
 
 function a_res(model::SAFTVRSWModel, V, T, z)

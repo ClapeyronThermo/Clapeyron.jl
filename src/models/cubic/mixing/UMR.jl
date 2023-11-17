@@ -82,10 +82,6 @@ function ab_premixing(model::PRModel,mixing::UMRRuleModel,k = nothing, l = nothi
     return a,b
 end
 
-function cubic_get_l(model::CubicModel,mixing::UMRRuleModel,params)
-    return get_k_powmean(params.b.values,0.5)
-end
-
 UMR_g_E(model,V,T,z) = excess_gibbs_free_energy(model,V,T,z)
 
 function UMR_g_E(model::UNIFACModel,V,T,z)

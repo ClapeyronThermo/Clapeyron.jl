@@ -14,6 +14,7 @@ default_references(::Type{BACKSAFT}) = ["10.1016/s0378-3812(02)00093-6"]
 default_locations(::Type{BACKSAFT}) = ["SAFT/BACKSAFT","properties/molarmass.csv"]
 function transform_params(::Type{BACKSAFT},params)
     k = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     sigma = params["vol"]
     sigma.values .*= 6/N_A/1e6/π
     sigma.values .^= 1/3
@@ -21,6 +22,14 @@ function transform_params(::Type{BACKSAFT},params)
     params["sigma"] = sigma_LorentzBerthelot(sigma)
     params["epsilon"] = epsilon_LorentzBerthelot(epsilon, k)
     return params
+end
+
+function get_k(model::BACKSAFT)   
+    return get_k_geomean(model.params.epsilon)
+end
+
+function get_l(model::BACKSAFT)   
+    return get_k_mean(model.params.sigma)
 end
 
 export BACKSAFT
