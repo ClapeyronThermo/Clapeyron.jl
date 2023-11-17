@@ -94,3 +94,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::LCVMRuleModel,α,a,b,c)
     ā = b̄*R̄*T*(C1*(g_E/(R̄*T)-0.3*Σlogb)+Σxᾱ )
     return ā,b̄,c̄
 end
+
+function cubic_get_l(model::CubicModel,mixing::LCVMRuleModel,params)
+    return get_k_mean(params.b.values)
+end

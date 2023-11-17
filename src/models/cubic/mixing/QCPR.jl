@@ -87,3 +87,11 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
     #dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
     return ā,b̄,c̄
 end
+
+function cubic_get_k(model::CubicModel,mixing::QCPRRuleModel,params)
+    return get_k_geomean(params.a.values)
+end
+
+function cubic_get_l(model::CubicModel,mixing::QCPRRuleModel,params)
+    return copy(mixing.params.l.values)
+end

@@ -70,4 +70,12 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b
     return ā,b̄,c̄
 end
 
+function cubic_get_k(model::CubicModel,mixing::KayRuleModel,params)
+    return get_k_geomean(params.a.values)
+end
+
+function cubic_get_l(model::CubicModel,mixing::KayRuleModel,params)
+    return get_k_mean(params.b.values)
+end
+
 is_splittable(::KayRule) = false
