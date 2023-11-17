@@ -34,3 +34,8 @@ function binary_component_error(method,model)
     throw(DimensionMismatch(msg))
 end
 
+function incorrect_squarematrix_error(model,n)
+    l = length(model)
+    msg = string(model," has $l components, while input matrix is of size $(n)×$(n)")
+    throw(DimensionMismatch(msg))
+end
