@@ -185,7 +185,13 @@ function FugBubblePressure(;vol0 = nothing,
 end
 
 function bubble_pressure_impl(model::EoSModel, T, x,method::FugBubblePressure)
-    p0,vl,vv,y0 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0)
+    if !isnothing(method.nonvolatiles)
+        volatiles = [!in(x,method.nonvolatiles) for x in model.components]
+    else
+        volatiles = fill(true,length(model))
+    end
+    _vol0,_p0,_y0 = method.vol0,method.p0,method.y0
+    p0,vl,vv,y0 = bubble_pressure_init(model,T,x,_vol0,_p0,_y0,volatiles)
     itmax_newton = method.itmax_newton
     itmax_ss = method.itmax_ss
     tol_y = method.tol_y

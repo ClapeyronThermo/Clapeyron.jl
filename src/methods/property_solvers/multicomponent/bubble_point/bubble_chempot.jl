@@ -66,15 +66,22 @@ function ChemPotBubblePressure(;vol0 = nothing,
 end
 
 function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressure)
-    p0,vl,vv,y0 = bubble_pressure_init(model,T,x,method.vol0,method.p0,method.y0)
+    
     if !isnothing(method.nonvolatiles)
         volatiles = [!in(x,method.nonvolatiles) for x in model.components]
+    else
+        volatiles = fill(true,length(model))
+    end
+    _vol0,_p0,_y0 = method.vol0,method.p0,method.y0
+    p0,vl,vv,y0 = bubble_pressure_init(model,T,x,_vol0,_p0,_y0,volatiles)
+    
+    if !isnothing(method.nonvolatiles)
         model_y,volatiles = index_reduction(model,volatiles)
         y0 = y0[volatiles]
     else
-        volatiles = fill(true,length(model))
         model_y = nothing
     end
+    
     v0 = vcat(log10(vl),log10(vv),y0[1:end-1])
     pmix = p_scale(model,x)
     f!(F,z) = Obj_bubble_pressure(model,model_y, F, T, exp10(z[1]),exp10(z[2]),x,z[3:end],pmix,volatiles)

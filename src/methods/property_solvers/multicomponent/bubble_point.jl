@@ -23,8 +23,15 @@ function index_reduction(method::BubblePointMethod,idx_r)
     return method
 end
 
-function initial_points_bd_T(pure,T)
+function initial_points_bd_T(pure,T,volatile = true)
     #try without critical point information
+    if !volatile
+        #the component is not volatile. its gas volume is 0
+        vv = zero(one(eltype(pure))+T)
+        vl = zero(vv)
+        p = zero(vv)
+        return p,vl,vv
+    end
     sat = saturation_pressure(pure,T,crit_retry = false)
     !isnan(first(sat)) && return sat
     
@@ -42,10 +49,19 @@ function initial_points_bd_T(pure,T)
     return p0,vl0,vv0
 end
 
-function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing)
+function fix_vli!(pure,vli,p,T,volatiles)
+    for i in eachindex(vli)
+        if !volatiles[i]
+            vlii = volume(pure[i],p,T,phase =:l)
+            vli[i] = volume(pure[i],p,T,phase =:l)
+        end
+    end
+end
+
+function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillArrays.Fill(true,length(model)))
     #check each T with T_scale, if treshold is over, replace Pi with inf
     pure = split_model(model)
-    pure_vals = initial_points_bd_T.(pure,T) #saturation, or aproximation via critical point.
+    pure_vals = initial_points_bd_T.(pure,T,volatiles) #saturation, or aproximation via critical point.
     p0 = first.(pure_vals)
     vli = getindex.(pure_vals,2)
     vvi = getindex.(pure_vals,3)
@@ -57,11 +73,11 @@ function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing)
     else
         y = y0
     end
+    fix_vli!(pure,vli,p,T,volatiles) #calculate volumes if not-volatiles present
     vl0  = dot(vli,x)
     vv0 = dot(vvi,y)
     return p,vl0,vv0,y
 end
-
 
 function x0_bubble_pressure(model,T,x)
     p,V0_l,V0_v,y = __x0_bubble_pressure(model,T,x)
@@ -69,7 +85,7 @@ function x0_bubble_pressure(model,T,x)
     return y
 end
 
-function bubble_pressure_init(model,T,x,vol0,p0,y0)
+function bubble_pressure_init(model,T,x,vol0,p0,y0,volatiles = FillArrays.Fill(true,length(model)))
     if !isnothing(y0)
         if !isnothing(p0)
             if !isnothing(vol0)
@@ -83,13 +99,13 @@ function bubble_pressure_init(model,T,x,vol0,p0,y0)
                 vl,vv = vol0
                 p0 = pressure(model,vv,T,y0)
             else
-                p0,_,_,_ = __x0_bubble_pressure(model,T,x,y0)
+                p0,_,_,_ = __x0_bubble_pressure(model,T,x,y0,volatiles)
                 vl = volume(model,p0,T,x,phase = :l)
                 vv = volume(model,p0,T,y0,phase =:v)
             end
         end
     else
-        p00,vl0,vv0,y0 = __x0_bubble_pressure(model,T,x)
+        p00,vl0,vv0,y0 = __x0_bubble_pressure(model,T,x,nothing,volatiles)
         if !isnothing(p0)
             vl = volume(model,p0,T,x,phase = :l)
             vv = volume(model,p0,T,y0,phase = :v)
