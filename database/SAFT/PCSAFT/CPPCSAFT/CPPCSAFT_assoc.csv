@@ -1,27 +1,27 @@
 Clapeyron Database File
 CP-PC-SAFT Assoc Parameters
 species1,site1,species2,site2,epsilon_assoc,bondvol,source
-water,H,water,e,2070.00,0.22800,10.1002/aic.15715
+water,H,water,e,2070.0,0.228,10.1002/aic.15715
 water,H,benzene,BR,1242.0,0.228,10.1002/aic.15715
 water,H,toluene,BR,1242.0,0.228,10.1002/aic.15715
 water,H,ethylbenzene,BR,1242.0,0.228,10.1002/aic.15715
-water,H,n-propylbenzene,BR,1242.0,0.228,10.1002/aic.15715
-water,H,o-xylene,BR,1242.0,0.228,10.1002/aic.15715
-water,H,p-xylene,BR,1242.0,0.228,10.1002/aic.15715
-water,H,mesitylene,BR,1242.0,0.228,10.1002/aic.15715
-water,H,m-diethylbenzene,BR,1242.0,0.228,10.1002/aic.15715
-water,H,p-diisopropylbenzene,BR,1242.0,0.228,10.1002/aic.15715
-water,H,tetralin,BR,1242.0,0.228,10.1002/aic.15715
+water,H,propylbenzene~|~n-propylbenzene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",BR,1242.0,0.228,10.1002/aic.15715
+water,H,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",BR,1242.0,0.228,10.1002/aic.15715
+water,H,"mesitylene~|~1,3,5-trimethylbenzene",BR,1242.0,0.228,10.1002/aic.15715
+water,H,"m-diethylbenzene~|~1,3-diethylbenzene",BR,1242.0,0.228,10.1002/aic.15715
+water,H,"p-diisopropylbenzene~|~1,4-diisopropylbenzene~|~1,4-bis(1-methylethyl)-benzene",BR,1242.0,0.228,10.1002/aic.15715
+water,H,"tetralin~|~1,2,3,4-tetrahydronaphthalene",BR,1242.0,0.228,10.1002/aic.15715
 water,H,naphthalene,BR,1242.0,0.228,10.1002/aic.15715
-water,H,methylnaphthalene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,1-methylnaphthalene,BR,1242.0,0.228,10.1002/aic.15715
 water,H,1-chloronaphthalene,BR,1242.0,0.228,10.1002/aic.15715
 water,H,biphenyl,BR,1242.0,0.228,10.1002/aic.15715
 water,H,diphenylmethane,BR,1242.0,0.228,10.1002/aic.15715
-water,H,"1,2-diphenylethane",BR,1242.0,0.228,10.1002/aic.15715
+water,H,"1,2-diphenylethane~|~1,1'-(1,2-ethanediyl)bis-benzene",BR,1242.0,0.228,10.1002/aic.15715
 water,H,diphenyl ether,BR,1242.0,0.228,10.1002/aic.15715
 water,H,benzophenone,BR,1242.0,0.228,10.1002/aic.15715
-water,H,indene,BR,1242.0,0.228,10.1002/aic.15715
-water,H,cis-Decalin,BR,1242.0,0.228,10.1002/aic.15715
-ammonia,H,ammonia,e,985.00,0.63900,10.1016/j.molliq.2020.113266
-methanol,H,methanol,e,2900.0,0.06300,10.1016/j.molliq.2020.113266
-ethanol,H,ethanol,e,2650.0,0.07870,10.1016/j.molliq.2020.113266
+water,H,indene~|~1h-indene,BR,1242.0,0.228,10.1002/aic.15715
+water,H,cis-decalin~|~decahydronaphthalene~|~cis-decahydronaphthalene,BR,1242.0,0.228,10.1002/aic.15715
+ammonia,H,ammonia,e,985.0,0.639,10.1016/j.molliq.2020.113266
+methanol,H,methanol,e,2900.0,0.063,10.1016/j.molliq.2020.113266
+ethanol,H,ethanol,e,2650.0,0.0787,10.1016/j.molliq.2020.113266

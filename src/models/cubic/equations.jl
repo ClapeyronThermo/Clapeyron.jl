@@ -118,7 +118,6 @@ function set_l!(model::CubicModel,l)
     recombine_mixing!(model,model.mixing,FillArrays.Zeros(Int, n, n),l)
 end
 
-
 function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
     Δ1,Δ2 = cubic_Δ(model,z)
