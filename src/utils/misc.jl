@@ -69,7 +69,7 @@ function doi2bib(doi::String)
             Downloads.request(url, output = out, method = "GET",headers = headers)
         end
         if r.status == 200
-            res = String(take!(out))
+            res = strip(String(take!(out)))
         else
             res =  ""
         end
