@@ -98,3 +98,7 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::MHV1RuleModel,α,a,
     ā = b̄*R̄*T*(Σab-1/q*(g_E/(R̄*T)+Σlogb))
     return ā,b̄,c̄
 end
+
+function cubic_get_l(model::CubicModel,mixing::MHV1RuleModel,params)
+    return get_k_mean(params.b.values)
+end

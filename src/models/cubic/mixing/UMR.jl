@@ -108,3 +108,7 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::UMRRuleModel,α,a,b,c)
     ā = b̄*R̄*T*(Σab-1/0.53*g_E/(R̄*T))
     return ā,b̄,c̄
 end
+
+function cubic_get_l(model::CubicModel,mixing::UMRRuleModel,params)
+    return get_k_powmean(params.b.values,0.5)
+end
