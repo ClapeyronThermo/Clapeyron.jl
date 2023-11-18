@@ -55,12 +55,12 @@ function ab_premixing(model::CubicModel,mixing::MixingRule,Tc,Pc,kij,lij)
     Ωa, Ωb = ab_consts(model)
     comps = Tc.components
     n = length(Tc)
-    a = PairParam("a",comps,zeros(n,n),)
+    a = PairParam("a",comps,zeros(n,n))
     b = PairParam("b",comps,zeros(n,n))
-    diagvalues(a) .= Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= Ωb*R̄*_Tc/_pc
-    epsilon_LorentzBerthelot!(a,k)
-    sigma_LorentzBerthelot!(b,l)
+    diagvalues(a) .= @. Ωa*R̄^2*Tc^2/pc
+    diagvalues(b) .= @. Ωb*R̄*Tc/pc
+    epsilon_LorentzBerthelot!(a,kij)
+    sigma_LorentzBerthelot!(b,lij)
     return a,b
 end
 
@@ -114,17 +114,17 @@ function set_k!(model::CubicModel,k)
     if n != n2
         incorrect_squarematrix_error(model,n2)
     end
-    recombine_mixing!(model,model.mixing,k,FillArrays.Zeros(Int, n, n))
+    recombine_mixing!(model,model.mixing,k,nothing)
     return nothing
 end
 
 function set_l!(model::CubicModel,l)
     n = length(model)
-    n2 = LinearAlgebra.checksquare(k)
+    n2 = LinearAlgebra.checksquare(l)
     if n != n2
         incorrect_squarematrix_error(model,n2)
     end
-    recombine_mixing!(model,model.mixing,FillArrays.Zeros(Int, n, n),l)
+    recombine_mixing!(model,model.mixing,nothing,l)
     return nothing
 end
 
