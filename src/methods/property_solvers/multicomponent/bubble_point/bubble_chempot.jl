@@ -173,13 +173,19 @@ function ChemPotBubbleTemperature(;vol0 = nothing,
 end
 
 function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemperature)
-    T0,vl,vv,y0 = bubble_temperature_init(model,p,x,method.vol0,method.T0,method.y0)
     if !isnothing(method.nonvolatiles)
         volatiles = [!in(x,method.nonvolatiles) for x in model.components]
+    else
+        volatiles = fill(true,length(model))
+    end
+
+    _vol0,_T0,_y0 = method.vol0,method.T0,method.y0
+    T0,vl,vv,y0 = bubble_temperature_init(model,p,x,_vol0,_T0,_y0,volatiles)
+
+    if !isnothing(method.nonvolatiles)
         model_y,volatiles = index_reduction(model,volatiles)
         y0 = y0[volatiles]
     else
-        volatiles = fill(true,length(model))
         model_y = nothing
     end
     v0 = vcat(T0,log10(vl),log10(vv),y0[1:end-1])

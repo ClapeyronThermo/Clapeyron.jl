@@ -1,6 +1,6 @@
 
 """
-    DewPointMethod <: ThermodynamicMethod 
+    DewPointMethod <: ThermodynamicMethod
 
 Abstract type for `dew_pressure` and `dew_temperature` routines.
 
@@ -12,7 +12,7 @@ abstract type DewPointMethod <: ThermodynamicMethod end
 
 function index_reduction(method::DewPointMethod,idx_r)
     if hasfield(typeof(method),:x0)
-        if !isnothing(method.x0) 
+        if !isnothing(method.x0)
             method_r = deepcopy(method)
             x0_new = method.x0[idx_r]
             resize!(method_r.x0,length(x0_new))
@@ -23,9 +23,8 @@ function index_reduction(method::DewPointMethod,idx_r)
     return method
 end
 
-function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)))
-    pure = split_model(model)
-    pure_vals = initial_points_bd_T.(pure,T,condensables,false) #saturation, or aproximation via critical point.
+function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model), crit = nothing)
+    pure_vals = initial_points_bd_T.(pure,T,crit,condensables,false) #saturation, or aproximation via critical point.
     p0 = first.(pure_vals)
     vli = getindex.(pure_vals,2)
     vvi = getindex.(pure_vals,3)
@@ -131,90 +130,62 @@ function dew_pressure(model::EoSModel, T, y,method::DewPointMethod)
     end
 end
 
-function antoine_dew(pure,T,y,crit)
-    pᵢ = aprox_psat.(pure,T,crit)
-    p = sum(y./pᵢ)^(-1)
-    x = y.*p./pᵢ
-    xsum = 1/∑(x)
-    x    = x.*xsum
-    return p,x
+function antoine_dew(pure,T,y,crit,condensables)
+    pinv = zero(T+first(x)+first(crit)[1])
+    for i in 1:length(pure)
+        if condensables[i] #if non-volatile, pi -> 0
+            pᵢ = aprox_psat(pure,T,crit)
+            pᵢyᵢ = y[i]/pᵢ
+            pinv += pᵢyᵢ
+        end
+    end
+    p = 1/pinv
+    return p
 end
 
-function __x0_dew_temperature(model::EoSModel,p,y)
-    comps = length(model)
+function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)))
     pure = split_model(model)
     crit = crit_pure.(pure)
+    sat = initial_points_bd_p.(pure,crit,p,condensables,false)
     
-    p_c = [tup[2] for tup in crit]
-    V_c = [tup[3] for tup in crit]
-    _0 = zero(p+first(y))
-    replaceP = p_c .< p
-    T_sat = fill(_0,comps)
-    V_l_sat = fill(_0,comps)
-    V_v_sat = fill(_0,comps)
-    for i in 1:comps
-        crit_i = crit[i]
-        Tci,Pci,Vci = crit_i
-        if !replaceP[i]
-            Ti,Vli,Vvi = saturation_temperature(pure[i],p,AntoineSaturation(crit = crit_i))
-        else 
-            Ti,Vli,Vvi = Tci,Vci,1.2*Vci  
-        end
-        T_sat[i] = Ti
-        V_l_sat[i] = Vli
-        V_v_sat[i] = Vvi
-    end    
-
-    V0_l = zero(p)
-    V0_v = zero(p)
-    if !any(replaceP) #p < min(pci), proceed with entalphy aproximation:
-	    dPdTsat = (VT_entropy.(pure,V_v_sat,T_sat) .- VT_entropy.(pure,V_l_sat,T_sat)) ./ (V_v_sat .- V_l_sat)
-        x = copy(dPdTsat)
+    if Tx0 !== nothing
+        T0 = Tx0
+    elseif !any(crit_i -> crit_i[2] < p,crit) #p < min(pci), proceed with entalphy aproximation:
+        dPdTsat = __dPdTsat.(pure,sat,condensables,false)
         ##initialization for T, dew form
         #= we solve the aproximate problem of finding T such as:
         p = sum(yi*pi(T))
         where pi ≈ p + dpdt(T-T0)
         for a dew specification:
-        sum(yi/(1 + dpdt(T-T0)/p)) - 1 = 0
+        sum(xi*pi(T))/p - 1 = 0
+        sum(yi/(pi/p))  - 1 = 0
+        sum(yi/(1 + dpdt(T-T0)/p)) - 1 = 0 
+        special case: non-condensable:
+        pi -> infinity p*yi/pi -> 0 
         =#
         function f0p(T)
-            res = zero(T)
-            for i in eachindex(dPdTsat)
-                pr_i = 1 + dPdTsat[i]*(T-T_sat[i])/p
-                res += y[i]/pr_i
+            resinv = zero(T+first(y)+first(crit)[1])
+            for i in 1:length(pure)
+                if condensables[i] #if non-volatile, pi -> 0
+                    Ti = sat[i][1]
+                    pᵢ = p + dPdTsat[i]*(T - Ti)
+                    pᵢyᵢ = y[i]/pᵢ
+                    resinv += pᵢyᵢ
+                end
             end
-            return res - 1
+            return 1/resinv - p
         end
-        fTd = Roots.ZeroProblem(f0p,dot(T_sat,y))
+        T00 = sum(y[i]*first(sat[i]) for i in 1:length(model))
+        fTd = Roots.ZeroProblem(f0p,T00)
         T0 = Roots.solve(fTd,Roots.Order0())
-        sat = saturation_pressure.(pure,T0)
-        for i in 1:comps
-            V_l_sat[i] = sat[i][2]
-            V_v_sat[i] = sat[i][3]
-        end
-        x .= y ./ first.(sat)
-        x ./= sum(x) 
     else
-        Tb = extrema(T_sat).*(0.9,1.1)
-        
-        f(T) = antoine_dew(pure,T,y,crit)[1]-p
+        Tb = extrema(first,sat).*(0.9,1.1)
+        f(T) = antoine_dew(pure,T,y,crit,condensables) - p
         fT = Roots.ZeroProblem(f,Tb)
         T0 = Roots.solve(fT,Roots.Order0())
-        p,x = antoine_dew(pure,T0,y,crit)
     end
-    V0_l = zero(p)
-    V0_v = zero(p)
-
-    for i in 1:comps
-        if !replaceP[i]
-            V0_v += y[i]*V_v_sat[i]
-            V0_l += x[i]*V_l_sat[i]
-        else
-            V0_v += y[i]*V_c[i]*1.2
-            V0_l += x[i]*V_c[i]
-        end
-    end
-    return T0,V0_l,V0_v,x
+    _,vl0,vv0,x = __x0_dew_pressure(model,T0,y,nothing,condensables,pure,crit)
+    return T0,vl0,vv0,x
 end
 
 function x0_dew_temperature(model::EoSModel,p,y)
@@ -224,7 +195,7 @@ function x0_dew_temperature(model::EoSModel,p,y)
     return x
 end
 
-function dew_temperature_init(model,p,y,vol0,T0,x0)
+function dew_temperature_init(model,p,y,vol0,T0,x0,condensables)
     if !isnothing(x0)
         if !isnothing(T0)
             if !isnothing(vol0)
@@ -234,7 +205,7 @@ function dew_temperature_init(model,p,y,vol0,T0,x0)
                 vv = volume(model,p,T0,y,phase =:v)
             end
         else
-            T0,vl0,vv0,_ = __x0_dew_temperature(model,p,y)
+            T0,vl0,vv0,_ = __x0_dew_temperature(model,p,y,T0,condensables)
             if !isnothing(vol0)
                 vl,vv = vol0
             else
@@ -243,7 +214,7 @@ function dew_temperature_init(model,p,y,vol0,T0,x0)
             end
         end
     else
-        T00,vl0,vv0,x0 = __x0_dew_temperature(model,p,y)
+        T00,vl0,vv0,x0 = __x0_dew_temperature(model,p,y,T0,condensables)
         if !isnothing(T0)
             vl = min(vl0,volume(model,p,T0,x0,phase = :l))
             vv = max(vv0,volume(model,p,T0,y,phase = :v))
@@ -313,14 +284,14 @@ function dew_temperature(model::EoSModel,p,y,method::DewPointMethod)
 end
 
 include("dew_point/dew_chempot.jl")
-include("dew_point/dew_fugacity.jl") 
+include("dew_point/dew_fugacity.jl")
 include("dew_point/dew_activity.jl")
 
 function init_preferred_method(method::typeof(dew_pressure),model::EoSModel,kwargs)
-    return ChemPotDewPressure(;kwargs...) 
+    return ChemPotDewPressure(;kwargs...)
 end
 
 function init_preferred_method(method::typeof(dew_temperature),model::EoSModel,kwargs)
-    return ChemPotDewTemperature(;kwargs...) 
+    return ChemPotDewTemperature(;kwargs...)
 end
 
