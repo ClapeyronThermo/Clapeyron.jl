@@ -165,15 +165,21 @@ function ChemPotDewTemperature(;vol0 = nothing,
 end
 
 function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
-    T0,vl,vv,x0 = dew_temperature_init(model,p,y,method.vol0,method.T0,method.x0)
     if !isnothing(method.noncondensables)
         condensables = [!in(x,method.noncondensables) for x in model.components]
+    else
+        condensables = fill(true,length(model))
+    end
+
+    _vol0,_T0,_x0 = method.vol0,method.T0,method.x0
+    T0,vl,vv,x0 = dew_temperature_init(model,p,y,_vol0,_T0,_x0,condensables)
+    if !isnothing(method.noncondensables)
         model_x,condensables = index_reduction(model,condensables)
         x0 = x0[condensables]
     else
-        condensables = fill(true,length(model))
         model_x = nothing
     end
+
     v0 = vcat(T0,log10(vl),log10(vv),x0[1:end-1])
     pmix = p_scale(model,y)
     f!(F,z) = Obj_dew_temperature(model,model_x, F, p, z[1], exp10(z[2]), exp10(z[3]), z[4:end],y, pmix, condensables)

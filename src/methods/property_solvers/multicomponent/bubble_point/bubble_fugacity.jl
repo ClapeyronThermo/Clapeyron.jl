@@ -388,7 +388,13 @@ function FugBubbleTemperature(;vol0 = nothing,
 end
 
 function bubble_temperature_impl(model::EoSModel, p, x, method::FugBubbleTemperature)
-    T0,vl,vv,y0 = bubble_temperature_init(model,p,x,method.vol0,method.T0,method.y0)
+    if !isnothing(method.nonvolatiles)
+        volatiles = [!in(x,method.nonvolatiles) for x in model.components]
+    else
+        volatiles = fill(true,length(model))
+    end
+    _vol0,_T0,_y0 = method.vol0,method.T0,method.y0
+    T0,vl,vv,y0 = bubble_temperature_init(model,p,x,_vol0,_T0,_y0,volatiles)
     itmax_newton = method.itmax_newton
     itmax_ss = method.itmax_ss
     tol_y = method.tol_y
