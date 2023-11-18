@@ -51,6 +51,25 @@ end
 
 recombine_impl!(model::QCPRRule) = model
 
+function ab_premixing(model::PRModel,mixing::QCPRRuleModel,kij,lij)
+    Tc = model.params.Tc
+    Pc = model.params.Pc
+    Ωa, Ωb = ab_consts(model)
+    comps = Tc.components
+    n = length(Tc)
+    a = model.params.a
+    b = model.params.b
+    aii,bii = diagvalues(a),diagvalues(b)
+    @. aii = Ωa*R̄^2*Tc^2/Pc
+    @. bii = Ωb*R̄*Tc/Pc
+    epsilon_LorentzBerthelot!(a,kij)
+    sigma_LorentzBerthelot!(b)
+    if lij !== nothing
+        mixing.params.l.values .= lij
+    end
+    return a,b
+end
+
 function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
     n = sum(z)
     invn = (one(n)/n)
@@ -95,3 +114,5 @@ end
 function cubic_get_l(model::CubicModel,mixing::QCPRRuleModel,params)
     return copy(mixing.params.l.values)
 end
+
+export QCPRRule

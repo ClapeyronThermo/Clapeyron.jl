@@ -37,7 +37,7 @@ function get_k_geomean(p::AbstractMatrix)
         p_i = p[i,i]
         for j in 1:n
             p_j = p[j,j]
-            #kij = 0.5*(pi + pj)*(1-kij)
+            #pij = sqrt(pi * pj)*(1-kij)
             k[i,j] = 1 - p[i,j]/sqrt(p_i*p_j)
         end
     end
