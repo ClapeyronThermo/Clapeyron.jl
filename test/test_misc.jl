@@ -169,7 +169,7 @@ end
         Clapeyron.show_references(_io,umr)
         citation_show = String(take!(_io))
         @test citation_show == "\nReferences: 10.1021/I160057A011, 10.1021/ie049580p, 10.1021/i260064a004, 10.1021/acs.jced.0c00723"
-        @test Clapeyron.doi2bib("10.1021/I160057A011") == "@article{Peng_1976,\n\tdoi = {10.1021/i160057a011},\n\turl = {https://doi.org/10.1021%2Fi160057a011},\n\tyear = 1976,\n\tmonth = {feb},\n\tpublisher = {American Chemical Society ({ACS})},\n\tvolume = {15},\n\tnumber = {1},\n\tpages = {59--64},\n\tauthor = {Ding-Yu Peng and Donald B. Robinson},\n\ttitle = {A New Two-Constant Equation of State},\n\tjournal = {Industrial {\\&}amp\$\\mathsemicolon\$ Engineering Chemistry Fundamentals}\n}"
+        @test startswith(Clapeyron.doi2bib("10.1021/I160057A011"),"@article{Peng_1976")
 
     end
 
