@@ -108,10 +108,13 @@ function a_2(model ::PPCSAFTModel, V, T, z, _data=@f(data))
         _J2_ii = @f(J2,i,i,η,m,ϵ)
         zᵢ = z[i]
         μ̄²ᵢ = μ̄²[i]
+        iszero(μ̄²ᵢ) && continue
         _a_2 +=zᵢ^2*μ̄²ᵢ^2/σ[i,i]^3*_J2_ii
         for j ∈ (i+1):nc
+            μ̄²ⱼ = μ̄²[j]
+            iszero(μ̄²ⱼ) && continue
             _J2_ij = @f(J2,i,j,η,m,ϵ)
-            _a_2 += 2*zᵢ*z[j]*μ̄²ᵢ*μ̄²[j]/σ[i,j]^3*_J2_ij
+            _a_2 += 2*zᵢ*z[j]*μ̄²ᵢ*μ̄²ⱼ/σ[i,j]^3*_J2_ij
         end
     end
     _a_2 *= -π*ρ/(T*T)/(∑z*∑z)
@@ -130,12 +133,14 @@ function a_3(model ::PPCSAFTModel, V, T, z, _data=@f(data))
     nc = length(model)
 
     @inbounds for i ∈ 1:nc
-        _J3_iii = @f(J3,i,i,i,η,m)
         zi,μ̄²i = z[i],μ̄²[i]
+        iszero(μ̄²i) && continue
+        _J3_iii = @f(J3,i,i,i,η,m)
         a_3_i = zi*μ̄²i/σ[i,i]
         _a_3 += a_3_i^3*_J3_iii
         for j ∈ i+1:nc
             zj,μ̄²j = z[j],μ̄²[j]
+            iszero(μ̄²j) && continue
             σij⁻¹ = 1/σ[i,j]
             a_3_iij = zi*μ̄²i*σij⁻¹
             a_3_ijj = zj*μ̄²j*σij⁻¹
@@ -145,6 +150,7 @@ function a_3(model ::PPCSAFTModel, V, T, z, _data=@f(data))
             _a_3 += 3*a_3_iij*a_3_ijj*(a_3_i*_J3_iij + a_3_j*_J3_ijj)
             for k ∈ j+1:nc
                 zk,μ̄²k = z[k],μ̄²[k]
+                iszero(μ̄²k) && continue
                 _J3_ijk = @f(J3,i,j,k,η,m)
                 _a_3 += 6*zi*zj*zk*μ̄²i*μ̄²j*μ̄²k*σij⁻¹/σ[i,k]/σ[j,k]*_J3_ijk
             end
@@ -157,7 +163,7 @@ end
 function J2(model, V, T, z, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵ = model.params.epsilon.values)
     corr_a = PPCSAFTconsts.corr_a
     corr_b = PPCSAFTconsts.corr_b
-    m̄ = min(sqrt(m[i]*m[j]),2*one(η))
+    m̄ = min(sqrt(m[i]*m[j]),2*one(m[i]))
     ϵT = ϵ[i,j]/T
     aij = _ppcsaft_corr_poly(corr_a,m̄)
     bij = _ppcsaft_corr_poly(corr_b,m̄)
@@ -167,7 +173,7 @@ end
 
 function J3(model, V, T, z, i, j, k, η = @f(ζ,3),m = model.params.segment.values)
     corr_c = PPCSAFTconsts.corr_c
-    m̄ = min(cbrt(m[i]*m[j]*m[k]),2*one(η))
+    m̄ = min(cbrt(m[i]*m[j]*m[k]),2*one(m[i]))
     cijk = _ppcsaft_corr_poly(corr_c,m̄)
     return evalpoly(η,cijk)
 end
