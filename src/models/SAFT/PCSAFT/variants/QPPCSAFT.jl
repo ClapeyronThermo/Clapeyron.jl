@@ -79,14 +79,6 @@ function a_res(model ::QPPCSAFTModel, V, T, z)
     return @f(a_hc,_data) + @f(a_disp,_data) + @f(a_assoc,_data) + @f(a_mp,_data)
 end
 
-# function data(model::QPPCSAFTModel,V,T,z)
-#     _d = @f(d)
-#     ζ0,ζ1,ζ2,ζ3 = @f(ζ0123,_d)
-#     m = model.params.segment.values
-#     m̄ = dot(z, m)/sum(z)
-#     return (_d,ζ0,ζ1,ζ2,ζ3,m̄)
-# end
-
 function a_mp(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
     μ̄² = model.params.dipole2.values
     Q̄² = model.params.quadrupole2.values
@@ -120,8 +112,6 @@ end
 
 # Deals only with DD & QQ
 function a_2_qq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
-    _, qp_comps = @f(polar_comps)
-    if isempty(qp_comps) return 0. end
     Q̄² = model.params.quadrupole2.values
     _,_,_,_,η,_ = _data
     ∑z = sum(z)
@@ -130,13 +120,16 @@ function a_2_qq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
     m = model.params.segment.values
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
-    @inbounds for (idx, i) ∈ enumerate(qp_comps)
-        _J2_ii = @f(J2,:QQ,i,i,η,m,ϵ)
-        zᵢ = z[i]
-        Q̄²ᵢ = Q̄²[i]
+    T⁻¹ = 1/T
+    for i ∈ @comps
+        ϵTii,zᵢ,Q̄²ᵢ = ϵ[i,i]*T⁻¹,z[i],Q̄²[i]
+        iszero(Q̄²ᵢ) && continue
+        _J2_ii = @f(J2,:QQ,i,i,η,m,ϵTii)
         _a_2 +=zᵢ^2*Q̄²ᵢ^2/σ[i,i]^7*_J2_ii
-        for j ∈ qp_comps[idx+1:end]
-            _J2_ij = @f(J2,:QQ,i,j,η,m,ϵ)
+        for j ∈ 1:(i-1)
+            Q̄²ⱼ = Q̄²[j]
+            iszero(Q̄²ⱼ) && continue
+            _J2_ij = @f(J2,:QQ,i,j,η,m,ϵ[i,j]*T⁻¹)
             _a_2 += 2*zᵢ*z[j]*Q̄²ᵢ*Q̄²[j]/σ[i,j]^7*_J2_ij
         end
     end
@@ -145,6 +138,31 @@ function a_2_qq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
 end
 
 function a_2_dq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
+    
+    Q̄² = model.params.quadrupole2.values
+    μ̄² = model.params.dipole2.values
+    _,_,_,_,η,_ = _data
+    ∑z = sum(z)
+    ρ = N_A*∑z/V
+    _a_2 = zero(T+V+first(z))
+    m = model.params.segment.values
+    ϵ = model.params.epsilon.values
+    T⁻¹ = 1/T
+    σ = model.params.sigma.values
+    for i ∈ @comps
+        ϵi,zi,μ̄²i,Q̄²i = ϵ[i,i],z[i],μ̄²[i],Q̄²[i]
+        iszero(μ̄²i) && continue
+        for j ∈ @comps
+            ϵij,zj,μ̄²j,Q̄²j = ϵ[i,j],z[j],μ̄²[j],Q̄²[j]
+            iszero(Q̄²j) && continue
+            σij5 = σ[i,j]^5
+            ϵ_TS =  ϵij*T⁻¹
+            _J2_ij = @f(J2,:DQ,i,j,η,m,ϵij*T⁻¹)
+            _a_2 += zi*zj*μ̄²i*Q̄²j/σij5*_J2_ij
+        end
+    end
+    _a_2 *= -π*9/4*ρ/(T*T)/(∑z*∑z)
+    return _a_2
     dp_comps, qp_comps = @f(polar_comps)
     Q̄² = model.params.quadrupole2.values
     μ̄² = model.params.dipole2.values
@@ -154,11 +172,11 @@ function a_2_dq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
     _a_2 = zero(T+V+first(z))
     m = model.params.segment.values
     ϵ = model.params.epsilon.values
-    ϵ_TS = [sqrt(ϵ[i,i]*ϵ[j,j]) for i ∈ @comps, j ∈ @comps]
+    #ϵ_TS = [sqrt(ϵ[i,i]*ϵ[j,j]) for i ∈ @comps, j ∈ @comps]
     σ = model.params.sigma.values
     @inbounds for i ∈ dp_comps
         for j ∈ qp_comps
-            _J2_ij = @f(J2,:DQ,i,j,η,m,ϵ_TS)
+            _J2_ij = @f(J2,:DQ,i,j,η,m)
             _a_2 += z[i]*z[j]*μ̄²[i]*Q̄²[j]/σ[i,j]^5*_J2_ij
         end
     end
@@ -167,9 +185,7 @@ function a_2_dq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
 end
 
 function a_3_qq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
-    _, qp_comps = @f(polar_comps)
     _0 = zero(T+V+first(z))
-    if isempty(qp_comps) return _0 end
     Q̄² = model.params.quadrupole2.values
     ∑z = sum(z)
     ρ = N_A*∑z/V
@@ -177,13 +193,16 @@ function a_3_qq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
     _a_3 = _0
     m = model.params.segment.values
     σ = model.params.sigma.values
-    @inbounds for (idx_i,i) ∈ enumerate(qp_comps)
-        _J3_iii = @f(J3,:QQ,i,i,i,η,m)
+    nc = length(model)
+    for i ∈ 1:nc
         zi,Q̄²i = z[i],Q̄²[i]
+        iszero(Q̄²i) && continue
+        _J3_iii = @f(J3,:QQ,i,i,i,η,m)
         a_3_i = zi*Q̄²i/σ[i,i]^3
         _a_3 += a_3_i^3*_J3_iii
-        for (idx_j,j) ∈ enumerate(qp_comps[idx_i+1:end])
+        for j ∈ i+1:nc
             zj,Q̄²j = z[j],Q̄²[j]
+            iszero(Q̄²j) && continue
             σij⁻³ = 1/σ[i,j]^3
             a_3_iij = zi*Q̄²i*σij⁻³
             a_3_ijj = zj*Q̄²j*σij⁻³
@@ -191,8 +210,9 @@ function a_3_qq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
             _J3_iij = @f(J3,:QQ,i,i,j,η,m)
             _J3_ijj = @f(J3,:QQ,i,j,j,η,m)
             _a_3 += 3*a_3_iij*a_3_ijj*(a_3_i*_J3_iij + a_3_j*_J3_ijj)
-            for k ∈ qp_comps[idx_i+idx_j+1:end]
+            for k ∈ j+1:nc
                 zk,Q̄²k = z[k],Q̄²[k]
+                iszero(Q̄²k) && continue
                 _J3_ijk = @f(J3,:QQ,i,j,k,η,m)
                 _a_3 += 6*zi*zj*zk*Q̄²i*Q̄²j*Q̄²k*σij⁻³/(σ[i,k]*σ[j,k])^3*_J3_ijk
             end
@@ -203,7 +223,6 @@ function a_3_qq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
 end
 
 function a_3_dq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
-    dp_comps, qp_comps = @f(polar_comps)
     μ̄² = model.params.dipole2.values
     Q̄² = model.params.quadrupole2.values
     _,_,_,_,η,_ = _data
@@ -212,13 +231,23 @@ function a_3_dq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
     _a_3 = zero(T+V+first(z))
     m = model.params.segment.values
     σ = model.params.sigma.values
-    @inbounds for i ∈ dp_comps
-        for j ∈ union(dp_comps, qp_comps)
-            for k ∈ qp_comps
+    nc = length(model)
+    @inbounds for i ∈ 1:nc#dp_comps
+        μ̄²i,zi = μ̄²[i],z[i]
+        iszero(μ̄²i) && continue
+        σi = σ[i,i]
+        for j ∈ 1:nc #union(dq_comps,qp_comps)
+            μ̄²j,zj,Q̄²j = μ̄²[i],z[j],Q̄²[j]
+            iszero(μ̄²j) | iszero(Q̄²j) && continue
+            σj = σ[j,j]
+            σij = σ[i,j]
+            for k ∈ 1:nc#qp_comps
+                μ̄²k,zk,Q̄²k = μ̄²[k],z[k],Q̄²[k]
+                iszero(Q̄²k) && continue
                 _J3_ijk = @f(J3,:DQ,i,j,k,η,m)
-                _a_3 += z[i]*z[j]*z[k]*σ[i,i]/
-                    (σ[k,k]*(σ[i,j]*σ[i,k]*σ[j,k])^2)*
-                    μ̄²[i]*Q̄²[k]*(σ[j,j]*μ̄²[j]+1.19374/σ[j,j]*Q̄²[j])*_J3_ijk
+                _a_3 += zi*zj*zk*σi/
+                    (σ[k,k]*(σij*σ[i,k]*σ[j,k])^2)*
+                    μ̄²i*Q̄²k*(σj*μ̄²j+1.19374/σj*Q̄²j)*_J3_ijk
             end
         end
     end
@@ -229,9 +258,9 @@ end
 function polar_comps(model, V, T, z)
     μ̄² = model.params.dipole2.values
     Q̄² = model.params.quadrupole2.values
-    dipole_comps = []
-    quadrupole_comps = []
-    for i in @comps
+    dipole_comps = Int[]
+    quadrupole_comps = Int[]
+    for i ∈ @comps
         if !iszero(μ̄²[i]) push!(dipole_comps,i) end
         if !iszero(Q̄²[i]) push!(quadrupole_comps,i) end
     end
@@ -239,46 +268,52 @@ function polar_comps(model, V, T, z)
 end
 
 
-function J2(model::QPPCSAFTModel, V, T, z, type::Symbol, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵ = model.params.epsilon.values)
-    ϵT⁻¹ = ϵ[i,j]/T
+function J2(model::QPPCSAFTModel, V, T, z, type::Symbol, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵT⁻¹ = model.params.epsilon.values[i,j]/T)
     m̄ = sqrt(m[i]*m[j])
-    consts = type == :QQ ? QQ_consts : DQ_consts
-    order = type == :QQ ? 5 : 4
-    m̄1 = 1.
+    m̄1 = one(m̄)
     m̄2 = (m̄-1)/m̄
     m̄3 = m̄2*(m̄-2)/m̄
     m̄i = (m̄1,m̄2,m̄3)
-    aij = NTuple{order}(dot(m̄i,ai) for ai in consts.corr_a)
-    bij = NTuple{order}(dot(m̄i,bi) for bi in consts.corr_b)
-    cij = aij .+ bij .* ϵT⁻¹
-    return evalpoly(η,cij)
+    if type == :QQ
+        aij_qq = ntuple(i -> dot(m̄i,QQ_consts.corr_a[i]),Val(5))
+        bij_qq = ntuple(i -> dot(m̄i,QQ_consts.corr_b[i]),Val(5))
+        #aij = NTuple{5,Float64}(m̄ for ai in QQ_consts.corr_a)
+        #bij = NTuple{5,Float64}(dot(m̄i,bi) for bi in QQ_consts.corr_b)
+        cij_qq = aij_qq .+ bij_qq .* ϵT⁻¹
+        return evalpoly(η,cij_qq)
+    else
+        aij_dq = ntuple(i -> dot(m̄i,DQ_consts.corr_a[i]),Val(4))
+        bij_dq = ntuple(i -> dot(m̄i,DQ_consts.corr_b[i]),Val(4))
+        cij_dq = aij_dq .+ bij_dq .* ϵT⁻¹
+        return evalpoly(η,cij_dq)
+    end
 end
 
 function J3(model::QPPCSAFTModel, V, T, z, type::Symbol, i, j, k, η = @f(ζ,3),m = model.params.segment.values)
     m̄ = cbrt(m[i]*m[j]*m[k])
-    corr_c = type == :QQ ? QQ_consts.corr_c : DQ_consts.corr_c
-    m̄1 = 1.
+    m̄1 = one(m̄)
     m̄2 = (m̄-1)/m̄
     if type == :DQ
-        m̄i = (m̄1,m̄2)
-        cijk = NTuple{4}(dot(m̄i,ci) for ci in corr_c)
-        return evalpoly(η,cijk)
+        m̄i_dq = (m̄1,m̄2)
+        cijk_dq = ntuple(i -> dot(m̄i_dq,DQ_consts.corr_c[i]),Val(4))
+        #cijk = NTuple{4}(dot(m̄i,ci) for ci in DQ_consts.corr_c)
+        return evalpoly(η,cijk_dq)
     end
     m̄3 = m̄2*(m̄-2)/m̄
     m̄i = (m̄1,m̄2,m̄3)
-    cijk = NTuple{5}(dot(m̄i,ci) for ci in corr_c)
-    return evalpoly(η,cijk)
+    cijk_qq = ntuple(i -> dot(m̄i,QQ_consts.corr_c[i]),Val(4))
+    return evalpoly(η,cijk_qq)
 end
 
 const QQ_consts = (
-    corr_a = 
+    corr_a =
     ((1.2378308, 1.2854109,	1.7942954),
     (2.4355031,	-11.465615,	0.7695103),
     (1.6330905,	22.086893,	7.2647923),
     (-1.6118152, 7.4691383,	94.486699),
     (6.9771185,	-17.197772,	-77.148458)),
 
-    corr_b = 
+    corr_b =
     ((0.4542718, -0.813734, 6.8682675),
     (-4.5016264, 10.06403, -5.1732238),
     (3.5858868,	-10.876631, -17.240207),
@@ -290,7 +325,7 @@ const QQ_consts = (
     (6.5318692, -6.7838658, 7.2475888),
     (-16.01478, 20.383246, 3.0759478),
     (14.42597, -10.895984, 0.),
-    (0., 0., 0.))    
+    (0., 0., 0.))
 )
 
 const DQ_consts = (
