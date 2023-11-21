@@ -237,8 +237,8 @@ function a_3_dq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
         iszero(μ̄²i) && continue
         σi = σ[i,i]
         for j ∈ 1:nc #union(dq_comps,qp_comps)
-            μ̄²j,zj,Q̄²j = μ̄²[i],z[j],Q̄²[j]
-            iszero(μ̄²j) | iszero(Q̄²j) && continue
+            μ̄²j,zj,Q̄²j = μ̄²[j],z[j],Q̄²[j]
+            iszero(μ̄²j) & iszero(Q̄²j) && continue
             σj = σ[j,j]
             σij = σ[i,j]
             for k ∈ 1:nc#qp_comps
