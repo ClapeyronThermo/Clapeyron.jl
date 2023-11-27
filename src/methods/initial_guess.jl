@@ -211,7 +211,9 @@ function x0_sat_pure(model,T,z=SA[1.0])
     x0l = min(Vl0,vl)
     
     pl = R̄*T/(x0l - b) - a/(x0l*x0l)
-    if Vv0 > 1e4*one(Vv0)
+    if Tr < 0.01 #Vv probably diverged.
+        x0v = 1e4*one(Vv0)
+    elseif Vv0 > 1e4*one(Vv0)
         #gas volume over threshold.
         #normally this happens at low temperatures. we could suppose that Vl0 is a 
         #"zero-pressure" volume, apply corresponding strategy
