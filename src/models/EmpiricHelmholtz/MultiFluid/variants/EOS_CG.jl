@@ -27,4 +27,4 @@ function EOS_CG(components;verbose = false,Rgas = Rgas())
     Rgas = Rgas,
     verbose = verbose)
 end
-export EOS_LNG
+export EOS_CG
