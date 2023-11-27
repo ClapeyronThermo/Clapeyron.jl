@@ -79,12 +79,11 @@ function check_valid_sat_pure(model,P_sat,V_l,V_v,T,ε0 = 5e7)
     ε <= ε0 && return false
     pl,dpdvl = p∂p∂V(model,V_l,T,SA[1.0])
     pv,dpdvv = p∂p∂V(model,V_v,T,SA[1.0])
-    ε = ε0*eps(typeof(P_sat))
-
+    ε1 = ε0*eps(P_sat)
     return  (dpdvl <= 0)        && #mechanical stability of the liquid phase
             (dpdvv <= 0)        && #mechanical stability of the vapour phase
-            (1 - pl/P_sat < ε)  && #calculated pressure for liquid phase is aproximately the same
-            (1 - pv/P_sat < ε)     #calculated pressure for vapour phase is aproximately the same
+            (1 - pl/P_sat < ε1)  && #calculated pressure for liquid phase is aproximately the same
+            (1 - pv/P_sat < ε1)     #calculated pressure for vapour phase is aproximately the same
     #if ΔV > ε then Vl and Vv are different values
 end
 
