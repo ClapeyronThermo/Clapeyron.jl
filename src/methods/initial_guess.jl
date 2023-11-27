@@ -209,7 +209,24 @@ function x0_sat_pure(model,T,z=SA[1.0])
 
     Vl0,Vv0 = vdw_x0_xat_pure(T,Tc,Pc,Vc)
     x0l = min(Vl0,vl)
-    x0v = min(1e4*one(Vv0),Vv0) #cutoff volume
+    
+    pl = R̄*T/(x0l - b) - a/(x0l*x0l)
+    if Vv0 > 1e4*one(Vv0)
+        #gas volume over threshold.
+        #normally this happens at low temperatures. we could suppose that Vl0 is a 
+        #"zero-pressure" volume, apply corresponding strategy
+        ares = a_res(model, x0l, T, z)
+        lnϕ_liq0 = ares - 1 + log(R̄*T/x0l)
+        P0 = exp(lnϕ_liq0)
+        if isnan(B)
+            x0v = R̄*T/P0
+        else
+            x0v = volume_virial(B,P0,T)
+        end
+        #we have the liquid value of fugacity. calculate
+    else
+        x0v = Vv0
+    end
     return (x0l,x0v)
 end
 
