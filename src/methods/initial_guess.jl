@@ -218,12 +218,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
         ares = a_res(model, x0l, T, z)
         lnϕ_liq0 = ares - 1 + log(R̄*T/x0l)
         P0 = exp(lnϕ_liq0)
-        if isnan(B)
-            x0v = R̄*T/P0
-        else
-            x0v = volume_virial(B,P0,T)
-        end
-        #we have the liquid value of fugacity. calculate
+        x0v = R̄*T/P0
     else
         x0v = Vv0
     end
