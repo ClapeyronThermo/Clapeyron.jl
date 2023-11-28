@@ -12,7 +12,7 @@ Saturation pressure:
 model = PR(["water"])
 Tsat = 373.15
 saturation_pressure(model,Tsat) #using default method (chemical potential with volume base)
-saturation_pressure(model,Tsat,SuperAncSaturation()) #solve using cubic superancilliary
+saturation_pressure(model,Tsat,SuperAncSaturation()) #solve using cubic superancillary
 ```
 
 Bubble point pressure
@@ -35,9 +35,10 @@ end
 
 mw(model::EoSModel) = model.params.Mw.values
 
-function group_molecular_weight(groups::GroupParam,mw,z = @SVector [1.])
+function group_molecular_weight(groups::GroupParameter,mw,z = @SVector [1.])
     res = zero(first(z))
-    for ni in groups.n_flattenedgroups
+    for i in 1:length(groups.n_flattenedgroups)
+        ni = groups.n_flattenedgroups[i]
         mwi = dot(ni,mw)
         res +=z[i]*mwi
     end
@@ -45,6 +46,15 @@ function group_molecular_weight(groups::GroupParam,mw,z = @SVector [1.])
 end
 
 comp_molecular_weight(mw,z = @SVector [1.]) = 0.001*dot(mw,z)
+
+function molecular_weight(model::EoSModel,z=SA[1.0])
+    MW = mw(model)
+    if has_groups(model)
+        return group_molecular_weight(model.groups,MW,z)
+    else
+        return comp_molecular_weight(MW,z)
+    end
+end
 
 const LIQUID_STR = (:liquid,:LIQUID,:L,:l)
 
@@ -146,9 +156,12 @@ function ∑(iterator)
     return sum(iterator)
 end
 
+∑(x::AbstractArray) = sum(x)
+∑(f,x::AbstractArray) = sum(f,x)
+
 function ∑(fn,iterator)
     len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
-    hastype =  (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
+    hastype = (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
     local _0
     if hastype
         _0 = zero(eltype(iterator))
@@ -158,18 +171,6 @@ function ∑(fn,iterator)
     len && iszero(length(iterator)) && return _0
     !len && return mapreduce(fn,Base.add_sum,iterator,init=_0)
     return sum(fn,iterator)
-end
-
-"""
-    xlogx(x::Real)
-Return `x * log(x)` for `x ≥ 0`, handling ``x = 0`` by taking the downward limit.
-
-copied from LogExpFunctions.jl
-"""
-function xlogx(x::Real)
-    _0 = zero(x)
-    iszero(x) && return _0
-    ifelse(x >= _0,x*Base.log(max(_0,x)),_0/_0)
 end
 
 @inline function nan_num(V,T,z)
@@ -217,6 +218,52 @@ function gradient_type(V,T,z::FractionVector)
     return Vector{μ}
 end
 
+
+"""
+    init_preferred_method(method,model,kwargs)
+
+Returns the preferred method for a combination of model and function, with the specified kwargs.
+
+"""
+function init_preferred_method(method,model) end
+
+"""
+    get_k(model)::VarArg{Matrix}
+
+Returns a matrix of "k-values" binary interaction parameters used by the input `model`. Returns `nothing` if the model cannot return the k-values matrix.
+In the case of multiple k-values (as is the case in T-dependent values, i.e: k(T) = k1 + k2*T), it will return a tuple of matrices corresponding to each term in the k-value expression.
+Note that some models do not store the k-value matrix directly, but they contain the value in an indirect manner. for example, cubic EoS store `a[i,j] = f(a[i],a[j],k[i,j])`, where `f` depends on the mixing rule.
+
+"""
+get_k(model::EoSModel) = nothing
+
+"""
+    get_l(model)::VarArg{Matrix}
+
+returns a matrix of "l-values" binary interaction parameters used by the input `model`. Returns `nothing` if the model cannot return the l-values matrix.
+In the case of multiple l-values (as is the case in T-dependent values, i.e: l(T) = l1 + l2*T), it will return a tuple of matrices corresponding to each term in the l-value expression.
+Note that some models do not store the l-value matrix directly, but they contain the value in an indirect manner. for example, cubic EoS store `b[i,j] = f(b[i],b[j],l[i,j])`, where `f` depends on the mixing rule.
+"""
+get_l(model::EoSModel) = nothing
+
+"""
+    set_k!(model,k)
+    set_k!(model,ki...)
+
+Sets the model "k-values" binary interaction parameter to the input matrix `k`. If the input model requires multiple k-matrices (as is the case for T-dependent values, i.e: k(T) = k1 + k2*T), then you must call `set_k!` with all the matrices as input (`set_k!(model,k1,k2)`).
+
+"""
+set_k!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting k-values"))
+
+"""
+    set_l!(model,l)
+    set_l!(model,li...)
+
+Sets the model "l-values" binary interaction parameter to the input matrix `l`. If the input model requires multiple l-matrices (as is the case for T-dependent values, i.e: l(T) = l1 + l2*T), then you must call `set_l!` with all the matrices as input (`set_l!(model,l1,l2)`).
+
+"""
+set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting k-values"))
+
 include("initial_guess.jl")
 include("differentials.jl")
 include("VT.jl")
@@ -225,5 +272,3 @@ include("property_solvers/property_solvers.jl")
 include("tpd.jl")
 include("stability.jl")
 include("pT.jl")
-include("unitful_base.jl")
-include("unitful_methods.jl")

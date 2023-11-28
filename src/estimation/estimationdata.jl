@@ -64,7 +64,7 @@ function EstimationData(filepaths::Vector{String})
         if isempty(species)
             species=["all"]
         end
-        df = read_csv(filepath)
+        df = read_csv(filepath,DefaultOptions,csv_method[:sep])
         csvheaders = String.(Tables.columnnames(df))
         outputs_headers = chop.(String.(filter(x -> startswith(x, "out_") && !any(endswith.(x, "_" .* String.(ERRORTYPES))), csvheaders)), head=4, tail=0)
         inputs_headers = filter(x -> !startswith(x, "out_") && !any(endswith.(x, "_" .* String.(ERRORTYPES))), csvheaders)
@@ -105,7 +105,7 @@ function EstimationData(filepaths_weights::Array{Tuple{Float64, String}})
         if isempty(species)
             species=["all"]
         end
-        df = read_csv(filepaths[i])
+        df = read_csv(filepaths[i],DefaultOptions,csv_method[:sep])
         csvheaders = String.(Tables.columnnames(df))
         outputs_headers = chop.(String.(filter(x -> startswith(x, "out_") && !any(endswith.(x, "_" .* String.(ERRORTYPES))), csvheaders)), head=4, tail=0)
         inputs_headers = filter(x -> !startswith(x, "out_") && !any(endswith.(x, "_" .* String.(ERRORTYPES))), csvheaders)

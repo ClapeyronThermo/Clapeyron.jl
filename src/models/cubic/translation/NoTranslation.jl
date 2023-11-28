@@ -1,10 +1,5 @@
 abstract type NoTranslationModel <: TranslationModel end
-
-struct NoTranslationParam <: EoSParam
-end
-
-@newmodelsimple NoTranslation NoTranslationModel NoTranslationParam
-
+@newmodelsingleton NoTranslation NoTranslationModel
 export NoTranslation
 
 """
@@ -23,21 +18,18 @@ V = V₀ + mixing_rule(cᵢ)
 cᵢ = 0 ∀ i
 ```
 
+## Model Construction Examples
+```
+# Because this model does not have parameters, all those constructors are equivalent:
+translation = NoTranslation()
+translation = NoTranslation("water")
+translation = NoTranslation(["water","carbon dioxide"])
+```
 """
 NoTranslation
-
-function NoTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
-    model = NoTranslation(NoTranslationParam())
-    return model
-end
-
-NoTranslation() = NoTranslation(NoTranslationParam())
 
 function translation(model::CubicModel,V,T,z,translation_model::NoTranslation)
     return FillArrays.Zeros{Float64}(length(z))
 end
 
 recombine_translation!(model::CubicModel,translation_model::NoTranslation) = translation_model
-
-
-is_splittable(::NoTranslation) = false

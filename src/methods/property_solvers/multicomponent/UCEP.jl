@@ -15,11 +15,9 @@ returns:
 function UCEP_mix(model::EoSModel;v0=nothing)
     if v0 === nothing
         v0 = x0_UCEP_mix(model)
-    end  
-    ts = T_scales(model)
-
+    end
     pmix = p_scale(model,Fractions.zeros(length(model))) #(1/n for i in n)
-    f! = (F,x) -> Obj_UCEP_mix(model, F, x[1], x[2], exp10(x[3]), exp10(x[4]), x[5],ts,pmix)
+    f! = (F,x) -> Obj_UCEP_mix(model, F, x[1], x[2], exp10(x[3]), exp10(x[4]), x[5], pmix)
     r  = Solvers.nlsolve(f!,v0[1:end],LineSearch(Newton()))
     sol = Solvers.x_sol(r)
     x = FractionVector(sol[1])
@@ -31,10 +29,10 @@ function UCEP_mix(model::EoSModel;v0=nothing)
     return (T, p, V_l, V_v, x, y)
 end
 
-function Obj_UCEP_mix(model::EoSModel,F,x,y,V_l,V_v,T,ts,ps)
+function Obj_UCEP_mix(model::EoSModel,F,x,y,V_l,V_v,T,ps)
     x̄ = FractionVector(x)
-    F = μp_equality(model,F,T,V_l,V_v,x̄,FractionVector(y),ts,ps) #equality of chemical potentials and pressures
-    L,detM = mixture_critical_constraint(model,V_l,T,x̄) 
+    F = μp_equality(model,F,T,V_l,V_v,x̄,FractionVector(y),ps) #equality of chemical potentials and pressures
+    L,detM = mixture_critical_constraint(model,V_l,T,x̄)
     F[end-1] = L
     F[end] = detM
     return F

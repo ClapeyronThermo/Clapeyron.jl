@@ -31,7 +31,7 @@ function recombine_unifac_cache!(cache::UNIFACFVCache,groups,params)
 end
 
 struct UNIFACFVParam <: EoSParam
-    v::SingleParam{Float64}
+    volume::SingleParam{Float64}
     A::PairParam{Float64}
     R::SingleParam{Float64}
     Q::SingleParam{Float64}
@@ -49,7 +49,6 @@ struct UNIFACFV{c<:EoSModel} <: UNIFACFVModel
     UNIFACFV_cache::UNIFACFVCache
 end
 
-@registermodel UNIFACFV
 export UNIFACFV
 
 """
@@ -63,7 +62,7 @@ export UNIFACFV
     verbose = false)
 
 ## Input parameters
-- `v`: Single Parameter (`Float64`)  - specific volume of species
+- `volume`: Single Parameter (`Float64`)  - specific volume of species `[g/cm^3]`
 - `R`: Single Parameter (`Float64`)  - Normalized group Van der Vals volume
 - `Q`: Single Parameter (`Float64`) - Normalized group Surface Area
 - `A`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Binary group Interaction Energy Parameter
@@ -86,13 +85,13 @@ Gᴱ = nRT(gᴱ(comb) + gᴱ(res) + gᴱ(FV))
 UNIFACFV
 
 function UNIFACFV(components;
-    puremodel = PR,
+    puremodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
 
-    params_species = getparams(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_like.csv"]; userlocations=userlocations, verbose=verbose)
+    params_species = getparams(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_like.csv"]; userlocations=userlocations, verbose=verbose, ignore_headers = ["dipprnumber","smiles","c"])
 
     groups = GroupParam(components, ["Activity/UNIFAC/UNIFACFV/UNIFACFV_groups.csv"]; group_userlocations = group_userlocations, verbose=verbose)
     components = groups.components
@@ -102,9 +101,9 @@ function UNIFACFV(components;
     R  = params["R"]
     Q  = params["Q"]
     Mw = params["Mw"]
-    v  = params_species["volume"]
+    volume  = params_species["volume"]
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
-    packagedparams = UNIFACFVParam(v,A,R,Q,Mw)
+    packagedparams = UNIFACFVParam(volume,A,R,Q,Mw)
     references = String["10.1021/i260064a004"]
     cache = UNIFACFVCache(groups,packagedparams)
     model = UNIFACFV(components,groups,packagedparams,_puremodel,references,cache)
@@ -179,7 +178,7 @@ function lnγ_FV(model::UNIFACFVModel,V,T,z,_data=@f(data))
     w,x = _data
     c = 1.1
     b = 1.28
-    v = model.params.v.values
+    v = model.params.volume.values
     r = model.UNIFACFV_cache.r
 
     v̄  = @. v/(15.17*b*r)

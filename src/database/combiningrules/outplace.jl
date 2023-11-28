@@ -40,6 +40,8 @@ g(Pᵢ,Pᵢ,Qᵢ,Qᵢ,Qᵢ) = Pᵢ
 it is a more general form of `kij_mix`, where `kij_mix(f,P,Q) == pair_mix(g,P,Q)` is correct if:
 ```
 f(Pᵢ,Pⱼ,Qᵢⱼ) = g(Pᵢ,Pⱼ,_,_,Qᵢⱼ)
+
+If you pass a `SingleParam` or a vector as input for `Q`, then `Qᵢⱼ` will be considered 0.
 ```
 """
 function pair_mix(f::F,P::SingleOrPair,Q::SingleOrPair) where F

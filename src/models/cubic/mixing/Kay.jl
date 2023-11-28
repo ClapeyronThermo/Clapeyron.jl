@@ -1,15 +1,13 @@
 abstract type KayRuleModel <: MixingRule end
 
-struct KayRuleParam <: EoSParam
-end
-
-@newmodelsimple KayRule KayRuleModel KayRuleParam
+#we don't use newmodelsingleton here, the default constructor requires passing activity as a param.
+struct KayRule <: KayRuleModel end
 
 """
     KayRule <: KayRuleModel
     
-    KayRule(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    KayRule(components;
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -21,24 +19,28 @@ None
 Kay mixing rule for cubic parameters:
 
 ```
-aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
-bᵢⱼ = (bᵢ + bⱼ)/2
+aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
+bᵢⱼ = (1 - lᵢⱼ)(bᵢ + bⱼ)/2
 ā = b̄*(∑[aᵢⱼxᵢxⱼ√(αᵢ(T)αⱼ(T))/bᵢⱼ])^2
 b̄ = (∑∛(bᵢⱼ)xᵢxⱼ)^3
 c̄ = ∑cᵢxᵢ
 ```
+
+## Model Construction Examples
+```
+# Because this model does not have parameters, all those constructors are equivalent:
+mixing = KayRule()
+mixing = KayRule("water")
+mixing = KayRule(["water","carbon dioxide"])
+```
 """
 KayRule
 
-export KayRule
-
-function KayRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
-    #params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    #acentricfactor = params["acentricfactor"]
-    packagedparams = KayRuleParam()
-    model = KayRule(packagedparams, verbose=verbose)
-    return model
+function KayRule(components; activity = nothing, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+    KayRule()
 end
+
+export KayRule
 
 function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b,c)
     n = sum(z)
@@ -66,6 +68,14 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::KayRuleModel,α,a,b
     ā = sqrt(ab2*invn2)*b̄
     c̄ = dot(z,c)*invn
     return ā,b̄,c̄
+end
+
+function cubic_get_k(model::CubicModel,mixing::KayRuleModel,params)
+    return get_k_geomean(params.a.values)
+end
+
+function cubic_get_l(model::CubicModel,mixing::KayRuleModel,params)
+    return get_k_mean(params.b.values)
 end
 
 is_splittable(::KayRule) = false

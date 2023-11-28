@@ -7,13 +7,10 @@
                         atol = 1e-8,
                         rtol = 1e-12,
                         max_iters = 10^4)
-
 Saturation method for `saturation_temperature` .Default method for saturation temperature from Clapeyron 0.3.7. It solves the Volume-Temperature system of equations for the saturation condition.
     
 If only `T0` is provided, `vl` and `vv` are obtained via [`x0_sat_pure`](@ref). If `T0` is not provided, it will be obtained via [`x0_saturation_temperature`](@ref). It is recommended to overload `x0_saturation_temperature`, as the default starting point calls [`crit_pure`](@ref), resulting in slower than ideal times.
-
 `f_limit`, `atol`, `rtol`, `max_iters` are passed to the non linear system solver.
-
 """
 struct AntoineSaturation{T,C} <: SaturationMethod
     T0::Union{Nothing,T}
@@ -50,13 +47,6 @@ function AntoineSaturation(;T0 = nothing,
     end
 end
 
-#if a number is provided as initial point, it will instead proceed to solve directly
-function saturation_temperature(model::EoSModel, p, T0::Number)
-    sat = x0_sat_pure(model,T0)
-    T0,vl,vv = promote(T0,sat[1],sat[2])
-    return saturation_temperature_impl(model,p,AntoineSaturation(;T0,vl,vv))
-end
-
 function Obj_Sat_Temp(model::EoSModel, F, T, V_l, V_v,p,scales,method::AntoineSaturation)
     fun(_V) = eos(model, _V, T,SA[1.])
     A_l,Av_l = Solvers.f∂f(fun,V_l)
@@ -85,7 +75,8 @@ end
 #in case that there isn't any antoine coefficients:
 #We aproximate to RK, use the cubic antoine, and perform refinement with one Clapeyron Saturation iteration 
 
-function saturation_temperature_impl(model,p,method::AntoineSaturation)    
+function saturation_temperature_impl(model,p,method::AntoineSaturation)   
+    R̄ = Rgas(model) 
     scales = scale_sat_pure(model)
     if isnothing(method.T0)
         T0,Vl,Vv = x0_saturation_temperature(model,p)
@@ -176,9 +167,5 @@ function try_sat_temp(model,p,T0,Vl,Vv,scales,method::AntoineSaturation)
     return (T,Vl,Vv),converged
 end
 
-#Default!
-function saturation_temperature(model,p)
-    return saturation_temperature(model,p,AntoineSaturation())
-end
 
 export AntoineSaturation

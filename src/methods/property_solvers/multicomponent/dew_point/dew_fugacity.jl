@@ -184,7 +184,15 @@ end
 
 
 function dew_pressure_impl(model::EoSModel, T, y ,method::FugDewPressure)
-    p0,vl,vv,x0 = dew_pressure_init(model,T,y,method.vol0,method.p0,method.x0)
+    
+    if !isnothing(method.noncondensables)
+        condensables = [!in(x,method.noncondensables) for x in model.components]
+    else
+        condensables = fill(true,length(model))
+    end
+
+    _vol0,_p0,_x0 = method.vol0,method.p0,method.x0
+    p0,vl,vv,x0 = dew_pressure_init(model,T,y,_vol0,_p0,_x0,condensables)
     itmax_newton = method.itmax_newton
     itmax_ss = method.itmax_ss
     tol_x = method.tol_x
@@ -377,7 +385,14 @@ function FugDewTemperature(;vol0 = nothing,
 end
 
 function dew_temperature_impl(model::EoSModel, p, y, method::FugDewTemperature)
-    T0,vl,vv,x0 = dew_temperature_init(model,p,y,method.vol0,method.T0,method.x0)
+    if !isnothing(method.noncondensables)
+        condensables = [!in(x,method.noncondensables) for x in model.components]
+    else
+        condensables = fill(true,length(model))
+    end
+
+    _vol0,_T0,_x0 = method.vol0,method.T0,method.x0
+    T0,vl,vv,x0 = dew_temperature_init(model,p,y,_vol0,_T0,_x0,condensables)
     itmax_newton = method.itmax_newton
     itmax_ss = method.itmax_ss
     tol_x = method.tol_x

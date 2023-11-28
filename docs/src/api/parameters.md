@@ -40,6 +40,7 @@ Clapeyron.AssocOptions
 ```@docs
 Clapeyron.kij_mix
 Clapeyron.pair_mix
+Clapeyron.mirror_pair
 Clapeyron.sigma_LorentzBerthelot
 Clapeyron.epsilon_LorentzBerthelot
 Clapeyron.epsilon_HudsenMcCoubrey
@@ -59,6 +60,11 @@ Clapeyron.group_matrix
 Clapeyron.split_model
 Clapeyron.is_splittable
 Clapeyron.index_reduction
+```
+
+## Model Exporting
+```@docs
+Clapeyron.export_model
 ```
 
 ## Model Citing

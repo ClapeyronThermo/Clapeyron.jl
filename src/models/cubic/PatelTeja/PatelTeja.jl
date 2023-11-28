@@ -12,9 +12,8 @@ struct PatelTeja{T <: IdealModel,α,c,γ} <:PatelTejaModel
     references::Array{String,1}
 end
 
-@registermodel PatelTeja
 """
-    PatelTeja(components::Vector{String};
+    PatelTeja(components;
     idealmodel=BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
@@ -65,6 +64,39 @@ Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
 Δ₁ =  -(ϵ + √δ)/2
 Δ₂ =  -(ϵ - √δ)/2
 ```
+
+## Model Construction Examples
+```julia
+# Using the default database
+model = PatelTeja("water") #single input
+model = PatelTeja(["water","ethanol"]) #multiple components
+model = PatelTeja(["water","ethanol"], idealmodel = ReidIdeal) #modifying ideal model
+model = PatelTeja(["water","ethanol"],alpha = TwuAlpha) #modifying alpha function
+model = PatelTeja(["water","ethanol"],translation = RackettTranslation) #modifying translation
+model = PatelTeja(["water","ethanol"],mixing = KayRule) #using another mixing rule
+model = PatelTeja(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced EoS+gᴱ mixing rule
+
+# Passing a prebuilt model
+
+my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
+model =  PatelTeja(["ethane","butane"],alpha = my_alpha)
+
+# User-provided parameters, passing files or folders
+model = PatelTeja(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])
+
+# User-provided parameters, passing parameters directly
+
+model = PatelTeja(["neon","hydrogen"];
+        userlocations = (;Tc = [44.492,33.19],
+                        Pc = [2679000, 1296400],
+                        Vc = [4.25e-5, 6.43e-5],
+                        Mw = [20.17, 2.],
+                        acentricfactor = [-0.03,-0.21]
+                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        l = [0. 0.01; 0.01 0.])
+                    )
+```
+
 ## References
 
 1. Patel, N. C., & Teja, A. S. (1982). A new cubic equation of state for fluids and fluid mixtures. Chemical Engineering Science, 37(3), 463–473. [doi:10.1016/0009-2509(82)80099-7](https://doi.org/10.1016/0009-2509(82)80099-7)
@@ -73,36 +105,40 @@ Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
 PatelTeja
 
 export PatelTeja
-function PatelTeja(components::Vector{String}; idealmodel=BasicIdeal,
+function PatelTeja(components; idealmodel=BasicIdeal,
     alpha = PatelTejaAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
      verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    
+    
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = get(params,"k",nothing)
-    l = get(params,"l",nothing) 
+    l = get(params,"l",nothing)
     pc = params["Pc"]
     Vc = params["Vc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
+    acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    n = length(components)
-    a = PairParam("a",components,zeros(n))
-    b = PairParam("b",components,zeros(n))
-    c = PairParam("c",components,zeros(n))
+    n = length(Tc)
+    a = PairParam("a",formatted_components,zeros(n))
+    b = PairParam("b",formatted_components,zeros(n))
+    c = PairParam("c",formatted_components,zeros(n))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PatelTejaParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1016/0009-2509(82)80099-7"]
-    model = PatelTeja(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = PatelTeja(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end
@@ -114,7 +150,7 @@ function ab_premixing(model::PatelTejaModel,mixing::MixingRule,k,l)
     a = model.params.a
     b = model.params.b
     n = length(model)
-    _Zc = _pc .* _Vc ./ (R̄ .* _Tc)             
+    _Zc = _pc .* _Vc ./ (R̄ .* _Tc)
     _poly = [(-_Zc[i]^3,3*_Zc[i]^2,2-3*_Zc[i],1.) for i ∈ 1:n]
     sols = Solvers.roots3.(_poly)
     Ωb = [minimum(real.(sols[i][isreal.(sols[1]).*real.(sols[1]).>0])) for i ∈ 1:n]
@@ -138,7 +174,7 @@ function c_premixing(model::PatelTejaModel)
     return c
 end
 
-function cubic_Δ(model::PatelTejaModel,z) 
+function cubic_Δ(model::PatelTejaModel,z)
     b = diagvalues(model.params.b)
     c = diagvalues(model.params.c)
     z⁻¹ = sum(z)^-1

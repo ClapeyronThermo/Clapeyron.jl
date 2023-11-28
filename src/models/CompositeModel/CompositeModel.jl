@@ -1,48 +1,60 @@
-#this model only holds a named tuple with all models.
+
+include("GenericAncEvaluator.jl")
 include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
-"""
-    CompositeModel(components;
-    gas = BasicIdeal,
-    liquid = RackettLiquid,
-    saturation = LeeKeslerSat,
-    gas_userlocations = String[],
-    liquid_userlocations = String[],
-    saturation_userlocations = String[]
-
-Composite Model. it is not consistent, but it can hold different correlations that
-are faster than a volume or saturation pressure iteration.
-
-"""
-struct CompositeModel{𝕍,𝕃,𝕊,𝕃𝕍,𝕃𝕊} <: EoSModel
-    components::Vector{String}
-    gas::𝕍
-    liquid::𝕃
-    solid::𝕊
-    saturation::𝕃𝕍
-    melting::𝕃𝕊
-end
+include("PolExpVapour.jl")
+include("SolidModel/SolidHfus.jl")
 
 Base.length(cmodel::CompositeModel) = length(cmodel.components)
 
 function CompositeModel(components;
     liquid = RackettLiquid,
     gas = BasicIdeal,
+    fluid=nothing,
+    userlocations = String[],
     solid = nothing,
     saturation = LeeKeslerSat,
     melting = nothing,
     gas_userlocations = String[],
     liquid_userlocations = String[],
+    fluid_userlocations = String[],
     solid_userlocations = String[],
     saturation_userlocations = String[],
     melting_userlocations = String[],
     verbose = false)
 
+    if fluid !== nothing
+        if typeof(fluid) <: EoSModel
+            if typeof(fluid) <: ActivityModel
+                error("Activity models only represent the liquid phase. Please specify a gas phase model.")
+            end
+        elseif fluid <: ActivityModel
+            error("Activity models only represent the liquid phase. Please specify a gas phase model.")
+        end
+        gas = fluid
+        liquid = fluid
+        saturation = fluid
+        gas_userlocations = fluid_userlocations
+        liquid_userlocations = fluid_userlocations
+        saturation_userlocations = fluid_userlocations
+    end
+
     init_gas = init_model(gas,components,gas_userlocations,verbose)
-    init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+    if typeof(liquid) <: EoSModel
+        init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+    else
+        if liquid <: ActivityModel
+            init_liquid = liquid(components;userlocations=liquid_userlocations,puremodel=gas,verbose)
+        else
+            init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+        end
+    end
+
     init_solid = init_model(solid,components,solid_userlocations,verbose)
     init_sat = init_model(saturation,components,saturation_userlocations,verbose)
     init_melt = init_model(melting,components,melting_userlocations,verbose)
+
+    components = format_components(components)
     return CompositeModel(components,init_gas,init_liquid,init_solid,init_sat,init_melt)
 end
 
@@ -53,10 +65,6 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
     model.solid !== nothing && println(io,'\n'," Solid Model: ",model.solid)
     model.saturation !== nothing && print(io,'\n'," Saturation Model: ",model.saturation)
     model.melting !== nothing && print(io,'\n'," Melting Model: ",model.melting)
-end
-
-function Base.show(io::IO,model::CompositeModel)
-    eosshow(io,model)
 end
 
 __gas_model(model::CompositeModel) = model.gas
@@ -91,7 +99,7 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
                 end
 
             end
-            
+
             return nan
         else
             @error "A phase needs to be specified on multicomponent composite models."
@@ -100,13 +108,12 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
     end
 end
 
-function saturation_pressure(model::CompositeModel,T::Real)
-    if model.saturation isa SaturationModel
-        method = SaturationCorrelation()
-    else
-        method = ChemPotVSaturation()
-    end
-    return saturation_pressure(model,T,method)
+function init_preferred_method(method::typeof(saturation_pressure),model::CompositeModel,kwargs)
+    return init_preferred_method(saturation_pressure,model.saturation,kwargs)
+end
+
+function init_preferred_method(method::typeof(saturation_temperature),model::CompositeModel,kwargs)
+    return init_preferred_method(saturation_temperature,model.saturation,kwargs)
 end
 
 function saturation_pressure(model::CompositeModel,T,method::SaturationMethod)
@@ -119,13 +126,26 @@ function saturation_pressure(model::CompositeModel,T,method::SaturationMethod)
     #if psat fails, there are two options:
     #1- over critical point -> nan nan nan
     #2- saturation failed -> nan nan nan
-    else 
+    else
         return nan,nan,nan
     end
 end
 
 function crit_pure(model::CompositeModel)
-    return crit_pure(model.models.saturation)
+    single_component_check(crit_pure,model)
+    return crit_pure(model.saturation)
+end
+
+function x0_sat_pure(model::CompositeModel,T)
+    p = x0_psat(model,T)
+    vl = volume(model.liquid,p,T,phase=:l)
+    vv = volume(model.gas,p,T,phase=:v)
+    return vl,vv
+end
+
+function x0_psat(model::CompositeModel,T)
+    ps,_,_ = saturation_pressure(model.saturation,T)
+    return ps
 end
 
 function saturation_temperature(model::CompositeModel,p,method::SaturationMethod)
@@ -138,9 +158,70 @@ function saturation_temperature(model::CompositeModel,p,method::SaturationMethod
     #if psat fails, there are two options:
     #1- over critical point -> nan nan nan
     #2- saturation failed -> nan nan nan
-    else 
+    else
         return nan,nan,nan
     end
+end
+
+#Michelsen TPFlash and rachford rice tpflash support
+function init_preferred_method(method::typeof(tp_flash),model::CompositeModel,kwargs)
+    return RRTPFlash(;kwargs...)
+end
+
+__tpflash_cache_model(model::CompositeModel,p,T,z,equilibrium) = PTFlashWrapper(model,p,T,equilibrium)
+
+function PTFlashWrapper(model::CompositeModel,p,T::Number,equilibrium::Symbol)
+    satmodels = split_model(model.saturation)
+    gases = split_model(model.gas,1:length(model))
+    sats = saturation_pressure.(satmodels,T)
+    vv_pure = last.(sats)
+    RT = R̄*T
+    p_pure = first.(sats)
+    μpure = only.(VT_chemical_potential_res.(gases,vv_pure,T))
+    ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
+    g_pure = [VT_gibbs_free_energy(gases[i],sats[i][2],T) for i in 1:length(model)]
+    return PTFlashWrapper(model.components,model,sats,ϕpure,μpure)
+end
+
+function update_K!(lnK,wrapper::PTFlashWrapper{<:CompositeModel},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)
+    model = wrapper.model
+    sats = wrapper.sat
+    #crits = wrapper.crit
+    fug = wrapper.fug
+    RT = R̄*T
+    volx = volume(model.liquid, p, T, x, phase = phasex, vol0 = volx)
+    lnϕy, voly = lnϕ(__gas_model(model), p, T, y; phase=phasey, vol0=voly)
+    if is_vapour(phasey)
+        for i in eachindex(lnK)
+            if iny[i]
+                ϕli = fug[i]
+                p_i = sats[i][1]
+                lnK[i] = log(p_i*ϕli/p) - lnϕy[i] + volx*(p - p_i)/RT
+            end
+        end
+    else
+        throw(error("CompositeModel does not support LLE equilibria."))
+    end
+    return lnK,volx,voly,NaN*one(T+p+first(x))
+end
+
+function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:CompositeModel},p,T,x,y,β,eq)
+    return NaN*one(T+p+first(x))
+end
+
+function dgibbs_obj!(model::PTFlashWrapper{<:CompositeModel}, p, T, z, phasex, phasey,
+    nx, ny, vcache, ny_var = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
+    F=nothing, G=nothing, H=nothing)
+    throw(error("CompositeModel does not support gibbs energy optimization in MichelsenTPFlash."))
+    #
+end
+
+function K0_lle_init(model::PTFlashWrapper{<:CompositeModel},p,T,z)
+    throw(error("CompositeModel does not support LLE equilibria."))
+end
+
+function __eval_G_DETPFlash(model::PTFlashWrapper{<:CompositeModel},p,T,xi,equilibrium)
+    throw(error("CompositeModel does not support DETPFlash."))
 end
 
 export CompositeModel

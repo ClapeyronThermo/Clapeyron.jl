@@ -2,7 +2,7 @@
 CurrentModule = Clapeyron
 ```
 # Clapeyron.jl
-A [Julia](http://julialang.org) package for the modelling of fluids using thermodynamic equations of state. These include the standard cubics (van der Waals, Redlich-Kwong, Peng-Robinson, _etc._), SAFT-type equations (PC-SAFT, SAFT-VR Mie, SAFT-$\gamma$ Mie, _etc._), empirical equations (GERG2008, IAWPS95) and many more.
+An extensible [Julia](http://julialang.org) package for the modelling of fluids using thermodynamic equations of state. These include the standard cubics (van der Waals, Redlich-Kwong, Peng-Robinson, _etc._), SAFT-type equations (PC-SAFT, SAFT-VR Mie, SAFT-$\gamma$ Mie, _etc._), empirical equations (GERG2008, IAWPS95), Activity coefficient models (NRTL, UNIFAC, COSMO-SAC, _etc._) and many more.
 
 The documentation is laid out as follows:
 
@@ -21,7 +21,7 @@ The documentation is laid out as follows:
 
 ### License
 
-Clapeyron.jl is licensed under the [MIT license](https://github.com/ypaul21/Clapeyron.jl/blob/master/LICENSE.md).
+Clapeyron.jl is licensed under the [MIT license](https://github.com/ClapeyronThermo/Clapeyron.jl/blob/master/LICENSE.md).
 
 ### Installation
 
@@ -40,9 +40,9 @@ If you are using Clapeyron for your research work, please cite the following:
     title={Clapeyron.jl: An Extensible, Open-Source Fluid Thermodynamics Toolkit},
     author={Pierre J. Walker, Hon-Wa Yew, and Andrés Riedemann},
     journal={Ind. Eng. Chem. Res.},
-    volume={XX},
-    number={XX},
-    pages={XX--XX},
+    volume={61},
+    number={20},
+    pages={7130--7153},
     year={2022},
     publisher={American Chemical Society},
     doi={doi/10.1021/acs.iecr.2c00326},

@@ -18,7 +18,22 @@ end
 
 function group_sum!(out::SingleParameter,groups::GroupParameter,param::SingleParameter)
     _group_sum!(out.values,groups,param)
-    out.ismissingvalues .= param.ismissingvalues
+    v = groups.n_flattenedgroups
+    missingvals_comps = out.ismissingvalues
+    missingvals_gc = param.ismissingvalues
+    #173
+    gc = length(groups.flattenedgroups)
+    comps = length(out.values)
+    for i in 1:comps
+        is_missing_i = false
+        vi = v[i]
+        for j in 1:gc
+            if v[i] != 0 #if the group count is nonzero, then reduce the ismissing values
+                is_missing_i = is_missing_i | missingvals_gc[j]
+            end
+        end
+        missingvals_comps[i] = is_missing_i
+    end
     return out
 end
 
@@ -45,7 +60,7 @@ function group_sum(groups::GroupParameter,param::SingleParameter)
     out =  SingleParam(param.name,
                         groups.components,
                         zeros(float(eltype(param.values)),gc),
-                        param.ismissingvalues,
+                        fill(false,gc),
                         param.sources,
                         param.sourcecsvs)
     return group_sum!(out,groups,param)

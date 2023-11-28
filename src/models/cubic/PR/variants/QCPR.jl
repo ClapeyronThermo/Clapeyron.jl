@@ -1,5 +1,5 @@
 """
-    QCPR(components::Vector{String}; idealmodel=BasicIdeal,
+    QCPR(components; idealmodel=BasicIdeal,
         userlocations=String[], 
         ideal_userlocations=String[],
         alpha_userlocations = String[],
@@ -7,6 +7,7 @@
         activity_userlocations = String[],
         translation_userlocations = String[],
         verbose=false)
+
 Quantum-corrected Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`ConstantTranslation`](@ref)
 - Alpha Model: [`TwuAlpha`](@ref)
@@ -14,7 +15,7 @@ Quantum-corrected Peng Robinson equation of state. it uses the following models:
 ## References
 1. Aasen, A., Hammer, M., Lasala, S., Jaubert, J.-N., & Wilhelmsen, Ø. (2020). Accurate quantum-corrected cubic equations of state for helium, neon, hydrogen, deuterium and their mixtures. Fluid Phase Equilibria, 524(112790), 112790. [doi:10.1016/j.fluid.2020.112790](https://doi.org/10.1016/j.fluid.2020.112790)
 """
-function QCPR(components::Vector{String}; idealmodel=BasicIdeal,
+function QCPR(components; idealmodel=BasicIdeal,
     userlocations=String[], 
     ideal_userlocations=String[],
     alpha_userlocations = String[],
@@ -23,23 +24,23 @@ function QCPR(components::Vector{String}; idealmodel=BasicIdeal,
     translation_userlocations = String[],
     verbose=false)
 
-QCPR_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_critical.csv", "@DB/cubic/QCPR/QCPR_unlike.csv",userlocations)
-QCPR_alpha_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/Twu_QCPR.csv",alpha_userlocations)
-QCPR_translation_userlocations = vcat("@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_translation.csv",translation_userlocations)
+    QCPR_userlocations = userlocation_merge(["@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_critical.csv", "@DB/cubic/QCPR/QCPR_unlike.csv"],userlocations)
+    QCPR_alpha_userlocations = userlocation_merge(["@REMOVEDEFAULTS","@DB/cubic/QCPR/Twu_QCPR.csv"],alpha_userlocations)
+    QCPR_translation_userlocations = userlocation_merge(["@REMOVEDEFAULTS","@DB/cubic/QCPR/QCPR_translation.csv"],translation_userlocations)
 
-model = PR(components;
-    idealmodel = idealmodel,
-    alpha = TwuAlpha,
-    mixing = QCPRRule,
-    activity = nothing,
-    translation = ConstantTranslation,
-    userlocations = QCPR_userlocations,
-    ideal_userlocations= ideal_userlocations,
-    alpha_userlocations = QCPR_alpha_userlocations,
-    mixing_userlocations = mixing_userlocations,
-    activity_userlocations = activity_userlocations,
-    translation_userlocations = QCPR_translation_userlocations,
-    verbose=false)
+    model = PR(components;
+        idealmodel = idealmodel,
+        alpha = TwuAlpha,
+        mixing = QCPRRule,
+        activity = nothing,
+        translation = ConstantTranslation,
+        userlocations = QCPR_userlocations,
+        ideal_userlocations= ideal_userlocations,
+        alpha_userlocations = QCPR_alpha_userlocations,
+        mixing_userlocations = mixing_userlocations,
+        activity_userlocations = activity_userlocations,
+        translation_userlocations = QCPR_translation_userlocations,
+        verbose=verbose)
     setreferences!(model,String["10.1021/I160057A011"])
     return model
 end
@@ -56,7 +57,7 @@ function cubic_ab(model::QCPRModel,V,T,z=SA[1.0],n=sum(z))
     c = @f(translation,model.translation)
     if length(z)>1
     ā,b̄,c̄ = @f(mixing_rule,model.mixing,α,a,b,c)
-    else 
+    else
         ā = a[1,1]*α[1]
         A = model.mixing.params.A.values[1,1]
         B = model.mixing.params.B.values[1,1]
@@ -97,7 +98,7 @@ function lb_volume(model::QCPRModel,z=SA[1.0])
             Aj = A[j]
             βj = (1 + min(0,Aj/Bj))^3 / (1 + Aj/(Tc[j] + Bj))^3
             bqj = βj*b[j,j]
-            
+
             b̄ += zij*(bqi+bqj)*(1-l[i,j]) #2 * zij * 0.5(bi + bj)
         end
     end

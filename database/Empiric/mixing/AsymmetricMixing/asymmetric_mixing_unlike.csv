@@ -1,0 +1,814 @@
+Clapeyron Database Parameters
+Asymmetric parameters for mixing Multiparameter EoS [csvtype = unlike]
+species1,cas1,species2,cas2,beta_v,gamma_v,beta_T,gamma_T,source
+"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,1.0,0.985,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,1.0,1.015,1.017,1.0,
+carbon dioxide,124-38-9,"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene",29118-24-9,1.0,1.0,1.0,1.023,
+"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene",29118-24-9,1.0,1.0,1.0,0.987,
+ethene~|~ethylene~|~1-ethylene,74-85-1,"r1243zf~|~3,3,3-trifluoropropene~|~3,3,3-trifluoro-1-propene~|~1,1,1-trifluoro-2-propene",677-21-4,1.0,1.02732,1.0,0.940888,
+r1123~|~trifluoroethene~|~trifluoroethylene,359-11-5,r32~|~difluoromethane,75-10-5,1.0066985723000847,1.02211,0.999480270259465,0.948538,
+r23~|~trifluoromethane,75-46-7,"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,1.0,1.02879,1.0,1.01,
+carbon dioxide,124-38-9,water,7732-18-5,1.021392,0.895156,1.030538,0.828472,10.1016/j.jct.2015.05.015
+carbon dioxide,124-38-9,nitrogen,7727-37-9,1.022709642,1.047578256,0.994140013,1.107654104,10.1016/j.jct.2015.05.015
+carbon dioxide,124-38-9,oxygen,7782-44-7,1.0,1.08446,1.0,1.031986,10.1016/j.jct.2015.05.015
+carbon dioxide,124-38-9,argon,7440-37-1,1.001378,1.02971,1.027147,0.968781,10.1016/j.jct.2015.05.015
+carbon dioxide,124-38-9,carbon monoxide,630-08-0,1.030855,1.245499,0.993245,1.068392,10.1016/j.jct.2015.05.015
+water,7732-18-5,nitrogen,7727-37-9,1.079628,0.733443,0.954149,0.805147,10.1016/j.jct.2015.05.015
+water,7732-18-5,oxygen,7782-44-7,0.972576,0.87346,0.798046,0.807842,10.1016/j.jct.2015.05.015
+water,7732-18-5,argon,7440-37-1,0.940398,1.050952,0.679104,0.921,10.1016/j.jct.2015.05.015
+water,7732-18-5,carbon monoxide,630-08-0,1.063348,0.766756,1.045927,0.823984,10.1016/j.jct.2015.05.015
+nitrogen,7727-37-9,oxygen,7782-44-7,0.99952177,0.997082328,0.997190589,0.995157044,10.1016/j.jct.2015.05.015
+nitrogen,7727-37-9,argon,7440-37-1,1.006697,1.001549,0.999442,0.989311,10.1016/j.jct.2015.05.015
+nitrogen,7727-37-9,carbon monoxide,630-08-0,1.0,1.001317,1.002409,0.9941,10.1016/j.jct.2015.05.015
+oxygen,7782-44-7,argon,7440-37-1,1.006502,1.001341,0.999039,0.988822,10.1016/j.jct.2015.05.015
+oxygen,7782-44-7,carbon monoxide,630-08-0,1.0,1.0,1.0,1.0,10.1016/j.jct.2015.05.015
+carbon monoxide,630-08-0,argon,7440-37-1,1.0,1.159720623,1.0,0.954215746,10.1016/j.jct.2015.05.015
+methane,74-82-8,nitrogen,7727-37-9,0.998721377,1.013950311,0.99809883,0.979273013,10.1021/je300655b
+methane,74-82-8,carbon dioxide,124-38-9,0.999518072,1.002806594,1.02262449,0.975665369,10.1021/je300655b
+methane,74-82-8,ethane,74-84-0,0.997547866,1.006617867,0.996336508,1.049707697,10.1021/je300655b
+methane,74-82-8,propane~|~n-propane,74-98-6,1.00482707,1.038470657,0.989680305,1.098655531,10.1021/je300655b
+methane,74-82-8,butane~|~n-butane,106-97-8,0.979105972,1.045375122,0.99417491,1.171607691,10.1021/je300655b
+methane,74-82-8,isobutane~|~2-methylpropane,75-28-5,1.011240388,1.054319053,0.980315756,1.161117729,10.1021/je300655b
+methane,74-82-8,pentane~|~n-pentane,109-66-0,0.94833012,1.124508039,0.992127525,1.249173968,10.1021/je300655b
+methane,74-82-8,isopentane~|~methylbutane~|~2-methylbutane,78-78-4,1.0,1.343685343,1.0,1.188899743,10.1021/je300655b
+methane,74-82-8,hexane~|~n-hexane,110-54-3,0.958015294,1.052643846,0.981844797,1.330570181,10.1021/je300655b
+methane,74-82-8,heptane~|~n-heptane,142-82-5,0.962050831,1.156655935,0.977431529,1.379850328,10.1021/je300655b
+methane,74-82-8,octane~|~n-octane,111-65-9,0.994740603,1.116549372,0.957473785,1.449245409,10.1021/je300655b
+methane,74-82-8,nonane~|~n-nonane,111-84-2,1.002852287,1.141895355,0.947716769,1.528532478,10.1021/je300655b
+methane,74-82-8,decane~|~n-decane,124-18-5,1.033086292,1.146089637,0.937777823,1.568231489,10.1021/je300655b
+methane,74-82-8,hydrogen,1333-74-0,1.086,0.804,1.01,1.44,10.1063/5.0040533
+methane,74-82-8,oxygen,7782-44-7,1.0,1.0,1.0,0.95,10.1021/je300655b
+methane,74-82-8,carbon monoxide,630-08-0,0.997340772,1.006102927,0.987411732,0.987473033,10.1021/je300655b
+methane,74-82-8,water,7732-18-5,1.012783169,1.585018334,1.063333913,0.775810513,10.1021/je300655b
+methane,74-82-8,hydrogen sulfide,7783-06-4,1.012599087,1.040161207,1.011090031,0.961155729,10.1021/je300655b
+methane,74-82-8,helium~|~helium-4,7440-59-7,1.0,0.881405683,1.0,3.159776855,10.1021/je300655b
+methane,74-82-8,argon,7440-37-1,1.034630259,1.014678542,0.990954281,0.989843388,10.1021/je300655b
+nitrogen,7727-37-9,ethane,74-84-0,0.978880168,1.042352891,1.007671428,1.098650964,10.1021/je300655b
+nitrogen,7727-37-9,propane~|~n-propane,74-98-6,0.974424681,1.081025408,1.002677329,1.201264026,10.1021/je300655b
+nitrogen,7727-37-9,butane~|~n-butane,106-97-8,0.99608261,1.146949309,0.994515234,1.304886838,10.1021/je300655b
+nitrogen,7727-37-9,isobutane~|~2-methylpropane,75-28-5,0.98641583,1.100576129,0.99286813,1.284462634,10.1021/je300655b
+nitrogen,7727-37-9,pentane~|~n-pentane,109-66-0,1.0,1.078877166,1.0,1.419029041,10.1021/je300655b
+nitrogen,7727-37-9,isopentane~|~methylbutane~|~2-methylbutane,78-78-4,1.0,1.154135439,1.0,1.38177077,10.1021/je300655b
+nitrogen,7727-37-9,hexane~|~n-hexane,110-54-3,1.0,1.195952177,1.0,1.472607971,10.1021/je300655b
+nitrogen,7727-37-9,heptane~|~n-heptane,142-82-5,1.0,1.40455409,1.0,1.520975334,10.1021/je300655b
+nitrogen,7727-37-9,octane~|~n-octane,111-65-9,1.0,1.186067025,1.0,1.733280051,10.1021/je300655b
+nitrogen,7727-37-9,nonane~|~n-nonane,111-84-2,1.0,1.100405929,0.95637945,1.749119996,10.1021/je300655b
+nitrogen,7727-37-9,decane~|~n-decane,124-18-5,1.0,1.0,0.957934447,1.822157123,10.1021/je300655b
+nitrogen,7727-37-9,hydrogen,1333-74-0,0.993,0.773,1.027,1.24,10.1063/5.0040533
+nitrogen,7727-37-9,hydrogen sulfide,7783-06-4,0.910394249,1.256844157,1.004692366,0.9601742,10.1021/je300655b
+nitrogen,7727-37-9,helium~|~helium-4,7440-59-7,0.969501055,0.932629867,0.692868765,1.47183158,10.1021/je300655b
+carbon dioxide,124-38-9,ethane,74-84-0,1.002525718,1.032876701,1.013871147,0.90094953,10.1021/je300655b
+carbon dioxide,124-38-9,propane~|~n-propane,74-98-6,0.996898004,1.047596298,1.033620538,0.908772477,10.1021/je300655b
+carbon dioxide,124-38-9,butane~|~n-butane,106-97-8,1.174760923,1.222437324,1.018171004,0.911498231,10.1021/je300655b
+carbon dioxide,124-38-9,isobutane~|~2-methylpropane,75-28-5,1.076551882,1.081909003,1.023339824,0.929982936,10.1021/je300655b
+carbon dioxide,124-38-9,pentane~|~n-pentane,109-66-0,1.024311498,1.068406078,1.027000795,0.979217302,10.1021/je300655b
+carbon dioxide,124-38-9,isopentane~|~methylbutane~|~2-methylbutane,78-78-4,1.060793104,1.116793198,1.019180957,0.961218039,10.1021/je300655b
+carbon dioxide,124-38-9,hexane~|~n-hexane,110-54-3,1.0,0.851343711,1.0,1.038675574,10.1021/je300655b
+carbon dioxide,124-38-9,heptane~|~n-heptane,142-82-5,1.205469976,1.164585914,1.011806317,1.046169823,10.1021/je300655b
+carbon dioxide,124-38-9,octane~|~n-octane,111-65-9,1.026169373,1.104043935,1.02969078,1.074455386,10.1021/je300655b
+carbon dioxide,124-38-9,nonane~|~n-nonane,111-84-2,1.0,0.973386152,1.00768862,1.140671202,10.1021/je300655b
+carbon dioxide,124-38-9,decane~|~n-decane,124-18-5,1.000151132,1.183394668,1.02002879,1.145512213,10.1021/je300655b
+carbon dioxide,124-38-9,hydrogen,1333-74-0,1.198,0.842,0.979,1.961,10.1063/5.0040533
+carbon dioxide,124-38-9,hydrogen sulfide,7783-06-4,0.906630564,1.024085837,1.016034583,0.92601888,10.1021/je300655b
+carbon dioxide,124-38-9,helium~|~helium-4,7440-59-7,0.846647561,0.864141549,0.76837763,3.207456948,10.1021/je300655b
+ethane,74-84-0,propane~|~n-propane,74-98-6,0.997607277,1.00303472,0.996199694,1.01473019,10.1021/je300655b
+ethane,74-84-0,butane~|~n-butane,106-97-8,0.999157205,1.006179146,0.999130554,1.034832749,10.1021/je300655b
+ethane,74-84-0,isobutane~|~2-methylpropane,75-28-5,1.0,1.006616886,1.0,1.033283811,10.1021/je300655b
+ethane,74-84-0,pentane~|~n-pentane,109-66-0,0.993851009,1.026085655,0.998688946,1.066665676,10.1021/je300655b
+ethane,74-84-0,isopentane~|~methylbutane~|~2-methylbutane,78-78-4,1.0,1.045439935,1.0,1.021150247,10.1021/je300655b
+ethane,74-84-0,hexane~|~n-hexane,110-54-3,1.0,1.169701102,1.0,1.092177796,10.1021/je300655b
+ethane,74-84-0,heptane~|~n-heptane,142-82-5,1.0,1.057666085,1.0,1.134532014,10.1021/je300655b
+ethane,74-84-0,octane~|~n-octane,111-65-9,1.007469726,1.071917985,0.984068272,1.168636194,10.1021/je300655b
+ethane,74-84-0,nonane~|~n-nonane,111-84-2,1.0,1.14353473,1.0,1.05603303,10.1021/je300655b
+ethane,74-84-0,decane~|~n-decane,124-18-5,0.995676258,1.098361281,0.970918061,1.237191558,10.1021/je300655b
+ethane,74-84-0,hydrogen,1333-74-0,0.925367171,1.10607204,0.932969831,1.902008495,10.1021/je300655b
+ethane,74-84-0,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+ethane,74-84-0,carbon monoxide,630-08-0,1.0,1.201417898,1.0,1.069224728,10.1021/je300655b
+ethane,74-84-0,water,7732-18-5,1.0,1.0,1.0,1.0,10.1021/je300655b
+ethane,74-84-0,hydrogen sulfide,7783-06-4,1.010817909,1.030988277,0.990197354,0.90273666,10.1021/je300655b
+ethane,74-84-0,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+ethane,74-84-0,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+propane~|~n-propane,74-98-6,butane~|~n-butane,106-97-8,0.999795868,1.003264179,1.000310289,1.007392782,10.1021/je300655b
+propane~|~n-propane,74-98-6,isobutane~|~2-methylpropane,75-28-5,0.999243146,1.001156119,0.998012298,1.005250774,10.1021/je300655b
+propane~|~n-propane,74-98-6,pentane~|~n-pentane,109-66-0,1.044919431,1.019921513,0.996484021,1.008344412,10.1021/je300655b
+propane~|~n-propane,74-98-6,isopentane~|~methylbutane~|~2-methylbutane,78-78-4,1.040459289,0.999432118,0.994364425,1.0032695,10.1021/je300655b
+propane~|~n-propane,74-98-6,hexane~|~n-hexane,110-54-3,1.0,1.057872566,1.0,1.025657518,10.1021/je300655b
+propane~|~n-propane,74-98-6,heptane~|~n-heptane,142-82-5,1.0,1.079648053,1.0,1.050044169,10.1021/je300655b
+propane~|~n-propane,74-98-6,octane~|~n-octane,111-65-9,1.0,1.102764612,1.0,1.063694129,10.1021/je300655b
+propane~|~n-propane,74-98-6,nonane~|~n-nonane,111-84-2,1.0,1.199769134,1.0,1.109973833,10.1021/je300655b
+propane~|~n-propane,74-98-6,decane~|~n-decane,124-18-5,0.984104227,1.053040574,0.985331233,1.140905252,10.1021/je300655b
+propane~|~n-propane,74-98-6,hydrogen,1333-74-0,1.0,1.07400611,1.0,2.308215191,10.1021/je300655b
+propane~|~n-propane,74-98-6,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+propane~|~n-propane,74-98-6,carbon monoxide,630-08-0,1.0,1.108143673,1.0,1.197564208,10.1021/je300655b
+propane~|~n-propane,74-98-6,water,7732-18-5,1.0,1.011759763,1.0,0.600340961,10.1021/je300655b
+propane~|~n-propane,74-98-6,hydrogen sulfide,7783-06-4,0.936811219,1.010593999,0.992573556,0.905829247,10.1021/je300655b
+propane~|~n-propane,74-98-6,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+propane~|~n-propane,74-98-6,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+butane~|~n-butane,106-97-8,isobutane~|~2-methylpropane,75-28-5,1.000880464,1.00041444,1.000077547,1.001432824,10.1021/je300655b
+butane~|~n-butane,106-97-8,pentane~|~n-pentane,109-66-0,1.0,1.01815965,1.0,1.00214364,10.1021/je300655b
+butane~|~n-butane,106-97-8,isopentane~|~methylbutane~|~2-methylbutane,78-78-4,1.0,1.002728434,1.0,1.000792201,10.1021/je300655b
+butane~|~n-butane,106-97-8,hexane~|~n-hexane,110-54-3,1.0,1.034995284,1.0,1.00915706,10.1021/je300655b
+butane~|~n-butane,106-97-8,heptane~|~n-heptane,142-82-5,1.0,1.019174227,1.0,1.021283378,10.1021/je300655b
+butane~|~n-butane,106-97-8,octane~|~n-octane,111-65-9,1.0,1.046905515,1.0,1.033180106,10.1021/je300655b
+butane~|~n-butane,106-97-8,nonane~|~n-nonane,111-84-2,1.0,1.049219137,1.0,1.014096448,10.1021/je300655b
+butane~|~n-butane,106-97-8,decane~|~n-decane,124-18-5,0.976951968,1.027845529,0.993688386,1.076466918,10.1021/je300655b
+butane~|~n-butane,106-97-8,hydrogen,1333-74-0,1.0,1.232939523,1.0,2.509259945,10.1021/je300655b
+butane~|~n-butane,106-97-8,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+butane~|~n-butane,106-97-8,carbon monoxide,630-08-0,1.0,1.084740904,1.0,1.173916162,10.1021/je300655b
+butane~|~n-butane,106-97-8,water,7732-18-5,1.0,1.223638763,1.0,0.615512682,10.1021/je300655b
+butane~|~n-butane,106-97-8,hydrogen sulfide,7783-06-4,0.908113163,1.033366041,0.985962886,0.926156602,10.1021/je300655b
+butane~|~n-butane,106-97-8,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+butane~|~n-butane,106-97-8,argon,7440-37-1,1.0,1.214638734,1.0,1.245039498,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,pentane~|~n-pentane,109-66-0,1.0,1.002779804,1.0,1.002495889,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,isopentane~|~methylbutane~|~2-methylbutane,78-78-4,1.0,1.002284353,1.0,1.001835788,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,hexane~|~n-hexane,110-54-3,1.0,1.010493989,1.0,1.006018054,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,heptane~|~n-heptane,142-82-5,1.0,1.021668316,1.0,1.00988576,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,octane~|~n-octane,111-65-9,1.0,1.032807063,1.0,1.013945424,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,nonane~|~n-nonane,111-84-2,1.0,1.047298475,1.0,1.017817492,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,decane~|~n-decane,124-18-5,1.0,1.060243344,1.0,1.021624748,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,hydrogen,1333-74-0,1.0,1.147595688,1.0,1.895305393,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,carbon monoxide,630-08-0,1.0,1.087272232,1.0,1.161390082,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,water,7732-18-5,1.0,1.0,1.0,1.0,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,hydrogen sulfide,7783-06-4,1.012994431,0.988591117,0.974550548,0.937130844,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+isobutane~|~2-methylpropane,75-28-5,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,isopentane~|~methylbutane~|~2-methylbutane,78-78-4,1.0,1.000024335,1.0,1.000050537,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,hexane~|~n-hexane,110-54-3,1.0,1.002480637,1.0,1.000761237,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,heptane~|~n-heptane,142-82-5,1.0,1.008972412,1.0,1.002441051,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,octane~|~n-octane,111-65-9,1.0,1.069223964,1.0,1.016422347,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,nonane~|~n-nonane,111-84-2,1.0,1.034910633,1.0,1.103421755,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,decane~|~n-decane,124-18-5,1.0,1.016370338,1.0,1.049035838,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,hydrogen,1333-74-0,1.0,1.188334783,1.0,2.013859174,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,carbon monoxide,630-08-0,1.0,1.119954454,1.0,1.206043295,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,water,7732-18-5,1.0,0.95667731,1.0,0.447666011,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,hydrogen sulfide,7783-06-4,0.984613203,1.076539234,0.962006651,0.959065662,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+pentane~|~n-pentane,109-66-0,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,hexane~|~n-hexane,110-54-3,1.0,1.002995876,1.0,1.001204174,10.1021/je300655b
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,heptane~|~n-heptane,142-82-5,1.0,1.009928206,1.0,1.003194615,10.1021/je300655b
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,octane~|~n-octane,111-65-9,1.0,1.017880545,1.0,1.00564748,10.1021/je300655b
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,nonane~|~n-nonane,111-84-2,1.0,1.028994325,1.0,1.008191499,10.1021/je300655b
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,decane~|~n-decane,124-18-5,1.0,1.039372957,1.0,1.010825138,10.1021/je300655b
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,hydrogen,1333-74-0,1.0,1.184340443,1.0,1.996386669,10.1021/je300655b
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,carbon monoxide,630-08-0,1.0,1.116694577,1.0,1.199326059,10.1021/je300655b
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,water,7732-18-5,1.0,1.0,1.0,1.0,10.1021/je300655b
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,hydrogen sulfide,7783-06-4,1.0,0.835763343,1.0,0.982651529,10.1021/je300655b
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+hexane~|~n-hexane,110-54-3,heptane~|~n-heptane,142-82-5,1.0,1.001508227,1.0,0.999762786,10.1021/je300655b
+hexane~|~n-hexane,110-54-3,octane~|~n-octane,111-65-9,1.0,1.006268954,1.0,1.001633952,10.1021/je300655b
+hexane~|~n-hexane,110-54-3,nonane~|~n-nonane,111-84-2,1.0,1.02076168,1.0,1.055369591,10.1021/je300655b
+hexane~|~n-hexane,110-54-3,decane~|~n-decane,124-18-5,1.001516371,1.013511439,0.99764101,1.028939539,10.1021/je300655b
+hexane~|~n-hexane,110-54-3,hydrogen,1333-74-0,1.0,1.243461678,1.0,3.021197546,10.1021/je300655b
+hexane~|~n-hexane,110-54-3,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+hexane~|~n-hexane,110-54-3,carbon monoxide,630-08-0,1.0,1.155145836,1.0,1.233272781,10.1021/je300655b
+hexane~|~n-hexane,110-54-3,water,7732-18-5,1.0,1.170217596,1.0,0.569681333,10.1021/je300655b
+hexane~|~n-hexane,110-54-3,hydrogen sulfide,7783-06-4,0.754473958,1.339283552,0.985891113,0.956075596,10.1021/je300655b
+hexane~|~n-hexane,110-54-3,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+hexane~|~n-hexane,110-54-3,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+heptane~|~n-heptane,142-82-5,octane~|~n-octane,111-65-9,1.0,1.006767176,1.0,0.998793111,10.1021/je300655b
+heptane~|~n-heptane,142-82-5,nonane~|~n-nonane,111-84-2,1.0,1.001370076,1.0,1.001150096,10.1021/je300655b
+heptane~|~n-heptane,142-82-5,decane~|~n-decane,124-18-5,1.0,1.002972346,1.0,1.002229938,10.1021/je300655b
+heptane~|~n-heptane,142-82-5,hydrogen,1333-74-0,1.0,1.159131722,1.0,3.169143057,10.1021/je300655b
+heptane~|~n-heptane,142-82-5,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+heptane~|~n-heptane,142-82-5,carbon monoxide,630-08-0,1.0,1.190354273,1.0,1.256123503,10.1021/je300655b
+heptane~|~n-heptane,142-82-5,water,7732-18-5,1.0,1.0,1.0,1.0,10.1021/je300655b
+heptane~|~n-heptane,142-82-5,hydrogen sulfide,7783-06-4,0.828967164,1.087956749,0.988937417,1.013453092,10.1021/je300655b
+heptane~|~n-heptane,142-82-5,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+heptane~|~n-heptane,142-82-5,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+octane~|~n-octane,111-65-9,nonane~|~n-nonane,111-84-2,1.0,1.001357085,1.0,1.000235044,10.1021/je300655b
+octane~|~n-octane,111-65-9,decane~|~n-decane,124-18-5,1.0,1.002553544,1.0,1.007186267,10.1021/je300655b
+octane~|~n-octane,111-65-9,hydrogen,1333-74-0,1.0,1.305249405,1.0,2.191555216,10.1021/je300655b
+octane~|~n-octane,111-65-9,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+octane~|~n-octane,111-65-9,carbon monoxide,630-08-0,1.0,1.219206702,1.0,1.276565536,10.1021/je300655b
+octane~|~n-octane,111-65-9,water,7732-18-5,1.0,0.599484191,1.0,0.662072469,10.1021/je300655b
+octane~|~n-octane,111-65-9,hydrogen sulfide,7783-06-4,1.0,1.0,1.0,1.0,10.1021/je300655b
+octane~|~n-octane,111-65-9,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+octane~|~n-octane,111-65-9,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+nonane~|~n-nonane,111-84-2,decane~|~n-decane,124-18-5,1.0,1.00081052,1.0,1.000182392,10.1021/je300655b
+nonane~|~n-nonane,111-84-2,hydrogen,1333-74-0,1.0,1.342647661,1.0,2.23435404,10.1021/je300655b
+nonane~|~n-nonane,111-84-2,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+nonane~|~n-nonane,111-84-2,carbon monoxide,630-08-0,1.0,1.252151449,1.0,1.294070556,10.1021/je300655b
+nonane~|~n-nonane,111-84-2,water,7732-18-5,1.0,1.0,1.0,1.0,10.1021/je300655b
+nonane~|~n-nonane,111-84-2,hydrogen sulfide,7783-06-4,1.0,1.082905109,1.0,1.086557826,10.1021/je300655b
+nonane~|~n-nonane,111-84-2,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+nonane~|~n-nonane,111-84-2,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+decane~|~n-decane,124-18-5,hydrogen,1333-74-0,1.695358382,1.120233729,1.064818089,3.786003724,10.1021/je300655b
+decane~|~n-decane,124-18-5,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+decane~|~n-decane,124-18-5,carbon monoxide,630-08-0,1.0,0.87018496,1.049594632,1.803567587,10.1021/je300655b
+decane~|~n-decane,124-18-5,water,7732-18-5,1.0,0.551405318,0.897162268,0.740416402,10.1021/je300655b
+decane~|~n-decane,124-18-5,hydrogen sulfide,7783-06-4,0.975187766,1.171714677,0.973091413,1.103693489,10.1021/je300655b
+decane~|~n-decane,124-18-5,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+decane~|~n-decane,124-18-5,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+hydrogen,1333-74-0,oxygen,7782-44-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+carbon monoxide,630-08-0,hydrogen,1333-74-0,1.037,1.04,1.078,1.105,10.1063/5.0040533
+hydrogen,1333-74-0,water,7732-18-5,1.0,1.0,1.0,1.0,10.1021/je300655b
+hydrogen,1333-74-0,hydrogen sulfide,7783-06-4,1.0,1.0,1.0,1.0,10.1021/je300655b
+hydrogen,1333-74-0,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+hydrogen,1333-74-0,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+oxygen,7782-44-7,hydrogen sulfide,7783-06-4,1.0,1.0,1.0,1.0,10.1021/je300655b
+oxygen,7782-44-7,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+carbon monoxide,630-08-0,hydrogen sulfide,7783-06-4,0.795660392,1.101731308,1.025536736,1.022749748,10.1021/je300655b
+carbon monoxide,630-08-0,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+water,7732-18-5,hydrogen sulfide,7783-06-4,1.0,1.014832832,1.0,0.940587083,10.1021/je300655b
+water,7732-18-5,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+hydrogen sulfide,7783-06-4,helium~|~helium-4,7440-59-7,1.0,1.0,1.0,1.0,10.1021/je300655b
+hydrogen sulfide,7783-06-4,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+helium~|~helium-4,7440-59-7,argon,7440-37-1,1.0,1.0,1.0,1.0,10.1021/je300655b
+ethanol,64-17-5,water,7732-18-5,1.0624092,0.8687762,0.971761,0.93996768,
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,"r245fa~|~1,1,1,3,3-pentafluoropropane",460-73-1,0.992025,1.0,1.0,1.00643,akasaka-purdue-2014
+r32~|~difluoromethane,75-10-5,"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,0.993346,1.02211,1.00052,0.948538,akasaka-fpe-2013
+r32~|~difluoromethane,75-10-5,"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene",29118-24-9,1.00586,0.982707,1.00343,0.977857,akasaka-fpe-2013
+butene~|~1-butene,106-98-9,acetone~|~propanone,67-64-1,1.0,1.0,1.01475,0.95623,10.1021/acs.jced.6b00257
+butene~|~1-butene,106-98-9,butane~|~n-butane,106-97-8,1.0,1.0,1.00154,0.99777,10.1021/acs.jced.6b00257
+butene~|~1-butene,106-98-9,perfluorobutane~|~decafluorobutane~|~n-perfluorobutane,355-25-9,1.0,1.0,1.06345,0.86402,10.1021/acs.jced.6b00257
+butene~|~1-butene,106-98-9,carbon dioxide,124-38-9,1.0,1.0,0.98059,0.96751,10.1021/acs.jced.6b00257
+butene~|~1-butene,106-98-9,dimethyl ether,115-10-6,1.0,1.0,0.99767,0.98081,10.1021/acs.jced.6b00257
+butene~|~1-butene,106-98-9,ethene~|~ethylene~|~1-ethylene,74-85-1,1.0,1.0,1.00327,1.0557,10.1021/acs.jced.6b00257
+butene~|~1-butene,106-98-9,propene~|~propylene,115-07-1,1.0,1.0,1.00018,1.00725,10.1021/acs.jced.6b00257
+butene~|~1-butene,106-98-9,r1216~|~perfluoropropene~|~hexafluoropropene~|~hexafluoropropylene,116-15-4,1.0,1.0,1.01733,0.92312,10.1021/acs.jced.6b00257
+butene~|~1-butene,106-98-9,r32~|~difluoromethane,75-10-5,1.0,1.0,0.98014,0.85398,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,benzene,71-43-2,1.0,1.0,0.9982,0.98198,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,butane~|~n-butane,106-97-8,1.0,1.0,0.98364,0.93303,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,dodecane~|~n-dodecane,112-40-3,1.0,1.0,1.0322,0.99897,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,tetradecane~|~n-tetradecane,629-59-4,1.0,1.0,1.02803,1.02375,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,2-butene~|~(z)-2-butene~|~cis-2-butene,590-18-1,1.0,1.0,0.98583,0.95209,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,carbon dioxide,124-38-9,1.0,1.0,1.01322,1.0805,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,cyclohexane,110-82-7,1.0,1.0,0.9912,0.92123,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,decane~|~n-decane,124-18-5,1.0,1.0,1.02395,0.96708,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,diethyl ether,60-29-7,1.0,1.0,0.99001,0.97127,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,dimethyl carbonate,616-38-6,1.0,1.0,0.997,0.99989,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,ethane,74-84-0,1.0,1.0,0.96779,1.0142,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,ethanol,64-17-5,1.0,1.0,1.0035,0.9739,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,ethene~|~ethylene~|~1-ethylene,74-85-1,1.0,1.0,0.99223,1.10077,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,hydrogen sulfide,7783-06-4,1.0,1.0,0.95958,1.04871,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,heptane~|~n-heptane,142-82-5,1.0,1.0,1.01173,0.92544,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,hexane~|~n-hexane,110-54-3,1.0,1.0,1.00129,0.91955,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,isobutene~|~isobutylene~|~2-methylpropene,115-11-7,1.0,1.0,0.98616,0.95994,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,"isooctane~|~2,2,4-trimethylpentane",540-84-1,1.0,1.0,1.00451,0.93534,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,isobutane~|~2-methylpropane,75-28-5,1.0,1.0,0.98302,0.93551,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,methanol,67-56-1,1.0,1.0,0.99906,0.97135,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,nonane~|~n-nonane,111-84-2,1.0,1.0,1.01457,0.9428,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,pentane~|~n-pentane,109-66-0,1.0,1.0,0.9945,0.92363,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,propene~|~propylene,115-07-1,1.0,1.0,0.98047,0.99014,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,1.0007,0.9752,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,1.0,1.0,0.9963,0.95086,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,1.04656,1.07981,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,sulfur dioxide,7446-09-5,1.0,1.0,1.0107,1.10455,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,(e)-2-butene~|~trans-2-butene,624-64-6,1.0,1.0,0.98504,0.95011,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,toluene,108-88-3,1.0,1.0,0.99846,0.97643,10.1021/acs.jced.6b00257
+acetone~|~propanone,67-64-1,water,7732-18-5,1.0,1.0,0.98238,0.9197,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,argon,7440-37-1,1.0,1.0,1.03498,1.06504,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,benzene,71-43-2,1.0,1.0,1.03065,0.92822,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,butane~|~n-butane,106-97-8,1.0,1.0,1.05871,0.80552,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,hexane~|~n-hexane,110-54-3,1.0,1.0,1.09995,0.86636,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,krypton,7439-90-9,1.0,1.0,0.98832,0.92419,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,1.0425,0.95719,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,octane~|~n-octane,111-65-9,1.0,1.0,1.04331,0.62644,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,pentane~|~n-pentane,109-66-0,1.0,1.0,1.09752,0.8445,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,propane~|~n-propane,74-98-6,1.0,1.0,1.04145,0.79017,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,propene~|~propylene,115-07-1,1.0,1.0,1.02533,0.84826,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,propyne~|~1-propyne~|~methylacetylene,74-99-7,1.0,1.0,1.00696,0.94154,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,r125~|~pentafluoroethane,354-33-6,1.0,1.0,1.04548,0.96866,10.1021/acs.jced.6b00257
+ammonia,7664-41-7,r13~|~chlorotrifluoromethane,75-72-9,1.0,1.0,1.03859,0.76464,10.1021/acs.jced.6b00257
+argon,7440-37-1,benzene,71-43-2,1.0,1.0,1.00291,1.40461,10.1021/acs.jced.6b00257
+argon,7440-37-1,cyclopentane,287-92-3,1.0,1.0,0.9798,1.36013,10.1021/acs.jced.6b00257
+argon,7440-37-1,krypton,7439-90-9,1.0,1.0,1.0002,1.0046,10.1021/acs.jced.6b00257
+argon,7440-37-1,"neopentane~|~2,2-dimethylpropane",463-82-1,1.0,1.0,1.00019,1.28707,10.1021/acs.jced.6b00257
+argon,7440-37-1,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.98668,1.20531,10.1021/acs.jced.6b00257
+benzene,71-43-2,butane~|~n-butane,106-97-8,1.0,1.0,0.99022,0.99834,10.1021/acs.jced.6b00257
+benzene,71-43-2,dodecane~|~n-dodecane,112-40-3,1.0,1.0,1.00717,1.02547,10.1021/acs.jced.6b00257
+benzene,71-43-2,tetradecane~|~n-tetradecane,629-59-4,1.0,1.0,0.99866,1.04969,10.1021/acs.jced.6b00257
+benzene,71-43-2,methylcyclohexane,108-87-2,1.0,1.0,1.00452,0.98159,10.1021/acs.jced.6b00257
+benzene,71-43-2,carbon monoxide,630-08-0,1.0,1.0,1.02875,1.47254,10.1021/acs.jced.6b00257
+benzene,71-43-2,carbon dioxide,124-38-9,1.0,1.0,0.99261,1.03295,10.1021/acs.jced.6b00257
+benzene,71-43-2,cyclohexane,110-82-7,1.0,1.0,1.00212,0.97982,10.1021/acs.jced.6b00257
+benzene,71-43-2,water-d2~|~heavywater~|~deuterium oxide,556-67-2,1.0,1.0,1.01222,0.98954,10.1021/acs.jced.6b00257
+benzene,71-43-2,decane~|~n-decane,124-18-5,1.0,1.0,1.00678,0.99831,10.1021/acs.jced.6b00257
+benzene,71-43-2,diethyl ether,60-29-7,1.0,1.0,1.00092,1.00226,10.1021/acs.jced.6b00257
+benzene,71-43-2,dimethyl carbonate,616-38-6,1.0,1.0,1.00156,0.98361,10.1021/acs.jced.6b00257
+benzene,71-43-2,ethylbenzene,100-41-4,1.0,1.0,0.99807,1.01425,10.1021/acs.jced.6b00257
+benzene,71-43-2,ethane,74-84-0,1.0,1.0,0.99662,1.08163,10.1021/acs.jced.6b00257
+benzene,71-43-2,ethanol,64-17-5,1.0,1.0,1.02907,0.9164,10.1021/acs.jced.6b00257
+benzene,71-43-2,hydrogen sulfide,7783-06-4,1.0,1.0,1.00564,1.06015,10.1021/acs.jced.6b00257
+benzene,71-43-2,heptane~|~n-heptane,142-82-5,1.0,1.0,1.00775,0.97482,10.1021/acs.jced.6b00257
+benzene,71-43-2,hexane~|~n-hexane,110-54-3,1.0,1.0,1.0043,0.97222,10.1021/acs.jced.6b00257
+benzene,71-43-2,isohexane~|~2-methylpentane,107-83-5,1.0,1.0,1.00643,0.97119,10.1021/acs.jced.6b00257
+benzene,71-43-2,"isooctane~|~2,2,4-trimethylpentane",540-84-1,1.0,1.0,1.00861,0.96998,10.1021/acs.jced.6b00257
+benzene,71-43-2,methane,74-82-8,1.0,1.0,1.0018,1.29314,10.1021/acs.jced.6b00257
+benzene,71-43-2,methanol,67-56-1,1.0,1.0,1.02351,0.90254,10.1021/acs.jced.6b00257
+benzene,71-43-2,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,0.99896,1.00464,10.1021/acs.jced.6b00257
+benzene,71-43-2,nonane~|~n-nonane,111-84-2,1.0,1.0,1.00489,0.97411,10.1021/acs.jced.6b00257
+benzene,71-43-2,octane~|~n-octane,111-65-9,1.0,1.0,1.00796,0.98037,10.1021/acs.jced.6b00257
+benzene,71-43-2,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,1.01414,1.00329,10.1021/acs.jced.6b00257
+benzene,71-43-2,pentane~|~n-pentane,109-66-0,1.0,1.0,1.00187,0.97605,10.1021/acs.jced.6b00257
+benzene,71-43-2,propane~|~n-propane,74-98-6,1.0,1.0,1.0017,1.01942,10.1021/acs.jced.6b00257
+benzene,71-43-2,propene~|~propylene,115-07-1,1.0,1.0,0.9973,1.02876,10.1021/acs.jced.6b00257
+benzene,71-43-2,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,1.00112,1.00639,10.1021/acs.jced.6b00257
+benzene,71-43-2,"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,1.0,1.0,1.00372,0.97215,10.1021/acs.jced.6b00257
+benzene,71-43-2,"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",76-14-2,1.0,1.0,1.00118,0.95788,10.1021/acs.jced.6b00257
+benzene,71-43-2,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,1.0106,1.03496,10.1021/acs.jced.6b00257
+benzene,71-43-2,toluene,108-88-3,1.0,1.0,1.00015,1.00176,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,tetradecane~|~n-tetradecane,629-59-4,1.0,1.0,0.97985,1.15977,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,2-butene~|~(z)-2-butene~|~cis-2-butene,590-18-1,1.0,1.0,0.9988,0.99538,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,cyclohexane,110-82-7,1.0,1.0,1.00719,1.02834,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,dimethyl ether,115-10-6,1.0,1.0,0.99621,0.96541,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,ethene~|~ethylene~|~1-ethylene,74-85-1,1.0,1.0,1.02263,1.05892,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,1.0,1.0,0.97018,0.94381,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,isobutene~|~isobutylene~|~2-methylpropene,115-11-7,1.0,1.0,1.00062,0.99703,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,methyl palmitate~|~methyl hexadecanoate~|~hexadecanoicacidmethylester,112-39-0,1.0,1.0,0.93827,1.21149,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,1.0,1.0,1.0029,0.99168,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,r125~|~pentafluoroethane,354-33-6,1.0,1.0,0.99482,0.90412,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,r13~|~chlorotrifluoromethane,75-72-9,1.0,1.0,0.9973,0.98279,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,1.00409,0.89057,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,"r143a~|~1,1,1-trifluoroethane",420-46-2,1.0,1.0,1.00093,0.91912,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,1.00243,0.91179,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,1.0,1.0,1.01441,0.90171,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.97624,0.89836,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,"r245fa~|~1,1,1,3,3-pentafluoropropane",460-73-1,1.0,1.0,1.01634,0.90319,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,r32~|~difluoromethane,75-10-5,1.0,1.0,0.98166,0.8699,10.1021/acs.jced.6b00257
+butane~|~n-butane,106-97-8,(e)-2-butene~|~trans-2-butene,624-64-6,1.0,1.0,0.99911,0.99609,10.1021/acs.jced.6b00257
+undecane~|~n-undecane,1120-21-4,carbon dioxide,124-38-9,1.0,1.0,0.99389,1.19119,10.1021/acs.jced.6b00257
+undecane~|~n-undecane,1120-21-4,ethane,74-84-0,1.0,1.0,1.06034,1.27938,10.1021/acs.jced.6b00257
+undecane~|~n-undecane,1120-21-4,methanol,67-56-1,1.0,1.0,0.90438,0.95529,10.1021/acs.jced.6b00257
+undecane~|~n-undecane,1120-21-4,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,1.0009,1.00198,10.1021/acs.jced.6b00257
+undecane~|~n-undecane,1120-21-4,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,0.9981,0.99825,10.1021/acs.jced.6b00257
+undecane~|~n-undecane,1120-21-4,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,0.99981,1.0018,10.1021/acs.jced.6b00257
+dodecane~|~n-dodecane,112-40-3,carbon monoxide,630-08-0,1.0,1.0,1.06881,1.92729,10.1021/acs.jced.6b00257
+dodecane~|~n-dodecane,112-40-3,cyclohexane,110-82-7,1.0,1.0,1.0045,1.04292,10.1021/acs.jced.6b00257
+dodecane~|~n-dodecane,112-40-3,decane~|~n-decane,124-18-5,1.0,1.0,0.9987,1.00382,10.1021/acs.jced.6b00257
+dodecane~|~n-dodecane,112-40-3,ethane,74-84-0,1.0,1.0,1.05041,1.32514,10.1021/acs.jced.6b00257
+dodecane~|~n-dodecane,112-40-3,hydrogen sulfide,7783-06-4,1.0,1.0,1.01731,1.17814,10.1021/acs.jced.6b00257
+dodecane~|~n-dodecane,112-40-3,heptane~|~n-heptane,142-82-5,1.0,1.0,0.99911,1.03014,10.1021/acs.jced.6b00257
+dodecane~|~n-dodecane,112-40-3,methanol,67-56-1,1.0,1.0,0.90111,0.79118,10.1021/acs.jced.6b00257
+dodecane~|~n-dodecane,112-40-3,nitrous oxide,10024-97-2,1.0,1.0,1.03545,1.2736,10.1021/acs.jced.6b00257
+dodecane~|~n-dodecane,112-40-3,octane~|~n-octane,111-65-9,1.0,1.0,1.00166,1.0217,10.1021/acs.jced.6b00257
+dodecane~|~n-dodecane,112-40-3,toluene,108-88-3,1.0,1.0,0.99508,1.01727,10.1021/acs.jced.6b00257
+tetradecane~|~n-tetradecane,629-59-4,methanol,67-56-1,1.0,1.0,0.90474,1.82083,10.1021/acs.jced.6b00257
+tetradecane~|~n-tetradecane,629-59-4,propane~|~n-propane,74-98-6,1.0,1.0,1.06681,1.1558,10.1021/acs.jced.6b00257
+methylcyclohexane,108-87-2,cyclohexane,110-82-7,1.0,1.0,0.99923,0.99987,10.1021/acs.jced.6b00257
+methylcyclohexane,108-87-2,ethylbenzene,100-41-4,1.0,1.0,1.00104,0.99289,10.1021/acs.jced.6b00257
+methylcyclohexane,108-87-2,ethane,74-84-0,1.0,1.0,1.00973,1.12773,10.1021/acs.jced.6b00257
+methylcyclohexane,108-87-2,ethanol,64-17-5,1.0,1.0,1.02569,0.9013,10.1021/acs.jced.6b00257
+methylcyclohexane,108-87-2,heptane~|~n-heptane,142-82-5,1.0,1.0,0.99972,0.9978,10.1021/acs.jced.6b00257
+methylcyclohexane,108-87-2,hexane~|~n-hexane,110-54-3,1.0,1.0,1.00014,0.99759,10.1021/acs.jced.6b00257
+methylcyclohexane,108-87-2,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,1.00132,0.99508,10.1021/acs.jced.6b00257
+methylcyclohexane,108-87-2,pentane~|~n-pentane,109-66-0,1.0,1.0,1.00254,1.00312,10.1021/acs.jced.6b00257
+methylcyclohexane,108-87-2,propane~|~n-propane,74-98-6,1.0,1.0,0.99917,1.054,10.1021/acs.jced.6b00257
+methylcyclohexane,108-87-2,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,1.00133,0.99463,10.1021/acs.jced.6b00257
+methylcyclohexane,108-87-2,toluene,108-88-3,1.0,1.0,0.99987,0.98708,10.1021/acs.jced.6b00257
+2-butene~|~(z)-2-butene~|~cis-2-butene,590-18-1,ethanol,64-17-5,1.0,1.0,1.02589,0.94964,10.1021/acs.jced.6b00257
+2-butene~|~(z)-2-butene~|~cis-2-butene,590-18-1,methanol,67-56-1,1.0,1.0,1.02664,0.90617,10.1021/acs.jced.6b00257
+propylcyclohexane~|~n-propylcyclohexane~|~1-cyclohexylpropane,1678-92-8,ethane,74-84-0,1.0,1.0,1.01912,1.195,10.1021/acs.jced.6b00257
+propylcyclohexane~|~n-propylcyclohexane~|~1-cyclohexylpropane,1678-92-8,hydrogen sulfide,7783-06-4,1.0,1.0,1.00425,1.10114,10.1021/acs.jced.6b00257
+propylcyclohexane~|~n-propylcyclohexane~|~1-cyclohexylpropane,1678-92-8,nitrogen,7727-37-9,1.0,1.0,1.01206,1.69332,10.1021/acs.jced.6b00257
+propylcyclohexane~|~n-propylcyclohexane~|~1-cyclohexylpropane,1678-92-8,propane~|~n-propane,74-98-6,1.0,1.0,1.00516,1.10943,10.1021/acs.jced.6b00257
+perfluorobutane~|~decafluorobutane~|~n-perfluorobutane,355-25-9,carbon dioxide,124-38-9,1.0,1.0,0.96003,0.95201,10.1021/acs.jced.6b00257
+perfluorobutane~|~decafluorobutane~|~n-perfluorobutane,355-25-9,dimethyl ether,115-10-6,1.0,1.0,0.95275,0.86921,10.1021/acs.jced.6b00257
+perfluorobutane~|~decafluorobutane~|~n-perfluorobutane,355-25-9,ethane,74-84-0,1.0,1.0,0.97199,0.97003,10.1021/acs.jced.6b00257
+perfluorobutane~|~decafluorobutane~|~n-perfluorobutane,355-25-9,ethene~|~ethylene~|~1-ethylene,74-85-1,1.0,1.0,0.96014,0.97341,10.1021/acs.jced.6b00257
+perfluorobutane~|~decafluorobutane~|~n-perfluorobutane,355-25-9,methane,74-82-8,1.0,1.0,0.98649,1.12365,10.1021/acs.jced.6b00257
+perfluorobutane~|~decafluorobutane~|~n-perfluorobutane,355-25-9,propane~|~n-propane,74-98-6,1.0,1.0,0.97499,0.90987,10.1021/acs.jced.6b00257
+perfluorobutane~|~decafluorobutane~|~n-perfluorobutane,355-25-9,"r365mfc~|~1,1,1,3,3-pentafluorobutane",406-58-6,1.0,1.0,0.99786,0.93067,10.1021/acs.jced.6b00257
+perfluoropentane~|~n-perfluoropentane~|~perfluoro-n-pentane,678-26-2,pentane~|~n-pentane,109-66-0,1.0,1.0,0.97304,0.8914,10.1021/acs.jced.6b00257
+r13i1~|~trifluoroiodomethane,2314-97-8,isobutane~|~2-methylpropane,75-28-5,1.0,1.0,1.002,0.98459,10.1021/acs.jced.6b00257
+r13i1~|~trifluoroiodomethane,2314-97-8,nitrogen,7727-37-9,1.0,1.0,1.00123,1.30226,10.1021/acs.jced.6b00257
+r13i1~|~trifluoroiodomethane,2314-97-8,propane~|~n-propane,74-98-6,1.0,1.0,0.99452,0.98807,10.1021/acs.jced.6b00257
+r13i1~|~trifluoroiodomethane,2314-97-8,"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene",29118-24-9,1.0,1.0,1.00346,0.96604,10.1021/acs.jced.6b00257
+r13i1~|~trifluoroiodomethane,2314-97-8,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,0.99875,0.96404,10.1021/acs.jced.6b00257
+cl2~|~chlorine,7782-50-5,hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,1.0,1.0,0.99601,0.96115,10.1021/acs.jced.6b00257
+carbon monoxide,630-08-0,cyclohexane,110-82-7,1.0,1.0,0.99244,1.46342,10.1021/acs.jced.6b00257
+carbon monoxide,630-08-0,ethanol,64-17-5,1.0,1.0,0.91325,1.69985,10.1021/acs.jced.6b00257
+carbon monoxide,630-08-0,ethene~|~ethylene~|~1-ethylene,74-85-1,1.0,1.0,0.96489,1.09111,10.1021/acs.jced.6b00257
+carbon monoxide,630-08-0,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,0.98439,1.5975,10.1021/acs.jced.6b00257
+carbon monoxide,630-08-0,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,0.98181,1.62153,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,carbonyl sulfide,463-58-1,1.0,1.0,1.00023,0.9445,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,cyclopentane,287-92-3,1.0,1.0,1.01592,0.98308,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,diethyl ether,60-29-7,1.0,1.0,1.01217,1.03241,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,dimethyl ether,115-10-6,1.0,1.0,0.99723,1.03116,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,ethylbenzene,100-41-4,1.0,1.0,1.00091,1.09145,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,ethene~|~ethylene~|~1-ethylene,74-85-1,1.0,1.0,1.00402,0.95576,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,methyl stearate~|~methyl octadecanoate~|~octadecanoicacidmethylester,112-61-8,1.0,1.0,0.90151,1.45262,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"neopentane~|~2,2-dimethylpropane",463-82-1,1.0,1.0,1.02674,0.9543,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"novec649~|~1,1,1,2,2,4,5,5,5-nonafluoro-4-(trifluoromethyl)-3-pentanone",756-13-8,1.0,1.0,1.04359,1.03509,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,1.00114,1.10292,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,propene~|~propylene,115-07-1,1.0,1.0,1.01217,0.93465,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,1.0034,1.1043,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,r116~|~perfluoroethane~|~hexafluoroethane,76-16-4,1.0,1.0,1.03808,0.89857,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,r12~|~dichlorodifluoromethane,75-71-8,1.0,1.0,1.01811,0.9576,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,r1216~|~perfluoropropene~|~hexafluoropropene~|~hexafluoropropylene,116-15-4,1.0,1.0,1.01687,0.98477,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"r123~|~1,1-dichloro-2,2,2-trifluoroethane~|~2,2-dichloro-1,1,1-trifluoroethane",306-83-2,1.0,1.0,0.98639,1.05886,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,1.0,1.0,1.01128,0.98477,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene",29118-24-9,1.0,1.0,1.00219,1.02234,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"r124~|~1-chloro-1,2,2,2-tetrafluoroethane~|~2-chloro-1,1,1,2-tetrafluoroethane",2837-89-0,1.0,1.0,0.99517,1.01028,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,r125~|~pentafluoroethane,354-33-6,1.0,1.0,1.0115,0.96741,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,1.01036,1.01129,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"r142b~|~1-chloro-1,1-difluoroethane",75-68-3,1.0,1.0,1.01196,1.00776,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"r143a~|~1,1,1-trifluoroethane",420-46-2,1.0,1.0,1.02027,0.98474,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,1.00224,1.00646,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,1.00394,1.01254,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,1.0,1.0,1.00608,1.00235,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,r23~|~trifluoromethane,75-46-7,1.0,1.0,1.00402,0.9847,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,r32~|~difluoromethane,75-10-5,1.0,1.0,1.00312,0.99971,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,r41~|~fluoromethane~|~methyl fluoride,593-53-3,1.0,1.0,0.99603,1.003,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,sulfur dioxide,7446-09-5,1.0,1.0,1.00511,1.0107,10.1021/acs.jced.6b00257
+carbon dioxide,124-38-9,toluene,108-88-3,1.0,1.0,1.00502,1.06677,10.1021/acs.jced.6b00257
+carbonyl sulfide,463-58-1,hydrogen sulfide,7783-06-4,1.0,1.0,0.99425,0.94407,10.1021/acs.jced.6b00257
+carbonyl sulfide,463-58-1,methane,74-82-8,1.0,1.0,1.01619,1.08482,10.1021/acs.jced.6b00257
+carbonyl sulfide,463-58-1,propane~|~n-propane,74-98-6,1.0,1.0,0.99601,0.992,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,dimethyl carbonate,616-38-6,1.0,1.0,1.00826,0.92848,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,ethylbenzene,100-41-4,1.0,1.0,1.0043,0.99414,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,ethane,74-84-0,1.0,1.0,1.00539,1.09921,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,ethanol,64-17-5,1.0,1.0,1.02513,0.90252,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,ethene~|~ethylene~|~1-ethylene,74-85-1,1.0,1.0,1.00126,1.12037,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,hydrogen sulfide,7783-06-4,1.0,1.0,0.98291,1.01006,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,heptane~|~n-heptane,142-82-5,1.0,1.0,1.00116,0.99502,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,hexane~|~n-hexane,110-54-3,1.0,1.0,1.00102,0.99297,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,"isooctane~|~2,2,4-trimethylpentane",540-84-1,1.0,1.0,1.0019,0.99375,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,methane,74-82-8,1.0,1.0,1.01565,1.32339,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,1.00315,0.99328,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,nitrogen,7727-37-9,1.0,1.0,0.9997,1.47554,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,nonane~|~n-nonane,111-84-2,1.0,1.0,0.99583,1.00655,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,octane~|~n-octane,111-65-9,1.0,1.0,1.00125,0.99972,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,1.00392,0.99006,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,pentane~|~n-pentane,109-66-0,1.0,1.0,1.0005,0.99588,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,propane~|~n-propane,74-98-6,1.0,1.0,0.9974,1.03578,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,propene~|~propylene,115-07-1,1.0,1.0,1.00099,1.04089,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,1.00184,0.99198,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,r12~|~dichlorodifluoromethane,75-71-8,1.0,1.0,0.96292,0.989,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.99094,0.97638,10.1021/acs.jced.6b00257
+cyclohexane,110-82-7,toluene,108-88-3,1.0,1.0,1.00176,0.98779,10.1021/acs.jced.6b00257
+cyclopentane,287-92-3,water-d2~|~heavywater~|~deuterium oxide,556-67-2,1.0,1.0,0.99608,1.03293,10.1021/acs.jced.6b00257
+cyclopentane,287-92-3,ethanol,64-17-5,1.0,1.0,1.06483,0.89994,10.1021/acs.jced.6b00257
+cyclopentane,287-92-3,xenon,7440-63-3,1.0,1.0,1.04856,1.17726,10.1021/acs.jced.6b00257
+cyclopropane,75-19-4,propane~|~n-propane,74-98-6,1.0,1.0,0.99757,0.98041,10.1021/acs.jced.6b00257
+cyclopropane,75-19-4,r125~|~pentafluoroethane,354-33-6,1.0,1.0,1.01522,0.91039,10.1021/acs.jced.6b00257
+cyclopropane,75-19-4,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,1.01623,0.91325,10.1021/acs.jced.6b00257
+cyclopropane,75-19-4,xenon,7440-63-3,1.0,1.0,1.07035,0.94711,10.1021/acs.jced.6b00257
+deuterium,7782-39-0,hydrogen,1333-74-0,1.0,1.0,0.99136,0.99511,10.1021/acs.jced.6b00257
+deuterium,7782-39-0,neon,7440-01-9,1.0,1.0,0.98882,0.83393,10.1021/acs.jced.6b00257
+deuterium,7782-39-0,nitrogen,7727-37-9,1.0,1.0,1.01561,1.22898,10.1021/acs.jced.6b00257
+water-d2~|~heavywater~|~deuterium oxide,7789-20-0,water,7732-18-5,1.0,1.0,0.99577,1.00379,10.1021/acs.jced.6b00257
+water-d2~|~heavywater~|~deuterium oxide,556-67-2,mdm~|~octamethyltrisiloxane,107-51-7,1.0,1.0,1.00174,0.99969,10.1021/acs.jced.6b00257
+decane~|~n-decane,124-18-5,dimethyl carbonate,616-38-6,1.0,1.0,0.98375,0.9247,10.1021/acs.jced.6b00257
+decane~|~n-decane,124-18-5,ethanol,64-17-5,1.0,1.0,0.99423,0.89711,10.1021/acs.jced.6b00257
+decane~|~n-decane,124-18-5,ethene~|~ethylene~|~1-ethylene,74-85-1,1.0,1.0,1.05317,1.28576,10.1021/acs.jced.6b00257
+decane~|~n-decane,124-18-5,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,1.00035,0.99369,10.1021/acs.jced.6b00257
+decane~|~n-decane,124-18-5,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,0.99865,0.99471,10.1021/acs.jced.6b00257
+decane~|~n-decane,124-18-5,propene~|~propylene,115-07-1,1.0,1.0,1.04471,1.19102,10.1021/acs.jced.6b00257
+decane~|~n-decane,124-18-5,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,0.99899,0.99262,10.1021/acs.jced.6b00257
+decane~|~n-decane,124-18-5,toluene,108-88-3,1.0,1.0,0.9929,0.99245,10.1021/acs.jced.6b00257
+diethyl ether,60-29-7,ethanol,64-17-5,1.0,1.0,1.00897,0.97226,10.1021/acs.jced.6b00257
+diethyl ether,60-29-7,ethene~|~ethylene~|~1-ethylene,74-85-1,1.0,1.0,1.01111,1.10874,10.1021/acs.jced.6b00257
+diethyl ether,60-29-7,hexane~|~n-hexane,110-54-3,1.0,1.0,0.99773,0.99035,10.1021/acs.jced.6b00257
+diethyl ether,60-29-7,methanol,67-56-1,1.0,1.0,1.00417,0.94684,10.1021/acs.jced.6b00257
+diethyl ether,60-29-7,r12~|~dichlorodifluoromethane,75-71-8,1.0,1.0,0.99569,1.02787,10.1021/acs.jced.6b00257
+diethyl ether,60-29-7,sulfur dioxide,7446-09-5,1.0,1.0,0.98788,1.04115,10.1021/acs.jced.6b00257
+diethyl ether,60-29-7,water,7732-18-5,1.0,1.0,0.96917,0.84219,10.1021/acs.jced.6b00257
+dimethyl carbonate,616-38-6,ethanol,64-17-5,1.0,1.0,1.00298,0.9412,10.1021/acs.jced.6b00257
+dimethyl carbonate,616-38-6,heptane~|~n-heptane,142-82-5,1.0,1.0,1.00844,0.92607,10.1021/acs.jced.6b00257
+dimethyl carbonate,616-38-6,hexane~|~n-hexane,110-54-3,1.0,1.0,1.00137,0.92986,10.1021/acs.jced.6b00257
+dimethyl carbonate,616-38-6,methanol,67-56-1,1.0,1.0,0.99772,0.93765,10.1021/acs.jced.6b00257
+dimethyl carbonate,616-38-6,nonane~|~n-nonane,111-84-2,1.0,1.0,1.02118,0.93384,10.1021/acs.jced.6b00257
+dimethyl carbonate,616-38-6,octane~|~n-octane,111-65-9,1.0,1.0,1.01339,0.92726,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,ethanol,64-17-5,1.0,1.0,0.99876,1.0361,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,hexane~|~n-hexane,110-54-3,1.0,1.0,1.00984,0.99219,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,isobutane~|~2-methylpropane,75-28-5,1.0,1.0,1.00227,0.96302,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,methane,74-82-8,1.0,1.0,1.00956,1.14009,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,methanol,67-56-1,1.0,1.0,1.00406,1.00554,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,pentane~|~n-pentane,109-66-0,1.0,1.0,1.03571,0.99489,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,propane~|~n-propane,74-98-6,1.0,1.0,0.99761,0.96354,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,propene~|~propylene,115-07-1,1.0,1.0,0.99733,0.98909,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,r125~|~pentafluoroethane,354-33-6,1.0,1.0,1.00899,1.03733,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,0.99604,1.01372,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,"r143a~|~1,1,1-trifluoroethane",420-46-2,1.0,1.0,1.00012,0.99059,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,1.01491,1.07125,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,1.0,1.0,1.01575,1.05765,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,"r236ea~|~1,1,1,2,3,3-hexafluoropropane",431-63-0,1.0,1.0,0.98075,1.06804,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,"r236fa~|~1,1,1,3,3,3-hexafluoropropane",690-39-1,1.0,1.0,0.98997,1.04344,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,r32~|~difluoromethane,75-10-5,1.0,1.0,0.99399,0.99941,10.1021/acs.jced.6b00257
+dimethyl ether,115-10-6,r40~|~chloromethane~|~methyl chloride,74-87-3,1.0,1.0,0.99969,1.01217,10.1021/acs.jced.6b00257
+ethylbenzene,100-41-4,ethanol,64-17-5,1.0,1.0,1.01024,0.90463,10.1021/acs.jced.6b00257
+ethylbenzene,100-41-4,heptane~|~n-heptane,142-82-5,1.0,1.0,1.0004,0.98665,10.1021/acs.jced.6b00257
+ethylbenzene,100-41-4,hexane~|~n-hexane,110-54-3,1.0,1.0,0.99974,0.99383,10.1021/acs.jced.6b00257
+ethylbenzene,100-41-4,"isooctane~|~2,2,4-trimethylpentane",540-84-1,1.0,1.0,1.00096,0.98599,10.1021/acs.jced.6b00257
+ethylbenzene,100-41-4,methanol,67-56-1,1.0,1.0,1.00109,0.89432,10.1021/acs.jced.6b00257
+ethylbenzene,100-41-4,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,1.00012,0.99939,10.1021/acs.jced.6b00257
+ethylbenzene,100-41-4,nonane~|~n-nonane,111-84-2,1.0,1.0,1.00375,0.98564,10.1021/acs.jced.6b00257
+ethylbenzene,100-41-4,octane~|~n-octane,111-65-9,1.0,1.0,1.00078,0.98584,10.1021/acs.jced.6b00257
+ethylbenzene,100-41-4,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,1.00153,0.99924,10.1021/acs.jced.6b00257
+ethylbenzene,100-41-4,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,0.99948,0.99905,10.1021/acs.jced.6b00257
+ethylbenzene,100-41-4,toluene,108-88-3,1.0,1.0,1.00288,1.00252,10.1021/acs.jced.6b00257
+ethane,74-84-0,ethene~|~ethylene~|~1-ethylene,74-85-1,1.0,1.0,1.00375,0.99401,10.1021/acs.jced.6b00257
+ethane,74-84-0,hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,1.0,1.0,0.99182,0.90586,10.1021/acs.jced.6b00257
+ethane,74-84-0,"isooctane~|~2,2,4-trimethylpentane",540-84-1,1.0,1.0,0.90358,1.22877,10.1021/acs.jced.6b00257
+ethane,74-84-0,krypton,7439-90-9,1.0,1.0,1.00338,1.04799,10.1021/acs.jced.6b00257
+ethane,74-84-0,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,0.98799,1.17616,10.1021/acs.jced.6b00257
+ethane,74-84-0,propene~|~propylene,115-07-1,1.0,1.0,0.99928,1.0056,10.1021/acs.jced.6b00257
+ethane,74-84-0,r116~|~perfluoroethane~|~hexafluoroethane,76-16-4,1.0,1.0,1.03539,0.89844,10.1021/acs.jced.6b00257
+ethane,74-84-0,r1216~|~perfluoropropene~|~hexafluoropropene~|~hexafluoropropylene,116-15-4,1.0,1.0,1.01157,0.93961,10.1021/acs.jced.6b00257
+ethane,74-84-0,r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,75-73-0,1.0,1.0,1.01483,0.89216,10.1021/acs.jced.6b00257
+ethane,74-84-0,r218~|~perfluoropropane~|~octafluoropropane,76-19-7,1.0,1.0,1.03147,0.93581,10.1021/acs.jced.6b00257
+ethane,74-84-0,r23~|~trifluoromethane,75-46-7,1.0,1.0,1.00597,0.87082,10.1021/acs.jced.6b00257
+ethane,74-84-0,toluene,108-88-3,1.0,1.0,0.9954,1.12756,10.1021/acs.jced.6b00257
+ethane,74-84-0,xenon,7440-63-3,1.0,1.0,0.99857,1.0096,10.1021/acs.jced.6b00257
+ethanol,64-17-5,ethene~|~ethylene~|~1-ethylene,74-85-1,1.0,1.0,1.02189,1.17065,10.1021/acs.jced.6b00257
+ethanol,64-17-5,heptane~|~n-heptane,142-82-5,1.0,1.0,0.98096,0.8981,10.1021/acs.jced.6b00257
+ethanol,64-17-5,hexane~|~n-hexane,110-54-3,1.0,1.0,0.97333,0.90746,10.1021/acs.jced.6b00257
+ethanol,64-17-5,isobutene~|~isobutylene~|~2-methylpropene,115-11-7,1.0,1.0,0.97566,0.96241,10.1021/acs.jced.6b00257
+ethanol,64-17-5,isohexane~|~2-methylpentane,107-83-5,1.0,1.0,0.98557,0.90538,10.1021/acs.jced.6b00257
+ethanol,64-17-5,"isooctane~|~2,2,4-trimethylpentane",540-84-1,1.0,1.0,0.98077,0.89163,10.1021/acs.jced.6b00257
+ethanol,64-17-5,methanol,67-56-1,1.0,1.0,1.00177,0.99902,10.1021/acs.jced.6b00257
+ethanol,64-17-5,mm~|~hexamethyldisiloxane,107-46-0,1.0,1.0,0.99498,0.91176,10.1021/acs.jced.6b00257
+ethanol,64-17-5,nitrogen,7727-37-9,1.0,1.0,1.04316,1.63914,10.1021/acs.jced.6b00257
+ethanol,64-17-5,nonane~|~n-nonane,111-84-2,1.0,1.0,1.00808,0.89624,10.1021/acs.jced.6b00257
+ethanol,64-17-5,octane~|~n-octane,111-65-9,1.0,1.0,0.99103,0.89471,10.1021/acs.jced.6b00257
+ethanol,64-17-5,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,0.98697,0.90681,10.1021/acs.jced.6b00257
+ethanol,64-17-5,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,0.97813,0.9059,10.1021/acs.jced.6b00257
+ethanol,64-17-5,"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,1.0,1.0,0.9882,0.90301,10.1021/acs.jced.6b00257
+ethanol,64-17-5,"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",76-14-2,1.0,1.0,0.95361,0.93497,10.1021/acs.jced.6b00257
+ethanol,64-17-5,r125~|~pentafluoroethane,354-33-6,1.0,1.0,1.00462,1.05044,10.1021/acs.jced.6b00257
+ethanol,64-17-5,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,0.97178,0.98183,10.1021/acs.jced.6b00257
+ethanol,64-17-5,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,0.96946,0.97677,10.1021/acs.jced.6b00257
+ethanol,64-17-5,r21~|~chfcl2~|~dichlorofluoromethane,75-43-4,1.0,1.0,0.97987,0.90692,10.1021/acs.jced.6b00257
+ethanol,64-17-5,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.99373,1.05058,10.1021/acs.jced.6b00257
+ethanol,64-17-5,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.90517,1.05138,10.1021/acs.jced.6b00257
+ethanol,64-17-5,r32~|~difluoromethane,75-10-5,1.0,1.0,0.97558,1.01657,10.1021/acs.jced.6b00257
+ethanol,64-17-5,(e)-2-butene~|~trans-2-butene,624-64-6,1.0,1.0,0.97419,0.95288,10.1021/acs.jced.6b00257
+ethanol,64-17-5,toluene,108-88-3,1.0,1.0,0.981,0.90682,10.1021/acs.jced.6b00257
+ethene~|~ethylene~|~1-ethylene,74-85-1,heptane~|~n-heptane,142-82-5,1.0,1.0,0.97975,1.1797,10.1021/acs.jced.6b00257
+ethene~|~ethylene~|~1-ethylene,74-85-1,hexane~|~n-hexane,110-54-3,1.0,1.0,0.99131,1.13008,10.1021/acs.jced.6b00257
+ethene~|~ethylene~|~1-ethylene,74-85-1,isobutane~|~2-methylpropane,75-28-5,1.0,1.0,0.99619,1.05868,10.1021/acs.jced.6b00257
+ethene~|~ethylene~|~1-ethylene,74-85-1,methane,74-82-8,1.0,1.0,0.99352,1.02333,10.1021/acs.jced.6b00257
+ethene~|~ethylene~|~1-ethylene,74-85-1,nitrogen,7727-37-9,1.0,1.0,0.99699,1.051,10.1021/acs.jced.6b00257
+ethene~|~ethylene~|~1-ethylene,74-85-1,nonane~|~n-nonane,111-84-2,1.0,1.0,0.96742,1.26048,10.1021/acs.jced.6b00257
+ethene~|~ethylene~|~1-ethylene,74-85-1,octane~|~n-octane,111-65-9,1.0,1.0,0.9692,1.21808,10.1021/acs.jced.6b00257
+ethene~|~ethylene~|~1-ethylene,74-85-1,propane~|~n-propane,74-98-6,1.0,1.0,1.00374,1.01236,10.1021/acs.jced.6b00257
+ethene~|~ethylene~|~1-ethylene,74-85-1,propene~|~propylene,115-07-1,1.0,1.0,1.00207,1.01552,10.1021/acs.jced.6b00257
+ethene~|~ethylene~|~1-ethylene,74-85-1,r1216~|~perfluoropropene~|~hexafluoropropene~|~hexafluoropropylene,116-15-4,1.0,1.0,1.01864,0.99653,10.1021/acs.jced.6b00257
+ethene~|~ethylene~|~1-ethylene,74-85-1,xenon,7440-63-3,1.0,1.0,0.99831,0.98039,10.1021/acs.jced.6b00257
+hydrogen sulfide,7783-06-4,"isooctane~|~2,2,4-trimethylpentane",540-84-1,1.0,1.0,1.02296,1.01015,10.1021/acs.jced.6b00257
+hydrogen sulfide,7783-06-4,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,0.97237,1.10582,10.1021/acs.jced.6b00257
+hydrogen sulfide,7783-06-4,"neopentane~|~2,2-dimethylpropane",463-82-1,1.0,1.0,1.02548,0.93089,10.1021/acs.jced.6b00257
+hydrogen sulfide,7783-06-4,toluene,108-88-3,1.0,1.0,0.98283,1.08325,10.1021/acs.jced.6b00257
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,hexane~|~n-hexane,110-54-3,1.0,1.0,1.01481,1.01449,10.1021/acs.jced.6b00257
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,methanol,67-56-1,1.0,1.0,0.90069,1.65053,10.1021/acs.jced.6b00257
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,propane~|~n-propane,74-98-6,1.0,1.0,1.02143,0.9176,10.1021/acs.jced.6b00257
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,"r142b~|~1-chloro-1,1-difluoroethane",75-68-3,1.0,1.0,1.00828,1.00217,10.1021/acs.jced.6b00257
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,r32~|~difluoromethane,75-10-5,1.0,1.0,1.00252,0.9976,10.1021/acs.jced.6b00257
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,r40~|~chloromethane~|~methyl chloride,74-87-3,1.0,1.0,0.98451,1.08265,10.1021/acs.jced.6b00257
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,r41~|~fluoromethane~|~methyl fluoride,593-53-3,1.0,1.0,0.98722,1.10901,10.1021/acs.jced.6b00257
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,sulfur dioxide,7446-09-5,1.0,1.0,0.9942,1.05144,10.1021/acs.jced.6b00257
+hcl~|~hydrogen chloride~|~hydrochloric acid,7647-01-0,xenon,7440-63-3,1.0,1.0,0.98264,0.90579,10.1021/acs.jced.6b00257
+heptane~|~n-heptane,142-82-5,isohexane~|~2-methylpentane,107-83-5,1.0,1.0,1.00097,1.00472,10.1021/acs.jced.6b00257
+heptane~|~n-heptane,142-82-5,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,0.99846,0.9896,10.1021/acs.jced.6b00257
+heptane~|~n-heptane,142-82-5,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,0.99904,0.98672,10.1021/acs.jced.6b00257
+heptane~|~n-heptane,142-82-5,propene~|~propylene,115-07-1,1.0,1.0,0.99114,1.06264,10.1021/acs.jced.6b00257
+heptane~|~n-heptane,142-82-5,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,0.99936,0.98957,10.1021/acs.jced.6b00257
+heptane~|~n-heptane,142-82-5,"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,1.0,1.0,0.99577,0.99057,10.1021/acs.jced.6b00257
+heptane~|~n-heptane,142-82-5,"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",76-14-2,1.0,1.0,0.99215,0.99663,10.1021/acs.jced.6b00257
+heptane~|~n-heptane,142-82-5,r12~|~dichlorodifluoromethane,75-71-8,1.0,1.0,0.98822,1.03388,10.1021/acs.jced.6b00257
+heptane~|~n-heptane,142-82-5,toluene,108-88-3,1.0,1.0,0.99684,0.98136,10.1021/acs.jced.6b00257
+hexane~|~n-hexane,110-54-3,isohexane~|~2-methylpentane,107-83-5,1.0,1.0,0.99954,0.9986,10.1021/acs.jced.6b00257
+hexane~|~n-hexane,110-54-3,"isooctane~|~2,2,4-trimethylpentane",540-84-1,1.0,1.0,1.00668,1.00427,10.1021/acs.jced.6b00257
+hexane~|~n-hexane,110-54-3,mm~|~hexamethyldisiloxane,107-46-0,1.0,1.0,0.995,1.00697,10.1021/acs.jced.6b00257
+hexane~|~n-hexane,110-54-3,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,1.01308,0.99672,10.1021/acs.jced.6b00257
+hexane~|~n-hexane,110-54-3,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,1.00096,1.00154,10.1021/acs.jced.6b00257
+hexane~|~n-hexane,110-54-3,propene~|~propylene,115-07-1,1.0,1.0,1.01641,1.03815,10.1021/acs.jced.6b00257
+hexane~|~n-hexane,110-54-3,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,1.00071,0.99711,10.1021/acs.jced.6b00257
+hexane~|~n-hexane,110-54-3,"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,1.0,1.0,0.9994,0.98509,10.1021/acs.jced.6b00257
+hexane~|~n-hexane,110-54-3,"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",76-14-2,1.0,1.0,0.99629,0.98179,10.1021/acs.jced.6b00257
+hexane~|~n-hexane,110-54-3,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.98925,0.99579,10.1021/acs.jced.6b00257
+hexane~|~n-hexane,110-54-3,toluene,108-88-3,1.0,1.0,0.99876,0.98316,10.1021/acs.jced.6b00257
+hexane~|~n-hexane,110-54-3,xenon,7440-63-3,1.0,1.0,1.01959,1.16656,10.1021/acs.jced.6b00257
+hydrogen,1333-74-0,neon,7440-01-9,1.0,1.0,1.00124,0.83639,10.1021/acs.jced.6b00257
+isobutene~|~isobutylene~|~2-methylpropene,115-11-7,isobutane~|~2-methylpropane,75-28-5,1.0,1.0,1.00019,0.99644,10.1021/acs.jced.6b00257
+isobutene~|~isobutylene~|~2-methylpropene,115-11-7,octane~|~n-octane,111-65-9,1.0,1.0,0.99296,1.0535,10.1021/acs.jced.6b00257
+isobutene~|~isobutylene~|~2-methylpropene,115-11-7,propane~|~n-propane,74-98-6,1.0,1.0,1.00734,0.99305,10.1021/acs.jced.6b00257
+isobutene~|~isobutylene~|~2-methylpropene,115-11-7,"r143a~|~1,1,1-trifluoroethane",420-46-2,1.0,1.0,1.0022,0.94375,10.1021/acs.jced.6b00257
+isobutene~|~isobutylene~|~2-methylpropene,115-11-7,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,1.0008,0.93949,10.1021/acs.jced.6b00257
+isobutene~|~isobutylene~|~2-methylpropene,115-11-7,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,1.0,1.0,1.01295,0.92836,10.1021/acs.jced.6b00257
+isobutene~|~isobutylene~|~2-methylpropene,115-11-7,r40~|~chloromethane~|~methyl chloride,74-87-3,1.0,1.0,1.00052,0.97922,10.1021/acs.jced.6b00257
+isobutene~|~isobutylene~|~2-methylpropene,115-11-7,sulfur dioxide,7446-09-5,1.0,1.0,0.9864,0.94224,10.1021/acs.jced.6b00257
+isohexane~|~2-methylpentane,107-83-5,methanol,67-56-1,1.0,1.0,1.00691,0.88008,10.1021/acs.jced.6b00257
+isohexane~|~2-methylpentane,107-83-5,propane~|~n-propane,74-98-6,1.0,1.0,1.00112,1.03496,10.1021/acs.jced.6b00257
+"isooctane~|~2,2,4-trimethylpentane",540-84-1,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,0.99628,1.0016,10.1021/acs.jced.6b00257
+"isooctane~|~2,2,4-trimethylpentane",540-84-1,nitrogen,7727-37-9,1.0,1.0,1.00895,1.55448,10.1021/acs.jced.6b00257
+"isooctane~|~2,2,4-trimethylpentane",540-84-1,octane~|~n-octane,111-65-9,1.0,1.0,1.00129,1.00412,10.1021/acs.jced.6b00257
+"isooctane~|~2,2,4-trimethylpentane",540-84-1,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,0.99859,0.98905,10.1021/acs.jced.6b00257
+"isooctane~|~2,2,4-trimethylpentane",540-84-1,propene~|~propylene,115-07-1,1.0,1.0,1.03677,1.11387,10.1021/acs.jced.6b00257
+"isooctane~|~2,2,4-trimethylpentane",540-84-1,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,0.99929,0.99104,10.1021/acs.jced.6b00257
+"isooctane~|~2,2,4-trimethylpentane",540-84-1,toluene,108-88-3,1.0,1.0,0.99502,0.9779,10.1021/acs.jced.6b00257
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.97157,0.93001,10.1021/acs.jced.6b00257
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,"r245fa~|~1,1,1,3,3-pentafluoropropane",460-73-1,1.0,1.0,0.98838,0.90433,10.1021/acs.jced.6b00257
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,"r365mfc~|~1,1,1,3,3-pentafluorobutane",406-58-6,1.0,1.0,1.01335,0.9238,10.1021/acs.jced.6b00257
+isopentane~|~methylbutane~|~2-methylbutane,78-78-4,toluene,108-88-3,1.0,1.0,1.01022,0.99749,10.1021/acs.jced.6b00257
+isobutane~|~2-methylpropane,75-28-5,propene~|~propylene,115-07-1,1.0,1.0,1.03014,1.0126,10.1021/acs.jced.6b00257
+isobutane~|~2-methylpropane,75-28-5,"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,1.0,1.0,1.0073,0.93536,10.1021/acs.jced.6b00257
+isobutane~|~2-methylpropane,75-28-5,"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene",29118-24-9,1.0,1.0,1.00591,0.9282,10.1021/acs.jced.6b00257
+isobutane~|~2-methylpropane,75-28-5,r125~|~pentafluoroethane,354-33-6,1.0,1.0,0.98858,0.90644,10.1021/acs.jced.6b00257
+isobutane~|~2-methylpropane,75-28-5,r13~|~chlorotrifluoromethane,75-72-9,1.0,1.0,0.99553,0.98045,10.1021/acs.jced.6b00257
+isobutane~|~2-methylpropane,75-28-5,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,1.00145,0.89668,10.1021/acs.jced.6b00257
+isobutane~|~2-methylpropane,75-28-5,"r143a~|~1,1,1-trifluoroethane",420-46-2,1.0,1.0,1.00047,0.9195,10.1021/acs.jced.6b00257
+isobutane~|~2-methylpropane,75-28-5,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,0.99318,0.91845,10.1021/acs.jced.6b00257
+isobutane~|~2-methylpropane,75-28-5,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,1.0,1.0,1.01326,0.90916,10.1021/acs.jced.6b00257
+isobutane~|~2-methylpropane,75-28-5,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.97853,0.89794,10.1021/acs.jced.6b00257
+isobutane~|~2-methylpropane,75-28-5,"r245fa~|~1,1,1,3,3-pentafluoropropane",460-73-1,1.0,1.0,1.01357,0.90803,10.1021/acs.jced.6b00257
+isobutane~|~2-methylpropane,75-28-5,r32~|~difluoromethane,75-10-5,1.0,1.0,0.9765,0.86238,10.1021/acs.jced.6b00257
+krypton,7439-90-9,methane,74-82-8,1.0,1.0,0.99962,0.99368,10.1021/acs.jced.6b00257
+krypton,7439-90-9,oxygen,7782-44-7,1.0,1.0,0.99555,0.98848,10.1021/acs.jced.6b00257
+krypton,7439-90-9,propene~|~propylene,115-07-1,1.0,1.0,0.99711,1.08746,10.1021/acs.jced.6b00257
+methane,74-82-8,nitrous oxide,10024-97-2,1.0,1.0,0.98876,1.02354,10.1021/acs.jced.6b00257
+methane,74-82-8,"neopentane~|~2,2-dimethylpropane",463-82-1,1.0,1.0,0.98554,1.22513,10.1021/acs.jced.6b00257
+methane,74-82-8,propene~|~propylene,115-07-1,1.0,1.0,0.99563,1.11748,10.1021/acs.jced.6b00257
+methane,74-82-8,sulfur dioxide,7446-09-5,1.0,1.0,1.03694,1.07082,10.1021/acs.jced.6b00257
+methanol,67-56-1,mm~|~hexamethyldisiloxane,107-46-0,1.0,1.0,1.02619,0.90636,10.1021/acs.jced.6b00257
+methanol,67-56-1,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,1.0,1.0,0.99745,0.88973,10.1021/acs.jced.6b00257
+methanol,67-56-1,oxygen,7782-44-7,1.0,1.0,1.07547,1.5018,10.1021/acs.jced.6b00257
+methanol,67-56-1,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,1.00779,0.98889,10.1021/acs.jced.6b00257
+methanol,67-56-1,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,1.01147,0.98828,10.1021/acs.jced.6b00257
+methanol,67-56-1,r21~|~chfcl2~|~dichlorofluoromethane,75-43-4,1.0,1.0,1.03177,0.91282,10.1021/acs.jced.6b00257
+methanol,67-56-1,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,1.00262,1.03751,10.1021/acs.jced.6b00257
+methanol,67-56-1,r32~|~difluoromethane,75-10-5,1.0,1.0,0.993,1.01175,10.1021/acs.jced.6b00257
+methanol,67-56-1,sulfur dioxide,7446-09-5,1.0,1.0,0.97373,1.02388,10.1021/acs.jced.6b00257
+methanol,67-56-1,(e)-2-butene~|~trans-2-butene,624-64-6,1.0,1.0,0.9789,0.90748,10.1021/acs.jced.6b00257
+methanol,67-56-1,toluene,108-88-3,1.0,1.0,0.98203,0.891,10.1021/acs.jced.6b00257
+methanol,67-56-1,water,7732-18-5,1.0,1.0,0.99676,0.96774,10.1021/acs.jced.6b00257
+methanol,67-56-1,xenon,7440-63-3,1.0,1.0,0.93558,0.77335,10.1021/acs.jced.6b00257
+"methyllinoleate~|~methyl (z,z)-9,12-octadecadienate",112-63-0,methyl palmitate~|~methyl hexadecanoate~|~hexadecanoicacidmethylester,112-39-0,1.0,1.0,0.9974,0.99543,10.1021/acs.jced.6b00257
+mm~|~hexamethyldisiloxane,107-46-0,toluene,108-88-3,1.0,1.0,0.9991,0.97446,10.1021/acs.jced.6b00257
+methyloleate~|~methyl cis-9-octadecenoate,112-62-9,methyl stearate~|~methyl octadecanoate~|~octadecanoicacidmethylester,112-61-8,1.0,1.0,0.99882,0.99836,10.1021/acs.jced.6b00257
+methyl palmitate~|~methyl hexadecanoate~|~hexadecanoicacidmethylester,112-39-0,propane~|~n-propane,74-98-6,1.0,1.0,1.08514,1.21332,10.1021/acs.jced.6b00257
+"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,nonane~|~n-nonane,111-84-2,1.0,1.0,1.00227,0.98031,10.1021/acs.jced.6b00257
+"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,octane~|~n-octane,111-65-9,1.0,1.0,1.00031,0.99296,10.1021/acs.jced.6b00257
+"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,1.00073,0.99997,10.1021/acs.jced.6b00257
+"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,propane~|~n-propane,74-98-6,1.0,1.0,1.00346,1.08363,10.1021/acs.jced.6b00257
+"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,propene~|~propylene,115-07-1,1.0,1.0,1.00655,1.09811,10.1021/acs.jced.6b00257
+"mxylene~|~m-xylene~|~1,3-dimethylbenzene",108-38-3,toluene,108-88-3,1.0,1.0,0.9965,0.99601,10.1021/acs.jced.6b00257
+nitrous oxide,10024-97-2,r125~|~pentafluoroethane,354-33-6,1.0,1.0,0.97626,0.77302,10.1021/acs.jced.6b00257
+"neopentane~|~2,2-dimethylpropane",463-82-1,pentane~|~n-pentane,109-66-0,1.0,1.0,1.0005,1.00236,10.1021/acs.jced.6b00257
+"neopentane~|~2,2-dimethylpropane",463-82-1,propane~|~n-propane,74-98-6,1.0,1.0,1.02028,1.0591,10.1021/acs.jced.6b00257
+nitrogen,7727-37-9,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,0.99471,1.63462,10.1021/acs.jced.6b00257
+nitrogen,7727-37-9,r13~|~chlorotrifluoromethane,75-72-9,1.0,1.0,0.97523,1.24069,10.1021/acs.jced.6b00257
+nitrogen,7727-37-9,r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,75-73-0,1.0,1.0,0.97005,1.10991,10.1021/acs.jced.6b00257
+nitrogen,7727-37-9,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,1.0,1.0,0.97134,1.40945,10.1021/acs.jced.6b00257
+nonane~|~n-nonane,111-84-2,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,0.9971,0.98501,10.1021/acs.jced.6b00257
+nonane~|~n-nonane,111-84-2,propene~|~propylene,115-07-1,1.0,1.0,1.01604,1.11698,10.1021/acs.jced.6b00257
+nonane~|~n-nonane,111-84-2,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,1.00061,0.99387,10.1021/acs.jced.6b00257
+nonane~|~n-nonane,111-84-2,toluene,108-88-3,1.0,1.0,0.99448,0.98072,10.1021/acs.jced.6b00257
+"novec649~|~1,1,1,2,2,4,5,5,5-nonafluoro-4-(trifluoromethyl)-3-pentanone",756-13-8,pentane~|~n-pentane,109-66-0,1.0,1.0,0.9669,0.90539,10.1021/acs.jced.6b00257
+"novec649~|~1,1,1,2,2,4,5,5,5-nonafluoro-4-(trifluoromethyl)-3-pentanone",756-13-8,re347mcc~|~heptafluoro-1-methoxypropane~|~heptafluoropropyl methyl ether,375-03-1,1.0,1.0,0.98723,0.97915,10.1021/acs.jced.6b00257
+octane~|~n-octane,111-65-9,"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,1.0,1.0,0.99933,0.99245,10.1021/acs.jced.6b00257
+octane~|~n-octane,111-65-9,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,0.99788,0.98651,10.1021/acs.jced.6b00257
+octane~|~n-octane,111-65-9,r12~|~dichlorodifluoromethane,75-71-8,1.0,1.0,0.99653,1.06084,10.1021/acs.jced.6b00257
+octane~|~n-octane,111-65-9,toluene,108-88-3,1.0,1.0,0.99664,0.98036,10.1021/acs.jced.6b00257
+oxygen,7782-44-7,sulfur dioxide,7446-09-5,1.0,1.0,0.98436,1.18081,10.1021/acs.jced.6b00257
+"oxylene~|~o-xylene~|~1,2-dimethylbenzene",95-47-6,toluene,108-88-3,1.0,1.0,0.99826,1.00209,10.1021/acs.jced.6b00257
+pentane~|~n-pentane,109-66-0,"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",76-14-2,1.0,1.0,0.99646,0.97011,10.1021/acs.jced.6b00257
+pentane~|~n-pentane,109-66-0,"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene",29118-24-9,1.0,1.0,0.98894,0.93824,10.1021/acs.jced.6b00257
+pentane~|~n-pentane,109-66-0,"r141b~|~1,1-dichloro-1-fluoroethane",1717-00-6,1.0,1.0,1.0027,0.977,10.1021/acs.jced.6b00257
+pentane~|~n-pentane,109-66-0,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,0.98932,0.92023,10.1021/acs.jced.6b00257
+pentane~|~n-pentane,109-66-0,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.98621,0.96034,10.1021/acs.jced.6b00257
+pentane~|~n-pentane,109-66-0,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.96622,0.94007,10.1021/acs.jced.6b00257
+pentane~|~n-pentane,109-66-0,"r245fa~|~1,1,1,3,3-pentafluoropropane",460-73-1,1.0,1.0,1.00687,0.89534,10.1021/acs.jced.6b00257
+pentane~|~n-pentane,109-66-0,re347mcc~|~heptafluoro-1-methoxypropane~|~heptafluoropropyl methyl ether,375-03-1,1.0,1.0,1.00983,0.9281,10.1021/acs.jced.6b00257
+pentane~|~n-pentane,109-66-0,sulfur hexafluoride,2551-62-4,1.0,1.0,0.97466,0.92912,10.1021/acs.jced.6b00257
+pentane~|~n-pentane,109-66-0,toluene,108-88-3,1.0,1.0,1.00052,0.99282,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,propene~|~propylene,115-07-1,1.0,1.0,0.99978,0.9935,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,1.0,1.0,1.0047,1.01447,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",76-14-2,1.0,1.0,1.00332,0.98055,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,r116~|~perfluoroethane~|~hexafluoroethane,76-16-4,1.0,1.0,1.01661,0.89173,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,r1216~|~perfluoropropene~|~hexafluoropropene~|~hexafluoropropylene,116-15-4,1.0,1.0,1.01214,0.92233,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene",29118-24-9,1.0,1.0,1.01336,0.93387,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,r125~|~pentafluoroethane,354-33-6,1.0,1.0,1.00883,0.89892,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,1.01148,0.89674,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,"r143a~|~1,1,1-trifluoroethane",420-46-2,1.0,1.0,1.00987,0.91581,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,1.01223,0.92009,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,1.0,1.0,1.02125,0.91449,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.98814,0.87585,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,"r236ea~|~1,1,1,2,3,3-hexafluoropropane",431-63-0,1.0,1.0,1.02233,0.92015,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,"r236fa~|~1,1,1,3,3,3-hexafluoropropane",690-39-1,1.0,1.0,1.02204,0.91493,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,"r245fa~|~1,1,1,3,3-pentafluoropropane",460-73-1,1.0,1.0,1.02121,0.92286,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,r32~|~difluoromethane,75-10-5,1.0,1.0,1.00067,0.86421,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,rc318~|~octafluorocyclobutane,115-25-3,1.0,1.0,1.02377,0.9232,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,sulfur dioxide,7446-09-5,1.0,1.0,0.99024,0.87281,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,toluene,108-88-3,1.0,1.0,1.00576,1.04281,10.1021/acs.jced.6b00257
+propane~|~n-propane,74-98-6,xenon,7440-63-3,1.0,1.0,1.00491,1.04133,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,1.0,1.0,0.99082,1.09426,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",76-14-2,1.0,1.0,1.01235,0.97683,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,"r115~|~chloropentafluoroethane~|~1-chloro-1,1,2,2,2-pentafluoroethane",76-15-3,1.0,1.0,1.01487,0.94167,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,r116~|~perfluoroethane~|~hexafluoroethane,76-16-4,1.0,1.0,1.01401,0.87937,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,r12~|~dichlorodifluoromethane,75-71-8,1.0,1.0,1.00271,0.9883,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,r1216~|~perfluoropropene~|~hexafluoropropene~|~hexafluoropropylene,116-15-4,1.0,1.0,1.01903,0.93686,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,r125~|~pentafluoroethane,354-33-6,1.0,1.0,1.00733,0.92944,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,r13~|~chlorotrifluoromethane,75-72-9,1.0,1.0,0.99688,0.95923,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,1.0136,0.93494,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,"r142b~|~1-chloro-1,1-difluoroethane",75-68-3,1.0,1.0,1.00653,0.9925,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,1.01177,0.94791,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,1.00095,0.97836,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.99184,0.9181,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,r32~|~difluoromethane,75-10-5,1.0,1.0,0.99634,0.90627,10.1021/acs.jced.6b00257
+propene~|~propylene,115-07-1,xenon,7440-63-3,1.0,1.0,0.99031,1.01223,10.1021/acs.jced.6b00257
+"pxylene~|~p-xylene~|~1,4-dimethylbenzene",106-42-3,toluene,108-88-3,1.0,1.0,0.99915,0.99999,10.1021/acs.jced.6b00257
+r11~|~cfcl3~|~trichlorofluoromethane,75-69-4,r12~|~dichlorodifluoromethane,75-71-8,1.0,1.0,1.00726,1.00102,10.1021/acs.jced.6b00257
+r11~|~cfcl3~|~trichlorofluoromethane,75-69-4,r13~|~chlorotrifluoromethane,75-72-9,1.0,1.0,0.99697,1.01419,10.1021/acs.jced.6b00257
+r11~|~cfcl3~|~trichlorofluoromethane,75-69-4,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.9996,0.97759,10.1021/acs.jced.6b00257
+r11~|~cfcl3~|~trichlorofluoromethane,75-69-4,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.97898,0.94638,10.1021/acs.jced.6b00257
+"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",76-14-2,1.0,1.0,0.99859,1.00476,10.1021/acs.jced.6b00257
+"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,r13~|~chlorotrifluoromethane,75-72-9,1.0,1.0,0.99941,1.05033,10.1021/acs.jced.6b00257
+"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,"r142b~|~1-chloro-1,1-difluoroethane",75-68-3,1.0,1.0,0.99666,0.98837,10.1021/acs.jced.6b00257
+"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,0.98806,0.95473,10.1021/acs.jced.6b00257
+"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.98836,0.99757,10.1021/acs.jced.6b00257
+"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.97121,0.98801,10.1021/acs.jced.6b00257
+"r113~|~1,1,2-trichlorotrifluoroethane~|~1,1,2-trichloro-1,2,2-trifluoroethane",76-13-1,sulfur hexafluoride,2551-62-4,1.0,1.0,1.07569,1.06961,10.1021/acs.jced.6b00257
+"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",76-14-2,r12~|~dichlorodifluoromethane,75-71-8,1.0,1.0,1.00164,0.99126,10.1021/acs.jced.6b00257
+"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",76-14-2,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,1.003,0.9658,10.1021/acs.jced.6b00257
+"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",76-14-2,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.97633,0.9623,10.1021/acs.jced.6b00257
+"r115~|~chloropentafluoroethane~|~1-chloro-1,1,2,2,2-pentafluoroethane",76-15-3,r125~|~pentafluoroethane,354-33-6,1.0,1.0,0.99972,0.96147,10.1021/acs.jced.6b00257
+"r115~|~chloropentafluoroethane~|~1-chloro-1,1,2,2,2-pentafluoroethane",76-15-3,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,1.01422,0.94989,10.1021/acs.jced.6b00257
+r116~|~perfluoroethane~|~hexafluoroethane,76-16-4,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,1.01284,0.93618,10.1021/acs.jced.6b00257
+r116~|~perfluoroethane~|~hexafluoroethane,76-16-4,"r143a~|~1,1,1-trifluoroethane",420-46-2,1.0,1.0,1.01003,0.93499,10.1021/acs.jced.6b00257
+r116~|~perfluoroethane~|~hexafluoroethane,76-16-4,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.99671,0.91302,10.1021/acs.jced.6b00257
+r116~|~perfluoroethane~|~hexafluoroethane,76-16-4,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.99695,0.91114,10.1021/acs.jced.6b00257
+r12~|~dichlorodifluoromethane,75-71-8,r1216~|~perfluoropropene~|~hexafluoropropene~|~hexafluoropropylene,116-15-4,1.0,1.0,0.99964,0.97942,10.1021/acs.jced.6b00257
+r12~|~dichlorodifluoromethane,75-71-8,r13~|~chlorotrifluoromethane,75-72-9,1.0,1.0,0.99071,0.97345,10.1021/acs.jced.6b00257
+r12~|~dichlorodifluoromethane,75-71-8,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,1.0075,0.941,10.1021/acs.jced.6b00257
+r12~|~dichlorodifluoromethane,75-71-8,"r142b~|~1-chloro-1,1-difluoroethane",75-68-3,1.0,1.0,1.01193,0.9765,10.1021/acs.jced.6b00257
+r12~|~dichlorodifluoromethane,75-71-8,"r143a~|~1,1,1-trifluoroethane",420-46-2,1.0,1.0,0.9859,0.95199,10.1021/acs.jced.6b00257
+r12~|~dichlorodifluoromethane,75-71-8,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,1.01876,0.94387,10.1021/acs.jced.6b00257
+r12~|~dichlorodifluoromethane,75-71-8,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.99654,0.96477,10.1021/acs.jced.6b00257
+r12~|~dichlorodifluoromethane,75-71-8,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.99206,0.93086,10.1021/acs.jced.6b00257
+r12~|~dichlorodifluoromethane,75-71-8,rc318~|~octafluorocyclobutane,115-25-3,1.0,1.0,1.00226,0.96907,10.1021/acs.jced.6b00257
+r1216~|~perfluoropropene~|~hexafluoropropene~|~hexafluoropropylene,116-15-4,"r123~|~1,1-dichloro-2,2,2-trifluoroethane~|~2,2-dichloro-1,1,1-trifluoroethane",306-83-2,1.0,1.0,1.00494,0.97467,10.1021/acs.jced.6b00257
+r1216~|~perfluoropropene~|~hexafluoropropene~|~hexafluoropropylene,116-15-4,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.99593,0.96186,10.1021/acs.jced.6b00257
+r1216~|~perfluoropropene~|~hexafluoropropene~|~hexafluoropropylene,116-15-4,rc318~|~octafluorocyclobutane,115-25-3,1.0,1.0,1.00387,1.00433,10.1021/acs.jced.6b00257
+"r123~|~1,1-dichloro-2,2,2-trifluoroethane~|~2,2-dichloro-1,1,1-trifluoroethane",306-83-2,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,0.99393,0.98277,10.1021/acs.jced.6b00257
+"r123~|~1,1-dichloro-2,2,2-trifluoroethane~|~2,2-dichloro-1,1,1-trifluoroethane",306-83-2,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.99482,1.01277,10.1021/acs.jced.6b00257
+"r123~|~1,1-dichloro-2,2,2-trifluoroethane~|~2,2-dichloro-1,1,1-trifluoroethane",306-83-2,r32~|~difluoromethane,75-10-5,1.0,1.0,0.98824,0.98194,10.1021/acs.jced.6b00257
+"r123~|~1,1-dichloro-2,2,2-trifluoroethane~|~2,2-dichloro-1,1,1-trifluoroethane",306-83-2,water,7732-18-5,1.0,1.0,1.09996,0.95847,10.1021/acs.jced.6b00257
+"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,r125~|~pentafluoroethane,354-33-6,1.0,1.0,0.99915,0.99876,10.1021/acs.jced.6b00257
+"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,0.99972,0.98643,10.1021/acs.jced.6b00257
+"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,"r143a~|~1,1,1-trifluoroethane",420-46-2,1.0,1.0,1.00024,0.99523,10.1021/acs.jced.6b00257
+"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,0.9963,0.98112,10.1021/acs.jced.6b00257
+"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,r161~|~fluoroethane~|~ethyl fluoride,353-36-6,1.0,1.0,0.99781,0.98828,10.1021/acs.jced.6b00257
+"r1234yf~|~2,3,3,3-tetrafluoropropene~|~2,3,3,3-tetrafluoro-1-propene",754-12-1,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,1.0,1.0,0.99938,0.99916,10.1021/acs.jced.6b00257
+"r1234zee~|~r1234ze(e)~|~trans-1,3,3,3-tetrafluoropropene",29118-24-9,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,0.99902,0.99579,10.1021/acs.jced.6b00257
+"r124~|~1-chloro-1,2,2,2-tetrafluoroethane~|~2-chloro-1,1,1,2-tetrafluoroethane",2837-89-0,"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,1.0,1.0,0.99881,0.98961,10.1021/acs.jced.6b00257
+"r124~|~1-chloro-1,2,2,2-tetrafluoroethane~|~2-chloro-1,1,1,2-tetrafluoroethane",2837-89-0,"r142b~|~1-chloro-1,1-difluoroethane",75-68-3,1.0,1.0,0.99802,1.0032,10.1021/acs.jced.6b00257
+r125~|~pentafluoroethane,354-33-6,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,0.99429,1.00282,10.1021/acs.jced.6b00257
+r125~|~pentafluoroethane,354-33-6,r161~|~fluoroethane~|~ethyl fluoride,353-36-6,1.0,1.0,1.01043,0.99311,10.1021/acs.jced.6b00257
+r125~|~pentafluoroethane,354-33-6,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,1.0,1.0,1.00101,1.00302,10.1021/acs.jced.6b00257
+r125~|~pentafluoroethane,354-33-6,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.99685,1.00309,10.1021/acs.jced.6b00257
+r125~|~pentafluoroethane,354-33-6,"r236ea~|~1,1,1,2,3,3-hexafluoropropane",431-63-0,1.0,1.0,0.99947,1.01046,10.1021/acs.jced.6b00257
+r125~|~pentafluoroethane,354-33-6,"r236fa~|~1,1,1,3,3,3-hexafluoropropane",690-39-1,1.0,1.0,0.9996,1.01028,10.1021/acs.jced.6b00257
+r125~|~pentafluoroethane,354-33-6,"r245fa~|~1,1,1,3,3-pentafluoropropane",460-73-1,1.0,1.0,0.99836,1.01325,10.1021/acs.jced.6b00257
+r125~|~pentafluoroethane,354-33-6,re143a~|~hfe143m~|~trifluoromethoxymethane~|~trifluoromethyl methyl ether,421-14-7,1.0,1.0,1.00105,1.00517,10.1021/acs.jced.6b00257
+r13~|~chlorotrifluoromethane,75-72-9,r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,75-73-0,1.0,1.0,0.99884,0.99334,10.1021/acs.jced.6b00257
+r13~|~chlorotrifluoromethane,75-72-9,r23~|~trifluoromethane,75-46-7,1.0,1.0,1.00234,0.93027,10.1021/acs.jced.6b00257
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,"r141b~|~1,1-dichloro-1-fluoroethane",1717-00-6,1.0,1.0,1.00716,0.96823,10.1021/acs.jced.6b00257
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,"r142b~|~1-chloro-1,1-difluoroethane",75-68-3,1.0,1.0,1.00176,0.98544,10.1021/acs.jced.6b00257
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,r161~|~fluoroethane~|~ethyl fluoride,353-36-6,1.0,1.0,1.00101,1.00619,10.1021/acs.jced.6b00257
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,r218~|~perfluoropropane~|~octafluoropropane,76-19-7,1.0,1.0,0.99885,0.9228,10.1021/acs.jced.6b00257
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.99975,0.99196,10.1021/acs.jced.6b00257
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,1.0,1.0,1.00135,0.98915,10.1021/acs.jced.6b00257
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,r23~|~trifluoromethane,75-46-7,1.0,1.0,1.00246,1.0219,10.1021/acs.jced.6b00257
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,"r236fa~|~1,1,1,3,3,3-hexafluoropropane",690-39-1,1.0,1.0,0.99958,1.00198,10.1021/acs.jced.6b00257
+"r134a~|~tetrafluoroethane~|~1,1,1,2-tetrafluoroethane",811-97-2,re143a~|~hfe143m~|~trifluoromethoxymethane~|~trifluoromethyl methyl ether,421-14-7,1.0,1.0,0.99957,0.99594,10.1021/acs.jced.6b00257
+r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,75-73-0,r23~|~trifluoromethane,75-46-7,1.0,1.0,1.01673,0.94295,10.1021/acs.jced.6b00257
+r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,75-73-0,toluene,108-88-3,1.0,1.0,0.92032,1.18828,10.1021/acs.jced.6b00257
+"r142b~|~1-chloro-1,1-difluoroethane",75-68-3,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,1.0043,1.00646,10.1021/acs.jced.6b00257
+"r142b~|~1-chloro-1,1-difluoroethane",75-68-3,r32~|~difluoromethane,75-10-5,1.0,1.0,0.98803,0.9751,10.1021/acs.jced.6b00257
+"r143a~|~1,1,1-trifluoroethane",420-46-2,"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,1.0,1.0,0.99955,0.99038,10.1021/acs.jced.6b00257
+"r143a~|~1,1,1-trifluoroethane",420-46-2,r161~|~fluoroethane~|~ethyl fluoride,353-36-6,1.0,1.0,0.99931,0.99556,10.1021/acs.jced.6b00257
+"r143a~|~1,1,1-trifluoroethane",420-46-2,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.99197,1.00381,10.1021/acs.jced.6b00257
+"r143a~|~1,1,1-trifluoroethane",420-46-2,"r236fa~|~1,1,1,3,3,3-hexafluoropropane",690-39-1,1.0,1.0,0.99911,1.01834,10.1021/acs.jced.6b00257
+"r143a~|~1,1,1-trifluoroethane",420-46-2,r32~|~difluoromethane,75-10-5,1.0,1.0,0.99734,0.97488,10.1021/acs.jced.6b00257
+"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,1.00239,1.01169,10.1021/acs.jced.6b00257
+"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,1.0,1.0,1.0088,0.99527,10.1021/acs.jced.6b00257
+"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,r23~|~trifluoromethane,75-46-7,1.0,1.0,1.00035,1.02378,10.1021/acs.jced.6b00257
+"r152a~|~difluoroethane~|~1,1-difluoroethane",75-37-6,r32~|~difluoromethane,75-10-5,1.0,1.0,0.99966,0.99709,10.1021/acs.jced.6b00257
+r161~|~fluoroethane~|~ethyl fluoride,353-36-6,"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,1.0,1.0,1.00966,1.02456,10.1021/acs.jced.6b00257
+r161~|~fluoroethane~|~ethyl fluoride,353-36-6,r32~|~difluoromethane,75-10-5,1.0,1.0,1.00239,0.98909,10.1021/acs.jced.6b00257
+r218~|~perfluoropropane~|~octafluoropropane,76-19-7,r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,1.0,1.0,0.98269,0.91598,10.1021/acs.jced.6b00257
+r218~|~perfluoropropane~|~octafluoropropane,76-19-7,rc318~|~octafluorocyclobutane,115-25-3,1.0,1.0,1.00386,1.04248,10.1021/acs.jced.6b00257
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.99569,0.98752,10.1021/acs.jced.6b00257
+r22~|~chf2cl~|~chlorodifluoromethane~|~difluorochloromethane,75-45-6,rc318~|~octafluorocyclobutane,115-25-3,1.0,1.0,1.05268,0.96966,10.1021/acs.jced.6b00257
+"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,r23~|~trifluoromethane,75-46-7,1.0,1.0,0.9886,1.00208,10.1021/acs.jced.6b00257
+"r227ea~|~1,1,1,2,3,3,3-heptafluoropropane",431-89-0,r32~|~difluoromethane,75-10-5,1.0,1.0,0.98611,0.97064,10.1021/acs.jced.6b00257
+r23~|~trifluoromethane,75-46-7,r32~|~difluoromethane,75-10-5,1.0,1.0,1.00116,1.00385,10.1021/acs.jced.6b00257
+r23~|~trifluoromethane,75-46-7,sulfur hexafluoride,2551-62-4,1.0,1.0,0.99445,0.91843,10.1021/acs.jced.6b00257
+r23~|~trifluoromethane,75-46-7,toluene,108-88-3,1.0,1.0,0.96909,1.07054,10.1021/acs.jced.6b00257
+"r236ea~|~1,1,1,2,3,3-hexafluoropropane",431-63-0,r32~|~difluoromethane,75-10-5,1.0,1.0,0.99812,1.01165,10.1021/acs.jced.6b00257
+"r236fa~|~1,1,1,3,3,3-hexafluoropropane",690-39-1,r32~|~difluoromethane,75-10-5,1.0,1.0,0.99365,0.99661,10.1021/acs.jced.6b00257
+r32~|~difluoromethane,75-10-5,sulfur hexafluoride,2551-62-4,1.0,1.0,0.9983,0.86502,10.1021/acs.jced.6b00257
+r32~|~difluoromethane,75-10-5,sulfur dioxide,7446-09-5,1.0,1.0,1.00238,0.99968,10.1021/acs.jced.6b00257
+r32~|~difluoromethane,75-10-5,toluene,108-88-3,1.0,1.0,1.01598,0.98173,10.1021/acs.jced.6b00257
+r40~|~chloromethane~|~methyl chloride,74-87-3,r41~|~fluoromethane~|~methyl fluoride,593-53-3,1.0,1.0,0.99518,0.9981,10.1021/acs.jced.6b00257
+r40~|~chloromethane~|~methyl chloride,74-87-3,xenon,7440-63-3,1.0,1.0,0.96464,1.03491,10.1021/acs.jced.6b00257
+r41~|~fluoromethane~|~methyl fluoride,593-53-3,toluene,108-88-3,1.0,1.0,0.97539,1.09707,10.1021/acs.jced.6b00257
+r41~|~fluoromethane~|~methyl fluoride,593-53-3,xenon,7440-63-3,1.0,1.0,0.97753,0.91395,10.1021/acs.jced.6b00257
+sulfur hexafluoride,2551-62-4,xenon,7440-63-3,1.0,1.0,0.96469,0.92846,10.1021/acs.jced.6b00257
+sulfur dioxide,7446-09-5,toluene,108-88-3,1.0,1.0,1.01133,1.02114,10.1021/acs.jced.6b00257

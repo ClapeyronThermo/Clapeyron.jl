@@ -6,15 +6,13 @@ struct MHV2Rule{γ} <: MHV2RuleModel
     references::Array{String,1}
 end
 
-@registermodel MHV2Rule
-
 """
     MHV2Rule{γ} <: MHV2RuleModel
 
-    MHV2Rule(components::Vector{String};
+    MHV2Rule(components;
     activity = Wilson,
-    userlocations::Vector{String}=String[],
-    activity_userlocations::Vector{String}=String[],
+    userlocations=String[],
+    activity_userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -29,8 +27,7 @@ None
 
 Modified Huron-Vidal Mixing Rule, Second Order.
 ```
-aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
-bᵢⱼ = (bᵢ + bⱼ)/2
+bᵢⱼ = (1 - lᵢⱼ)(bᵢ + bⱼ)/2
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ᾱᵢ  = aᵢαᵢ/bᵢRT
@@ -46,6 +43,31 @@ if the model is Redlich-Kwong:
 
 to use different values for `q₁` and `q₂`, overload `Clapeyron.MHV1q(::CubicModel,::MHV2Model) = (q₁,q₂)`
 
+## Model Construction Examples
+```
+# Using the default database
+mixing = MHV2Rule(["water","carbon dioxide"]) #default: Wilson Activity Coefficient.
+mixing = MHV2Rule(["water","carbon dioxide"],activity = NRTL) #passing another Activity Coefficient Model.
+mixing = MHV2Rule([("ethane",["CH3" => 2]),("butane",["CH2" => 2,"CH3" => 2])],activity = UNIFAC) #passing a GC Activity Coefficient Model.
+
+# Passing a prebuilt model
+
+act_model = NRTL(["water","ethanol"],userlocations = (a = [0.0 3.458; -0.801 0.0],b = [0.0 -586.1; 246.2 0.0], c = [0.0 0.3; 0.3 0.0]))
+mixing = MHV2Rule(["water","ethanol"],activity = act_model)
+
+# Using user-provided parameters
+
+# Passing files or folders
+mixing = MHV2Rule(["water","ethanol"]; activity = NRTL, activity_userlocations = ["path/to/my/db","nrtl_ge.csv"])
+
+# Passing parameters directly
+mixing = MHV1Rule(["water","ethanol"];
+                activity = NRTL,
+                userlocations = (a = [0.0 3.458; -0.801 0.0],
+                    b = [0.0 -586.1; 246.2 0.0],
+                    c = [0.0 0.3; 0.3 0.0])
+                )
+```
 
 ## References
 1. Michelsen, M. L. (1990). A modified Huron-Vidal mixing rule for cubic equations of state. Fluid Phase Equilibria, 60(1–2), 213–219. [doi:10.1016/0378-3812(90)85053-d](https://doi.org/10.1016/0378-3812(90)85053-d)
@@ -55,11 +77,11 @@ MHV2Rule
 
 
 export MHV2Rule
-function MHV2Rule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    _activity = init_model(activity,components,activity_userlocations,verbose)
+function MHV2Rule(components; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+    _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
 
     references = ["10.1016/0378-3812(90)85053-D"]
-    model = MHV2Rule(components, _activity,references)
+    model = MHV2Rule(format_components(components), _activity,references)
     return model
 end
 
@@ -92,21 +114,7 @@ function mixing_rule(model::Union{PRModel,RKModel},V,T,z,mixing_model::MHV2RuleM
     ā = b̄*R̄*T*(-q1-sqrt(q1^2-4*q2*c))/(2*q2)
     return ā,b̄,c̄
 end
-#=
-function mixing_rule(model::PRModel,V,T,z,mixing_model::MHV2RuleModel,α,a,b,c)
-    n = sum(z)
-    x = z./n
-    invn2 = (one(n)/n)^2
-    g_E = excess_gibbs_free_energy(mixing_model.activity,1e5,T,z) / n
-    b̄ = dot(z,Symmetric(b),z) * invn2
-    c̄ = dot(z,c)/n
 
-    ᾱ = a.*sqrt.(α.*α')./(b*R̄*T)
-
-    q1 = -0.4347
-    q2 = -0.003654
-    c  = -q1*sum(x[i]*ᾱ[i,i] for i ∈ @comps)-q2*sum(x[i]*ᾱ[i,i]^2 for i ∈ @comps)-g_E/(R̄*T)-sum(x[i]*log(b̄/b[i,i]) for i ∈ @comps)
-
-    ā = b̄*R̄*T*(-q1-sqrt(q1^2-4*q2*c))/(2*q2)
-    return ā,b̄,c̄
-end=#
+function cubic_get_l(model::CubicModel,mixing::MHV2RuleModel,params)
+    return get_k_mean(params.b.values)
+end

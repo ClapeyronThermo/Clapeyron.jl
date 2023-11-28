@@ -5,15 +5,14 @@ struct HVRule{γ} <: HVRuleModel
     activity::γ
     references::Array{String,1}
 end
-@registermodel HVRule
 
 """
     HVRule{γ} <: HVRuleModel
 
-    HVRule(components::Vector{String};
+    HVRule(components;
     activity = Wilson,
-    userlocations::Vector{String}=String[],
-    activity_userlocations::Vector{String}=String[],
+    userlocations=String[],
+    activity_userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -28,8 +27,6 @@ None
 
 Huron-Vidal Mixing Rule
 ```
-aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
-bᵢⱼ = (bᵢ +bⱼ)/2
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ā = b̄(∑[xᵢaᵢᵢαᵢ/(bᵢᵢ)] - gᴱ/λ)
@@ -43,14 +40,40 @@ for Peng-Robinson:
 ## References
 1. Huron, M.-J., & Vidal, J. (1979). New mixing rules in simple equations of state for representing vapour-liquid equilibria of strongly non-ideal mixtures. Fluid Phase Equilibria, 3(4), 255–271. [doi:10.1016/0378-3812(79)80001-1](https://doi.org/10.1016/0378-3812(79)80001-1)
 
+## Model Construction Examples
+```
+# Using the default database
+mixing = HVRule(["water","carbon dioxide"]) #default: Wilson Activity Coefficient.
+mixing = HVRule(["water","carbon dioxide"],activity = NRTL) #passing another Activity Coefficient Model.
+mixing = HVRule([("ethane",["CH3" => 2]),("butane",["CH2" => 2,"CH3" => 2])],activity = UNIFAC) #passing a GC Activity Coefficient Model.
+
+# Passing a prebuilt model
+
+act_model = NRTL(["water","ethanol"],userlocations = (a = [0.0 3.458; -0.801 0.0],b = [0.0 -586.1; 246.2 0.0], c = [0.0 0.3; 0.3 0.0]))
+mixing = HVRule(["water","ethanol"],activity = act_model)
+
+# Using user-provided parameters
+
+# Passing files or folders
+mixing = HVRule(["water","ethanol"]; activity = NRTL, activity_userlocations = ["path/to/my/db","nrtl_ge.csv"])
+
+# Passing parameters directly
+mixing = HVRule(["water","ethanol"];
+                activity = NRTL,
+                userlocations = (a = [0.0 3.458; -0.801 0.0],
+                    b = [0.0 -586.1; 246.2 0.0],
+                    c = [0.0 0.3; 0.3 0.0])
+                )
+```
+
 """
 HVRule
 
 export HVRule
-function HVRule(components::Vector{String}; activity = Wilson, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    _activity = init_model(activity,components,activity_userlocations,verbose)
+function HVRule(components; activity = Wilson, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+    _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
     references = ["10.1016/0378-3812(79)80001-1"]
-    model = HVRule(components, _activity,references)
+    model = HVRule(format_components(components), _activity,references)
     return model
 end
 
@@ -69,3 +92,6 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::HVRuleModel,α,a,b,
     return ā,b̄,c̄
 end
 
+function cubic_get_l(model::CubicModel,mixing::HVRuleModel,params)
+    return get_k_mean(params.b.values)
+end

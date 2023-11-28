@@ -10,8 +10,8 @@ export CPAAlpha
 """
     CPAAlpha <: CPAAlphaModel
     
-    CPAAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    CPAAlpha(components;
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -23,19 +23,25 @@ export CPAAlpha
 Cubic alpha `(α(T))` model. Default for `CPA` EoS.
 ```
 αᵢ = (1+c¹ᵢ(1-√(Trᵢ)))^2
-
 ```
 
+## Model Construction Examples
+```
+# Using the default database
+alpha = CPAAlpha("water") #single input
+alpha = CPAAlpha(["water","carbon dioxide"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = CPAAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","cpa/alpha.csv"])
+
+# Passing parameters directly
+alpha = CPAAlpha(["water","carbon dioxide"];userlocations = (;c1 = [0.67,0.76]))
+```
 """
 CPAAlpha
-
-function CPAAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
-    params = getparams(components, ["SAFT/CPA/CPA_like.csv"]; userlocations=userlocations, ignore_missing_singleparams=["Mw"], verbose=verbose)
-    c1 = params["c1"]
-    packagedparams = CPAAlphaParam(c1)
-    model = CPAAlpha(packagedparams, verbose=verbose)
-    return model
-end
+default_locations(::Type{CPAAlpha}) = ["SAFT/CPA/CPA_like.csv"]
 
 function α_function(model::CubicModel,V,T,z,alpha_model::CPAAlphaModel)
     Tc = model.params.Tc.values

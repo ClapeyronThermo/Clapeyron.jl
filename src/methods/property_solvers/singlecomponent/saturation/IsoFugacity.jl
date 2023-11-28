@@ -59,7 +59,7 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters
     # vol0 = initial guesses for the phase volumes = [vol liquid, vol vapor]
     # out = Saturation Pressure, vol liquid, vol vapor
     z = SA[1.]
-    RT = R̄*T
+    RT = Rgas(model)*T
     P = 1. * p0
     vol_liq0, vol_vap0 = vol0
     #we use volume here, because cubics can opt in to their root solver.

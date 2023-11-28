@@ -50,10 +50,20 @@ const SingleParam{T} = SingleParameter{T,Vector{T}} where T
 #indexing
 
 Base.@propagate_inbounds Base.getindex(param::SingleParameter{T,<:AbstractVector{T}},i::Int) where T = param.values[i]
-Base.setindex!(param::SingleParameter,val,i) = setindex!(param.values,val,i)
 
+function Base.getindex(param::SingleParameter{T,<:AbstractVector{T}},i::AbstractString) where T
+    idx = _str_to_idx(param,i)
+    return param[idx]
+end
+
+Base.setindex!(param::SingleParameter,val,i::Integer) = setindex!(param.values,val,i)
+function Base.setindex!(param::SingleParameter,val,i::AbstractString)
+    idx = _str_to_idx(param,i)
+    setindex!(param,val,idx)
+end
 #broadcasting
 Base.size(param::SingleParameter) = size(param.values)
+Base.length(param::SingleParameter) = length(param.values)
 Base.broadcastable(param::SingleParameter) = param.values
 Base.BroadcastStyle(::Type{<:SingleParameter}) = Broadcast.Style{SingleParameter}()
 
@@ -83,8 +93,10 @@ Base.eltype(param::SingleParameter{T}) where T = T
 LinearAlgebra.dot(param::SingleParameter,x::Union{<:AbstractVector,<:Number}) = dot(param.values,x)
 LinearAlgebra.dot(x::Union{<:AbstractVector,<:Number},param::SingleParameter) = dot(x,param.values)
 
-SingleParam(name,components,values,missingvals,src,sourcecsv) = SingleParameter(name,components,values,missingvals,src,sourcecsv)
-
+function SingleParam(name,components,values,missingvals,src,sourcecsv) 
+    param_length_check(SingleParam,name,length(components),length(values))
+    SingleParameter(name,components,values,missingvals,src,sourcecsv)
+end
 
 function Base.show(io::IO, ::MIME"text/plain", param::SingleParameter)
     len = length(param.values)
@@ -126,6 +138,7 @@ function SingleParam(
         sourcecsvs = String[],
         sources = String[]
     ) where T
+    param_length_check(SingleParam,name,length(components),length(values))
     if any(ismissing, values)
         _values,_ismissingvalues = defaultmissing(values)
         TT = eltype(_values)
@@ -142,31 +155,26 @@ function SingleParam(
         name::String,
         components::Vector{String};
         sources = String[]
-    ) 
+    )
     values = fill(0.0, length(components))
     return SingleParam(name, components, values, String[], sources)
 end
 
-function SingleParam(x::SingleParameter, v::Vector)
+function SingleParam(oldparam::SingleParameter, v::Vector)
     _values,_ismissingvalues = defaultmissing(v)
-    return SingleParam(x.name, x.components,_values, _ismissingvalues , x.sourcecsvs, x.sources)
+    param_length_check(SingleParam,name,length(oldparam.components),length(_values))
+    return SingleParam(oldparam.name, oldparam.components,_values, _ismissingvalues , oldparam.sourcecsvs, oldparam.sources)
 end
 
 #convert utilities
-function Base.convert(::Type{SingleParam{Float64}},param::SingleParam{Int})
-    values = Float64.(param.values)
+function Base.convert(::Type{SingleParam{T1}},param::SingleParam{T2}) where {T1<:Number,T2<:Number}
+    values = T1.(param.values)
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{<:Union{Int,Float64}})
-    @assert all(z->(isone(z) | iszero(z)),param.values)
+    #@assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
-    return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function Base.convert(::Type{SingleParam{Int}},param::SingleParam{Float64})
-    @assert all(z->isinteger(z),param.values)
-    values = Int.(param.values)
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
@@ -207,7 +215,7 @@ function pack_vectors(params::Vararg{SingleParameter{T},N}) where {T<:Number,N}
     SingleParam(name,components,vals,missingvals,srccsv,src)
 end
 
-#= Operations 
+#= Operations
 function Base.:(+)(param::SingleParameter, x::Number)
     values = param.values .+ x
     return SingleParam(param.name, param.components, values, param.ismissingvalues, param.sourcecsvs, param.sources)

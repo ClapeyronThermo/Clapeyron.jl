@@ -1,13 +1,12 @@
 abstract type sCPAAlphaModel <: CPAAlphaModel end
 
-
 @newmodelsimple sCPAAlpha sCPAAlphaModel CPAAlphaParam
 
 """
     sCPAAlpha <: sCPAAlphaModel
     
-    CPAAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    sCPAAlpha(components;
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -21,14 +20,21 @@ Cubic alpha `(α(T))` model. Default for `sCPA` EoS.
 αᵢ = (1+c¹ᵢ(1-√(Trᵢ)))^2
 ```
 
+## Model Construction Examples
+```
+# Using the default database
+alpha = sCPAAlpha("water") #single input
+alpha = sCPAAlpha(["water","carbon dioxide"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = sCPAAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","scpa/alpha.csv"])
+
+# Passing parameters directly
+alpha = sCPAAlpha(["water","carbon dioxide"];userlocations = (;c1 = [0.67,0.76]))
+```
+
 """
 sCPAAlpha
-
-export sCPAAlpha
-function sCPAAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false, kwargs...)
-    params = getparams(components, ["SAFT/CPA/sCPA/sCPA_like.csv"]; userlocations=userlocations, ignore_missing_singleparams=["Mw"], verbose=verbose)
-    c1 = params["c1"]
-    packagedparams = CPAAlphaParam(c1)
-    model = sCPAAlpha(packagedparams, verbose=verbose)
-    return model
-end
+default_locations(::Type{sCPAAlpha}) = ["SAFT/CPA/sCPA/sCPA_like.csv"]

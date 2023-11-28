@@ -11,7 +11,6 @@ struct PPR78Rule <: PPR78RuleModel
     params::PPR78Param
     references::Vector{String}
 end
-@registermodel PPR78Rule
 
 """
     PPR78Rule <: PPR78RuleModel
@@ -30,7 +29,7 @@ aᵢⱼ = √(aᵢaⱼ)
 bᵢⱼ = (bᵢ +bⱼ)/2
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
-ā = b̄(∑[xᵢaᵢᵢαᵢ/(bᵢᵢ)] - ∑xᵢxⱼbᵢbⱼEᵢⱼ/2b̄)
+ā = b̄(∑[xᵢaᵢαᵢ/(bᵢᵢ)] - ∑xᵢxⱼbᵢbⱼEᵢⱼ/2b̄)
 Eᵢⱼ = ∑(z̄ᵢₖ - z̄ⱼₖ)(z̄ᵢₗ - z̄ⱼₗ) × Aₖₗ × (298.15/T)^(Aₖₗ/Bₖₗ - 1)
 ```
 ## References
@@ -63,7 +62,7 @@ function mixing_rule(model::CubicModel,V,T,z,mixing_model::PPR78Rule,α,a,b,c)
     invn = 1/n
     invn2 = invn*invn
     T̄ = 298.15/T
-    b̄ = dot(z,diag(b)) * invn
+    b̄ = dot(z,diagvalues(b)) * invn
     c̄ = dot(z,c)*invn
     _0 = zero(T+first(z))
     gᴱ = _0

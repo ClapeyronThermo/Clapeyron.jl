@@ -18,7 +18,6 @@ struct Berthelot{T <: IdealModel,α,c,M} <: BerthelotModel
     idealmodel::T
     references::Array{String,1}
 end
-@registermodel Berthelot
 
 export Berthelot
 
@@ -29,7 +28,7 @@ export Berthelot
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -78,18 +77,19 @@ P = RT/(V-Nb) + a•α(T)/V²
 """
 Berthelot
 
-function Berthelot(components::Vector{String}; idealmodel=BasicIdeal,
+function Berthelot(components; idealmodel=BasicIdeal,
     alpha = ClausiusAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
+    formatted_components = format_components(components)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = get(params,"k",nothing)
     l = get(params,"l",nothing)
@@ -97,15 +97,16 @@ function Berthelot(components::Vector{String}; idealmodel=BasicIdeal,
     Mw = params["Mw"]
     Tc = params["Tc"]
     Vc = params["Vc"]
+    acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components)))
-    b = PairParam("b",components,zeros(length(components)))
+    a = PairParam("a",formatted_components,zeros(length(Tc)))
+    b = PairParam("b",formatted_components,zeros(length(Tc)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     packagedparams = BerthelotParam(a,b,Tc,pc,Vc,Mw)
     references = String["10.1051/jphystap:018990080026300"]
-    model = Berthelot(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = Berthelot(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
 end
 
@@ -147,7 +148,7 @@ function a_res(model::BerthelotModel, V, T, z,_data = data(model,V,T,z))
     return (-log(1+(c̄-b̄)*ρ) - ā*ρt*RT⁻¹)
     #
     #return -log(V-n*b̄) - ā*n/(R̄*T*V) + log(V)
-end   
+end
 
 function T_scale(model::BerthelotModel,z = SA[1.0])
     comps = 1:length(z)
@@ -164,7 +165,8 @@ function x0_crit_pure(model::BerthelotModel)
     (1.1, log10(lb_v*3))
 end
 
-function crit_pure(model::BerthelotModel) 
+function crit_pure(model::BerthelotModel)
+    single_component_check(crit_pure,model)
     Tc = model.params.Tc.values[1]
     Vc = model.params.Vc.values[1]
     Pc = pressure(model,Vc,Tc)
@@ -174,7 +176,7 @@ end
 
 
 #=
-z = PV/RT = 1/(1 - b/v) - a/RT2V2 
+z = PV/RT = 1/(1 - b/v) - a/RT2V2
 P = RT/(v - b)  - a/TV
 
 =#

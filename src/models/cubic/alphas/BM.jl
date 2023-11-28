@@ -1,17 +1,15 @@
 abstract type BMAlphaModel <: AlphaModel end
 
-struct BMAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+const BMAlphaParam = SimpleAlphaParam
 
-@newmodelsimple BMAlpha BMAlphaModel BMAlphaParam
+@newmodelsimple BMAlpha BMAlphaModel SimpleAlphaParam
 export BMAlpha
 
 """
     BMAlpha <: BMAlphaModel
 
-    MTAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    BMAlpha(components;
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -36,20 +34,28 @@ for RK models:
     mᵢ = 0.480 + 1.547ωᵢ - 0.176ωᵢ^2
 ```
 
+## Model Construction Examples
+```
+# Using the default database
+alpha = BMAlpha("water") #single input
+alpha = BMAlpha(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = BMAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/acentric.csv"])
+
+# Passing parameters directly
+alpha = BMAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
+```
+
 ## References
 
 1. .M. Boston, P.M. Mathias, Proceedings of the 2nd International Conference on Phase Equilibria and Fluid Properties in the Chemical Process Industries, West Berlin, March, 1980, pp. 823–849
 
 """
 BMAlpha
-
-function BMAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = BMAlphaParam(acentricfactor)
-    model = BMAlpha(packagedparams, verbose=verbose)
-    return model
-end
+default_locations(::Type{BMAlpha}) = critical_data()
 
 function α_function(model::RKModel,V,T,z,alpha_model::BMAlphaModel)
     Tc = model.params.Tc.values

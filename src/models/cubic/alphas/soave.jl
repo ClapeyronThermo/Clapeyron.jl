@@ -1,8 +1,6 @@
 abstract type SoaveAlphaModel <: AlphaModel end
 
-struct SoaveAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+const SoaveAlphaParam = SimpleAlphaParam
 
 @newmodelsimple SoaveAlpha SoaveAlphaModel SoaveAlphaParam
 export SoaveAlpha
@@ -10,8 +8,8 @@ export SoaveAlpha
 """
     SoaveAlpha <: SoaveAlphaModel
     
-    SoaveAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    SoaveAlpha(components;
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -27,18 +25,26 @@ Cubic alpha `(α(T))` model. Default for [`SRK`](@ref) EoS.
 Trᵢ = T/Tcᵢ
 mᵢ = 0.480 + 1.547ωᵢ - 0.176ωᵢ^2
 ```
-to use different polynomial coefficients for `mᵢ`, overload `Clapeyron.α_m(::CubicModel,::SoaveAlphaModel) = (c₁,c₂,...cₙ)`
+To use different polynomial coefficients for `mᵢ`, overload `Clapeyron.α_m(::CubicModel,::SoaveAlphaModel) = (c₁,c₂,...cₙ)`
+
+## Model Construction Examples
+```
+# Using the default database
+alpha = SoaveAlpha("water") #single input
+alpha = SoaveAlpha(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = SoaveAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/acentric.csv"])
+
+# Passing parameters directly
+alpha = SoaveAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
+```
 
 """
 SoaveAlpha
-
-function SoaveAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = SoaveAlphaParam(acentricfactor)
-    model = SoaveAlpha(packagedparams, verbose=verbose)
-    return model
-end
+default_locations(::Type{SoaveAlpha}) = critical_data()
 
 @inline α_m(model::RKModel,::SoaveAlpha) = (0.480,1.547,-0.176)
 @inline α_m(model::PRModel,::SoaveAlpha) = (0.37464,1.54226,-0.26992) #equal to PRAlpha
@@ -69,4 +75,3 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::SoaveAlpha
 end
 
 const SRKModel = RK{I,SoaveAlpha,M,T} where {I,M,T}
-

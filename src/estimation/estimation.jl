@@ -64,12 +64,13 @@ export Estimation
 # Mutable for now to make it easy to just replace the model
 """
     Estimation
-    Estimation(model,toestimate,filepaths,ignorefield)
+    Estimation(model,toestimate,filepaths,ignorefield,objective_form)
 ## Input parameters:
 - ` model`: The initial model containing the species we wish to parameterise
 - `toestimate`: The dictionary of parameters being fitted
 - `filepaths` or `filepaths_weights`: The location of the data files used to fit. Can also contain the weights of each dataset
 - `ignorefield`: Specify which EoSModel fields to ignore in the main model
+- `objective_form`: Specify the functional form of the objective function in the form `objective_form(pred,exp)`
 ## Output: 
 Estimator object which contains the following:
 - `model`: The model whose parameters will be varied
@@ -77,6 +78,7 @@ Estimator object which contains the following:
 - `toestimate`: ToEstimate struct which contains all the information on the parameters
 - `data`: Vector of `EstimationData` structs where all the information on the data is stored
 - `ignorefield`: Vector of fields to ignore in the parameter estimation
+- `objective_form`: Function to evaluate the error measure for the objective function
 The following objects are also output:
 - `objective`: The objective function which is used to fit the parameters
 - `x0`: Initial guesses for the parameters
@@ -91,6 +93,7 @@ mutable struct Estimation{T<:EoSModel}
     toestimate::ToEstimate
     data::Vector{EstimationData}
     ignorefield::Union{Nothing,Vector{Symbol}}
+    objective_form::Function
 end
 
 function Base.show(io::IO, mime::MIME"text/plain", estimation::Estimation)
@@ -113,8 +116,8 @@ function Base.show(io::IO, estimation::Estimation)
     print(io, typeof(estimation))
 end
 
-function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}}, ignorefield::Vector{Symbol})
-    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths),ignorefield)
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}}, ignorefield::Vector{Symbol}, objective_form::Function = mse(pred,exp) = ((pred-exp)/exp)^2)
+    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths),ignorefield,objective_form)
     
     nparams = length(estimation.toestimate.params)
 
@@ -126,8 +129,8 @@ function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filep
     return estimation, objective, x0, upper, lower
 end
 
-function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}})
-    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths),Symbol[])
+function Estimation(model::EoSModel, toestimate::Vector{Dict{Symbol,Any}}, filepaths::Union{Array{String},Array{Tuple{Float64, String}}}, objective_form::Function = mse(pred,exp) = ((pred-exp)/exp)^2)
+    estimation = Estimation(model, deepcopy(model), ToEstimate(toestimate), EstimationData(filepaths), Symbol[], objective_form)
     
     nparams = length(estimation.toestimate.params)
 
@@ -308,6 +311,7 @@ The objective function used within parameter estimation.
 function objective_function(estimation::Estimation,guesses)
     F = 0
     model = return_model(estimation, estimation.model, guesses)
+    objective_form = estimation.objective_form
     for i ∈ 1:length(estimation.data)
         if estimation.data[i].species == ["all"]
             model_r = model
@@ -336,9 +340,9 @@ function objective_function(estimation::Estimation,guesses)
         end
 
         if length(outputs)==1
-            F += sum(((prediction.-outputs[1])./outputs[1]).^2)/length(outputs[1])*weights[1]
+            F += sum(objective_form.(prediction,outputs[1]))/length(outputs[1])*weights[1]
         else
-            F += sum([sum([((prediction[k][j].-outputs[j][k])./outputs[j][k]).^2 for j in 1:length(prediction[k])])*weights[1] for k in 1:length(prediction)])/length(outputs[1])
+            F += sum([sum([objective_form.(prediction[k][j],outputs[j][k]) for j in 1:length(prediction[k])])*weights[1] for k in 1:length(prediction)])/length(outputs[1])
         end
     end
     if isnan(F)

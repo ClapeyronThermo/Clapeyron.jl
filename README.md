@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/267659508.svg)](https://zenodo.org/badge/latestdoi/267659508)
 [![Build Status](https://github.com/ClapeyronThermo/Clapeyron.jl/workflows/CI/badge.svg)](https://github.com/ClapeyronThermo/Clapeyron.jl/actions)
-[![codecov](https://codecov.io/gh/ypaul21/Clapeyron.jl/branch/master/graph/badge.svg?token=ZVGGR4AAFB)](https://codecov.io/gh/ypaul21/Clapeyron.jl)
+[![codecov](https://codecov.io/gh/ClapeyronThermo/Clapeyron.jl/branch/master/graph/badge.svg?token=ZVGGR4AAFB)](https://codecov.io/gh/ClapeyronThermo/Clapeyron.jl)
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://clapeyronthermo.github.io/Clapeyron.jl/dev)
 [![project chat](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://julialang.zulipchat.com/#narrow/stream/265161-Clapeyron.2Ejl)
 
@@ -10,7 +10,7 @@ Welcome to Clapeyron! This module provides both a large library of thermodynamic
 
 The official manuscript is in ACS. https://pubs.acs.org/doi/10.1021/acs.iecr.2c00326. There is also a preprint available at arxiv: https://arxiv.org/abs/2201.08927
 
-We have also ppresented at the JuliaCon 2021 conference! Feel free to take a look at our talk:
+We have also presented at the JuliaCon 2021 conference! Feel free to take a look at our talk:
 
 [![Clapeyron.jl: An Extensible Implementation of Equations of State | Paul Yew et al | JuliaCon2021](https://img.youtube.com/vi/Re5qI-9zyIM/0.jpg)](https://www.youtube.com/watch?v=Re5qI-9zyIM "Clapeyron.jl: An Extensible Implementation of Equations of State | Paul Yew et al | JuliaCon2021")
 
@@ -34,19 +34,19 @@ We support many equations of state and properties. Some examples of figures you 
 
 # Installing Clapeyron
 
-To install Clapeyron, launch Julia with
+The minimum supported version is Julia 1.6. To install Clapeyron, launch Julia with
 
-```julia
+```
 > julia
 ```
 
 Hit the ```]``` key to enter Pkg mode, then type
 
-```julia
+```
 Pkg> add Clapeyron
 ```
 Or to add the development version:
-```julia
+```
 Pkg> add https://github.com/ClapeyronThermo/Clapeyron.jl#master
 ```
 Exit Pkg mode by hitting backspace.
@@ -59,7 +59,7 @@ using Clapeyron
 
 To remove the package, hit the ```]``` key to enter Pkg mode, then type
 
-```julia
+```
 Pkg> rm Clapeyron
 ```
 ## Citing Clapeyron

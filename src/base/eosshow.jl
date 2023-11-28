@@ -1,12 +1,23 @@
+"""
+custom_show(::Type{T})::Bool
+
+Trait used to determine if an EoSModel can use the default custom `show` methods defined for EoSModels in the package.
+
+"""
+custom_show(model::EoSModel) = _custom_show(model)
+custom_show(model) = false
+function _custom_show(Base.@nospecialize(model))
+    hasfield(typeof(model),:components)
+end 
 
 function show_params(io,model)
-    if hasfield(typeof(model),:params)
-        println(io)
-        paramnames = fieldnames(typeof(model.params))
-        len_params = length(paramnames)
-        !iszero(len_params) && print(io,"Contains parameters: ")
-        show_pairs(io,paramnames,pair_separator = ", ",quote_string = false)
-    end
+    hasfield(typeof(model),:params) || return nothing
+    iszero(fieldcount(typeof(model.params))) && return nothing
+    println(io)
+    paramnames = fieldnames(typeof(model.params))
+    len_params = length(paramnames)
+    !iszero(len_params) && print(io,"Contains parameters: ")
+    show_pairs(io,paramnames,pair_separator = ", ",quote_string = false)
 end
 
 function may_show_references(io::IO,model)
@@ -26,13 +37,20 @@ function show_references(io::IO,model)
     end
 end
 
-
-function eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSModel))
+function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSModel))   
     print(io, typeof(model))
     if hasfield(typeof(model),:components)
         length(model) == 1 && println(io, " with 1 component:")
         length(model) > 1 && println(io, " with ", length(model), " components:")
-        show_pairs(io,model.components)
+        if has_groups(model)
+            groups = model.groups
+            show_groups(io,groups)
+            println(io)
+            print(io,"Group Type: ",groups.grouptype)
+        else
+            show_pairs(io,model.components)
+
+        end
     else
         print(io,"()")
     end
@@ -61,20 +79,21 @@ end
 
 show_groups(io,gc) = show_pairs(io,gc.components,zip(gc.groups,gc.n_groups),": ",__show_group_i)
 
-function gc_eosshow(io::IO, ::MIME"text/plain", Base.@nospecialize(model::EoSModel))
-    print(io, typeof(model))
-    length(model) == 1 && println(io, " with 1 component:")
-    length(model) > 1 && println(io, " with ", length(model), " components:")
-    groups = model.groups
-    show_groups(io,groups)
-    println(io)
-    print(io,"Group Type: ",groups.grouptype)
-    show_params(io,model)
-    may_show_references(io,model)
+#overload of Base.show here
+function Base.show(io::IO,mime::MIME"text/plain",model::EoSModel)
+    if custom_show(model)
+        eosshow(io,mime,model)
+    else
+        show_default(io,mime,model)
+    end
 end
 
-function gc_eosshow(io::IO, Base.@nospecialize(model::EoSModel))
-    return eosshow(io,model)
+function Base.show(io::IO,model::EoSModel)
+    if custom_show(model)
+        eosshow(io,model)
+    else
+        show_default(io,model)
+    end
 end
 
 export eosshow

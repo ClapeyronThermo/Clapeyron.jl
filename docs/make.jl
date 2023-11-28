@@ -4,9 +4,10 @@ using Documenter,Clapeyron
 makedocs(sitename = "Clapeyron.jl",
 format = Documenter.HTML(
     # Use clean URLs, unless built as a "local" build
-    canonical = "https://ypaul21.github.io/Clapeyron.jl/",
+    canonical = "https://ClapeyronThermo.github.io/Clapeyron.jl/",
     assets = ["assets/logo.ico"],
 ),
+warnonly = Documenter.except(),
     authors = "Pierre J. Walker, Hon Wa Yew and Andrés Riedemann.",
     pages = [
         "Home" => "index.md",
@@ -41,9 +42,9 @@ format = Documenter.HTML(
         "Macros" => "api/macros.md",
         "Association" => "api/association.md",
         "Parameter Estimation" => "api/estimation.md",
-        ]
-        ])
+        ],
+        "Developer Guide" => "dev.md"])
 
         deploydocs(;
-    repo="github.com/ypaul21/Clapeyron.jl.git",
+    repo="github.com/ClapeyronThermo/Clapeyron.jl.git",
 )

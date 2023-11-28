@@ -1,10 +1,5 @@
-struct BasicIdealParam <: EoSParam
-end
-
 abstract type BasicIdealModel <: IdealModel end
-struct BasicIdeal <: BasicIdealModel
-    params::BasicIdealParam
-end
+@newmodelsingleton BasicIdeal BasicIdealModel
 
 """
     BasicIdeal <: IdealModel
@@ -18,17 +13,19 @@ Default Ideal Model. Constant specific heat capacity equal to `5R/2`. it's Helmh
 ```
     a₀ = A₀/nRT =  ∑(xᵢlog(nxᵢ/V)) - 1 - 1.5log(T)
 ```
+
+## Model Construction Examples
+```
+# Because this model does not have parameters, all those constructors are equivalent:
+idealmodel = BasicIdeal()
+idealmodel = BasicIdeal("water")
+idealmodel = BasicIdeal(["water","carbon dioxide"])
+```
 """
 BasicIdeal
 
 export BasicIdeal
-function BasicIdeal(components::Vector; userlocations::Array{String,1}=String[], verbose=false)
-    return BasicIdeal(BasicIdealParam())
-end
 
-
-is_splittable(::BasicIdeal) = false
-recombine_impl!(model::BasicIdeal) = model
 function a_ideal(model::BasicIdeal, V, T, z)
     N = ∑(z)
     #x = z/∑(z)

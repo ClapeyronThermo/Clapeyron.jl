@@ -30,4 +30,8 @@ the combining option controls the type of combining rule applied to the associat
     dense::Bool = true
 end
 
+#allows overloading default assoc_options
+default_assoc_options(m::EoSModel) = default_assoc_options(parameterless_type(m))
+default_assoc_options(m) = AssocOptions()
+
 is_splittable(::AssocOptions) = false

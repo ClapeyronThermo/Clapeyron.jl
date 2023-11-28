@@ -5,7 +5,9 @@ struct TsonopoulosVirialParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
-@newmodel TsonopoulosVirial SecondVirialModel TsonopoulosVirialParam
+@newmodel TsonopoulosVirial SecondVirialModel TsonopoulosVirialParam false
+default_locations(::Type{TsonopoulosVirial}) = ["properties/critical.csv", "properties/molarmass.csv"]
+default_references(::Type{TsonopoulosVirial}) = ["10.1002/aic.690200209"]
 
 """
     TsonopoulosVirial <: SecondVirialModel
@@ -16,13 +18,6 @@ end
             verbose=false)
 
 ## Input parameters
-
-- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `w`: Single Parameter (`Float64`) - Acentric Factor
-- `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-
-## Model Parameters
 
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
@@ -47,6 +42,31 @@ Pcᵢⱼ = (Pcᵢ + Pcⱼ)/2
 ωᵢⱼ = (ωᵢ + ωⱼ)/2
 ```
 
+## Model Construction Examples
+```julia
+# Using the default database
+model = TsonopoulosVirial("water") #single input
+model = TsonopoulosVirial(["water","ethanol"]) #multiple components
+model = TsonopoulosVirial(["water","ethanol"], idealmodel = ReidIdeal) #modifying ideal model
+
+# Passing a prebuilt model
+
+my_idealmodel = MonomerIdeal(["neon","hydrogen"];userlocations = (;Mw = [20.17, 2.]))
+model = TsonopoulosVirial(["neon","hydrogen"],idealmodel = my_idealmodel)
+
+# User-provided parameters, passing files or folders
+model = TsonopoulosVirial(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical.csv"])
+
+# User-provided parameters, passing parameters directly
+
+model = TsonopoulosVirial(["neon","hydrogen"];
+        userlocations = (;Tc = [44.492,33.19],
+                        Pc = [2679000, 1296400],
+                        Mw = [20.17, 2.],
+                        acentricfactor = [-0.03,-0.21])
+                    )
+```
+
 ## References
 
 1. Tsonopoulos, C. (1974). An empirical correlation of second virial coefficients. AIChE Journal. American Institute of Chemical Engineers, 20(2), 263–272. [doi:10.1002/aic.690200209](https://doi.org/10.1002/aic.690200209)
@@ -55,20 +75,6 @@ Pcᵢⱼ = (Pcᵢ + Pcⱼ)/2
 TsonopoulosVirial
 
 export TsonopoulosVirial
-function TsonopoulosVirial(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false)
-    params = getparams(components,["properties/critical.csv", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    Mw = params["Mw"]
-    Tc = params["Tc"]
-    Pc = params["Pc"]
-    acentricfactor = params["acentricfactor"]
-    packagedparams = TsonopoulosVirialParam(Tc,Pc,acentricfactor,Mw)
-    references = String["10.1002/aic.690200209"]
-    return TsonopoulosVirial(packagedparams, idealmodel; ideal_userlocations, references, verbose)
-end
 
 function second_virial_coefficient_impl(model::TsonopoulosVirial,T,z=SA[1.0])
     B = zero(T+first(z))

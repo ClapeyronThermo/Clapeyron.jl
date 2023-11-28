@@ -1,8 +1,6 @@
 abstract type PTVAlphaModel <: AlphaModel end
 
-struct PTVAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+const PTVAlphaParam = SimpleAlphaParam
 
 @newmodelsimple PTVAlpha PTVAlphaModel PTVAlphaParam
 export PTVAlpha
@@ -10,8 +8,8 @@ export PTVAlpha
 """
     PTVAlpha <: PTVAlphaModel
     
-    PTVAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    PTVAlpha(components;
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -27,16 +25,25 @@ Cubic alpha `(α(T))` model. Default for [`PTV`](@ref) EoS.
 Trᵢ = T/Tcᵢ
 mᵢ = 0.46283 + 3.58230Zcᵢ*ωᵢ - 8.19417(Zcᵢ*ωᵢ)^2
 ```
+
+## Model Construction Examples
+```
+# Using the default database
+alpha = PTVAlpha("water") #single input
+alpha = PTVAlpha(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = PTVAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/acentric.csv"])
+
+# Passing parameters directly
+alpha = PTVAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
+```
+
 """
 PTVAlpha
-
-function PTVAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = PTVAlphaParam(acentricfactor)
-    model = PTVAlpha(packagedparams, verbose=verbose)
-    return model
-end
+default_locations(::Type{PTVAlpha}) = critical_data()
 
 function α_function(model::CubicModel,V,T,z,alpha_model::PTVAlphaModel)
     Tc = model.params.Tc.values

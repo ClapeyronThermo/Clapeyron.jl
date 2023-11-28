@@ -12,15 +12,13 @@ struct QCPRRule <: QCPRRuleModel
     references::Array{String,1}
 end
 
-@registermodel QCPRRule
-
 """
     QCPRRule <: MHV2RuleModel
     
-    QCPRRule(components::Vector{String};
+    QCPRRule(components;
     activity = Wilson,
-    userlocations::Vector{String}=String[],
-    activity_userlocations::Vector{String}=String[],
+    userlocations=String[],
+    activity_userlocations=String[],
     verbose::Bool=false)
 ## Input Parameters
 None
@@ -30,7 +28,7 @@ None
 Quantum-Corrected Mixing Rule, used by [`QCPR`](@ref) EoS:
 ```
 aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
-bᵢⱼ = (1-lᵢⱼ)(bqᵢ + bqⱼ)/2
+bᵢⱼ = (1 - lᵢⱼ)(bqᵢ + bqⱼ)/2
 bqᵢ = bᵢβᵢ(T)
 βᵢ(T) = (1 + Aᵢ/(T + Bᵢ))^3 / (1 + Aᵢ/(Tcᵢ + Bᵢ))^3
 ā = ∑aᵢⱼxᵢxⱼ√(αᵢ(T)αⱼ(T))
@@ -43,15 +41,34 @@ c̄ = ∑cᵢxᵢ
 QCPRRule
 
 
-function QCPRRule(components::Vector{String}; activity = nothing, userlocations::Vector{String}=String[],activity_userlocations::Vector{String}=String[], verbose::Bool=false)
+function QCPRRule(components; activity = nothing, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
     params = getparams(components, ["cubic/QCPR/QCPR_like.csv","cubic/QCPR/QCPR_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     references = String["10.1016/j.fluid.2020.112790"]
     pkgparams = QCPRRuleParam(params["A"],params["B"],params["l"])
-    model = QCPRRule(components, pkgparams ,references)
+    model = QCPRRule(format_components(components), pkgparams ,references)
     return model
 end
 
 recombine_impl!(model::QCPRRule) = model
+
+function ab_premixing(model::PRModel,mixing::QCPRRuleModel,kij,lij)
+    Tc = model.params.Tc
+    Pc = model.params.Pc
+    Ωa, Ωb = ab_consts(model)
+    comps = Tc.components
+    n = length(Tc)
+    a = model.params.a
+    b = model.params.b
+    aii,bii = diagvalues(a),diagvalues(b)
+    @. aii = Ωa*R̄^2*Tc^2/Pc
+    @. bii = Ωb*R̄*Tc/Pc
+    epsilon_LorentzBerthelot!(a,kij)
+    sigma_LorentzBerthelot!(b)
+    if lij !== nothing
+        mixing.params.l.values .= lij
+    end
+    return a,b
+end
 
 function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
     n = sum(z)
@@ -89,3 +106,13 @@ function mixing_rule(model::PRModel,V,T,z,mixing_model::QCPRRuleModel,α,a,b,c)
     #dot(z,Symmetric(a .* sqrt.(α*α')),z) * invn2
     return ā,b̄,c̄
 end
+
+function cubic_get_k(model::CubicModel,mixing::QCPRRuleModel,params)
+    return get_k_geomean(params.a.values)
+end
+
+function cubic_get_l(model::CubicModel,mixing::QCPRRuleModel,params)
+    return copy(mixing.params.l.values)
+end
+
+export QCPRRule

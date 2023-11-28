@@ -69,6 +69,32 @@ function gibbs_duhem(model,V,T,z=SA[1.0])
 end
 
 """
+    ideal_consistency(model,V,T,z=[1.0])
+
+performs a ideal model consistency check:
+```
+∂a₀∂V + 1/V ≈ 0
+```
+Where `∂a₀∂V` is the derivative of `a_ideal` respect to `V`. it can help diagnose if a user-defined ideal model is consistent.
+
+Return |∂a₀∂V + 1/V| at the specified conditions.
+
+If the model is not an `IdealModel`, then `Clapeyron.idealmodel(model)` will be called to obtain the respective ideal model.
+"""
+
+function ideal_consistency(model,V,T,z =SA[1.0])
+    id = idealmodel(model)
+    if id === nothing
+        f(∂V) = a_ideal(model,∂V,T,z)
+        ∂f0∂V = Solvers.derivative(f,V)
+        n = sum(z)
+        return abs(∂f0∂V + 1/V)
+    else
+        return ideal_consistency(id,V,T,z)
+    end
+end
+
+"""
     VT_chemical_stability(model,V,T,z)::Bool
 
 Performs a chemical stability check using the tangent plane distance criterion, starting with the wilson correlation for K-values.
@@ -82,7 +108,7 @@ function VT_chemical_stability(model::EoSModel,V,T,z)
         return pure_chemical_instability(model,V/sum(z),T) 
     end
     p = pressure(model,V,T,z)
-    Kʷ = wilson_k_values(model,p,T)
+    Kʷ = tp_flash_K0(model,p,T)
     z = z./sum(z)
     w_vap = Kʷ.*z
     w_liq = z./Kʷ

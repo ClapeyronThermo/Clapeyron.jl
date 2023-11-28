@@ -7,28 +7,32 @@ struct pharmaPCSAFTParam <: EoSParam
     kT::PairParam{Float64}
     epsilon_assoc::AssocParam{Float64}
     bondvol::AssocParam{Float64}
-end
-
-abstract type pharmaPCSAFTModel <: PCSAFTModel end
-
-struct pharmaPCSAFT{T <: IdealModel} <: pharmaPCSAFTModel
-    components::Array{String,1}
-    sites::SiteParam
-    params::pharmaPCSAFTParam
-    idealmodel::T
-    assoc_options::AssocOptions
-    references::Array{String,1}
     water::SpecialComp
 end
 
-@registermodel pharmaPCSAFT
+abstract type pharmaPCSAFTModel <: PCSAFTModel end
+@newmodel pharmaPCSAFT pharmaPCSAFTModel pharmaPCSAFTParam
+default_references(::Type{pharmaPCSAFT}) =  ["10.1021/ie0003887", "10.1021/ie010954d","10.1016/j.cep.2007.02.034"]
+default_locations(::Type{pharmaPCSAFT}) = ["SAFT/PCSAFT","properties/molarmass.csv"]
+default_assoc_options(::Type{pharmaPCSAFT}) = AssocOptions(combining = :elliott_runtime)
+function transform_params(::Type{pharmaPCSAFT},params,components)
+    sigma = params["sigma"]
+    sigma.values .*= 1E-10
+    params["kT"] = get(params,"kT",PairParam("kT",components,zeros(length(components))))
+    params["water"] = SpecialComp(components,["water08"])
+    #k needs to be fully instantiated here, because it is stored as a parameter
+    params["k"] = get(params,"k",PairParam("k",components,zeros(length(components))))
+    sigma,epsilon = params["sigma"],params["epsilon"]
+    params["sigma"] = sigma_LorentzBerthelot(sigma)
+    params["epsilon"] = epsilon_LorentzBerthelot(epsilon) #the mixing is done at runtime
+    return params
+end
 
 export pharmaPCSAFT
 
-
 """
     pharmaPCSAFTModel <: PCSAFTModel
-    pharmaPCSAFT(components; 
+    pharmaPCSAFT(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
@@ -63,50 +67,17 @@ For using the water's sigma correlation, `water08` should be selected instead of
 """
 pharmaPCSAFT
 
-function pharmaPCSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions(combining = :elliott_runtime))
-
-    params,sites = getparams(components, ["SAFT/PCSAFT","properties/molarmass.csv"]; 
-    userlocations=userlocations, 
-    verbose=verbose,
-    ignore_missing_singleparams = ["kT"])
-    
-    water = SpecialComp(components,["water08"])
-    segment = params["segment"]
-    k0 = get(params,"k",nothing)
-    n = length(components)
-    k1 = get(params,"kT",PairParam("kT",components,zeros(n)))
-    Mw = params["Mw"]
-    params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"])
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bondvol"]
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
-
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    packagedparams = pharmaPCSAFTParam(Mw, segment, sigma, epsilon,k0, k1, epsilon_assoc, bondvol)
-    references = ["10.1021/ie0003887", "10.1021/ie010954d","10.1016/j.cep.2007.02.034"]
-
-    model = pharmaPCSAFT(components,sites,packagedparams,init_idealmodel,assoc_options,references,water)
-    return model
-end
-
 #Δσh20(T) = σ[T] - σconstant
 # σ = σconstant + Δσh20(T)
 #https://doi.org/10.1016/j.cep.2007.02.034
-Δσh20(T) = (10.1100*exp(-0.01775*T)-1.41700*exp(-0.01146*T))*1e-10 
+Δσh20(T) = (10.1100*exp(-0.01775*T)-1.41700*exp(-0.01146*T))*1e-10
 @inline water08_k(model::PCSAFTModel) = 0
-@inline water08_k(model::pharmaPCSAFTModel) = model.water[]
+@inline water08_k(model::pharmaPCSAFTModel) = model.params.water[]
 
 function d(model::pharmaPCSAFTModel, V, T, z)
     ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values 
-    _d = zeros(typeof(T),length(z))
+    σ = model.params.sigma.values
+    _d = zeros(typeof(T*one(eltype(model))),length(z))
     Δσ = Δσh20(T)
     k = water08_k(model)
     for i ∈ @comps
@@ -117,6 +88,16 @@ function d(model::pharmaPCSAFTModel, V, T, z)
     return _d
 end
 
+function d(model::pharmaPCSAFT, V, T, z::SingleComp)
+    ϵ = only(model.params.epsilon.values)
+    σ = only(model.params.sigma.values)
+    k = water08_k(model)
+    if k == 1
+        σ += Δσh20(T)
+    end
+    return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
+end
+
 function m2ϵσ3(model::pharmaPCSAFTModel, V, T, z)
     m = model.params.segment.values
     σ = model.params.sigma.values
@@ -125,9 +106,9 @@ function m2ϵσ3(model::pharmaPCSAFTModel, V, T, z)
     k1 = model.params.kT.values
     m2ϵσ3₂ = zero(V+T+first(z))
     m2ϵσ3₁ = m2ϵσ3₂
-    
+
     k = water08_k(model)
-    Δσ = Δσh20(T) 
+    Δσ = Δσh20(T)
     @inbounds for i ∈ @comps
         zi = z[i]
         mi = m[i]
@@ -140,7 +121,7 @@ function m2ϵσ3(model::pharmaPCSAFTModel, V, T, z)
         m2ϵσ3₂ += constant*exp2
         for j ∈ 1:(i-1)
             σij = σ[i,j] + 0.5*(k==i  +  k==j)*Δσ
-            constant = zi*z[j]*mi*m[j] * σij^3 
+            constant = zi*z[j]*mi*m[j] * σij^3
             exp1 = ϵ[i,j]*(1 - k0[i,j] - k1[i,j]*T)/T
             exp2 = exp1*exp1
             m2ϵσ3₁ += 2*constant*exp1
@@ -157,12 +138,12 @@ function Δ(model::pharmaPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     _0 = zero(V+T+first(z))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
-    κijab = κ[i,j][a,b] 
+    κijab = κ[i,j][a,b]
     iszero(κijab) && return _0
     σ = model.params.sigma.values
     gij = @f(g_hs,i,j,_data)
     k = water08_k(model)
-    Δσ = Δσh20(T)    
+    Δσ = Δσh20(T)
     σij = σ[i,j] + 0.5*((k==i) + (k==j))*Δσ
     res = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κijab
     return res
@@ -173,8 +154,8 @@ function  Δ(model::pharmaPCSAFT, V, T, z,_data=@f(data))
     κ = model.params.bondvol.values
     σ = model.params.sigma.values
     k = water08_k(model)
-    k = model.water[]
-    Δσ = Δσh20(T)   
+    k = model.params.water[]
+    Δσ = Δσh20(T)
     Δout = assoc_similar(κ,typeof(V+T+first(z)))
     Δout.values .= false #fill with zeros, maybe it is not necessary?
     for (idx,(i,j),(a,b)) in indices(Δout)

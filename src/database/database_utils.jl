@@ -86,12 +86,17 @@ function _getpaths(location,special_parse = true)
     end =#
     files = readdir(filepath,join = true) #this returns the full (non-normalized) path
     filter!(isfile,files) #remove folders, the reader is not recursive
-    filter!(f -> getfileextension(f) == "csv",files)
+    filter!(f -> getfileextension(f) in ("csv","json"),files)
     map!(realpath,files,files)
     return files
 end
 
-function flattenfilepaths(locations,userlocations)
+flattenfilepaths(locations) = flattenfilepaths(locations,String[])
+
+function flattenfilepaths(locations,userlocations::Vector{String})
+    if length(locations) == 0 && length(userlocations) == 0
+        return String[]
+    end
     defaultpaths = reduce(vcat,getpaths.(locations; relativetodatabase=true),init = String[])
     userpaths = reduce(vcat,getpaths.(userlocations),init = String[])
     idx = findfirst(isequal("@REMOVEDEFAULTS"),userpaths)
@@ -101,6 +106,16 @@ function flattenfilepaths(locations,userlocations)
     end
     return vcat(defaultpaths,userpaths,String[])
 end
+
+flattenfilepaths(locations,userlocations::AbstractString) = flattenfilepaths(locations,[userlocations])
+
+getpath(location;relativetodatabase = true) = only(getpaths(location; relativetodatabase))
+
+Base.@nospecialize
+function flattenfilepaths(locations,userlocations)
+    return String[]
+end
+Base.@specialize
 
 function getline(filepath::AbstractString, selectedline::Int)
     is_inline_csv(filepath) && return getline(IOBuffer(filepath),selectedline)
@@ -157,6 +172,7 @@ function _indexin(query,list,separator,indices)
     end
     return res,comp_res
 end
+
 else
     function _indexin(query,list,separator,indices)
         kq = keys(query)
@@ -311,4 +327,52 @@ function info_color(text)
     red = colors[:bold] * colors[:cyan]
     reset = colors[:normal]
     return red * text * reset
+end
+
+function userlocation_merge(loc1,loc2)
+    if isempty(loc2)
+        return loc1
+    elseif loc1 isa Vector{String} && loc2 isa Vector{String}
+        return append!(loc1,loc2)
+    elseif loc1 isa Vector{String} && length(loc1) == 0
+        return loc2
+    elseif loc1 isa Vector{String} && loc2 isa Union{NamedTuple,AbstractDict}
+        return loc2
+    elseif loc1 isa Union{NamedTuple,AbstractDict} && loc1 isa Union{NamedTuple,AbstractDict}
+        loc0 = Dict(pairs(loc1))
+        for k in keys(loc2)
+            loc0[k] = loc2[k]
+        end
+        return loc0
+    else
+        throw(ArgumentError("invalid userlocations combination: old: $loc1, new: $loc2"))
+    end
+end
+
+critical_data() = ["properties/critical.csv"]
+mw_data() = ["properties/molarmass.csv"]
+
+function by_cas(caslist)
+    cas = format_components(caslist)
+    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[])
+    species = params["species"].values
+    for (i,sp) in pairs(species)
+        if occursin("~|~",sp)
+            x,_ = eachsplit(sp,"~|~")
+            species[i] = x
+        end
+    end
+    return species
+end
+
+function cas(components)
+    components = format_components(components)
+    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["SMILES"],ignore_missing_singleparams = ["CAS"])
+    return params["CAS"].values
+end
+
+function SMILES(components)
+    components = format_components(components)
+    params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
+    return params["SMILES"].values
 end

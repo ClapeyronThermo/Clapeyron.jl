@@ -129,7 +129,7 @@ function second_virial_coefficient_impl(model::EoSModel,T , z = SA[1.0])
     V = 1/sqrt(eps(TT))
     fAᵣ(x) = eos_res(model,x,T,z)
     Aᵣ,∂Aᵣ∂V,∂²Aᵣ∂V² = Solvers.f∂f∂2f(fAᵣ,V)
-    return V^2/(R̄*T)*(∂Aᵣ∂V+V*∂²Aᵣ∂V²) #V*V/J * (J/V )
+    return V^2/(Rgas(model)*T)*(∂Aᵣ∂V+V*∂²Aᵣ∂V²) #V*V/J * (J/V )
 end
 
 
@@ -158,7 +158,8 @@ function cross_second_virial(model,T,z)
     ∑z = sum(z)
     if n == 1
         return zero(T + first(z))
-    elseif n == 2
+    else
+        binary_component_check(cross_second_virial,model)
         model1,model2 = split_model(model)
         B̄ = B(model,T,z)/∑z #1 mol
         B1,B2 = B(model1,T),B(model2,T) #1 mol by default
@@ -167,8 +168,6 @@ function cross_second_virial(model,T,z)
         #B̄ = (B1*x1^2 + B2*x2^2 + B12*x1*x2)
         B12 = (B̄ - x[1]*x[1]*B1 - x[2]*x[2]*B2)/(2*x[1]*x[2])
         return B12*∑z
-    else
-        throw(error("cross_second_virial is only for models with 2 components. got a model with $n conponents"))
     end
 end
 
@@ -188,7 +187,7 @@ B12 = equivol_cross_second_virial(model,)
 1. Brewer, J., & Vaughn, G. W. (1969). Measurement and correlation of some interaction second virial coefficients from − 125° to 50°C. I. The Journal of Chemical Physics, 50(7), 2960–2968. [doi:10.1063/1.1671491](https://doi.org/10.1063/1.1671491)
 """
 function equivol_cross_second_virial(model,T,p_exp = 200000.0)
-    @assert length(model) == 2 "this function only works with binary models"
+    binary_component_check(cross_second_virial,model)
     #they do experiments at constant volume and temperature, so we are gonna need to calculate the mole fractions for that
     m1,m2 = split_model(model)
     B = second_virial_coefficient
@@ -213,7 +212,7 @@ end
 
 function VT_compressibility_factor(model::EoSModel, V, T, z=SA[1.])
     p = pressure(model,V,T,z)
-    return p*V/(sum(z)*R̄*T)
+    return p*V/(sum(z)*Rgas(model)*T)
 end
 
 """
@@ -253,11 +252,17 @@ end
 function VT_partial_property(model::EoSModel,V,T,z,property::ℜ) where {ℜ}
     fun(x) = property(model,V,T,x)
     TT = gradient_type(V,T,z)
-    return ForwardDiff.gradient(fun,z)::TT
+    return Solvers.gradient(fun,z)::TT
+end
+
+function VT_partial_property!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F,ℜ}
+    fun(x) = property(model,V,T,x)
+    return Solvers.gradient!(fx,fun,z)::F
 end
 
 VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos)
 VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos_res)
+VT_chemical_potential_res!(r,model::EoSModel, V, T, z=SA[1.]) = VT_partial_property!(r,model,V,T,z,eos_res)
 
 export second_virial_coefficient,pressure,cross_second_virial,equivol_cross_second_virial
 

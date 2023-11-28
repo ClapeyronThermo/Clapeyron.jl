@@ -1,5 +1,22 @@
 abstract type EoSModel end
-export EoSModel
+
+function a_eos(model::EoSModel, V, T, z=SA[1.0])
+    maybe_ideal = idealmodel(model)
+    ideal = maybe_ideal !== nothing ? maybe_ideal : model
+    return a_ideal(ideal,V,T,z) + a_res(model,V,T,z)
+end
+
+"""
+    Rgas(model)
+    Rgas()
+
+Returns the gas constant used by an `EoSModel`.
+
+By default, uses the current 2019 definition: `R̄` = 8.31446261815324 [J⋅K⁻¹⋅mol⁻¹]. you can call `Rgas()` to obtain this value.
+
+"""
+Rgas(model) = R̄
+Rgas() = R̄
 
 """
     eos(model::EoSModel, V, T, z=SA[1.0])
@@ -17,11 +34,12 @@ You can mix and match ideal models if you provide:
 - `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz free energy
 """
 function eos(model::EoSModel, V, T, z=SA[1.0])
-    return N_A*k_B*sum(z)*T * (a_ideal(idealmodel(model),V,T,z)+a_res(model,V,T,z))
+    return Rgas(model)*sum(z)*T * a_eos(model,V,T,z)
 end
+
 """
     idealmodel(model::EoSModel)
-    
+
 retrieves the ideal model from the input's model. if the model is already an idealmodel, return `nothing`
 # Examples:
 ```julia-repl
@@ -46,6 +64,7 @@ idealmodel(model::EoSModel) = __idealmodel(model::EoSModel)
         return :(nothing)
     end
 end
+
 """
     eos_res(model::EoSModel, V, T, z=SA[1.0])
 Returns the residual Helmholtz free energy.
@@ -59,7 +78,7 @@ Returns the residual Helmholtz free energy.
 by default, it calls `R̄*T*∑(z)*(a_res(model,V,T,z))` where [`a_res`](@ref) is the reduced residual Helmholtz energy.
 """
 function eos_res(model::EoSModel, V, T, z=SA[1.0])
-    return N_A*k_B*sum(z)*T*(a_res(model,V,T,z))
+    return Rgas(model)*sum(z)*T*a_res(model,V,T,z)
 end
 
 
@@ -73,33 +92,78 @@ Reduced residual Helmholtz free energy.
 - `z` mole amounts, in [mol], by default is `@SVector [1.0]`
 # Outputs:
 - Residual Helmholtz free energy, no units
-You can define your own EoS by adding a method to `a_res` that accepts your custom model. 
+You can define your own EoS by adding a method to `a_res` that accepts your custom model.
 """
 function a_res end
+
 Base.broadcastable(model::EoSModel) = Ref(model)
 Base.transpose(model::EoSModel) = model
+Base.eltype(model::EoSModel) = __eltype(model)
+@pure function __eltype(model::T) where T <:EoSModel
+    if hasfield(T,:params)
+        return eltype(model.params)
+    else
+        return Float64
+    end
+end
+
+Base.summary(model::EoSModel) = string(parameterless_type(model))
+
 """
     @comps
-This macro is an alias to
-    1:length(model)
+
+This macro is an alias to `1:length(model)`
 The caveat is that `model` has to exist in the local namespace.
 `model` is expected to any struct that has length defined in terms of the amount of components.
 """
-
 macro comps()
     return quote
         1:length(model)
     end |> esc
 end
 
-has_sites(::Type{<:EoSModel}) = false
-has_groups(::Type{<:EoSModel}) = false
-has_sites(::T) where T<:EoSModel = has_sites(T)
-has_groups(::T) where T<:EoSModel = has_groups(T)
+"""
+    R̄
+
+This macro is an alias to `Rgas(model)`
+The caveat is that `model` has to exist in the local namespace.
+"""
+macro R̄()
+    return quote
+        Rgas(model)
+    end |> esc
+end
+
+has_sites(::T) where T <: EoSModel = has_sites(T)
+has_sites(::Type{T}) where T <: EoSModel = _has_sites(T)
+
+@pure function _has_sites(::Type{T}) where T <: EoSModel
+    s1 = hasfield(T,:sites)
+    if s1
+       return fieldtype(T,:sites) == SiteParam
+    end
+    return false
+end
+
+has_groups(::T) where T <: EoSModel = has_groups(T)
+has_groups(::Type{T}) where T <: EoSModel = _has_groups(T)
+
+@pure function _has_groups(::Type{T}) where T <: EoSModel
+    s1 = hasfield(T,:groups)
+    if s1
+       return fieldtype(T,:groups) <: GroupParameter
+    end
+    return false
+end
+
+Base.length(model::T) where T <:EoSModel = _eos_length(model,Val(has_groups(model)))
+
+_eos_length(model::EoSModel,::Val{true}) = length(model.groups.components)
+_eos_length(model::EoSModel,::Val{false}) = length(model.components)
 
 """
     doi(model)
-Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format.
+Returns a Vector of strings containing the top-level bibliographic references of the model, in DOI format. if there isn't a `references` field, it defaults to `default_references(model)`
 ```julia-repl
 julia> umr = UMRPR(["water"],idealmodel = WalkerIdeal);Clapeyron.doi(umr)
 1-element Vector{String}:
@@ -110,9 +174,18 @@ function doi(model)
     if hasfield(typeof(model),:references)
         return model.references
     else
-        return String[]
+        return default_references(model)
     end
 end
+"""
+    default_references(::Type{<:EoSModel})::Vector{String}
+
+Return the default references of a model. If you are using the `@newmodel`, `@newmodelsimple` or `@newmodelgc` macros, define this function to set the references for the defined EoS.
+
+"""
+function default_references end
+default_references(m::EoSModel) = default_references(parameterless_type(m))
+default_references(M) = String[]
 
 """
     cite(model,out = :doi)
@@ -148,7 +221,7 @@ This list will displayed by each `EoSModel` on future versions. you can enable/d
 function cite(model::EoSModel,out = :doi)
     keys = fieldnames(typeof(model))
     res = doi(model)
-    
+
     for key in keys
         val = getfield(model,key)
         if val isa EoSModel
@@ -178,3 +251,5 @@ function setreferences!(model,references)
     resize!(oldrefs,length(references))
     oldrefs .= references
 end
+
+export EoSModel, eos, has_groups, has_sites, Rgas

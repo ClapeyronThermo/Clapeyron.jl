@@ -1,11 +1,17 @@
 abstract type sPCSAFTModel <: PCSAFTModel end
 @newmodel sPCSAFT sPCSAFTModel PCSAFTParam
-
+default_references(::Type{sPCSAFT}) = ["10.1021/ie020753p"]
+default_locations(::Type{sPCSAFT}) = ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]
+function transform_params(::Type{sPCSAFT},params)
+    sigma = params["sigma"]
+    sigma.values .*= 1E-10
+    return saft_lorentz_berthelot(params)
+end
 export sPCSAFT
 
 """
     sPCSAFT <: PCSAFTModel
-    sPCSAFT(components; 
+    sPCSAFT(components;
     idealmodel=BasicIdeal,
     userlocations=String[],
     ideal_userlocations=String[],
@@ -34,32 +40,6 @@ Simplified Perturbed-Chain SAFT (sPC-SAFT)
 1. von Solms, N., Michelsen, M. L., & Kontogeorgis, G. M. (2003). Computational and physical performance of a modified PC-SAFT equation of state for highly asymmetric and associating mixtures. Industrial & Engineering Chemistry Research, 42(5), 1098–1105. [doi:10.1021/ie020753p](https://doi.org/10.1021/ie020753p)
 """
 sPCSAFT
-
-function sPCSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
-    
-    params,sites = getparams(components, ["SAFT/PCSAFT", "SAFT/PCSAFT/sPCSAFT"]; userlocations=userlocations, verbose=verbose)
-    
-    segment = params["segment"]
-    k = get(params,"k",nothing)
-    Mw = params["Mw"]
-    params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bondvol"]
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
-
-    packagedparams = PCSAFTParam(Mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
-    references = ["10.1021/ie020753p"]
-
-    model = sPCSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
-    return model
-end
 
 function a_hc(model::sPCSAFTModel, V, T, z , _data = @f(data))
     _,_,_,_,η,m̄ = _data

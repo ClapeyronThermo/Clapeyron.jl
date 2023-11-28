@@ -3,7 +3,6 @@ struct SLKRule <: SLMixingRule
     k::PairParam{Float64}
 end
 
-@registermodel SLKRule
 export SLKRule
 
 """
@@ -32,7 +31,7 @@ function sl_mix(unmixed_vol,unmixed_epsilon,mixmodel::SLKRule)
     return premixed_vol,premixed_epsilon
 end
 
-function SLKRule(components; userlocations=String[], verbose=false, kwargs...)
+function SLKRule(components; userlocations=String[], verbose=false)
     params = getparams(components, ["LatticeFluid/SanchezLacombe/mixing/k0k1l_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k = params["k0"]
     model = SLKRule(components,k)

@@ -16,27 +16,87 @@ struct COSMOSAC10{c<:EoSModel} <: COSMOSAC10Model
     references::Array{String,1}
 end
 
-@registermodel COSMOSAC10
 export COSMOSAC10
 
-function COSMOSAC10(components::Vector{String};
+default_locations(::Type{COSMOSAC10}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv"]
+
+"""
+    COSMOSAC10(components;
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose=false, kwargs...)
+    verbose = false)
+    
+## Input parameters:
+- `Pnhb` :Single Parameter{String} 
+- `POH` :Single Parameter{String} 
+- `POT` :Single Parameter{String} 
+- `V`: Single Parameter{Float64}
+- `A`: Single Parameter{Float64}
 
-    params = getparams(components, ["Activity/COSMOSAC/COSMOSAC10_like.csv"]; userlocations=userlocations, verbose=verbose)
-    Pnhb  = COSMO_parse_Pi(params["Pnhb"])
-    POH  = COSMO_parse_Pi(params["POH"])
-    POT  = COSMO_parse_Pi(params["POT"])
-    A  = params["A"]
-    V  = params["V"]
+## Description
+An activity coefficient model using molecular solvation based on the COSMO-RS method. Sigma profiles are now split by non-hydrogen bonding, hydrogen acceptor and hydrogen donor.
+
+## References
+1. Hsieh, C-H., Sandler, S.I., & Lin, S-T. (2010). Improvements of COSMO-SAC for vapor–liquid and liquid–liquid equilibrium predictions. Fluid Phase Equilibria, 297(1), 90-97. [doi:10.1016/j.fluid.2010.06.011](https://doi.org/10.1016/j.fluid.2010.06.011)
+"""
+COSMOSAC10
+
+function COSMOSAC10(components;
+    puremodel = PR,
+    userlocations = String[],
+    pure_userlocations = String[],
+    use_nist_database = false,
+    verbose=false)
+
+    formatted_components = format_components(components)
+
+    if use_nist_database
+        @warn "using parameters from the nistgov/COSMOSAC database, check their license before usage."
+        CAS, INCHIKEY = get_cosmo_comps()
+        A = zeros(length(components))
+        V = zeros(length(components))
+        Pnhb = [zeros(51) for i in 1:length(components)]
+        POH = [zeros(51) for i in 1:length(components)]
+        POT = [zeros(51) for i in 1:length(components)]
+        for i in 1:length(components)
+            id = cas(formatted_components[i])
+            ids = CAS.==uppercase(id[1])
+            dbname = INCHIKEY[ids]
+            file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma3/"*dbname[1]*".sigma", IOBuffer())))
+            lines = split(file,r"\n")
+            meta = lines[1][9:end]
+            json = JSON3.read(meta)
+            A[i] = json["area [A^2]"]
+            V[i] = json["volume [A^3]"]
+            Pnhb[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
+            POH[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 55:105]
+            POT[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 106:156]
+        end
+        A = SingleParam("A",formatted_components,A)
+        V = SingleParam("V",formatted_components,V)
+        Pnhb = SingleParam("Pnhb",formatted_components,Pnhb)
+        POH = SingleParam("POH",formatted_components,POH)
+        POT = SingleParam("POT",formatted_components,POT)
+    else
+        params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V"], verbose=verbose)
+        Pnhb  = COSMO_parse_Pi(params["Pnhb"])
+        POH  = COSMO_parse_Pi(params["POH"])
+        POT  = COSMO_parse_Pi(params["POT"])
+        A  = params["A"]
+        V  = params["V"]
+    end
     
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)    
     packagedparams = COSMOSAC10Param(Pnhb,POH,POT,V,A)
-    references = String[]
-    model = COSMOSAC10(components,packagedparams,_puremodel,1e-12,references)
+    references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360"]
+    model = COSMOSAC10(formatted_components,packagedparams,_puremodel,1e-12,references)
     return model
+end
+
+function excess_g_res(model::COSMOSAC10Model,V,T,z)
+    lnγ = @f(lnγ_res)
+    sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
 
 function lnγ_res(model::COSMOSAC10Model,V,T,z)

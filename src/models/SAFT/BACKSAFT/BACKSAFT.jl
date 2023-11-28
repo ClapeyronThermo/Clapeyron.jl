@@ -8,7 +8,29 @@ struct BACKSAFTParam <: EoSParam
 end
 
 abstract type BACKSAFTModel <: SAFTModel end
-@newmodel BACKSAFT BACKSAFTModel BACKSAFTParam
+#BACKSAFT does not define association.
+@newmodel BACKSAFT BACKSAFTModel BACKSAFTParam false
+default_references(::Type{BACKSAFT}) = ["10.1016/s0378-3812(02)00093-6"]
+default_locations(::Type{BACKSAFT}) = ["SAFT/BACKSAFT","properties/molarmass.csv"]
+function transform_params(::Type{BACKSAFT},params)
+    k = get(params,"k",nothing)
+    l = get(params,"l",nothing)
+    sigma = params["vol"]
+    sigma.values .*= 6/N_A/1e6/π
+    sigma.values .^= 1/3
+    epsilon = params["epsilon"]
+    params["sigma"] = sigma_LorentzBerthelot(sigma)
+    params["epsilon"] = epsilon_LorentzBerthelot(epsilon, k)
+    return params
+end
+
+function get_k(model::BACKSAFT)   
+    return get_k_geomean(model.params.epsilon)
+end
+
+function get_l(model::BACKSAFT)   
+    return get_k_mean(model.params.sigma)
+end
 
 export BACKSAFT
 
@@ -50,30 +72,6 @@ BACKSAFT
 1. Mi, J.-G., Chen, J., Gao, G.-H., & Fei, W.-Y. (2002). Equation of state extended from SAFT with improved results for polar fluids across the critical point. Fluid Phase Equilibria, 201(2), 295–307. [doi:10.1016/s0378-3812(02)00093-6](https://doi.org/10.1016/s0378-3812(02)00093-6)
 """
 BACKSAFT
-
-function BACKSAFT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions(), kwargs...)
-
-    params = getparams(components, ["SAFT/BACKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["segment"]
-    c = params["c"]
-    k = get(params,"k",nothing)
-    alpha = params["alpha"]
-    sigma = params["vol"]
-    sigma.values .*= 6/N_A/1e6/π
-    sigma.values .^= 1/3
-    sigma = sigma_LorentzBerthelot(sigma)
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    packagedparams = BACKSAFTParam(params["Mw"],segment, sigma, epsilon, c, alpha)
-    references = ["TODO BACKSAFT", "TODO BACKSAFT"]
-
-    model = BACKSAFT(packagedparams, idealmodel; ideal_userlocations, references, verbose, assoc_options)
-    return model
-end
 
 recombine_impl!(model::BACKSAFTModel) = recombine_saft!(model)
 

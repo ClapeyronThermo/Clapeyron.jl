@@ -1,8 +1,6 @@
 abstract type PR78AlphaModel <: AlphaModel end
 
-struct PR78AlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+const PR78AlphaParam = SimpleAlphaParam
 
 @newmodelsimple PR78Alpha PR78AlphaModel PR78AlphaParam
 export PR78Alpha
@@ -10,8 +8,8 @@ export PR78Alpha
 """
     PR78Alpha <: PR78AlphaModel
     
-    PR78Alpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    PR78Alpha(components;
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -28,16 +26,25 @@ if ωᵢ ≤ 0.491
 else
     mᵢ = 0.379642 + 1.487503ωᵢ - 0.164423ωᵢ^2 - 0.016666ωᵢ^3
 ```
+
+## Model Construction Examples
+```
+# Using the default database
+alpha = PR78Alpha("water") #single input
+alpha = PR78Alpha(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = PR78Alpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/acentric.csv"])
+
+# Passing parameters directly
+alpha = PR78Alpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
+```
 """
 PR78Alpha
+default_locations(::Type{PR78Alpha}) = critical_data()
 
-function PR78Alpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = PR78AlphaParam(acentricfactor)
-    model = PR78Alpha(packagedparams, verbose=verbose)
-    return model
-end
 
 function α_function(model::CubicModel,V,T,z,alpha_model::PR78AlphaModel)
     Tc = model.params.Tc.values

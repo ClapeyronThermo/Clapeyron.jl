@@ -8,15 +8,27 @@ struct gcPCSAFTParam <: EoSParam
 end
 
 abstract type gcPCSAFTModel <: PCSAFTModel end
-
-struct gcPCSAFT{I} <: gcPCSAFTModel
-    components::Vector{String}
-    groups::StructGroupParam
-    sites::SiteParam
-    params::gcPCSAFTParam
-    idealmodel::I
-    assoc_options::AssocOptions
-    references::Array{String,1}
+@newmodelgc gcPCSAFT gcPCSAFTModel gcPCSAFTParam true true
+default_references(::Type{gcPCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
+default_locations(::Type{gcPCSAFT}) = ["SAFT/PCSAFT/gcPCSAFT","properties/molarmass_groups.csv"]
+default_gclocations(::Type{gcPCSAFT}) = ["SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_groups.csv","SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_intragroups.csv"]
+function transform_params(::Type{gcPCSAFT},params,groups)
+    sigma = params["sigma"]
+    sigma.values .*= 1E-10
+    params = saft_lorentz_berthelot(params)
+    
+    sites = params["sites"]
+    comp_sites = gc_to_comp_sites(sites,groups)
+    params["sites"] = comp_sites
+    gc_epsilon_assoc = params["epsilon_assoc"]
+    gc_bondvol = params["bondvol"]
+    assoc_options = params["assoc_options"]
+    
+    sigma = params["sigma"]
+    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options) #combining rules for association
+    params["bondvol"] = gc_to_comp_sites(gc_bondvol,comp_sites)
+    params["epsilon_assoc"] = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
+    return params
 end
 
 """
@@ -49,48 +61,30 @@ Heterogeneous Group-contribution Perturbed-Chain SAFT (gc-PC-SAFT)
 ## References
 1. Gross, J., Spuhl, O., Tumakaka, F. & Sadowski, G. (2003). Modeling Copolymer Systems Using the Perturbed-Chain SAFT Equation of State. Industrial & Engineering Chemistry Research, 42, 1266-1274. [doi:10.1021/ie020509y](https://doi.org/10.1021/ie020509y)
 2. Sauer, E., Stavrou, M. & Gross, J. (2014). Comparison between a Homo- and a Heterosegmented Group Contribution Approach Based on the Perturbed-Chain Polar Statistical Associating Fluid Theory Equation of State. Industrial & Engineering Chemistry Research, 53(38), 14854–14864. [doi:10.1021/ie502203w](https://doi.org/10.1021/ie502203w)
+
+## List of available groups
+|Name    |Description         |
+|--------|--------------------|
+|CH3     |Methyl              |
+|CH2     |Methylene           |
+|CH      |                    |
+|C       |                    |
+|CH2=    |Terminal alkene     |
+|CH=     |                    |
+|=C<     |                    |
+|C#CH    |Terminal alkyne     |
+|cCH2_pen|Cyclic pentane group|
+|cCH_pen |                    |
+|cCH2_hex|Cyclic hexane group |
+|cCH_hex |                    |
+|aCH     |Aromatic group      |
+|aCH     |                    |
+|OH      |Hydroxyl group      |
+|NH2     |Amine group         |
 """
 gcPCSAFT
 
 export gcPCSAFT
-function gcPCSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions())
-
-    groups = StructGroupParam(components, ["SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_groups.csv","SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_intragroups.csv"])
-    params,sites = getparams(groups, ["SAFT/PCSAFT/gcPCSAFT","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
-    
-    components = groups.components
-    
-    segment = params["segment"]
-    k = get(params,"k",nothing)
-    Mw = params["Mw"]
-    params["sigma"].values .*= 1E-10
-    sigma = sigma_LorentzBerthelot(params["sigma"])
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-
-    gc_epsilon_assoc = params["epsilon_assoc"]
-    gc_bondvol = params["bondvol"]
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options) #combining rules for association
-
-    comp_sites = gc_to_comp_sites(sites,groups)
-    comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
-    comp_epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-
-    packagedparams = gcPCSAFTParam(Mw, segment, sigma, epsilon, comp_epsilon_assoc, comp_bondvol)
-    references = ["10.1021/ie0003887", "10.1021/ie010954d"]
-
-
-    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-
-    model = gcPCSAFT(components,groups,comp_sites,packagedparams, idmodel, assoc_options, references)
-    return model
-end
-
-@registermodel gcPCSAFT
 
 function lb_volume(model::gcPCSAFTModel, z = SA[1.0])
     vk  = model.groups.n_flattenedgroups
@@ -127,7 +121,7 @@ function a_hc(model::gcPCSAFTModel, V, T, z,_data=@f(data))
     c1 = 1/(1-ζ3)
     c2 = 3ζ2/(1-ζ3)^2
     c3 = 2ζ2^2/(1-ζ3)^3
-    a_hs = 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
+    a_hs = bmcs_hs(ζ0,ζ1,ζ2,ζ3)
     g_hs = zero(V+T+first(z))*zeros(ngroups,ngroups)
     for k ∈ @groups
         dₖ = _d[k]

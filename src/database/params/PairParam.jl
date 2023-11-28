@@ -48,12 +48,35 @@ PairParam(name,components,vals,missingvals,srccsv,src) = PairParameter(name,comp
 
 #indexing
 
-Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T}},i::Int) where T = param.values[i,i]
-Base.@propagate_inbounds Base.getindex(param::PairParameter{T,<:AbstractMatrix{T}},i::Int,j::Int) where T = param.values[i,j]
+Base.@propagate_inbounds Base.getindex(param::PairParameter{T},i::Int) where T = param.values[i,i]
+Base.@propagate_inbounds Base.getindex(param::PairParameter{T},i::Int,j::Int) where T = param.values[i,j]
+
+function Base.getindex(param::PairParameter{T},i::AbstractString) where T
+    idx = _str_to_idx(param,i)
+    return param[idx]
+end
+
+function Base.getindex(param::PairParameter{T},i::AbstractString,j::AbstractString) where T
+    idx_i,idx_j = _str_to_idx(param,i,j)
+    return param[idx_i,idx_j]
+end
+
 Base.setindex!(param::PairParameter,val,i) = setindex!(param,val,i,i,false)
+
 function Base.setindex!(param::PairParameter,val,i,j,symmetric = true) 
     setindex!(param.values,val,i,j)
     symmetric && setindex!(param.values,val,j,i)
+end
+
+function Base.setindex!(param::PairParameter,val,i::AbstractString,j::AbstractString,symmetric = true) 
+    idx_i,idx_j = _str_to_idx(param,i,j)
+    setindex!(param.values,val,idx_i,idx_j)
+    symmetric && setindex!(param,val,idx_j,idx_i)
+end
+
+function Base.setindex!(param::PairParameter,val,i::AbstractString)
+    idx = _str_to_idx(param,i)
+    setindex!(param,val,idx::Int)
 end
 
 #Broadcasting
@@ -95,6 +118,7 @@ Base.eltype(param::PairParameter{T}) where T = T
 
 #unsafe constructor
 function PairParam(name,components,values)
+    param_length_check(PairParam,name,length(components),LinearAlgebra.checksquare(values))
     missingvals = fill(false,size(values))
     src = String[]
     sourcecsv = String[]
@@ -102,12 +126,13 @@ function PairParam(name,components,values)
 end
 
 function PairParam(name::String,
-                    components::Array{String,1},
-                    values::Array{T,2},
-                    ismissingvalues = fill(false,length(components),length(components)),
-                    sourcecsvs::Array{String,1} = String[], 
-                    sources::Array{String,1} = String[]) where T
+    components::Array{String,1},
+    values::Array{T,2},
+    ismissingvalues = fill(false,length(components),length(components)),
+    sourcecsvs::Array{String,1} = String[], 
+    sources::Array{String,1} = String[]) where T
     
+    param_length_check(PairParam,name,length(components),LinearAlgebra.checksquare(values))
     _values,_ismissingvalues = defaultmissing(values)
     if !all(ismissingvalues)
         _ismissingvalues = ismissingvalues
@@ -121,12 +146,14 @@ function PairParam(name::String,
     ismissingvalues = map(!,diagm(fill(true,length(components)))),
     sourcecsvs::Array{String,1} = String[], 
     sources::Array{String,1} = String[]) where T
+    
+    param_length_check(PairParam,name,length(components),length(values))
 
-_values,_ismissingvalues = defaultmissing(diagm(values))
-if !all(ismissingvalues)
-_ismissingvalues = ismissingvalues
-end
-return PairParameter(name, components,_values, _ismissingvalues, sourcecsvs, sources)
+    _values,_ismissingvalues = defaultmissing(diagm(values))
+    if !all(ismissingvalues)
+        _ismissingvalues = ismissingvalues
+    end
+    return PairParameter(name, components,_values, _ismissingvalues, sourcecsvs, sources)
 end
 
 # If no value is provided, just initialise empty param.
@@ -136,8 +163,8 @@ function PairParam(
         sources::Vector{String} = String[]
     )
     values = fill(0.0, length(components), length(components))
-    missingvals = fill(false, size(values))
-    return PairParam(name, components, values, missingvals, String[], sources)
+    missingvals = fill(true, size(values))
+    return PairParameter(name, components, values, missingvals, String[], sources)
 end
 
 function PairParam(x::PairParam, name::String = x.name; isdeepcopy = true, sources = x.sources)
@@ -152,7 +179,7 @@ function PairParam(x::PairParam, name::String = x.name; isdeepcopy = true, sourc
             sources
         )
     end
-    return PairParam(
+    return PairParameter(
         name,
         x.components,
         x.values,
@@ -187,20 +214,14 @@ function Base.show(io::IO,mime::MIME"text/plain",param::PairParameter)
 end
 
 #convert utilities
-function Base.convert(::Type{PairParam{Float64}},param::PairParam{Int})
-    values = Float64.(param.values)
+function Base.convert(::Type{PairParam{T1}},param::PairParam{T2}) where {T1<:Number,T2<:Number}
+    values = T1.(param.values)
     return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
 function Base.convert(::Type{PairParam{Bool}},param::PairParam{<:Union{Int,Float64}})
-    @assert all(z->(isone(z) | iszero(z)),param.values)
+    #@assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
-    return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
-end
-
-function Base.convert(::Type{PairParam{Int}},param::PairParam{Float64})
-    @assert all(z->isinteger(z),param.values)
-    values = Int.(param.values)
     return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 

@@ -12,21 +12,21 @@ struct PR{T <: IdealModel,α,c,γ} <:PRModel
     references::Array{String,1}
 end
 
-@registermodel PR
-
 """
-    PR(components::Vector{String}; idealmodel=BasicIdeal,
+    PR(components;
+    idealmodel = BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    verbose = false)
+    
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
@@ -53,6 +53,37 @@ P = RT/(V-Nb) + a•α(T)/(V-Nb₁)(V-Nb₂)
 b₁ = (1 + √2)b
 b₂ = (1 - √2)b
 ```
+
+## Model Construction Examples
+```julia
+# Using the default database
+model = PR("water") #single input
+model = PR(["water","ethanol"]) #multiple components
+model = PR(["water","ethanol"], idealmodel = ReidIdeal) #modifying ideal model
+model = PR(["water","ethanol"],alpha = Soave2019) #modifying alpha function
+model = PR(["water","ethanol"],translation = RackettTranslation) #modifying translation
+model = PR(["water","ethanol"],mixing = KayRule) #using another mixing rule
+model = PR(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced EoS+gᴱ mixing rule
+
+# Passing a prebuilt model
+
+my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
+model =  PR(["ethane","butane"],alpha = my_alpha)
+
+# User-provided parameters, passing files or folders
+model = PR(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])
+
+# User-provided parameters, passing parameters directly
+
+model = PR(["neon","hydrogen"];
+        userlocations = (;Tc = [44.492,33.19],
+                        Pc = [2679000, 1296400],
+                        Mw = [20.17, 2.],
+                        acentricfactor = [-0.03,-0.21]
+                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        l = [0. 0.01; 0.01 0.])
+                    )
+```
 ## References
 1. Peng, D.Y., & Robinson, D.B. (1976). A New Two-Constant Equation of State. Industrial & Engineering Chemistry Fundamentals, 15, 59-64. [doi:10.1021/I160057A011](https://doi.org/10.1021/I160057A011)
 """
@@ -60,34 +91,39 @@ PR
 
 
 export PR
-function PR(components::Vector{String}; idealmodel=BasicIdeal,
+function PR(components; idealmodel=BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
+    activity = nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
-    
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = get(params,"k",nothing)
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
+        userlocations=userlocations,
+        verbose=verbose,
+        ignore_missing_singleparams = __ignored_crit_params(alpha))
+
+    k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     pc = params["Pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
+    acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components)))
-    b = PairParam("b",components,zeros(length(components)))
+    a = PairParam("a",formatted_components,zeros(length(Tc)))
+    b = PairParam("b",formatted_components,zeros(length(Tc)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = PRParam(a,b,Tc,pc,Mw)
+    packagedparams = ABCubicParam(a,b,Tc,pc,Mw)
     references = String["10.1021/I160057A011"]
-    model = PR(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = PR(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end
@@ -96,7 +132,7 @@ function ab_consts(::Type{<:PRModel})
     return 0.457235,0.077796
 end
 
-function cubic_Δ(model::PRModel,z) 
+function cubic_Δ(model::PRModel,z)
     sqrt2 = sqrt(2)
     return (-1+sqrt2,-1-sqrt2)
 end

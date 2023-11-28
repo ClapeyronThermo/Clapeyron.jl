@@ -1,0 +1,14 @@
+Clapeyron Database File
+SolidHfus Like Parameters
+species,Mw,Tm,Hfus,CpSL
+water,18.01,273.15,6000.,
+ethanol,53.01,158.70,4969.00,
+paracetamol,151.16,443.6,27000,
+naproxen,230.26,427.6,31500,
+ibuprofen,206.28,347.2,25500,
+flurbiprofen,244.26,388.2,29100,
+ketoprofen,254.28,367.7,21000,
+lovastatin,404.54,445.5,43136,
+thymol,150.22,324.2,22010.,
+1-decanol,158.28,280.,33670.,
+benzoic acid, 122.12,395.64,17909.,

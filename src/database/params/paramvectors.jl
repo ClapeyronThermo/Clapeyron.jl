@@ -105,6 +105,11 @@ function Base.show(io::IO,m::Compressed4DMatrix{T}) where T
     print(io,typeof(m))
     print(io,m.values)
 end
+
+function Base.:(==)(p1::Compressed4DMatrix,p2::Compressed4DMatrix)
+    return (p1.values == p2.values) & (p1.outer_indices == p2.outer_indices) && (p1.inner_indices == p2.inner_indices)
+end
+
 function Compressed4DMatrix{T}() where T
     return Compressed4DMatrix(T[],Tuple{Int,Int}[],Tuple{Int,Int}[],(0,0),(0,0))
 end
@@ -137,17 +142,22 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     outer_indices = [(c[1],c[2]) for c ∈ indices]
     inner_indices = [(c[3],c[4]) for c ∈ indices]
     values = values[idx]
-    return Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,outer_size,inner_size)
+    result = Compressed4DMatrix{T,Vector{T}}(values,outer_indices,inner_indices,outer_size,inner_size)
+    return dropzeros!(result)
 end
 
 function __getidx_assoc(mat::Matrix,i,j,val)
-    res = mat[i,j]
-    res,_iszero(res)
+    if !iszero(prod(size(mat)))
+        res = mat[i,j]
+        res,false
+    else
+        return zero(eltype(mat)),true
+    end
 end
 __getidx_assoc(v::Vector,i,j,val) = (v[i],v[j]),false
 __getidx_assoc(v,i,j,val) = convert(eltype(val),0),false
 
-__size_assoc(mat::Matrix) = size(matrix)
+__size_assoc(mat::Matrix) = size(mat)
 __size_assoc(tup::Tuple) = (length(first(tup)),length(last(tup)))
 __size_assoc(vec::Vector) = (length(vec),length(vec))
 
@@ -365,4 +375,10 @@ function Base.show(io::IO,::MIME"text/plain",A::SparsePackedMofV)
             println(io,"  ($i,$j) => $val")
         end
     end
+end
+
+function Solvers.primalval(x::Compressed4DMatrix{T}) where T <: ForwardDiff.Dual
+    vals = x.values
+    vals₀ = Solvers.primalval(vals)
+    return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)
 end
