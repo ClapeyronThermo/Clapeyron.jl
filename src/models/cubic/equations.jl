@@ -109,21 +109,13 @@ get_k(model::CubicModel) = cubic_get_k(model,model.mixing,model.params)
 get_l(model::CubicModel) = cubic_get_l(model,model.mixing,model.params)
 
 function set_k!(model::CubicModel,k)
-    n = length(model)
-    n2 = LinearAlgebra.checksquare(k)
-    if n != n2
-        incorrect_squarematrix_error(model,n2)
-    end
+    check_arraysize(model,k)
     recombine_mixing!(model,model.mixing,k,nothing)
     return nothing
 end
 
 function set_l!(model::CubicModel,l)
-    n = length(model)
-    n2 = LinearAlgebra.checksquare(l)
-    if n != n2
-        incorrect_squarematrix_error(model,n2)
-    end
+    check_arraysize(model,k)
     recombine_mixing!(model,model.mixing,nothing,l)
     return nothing
 end

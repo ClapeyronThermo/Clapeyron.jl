@@ -69,7 +69,24 @@ function x0_saturation_temperature(model::EoSModel,p,::AntoineSaturation)
     lnp̄ = log(p / p_scale(model))
     T0 = T_scale(model)*(B/(A-lnp̄)-C)
     Vl,Vv = x0_sat_pure(model,T0)
-    return (T0,Vl,Vv)
+    #take the liquid volume
+    pl0 = pressure(model,Vl,T0)
+    pv0 = pressure(model,Vv,T0)
+    0.8*p < pl0 < 1.2*p && return (T0,Vl,Vv)
+    #normally, the use of coefficients produce T0 values too far below from the real result, we add a correction
+    R̄ = Rgas(model)
+    Vv0 = R̄*T0/p
+    ΔS = (VT_entropy(model,Vv0,T0) - VT_entropy(model,Vl,T0))
+    dp = p - pl0
+    Δv = Vv0 - Vl
+    dpdt = ΔS/Δv
+    dT = dp/dpdt    #(T - T0)
+    T1 = T0 + dT
+    if T1 < 0 #???
+        T1 = T0 #error found while testing, better catch it earlier
+    end
+    Vv1 = 2*R̄*T1/p #add factor to allow easier iteration
+    return (T1,Vl,Vv1)
 end
 
 #in case that there isn't any antoine coefficients:
