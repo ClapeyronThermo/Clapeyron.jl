@@ -20,7 +20,11 @@ julia> model.params.bondvol[("water","a"),("water","b")]
 ```
 - `PCPSAFT` is defined (alias for `PPCSAFT`)
 - New EOS: Critical-point based PC-SAFT `CPPCSAFT` (https://doi.org/10.1021/ie502633e)
+- Experimental: new `get_k`/`get_l`/`set_k!`/`set_l!` defined for cubics
 
 ## Bug Fixes
 - bug in ether and aldehyde parameters in UNIFAC (https://github.com/ClapeyronThermo/Clapeyron.jl/issues/225)
+- more strict checks for saturation temperature and better initial point.
+
+
 
