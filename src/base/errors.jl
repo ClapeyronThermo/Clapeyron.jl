@@ -34,8 +34,33 @@ function binary_component_error(method,model)
     throw(DimensionMismatch(msg))
 end
 
+function check_arraysize(model,k::AbstractMatrix)
+    n = length(model)
+    n2 = LinearAlgebra.checksquare(k)
+    if n != n2
+        incorrect_squarematrix_error(model,n2)
+    end
+    return nothing
+end
+
+function check_arraysize(model,k::AbstractVector)
+    n = length(model)
+    n2 = length(k)
+    if n != n2
+        incorrect_vector_error(model,n2)
+    end
+    return nothing
+end
+
 function incorrect_squarematrix_error(model,n)
     l = length(model)
     msg = string(model," has $l components, while input matrix is of size $(n)×$(n)")
     throw(DimensionMismatch(msg))
 end
+
+function incorrect_vector_error(model,n)
+    l = length(model)
+    msg = string(model," has $l components, while input vector is of size $(n)")
+    throw(DimensionMismatch(msg))
+end
+

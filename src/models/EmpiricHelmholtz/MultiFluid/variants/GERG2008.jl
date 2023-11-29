@@ -2,7 +2,7 @@
     GERG2008::MultiFluid
     GERG2008(components::Vector{String};Rgas = 8.314472,verbose = false)
 
-## Imput Parameters
+## input Parameters
 
 None
 
