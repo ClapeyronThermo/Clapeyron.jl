@@ -7,9 +7,10 @@ abstract type DHModel <: IonModel end
 
 struct DH{ϵ} <: DHModel
     components::Array{String,1}
-    solvents::Array{String,1}
+    neutral::Array{String,1}
     ions::Array{String,1}
-    isolvents::UnitRange{Int}
+    icomponents::UnitRange{Int}
+    ineutral::UnitRange{Int}
     iions::UnitRange{Int}
     params::DHParam
     RSPmodel::ϵ
@@ -31,23 +32,21 @@ Debye-Hückel (DH) model for electrostatic interaction.
 DH
 
 export DH
-function DH(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocations=String[], ideal_userlocations=String[], verbose=false)
-    ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
+function DH(solvents,ions; RSPmodel=ConstW, SAFTlocations=String[], userlocations=String[], verbose=false)
 
-    ions = ion_groups.flattenedgroups
     components = deepcopy(ions)
-    _solvents = group_components(solvents)
-    prepend!(components,_solvents)
+    prepend!(components,solvents)
+    icomponents = 1:length(components)
     isolvents = 1:length(solvents)
     iions = (length(solvents)+1):length(components)
 
-    if occursin("CPA",SAFTlocations[1])
-        params,sites = getparams(components, append!(["Electrolytes/properties/charges.csv","properties/molarmass.csv"],SAFTlocations); userlocations=userlocations,ignore_missing_singleparams=["b","charge"], verbose=verbose)
+    params = getparams(components, ["Electrolytes/properties/charges.csv","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    
+    if any(keys(params).=="b")
         params["b"].values .*= 3/2/N_A/π*1e-3
         params["b"].values .^= 1/3
-        sigma = params["b"]
+        sigma = SingleParam("sigma",components,params["b"].values)
     else
-        params,sites = getparams(components, append!(["Electrolytes/properties/charges.csv","properties/molarmass.csv"],SAFTlocations); userlocations=userlocations,ignore_missing_singleparams=["sigma","charge"], verbose=verbose)
         params["sigma"].values .*= 1E-10
         sigma = params["sigma"]
     end
@@ -58,13 +57,9 @@ function DH(solvents,salts; RSPmodel=ConstW, SAFTlocations=String[], userlocatio
 
     references = String[]
 
-    if RSPmodel !== nothing
-        init_RSPmodel = RSPmodel(solvents,salts)
-    else
-        init_RSPmodel = nothing
-    end
+    init_RSPmodel = RSPmodel(solvents,ions)
 
-    model = DH(components, _solvents, ions, isolvents, iions, packagedparams, init_RSPmodel,references)
+    model = DH(components, solvents, ions, icomponents, isolvents, iions, packagedparams, init_RSPmodel,references)
     return model
 end
 

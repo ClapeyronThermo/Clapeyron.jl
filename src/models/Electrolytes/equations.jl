@@ -25,6 +25,32 @@ function FractionSalt(model::ElectrolyteModel,z)
     return z_new
 end
 
+function molality_to_composition(model::ElectrolyteModel,m,salts,zsolv=[1.])
+    ν = zeros(length(salts),length(model.ions))
+    Mw = model.neutralmodel.params.Mw.values.*1e-3
+    for i in 1:length(salts)
+        v = salts[i][2]
+        for j in 1:length(v)
+            ν[i,v[j][1].==model.ions] .= v[j][2]
+        end
+        if sum(ν[i,:].*model.ionmodel.params.charge.values[model.iions])!==0.
+            throw(ArgumentError("The salt $i is not electroneutral"))
+        end
+    end
+    if any(sum(ν;dims=1).==0)
+        throw(ArgumentError("Not all ions are involved in the salts"))
+    end
+
+    isalts = 1:length(salts)
+    iions = 1:length(model.ions)
+    x_solv = zsolv ./ (1+sum(zsolv[j]*Mw[j] for j in model.ineutral)*(sum(m[k]*sum(ν[k,i] for i ∈ iions) for k ∈ isalts)))
+    x_ions = [sum(m[k]*ν[k,l] for k ∈ isalts) / (1/sum(zsolv[j]*Mw[j] for j in model.ineutral)+(sum(m[k]*sum(ν[k,i] for i ∈ iions) for k ∈ isalts))) for l ∈ iions]
+    return append!(x_solv,x_ions)
+end
+
+export molality_to_composition
+
+
 #=
 function Obj_Sat(model::ElectrolyteModel, F, T, V_l, V_v,scales)
     ν = model.stoic_coeff[1]
