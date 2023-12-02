@@ -249,6 +249,7 @@ include("models/Electrolytes/Born/GCBorn.jl")
 include("models/Electrolytes/ElectrolyteSAFT/ElectrolyteSAFT.jl")
 include("models/SAFT/SAFTgammaMie/variants/SAFTgammaEMie.jl")
 include("models/Electrolytes/ElectrolyteSAFT/eCPA.jl")
+include("methods/property_solvers/electrolytes/electrolytes.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
 include("utils/misc.jl")
 
