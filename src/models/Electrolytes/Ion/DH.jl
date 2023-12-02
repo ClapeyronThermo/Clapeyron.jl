@@ -7,11 +7,7 @@ abstract type DHModel <: IonModel end
 
 struct DH{ϵ} <: DHModel
     components::Array{String,1}
-    neutral::Array{String,1}
-    ions::Array{String,1}
     icomponents::UnitRange{Int}
-    ineutral::UnitRange{Int}
-    iions::UnitRange{Int}
     params::DHParam
     RSPmodel::ϵ
     references::Array{String,1}
@@ -37,8 +33,6 @@ function DH(solvents,ions; RSPmodel=ConstW, SAFTlocations=String[], userlocation
     components = deepcopy(ions)
     prepend!(components,solvents)
     icomponents = 1:length(components)
-    isolvents = 1:length(solvents)
-    iions = (length(solvents)+1):length(components)
 
     params = getparams(components, ["Electrolytes/properties/charges.csv","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     
@@ -59,7 +53,7 @@ function DH(solvents,ions; RSPmodel=ConstW, SAFTlocations=String[], userlocation
 
     init_RSPmodel = RSPmodel(solvents,ions)
 
-    model = DH(components, solvents, ions, icomponents, isolvents, iions, packagedparams, init_RSPmodel,references)
+    model = DH(components, icomponents, packagedparams, init_RSPmodel,references)
     return model
 end
 
@@ -68,19 +62,22 @@ function data(model::DHModel, V, T, z)
 end
 
 function a_res(model::DHModel, V, T, z,_data=@f(data))  
-    if length(model.iions) == 0
-        return zero(V+T+first(z))
-    end
     ϵ_r = _data
     σ = model.params.sigma.values
     Z = model.params.charge.values
+    iions = model.icomponents[Z.!=0]
+
+    if length(iions) == 0
+        return zero(V+T+first(z))
+    end
+   
     ∑z = sum(z)
     #x = z ./ sum(z)
     ρ = N_A*sum(z)/V
 
     s = e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)
-    κ = (4π*s*ρ*sum(z[i]*Z[i]^2 for i ∈ model.iions)/∑z)^(1/2)
+    κ = (4π*s*ρ*sum(z[i]*Z[i]^2 for i ∈ iions)/∑z)^(1/2)
     y = σ*κ
     χ = @. 3/y^3*(3/2+log1p(y)-2*(1+y)+1/2*(1+y)^2)
-    return -1/3*s*κ*sum(z[i]*Z[i]^2*χ[i] for i ∈ model.iions)/∑z
+    return -1/3*s*κ*sum(z[i]*Z[i]^2*χ[i] for i ∈ iions)/∑z
 end
