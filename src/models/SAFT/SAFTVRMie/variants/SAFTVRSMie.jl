@@ -345,7 +345,7 @@ function a_chain(model::SAFTVRSMieModel,V,T,z,_data = @f(data))
         duλ = -Cᵢ*ϵ̄*(λrᵢ*λ̄^-(λrᵢ+1) -λaᵢ*λ̄^-(λaᵢ+1))
         
         g_hsᵢ = g_hs(model,η,dᵢ,σᵢ,J̄[i])
-        βV₀ᵢ = - uλ - duλ*(λ̄ - 1)
+        βV₀ᵢ = - uλ + duλ*(λ̄ - 1)
         
         y_hsᵢ = g_hsᵢ
         g_Mieᵢ = y_hsᵢ*exp(-βV₀ᵢ)
