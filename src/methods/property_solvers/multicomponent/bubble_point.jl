@@ -83,6 +83,9 @@ function fix_vi!(pure,vli,p,T,volatiles,phase)
     for i in eachindex(vli)
         if !volatiles[i]
             vli[i] = volume(pure[i],p,T,phase = phase)
+            if isnan(vli[i])
+                vli[i] = x0_volume_liquid(pure[i],T,[1.])
+            end
         end
     end
 end
