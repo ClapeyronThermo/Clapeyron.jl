@@ -104,7 +104,7 @@ function screening_length(model::MSAModel,V,T,z,ϵ_r = @f(data))
     Γnew = _0
     tol  = one(_0)
     iter = 1
-    while tol>1e-8 && iter < 100
+    while tol>1e-12 && iter < 100
         Ω = 1+π*ρ/(2*Δ)*sum(z[i]*σ[i]^3/(1+Γold*σ[i]) for i ∈ iions)/∑z
         Pn = ρ/Ω*sum(z[i]*σ[i]*Z[i]/(1+Γold*σ[i]) for i ∈ iions)/∑z
         #Q = @. (Z-σ^2*Pn*(π/(2Δ)))./(1+Γold*σ)

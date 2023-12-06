@@ -43,14 +43,18 @@ function a_res(model::ESElectrolyteModel, V, T, z)
     return a_res(model.neutralmodel,V,T,z)+a_res(model.ionmodel,V,T,z)
 end
 
-function lb_volume(model::ESElectrolyteModel,z)
+function lb_volume(model::ESElectrolyteModel,z=SA[1.])
     return lb_volume(model.neutralmodel,z)
 end
 
-function p_scale(model::ESElectrolyteModel,z)
+function x0_volume_liquid(model::ESElectrolyteModel, T,z=SA[1.])
+    return x0_volume_liquid(model.neutralmodel, T,z)
+end
+
+function p_scale(model::ESElectrolyteModel,z=SA[1.])
     return p_scale(model.neutralmodel,z)
 end
 
-function T_scale(model::ESElectrolyteModel,z)
+function T_scale(model::ESElectrolyteModel,z=SA[1.])
     return T_scale(model.neutralmodel,z)
 end

@@ -3,78 +3,56 @@ abstract type SchreckenbergModel <: RSPModel end
 struct SchreckenbergParam <: EoSParam
     d_T::SingleParam{Float64}
     d_V::SingleParam{Float64}
+    charge::SingleParam{Float64}
 end
 
 struct Schreckenberg <: SchreckenbergModel
     components::Array{String,1}
-    solvents::Array{String,1}
-    salts::Array{String,1}
-    isolvents::UnitRange{Int}
-    isalts::UnitRange{Int}
-    stoic_coeff::Array{Float64}
+    icomponents::UnitRange{Int}
     params::SchreckenbergParam
     references::Array{String,1}
 end
 
 @registermodel Schreckenberg
 export Schreckenberg
-function Schreckenberg(solvents,salts; userlocations::Vector{String}=String[], verbose::Bool=false)
-    ion_groups = GroupParam(salts, ["Electrolytes/properties/salts.csv"]; verbose=verbose)
+function Schreckenberg(solvents,ions; userlocations::Vector{String}=String[], verbose::Bool=false)
+    components = deepcopy(ions)
+    prepend!(components,solvents)
+    icomponents = 1:length(components)
 
-    salts = ion_groups.components
-    stoichiometric_coeff = zeros(length(ion_groups.components),length(ion_groups.flattenedgroups))
-    for i in 1:length(salts)
-        stoichiometric_coeff[i,:] = ion_groups.n_flattenedgroups[i]
-    end
-
-    if isempty(solvents)
-        components=deepcopy(salts)
-        _solvents = String[]
-    else
-        _solvents = group_components(solvents)
-        components = cat(_solvents,salts,dims=1)
-    end
-    
-    isolvents = 1:length(solvents)
-    isalts = (length(solvents)+1):length(components)
-
-    params = getparams(components, ["Electrolytes/RSP/Schreckenberg.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["Electrolytes/RSP/Schreckenberg.csv","Electrolytes/properties/charges.csv"]; userlocations=userlocations, verbose=verbose, ignore_missing_singleparams=["d_T","d_V"])
     d_T = params["d_T"]
     d_V = params["d_V"]
-    packagedparams = SchreckenbergParam(d_T,d_V)
+    charge = params["charge"]
+    packagedparams = SchreckenbergParam(d_T,d_V,charge)
 
     references = String[]
     
-    model = Schreckenberg(components, _solvents, salts, isolvents, isalts, stoichiometric_coeff, packagedparams,references)
+    model = Schreckenberg(components,icomponents,packagedparams,references)
     return model
 end
 
 function dielectric_constant(model::SchreckenbergModel,V,T,z,_data=nothing)
-        z_s = FractionSalt(model,z)
         d_T = model.params.d_T.values
         d_V = model.params.d_V.values
-        #d = @. d_V*(d_T/T-1)
-        #d = (d .+d')/2
-        #x0 = z_s ./ n_solv
-        #d̄ = sum(sum(x0[i]*x0[j]*d[i,j] for j ∈ comps) for i ∈ comps)
+        Z = model.params.charge.values
+        ineutral = model.icomponents[Z.==0]
 
-        n_solv = sum(z_s)
+        n_solv = sum(z[ineutral])
         ρ_solv = n_solv / V
-        d̄ = zero(T+first(z_s))
+        d̄ = zero(T+first(z))
 
-        for i in 1:length(model)
+        for i in ineutral
             di = d_V[i]*(d_T[i]/T-1)
-            dij,zi = di,z_s[i]
+            dij,zi = di,z[i]
             d̄ += dij*zi*zi
-            for j in 1:(j-1)
+            for j in ineutral[ineutral.!=i]
                 dj = d_V[j]*(d_T[j]/T-1)
-                dij,zj = 0.5*(di+dj),z_s[j]
-                d̄ += 2*dij*zi*zj
+                dij,zj = 0.5*(di+dj),z[j]
+                d̄ += dij*zi*zj
             end
         end
 
     d̄ = d̄/(n_solv*n_solv)
     return 1+ρ_solv*d̄
 end
-
-is_splittable(::Schreckenberg) = false
