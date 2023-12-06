@@ -190,10 +190,14 @@ function d_vrmie(T,λa,λr,σ,ϵ)
     θ = C/Tx
     λrinv = 1/λr
     λaλr = λa/λr
-    f_laguerre(x) = x^(-λrinv)*exp(θ*x^(λaλr))*λrinv/x
-    ∑fi = Solvers.laguerre5(f_laguerre,θ,one(θ))
-    #∑fi2 = Solvers.laguerre10(f_laguerre,θ,1.)
-    di = σ*(1-∑fi)
+    if Tx<10
+        f_laguerre(x) = x^(-λrinv)*exp(θ*x^(λaλr))*λrinv/x
+        ∑fi = Solvers.laguerre5(f_laguerre,θ,one(θ))
+    else
+        f_legendre(x) = exp(-C*(x^(-λr)-x^(-λa))/Tx)
+        ∑fi = Solvers.integral21(f_legendre,zeros(θ),one(θ))
+    end
+        di = σ*(1-∑fi)
     return di
 end
 
