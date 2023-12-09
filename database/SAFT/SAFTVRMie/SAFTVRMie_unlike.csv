@@ -9,6 +9,9 @@ methanol,CO,carbon dioxide,O=C(=O),157.83,8.3462,10.1016/j.fluid.2015.12.044
 methane,C,water,O,175.41,,10.1016/j.fluid.2015.12.044
 methane,C,carbon dioxide,O,144.72,11.95,10.1016/j.fluid.2015.12.044
 methane,C,methanol,CO,233.21,,10.1016/j.fluid.2015.12.044
+water,O,sodium,Na,539.68,,
+water,O,chloride,Cl,95.406,,
+sodium,Na,chloride,Cl,27.937,,
 water,,H3O+,,391.04,,
 water,,Li+,,1023.1,,
 water,,Na+,,539.68,,
