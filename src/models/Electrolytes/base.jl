@@ -48,7 +48,7 @@ function lb_volume(model::ESElectrolyteModel,z=SA[1.])
 end
 
 function x0_volume_liquid(model::ESElectrolyteModel, T,z=SA[1.])
-    return x0_volume_liquid(model.neutralmodel, T,z)
+    return x0_volume_liquid(model.neutralmodel, T,z)*1.5
 end
 
 function p_scale(model::ESElectrolyteModel,z=SA[1.])
