@@ -49,7 +49,7 @@ function molality_to_composition(model::ElectrolyteModel,salts,m,zsolv=[1.])
 
     ions = model.components[model.charge.!=0]
     neutral = model.components[model.charge.==0]
-    Mw = model.neutralmodel.params.Mw.values.*1e-3
+    Mw = mw(model.neutralmodel).*1e-3
 
     isalts = 1:length(salts)
     iions = 1:length(ions)

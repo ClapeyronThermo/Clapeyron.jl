@@ -18,6 +18,7 @@ export Schreckenberg
 function Schreckenberg(solvents,ions; userlocations::Vector{String}=String[], verbose::Bool=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
+    components = format_components(components)
     icomponents = 1:length(components)
 
     params = getparams(components, ["Electrolytes/RSP/Schreckenberg.csv","Electrolytes/properties/charges.csv"]; userlocations=userlocations, verbose=verbose, ignore_missing_singleparams=["d_T","d_V"])
