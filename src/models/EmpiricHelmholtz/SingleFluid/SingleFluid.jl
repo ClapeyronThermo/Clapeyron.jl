@@ -1,7 +1,7 @@
 
 include("structs.jl")
 
-const EmpiricAncillary = CompositeModel{PolExpVapour, PolExpLiquid, Nothing, PolExpSat, Nothing}
+const EmpiricAncillary = CompositeModel{FluidCorrelation{PolExpVapour, PolExpLiquid, PolExpSat}, Nothing}
 #term dispatch. function definitions are in term_functions.jl
 
 function a_term(term::NonAnalyticTerm,δ,τ,lnδ,lnτ,_0)
