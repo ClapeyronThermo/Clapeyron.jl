@@ -16,8 +16,8 @@ end
 
 function x0_triple_point(model::CompositeModel)
     T0 = 0.65
-    vs0 = log10(lb_volume(model.solid)*1.05*6/π)
-    vl0 = log10(lb_volume(model.liquid)*1.25*6/π)
+    vs0 = log10(lb_volume(model.solid)*1.02*6/π)
+    vl0 = log10(lb_volume(model.liquid)*1.15*6/π)
     vv0 = log10(lb_volume(model.gas)*1000)
 
     return [T0,vs0,vl0,vv0]
@@ -33,7 +33,7 @@ function triple_point(model::CompositeModel;v0 = x0_triple_point(model))
 
     f!(F,x) = obj_triple_point(model,F,x[1]*model.solid.params.epsilon[1],exp10(x[2]),exp10(x[3]),exp10(x[4]),p̄,T̄)
 
-    results = Solvers.nlsolve(f!,v0)
+    results = Solvers.nlsolve(f!,v0,TrustRegion(Newton(),Dogleg()))
 
     x = Solvers.x_sol(results)
 
