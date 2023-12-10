@@ -129,6 +129,10 @@ fluid_model(model) = model
 solid_model(model) = model
 
 function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,vol0=nothing)
+    return _volume_impl(model,p,T,z,phase,threaded,vol0)
+end
+
+function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,vol0=nothing)
 #Threaded version
     TYPE = typeof(p+T+first(z)+one(eltype(model)))
     nan = zero(TYPE)/zero(TYPE)
