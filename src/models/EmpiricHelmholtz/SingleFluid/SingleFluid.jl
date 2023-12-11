@@ -246,7 +246,8 @@ function Base.show(io::IO,mime::MIME"text/plain",model::SingleFluidIdeal)
 end
 
 function x0_sat_pure(model::SingleFluid,T,z=SA[1.0])
-    vv = volume(model.ancillaries.gas,0.0,T,z)
+    gas_ancillary = model.ancillaries.fluid.gas
+    vv = volume(gas_ancillary,0.0,T,z)
     vl = x0_volume_liquid(model,T,z)
     return (vl,vv)
 end
@@ -254,16 +255,17 @@ end
 function x0_volume_liquid(model::SingleFluid,T,z = SA[1.0])
     lb_v = lb_volume(model)
     vl_tp = 1/model.properties.rhol_tp
-    vl_anc = volume(model.ancillaries.liquid,0.0,min(T,model.properties.Tc*one(T)),z)
+    liquid_ancillary = model.ancillaries.fluid.liquid
+    vl_anc = volume(liquid_ancillary,0.0,min(T,model.properties.Tc*one(T)),z)
     isnan(vl_tp) && (vl_tp = 0.0)
     isnan(vl_anc) && (vl_anc = 0.0)
     return max(vl_tp,vl_anc,1.01*lb_v)
 end
 
-x0_psat(model::SingleFluid,T,crit=nothing) = saturation_pressure(model.ancillaries.saturation,T,SaturationCorrelation())[1]
+x0_psat(model::SingleFluid,T,crit=nothing) = saturation_pressure(model.ancillaries.fluid.saturation,T,SaturationCorrelation())[1]
 
 function x0_saturation_temperature(model::SingleFluid,p)
-    T = saturation_temperature(model.ancillaries.saturation,p,SaturationCorrelation())[1]
+    T = saturation_temperature(model.ancillaries.fluid.saturation,p,SaturationCorrelation())[1]
     vl,vv = x0_sat_pure(model,T)
     return (T,vl,vv)
 end

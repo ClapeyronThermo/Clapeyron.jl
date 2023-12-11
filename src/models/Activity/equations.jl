@@ -159,7 +159,7 @@ end
 
 function dew_temperature(model::ActivityModel,p,y,method::DewPointMethod)
     compmodel = __act_to_gammaphi(model,method)
-    return dew_pressure(compmodel,p,y,method)
+    return dew_temperature(compmodel,p,y,method)
 end
 
 function init_preferred_method(method::typeof(bubble_pressure),model::ActivityModel,kwargs)
