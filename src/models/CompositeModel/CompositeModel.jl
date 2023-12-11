@@ -119,7 +119,9 @@ function CompositeModel(components;
         if init_liquid isa ActivityModel
             #case 3.a, the fluid itself is a composite model. unwrap the fluid field.
             if _fluid isa CompositeModel
-                _fluid = _fluid.fluid
+                _fluid = EoSVectorParam(_fluid.fluid,_components)
+            else
+                _fluid = EoSVectorParam(_fluid,_components)
             end
             init_fluid = GammaPhi(_components,init_liquid,_fluid)
         else
@@ -171,8 +173,8 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
 
     if fluid !== nothing
         if fluid isa GammaPhi
-            print(io,'\n'," Activity Model: ",fluid.activity)
-            print(io,'\n'," Fluid Model: ",fluid.fluid)
+            print(io,'\n'," Activity Model: ",fluid.activity)  
+            print(io,'\n'," Fluid Model: ",fluid.fluid.model) #on gamma-phi, fluid is an EoSVectorParam
         elseif fluid isa FluidCorrelation
             fluid.gas !== nothing && print(io,'\n'," Gas Model: ",fluid.gas)
             fluid.liquid !== nothing && print(io,'\n'," Liquid Model: ",fluid.liquid)
@@ -214,9 +216,13 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
             return _volume_impl(model,p,T,z,phase,threaded,vol0)
         else
             #TODO: implement these when we have an actual sublimation-melting empiric model.
-            throw(error("automatic phase detection not implemented for $(typeof(CompositeModel))"))
+            throw(error("automatic phase detection not implemented for $(typeof(model))"))
         end
     end
+end
+
+function activity_coefficient(model::CompositeModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
+    return activity_coefficient(model.fluid,p,T,z;phase,threaded)
 end
 
 function init_preferred_method(method::typeof(saturation_pressure),model::CompositeModel,kwargs)

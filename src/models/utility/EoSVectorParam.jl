@@ -4,9 +4,8 @@ struct EoSVectorParam{T} <: EoSModel
     pure::Vector{T}
 end
 
-function EoSVectorParam(model::EoSModel)
-    pure = split_model(model)
-    components = model.components
+function EoSVectorParam(model::EoSModel,components = model.components)
+    pure = split_model(model,1:length(components))
     return EoSVectorParam(components,model,pure)
 end
 

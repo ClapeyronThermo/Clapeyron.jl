@@ -39,12 +39,18 @@ function init_preferred_method(method::typeof(tp_flash),model::GammaPhi,kwargs)
     RRTPFlash(;kwargs...)
 end
 
+# Error handling for Activity models that don't provide saturation properties, in the context of VLE.
+function ActivitySaturationError(model,method)
+    throw(ArgumentError("$method requires $model to be used in conjuction with another EoS model that supports saturation properties. If you are using an Activity Model as a raw input, use `CompositeModel(components, liquid = activity_model, fluid = fluid_model)` instead."))
+end
+
 function PTFlashWrapper(model::GammaPhi,p,T::Number,equilibrium::Symbol)
     fluidmodel = model.fluid
     #check that we can actually solve the equilibria
-    if fluidmodel.model isa IdealModel && !is_lle(equilibrium)
-        throw(DomainError(model,"solving Vapor-liquid equilibria with activity models requires a pure model that is capable of providing saturation properties"))
+    if fluidmodel isa IdealModel && !is_lle(equilibrium)
+        ActivitySaturationError(model.activity,tp_flash)
     end
+
     pures = fluidmodel.pure
     RT = R̄*T
     if fluidmodel.model isa IdealModel
