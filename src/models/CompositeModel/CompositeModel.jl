@@ -19,6 +19,12 @@ Composite Model. it is not consistent, but it can hold different correlations th
 are faster than a volume or saturation pressure iteration.
 """
 CompositeModel
+"""
+    RestrictedEquilibriaModel <: EoSModel
+
+Abstract type of models that implement simplifications over the equality of chemical potentials approach for phase equilibria. subtypes of `RestrictedEquilibriaModel` are the `GammaPhi` (activity + gas), `FluidCorrelation` (for fluid phase change and volume correlations) and `SolidCorrelation` (for solid phase change and solid volume correlations)
+"""
+abstract type RestrictedEquilibriaModel <: EoSModel end
 
 include("FluidCorrelation.jl")
 include("SolidCorrelation.jl")
@@ -28,6 +34,8 @@ include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
 include("PolExpVapour.jl")
 include("SolidModel/SolidHfus.jl")
+include("bubble_point.jl")
+include("dew_point.jl")
 
 function CompositeModel(components;
     liquid = nothing,
@@ -90,7 +98,7 @@ function CompositeModel(components;
     #legacy case, maybe we are constructing an activity that has a puremodel
     init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
         if init_liquid isa ActivityModel
-            if hasfield(init_liquid,:puremodel)
+            if hasfield(typeof(init_liquid),:puremodel)
                 pure = model.puremodel
             else
                 pure = init_puremodel(BasicIdeal(),components,userlocations,verbose)
@@ -108,7 +116,13 @@ end
 function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
     fluid = model.fluid
     solid = model.solid
+
     print(io,"Composite Model")
+    if fluid isa GammaPhi && solid == nothing
+        print(io," (γ-ϕ)")
+    elseif fluid isa FluidCorrelation && solid == nothing
+        print(io," (Correlation-Based)")
+    end
     length(model) == 1 && print(io, " with 1 component:")
     length(model) > 1 && print(io, " with ", length(model), " components:")
     if solid !== nothing
@@ -135,6 +149,14 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
     end
 end
 
+"""
+    __gas_model(model::EoSModel)
+
+internal function.
+provides the model used to calculate gas properties.
+normally, this is the identity, but `CompositeModel` has a gas model by itself.
+"""
+__gas_model(model::EoSModel) = model
 __gas_model(model::CompositeModel) = model.fluid
 fluid_model(model::CompositeModel) = model.fluid
 solid_model(model::CompositeModel) = model.solid
@@ -185,9 +207,55 @@ function saturation_temperature(model::CompositeModel,p,method::SaturationMethod
     return saturation_temperature(model.fluid,p,method)
 end
 
+#defer bubbledew eq to the fluid field
+
+function init_preferred_method(method::typeof(bubble_pressure),model::CompositeModel,kwargs)
+    init_preferred_method(method,model.fluid,kwargs)
+end
+
+function init_preferred_method(method::typeof(bubble_temperature),model::CompositeModel,kwargs)
+    init_preferred_method(method,model.fluid,kwargs)
+end
+
+function init_preferred_method(method::typeof(dew_pressure),model::CompositeModel,kwargs)
+    init_preferred_method(method,model.fluid,kwargs)
+end
+
+function init_preferred_method(method::typeof(dew_temperature),model::CompositeModel,kwargs)
+    init_preferred_method(method,model.fluid,kwargs)
+end
+
+function bubble_pressure(model::CompositeModel, T, x, method::BubblePointMethod)
+    if !(method isa ActivityBubblePressure) && !(model.fluid isa RestrictedEquilibriaModel)
+        throw(ArgumentError("$method not supported by $(typeof(model.fluid))"))
+    end
+    return bubble_pressure(model.fluid, T, x, method)
+end
+
+function bubble_temperature(model::CompositeModel, T, x, method::BubblePointMethod)
+    if !(method isa ActivityBubbleTemperature) && !(model.fluid isa RestrictedEquilibriaModel)
+        throw(ArgumentError("$method not supported by $(typeof(model.fluid))"))
+    end
+    return bubble_temperature(model.fluid, T, x, method)
+end
+
+function dew_pressure(model::CompositeModel, T, x, method::DewPointMethod)
+    if !(method isa ActivityDewPressure)  && !(model.fluid isa RestrictedEquilibriaModel)
+        throw(ArgumentError("$method not supported by $(typeof(model.fluid))"))
+    end
+    return dew_pressure(model.fluid, T, x, method)
+end
+
+function dew_temperature(model::CompositeModel, T, x, method::DewPointMethod)
+    if !(method isa ActivityDewTemperature)  && !(model.fluid isa RestrictedEquilibriaModel)
+        throw(ArgumentError("$method not supported by $(typeof(model.fluid))"))
+    end
+    return dew_temperature(model.fluid, T, x, method)
+end
+
 #Michelsen TPFlash and rachford rice tpflash support
 function init_preferred_method(method::typeof(tp_flash),model::CompositeModel{<:Any,Nothing},kwargs)
-    init_preferred_method(tp_flash,model.fluid,kwargs)
+    init_preferred_method(method,model.fluid,kwargs)
 end
 
 __tpflash_cache_model(model::CompositeModel{<:Any,Nothing},p,T,z,equilibrium) = __tpflash_cache_model(model.fluid,p,T,z,equilibrium)

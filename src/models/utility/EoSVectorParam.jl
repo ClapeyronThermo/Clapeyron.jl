@@ -36,3 +36,19 @@ function recombine_impl!(model::EoSVectorParam)
     end
     return model
 end
+
+function saturation_pressure(model::EoSVectorParam,T::Real,method::SaturationMethod)
+    return saturation_pressure(model.model,T,method)
+end
+
+function saturation_temperature(model::EoSVectorParam,T::Real,method::SaturationMethod)
+    return saturation_temperature(model.model,T,method)
+end
+
+function init_preferred_method(method::typeof(saturation_pressure),model::EoSVectorParam,kwargs)
+    return init_preferred_method(method,model.model,kwargs)
+end
+
+function init_preferred_method(method::typeof(saturation_temperature),model::EoSVectorParam,kwargs)
+    return init_preferred_method(method,model.model,kwargs)
+end
