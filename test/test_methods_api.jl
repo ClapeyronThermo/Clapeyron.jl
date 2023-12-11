@@ -196,10 +196,18 @@ end
         @test Clapeyron.dnorm(act_x3,act_y3) < 1e-8
 
         #running the vle part
-        model_vle = UNIFAC(["water", "ethanol"],puremodel = PCSAFT)
-        @test tp_flash(model_vle, 101325, 363.15, [0.5, 0.5], MichelsenTPFlash())[1] ≈
+        if hasfield(UNIFAC,:puremodel)
+            model_vle = UNIFAC(["water", "ethanol"],puremodel = PCSAFT)   
+        else
+            model_vle = CompositeModel(["water", "ethanol"],liquid = UNIFAC,fluid = PCSAFT)
+        end
+        flash4 =  tp_flash(model_vle, 101325, 363.15, [0.5, 0.5], MichelsenTPFlash())
+        @test flash4[1] ≈
         [0.6824441505154921 0.31755584948450793
-         0.3025308123759482 0.6974691876240517] rtol = 1e-6
+        0.3025308123759482 0.6974691876240517] rtol = 1e-6
+        act_x4 = activity_coefficient(system_cc, 101325, 363.15, flash4[1][1,:]) .* flash4[1][1,:]
+        act_y4 = activity_coefficient(system_cc, 101325, 363.15, flash4[1][2,:]) .* flash4[1][2,:]
+        @test Clapeyron.dnorm(act_x4,act_y4) < 1e-8
     end
 
     @testset "Michelsen Algorithm, CompositeModel" begin

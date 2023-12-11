@@ -32,6 +32,9 @@ function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
     @test G ≈ ∑μᵢzᵢ rtol = rtol
 end
 
+function test_activity_vle(model,p,T,z,flash::Matrix)
+
+
 @testset "All tests" begin
     include("test_database.jl")
     include("test_solvers.jl")
