@@ -208,7 +208,7 @@ function gradient_type(V,T,z::StaticArray)
     return StaticArrays.similar_type(z,μ)
 end
 
-function gradient_type(V,T,z::Vector)
+function gradient_type(V,T,z::AbstractVector)
     μ = typeof(V+T+first(z))
     return Vector{μ}
 end

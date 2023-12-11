@@ -63,7 +63,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     nvals = zeros(TYPE,numphases, numspecies)
     logspace = method.logspace
     vcache = zeros(TYPE,numphases)
-    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace)
+    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace,method.equilibrium)
     #Minimize Gibbs Free Energy
 
     #=
