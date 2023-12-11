@@ -9,8 +9,8 @@ function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::Activ
         pmodel = model.fluid.model
         pure = model.fluid.pure
     else
-        pmodel = __gas_model(model)
-        pure = split_model(pmodel)
+        pmodel = model
+        pure = split_model(pmodel,1:length(model))
     end
 
     sat = saturation_pressure.(pure,T)
@@ -88,8 +88,8 @@ function bubble_temperature_impl(model::RestrictedEquilibriaModel,p,x,method::Ac
         pmodel = model.fluid.model
         pure = model.fluid.pure
     else
-        pmodel = __gas_model(model)
-        pure = split_model(pmodel)
+        pmodel = model
+        pure = split_model(pmodel,1:length(model))
     end
 
     f(z) = Obj_bubble_temperature(model,z,p,x,pure)
