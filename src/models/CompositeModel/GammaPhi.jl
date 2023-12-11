@@ -50,7 +50,6 @@ function PTFlashWrapper(model::GammaPhi,p,T::Number,equilibrium::Symbol)
     if fluidmodel isa IdealModel && !is_lle(equilibrium)
         ActivitySaturationError(model.activity,tp_flash)
     end
-
     pures = fluidmodel.pure
     RT = R̄*T
     if fluidmodel.model isa IdealModel
@@ -166,7 +165,7 @@ function dgibbs_obj!(model::PTFlashWrapper{<:GammaPhi}, p, T, z, phasex, phasey,
 end
 
 function K0_lle_init(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z)
-    return K0_lle_init(GammaPhi.model.activity,p,T,z)
+    return K0_lle_init(wrapper.model.activity,p,T,z)
 end
 
 function __eval_G_DETPFlash(model::PTFlashWrapper{<:GammaPhi},p,T,xi,equilibrium)

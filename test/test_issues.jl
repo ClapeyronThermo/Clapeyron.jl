@@ -156,9 +156,13 @@
         #=
         Ternary LLE
         =#
-        @test aspenNRTL(["water", "acetone", "dichloromethane"],puremodel = PR) isa EoSModel
+        if hasfield(aspenNRTL,:puremodel)
+            @test aspenNRTL(["water", "acetone", "dichloromethane"],puremodel = PR) isa EoSModel
+        else
+            @test aspenNRTL(["water", "acetone", "dichloromethane"]) isa EoSModel
+        end
+        
         @test UNIFAC(["water", "acetone", "dichloromethane"]) isa EoSModel
-
     end
 
     @testset "#212" begin
