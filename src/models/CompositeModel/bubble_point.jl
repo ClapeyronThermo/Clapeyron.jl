@@ -6,8 +6,8 @@ end
 
 function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::ActivityBubblePressure) 
     if model isa GammaPhi
-        pmodel = model.puremodel.model
-        pure = model.puremodel.pure
+        pmodel = model.fluid.model
+        pure = model.fluid.pure
     else
         pmodel = __gas_model(model)
         pure = split_model(pmodel)

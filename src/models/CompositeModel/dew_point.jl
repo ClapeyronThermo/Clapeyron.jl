@@ -115,8 +115,8 @@ function dew_temperature_impl(model::RestrictedEquilibriaModel,p,y,method::Activ
     T = wsol[end]
    
     x = collect(FractionVector(wsol[1:end-1]))
-    vl = volume(pure.model,p,T,x,phase = :l)
-    vv = volume(pure.model,p,T,y,phase = :v)
+    vl = volume(pmodel,p,T,x,phase = :l)
+    vv = volume(pmodel,p,T,y,phase = :v)
     return (T,vl,vv,x)
 end
 
