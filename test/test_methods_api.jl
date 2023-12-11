@@ -100,8 +100,15 @@ end
     GC.gc()
 
     @testset "DE Algorithm" begin
-        method = DETPFlash(numphases=3)
-        @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.759674475174073 rtol = 1e-6
+        #VLLE eq
+        @test Clapeyron.tp_flash(system, p, T, z, DETPFlash(numphases = 3))[3] ≈ -6.759674475174073 rtol = 1e-6
+
+        #LLE eq with activities
+        act_system = UNIFAC(["water","cyclohexane","propane"])
+        flash0 = Clapeyron.tp_flash(act_system, p, T, [0.5,0.5,0.0], DETPFlash(equilibrium = :lle))
+        act_x0 = activity_coefficient(act_system, p, T, flash0[1][1,:]) .* flash0[1][1,:]
+        act_y0 = activity_coefficient(act_system, p, T, flash0[1][2,:]) .* flash0[1][2,:]
+        @test Clapeyron.dnorm(act_x0,act_y0) < 0.01 #not the most accurate, but it is global
     end
     GC.gc()
 
@@ -205,9 +212,7 @@ end
         @test flash4[1] ≈
         [0.6824441505154921 0.31755584948450793
         0.3025308123759482 0.6974691876240517] rtol = 1e-6
-        act_x4 = activity_coefficient(system_cc, 101325, 363.15, flash4[1][1,:]) .* flash4[1][1,:]
-        act_y4 = activity_coefficient(system_cc, 101325, 363.15, flash4[1][2,:]) .* flash4[1][2,:]
-        @test Clapeyron.dnorm(act_x4,act_y4) < 1e-8
+        #test equality of activities does not make sense in VLE
     end
 
     @testset "Michelsen Algorithm, CompositeModel" begin
