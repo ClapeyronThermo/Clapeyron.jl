@@ -144,7 +144,7 @@ function __tpflash_gibbs_reduced(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,β,
     g_pure_x = dot(x,g_pures)
     gibbs = (g_E_x + g_ideal_x + g_pure_x)*(1-β)/RT
     if is_vle(eq)
-        gibbs += gibbs_free_energy(fluidmodel,p,T,y,phase =:v)*β/R̄/T
+        gibbs += gibbs_free_energy(__gas_model(fluidmodel),p,T,y,phase =:v)*β/R̄/T
     else #lle
         γy = activity_coefficient(model.activity, p, T, y)
         g_E_y = sum(y[i]*RT*log(γy[i]) for i ∈ 1:n)
@@ -168,7 +168,31 @@ function K0_lle_init(wrapper::PTFlashWrapper{<:GammaPhi},p,T,z)
     return K0_lle_init(wrapper.model.activity,p,T,z)
 end
 
-function __eval_G_DETPFlash(model::PTFlashWrapper{<:GammaPhi},p,T,xi,equilibrium)
-    throw(error("γ-ϕ Composite Model does not support DETPFlash."))
-    #TODO: actually support this?
+function __eval_G_DETPFlash(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,equilibrium)
+    model = wrapper.model
+    phase = is_lle(equilibrium) ? :liquid : :unknown
+    n = length(model)
+    g_pures = wrapper.μ
+    R = Rgas()
+    RT = R*T
+    γx = activity_coefficient(model.activity, p, T, x)
+    g_E_x = sum(x[i]*RT*log(γx[i]) for i ∈ 1:n)
+    g_ideal_x = sum(x[i]*RT*(log(x[i])) for i ∈ 1:n)
+    g_pure_x = dot(x,g_pures)
+    gl = (g_E_x + g_ideal_x + g_pure_x)
+    vl = volume(model.fluid.model,p,T,x,phase = :l)
+    if phase == :liquid
+        return gl,vl
+    else
+        throw(error("γ-ϕ Composite Model does not support VLE calculation with `DETPFlash`. if you want to calculate LLE equilibria, try using `DETPFlash(equilibrium = :lle)`"))
+        #=  
+        vv = volume(model.fluid.model,p,T,x,phase = :v)
+        gv = VT_gibbs_free_energy(model.fluid.model, vv, T, x)
+        if gv > gl
+            return gl,vl
+        else
+            return gv,vv
+        end
+        =#
+    end
 end
