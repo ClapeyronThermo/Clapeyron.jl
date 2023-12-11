@@ -1,14 +1,17 @@
 """
-    FluidCorrelation{V,L,Sat} <: EoSModel
+    FluidCorrelation{V,L,Sat} <: RestrictedEquilibriaModel
 
 Wrapper struct to signal that a `CompositeModel` uses correlations for calculation of saturation points, vapour and liquid phase volumes.
 """
-struct FluidCorrelation{V,L,Sat}
+struct FluidCorrelation{V,L,Sat} <: RestrictedEquilibriaModel
     components::Vector{String}
     gas::V
     liquid::L
     saturation::Sat
 end
+
+__gas_model(model::FluidCorrelation) = model.gas
+activity_coefficient(model::FluidCorrelation, p, T,z=SA[1.]; phase = :unknown, threaded=true) = FillArrays.Ones(length(model)) 
 
 function volume_impl(model::FluidCorrelation,p,T,z,phase=:unknown,threaded=false,vol0 = nothing)
     _0 = zero(p+T+first(z))
@@ -47,6 +50,14 @@ function volume_impl(model::FluidCorrelation,p,T,z,phase=:unknown,threaded=false
             return nan
         end
     end
+end
+
+function init_preferred_method(method::typeof(saturation_pressure),model::FluidCorrelation,kwargs)
+    return init_preferred_method(method,model.saturation,kwargs)
+end
+
+function init_preferred_method(method::typeof(saturation_temperature),model::FluidCorrelation,kwargs)
+    return init_preferred_method(method,model.saturation,kwargs)
 end
 
 function saturation_pressure(model::FluidCorrelation,T,method::SaturationMethod)

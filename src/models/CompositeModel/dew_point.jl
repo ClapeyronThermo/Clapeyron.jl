@@ -1,22 +1,18 @@
-function init_preferred_method(method::typeof(dew_pressure),model::ActivityModel,kwargs)
+function init_preferred_method(method::typeof(dew_pressure),model::RestrictedEquilibriaModel,kwargs)
     gas_fug = get(kwargs,:gas_fug,false)
     poynting = get(kwargs,:poynting,false)
     return ActivityDewPressure(;gas_fug,poynting,kwargs...)
 end
 
-function dew_pressure(model::ActivityModel, T, y, method::DewPointMethod)
-    if !(method isa ActivityDewPressure)
-        throw(error("$method not supported by Activity models"))
+function dew_pressure_impl(model::RestrictedEquilibriaModel,T,y,method::ActivityDewPressure)
+    if model isa GammaPhi
+        pmodel = model.fluid.model
+        pure = model.fluid.pure
+    else
+        pmodel = __gas_model(model)
+        pure = split_model(pmodel)
     end
-    _T = typeof(T)
-    _y = typeof(y)
-    Base.invoke(dew_pressure,Tuple{EoSModel,_T,_y,DewPointMethod},model,T,y,method)
-end
-
-function dew_pressure_impl(model::ActivityModel,T,y,method::ActivityDewPressure)
-    sat = saturation_pressure.(model.puremodel,T)
-    pmodel = model.puremodel.model
-    pure = model.puremodel.pure
+    sat = saturation_pressure.(pure,T)
     p_pure = first.(sat)
     vl_pure = getindex.(sat,2)
     vv_pure = last.(sat)
@@ -79,13 +75,13 @@ function dew_pressure_impl(model::ActivityModel,T,y,method::ActivityDewPressure)
     return (p,vl,vv,x)
 end
 
-function init_preferred_method(method::typeof(dew_temperature),model::ActivityModel,kwargs)
+function init_preferred_method(method::typeof(dew_temperature),model::RestrictedEquilibriaModel,kwargs)
     gas_fug = get(kwargs,:gas_fug,false)
     poynting = get(kwargs,:poynting,false)
     return ActivityDewTemperature(;gas_fug,poynting,kwargs...)
 end
 
-function dew_temperature(model::ActivityModel, T, x, method::DewPointMethod)
+function dew_temperature(model::RestrictedEquilibriaModel, T, x, method::DewPointMethod)
     if !(method isa ActivityDewTemperature)
         throw(error("$method not supported by Activity models"))
     end
@@ -94,9 +90,17 @@ function dew_temperature(model::ActivityModel, T, x, method::DewPointMethod)
     Base.invoke(dew_temperature,Tuple{EoSModel,_T,_x,DewPointMethod},model,T,x,method)
 end
 
-function dew_temperature_impl(model::ActivityModel,p,y,method::ActivityDewTemperature)
-    f(z) = Obj_bubble_temperature(model,z,p,y)
-    pure = model.puremodel
+function dew_temperature_impl(model::RestrictedEquilibriaModel,p,y,method::ActivityDewTemperature)
+    
+    if model isa GammaPhi
+        pmodel = model.fluid.model
+        pure = model.fluid.pure
+    else
+        pmodel = __gas_model(model)
+        pure = split_model(pmodel)
+    end
+
+    f(z) = Obj_bubble_temperature(model,z,p,y,pure)
     sat = saturation_temperature.(pure,p)
     Ti   = first.(sat)
     T0 = dot(Ti,y)
@@ -105,7 +109,7 @@ function dew_temperature_impl(model::ActivityModel,p,y,method::ActivityDewTemper
     x0 = y ./ pi0
     x0 ./= sum(x0)
     x0[end] = T0
-    f0(F,w) =  Obj_dew_temperature(F,model,p,y,w[1:end-1],w[end])
+    f0(F,w) =  Obj_dew_temperature(F,model,p,y,w[1:end-1],w[end],pure)
     sol = Solvers.nlsolve(f0,x0,LineSearch(Newton()))
     wsol = Solvers.x_sol(sol)
     T = wsol[end]
@@ -116,12 +120,11 @@ function dew_temperature_impl(model::ActivityModel,p,y,method::ActivityDewTemper
     return (T,vl,vv,x)
 end
 
-function Obj_dew_temperature(F,model::ActivityModel,p,y,_x,T)
+function Obj_dew_temperature(F,model::RestrictedEquilibriaModel,p,y,_x,T,pure)
     x = FractionVector(_x)
     γ  = activity_coefficient(model,p,T,x)
-    sat = saturation_pressure.(model.puremodel,T) #TODO: AD rule for saturation pressure
     for i in eachindex(F)
-        pᵢ = sat[i][1]
+        pᵢ = first(saturation_pressure(pure[i],T))
         F[i] = x[i] - y[i]*p/(γ[i]*pᵢ)
     end
     return F
