@@ -99,11 +99,11 @@ function CompositeModel(components;
     init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
         if init_liquid isa ActivityModel
             if hasfield(typeof(init_liquid),:puremodel)
-                pure = model.puremodel
+                pure = init_liquid.puremodel
             else
                 pure = init_puremodel(BasicIdeal(),components,userlocations,verbose)
             end
-            init_fluid = GammaPhi(_components,liquid,pure)
+            init_fluid = GammaPhi(_components,init_liquid,pure)
         else
             throw(ArgumentError("Invalid specification for CompositeModel"))
         end
