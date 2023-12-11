@@ -9,8 +9,8 @@ function dew_pressure_impl(model::RestrictedEquilibriaModel,T,y,method::Activity
         pmodel = model.fluid.model
         pure = model.fluid.pure
     else
-        pmodel = __gas_model(model)
-        pure = split_model(pmodel)
+        pmodel = model
+        pure = split_model(pmodel,1:length(model))
     end
     sat = saturation_pressure.(pure,T)
     p_pure = first.(sat)
@@ -96,8 +96,8 @@ function dew_temperature_impl(model::RestrictedEquilibriaModel,p,y,method::Activ
         pmodel = model.fluid.model
         pure = model.fluid.pure
     else
-        pmodel = __gas_model(model)
-        pure = split_model(pmodel)
+        pmodel = model
+        pure = split_model(pmodel,1:length(model))
     end
 
     f(z) = Obj_bubble_temperature(model,z,p,y,pure)

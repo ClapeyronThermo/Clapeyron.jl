@@ -144,7 +144,7 @@ function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true
         if !isnan(vol0)
             V0 = vol0
             V = _volume_compress(fluid,p,T,z,V0)
-            if solid !== liquid && isnan(V)
+            if solid !== fluid && isnan(V)
                 return _volume_compress(solid,p,T,z,V0)
             end
             return V
