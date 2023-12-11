@@ -188,7 +188,8 @@ end
         @test Clapeyron.dnorm(act_x3,act_y3) < 1e-8
 
         #test combinations of Activity + CompositeModel
-        system_cc = UNIFAC(["water", "hexane"],puremodel = CompositeModel)
+        system_fluid = CompositeModel(["water","ethanol"],gas = BasicIdeal, liquid = RackettLiquid, saturation = LeeKeslerSat)
+        system_cc  = CompositeModel(["water","ethanol"],liquid = UNIFAC,fluid = system_fluid)
         flash3 = tp_flash(system_cc, 101325, 303.15, [0.5, 0.5], alg2)
         act_x3 = activity_coefficient(system_cc, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
         act_y3 = activity_coefficient(system_cc, 101325, 303.15, flash3[1][2,:]) .* flash3[1][2,:]
@@ -203,7 +204,7 @@ end
 
     @testset "Michelsen Algorithm, CompositeModel" begin
         p,T,z = 101325.,85+273.,[0.2,0.8]
-        system = CompositeModel(["water","ethanol"]) #ideal gas + rackett + lee kesler saturation correlation
+        system = CompositeModel(["water","ethanol"],gas = BasicIdeal, liquid = RackettLiquid, saturation = LeeKeslerSat) #ideal gas + rackett + lee kesler saturation correlation
         @test Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash())[1] ≈
         [0.3618699659002134 0.6381300340997866
         0.17888243361092543 0.8211175663890746] rtol = 1e-6
@@ -211,7 +212,6 @@ end
         @test_throws ErrorException Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash(ss_iters = 0))
     end
 end
-
 
 @testset "Saturation Methods" begin
     model = PR(["water"])

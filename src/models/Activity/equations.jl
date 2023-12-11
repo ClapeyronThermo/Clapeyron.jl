@@ -47,13 +47,13 @@ end
 function eos(model::ActivityModel,V,T,z)
     Σz = sum(z)
     lnΣz = log(Σz)
-    
+
     pures = model.puremodel
     p = sum(z[i]*pressure(pures[i],V/Σz,T) for i ∈ @comps)/Σz
     g_E = excess_gibbs_free_energy(model,p,T,z)
     g_ideal = sum(z[i]*R̄*T*(log(z[i])-lnΣz) for i ∈ @comps)
     g_pure = sum(z[i]*VT_gibbs_free_energy(pures[i],V/Σz,T) for i ∈ @comps)
-    
+
     return g_E+g_ideal+g_pure-p*V
 end
 
@@ -85,11 +85,11 @@ function mixing(model::ActivityModel,p,T,z,::typeof(entropy))
 end
 
 function gibbs_solvation(model::ActivityModel,T)
-    z = [1.0,1e-30] 
+    z = [1.0,1e-30]
     p,v_l,v_v = saturation_pressure(model.puremodel[1],T)
     p2,v_l2,v_v2 = saturation_pressure(model.puremodel[2],T)
     γ = activity_coefficient(model,p,T,z)
-    K = v_v/v_l*γ[2]*p2/p   
+    K = v_v/v_l*γ[2]*p2/p
     return -R̄*T*log(K)
 end
 
@@ -120,13 +120,8 @@ function γdγdn(model::ActivityModel,p,T,z)
     return γz,dyz
 end
 
-# Error handling for Activity models that don't provide saturation properties, in the context of VLE.
-
-function ActivitySaturationError(model,method)
-    throw(ArgumentError("$method requires $model to provide saturation properties."))
-end
-
-function __act_to_gammaphi(model::ActivityModel,method)
+#convert ActivityModel into a RestrictedEquilibriaModel
+function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
     components = model.components
     if hasfield(typeof(model),:puremodel)
         pure = model.puremodel
@@ -136,7 +131,7 @@ function __act_to_gammaphi(model::ActivityModel,method)
     else
         pure = init_puremodel(BasicIdeal(),components,String[],false)
     end
-    if pure.model isa IdealModel
+    if pure.model isa IdealModel && !ignore
         ActivitySaturationError(model,method)
     end
     γϕmodel = GammaPhi(components,model,pure)
@@ -186,6 +181,18 @@ function init_preferred_method(method::typeof(dew_temperature),model::ActivityMo
     return ActivityDewTemperature(;gas_fug,poynting,kwargs...)
 end
 
+function init_preferred_method(method::typeof(tp_flash),model::ActivityModel,kwargs)
+    return RRTPFlash(;kwargs...)
+end
+
+function __tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium)
+    ignore = is_lle(equilibrium)
+    compmodel = __act_to_gammaphi(model,tp_flash,ignore)
+    PTFlashWrapper(compmodel,p,T,equilibrium)
+end
+
+#LLE point. it does not require an imput concentration, because it assumes that activities are pressure-independent.
+
 function LLE(model::ActivityModel,T;v0=nothing)
     if v0 === nothing
         if length(model) == 2
@@ -209,8 +216,7 @@ function Obj_LLE(model::ActivityModel, F, T, x, xx)
     xx = Fractions.FractionVector(xx)
     γₐ = activity_coefficient(model,1e-3,T,x)
     γᵦ = activity_coefficient(model,1e-3,T,xx)
-
-    F .= γᵦ.*xx-γₐ.*x
+    F .= γᵦ.*xx .- γₐ.*x
     return F
 end
 
