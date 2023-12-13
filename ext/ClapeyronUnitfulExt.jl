@@ -103,35 +103,23 @@ function C.pressure(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=
     return uconvert(output, res)
 end
 
-for (fn,unit) in Iterators.zip(
-    [:enthalpy,
-    :entropy,
-    :internal_energy,
-    :gibbs_free_energy,
-    :helmholtz_free_energy,
-    :isochoric_heat_capacity,
-    :isobaric_heat_capacity,
-    :isothermal_compressibility,
-    :isentropic_compressibility,
-    :speed_of_sound,
-    :isobaric_expansivity,
-    :joule_thomson_coefficient,
-    :mass_density,
-    :molar_density],
-    [u"J",
-    u"J/K",
-    u"J",
-    u"J",
-    u"J",
-    u"J/K",
-    u"J/K",
-    u"Pa^-1",
-    u"Pa^-1",
-    u"m/s",
-    u"K^-1",
-    u"K/Pa",
-    u"kg/m^3",
-    u"mol/m^3"])
+for (fn,unit) in [
+    (:compressibility_factor, NoUnits),
+    (:enthalpy, u"J"),
+    (:entropy, u"J/K"),
+    (:gibbs_free_energy, u"J"),
+    (:helmholtz_free_energy, u"J"),
+    (:internal_energy, u"J"),
+    (:isentropic_compressibility, u"Pa^-1"),
+    (:isobaric_expansivity, u"K^-1"),
+    (:isobaric_heat_capacity, u"J/K"),
+    (:isochoric_heat_capacity, u"J/K"),
+    (:isothermal_compressibility, u"Pa^-1"),
+    (:joule_thomson_coefficient, u"K/Pa"),
+    (:mass_density, u"kg/m^3"),
+    (:molar_density, u"mol/m^3"),
+    (:speed_of_sound, u"m/s"),
+    ]
     VT_fn = Symbol(:VT_,fn)
     @eval begin
         function C.$fn(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=$unit)
@@ -157,20 +145,6 @@ function C.volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, 
     return uconvert(output, res)
 end
 
-#compressibility_factor
-function C.compressibility_factor(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=SA[1.])
-    st = standarize(model,v,T,z)
-    _v,_T,_z = state_to_vt(model,st)
-    res = C.VT_compressibility_factor(model, _v, _T,_z)
-    return res
-end
-
-function C.compressibility_factor(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, threaded=true)
-    st = standarize(model,p,T,z)
-    _p,_T,_z = state_to_pt(model,st)
-    res = compressibility_factor(model, _p, _T, _z; phase, threaded)
-    return res
-end
 
 #second_virial_coefficient
 function C.second_virial_coefficient(model::EoSModel, T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
