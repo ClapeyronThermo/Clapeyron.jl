@@ -206,4 +206,43 @@
 
         @test γ1[1] ≈ 55334.605821130834 rtol = 1e-4
     end
+
+    @testset "SorptionModels.jl - init kij with user" begin
+        #=
+        on SL, passing k in userlocations did not work.
+        =#
+
+
+        v★(P★, T★,) = 8.31446261815324 * T★ / P★ / 1000000 # J / (mol*K) * K / mpa -> pa * m3 / (mol * mpa) ->  need to divide by 1000000 to get m3/mol
+        ϵ★(T★) = 8.31446261815324 * T★ # J / (mol * K) * K -> J/mol 
+        r(P★, T★, ρ★, mw) = mw * (P★ * 1000000) / (8.31446261815324 * T★ * (ρ★ / 1e-6)) # g/mol * mpa * 1000000 pa/mpa / ((j/mol*K) * K * g/(cm3 / 1e-6 m3/cm3)) -> unitless
+    
+        P★ = [534., 630.]
+        T★ = [755., 300.]
+        ρ★ = [1.275, 1.515]
+        mw = [100000, 44.01]
+        kij = [0 -0.0005; -0.0005 0]
+        model1 = Clapeyron.SL(
+            ["PC", "CO2"], 
+            userlocations = Dict(
+                :vol => v★.(P★, T★,), 
+                :segment => r.(P★, T★, ρ★, mw),
+                :epsilon => ϵ★.(T★), 
+                :Mw => mw
+            ),
+            mixing_userlocations = (;k0 = kij, k1 = [0 0; 0 0], l = [0 0; 0 0])
+        )
+
+        model2 = Clapeyron.SL(
+            ["PC", "CO2"], 
+            userlocations = Dict(
+                :vol => v★.(P★, T★,), 
+                :segment => r.(P★, T★, ρ★, mw),
+                :epsilon => ϵ★.(T★), 
+                :Mw => mw,
+                :k => kij
+            )
+        )
+        @test Clapeyron.get_k(model1) ≈ Clapeyron.get_k(model2)
+    end
 end

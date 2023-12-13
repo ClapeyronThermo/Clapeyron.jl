@@ -1,6 +1,5 @@
 abstract type SLMixingRule <: EoSModel end
 
-
 """
     mix_vε(model::SanchezLacombeModel,V,T,z,mix::SLMixingRule,r̄ = @f(rmix),∑z = sum(z))
 
@@ -30,7 +29,7 @@ function init_slmixing(model,components,params,mixing_userlocations,verbose)
     if any(z -> haskey(params,z),("k","k0","k1","l")) && model <: SLMixingRule
         paramstype = fieldtype(model,:params)
         pnew = transform_params(model,params,components)
-        mixing_params = paramstype(pnew)
+        mixing_params = build_eosparam(paramstype,pnew)
         if verbose
             @info "Building an instance of $(info_color(string(model))) with components $components"
         end

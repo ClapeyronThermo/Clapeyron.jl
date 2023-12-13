@@ -59,42 +59,40 @@ SLk0k1lMixingRule
 
 function sl_mix(unmixed_vol,unmixed_epsilon,mixmodel::SLk0k1lMixingRule)
     #dont mind the function names, it performs the correct mixing
-    premixed_vol = epsilon_LorentzBerthelot(unmixed_vol,mixmodel.l)
+    premixed_vol = epsilon_LorentzBerthelot(unmixed_vol,mixmodel.params.l)
     premixed_epsilon = sigma_LorentzBerthelot(unmixed_epsilon)
     return premixed_vol,premixed_epsilon
 end
 
 function sl_mix!(unmixed_vol,unmixed_epsilon,mixmodel::SLk0k1lMixingRule)
-    epsilon_LorentzBerthelot!(unmixed_vol,mixmodel.l)
+    epsilon_LorentzBerthelot!(unmixed_vol,mixmodel.params.l)
     sigma_LorentzBerthelot!(unmixed_epsilon)
 end
 
 function __SL_get_k(model::SanchezLacombe,mixing::SLk0k1lMixingRule)
-    return copy(mixing.k0.values),copy(mixing.k1.values)
+    return copy(mixing.params.k0.values),copy(mixing.params.k1.values)
 end
 
 function set_k!(model::SanchezLacombe{SLk0k1lMixingRule},k0,k1)
     check_arraysize(model,k0)
     check_arraysize(model,k1)
-    model.mixing.k0.values = k0
-    model.mixing.k1.values = k1
+    model.mixing.params.k0.values = k0
+    model.mixing.params.k1.values = k1
 end
 
 function set_k!(model::SanchezLacombe{SLk0k1lMixingRule},k0)
     check_arraysize(model,k0)
-    model.mixing.k0.values .= k0
+    model.mixing.params.k0.values .= k0
     n = length(model)
-    model.mixing.k1.values .= FillArrays.Zeros(n,n)
+    model.mixing.params.k1.values .= FillArrays.Zeros(n,n)
 end
 
-
-
 function __SL_get_l(model::SanchezLacombe,mixing::SLk0k1lMixingRule)
-    return copy(mixing.l.values) 
+    return copy(mixing.params.l.values) 
 end
 
 function set_l!(model::SanchezLacombe{SLk0k1lMixingRule},l)
-    l0 = model.mixing.l.values
+    l0 = model.mixing.params.l.values
     epsilon_LorentzBerthelot!(model.params.vol,l)
     l0 .= l
 end
