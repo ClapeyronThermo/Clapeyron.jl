@@ -47,13 +47,11 @@ end
 function eos(model::ActivityModel,V,T,z)
     Σz = sum(z)
     lnΣz = log(Σz)
-
     pures = model.puremodel
     p = sum(z[i]*pressure(pures[i],V/Σz,T) for i ∈ @comps)/Σz
     g_E = excess_gibbs_free_energy(model,p,T,z)
     g_ideal = sum(z[i]*R̄*T*(log(z[i])-lnΣz) for i ∈ @comps)
     g_pure = sum(z[i]*VT_gibbs_free_energy(pures[i],V/Σz,T) for i ∈ @comps)
-
     return g_E+g_ideal+g_pure-p*V
 end
 
@@ -69,8 +67,8 @@ end
 
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
-    df(x) = Solvers.derivative(f,x)
-    return -df(T)*T^2
+    dfT = Solvers.derivative(f,T)
+    return -dfT*T^2
 end
 
 function mixing(model::ActivityModel,p,T,z,::typeof(gibbs_free_energy))
@@ -85,12 +83,8 @@ function mixing(model::ActivityModel,p,T,z,::typeof(entropy))
 end
 
 function gibbs_solvation(model::ActivityModel,T)
-    z = [1.0,1e-30]
-    p,v_l,v_v = saturation_pressure(model.puremodel[1],T)
-    p2,v_l2,v_v2 = saturation_pressure(model.puremodel[2],T)
-    γ = activity_coefficient(model,p,T,z)
-    K = v_v/v_l*γ[2]*p2/p
-    return -R̄*T*log(K)
+    binary_component_check(gibbs_solvation,model)
+    return gibbs_solvation(__act_to_gammaphi(model,gibbs_solvation),T)
 end
 
 function lb_volume(model::ActivityModel,z = SA[1.0])

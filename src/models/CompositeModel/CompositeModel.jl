@@ -300,4 +300,9 @@ end
 
 __tpflash_cache_model(model::CompositeModel{<:Any,Nothing},p,T,z,equilibrium) = __tpflash_cache_model(model.fluid,p,T,z,equilibrium)
 
+function gibbs_solvation(model::CompositeModel,T)
+    binary_component_check(gibbs_solvation,model)
+    return gibbs_solvation(model.fluid,T)
+end
+
 export CompositeModel

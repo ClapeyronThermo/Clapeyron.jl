@@ -44,6 +44,15 @@ function ActivitySaturationError(model,method)
     throw(ArgumentError("$method requires $model to be used in conjuction with another EoS model that supports saturation properties. If you are using an Activity Model as a raw input, use `CompositeModel(components, liquid = activity_model, fluid = fluid_model)` instead."))
 end
 
+function gibbs_solvation(model::GammaPhi,T)
+    z = [1.0,1e-30]
+    p,v_l,v_v = saturation_pressure(model.fluid[1],T)
+    p2,v_l2,v_v2 = saturation_pressure(model.fluid[2],T)
+    γ = activity_coefficient(model,p,T,z)
+    K = v_v/v_l*γ[2]*p2/p
+    return -R̄*T*log(K)
+end
+
 function PTFlashWrapper(model::GammaPhi,p,T::Number,equilibrium::Symbol)
     fluidmodel = model.fluid
     #check that we can actually solve the equilibria
