@@ -48,7 +48,7 @@ function set_k!(model::SanchezLacombe{SLKRule},k)
 end
 
 function __SL_get_k(model::SanchezLacombe,mixing::SLKRule)
-    return copy(mixing.k.values)
+    return copy(mixing.params.k.values)
 end
 
 function __SL_get_l(model::SanchezLacombe,mixing::SLKRule)
