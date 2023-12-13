@@ -41,6 +41,8 @@ end
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
+- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `a`: Single Parameter (`Float64`) - Atraction parameter
 - `b`: Single Parameter (`Float64`) - Covolume
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter
@@ -86,7 +88,9 @@ function CPA(components;
     assoc_options = AssocOptions())
 
     params = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    sites = params["sites"]
+    sites = get!(params,"sites") do
+        SiteParam(components)
+    end
     Mw  = params["Mw"]
     k = get(params,"k",nothing)
     Tc = params["Tc"]
@@ -95,11 +99,16 @@ function CPA(components;
     params["b"].values .*= 1E-3
     a  = epsilon_LorentzBerthelot(params["a"], k)
     b  = sigma_LorentzBerthelot(params["b"])
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bondvol"]
+    
+    epsilon_assoc = get!(params,"epsilon_assoc") do
+        AssocParam("epsilon_assoc",components)
+    end
+    
+    bondvol = get!(params,"bondvol") do
+        AssocParam("bondvol",components)
+    end
     bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
     packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
-
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
