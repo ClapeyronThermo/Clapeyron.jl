@@ -82,7 +82,7 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,volx,voly,pha
     #crits = wrapper.crit
     fug = wrapper.fug
     RT = R̄*T
-    γx = activity_coefficient(model.activity, p, T, x)
+    γx = activity_coefficient(model, p, T, x)
     volx = volume(fluidmodel, p, T, x, phase = phasex, vol0 = volx)
     _0 = zero(eltype(lnK))
 
@@ -108,11 +108,11 @@ function update_K!(lnK,wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,y,volx,voly,pha
                 ϕli = fug[i]
                 p_i = sats[i][1]
                 lnK[i] = log(γx[i]*p_i*ϕli/p) - lnϕy[i] + volx*(p - p_i)/RT
-                gibbs += β*y[i]*log(y[i] + lnϕy[i])
+                gibbs += β*y[i]*(log(y[i]) + lnϕy[i])
             end
         end
     else
-        γy = activity_coefficient(model.activity, p, T, y)
+        γy = activity_coefficient(model, p, T, y)
         lnK .= log.(γx./γy)
         voly = volume(fluidmodel, p, T, y, phase = phasey, vol0 = voly)
         if β !== nothing
