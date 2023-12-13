@@ -87,9 +87,7 @@ function set_k!(model::SanchezLacombe{SLk0k1lMixingRule},k0)
     model.mixing.k1.values .= FillArrays.Zeros(n,n)
 end
 
-function __SL_get_k(model::SanchezLacombe,mixing::SLKRule)
-    return copy(mixing.k.values)
-end
+
 
 function __SL_get_l(model::SanchezLacombe,mixing::SLk0k1lMixingRule)
     return copy(mixing.l.values) 

@@ -47,10 +47,13 @@ function set_k!(model::SanchezLacombe{SLKRule},k)
     model.mixing.k.values = k
 end
 
-function __SL_get_k(model::Clapeyron.SanchezLacombe,mixing::Clapeyron.SLKRule)
+function __SL_get_k(model::SanchezLacombe,mixing::SLKRule)
     return copy(mixing.k.values)
 end
 
+function __SL_get_l(model::SanchezLacombe,mixing::SLKRule)
+    return nothing
+end
 
 function sl_mix(unmixed_vol,unmixed_epsilon,mixmodel::SLKRule)
     #dont mind the function names, it performs the correct mixing

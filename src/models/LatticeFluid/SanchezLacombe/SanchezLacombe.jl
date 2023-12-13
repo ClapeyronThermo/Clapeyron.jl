@@ -85,7 +85,7 @@ function SanchezLacombe(components;
     return model
 end
 
-function Clapeyron.get_k(model::Clapeyron.SanchezLacombe)
+function get_k(model::SanchezLacombe)
     return __SL_get_k(model,model.mixing)
 end
 
@@ -95,7 +95,7 @@ function recombine_impl!(model::SanchezLacombe)
     return model
 end
 
-function Clapeyron.get_l(model::Clapeyron.SanchezLacombe)
+function get_l(model::SanchezLacombe)
     return __SL_get_l(model,model.mixing)
 end
 
