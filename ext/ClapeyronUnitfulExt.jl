@@ -141,19 +141,19 @@ for (fn,unit) in Iterators.zip(
             return uconvert(output, res)
         end
 
-        function C.$fn(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=$unit)
+        function C.$fn(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=$unit, threaded=true)
             st = standarize(model,p,T,z)
             _p,_T,_z = state_to_pt(model,st)
-            res = C.$fn(model, _p, _T, _z; phase=phase)*($unit)
+            res = C.$fn(model, _p, _T, _z; phase, threaded)*($unit)
             return uconvert(output, res)
         end
     end
 end
 
-function C.volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=u"m^3")
+function C.volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=u"m^3", threaded=true)
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
-    res = volume(model, _p, _T, _z; phase=phase)*u"m^3"
+    res = volume(model, _p, _T, _z; phase, threaded)*u"m^3"
     return uconvert(output, res)
 end
 
@@ -165,15 +165,15 @@ function C.compressibility_factor(model::EoSModel, v::__VolumeKind, T::Unitful.T
     return res
 end
 
-function C.compressibility_factor(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown)
+function C.compressibility_factor(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, threaded=true)
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
-    res = compressibility_factor(model, _p, _T, _z; phase=phase)
+    res = compressibility_factor(model, _p, _T, _z; phase, threaded)
     return res
 end
 
 #second_virial_coefficient
-function C.second_virial_coefficient(model::EoSModel, T::Unitful.Temperature, z=SA[1.];output=u"m^3")
+function C.second_virial_coefficient(model::EoSModel, T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
     st = standarize(model,-1,T,z)
     _,_T,_z = state_to_pt(model,st)
     res = second_virial_coefficient(model, _T,_z)*u"m^3"
