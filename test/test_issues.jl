@@ -243,6 +243,6 @@
                 :k => kij
             )
         )
-        @test Clapeyron.get_k(model1) ≈ Clapeyron.get_k(model2)
+        @test Clapeyron.get_k(model1)[1] ≈ Clapeyron.get_k(model2)[1]
     end
 end
