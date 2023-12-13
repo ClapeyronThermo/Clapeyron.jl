@@ -66,7 +66,7 @@ Clapeyron.isobaric_expansivity
 Clapeyron.joule_thomson_coefficient
 ```
 
-### Methods that first order composition derivatives
+### Methods that require first order composition derivatives
 ```@docs
 Clapeyron.chemical_potential
 Clapeyron.chemical_potential_res
