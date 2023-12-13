@@ -104,9 +104,12 @@ function C.pressure(model::EoSModel, v::__VolumeKind, T::Unitful.Temperature, z=
 end
 
 for (fn,unit) in [
+    (:chemical_potential, u"J/mol"),
+    (:chemical_potential_res, u"J/mol"),
     (:compressibility_factor, NoUnits),
     (:enthalpy, u"J"),
     (:entropy, u"J/K"),
+    (:entropy_res, u"J/K"),
     (:gibbs_free_energy, u"J"),
     (:helmholtz_free_energy, u"J"),
     (:internal_energy, u"J"),
@@ -138,13 +141,12 @@ for (fn,unit) in [
     end
 end
 
-function C.volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=u"m^3", threaded=true)
+function C.volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=u"m^3", threaded=true, vol0=nothing)
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
-    res = volume(model, _p, _T, _z; phase, threaded)*u"m^3"
+    res = volume(model, _p, _T, _z; phase, threaded, vol0)*u"m^3"
     return uconvert(output, res)
 end
-
 
 #second_virial_coefficient
 function C.second_virial_coefficient(model::EoSModel, T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
@@ -186,6 +188,20 @@ function C.saturation_pressure(model::EoSModel, T::Unitful.Temperature; output=(
     _v_l = uconvert(output[2],v_l*u"m^3")
     _v_v = uconvert(output[3],v_v*u"m^3")
     return (_P_sat,_v_l,_v_v)
+end
+
+function C.fugacity_coefficient(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, threaded=true)
+    st = standarize(model,p,T,z)
+    _p,_T,_z = state_to_pt(model,st)
+    res = C.fugacity_coefficient(model, _p, _T, _z; phase, threaded)
+    return res
+end
+
+function C.volume_virial(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
+    st = standarize(model,p,T,z)
+    _p,_T,_z = state_to_pt(model,st)
+    res = C.volume_virial(model, _p, _T, _z)*u"m^3"
+    return uconvert(output, res)
 end
 
 end #module
