@@ -249,14 +249,19 @@
     @testset "https://github.com/ClapeyronThermo/Clapeyron.jl/discussions/239" begin
         #test for easier initialization of CPA/SAFT without association
         m1 = Clapeyron.CPA(["Methanol"])
-        m2 = Clapeyron.CPA(["Methanol"]; userlocations = (;
-        a = m1.params.a.values,
-        Tc = m1.params.Tc.values,
-        b = m1.params.b.values,
+        m2 = CPA(["Methanol"]; userlocations=(;
+        a = m1.params.a.values .* 10, #undo scaling of a
+        b = m1.params.b.values .* 1000, #undo scaling of b
         c1 = m1.params.c1.values,
         Mw = m1.params.Mw.values,
-        Pc = m1.cubicmodel.params.Pc.values),)
-        @test m1.cubicmodel.params.a.values == m2.cubicmodel.params.a.values
+        Tc = m1.params.Tc.values,
+        Pc = m1.cubicmodel.params.Pc.values,
+        n_H = [1],
+        n_e = [1],
+        epsilon_assoc = Dict((("Methanol","H"),("Methanol","e"))=>244.76),
+        bondvol = Dict((("Methanol","H"),("Methanol","e"))=>15.4)),
+        )
+        @test volume(m1,1e5,333.0) ≈ volume(m2,1e5,333.0)
 
         m3 = PCSAFT("water",userlocations =(segment = 1,Mw = 1,epsilon = 1,sigma = 1.0))
         @test length(m3.params.bondvol.values.values) == 0
