@@ -26,9 +26,9 @@ When the solid field is specified, some properties (like `volume`) start taking 
 
 ## Examples:
 - Saturation pressure calculated using Correlations:
-```julia
+```julia-repl
 #rackett correlation for liquids, DIPPR 101 correlation for the saturation pressure, ideal gas for the vapour volume
-julia> model = CompositeModel(["water"],liquid = RackettLiquid,saturation = DIPPR101Sat,gas = BasicIdeal)  
+julia> model = CompositeModel(["water"],liquid = RackettLiquid,saturation = DIPPR101Sat,gas = BasicIdeal)
 Composite Model (Correlation-Based) with 1 component:
  Gas Model: BasicIdeal()
  Liquid Model: RackettLiquid("water")
@@ -39,7 +39,7 @@ julia> saturation_pressure(model,373.15)
 ```
 
 - Bubble Pressure, calculated using fluid correlations and a Raoult solver:
-```
+```julia-repl
 julia> model = CompositeModel(["octane","heptane"],liquid = RackettLiquid,saturation = DIPPR101Sat,gas = BasicIdeal)
 Composite Model (Correlation-Based) with 2 components:
  Gas Model: BasicIdeal()
@@ -47,9 +47,30 @@ Composite Model (Correlation-Based) with 2 components:
  Saturation Model: DIPPR101Sat("octane", "heptane")
 
 julia> bubble_pressure(model,300.15,[0.9,0.1])
-(2552.3661540464022, 0.00015684158726046333, 0.9777538974501402, [0.7376170278676232, 0.2623829721323768]) 
+(2552.3661540464022, 0.00015684158726046333, 0.9777538974501402, [0.7376170278676232, 0.2623829721323768])
 ```
 
+- Bubble Pressure, using an Activity Model along with another model for fluid properties:
+```julia-repl
+#using a helmholtz-based fluid
+julia> model = CompositeModel(["octane","heptane"],liquid = UNIFAC,fluid = PR)
+Composite Model (γ-ϕ) with 2 components:
+ Activity Model: UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}("octane", "heptane")
+ Fluid Model: PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}("octane", "heptane")
+
+julia> bubble_pressure(model,300.15,[0.9,0.1])
+(2694.150594740186, 0.00016898441224336215, 0.9239727973658585, [0.7407077952279438, 0.2592922047720562])
+
+#using a correlation-based fluid
+julia> fluidmodel = CompositeModel(["octane","heptane"],liquid = RackettLiquid,saturation = DIPPR101Sat,gas = BasicIdeal); 
+model2 = CompositeModel(["octane","heptane"],liquid = UNIFAC, fluid = fluidmodel)
+Composite Model (γ-ϕ) with 2 components:
+ Activity Model: UNIFAC{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}}("octane", "heptane")
+ Fluid Model: FluidCorrelation{BasicIdeal, RackettLiquid, DIPPR101Sat}("octane", "heptane")
+
+julia> bubble_pressure(model2,300.15,[0.9,0.1])
+(2551.6008524130893, 0.00015684158726046333, 0.9780471551726359, [0.7378273929683233, 0.2621726070316766])
+```
 
 """
 CompositeModel
@@ -173,7 +194,7 @@ function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
 
     if fluid !== nothing
         if fluid isa GammaPhi
-            print(io,'\n'," Activity Model: ",fluid.activity)  
+            print(io,'\n'," Activity Model: ",fluid.activity)
             print(io,'\n'," Fluid Model: ",fluid.fluid.model) #on gamma-phi, fluid is an EoSVectorParam
         elseif fluid isa FluidCorrelation
             fluid.gas !== nothing && print(io,'\n'," Gas Model: ",fluid.gas)

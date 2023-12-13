@@ -166,3 +166,5 @@ end
 function __eval_G_DETPFlash(model::PTFlashWrapper{<:FluidCorrelation},p,T,xi,equilibrium)
     throw(error("Correlation-Based Composite Model does not support DETPFlash."))
 end
+
+export FluidCorrelation

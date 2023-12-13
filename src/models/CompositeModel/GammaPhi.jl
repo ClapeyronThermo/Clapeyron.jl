@@ -6,7 +6,7 @@ wrapper struct to signal that a `CompositeModel` uses an activity model in conju
 struct GammaPhi{γ,Φ} <: RestrictedEquilibriaModel
     components::Vector{String}
     activity::γ
-    fluid::Φ
+    fluid::EoSVectorParam{Φ}
 end
 
 __gas_model(model::GammaPhi) = model.fluid
@@ -205,3 +205,5 @@ function __eval_G_DETPFlash(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,equilibriu
         =#
     end
 end
+
+export GammaPhi
