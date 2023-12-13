@@ -263,6 +263,9 @@ Sets the model "l-values" binary interaction parameter to the input matrix `l`. 
 """
 set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting k-values"))
 
+export get_k,set_k!
+export get_l,set_l!
+
 include("initial_guess.jl")
 include("differentials.jl")
 include("VT.jl")
