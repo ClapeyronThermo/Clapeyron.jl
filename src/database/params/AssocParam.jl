@@ -38,6 +38,12 @@ function AssocParam(name::String,components::Vector{String},vals::Compressed4DMa
     return AssocParam{T}(name,components,vals,_sites,sourcecsvs,sources)
 end
 
+function AssocParam(name::String,components::Vector{String})
+    sites = [String[] for i in 1:length(components)]
+    values = Compressed4DMatrix{Float64}()
+    AssocParam{Float64}(name,components,values,sites,String[],String[])
+end
+
 function Base.copyto!(dest::AssocParam,src::Base.Broadcast.Broadcasted)
     Base.copyto!(dest.values.values,src)
     return dest
