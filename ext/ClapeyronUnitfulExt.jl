@@ -208,6 +208,12 @@ function C.volume_virial(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temper
 end
 
 # resolve ambiguity
+function C.chemical_potential(model::(C.SolidHfusModel), v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=u"J/mol")
+    st = standardize(model,v,T,z)
+    _v,_T,_z = state_to_vt(model,st)
+    res = C.VT_chemical_potential(model, _v, _T,_z)*u"J/mol"
+    return uconvert.(output, res)
+end
 function C.chemical_potential(model::(C.SolidHfusModel), p::Unitful.Pressure, T::Unitful.Temperature, z; output=u"J/mol")
     st = standardize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
