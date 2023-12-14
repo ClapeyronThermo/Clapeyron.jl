@@ -211,16 +211,18 @@ end
 function C.chemical_potential(model::(C.SolidHfusModel), v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=u"J/mol")
     st = standardize(model,v,T,z)
     _v,_T,_z = state_to_vt(model,st)
-    res = C.VT_chemical_potential(model, _v, _T,_z)*u"J/mol"
-    return uconvert.(output, res)
-end
-function C.chemical_potential(model::(C.SolidHfusModel), p::Unitful.Pressure, T::Unitful.Temperature, z; output=u"J/mol")
-    st = standardize(model,p,T,z)
-    _p,_T,_z = state_to_pt(model,st)
-    res = C.chemical_potential(model, _p, _T, _z)*u"J/mol"
+    #SolidHfus does not depend on volume or pressure
+    res = C.chemical_potential(model, _v, _T, _z)*u"J/mol"
     return uconvert.(output, res)
 end
 
+function C.chemical_potential(model::(C.SolidHfusModel), p::Unitful.Pressure, T::Unitful.Temperature, z; output=u"J/mol")
+    st = standardize(model,p,T,z)
+    _p,_T,_z = state_to_pt(model,st)
+    #SolidHfus does not depend on volume or pressure
+    res = C.chemical_potential(model, _p, _T, _z)*u"J/mol"
+    return uconvert.(output, res)
+end
 
 # x0_psat fallback method
 function C.x0_psat(model::EoSModel, T::Unitful.Temperature, Tc::Unitful.Temperature, Vc::__VolumeKind; output=u"Pa")
@@ -232,25 +234,14 @@ function C.x0_psat(model::EoSModel, T::Unitful.Temperature, Tc::Unitful.Temperat
 end
 
 # x0_psat interface
-for modeltype in (:EoSModel, :(C.SingleFluid), :(C.MultiFluid), :(C.CompositeModel))
+for modeltype in (:EoSModel, :(C.SingleFluid), :(C.MultiFluid), :(C.CompositeModel),:(C.GammaPhi),:(C.FluidCorrelation))
     @eval function C.x0_psat(model::($modeltype), T::Unitful.Temperature, crit=nothing; output=u"Pa")
         uconvert(output, C.x0_psat(model, standardize(T, 1u"K"), crit)*u"Pa")
     end
 end
 
-# x0_sat_pure using z
-for modeltype in (:EoSModel, :(C.SingleFluid), :(C.ExtendedCorrespondingStates))
-    @eval function C.x0_sat_pure(model::($modeltype), T::Unitful.Temperature, z=SA[1.0]; output=(u"m^3", u"m^3"))
-        st = standardize(model,-1,T,z)
-        _,_T,_z = state_to_pt(model,st)
-        v_l, v_v = C.x0_sat_pure(model, _T, _z)
-        _v_l = uconvert(output[1],v_l*u"m^3")
-        _v_v = uconvert(output[2],v_v*u"m^3")
-        return (_v_l,_v_v)
-    end
-end
 # x0_sat_pure without z
-for modeltype in (:(C.CompositeModel), :(C.MultiFluid), :(C.LJRef), :(C.ActivityModel), :(C.ABCubicModel))
+for modeltype in (:EoSModel, :(C.SingleFluid), :(C.ExtendedCorrespondingStates), :(C.CompositeModel),:(C.GammaPhi),:(C.FluidCorrelation), :(C.MultiFluid), :(C.LJRef), :(C.ActivityModel), :(C.ABCubicModel))
     @eval function C.x0_sat_pure(model::($modeltype), T::Unitful.Temperature; output=(u"m^3", u"m^3"))
         v_l, v_v = C.x0_sat_pure(model, standardize(T, 1u"K"))
         _v_l = uconvert(output[1],v_l*u"m^3")
@@ -289,7 +280,7 @@ end
 
 # x0_volume_liquid with a default value for z
 for modeltype in (:(C.SingleFluid), :(C.ExtendedCorrespondingStates), :(C.ActivityModel), :(C.AnalyticalSLVModel))
-    @eval function C.x0_volume_liquid(model::($modeltype), T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
+    @eval function C.x0_volume_liquid(model::($modeltype), T::Unitful.Temperature, z= SA[1.]; output=u"m^3")
         st = standardize(model,-1,T,z)
         _,_T,_z = state_to_pt(model,st)
         res = C.x0_volume_liquid(model, _T, _z)*u"m^3"
@@ -301,7 +292,7 @@ end
 for modeltype in (:EoSModel, :(C.MultiFluid), :(C.SanchezLacombe), :(C.SAFTVRQMieModel),
                   :(C.softSAFTModel), :(C.PeTSModel), :(C.SAFTgammaMieModel),
                   :(C.SAFTVRMieModel), :(C.BACKSAFTModel))
-    @eval function C.x0_volume_liquid(model::($modeltype), T::Unitful.Temperature, z; output=u"m^3")
+    @eval function C.x0_volume_liquid(model::($modeltype), T::Unitful.Temperature, z = SA[1.0]; output=u"m^3")
         st = standardize(model,-1,T,z)
         _,_T,_z = state_to_pt(model,st)
         res = C.x0_volume_liquid(model, _T, _z)*u"m^3"
