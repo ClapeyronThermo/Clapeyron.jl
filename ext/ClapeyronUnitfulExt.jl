@@ -207,4 +207,107 @@ function C.volume_virial(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temper
     return uconvert(output, res)
 end
 
+# x0_psat fallback method
+function C.x0_psat(model::EoSModel, T::Unitful.Temperature, Tc::Unitful.Temperature, Vc::__VolumeKind; output=u"Pa")
+    st = standarize(model, Vc, T, SA[1.])
+    _Vc, _T, _ = state_to_vt(model,st)
+    _Tc = standarize(Tc, 1u"K")
+    res = C.x0_psat(model, _T, _Tc, _Vc)*u"Pa"
+    return uconvert(output, res)
+end
+
+# x0_psat interface
+for modeltype in (:EoSModel, :SingleFluid, :MultiFluid, :CompositeModel)
+    @eval function C.x0_psat(model::($modeltype), T::Unitful.Temperature, crit=nothing; output=u"Pa")
+        uconvert(output, C.x0_psat(model, standarize(T, 1u"K"), crit)*u"Pa")
+    end
+end
+
+# x0_sat_pure using z
+for modeltype in (:EoSModel, :SingleFluid, :ExtendedCorrespondingStates)
+    @eval function C.x0_sat_pure(model::($modeltype), T::Unitful.Temperature, z=SA[1.0]; output=(u"m^3", u"m^3"))
+        st = standarize(model,-1,T,z)
+        _,_T,_z = state_to_pt(model,st)
+        v_l, v_v = C.x0_sat_pure(model, _T, _z)
+        _v_l = uconvert(output[1],v_l*u"m^3")
+        _v_v = uconvert(output[2],v_v*u"m^3")
+        return (_v_l,_v_v)
+    end
+end
+# x0_sat_pure without z
+for modeltype in (:CompositeModel, :MultiFluid, :LJRef, :(Clapeyron.ActivityModel), :(Clapeyron.ABCubicModel))
+    @eval function C.x0_sat_pure(model::($modeltype), T::Unitful.Temperature; output=(u"m^3", u"m^3"))
+        v_l, v_v = C.x0_sat_pure(model, standarize(T, 1u"K"))
+        _v_l = uconvert(output[1],v_l*u"m^3")
+        _v_v = uconvert(output[2],v_v*u"m^3")
+        return (_v_l,_v_v)
+    end
+end
+
+# x0_saturation_temperature
+for modeltype in (:EoSModel, :SingleFluid, :MultiFluid)
+    @eval function C.x0_saturation_temperature(model::($modeltype), p::Unitful.Pressure; output=(u"K", u"m^3", u"m^3"))
+        (T_sat, v_l, v_v) = C.x0_saturation_temperature(model, standarize(p, nothing))
+        _T_sat = uconvert(output[1],T_sat*u"K")
+        _v_l = uconvert(output[2],v_l*u"m^3")
+        _v_v = uconvert(output[3],v_v*u"m^3")
+        return (_T_sat,_v_l,_v_v)
+    end
+end
+
+function C.x0_volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=u"m^3")
+    st = standarize(model,p,T,z)
+    _p,_T,_z = state_to_pt(model,st)
+    res = C.x0_volume(model, _p, _T, _z; phase)*u"m^3"
+    return uconvert(output, res)
+end
+
+# x0_volume_gas
+for modeltype in (:EoSModel, :MultiFluid, :SanchezLacombe, :(Clapeyron.DAPTModel))
+    @eval function C.x0_volume_gas(model::($modeltype), p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
+        st = standarize(model,p,T,z)
+        _p,_T,_z = state_to_pt(model,st)
+        res = C.x0_volume_gas(model, _p, _T, _z)*u"m^3"
+        return uconvert(output, res)
+    end
+end
+
+# x0_volume_liquid with a default value for z
+for modeltype in (:SingleFluid, :ExtendedCorrespondingStates, :(Clapeyron.ActivityModel), :(Clapeyron.AnalyticalSLVModel))
+    @eval function C.x0_volume_liquid(model::($modeltype), T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
+        st = standarize(model,-1,T,z)
+        _,_T,_z = state_to_pt(model,st)
+        res = C.x0_volume_liquid(model, _T, _z)*u"m^3"
+        return uconvert(output, res)
+    end
+end
+
+# x0_volume_liquid without a default value for z
+for modeltype in (:EoSModel, :MultiFluid, :SanchezLacombe, :(Clapeyron.SAFTVRQMieModel),
+                  :(Clapeyron.softSAFTModel), :(Clapeyron.PeTSModel), :(Clapeyron.SAFTgammaMieModel),
+                  :(Clapeyron.SAFTVRMieModel), :(Clapeyron.BACKSAFTModel))
+    @eval function C.x0_volume_liquid(model::($modeltype), T::Unitful.Temperature, z; output=u"m^3")
+        st = standarize(model,-1,T,z)
+        _,_T,_z = state_to_pt(model,st)
+        res = C.x0_volume_liquid(model, _T, _z)*u"m^3"
+        return uconvert(output, res)
+    end
+end
+
+# x0_volume_solid with a default value for z
+function C.x0_volume_solid(model::Clapeyron.AnalyticalSLVModel, T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
+    st = standarize(model,-1,T,z)
+    _,_T,_z = state_to_pt(model,st)
+    res = C.x0_volume_solid(model, _T, _z)*u"m^3"
+    return uconvert(output, res)
+end
+
+# x0_volume_solid without a default value for z
+function C.x0_volume_solid(model::EoSModel, T::Unitful.Temperature, z; output=u"m^3")
+    st = standarize(model,-1,T,z)
+    _,_T,_z = state_to_pt(model,st)
+    res = C.x0_volume_solid(model, _T, _z)*u"m^3"
+    return uconvert(output, res)
+end
+
 end #module
