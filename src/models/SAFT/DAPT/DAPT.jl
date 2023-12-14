@@ -38,7 +38,6 @@ end
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 - `theta_c`: Association Parameter (`Float64`)
 
 ## Model Parameters
@@ -49,7 +48,6 @@ end
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume
 - `theta_c`: Association Parameter (`Float64`)
 
 ## Input models
