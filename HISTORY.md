@@ -66,7 +66,7 @@ julia> model.params.bondvol[("water","a"),("water","b")]
 # v0.5.3
 
 ## New Features
-- Databases were standarized according to CAS. almost all components present in Clapeyron.jl databases are present in `@DB/properties/identifiers.csv`.
+- Databases were standardized according to CAS. almost all components present in Clapeyron.jl databases are present in `@DB/properties/identifiers.csv`.
 - COSMOSAC-2002 (`COSMOSAC02`),COSMOSAC-2010 (`COSMOSAC10`) and COSMOSAC-dispersion (`COSMOSACdsp`) can now read files from the NIST database found at https://github.com/usnistgov/COSMOSAC . to use those parameters, pass the keyword `use_nist_database = true`
 - New model: doubly association perturbation theory (`DAPT`)
 - New model: PCSAFT with association dependent hard sphere diameter (`ADPCSAFT`)
