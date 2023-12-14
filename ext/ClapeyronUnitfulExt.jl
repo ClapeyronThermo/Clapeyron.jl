@@ -43,7 +43,7 @@ function mw(model)
 end
 #handle pressure/volume/temp
 standarize(x::Number,st::Nothing) = x #default
-standarize(x::Unitful.Pressure,st::Nothing) = uconvert(u"Pa",x)
+standarize(x::Unitful.Pressure,st::Nothing) = ustrip(u"Pa",x)
 standarize(x::__VolumeKind,st::Nothing) = upreferred(x)
 standarize(x::Number,st::Unitful.Temperature) = x #default
 standarize(x::Unitful.Temperature,st::Unitful.Temperature) = ustrip(u"K",x)
@@ -76,8 +76,6 @@ total_volume(model,x::__MolDensity,z) = C.molecular_weight(model,z) / ustrip(x)
 total_volume(model,x::__MassVolume,z) = ustrip(x) * mass(model,z)
 total_volume(model,x::__MassDensity,z) = mass(model,z) / ustrip(x)
 
-_pressure(x::Number) = x
-_pressure(x::Unitful.Pressure) = ustrip(x)
 
 function state_to_vt(model,st::StdState)
     V = total_volume(model,st.x,st.z)
@@ -87,7 +85,7 @@ function state_to_vt(model,st::StdState)
 end
 
 function state_to_pt(model,st::StdState)
-    p = _pressure(st.x)
+    p = st.x
     T = st.T
     z = st.z
     return p,T,z
