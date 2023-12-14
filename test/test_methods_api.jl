@@ -105,8 +105,15 @@ end
     GC.gc()
 
     @testset "DE Algorithm" begin
-        method = DETPFlash(numphases=3)
-        @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.759674475174073 rtol = 1e-6
+        #VLLE eq
+        @test Clapeyron.tp_flash(system, p, T, z, DETPFlash(numphases = 3))[3] ≈ -6.759674475174073 rtol = 1e-6
+
+        #LLE eq with activities
+        act_system = UNIFAC(["water","cyclohexane","propane"])
+        flash0 = Clapeyron.tp_flash(act_system, p, T, [0.5,0.5,0.0], DETPFlash(equilibrium = :lle))
+        act_x0 = activity_coefficient(act_system, p, T, flash0[1][1,:]) .* flash0[1][1,:]
+        act_y0 = activity_coefficient(act_system, p, T, flash0[1][2,:]) .* flash0[1][2,:]
+        @test Clapeyron.dnorm(act_x0,act_y0) < 0.01 #not the most accurate, but it is global
     end
     GC.gc()
 
@@ -193,22 +200,36 @@ end
         @test Clapeyron.dnorm(act_x3,act_y3) < 1e-8
 
         #test combinations of Activity + CompositeModel
-        system_cc = UNIFAC(["water", "hexane"],puremodel = CompositeModel)
+        system_fluid = CompositeModel(["water","ethanol"],gas = BasicIdeal, liquid = RackettLiquid, saturation = LeeKeslerSat)
+        system_cc  = CompositeModel(["water","ethanol"],liquid = UNIFAC,fluid = system_fluid)
         flash3 = tp_flash(system_cc, 101325, 303.15, [0.5, 0.5], alg2)
         act_x3 = activity_coefficient(system_cc, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
         act_y3 = activity_coefficient(system_cc, 101325, 303.15, flash3[1][2,:]) .* flash3[1][2,:]
         @test Clapeyron.dnorm(act_x3,act_y3) < 1e-8
 
         #running the vle part
-        model_vle = UNIFAC(["water", "ethanol"],puremodel = PCSAFT)
-        @test tp_flash(model_vle, 101325, 363.15, [0.5, 0.5], MichelsenTPFlash())[1] ≈
+        if hasfield(UNIFAC,:puremodel)
+            model_vle = UNIFAC(["water", "ethanol"],puremodel = PCSAFT)   
+        else
+            model_vle = CompositeModel(["water", "ethanol"],liquid = UNIFAC,fluid = PCSAFT)
+        end
+        flash4 =  tp_flash(model_vle, 101325, 363.15, [0.5, 0.5], MichelsenTPFlash())
+        #=@test flash4[1] ≈
         [0.6824441505154921 0.31755584948450793
-         0.3025308123759482 0.6974691876240517] rtol = 1e-6
+        0.3025308123759482 0.6974691876240517] rtol = 1e-6 
+        this was wrong, we were calculating the gas volume as the addition of partial pressures,
+        basically ideal gas.
+        =#
+
+        @test flash4[1] ≈
+        [0.7006206854062672 0.29937931459373285; 
+        0.43355504959745633 0.5664449504025437] rtol = 1e-6
+        #test equality of activities does not make sense in VLE
     end
 
     @testset "Michelsen Algorithm, CompositeModel" begin
         p,T,z = 101325.,85+273.,[0.2,0.8]
-        system = CompositeModel(["water","ethanol"]) #ideal gas + rackett + lee kesler saturation correlation
+        system = CompositeModel(["water","ethanol"],gas = BasicIdeal, liquid = RackettLiquid, saturation = LeeKeslerSat) #ideal gas + rackett + lee kesler saturation correlation
         @test Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash())[1] ≈
         [0.3618699659002134 0.6381300340997866
         0.17888243361092543 0.8211175663890746] rtol = 1e-6
@@ -216,7 +237,6 @@ end
         @test_throws ErrorException Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash(ss_iters = 0))
     end
 end
-
 
 @testset "Saturation Methods" begin
     model = PR(["water"])
@@ -425,7 +445,7 @@ end
 
 @testset "Solid Phase Equilibria" begin
     @testset "Solid-Liquid Equilibria" begin
-        model = CompositeModel([("1-decanol",["CH3"=>1,"CH2"=>9,"OH (P)"=>1]),("thymol",["ACCH3"=>1,"ACH"=>3,"ACOH"=>1,"ACCH"=>1,"CH3"=>2])];liquid=UNIFAC,solid=SolidHfus,saturation=nothing)
+        model = CompositeModel([("1-decanol",["CH3"=>1,"CH2"=>9,"OH (P)"=>1]),("thymol",["ACCH3"=>1,"ACH"=>3,"ACOH"=>1,"ACCH"=>1,"CH3"=>2])];liquid=UNIFAC,solid=SolidHfus)
         T = 275.
         p = 1e5
         s1 = sle_solubility(model,p,T,[1.,1.];solute=["1-decanol"])
@@ -438,7 +458,7 @@ end
     end
    
     @testset "Solid-Liquid-Liquid Equilibria" begin
-        model = CompositeModel(["water","ethanol",("ibuprofen",["ACH"=>4,"ACCH2"=>1,"ACCH"=>1,"CH3"=>3,"COOH"=>1,"CH"=>1])];liquid=UNIFAC,solid=SolidHfus,saturation=nothing)
+        model = CompositeModel(["water","ethanol",("ibuprofen",["ACH"=>4,"ACCH2"=>1,"ACCH"=>1,"CH3"=>3,"COOH"=>1,"CH"=>1])];liquid=UNIFAC,solid=SolidHfus)
         p = 1e5
         T = 323.15
         (s1,s2) = slle_solubility(model,p,T)
