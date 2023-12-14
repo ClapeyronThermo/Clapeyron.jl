@@ -156,14 +156,14 @@ end
 """
     isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
 
-Default units: `[J/T]`
-     
+Default units: `[J/K]`
+
 Calculates the isochoric heat capacity, defined as:
 
 ```julia
 Cv = -T * ∂²A/∂T²
 ```
-Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_isochoric_heat_capacity(model,V,T,z)`.
 
 The keywords `phase` and `threaded` are passed to the volume solver.
@@ -179,14 +179,14 @@ end
 """
     isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase = :unknown, threaded=true)
 
-Default units: `[J/T]`
-   
+Default units: `[J/K]`
+
 Calculates the isobaric heat capacity, defined as:
 
 ```julia
 Cp =  -T*(∂²A/∂T² - (∂²A/∂V∂T)^2 / ∂²A/∂V²)
 ```
-Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and 
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_isobaric_heat_capacity(model,V,T,z)`.
 
 The keywords `phase` and `threaded` are passed to the volume solver.
