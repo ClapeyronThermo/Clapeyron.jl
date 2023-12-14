@@ -108,7 +108,7 @@ function CPA(components;
         AssocParam("bondvol",components)
     end
     bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
-    packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
+    packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol, Mw)
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
@@ -145,25 +145,23 @@ p_scale(model::CPAModel,z=SA[1.0]) = p_scale(model.cubicmodel,z)
 
 function x0_crit_pure(model::CPAModel)
     lb_v = lb_volume(model)
-    return [1.0, log10(lb_v/0.3)]
+    return (1.0, log10(lb_v/0.3))
 end
 
 function a_res(model::CPAModel, V, T, z)
     n = sum(z)
-    ā,b̄,c̄ = cubic_ab(model.cubicmodel,V,T,z,n)
-    return a_res(model.cubicmodel,V,T,z) + a_assoc(model,V+c̄*n,T,z)
+    _data = cubic_ab(model.cubicmodel,V,T,z,n)
+    return a_res(model.cubicmodel,V,T,z,_data) + a_assoc(model,V+c̄*n,T,z,_data)
 end
 
 ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
 
-function Δ(model::CPAModel, V, T, z, i, j, a, b)
+function Δ(model::CPAModel, V, T, z, i, j, a, b, abc = cubic_ab(model.cubicmodel,V,T,z))
+    ā,b̄,c̄ = abc
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b] * 1e2/R̄
     βijab = model.params.bondvol.values[i,j][a,b] * 1e-3
-    Σz = sum(z)
     b = model.params.b.values
-    b̄ = dot(z,b,z)
-    η = b̄/(4*V*Σz)
+    η = sum(z)*b̄/(4*V)
     g = (1-η/2)/(1-η)^3
-    bij = (b[i,i]+b[j,j])/2
-    return g*(exp(ϵ_associjab/T)-1)*βijab*bij/N_A
+    return g*expm1(ϵ_associjab/T)*βijab*b[i,j]/N_A
 end
