@@ -129,14 +129,14 @@ for (fn,unit) in [
             st = standarize(model,v,T,z)
             _v,_T,_z = state_to_vt(model,st)
             res = C.$VT_fn(model, _v, _T,_z)*$unit
-            return uconvert(output, res)
+            return uconvert.(output, res)
         end
 
         function C.$fn(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=$unit, threaded=true)
             st = standarize(model,p,T,z)
             _p,_T,_z = state_to_pt(model,st)
             res = C.$fn(model, _p, _T, _z; phase, threaded)*($unit)
-            return uconvert(output, res)
+            return uconvert.(output, res)
         end
     end
 end
