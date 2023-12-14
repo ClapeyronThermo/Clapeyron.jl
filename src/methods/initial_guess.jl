@@ -104,7 +104,7 @@ Used in [`saturation_pressure`](@ref) methods that require initial volume guesse
 It can be overloaded to provide more accurate estimates if necessary.
 """
 function x0_sat_pure(model,T)
-    
+    z = SA[1.0]
     single_component_check(x0_sat_pure,model)
     
     #=theory as follows
@@ -117,8 +117,8 @@ function x0_sat_pure(model,T)
     =#
 
     R̄ = Rgas(model)
-    B = second_virial_coefficient(model,T,SA[1.0])
-    lb_v = lb_volume(model,SA[1.0])*one(T)
+    B = second_virial_coefficient(model,T,z)
+    lb_v = lb_volume(model,z)*one(T)
     #=
     some very complicated models, like DAPT, fail on the calculation of the second virial coefficient.
     while this is a numerical problem in the model itself, it is better to catch this early.
@@ -146,7 +146,7 @@ function x0_sat_pure(model,T)
 
     p = -0.25*R̄*T/B
     vl_x0 = x0_volume(model,p,T,z,phase=:l)
-    vl = _volume_compress(model,p,T,SA[1.0],vl_x0)
+    vl = _volume_compress(model,p,T,z,vl_x0)
 
     #=the basis is that p = RT/v-b - a/v2
     we have a (p,v,T) pair
