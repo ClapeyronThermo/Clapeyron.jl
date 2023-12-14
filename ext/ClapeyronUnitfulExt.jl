@@ -27,9 +27,6 @@ function standarize(model,x,T,z)
     return StdState(xs,ts,zs)
 end
 
-#utility func
-_u0(x::T,val::V) where {T,V} = ustrip(uconvert(x,val))
-
 function mw(model)
     if C.has_groups(model)
         n = length(model)
@@ -49,17 +46,17 @@ standarize(x::Number,st::Nothing) = x #default
 standarize(x::Unitful.Pressure,st::Nothing) = uconvert(u"Pa",x)
 standarize(x::__VolumeKind,st::Nothing) = upreferred(x)
 standarize(x::Number,st::Unitful.Temperature) = x #default
-standarize(x::Unitful.Temperature,st::Unitful.Temperature) = _u0(u"K",x)
+standarize(x::Unitful.Temperature,st::Unitful.Temperature) = ustrip(u"K",x)
 
 #handle vector of compounds
 standarize(model,x::Number,st::Unitful.Amount) = C.SA[x]
-standarize(model,x::Unitful.Amount,st::Unitful.Amount) = C.SA[_u0(u"mol",x)]
+standarize(model,x::Unitful.Amount,st::Unitful.Amount) = C.SA[ustrip(u"mol",x)]
 standarize(model,x::AbstractVector{<:Number},st::Unitful.Amount) = x
-standarize(model,x::AbstractVector{<:Unitful.Amount},st::Unitful.Amount) = _u0.(u"mol",x)
+standarize(model,x::AbstractVector{<:Unitful.Amount},st::Unitful.Amount) = ustrip.(u"mol",x)
 #mass forms
-standarize(model,x::Unitful.Mass,st::Unitful.Amount) = C.SA[1000*_u0(u"kg",x)/mw(model)[1]]
+standarize(model,x::Unitful.Mass,st::Unitful.Amount) = C.SA[1000*ustrip(u"kg",x)/mw(model)[1]]
 function standarize(model,x::AbstractVector{<:Unitful.Mass},st::Unitful.Amount)
-    return map(y -> 1000*_u0(u"kg",y[1])/y[2],zip(x,mw(model)))
+    return map(y -> 1000*ustrip(u"kg",y[1])/y[2],zip(x,mw(model)))
 end
 
 function mass(model,z)
