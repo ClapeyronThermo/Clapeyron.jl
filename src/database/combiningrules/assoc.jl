@@ -106,8 +106,12 @@ function assoc_mix!(data,components,assoc_options = AssocOptions())
         data["bondvol"] = bondvol
         data["epsilon_assoc"] = epsilon_assoc
     else
-        data["bondvol"] = AssocParam("bondvol",components)
-        data["epsilon_assoc"] = AssocParam("epsilon_assoc",components)
+        x1 = get!(data,"bondvol") do 
+            AssocParam("bondvol",components) 
+        end
+        x2 = get!(data,"epsilon_assoc") do 
+            AssocParam("epsilon_assoc",components)
+        end
     end
     return data
 end
