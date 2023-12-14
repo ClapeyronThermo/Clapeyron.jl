@@ -230,7 +230,7 @@ end
 
 function compile_assoc(name,components,raw::RawParam,site_strings,options)
     EMPTY_STR = ""
-    _ijab = standarize_comp_info(raw.component_info,components,site_strings)
+    _ijab = standardize_comp_info(raw.component_info,components,site_strings)
     unique_sitepairs = unique(raw.component_info)
     l = length(unique_sitepairs)
     unique_dict = Dict{NTuple{4,String},Int}(unique_sitepairs[i] => i for i in 1:l)
@@ -266,7 +266,7 @@ function compile_assoc(name,components,raw::CSVType,site_strings,options)
 end
 
 #Sort site tape, so that components are sorted by the input.
-function standarize_comp_info(component_info,components,site_strings)
+function standardize_comp_info(component_info,components,site_strings)
     ijab = Vector{Tuple{Int,Int,Int,Int}}(undef,length(component_info))
     l = length(components)
     for (i,val) ∈ pairs(component_info)

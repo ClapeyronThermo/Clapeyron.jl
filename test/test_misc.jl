@@ -195,6 +195,9 @@ end
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
         @testset "ambiguities" begin
             ambiguities = Test.detect_ambiguities(Clapeyron)
+            if !isempty(ambiguities)
+                foreach(display, ambiguities)
+            end
             @test length(ambiguities) == 0
         end
     end

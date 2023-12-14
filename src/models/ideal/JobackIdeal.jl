@@ -1,6 +1,6 @@
 
 #TODO
-# - standarize chemical group notation to make it the same as SAFTgammaMie
+# - standardize chemical group notation to make it the same as SAFTgammaMie
 # - add a database of group Mw
 
 struct JobackIdealParam <: EoSParam
