@@ -17,23 +17,32 @@ function obj_sublimation_pressure(model::CompositeModel,F,T,vs,vv,p̄,T̄)
     return F
 end
 
+"""
+    psub,vs,vv = sublimation_pressure(model::CompositeModel,T;v0=x0_sublimation_pressure(model,T))
+
+Calculates the sublimation pressure of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure.
+You can pass a tuple of initial values for the volumes `(vs0,vv0)`.
+
+returns:
+- Sublimation Pressure [`Pa`]
+- Sublimation solid volume at specified temperature [`m³`]
+- Sublimation vapour volume at specified temperature [`m³`]
+"""
+
 function sublimation_pressure(model::CompositeModel,T;v0=x0_sublimation_pressure(model,T))
     T̄ = T_scale(model.fluid)
     p̄ = p_scale(model.fluid)
-
+    V0 = vec2(log(v0[1]),log(v0[2]),T)
     f!(F,x) = obj_sublimation_pressure(model,F,T,exp10(x[1]),exp10(x[2]),p̄,T̄)
-
-    results = Solvers.nlsolve(f!,v0)
-
+    results = Solvers.nlsolve(f!,V0)
     x = Solvers.x_sol(results)
-
-    vs = exp10(x[1])
-    vv = exp10(x[2])
+    vs = exp(x[1])
+    vv = exp(x[2])
     return pressure(model.fluid, vv, T), vs, vv
 end
 
 function x0_sublimation_pressure(model,T)
-    vs0 = log10(lb_volume(model.solid)*6*1.05/π)
-    vv0 = log10(lb_volume(model.fluid)*6*1.25/π)
-    return [vs0,vv0]
+    vs0 = lb_volume(model.solid)*6*1.05/π
+    vv0 = lb_volume(model.fluid)*6*1.25/π
+    return (vs0,vv0)
 end
