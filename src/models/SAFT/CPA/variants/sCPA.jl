@@ -114,14 +114,13 @@ function sCPA(components;
     return model
 end
 
-function Δ(model::sCPAModel, V, T, z, i, j, a, b)
+function Δ(model::sCPAModel, V, T, z, i, j, a, b,abc = cubic_ab(model.cubicmodel,V,T,z)))
+    ā,b̄,c̄ = abc
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b] * 1e2/R̄
     βijab = model.params.bondvol.values[i,j][a,b] * 1e-3
-    Σz = ∑(z)
     b = model.params.b.values
-    b̄ = dot(z,b,z)/(Σz*Σz)
-    η = b̄*Σz/(4*V)
+    η = b̄*sum(z)/(4*V)
     g = (1-1.9η)^-1
     bij = (b[i,i]+b[j,j])/2
-    return g*(exp(ϵ_associjab/T)-1)*βijab*bij/N_A
+    return g*expm1(ϵ_associjab/T)*βijab*bij/N_A
 end
