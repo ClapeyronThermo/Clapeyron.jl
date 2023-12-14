@@ -185,6 +185,14 @@ function C.saturation_pressure(model::EoSModel, T::Unitful.Temperature; output=(
     return (_P_sat,_v_l,_v_v)
 end
 
+function C.saturation_temperature(model::EoSModel, p::Unitful.Pressure; output=(u"K", u"m^3", u"m^3"))
+    (T_sat, v_l, v_v) = C.saturation_temperature(model, standarize(p, nothing))
+    _T_sat = uconvert(output[1],T_sat*u"K")
+    _v_l = uconvert(output[2],v_l*u"m^3")
+    _v_v = uconvert(output[3],v_v*u"m^3")
+    return (_T_sat,_v_l,_v_v)
+end
+
 function C.fugacity_coefficient(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, threaded=true)
     st = standarize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
