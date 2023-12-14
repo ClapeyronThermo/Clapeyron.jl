@@ -207,6 +207,15 @@ function C.volume_virial(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temper
     return uconvert(output, res)
 end
 
+# resolve ambiguity
+function C.chemical_potential(model::(C.SolidHfusModel), p::Unitful.Pressure, T::Unitful.Temperature, z; output=u"J/mol")
+    st = standardize(model,p,T,z)
+    _p,_T,_z = state_to_pt(model,st)
+    res = C.chemical_potential(model, _p, _T, _z)*u"J/mol"
+    return uconvert.(output, res)
+end
+
+
 # x0_psat fallback method
 function C.x0_psat(model::EoSModel, T::Unitful.Temperature, Tc::Unitful.Temperature, Vc::__VolumeKind; output=u"Pa")
     st = standardize(model, Vc, T, SA[1.])
