@@ -2,7 +2,7 @@
     EOS_LNG::MultiFluid
     EOS_LNG(components::Vector{String};Rgas = 8.314472,verbose = false)
 
-## Imput Parameters
+## input Parameters
 
 None
 

@@ -10,7 +10,7 @@
         verbose = false,
         )
 
-## Imput Parameters
+## input Parameters
 
 - CoolProp JSON pure fluid files
 

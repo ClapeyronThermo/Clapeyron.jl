@@ -208,7 +208,7 @@ function gradient_type(V,T,z::StaticArray)
     return StaticArrays.similar_type(z,μ)
 end
 
-function gradient_type(V,T,z::Vector)
+function gradient_type(V,T,z::AbstractVector)
     μ = typeof(V+T+first(z))
     return Vector{μ}
 end
@@ -263,6 +263,9 @@ Sets the model "l-values" binary interaction parameter to the input matrix `l`. 
 
 """
 set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting k-values"))
+
+export get_k,set_k!
+export get_l,set_l!
 
 include("initial_guess.jl")
 include("differentials.jl")
