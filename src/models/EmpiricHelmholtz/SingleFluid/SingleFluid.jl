@@ -245,10 +245,11 @@ function Base.show(io::IO,mime::MIME"text/plain",model::SingleFluidIdeal)
     show_multiparameter_coeffs(io,model.ideal)
 end
 
-function x0_sat_pure(model::SingleFluid,T,z=SA[1.0])
+function x0_sat_pure(model::SingleFluid,T)
+    z=SA[1.0]
     gas_ancillary = model.ancillaries.fluid.gas
     vv = volume(gas_ancillary,0.0,T,z)
-    vl = x0_volume_liquid(model,T,z)
+    vl = x0_volume_liquid(model,T,)
     return (vl,vv)
 end
 

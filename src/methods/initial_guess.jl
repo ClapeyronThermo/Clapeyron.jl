@@ -98,12 +98,12 @@ antoine_coef(model) = nothing
 
 
 """
-    x0_sat_pure(model::EoSModel,T,z=SA[1.0])
+    x0_sat_pure(model::EoSModel,T)
 Returns a 2-tuple corresponding to `(Vₗ,Vᵥ)`, where `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses.
 Used in [`saturation_pressure`](@ref) methods that require initial volume guesses.
 It can be overloaded to provide more accurate estimates if necessary.
 """
-function x0_sat_pure(model,T,z=SA[1.0])
+function x0_sat_pure(model,T)
     
     single_component_check(x0_sat_pure,model)
     
