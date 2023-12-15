@@ -3,8 +3,6 @@ struct EoSVirial2{I,T} <: SecondVirialModel
     model::T
 end
 
-@registermodel EoSVirial2
-
 """
     EoSVirial2 <: SecondVirialModel
     EoSVirial2(model;idealmodel = idealmodel(model))

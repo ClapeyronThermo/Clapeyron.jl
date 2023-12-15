@@ -13,7 +13,7 @@ Correlation models are, as their name says, fitted equations that express one pr
 
 # Saturation Correlations
 
-Saturation Correlations are any [`EoSModel`](@ref) that are subtypes of [`SaturationModel`](@ref). return `psat(T)` and the upper limit `(Tc,Pc)` pair. To define saturation correlations, you need to overload:
+Saturation Correlations are any `EoSModel` that are subtypes of [`SaturationModel`](@ref). return `psat(T)` and the upper limit `(Tc,Pc)` pair. To define saturation correlations, you need to overload:
 
 ```julia
 function crit_pure(model::MySaturationModel <: SaturationModel)
@@ -36,8 +36,14 @@ Clapeyron.DIPPR101Sat
 ```
 
 # Liquid Volume Correlations
-Liquid Volume Correlations are any [`EoSModel`](@ref) that are subtypes of [`LiquidVolumeModel`](@ref). 
+Liquid Volume Correlations are any `EoSModel` that are subtypes of `LiquidVolumeModel`. 
 They return `volume(model,p,T,z, phase = :liquid)`.
+
+```@docs
+RackettLiquid
+YamadaGunnLiquid
+COSTALD
+```
 
 # Virial Models
 
@@ -51,4 +57,12 @@ To implement a virial model, it is necessary to overload `Clapeyron.second_viria
 AbbottVirial
 TsonopoulosVirial
 EoSVirial2
+```
+
+# Solid Models
+
+Solid models provide simple approximations to the excess chemical potential in the solid phase. Intended to be used in conjuction with a liquid model within a CompositeModel
+
+```@docs
+SolidHfus
 ```

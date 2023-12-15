@@ -142,7 +142,7 @@ function f_hess(model,V,T,z)
     f(w) = eos(model,first(w),last(w),z)
     V,T = promote(V,T)
     VT_vec = SVector(V,T)
-    return ForwardDiff.hessian(f,VT_vec)
+    return Solvers.hessian(f,VT_vec)
 end
 
 """

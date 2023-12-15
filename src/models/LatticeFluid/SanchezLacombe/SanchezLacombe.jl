@@ -18,8 +18,6 @@ struct SanchezLacombe{T <: SLMixingRule,I<:IdealModel} <:SanchezLacombeModel
     idealmodel::I
     references::Array{String,1}
 end
-@registermodel SanchezLacombe
-
 
 """
     SanchezLacombe(components::Vector{String}; 
@@ -70,7 +68,7 @@ function SanchezLacombe(components;
     userlocations=String[], 
     ideal_userlocations=String[], 
     mixing_userlocations = String[],
-    verbose=false, kwargs...)
+    verbose=false)
     params = getparams(components, ["LatticeFluid/SanchezLacombe","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     
     segment = params["segment"]

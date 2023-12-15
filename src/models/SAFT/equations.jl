@@ -10,6 +10,15 @@ function x0_crit_pure(model::SAFTModel)
     (2.0, log10(lb_v/0.3))
 end
 
+function saft_lorentz_berthelot(params)
+    k = get(params,"k",nothing)
+    l = get(params,"l",nothing)
+    sigma,epsilon = params["sigma"],params["epsilon"]
+    params["sigma"] = sigma_LorentzBerthelot(sigma, l)
+    params["epsilon"] = epsilon_LorentzBerthelot(epsilon, k)
+    return params
+end
+
 function T_scale(model::SAFTModel,z=SA[1.0])
     ϵ = model.params.epsilon.values
     return prod(ϵ[i,i]^z[i] for i in 1:length(z))^(1/sum(z))
@@ -36,7 +45,7 @@ end
 
 ## Association overloads required to support association
 
-@inline function assoc_similar(model::Union{SAFTModel,CPAModel},::Type{𝕋}) where 𝕋
+@inline function assoc_similar(model::EoSModel,::Type{𝕋}) where 𝕋
     assoc_similar(model.params.bondvol.values,𝕋)
 end
 

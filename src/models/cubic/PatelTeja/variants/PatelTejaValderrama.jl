@@ -12,9 +12,8 @@ struct PTV{T <: IdealModel,α,c,γ} <:PTVModel
     references::Array{String,1}
 end
 
-@registermodel PTV
 """
-    PTV(components::Vector{String};
+    PTV(components;
     idealmodel=BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
@@ -67,6 +66,39 @@ Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
 Δ₂ =  -(ϵ - √δ)/2
 ```
 
+## Model Construction Examples
+```julia
+# Using the default database
+model = PTV("water") #single input
+model = PTV(["water","ethanol"]) #multiple components
+model = PTV(["water","ethanol"], idealmodel = ReidIdeal) #modifying ideal model
+model = PTV(["water","ethanol"],alpha = TwuAlpha) #modifying alpha function
+model = PTV(["water","ethanol"],translation = RackettTranslation) #modifying translation
+model = PTV(["water","ethanol"],mixing = KayRule) #using another mixing rule
+model = PTV(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced EoS+gᴱ mixing rule
+
+# Passing a prebuilt model
+
+my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
+model =  PTV(["ethane","butane"],alpha = my_alpha)
+
+# User-provided parameters, passing files or folders
+model = PTV(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])
+
+# User-provided parameters, passing parameters directly
+
+model = PTV(["neon","hydrogen"];
+        userlocations = (;Tc = [44.492,33.19],
+                        Pc = [2679000, 1296400],
+                        Vc = [4.25e-5, 6.43e-5],
+                        Mw = [20.17, 2.],
+                        acentricfactor = [-0.03,-0.21]
+                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        l = [0. 0.01; 0.01 0.])
+                    )
+```
+
+
 ## References
 
 1. Valderrama, J. O. (1990). A generalized Patel-Teja equation of state for polar and nonpolar fluids and their mixtures. Journal of Chemical Engineering of Japan, 23(1), 87–91. [doi:10.1252/jcej.23.87](https://doi.org/10.1252/jcej.23.87)
@@ -75,7 +107,7 @@ Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
 PTV
 
 export PTV
-function PTV(components::Vector{String}; idealmodel=BasicIdeal,
+function PTV(components; idealmodel=BasicIdeal,
     alpha = PTVAlpha,
     mixing = vdW1fRule,
     activity=nothing,
@@ -86,7 +118,9 @@ function PTV(components::Vector{String}; idealmodel=BasicIdeal,
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-     verbose=false)
+    verbose=false)
+    
+    formatted_components = format_components(components)
     params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = get(params,"k",nothing)
     l = get(params,"l",nothing)
@@ -94,16 +128,17 @@ function PTV(components::Vector{String}; idealmodel=BasicIdeal,
     Vc = params["Vc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
+    acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components)))
-    b = PairParam("b",components,zeros(length(components)))
-    c = PairParam("c",components,zeros(length(components)))
+    a = PairParam("a",formatted_components,zeros(length(Tc)))
+    b = PairParam("b",formatted_components,zeros(length(Tc)))
+    c = PairParam("c",formatted_components,zeros(length(Tc)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PTVParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1252/jcej.23.87"]
-    model = PTV(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = PTV(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end

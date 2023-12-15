@@ -15,7 +15,7 @@ end
 
 Equivalent to `norm((xi-yi for (xi, yi) in zip(x, y)), p)`
 """
-function dnorm(x,y,p)
+function dnorm(x,y,p = 2)
     return norm((xi-yi for (xi, yi) in zip(x, y)), p)
 end
 
@@ -60,8 +60,8 @@ function doi2bib(doi::String)
 
     headers = ["Accept"=>"application/x-bibtex",
                 "charset" => "utf-8",
-                "User-Agent" => "https://github.com/ypaul21/Clapeyron.jl"]
-    
+                "User-Agent" => "https://github.com/ClapeyronThermo/Clapeyron.jl"]
+
     url = "https://api.crossref.org/v1/works/" * doi * "/transform"
     out = IOBuffer()
     try
@@ -69,8 +69,8 @@ function doi2bib(doi::String)
             Downloads.request(url, output = out, method = "GET",headers = headers)
         end
         if r.status == 200
-            res = String(take!(out))
-        else  
+            res = strip(String(take!(out)))
+        else
             res =  ""
         end
         DOI2BIB_CACHE[doi] = res
@@ -81,3 +81,46 @@ function doi2bib(doi::String)
         return ""
     end
 end
+
+"""
+    evalexppoly(x,n,v)
+
+Returns ∑nᵢx^vᵢ.
+"""
+function evalexppoly(x,n,v)
+    res = zero(x*first(n)*first(v))
+    logx = log(x)
+    for i in 1:length(n)
+        res += n[i]*exp(logx*v[i])
+    end
+    return res
+end
+
+function cached_indexin(a, b, bdict)
+    inds = keys(b)
+    #bdict = Dict{eltype(b),eltype(inds)}()
+    empty!(bdict)
+    for (val, ind) in zip(b, inds)
+        get!(bdict, val, ind)
+    end
+    return Union{eltype(inds), Nothing}[
+        get(bdict, i, nothing) for i in a
+    ]
+end
+
+format_components(str::String) = [str]
+format_components(str::Tuple) = format_components(first(str))
+format_components(str::Pair) = format_components(first(str))
+format_components(str::AbstractString) = String(str)
+format_components(str::Vector{String}) = str
+format_components(str) = map(format_component_i,str)
+format_component_i(str::AbstractString) = String(str)
+format_component_i(str::String) = str
+format_component_i(x::Tuple) = first(x)
+format_component_i(x::Pair) = first(x)
+
+format_gccomponents(str::Tuple) = [str]
+format_gccomponents(str::Pair) = [str]
+format_gccomponents(str) = str
+
+#used by MultiComponentFlash extension

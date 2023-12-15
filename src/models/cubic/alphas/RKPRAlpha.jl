@@ -1,8 +1,6 @@
 abstract type RKPRAlphaModel <: AlphaModel end
 
-struct RKPRAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+const RKPRAlphaParam = SimpleAlphaParam
 
 @newmodelsimple RKPRAlpha RKPRAlphaModel RKPRAlphaParam
 export RKPRAlpha
@@ -10,8 +8,8 @@ export RKPRAlpha
 """
     RKPRAlpha <: RKPRAlphaModel
     
-    RKPRAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    RKPRAlpha(components;
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -27,17 +25,25 @@ Cubic alpha `(α(T))` model. Default for [`RKPR`](@ref) EoS.
 kᵢ = (12.504Zc -2.7238) + (7.4513*Zc + 1.9681)ωᵢ + (-2.4407*Zc + 0.0017)ωᵢ^2
 Trᵢ = T/Tcᵢ
 ```
+
+## Model Construction Examples
+```
+# Using the default database
+alpha = RKPRAlpha("water") #single input
+alpha = RKPRAlpha(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = RKPRAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/acentric.csv"])
+
+# Passing parameters directly
+alpha = RKPRAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
+```
 """
 RKPRAlpha
+default_locations(::Type{RKPRAlpha}) = critical_data()
 
-function RKPRAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = RKPRAlphaParam(acentricfactor)
-    model = RKPRAlpha(packagedparams, verbose=verbose)
-    return model
-end
-#ideally, k should be fitted to Tr = 0.7
 function α_function(model::CubicModel,V,T,z,alpha_model::RKPRAlphaModel)
     Tc = model.params.Tc.values
     Pc = model.params.Pc.values
@@ -70,4 +76,3 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::RKPRAlphaM
     ki = evalpoly(ω,(12.504*Zc -2.7238,7.4513*Zc + 1.9681,-2.4407*Zc + 0.0017))
     return (3/(2 + Tr))^ki
 end
-

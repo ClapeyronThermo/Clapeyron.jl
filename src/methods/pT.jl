@@ -329,14 +329,27 @@ function fugacity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, th
     V = volume(model,p,T,z;phase,threaded)
     μ_res = VT_chemical_potential_res(model,V,T,z)
     φ = μ_res
+    R̄ = Rgas(model)
     Z = p*V/R̄/T/sum(z)
     return exp.(μ_res ./ R̄ ./ T) ./ Z
+end
+
+function fugacity_coefficient!(φ,model::EoSModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
+    V = volume(model,p,T,z;phase,threaded)
+    φ = VT_chemical_potential_res!(φ,model,V,T,z)
+    R̄ = Rgas(model)
+    Z = p*V/R̄/T/sum(z)
+    φ ./= (R̄*T)
+    φ .= exp.(φ)
+    φ ./= Z
+    return φ
 end
 
 function activity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase = :unknown, threaded=true)
     pure   = split_model(model)
     μ_mixt = chemical_potential(model,p,T,z;phase,threaded)
     μ_pure = gibbs_free_energy.(pure,p,T;phase,threaded)
+    R̄ = Rgas(model)
     return exp.((μ_mixt .- μ_pure) ./ R̄ ./ T) ./z
 end
 
@@ -352,6 +365,7 @@ The keywords `phase` and `threaded` are passed to [`Clapeyron.volume`](@ref).
 """
 function compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase = :unknown,threaded=true)
     V = volume(model, p, T, z; phase=phase, threaded=threaded)
+    R̄ = Rgas(model)
     return p*V/(sum(z)*R̄*T)
 end
 
@@ -442,6 +456,7 @@ function excess(model::EoSModel,p,T,z,::typeof(gibbs_free_energy))
     g_mix = gibbs_free_energy(model,p,T,z)
     log∑z = log(sum(z))
     v = volume(model,p,T,z)
+    R̄ = Rgas(model)
     for i in 1:length(z)
         lnxi = R̄*T*(log(z[i]) - log∑z)
         g_mix -= z[i]*(gibbs_free_energy(pure[i],p,T) + lnxi)
@@ -462,6 +477,7 @@ g_solv = -R̄*T*log(K)
 where the first component is the solvent and second is the solute.
 """
 function gibbs_solvation(model::EoSModel,T)
+    binary_component_check(gibbs_solvation,model)
     pure = split_model(model)
     z = [1.0,1e-30]
     
@@ -471,9 +487,21 @@ function gibbs_solvation(model::EoSModel,T)
     φ_v = fugacity_coefficient(model,p,T,z;phase=:v)
     
     K = φ_v[2]*v_v/φ_l[2]/v_l
-    
+    R̄ = Rgas(model)
     return -R̄*T*log(K)
 end    
+
+function partial_property(model::EoSModel,p,T,z,property::ℜ;phase = :unknown,threaded=true) where {ℜ}
+    V = volume(model,p,T,z;phase,threaded)
+    return VT_partial_property(model,V,T,z,property)
+end
+
+#special dispatch for volume here
+function VT_partial_property(model::EoSModel,V,T,z,property::typeof(volume))
+    _,dpdv = p∂p∂V(model,V,T,z)
+    dpdni = VT_partial_property(model,V,T,z,pressure)
+    return -dpdni ./ dpdv
+end
 
 export entropy, chemical_potential, internal_energy, enthalpy, gibbs_free_energy
 export helmholtz_free_energy, isochoric_heat_capacity, isobaric_heat_capacity

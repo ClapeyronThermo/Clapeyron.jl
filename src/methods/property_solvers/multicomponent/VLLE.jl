@@ -5,7 +5,7 @@ function Obj_VLLE_pressure(model::EoSModel, F, T, v_l, v_ll, v_v, x, xx, y,ts,ps
     xx  = FractionVector(xx)
     n_c = length(model)
     μ_v = VT_chemical_potential(model,v_v,T,y)
-    
+    R̄ = Rgas(model)
     @inbounds for i in 1:n_c
         F[i] = -μ_v[i]/(R̄*ts[i])
         F[i+n_c] = -μ_v[i]/(R̄*ts[i])
@@ -146,19 +146,20 @@ function Obj_VLLE_temperature(model::EoSModel, F, p, T, v_l, v_ll, v_v, x, xx, y
     xx  = FractionVector(xx)
     n_c = length(model)
     μ_v = VT_chemical_potential(model,v_v,T,y)
-    
+    R̄ = Rgas(model)
+    Ts = sum(ts)/3
     @inbounds for i in 1:n_c
-        F[i] = -μ_v[i]/(R̄*ts[i])
-        F[i+n_c] = -μ_v[i]/(R̄*ts[i])
+        F[i] = -μ_v[i]/(R̄*Ts)
+        F[i+n_c] = -μ_v[i]/(R̄*Ts)
     end
 
     μ_l = VT_chemical_potential!(μ_v,model,v_l,T,x)
     @inbounds for i in 1:n_c
-        F[i] += μ_l[i]/(R̄*ts[i])
+        F[i] += μ_l[i]/(R̄*Ts)
     end
     μ_ll = VT_chemical_potential!(μ_l,model,v_ll,T,xx)
     @inbounds for i in 1:n_c
-        F[i+n_c] += (μ_ll[i])/(R̄*ts[i])
+        F[i+n_c] += (μ_ll[i])/(R̄*Ts)
     end
 
     p_l   = pressure(model,v_l,T,x)

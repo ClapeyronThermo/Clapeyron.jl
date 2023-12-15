@@ -1,17 +1,12 @@
-const DEFAULT_N_SITES = Dict{String,String}(
-    "e" => "n_e",
-    "e1" => "n_e1",
-    "e2" => "n_e2",
-    "H" => "n_H"
-)
+const DEFAULT_N_SITES = Dict{String,String}()
 
 const IGNORE_HEADERS = ["dipprnumber", "smiles", "cas"]
 
 """
     ParamOptions(;kwargs...)
 Struct containing all the options related to parameter parsing:
-* `userlocations::Vector{String} = String[]`: List of used-defined locations to search.
-* `group_userlocations::Vector{String} = String[]`: List of used-defined group locations to search.
+* `userlocations = String[]`: List of used-defined locations to search.
+* `group_userlocations = String[]`: List of used-defined group locations to search.
 * `asymmetricparams::Vector{String} = String[]`: List of pair parameters that follow that `param[i,j] ≠ param[j,i]`. if not set on asymmetric pairs, the asymmetric values will be overwritten!
 * `ignore_headers::Vector{String} =  ["dipprnumber", "smiles"]`: List of ignored headers.
 * `ignore_missing_singleparams::Vector{String} = String[]`: List of parameters where checking for missing parameter values (in `SingleParam`) or the diagonal (on `PairParam`) are ignored.
@@ -24,9 +19,9 @@ Struct containing all the options related to parameter parsing:
 * `return_sites::Bool = true`: If set to false, association params will be ignored and sites will not be created, even if they exist in the list of locations.
 * `component_delimiter::String = "~|~"`: When there are multiple component names to match, seperate them by this delimiter.
 """
-Base.@kwdef struct ParamOptions
-    userlocations::Vector{String} = String[]
-    group_userlocations::Vector{String} = String[]
+Base.@kwdef struct ParamOptions{𝕌,𝔾}
+    userlocations::𝕌 = String[]
+    group_userlocations::𝔾 = String[]
     asymmetricparams::Vector{String}= String[]
     ignore_missing_singleparams::Vector{String} = String[]
     ignore_headers::Vector{String} = IGNORE_HEADERS

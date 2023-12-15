@@ -10,10 +10,10 @@ For Clapeyron 0.4.0, this will also hold the group type, tapes with different gr
 =#
 struct RawParam{T}
     name::String
-    component_info::Vector{NTuple{4,String}}  # "Tape" for component data (component1,component2,site1,site2)
+    component_info::Union{Vector{NTuple{4,String}},Nothing}  # "Tape" for component data (component1,component2,site1,site2)
     data::Vector{T} # "Tape" of data
-    sources::Vector{String} # "Tape" of parsed sources
-    csv::Vector{String} # "Tape" of origin csv
+    sources::Union{Vector{String},Nothing} # "Tape" of parsed sources
+    csv::Union{Vector{String},Nothing} # "Tape" of origin csv
     type::CSVType #the type of data
     grouptype::Symbol #in the future, this could hold an "Options" type,generated per CSV
 end
@@ -122,7 +122,7 @@ it also builds empty params, if you pass a CSVType instead of a RawParam
 Base.@nospecialize
 
 function compile_param(components,name,raw::RawParam,site_strings,options)
-    if raw.type == singledata || raw.type == groupdata || raw.type == intragroupdata
+    if raw.type == singledata || raw.type == groupdata || raw.type == structgroupdata
         return compile_single(name,components,raw,options)
     elseif raw.type == pairdata
         return compile_pair(name,components,raw,options)
@@ -144,6 +144,11 @@ function compile_param(components,name,raw::CSVType,site_strings,options)
 end
 
 function compile_single(name,components,raw::RawParam,options)
+    
+    if isnothing(raw.component_info) #build from named tuple
+        return SingleParam(raw.name,components,raw.data)
+    end
+
     EMPTY_STR = ""
     l = length(components)
     L = eltype(raw)
@@ -156,7 +161,7 @@ function compile_single(name,components,raw::RawParam,options)
     sources = fill(EMPTY_STR,l)
     sources_csv = fill(EMPTY_STR,l)
     for (k,v,ss,sc) ∈ zip(raw.component_info,raw.data,raw.sources,raw.csv)
-        i = findfirst(==(k[1]),components)
+        i = findfirst(==(k[1]),components)::Int
         values[i] = v
         ismissingvals[i] = false
         sources[i] = ss
@@ -173,11 +178,17 @@ function compile_single(name,components,type::CSVType,options)
     if name ∈ options.ignore_missing_singleparams
         return SingleParam(name,components)
     else
-        error("cannot found any values for ", error_color(name), ".")
+        throw(MissingException("cannot found values of " * error_color(name) * " for all input components."))
     end
 end
 
 function compile_pair(name,components,raw::RawParam,options)
+    
+    if isnothing(raw.component_info) #build from named tuple
+        l = length(components)
+        return PairParam(raw.name,components,reshape(raw.data,(l,l)))
+    end
+    
     EMPTY_STR = ""
     symmetric = name ∉ options.asymmetricparams
     l = length(components)
@@ -192,9 +203,9 @@ function compile_pair(name,components,raw::RawParam,options)
     sources_csv = fill(EMPTY_STR,(l,l))
     for (k,v,ss,sc) ∈ zip(raw.component_info,raw.data,raw.sources,raw.csv)
         c1,c2,_,_ = k
-        i = findfirst(==(c1),components)
+        i = findfirst(==(c1),components)::Int
         #if the second component is null, it comes from a single param, then i = (i,i)
-        j = k[2] == "" ? i : findfirst(==(c2),components)
+        j::Int = k[2] == "" ? i : findfirst(==(c2),components)
         values[i,j] = v
         ismissingvals[i,j] = false
         sources[i,j] = ss
@@ -260,10 +271,10 @@ function standarize_comp_info(component_info,components,site_strings)
     l = length(components)
     for (i,val) ∈ pairs(component_info)
         c1,c2,s1,s2 = val
-        idx1 = findfirst(isequal(c1), components)
-        idx2 = findfirst(isequal(c2), components)
-        idx21 = findfirst(isequal(s1), site_strings[idx1])
-        idx22 = findfirst(isequal(s2), site_strings[idx2])
+        idx1 = findfirst(isequal(c1), components)::Int
+        idx2 = findfirst(isequal(c2), components)::Int
+        idx21 = findfirst(isequal(s1), site_strings[idx1])::Int
+        idx22 = findfirst(isequal(s2), site_strings[idx2])::Int
         if idx1 > idx2
             newval = (c2,c1,s2,s1)
             ijab[i] = (idx2,idx1,idx22,idx21)
@@ -291,8 +302,7 @@ values are zero, ∈ this case is ommited (can also be overrided)
 function is_valid_param(param::SingleParameter,options)
     missingvals = param.ismissingvalues
     if param.name ∉ options.ignore_missing_singleparams && any(missingvals)
-        vals = [ifelse(missingvals[i],missing,param.values[i]) for i ∈ 1:length(missingvals)]
-        error("Missing values exist ∈ single parameter ", error_color(param.name), ": ", vals, ".")
+        SingleMissingError(param)
     end
     return nothing
 end
@@ -300,10 +310,23 @@ end
 function is_valid_param(param::PairParameter,options)
     diag = diagvalues(param.ismissingvalues)
     if param.name ∉ options.ignore_missing_singleparams && !all(diag) && any(diag)
-        vals = [ifelse(diag[i],missing,param.values[i]) for i ∈ 1:length(diag)]
-        error("Partial missing values exist ∈ diagonal of pair parameter ",error_color(param.name), ": ", vals, ".")
+        PairMissingError(param)
     end
     return nothing
+end
+
+function SingleMissingError(param::SingleParameter)
+    missingvals = param.ismissingvalues
+    idx = findall(param.ismissingvalues)
+    comps = param.components[idx]
+    throw(MissingException(string("Missing values exist ∈ single parameter ", error_color(param.name), ": ", comps, ".")))
+end
+
+function PairMissingError(param::PairParameter)
+    diag = diagvalues(param.ismissingvalues)
+    idx = findall(diag)
+    comps = param.components[idx]
+    throw(MissingException(string("Partial missing values exist ∈ diagonal of pair parameter ",error_color(param.name), ": ", comps, ".")))
 end
 
 function is_valid_param(param::AssocParam,options)

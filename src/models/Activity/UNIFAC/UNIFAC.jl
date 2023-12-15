@@ -17,7 +17,7 @@ struct UNIFAC{c<:EoSModel} <: UNIFACModel
     unifac_cache::UNIFACCache
 end
 
-@registermodel UNIFAC
+default_locations(::Type{UNIFAC}) = ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]
 const modUNIFAC = UNIFAC
 export UNIFAC
 
@@ -65,6 +65,102 @@ Xₖ = (∑xᵢνᵢₖ)/v̄ for i ∈ components
 ## References
 1. Fredenslund, A., Gmehling, J., Michelsen, M. L., Rasmussen, P., & Prausnitz, J. M. (1977). Computerized design of multicomponent distillation columns using the UNIFAC group contribution method for calculation of activity coefficients. Industrial & Engineering Chemistry Process Design and Development, 16(4), 450–462. [doi:10.1021/i260064a004](https://doi.org/10.1021/i260064a004)
 2. Weidlich, U.; Gmehling, J. A modified UNIFAC model. 1. Prediction of VLE, hE, and.gamma..infin. Ind. Eng. Chem. Res. 1987, 26, 1372–1381.
+
+## List of groups available
+|Name      |Description            |
+|----------|-----------------------|
+|CH3       |Methyl group           |
+|CH2       |Methylene group        |
+|CH        |                       |
+|C         |                       |
+|CH2=CH    |                       |
+|CH=CH     |                       |
+|CH2=C     |                       |
+|CH=C      |                       |
+|ACH       |Aromatic CH            |
+|AC        |                       |
+|ACCH3     |                       |
+|ACCH2     |                       |
+|ACCH      |                       |
+|OH (P)    |Primary alcohol        |
+|CH3OH     |Methanol               |
+|H2O       |Water                  |
+|ACOH      |                       |
+|CH3CO     |Methyl ketone          |
+|CH2CO     |Methylene ketone       |
+|CHO       |                       |
+|CH3COO    |Acetate group          |
+|CH2COO    |                       |
+|HCOO      |                       |
+|CH3O      |Methoxy group          |
+|CH2O      |                       |
+|CHO       |                       |
+|THF       |Tetrahydrofuran        |
+|CH3NH2    |Methylamine            |
+|CH2NH2    |                       |
+|CHNH2     |                       |
+|CH3NH     |                       |
+|CH2NH     |                       |
+|CHNH      |                       |
+|CH3N      |                       |
+|CH2N      |                       |
+|ACNH2     |                       |
+|AC2H2N    |                       |
+|AC2HN     |                       |
+|AC2N      |                       |
+|CH3CN     |Acetonitrile           |
+|CH2CN     |                       |
+|COO       |Ester group            |
+|COOH      |Carboxylate group      |
+|HCOOH     |Formic acid            |
+|CH2CL     |                       |
+|CHCL      |                       |
+|CCL       |                       |
+|CH2CL2    |Dichloromethane        |
+|CHCL2     |                       |
+|CCL2      |                       |
+|CHCL3     |Chloroform             |
+|CCL3      |                       |
+|CCL4      |Carbon tetrachloride   |
+|ACCL      |                       |
+|CH3NO2    |Nitromethane           |
+|CH2NO2    |                       |
+|CHNO2     |                       |
+|ACNO2     |                       |
+|CS2       |Carbon disulfide       |
+|CH3SH     |Methanethiol           |
+|CH2SH     |                       |
+|FURFURAL  |Furfural               |
+|DOH       |                       |
+|I         |Iodine group           |
+|BR        |Bromine group          |
+|CH=-C     |                       |
+|C=-C      |                       |
+|DMSO      |Dimethyl sulfoxide     |
+|ACRY      |Acrylate               |
+|CL-(C=C)  |                       |
+|C=C       |                       |
+|ACF       |                       |
+|DMF       |Dimethylformamide      |
+|HCON(CH2)2|                       |
+|CF3       |                       |
+|CF2       |                       |
+|CF        |                       |
+|CY-CH2    |Cycloalkane group      |
+|CY-CH     |                       |
+|CY-C      |                       |
+|OH (S)    |Second hydroxyl group  |
+|OH (T)    |Tertiary hydroxyl group|
+|CY-CH2O   |                       |
+|TRIOXAN   |Trioxane               |
+|CNH2      |                       |
+|NMP       |N-Methylpyrrolidone    |
+|NEP       |                       |
+|NIPP      |                       |
+|NTBP      |                       |
+|CONH2     |                       |
+|CONHCH3   |                       |
+|CONHCH2  |                       |
 """
 UNIFAC
 
@@ -77,7 +173,11 @@ function UNIFAC(components;
 
     groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
 
-    params = getparams(groups, ["Activity/UNIFAC/UNIFAC_like.csv", "Activity/UNIFAC/UNIFAC_unlike.csv"]; userlocations=userlocations, asymmetricparams=["A","B","C"], ignore_missing_singleparams=["A","B","C"], verbose=verbose)
+    params = getparams(groups, default_locations(UNIFAC);
+                        userlocations=userlocations,
+                        asymmetricparams=["A","B","C"],
+                        ignore_missing_singleparams=["A","B","C"],
+                        verbose=verbose)
     A  = params["A"]
     B  = params["B"]
     C  = params["C"]
@@ -92,11 +192,128 @@ function UNIFAC(components;
 end
 
 function recombine_impl!(model::UNIFACModel)
-    recombine_unifac_cache!(model.unifac_cache,model.groups,model.params)
+    if hasfield(typeof(model),:unifac_cache)
+        recombine_unifac_cache!(model.unifac_cache,model.groups,model.params)
+    end
     recombine!(model.puremodel)
     return model
 end
 
+function Ψ(model::UNIFACModel,V,T,z)
+    A = model.params.A.values
+    B = model.params.B.values
+    C = model.params.C.values
+    return @. exp(-(A+B*T+C*T^2)/T)
+end
+
+excess_g_comb(model::UNIFACModel,p,T,z=SA[1.0]) = excess_g_comb_dormund(model,p,T,z)
+
+#flory-huggins(FH) + Staverman-Guggenheim (SG) contributions
+function excess_g_comb_dormund(model::UNIFACModel,p,T,z=SA[1.0])
+    _0 = zero(eltype(z))
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+    q_p = model.unifac_cache.q_p
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    Φpm = dot(q_p,z)*invn
+    G_comb = _0
+    for i ∈ @comps
+        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        Φpi = q_p[i]/Φpm #technically xi[i]q_p[i]/θpm, but it gets cancelled out (log(Φpi/xi))
+        zi = z[i]
+        G_comb += zi*log(Φpi) + 5*q[i]*zi*log(θi/Φi)
+    end
+    return G_comb*R̄*T
+end
+
+function excess_g_comb_original(model::UNIFACModel,p,T,z=SA[1.0])
+    _0 = zero(eltype(z))
+    r =model.unifac_cache.r
+    q =model.unifac_cache.q
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    G_comb = _0
+    for i ∈ @comps
+        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        zi = z[i]
+        G_comb += zi*log(Φi) + 5*q[i]*zi*log(θi/Φi)
+    end
+    return G_comb*R̄*T
+end
+
+
+#just Staverman-Guggenheim (SG) contribution, used for UMR
+function excess_g_SG(model::UNIFACModel,p,T,z)
+    _0 = zero(eltype(z))
+    r = model.unifac_cache.r
+    q = model.unifac_cache.q
+    n = sum(z)
+    invn = 1/n
+    Φm = dot(r,z)*invn
+    θm = dot(q,z)*invn
+    G_SG = _0
+    for i ∈ @comps
+        Φi = r[i]/Φm #technically xi[i]r[i]/Φm, but it gets cancelled out (log(θi/Φi))
+        θi = q[i]/θm #technically xi[i]q[i]/θm, but it gets cancelled out (log(θi/Φi))
+        G_SG += 5*q[i]*z[i]*log(θi/Φi)
+    end
+    return G_SG*R̄*T
+end
+
+# https://github.com/thermotools/thermopack/blob/main/doc/memo/UNIFAC/unifac.pdf
+function excess_g_res(model::UNIFACModel,p,T,z)
+    _0 = zero(T + first(z))
+    G_res = _0
+    V = _0
+    Ẽ = @f(Ψ)
+    v = model.groups.n_flattenedgroups
+    Q = model.params.Q.values
+    ∑vikQk = [dot(Q,vi) for vi in v]
+    #calculate Θ with the least amount of allocs possible
+    X = group_matrix(model.groups)*z
+    ∑XQ⁻¹ = 1/dot(X,Q)
+    X .*= Q
+    X .*= ∑XQ⁻¹
+    Θ = X
+    for i in @comps
+        ∑QkΔΛk = _0
+        vi = v[i]
+        ∑vikQk⁻¹ = 1/∑vikQk[i] # 1/(sum(vik * Qk for k in groups))
+        zi = z[i]
+        #iszero(zi) && continue #causes problems with AD
+        for k in @groups
+            Λk = _0
+            Λki = _0
+            for j in @groups
+                Ẽjk = Ẽ[j,k]
+                Λk += Ẽjk*Θ[j]
+                Θij = Q[j]*vi[j]
+                Λki += Ẽjk*Θij
+            end
+            Λki = Λki*∑vikQk⁻¹
+            Λk = log(Λk)
+            Λki = log(Λki)
+            ∑QkΔΛk += vi[k]*Q[k]*(Λk - Λki)
+        end
+        G_res +=zi*∑QkΔΛk
+    end
+    return -G_res*R̄*T
+end
+
+function excess_gibbs_free_energy(model::UNIFACModel,p,T,z)
+    g_comb = excess_g_comb(model,p,T,z)
+    g_res = excess_g_res(model,p,T,z)
+    return g_comb+g_res
+end
+
+#=
 function activity_coefficient(model::UNIFACModel,V,T,z)
     return exp.(@f(lnγ_comb)+ @f(lnγ_res))
 end
@@ -113,13 +330,15 @@ function lnγ_comb(model::UNIFACModel,V,T,z)
     return lnγ_comb
 end
 
+function excess_g_comb(model::UNIFACModel,p,T,z)
+    lnγ = lnγ_comb(model,p,T,z)
+    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
+end
+
 function lnγ_SG(model::UNIFACModel,V,T,z)
-
     x = z ./ sum(z)
-
     r =model.unifac_cache.r
     q =model.unifac_cache.q
-
     Φ = r/dot(x,r)
     θ = q/dot(x,q)
     lnγ_SG = @. -5*q*(log(Φ/θ)+(1-Φ/θ))
@@ -155,19 +374,13 @@ function lnΓi(model::UNIFACModel,V,T,z,ψ = @f(ψ))
     return lnΓi_
 end
 
-function Ψ(model::UNIFACModel,V,T,z)
-    A = model.params.A.values
-    B = model.params.B.values
-    C = model.params.C.values
-    return @. exp(-(A+B*T+C*T^2)/T)
+function excess_g_res(model::UNIFACModel,p,T,z)
+    lnγ = lnγ_res(model,p,T,z)
+    return sum(z[i]*R̄*T*lnγ[i] for i ∈ 1:length(model))
 end
 
 function excess_g_SG(model::UNIFACModel,p,T,z)
     lnγ = lnγ_SG(model,p,T,z)
     return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
-
-function excess_g_res(model::UNIFACModel,p,T,z)
-    lnγ = lnγ_res(model,p,T,z)
-    return sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
-end
+=#

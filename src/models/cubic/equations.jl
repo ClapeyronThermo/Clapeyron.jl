@@ -1,6 +1,5 @@
 abstract type AlphaModel <:EoSModel end
 abstract type TranslationModel <:EoSModel end
-abstract type MixingRule <:EoSModel end
 
 struct ABCubicParam <: EoSParam
     a::PairParam{Float64}
@@ -34,7 +33,7 @@ bᵢⱼ = (bᵢ + bⱼ)/2
 """
 function ab_premixing end
 
-function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = nothing) 
+function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = nothing)
     Ωa, Ωb = ab_consts(model)
     _Tc = model.params.Tc
     _pc = model.params.Pc
@@ -47,7 +46,7 @@ function ab_premixing(model::CubicModel,mixing::MixingRule,k = nothing, l = noth
     return a,b
 end
 
-function ab_premixing(model::CubicModel,kij::K,lij::L) where K <: Union{Nothing,PairParameter,AbstractMatrix} where L <: Union{Nothing,PairParameter,AbstractMatrix} 
+function ab_premixing(model::CubicModel,kij::K,lij::L) where K <: Union{Nothing,PairParameter,AbstractMatrix} where L <: Union{Nothing,PairParameter,AbstractMatrix}
     return ab_premixing(model,model.mixing,kij,lij)
 end
 
@@ -56,12 +55,12 @@ function ab_premixing(model::CubicModel,mixing::MixingRule,Tc,Pc,kij,lij)
     Ωa, Ωb = ab_consts(model)
     comps = Tc.components
     n = length(Tc)
-    a = PairParam("a",comps,zeros(n,n),)
+    a = PairParam("a",comps,zeros(n,n))
     b = PairParam("b",comps,zeros(n,n))
-    diagvalues(a) .= Ωa*R̄^2*_Tc^2/_pc
-    diagvalues(b) .= Ωb*R̄*_Tc/_pc
-    epsilon_LorentzBerthelot!(a,k)
-    sigma_LorentzBerthelot!(b,l)
+    diagvalues(a) .= @. Ωa*R̄^2*Tc^2/pc
+    diagvalues(b) .= @. Ωb*R̄*Tc/pc
+    epsilon_LorentzBerthelot!(a,kij)
+    sigma_LorentzBerthelot!(b,lij)
     return a,b
 end
 
@@ -103,6 +102,32 @@ function data(model::ABCubicModel, V, T, z)
     return n, ā, b̄, c̄
 end
 
+function cubic_get_k end
+function cubic_get_l end
+
+get_k(model::CubicModel) = cubic_get_k(model,model.mixing,model.params)
+get_l(model::CubicModel) = cubic_get_l(model,model.mixing,model.params)
+
+function set_k!(model::CubicModel,k)
+    n = length(model)
+    n2 = LinearAlgebra.checksquare(k)
+    if n != n2
+        incorrect_squarematrix_error(model,n2)
+    end
+    recombine_mixing!(model,model.mixing,k,nothing)
+    return nothing
+end
+
+function set_l!(model::CubicModel,l)
+    n = length(model)
+    n2 = LinearAlgebra.checksquare(l)
+    if n != n2
+        incorrect_squarematrix_error(model,n2)
+    end
+    recombine_mixing!(model,model.mixing,nothing,l)
+    return nothing
+end
+
 function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     n,ā,b̄,c̄ = _data
     Δ1,Δ2 = cubic_Δ(model,z)
@@ -117,7 +142,7 @@ function a_res(model::ABCubicModel, V, T, z,_data = data(model,V,T,z))
     else
         l1 = log1p(-Δ1*b̄ρt)
         l2 = log1p(-Δ2*b̄ρt)
-        return a₁ - ā*RT⁻¹*(l1-l2)/(ΔΔ*b̄) 
+        return a₁ - ā*RT⁻¹*(l1-l2)/(ΔΔ*b̄)
     end
 end
 
@@ -215,47 +240,28 @@ function crit_pure_tp(model::ABCCubicModel)
 end
 
 function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0=nothing)
-    lb_v   =lb_volume(model,z)
+    lb_v = lb_volume(model,z)
     if iszero(p)
         vl,_ = zero_pressure_impl(model,T,z)
         return vl
     end
     nRTp = sum(z)*R̄*T/p
     _poly,c̄ = cubic_poly(model,p,T,z)
-    sols = Solvers.roots3(_poly)
-    function imagfilter(x)
-        absx = abs(imag(x))
-        return absx < 8 * eps(typeof(absx))
-    end
-    x1, x2, x3 = sols
-    sols = (x1, x2, x3)
-    xx = (x1, x2, x3)
-    
-    isreal = imagfilter.(xx)
-    vvv = extrema(real.(xx))
-    zl,zg = vvv
+    num_isreal, zl, zg = Solvers.real_roots3(_poly)
     vvl,vvg = nRTp*zl,nRTp*zg
-    err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
-    
+    #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     if !isfinite(vvl) && !isfinite(vvg) && phase != :unknown
         V0 = x0_volume(model, p, T, z; phase)
         v = _volume_compress(model, p, T, z, V0)
-        isnan(v) && err()
+        #isnan(v) && err()
         return v
     end
-    if sum(isreal) == 3 #3 roots
+    if num_isreal == 3 # 3 real roots
         vg = vvg
         _vl = vvl
         vl = ifelse(_vl > lb_v, _vl, vg) #catch case where solution is unphysical
-    elseif sum(isreal) == 1
-        i = findfirst(imagfilter, sols)
-        vl = real(sols[i]) * nRTp
-        vg = real(sols[i]) * nRTp
-    elseif sum(isreal) == 0
-        V0 = x0_volume(model, p, T, z; phase)
-        v = _volume_compress(model, p, T, z, V0)
-        isnan(v) && err()
-        return v
+    else # 1 real root (or 2 with the second one degenerate)
+        vg = vl = zl * nRTp
     end
 
     function gibbs(v)
@@ -320,7 +326,6 @@ function x0_sat_pure(model::ABCubicModel, T)
 
     a, b, c = cubic_ab(model, 1 / sqrt(eps(float(T))), T)
     data = (1.0, a, b, c)
-  
     pc = model.params.Pc.values[1]
     zc = pure_cubic_zc(model)
     Δ1,Δ2 = cubic_Δ(model,SA[1.0])
@@ -336,8 +341,8 @@ function x0_sat_pure(model::ABCubicModel, T)
         vl = vl_p0*exp(_Δ)
         vv = volume_virial(B,pl0,T) - c
         return (vl, vv)
-    else 
-        vc = zc*R̄*Tc/pc - c 
+    else
+        vc = zc*R̄*Tc/pc - c
         pv0 = -0.25*R̄*T/B
         vl = vl_max
         pc = model.params.Pc.values[1]
@@ -385,12 +390,18 @@ vl = b + sqrt(0.5RTb3/2a) - c
 =#
 
 
-function wilson_k_values(model::ABCubicModel, p, T, crit = nothing)
+function wilson_k_values!(K,model::ABCubicModel, p, T, crit = nothing)
     Pc = model.params.Pc.values
     Tc = model.params.Tc.values
+    α = typeof(model.alpha)
+    w1 = getparam(model,:acentricfactor)
+    w2 = getparam(model.alpha,:acentricfactor)
 
-    if hasfield(typeof(model.alpha.params), :acentricfactor)
-        ω = model.alpha.params.acentricfactor.values
+    #we can find stored acentric factor values, so we calculate those
+    if w1 !== nothing
+        ω = w1.values
+    elseif w2 !== nothing
+        ω = w2.values
     else
         pure = split_model(model)
         ω = zero(Tc)
@@ -400,7 +411,8 @@ function wilson_k_values(model::ABCubicModel, p, T, crit = nothing)
         end
     end
 
-    return @. Pc / p * exp(5.373 * (1 + ω) * (1 - Tc / T))
+    return @.K .= Pc / p * exp(5.373 * (1 + ω) * (1 - Tc / T))
+
 end
 
 function vdw_tv_mix(Tc,Vc,z)

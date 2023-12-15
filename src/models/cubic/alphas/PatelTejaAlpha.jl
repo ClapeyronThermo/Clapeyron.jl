@@ -1,6 +1,4 @@
-struct PatelTejaAlphaParam <: EoSParam
-    acentricfactor::SingleParam{Float64}
-end
+const PatelTejaAlphaParam = SimpleAlphaParam
 
 @newmodelsimple PatelTejaAlpha SoaveAlphaModel PatelTejaAlphaParam
 export PatelTejaAlpha
@@ -8,8 +6,8 @@ export PatelTejaAlpha
 """
     PatelTejaAlpha <: SoaveAlphaModel
     
-    PatelTejaAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    PatelTejaAlpha(components;
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -25,15 +23,24 @@ Trᵢ = T/Tcᵢ
 mᵢ = 0.452413 + 1.30982ωᵢ - 0.295937ωᵢ^2
 ```
 
+## Model Construction Examples
+```
+# Using the default database
+alpha = PatelTejaAlpha("water") #single input
+alpha = PatelTejaAlpha(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+alpha = PatelTejaAlpha(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/acentric.csv"])
+
+# Passing parameters directly
+alpha = PatelTejaAlpha(["neon","hydrogen"];userlocations = (;acentricfactor = [-0.03,-0.21]))
+```
+
 """
 PatelTejaAlpha
+default_locations(::Type{PatelTejaAlpha}) = critical_data()
 
-function PatelTejaAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_ACENTRICFACTOR)
-    acentricfactor = params["acentricfactor"]
-    packagedparams = PatelTejaAlphaParam(acentricfactor)
-    model = PatelTejaAlpha(packagedparams, verbose=verbose)
-    return model
-end
 
 @inline α_m(model,::PatelTejaAlpha) = (0.452413,1.30982,-0.295937)

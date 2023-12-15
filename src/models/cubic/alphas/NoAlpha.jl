@@ -15,18 +15,17 @@ Cubic alpha `(α(T))` model. Default for [`vdW`](@ref) EoS
 ```
 αᵢ = 1 ∀ i
 ```
+
+## Model Construction Examples
+```
+# Because this model does not have parameters, all those constructors are equivalent:
+alpha = NoAlpha()
+alpha = NoAlpha("water")
+alpha = NoAlpha(["water","carbon dioxide"])
+```
 """
 NoAlpha
-
-function NoAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    model = NoAlpha(NoAlphaParam())
-    return model
-end
-
-NoAlpha() = NoAlpha(NoAlphaParam())
 
 function α_function(model::CubicModel,V,T,z,alpha_model::NoAlphaModel)
    return FillArrays.Ones{Float64}(length(z))
 end
-
-is_splittable(::NoAlpha) = false

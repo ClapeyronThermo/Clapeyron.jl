@@ -8,3 +8,14 @@ Untitled.ipynb
 Test.ipynb
 *.ipynb
 Manifest.toml
+docs/build/
+docs/site/
+*.jl.cov
+*.jl.*.cov
+*.jl.mem
+lcov.info
+LocalPreferences.toml
+*.ipynb
+/notebooks
+examples/Playground/*
+.DS_Store

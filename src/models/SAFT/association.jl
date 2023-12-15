@@ -29,7 +29,8 @@ end
 """
     assoc_strength(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
     Δ(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
-Calculates the asssociation strength between component `i` at site `a` and component `j` at site `b`. 
+Calculates the asssociation strength between component `i` at site `a` and component `j` at site `b`.
+
 Any precomputed values can be passed along by calling `Clapeyron.data`.
 ## Example
 ```julia-repl
@@ -122,7 +123,7 @@ function compute_index(idxs,i,a)::Int
 end
 
 function inverse_index(idxs,o)
-    i = findfirst(>=(o-1),idxs)
+    i = findfirst(>=(o-1),idxs)::Int
     a = o + 1 - idxs[i]
     return i,a
 end
@@ -148,13 +149,10 @@ end
 
 function assoc_site_matrix(model,V,T,z,data = nothing)
     options = assoc_options(model)
-    combining = options.combining
-    if combining == :sparse_nocombining
-        K = sparse_assoc_site_matrix(model,V,T,z,data)
-    else
-        K = dense_assoc_site_matrix(model,V,T,z,data)
+    if !options.dense
+        @warn "using sparse matrices for association is deprecated."
     end
-    return K
+    return dense_assoc_site_matrix(model,V,T,z,data)
 end
 
 function dense_assoc_site_matrix(model,V,T,z,data=nothing)
@@ -163,7 +161,8 @@ function dense_assoc_site_matrix(model,V,T,z,data=nothing)
     else
         delta = @f(Δ,data)
     end
-    _sites = model.sites.n_sites
+    sitesparam = getsites(model)
+    _sites = sitesparam.n_sites
     p = _sites.p
     ρ = N_A/V
 
@@ -173,7 +172,7 @@ function dense_assoc_site_matrix(model,V,T,z,data=nothing)
     _Δ= delta.values
     TT = eltype(_Δ)
 
-    _n = model.sites.n_sites.v
+    _n = sitesparam.n_sites.v
 
     nn = length(_n)
     K  = zeros(TT,nn,nn)
@@ -219,66 +218,8 @@ function dense_assoc_site_matrix(model,V,T,z,data=nothing)
         end
     end
 
-    return K
+    return K::Matrix{TT}
 end
-
-function sparse_assoc_site_matrix(model,V,T,z,data=nothing)
-    if data === nothing
-        delta = @f(Δ)
-    else
-        delta = @f(Δ,data)
-    end
-    _sites = model.sites.n_sites
-    p = _sites.p
-    ρ = N_A/V
-    _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
-    _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
-    _idx = 1:length(_ii)
-    _Δ= delta.values
-    TT = eltype(_Δ)
-    count = 0
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps
-        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
-        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            #ia = compute_index(pack_indices,i,a)
-            for idx ∈ _idx #iterating for all sites
-                ij = _ii[idx]
-                ab = _aa[idx]
-                issite(i,a,ij,ab) && (count += 1)
-            end
-        end
-    end
-    c1 = zeros(Int,count)
-    c2 = zeros(Int,count)
-    val = zeros(TT,count)
-    _n = model.sites.n_sites.v
-    count = 0
-    @inbounds for i ∈ 1:length(z) #for i ∈ comps
-        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
-        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
-            ia = compute_index(p,i,a)
-            for idx ∈ _idx #iterating for all sites
-                ij = _ii[idx]
-                ab = _aa[idx]
-                if issite(i,a,ij,ab)
-                    j = complement_index(i,ij)
-                    b = complement_index(a,ab)
-                    jb = compute_index(p,j,b)
-                    njb = _n[jb]
-                    count += 1
-                    c1[count] = ia
-                    c2[count] = jb
-                    val[count] = ρ*njb*z[j]*_Δ[idx]
-                end
-            end
-        end
-    end
-    K::SparseMatrixCSC{TT,Int} = sparse(c1,c2,val)
-    return K
-end
-#Mx = a + b(x,x)
-#Axx + x - 1 = 0
-#x = 1 - Axx
 
 function X end
 const assoc_fractions = X
@@ -286,7 +227,7 @@ const assoc_fractions = X
 """
     assoc_fractions(model::EoSModel, V, T, z,data = nothing)
 Returns the solution for the association site fractions. used internally by all models that require association.
-The result is of type `PackedVectorsOfVectors.PackedVectorOfVectors`, with `length = length(model)`, and `x[i][a]` representing the empty fraction of the site `a` at component `i` 
+The result is of type `PackedVectorsOfVectors.PackedVectorOfVectors`, with `length = length(model)`, and `x[i][a]` representing the empty fraction of the site `a` at component `i`
 ## Example:
 ```
 julia> model = PCSAFT(["water","methanol","ethane"],assoc_options = AssocOptions(combining = :esd))
@@ -306,12 +247,9 @@ function X(model::EoSModel, V, T, z,data = nothing)
     nn = assoc_pair_length(model)
     isone(nn) && return X_exact1(model,V,T,z,data)
     options = assoc_options(model)
-    if options.dense
-        K = dense_assoc_site_matrix(model,V,T,z,data)
-    else sparse_assoc_site_matrix
-        K = sparse_assoc_site_matrix(model,V,T,z,data)
-    end
-    idxs = model.sites.n_sites.p
+    K = assoc_site_matrix(model,V,T,z,data)
+    sitesparam = getsites(model)
+    idxs = sitesparam.n_sites.p
     Xsol = assoc_matrix_solve(K,options)
     return PackedVofV(idxs,Xsol)
 end
@@ -335,7 +273,7 @@ function assoc_matrix_solve(K, α, atol ,rtol, max_iters)
         f = true-Kmin
     end
     X0 = fill(f,n) #initial point
-    
+
     #
     #
     #=
@@ -359,45 +297,71 @@ function assoc_matrix_solve(K, α, atol ,rtol, max_iters)
 end
 
 #exact calculation of site non-bonded fraction when there is only one site
+
 function X_exact1(model,V,T,z,data=nothing)
     κ = model.params.bondvol.values
     i,j = κ.outer_indices[1]
     a,b = κ.inner_indices[1]
-
     if data === nothing
         _Δ = @f(Δ,i,j,a,b)
     else
         _Δ = @f(Δ,i,j,a,b,data)
     end
     _1 = one(eltype(_Δ))
-    idxs = model.sites.n_sites.p
-    n = length(model.sites.n_sites.v)
-    Xsol = fill(_1,n)
-    _X = PackedVofV(idxs,Xsol)
+    sitesparam = getsites(model)
+    idxs = sitesparam.n_sites.p
+    n = length(sitesparam.n_sites.v)
     ρ = N_A/V
     zi = z[i]
     zj = z[j]
-    ni = model.sites.n_sites[i]
+    ni = sitesparam.n_sites[i]
     na = ni[a]
-    nj = model.sites.n_sites[j]
+    nj = sitesparam.n_sites[j]
     nb = nj[b]
     ρ = N_A/V
     kia = na*zi*ρ*_Δ
     kjb = nb*zj*ρ*_Δ
-    #kia*x*x + x(kjb-kia+1) - 1 = 0
     _a = kia
-    _b = _1 -kia + kjb
+    _b = _1 - kia + kjb
     _c = -_1
-    xia = -2*_c/(_b + sqrt(_b*_b - 4*_a*_c))
-    xjb = _1/(1+kia*xia)
+    denom = _b + sqrt(_b*_b - 4*_a*_c)
+    xia = -2*_c/denom
+    xk_ia = kia*xia
+    xjb = (1- xk_ia)/(1 - xk_ia*xk_ia)
+    return pack_X_exact1(z,xia,xjb,i,j,a,b,n,idxs)
+end
+
+function pack_X_exact1(z,xia,xjb,i,j,a,b,n,idxs)
+    Xsol = fill(one(xia),n)
+    _X = PackedVofV(idxs,Xsol)
     _X[j][b] = xjb
     _X[i][a] = xia
     return _X
 end
+#=
+#Disabled. see #171
+function pack_X_exact1(z::SingleComp,xia,xjb,i,j,a,b,n,idxs)
+    if (i,a) == (j,b)
+        Xsol = SA[xia,xia]
+    elseif  (i,a) > (j,b)
+        Xsol = SA[xjb,xia]
+    else
+        Xsol = SA[xia,xjb]
+    end
+    _X = PackedVofV(idxs,Xsol)
+    return _X
+end =#
 
-function a_assoc_impl(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
+
+#helper function to get the sites. in almost all cases, this is model.sites
+#but SAFTgammaMie uses model.vrmodel.sites instead
+
+getsites(model) = model.sites
+
+function a_assoc_impl(model::EoSModel, V, T, z,X_)
     _0 = zero(first(X_.v))
-    n = model.sites.n_sites
+    sites = getsites(model)
+    n = sites.n_sites
     res = _0
     resᵢₐ = _0
     for i ∈ @comps
@@ -413,6 +377,59 @@ function a_assoc_impl(model::Union{SAFTModel,CPAModel}, V, T, z,X_)
         res += resᵢₐ*z[i]
     end
     return res/sum(z)
+end
+
+
+"""
+    @assoc_loop(Xold,Xnew,expr)
+Solves an association problem, given an expression for the calculation of the fraction of non-bonded sites `X`.
+The macro takes care of creating the appropiate shaped vectors, and passing the appropiate iteration parameters from `AssocOptions`
+Expects the following variable names in scope:
+- `model` : EoS Model used
+- `V`,`T`,`z` : Total volume, Temperature, mol amounts
+`Xold` and `Xnew` are Vectors of Vectors, that can be indexed by component and site (`X[i][a]`).
+## Example
+```julia
+function X(model::DAPTModel, V, T, z)
+    _1 = one(V+T+first(z))
+    σ = model.params.sigma.values[1][1]
+    θ_c = model.params.theta_c.values[1,1][2,1]
+    κ = (1 - cos(θ_c*π/180))^2/4
+    ε_as = model.params.epsilon_assoc.values[1,1][2,1]
+    f = exp(ε_as/(T))-1
+    ρ = N_A*∑(z)/V
+    Irc = @f(I)
+    Xsol = @association_loop X_old X_new for i ∈ @comps, a ∈ @sites(i)
+            X4 = (1-X_old[i][a])^4
+            c_A = 8*π*κ*σ^3*f*(ρ*X_old[i][a]*(Irc*(1-X4) + X4/(π*ρ*σ^3)) + 2*ρ*(X_old[i][a]^2)*((1 - X_old[i][a])^3)*(Irc - 1/(π*ρ*σ^3)) )
+            X_new[i][a] =1/(1+c_A)
+    end
+    return Xsol
+end
+```
+"""
+macro assoc_loop(Xold,Xnew,expr)
+    return quote
+        __sites = model.sites
+        idxs = __sites.n_sites.p
+        X0 = fill(one(V+T+first(z)),length(__sites.n_sites.v))
+
+        function x_assoc_iter!(__X_new_i,__X_old_i)
+            $Xold = PackedVofV(idxs,__X_old_i)
+            $Xnew = PackedVofV(idxs,__X_old_i)
+            $expr
+            return __X_new_i
+        end
+
+        options = model.assoc_options
+        atol = options.atol
+        rtol = options.rtol
+        max_iters = options.max_iters
+        α = options.dampingfactor
+
+        Xsol = Clapeyron.Solvers.fixpoint(x_assoc_iter!,X0,Clapeyron.Solvers.SSFixPoint(α),atol=atol,rtol = rtol,max_iters = max_iters)
+        Xsol
+    end |> esc
 end
 #=
 function AX!(output,input,pack_indices,delta::Compressed4DMatrix{TT,VV} ,modelsites,ρ,z) where {TT,VV}
@@ -470,4 +487,64 @@ x = 1/1+kiax
 x(1+kx) - 1 = 0
 kx2 +x - 1 = 0
 end
+=#
+
+#=
+function sparse_assoc_site_matrix(model,V,T,z,data=nothing)
+    if data === nothing
+        delta = @f(Δ)
+    else
+        delta = @f(Δ,data)
+    end
+    _sites = model.sites.n_sites
+    p = _sites.p
+    ρ = N_A/V
+    _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
+    _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
+    _idx = 1:length(_ii)
+    _Δ= delta.values
+    TT = eltype(_Δ)
+    count = 0
+    @inbounds for i ∈ 1:length(z) #for i ∈ comps
+        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
+        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
+            #ia = compute_index(pack_indices,i,a)
+            for idx ∈ _idx #iterating for all sites
+                ij = _ii[idx]
+                ab = _aa[idx]
+                issite(i,a,ij,ab) && (count += 1)
+            end
+        end
+    end
+    c1 = zeros(Int,count)
+    c2 = zeros(Int,count)
+    val = zeros(TT,count)
+    _n = model.sites.n_sites.v
+    count = 0
+    @inbounds for i ∈ 1:length(z) #for i ∈ comps
+        sitesᵢ = 1:(p[i+1] - p[i]) #sites are normalized, with independent indices for each component
+        for a ∈ sitesᵢ #for a ∈ sites(comps(i))
+            ia = compute_index(p,i,a)
+            for idx ∈ _idx #iterating for all sites
+                ij = _ii[idx]
+                ab = _aa[idx]
+                if issite(i,a,ij,ab)
+                    j = complement_index(i,ij)
+                    b = complement_index(a,ab)
+                    jb = compute_index(p,j,b)
+                    njb = _n[jb]
+                    count += 1
+                    c1[count] = ia
+                    c2[count] = jb
+                    val[count] = ρ*njb*z[j]*_Δ[idx]
+                end
+            end
+        end
+    end
+    K::SparseMatrixCSC{TT,Int} = sparse(c1,c2,val)
+    return K
+end
+#Mx = a + b(x,x)
+#Axx + x - 1 = 0
+#x = 1 - Axx
 =#

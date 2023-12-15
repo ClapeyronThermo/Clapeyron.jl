@@ -14,56 +14,80 @@ struct COSMOSAC02{c<:EoSModel} <: COSMOSAC02Model
     references::Array{String,1}
 end
 
-@registermodel COSMOSAC02
 export COSMOSAC02
-@doc """
-COSMOSAC02(components::Vector{String};
-puremodel = PR,
-userlocations = String[],
-pure_userlocations = String[],
-verbose = false)
-
-COSMOSAC02 EoS
+"""
+    COSMOSAC02(components;
+    puremodel = PR,
+    userlocations = String[],
+    pure_userlocations = String[],
+    verbose = false)
 
 ## Input parameters:
 - `Pi` :Single Parameter{String} 
 - `V`: Single Parameter{Float64}
 - `A`: Single Parameter{Float64}
 
-
-## Model Parameters:
-- Pi::SingleParam{Vector{Float64}}
-- V::SingleParam{Float64}
-- A::SingleParam{Float64}
-
 ## Description
 An activity coefficient model using molecular solvation based on the COSMO-RS method.
 
-""" COSMOSAC02
+## References
+1. Lin, S-T. & Sandler, S.I. (2002). A priori phase equilibrium prediction from a segment contribution solvation model. Industrial & Engineering Chemistry Research, 41(5), 899–913. [doi:10.1021/ie001047w](https://doi.org/10.1021/ie001047w)
+"""
+COSMOSAC02
 
+default_locations(::Type{COSMOSAC02}) = ["Activity/COSMOSAC/COSMOSAC02_like.csv"]
 
-
-function COSMOSAC02(components::Vector{String};
+function COSMOSAC02(components;
     puremodel = PR,
     userlocations = String[],
     pure_userlocations = String[],
-    verbose=false, kwargs...)
+    use_nist_database = false,
+    verbose=false)
+    formatted_components = format_components(components)
 
-    params = getparams(components, ["Activity/COSMOSAC/COSMOSAC02_like.csv"]; userlocations=userlocations, verbose=verbose)
-    Pi  = COSMO_parse_Pi(params["Pi"])
-    A  = params["A"]
-    V  = params["V"]
+    if use_nist_database
+        @warn "using parameters from the nistgov/COSMOSAC database, check their license before usage."
+        CAS, INCHIKEY = get_cosmo_comps()
+        A = zeros(length(components))
+        V = zeros(length(components))
+        Pi = [zeros(51) for i in 1:length(components)]
+        for i in 1:length(components)
+            id = cas(formatted_components[i])
+            ids = CAS.==uppercase(id[1])
+            dbname = INCHIKEY[ids]
+            file = String(take!(Downloads.download("https://raw.githubusercontent.com/usnistgov/COSMOSAC/master/profiles/UD/sigma/"*dbname[1]*".sigma", IOBuffer())))
+            lines = split(file,r"\n")
+            meta = lines[1][9:end]
+            json = JSON3.read(meta)
+            A[i] = json["area [A^2]"]
+            V[i] = json["volume [A^3]"]
+            Pi[i] = [parse(Float64,split(lines[i]," ")[2]) for i in 4:54]
+        end
+        A = SingleParam("A",formatted_components,A)
+        V = SingleParam("V",formatted_components,V)
+        Pi = SingleParam("Pi",formatted_components,Pi)
+    else
+        params = getparams(formatted_components, default_locations(COSMOSAC02); userlocations=userlocations, verbose=verbose)
+        Pi  = COSMO_parse_Pi(params["Pi"])
+        A  = params["A"]
+        V  = params["V"]
+    end
 
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSAC02Param(Pi,V,A)
-    references = String["10.1021/ie001047w"]
-    model = COSMOSAC02(components,packagedparams,_puremodel,1e-12,references)
+    references = String["10.1021/ie001047w","10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360"]
+    model = COSMOSAC02(formatted_components,packagedparams,_puremodel,1e-12,references)
     return model
 end
 
 function activity_coefficient(model::COSMOSAC02Model,V,T,z)
     return exp.(@f(lnγ_comb) .+ @f(lnγ_res))
+end
+
+function excess_g_res(model::COSMOSAC02Model,V,T,z)
+    lnγ = @f(lnγ_res)
+    sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
 
 function lnγ_comb(model::COSMOSAC02Model,p,T,z)

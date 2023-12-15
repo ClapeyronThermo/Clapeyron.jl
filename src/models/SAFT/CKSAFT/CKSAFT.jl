@@ -10,6 +10,27 @@ end
 
 abstract type CKSAFTModel <: SAFTModel end
 @newmodel CKSAFT CKSAFTModel CKSAFTParam
+default_references(::Type{CKSAFT}) = ["10.1021/IE00107A014", "10.1021/ie00056a050"]
+default_locations(::Type{CKSAFT}) = ["SAFT/CKSAFT","properties/molarmass.csv"]
+function transform_params(::Type{CKSAFT},params)
+    k = get(params,"k",nothing)
+    l = get(params,"l",nothing)
+    sigma = params["vol"]
+    sigma.values .*= 6*0.74048/N_A/1e6/π
+    sigma.values .^= 1/3
+    epsilon = params["epsilon"]
+    params["sigma"] = sigma_LorentzBerthelot(sigma, l)
+    params["epsilon"] = epsilon_LorentzBerthelot(epsilon, k)
+    return params
+end
+
+function get_k(model::CKSAFT)   
+    return get_k_geomean(model.params.epsilon)
+end
+
+function get_l(model::CKSAFT)   
+    return get_k_mean(model.params.sigma)
+end
 
 export CKSAFT
 """
@@ -54,32 +75,6 @@ Chen and Kreglewski SAFT (CK-SAFT)
 """
 CKSAFT
 
-function CKSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
-    assoc_options = AssocOptions(), kwargs...)
-
-    params,sites = getparams(components, ["SAFT/CKSAFT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    segment = params["segment"]
-    c = params["c"]
-    k = get(params,"k",nothing)
-    sigma = params["vol"]
-    sigma.values .*= 6*0.74048/N_A/1e6/π
-    sigma.values .^= 1/3
-    sigma = sigma_LorentzBerthelot(sigma)
-    epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
-    epsilon_assoc = params["epsilon_assoc"]
-    bondvol = params["bond_vol"]
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
-    packagedparams = CKSAFTParam(params["Mw"],segment, sigma, epsilon,c, epsilon_assoc, bondvol)
-    references = ["10.1021/IE00107A014", "10.1021/ie00056a050"]
-
-    model = CKSAFT(packagedparams, sites, idealmodel; ideal_userlocations, references, verbose, assoc_options)
-    return model
-end
-
 recombine_impl!(model::CKSAFTModel) = recombine_saft!(model)
 
 function a_res(model::CKSAFTModel, V, T, z)
@@ -99,7 +94,7 @@ function a_hs(model::CKSAFTModel, V, T, z)
     ζ1 = @f(ζ,1)
     ζ2 = @f(ζ,2)
     ζ3 = @f(ζ,3)
-    return 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
+    return bmcs_hs(ζ0,ζ1,ζ2,ζ3)
 end
 
 function a_disp(model::CKSAFTModel, V, T, z)

@@ -88,6 +88,14 @@ end
     @testset "RR Algorithm" begin
         method = RRTPFlash()
         @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.539976318817461 rtol = 1e-6
+        
+    end
+
+    if isdefined(Base,:get_extension)
+        @testset "RR Algorithm - MultiComponentFlash.jl" begin
+            mcf = MCFlashJL()
+            @test Clapeyron.tp_flash(system, p, T, z, mcf)[3] ≈ -6.490030777308265 rtol = 1e-6
+        end
     end
     GC.gc()
 
@@ -147,6 +155,61 @@ end
         GC.gc()
 
     end
+
+    @testset "Michelsen Algorithm, activities" begin
+    #example from https://github.com/ClapeyronThermo/Clapeyron.jl/issues/144
+        system = UNIFAC(["water", "hexane"])
+        alg1 = MichelsenTPFlash(
+            equilibrium = :lle, 
+            K0 = [0.00001/0.99999, 0.99999/0.00001],
+        )
+
+        flash1 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg1)
+        act_x1 = activity_coefficient(system, 101325, 303.15, flash1[1][1,:]) .* flash1[1][1,:]
+        act_y1 = activity_coefficient(system, 101325, 303.15, flash1[1][2,:]) .* flash1[1][2,:]
+        @test Clapeyron.dnorm(act_x1,act_y1) < 1e-8
+
+        alg2 = MichelsenTPFlash(
+            equilibrium = :lle, 
+            x0 = [0.99999, 0.00001],
+            y0 = [0.00001, 0.00009]
+        )
+        flash2 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg2)
+        act_x2 = activity_coefficient(system, 101325, 303.15, flash2[1][1,:]) .* flash2[1][1,:]
+        act_y2 = activity_coefficient(system, 101325, 303.15, flash2[1][2,:]) .* flash2[1][2,:]
+        @test Clapeyron.dnorm(act_x2,act_y2) < 1e-8
+
+        #test K0_lle_init initialization
+        alg3 = MichelsenTPFlash(
+            equilibrium = :lle)
+        flash3 = tp_flash(system, 101325, 303.15, [0.5, 0.5], alg3)
+        act_x3 = activity_coefficient(system, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
+        act_y3 = activity_coefficient(system, 101325, 303.15, flash3[1][2,:]) .* flash3[1][2,:]
+        @test Clapeyron.dnorm(act_x3,act_y3) < 1e-8
+
+        #test combinations of Activity + CompositeModel
+        system_cc = UNIFAC(["water", "hexane"],puremodel = CompositeModel)
+        flash3 = tp_flash(system_cc, 101325, 303.15, [0.5, 0.5], alg2)
+        act_x3 = activity_coefficient(system_cc, 101325, 303.15, flash3[1][1,:]) .* flash3[1][1,:]
+        act_y3 = activity_coefficient(system_cc, 101325, 303.15, flash3[1][2,:]) .* flash3[1][2,:]
+        @test Clapeyron.dnorm(act_x3,act_y3) < 1e-8
+
+        #running the vle part
+        model_vle = UNIFAC(["water", "ethanol"],puremodel = PCSAFT)
+        @test tp_flash(model_vle, 101325, 363.15, [0.5, 0.5], MichelsenTPFlash())[1] ≈
+        [0.6824441505154921 0.31755584948450793
+         0.3025308123759482 0.6974691876240517] rtol = 1e-6
+    end
+
+    @testset "Michelsen Algorithm, CompositeModel" begin
+        p,T,z = 101325.,85+273.,[0.2,0.8]
+        system = CompositeModel(["water","ethanol"]) #ideal gas + rackett + lee kesler saturation correlation
+        @test Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash())[1] ≈
+        [0.3618699659002134 0.6381300340997866
+        0.17888243361092543 0.8211175663890746] rtol = 1e-6
+
+        @test_throws ErrorException Clapeyron.tp_flash(system, p, T, z, MichelsenTPFlash(ss_iters = 0))
+    end
 end
 
 
@@ -156,6 +219,13 @@ end
     p0 = 1e5
     T = 373.15
     p,vl,vv = Clapeyron.saturation_pressure(model,T) #default
+
+    #legacy api,
+    @test Clapeyron.saturation_pressure(model,T,Clapeyron.ChemPotVSaturation((vl,vv)))[1] ==
+        Clapeyron.saturation_pressure(model,T,Clapeyron.ChemPotVSaturation([vl,vv]))[1] ==     
+        Clapeyron.saturation_pressure(model,T,[vl,vv])[1] == 
+        Clapeyron.saturation_pressure(model,T,(vl,vv))[1]
+
     px,vlx,vvx = Clapeyron.saturation_pressure(vdw,T) #vdw
 
     p1,vl1,vv1 = Clapeyron.saturation_pressure_impl(model,T,IsoFugacitySaturation())
@@ -181,6 +251,7 @@ end
     #SuperAncSaturation
     p5,vl5,vv5 = Clapeyron.saturation_pressure_impl(model,T,SuperAncSaturation())
     @test p5 ≈ p rtol = 1e-6
+    @test Clapeyron.saturation_temperature_impl(model,p5,SuperAncSaturation())[1] ≈ T rtol = 1e-6
     @test @inferred Clapeyron.saturation_pressure_impl(vdw,T,SuperAncSaturation())[1] ≈ px
     GC.gc()
 
@@ -283,7 +354,7 @@ end
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(T0 = 450))[1] ≈ Tres2 rtol = 1E-6
         @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(T0 = 450,x0 = [0.1,0.9]))[1] ≈ Tres2 rtol = 1E-6
-        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(itmax_newton = 1))[1] ≈ Tres2 rtol = 1E-6
+        @test Clapeyron.dew_temperature(system1,p2,z,Clapeyron.FugDewTemperature(itmax_newton = 2))[1] ≈ Tres2 rtol = 1E-6
         GC.gc()
 
     end
@@ -342,4 +413,61 @@ end
     end
     GC.gc()
 
+
+    #testset for equilibria bugs
+    
 end
+
+@testset "Solid Phase Equilibria" begin
+    @testset "Solid-Liquid Equilibria" begin
+        model = CompositeModel([("1-decanol",["CH3"=>1,"CH2"=>9,"OH (P)"=>1]),("thymol",["ACCH3"=>1,"ACH"=>3,"ACOH"=>1,"ACCH"=>1,"CH3"=>2])];liquid=UNIFAC,solid=SolidHfus,saturation=nothing)
+        T = 275.
+        p = 1e5
+        s1 = sle_solubility(model,p,T,[1.,1.];solute=["1-decanol"])
+        s2 = sle_solubility(model,p,T,[1.,1.];solute=["thymol"])
+        @test s1[2] ≈ 0.21000625991669147 rtol = 1e-6
+        @test s2[2] ≈ 0.3370264930822045 rtol = 1e-6
+
+        (TE,xE) = eutectic_point(model)
+        @test TE ≈ 271.97967645045804 rtol = 1e-6
+    end
+   
+    @testset "Solid-Liquid-Liquid Equilibria" begin
+        model = CompositeModel(["water","ethanol",("ibuprofen",["ACH"=>4,"ACCH2"=>1,"ACCH"=>1,"CH3"=>3,"COOH"=>1,"CH"=>1])];liquid=UNIFAC,solid=SolidHfus,saturation=nothing)
+        p = 1e5
+        T = 323.15
+        (s1,s2) = slle_solubility(model,p,T)
+        @test s1[3] ≈ 0.0015804179997257882 rtol = 1e-6
+    end
+end
+
+#test for really really difficult equilibria.
+@testset "challenging equilibria" begin
+       
+    #see https://github.com/ClapeyronThermo/Clapeyron.jl/issues/173
+    @testset "VTPR - 1" begin
+        #=
+        carbon monoxide is supercritical.
+        =#
+
+        system = VTPR(["carbon monoxide","carbon dioxide"])
+        @test_broken Clapeyron.bubble_pressure(system,218.15,[1e-5,1-1e-5])[1] ≈ 1.1373024916997014e6 rtol = 1e-4
+    end
+
+
+
+    #see https://github.com/ClapeyronThermo/Clapeyron.jl/issues/172
+    @testset "PCSAFT - 1" begin
+        #=
+        really near critical temperature of the mixture
+        seems that was fixed by passing the initial point to the x0_bubble_pressure function
+        =#
+        x = [0.96611,0.01475,0.01527,0.00385]
+        T = 202.694
+        v0 = [-4.136285855713797, -4.131888756537859, 0.9673991775701574, 0.014192499147585259, 0.014746430039492817, 0.003661893242764558]
+        model = PCSAFT(["methane","butane","isobutane","pentane"])
+        # @test_broken bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
+        # FIXME: The test does not yield the same value depending on the OS and the julia version
+    end
+end
+

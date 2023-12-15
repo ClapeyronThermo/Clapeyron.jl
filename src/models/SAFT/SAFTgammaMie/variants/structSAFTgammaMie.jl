@@ -7,6 +7,7 @@ struct structSAFTgammaMie{I,VR} <: structSAFTgammaMieModel
     params::SAFTgammaMieParam
     idealmodel::I
     vrmodel::VR
+    epsilon_mixing::Symbol
     assoc_options::AssocOptions
     references::Array{String,1}
 end
@@ -20,12 +21,13 @@ end
     group_userlocations=String[],
     ideal_userlocations=String[],
     verbose=false,
+    epsilon_mixing = :default,
     assoc_options = AssocOptions())
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
-- `shapefactor`: Single Parameter (`Float64`) - Shape factor for segment (no units)
+- `vst`: Single Parameter (`Float64`) - Number of segments (no units)
+- `S`: Single Parameter (`Float64`) - Shape factor for segment (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `lambda_a`: Pair Parameter (`Float64`) - Atractive range parameter (no units)
@@ -62,10 +64,12 @@ function structSAFTgammaMie(components;
     group_userlocations = String[],
     ideal_userlocations=String[],
     verbose=false,
-    assoc_options = AssocOptions(), kwargs...)
+    epsilon_mixing = :default,
+    assoc_options = AssocOptions())
 
-    groups = StructGroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"])
-    params,sites = getparams(groups, ["SAFT/SAFTgammaMie/structSAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    groups = StructGroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv","SAFT/SAFTgammaMie/structSAFTgammaMie/structSAFTgammaMie_intragroups.csv"])
+    params = getparams(groups, ["SAFT/SAFTgammaMie/structSAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    sites = params["sites"]
     components = groups.components
     
     gc_segment = params["vst"]
@@ -85,9 +89,15 @@ function structSAFTgammaMie(components;
     sigma3.values .= cbrt.(sigma3.values)
     sigma = sigma_LorentzBerthelot(sigma3)
 
-    gc_epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], gc_sigma)
-    epsilon = epsilon_HudsenMcCoubrey(group_pairmean(groups,gc_epsilon),sigma)
-    
+    if epsilon_mixing == :default
+        gc_epsilon = epsilon_HudsenMcCoubreysqrt(params["epsilon"], gc_sigma)
+        epsilon = epsilon_HudsenMcCoubreysqrt(group_pairmean(groups,gc_epsilon),sigma)
+    elseif epsilon_mixing == :hudsen_mccoubrey
+        gc_epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], gc_sigma)
+        epsilon = epsilon_HudsenMcCoubrey(group_pairmean(groups,gc_epsilon),sigma)
+    else
+        throw(error("invalid specification of ",error_color(epsilon_mixing),". available values are :default and :hudsen_mccoubrey"))
+    end
     gc_lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     gc_lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
 
@@ -108,12 +118,11 @@ function structSAFTgammaMie(components;
     
     idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     
-    vr = SAFTVRMie(vrparams, comp_sites, idmodel; ideal_userlocations, verbose, assoc_options)
+    vr = SAFTVRMie(components,comp_sites,vrparams,idmodel,assoc_options,default_references(SAFTVRMie))
     γmierefs = ["10.1063/1.4851455", "10.1021/je500248h"]
-    gmie = structSAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,assoc_options,γmierefs)
+    gmie = structSAFTgammaMie(components,groups,sites,gcparams,idmodel,vr,epsilon_mixing,assoc_options,γmierefs)
     return gmie
 end
-@registermodel structSAFTgammaMie
 
 const sSAFTγMie = structSAFTgammaMie
 const sSAFTgammaMie = structSAFTgammaMie

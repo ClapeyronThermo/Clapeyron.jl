@@ -7,7 +7,7 @@ end
 """
     ExtendedCorrespondingStates <: EoSModel
 
-    function ECS(components::Vector{String},
+    function ECS(components,
         refmodel=PropaneRef(),
         shapemodel=SRK(components),
         shaperef = SRK(refmodel.components))

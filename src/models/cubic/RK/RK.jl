@@ -11,11 +11,11 @@ struct RK{T <: IdealModel,α,c,M} <: RKModel
     references::Array{String,1}
 end
 
-@registermodel RK
 export RK
 
 """
-    RK(components::Vector{String}; idealmodel=BasicIdeal,
+    RK(components; 
+    idealmodel=BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
     activity=nothing,
@@ -55,38 +55,77 @@ Redlich-Kwong Equation of state.
 P = RT/(V-Nb) + a•α(T)/(V(V+Nb))
 ```
 
+## Model Construction Examples
+```julia
+# Using the default database
+model = RK("water") #single input
+model = RK(["water","ethanol"]) #multiple components
+model = RK(["water","ethanol"], idealmodel = ReidIdeal) #modifying ideal model
+model = RK(["water","ethanol"],alpha = Soave2019) #modifying alpha function
+model = RK(["water","ethanol"],translation = RackettTranslation) #modifying translation
+model = RK(["water","ethanol"],mixing = KayRule) #using another mixing rule
+model = RK(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced EoS+gᴱ mixing rule
+
+# Passing a prebuilt model
+
+my_alpha = SoaveAlpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
+model =  RK(["ethane","butane"],alpha = my_alpha) #this is efectively now an SRK model
+
+# User-provided parameters, passing files or folders
+
+# Passing files or folders
+model = RK(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])
+
+# User-provided parameters, passing parameters directly
+
+model = RK(["neon","hydrogen"];
+        userlocations = (;Tc = [44.492,33.19],
+                        Pc = [2679000, 1296400],
+                        Mw = [20.17, 2.],
+                        acentricfactor = [-0.03,-0.21]
+                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        l = [0. 0.01; 0.01 0.])
+                    )
+```
+
 ## References
 1. Redlich, O., & Kwong, J. N. S. (1949). On the thermodynamics of solutions; an equation of state; fugacities of gaseous solutions. Chemical Reviews, 44(1), 233–244. [doi:10.1021/cr60137a013](https://doi.org/10.1021/cr60137a013)
 """
 RK
 
-function RK(components::Vector{String}; idealmodel=BasicIdeal,
+function RK(components; idealmodel=BasicIdeal,
     alpha = RKAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
      verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = get(params,"k",nothing)
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
+        userlocations=userlocations,
+        verbose=verbose,
+        ignore_missing_singleparams = __ignored_crit_params(alpha))
+
+    k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     pc = params["Pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
+    acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components)))
-    b = PairParam("b",components,zeros(length(components)))
+    a = PairParam("a",formatted_components,zeros(length(Tc)))
+    b = PairParam("b",formatted_components,zeros(length(Tc)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    packagedparams = RKParam(a,b,Tc,pc,Mw)
+    packagedparams = ABCubicParam(a,b,Tc,pc,Mw)
     references = String["10.1021/cr60137a013"]
-    model = RK(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = RK(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end
@@ -97,7 +136,7 @@ function ab_consts(::Type{<:RKModel})
     return Ωa,Ωb
 end
 
-function cubic_Δ(model::RKModel,z) 
+function cubic_Δ(model::RKModel,z)
     return (0.0,-1.0)
 end
 
@@ -191,4 +230,3 @@ chebyshev_Tmin_p(model::RKModel) = (0.020267685653535945,0.02596797224359293,0.0
 chebyshev_Tmax_p(model::RKModel) = (0.02596797224359293,0.03166825883364991,0.04306883201376388,0.06586997837399182,0.1114722710944477,0.20267685653535944)
 
 chebyshev_Trange_p(model::RKModel) = (0.020267685653535945,0.02596797224359293,0.03166825883364991,0.04306883201376388,0.06586997837399182,0.1114722710944477,0.20267685653535944)
-

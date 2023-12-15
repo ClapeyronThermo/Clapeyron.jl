@@ -12,9 +12,8 @@ struct Clausius{T <: IdealModel,α,c,γ} <:ClausiusModel
     references::Array{String,1}
 end
 
-@registermodel Clausius
 """
-    Clausius(components::Vector{String};
+    Clausius(components;
     idealmodel=BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
@@ -66,35 +65,38 @@ cᵢ = 3/8 * RTcᵢ/Pcᵢ - Vcᵢ
 Clausius
 
 export Clausius
-function Clausius(components::Vector{String}; idealmodel=BasicIdeal,
+function Clausius(components; idealmodel=BasicIdeal,
     alpha = ClausiusAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-     verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    verbose=false)
+
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = get(params,"k",nothing)
     l  = get(params,"l",nothing)
     pc = params["Pc"]
     Vc = params["Vc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
+    acentricfactor = get(params,"acentricfactor",nothing)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components)))
-    b = PairParam("b",components,zeros(length(components)))
-    c = PairParam("c",components,zeros(length(components)))
+    a = PairParam("a",formatted_components,zeros(length(Tc)))
+    b = PairParam("b",formatted_components,zeros(length(Tc)))
+    c = PairParam("c",formatted_components,zeros(length(Tc)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = ClausiusParam(a,b,c,Tc,pc,Vc,Mw)
     references = String["10.1002/andp.18802450302"]
-    model = Clausius(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = Clausius(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end
@@ -127,7 +129,7 @@ function c_premixing(model::ClausiusModel)
     return c
 end
 
-function cubic_Δ(model::ClausiusModel,z) 
+function cubic_Δ(model::ClausiusModel,z)
     b = diagvalues(model.params.b)
     c = diagvalues(model.params.c)
     z⁻¹ = sum(z)^-1

@@ -17,7 +17,7 @@ julia> grouplist = [
            ("nonadecanol", ["CH3"=>1, "CH2"=>18, "OH"=>1]),
            ("ibuprofen", ["CH3"=>3, "COOH"=>1, "aCCH"=>1, "aCCH2"=>1, "aCH"=>4])];
 julia> groups = GroupParam(grouplist)
-GroupParam(:unkwown) with 3 components:
+GroupParam(:unknown) with 3 components:
  "ethanol": "CH3" => 1, "CH2" => 1, "OH" => 1
  "nonadecanol": "CH3" => 1, "CH2" => 18, "OH" => 1
  "ibuprofen": "CH3" => 3, "COOH" => 1, "aCCH" => 1, "aCCH2" => 1, "aCH" => 4
@@ -76,15 +76,10 @@ function GroupParam(imput::PARSED_GROUP_VECTOR_TYPE)
     return GroupParam(imput,:unknown,String[])
 end
 
-#utilities
-group_comp(val::Pair) = first(pair)
-group_comp(val::Tuple{<:Any,<:Any}) = first(pair)
-group_components(param::Vector{String}) = param
-group_components(param::GroupParam) = param.components
-group_components(param::Vector) = map(group_comp,param)
+format_components(g::GroupParameter) = g
 
 #given components, groups, n_groups, reconstitute GroupParam
-function recombine!(param::GroupParam)
+function recombine!(param::GroupParameter)
     components = param.components
     groups = param.groups
     n_groups = param.n_groups
@@ -111,7 +106,7 @@ function recombine!(param::GroupParam)
         i_group = i_groups[i]
         resize!(i_group,length(group))
         for j in eachindex(i_group)
-            i_group[j] = findfirst(isequal(group[j]), flattenedgroups)
+            i_group[j] = findfirst(isequal(group[j]), flattenedgroups)::Int
         end
     end
 
@@ -225,7 +220,7 @@ function StructGroupParam(group::GroupParam,gccomponents_parsed,filepaths::Vecto
             k = first(pair_ik)
             val = last(pair_ik)
             k1,k2 = k
-            n1,n2 = findfirst(==(k1),groupnames),findfirst(==(k2),groupnames)
+            n1,n2 = findfirst(==(k1),groupnames)::Int,findfirst(==(k2),groupnames)::Int
             n_mat[n1,n2] = val
             n_mat[n2,n1] = val
         end

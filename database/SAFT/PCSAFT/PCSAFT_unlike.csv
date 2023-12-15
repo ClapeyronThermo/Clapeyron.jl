@@ -1,49 +1,46 @@
 Clapeyron Database File,,,,,
 PCSAFT Unlike Parameters,,,,,
 species1,SMILES1,species2,SMILES2,k,source
-methane,C,butane,CCCC,0.022,10.1021/ie0003887
-methane,C,pentane,CCCCC,0.024,10.1021/ie0003887
-methane,C,hexane,CCCCCC,0.021,10.1021/ie0003887
-methane,C,heptane,CCCCCCC,0.016,10.1021/ie0003887
-methane,C,decane,CCCCCCCCCC,0.056,10.1021/ie0003887
-methane,C,isobutane,,0.028,10.1021/ie0003887
+methane,C,butane~|~n-butane,CCCC,0.022,10.1021/ie0003887
+methane,C,pentane~|~n-pentane,CCCCC,0.024,10.1021/ie0003887
+methane,C,hexane~|~n-hexane,CCCCCC,0.021,10.1021/ie0003887
+methane,C,heptane~|~n-heptane,CCCCCCC,0.016,10.1021/ie0003887
+methane,C,decane~|~n-decane,CCCCCCCCCC,0.056,10.1021/ie0003887
+methane,C,isobutane~|~2-methylpropane,,0.028,10.1021/ie0003887
 methane,C,cyclohexane,,0.045,10.1021/ie0003887
 methane,C,benzene,,0.037,10.1021/ie0003887
 methane,C,toluene,,0.052,10.1021/ie0003887
-methane,C,m-xylene,,0.045,10.1021/ie0003887
-methane,C,tetralin,,0.075,10.1021/ie0003887
-nitrogen,N#N,ethylene,C=C,0.075,10.1021/ie0003887
-nitrogen,N#N,n-hexane,CCCCCC,0.119,10.1021/ie0003887
-ethylene,C=C,n-heptane,CCCCCCC,0.018,10.1021/ie0003887
-ethylene,C=C,propylene,C=CC,-0.001,10.1021/ie0003887
-propane,CCC,n-butane,CCCC,0.003,10.1021/ie0003887
-propylene,C=CC,isobutane,,-0.006,10.1021/ie0003887
-pentane,CCCCC,n-heptane,CCCCCCC,0.011,10.1021/ie0003887
+methane,C,"mxylene~|~m-xylene~|~1,3-dimethylbenzene",,0.045,10.1021/ie0003887
+methane,C,"tetralin~|~1,2,3,4-tetrahydronaphthalene",,0.075,10.1021/ie0003887
+nitrogen,N#N,ethene~|~ethylene~|~1-ethylene,C=C,0.075,10.1021/ie0003887
+nitrogen,N#N,hexane~|~n-hexane,CCCCCC,0.119,10.1021/ie0003887
+ethene~|~ethylene~|~1-ethylene,C=C,heptane~|~n-heptane,CCCCCCC,0.018,10.1021/ie0003887
+ethene~|~ethylene~|~1-ethylene,C=C,propene~|~propylene,C=CC,-0.001,10.1021/ie0003887
+propane~|~n-propane,CCC,butane~|~n-butane,CCCC,0.003,10.1021/ie0003887
+propene~|~propylene,C=CC,isobutane~|~2-methylpropane,,-0.006,10.1021/ie0003887
+pentane~|~n-pentane,CCCCC,heptane~|~n-heptane,CCCCCCC,0.011,10.1021/ie0003887
 carbon dioxide,(O=)C=O,methane,C,0.065,10.1021/ie0003887
-carbon dioxide,(O=)C=O,propane,CCC,0.109,10.1021/ie0003887
-carbon dioxide,(O=)C=O,decane,CCC,0.128,10.1021/ie0003887
-carbon dioxide,(O=)C=O,butane,CCCC,0.12,10.1021/ie0003887
-carbon dioxide,(O=)C=O,n-pentane,CCCCC,0.143,10.1021/ie0003887
-carbon dioxide,(O=)C=O,n-heptane,CCCCCCC,0.129,10.1021/ie0003887
+carbon dioxide,(O=)C=O,propane~|~n-propane,CCC,0.109,10.1021/ie0003887
+carbon dioxide,(O=)C=O,decane~|~n-decane,CCC,0.128,10.1021/ie0003887
+carbon dioxide,(O=)C=O,butane~|~n-butane,CCCC,0.12,10.1021/ie0003887
+carbon dioxide,(O=)C=O,pentane~|~n-pentane,CCCCC,0.143,10.1021/ie0003887
+carbon dioxide,(O=)C=O,heptane~|~n-heptane,CCCCCCC,0.129,10.1021/ie0003887
 carbon dioxide,(O=)C=O,methylcyclohexane,,0.144,10.1021/ie0003887
 carbon dioxide,(O=)C=O,cyclohexane,,0.13,10.1021/ie0003887
 carbon dioxide,(O=)C=O,water,,-0.005927,10.1021/ie0003887
 carbon dioxide,(O=)C=O,water08,,-0.005927,10.1021/ie0003887
-1-chlorobutane,CCCC(Cl),hexane,CCCCCC,0.017,10.1021/ie0003887
-methanol,CO,isobutanol,,0.05,10.1021/ie010954d
+1-chlorobutane~|~n-butyl chloride,CCCC(Cl),hexane~|~n-hexane,CCCCCC,0.017,10.1021/ie0003887
+methanol,CO,isobutanol~|~2-methyl-1-propanol,,0.05,10.1021/ie010954d
 methanol,CO,cyclohexane,C1CCCCC1,0.051,10.1021/ie010954d
-methanol,CO,1-octanol,CCCCCCCCO,0.02,10.1021/ie010954d
-ethanol,CCO,butane,CCCC,0.028,10.1021/ie010954d
-1-propanol,CCCO,benzene,c1ccccc1,0.,10.1021/ie010954d
-1-propanol,CCCO,ethylbenzene,c1ccccc1(CC),0.023,10.1021/ie010954d
-2-propanol,CC(O)C,benzene,c1ccccc1,0.,10.1021/ie010954d
-1-butanol,CCCCO,butane,CCCC,0.015,10.1021/ie010954d
-1-pentanol,CCCCCO,benzene,c1ccccc1,0.0135,10.1021/ie010954d
-water,O,1-pentanol,CCCCCO,0.016,10.1021/ie010954d
-water08,O,1-pentanol,CCCCCO,0.016,10.1021/ie010954d
-diethyl ether,,ethane,CC,0,10.1021/ie0003887
-perfluoromethane,,butane,,0.0980,
-water,,acetonitrile,,0.0,
-[EMIM][BF4],,PEO-02,,0.05,
-perfluoromethane,,butnae,,0.0980,
-acetonitrile,,[C2MIM][OAc],,0.04,
+methanol,CO,1-octanol~|~octan-1-ol,CCCCCCCCO,0.02,10.1021/ie010954d
+ethanol,CCO,butane~|~n-butane,CCCC,0.028,10.1021/ie010954d
+propanol~|~1-propanol~|~propan-1-ol,CCCO,benzene,c1ccccc1,0.0,10.1021/ie010954d
+propanol~|~1-propanol~|~propan-1-ol,CCCO,ethylbenzene,c1ccccc1(CC),0.023,10.1021/ie010954d
+2-propanol~|~propan-2-ol~|~isopropanol,CC(O)C,benzene,c1ccccc1,0.0,10.1021/ie010954d
+butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,CCCCO,butane~|~n-butane,CCCC,0.015,10.1021/ie010954d
+1-pentanol~|~pentan-1-ol,CCCCCO,benzene,c1ccccc1,0.0135,10.1021/ie010954d
+water,O,1-pentanol~|~pentan-1-ol,CCCCCO,0.016,10.1021/ie010954d
+water08,O,1-pentanol~|~pentan-1-ol,CCCCCO,0.016,10.1021/ie010954d
+diethyl ether,,ethane,CC,0.0,10.1021/ie0003887
+r14~|~perfluoromethane~|~tetrafluoromethane~|~carbon tetrafluoride,,butane~|~n-butane,,0.098,
+sodium,Na,chloride,Cl,0.317,

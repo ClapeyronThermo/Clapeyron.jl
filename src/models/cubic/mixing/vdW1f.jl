@@ -1,38 +1,41 @@
 abstract type vdW1fRuleModel <: MixingRule end
 
-struct vdW1fRuleParam <: EoSParam
-end
+#we don't use newmodelsingleton here, the default constructor requires passing activity as a param.
+struct vdW1fRule <: vdW1fRuleModel end
 
-@newmodelsimple vdW1fRule vdW1fRuleModel vdW1fRuleParam
 export vdW1fRule
 
 """
     vdW1fRule <: vdW1fRuleModel
     
-    vdW1fRule(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    vdW1fRule(components;
+    userlocations=String[],
     verbose::Bool=false)
 ## Input Parameters
 None
 ## Description
 van der Wals One-Fluid mixing rule for cubic parameters:
 ```
-aᵢⱼ = √(aᵢaⱼ)(1-kᵢⱼ)
-bᵢⱼ = (bᵢ + bⱼ)/2
+aᵢⱼ = √(aᵢaⱼ)(1 - kᵢⱼ)
+bᵢⱼ = (1 - lᵢⱼ)(bᵢ + bⱼ)/2
 ā = ∑aᵢⱼxᵢxⱼ√(αᵢ(T)αⱼ(T))
 b̄ = ∑bᵢⱼxᵢxⱼ
 c̄ = ∑cᵢxᵢ
 ```
+
+## Model Construction Examples
+```
+# Because this model does not have parameters, all those constructors are equivalent:
+mixing = vdW1fRule()
+mixing = vdW1fRule("water")
+mixing = vdW1fRule(["water","carbon dioxide"])
+```
 """
 vdW1fRule
 
-function vdW1fRule(components::Vector{String}; activity=nothing, userlocations::Vector{String}=String[], activity_userlocations::Vector{String}=String[], verbose::Bool=false)
-    packagedparams = vdW1fRuleParam()
-    model = vdW1fRule(packagedparams, verbose=verbose)
-    return model
+function vdW1fRule(components; activity = nothing, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+    vdW1fRule()
 end
-
-vdW1fRule() = vdW1fRule(vdW1fRuleParam())
 
 function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a,b,c)
     n = sum(z)
@@ -60,6 +63,12 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::vdW1fRuleModel,α,a
     return ā,b̄,c̄
 end
 
-
-
 is_splittable(::vdW1fRule) = false
+
+function cubic_get_k(model::CubicModel,mixing::vdW1fRuleModel,params)
+    return get_k_geomean(params.a.values)
+end
+
+function cubic_get_l(model::CubicModel,mixing::vdW1fRuleModel,params)
+    return get_k_mean(params.b.values)
+end

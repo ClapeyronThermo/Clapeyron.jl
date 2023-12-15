@@ -1,0 +1,472 @@
+{
+  "STATES": {
+    "triple_liquid": {
+      "rhomolar_units": "mol/m^3",
+      "T": 216.592,
+      "T_units": "K",
+      "p": 517964.34344772575,
+      "rhomolar": 26777.277860217495,
+      "hmolar": 3522.347496266107,
+      "p_units": "Pa",
+      "smolar_units": "J/mol/K",
+      "hmolar_units": "J/mol",
+      "smolar": 22.94317948018097
+    },
+    "critical": {
+      "rhomolar_units": "mol/m^3",
+      "T": 304.1282,
+      "T_units": "K",
+      "p": 7377300,
+      "rhomolar": 10624.978697999999,
+      "hmolar": 14622.609393908302,
+      "p_units": "Pa",
+      "smolar_units": "J/mol/K",
+      "hmolar_units": "J/mol",
+      "smolar": 63.09519513382813
+    },
+    "triple_vapor": {
+      "rhomolar_units": "mol/m^3",
+      "T": 216.592,
+      "T_units": "K",
+      "p": 517964.3648069499,
+      "rhomolar": 312.6777588871105,
+      "hmolar": 18942.529431708263,
+      "p_units": "Pa",
+      "smolar_units": "J/mol/K",
+      "hmolar_units": "J/mol",
+      "smolar": 94.13778439068052
+    }
+  },
+  "INFO": {
+    "SMILES": "C(=O)=O",
+    "INCHI_KEY": "CURLTUGMZLYLDI-UHFFFAOYSA-N",
+    "CHEMSPIDER_ID": 274,
+    "REFPROP_NAME": "CO2",
+    "INCHI_STRING": "InChI=1S/CO2/c2-1-3",
+    "CAS": "124-38-9",
+    "2DPNG_URL": "http://www.chemspider.com/ImagesHandler.ashx?id=274",
+    "ENVIRONMENTAL": {
+      "GWP20": 1,
+      "ODP": -1,
+      "GWP500": 1,
+      "GWP100": 1,
+      "HH": 1,
+      "FH": 0,
+      "PH": 0,
+      "ASHRAE34": "A1",
+      "Name": "CarbonDioxide"
+    },
+    "NAME": "CarbonDioxide",
+    "FORMULA": "C_{1}O_{2}",
+    "ALIASES": [
+      "R744",
+      "co2",
+      "CO2",
+      "carbondioxide",
+      "CARBONDIOXIDE"
+    ]
+  },
+  "EOS": [
+    {
+      "p_max": 800000000,
+      "molar_mass_units": "kg/mol",
+      "STATES": {
+        "hs_anchor": {
+          "rhomolar_units": "mol/m^3",
+          "T": 334.54102,
+          "T_units": "K",
+          "p": 1.2034846936049871e7,
+          "rhomolar": 9562.41567,
+          "hmolar": 17160.722172023383,
+          "p_units": "Pa",
+          "smolar_units": "J/mol/K",
+          "hmolar_units": "J/mol",
+          "smolar": 69.6221044162246
+        },
+        "reducing": {
+          "rhomolar_units": "mol/m^3",
+          "T": 304.1282,
+          "T_units": "K",
+          "p": 7377300,
+          "rhomolar": 10624.978697999999,
+          "hmolar": 14625.95622338912,
+          "p_units": "Pa",
+          "smolar_units": "J/mol/K",
+          "hmolar_units": "J/mol",
+          "smolar": 63.10475559231642
+        },
+        "sat_min_liquid": {
+          "rhomolar_units": "mol/m^3",
+          "T": 216.592,
+          "T_units": "K",
+          "p": 517964.34344772575,
+          "rhomolar": 26777.277860217495,
+          "hmolar": 3522.347496266107,
+          "p_units": "Pa",
+          "smolar_units": "J/mol/K",
+          "hmolar_units": "J/mol",
+          "smolar": 22.94317948018097
+        },
+        "sat_min_vapor": {
+          "rhomolar_units": "mol/m^3",
+          "T": 216.592,
+          "T_units": "K",
+          "p": 517964.3648069499,
+          "rhomolar": 312.6777588871105,
+          "hmolar": 18942.529431708263,
+          "p_units": "Pa",
+          "smolar_units": "J/mol/K",
+          "hmolar_units": "J/mol",
+          "smolar": 94.13778439068052
+        }
+      },
+      "alphar": [
+        {
+          "l": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            2,
+            2,
+            3,
+            3,
+            3,
+            3,
+            3,
+            5,
+            5,
+            5,
+            6,
+            6
+          ],
+          "n": [
+            0.52646564804653,
+            -1.4995725042592,
+            0.27329786733782,
+            0.12949500022786,
+            0.15404088341841,
+            -0.58186950946814,
+            -0.18022494838296,
+            -0.095389904072812,
+            -0.0080486819317679,
+            -0.03554775127309,
+            -0.28079014882405,
+            -0.082435890081677,
+            0.010832427979006,
+            -0.0067073993161097,
+            -0.0046827907600524,
+            -0.028359911832177,
+            0.019500174744098,
+            -0.21609137507166,
+            0.43772794926972,
+            -0.22130790113593,
+            0.015190189957331,
+            -0.0153809489533
+          ],
+          "d": [
+            1,
+            1,
+            2,
+            3,
+            3,
+            3,
+            4,
+            5,
+            6,
+            6,
+            1,
+            4,
+            1,
+            1,
+            3,
+            3,
+            4,
+            5,
+            5,
+            5,
+            5,
+            5
+          ],
+          "type": "ResidualHelmholtzPower",
+          "t": [
+            0,
+            1.25,
+            1.625,
+            0.375,
+            0.375,
+            1.375,
+            1.125,
+            1.375,
+            0.125,
+            1.625,
+            3.75,
+            3.5,
+            7.5,
+            8,
+            6,
+            16,
+            11,
+            24,
+            26,
+            28,
+            24,
+            26
+          ]
+        }
+      ],
+      "gas_constant_units": "J/mol/K",
+      "T_max": 2000,
+      "pseudo_pure": false,
+      "molar_mass": 0.0440095,
+      "Ttriple_units": "K",
+      "T_max_units": "K",
+      "acentric": 0.22394,
+      "acentric_units": "-",
+      "alpha0": [
+        {
+          "a2": -16.118762264,
+          "type": "IdealGasHelmholtzLead",
+          "a1": 11.925152758
+        },
+        {
+          "a": 2.50002,
+          "type": "IdealGasHelmholtzLogTau"
+        },
+        {
+          "n": [
+            2.04452,
+            -1.06044,
+            2.03366,
+            0.01393
+          ],
+          "type": "IdealGasClapeyronJLGerg2008",
+          "v": [
+            3.022758166,
+            -2.844425476,
+            1.589964364,
+            1.12159609
+          ]
+        },
+        {
+          "R0": 8.31451,
+          "type": "IdealGasClapeyronJLR0",
+          "R0_units": "J/mol/K"
+        }
+      ],
+      "p_max_units": "Pa",
+      "BibTeX_EOS": "Kunz-JCED-2012",
+      "BibTeX_CP0": "Kunz-JCED-2012",
+      "Ttriple": 216.592,
+      "gas_constant": 8.314472,
+      "rhomolar_max": 32948.363557983954,
+      "rhomolar_max_units": "mol/m^3"
+    }
+  ],
+  "ANCILLARIES": {
+    "pS": {
+      "Tmin": 216.592,
+      "description": "p' = pc*exp(Tc/T*sum(n_i*theta^t_i))",
+      "Tmax": 304.1281999999994,
+      "n": [
+        -5.867399337600407,
+        -7.10969550015274,
+        11.022781986239265,
+        4.826076405022,
+        -6.240803382557819,
+        -6.7009642572439
+      ],
+      "max_abserror_percentage": 0.0010595686337877552,
+      "t": [
+        0.983,
+        1.322,
+        1.488,
+        2.807,
+        3.571,
+        1.941
+      ],
+      "reducing_value": 7377300,
+      "T_r": 304.1282,
+      "using_tau_r": true,
+      "type": "pL"
+    },
+    "sL": {
+      "A": [
+        6818.852909580215,
+        -194.27077153804927,
+        2.337179131824697,
+        -0.015524257504727535,
+        6.167869191905478e-5,
+        -1.4672785174288017e-7,
+        1.9359504641101607e-10,
+        -1.0932124877170373e-13
+      ],
+      "_note": "coefficients are in increasing order; input in K, output in J/mol/K; value is entropy minus hs_anchor entropy",
+      "B": [
+        1,
+        -0.0032708730612790167
+      ],
+      "Tmin": 216.592,
+      "Tmax": 304.0282,
+      "max_abs_error": 0.23598785475884476,
+      "type": "rational_polynomial",
+      "max_abs_error_units": "J/mol/K"
+    },
+    "hLV": {
+      "A": [
+        -5.415096280433002e6,
+        151804.48769240957,
+        -1815.1849622476843,
+        12.03166531764478,
+        -0.04777740915553576,
+        0.00011367805991519426,
+        -1.5007660898685777e-7,
+        8.482257174875226e-11
+      ],
+      "_note": "coefficients are in increasing order; input in K, output in J/mol; value is enthalpy minus hs_anchor enthalpy",
+      "B": [
+        1,
+        -0.003270052278106843
+      ],
+      "Tmin": 216.592,
+      "Tmax": 304.0282,
+      "max_abs_error": 173.64292643581348,
+      "type": "rational_polynomial",
+      "max_abs_error_units": "J/mol"
+    },
+    "sLV": {
+      "A": [
+        -16484.333203977505,
+        468.6667736497161,
+        -5.646271070005194,
+        0.03758538105576745,
+        -0.00014964205041478293,
+        3.566616470054065e-7,
+        -4.714095350852994e-10,
+        2.666394812306008e-13
+      ],
+      "_note": "coefficients are in increasing order; input in K, output in J/mol/K; value is entropy minus hs_anchor entropy",
+      "B": [
+        1,
+        -0.003270334053902686
+      ],
+      "Tmin": 216.592,
+      "Tmax": 304.0282,
+      "max_abs_error": 0.5638485464661311,
+      "type": "rational_polynomial",
+      "max_abs_error_units": "J/mol/K"
+    },
+    "melting_line": {
+      "type": "polynomial_in_Theta",
+      "parts": [
+        {
+          "a": [
+            1955.539,
+            2055.4593
+          ],
+          "T_min": 216.592,
+          "t": [
+            1,
+            2
+          ],
+          "T_0": 216.592,
+          "T_max": 330,
+          "p_0": 517950
+        }
+      ],
+      "BibTeX": "Span-JPCRD-1996",
+      "T_m": 216.58
+    },
+    "rhoV": {
+      "Tmin": 216.592,
+      "description": "rho'' = rhoc*exp(Tc/T*sum(n_i*theta^t_i))",
+      "Tmax": 304.1281999999994,
+      "n": [
+        -1.1635587811569497,
+        -3.64216164754343,
+        2.777311807571324,
+        -3.2573848494624538,
+        -1.9739104682508852,
+        -16.057319994659142
+      ],
+      "max_abserror_percentage": 0.035329219540658485,
+      "t": [
+        0.306,
+        0.569,
+        0.677,
+        0.891,
+        3.206,
+        6.093
+      ],
+      "reducing_value": 10624.9063,
+      "T_r": 304.1282,
+      "using_tau_r": true,
+      "type": "rhoV"
+    },
+    "surface_tension": {
+      "a": [
+        0.07863
+      ],
+      "n": [
+        1.254
+      ],
+      "BibTeX": "Mulero-JPCRD-2012",
+      "Tc": 304.128,
+      "description": "sigma = sum(a_i*(1-T/Tc)^n_i)"
+    },
+    "hL": {
+      "A": [
+        2.190950316411505e6,
+        -61844.371427955935,
+        740.4396282202234,
+        -4.905856469235458,
+        0.01946528303665375,
+        -4.627326593039687e-5,
+        6.103305785735871e-8,
+        -3.4462847211320295e-11
+      ],
+      "_note": "coefficients are in increasing order; input in K, output in J/mol; value is enthalpy minus hs_anchor enthalpy",
+      "B": [
+        1,
+        -0.0032706009039297603
+      ],
+      "Tmin": 216.592,
+      "Tmax": 304.0282,
+      "max_abs_error": 72.68905903839186,
+      "type": "rational_polynomial",
+      "max_abs_error_units": "J/mol"
+    },
+    "rhoL": {
+      "Tmin": 216.592,
+      "description": "rho' = rhoc*(1+sum(n_i*theta^t_i))",
+      "Tmax": 304.1281999999994,
+      "n": [
+        0.861951794789174,
+        5.535795098719573,
+        -21.766373764605415,
+        20.01416999278327,
+        -2.2218647220786862,
+        888.2387848519858
+      ],
+      "max_abserror_percentage": 0.044231974273145624,
+      "t": [
+        0.264,
+        0.672,
+        0.986,
+        1.092,
+        1.714,
+        9.902
+      ],
+      "reducing_value": 10624.9063,
+      "T_r": 304.1282,
+      "using_tau_r": false,
+      "type": "rhoLnoexp"
+    }
+  }
+}

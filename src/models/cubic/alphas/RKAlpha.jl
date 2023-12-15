@@ -1,25 +1,17 @@
 abstract type RKAlphaModel <: AlphaModel end
 
-struct RKAlphaParam <: EoSParam
-end
-
-@newmodelsimple RKAlpha RKAlphaModel RKAlphaParam
-export RKAlpha
+@newmodelsingleton RKAlpha RKAlphaModel
 
 """
     RKAlpha <: RKAlphaModel
     
-    RKAlpha(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    RKAlpha(components;
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
 
-- `w`: Single Parameter (`Float64`)
-
-## Model Parameters
-
-- `acentricfactor`: Single Parameter (`Float64`)
+- none
 
 ## Description
 
@@ -29,16 +21,15 @@ Cubic alpha `(α(T))` model. Default for [`RK`](@ref) EoS.
 Trᵢ = T/Tcᵢ
 ```
 
+## Model Construction Examples
+```
+# Because this model does not have parameters, all those constructors are equivalent:
+alpha = RKAlpha()
+alpha = RKAlpha("water")
+alpha = RKAlpha(["water","carbon dioxide"])
+```
 """
 RKAlpha
-
-function RKAlpha(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    packagedparams = RKAlphaParam()
-    model = RKAlpha(packagedparams, verbose=verbose)
-    return model
-end
-
-RKAlpha() = RKAlpha(RKAlphaParam())
 
 function α_function(model::CubicModel,V,T,z,alpha_model::RKAlphaModel)
     Tc = model.params.Tc.values
@@ -55,5 +46,3 @@ function α_function(model::CubicModel,V,T,z::SingleComp,alpha_model::RKAlphaMod
     Tr = T/Tc
     α = 1 /√(Tr)
 end
-
-is_splittable(::RKAlpha) = false

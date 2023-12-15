@@ -12,17 +12,16 @@ struct vdW{T <: IdealModel,α,c,M} <: vdWModel
     references::Array{String,1}
 end
 
-@registermodel vdW
 export vdW
 
 """
-    vdW(components::Vector{String};
+    vdW(components;
     idealmodel=BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
@@ -59,6 +58,38 @@ van der Wals Equation of state.
 P = RT/(V-Nb) + a•α(T)/V²
 ```
 
+## Model Construction Examples
+```julia
+# Using the default database
+model = vdW("water") #single input
+model = vdW(["water","ethanol"]) #multiple components
+model = vdW(["water","ethanol"], idealmodel = ReidIdeal) #modifying ideal model
+model = vdW(["water","ethanol"],alpha = SoaveAlpha) #modifying alpha function
+model = vdW(["water","ethanol"],translation = RackettTranslation) #modifying translation
+model = vdW(["water","ethanol"],mixing = KayRule) #using another mixing rule
+model = vdW(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced EoS+gᴱ mixing rule
+
+# Passing a prebuilt model
+
+my_alpha = SoaveAlpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
+model =  vdW(["ethane","butane"],alpha = my_alpha)
+
+# User-provided parameters, passing files or folders
+
+model = vdW(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])
+
+# User-provided parameters, passing parameters directly
+
+model = vdW(["neon","hydrogen"];
+        userlocations = (;Tc = [44.492,33.19],
+                        Pc = [2679000, 1296400],
+                        Mw = [20.17, 2.],
+                        acentricfactor = [-0.03,-0.21]
+                        k = [0. 0.18; 0.18 0.], #k,l can be ommited in single-component models.
+                        l = [0. 0.01; 0.01 0.])
+                    )
+```
+
 ## References
 
 1. van der Waals JD. Over de Continuiteit van den Gasen Vloeistoftoestand. PhD thesis, University of Leiden; 1873
@@ -66,34 +97,40 @@ P = RT/(V-Nb) + a•α(T)/V²
 """
 vdW
 
-function vdW(components::Vector{String}; idealmodel=BasicIdeal,
+function vdW(components; idealmodel=BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
     activity=nothing,
     translation=NoTranslation,
-    userlocations=String[], 
+    userlocations=String[],
     ideal_userlocations=String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
     verbose=false)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
-    k  = get(params,"k",nothing)
+    formatted_components = format_components(components)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
+        userlocations=userlocations,
+        verbose=verbose,
+        ignore_missing_singleparams = __ignored_crit_params(alpha))
+
+    k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     pc = params["Pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
+    acentricfactor = get(params,"acentricfactor",nothing)
+
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    n = length(components)
-    a = PairParam("a",components,zeros(n))
-    b = PairParam("b",components,zeros(n))
+    a = PairParam("a",formatted_components,zeros(length(Tc)))
+    b = PairParam("b",formatted_components,zeros(length(Tc)))
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    packagedparams = vdWParam(a,b,Tc,pc,Mw)
+    packagedparams = ABCubicParam(a,b,Tc,pc,Mw)
     references = String[]
-    model = vdW(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = vdW(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end
@@ -114,7 +151,7 @@ function a_res(model::vdWModel, V, T, z,_data = data(model,V,T,z))
     return -log(1+(c̄-b̄)*ρ) - ā*ρt*RT⁻¹
     #
     #return -log(V-n*b̄) - ā*n/(R̄*T*V) + log(V)
-end   
+end
 
 crit_pure(model::vdWModel) = crit_pure_tp(model)
 

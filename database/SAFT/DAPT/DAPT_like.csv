@@ -1,0 +1,4 @@
+Clapeyron Database File,,,,,,,,,,
+DAPT Like Parameters,,,,,,,,,,
+species,DIPPR Number,Mw,segment,r_c,lambda,sigma,epsilon,n_H,n_e,source
+water,,18.01,1.0,1.193,1.9,2.931,254.23,2,2,10.1016/j.fluid.2019.112252

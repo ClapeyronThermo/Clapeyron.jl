@@ -46,10 +46,13 @@ One can find out more about the information stored within these model objects in
 - Redlich-Kwong ([`RK`](@ref))
   - Soave-Redlich-Kwong ([`SRK`](@ref))
   - Predictive Soave-Redlich-Kwong ([`PSRK`](@ref))
+  - Translated-and-Consistent Redlich-Kwong ([`tcRK`](@ref))
 - Peng-Robinson ([`PR`](@ref))
   - Peng-Robinson (1978) ([`PR78`](@ref))
   - "Universal Mixing Rule" Peng-Robinson ([`UMRPR`](@ref))
   - Volume-Translated Peng-Robinson ([`VTPR`](@ref))
+  - Translated-and-Consistent Peng-Robinson ([`tcPR`](@ref))
+  - Consistent Peng-Robinson + Twu ([`cPR`](@ref))
   - Quantum Corrected Peng-Robinson ([`QCPR`](@ref))
   - Enhanced Predictive Peng-Robinson (1978) ([`EPPR78`](@ref))
 - Patel-Teja ([`PatelTeja`](@ref))
@@ -82,6 +85,7 @@ One can find out more about the information stored within these model objects in
 
 - [`Wilson`](@ref)
 - Non-random two-liquid ([`NRTL`](@ref))
+  - NRTL, temperature-dependent interaction ([`aspenNRTL`](@ref))
 - *Universal quasichemical Activity Coefficients* (UNIQUAC): ([`UNIQUAC`](@ref))
 - *UNIQUAC Functional-group Activity Coefficients* (UNIFAC): ([`UNIFAC`](@ref))
   - UNIFAC-FV ([`UNIFACFV`](@ref))
@@ -92,13 +96,14 @@ One can find out more about the information stored within these model objects in
   - COSMO-SAC with dispersive interactions ([`COSMOSACdsp`](@ref))
 
 **Empirical**:
-
-- GERG-2008 EoS for Natural Gas ([`GERG2008`](@ref))
+- General MultiParameter Empiric model  ([`MultiFluid`](@ref))
+  - GERG-2008 EoS for Natural Gas ([`GERG2008`](@ref))
   - EOS-LNG for Liquified Natural Gas ([`EOS_LNG`](@ref))
-- IAPWS-95 Water reference ([`IAPWS95`](@ref))
-- Propane Reference ([`PropaneRef`](@ref))
-- Lennard Jones Reference from Thol et al. (2016) ([`LJRef`](@ref))
-
+  - IAPWS-95 Water reference ([`IAPWS95`](@ref))
+  - Propane Reference ([`PropaneRef`](@ref))
+  - Lennard Jones Reference from Thol et al. (2016) ([`LJRef`](@ref))
+  - Ammonia Reference (2023) ([`Amonnia2023`](@ref))
+  - Multiparameter EoS + Activity ([`HelmAct`](@ref))
 **Extended Corresponding States ([`ECS`](@ref))**:
 - SPUNG ([`SPUNG`](@ref))
 
@@ -114,6 +119,8 @@ Both SAFT and cubic-type equations of state rely upon an ideal model. By default
 - Walker and Haslam's ideal correlation ([`WalkerIdeal`](@ref))
 - Joback's ideal correlation ([`JobackIdeal`](@ref))
 - Reid's polynomial correlation ([`ReidIdeal`](@ref))
+- Aly-Lee's correlation ([`AlyLeeIdeal`](@ref))
+- MultiParameter Empiric Ideal correlations ([`EmpiricIdeal`](@ref))
 
 These can be specified for any of the SAFT or cubic-type equations of state using:
 
@@ -140,8 +147,10 @@ The above model would be equivalent to a model built by SRK directly. We support
 - [`KUAlpha`](@ref): This is the default alpha function for KU
 - [`RKPRAlpha`](@ref): This is the default alpha function for RKPR
 - [`BMAlpha`](@ref): This is the modified alpha function proposed by Boston and Mathias designed to improve estimates above the critical point. This works for both PR and RK. 
-- [`TwuAlpha`](@ref): Proposed by Twu _et al._, this alpha function uses species-specific parameters rather than correlation and, thus, is slightly more accurate than regular alpha functions. It was intended to be used with PR and is used in VTPR.
+- [`TwuAlpha`](@ref): Proposed by Twu _et al._, this alpha function uses species-specific parameters rather than correlation and, thus, is slightly more accurate than regular alpha functions. It was intended to be used with PR and is used in VTPR, tcPR, cPR and tcRK.
+- [`Twu88Alpha`](@ref): An earlier version of `TwuAlpha`, that uses 2 parameters instead of 3.
 - [`MTAlpha`](@ref): Proposed by Magoulas and Tassios, this alpha function is essentially like the regular PR alpha function only to a higher order. It is used within UMRPR.
+- [`Soave2019Alpha`](@ref): Updated soave correlations for `PR` and (s)`RK` models.
 
 ## Specifying a mixing rule
 

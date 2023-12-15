@@ -2,19 +2,21 @@ struct ReidIdealParam <: EoSParam
     coeffs::SingleParam{NTuple{4,Float64}}
 end
 
-function ReidIdealParam(a::SingleParam,b::SingleParam,c::SingleParam,d::SingleParam)
+
+
+function reid_coeffs(a::SingleParam,b::SingleParam,c::SingleParam,d::SingleParam)
     comps = a.components
     a = a.values
     b = b.values
     c = c.values
     d = d.values
-    return ReidIdealParam(a,b,c,d,comps)
+    return reid_coeffs(a,b,c,d,comps)
 end
 
-function ReidIdealParam(a,b,c,d,comps)
+function reid_coeffs(a,b,c,d,comps)
     n = length(a)
     coeffs = [(a[i],b[i],c[i],d[i]) for i in 1:n]
-    ReidIdealParam(SingleParam("Reid Coefficients",comps,coeffs))
+    SingleParam("Reid Coefficients",comps,coeffs)
 end
 
 abstract type ReidIdealModel <: IdealModel end
@@ -45,22 +47,37 @@ Reid Ideal Model. Helmholtz energy obtained via integration of specific heat cap
 Cpᵢ(T) = aᵢ  + bᵢT + cᵢT^2 + dᵢT^3
 Cp(T) = ∑Cpᵢxᵢ
 ```
+
+## Model Construction Examples
+```
+# Using the default database
+idealmodel = ReidIdeal("water") #single input
+idealmodel = ReidIdeal(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+idealmodel = ReidIdeal(["neon","hydrogen"]; userlocations = ["path/to/my/db","reid.csv"])
+
+# Passing parameters directly
+idealmodel = ReidIdeal(["water","butane"];
+            userlocations = (a = [32.24, 9.487], 
+                        b = [0.00192, 0.3313], 
+                        c = [1.06e-5, -0.0001108],
+                        d = [-3.6e-9, -2.822e-9])
+                        )
+```
+
 """
 ReidIdeal
 
 export ReidIdeal
-function ReidIdeal(components::Array{String,1}; userlocations::Array{String,1}=String[], verbose=false, kwargs...)
-    params = getparams(components, ["ideal/ReidIdeal.csv"]; userlocations=userlocations, verbose=verbose)
-    a = params["a"]
-    b = params["b"]
-    c = params["c"]
-    d = params["d"]
-    packagedparams = ReidIdealParam(a, b, c, d)
-    references = String[] #  Fill this up.
-    return ReidIdeal(packagedparams; references=references)
+default_locations(::Type{ReidIdeal}) = ["ideal/ReidIdeal.csv"]
+function transform_params(::Type{ReidIdeal},params)
+    a,b,c,d = params["a"],params["b"],params["c"],params["d"]
+    params["coeffs"] = reid_coeffs(a,b,c,d)
+    return params
 end
-
-#TODO,add a dependency of a,b,c,d parameters
 recombine_impl!(model::ReidIdealModel) = model
 
 
@@ -69,7 +86,7 @@ function a_ideal(model::ReidIdealModel, V, T, z)
     polycoeff = model.params.coeffs.values
     #return sum(x[i]*(log(z[i]/V) + 1/(R̄*T)*(sum(polycoeff[k][i]/k*(T^k-298^k) for k in 1:4)) -
     #    1/R̄*((polycoeff[k][1]-R̄)*log(T/298)+sum(polycoeff[k][i]/(k-1)*(T^(k-1)-298^(k-1)) for k in 2:4))) for i in @comps)
-
+    V⁻¹ = 1/V
     res = zero(V+T+first(z))
     Σz = sum(z)
     @inbounds for i in @comps
@@ -82,11 +99,11 @@ function a_ideal(model::ReidIdealModel, V, T, z)
         R̄⁻¹= 1/R̄
         pol1 = ci ./ div1
         pol2 = cii ./ div2
-        lnV = log(z[i]/V)
         lnT = (1 - c0*R̄⁻¹)*(log(T/298))
         H = (evalpoly(T,pol1) - 298*evalpoly(298,pol1)/T)*R̄⁻¹
         TS = (T*evalpoly(T,pol2) - 298*evalpoly(298,pol2))*R̄⁻¹
-        res += z[i]*(lnV+lnT+H-TS)
+        res += z[i]*(lnT+H-TS)
+        res += xlogx(z[i],V⁻¹)
         #res +=x[i]*(log(z[i]/V) + 1/(R̄*T)*(sum(polycoeff[k]/k*(T^k-298^k) for k in 1:4)) -
         #1/R̄*((polycoeff[1]-R̄)*log(T/298)+sum(polycoeff[k]/(k-1)*(T^(k-1)-298^(k-1)) for k in 2:4)))
     end

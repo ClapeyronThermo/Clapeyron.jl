@@ -1,0 +1,998 @@
+Clapeyron Database File
+Rackett Compresibility Factor Single Parameters
+species,ZRA
+"[3-(2,3-epoxyproxy)propyl]trimethoxysilane",0.2347
+"1,1,1,2,2-pentafluoropropane",0.2658
+"1,1,1,2,3,3,3-heptafluoropropane",0.2654
+"1,1,1,2,3,3-hexafluoropropane",0.2654
+"1,1,1,2-tetrachlorodifluoroethane",0.2623
+"1,1,1,2-tetrachloroethane",0.2611
+"1,1,1,2-tetrafluoroethane",0.2596
+"1,1,1,3,3,3-hexafluoropropane",0.2654
+"1,1,1,3,3-pentafluorobutane",0.273
+"1,1,1,3,3-pentafluoropropane",0.2636
+"1,1,1-trichloroethane",0.2706
+"1,1,1-trichlorotrifluoroethane",0.267
+"1,1,1-trifluoroethane",0.2567
+"1,1,2,2,3-pentafluoropropane",0.2668
+"1,1,2,2-tetrachloroethane",0.2545
+"1,1,2,2-tetrafluoroethane",0.2691
+"1,1,2-trichloroethane",0.258
+"1,1,2-trichlorotrifluoroethane",0.272
+"1,1,2-trifluoroethane",0.2625
+"1,1,2-trimethylcyclopentane",0.2622
+"1,1,3-trimethylcyclohexane",0.2776
+"1,1,3-trimethylcyclopentane",0.2621
+"1,1-dibromoethane",0.2992
+"1,1-dichloro-1-fluoroethane",0.2753
+"1,1-dichloroethane",0.2744
+"1,1-dichloroethylene",0.2763
+"1,1-dichloropropane",0.2602
+"1,1-dichlorotetrafluoroethane",0.2747
+"1,1-diethylcyclohexane",0.2567
+"1,1-difluoroethane",0.2538
+"1,1-difluoroethylene",0.2713
+"1,1-dimethoxyethane",0.266
+"1,1-dimethylcyclohexane",0.2602
+"1,1-dimethylcyclopentane",0.2779
+"1,1-diphenylethane",0.2548
+"1,2,3,4-tetrahydronaphthalene",0.2609
+"1,2,3,4-tetramethylbenzene",0.2564
+"1,2,3,4-tetramethylcyclohexane",0.2567
+"1,2,3,5-tetraethylbenzene",0.2494
+"1,2,3,5-tetramethylbenzene",0.2543
+"1,2,3,6-tetrahydrobenzaldehyde",0.2615
+"1,2,3-trichlorobenzene",0.2818
+"1,2,3-trichloropropane",0.2419
+"1,2,3-trimethyl-4-ethylbenzene",0.2543
+"1,2,3-trimethylbenzene",0.2579
+"1,2,4,5-tetramethylbenzene",0.2497
+"1,2,4-triethylbenzene",0.2513
+"1,2,4-trimethyl-3-ethylbenzene",0.2561
+"1,2,4-trimethyl-5-ethylbenzene",0.2531
+"1,2,4-trimethylbenzene",0.2564
+"1,2-butadiene",0.2619
+"1,2-dibromoethane",0.2663
+"1,2-dibromotetrafluoroethane",0.2712
+"1,2-dichloro-1,1,2-trifluoroethane",0.2642
+"1,2-dichlorobutane",0.2528
+"1,2-dichloroethane",0.266
+"1,2-dichloropropane",0.2604
+"1,2-dichlorotetrafluoroethane",0.2728
+"1,2-diethoxyethane",0.2566
+"1,2-dimethoxyethane",0.2607
+"1,2-diphenylethane",0.2518
+"1,2-epoxy-3-phenoxypropane",0.2322
+"1,2-epoxybutane",0.257
+"1,2-pentadiene",0.2574
+"1,2-propanediamine",0.2756
+"1,2-propylene oxide",0.2473
+"1,3,5-trichlorobenzene",0.2559
+"1,3,5-triethylbenzene",0.2485
+"1,3-benzenediol",0.2904
+"1,3-butadiene",0.2708
+"1,3-butanediol",0.2165
+"1,3-cyclohexadiene",0.2796
+"1,3-dichloro-2-propanol",0.2557
+"1,3-dichloropropane",0.2468
+"1,3-dimethyladamantane",0.2782
+"1,3-dioxane",0.2691
+"1,3-propylene glycol",0.3052
+"1,3-propylene oxide",0.2535
+"1,4-butanediisocyanate",0.2245
+"1,4-cyclohexadiene",0.2721
+"1,4-dibromobenzene",0.2739
+"1,4-dichlorobutane",0.243
+"1,4-dioxane",0.2682
+"1,4-di-tert-butylbenzene",0.269
+"1,4-hexadiene",0.2636
+"1,4-pentadiene",0.273
+"1,5-cyclooctadiene",0.2768
+"1,5-dichloropentane",0.2419
+"1,5-hexadiene",0.2641
+"1,5-pentanediamine",0.2602
+"1,5-pentanediol",0.237
+1-amino-2-propanol,0.2592
+1-bromobutane,0.2683
+1-bromoheptane,0.2642
+1-bromonaphthalene,0.2543
+1-bromopropane,0.2659
+1-butanol,0.2549
+1-butene,0.2738
+"1-chloro-1,1-difluoroethane",0.2668
+1-chloronaphthalene,0.2464
+1-chloropentane,0.2567
+1-cis-2-trans-4-trimethylcyclopentane,0.2605
+1-decanol,0.2493
+1-decene,0.2556
+1-decyne,0.2577
+1-dodecanol,0.2448
+1-dodecene,0.2488
+1-eicosene,0.2388
+1-ethyl-2-isopropylbenzene,0.2561
+1-ethylcyclohexene,0.2628
+1-ethylnaphthalene,0.2572
+1-heptadecene,0.2421
+1-heptanol,0.2617
+1-heptene,0.2649
+1-heptyne,0.2677
+1-hexadecanol,0.2364
+1-hexadecene,0.2424
+1-hexanol,0.2544
+1-hexene,0.2674
+1-hexyne,0.2698
+1-isopropoxy-2-propanol,0.2768
+1-methyl-1-ethylcyclopentane,0.2656
+1-methyl-2-n-propylbenzene,0.259
+1-methyl-3-n-propylbenzene,0.2584
+1-methyl-4-n-propylbenzene,0.2608
+1-methyl-4-vinylcyclohexene,0.262
+1-methylcyclopentene,0.2728
+1-methylindene,0.2556
+1-methylnaphthalene,0.2561
+1-methylvinyl acetate,0.2794
+1-nitropropane,0.2447
+1-nonadecene,0.2401
+1-nonanol,0.2492
+1-nonene,0.2591
+1-nonyne,0.2615
+1-octadecanol,0.2327
+1-octadecene,0.2412
+1-octanol,0.2549
+1-octene,0.2625
+1-octyne,0.2642
+1-pentadecene,0.2445
+1-pentanol,0.2561
+1-pentene,0.2702
+1-pentyne,0.2825
+1-phenylnaphthalene,0.2443
+1-propanol,0.2511
+1-tetradecanol,0.2416
+1-tetradecene,0.2425
+"1-trans-3,5-trimethylcyclohexane",0.2716
+1-tridecanol,0.2423
+1-tridecene,0.2456
+1-undecanol,0.2479
+1-undecene,0.2521
+2-(2-hexoxyethoxy)ethanol,0.2669
+"2-(difluoromethoxy)-1,1,1-trifluoroethane",0.2638
+"2,2,3,3-tetramethylbutane",0.2742
+"2,2,3,3-tetramethylhexane",0.2693
+"2,2,3,3-tetramethylpentane",0.2708
+"2,2,3,4-tetramethylpentane",0.2687
+"2,2,3-trimethylbutane",0.2712
+"2,2,3-trimethylpentane",0.266
+"2,2,4,4,6,8,8-heptamethylnonane",0.2509
+"2,2,4,4-tetramethylpentane",0.2697
+"2,2,4-trimethyl-1,3-pentanediol",0.2363
+"2,2,4-trimethylpentane",0.2677
+"2,2,5,5-tetramethylhexane",0.2653
+"2,2,5-trimethylhexane",0.2635
+"2,2-dichloro-1,1,1-trifluoroethane",0.2676
+"2,2-dimethyl-3-ethylpentane",0.269
+"2,2-dimethylbutane",0.2736
+"2,2-dimethylheptane",0.2628
+"2,2-dimethylhexane",0.2641
+"2,2-dimethyloctane",0.2582
+"2,2-dimethylpentane",0.2668
+"2,3,3,3-tetrafluoropropene",0.2645
+"2,3,3,4-tetramethylpentane",0.2702
+"2,3,3-trimethyl-1-butene",0.2767
+"2,3,3-trimethylpentane",0.2687
+"2,3,4-trimethylpentane",0.266
+"2,3-dichloro-1-propanol",0.254
+"2,3-dichloropropene",0.2605
+"2,3-dihydrofuran",0.2686
+"2,3-dimethyl-1,3-butadiene",0.2617
+"2,3-dimethyl-1-butene",0.2725
+"2,3-dimethyl-1-hexene",0.2672
+"2,3-dimethyl-2-butene",0.2598
+"2,3-dimethylbutane",0.2707
+"2,3-dimethylheptane",0.2604
+"2,3-dimethylhexane",0.2628
+"2,3-dimethyloctane",0.2553
+"2,3-dimethylpentane",0.2654
+"2,3-pentadiene",0.2577
+"2,3-xylenol",0.293
+"2,4,4-trimethyl-1-pentene",0.2661
+"2,4,4-trimethyl-2-pentene",0.2637
+"2,4,4-trimethylhexane",0.2662
+"2,4,6-trimethylpyridine",0.2518
+"2,4-diaminotoluene",0.2466
+"2,4-dichlorotoluene",0.2547
+"2,4-dimethyl-3-ethylpentane",0.2659
+"2,4-dimethylhexane",0.2658
+"2,4-dimethyloctane",0.2623
+"2,4-dimethylpentane",0.2655
+"2,4-toluene diisocyanate",0.2456
+"2,4-xylenol",0.2696
+"2,5-dihydrofuran",0.2618
+"2,5-dimethyl-2,4-hexadiene",0.2466
+"2,5-dimethylhexane",0.262
+"2,5-dimethyloctane",0.2584
+"2,5-xylenol",0.289
+"2,6-dimethyl-4-heptanol",0.2684
+"2,6-dimethylheptane",0.259
+"2,6-dimethyloctane",0.2606
+"2,6-dimethylpyridine",0.257
+"2,6-toluene diisocyanate",0.2355
+"2,6-xylenol",0.288
+"2,7-dimethyloctane",0.2564
+2-aminoethoxyethanol,0.2891
+2-bromobutane,0.2881
+2-bromopropane,0.3197
+2-butanol,0.2538
+2-butoxyethanol,0.254
+"2-chloro-1,1,1,2-tetrafluoroethane",0.2697
+"2-chloro-1,1-difluoroethylene",0.2657
+2-chloroethanol,0.2446
+2-chloropropene,0.2762
+2-ethoxyethanol,0.2529
+2-ethoxyethyl acetate,0.262
+2-ethyl butyric acid,0.254
+2-ethyl-1-butene,0.2674
+2-ethyl-1-hexanol,0.2556
+2-ethyl-1-hexene,0.2603
+2-ethyl-1-pentene,0.2641
+2-ethyl-2-hexenal,0.23
+2-ethylhexyl acetate,0.2537
+2-ethyl-m-xylene,0.2591
+2-ethyl-p-xylene,0.2551
+2-ethyl-tetrahydrothiophene,0.2643
+2-heptanone,0.2544
+2-hexanol,0.2565
+2-hexanone,0.2546
+2-hexoxyethanol,0.2555
+2-hexyne,0.2612
+2-methyl-1-butanol,0.2581
+2-methyl-1-butene,0.2622
+2-methyl-1-heptene,0.2584
+2-methyl-1-hexanol,0.2578
+2-methyl-1-hexene,0.2615
+2-methyl-1-nonene,0.2534
+2-methyl-1-octene,0.2539
+2-methyl-1-pentanol,0.2564
+2-methyl-1-pentene,0.2645
+2-methyl-1-propanol,0.253
+2-methyl-2-aminobutane,0.2787
+2-methyl-2-butanol,0.2601
+2-methyl-2-butene,0.2561
+2-methyl-2-pentenal,0.2401
+2-methyl-2-pentene,0.2608
+2-methyl-2-propanol,0.256
+2-methyl-3-ethylpentane,0.2626
+2-methylbutyraldehyde,0.2634
+2-methylheptane,0.2593
+2-methylhexane,0.2633
+2-methylnaphthalene,0.2554
+2-methylnonane,0.2549
+2-methyloctane,0.2589
+2-methylpentane,0.2686
+2-methylpropanal,0.257
+2-methylpyridine,0.2663
+2-methyltetrahydrofuran,0.2506
+2-methylthiophene,0.2766
+2-nitropropane,0.2523
+2-nonanol,0.2596
+2-nonanone,0.2489
+2-octanone,0.252
+2-pentanone,0.2551
+2-pentoxyethanol,0.2606
+2-pentyne,0.2618
+2-phenyl-1-propanol,0.2624
+3-(methylmercapto)propanal,0.243
+"3,3,5-trimethylheptane",0.2643
+"3,3-diethylpentane",0.2659
+"3,3-dimethyl-1-butene",0.281
+"3,3-dimethyl-2-butanone",0.2607
+"3,3-dimethylhexane",0.2613
+"3,3-dimethylpentane",0.2733
+"3,4-dichloroaniline",0.2461
+"3,4-dimethylhexane",0.2636
+"3,4-xylenol",0.2846
+"3,5-xylenol",0.2395
+3-chloropropene,0.2601
+3-chloropropyltrimethoxysilane,0.2414
+3-ethyl-1-pentene,0.2732
+3-ethylheptane,0.2589
+3-ethylhexane,0.2596
+3-ethyl-o-xylene,0.2509
+3-ethylpentane,0.2664
+3-heptanol,0.2621
+3-hexanone,0.2559
+3-hexyne,0.2606
+3-methoxypropionitrile,0.2177
+"3-methyl-1,2-butadiene",0.2637
+"3-methyl-1,4-pentadiene",0.273
+3-methyl-1-butene,0.2744
+3-methyl-1-butyne,0.2891
+3-methyl-1-hexene,0.2691
+3-methyl-1-pentanol,0.2546
+3-methyl-1-pentene,0.2742
+3-methyl-2-pentanone,0.2586
+3-methyl-3-ethylpentane,0.2681
+3-methyl-cis-2-pentene,0.2646
+3-methylcyclopentene,0.278
+3-methylheptane,0.2588
+3-methylhexanal,0.2498
+3-methylhexane,0.2615
+3-methylnonane,0.2544
+3-methyloctane,0.2581
+3-methylpentane,0.2674
+3-methylpyridine,0.2611
+3-methylthiophene,0.2737
+3-methyl-trans-2-pentene,0.2578
+3-nitrobenzotrifluoride,0.2322
+3-pentanol,0.2545
+3-pentanone,0.2569
+3-phenyl-1-propanol,0.2586
+4-ethyl-m-xylene,0.2552
+4-ethyl-o-xylene,0.2543
+4-methyl-1-hexene,0.2716
+4-methyl-1-pentene,0.2716
+4-methyl-2-pentanol,0.2672
+4-methyl-cis-2-pentene,0.2699
+4-methylcyclopentene,0.2799
+4-methylheptane,0.2592
+4-methylnonane,0.2573
+4-methyloctane,0.2581
+4-methylpyridine,0.2621
+4-methyl-trans-2-pentene,0.2696
+5-ethylidene-2-norbornene,0.2653
+5-ethyl-m-xylene,0.2513
+5-methyl-1-hexene,0.2649
+5-methyl-2-hexanone,0.2568
+5-methylnonane,0.256
+5-nonanone,0.2435
+6-aminohexanamide,0.248
+6-methyl-1-heptene,0.2601
+8-hydroxyquinoline,0.2626
+8-methylquinoline,0.2736
+acenaphthene,0.2315
+acetal,0.2832
+acetaldoxime,0.247
+acetic acid,0.2214
+acetic anhydride,0.2438
+acetone,0.2442
+acetonitrile,0.1986
+acetophenone,0.2567
+acetyl chloride,0.2664
+acetylene,0.271
+acridine,0.2547
+acrolein,0.2366
+acrylic acid,0.245
+air,0.2934
+allyl acetate,0.2566
+allyl alcohol,0.2505
+allylamine,0.2575
+alpha-methylstyrene,0.2572
+alpha-pinene,0.2542
+ammonia,0.2464
+anethole,0.2435
+aniline,0.2606
+anisole,0.2639
+anthracene,0.2306
+anthraquinone,0.2377
+antimony trichloride,0.2203
+argon,0.2935
+arsine,0.2792
+benzaldehyde,0.2595
+benzene,0.2697
+benzoic acid,0.2481
+benzophenone,0.2625
+benzothiophene,0.2782
+benzotrichloride,0.2539
+benzotrifluoride,0.2536
+benzoyl chloride,0.2602
+benzyl alcohol,0.2461
+benzyl chloride,0.2537
+benzyl dichloride,0.2561
+benzyl ethyl ether,0.2523
+benzyl mercaptan,0.261
+benzylamine,0.2612
+beta-phellandrene,0.2647
+beta-pinene,0.2549
+bicyclo[2.2.2]octane,0.2468
+bicyclohexyl,0.2556
+biphenyl,0.2559
+bis(chloromethyl)ether,0.2541
+boron trichloride,0.2489
+boron trifluoride,0.2602
+bromine,0.2992
+bromobenzene,0.2632
+bromochlorodifluoromethane,0.2745
+bromochloromethane,0.2714
+bromodifluoromethane,0.2684
+bromoethane,0.2742
+bromomethane,0.2715
+bromotrifluoromethane,0.276
+butanal,0.2593
+butyl vinyl ether,0.262
+butyronitrile,0.2306
+camphor,0.256
+carbon dioxide,0.2719
+carbon disulfide,0.2879
+carbon monoxide,0.2897
+carbon tetrachloride,0.2722
+carbon tetrafluoride,0.281
+carbonyl sulfide,0.2757
+chlorine,0.2774
+chlorine trifluoride,0.204
+chloroacetic acid,0.2315
+chloroacetyl chloride,0.2568
+chlorodifluoromethane,0.2677
+chlorofluoromethane,0.2477
+chloroform,0.2757
+chloropentafluoroethane,0.2757
+chloroprene,0.2607
+chlorotrifluoroethylene,0.2718
+chlorotrifluoromethane,0.2772
+"cis-1,2-dichloroethylene",0.259
+"cis-1,2-dimethylcyclohexane",0.2544
+"cis-1,2-dimethylcyclopentane",0.2698
+"cis-1,3-dimethylcyclohexane",0.2634
+"cis-1,3-dimethylcyclopentane",0.2801
+"cis-1,3-pentadiene",0.2559
+"cis-1,4-dimethylcyclohexane",0.2592
+cis-1-propenylbenzene,0.2558
+cis-2-butene,0.2704
+cis-2-decene,0.2516
+cis-2-heptene,0.2574
+cis-2-hexene,0.2605
+cis-2-methylcyclohexanol,0.267
+cis-2-octene,0.2554
+cis-2-pentene,0.2701
+cis-3-heptene,0.2588
+cis-3-hexene,0.2634
+cis-3-octene,0.2559
+cis-4-octene,0.256
+cis-crotonitrile,0.2235
+cis-decahydronaphthalene,0.264
+cumene,0.2622
+cyanogen,0.2629
+cyanogen chloride,0.2378
+cyclobutane,0.2727
+cycloheptane,0.2721
+cycloheptene,0.277
+cyclohexane,0.273
+cyclohexanol,0.2581
+cyclohexanone,0.2465
+cyclohexene,0.272
+cyclohexyl mercaptan,0.2693
+cyclohexylamine,0.2757
+cyclohexylbenzene,0.2624
+cyclooctane,0.2701
+cyclopentadiene,0.2746
+cyclopentane,0.2712
+cyclopentanone,0.2483
+cyclopentene,0.2759
+cyclopentylamine,0.271
+cyclopropane,0.2776
+decafluorobutane,0.271
+decamethylcyclopentasiloxane,0.2485
+decanal,0.27
+deuterium,0.315
+di(2-chloroethyl)ether,0.2475
+di(2-ethylhexyl)adipate,0.2428
+dibenzofuran,0.261
+diborane,0.2836
+dibromomethane,0.2847
+dibutyl sebacate,0.2392
+dichloroacetyl chloride,0.2686
+dichlorodifluoromethane,0.2761
+dichlorofluoromethane,0.2711
+dichloromethane,0.2627
+dichlorosilane,0.2767
+dicyclopentadiene,0.2583
+diethanolamine,0.2236
+diethyl disulfide,0.2695
+diethyl ether,0.2645
+diethyl maleate,0.2614
+diethyl phthalate,0.241
+diethyl sulfide,0.2668
+diethylamine,0.2614
+diethylene glycol diethyl ether,0.255
+diethylene glycol monopropyl ether,0.2597
+diethylsulfite,0.275
+difluoromethane,0.2444
+difluoromethyl trifluoromethyl ether,0.2672
+dihexyl adipate,0.2424
+diiodomethane,0.2392
+diisobutyl ketone,0.2595
+diisobutylamine,0.269
+diisopentylsulfide,0.2585
+diisopropyl ether,0.2699
+dimethyl carbonate,0.2502
+dimethyl disulfide,0.275
+dimethyl ether,0.2731
+dimethyl succinate,0.2508
+dimethyl sulfide,0.2674
+dimethyl sulfoxide,0.235
+dimethyl terephthalate,0.2375
+dimethylacetylene,0.2649
+dimethylamine,0.2633
+dimethylchlorosilane,0.2691
+dimethyldichlorosilane,0.2738
+dimethyldimethoxysilane,0.2505
+di-n-butyl ether,0.2592
+di-n-butyl phthalate,0.2467
+di-n-butyl sulfone,0.2422
+di-n-butylamine,0.2622
+di-n-hexyl ether,0.2499
+di-n-octyl ether,0.2442
+di-n-octylamine,0.2256
+di-n-pentyl ether,0.2543
+di-n-propyl disulfide,0.2645
+di-n-propyl ether,0.2663
+di-n-propyl sulfide,0.2607
+di-n-propyl sulfone,0.2419
+dioctyl adipate,0.2305
+diphenyl ether,0.2553
+diphenylamine,0.2491
+diphenyldichlorosilane,0.2439
+diphenylmethane,0.2431
+dipropylene glycol monoethyl ether,0.2677
+di-tert-butyl ether,0.2701
+ethane,0.2814
+ethanol,0.243
+ethyl acetate,0.2555
+ethyl acrylate,0.2563
+ethyl aluminum dichloride,0.1526
+ethyl benzoate,0.256
+ethyl chloride,0.2664
+ethyl chloroformate,0.2788
+ethyl fluoride,0.2612
+ethyl formate,0.2584
+ethyl iodide,0.2504
+ethyl isobutyrate,0.2623
+ethyl isovalerate,0.2632
+ethyl mercaptan,0.2701
+ethyl methacrylate,0.2529
+ethyl n-butyrate,0.251
+ethyl propionate,0.2543
+ethyl t-butyl sulfide,0.2695
+ethyl tert-pentyl ether,0.2653
+ethyl vinyl ether,0.2686
+ethylacetylene,0.2705
+ethylal,0.2669
+ethylamine,0.2649
+ethylbenzene,0.262
+ethylchloroacetate,0.2487
+ethylcyclohexane,0.2595
+ethylcyclopentane,0.2673
+ethylene,0.282
+ethylene glycol,0.2424
+ethylene glycol monobutyl ether acetate,0.2524
+ethylene oxide,0.2573
+ethylenediamine,0.2556
+ethyleneimine,0.2402
+ethyltrichlorosilane,0.2768
+ethynylbenzene,0.2702
+fluorine,0.2874
+fluorobenzene,0.266
+formaldehyde,0.2126
+formic acid,0.1729
+furan,0.2694
+furfural,0.2631
+furfuryl alcohol,0.2614
+gamma-valerolactone,0.2542
+glutaric acid,0.2286
+glutaric anhydride,0.2552
+glyceryl triacetate,0.2466
+halothane,0.274
+helium-4,0.3355
+heptanal,0.2599
+hexaethylbenzene,0.2517
+"hexafluoro-1,3-butadiene",0.2645
+hexafluoroacetone,0.2657
+hexafluorobenzene,0.2552
+hexafluoroethane,0.2778
+hexamethylbenzene,0.2495
+hexamethylcyclotrisiloxane,0.2673
+hexamethyldisilazane,0.2598
+hexamethyldisiloxane,0.2672
+hexanal,0.2601
+hexanenitrile,0.2447
+hydrazine,0.2641
+hydrogen,0.3192
+hydrogen bromide,0.2832
+hydrogen chloride,0.267
+hydrogen cyanide,0.1917
+hydrogen iodide,0.2883
+hydrogen peroxide,0.267
+hydrogen selenide,0.2871
+hydrogen sulfide,0.2818
+indane,0.2668
+indene,0.2545
+indole,0.2378
+iodine,0.2993
+iodobenzene,0.265
+iron pentacarbonyl,0.2664
+isobutane,0.2745
+isobutene,0.2725
+isobutyl acetate,0.2556
+isobutyl chloride,0.2641
+isobutyl formate,0.2771
+isobutyl isobutyrate,0.2667
+isobutyl mercaptan,0.272
+isobutylamine,0.2709
+isobutylbenzene,0.2719
+iso-butylcyclohexane,0.2657
+isobutyric acid,0.2251
+isobutyric anhydride,0.2685
+isobutyronitrile,0.2336
+isopentane,0.2715
+isopentyl isovalerate,0.2538
+isophthaloyl chloride,0.2501
+isoprene,0.2649
+isopropanol,0.2487
+isopropyl acetate,0.2559
+isopropyl butyl ether,0.2695
+isopropyl chloride,0.2741
+isopropyl iodide,0.2958
+isopropyl mercaptan,0.2822
+isopropyl myristate,0.2469
+isopropylamine,0.2682
+isopropylcyclohexane,0.2629
+isopropylcyclopentane,0.264
+isoquinoline,0.281
+isovaleric acid,0.2441
+isoxazole,0.2482
+ketene,0.272
+krypton,0.2903
+lithium,0.124
+l-menthol,0.26
+m-chloroaniline,0.2619
+m-chloronitrobenzene,0.246
+m-chlorophenol,0.2771
+m-cresol,0.2542
+m-cymene,0.2554
+m-dichlorobenzene,0.2614
+m-diethylbenzene,0.2577
+m-diisopropylbenzene,0.2747
+m-divinylbenzene,0.2497
+mercury,0.3906
+mesityl oxide,0.2469
+mesitylene,0.2555
+methacrolein,0.2459
+methacrylonitrile,0.2307
+methane,0.2893
+methanol,0.2313
+methyl acetate,0.257
+methyl acrylate,0.2518
+methyl benzoate,0.2549
+methyl chloride,0.2683
+methyl chloroacetate,0.2514
+methyl chloroformate,0.2683
+methyl dichlorosilane,0.2696
+methyl diethanolamine,0.2505
+methyl dodecanoate,0.237
+methyl ethyl ether,0.2689
+methyl ethyl ketone,0.2524
+methyl ethyl sulfide,0.2559
+methyl fluoride,0.2481
+methyl formate,0.2576
+methyl iodide,0.2669
+methyl isobutyl ether,0.2713
+methyl isobutyrate,0.2582
+methyl isopropenyl ketone,0.2509
+methyl isopropyl ether,0.2703
+methyl isopropyl ketone,0.2603
+methyl isopropyl sulfide,0.2712
+methyl mercaptan,0.2727
+methyl methacrylate,0.2544
+methyl n-butyl ether,0.2637
+methyl n-butyl sulfide,0.2615
+methyl n-butyrate,0.2546
+methyl n-pentyl ether,0.2632
+methyl n-propyl ether,0.2684
+methyl n-propyl sulfide,0.2666
+methyl propionate,0.2564
+methyl sec-butyl ether,0.2683
+methyl silicate,0.2666
+methyl stearate,0.2182
+methyl t-butyl sulfide,0.2722
+methyl tert-pentyl ether,0.2616
+methyl trichlorosilane,0.2702
+methyl vinyl dichlorosilane,0.2516
+methyl vinyl ether,0.2616
+methylacetylene,0.2705
+methylal,0.2489
+methylamine,0.2589
+methylcyclohexane,0.2712
+methylcyclopentane,0.2713
+m-ethyltoluene,0.2583
+m-methylstyrene,0.2507
+monochlorobenzene,0.2646
+morpholine,0.2693
+m-phenylenediamine,0.2473
+m-tolualcohol,0.2747
+m-toluidine,0.2543
+m-xylene,0.2587
+"n,n-diethylaniline",0.2523
+"n,n-diethylhydroxylamine",0.268
+"n,n-dimethylacetamide",0.2317
+"n,n-dimethylaniline",0.2545
+"n,n-dimethylformamide",0.2211
+naphthalene,0.2605
+n-butane~|~butane,0.2731
+n-butyl acetate~|~butyl acetate,0.2576
+n-butyl acrylate~|~butyl acrylate,0.26
+n-butyl chloride~|~butyl chloride,0.2564
+n-butyl formate~|~butyl formate,0.2569
+n-butyl mercaptan~|~butyl mercaptan,0.2636
+n-butyl n-butyrate~|~butyl butyrate,0.2545
+n-butyl propionate~|~butyl propionate,0.2565
+n-butyl valerate~|~butyl valerate,0.2545
+n-butylamine~|~butylamine,0.2659
+n-butylbenzene~|~butylbenzene,0.2596
+n-butylcyclohexane~|~butylcyclohexane,0.2578
+n-butylcyclopentane~|~butylcyclopentane,0.2596
+n-butyric acid~|~butyric acid,0.2338
+n-decane~|~decane,0.2517
+n-decyl mercaptan~|~decyl mercaptan,0.2449
+n-decylamine~|~decylamine,0.2493
+n-decylbenzene~|~decylbenzene,0.2467
+n-decylcyclohexane~|~decylcyclohexane,0.247
+n-docosane~|~docosane,0.2299
+n-dodecane~|~dodecane,0.2466
+n-dodecanoic acid~|~n-dodecanoic acid~|~dodecanoic acid~|~n-dodecanoic acid,0.2408
+n-dotriacontane~|~dotriacontane,0.2229
+n-eicosane~|~eicosane,0.2335
+neon,0.3004
+neopentane,0.2755
+n-heneicosane~|~heneicosane,0.2315
+n-heptadecane~|~heptadecane,0.2364
+n-heptane~|~heptane,0.2605
+n-heptanoic acid~|~heptanoic acid,0.2494
+n-heptyl acetate~|~heptyl acetate,0.2547
+n-heptyl formate~|~heptyl formate,0.2527
+n-heptyl mercaptan~|~heptyl mercaptan,0.2544
+n-heptylamine~|~heptylamine,0.2561
+n-heptylbenzene~|~heptylbenzene,0.2503
+n-hexacosane~|~hexacosane,0.2267
+n-hexadecane~|~hexadecane,0.2366
+n-hexane~|~hexane,0.2638
+n-hexatriacontane~|~hexatriacontane,0.2229
+n-hexyl acetate~|~hexyl acetate,0.2551
+n-hexyl formate~|~hexyl formate,0.2522
+n-hexyl mercaptan~|~hexyl mercaptan,0.2569
+n-hexylamine~|~hexylamine,0.2582
+n-hexylbenzene~|~hexylbenzene,0.2521
+nitric oxide,0.2616
+nitrogen,0.2902
+nitrogen trifluoride,0.2779
+nitromethane,0.2312
+nitrous oxide,0.275
+n-methyl-2-pyrrolidone,0.242
+n-methylaniline,0.2861
+n-methylformamide,0.2079
+n-nonadecane~|~nonadecane,0.2334
+n-nonane~|~nonane,0.2544
+n-nonyl mercaptan~|~nonyl mercaptan,0.2502
+n-nonylamine~|~nonylamine,0.253
+n-octacosane~|~octacosane,0.2256
+n-octadecane~|~octadecane,0.2347
+n-octane~|~octane,0.2569
+n-octanoic acid~|~octanoic acid,0.2479
+n-octyl formate~|~octyl formate,0.2521
+n-octyl mercaptan~|~octyl mercaptan,0.252
+n-octylamine~|~octylamine,0.2552
+n-octylbenzene~|~octylbenzene,0.2483
+nonanal,0.2623
+n-pentacosane~|~pentacosane,0.2281
+n-pentadecane~|~pentadecane,0.2384
+n-pentane~|~pentane,0.2681
+n-pentanoic acid~|~pentanoic acid,0.2388
+n-pentyl acetate~|~pentyl acetate,0.2546
+n-pentyl mercaptan~|~pentyl mercaptan,0.2623
+n-pentylamine~|~pentylamine,0.2613
+n-pentylbenzene~|~pentylbenzene,0.2539
+n-propyl acetate~|~propyl acetate,0.2536
+n-propyl acrylate~|~propyl acrylate,0.2597
+n-propyl benzoate~|~propyl benzoate,0.2525
+n-propyl formate~|~propyl formate,0.2572
+n-propyl iodide~|~propyl iodide,0.2529
+n-propyl isobutyrate~|~propyl isobutyrate,0.2646
+n-propyl mercaptan~|~propyl mercaptan,0.2688
+n-propyl methacrylate~|~propyl methacrylate,0.2575
+n-propyl n-butyrate~|~propyl butyrate,0.2539
+n-propyl propionate~|~propyl propionate,0.2568
+n-propylamine~|~propylamine,0.2637
+n-propylbenzene~|~propylbenzene,0.2622
+n-propylcyclohexane~|~propylcyclohexane,0.2607
+n-propylcyclopentane~|~propylcyclopentane,0.2629
+n-tetracosane~|~tetracosane,0.2284
+n-tetradecane~|~tetradecane,0.2401
+n-tricosane~|~tricosane,0.2293
+n-tridecane~|~tridecane,0.2433
+n-tridecanoic acid~|~tridecanoic acid,0.2383
+n-tridecylbenzene~|~tridecylbenzene,0.2433
+n-undecane~|~undecane,0.2488
+n-undecylbenzene~|~undecylbenzene,0.2465
+o-chloroaniline,0.2577
+o-chlorotoluene,0.2595
+o-cresol,0.2702
+octafluoro-2-butene,0.2458
+octafluorocyclobutane,0.2715
+octafluoropropane,0.2778
+octamethylcyclotetrasiloxane,0.2568
+octanal,0.2659
+o-cymene,0.2565
+o-dichlorobenzene,0.2549
+o-diethylbenzene,0.2534
+o-ethylphenol,0.2751
+o-ethyltoluene,0.26
+o-methylstyrene,0.2589
+o-nitrotoluene,0.2511
+o-phenylenediamine,0.2509
+o-terphenyl,0.285
+o-tolualcohol,0.2574
+o-toluic acid,0.2468
+o-toluidine,0.2676
+oxygen,0.2896
+o-xylene,0.2616
+ozone,0.2533
+paraldehyde,0.2786
+p-bromotoluene,0.2795
+p-chlorobenzotrifluoride,0.2509
+p-chloronitrobenzene,0.2428
+p-chlorophenol,0.272
+p-chlorotoluene,0.2615
+p-cresol,0.2731
+p-cumylphenol,0.2656
+p-cymene,0.2559
+p-dichlorobenzene,0.2601
+p-diethylbenzene,0.2547
+p-diisopropylbenzene,0.2577
+pentachloroethane,0.2532
+pentaethylbenzene,0.2506
+pentafluoroethane,0.2671
+pentafluorophenol,0.2619
+pentamethylbenzene,0.255
+pentanal,0.2578
+pentylcyclohexane,0.2586
+perchloryl fluoride,0.2811
+perfluorobutanoic acid,0.2413
+perfluoromethylcyclopentane,0.2667
+perfluoro-n-heptane,0.2556
+perfluoro-n-hexane,0.2618
+perfluoro-n-octane,0.2536
+perfluoro-n-pentane,0.2663
+p-ethyltoluene,0.2651
+phenanthrene,0.2259
+phenetole,0.2547
+phenol,0.2771
+phenyl isocyanate,0.2592
+phenyl mercaptan,0.2665
+phenylacetonitrile,0.2289
+phenylmethyldichlorosilane,0.2638
+phenyltrichlorosilane,0.2629
+phosgene,0.2789
+phosphine,0.2975
+phosphorus oxychloride,0.2152
+phosphorus trichloride,0.2937
+phthalan,0.2595
+p-hydroxybenzaldehyde,0.2419
+piperidine,0.2724
+p-methylstyrene,0.2615
+p-nitrotoluene,0.2219
+potassium,0.2039
+p-phenylenediamine,0.248
+propadiene,0.2677
+propanal,0.2549
+propane,0.277
+propargyl alcohol,0.2405
+propenyl cyclohexene,0.2616
+propionic acid,0.2284
+propionic anhydride,0.2571
+propionitrile,0.2176
+propyl chloride,0.2627
+propylene,0.2776
+propylene glycol 1-tert-butyl ether,0.2553
+propylene glycol ethyl ether acetate,0.2568
+propylene glycol monomethyl ether acetate,0.2548
+propylene glycol n-propyl ether,0.2703
+p-terphenyl,0.2732
+p-tert-butylphenol,0.2652
+p-tolualdehyde,0.254
+p-toluidine,0.2459
+p-xylene,0.2585
+pyrazine,0.2493
+pyrazole,0.2358
+pyridine,0.2681
+pyrrole,0.2592
+pyrrolidine,0.2766
+quinaldine,0.2425
+quinoline,0.2759
+quinone,0.2801
+radon,0.2807
+sec-butyl acetate,0.2667
+sec-butyl chloride,0.2685
+sec-butyl formate,0.264
+sec-butyl mercaptan,0.2739
+sec-butylamine,0.265
+sec-butylbenzene,0.2603
+sec-butyl-tert-butyl ether,0.2721
+silane,0.309
+styrene,0.2606
+sulfur dichloride,0.2671
+sulfur dioxide,0.2664
+sulfur hexafluoride,0.2788
+sulfuryl chloride,0.2496
+tert-butyl acetate,0.2675
+tert-butyl chloride,0.2787
+tert-butyl ethyl ether,0.2684
+tert-butyl mercaptan,0.2862
+tert-butyl methacrylate,0.2672
+tert-butylamine,0.2704
+tert-butylbenzene,0.2646
+tert-nonyl mercaptan,0.2476
+tert-octyl mercaptan,0.2629
+tetrachloroethylene,0.2663
+tetrachlorosilane,0.271
+tetraethoxysilane,0.2744
+tetraethyl lead,0.2406
+tetraethyl silane,0.2671
+tetraethylenepentamine,0.25
+tetrafluoroethylene,0.2701
+tetrahydrofuran,0.2682
+tetrahydropyran,0.2757
+tetrahydrothiophene,0.2613
+tetramethylsilane,0.2718
+thiacyclopropane,0.2603
+thionyl chloride,0.2239
+thiophene,0.2721
+thymol,0.2692
+tin(iv) chloride,0.2663
+toluene,0.2643
+"trans,trans-2,4-hexadiene",0.255
+"trans-1,2-dichloroethylene",0.2755
+"trans-1,2-dimethylcyclohexane",0.2592
+"trans-1,2-dimethylcyclopentane",0.278
+"trans-1,3,3,3-tetrafluoropropene",0.2664
+"trans-1,3-dimethylcyclohexane",0.2591
+"trans-1,3-dimethylcyclopentane",0.2779
+"trans-1,3-pentadiene",0.2595
+"trans-1,4-dimethylcyclohexane",0.2644
+trans-2-butene,0.272
+trans-2-heptene,0.2592
+trans-2-hexene,0.2629
+trans-2-octene,0.2562
+trans-2-pentene,0.2709
+trans-3-heptene,0.2607
+trans-3-hexene,0.2648
+trans-3-octene,0.2569
+trans-4-octene,0.2573
+trans-crotonitrile,0.2243
+trans-decahydronaphthalene,0.2713
+tribromomethane,0.2826
+trichloroacetic acid,0.2621
+trichloroacetyl chloride,0.2806
+trichloroethylene,0.2704
+trichlorofluoromethane,0.2759
+trichlorosilane,0.2787
+tridecafluoroheptanoic acid,0.2612
+tridecanal,0.2627
+triethylamine,0.2693
+trifluoromethane,0.2576
+trimethylamine,0.2711
+trimethylchlorosilane,0.2727
+trimethylene sulfide,0.2553
+tri-n-butylamine,0.251
+triphenylmethane,0.2437
+tripropylene glycol monoethyl ether,0.2625
+undecanal,0.266
+undecyl mercaptan,0.2437
+valeronitrile,0.2388
+vinyl chloride,0.2748
+vinyl fluoride,0.2744
+vinyl formate,0.2605
+vinyl propionate,0.2605
+vinylacetonitrile,0.2197
+vinylacetylene,0.265
+vinylethylene carbonate,0.2421
+vinyltrichlorosilane,0.2543
+vinyltrimethoxysilane,0.2614
+water,0.2307
+xenon,0.2877

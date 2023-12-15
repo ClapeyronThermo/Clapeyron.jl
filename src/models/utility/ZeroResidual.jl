@@ -3,10 +3,6 @@ struct ZeroResidual{I} <: EoSModel
     idealmodel::I
 end
 
-Base.length(model::ZeroResidual) = length(model.components)
-Base.show(io::IO,model::ZeroResidual) = eosshow(io,model)
-Base.show(io::IO, mime::MIME"text/plain", model::ZeroResidual) = eosshow(io,mime,model)
-
 """
     ZeroResidual <: EoSModel
     ZeroResidual(components; 
@@ -27,7 +23,7 @@ function ZeroResidual(components;
     verbose=false,
     )
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    return ZeroResidual(components,init_idealmodel)
+    return ZeroResidual(format_components(components),init_idealmodel)
 end
 
 a_res(model::ZeroResidual,V,T,z) = 0.0

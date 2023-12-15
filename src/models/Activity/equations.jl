@@ -18,12 +18,12 @@ end
 #for use in models that have gibbs free energy defined.
 function activity_coefficient(model::ActivityModel,p,T,z)
     X = gradient_type(p,T,z)
-    return exp.(ForwardDiff.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
+    return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
 end
 
 function test_activity_coefficient(model::ActivityModel,p,T,z)
     X = gradient_type(p,T,z)
-    return exp.(ForwardDiff.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
+    return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
 end
 
 x0_sat_pure(model::ActivityModel,T) = x0_sat_pure(model.puremodel[1],T)
@@ -54,7 +54,6 @@ function eos_res(model::ActivityModel,V,T,z)
     p_res = p - Σz*R̄*T/V
     return g_E+g_pure_res-p_res*V
 end
-
 
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
@@ -98,6 +97,15 @@ end
 function x0_volume_liquid(model::ActivityModel,T,z = SA[1.0])
     pures = model.puremodel
     return sum(z[i]*x0_volume_liquid(pures[i],T,SA[1.0]) for i ∈ @comps)
+end
+
+function γdγdn(model::ActivityModel,p,T,z)
+    storage = DiffResults.JacobianResult(z)
+    γ(_z) = activity_coefficient(model,p,T,_z)
+    ForwardDiff.jacobian!(storage,γ,z)
+    γz = DiffResults.value(storage)
+    dyz = DiffResults.jacobian(storage)
+    return γz,dyz
 end
 
 include("methods/methods.jl")

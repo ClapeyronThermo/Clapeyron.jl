@@ -11,8 +11,8 @@ end
 
     PenelouxTranslation <: PenelouxTranslationModel
 
-    PenelouxTranslation(components::Vector{String};
-    userlocations::Vector{String}=String[],
+    PenelouxTranslation(components;
+    userlocations=String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -34,6 +34,21 @@ cᵢ = -0.252*RTcᵢ/Pcᵢ*(1.5448Zcᵢ - 0.4024)
 Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 ```
 
+## Model Construction Examples
+```
+# Using the default database
+translation = PenelouxTranslation("water") #single input
+translation = PenelouxTranslation(["water","ethanol"]) #multiple components
+
+# Using user-provided parameters
+
+# Passing files or folders
+translation = PenelouxTranslation(["neon","hydrogen"]; userlocations = ["path/to/my/db","critical/Vc.csv"])
+
+# Passing parameters directly
+translation = PenelouxTranslation(["neon","hydrogen"];userlocations = (;Vc = [4.25e-5, 6.43e-5]))
+```
+
 ## References
 
 1. Péneloux A, Rauzy E, Fréze R. (1982) A consistent correction for Redlich‐Kwong‐Soave volumes. Fluid Phase Equilibria 1, 8(1), 7–23. [doi:10.1016/0378-3812(82)80002-2](https://doi.org/10.1016/0378-3812(82)80002-2)
@@ -42,17 +57,14 @@ Zcᵢ = Pcᵢ*Vcᵢ/(RTcᵢ)
 PenelouxTranslation
 
 export PenelouxTranslation
-function PenelouxTranslation(components::Vector{String}; userlocations::Vector{String}=String[], verbose::Bool=false)
-    params = getparams(components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose,ignore_headers = ONLY_VC)
-    Vc = params["Vc"]
-    c = SingleParam("Volume shift",components,zeros(length(components)))
-    c.ismissingvalues .= true
-    packagedparams = PenelouxTranslationParam(Vc,c)
-    model = PenelouxTranslation(packagedparams, verbose=verbose)
-    return model
+default_locations(::Type{PenelouxTranslation}) = critical_data()
+default_references(::Type{PenelouxTranslation}) = ["10.1016/0378-3812(82)80002-2"]
+function transform_params(::Type{PenelouxTranslation},params,components)
+    v_shift = SingleParam("Volume shift",components,zeros(length(components)))
+    v_shift.ismissingvalues .= true
+    params["v_shift"] = v_shift
+    return params
 end
-
-doi(::PenelouxTranslation) = ["10.1016/0378-3812(82)80002-2"]
 
 function translation(model::CubicModel,V,T,z,translation_model::PenelouxTranslation)
     c = translation_model.params.v_shift

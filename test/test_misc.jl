@@ -1,3 +1,11 @@
+#struct for testset "#161"
+struct PCSAFT161 <: Clapeyron.PCSAFTModel
+    components::Vector{String}
+    params::Clapeyron.PCSAFTParam
+    references::Vector{String}
+    weird_thing::Int
+end
+
 @testset "misc" begin
     @printline
     model2 = PCSAFT(["water","ethanol"])
@@ -10,8 +18,12 @@
     ideal1 = WalkerIdeal(["hexane"])
     noparam1 = gc3.puremodel[1].translation
     simple1 = gc3.puremodel[1].alpha
+    model_structgc = structSAFTgammaMie(["ethanol","octane"])
     @testset "split_model" begin
         models2 = split_model(model2)
+        @info "The following 2 error messages are expected:"
+        @test_throws ArgumentError split_model(noparam1)
+        @test_throws ArgumentError split_model(model2,missing)
         @test models2[1].components[1] == model2.components[1]
         @test models2[2].components[1] == model2.components[2]
 
@@ -26,6 +38,67 @@
         gc3_split = Clapeyron.split_model(gc3)
         @test all(isone(length(gc3_split[i])) for i in 1:3)
         @test all(isone(length(gc3_split[i].puremodel)) for i in 1:3)
+
+        structgc_split = Clapeyron.split_model(model_structgc)
+        @test structgc_split[1].groups.n_intergroups[1] == [0 1; 1 0]
+        @test structgc_split[2].groups.n_intergroups[1] == [0 2; 2 5]
+
+        noparam1_split = split_model(noparam1,1:5)
+        @test length(noparam1_split) == 5
+        @test noparam1_split[1] == noparam1
+
+        #from notebooks, #173
+        nb_test = SAFTgammaMie(["methane","nitrogen","carbon dioxide","ethane","propane","butane","isobutane",
+        "pentane","isopentane","hexane","heptane","octane"])
+        @test length(split_model(nb_test)) == 12
+
+        #weird error found on splitting groups
+        model0 = SAFTgammaMie(["ethane"])
+        model0_split = SAFTgammaMie(["methane","ethane"]) |> split_model |> last
+        @test model0.params.epsilon.values[1,1] == model0_split.params.epsilon.values[1,1]
+    end
+
+    @testset "export_model" begin
+        @testset "SAFT Model" begin
+            model_og = PCSAFT(["water","ethanol"])
+            export_model(model_og)
+            model_ex = PCSAFT(["water","ethanol"]; userlocations = ["singledata_PCSAFT.csv","pairdata_PCSAFT.csv","assocdata_PCSAFT.csv"])
+
+            @test model_og.params.segment.values == model_ex.params.segment.values
+            @test model_og.params.epsilon.values == model_ex.params.epsilon.values
+            @test model_og.params.epsilon_assoc.values.values == model_ex.params.epsilon_assoc.values.values
+        end
+
+        @testset "Cubic Model" begin
+            model_og = PR(["water","ethanol"])
+            export_model(model_og)
+            model_ex = PR(["water","ethanol"]; userlocations = ["singledata_PR.csv","pairdata_PR.csv"],
+                                       alpha_userlocations = ["singledata_PRAlpha.csv"])
+
+            @test model_og.params.a.values == model_ex.params.a.values
+            @test model_og.alpha.params.acentricfactor.values == model_ex.alpha.params.acentricfactor.values
+        end
+
+        @testset "Activity & GC Model" begin
+            model_og = UNIFAC(["water","ethanol"])
+            export_model(model_og)
+            model_ex = UNIFAC(["water","ethanol"]; userlocations = ["singledata_UNIFAC.csv","pairdata_UNIFAC.csv"])
+
+            @test model_og.params.Q.values == model_ex.params.Q.values
+            @test model_og.params.A.values == model_ex.params.A.values
+        end
+
+    end
+
+    @testset "single component error" begin
+        model = PCSAFT(["water","methane"])
+        @test_throws DimensionMismatch saturation_pressure(model,300.15)
+        @test_throws DimensionMismatch crit_pure(model)
+        @test_throws DimensionMismatch saturation_temperature(model,1e5)
+        @test_throws DimensionMismatch acentric_factor(model)
+        @test_throws DimensionMismatch enthalpy_vap(model,300.15)
+        @test_throws DimensionMismatch Clapeyron.x0_sat_pure(model,300.15)
+        @test_throws DimensionMismatch saturation_liquid_density(model,300.15)
     end
 
     @testset "macros" begin
@@ -60,18 +133,18 @@
         @test repr(ideal1) == "WalkerIdeal{BasicIdeal}(\"hexane\")"
         @test repr("text/plain",ideal1) == "WalkerIdeal{BasicIdeal} with 1 component:\n \"hexane\": \"CH3\" => 2, \"CH2\" => 4\nGroup Type: Walker\nContains parameters: Mw, Nrot, theta1, theta2, theta3, theta4, deg1, deg2, deg3, deg4"
         #@newmodel
-        @test repr(model2) == "PCSAFT{BasicIdeal}(\"water\", \"ethanol\")"
-        @test repr("text/plain",model2) == "PCSAFT{BasicIdeal} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"
+        @test repr(model2) == "PCSAFT{BasicIdeal, Float64}(\"water\", \"ethanol\")"
+        @test repr("text/plain",model2) == "PCSAFT{BasicIdeal, Float64} with 2 components:\n \"water\"\n \"ethanol\"\nContains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol"
         #@newmodelsimple
         @test repr(noparam1) == "NoTranslation()"
-        @test repr("text/plain",noparam1) == "NoTranslation\n"
+        @test repr("text/plain",noparam1) == "NoTranslation()"
         @test repr(simple1) == "PRAlpha(\"propane\")"
         @test repr("text/plain",simple1) == "PRAlpha with 1 component:\n \"propane\"\nContains parameters: acentricfactor"
     end
 
     @testset "Clapeyron Param show" begin
-        @test repr(model2.params) == "Clapeyron.PCSAFTParam"
-        @test repr("text/plain",model2.params) == "Clapeyron.PCSAFTParam for [\"water\", \"ethanol\"] with 6 params:\n Mw::SingleParam{Float64}\n segment::SingleParam{Float64}\n sigma::PairParam{Float64}\n epsilon::PairParam{Float64}\n epsilon_assoc::AssocParam{Float64}\n bondvol::AssocParam{Float64}"
+        @test repr(model2.params) == "Clapeyron.PCSAFTParam{Float64}"
+        @test repr("text/plain",model2.params) == "Clapeyron.PCSAFTParam{Float64} for [\"water\", \"ethanol\"] with 6 params:\n Mw::SingleParam{Float64}\n segment::SingleParam{Float64}\n sigma::PairParam{Float64}\n epsilon::PairParam{Float64}\n epsilon_assoc::AssocParam{Float64}\n bondvol::AssocParam{Float64}"
     end
 
     @testset "phase symbols" begin
@@ -92,90 +165,37 @@
         @test citation_top ⊆ citation_full
         @test citation_mixing ⊆ citation_full
         @test citation_translation ⊆ citation_full
+        _io = Base.IOBuffer()
+        Clapeyron.show_references(_io,umr)
+        citation_show = String(take!(_io))
+        @test citation_show == "\nReferences: 10.1021/I160057A011, 10.1021/ie049580p, 10.1021/i260064a004, 10.1021/acs.jced.0c00723"
+        @test startswith(Clapeyron.doi2bib("10.1021/I160057A011"),"@article{Peng_1976")
+
     end
+
+    @testset "alternative input" begin
+        @test PCSAFT("water" => ["H2O"=>1],idealmodel = WalkerIdeal) isa EoSModel
+        @test PCSAFT(["water" => ["H2O"=>1]],idealmodel = WalkerIdeal) isa EoSModel
+        @test PCSAFT("water") isa EoSModel
+        @test PCSAFT(["water" => ["H2O"=>1]]) isa EoSModel
+    end
+
     @printline
 
-    @testset "Reported errors" begin
-        #https://github.com/ypaul21/Clapeyron.jl/issues/104
-        @testset "#104" begin
-            model = VTPR(["carbon dioxide"])
-            p = 1e5
-            T = 273.15
-            @test fugacity_coefficient(model, p, T)[1] ≈ 0.9928244080356565 rtol = 1E-6
-            @test activity_coefficient(model, p, T)[1] ≈ 1.0
-        end
-        @testset "#112" begin
-            model = CPA(["methanol"])
-            @test crit_pure(model)[1] ≈ 538.2329369300235 rtol = 1e-6
-        end
-
-        @testset "DM - SAFTgammaMie 1" begin
-            #this constructor was failing on Clapeyron, 3.10-dev
-            model=SAFTgammaMie(["water","ethyl acetate"])
-            assocparam = model.vrmodel.params.bondvol
-            @test assocparam.sites[1] == ["H2O/H", "H2O/e1"]
-            @test assocparam.sites[2] == ["COO/e1"]
-        end
-
-        @testset "#140" begin
-        #FractionVector with length(x) == 0.
-            model = PCSAFT(["water","carbon dioxide"])
-            res = bubble_pressure(model,280,Clapeyron.FractionVector(0.01),ChemPotBubblePressure(nonvolatiles = ["water"]))
-            @test res[1] ≈ 4.0772545187410433e6 rtol = 1e-6
-        end
-
-        @testset "#145" begin
-            #incorrect indexing of gc_to_comp_sites when there is more than one assoc site.
-            like_data = """
-            Clapeyron Database File
-            SAFTgammaMie Like Parameters [csvtype = like,grouptype = SAFTgammaMie]
-            species,vst,S,lambda_r,lambda_a,sigma,epsilon,n_H,n_e1,n_e2,Mw
-            CH2_PEO,1,1,12,6,4,300,0,0,0,100
-            cO_1sit,1,1,12,6,4,300,0,1,0,100
-            """
-            
-            mw_data = """
-            Clapeyron Database File
-            SAFTgammaMie Like Parameters
-            species,Mw
-            CH2_PEO,100
-            cO_1sit,100
-            """
-            
-            assoc_data = """
-            Clapeyron Database File,,,,,,
-            SAFTgammaMie Assoc Parameters [csvtype = assoc,grouptype = SAFTgammaMie]
-            species1,site1,species2,site2,epsilon_assoc,bondvol,source
-            H2O,H,cO_1sit,e1,2193.2,5e-29,
-            CH2OH,H,cO_1sit,e1,1572.5,4.331e-28,
-            """
-            
-            group_data = """
-            Clapeyron Database File,
-            SAFTgammaMie Groups [csvtype = groups,grouptype = SAFTgammaMie]
-            species,groups
-            PEG_1sit,"[""CH2_PEO"" => 2000,""cO_1sit"" => 1000,""CH2OH"" => 2]"
-            """
-            
-            model = SAFTgammaMie(["water","PEG_1sit"],userlocations = [like_data,assoc_data,mw_data],group_userlocations = [group_data])
-            #in this case,because the groups are 1 to 1 correspondence to each molecule, the amount of groups should be the same 
-            @test length(model.vrmodel.params.epsilon_assoc.values.values) == length(model.params.epsilon_assoc.values.values)
-            #test if we got the number of sites right
-            @test model.vrmodel.sites.n_sites[2][1] == 1000 #1000 sites cO_1sit/e1 in PEG.
-        end
-
+    @testset "core utils" begin
+        @test Clapeyron.parameterless_type(typeof(rand(5))) === Array
+        @test Clapeyron._vecparser("1 2 3") == [1,2,3]
+        @test Clapeyron._vecparser("1 2 3.5") == [1,2,3.5]
+        @test_throws ErrorException Clapeyron._vecparser("not numbers")
+        @test Clapeyron.split_2("a b") == ("a","b")
+        @test Clapeyron.split_2("a|b",'|') == ("a","b")
     end
+
     @printline
     if Base.VERSION >= v"1.8" #for some reason, it segfaults on julia 1.6
         @testset "ambiguities" begin
             ambiguities = Test.detect_ambiguities(Clapeyron)
             @test length(ambiguities) == 0
         end
-    end
-    #testset for equilibria bugs
-    @testset "challenging equilibria" begin
-        #@testset "dew_temperature N°1" begin
-        #    modelp = PCSAFT(["water","methanol"])
-        #end
     end
  end
