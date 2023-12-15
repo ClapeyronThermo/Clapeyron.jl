@@ -120,7 +120,6 @@ function Δ(model::sCPAModel, V, T, z, i, j, a, b,abc = cubic_ab(model.cubicmode
     βijab = model.params.bondvol.values[i,j][a,b] * 1e-3
     b = model.params.b.values
     η = b̄*sum(z)/(4*V)
-    g = (1-1.9η)^-1
-    bij = (b[i,i]+b[j,j])/2
-    return g*expm1(ϵ_associjab/T)*βijab*bij/N_A
+    g = 1/(1-1.9η)
+    return g*expm1(ϵ_associjab/T)*βijab*b[i,j]/N_A
 end
