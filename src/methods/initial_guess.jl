@@ -263,9 +263,9 @@ function vdw_x0_xat_pure(T,T_c,P_c,V_c)
     return (Vl0,Vv0)
 end
 
-function scale_sat_pure(model,z=SA[1.0])
-    p    = 1/p_scale(model,z)
-    μ    = 1/Rgas(model)/T_scale(model,z)
+function scale_sat_pure(model)
+    p    = 1/p_scale(model,SA[1.0])
+    μ    = 1/Rgas(model)/T_scale(model,SA[1.0])
     return p,μ
 end
 
