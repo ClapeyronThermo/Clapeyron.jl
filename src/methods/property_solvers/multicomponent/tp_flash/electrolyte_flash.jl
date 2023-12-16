@@ -1,6 +1,6 @@
 function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, K0=nothing,
                                      x0=nothing, y0=nothing, vol0=(nothing, nothing),
-                                     K_tol=1e-12, itss=101, nacc=5, second_order=false, use_opt_solver = true,
+                                     K_tol=1e-12, itss=21, nacc=5, second_order=false, use_opt_solver = true,
                                      non_inx_list=nothing, non_iny_list=nothing, reduced=false)
 
 
@@ -148,6 +148,44 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(lnK,lnK_old,1)
     end
+
+    if error_lnK > K_tol && it == itss && !singlephase && use_opt_solver
+        nx = zeros(nc)
+        ny = zeros(nc)
+
+        if active_inx
+            ny[non_inx] = z[non_inx]
+            nx[non_inx] .= 0.
+        end
+        if active_iny
+            ny[non_iny] .= 0.
+            nx[non_iny] = z[non_iny]
+        end
+
+        ny_var0 = y[in_equilibria] * β
+        fgibbs!(F, G, H, ny_var) = dgibbs_obj!(model, p, T, z, phasex, phasey,
+                                                        nx, ny, vcache, ny_var[1:end-1], ny_var[end] , in_equilibria, non_inx, non_iny;
+                                                        F=F, G=G, H=H)
+        append!(ny_var0,ψ)
+
+        fgibbs!(F, G, ny_var) = fgibbs!(F, G, nothing, ny_var)
+
+        if second_order
+            sol = Solvers.optimize(Solvers.only_fgh!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.Newton()))
+        else
+            sol = Solvers.optimize(Solvers.only_fg!(fgibbs!), ny_var0, Solvers.LineSearch(Solvers.BFGS()))
+        end
+        ny_var = Solvers.x_sol(sol)[1:end-1]
+        ψ = Solvers.x_sol(sol)[end]
+        ny[in_equilibria] = ny_var
+        nx[in_equilibria] = z[in_equilibria] .- ny[in_equilibria]
+        nxsum = sum(nx)
+        nysum = sum(ny)
+        x = nx ./ nxsum
+        y = ny ./ nysum
+        β = sum(ny)
+
+    end
     K .= x ./ y
     #convergence checks (TODO, seems to fail with activity models)
     _,singlephase,_ = rachfordrice_β0(K.*exp.(Z.*ψ),z)
@@ -193,5 +231,90 @@ function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill
         return β, ψ
     else
         return β, ψ0
+    end
+end
+
+function dgibbs_obj!(model::ElectrolyteModel, p, T, z, phasex, phasey,
+    nx, ny, vcache, ny_var = nothing, ψ = nothing, in_equilibria = FillArrays.Fill(true,length(z)), non_inx = in_equilibria, non_iny = in_equilibria;
+    F=nothing, G=nothing, H=nothing)
+
+    Z = model.charge
+    # Objetive Function to minimize the Gibbs Free Energy
+    # It computes the Gibbs free energy, its gradient and its hessian
+    iv = 0
+    for i in eachindex(z)
+        if in_equilibria[i]
+            iv += 1
+            nyi = ny_var[iv]
+            ny[i] = nyi
+            nx[i] =z[i] - nyi
+        end
+    end    # nx = z .- ny
+
+    nxsum = sum(nx)
+    nysum = sum(ny)
+    x = nx ./ nxsum
+    y = ny ./ nysum
+
+    # Volumes are set from local cache to reuse their values for following
+    # Iterations
+    volx,voly = vcache[]
+    all_equilibria = all(in_equilibria)
+    if H !== nothing
+        # Computing Gibbs Energy Hessian
+        lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, x; phase=phasex, vol0=volx)
+        lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, y; phase=phasey, vol0=voly)
+
+        if !all_equilibria
+            ∂ϕx = ∂lnϕ∂nx[in_equilibria, in_equilibria]
+            ∂ϕy = ∂lnϕ∂ny[in_equilibria, in_equilibria]
+        else
+            #skip a copy if possible
+            ∂ϕx,∂ϕy = ∂lnϕ∂nx,∂lnϕ∂ny
+        end
+            ∂ϕx .-= 1
+            ∂ϕy .-= 1
+            ∂ϕx ./= nxsum
+            ∂ϕy ./= nysum
+        for (i,idiag) in pairs(diagind(∂ϕy))
+            ∂ϕx[idiag] += 1/nx[i]
+            ∂ϕy[idiag] += 1/ny[i]
+        end
+
+        #∂ϕx = eye./nx .- 1/nxsum .+ ∂lnϕ∂nx/nxsum
+        #∂ϕy = eye./ny .- 1/nysum .+ ∂lnϕ∂ny/nysum
+        H .= ∂ϕx .+ ∂ϕy
+    else
+        lnϕx, volx = lnϕ(model, p, T, x; phase=phasex, vol0=volx)
+        lnϕy, voly = lnϕ(model, p, T, y; phase=phasey, vol0=voly)
+    end
+    #volumes are stored in the local cache
+    vcache[] = (volx,voly)
+
+    ϕx = log.(x) .+ lnϕx #log(xi*ϕxi)
+    ϕy = log.(y) .+ lnϕy #log(yi*ϕyi)
+
+    # to avoid NaN in Gibbs energy
+    for i in eachindex(z)
+        non_iny[i] && (ϕy[i] = 0.)
+        non_inx[i] && (ϕx[i] = 0.)
+    end
+
+    if G !== nothing
+        # Computing Gibbs Energy gradient
+        i0 = 0
+        for i in eachindex(in_equilibria)
+            if in_equilibria[i]
+                i0 += 1
+                G[i0] = ϕy[i] - ϕx[i] - ψ*Z[i]
+            end
+        end
+        G[i0+1] = dot(ny,Z)
+    end
+
+    if F !== nothing
+        # Computing Gibbs Energy
+        FO = dot(ny,ϕy) + dot(nx,ϕx) + ψ*dot(nx,Z)
+        return FO
     end
 end
