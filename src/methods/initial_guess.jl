@@ -20,8 +20,13 @@ end
 Returns an initial guess to the solid volume, dependent on temperature and composition. needs to be defined for EoS that support solid phase. by default returns NaN
 """
 function x0_volume_solid(model,T,z)
-    v_lb = lb_volume(model,z)
-    return v_lb*1.05
+    if is_solid(model)
+        v_lb = lb_volume(model,z)
+        return v_lb*1.05
+    else
+        _0 = zero(T+first(z))
+        return _0/_0
+    end
 end
 
 """

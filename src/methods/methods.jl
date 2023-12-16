@@ -95,14 +95,15 @@ is_supercritical(str::String) = is_vapour(Symbol(str))
 const SOLID_STR = (:solid,:SOLID,:s)
 """
     is_solid(x::Union{Symbol,String})
+    is_solid(x::EoSModel)
 
 Returns `true` if the symbol is in `(:solid,:SOLID,:s)`.
-
+if `x` is an `EoSModel`, it will return if the model is able to contain a solid phase. In this case, defaults to `false`
 If a string is passed, it is converted to symbol.
 """
 is_solid(sym::Symbol) = sym in SOLID_STR
 is_solid(str::String) = is_vapour(Symbol(str))
-
+is_solid(model::EoSModel) = false
 
 const VLE_STR = (:vle,:lve,:vl,:lv)
 """
