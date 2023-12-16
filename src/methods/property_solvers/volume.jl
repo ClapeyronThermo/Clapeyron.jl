@@ -143,6 +143,9 @@ function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true
     if !isnothing(vol0)
         if !isnan(vol0)
             V0 = vol0
+            if is_solid(phase) #to allow specification of the model.
+                return _volume_compress(solid,p,T,z,V0)
+            end
             V = _volume_compress(fluid,p,T,z,V0)
             if solid !== fluid && isnan(V)
                 return _volume_compress(solid,p,T,z,V0)
