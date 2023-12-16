@@ -47,8 +47,9 @@ Performs integration via a 65-point Gauss-Legendre rule. ForwardDiff-friendly.
 function integral64(Base.@specialize(f),a,b)
     w = gl64_w
     x = gl64_x
-    res = zero(a+b)
-    for i in 1:64
+    x1 = 0.5*(x[1] + 1)*(b - a) + a
+    res =  w[1]*f(x1)
+    for i in 2:64
         xs = 0.5*(x[i] + 1)*(b - a) + a
         res += w[i]*f(xs)
     end
