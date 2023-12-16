@@ -30,6 +30,8 @@ function transform_params(::Type{SAFTVRSMie},params)
     return params
 end
 
+is_solid(model::SAFTVRSMieModel) = true
+
 function a_res(model::SAFTVRSMieModel,V,T,z)
     _data = @f(data)
     return @f(a_mono,_data) + @f(a_chain,_data)
