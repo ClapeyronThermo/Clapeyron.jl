@@ -1,4 +1,5 @@
 function obj_sublimation_pressure(model::CompositeModel,F,T,vs,vv,p̄,T̄)
+    z = SA[1.0]
     eos_solid(V) = eos(model.solid,V,T,z)
     eos_fluid(V) = eos(model.fluid,V,T,z)
     A_v,Av_v = Solvers.f∂f(eos_fluid,vv)
@@ -42,7 +43,17 @@ function sublimation_pressure(model::CompositeModel,T;v0=x0_sublimation_pressure
 end
 
 function x0_sublimation_pressure(model,T)
-    vs0 = lb_volume(model.solid)*6*1.05/π
-    vv0 = lb_volume(model.fluid)*6*1.25/π
+    #we can suppose we are in a low pressure regime, we treat the solid as a liquid,
+    #and apply the zero pressure aproximation.
+    solid = solid_model(model)
+    fluid = fluid_model(model)
+    R̄ = Rgas(solid)
+    z = SA[1.0]
+    vs_at_0 = volume(solid,0.0,T,phase = :s)
+    ares = a_res(solid, vs_at_0, T, z)
+    lnϕ_s0 = ares - 1 + log(R̄*T/vs_at_0)
+    P0 = exp(lnϕ_s0)
+    vs0 = volume(solid,P0,T,z,vol0 = vs_at_0)
+    vv0 = R̄*T/P0
     return (vs0,vv0)
 end
