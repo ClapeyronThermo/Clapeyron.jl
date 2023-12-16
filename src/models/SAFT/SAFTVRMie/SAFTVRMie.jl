@@ -785,7 +785,7 @@ Optimizations for single component SAFTVRMie
 
 #######
 
-function d(model::SAFTVRMie{}, V, T, z::SingleComp)
+function d(model::SAFTVRMie, V, T, z::SingleComp)
     ϵ = model.params.epsilon.values[1,1]
     σ = model.params.sigma.values[1,1]
     λa = model.params.lambda_a.values[1,1]
