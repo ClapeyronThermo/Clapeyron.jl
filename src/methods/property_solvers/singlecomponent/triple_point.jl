@@ -67,7 +67,8 @@ function x0_triple_point(model::CompositeModel,T0 = 0.65*T_scale(fluid_model(mod
     vs0 = volume(model,p,T,phase = :s) |> log
     vl0 = volume(model,p,T,phase = :l) |> log
     vv0 = volume(model,p,T,phase = :v) |> log
-    return [T/T_scale(fluid_model(model)),vs0,vl0,vv0]
+    Ts = T_scale(fluid_model(model))
+    return [T/Ts,vs0,vl0,vv0]
 end
 """
     Tt,pt,vs,vl,vv = triple_point(model::CompositeModel;v0 = x0_triple_point(model))
