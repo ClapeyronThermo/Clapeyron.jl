@@ -34,7 +34,7 @@ function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSP_userl
     components = deepcopy(ions)
     prepend!(components,solvents)
     icomponents = 1:length(components)
-    params = getparams(components, append!(["Electrolytes/properties/charges.csv","properties/molarmass.csv"],SAFTlocations); userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
+    params = getparams(components, ["Electrolytes/properties/charges.csv","properties/molarmass.csv"]; userlocations=userlocations,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
     if any(keys(params).=="b")
         params["b"].values .*= 3/2/N_A/π*1e-3
         params["b"].values .^= 1/3
@@ -49,11 +49,8 @@ function MSA(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSP_userl
     packagedparams = MSAParam(sigma,charge)
 
     references = String[]
-    if RSPmodel !== nothing
-        init_RSPmodel = RSPmodel(solvents,salts)
-    else
-        init_RSPmodel = nothing
-    end
+        
+    init_RSPmodel = RSPmodel(solvents,ions)
 
     model = MSA(components, icomponents, packagedparams, init_RSPmodel, references)
     return model
@@ -97,7 +94,7 @@ function screening_length(model::MSAModel,V,T,z,ϵ_r = @f(data))
 
     ∑z = sum(z)
     ρ = N_A*sum(z)/V
-    Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ iions)/∑z
+    Δ = 1-π*ρ/6*sum(z[i]*σ[i]^3 for i ∈ @comps)/∑z
 
     Γold = (4π*e_c^2/(4π*ϵ_0*ϵ_r*k_B*T)*ρ*sum(z[i]*Z[i]^2 for i ∈ iions)/∑z)^(1/2)
     _0 = zero(Γold)
