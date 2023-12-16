@@ -51,7 +51,7 @@ function DH(solvents,ions; RSPmodel=ConstW, SAFTlocations=String[], userlocation
 
     references = String[]
 
-    init_RSPmodel = RSPmodel(solvents,ions)
+    init_RSPmodel = init_electrolyte_model(RSPmodel,solvents,ions)
 
     model = DH(components, icomponents, packagedparams, init_RSPmodel,references)
     return model
