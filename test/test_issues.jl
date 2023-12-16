@@ -204,7 +204,11 @@
 
         γ1 = activity_coefficient(model,p,T,z)
 
-        @test γ1[1] ≈ 55334.605821130834 rtol = 1e-4
+        #this was an error too. check commit that added this
+        #@test γ1[1] ≈ 55334.605821130834 rtol = 1e-4
+
+        @test γ1[1] ≈ 51930.06908022231 rtol = 1e-4
+        
     end
 
     @testset "SorptionModels.jl - init kij with user" begin

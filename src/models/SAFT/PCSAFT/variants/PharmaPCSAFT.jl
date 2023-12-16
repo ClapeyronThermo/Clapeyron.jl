@@ -74,6 +74,21 @@ pharmaPCSAFT
 @inline water08_k(model::PCSAFTModel) = 0
 @inline water08_k(model::pharmaPCSAFTModel) = model.params.water[]
 
+function x0_volume_liquid(model::pharmaPCSAFTModel, T,z=SA[1.])
+    return lb_volume(model,z)*1.7
+end
+
+function lb_volume(model::pharmaPCSAFTModel, z = SA[1.0])
+    seg = model.params.segment.values
+    σ = deepcopy(model.params.sigma.values)
+    k = water08_k(model)
+    if k > 0 
+        σ[k,k] += Δσh20(298.15)
+    end
+    val = π/6*N_A*sum(z[i]*seg[i]*σ[i,i]^3 for i in 1:length(z))
+    return val
+end
+
 function d(model::pharmaPCSAFTModel, V, T, z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
@@ -120,7 +135,7 @@ function m2ϵσ3(model::pharmaPCSAFTModel, V, T, z)
         m2ϵσ3₁ += constant*exp1
         m2ϵσ3₂ += constant*exp2
         for j ∈ 1:(i-1)
-            σij = σ[i,j] + 0.5*(k==i  +  k==j)*Δσ
+            σij = σ[i,j] + (0.5*(k==i)  +  0.5*(k==j))*Δσ
             constant = zi*z[j]*mi*m[j] * σij^3
             exp1 = ϵ[i,j]*(1 - k0[i,j] - k1[i,j]*T)/T
             exp2 = exp1*exp1
@@ -160,7 +175,7 @@ function  Δ(model::pharmaPCSAFT, V, T, z,_data=@f(data))
     Δout.values .= false #fill with zeros, maybe it is not necessary?
     for (idx,(i,j),(a,b)) in indices(Δout)
         gij = @f(g_hs,i,j,_data)
-        σij = σ[i,j] + 0.5*((k==i) + (k==j))*Δσ
+        σij = σ[i,j] + (0.5*(k==i)  +  0.5*(k==j))*Δσ
         Δout[idx] = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
     end
     return Δout
