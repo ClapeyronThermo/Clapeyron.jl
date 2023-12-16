@@ -58,7 +58,7 @@ solidsoftSAFT
 export solidsoftSAFT
 
 recombine_impl!(model::solidsoftSAFTModel) = recombine_saft!(model)
-
+is_solid(model::solidsoftSAFTModel) = true
 
 function x0_volume_solid(model::solidsoftSAFTModel,T,z)
     v_lb = lb_volume(model,z)
