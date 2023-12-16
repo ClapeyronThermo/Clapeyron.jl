@@ -112,7 +112,7 @@ function g_hs(model::SAFTVRSMieModel,η,d,r,J,r₁d = r1_d(η),k₁ = K1(model,�
 end
 
 function g_hs_fdf(model::SAFTVRSMieModel,V,T,z,d,r,i::Int) #eq 11, used in the context of the evaluation of d
-    mᵢ = model.params.segment[i]
+    mᵢ = model.params.segment.values[i]
     η = (π/6*N_A*mᵢ*z[i]/V)*d*d*d
     ηc = 0.740480489693061
     ρs = z[i]*mᵢ*N_A/V #is this ok?
@@ -141,7 +141,7 @@ function g_hs_1(model::SAFTVRSMieModel,η,d,r,J,r1d = r1_d(η),k₁ = K1(model,�
     rd = r/d
     _k12 = -(k₁*(rd-r1d))^2
     _k24 = -(k₂*(rd-r1d))^4
-    (J*d/r)*exp(_k12+_k24)
+    (J*d/r)*exp(_k12 + _k24)
 end
 
 #eq 12 + derivative, used in calculation of d
@@ -158,8 +158,8 @@ function g_hs_1_fdf(model::SAFTVRSMieModel,η,d,r,J,r1d = r1_d(η),k₁ = K1(mod
 end
 
 function g_hs_i(model::SAFTVRSMieModel,η,d,r,k = K(model::SAFTVRSMieModel,η)) #eq 13
-    n = SAFTVRSMieConsts.r_fcc
-    g = zero(η+d+r)
+    n = SAFTVRSMieConsts.r_fcc::Vector{Int}
+    g = zero(η+d+r+k)
     rd = r/d
     dr = d/r
     v₀ = π*d^3/(6*η)
@@ -178,9 +178,9 @@ function g_hs_i(model::SAFTVRSMieModel,η,d,r,k = K(model::SAFTVRSMieModel,η)) 
 end
 
 function g_hs_i_fdf(model::SAFTVRSMieModel,η,d,r,k = K(model::SAFTVRSMieModel,η)) #eq 13
-    n = SAFTVRSMieConsts.r_fcc
-    g = zero(η+d+r)
-    ∂g = zero(η+d+r)
+    n = SAFTVRSMieConsts.r_fcc::Vector{Int}
+    g = zero(η+d+r+k)
+    ∂g = zero(g)
     rd = r/d
     dr = d/r
     v₀ = π*d^3/(6*η)
@@ -370,11 +370,11 @@ end
 
 #TODO: this is a sketch
 function d_vrs(model::SAFTVRSMieModel,V,T,z,i::Int)
-    _0 = zero(V+T+first(z))
-    mᵢ = model.params.segment[i]
+    _0 = zero(T+first(z))
+    mᵢ = model.params.segment.values[i]
     ρS = z[i]*mᵢ*N_A/V
     λ = cbrt(sqrt(2)/ρS)*one(T)
-    σᵢ = model.params.sigma[i]
+    σᵢ = model.params.sigma.values[i,i]
     λ̄ = λ/σᵢ
 
     λa,λr = model.params.lambda_a[i],model.params.lambda_r[i]
@@ -386,10 +386,9 @@ function d_vrs(model::SAFTVRSMieModel,V,T,z,i::Int)
     u(r) = Cᵢ*ϵ̄*(r^-λr -r^-λa)
     du(r) = -Cᵢ*ϵ̄*(λr*r^-(λr+1) -λa*r^-(λa+1))
 
-
     function V₀(r)
         if r > λ̄
-            return _0
+            return zero(r)
         else
             uλ = u(λ̄)
             duλ = du(λ̄)
@@ -400,7 +399,7 @@ function d_vrs(model::SAFTVRSMieModel,V,T,z,i::Int)
 
     function dV₀(r)
         if r > λ̄
-            return _0
+            return zero(r)
         else
             duλ = du(λ̄)
             return du(r) - duλ
@@ -415,10 +414,18 @@ function d_vrs(model::SAFTVRSMieModel,V,T,z,i::Int)
     δ = Solvers.integral64(δ_f,_0,λ̄)
     #iteration 0: d = dB
     d = dB
-    d0 = one(V+T+first(z))
-    k = 0
+    d0 = one(d)
+    function f0(dj)
+        g_hs,∂g_hs = g_hs_fdf(model,V,T,z,dj*σᵢ,dj*σᵢ,i)
+        σ₀ = g_hs
+        σ₁ = 2*σ₀ + ∂g_hs
+        return dB*(1 + δ*σ₁/(2*σ₀))
+    end
+
+    return Solvers.fixpoint(f0,d0)*σᵢ
+    #=
     while abs(d - d0) > 1E-12 && k < 100
-        d0 = deepcopy(d)
+        d0 = d
         g_hs,∂g_hs = g_hs_fdf(model,V,T,z,d0*σᵢ,d0*σᵢ,i)
         # #=TODO 
         # is d > λ ? if so, y_hs = g_hs and it would simplify this calculation a lot
@@ -433,7 +440,7 @@ function d_vrs(model::SAFTVRSMieModel,V,T,z,i::Int)
         d = dB*(1 + δ*σ₁/(2*σ₀))
         k += 1
     end
-    return d*σᵢ
+    return d*σᵢ =#
 end
 
 #SA, Table 1
