@@ -11,7 +11,7 @@ function eutectic_point(model::CompositeModel,p=1e5)
     if length(model.components) != 2
         error("Eutectic point only defined for binary systems")
     end
-    f!(F,x) = obj_eutectic_point(F,model.solid,model.liquid,p,x[1]*200.,FractionVector(x[2]))
+    f!(F,x) = obj_eutectic_point(F,model.solid,model.fluid,p,x[1]*200.,FractionVector(x[2]))
     x0 = x0_eutectic_point(model)
     # println(x0)
     results = Solvers.nlsolve(f!,x0)

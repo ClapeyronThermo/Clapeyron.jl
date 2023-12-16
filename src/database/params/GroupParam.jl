@@ -72,8 +72,8 @@ struct GroupParam <: GroupParameter
     sourcecsvs::Array{String,1}
 end
 
-function GroupParam(imput::PARSED_GROUP_VECTOR_TYPE)
-    return GroupParam(imput,:unknown,String[])
+function GroupParam(input::PARSED_GROUP_VECTOR_TYPE)
+    return GroupParam(input,:unknown,String[])
 end
 
 format_components(g::GroupParameter) = g

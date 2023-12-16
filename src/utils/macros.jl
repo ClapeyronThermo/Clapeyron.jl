@@ -341,7 +341,7 @@ macro newmodel(name, parent, paramstype,sitemodel = true)
 end
 
 """
-    @newmodelsimple
+    @newmodelsimple name parent paramstype
 
 Even simpler model, primarily for the ideal models.
 Contains neither sites nor ideal models.
@@ -507,8 +507,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
 
     #mix sites
     if has_sites(M)
-        assoc_mix!(params_out,assoc_options)
-        
+        assoc_mix!(params_out,_components,assoc_options)
     end
     #build EoSParam
     pkgparam = build_eosparam(paramtype,params_out)

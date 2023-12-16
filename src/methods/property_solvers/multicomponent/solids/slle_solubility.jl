@@ -20,7 +20,7 @@ function slle_solubility(model::CompositeModel,p,T)
     
     x0 = x0_slle_solubility(model,p,T,μsol)
     
-    f!(F,x) = obj_slle_solubility(F,model.liquid,p,T,[exp10(x[1]),1-exp10(x[1])-exp10(x[2]),exp10(x[2])],[exp10(x[3]),1-exp10(x[3])-exp10(x[4]),exp10(x[4])],μsol)
+    f!(F,x) = obj_slle_solubility(F,model.fluid,p,T,[exp10(x[1]),1-exp10(x[1])-exp10(x[2]),exp10(x[2])],[exp10(x[3]),1-exp10(x[3])-exp10(x[4]),exp10(x[4])],μsol)
     results = Solvers.nlsolve(f!,x0,LineSearch(Newton()))
     sol = exp10.(Solvers.x_sol(results))
     x1 = [sol[1],1-sol[1]-sol[2],sol[2]]
@@ -46,17 +46,17 @@ function x0_slle_solubility(model,p,T,μsol)
         z∞ = ones(length(model))*1e-3
         z∞[i] = 1.0
         z∞ ./= sum(z∞)
-        γ∞ = activity_coefficient(model.liquid,p,T,z∞)
+        γ∞ = activity_coefficient(model.fluid,p,T,z∞)
         z∞[end] = exp(μsol[1]/(Rgas()*T)-log(γ∞[end]))
         z∞ ./= sum(z∞)
-        γ∞ = activity_coefficient(model.liquid,p,T,z∞)
+        γ∞ = activity_coefficient(model.fluid,p,T,z∞)
         x = zeros(length(model))
         x[i] = 1.0
         x[end] = exp(μsol[1]/(Rgas()*T)-log(γ∞[end]))
         x[findfirst(x.==0)] = 1/γ∞[findfirst(x.==0)]
         x ./= sum(x)
 
-        # x = x0_lle_init(model.liquid,p,T,z0,x)
+        # x = x0_lle_init(model.fluid,p,T,z0,x)
 
         x0[:,i] = x
     end

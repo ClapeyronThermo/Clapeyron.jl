@@ -1,6 +1,6 @@
 #general initial point
 
-function x0_lle_init(model::EoSModel, p, T, z,z0 = nothing)
+function x0_lle_init(model::EoSModel, p, T, z, z0 = nothing)
     nc = length(model)
     if z0 == nothing
         z_test = initial_candidate_fractions(z)

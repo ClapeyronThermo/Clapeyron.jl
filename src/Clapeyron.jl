@@ -91,13 +91,9 @@ include("utils/acceleration_ss.jl")
 #Clapeyron methods (AD, property solvers, etc)
 include("methods/methods.jl")
 
-#Unitful support, transition from dependency to ext
-if !isdefined(Base,:get_extension)
-    include("../ext/ClapeyronUnitfulExt.jl")
-end
 #=
 the dependency chain is the following:
-base --> database(params)  -|-> split_model --> methods -|-> models                     
+base --> database(params)  -|-> split_model --> methods -|-> models
                             |-> macros ------------------|
 =#
 
@@ -253,6 +249,12 @@ include("models/SAFT/SAFTVRMie/variants/SAFTVREMie.jl")
 include("methods/property_solvers/electrolytes/electrolytes.jl")
 include("methods/property_solvers/multicomponent/tp_flash/electrolyte_flash.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
+
+#Unitful support, transition from dependency to ext
+if !isdefined(Base,:get_extension)
+    include("../ext/ClapeyronUnitfulExt.jl")
+end
+
 include("utils/misc.jl")
 
 include("estimation/estimation.jl")

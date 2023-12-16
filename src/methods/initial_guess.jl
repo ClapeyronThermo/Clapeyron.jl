@@ -120,13 +120,13 @@ antoine_coef(model) = nothing
 
 
 """
-    x0_sat_pure(model::EoSModel,T,z=SA[1.0])
+    x0_sat_pure(model::EoSModel,T)
 Returns a 2-tuple corresponding to `(Vₗ,Vᵥ)`, where `Vₗ` and `Vᵥ` are the liquid and vapor initial guesses.
 Used in [`saturation_pressure`](@ref) methods that require initial volume guesses.
 It can be overloaded to provide more accurate estimates if necessary.
 """
-function x0_sat_pure(model,T,z=SA[1.0])
-    
+function x0_sat_pure(model,T)
+    z = SA[1.0]
     single_component_check(x0_sat_pure,model)
     
     #=theory as follows
@@ -139,8 +139,8 @@ function x0_sat_pure(model,T,z=SA[1.0])
     =#
 
     R̄ = Rgas(model)
-    B = second_virial_coefficient(model,T,SA[1.0])
-    lb_v = lb_volume(model,SA[1.0])*one(T)
+    B = second_virial_coefficient(model,T,z)
+    lb_v = lb_volume(model,z)*one(T)
     #=
     some very complicated models, like DAPT, fail on the calculation of the second virial coefficient.
     while this is a numerical problem in the model itself, it is better to catch this early.
@@ -168,7 +168,7 @@ function x0_sat_pure(model,T,z=SA[1.0])
 
     p = -0.25*R̄*T/B
     vl_x0 = x0_volume(model,p,T,z,phase=:l)
-    vl = _volume_compress(model,p,T,SA[1.0],vl_x0)
+    vl = _volume_compress(model,p,T,z,vl_x0)
 
     #=the basis is that p = RT/v-b - a/v2
     we have a (p,v,T) pair
@@ -231,7 +231,17 @@ function x0_sat_pure(model,T,z=SA[1.0])
 
     Vl0,Vv0 = vdw_x0_xat_pure(T,Tc,Pc,Vc)
     x0l = min(Vl0,vl)
-    x0v = min(1e4*one(Vv0),Vv0) #cutoff volume
+    if Vv0 > 1e4*one(Vv0)
+        #gas volume over threshold. but not diverged.
+        #normally this happens at low temperatures. we could suppose that Vl0 is a 
+        #"zero-pressure" volume, apply corresponding strategy
+        ares = a_res(model, x0l, T, z)
+        lnϕ_liq0 = ares - 1 + log(R̄*T/x0l)
+        P0 = exp(lnϕ_liq0)
+        x0v = R̄*T/P0
+    else
+        x0v = Vv0
+    end
     return (x0l,x0v)
 end
 

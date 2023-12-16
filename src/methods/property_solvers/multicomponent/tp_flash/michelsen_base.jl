@@ -105,10 +105,10 @@ function update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = 
     if β !== nothing
         for i in eachindex(y)
             if iny[i]
-                gibbs += β*y[i]*log(y[i] + lnϕy[i])
+                gibbs += β*y[i]*(log(y[i]) + lnϕy[i])
             end
             if inx[i]
-                gibbs += (1-β)*x[i]*log(x[i] + lnϕx[i])
+                gibbs += (1-β)*x[i]*(log(x[i]) + lnϕx[i])
             end
         end
     else
