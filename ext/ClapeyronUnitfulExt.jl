@@ -224,6 +224,7 @@ function C.chemical_potential(model::(C.SolidHfusModel), p::Unitful.Pressure, T:
     return uconvert.(output, res)
 end
 
+#=
 # x0_psat fallback method
 function C.x0_psat(model::EoSModel, T::Unitful.Temperature, Tc::Unitful.Temperature, Vc::__VolumeKind; output=u"Pa")
     st = standardize(model, Vc, T, SA[1.])
@@ -240,7 +241,7 @@ for modeltype in (:EoSModel, :(C.SingleFluid), :(C.MultiFluid), :(C.CompositeMod
     end
 end
 
-# x0_sat_pure without z
+# x0_sat_pure
 for modeltype in (:EoSModel, :(C.SingleFluid), :(C.ExtendedCorrespondingStates), :(C.CompositeModel),:(C.GammaPhi),:(C.FluidCorrelation), :(C.MultiFluid), :(C.LJRef), :(C.ActivityModel), :(C.ABCubicModel))
     @eval function C.x0_sat_pure(model::($modeltype), T::Unitful.Temperature; output=(u"m^3", u"m^3"))
         v_l, v_v = C.x0_sat_pure(model, standardize(T, 1u"K"))
@@ -315,5 +316,5 @@ function C.x0_volume_solid(model::EoSModel, T::Unitful.Temperature, z; output=u"
     res = C.x0_volume_solid(model, _T, _z)*u"m^3"
     return uconvert(output, res)
 end
-
+=#
 end #module

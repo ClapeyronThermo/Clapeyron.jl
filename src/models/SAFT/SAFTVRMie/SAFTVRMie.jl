@@ -27,7 +27,7 @@ end
 Base.eltype(p::SAFTVRMieParam{T}) where T = T
 
 abstract type SAFTVRMieModel <: SAFTModel end
-@newmodel SAFTVRMie SAFTVRMieModel SAFTVRMieParam
+@newmodel SAFTVRMie SAFTVRMieModel SAFTVRMieParam{T}
 default_references(::Type{SAFTVRMie}) = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
 default_locations(::Type{SAFTVRMie}) = ["SAFT/SAFTVRMie", "properties/molarmass.csv"]
 function transform_params(::Type{SAFTVRMie},params)
@@ -785,10 +785,10 @@ Optimizations for single component SAFTVRMie
 
 #######
 
-function d(model::SAFTVRMie, V, T, z::SingleComp)
-    ϵ = model.params.epsilon
-    σ = model.params.sigma
-    λa = model.params.lambda_a
-    λr = model.params.lambda_r
+function d(model::SAFTVRMie{}, V, T, z::SingleComp)
+    ϵ = model.params.epsilon.values[1,1]
+    σ = model.params.sigma.values[1,1]
+    λa = model.params.lambda_a.values[1,1]
+    λr = model.params.lambda_r.values[1,1]
     return SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1])]
 end

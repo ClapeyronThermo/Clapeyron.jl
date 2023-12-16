@@ -45,8 +45,8 @@
 
     # consistency of the results with/without units
     @test chemical_potential(BasicIdeal(), 1e6u"Pa", 300u"K") == chemical_potential(BasicIdeal(), 1e6, 300)*u"J/mol"
-    @test Clapeyron.x0_psat(model11, 100u"K") == Clapeyron.x0_psat(model11, 100)*u"Pa"
-    @test Clapeyron.x0_sat_pure(model11, 100u"K") == Clapeyron.x0_sat_pure(model11, 100).*(u"m^3",)
+    #@test Clapeyron.x0_psat(model11, 100u"K") == Clapeyron.x0_psat(model11, 100)*u"Pa"
+    #@test Clapeyron.x0_sat_pure(model11, 100u"K") == Clapeyron.x0_sat_pure(model11, 100).*(u"m^3",)
 end
 
 @testset "association" begin

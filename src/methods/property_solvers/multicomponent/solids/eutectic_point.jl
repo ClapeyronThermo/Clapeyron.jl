@@ -8,10 +8,12 @@ Can only function when solid and liquid models are specified within a CompositeM
 """
 function eutectic_point(model::CompositeModel,p=1e5)
     p = p*one(eltype(model))
-    if length(model.components) != 2
+    if length(model) != 2
         error("Eutectic point only defined for binary systems")
     end
-    f!(F,x) = obj_eutectic_point(F,model.solid,model.fluid,p,x[1]*200.,FractionVector(x[2]))
+    solid = solid_model(model)
+    fluid = fluid_model(model)
+    f!(F,x) = obj_eutectic_point(F,solid,fluid,p,x[1]*200.,FractionVector(x[2]))
     x0 = x0_eutectic_point(model)
     # println(x0)
     results = Solvers.nlsolve(f!,x0)
@@ -27,7 +29,7 @@ function obj_eutectic_point(F,solid,liquid,p,T,x)
 end
 
 function x0_eutectic_point(model::CompositeModel)
-    model_s = model.solid
+    model_s = solid_model(model)
     Hfus = model_s.params.Hfus.values
     Tm = model_s.params.Tm.values
     f(t) = 1-sum(exp.(-Hfus./Rgas().*(1/t.-1 ./Tm)))
