@@ -218,7 +218,6 @@ function J(model::SAFTVRSMieModel,V,T,z,_d = @f(d),η = @f(ζ3,_d),Z = @f(Zhs_ha
     J = 
     =#
     J̄ = fill(zero(V+T+first(z)+one(eltype(model))),length(model))
-
     for i in @comps
         r1d = r1_d(η)
         k₁ = K1(model,η)
@@ -266,6 +265,51 @@ function K(model::SAFTVRSMieModel,η)  #eq 17
     return 1.9881/η✷ + evalpoly(η✷,(-3.5276,6.9762,-26.205))
 end
 
+function ∫ghsW(model::SAFTVRSMieModel,V,T,z,i,j,_data = @f(data),r₁d = r1_d(_data[3]),k₁ = K1(model,_data[3]) ,k₂ = K2(model,_data[3]),k = K(model,_data[3]))
+    m̄,d,η,ρS,ρ0,Z,J̄ = _data
+    m̄inv = 1/m̄
+    m = model.params.segment.values
+    σ = model.params.sigma.values
+    σᵢⱼ = σ[i,j]
+    ϵ̄ = ϵ[i,j]/T
+    λa = model.params.lambda_a.values
+    λr = model.params.lambda_r.values
+    ϵ = model.params.epsilon.values
+    ∫ = zero(V+T+first(z)+one(eltype(model)))
+    λ̄ = λ/σ[i,j]
+    ρSi = z[i]*m[i]*N_A/V
+    ρSj = z[j]*m[j]*N_A/V
+    dSi = cbrt(1/ρSi)
+    dSj = cbrt(1/ρSj)
+    dSij = 0.5*(dSi + dSj)
+    ρSᵢⱼ = dSij^-3 #TODO: look up correct mixing rule
+    λ = cbrt(sqrt(2)/ρSij)*one(T)
+    λ̄ = λ/σ[i,j]
+    dᵢ = d[i]/σ[i,i]
+    dⱼ = d[j]/σ[j,j]
+    dᵢⱼ = 0.5*(dᵢ + dⱼ)
+    λaᵢⱼ = λa[i,j]
+    λrᵢⱼ = λr[i,j]
+    Cᵢⱼ = Cλ_mie(λaᵢⱼ, λrᵢⱼ)
+    u(r) = Cᵢⱼ*ϵ̄*(r^-λrᵢⱼ -r^-λaᵢⱼ)
+    du(r) = -Cᵢⱼ*ϵ̄*(λrᵢⱼ*r^-(λrᵢⱼ+1) -λaᵢⱼ*r^-(λaᵢⱼ+1))
+    uλ = u(λ̄)
+    duλ = du(λ̄)
+    W(r) = if (r >= λ̄) u(r) else (uλ - duλ*(λ̄ - r)) end
+    if i == j
+        J̄ᵢⱼ = J̄[i]
+    else
+        J̄ᵢⱼ = g_hs_Ji(model,dᵢⱼ,η,Z,k₁,k₂,r1d,k)
+    end
+    ghsWr(r) = g_hs(model,η,dᵢⱼ*σᵢⱼ,r*σᵢⱼ,J̄ᵢⱼ,r₁d,k₁,k₂,k)*r*r*W(r)
+    Wr(r) = r*r*W(r)
+    #we separate the integration between [d,3.3d] and [3.3d,∞]
+    #the second part can be solved more efficiently. TODO: actually do that.
+    ∫ = Solvers.integral64(ghsWr,dᵢⱼ,3.3*dᵢⱼ)*σᵢⱼ^3
+    ∫ += Solvers.integral64(Wr,3.3dᵢⱼ,10*dᵢⱼ)*σᵢⱼ^3
+    return ∫
+end
+
 function a_1(model::SAFTVRSMieModel,V,T,z,_data = @f(data))
     m̄,d,η,ρS,ρ0,Z,J̄ = _data
     m̄inv = 1/m̄
@@ -275,51 +319,17 @@ function a_1(model::SAFTVRSMieModel,V,T,z,_data = @f(data))
     λr = model.params.lambda_r.values
     ϵ = model.params.epsilon.values
     a₁ = zero(V+T+first(z)+one(eltype(model)))
+    r₁d = r1_d(η)
+    k₁ = K1(model,η)
+    k₂ = K2(model,η)
+    k = K(model,η)
     for i ∈ @comps
-        ρS = z[i]*m[i]*N_A/V
-        λ = cbrt(sqrt(2)/ρS)*one(T)
-        λ̄ = λ/σ[i]
-        
-        xsᵢ = z[i]*m[i]*m̄inv
-        dᵢᵢ = d[i]/σ[i]
-        ϵ̄ = ϵ[i]/T
-        r₁dᵢ = r1_d(η)
-        k₁ᵢ = K1(model,η)
-        k₂ᵢ = K2(model,η)
-        kᵢ = K(model,η)
-        Cᵢ = Cλ_mie(λa[i], λr[i])
-        u(r) = Cᵢ*ϵ̄*(r^-λr[i] -r^-λa[i])
-        du(r) = -Cᵢ*ϵ̄*(λr[i]*r^-(λr[i]+1) -λa[i]*r^-(λa[i]+1))
-
-
-        function W(r)
-            if r >= λ̄
-                return u(r)
-            else
-                uλ = u(λ̄)
-                duλ = du(λ̄)
-                #du/dr at r = λ
-                return uλ - duλ*(λ̄ - r)
-            end
-        end
-
-
-        ghsWrᵢ = r -> begin 
-            _Wr = W(r)
-            g_hs(model,η,dᵢᵢ*σ[i],r*σ[i],J̄[i],r₁dᵢ,k₁ᵢ,k₂ᵢ,kᵢ)*r*r*_Wr
-        end
-        Wrᵢ = r -> begin
-            W(r)*r*r
-        end
-        #we separate the integration between [d,3.3d] and [3.3d,∞]
-        #the second part can be solved more efficiently.
-        a₁ᵢᵢ = Solvers.integral64(ghsWrᵢ,dᵢᵢ,3.3*dᵢᵢ)*σ[i]^3 #TODO is this grade ok? maybe a 10-point quadrature would suffice
-        a₁ᵢᵢ += Solvers.integral64(Wrᵢ,3.3dᵢᵢ,10*dᵢᵢ)*σ[i]^3
-        a₁ += a₁ᵢᵢ*xsᵢ*xsᵢ
+        xsᵢ= z[i]*m[i]*m̄inv
+        a₁ += xsᵢ*xsᵢ*@f(∫ghsW,i,i,_data,r₁d,k₁,k₂,k)
         for j ∈ 1:(i-1)
             xsⱼ = z[i]*m[i]*m̄inv
             dᵢⱼ = 0.5*(dᵢᵢ+d[j])
-            a₁ᵢⱼ = 1 #TODO: what is the definition of g_hs here?
+            a₁ᵢⱼ = @f(∫ghsW,i,j,_data,r₁d,k₁,k₂,k)
             a₁ += 2*a₁ᵢⱼ*xsᵢ*xsⱼ
         end
     end
@@ -423,26 +433,7 @@ function d_vrs(model::SAFTVRSMieModel,V,T,z,i::Int)
         σ₁ = 2*σ₀ + ∂g_hs
         return dB*(1 + δ*σ₁/(2*σ₀))
     end
-
     return Solvers.fixpoint(f0,d0)*σᵢ
-    #=
-    while abs(d - d0) > 1E-12 && k < 100
-        d0 = d
-        g_hs,∂g_hs = g_hs_fdf(model,V,T,z,d0*σᵢ,d0*σᵢ,i)
-        # #=TODO 
-        # is d > λ ? if so, y_hs = g_hs and it would simplify this calculation a lot
-        # =#
-        # V₀ = d > λ ? zero(λ) : 
-        # expV₀ = exp(-V₀(d)/T)
-        # ∂expV₀ = 1 #TODO
-        # y_hs = g_hs*expV0
-        # dy_hs = g_hs*∂expV₀ + ∂g_hs*expV₀
-        σ₀ = g_hs
-        σ₁ = 2*σ₀ + ∂g_hs
-        d = dB*(1 + δ*σ₁/(2*σ₀))
-        k += 1
-    end
-    return d*σᵢ =#
 end
 
 #SA, Table 1
