@@ -50,7 +50,7 @@ returns:
 """
 function sublimation_pressure(model::CompositeModel,T;kwargs...)
     method = init_preferred_method(sublimation_pressure,model,kwargs)
-    return sublimation_pressure(model,p,method)
+    return sublimation_pressure(model,T,method)
 end
 
 function init_preferred_method(method::typeof(sublimation_pressure),model::CompositeModel{<:EoSModel,<:EoSModel},kwargs)
