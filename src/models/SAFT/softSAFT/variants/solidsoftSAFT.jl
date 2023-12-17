@@ -47,11 +47,10 @@ end
 
 ## Description
 
-Soft SAFT, with Lennard-Jones function from Johnson et al. (1993)
+Soft SAFT equation of state for the solid phase.
 
 ## References
-1. Johnson, J. K., Zollweg, J. A., & Gubbins, K. E. (1993). The Lennard-Jones equation of state revisited. Molecular physics, 78(3), 591–618. [doi:10.1080/00268979300100411](https://doi.org/10.1080/00268979300100411)
-2. FELIPE J. BLAS and LOURDES F. VEGA. (1997). Thermodynamic behaviour of homonuclear and heteronuclear Lennard-Jones chains with association sites from simulation and theory. Molecular physics, 92(1), 135–150. [doi:10.1080/002689797170707](https://doi.org/10.1080/002689797170707)
+1. Johnson, J. K., Zollweg, J. A., & Gubbins, K. E. (1993). Modelling the solid–liquid–vapour phase behaviour ofn-alkanes in a TPT-1framework. Molecular physics, 78(3), 591–618. [doi:10.1080/00268979300100411](https://doi.org/10.1080/00268979300100411)
 """
 solidsoftSAFT
 
@@ -108,7 +107,7 @@ end
 
 function a_chain(model::solidsoftSAFTModel, V, T, z,_data = @f(data))
     σ3,ϵ̄,m̄,ρ̄  = _data
-    return -log(@f(g_LJ,_data)*exp(-ϵ/T))*(m̄-1)
+    return -log(@f(g_LJ,_data)*exp(-ϵ̄/T))*(m̄-1)
 end
 
 function g_LJ(model::solidsoftSAFTModel, V, T, z ,_data = @f(data))
