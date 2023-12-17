@@ -11,9 +11,9 @@ end
 struct ChemPotMeltingPressure{V} <: ThermodynamicMethod
     v0::V
     check_triple::Bool
-    f_limit::Float64,
-    atol::Float64,
-    rtol::Float64,
+    f_limit::Float64
+    atol::Float64
+    rtol::Float64
     max_iters::Int
 end
 
@@ -26,11 +26,6 @@ function ChemPotMeltingPressure(;v0 = nothing,
 
     return ChemPotMeltingPressure(v0,check_triple,f_limit,atol,rtol,max_iters)
 end
-
-function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:EoSModel,<:EoSModel},kwargs)
-    ChemPotMeltingPressure(;kwargs...)
-end
-
 
 """
     pm,vs,vl = melting_pressure(model::CompositeModel,T;v0=x0_melting_pressure(model,T))
@@ -47,11 +42,15 @@ function melting_pressure(model::CompositeModel,T,kwargs...)
     method = init_preferred_method(melting_pressure,model,kwargs)
     return melting_pressure(model,T,method)
 end
+function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:EoSModel,<:EoSModel},kwargs)
+    ChemPotMeltingPressure(;kwargs...)
+end
 
 function melting_pressure(model::CompositeModel,T,method::ThermodynamicMethod)
     T = T*T/T
     return melting_pressure_impl(model,T,method)
 end
+
 function melting_pressure_impl(model::CompositeModel,T,method::ChemPotMeltingPressure)
     T̄ = T_scale(model.fluid)
     p̄ = p_scale(model.fluid)
@@ -71,7 +70,7 @@ function melting_pressure_impl(model::CompositeModel,T,method::ChemPotMeltingPre
 end
 
 function x0_melting_pressure(model::CompositeModel,T)
-    vs0 = lb_volume(model.solid)*6*1.05/π
-    vl0 = lb_volume(model.fluid)*6*1.25/π
+    vs0 = x0_volume_solid(solid_model(model),T,SA[1.0])
+    vl0 = x0_volume_liquid(fluid_model(model),T,SA[1.0])
     return (vs0,vl0)
 end

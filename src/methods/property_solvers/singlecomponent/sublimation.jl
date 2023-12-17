@@ -21,9 +21,9 @@ end
 struct ChemPotSublimationPressure{V} <: ThermodynamicMethod
     v0::V
     check_triple::Bool
-    f_limit::Float64,
-    atol::Float64,
-    rtol::Float64,
+    f_limit::Float64
+    atol::Float64
+    rtol::Float64
     max_iters::Int
 end
 
@@ -35,10 +35,6 @@ function ChemPotSublimationPressure(;v0 = nothing,
                                     max_iters = 10000)
 
     return ChemPotSublimationPressure(v0,check_triple,f_limit,atol,rtol,max_iters)
-end
-
-function init_preferred_method(method::typeof(sublimation_pressure),model::CompositeModel{<:EoSModel,<:EoSModel},kwargs)
-    ChemPotSublimationPressure(;kwargs...)
 end
 
 """
@@ -55,6 +51,10 @@ returns:
 function sublimation_pressure(model::CompositeModel,T;kwargs...)
     method = init_preferred_method(sublimation_pressure,model,kwargs)
     return sublimation_pressure(model,p,method)
+end
+
+function init_preferred_method(method::typeof(sublimation_pressure),model::CompositeModel{<:EoSModel,<:EoSModel},kwargs)
+    ChemPotSublimationPressure(;kwargs...)
 end
 
 function sublimation_pressure(model,T,method::ThermodynamicMethod)
