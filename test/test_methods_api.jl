@@ -444,7 +444,20 @@ end
 end
 
 @testset "Solid Phase Equilibria" begin
-    @testset "Solid-Liquid Equilibria" begin
+    @testset "Pure Solid-Liquid Equilibria" begin
+        model = CompositeModel(["methane"]; fluid = SAFTVRMie, solid = SAFTVRSMie)
+        
+        trp = triple_point(model)
+        @test trp[1] ≈ 106.01194395351305 rtol = 1e-6
+
+        sub = sublimation_pressure(model,100.)
+        @test sub[1] ≈ 30063.452618478666 rtol = 1e-6
+
+        mel = julia> melting_pressure(model,110.;v0=[trp[3],trp[4]])
+        @test sub[1] ≈ 1.514801965089488e8 rtol = 1e-6
+    end
+
+    @testset "Mixture Solid-Liquid Equilibria" begin
         model = CompositeModel([("1-decanol",["CH3"=>1,"CH2"=>9,"OH (P)"=>1]),("thymol",["ACCH3"=>1,"ACH"=>3,"ACOH"=>1,"ACCH"=>1,"CH3"=>2])];liquid=UNIFAC,solid=SolidHfus)
         T = 275.
         p = 1e5
