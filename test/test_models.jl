@@ -93,7 +93,7 @@ using Clapeyron, Test
         V_sol = 1e-4
         @test Clapeyron.a_mono(system, V_sol, T, z) ≈ 7.830498923903852 rtol = 1e-6
         @test Clapeyron.a_chain(system, V_sol, T, z) ≈ -2.3460460361188207 rtol = 1e-6
-        test_gibbs_duhem(system,V,T,z)
+        test_gibbs_duhem(system,V_sol,T,z)
     end
 
     @testset "PCSAFT" begin
@@ -206,7 +206,7 @@ using Clapeyron, Test
         V_sol = 3e-5
         @test Clapeyron.a_mono(system, V_sol, T, z) ≈ 0.43643302846919896 rtol = 1e-6
         @test Clapeyron.a_chain(system, V_sol, T, z) ≈ -0.4261294644079463 rtol = 1e-6
-        test_gibbs_duhem(system,V,T,z)
+        test_gibbs_duhem(system,V_sol,T,z)
     end
 
     @testset "SAFTgammaMie" begin
