@@ -453,7 +453,7 @@ end
         sub = sublimation_pressure(model,100.)
         @test sub[1] ≈ 30063.452618478666 rtol = 1e-6
 
-        mel = julia> melting_pressure(model,110.;v0=[trp[3],trp[4]])
+        mel = melting_pressure(model,110.;v0=[trp[3],trp[4]])
         @test sub[1] ≈ 1.514801965089488e8 rtol = 1e-6
     end
 
