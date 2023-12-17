@@ -314,20 +314,18 @@ function ∫ghsW(model::SAFTVRSMieModel,V,T,z,i,j,_data = @f(data),r₁d = r1_d(
     m̄inv = 1/m̄
     m = model.params.segment.values
     σ = model.params.sigma.values
+    ϵ = model.params.epsilon.values
     σᵢⱼ = σ[i,j]
     ϵ̄ = ϵ[i,j]/T
     λa = model.params.lambda_a.values
     λr = model.params.lambda_r.values
-    ϵ = model.params.epsilon.values
-    ∫ = zero(V+T+first(z)+one(eltype(model)))
-    λ̄ = λ/σ[i,j]
     ρSi = z[i]*m[i]*N_A/V
     ρSj = z[j]*m[j]*N_A/V
     dSi = cbrt(1/ρSi)
     dSj = cbrt(1/ρSj)
     dSij = 0.5*(dSi + dSj)
     ρSᵢⱼ = dSij^-3 #TODO: look up correct mixing rule
-    λ = cbrt(sqrt(2)/ρSij)*one(T)
+    λ = cbrt(sqrt(2)/ρSᵢⱼ)*one(T)
     λ̄ = λ/σ[i,j]
     dᵢ = d[i]/σ[i,i]
     dⱼ = d[j]/σ[j,j]
@@ -340,10 +338,10 @@ function ∫ghsW(model::SAFTVRSMieModel,V,T,z,i,j,_data = @f(data),r₁d = r1_d(
     uλ = u(λ̄)
     duλ = du(λ̄)
     W(r) = if (r >= λ̄) u(r) else (uλ - duλ*(λ̄ - r)) end
-    if i == j
-        J̄ᵢⱼ = J̄[i]
+    J̄ᵢⱼ = if i == j
+        J̄[i]
     else
-        J̄ᵢⱼ = g_hs_Ji(model,dᵢⱼ,η,Z,k₁,k₂,r1d,k)
+       one(J̄[i])*g_hs_Ji(model,dᵢⱼ,η,Z,k₁,k₂,r₁d,k)
     end
     ghsWr(r) = g_hs(model,η,dᵢⱼ*σᵢⱼ,r*σᵢⱼ,J̄ᵢⱼ,r₁d,k₁,k₂,k)*r*r*W(r)
     Wr(r) = r*r*W(r)

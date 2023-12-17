@@ -38,7 +38,7 @@ returns:
 - melting solid volume at specified temperature [`m³`]
 - melting liquid volume at specified temperature [`m³`]
 """
-function melting_pressure(model::CompositeModel,T,kwargs...)
+function melting_pressure(model::CompositeModel,T;kwargs...)
     method = init_preferred_method(melting_pressure,model,kwargs)
     return melting_pressure(model,T,method)
 end
