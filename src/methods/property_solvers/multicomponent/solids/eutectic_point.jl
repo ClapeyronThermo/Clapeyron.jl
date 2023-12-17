@@ -17,7 +17,9 @@ function eutectic_point(model::CompositeModel,p=1e5)
     x0 = x0_eutectic_point(model)
     # println(x0)
     results = Solvers.nlsolve(f!,x0)
-    return [Solvers.x_sol(results)[1]*200.,FractionVector(Solvers.x_sol(results)[2])]
+    T = Solvers.x_sol(results)[1]*200
+    x = FractionVector(Solvers.x_sol(results)[2])
+    return T,x
 end
 
 function obj_eutectic_point(F,solid,liquid,p,T,x)
@@ -28,12 +30,21 @@ function obj_eutectic_point(F,solid,liquid,p,T,x)
     return F
 end
 
-function x0_eutectic_point(model::CompositeModel)
-    model_s = solid_model(model)
-    Hfus = model_s.params.Hfus.values
-    Tm = model_s.params.Tm.values
-    f(t) = 1-sum(exp.(-Hfus./Rgas().*(1/t.-1 ./Tm)))
-    T0 = Roots.fzero(f,(minimum(Tm)*0.5,minimum(Tm)))
+function x0_eutectic_point(model::EoSModel,p)
+    pure = split_model(model)
+    fus = melting_temperature.(pure,p)
+    Tm = first.(fus)
+    vs = getindex.(fus,2)
+    vl = last.(fus)
+
+    _Hfus(modeli,_Vs,_Vl,_T,z =SA[1.0]) = VT_enthalpy(fluid_model(model),_Vl,_T,SA[1.0]) - VT_enthalpy(solid_model(model),_Vs,_T,SA[1.0])
+    Hfus = _Hfus.(pure,vs,vl,Tm)
+    #Hfus correlation
+    Tmax = 2/minimum(Tm)
+    f(tinv) = 1 - exp(-Hfus[1]/R*(tinv -1/Tm[1])) - exp(-Hfus[2]/R*(tinv -1/Tm[2]))
+    prob = Roots.ZeroProblem(f,(zero(Tmax),Tmax))
+    T0inv = Roots.solve(prob)
+    T0 = 1/T0inv
     x0 = exp(-Hfus[1]/Rgas()*(1/T0-1/Tm[1]))
-    return [T0/200.,x0]
+    return (T0/200.,x0)
 end

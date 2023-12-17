@@ -9,3 +9,5 @@ struct SolidCorrelation{P,M,L} <: RestrictedEquilibriaModel
     melting::M
     sublimation::L
 end
+
+struct MeltingCorrelation <: ThermodynamicMethod end
