@@ -455,6 +455,12 @@ end
 
         mel = melting_pressure(model,110.)
         @test mel[1] ≈ 1.126517131058346e7 rtol = 1e-6
+
+        sub = sublimation_temperature(model,1e3)
+        @test sub[1] ≈ 78.29626523297529 rtol = 1e-6
+
+        mel = melting_temperature(model,1e5)
+        @test mel[1] ≈ 106.02571487518759 rtol = 1e-6
     end
 
     @testset "Mixture Solid-Liquid Equilibria" begin
