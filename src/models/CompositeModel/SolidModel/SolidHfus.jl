@@ -84,7 +84,7 @@ end
 
 function melting_temperature_impl(model::CompositeModel{<:EoSModel,<:SolidHfusModel},P,method::MeltingCorrelation)
     T,vs,_ = melting_temperature_impl(model.solid,P,method)
-    vl = volume(model.fluid,P,T,phase = :l)
+    vl = volume(fluid_model(model),P,T,SA[1.0],phase = :l)
     return T,vs,vl
 end
 
