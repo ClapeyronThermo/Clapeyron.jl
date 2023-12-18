@@ -22,7 +22,7 @@ It contains a "fluid" and a "solid" field. there are three available representat
 - Fluid Correlations, consisting in a gas model, a correlation for obtaining the saturation pressure, and a liquid model. both gas and liquid models can optionally be helmholtz models too, but correlations for saturated liquid and vapour are also allowed.
 - Activity models, consisting of a liquid activity and a model for the fluid. the fluid model can be a helmholtz-based model, or another `CompositeModel` containing correlations.
 
-When the solid field is specified, some properties (like `volume`) start taking in account the solid phase in their calculations. optionally, there are other models that provide specific correlations for SLE equilibria (like `SolidHFus`)
+When the solid field is specified, some properties (like `volume`) start taking in account the solid phase in their calculations. optionally, there are other models that provide specific correlations for SLE equilibria (like `SolidHfus`)
 
 ## Examples:
 - Saturation pressure calculated using Correlations:
@@ -325,5 +325,6 @@ function gibbs_solvation(model::CompositeModel,T)
     binary_component_check(gibbs_solvation,model)
     return gibbs_solvation(model.fluid,T)
 end
+
 
 export CompositeModel
