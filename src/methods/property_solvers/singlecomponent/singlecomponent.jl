@@ -8,4 +8,4 @@ include("melting.jl")
 
 export saturation_pressure, saturation_liquid_density, saturation_temperature
 export crit_pure, enthalpy_vap, acentric_factor
-export triple_point, sublimation_pressure, melting_pressure
+export triple_point, sublimation_pressure, melting_pressure, sublimation_temperature, melting_temperature
