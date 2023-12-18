@@ -16,7 +16,7 @@ function slle_solubility(model::CompositeModel,p,T)
     idx_sol = solute.==model.components
 
     solid_r,idx_sol_r = index_reduction(model.solid,idx_sol)
-    μsol = gibbs_free_energy(solid_r,p,T,phase = :s)
+    μsol = chemical_potential(solid_r,p,T,[1.])
     
     x0 = x0_slle_solubility(model,p,T,μsol)
     
@@ -29,33 +29,30 @@ function slle_solubility(model::CompositeModel,p,T)
 end
 
 function obj_slle_solubility(F,liquid,p,T,x1,x2,μsol)
-    RT = Rgas()*T
     nc = length(liquid)
     γliq1 = activity_coefficient(liquid,p,T,x1)
-    μliq1 = @. RT*T*log(γliq1*x1)
+    μliq1 = @. Rgas()*T*log(γliq1*x1)
     γliq2 = activity_coefficient(liquid,p,T,x2)
-    μliq2 = @. RT*T*log(γliq2*x2)
+    μliq2 = @. Rgas()*T*log(γliq2*x2)
 
-    F[1] = (μliq1[end] - μsol[1])/RT
-    F[2:nc+1] = @. (μliq2 - μliq1)/RT
+    F[1] = (μliq1[end] - μsol[1])/Rgas()/T
+    F[2:nc+1] = @. (μliq2 - μliq1)/Rgas()/T
     return F
 end
 
 function x0_slle_solubility(model,p,T,μsol)
     x0 = zeros(length(model),2)
-    RT = Rgas()*T
-    liquid = fluid_model(model)
     for i in 1:length(model)-1
         z∞ = ones(length(model))*1e-3
         z∞[i] = 1.0
         z∞ ./= sum(z∞)
-        γ∞ = activity_coefficient(liquid,p,T,z∞)
-        z∞[end] = exp(μsol/RT-log(γ∞[end]))
+        γ∞ = activity_coefficient(model.fluid,p,T,z∞)
+        z∞[end] = exp(μsol[1]/(Rgas()*T)-log(γ∞[end]))
         z∞ ./= sum(z∞)
-        γ∞ = activity_coefficient(liquid,p,T,z∞)
+        γ∞ = activity_coefficient(model.fluid,p,T,z∞)
         x = zeros(length(model))
         x[i] = 1.0
-        x[end] = exp(μsol/RT-log(γ∞[end]))
+        x[end] = exp(μsol[1]/(Rgas()*T)-log(γ∞[end]))
         x[findfirst(x.==0)] = 1/γ∞[findfirst(x.==0)]
         x ./= sum(x)
 

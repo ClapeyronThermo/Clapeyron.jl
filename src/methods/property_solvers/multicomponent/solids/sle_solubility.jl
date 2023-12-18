@@ -13,15 +13,17 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing)
     p = p*one(eltype(model))
     T = T*one(eltype(model))
     sol = zeros(length(solute),length(model.components))
-    idxs = indexin(solute,model.components)
-    pures = split_model(model)
+    idxs = convert(Vector{Int},indexin(solute,model.components))
+    idx_sol = zeros(Bool,length(model.components))
+    idx_sol[idxs] .= true
+    pures = split_model(model,idxs)
     for i in 1:length(solute)
-        Tmi = melting_temperature(pures[i],p)
+        Tmi = melting_temperature(pures[i],p)[1]
         if T > Tmi
             error("Temperature above melting point of $(solute[i])")
         end
-        solid_r,idx_sol_r = index_reduction(model.solid,idx_sol)
-        μsol = gibbs_free_energy(solid_r,p,T,SA[1.],phase = :s)
+        #solid_r,idx_sol_r = index_reduction(model.solid,idx_sol)
+        μsol = chemical_potential(solid_model(pures[i]),p,T,SA[1.0])[1]
         x0 = x0_sle_solubility(model,p,T,z,idx_sol,μsol)
         # println(x0)
         f!(F,x) = obj_sle_solubility(F,model.fluid,p,T,z[.!(idx_sol)],exp10(x[1]),μsol,idx_sol)
