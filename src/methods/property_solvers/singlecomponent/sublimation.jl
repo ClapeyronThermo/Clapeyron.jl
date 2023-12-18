@@ -126,3 +126,105 @@ function x0_sublimation_pressure(model,T)
     vs0 = vs_at_0
     return vs0,vv0
 end
+
+
+function Obj_Sub_Temp(model::EoSModel, F, T, V_s, V_v,p,p̄,T̄)
+    z = SA[1.0]
+    eos_solid(V) = eos(model.solid,V,T,z)
+    eos_fluid(V) = eos(model.fluid,V,T,z)
+    A_v,Av_v = Solvers.f∂f(eos_fluid,V_v)
+    A_s,Av_s =Solvers.f∂f(eos_solid,V_s)
+    g_v = muladd(-V_v,Av_v,A_v)
+    g_s = muladd(-V_s,Av_s,A_s)
+    
+    F[1] = -(Av_v+p)/p̄
+    F[2] = -(Av_s+p)/p̄
+    F[3] = (g_v-g_s)/(R̄*T̄)
+    return F
+end
+
+struct ChemPotSublimationTemperature{V} <: ThermodynamicMethod
+    T0::Union{Nothing,V}
+    v0::V
+    check_triple::Bool
+    f_limit::Float64
+    atol::Float64
+    rtol::Float64
+    max_iters::Int
+end
+
+function ChemPotSublimationTemperature(;v0 = nothing,
+                                    T0 = nothing,
+                                    check_triple = false,
+                                    f_limit = 0.0,
+                                    atol = 1e-8,
+                                    rtol = 1e-12,
+                                    max_iters = 10000)
+
+    return ChemPotSublimationTemperature(v0,T0,check_triple,f_limit,atol,rtol,max_iters)
+end
+
+"""
+    pm,vs,vl = sublimation_temperature(model::CompositeModel,T;v0=x0_sublimation_pressure(model,T))
+
+Calculates the sublimation temperature of a `CompositeModel` containing a solid and fluid phase EoS, at a specified pressure.
+You can pass a tuple of initial values for the volumes `(vs0,vl0)`.
+
+returns:
+- Sublimation Temperature [`K`]
+- sublimation solid volume at specified pressure [`m³`]
+- sublimation vapour volume at specified pressure [`m³`]
+"""
+function sublimation_temperature(model::CompositeModel,p;kwargs...)
+    method = init_preferred_method(sublimation_temperature,model,kwargs)
+    return sublimation_temperature(model,p,method)
+end
+function init_preferred_method(method::typeof(sublimation_temperature),model::CompositeModel{<:EoSModel,<:EoSModel},kwargs)
+    ChemPotSublimationTemperature(;kwargs...)
+end
+
+function sublimation_temperature(model::CompositeModel,p,method::ThermodynamicMethod)
+    p = p*p/p
+    return sublimation_temperature_impl(model,p,method)
+end
+
+function sublimation_temperature_impl(model::CompositeModel,p,method::ChemPotSublimationTemperature)
+    T̄ = T_scale(model.fluid)
+    p̄ = p_scale(model.fluid)
+    if method.v0 == nothing
+        v0 = x0_sublimation_temperature(model,p)
+    else
+        v0 = method.v0
+    end
+    V0 = [v0[1],log(v0[2]),log(v0[3])]
+    f!(F,x) = Obj_Sub_Temp(model,F,x[1],exp(x[2]),exp(x[3]),p,p̄,T̄)
+    results = Solvers.nlsolve(f!,V0,TrustRegion(Newton(),Dogleg()))
+    x = Solvers.x_sol(results)
+    vs = exp(x[2])
+    vv = exp(x[3])
+    Tfus = x[1]
+    
+    converged = check_valid_eq2(solid_model(model),fluid_model(model),p,vs,vv,Tfus)
+    if converged
+    return Tfus, vs, vv
+    else
+        nan = zero(Tfus)/zero(Tfus)
+        return nan,nan,nan
+    end
+end
+
+function x0_sublimation_temperature(model::CompositeModel,p)
+    trp = triple_point(model)
+
+    pt = trp[2]
+    vs0 = trp[3]
+    vv0 = trp[5]
+    Δv = vv0-vs0
+    Tt = trp[1]
+    hs0 = VT_enthalpy(model.solid,vs0,Tt)
+    hv0 = VT_enthalpy(model.fluid,vv0,Tt)
+    Δh = hv0-hs0
+    T0 = Tt*exp(Δv*(p-pt)/Δh)
+
+    return T0,vs0,vv0
+end
