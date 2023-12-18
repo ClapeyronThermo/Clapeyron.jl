@@ -29,9 +29,11 @@ Clapeyron.ADPCSAFT
 Clapeyron.LJSAFT
 Clapeyron.softSAFT
 Clapeyron.softSAFT2016
+Clapeyron.solidsoftSAFT
 Clapeyron.SAFTVRSW
 Clapeyron.SAFTVRMie
 Clapeyron.SAFTVRQMie
+Clapeyron.SAFTVRSMie
 Clapeyron.SAFTgammaMie
 Clapeyron.structSAFTgammaMie
 Clapeyron.DAPT
