@@ -75,15 +75,19 @@ Checks that a saturation method converged correctly. it checks:
 - That both volumes are different, with a difference of at least `ε0` epsilons
 """
 function check_valid_sat_pure(model,P_sat,V_l,V_v,T,ε0 = 5e7)
-    ε = abs(V_l-V_v)/(eps(typeof(V_l-V_v)))
+   return check_valid_eq2(model,model,P_sat,V_l,V_v,T,ε0)
+end
+
+function check_valid_eq2(model1,model2,P_sat,V1,V2,T,ε0 = 5e7)
+    ε = abs(V1-V2)/(eps(typeof(V1-V2)))
     ε <= ε0 && return false
-    pl,dpdvl = p∂p∂V(model,V_l,T,SA[1.0])
-    pv,dpdvv = p∂p∂V(model,V_v,T,SA[1.0])
+    p1,dpdv1 = p∂p∂V(model1,V1,T,SA[1.0])
+    p2,dpdv2 = p∂p∂V(model2,V2,T,SA[1.0])
     ε1 = ε0*eps(P_sat)
-    return  (dpdvl <= 0)        && #mechanical stability of the liquid phase
-            (dpdvv <= 0)        && #mechanical stability of the vapour phase
-            (1 - pl/P_sat < ε1)  && #calculated pressure for liquid phase is aproximately the same
-            (1 - pv/P_sat < ε1)     #calculated pressure for vapour phase is aproximately the same
+    return  (dpdv1 <= 0)        && #mechanical stability of the liquid phase
+            (dpdv2 <= 0)        && #mechanical stability of the vapour phase
+            (1 - p1/P_sat < ε1)  && #calculated pressure for liquid phase is aproximately the same
+            (1 - p2/P_sat < ε1)     #calculated pressure for vapour phase is aproximately the same
     #if ΔV > ε then Vl and Vv are different values
 end
 
