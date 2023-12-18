@@ -59,7 +59,7 @@ function melting_pressure_impl(model::CompositeModel{<:EoSModel,<:SolidHfusModel
     return P,vs,vl
 end
 
-function melting_pressure_impl(compmodel::SolidHfusModel,T,method::MeltingCorrelation)
+function melting_pressure_impl(model::SolidHfusModel,T,method::MeltingCorrelation)
     Hfus = model.params.Hfus.values[1]
     Tm = model.params.Tm.values[1]
     Pm = 1e5
@@ -69,12 +69,26 @@ function melting_pressure_impl(compmodel::SolidHfusModel,T,method::MeltingCorrel
     return P, nan, nan
 end
 
-function melting_temperature(model::CompositeModel{<:Any,<:SolidHfusModel},P)
-    return melting_temperature(model.solid,P)
+function init_preferred_method(method::typeof(melting_temperature),model::CompositeModel{<:EoSModel,<:SolidHfusModel},kwargs...)
+    return MeltingCorrelation()
+end
+
+function init_preferred_method(method::typeof(melting_temperature),model::SolidHfusModel,kwargs...)
+    return MeltingCorrelation()
 end
 
 
-function melting_temperature(model::SolidHfusModel,P)
+function melting_temperature(model::CompositeModel{<:Any,<:SolidHfusModel},P,method::ThermodynamicMethod)
+    return melting_temperature_impl(model,P,method)
+end
+
+function melting_temperature_impl(model::CompositeModel{<:EoSModel,<:SolidHfusModel},P,method::MeltingCorrelation)
+    T,vs,_ = melting_temperature_impl(model.solid,P,method)
+    vl = volume(model.fluid,P,T,phase = :l)
+    return T,vs,vl
+end
+
+function melting_temperature_impl(model::SolidHfusModel,P,method::MeltingCorrelation)
     Hfus = model.params.Hfus.values[1]
     Tm = model.params.Tm.values[1]
     Pm = 1e5

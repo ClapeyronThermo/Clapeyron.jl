@@ -461,6 +461,10 @@ end
 
         mel = melting_temperature(model,1e5)
         @test mel[1] ≈ 106.02571487518759 rtol = 1e-6
+
+        model2 = CompositeModel("water",solid = SolidHfus, fluid = IAPWS95())
+        @test melting_temperature(model2,1e5) ≈ 273.15 rtol = 1e-6
+        @test melting_pressure(model2,273.15) ≈ 1e5 rtol = 1e-6
     end
 
     @testset "Mixture Solid-Liquid Equilibria" begin
