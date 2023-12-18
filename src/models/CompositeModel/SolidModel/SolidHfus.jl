@@ -10,7 +10,7 @@ end
 
 """
     SolidHfusModel <: EoSModel
-    
+
     SolidHfus(components;
     userlocations=String[],
     verbose::Bool=false)
@@ -23,7 +23,7 @@ end
 
 ## Description
 
-Approximation of the excess chemical potential in the solid phase (`CpSL` is not necessary by default): 
+Approximation of the excess chemical potential in the solid phase (`CpSL` is not necessary by default):
 ```
 ln(x_iγ_i) = Hfus*T*(1/Tm-1/T)-CpSL/R̄*(Tm/T-1-log(Tm/T))
 ```
