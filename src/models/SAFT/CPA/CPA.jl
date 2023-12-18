@@ -12,6 +12,7 @@ abstract type CPAModel <: EoSModel end
 
 struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
     components::Array{String,1}
+    radial_dist::Symbol
     cubicmodel::c
     params::CPAParam
     sites::SiteParam
@@ -24,6 +25,7 @@ end
     CPAModel <: EoSModel
 
     function CPA(components;
+        radial_dist = :CS
         idealmodel=BasicIdeal,
         cubicmodel=RK,
         alpha=sCPAAlpha,
@@ -64,7 +66,13 @@ end
 
 ## Description
 
-Cubic Plus Association (CPA) EoS
+Cubic Plus Association (CPA) EoS. consist in the addition of a cubic part and an association part:
+```
+a_res(model::CPA) = a_res(model::Cubic) + a_assoc(model)
+```
+
+The `radial_dist` argument can be used to choose between a Carnahan-Starling form (`CS`, default) or the Kontogeorgis (`KG`) term, more widely known as s-CPA.
+
 ## References
 1. Kontogeorgis, G. M., Michelsen, M. L., Folas, G. K., Derawi, S., von Solms, N., & Stenby, E. H. (2006). Ten years with the CPA (cubic-plus-association) equation of state. Part 1. Pure compounds and self-associating systems. Industrial & Engineering Chemistry Research, 45(14), 4855–4868. [doi:10.1021/ie051305v](https://doi.org/10.1021/ie051305v)
 """
@@ -73,6 +81,7 @@ CPA
 export CPA
 function CPA(components;
     idealmodel=BasicIdeal,
+    radial_dist::Symbol = :CS,
     cubicmodel=RK,
     alpha=CPAAlpha,
     mixing=vdW1fRule,
@@ -87,7 +96,16 @@ function CPA(components;
     verbose=false,
     assoc_options = AssocOptions())
 
-    params = getparams(components, ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    locs = if radial_dist == :CS
+        ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]
+    elseif radial_dist == :KG || radial_dist == :OT
+        ["SAFT/CPA/sCPA/", "properties/molarmass.csv","properties/critical.csv"]
+    else
+        throw(error("CPA: incorrect specification of radial_dist, try using `:CS` (original CPA) or `:KG` (simplified CPA)"))
+    end
+
+    params = getparams(components, locs; userlocations=userlocations, verbose=verbose)
+    
     sites = get!(params,"sites") do
         SiteParam(components)
     end
@@ -95,15 +113,13 @@ function CPA(components;
     k = get(params,"k",nothing)
     Tc = params["Tc"]
     c1 = params["c1"]
-    params["a"].values .*= 1E-1
-    params["b"].values .*= 1E-3
     a  = epsilon_LorentzBerthelot(params["a"], k)
     b  = sigma_LorentzBerthelot(params["b"])
-    
+
     epsilon_assoc = get!(params,"epsilon_assoc") do
         AssocParam("epsilon_assoc",components)
     end
-    
+
     bondvol = get!(params,"bondvol") do
         AssocParam("bondvol",components)
     end
@@ -118,7 +134,7 @@ function CPA(components;
 
     references = ["10.1021/ie051305v"]
 
-    model = CPA(components, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
+    model = CPA(components, radial_dist, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
     return model
 end
 
@@ -143,6 +159,16 @@ lb_volume(model::CPAModel,z = SA[1.0]) = lb_volume(model.cubicmodel,z)
 T_scale(model::CPAModel,z=SA[1.0]) = T_scale(model.cubicmodel,z)
 p_scale(model::CPAModel,z=SA[1.0]) = p_scale(model.cubicmodel,z)
 
+function show_info(io,model::CPAModel) 
+    rdf = model.radial_dist
+    println(io)
+    if rdf == :CS #CPA original
+        print(io,"RDF: Carnahan-Starling (original CPA)")
+    elseif rdf == :KG || rdf == :OT #sCPA
+        print(io,"RDF: Kontogeorgis (s-CPA)")
+    end
+end
+
 function x0_crit_pure(model::CPAModel)
     lb_v = lb_volume(model)
     return (1.0, log10(lb_v/0.3))
@@ -158,10 +184,19 @@ ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
 
 function Δ(model::CPAModel, V, T, z, i, j, a, b, abc = cubic_ab(model.cubicmodel,V,T,z))
     ā,b̄,c̄ = abc
-    ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b] * 1e2/R̄
-    βijab = model.params.bondvol.values[i,j][a,b] * 1e-3
+    ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]/R̄
+    βijab = model.params.bondvol.values[i,j][a,b]
     b = model.params.b.values
     η = sum(z)*b̄/(4*V)
-    g = (1-η/2)/(1-η)^3
+
+    rdf = model.radial_dist
+    g = if rdf == :CS #CPA original
+        (1-0.5*η)/(1-η)^3
+    elseif rdf == :KG || rdf == :OT #sCPA
+        1/(1-1.9η)
+    else
+        zero(η)/zero(η)
+    end
+
     return g*expm1(ϵ_associjab/T)*βijab*b[i,j]/N_A
 end
