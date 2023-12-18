@@ -1,4 +1,4 @@
-function obj_sublimation_pressure(model::CompositeModel,F,T,vs,vv,p̄,T̄)
+function obj_sublimation_pressure(model::CompositeModel,F,T,vs,vv,p_scale,μ_scale)
     z = SA[1.0]
     eos_solid(V) = eos(model.solid,V,T,z)
     eos_fluid(V) = eos(model.fluid,V,T,z)
@@ -13,8 +13,8 @@ function obj_sublimation_pressure(model::CompositeModel,F,T,vs,vv,p̄,T̄)
     μv = VT_chemical_potential(model.fluid, vv, T)[1]
     ps = pressure(model.solid, vs, T)
     pv = pressure(model.fluid, vv, T) =#
-    F[1] = (μs - μv)/R̄/T̄
-    F[2] = (ps - pv)/p̄
+    F[1] = (μs - μv)*μ_scale
+    F[2] = (ps - pv)*p_scale
     return F
 end
 
@@ -32,7 +32,7 @@ function ChemPotSublimationPressure(;v0 = nothing,
                                     f_limit = 0.0,
                                     atol = 1e-8,
                                     rtol = 1e-12,
-                                    max_iters = 10000)
+                                    max_iters = 100)
 
     return ChemPotSublimationPressure(v0,check_triple,f_limit,atol,rtol,max_iters)
 end
@@ -64,21 +64,51 @@ function sublimation_pressure(model,T,method::ThermodynamicMethod)
 end
 
 function sublimation_pressure_impl(model::CompositeModel,T,method::ChemPotSublimationPressure)
-    T̄ = T_scale(model.fluid)
-    p̄ = p_scale(model.fluid)
+    fluid = fluid_model(model)
+    solid = solid_model(model)
     if method.v0 == nothing
         v0 = x0_sublimation_pressure(model,T)
     else
         v0 = method.v0
     end
+    vs,vv = v0
+    p_scale,μ_scale = scale_sat_pure(fluid)
+
     V0 = vec2(log(v0[1]),log(v0[2]),T)
-    f!(F,x) = obj_sublimation_pressure(model,F,T,exp10(x[1]),exp10(x[2]),p̄,T̄)
-    results = Solvers.nlsolve(f!,V0)
+    f!(F,x) = obj_sublimation_pressure(model,F,T,exp(x[1]),exp(x[2]),p_scale,μ_scale)
+    results = Solvers.nlsolve(f!,V0,LineSearch(Newton()))
+    #@show results
     x = Solvers.x_sol(results)
     vs = exp(x[1])
     vv = exp(x[2])
-    psub = pressure(model.fluid, vv, T)
-    return psub, vs, vv
+    return pressure(fluid,vv,T),vs,vv
+    #=
+    z = SA[1.0]
+    f1(_V) = eos(solid,_V,T,z)
+    f2(_V) = eos(fluid,_V,T,z)
+    a1,da1,d2a1 = Solvers.f∂f∂2f(f1,vs)
+    a2,da2,d2a2 = Solvers.f∂f∂2f(f2,vv)
+    p1 = -da1
+    p2 = -da2
+    if p1 ≈ p2 && g1 ≈ g2 && (d2a1 > 0) && (d2a2 > 0)
+        return p2,vs,vv
+    end
+    for i in 1:method.max_iters
+        vs,vv = solve_2ph_taylor(vs,vv,a1,da1,d2a1,a2,da2,d2a2,p_scale,μ_scale)
+        a1,da1,d2a1 = Solvers.f∂f∂2f(f1,vs)
+        a2,da2,d2a2 = Solvers.f∂f∂2f(f2,vv)
+        p1 = -da1
+        p2 = -da2
+        g1 = a1 + p1*vs
+        g2 = a2 + p2*vv     
+        if p1 ≈ p2 && g1 ≈ g2 && (d2a1 > 0) && (d2a2 > 0)
+            return p2,vs,vv
+        end
+    end
+    nan = p1/p1
+    return nan,nan,nan
+    =#
+    
 end
 
 function x0_sublimation_pressure(model,T)
@@ -92,7 +122,7 @@ function x0_sublimation_pressure(model,T)
     ares = a_res(solid, vs_at_0, T, z)
     lnϕ_s0 = ares - 1 + log(R̄*T/vs_at_0)
     P0 = exp(lnϕ_s0)
-    vs0 = volume(solid,P0,T,z,vol0 = vs_at_0)
     vv0 = R̄*T/P0
-    return (vs0,vv0)
+    vs0 = vs_at_0
+    return vs0,vv0
 end
