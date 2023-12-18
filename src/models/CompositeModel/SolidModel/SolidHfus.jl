@@ -38,18 +38,11 @@ function volume_impl(model::SolidHfusModel,p,T,z=SA[1.0],phase=:unknown,threaded
     return _0/_0
 end
 
-function VT_gibbs_free_energy(model::SolidHfusModel,V,T,z)
-    Hfus = model.params.Hfus.values[i]
-    Tm = model.params.Tm.values[i]
-    CpSL = model.params.CpSL.values[i]
-    R = Rgas()
-    Tinv = 1/T
-    for i in @comps
-        Tmi = Tm[i]
-        TmiTinv = Tmi*Tinv
-        res += z[i]*Hfus[i]*T*(1/Tmi-Tinv)-CpSL[i]/R*(TmiTinv-1-log(TmiTinv))
-    end
-    return res
+function chemical_potential(model::SolidHfusModel, p, T, z)
+    Hfus = model.params.Hfus.values
+    Tm = model.params.Tm.values
+    CpSL = model.params.CpSL.values
+    return @. Hfus*T*(1/Tm-1/T)-CpSL/Rgas()*(Tm/T-1-log(Tm/T))
 end
 
 function init_preferred_method(method::typeof(melting_pressure),model::CompositeModel{<:EoSModel,<:SolidHfusModel},kwargs...)
@@ -76,6 +69,11 @@ function melting_pressure_impl(compmodel::SolidHfusModel,T,method::MeltingCorrel
     return P, nan, nan
 end
 
+function melting_temperature(model::CompositeModel{<:Any,<:SolidHfusModel},P)
+    return melting_temperature(model.solid,P)
+end
+
+
 function melting_temperature(model::SolidHfusModel,P)
     Hfus = model.params.Hfus.values[1]
     Tm = model.params.Tm.values[1]
@@ -100,7 +98,7 @@ function x0_eutectic_point(model::SolidHfusModel,p)
     T0inv = Roots.solve(prob)
     T0 = 1/T0inv
     x0 = exp(-Hfus[1]/Rgas()*(1/T0-1/Tm[1]))
-    return (T0/200.,x0)
+    return [T0/200.,x0]
 end
 
 export SolidHfus
