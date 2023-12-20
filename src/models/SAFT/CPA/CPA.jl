@@ -25,7 +25,7 @@ end
     CPAModel <: EoSModel
 
     function CPA(components;
-        radial_dist = :CS
+        radial_dist::Symbol = :CS,
         idealmodel=BasicIdeal,
         cubicmodel=RK,
         alpha=sCPAAlpha,
@@ -45,9 +45,9 @@ end
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `a`: Single Parameter (`Float64`) - Atraction parameter
-- `b`: Single Parameter (`Float64`) - Covolume
-- `c1`: Single Parameter (`Float64`) - α-function constant Parameter
+- `a`: Single Parameter (`Float64`) - Atraction parameter `[m^6*Pa/mol]`
+- `b`: Single Parameter (`Float64`) - Covolume `[m^3/mol]`
+- `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
@@ -66,7 +66,7 @@ end
 
 ## Description
 
-Cubic Plus Association (CPA) EoS. consist in the addition of a cubic part and an association part:
+Cubic Plus Association (CPA) EoS. Consists in the addition of a cubic part and an association part:
 ```
 a_res(model::CPA) = a_res(model::Cubic) + a_assoc(model)
 ```
@@ -175,19 +175,19 @@ function x0_crit_pure(model::CPAModel)
 end
 
 function a_res(model::CPAModel, V, T, z)
-    n = sum(z)
-    _data = cubic_ab(model.cubicmodel,V,T,z,n)
+    _data = data(model.cubicmodel,V,T,z)
+    n,ā,b̄,c̄ = _data
     return a_res(model.cubicmodel,V,T,z,_data) + a_assoc(model,V+c̄*n,T,z,_data)
 end
 
 ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
 
-function Δ(model::CPAModel, V, T, z, i, j, a, b, abc = cubic_ab(model.cubicmodel,V,T,z))
-    ā,b̄,c̄ = abc
+function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = data(model.cubicmodel,V,T,z))
+    n,ā,b̄,c̄ = _data
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]/R̄
     βijab = model.params.bondvol.values[i,j][a,b]
     b = model.params.b.values
-    η = sum(z)*b̄/(4*V)
+    η = n*b̄/(4*V)
 
     rdf = model.radial_dist
     g = if rdf == :CS #CPA original
