@@ -21,7 +21,6 @@
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `a`: Single Parameter (`Float64`) - Atraction parameter `[m^6*Pa/mol]`
 - `b`: Single Parameter (`Float64`) - Covolume `[m^3/mol]`
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
