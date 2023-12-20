@@ -1,23 +1,23 @@
 Clapeyron Database File,,,,,,,
 sCPA Assoc Parameters,,,,,,,
 species1,site1,species2,site2,epsilon_assoc,bondvol
-water,e,water,H,166.55947239815478,0.0692
-carbon dioxide,e,water,H,83.28,0.1836
+water,e,water,H,166.55947239815478e+02,0.0692
+carbon dioxide,e,water,H,83.28e+02,0.1836
 hydrogen sulfide,e,hydrogen sulfide,H,3726.34,0.04745
-methanol,e,methanol,H,245.91,16.1e-03
-ethanol,e,ethanol,H,215.32,8.0e-03
-propanol,e,propanol,H,210.00,8.1e-03
-2-propanol,e,propanol,H,210.00,9.1e-03
-butanol,e,butanol,H,210.00,8.2e-03
-pentanol,e,pentanol,H,210.00,3.6e-03
-octanol,e,octanol,H,267.59,0.14e-03
-formic acid,e,formic acid,H,419.17,15.5e-03
-acetic acid,e,acetic acid,H,403.23,4.5e-03
-propanoic acid,e,propanoic acid,H,399.75,2.1e-03
-ethylene glycol,e,ethylene glycol,H,197.52,14.1e-03
-diethylene glycol,e,diethylene glycol,H,196.84,6.4e-03
-triethylene glycol,e,triethylene glycol,H,143.37,18.8e-03
-propylene glycol,e,propylene glycol,H,174.42,19.0e-03
-methylamine,e,methylamine,H,114.66,33.7e-03
-ethylamine,e,ethylamine,H,93.175,43.0e-03
-diethylamine,e,diethylamine,H,37.008,110.8e-03
+methanol,e,methanol,H,245.91e+02,16.1e-03
+ethanol,e,ethanol,H,215.32e+02,8.0e-03
+propanol,e,propanol,H,210.00e+02,8.1e-03
+2-propanol,e,propanol,H,210.00e+02,9.1e-03
+butanol,e,butanol,H,210.00e+02,8.2e-03
+pentanol,e,pentanol,H,210.00e+02,3.6e-03
+octanol,e,octanol,H,267.59e+02,0.14e-03
+formic acid,e,formic acid,H,419.17e+02,15.5e-03
+acetic acid,e,acetic acid,H,403.23e+02,4.5e-03
+propanoic acid,e,propanoic acid,H,399.75e+02,2.1e-03
+ethylene glycol,e,ethylene glycol,H,197.52e+02,14.1e-03
+diethylene glycol,e,diethylene glycol,H,196.84e+02,6.4e-03
+triethylene glycol,e,triethylene glycol,H,143.37e+02,18.8e-03
+propylene glycol,e,propylene glycol,H,174.42e+02,19.0e-03
+methylamine,e,methylamine,H,114.66e+02,33.7e-03
+ethylamine,e,ethylamine,H,93.175e+02,43.0e-03
+diethylamine,e,diethylamine,H,37.008e+02,110.8e-03
