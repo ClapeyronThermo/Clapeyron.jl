@@ -50,6 +50,7 @@ end
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[J]`
+- `epsilon_assoc_over_R`: Association Parameter (`Float64`) (alternative to `epsilon_assoc`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
 ## Model Parameters
@@ -120,6 +121,13 @@ function CPA(components;
     c1 = params["c1"]
     a  = epsilon_LorentzBerthelot(params["a"], k)
     b  = sigma_LorentzBerthelot(params["b"])
+
+    if haskey(params,"epsilon_assoc_over_R") || !haskey(params,"epsilon_assoc")
+        old_assoc = params["epsilon_assoc_over_R"]
+        new_assoc = AssocParam("epsilon_assoc",old.components,old.values,old.sites,old.sourcecsvs,old.sources)
+        new_assoc.values.values .*= R̄
+        params["epsilon_assoc"] = new_assoc
+    end
 
     epsilon_assoc = get!(params,"epsilon_assoc") do
         AssocParam("epsilon_assoc",components)
