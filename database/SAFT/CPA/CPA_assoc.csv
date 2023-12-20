@@ -1,14 +1,14 @@
 Clapeyron Database File,,,,,,,
 CPA Assoc Parameters,,,,,,,
 species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol
-methanol,CO,e,methanol,CO,H,244.76,15.4e-03
-ethanol,CCO,e,ethanol,CCO,H,215.00,8e-03
-1-propanol,CCCO,e,1-propanol,CCCO,H,210.00,9.3e-03
-2-propanol,CC(O)C,e,2-propanol,CC(O)C,H,210.00,9.2e-03
-1-butanol,CCCCO,e,1-butanol,CCCCO,H,210.00,9e-03
-tert-butanol,CCCCCO,e,tert-butanol,CCCCCO,H,210.00,1.4e-03
-1-pentanol,CCCCCCCCO,e,1-pentanol,CCCCCCCCO,H,210.00,3.7e-03
-1-hexanol,C(=O)O,e,1-hexanol,C(=O)O,H,210.00,3.3e-03
-1-dodecanol,CC(=O)O,e,1-dodecanol,CC(=O)O,H,210.00,1.4e-03
-phenol,CCC(=O)O,e,phenol,CCC(=O)O,H,174.88,45.3e-03
-water,O,e,water,O,H,166.55,69.2e-03
+methanol,CO,e,methanol,CO,H,244.76e+02,15.4e-03
+ethanol,CCO,e,ethanol,CCO,H,215.00e+02,8e-03
+1-propanol,CCCO,e,1-propanol,CCCO,H,210.00e+02,9.3e-03
+2-propanol,CC(O)C,e,2-propanol,CC(O)C,H,210.00e+02,9.2e-03
+1-butanol,CCCCO,e,1-butanol,CCCCO,H,210.00e+02,9e-03
+tert-butanol,CCCCCO,e,tert-butanol,CCCCCO,H,210.00e+02,1.4e-03
+1-pentanol,CCCCCCCCO,e,1-pentanol,CCCCCCCCO,H,210.00e+02,3.7e-03
+1-hexanol,C(=O)O,e,1-hexanol,C(=O)O,H,210.00e+02,3.3e-03
+1-dodecanol,CC(=O)O,e,1-dodecanol,CC(=O)O,H,210.00e+02,1.4e-03
+phenol,CCC(=O)O,e,phenol,CCC(=O)O,H,174.88e+02,45.3e-03
+water,O,e,water,O,H,166.55e+02,69.2e-03
