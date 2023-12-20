@@ -254,16 +254,16 @@
         #test for easier initialization of CPA/SAFT without association
         m1 = Clapeyron.CPA(["Methanol"])
         m2 = CPA(["Methanol"]; userlocations=(;
-        a = m1.params.a.values .* 10, #undo scaling of a
-        b = m1.params.b.values .* 1000, #undo scaling of b
+        a = m1.params.a.values[1],
+        b = m1.params.b.values[1],
         c1 = m1.params.c1.values,
         Mw = m1.params.Mw.values,
         Tc = m1.params.Tc.values,
         Pc = m1.cubicmodel.params.Pc.values,
         n_H = [1],
         n_e = [1],
-        epsilon_assoc = Dict((("Methanol","H"),("Methanol","e"))=>244.76),
-        bondvol = Dict((("Methanol","H"),("Methanol","e"))=>15.4)),
+        epsilon_assoc = Dict((("Methanol","H"),("Methanol","e")) => m1.params.epsilon_assoc.values.values[1]),
+        bondvol = Dict((("Methanol","H"),("Methanol","e")) => m1.params.bondvol.values.values[1]))
         )
         @test volume(m1,1e5,333.0) ≈ volume(m2,1e5,333.0)
 
