@@ -1,5 +1,6 @@
 Clapeyron Database File,,,,,,,
 sCPA Assoc Parameters,,,,,,,
-species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol
-water,O,e,water,O,H,166.55947239815478,69.2e-03
-carbon dioxide,,e,water,O,H,83.28,183.6e-03
+species1,site1,species2,site2,epsilon_assoc,bondvol
+water,e,water,H,166.55947239815478,0.0692
+carbon dioxide,e,water,H,83.28,0.1836
+hydrogen sulfide,e,hydrogen sulfide,H,3726.34,0.04745
