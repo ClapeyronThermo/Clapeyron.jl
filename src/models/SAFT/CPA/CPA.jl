@@ -49,8 +49,7 @@ end
 - `b`: Single Parameter (`Float64`) - Covolume `[m^3/mol]`
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[J]`
-- `epsilon_assoc_over_R`: Association Parameter (`Float64`) (alternative to `epsilon_assoc`) - Reduced association energy `[K]`
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
 ## Model Parameters
@@ -99,7 +98,7 @@ function CPA(components;
 
     locs = if radial_dist == :CS
         ["SAFT/CPA", "properties/molarmass.csv","properties/critical.csv"]
-    elseif radial_dist == :KG || radial_dist == :OT
+    elseif radial_dist == :KG
         ["SAFT/CPA/sCPA/", "properties/molarmass.csv","properties/critical.csv"]
     else
         throw(error("CPA: incorrect specification of radial_dist, try using `:CS` (original CPA) or `:KG` (simplified CPA)"))
@@ -122,13 +121,6 @@ function CPA(components;
     a  = epsilon_LorentzBerthelot(params["a"], k)
     b  = sigma_LorentzBerthelot(params["b"])
 
-    if haskey(params,"epsilon_assoc_over_R") || !haskey(params,"epsilon_assoc")
-        old_assoc = params["epsilon_assoc_over_R"]
-        new_assoc = AssocParam("epsilon_assoc",old.components,old.values,old.sites,old.sourcecsvs,old.sources)
-        new_assoc.values.values .*= R̄
-        params["epsilon_assoc"] = new_assoc
-    end
-
     epsilon_assoc = get!(params,"epsilon_assoc") do
         AssocParam("epsilon_assoc",components)
     end
@@ -136,8 +128,11 @@ function CPA(components;
     bondvol = get!(params,"bondvol") do
         AssocParam("bondvol",components)
     end
+
     bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
     packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol, Mw)
+    
+    #init cubic model
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
@@ -174,9 +169,10 @@ function p_scale(model::CPAModel,z=SA[1.0])
     #does not depend on Pc, so it can be made optional on CPA input
     b = model.cubicmodel.params.b.values
     a = model.cubicmodel.params.a.values
-    b̄ = dot(z,b,z)/sum(z)
-    ā = dot(z,a,z)
-    return ā/(b̄*b̄)
+    Ωa,Ωb = ab_consts(model.cubicmodel)
+    b̄r = dot(z,b,z)/(sum(z)*Ωb)
+    ār = dot(z,a,z)/Ωa
+    return ār/(b̄r*b̄r)
 end
 
 function show_info(io,model::CPAModel) 
@@ -204,7 +200,7 @@ ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
 
 function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = data(model.cubicmodel,V,T,z))
     n,ā,b̄,c̄ = _data
-    ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]/R̄
+    ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
     βijab = model.params.bondvol.values[i,j][a,b]
     b = model.params.b.values
     η = n*b̄/(4*V)
@@ -212,7 +208,7 @@ function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = data(model.cubicmodel,
     rdf = model.radial_dist
     g = if rdf == :CS #CPA original
         (1-0.5*η)/(1-η)^3
-    elseif rdf == :KG || rdf == :OT #sCPA
+    elseif rdf == :KG #sCPA
         1/(1-1.9η)
     else
         zero(η)/zero(η)

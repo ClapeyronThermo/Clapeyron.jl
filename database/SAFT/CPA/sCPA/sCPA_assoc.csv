@@ -1,23 +1,23 @@
 Clapeyron Database File,,,,,,,
 sCPA Assoc Parameters,,,,,,,
 species1,site1,species2,site2,epsilon_assoc,bondvol
-water,e,water,H,166.55947239815478e+02,0.0692
-carbon dioxide,e,water,H,83.28e+02,0.1836
-hydrogen sulfide,e,hydrogen sulfide,H,3726.34,0.04745
-methanol,e,methanol,H,245.91e+02,16.1e-03
-ethanol,e,ethanol,H,215.32e+02,8.0e-03
-propanol,e,propanol,H,210.00e+02,8.1e-03
-2-propanol,e,propanol,H,210.00e+02,9.1e-03
-butanol,e,butanol,H,210.00e+02,8.2e-03
-pentanol,e,pentanol,H,210.00e+02,3.6e-03
-octanol,e,octanol,H,267.59e+02,0.14e-03
-formic acid,e,formic acid,H,419.17e+02,15.5e-03
-acetic acid,e,acetic acid,H,403.23e+02,4.5e-03
-propanoic acid,e,propanoic acid,H,399.75e+02,2.1e-03
-ethylene glycol,e,ethylene glycol,H,197.52e+02,14.1e-03
-diethylene glycol,e,diethylene glycol,H,196.84e+02,6.4e-03
-triethylene glycol,e,triethylene glycol,H,143.37e+02,18.8e-03
-propylene glycol,e,propylene glycol,H,174.42e+02,19.0e-03
-methylamine,e,methylamine,H,114.66e+02,33.7e-03
-ethylamine,e,ethylamine,H,93.175e+02,43.0e-03
-diethylamine,e,diethylamine,H,37.008e+02,110.8e-03
+water,e,water,H,2003.25,0.0692
+carbon dioxide,e,water,H,1001.6281727958225,0.1836
+hydrogen sulfide,e,hydrogen sulfide,H,448.1756874899118,0.04745
+methanol,e,methanol,H,2957.6174828556764,0.0161
+ethanol,e,ethanol,H,2589.7043487799774,0.008
+propanol,e,propanol,H,2525.719455897247,0.0081
+2-propanol,e,propanol,H,2525.719455897247,0.0091
+butanol,e,butanol,H,2525.719455897247,0.0082
+pentanol,e,pentanol,H,2525.719455897247,0.0036
+octanol,e,octanol,H,3218.3679485883063,0.00014
+formic acid,e,formic acid,H,5041.4563063259475,0.0155
+acetic acid,e,acetic acid,H,4849.742172387842,0.0045
+propanoic acid,e,propanoic acid,H,4807.887392832974,0.0021
+ethylene glycol,e,ethylene glycol,H,2375.6195568039248,0.0141
+diethylene glycol,e,diethylene glycol,H,2367.4410366610196,0.0064
+triethylene glycol,e,triethylene glycol,H,1724.3447542475633,0.0188
+propylene glycol,e,propylene glycol,H,2097.7904166552275,0.019
+methylamine,e,methylamine,H,1379.042822919897,0.0337
+ethylamine,e,ethylamine,H,1120.6376681105999,0.043
+diethylamine,e,diethylamine,H,445.10393154212056,0.1108
