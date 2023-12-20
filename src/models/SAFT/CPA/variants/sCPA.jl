@@ -27,6 +27,7 @@
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[J]`
+- `epsilon_assoc_over_R`: Association Parameter (`Float64`) (alternative to `epsilon_assoc`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
 ## Model Parameters
