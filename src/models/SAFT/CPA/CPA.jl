@@ -49,15 +49,15 @@ end
 - `b`: Single Parameter (`Float64`) - Covolume `[m^3/mol]`
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[J]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter
-- `b`: Pair Parameter (`Float64`) - Mixed Covolume
-- `c1`: Single Parameter (`Float64`) - α-function constant Parameter
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter `[m^6*Pa/mol]`
+- `b`: Pair Parameter (`Float64`) - Mixed Covolume `[m^3/mol]`
+- `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[J]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
 ## Input models
@@ -109,6 +109,11 @@ function CPA(components;
     sites = get!(params,"sites") do
         SiteParam(components)
     end
+
+    Pc = get!(params,"Pc") do
+        SingleParam("Pc",components)
+    end
+
     Mw  = params["Mw"]
     k = get(params,"k",nothing)
     Tc = params["Tc"]
@@ -129,7 +134,7 @@ function CPA(components;
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
-    cubicparams = ABCubicParam(a, b, params["Tc"],params["Pc"],Mw) #PR, RK, vdW
+    cubicparams = ABCubicParam(a, b, params["Tc"],Pc,Mw) #PR, RK, vdW
     init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
 
     references = ["10.1021/ie051305v"]
@@ -157,7 +162,14 @@ end
 
 lb_volume(model::CPAModel,z = SA[1.0]) = lb_volume(model.cubicmodel,z)
 T_scale(model::CPAModel,z=SA[1.0]) = T_scale(model.cubicmodel,z)
-p_scale(model::CPAModel,z=SA[1.0]) = p_scale(model.cubicmodel,z)
+function p_scale(model::CPAModel,z=SA[1.0])
+    #does not depend on Pc, so it can be made optional on CPA input
+    b = model.cubicmodel.params.b.values
+    a = model.cubicmodel.params.a.values
+    b̄ = dot(z,b,z)/sum(z)
+    ā = dot(z,a,z)
+    return ā/(b̄*b̄)
+end
 
 function show_info(io,model::CPAModel) 
     rdf = model.radial_dist

@@ -22,19 +22,19 @@
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `a`: Single Parameter (`Float64`) - Atraction Parameter
-- `b`: Single Parameter (`Float64`) - Covolume
-- `c1`: Single Parameter (`Float64`) - α-function constant Parameter
+- `a`: Single Parameter (`Float64`) - Atraction parameter `[m^6*Pa/mol]`
+- `b`: Single Parameter (`Float64`) - Covolume `[m^3/mol]`
+- `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[J]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter
-- `b`: Pair Parameter (`Float64`) - Mixed Covolume
-- `c1`: Single Parameter (`Float64`) - α-function constant Parameter
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter `[m^6*Pa/mol]`
+- `b`: Pair Parameter (`Float64`) - Mixed Covolume `[m^3/mol]`
+- `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[J]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
 ## Input models
