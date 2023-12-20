@@ -182,7 +182,7 @@ we use a mixed approach, depending on T⋆ = T/ϵ:
 if T⋆ < 1:
     5-point gauss-laguerre. we do the change of variables `y = r^-λr`
 else:
-    10-point modified gauss-legendre with cut. (pending)
+    10-point modified gauss-legendre with cut.
 =#
 function d_vrmie(T,λa,λr,σ,ϵ)
     Tx = T/ϵ
@@ -190,11 +190,40 @@ function d_vrmie(T,λa,λr,σ,ϵ)
     θ = C/Tx
     λrinv = 1/λr
     λaλr = λa/λr
-    f_laguerre(x) = x^(-λrinv)*exp(θ*x^(λaλr))*λrinv/x
-    ∑fi = Solvers.laguerre5(f_laguerre,θ,one(θ))
-    #∑fi2 = Solvers.laguerre10(f_laguerre,θ,1.)
-    di = σ*(1-∑fi)
-    return di
+    if Tx < 1
+        f_laguerre(x) = x^(-λrinv)*exp(θ*x^(λaλr))*λrinv/x
+        ∑fi = Solvers.laguerre10(f_laguerre,θ,one(θ))
+    else
+        EPS = eps(typeof(C*T))
+        K = log(-T*log(EPS)/(C*ϵ))
+        #initial point
+        j0 = exp(-K/λr)
+        # exp(u(r)/T), d[exp(u(r))/T)]/dr, d2[exp(u(r))/T)]/dr2
+        #3.6689376104534305e-10
+        T⁻¹ = 1/T
+        function fdfd2f(r)
+            r⁻¹ = 1/r
+            rλr = r^-λr
+            rλa = r^-λa
+            u_r = rλr - rλa #u/C*ϵ
+            du_ra = rλa*r⁻¹*(-λa)
+            du_rr = rλr*r⁻¹*(-λr)
+            du_r = du_rr - du_ra
+            d2u_rr = du_rr*r⁻¹*(-λr - 1)
+            d2u_ra = du_ra*r⁻¹*(-λa - 1)
+            d2u_r = d2u_rr - d2u_ra
+            f = exp(-u_r*C*ϵ*T⁻¹)
+            dfT = f*du_r
+            df = -f*du_r*T⁻¹
+            d2f = (df*du_r + f*d2u_r)*-T⁻¹
+            return f, f/df, df/d2f
+        end
+        jprob = Roots.ZeroProblem(fdfd2f,j0)
+        j = Roots.solve(jprob,Roots.Halley())
+        f_legendre(x) = exp(-C*(x^(-λr)-x^(-λa))/Tx)
+        ∑fi = Solvers.integral10(f_legendre,j,one(j))
+    end
+    return σ*(1 - ∑fi)
 end
 
 function d(model::SAFTVRMieModel, V, T, z)
