@@ -161,7 +161,7 @@ bc_l = y(t, 0.0) .~ activity_coefficient(mixture, 1.0, 298.15, moles)
 
 ## New Features
 
-- The package now performs precompilation (via `PrecompileTools.jl`) of some commonly used functions and EoSModels. this will add more time at the installation of the package, in exchange with decreased loading times each time `Clapeyron` is loaded in a new julia session. you can turn on/off the feature with `Clapeyron.precompile_clapeyron!(setting::Bool)` (recomended in the case of developing the library). due to how precompilation is done, it is only done from julia 1.9 onwards. 
+- The package now performs precompilation (via `PrecompileTools.jl`) of some commonly used functions and EoSModels. this will add more time at the installation of the package, in exchange with decreased loading times each time `Clapeyron` is loaded in a new julia session. you can turn on/off the feature with `Clapeyron.precompile_clapeyron!(setting::Bool)` (recomended in the case of developing the library). due to how precompilation is done, it is only done from julia 1.9 onwards.
 - New EoS: NRTL with aspen paranetrization of τᵢⱼ : `aspenNRTL`
 - `split_model` should be a little bit faster, and will perform correct splitting of group association models that use `get_group_idx`.
 
@@ -188,7 +188,7 @@ bc_l = y(t, 0.0) .~ activity_coefficient(mixture, 1.0, 298.15, moles)
 ## New Features
 
 - `ideal_consistency(model,V,T,z)` that checks if `da0/dV + sum(z)/V` is zero (or as close to zero as the Floating Point Format allows it.)
-- broadcasting on `AssocParam` is defined (`bondvol .= 1e-10 .* bondvol .^3`) 
+- broadcasting on `AssocParam` is defined (`bondvol .= 1e-10 .* bondvol .^3`)
 - you can pass functions that build models instead of  EoSModel types. for example, now you can do:
     ```julia
     function myvdW(components;userlocations = String[],verbose = false)
@@ -225,7 +225,7 @@ Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
 ```
 - The `dense` option in `AssocOptions` is deprecated and it will be removed on 0.5.0. the sparse solver is not used anymore, the dense solver has performance advantages in all cases.
 ## Bug Fixes
-- bug in `@registermodel` (#157) 
+- bug in `@registermodel` (#157)
 
 # v0.4.7
 
@@ -304,7 +304,7 @@ saturation_pressure.(transpose(models),T) #produces a 51×3 Matrix{Tuple{Float64
 - cubic EoS now support `recombine!`
 - `PenelouxTranslation` and `RackettTranslation` now cache their results, resulting in a speed up when using volume translated EoS.
 - `Clapeyron.cite` now accepts the optional argument `out`, that can be `doi` (current default, DOI) or `:bib` (for BibTeX)
-- 
+-
 ## Bug fixes
 - various bug fixes in SAFT-VRQ-Mie. the Hard sphere term now performs the non-additive mixing rule for the multicomponent case. initializations with integer values are fixed.
 
@@ -320,7 +320,7 @@ saturation_pressure.(transpose(models),T) #produces a 51×3 Matrix{Tuple{Float64
 - all quadratic mixing rules have an implace version (`sigma_LorentzBerthelot(sigma,zeta)` ->  `sigma_LorentzBerthelot!(sigma,zeta)`)
 - `AssocParam` has `getindex`/`setindex!` methods defined.
 - `GroupParam` has a new field, `grouptype`, to differenciate group parametrizations
-- 
+-
 ## Deprecations
 
 - `icomponents` was removed, use `Clapeyron.@comps` or `1:length(model)` instead
@@ -329,7 +329,7 @@ saturation_pressure.(transpose(models),T) #produces a 51×3 Matrix{Tuple{Float64
 # v0.3.10
 
 ## New features
-- `dew_pressure` and `dew_temperature` can now by calculated with `ActivityModel`s. options available can be passed via the new methods `ActivityBubblePressure`, `ActivityBubblwTemperature`, `ActivityDewPressure`, `ActivityDewTemperature`. helmholtz-based models also support solving `bubble_pressure` and `dew_pressure` using those methods (http://dx.doi.org/10.1021/acs.iecr.1c03800). 
+- `dew_pressure` and `dew_temperature` can now by calculated with `ActivityModel`s. options available can be passed via the new methods `ActivityBubblePressure`, `ActivityBubblwTemperature`, `ActivityDewPressure`, `ActivityDewTemperature`. helmholtz-based models also support solving `bubble_pressure` and `dew_pressure` using those methods (http://dx.doi.org/10.1021/acs.iecr.1c03800).
 - There is support for γ-ϕ equilibria on `bubble_pressure` and `dew_pressure` with activity models, that is:, solving `yᵢϕᵢp = γᵢp₀ᵢϕ₀ᵢ𝒫ᵢ`
 - New Correlation models: `LeeKeslerSat`, `DIPPR101Sat` for saturation pressure and temperature, `COSTALD`, `RackettLiquid`,`DIPPR105Liquid`, for saturated liquid volume.
 - New models: Second Virial models (`AbbottVirial`,`TsonopoulosVirial` and `EoSVirial2`)
@@ -342,8 +342,8 @@ saturation_pressure.(transpose(models),T) #produces a 51×3 Matrix{Tuple{Float64
     Saturation Model: DIPPR101Sat("water", "methanol")
 
     # Wilson activity model, using the composite model as the pure model
-    julia> model = Wilson(["water","methanol"],puremodel = com) 
-    Wilson{CompositeModel{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}, COSTALD, Nothing, DIPPR101Sat, Nothing}} with 2 components:       
+    julia> model = Wilson(["water","methanol"],puremodel = com)
+    Wilson{CompositeModel{PR{BasicIdeal, PRAlpha, NoTranslation, vdW1fRule}, COSTALD, Nothing, DIPPR101Sat, Nothing}} with 2 components:
     "water"
     "methanol"
     Contains parameters: g, Tc, Pc, ZRA, Mw
@@ -426,7 +426,7 @@ saturation_pressure.(transpose(models),T) #produces a 51×3 Matrix{Tuple{Float64
 - New function: `x0_psat(model,p)`, that returns starting points for `IsoFugacitySaturation`.
 - New function: `antoine_coef` for reduced antoine coefficients. used to accelerate initial points, if available.
 - New function: `cite(model)` returns all references used in the evaluation of a model.
-- `bubble_temperature`, `dew_temperature`, `lle_temperature`, `azeotrope_temperature` and `vlle_temperature` methods now iterate directly over the extended-with-temperature non linear system that their pressure cointerparts. 
+- `bubble_temperature`, `dew_temperature`, `lle_temperature`, `azeotrope_temperature` and `vlle_temperature` methods now iterate directly over the extended-with-temperature non linear system that their pressure cointerparts.
 - Cubics were revamped and generalized even more. those changes opened the way to introduce more non-standard cubics, all while being compatible with the initial guess procedures, advanced mixing rules and other Clapeyron optimizations for cubics.
 - New cubic EoS: `Clausius`
 - New cubic EoS: `Berthelot`
@@ -468,7 +468,7 @@ In particular, this release is the one used in the `Clapeyron.jl` paper. and it'
 ## New Features
 - New EoS: Enhanced Predictive Peng Robinson 1978 (2022) (`EPPR78`)
 - New EoS: Quantum Corrected Peng Robinson (2022) (`QCPR`)
-- New EoS: Modified PCSAFT with T-dependent σ for water (passing `water08`) and k0 + k1T mixing rule (`pharmaPCSAFT`). 
+- New EoS: Modified PCSAFT with T-dependent σ for water (passing `water08`) and k0 + k1T mixing rule (`pharmaPCSAFT`).
 - New function: `index_reduction(model,z)` that removes components with compositions near zero. useful to reduce the dimensionality on multicomponent solvers.
 - New function: `isstable(model,V,T,z)` to check for stability at the input conditions.
 - New function: `gibbs_duhem(model,V,T,z)` to check if the Gibbs-Duhem relations holds for the input model at the specified conditions.
@@ -507,7 +507,7 @@ In particular, this release is the one used in the `Clapeyron.jl` paper. and it'
 # v0.3.2
 
 - fixes in volume solver
-- fixes in initial guesses for `MultiFuidModel` and `CPA` 
+- fixes in initial guesses for `MultiFuidModel` and `CPA`
 - all multicomponent solvers now accept an initial guess
 
 # v0.3.1

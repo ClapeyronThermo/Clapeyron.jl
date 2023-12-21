@@ -1,4 +1,4 @@
-Clapeyron Database File,,,,,,,,,,,,,,,
-eCPA Like Parameters,,,,,,,,,,,,,,,
+Clapeyron Database File
+eCPA Like Parameters TODO:check the units here
 species,SMILES,Mw,Gamma,b,c1,Tc,c,gamma,theta,polarizability,coordno,mu,n_H,n_e,source
-water,O,18,1017.34,14.515,0.6736,647.13,0,63.5,94.79,1.613,6,1.855,2,2,
+water,O,18.015,1017.34,14.515e-03,0.6736,647.13,0,63.5,94.79,1.613,6,1.855,2,2,

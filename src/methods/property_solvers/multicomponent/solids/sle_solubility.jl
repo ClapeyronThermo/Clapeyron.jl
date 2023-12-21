@@ -14,11 +14,16 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing)
     p = p*one(eltype(model))
     T = T*one(eltype(model))
     sol = zeros(length(solute),length(model.components))
-
+    idxs = convert(Vector{Int},indexin(solute,model.components))
+    idx_sol = zeros(Bool,length(model.components))
+    idx_sol[idxs] .= true
+    pures = split_model(model,idxs)
     for i in 1:length(solute)
         idx_sol_s = zeros(Bool,length(model.solid.components))
         idx_sol_s[model.solid.components .==solute[i]] .= true
-        Tm = model.solid.params.Tm.values[idx_sol_s][1]
+
+        #TODO: express this in terms of melting_temperature
+        Tm = model.solid.params.Tm.values[idx_sol_s][1] 
 
         idx_sol_l = zeros(Bool,length(model.fluid.components))
         solute_l = mapping[idx_sol_s][1]
