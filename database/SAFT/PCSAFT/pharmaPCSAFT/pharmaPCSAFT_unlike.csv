@@ -1,0 +1,12 @@
+Clapeyron Database File,,,,,
+PCSAFT Unlike Parameters,,,,,
+species1,SMILES1,species2,SMILES2,k,kT,source
+water08,O,sodium,Na,2.37999,-0.007981,
+water08,O,chloride,Cl,-0.25,,
+sodium,Na,chloride,Cl,0.317,,
+potassium,K,bromide,Br,-0.102,,
+potassium,K,water08,O,1.3959,-0.004012,
+bromide,Br,water08,O,-0.25,0,
+PEG200,,water08,O,-0.135,0,
+PEG200,,sodium,Na,0.35,0,
+PEG200,,chloride,Cl,-0.4,0,
