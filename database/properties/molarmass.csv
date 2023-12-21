@@ -533,7 +533,7 @@ butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,71-36-3,74.123
 1-nonanol~|~nonan-1-ol,143-08-8,144.257
 2-propanol~|~propan-2-ol~|~isopropanol,67-63-0,60.096
 tert-pentanol~|~2-methyl-2-butanol~|~2-methylbutan-2-ol,75-85-4,88.15
-water,7732-18-5,18.015
+water~|~water08,7732-18-5,18.015
 methylamine~|~methanamine,74-89-5,31.06
 ethylamine~|~ethanamine,75-04-7,45.09
 propylamine~|~n-propylamine~|~1-propylamine~|~propan-1-amine,107-10-8,59.11
@@ -3771,3 +3771,6 @@ nonylphenols,25154-52-3,220.183
 "1,6-anhydro-3,4-dideoxyhex-3-enopyran-2-ulose",37112-31-5,126.032
 phenyldichlorophosphite,3426-89-9,193.946
 limonene,138-86-3,136.125
+sodium,,22.98976928
+chloride,,35.453
+PEG200,,200.
