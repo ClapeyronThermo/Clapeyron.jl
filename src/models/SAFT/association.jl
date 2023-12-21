@@ -8,16 +8,21 @@ end
 
 """
     assoc_pair_length(model::EoSModel)
+
 Indicates the number of pair combinations between the different sites in an association model.
+
 ## Example:
+
 ```julia-repl
 julia> model = PCSAFT(["water"])
 PCSAFT{BasicIdeal} with 1 component:
  "water"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
 julia> model.params.bondvol
 AssocParam{Float64}["water"]) with 1 value:
 ("water", "e") >=< ("water", "H"): 0.034868
+
 julia> Clapeyron.assoc_pair_length(model)
 1
 ```
@@ -32,20 +37,25 @@ end
 Calculates the asssociation strength between component `i` at site `a` and component `j` at site `b`.
 
 Any precomputed values can be passed along by calling `Clapeyron.data`.
+
 ## Example
 ```julia-repl
 julia> model = PCSAFT(["water"])
 PCSAFT{BasicIdeal} with 1 component:
  "water"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
 julia> model.params.bondvol.values
 Clapeyron.Compressed4DMatrix{Float64, Vector{Float64}} with 1 entry:
  (1, 1) >=< (1, 2): 0.034868
+
 julia> Clapeyron.assoc_strength(model,2.5e-5,298.15,[1.0],1,1,1,2) #you can also use Clapeyron.Δ
 1.293144062056963e-26
+
 #PCSAFT precomputed data: (d,ζ₀,ζ₁,ζ₂,ζ₃,m̄)
 julia> _data = Clapeyron.data(model,2.5e-5,298.15,[1.0])
 ([2.991688553098391e-10], 1.3440137996322956e28, 4.020870699566213e18, 1.2029192845380957e9, 0.3598759853853927, 1.0656)
+
 julia> Clapeyron.Δ(model,2.5e-5,298.15,[1.0],1,1,1,2,_data)
 1.293144062056963e-26
 ```
@@ -58,22 +68,28 @@ const assoc_strength = Δ
     Δ(model::EoSModel, V, T, z,data)
     assoc_strength(model::EoSModel, V, T, z)
     assoc_strength(model::EoSModel, V, T, z,data)
+
 Returns a list of all combinations of non-zero association strength, calculated at V,T,z conditions. returns a `Clapeyron.Compressed4DMatrix`.
 By default, it calls `assoc_similar(model,𝕋)` (where 𝕋 is the promoted type of all the arguments) and fills the list using `Δ(model,V,T,z,i,j,a,b,data)`
+
 ## Example
 ```julia-repl
 julia> model = PCSAFT(["water"])
 PCSAFT{BasicIdeal} with 1 component:
  "water"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
 julia> model.params.bondvol
 AssocParam{Float64}["water"]) with 1 value:
 ("water", "e") >=< ("water", "H"): 0.034868
+
 julia> Clapeyron.assoc_strength(model,2.5e-5,298.15,[1.0],1,1,1,2) #you can also use Clapeyron.Δ
 1.293144062056963e-26
+
 #PCSAFT precomputed data: (d,ζ₀,ζ₁,ζ₂,ζ₃,m̄)
 julia> _data = Clapeyron.data(model,2.5e-5,298.15,[1.0])
 ([2.991688553098391e-10], 1.3440137996322956e28, 4.020870699566213e18, 1.2029192845380957e9, 0.3598759853853927, 1.0656)
+
 julia> Clapeyron.Δ(model,2.5e-5,298.15,[1.0],1,1,1,2,_data)
 1.293144062056963e-26
 ```
@@ -88,7 +104,9 @@ end
 
 """
     assoc_options(model::EoSModel)
+
 Returns association options used in the association solver.
+
 """
 @inline function assoc_options(model::EoSModel)
     return model.assoc_options
@@ -226,9 +244,11 @@ const assoc_fractions = X
 
 """
     assoc_fractions(model::EoSModel, V, T, z,data = nothing)
+
 Returns the solution for the association site fractions. used internally by all models that require association.
 The result is of type `PackedVectorsOfVectors.PackedVectorOfVectors`, with `length = length(model)`, and `x[i][a]` representing the empty fraction of the site `a` at component `i`
 ## Example:
+
 ```
 julia> model = PCSAFT(["water","methanol","ethane"],assoc_options = AssocOptions(combining = :esd))
 PCSAFT{BasicIdeal} with 3 components:
@@ -236,6 +256,7 @@ PCSAFT{BasicIdeal} with 3 components:
  "methanol"
  "ethane"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
 julia> x = Clapeyron.assoc_fractions(model,2.6e-5,300.15,[0.3,0.3,0.4]) #you can also use `Clapeyron.X`
 3-element pack(::Vector{Vector{Float64}}):
  [0.041396427041509046, 0.041396427041509046]
@@ -470,10 +491,13 @@ end
 on one site:
 Xia = 1/(1+*nb*z[j]*rho*Δ*Xjb)
 Xjb = 1/(1+*na*z[i]*rho*Δ*Xia)
+
 kia = na*z[i]*rho*Δ
 kjb = nb*z[j]*rho*Δ
+
 Xia = 1/(1+kjb*Xjb)
 Xjb = 1/(1+kia*Xia)
+
 Xia = 1/(1+kjb*(1/(1+kia*Xia)))
 Xia = 1/(1+kjb/(1+kia*Xia))
 Xia = 1/((1+kia*Xia+kjb)/(1+kia*Xia))
@@ -483,6 +507,7 @@ x*(1+kia*x+kjb) = 1+kia*x
 x + kia*x*x + kjb*x - 1 - kia*x = 0
 kia*x*x + x(kjb-kia+1) - 1 = 0
 x = - (kjb-kia+1) +
+
 x = 1/1+kiax
 x(1+kx) - 1 = 0
 kx2 +x - 1 = 0

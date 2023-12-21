@@ -53,28 +53,6 @@ function x0_volume(model, p, T, z = SA[1.0]; phase = :unknown)
     end
 end
 
-
-#=x0_sat_pure=#
-
-# function x0_sat_pure(model::SAFTVRQMie)
-#     x0    = [log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/0.2),
-#     log10(π/6*N_A*model.params.segment[model.components[1]]*model.params.sigma[model.components[1]]^3/1e-3)]
-# end
-
-# function x0_sat_pure(model::LJSAFT)
-#     x0    = [log10(π/6*model.params.segment[model.components[1]]*model.params.b[model.components[1]]/0.5),
-#     log10(π/6*model.params.segment[model.components[1]]*model.params.b[model.components[1]]/1e-3)]
-# end
-
-
-
-
-##=lb_volume=#
-#
-#lb_volume(model::LJSAFT,z; phase = :unknown) = [log10(π/6*sum(z[i]*model.params.segment[i]*model.params.b[i] for i in model.components)/1)]
-
-
-
 """
     lb_volume(model::EoSModel,z=SA[1.0])
 Returns the lower bound volume.
