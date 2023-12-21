@@ -8,7 +8,6 @@ struct CPAParam <: EoSParam
     Mw::SingleParam{Float64}
 end
 
-
 struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
     components::Array{String,1}
     radial_dist::Symbol
