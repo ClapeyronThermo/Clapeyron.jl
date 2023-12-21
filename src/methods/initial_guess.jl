@@ -428,3 +428,43 @@ function T_scales(model)
 end
 
 T_scales(model,z) = T_scales(model)
+
+"""
+    solve_2ph_taylor(v10,v20,a1,da1,d2a1,a2,da2,d2a2,p_scale = 1.0,μ_scale = 1.0)
+
+Solves the 2-phase problem with 1 component, using a 2nd order taylor aprox in helmholtz energy and a isothermal compressibility factor aproximation for pressure.
+"""
+function solve_2ph_taylor(v10,v20,a1,da1,d2a1,a2,da2,d2a2,p_scale = 1.0,μ_scale = 1.0)
+    
+    function F0(x)
+        logv1,logv2 = x[1],x[2]
+        v1,v2 = exp(logv1),exp(logv2)
+        p1 = log(v1/v10)*(-v1*d2a1) - da1
+        p2 = log(v2/v20)*(-v2*d2a2) - da2
+        
+        Δv1 = (v1 - v10)
+        Δv2 = (v2 - v20)
+        A1 = evalpoly(Δv1,(a1,da1,0.5*d2a1))
+        A2 = evalpoly(Δv2,(a2,da2,0.5*d2a2))
+        μ1 = A1 + p1*v1
+        μ2 = A2 + p2*v2
+        #F[1] = (μ1 - μ2)*μ_scale
+        #F[2] = (p1 - p2)*p_scale
+        F1 = (μ1 - μ2)*μ_scale
+        F2 = (p1 - p2)*p_scale
+        #return F
+        return SVector((F1,F2))
+    end
+    x0 = SVector((log(v10),log(v20)))
+    x = Solvers.nlsolve2(F0,x0,Solvers.Newton2Var())
+    return exp(x[1]), exp(x[2])
+end
+
+function solve_2ph_taylor(model1::EoSModel,model2::EoSModel,T,v1,v2,p_scale = 1.0,μ_scale = 1.0)
+    z = SA[1.0]
+    f1(_V) = eos(model1,_V,T,z)
+    f2(_V) = eos(model2,_V,T,z)
+    a1,da1,d2a1 = Solvers.f∂f∂2f(f1,v1)
+    a2,da2,d2a2 = Solvers.f∂f∂2f(f2,v2)
+    return solve_2ph_taylor(v1,v2,a1,da1,d2a1,a2,da2,d2a2,p_scale,μ_scale)
+end

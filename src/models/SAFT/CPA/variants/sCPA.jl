@@ -1,22 +1,9 @@
-abstract type sCPAModel <: CPAModel end
-
-struct sCPA{T <: IdealModel,c <: CubicModel} <: sCPAModel
-    components::Array{String,1}
-    cubicmodel::c
-    params::CPAParam
-    sites::SiteParam
-    idealmodel::T
-    assoc_options::AssocOptions
-    references::Array{String,1}
-end
-
-export sCPA
-
 """
     sCPAModel <: CPAModel
 
     function sCPA(components;
         idealmodel=BasicIdeal,
+        radial_dist::Symbol = :KG,
         cubicmodel=RK,
         alpha=sCPAAlpha,
         mixing=vdW1fRule,
@@ -34,20 +21,19 @@ export sCPA
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
-- `a`: Single Parameter (`Float64`) - Atraction Parameter
-- `b`: Single Parameter (`Float64`) - Covolume
-- `c1`: Single Parameter (`Float64`) - α-function constant Parameter
+- `a`: Single Parameter (`Float64`) - Atraction parameter `[m^6*Pa/mol]`
+- `b`: Single Parameter (`Float64`) - Covolume `[m^3/mol]`
+- `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter
-- `b`: Pair Parameter (`Float64`) - Mixed Covolume
-- `c1`: Single Parameter (`Float64`) - α-function constant Parameter
-- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
+- `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter `[m^6*Pa/mol]`
+- `b`: Pair Parameter (`Float64`) - Mixed Covolume `[m^3/mol]`
+- `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
+- `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[J]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
 ## Input models
@@ -56,15 +42,19 @@ export sCPA
 
 ## Description
 
-simplified CPA
+Simplified Cubic Plus Association (s-CPA) EoS. Consists in the addition of a cubic part and an association part:
+```
+a_res(model::CPA) = a_res(model::Cubic) + a_assoc(model)
+```
+
+The `radial_dist` argument can be used to choose between a Carnahan-Starling form (`CS`, default) or the Kontogeorgis (`KG`) term, more widely known as s-CPA. using `sCPA(components, radial_dist =: CS)` is equivalent to using the original CPA
 
 ## References
 1. Kontogeorgis, G. M., Michelsen, M. L., Folas, G. K., Derawi, S., von Solms, N., & Stenby, E. H. (2006). Ten years with the CPA (cubic-plus-association) equation of state. Part 1. Pure compounds and self-associating systems. Industrial & Engineering Chemistry Research, 45(14), 4855–4868. [doi:10.1021/ie051305v](https://doi.org/10.1021/ie051305v)
 """
-sCPA
-
 function sCPA(components;
             idealmodel=BasicIdeal,
+            radial_dist::Symbol = :KG,
             cubicmodel=RK,
             alpha=sCPAAlpha,
             mixing=vdW1fRule,
@@ -79,49 +69,22 @@ function sCPA(components;
             verbose=false,
             assoc_options = AssocOptions())
 
-    params = getparams(components, ["SAFT/CPA/sCPA/", "properties/molarmass.csv","properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
-    sites = get!(params,"sites") do
-        SiteParam(components)
-    end
-    Mw  = params["Mw"]
-    k = get(params,"k",nothing)
-    Tc = params["Tc"]
-    c1 = params["c1"]
-    params["a"].values .*= 1E-1
-    params["b"].values .*= 1E-3
-    a  = epsilon_LorentzBerthelot(params["a"], k)
-    b  = sigma_LorentzBerthelot(params["b"])
-    epsilon_assoc = get!(params,"epsilon_assoc") do
-        AssocParam("epsilon_assoc",components)
-    end
-    
-    bondvol = get!(params,"bondvol") do
-        AssocParam("bondvol",components)
-    end
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
-    packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol,Mw)
-
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
-    init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    init_translation = init_model(translation,components,translation_userlocations,verbose)
-    cubicparams = ABCubicParam(a, b, params["Tc"],params["Pc"],Mw) #PR, RK, vdW
-    init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
-
-    references = ["10.1021/ie051305v"]
-
-    model = sCPA(components, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
-    return model
+    return CPA(components;
+        idealmodel=idealmodel,
+        radial_dist = radial_dist,
+        cubicmodel=cubicmodel,
+        alpha=alpha,
+        mixing=mixing,
+        activity=activity,
+        translation=translation,
+        userlocations=userlocations,
+        ideal_userlocations=ideal_userlocations,
+        alpha_userlocations=alpha_userlocations,
+        activity_userlocations=activity_userlocations,
+        mixing_userlocations=mixing_userlocations,
+        translation_userlocations=translation_userlocations,
+        verbose=verbose,
+        assoc_options = assoc_options)
 end
 
-function Δ(model::sCPAModel, V, T, z, i, j, a, b)
-    ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b] * 1e2/R̄
-    βijab = model.params.bondvol.values[i,j][a,b] * 1e-3
-    Σz = ∑(z)
-    b = model.params.b.values
-    b̄ = dot(z,b,z)/(Σz*Σz)
-    η = b̄*Σz/(4*V)
-    g = (1-1.9η)^-1
-    bij = (b[i,i]+b[j,j])/2
-    return g*(exp(ϵ_associjab/T)-1)*βijab*bij/N_A
-end
+export sCPA

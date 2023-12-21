@@ -1,4 +1,4 @@
-Clapeyron Database File,,,,,
-sCPA Unlike Parameters,,,,,
-species1,SMILES1,species2,SMILES2,k,source
-water,,carbon dioxide,,0.1145,
+Clapeyron Database File
+sCPA Unlike Parameters
+species1,species2,k,
+water,carbon dioxide,0.1145,

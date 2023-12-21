@@ -85,3 +85,44 @@ function NLSolvers.upto_gradient(meritobj::NLSolvers.MeritObjective, ∇f, x)
 end
 =#
 
+#=
+
+=#
+
+struct Newton2Var end
+
+function nlsolve2(f::Base.Callable,x,method::Newton2Var,options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
+    function FJ(z)
+        f(z),ForwardDiff.jacobian(f,z)
+    end
+    t0 = time()
+
+    Fx, Jx = FJ(x)
+    z = x
+    T = eltype(Fx)
+    stoptol = T(options.f_abstol)
+    ρF0, ρ2F0 = norm(Fx, Inf), norm(Fx, 2)
+    ρs = T(NaN)
+    if ρF0 < stoptol
+        return x
+    end
+    iter = 1
+    while iter ≤ options.maxiter
+        d = Jx \ -Fx
+        z = x
+        x = x + d
+        #@show d
+        Fx, Jx = FJ(x)
+        ρF = norm(Fx, Inf)
+        ρs = max(abs(x[1] - z[1]),abs(x[2] - z[2]))
+        if ρF <= stoptol || ρs <= stoptol
+            break
+        end
+
+        if isnan(x[1]) || isnan(x[2])
+            break
+        end
+        iter += 1
+    end
+    return x
+end

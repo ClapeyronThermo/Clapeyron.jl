@@ -27,6 +27,10 @@ function saturation_pressure(model::GammaPhi,T,method::SaturationMethod)
     return saturation_pressure(model.fluid,T,method)
 end
 
+function volume_impl(model::GammaPhi,p,T,z,phase=:unknown,threaded=false,vol0 = nothing)
+    return volume_impl(model.fluid.model,p,T,z,phase,threaded,vol0)
+end
+
 crit_pure(model::GammaPhi) = crit_pure(model.fluid)
 x0_sat_pure(model::GammaPhi,T) = x0_sat_pure(model.fluid)
 x0_psat(model::GammaPhi,T) = x0_psat(model.fluid,T)
