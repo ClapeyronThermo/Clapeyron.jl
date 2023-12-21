@@ -26,4 +26,5 @@ struct CompositeModel{𝔽,𝕊} <: EoSModel
     components::Vector{String}
     fluid::𝔽
     solid::𝕊
+    mapping::Any
 end
