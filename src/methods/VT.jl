@@ -264,5 +264,13 @@ VT_chemical_potential(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(mod
 VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property(model,V,T,z,eos_res)
 VT_chemical_potential_res!(r,model::EoSModel, V, T, z=SA[1.]) = VT_partial_property!(r,model,V,T,z,eos_res)
 
+function VT_fugacity_coefficient(model::EoSModel,V,T,z=SA[1.])
+    p = pressure(model,V,T,z)
+    μ_res = VT_chemical_potential_res(model,V,T,z)
+    R̄ = Rgas(model)
+    Z = p*V/R̄/T/sum(z)
+    return exp.(μ_res ./ R̄ ./ T) ./ Z
+end
+
 export second_virial_coefficient,pressure,cross_second_virial,equivol_cross_second_virial
 
