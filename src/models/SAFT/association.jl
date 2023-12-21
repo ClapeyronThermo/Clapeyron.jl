@@ -2,6 +2,7 @@ function a_assoc(model::EoSModel, V, T, z,data=nothing)
     _0 = zero(V+T+first(z))
     nn = assoc_pair_length(model)
     iszero(nn) && return _0
+    isone(nn) && return a_assoc_exact_1(model,V,T,z,data)
     X_ = @f(X,data)
     return @f(a_assoc_impl,X_)
 end
@@ -319,7 +320,12 @@ end
 
 #exact calculation of site non-bonded fraction when there is only one site
 
-function X_exact1(model,V,T,z,data=nothing)
+function X_exact1(model,V,T,z,data = nothing)
+    xia,xjb,i,j,a,b,n,idxs = _X_exact1(model,V,T,z,data)
+    pack_X_exact1(xia,xjb,i,j,a,b,n,idxs)
+end
+
+function _X_exact1(model,V,T,z,data=nothing)
     κ = model.params.bondvol.values
     i,j = κ.outer_indices[1]
     a,b = κ.inner_indices[1]
@@ -349,30 +355,16 @@ function X_exact1(model,V,T,z,data=nothing)
     xia = -2*_c/denom
     xk_ia = kia*xia
     xjb = (1- xk_ia)/(1 - xk_ia*xk_ia)
-    return pack_X_exact1(z,xia,xjb,i,j,a,b,n,idxs)
+    return xia,xjb,i,j,a,b,n,idxs 
 end
 
-function pack_X_exact1(z,xia,xjb,i,j,a,b,n,idxs)
+function pack_X_exact1(xia,xjb,i,j,a,b,n,idxs)
     Xsol = fill(one(xia),n)
     _X = PackedVofV(idxs,Xsol)
     _X[j][b] = xjb
     _X[i][a] = xia
     return _X
 end
-#=
-#Disabled. see #171
-function pack_X_exact1(z::SingleComp,xia,xjb,i,j,a,b,n,idxs)
-    if (i,a) == (j,b)
-        Xsol = SA[xia,xia]
-    elseif  (i,a) > (j,b)
-        Xsol = SA[xjb,xia]
-    else
-        Xsol = SA[xia,xjb]
-    end
-    _X = PackedVofV(idxs,Xsol)
-    return _X
-end =#
-
 
 #helper function to get the sites. in almost all cases, this is model.sites
 #but SAFTgammaMie uses model.vrmodel.sites instead
@@ -393,13 +385,31 @@ function a_assoc_impl(model::EoSModel, V, T, z,X_)
         for (a,nᵢₐ) ∈ pairs(ni)
             Xᵢₐ = Xᵢ[a]
             nᵢₐ = ni[a]
-            resᵢₐ +=  nᵢₐ* (log(Xᵢₐ) - Xᵢₐ/2 + 0.5)
+            resᵢₐ +=  nᵢₐ* (log(Xᵢₐ) - Xᵢₐ*0.5 + 0.5)
         end
         res += resᵢₐ*z[i]
     end
     return res/sum(z)
 end
 
+#exact calculation of a_assoc when there is only one site pair
+#in this case the fraction of non-bonded sites is simply xia and xjb
+#so whe don't need to allocate the X vector
+function a_assoc_exact_1(model::EoSModel,V,T,z,data = nothing)
+    xia,xjb,i,j,a,b,n,idxs = _X_exact1(model,V,T,z,data)
+    _0 = zero(xia)
+    sites = getsites(model)
+    nn = sites.n_sites
+    res = _0
+    resᵢₐ = _0
+    nia = nn[i][a]
+    njb = nn[j][b]
+    res = z[i]*nia*(log(xia) - xia*0.5 + 0.5)
+    if (i != j) | (a != b) #we check if we have 2 sites or just 1
+        res += z[j]*njb*(log(xjb) - xjb*0.5 + 0.5)
+    end
+    return res/sum(z)
+end
 
 """
     @assoc_loop(Xold,Xnew,expr)
