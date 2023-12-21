@@ -189,8 +189,9 @@ function x0_crit_pure(model::CPAModel)
     return (1.0, log10(lb_v/0.3))
 end
 
-function a_res(model::CPAModel, V, T, z)
-    _data = data(model.cubicmodel,V,T,z)
+data(model::CPAModel, V, T, z) = data(model.cubicmodel,V,T,z)
+
+function a_res(model::CPAModel, V, T, z, _data = @f(_data))
     n,ā,b̄,c̄ = _data
     return a_res(model.cubicmodel,V,T,z,_data) + a_assoc(model,V+c̄*n,T,z,_data)
 end

@@ -1,5 +1,0 @@
-Clapeyron Database File,,,,,,,,
-PCPSAFT Assoc Parameters,,,,,,,,
-species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
-water,O,H,water,O,e,2515.6706,0.0348679836,10.1021/ie010954d
-acetonitrile,,e,water,,H,2264.613904,0.025773553782836328,

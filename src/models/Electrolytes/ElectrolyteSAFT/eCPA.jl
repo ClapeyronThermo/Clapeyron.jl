@@ -82,7 +82,7 @@ end
 function a_res(model::eCPAModel, V, T, z,_data = @f(data))
     (data_cpa,data_rsp) = _data
     n,ā,b̄,c̄ = data_cpa
-    return a_res(model.puremodel,V,T,z)+a_res(model.ionicmodel,V+c̄*n,T,z,data_rsp)+a_res(model.bornmodel,V+c̄*n,T,z,data_rsp)
+    return a_res(model.puremodel,V,T,z,data_cpa) + a_res(model.ionicmodel,V+c̄*n,T,z,data_rsp) + a_res(model.bornmodel,V+c̄*n,T,z,data_rsp)
 
 end
 
