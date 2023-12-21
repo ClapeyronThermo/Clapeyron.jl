@@ -1,8 +1,8 @@
-function ePCSAFT(solvents,ions; 
+function SAFTgammaEMie(solvents,ions; 
     idealmodel = BasicIdeal,
-    neutralmodel = pharmaPCSAFT,
-    ionmodel = DH,
-    RSPmodel = ConstRSP,
+    neutralmodel = SAFTgammaMie,
+    ionmodel = GCMSABorn,
+    RSPmodel = Schreckenberg,
     userlocations=String[], 
     ideal_userlocations=String[],
      verbose=false)
@@ -14,15 +14,11 @@ function ePCSAFT(solvents,ions;
 
     icomponents = 1:length(components)
 
-    neutral_path = DB_PATH.*["/SAFT/PCSAFT","/SAFT/PCSAFT/pharmaPCSAFT"]
+    neutral_path = [DB_PATH*"/SAFT/SAFTgammaMie"]
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     init_neutralmodel = neutralmodel(components;userlocations=userlocations,verbose=verbose)
     init_ionmodel = ionmodel(solvents,ions;RSPmodel=RSPmodel,userlocations=append!(userlocations,neutral_path),verbose=verbose)
-
-    for i in ions
-        init_neutralmodel.params.epsilon[i] = 0.
-    end
 
     references = String[]
     components = format_components(components)
@@ -30,4 +26,4 @@ function ePCSAFT(solvents,ions;
     return model
 end
 
-export ePCSAFT
+export SAFTgammaEMie
