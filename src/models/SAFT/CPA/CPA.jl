@@ -198,7 +198,7 @@ end
 
 ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
 
-function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = data(model.cubicmodel,V,T,z))
+function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = @f(data))
     n,ā,b̄,c̄ = _data
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
     βijab = model.params.bondvol.values[i,j][a,b]

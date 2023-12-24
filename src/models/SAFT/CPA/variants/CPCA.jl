@@ -21,10 +21,36 @@ function CPCAMixing(components; activity = nothing, userlocations=String[],activ
     return CPCAMixing(format_components(components), param, ["10.1021/acs.iecr.2c00902"])
 end
 
-function mixing_rule(model::CPCAMixingModel, V, T, z, model_params)
-    kb1 = model_params.kb1.values
-    kb2 = model_params.kb2.values
-    segment = model_params.segment.values
+function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::CPCAMixing,α,a,b,c)
+    kb1 = mixing_model.params.kb1.values
+    kb2 = mixing_model.params.kb2.values
+    m = mixing_model.params.segment.values
+    
+    Tc = model.params.Tc.values
+    m̄ = zero(first(z))
+    n = sum(z)
+    invn = (one(n)/n)
+    invn2 = invn^2
+    #b̄ = dot(z,Symmetric(b),z) * invn2
+    ā = zero(T+first(z))
+    b̄ = zero(first(z))
+    for i in 1:length(z)
+        zi,mi,αi = z[i],m[i],α[i]
+        αi = α[i]
+        m̄ += zi*mi
+        βi = kb1[i]*exp(kb2[i]*T/Tc[i])
+        b̄ += b[i,i]*zi*mi
+        ā += a[i,i]*αi*zi^2
+        for j in 1:(i-1)
+            zj,mj,αj = z[j],m[j],α[j]
+            ā += 2*a[i,j]*sqrt(αi*α[j])*zi*zj*mi*mj
+        end
+    end
+    m̄inv = 1/m̄
+    ā *= m̄inv*m̄inv
+    b̄ *= m̄inv
+    c̄ = dot(z,c)*invn
+    return ā,b̄,c̄
 end
 
 const CPCACubic = RK{I,CPAAlpha,T,CPCAMixing} where {I,T}
@@ -50,6 +76,40 @@ function cubic_ab(model::CPCACubic,V,T,z=SA[1.0],n=sum(z))
     return ā ,b̄, c̄
 end
 
+function lb_volume(model::CPCACubic,z=SA[1.0])
+    mix = model.mixing.params
+    m = mix.segment.values
+    kb1 = mix.kb1.values
+    kb2 = mix.kb2.values
+    b = model.params.b.values
+    res = zero(eltype(z) + 1.0)
+    for i in @comps
+        kb1i,kb2i = kb1[i],kb2[i]
+        #=
+        this is an exponential, so it diverges at high T
+        βi = kb1*exp(-kb2*T/Tc)
+        kb1 is > 1, and increasing with Mw
+        kb2 < 1, increases with Mw until crossing to > 1
+        as a result, βi
+        if we do:
+        ```  
+        f1(x) = 0.7112*x^0.1502
+        f2(x) = 0.1549*log(x) - 0.3224
+        ff(Mw,Tr) = f1(Mw)*exp(-f2(Mw)*Tr)
+        ```
+        f1(x,1) ≈ 0.96, slighly decreasing but mostly stable
+        f1(x,2) ≈ decreases a lot with temperature, tends to 0
+        this function does not work with infinite T!!!
+        we fix βi = 0.5, anything lower should fail the volume check.
+        =#
+        if kb1i > 1.0 && 0 < kb2i
+            res += 0.5*b[i,i]*z[i]
+        else
+            #TODO: handle this case. useful in case of hydrogen (not covered in the correlations.)
+            res += b[i,i]*z[i]
+        end
+    end
+end
 
 abstract type CPCAModel <: CPAModel end
 
@@ -59,6 +119,9 @@ struct CPCAParam <: EoSParam
     segment::SingleParam{Float64}
     a::PairParam{Float64}
     b::PairParam{Float64}
+    c1::SingleParam{Float64}
+    kb1::SingleParam{Float64}
+    kb2::SingleParam{Float64}
     epsilon_assoc::AssocParam{Float64}
     bondvol::AssocParam{Float64} 
 end
@@ -129,7 +192,11 @@ function CPCA(components;
     assoc_options = AssocOptions())
     locs = ["SAFT/CPA/CPCA/", "properties/molarmass.csv","properties/critical.csv"]
     params = getparams(components, locs; userlocations=userlocations, verbose=verbose)
+    _components = format_components(components)
     
+    segment = params["segment"]
+    Mw  = params["Mw"]
+
     sites = get!(params,"sites") do
         SiteParam(components)
     end
@@ -137,12 +204,8 @@ function CPCA(components;
     Pc = get!(params,"Pc") do
         SingleParam("Pc",components)
     end
-
-    Mw  = params["Mw"]
-    alpha
-    
-    
     k = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     Tc = params["Tc"]
     a  = epsilon_LorentzBerthelot(params["a"], k)
     b  = sigma_LorentzBerthelot(params["b"], l)
@@ -155,30 +218,48 @@ function CPCA(components;
         AssocParam("bondvol",components)
     end
 
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
-    packagedparams = CPCAParam(a, b, Tc, epsilon_assoc, bondvol, Mw)
-    
-    #init cubic model
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_alpha = CPAAlpha(components,userlocations = (;c1 = 10.2425 .* Mw .^ 0.2829)) 
-    init_mixing = CPCAMixing(components,userlocations = (;c1 = 0.0, c2 = 0.0))
+
+    c1 = get!(params,"c1") do
+        SingleParam("c1",_components,@.(0.2425*Mw^0.2829))
+    end
+    alpha_param = CPAAlphaParam(c1)
+    init_alpha = CPAAlpha(components,CPAAlphaParam(),String[]) 
+
+    kb1 = get!(params,"kb1") do
+        SingleParam("kb1",_components,@.(0.7112*(Mw)^0.1502))
+    end
+
+    kb2 = get!(params,"kb2") do
+        SingleParam("kb2",_components,@.(0.1549*log(Mw) - 0.3224))
+    end
+    mix_param = CPCAMixingParam(kb1,kb2,segment)
+    init_mixing = CPCAMixing(_components,mix_param,String[])
+
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     cubicparams = ABCubicParam(a, b, params["Tc"],Pc,Mw) #PR, RK, vdW
     init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
+
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
+    packagedparams = CPCAParam(Mw, Tc, segment, a, b, epsilon_assoc, bondvol)
+    #init cubic model
+    
 
     references = ["10.1021/ie051305v"]
     model = CPCA(components, radial_dist, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
     return model
 end
 
-function recombine_impl!(model::CPAModel)
+function recombine_impl!(model::CPCAModel)
     assoc_options = model.assoc_options
     a = model.params.a
     b = model.params.b
-
+    model.cubicmodel.alpha.params.c1.values .= model.params.c1.values
+    model.cubicmodel.mixing.params.segment.values .= model.params.segment.values
+    model.cubicmodel.mixing.params.kb1.values .= model.params.kb1.values
+    model.cubicmodel.mixing.params.kb2.values .= model.params.kb2.values
     a  = epsilon_LorentzBerthelot!(a)
     b  = sigma_LorentzBerthelot!(b)
-
     epsilon_assoc = model.params.epsilon_assoc
     bondvol = model.params.bondvol
     bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options) #combining rules for association
@@ -188,34 +269,44 @@ function recombine_impl!(model::CPAModel)
     return model
 end
 
-lb_volume(model::CPAModel,z = SA[1.0]) = lb_volume(model.cubicmodel,z)
-T_scale(model::CPAModel,z=SA[1.0]) = T_scale(model.cubicmodel,z)
-function p_scale(model::CPAModel,z=SA[1.0])
-    #does not depend on Pc, so it can be made optional on CPA input
-    b = model.cubicmodel.params.b.values
-    a = model.cubicmodel.params.a.values
-    Ωa,Ωb = ab_consts(model.cubicmodel)
-    b̄r = dot(z,b,z)/(sum(z)*Ωb)
-    ār = dot(z,a,z)/Ωa
-    return ār/(b̄r*b̄r)
-end
-
-function show_info(io,model::CPAModel) 
-    rdf = model.radial_dist
-    println(io)
-    if rdf == :CS #CPA original
-        print(io,"RDF: Carnahan-Starling (original CPA)")
-    elseif rdf == :KG || rdf == :OT #sCPA
-        print(io,"RDF: Kontogeorgis (s-CPA)")
-    end
-end
-
-function x0_crit_pure(model::CPAModel)
-    lb_v = lb_volume(model)
-    return (1.0, log10(lb_v/0.3))
-end
-
-function a_res(model::CPAModel, V, T, z, _data = @f(data))
+function data(model::CPCAModel, V, T, z)
+    nabc = data(model.cubicmodel,V,T,z)
     n,ā,b̄,c̄ = _data
-    return a_res(model.cubicmodel,V,T,z,_data) + a_assoc(model,V+c̄*n,T,z,_data)
+    m = model.params.segment.values
+    m̄ = dot(z,m)/n
+    β = n*m̄*b̄/V
+    return nabc,β,m̄
+end
+
+function x0_volume_liquid(model::CPCAModel,T,z)
+    nabc = data(model.cubicmodel,0.0,T,z)
+    n,ā,b̄,c̄ = _data
+    return (1.25b̄ + c̄)*n
+end
+
+function a_res(model::CPCAModel, V, T, z, _data = @f(data))
+    nabc,β,m̄ = _data
+    n,ā,b̄,c̄ = nabc
+    return m̄*a_res(model.cubicmodel,V,T,z,_data) + a_chain(model,V+c̄*n,T,z,_data) + a_assoc(model,V+c̄*n,T,z,_data)
+end
+
+function a_chain(model::CPCAModel,V,T,z,_data = @f(data))
+    nabc,β,m̄ = _data
+    res = zero(V + first(z))
+    m = model.params.segment.values
+    ln_ghs = -log1p(-0.475*β)
+    for i in @comps
+        res = z[i]*(m[i] - 1)
+    end
+    return -res*ln_ghs/n
+end
+
+function Δ(model::CPCAModel, V, T, z, i, j, a, b, _data = @f(data))
+    nabc,β,m̄ = _data
+    ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
+    βijab = model.params.bondvol.values[i,j][a,b]
+    b = model.params.b.values
+    rdf = model.radial_dist
+    g = 1/(1-0.475β)
+    return g*expm1(ϵ_associjab/T)*βijab*b[i,j]/N_A
 end
