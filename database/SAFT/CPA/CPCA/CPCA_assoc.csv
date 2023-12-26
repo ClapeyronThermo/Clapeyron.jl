@@ -1,0 +1,20 @@
+Clapeyron Database File
+CPCA Assoc Parameters
+species1,site1,species2,site2,bondvol,epsilon_assoc,source
+methanol,e,methanol,H,0.073628,2440.4463561719544,10.1021/acs.iecr.3c02774
+ethanol,e,ethanol,H,0.006502,2477.6105138801568,10.1021/acs.iecr.3c02774
+1-propanol,e,1-propanol,H,0.007505,2511.647590357248,10.1021/acs.iecr.3c02774
+1-butanol,e,1-butanol,H,0.008101,2537.866963756562,10.1021/acs.iecr.3c02774
+1-pentanol,e,1-pentanol,H,0.0083,2565.409333061347,10.1021/acs.iecr.3c02774
+1-heptanol,e,1-heptanol,H,0.0093,2624.7036040974103,10.1021/acs.iecr.3c02774
+1-octanol,e,1-octanol,H,0.009007,2658.0190464442458,10.1021/acs.iecr.3c02774
+1-decanol,e,1-decanol,H,0.009157,2718.395768675694,10.1021/acs.iecr.3c02774
+1-dodecanol,e,1-dodecanol,H,0.008122,2784.5455639491934,10.1021/acs.iecr.3c02774
+1-pentadecanol,e,1-pentadecanol,H,0.009293,2872.8254725505544,10.1021/acs.iecr.3c02774
+t-butanol,e,t-butanol,H,0.004013,2616.4048115994624,10.1021/acs.iecr.3c02774
+water,e,water,H,0.09527,1944.4431639757518,10.1021/acs.iecr.3c02774
+methylamine,e,methylamine,H,0.012096,1310.9686699657138,10.1021/acs.iecr.3c02774
+ethylamine,e,ethylamine,H,0.010259,1346.930104123489,10.1021/acs.iecr.3c02774
+1-propylamine,e,1-propylamine,H,0.012301,1368.5791280311796,10.1021/acs.iecr.3c02774
+2-propylamine,e,2-propylamine,H,0.01,1318.3052836233203,10.1021/acs.iecr.3c02774
+aniline,e,aniline,H,0.072052,1202.7235504272605,10.1021/acs.iecr.3c02774

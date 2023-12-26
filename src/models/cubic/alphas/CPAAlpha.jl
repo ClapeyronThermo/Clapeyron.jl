@@ -49,7 +49,7 @@ function α_function(model::CubicModel,V,T,z,alpha_model::CPAAlphaModel)
     α = zeros(typeof(1.0*T),length(Tc))
     for i in @comps
         Tr = T/Tc[i]
-        α[i] = (1+c1[i]*(1-√(Tr)))^2
+        α[i] = (1+c1[i]*(1-sqrt(Tr)))^2
     end
     return α
 end

@@ -164,7 +164,6 @@ include("models/SAFT/PCSAFT/variants/CPPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")
 include("models/SAFT/CPA/variants/sCPA.jl")
-include("models/SAFT/CPA/variants/CPCA.jl")
 include("models/SAFT/SAFTVRSW/SAFTVRSW.jl")
 include("models/SAFT/LJSAFT/LJSAFT.jl")
 include("models/SAFT/softSAFT/softSAFT.jl")
@@ -220,6 +219,7 @@ include("models/cubic/PatelTeja/PatelTeja.jl")
 include("models/cubic/PatelTeja/variants/PatelTejaValderrama.jl")
 
 include("models/SAFT/PCSAFT/variants/GEPCSAFT.jl")
+include("models/SAFT/CPA/variants/CPCA.jl")
 
 include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
