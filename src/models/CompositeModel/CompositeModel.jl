@@ -92,7 +92,8 @@ include("SolidModel/SolidHfus.jl")
 include("bubble_point.jl")
 include("dew_point.jl")
 
-function CompositeModel(components, mapping = nothing;
+function CompositeModel(components ;
+    mapping = nothing,
     liquid = nothing,
     gas = nothing,
     fluid = nothing,
