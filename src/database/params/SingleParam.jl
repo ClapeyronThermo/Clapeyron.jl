@@ -172,7 +172,7 @@ function Base.convert(::Type{SingleParam{T1}},param::SingleParam{T2}) where {T1<
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
-function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{<:Union{Int,Float64}})
+function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{<:Union{Int,Float64,Bool}})
     #@assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
