@@ -1,11 +1,11 @@
 struct CPAParam <: EoSParam
+    Mw::SingleParam{Float64}
+    Tc::SingleParam{Float64}
     a::PairParam{Float64}
     b::PairParam{Float64}
     c1::SingleParam{Float64}
-    Tc::SingleParam{Float64}
     epsilon_assoc::AssocParam{Float64}
     bondvol::AssocParam{Float64}
-    Mw::SingleParam{Float64}
 end
 
 struct CPA{T <: IdealModel,c <: CubicModel} <: CPAModel
@@ -42,16 +42,17 @@ end
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
-- `Pc`: Single Parameter (`Float64`) - Critical Pressure `[Pa]`
 - `a`: Single Parameter (`Float64`) - Atraction parameter `[m^6*Pa/mol]`
 - `b`: Single Parameter (`Float64`) - Covolume `[m^3/mol]`
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
+- `l`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
+- `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
 - `a`: Pair Parameter (`Float64`) - Mixed Atraction Parameter `[m^6*Pa/mol]`
 - `b`: Pair Parameter (`Float64`) - Mixed Covolume `[m^3/mol]`
 - `c1`: Single Parameter (`Float64`) - α-function constant Parameter (no units)
@@ -114,10 +115,11 @@ function CPA(components;
 
     Mw  = params["Mw"]
     k = get(params,"k",nothing)
+    l = get(params,"k",nothing)
     Tc = params["Tc"]
     c1 = params["c1"]
     a  = epsilon_LorentzBerthelot(params["a"], k)
-    b  = sigma_LorentzBerthelot(params["b"])
+    b  = sigma_LorentzBerthelot(params["b"], l)
 
     epsilon_assoc = get!(params,"epsilon_assoc") do
         AssocParam("epsilon_assoc",components)
@@ -128,7 +130,7 @@ function CPA(components;
     end
 
     bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
-    packagedparams = CPAParam(a, b, c1, Tc, epsilon_assoc, bondvol, Mw)
+    packagedparams = CPAParam(Mw, Tc, a, b, c1, epsilon_assoc, bondvol)
     
     #init cubic model
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
@@ -197,7 +199,7 @@ end
 
 ab_consts(model::CPAModel) = ab_consts(model.cubicmodel)
 
-function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = data(model.cubicmodel,V,T,z))
+function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = @f(data))
     n,ā,b̄,c̄ = _data
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
     βijab = model.params.bondvol.values[i,j][a,b]
