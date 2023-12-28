@@ -113,7 +113,7 @@ function get_json_data(components;
             verbose && coolprop_userlocations && @info "trying to look JSON for $(info_color(component)) in CoolProp"
             #try to extract from coolprop.
             !coolprop_userlocations && throw(error("cannot found component file $(component)."))
-            alternative_comp = get(JSON_ALTERNATIVE_NAMES,norm_comp1,norm_comp1)
+            alternative_comp = get(JSON_ALTERNATIVE_NAMES,norm_comp1,component)
             success,json_string = coolprop_csv(alternative_comp,component)
             if success
                 data = JSON3.read(json_string)[1]
