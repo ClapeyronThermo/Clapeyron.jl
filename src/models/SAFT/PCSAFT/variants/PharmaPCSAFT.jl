@@ -159,12 +159,12 @@ function Δ(model::pharmaPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     gij = @f(g_hs,i,j,_data)
     k = water08_k(model)
     Δσ = Δσh20(T)
-    σij = σ[i,j] + 0.5*((k==i) + (k==j))*Δσ
+    σij = σ[i,j] + (0.5*(k==i) + 0.5*(k==j))*Δσ
     res = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κijab
     return res
 end
 
-function  Δ(model::pharmaPCSAFT, V, T, z,_data=@f(data))
+function  Δ(model::pharmaPCSAFTModel, V, T, z,_data=@f(data))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     σ = model.params.sigma.values
