@@ -56,7 +56,12 @@ ChemPotVSaturation(x::Vector) = ChemPotVSaturation(vl = first(x),vv = last(x))
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{Nothing})
     vl,vv = x0_sat_pure(model,T)
     crit = method.crit
-    return saturation_pressure_impl(model,T,ChemPotVSaturation(;vl,vv,crit))
+    crit_retry = method.crit_retry
+    f_limit = method.f_limit
+    atol = method.atol
+    rtol = method.rtol
+    max_iters = method.max_iters
+    return saturation_pressure_impl(model,T,ChemPotVSaturation(vl,vv,crit,crit_retry,f_limit,atol,rtol,max_iters))
 end
 
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{<:Number})
