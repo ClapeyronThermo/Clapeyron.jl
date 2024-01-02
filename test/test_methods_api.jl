@@ -517,5 +517,18 @@ end
         # @test_broken bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
         # FIXME: The test does not yield the same value depending on the OS and the julia version
     end
+
+    @testset "Tr = 0.995" begin
+        model1 = PCSAFT("water")
+        Tc1,_,_ = crit_pure(model)
+        T1 = 0.995Tc1
+        @test Clapeyron.saturation_pressure(model,T1,crit_retry = false)[1] ≈ 3.542008160105954e7 rtol = 1e-6
+        
+        model2 = PCSAFT("eicosane")
+        Tc2,_,_ = crit_pure(model2)
+        T2 = 0.995Tc2
+        @test Clapeyron.saturation_pressure(model2,T2,crit_retry = false)[1] ≈ 1.3931662325210017e6 rtol = 1e-6
+    end
+
 end
 
