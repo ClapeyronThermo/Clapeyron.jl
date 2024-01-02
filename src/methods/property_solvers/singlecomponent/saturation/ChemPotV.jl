@@ -128,31 +128,20 @@ end
 #with the critical point, we can perform a
 #corresponding states approximation with the
 #propane reference equation of state
-function x0_sat_pure_crit(model,T,T_c,P_c,V_c)
-    h = V_c*5000
-    T0 = 369.89*T/T_c
+function x0_sat_pure_crit(model,T,Tc,Pc,Vc)
+    h = Vc*5000
+    T0 = 369.89*T/Tc
     Vl0 = (1.0/_propaneref_rholsat(T0))*h
     Vv0 = (1.0/_propaneref_rhovsat(T0))*h
     _1 = SA[1.0]
-    #μ_l = only(VT_chemical_potential(model,Vl0,T,_1))
-    #μ_v = only(VT_chemical_potential(model,Vv0,T,_1))
-    #@show (μ_l < μ_v,T/T_c)
-    #if μ_l < μ_v
-      #@show μ_l,μ_v
-    #end
-    # _,dpdvv = p∂p∂V(model,Vv0,T,SA[1.0])
-    # @show dpdvv*Vv0
-    # _,dpdvv = p∂p∂V(model,2*Vv0,T,SA[1.0])
-    # @show dpdvv*Vv0
     return Vl0,Vv0
 end
 
-#=
-function sat_pure(model,T,V0,method)
-    f! = ObjSatPure(model,T)
-    return sat_pure(f!,V0,method)
+function x0_sat_pure_crit(model,T)
+    Tc,Pc,Vc = crit_pure(model)
+    return x0_sat_pure_crit(model,T,Tc,Pc,Vc)
 end
-=#
+
 function sat_pure(f!::ObjSatPure,V0,method)
     model, T = f!.model, f!.Tsat
     nan = zero(eltype(V0))/zero(eltype(V0))
