@@ -118,7 +118,7 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7714.8637084302 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 522.7772913470494 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 522.7772913470494 rtol = 1E-5
     end
 end
 

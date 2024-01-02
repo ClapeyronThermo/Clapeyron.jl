@@ -190,7 +190,7 @@ function d_vrmie(T,λa,λr,σ,ϵ)
     θ = C/Tx
     λrinv = 1/λr
     λaλr = λa/λr
-    if Tx < 1
+    if Tx < 2
         f_laguerre(x) = x^(-λrinv)*exp(θ*x^(λaλr))*λrinv/x
         ∑fi = Solvers.laguerre10(f_laguerre,θ,one(θ))
     else
@@ -226,8 +226,15 @@ function d_vrmie_cut(T,λa,λr,C,ϵ)
         d2f = (df*du_r + f*d2u_r)*-T⁻¹
         return f, f/df, df/d2f
     end
-    jprob = Roots.ZeroProblem(fdfd2f,j0)
-    j = Roots.solve(jprob,Roots.Halley())
+    j = j0
+    for i in 1:5
+        fi,f1,f2 = fdfd2f(j)
+        dd = (1 - 0.5*f1/f2)
+        dj = f1/(1 - 0.5*f1/f2)
+        j = j - dj
+        fi < eps(eltype(fi)) && break 
+    end
+    return j
 end
 
 function d(model::SAFTVRMieModel, V, T, z)
