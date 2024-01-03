@@ -92,7 +92,7 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
     if T < T_c
         x0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
         V01,V02 = x0
-        V0 = vec2(log(V01),log(V02),T)
+        V0 = svec2(log(V01),log(V02),T)
         result,converged = sat_pure(f!,V0,method)
         if converged
             return result
