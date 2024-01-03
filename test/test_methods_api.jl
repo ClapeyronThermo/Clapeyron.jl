@@ -518,7 +518,7 @@ end
         # FIXME: The test does not yield the same value depending on the OS and the julia version
     end
 
-    @testset "Tr = 0.995" begin
+    @testset "saturation pressures" begin
         model1 = PCSAFT("water")
         Tc1,_,_ = crit_pure(model1)
         T1 = 0.995Tc1
@@ -530,6 +530,10 @@ end
         if Base.VERSION >= v"1.7" #this test fails on mac, julia 1.6
             @test Clapeyron.saturation_pressure(model2,T2,crit_retry = false)[1] ≈ 1.3931662325210017e6 rtol = 1e-6
         end
+
+        #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/237
+        model3 = SAFTVRMie("heptacosane",userlocations = (Mw = 380.44,segment = 2.0,sigma = 3.0,lambda_a = 6.0,lambda_r = 20.01,epsilon = 200.51))
+        @test Clapeyron.saturation_pressure(model3,94.33,crit_retry = false) ≈ 1.3931662325210017e6 rtol = 1e-6
     end
 
 end
