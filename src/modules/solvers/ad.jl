@@ -20,7 +20,7 @@ end
 
 @inline function gradient2(f::F, x1::R,x2::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
-    _1 = one(R)
+    _1 = oneunit(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
     dual2 = ForwardDiff.Dual{T,R,2}(x2, ForwardDiff.Partials((_0,_1)))
@@ -41,7 +41,7 @@ returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.j
 """
 @inline function f∂f(f::F, x::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
-    out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),))))
+    out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((oneunit(R),))))
     return ForwardDiff.value(out),  ForwardDiff.extract_derivative(T, out)
 end
 
@@ -54,7 +54,7 @@ returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.j
 """
 @inline function f∂f∂2f(f::F,x::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
-    out = ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),)))
+    out = ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((oneunit(R),)))
     _f,_df = f∂f(f,out)
     fx = ForwardDiff.value(_f)
     dfx = ForwardDiff.partials(_f).values[1]
@@ -76,7 +76,7 @@ end
 
 @inline function fgradf2(f::F,x1::R,x2::R) where{F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
-    _1 = one(R)
+    _1 = oneunit(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
     dual2 = ForwardDiff.Dual{T,R,2}(x2, ForwardDiff.Partials((_0,_1)))
@@ -88,7 +88,7 @@ end
 #Manual implementation of an hyperdual.
 @inline function ∂2(f::F,x1::R,x2::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
-    _1 = one(R)
+    _1 = oneunit(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
     dual2 = ForwardDiff.Dual{T,R,2}(x2, ForwardDiff.Partials((_0,_1)))  
@@ -101,6 +101,25 @@ end
     d2f = SMatrix{2}(d2fdx2,d2fdxdy,d2fdxdy,d2fdy2)
     return (fx,df,d2f)
 end
+
+#Manual implementation of an hyperdual.
+@inline function J2(f::F,x::SVector{2,R}) where {F,R<:Real}
+    T = typeof(ForwardDiff.Tag(f, R))
+    _1 = oneunit(R)
+    _0 = zero(R)
+    x1,x2 = x
+    dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
+    dual2 = ForwardDiff.Dual{T,R,2}(x2, ForwardDiff.Partials((_0,_1)))  
+    dx = SVector(dual1,dual2)
+    f̄ = f(dx)
+    f̄1,f̄2 = f̄[1],f̄[2]
+    F̄ = SVector(f̄1.value , f̄2.value)
+    df1dx1, df1dx2 = f̄1.partials.values
+    df2dx1, df2dx2 = f̄2.partials.values
+    J = SMatrix{2}(df1dx1,df2dx1,df1dx2,df2dx2)
+    return F̄,J
+end
+
 
 function ∂2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)

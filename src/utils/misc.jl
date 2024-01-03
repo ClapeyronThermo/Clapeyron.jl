@@ -10,6 +10,11 @@ function vec2(x1,x2,opt = true)
         return SizedVector{2,typeof(V01)}((V01,V02))
     end
 end
+
+function svec2(x1,x2,opt = true)
+    V01,V02,_ = promote(x1,x2,opt)
+    return SVector{2}(V01,V02)
+end
 """
     dnorm(x,y,p)
 
