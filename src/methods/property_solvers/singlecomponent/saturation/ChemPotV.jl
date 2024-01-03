@@ -16,8 +16,8 @@ when `crit_retry` is true, if the initial solve fail, it will try to obtain a be
 `f_limit`, `atol`, `rtol`, `max_iters` are passed to the non linear system solver.
 """
 struct ChemPotVSaturation{T,C} <: SaturationMethod
-    vl::Union{Nothing,T}
-    vv::Union{Nothing,T}
+    vl::T
+    vv::T
     crit::C
     crit_retry::Bool
     f_limit::Float64
@@ -49,19 +49,22 @@ end
 ChemPotVSaturation(x::Tuple) = ChemPotVSaturation(vl = first(x),vv = last(x))
 ChemPotVSaturation(x::Vector) = ChemPotVSaturation(vl = first(x),vv = last(x))
 
-function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{Nothing})
-    vl,vv = x0_sat_pure(model,T)
+function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{Nothing,C}) where C
+    TT = typeof(1.0*T*oneunit(eltype(model)))
+    vl::TT,vv::TT = x0_sat_pure(model,T)
     crit = method.crit
     crit_retry = method.crit_retry
     f_limit = method.f_limit
     atol = method.atol
     rtol = method.rtol
     max_iters = method.max_iters
-    return saturation_pressure_impl(model,T,ChemPotVSaturation(vl,vv,crit,crit_retry,f_limit,atol,rtol,max_iters))
+    new_method = ChemPotVSaturation{TT,C}(vl,vv,crit,crit_retry,f_limit,atol,rtol,max_iters)
+    #@show new_method
+    return saturation_pressure_impl(model,T,new_method)
 end
 
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{<:Number})
-    V0 = svec2(log(method.vl),log(method.vv),T)
+    V0 = svec2(log(method.vl),log(method.vv),1.0*T*oneunit(eltype(model)))
     V01,V02 = V0
     TYPE = eltype(V0)
     nan = zero(TYPE)/zero(TYPE)

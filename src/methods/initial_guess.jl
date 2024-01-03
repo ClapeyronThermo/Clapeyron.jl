@@ -136,7 +136,7 @@ function x0_sat_pure(model,T)
         x0l = 3*lb_v
         px = pressure(model,x0l,T)
         if px < 0 #low pressure
-            return x0_sat_volume_near0(model,T)
+            return x0_sat_pure_near0(model,T)
         else #high pressure?
             return 4*lb_v,20*lb_v
         end
@@ -214,10 +214,7 @@ function x0_sat_pure(model,T)
         #normally this happens at low temperatures. we could suppose that Vl0 is a
         #"zero-pressure" volume, apply corresponding strategy
         x0l = min(Vl0,vl)
-        ares = a_res(model, x0l, T, z)
-        lnϕ_liq0 = ares - 1 + log(RT/x0l)
-        P0 = exp(lnϕ_liq0)
-        return x0l,RT/P0
+        return x0_sat_pure_near0(model,T,x0l)
     else
         #we correct the gas saturation pressure. normally, B_vdw is lower than B_eos.
         #this causes underprediction on the vapour initial point.
@@ -289,10 +286,9 @@ function vdw_crit_pure(a,b)
     return Tc,Pc,Vc
 end
 
-function x0_sat_volume_near0(model, T)
+function x0_sat_pure_near0(model, T,vl0 = volume(model,zero(T),T,phase =:liquid))
     R̄ = Rgas(model)
     z = SA[1.0]
-    vl0 = volume(model,zero(T),T,phase =:liquid)
     ares = a_res(model, vl0, T, z)
     lnϕ_liq0 = ares - 1 + log(R̄*T/vl0)
     P0 = exp(lnϕ_liq0)
@@ -303,7 +299,8 @@ end
 
 function x0_sat_pure_hermite_spinodal(model,Vl00,Vv00,T)
     p(x) = pressure(model,x,T)
-    Vl_spinodal,Vv_spinodal = Vl00,Vv00
+    TT = oneunit(eltype(model))*oneunit(T/T)
+    Vl_spinodal,Vv_spinodal = Vl00*TT,Vv00*TT
     #=
     strategy:
 
@@ -370,8 +367,8 @@ function x0_sat_pure_hermite_spinodal(model,Vl00,Vv00,T)
             P_max = evalpoly(yv,poly_v)
             P_min = evalpoly(yl,poly_l)
             P = 0.5*(P_max + P_min)
-            Vv0 = volume(model,P,T,vol0 = Vv00)
-            Vl0 = volume(model,P,T,vol0 = Vl00)
+            Vv0 = volume(model,P,T,vol0 = Vv00)::typeof(TT)
+            Vl0 = volume(model,P,T,vol0 = Vl00)::typeof(TT)
             #this initial point gives good estimated for the saturated vapour volume
             #but overpredicts the saturated liquid volume, causing failure in subsequent eq solvers.
             #isofugacity criteria does not work here.
