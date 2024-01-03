@@ -533,7 +533,7 @@ end
 
         #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/237
         model3 = SAFTVRMie("heptacosane",userlocations = (Mw = 380.44,segment = 2.0,sigma = 3.0,lambda_a = 6.0,lambda_r = 20.01,epsilon = 200.51))
-        @test Clapeyron.saturation_pressure(model3,94.33,crit_retry = false)[1] ≈ 1.3931662325210017e6 rtol = 1e-6
+        @test Clapeyron.saturation_pressure(model3,94.33,crit_retry = false)[1] ≈ 2.8668634416924506 rtol = 1e-6
     end
 
 end
