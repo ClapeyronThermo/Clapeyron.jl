@@ -39,7 +39,7 @@ julia> p,vl,vv = saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)
 """
 function saturation_pressure(model::EoSModel,T,method::SaturationMethod)
     single_component_check(saturation_pressure,model)
-    T = T*(T/T)
+    T = T*(T/T)*oneunit(eltype(model))
     return saturation_pressure_impl(model,T,method)
 end
 

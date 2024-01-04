@@ -91,9 +91,9 @@ end
 
 struct Newton2Var end
 
-function nlsolve2(f::Base.Callable,x,method::Newton2Var,options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
-    function FJ(z)
-        f(z),ForwardDiff.jacobian(f,z)
+function nlsolve2(f,x,method::Newton2Var,options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
+    function FJ(_z)
+        return J2(f,_z)
     end
     t0 = time()
 
