@@ -13,13 +13,13 @@ end
 __gas_model(model::FluidCorrelation) = model.gas
 activity_coefficient(model::FluidCorrelation, p, T,z=SA[1.]; phase = :unknown, threaded=true) = FillArrays.Ones(length(model)) 
 
-function volume_impl(model::FluidCorrelation,p,T,z,phase=:unknown,threaded=false,vol0 = nothing)
+function volume_impl(model::FluidCorrelation, p, T, z, phase=:unknown, threaded=false, vol0=nothing)
     _0 = zero(p+T+first(z))
     nan = _0/_0
     if is_liquid(phase)
-        return volume(model.liquid,p,T,z;phase,threaded)
+        return volume(model.liquid, p, T, z; phase, threaded, vol0)
     elseif is_vapour(phase)
-        return volume(model.gas,p,T,z;phase,threaded)
+        return volume(model.gas, p, T, z; phase, threaded, vol0)
     else
         if length(model) == 1
             psat,vl,vv = saturation_pressure(model,T)
@@ -33,9 +33,9 @@ function volume_impl(model::FluidCorrelation,p,T,z,phase=:unknown,threaded=false
                 tc,pc,vc = crit_pure(model)
                 if T > tc #supercritical conditions. ideally, we could go along the critical isochore, but we dont have that.
                     if p > pc # supercritical fluid
-                        return volume(model.liquid,p,T,z;phase,threaded)
+                        return volume(model.liquid, p, T, z; phase, threaded, vol0)
                     else #gas phase
-                        return volume(model.gas,p,T,z;phase,threaded)
+                        return volume(model.gas, p, T, z; phase, threaded, vol0)
                     end
                 else #something failed on saturation_pressure, not related to passing the critical point
                     @error "an error ocurred while determining saturation line division."

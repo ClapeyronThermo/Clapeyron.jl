@@ -10,9 +10,10 @@
 - New property: triple point. `triple_point(model::CompositeModel)`
 - `CompositeModel` was revamped to support more general equilibria. in particular it will be used to represent equilibria with Activity Models along with with Real Gases. As a result of these enhancements, `CompositeModel` now supports `bubble_pressure`,`bubble_temperature`,`dew_pressure`, and `dew_temperature`.
 - `DETPFlash` supports LLE equilibria with activity models
+- Bulk properties now accept a `vol0` initial point for the volume solver.
 
 ## Bug fixes
-- `SAFTVRMie` was allocating excesively because of unbound type parameter. 
+- `SAFTVRMie` was allocating excesively because of unbound type parameter.
 - typos in `pharmaPCSAFT`
 - `SanchezLacombe` didn't set `k` correctly when passed as `userlocations`
 - `CPA`, SAFT equation of state and other EoS that implement association,don't need to specify `bondvol` and `epsilon_assoc`, when using non-associating species.
