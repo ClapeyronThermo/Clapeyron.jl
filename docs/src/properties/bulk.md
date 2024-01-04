@@ -26,8 +26,8 @@ Clapeyron.pip
 
 In general almost all bulk properties follow the pattern:
 ```julia
-function property(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true)
-    V = volume(model, p, T, z; phase, threaded)
+function property(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    V = volume(model, p, T, z; phase, threaded, vol0)
     return VT_property(model,V,T,z)
 end
 ```
