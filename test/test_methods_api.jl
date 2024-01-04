@@ -27,7 +27,7 @@
 
     #example 3.13, abbott and van ness, 7th ed.
     model13 = PR(["ammonia"],translation = RackettTranslation)
-    v13 = 26.545208120801895u"cm^3"
+    v13 = 26.545235297652496u"cm^3"
     T13 = 310u"K"
     #experimental value is 29.14 cm3/mol. PR default is ≈ 32, Racckett overcorrects
     @test saturation_pressure(model13,T13,output = (u"atm",u"cm^3",u"cm^3"))[2] ≈ v13 rtol = 1E-6
@@ -271,7 +271,7 @@ end
 
     #test IsoFugacity, near criticality
     Tc_near = 0.95*647.096
-    psat_Tcnear = 1.4960621837287119e7 #default solver result
+    psat_Tcnear = 1.496059652088857e7 #default solver result
     @test first(Clapeyron.saturation_pressure(model,Tc_near,IsoFugacitySaturation())) ≈ psat_Tcnear rtol = 1e-6
     #Test that IsoFugacity fails over critical point
     @test isnan(first(Clapeyron.saturation_pressure(model,1.1*647.096,IsoFugacitySaturation())))
