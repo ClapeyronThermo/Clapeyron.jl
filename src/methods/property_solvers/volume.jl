@@ -92,17 +92,27 @@ end
 #(z = pV/RT)
 #(RT/p = V/z)
 """
-    volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
+    volume(model::EoSModel, p, T, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
 
-Calculates the volume (m³) of the compound modelled by `model` at a certain pressure,temperature and moles.
+Calculates the volume (m³) of the compound modelled by `model` at a certain pressure, temperature and moles.
 `phase` is a Symbol that determines the initial volume root to look for:
 - If `phase =:unknown` (Default), it will return the physically correct volume root with the least gibbs energy.
 - If `phase =:liquid`, it will return the volume of the phase using a liquid initial point.
 - If `phase =:vapor`, it will return the volume of the phase using a gas initial point.
 - If `phase =:solid`, it will return the volume of the phase using a solid initial point (only supported for EoS that support a solid phase)
 - If `phase =:stable`, it will return the physically correct volume root with the least gibbs energy, and perform a stability test on the result.
+
 All volume calculations are checked for mechanical stability, that is: `dP/dV <= 0`.
-The calculation of both volume roots can be calculated in serial (`threaded=false`) or in parallel (`threaded=true`)
+
+The calculation of both volume roots can be calculated in serial (`threaded=false`) or in parallel (`threaded=true`).
+
+An initial estimate of the volume `vol0` can be optionally be provided.
+
+!!! tip
+    The volume computation may fail and return `NaN` because the default initial point is too far from the actual volume.
+    Providing a value for `vol0` may help in these situations.
+    Such a starting point can be found from physical knowledge, or by computing the volume using a different model for example.
+
 !!! warning "Stability checks"
     The stability check is disabled by default. that means that the volume obtained just follows the the relation `P = pressure(model,V,T,z)`.
     For single component models, this is alright, but phase splits (with different compositions that the input) can and will occur, meaning that
@@ -114,7 +124,7 @@ The calculation of both volume roots can be calculated in serial (`threaded=fals
     isstable(model,v,T,z)
     ```
 """
-function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true,vol0=nothing)
+function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0=nothing)
     return volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
@@ -128,11 +138,11 @@ end
 fluid_model(model) = model
 solid_model(model) = model
 
-function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,vol0=nothing)
+function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
     return _volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
-function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,vol0=nothing)
+function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
 #Threaded version
     TYPE = typeof(p+T+first(z)+one(eltype(model)))
     nan = zero(TYPE)/zero(TYPE)
