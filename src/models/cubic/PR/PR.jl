@@ -129,7 +129,7 @@ function PR(components; idealmodel=BasicIdeal,
 end
 
 function ab_consts(::Type{<:PRModel})
-    return 0.457235,0.077796
+    return 0.45723552892138218938,0.077796073903888455972
 end
 
 function cubic_Δ(model::PRModel,z)
