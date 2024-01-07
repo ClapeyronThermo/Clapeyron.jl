@@ -185,30 +185,33 @@ else:
     10-point modified gauss-legendre with cut.
 =#
 function d_vrmie(T,λa,λr,σ,ϵ)
-    Tx = T/ϵ
     C = Cλ_mie(λa, λr)
-    θ = C/Tx
-    λrinv = 1/λr
-    λaλr = λa/λr
-    if Tx < 2
-        f_laguerre(x) = x^(-λrinv)*exp(θ*x^(λaλr))*λrinv/x
-        ∑fi = Solvers.laguerre10(f_laguerre,θ,one(θ))
-    else
-        j = d_vrmie_cut(T,λa,λr,C,ϵ)
-        f_legendre(x) = exp(-θ*(x^(-λr)-x^(-λa)))
-        ∑fi = Solvers.integral10(f_legendre,j,one(j))
-    end
+    θ = ϵ*C/T
+    ∑fi = vr_mie_d_integral(θ,λa,λr)
     return σ*(1 - ∑fi)
 end
 
+#this function is a fundamental one.
+function vr_mie_d_integral(θ,λa,λr)
+    λrinv = 1/λr
+    λaλr = λa/λr
+    if θ > 1
+        f_laguerre(x) = x^(-λrinv)*exp(θ*x^(λaλr))*λrinv/x
+        return Solvers.laguerre10(f_laguerre,θ,one(θ))
+    else
+        j = d_vrmie_cut(θ,λa,λr)
+        f_legendre(x) = exp(-θ*(x^(-λr)-x^(-λa)))
+        return  Solvers.integral10(f_legendre,j,one(j))
+    end
+end
+
 #implements the method of aasen for VRQ Mie. (https://github.com/usnistgov/teqp/issues/39)
-function d_vrmie_cut(T,λa,λr,C,ϵ)
-    EPS = eps(typeof(C*T))
-    K = log(-T*log(EPS)/(C*ϵ))
+function d_vrmie_cut(θ,λa,λr)
     #initial point
+    EPS = eps(typeof(θ))
+    K = log(-log(EPS)/θ)
     j0 = exp(-K/λr)
     # exp(-u(r)/T), d[exp(-u(r))/T)]/dr, d2[exp(-u(r))/T)]/dr2
-    T⁻¹ = 1/T
     function fdfd2f(r)
         r⁻¹ = 1/r
         rλr = r^-λr
@@ -216,14 +219,13 @@ function d_vrmie_cut(T,λa,λr,C,ϵ)
         u_r = rλr - rλa #u/C*ϵ
         du_ra = rλa*r⁻¹*(-λa)
         du_rr = rλr*r⁻¹*(-λr)
-        du_r = du_rr - du_ra
+        du_r = (du_rr - du_ra)
         d2u_rr = du_rr*r⁻¹*(-λr - 1)
         d2u_ra = du_ra*r⁻¹*(-λa - 1)
         d2u_r = d2u_rr - d2u_ra
-        f = exp(-u_r*C*ϵ*T⁻¹)
-        dfT = f*du_r
-        df = -f*du_r*T⁻¹
-        d2f = (df*du_r + f*d2u_r)*-T⁻¹
+        f = exp(-u_r*θ)
+        df = -θ*f*du_r
+        d2f = df*df - θ*d2u_r*f
         return f, f/df, df/d2f
     end
     j = j0
