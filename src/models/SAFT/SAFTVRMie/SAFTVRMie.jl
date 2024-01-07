@@ -196,11 +196,17 @@ function vr_mie_d_integral(θ,λa,λr)
     λrinv = 1/λr
     λaλr = λa/λr
     if θ > 1
-        f_laguerre(x) = x^(-λrinv)*exp(θ*x^(λaλr))*λrinv/x
+        function f_laguerre(x)
+            lnx = log(x)
+            return exp(-λrinv*lnx)*exp(θ*exp(lnx*λaλr))*λrinv/x
+        end
         return Solvers.laguerre10(f_laguerre,θ,one(θ))
     else
         j = d_vrmie_cut(θ,λa,λr)
-        f_legendre(x) = exp(-θ*(x^(-λr)-x^(-λa)))
+        function f_legendre(x) 
+            lnx = log(x)
+            return exp(-θ*(exp(-λr*lnx)-exp(-λa*lnx)))
+        end
         return  Solvers.integral10(f_legendre,j,one(j))
     end
 end
@@ -214,8 +220,11 @@ function d_vrmie_cut(θ,λa,λr)
     # exp(-u(r)/T), d[exp(-u(r))/T)]/dr, d2[exp(-u(r))/T)]/dr2
     function fdfd2f(r)
         r⁻¹ = 1/r
-        rλr = r^-λr
-        rλa = r^-λa
+        lnr = log(r)
+        rλr = exp(-lnr*λr)
+        rλa = exp(-lnr*λa)
+        #rλr = r^-λr
+        #rλa = r^-λa
         u_r = rλr - rλa #u/C*ϵ
         du_ra = rλa*r⁻¹*(-λa)
         du_rr = rλr*r⁻¹*(-λr)
