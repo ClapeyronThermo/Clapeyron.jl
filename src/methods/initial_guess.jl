@@ -182,7 +182,6 @@ function x0_sat_pure(model,T)
     with Tc, we can also know in what regime we are.
     in near critical pressures, we use directly vv0 = -2B
     and vl0 = 4*lb_v
-    
     [1]
     DOI: 10.1007/s10910-007-9272-4
     Journal of Mathematical Chemistry, Vol. 43, No. 4, May 2008 (© 2007)
@@ -289,11 +288,12 @@ end
 function x0_sat_pure_near0(model, T,vl0 = volume(model,zero(T),T,phase =:liquid))
     R̄ = Rgas(model)
     z = SA[1.0]
+    RT = R̄*T
     ares = a_res(model, vl0, T, z)
-    lnϕ_liq0 = ares - 1 + log(R̄*T/vl0)
-    P0 = exp(lnϕ_liq0)
-    vl = volume(model,P0,T,z,vol0 = vl0)
-    vv = R̄*T/P0
+    lnϕ_liq0 = ares - 1 + log(RT/vl0)
+    P = exp(lnϕ_liq0)
+    vl = volume(model,P,T,z,vol0 = vl0)
+    vv = RT/P
     return vl,vv
 end
 
@@ -407,6 +407,51 @@ function vdw_x0_xat_pure(T,T_c,P_c,V_c)
     return (Vl0,Vv0)
 end
 
+#=
+if we are near the critical point and we know it, we can use corresponding states to
+obtain a good guess
+=#
+
+function _propaneref_rholsat(T)
+    T_c = 369.89
+    ρ_c = 5000.0
+    T>T_c && return zero(T)/zero(T)
+    Tr = T/T_c
+    θ = 1.0-Tr
+    ρ_l = (1.0 + 1.82205*θ^0.345 + 0.65802*θ^0.74 + 0.21109*θ^2.6 + 0.083973*θ^7.2)*ρ_c
+    return ρ_l
+end
+
+function _propaneref_rhovsat(T)
+    T_c = 369.89
+    ρ_c = 5000.0
+    T>T_c && return zero(T)/zero(T)
+    Tr = T/T_c
+    θ = 1.0 - Tr
+    log_ρ_v_ρ_c = (-2.4887*θ^0.3785 -5.1069*θ^1.07 -12.174*θ^2.7 -30.495*θ^5.5 -52.192*θ^10 -134.89*θ^20)
+    ρ_v = exp(log_ρ_v_ρ_c)*ρ_c
+    return ρ_v
+end
+
+function x0_sat_pure_crit(model,T,crit::Tuple)
+    Tc,Pc,Vc = crit
+    return x0_sat_pure_crit(model,T,Tc,Pc,Vc)
+end
+
+function x0_sat_pure_crit(model,T,Tc,Pc,Vc)
+    h = Vc*5000
+    T0 = 369.89*T/Tc
+    Vl0 = (1.0/_propaneref_rholsat(T0))*h
+    Vv0 = (1.0/_propaneref_rhovsat(T0))*h
+    _1 = SA[1.0]
+    return Vl0,Vv0
+end
+
+function x0_sat_pure_crit(model,T)
+    Tc,Pc,Vc = crit_pure(model)
+    return x0_sat_pure_crit(model,T,Tc,Pc,Vc)
+end
+
 function scale_sat_pure(model)
     p    = 1/p_scale(model,SA[1.0])
     μ    = 1/Rgas(model)/T_scale(model,SA[1.0])
@@ -482,37 +527,159 @@ Used in [`saturation_temperature`](@ref) with [`AntoineSaturation`](@ref).
 """
 function x0_saturation_temperature end
 
+function x0_saturation_temperature(model,p)
+    coeffs = antoine_coef(model)
+    if coeffs !== nothing
+        #return x0_saturation_temperature_antoine_coeff(model,p,coeffs)
+    end
+    #if we don't have knowledge of the critical point, perform virial approach.
+    #if obtaining the critical point is cheap, models can opt in by defining:
+    #=
+    x0_saturation_temperature(model::MyModel,p) = x0_saturation_temperature(model,p,crit_pure(model))
+    =#
+    return x0_saturation_temperature(model,p,nothing)
+end
+
+#virial approach, then refinement
 function x0_saturation_temperature(model::EoSModel,p,::Nothing)
-    crit = crit_pure(model)
-    return x0_saturation_temperature(model,p,crit)
+    return x0_saturation_temperature_virial(model,p)
 end
 
 function x0_saturation_temperature(model::EoSModel,p,crit::Tuple)
+    return x0_saturation_temperature_crit(model,p,crit)
+end
+
+#model has knowledge of the Antoine coefficients. use those to create an initial point.
+function x0_saturation_temperature_antoine_coeff(model,p,coeffs)
+    A,B,C = antoine_coef(model)
+    lnp̄ = log(p / p_scale(model))
+    T0 = T_scale(model)*(B/(A-lnp̄)-C)
+    Vl,Vv = x0_sat_pure(model,T0)
+    #take the liquid volume
+    pl0 = pressure(model,Vl,T0)
+    pv0 = pressure(model,Vv,T0)
+    if 0.8*p < pl0 < 1.2*p
+        return (T0,Vl,Vv)
+    end
+
+    #normally, the use of coefficients produce T0 values too far below from the real result, we add a correction
+    R̄ = Rgas(model)
+    Vv0 = R̄*T0/p
+    dpdt = (VT_entropy(model,Vv0,T0) - VT_entropy(model,Vl,T0))/(Vv0 - Vl)
+    Δp = p - pl0
+    T = T0 + Δp/dpdt
+    ΔS = (VT_entropy(model,Vv0,T0) - VT_entropy(model,Vl,T0))
+    dp = p - pl0
+    Δv = Vv0 - Vl
+    dpdt = ΔS/Δv
+    dT = dp/dpdt    #(T - T0)
+    T1 = T0 + dT
+    if T1 < 0 || dT > T0#???
+        T1 = T0 #error found while testing, better catch it earlier
+    end
+
+    Vv1 = 2*R̄*T1/p #add factor to allow easier iteration
+    if Vv1/Vl > 10000
+        Vl = volume(model,p,T,phase = :liquid)
+        Vv1 = volume(model,p,T,phase = :gas)
+    end
+    return (T1,Vl,Vv1)
+end
+
+function x0_saturation_temperature_crit(model::EoSModel,p,crit)
     Tc,Pc,Vc = crit
-    A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941)
+    A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941) #universal antoine constants (RK)
     if Pc < p
         nan = zero(p)/zero(p)
         return (nan,nan,nan)
     end
     lnp̄ = log(p / Pc)
     T0 = Tc*(B/(A-lnp̄)-C)
-    pii,vli,vvi = saturation_pressure(model,T0,ChemPotVSaturation(;crit))
 
-    if isnan(pii)
-        nan = zero(p)/zero(p)
-        return (nan,nan,nan)
+    if p/Pc > 0.95
+        vl,vv = x0_sat_pure_crit(model,T0,crit)
+    else
+        T,_ = refine_x0_saturation_temperature(model,p,T0,crit)
+        vv = volume(model,p,T,phase = :gas)
+        vl = volume(model,p,T,phase = :liquid)
+    end
+    return T,vl,vv
+end
+
+#refine an initial temperature for x0_saturation_pressure, via calculating the saturation pressure at that temperature
+#and performing second order extrapolation.
+function refine_x0_saturation_temperature(model,p,T0,crit::Union{Nothing,Tuple})
+    #we want to use the crit point if available.
+    return refine_x0_saturation_temperature(model,p,T0,ChemPotVSaturation(;crit,crit_retry = isnothing(crit)))
+end
+
+function refine_x0_saturation_temperature(model,p,T0)
+    return refine_x0_saturation_temperature(model,p,T0,ChemPotVSaturation(crit_retry = false))
+end
+
+function refine_x0_saturation_temperature(model,p,T0,satmethod,multiple::Bool = false)
+    T = T0*oneunit(eltype(model))*oneunit(p)*1.0
+    dT = one(T)/zero(T)
+    nan = zero(T)/zero(T)
+    sat = (nan,nan,nan)
+    n = multiple ? 10 : 1
+    for i in 1:n
+        sat = saturation_pressure(model,T,satmethod)
+        pii,vli,vvi = sat
+        if isnan(pii)
+            return zero(pii)/zero(pii), sat
+        end
+        dpdT = (VT_entropy(model,vvi,T) - VT_entropy(model,vli,T))/(vvi - vli)
+        dTdp = 1/dpdT
+        Δp = (p-pii)
+        dT = clamp(dTdp*Δp,-0.5*T,0.5*T)
+        T = T + dT
+        !multiple && return T,sat
+        if abs(dT)/T < 0.02
+            return T,sat
+        end
+    end
+    return T,sat
+end
+
+function x0_saturation_temperature_virial(model,p,T0::XX = 0.9*T_scale(model)*oneunit(p)*1.0,refine::Bool = true) where XX
+    #=
+    we use the "γT-γc" strategy:
+    we find a value of T such as γc(γT)*pv_virial = p, that is, we suppose p is a liquid pressure.
+    note that this objective does not have nested iterative calculations, and the function shape is smooth
+    =#
+    function f(_T::X) where X
+        R = Rgas(model)
+        B = second_virial_coefficient(model,_T)
+        pv_virial = -0.25*R*_T/B
+        pv_eos = pressure(model,-2*B,_T)
+        aγ,bγ,cγ = 1.2442071971165476e-5, -8.695786307570637, 1.0505452946870144
+        γT = pv_eos/pv_virial
+        γc = aγ*exp(-γT*bγ) + cγ
+        pl_eos = γc*pv_virial
+        return pl_eos  - p
     end
 
-    Δp = (p-pii)
-    S_v = VT_entropy(model,vvi,T0)
-    S_l = VT_entropy(model,vli,T0)
-    ΔS = S_v - S_l
-    ΔV = vvi - vli
-    dpdt = ΔS/ΔV #≈ (p - pii)/(T-Tnew)
-    T = T0 + Δp/dpdt
-    vv = volume_virial(model,p,T)
-    vl = 0.3*lb_volume(model) + 0.7*vli
-    return (T,vl,vv)
+    #this line causes allocations
+    prob = Roots.ZeroProblem(f,T0)
+    T = Roots.solve(prob)
+    #if refine
+    #    T,sat = refine_x0_saturation_temperature(model,p,T)
+    #    _,vli,_ = sat
+    #end
+    Vl0,Vv0 = x0_sat_pure(model,T)
+    pv0 = pressure(model,Vl0,T)
+    if 0.8*p < pv0 < 1.2*p
+        return (T,Vl0,Vv0)
+    elseif Vv0/Vl0 > 10000
+        vl = volume(model,p,T,phase = :liquid)
+        vv = volume(model,p,T,phase = :gas)
+        return T,vl,vv
+    else
+        t,sat = refine_x0_saturation_temperature(model,p,T)
+        _,vl,vv = sat
+        return t,vl,vv
+    end
 end
 
 """

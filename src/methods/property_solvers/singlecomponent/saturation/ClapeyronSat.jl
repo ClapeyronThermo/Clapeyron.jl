@@ -1,7 +1,7 @@
 struct ClapeyronSaturation{T,C,M<:SaturationMethod} <: SaturationMethod
     T0::T
     crit::C
-    satmethod::M  
+    satmethod::M
 end
 
 """
@@ -32,7 +32,7 @@ function saturation_temperature_impl(model::EoSModel,p,method::ClapeyronSaturati
     end
     SatMethod = parameterless_type(method.satmethod)
     satmethod = SatMethod(;crit)
-    T0,_,_ = x0_saturation_temperature(model,p,crit)
+    T0,_,_ = x0_saturation_temperature_crit(model,p,crit)
     method_init = ClapeyronSaturation(T0,crit,satmethod)
     return saturation_temperature_impl(model,p,method_init)
 end
@@ -51,6 +51,8 @@ end
 function Obj_sat_pure_T(model,T,p,cache,satmethod)
     Told,pold,_,_,_ = cache[]
     pii,vli,vvi = saturation_pressure(model,T,satmethod)
+    Ti,sat = refine_x0_saturation_temperature(model,p,T,satmethod,false)
+    pii,vli,vvi = sat
     Δp = (p-pii)
     abs(Δp) < 4eps(p) && return T
     #if abs(Δp/p) < 0.01
@@ -61,13 +63,7 @@ function Obj_sat_pure_T(model,T,p,cache,satmethod)
             return (T+Told)/2
         end
     end
-    cache[] = (T,pii,vli,vvi,false) 
-    S_v = VT_entropy(model,vvi,T)
-    S_l = VT_entropy(model,vli,T)
-    ΔS = S_v - S_l
-    ΔV = vvi - vli
-    dpdt = ΔS/ΔV #≈ (p - pii)/(T-Tnew)
-    Ti = T + Δp/dpdt
+    cache[] = (T,pii,vli,vvi,false)
     return Ti
 end
 

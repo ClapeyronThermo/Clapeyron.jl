@@ -139,6 +139,13 @@ end
     return F̄,J
 end
 
+function J23(f::F,x::SVector{3,R}) where {F,R<:Real}
+    return J3(f,x)
+end
+
+function J23(f::F,x::SVector{2,R}) where {F,R<:Real}
+    return J2(f,x)
+end
 
 function ∂2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)

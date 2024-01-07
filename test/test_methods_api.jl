@@ -522,7 +522,7 @@ end
         # FIXME: The test does not yield the same value depending on the OS and the julia version
     end
 
-    @testset "saturation pressures" begin
+    @testset "saturation points without critical point" begin
         model1 = PCSAFT("water")
         Tc1,_,_ = crit_pure(model1)
         T1 = 0.995Tc1
@@ -541,7 +541,10 @@ end
             model3 = SAFTVRMie("heptacosane",userlocations = (Mw = 380.44,segment = 2.0,sigma = 3.0,lambda_a = 6.0,lambda_r = 20.01,epsilon = 200.51))
             @test Clapeyron.saturation_pressure(model3,94.33,crit_retry = false)[1] ≈ 2.8668634416924506 rtol = 1e-6
         end
-    end
 
+        model4 = SAFTVRMie(["methanol"])
+        T4 = 164.7095044742657
+        @test Clapeyron.saturation_pressure(model4,T4,crit_retry = false)[1] ≈ 0.02610821545005174 rtol = 1e-6
+    end
 end
 
