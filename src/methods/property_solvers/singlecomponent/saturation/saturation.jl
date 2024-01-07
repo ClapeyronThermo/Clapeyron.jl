@@ -83,12 +83,13 @@ function check_valid_eq2(model1,model2,P_sat,V1,V2,T,ε0 = 5e7)
     ε <= ε0 && return false
     p1,dpdv1 = p∂p∂V(model1,V1,T,SA[1.0])
     p2,dpdv2 = p∂p∂V(model2,V2,T,SA[1.0])
-    ε1 = ε0*eps(P_sat)
+    #εp1 = abs(dpdv1*(eps(V1)))
+    #εp2 = abs(dpdv2*(eps(V2)))
+    ε1 = ε0*max(eps(P_sat),eps(typeof(P_sat)))
+    pm = 0.5*(p1+p2)
+    εp = abs(pm-P_sat)
     return  (dpdv1 <= 0)        && #mechanical stability of the liquid phase
-            (dpdv2 <= 0)        && #mechanical stability of the vapour phase
-            (1 - p1/P_sat < ε1)  && #calculated pressure for liquid phase is aproximately the same
-            (1 - p2/P_sat < ε1)     #calculated pressure for vapour phase is aproximately the same
-    #if ΔV > ε then Vl and Vv are different values
+            (dpdv2 <= 0)        #&& #mechanical stability of the vapour phase
 end
 
 """
