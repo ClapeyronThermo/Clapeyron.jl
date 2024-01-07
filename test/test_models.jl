@@ -639,6 +639,9 @@ end
         @test Clapeyron.ideal_consistency(system, V, T, z) ≈ 0.0 rtol = 1e-14
         @test Clapeyron.a_res(system, V, T, z) ≈ -1.1706377677539772 rtol = 1e-6
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
+
+        system_R = Clapeyron.GERG2008(["methane","ethane"],Rgas = 8.2)
+        @test Clapeyron.Rgas(system_R) == 8.2
     end
 
     @testset "EOS-LNG" begin
