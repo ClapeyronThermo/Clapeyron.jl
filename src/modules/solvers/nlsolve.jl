@@ -93,36 +93,45 @@ struct Newton2Var end
 
 function nlsolve2(f,x,method::Newton2Var,options=NEqOptions(),chunk = ForwardDiff.Chunk{2}())
     function FJ(_z)
-        return J2(f,_z)
+        if length(_z) == 2
+            return J2(f,_z)
+        else
+            return J3(f,_z)
+        end
     end
-    t0 = time()
-
     Fx, Jx = FJ(x)
     z = x
     T = eltype(Fx)
     stoptol = T(options.f_abstol)
     ρF0, ρ2F0 = norm(Fx, Inf), norm(Fx, 2)
-    ρs = T(NaN)
+    nan = T(NaN)
+    ρs = nan
     if ρF0 < stoptol
         return x
     end
     iter = 1
+    converged = false
     while iter ≤ options.maxiter
         d = Jx \ -Fx
-        z = x
         x = x + d
-        #@show d
         Fx, Jx = FJ(x)
         ρF = norm(Fx, Inf)
-        ρs = max(abs(x[1] - z[1]),abs(x[2] - z[2]))
-        if ρF <= stoptol || ρs <= stoptol
+        ρs = norm(d,Inf)
+        if ρs <= stoptol || ρF <= stoptol
+            converged = true
             break
         end
 
-        if isnan(x[1]) || isnan(x[2])
+        if !all(isfinite,x)
+            converged = false
             break
         end
         iter += 1
     end
-    return x
+    if converged
+        return x
+    else
+        x  = nan .* x
+        return x
+    end
 end

@@ -15,13 +15,10 @@ function svec2(x1,x2,opt = true)
     V01,V02,_ = promote(x1,x2,opt)
     return SVector{2}(V01,V02)
 end
-"""
-    dnorm(x,y,p)
 
-Equivalent to `norm((xi-yi for (xi, yi) in zip(x, y)), p)`
-"""
-function dnorm(x,y,p = 2)
-    return norm((xi-yi for (xi, yi) in zip(x, y)), p)
+function svec3(x1,x2,x3,opt = true)
+    V01,V02,V03,_ = promote(x1,x2,x3,opt)
+    return SVector{3}(V01,V02,V03)
 end
 
 """
