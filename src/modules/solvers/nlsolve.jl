@@ -91,7 +91,7 @@ end
 
 struct Newton2Var end
 
-function nlsolve2(f,x,method::Newton2Var,options=NEqOptions())
+function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions()) where {FF,NN,TT}
     function FJ(_z)
         return J23(f,_z)
     end
@@ -102,6 +102,7 @@ function nlsolve2(f,x,method::Newton2Var,options=NEqOptions())
     ρF0, ρ2F0 = norm(Fx, Inf), norm(Fx, 2)
     nan = T(NaN)
     ρs = nan
+    #@show ρF0
     if ρF0 < stoptol
         return x
     end
@@ -109,10 +110,12 @@ function nlsolve2(f,x,method::Newton2Var,options=NEqOptions())
     converged = false
     while iter ≤ options.maxiter
         d = Jx \ -Fx
+        #@show Jx, Fx
         x = x + d
         Fx, Jx = FJ(x)
-        ρF = maximum(abs,Fx)
+        ρF = norm(Fx, Inf)
         ρs = norm(d, Inf)
+        #@show ρF, ρs
         if ρs <= stoptol || ρF <= stoptol
             converged = true
             break

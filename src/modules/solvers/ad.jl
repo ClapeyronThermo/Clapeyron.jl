@@ -120,8 +120,20 @@ end
     return F̄,J
 end
 
-@inline function J3(f::F,x::SVector{3,R}) where {F,R<:Real}
-    T = typeof(ForwardDiff.Tag(f, R))
+@inline function J3(f::FF,x::SVector{3,R}) where {FF,R<:Real}
+    #=
+    ∂result = DiffResults.GradientResult(x)
+    res_∂F = ForwardDiff.jacobian!(∂result, f, x)
+    F =  DiffResults.value(res_∂F)
+    J = DiffResults.jacobian(res_∂F)
+    =#
+
+    F = f(x)
+    J = ForwardDiff.jacobian(f,x)
+
+
+
+    #=T = typeof(ForwardDiff.Tag(f, R))
     _1 = oneunit(R)
     _0 = zero(R)
     x1,x2 = x
@@ -131,12 +143,16 @@ end
     dx = SVector(dual1,dual2,dual3)
     f̄ = f(dx)
     f̄1,f̄2,f̄3 = f̄[1],f̄[2],f̄[3]
-    F̄ = SVector(f̄1.value , f̄2.value, f̄3.value)
+    F̄ = SVector(f̄1.value, f̄2.value, f̄3.value)
     df1dx1, df1dx2, df1dx3 = f̄1.partials.values
     df2dx1, df2dx2, df2dx3 = f̄2.partials.values
     df3dx1, df3dx2, df3dx3 = f̄3.partials.values
-    J = SMatrix{3}(df1dx1,df2dx1,df3dx1,df1dx2,df2dx2,df3dx2,df1dx3,df2dx3,df3dx3)
-    return F̄,J
+    J = [df1dx1 df2dx1 df3dx1
+        df1dx2 df2dx2 df3dx2
+        df1dx3 df2dx3 df3dx3]
+
+    return F̄,J =#
+    return F,J
 end
 
 function J23(f::F,x::SVector{3,R}) where {F,R<:Real}

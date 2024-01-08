@@ -528,6 +528,7 @@ Used in [`saturation_temperature`](@ref) with [`AntoineSaturation`](@ref).
 function x0_saturation_temperature end
 
 function x0_saturation_temperature(model,p)
+    single_component_check(x0_saturation_temperature,model)
     coeffs = antoine_coef(model)
     if coeffs !== nothing
         #return x0_saturation_temperature_antoine_coeff(model,p,coeffs)
@@ -557,33 +558,16 @@ function x0_saturation_temperature_antoine_coeff(model,p,coeffs)
     Vl,Vv = x0_sat_pure(model,T0)
     #take the liquid volume
     pl0 = pressure(model,Vl,T0)
-    pv0 = pressure(model,Vv,T0)
     if 0.8*p < pl0 < 1.2*p
         return (T0,Vl,Vv)
+    elseif Vl/Vl > 10000
+        return x0_saturation_temperature_near0(model,p,Vl,T1)
+    else
+        Ts,sat = refine_x0_saturation_temperature(model,p,T0)
+        Vl = volume(model,p,Ts, phase = :liquid)
+        Vv = volume(model,p,Ts, phase = :gas)
+        return (Ts,Vl,Vv)
     end
-
-    #normally, the use of coefficients produce T0 values too far below from the real result, we add a correction
-    R̄ = Rgas(model)
-    Vv0 = R̄*T0/p
-    dpdt = (VT_entropy(model,Vv0,T0) - VT_entropy(model,Vl,T0))/(Vv0 - Vl)
-    Δp = p - pl0
-    T = T0 + Δp/dpdt
-    ΔS = (VT_entropy(model,Vv0,T0) - VT_entropy(model,Vl,T0))
-    dp = p - pl0
-    Δv = Vv0 - Vl
-    dpdt = ΔS/Δv
-    dT = dp/dpdt    #(T - T0)
-    T1 = T0 + dT
-    if T1 < 0 || dT > T0#???
-        T1 = T0 #error found while testing, better catch it earlier
-    end
-
-    Vv1 = 2*R̄*T1/p #add factor to allow easier iteration
-    if Vv1/Vl > 10000
-        Vl = volume(model,p,T,phase = :liquid)
-        Vv1 = volume(model,p,T,phase = :gas)
-    end
-    return (T1,Vl,Vv1)
 end
 
 function x0_saturation_temperature_crit(model::EoSModel,p,crit)
@@ -598,6 +582,9 @@ function x0_saturation_temperature_crit(model::EoSModel,p,crit)
 
     if p/Pc > 0.95
         vl,vv = x0_sat_pure_crit(model,T0,crit)
+    elseif lnp̄ < -3
+        vl0 = volume(model,p,T0,phase =:l)
+        return x0_saturation_temperature_near0(model,p,vl0,T0)
     else
         T,_ = refine_x0_saturation_temperature(model,p,T0,crit)
         vv = volume(model,p,T,phase = :gas)
@@ -663,23 +650,36 @@ function x0_saturation_temperature_virial(model,p,T0::XX = 0.9*T_scale(model)*on
     #this line causes allocations
     prob = Roots.ZeroProblem(f,T0)
     T = Roots.solve(prob)
-    #if refine
-    #    T,sat = refine_x0_saturation_temperature(model,p,T)
-    #    _,vli,_ = sat
-    #end
     Vl0,Vv0 = x0_sat_pure(model,T)
-    pv0 = pressure(model,Vl0,T)
-    if 0.8*p < pv0 < 1.2*p
-        return (T,Vl0,Vv0)
-    elseif Vv0/Vl0 > 10000
-        vl = volume(model,p,T,phase = :liquid)
-        vv = volume(model,p,T,phase = :gas)
-        return T,vl,vv
+    pl0 = pressure(model,Vl0,T)    
+    Vv0 = volume(model,p,T,phase = :v) #this could fail. if it does, the Vv/Vl condition does not hold.
+    if Vv0/Vl0 > 10000
+        r =  x0_saturation_temperature_near0(model,p,Vl0,T0)
     else
         t,sat = refine_x0_saturation_temperature(model,p,T)
         _,vl,vv = sat
         return t,vl,vv
     end
+end
+
+function x0_saturation_temperature_near0(model,p,vl0,T0 = 0.9*T_scale(model)*oneunit(p)*1.0)   
+    function __f0(V)
+        R = Rgas(model)
+        z = SA[1.0]
+        T,vl = V[1],exp(V[2])
+        ares = a_res(model, vl, T, z)
+        lnϕ_liq0 = ares - 1 + log(R*T/vl)
+        F1 = exp(lnϕ_liq0) - p
+        F2 = pressure(model,vl,T) - p
+        return SVector(F1/p,F2/p)
+    end
+    logv0 = log(vl0)
+    x0 = svec2(T0,logv0,p)
+    sol = Solvers.nlsolve2(__f0,x0,Solvers.Newton2Var())
+    Ts = sol[1]
+    Vl = exp(sol[2])
+    Vv = Rgas(model)*Ts/p 
+    return Ts,Vl,Vv
 end
 
 """
