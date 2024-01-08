@@ -353,6 +353,11 @@ function x0_sat_pure(model::ABCubicModel, T)
     return (vl, vv)
 end
 
+function x0_saturation_temperature(model::ABCubicModel,p,::Nothing)
+    crit = crit_pure(model)
+    return x0_saturation_temperature_crit(model, p, crit)
+end
+
 #=
 #on the dpdv limit:
 dp/dv = 0

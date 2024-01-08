@@ -74,8 +74,9 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation{TT,VV,CC}
             Vl,Vv = method.vl,method.vv
         end
     elseif isnothing(method.vl) && isnothing(method.vv)
-        Vl,Vv = x0_sat_pure(model,method.T0)
+        Vl,_ = x0_sat_pure(model,method.T0)
         T0 = method.T0
+        Vv = Rgas(model)*T0/p
     else
         T0,Vl,Vv = method.T0,method.vl,method.vv
     end
