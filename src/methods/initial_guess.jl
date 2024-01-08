@@ -543,7 +543,7 @@ end
 
 #virial approach, then refinement
 function x0_saturation_temperature(model::EoSModel,p,::Nothing)
-    return x0_saturation_temperature_virial(model,p)
+    return x0_saturation_temperature_refine(model,p)
 end
 
 function x0_saturation_temperature(model::EoSModel,p,crit::Tuple)
@@ -555,19 +555,7 @@ function x0_saturation_temperature_antoine_coeff(model,p,coeffs)
     A,B,C = antoine_coef(model)
     lnp̄ = log(p / p_scale(model))
     T0 = T_scale(model)*(B/(A-lnp̄)-C)
-    Vl,Vv = x0_sat_pure(model,T0)
-    #take the liquid volume
-    pl0 = pressure(model,Vl,T0)
-    if 0.8*p < pl0 < 1.2*p
-        return (T0,Vl,Vv)
-    elseif Vl/Vl > 10000
-        return x0_saturation_temperature_near0(model,p,Vl,T1)
-    else
-        Ts,sat = refine_x0_saturation_temperature(model,p,T0)
-        Vl = volume(model,p,Ts, phase = :liquid)
-        Vv = volume(model,p,Ts, phase = :gas)
-        return (Ts,Vl,Vv)
-    end
+    return x0_saturation_temperature_refine(model,p,T0)
 end
 
 function x0_saturation_temperature_crit(model::EoSModel,p,crit)
@@ -579,32 +567,21 @@ function x0_saturation_temperature_crit(model::EoSModel,p,crit)
     end
     lnp̄ = log(p / Pc)
     T0 = Tc*(B/(A-lnp̄)-C)
-
-    if p/Pc > 0.95
-        vl,vv = x0_sat_pure_crit(model,T0,crit)
-    elseif lnp̄ < -3
-        vl0 = volume(model,p,T0,phase =:l)
-        return x0_saturation_temperature_near0(model,p,vl0,T0)
-    else
-        T,_ = refine_x0_saturation_temperature(model,p,T0,crit)
-        vv = volume(model,p,T,phase = :gas)
-        vl = volume(model,p,T,phase = :liquid)
-    end
-    return T,vl,vv
+    return x0_saturation_temperature_refine(model,p,T0)
 end
 
 #refine an initial temperature for x0_saturation_pressure, via calculating the saturation pressure at that temperature
 #and performing second order extrapolation.
-function refine_x0_saturation_temperature(model,p,T0,crit::Union{Nothing,Tuple})
+function dpdTsat_step(model,p,T0,crit::Union{Nothing,Tuple})
     #we want to use the crit point if available.
-    return refine_x0_saturation_temperature(model,p,T0,ChemPotVSaturation(;crit,crit_retry = isnothing(crit)))
+    return dpdTsat_step(model,p,T0,ChemPotVSaturation(;crit,crit_retry = isnothing(crit)))
 end
 
-function refine_x0_saturation_temperature(model,p,T0)
-    return refine_x0_saturation_temperature(model,p,T0,ChemPotVSaturation(crit_retry = false))
+function dpdTsat_step(model,p,T0)
+    return dpdTsat_step(model,p,T0,ChemPotVSaturation(crit_retry = false))
 end
 
-function refine_x0_saturation_temperature(model,p,T0,satmethod,multiple::Bool = false)
+function dpdTsat_step(model,p,T0,satmethod,multiple::Bool = false)
     T = T0*oneunit(eltype(model))*oneunit(p)*1.0
     dT = one(T)/zero(T)
     nan = zero(T)/zero(T)
@@ -616,11 +593,19 @@ function refine_x0_saturation_temperature(model,p,T0,satmethod,multiple::Bool = 
         if isnan(pii)
             return zero(pii)/zero(pii), sat
         end
+        #=
+        we use 1/T = 1/T0 + k*log(p/p0)
+        k = -p0/(dpdT*T*T) 
+        dpdT(saturation) = Δs/Δv (Clapeyron equation)
+        =#
         dpdT = (VT_entropy(model,vvi,T) - VT_entropy(model,vli,T))/(vvi - vli)
-        dTdp = 1/dpdT
-        Δp = (p-pii)
-        dT = clamp(dTdp*Δp,-0.5*T,0.5*T)
-        T = T + dT
+        dTinvdlnp = -pii/(dpdT*T*T)
+        Δlnp = log(p/pii)
+        #dT = clamp(dTdp*Δp,-0.5*T,0.5*T)
+        Tinv0 = 1/T
+        Tinv = Tinv0 + dTinvdlnp*Δlnp
+        dT = T - 1/Tinv
+        T = 1/Tinv
         !multiple && return T,sat
         if abs(dT)/T < 0.02
             return T,sat
@@ -629,57 +614,12 @@ function refine_x0_saturation_temperature(model,p,T0,satmethod,multiple::Bool = 
     return T,sat
 end
 
-function x0_saturation_temperature_virial(model,p,T0::XX = 0.9*T_scale(model)*oneunit(p)*1.0,refine::Bool = true) where XX
-    #=
-    we use the "γT-γc" strategy:
-    we find a value of T such as γc(γT)*pv_virial = p, that is, we suppose p is a liquid pressure.
-    note that this objective does not have nested iterative calculations, and the function shape is smooth
-    =#
-    function f(_T::X) where X
-        R = Rgas(model)
-        B = second_virial_coefficient(model,_T)
-        pv_virial = -0.25*R*_T/B
-        pv_eos = pressure(model,-2*B,_T)
-        aγ,bγ,cγ = 1.2442071971165476e-5, -8.695786307570637, 1.0505452946870144
-        γT = pv_eos/pv_virial
-        γc = aγ*exp(-γT*bγ) + cγ
-        pl_eos = γc*pv_virial
-        return pl_eos  - p
-    end
-
-    #this line causes allocations
-    prob = Roots.ZeroProblem(f,T0)
-    T = Roots.solve(prob)
-    Vl0,Vv0 = x0_sat_pure(model,T)
-    pl0 = pressure(model,Vl0,T)    
-    Vv0 = volume(model,p,T,phase = :v) #this could fail. if it does, the Vv/Vl condition does not hold.
-    if Vv0/Vl0 > 10000
-        r =  x0_saturation_temperature_near0(model,p,Vl0,T0)
-    else
-        t,sat = refine_x0_saturation_temperature(model,p,T)
-        _,vl,vv = sat
-        return t,vl,vv
-    end
-end
-
-function x0_saturation_temperature_near0(model,p,vl0,T0 = 0.9*T_scale(model)*oneunit(p)*1.0)   
-    function __f0(V)
-        R = Rgas(model)
-        z = SA[1.0]
-        T,vl = V[1],exp(V[2])
-        ares = a_res(model, vl, T, z)
-        lnϕ_liq0 = ares - 1 + log(R*T/vl)
-        F1 = exp(lnϕ_liq0) - p
-        F2 = pressure(model,vl,T) - p
-        return SVector(F1/p,F2/p)
-    end
-    logv0 = log(vl0)
-    x0 = svec2(T0,logv0,p)
-    sol = Solvers.nlsolve2(__f0,x0,Solvers.Newton2Var())
-    Ts = sol[1]
-    Vl = exp(sol[2])
-    Vv = Rgas(model)*Ts/p 
-    return Ts,Vl,Vv
+function x0_saturation_temperature_refine(model,p,T0::XX = 0.9*T_scale(model)*oneunit(p)*1.0,refine::Bool = true) where XX
+    t,sat = dpdTsat_step(model,p,T0)
+    _,vl,vv = sat
+    vl = volume(model,p,t,phase = :liquid)
+    vv = volume(model,p,t,phase = :gas)
+    return t,vl,vv
 end
 
 """
