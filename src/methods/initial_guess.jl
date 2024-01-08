@@ -581,7 +581,7 @@ function dpdTsat_step(model,p,T0)
     return dpdTsat_step(model,p,T0,ChemPotVSaturation(crit_retry = false))
 end
 
-function dpdTsat_step(model,p,T0,satmethod,multiple::Bool = false)
+function dpdTsat_step(model,p,T0,satmethod,multiple::Bool = true)
     T = T0*oneunit(eltype(model))*oneunit(p)*1.0
     dT = one(T)/zero(T)
     nan = zero(T)/zero(T)
@@ -606,7 +606,7 @@ function dpdTsat_step(model,p,T0,satmethod,multiple::Bool = false)
         Tinv = Tinv0 + dTinvdlnp*Δlnp
         dT = T - 1/Tinv
         T = 1/Tinv
-        !multiple && return T,sat
+        #!multiple && return T,sat
         if abs(dT)/T < 0.02
             return T,sat
         end
