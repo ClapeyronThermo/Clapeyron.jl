@@ -531,9 +531,8 @@ function x0_saturation_temperature(model,p)
     single_component_check(x0_saturation_temperature,model)
     coeffs = antoine_coef(model)
     if coeffs !== nothing
-        #return x0_saturation_temperature_antoine_coeff(model,p,coeffs)
+        return x0_saturation_temperature_antoine_coeff(model,p,coeffs)
     end
-    #if we don't have knowledge of the critical point, perform virial approach.
     #if obtaining the critical point is cheap, models can opt in by defining:
     #=
     x0_saturation_temperature(model::MyModel,p) = x0_saturation_temperature(model,p,crit_pure(model))
@@ -541,12 +540,13 @@ function x0_saturation_temperature(model,p)
     return x0_saturation_temperature(model,p,nothing)
 end
 
-#virial approach, then refinement
 function x0_saturation_temperature(model::EoSModel,p,::Nothing)
+    single_component_check(x0_saturation_temperature,model)
     return x0_saturation_temperature_refine(model,p)
 end
 
 function x0_saturation_temperature(model::EoSModel,p,crit::Tuple)
+    single_component_check(x0_saturation_temperature,model)
     return x0_saturation_temperature_crit(model,p,crit)
 end
 
