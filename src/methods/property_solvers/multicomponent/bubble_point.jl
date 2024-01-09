@@ -54,11 +54,11 @@ function initial_points_bd_T(pure,T,_crit = nothing,volatile = true, bubble = tr
     end
     #create initial point from critical values
     #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
-    dlnpdTinv,logp,Tcinv = __dlnPdTinvsat(pure,sat,crit,T,volatile,false)
-    lnp = logp + dlnpdTinv*(1/T - Tcinv)
+    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,T,volatile,false)
+    lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
     p0 = exp(lnp)
-    vl0 = Vc
-    vv0 = max(1.2*Vc,Rgas(pure)*T/p0)
+    vl0 = x0_volume(pure,p0,T,phase = :l)
+    vv0 = max(1.2*Vc,3*Rgas(pure)*T/Pc)
     return p0,vl0,vv0
 end
 
@@ -116,20 +116,22 @@ function __dlnPdTinvsat(pure,sat,crit,xx,in_media = true,is_sat_temperature = tr
     if is_sat_temperature
         T,vl,vv = sat
         p = xx
+        nan_check = isnan(T)
     else
         p,vl,vv = sat
         T = xx
+        nan_check = isnan(p)
     end
-    if in_media && !isnan(T)
+    if in_media && !nan_check
         Sl = VT_entropy(pure,vl,T)
         Sv = VT_entropy(pure,vv,T)
         dpdT = (Sv - Sl)/(vv - vl)
         return -dpdT*T*T/p,log(p),1/T
     elseif !in_media
         return zero(vl)
-    elseif !isnan(crit[1]) && crit[2] <= p
-        Tc,Vc,Pc = crit
-        _p(_T) = pressure(model,Vc,_T)
+    elseif !isnan(crit[1]) && (crit[1] <= T || crit[2] < p)
+        Tc,Pc,Vc = crit
+        _p(_T) = pressure(pure,Vc,_T)
         dpdT = Solvers.derivative(_p,Tc)
         return -dpdT*Tc*Tc/Pc,log(Pc),1/Tc
     else
