@@ -37,11 +37,12 @@ end
 
 function chebyshev_vapour_volume(model::ABCubicModel,T̃,b)
     Cₙ = chebyshev_coef_v(model)
-    Tmin = chebyshev_Tmin_v(model)
-    Tmax = chebyshev_Tmax_v(model)
-    for i ∈ 1:length(Cₙ)
-        Tmin_i = Tmin[i]
-        Tmax_i = Tmax[i]
+    T_range = chebyshev_Trange_v(model)
+    Tmin_i = T_range[1]
+    Tmax_i = Tmin_i
+    @inbounds for i ∈ 1:length(Cₙ)
+        Tmin_i = Tmax_i
+        Tmax_i = T_range[i+1]
         if Tmin_i <= T̃ <= Tmax_i
             Cₙi::Vector{Float64} = Cₙ[i]
             T̄ = (2*T̃ - (Tmax_i + Tmin_i)) / (Tmax_i - Tmin_i)
@@ -55,11 +56,12 @@ end
 
 function chebyshev_liquid_volume(model::ABCubicModel,T̃,b)
     Cₙ = chebyshev_coef_l(model)
-    Tmin = chebyshev_Tmin_l(model)
-    Tmax = chebyshev_Tmax_l(model)
-    for i ∈ 1:length(Cₙ)
-        Tmin_i = Tmin[i]
-        Tmax_i = Tmax[i]
+    T_range = chebyshev_Trange_l(model)
+    Tmin_i = T_range[1]
+    Tmax_i = Tmin_i
+    @inbounds for i ∈ 1:length(Cₙ)
+        Tmin_i = Tmax_i
+        Tmax_i = T_range[i+1]
         if Tmin_i <= T̃ <= Tmax_i
             Cₙi::Vector{Float64} = Cₙ[i]
             T̄ = (2*T̃ - (Tmax_i + Tmin_i)) / (Tmax_i - Tmin_i)
@@ -73,11 +75,12 @@ end
 
 function chebyshev_pressure(model::ABCubicModel,T̃,a,b)
     Cₙ = chebyshev_coef_p(model)
-    Tmin = chebyshev_Tmin_p(model)
-    Tmax = chebyshev_Tmax_p(model)
-    for i ∈ 1:length(Cₙ)
-        Tmin_i = Tmin[i]
-        Tmax_i = Tmax[i]
+    T_range = chebyshev_Trange_p(model)
+    Tmin_i = T_range[1]
+    Tmax_i = Tmin_i
+    @inbounds for i ∈ 1:length(Cₙ)
+        Tmin_i = Tmax_i
+        Tmax_i = T_range[i+1]
         if Tmin_i <= T̃ <= Tmax_i
             Cₙi::Vector{Float64} = Cₙ[i]
             T̄ = (2*T̃ - (Tmax_i + Tmin_i)) / (Tmax_i - Tmin_i)

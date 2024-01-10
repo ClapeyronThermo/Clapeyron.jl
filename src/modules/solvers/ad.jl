@@ -120,25 +120,32 @@ end
     return F̄,J
 end
 
-@inline function J3(f::F,x::SVector{3,R}) where {F,R<:Real}
+@inline function J3(f::FF,x::SVector{3,R}) where {FF,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
     _1 = oneunit(R)
     _0 = zero(R)
-    x1,x2 = x
-    dual1 = ForwardDiff.Dual{T,R,3}(x1, ForwardDiff.Partials((_1,_0,_0)))
-    dual2 = ForwardDiff.Dual{T,R,3}(x2, ForwardDiff.Partials((_0,_1,_0)))
-    dual3 = ForwardDiff.Dual{T,R,3}(x2, ForwardDiff.Partials((_0,_0,_1)))  
-    dx = SVector(dual1,dual2,dual3)
+    x1,x2,x3 = x
+    dx1 = ForwardDiff.Dual{T,R,3}(x1, ForwardDiff.Partials((_1,_0,_0)))
+    dx2 = ForwardDiff.Dual{T,R,3}(x2, ForwardDiff.Partials((_0,_1,_0)))
+    dx3 = ForwardDiff.Dual{T,R,3}(x3, ForwardDiff.Partials((_0,_0,_1)))  
+    dx = SVector(dx1,dx2,dx3)
     f̄ = f(dx)
     f̄1,f̄2,f̄3 = f̄[1],f̄[2],f̄[3]
-    F̄ = SVector(f̄1.value , f̄2.value, f̄3.value)
+    Fx = SVector(f̄1.value, f̄2.value, f̄3.value)
     df1dx1, df1dx2, df1dx3 = f̄1.partials.values
     df2dx1, df2dx2, df2dx3 = f̄2.partials.values
     df3dx1, df3dx2, df3dx3 = f̄3.partials.values
-    J = SMatrix{3}(df1dx1,df2dx1,df3dx1,df1dx2,df2dx2,df3dx2,df1dx3,df2dx3,df3dx3)
-    return F̄,J
+    Jx = SMatrix{3}(df1dx1,df2dx1,df3dx1,df1dx2,df2dx2,df3dx2,df1dx3,df2dx3,df3dx3)
+    return Fx,Jx
 end
 
+function J23(f::F,x::SVector{3,R}) where {F,R<:Real}
+    return J3(f,x)
+end
+
+function J23(f::F,x::SVector{2,R}) where {F,R<:Real}
+    return J2(f,x)
+end
 
 function ∂2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
     y1,y2 = promote(x1,x2)

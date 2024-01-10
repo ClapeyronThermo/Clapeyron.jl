@@ -124,22 +124,6 @@ function (f::ObjSatPure)(x)
     T = f.Tsat
     return Obj_Sat(model, T, exp(x[1]), exp(x[2]),scales)
 end
-#with the critical point, we can perform a
-#corresponding states approximation with the
-#propane reference equation of state
-function x0_sat_pure_crit(model,T,Tc,Pc,Vc)
-    h = Vc*5000
-    T0 = 369.89*T/Tc
-    Vl0 = (1.0/_propaneref_rholsat(T0))*h
-    Vv0 = (1.0/_propaneref_rhovsat(T0))*h
-    _1 = SA[1.0]
-    return Vl0,Vv0
-end
-
-function x0_sat_pure_crit(model,T)
-    Tc,Pc,Vc = crit_pure(model)
-    return x0_sat_pure_crit(model,T,Tc,Pc,Vc)
-end
 
 function sat_pure(f::ObjSatPure,V0,method)
     model, T = f.model, f.Tsat
