@@ -315,7 +315,6 @@ function x0_sat_pure(model::ABCubicModel, T)
         nan = zero(T) / zero(T)
         return (nan, nan)
     end
-
     a, b, c = cubic_ab(model, 1 / sqrt(eps(float(T))), T)
     data = (1.0, a, b, c)
     pc = model.params.Pc.values[1]
