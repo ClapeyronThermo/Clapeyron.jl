@@ -3,6 +3,7 @@
 ## New Features
 - Association models don't allocate anymore in the case of a single association site pair.
 - `saturation_pressure(model,T)` does not allocate if the calculation does not require a critical point calculation. Note that the function can still allocate if the EoS model itself allocates.
+- `saturation_temperature(model,T)` does not allocate if the calculation does not require a critical point calculation. Note that the function can still allocate if the EoS model itself allocates.
 - Bulk properties now accept a `vol0` initial point for the volume solver.
 - SAFT-VR-Mie uses a divided approach for calculating `d`: if T/ϵᵢ < 1, then it uses a
 5-point gauss-laguerre integrator. Otherwise, the Assen method of finding a cut point and integrating the rest is used. A description of the method is found here: https://teqp.readthedocs.io/en/latest/models/SAFT-VR-Mie.html. the cut allows for better accuracy at higher reduced temperatures.

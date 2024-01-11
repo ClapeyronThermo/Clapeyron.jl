@@ -67,7 +67,7 @@ end
 
 function saturation_temperature_impl(model,p,method::AntoineSaturation{TT,VV,CC}) where {TT,VV,CC}
     R̄ = Rgas(model)
-    scales = scale_sat_pure(model)
+    ps,μs = scale_sat_pure(model)
     if isnothing(method.T0)
         T0,Vl,Vv = x0_saturation_temperature(model,p)
         if !(isnothing(method.vl) && isnothing(method.vv))
@@ -87,11 +87,10 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation{TT,VV,CC}
     if isnan(T0)
         return fail
     end
-
-    res,converged = try_sat_temp(model,p,T0,Vl,Vv,scales,method)
+    res,converged = try_2ph_pure_temperature(model,p,T0,Vl,Vv,ps,μs,method)
     converged && return res
     T2,_,_ = res
-    
+
     if !isnothing(method.crit)
         Tc,pc,_ = method.crit
         p > pc && return fail
@@ -102,19 +101,21 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation{TT,VV,CC}
     #one (or two) saturation pressure calculations are normally faster than a crit pure calculation
     (p2,vl2,vv2) = saturation_pressure(model,T2,ChemPotVSaturation(crit_retry = false))
     if !isnan(p2) #nice, psat(T2) exists, we can now produce a really good estimate of the saturation temperature
-        ΔHvap = (VT_enthalpy(model,vv2,T2) - VT_enthalpy(model,vl2,T2))
-        #log(p/p2) = (ΔHvap/R̄)(1/T2 - 1/T)
-        #log(p/p2)*R̄/ΔHvap = 1/T - 1/T2
-        T3 = 1/(log(p2/p)*R̄/ΔHvap + 1/T2)
-        (_,vl3,vv3) = saturation_pressure(model,T2,ChemPotVSaturation(crit_retry = false))
-        res,converged = try_sat_temp(model,p,T3,vl3,vv3,scales,method)
+        dpdT = (VT_entropy(model,vv2,T2) - VT_entropy(model,vl2,T2))/(vvi - vl2)
+        dTinvdlnp = -p2/(dpdT*T2*T2)
+        Δlnp = log(p/p2)
+        Tinv0 = 1/T2
+        Tinv = Tinv0 + dTinvdlnp*Δlnp
+        T3 = 1/Tinv
+        (_,vl3,vv3) = saturation_pressure(model,T3,ChemPotVSaturation(crit_retry = false))
+        res,converged = try_2ph_pure_temperature(model,p,T3,vl3,vv3,ps,μs,method)
         converged && return res
     end
     #no luck here, we need to calculate the critical point
-    if !method.crit_retry 
+    if !method.crit_retry
         return fail
     end
-    
+
     if isnothing(crit)
         crit = crit_pure(model)
     end
@@ -124,24 +125,11 @@ function saturation_temperature_impl(model,p,method::AntoineSaturation{TT,VV,CC}
         #you could still perform another iteration from a better initial point
         T3,Vl3,Vv3 = x0_saturation_temperature(model,p,crit)
         if !(Vl ≈ Vl3) && !(Vv ≈ Vv3) && !(T3 ≈ T0) #check if the initial points are not the same
-            res,converged = try_sat_temp(model,p,T3,Vl3,Vv3,scales,method)
+            res,converged = try_2ph_pure_temperature(model,p,T3,Vl3,Vv3,ps,μs,method)
             converged && return res
         end
     end
     return fail
 end
-
-function try_sat_temp(model,p,T0,Vl,Vv,scales,method::AntoineSaturation{TT,VV,CC}) where {TT,VV,CC}
-    V0 = svec3(T0,log(Vl),log(Vv),oneunit(eltype(model)))
-    #we solve volumes in a log scale
-    f(x) = Obj_Sat_Temp(model,x[1],exp(x[2]),exp(x[3]),p,scales)
-    sol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),NEqOptions(method))
-    T = sol[1]
-    Vlx = exp(sol[2])
-    Vvx = exp(sol[3])
-    converged = check_valid_sat_pure(model,p,Vlx,Vvx,T)
-    return (T,Vlx,Vvx),converged
-end
-
 
 export AntoineSaturation

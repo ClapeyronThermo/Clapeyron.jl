@@ -11,6 +11,15 @@ function vec2(x1,x2,opt = true)
     end
 end
 
+function vec3(x1,x2,x3,opt = true)
+    V01,V02,V03,_ = promote(x1,x2,x3,opt)
+    if V01 isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
+        return MVector(V01,V02,V03)
+    else
+        return SizedVector{2,typeof(V01)}((V01,V02,V03))
+    end
+end
+
 function svec2(x1,x2,opt = true)
     V01,V02,_ = promote(x1,x2,opt)
     return SVector{2}(V01,V02)

@@ -12,7 +12,7 @@
                         max_iters = 10^4)
 Default `saturation_pressure` Saturation method used by `Clapeyron.jl`. It uses equality of Chemical Potentials with a volume basis. If no volumes are provided, it will use  [`x0_sat_pure`](@ref).
 If those initial guesses fail and the specification is near critical point, it will try one more time, using Corresponding States instead.
-when `crit_retry` is true, if the initial solve fail, it will try to obtain a better estimate by calculating the critical point. 
+when `crit_retry` is true, if the initial solve fail, it will try to obtain a better estimate by calculating the critical point.
 `f_limit`, `atol`, `rtol`, `max_iters` are passed to the non linear system solver.
 """
 struct ChemPotVSaturation{T,C} <: SaturationMethod
@@ -64,21 +64,22 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
 end
 
 function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation{<:Number})
-    V0 = svec2(log(method.vl),log(method.vv),1.0*T*oneunit(eltype(model)))
-    V01,V02 = V0
-    TYPE = eltype(V0)
-    nan = zero(TYPE)/zero(TYPE)
-    f! = ObjSatPure(model,T) #functor
+    vl0 = method.vl
+    vv0 = method.vv
+    _0 = zero(vl0*vv0*T*oneunit(eltype(model)))
+    nan = _0/_0
     fail = (nan,nan,nan)
-    if !isfinite(V0[1]) | !isfinite(V0[2]) | !isfinite(T)
-        #error in initial conditions
+    valid_input = check_valid_2ph_input(vl0,vv0,true,T)
+    if !valid_input
         return fail
     end
-    result,converged = sat_pure(f!,V0,method)
-    #did not converge, but didnt error.
+    ps,μs = scale_sat_pure(model)
+    result,converged = try_2ph_pure_pressure(model,T,vl0,vv0,ps,μs,method)
+
     if converged
         return result
     end
+
     if !method.crit_retry
         return fail
     end
@@ -92,64 +93,16 @@ function saturation_pressure_impl(model::EoSModel, T, method::ChemPotVSaturation
         return (p_c,V_c,V_c)
     end
         #@error "initial temperature $T greater than critical temperature $T_c. returning NaN"
-    if T < T_c
+    if 0.7*T_c < T < T_c
         x0 = x0_sat_pure_crit(model,T,T_c,p_c,V_c)
-        V01,V02 = x0
-        V0 = svec2(log(V01),log(V02),T)
-        result,converged = sat_pure(f!,V0,method)
+        vlc0,vvc0 = x0
+        result,converged = try_2ph_pure_pressure(model,T,vlc0,vvc0,ps,μs,method)
         if converged
             return result
         end
     end
     #not converged, even trying with better critical aprox.
     return fail
-end
-
-struct ObjSatPure{M,T}
-    model::M
-    ps::T
-    mus::T
-    Tsat::T
-end
-
-function ObjSatPure(model,T)
-    ps,mus = scale_sat_pure(model)
-    ps,mus,T = promote(ps,mus,T)
-    ObjSatPure(model,ps,mus,T)
-end
-
-function (f::ObjSatPure)(x)
-    model = f.model
-    scales = (f.ps,f.mus)
-    T = f.Tsat
-    return Obj_Sat(model, T, exp(x[1]), exp(x[2]),scales)
-end
-
-function sat_pure(f::ObjSatPure,V0,method)
-    model, T = f.model, f.Tsat
-    nan = zero(eltype(V0))/zero(eltype(V0))
-    if !isfinite(V0[1]) | !isfinite(V0[2]) | !isfinite(T)
-        return (nan,nan,nan), false
-    end
-    Vsol = Solvers.nlsolve2(f,V0,Solvers.Newton2Var(),NEqOptions(method))
-    V_l = exp(Vsol[1])
-    V_v = exp(Vsol[2])
-    P_sat = pressure(model,V_v,T)
-    res = (P_sat,V_l,V_v)
-    valid = check_valid_sat_pure(model,P_sat,V_l,V_v,T)
-    return res,valid
-end
-
-function Obj_Sat(model::EoSModel, T, V_l, V_v,scales)
-    fun(_V) = eos(model, _V, T,SA[1.])
-    A_l,Av_l = Solvers.f∂f(fun,V_l)
-    A_v,Av_v =Solvers.f∂f(fun,V_v)
-    g_l = muladd(-V_l,Av_l,A_l)
-    g_v = muladd(-V_v,Av_v,A_v)
-    (p_scale,μ_scale) = scales
-    F1 = -(Av_l-Av_v)*p_scale
-    F2 = (g_l-g_v)*μ_scale
-    return SVector(F1,F2)
 end
 
 export ChemPotVSaturation
