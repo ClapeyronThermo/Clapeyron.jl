@@ -52,7 +52,7 @@ function μp_equality1_T(model1,model2,v1,v2,p,T,ps,μs)
     p1 = - Av1
     p2 = - Av2
     Fp1 = (p1 - p)*ps
-    Fp2 = (p1 - p)*ps
+    Fp2 = (p2 - p)*ps
     Fμ  = (μ1 - μ2)*μs
     return SVector(Fμ,Fp1,Fp2)
 end
