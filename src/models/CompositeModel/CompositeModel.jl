@@ -92,7 +92,8 @@ include("SolidModel/SolidHfus.jl")
 include("bubble_point.jl")
 include("dew_point.jl")
 
-function CompositeModel(components, mapping = nothing;
+function CompositeModel(components ;
+    mapping = nothing,
     liquid = nothing,
     gas = nothing,
     fluid = nothing,
@@ -168,10 +169,13 @@ function CompositeModel(components, mapping = nothing;
         throw(ArgumentError("Invalid specification for CompositeModel"))
     end
 
-    if isnothing(mapping) && init_fluid.components!=init_solid.components
-        throw(ArgumentError("Invalid specification for CompositeModel. Please specify mapping between species in solid and liquid phase"))
-    elseif isnothing(mapping) && init_fluid.components==init_solid.components
-        mapping = [((i,1),)=>(i,1) for i in _components]
+    if isnothing(init_fluid) || isnothing(init_solid)
+    else
+        if isnothing(mapping) && init_fluid.components!=init_solid.components
+            throw(ArgumentError("Invalid specification for CompositeModel. Please specify mapping between species in solid and liquid phase"))
+        elseif isnothing(mapping) && init_fluid.components==init_solid.components
+            mapping = [((i,1),)=>(i,1) for i in _components]
+        end
     end
     return CompositeModel(_components,init_fluid,init_solid,mapping)
 end
