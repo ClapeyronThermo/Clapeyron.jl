@@ -23,7 +23,7 @@ include("utils/core_utils.jl")
 
 include("modules/solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log, sqrt, log1p, ^
+using .Solvers: log, sqrt, log1p, ^, dnorm
 
 #misc functions, useful for EoS, don't depend on models
 include("modules/eosfunctions/EoSFunctions.jl")
@@ -224,12 +224,9 @@ include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
 include("models/Virial/Virial.jl")
 
-#include("models/UFTheory/UFTheory.jl")
-
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
 include("models/PeTS/PeTS.jl")
-include("models/UFTheory/UFTheory.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
 
 #Unitful support, transition from dependency to ext

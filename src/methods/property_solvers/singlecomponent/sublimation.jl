@@ -1,21 +1,7 @@
-function obj_sublimation_pressure(model::CompositeModel,F,T,vs,vv,p_scale,μ_scale)
-    z = SA[1.0]
-    eos_solid(V) = eos(model.solid,V,T,z)
-    eos_fluid(V) = eos(model.fluid,V,T,z)
-    A_v,Av_v = Solvers.f∂f(eos_fluid,vv)
-    A_s,Av_s =Solvers.f∂f(eos_solid,vs)
-    μv = muladd(-vv,Av_v,A_v)
-    μs = muladd(-vs,Av_s,A_s)
-    ps = - Av_s
-    pv = - Av_v
-    #=
-    μs = VT_chemical_potential(model.solid, vs, T)[1]
-    μv = VT_chemical_potential(model.fluid, vv, T)[1]
-    ps = pressure(model.solid, vs, T)
-    pv = pressure(model.fluid, vv, T) =#
-    F[1] = (μs - μv)*μ_scale
-    F[2] = (ps - pv)*p_scale
-    return F
+function obj_sublimation_pressure(model::CompositeModel,T,vs,vv,p_scale,μ_scale)
+    solid = solid_model(model)
+    fluid = fluid_model(model)
+    return μp_equality1_p(solid,fluid,vs,vl,T,p_scale,μ_scale)
 end
 
 struct ChemPotSublimationPressure{V} <: ThermodynamicMethod
@@ -64,51 +50,28 @@ function sublimation_pressure(model,T,method::ThermodynamicMethod)
 end
 
 function sublimation_pressure_impl(model::CompositeModel,T,method::ChemPotSublimationPressure)
-    fluid = fluid_model(model)
-    solid = solid_model(model)
     if method.v0 == nothing
         v0 = x0_sublimation_pressure(model,T)
     else
         v0 = method.v0
     end
-    vs,vv = v0
-    p_scale,μ_scale = scale_sat_pure(fluid)
-
-    V0 = vec2(log(v0[1]),log(v0[2]),T)
-    f!(F,x) = obj_sublimation_pressure(model,F,T,exp(x[1]),exp(x[2]),p_scale,μ_scale)
-    results = Solvers.nlsolve(f!,V0,LineSearch(Newton()))
-    #@show results
-    x = Solvers.x_sol(results)
-    vs = exp(x[1])
-    vv = exp(x[2])
-    return pressure(fluid,vv,T),vs,vv
-    #=
-    z = SA[1.0]
-    f1(_V) = eos(solid,_V,T,z)
-    f2(_V) = eos(fluid,_V,T,z)
-    a1,da1,d2a1 = Solvers.f∂f∂2f(f1,vs)
-    a2,da2,d2a2 = Solvers.f∂f∂2f(f2,vv)
-    p1 = -da1
-    p2 = -da2
-    if p1 ≈ p2 && g1 ≈ g2 && (d2a1 > 0) && (d2a2 > 0)
-        return p2,vs,vv
+    vs0,vv0 = v0
+    _0 = zero(vs0*vv0*T*oneunit(eltype(model)))
+    nan = _0/_0
+    fail = (nan,nan,nan)
+    valid_input = check_valid_2ph_input(vs0,vv0,true,T)
+    if !valid_input
+        return fail
     end
-    for i in 1:method.max_iters
-        vs,vv = solve_2ph_taylor(vs,vv,a1,da1,d2a1,a2,da2,d2a2,p_scale,μ_scale)
-        a1,da1,d2a1 = Solvers.f∂f∂2f(f1,vs)
-        a2,da2,d2a2 = Solvers.f∂f∂2f(f2,vv)
-        p1 = -da1
-        p2 = -da2
-        g1 = a1 + p1*vs
-        g2 = a2 + p2*vv     
-        if p1 ≈ p2 && g1 ≈ g2 && (d2a1 > 0) && (d2a2 > 0)
-            return p2,vs,vv
-        end
+    fluid = fluid_model(model)
+    solid = solid_model(model)
+    ps,μs = scale_sat_pure(fluid)
+    result,converged = try_2ph_pure_pressure(solid,fluid,T,vs0,vv0,ps,μs,method)
+    if converged
+        return result
+    else
+        return fail
     end
-    nan = p1/p1
-    return nan,nan,nan
-    =#
-    
 end
 
 function x0_sublimation_pressure(model,T)
@@ -136,7 +99,6 @@ function Obj_Sub_Temp(model::EoSModel, F, T, V_s, V_v,p,p̄,T̄)
     A_s,Av_s =Solvers.f∂f(eos_solid,V_s)
     g_v = muladd(-V_v,Av_v,A_v)
     g_s = muladd(-V_s,Av_s,A_s)
-    
     F[1] = -(Av_v+p)/p̄
     F[2] = -(Av_s+p)/p̄
     F[3] = (g_v-g_s)/(R̄*T̄)
@@ -189,22 +151,23 @@ function sublimation_temperature(model::CompositeModel,p,method::ThermodynamicMe
 end
 
 function sublimation_temperature_impl(model::CompositeModel,p,method::ChemPotSublimationTemperature)
-    T̄ = T_scale(model.fluid)
-    p̄ = p_scale(model.fluid)
+    solid = solid_model(model)
+    fluid = fluid_model(model)
+    T̄ = T_scale(fluid)
+    p̄ = p_scale(fluid)
     if method.v0 == nothing
         v0 = x0_sublimation_temperature(model,p)
     else
         v0 = method.v0
     end
-    V0 = [v0[1],log(v0[2]),log(v0[3])]
+    V0 = vec3(v0[1],log(v0[2]),log(v0[3]),p*1.0*one(eltype(solid))*one(eltype(fluid)))
     f!(F,x) = Obj_Sub_Temp(model,F,x[1],exp(x[2]),exp(x[3]),p,p̄,T̄)
-    results = Solvers.nlsolve(f!,V0,TrustRegion(Newton(),Dogleg()))
+    results = Solvers.nlsolve(f!,V0,TrustRegion(Newton(),Dogleg()),NEqOptions(method))
     x = Solvers.x_sol(results)
     vs = exp(x[2])
     vv = exp(x[3])
     Tfus = x[1]
-    
-    converged = check_valid_eq2(solid_model(model),fluid_model(model),p,vs,vv,Tfus)
+    converged = check_valid_eq2(solid,fluid,p,vs,vv,Tfus)
     if converged
     return Tfus, vs, vv
     else
@@ -215,7 +178,6 @@ end
 
 function x0_sublimation_temperature(model::CompositeModel,p)
     trp = triple_point(model)
-
     pt = trp[2]
     vs0 = trp[3]
     vv0 = trp[5]
@@ -225,6 +187,5 @@ function x0_sublimation_temperature(model::CompositeModel,p)
     hv0 = VT_enthalpy(model.fluid,vv0,Tt)
     Δh = hv0-hs0
     T0 = Tt*exp(Δv*(p-pt)/Δh)
-
     return T0,vs0,vv0
 end

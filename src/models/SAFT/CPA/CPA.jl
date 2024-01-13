@@ -115,7 +115,7 @@ function CPA(components;
 
     Mw  = params["Mw"]
     k = get(params,"k",nothing)
-    l = get(params,"k",nothing)
+    l = get(params,"l",nothing)
     Tc = params["Tc"]
     c1 = params["c1"]
     a  = epsilon_LorentzBerthelot(params["a"], k)
@@ -205,7 +205,6 @@ function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = @f(data))
     βijab = model.params.bondvol.values[i,j][a,b]
     b = model.params.b.values
     η = n*b̄/(4*V)
-
     rdf = model.radial_dist
     g = if rdf == :CS #CPA original
         (1-0.5*η)/(1-η)^3

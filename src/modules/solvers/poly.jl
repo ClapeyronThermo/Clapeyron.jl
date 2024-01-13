@@ -70,11 +70,11 @@ end
 roots3(pol)
 solves a cubic equation of the form pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3
 """
-function roots3(pol) 
+function roots3(pol)
 return SVector(solve_cubic_eq(pol))
 end
 
-function roots3(a,b,c,d) 
+function roots3(a,b,c,d)
 x = (a,b,c,d)
 return roots3(x)
 end
@@ -118,3 +118,60 @@ function real_roots3(pol::NTuple{4,T}) where {T<:Real}
     end
 end
 real_roots3(a,b,c,d) = real_roots3((a,b,c,d))
+
+#we suppose that there is a translation: xx = x + x0
+function hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
+    #Δx0 = x - x0
+    #Δx1 = x - x1
+    Δx10 = (x1 - x0)
+   # Δx03 = Δx0^3
+
+    Δx102 = Δx10^2
+    divx = 1/Δx10
+    p0 = f0
+    p1 = df0
+
+    p2 = (1//2)*d2f0
+    p3 = (f1 - f0 - df0*Δx10 - (1//2)*d2f0*Δx102)*divx^3
+
+    z4 = (3*f0 - 3*f1 + 2*(df0 + (1//2)*df1)*Δx10 - (1//2)*d2f0*Δx102)*divx^4 # * Δx03 * Δx1
+    #x^3 * (x -Δx10) = x^4 - -Δx10*x^3
+    p3 += -Δx10*z4
+    p4 = z4
+
+    z5 = (6*f1 - 6*f0 - 3*(df0 + df1)*Δx10 + (1//2)*(d2f1 - d2f0)*Δx102)*divx^5# * Δx03 * Δx1
+    #x^3 * (x -Δx10)^2 = x^5 -2*Δx10*x^4 +Δx10*Δx10*x^3
+    p3 += Δx10^2*z5
+    p4 += -2*Δx10*z5
+    p5 = z5
+    return p0,p1,p2,p3,p4,p5
+end
+
+"""
+    hermite5_poly(f,x0,x1)
+
+Returns a quintic hermite polynomial, that interpolates `f` between `x0` and `x1`, using first and second derivative information.
+the polynomial is translated, so that the zero is at `x0`.
+
+## Example
+```
+poly = hermite5_poly(f,x0,x1)
+evalpoly(0.0,poly) == f(x0)
+evalpoly(x1 - x0,poly) == f(x1)
+```
+"""
+function hermite5_poly(f,x0,x1)
+    f0,df0,d2f0 = f∂f∂2f(f,x0)
+    f1,df1,d2f1 = f∂f∂2f(f,x1)
+    return hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
+end
+
+"""
+    polyder(poly)
+
+returns the coefficients of the derivative of the polynomial.
+
+"""
+function polyder(x::NTuple{N,T}) where {N,T}
+    return ntuple(i->x[i+1]*i,Val{N-1}())
+end

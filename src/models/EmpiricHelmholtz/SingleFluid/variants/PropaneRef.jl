@@ -27,27 +27,6 @@ function _propaneref_tsat(p)
     return Roots.solve(prob,Roots.Order0())
 end
 
-function _propaneref_rholsat(T)
-    T_c = 369.89
-    ρ_c = 5000.0
-    T>T_c && return zero(T)/zero(T)
-    Tr = T/T_c
-    θ = 1.0-Tr
-    ρ_l = (1.0 + 1.82205*θ^0.345 + 0.65802*θ^0.74 + 0.21109*θ^2.6 + 0.083973*θ^7.2)*ρ_c
-    return ρ_l
-end
-
-function _propaneref_rhovsat(T)
-    T_c = 369.89
-    ρ_c = 5000.0
-    T>T_c && return zero(T)/zero(T)
-    Tr = T/T_c
-    θ = 1.0 - Tr
-    log_ρ_v_ρ_c = (-2.4887*θ^0.3785 -5.1069*θ^1.07 -12.174*θ^2.7 -30.495*θ^5.5 -52.192*θ^10 -134.89*θ^20)
-    ρ_v = exp(log_ρ_v_ρ_c)*ρ_c
-    return ρ_v
-end
-
 """
     PropaneRef <: EmpiricHelmholtzModel
     PropaneRef()

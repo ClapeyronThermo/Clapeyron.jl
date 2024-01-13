@@ -4,7 +4,7 @@ Original code by Thomas Moore
 included in https://github.com/ClapeyronThermo/Clapeyron.jl/pull/56
 =#
 """
-    DETPFlash(;numphases = 2;
+    DETPFlash(; numphases = 2,
     max_steps = 1e4*(numphases-1),
     population_size =20,
     time_limit = Inf,

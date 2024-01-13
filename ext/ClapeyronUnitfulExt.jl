@@ -105,6 +105,7 @@ for (fn,unit) in [
     (:enthalpy, u"J"),
     (:entropy, u"J/K"),
     (:entropy_res, u"J/K"),
+    (:fugacity_coefficient, NoUnits),
     (:gibbs_free_energy, u"J"),
     (:helmholtz_free_energy, u"J"),
     (:internal_energy, u"J"),
@@ -127,19 +128,21 @@ for (fn,unit) in [
             return uconvert.(output, res)
         end
 
-        function C.$fn(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=$unit, threaded=true)
+        function C.$fn(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=$unit)
             st = standardize(model,p,T,z)
             _p,_T,_z = state_to_pt(model,st)
-            res = C.$fn(model, _p, _T, _z; phase, threaded)*($unit)
+            _vol0 = vol0===nothing ? nothing : total_volume(model, vol0, z)
+            res = C.$fn(model, _p, _T, _z; phase, threaded, vol0=_vol0)*($unit)
             return uconvert.(output, res)
         end
     end
 end
 
-function C.volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=u"m^3", threaded=true, vol0=nothing)
+function C.volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=u"m^3")
     st = standardize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
-    res = volume(model, _p, _T, _z; phase, threaded, vol0)*u"m^3"
+    _vol0 = vol0===nothing ? nothing : total_volume(model, vol0, z)
+    res = volume(model, _p, _T, _z; phase, threaded, vol0=_vol0)*u"m^3"
     return uconvert(output, res)
 end
 
@@ -191,13 +194,6 @@ function C.saturation_temperature(model::EoSModel, p::Unitful.Pressure; output=(
     _v_l = uconvert(output[2],v_l*u"m^3")
     _v_v = uconvert(output[3],v_v*u"m^3")
     return (_T_sat,_v_l,_v_v)
-end
-
-function C.fugacity_coefficient(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, threaded=true)
-    st = standardize(model,p,T,z)
-    _p,_T,_z = state_to_pt(model,st)
-    res = C.fugacity_coefficient(model, _p, _T, _z; phase, threaded)
-    return res
 end
 
 function C.volume_virial(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; output=u"m^3")

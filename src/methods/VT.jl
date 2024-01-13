@@ -265,11 +265,30 @@ VT_chemical_potential_res(model::EoSModel, V, T, z=SA[1.]) = VT_partial_property
 VT_chemical_potential_res!(r,model::EoSModel, V, T, z=SA[1.]) = VT_partial_property!(r,model,V,T,z,eos_res)
 
 function VT_fugacity_coefficient(model::EoSModel,V,T,z=SA[1.])
+    return _VT_fugacity_coefficient(model,V,T,z)
+end
+
+#i saw some code that calls only(fugacity_coefficient(model,p,T)).
+#this is specialization for the case of a single component.
+function _VT_fugacity_coefficient(model::EoSModel,V,T,z)
     p = pressure(model,V,T,z)
     μ_res = VT_chemical_potential_res(model,V,T,z)
     R̄ = Rgas(model)
     Z = p*V/R̄/T/sum(z)
     return exp.(μ_res ./ R̄ ./ T) ./ Z
+end
+
+function _VT_fugacity_coefficient(model::EoSModel,V,T,z::SingleComp)
+    f(_V) = eos_res(model, _V, T,z)
+    A,dAdV = Solvers.f∂f(f,V)
+    R̄ = Rgas(model)
+    ∑z= sum(z)
+    p_ideal = ∑z*R̄*T/V
+    p = -dAdV + p_ideal
+    μ_res = muladd(-V,dAdV,A)
+    Z = p*V/R̄/T/sum(z)
+    ϕ = exp(μ_res/R̄/T)/Z
+    return SVector(ϕ)
 end
 
 export second_virial_coefficient,pressure,cross_second_virial,equivol_cross_second_virial

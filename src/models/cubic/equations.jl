@@ -315,7 +315,6 @@ function x0_sat_pure(model::ABCubicModel, T)
         nan = zero(T) / zero(T)
         return (nan, nan)
     end
-
     a, b, c = cubic_ab(model, 1 / sqrt(eps(float(T))), T)
     data = (1.0, a, b, c)
     pc = model.params.Pc.values[1]
@@ -351,6 +350,11 @@ function x0_sat_pure(model::ABCubicModel, T)
         return (vl, vv)
     end
     return (vl, vv)
+end
+
+function x0_saturation_temperature(model::ABCubicModel,p,::Nothing)
+    crit = crit_pure(model)
+    return x0_saturation_temperature_crit(model, p, crit)
 end
 
 #=
