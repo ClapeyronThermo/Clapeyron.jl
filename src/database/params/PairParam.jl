@@ -219,7 +219,7 @@ function Base.convert(::Type{PairParam{T1}},param::PairParam{T2}) where {T1<:Num
     return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
-function Base.convert(::Type{PairParam{Bool}},param::PairParam{<:Union{Int,Float64}})
+function Base.convert(::Type{PairParam{Bool}},param::PairParam{<:Union{Int,Float64,Bool}})
     #@assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
     return PairParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)

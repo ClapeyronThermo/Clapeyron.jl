@@ -176,7 +176,10 @@ function __get_k_alpha0(model)
 end
 
 function __set_Rgas(pure,Rgas)
-    Roots.Setfield.@set pure.properties.Rgas = Rgas
+    components,p,ancillaries,ideal,residual,references = pure.components,pure.properties,pure.ancillaries,pure.ideal,pure.residual,pure.references
+    Mw,Tr,rhor,lb_volume,Tc,Pc,rhoc,Ttp,ptp,rhov_tp,rhol_tp,acentricfactor = p.Mw, p.Tr, p.rhor, p.lb_volume, p.Tc, p.Pc, p.rhoc, p.Ttp, p.ptp, p.rhov_tp, p.rhol_tp, p.acentricfactor
+    properties = ESFProperties(Mw,Tr,rhor,lb_volume,Tc,Pc,rhoc,Ttp,ptp,rhov_tp,rhol_tp,acentricfactor,Rgas)
+    return SingleFluid(components,properties,ancillaries,ideal,residual,references)
 end
 
 function a_ideal(model::SingleFluidIdeal,V,T,z=SA[1.],k = __get_k_alpha0(model))

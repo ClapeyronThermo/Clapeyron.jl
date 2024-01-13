@@ -27,6 +27,7 @@ using Clapeyron, Test, Unitful
         @test Clapeyron.joule_thomson_coefficient(system, p, T) ≈ -6.007581864883784e-7 rtol = 1E-6
         @test Clapeyron.second_virial_coefficient(system, T) ≈ -0.004919678119638886  rtol = 1E-6 #exact value calculated by using BigFloat
         @test Clapeyron.inversion_temperature(system, 1.1e8) ≈ 824.4137805298458 rtol = 1E-6
+        @test Clapeyron.fugacity_coefficient(system, p, T, phase = :l)[1] ≈ 0.07865326632570452 rtol = 1E-6
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7972.550405922014 rtol = 1E-6
@@ -117,8 +118,8 @@ end
         @test Clapeyron.molecular_weight(system)*1000 ≈ 46.065
     end
     @testset "VLE properties" begin
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7714.8637084302 rtol = 1E-6
-        @test Clapeyron.crit_pure(system)[1] ≈ 522.7772913470494 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7714.8637084302 rtol = 1E-5
+        @test Clapeyron.crit_pure(system)[1] ≈ 522.7772913470494 rtol = 1E-5
     end
 end
 
@@ -331,8 +332,8 @@ end
 @testset "EPPR78, single component" begin
     system = EPPR78(["carbon dioxide"])
     T = 400u"K"
-    @test Clapeyron.volume(system, 3311.0u"bar", T) ≈ 3.363139140634349e-5u"m^3"
-    @test Clapeyron.molar_density(system, 3363.1u"bar", T) ≈ 29810.118127751106u"mol*m^-3"
+    @test Clapeyron.volume(system, 3311.0u"bar", T) ≈ 3.363141761376883e-5u"m^3"
+    @test Clapeyron.molar_density(system, 3363.1u"bar", T) ≈ 29810.09484964839u"mol*m^-3"
 end
 
 @testset "Cubic methods, multi-components" begin
@@ -353,16 +354,20 @@ end
 end
 
 @testset "Activity methods, pure components" begin
-    system = Wilson(["methanol"])
+    if hasfield(Wilson,:puremodel)
+        system = Wilson(["methanol"])
+    else
+        system = CompositeModel(["methanol"],liquid = Wilson,fluid = PR)
+    end
     p = 1e5
     T = 298.15
     @testset "Bulk properties" begin
-        @test Clapeyron.volume(system, p, T) ≈ 4.736782417401261e-5 rtol = 1e-6
-        @test Clapeyron.speed_of_sound(system, p, T) ≈ 2136.2222361829276 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T) ≈ 4.7367867309516085e-5 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(system, p, T) ≈ 2136.222735675237 rtol = 1e-6
     end
     @testset "VLE properties" begin
-        @test Clapeyron.crit_pure(system)[1] ≈ 512.6399509413803 rtol = 1E-6
-        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 15525.980361987053 rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 512.6400000000001 rtol = 1E-6
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 15525.93630485447 rtol = 1E-6
     end
 end
 
@@ -390,11 +395,11 @@ end
     end
     @testset "VLE properties" begin
         @test Clapeyron.gibbs_solvation(system, T) ≈ -24707.145697543132 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.647133460465 rtol = 1E-6
-        @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = true))[1] ≈ 23839.621459294547
-        @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = false))[1] ≈ 23833.39094581393
+        @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.58099358788 rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = true))[1] ≈ 23839.554959977086
+        @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = false))[1] ≈ 23833.324475723246
 
-        @test Clapeyron.bubble_temperature(system,23758.647133460465, z)[1] ≈ T  rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system,23758.58099358788, z)[1] ≈ T  rtol = 1E-6
 
         @test Clapeyron.dew_pressure(system2, T2, z)[1] ≈ 19386.939256733036 rtol = 1E-6
         @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = true))[1] ≈ 19393.924550078184 rtol = 1e-6

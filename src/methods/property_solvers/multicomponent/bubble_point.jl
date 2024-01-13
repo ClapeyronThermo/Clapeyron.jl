@@ -52,14 +52,18 @@ function initial_points_bd_T(pure,T,_crit = nothing,volatile = true, bubble = tr
         sat = saturation_pressure(pure,T,crit = crit) #calculate sat_p with crit info
         !isnan(first(sat)) && return sat
     end
-    #create initial point from critical values (TODO: use pseudocritical_pressure instead?)
-    p0 = pressure(pure,Vc,T)
-    vl0 = Vc
-    vv0 = 1.2Vc
+    #create initial point from critical values
+    #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
+    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,T,volatile,false)
+    lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
+    p0 = exp(lnp)
+    vl0 = x0_volume(pure,p0,T,phase = :l)
+    vv0 = max(1.2*Vc,3*Rgas(pure)*T/Pc)
     return p0,vl0,vv0
 end
 
-function initial_points_bd_p(pure,crit,p,volatile = true, bubble = true)
+#this function does not do the crit calculation.
+function initial_points_bd_p(pure,p,volatile = true)
     if !volatile
         #the component is not volatile/condensable. set volumes to 0.
         #one does not matter, the other one is recalculated later
@@ -68,20 +72,13 @@ function initial_points_bd_p(pure,crit,p,volatile = true, bubble = true)
         T = zero(vv) #TODO
         return T,vl,vv
     end
-    Tc,Pc,Vc = crit
-    if p < Pc
-        sat = saturation_temperature(pure,p,AntoineSaturation(crit = crit))
-        !isnan(first(sat)) && return sat
-    end
-    vl0 = Vc
-    vv0 = 1.2Vc
-    return Tc,vl0,vv0
+    return saturation_temperature(pure,p,crit_retry = false)
 end
 
 
-function fix_vi!(pure,vli,p,T,volatiles,phase)
+function fix_vi!(pure,vli,p,T,in_media,phase)
     for i in eachindex(vli)
-        if !volatiles[i]
+        if !in_media[i]
             # vli[i] = volume(pure[i],p,T,phase = phase)
             # if isnan(vli[i])
             vli[i] = x0_volume_liquid(pure[i],T,[1.])
@@ -90,14 +87,55 @@ function fix_vi!(pure,vli,p,T,volatiles,phase)
     end
 end
 
-function __dPdTsat(pure,sat,volatiles = true,bubble = true)
-    T,vl,vv = sat
-    if volatiles
+function __crit_pure(sat0,pure,in_media)
+    if isnan(first(sat0)) && in_media
+        return crit_pure(pure)
+    else
+        p,vl,vv = sat0
+        nan = zero(p)/zero(p)
+        return nan,nan,nan
+    end
+end
+
+function fix_sat_ti!(sat,pure,crit,p,in_media)
+    for i in eachindex(pure)
+        crit_i = crit[i]
+        pc_i = crit_i[2]
+        if in_media[i] && p <= pc_i
+            pure_i = pure[i]
+            sat_i = saturation_temperature(pure_i,p,crit = crit_i)
+            if isnan(sat_i[1])
+                throw(error("saturation temperataure for $pure_i not found at p = $p"))
+            end
+            sat[i] = sat_i
+        end  
+    end
+end
+
+function __dlnPdTinvsat(pure,sat,crit,xx,in_media = true,is_sat_temperature = true)
+    if is_sat_temperature
+        T,vl,vv = sat
+        p = xx
+        nan_check = isnan(T)
+    else
+        p,vl,vv = sat
+        T = xx
+        nan_check = isnan(p)
+    end
+    if in_media && !nan_check
         Sl = VT_entropy(pure,vl,T)
         Sv = VT_entropy(pure,vv,T)
-        return (Sv - Sl)/(vv - vl)
-    else
+        dpdT = (Sv - Sl)/(vv - vl)
+        return -dpdT*T*T/p,log(p),1/T
+    elseif !in_media
         return zero(vl)
+    elseif !isnan(crit[1]) && (crit[1] <= T || crit[2] < p)
+        Tc,Pc,Vc = crit
+        _p(_T) = pressure(pure,Vc,_T)
+        dpdT = Solvers.derivative(_p,Tc)
+        return -dpdT*Tc*Tc/Pc,log(Pc),1/Tc
+    else
+        throw(error("dPdTsat: unreachable state with $pure"))
     end
 end
 
@@ -211,59 +249,41 @@ end
 
 ###Bubble Temperature
 
-function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)))
-    comps = length(model)
-    pure = split_model(model)
-    crit = crit_pure.(pure)
-    sat = initial_points_bd_p.(pure,crit,p,volatiles,true)
+function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
+    sat = initial_points_bd_p.(pure,p,volatiles)
+    if crit === nothing
+        _crit = __crit_pure.(sat,pure,volatiles)
+    else
+        _crit = crit
+    end
+    fix_sat_ti!(sat,pure,_crit,p,volatiles)
     if Tx0 !== nothing
         T0 = Tx0
-    elseif !any(crit_i -> crit_i[2] < p,crit) #p < min(pci), proceed with entalphy aproximation:
-        dPdTsat = __dPdTsat.(pure,sat,volatiles,true)
-        ##initialization for T
-        #= we solve the aproximate problem of finding T such as:
-        p = sum(xi*pi(T))
-        where pi ≈ p + dpdt(T-T0)
-        then: p = sum(xi*pi) = sum(xi*(p + dpdti*(T-Ti)))
-        p = sum(xi*p) + sum(xi*dpdti*(T-Ti)) # sum(xi*p) = p
-        0 = sum(xi*dpdti*(T-Ti))
-        0 = sum(xi*dpdti)*T - sum(xi*dpdti*Ti)
-        0 = T* ∑T - ∑Ti
-        T = ∑Ti/∑T
-        special case: non-volatile:
-        pi -> 0
-        =#
-        ∑T = zero(p+first(dPdTsat))
-        ∑Ti = zero(∑T)
-        for i in eachindex(dPdTsat)
-            if volatiles[i]
-                Ti = sat[i][1]
-                ∑Ti += x[i]*dPdTsat[i]*Ti
-                ∑T += x[i]*dPdTsat[i]
-            end
-        end
-        T0 = ∑Ti/∑T
     else
-        Tb = extrema(first,sat).*(0.9,1.1)
-        f(T) = antoine_bubble(pure,T,x,crit,volatiles) - p
-        fT = Roots.ZeroProblem(f,Tb)
-        T0 = Roots.solve(fT,Roots.Order0())
+        dPdTsat = __dlnPdTinvsat.(pure,sat,_crit,p,volatiles)
+        prob = antoine_bubble_problem(dPdTsat,p,x,volatiles)
+        T0 = Roots.solve(prob)
     end
     #this is exactly like __x0_bubble_pressure, but we use T0, instead of an input T
     _,vl0,vv0,y = __x0_bubble_pressure(model,T0,x,nothing,volatiles,pure,crit)
     return T0,vl0,vv0,y
 end
 
-function antoine_bubble(pure,T,x,crit,volatiles)
-    p = zero(T+first(x)+first(crit)[1])
-    for i in 1:length(pure)
-        if volatiles[i] #if non-volatile, pi -> 0
-            pᵢ = aprox_psat(pure,T,crit)
-            pᵢxᵢ = x[i]*pᵢ
-            p += pᵢxᵢ
+function antoine_bubble_problem(dpdt,p_bubble,x,volatiles)  
+    function antoine_f0(T)
+        p = zero(T+first(x)+first(dpdt)[1])
+        for i in 1:length(dpdt)
+            dlnpdTinv,logp0,T0inv = dpdt[i]
+            if volatiles[i]
+                pᵢ = exp(logp0 + dlnpdTinv*(1/T - T0inv))
+                pᵢxᵢ = x[i]*pᵢ
+                p += pᵢxᵢ
+            end
         end
+        return p - p_bubble
     end
-    return p
+    Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
+    return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
 end
 
 function x0_bubble_temperature(model::EoSModel,p,x)

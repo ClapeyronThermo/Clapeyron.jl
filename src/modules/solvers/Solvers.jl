@@ -6,6 +6,16 @@ using PositiveFactorizations
 using DiffResults, ForwardDiff
 using StaticArrays
 
+"""
+    dnorm(x,y,p)
+
+Equivalent to `norm((xi-yi for (xi, yi) in zip(x, y)), p)`
+"""
+function dnorm(x,y,p = 2)
+    return norm((xi-yi for (xi, yi) in zip(x, y)), p)
+end
+
+
 function cholesky_linsolve(d,B,∇f)
     cholesky!(Positive, B)
     Bchol = Cholesky(B,'L',0)

@@ -1,6 +1,6 @@
 
 """
-    SaturationMethod <: ThermodynamicMethod 
+    SaturationMethod <: ThermodynamicMethod
 
 Abstract type for `saturation_temperature` and `saturation_pressure` routines.
 Should at least support passing the `crit` keyword, containing the critical point, if available.
@@ -39,7 +39,7 @@ julia> p,vl,vv = saturation_pressure(pr,373.15,IsoFugacitySaturation(p0 = 1.0e5)
 """
 function saturation_pressure(model::EoSModel,T,method::SaturationMethod)
     single_component_check(saturation_pressure,model)
-    T = T*(T/T)
+    T = T*(T/T)*oneunit(eltype(model))
     return saturation_pressure_impl(model,T,method)
 end
 
@@ -64,31 +64,6 @@ function saturation_pressure(model::EoSModel,T,V0::Union{Tuple,Vector})
     kwargs = (;vl,vv)
     method = init_preferred_method(saturation_pressure,model,kwargs)
     return saturation_pressure(model,T,method)
-end
-
-
-"""
-    check_valid_sat_pure(model,P_sat,Vl,Vv,T,ε0 = 5e7)
-
-Checks that a saturation method converged correctly. it checks:
-- That both volumes are mechanically stable
-- That both volumes are different, with a difference of at least `ε0` epsilons
-"""
-function check_valid_sat_pure(model,P_sat,V_l,V_v,T,ε0 = 5e7)
-   return check_valid_eq2(model,model,P_sat,V_l,V_v,T,ε0)
-end
-
-function check_valid_eq2(model1,model2,P_sat,V1,V2,T,ε0 = 5e7)
-    ε = abs(V1-V2)/(eps(typeof(V1-V2)))
-    ε <= ε0 && return false
-    p1,dpdv1 = p∂p∂V(model1,V1,T,SA[1.0])
-    p2,dpdv2 = p∂p∂V(model2,V2,T,SA[1.0])
-    ε1 = ε0*eps(P_sat)
-    return  (dpdv1 <= 0)        && #mechanical stability of the liquid phase
-            (dpdv2 <= 0)        && #mechanical stability of the vapour phase
-            (1 - p1/P_sat < ε1)  && #calculated pressure for liquid phase is aproximately the same
-            (1 - p2/P_sat < ε1)     #calculated pressure for vapour phase is aproximately the same
-    #if ΔV > ε then Vl and Vv are different values
 end
 
 """
@@ -148,7 +123,7 @@ include("AntoineSat.jl")
 """
     enthalpy_vap(model::EoSModel, T,method = ChemPotVSaturation(x0_sat_pure(model,T)))
 
-Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies at temperature `T`, in J   
+Calculates `ΔH`, the difference between saturated vapour and liquid enthalpies at temperature `T`, in J
 """
 function enthalpy_vap(model::EoSModel, T,satmethod = ChemPotVSaturation())
     single_component_check(enthalpy_vap,model)

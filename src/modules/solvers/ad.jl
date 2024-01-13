@@ -20,7 +20,7 @@ end
 
 @inline function gradient2(f::F, x1::R,x2::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
-    _1 = one(R)
+    _1 = oneunit(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
     dual2 = ForwardDiff.Dual{T,R,2}(x2, ForwardDiff.Partials((_0,_1)))
@@ -41,7 +41,7 @@ returns f and ∂f/∂x evaluated in `x`, using `ForwardDiff.jl`, `DiffResults.j
 """
 @inline function f∂f(f::F, x::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
-    out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),))))
+    out = f(ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((oneunit(R),))))
     return ForwardDiff.value(out),  ForwardDiff.extract_derivative(T, out)
 end
 
@@ -54,7 +54,7 @@ returns f,∂f/∂x,and ∂²f/∂²x and evaluated in `x`, using `ForwardDiff.j
 """
 @inline function f∂f∂2f(f::F,x::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
-    out = ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((one(R),)))
+    out = ForwardDiff.Dual{T,R,1}(x, ForwardDiff.Partials((oneunit(R),)))
     _f,_df = f∂f(f,out)
     fx = ForwardDiff.value(_f)
     dfx = ForwardDiff.partials(_f).values[1]
@@ -76,7 +76,7 @@ end
 
 @inline function fgradf2(f::F,x1::R,x2::R) where{F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
-    _1 = one(R)
+    _1 = oneunit(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
     dual2 = ForwardDiff.Dual{T,R,2}(x2, ForwardDiff.Partials((_0,_1)))
@@ -88,7 +88,7 @@ end
 #Manual implementation of an hyperdual.
 @inline function ∂2(f::F,x1::R,x2::R) where {F,R<:Real}
     T = typeof(ForwardDiff.Tag(f, R))
-    _1 = one(R)
+    _1 = oneunit(R)
     _0 = zero(R)
     dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
     dual2 = ForwardDiff.Dual{T,R,2}(x2, ForwardDiff.Partials((_0,_1)))  
@@ -100,6 +100,51 @@ end
           _, d2fdy2 = df2.partials.values
     d2f = SMatrix{2}(d2fdx2,d2fdxdy,d2fdxdy,d2fdy2)
     return (fx,df,d2f)
+end
+
+#Manual implementation of an hyperdual.
+@inline function J2(f::F,x::SVector{2,R}) where {F,R<:Real}
+    T = typeof(ForwardDiff.Tag(f, R))
+    _1 = oneunit(R)
+    _0 = zero(R)
+    x1,x2 = x
+    dual1 = ForwardDiff.Dual{T,R,2}(x1, ForwardDiff.Partials((_1,_0)))
+    dual2 = ForwardDiff.Dual{T,R,2}(x2, ForwardDiff.Partials((_0,_1)))  
+    dx = SVector(dual1,dual2)
+    f̄ = f(dx)
+    f̄1,f̄2 = f̄[1],f̄[2]
+    F̄ = SVector(f̄1.value , f̄2.value)
+    df1dx1, df1dx2 = f̄1.partials.values
+    df2dx1, df2dx2 = f̄2.partials.values
+    J = SMatrix{2}(df1dx1,df2dx1,df1dx2,df2dx2)
+    return F̄,J
+end
+
+@inline function J3(f::FF,x::SVector{3,R}) where {FF,R<:Real}
+    T = typeof(ForwardDiff.Tag(f, R))
+    _1 = oneunit(R)
+    _0 = zero(R)
+    x1,x2,x3 = x
+    dx1 = ForwardDiff.Dual{T,R,3}(x1, ForwardDiff.Partials((_1,_0,_0)))
+    dx2 = ForwardDiff.Dual{T,R,3}(x2, ForwardDiff.Partials((_0,_1,_0)))
+    dx3 = ForwardDiff.Dual{T,R,3}(x3, ForwardDiff.Partials((_0,_0,_1)))  
+    dx = SVector(dx1,dx2,dx3)
+    f̄ = f(dx)
+    f̄1,f̄2,f̄3 = f̄[1],f̄[2],f̄[3]
+    Fx = SVector(f̄1.value, f̄2.value, f̄3.value)
+    df1dx1, df1dx2, df1dx3 = f̄1.partials.values
+    df2dx1, df2dx2, df2dx3 = f̄2.partials.values
+    df3dx1, df3dx2, df3dx3 = f̄3.partials.values
+    Jx = SMatrix{3}(df1dx1,df2dx1,df3dx1,df1dx2,df2dx2,df3dx2,df1dx3,df2dx3,df3dx3)
+    return Fx,Jx
+end
+
+function J23(f::F,x::SVector{3,R}) where {F,R<:Real}
+    return J3(f,x)
+end
+
+function J23(f::F,x::SVector{2,R}) where {F,R<:Real}
+    return J2(f,x)
 end
 
 function ∂2(f::F,x1::R1,x2::R2) where{F,R1<:Real,R2<:Real}
