@@ -400,7 +400,7 @@ end
 
 default units: `[kg/m^3]`
 
-Calculates the molar density, defined as:
+Calculates the mass density, defined as:
 
 ```julia
 ρₙ =  Mr/V
