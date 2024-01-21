@@ -94,6 +94,25 @@ function internal_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, thread
 end
 
 """
+    internal_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Default units: `[J]`
+
+Calculates the residual internal energy, defined as:
+
+```julia
+U = Ar - T * ∂Ar/∂T
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_internal_energy_res(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
+function internal_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    V = volume(model, p, T, z; phase, threaded, vol0)
+    return VT_internal_energy_res(model,V,T,z)
+end
+
+"""
     enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
 Default units: `[J]`
@@ -113,6 +132,25 @@ function enthalpy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true
 end
 
 """
+    enthalpy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Default units: `[J]`
+
+Calculates the residual enthalpy, defined as:
+
+```julia
+H = Ar - T * ∂Ar/∂T - V * ∂Ar/∂V
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_enthalpy_res(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
+function enthalpy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    V = volume(model, p, T, z; phase, threaded, vol0)
+    return VT_enthalpy_res(model,V,T,z)
+end
+
+"""
     gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
 Default units: `[J]`
@@ -120,7 +158,7 @@ Default units: `[J]`
 Calculates the gibbs free energy, defined as:
 
 ```julia
-G = A - V * ∂A/∂V
+G = A + p*V
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_gibbs_free_energy(model,V,T,z)`.
 
@@ -135,6 +173,25 @@ function gibbs_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, thre
 end
 
 """
+    gibbs_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Default units: `[J]`
+
+Calculates the residual gibbs free energy, defined as:
+
+```julia
+G = Ar - V*∂Ar/∂V
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_gibbs_free_energy_res(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
+function gibbs_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    V = volume(model, p, T, z; phase, threaded, vol0)
+    return VT_gibbs_free_energy_res(model,V,T,z)
+end
+
+"""
     helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
 Default units: `[J]`
@@ -144,13 +201,32 @@ Calculates the helmholtz free energy, defined as:
 ```julia
 A = eos(model,V(p),T,z)
 ```
-Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `eos(model,V,T,z)`.
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_helmholtz_free_energy(model,V,T,z)`.
 
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
 function helmholtz_free_energy(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     V = volume(model, p, T, z; phase, threaded, vol0)
     return VT_helmholtz_free_energy(model,V,T,z)
+end
+
+"""
+    helmholtz_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+
+Default units: `[J]`
+
+Calculates the residual helmholtz free energy, defined as:
+
+```julia
+A = eos_res(model,V(p),T,z)
+```
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_helmholtz_free_energy_res(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
+function helmholtz_free_energy_res(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    V = volume(model, p, T, z; phase, threaded, vol0)
+    return VT_helmholtz_free_energy_res(model,V,T,z)
 end
 
 """
@@ -504,9 +580,15 @@ function VT_partial_property(model::EoSModel, V, T, z, ::typeof(volume))
     return -dpdni ./ dpdv
 end
 
-export entropy, chemical_potential, internal_energy, enthalpy, gibbs_free_energy
-export helmholtz_free_energy, isochoric_heat_capacity, isobaric_heat_capacity
+#first derivative order properties
+export entropy, internal_energy, enthalpy, gibbs_free_energy, helmholtz_free_energy
+export entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, helmholtz_free_energy_res
+#second derivative order properties
+export isochoric_heat_capacity, isobaric_heat_capacity
 export isothermal_compressibility, isentropic_compressibility, speed_of_sound
-export isobaric_expansivity, joule_thomson_coefficient, compressibility_factor, inversion_temperature
-export mass_density,molar_density, activity_coefficient, fugacity_coefficient, entropy_res
+export isobaric_expansivity, joule_thomson_coefficient, inversion_temperature
+#volume properties
+export mass_density,molar_density, compressibility_factor
+#molar gradient properties
+export chemical_potential, activity_coefficient, fugacity_coefficient
 export mixing, excess, gibbs_solvation

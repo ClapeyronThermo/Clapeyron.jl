@@ -54,6 +54,11 @@ function ∂f(model,V,T,z)
     return _df,_f
 end
 
+function ∂f_res(model,V,T,z)
+    f(∂V,∂T) = eos_res(model,∂V,∂T,z)
+    _f,_df = Solvers.fgradf2(f,V,T)
+    return _df,_f
+end
 #returns p and ∂p∂V at constant T
 #it doesnt do a pass over temperature, so its
 #faster that d2f when only requiring d2fdV2

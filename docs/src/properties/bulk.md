@@ -45,14 +45,17 @@ Where `r` could be any molar or mass density, molar or mass volume, total volume
 ```@docs
 Clapeyron.volume
 Clapeyron.helmholtz_free_energy
+Clapeyron.helmholtz_free_energy_res
 Clapeyron.molar_density
 Clapeyron.mass_density
 Clapeyron.compressibility_factor
 Clapeyron.gibbs_free_energy
+Clapeyron.gibbs_free_energy_res
 Clapeyron.entropy
 Clapeyron.entropy_res
 Clapeyron.enthalpy
 Clapeyron.internal_energy
+Clapeyron.internal_energy_res
 ```
 
 ### Methods that require second order VT derivatives
