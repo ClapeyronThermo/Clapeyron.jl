@@ -548,6 +548,14 @@ end
         @test Clapeyron.ideal_consistency(system,V,T,z) ≈ 0.0 atol = 1e-14
     end
 
+    @testset "Shomate" begin
+        system = ShomateIdeal(["water"])
+        coeff = model.params.coeffs[1]
+        @test Clapeyron.evalcoeff(model,coeff,500) ≈ 35.21836175 rtol = 1e-6
+        @test Clapeyron.eval∫coeff(model,coeff,500) ≈ 15979.2447 rtol = 1e-6
+        @test Clapeyron.eval∫coeffT(model,coeff,500) ≈ 191.00554 rtol = 1e-6
+    end
+
     @testset "Walker" begin
         system = WalkerIdeal(["hexane"])
         @test Clapeyron.molecular_weight(system)*1000 ≈ 86.21
