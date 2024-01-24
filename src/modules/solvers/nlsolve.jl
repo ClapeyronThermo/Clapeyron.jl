@@ -45,21 +45,21 @@ _inplace(x0::SVector) = false
 function autoVectorObjective(f!,x0::StaticArrays.SVector{2,T},chunk) where T
     f(x) = f!(nothing,x) #we assume that the F argument is unused in static arrays
     j(J,x) = ForwardDiff.jacobian(f,x)
-    fj(F,J,x) = J23(f,x)
+    fj(F,J,x) = FJ_ad(f,x)
     return NLSolvers.VectorObjective(f!,j,fj,nothing)
 end
 
 function autoVectorObjective(f!,x0::StaticArrays.SVector{3,T},chunk) where T
     f(x) = f!(nothing,x) #we assume that the F argument is unused in static arrays
     j(J,x) = ForwardDiff.jacobian(f,x)
-    fj(F,J,x) = J23(f,x)
+    fj(F,J,x) = FJ_ad(f,x)
     return NLSolvers.VectorObjective(f!,j,fj,nothing)
 end
 
 function autoVectorObjective(f!,x0::StaticArrays.SVector,chunk)
     f(x) = f!(nothing,x) #we assume that the F argument is unused in static arrays
     j(J,x) = ForwardDiff.jacobian(f,x)
-    fj(F,J,x) = J23(f,x)
+    fj(F,J,x) = FJ_ad(f,x)
     return NLSolvers.VectorObjective(f,j,fj,nothing)
 end
 
@@ -115,7 +115,7 @@ struct Newton2Var end
 
 function nlsolve2(f::FF,x::SVector{NN,TT},method::Newton2Var,options=NEqOptions()) where {FF,NN,TT}
     function FJ(_z)
-        return J23(f,_z)
+        return FJ_ad(f,_z)
     end
     Fx, Jx = FJ(x)
     z = x
