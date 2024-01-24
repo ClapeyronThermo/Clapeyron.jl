@@ -1,21 +1,28 @@
 struct ReidIdealParam <: EoSParam
-    coeffs::SingleParam{NTuple{4,Float64}}
+    coeffs::SingleParam{NTuple{5,Float64}}
 end
 
 
 
-function reid_coeffs(a::SingleParam,b::SingleParam,c::SingleParam,d::SingleParam)
+function reid_coeffs(a::SingleParam,b::SingleParam,c::SingleParam,d::SingleParam,e = nothing)
     comps = a.components
     a = a.values
     b = b.values
     c = c.values
     d = d.values
-    return reid_coeffs(a,b,c,d,comps)
+    _e = e == nothing ? FillArrays.Zeros(length(comps)) : e.values
+    return reid_coeffs(a,b,c,d,e,comps)
 end
 
 function reid_coeffs(a,b,c,d,comps)
     n = length(a)
-    coeffs = [(a[i],b[i],c[i],d[i]) for i in 1:n]
+    coeffs = [(a[i],b[i],c[i],d[i],zero(a[i])) for i in 1:n]
+    SingleParam("Reid Coefficients",comps,coeffs)
+end
+
+function reid_coeffs(a,b,c,d,e,comps)
+    n = length(a)
+    coeffs = [(a[i],b[i],c[i],d[i],e[i]) for i in 1:n]
     SingleParam("Reid Coefficients",comps,coeffs)
 end
 
@@ -30,14 +37,15 @@ abstract type ReidIdealModel <: IdealModel end
 
 ## Input parameters
 
-- `a`: Single Parameter (`Float64`)
-- `b`: Single Parameter (`Float64`)
-- `c`: Single Parameter (`Float64`)
-- `d`: Single Parameter (`Float64`)
+- `a`: Single Parameter (`Float64`) - polynomial coefficient
+- `b`: Single Parameter (`Float64`) - polynomial coefficient
+- `c`: Single Parameter (`Float64`) - polynomial coefficient
+- `d`: Single Parameter (`Float64`) - polynomial coefficient
+- `e`: Single Parameter (optional) (`Float64`)  - polynomial coefficient
 
 ## Model parameters
 
-- `coeffs`: Single Parameter (`NTuple{4,Float64}`)
+- `coeffs`: Single Parameter (`NTuple{5,Float64}`)
 
 ## Description
 
@@ -73,13 +81,16 @@ ReidIdeal
 
 export ReidIdeal
 default_locations(::Type{ReidIdeal}) = ["ideal/ReidIdeal.csv"]
-function transform_params(::Type{ReidIdeal},params)
+function transform_params(::Type{ReidIdeal},params,components)
     a,b,c,d = params["a"],params["b"],params["c"],params["d"]
-    params["coeffs"] = reid_coeffs(a,b,c,d)
+    e = get(params,"e") do
+        SingleParam("e",components)
+    end
+    params["coeffs"] = reid_coeffs(a,b,c,d,e)
     return params
 end
-recombine_impl!(model::ReidIdealModel) = model
 
+recombine_impl!(model::ReidIdealModel) = model
 
 function a_ideal(model::ReidIdealModel, V, T, z)
     #x = z/sum(z)
