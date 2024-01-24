@@ -1,5 +1,5 @@
 struct CPLNGEstIdealParam <: EoSParam
-    coeffs::SingleParam{NTuple{4,Float64}}
+    coeffs::SingleParam{NTuple{5,Float64}}
     Mw::SingleParam{Float64}
 end
 

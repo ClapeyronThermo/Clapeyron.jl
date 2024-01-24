@@ -21,7 +21,7 @@ struct JobackIdealParam <: EoSParam
     H_vap::SingleParam{Float64}
     eta_a::SingleParam{Float64}
     eta_b::SingleParam{Float64}
-    coeffs::SingleParam{NTuple{4,Float64}}
+    coeffs::SingleParam{NTuple{5,Float64}}
 end
 
 abstract type JobackIdealModel <: ReidIdealModel end

@@ -122,7 +122,7 @@ end
 format_components(str::String) = [str]
 format_components(str::Tuple) = format_components(first(str))
 format_components(str::Pair) = format_components(first(str))
-format_components(str::AbstractString) = String(str)
+format_components(str::AbstractString) = format_components(String(str))
 format_components(str::Vector{String}) = str
 format_components(str) = map(format_component_i,str)
 format_component_i(str::AbstractString) = String(str)
@@ -133,5 +133,7 @@ format_component_i(x::Pair) = first(x)
 format_gccomponents(str::Tuple) = [str]
 format_gccomponents(str::Pair) = [str]
 format_gccomponents(str) = str
-
+format_gccomponents(str::String) = [str]
+format_gccomponents(str::AbstractString) = format_components(String(str))
+format_gccomponents(str::Vector{String}) = str
 #used by MultiComponentFlash extension

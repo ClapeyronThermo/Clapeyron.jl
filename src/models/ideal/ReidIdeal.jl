@@ -14,13 +14,13 @@ function reid_coeffs(a::SingleParam,b::SingleParam,c::SingleParam,d::SingleParam
     return reid_coeffs(a,b,c,d,e,comps)
 end
 
-function reid_coeffs(a,b,c,d,comps)
+function reid_coeffs(a::AbstractVector,b::AbstractVector,c::AbstractVector,d::AbstractVector,comps::Vector{String})
     n = length(a)
     coeffs = [(a[i],b[i],c[i],d[i],zero(a[i])) for i in 1:n]
     SingleParam("Reid Coefficients",comps,coeffs)
 end
 
-function reid_coeffs(a,b,c,d,e,comps)
+function reid_coeffs(a::AbstractVector,b::AbstractVector,c::AbstractVector,d::AbstractVector,e::AbstractVector,comps::Vector{String})
     n = length(a)
     coeffs = [(a[i],b[i],c[i],d[i],e[i]) for i in 1:n]
     SingleParam("Reid Coefficients",comps,coeffs)

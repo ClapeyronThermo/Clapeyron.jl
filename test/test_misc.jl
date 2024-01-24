@@ -177,6 +177,7 @@ end
         @test PCSAFT("water" => ["H2O"=>1],idealmodel = WalkerIdeal) isa EoSModel
         @test PCSAFT(["water" => ["H2O"=>1]],idealmodel = WalkerIdeal) isa EoSModel
         @test PCSAFT("water") isa EoSModel
+        @test JobackIdeal("hexane") isa EoSModel 
         @test PCSAFT(["water" => ["H2O"=>1]]) isa EoSModel
     end
 
