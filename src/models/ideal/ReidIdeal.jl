@@ -4,14 +4,15 @@ struct ReidIdealParam <: EoSParam
     coeffs::SingleParam{NTuple{5,Float64}}
 end
 
-function reid_coeffs(a::SingleParam,b::SingleParam,c::SingleParam,d::SingleParam,e = nothing)
+function reid_coeffs(a::SingleParameter,b::SingleParameter,c::SingleParameter,d::SingleParameter,e::SingleParameter,comps::Vector{String})
     comps = a.components
     a = a.values
     b = b.values
     c = c.values
     d = d.values
     _e = e == nothing ? FillArrays.Zeros(length(comps)) : e.values
-    return reid_coeffs(a,b,c,d,e,comps)
+
+    return reid_coeffs(a,b,c,d,_e,comps)
 end
 
 function reid_coeffs(a::AbstractVector,b::AbstractVector,c::AbstractVector,d::AbstractVector,comps::Vector{String})
@@ -86,7 +87,7 @@ function transform_params(::Type{ReidIdeal},params,components)
     e = get(params,"e") do
         SingleParam("e",components)
     end
-    params["coeffs"] = reid_coeffs(a,b,c,d,e)
+    params["coeffs"] = reid_coeffs(a,b,c,d,e,components)
     return params
 end
 
@@ -139,7 +140,7 @@ function VT_isobaric_heat_capacity(model::PolynomialIdealModel,V,T,z=SA[1.])
     Σz = sum(z)
     for i in @comps
         pol = coeff[i]
-        res +=z[i]*evalcoeff(model,T,pol)
+        res +=z[i]*evalcoeff(model,pol,T)
     end
     return res/Σz
 end
