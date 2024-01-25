@@ -550,10 +550,10 @@ end
 
     @testset "Shomate" begin
         system = ShomateIdeal(["water"])
-        coeff = model.params.coeffs[1]
-        @test Clapeyron.evalcoeff(model,coeff,500) ≈ 35.21836175 rtol = 1e-6
-        @test Clapeyron.eval∫coeff(model,coeff,500) ≈ 15979.2447 rtol = 1e-6
-        @test Clapeyron.eval∫coeffT(model,coeff,500) ≈ 191.00554 rtol = 1e-6
+        coeff = system.params.coeffs[1]
+        @test Clapeyron.evalcoeff(system,coeff,500) ≈ 35.21836175 rtol = 1e-6
+        @test Clapeyron.eval∫coeff(system,coeff,500) ≈ 15979.2447 rtol = 1e-6
+        @test Clapeyron.eval∫coeffT(system,coeff,500) ≈ 191.00554 rtol = 1e-6
     end
 
     @testset "Walker" begin
