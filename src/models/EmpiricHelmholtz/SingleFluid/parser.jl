@@ -986,3 +986,28 @@ function idealmodel_to_json_data(model::AlyLeeIdealModel,Tr,T0,Vr)
         ),
     ]
 end
+
+function idealmodel_to_json_data(model::ShomateIdealModel,Tr,T0,Vr)
+    coeffs = model.params.coeffs[1] ./ Rgas(model)
+    n = length(coeffs)
+    [
+        Dict(
+            :type => "IdealGasHelmholtzLead",
+            :a1 => - log(Vr) - log(298) + log(Tr),
+            :a2 => 0,
+        ),
+
+        Dict(
+            :type => "IdealGasHelmholtzLogTau",
+            :a => -1,
+        ),
+
+        Dict(
+            :type => "IdealGasHelmholtzCP0PolyT",
+            :T0 => 298.0,
+            :Tc => Tr,
+            :c => [coeffs...],
+            :t => [0,1,2,3,-2],
+        ),
+    ]
+end
