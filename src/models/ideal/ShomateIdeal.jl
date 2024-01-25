@@ -60,7 +60,7 @@ function transform_params(::Type{ShomateIdeal},params,components)
     e = get(params,"e") do
         SingleParam("e",components)
     end
-    params["coeffs"] = reid_coeffs(a,b,c,d,e)
+    params["coeffs"] = reid_coeffs(a,b,c,d,e,components)
     return params
 end
 
