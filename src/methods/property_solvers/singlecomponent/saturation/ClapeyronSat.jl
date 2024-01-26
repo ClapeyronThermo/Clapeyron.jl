@@ -1,7 +1,7 @@
 struct ClapeyronSaturation{T,C,M<:SaturationMethod} <: SaturationMethod
     T0::T
     crit::C
-    satmethod::M  
+    satmethod::M
 end
 
 """
@@ -24,21 +24,21 @@ ClapeyronSaturation(;T0 = nothing, crit = nothing, satmethod = ChemPotVSaturatio
 #coordinate and descending.
 
 #by default, starts right before the critical point, and descends via Clapeyron equation: (∂p/∂T)sat = ΔS/ΔV ≈ Δp/ΔT
-
-function saturation_temperature_impl(model::EoSModel,p,method::ClapeyronSaturation{Nothing})
+function saturation_temperature_impl(model::EoSModel,p,method::ClapeyronSaturation)
+    
     crit = method.crit
-    if isnothing(method.crit)
-        crit = crit_pure(model)
-    end
     SatMethod = parameterless_type(method.satmethod)
     satmethod = SatMethod(;crit)
-    T0,_,_ = x0_saturation_temperature(model,p,crit)
-    method_init = ClapeyronSaturation(T0,crit,satmethod)
-    return saturation_temperature_impl(model,p,method_init)
-end
-
-function saturation_temperature_impl(model::EoSModel,p,method::ClapeyronSaturation)
-    T0 = method.T0/one(method.T0)
+    
+    if !isnothing(method.T0)
+        T00 = method.T0 
+    elseif !isnothing(method.crit)
+        T00,_,_ = x0_saturation_temperature_crit(model,p,crit)
+    else
+        T00 = 0.7*T_scale(model,SA[1.0])
+    end
+    
+    T0 = T00/oneunit(T00)*oneunit(eltype(model))
     TT = typeof(T0)
     nan = zero(T0)/zero(T0)
     cache = Ref{Tuple{TT,TT,TT,TT,Bool}}((nan,nan,nan,nan,false))
@@ -51,23 +51,16 @@ end
 function Obj_sat_pure_T(model,T,p,cache,satmethod)
     Told,pold,_,_,_ = cache[]
     pii,vli,vvi = saturation_pressure(model,T,satmethod)
+    Ti,sat = dpdTsat_step(model,p,T,satmethod,false)
+    pii,vli,vvi = sat
     Δp = (p-pii)
     abs(Δp) < 4eps(p) && return T
-    #if abs(Δp/p) < 0.01
-    #    use_v = true
-    #end
     if Told < T
         if isnan(pii) && !isnan(pold)
             return (T+Told)/2
         end
     end
-    cache[] = (T,pii,vli,vvi,false) 
-    S_v = VT_entropy(model,vvi,T)
-    S_l = VT_entropy(model,vli,T)
-    ΔS = S_v - S_l
-    ΔV = vvi - vli
-    dpdt = ΔS/ΔV #≈ (p - pii)/(T-Tnew)
-    Ti = T + Δp/dpdt
+    cache[] = (T,pii,vli,vvi,false)
     return Ti
 end
 

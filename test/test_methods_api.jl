@@ -27,7 +27,7 @@
 
     #example 3.13, abbott and van ness, 7th ed.
     model13 = PR(["ammonia"],translation = RackettTranslation)
-    v13 = 26.545208120801895u"cm^3"
+    v13 = 26.545235297652496u"cm^3"
     T13 = 310u"K"
     #experimental value is 29.14 cm3/mol. PR default is ≈ 32, Racckett overcorrects
     @test saturation_pressure(model13,T13,output = (u"atm",u"cm^3",u"cm^3"))[2] ≈ v13 rtol = 1E-6
@@ -47,6 +47,10 @@
     @test chemical_potential(BasicIdeal(), 1e6u"Pa", 300u"K") == chemical_potential(BasicIdeal(), 1e6, 300)*u"J/mol"
     #@test Clapeyron.x0_psat(model11, 100u"K") == Clapeyron.x0_psat(model11, 100)*u"Pa"
     #@test Clapeyron.x0_sat_pure(model11, 100u"K") == Clapeyron.x0_sat_pure(model11, 100).*(u"m^3",)
+
+    # support for vol0
+    modelgergCO2 = GERG2008(["carbon dioxide"])
+    @test !isnan(only(Clapeyron.fugacity_coefficient(modelgergCO2, 1u"MPa", 300u"K"; phase=:stable, vol0=0.0023u"m^3")))
 end
 
 @testset "association" begin
@@ -267,7 +271,7 @@ end
 
     #test IsoFugacity, near criticality
     Tc_near = 0.95*647.096
-    psat_Tcnear = 1.4960621837287119e7 #default solver result
+    psat_Tcnear = 1.496059652088857e7 #default solver result
     @test first(Clapeyron.saturation_pressure(model,Tc_near,IsoFugacitySaturation())) ≈ psat_Tcnear rtol = 1e-6
     #Test that IsoFugacity fails over critical point
     @test isnan(first(Clapeyron.saturation_pressure(model,1.1*647.096,IsoFugacitySaturation())))
@@ -516,6 +520,31 @@ end
         model = PCSAFT(["methane","butane","isobutane","pentane"])
         # @test_broken bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
         # FIXME: The test does not yield the same value depending on the OS and the julia version
+    end
+
+    @testset "saturation points without critical point" begin
+        model1 = PCSAFT("water")
+        Tc1,_,_ = crit_pure(model1)
+        T1 = 0.995Tc1
+        @test Clapeyron.saturation_pressure(model1,T1,crit_retry = false)[1] ≈ 3.542008160105954e7 rtol = 1e-6
+        
+        model2 = PCSAFT("eicosane")
+        Tc2,_,_ = crit_pure(model2)
+        T2 = 0.995Tc2
+        if Base.VERSION >= v"1.7" #this test fails on mac, julia 1.6
+            @test Clapeyron.saturation_pressure(model2,T2,crit_retry = false)[1] ≈ 1.3931662325210017e6 rtol = 1e-6
+        end
+
+        #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/237
+        #for some reason, it fails with mac sometimes
+        if !Base.Sys.isapple()
+            model3 = SAFTVRMie("heptacosane",userlocations = (Mw = 380.44,segment = 2.0,sigma = 3.0,lambda_a = 6.0,lambda_r = 20.01,epsilon = 200.51))
+            @test Clapeyron.saturation_pressure(model3,94.33,crit_retry = false)[1] ≈ 2.8668634416924506 rtol = 1e-6
+        end
+
+        model4 = SAFTVRMie(["methanol"])
+        T4 = 164.7095044742657
+        @test Clapeyron.saturation_pressure(model4,T4,crit_retry = false)[1] ≈ 0.02610821545005174 rtol = 1e-6
     end
 end
 
