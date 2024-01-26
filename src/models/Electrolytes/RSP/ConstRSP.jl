@@ -9,7 +9,7 @@ end
 
 @registermodel ConstRSP
 export ConstRSP
-function ConstRSP(solvents,ions; userlocations::Vector{String}=String[], value =  78.4, verbose::Bool=false)
+function ConstRSP(solvents,ions; userlocations::Vector{String}=String[], value =  78.38484961, verbose::Bool=false)
     components = deepcopy(solvents)
     append!(components,ions)
     icomponents = 1:length(components)

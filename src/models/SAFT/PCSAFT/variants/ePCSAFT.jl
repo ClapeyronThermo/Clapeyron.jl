@@ -30,4 +30,12 @@ function ePCSAFT(solvents,ions;
     return model
 end
 
+function a_res(model::ESElectrolyte{BasicIdeal, pharmaPCSAFT{BasicIdeal}, DH{ConstRSP}}, V, T, z)
+    data_pcsaft = data(model.neutralmodel,V,T,z)
+    data_ion = data(model.ionmodel,V,T,z)
+    data_ion = (data_ion[1],data_pcsaft[1])
+
+    return a_res(model.neutralmodel,V,T,z,data_pcsaft)+a_res(model.ionmodel,V,T,z,data_ion)
+end
+
 export ePCSAFT
