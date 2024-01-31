@@ -191,16 +191,16 @@ function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=tru
         volumes = (v1,v2,v3)
         =#
         
-        _Vg = Threads.@spawn _volume_compress($fluid,$p,$T,$z,$Vg0)
-        _Vl = Threads.@spawn _volume_compress($fluid,$p,$T,$z,$Vl0)
+        _Vg = StableTasks.@spawn _volume_compress($fluid,$p,$T,$z,$Vg0)
+        _Vl = StableTasks.@spawn _volume_compress($fluid,$p,$T,$z,$Vl0)
         if !isnan(Vs0)
-            _Vs = Threads.@spawn _volume_compress($solid,$p,$T,$z,$Vs0)
+            _Vs = StableTasks.@spawn _volume_compress($solid,$p,$T,$z,$Vs0)
         else
             _Vs = nan
         end
-        Vg::TYPE = fetch(_Vg)
-        Vl::TYPE = fetch(_Vl)
-        Vs::TYPE = fetch(_Vs)
+        Vg = fetch(_Vg)
+        Vl = fetch(_Vl)
+        Vs = fetch(_Vs)
         volumes = (Vg,Vl,Vs)
     else
         Vg =  _volume_compress(fluid,p,T,z,Vg0)

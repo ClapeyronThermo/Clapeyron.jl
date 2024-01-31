@@ -17,6 +17,7 @@ using NLSolvers
 using NLSolvers: NEqOptions
 using DiffResults, ForwardDiff
 using Downloads #for bibtex
+using StableTasks #for multithreaded volume
 
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
