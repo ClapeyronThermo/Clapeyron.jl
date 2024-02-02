@@ -125,7 +125,6 @@ An initial estimate of the volume `vol0` can be optionally be provided.
     ```
 """
 function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0=nothing)
-    check_arraysize(model,z)
     return volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
@@ -145,6 +144,7 @@ end
 
 function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
 #Threaded version
+    check_arraysize(model,z)
     TYPE = typeof(p+T+first(z)+oneunit(eltype(model)))
     nan = zero(TYPE)/zero(TYPE)
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
