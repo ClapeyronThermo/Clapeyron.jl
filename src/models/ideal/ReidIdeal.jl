@@ -93,22 +93,22 @@ end
 
 recombine_impl!(model::ReidIdealModel) = model
 
-evalcoeff(::ReidIdealModel,coeffs,T) = evalpoly(T,coeffs)
+evalcoeff(::ReidIdealModel,coeffs,T,lnT = log(T)) = evalpoly(T,coeffs)
 
-function eval∫coeff(::ReidIdealModel,coeffs,T)
+function eval∫coeff(::ReidIdealModel,coeffs,T,lnT = log(T))
     n = length(coeffs)
     div1 = NTuple{n,Int}(1:n)
     ∫poly = coeffs ./ div1
     return evalpoly(T,∫poly)*T
 end
 
-function eval∫coeffT(::ReidIdealModel,coeffs,T)
+function eval∫coeffT(::ReidIdealModel,coeffs,T,lnT = log(T))
     n = length(coeffs)
     div1 = NTuple{n-1,Int}(1:(n-1))
     A = first(coeffs)
     coeffs1 = coeffs[2:end]
     ∫polyT = coeffs1 ./ div1
-    return evalpoly(T,∫polyT)*T + A*log(T)
+    return evalpoly(T,∫polyT)*T + A*lnT
 end
 
 function a_ideal(model::PolynomialIdealModel, V, T, z)
@@ -123,11 +123,13 @@ function a_ideal(model::PolynomialIdealModel, V, T, z)
     R̄⁻¹ = 1/R̄
     RT⁻¹ = 1/RT
     T0 = 298.
+    lnT0 = log(T0)
+    lnT = log(T)
     @inbounds for i in @comps
         coeffs = polycoeff[i] 
-        H = (eval∫coeff(model,coeffs,T) - eval∫coeff(model,coeffs,T0))*RT⁻¹
-        TS = (eval∫coeffT(model,coeffs,T) - eval∫coeffT(model,coeffs,T0))*R̄⁻¹
-        α₀ᵢ = H - TS + log(T/T0)
+        H = (eval∫coeff(model,coeffs,T,lnT) - eval∫coeff(model,coeffs,T0,lnT0))*RT⁻¹
+        TS = (eval∫coeffT(model,coeffs,T,lnT) - eval∫coeffT(model,coeffs,T0,lnT0))*R̄⁻¹
+        α₀ᵢ = H - TS + lnT - lnT0
         res += z[i]*α₀ᵢ
         res += xlogx(z[i],V⁻¹)
     end

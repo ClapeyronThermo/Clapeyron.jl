@@ -64,21 +64,21 @@ function transform_params(::Type{ShomateIdeal},params,components)
     return params
 end
 
-function evalcoeff(::ShomateIdealModel,coeffs,T)
+function evalcoeff(::ShomateIdealModel,coeffs,T,lnT = log(T))
     A,B,C,D,E = coeffs
     poly = (A,B,C,D)
     return evalpoly(T,poly) + E/(T*T)
 end
 
-function eval∫coeff(::ShomateIdealModel,coeffs,T)
+function eval∫coeff(::ShomateIdealModel,coeffs,T,lnT = log(T))
     A,B,C,D,E = coeffs
     ∫poly = (A,B/2,C/3,D/4)
     return evalpoly(T,∫poly)*T - E/T
 end
 
-function eval∫coeffT(::ShomateIdealModel,coeffs,T)
+function eval∫coeffT(::ShomateIdealModel,coeffs,T,lnT = log(T))
     A,B,C,D,E = coeffs
     ∫polyT = (B,C/2,D/3)
-    return A*log(T) + evalpoly(T,∫polyT)*T - E/(2*T*T)
+    return A*lnT + evalpoly(T,∫polyT)*T - E/(2*T*T)
 end
 
