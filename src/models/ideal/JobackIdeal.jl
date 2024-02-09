@@ -22,6 +22,7 @@ struct JobackIdealParam <: EoSParam
     eta_a::SingleParam{Float64}
     eta_b::SingleParam{Float64}
     coeffs::SingleParam{NTuple{5,Float64}}
+    reference_state::ReferenceState
 end
 
 abstract type JobackIdealModel <: ReidIdealModel end
@@ -161,7 +162,7 @@ function recombine_impl!(model::JobackIdeal)
     return model
 end
 
-ReidIdeal(model::JobackIdeal) = ReidIdeal(model.components,ReidIdealParam(model.params.coeffs),model.references)
+ReidIdeal(model::JobackIdeal) = ReidIdeal(model.components,ReidIdealParam(model.params.coeffs,model.params.reference_state),model.references)
 
 function T_b(model::JobackIdeal)
     n = model.groups.n_flattenedgroups

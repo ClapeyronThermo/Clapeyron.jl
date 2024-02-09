@@ -2,6 +2,7 @@ abstract type PolynomialIdealModel <: IdealModel end
 
 struct ReidIdealParam <: EoSParam
     coeffs::SingleParam{NTuple{5,Float64}}
+    reference_state::ReferenceState
 end
 
 function reid_coeffs(a::SingleParameter,b::SingleParameter,c::SingleParameter,d::SingleParameter,e::SingleParameter,comps::Vector{String})

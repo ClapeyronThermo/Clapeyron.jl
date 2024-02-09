@@ -1,5 +1,6 @@
 struct MonomerIdealParam <: EoSParam
     Mw::SingleParam{Float64}
+    reference_state::ReferenceState
 end
 
 abstract type MonomerIdealModel <: IdealModel end

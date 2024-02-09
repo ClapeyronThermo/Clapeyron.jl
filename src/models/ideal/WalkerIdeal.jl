@@ -9,6 +9,7 @@ struct WalkerIdealParam <: EoSParam
     deg2::SingleParam{Int}
     deg3::SingleParam{Int}
     deg4::SingleParam{Int}
+    reference_state::ReferenceState
 end
 
 abstract type WalkerIdealModel <: IdealModel end

@@ -3,7 +3,7 @@ abstract type EoSModel end
 function a_eos(model::EoSModel, V, T, z=SA[1.0])
     maybe_ideal = idealmodel(model)
     ideal = maybe_ideal !== nothing ? maybe_ideal : model
-    return a_ideal(ideal,V,T,z) + a_res(model,V,T,z)
+    return a_ideal(ideal,V,T,z) + a_res(model,V,T,z) + reference_state_eval(model,V,T,z)
 end
 
 """
