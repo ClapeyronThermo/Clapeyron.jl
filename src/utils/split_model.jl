@@ -4,6 +4,15 @@ function each_split_model(param::AbstractVector,I)
     return val
 end
 
+function each_split_model(param::ReferenceState,I)
+    sym = param.std_type
+    if length(param.a1) == 0
+        return deepcopy(param)
+    else
+        return ReferenceState(param.components[I],param.a0[I],param.a1[I],param.T0,param.P0,param.H0[I],param.S0[I],param.z0[I],param.std_type)
+    end
+end
+
 function each_split_model(param::AbstractMatrix,I)
     val =  param[I,I]
     eltype(param) <: AbstractArray && return deepcopy(val)
@@ -237,6 +246,10 @@ end
 
 function split_model(param::PairParameter,
     splitter = split_model(1:length(param.components)))
+    return [each_split_model(param,i) for i ∈ splitter]
+end
+
+function split_model(param::ReferenceState,splitter)
     return [each_split_model(param,i) for i ∈ splitter]
 end
 

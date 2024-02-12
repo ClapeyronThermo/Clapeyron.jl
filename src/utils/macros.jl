@@ -492,14 +492,14 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
             params_in["reference_state"] = reference_state
         end
     else
-        reference_state_checkempty(M,reference_state)
+        #reference_state_checkempty(M,reference_state)
     end
     #put AssocOptions inside params, so it can be used in transform_params
     if has_sites(M)
         if !haskey(params_in,"assoc_options")
             params_in["assoc_options"] = assoc_options
         else
-            throw(error("cannot overwrite \"assoc_options\" key, already exists!"))
+            #throw(error("cannot overwrite \"assoc_options\" key, already exists!"))
         end
 
         #legacy case: the model has a SiteParam, but it does not have association parameters.
@@ -544,14 +544,16 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
 
     #build idealmodel, if needed
     if hasfield(M,:idealmodel)
-        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
         result[:idealmodel] = init_idealmodel
     end
 
     #build model
     model = M((result[k] for k in fieldnames(M))...)
     #fit reference state
-    set_reference_state!(model)
+    if hasfield(M,:idealmodel)
+        set_reference_state!(model)
+    end
     return model
 end
 
