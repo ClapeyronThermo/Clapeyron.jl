@@ -83,6 +83,7 @@ ReidIdeal
 
 export ReidIdeal
 default_locations(::Type{ReidIdeal}) = ["ideal/ReidIdeal.csv"]
+default_ignore_missing_singleparams(::Type{ReidIdeal}) = ["e"]
 function transform_params(::Type{ReidIdeal},params,components)
     a,b,c,d = params["a"],params["b"],params["c"],params["d"]
     e = get(params,"e") do
