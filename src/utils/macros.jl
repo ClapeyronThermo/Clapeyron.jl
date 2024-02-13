@@ -492,8 +492,10 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
             params_in["reference_state"] = reference_state
         end
     else
+        #this could fail when the type is not entirely known.
         #reference_state_checkempty(M,reference_state)
     end
+
     #put AssocOptions inside params, so it can be used in transform_params
     if has_sites(M)
         if !haskey(params_in,"assoc_options")
@@ -543,17 +545,32 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     end
 
     #build idealmodel, if needed
+    
     if hasfield(M,:idealmodel)
-        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+        if has_reference_state(idealmodel)
+            #=
+            we want to execute set_reference_state!(model) only once (ideal models don't have)
+            saturation information so some standard states cannot be initialized.
+            
+            To avoid this, we set the input reference state to :no_set, and then we reset it to the 
+            input value. with this strategy, we can differenciate between standalone ideal models and
+            ideal models stored inside a residual model.
+            =#
+            _reference_state = reference_state === nothing ? ReferenceState() : reference_state
+            std_type = _reference_state.std_type
+            _reference_state.std_type = :no_set
+            init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+            _reference_state.std_type = std_type
+        else
+            init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        end
         result[:idealmodel] = init_idealmodel
     end
 
     #build model
     model = M((result[k] for k in fieldnames(M))...)
     #fit reference state
-    if hasfield(M,:idealmodel)
-        set_reference_state!(model)
-    end
+    set_reference_state!(model,verbose = verbose)
     return model
 end
 

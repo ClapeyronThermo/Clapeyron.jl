@@ -9,7 +9,7 @@ function each_split_model(param::ReferenceState,I)
     if length(param.a1) == 0
         return deepcopy(param)
     else
-        return ReferenceState(param.components[I],param.a0[I],param.a1[I],param.T0,param.P0,param.H0[I],param.S0[I],param.z0[I],param.std_type)
+        return ReferenceState(param.components[I],param.a0[I],param.a1[I],param.T0,param.P0,param.H0[I],param.S0[I],param.z0[I],param.phase,param.std_type)
     end
 end
 

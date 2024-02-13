@@ -9,20 +9,26 @@ mutable struct ReferenceState <: ClapeyronParam
     H0::Vector{Float64}
     S0::Vector{Float64}
     z0::Vector{Float64}
+    phase::Symbol
     std_type::Symbol
-    function ReferenceState(components,a0,a1,T0,P0,H0,S0,z0,std_type)
+    function ReferenceState(components,a0,a1,T0,P0,H0,S0,z0,phase,std_type)
         if std_type in (:ashrae,:nbp,:iir,:custom,:no_set)
-            return new(components,a0,a1,T0,P0,H0,S0,z0,std_type)
+            return new(components,a0,a1,T0,P0,H0,S0,z0,phase,std_type)
         else
             throw(error("invalid specification for ReferenceState."))
         end
     end
 end
 
-function ReferenceState(symbol = :no_set,T0 = NaN,P0 = NaN,H0 = NaN,S0 = NaN,z0 = Float64[])
+function ReferenceState(symbol = :no_set;T0 = NaN,P0 = NaN,H0 = NaN,S0 = NaN,phase = :unknown, z0 = Float64[])
     _H0 = isnan(H0) ? Float64[] : [H0]
     _S0 = isnan(S0) ? Float64[] : [S0]
-    ReferenceState(String[],Float64[],Float64[],T0,P0,_H0,_S0,z0,symbol)
+    _symbol = if !isnan(T0) & !isnan(P0) & (symbol == :no_set)
+        :custom
+    else
+        symbol
+    end
+    ReferenceState(String[],Float64[],Float64[],T0,P0,_H0,_S0,z0,phase,_symbol)
 end
 #by default, the reference state is stored in the idealmodel params. unwrap until
 #reaching that
@@ -45,17 +51,16 @@ end
 end
 
 function reference_state_eval(model::EoSModel,V,T,z)
-    _ref = reference_state(model)
-    if _ref.std_type == :no_set
-        reference_state_eval(nothing,V,T,z)
-    else
-        reference_state_eval(_ref,V,T,z)
-    end
+    _ref = reference_state(model)    
+    reference_state_eval(_ref,V,T,z)    
 end
 
-reference_state_eval(ref::Nothing,V,T,z) = zero(T+first(z)+oneunit(eltype(model)))
+reference_state_eval(ref::Nothing,V,T,z) = zero(1.0*T+first(z))
 
 function reference_state_eval(ref::ReferenceState,V,T,z)
+    if ref.std_type == :no_set
+        return zero(1.0*T + first(z))
+    end
     ā0 = dot(ref.a0,z)
     ā1 = dot(ref.a1,z)
     return (ā0/T + ā1)/sum(z)
@@ -71,7 +76,7 @@ function has_reference_state(model::Type{T}) where T
     return hasfield(T,:reference_state) && (fieldtype(T,:reference_state) == ReferenceState)
 end
 
-function set_reference_state!(model::EoSModel)
+function set_reference_state!(model::EoSModel;verbose = false)
     ref = reference_state(model)
     #handle cases where we don't need to do anything
     ref === nothing && return nothing
@@ -153,7 +158,6 @@ function _set_reference_state!(model,z0 = SA[1.0])
         resize!(z0,len)
         z0 .= 0
     end
-    @show z0
     a0 .= 0
     a1 .= 0
     R = Rgas(model)
@@ -188,7 +192,7 @@ function _set_reference_state!(model,z0 = SA[1.0])
         a0 .= (-H00 + H_iir)/R
         #IIR: h = 200 kJ/kg, s=1 kJ/kg/K at 0C saturated liquid
     elseif type == :custom
-        vl = volume(model,p0,T0,z0)
+        vl = volume(model,P0,T0,z0,phase = ref.phase)
         H_set = first(H0)
         S_set = first(S0)
         S00 = VT_entropy(model,vl,T0,z0) 
@@ -200,4 +204,4 @@ function _set_reference_state!(model,z0 = SA[1.0])
     end
 end
 
-export ReferenceState
+export ReferenceState,reference_state,has_reference_state,set_reference_state!
