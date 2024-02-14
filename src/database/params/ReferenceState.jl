@@ -11,20 +11,56 @@ mutable struct ReferenceState <: ClapeyronParam
     z0::Vector{Float64}
     phase::Symbol
     std_type::Symbol
-    function ReferenceState(components,a0,a1,T0,P0,H0,S0,z0,phase,std_type)
-        if std_type in (:ashrae,:nbp,:iir,:custom,:no_set)
-            return new(components,a0,a1,T0,P0,H0,S0,z0,phase,std_type)
-        else
-            throw(error("invalid specification for ReferenceState."))
-        end
-    end
 end
+"""
+    ReferenceState(type::Symbol = :no_set;T0 = NaN;P0 = NaN,H0 = NaN,S0 = NaN,phase = :unknown,z0 = Float64[])
+
+Parameter used to define a reference state for enthalpy and entropy, normally stored in the ideal model. 
+when set, it calculates a set of `a0` and `a1` values such as the entropy and enthalpy at a specified point are fixed.
+
+the `type` argument accepts the following standalone options:
+- `:no_set`: it returns the current defaults stablished by the equation of state.
+- `:ashrae`: h = s = 0 at -40C saturated liquid
+- `:iir`: h = 200.0 kJ/kg, s=1.0 kJ/kg/K at 0C saturated liquid
+- `:nbp`: h = s = 0 at 1 atm saturated liquid
+
+it also accepts the following options, that require additional specifications:
+- `:volume` h = H0, s = S0, at T = T0, v = `volume(model,P0,T0,z0,phase = phase)`
+- `:saturation_pressure` h = H0, s = S0, at T = T0, saturated phase (specified by the `phase` argument)
+- `:saturation_temperature` h = H0, s = S0, at p = P0, saturated phase (specified by the `phase` argument)
+
+If `z0` is not specified, the reference state calculation will be done for each component separately.
+
+## Examples
+```
+julia> model = PCSAFT(["water","pentane"],idealmodel = ShomateIdeal,reference_state = ReferenceState(:nbp))
+PCSAFT{ShomateIdeal, Float64} with 2 components:
+ "water"
+ "pentane"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> pure = split_model(model)
+2-element Vector{PCSAFT{ShomateIdeal, Float64}}:
+ PCSAFT{ShomateIdeal, Float64}("water")
+ PCSAFT{ShomateIdeal, Float64}("pentane")
+
+julia> T,vl,_ = saturation_temperature(pure[1],101325.0) #saturated liquid at 1 atm
+(373.2706553019503, 2.0512186595412677e-5, 0.03006573003253086)
+
+julia> enthalpy(pure[1],101325.0,T)
+-5.477897970382323e-6
+
+julia> entropy(pure[1],101325.0,T)
+5.009221069190994e-9
+```
+"""
+ReferenceState
 
 function ReferenceState(symbol = :no_set;T0 = NaN,P0 = NaN,H0 = NaN,S0 = NaN,phase = :unknown, z0 = Float64[])
     _H0 = isnan(H0) ? Float64[] : [H0]
     _S0 = isnan(S0) ? Float64[] : [S0]
     _symbol = if !isnan(T0) & !isnan(P0) & (symbol == :no_set)
-        :custom
+        :volume
     else
         symbol
     end
@@ -77,61 +113,23 @@ function has_reference_state(model::Type{T}) where T
 end
 
 function set_reference_state!(model::EoSModel;verbose = false)
-    ref = reference_state(model)
     #handle cases where we don't need to do anything
+    ref = reference_state(model)
     ref === nothing && return nothing
     ref.std_type == :no_set && return nothing
-    
-    #=
-    z0 is not set. we:
-        - split the model
-        - set reference states in each pure model
-        - agregate the reference states into the main model
-    =#
+    if verbose
+        @info "Calculating reference states for $model..."
+        @info "Reference state type: $(info_color(ref.std_type))"
+    end
 
-
-    if all(iszero,ref.z0) 
+    #allocate the appropiate caches.
+    initialize_reference_state!(model,ref)
+    if all(iszero,ref.z0) #pure case
         pures = split_model(model)
-        z0 = FillArrays.Fill(1.0,length(model))
-        _set_reference_state!.(pures,z0)
+        _set_reference_state!.(pures)
         pure_refs = reference_state.(pures)
-        len = length(model)
-
-        comps,T0,P0,H0,S0 = ref.components,ref.T0,ref.P0,ref.H0,ref.S0
-        z0 = ref.z0
-        if length(z0) == 0
-            resize!(z0,len)
-            z0 .= 0
-        end
-
-        if length(comps) == 0
-            resize!(comps,len)
-            comps .= model.components
-        end
-
-        if length(H0) == 0
-            resize!(H0,len)
-        elseif length(H0) == 1
-            h0 = H0[1]
-            resize!(H0,len)
-            H0 .= h0
-        end
-
-        if length(S0) == 0
-            resize!(S0,len)
-        elseif length(S0) == 1
-            s0 = S0[1]
-            resize!(S0,len)
-            S0 .= s0
-        end
-
-        a0,a1 = ref.a0,ref.a1
-        for prop in (a0,a1)
-            resize!(prop,len)
-        end
-        comps .= model.components
-        a0 .= only.(getfield.(pure_refs,:a0))
-        a1 .= only.(getfield.(pure_refs,:a1))
+        ref.a0 .= only.(getfield.(pure_refs,:a0))
+        ref.a1 .= only.(getfield.(pure_refs,:a1))
     else
         _set_reference_state!(model,ref.z0)
     end
@@ -143,65 +141,113 @@ function _set_reference_state!(model,z0 = SA[1.0])
     ref === nothing && return nothing
     type = ref.std_type
     type == :no_set && return nothing
-    comps = ref.components
-    len = length(model)
-    resize!(comps,len)
-    comps .= model.components
+    
     T0,P0,H0,S0 = ref.T0,ref.P0,ref.H0,ref.S0
-    z0 = ref.z0
     a0,a1 = ref.a0,ref.a1
-    resize!(a0,len)
-    resize!(a1,len)
-    resize!(H0,len)
-    resize!(S0,len)
-    if length(z0) == 0
-        resize!(z0,len)
-        z0 .= 0
-    end
-    a0 .= 0
-    a1 .= 0
     R = Rgas(model)
+    
     if type == :ashrae
+        #ASHRAE: h = 0, s = 0 @ -40C saturated liquid
         single_component_check(set_reference_state!,model)
         T_ashrae = 273.15 - 40
-        p,vl_ashrae,_ = saturation_pressure(model,T_ashrae)
-        S00 = VT_entropy(model,vl_ashrae,T_ashrae,SA[1.0])
-        a1 .= S00 ./R
-        H00 = VT_enthalpy(model,vl_ashrae,T_ashrae,SA[1.0])
-        a0 .= -H00 ./R
-        #ASHRAE: h = 0, s = 0 @ -40C saturated liquid
+        _a0,_a1 = calculate_reference_state_consts(model,:saturation_pressure,T_ashrae,NaN,0.,0.,SA[1.0],:liquid)
+        a0 .= _a0
+        a1 .= _a1
     elseif type == :nbp
+        #NBP: h=0, s=0 for saturated liquid at 1 atmosphere
         single_component_check(set_reference_state!,model)
         p_nbp = 101325.0
-        T_nbp,vl_nbp,_ = saturation_temperature(model,p_nbp)
-        S00 = VT_entropy(model,vl_nbp,T_nbp,SA[1.0])
-        a1 .= S00/R
-        H00 = VT_enthalpy(model,vl_nbp,T_nbp,SA[1.0])
-        a0 .= -H00/R
-        #NBP: h=0, s=0 for saturated liquid at 1 atmosphere
+        _a0,_a1 = calculate_reference_state_consts(model,:saturation_temperature,NaN,p_nbp,0.,0.,SA[1.0],:liquid)
+        a0 .= _a0
+        a1 .= _a1
     elseif type == :iir
+        #IIR: h = 200 kJ/kg, s=1 kJ/kg/K at 0C saturated liquid
         single_component_check(set_reference_state!,model)
         T_iir = 273.15
-        p,vl_iir,_ = saturation_pressure(model,T_iir)
         M = molecular_weight(model,SA[1.0]) #kg/mol
         H_iir = 200*M*1000
         S_iir = 1*M*1000
-        S00 = VT_entropy(model,vl_iir,T_iir,SA[1.0])
-        a1 .= (S00 - S_iir)/R
-        H00 = VT_enthalpy(model,vl_iir,T_iir,SA[1.0])
-        a0 .= (-H00 + H_iir)/R
-        #IIR: h = 200 kJ/kg, s=1 kJ/kg/K at 0C saturated liquid
-    elseif type == :custom
-        vl = volume(model,P0,T0,z0,phase = ref.phase)
-        H_set = first(H0)
-        S_set = first(S0)
-        S00 = VT_entropy(model,vl,T0,z0) 
-        a1 .= (S00 - S_set)/R
-        H00 = VT_enthalpy(model,vl,T0,z0)
-        a0 .= (-H00 + H_set)/R
+        _a0,_a1 = calculate_reference_state_consts(model,:saturation_pressure,T_iir,NaN,H_iir,S_iir,SA[1.0],:liquid)
+        a0 .= _a0
+        a1 .= _a1
+    elseif type in (:volume,:saturation_pressure,:saturation_temperature)
+        _a0,_a1 = calculate_reference_state_consts(model,type,T0,P0,first(H0),first(S0),z0,ref.phase)
+        a0 .= _a0
+        a1 .= _a1
     else
         throw(error("invalid specification for ReferenceState."))
     end
+end
+
+function initialize_reference_state!(model,ref = reference_state(model))
+    comps,T0,P0,H0,S0 = ref.components,ref.T0,ref.P0,ref.H0,ref.S0
+    z0 = ref.z0
+    len = length(model)
+    pure_check = length(z0) == 0
+
+    if pure_check
+        resize!(z0,len)
+        z0 .= 0
+    end
+
+    if length(comps) == 0
+        resize!(comps,len)
+        comps .= model.components
+    end
+
+    if length(H0) == 0
+        resize!(H0,len)
+        H0 .= 0
+    elseif length(H0) == 1
+        h0 = H0[1]
+        resize!(H0,len)
+        H0 .= h0
+    end
+
+    if length(S0) == 0
+        resize!(S0,len)
+        S0 .= 0
+    elseif length(S0) == 1
+        s0 = S0[1]
+        resize!(S0,len)
+        S0 .= s0
+    end
+    resize!(ref.a0,len)
+    resize!(ref.a1,len)
+
+    if !pure_check
+        h0 = H0[1]
+        if !all(isequal(h0),H0)
+            throw(ArgumentError("cannot set enthalpy to different values when evaluating in a multicomponent reference state."))
+        end
+
+        s0 = S0[1]
+        if !all(isequal(s0),S0)
+            throw(ArgumentError("cannot set entropy to different values when evaluating in a multicomponent reference state."))
+        end
+    end
+    return ref
+end
+
+function calculate_reference_state_consts(model,type,T0,P0,H0,S0,z0,phase)
+    if type == :saturation_pressure
+        p,vl,vv = saturation_pressure(model,T0)
+        v = is_liquid(phase) ? vl : vv
+        T = T0
+    elseif type == :saturation_temperature
+        T,vl,vv = saturation_temperature(model,P0)
+        v = is_liquid(phase) ? vl : vv
+    elseif type == :volume
+        v = volume(model,P0,T0,z0,phase = phase)
+        T = T0
+    else
+    end
+    R = Rgas(model)
+    S00 = VT_entropy(model,v,T,z0) 
+    a1 = (S00 - S0)/R
+    H00 = VT_enthalpy(model,v,T,z0)
+    a0 = (-H00 + H0)/R
+    return a0,a1
 end
 
 export ReferenceState,reference_state,has_reference_state,set_reference_state!
