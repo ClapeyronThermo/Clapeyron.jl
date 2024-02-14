@@ -20,7 +20,8 @@ default_gclocations(::Type{WalkerIdeal}) = ["ideal/WalkerIdeal_Groups.csv"]
 
 """
     WalkerIdeal <: WalkerIdealModel
-    WalkerIdeal(components::Array{String,1}; 
+
+    WalkerIdeal(components; 
     userlocations = String[],
     group_userlocations = String[]
     verbose = false)

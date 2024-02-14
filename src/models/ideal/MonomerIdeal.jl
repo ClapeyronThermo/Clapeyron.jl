@@ -8,8 +8,10 @@ abstract type MonomerIdealModel <: IdealModel end
 
 """
     MonomerIdeal <: MonomerIdealModel
-    MonomerIdeal(components::Array{String,1}; 
-    userlocations::Array{String,1}=String[], 
+
+    MonomerIdeal(components; 
+    userlocations = String[],
+    reference_state = nothing,
     verbose = false)
 
 ## Input parameters

@@ -3,9 +3,12 @@ abstract type BasicIdealModel <: IdealModel end
 
 """
     BasicIdeal <: IdealModel
-    BasicIdeal(components::Array{String,1}; 
-    userlocations::Array{String,1}=String[], 
+
+    BasicIdeal(components; 
+    userlocations = String[],
+    reference_state = nothing,
     verbose = false)
+
 ## Input parameters
 None
 ## Description

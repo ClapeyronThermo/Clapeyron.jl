@@ -33,8 +33,10 @@ abstract type ReidIdealModel <: PolynomialIdealModel end
 
 """
     ReidIdeal <: IdealModel
+
     ReidIdeal(components; 
-    userlocations::Array{String,1}=String[], 
+    userlocations = String[],
+    reference_state = nothing,
     verbose = false)
 
 ## Input parameters

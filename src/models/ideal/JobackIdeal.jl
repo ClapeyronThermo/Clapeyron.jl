@@ -53,8 +53,10 @@ export JobackIdeal
 
 """
     JobackIdeal <: JobackIdealModel
+
     JobackIdeal(components; 
-    userlocations::Array{String,1}=String[], 
+    userlocations = String[],
+    reference_state = nothing,
     verbose = false)
 
 ## Input parameters

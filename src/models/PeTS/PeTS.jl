@@ -21,6 +21,7 @@ end
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],
+    reference_state = nothing,
     verbose = false)
 
 ## Input parameters

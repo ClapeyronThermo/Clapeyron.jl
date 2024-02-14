@@ -7,8 +7,10 @@ end
 
 """
     CPLNGEstIdeal <: ReidIdealModel
+
     CPLNGEstIdeal(components; 
-    userlocations::Array{String,1}=String[], 
+    userlocations = String[],
+    reference_state = nothing,
     verbose = false)
 
 ## Input parameters
