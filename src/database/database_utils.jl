@@ -322,12 +322,17 @@ function error_color(text)
     return red * text * reset
 end
 
+error_color(symbol::Symbol) = error_color(":" * string(symbol))
+
 function info_color(text)
     colors = Base.text_colors
     red = colors[:bold] * colors[:cyan]
     reset = colors[:normal]
     return red * text * reset
 end
+
+info_color(symbol::Symbol) = info_color(":" * string(symbol))
+
 
 function userlocation_merge(loc1,loc2)
     if isempty(loc2)
