@@ -14,7 +14,7 @@ end
 
 """
     PTV(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
     activity = nothing,

@@ -14,7 +14,7 @@ end
 
 """
     PatelTeja(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
     activity = nothing,
@@ -25,6 +25,7 @@ end
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
+    reference_state = nothing,
     verbose = false)
 
 ## Input parameters
@@ -117,9 +118,9 @@ function PatelTeja(components;
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-     verbose = false)
-    
-    
+    reference_state = nothing,
+    verbose = false)
+
     formatted_components = format_components(components)
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
     k  = get(params,"k",nothing)
@@ -134,7 +135,7 @@ function PatelTeja(components;
     a = PairParam("a",formatted_components,zeros(n))
     b = PairParam("b",formatted_components,zeros(n))
     c = PairParam("c",formatted_components,zeros(n))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PatelTejaParam(a,b,c,Tc,pc,Vc,Mw)

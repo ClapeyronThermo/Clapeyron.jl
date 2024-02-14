@@ -34,6 +34,7 @@ end
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
+    reference_state = nothing,
     verbose = false)
 
 ## Input parameters
@@ -126,6 +127,7 @@ function KU(components;
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
+    reference_state = nothing,
     verbose = false)
 
     formatted_components = format_components(components)
@@ -143,7 +145,7 @@ function KU(components;
     b = PairParam("b",formatted_components,zeros(n))
     omega_a = SingleParam("Ωa",formatted_components,zeros(n))
     omega_b = SingleParam("Ωb",formatted_components,zeros(n))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = KUParam(a,b,omega_a,omega_b,Tc,pc,Vc,Mw)
