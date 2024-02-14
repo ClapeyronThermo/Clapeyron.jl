@@ -8,7 +8,8 @@
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
 Universal Mixing Rule Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`MTTranslation`](@ref)
@@ -26,7 +27,8 @@ function UMRPR(components;
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
 
     activity = UNIFAC(components,
@@ -53,6 +55,7 @@ function UMRPR(components;
     mixing_userlocations = mixing_userlocations,
     activity_userlocations = activity_userlocations,
     translation_userlocations = translation_userlocations,
+    reference_state = reference_state,
     verbose = verbose)
 end
 export UMRPR

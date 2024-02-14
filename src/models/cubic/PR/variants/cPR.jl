@@ -1,12 +1,14 @@
 """
-    cPR(components::Vector{String}; idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    cPR(components::Vector{String};
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
 consistent Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`NoTranslation`](@ref)
@@ -16,17 +18,19 @@ consistent Peng Robinson equation of state. it uses the following models:
 ## References
 1. Bell, I. H., Satyro, M., & Lemmon, E. W. (2018). Consistent twu parameters for more than 2500 pure fluids from critically evaluated experimental data. Journal of Chemical and Engineering Data, 63(7), 2402–2409. [doi:10.1021/acs.jced.7b00967](https://doi.org/10.1021/acs.jced.7b00967)
 """
-function cPR(components; idealmodel=BasicIdeal,
+function cPR(components;
+    idealmodel = BasicIdeal,
     alpha = TwuAlpha,
     mixing = vdW1fRule,
     activity = nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
+    reference_state = nothing,
     verbose=false)
 
     formatted_components = format_components(components)
@@ -52,7 +56,7 @@ function cPR(components; idealmodel=BasicIdeal,
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     a = PairParam("a",formatted_components,zeros(length(formatted_components)))
     b = PairParam("b",formatted_components,zeros(length(formatted_components)))
-    init_idealmodel = init_model(idealmodel,formatted_components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,formatted_components,ideal_userlocations,verbose,reference_state)
 
     if alpha !== TwuAlpha
         init_alpha = init_alphamodel(alpha,formatted_components,w,alpha_userlocations,verbose)

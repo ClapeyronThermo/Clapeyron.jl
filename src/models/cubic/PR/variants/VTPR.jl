@@ -7,6 +7,7 @@
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
+    reference_state = nothing,
     verbose=false)
 
 Volume-translated Peng Robinson equation of state. it uses the following models:
@@ -26,7 +27,8 @@ function VTPR(components;
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
     activity = VTPRUNIFAC(components,
             userlocations = activity_userlocations,
@@ -49,6 +51,7 @@ function VTPR(components;
     alpha_userlocations = alpha_userlocations,
     mixing_userlocations = mixing_userlocations,
     translation_userlocations = translation_userlocations,
+    reference_state = reference_state,
     verbose = verbose)
 end
 export VTPR

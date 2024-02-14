@@ -7,7 +7,8 @@
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
 translated and consistent Peng Robinson equation of state,with an gE mixing rule. it uses the following models:
 - Translation Model: [`ConstantTranslation`](@ref)
@@ -35,7 +36,8 @@ function tcPRW(components; idealmodel=BasicIdeal,
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
     return tcPR(components; idealmodel=idealmodel,
     alpha = alpha,
@@ -48,7 +50,8 @@ function tcPRW(components; idealmodel=BasicIdeal,
     mixing_userlocations = mixing_userlocations,
     activity_userlocations = activity_userlocations,
     translation_userlocations = translation_userlocations,
-    verbose=false)
+    reference_state = reference_state,
+    verbose = verbose)
 end
 
 export tcPRW

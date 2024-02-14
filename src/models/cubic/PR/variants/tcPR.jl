@@ -7,7 +7,8 @@
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false,
+    reference_state = nothing,
+    verbose = false,
     estimate_alpha = true,
     estimate_translation = true)
 
@@ -23,21 +24,24 @@ If Twu parameters are not provided, they can be estimated from the acentric fact
 2. Pina-Martinez, A., Le Guennec, Y., Privat, R., Jaubert, J.-N., & Mathias, P. M. (2018). Analysis of the combinations of property data that are suitable for a safe estimation of consistent twu α-function parameters: Updated parameter values for the translated-consistent tc-PR and tc-RK cubic equations of state. Journal of Chemical and Engineering Data, 63(10), 3980–3988. [doi:10.1021/acs.jced.8b00640](http://dx.doi.org/10.1021/acs.jced.8b00640)
 3. Piña-Martinez, A., Privat, R., & Jaubert, J.-N. (2022). Use of 300,000 pseudo‐experimental data over 1800 pure fluids to assess the performance of four cubic equations of state: SRK , PR , tc ‐RK , and tc ‐PR. AIChE Journal. American Institute of Chemical Engineers, 68(2). [doi:10.1002/aic.17518](https://doi.org/10.1021/acs.iecr.1c03003)
 """
-function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
+function tcPR(components;
+    idealmodel = BasicIdeal,
     alpha = TwuAlpha,
     mixing = vdW1fRule,
     activity = nothing,
-    translation=ConstantTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    translation = ConstantTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false,
+    reference_state = nothing,
+    verbose = false,
     estimate_alpha = true,
     estimate_translation = true)
 
+    formatted_components = format_components(components)
 
     #just read once if allowed.
     userlocations_tcpr = String[]
@@ -50,21 +54,21 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
         userlocations_tcpr = userlocation_merge(userlocations_tcpr,translation_userlocations)
     end
 
-    params = getparams(components, ["cubic/tcPR/tcPR_single.csv"];
+    params = getparams(formatted_components, ["cubic/tcPR/tcPR_single.csv"];
     userlocations=userlocations_tcpr,
     verbose=verbose,
     ignore_missing_singleparams = ["v_shift","ZRA","acentricfactor","M","N","L"])
 
-    n = length(components)
+    n = length(formatted_components)
     k  = get(params,"k",nothing)
     l = get(params,"l",nothing)
     pc = params["Pc"]
     Mw = params["Mw"]
     Tc = params["Tc"]
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
-    a = PairParam("a",components,zeros(length(components)))
-    b = PairParam("b",components,zeros(length(components)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    a = PairParam("a",formatted_components,zeros(n))
+    b = PairParam("b",formatted_components,zeros(n))
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
 
     w = get(params,"acentricfactor",nothing)
     zra = get(params,"ZRA",nothing)
@@ -100,7 +104,7 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
             end
         end
         packagedparams = TwuAlphaParam(M,N,L)
-        init_alpha = TwuAlpha(components,packagedparams,default_references(TwuAlpha))
+        init_alpha = TwuAlpha(formatted_components,packagedparams,default_references(TwuAlpha))
     end
 
     if translation !== ConstantTranslation
@@ -108,7 +112,7 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
     else
         c = params["v_shift"]
         packagedparams = ConstantTranslationParam(c)
-        init_translation = ConstantTranslation(components,packagedparams,String[])
+        init_translation = ConstantTranslation(formatted_components,packagedparams,String[])
         #try to initialize translation if missing
         cc = init_translation.params.v_shift
         for i in 1:n
@@ -132,7 +136,7 @@ function tcPR(components::Vector{String}; idealmodel=BasicIdeal,
 
     packagedparams = PRParam(a,b,Tc,pc,Mw)
     references = String["10.1016/j.fluid.2016.09.003","10.1021/acs.jced.8b00640","10.1002/aic.17518","10.1021/acs.iecr.1c03003"]
-    model = PR(components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
+    model = PR(formatted_components,init_alpha,init_mixing,init_translation,packagedparams,init_idealmodel,references)
     recombine_cubic!(model,k,l)
     return model
 end

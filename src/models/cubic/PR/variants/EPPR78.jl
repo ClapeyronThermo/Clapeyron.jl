@@ -44,17 +44,18 @@ HC=-C-
 
 """
     EPPR78(components_or_groups;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     alpha = PR78Alpha,
     mixing = PPR78Rule,
     activity = nothing,
-    translation=NoTranslation,
-    userlocations=String[], 
-    ideal_userlocations=String[],
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 Enhanced Predictive Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`NoTranslation`](@ref)
 - Alpha Model: [`PR78Alpha`](@ref)
@@ -64,14 +65,15 @@ Enhanced Predictive Peng Robinson equation of state. it uses the following model
 2. Jaubert, J.-N., Qian, J.-W., Lasala, S., & Privat, R. (2022). The impressive impact of including enthalpy and heat capacity of mixing data when parameterising equations of state. Application to the development of the E-PPR78 (Enhanced-Predictive-Peng-Robinson-78) model. Fluid Phase Equilibria, (113456), 113456. [doi:10.1016/j.fluid.2022.113456](https://doi.org/10.1016/j.fluid.2022.113456)
 """
 function EPPR78(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
+    idealmodel = BasicIdeal,
+    userlocations = String[],
     group_userlocations = String[],
-    ideal_userlocations=String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
     mixing = PPR78Rule(components,
             userlocations=mixing_userlocations,
@@ -93,6 +95,7 @@ function EPPR78(components;
     alpha_userlocations = alpha_userlocations,
     mixing_userlocations = mixing_userlocations,
     translation_userlocations = translation_userlocations,
+    reference_state = reference_state,
     verbose = verbose)
 end
 export EPPR78
