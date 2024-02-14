@@ -233,7 +233,7 @@ macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = fa
                 ideal_userlocations = String[],
                 assoc_options = Clapeyron.default_assoc_options($name),
                 reference_state = nothing,
-                verbose = false)
+               verbose = false)
 
                 Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options,reference_state)
             end
@@ -254,7 +254,7 @@ macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = fa
                 group_userlocations = String[],
                 ideal_userlocations = String[],
                 reference_state = nothing,
-                verbose = false)
+               verbose = false)
 
                 Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,nothing,reference_state)
             end
@@ -315,7 +315,7 @@ macro newmodel(name, parent, paramstype,sitemodel = true)
                 ideal_userlocations = String[],
                 assoc_options = Clapeyron.default_assoc_options($name),
                 reference_state = nothing,
-                verbose = false)
+               verbose = false)
 
                 Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,nothing,ideal_userlocations,verbose,assoc_options,reference_state)
             end
@@ -334,7 +334,7 @@ macro newmodel(name, parent, paramstype,sitemodel = true)
                 userlocations = String[],
                 ideal_userlocations = String[],
                 reference_state = nothing,
-                verbose = false)
+               verbose = false)
 
                 Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,nothing,ideal_userlocations,verbose,nothing,reference_state)
             end

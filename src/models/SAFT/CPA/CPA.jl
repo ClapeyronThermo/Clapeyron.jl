@@ -24,7 +24,7 @@ end
 
     function CPA(components;
         radial_dist::Symbol = :CS,
-        idealmodel=BasicIdeal,
+        idealmodel = BasicIdeal,
         cubicmodel=RK,
         alpha=sCPAAlpha,
         mixing=vdW1fRule,
@@ -79,7 +79,7 @@ CPA
 
 export CPA
 function CPA(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     radial_dist::Symbol = :CS,
     cubicmodel=RK,
     alpha=CPAAlpha,

@@ -1,6 +1,6 @@
 """
     UMRPR(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],
     ideal_userlocations = String[],
@@ -19,7 +19,7 @@ Universal Mixing Rule Peng Robinson equation of state. it uses the following mod
 1. Voutsas, E., Magoulas, K., & Tassios, D. (2004). Universal mixing rule for cubic equations of state applicable to symmetric and asymmetric systems: Results with the Peng−Robinson equation of state. Industrial & Engineering Chemistry Research, 43(19), 6238–6246. [doi:10.1021/ie049580p](https://doi.org/10.1021/ie049580p)
 """
 function UMRPR(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],
     ideal_userlocations = String[],

@@ -62,7 +62,7 @@ Homosegmented Group-contribution Polar Perturbed-Chain SAFT (gcPPC-SAFT)
 gcPPCSAFT
 
 function gcPPCSAFT(components,mixing=:homosegmented;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],
     ideal_userlocations = String[],

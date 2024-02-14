@@ -6,7 +6,7 @@ end
 """
     ZeroResidual <: EoSModel
     ZeroResidual(components; 
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     ideal_userlocations = String[],
     verbose = false)
 ## Input parameters
@@ -18,7 +18,7 @@ Zero residual model.
 ```
 """
 function ZeroResidual(components; 
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     ideal_userlocations = String[],
     verbose=false,
     )

@@ -60,7 +60,7 @@ s-SAFT-γ-Mie EoS
 structSAFTgammaMie
 
 function structSAFTgammaMie(components; 
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],
     ideal_userlocations = String[],
