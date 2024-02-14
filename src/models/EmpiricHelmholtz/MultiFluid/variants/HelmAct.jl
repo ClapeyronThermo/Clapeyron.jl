@@ -47,7 +47,7 @@ function HelmAct(components;
     coolprop_userlocations = false,
     Rgas = Rgas,
     reference_state = nothing,
-    verbose = verbose)
+    verbose = false)
 
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     if has_groups(init_activity)
@@ -64,7 +64,7 @@ function HelmAct(components;
         coolprop_userlocations = coolprop_userlocations,
         Rgas = Rgas,
         reference_state = reference_state,
-        verbose = false,
+        verbose = verbose,
         idealmodel = idealmodel,
         ideal_userlocations = ideal_userlocations,
         )
