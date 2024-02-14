@@ -25,13 +25,16 @@ end
 export gcPPCSAFT
 
 """
-    gcPPCSAFT <: PCSAFTModel
+    gcPPCSAFTModel <: PPCSAFTModel
+
     gcPPCSAFT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
+
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
@@ -64,6 +67,7 @@ function gcPPCSAFT(components,mixing=:homosegmented;
     group_userlocations = String[],
     ideal_userlocations=String[],
     verbose=false,
+    reference_state = nothing,
     assoc_options = AssocOptions())
     
     groups = GroupParam(components,["SAFT/PCSAFT/gcPPCSAFT/homo_gcPPCSAFT/gcPPCSAFT_groups.csv"]; group_userlocations = group_userlocations,verbose=verbose)
@@ -112,7 +116,7 @@ function gcPPCSAFT(components,mixing=:homosegmented;
     gcparams = hogcPPCSAFTParam(gc_mw, gc_segment, gc_params["sigma"], gc_params["epsilon"], gc_dipole, gc_dipole2, gc_epsilon_assoc,gc_bondvol)
     params = PPCSAFTParam(mw, segment, sigma, epsilon, dipole, dipole2, epsilon_assoc, bondvol)
     
-    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
 
     references = ["10.1021/ie020753p"]
     pc = PPCSAFT(components,comp_sites,params,idmodel, assoc_options, references)
