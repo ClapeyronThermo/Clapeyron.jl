@@ -5,7 +5,7 @@ abstract type BasicIdealModel <: IdealModel end
     BasicIdeal <: IdealModel
     BasicIdeal(components::Array{String,1}; 
     userlocations::Array{String,1}=String[], 
-    verbose=false)
+    verbose = false)
 ## Input parameters
 None
 ## Description

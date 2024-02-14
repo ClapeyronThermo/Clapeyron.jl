@@ -24,7 +24,7 @@ end
 export SLKRule
 
 """
-    SLKRule(components; userlocations=String[], verbose=false)
+    SLKRule(components; userlocations = String[], verbose = false)
      
 ## Input parameters
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Parameter (no units)

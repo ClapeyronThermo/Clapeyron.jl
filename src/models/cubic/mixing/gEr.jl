@@ -11,8 +11,8 @@ end
 
     gErRule(components;
     activity = NRTL,
-    userlocations=String[],
-    activity_userlocations=String[],
+    userlocations = String[],
+    activity_userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -69,7 +69,7 @@ gErRule
 default_references(::Type{gErRule}) =  ["10.1016/0378-3812(90)85053-D"]
 
 export gErRule
-function gErRule(components; activity = NRTL, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+function gErRule(components; activity = NRTL, userlocations = String[],activity_userlocations = String[], verbose::Bool=false)
     _components = format_components(components)
     _activity = init_model(activity,_components,activity_userlocations,verbose)
     model = gErRule(_components, _activity,default_references(gErRule))

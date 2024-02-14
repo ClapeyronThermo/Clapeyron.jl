@@ -20,7 +20,7 @@ end
     activity = nothing,
     translation = NoTranslation,
     userlocations = String[],
-    ideal_userlocations=String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
@@ -90,13 +90,14 @@ model = PR(["neon","hydrogen"];
 PR
 export PR
 
-function PR(components; idealmodel=BasicIdeal,
+function PR(components;
+    idealmodel = BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
     activity = nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],

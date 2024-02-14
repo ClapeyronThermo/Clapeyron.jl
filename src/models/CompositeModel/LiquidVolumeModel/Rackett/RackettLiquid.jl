@@ -167,7 +167,7 @@ model = YamadaGunnLiquid(["neon","hydrogen"];
 - Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. [doi:10.1021/je60047a012](https://doi.org/10.1021/je60047a012)
 - Gunn, R. D., & Yamada, T. (1971). A corresponding states correlation of saturated liquid volumes. AIChE Journal. American Institute of Chemical Engineers, 17(6), 1341–1345. [doi:10.1002/aic.690170613](https://doi.org/10.1002/aic.690170613)
 """
-function YamadaGunnLiquid(components; userlocations=String[], verbose::Bool=false)
+function YamadaGunnLiquid(components; userlocations = String[], verbose::Bool=false)
     _components = format_components(components)
     params = getparams(_components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
     acentricfactor = params["acentricfactor"]

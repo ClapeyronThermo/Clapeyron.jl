@@ -1,14 +1,15 @@
 """
-    VTPR(components; idealmodel=BasicIdeal,
-    userlocations=String[],
+    VTPR(components;
+    idealmodel = BasicIdeal,
+    userlocations = String[],
     group_userlocations = String[]
-    ideal_userlocations=String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
     reference_state = nothing,
-    verbose=false)
+    verbose = false)
 
 Volume-translated Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`RackettTranslation`](@ref)
@@ -20,9 +21,9 @@ Volume-translated Peng Robinson equation of state. it uses the following models:
 function VTPR(components;
     idealmodel=BasicIdeal,
     alpha = TwuAlpha, #here just for compatibility with the notebooks.
-    userlocations=String[], 
+    userlocations = String[], 
     group_userlocations = String[],
-    ideal_userlocations=String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
@@ -45,7 +46,7 @@ function VTPR(components;
     alpha = alpha,
     mixing=mixing,
     activity = activity,
-    translation=translation,
+    translation = translation,
     userlocations = userlocations,
     ideal_userlocations = ideal_userlocations,
     alpha_userlocations = alpha_userlocations,

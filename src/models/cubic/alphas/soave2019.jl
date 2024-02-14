@@ -5,7 +5,7 @@ export Soave2019Alpha
     Soave2019Alpha <: SoaveAlphaModel
 
     Soave2019Alpha(components::Vector{String};
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters

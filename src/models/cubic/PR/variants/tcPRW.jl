@@ -1,8 +1,8 @@
 """
     tcPR(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
@@ -25,13 +25,14 @@ If Twu parameters are not provided, they can be estimated from the acentric fact
 4. Piña-Martinez, A., Privat, R., Nikolaidis, I. K., Economou, I. G., & Jaubert, J.-N. (2021). What is the optimal activity coefficient model to be combined with the translated–consistent Peng–Robinson equation of state through advanced mixing rules? Cross-comparison and grading of the Wilson, UNIQUAC, and NRTL aE models against a benchmark database involving 200 binary systems. Industrial & Engineering Chemistry Research, 60(47), 17228–17247. [doi:10.1021/acs.iecr.1c03003](https://doi.org/10.1021/acs.iecr.1c03003)
 
 """
-function tcPRW(components; idealmodel=BasicIdeal,
+function tcPRW(components;
+    idealmodel = BasicIdeal,
     alpha = TwuAlpha,
     mixing = gErRule,
     activity = tcPRWilsonRes,
-    translation=ConstantTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    translation = ConstantTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
@@ -43,9 +44,9 @@ function tcPRW(components; idealmodel=BasicIdeal,
     alpha = alpha,
     mixing = mixing,
     activity = activity,
-    translation=translation,
+    translation = translation,
     userlocations=userlocations,
-    ideal_userlocations=ideal_userlocations,
+    ideal_userlocations = ideal_userlocations,
     alpha_userlocations = alpha_userlocations,
     mixing_userlocations = mixing_userlocations,
     activity_userlocations = activity_userlocations,

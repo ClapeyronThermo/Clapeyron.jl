@@ -18,8 +18,8 @@ export LJRef
 """
     LJRef <: EmpiricHelmholtzModel
     LJRef(components;
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 ## Input parameters
 - `sigma`: Single Parameter (`Float64`) - particle size [Å]
 - `epsilon`: Single Parameter (`Float64`) - dispersion energy [`K`]
@@ -56,8 +56,8 @@ parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 LJRef
 
 function LJRef(components;
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 
     components = format_components(components)
     params = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
@@ -205,7 +205,7 @@ LJRefIdeal(lj::LJRef) = LJRefIdeal(lj.components,lj.params,lj.unscaled_lj,lj.ref
 LJRef(lj::LJRefIdeal) = LJRef(lj.components,lj.params,lj.unscaled_lj,lj.references)
 idealmodel(model::LJRef) = LJRefIdeal(model)
 
-function LJRefIdeal(components;userlocations=String[], verbose=false)
+function LJRefIdeal(components;userlocations = String[], verbose = false)
     lj = LJRef(components;userlocations,verbose)
     return LJRefIdeal(lj)
 end
@@ -236,8 +236,8 @@ end
 """
     LJRefIdeal <: IdealModel
     LJRef(components;
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 

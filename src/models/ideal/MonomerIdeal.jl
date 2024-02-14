@@ -10,7 +10,7 @@ abstract type MonomerIdealModel <: IdealModel end
     MonomerIdeal <: MonomerIdealModel
     MonomerIdeal(components::Array{String,1}; 
     userlocations::Array{String,1}=String[], 
-    verbose=false)
+    verbose = false)
 
 ## Input parameters
 

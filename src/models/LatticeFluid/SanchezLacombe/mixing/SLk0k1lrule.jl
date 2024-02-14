@@ -34,7 +34,7 @@ end
 export SLk0k1lMixingRule
 
 """
-    SLKRule(components; userlocations=String[], verbose=false)
+    SLKRule(components; userlocations = String[], verbose = false)
 
 ## Input parameters
 - `k0`,`k`: Pair Parameter (`Float64`, optional) - Binary Interaction Parameter (no units)

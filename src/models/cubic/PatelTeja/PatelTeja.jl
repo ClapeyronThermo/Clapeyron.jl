@@ -17,15 +17,15 @@ end
     idealmodel=BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=PatelTejaTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = PatelTejaTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    verbose = false)
 
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -105,18 +105,19 @@ model = PatelTeja(["neon","hydrogen"];
 PatelTeja
 
 export PatelTeja
-function PatelTeja(components; idealmodel=BasicIdeal,
+function PatelTeja(components;
+    idealmodel = BasicIdeal,
     alpha = PatelTejaAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-     verbose=false)
+     verbose = false)
     
     
     formatted_components = format_components(components)

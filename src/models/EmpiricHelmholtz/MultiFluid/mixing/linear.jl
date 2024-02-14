@@ -4,8 +4,8 @@
 """
     LinearMixing <: MultiFluidDepartureModel
     LinearMixing(components;
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 none

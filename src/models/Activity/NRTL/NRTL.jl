@@ -21,9 +21,9 @@ export NRTL
 
     function NRTL(components;
     puremodel=PR,
-    userlocations=String[],
+    userlocations = String[],
     pure_userlocations = String[],
-    verbose=false)
+    verbose = false)
 
 ## Input parameters
 - `a`: Pair Parameter (`Float64`, asymetrical, defaults to `0`) - Interaction Parameter
@@ -77,7 +77,7 @@ default_locations(::Type{NRTL}) = ["properties/molarmass.csv","Activity/NRTL/NRT
 function NRTL(components; puremodel=PR,
     userlocations = String[], 
     pure_userlocations = String[],
-    verbose=false)
+    verbose = false)
 
     formatted_components = format_components(components)
     params = getparams(formatted_components, default_locations(NRTL); userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b","Mw"], verbose=verbose)

@@ -123,7 +123,7 @@ end
     IAPWS95Ideal <: IdealModel
     IAPWS95Ideal(components;
     userlocations::Array{String,1}=String[],
-    verbose=false)
+    verbose = false)
 
     IAPWS95Ideal()
 

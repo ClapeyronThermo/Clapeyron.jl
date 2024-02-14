@@ -15,7 +15,8 @@ abstract type SAFTgammaMieModel <: GCSAFTModel end
 
 const SAFTγMie = SAFTgammaMie
 export SAFTgammaMie,SAFTγMie
-function SAFTgammaMie(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose = false)
+function SAFTgammaMie(components;
+    idealmodel = BasicIdeal, userlocations = String[], ideal_userlocations = String[], verbose = false)
     groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params,sites = getparams(groups, ["SAFT/SAFTgammaMie"]; userlocations=userlocations, verbose=verbose)
 
@@ -34,7 +35,7 @@ function SAFTgammaMie(components; idealmodel=BasicIdeal, userlocations=String[],
     packagedparams = SAFTgammaMieParam(segment, shapefactor, lambda_a, lambda_r, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1063/1.4851455", "10.1021/je500248h"]
 
-    model = SAFTgammaMie(packagedparams, groups, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
+    model = SAFTgammaMie(packagedparams, groups, sites, idealmodel; ideal_userlocations = ideal_userlocations, references=references, verbose=verbose)
     return model
 end
 

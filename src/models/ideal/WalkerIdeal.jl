@@ -23,7 +23,7 @@ default_gclocations(::Type{WalkerIdeal}) = ["ideal/WalkerIdeal_Groups.csv"]
     WalkerIdeal(components::Array{String,1}; 
     userlocations = String[],
     group_userlocations = String[]
-    verbose=false)
+    verbose = false)
 
 ## Input parameters
 

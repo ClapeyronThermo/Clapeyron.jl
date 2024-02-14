@@ -35,7 +35,7 @@ abstract type ReidIdealModel <: PolynomialIdealModel end
     ReidIdeal <: IdealModel
     ReidIdeal(components; 
     userlocations::Array{String,1}=String[], 
-    verbose=false)
+    verbose = false)
 
 ## Input parameters
 

@@ -178,7 +178,7 @@ Note, that the parser will not fail if you pass different parameters with differ
 """
 function getparams(components,
                     locations::Array{String,1}=String[];
-                    userlocations=String[],
+                    userlocations = String[],
                     asymmetricparams::Vector{String}=String[],
                     ignore_missing_singleparams::Vector{String}=String[],
                     ignore_headers::Vector{String} =  IGNORE_HEADERS,

@@ -16,7 +16,7 @@ end
     PPR78Rule <: PPR78RuleModel
     
     PPR78Rule(components;
-    userlocations=String[],
+    userlocations = String[],
     group_userlocations = String[]
     verbose::Bool=false)
 ## Input Parameters
@@ -42,9 +42,9 @@ export PPR78Rule
 
 function PPR78Rule(components;
     activity = nothing,
-    userlocations=String[],
+    userlocations = String[],
     group_userlocations = String[],
-    activity_userlocations=String[],
+    activity_userlocations = String[],
     verbose::Bool=false)
     
     groups = GroupParam(components,["cubic/EPPR78/EPPR78_groups.csv"]; group_userlocations = group_userlocations,verbose=verbose)

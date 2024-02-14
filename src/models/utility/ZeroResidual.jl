@@ -7,8 +7,8 @@ end
     ZeroResidual <: EoSModel
     ZeroResidual(components; 
     idealmodel=BasicIdeal,
-    ideal_userlocations=String[],
-    verbose=false)
+    ideal_userlocations = String[],
+    verbose = false)
 ## Input parameters
 None
 ## Description
@@ -19,7 +19,7 @@ Zero residual model.
 """
 function ZeroResidual(components; 
     idealmodel=BasicIdeal,
-    ideal_userlocations=String[],
+    ideal_userlocations = String[],
     verbose=false,
     )
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)

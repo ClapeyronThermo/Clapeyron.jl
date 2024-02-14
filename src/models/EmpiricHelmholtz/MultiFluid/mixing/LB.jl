@@ -1,8 +1,8 @@
 """
     LorentzBerthelotMixing::AsymmetricMixing
     LorentzBerthelotMixing(components;
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 - `k`: Pair Parameter (`Float64`) - binary interaction parameter for temperature  (no units)

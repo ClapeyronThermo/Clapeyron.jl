@@ -55,7 +55,7 @@ export JobackIdeal
     JobackIdeal <: JobackIdealModel
     JobackIdeal(components; 
     userlocations::Array{String,1}=String[], 
-    verbose=false)
+    verbose = false)
 
 ## Input parameters
 

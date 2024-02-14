@@ -382,8 +382,8 @@ macro newmodelsingleton(name,parent)
 end
 
 """
-    init_model(model::EoSModel,components,userlocations=String[],verbose = false)
-    init_model(::Type{𝕄},components,userlocations=String[],verbose = false) where 𝕄 <: EoSModel
+    init_model(model::EoSModel,components,userlocations = String[],verbose = false)
+    init_model(::Type{𝕄},components,userlocations = String[],verbose = false) where 𝕄 <: EoSModel
 
 Utility for building simple models. if a model instance is passed, it will return that instance.
 otherwise, it will build the model from the input components and user locations.
@@ -422,15 +422,15 @@ SingleParam{Float64}("Mw") with 2 components:
 ```
 
 """
-function init_model(model::EoSModel,components,userlocations=String[],verbose = false,reference_state = nothing)
+function init_model(model::EoSModel,components,userlocations = String[],verbose = false,reference_state = nothing)
     return model
 end
 
-function init_model(::Nothing,components,userlocations=String[],verbose = false,reference_state = nothing)
+function init_model(::Nothing,components,userlocations = String[],verbose = false,reference_state = nothing)
     return nothing
 end
 
-function init_model(::Type{𝕄},components,userlocations=String[],verbose = false,reference_state = nothing) where  𝕄 <: EoSModel
+function init_model(::Type{𝕄},components,userlocations = String[],verbose = false,reference_state = nothing) where  𝕄 <: EoSModel
     if verbose
         @info "Building an instance of $(info_color(string(𝕄))) with components $components"
     end
@@ -441,7 +441,7 @@ function init_model(::Type{𝕄},components,userlocations=String[],verbose = fal
     end
 end
 
-function init_model(f::Function,components,userlocations=String[],verbose = false,reference_state = nothing)
+function init_model(f::Function,components,userlocations = String[],verbose = false,reference_state = nothing)
     if verbose
         @info "building an EoS model, using function $(info_color(string(f))) with components $components"
     end

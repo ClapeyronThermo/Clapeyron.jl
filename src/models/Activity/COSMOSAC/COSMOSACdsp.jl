@@ -57,7 +57,7 @@ function COSMOSACdsp(components;
     userlocations = String[],
     pure_userlocations = String[],
     use_nist_database = false,
-    verbose=false)
+    verbose = false)
 
     formatted_components = format_components(components)
 

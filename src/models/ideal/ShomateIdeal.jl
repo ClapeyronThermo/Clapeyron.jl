@@ -7,7 +7,7 @@ abstract type ShomateIdealModel <: ReidIdealModel end
     ShomateIdeal <: ShomateIdealModel
     ShomateIdeal(components; 
     userlocations::Array{String,1}=String[], 
-    verbose=false)
+    verbose = false)
 
 ## Input parameters
 

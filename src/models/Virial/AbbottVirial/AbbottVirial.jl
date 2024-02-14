@@ -12,9 +12,9 @@ default_locations(::Type{AbbottVirial}) = ["properties/critical.csv", "propertie
     AbbottVirial <: SecondVirialModel
     AbbottVirial(components;
                 idealmodel=BasicIdeal,
-                userlocations=String[],
-                ideal_userlocations=String[],
-                verbose=false)
+                userlocations = String[],
+                ideal_userlocations = String[],
+                verbose = false)
 
 ## Input parameters
 

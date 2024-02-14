@@ -63,9 +63,9 @@ gcPPCSAFT
 
 function gcPPCSAFT(components,mixing=:homosegmented;
     idealmodel=BasicIdeal,
-    userlocations=String[],
+    userlocations = String[],
     group_userlocations = String[],
-    ideal_userlocations=String[],
+    ideal_userlocations = String[],
     verbose=false,
     reference_state = nothing,
     assoc_options = AssocOptions())

@@ -39,7 +39,7 @@ function QCPR(components;
         activity = nothing,
         translation = ConstantTranslation,
         userlocations = QCPR_userlocations,
-        ideal_userlocations= ideal_userlocations,
+        ideal_userlocations =  ideal_userlocations,
         alpha_userlocations = QCPR_alpha_userlocations,
         mixing_userlocations = mixing_userlocations,
         activity_userlocations = activity_userlocations,

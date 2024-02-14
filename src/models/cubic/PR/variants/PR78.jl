@@ -72,7 +72,7 @@ function PR78(components;
     alpha = alpha,
     mixing=mixing,
     activity = activity,
-    translation=translation,
+    translation = translation,
     userlocations = userlocations,
     ideal_userlocations = ideal_userlocations,
     alpha_userlocations = alpha_userlocations,

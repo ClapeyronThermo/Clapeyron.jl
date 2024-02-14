@@ -173,7 +173,7 @@ function all_tpd(model::EoSModel, p, T, z,phasepairs = ((:liquid,:vapour),(:liqu
 end
 
 """
-    tpd(model,p,T,z;verbose=false)
+    tpd(model,p,T,z;verbose = false)
 
 Calculates the Tangent plane distance function (`tpd`). It returns:
 

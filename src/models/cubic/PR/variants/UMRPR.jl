@@ -1,9 +1,9 @@
 """
     UMRPR(components;
     idealmodel=BasicIdeal,
-    userlocations=String[],
+    userlocations = String[],
     group_userlocations = String[],
-    ideal_userlocations=String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
@@ -20,9 +20,9 @@ Universal Mixing Rule Peng Robinson equation of state. it uses the following mod
 """
 function UMRPR(components;
     idealmodel=BasicIdeal,
-    userlocations=String[],
+    userlocations = String[],
     group_userlocations = String[],
-    ideal_userlocations=String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
@@ -48,7 +48,7 @@ function UMRPR(components;
     alpha = alpha,
     mixing=mixing,
     activity = activity,
-    translation=translation,
+    translation = translation,
     userlocations = userlocations,
     ideal_userlocations = ideal_userlocations,
     alpha_userlocations = alpha_userlocations,

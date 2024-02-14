@@ -66,7 +66,8 @@ Doubly-Associated Perturbation Theory model. Currently only works for water.
 """
 DAPT
 #==
-function DAPT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false, assoc_options = AssocOptions())
+function DAPT(components;
+    idealmodel = BasicIdeal, userlocations = String[], ideal_userlocations = String[], verbose=false, assoc_options = AssocOptions())
     params,sites = getparams(components, ["SAFT/DAPT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
     segment = params["m"]
     k = params["k"]  #Note: this is the kij, not the association volume
@@ -80,7 +81,7 @@ function DAPT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_u
     theta_c = params["theta_c"]
     packagedparams = DAPTParam(Mw, segment, r_c, lambda, sigma, epsilon, epsilon_assoc, theta_c)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
-    model = DAPT(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
+    model = DAPT(packagedparams, sites, idealmodel; ideal_userlocations = ideal_userlocations, references=references, verbose=verbose)
     return model
 end
 ==#

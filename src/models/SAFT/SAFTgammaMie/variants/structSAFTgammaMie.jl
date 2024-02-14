@@ -61,9 +61,9 @@ structSAFTgammaMie
 
 function structSAFTgammaMie(components; 
     idealmodel=BasicIdeal,
-    userlocations=String[],
+    userlocations = String[],
     group_userlocations = String[],
-    ideal_userlocations=String[],
+    ideal_userlocations = String[],
     reference_state = nothing,
     verbose=false,
     epsilon_mixing = :default,

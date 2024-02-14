@@ -13,9 +13,9 @@ default_references(::Type{TsonopoulosVirial}) = ["10.1002/aic.690200209"]
     TsonopoulosVirial <: SecondVirialModel
     TsonopoulosVirial(components;
             idealmodel=BasicIdeal,
-            userlocations=String[],
-            ideal_userlocations=String[],
-            verbose=false)
+            userlocations = String[],
+            ideal_userlocations = String[],
+            verbose = false)
 
 ## Input parameters
 

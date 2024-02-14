@@ -89,7 +89,7 @@ function EPPR78(components;
     alpha = alpha,
     mixing = mixing,
     activity = nothing,
-    translation=translation,
+    translation = translation,
     userlocations = userlocations,
     ideal_userlocations = ideal_userlocations,
     alpha_userlocations = alpha_userlocations,
