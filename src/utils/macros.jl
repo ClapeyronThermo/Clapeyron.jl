@@ -434,7 +434,11 @@ function init_model(::Type{𝕄},components,userlocations=String[],verbose = fal
     if verbose
         @info "Building an instance of $(info_color(string(𝕄))) with components $components"
     end
-    return 𝕄(components;userlocations,verbose,reference_state)
+    if has_reference_state(𝕄)
+        return 𝕄(components;userlocations,verbose,reference_state)
+    else
+        return 𝕄(components;userlocations,verbose)
+    end
 end
 
 function init_model(f::Function,components,userlocations=String[],verbose = false,reference_state = nothing)
