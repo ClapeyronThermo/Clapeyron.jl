@@ -84,7 +84,7 @@ function sCPA(components;
         alpha_userlocations = alpha_userlocations,
         activity_userlocations = activity_userlocations,
         mixing_userlocations = mixing_userlocations,
-        mixing_userlocations = translation_userlocations,
+        translation_userlocations = translation_userlocations,
         reference_state = reference_state,
         verbose = verbose,
         assoc_options = assoc_options)
