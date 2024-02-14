@@ -44,7 +44,7 @@ function VTPR(components;
     return PR(_components;
     idealmodel = idealmodel,
     alpha = alpha,
-    mixing=mixing,
+    mixing = mixing,
     activity = activity,
     translation = translation,
     userlocations = userlocations,

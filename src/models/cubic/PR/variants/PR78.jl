@@ -70,7 +70,7 @@ function PR78(components;
     return PR(components;
     idealmodel = idealmodel,
     alpha = alpha,
-    mixing=mixing,
+    mixing = mixing,
     activity = activity,
     translation = translation,
     userlocations = userlocations,

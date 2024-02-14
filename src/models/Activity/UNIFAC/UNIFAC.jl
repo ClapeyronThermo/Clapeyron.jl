@@ -174,10 +174,10 @@ function UNIFAC(components;
     groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
 
     params = getparams(groups, default_locations(UNIFAC);
-                        userlocations=userlocations,
+                        userlocations = userlocations,
                         asymmetricparams=["A","B","C"],
                         ignore_missing_singleparams=["A","B","C"],
-                        verbose=verbose)
+                        verbose = verbose)
     A  = params["A"]
     B  = params["B"]
     C  = params["C"]

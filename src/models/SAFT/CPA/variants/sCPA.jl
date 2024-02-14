@@ -4,9 +4,9 @@
     function sCPA(components;
         idealmodel = BasicIdeal,
         radial_dist::Symbol = :KG,
-        cubicmodel=RK,
-        alpha=sCPAAlpha,
-        mixing=vdW1fRule,
+        cubicmodel = RK,
+        alpha = sCPAAlpha,
+        mixing = vdW1fRule,
         activity = nothing,
         translation = NoTranslation,
         userlocations = String[],
@@ -15,7 +15,8 @@
         activity_userlocations = String[],
         mixing_userlocations = String[],
         translation_userlocations = String[],
-        verbose=false,
+        reference_state = nothing,
+        verbose = false,
         assoc_options = AssocOptions())
 
 ## Input parameters
@@ -55,9 +56,9 @@ The `radial_dist` argument can be used to choose between a Carnahan-Starling for
 function sCPA(components;
             idealmodel = BasicIdeal,
             radial_dist::Symbol = :KG,
-            cubicmodel=RK,
-            alpha=sCPAAlpha,
-            mixing=vdW1fRule,
+            cubicmodel = RK,
+            alpha = sCPAAlpha,
+            mixing = vdW1fRule,
             activity = nothing,
             translation = NoTranslation,
             userlocations = String[],
@@ -66,24 +67,26 @@ function sCPA(components;
             activity_userlocations = String[],
             mixing_userlocations = String[],
             translation_userlocations = String[],
-            verbose=false,
+            reference_state = nothing,
+            verbose = false,
             assoc_options = AssocOptions())
 
     return CPA(components;
-        idealmodel=idealmodel,
+        idealmodel = idealmodel,
         radial_dist = radial_dist,
-        cubicmodel=cubicmodel,
-        alpha=alpha,
-        mixing=mixing,
+        cubicmodel = cubicmodel,
+        alpha = alpha,
+        mixing = mixing,
         activity = activity,
         translation = translation,
-        userlocations=userlocations,
+        userlocations = userlocations,
         ideal_userlocations = ideal_userlocations,
-        alpha_userlocations=alpha_userlocations,
-        activity_userlocations=activity_userlocations,
-        mixing_userlocations=mixing_userlocations,
-        translation_userlocations=translation_userlocations,
-        verbose=verbose,
+        alpha_userlocations = alpha_userlocations,
+        activity_userlocations = activity_userlocations,
+        mixing_userlocations = mixing_userlocations,
+        mixing_userlocations = translation_userlocations,
+        reference_state = reference_state,
+        verbose = verbose,
         assoc_options = assoc_options)
 end
 

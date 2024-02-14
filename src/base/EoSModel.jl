@@ -43,7 +43,7 @@ end
 retrieves the ideal model from the input's model. if the model is already an idealmodel, return `nothing`
 # Examples:
 ```julia-repl
-julia> pr = PR(["water"],idealmodel=MonomerIdeal)
+julia> pr = PR(["water"],idealmodel = MonomerIdeal)
 PR{MonomerIdeal, PRAlpha, NoTranslation, vdW1fRule} with 1 component:
  "water"
 Contains parameters: a, b, Tc, Pc, Mw

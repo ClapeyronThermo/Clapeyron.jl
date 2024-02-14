@@ -86,7 +86,7 @@ function aspenNRTL(components; puremodel=PR,
     verbose = false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(aspenNRTL); userlocations=userlocations, asymmetricparams=["t0","t1","t2","t3"], ignore_missing_singleparams=asymmetricparams=["t0","t1","t2","t3"], verbose=verbose)
+    params = getparams(formatted_components, default_locations(aspenNRTL); userlocations = userlocations, asymmetricparams=["t0","t1","t2","t3"], ignore_missing_singleparams=asymmetricparams=["t0","t1","t2","t3"], verbose = verbose)
     a0  = params["a0"]
     a1  = params["a1"]
     t0  = params["t0"]

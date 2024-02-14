@@ -92,7 +92,7 @@ function UNIQUAC(components;
     verbose = false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(UNIQUAC); userlocations=userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose=verbose)
+    params = getparams(formatted_components, default_locations(UNIQUAC); userlocations = userlocations, asymmetricparams=["a"], ignore_missing_singleparams=["a"], verbose = verbose)
     a  = params["a"]
     r  = params["r"]
     q  = params["q"]

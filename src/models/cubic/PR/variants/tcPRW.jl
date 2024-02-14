@@ -40,12 +40,12 @@ function tcPRW(components;
     reference_state = nothing,
     verbose = false)
 
-    return tcPR(components; idealmodel=idealmodel,
+    return tcPR(components; idealmodel = idealmodel,
     alpha = alpha,
     mixing = mixing,
     activity = activity,
     translation = translation,
-    userlocations=userlocations,
+    userlocations = userlocations,
     ideal_userlocations = ideal_userlocations,
     alpha_userlocations = alpha_userlocations,
     mixing_userlocations = mixing_userlocations,

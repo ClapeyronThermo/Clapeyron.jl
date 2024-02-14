@@ -36,7 +36,7 @@ SAFTgammaMie(components;
     ideal_userlocations = String[],
     epsilon_mixing = :default,
     reference_state = nothing,
-    verbose=false,
+    verbose = false,
     assoc_options = AssocOptions())
 
 ## Input parameters
@@ -123,8 +123,8 @@ function SAFTgammaMie(components;
     epsilon_mixing = :default,
     assoc_options = AssocOptions())
 
-    groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; group_userlocations = group_userlocations,verbose=verbose)
-    params = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    groups = GroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
+    params = getparams(groups, ["SAFT/SAFTgammaMie","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
     sites = params["sites"]
     components = groups.components
 

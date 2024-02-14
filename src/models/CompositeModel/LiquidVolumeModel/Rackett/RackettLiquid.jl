@@ -169,7 +169,7 @@ model = YamadaGunnLiquid(["neon","hydrogen"];
 """
 function YamadaGunnLiquid(components; userlocations = String[], verbose::Bool=false)
     _components = format_components(components)
-    params = getparams(_components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(_components, ["properties/critical.csv"]; userlocations = userlocations, verbose = verbose)
     acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]
     Pc = params["Pc"]

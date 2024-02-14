@@ -60,7 +60,7 @@ function LJRef(components;
     verbose = false)
 
     components = format_components(components)
-    params = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/PCSAFT"]; userlocations = userlocations, verbose = verbose)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     k = get(params,"k",nothing)

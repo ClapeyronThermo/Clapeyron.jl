@@ -25,9 +25,9 @@ end
     function CPA(components;
         radial_dist::Symbol = :CS,
         idealmodel = BasicIdeal,
-        cubicmodel=RK,
-        alpha=sCPAAlpha,
-        mixing=vdW1fRule,
+        cubicmodel = RK,
+        alpha = sCPAAlpha,
+        mixing = vdW1fRule,
         activity = nothing,
         translation = NoTranslation,
         userlocations = String[],
@@ -36,7 +36,8 @@ end
         activity_userlocations = String[],
         mixing_userlocations = String[],
         translation_userlocations = String[],
-        verbose=false,
+        reference_state = nothing,
+        verbose = false,
         assoc_options = AssocOptions())
 
 ## Input parameters
@@ -81,9 +82,9 @@ export CPA
 function CPA(components;
     idealmodel = BasicIdeal,
     radial_dist::Symbol = :CS,
-    cubicmodel=RK,
-    alpha=CPAAlpha,
-    mixing=vdW1fRule,
+    cubicmodel = RK,
+    alpha = CPAAlpha,
+    mixing = vdW1fRule,
     activity = nothing,
     translation = NoTranslation,
     userlocations = String[],
@@ -92,7 +93,8 @@ function CPA(components;
     activity_userlocations = String[],
     mixing_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false,
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
 
     locs = if radial_dist == :CS
@@ -103,7 +105,7 @@ function CPA(components;
         throw(error("CPA: incorrect specification of radial_dist, try using `:CS` (original CPA) or `:KG` (simplified CPA)"))
     end
 
-    params = getparams(components, locs; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, locs; userlocations = userlocations, verbose = verbose)
     
     sites = get!(params,"sites") do
         SiteParam(components)
@@ -133,7 +135,7 @@ function CPA(components;
     packagedparams = CPAParam(Mw, Tc, a, b, c1, epsilon_assoc, bondvol)
     
     #init cubic model
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)

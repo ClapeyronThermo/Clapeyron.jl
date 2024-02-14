@@ -79,7 +79,7 @@ function COSMOSAC10(components;
         POH = SingleParam("POH",formatted_components,POH)
         POT = SingleParam("POT",formatted_components,POT)
     else
-        params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V"], verbose=verbose)
+        params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations = userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V"], verbose = verbose)
         Pnhb  = COSMO_parse_Pi(params["Pnhb"])
         POH  = COSMO_parse_Pi(params["POH"])
         POT  = COSMO_parse_Pi(params["POT"])

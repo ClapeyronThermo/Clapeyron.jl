@@ -67,7 +67,7 @@ function COSMOSAC02(components;
         V = SingleParam("V",formatted_components,V)
         Pi = SingleParam("Pi",formatted_components,Pi)
     else
-        params = getparams(formatted_components, default_locations(COSMOSAC02); userlocations=userlocations, verbose=verbose)
+        params = getparams(formatted_components, default_locations(COSMOSAC02); userlocations = userlocations, verbose = verbose)
         Pi  = COSMO_parse_Pi(params["Pi"])
         A  = params["A"]
         V  = params["V"]

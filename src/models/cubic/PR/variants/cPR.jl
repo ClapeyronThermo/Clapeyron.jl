@@ -43,8 +43,8 @@ function cPR(components;
     end
 
     params = getparams(formatted_components, ["cubic/cPR/cPR_single.csv"];
-    userlocations=userlocations_cpr,
-    verbose=verbose,
+    userlocations = userlocations_cpr,
+    verbose = verbose,
     ignore_missing_singleparams = ["v_shift","ZRA","acentricfactor"])
 
     k  = get(params,"k",nothing)

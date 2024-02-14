@@ -80,7 +80,7 @@ function NRTL(components; puremodel=PR,
     verbose = false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(NRTL); userlocations=userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b","Mw"], verbose=verbose)
+    params = getparams(formatted_components, default_locations(NRTL); userlocations = userlocations, asymmetricparams=["a","b"], ignore_missing_singleparams=["a","b","Mw"], verbose = verbose)
     a  = params["a"]
     b  = params["b"]
     c  = params["c"]

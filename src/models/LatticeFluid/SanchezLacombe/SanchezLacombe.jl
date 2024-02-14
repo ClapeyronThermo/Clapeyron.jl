@@ -72,7 +72,7 @@ function SanchezLacombe(components;
     reference_state = nothing,
     verbose = false)
 
-    params = getparams(components, ["LatticeFluid/SanchezLacombe","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["LatticeFluid/SanchezLacombe","properties/molarmass.csv"]; userlocations = userlocations, verbose = verbose)
 
     segment = params["segment"]
     unmixed_epsilon = params["epsilon"]

@@ -52,7 +52,7 @@ function PSRK(components;
     return RK(_components;
     idealmodel = idealmodel,
     alpha = alpha,
-    mixing=mixing,
+    mixing = mixing,
     activity = activity,
     translation = translation,
     userlocations = userlocations,

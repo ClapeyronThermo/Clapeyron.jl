@@ -61,17 +61,17 @@ Homosegmented Group-contribution Polar Perturbed-Chain SAFT (gcPPC-SAFT)
 """
 gcPPCSAFT
 
-function gcPPCSAFT(components,mixing=:homosegmented;
+function gcPPCSAFT(components,mixing = :homosegmented;
     idealmodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],
     ideal_userlocations = String[],
-    verbose=false,
+    verbose = false,
     reference_state = nothing,
     assoc_options = AssocOptions())
     
-    groups = GroupParam(components,["SAFT/PCSAFT/gcPPCSAFT/homo_gcPPCSAFT/gcPPCSAFT_groups.csv"]; group_userlocations = group_userlocations,verbose=verbose)
-    gc_params = getparams(groups, ["SAFT/PCSAFT/gcPPCSAFT/homo_gcPPCSAFT/","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    groups = GroupParam(components,["SAFT/PCSAFT/gcPPCSAFT/homo_gcPPCSAFT/gcPPCSAFT_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
+    gc_params = getparams(groups, ["SAFT/PCSAFT/gcPPCSAFT/homo_gcPPCSAFT/","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
     
     components = groups.components    
     sites = gc_params["sites"]

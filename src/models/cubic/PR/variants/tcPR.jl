@@ -55,8 +55,8 @@ function tcPR(components;
     end
 
     params = getparams(formatted_components, ["cubic/tcPR/tcPR_single.csv"];
-    userlocations=userlocations_tcpr,
-    verbose=verbose,
+    userlocations = userlocations_tcpr,
+    verbose = verbose,
     ignore_missing_singleparams = ["v_shift","ZRA","acentricfactor","M","N","L"])
 
     n = length(formatted_components)

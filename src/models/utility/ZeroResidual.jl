@@ -20,7 +20,7 @@ Zero residual model.
 function ZeroResidual(components; 
     idealmodel = BasicIdeal,
     ideal_userlocations = String[],
-    verbose=false,
+    verbose = false,
     )
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
     return ZeroResidual(format_components(components),init_idealmodel)
