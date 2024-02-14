@@ -79,8 +79,9 @@ reduced_a_ideal(model::SingleFluid,τ) = reduced_a_ideal(model.ideal,τ)
 reduced_a_ideal(model::SingleFluidIdeal,τ) = reduced_a_ideal(model.ideal,τ)
 
 function reduced_a_ideal(model::SingleFluidIdealParam,τ)
-    a₁ = model.a1
-    a₂ = model.a2
+    #model.ref_a constains modifications done by the reference state set by the user.
+    a₁ = model.a1 + model.ref_a[1]
+    a₂ = model.a2 + model.ref_a[2]
     c₀ = model.c0
     c₁ = model.c1
     logτ = log(τ)
@@ -192,6 +193,9 @@ function a_ideal(model::SingleFluidIdeal,V,T,z=SA[1.],k = __get_k_alpha0(model))
     logδ = log(N/rhoc) - log(V)
     return k*α0 + logδ
 end
+
+v_scale(model::SingleFluid,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhoc
+v_scale(model::SingleFluidIdeal,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhoc
 
 a_ideal(model::SingleFluid,V,T,z=SA[1.]) = a_ideal(idealmodel(model),V,T,z)
 

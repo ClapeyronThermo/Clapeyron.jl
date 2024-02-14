@@ -24,8 +24,8 @@ Rgas(m::EmpiricIdealModel) = m.Rgas
     estimate_pure = false,
     coolprop_userlocations = true,
     Rgas = R̄,
-    verbose = false,
-    )
+    verbose = false)
+
 ## Input parameters
 - JSON data (CoolProp and teqp format)
 
@@ -44,8 +44,9 @@ function EmpiricIdeal(components;
     userlocations = String[],
     coolprop_userlocations = true,
     Rgas = R̄,
-    verbose = false,
-    )
+    reference_state = nothing,
+    verbose = false)
+
     components = format_components(components)
     pures = [
         SingleFluidIdeal(comp;
@@ -54,15 +55,18 @@ function EmpiricIdeal(components;
         coolprop_userlocations = coolprop_userlocations,
         )
         for comp in components]
-    params = MultiFluidParam(components,pures)
+    params = MultiFluidParam(components,pures,reference_state)
     references = unique!(reduce(vcat,pure.references for pure in pures))
     model = EmpiricIdeal(components,params,pures,Rgas,references)
+    set_reference_state!(model,verbose = verbose)
     return model
 end
 
 function idealmodel(m::MultiFluid)
     EmpiricIdealfromMulti(m.components,m.params,m.pures,m.Rgas,m.references)
 end
+
+set_reference_state!(model::EmpiricIdealModel;verbose = false) = set_reference_state_empiric!(model;verbose)
 
 function a_ideal(model::EmpiricIdealModel,V,T,z,∑z = sum(z))
     #log(δi) = log(ρ * vc[i]) = -log(V) + log(sum(z)) + log(vc[i])

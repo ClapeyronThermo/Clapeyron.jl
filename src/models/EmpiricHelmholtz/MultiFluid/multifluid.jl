@@ -5,16 +5,18 @@ struct MultiFluidParam <: EoSParam
     Vc::SingleParam{Float64}
     acentricfactor::SingleParam{Float64}
     lb_volume::SingleParam{Float64}
+    reference_state::ReferenceState
 end
 
-function MultiFluidParam(components,pures)
+function MultiFluidParam(components,pures,reference_state = nothing)
     Mw = SingleParam("Mw",components,[pure.properties.Mw for pure in pures])
     Tc = SingleParam("Tc",components,[pure.properties.Tc for pure in pures])
     Pc = SingleParam("Pc",components,[pure.properties.Pc for pure in pures])
     Vc = SingleParam("Vc",components,1 ./ [pure.properties.rhoc for pure in pures])
     acentricfactor = SingleParam("acentric factor",components,[pure.properties.acentricfactor for pure in pures])
     lb_volume = SingleParam("lower bound volume",components,[pure.properties.lb_volume for pure in pures])
-    return MultiFluidParam(Mw,Tc,Pc,Vc,acentricfactor,lb_volume)
+    ref = reference_state == nothing ? ReferenceState() : deepcopy(reference_state)
+    return MultiFluidParam(Mw,Tc,Pc,Vc,acentricfactor,lb_volume,ref)
 end
 
 struct MultiFluid{𝔸,𝕄,ℙ} <: EmpiricHelmholtzModel
@@ -42,8 +44,9 @@ Rgas(model::MultiFluid) = model.Rgas
         estimate_mixing = :off,
         coolprop_userlocations = true,
         Rgas = R̄,
-        verbose = false,
-        )
+        reference_state = nothing,
+        verbose = false)
+
 ## Input parameters
 - JSON data (CoolProp and teqp format)
 
@@ -81,14 +84,14 @@ function MultiFluid(components;
     estimate_mixing = :off,
     coolprop_userlocations = true,
     Rgas = R̄,
-    verbose = false,
-    )
+    reference_state = nothing,
+    verbose = false)
 
     _components = format_components(components)
     if idealmodel === nothing
         idealmodels = FillArrays.Fill(nothing,length(_components))
     else
-        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
         idealmodels = split_model(init_idealmodel,1:length(_components))
     end
 
@@ -103,11 +106,12 @@ function MultiFluid(components;
         for (i,comp) in pairs(_components)]
     mixing = init_model(mixing,components,mixing_userlocations,verbose)
     departure = init_model(departure,components,departure_userlocations,verbose)
-    params = MultiFluidParam(_components,pures)
+    params = MultiFluidParam(_components,pures,reference_state)
     references = unique!(reduce(vcat,pure.references for pure in pures))
     model = MultiFluid(_components,params,pures,mixing,departure,Rgas,references)
     recombine_mixing!(model,model.mixing,estimate_mixing)
     recombine_departure!(model,model.departure)
+    set_reference_state!(model,verbose = verbose)
     return model
 end
 
@@ -230,6 +234,57 @@ function wilson_k_values!(K,model::MultiFluid,p,T,crit = nothing)
         K[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
     end
     return K
+end
+
+#set reference states:
+reference_state(model::MultiFluid) = model.params.reference_state
+has_reference_state(model::MultiFluid) = true
+set_reference_state!(model::MultiFluid;verbose = false) = set_reference_state_empiric!(model;verbose)
+
+function set_reference_state_empiric!(model;verbose = false)
+    #handle cases where we don't need to do anything
+    ref = reference_state(model)
+    ref === nothing && return nothing
+    ref.std_type == :no_set && return nothing
+    if verbose
+        @info "Calculating reference states for $model..."
+        @info "Reference state type: $(info_color(ref.std_type))"
+    end
+
+    #allocate the appropiate caches.
+    initialize_reference_state!(model,ref)
+    pures = model.pures
+    if all(iszero,ref.z0) #pure case
+        pure_refs = split_model(ref,(SA[i] for i ∈ 1:length(model)))
+        _set_reference_state!.(pures,SA[1.0],pure_refs)
+        ref.a0 .= only.(getfield.(pure_refs,:a0))
+        ref.a1 .= only.(getfield.(pure_refs,:a1))
+        for (i,pure) in pairs(pures)
+            ref_a = pure.ideal.ref_a
+            ref_a[1] = pure_refs[i].a0[1]
+            ref_a[2] = pure_refs[i].a1[1] 
+        end
+    else
+        _set_reference_state!(model,ref.z0)
+        for (i,pure) in pairs(pures)
+            ref_a = pure.ideal.ref_a
+            ref_a[1] = a0[i]
+            ref_a[2] = a2[i]
+        end
+    end
+    return model
+end
+
+function __calculate_reference_state_consts(model::MultiFluid,v,T,z0,H0,S0)
+    R = Rgas(model)
+    Ts = T_scale(model,z)
+    S00 = VT_entropy(model,v,T,z) 
+    a1 = (S00 - S0)/R
+    Vs = v_scale(model,z)
+    
+    H00 = VT_enthalpy(model,v,T,z)
+    a0 = (-H00 + H0)/R
+    return a0,a1
 end
 
 export MultiFluid

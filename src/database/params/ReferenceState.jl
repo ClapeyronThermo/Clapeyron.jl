@@ -69,6 +69,7 @@ end
 #by default, the reference state is stored in the idealmodel params. unwrap until
 #reaching that
 reference_state(model) = reference_state(idealmodel(model))
+reference_state(::Nothing) = nothing
 
 function reference_state(model::IdealModel)
     return __reference_state(model)
@@ -136,8 +137,7 @@ function set_reference_state!(model::EoSModel;verbose = false)
     return model
 end
 
-function _set_reference_state!(model,z0 = SA[1.0])
-    ref = reference_state(model)
+function _set_reference_state!(model,z0 = SA[1.0],ref = reference_state(model))
     ref === nothing && return nothing
     type = ref.std_type
     type == :no_set && return nothing
@@ -242,10 +242,14 @@ function calculate_reference_state_consts(model,type,T0,P0,H0,S0,z0,phase)
         T = T0
     else
     end
+    return __calculate_reference_state_consts(model,v,T,z0,H0,S0)
+end
+
+function __calculate_reference_state_consts(model::EoSModel,v,T,z,H0,S0)
     R = Rgas(model)
-    S00 = VT_entropy(model,v,T,z0) 
+    S00 = VT_entropy(model,v,T,z) 
     a1 = (S00 - S0)/R
-    H00 = VT_enthalpy(model,v,T,z0)
+    H00 = VT_enthalpy(model,v,T,z)
     a0 = (-H00 + H0)/R
     return a0,a1
 end

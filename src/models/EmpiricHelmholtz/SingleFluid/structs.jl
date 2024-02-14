@@ -4,7 +4,7 @@ struct SingleFluidIdealParam <:MultiParameterParam
     a1::Float64 #a1
     a2::Float64 #a2*τ
     c0::Float64 #c0*log(τ)
-
+    ref_a::MVector{2,Float64} #equivalent to a1/a2,but mutable and used to set reference states
     #gpe terms (Generalized Plank-Einstein)
     n_gpe::Vector{Float64} 
     t_gpe::Vector{Float64}
@@ -28,7 +28,7 @@ struct SingleFluidIdealParam <:MultiParameterParam
         @assert length(n_gerg) == length(v_gerg)
         @assert length(n) == length(t) == length(c) == length(d)
         @assert length(n_p) == length(t_p)
-        return new(a1,a2,c0,n,t,c,d,n_p,t_p,n_gerg,v_gerg,R0,c1)
+        return new(a1,a2,c0,MVector(0.0,0.0),n,t,c,d,n_p,t_p,n_gerg,v_gerg,R0,c1)
     end
 end
 

@@ -5,10 +5,10 @@
         activity = PSRKUNIFAC,
         activity_userlocations = String[],
         estimate_pure = false,
-        coolprop_userlocations = true,
-        Rgas = R̄,
-        verbose = false,
-        )
+        coolprop_userlocations = false,
+        Rgas = Rgas,
+        reference_state = nothing,
+        verbose = verbose)
 
 ## input Parameters
 
@@ -44,10 +44,10 @@ function HelmAct(components;
     idealmodel = nothing,
     ideal_userlocations = String[],
     estimate_pure = false,
-    coolprop_userlocations = true,
-    Rgas = R̄,
-    verbose = false,
-    )
+    coolprop_userlocations = false,
+    Rgas = Rgas,
+    reference_state = nothing,
+    verbose = verbose)
 
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     if has_groups(init_activity)
@@ -63,6 +63,7 @@ function HelmAct(components;
         estimate_pure = estimate_pure,
         coolprop_userlocations = coolprop_userlocations,
         Rgas = Rgas,
+        reference_state = reference_state,
         verbose = false,
         idealmodel = idealmodel,
         ideal_userlocations = ideal_userlocations,
