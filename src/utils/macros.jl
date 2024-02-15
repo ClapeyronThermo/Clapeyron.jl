@@ -490,11 +490,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     
     #inject reference state if not built
     if has_reference_state(M)
-        if reference_state === nothing
-            params_in["reference_state"] = ReferenceState()
-        else
-            params_in["reference_state"] = deepcopy(reference_state)
-        end
+            params_in["reference_state"] = __init_reference_state_kw(reference_state)
     else
         #this could fail when the type is not entirely known.
         #reference_state_checkempty(M,reference_state)
@@ -560,10 +556,10 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
             input value. with this strategy, we can differenciate between standalone ideal models and
             ideal models stored inside a residual model.
             =#
-            input_reference_state = reference_state === nothing ? ReferenceState() : reference_state
+            input_reference_state = __init_reference_state_kw(reference_state)
             std_type = input_reference_state.std_type
             input_reference_state.std_type = :no_set
-            init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
+            init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,input_reference_state)
             input_reference_state.std_type = std_type
             idmodel_reference_state = Clapeyron.reference_state(init_idealmodel)
             idmodel_reference_state.std_type = std_type

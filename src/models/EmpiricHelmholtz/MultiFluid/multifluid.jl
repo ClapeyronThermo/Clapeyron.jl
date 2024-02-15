@@ -15,7 +15,7 @@ function MultiFluidParam(components,pures,reference_state = nothing)
     Vc = SingleParam("Vc",components,1 ./ [pure.properties.rhoc for pure in pures])
     acentricfactor = SingleParam("acentric factor",components,[pure.properties.acentricfactor for pure in pures])
     lb_volume = SingleParam("lower bound volume",components,[pure.properties.lb_volume for pure in pures])
-    ref = reference_state == nothing ? ReferenceState() : deepcopy(reference_state)
+    ref = __init_reference_state_kw(reference_state)
     return MultiFluidParam(Mw,Tc,Pc,Vc,acentricfactor,lb_volume,ref)
 end
 
@@ -238,7 +238,6 @@ end
 
 #set reference states:
 reference_state(model::MultiFluid) = model.params.reference_state
-has_reference_state(model::MultiFluid) = true
 set_reference_state!(model::MultiFluid;verbose = false) = set_reference_state_empiric!(model;verbose)
 
 function set_reference_state_empiric!(model;verbose = false)

@@ -39,6 +39,12 @@ PCSAFT{ShomateIdeal, Float64} with 2 components:
  "pentane"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
 
+julia> model2 = PCSAFT(["water","pentane"],idealmodel = ShomateIdeal,reference_state = :nbp) #equivalent
+PCSAFT{ShomateIdeal, Float64} with 2 components:
+ "water"
+ "pentane"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
 julia> pure = split_model(model)
 2-element Vector{PCSAFT{ShomateIdeal, Float64}}:
  PCSAFT{ShomateIdeal, Float64}("water")
@@ -66,9 +72,35 @@ function ReferenceState(symbol = :no_set;T0 = NaN,P0 = NaN,H0 = NaN,S0 = NaN,pha
     end
     ReferenceState(String[],Float64[],Float64[],T0,P0,_H0,_S0,z0,phase,_symbol)
 end
+
+__init_reference_state_kw(::Nothing) = ReferenceState()
+__init_reference_state_kw(s::Symbol) = ReferenceState(s)
+__init_reference_state_kw(ref::ReferenceState) = deepcopy(ref)
+
 #by default, the reference state is stored in the idealmodel params. unwrap until
 #reaching that
-reference_state(model) = reference_state(idealmodel(model))
+"""
+    reference_state(model)::Union{ReferenceState,Nothing}
+
+Returns the reference state of the input model, if available. Returns `nothing` otherwise.
+
+## Examples
+```julia-repl
+julia> reference_state(PCSAFT("water"))
+false
+
+julia> has_reference_state(PCSAFT("water",idealmodel = ReidIdeal))
+true
+
+julia> reference_state(PCSAFT("water",idealmodel = MonomerIdeal)) #has reference state, it is not initialized.
+ReferenceState(String[], Float64[], Float64[], NaN, NaN, Float64[], Float64[], Float64[], :unknown, :no_set)
+
+julia> reference_state(PCSAFT("water",idealmodel = MonomerIdeal, reference_state = ReferenceState(:nbp))) #has an initialized reference state
+ReferenceState(["water"], [33107.133379491206], [17.225988924236503], NaN, NaN, [0.0], [0.0], [0.0], :unknown, :nbp)
+```
+"""
+function reference_state end
+reference_state(model::EoSModel) = reference_state(idealmodel(model))
 reference_state(::Nothing) = nothing
 
 function reference_state(model::IdealModel)
@@ -104,14 +136,40 @@ function reference_state_eval(ref::ReferenceState,V,T,z,∑z)
     return ā0 + ā1*T
 end
 
-has_reference_state(x) = false
-has_reference_state(model::EoSModel) = has_reference_state(typeof(model))
-function has_reference_state(::Type{M}) where M <: EoSModel
-    return hasfield(M,:params) && has_reference_state(fieldtype(M,:params))
-end
+"""
+    has_reference_state(model)::Bool
 
-function has_reference_state(model::Type{T}) where T
-    return hasfield(T,:reference_state) && (fieldtype(T,:reference_state) == ReferenceState)
+Checks if the input `EoSModel` has a reference state. Returns `true/false`
+
+## Examples
+
+```julia-repl
+julia> has_reference_state(PCSAFT("water"))
+false
+
+julia> has_reference_state(PCSAFT("water",idealmodel = ReidIdeal))
+true
+```
+
+Note that the default idealmodel (`BasicIdeal`) does not allow for setting reference states.
+"""
+has_reference_state(x) = !isnothing(reference_state(x))
+has_reference_state(x::Type{T}) where T = has_reference_state_type(T)
+
+function has_reference_state_type(::Type{model}) where model
+    if hasfield(model,:params)
+        params = fieldtype(model,:params)
+        if hasfield(params,:reference_state)
+            if fieldtype(params,:reference_state) == ReferenceState
+                return true
+            end     
+        elseif hasfield(model,:idealmodel)
+            return has_reference_state_type(fieldtype(model,:idealmodel))
+        end
+    elseif hasfield(model,:idealmodel)
+        return has_reference_state_type(fieldtype(model,:idealmodel))
+    end
+    return false
 end
 
 function set_reference_state!(model::EoSModel;verbose = false)
@@ -194,6 +252,9 @@ function initialize_reference_state!(model,ref = reference_state(model))
     if length(comps) == 0
         resize!(comps,len)
         comps .= model.components
+    else
+        #this means the ReferenceState struct was already initialized. check for inconsistencies in size
+        check_arraysize(model,comps)
     end
 
     if length(H0) == 0
@@ -246,8 +307,7 @@ function calculate_reference_state_consts(model,type,T0,P0,H0,S0,z0,phase)
     return __calculate_reference_state_consts(model,v,T,z0,H0,S0)
 end
 
-function __calculate_reference_state_consts(model::EoSModel,v,T,z,H0,S0)
-    R = Rgas(model)
+function __calculate_reference_state_consts(model,v,T,z,H0,S0)
     ∑z = sum(z)
     S00 = VT_entropy(model,v,T,z)
     a1 = (S00 - S0)/∑z

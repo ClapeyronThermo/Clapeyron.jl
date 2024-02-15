@@ -87,6 +87,10 @@ end
 end
 
 @testset "reference states" begin
+    
+    @test !has_reference_state(PCSAFT("water"))
+    @test has_reference_state(PCSAFT("water",idealmodel = ShomateIdeal))
+
     ref1 = ReferenceState(:nbp)
     ref2 = ReferenceState(:ashrae)
     ref3 = ReferenceState(:iir)
@@ -102,6 +106,12 @@ end
         T12,v12,_ = saturation_temperature(pure1[2],101325.0)
         @test Clapeyron.VT_enthalpy(pure1[2],v12,T12) ≈ 0.0 atol = 1e-6
         @test Clapeyron.VT_entropy(pure1[2],v12,T12) ≈ 0.0 atol = 1e-6
+        
+        #test that multifluids work.
+        model1b = GERG2008("water",reference_state = :nbp)
+        T1b,v1b,_ = saturation_temperature(model1b,101325.0)
+        @test Clapeyron.VT_enthalpy(model1b,v1b,T1b) ≈ 0.0 atol = 1e-6
+        @test Clapeyron.VT_entropy(model1b,v1b,T1b) ≈ 0.0 atol = 1e-6
     end
 
     @testset "ashrae reference state" begin
