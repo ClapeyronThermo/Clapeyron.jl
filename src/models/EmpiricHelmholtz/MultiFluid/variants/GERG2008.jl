@@ -54,12 +54,3 @@ function GERG2008(components;
     verbose = verbose)
 end
 export GERG2008
-
-
-function ref_f()
-    model = GERG2008("water",reference_state = ReferenceState(:nbp))
-    T,v,_ = saturation_temperature(model,101325.0)
-    h = Clapeyron.VT_enthalpy(model,v,T)
-    s = Clapeyron.VT_entropy(model,v,T)
-    return (;h,s)
-end

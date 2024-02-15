@@ -87,20 +87,21 @@ end
     return quote nothing end
 end
 
-function reference_state_eval(model::EoSModel,V,T,z)
+function reference_state_eval(model::EoSModel,V,T,z,∑z = sum(z))
     _ref = reference_state(model)    
-    reference_state_eval(_ref,V,T,z)    
+    reference_state_eval(_ref,V,T,z,∑z)    
 end
 
-reference_state_eval(ref::Nothing,V,T,z) = zero(1.0*T+first(z))
+reference_state_eval(ref::Nothing,V,T,z,∑z) = zero(1.0*T+first(z))
 
-function reference_state_eval(ref::ReferenceState,V,T,z)
+function reference_state_eval(ref::ReferenceState,V,T,z,∑z)
+    
     if ref.std_type == :no_set
         return zero(1.0*T + first(z))
     end
     ā0 = dot(ref.a0,z)
     ā1 = dot(ref.a1,z)
-    return (ā0/T + ā1)/sum(z)
+    return (ā0 + ā1*T)*∑z
 end
 
 has_reference_state(x) = false
@@ -247,10 +248,11 @@ end
 
 function __calculate_reference_state_consts(model::EoSModel,v,T,z,H0,S0)
     R = Rgas(model)
-    S00 = VT_entropy(model,v,T,z) 
-    a1 = (S00 - S0)/R
+    ∑z = sum(z)
+    S00 = VT_entropy(model,v,T,z)
+    a1 = (S00 - S0)/∑z
     H00 = VT_enthalpy(model,v,T,z)
-    a0 = (-H00 + H0)/R
+    a0 = (-H00 + H0)/∑z
     return a0,a1
 end
 

@@ -163,7 +163,8 @@ function eos(model::MultiFluid,V,T,z = SA[1.0])
     δ = reduced_delta(model,V,T,z,∑z)
     τ = reduced_tau(model,V,T,z,∑z)
     aᵣ = multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
-    return ∑z*@R̄()*T*(a₀+aᵣ)
+    𝕒 = reference_state_eval(model,V,T,z)
+    return ∑z*@R̄()*T*(a₀+aᵣ) + reference_state_eval(model,V,T,z,∑z)
 end
 
 function eos_res(model::MultiFluid,V,T,z = SA[1.0])
@@ -258,33 +259,16 @@ function set_reference_state_empiric!(model;verbose = false)
         pure_refs = split_model(ref,(SA[i] for i ∈ 1:length(model)))
         _set_reference_state!.(pures,SA[1.0],pure_refs)
         ref.a0 .= only.(getfield.(pure_refs,:a0))
-        ref.a1 .= only.(getfield.(pure_refs,:a1))
-        for (i,pure) in pairs(pures)
-            ref_a = pure.ideal.ref_a
-            ref_a[1] = pure_refs[i].a0[1]
-            ref_a[2] = pure_refs[i].a1[1] 
-        end
+        ref.a1 .= only.(getfield.(pure_refs,:a1))  
     else
         _set_reference_state!(model,ref.z0)
-        for (i,pure) in pairs(pures)
-            ref_a = pure.ideal.ref_a
-            ref_a[1] = a0[i]
-            ref_a[2] = a2[i]
-        end
+    end
+    for (i,pure) in pairs(pures)
+        ref_a = pure.ideal.ref_a
+        ref_a[1] = pure_refs[i].a0[1]
+        ref_a[2] = pure_refs[i].a1[1] 
     end
     return model
-end
-
-function __calculate_reference_state_consts(model::MultiFluid,v,T,z0,H0,S0)
-    R = Rgas(model)
-    Ts = T_scale(model,z)
-    S00 = VT_entropy(model,v,T,z) 
-    a1 = (S00 - S0)/R
-    Vs = v_scale(model,z)
-    
-    H00 = VT_enthalpy(model,v,T,z)
-    a0 = (-H00 + H0)/R
-    return a0,a1
 end
 
 export MultiFluid

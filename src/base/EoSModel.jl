@@ -3,7 +3,7 @@ abstract type EoSModel end
 function a_eos(model::EoSModel, V, T, z=SA[1.0])
     maybe_ideal = idealmodel(model)
     ideal = maybe_ideal !== nothing ? maybe_ideal : model
-    return a_ideal(ideal,V,T,z) + a_res(model,V,T,z) + reference_state_eval(model,V,T,z)
+    return a_ideal(ideal,V,T,z) + a_res(model,V,T,z)
 end
 
 """
@@ -33,8 +33,9 @@ You can mix and match ideal models if you provide:
 - `[idealmodel](@ref)(model)`: extracts the ideal model from your Thermodynamic model
 - `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz free energy
 """
-function eos(model::EoSModel, V, T, z=SA[1.0])
-    return Rgas(model)*sum(z)*T * a_eos(model,V,T,z)
+function eos(model::EoSModel, V, T, z = SA[1.0])
+    ∑z = sum(z)
+    return Rgas(model)*∑z*T*a_eos(model,V,T,z) + reference_state_eval(model,V,T,z,∑z)
 end
 
 """

@@ -79,9 +79,8 @@ reduced_a_ideal(model::SingleFluid,τ) = reduced_a_ideal(model.ideal,τ)
 reduced_a_ideal(model::SingleFluidIdeal,τ) = reduced_a_ideal(model.ideal,τ)
 
 function reduced_a_ideal(model::SingleFluidIdealParam,τ)
-    #model.ref_a constains modifications done by the reference state set by the user.
-    a₁ = model.a1 + model.ref_a[1]
-    a₂ = model.a2 + model.ref_a[2]
+    a₁ = model.a1
+    a₂ = model.a2
     c₀ = model.c0
     c₁ = model.c1
     logτ = log(τ)
@@ -217,7 +216,9 @@ function eos(model::SingleFluid, V, T, z=SA[1.0])
     τ = Tc/T
     k = __get_k_alpha0(model)
     logδ = log(δ)
-    return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ))
+    ref_a = model.ideal.ref_a
+    a0,a1 = ref_a[1],ref_a[2]
+    return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ)) + N*(a0 + a1*T)
 end
 
 function eos_res(model::SingleFluid,V,T,z=SA[1.0])
