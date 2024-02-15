@@ -101,7 +101,7 @@ function reference_state_eval(ref::ReferenceState,V,T,z,∑z)
     end
     ā0 = dot(ref.a0,z)
     ā1 = dot(ref.a1,z)
-    return (ā0 + ā1*T)*∑z
+    return ā0 + ā1*T
 end
 
 has_reference_state(x) = false

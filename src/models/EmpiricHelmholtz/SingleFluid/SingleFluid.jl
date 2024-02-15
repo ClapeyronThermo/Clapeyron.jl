@@ -217,7 +217,7 @@ function eos(model::SingleFluid, V, T, z=SA[1.0])
     k = __get_k_alpha0(model)
     logδ = log(δ)
     ref_a = model.ideal.ref_a
-    a0,a1 = ref_a[1],ref_a[2]
+    a0,a1 = ref_a[1],ref_a[2] #reference state evaluation
     return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ)) + N*(a0 + a1*T)
 end
 

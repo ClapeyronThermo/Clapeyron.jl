@@ -163,7 +163,6 @@ function eos(model::MultiFluid,V,T,z = SA[1.0])
     δ = reduced_delta(model,V,T,z,∑z)
     τ = reduced_tau(model,V,T,z,∑z)
     aᵣ = multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
-    𝕒 = reference_state_eval(model,V,T,z)
     return ∑z*@R̄()*T*(a₀+aᵣ) + reference_state_eval(model,V,T,z,∑z)
 end
 
