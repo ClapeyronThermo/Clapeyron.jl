@@ -216,7 +216,7 @@ function ρ_S(model::SAFTgammaMieModel, V, T, z)
     #vst = model.params.segment.values
     #S = model.params.shapefactor.values
     ρ = ∑(z)*N_A/V
-    #res1 =  ρ * ∑(x[i] * ∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps)
+    #res1 = ρ * ∑(x[i] * ∑(v[i][k]*vst[k]*S[k] for k ∈ @groups(i)) for i ∈ @comps)
     res2 = ρ *@f(∑Â_n)
     return res2
 end
@@ -643,7 +643,7 @@ function a_disp(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     a₂ = a₂*m̄/(T*T)/∑z
     a₃ = a₃*m̄/(T*T*T)/∑z
     #@show (a₁,a₂,a₃)
-    adisp =  a₁ + a₂ + a₃ 
+    adisp = a₁ + a₂ + a₃ 
     return adisp
 end
 

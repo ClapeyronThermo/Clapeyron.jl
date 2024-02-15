@@ -495,7 +495,7 @@ function AX!(output,input,pack_indices,delta::Compressed4DMatrix{TT,VV} ,modelsi
     return output
 end
 =#
-#res =  ∑(z[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)/sum(z)
+#res = ∑(z[i]*∑(n[i][a] * (log(X_[i][a]) - X_[i][a]/2 + 0.5) for a ∈ @sites(i)) for i ∈ @comps)/sum(z)
 
 #=
 on one site:

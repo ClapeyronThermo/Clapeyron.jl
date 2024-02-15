@@ -32,7 +32,7 @@ model = PR78(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanc
 # Passing a prebuilt model
 
 my_alpha = PRAlpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  PR78(["ethane","butane"],alpha = my_alpha) #this model becomes a normal PR EoS
+model = PR78(["ethane","butane"],alpha = my_alpha) #this model becomes a normal PR EoS
 
 # User-provided parameters, passing files or folders
 model = PR78(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])

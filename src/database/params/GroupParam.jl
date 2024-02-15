@@ -147,7 +147,7 @@ end
 
 function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs::Vector{String})
     components = [first(i) for i ∈ input]
-    raw_groups =  [last(i) for i ∈ input]
+    raw_groups = [last(i) for i ∈ input]
     groups = [first.(grouppairs) for grouppairs ∈ raw_groups]
     n_groups = [last.(grouppairs) for grouppairs ∈ raw_groups]
     flattenedgroups = String[]
@@ -155,7 +155,7 @@ function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs
     n_flattenedgroups = Vector{Vector{Int}}(undef,0)
     n_groups_cache = PackedVofV(Int[],Float64[])
 
-    param =  GroupParam(components,
+    param = GroupParam(components,
     groups,
     grouptype,
     n_groups,

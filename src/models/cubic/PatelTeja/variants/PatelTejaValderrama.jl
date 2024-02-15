@@ -53,7 +53,7 @@ P = RT/(v-b) + a•α(T)/((v - Δ₁b)*(v - Δ₂b))
 aᵢᵢ = Ωaᵢ(R²Tcᵢ²/Pcᵢ)
 bᵢᵢ = Ωbᵢ(R²Tcᵢ/Pcᵢ)
 cᵢ = Ωcᵢ(R²Tcᵢ/Pcᵢ)
-Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
+Zcᵢ = Pcᵢ*Vcᵢ/(R*Tcᵢ)
 Ωaᵢ = 0.66121 - 0.76105Zcᵢ
 Ωbᵢ = 0.02207 + 0.20868Zcᵢ
 Ωcᵢ = 0.57765 - 1.87080Zcᵢ
@@ -62,8 +62,8 @@ Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
 δ = 1 + 6γ + γ²
 ϵ = 1 + γ
 
-Δ₁ =  -(ϵ + √δ)/2
-Δ₂ =  -(ϵ - √δ)/2
+Δ₁ = -(ϵ + √δ)/2
+Δ₂ = -(ϵ - √δ)/2
 ```
 
 ## Model Construction Examples
@@ -80,7 +80,7 @@ model = PTV(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advance
 # Passing a prebuilt model
 
 my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  PTV(["ethane","butane"],alpha = my_alpha)
+model = PTV(["ethane","butane"],alpha = my_alpha)
 
 # User-provided parameters, passing files or folders
 model = PTV(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])

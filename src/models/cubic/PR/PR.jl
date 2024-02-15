@@ -68,7 +68,7 @@ model = PR(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced
 # Passing a prebuilt model
 
 my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  PR(["ethane","butane"],alpha = my_alpha)
+model = PR(["ethane","butane"],alpha = my_alpha)
 
 # User-provided parameters, passing files or folders
 model = PR(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])

@@ -71,7 +71,7 @@ yᵢ = 1 + (2(1 + cᵢ))^(1/3) + (4/(1 + cᵢ))^(1/3)
 `cᵢ` is fitted to match:
 ```
 if Zcᵢ[exp] > 0.29
-    cᵢ =  √2 - 1
+    cᵢ = √2 - 1
 else
     Zcᵢ = 1.168Zcᵢ[exp]
     f(cᵢ) == 0
@@ -92,7 +92,7 @@ model = RKPR(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanc
 # Passing a prebuilt model
 
 my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  RKPR(["ethane","butane"],alpha = my_alpha)
+model = RKPR(["ethane","butane"],alpha = my_alpha)
 
 # User-provided parameters, passing files or folders
 model = RKPR(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])
@@ -202,7 +202,7 @@ function cubic_Δ(model::RKPRModel,z)
     Δ1 = zero(eltype(z))
     Δ2 = zero(Δ1)
     for i in @comps
-        δi =  c[i]
+        δi = c[i]
         zi = z[i]
         Δ2 += zi*δi
         Δ1 += z[i]*((1 - δi)/(1 + δi))

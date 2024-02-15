@@ -259,7 +259,7 @@ function J(model::SAFTVRSMieModel,V,T,z,_d = @f(d),η = @f(ζ3,_d),Z = @f(Zhs_ha
     g_hs(1,η) = (z-1)/(4*η)
     g_hs_1(1,η) + g_hs_i(1,η) = (z-1)/(4*η)
     g_hs_1(1,η) = (z-1)/(4*η) - g_hs_i(1,η)
-    J*ghs_1_divJ(1,η) =  (z-1)/(4*η) - g_hs_i(1,η)
+    J*ghs_1_divJ(1,η) = (z-1)/(4*η) - g_hs_i(1,η)
     J = 
     =#
     J̄ = fill(zero(V+T+first(z)+one(eltype(model))),length(model))

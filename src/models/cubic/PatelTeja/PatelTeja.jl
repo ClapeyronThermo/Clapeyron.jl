@@ -53,7 +53,7 @@ P = RT/(v-b) + a•α(T)/((v - Δ₁b)*(v - Δ₂b))
 aᵢᵢ = Ωaᵢ(R²Tcᵢ²/Pcᵢ)
 bᵢᵢ = Ωbᵢ(R²Tcᵢ/Pcᵢ)
 cᵢ = Ωcᵢ(R²Tcᵢ/Pcᵢ)
-Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
+Zcᵢ = Pcᵢ*Vcᵢ/(R*Tcᵢ)
 Ωaᵢ = 3Zcᵢ² + 3(1 - 2Zcᵢ)Ωbᵢ + Ωbᵢ² + 1 - 3Zcᵢ
 0 = -Zcᵢ³ + (3Zcᵢ²)*Ωbᵢ + (2 - 3Zcᵢ)*Ωbᵢ² + Ωbᵢ³
 Ωcᵢ = 1 - 3Zcᵢ
@@ -62,8 +62,8 @@ Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
 δ = 1 + 6γ + γ²
 ϵ = 1 + γ
 
-Δ₁ =  -(ϵ + √δ)/2
-Δ₂ =  -(ϵ - √δ)/2
+Δ₁ = -(ϵ + √δ)/2
+Δ₂ = -(ϵ - √δ)/2
 ```
 
 ## Model Construction Examples
@@ -80,7 +80,7 @@ model = PatelTeja(["water","ethanol"],mixing = WSRule, activity = NRTL) #using a
 # Passing a prebuilt model
 
 my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  PatelTeja(["ethane","butane"],alpha = my_alpha)
+model = PatelTeja(["ethane","butane"],alpha = my_alpha)
 
 # User-provided parameters, passing files or folders
 model = PatelTeja(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])

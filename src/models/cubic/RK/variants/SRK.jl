@@ -35,7 +35,7 @@ model = SRK(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advance
 # Passing a prebuilt model
 
 my_alpha = SoaveAlpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  SRK(["ethane","butane"],alpha = my_alpha)
+model = SRK(["ethane","butane"],alpha = my_alpha)
 
 # User-provided parameters, passing files or folders
 

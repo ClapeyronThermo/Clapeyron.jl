@@ -143,7 +143,7 @@ function lnγ_res(model::UNIFACFVPolyModel,V,T,z,_data=@f(data))
     _Ψ = @f(Ψ)
     lnΓ_ = @f(lnΓ,_Ψ)
     lnΓi_ = @f(lnΓi,_Ψ)
-    lnγ_res_ =  [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
+    lnγ_res_ = [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
     return lnγ_res_
 end
 

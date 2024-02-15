@@ -69,7 +69,7 @@ model = RK(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced
 # Passing a prebuilt model
 
 my_alpha = SoaveAlpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  RK(["ethane","butane"],alpha = my_alpha) #this is efectively now an SRK model
+model = RK(["ethane","butane"],alpha = my_alpha) #this is efectively now an SRK model
 
 # User-provided parameters, passing files or folders
 
@@ -133,7 +133,7 @@ function RK(components;
 end
 
 function ab_consts(::Type{<:RKModel})
-    Ωa =  1/(9*(2^(1/3)-1))
+    Ωa = 1/(9*(2^(1/3)-1))
     Ωb = (2^(1/3)-1)/3
     return Ωa,Ωb
 end

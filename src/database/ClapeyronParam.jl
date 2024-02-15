@@ -39,7 +39,7 @@ end
 
 Base.eltype(p::EoSParam) = Float64
 
-const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
+const PARSED_GROUP_VECTOR_TYPE = Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
 function pack_vectors(x::AbstractVector{<:AbstractVector})
     return PackedVectorsOfVectors.pack(x)

@@ -91,7 +91,7 @@ function tcRK(components;
                 if !w.ismissingvalues[i]
                     wi = w[i]
                     Li = 0.0611*wi*wi + 0.7535*wi + 0.1359
-                    Mi =  0.1709*wi*wi - 0.2063*wi + 0.8787
+                    Mi = 0.1709*wi*wi - 0.2063*wi + 0.8787
                     L[i] = Li
                     N[i] = 2
                     M[i] = Mi

@@ -14,7 +14,7 @@ function each_split_model(param::ReferenceState,I)
 end
 
 function each_split_model(param::AbstractMatrix,I)
-    val =  param[I,I]
+    val = param[I,I]
     eltype(param) <: AbstractArray && return deepcopy(val)
     return val
 end
@@ -43,7 +43,7 @@ function each_split_model(y::SparsePackedMofV,I)
 end
 
 function each_split_model(param::PackedVofV,I)
-    val =  PackedVectorsOfVectors.pack(param[I])
+    val = PackedVectorsOfVectors.pack(param[I])
     return val
 end
 

@@ -31,7 +31,7 @@ end
 function p_scale(model::SAFTModel,z=SA[1.0])
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
-    val =  sum(z[i]*σ[i,i]^3/ϵ[i,i] for i in 1:length(z))*N_A/R̄
+    val = sum(z[i]*σ[i,i]^3/ϵ[i,i] for i in 1:length(z))*N_A/R̄
     return 1/val
 end
 

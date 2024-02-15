@@ -73,7 +73,7 @@ model = vdW(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advance
 # Passing a prebuilt model
 
 my_alpha = SoaveAlpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  vdW(["ethane","butane"],alpha = my_alpha)
+model = vdW(["ethane","butane"],alpha = my_alpha)
 
 # User-provided parameters, passing files or folders
 
@@ -139,8 +139,8 @@ function vdW(components;
 end
 
 function ab_consts(::Type{<:vdWModel})
-    Ωa =  27/64
-    Ωb =  1/8
+    Ωa = 27/64
+    Ωb = 1/8
     return Ωa,Ωb
 end
 

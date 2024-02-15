@@ -321,7 +321,7 @@ function x0_sat_pure(model::ABCubicModel, T)
     zc = pure_cubic_zc(model)
     Δ1,Δ2 = cubic_Δ(model,SA[1.0])
     vl_p0,vl_max = zero_pressure_impl(T,a,b,c,Δ1,Δ2,z) #exact solution to zero-pressure cubic
-    B =  b-a/(R̄*T)
+    B = b-a/(R̄*T)
     if !isnan(vl_p0)
         ares = a_res(model, vl_p0, T, z,data)
         lnϕ_liq0 = ares - 1. + log(R̄*T/vl_p0)
@@ -368,8 +368,8 @@ pr: pol = v2 + 2bv - b2 -> pol(b) = 2b2, dpol(b) = 2v + 2b = 4b
 rk: pol = v*(v+b) -> pol(b) = 2b2, dpol(b) = 2v + b = 3b
 
 vdw:k = 2b/(b2)^2 = 2/b3 , k^-1 = 0.5b3
-pr:k =  4b/(2b^2) = 1/b3, k^-1 = b3
-rk:k =  3b/(2b^2) = 0.75/b3 lower  1.33b3
+pr:k = 4b/(2b^2) = 1/b3, k^-1 = b3
+rk:k = 3b/(2b^2) = 0.75/b3 lower  1.33b3
 
 we want the lowest possible volume, to be sure on being on the liquid side.
 

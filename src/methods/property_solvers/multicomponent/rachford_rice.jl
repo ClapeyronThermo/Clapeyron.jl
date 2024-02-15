@@ -76,7 +76,7 @@ function rr_vle_vapor_fraction(K,z)
     t2 = b111*Ξ2 + 2*b12*N2 + b3*M2
     b4 = -(t1+t2)/M1
     βaprox = (b0+b1+b2+b3+b4) #β(ε=1)
-    βsol1 =  rr_flash_refine(K,z,βaprox)
+    βsol1 = rr_flash_refine(K,z,βaprox)
     βsol = βsol1
     #converged to -2.2e-16 or lower, practically 0
     if abs(βsol1) < eps(_1)
@@ -90,8 +90,8 @@ function rr_vle_vapor_fraction(K,z)
     elseif (βsol1 < β_near0) | (βsol1 > β_near1)     #in this case, we have two asymptotes really, really near one and zero
         βaprox_near0 = near_mean
         βaprox_near1 = _1 - near_mean
-        βsol_near0 =  rr_flash_refine(K,z,βaprox_near0)
-        βsol_near1 =  rr_flash_refine(K,z,βaprox_near1)
+        βsol_near0 = rr_flash_refine(K,z,βaprox_near0)
+        βsol_near1 = rr_flash_refine(K,z,βaprox_near1)
         βsol_near0,βsol_near1
         if 0 <= βsol_near0 <= 1
             βsol = βsol_near0
@@ -106,8 +106,8 @@ end
 function rr_find_strongest(K,z)
     _0 = zero(first(z)+first(K))
     _1 = one(_0)
-    (kmin,idmin) =  findmin(K)
-    (kmax,idmax) =  findmax(K)
+    (kmin,idmin) = findmin(K)
+    (kmax,idmax) = findmax(K)
     βmin = _1/(_1-kmax)
     βmax = _1/(_1-kmin)
     idx = 0
@@ -208,7 +208,7 @@ function rr_find_strongest(K,z)
         a2 = -b1*(z2 + z3 + z4) - b2*(z1 + z3 + z4) - b3*(z1 + z2 + z4)
         a1 = b1*b2*(z3+z4) + b1*b3*(z2+z4) + b2*b3*(z1+z4) + b1*b4*(z2+z3) + b2*b4*(z1+z3) + b3*b4*(z1+z2)
         a0 = -b1*b2*b3*z4 - b1*b2*b4*z3 - b1*b3*b4*z2 - b2*b3*b4*z1
-        res1 =  Solvers.roots3(a0,a1,a2,a3)
+        res1 = Solvers.roots3(a0,a1,a2,a3)
         βmax = max(b1,b2,b3,b4)
         βmin = min(b1,b2,b3,b4)
         clx1,clx2,clx3 = res1
@@ -291,7 +291,7 @@ end
 #obtains the minimum and maximum permissible value of β
 function rr_βminmax(K,z)
     _1 = one(eltype(K))*one(eltype(z))
-    βmin =  Inf*_1
+    βmin = Inf*_1
     βmax = -Inf*_1
     _0 = zero(_1)
     #βmin = max(0., minimum(((K.*z .- 1) ./ (K .-  1.))[K .> 1]))
@@ -431,7 +431,7 @@ while error_β > 1e-8 && error_FO > 1e-8 && it < 30
     end
 
     #updatind β
-    βnew =  β + dβ
+    βnew = β + dβ
     if βmin < βnew && βnew < βmax
         β = βnew
     else

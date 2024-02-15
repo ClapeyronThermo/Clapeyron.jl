@@ -266,10 +266,10 @@ function σeff(model::SAFTVRQMieModel, V, T, z)
     n1,n2 = size(_σ)
     for i in 1:n1
         f0 = x -> fgh(x,_λa[i,i],_λr[i,i],_σ[i,i],T,Mwij[i,i])
-        _σeff[i,i] =  _σ[i,i]*Solvers.halley(f0,one(1.0*T))
+        _σeff[i,i] = _σ[i,i]*Solvers.halley(f0,one(1.0*T))
         for j in 1:i-1
         f0 = x -> fgh(x,_λa[i,j],_λr[i,j],_σ[i,j],T,Mwij[i,j])
-        _σeff[i,j] =  _σ[i,j]*Solvers.halley(f0,one(1.0*T))
+        _σeff[i,j] = _σ[i,j]*Solvers.halley(f0,one(1.0*T))
         _σeff[j,i] = _σeff[i,j]
         end
     end
@@ -324,13 +324,13 @@ function ϵeff(model::SAFTVRQMieModel, V, T, z)
         x0 = (_λr[i,i]/_λa[i,i])^(1/(_λr[i,i]-_λa[i,i]))
         _σmin = Solvers.halley(f0,one(T)*x0)
         uij =u(_σmin,_λa[i,i],_λr[i,i],_σ[i,i],T,Mwij[i,i])
-        _ϵeff[i,i] =  -ϵ[i,i]*uij
+        _ϵeff[i,i] = -ϵ[i,i]*uij
         for j in 1:i-1
             f0 = x -> fgh(x,_λa[i,j],_λr[i,j],_σ[i,j],T,Mwij[i,j])
             x0 = (_λr[i,j]/_λa[i,j])^(1/(_λr[i,j]-_λa[i,j]))
             _σmin = Solvers.halley(f0,one(T)*x0)
             uij =u(_σmin,_λa[i,j],_λr[i,j],_σ[i,j],T,Mwij[i,j])
-            _ϵeff[i,j] =  -ϵ[i,j]*uij
+            _ϵeff[i,j] = -ϵ[i,j]*uij
             _ϵeff[j,i] = _ϵeff[i,j]
         end
     end
@@ -629,6 +629,6 @@ function a_disp(model::SAFTVRQMieModel, V, T, z,_data = @f(data))
     a₁ = a₁*m̄/T/∑z
     a₂ = a₂*m̄/(T*T)/∑z
     a₃ = a₃*m̄/(T*T*T)/∑z
-    adisp =  a₁ + a₂ + a₃
+    adisp = a₁ + a₂ + a₃
     return adisp
 end

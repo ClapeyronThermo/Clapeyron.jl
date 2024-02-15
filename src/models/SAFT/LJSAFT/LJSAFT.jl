@@ -87,7 +87,7 @@ end
 function p_scale(model::LJSAFTModel,z=SA[1.0])
     T̃ = model.params.T_tilde.values
     b = model.params.b.values
-    val =  sum(z[i]*b[i,i]/T̃[i,i] for i in 1:length(z))/R̄
+    val = sum(z[i]*b[i,i]/T̃[i,i] for i in 1:length(z))/R̄
     return 1/val
 end
 

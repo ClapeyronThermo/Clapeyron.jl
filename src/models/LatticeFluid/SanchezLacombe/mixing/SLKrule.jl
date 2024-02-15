@@ -72,7 +72,7 @@ function mix_vε(model::SanchezLacombe,V,T,z,mix::SLKRule,r̄,Σz = sum(z))
     v = model.params.vol.values
     ε = model.params.epsilon.values
     isone(length(z)) && return (only(v),only(ε))
-    r =  model.params.segment.values
+    r = model.params.segment.values
     k = mix.params.k.values
     r̄inv = one(r̄)/r̄
     ϕ = @. r* z* r̄inv/Σz

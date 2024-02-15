@@ -17,7 +17,7 @@ Tillner-Roth and Friend model for water-ammonia mixtures.
 
 """
 function TillnerRothFriend(components = ["water","ammonia"],
-                            Rgas =  R̄,
+                            Rgas = R̄,
                             reference_state = nothing,
                              verbose = false)
     water = findfirst(isequal("water"),components)

@@ -480,7 +480,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     if has_groups(M)
         G = fieldtype(M,:groups)
 
-        groups =  G(format_gccomponents(components),default_gclocations(M);group_userlocations,verbose)
+        groups = G(format_gccomponents(components),default_gclocations(M);group_userlocations,verbose)
         params_in = getparams(groups, default_locations(M),options)
         result[:groups] = groups
     else

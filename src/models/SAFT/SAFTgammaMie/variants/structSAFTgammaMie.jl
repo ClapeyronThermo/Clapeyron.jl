@@ -187,7 +187,7 @@ function a_chain(model::structSAFTgammaMieModel, V, T, z,_data = @f(data))
         g_1_ = 3*∂a_1∂ρ_S-_C*(λa*x_0ij^λa*(aS_1_a+B_a)-λr*x_0ij^λr*(aS_1_r+B_r))
         #@show (g_1_,i)
         θ = exp(ϵ/T)-1
-        γc =  10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
+        γc = 10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
         ∂a_2∂ρ_S = 0.5*_C^2 *
             (ρS*_∂KHS*(x_0ij^(2*λa)*(aS_1_2a+B_2a)
             - 2*x_0ij^(λa+λr)*(aS_1_ar+B_ar)
@@ -235,7 +235,7 @@ function a_chain(model::structSAFTgammaMieModel, V, T, z,_data = @f(data))
             g_1_ = 3*∂a_1∂ρ_S-_C*(λa*x_0^λa*(aS_1_a+B_a)-λr*x_0^λr*(aS_1_r+B_r))
             #@show (g_1_,i)
             θ = exp(ϵ/T)-1
-            γc =  10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
+            γc = 10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
             ∂a_2∂ρ_S = 0.5*_C^2 *
                 (ρS*_∂KHS*(x_0^(2*λa)*(aS_1_2a+B_2a)
                 - 2*x_0^(λa+λr)*(aS_1_ar+B_ar)
@@ -251,7 +251,7 @@ function a_chain(model::structSAFTgammaMieModel, V, T, z,_data = @f(data))
             g_2_ = (1+γc)*gMCA2
             #@show (g_2_,i)
             g_Mie[k,l] = g_HSi*exp(ϵ/T*g_1_/g_HSi+(ϵ/T)^2*g_2_/g_HSi)
-            g_Mie[l,k] =  g_Mie[k,l]
+            g_Mie[l,k] = g_Mie[k,l]
         end
     end
 

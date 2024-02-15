@@ -43,9 +43,9 @@ a⁰(δ,τ,z) = ∑xᵢ(a⁰ᵢ + log(xᵢ))
 τ = 1.32ϵ/T
 δ = n(Nₐσ^3)/0.31V
 aʳ(δ,τ)  = aʳ₁+ aʳ₂ + aʳ₃ + aʳ₄
-aʳ₁(δ,τ)  =  ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:6
-aʳ₂(δ,τ)  =  ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 7:12
-aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 13:23
+aʳ₁(δ,τ)  = ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:6
+aʳ₂(δ,τ)  = ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 7:12
+aʳ₃(δ,τ)  = ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 13:23
 ```
 parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 !!! warning "Multiple component warning"
@@ -148,9 +148,9 @@ function eos(model::LJRef,V,T,z = SA[1.0])
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
     δ = (Σz*V0)/(0.31*V)
-    αr =  m̄*reduced_a_res(model,δ,τ)
+    αr = m̄*reduced_a_res(model,δ,τ)
     x1 = R̄*T*Σz*αr
-    x2 =  R̄*T*α0
+    x2 = R̄*T*α0
     return x1+x2
 end
 
@@ -170,7 +170,7 @@ function eos_res(model::LJRef,V,T,z = SA[1.0])
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
     δ = (ρ*V0)/0.31
-    αr =  m̄*reduced_a_res(model,δ,τ)
+    αr = m̄*reduced_a_res(model,δ,τ)
     return R̄*T*Σz*αr
 end
 
@@ -179,8 +179,8 @@ function x0_sat_pure(model::LJRef,T)
     Tc = T_scale(model)
     vl0,vv0 = x0_sat_pure(model.unscaled_lj,T/Tc)
     vl0,vv0
-    vl =  (m̄*N_A*σ3)*vl0
-    vv =  (m̄*N_A*σ3)*vv0
+    vl = (m̄*N_A*σ3)*vl0
+    vv = (m̄*N_A*σ3)*vv0
     return vl,vv
 end
 

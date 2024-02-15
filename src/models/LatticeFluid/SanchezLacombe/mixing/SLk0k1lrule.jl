@@ -101,7 +101,7 @@ function mix_vε(model::SanchezLacombe,V,T,z,mix::SLk0k1lMixingRule,r̄,Σz)
     ε = model.params.epsilon.values
     v = model.params.vol.values
     isone(length(z)) && return (only(v),only(ε))
-    r =  model.params.segment.values
+    r = model.params.segment.values
     k0 = mix.params.k0.values
     k1 = mix.params.k1.values
     r̄inv = one(r̄)/r̄

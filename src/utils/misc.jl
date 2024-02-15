@@ -82,7 +82,7 @@ function doi2bib(doi::String)
         if r.status == 200
             res = strip(String(take!(out)))
         else
-            res =  ""
+            res = ""
         end
         DOI2BIB_CACHE[doi] = res
         return res

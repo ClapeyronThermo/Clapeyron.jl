@@ -113,7 +113,7 @@ function activity_coefficient(model::UNIQUACModel,p,T,z)
 
     x = z ./ sum(z)
 
-    Φ =  x.*r/sum(x[i]*r[i] for i ∈ @comps)
+    Φ = x.*r/sum(x[i]*r[i] for i ∈ @comps)
     θ = x.*q/sum(x[i]*q[i] for i ∈ @comps)
     θ_p = x.*q_p/sum(x[i]*q_p[i] for i ∈ @comps)
     τ = Ψ(model,p,T,z)

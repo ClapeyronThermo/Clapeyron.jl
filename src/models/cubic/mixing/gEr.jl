@@ -66,7 +66,7 @@ mixing = gErRule(["water","ethanol"];
 """
 gErRule
 
-default_references(::Type{gErRule}) =  ["10.1016/0378-3812(90)85053-D"]
+default_references(::Type{gErRule}) = ["10.1016/0378-3812(90)85053-D"]
 
 export gErRule
 function gErRule(components; activity = NRTL, userlocations = String[],activity_userlocations = String[], verbose::Bool=false)

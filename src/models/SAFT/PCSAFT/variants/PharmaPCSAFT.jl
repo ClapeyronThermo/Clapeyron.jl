@@ -12,7 +12,7 @@ end
 
 abstract type pharmaPCSAFTModel <: PCSAFTModel end
 @newmodel pharmaPCSAFT pharmaPCSAFTModel pharmaPCSAFTParam
-default_references(::Type{pharmaPCSAFT}) =  ["10.1021/ie0003887", "10.1021/ie010954d","10.1016/j.cep.2007.02.034"]
+default_references(::Type{pharmaPCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d","10.1016/j.cep.2007.02.034"]
 default_locations(::Type{pharmaPCSAFT}) = ["SAFT/PCSAFT","SAFT/PCSAFT/pharmaPCSAFT","properties/molarmass.csv"]
 default_assoc_options(::Type{pharmaPCSAFT}) = AssocOptions(combining = :elliott_runtime)
 function transform_params(::Type{pharmaPCSAFT},params,components)
