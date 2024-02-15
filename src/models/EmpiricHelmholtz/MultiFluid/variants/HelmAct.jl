@@ -6,7 +6,7 @@
         activity_userlocations = String[],
         estimate_pure = false,
         coolprop_userlocations = false,
-        Rgas = Rgas,
+        Rgas = R̄,
         reference_state = nothing,
         verbose = verbose)
 

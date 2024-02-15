@@ -15,7 +15,7 @@ default_references(::Type{TsonopoulosVirial}) = ["10.1002/aic.690200209"]
             idealmodel = BasicIdeal,
             userlocations = String[],
             ideal_userlocations = String[],
-           verbose = false)
+            verbose = false)
 
 ## Input parameters
 

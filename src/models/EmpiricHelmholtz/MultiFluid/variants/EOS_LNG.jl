@@ -24,7 +24,7 @@ It uses the same functional form as [`GERG2008`](@ref).
 function EOS_LNG(components;
                 Rgas = 8.314472,
                 reference_state = nothing,
-                verbose = false)
+                 verbose = false)
     
     return MultiFluid(components;
     mixing = AsymmetricMixing,

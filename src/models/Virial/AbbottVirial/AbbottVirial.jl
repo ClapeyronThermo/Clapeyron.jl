@@ -14,7 +14,7 @@ default_locations(::Type{AbbottVirial}) = ["properties/critical.csv", "propertie
                 idealmodel = BasicIdeal,
                 userlocations = String[],
                 ideal_userlocations = String[],
-               verbose = false)
+                verbose = false)
 
 ## Input parameters
 

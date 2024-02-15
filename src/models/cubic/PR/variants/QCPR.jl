@@ -8,7 +8,7 @@
         activity_userlocations = String[],
         translation_userlocations = String[],
         reference_state = nothing,
-       verbose = false)
+        verbose = false)
 
 Quantum-corrected Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`ConstantTranslation`](@ref)

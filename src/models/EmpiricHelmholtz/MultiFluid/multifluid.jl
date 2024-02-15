@@ -45,7 +45,7 @@ Rgas(model::MultiFluid) = model.Rgas
         coolprop_userlocations = true,
         Rgas = R̄,
         reference_state = nothing,
-        verbose = false)
+         verbose = false)
 
 ## Input parameters
 - JSON data (CoolProp and teqp format)
