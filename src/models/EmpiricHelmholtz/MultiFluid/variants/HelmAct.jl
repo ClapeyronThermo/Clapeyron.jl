@@ -44,7 +44,7 @@ function HelmAct(components;
     idealmodel = nothing,
     ideal_userlocations = String[],
     estimate_pure = false,
-    coolprop_userlocations = false,
+    coolprop_userlocations = true,
     Rgas = Rgas,
     reference_state = nothing,
     verbose = false)
