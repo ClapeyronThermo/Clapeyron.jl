@@ -53,6 +53,7 @@ function EmpiricIdeal(components;
         userlocations = userlocations,
         verbose = verbose,
         coolprop_userlocations = coolprop_userlocations,
+        Rgas = Rgas
         )
         for comp in components]
     params = MultiFluidParam(components,pures,reference_state)

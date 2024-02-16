@@ -34,8 +34,7 @@ You can mix and match ideal models if you provide:
 - `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz free energy
 """
 function eos(model::EoSModel, V, T, z = SA[1.0])
-    ∑z = sum(z)
-    return Rgas(model)*∑z*T*a_eos(model,V,T,z) + reference_state_eval(model,V,T,z,∑z)
+    return Rgas(model)*sum(z)*T*a_eos(model,V,T,z) + reference_state_eval(model,V,T,z)
 end
 
 """

@@ -119,15 +119,14 @@ end
     return quote nothing end
 end
 
-function reference_state_eval(model::EoSModel,V,T,z,∑z = sum(z))
+function reference_state_eval(model::EoSModel,V,T,z)
     _ref = reference_state(model)    
-    reference_state_eval(_ref,V,T,z,∑z)    
+    reference_state_eval(_ref,V,T,z)    
 end
 
-reference_state_eval(ref::Nothing,V,T,z,∑z) = zero(1.0*T+first(z))
+reference_state_eval(ref::Nothing,V,T,z) = zero(1.0*T+first(z))
 
-function reference_state_eval(ref::ReferenceState,V,T,z,∑z)
-    
+function reference_state_eval(ref::ReferenceState,V,T,z)
     if ref.std_type == :no_set
         return zero(1.0*T + first(z))
     end
@@ -310,9 +309,9 @@ end
 function __calculate_reference_state_consts(model,v,T,z,H0,S0)
     ∑z = sum(z)
     S00 = VT_entropy(model,v,T,z)
-    a1 = (S00 - S0)/∑z
+    a1 = (S00 - S0)#/∑z
     H00 = VT_enthalpy(model,v,T,z)
-    a0 = (-H00 + H0)/∑z
+    a0 = (-H00 + H0)#/∑z
     return a0,a1
 end
 

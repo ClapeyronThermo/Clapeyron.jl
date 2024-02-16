@@ -102,6 +102,7 @@ function MultiFluid(components;
         verbose = verbose,
         estimate_pure = estimate_pure,
         coolprop_userlocations = coolprop_userlocations,
+        Rgas = Rgas
         )
         for (i,comp) in pairs(_components)]
     mixing = init_model(mixing,components,mixing_userlocations,verbose)
@@ -163,7 +164,7 @@ function eos(model::MultiFluid,V,T,z = SA[1.0])
     δ = reduced_delta(model,V,T,z,∑z)
     τ = reduced_tau(model,V,T,z,∑z)
     aᵣ = multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
-    return ∑z*@R̄()*T*(a₀+aᵣ) + reference_state_eval(model,V,T,z,∑z)
+    return ∑z*@R̄()*T*(a₀+aᵣ) + reference_state_eval(model,V,T,z)
 end
 
 function eos_res(model::MultiFluid,V,T,z = SA[1.0])
