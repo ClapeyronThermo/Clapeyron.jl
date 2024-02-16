@@ -15,7 +15,7 @@ macro printline()  # useful in hunting for where tests get stuck
 end
 
 #fix to current tests
-function GERG2008(components::Vector{String};verbose = false,reference_state = nothing)
+function GERG2008(components;verbose = false,reference_state = nothing)
     return MultiFluid(components;
     mixing = AsymmetricMixing,
     departure = EmpiricDeparture,
