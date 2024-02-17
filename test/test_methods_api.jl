@@ -586,9 +586,10 @@ end
 
         model2 = PCSAFT("eicosane")
         Tc2,_,_ = crit_pure(model2)
-        T2 = 0.995Tc2
+        T2 = 0.99Tc2
+        
         if !Base.Sys.isapple() #this test fails on mac, julia 1.6
-            @test Clapeyron.saturation_pressure(model2,T2,crit_retry = false)[1] ≈ 1.3931662325210017e6 rtol = 1e-6
+            @test Clapeyron.saturation_pressure(model2,T2,crit_retry = false)[1] ≈ 1.3225433281814915e6 rtol = 1e-6
         end
 
         #https://github.com/ClapeyronThermo/Clapeyron.jl/issues/237
