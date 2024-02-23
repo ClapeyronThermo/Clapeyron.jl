@@ -134,4 +134,12 @@ format_gccomponents(str::Tuple) = [str]
 format_gccomponents(str::Pair) = [str]
 format_gccomponents(str) = str
 
-#used by MultiComponentFlash extension
+function mole_to_mass(model, x)
+    w = x .* mw(model)
+    return w ./ sum(w)
+end
+
+function mass_to_mole(model, w)
+    x = w ./ mw(model)
+    return x ./ sum(x)
+end
