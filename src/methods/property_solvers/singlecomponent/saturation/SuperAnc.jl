@@ -3,6 +3,13 @@ struct SuperAncSaturation <: SaturationMethod
     p_tol::Float64
 end
 
+const SUPERANC_ENABLED = Ref(false)
+
+function use_superancillaries!(val::Bool = true)
+    SUPERANC_ENABLED[] = val
+    return val
+end
+
 """
     SuperAncSaturation <: SaturationMethod
     SuperAncSaturation()
