@@ -47,8 +47,8 @@ function saturation_pressure_impl(model::ABCubicModel,T,method::SuperAncSaturati
     end
     a,b,c = cubic_ab(model,1e-3,T)
     T̃ = T*Rgas(model)*b/a
-    Vv = chebyshev_vapour_volume(model,T̃,b)
-    Vl = chebyshev_liquid_volume(model,T̃,b)
+    Vv = chebyshev_vapour_volume(model,T̃,b) - c
+    Vl = chebyshev_liquid_volume(model,T̃,b) - c
     p_sat = chebyshev_pressure(model,T̃,a,b)
     return (p_sat,Vl,Vv)
 end
@@ -121,8 +121,8 @@ function saturation_temperature_impl(model::ABCubicModel,p,method::SuperAncSatur
     T = chebyshev_temperature(model,p,method)
     a,b,c = cubic_ab(model,1e-3,T)
     T̃ = T*Rgas(model)*b/a
-    Vv = chebyshev_vapour_volume(model,T̃,b)
-    Vl = chebyshev_liquid_volume(model,T̃,b)
+    Vv = chebyshev_vapour_volume(model,T̃,b) - c
+    Vl = chebyshev_liquid_volume(model,T̃,b) - c
     return (T,Vl,Vv)
     #p_sat = chebyshev_pressure(model,T̃,a,b) 
 end

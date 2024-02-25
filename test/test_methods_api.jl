@@ -80,11 +80,17 @@ end
 if isdefined(Base,:get_extension)
     @testset "Superancillaries.jl" begin
         pc = PCSAFT("eicosane")
+        cubic = tcPR(["water"])
         crit_pc = crit_pure(pc)
+        sat_cubic = saturation_pressure(cubic,373.15)
         Clapeyron.use_superancillaries!(true)
         crit_sa_pc = crit_pure(pc)
+        sat_sa_cubic = saturation_pressure(cubic,373.15)
         @test crit_pc[1] ≈ crit_sa_pc[1] rtol = 1e-6
         @test crit_pc[3] ≈ crit_sa_pc[3] rtol = 1e-6
+        @test sat_cubic[1] ≈ sat_sa_cubic[1] rtol = 1e-6
+        @test sat_cubic[2] ≈ sat_sa_cubic[2] rtol = 1e-6 
+        @test sat_cubic[3] ≈ sat_sa_cubic[3] rtol = 1e-6
     end
 end
 

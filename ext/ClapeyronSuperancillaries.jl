@@ -101,23 +101,23 @@ end
 
 function C.x0_sat_pure(model::SuperancCubic,T)
     can_superanc(model) || return x0_sat_pure_default(model,T)
-    a,b,c = cubic_ab(model)
+    a,b,c = C.cubic_ab(model,1e-3,T,C.SA[1.0])
+    ac,bc = model.params.a[1],model.params.b[1]
     _0 = zero(a)
     Tc = model.params.Tc.values[1]
     if T > Tc
         nan = _0/_0
         return nan,nan
     end
-
-    k = Rgas(model)*b/a
-    T̃,T̃c = T*k,Tc*k
+    T̃ = T*Rgas(model)*b/a
+    T̃c = Tc*Rgas(model)*bc/ac
     T̃ < 0.1*T̃c && return x0_sat_pure_default(model,T)
     if model isa C.vdW
-        return vdw_vsat(T,a,b)
+        return vdw_vsat(T,a,b) .- c
     elseif model isa C.RK
-        return rk_vsat(T,a,b,c)
+        return rk_vsat(T,a,b) .- c
     else #model isa C.PR
-        return pr_vsat(T,a,b,c)
+        return pr_vsat(T,a,b) .- c
     end
 end
 
