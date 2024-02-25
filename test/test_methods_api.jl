@@ -77,13 +77,15 @@ end
     @test Clapeyron.a_assoc(model_esd_r,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
 end
 
-@testset "Superancillaries.jl" begin
-    pc = PCSAFT("eicosane")
-    crit_pc = crit_pure(pc)
-    Clapeyron.use_superancillaries!(true)
-    crit_sa_pc = crit_pure(pc)
-    @test crit_pc[1] ≈ crit_sa_pc[1] rtol = 1e-6
-    @test crit_pc[3] ≈ crit_sa_pc[3] rtol = 1e-6
+if isdefined(Base,:get_extension)
+    @testset "Superancillaries.jl" begin
+        pc = PCSAFT("eicosane")
+        crit_pc = crit_pure(pc)
+        Clapeyron.use_superancillaries!(true)
+        crit_sa_pc = crit_pure(pc)
+        @test crit_pc[1] ≈ crit_sa_pc[1] rtol = 1e-6
+        @test crit_pc[3] ≈ crit_sa_pc[3] rtol = 1e-6
+    end
 end
 
 @testset "tpd" begin
