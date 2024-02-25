@@ -5,7 +5,17 @@ const C = Clapeyron
 
 #(:PCSAFT,:PPCSAFT,:QPPCSAFT),
 const SuperancPCSAFT = Union{C.PCSAFT,C.PPCSAFT,C.QPPCSAFT,C.pharmaPCSAFT}
-function x0_sat_pure_default(model,T) = @invoke C.x0_sat_pure(model::Any,T)
+
+function can_superanc(model::SuperancPCSAFT)
+    val = true
+    val = val & (length(model.params.epsilon_assoc.values.values) == 0)
+    if hasfield(typeof(model.params),:dipole)
+        val = val & all(iszero,model.params.dipole.values)
+    end
+    return val && C.SUPERANC_ENABLED[]
+end
+
+x0_sat_pure_default(model::SuperancPCSAFT,T) = @invoke C.x0_sat_pure(model::Any,T)
 
 function Δσ(model,T)
     if model isa C.pharmaPCSAFT
@@ -16,15 +26,6 @@ function Δσ(model,T)
     else
         return zero(T)
     end
-end
-
-function can_superanc(model::SuperancPCSAFT)
-    val = true
-    val = val & (length(model.params.epsilon_assoc.values.values) != 0)
-    if hasfield(typeof(model.params),:dipole)
-        val = val & all(iszero,model.params.dipole.values)
-    end
-    return val && C.SUPERANC_ENABLED[]
 end
 
 function get_pcsaft_consts(model)
@@ -57,16 +58,16 @@ function C.x0_crit_pure(model::SuperancPCSAFT)
     can_superanc(model) || return x0_crit_pure_default(model)
     m,ϵ,σ = get_pcsaft_consts(model)
     if 1.0 <= m <= 64.0
-        T̃c = pcsaft_tc(m,1.0)
-        vc = pcsaft_vc(m,σ + Δσ(model,ϵ*T̃c))
-        return T̃c,log10(vc)
+        Tc = pcsaft_tc(m,ϵ)
+        vc = pcsaft_vc(m,σ + Δσ(model,Tc))
+        return Tc/ϵ,log10(vc)
     else
         return x0_crit_pure_default(model)
     end
 end
 
-function crit_pure(model::SuperancPCSAFT)
-    can_superanc(model) || return crit_pure(model,C.x0_crit_pure(model))
+function C.crit_pure(model::SuperancPCSAFT)
+    can_superanc(model) || return C.crit_pure(model,C.x0_crit_pure(model))
     m,ϵ,σ = get_pcsaft_consts(model)
     if 1.0 <= m <= 64.0
         Tc = pcsaft_tc(m,ϵ)
@@ -74,7 +75,7 @@ function crit_pure(model::SuperancPCSAFT)
         pc = pressure(model,vc,Tc)
         return Tc,pc,vc
     else
-        return crit_pure(model,C.x0_crit_pure(model))
+        return crit_pure(model,C.x0_crit_pure_default(model))
     end
 end
 
@@ -92,12 +93,36 @@ end
 
 const SuperancCubic = Union{C.vdW,C.PR,C.RK}
 
+x0_sat_pure_default(model::SuperancCubic,T) = @invoke C.x0_sat_pure(model::C.ABCubicModel,T)
+
 function can_superanc(model::SuperancCubic)
     return C.SUPERANC_ENABLED[]
 end
 
+function C.x0_sat_pure(model::SuperancCubic,T)
+    can_superanc(model) || return x0_sat_pure_default(model,T)
+    a,b,c = cubic_ab(model)
+    _0 = zero(a)
+    Tc = model.params.Tc.values[1]
+    if T > Tc
+        nan = _0/_0
+        return nan,nan
+    end
+
+    k = Rgas(model)*b/a
+    T̃,T̃c = T*k,Tc*k
+    T̃ < 0.1*T̃c && return x0_sat_pure_default(model,T)
+    if model isa C.vdW
+        return vdw_vsat(T,a,b)
+    elseif model isa C.RK
+        return rk_vsat(T,a,b,c)
+    else #model isa C.PR
+        return pr_vsat(T,a,b,c)
+    end
+end
+
 function __init__()
-    C.use_superancillaries!()
+    C.use_superancillaries!(true)
 end
 
 end #module
