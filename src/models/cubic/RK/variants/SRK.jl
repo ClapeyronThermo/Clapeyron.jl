@@ -1,16 +1,18 @@
 """
-    SRK(components::Vector{String}; idealmodel=BasicIdeal,
+    SRK(components::Vector{String};
+    idealmodel = BasicIdeal,
     alpha = SoaveAlpha,
     mixing = vdW1fRule,
     activity = nothing,
-    translation=NoTranslation,
-    userlocations=String[], 
-    ideal_userlocations=String[],
+    translation = NoTranslation,
+    userlocations = String[], 
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
 ## Description
 Soave-Redlich-Kwong equation of state. it uses the following models:
@@ -33,7 +35,7 @@ model = SRK(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advance
 # Passing a prebuilt model
 
 my_alpha = SoaveAlpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  SRK(["ethane","butane"],alpha = my_alpha)
+model = SRK(["ethane","butane"],alpha = my_alpha)
 
 # User-provided parameters, passing files or folders
 
@@ -55,31 +57,34 @@ model = SRK(["neon","hydrogen"];
 ## References
 1. Soave, G. (1972). Equilibrium constants from a modified Redlich-Kwong equation of state. Chemical Engineering Science, 27(6), 1197–1203. [doi:10.1016/0009-2509(72)80096-4](https://doi.org/10.1016/0009-2509(72)80096-4)
 """
-function SRK(components; idealmodel=BasicIdeal,
+function SRK(components;
+    idealmodel = BasicIdeal,
     alpha = SoaveAlpha,
     mixing = vdW1fRule,
     activity = nothing,
-    translation=NoTranslation,
-    userlocations=String[], 
-    ideal_userlocations=String[],
+    translation = NoTranslation,
+    userlocations = String[], 
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
-     return RK(components;
-     idealmodel = idealmodel,
-     alpha = alpha,
-     mixing=mixing,
-     activity = activity,
-     translation = translation,
-     userlocations = userlocations, 
-     ideal_userlocations = ideal_userlocations,
-     alpha_userlocations = alpha_userlocations,
-     mixing_userlocations = mixing_userlocations,
-     activity_userlocations = activity_userlocations,
-     translation_userlocations = translation_userlocations,
-     verbose = verbose)
+    return RK(components;
+    idealmodel = idealmodel,
+    alpha = alpha,
+    mixing = mixing,
+    activity = activity,
+    translation = translation,
+    userlocations = userlocations, 
+    ideal_userlocations = ideal_userlocations,
+    alpha_userlocations = alpha_userlocations,
+    mixing_userlocations = mixing_userlocations,
+    activity_userlocations = activity_userlocations,
+    translation_userlocations = translation_userlocations,
+    reference_state = reference_state,
+    verbose = verbose)
 end
 export SRK

@@ -12,7 +12,7 @@ end
     PenelouxTranslation <: PenelouxTranslationModel
 
     PenelouxTranslation(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters

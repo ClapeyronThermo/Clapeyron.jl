@@ -16,18 +16,19 @@ export vdW
 
 """
     vdW(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -72,7 +73,7 @@ model = vdW(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advance
 # Passing a prebuilt model
 
 my_alpha = SoaveAlpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  vdW(["ethane","butane"],alpha = my_alpha)
+model = vdW(["ethane","butane"],alpha = my_alpha)
 
 # User-provided parameters, passing files or folders
 
@@ -97,22 +98,24 @@ model = vdW(["neon","hydrogen"];
 """
 vdW
 
-function vdW(components; idealmodel=BasicIdeal,
+function vdW(components;
+    idealmodel = BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
     formatted_components = format_components(components)
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
-        userlocations=userlocations,
-        verbose=verbose,
+        userlocations = userlocations,
+        verbose = verbose,
         ignore_missing_singleparams = __ignored_crit_params(alpha))
 
     k = get(params,"k",nothing)
@@ -136,8 +139,8 @@ function vdW(components; idealmodel=BasicIdeal,
 end
 
 function ab_consts(::Type{<:vdWModel})
-    Ωa =  27/64
-    Ωb =  1/8
+    Ωa = 27/64
+    Ωb = 1/8
     return Ωa,Ωb
 end
 

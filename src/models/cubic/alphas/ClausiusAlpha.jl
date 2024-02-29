@@ -6,7 +6,7 @@ export ClausiusAlpha
     ClausiusAlpha <: ClausiusAlphaModel
     
     ClausiusAlpha(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters

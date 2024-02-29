@@ -24,19 +24,20 @@ end
 
     function CPA(components;
         radial_dist::Symbol = :CS,
-        idealmodel=BasicIdeal,
-        cubicmodel=RK,
-        alpha=sCPAAlpha,
-        mixing=vdW1fRule,
-        activity=nothing,
-        translation=NoTranslation,
-        userlocations=String[],
-        ideal_userlocations=String[],
-        alpha_userlocations=String[],
-        activity_userlocations=String[],
-        mixing_userlocations=String[],
-        translation_userlocations=String[],
-        verbose=false,
+        idealmodel = BasicIdeal,
+        cubicmodel = RK,
+        alpha = sCPAAlpha,
+        mixing = vdW1fRule,
+        activity = nothing,
+        translation = NoTranslation,
+        userlocations = String[],
+        ideal_userlocations = String[],
+        alpha_userlocations = String[],
+        activity_userlocations = String[],
+        mixing_userlocations = String[],
+        translation_userlocations = String[],
+        reference_state = nothing,
+        verbose = false,
         assoc_options = AssocOptions())
 
 ## Input parameters
@@ -79,20 +80,21 @@ CPA
 
 export CPA
 function CPA(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     radial_dist::Symbol = :CS,
-    cubicmodel=RK,
-    alpha=CPAAlpha,
-    mixing=vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    alpha_userlocations=String[],
-    activity_userlocations=String[],
-    mixing_userlocations=String[],
-    translation_userlocations=String[],
-    verbose=false,
+    cubicmodel = RK,
+    alpha = CPAAlpha,
+    mixing = vdW1fRule,
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    alpha_userlocations = String[],
+    activity_userlocations = String[],
+    mixing_userlocations = String[],
+    translation_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
 
     locs = if radial_dist == :CS
@@ -103,14 +105,15 @@ function CPA(components;
         throw(error("CPA: incorrect specification of radial_dist, try using `:CS` (original CPA) or `:KG` (simplified CPA)"))
     end
 
-    params = getparams(components, locs; userlocations=userlocations, verbose=verbose)
+    _components = format_components(components)
+    params = getparams(_components, locs; userlocations = userlocations, verbose = verbose)
     
     sites = get!(params,"sites") do
-        SiteParam(components)
+        SiteParam(_components)
     end
 
     Pc = get!(params,"Pc") do
-        SingleParam("Pc",components)
+        SingleParam("Pc",_components)
     end
 
     Mw  = params["Mw"]
@@ -122,27 +125,27 @@ function CPA(components;
     b  = sigma_LorentzBerthelot(params["b"], l)
 
     epsilon_assoc = get!(params,"epsilon_assoc") do
-        AssocParam("epsilon_assoc",components)
+        AssocParam("epsilon_assoc",_components)
     end
 
     bondvol = get!(params,"bondvol") do
-        AssocParam("bondvol",components)
+        AssocParam("bondvol",_components)
     end
 
     bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
     packagedparams = CPAParam(Mw, Tc, a, b, c1, epsilon_assoc, bondvol)
     
     #init cubic model
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     init_alpha = init_model(alpha,components,alpha_userlocations,verbose)
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     cubicparams = ABCubicParam(a, b, params["Tc"],Pc,Mw) #PR, RK, vdW
-    init_cubicmodel = cubicmodel(components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
+    init_cubicmodel = cubicmodel(_components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
 
     references = ["10.1021/ie051305v"]
 
-    model = CPA(components, radial_dist, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
+    model = CPA(_components, radial_dist, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
     return model
 end
 

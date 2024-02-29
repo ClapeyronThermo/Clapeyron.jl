@@ -193,6 +193,9 @@ function a_ideal(model::SingleFluidIdeal,V,T,z=SA[1.],k = __get_k_alpha0(model))
     return k*α0 + logδ
 end
 
+v_scale(model::SingleFluid,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhoc
+v_scale(model::SingleFluidIdeal,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhoc
+
 a_ideal(model::SingleFluid,V,T,z=SA[1.]) = a_ideal(idealmodel(model),V,T,z)
 
 function a_res(model::SingleFluid,V,T,z=SA[1.])
@@ -213,7 +216,9 @@ function eos(model::SingleFluid, V, T, z=SA[1.0])
     τ = Tc/T
     k = __get_k_alpha0(model)
     logδ = log(δ)
-    return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ))
+    ref_a = model.ideal.ref_a
+    a0,a1 = ref_a[1],ref_a[2] #reference state evaluation
+    return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ)) + N*(a0 + a1*T)
 end
 
 function eos_res(model::SingleFluid,V,T,z=SA[1.0])

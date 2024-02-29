@@ -19,10 +19,11 @@ end
     solidsoftSAFTModel <: SAFTModel
 
     solidsoftSAFT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
 
 ## Input parameters
@@ -116,7 +117,7 @@ function g_LJ(model::solidsoftSAFTModel, V, T, z ,_data = @f(data))
     σ3,ϵ̄,m̄,ρ̄  = _data
     T̄ = T/ϵ̄
     a = solidsoftSAFTconsts.a
-    gLJ =  1+sum(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
+    gLJ = 1+sum(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
     return gLJ
 end
 

@@ -18,7 +18,7 @@ end
     DIPPR101Sat <: SaturationModel
     
     DIPPR101Sat(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters

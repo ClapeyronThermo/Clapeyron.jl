@@ -33,7 +33,7 @@ function lnγ_res(model::UNIFACModel,V,T,z)
     _ψ = @f(Ψ)
     lnΓ_ = @f(lnΓ,_ψ)
     lnΓi_ = @f(lnΓi,_ψ)
-    lnγ_res_ =  [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
+    lnγ_res_ = [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
     return lnγ_res_
 end
 

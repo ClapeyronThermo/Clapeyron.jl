@@ -3,15 +3,18 @@ abstract type BasicIdealModel <: IdealModel end
 
 """
     BasicIdeal <: IdealModel
-    BasicIdeal(components::Array{String,1}; 
-    userlocations::Array{String,1}=String[], 
-    verbose=false)
+
+    BasicIdeal(components; 
+    userlocations = String[],
+    reference_state = nothing,
+    verbose = false)
+
 ## Input parameters
 None
 ## Description
 Default Ideal Model. Constant specific heat capacity equal to `5R/2`. it's Helmholtz energy is equal to:
 ```
-    a₀ = A₀/nRT =  ∑(xᵢlog(nxᵢ/V)) - 1 - 1.5log(T)
+    a₀ = A₀/nRT = ∑(xᵢlog(nxᵢ/V)) - 1 - 1.5log(T)
 ```
 
 ## Model Construction Examples

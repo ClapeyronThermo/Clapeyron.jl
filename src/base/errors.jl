@@ -66,3 +66,9 @@ function incorrect_vector_error(model,n)
     throw(DimensionMismatch(msg))
 end
 
+reference_state_checkempty(model,::Nothing) = nothing
+function reference_state_checkempty(model,ref)
+    if !has_reference_state(model)
+        throw(ArgumentError("$model does not accept setting custom reference states."))
+    end
+end

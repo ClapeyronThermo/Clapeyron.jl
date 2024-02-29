@@ -46,7 +46,7 @@ function partition!(dividers,n,x,nvals)
     end
 #Calculate mole fractions xij
 for i = 1:numphases
-    ni =  @view(nvals[i, :])
+    ni = @view(nvals[i, :])
     invn = 1/sum(ni)
     xi = @view(x[i, :])
     xi  .= ni

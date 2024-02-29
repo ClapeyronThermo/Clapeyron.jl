@@ -6,7 +6,7 @@ default units: `[Pa]`
 Returns the pressure of the model at a given volume, temperature and composition, defined as:
 
 ```julia
-p =  -∂A/∂V
+p = -∂A/∂V
 ```
 
 """

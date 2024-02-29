@@ -37,8 +37,8 @@ end
 GEDeparture <: MultiFluidDepartureModel
     GEDeparture(components;
     activity = UNIFAC,
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 none
@@ -64,7 +64,7 @@ b = 1/1.17ρref
 ## References
 1. Jäger, A., Breitkopf, C., & Richter, M. (2021). The representation of cross second virial coefficients by multifluid mixture models and other equations of state. Industrial & Engineering Chemistry Research, 60(25), 9286–9295. [doi:10.1021/acs.iecr.1c01186](https://doi.org/10.1021/acs.iecr.1c01186)
 """
-function GEDeparture(components::AbstractVector; activity = UNIFAC, userlocations=String[], verbose::Bool=false)
+function GEDeparture(components::AbstractVector; activity = UNIFAC, userlocations = String[], verbose::Bool=false)
     init_activity = init_model(activity,components,userlocations,verbose)
     comps = init_activity.components
     vref = SingleParam("reference volume",comps)

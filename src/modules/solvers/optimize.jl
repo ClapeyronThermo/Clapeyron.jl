@@ -27,7 +27,7 @@ function ADScalarObjective(f,x0::AbstractArray,chunk = autochunk(x0))
     end
     g(df,x) = _g(df,x,Hres)
     fg(df,x) = _fg(df,x,Hres)
-    fgh(df,d2f,x) =  _fgh(df,d2f,x,Hres)
+    fgh(df,d2f,x) = _fgh(df,d2f,x,Hres)
     return ScalarObjective(f=f,
     g=g,
     fg=fg,
@@ -66,7 +66,7 @@ end
 function optimize(f,x0::NTuple{2,T},method=BrentMin(),options=OptimizationOptions()) where T<:Real
     scalarobj = ADScalarObjective(f,first(x0),nothing)
     optprob = OptimizationProblem(obj = scalarobj,bounds = x0, inplace=false)
-    res =  NLSolvers.solve(optprob,method,options)
+    res = NLSolvers.solve(optprob,method,options)
     return res
 end
 #general one, with support for ActiveBox

@@ -245,7 +245,7 @@ calculates the property via `VT_isochoric_heat_capacity(model,V,T,z)`.
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 
 !!! warning "Accurate ideal model required"
-    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel=ReidIdeal)`).
+    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel = ReidIdeal)`).
 """
 function isochoric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     V = volume(model, p, T, z; phase, threaded, vol0)
@@ -260,7 +260,7 @@ Default units: `[J/K]`
 Calculates the isobaric heat capacity, defined as:
 
 ```julia
-Cp =  -T*(∂²A/∂T² - (∂²A/∂V∂T)^2 / ∂²A/∂V²)
+Cp = -T*(∂²A/∂T² - (∂²A/∂V∂T)^2 / ∂²A/∂V²)
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_isobaric_heat_capacity(model,V,T,z)`.
@@ -268,7 +268,7 @@ calculates the property via `VT_isobaric_heat_capacity(model,V,T,z)`.
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 
 !!! warning "Accurate ideal model required"
-    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel=ReidIdeal)`).
+    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel = ReidIdeal)`).
 
 """
 function isobaric_heat_capacity(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -283,7 +283,7 @@ default units: `[Pa^-1]`
 Calculates the isothermal compressibility, defined as:
 
 ```julia
-κT =  (V*∂p/∂V)^-1
+κT = (V*∂p/∂V)^-1
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_isothermal_compressibility(model,V,T,z)`.
@@ -303,7 +303,7 @@ default units: `[Pa^-1]`
 Calculates the isentropic compressibility, defined as:
 
 ```julia
-κS =  (V*( ∂²A/∂V² - ∂²A/∂V∂T^2 / ∂²A/∂T² ))^-1
+κS = (V*( ∂²A/∂V² - ∂²A/∂V∂T^2 / ∂²A/∂T² ))^-1
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_isentropic_compressibility(model,V,T,z)`.
@@ -311,7 +311,7 @@ calculates the property via `VT_isentropic_compressibility(model,V,T,z)`.
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 
 !!! warning "Accurate ideal model required"
-    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel=ReidIdeal)`).
+    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel = ReidIdeal)`).
 
 """
 function isentropic_compressibility(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -327,7 +327,7 @@ default units: `[m/s]`
 Calculates the speed of sound, defined as:
 
 ```julia
-c =  V * √(∂²A/∂V² - ∂²A/∂V∂T^2 / ∂²A/∂T²)/Mr)
+c = V * √(∂²A/∂V² - ∂²A/∂V∂T^2 / ∂²A/∂T²)/Mr)
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
 
@@ -337,7 +337,7 @@ calculates the property via `VT_speed_of_sound(model,V,T,z)`.
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 
 !!! warning "Accurate ideal model required"
-    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel=ReidIdeal)`).
+    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel = ReidIdeal)`).
 
 """
 function speed_of_sound(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -353,7 +353,7 @@ default units: `[K^-1]`
 Calculates the isobaric expansivity, defined as:
 
 ```julia
-α =  -∂²A/∂V∂T / (V*∂²A/∂V²)
+α = -∂²A/∂V∂T / (V*∂²A/∂V²)
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_isobaric_expansivity(model,V,T,z)`.
@@ -373,7 +373,7 @@ default units: `[K/Pa]`
 Calculates the joule thomson coefficient, defined as:
 
 ```julia
-μⱼₜ =  -(∂²A/∂V∂T - ∂²A/∂V² * ((T*∂²A/∂T² + V*∂²A/∂V∂T) / (T*∂²A/∂V∂T + V*∂²A/∂V²)))^-1
+μⱼₜ = -(∂²A/∂V∂T - ∂²A/∂V² * ((T*∂²A/∂T² + V*∂²A/∂V∂T) / (T*∂²A/∂V∂T + V*∂²A/∂V²)))^-1
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_joule_thomson_coefficient(model,V,T,z)`.
@@ -381,7 +381,7 @@ calculates the property via `VT_joule_thomson_coefficient(model,V,T,z)`.
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 
 !!! warning "Accurate ideal model required"
-    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel=ReidIdeal)`).
+    This property requires at least second order ideal model temperature derivatives. If you are computing these properties, consider using a different ideal model than the `BasicIdeal` default (e.g. `EoS(["species"];idealmodel = ReidIdeal)`).
 
 """
 function joule_thomson_coefficient(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -395,7 +395,7 @@ end
 Calculates the fugacity coefficient φᵢ, defined as:
 
 ```julia
-log(φᵢ) =  μresᵢ/RT - log(Z)
+log(φᵢ) = μresᵢ/RT - log(Z)
 ```
 Where `μresᵢ` is the vector of residual chemical potentials and `Z` is the compressibility factor.
 
@@ -459,7 +459,7 @@ default units: `[mol/m^3]`
 Calculates the molar density, defined as:
 
 ```julia
-ρₙ =  ∑nᵢ/V
+ρₙ = ∑nᵢ/V
 ```
 Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
 calculates the property via `VT_molar_density(model,V,T,z)`.
@@ -479,7 +479,7 @@ default units: `[kg/m^3]`
 Calculates the mass density, defined as:
 
 ```julia
-ρₙ =  Mr/V
+ρₙ = Mr/V
 ```
 Where `Mr` is the molecular weight of the model at the input composition.
 

@@ -9,7 +9,7 @@ export SoaveAlpha
     SoaveAlpha <: SoaveAlphaModel
     
     SoaveAlpha(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters

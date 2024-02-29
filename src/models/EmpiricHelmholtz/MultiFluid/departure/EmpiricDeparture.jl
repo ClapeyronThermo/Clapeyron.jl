@@ -99,8 +99,8 @@ end
 """
 EmpiricDeparture <: MultiFluidDepartureModel
     EmpiricDeparture(components;
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 none

@@ -136,7 +136,7 @@ function dew_pressure_impl(model,T,y,method::ActivityDewPressure)
             pᵢ = p_pure[i]
             vpureᵢ = vl_pure[i]
             μᵢ = μpure[i]
-            ϕ̂ᵢ =  ϕpure[i]
+            ϕ̂ᵢ = ϕpure[i]
             γ[i] = exp(log(vpureᵢ/vl) + (μmix[i] - μᵢ)/RT -  vpureᵢ*(pmix -pᵢ)/RT)
             if use_𝒫
                 ln𝒫 = vpureᵢ*expm1(κ[i]*(pmix-pᵢ))/(κ[i]*RT) #see end of file

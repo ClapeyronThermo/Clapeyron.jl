@@ -54,7 +54,7 @@ function ParamTable(type::Symbol,data;
     if name === nothing
         name = repr(rand(UInt))
     end
-    csvname =  "$(Symbol(table_type))_$(name).csv"
+    csvname = "$(Symbol(table_type))_$(name).csv"
     headers = String.(Tables.columnnames(data))
     normalised_headers = normalisestring.(headers)
     _,_,_ = col_indices(table_type,normalised_headers,options) #basically to check the schema

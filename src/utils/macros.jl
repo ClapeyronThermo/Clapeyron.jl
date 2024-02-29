@@ -232,9 +232,10 @@ macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = fa
                 group_userlocations = String[],
                 ideal_userlocations = String[],
                 assoc_options = Clapeyron.default_assoc_options($name),
+                reference_state = nothing,
                 verbose = false)
 
-                Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options)
+                Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options,reference_state)
             end
         end
     else
@@ -252,9 +253,10 @@ macro newmodelgc(name, parent, paramstype,sitemodel = true,use_struct_param = fa
                 userlocations = String[],
                 group_userlocations = String[],
                 ideal_userlocations = String[],
+                reference_state = nothing,
                 verbose = false)
 
-                Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,nothing)
+                Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,nothing,reference_state)
             end
         end
     end
@@ -312,9 +314,10 @@ macro newmodel(name, parent, paramstype,sitemodel = true)
                 userlocations = String[],
                 ideal_userlocations = String[],
                 assoc_options = Clapeyron.default_assoc_options($name),
+                reference_state = nothing,
                 verbose = false)
 
-                Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,nothing,ideal_userlocations,verbose,assoc_options)
+                Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,nothing,ideal_userlocations,verbose,assoc_options,reference_state)
             end
         end
     else
@@ -330,9 +333,10 @@ macro newmodel(name, parent, paramstype,sitemodel = true)
                 idealmodel = Clapeyron.BasicIdeal,
                 userlocations = String[],
                 ideal_userlocations = String[],
+                reference_state = nothing,
                 verbose = false)
 
-                Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,nothing,ideal_userlocations,verbose,nothing)
+                Clapeyron.build_eosmodel($name,components,idealmodel,userlocations,nothing,ideal_userlocations,verbose,nothing,reference_state)
             end
         end
     end
@@ -355,8 +359,8 @@ macro newmodelsimple(name, parent, paramstype)
             references::Array{String,1}
         end
 
-        function $name(components;userlocations = String[],verbose = false)
-            Clapeyron.build_eosmodel($name,components,nothing,userlocations,nothing,nothing,verbose,nothing)
+        function $name(components;userlocations = String[],reference_state = nothing,verbose = false)
+            Clapeyron.build_eosmodel($name,components,nothing,userlocations,nothing,nothing,verbose,nothing,reference_state)
         end
     end |> esc
 end
@@ -370,15 +374,16 @@ macro newmodelsingleton(name,parent)
     quote
     struct $name <: $parent end
     Clapeyron.is_splittable(::$name) = false
-    function $name(components;userlocations = String[],verbose = false)
+    function $name(components;userlocations = String[],verbose = false,reference_state = nothing)
+        reference_state_checkempty($name,reference_state)
         return $name()
     end
     end |> esc
 end
 
 """
-    init_model(model::EoSModel,components,userlocations=String[],verbose = false)
-    init_model(::Type{𝕄},components,userlocations=String[],verbose = false) where 𝕄 <: EoSModel
+    init_model(model::EoSModel,components,userlocations = String[],verbose = false)
+    init_model(::Type{𝕄},components,userlocations = String[],verbose = false) where 𝕄 <: EoSModel
 
 Utility for building simple models. if a model instance is passed, it will return that instance.
 otherwise, it will build the model from the input components and user locations.
@@ -417,26 +422,30 @@ SingleParam{Float64}("Mw") with 2 components:
 ```
 
 """
-function init_model(model::EoSModel,components,userlocations=String[],verbose = false)
+function init_model(model::EoSModel,components,userlocations = String[],verbose = false,reference_state = nothing)
     return model
 end
 
-function init_model(::Nothing,components,userlocations=String[],verbose = false)
+function init_model(::Nothing,components,userlocations = String[],verbose = false,reference_state = nothing)
     return nothing
 end
 
-function init_model(::Type{𝕄},components,userlocations=String[],verbose = false) where  𝕄 <: EoSModel
+function init_model(::Type{𝕄},components,userlocations = String[],verbose = false,reference_state = nothing) where  𝕄 <: EoSModel
     if verbose
         @info "Building an instance of $(info_color(string(𝕄))) with components $components"
     end
-    return 𝕄(components;userlocations,verbose)
+    if has_reference_state(𝕄)
+        return 𝕄(components;userlocations,verbose,reference_state)
+    else
+        return 𝕄(components;userlocations,verbose)
+    end
 end
 
-function init_model(f::Function,components,userlocations=String[],verbose = false)
+function init_model(f::Function,components,userlocations = String[],verbose = false,reference_state = nothing)
     if verbose
         @info "building an EoS model, using function $(info_color(string(f))) with components $components"
     end
-    return f(components;userlocations,verbose)
+    return f(components;userlocations,verbose,reference_state)
 end
 """
     @registermodel(model)
@@ -451,10 +460,9 @@ macro registermodel(model)
     esc(model)
 end
 
-function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options = nothing) where M <: EoSModel
+function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_userlocations,ideal_userlocations,verbose,assoc_options = nothing,reference_state = nothing) where M <: EoSModel
 
     paramtype = fieldtype(M,:params)
-
     _components = format_components(components)
 
     #non-splittable
@@ -467,13 +475,12 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     #all fields of the model.
     result = Dict{Symbol,Any}()
     result[:components] = _components
-
     #parse params from database.
     options = default_getparams_arguments(M,userlocations,verbose)
     if has_groups(M)
         G = fieldtype(M,:groups)
 
-        groups =  G(format_gccomponents(components),default_gclocations(M);group_userlocations,verbose)
+        groups = G(format_gccomponents(components),default_gclocations(M);group_userlocations,verbose)
         params_in = getparams(groups, default_locations(M),options)
         result[:groups] = groups
     else
@@ -481,12 +488,20 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
         params_in = getparams(_components, default_locations(M),options)
     end
     
+    #inject reference state if not built
+    if has_reference_state(M)
+            params_in["reference_state"] = __init_reference_state_kw(reference_state)
+    else
+        #this could fail when the type is not entirely known.
+        #reference_state_checkempty(M,reference_state)
+    end
+
     #put AssocOptions inside params, so it can be used in transform_params
     if has_sites(M)
         if !haskey(params_in,"assoc_options")
             params_in["assoc_options"] = assoc_options
         else
-            throw(error("cannot overwrite \"assoc_options\" key, already exists!"))
+            #throw(error("cannot overwrite \"assoc_options\" key, already exists!"))
         end
 
         #legacy case: the model has a SiteParam, but it does not have association parameters.
@@ -530,16 +545,35 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
     end
 
     #build idealmodel, if needed
+    
     if hasfield(M,:idealmodel)
-        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        if has_reference_state(idealmodel)
+            #=
+            we want to execute set_reference_state!(model) only once (ideal models don't have)
+            saturation information so some standard states cannot be initialized.
+            
+            To avoid this, we set the input reference state to :no_set, and then we reset it to the 
+            input value. with this strategy, we can differenciate between standalone ideal models and
+            ideal models stored inside a residual model.
+            =#
+            input_reference_state = __init_reference_state_kw(reference_state)
+            std_type = input_reference_state.std_type
+            input_reference_state.std_type = :no_set
+            init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,input_reference_state)
+            input_reference_state.std_type = std_type
+            idmodel_reference_state = Clapeyron.reference_state(init_idealmodel)
+            idmodel_reference_state.std_type = std_type
+        else
+            init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        end
         result[:idealmodel] = init_idealmodel
     end
 
     #build model
-    return M((result[k] for k in fieldnames(M))...)
+    model = M((result[k] for k in fieldnames(M))...)
+    #fit reference state
+    set_reference_state!(model,verbose = verbose)
+    return model
 end
-
-
-
 
 export @newmodel, @f, @newmodelgc, @newmodelsimple, @newmodelsingleton

@@ -48,7 +48,7 @@ function dew_pressure_impl(model::RestrictedEquilibriaModel,T,y,method::Activity
         for i in eachindex(γ)
             pᵢ = p_pure[i]
             vpureᵢ = vl_pure[i]
-            ϕ̂ᵢ =  ϕpure[i]
+            ϕ̂ᵢ = ϕpure[i]
             if method.poynting && method.gas_fug
                 ln𝒫 = vpureᵢ*(p - pᵢ)/RT
                 𝒫 = exp(ln𝒫)
@@ -109,7 +109,7 @@ function dew_temperature_impl(model::RestrictedEquilibriaModel,p,y,method::Activ
     x0 = y ./ pi0
     x0 ./= sum(x0)
     x0[end] = T0
-    f0(F,w) =  Obj_dew_temperature(F,model,p,y,w[1:end-1],w[end],pure)
+    f0(F,w) = Obj_dew_temperature(F,model,p,y,w[1:end-1],w[end],pure)
     sol = Solvers.nlsolve(f0,x0,LineSearch(Newton()))
     wsol = Solvers.x_sol(sol)
     T = wsol[end]

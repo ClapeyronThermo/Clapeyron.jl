@@ -25,11 +25,13 @@ export gcsPCSAFT
 """
     gcsPCSAFT <: PCSAFTModel
     gcsPCSAFT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
+
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `m`: Single Parameter (`Float64`) - Number of segments (no units)
@@ -55,17 +57,18 @@ Group-contribution version of Simplified Perturbed-Chain SAFT (sPC-SAFT)
 gcsPCSAFT
 
 function gcsPCSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
+    idealmodel = BasicIdeal,
+    userlocations = String[],
     group_userlocations = String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
     
-    groups = GroupParam(components,["SAFT/PCSAFT/gcsPCSAFT/gcsPCSAFT_groups.csv"]; group_userlocations = group_userlocations,verbose=verbose)
-    gc_params = getparams(groups, ["SAFT/PCSAFT/gcsPCSAFT/","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    groups = GroupParam(components,["SAFT/PCSAFT/gcsPCSAFT/gcsPCSAFT_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
+    gc_params = getparams(groups, ["SAFT/PCSAFT/gcsPCSAFT/","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
     components = groups.components
-    params = getparams(components, ["SAFT/PCSAFT/sPCSAFT/sPCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/PCSAFT/sPCSAFT/sPCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
     
     sites = gc_params["sites"]
 
@@ -100,7 +103,7 @@ function gcsPCSAFT(components;
     gcparams = gcsPCSAFTParam(gc_mw, gc_segment, gc_msigma3, gc_mepsilon, gc_epsilon_assoc,gc_bondvol)
     params = PCSAFTParam(mw, segment, sigma, epsilon, epsilon_assoc, bondvol)
     
-    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
 
     references = ["10.1021/ie020753p"]
     pc = sPCSAFT(components,sites,params,idmodel, assoc_options, references)
