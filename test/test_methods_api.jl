@@ -77,6 +77,10 @@ end
     @test Clapeyron.a_assoc(model_esd_r,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
 end
 
+using EoSSuperancillaries
+#we test this separately, but leaving this on could speed up the test suite?
+Clapeyron.use_superancillaries!(false)
+
 if isdefined(Base,:get_extension)
     @testset "Superancillaries.jl" begin
         pc = PCSAFT("eicosane")

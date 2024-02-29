@@ -3,9 +3,6 @@ t1 = @elapsed using Clapeyron
 using CoolProp #CoolProp ext
 using Unitful #Unitful ext
 using MultiComponentFlash: MultiComponentFlash
-using EoSSuperancillaries
-#we test this separately, but leaving this on could speed up the test suite?
-use_superancillaries!(false)
 
 @info "Loading Clapeyron took $(round(t1,digits = 2)) seconds"
 @info "Coolprop: $(Clapeyron.is_coolprop_loaded())"
