@@ -102,6 +102,7 @@ end
     T = 298.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T) ≈ 5.913050998953597e-5 rtol = 1e-6
+        @test volume(CPA("water"), 1e5u"Pa", 303.15u"K") ≈ 1.7915123921401366e-5u"m^3" rtol = 1e-6
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 7923.883649594267 rtol = 1E-6
@@ -483,9 +484,9 @@ end
         @test_broken Clapeyron.saturation_pressure(system, T, IsoFugacitySaturation())[1] ≈ 3169.9293390134403 rtol = 1E-6
         #saturation temperature tests are noisy
         @test Clapeyron.saturation_temperature(system,3169.9293390134403)[1] ≈ 298.1499999999789 rtol = 1E-6
-        tc,pc,vc =  Clapeyron.crit_pure(system)
+        tc,pc,vc = Clapeyron.crit_pure(system)
         @test tc ≈ 647.096 rtol = 1E-5
-        v2 =  volume(system,pc,tc)
+        v2 = volume(system,pc,tc)
         @test pressure(system,v2,tc) ≈ pc rtol = 1E-6
     end
 end

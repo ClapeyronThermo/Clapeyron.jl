@@ -47,7 +47,7 @@ function COSMOSAC10(components;
     userlocations = String[],
     pure_userlocations = String[],
     use_nist_database = false,
-    verbose=false)
+    verbose = false)
 
     formatted_components = format_components(components)
 
@@ -79,7 +79,7 @@ function COSMOSAC10(components;
         POH = SingleParam("POH",formatted_components,POH)
         POT = SingleParam("POT",formatted_components,POT)
     else
-        params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V"], verbose=verbose)
+        params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations = userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V"], verbose = verbose)
         Pnhb  = COSMO_parse_Pi(params["Pnhb"])
         POH  = COSMO_parse_Pi(params["POH"])
         POT  = COSMO_parse_Pi(params["POT"])
@@ -118,7 +118,7 @@ function lnγ_res(model::COSMOSAC10Model,V,T,z)
     (lnΓSnhb, lnΓSOH, lnΓSOT)= @f(lnΓ,PSnhb,PSOH,PSOT)
     lnΓi = [@f(lnΓ,Pnhb[i]./A[i],POH[i]./A[i],POT[i]./A[i]) for i ∈ @comps]
     
-    lnγ_res_ =  [n[i]*(sum(Pnhb[i][v]/A[i]*(lnΓSnhb[v]-lnΓi[i][1][v]) for v ∈ 1:51)
+    lnγ_res_ = [n[i]*(sum(Pnhb[i][v]/A[i]*(lnΓSnhb[v]-lnΓi[i][1][v]) for v ∈ 1:51)
                       +sum(POH[i][v]/A[i]*(lnΓSOH[v]-lnΓi[i][2][v]) for v ∈ 1:51)
                       +sum(POT[i][v]/A[i]*(lnΓSOT[v]-lnΓi[i][3][v]) for v ∈ 1:51)) for i ∈ @comps]               
     return lnγ_res_

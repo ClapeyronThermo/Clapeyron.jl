@@ -203,15 +203,15 @@ function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=tru
         Vs = fetch(_Vs)::TYPE
         volumes = (Vg,Vl,Vs)
     else
-        Vg =  _volume_compress(fluid,p,T,z,Vg0)
-        Vl =  _volume_compress(fluid,p,T,z,Vl0)
-        Vs =  _volume_compress(solid,p,T,z,Vs0)
+        Vg = _volume_compress(fluid,p,T,z,Vg0)
+        Vl = _volume_compress(fluid,p,T,z,Vl0)
+        Vs = _volume_compress(solid,p,T,z,Vs0)
         volumes = (Vg,Vl,Vs)
     end
     
     function gibbs(m,fV)
         isnan(fV) && return one(fV)/zero(fV)
-        _df,_f =  ∂f(m,fV,T,z)
+        _df,_f = ∂f(m,fV,T,z)
         dV,_ = _df
         return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
     end
@@ -254,7 +254,7 @@ function _label_and_volumes(model::EoSModel,cond)
     Vv = volume(model,p,T,z,phase =:v)
     function gibbs(fV)
         isnan(fV) && return one(fV)/zero(fV)
-        _df,_f =  ∂f(model,fV,T,z)
+        _df,_f = ∂f(model,fV,T,z)
         dV,_ = _df
         return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
     end

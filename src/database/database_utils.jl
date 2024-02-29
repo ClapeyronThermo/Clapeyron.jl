@@ -8,7 +8,7 @@ const SHORT_PATHS = Dict{String,String}(
 
 const SPECIAL_IDENTIFIERS = ["@REPLACE"]
 
-const SKIP_GETPATHS =   ("Clapeyron Database File", #a raw CSV file
+const SKIP_GETPATHS =  ("Clapeyron Database File", #a raw CSV file
                         "Clapeyron Estimator")
 
 """
@@ -46,7 +46,7 @@ function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vec
     if startswith(location,"@REPLACE")
         filepath = chop(location,head = 9, tail = 0)
         result = getpaths(filepath)
-        rr =  ["@REPLACE" * Base.Filesystem.path_separator * res for res in result]
+        rr = ["@REPLACE" * Base.Filesystem.path_separator * res for res in result]
         return rr
     end
     if relativetodatabase
@@ -322,12 +322,17 @@ function error_color(text)
     return red * text * reset
 end
 
+error_color(symbol::Symbol) = error_color(":" * string(symbol))
+
 function info_color(text)
     colors = Base.text_colors
     red = colors[:bold] * colors[:cyan]
     reset = colors[:normal]
     return red * text * reset
 end
+
+info_color(symbol::Symbol) = info_color(":" * string(symbol))
+
 
 function userlocation_merge(loc1,loc2)
     if isempty(loc2)

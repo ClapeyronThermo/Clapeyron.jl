@@ -83,7 +83,7 @@ function x0_melting_pressure(model::CompositeModel,T)
     quadratic taylor expansion for helmholtz energy
     isothermal compressibility aproximation for pressure
    =#
-    p_scale,μ_scale =  scale_sat_pure(liquid)
+    p_scale,μ_scale = scale_sat_pure(liquid)
     return solve_2ph_taylor(solid,liquid,T,vs00,vl00,p_scale,μ_scale)
 end
 

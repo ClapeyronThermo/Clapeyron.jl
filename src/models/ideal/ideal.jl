@@ -1,6 +1,6 @@
 
 function eos(model::IdealModel, V, T, z=SA[1.0])
-    return N_A*k_B*sum(z)*T * a_ideal(model,V,T,z)
+    return Rgas(model)*sum(z)*T *(a_ideal(model,V,T,z) + reference_state_eval(model,V,T,z))
 end
 
 for f in (:eos_res,:a_res,:VT_entropy_res,:VT_gibbs_free_energy_res,:VT_helmholtz_free_energy_res)
@@ -45,4 +45,3 @@ end
 lb_volume(model::IdealModel,z=SA[1.0]) = zero(eltype(z))
 
 idealmodel(model::IdealModel) = nothing
-

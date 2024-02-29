@@ -14,18 +14,19 @@ end
 
 """
     Clausius(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=ClausiusTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = ClausiusTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -65,21 +66,23 @@ cᵢ = 3/8 * RTcᵢ/Pcᵢ - Vcᵢ
 Clausius
 
 export Clausius
-function Clausius(components; idealmodel=BasicIdeal,
+function Clausius(components;
+    idealmodel = BasicIdeal,
     alpha = ClausiusAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
     k  = get(params,"k",nothing)
     l  = get(params,"l",nothing)
     pc = params["Pc"]
@@ -91,7 +94,7 @@ function Clausius(components; idealmodel=BasicIdeal,
     a = PairParam("a",formatted_components,zeros(length(Tc)))
     b = PairParam("b",formatted_components,zeros(length(Tc)))
     c = PairParam("c",formatted_components,zeros(length(Tc)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = ClausiusParam(a,b,c,Tc,pc,Vc,Mw)

@@ -102,7 +102,7 @@ end
 function NLSolvers.upto_gradient(meritobj::NLSolvers.MeritObjective, ∇f, x)
     neq = meritobj.prob
     G = neq.R.F(∇f, x)
-    F =  (norm(G)^2) / 2
+    F = (norm(G)^2) / 2
     return F,G
 end
 =#

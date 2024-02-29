@@ -15,13 +15,14 @@ macro printline()  # useful in hunting for where tests get stuck
 end
 
 #fix to current tests
-function GERG2008(components::Vector{String};verbose = false)
+function GERG2008(components;verbose = false,reference_state = nothing)
     return MultiFluid(components;
     mixing = AsymmetricMixing,
     departure = EmpiricDeparture,
     pure_userlocations = String["@REMOVEDEFAULTS","@DB/Empiric/GERG2008/pures"],
     mixing_userlocations  = String["@REMOVEDEFAULTS","@DB/Empiric/GERG2008/mixing/GERG2008_mixing_unlike.csv"],
     departure_userlocations = String["@REMOVEDEFAULTS","@DB/Empiric/GERG2008/departure/GERG2008_departure_unlike.csv"],
+    reference_state = reference_state,
     coolprop_userlocations = false,
     verbose = verbose,
     Rgas = Clapeyron.R̄)

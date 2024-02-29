@@ -2,6 +2,7 @@ abstract type PolynomialIdealModel <: IdealModel end
 
 struct ReidIdealParam <: EoSParam
     coeffs::SingleParam{NTuple{5,Float64}}
+    reference_state::ReferenceState
 end
 
 function reid_coeffs(a::SingleParameter,b::SingleParameter,c::SingleParameter,d::SingleParameter,e::SingleParameter,comps::Vector{String})
@@ -32,9 +33,11 @@ abstract type ReidIdealModel <: PolynomialIdealModel end
 
 """
     ReidIdeal <: IdealModel
+
     ReidIdeal(components; 
-    userlocations::Array{String,1}=String[], 
-    verbose=false)
+    userlocations = String[],
+    reference_state = nothing,
+    verbose = false)
 
 ## Input parameters
 
@@ -82,6 +85,7 @@ ReidIdeal
 
 export ReidIdeal
 default_locations(::Type{ReidIdeal}) = ["ideal/ReidIdeal.csv"]
+default_ignore_missing_singleparams(::Type{ReidIdeal}) = ["e"]
 function transform_params(::Type{ReidIdeal},params,components)
     a,b,c,d = params["a"],params["b"],params["c"],params["d"]
     e = get(params,"e") do

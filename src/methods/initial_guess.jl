@@ -276,7 +276,7 @@ end
 
 #vdw crit pure values,given a and b
 function vdw_crit_pure(a,b)
-    Ωa,Ωb =  27/64, 1/8
+    Ωa,Ωb = 27/64, 1/8
     Vc = 3*b
     ar = a/Ωa
     br = b/Ωb
@@ -473,7 +473,7 @@ function x0_psat(model,T,crit = nothing)
         T̃ = T/T_scale(model)
         lnp̃ = A - B/(T̃ + C)
         ps = p_scale(model)
-        px =  exp(lnp̃)*ps
+        px = exp(lnp̃)*ps
         return px
     end
     if isnothing(crit)

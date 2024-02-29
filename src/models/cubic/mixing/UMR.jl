@@ -11,8 +11,8 @@ end
 
     UMRRule(components;
     activity = UNIFAC,
-    userlocations=String[],
-    activity_userlocations=String[],
+    userlocations = String[],
+    activity_userlocations = String[],
     verbose::Bool=false)
 ## Input Parameters
 None
@@ -61,7 +61,7 @@ mixing = VTPRRule(["water","ethanol"];
 """
 UMRRule
 export UMRRule
-function UMRRule(components; activity = UNIFAC, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+function UMRRule(components; activity = UNIFAC, userlocations = String[],activity_userlocations = String[], verbose::Bool=false)
     _activity = init_mixing_act(activity,components,activity_userlocations,verbose)
     references = ["10.1021/ie049580p"]
     model = UMRRule(format_components(components), _activity,references)

@@ -92,7 +92,7 @@ function _vecparser(T::Type{X},vals::String,dlm = ' ') where X <: Union{Int,Floa
             colors = Base.text_colors
             red = colors[:bold] * colors[:red]
             reset = colors[:normal]
-            errval =  red * strval * reset
+            errval = red * strval * reset
             error("cannot parse $errval as a number in $vals")
         end
     end

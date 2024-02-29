@@ -84,7 +84,7 @@ function pair_mix!(f,p::AbstractMatrix,q::AbstractMatrix,B::AbstractMatrix)
             if B[j,i]
                 p_i = p[i,i]
                 q_i = q[i,i]
-                q_ji =  q[j,i]
+                q_ji = q[j,i]
                 p_ji = f(p_j,p_i,q_j,q_i,q_ji)
                 p[j,i] = p_ji
             end

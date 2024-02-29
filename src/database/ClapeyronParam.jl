@@ -39,7 +39,7 @@ end
 
 Base.eltype(p::EoSParam) = Float64
 
-const PARSED_GROUP_VECTOR_TYPE =  Vector{Tuple{String, Vector{Pair{String, Int64}}}}
+const PARSED_GROUP_VECTOR_TYPE = Vector{Tuple{String, Vector{Pair{String, Int64}}}}
 
 function pack_vectors(x::AbstractVector{<:AbstractVector})
     return PackedVectorsOfVectors.pack(x)
@@ -83,6 +83,7 @@ include("params/GroupParam.jl")
 include("params/SiteParam.jl")
 include("params/AssocOptions.jl")
 include("params/SpecialComp.jl")
+include("params/ReferenceState.jl")
 
 const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
 function Base.show(io::IO,param::SingleOrPair)

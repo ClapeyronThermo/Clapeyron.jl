@@ -140,7 +140,7 @@ function bubble_pressure_impl(model,T,x,method::ActivityBubblePressure)
             pᵢ = p_pure[i]
             vpureᵢ = vl_pure[i]
             μᵢ = μpure[i]
-            ϕ̂ᵢ =  ϕpure[i]
+            ϕ̂ᵢ = ϕpure[i]
             γ[i] = exp(log(vpureᵢ/vl) + (μmix[i] - μᵢ)/RT -  vpureᵢ*(pmix -pᵢ)/RT)
             if method.poynting
                 ln𝒫 = vpureᵢ*expm1(κ[i]*(pmix-pᵢ))/(κ[i]*RT) #see end of file

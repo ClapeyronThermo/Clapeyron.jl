@@ -331,7 +331,7 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     rhov_tp_data = get(st_data,:triple_vapor,nothing)
     Ttp = tryparse_units(get(eos_data,:Ttriple,NaN),get(eos_data,:Ttriple_units,""))
     if rhov_tp_data !== nothing
-        ptp =  tryparse_units(get(rhov_tp_data,:p,NaN),get(rhov_tp_data,:p_units,""))
+        ptp = tryparse_units(get(rhov_tp_data,:p,NaN),get(rhov_tp_data,:p_units,""))
         rhov_tp = tryparse_units(get(rhov_tp_data,:rhomolar,NaN),get(rhov_tp_data,:rhomolar_units,""))
     else
         ptp,rhov_tp = NaN,NaN
@@ -340,7 +340,7 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     rhol_tp_data = get(st_data,:triple_liquid,nothing)
     if rhol_tp_data !== nothing
         if isnan(ptp)
-            ptp =  tryparse_units(get(rhol_tp_data,:p,NaN),get(rhov_tl_data,:p_units,""))
+            ptp = tryparse_units(get(rhol_tp_data,:p,NaN),get(rhov_tl_data,:p_units,""))
         end
         rhol_tp  = tryparse_units(get(rhol_tp_data,:rhomolar,NaN),get(rhol_tp_data,:rhomolar_units,""))
     else

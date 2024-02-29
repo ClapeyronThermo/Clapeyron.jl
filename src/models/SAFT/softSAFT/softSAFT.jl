@@ -29,10 +29,11 @@ end
     softSAFTModel <: SAFTModel
 
     softSAFT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
 
 ## Input parameters
@@ -122,7 +123,7 @@ function a_LJ(model::softSAFTModel, V, T, z,_data = @f(data))
          x[28]/T2+x[29]/T3,
          x[30]/T2+x[31]/T3+x[32]/T4,
         )
-    G1 =  (1-F)/(2γ)
+    G1 = (1-F)/(2γ)
     G2 = -(F*ρ̄ ^2 - 2*G1) / 2γ
     G3 = -(F*ρ̄ ^4 - 4*G2) / 2γ
     G4 = -(F*ρ̄ ^6 - 6*G3) / 2γ
@@ -171,7 +172,7 @@ function g_LJ(model::softSAFTModel, V, T, z ,_data = @f(data))
     σ3,ϵ̄,m̄,ρ̄  = _data
     T̄ = T/ϵ̄
     a = softSAFTconsts.a
-    gLJ =  1+sum(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
+    gLJ = 1+sum(a[i,j]*ρ̄^i*T̄^(1-j) for i ∈ 1:5 for j ∈ 1:5)
 end
 
 function Δ(model::softSAFTModel, V, T, z, i, j, a, b,_data = @f(data))

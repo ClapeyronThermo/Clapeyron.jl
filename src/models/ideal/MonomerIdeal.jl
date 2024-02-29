@@ -1,5 +1,6 @@
 struct MonomerIdealParam <: EoSParam
     Mw::SingleParam{Float64}
+    reference_state::ReferenceState
 end
 
 abstract type MonomerIdealModel <: IdealModel end
@@ -7,9 +8,11 @@ abstract type MonomerIdealModel <: IdealModel end
 
 """
     MonomerIdeal <: MonomerIdealModel
-    MonomerIdeal(components::Array{String,1}; 
-    userlocations::Array{String,1}=String[], 
-    verbose=false)
+
+    MonomerIdeal(components; 
+    userlocations = String[],
+    reference_state = nothing,
+    verbose = false)
 
 ## Input parameters
 

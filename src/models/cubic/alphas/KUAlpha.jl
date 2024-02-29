@@ -9,7 +9,7 @@ export KUAlpha
     KUAlpha <: AlphaModel
     
     KUAlpha(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters

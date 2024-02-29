@@ -47,10 +47,11 @@ end
     SAFTVRMieModel <: SAFTModel
 
     SAFTVRMie(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
 
 ## Input parameters
@@ -387,7 +388,7 @@ function ζeff_fdf(model::SAFTVRMieModel, V, T, z, λ,ζ_X_,ρ_S_)
     A = SAFTγMieconsts.A
     λ⁻¹ = one(λ)/λ
     Aλ⁻¹ = A * SA[one(λ); λ⁻¹; λ⁻¹*λ⁻¹; λ⁻¹*λ⁻¹*λ⁻¹]
-    _f =  dot(Aλ⁻¹,SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4])
+    _f = dot(Aλ⁻¹,SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4])
     _df = dot(Aλ⁻¹,SA[1; 2ζ_X_; 3ζ_X_^2; 4ζ_X_^3]) * ζ_X_/ρ_S_
     return _f,_df
 end
@@ -398,7 +399,7 @@ function aS_1_fdf(model::SAFTVRMieModel, V, T, z, λ, ζ_X_= @f(ζ_X),ρ_S_ = @f
     ζeffm1 = (1-ζeff_*0.5)
     ζf = ζeffm1/ζeff3
     λf = -1/(λ-3)
-    _f =  λf * ζf
+    _f = λf * ζf
     _df = λf * (ζf + ρ_S_*∂ζeff_*((3*ζeffm1*(1-ζeff_)^2 - 0.5*ζeff3)/ζeff3^2))
     return _f,_df
 end
@@ -552,7 +553,7 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
         #calculus for g1
         g_1_ = 3*∂a_1∂ρ_S - _C*(λa*x_0ij_λa*(aS₁_a + B_a) - λr*x_0ij_λr*(aS₁_r + B_r))
         θ = expm1(τ)
-        γc =  10 * (-tanh(10*(0.57 - α)) + 1) * _ζst*θ*exp(_ζst*(-6.7 - 8*_ζst))
+        γc = 10 * (-tanh(10*(0.57 - α)) + 1) * _ζst*θ*exp(_ζst*(-6.7 - 8*_ζst))
         
         ∂a_2∂ρ_S = 0.5*_C^2 *
                 (ρS*_∂KHS*(x_0ij_2λa*(aS₁_2a+B_2a)
@@ -608,7 +609,7 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
     a₁ = a₁*m̄/T/∑z
     a₂ = a₂*m̄/(T*T)/∑z
     a₃ = a₃*m̄/(T*T*T)/∑z
-    adisp =  a₁ + a₂ + a₃
+    adisp = a₁ + a₂ + a₃
     return adisp + achain/∑z
 end
 
@@ -708,7 +709,7 @@ function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     a₂ = a₂*m̄/(T*T)  #/sum(z)
     a₃ = a₃*m̄/(T*T*T)  #/sum(z)
     #@show (a₁,a₂,a₃)
-    adisp =  a₁ + a₂ + a₃
+    adisp = a₁ + a₂ + a₃
     return adisp
 end
 
@@ -781,7 +782,7 @@ function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
         g_1_ = 3*∂a_1∂ρ_S-_C*(λa*x_0ij^λa*(aS_1_a+B_a)-λr*x_0ij^λr*(aS_1_r+B_r))
         #@show (g_1_,i)
         θ = exp(ϵ/T)-1
-        γc =  10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
+        γc = 10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
         ∂a_2∂ρ_S = 0.5*_C^2 *
             (ρS*_∂KHS*(x_0ij^(2*λa)*(aS_1_2a+B_2a)
             - 2*x_0ij^(λa+λr)*(aS_1_ar+B_ar)

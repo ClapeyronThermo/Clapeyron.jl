@@ -37,16 +37,16 @@ function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
 
 _1 = one(T)
 third = _1/3
-a1  =  complex(one(T) / poly[4])
+a1  = complex(one(T) / poly[4])
 E1  = -poly[3]*a1
-E2  =  poly[2]*a1
+E2  = poly[2]*a1
 E3  = -poly[1]*a1
-s0  =  E1
-E12 =  E1*E1
-A   =  det_22(2*E1,E12,9*E1,E2) + 27*E3
-#A   =  2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
+s0  = E1
+E12 = E1*E1
+A   = det_22(2*E1,E12,9*E1,E2) + 27*E3
+#A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
 B = det_22(E1,E1,3,E2)
-#B   =  E12 - 3*E2                 # = s1 s2
+#B   = E12 - 3*E2                 # = s1 s2
 # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
 Δ2 = det_22(A,A,4*B*B,B)
 Δ = Base.sqrt(Δ2)

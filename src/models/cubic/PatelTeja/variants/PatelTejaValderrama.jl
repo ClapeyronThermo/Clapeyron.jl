@@ -14,18 +14,18 @@ end
 
 """
     PTV(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     alpha = NoAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=PTVTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = PTVTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    verbose = false)
 
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -53,7 +53,7 @@ P = RT/(v-b) + a•α(T)/((v - Δ₁b)*(v - Δ₂b))
 aᵢᵢ = Ωaᵢ(R²Tcᵢ²/Pcᵢ)
 bᵢᵢ = Ωbᵢ(R²Tcᵢ/Pcᵢ)
 cᵢ = Ωcᵢ(R²Tcᵢ/Pcᵢ)
-Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
+Zcᵢ = Pcᵢ*Vcᵢ/(R*Tcᵢ)
 Ωaᵢ = 0.66121 - 0.76105Zcᵢ
 Ωbᵢ = 0.02207 + 0.20868Zcᵢ
 Ωcᵢ = 0.57765 - 1.87080Zcᵢ
@@ -62,8 +62,8 @@ Zcᵢ =  Pcᵢ*Vcᵢ/(R*Tcᵢ)
 δ = 1 + 6γ + γ²
 ϵ = 1 + γ
 
-Δ₁ =  -(ϵ + √δ)/2
-Δ₂ =  -(ϵ - √δ)/2
+Δ₁ = -(ϵ + √δ)/2
+Δ₂ = -(ϵ - √δ)/2
 ```
 
 ## Model Construction Examples
@@ -80,7 +80,7 @@ model = PTV(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advance
 # Passing a prebuilt model
 
 my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  PTV(["ethane","butane"],alpha = my_alpha)
+model = PTV(["ethane","butane"],alpha = my_alpha)
 
 # User-provided parameters, passing files or folders
 model = PTV(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])
@@ -107,21 +107,22 @@ model = PTV(["neon","hydrogen"];
 PTV
 
 export PTV
-function PTV(components; idealmodel=BasicIdeal,
+function PTV(components;
+    idealmodel = BasicIdeal,
     alpha = PTVAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    verbose = false)
     
     formatted_components = format_components(components)
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
     k  = get(params,"k",nothing)
     l = get(params,"l",nothing)
     pc = params["Pc"]
