@@ -16,26 +16,36 @@ jobs:
           - '1'
         os:
           - ubuntu-latest
-          - macOS-latest
           - windows-latest
         arch:
           - x64
+        include:
+          - os: macOS-14
+            arch: aarch64
+            version: '1'
+          - os: macOS-latest
+            arch: x64
+            version : '1.6'
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@latest
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@latest
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest
         with:
-          coverage: false
+          coverage: ${{ (matrix.version == '1') && ('matrix.os' == 'ubuntu-latest') }}
+      - uses: julia-actions/julia-processcoverage@latest
+      - uses: codecov/codecov-action@v4
+        with:
+          file: lcov.info
   nighly-test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     if: "!contains(github.event.head_commit.message, 'Clapeyron skip ci')"
-    timeout-minutes: 120
+    timeout-minutes: 60
     continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
@@ -44,10 +54,12 @@ jobs:
           - 'nightly'
         os:
           - ubuntu-latest
-          - macOS-latest
           - windows-latest
         arch:
           - x64
+        include:
+          - os: macOS-14
+            arch: aarch64
         experimental: [true]
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +71,7 @@ jobs:
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest
         with:
-          coverage: true
+          coverage: false
       - uses: julia-actions/julia-processcoverage@latest
       - uses: codecov/codecov-action@v4
         with:
