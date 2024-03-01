@@ -1,8 +1,8 @@
 module ClapeyronSuperancillaries
-using EoSSuperancillaries
-using Clapeyron
+import EoSSuperancillaries
+import Clapeyron
 const C = Clapeyron
-
+const ES = EoSSuperancillaries
 #(:PCSAFT,:PPCSAFT,:QPPCSAFT),
 const SuperancPCSAFT = Union{C.PCSAFT,C.PPCSAFT,C.QPPCSAFT,C.pharmaPCSAFT}
 
@@ -15,7 +15,7 @@ function can_superanc(model::SuperancPCSAFT)
     return val && C.SUPERANC_ENABLED[]
 end
 
-x0_sat_pure_default(model::SuperancPCSAFT,T) = Clapeyron.x0_sat_pure_virial(model,T)
+x0_sat_pure_default(model::SuperancPCSAFT,T) = C.x0_sat_pure_virial(model,T)
 
 function Δσ(model,T)
     if model isa C.pharmaPCSAFT
@@ -40,13 +40,13 @@ function C.x0_sat_pure(model::SuperancPCSAFT,T)
     m,ϵ,σ = get_pcsaft_consts(model)
     σ += Δσ(model,T)
     T̃ = T/ϵ
-    θ,status = pcsaft_theta(T̃,m)
+    θ,status = ES.pcsaft_theta(T̃,m)
     if status == :over_Tmax
         return θ,θ
     elseif status != :inrange
         return x0_sat_pure_default(model,T)
     else
-        ρ̃l,ρ̃v = pcsaft_rhosat_reduced(θ,m)
+        ρ̃l,ρ̃v = ES.pcsaft_rhosat_reduced(θ,m)
         N_Aσ3 = C.N_A*σ*σ*σ
         return N_Aσ3/ρ̃l,N_Aσ3/ρ̃v
     end
@@ -61,8 +61,8 @@ function C.x0_crit_pure(model::SuperancPCSAFT)
     can_superanc(model) || return x0_crit_pure_default(model)
     m,ϵ,σ = get_pcsaft_consts(model)
     if 1.0 <= m <= 64.0
-        Tc = pcsaft_tc(m,ϵ)
-        vc = pcsaft_vc(m,σ + Δσ(model,Tc))
+        Tc = ES.pcsaft_tc(m,ϵ)
+        vc = ES.pcsaft_vc(m,σ + Δσ(model,Tc))
         return Tc/ϵ,log10(vc)
     else
         return x0_crit_pure_default(model)
@@ -73,12 +73,12 @@ function C.crit_pure(model::SuperancPCSAFT)
     can_superanc(model) || return C.crit_pure(model,C.x0_crit_pure(model))
     m,ϵ,σ = get_pcsaft_consts(model)
     if 1.0 <= m <= 64.0
-        Tc = pcsaft_tc(m,ϵ)
-        vc = pcsaft_vc(m,σ + Δσ(model,Tc))
-        pc = pressure(model,vc,Tc)
+        Tc = ES.pcsaft_tc(m,ϵ)
+        vc = ES.pcsaft_vc(m,σ + Δσ(model,Tc))
+        pc = C.pressure(model,vc,Tc)
         return Tc,pc,vc
     else
-        return crit_pure(model,C.x0_crit_pure_default(model))
+        return ES.crit_pure(model,C.x0_crit_pure_default(model))
     end
 end
 
@@ -89,14 +89,14 @@ function C.saturation_pressure_impl(model::SuperancPCSAFT,T,method::C.SuperAncSa
     can_superanc(model) || return fail
     m,ϵ,σ = get_pcsaft_consts(model)
     σ += Δσ(model,T)
-    vl,vv = pcsaft_vsat(T,m,ϵ,σ)
-    p = pressure(model,vv,T)
+    vl,vv = ES.pcsaft_vsat(T,m,ϵ,σ)
+    p = C.pressure(model,vv,T)
     return p,vl,vv
 end
 
 const SuperancCubic = Union{C.vdW,C.PR,C.RK}
 
-x0_sat_pure_default(model::SuperancCubic,T) = Clapeyron.x0_sat_pure_cubic_ab(model,T)
+x0_sat_pure_default(model::SuperancCubic,T) = C.x0_sat_pure_cubic_ab(model,T)
 
 function can_superanc(model::SuperancCubic)
     return C.SUPERANC_ENABLED[]
@@ -112,15 +112,15 @@ function C.x0_sat_pure(model::SuperancCubic,T)
         nan = _0/_0
         return nan,nan
     end
-    T̃ = T*Rgas(model)*b/a
-    T̃c = Tc*Rgas(model)*bc/ac
+    T̃ = T*C.Rgas(model)*b/a
+    T̃c = Tc*C.Rgas(model)*bc/ac
     T̃ < 0.1*T̃c && return x0_sat_pure_default(model,T)
     if model isa C.vdW
-        return vdw_vsat(T,a,b) .- c
+        return ES.vdw_vsat(T,a,b) .- c
     elseif model isa C.RK
-        return rk_vsat(T,a,b) .- c
+        return ES.rk_vsat(T,a,b) .- c
     else #model isa C.PR
-        return pr_vsat(T,a,b) .- c
+        return ES.pr_vsat(T,a,b) .- c
     end
 end
 
