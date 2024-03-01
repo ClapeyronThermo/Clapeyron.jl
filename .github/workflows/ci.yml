@@ -30,7 +30,7 @@ jobs:
             version : '1.6'
           - os: macOS-14
             arch: aarch64
-            version: '1.10.0'
+            version: '1'
           - os: macOS-14
             arch: aarch64
             version: 'nightly'
