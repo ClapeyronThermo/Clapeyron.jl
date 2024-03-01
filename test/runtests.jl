@@ -11,7 +11,7 @@ ENV["CLAPEYRON_SHOW_REFERENCES"] = "FALSE"
 
 macro printline()  # useful in hunting for where tests get stuck
     file = split(string(__source__.file), "/")[end]
-    printstyled("  ", file, ":", __source__.line, "\n", color=:light_black)
+    printstyled(">>", file, ":", __source__.line, "\n", color=:light_black)
 end
 
 #fix to current tests

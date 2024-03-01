@@ -241,6 +241,7 @@ using Clapeyron, Test
     @printline
 end
 GC.gc()
+@printline
 
 @testset "Cubic models" begin
     @printline

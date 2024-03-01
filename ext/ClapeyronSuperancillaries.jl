@@ -15,7 +15,7 @@ function can_superanc(model::SuperancPCSAFT)
     return val && C.SUPERANC_ENABLED[]
 end
 
-x0_sat_pure_default(model::SuperancPCSAFT,T) = @invoke C.x0_sat_pure(model::Any,T)
+x0_sat_pure_default(model::SuperancPCSAFT,T) = Clapeyron.x0_sat_pure_virial(model,T)
 
 function Δσ(model,T)
     if model isa C.pharmaPCSAFT
@@ -52,7 +52,10 @@ function C.x0_sat_pure(model::SuperancPCSAFT,T)
     end
 end
 
-x0_crit_pure_default(model) = @invoke C.x0_crit_pure(model::C.SAFTModel)
+function x0_crit_pure_default(model::SuperancPCSAFT) 
+    lb_v = C.lb_volume(model)
+    (2.0, log10(lb_v/0.3))
+end
 
 function C.x0_crit_pure(model::SuperancPCSAFT)
     can_superanc(model) || return x0_crit_pure_default(model)
@@ -93,7 +96,7 @@ end
 
 const SuperancCubic = Union{C.vdW,C.PR,C.RK}
 
-x0_sat_pure_default(model::SuperancCubic,T) = @invoke C.x0_sat_pure(model::C.ABCubicModel,T)
+x0_sat_pure_default(model::SuperancCubic,T) = Clapeyron.x0_sat_pure_cubic_ab(model,T)
 
 function can_superanc(model::SuperancCubic)
     return C.SUPERANC_ENABLED[]

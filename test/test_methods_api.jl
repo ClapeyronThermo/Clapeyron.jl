@@ -154,6 +154,9 @@ end
         H31,H32 = 200*model3.params.Mw[1],200*model3.params.Mw[2]
         S31,S32 = 1.0*model3.params.Mw[1],1.0*model3.params.Mw[2]
         _,v31,_ = saturation_pressure(pure3[1],Tiir)
+        if isnan(v31)
+            @show Clapeyron.reference_state(model3)
+        end
         @test Clapeyron.VT_enthalpy(pure3[1],v31,Tiir) ≈ H31 atol = 1e-6
         @test Clapeyron.VT_entropy(pure3[1],v31,Tiir) ≈ S31 atol = 1e-6
         _,v32,_ = saturation_pressure(pure3[2],Tiir)
