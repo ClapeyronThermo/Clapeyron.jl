@@ -1,6 +1,6 @@
 using Clapeyron, Test
 
-@testset "SAFT models" begin
+@testset "SAFT models - misc" begin
     T = 298.15
     V = 1e-4
     @printline
@@ -47,20 +47,6 @@ using Clapeyron, Test
         @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.3009761155167205 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
     end
-
-    @testset "CPA" begin
-        system = CPA(["ethanol","benzene"])
-        z = [0.5, 0.5]
-        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.1575210505284332 rtol = 1e-6
-        test_gibbs_duhem(system,V,T,z)
-    end
-
-    @testset "sCPA" begin
-        system = sCPA(["water","carbon dioxide"])
-        z = [0.5, 0.5]
-        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.957518287413705 rtol = 1e-6
-    end
-
     @testset "SAFTVRSW" begin
         system = SAFTVRSW(["water", "ethane"])
         z = [0.5, 0.5]
@@ -95,7 +81,30 @@ using Clapeyron, Test
         @test Clapeyron.a_chain(system, V_sol, T, z) ≈ -2.3460460361188207 rtol = 1e-6
         test_gibbs_duhem(system,V_sol,T,z,rtol = 1e-12)
     end
+end
 
+@testset "CPA" begin
+    T = 298.15
+    V = 1e-4
+    @printline
+    @testset "CPA" begin
+        system = CPA(["ethanol","benzene"])
+        z = [0.5, 0.5]
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.1575210505284332 rtol = 1e-6
+        test_gibbs_duhem(system,V,T,z)
+    end
+
+    @testset "sCPA" begin
+        system = sCPA(["water","carbon dioxide"])
+        z = [0.5, 0.5]
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.957518287413705 rtol = 1e-6
+    end
+end
+GC.gc()
+@testset "PCSAFT Models" begin
+    T = 298.15
+    V = 1e-4
+    @printline
     @testset "PCSAFT" begin
         system = PCSAFT(["butane", "ethanol"])
         z = [0.5, 0.5]
@@ -181,6 +190,21 @@ using Clapeyron, Test
         test_gibbs_duhem(system,V,T,z)
     end
 
+    @testset "DAPT" begin
+        system = DAPT(["water"])
+        z = [1.0]
+        @test Clapeyron.a_hs(system, V, T, z) ≈ 0.35240995905438116 rtol = 1e-6
+        @test Clapeyron.a_disp(system, V, T, z) ≈ -1.7007754776344663 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.815041612389342 rtol = 1e-6
+        test_gibbs_duhem(system,V,T,z)
+    end
+end
+
+GC.gc()
+@testset "SAFT-VR-Mie Models" begin
+    T = 298.15
+    V = 1e-4
+    @printline
     @testset "SAFTVRMie" begin
         system = SAFTVRMie(["methanol", "water"])
         z = [0.5, 0.5]
@@ -229,17 +253,9 @@ using Clapeyron, Test
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.11160851237651681 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z,rtol = 1e-12)
     end
-
-    @testset "DAPT" begin
-        system = DAPT(["water"])
-        z = [1.0]
-        @test Clapeyron.a_hs(system, V, T, z) ≈ 0.35240995905438116 rtol = 1e-6
-        @test Clapeyron.a_disp(system, V, T, z) ≈ -1.7007754776344663 rtol = 1e-6
-        @test Clapeyron.a_assoc(system, V, T, z) ≈ -1.815041612389342 rtol = 1e-6
-        test_gibbs_duhem(system,V,T,z)
-    end
     @printline
 end
+
 GC.gc()
 @printline
 
