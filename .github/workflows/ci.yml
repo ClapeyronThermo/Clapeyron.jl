@@ -60,8 +60,9 @@ jobs:
       if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
       - uses: codecov/codecov-action@v4
       if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
-        with:
-          file: lcov.info
+      with:
+        file: lcov.info
+        token: ${{ secrets.CODECOV_TOKEN }}
   docs:
     name: Documentation
     runs-on: ubuntu-latest
