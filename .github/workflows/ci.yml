@@ -54,15 +54,13 @@ jobs:
       - uses: julia-actions/cache@v1
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest
-        with:
-          coverage: ${{ (matrix.version == '1') && ('matrix.os' == 'ubuntu-latest') }}
       - uses: julia-actions/julia-processcoverage@v1
-      if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
+        if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
       - uses: codecov/codecov-action@v4
-      if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
-      with:
-        file: lcov.info
-        token: ${{ secrets.CODECOV_TOKEN }}
+        if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
+        with:
+          file: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
   docs:
     name: Documentation
     runs-on: ubuntu-latest
