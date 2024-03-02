@@ -307,8 +307,9 @@ end
 function ab_consts(model::CubicModel)
     return ab_consts(typeof(model))
 end
+x0_sat_pure(model::ABCubicModel,T) = x0_sat_pure_cubic_ab(model,T)
 
-function x0_sat_pure(model::ABCubicModel, T)
+function x0_sat_pure_cubic_ab(model::ABCubicModel, T)
     z = SA[1.0]
     Tc = model.params.Tc.values[1]
     if Tc < T
@@ -343,7 +344,7 @@ function x0_sat_pure(model::ABCubicModel, T)
         p0 = 0.5 * (pl0 + pv0)
         vv = volume_virial(B, p0, T) - c
         if p_vl > pc #improves predictions around critical point
-            vlc, vvc = vdw_x0_xat_pure(T, Tc, pc, vc)
+            vlc, vvc = vdw_x0_sat_pure(T, Tc, pc, vc)
             vl = 0.5 * (vl + vlc)
             vv = 0.5 * (vv + vvc)
         end

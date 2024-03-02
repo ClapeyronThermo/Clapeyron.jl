@@ -278,7 +278,7 @@ end
         @test Clapeyron.wilson_k_values(system,p,T) ≈ [0.13839117786853375]  rtol = 1E-6
     end
 end
-
+GC.gc()
 @testset "Patel-Teja, single component" begin
     system = PatelTeja(["water"])
     p = 1e5
@@ -354,7 +354,7 @@ end
         @test Clapeyron.wilson_k_values(srksystem,p,T) ≈ [0.420849235562207, 1.6163027384311e-5] rtol = 1E-6
     end
 end
-
+GC.gc()
 @testset "Activity methods, pure components" begin
     if hasfield(Wilson,:puremodel)
         system = Wilson(["methanol"])
@@ -409,7 +409,7 @@ end
         @test Clapeyron.dew_temperature(system2, 19386.939256733036, z)[1]  ≈ T2 rtol = 1E-6
     end
 end
-
+GC.gc()
 @testset "GERG2008 methods, single components" begin
     system = GERG2008(["water"])
     met = GERG2008(["methane"])
@@ -526,7 +526,7 @@ end
     end
 
 end
-
+GC.gc()
 @testset "Helmholtz + Activity" begin
     model = HelmAct(["water","ethanol"])
     p = 12666.0
@@ -576,7 +576,7 @@ end
         @test Clapeyron.crit_pure(system)[1] ≈ 305.37187249327553 rtol = 1E-6
     end
 end
-
+GC.gc()
 @testset "lattice methods" begin
     p = 1e5
     T = 298.15

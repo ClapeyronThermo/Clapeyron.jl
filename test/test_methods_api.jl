@@ -77,6 +77,27 @@ end
     @test Clapeyron.a_assoc(model_esd_r,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
 end
 
+using EoSSuperancillaries
+#we test this separately, but leaving this on could speed up the test suite?
+Clapeyron.use_superancillaries!(false)
+
+if isdefined(Base,:get_extension)
+    @testset "Superancillaries.jl" begin
+        pc = PCSAFT("eicosane")
+        cubic = tcPR(["water"])
+        crit_pc = crit_pure(pc)
+        sat_cubic = saturation_pressure(cubic,373.15)
+        Clapeyron.use_superancillaries!(true)
+        crit_sa_pc = crit_pure(pc)
+        sat_sa_cubic = saturation_pressure(cubic,373.15)
+        @test crit_pc[1] ≈ crit_sa_pc[1] rtol = 1e-6
+        @test crit_pc[3] ≈ crit_sa_pc[3] rtol = 1e-6
+        @test sat_cubic[1] ≈ sat_sa_cubic[1] rtol = 1e-6
+        @test sat_cubic[2] ≈ sat_sa_cubic[2] rtol = 1e-6 
+        @test sat_cubic[3] ≈ sat_sa_cubic[3] rtol = 1e-6
+    end
+end
+
 @testset "tpd" begin
     system = PCSAFT(["water","cyclohexane"])
     T = 298.15
@@ -133,6 +154,9 @@ end
         H31,H32 = 200*model3.params.Mw[1],200*model3.params.Mw[2]
         S31,S32 = 1.0*model3.params.Mw[1],1.0*model3.params.Mw[2]
         _,v31,_ = saturation_pressure(pure3[1],Tiir)
+        if isnan(v31)
+            @show Clapeyron.reference_state(model3)
+        end
         @test Clapeyron.VT_enthalpy(pure3[1],v31,Tiir) ≈ H31 atol = 1e-6
         @test Clapeyron.VT_entropy(pure3[1],v31,Tiir) ≈ S31 atol = 1e-6
         _,v32,_ = saturation_pressure(pure3[2],Tiir)
@@ -501,8 +525,7 @@ end
         @test Tb  ≈ Tres2 rtol = 1E-6
         @test xa[3] == 0.0
     end
-    GC.gc()
-    #testset for equilibria bugs
+    GC.gc() 
 end
 
 @testset "Solid Phase Equilibria" begin
@@ -528,7 +551,7 @@ end
         @test melting_temperature(model2,1e5)[1] ≈ 273.15 rtol = 1e-6
         @test melting_pressure(model2,273.15)[1] ≈ 1e5 rtol = 1e-6
     end
-
+    GC.gc()
     @testset "Mixture Solid-Liquid Equilibria" begin
         model = CompositeModel([("1-decanol",["CH3"=>1,"CH2"=>9,"OH (P)"=>1]),("thymol",["ACCH3"=>1,"ACH"=>3,"ACOH"=>1,"ACCH"=>1,"CH3"=>2])];liquid=UNIFAC,solid=SolidHfus)
         T = 275.
@@ -541,6 +564,7 @@ end
         (TE,xE) = eutectic_point(model)
         @test TE ≈ 271.97967645045804 rtol = 1e-6
     end
+    GC.gc()
 
     @testset "Solid-Liquid-Liquid Equilibria" begin
         model = CompositeModel(["water","ethanol",("ibuprofen",["ACH"=>4,"ACCH2"=>1,"ACCH"=>1,"CH3"=>3,"COOH"=>1,"CH"=>1])];liquid=UNIFAC,solid=SolidHfus)
@@ -550,7 +574,7 @@ end
         @test s1[3] ≈ 0.0015804179997257882 rtol = 1e-6
     end
 end
-
+GC.gc()
 #test for really really difficult equilibria.
 @testset "challenging equilibria" begin
 
@@ -577,7 +601,7 @@ end
         # @test_broken bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
         # FIXME: The test does not yield the same value depending on the OS and the julia version
     end
-
+    GC.gc()
     @testset "saturation points without critical point" begin
         model1 = PCSAFT("water")
         Tc1,_,_ = crit_pure(model1)
@@ -603,5 +627,6 @@ end
         T4 = 164.7095044742657
         @test Clapeyron.saturation_pressure(model4,T4,crit_retry = false)[1] ≈ 0.02610821545005174 rtol = 1e-6
     end
+    GC.gc()
 end
 

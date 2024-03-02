@@ -30,6 +30,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [weakdeps]
 CoolProp = "e084ae63-2819-5025-826e-f8e611a84251"
+EoSSuperancillaries = "c1bf003f-4e47-49d9-bdfd-5a4051db3c04"
 JutulDarcy = "82210473-ab04-4dce-b31b-11573c4f8e0a"
 Metaheuristics = "bcdb8e00-2c21-11e9-3065-2b553b22f898"
 MultiComponentFlash = "35e5bd01-9722-4017-9deb-64a5d32478ff"
@@ -43,12 +44,14 @@ ClapeyronMetaheuristicsExt = "Metaheuristics"
 ClapeyronMultiComponentFlashExt = "MultiComponentFlash"
 ClapeyronSymbolicsExt = "Symbolics"
 ClapeyronUnitfulExt = "Unitful"
+ClapeyronSuperancillaries = "EoSSuperancillaries"
 
 [compat]
 BlackBoxOptim = "^0.6.2"
 CSV = "0.10"
 DiffResults = "^1.1"
 Downloads = "1"
+EoSSuperancillaries = "1.2.3"
 FillArrays = "^0.12, 0.13, 1"
 ForwardDiff = "^0.10"
 JSON3 = "1"
@@ -72,6 +75,7 @@ julia = "1.6"
 
 [extras]
 CoolProp = "e084ae63-2819-5025-826e-f8e611a84251"
+EoSSuperancillaries = "c1bf003f-4e47-49d9-bdfd-5a4051db3c04"
 JutulDarcy = "82210473-ab04-4dce-b31b-11573c4f8e0a"
 Metaheuristics = "bcdb8e00-2c21-11e9-3065-2b553b22f898"
 MultiComponentFlash = "35e5bd01-9722-4017-9deb-64a5d32478ff"
@@ -80,4 +84,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [targets]
-test = ["CoolProp", "Test", "Unitful", "MultiComponentFlash"]
+test = ["CoolProp", "EoSSuperancillaries", "MultiComponentFlash", "Test", "Unitful"]
