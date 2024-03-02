@@ -6,6 +6,11 @@ on:
 permissions:
   actions: write
   contents: read
+concurrency:
+    # Skip intermediate builds: always.
+    # Cancel intermediate builds: only if it is a pull request build.
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
@@ -28,6 +33,9 @@ jobs:
           - os: macOS-latest
             arch: x64
             version : '1.6'
+          - os: macOS-latest
+            arch: x64
+            version : '1'
           - os: macOS-14
             arch: aarch64
             version: '1'
@@ -45,8 +53,10 @@ jobs:
       - uses: julia-actions/julia-runtest@latest
         with:
           coverage: ${{ (matrix.version == '1') && ('matrix.os' == 'ubuntu-latest') }}
-      - uses: julia-actions/julia-processcoverage@latest
+      - uses: julia-actions/julia-processcoverage@v1
+      if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
       - uses: codecov/codecov-action@v4
+      if: matrix.version == '1' && matrix.os == 'ubuntu-latest'
         with:
           file: lcov.info
   docs:
