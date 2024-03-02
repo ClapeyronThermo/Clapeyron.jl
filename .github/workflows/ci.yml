@@ -39,8 +39,11 @@ jobs:
           - os: macOS-14
             arch: aarch64
             version: '1'
+            experimental: true
           - os: macOS-14
             arch: aarch64
+            version: 'nightly'
+          - experimental: true
             version: 'nightly'
     steps:
       - uses: actions/checkout@v4
