@@ -23,3 +23,4 @@ struct CompositeModel{𝔽,𝕊} <: EoSModel
     fluid::𝔽
     solid::𝕊
 end
+ 
