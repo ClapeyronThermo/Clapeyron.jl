@@ -68,7 +68,7 @@ function HomogcPCPSAFT(components;
     gc_components = components
     components = groups.components    
     sites = gc_params["sites"]
-
+    n_gc = length(groups.flattenedgroups)
     gc_mw = gc_params["Mw"]
     mw = group_sum(groups,gc_mw)
 
@@ -83,12 +83,15 @@ function HomogcPCPSAFT(components;
     sigma.values ./= segment.values
     sigma.values .= cbrt.(sigma.values)
     sigma = sigma_LorentzBerthelot(sigma)
-
+    gc_k = get(gc_params, "k") do
+        PairParam(groups.flattenedgroups, "k",zeros(n_gc,n_gc))
+    end
+    k = group_pairmean(groups,gc_k)
     gc_epsilon = gc_params["epsilon"]
     gc_epsilon.values .*= gc_segment.values
     epsilon = group_sum(groups,gc_epsilon)
     epsilon.values ./= segment.values
-    epsilon = epsilon_LorentzBerthelot(epsilon)
+    epsilon = epsilon_LorentzBerthelot(epsilon,k)
 
     gc_dipole = gc_params["dipole"]
     gc_dipole2 = SingleParam("Dipole squared", groups.flattenedgroups, gc_dipole.^2 ./ k_B*1e-36*(1e-10*1e-3))

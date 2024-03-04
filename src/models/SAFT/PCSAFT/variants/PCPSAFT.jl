@@ -22,7 +22,7 @@ Base.@deprecate_binding PPCSAFTModel PCPSAFTModel
 Base.@deprecate_binding PPCSAFTParam PCPSAFTParam
 
 default_references(::Type{PCPSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
-default_locations(::Type{PCPSAFT}) = ["SAFT/PCSAFT/PPCSAFT/","properties/molarmass.csv"]
+default_locations(::Type{PCPSAFT}) = ["SAFT/PCSAFT/PCPSAFT/","properties/molarmass.csv"]
 default_ignore_missing_singleparams(::Type{PCPSAFT}) = ["dipole"]
 
 function transform_params(::Type{PCPSAFT},params,components)
