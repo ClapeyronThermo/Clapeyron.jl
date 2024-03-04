@@ -31,6 +31,16 @@ function gcPCPSAFT(components;
     end
 end
 
+function __gcpcpsaft_combine(mixing)
+    if mixing == :homo
+        return :cr1
+    elseif mixing ==:hetero
+        return :cr1
+    else
+        throw(ArgumentError("gcPCSAFT: mixing must be :homo or :hetero"))
+    end
+end
+
 function gcPCSAFT(components;
     mixing = :hetero,
     idealmodel = BasicIdeal,
@@ -39,7 +49,7 @@ function gcPCSAFT(components;
     ideal_userlocations = String[],
     verbose = false,
     reference_state = nothing,
-    assoc_options = AssocOptions())
+    assoc_options = AssocOptions(combining = __gcpcpsaft_combine(mixing)))
 
     if mixing == :homo
         return HomogcPCPSAFT(components;

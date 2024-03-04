@@ -132,7 +132,7 @@ function CPA(components;
         AssocParam("bondvol",_components)
     end
 
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options,sites)
     packagedparams = CPAParam(Mw, Tc, a, b, c1, epsilon_assoc, bondvol)
     
     #init cubic model
@@ -159,7 +159,7 @@ function recombine_impl!(model::CPAModel)
 
     epsilon_assoc = model.params.epsilon_assoc
     bondvol = model.params.bondvol
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options) #combining rules for association
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options,model.sites) #combining rules for association
 
     model.params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
     model.params.bondvol.values.values[:] = bondvol.values.values

@@ -163,7 +163,7 @@ function SAFTgammaMie(components;
     #GC to component model in association
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options) #combining rules for association
+    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options,sites) #combining rules for association
 
     comp_sites = gc_to_comp_sites(sites,groups)
     comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
@@ -233,7 +233,7 @@ function recombine_impl!(model::SAFTgammaMieModel)
     comp_lambda_r = group_pairmean(groups,gc_lambda_r) |> lambda_LorentzBerthelot
     model.vrmodel.params.lambda_r.values[:] = comp_lambda_r.values
 
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options)
+    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options,sites)
     model.params.bondvol.values.values[:] = gc_bondvol.values.values
     model.params.epsilon_assoc.values.values[:] = gc_epsilon_assoc.values.values
 

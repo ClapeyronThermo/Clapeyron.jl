@@ -61,14 +61,14 @@ function HomogcPCPSAFT(components;
     ideal_userlocations = String[],
     verbose = false,
     reference_state = nothing,
-    assoc_options = AssocOptions())
+    assoc_options = AssocOptions(combining = :cr1))
     
     groups = GroupParam(components,["SAFT/PCSAFT/gcPCPSAFT/homo/HomogcPCPSAFT_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
-    gc_params = getparams(groups, ["SAFT/PCSAFT/gcPCPSAFT/homo/","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
+    gc_params = getparams(groups,["SAFT/PCSAFT/gcPCPSAFT/homo/"]; userlocations = userlocations, verbose = verbose)
     gc_components = components
     components = groups.components    
     sites = gc_params["sites"]
-    n_gc = length(groups.flattenedgroups)
+    
     gc_mw = gc_params["Mw"]
     mw = group_sum(groups,gc_mw)
 
@@ -84,7 +84,8 @@ function HomogcPCPSAFT(components;
     sigma.values .= cbrt.(sigma.values)
     sigma = sigma_LorentzBerthelot(sigma)
     gc_k = get(gc_params, "k") do
-        PairParam(groups.flattenedgroups, "k",zeros(n_gc,n_gc))
+        n_gc = length(gc_sigma.components)
+        PairParam(gc_sigma.components, "k",zeros(n_gc,n_gc))
     end
     k = group_pairmean(groups,gc_k)
     gc_epsilon = gc_params["epsilon"]
@@ -105,7 +106,7 @@ function HomogcPCPSAFT(components;
     comp_sites = gc_to_comp_sites(sites,groups)
     bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
     epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options,comp_sites) #combining rules for association
 
 
 

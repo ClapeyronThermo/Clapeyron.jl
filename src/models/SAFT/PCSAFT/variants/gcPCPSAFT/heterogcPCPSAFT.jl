@@ -18,7 +18,7 @@ function transform_params(::Type{HeterogcPCPSAFT},params,groups)
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
     assoc_options = params["assoc_options"]
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options) #combining rules for association
+    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options,comp_sites) #combining rules for association
     params["bondvol"] = gc_to_comp_sites(gc_bondvol,comp_sites)
     params["epsilon_assoc"] = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
     return params

@@ -116,7 +116,7 @@ end
 """
     group_pairmean(groups::GroupParam,param::PairParam)
     group_pairmean(f,groups::GroupParam,param::SingleParam)
-Given a `GroupParam`and a parameter `P` it will return a single parameter `p` of component data, where:
+Given a `GroupParam` and a parameter `P` it will return a single parameter `p` of component data, where:
 
 pᵢ = ∑νᵢₖ(∑(νᵢₗ*P(i,j))) / ∑νᵢₖ(∑νᵢₗ)
 
