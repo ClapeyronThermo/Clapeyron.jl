@@ -137,6 +137,7 @@ function _getline(file, selectedline::Int)
 end
 
 function normalisestring(str, isactivated::Bool=true; tofilter = ' ')
+    ismissing(str) && return ""
     if !isactivated
         str isa String && return str::String
         return string(str)::String
