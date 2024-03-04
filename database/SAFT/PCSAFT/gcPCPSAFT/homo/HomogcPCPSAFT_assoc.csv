@@ -1,5 +1,5 @@
 Clapeyron Database File,,,,,,,,
-gcPPCSAFT Assoc Parameters,,,,,,,,
+homo-gc-PCPSAFT Assoc Parameters,,,,,,,,
 species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
 OH,,e,OH,,H,2517.0,0.006825,10.1021/ie502203w
 NH2,,e,NH2,,H,1064.6,0.026662,10.1021/ie502203w

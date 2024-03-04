@@ -1,5 +1,5 @@
 Clapeyron Database File,,,,,,,
-homosegmented GC-PPCSAFT Like Parameters,,,,,,,
+homosegmented GC-PCPSAFT Like Parameters,,,,,,,
 species,Mw,segment,sigma,epsilon,dipole,n_H,n_e,source
 CH3,15.,0.61198,3.7202,229.90,0,0,0,10.1021/ie502203w
 CH2,14.,0.45606,3.8900,239.01,0,0,0,10.1021/ie502203w

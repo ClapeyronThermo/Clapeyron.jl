@@ -1,5 +1,5 @@
 Clapeyron Database File,,,,,,,,
-PPCSAFT Like Parameters,,,,,,,,
+PCPSAFT Like Parameters,,,,,,,,
 species,Mw,segment,sigma,epsilon,dipole,n_H,n_e,source
 acetone~|~propanone,58.08,2.7447,3.2742,232.99,2.88,0,0,10.1002/aic.10683
 butanone~|~2-butanone~|~methyl ethyl ketone,72.107,2.9835,3.4239,244.99,2.78,0,0,10.1002/aic.10683

@@ -17,9 +17,9 @@ at the moment, we use the Gross-Vrabec polar term
 and the technically correct name is PCPSAFT
 so, for the moment, we alias that.
 =#
-const PPCSAFTModel = PCPSAFTModel
-const PPCSAFTParam = PCPSAFTParam
-const PPCSAFT = PCPSAFT
+Base.@deprecate_binding PPCSAFT PCPSAFT
+Base.@deprecate_binding PPCSAFTModel PCPSAFTModel
+Base.@deprecate_binding PPCSAFTParam PCPSAFTParam
 
 default_references(::Type{PCPSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 default_locations(::Type{PCPSAFT}) = ["SAFT/PCSAFT/PPCSAFT/","properties/molarmass.csv"]

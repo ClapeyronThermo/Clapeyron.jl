@@ -162,6 +162,8 @@ include("models/SAFT/PCSAFT/variants/PCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/QPCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCPSAFT/HomogcPCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCPSAFT/HeterogcPCPSAFT.jl")
+include("models/SAFT/PCSAFT/variants/gcPCPSAFT/gcPCSAFT.jl")
+
 include("models/SAFT/PCSAFT/variants/CPPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")

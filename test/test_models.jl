@@ -114,16 +114,16 @@ GC.gc()
         test_gibbs_duhem(system,V,T,z)
     end
 
-    @testset "PPCSAFT" begin
-        system = PPCSAFT(["acetone", "butane", "DMSO"])
+    @testset "PCPSAFT" begin
+        system = PCPSAFT(["acetone", "butane", "DMSO"])
         z = [0.333, 0.333,0.333]
         @test Clapeyron.a_polar(system, V, T, z) ≈ -0.6541688650413224 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
     end
 
-    @testset "QPPCSAFT" begin
-        system1 = QPPCSAFT(["carbon dioxide", "acetone", "hydrogen sulfide"])
-        system2 = QPPCSAFT(["carbon dioxide", "chlorine", "carbon disulfide"])
+    @testset "QPCPSAFT" begin
+        system1 = QPCPSAFT(["carbon dioxide", "acetone", "hydrogen sulfide"])
+        system2 = QPCPSAFT(["carbon dioxide", "chlorine", "carbon disulfide"])
         z = [0.333, 0.333, 0.333]
         @test Clapeyron.a_mp(system1, V, T, z) ≈ -0.37364363283985724 rtol = 1e-6
         @test Clapeyron.a_mp(system2, V, T, z) ≈ -0.1392358363758833 rtol = 1e-6
@@ -131,9 +131,9 @@ GC.gc()
         test_gibbs_duhem(system2,V,T,z)
     end
 
-    @testset "gcPPCSAFT" begin
+    @testset "gcPCPSAFT" begin
         z = [0.333, 0.333, 0.333]
-        system = gcPPCSAFT(["acetone", "ethane","ethanol"])
+        system = gcPCPSAFT(["acetone", "ethane","ethanol"])
         test_gibbs_duhem(system,V,T,z)
     end
 

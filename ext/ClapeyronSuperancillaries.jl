@@ -3,8 +3,8 @@ import EoSSuperancillaries
 import Clapeyron
 const C = Clapeyron
 const ES = EoSSuperancillaries
-#(:PCSAFT,:PPCSAFT,:QPPCSAFT),
-const SuperancPCSAFT = Union{C.PCSAFT,C.PPCSAFT,C.QPPCSAFT,C.pharmaPCSAFT}
+#(:PCSAFT,:PCPSAFT,:QPCPSAFT),
+const SuperancPCSAFT = Union{C.PCSAFT,C.PCPSAFT,C.QPCPSAFT,C.pharmaPCSAFT}
 
 function can_superanc(model::SuperancPCSAFT)
     val = true

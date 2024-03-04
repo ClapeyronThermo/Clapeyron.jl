@@ -1,5 +1,5 @@
 Clapeyron Database File
-PPCSAFT Assoc Parameters; Esper et al. (2023) [csvtype = assoc]
+PCPSAFT Assoc Parameters; Esper et al. (2023) [csvtype = assoc]
 species1,site1,species2,site2,bondvol,epsilon_assoc,source
 acetamide~|~ethanamide,a,acetamide~|~ethanamide,b,0.01458,1624.88542,10.1021/acs.iecr.3c02255
 "ethylenediamine~|~1,2-diaminoethane~|~ethane-1,2-diamine",a,"ethylenediamine~|~1,2-diaminoethane~|~ethane-1,2-diamine",b,0.00021,1044.99964,10.1021/acs.iecr.3c02255

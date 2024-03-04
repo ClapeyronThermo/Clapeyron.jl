@@ -170,7 +170,7 @@
         Polar PCSAFT
         it uses `a` and `b` as site names
         =#
-        model = PPCSAFT("water")
+        model = PCPSAFT("water")
         @test model isa EoSModel
         @test "a" in model.sites.flattenedsites
         @test "b" in model.sites.flattenedsites
