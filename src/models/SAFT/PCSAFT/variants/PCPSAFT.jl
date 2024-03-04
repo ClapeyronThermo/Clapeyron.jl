@@ -1,4 +1,4 @@
-struct PPCSAFTParam <: EoSParam
+struct PCPSAFTParam <: EoSParam
     Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}

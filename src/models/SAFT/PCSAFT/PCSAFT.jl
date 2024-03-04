@@ -290,4 +290,3 @@ function d(model::PCSAFT, V, T, z::SingleComp)
     σ = only(model.params.sigma.values)
     return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
 end
-
