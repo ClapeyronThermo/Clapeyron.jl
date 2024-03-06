@@ -62,9 +62,8 @@ function HomogcPCPSAFT(components;
     verbose = false,
     reference_state = nothing,
     assoc_options = AssocOptions(combining = :cr1))
-    
     groups = GroupParam(components,["SAFT/PCSAFT/gcPCPSAFT/homo/HomogcPCPSAFT_groups.csv"]; group_userlocations = group_userlocations,verbose = verbose)
-    gc_params = getparams(groups,["SAFT/PCSAFT/gcPCPSAFT/homo/"]; userlocations = userlocations, verbose = verbose)
+    gc_params = getparams(groups,["SAFT/PCSAFT/gcPCPSAFT/homo/"]; userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["k"])
     gc_components = components
     components = groups.components    
     sites = gc_params["sites"]
@@ -87,7 +86,7 @@ function HomogcPCPSAFT(components;
         n_gc = length(gc_sigma.components)
         PairParam(gc_sigma.components, "k",zeros(n_gc,n_gc))
     end
-    k = group_pairmean(groups,gc_k)
+    k = group_pairmean2(groups,gc_k)
     gc_epsilon = gc_params["epsilon"]
     gc_epsilon.values .*= gc_segment.values
     epsilon = group_sum(groups,gc_epsilon)
@@ -108,15 +107,16 @@ function HomogcPCPSAFT(components;
     epsilon_assoc = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
     bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options,comp_sites) #combining rules for association
 
+    gc_sigma = gc_params["sigma"] |> sigma_LorentzBerthelot
+    gc_epsilon = gc_params["epsilon"] |> epsilon_LorentzBerthelot
 
-
-    gcparams = hoHomogcPCPSAFTParam(gc_mw, gc_segment, gc_params["sigma"], gc_params["epsilon"], gc_dipole, gc_dipole2, gc_epsilon_assoc,gc_bondvol)
-    params = PPCSAFTParam(mw, segment, sigma, epsilon, dipole, dipole2, epsilon_assoc, bondvol)
+    gcparams = PCPSAFTParam(gc_mw, gc_segment, gc_sigma, gc_epsilon, gc_dipole, gc_dipole2, gc_epsilon_assoc,gc_bondvol)
+    params = PCPSAFTParam(mw, segment, sigma, epsilon, dipole, dipole2, epsilon_assoc, bondvol)
     
     idmodel = init_model(idealmodel,gc_components,ideal_userlocations,verbose,reference_state)
 
     references = ["10.1021/ie020753p"]
-    pc = PPCSAFT(components,comp_sites,params,idmodel, assoc_options, references)
+    pc = PCPSAFT(components,comp_sites,params,idmodel, assoc_options, references)
     model = HomogcPCPSAFT(components, groups, sites, gcparams,idmodel,pc, assoc_options, references)
     return model
 end
@@ -179,3 +179,5 @@ end
 function p_scale(model::HomogcPCPSAFTModel,z=SA[1.0])
     return p_scale(model.ppcmodel,z)
 end
+
+export HomogcPCPSAFT

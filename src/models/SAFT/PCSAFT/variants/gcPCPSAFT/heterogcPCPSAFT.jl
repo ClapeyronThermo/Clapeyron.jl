@@ -3,7 +3,7 @@ abstract type gcPCPSAFTModel <: PCPSAFTModel end
 @newmodelgc HeterogcPCPSAFT gcPCPSAFTModel PCPSAFTParam true true
 default_references(::Type{HeterogcPCPSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 default_locations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/","properties/molarmass_groups.csv"]
-default_gclocations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/homo/HomogcPCPSAFT_groups.csv","SAFT/PCSAFT/gcPCPSAFT/homo/HomogcPCPSAFT_intragroups.csv"]
+default_gclocations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_groups.csv","SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_intragroups.csv"]
 
 function transform_params(::Type{HeterogcPCPSAFT},params,groups)
     
@@ -17,9 +17,14 @@ function transform_params(::Type{HeterogcPCPSAFT},params,groups)
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
     assoc_options = params["assoc_options"]
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options,comp_sites) #combining rules for association
+    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options,sites) #combining rules for association
     params["bondvol"] = gc_to_comp_sites(gc_bondvol,comp_sites)
     params["epsilon_assoc"] = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
+    μ = get!(params,"dipole") do
+        SingleParam("dipole",components)
+    end
+    m = params["segment"]
+    params["dipole2"] = SingleParam("Dipole squared",groups.flattenedgroups, μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3))
     return params
 end
 
@@ -248,3 +253,5 @@ end
 function a_polar(model ::gcPCPSAFTModel, V, T, z, _data=@f(data))
     return zero(V+T+first(z))
 end
+
+export HeterogcPCPSAFT

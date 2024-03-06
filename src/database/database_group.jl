@@ -71,7 +71,7 @@ end
 gc_get_comp(x::AbstractString) = x
 gc_get_comp(x) = first(x)
 gc_get_group(x::AbstractString) = nothing
-gc_get_group(x) = last(x)
+gc_get_group(x) = x[2] #first index is the component, second is the group, third is the bond info.
 
 
 function GroupParam(gccomponents::Vector,

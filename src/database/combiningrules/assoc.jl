@@ -1,3 +1,13 @@
+__valid_site_comb(::Nothing,i,j,a,b) = false
+function __valid_site_comb(n,i,j,a,b)
+    ni,nj = n[i],n[j]
+    if length(ni)*length(nj) == 0
+        return false
+    else
+        return !iszero(ni[a]*nj[b])
+    end
+end
+
 function assoc_extend(param::AssocParam)
     length(param.values.values) == 0 && return param
     _4dmatrix = assoc_extend(param.values,param.sites)
@@ -48,9 +58,8 @@ function bondvol_mix(bondvol::AssocParam,::Nothing,sites = nothing)
     else
         n = nothing
     end
-    for (idx,(i,j),(a,b)) in indices(mat)
-        valid_combination = isnothing(n) ? true : !iszero(n[i][a]*n[j][b])
-        if iszero(mat.values[idx]) & valid_combination
+    for (idx,(i,j),(a,b)) in indices(mat)   
+        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
             mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])
         end
     end
@@ -69,8 +78,7 @@ function epsilon_assoc_mix(epsilon_assoc::AssocParam,sites)
     end
     for (idx,(i,j),(a,b)) in indices(mat)
         #check that nia != 0 && njb != 0
-        valid_combination = isnothing(n) ? true : !iszero(n[i][a]*n[j][b])
-        if iszero(mat.values[idx]) & valid_combination
+        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
             mat.values[idx] = (mat[i,i][a,b] + mat[j,j][a,b])/2
         end
     end
@@ -89,8 +97,7 @@ function bondvol_mix(bondvol::AssocParam,σ,sites = nothing)
     end
     for (idx,(i,j),(a,b)) in indices(mat)
         #check that nia != 0 && njb != 0
-        valid_combination = isnothing(n) ? true : !iszero(n[i][a]*n[j][b])
-        if iszero(mat.values[idx]) && valid_combination
+        if iszero(mat.values[idx]) && __valid_site_comb(n,i,j,a,b)
             mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])*(sqrt(σ[i,i]*σ[j,j])/σ[i,j])^3
         end
     end

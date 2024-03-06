@@ -133,7 +133,7 @@ GC.gc()
 
     @testset "gcPCPSAFT" begin
         z = [0.333, 0.333, 0.333]
-        system = gcPCPSAFT(["acetone", "ethane","ethanol"])
+        system = gcPCPSAFT(["acetone", "ethane","ethanol"],mixing = :mono)
         test_gibbs_duhem(system,V,T,z)
     end
 
