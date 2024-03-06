@@ -1,12 +1,11 @@
 
-abstract type gcPCPSAFTModel <: PCSAFTModel end
+abstract type gcPCPSAFTModel <: PCPSAFTModel end
 @newmodelgc HeterogcPCPSAFT gcPCPSAFTModel PCPSAFTParam true true
 default_references(::Type{HeterogcPCPSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 default_locations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/","properties/molarmass_groups.csv"]
 default_gclocations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/homo/HomogcPCPSAFT_groups.csv","SAFT/PCSAFT/gcPCPSAFT/homo/HomogcPCPSAFT_intragroups.csv"]
 
 function transform_params(::Type{HeterogcPCPSAFT},params,groups)
-    k = get(params,"k",nothing)
     
     sigma = params["sigma"]
     sigma.values .*= 1E-10
@@ -243,4 +242,9 @@ function  Δ(model::HeterogcPCPSAFT, V, T, z,_data=@f(data))
         Δout[idx] = gkl*σ[k,l]^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
     end
     return Δout
+end
+
+#TODO
+function a_polar(model ::gcPCPSAFTModel, V, T, z, _data=@f(data))
+    return zero(V+T+first(z))
 end
