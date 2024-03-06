@@ -1,3 +1,7 @@
+function gcPCSAFTMixingError(x::Symbol)
+    throw(ArgumentError("gcPCSAFT: mixing must be :homo or :hetero. Got " * error_color(x) * " instead."))
+end
+
 function gcPCPSAFT(components;
     mixing = :hetero,
     idealmodel = BasicIdeal,
@@ -27,7 +31,7 @@ function gcPCPSAFT(components;
         reference_state = reference_state,
         assoc_options = assoc_options)
     else
-        throw(ArgumentError("gcPCSAFT: mixing must be :homo or :hetero"))
+        gcPCSAFTMixingError(mixing)
     end
 end
 
@@ -37,7 +41,7 @@ function __gcpcpsaft_combine(mixing)
     elseif mixing ==:hetero
         return :cr1
     else
-        throw(ArgumentError("gcPCSAFT: mixing must be :homo or :hetero"))
+        gcPCSAFTMixingError(mixing)
     end
 end
 
@@ -70,7 +74,7 @@ function gcPCSAFT(components;
         reference_state = reference_state,
         assoc_options = assoc_options)
     else
-        throw(ArgumentError("gcPCSAFT: mixing must be :homo or :hetero"))
+        gcPCSAFTMixingError(mixing)
     end
 end
 

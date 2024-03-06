@@ -386,3 +386,48 @@ function SMILES(components)
     params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
     return params["SMILES"].values
 end
+
+function by_cas2(caslist)
+    cas = format_components(caslist)
+    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[], ignore_missing_singleparams = ["CAS","species","SMILES","inchikey"])
+    species = params["species"]
+    d = Dict(k => v for (k,v) in zip(species.components,species.values))
+    return d,species.values
+end
+
+function to_groups(x)
+    s = unique(x)
+    vals = [count(isequal(si),x) for si in s]
+    return [si => vali for (si,vali) in zip(s,vals)]
+end
+
+function bond_to_pair(segments,bonds)
+    res = Vector{Tuple{String,String}}[]
+    resize!(res,length(segments))
+    function sort2(s1,s2)
+        if s1 < s2
+            return String(s1),String(s2)
+        else
+            return String(s2),String(s1)
+        end
+    end
+    for i in 1:length(segments)
+        bi = bonds[i]
+        si = segments[i]
+        res_i = Tuple{String,String}[]
+        if ismissing(bi)
+            #assume linear
+            for j in 2:length(si)
+                push!(res_i,sort2(si[j-1],si[j]))
+            end
+        else
+            for j in 1:length(bi)
+                id1,id2 = bi[j][1],bi[j][2]
+                id1,id2 = id1+1,id2+1
+                push!(res_i,sort2(si[id1],si[id2]))
+            end
+        end
+        res[i] = res_i
+    end
+    return res
+end

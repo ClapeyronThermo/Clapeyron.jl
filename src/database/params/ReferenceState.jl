@@ -33,22 +33,22 @@ If `z0` is not specified, the reference state calculation will be done for each 
 
 ## Examples
 ```
-julia> model = PCSAFT(["water","pentane"],idealmodel = ShomateIdeal,reference_state = ReferenceState(:nbp))
-PCSAFT{ShomateIdeal, Float64} with 2 components:
+julia> model = PCSAFT(["water","pentane"],idealmodel = ReidIdeal,reference_state = ReferenceState(:nbp))
+PCSAFT{ReidIdeal, Float64} with 2 components:
  "water"
  "pentane"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
 
-julia> model2 = PCSAFT(["water","pentane"],idealmodel = ShomateIdeal,reference_state = :nbp) #equivalent
-PCSAFT{ShomateIdeal, Float64} with 2 components:
+julia> model2 = PCSAFT(["water","pentane"],idealmodel = ReidIdeal,reference_state = :nbp) #equivalent
+PCSAFT{ReidIdeal, Float64} with 2 components:
  "water"
  "pentane"
 Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
 
 julia> pure = split_model(model)
-2-element Vector{PCSAFT{ShomateIdeal, Float64}}:
- PCSAFT{ShomateIdeal, Float64}("water")
- PCSAFT{ShomateIdeal, Float64}("pentane")
+2-element Vector{PCSAFT{ReidIdeal, Float64}}:
+ PCSAFT{ReidIdeal, Float64}("water")
+ PCSAFT{ReidIdeal, Float64}("pentane")
 
 julia> T,vl,_ = saturation_temperature(pure[1],101325.0) #saturated liquid at 1 atm
 (373.2706553019503, 2.0512186595412677e-5, 0.03006573003253086)

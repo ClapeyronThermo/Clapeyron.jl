@@ -1,5 +1,5 @@
 Clapeyron Database File
-Reid Coefficients from Poling [csvtype = single; grouptype = unknown]
+Reid Coefficients from Poling [csvtype = single, grouptype = unknown]
 species,cas,a,b,c,d,e
 ccl4~|~tetrachloromethane~|~carbon tetrachloride,56-23-5,20.93581687250985,0.34822632337349396,-0.0005953155234597719,4.771670096558143e-7,-1.4600196357477086e-10
 diethyl ether,60-29-7,38.346301594922735,0.3117258324798012,-0.00015548045095946557,1.0941832805489662e-7,-5.80349490747096e-11
