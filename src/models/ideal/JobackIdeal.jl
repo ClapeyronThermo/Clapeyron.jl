@@ -233,4 +233,9 @@ function crit_pure(model::JobackIdeal)
     return (T_c(model),P_c(model),V_c(model))
 end
 
+function conjugate(model::JobackIdeal)
+    model.params.
+    return (2)
+end
+
 export JobackIdeal

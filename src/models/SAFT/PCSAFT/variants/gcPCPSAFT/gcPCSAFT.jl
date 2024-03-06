@@ -74,4 +74,6 @@ function gcPCSAFT(components;
     end
 end
 
+export gcPCPSAFT, gcPCSAFT
+
 Base.@deprecate_binding gcPPCSAFT gcPCPSAFT
