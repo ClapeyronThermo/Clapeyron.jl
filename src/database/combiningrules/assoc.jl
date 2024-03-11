@@ -124,7 +124,8 @@ function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions,sites
     end
 end
 
-function assoc_mix!(data,components,assoc_options = AssocOptions())
+function assoc_mix!(data,components)
+    assoc_options = data["assoc_options"]
     if haskey(data,"bondvol") && haskey(data,"epsilon_assoc")  
         bondvol = data["bondvol"]
         epsilon_assoc = data["epsilon_assoc"]
