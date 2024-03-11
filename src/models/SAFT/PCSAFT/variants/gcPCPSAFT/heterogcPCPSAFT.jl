@@ -1,6 +1,21 @@
 
 abstract type gcPCPSAFTModel <: PCPSAFTModel end
-@newmodelgc HeterogcPCPSAFT gcPCPSAFTModel PCPSAFTParam true true
+
+struct HeterogcPCPSAFTParam <: EoSParam
+    Mw::SingleParam{Float64}
+    segment::SingleParam{Float64}
+    sigma::PairParam{Float64}
+    epsilon::PairParam{Float64}
+    comp_segment::SingleParam{Float64}
+    comp_sigma::SingleParam{Float64}
+    comp_epsilon::SingleParam{Float64}
+    dipole::SingleParam{Float64}
+    dipole2::SingleParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
+end
+
+@newmodelgc HeterogcPCPSAFT gcPCPSAFTModel HeterogcPCPSAFTParam true true
 default_references(::Type{HeterogcPCPSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
 default_locations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/","properties/molarmass_groups.csv"]
 default_gclocations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_groups.csv","SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_intragroups.csv"]
@@ -20,11 +35,19 @@ function transform_params(::Type{HeterogcPCPSAFT},params,groups)
     gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options,sites) #combining rules for association
     params["bondvol"] = gc_to_comp_sites(gc_bondvol,comp_sites)
     params["epsilon_assoc"] = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
-    μ = get!(params,"dipole") do
+    gc_μ = get!(params,"dipole") do
         SingleParam("dipole",components)
     end
-    m = params["segment"]
-    params["dipole2"] = SingleParam("Dipole squared",groups.flattenedgroups, μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3))
+    gc_segment = params["segment"]
+    m = group_sum(groups,gc_segment)
+    params["comp_segment"] = m
+    gc_μ2 = SingleParam("Dipole squared",groups.flattenedgroups, μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3))
+    dipole2 = group_sum(groups,gc_dipole2)
+    dipole2 = SingleParam("Dipole squared",components, dipole2 ./ m)
+    dipole = SingleParam("Dipole",components, sqrt.(dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3)))
+    params["dipole"] = dipole
+    params["dipole2"] = dipole2
+
     return params
 end
 
@@ -249,9 +272,9 @@ function  Δ(model::HeterogcPCPSAFT, V, T, z,_data=@f(data))
     return Δout
 end
 
-#TODO
-function a_polar(model ::gcPCPSAFTModel, V, T, z, _data=@f(data))
-    return zero(V+T+first(z))
-end
+#polar overloads
+@inline pcp_sigma(model::HeterogcPCPSAFT) = model.params.comp_sigma.values
+@inline pcp_epsilon(model::HeterogcPCPSAFT) = model.params.comp_epsilon.values
+@inline pcp_segment(model::HeterogcPCPSAFT) = model.params.comp_segment.values
 
 export HeterogcPCPSAFT

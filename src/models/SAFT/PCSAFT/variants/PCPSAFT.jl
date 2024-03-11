@@ -92,8 +92,26 @@ function a_res(model ::PCPSAFTModel, V, T, z)
     return @f(a_hc,_data) + @f(a_disp,_data) + @f(a_assoc,_data) + @f(a_polar,_data)
 end
 
+#accessors for some properties
+#used in Hetero-gc-PCP-SAFT
+
+@inline pcp_sigma(model) = model.params.sigma.values
+@inline pcp_segment(model) = model.params.segment.values
+@inline pcp_epsilon(model) = model.params.epsilon.values
+@inline pcp_dipole(model) = model.params.dipole.values
+@inline function pcp_dipole2(model) 
+    params = model.params
+    if hasfield(typeof(params),:dipole2)
+        return params.dipole2.values
+    else
+        μ = pcp_dipole(model)
+        m = pcp_segment(model)
+        return μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3)
+    end
+end
+
 function a_polar(model ::PCPSAFTModel, V, T, z, _data=@f(data))
-    dipole = model.params.dipole.values
+    dipole = pcp_dipole(model)
     if all(iszero,dipole)
         return zero(V+T+first(z))
     end
@@ -109,10 +127,10 @@ function a_2(model ::PCPSAFTModel, V, T, z, _data=@f(data))
     ρ = N_A*∑z/V
     _a_2 = zero(T+V+first(z))
     nc = length(model)
-    m = model.params.segment.values
-    ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values
-    μ̄² = model.params.dipole2.values
+    m = pcp_segment(model)
+    ϵ = pcp_epsilon(model)
+    σ = pcp_sigma(model)
+    μ̄² = pcp_dipole2(model)
     @inbounds for i ∈ 1:nc
         _J2_ii = @f(J2,i,i,η,m,ϵ)
         zᵢ = z[i]
@@ -135,10 +153,10 @@ function a_3(model ::PCPSAFTModel, V, T, z, _data=@f(data))
     ρ = N_A*∑z/V
     _,_,_,_,η,_ = _data
     _a_3 = zero(T+V+first(z))
-    m = model.params.segment.values
-    ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values
-    μ̄² = model.params.dipole2.values
+    m = pcp_segment(model)
+    ϵ = pcp_epsilon(model)
+    σ = pcp_sigma(model)
+    μ̄² = pcp_dipole2(model)
     nc = length(model)
 
     @inbounds for i ∈ 1:nc
@@ -169,7 +187,7 @@ function a_3(model ::PCPSAFTModel, V, T, z, _data=@f(data))
     return _a_3
 end
 
-function J2(model, V, T, z, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵ = model.params.epsilon.values)
+function J2(model, V, T, z, i, j, η = @f(ζ,3),m = pcp_segment(model),ϵ = pcp_epsilon(model))
     corr_a = PCPSAFTconsts.corr_a
     corr_b = PCPSAFTconsts.corr_b
     m̄ = min(sqrt(m[i]*m[j]),2*one(m[i]))
@@ -180,7 +198,7 @@ function J2(model, V, T, z, i, j, η = @f(ζ,3),m = model.params.segment.values,
     return evalpoly(η,cij)
 end
 
-function J3(model, V, T, z, i, j, k, η = @f(ζ,3),m = model.params.segment.values)
+function J3(model, V, T, z, i, j, k, η = @f(ζ,3),m = pcp_segment(model),ϵ = pcp_epsilon(model))
     corr_c = PCPSAFTconsts.corr_c
     m̄ = min(cbrt(m[i]*m[j]*m[k]),2*one(m[i]))
     cijk = _ppcsaft_corr_poly(corr_c,m̄)
