@@ -22,32 +22,49 @@ default_gclocations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/He
 
 function transform_params(::Type{HeterogcPCPSAFT},params,groups)
     
-    sigma = params["sigma"]
-    sigma.values .*= 1E-10
+    gc_sigma = params["sigma"]
+    gc_sigma.values .*= 1E-10
     params = saft_lorentz_berthelot(params)
-    
     sites = params["sites"]
     comp_sites = gc_to_comp_sites(sites,groups)
     params["sites"] = comp_sites
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
     assoc_options = params["assoc_options"]
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options,sites) #combining rules for association
+    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options,sites) #combining rules for association
     params["bondvol"] = gc_to_comp_sites(gc_bondvol,comp_sites)
     params["epsilon_assoc"] = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
+    
+    #mixing for dipole
     gc_μ = get!(params,"dipole") do
         SingleParam("dipole",components)
     end
     gc_segment = params["segment"]
-    m = group_sum(groups,gc_segment)
-    params["comp_segment"] = m
-    gc_μ2 = SingleParam("Dipole squared",groups.flattenedgroups, μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3))
+    segment = group_sum(groups,gc_segment)
+    params["comp_segment"] = segment
+    gc_μ2 = SingleParam("Dipole squared",groups.flattenedgroups, μ.^2 ./ gc_segment ./ k_B*1e-36*(1e-10*1e-3))
     dipole2 = group_sum(groups,gc_dipole2)
-    dipole2 = SingleParam("Dipole squared",components, dipole2 ./ m)
+    dipole2 = SingleParam("Dipole squared",components, dipole2 ./ segment)
     dipole = SingleParam("Dipole",components, sqrt.(dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3)))
     params["dipole"] = dipole
     params["dipole2"] = dipole2
 
+    #mixing for comp_epsilon
+    gc_epsilon = gc_params["epsilon"]
+    gc_epsilon.values .*= gc_segment.values
+    epsilon = group_sum(groups,gc_epsilon)
+    epsilon.values ./= segment.values
+    params["comp_epsilon"] = epsilon_LorentzBerthelot(epsilon)
+
+    #mixing for comp_sigma
+    gc_sigma = deepcopy(params["sigma"])
+    gc_sigma_vals .^= 3
+    gc_sigma.values .*= gc_segment.values
+    sigma = group_sum(groups,gc_sigma)
+    sigma.values ./= segment.values
+    sigma.values .= cbrt.(sigma.values)
+    params["comp_sigma"] = sigma_LorentzBerthelot(sigma)
+    
     return params
 end
 
