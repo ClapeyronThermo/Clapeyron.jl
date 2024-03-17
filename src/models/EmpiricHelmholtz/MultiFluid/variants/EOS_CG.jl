@@ -1,12 +1,22 @@
 """
-    EOS_CG::MultiFluid
-    EOS_CG(components::Vector{String};Rgas = 8.314472,verbose = false)
+    EOS_LNG::MultiFluid
 
-## Input Parameters
+    EOS_LNG(components::Vector{String};
+    Rgas = R̄,
+    reference_state = nothing,
+    verbose = false)
+
+## input Parameters
 
 None
 
 ## Description
+
+EOS-LNG: A Fundamental Equation of State for the Calculation of Thermodynamic Properties of Liquefied Natural Gases. valid for 21 compounds (`Clapeyron.GERG2008_names`). the EoS has new binary-specific parameters for methane + n-butane, methane + isobutane, methane + n-pentane, and methane + isopentane.
+
+It uses the same functional form as [`GERG2008`](@ref).
+
+## References
 
 EOS-CG: : A Mixture Model for the Calculation of Thermodynamic Properties of CCS Mixtures
 

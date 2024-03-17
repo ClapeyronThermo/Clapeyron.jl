@@ -96,6 +96,17 @@ end
 get_only_comp(x::Vector{String}) = only(x)
 get_only_comp(x::String) = x
 
+#compare filenames using Clapeyron string criteria
+function compare_empiric_names(filename,input)
+    norm_filename = normalisestring(last(splitdir(first(splitext(x)))))
+    for name in eachsplit(norm_filename,"~|~")
+        if name == input
+            return true
+        end
+    end
+    return false
+end
+
 function get_json_data(components;
     userlocations = String[],
     coolprop_userlocations = true,
@@ -106,7 +117,7 @@ function get_json_data(components;
     if first(component) != '{' #not json
         _paths = flattenfilepaths(["Empiric"],userlocations)
         norm_comp1 = normalisestring(component)
-        f0 = x -> normalisestring(last(splitdir(first(splitext(x))))) == norm_comp1
+        f0 = x -> compare_empiric_names(x,norm_comp1)
         found_paths = filter(f0,_paths)
         if iszero(length(found_paths))
             verbose && @info "JSON for $(info_color(component)) not found in supplied paths"
