@@ -1,5 +1,23 @@
 Clapeyron Database File,,,,,,,
 sCPA Assoc Parameters,,,,,,,
-species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol
-water,O,e,water,O,H,166.55947239815478,69.2
-carbon dioxide,,e,water,O,H,83.28,183.6
+species1,site1,species2,site2,epsilon_assoc,bondvol
+water,e,water,H,2003.25,0.0692
+carbon dioxide,e,water,H,1001.6281727958225,0.1836
+hydrogen sulfide,e,hydrogen sulfide,H,448.1756874899118,0.04745
+methanol,e,methanol,H,2957.6174828556764,0.0161
+ethanol,e,ethanol,H,2589.7043487799774,0.008
+propanol,e,propanol,H,2525.719455897247,0.0081
+2-propanol,e,propanol,H,2525.719455897247,0.0091
+butanol,e,butanol,H,2525.719455897247,0.0082
+pentanol,e,pentanol,H,2525.719455897247,0.0036
+octanol,e,octanol,H,3218.3679485883063,0.00014
+formic acid,e,formic acid,H,5041.4563063259475,0.0155
+acetic acid,e,acetic acid,H,4849.742172387842,0.0045
+propanoic acid,e,propanoic acid,H,4807.887392832974,0.0021
+ethylene glycol,e,ethylene glycol,H,2375.6195568039248,0.0141
+diethylene glycol,e,diethylene glycol,H,2367.4410366610196,0.0064
+triethylene glycol,e,triethylene glycol,H,1724.3447542475633,0.0188
+propylene glycol,e,propylene glycol,H,2097.7904166552275,0.019
+methylamine,e,methylamine,H,1379.042822919897,0.0337
+ethylamine,e,ethylamine,H,1120.6376681105999,0.043
+diethylamine,e,diethylamine,H,445.10393154212056,0.1108

@@ -18,8 +18,8 @@ export LJRef
 """
     LJRef <: EmpiricHelmholtzModel
     LJRef(components;
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 ## Input parameters
 - `sigma`: Single Parameter (`Float64`) - particle size [Å]
 - `epsilon`: Single Parameter (`Float64`) - dispersion energy [`K`]
@@ -43,9 +43,9 @@ a⁰(δ,τ,z) = ∑xᵢ(a⁰ᵢ + log(xᵢ))
 τ = 1.32ϵ/T
 δ = n(Nₐσ^3)/0.31V
 aʳ(δ,τ)  = aʳ₁+ aʳ₂ + aʳ₃ + aʳ₄
-aʳ₁(δ,τ)  =  ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:6
-aʳ₂(δ,τ)  =  ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 7:12
-aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 13:23
+aʳ₁(δ,τ)  = ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:6
+aʳ₂(δ,τ)  = ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 7:12
+aʳ₃(δ,τ)  = ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 13:23
 ```
 parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 !!! warning "Multiple component warning"
@@ -56,11 +56,11 @@ parameters `n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
 LJRef
 
 function LJRef(components;
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 
     components = format_components(components)
-    params = getparams(components, ["SAFT/PCSAFT"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["SAFT/PCSAFT"]; userlocations = userlocations, verbose = verbose)
     Mw = params["Mw"]
     params["sigma"].values .*= 1E-10
     k = get(params,"k",nothing)
@@ -148,9 +148,9 @@ function eos(model::LJRef,V,T,z = SA[1.0])
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
     δ = (Σz*V0)/(0.31*V)
-    αr =  m̄*reduced_a_res(model,δ,τ)
+    αr = m̄*reduced_a_res(model,δ,τ)
     x1 = R̄*T*Σz*αr
-    x2 =  R̄*T*α0
+    x2 = R̄*T*α0
     return x1+x2
 end
 
@@ -170,7 +170,7 @@ function eos_res(model::LJRef,V,T,z = SA[1.0])
     V0,T0,m̄ = VT_scale(model,z)
     τ = 1.32/(T/T0)
     δ = (ρ*V0)/0.31
-    αr =  m̄*reduced_a_res(model,δ,τ)
+    αr = m̄*reduced_a_res(model,δ,τ)
     return R̄*T*Σz*αr
 end
 
@@ -179,8 +179,8 @@ function x0_sat_pure(model::LJRef,T)
     Tc = T_scale(model)
     vl0,vv0 = x0_sat_pure(model.unscaled_lj,T/Tc)
     vl0,vv0
-    vl =  (m̄*N_A*σ3)*vl0
-    vv =  (m̄*N_A*σ3)*vv0
+    vl = (m̄*N_A*σ3)*vl0
+    vv = (m̄*N_A*σ3)*vv0
     return vl,vv
 end
 
@@ -205,7 +205,7 @@ LJRefIdeal(lj::LJRef) = LJRefIdeal(lj.components,lj.params,lj.unscaled_lj,lj.ref
 LJRef(lj::LJRefIdeal) = LJRef(lj.components,lj.params,lj.unscaled_lj,lj.references)
 idealmodel(model::LJRef) = LJRefIdeal(model)
 
-function LJRefIdeal(components;userlocations=String[], verbose=false)
+function LJRefIdeal(components;userlocations = String[], verbose = false)
     lj = LJRef(components;userlocations,verbose)
     return LJRefIdeal(lj)
 end
@@ -236,8 +236,8 @@ end
 """
     LJRefIdeal <: IdealModel
     LJRef(components;
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 

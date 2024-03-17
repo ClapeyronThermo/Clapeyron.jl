@@ -137,7 +137,7 @@ function Compressed4DMatrix(x::MatrixofMatrices{T}) where T
     #self association
     __set_idx_4d!(x,values,indices)
 
-    idx =  sortperm(indices)
+    idx = sortperm(indices)
     indices = indices[idx]
     outer_indices = [(c[1],c[2]) for c ∈ indices]
     inner_indices = [(c[3],c[4]) for c ∈ indices]

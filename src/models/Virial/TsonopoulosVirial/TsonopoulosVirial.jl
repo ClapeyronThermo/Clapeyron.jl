@@ -12,10 +12,10 @@ default_references(::Type{TsonopoulosVirial}) = ["10.1002/aic.690200209"]
 """
     TsonopoulosVirial <: SecondVirialModel
     TsonopoulosVirial(components;
-            idealmodel=BasicIdeal,
-            userlocations=String[],
-            ideal_userlocations=String[],
-            verbose=false)
+            idealmodel = BasicIdeal,
+            userlocations = String[],
+            ideal_userlocations = String[],
+            verbose = false)
 
 ## Input parameters
 
@@ -97,7 +97,7 @@ function second_virial_coefficient_impl(model::TsonopoulosVirial,T,z=SA[1.0])
             #mixing, todo: implement mixing at the EoS level, like cubics
             Tcij = sqrt(Tci*Tcj)
             Pcij = 0.5*(Pci+Pcj)
-            ωij =  0.5*(ωi+ωj)
+            ωij = 0.5*(ωi+ωj)
             zj = z[j]
             τ = Tci/T
             B0 = 0.335 - 0.43*τ -  0.1385*τ*τ - 0.0121*τ*τ*τ - 0.000607*τ^8

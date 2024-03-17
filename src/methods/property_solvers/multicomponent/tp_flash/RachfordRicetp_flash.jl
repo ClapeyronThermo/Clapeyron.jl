@@ -13,7 +13,7 @@ Only two phases are supported. if `K0` is `nothing`, it will be calculated via t
 - `vol0` = optional, initial guesses for phase x and phase y volumes
 - `K_tol` = tolerance to stop the calculation
 - `max_iters` = number of Successive Substitution iterations to perform
-- `nacc` =  accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
+- `nacc` = accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
 - `noncondensables` = arrays with names (strings) of components non allowed on the liquid phase. In the case of LLE equilibria, corresponds to the `x` phase
 - `nonvolatiles` = arrays with names (strings) of components non allowed on the vapour phase. In the case of LLE equilibria, corresponds to the `y` phase
 
@@ -64,7 +64,7 @@ function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
 
     model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
 
-    x,y,β =  tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium,
+    x,y,β = tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium,
     K0 = method.K0, x0 = method.x0, y0 = method.y0, vol0 = method.v0,
     K_tol = method.K_tol,itss = method.max_iters, nacc=method.nacc,
     non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,

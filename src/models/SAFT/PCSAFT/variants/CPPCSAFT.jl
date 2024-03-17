@@ -14,12 +14,15 @@ export CPPCSAFT
 
 """
     CPPCSAFTModel <: PCSAFTModel
+
     CPPCSAFT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
+
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
@@ -185,6 +188,13 @@ function I(model::CPPCSAFTModel, V, T, z, n, _data=@f(data))
         res +=ki*η^ii
     end
     return res
+end
+
+function lb_volume(model::CPPCSAFTModel, z = SA[1.0])
+    m = model.params.segment.values
+    σ = model.params.sigma.values
+    val = π/6*N_A*sum(z[i]*m[i,i]*σ[i,i]^3 for i in 1:length(z))
+    return val
 end
 
 const CPPCSAFTconsts = (

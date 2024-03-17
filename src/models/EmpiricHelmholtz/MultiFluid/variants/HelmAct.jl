@@ -5,12 +5,12 @@
         activity = PSRKUNIFAC,
         activity_userlocations = String[],
         estimate_pure = false,
-        coolprop_userlocations = true,
+        coolprop_userlocations = false,
         Rgas = R̄,
-        verbose = false,
-        )
+        reference_state = nothing,
+        verbose = verbose)
 
-## Input Parameters
+## input Parameters
 
 - CoolProp JSON pure fluid files
 
@@ -46,8 +46,8 @@ function HelmAct(components;
     estimate_pure = false,
     coolprop_userlocations = true,
     Rgas = R̄,
-    verbose = false,
-    )
+    reference_state = nothing,
+    verbose = false)
 
     init_activity = init_model(activity,components,activity_userlocations,verbose)
     if has_groups(init_activity)
@@ -63,7 +63,8 @@ function HelmAct(components;
         estimate_pure = estimate_pure,
         coolprop_userlocations = coolprop_userlocations,
         Rgas = Rgas,
-        verbose = false,
+        reference_state = reference_state,
+        verbose = verbose,
         idealmodel = idealmodel,
         ideal_userlocations = ideal_userlocations,
         )

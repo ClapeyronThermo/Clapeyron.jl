@@ -18,7 +18,7 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
 end
 
 function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    _0 = zero(p+T+first(z))
+    _0 = zero(p+T+first(z)+oneunit(eltype(model)))
     _1 = one(_0)
     isnan(V0) && return _0/_0
     pset = _1*p
@@ -92,17 +92,27 @@ end
 #(z = pV/RT)
 #(RT/p = V/z)
 """
-    volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true)
+    volume(model::EoSModel, p, T, z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
 
-Calculates the volume (m³) of the compound modelled by `model` at a certain pressure,temperature and moles.
+Calculates the volume (m³) of the compound modelled by `model` at a certain pressure, temperature and moles.
 `phase` is a Symbol that determines the initial volume root to look for:
 - If `phase =:unknown` (Default), it will return the physically correct volume root with the least gibbs energy.
 - If `phase =:liquid`, it will return the volume of the phase using a liquid initial point.
 - If `phase =:vapor`, it will return the volume of the phase using a gas initial point.
 - If `phase =:solid`, it will return the volume of the phase using a solid initial point (only supported for EoS that support a solid phase)
 - If `phase =:stable`, it will return the physically correct volume root with the least gibbs energy, and perform a stability test on the result.
+
 All volume calculations are checked for mechanical stability, that is: `dP/dV <= 0`.
-The calculation of both volume roots can be calculated in serial (`threaded=false`) or in parallel (`threaded=true`)
+
+The calculation of both volume roots can be calculated in serial (`threaded=false`) or in parallel (`threaded=true`).
+
+An initial estimate of the volume `vol0` can be optionally be provided.
+
+!!! tip
+    The volume computation may fail and return `NaN` because the default initial point is too far from the actual volume.
+    Providing a value for `vol0` may help in these situations.
+    Such a starting point can be found from physical knowledge, or by computing the volume using a different model for example.
+
 !!! warning "Stability checks"
     The stability check is disabled by default. that means that the volume obtained just follows the the relation `P = pressure(model,V,T,z)`.
     For single component models, this is alright, but phase splits (with different compositions that the input) can and will occur, meaning that
@@ -114,7 +124,7 @@ The calculation of both volume roots can be calculated in serial (`threaded=fals
     isstable(model,v,T,z)
     ```
 """
-function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown,threaded=true,vol0=nothing)
+function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0=nothing)
     return volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
@@ -125,29 +135,49 @@ function _v_stable(model,V,T,z,phase)
     return isstable(model,V,T,z)
 end
 
-function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,vol0=nothing)
+fluid_model(model) = model
+solid_model(model) = model
+
+function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
+    return _volume_impl(model,p,T,z,phase,threaded,vol0)
+end
+
+function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
 #Threaded version
-    TYPE = typeof(p+T+first(z)+one(eltype(model)))
+    check_arraysize(model,z)
+    TYPE = typeof(p+T+first(z)+oneunit(eltype(model)))
     nan = zero(TYPE)/zero(TYPE)
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
-     
+    fluid = fluid_model(model)
+    solid = solid_model(model)
+
     if !isnothing(vol0)
         if !isnan(vol0)
             V0 = vol0
-            V = _volume_compress(model,p,T,z,V0)
+            if is_solid(phase) #to allow specification of the model.
+                return _volume_compress(solid,p,T,z,V0)
+            end
+            V = _volume_compress(fluid,p,T,z,V0)
+            if solid !== fluid && isnan(V)
+                return _volume_compress(solid,p,T,z,V0)
+            end
             return V
         end
     end
 
     if phase != :unknown
         V0 = x0_volume(model,p,T,z,phase=phase)
-        V = _volume_compress(model,p,T,z,V0)
+        if is_solid(phase)
+            V = _volume_compress(solid,p,T,z,V0)
+        else
+            V = _volume_compress(fluid,p,T,z,V0)
+        end
         #isstable(model,V,T,z,phase) the user just wants that phase
         return V
     end
-    Vg0 = x0_volume(model,p,T,z,phase=:v)
-    Vl0 = x0_volume(model,p,T,z,phase=:l)
-    Vs0 = x0_volume_solid(model,T,z) #Needs to be const-propagated.
+    Vg0 = x0_volume(fluid,p,T,z,phase=:v)
+    Vl0 = x0_volume(fluid,p,T,z,phase=:l)
+    Vs0 = x0_volume_solid(solid,T,z) #Needs to be const-propagated.
     volumes0 = (Vg0,Vl0,Vs0)
     if threaded
         #=
@@ -161,28 +191,27 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
         v3::TYPE = take!(ch) 
         volumes = (v1,v2,v3)
         =#
-        
-        _Vg = Threads.@spawn _volume_compress($model,$p,$T,$z,$Vg0)
-        _Vl = Threads.@spawn _volume_compress($model,$p,$T,$z,$Vl0)
+        _Vg = StableTasks.@spawn _volume_compress($fluid,$p,$T,$z,$Vg0)
+        _Vl = StableTasks.@spawn _volume_compress($fluid,$p,$T,$z,$Vl0)
         if !isnan(Vs0)
-            _Vs = Threads.@spawn _volume_compress($model,$p,$T,$z,$Vs0)
+            _Vs = StableTasks.@spawn _volume_compress($solid,$p,$T,$z,$Vs0)
         else
             _Vs = nan
         end
-        Vg::TYPE = fetch(_Vg)
-        Vl::TYPE = fetch(_Vl)
-        Vs::TYPE = fetch(_Vs)
+        Vg = fetch(_Vg)::TYPE
+        Vl = fetch(_Vl)::TYPE
+        Vs = fetch(_Vs)::TYPE
         volumes = (Vg,Vl,Vs)
     else
-        Vg =  _volume_compress(model,p,T,z,Vg0)
-        Vl =  _volume_compress(model,p,T,z,Vl0)
-        Vs =  _volume_compress(model,p,T,z,Vs0)
+        Vg = _volume_compress(fluid,p,T,z,Vg0)
+        Vl = _volume_compress(fluid,p,T,z,Vl0)
+        Vs = _volume_compress(solid,p,T,z,Vs0)
         volumes = (Vg,Vl,Vs)
     end
     
-    function gibbs(fV)
+    function gibbs(m,fV)
         isnan(fV) && return one(fV)/zero(fV)
-        _df,_f =  ∂f(model,fV,T,z)
+        _df,_f = ∂f(m,fV,T,z)
         dV,_ = _df
         return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
     end
@@ -194,13 +223,23 @@ function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown,threaded=true,
     elseif valid == 1 #only one possible volume
         idx = findfirst(!isnan,volumes)::Int
         v = volumes[idx]
-        _v_stable(model,v,T,z,phase)
+        if idx == 3
+            _v_stable(solid,v,T,z,phase)
+        else
+            _v_stable(fluid,v,T,z,phase)
+        end
         return v        
     else
-        g = gibbs.(volumes)
+        v1,v2,v3 = volumes
+        g1,g2,g3 = gibbs(fluid,v1),gibbs(fluid,v2),gibbs(solid,v3)
+        g = (g1,g2,g3)
         _,idx = findmin(g)
         v = volumes[idx]
-        _v_stable(model,v,T,z,phase)
+        if idx == 3
+            _v_stable(solid,v,T,z,phase)
+        else
+            _v_stable(fluid,v,T,z,phase)
+        end
         return v
     end
 end
@@ -215,7 +254,7 @@ function _label_and_volumes(model::EoSModel,cond)
     Vv = volume(model,p,T,z,phase =:v)
     function gibbs(fV)
         isnan(fV) && return one(fV)/zero(fV)
-        _df,_f =  ∂f(model,fV,T,z)
+        _df,_f = ∂f(model,fV,T,z)
         dV,_ = _df
         return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
     end

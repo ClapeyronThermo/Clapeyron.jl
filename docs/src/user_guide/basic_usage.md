@@ -252,13 +252,15 @@ The functions for the physical properties that we currently support are as follo
 
     The default value is `:unknown` where it will find both the vapour and liquid roots first and determine which has the lowest Gibbs free energy.
 
-  - `threaded`: This determines whether or not to run the vapour and liquid calculations in parallel or not and is only relevant for when the phases are unknown and non-cubic models. 
+  - `threaded`: This determines whether or not to run the vapour and liquid calculations in parallel or not and is only relevant for when the phases are unknown and non-cubic models.
 
-    ```
+    ```julia
     V = volume(model, p, T, z; threaded=false)
     ```
 
     The default value is `true`. This shouldn't change the results.
+
+  Most of the above functions also accept the `vol0` optional keyword argument, which specifies an initial guess for the [Clapeyron.volume](@ref) solver.
 
   Note that all of the above functions can be broadcast _i.e._ if `T` is an array, instead of a for loop, we can simply:
 

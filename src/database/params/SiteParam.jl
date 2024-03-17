@@ -127,7 +127,7 @@ end
 
 function SiteParam(input::PARSED_GROUP_VECTOR_TYPE,sourcecsvs::Vector{String}=String[])
     components = [first(i) for i ∈ input]
-    raw_sites =  [last(i) for i ∈ input]
+    raw_sites = [last(i) for i ∈ input]
     sites = [first.(sitepairs) for sitepairs ∈ raw_sites]
     n_sites = [last.(sitepairs) for sitepairs ∈ raw_sites]
     return SiteParam(components,sites,n_sites,sourcecsvs)
@@ -353,7 +353,7 @@ end
 function get_group_idx(param::SiteParam,i,j,a,b)
     site_translator::Vector{Vector{NTuple{2,Int}}} = param.site_translator
     k,_ = site_translator[i][a]
-    l,_ =  site_translator[j][b]
+    l,_ = site_translator[j][b]
   return k,l
 end
 

@@ -42,7 +42,7 @@ function COSMOSAC02(components;
     userlocations = String[],
     pure_userlocations = String[],
     use_nist_database = false,
-    verbose=false)
+    verbose = false)
     formatted_components = format_components(components)
 
     if use_nist_database
@@ -67,7 +67,7 @@ function COSMOSAC02(components;
         V = SingleParam("V",formatted_components,V)
         Pi = SingleParam("Pi",formatted_components,Pi)
     else
-        params = getparams(formatted_components, default_locations(COSMOSAC02); userlocations=userlocations, verbose=verbose)
+        params = getparams(formatted_components, default_locations(COSMOSAC02); userlocations = userlocations, verbose = verbose)
         Pi  = COSMO_parse_Pi(params["Pi"])
         A  = params["A"]
         V  = params["V"]
@@ -123,7 +123,7 @@ function lnγ_res(model::COSMOSAC02Model,V,T,z)
     
     lnΓS = @f(lnΓ,PS)
     lnΓi = [@f(lnΓ,Pi[i]./A[i]) for i ∈ @comps]
-    lnγ_res_ =  [n[i]*sum(Pi[i][v]/A[i]*(lnΓS[v]-lnΓi[i][v]) for v ∈ 1:51) for i ∈ @comps]
+    lnγ_res_ = [n[i]*sum(Pi[i][v]/A[i]*(lnΓS[v]-lnΓi[i][v]) for v ∈ 1:51) for i ∈ @comps]
     
     return lnγ_res_
 end

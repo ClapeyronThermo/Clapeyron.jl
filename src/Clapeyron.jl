@@ -17,13 +17,14 @@ using NLSolvers
 using NLSolvers: NEqOptions
 using DiffResults, ForwardDiff
 using Downloads #for bibtex
+using StableTasks #for multithreaded volume
 
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
 
 include("modules/solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log, sqrt, log1p, ^
+using .Solvers: log, sqrt, log1p, ^, dnorm
 
 #misc functions, useful for EoS, don't depend on models
 include("modules/eosfunctions/EoSFunctions.jl")
@@ -91,13 +92,9 @@ include("utils/acceleration_ss.jl")
 #Clapeyron methods (AD, property solvers, etc)
 include("methods/methods.jl")
 
-#Unitful support, transition from dependency to ext
-if !isdefined(Base,:get_extension)
-    include("../ext/ClapeyronUnitfulExt.jl")
-end
 #=
 the dependency chain is the following:
-base --> database(params)  -|-> split_model --> methods -|-> models                     
+base --> database(params)  -|-> split_model --> methods -|-> models
                             |-> macros ------------------|
 =#
 
@@ -111,6 +108,7 @@ include("models/ideal/ReidIdeal.jl")
 include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
 include("models/ideal/CPLNGEstIdeal.jl")
+include("models/ideal/ShomateIdeal.jl")
 
 #AlyLee Ideal uses gerg 2008 terms
 include("models/EmpiricHelmholtz/term_functions.jl")
@@ -173,8 +171,10 @@ include("models/SAFT/SAFTVRSW/SAFTVRSW.jl")
 include("models/SAFT/LJSAFT/LJSAFT.jl")
 include("models/SAFT/softSAFT/softSAFT.jl")
 include("models/SAFT/softSAFT/variants/softSAFT2016.jl")
+include("models/SAFT/softSAFT/variants/solidsoftSAFT.jl")
 include("models/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
+include("models/SAFT/SAFTVRMie/variants/SAFTVRSMie.jl")
 include("models/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
 include("models/SAFT/SAFTgammaMie/variants/structSAFTgammaMie.jl")
 include("models/SAFT/CKSAFT/CKSAFT.jl")
@@ -227,13 +227,16 @@ include("models/LatticeFluid/SanchezLacombe/SanchezLacombe.jl")
 
 include("models/Virial/Virial.jl")
 
-#include("models/UFTheory/UFTheory.jl")
-
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
 include("models/PeTS/PeTS.jl")
-include("models/UFTheory/UFTheory.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
+
+#Unitful support, transition from dependency to ext
+if !isdefined(Base,:get_extension)
+    include("../ext/ClapeyronUnitfulExt.jl")
+end
+
 include("utils/misc.jl")
 
 include("estimation/estimation.jl")

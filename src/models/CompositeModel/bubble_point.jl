@@ -1,23 +1,19 @@
-function init_preferred_method(method::typeof(bubble_pressure),model::ActivityModel,kwargs)
+function init_preferred_method(method::typeof(bubble_pressure),model::RestrictedEquilibriaModel,kwargs)
     gas_fug = get(kwargs,:gas_fug,false)
     poynting = get(kwargs,:poynting,false)
     return ActivityBubblePressure(;gas_fug,poynting,kwargs...)
 end
 
-function bubble_pressure(model::ActivityModel, T, x, method::BubblePointMethod)
-    if !(method isa ActivityBubblePressure)
-        throw(error("$method not supported by Activity models"))
+function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::ActivityBubblePressure) 
+    if model isa GammaPhi
+        pmodel = model.fluid.model
+        pure = model.fluid.pure
+    else
+        pmodel = model
+        pure = split_model(pmodel,1:length(model))
     end
-    _T = typeof(T)
-    _x = typeof(x)
-    #this is done to reuse the index_reduction strategy done in the main function.
-    Base.invoke(bubble_pressure,Tuple{EoSModel,_T,_x,BubblePointMethod},model,T,x,method)
-end
 
-function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePressure)
-    sat = saturation_pressure.(model.puremodel,T)
-    pmodel = model.puremodel.model
-    pure = model.puremodel.pure
+    sat = saturation_pressure.(pure,T)
     p_pure = first.(sat)
     vl_pure = getindex.(sat,2)
     vv_pure = last.(sat)
@@ -55,7 +51,7 @@ function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePre
         for i in eachindex(γ)
             pᵢ = p_pure[i]
             vpureᵢ = vl_pure[i]
-            ϕ̂ᵢ =  ϕpure[i]
+            ϕ̂ᵢ = ϕpure[i]
             if method.poynting && method.gas_fug
                 ln𝒫 = vpureᵢ*(p - pᵢ)/RT
                 𝒫 = exp(ln𝒫)
@@ -81,34 +77,32 @@ function bubble_pressure_impl(model::ActivityModel,T,x,method::ActivityBubblePre
     return (p,vl,vv,y)
 end
 
-function init_preferred_method(method::typeof(bubble_temperature),model::ActivityModel,kwargs)
+function init_preferred_method(method::typeof(bubble_temperature),model::RestrictedEquilibriaModel,kwargs)
     gas_fug = get(kwargs,:gas_fug,false)
     poynting = get(kwargs,:poynting,false)
     return ActivityBubbleTemperature(;gas_fug,poynting,kwargs...)
 end
 
-function bubble_temperature(model::ActivityModel, T, x, method::BubblePointMethod)
-    if !(method isa ActivityBubbleTemperature)
-        throw(error("$method not supported by Activity models"))
+function bubble_temperature_impl(model::RestrictedEquilibriaModel,p,x,method::ActivityBubbleTemperature)
+    if model isa GammaPhi
+        pmodel = model.fluid.model
+        pure = model.fluid.pure
+    else
+        pmodel = model
+        pure = split_model(pmodel,1:length(model))
     end
-    _T = typeof(T)
-    _x = typeof(x)
-    Base.invoke(bubble_temperature,Tuple{EoSModel,_T,_x,BubblePointMethod},model,T,x,method)
-end
 
-function bubble_temperature_impl(model::ActivityModel,p,x,method::ActivityBubbleTemperature)
-    f(z) = Obj_bubble_temperature(model,z,p,x)
-        pure = model.puremodel
-        sat = saturation_temperature.(pure,p)
-        Ti   = first.(sat)
-        T0 = dot(Ti,x)
-        T = Roots.find_zero(f,T0)
+    f(z) = Obj_bubble_temperature(model,z,p,x,pure)
+    sat = saturation_temperature.(pure,p)
+    Ti   = first.(sat)
+    T0 = dot(Ti,x)
+    T = Roots.find_zero(f,T0)
     p,vl,vv,y = bubble_pressure(model,T,x,ActivityBubblePressure(gas_fug = method.gas_fug,poynting = method.poynting))
     return (T,vl,vv,y)
 end
 
-function Obj_bubble_temperature(model::ActivityModel,T,p,x)
-    sat = saturation_pressure.(model.puremodel,T)
+function Obj_bubble_temperature(model::GammaPhi,T,p,x,pure)
+    sat = saturation_pressure.(pure,T)
     p_sat = [tup[1] for tup in sat]
     γ     = activity_coefficient(model,p,T,x)
     y     = x.*γ.*p_sat ./ p

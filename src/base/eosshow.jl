@@ -10,6 +10,9 @@ function _custom_show(Base.@nospecialize(model))
     hasfield(typeof(model),:components)
 end 
 
+#function used to customize the first line to your liking
+show_info(io,model) = nothing
+
 function show_params(io,model)
     hasfield(typeof(model),:params) || return nothing
     iszero(fieldcount(typeof(model.params))) && return nothing
@@ -49,12 +52,11 @@ function eosshow(io::IO, mime::MIME"text/plain", Base.@nospecialize(model::EoSMo
             print(io,"Group Type: ",groups.grouptype)
         else
             show_pairs(io,model.components)
-
         end
     else
         print(io,"()")
     end
-
+    show_info(io,model)
     show_params(io,model)
     may_show_references(io,model)
 end

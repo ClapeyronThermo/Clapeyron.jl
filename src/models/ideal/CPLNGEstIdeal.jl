@@ -1,5 +1,5 @@
 struct CPLNGEstIdealParam <: EoSParam
-    coeffs::SingleParam{NTuple{4,Float64}}
+    coeffs::SingleParam{NTuple{5,Float64}}
     Mw::SingleParam{Float64}
 end
 
@@ -7,9 +7,11 @@ end
 
 """
     CPLNGEstIdeal <: ReidIdealModel
+
     CPLNGEstIdeal(components; 
-    userlocations::Array{String,1}=String[], 
-    verbose=false)
+    userlocations = String[],
+    reference_state = nothing,
+    verbose = false)
 
 ## Input parameters
 
@@ -18,7 +20,7 @@ end
 ## Model parameters
 
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `coeffs`: Single Parameter (`NTuple{4,Float64}`) - polynomial coefficients
+- `coeffs`: Single Parameter (`NTuple{5,Float64}`) - polynomial coefficients
 
 ## Description
 

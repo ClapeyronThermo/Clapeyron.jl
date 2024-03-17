@@ -130,62 +130,42 @@ function dew_pressure(model::EoSModel, T, y,method::DewPointMethod)
     end
 end
 
-function antoine_dew(pure,T,y,crit,condensables)
-    pinv = zero(T+first(x)+first(crit)[1])
-    for i in 1:length(pure)
-        if condensables[i] #if non-volatile, pi -> 0
-            pᵢ = aprox_psat(pure,T,crit)
-            pᵢyᵢ = y[i]/pᵢ
-            pinv += pᵢyᵢ
-        end
-    end
-    p = 1/pinv
-    return p
-end
 
-function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)))
-    pure = split_model(model)
-    crit = crit_pure.(pure)
-    sat = initial_points_bd_p.(pure,crit,p,condensables,false)
-    
+
+function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
+    sat = initial_points_bd_p.(pure,p,condensables)
+    if crit === nothing
+        _crit = __crit_pure.(sat,pure,condensables)
+    else
+        _crit = crit
+    end
+    fix_sat_ti!(sat,pure,_crit,p,condensables)
     if Tx0 !== nothing
         T0 = Tx0
-    elseif !any(crit_i -> crit_i[2] < p,crit) #p < min(pci), proceed with entalphy aproximation:
-        dPdTsat = __dPdTsat.(pure,sat,condensables,false)
-        ##initialization for T, dew form
-        #= we solve the aproximate problem of finding T such as:
-        p = sum(yi*pi(T))
-        where pi ≈ p + dpdt(T-T0)
-        for a dew specification:
-        sum(xi*pi(T))/p - 1 = 0
-        sum(yi/(pi/p))  - 1 = 0
-        sum(yi/(1 + dpdt(T-T0)/p)) - 1 = 0 
-        special case: non-condensable:
-        pi -> infinity p*yi/pi -> 0 
-        =#
-        function f0p(T)
-            resinv = zero(T+first(y)+first(crit)[1])
-            for i in 1:length(pure)
-                if condensables[i] #if non-volatile, pi -> 0
-                    Ti = sat[i][1]
-                    pᵢ = p + dPdTsat[i]*(T - Ti)
-                    pᵢyᵢ = y[i]/pᵢ
-                    resinv += pᵢyᵢ
-                end
-            end
-            return 1/resinv - p
-        end
-        T00 = sum(y[i]*first(sat[i]) for i in 1:length(model))
-        fTd = Roots.ZeroProblem(f0p,T00)
-        T0 = Roots.solve(fTd,Roots.Order0())
     else
-        Tb = extrema(first,sat).*(0.9,1.1)
-        f(T) = antoine_dew(pure,T,y,crit,condensables) - p
-        fT = Roots.ZeroProblem(f,Tb)
-        T0 = Roots.solve(fT,Roots.Order0())
+        dPdTsat = __dlnPdTinvsat.(pure,sat,_crit,p,condensables)
+        prob = antoine_dew_problem(dPdTsat,p,y,condensables)
+        T0 = Roots.solve(prob)
     end
     _,vl0,vv0,x = __x0_dew_pressure(model,T0,y,nothing,condensables,pure,crit)
     return T0,vl0,vv0,x
+end
+
+function antoine_dew_problem(dpdt,p_dew,y,condensables)  
+    function antoine_f0(T)
+        pinv = zero(T+first(y)+first(dpdt)[1])
+        for i in 1:length(dpdt)
+            dlnpdTinv,logp0,T0inv = dpdt[i]
+            if condensables[i]
+                pᵢ = exp(logp0 + dlnpdTinv*(1/T - T0inv))
+                pᵢyᵢ = y[i]/pᵢ
+                pinv += pᵢyᵢ
+            end
+        end
+        return 1/pinv - p_dew
+    end
+    Tmin,Tmax = extrema(x -> 1/last(x),dpdt)
+    return Roots.ZeroProblem(antoine_f0,(Tmin,Tmax))
 end
 
 function x0_dew_temperature(model::EoSModel,p,y)

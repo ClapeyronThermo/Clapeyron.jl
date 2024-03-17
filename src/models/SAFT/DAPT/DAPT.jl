@@ -24,11 +24,13 @@ end
 """
     DAPTModel <: SAFTModel
     DAPT(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
+
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `r_c`: Single Parameter (`Float64`)
@@ -38,7 +40,6 @@ end
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 - `theta_c`: Association Parameter (`Float64`)
 
 ## Model Parameters
@@ -49,7 +50,6 @@ end
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
-- `bondvol`: Association Parameter (`Float64`) - Association Volume
 - `theta_c`: Association Parameter (`Float64`)
 
 ## Input models
@@ -66,8 +66,9 @@ Doubly-Associated Perturbation Theory model. Currently only works for water.
 """
 DAPT
 #==
-function DAPT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_userlocations=String[], verbose=false, assoc_options = AssocOptions())
-    params,sites = getparams(components, ["SAFT/DAPT","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+function DAPT(components;
+    idealmodel = BasicIdeal, userlocations = String[], ideal_userlocations = String[], verbose = false, assoc_options = AssocOptions())
+    params,sites = getparams(components, ["SAFT/DAPT","properties/molarmass.csv"]; userlocations = userlocations, verbose = verbose)
     segment = params["m"]
     k = params["k"]  #Note: this is the kij, not the association volume
     Mw = params["Mw"]
@@ -80,7 +81,7 @@ function DAPT(components; idealmodel=BasicIdeal, userlocations=String[], ideal_u
     theta_c = params["theta_c"]
     packagedparams = DAPTParam(Mw, segment, r_c, lambda, sigma, epsilon, epsilon_assoc, theta_c)
     references = ["10.1021/ie0003887", "10.1021/ie010954d"]
-    model = DAPT(packagedparams, sites, idealmodel; ideal_userlocations=ideal_userlocations, references=references, verbose=verbose)
+    model = DAPT(packagedparams, sites, idealmodel; ideal_userlocations = ideal_userlocations, references=references, verbose = verbose)
     return model
 end
 ==#

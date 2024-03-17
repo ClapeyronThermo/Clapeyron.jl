@@ -26,13 +26,16 @@ function transform_params(::Type{QPPCSAFT},params,components)
 end
 
 """
-    QPPCSAFTModel <: SAFTModel
+    QPPCSAFTModel <: PPCSAFTModel
+
     QPPCSAFT(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
+
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
@@ -156,7 +159,7 @@ function a_2_dq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
             ϵij,zj,μ̄²j,Q̄²j = ϵ[i,j],z[j],μ̄²[j],Q̄²[j]
             iszero(Q̄²j) && continue
             σij5 = σ[i,j]^5
-            ϵ_TS =  ϵij*T⁻¹
+            ϵ_TS = ϵij*T⁻¹
             _J2_ij = @f(J2,:DQ,i,j,η,m,ϵij*T⁻¹)
             _a_2 += zi*zj*μ̄²i*Q̄²j/σij5*_J2_ij
         end

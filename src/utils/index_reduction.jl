@@ -71,7 +71,7 @@ Given an input vector generated from a reduced model and the non zero indices, r
 function index_expansion(x::AbstractVector,idr::AbstractVector)
     numspecies = length(idr)
     res = similar(x, numspecies)
-    res .= 0
+    res .= false
     res[idr] .= x
     return res
 end

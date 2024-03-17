@@ -307,22 +307,22 @@ end
 function ab_consts(model::CubicModel)
     return ab_consts(typeof(model))
 end
+x0_sat_pure(model::ABCubicModel,T) = x0_sat_pure_cubic_ab(model,T)
 
-function x0_sat_pure(model::ABCubicModel, T)
+function x0_sat_pure_cubic_ab(model::ABCubicModel, T)
     z = SA[1.0]
     Tc = model.params.Tc.values[1]
     if Tc < T
         nan = zero(T) / zero(T)
         return (nan, nan)
     end
-
     a, b, c = cubic_ab(model, 1 / sqrt(eps(float(T))), T)
     data = (1.0, a, b, c)
     pc = model.params.Pc.values[1]
     zc = pure_cubic_zc(model)
     Δ1,Δ2 = cubic_Δ(model,SA[1.0])
     vl_p0,vl_max = zero_pressure_impl(T,a,b,c,Δ1,Δ2,z) #exact solution to zero-pressure cubic
-    B =  b-a/(R̄*T)
+    B = b-a/(R̄*T)
     if !isnan(vl_p0)
         ares = a_res(model, vl_p0, T, z,data)
         lnϕ_liq0 = ares - 1. + log(R̄*T/vl_p0)
@@ -344,13 +344,18 @@ function x0_sat_pure(model::ABCubicModel, T)
         p0 = 0.5 * (pl0 + pv0)
         vv = volume_virial(B, p0, T) - c
         if p_vl > pc #improves predictions around critical point
-            vlc, vvc = vdw_x0_xat_pure(T, Tc, pc, vc)
+            vlc, vvc = vdw_x0_sat_pure(T, Tc, pc, vc)
             vl = 0.5 * (vl + vlc)
             vv = 0.5 * (vv + vvc)
         end
         return (vl, vv)
     end
     return (vl, vv)
+end
+
+function x0_saturation_temperature(model::ABCubicModel,p,::Nothing)
+    crit = crit_pure(model)
+    return x0_saturation_temperature_crit(model, p, crit)
 end
 
 #=
@@ -364,8 +369,8 @@ pr: pol = v2 + 2bv - b2 -> pol(b) = 2b2, dpol(b) = 2v + 2b = 4b
 rk: pol = v*(v+b) -> pol(b) = 2b2, dpol(b) = 2v + b = 3b
 
 vdw:k = 2b/(b2)^2 = 2/b3 , k^-1 = 0.5b3
-pr:k =  4b/(2b^2) = 1/b3, k^-1 = b3
-rk:k =  3b/(2b^2) = 0.75/b3 lower  1.33b3
+pr:k = 4b/(2b^2) = 1/b3, k^-1 = b3
+rk:k = 3b/(2b^2) = 0.75/b3 lower  1.33b3
 
 we want the lowest possible volume, to be sure on being on the liquid side.
 

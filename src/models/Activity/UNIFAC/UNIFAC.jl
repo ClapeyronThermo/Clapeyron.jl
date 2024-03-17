@@ -174,10 +174,10 @@ function UNIFAC(components;
     groups = GroupParam(components, ["Activity/UNIFAC/UNIFAC_groups.csv"]; group_userlocations = group_userlocations, verbose = verbose)
 
     params = getparams(groups, default_locations(UNIFAC);
-                        userlocations=userlocations,
+                        userlocations = userlocations,
                         asymmetricparams=["A","B","C"],
                         ignore_missing_singleparams=["A","B","C"],
-                        verbose=verbose)
+                        verbose = verbose)
     A  = params["A"]
     B  = params["B"]
     C  = params["C"]
@@ -350,7 +350,7 @@ function lnγ_res(model::UNIFACModel,V,T,z)
     _ψ = @f(Ψ)
     lnΓ_ = @f(lnΓ,_ψ)
     lnΓi_ = @f(lnΓi,_ψ)
-    lnγ_res_ =  [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
+    lnγ_res_ = [sum(v[i][k].*(lnΓ_[k].-lnΓi_[i][k]) for k ∈ @groups) for i ∈ @comps]
     return lnγ_res_
 end
 

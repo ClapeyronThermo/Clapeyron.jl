@@ -1,7 +1,7 @@
 
 include("structs.jl")
 
-const EmpiricAncillary = CompositeModel{PolExpVapour, PolExpLiquid, Nothing, PolExpSat, Nothing}
+const EmpiricAncillary = CompositeModel{FluidCorrelation{PolExpVapour, PolExpLiquid, PolExpSat}, Nothing}
 #term dispatch. function definitions are in term_functions.jl
 
 function a_term(term::NonAnalyticTerm,δ,τ,lnδ,lnτ,_0)
@@ -176,7 +176,10 @@ function __get_k_alpha0(model)
 end
 
 function __set_Rgas(pure,Rgas)
-    Roots.Setfield.@set pure.properties.Rgas = Rgas
+    components,p,ancillaries,ideal,residual,references = pure.components,pure.properties,pure.ancillaries,pure.ideal,pure.residual,pure.references
+    Mw,Tr,rhor,lb_volume,Tc,Pc,rhoc,Ttp,ptp,rhov_tp,rhol_tp,acentricfactor = p.Mw, p.Tr, p.rhor, p.lb_volume, p.Tc, p.Pc, p.rhoc, p.Ttp, p.ptp, p.rhov_tp, p.rhol_tp, p.acentricfactor
+    properties = ESFProperties(Mw,Tr,rhor,lb_volume,Tc,Pc,rhoc,Ttp,ptp,rhov_tp,rhol_tp,acentricfactor,Rgas)
+    return SingleFluid(components,properties,ancillaries,ideal,residual,references)
 end
 
 function a_ideal(model::SingleFluidIdeal,V,T,z=SA[1.],k = __get_k_alpha0(model))
@@ -189,6 +192,9 @@ function a_ideal(model::SingleFluidIdeal,V,T,z=SA[1.],k = __get_k_alpha0(model))
     logδ = log(N/rhoc) - log(V)
     return k*α0 + logδ
 end
+
+v_scale(model::SingleFluid,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhoc
+v_scale(model::SingleFluidIdeal,z = SA[1.0],∑z = sum(z)) = 1/∑z/model.properties.rhoc
 
 a_ideal(model::SingleFluid,V,T,z=SA[1.]) = a_ideal(idealmodel(model),V,T,z)
 
@@ -210,7 +216,9 @@ function eos(model::SingleFluid, V, T, z=SA[1.0])
     τ = Tc/T
     k = __get_k_alpha0(model)
     logδ = log(δ)
-    return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ))
+    ref_a = model.ideal.ref_a
+    a0,a1 = ref_a[1],ref_a[2] #reference state evaluation
+    return N*R*T*(logδ + k*reduced_a_ideal(model,τ) + reduced_a_res(model,δ,τ)) + N*(a0 + a1*T)
 end
 
 function eos_res(model::SingleFluid,V,T,z=SA[1.0])
@@ -245,25 +253,28 @@ function Base.show(io::IO,mime::MIME"text/plain",model::SingleFluidIdeal)
     show_multiparameter_coeffs(io,model.ideal)
 end
 
-function x0_sat_pure(model::SingleFluid,T,z=SA[1.0])
-    vv = volume(model.ancillaries.gas,0.0,T,z)
-    vl = x0_volume_liquid(model,T,z)
+function x0_sat_pure(model::SingleFluid,T)
+    z=SA[1.0]
+    gas_ancillary = model.ancillaries.fluid.gas
+    vv = volume(gas_ancillary,0.0,T,z)
+    vl = x0_volume_liquid(model,T,)
     return (vl,vv)
 end
 
 function x0_volume_liquid(model::SingleFluid,T,z = SA[1.0])
     lb_v = lb_volume(model)
     vl_tp = 1/model.properties.rhol_tp
-    vl_anc = volume(model.ancillaries.liquid,0.0,min(T,model.properties.Tc*one(T)),z)
+    liquid_ancillary = model.ancillaries.fluid.liquid
+    vl_anc = volume(liquid_ancillary,0.0,min(T,model.properties.Tc*one(T)),z)
     isnan(vl_tp) && (vl_tp = 0.0)
     isnan(vl_anc) && (vl_anc = 0.0)
     return max(vl_tp,vl_anc,1.01*lb_v)
 end
 
-x0_psat(model::SingleFluid,T,crit=nothing) = saturation_pressure(model.ancillaries.saturation,T,SaturationCorrelation())[1]
+x0_psat(model::SingleFluid,T,crit=nothing) = saturation_pressure(model.ancillaries.fluid.saturation,T,SaturationCorrelation())[1]
 
 function x0_saturation_temperature(model::SingleFluid,p)
-    T = saturation_temperature(model.ancillaries.saturation,p,SaturationCorrelation())[1]
+    T = saturation_temperature(model.ancillaries.fluid.saturation,p,SaturationCorrelation())[1]
     vl,vv = x0_sat_pure(model,T)
     return (T,vl,vv)
 end

@@ -26,22 +26,32 @@ function test_activity_coefficient(model::ActivityModel,p,T,z)
     return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
 end
 
-x0_sat_pure(model::ActivityModel,T) = x0_sat_pure(model.puremodel[1],T)
+x0_sat_pure(model::ActivityModel,T) = x0_sat_pure(__act_to_gammaphi(model,x0_sat_pure),T)
 
 function saturation_pressure(model::ActivityModel,T::Real,method::SaturationMethod)
-    return saturation_pressure(model.puremodel[1],T,method)
+    return saturation_pressure(__act_to_gammaphi(model,saturation_pressure),T,method)
+end
+
+function saturation_temperature(model::ActivityModel,T::Real,method::SaturationMethod)
+    return saturation_temperature(__act_to_gammaphi(model,saturation_temperature),T,method)
+end
+
+function init_preferred_method(method::typeof(saturation_pressure),model::ActivityModel,kwargs)
+    return init_preferred_method(method,__act_to_gammaphi(model,method),kwargs)
+end
+
+function init_preferred_method(method::typeof(saturation_temperature),model::ActivityModel,kwargs)
+    return init_preferred_method(method,__act_to_gammaphi(model,method),kwargs)
 end
 
 function eos(model::ActivityModel,V,T,z)
     Σz = sum(z)
     lnΣz = log(Σz)
-    
     pures = model.puremodel
     p = sum(z[i]*pressure(pures[i],V/Σz,T) for i ∈ @comps)/Σz
     g_E = excess_gibbs_free_energy(model,p,T,z)
     g_ideal = sum(z[i]*R̄*T*(log(z[i])-lnΣz) for i ∈ @comps)
     g_pure = sum(z[i]*VT_gibbs_free_energy(pures[i],V/Σz,T) for i ∈ @comps)
-    
     return g_E+g_ideal+g_pure-p*V
 end
 
@@ -57,8 +67,8 @@ end
 
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
     f(x) = excess_gibbs_free_energy(model,p,x,z)/x
-    df(x) = Solvers.derivative(f,x)
-    return -df(T)*T^2
+    dfT = Solvers.derivative(f,T)
+    return -dfT*T^2
 end
 
 function mixing(model::ActivityModel,p,T,z,::typeof(gibbs_free_energy))
@@ -73,12 +83,8 @@ function mixing(model::ActivityModel,p,T,z,::typeof(entropy))
 end
 
 function gibbs_solvation(model::ActivityModel,T)
-    z = [1.0,1e-30] 
-    p,v_l,v_v = saturation_pressure(model.puremodel[1],T)
-    p2,v_l2,v_v2 = saturation_pressure(model.puremodel[2],T)
-    γ = activity_coefficient(model,p,T,z)
-    K = v_v/v_l*γ[2]*p2/p   
-    return -R̄*T*log(K)
+    binary_component_check(gibbs_solvation,model)
+    return gibbs_solvation(__act_to_gammaphi(model,gibbs_solvation),T)
 end
 
 function lb_volume(model::ActivityModel,z = SA[1.0])
@@ -108,4 +114,109 @@ function γdγdn(model::ActivityModel,p,T,z)
     return γz,dyz
 end
 
-include("methods/methods.jl")
+#convert ActivityModel into a RestrictedEquilibriaModel
+function __act_to_gammaphi(model::ActivityModel,method,ignore = false)
+    components = model.components
+    if hasfield(typeof(model),:puremodel) && !ignore && model.puremodel.model isa IdealModel
+        ActivitySaturationError(model,method)
+    end
+
+    if hasfield(typeof(model),:puremodel)
+        pure = model.puremodel
+        if pure.model isa CompositeModel
+            pure = EoSVectorParam(pure.model.fluid,model.components)
+        end
+    else
+        if ignore
+            pure = EoSVectorParam(BasicIdeal(),model.components)
+        else
+            ActivitySaturationError(model,method)
+        end
+    end
+    γϕmodel = GammaPhi(components,model,pure)
+end
+
+function bubble_pressure(model::ActivityModel,T,x,method::BubblePointMethod)
+    compmodel = __act_to_gammaphi(model,method)
+    return bubble_pressure(compmodel,T,x,method)
+end
+
+function bubble_temperature(model::ActivityModel,p,x,method::BubblePointMethod)
+    compmodel = __act_to_gammaphi(model,method)
+    return bubble_temperature(compmodel,p,x,method)
+end
+
+function dew_pressure(model::ActivityModel,T,y,method::DewPointMethod)
+    compmodel = __act_to_gammaphi(model,method)
+    return dew_pressure(compmodel,T,y,method)
+end
+
+function dew_temperature(model::ActivityModel,p,y,method::DewPointMethod)
+    compmodel = __act_to_gammaphi(model,method)
+    return dew_temperature(compmodel,p,y,method)
+end
+
+function init_preferred_method(method::typeof(bubble_pressure),model::ActivityModel,kwargs)
+    gas_fug = get(kwargs,:gas_fug,false)
+    poynting = get(kwargs,:poynting,false)
+    return ActivityBubblePressure(;gas_fug,poynting,kwargs...)
+end
+
+function init_preferred_method(method::typeof(bubble_temperature),model::ActivityModel,kwargs)
+    gas_fug = get(kwargs,:gas_fug,false)
+    poynting = get(kwargs,:poynting,false)
+    return ActivityBubbleTemperature(;gas_fug,poynting,kwargs...)
+end
+
+function init_preferred_method(method::typeof(dew_pressure),model::ActivityModel,kwargs)
+    gas_fug = get(kwargs,:gas_fug,false)
+    poynting = get(kwargs,:poynting,false)
+    return ActivityDewPressure(;gas_fug,poynting,kwargs...)
+end
+
+function init_preferred_method(method::typeof(dew_temperature),model::ActivityModel,kwargs)
+    gas_fug = get(kwargs,:gas_fug,false)
+    poynting = get(kwargs,:poynting,false)
+    return ActivityDewTemperature(;gas_fug,poynting,kwargs...)
+end
+
+function init_preferred_method(method::typeof(tp_flash),model::ActivityModel,kwargs)
+    return RRTPFlash(;kwargs...)
+end
+
+function __tpflash_cache_model(model::ActivityModel,p,T,z,equilibrium)
+    ignore = is_lle(equilibrium)
+    compmodel = __act_to_gammaphi(model,tp_flash,ignore)
+    PTFlashWrapper(compmodel,p,T,equilibrium)
+end
+
+#LLE point. it does not require an imput concentration, because it assumes that activities are pressure-independent.
+
+function LLE(model::ActivityModel,T;v0=nothing)
+    if v0 === nothing
+        if length(model) == 2
+        v0 = [0.25,0.75]
+        else
+            throw(error("unable to provide an initial point for LLE pressure"))
+        end
+    end
+    len = length(v0)
+    Fcache = zeros(eltype(v0),len)
+    f!(F,z) = Obj_LLE(model, F, T, z[1], z[2])
+    r  = Solvers.nlsolve(f!,v0,LineSearch(Newton()))
+    sol = Solvers.x_sol(r)
+    x = sol[1]
+    xx = sol[2]
+    return x,xx
+end
+
+function Obj_LLE(model::ActivityModel, F, T, x, xx)
+    x = Fractions.FractionVector(x)
+    xx = Fractions.FractionVector(xx)
+    γₐ = activity_coefficient(model,1e-3,T,x)
+    γᵦ = activity_coefficient(model,1e-3,T,xx)
+    F .= γᵦ.*xx .- γₐ.*x
+    return F
+end
+
+export LLE

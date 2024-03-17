@@ -57,7 +57,7 @@ function COSMOSACdsp(components;
     userlocations = String[],
     pure_userlocations = String[],
     use_nist_database = false,
-    verbose=false)
+    verbose = false)
 
     formatted_components = format_components(components)
 
@@ -126,7 +126,7 @@ function COSMOSACdsp(components;
         hb_don = SingleParam("hb_don",formatted_components,hb_don)
         water = SingleParam("water",formatted_components,water)
     else
-        params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V","epsilon","water","COOH","hb_acc","hb_don"], verbose=verbose)
+        params = getparams(formatted_components, default_locations(COSMOSACdsp); userlocations = userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V","epsilon","water","COOH","hb_acc","hb_don"], verbose = verbose)
         Pnhb  = COSMO_parse_Pi(params["Pnhb"])
         POH  = COSMO_parse_Pi(params["POH"])
         POT  = COSMO_parse_Pi(params["POT"])

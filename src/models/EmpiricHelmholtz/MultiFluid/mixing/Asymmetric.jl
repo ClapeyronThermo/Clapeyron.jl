@@ -11,8 +11,8 @@ end
 """
     AsymmetricMixing <: MultiFluidDepartureModel
     AsymmetricMixing(components;
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 - `beta_v`: Pair Parameter (`Float64`) - binary interaction parameter  (no units)

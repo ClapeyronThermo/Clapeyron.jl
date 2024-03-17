@@ -21,7 +21,7 @@ model = PCSAFT(["methanol","cyclohexane"])
 T = 313.15
 z = [0.5,0.5]
 bubble_pressure(model,T,z) #using default method (chemical potential equality)
-bubble_pressure(model,T,z,FugBubblePressure(y0 =  = [0.6,0.4], p0 = 5e4)) #using isofugacity criteria with starting points
+bubble_pressure(model,T,z,FugBubblePressure(y0 = = [0.6,0.4], p0 = 5e4)) #using isofugacity criteria with starting points
 ```
 """
 abstract type ThermodynamicMethod end
@@ -95,14 +95,15 @@ is_supercritical(str::String) = is_vapour(Symbol(str))
 const SOLID_STR = (:solid,:SOLID,:s)
 """
     is_solid(x::Union{Symbol,String})
+    is_solid(x::EoSModel)
 
 Returns `true` if the symbol is in `(:solid,:SOLID,:s)`.
-
+if `x` is an `EoSModel`, it will return if the model is able to contain a solid phase. In this case, defaults to `false`
 If a string is passed, it is converted to symbol.
 """
 is_solid(sym::Symbol) = sym in SOLID_STR
 is_solid(str::String) = is_vapour(Symbol(str))
-
+is_solid(model::EoSModel) = false
 
 const VLE_STR = (:vle,:lve,:vl,:lv)
 """
@@ -144,7 +145,7 @@ equivalent to `sum(iterator,init=0.0)`.
 """
 function ∑(iterator)
     len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
-    hastype =  (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
+    hastype = (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
     local _0
     if hastype
         _0 = zero(eltype(iterator))
@@ -208,7 +209,7 @@ function gradient_type(V,T,z::StaticArray)
     return StaticArrays.similar_type(z,μ)
 end
 
-function gradient_type(V,T,z::Vector)
+function gradient_type(V,T,z::AbstractVector)
     μ = typeof(V+T+first(z))
     return Vector{μ}
 end
@@ -263,6 +264,9 @@ Sets the model "l-values" binary interaction parameter to the input matrix `l`. 
 
 """
 set_l!(model::EoSModel,k) = throw(ArgumentError("$(typeof(model)) does not have support for setting k-values"))
+
+export get_k,set_k!
+export get_l,set_l!
 
 include("initial_guess.jl")
 include("differentials.jl")

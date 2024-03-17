@@ -8,7 +8,7 @@ Struct containing all the options related to parameter parsing:
 * `userlocations = String[]`: List of used-defined locations to search.
 * `group_userlocations = String[]`: List of used-defined group locations to search.
 * `asymmetricparams::Vector{String} = String[]`: List of pair parameters that follow that `param[i,j] ≠ param[j,i]`. if not set on asymmetric pairs, the asymmetric values will be overwritten!
-* `ignore_headers::Vector{String} =  ["dipprnumber", "smiles"]`: List of ignored headers.
+* `ignore_headers::Vector{String} = ["dipprnumber", "smiles"]`: List of ignored headers.
 * `ignore_missing_singleparams::Vector{String} = String[]`: List of parameters where checking for missing parameter values (in `SingleParam`) or the diagonal (on `PairParam`) are ignored.
 * `verbose::Bool = false`: If `true`, show all operations done by `getparams` displayed in the terminal. this includes the warnings emmited by `CSV.jl` 
 * `species_columnreference::String ="species"`: column name to check for components. in pair and association params, it will check for `#species#1` and `#species#2`, where `#species#` is the value of this option.

@@ -4,7 +4,7 @@ Original code by Thomas Moore
 included in https://github.com/ClapeyronThermo/Clapeyron.jl/pull/56
 =#
 """
-    DETPFlash(;numphases = 2;
+    DETPFlash(; numphases = 2,
     max_steps = 1e4*(numphases-1),
     population_size =20,
     time_limit = Inf,
@@ -46,7 +46,7 @@ function partition!(dividers,n,x,nvals)
     end
 #Calculate mole fractions xij
 for i = 1:numphases
-    ni =  @view(nvals[i, :])
+    ni = @view(nvals[i, :])
     invn = 1/sum(ni)
     xi = @view(x[i, :])
     xi  .= ni
@@ -63,7 +63,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     nvals = zeros(TYPE,numphases, numspecies)
     logspace = method.logspace
     vcache = zeros(TYPE,numphases)
-    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace)
+    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace,method.equilibrium)
     #Minimize Gibbs Free Energy
 
     #=

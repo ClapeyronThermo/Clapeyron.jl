@@ -1,18 +1,19 @@
 function PSRKUNIFAC end
 """
     function PSRK(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     alpha = SoaveAlpha,
     mixing = PSRKRule,
     activity = PSRKUNIFAC,
-    translation=PenelouxTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    translation = PenelouxTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
 ## Description
 Predictive Soave-Redlich-Kwong equation of state. it uses the following models:
@@ -26,15 +27,16 @@ Predictive Soave-Redlich-Kwong equation of state. it uses the following models:
 1. Horstmann, S., Jabłoniec, A., Krafczyk, J., Fischer, K., & Gmehling, J. (2005). PSRK group contribution equation of state: comprehensive revision and extension IV, including critical constants and α-function parameters for 1000 components. Fluid Phase Equilibria, 227(2), 157–164. [doi:10.1016/j.fluid.2004.11.002](https://doi.org/10.1016/j.fluid.2004.11.002)
 """
 function PSRK(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     userlocations = String[],
     group_userlocations = String[],
-    ideal_userlocations=String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
     activity = PSRKUNIFAC(components,
     userlocations = activity_userlocations,
@@ -45,12 +47,12 @@ function PSRK(components;
 
     alpha = SoaveAlpha
     mixing = PSRKRule
-    translation=PenelouxTranslation
+    translation = PenelouxTranslation
 
     return RK(_components;
     idealmodel = idealmodel,
     alpha = alpha,
-    mixing=mixing,
+    mixing = mixing,
     activity = activity,
     translation = translation,
     userlocations = userlocations,
@@ -59,6 +61,7 @@ function PSRK(components;
     mixing_userlocations = mixing_userlocations,
     activity_userlocations = activity_userlocations,
     translation_userlocations = translation_userlocations,
+    reference_state = reference_state,
     verbose = verbose)
 end
 export PSRK

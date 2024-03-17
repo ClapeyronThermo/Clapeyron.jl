@@ -1,26 +1,11 @@
-# v0.5.8
+# v0.5.10
 
 ## New Features
-- `Base.getindex` and `Base.setindex` with `SingleParam`, `PairParam` and `AssocParam` now works with strings. the strings are compared with the components (or groups) stored in each param. in particular `AssocParam` allows set/get index methods if you pass a `Tuple{String,String}`:
-```julia
-julia> model = PPCSAFT(["water","ethanol"],assoc_options = AssocOptions(combining = :esd))
-PPCSAFT{BasicIdeal} with 2 components:
- "water"
- "ethanol"
-Contains parameters: Mw, segment, sigma, epsilon, dipole, dipole2, epsilon_assoc, bondvol
+- Association models don't allocate anymore in the case of a single association site pair.
+- `saturation_pressure(model,T)` (`ChemPotVSaturation,IsoFugacitySaturation`) does not allocate if the calculation does not require a critical point calculation. Note that the function can still allocate if the EoS model itself allocates. the same optimizations were applied to `saturation_temperature` (`AntoineSaturation`,`ClapeyronSaturation`), `sublimation_pressure` and `melting_pressure`.
+- Bulk properties now accept a `vol0` initial point for the volume solver.
+- SAFT-VR-Mie uses a divided approach for calculating `d`: if θ = ℂ*ϵᵢ/T > 1, then it uses a 10-point gauss-laguerre integrator. Otherwise, the Assen method of finding a cut point and integrating the rest is used. A description of the method is found here: https://teqp.readthedocs.io/en/latest/models/SAFT-VR-Mie.html. the cut allows for better accuracy at higher reduced temperatures.
 
-julia> model.params.bondvol[("water","a"),("water","b")]
-0.35319
-
-julia> model.params.bondvol[("water","a"),("water","b")] = 0.36
-0.36
-
-julia> model.params.bondvol[("water","a"),("water","b")]
-0.36
-```
-- `PCPSAFT` is defined (alias for `PPCSAFT`)
-- New EOS: Critical-point based PC-SAFT `CPPCSAFT` (https://doi.org/10.1021/ie502633e)
-
-## Bug Fixes
-- bug in ether and aldehyde parameters in UNIFAC (https://github.com/ClapeyronThermo/Clapeyron.jl/issues/225)
-
+## Bug fixes
+- Peng-Robinson now uses more accurate `Ωa` and `Ωb` values
+- CPA/sCPA now uses SI units as input.

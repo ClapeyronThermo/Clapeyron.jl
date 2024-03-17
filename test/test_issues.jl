@@ -108,7 +108,7 @@
         @test model1 isa Clapeyron.EoSModel
 
         #this case is just for compatibility with the notebooks that were originally released.
-        model2 = VTPR(["carbon monoxide","carbon dioxide"];alpha=BMAlpha)
+        model2 = VTPR(["carbon monoxide","carbon dioxide"];alpha = BMAlpha)
         @test model2 isa Clapeyron.EoSModel
     end
 
@@ -156,9 +156,13 @@
         #=
         Ternary LLE
         =#
-        @test aspenNRTL(["water", "acetone", "dichloromethane"],puremodel = PR) isa EoSModel
-        @test UNIFAC(["water", "acetone", "dichloromethane"]) isa EoSModel
+        if hasfield(aspenNRTL,:puremodel)
+            @test aspenNRTL(["water", "acetone", "dichloromethane"],puremodel = PR) isa EoSModel
+        else
+            @test aspenNRTL(["water", "acetone", "dichloromethane"]) isa EoSModel
+        end
 
+        @test UNIFAC(["water", "acetone", "dichloromethane"]) isa EoSModel
     end
 
     @testset "#212" begin
@@ -193,13 +197,77 @@
         (("water08","e"),("water08","H")) => 0.04509)
         )
         model = pharmaPCSAFT(["griseofulvin","water08"];userlocations = userlocations)
-        
+
         T = 310.15
         p = 1.01325e5
         z=[7.54e-7, 1-7.54e-7]
 
         γ1 = activity_coefficient(model,p,T,z)
 
-        @test γ1[1] ≈ 55334.605821130834 rtol = 1e-4
+        #this was an error too. check commit that added this
+        #@test γ1[1] ≈ 55334.605821130834 rtol = 1e-4
+
+        @test γ1[1] ≈ 51930.06908022231 rtol = 1e-4
+        
+    end
+
+    @testset "SorptionModels.jl - init kij with user" begin
+        #=
+        on SL, passing k in userlocations did not work.
+        =#
+
+
+        v★(P★, T★,) = 8.31446261815324 * T★ / P★ / 1000000 # J / (mol*K) * K / mpa -> pa * m3 / (mol * mpa) ->  need to divide by 1000000 to get m3/mol
+        ϵ★(T★) = 8.31446261815324 * T★ # J / (mol * K) * K -> J/mol
+        r(P★, T★, ρ★, mw) = mw * (P★ * 1000000) / (8.31446261815324 * T★ * (ρ★ / 1e-6)) # g/mol * mpa * 1000000 pa/mpa / ((j/mol*K) * K * g/(cm3 / 1e-6 m3/cm3)) -> unitless
+
+        P★ = [534., 630.]
+        T★ = [755., 300.]
+        ρ★ = [1.275, 1.515]
+        mw = [100000, 44.01]
+        kij = [0 -0.0005; -0.0005 0]
+        model1 = Clapeyron.SL(
+            ["PC", "CO2"],
+            userlocations = Dict(
+                :vol => v★.(P★, T★,),
+                :segment => r.(P★, T★, ρ★, mw),
+                :epsilon => ϵ★.(T★),
+                :Mw => mw
+            ),
+            mixing_userlocations = (;k0 = kij, k1 = [0 0; 0 0], l = [0 0; 0 0])
+        )
+
+        model2 = Clapeyron.SL(
+            ["PC", "CO2"],
+            userlocations = Dict(
+                :vol => v★.(P★, T★,),
+                :segment => r.(P★, T★, ρ★, mw),
+                :epsilon => ϵ★.(T★),
+                :Mw => mw,
+                :k => kij
+            )
+        )
+        @test Clapeyron.get_k(model1)[1] ≈ Clapeyron.get_k(model2)[1]
+    end
+
+    @testset "https://github.com/ClapeyronThermo/Clapeyron.jl/discussions/239" begin
+        #test for easier initialization of CPA/SAFT without association
+        m1 = Clapeyron.CPA(["Methanol"])
+        m2 = CPA(["Methanol"]; userlocations=(;
+        a = m1.params.a.values[1],
+        b = m1.params.b.values[1],
+        c1 = m1.params.c1.values,
+        Mw = m1.params.Mw.values,
+        Tc = m1.params.Tc.values,
+        Pc = m1.cubicmodel.params.Pc.values,
+        n_H = [1],
+        n_e = [1],
+        epsilon_assoc = Dict((("Methanol","H"),("Methanol","e")) => m1.params.epsilon_assoc.values.values[1]),
+        bondvol = Dict((("Methanol","H"),("Methanol","e")) => m1.params.bondvol.values.values[1]))
+        )
+        @test volume(m1,1e5,333.0) ≈ volume(m2,1e5,333.0)
+
+        m3 = PCSAFT("water",userlocations =(segment = 1,Mw = 1,epsilon = 1,sigma = 1.0))
+        @test length(m3.params.bondvol.values.values) == 0
     end
 end

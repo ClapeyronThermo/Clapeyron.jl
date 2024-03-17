@@ -54,6 +54,11 @@ function ∂f(model,V,T,z)
     return _df,_f
 end
 
+function ∂f_res(model,V,T,z)
+    f(∂V,∂T) = eos_res(model,∂V,∂T,z)
+    _f,_df = Solvers.fgradf2(f,V,T)
+    return _df,_f
+end
 #returns p and ∂p∂V at constant T
 #it doesnt do a pass over temperature, so its
 #faster that d2f when only requiring d2fdV2
@@ -94,7 +99,7 @@ Where `V` is the total volume, `T` is the temperature and `f` is the total helmh
 """
 function ∂2f(model,V,T,z)
     f(_V,_T) = eos(model,_V,_T,z)
-    _f,_∂f,_∂2f =  Solvers.∂2(f,V,T)
+    _f,_∂f,_∂2f = Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
 
@@ -122,7 +127,7 @@ Where `V` is the total volume, `T` is the temperature and `p` is the pressure.
 """
 function ∂2p(model,V,T,z)
     f(_V,_T) = pressure(model,_V,_T,z)
-    _f,_∂f,_∂2f =  Solvers.∂2(f,V,T)
+    _f,_∂f,_∂2f = Solvers.∂2(f,V,T)
     return (_∂2f,_∂f,_f)
 end
 

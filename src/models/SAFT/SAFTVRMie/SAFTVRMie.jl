@@ -27,7 +27,7 @@ end
 Base.eltype(p::SAFTVRMieParam{T}) where T = T
 
 abstract type SAFTVRMieModel <: SAFTModel end
-@newmodel SAFTVRMie SAFTVRMieModel SAFTVRMieParam
+@newmodel SAFTVRMie SAFTVRMieModel SAFTVRMieParam{T}
 default_references(::Type{SAFTVRMie}) = ["10.1063/1.4819786", "10.1080/00268976.2015.1029027"]
 default_locations(::Type{SAFTVRMie}) = ["SAFT/SAFTVRMie", "properties/molarmass.csv"]
 function transform_params(::Type{SAFTVRMie},params)
@@ -47,10 +47,11 @@ end
     SAFTVRMieModel <: SAFTModel
 
     SAFTVRMie(components;
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     assoc_options = AssocOptions())
 
 ## Input parameters
@@ -182,19 +183,70 @@ we use a mixed approach, depending on T⋆ = T/ϵ:
 if T⋆ < 1:
     5-point gauss-laguerre. we do the change of variables `y = r^-λr`
 else:
-    10-point modified gauss-legendre with cut. (pending)
+    10-point modified gauss-legendre with cut.
 =#
 function d_vrmie(T,λa,λr,σ,ϵ)
-    Tx = T/ϵ
     C = Cλ_mie(λa, λr)
-    θ = C/Tx
+    θ = ϵ*C/T
+    ∑fi = vr_mie_d_integral(θ,λa,λr)
+    return σ*(1 - ∑fi)
+end
+
+#this function is a fundamental one.
+function vr_mie_d_integral(θ,λa,λr)
     λrinv = 1/λr
     λaλr = λa/λr
-    f_laguerre(x) = x^(-λrinv)*exp(θ*x^(λaλr))*λrinv/x
-    ∑fi = Solvers.laguerre5(f_laguerre,θ,one(θ))
-    #∑fi2 = Solvers.laguerre10(f_laguerre,θ,1.)
-    di = σ*(1-∑fi)
-    return di
+    if θ > 1
+        function f_laguerre(x)
+            lnx = log(x)
+            return exp(-λrinv*lnx)*exp(θ*exp(lnx*λaλr))*λrinv/x
+        end
+        return Solvers.laguerre10(f_laguerre,θ,one(θ))
+    else
+        j = d_vrmie_cut(θ,λa,λr)
+        function f_legendre(x) 
+            lnx = log(x)
+            return exp(-θ*(exp(-λr*lnx)-exp(-λa*lnx)))
+        end
+        return  Solvers.integral10(f_legendre,j,one(j))
+    end
+end
+
+#implements the method of aasen for VRQ Mie. (https://github.com/usnistgov/teqp/issues/39)
+function d_vrmie_cut(θ,λa,λr)
+    #initial point
+    EPS = eps(typeof(θ))
+    K = log(-log(EPS)/θ)
+    j0 = exp(-K/λr)
+    # exp(-u(r)/T), d[exp(-u(r))/T)]/dr, d2[exp(-u(r))/T)]/dr2
+    function fdfd2f(r)
+        r⁻¹ = 1/r
+        lnr = log(r)
+        rλr = exp(-lnr*λr)
+        rλa = exp(-lnr*λa)
+        #rλr = r^-λr
+        #rλa = r^-λa
+        u_r = rλr - rλa #u/C*ϵ
+        du_ra = rλa*r⁻¹*(-λa)
+        du_rr = rλr*r⁻¹*(-λr)
+        du_r = (du_rr - du_ra)
+        d2u_rr = du_rr*r⁻¹*(-λr - 1)
+        d2u_ra = du_ra*r⁻¹*(-λa - 1)
+        d2u_r = d2u_rr - d2u_ra
+        f = exp(-u_r*θ)
+        df = -θ*f*du_r
+        d2f = df*df - θ*d2u_r*f
+        return f, f/df, df/d2f
+    end
+    j = j0
+    for i in 1:5
+        fi,f1,f2 = fdfd2f(j)
+        dd = (1 - 0.5*f1/f2)
+        dj = f1/(1 - 0.5*f1/f2)
+        j = j - dj
+        fi < eps(eltype(fi)) && break 
+    end
+    return j
 end
 
 function d(model::SAFTVRMieModel, V, T, z)
@@ -336,7 +388,7 @@ function ζeff_fdf(model::SAFTVRMieModel, V, T, z, λ,ζ_X_,ρ_S_)
     A = SAFTγMieconsts.A
     λ⁻¹ = one(λ)/λ
     Aλ⁻¹ = A * SA[one(λ); λ⁻¹; λ⁻¹*λ⁻¹; λ⁻¹*λ⁻¹*λ⁻¹]
-    _f =  dot(Aλ⁻¹,SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4])
+    _f = dot(Aλ⁻¹,SA[ζ_X_; ζ_X_^2; ζ_X_^3; ζ_X_^4])
     _df = dot(Aλ⁻¹,SA[1; 2ζ_X_; 3ζ_X_^2; 4ζ_X_^3]) * ζ_X_/ρ_S_
     return _f,_df
 end
@@ -347,7 +399,7 @@ function aS_1_fdf(model::SAFTVRMieModel, V, T, z, λ, ζ_X_= @f(ζ_X),ρ_S_ = @f
     ζeffm1 = (1-ζeff_*0.5)
     ζf = ζeffm1/ζeff3
     λf = -1/(λ-3)
-    _f =  λf * ζf
+    _f = λf * ζf
     _df = λf * (ζf + ρ_S_*∂ζeff_*((3*ζeffm1*(1-ζeff_)^2 - 0.5*ζeff3)/ζeff3^2))
     return _f,_df
 end
@@ -501,7 +553,7 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
         #calculus for g1
         g_1_ = 3*∂a_1∂ρ_S - _C*(λa*x_0ij_λa*(aS₁_a + B_a) - λr*x_0ij_λr*(aS₁_r + B_r))
         θ = expm1(τ)
-        γc =  10 * (-tanh(10*(0.57 - α)) + 1) * _ζst*θ*exp(_ζst*(-6.7 - 8*_ζst))
+        γc = 10 * (-tanh(10*(0.57 - α)) + 1) * _ζst*θ*exp(_ζst*(-6.7 - 8*_ζst))
         
         ∂a_2∂ρ_S = 0.5*_C^2 *
                 (ρS*_∂KHS*(x_0ij_2λa*(aS₁_2a+B_2a)
@@ -557,7 +609,7 @@ function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
     a₁ = a₁*m̄/T/∑z
     a₂ = a₂*m̄/(T*T)/∑z
     a₃ = a₃*m̄/(T*T*T)/∑z
-    adisp =  a₁ + a₂ + a₃
+    adisp = a₁ + a₂ + a₃
     return adisp + achain/∑z
 end
 
@@ -657,7 +709,7 @@ function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     a₂ = a₂*m̄/(T*T)  #/sum(z)
     a₃ = a₃*m̄/(T*T*T)  #/sum(z)
     #@show (a₁,a₂,a₃)
-    adisp =  a₁ + a₂ + a₃
+    adisp = a₁ + a₂ + a₃
     return adisp
 end
 
@@ -730,7 +782,7 @@ function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
         g_1_ = 3*∂a_1∂ρ_S-_C*(λa*x_0ij^λa*(aS_1_a+B_a)-λr*x_0ij^λr*(aS_1_r+B_r))
         #@show (g_1_,i)
         θ = exp(ϵ/T)-1
-        γc =  10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
+        γc = 10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
         ∂a_2∂ρ_S = 0.5*_C^2 *
             (ρS*_∂KHS*(x_0ij^(2*λa)*(aS_1_2a+B_2a)
             - 2*x_0ij^(λa+λr)*(aS_1_ar+B_ar)
@@ -786,9 +838,9 @@ Optimizations for single component SAFTVRMie
 #######
 
 function d(model::SAFTVRMie, V, T, z::SingleComp)
-    ϵ = model.params.epsilon
-    σ = model.params.sigma
-    λa = model.params.lambda_a
-    λr = model.params.lambda_r
+    ϵ = model.params.epsilon.values[1,1]
+    σ = model.params.sigma.values[1,1]
+    λa = model.params.lambda_a.values[1,1]
+    λr = model.params.lambda_r.values[1,1]
     return SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1])]
 end

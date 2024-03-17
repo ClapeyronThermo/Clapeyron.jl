@@ -169,7 +169,7 @@ function p_scale(model::ECS,z=SA[1.0])
      return ps
 end
 
-function x0_sat_pure(model::ECS,T,z = SA[1.0])
+function x0_sat_pure(model::ECS,T)
     f,h = shape_factors(model,zero(T),T) 
     T0 = T/f
     v0l,v0v = x0_sat_pure(model.model_ref,T0)

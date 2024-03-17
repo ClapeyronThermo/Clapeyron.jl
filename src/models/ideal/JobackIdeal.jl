@@ -1,6 +1,6 @@
 
 #TODO
-# - standarize chemical group notation to make it the same as SAFTgammaMie
+# - standardize chemical group notation to make it the same as SAFTgammaMie
 # - add a database of group Mw
 
 struct JobackIdealParam <: EoSParam
@@ -21,7 +21,8 @@ struct JobackIdealParam <: EoSParam
     H_vap::SingleParam{Float64}
     eta_a::SingleParam{Float64}
     eta_b::SingleParam{Float64}
-    coeffs::SingleParam{NTuple{4,Float64}}
+    coeffs::SingleParam{NTuple{5,Float64}}
+    reference_state::ReferenceState
 end
 
 abstract type JobackIdealModel <: ReidIdealModel end
@@ -52,9 +53,11 @@ export JobackIdeal
 
 """
     JobackIdeal <: JobackIdealModel
+
     JobackIdeal(components; 
-    userlocations::Array{String,1}=String[], 
-    verbose=false)
+    userlocations = String[],
+    reference_state = nothing,
+    verbose = false)
 
 ## Input parameters
 
@@ -161,7 +164,7 @@ function recombine_impl!(model::JobackIdeal)
     return model
 end
 
-ReidIdeal(model::JobackIdeal) = ReidIdeal(model.components,ReidIdealParam(model.params.coeffs),model.references)
+ReidIdeal(model::JobackIdeal) = ReidIdeal(model.components,ReidIdealParam(model.params.coeffs,model.params.reference_state),model.references)
 
 function T_b(model::JobackIdeal)
     n = model.groups.n_flattenedgroups

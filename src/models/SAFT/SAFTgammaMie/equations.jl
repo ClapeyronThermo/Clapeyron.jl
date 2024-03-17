@@ -97,7 +97,7 @@ function σ3x(model::SAFTgammaMieModel, V, T, z)
     m̄ = dot(z, model.vrmodel.params.segment.values)
     m̄inv = 1/m̄
     σ = model.params.sigma.values
-    σ3_x =  zero(first(z))
+    σ3_x = zero(first(z))
     for i ∈ @groups
         x_Si = X[i]*m[i]*m̄inv
         σ3_x += x_Si*x_Si*(σ[i,i]^3)

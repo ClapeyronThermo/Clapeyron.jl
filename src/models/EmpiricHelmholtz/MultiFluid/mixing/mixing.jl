@@ -6,11 +6,11 @@ Calculates missing values, using the parameters stored in `model`. modifies `mix
 """
 recombine_mixing!(model::MultiFluid,mixing,estimate) = nothing
 
-function init_multifluid_mixing(model::EoSModel,components,estimate,userlocations=String[],verbose = false)
+function init_multifluid_mixing(model::EoSModel,components,estimate,userlocations = String[],verbose = false)
     return model
 end
 
-function init_multifluid_mixing(::Type{𝕄},components,estimate,userlocations=String[],verbose = false) where 𝕄
+function init_multifluid_mixing(::Type{𝕄},components,estimate,userlocations = String[],verbose = false) where 𝕄
     if verbose
         if estimate == :off
             additional = "no estimation"
