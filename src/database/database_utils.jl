@@ -137,6 +137,7 @@ function _getline(file, selectedline::Int)
 end
 
 function normalisestring(str, isactivated::Bool=true; tofilter = ' ')
+    ismissing(str) && return ""
     if !isactivated
         str isa String && return str::String
         return string(str)::String
@@ -363,8 +364,9 @@ mw_data() = ["properties/molarmass.csv"]
 
 function by_cas(caslist)
     cas = format_components(caslist)
-    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[])
+    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[],ignore_missing_singleparams = String["SMILES","inchikey","species"])
     species = params["species"].values
+    @show
     for (i,sp) in pairs(species)
         if occursin("~|~",sp)
             x,_ = eachsplit(sp,"~|~")

@@ -99,7 +99,7 @@ get_only_comp(x::String) = x
 #compare filenames using Clapeyron string criteria
 function compare_empiric_names(filename,input)
     norm_filename = normalisestring(last(splitdir(first(splitext(x)))))
-    for name in eachsplit(norm_filename,"~|~")
+    for name in eachsplit(norm_filename,"~")
         if name == input
             return true
         end
@@ -115,7 +115,7 @@ function get_json_data(components;
 
     component = get_only_comp(components)
     if first(component) != '{' #not json
-        _paths = flattenfilepaths(["Empiric"],userlocations)
+        _paths = flattenfilepaths(["Empiric","Empiric/EOS_CG/pures"],userlocations)
         norm_comp1 = normalisestring(component)
         f0 = x -> compare_empiric_names(x,norm_comp1)
         found_paths = filter(f0,_paths)

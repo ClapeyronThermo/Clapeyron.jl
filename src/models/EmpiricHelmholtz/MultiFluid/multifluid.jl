@@ -83,7 +83,7 @@ function MultiFluid(components;
     estimate_pure = false,
     estimate_mixing = :off,
     coolprop_userlocations = true,
-    Rgas = R̄,
+    Rgas = nothing,
     reference_state = nothing,
     verbose = false)
 
@@ -109,6 +109,13 @@ function MultiFluid(components;
     departure = init_model(departure,components,departure_userlocations,verbose)
     params = MultiFluidParam(_components,pures,reference_state)
     references = unique!(reduce(vcat,pure.references for pure in pures))
+    if Rgas == nothing
+        if length(pures) != 1
+            Rgas = Rgas()
+        else
+            Rgas = Rgas(pures[1])
+        end
+    end
     model = MultiFluid(_components,params,pures,mixing,departure,Rgas,references)
     recombine_mixing!(model,model.mixing,estimate_mixing)
     recombine_departure!(model,model.departure)
