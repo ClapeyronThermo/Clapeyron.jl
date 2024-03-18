@@ -25,10 +25,11 @@ function kij_mix!(f::F,out::PairParameter,K::PairParameter) where F
 end
 
 function kij_mix!(f::F,out::PairParameter,K::AbstractMatrix) where F
+    #when this method is called, we assume that all values of k are specified.
     out_missing = out.ismissingvalues
+    out_missing .= true
     kij_mix!(f,out.values,K,out_missing)
-    #but diagonals are all non-missing, by default:
-    diagvalues(out_missing) .= false
+    out_missing .= false
     return out
 end
 
