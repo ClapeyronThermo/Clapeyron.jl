@@ -43,7 +43,7 @@ Rgas(model::MultiFluid) = model.Rgas
         estimate_pure = false,
         estimate_mixing = :off,
         coolprop_userlocations = true,
-        Rgas = R̄,
+        Rgas = nothing,
         reference_state = nothing,
          verbose = false)
 
@@ -68,8 +68,10 @@ If `estimate_pure` is true, then, if a JSON is not found, the pure model will be
  -  `estimate_mixing = :lb` will perform Lorentz-Berthelot estimation of missing mixing parameters. (γT = βT = γv = βv = 1.0). additionally, you can pass `LorentzBerthelotMixing` to use `k` and `l` BIP instead.
  -  `estimate_mixing = :linear` will perform averaging of γT and γv so that `T(x) = ∑xᵢTᵢ` and `V(x) = ∑xᵢVᵢ` on missing mixing parameters. Additionally, you can use `LinearMixing` to perform this directly.
 
-`Rgas` sets the value of the gas constant to be used by the multifluid. defaults to `Clapeyron.R̄ = Rgas() = 8.31446261815324` (2019 defined constant value)
- """
+`Rgas` sets the value of the gas constant to be used by the multifluid. The default is the following:
+- If `Rgas` is not specified and the input is a single component model, then the value of `Rgas` will be taken from the fluid json file.
+- If `Rgas` is not specified and the input is a multi-component model, then the value of `Rgas` will be set to `Clapeyron.R̄ = Rgas() = 8.31446261815324` (2019 defined constant value)
+"""
 MultiFluid
 
 function MultiFluid(components;
@@ -83,7 +85,7 @@ function MultiFluid(components;
     estimate_pure = false,
     estimate_mixing = :off,
     coolprop_userlocations = true,
-    Rgas = R̄,
+    Rgas = nothing,
     reference_state = nothing,
     verbose = false)
 
@@ -109,6 +111,13 @@ function MultiFluid(components;
     departure = init_model(departure,components,departure_userlocations,verbose)
     params = MultiFluidParam(_components,pures,reference_state)
     references = unique!(reduce(vcat,pure.references for pure in pures))
+    if Rgas == nothing
+        if length(pures) != 1
+            Rgas = Clapeyron.Rgas()
+        else
+            Rgas = Clapeyron.Rgas(pures[1])
+        end
+    end
     model = MultiFluid(_components,params,pures,mixing,departure,Rgas,references)
     recombine_mixing!(model,model.mixing,estimate_mixing)
     recombine_departure!(model,model.departure)

@@ -14,6 +14,7 @@ Pages = ["misc.md"]
 Clapeyron.ECS
 Clapeyron.shape_factors
 Clapeyron.SPUNG
+Clapeyron.LKP
 ```
 
 ## Sanchez-Lacombe Model

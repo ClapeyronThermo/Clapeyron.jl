@@ -1,0 +1,335 @@
+{
+    "ANCILLARIES": {
+     "pS": {
+      "T_r": 736.5,
+      "Tmax": 736.5,
+      "Tmin": 0.0,
+      "description": "P=Pc*EXP[SUM(Ni*Theta^ti)*Tc/T]",
+      "n": [
+       -14.957,
+       10.22,
+       -5.9784,
+       -4.968,
+       -3.13
+      ],
+      "reducing_value": 4950750.0,
+      "t": [
+       1.0,
+       1.33,
+       1.8,
+       3.0,
+       10.3
+      ],
+      "type": "pL",
+      "using_tau_r": true
+     },
+     "rhoL": {
+      "T_r": 736.5,
+      "Tmax": 736.5,
+      "Tmin": 0.0,
+      "description": "D=Dc*[1+SUM(Ni*Theta^ti)]",
+      "n": [
+       -0.1814,
+       2.3567,
+       1.81,
+       -3.03,
+       1.874
+      ],
+      "reducing_value": 3300.0,
+      "t": [
+       0.02,
+       0.26,
+       1.43,
+       2.0,
+       2.6
+      ],
+      "type": "rhoLnoexp",
+      "using_tau_r": false
+     },
+     "rhoV": {
+      "T_r": 736.5,
+      "Tmax": 736.5,
+      "Tmin": 0.0,
+      "description": "D=Dc*EXP[SUM(Ni*Theta^ti)]",
+      "n": [
+       0.108,
+       -4.888,
+       -12.7,
+       -47.505,
+       -93.42,
+       -221.0
+      ],
+      "reducing_value": 3300.0,
+      "t": [
+       0.09,
+       0.395,
+       1.467,
+       3.7,
+       8.05,
+       16.2
+      ],
+      "type": "rhoV",
+      "using_tau_r": false
+     }
+    },
+    "EOS": [
+     {
+      "BibTeX_CP0": "",
+      "BibTeX_EOS": "??",
+      "STATES": {
+       "reducing": {
+        "T": 736.5,
+        "T_units": "K",
+        "hmolar": -99999999999.0,
+        "hmolar_units": "J/mol",
+        "p": 4950750.0,
+        "p_units": "Pa",
+        "rhomolar": 3300.0,
+        "rhomolar_units": "mol/m^3",
+        "smolar": 999999999999999.0,
+        "smolar_units": "J/mol/K"
+       },
+       "sat_min_liquid": {
+        "T": 301.1,
+        "T_units": "K",
+        "hmolar": -999999999999.0,
+        "hmolar_units": "J/mol",
+        "p": 0.13396,
+        "p_units": "Pa",
+        "rhomolar": 1e+16,
+        "rhomolar_units": "mol/m^3",
+        "smolar": 1e+20,
+        "smolar_units": "J/mol/K"
+       },
+       "sat_min_vapor": {
+        "T": 301.1,
+        "T_units": "K",
+        "hmolar": 9999999999999.0,
+        "hmolar_units": "J/mol",
+        "p": 0.13396,
+        "p_units": "Pa",
+        "rhomolar": 99999999999999.0,
+        "rhomolar_units": "mol/m^3",
+        "smolar": 1e+19,
+        "smolar_units": "J/mol/K"
+       }
+      },
+      "T_max": 740.0,
+      "T_max_units": "K",
+      "Ttriple": 301.1,
+      "Ttriple_units": "K",
+      "acentric": 1.013,
+      "acentric_units": "-",
+      "alpha0": [
+       {
+        "a1": 0.0,
+        "a2": 0.0,
+        "type": "IdealGasHelmholtzLead"
+       },
+       {
+        "a": -1,
+        "type": "IdealGasHelmholtzLogTau"
+       },
+       {
+        "R": 8.3144598,
+        "T0": 298.15,
+        "Tc": 736.5,
+        "c": [
+         4.0
+        ],
+        "t": [
+         0.0
+        ],
+        "type": "IdealGasHelmholtzCP0PolyT"
+       },
+       {
+        "R": 8.3144598,
+        "T0": 298.15,
+        "Tcrit": 736.5,
+        "n": [
+         4.25,
+         37.7
+        ],
+        "type": "IdealGasHelmholtzPlanckEinsteinFunctionT",
+        "v": [
+         96.0,
+         1165.0
+        ]
+       }
+      ],
+      "alphar": [
+       {
+        "d": [
+         4.0,
+         1.0,
+         1.0,
+         2.0,
+         3.0,
+         1.0,
+         3.0,
+         2.0,
+         2.0,
+         7.0
+        ],
+        "l": [
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         0.0,
+         2.0,
+         2.0,
+         1.0,
+         2.0,
+         1.0
+        ],
+        "n": [
+         0.066088158,
+         6.1059245,
+         -7.0526968,
+         -0.29739545,
+         0.11592105,
+         -1.8616953,
+         -0.97392153,
+         0.14690655,
+         -0.63284478,
+         -0.037820123
+        ],
+        "t": [
+         1.0,
+         0.507,
+         0.907,
+         1.22,
+         0.649,
+         2.14,
+         2.89,
+         1.54,
+         3.34,
+         0.998
+        ],
+        "type": "ResidualHelmholtzPower"
+       },
+       {
+        "beta": [
+         0.9691,
+         1.518,
+         1.328,
+         1.23,
+         1.112
+        ],
+        "d": [
+         1.0,
+         1.0,
+         3.0,
+         2.0,
+         2.0
+        ],
+        "epsilon": [
+         0.6694,
+         0.6466,
+         0.6669,
+         1.189,
+         1.248
+        ],
+        "eta": [
+         0.8971,
+         1.499,
+         1.681,
+         1.661,
+         1.245
+        ],
+        "gamma": [
+         1.216,
+         0.6775,
+         0.7815,
+         0.8796,
+         1.357
+        ],
+        "n": [
+         2.774726,
+         -1.0230468,
+         -0.19552536,
+         -0.14997584,
+         -0.23421918
+        ],
+        "t": [
+         0.92,
+         1.16,
+         1.43,
+         1.24,
+         0.801
+        ],
+        "type": "ResidualHelmholtzGaussian"
+       }
+      ],
+      "gas_constant": 8.3144598,
+      "gas_constant_units": "J/mol/K",
+      "molar_mass": 0.1051356,
+      "molar_mass_units": "kg/mol",
+      "p_max": 5000000.0,
+      "p_max_units": "Pa",
+      "pseudo_pure": false
+     }
+    ],
+    "INFO": {
+     "2DPNG_URL": "http://www.chemspider.com/ImagesHandler.ashx?id=-1",
+     "ALIASES": [],
+     "CAS": "111-42-2",
+     "CHEMSPIDER_ID": -1,
+     "ENVIRONMENTAL": {
+      "ASHRAE34": "?",
+      "FH": 99999999,
+      "GWP100": 99999999.0,
+      "GWP20": -99999999999,
+      "GWP500": -9999999999,
+      "HH": -999999999,
+      "Name": "DEA",
+      "ODP": 99999999.0,
+      "PH": -999999
+     },
+     "FORMULA": "HN(CH2CH2OH)2",
+     "INCHI_KEY": "ZBCBWPMODOFKDW-UHFFFAOYSA-N",
+     "INCHI_STRING": "InChI=1S/C4H11NO2/c6-3-1-5-2-4-7/h5-7H,1-4H2",
+     "NAME": "DEA",
+     "REFPROP_NAME": "DEA",
+     "SMILES": "?"
+    },
+    "STATES": {
+     "critical": {
+      "T": 736.5,
+      "T_units": "K",
+      "hmolar": -99999999999.0,
+      "hmolar_units": "J/mol",
+      "p": 4950750.0,
+      "p_units": "Pa",
+      "rhomolar": 3300.0,
+      "rhomolar_units": "mol/m^3",
+      "smolar": 999999999999999.0,
+      "smolar_units": "J/mol/K"
+     },
+     "triple_liquid": {
+      "T": 301.1,
+      "T_units": "K",
+      "hmolar": -999999999999.0,
+      "hmolar_units": "J/mol",
+      "p": 0.13396,
+      "p_units": "Pa",
+      "rhomolar": 1e+16,
+      "rhomolar_units": "mol/m^3",
+      "smolar": 1e+20,
+      "smolar_units": "J/mol/K"
+     },
+     "triple_vapor": {
+      "T": 301.1,
+      "T_units": "K",
+      "hmolar": 9999999999999.0,
+      "hmolar_units": "J/mol",
+      "p": 0.13396,
+      "p_units": "Pa",
+      "rhomolar": 99999999999999.0,
+      "rhomolar_units": "mol/m^3",
+      "smolar": 1e+19,
+      "smolar_units": "J/mol/K"
+     }
+    }
+   }

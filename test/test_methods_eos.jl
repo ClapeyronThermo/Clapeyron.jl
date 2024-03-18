@@ -539,6 +539,22 @@ end
     @test saturation_pressure(SingleFluid("methanol"),300.15)[1] ≈ PropsSI("P","T",300.15,"Q",1.,"methanol") rtol = 1e-6
 end
 
+@testset "LKP methods" begin
+    system = LKP("propane", idealmodel = AlyLeeIdeal)
+    p = 1e5
+    T = 230.15
+    @testset "Bulk properties" begin
+        @test Clapeyron.volume(system, p, T, phase = :l) ≈ 7.865195401331961e-5 rtol = 1e-6
+        @test Clapeyron.volume(system, p, T, phase = :v) ≈ 0.018388861273788176 rtol = 1e-6
+        @test Clapeyron.speed_of_sound(system, p, T, phase = :l) ≈ 1167.2461897307874 rtol = 1e-6
+    end
+    @testset "VLE properties" begin
+        @test Clapeyron.saturation_pressure(system, T)[1] ≈ 105419.26772976149 rtol = 1E-6
+        #saturation temperature tests are noisy
+        @test Clapeyron.saturation_temperature(system,105419.26772976149)[1] ≈ T  rtol = 1E-6
+        @test Clapeyron.crit_pure(system)[1] ≈ 369.6977432770013 rtol = 1E-6
+    end
+end
 
 @testset "LJRef methods" begin
     system = LJRef(["methane"])
