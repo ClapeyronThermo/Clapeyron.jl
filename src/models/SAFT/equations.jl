@@ -50,10 +50,10 @@ end
 end
 
 #recombine! utilities
-function recombine_saft!(model::SAFTModel)
+function recombine_saft!(model::SAFTModel,k = nothing,l = nothing)
     sigma = model.params.sigma
     epsilon = model.params.epsilon
-    sigma = sigma_LorentzBerthelot!(sigma)
-    epsilon = epsilon_LorentzBerthelot!(epsilon)
+    sigma = sigma_LorentzBerthelot!(sigma,k)
+    epsilon = epsilon_LorentzBerthelot!(epsilon,l)
     return model
 end

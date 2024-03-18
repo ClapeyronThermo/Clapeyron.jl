@@ -43,6 +43,17 @@ function get_l(model::PCSAFTModel)
     return get_k_mean(model.params.sigma)
 end
 
+function set_k!(model::PCSAFTModel,k)
+    has_groups(model) && return nothing
+    return recombine_saft!(model,k,nothing)
+end
+
+function set_l!(model::PCSAFTModel,l)
+    has_groups(model) && return nothing
+    return recombine_saft!(model,nothing,l)
+end
+
+
 """
     PCSAFTModel <: SAFTModel
 

@@ -117,6 +117,8 @@ GC.gc()
     @testset "PCPSAFT" begin
         system = PCPSAFT(["acetone", "butane", "DMSO"])
         z = [0.333, 0.333,0.333]
+        set_k!(system,zeros(3,3))
+        set_l!(system,zeros(3,3))
         @test Clapeyron.a_polar(system, V, T, z) ≈ -0.6541688650413224 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
     end

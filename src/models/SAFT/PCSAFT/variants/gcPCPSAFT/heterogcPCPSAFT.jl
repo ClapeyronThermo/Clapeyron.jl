@@ -32,15 +32,16 @@ function transform_params(::Type{HeterogcPCPSAFT},params,groups)
     params["comp_segment"] = segment
 
     #mixing for comp_epsilon
-    epsilon = group_pairmean2(groups,gc_epsilon .* gc_segment)
-    epsilon.values ./= segment.values
+    epsilon = group_sum(groups,gc_epsilon .* gc_segment)
+    epsilon ./= segment
+    epsilon = SingleParam("epsilon",groups.components,epsilon)
     params["comp_epsilon"] = epsilon_LorentzBerthelot(epsilon)
 
     #mixing for comp_sigma
     gc_sigma = deepcopy(params["sigma"])
     gc_sigma.values .^= 3
     gc_sigma.values .*= gc_segment.values
-    sigma = group_pairmean2(groups,gc_sigma)
+    sigma = group_sum(groups,gc_sigma)
     sigma.values ./= segment.values
     sigma.values .= cbrt.(sigma.values)
     params["comp_sigma"] = sigma_LorentzBerthelot(sigma)
