@@ -1,0 +1,145 @@
+Clapeyron Database File
+LKP Unlike Parameters (note: the original paper has κ values;the values here are k = 1 - κ)
+species1,species2,k
+methane,ethane,-0.052
+methane,ethene~|~ethylene~|~1-ethylene,-0.014
+methane,propane~|~n-propane,-0.113
+methane,propene~|~propylene,-0.089
+methane,butane~|~n-butane,-0.171
+methane,isobutane~|~2-methylpropane,-0.155
+methane,pentane~|~n-pentane,-0.24
+methane,isopentane~|~methylbutane~|~2-methylbutane,-0.228
+methane,hexane~|~n-hexane,-0.304
+methane,cyclohexane,-0.269
+methane,benzene,-0.234
+methane,heptane~|~n-heptane,-0.367
+methane,octane~|~n-octane,-0.423
+methane,nonane~|~n-nonane,-0.484
+methane,decane~|~n-decane,-0.533
+ethane,ethene~|~ethylene~|~1-ethylene,0.009
+ethane,propane~|~n-propane,-0.01
+ethane,propene~|~propylene,-0.002
+ethane,butane~|~n-butane,-0.029
+ethane,isobutane~|~2-methylpropane,-0.036
+ethane,pentane~|~n-pentane,-0.064
+ethane,isopentane~|~methylbutane~|~2-methylbutane,-0.07
+ethane,hexane~|~n-hexane,-0.106
+ethane,cyclohexane,-0.081
+ethane,benzene,-0.066
+ethane,heptane~|~n-heptane,-0.143
+ethane,octane~|~n-octane,-0.165
+ethane,nonane~|~n-nonane,-0.214
+ethane,decane~|~n-decane,-0.237
+ethene~|~ethylene~|~1-ethylene,butane~|~n-butane,0.002
+ethene~|~ethylene~|~1-ethylene,benzene,-0.094
+ethene~|~ethylene~|~1-ethylene,heptane~|~n-heptane,-0.163
+acetylene,ethene~|~ethylene~|~1-ethylene,0.052
+propane~|~n-propane,propene~|~propylene,0.008
+propane~|~n-propane,butane~|~n-butane,-0.003
+propane~|~n-propane,isobutane~|~2-methylpropane,-0.003
+propane~|~n-propane,pentane~|~n-pentane,-0.006
+propane~|~n-propane,isopentane~|~methylbutane~|~2-methylbutane,-0.009
+propane~|~n-propane,hexane~|~n-hexane,-0.047
+propane~|~n-propane,cyclohexane,-0.037
+propane~|~n-propane,benzene,-0.011
+propane~|~n-propane,heptane~|~n-heptane,-0.067
+propane~|~n-propane,octane~|~n-octane,-0.09
+propane~|~n-propane,nonane~|~n-nonane,-0.115
+propane~|~n-propane,decane~|~n-decane,-0.139
+propene~|~propylene,butane~|~n-butane,-0.01
+propene~|~propylene,isobutane~|~2-methylpropane,-0.009
+propene~|~propylene,isobutene~|~isobutylene~|~2-methylpropene,-0.006
+butane~|~n-butane,isobutane~|~2-methylpropane,-0.001
+butane~|~n-butane,pentane~|~n-pentane,0.006
+butane~|~n-butane,isopentane~|~methylbutane~|~2-methylbutane,0.002
+butane~|~n-butane,hexane~|~n-hexane,-0.018
+butane~|~n-butane,cyclohexane,-0.008
+butane~|~n-butane,benzene,0.001
+butane~|~n-butane,heptane~|~n-heptane,-0.027
+butane~|~n-butane,octane~|~n-octane,-0.046
+butane~|~n-butane,nonane~|~n-nonane,-0.064
+butane~|~n-butane,decane~|~n-decane,-0.078
+pentane~|~n-pentane,isopentane~|~methylbutane~|~2-methylbutane,0.013
+pentane~|~n-pentane,hexane~|~n-hexane,0.004
+pentane~|~n-pentane,cyclohexane,0.004
+pentane~|~n-pentane,benzene,0.023
+pentane~|~n-pentane,heptane~|~n-heptane,-0.004
+pentane~|~n-pentane,octane~|~n-octane,-0.02
+pentane~|~n-pentane,nonane~|~n-nonane,-0.033
+pentane~|~n-pentane,decane~|~n-decane,-0.045
+hexane~|~n-hexane,cyclohexane,0.002
+hexane~|~n-hexane,benzene,0.022
+hexane~|~n-hexane,heptane~|~n-heptane,-0.008
+hexane~|~n-hexane,octane~|~n-octane,-0.005
+hexane~|~n-hexane,nonane~|~n-nonane,-0.015
+hexane~|~n-hexane,decane~|~n-decane,-0.025
+benzene,cyclohexane,0.021
+benzene,heptane~|~n-heptane,0.015
+benzene,octane~|~n-octane,0.013
+benzene,"isooctane~|~2,2,4-trimethylpentane",0.018
+benzene,nonane~|~n-nonane,-0.034
+benzene,decane~|~n-decane,-0.047
+cyclohexane,heptane~|~n-heptane,0.001
+cyclohexane,octane~|~n-octane,-0.01
+cyclohexane,nonane~|~n-nonane,-0.021
+cyclohexane,decane~|~n-decane,-0.032
+heptane~|~n-heptane,octane~|~n-octane,0.007
+heptane~|~n-heptane,"isooctane~|~2,2,4-trimethylpentane",-0.002
+heptane~|~n-heptane,nonane~|~n-nonane,-0.002
+heptane~|~n-heptane,decane~|~n-decane,-0.01
+octane~|~n-octane,nonane~|~n-nonane,0.007
+octane~|~n-octane,decane~|~n-decane,0.001
+nonane~|~n-nonane,decane~|~n-decane,0.009
+nitrogen,methane,0.023
+nitrogen,ethene~|~ethylene~|~1-ethylene,-0.032
+nitrogen,ethane,-0.082
+nitrogen,propane~|~n-propane,-0.177
+nitrogen,propene~|~propylene,-0.151
+nitrogen,butane~|~n-butane,-0.276
+nitrogen,pentane~|~n-pentane,-0.372
+nitrogen,hexane~|~n-hexane,-0.442
+nitrogen,oxygen,0.003
+nitrogen,carbon monoxide,0.013
+nitrogen,argon,0.012
+nitrogen,hydrogen sulfide,0.017
+nitrogen,carbon dioxide,-0.11
+nitrogen,nitrous oxide~|~dinitrogen monoxide,-0.073
+nitrogen,ammonia,-0.033
+carbon dioxide,methane,0.025
+carbon dioxide,ethane,0.062
+carbon dioxide,propane~|~n-propane,0.075
+carbon dioxide,butane~|~n-butane,0.045
+carbon dioxide,isobutane~|~2-methylpropane,0.054
+carbon dioxide,pentane~|~n-pentane,-0.002
+carbon dioxide,hexane~|~n-hexane,-0.018
+carbon dioxide,cyclohexane,-0.054
+carbon dioxide,benzene,-0.018
+carbon dioxide,heptane~|~n-heptane,-0.058
+carbon dioxide,octane~|~n-octane,-0.09
+carbon dioxide,nonane~|~n-nonane,-0.126
+carbon dioxide,decane~|~n-decane,-0.16
+carbon dioxide,hydrogen sulfide,0.078
+carbon dioxide,r12~|~dichlorodifluoromethane,0.031
+carbon dioxide,methanol,-0.069
+hydrogen,methane,-0.216
+hydrogen,ethane,-0.604
+hydrogen,ethene~|~ethylene~|~1-ethylene,-0.498
+hydrogen,propane~|~n-propane,-0.826
+hydrogen,butane~|~n-butane,-1.093
+hydrogen,pentane~|~n-pentane,-1.335
+hydrogen,hexane~|~n-hexane,-1.456
+hydrogen,heptane~|~n-heptane,-1.634
+hydrogen,nitrogen,-0.08
+hydrogen,carbon monoxide,-0.085
+hydrogen,carbon dioxide,-0.624
+argon,oxygen,0.015
+argon,ammonia,-0.01
+argon,methane,0.016
+oxygen,nitrous oxide~|~dinitrogen monoxide,-0.057
+carbon monoxide,methane,0.026
+krypton,oxygen,0.011
+hydrogen sulfide,isobutane~|~2-methylpropane,0.053
+nitrous oxide~|~dinitrogen monoxide,methane,-0.017
+water,carbon dioxide,0.08
+water,ammonia,-0.152
+water,methanol,0.021

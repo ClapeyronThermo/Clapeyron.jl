@@ -1,21 +1,4 @@
-JSON_ALTERNATIVE_NAMES = Dict{String,String}(
-    "carbon dioxide" => "CarbonDioxide",
-    "hydrogen chloride" => "HydrogenChloride",
-    "hydrogen sulfide" => "HydrogenSulfide",
-    "isopentane" => "ISOPENTANE",
-    "nonane" => "n-Nonane",
-    "octane" => "n-Octane",
-    "heptane" => "n-Heptane",
-    "hexane" => "n-Hexane",
-    "pentane" => "n-Pentane",
-    "butane" => "n-Butane",
-    "propane" => "n-Propane",
-    "decane" => "n-Decane",
-    "undecane" => "n-Undecane",
-    "dodecane" => "n-Dodecane",
-    "carbonmonoxide" => "CARBONMONOXIDE",
-    "hydrogensulfide" => "HydrogenSulfide",
-)
+COOLPROP_IDENTIFIER_CACHE = Dict{String,String}()
 
 function coolprop_crit_data end
 
@@ -96,6 +79,17 @@ end
 get_only_comp(x::Vector{String}) = only(x)
 get_only_comp(x::String) = x
 
+#compare filenames using Clapeyron string criteria
+function compare_empiric_names(filename,input)
+    norm_filename = normalisestring(last(splitdir(first(splitext(filename)))))
+    for name in eachsplit(norm_filename,"~")
+        if name == input
+            return true
+        end
+    end
+    return false
+end
+
 function get_json_data(components;
     userlocations = String[],
     coolprop_userlocations = true,
@@ -104,16 +98,18 @@ function get_json_data(components;
 
     component = get_only_comp(components)
     if first(component) != '{' #not json
-        _paths = flattenfilepaths(["Empiric"],userlocations)
+        _paths = flattenfilepaths(["Empiric","Empiric/EOS_CG/pures"],userlocations)
         norm_comp1 = normalisestring(component)
-        f0 = x -> normalisestring(last(splitdir(first(splitext(x))))) == norm_comp1
+        f0 = x -> compare_empiric_names(x,norm_comp1)
         found_paths = filter(f0,_paths)
         if iszero(length(found_paths))
             verbose && @info "JSON for $(info_color(component)) not found in supplied paths"
             verbose && coolprop_userlocations && @info "trying to look JSON for $(info_color(component)) in CoolProp"
             #try to extract from coolprop.
             !coolprop_userlocations && throw(error("cannot found component file $(component)."))
-            alternative_comp = get(JSON_ALTERNATIVE_NAMES,norm_comp1,component)
+            alternative_comp = get!(COOLPROP_IDENTIFIER_CACHE,norm_comp1) do
+                cas(norm_comp1)[1]
+            end
             success,json_string = coolprop_csv(alternative_comp,component)
             if success
                 data = JSON3.read(json_string)[1]

@@ -433,7 +433,7 @@ trimethylamine,59.073,2.36556,3.60913,225.80738,0.0,1,0,,NONPOLAR,OK
 o-deuteromethanol,32.026,2.85208,2.60052,184.3475,0.0,1,1,,ASSOCIATIVE,OK
 dodecanol~|~1-dodecanol~|~dodecan-1-ol,186.198,5.72518,3.81916,262.94819,0.0,1,1,,ASSOCIATIVE,OK
 sulfolane,120.025,3.06974,3.59202,375.45722,4.68,2,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
-ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,61.053,1.07233,4.5,435.74158,0.0,2,2,,ASSOCIATIVE,sigma: higher
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,61.053,1.07233,4.5,435.74158,0.0,2,2,,ASSOCIATIVE,sigma: higher
 nonylbenzene~|~n-nonylbenzene,204.188,5.65331,3.9043,274.67771,0.0,0,0,,NONPOLAR,OK
 "r115~|~chloroperfluoroethane~|~chloropentafluoroethane~|~1-chloro-1,1,2,2,2-pentafluoroethane",153.961,2.76582,3.5012,170.66862,0.0,0,0,,NONPOLAR,OK
 "r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",169.931,2.7784,3.64165,202.49941,0.0,0,0,,NONPOLAR,OK
