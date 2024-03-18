@@ -137,7 +137,7 @@ Heterosegmented Group-contribution Polar Perturbed-Chain SAFT (Hetero-gc-PCP-SAF
 """
 HeterogcPCPSAFT
 
-export HeterogcPCSAFT
+export HeterogcPCPSAFT
 
 function lb_volume(model::gcPCPSAFTModel, z = SA[1.0])
     vk  = model.groups.n_flattenedgroups
@@ -299,5 +299,3 @@ end
 @inline pcp_sigma(model::HeterogcPCPSAFT) = model.params.comp_sigma.values
 @inline pcp_epsilon(model::HeterogcPCPSAFT) = model.params.comp_epsilon.values
 @inline pcp_segment(model::HeterogcPCPSAFT) = model.params.comp_segment.values
-
-export HeterogcPCPSAFT
