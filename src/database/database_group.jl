@@ -114,6 +114,14 @@ function __GroupParam(components,found_gcpairs,grouplocations,options,grouptype)
     filepaths = flattenfilepaths(grouplocations,usergrouplocations)
 
     gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(components))
+    
+    #fill gccomponents_parsed
+    for i in 1:length(components)
+        if !to_lookup[i]
+            gccomponents_parsed[i] = (components[i],found_gcpairs[i])
+        end
+    end
+
     #using parsing machinery
     if any(to_lookup)
         allparams,allnotfoundparams = createparams(componentstolookup, filepaths, options, :group) #merge all found params
@@ -134,8 +142,6 @@ function __GroupParam(components,found_gcpairs,grouplocations,options,grouptype)
                 j += 1
                 gcdata = _parse_group_string(raw_groups.values[j])
                 gccomponents_parsed[i] = (components[i],gcdata)
-            else
-                gccomponents_parsed[i] = (components[i],found_gcpairs[i])
             end
         end
     else
@@ -144,9 +150,6 @@ function __GroupParam(components,found_gcpairs,grouplocations,options,grouptype)
             _grouptype = grouptype
         end
         groupsourcecsvs = filepaths
-        for i in 1:length(components)
-            gccomponents_parsed[i] = (components[i],found_gcpairs[i])
-        end
     end
     return GroupParam(gccomponents_parsed,_grouptype,groupsourcecsvs)
 end
@@ -198,12 +201,19 @@ function StructGroupParam(gccomponents::Vector,
 
     found_intragcpairs = map(gc_get_intragroup,gccomponents)
     to_lookup = map(isnothing,found_intragcpairs)
+    gccomponents_parsed = Vector{Vector{Pair{NTuple{2,String},Int}}}(undef,length(components))
 
+    #fill gccomponents_parsed with input intragroups.
+    for i in 1:length(components)
+        if !to_lookup[i]
+            gccomponents_parsed[i] = found_intragcpairs[i]
+        end
+    end
     #we dont need intragroups if there is onlñy one group that appears one time. ej: water = ["H2O" => 1]
     for i in 1:length(components)
         trivial_intragroup = build_trivial_intragroup(group1,i,to_lookup[i])
         if !isnothing(trivial_intragroup)
-            found_intragcpairs[i] = trivial_intragroup
+            gccomponents_parsed[i] = trivial_intragroup
             to_lookup[i] = false
         end
     end
@@ -211,7 +221,6 @@ function StructGroupParam(gccomponents::Vector,
     usergrouplocations = options.group_userlocations
     componentstolookup = components[to_lookup]
     filepaths = flattenfilepaths(grouplocations,usergrouplocations)
-    gccomponents_parsed = Vector{Vector{Pair{NTuple{2,String},Int}}}(undef,length(components))
     if any(to_lookup)
         allparams,allnotfoundparams = createparams(componentstolookup, filepaths, options, :intragroup)
         raw_result, _ = compile_params(componentstolookup,allparams,allnotfoundparams,options) #generate ClapeyronParams
@@ -229,8 +238,6 @@ function StructGroupParam(gccomponents::Vector,
                 j += 1
                 gcdata = _parse_group_string(raw_groups.values[j],NTuple{2,String})
                 gccomponents_parsed[i] = gcdata
-            else
-                gccomponents_parsed[i] = found_intragcpairs[i]
             end
         end
     else
@@ -238,7 +245,6 @@ function StructGroupParam(gccomponents::Vector,
         if _grouptype != grouptype && grouptype != :unknown
             _grouptype = grouptype
         end
-        gccomponents_parsed .= found_intragcpairs
     end
 
     if _grouptype != group1.grouptype && _grouptype != :unknown
