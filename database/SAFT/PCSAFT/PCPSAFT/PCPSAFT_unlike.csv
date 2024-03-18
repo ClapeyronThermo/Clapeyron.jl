@@ -353,7 +353,7 @@ acetone~|~propanone,n-methylimidazole,-0.0313041934560577
 "glycol~|~1,2-ethanediol~|~ethylene glycol","3,6-dioxa-1-decanol~|~diethyleneglycolmonobutylether",0.017860469882484
 "glycol~|~1,2-ethanediol~|~ethylene glycol",2-(2-methoxyethoxy)ethanol~|~diethylene glycol monomethyl ether,0.0275319620284209
 "glycol~|~1,2-ethanediol~|~ethylene glycol",deg~|~diethylene glycol,0.0017837003824935
-"glycol~|~1,2-ethanediol~|~ethylene glycol",ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.029533319714347
+"glycol~|~1,2-ethanediol~|~ethylene glycol",mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.029533319714347
 "glycol~|~1,2-ethanediol~|~ethylene glycol","dea~|~diethanolamine~|~2,2'-diethanolamine",0.049191155352384
 "glycol~|~1,2-ethanediol~|~ethylene glycol",carbon dioxide,0.0839719209787344
 "glycol~|~1,2-ethanediol~|~ethylene glycol","1,3-butanediol",0.0027158308450135
@@ -579,7 +579,7 @@ oxirane~|~ethyleneoxide,"1,3-dioxolan-2-one~|~ethylene carbonate",-0.04137694431
 2-propenol~|~2-propen-1-ol~|~allyl alcohol,3-chloropropene~|~3-chloro-1-propene,-0.0149794749457253
 2-propenol~|~2-propen-1-ol~|~allyl alcohol,cumene~|~isopropylbenzene,0.014447917717357
 2-propenol~|~2-propen-1-ol~|~allyl alcohol,mm~|~hexamethyldisiloxane,-0.0078041914819879
-2-propenol~|~2-propen-1-ol~|~allyl alcohol,ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.0261589909793163
+2-propenol~|~2-propen-1-ol~|~allyl alcohol,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.0261589909793163
 2-propenol~|~2-propen-1-ol~|~allyl alcohol,"di-t-butyl peroxide~|~di-tert-butylperoxide~|~di-tert.butyl peroxide~|~bis(1,1-dimethylethyl)peroxide",0.0201383468379076
 2-propenol~|~2-propen-1-ol~|~allyl alcohol,2-hexanol,0.0128485531303101
 2-propenol~|~2-propen-1-ol~|~allyl alcohol,cis-crotonitrile,-0.0856323660016246
@@ -1374,7 +1374,7 @@ benzene,d4~|~octamethylcyclotetrasiloxane,-0.0085168935123201
 benzene,hexadecane~|~n-hexadecane,0.0098841493359812
 benzene,m-terphenyl,5.017312577949909e-5
 benzene,sulfolane,-0.0179560306292922
-benzene,ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.0183089132744889
+benzene,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.0183089132744889
 benzene,"r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",0.0289147827981009
 benzene,heptadecane~|~n-heptadecane,0.0016001978848222
 benzene,"n,n-diethylformamide",0.0036084530014053
@@ -4598,7 +4598,7 @@ dmso~|~dimethyl sulfoxide,5-nonanone,-0.0085589719962969
 dmso~|~dimethyl sulfoxide,2-butene~|~(z)-2-butene~|~cis-2-butene,-0.0019019040254726
 dmso~|~dimethyl sulfoxide,deg~|~diethylene glycol,-0.2247329266241534
 dmso~|~dimethyl sulfoxide,"mesitylene~|~1,3,5-trimethylbenzene",9.665441423407796e-5
-dmso~|~dimethyl sulfoxide,ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.1298958910309356
+dmso~|~dimethyl sulfoxide,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.1298958910309356
 dmso~|~dimethyl sulfoxide,methanethiol~|~methyl mercaptan,-0.0345579422050102
 dmso~|~dimethyl sulfoxide,hexyne~|~1-hexyne,-0.0307772323067168
 dmso~|~dimethyl sulfoxide,r30b2~|~ch2br2~|~dibromomethane,-0.0308243363405808
@@ -4655,7 +4655,7 @@ tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,(e)-2-butene~|~trans-2-
 tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,dimethyl carbonate~|~carbonic acid dimethyl ester,0.0102714934714425
 tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,isobutene~|~isobutylene~|~2-methylpropene,0.0237144467488439
 tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,2-butene~|~(z)-2-butene~|~cis-2-butene,0.0271839721505143
-tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.0088369739526052
+tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.0088369739526052
 tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,"di-t-butyl peroxide~|~di-tert-butylperoxide~|~di-tert.butyl peroxide~|~bis(1,1-dimethylethyl)peroxide",0.0559164766496803
 tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,"2,4,4-trimethyl-1-pentene",0.0408875813648211
 tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,propylbutyrate~|~n-propylbutyrate~|~propyl butanoate~|~n-propylbutanoate~|~n-propyl n-butyrate~|~butanoic acid propyl ester,0.0066642864908106
@@ -5120,7 +5120,7 @@ water,deg~|~diethylene glycol,-0.0025075123943886
 water,hexadecane~|~n-hexadecane,0.5980668712919226
 water,dipropyleneglycoln-butylether~|~dipropylene glycol butyl ether,0.0523840380326604
 water,o-deuteromethanol,-0.0091231094732122
-water,ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,0.0743117691639897
+water,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,0.0743117691639897
 water,mesityl oxide~|~4-methyl-3-penten-2-one,0.0117862995872625
 water,"2,2,3,3-tetrafluoro-1-propanol",-0.0309533891377785
 water,pyrrolidine,0.0126579844755505
@@ -5351,7 +5351,7 @@ ammonia,cumene~|~isopropylbenzene,0.1905930169135205
 ammonia,butenyne~|~1-buten-3-yne~|~vinylacetylene,0.0404200603447322
 ammonia,2-propylamine~|~2-propanamine~|~isopropylamine,0.0607436636127886
 ammonia,trimethylamine,0.1158582782342621
-ammonia,ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.0274503354243536
+ammonia,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.0274503354243536
 ammonia,dimethyl ether,0.0514651338646163
 ammonia,"r152a~|~difluoroethane~|~1,1-difluoroethane",0.0162463794699177
 ammonia,methane,0.0752873717698281
@@ -5739,7 +5739,7 @@ thiophene,isobutane~|~2-methylpropane,0.0179159110076507
 thiophene,(e)-2-butene~|~trans-2-butene,0.0099756882930302
 thiophene,isobutene~|~isobutylene~|~2-methylpropene,0.0085191868317374
 thiophene,sulfolane,-0.0146836475204548
-thiophene,ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.0342023737777228
+thiophene,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.0342023737777228
 thiophene,dimethyl ether,-0.0051097981184183
 thiophene,"2,3-dimethyl-2-butene",0.0116897595655932
 thiophene,"2,3-dimethyl-1-butene",0.0037755569655876
@@ -5756,7 +5756,7 @@ n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone~|~n-methyl
 n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone~|~n-methyl-2-pyrrolidinone,2-ethyl-1-hexanol,-0.0789333609613681
 n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone~|~n-methyl-2-pyrrolidinone,2-butene~|~(z)-2-butene~|~cis-2-butene,-0.0054446585187143
 n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone~|~n-methyl-2-pyrrolidinone,diphenylmethane,-0.0252254928731037
-n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone~|~n-methyl-2-pyrrolidinone,ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.1230149403125087
+n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone~|~n-methyl-2-pyrrolidinone,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,-0.1230149403125087
 n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone~|~n-methyl-2-pyrrolidinone,"2,2,3,3-tetrafluoro-1-propanol",-0.0084472915238675
 n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone~|~n-methyl-2-pyrrolidinone,2-hexanone,-0.0114626676876572
 n-methylpyrrolidone~|~n-methyl-2-pyrrolidone~|~methyl-2-pyrrolidinone~|~n-methyl-2-pyrrolidinone,gamma-butyrolactone~|~.gamma.-butyrolactone,0.0071651389433654
@@ -6255,7 +6255,7 @@ ethylene glycol acetate monomethyl ether,carbon dioxide,0.0286551247020902
 2-butene~|~(z)-2-butene~|~cis-2-butene,ethene~|~ethylene~|~1-ethylene,0.0055003393985667
 2-butene~|~(z)-2-butene~|~cis-2-butene,2-thiapropane~|~dimethylsulfide,0.0041129949214619
 2-butene~|~(z)-2-butene~|~cis-2-butene,formylmorpholine~|~n-formylmorpholine,0.0211647802040475
-deg~|~diethylene glycol,ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,0.0104463160122181
+deg~|~diethylene glycol,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,0.0104463160122181
 deg~|~diethylene glycol,"1,4-butadiol~|~1,4-butanediol",0.0076847192768288
 deg~|~diethylene glycol,guaiacol~|~2-methoxyphenol,-0.0061065394239619
 deg~|~diethylene glycol,carbon dioxide,0.0662876417593057
@@ -6354,8 +6354,8 @@ sulfolane,1-heptyne,-0.016931493188631
 sulfolane,carbon dioxide,0.045287523760565
 sulfolane,2-thiapropane~|~dimethylsulfide,0.0048797777179201
 sulfolane,sulfur dioxide,-0.0329265099792249
-ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,"dea~|~diethanolamine~|~2,2'-diethanolamine",0.1221760455195971
-ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,1-methoxy2-propanol~|~1-methoxy-2-propanol~|~propylene glycol monomethyl ether,-0.0789765708973801
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,"dea~|~diethanolamine~|~2,2'-diethanolamine",0.1221760455195971
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,1-methoxy2-propanol~|~1-methoxy-2-propanol~|~propylene glycol monomethyl ether,-0.0789765708973801
 nonylbenzene~|~n-nonylbenzene,carbon dioxide,0.1451218171400305
 "r115~|~chloroperfluoroethane~|~chloropentafluoroethane~|~1-chloro-1,1,2,2,2-pentafluoroethane","r114~|~1,2-dichlorotetrafluoroethane~|~1,2-dichloro-1,1,2,2-tetrafluoroethane",0.0042983006585053
 "r115~|~chloroperfluoroethane~|~chloropentafluoroethane~|~1-chloro-1,1,2,2,2-pentafluoroethane",cf3br~|~r13b1~|~bromotrifluoromethane~|~trifluorobromomethane,-0.002185941200462

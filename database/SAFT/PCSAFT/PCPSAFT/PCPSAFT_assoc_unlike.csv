@@ -741,7 +741,7 @@ ethanol,e,furfuryl alcohol~|~2-hydroxymethylfuran,H,2202.508753,0.0
 ethanol,e,"propyleneglycol~|~1,2-propanediol~|~1,2-propylene glycol",H,1950.302235,0.0
 ethanol,e,methylacetamide~|~n-methylacetamide,H,2349.172134,0.0
 ethanol,e,1-phenylethanol~|~sec-phenethylalcohol~|~alpha.-phenylethanol~|~alpha-methylbenzyl alcohol,H,2918.00396,0.0
-ethanol,e,ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,H,2229.217732,0.0
+ethanol,e,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,H,2229.217732,0.0
 ethanol,e,guaiacol~|~2-methoxyphenol,H,1069.238593,0.0
 ethanol,e,"2,2,2-trifluoroethanol",H,2238.251007,0.0
 ethanol,e,"tetraethylene glycol~|~3,6,9-trioxa-1,11-undecanediol~|~2,2'-oxybis(2,1-ethanediyloxy)bisethanol",H,2356.291322,0.0
@@ -931,7 +931,7 @@ lauric acid~|~dodecanoic acid~|~n-dodecanoic acid,e,myristic acid~|~tetradecanoi
 myristic acid~|~tetradecanoic acid,e,"linoleic acid~|~(z,z)-9,12-octadecadienoic acid",H,3492.904471,0.0
 deg~|~diethylene glycol,e,"dea~|~diethanolamine~|~2,2'-diethanolamine",H,1937.874672,0.0
 deg~|~diethylene glycol,e,dga~|~diglycolamine~|~2-aminoethoxyethanol~|~2-(2-aminoethoxy)ethanol,H,1934.249812,0.0
-ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,e,triethanolamine,H,1735.184927,0.0
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,e,triethanolamine,H,1735.184927,0.0
 "1,4-butadiol~|~1,4-butanediol",e,"1,2-butanediol",H,1848.5132,0.0
 2-methyl-1-butanol,e,tert-pentanol~|~2-methyl-2-butanol~|~2-methylbutan-2-ol,H,2629.191211,0.0
 1-hexadecanol,e,octadecanol~|~1-octadecanol,H,3039.034451,0.0
@@ -1679,7 +1679,7 @@ ethanol,H,furfuryl alcohol~|~2-hydroxymethylfuran,e,2202.508753,0.0
 ethanol,H,"propyleneglycol~|~1,2-propanediol~|~1,2-propylene glycol",e,1950.302235,0.0
 ethanol,H,methylacetamide~|~n-methylacetamide,e,2349.172134,0.0
 ethanol,H,1-phenylethanol~|~sec-phenethylalcohol~|~alpha.-phenylethanol~|~alpha-methylbenzyl alcohol,e,2918.00396,0.0
-ethanol,H,ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,e,2229.217732,0.0
+ethanol,H,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,e,2229.217732,0.0
 ethanol,H,guaiacol~|~2-methoxyphenol,e,1069.238593,0.0
 ethanol,H,"2,2,2-trifluoroethanol",e,2238.251007,0.0
 ethanol,H,"tetraethylene glycol~|~3,6,9-trioxa-1,11-undecanediol~|~2,2'-oxybis(2,1-ethanediyloxy)bisethanol",e,2356.291322,0.0
@@ -1869,7 +1869,7 @@ lauric acid~|~dodecanoic acid~|~n-dodecanoic acid,H,myristic acid~|~tetradecanoi
 myristic acid~|~tetradecanoic acid,H,"linoleic acid~|~(z,z)-9,12-octadecadienoic acid",e,3492.904471,0.0
 deg~|~diethylene glycol,H,"dea~|~diethanolamine~|~2,2'-diethanolamine",e,1937.874672,0.0
 deg~|~diethylene glycol,H,dga~|~diglycolamine~|~2-aminoethoxyethanol~|~2-(2-aminoethoxy)ethanol,e,1934.249812,0.0
-ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,H,triethanolamine,e,1735.184927,0.0
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,H,triethanolamine,e,1735.184927,0.0
 "1,4-butadiol~|~1,4-butanediol",H,"1,2-butanediol",e,1848.5132,0.0
 2-methyl-1-butanol,H,tert-pentanol~|~2-methyl-2-butanol~|~2-methylbutan-2-ol,e,2629.191211,0.0
 1-hexadecanol,H,octadecanol~|~1-octadecanol,e,3039.034451,0.0
