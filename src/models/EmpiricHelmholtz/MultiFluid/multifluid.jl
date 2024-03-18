@@ -111,9 +111,9 @@ function MultiFluid(components;
     references = unique!(reduce(vcat,pure.references for pure in pures))
     if Rgas == nothing
         if length(pures) != 1
-            Rgas = Rgas()
+            Rgas = Clapeyron.Rgas()
         else
-            Rgas = Rgas(pures[1])
+            Rgas = Clapeyron.Rgas(pures[1])
         end
     end
     model = MultiFluid(_components,params,pures,mixing,departure,Rgas,references)

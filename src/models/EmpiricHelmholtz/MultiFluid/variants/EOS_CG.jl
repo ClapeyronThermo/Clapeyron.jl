@@ -26,7 +26,7 @@ It uses the same functional form as [`GERG2008`](@ref).
 
 1. Neumann, T., Herrig, S., Bell, I. H., Beckmüller, R., Lemmon, E. W., Thol, M., & Span, R. (2023). EOS-CG-2021: A mixture model for the calculation of thermodynamic properties of CCS mixtures. International Journal of Thermophysics, 44(12). [doi:10.1007/s10765-023-03263-6](https://doi.org/10.1007/s10765-023-03263-6)
 """
-function EOS_CG(components;verbose = false,Rgas = Rgas())
+function EOS_CG(components;verbose = false,Rgas = R̄)
     return MultiFluid(components;
     mixing = AsymmetricMixing,
     departure = EmpiricDeparture,
