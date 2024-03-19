@@ -119,7 +119,7 @@ Base.@specialize
 
 function getline(filepath::AbstractString, selectedline::Int)
     is_inline_csv(filepath) && return getline(IOBuffer(filepath),selectedline)
-    open(filepath) do file
+    open(filepath,"r";lock = true) do file
        _getline(file,selectedline)
     end
 end

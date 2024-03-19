@@ -64,8 +64,8 @@ function coolprop_csv(component::String,comp = "")
         Base.Libc.Libdl.dlclose(lib_handler)
         throw(error("cannot found component file $(comp). Try loading the CoolProp library by loading it."))
     end
-
 end
+
 function tryparse_units(val,unit)
     result = try
         unit_parsed = Unitful.uparse(unit)
