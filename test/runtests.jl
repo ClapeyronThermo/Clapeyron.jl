@@ -3,17 +3,28 @@ t1 = @elapsed using Clapeyron
 using CoolProp #CoolProp ext
 using Unitful #Unitful ext
 using MultiComponentFlash: MultiComponentFlash
-using JuliaInterpreter
+
 using Clapeyron.LinearAlgebra
 using Clapeyron.StaticArrays
 
-union!(JuliaInterpreter.compiled_modules, Any[Base, Base.Broadcast, LinearAlgebra, StaticArrays])
+union!(JuliaInterpreter.compiled_modules, Any[Base, Base.Broadcast, LinearAlgebra, StaticArrays,Clapeyron.Solvers])
 
 #=
 This code is copied from ChainRules.jl tests.
 I remember that, some time ago, some of the package mantainers said that using JuliaInterpreter in the tests really speed things up.
 Clapeyron (compiled) tests take too long, because we are evaluating Each EoS. but in practice, an user will only use a handful of EoS at a time.
 =#
+@static if Base.VERSION <= v"1.11"
+    using JuliaInterpreter #JuliaInterpreter fails on nightly
+    macro interpret(ex)
+        esc(:(JuliaInterpreter.@interpret $ex))
+    end
+else
+    macro interpret(ex)
+        esc(:($ex))
+    end
+end
+
 function include_test(path)
     if isempty(ARGS) || any(occursin(a, path) for a in ARGS)
         println("Testing $path:")  # print so TravisCI doesn't timeout due to no output
@@ -61,12 +72,13 @@ end
     include("test_database.jl")
     include("test_solvers.jl")
     include("test_differentials.jl")
-    include("test_misc.jl")
+    include_test("test_misc.jl")
     #those two are the main slowdown on the tests.
     include_test("test_models.jl")
-    include_test("test_methods_eos.jl")
-    
+    include("test_methods_eos.jl")
+
     include("test_methods_api.jl")
     include("test_estimation.jl")
     include("test_issues.jl")
 end
+
