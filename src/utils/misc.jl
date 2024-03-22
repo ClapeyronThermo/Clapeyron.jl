@@ -82,7 +82,7 @@ function doi2bib(doi::String)
         if r.status == 200
             res = strip(String(take!(out)))
         else
-            res =  ""
+            res = ""
         end
         DOI2BIB_CACHE[doi] = res
         return res
@@ -122,7 +122,7 @@ end
 format_components(str::String) = [str]
 format_components(str::Tuple) = format_components(first(str))
 format_components(str::Pair) = format_components(first(str))
-format_components(str::AbstractString) = String(str)
+format_components(str::AbstractString) = format_components(String(str))
 format_components(str::Vector{String}) = str
 format_components(str) = map(format_component_i,str)
 format_component_i(str::AbstractString) = String(str)
@@ -143,3 +143,6 @@ function mass_to_mole(model, w)
     x = w ./ mw(model)
     return x ./ sum(x)
 end
+format_gccomponents(str::String) = [str]
+format_gccomponents(str::AbstractString) = format_components(String(str))
+format_gccomponents(str::Vector{String}) = str

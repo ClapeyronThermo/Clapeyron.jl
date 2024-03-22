@@ -108,7 +108,9 @@ Returns a 2-tuple corresponding to `(Vₗ,Vᵥ)`, where `Vₗ` and `Vᵥ` are th
 Used in [`saturation_pressure`](@ref) methods that require initial volume guesses.
 It can be overloaded to provide more accurate estimates if necessary.
 """
-function x0_sat_pure(model,T)
+x0_sat_pure(model,T) = x0_sat_pure_virial(model,T)
+
+function x0_sat_pure_virial(model,T)
     z = SA[1.0]
     single_component_check(x0_sat_pure,model)
 
@@ -203,7 +205,7 @@ function x0_sat_pure(model,T)
         return (x0l,x0v)
     end
     #saturation volumes calculated from a vdW EoS.
-    Vl0,Vv0 = vdw_x0_xat_pure(T,Tc,Pc,Vc)
+    Vl0,Vv0 = vdw_x0_sat_pure(T,Tc,Pc,Vc)
 
     if Tr > 0.97
         #in this region, finding both spinodals is cheaper than incurring in a crit_pure calculation.
@@ -276,7 +278,7 @@ end
 
 #vdw crit pure values,given a and b
 function vdw_crit_pure(a,b)
-    Ωa,Ωb =  27/64, 1/8
+    Ωa,Ωb = 27/64, 1/8
     Vc = 3*b
     ar = a/Ωa
     br = b/Ωb
@@ -380,7 +382,7 @@ function x0_sat_pure_hermite_spinodal(model,Vl00,Vv00,T)
     return Vl00,Vv00 #failed to find spinodal
 end
 
-function vdw_x0_xat_pure(T,T_c,P_c,V_c)
+function vdw_x0_sat_pure(T,T_c,P_c,V_c)
     Tr = T/T_c
     Trm1 = 1.0-Tr
     Trmid = sqrt(Trm1)
@@ -473,7 +475,7 @@ function x0_psat(model,T,crit = nothing)
         T̃ = T/T_scale(model)
         lnp̃ = A - B/(T̃ + C)
         ps = p_scale(model)
-        px =  exp(lnp̃)*ps
+        px = exp(lnp̃)*ps
         return px
     end
     if isnothing(crit)

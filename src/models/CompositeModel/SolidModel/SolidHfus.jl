@@ -12,7 +12,7 @@ end
     SolidHfusModel <: EoSModel
 
     SolidHfus(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Parameters

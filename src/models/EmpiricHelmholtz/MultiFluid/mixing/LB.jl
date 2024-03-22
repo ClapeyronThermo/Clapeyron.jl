@@ -1,8 +1,8 @@
 """
     LorentzBerthelotMixing::AsymmetricMixing
     LorentzBerthelotMixing(components;
-    userlocations=String[],
-    verbose=false)
+    userlocations = String[],
+    verbose = false)
 
 ## Input parameters
 - `k`: Pair Parameter (`Float64`) - binary interaction parameter for temperature  (no units)
@@ -22,7 +22,7 @@ Tᵣᵢⱼ = √(Tcᵢ*Tcⱼ)
 missing parameters will be assumed `kᵢⱼ = lᵢⱼ = 0`
 """
 function LorentzBerthelotMixing(components;userlocations = String[],verbose = false)
-    params = getparams(components,["Empiric/mixing/LorentzBerthelotMixing/LorentzBerthelotMixing_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components,["Empiric/mixing/LorentzBerthelotMixing/LorentzBerthelotMixing_unlike.csv"]; userlocations = userlocations, verbose = verbose)
     l = get(params,"l",nothing)
     k = get(params,"k",nothing)
     k === nothing && (k = PairParam("gamma_T",components))

@@ -15,9 +15,11 @@ abstract type AlyLeeIdealModel <: IdealModel end
 
 """
     AlyLeeIdeal <: AlyLeeIdealModel
-    AlyLeeIdeal(components::Array{String,1}; 
-    userlocations::Array{String,1}=String[], 
-    verbose=false)
+
+    AlyLeeIdeal(components; 
+    userlocations = String[],
+    reference_state = nothing,
+    verbose = false)
 
 ## Input parameters
 

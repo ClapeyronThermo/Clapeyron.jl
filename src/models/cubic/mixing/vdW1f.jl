@@ -9,7 +9,7 @@ export vdW1fRule
     vdW1fRule <: vdW1fRuleModel
     
     vdW1fRule(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 ## Input Parameters
 None
@@ -33,7 +33,7 @@ mixing = vdW1fRule(["water","carbon dioxide"])
 """
 vdW1fRule
 
-function vdW1fRule(components; activity = nothing, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+function vdW1fRule(components; activity = nothing, userlocations = String[],activity_userlocations = String[], verbose::Bool=false)
     vdW1fRule()
 end
 

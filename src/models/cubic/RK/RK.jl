@@ -15,18 +15,18 @@ export RK
 
 """
     RK(components; 
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     alpha = PRAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    verbose = false)
 
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -69,7 +69,7 @@ model = RK(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced
 # Passing a prebuilt model
 
 my_alpha = SoaveAlpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  RK(["ethane","butane"],alpha = my_alpha) #this is efectively now an SRK model
+model = RK(["ethane","butane"],alpha = my_alpha) #this is efectively now an SRK model
 
 # User-provided parameters, passing files or folders
 
@@ -93,22 +93,24 @@ model = RK(["neon","hydrogen"];
 """
 RK
 
-function RK(components; idealmodel=BasicIdeal,
+function RK(components;
+    idealmodel = BasicIdeal,
     alpha = RKAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-     verbose=false)
+    reference_state = nothing,
+    verbose = false)
     formatted_components = format_components(components)
     params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"];
-        userlocations=userlocations,
-        verbose=verbose,
+        userlocations = userlocations,
+        verbose = verbose,
         ignore_missing_singleparams = __ignored_crit_params(alpha))
 
     k = get(params,"k",nothing)
@@ -120,7 +122,7 @@ function RK(components; idealmodel=BasicIdeal,
     init_mixing = init_model(mixing,components,activity,mixing_userlocations,activity_userlocations,verbose)
     a = PairParam("a",formatted_components,zeros(length(Tc)))
     b = PairParam("b",formatted_components,zeros(length(Tc)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = ABCubicParam(a,b,Tc,pc,Mw)
@@ -131,7 +133,7 @@ function RK(components; idealmodel=BasicIdeal,
 end
 
 function ab_consts(::Type{<:RKModel})
-    Ωa =  1/(9*(2^(1/3)-1))
+    Ωa = 1/(9*(2^(1/3)-1))
     Ωb = (2^(1/3)-1)/3
     return Ωa,Ωb
 end

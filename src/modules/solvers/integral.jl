@@ -27,7 +27,7 @@ end
 
 function _integralx(Base.@specialize(f),a,b,w,x)
     x1 = 0.5*(x[1] + 1)*(b - a) + a
-    res =  w[1]*f(x1)
+    res = w[1]*f(x1)
     for i in 2:length(w)
         xs = 0.5*(x[i] + 1)*(b - a) + a
         res += w[i]*f(xs)

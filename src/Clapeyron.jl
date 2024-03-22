@@ -17,6 +17,7 @@ using NLSolvers
 using NLSolvers: NEqOptions
 using DiffResults, ForwardDiff
 using Downloads #for bibtex
+using StableTasks #for multithreaded volume
 
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
@@ -107,6 +108,7 @@ include("models/ideal/ReidIdeal.jl")
 include("models/ideal/WalkerIdeal.jl")
 include("models/ideal/JobackIdeal.jl")
 include("models/ideal/CPLNGEstIdeal.jl")
+include("models/ideal/ShomateIdeal.jl")
 
 #AlyLee Ideal uses gerg 2008 terms
 include("models/EmpiricHelmholtz/term_functions.jl")
@@ -135,9 +137,11 @@ include("models/EmpiricHelmholtz/MultiFluid/mixing/mixing.jl")
 include("models/EmpiricHelmholtz/MultiFluid/departure/departure.jl")
 include("models/EmpiricHelmholtz/MultiFluid/variants/GERG2008.jl")
 include("models/EmpiricHelmholtz/MultiFluid/variants/EOS_LNG.jl")
+include("models/EmpiricHelmholtz/MultiFluid/variants/EOS_CG.jl")
 include("models/EmpiricHelmholtz/MultiFluid/variants/TillnerRothFriend.jl")
 include("models/EmpiricHelmholtz/MultiFluid/variants/HelmAct.jl")
 include("models/EmpiricHelmholtz/MultiFluid/variants/EmpiricIdeal.jl")
+include("models/EmpiricHelmholtz/LKP/LKP.jl")
 
 #cubic models
 include("models/cubic/equations.jl")

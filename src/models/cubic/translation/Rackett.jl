@@ -11,7 +11,7 @@ end
     RackettTranslation <: RackettTranslationModel
 
     RackettTranslation(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters

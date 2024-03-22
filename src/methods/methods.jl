@@ -21,7 +21,7 @@ model = PCSAFT(["methanol","cyclohexane"])
 T = 313.15
 z = [0.5,0.5]
 bubble_pressure(model,T,z) #using default method (chemical potential equality)
-bubble_pressure(model,T,z,FugBubblePressure(y0 =  = [0.6,0.4], p0 = 5e4)) #using isofugacity criteria with starting points
+bubble_pressure(model,T,z,FugBubblePressure(y0 = = [0.6,0.4], p0 = 5e4)) #using isofugacity criteria with starting points
 ```
 """
 abstract type ThermodynamicMethod end
@@ -145,7 +145,7 @@ equivalent to `sum(iterator,init=0.0)`.
 """
 function ∑(iterator)
     len = Base.IteratorSize(typeof(iterator)) === Base.HasLength()
-    hastype =  (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
+    hastype = (Base.IteratorEltype(typeof(iterator)) === Base.HasEltype()) && (eltype(iterator) !== Any)
     local _0
     if hastype
         _0 = zero(eltype(iterator))

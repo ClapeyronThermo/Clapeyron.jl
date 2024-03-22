@@ -20,7 +20,7 @@ function fobj_psat!(model::EoSModel, T)
     # F = vector for objective function
     # J = matrix for objective function jacobian
 
-    ps,μs =  scale_sat_pure(model)
+    ps,μs = scale_sat_pure(model)
     function f!(F,x)
         ρ_liq, ρ_vap = x
         A_liq, ∂A_liq = ∂Helmholtz(model, ρ_liq, T)

@@ -10,7 +10,7 @@ Function used to dispatch on the different mixing rules available for Sanchez-La
 function mix_vε(model::SanchezLacombe,V,T,z,mix::SLKRule,r̄,Σz = sum(z))
     v = model.params.vol.values
     ε = model.params.epsilon.values
-    r =  model.params.segment.values
+    r = model.params.segment.values
     k = mix.k.values
     x = z ./ Σz
     ϕ = @. r * x / r̄

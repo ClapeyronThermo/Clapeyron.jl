@@ -161,13 +161,13 @@ function a_res(model::AnalyticalSLVModel,V,T,z,_data = @f(data))
 
     bd = (b̄ - d̄)
     dc = (d̄ - c̄)
-    k1 =  bd*log(1-b̄*ρ)
-    k2 =  dc*log(abs(1-c̄*ρ))
+    k1 = bd*log(1-b̄*ρ)
+    k2 = dc*log(abs(1-c̄*ρ))
     b̄ρt = b̄*ρ
 
     #The integral of 1/x is log(abs(x))
     #On solid volumes, 1-c̄*ρ is negative, so the abs matters
-    a₁ =  -(k1 + k2)/(b̄ - c̄) - (d̄ - c̄)/(b̄ - c̄)
+    a₁ = -(k1 + k2)/(b̄ - c̄) - (d̄ - c̄)/(b̄ - c̄)
     if Δ1 == Δ2
         return a₁ - ā*ρt*RT⁻¹/(1-Δ1*b̄ρt)
     else

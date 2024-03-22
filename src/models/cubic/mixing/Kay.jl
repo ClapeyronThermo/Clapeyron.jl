@@ -7,7 +7,7 @@ struct KayRule <: KayRuleModel end
     KayRule <: KayRuleModel
     
     KayRule(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters
@@ -36,7 +36,7 @@ mixing = KayRule(["water","carbon dioxide"])
 """
 KayRule
 
-function KayRule(components; activity = nothing, userlocations=String[],activity_userlocations=String[], verbose::Bool=false)
+function KayRule(components; activity = nothing, userlocations = String[],activity_userlocations = String[], verbose::Bool=false)
     KayRule()
 end
 

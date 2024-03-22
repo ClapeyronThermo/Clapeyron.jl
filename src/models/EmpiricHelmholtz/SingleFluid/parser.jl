@@ -1,21 +1,4 @@
-JSON_ALTERNATIVE_NAMES = Dict{String,String}(
-    "carbon dioxide" => "CarbonDioxide",
-    "hydrogen chloride" => "HydrogenChloride",
-    "hydrogen sulfide" => "HydrogenSulfide",
-    "isopentane" => "ISOPENTANE",
-    "nonane" => "n-Nonane",
-    "octane" => "n-Octane",
-    "heptane" => "n-Heptane",
-    "hexane" => "n-Hexane",
-    "pentane" => "n-Pentane",
-    "butane" => "n-Butane",
-    "propane" => "n-Propane",
-    "decane" => "n-Decane",
-    "undecane" => "n-Undecane",
-    "dodecane" => "n-Dodecane",
-    "carbonmonoxide" => "CARBONMONOXIDE",
-    "hydrogensulfide" => "HydrogenSulfide",
-)
+COOLPROP_IDENTIFIER_CACHE = Dict{String,String}()
 
 function coolprop_crit_data end
 
@@ -96,6 +79,17 @@ end
 get_only_comp(x::Vector{String}) = only(x)
 get_only_comp(x::String) = x
 
+#compare filenames using Clapeyron string criteria
+function compare_empiric_names(filename,input)
+    norm_filename = normalisestring(last(splitdir(first(splitext(filename)))))
+    for name in eachsplit(norm_filename,"~")
+        if name == input
+            return true
+        end
+    end
+    return false
+end
+
 function get_json_data(components;
     userlocations = String[],
     coolprop_userlocations = true,
@@ -104,16 +98,18 @@ function get_json_data(components;
 
     component = get_only_comp(components)
     if first(component) != '{' #not json
-        _paths = flattenfilepaths(["Empiric"],userlocations)
+        _paths = flattenfilepaths(["Empiric","Empiric/EOS_CG/pures"],userlocations)
         norm_comp1 = normalisestring(component)
-        f0 = x -> normalisestring(last(splitdir(first(splitext(x))))) == norm_comp1
+        f0 = x -> compare_empiric_names(x,norm_comp1)
         found_paths = filter(f0,_paths)
         if iszero(length(found_paths))
             verbose && @info "JSON for $(info_color(component)) not found in supplied paths"
             verbose && coolprop_userlocations && @info "trying to look JSON for $(info_color(component)) in CoolProp"
             #try to extract from coolprop.
             !coolprop_userlocations && throw(error("cannot found component file $(component)."))
-            alternative_comp = get(JSON_ALTERNATIVE_NAMES,norm_comp1,component)
+            alternative_comp = get!(COOLPROP_IDENTIFIER_CACHE,norm_comp1) do
+                cas(norm_comp1)[1]
+            end
             success,json_string = coolprop_csv(alternative_comp,component)
             if success
                 data = JSON3.read(json_string)[1]
@@ -278,11 +274,9 @@ function SingleFluidIdeal(components;
     coolprop_userlocations = true,
     idealmodel = nothing,
     ideal_userlocations = String[])
-
-
     _components = format_components(components)
     single_component_check(SingleFluidIdeal,_components)
-    data = get_json_data(_components;userlocations,coolprop_userlocations,verbose)
+    data = get_json_data(_components;userlocations,coolprop_userlocations,verbose)    
     eos_data = first(data[:EOS])
     #properties
     properties = _parse_properties(data,Rgas,verbose)
@@ -294,30 +288,46 @@ function SingleFluidIdeal(components;
         ideal_data = Clapeyron.idealmodel_to_json_data(init_idealmodel; Tr = properties.Tr, Vr = 1/properties.rhor)
     end
     ideal = _parse_ideal(ideal_data,verbose)
-    references = [eos_data[:BibTeX_EOS]]
-
+    references = String[]
+    if haskey(eos_data,:BibTeX_EOS)
+        push!(references,get(eos_data,:BibTeX_EOS))
+    end
     return SingleFluidIdeal(_components,properties,ideal,references)
 end
 
 function _parse_properties(data,Rgas0 = nothing, verbose = false)
     verbose && @info "Starting parsing of properties from JSON."
-    info = data[:INFO]
-    eos_data = first(data[:EOS])
+    #info = data[:INFO]
+    eos_data_vec  = data[:EOS]
+    eos_data = if eos_data_vec isa AbstractVector 
+        #coolprop stores EOS field as a vector. the first one is the multiparameter #EoS
+        #i did not see other examples in the CoolProp DB where they use more EoS
+        first(eos_data_vec)
+    else
+        #this is in case we want to pass a dict directly
+        eos_data_vec
+    end
     st_data = data[:STATES]
     crit = st_data[:critical]
-    reducing = eos_data[:STATES][:reducing]
+    eos_st_data = eos_data[:STATES]
+    reducing = get(eos_st_data,:reducing,nothing)
 
-    Tr = tryparse_units(get(reducing,:T,NaN),get(reducing,:T_units,""))
-    rhor = tryparse_units(get(reducing,:rhomolar,NaN),get(reducing,:rhomolar_units,""))
-    Mw = 1000*tryparse_units(get(eos_data,:molar_mass,0.0),get(eos_data,:molar_mass_units,""))
+    Mw = 1000*tryparse_units(get(eos_data,:molar_mass,NaN),get(eos_data,:molar_mass_units,""))
+    
     T_c = tryparse_units(get(crit,:T,NaN),get(crit,:T_units,""))
     P_c = tryparse_units(get(crit,:p,NaN),get(crit,:p_units,""))
     rho_c = tryparse_units(get(crit,:rhomolar,NaN),get(crit,:rhomolar_units,""))
-
+    if reducing !== nothing
+        Tr = tryparse_units(get(reducing,:T,NaN),get(reducing,:T_units,""))
+        rhor = tryparse_units(get(reducing,:rhomolar,NaN),get(reducing,:rhomolar_units,""))
+    else
+        Tr = T_c
+        rhor = rho_c
+    end
     rhov_tp_data = get(st_data,:triple_vapor,nothing)
     Ttp = tryparse_units(get(eos_data,:Ttriple,NaN),get(eos_data,:Ttriple_units,""))
     if rhov_tp_data !== nothing
-        ptp =  tryparse_units(get(rhov_tp_data,:p,NaN),get(rhov_tp_data,:p_units,""))
+        ptp = tryparse_units(get(rhov_tp_data,:p,NaN),get(rhov_tp_data,:p_units,""))
         rhov_tp = tryparse_units(get(rhov_tp_data,:rhomolar,NaN),get(rhov_tp_data,:rhomolar_units,""))
     else
         ptp,rhov_tp = NaN,NaN
@@ -326,7 +336,7 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     rhol_tp_data = get(st_data,:triple_liquid,nothing)
     if rhol_tp_data !== nothing
         if isnan(ptp)
-            ptp =  tryparse_units(get(rhol_tp_data,:p,NaN),get(rhov_tl_data,:p_units,""))
+            ptp = tryparse_units(get(rhol_tp_data,:p,NaN),get(rhov_tl_data,:p_units,""))
         end
         rhol_tp  = tryparse_units(get(rhol_tp_data,:rhomolar,NaN),get(rhol_tp_data,:rhomolar_units,""))
     else
@@ -337,6 +347,7 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     else
         Rgas = Rgas0
     end
+
     acentric_factor = tryparse_units(get(eos_data,:acentric,NaN),get(eos_data,:acentric_units,""))
 
     #TODO: in the future, maybe max_density could be in the files?
@@ -345,6 +356,7 @@ function _parse_properties(data,Rgas0 = nothing, verbose = false)
     isnan(lb_volume) && (lb_volume = 1/tryparse_units(get(eos_data,:rhomolar_max,NaN),get(eos_data,:rhomolar_max_units,"")))
     isnan(lb_volume) && (lb_volume = 1/(1.25*rhol_tp))
     isnan(lb_volume) && (lb_volume = 1/(3.25*rho_c))
+
     return SingleFluidProperties(Mw,Tr,rhor,lb_volume,T_c,P_c,rho_c,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
 end
 
@@ -967,6 +979,31 @@ function idealmodel_to_json_data(model::AlyLeeIdealModel,Tr,T0,Vr)
         :type => "IdealGasHelmholtzLead",
         :a1 => - log(Vr),
         :a2 => 0.0,
+        ),
+    ]
+end
+
+function idealmodel_to_json_data(model::ShomateIdealModel,Tr,T0,Vr)
+    coeffs = model.params.coeffs[1] ./ Rgas(model)
+    n = length(coeffs)
+    [
+        Dict(
+            :type => "IdealGasHelmholtzLead",
+            :a1 => - log(Vr) - log(298) + log(Tr),
+            :a2 => 0,
+        ),
+
+        Dict(
+            :type => "IdealGasHelmholtzLogTau",
+            :a => -1,
+        ),
+
+        Dict(
+            :type => "IdealGasHelmholtzCP0PolyT",
+            :T0 => 298.0,
+            :Tc => Tr,
+            :c => [coeffs...],
+            :t => [0,1,2,3,-2],
         ),
     ]
 end

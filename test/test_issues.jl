@@ -108,7 +108,7 @@
         @test model1 isa Clapeyron.EoSModel
 
         #this case is just for compatibility with the notebooks that were originally released.
-        model2 = VTPR(["carbon monoxide","carbon dioxide"];alpha=BMAlpha)
+        model2 = VTPR(["carbon monoxide","carbon dioxide"];alpha = BMAlpha)
         @test model2 isa Clapeyron.EoSModel
     end
 

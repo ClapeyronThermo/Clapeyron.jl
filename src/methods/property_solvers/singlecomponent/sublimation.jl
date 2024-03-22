@@ -100,10 +100,10 @@ function Obj_Sub_Temp(model::EoSModel, F, T, V_s, V_v,p,p̄,T̄)
     g_v = muladd(-V_v,Av_v,A_v)
     g_s = muladd(-V_s,Av_s,A_s)
 
-    F[1] = -(Av_v+p)/p̄
-    F[2] = -(Av_s+p)/p̄
-    F[3] = (g_v-g_s)/(R̄*T̄)
-    return F
+    F1 = -(Av_v+p)/p̄
+    F2 = -(Av_s+p)/p̄
+    F3 = (g_v-g_s)/(R̄*T̄)
+    return SVector(F1,F2,F3)
 end
 
 struct ChemPotSublimationTemperature{V} <: ThermodynamicMethod
@@ -161,7 +161,8 @@ function sublimation_temperature_impl(model::CompositeModel,p,method::ChemPotSub
     else
         v0 = method.v0
     end
-    V0 = vec3(v0[1],log(v0[2]),log(v0[3]),p*1.0*one(eltype(solid))*one(eltype(fluid)))
+    _1 = oneunit(p*1.0*one(eltype(solid))*one(eltype(fluid)))
+    V0 = SVector(v0[1]*_1,log(v0[2])*_1,log(v0[3])*_1)
     f!(F,x) = Obj_Sub_Temp(model,F,x[1],exp(x[2]),exp(x[3]),p,p̄,T̄)
     results = Solvers.nlsolve(f!,V0,TrustRegion(Newton(),Dogleg()),NEqOptions(method))
     x = Solvers.x_sol(results)

@@ -6,7 +6,7 @@ default units: `[Pa]`
 Returns the pressure of the model at a given volume, temperature and composition, defined as:
 
 ```julia
-p =  -∂A/∂V
+p = -∂A/∂V
 ```
 
 """
@@ -29,8 +29,20 @@ function VT_internal_energy(model::EoSModel, V, T, z=SA[1.])
     return A - T*∂A∂T
 end
 
+function VT_internal_energy_res(model::EoSModel, V, T, z=SA[1.])
+    dA, A = ∂f_res(model,V,T,z)
+    ∂A∂V, ∂A∂T = dA
+    return A - T*∂A∂T
+end
+
 function VT_enthalpy(model::EoSModel, V, T, z=SA[1.])
     dA, A = ∂f(model,V,T,z)
+    ∂A∂V, ∂A∂T = dA
+    return A - V*∂A∂V - T*∂A∂T
+end
+
+function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
+    dA, A = ∂f_res(model,V,T,z)
     ∂A∂V, ∂A∂T = dA
     return A - V*∂A∂V - T*∂A∂T
 end

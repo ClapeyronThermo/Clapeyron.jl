@@ -18,7 +18,7 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
 end
 
 function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    _0 = zero(p+T+first(z))
+    _0 = zero(p+T+first(z)+oneunit(eltype(model)))
     _1 = one(_0)
     isnan(V0) && return _0/_0
     pset = _1*p
@@ -144,7 +144,8 @@ end
 
 function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
 #Threaded version
-    TYPE = typeof(p+T+first(z)+one(eltype(model)))
+    check_arraysize(model,z)
+    TYPE = typeof(p+T+first(z)+oneunit(eltype(model)))
     nan = zero(TYPE)/zero(TYPE)
     #err() = @error("model $model Failed to converge to a volume root at pressure p = $p [Pa], T = $T [K] and compositions = $z")
     fluid = fluid_model(model)
@@ -190,28 +191,27 @@ function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=tru
         v3::TYPE = take!(ch) 
         volumes = (v1,v2,v3)
         =#
-        
-        _Vg = Threads.@spawn _volume_compress($fluid,$p,$T,$z,$Vg0)
-        _Vl = Threads.@spawn _volume_compress($fluid,$p,$T,$z,$Vl0)
+        _Vg = StableTasks.@spawn _volume_compress($fluid,$p,$T,$z,$Vg0)
+        _Vl = StableTasks.@spawn _volume_compress($fluid,$p,$T,$z,$Vl0)
         if !isnan(Vs0)
-            _Vs = Threads.@spawn _volume_compress($solid,$p,$T,$z,$Vs0)
+            _Vs = StableTasks.@spawn _volume_compress($solid,$p,$T,$z,$Vs0)
         else
             _Vs = nan
         end
-        Vg::TYPE = fetch(_Vg)
-        Vl::TYPE = fetch(_Vl)
-        Vs::TYPE = fetch(_Vs)
+        Vg = fetch(_Vg)::TYPE
+        Vl = fetch(_Vl)::TYPE
+        Vs = fetch(_Vs)::TYPE
         volumes = (Vg,Vl,Vs)
     else
-        Vg =  _volume_compress(fluid,p,T,z,Vg0)
-        Vl =  _volume_compress(fluid,p,T,z,Vl0)
-        Vs =  _volume_compress(solid,p,T,z,Vs0)
+        Vg = _volume_compress(fluid,p,T,z,Vg0)
+        Vl = _volume_compress(fluid,p,T,z,Vl0)
+        Vs = _volume_compress(solid,p,T,z,Vs0)
         volumes = (Vg,Vl,Vs)
     end
     
     function gibbs(m,fV)
         isnan(fV) && return one(fV)/zero(fV)
-        _df,_f =  ∂f(m,fV,T,z)
+        _df,_f = ∂f(m,fV,T,z)
         dV,_ = _df
         return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
     end
@@ -254,7 +254,7 @@ function _label_and_volumes(model::EoSModel,cond)
     Vv = volume(model,p,T,z,phase =:v)
     function gibbs(fV)
         isnan(fV) && return one(fV)/zero(fV)
-        _df,_f =  ∂f(model,fV,T,z)
+        _df,_f = ∂f(model,fV,T,z)
         dV,_ = _df
         return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
     end

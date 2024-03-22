@@ -33,8 +33,8 @@ You can mix and match ideal models if you provide:
 - `[idealmodel](@ref)(model)`: extracts the ideal model from your Thermodynamic model
 - `[a_res](@ref)(model,V,T,z)`: residual reduced Helmholtz free energy
 """
-function eos(model::EoSModel, V, T, z=SA[1.0])
-    return Rgas(model)*sum(z)*T * a_eos(model,V,T,z)
+function eos(model::EoSModel, V, T, z = SA[1.0])
+    return Rgas(model)*sum(z)*T*a_eos(model,V,T,z) + reference_state_eval(model,V,T,z)
 end
 
 """
@@ -43,7 +43,7 @@ end
 retrieves the ideal model from the input's model. if the model is already an idealmodel, return `nothing`
 # Examples:
 ```julia-repl
-julia> pr = PR(["water"],idealmodel=MonomerIdeal)
+julia> pr = PR(["water"],idealmodel = MonomerIdeal)
 PR{MonomerIdeal, PRAlpha, NoTranslation, vdW1fRule} with 1 component:
  "water"
 Contains parameters: a, b, Tc, Pc, Mw

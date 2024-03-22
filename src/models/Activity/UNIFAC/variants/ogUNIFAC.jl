@@ -77,9 +77,9 @@ function ogUNIFAC(components;
     pure_userlocations = String[],
     verbose = false)
 
-    groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"];group_userlocations = group_userlocations, verbose=verbose)
+    groups = GroupParam(components, ["Activity/UNIFAC/ogUNIFAC/ogUNIFAC_groups.csv"];group_userlocations = group_userlocations, verbose = verbose)
 
-    params = getparams(groups, default_locations(ogUNIFAC); userlocations=userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose=verbose)
+    params = getparams(groups, default_locations(ogUNIFAC); userlocations = userlocations, asymmetricparams=["A"], ignore_missing_singleparams=["A"], verbose = verbose)
     A  = params["A"]
     R  = params["R"]
     Q  = params["Q"]

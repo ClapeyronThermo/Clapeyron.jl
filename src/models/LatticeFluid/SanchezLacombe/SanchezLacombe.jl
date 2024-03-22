@@ -20,13 +20,14 @@ struct SanchezLacombe{T <: SLMixingRule,I<:IdealModel} <:SanchezLacombeModel
 end
 
 """
-    SanchezLacombe(components::Vector{String}; 
-    idealmodel=BasicIdeal, 
-    mixing = SLk0k1lMixingRule, 
-    userlocations=String[], 
-    ideal_userlocations=String[], 
+    SanchezLacombe(components;
+    idealmodel = BasicIdeal,
+    mixing = SLk0k1lMixingRule,
+    userlocations = String[],
+    ideal_userlocations = String[],
     mixing_userlocations = String[],
-    verbose=false)
+    reference_state = false,
+    verbose = false)
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
@@ -62,22 +63,23 @@ SanchezLacombe
 
 const SL = SanchezLacombe
 
-function SanchezLacombe(components; 
-    idealmodel=BasicIdeal, 
-    mixing = SLk0k1lMixingRule, 
-    userlocations=String[], 
-    ideal_userlocations=String[], 
+function SanchezLacombe(components;
+    idealmodel = BasicIdeal,
+    mixing = SLk0k1lMixingRule,
+    userlocations = String[],
+    ideal_userlocations = String[],
     mixing_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
-    params = getparams(components, ["LatticeFluid/SanchezLacombe","properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
-    
+    params = getparams(components, ["LatticeFluid/SanchezLacombe","properties/molarmass.csv"]; userlocations = userlocations, verbose = verbose)
+
     segment = params["segment"]
     unmixed_epsilon = params["epsilon"]
     unmixed_vol = params["vol"]
     Mw = params["Mw"]
     mixmodel = init_slmixing(mixing,components,params,mixing_userlocations,verbose)
-    ideal = init_model(idealmodel,components,ideal_userlocations,verbose)
+    ideal = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     premixed_vol,premixed_epsilon = sl_mix(unmixed_vol,unmixed_epsilon,mixmodel)
     packagedparams = SanchezLacombeParam(Mw, segment, premixed_epsilon, premixed_vol)
     references = ["10.1016/S0378-3812(02)00176-0"]
@@ -103,7 +105,7 @@ include("mixing/SLk0k1lrule.jl")
 include("mixing/SLKrule.jl")
 
 function a_res(model::SanchezLacombe,V,T,z=SA[1.0])
-    Σz = sum(z)     
+    Σz = sum(z)
     r = model.params.segment.values
     mixing = model.mixing
     r̄ = dot(z,r)

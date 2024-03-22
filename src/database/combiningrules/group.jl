@@ -57,7 +57,7 @@ where `νᵢₖ` is the number of groups `k` at component `i`.
 """
 function group_sum(groups::GroupParameter,param::SingleParameter)
     gc = length(groups.components)
-    out =  SingleParam(param.name,
+    out = SingleParam(param.name,
                         groups.components,
                         zeros(float(eltype(param.values)),gc),
                         fill(false,gc),
@@ -196,7 +196,7 @@ end
 
 modifies implace the field `n_groups_cache` (`μᵢₖ`) in the `GroupParam`:
 ```
-μᵢₖ =  νᵢₖ*Sₖ*vstₖ
+μᵢₖ = νᵢₖ*Sₖ*vstₖ
 ```
 Where `S` is a shape factor parameter for each group and `vst` is the segment size for each group.
 used mainly for GC models (like `SAFTgammaMie`) in which the group fraction depends on segment size and shape factors.

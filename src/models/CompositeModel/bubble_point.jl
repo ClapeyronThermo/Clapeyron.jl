@@ -51,7 +51,7 @@ function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::Activ
         for i in eachindex(γ)
             pᵢ = p_pure[i]
             vpureᵢ = vl_pure[i]
-            ϕ̂ᵢ =  ϕpure[i]
+            ϕ̂ᵢ = ϕpure[i]
             if method.poynting && method.gas_fug
                 ln𝒫 = vpureᵢ*(p - pᵢ)/RT
                 𝒫 = exp(ln𝒫)
