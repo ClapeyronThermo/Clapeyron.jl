@@ -1,0 +1,6 @@
+Clapeyron Database File,,,,,,,,,,
+SAFTVRMie Like Parameters,,,,,,,,,,
+species,DIPPR Number,Mw,segment,sigma,epsilon,lambda_r,lambda_a,n_H,n_e,source
+water,,18.01528,1,3.0555,418.00,35.823,6.,2,2,
+sodium,,22.98977,1,2.1607,32.39700989,12,6.,0,0,
+chloride,,35.453,1,3.0999,118.669,12,6.,0,0,

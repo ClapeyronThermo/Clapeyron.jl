@@ -61,7 +61,11 @@ function data(model::DHModel, V, T, z)
     return dielectric_constant(model.RSPmodel, V, T, z), model.params.sigma.values
 end
 
-function a_res(model::DHModel, V, T, z,_data=@f(data))  
+function a_res(model::DHModel, V, T, z, _data=@f(data))
+    return a_ion(model, V, T, z, _data)
+end
+
+function a_ion(model::DHModel, V, T, z,_data=@f(data))  
     ϵ_r, σ = _data
     Z = model.params.charge.values
     iions = model.icomponents[Z.!=0]
