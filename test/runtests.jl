@@ -19,25 +19,27 @@ if Base.VERSION <= v"1.11"
     macro interpret(ex)
         esc(:(JuliaInterpreter.@interpret $ex))
     end
+    function include_test(path)
+        if isempty(ARGS) || any(occursin(a, path) for a in ARGS)
+            println("Testing $path:")  # print so TravisCI doesn't timeout due to no output
+            @time Base.include(@__MODULE__(), path) do ex
+                Meta.isexpr(ex, :macrocall) && ex.args[1] == Symbol("@testset") || return ex
+                return :(@interpret (() -> $ex)())  # interpret testsets using JuliaInterpreter
+            end
+        else
+            # If you provide ARGS like so, then it runs only matching testsets: 
+            # Pkg.test("Clapeyron", test_args = ["index", "LinearAlgebra"])
+            println("(Not testing $path)")
+        end
+    end
 else
     macro interpret(ex)
         esc(:($ex))
     end
+    include_test(path) = include(path)
 end
 
-function include_test(path)
-    if isempty(ARGS) || any(occursin(a, path) for a in ARGS)
-        println("Testing $path:")  # print so TravisCI doesn't timeout due to no output
-        @time Base.include(@__MODULE__(), path) do ex
-            Meta.isexpr(ex, :macrocall) && ex.args[1] == Symbol("@testset") || return ex
-            return :(@interpret (() -> $ex)())  # interpret testsets using JuliaInterpreter
-        end
-    else
-        # If you provide ARGS like so, then it runs only matching testsets: 
-        # Pkg.test("Clapeyron", test_args = ["index", "LinearAlgebra"])
-        println("(Not testing $path)")
-    end
-end
+
 
 @info "Loading Clapeyron took $(round(t1,digits = 2)) seconds"
 @info "Coolprop: $(Clapeyron.is_coolprop_loaded())"

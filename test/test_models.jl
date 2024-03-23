@@ -1,5 +1,3 @@
-using Clapeyron, Test
-
 @testset "SAFT models - misc" begin
     T = 298.15
     V = 1e-4
