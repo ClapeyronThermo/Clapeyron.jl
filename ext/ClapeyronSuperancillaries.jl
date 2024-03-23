@@ -78,7 +78,7 @@ function C.crit_pure(model::SuperancPCSAFT)
         pc = C.pressure(model,vc,Tc)
         return Tc,pc,vc
     else
-        return ES.crit_pure(model,C.x0_crit_pure_default(model))
+        return C.crit_pure(model,x0_crit_pure_default(model))
     end
 end
 

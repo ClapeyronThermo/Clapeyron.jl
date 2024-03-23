@@ -7,7 +7,6 @@ using MultiComponentFlash: MultiComponentFlash
 using Clapeyron.LinearAlgebra
 using Clapeyron.StaticArrays
 
-union!(JuliaInterpreter.compiled_modules, Any[Base, Base.Broadcast, LinearAlgebra, StaticArrays,Clapeyron.Solvers])
 
 #=
 This code is copied from ChainRules.jl tests.
@@ -16,6 +15,7 @@ Clapeyron (compiled) tests take too long, because we are evaluating Each EoS. bu
 =#
 @static if Base.VERSION <= v"1.11"
     using JuliaInterpreter #JuliaInterpreter fails on nightly
+    union!(JuliaInterpreter.compiled_modules, Any[Base, Base.Broadcast, LinearAlgebra, StaticArrays,Clapeyron.Solvers])
     macro interpret(ex)
         esc(:(JuliaInterpreter.@interpret $ex))
     end
