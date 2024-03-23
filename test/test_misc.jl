@@ -120,7 +120,7 @@ end
         @test_throws MethodError Clapeyron.@nan(Base.log("s"),3)
     end
 
-    using Clapeyron: has_sites,has_groups
+    
     @testset "has_sites-has_groups" begin
         @test has_sites(typeof(gc3)) == false
         @test has_sites(typeof(model2)) == has_sites(typeof(model4)) == has_sites(typeof(gc2)) == true

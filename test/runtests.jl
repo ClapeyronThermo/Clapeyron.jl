@@ -6,7 +6,7 @@ using MultiComponentFlash: MultiComponentFlash
 
 using Clapeyron.LinearAlgebra
 using Clapeyron.StaticArrays
-
+using Clapeyron: has_sites,has_groups
 
 #=
 This code is copied from ChainRules.jl tests.
