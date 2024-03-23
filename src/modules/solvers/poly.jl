@@ -1,17 +1,3 @@
-function evalpoly_cheb(x::S, ch::AbstractVector{T}) where {T,S}
-    R = promote_type(T, S)
-    l = length(ch)
-    l == 0 && return zero(R)
-    l == 1 && return R(ch[1])
-    c0 = ch[l - 1]
-    c1 = ch[l]
-    for i in (l-2):-1:1
-        c0, c1 = ch[i] - c1, c0 + c1 * 2x
-    end
-    return R(c0 + c1 * x)
-end
-
-
 """
 det_22(a,b,c,d)
 
