@@ -221,7 +221,7 @@ function SingleFluid(components;
     residual = _parse_residual(SingleFluidResidualParam,eos_data[:alphar];verbose = verbose)
     #ancillaries
     if ancillaries === nothing
-        init_ancillaries = _parse_ancillaries(_components[1],data[:ANCILLARIES],verbose,properties)
+        init_ancillaries = _parse_ancillaries(_components,data[:ANCILLARIES],verbose,properties)
     else
         init_ancillaries = init_model(ancillaries,components,ancillaries_userlocations,verbose)
     end
@@ -783,7 +783,7 @@ function _parse_ancillaries(component,anc_data,verbose = false,properties = noth
     ps_anc = PolExpSat(_parse_ancilliary_func(p_data,:T_r,:reducing_value))
     rhov_anc = PolExpVapour(_parse_ancilliary_func(rhov_data,:T_r,:reducing_value))
     rhol_anc = PolExpLiquid(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
-    return CompositeModel(components,gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
+    return CompositeModel(component,gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
 end
 
 #converting Clapeyron ideal models into SingleFluidParams

@@ -78,7 +78,6 @@ Perturbed-Chain Polar SAFT (PCP-SAFT)
 1. Gross, J., & Vrabec, J. (2005). An equation-of-state contribution for polar components: Dipolar molecules. AIChE Journal, 52(3), 856-1282. [doi:10.1002/aic.10683](https://doi.org/10.1002/aic.10683)
 """
 PCPSAFT
-@doc (@doc PCPSAFT) PPCSAFT
 export PPCSAFT,PCPSAFT
 
 function recombine_impl!(model ::PCPSAFTModel)
