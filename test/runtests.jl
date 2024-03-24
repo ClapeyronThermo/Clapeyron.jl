@@ -13,7 +13,7 @@ This code is copied from ChainRules.jl tests.
 I remember that, some time ago, some of the package mantainers said that using JuliaInterpreter in the tests really speed things up.
 Clapeyron (compiled) tests take too long, because we are evaluating Each EoS. but in practice, an user will only use a handful of EoS at a time.
 =#
-if Base.VERSION <= v"1.11"
+@static if Base.VERSION <= v"1.10"
     @eval using JuliaInterpreter #JuliaInterpreter fails on nightly
     union!(JuliaInterpreter.compiled_modules, Any[Base, Base.Broadcast, LinearAlgebra, StaticArrays,Clapeyron.Solvers])
     macro interpret(ex)
@@ -74,7 +74,7 @@ end
     include("test_database.jl")
     include("test_solvers.jl")
     include("test_differentials.jl")
-    include_test("test_misc.jl")
+    include("test_misc.jl")
     #those two are the main slowdown on the tests.
     include_test("test_models.jl")
     include("test_methods_eos.jl")
