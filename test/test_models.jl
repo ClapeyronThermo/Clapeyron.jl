@@ -197,6 +197,7 @@ GC.gc()
         test_gibbs_duhem(system,V,T,z1)
         GC.gc()
     end
+    end
 end
 
 GC.gc()
