@@ -44,7 +44,7 @@ end
     include("test_differentials.jl")
     include("test_misc.jl")
     #those two are the main slowdown on the tests.
-    include_("test_models.jl")
+    include("test_models.jl")
     include("test_methods_eos.jl")
 
     include("test_methods_api.jl")
