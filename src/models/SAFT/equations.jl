@@ -23,7 +23,7 @@ function ck_diameter(model, T, z, k1 = 0.12, k2 = 3.0)
     return di
 end
 
-function ck_diameter(model, T, z::SingleComp)
+function ck_diameter(model, T, z::SingleComp,k1 = 0.12, k2 = 3.0)
     ϵ = only(model.params.epsilon.values)
     σ = only(model.params.sigma.values)
     return SA[σ*(1 - k1*exp(-k2*ϵ/T))]
