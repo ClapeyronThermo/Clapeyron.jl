@@ -50,7 +50,7 @@ ____________________
 
 function include_distributed(path,value::Int)
     workers = (DISTRIBUTED_WORKER_1,DISTRIBUTED_WORKER_2,DISTRIBUTED_WORKER_3,DISTRIBUTED_WORKER_4,COVERAGE)
-    if i in 1:5
+    if value in 1:5
         worker = workers[i]
     else
         worker = false
