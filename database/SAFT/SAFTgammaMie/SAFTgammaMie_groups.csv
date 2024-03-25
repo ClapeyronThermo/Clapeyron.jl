@@ -32,3 +32,6 @@ water,"[""H2O""=>1]"
 nitrogen,"[""N2""=>1]"
 acetone~|~propanone,"[""CH3COCH3""=>1]"
 propanol~|~1-propanol~|~propan-1-ol,"[""CH2OH""=>1,""CH2""=>1,""CH3""=>1]"
+methylamine~|~methanamine,"[""CH3"" => 1, ""NH2"" => 1]"
+ethylamine~|~ethanamine,"[""CH3"" => 1, ""CH2"" => 1, ""NH2"" => 1]"
+

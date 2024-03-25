@@ -1,40 +1,83 @@
-struct gcPCSAFTParam <: EoSParam
+
+abstract type gcPCPSAFTModel <: PCPSAFTModel end
+
+struct HeterogcPCPSAFTParam <: EoSParam
     Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
     epsilon::PairParam{Float64}
+    comp_segment::SingleParam{Float64}
+    comp_sigma::PairParam{Float64}
+    comp_epsilon::PairParam{Float64}
+    dipole::SingleParam{Float64}
+    dipole2::SingleParam{Float64}
     epsilon_assoc::AssocParam{Float64}
     bondvol::AssocParam{Float64}
 end
 
-abstract type gcPCSAFTModel <: PCSAFTModel end
-@newmodelgc gcPCSAFT gcPCSAFTModel gcPCSAFTParam true true
-default_references(::Type{gcPCSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
-default_locations(::Type{gcPCSAFT}) = ["SAFT/PCSAFT/gcPCSAFT","properties/molarmass_groups.csv"]
-default_gclocations(::Type{gcPCSAFT}) = ["SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_groups.csv","SAFT/PCSAFT/gcPCSAFT/gcPCSAFT_intragroups.csv"]
-function transform_params(::Type{gcPCSAFT},params,groups)
-    sigma = params["sigma"]
-    sigma.values .*= 1E-10
+@newmodelgc HeterogcPCPSAFT gcPCPSAFTModel HeterogcPCPSAFTParam true true
+default_references(::Type{HeterogcPCPSAFT}) = ["10.1021/ie0003887", "10.1021/ie010954d"]
+default_locations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/","properties/molarmass_groups.csv"]
+default_gclocations(::Type{HeterogcPCPSAFT}) = ["SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_groups.csv","SAFT/PCSAFT/gcPCPSAFT/hetero/HeterogcPCPSAFT_intragroups.csv"]
+
+function transform_params(::Type{HeterogcPCPSAFT},params,groups)
+    components = groups.components
+    gc_sigma = params["sigma"]
+    gc_sigma.values .*= 1E-10
+    gc_epsilon = params["epsilon"]
+
+    #mixing for segment
+    gc_segment = params["segment"]
+    segment = group_sum(groups,gc_segment)
+    params["comp_segment"] = segment
+
+    #mixing for comp_epsilon
+    epsilon = group_sum(groups,gc_epsilon .* gc_segment)
+    epsilon ./= segment
+    epsilon = SingleParam("epsilon",groups.components,epsilon)
+    params["comp_epsilon"] = epsilon_LorentzBerthelot(epsilon)
+
+    #mixing for comp_sigma
+    gc_sigma = deepcopy(params["sigma"])
+    gc_sigma.values .^= 3
+    gc_sigma.values .*= gc_segment.values
+    sigma = group_sum(groups,gc_sigma)
+    sigma.values ./= segment.values
+    sigma.values .= cbrt.(sigma.values)
+    params["comp_sigma"] = sigma_LorentzBerthelot(sigma)
+
+    #mix gc_sigma, gc_epsilon
     params = saft_lorentz_berthelot(params)
-    
+
+    #mix sites
     sites = params["sites"]
     comp_sites = gc_to_comp_sites(sites,groups)
     params["sites"] = comp_sites
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
     assoc_options = params["assoc_options"]
-    
-    sigma = params["sigma"]
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,sigma,assoc_options) #combining rules for association
+    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options,sites) #combining rules for association
     params["bondvol"] = gc_to_comp_sites(gc_bondvol,comp_sites)
     params["epsilon_assoc"] = gc_to_comp_sites(gc_epsilon_assoc,comp_sites)
+    
+    #mixing for dipole
+    gc_μ = get!(params,"dipole") do
+        SingleParam("dipole",components)
+    end
+    
+    gc_μ2 = SingleParam("Dipole squared",groups.flattenedgroups, gc_μ.^2 ./ gc_segment ./ k_B*1e-36*(1e-10*1e-3))
+    dipole2 = group_sum(groups,gc_μ2)
+    dipole2 = SingleParam("Dipole squared",components, dipole2 ./ segment)
+    dipole = SingleParam("Dipole",components, sqrt.(dipole2 .* k_B ./ 1e-36 ./ (1e-10*1e-3)))
+    params["dipole"] = dipole
+    params["dipole2"] = dipole2
     return params
 end
 
-"""
-    gcPCSAFTModel <: PCSAFTModel
+""" 
+    gcPCPSAFTModel <: PCSAFTModel
 
-    gcPCSAFT(components; 
+    HeterogcPCPSAFT(components; 
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],
@@ -44,23 +87,30 @@ end
 
 ## Input parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
-- `segment`: Single Parameter (`Float64`) - Number of segments (no units)
+- `m`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Single Parameter (`Float64`) - Segment Diameter [`A°`]
 - `epsilon`: Single Parameter (`Float64`) - Reduced dispersion energy  `[K]`
-- `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
+- `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
+- `k`: Pair Parameter (`Float64`) - Binary Interaction Paramater (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
+
 ## Model Parameters
 - `Mw`: Single Parameter (`Float64`) - Molecular Weight `[g/mol]`
 - `segment`: Single Parameter (`Float64`) - Number of segments (no units)
 - `sigma`: Pair Parameter (`Float64`) - Mixed segment Diameter `[m]`
 - `epsilon`: Pair Parameter (`Float64`) - Mixed reduced dispersion energy`[K]`
+- `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
+
 ## Input models
+
 - `idealmodel`: Ideal Model
 ## Description
-Heterogeneous Group-contribution Perturbed-Chain SAFT (gc-PC-SAFT)
+
+Heterosegmented Group-contribution Polar Perturbed-Chain SAFT (Hetero-gc-PCP-SAFT)
+
 ## References
 1. Gross, J., Spuhl, O., Tumakaka, F. & Sadowski, G. (2003). Modeling Copolymer Systems Using the Perturbed-Chain SAFT Equation of State. Industrial & Engineering Chemistry Research, 42, 1266-1274. [doi:10.1021/ie020509y](https://doi.org/10.1021/ie020509y)
 2. Sauer, E., Stavrou, M. & Gross, J. (2014). Comparison between a Homo- and a Heterosegmented Group Contribution Approach Based on the Perturbed-Chain Polar Statistical Associating Fluid Theory Equation of State. Industrial & Engineering Chemistry Research, 53(38), 14854–14864. [doi:10.1021/ie502203w](https://doi.org/10.1021/ie502203w)
@@ -85,11 +135,11 @@ Heterogeneous Group-contribution Perturbed-Chain SAFT (gc-PC-SAFT)
 |OH      |Hydroxyl group      |
 |NH2     |Amine group         |
 """
-gcPCSAFT
+HeterogcPCPSAFT
 
-export gcPCSAFT
+export HeterogcPCPSAFT
 
-function lb_volume(model::gcPCSAFTModel, z = SA[1.0])
+function lb_volume(model::gcPCPSAFTModel, z = SA[1.0])
     vk  = model.groups.n_flattenedgroups
     seg = model.params.segment.values
     σ = model.params.sigma.values
@@ -97,7 +147,7 @@ function lb_volume(model::gcPCSAFTModel, z = SA[1.0])
     return val
 end
 
-function data(model::gcPCSAFTModel,V,T,z)
+function data(model::gcPCPSAFTModel,V,T,z)
     ncomponents = length(model)
 
     _d = @f(d)
@@ -115,7 +165,7 @@ function data(model::gcPCSAFTModel,V,T,z)
     return (_d,ζ0,ζ1,ζ2,ζ3,m̄)
 end
 
-function a_hc(model::gcPCSAFTModel, V, T, z,_data=@f(data))
+function a_hc(model::gcPCPSAFTModel, V, T, z,_data=@f(data))
     ngroups = length(model.groups.flattenedgroups)
 
     _d,ζ0,ζ1,ζ2,ζ3,m̄ = _data
@@ -148,7 +198,7 @@ function a_hc(model::gcPCSAFTModel, V, T, z,_data=@f(data))
     return m̄*a_hs - res/Σz
 end
 
-function a_disp(model::gcPCSAFTModel, V, T, z,_data=@f(data))
+function a_disp(model::gcPCPSAFTModel, V, T, z,_data=@f(data))
     di,ζ0,ζ1,ζ2,ζ3,m̄ = _data
     Σz = sum(z)
     I₁ = @f(I,1,_data)
@@ -158,7 +208,7 @@ function a_disp(model::gcPCSAFTModel, V, T, z,_data=@f(data))
     return -2*π*N_A*Σz/V*I₁*m2ϵσ3₁ - π*m̄*N_A*Σz/V*C₁*I₂*m2ϵσ3₂
 end
 
-function m2ϵσ3(model::gcPCSAFTModel, V, T, z)
+function m2ϵσ3(model::gcPCPSAFTModel, V, T, z)
     n = model.groups.n_flattenedgroups
     m = model.params.segment.values
     σ = model.params.sigma.values
@@ -184,13 +234,13 @@ function m2ϵσ3(model::gcPCSAFTModel, V, T, z)
     #return ∑(z[i]*z[j]*m[i]*m[j] * (ϵ[i,j]*(1)/T)^n * σ[i,j]^3 for i ∈ @comps, j ∈ @comps)/(sum(z)^2)
 end
 
-function d(model::gcPCSAFTModel, V, T, z)
+function d(model::gcPCPSAFTModel, V, T, z)
     ϵᵢᵢ = diagvalues(model.params.epsilon)
     σᵢᵢ = diagvalues(model.params.sigma) 
     return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
 end
 
-function ζ0123(model::gcPCSAFTModel, V, T, z,_d)
+function ζ0123(model::gcPCPSAFTModel, V, T, z,_d = @f(d))
     m = model.params.segment.values
     n = model.groups.n_flattenedgroups
     ζ0 = zero(V+T+first(z))
@@ -218,7 +268,7 @@ function ζ0123(model::gcPCSAFTModel, V, T, z,_d)
     return ζ0,ζ1,ζ2,ζ3
 end
 
-function Δ(model::gcPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
+function Δ(model::gcPCPSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     _0 = zero(V+T+first(z))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
@@ -231,7 +281,7 @@ function Δ(model::gcPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     return res
 end
 
-function  Δ(model::gcPCSAFT, V, T, z,_data=@f(data))
+function  Δ(model::HeterogcPCPSAFT, V, T, z,_data=@f(data))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
     σ = model.params.sigma.values
@@ -244,3 +294,8 @@ function  Δ(model::gcPCSAFT, V, T, z,_data=@f(data))
     end
     return Δout
 end
+
+#polar overloads
+@inline pcp_sigma(model::HeterogcPCPSAFT) = model.params.comp_sigma.values
+@inline pcp_epsilon(model::HeterogcPCPSAFT) = model.params.comp_epsilon.values
+@inline pcp_segment(model::HeterogcPCPSAFT) = model.params.comp_segment.values

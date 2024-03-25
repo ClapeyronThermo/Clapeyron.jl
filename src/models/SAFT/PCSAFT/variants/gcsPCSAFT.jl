@@ -94,7 +94,7 @@ function gcsPCSAFT(components;
 
     gc_epsilon_assoc = gc_params["epsilon_assoc"]
     gc_bondvol = gc_params["bondvol"]
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,[],assoc_options) #combining rules for association
+    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,[],assoc_options,sites) #combining rules for association
 
     comp_sites = gc_to_comp_sites(sites,groups)
     bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)

@@ -200,7 +200,7 @@ The primary reasons behind PC-SAFT's popularity are three-fold. For one, the cod
 * Critical-point based PC-SAFT (CP-PC-SAFT)
 * Critical-point based PPC-SAFT (CP-PPC-SAFT)
 * Group-contribution PC-SAFT (GC-PC-SAFT)
-* Group contribution PPC-SAFT (GC-PPC-SAFT)
+* Group contribution PCP-SAFT (GC-PCP-SAFT)
 
 We will aim to provide some of these variants at a later date.
 

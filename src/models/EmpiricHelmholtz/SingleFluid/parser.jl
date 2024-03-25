@@ -64,8 +64,8 @@ function coolprop_csv(component::String,comp = "")
         Base.Libc.Libdl.dlclose(lib_handler)
         throw(error("cannot found component file $(comp). Try loading the CoolProp library by loading it."))
     end
-
 end
+
 function tryparse_units(val,unit)
     result = try
         unit_parsed = Unitful.uparse(unit)
@@ -221,11 +221,12 @@ function SingleFluid(components;
     residual = _parse_residual(SingleFluidResidualParam,eos_data[:alphar];verbose = verbose)
     #ancillaries
     if ancillaries === nothing
-        init_ancillaries = _parse_ancillaries(data[:ANCILLARIES],verbose)
-        init_ancillaries.components[1] = only(_components)
+        init_ancillaries = _parse_ancillaries(_components,data[:ANCILLARIES],verbose,properties)
     else
         init_ancillaries = init_model(ancillaries,components,ancillaries_userlocations,verbose)
     end
+
+
 
     references = [eos_data[:BibTeX_EOS]]
 
@@ -768,7 +769,12 @@ function _parse_ancilliary_func(anc,input_key,output_key)
     return GenericAncEvaluator(n,t,input_r,output_r,type,using_input_r)
 end
 
-function _parse_ancillaries(anc_data,verbose = false)
+function _parse_superancilliary_func end
+
+function _parse_ancillaries(component,anc_data,verbose = false,properties = nothing)
+    #if SUPERANC_ENABLED[] && !isnothing(Base.get_extension(Clapeyron,:ClapeyronSuperancillaries))
+    #    return _parse_superancilliary_func(component,properties,verbose)
+    #end
     #saturation pressure
     p_data = anc_data[:pS]
     rhol_data = anc_data[:rhoL]
@@ -777,7 +783,7 @@ function _parse_ancillaries(anc_data,verbose = false)
     ps_anc = PolExpSat(_parse_ancilliary_func(p_data,:T_r,:reducing_value))
     rhov_anc = PolExpVapour(_parse_ancilliary_func(rhov_data,:T_r,:reducing_value))
     rhol_anc = PolExpLiquid(_parse_ancilliary_func(rhol_data,:T_r,:reducing_value))
-    return CompositeModel(["ancillaries"],gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
+    return CompositeModel(component,gas = rhov_anc,liquid = rhol_anc,saturation = ps_anc)
 end
 
 #converting Clapeyron ideal models into SingleFluidParams

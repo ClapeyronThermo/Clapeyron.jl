@@ -99,7 +99,7 @@ function recombine_impl!(model::SAFTVRMieModel)
 
     epsilon_assoc = model.params.epsilon_assoc
     bondvol = model.params.bondvol
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options,model.sites) #combining rules for association
 
     model.params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
     model.params.bondvol.values.values[:] = bondvol.values.values
@@ -149,23 +149,6 @@ end
 
 function ρ_S(model::SAFTVRMieModel, V, T, z, m̄ = dot(z,model.params.segment.values))
     return N_A/V*m̄
-end
-
-function ζ0123(model::SAFTVRMieModel, V, T, z,_d=@f(d),m̄ = dot(z,model.params.segment.values))
-    m = model.params.segment
-    _0 = zero(V+T+first(z)+one(eltype(model)))
-    ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
-    for i ∈ 1:length(z)
-        di =_d[i]
-        xS = z[i]*m[i]/m̄
-        ζ0 += xS
-        ζ1 += xS*di
-        ζ2 += xS*di*di
-        ζ3 += xS*di*di*di
-    end
-    c = π/6*N_A*m̄/V
-    ζ0,ζ1,ζ2,ζ3 = c*ζ0,c*ζ1,c*ζ2,c*ζ3
-    return ζ0,ζ1,ζ2,ζ3
 end
 
 #=

@@ -5,6 +5,47 @@ function lb_volume(model::SAFTModel, z = SA[1.0])
     return val
 end
 
+"""
+    ck_diameter(model, T, z, k1 = 0.12, k2 = 3.0)
+
+Chen and Kregleswski efective diameter.
+```
+dᵢ = σᵢ*(1 - k1*exp(-k2ᵢ/ T))
+```
+"""
+function ck_diameter(model, T, z, k1 = 0.12, k2 = 3.0)
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    di = zeros(eltype(T+one(eltype(model))),length(model))
+    for i in 1:length(model)
+        di[i] = σ[i,i]*(1 - k1*exp(-k2*ϵ[i,i]/ T))
+    end
+    return di
+end
+
+function ck_diameter(model, T, z::SingleComp,k1 = 0.12, k2 = 3.0)
+    ϵ = only(model.params.epsilon.values)
+    σ = only(model.params.sigma.values)
+    return SA[σ*(1 - k1*exp(-k2*ϵ/T))]
+end
+
+function ζ0123(model, V, T, z, _d=@f(d),m = model.params.segment.values)
+    #N_A*π/6/V * sum(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
+    _0 = zero(V+T+first(z)+one(eltype(model)))
+    ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
+    for i ∈ 1:length(z)
+        di =_d[i]
+        xS = z[i]*m[i]
+        ζ0 += xS
+        ζ1 += xS*di
+        ζ2 += xS*di*di
+        ζ3 += xS*di*di*di
+    end
+    c = π/6*N_A/V
+    ζ0,ζ1,ζ2,ζ3 = c*ζ0,c*ζ1,c*ζ2,c*ζ3
+    return ζ0,ζ1,ζ2,ζ3
+end
+
 function x0_crit_pure(model::SAFTModel)
     lb_v = lb_volume(model)
     (2.0, log10(lb_v/0.3))
@@ -41,7 +82,7 @@ function antoine_coef(model::SAFTModel)
     B = exp(1.7330494260220226 + 0.6185684341246401*log(m))
     C = 0.018524160155803788 - 0.19222021003570597*log(m)
     return A,B,C
-end    
+end
 
 ## Association overloads required to support association
 
@@ -50,10 +91,10 @@ end
 end
 
 #recombine! utilities
-function recombine_saft!(model::SAFTModel)
+function recombine_saft!(model::SAFTModel,k = nothing,l = nothing)
     sigma = model.params.sigma
     epsilon = model.params.epsilon
-    sigma = sigma_LorentzBerthelot!(sigma)
-    epsilon = epsilon_LorentzBerthelot!(epsilon)
+    sigma = sigma_LorentzBerthelot!(sigma,l)
+    epsilon = epsilon_LorentzBerthelot!(epsilon,k)
     return model
 end

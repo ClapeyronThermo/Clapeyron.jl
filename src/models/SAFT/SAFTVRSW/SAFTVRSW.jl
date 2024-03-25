@@ -89,37 +89,33 @@ function get_l(model::SAFTVRSWModel)
 end
 
 function a_res(model::SAFTVRSWModel, V, T, z)
-    return @f(a_mono) + @f(a_chain) + @f(a_assoc)
+    _data = @f(data)
+    return @f(a_mono,_data) + @f(a_chain,_data) + @f(a_assoc,_data)
 end
 
-function a_mono(model::SAFTVRSWModel, V, T, z)
-    return @f(a_hs) + @f(a_disp)
-end
-
-function a_disp(model::SAFTVRSWModel, V, T, z)
-    return @f(a_1) + @f(a_2)
-end
-
-function a_hs(model::SAFTVRSWModel, V, T, z)
-    ζ0 = @f(ζn,0)
-    ζ1 = @f(ζn,1)
-    ζ2 = @f(ζn,2)
-    ζ3 = @f(ζn,3)
-    Σz = sum(z)
-    m = model.params.segment.values
-    m̄ = dot(z, m)/Σz
-    return m̄*bmcs_hs(ζ0,ζ1,ζ2,ζ3)
-end
-
-function ζn(model::SAFTVRSWModel, V, T, z, n)
+function data(model::SAFTVRSWModel, V, T, z)
+    m̄ = dot(z,model.params.segment)
+    _D_gHS = @f(D_gHS,m̄)
     σ = model.params.sigma.values
-    return π/6*@f(ρ_S)*∑(@f(x_S,i)*σ[i,i]^n for i ∈ @comps)
+    ζi = @f(ζ0123,diagvalues(σ))
+    _ρ_S = @f(ρ_S,m̄)
+    ζₓ = @f(ζ_X,m̄,_ρ_S)
+    return (_D_gHS,_ρ_S,ζi,ζₓ,m̄)
 end
 
-function ρ_S(model::SAFTVRSWModel, V, T, z)
+function a_mono(model::SAFTVRSWModel, V, T, z,_data = @f(data))
+    return @f(a_hs,_data) + @f(a_disp,_data)
+end
+
+function a_hs(model::SAFTVRSWModel, V, T, z,_data = @f(data))
+    _D_gHS,_ρ_S,ζi,ζₓ,m̄ = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
+    return m̄*bmcs_hs(ζ0,ζ1,ζ2,ζ3)/sum(z)
+end
+
+function ρ_S(model::SAFTVRSWModel, V, T, z, m̄ = dot(z,model.params.segment.values))
     Σz = sum(z)
     m = model.params.segment.values
-    m̄ = dot(z, m)
     N = N_A
     return N/V*m̄
 end
@@ -131,113 +127,151 @@ function x_S(model::SAFTVRSWModel, V, T, z, i)
     return z[i]*m[i]/m̄
 end
 
-function ζ_X(model::SAFTVRSWModel, V, T, z)
+function ζ_X(model::SAFTVRSWModel, V, T, z,m̄ = dot(z,model.params.segment.values),_ρ_S = @f(ρ_S,m̄))
     comps = @comps
     σ = model.params.sigma.values
-    return π/6*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*σ[i,j]^3 for i ∈ comps for j ∈ comps)
+    m = model.params.segment.values
+    m̄⁻¹ = 1/m̄
+    ζₓ = zero(first(z)+one(eltype(model)))
+    for i in @comps
+        x_Si = z[i]*m[i]*m̄⁻¹
+        ζₓ += x_Si*x_Si*σ[i,i]^3
+        for j in 1:(i-1)
+            x_Sj = z[j]*m[j]*m̄⁻¹
+            ζₓ += 2*x_Si*x_Sj*σ[i,j]^3
+        end
+    end
+    return ζₓ*π/6*_ρ_S
 end
 
-function a_1(model::SAFTVRSWModel, V, T, z)
+function a_disp(model::SAFTVRSWModel, V, T, z,_data = @f(data))
+    _D_gHS,_ρ_S,ζi,ζₓ,m̄ = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
     comps = @comps
     Σz = sum(z)
     m = model.params.segment.values
-    m̄ = dot(z, m)/Σz
-    return -m̄/T*@f(ρ_S)*∑(@f(x_S,i)*@f(x_S,j)*@f(a_1,i,j) for i ∈ comps for j ∈ comps)
-end
-
-function a_1(model::SAFTVRSWModel, V, T, z, i, j)
     ϵ = model.params.epsilon.values
-    λ = model.params.lambda.values
-    σ = model.params.sigma.values
-    αVDWij = 2π*ϵ[i,j]*σ[i,j]^3*(λ[i,j]^3-1)/3
-    return αVDWij * @f(gHS_0,i,j)
+    m̄⁻¹ = 1/m̄
+    a₁ = zero(first(z)+one(eltype(model))+T+V)
+    a₂ = zero(first(z)+one(eltype(model))+T+V)
+    KHS = ζ0*(1-ζ3)^4/(ζ0*(1-ζ3)^2+6*ζ1*ζ2*(1-ζ3)+9*ζ2^3)
+    for i in @comps
+        x_Si = z[i]*m[i]*m̄⁻¹
+        a₁ += x_Si*x_Si*@f(a_1,i,i,ζₓ)
+        ϵii = ϵ[i,i]
+        a₂ += 0.5*KHS*ϵii*ϵii*x_Si*x_Si*@f(∂a_1╱∂ρ_S╱ϵ,i,i,ζₓ)
+        for j in 1:(i-1)
+            x_Sj = z[j]*m[j]*m̄⁻¹
+            a₁ += 2*x_Si*x_Sj*@f(a_1,i,j,ζₓ)
+            ϵij = ϵ[i,j]
+            a₂ += KHS*ϵij*ϵij*x_Si*x_Sj*@f(∂a_1╱∂ρ_S╱ϵ,i,j,ζₓ)
+        end
+    end
+    return (-m̄/T*_ρ_S*a₁ + m̄/T^2*a₂)/Σz
 end
 
-function ζeff_X(model::SAFTVRSWModel, V, T, z, λ)
+function a_1(model::SAFTVRSWModel, V, T, z, i, j,ζₓ = @f(ζ_X))
+    ϵ = model.params.epsilon.values[i,j]
+    λ = model.params.lambda.values[i,j]
+    σ = model.params.sigma.values[i,j]
+    αVDWij = 2π*ϵ*σ^3*(λ*λ*λ-1)/3
+    return αVDWij * @f(gHS_0,λ,ζₓ)
+end
+
+function ζeff_X(model::SAFTVRSWModel, V, T, z, λ,ζₓ = @f(ζ_X))
     A = SAFTVRSWconsts.A
-    ζ_X_ = @f(ζ_X)
-    return A * [1; λ; λ^2] ⋅ [ζ_X_; ζ_X_^2; ζ_X_^3]
+    return A * SA[1; λ; λ*λ] ⋅ SA[ζₓ; ζₓ*ζₓ; ζₓ*ζₓ*ζₓ]
 end
 
-function gHS_0(model::SAFTVRSWModel,V, T, z, i, j)
-    λ = model.params.lambda.values
-    ζeff_X_ = @f(ζeff_X,λ[i,j])
+function gHS_0(model::SAFTVRSWModel,V, T, z, λ,ζₓ = @f(ζ_X),ζeff_X_ = @f(ζeff_X,λ,ζₓ))
     return (1-ζeff_X_/2)/(1-ζeff_X_)^3
 end
 
-function a_2(model::SAFTVRSWModel, V, T, z)
-    comps = @comps
-    Σz = sum(z)
-    m = model.params.segment.values
-    m̄ = dot(z, m)/Σz
-    return m̄/T^2*∑(@f(x_S,i)*@f(x_S,j)*@f(a_2,i,j) for i ∈ comps for j ∈ comps)
-end
 
-function a_2(model::SAFTVRSWModel, V, T, z, i, j)
+function a_2(model::SAFTVRSWModel, V, T, z, i, j,_data = @f(data))
+    _D_gHS,_ρ_S,ζi,ζₓ,m̄ = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
     ϵ = model.params.epsilon.values
-    ζ0 = @f(ζn,0)
-    ζ1 = @f(ζn,1)
-    ζ2 = @f(ζn,2)
-    ζ3 = @f(ζn,3)
     KHS = ζ0*(1-ζ3)^4/(ζ0*(1-ζ3)^2+6*ζ1*ζ2*(1-ζ3)+9*ζ2^3)
-    return 1/2*KHS*ϵ[i,j]*@f(∂a_1╱∂ρ_S,i,j)
+    λ = model.params.lambda.values[i,j]
+    return 1/2*KHS*ϵ[i,j]^2*@f(∂a_1╱∂ρ_S╱ϵ,i,j,λ,ζₓ,_ρ_S)
 end
 
-function ∂a_1╱∂ρ_S(model::SAFTVRSWModel, V, T, z, i, j)
-    ϵ = model.params.epsilon.values
-    λ = model.params.lambda.values
+function ∂a_1╱∂ρ_S╱ϵ(model::SAFTVRSWModel, V, T, z, i, j,ζₓ = @f(ζ_X),λ = model.params.lambda.values[i,j],_ρ_S = @f(ρ_S),ζeff_X_ = @f(ζeff_X,λ))
     σ = model.params.sigma.values
-    αij = 2π*ϵ[i,j]*σ[i,j]^3*(λ[i,j]^3-1)/3
-    ζ_X_ = @f(ζ_X)
-    ζeff_X_ = @f(ζeff_X,λ[i,j])
+    αij = 2π*σ[i,j]^3*(λ*λ*λ-1)/3
     A = SAFTVRSWconsts.A
-    ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [ζ_X_; 2ζ_X_^2; 3ζ_X_^3]
-    # ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
-    return -αij*(@f(ρ_S)*@f(gHS_0,i,j)+(5/2-ζeff_X_)/(1-ζeff_X_)^4*∂ζeff_X╱∂ζ_X)
+    ∂ζeff_X╱∂ζ_X = A * SA[1; λ; λ*λ] ⋅ SA[ζₓ; 2*ζₓ*ζₓ; 3*ζₓ*ζₓ*ζₓ]
+    return -αij*(_ρ_S*@f(gHS_0,λ,ζₓ,ζeff_X_)+(5/2-ζeff_X_)/(1-ζeff_X_)^4*∂ζeff_X╱∂ζ_X)
 end
 
-function a_chain(model::SAFTVRSWModel, V, T, z)
+function a_chain(model::SAFTVRSWModel, V, T, z,_data = @f(data))
+    _D_gHS,_ρ_S,ζi,ζₓ,m̄ = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
     Σz = sum(z)
     m = model.params.segment.values
-    return -∑(z[i]*(log(@f(γSW,i))*(m[i]-1)) for i ∈ @comps)/Σz
+    res = zero(V+T+Σz+one(eltype(model)))
+    for i in @comps
+        res -= z[i]*log(@f(γSW,i,_data))*(m[i]-1)
+    end
+    return res/Σz
 end
 
-function γSW(model::SAFTVRSWModel,V, T, z, i)
+function γSW(model::SAFTVRSWModel,V, T, z, i,_data = @f(data))
     ϵ = model.params.epsilon.values[i,i]
-    return @f(gSW,i,i)*exp(-ϵ/T)
+    return @f(gSW,i,i,_data)*exp(-ϵ/T)
 end
 
-function gSW(model::SAFTVRSWModel,V, T, z, i, j)
+function gSW(model::SAFTVRSWModel,V, T, z, i, j,_data = @f(data))
     ϵ = model.params.epsilon.values
-    return @f(gHS,i,j)+ϵ[i,j]/T*@f(g_1,i,j)
+    return @f(gHS,i,j,_data)+ϵ[i,j]/T*@f(g_1,i,j,_data)
 end
 
-function gHS(model::SAFTVRSWModel,V, T, z, i, j)
+function gHS(model::SAFTVRSWModel,V, T, z, i, j,_data = @f(data))
+    _D_gHS,_ρ_S,ζi,ζₓ,m̄ = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
     σ = model.params.sigma.values
-    ζ3 = @f(ζn,3)
-    D = σ[i]*σ[j]/(σ[i]+σ[j])*∑(@f(x_S,k)*σ[k]^2 for k ∈ @comps)/∑(@f(x_S,k)*σ[k]^3 for k ∈ @comps)
+    D = σ[i,i]*σ[j,j]/(σ[i,i]+σ[j,j])*_D_gHS
     return 1/(1-ζ3)+3*D*ζ3/(1-ζ3)^2+2*(D*ζ3)^2/(1-ζ3)^3
 end
 
-function g_1(model::SAFTVRSWModel,V, T, z, i, j)
-    λ = model.params.lambda.values
-    ζ_X_ = @f(ζ_X)
-    ζeff_X_ = @f(ζeff_X,λ[i,j])
-    A = SAFTVRSWconsts.A
-    ∂ζeff_X╱∂ζ_X = A * [1; λ[i,j]; λ[i,j]^2] ⋅ [1; 2ζ_X_; 3ζ_X_^2]
-    ∂ζeff_X╱∂λ = A * [0; 1; 2λ[i,j]] ⋅ [ζ_X_; ζ_X_^2; ζ_X_^3]
-    return @f(gHS_0,i,j)+(λ[i,j]^3-1)*(5/2-ζeff_X_)/(1-ζeff_X_)^4*(λ[i,j]/3*∂ζeff_X╱∂λ-ζ_X_*∂ζeff_X╱∂ζ_X)
+function D_gHS(model::SAFTVRSWModel,V, T, z, m̄ = dot(z,model.params.segment.values))
+    m = model.params.segment.values
+    σ = model.params.sigma.values
+    Σσ²x_Sᵢ = zero(first(z)+one(eltype(model)))
+    Σσ³x_Sᵢ = zero(first(z)+one(eltype(model)))
+    m̄⁻¹ = 1/m̄
+    for i in @comps
+        x_Si = m̄⁻¹*z[i]*m[i]
+        σi = σ[i,i]
+        σ² = σi*σi
+        σ³ = σ²*σi
+        Σσ²x_Sᵢ += x_Si*σ²
+        Σσ³x_Sᵢ += x_Si*σ³
+    end
+    return Σσ²x_Sᵢ/Σσ³x_Sᵢ
 end
 
-function Δ(model::SAFTVRSWModel, V, T, z, i, j, a, b)
+function g_1(model::SAFTVRSWModel,V, T, z, i, j,_data = @f(data))
+    _D_gHS,_ρ_S,ζi,ζₓ,m̄ = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
+    λ = model.params.lambda.values[i,j]
+    ζeff_X_ = @f(ζeff_X,λ)
+    A = SAFTVRSWconsts.A
+    ∂ζeff_X╱∂ζ_X = A * SA[1.0; λ; λ*λ] ⋅ SA[1; 2ζₓ; 3*ζₓ*ζₓ]
+    ∂ζeff_X╱∂λ = A * SA[0.0; 1.0; 2λ] ⋅ SA[ζₓ; ζₓ*ζₓ; ζₓ*ζₓ*ζₓ]
+    return @f(gHS_0,λ,ζₓ,ζeff_X_)+(λ^3-1)*(5/2-ζeff_X_)/(1-ζeff_X_)^4*(λ/3*∂ζeff_X╱∂λ-ζₓ*∂ζeff_X╱∂ζ_X)
+end
+
+function Δ(model::SAFTVRSWModel, V, T, z, i, j, a, b,_data = @f(data))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
-    g = @f(gSW,i,j)
-    return g*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
+    g = @f(gSW,i,j,_data)
+    return g*(expm1(ϵ_assoc[i,j][a,b]/T))*κ[i,j][a,b]
 end
 
 const SAFTVRSWconsts = (
-    A = [2.25855   -1.50349  0.249434;
+    A = SA[2.25855   -1.50349  0.249434;
     -0.66927  1.40049   -0.827739;
     10.1576   -15.0427   5.30827],
 )
