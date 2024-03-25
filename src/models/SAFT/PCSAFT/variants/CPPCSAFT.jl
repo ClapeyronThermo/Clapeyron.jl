@@ -84,7 +84,7 @@ function data(model::CPPCSAFTModel, V, T, z)
     m = model.params.segment.values
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
-    m̄ = sum(z[i]*m[i,i] for i in @comps) #TODO: check why dot(z,diagvalues(m)) allocates
+    m̄ = sum(z[i]*m[i,i] for i in @comps)
     ϵmix = zero(eltype(model))
     σmix = zero(eltype(model))
     for i in @comps
@@ -103,7 +103,7 @@ function data(model::CPPCSAFTModel, V, T, z)
     ϵmix = ϵmix/(σmix*σmix*σmix*m̄*m̄)
     m̄ = m̄/sum(z)
     _d = @f(d)
-    ζ0,ζ1,ζ2,ζ3 = @f(ζ0123,_d)
+    ζ0,ζ1,ζ2,ζ3 = @f(ζ0123,_d,diagvalues(m))
     (_d,ζ0,ζ1,ζ2,ζ3,m̄,ϵmix,σmix)
 end
 
