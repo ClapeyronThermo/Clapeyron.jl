@@ -6,19 +6,19 @@ function lb_volume(model::SAFTModel, z = SA[1.0])
 end
 
 """
-    ck_diameter(model, z)
+    ck_diameter(model, T, z, k1 = 0.12, k2 = 3.0)
 
 Chen and Kregleswski efective diameter.
 ```
-dᵢ = σᵢ*(1 - 0.12*exp(-3ᵢ/ T))
+dᵢ = σᵢ*(1 - k1*exp(-k2ᵢ/ T))
 ```
 """
-function ck_diameter(model, V, z)
+function ck_diameter(model, T, z, k1 = 0.12, k2 = 3.0)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
     di = zeros(eltype(T+one(eltype(model))),length(model))
     for i in 1:length(model)
-        di[i] = σ[i,i]*(1 - 0.12*exp(-3ϵ[i,i]/ T))
+        di[i] = σ[i,i]*(1 - k1*exp(-k2*ϵ[i,i]/ T))
     end
     return di
 end
@@ -26,7 +26,7 @@ end
 function ck_diameter(model, T, z::SingleComp)
     ϵ = only(model.params.epsilon.values)
     σ = only(model.params.sigma.values)
-    return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
+    return SA[σ*(1 - k1*exp(-k2*ϵ/T))]
 end
 
 
