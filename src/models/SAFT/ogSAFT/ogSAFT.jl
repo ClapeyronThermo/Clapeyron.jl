@@ -71,9 +71,9 @@ export ogSAFT
 recombine_impl!(model::ogSAFTModel) = recombine_saft!(model)
 
 function data(model::ogSAFTModel, V, T, z)
-    _d = @f(d)
+    _d = d(model,V,T,z)
     m̄ = dot(z,model.params.segment.values)
-    ζi = @f(ζ0123,_d)
+    ζi = ζ0123(model,V,T,z,_d)
     return _d, m̄, ζi
 end
 
@@ -86,10 +86,10 @@ function a_seg(model::ogSAFTModel, V, T, z,_data = @f(data))
     return m̄*(@f(a_hs,_data)+@f(a_disp,_data))/sum(z)
 end
 
-function a_chain(model::ogSAFTModel, V, T, z)
+function a_chain(model::ogSAFTModel, V, T, z,_data = @f(data))
     #x = z/∑(z)
     m = model.params.segment.values
-    return sum(z[i]*(1-m[i])*log(@f(g_hsij, i, i)) for i ∈ @comps)/sum(z)
+    return sum(z[i]*(1-m[i])*log(@f(g_hsij, i, i,_data)) for i ∈ @comps)/sum(z)
 end
 
 function d(model::ogSAFTModel, V, T, z)
