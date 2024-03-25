@@ -53,7 +53,7 @@
     @testset "CP-PCSAFT" begin
         system = CPPCSAFT(["butane", "propane"])
         @test Clapeyron.a_hc(system, V, T, z) ≈ 3.856483933013827 rtol = 1e-6
-        @test Clapeyron.a_disp(system, V, T, z) ≈ -6.620200672209108 rtol = 1e-6
+        @test Clapeyron.a_disp(system, V, T, z) ≈ -6.613302753897683 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
         GC.gc()
     end

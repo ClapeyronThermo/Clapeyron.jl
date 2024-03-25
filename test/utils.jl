@@ -49,8 +49,8 @@ ____________________
 """)
 
 function include_distributed(path,value::Int)
-    workers = (DISTRIBUTED_WORKER_1,DISTRIBUTED_WORKER_2,DISTRIBUTED_WORKER_3,DISTRIBUTED_WORKER_4,COVERAGE)
-    if value in 1:5
+    workers = (DISTRIBUTED_WORKER_1,DISTRIBUTED_WORKER_2,DISTRIBUTED_WORKER_3,DISTRIBUTED_WORKER_4)
+    if value in 1:4
         worker = workers[value]
     else
         worker = false
