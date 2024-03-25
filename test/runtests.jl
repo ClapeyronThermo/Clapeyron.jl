@@ -109,13 +109,13 @@ end
 if DISTRIBUTED_WORKER_4 || IS_LOCAL || COVERAGE || OTHER_WORKER
     include("test_methods_eos.jl")
 end
-if DISTRIBUTED_WORKER_3 || IS_LOCAL || COVERAGE
+if DISTRIBUTED_WORKER_3 || IS_LOCAL || COVERAGE || OTHER_WORKER
     include("test_methods_api.jl")
 end
-if DISTRIBUTED_WORKER_2 || IS_LOCAL || COVERAGE
+if DISTRIBUTED_WORKER_2 || IS_LOCAL || COVERAGE || OTHER_WORKER
     include("test_estimation.jl")
 end
 
-if DISTRIBUTED_WORKER_2 || IS_LOCAL || COVERAGE
+if DISTRIBUTED_WORKER_1 || IS_LOCAL || COVERAGE || OTHER_WORKER
     include("test_issues.jl")
 end
