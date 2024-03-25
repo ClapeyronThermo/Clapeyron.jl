@@ -23,12 +23,12 @@ const L_NIGHTLY = IS_OTHER && (Base.Sys.islinux())
 const A_STABLE = IS_STABLE && (Base.Sys.isapple())
 const A_LATEST = IS_LATEST && (Base.Sys.isapple())
 const A_NIGHTLY = IS_OTHER && (Base.Sys.isapple())
-const COVERAGE = !IS_LOCAL && L_NIGHTLY
 #ordered by priority
 const DISTRIBUTED_WORKER_1 = L_LATEST || W_NIGHTLY
-const DISTRIBUTED_WORKER_2 = L_NIGHTLY || A_LATEST
+const DISTRIBUTED_WORKER_2 = L_STABLE || A_LATEST
 const DISTRIBUTED_WORKER_3 = W_LATEST || A_STABLE
 const DISTRIBUTED_WORKER_4 = W_STABLE || A_NIGHTLY
+const COVERAGE = !IS_LOCAL && L_NIGHTLY
 const OTHER_WORKER = !DISTRIBUTED_WORKER_1 && !DISTRIBUTED_WORKER_2 && !DISTRIBUTED_WORKER_3 && !DISTRIBUTED_WORKER_4 && !COVERAGE
 
 DISTRIBUTED_NUMBER = if DISTRIBUTED_WORKER_1
@@ -64,7 +64,7 @@ ____________________
 ENV["CLAPEYRON_SHOW_REFERENCES"] = "FALSE"
 
 macro printline()  # useful in hunting for where tests get stuck
-    file = split(string(__source__.file), "/")[end]
+    file = split(string(__source__.file), Base.Filesystem.path_separator)[end]
     printstyled(">>", file, ":", __source__.line, "\n", color=:light_black)
 end
 
