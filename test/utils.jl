@@ -56,7 +56,7 @@ function include_distributed(path,value::Int)
         worker = false
     end
     if worker || IS_LOCAL || COVERAGE || OTHER_WORKER || ALL_TESTS
-        include(@__MODULE__(), path)
+        Base.include(@__MODULE__(), path)
     end
 end
 
