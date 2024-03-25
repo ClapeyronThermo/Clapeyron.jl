@@ -14,7 +14,7 @@ Modify this constant to true to run all tests in all workers
 =#
 
 ALL_TESTS = false
-
+include("utils.jl")
 @info "Loading Clapeyron took $(round(t1,digits = 2)) seconds"
 @info "Coolprop: $(Clapeyron.is_coolprop_loaded())"
 #Disable showing citations
