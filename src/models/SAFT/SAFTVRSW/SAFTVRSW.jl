@@ -96,7 +96,8 @@ end
 function data(model::SAFTVRSWModel, V, T, z)
     m̄ = dot(z,model.params.segment)
     _D_gHS = @f(D_gHS,m̄)
-    ζi = @f(ζ0123,m̄)
+    σ = model.params.sigma.values
+    ζi = @f(ζ0123,diagvalues(σ))
     _ρ_S = @f(ρ_S,m̄)
     ζₓ = @f(ζ_X,m̄,_ρ_S)
     return (_D_gHS,_ρ_S,ζi,ζₓ,m̄)
@@ -110,24 +111,6 @@ function a_hs(model::SAFTVRSWModel, V, T, z,_data = @f(data))
     _D_gHS,_ρ_S,ζi,ζₓ,m̄ = _data
     ζ0,ζ1,ζ2,ζ3 = ζi
     return m̄*bmcs_hs(ζ0,ζ1,ζ2,ζ3)/sum(z)
-end
-
-function ζ0123(model::SAFTVRSWModel, V, T, z,m̄ = dot(z,model.params.segment.values))
-    σ = model.params.sigma.values
-    m = model.params.segment
-    _0 = zero(V+T+first(z)+one(eltype(model)))
-    ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
-    for i ∈ 1:length(z)
-        di = σ[i,i]
-        xS = z[i]*m[i]/m̄
-        ζ0 += xS
-        ζ1 += xS*di
-        ζ2 += xS*di*di
-        ζ3 += xS*di*di*di
-    end
-    c = π/6*N_A*m̄/V
-    ζ0,ζ1,ζ2,ζ3 = c*ζ0,c*ζ1,c*ζ2,c*ζ3
-    return ζ0,ζ1,ζ2,ζ3
 end
 
 function ρ_S(model::SAFTVRSWModel, V, T, z, m̄ = dot(z,model.params.segment.values))

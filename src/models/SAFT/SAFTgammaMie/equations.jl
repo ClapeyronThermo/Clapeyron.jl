@@ -50,7 +50,7 @@ function data(model::SAFTgammaMieModel, V, T, z)
     X = @f(X_gc)
     _d_gc = d(model,V,T,X)
     _d_gc_av = @f(d_gc_av,_d_gc)
-    ζi = ζ0123(model,V,T,X,_d_gc,m̄)
+    ζi = ζ0123(model,V,T,X,_d_gc)
     _ζ_X,σ3x = ζ_X_σ3(model,V,T,X,_d_gc,m̄)
     _ρ_S = N_A/V*m̄
     _ζst = _ζst = σ3x*_ρ_S*π/6

@@ -111,24 +111,6 @@ function a_res(model::BACKSAFTModel ,V, T, z,_data = @f(data))
     return  a_hcb_ + a_chain_ + (1.75*(a_chain_/a_hcb_)+1)*a_disp_
 end
 
-function ζ0123(model::BACKSAFTModel, V, T, z,_d=@f(d))
-    #N_A*π/6/V * sum(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
-    m = model.params.segment
-    _0 = zero(V+T+first(z)+one(eltype(model)))
-    ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
-    for i ∈ 1:length(z)
-        di =_d[i]
-        xS = z[i]*m[i]
-        ζ0 += xS
-        ζ1 += xS*di
-        ζ2 += xS*di*di
-        ζ3 += xS*di*di*di
-    end
-    c = π/6*N_A/V
-    ζ0,ζ1,ζ2,ζ3 = c*ζ0,c*ζ1,c*ζ2,c*ζ3
-    return ζ0,ζ1,ζ2,ζ3
-end
-
 #=
 
 z = 1/(1-y) + 3ay/(1-y)2 + (3a2y2-a2y3)/(1-y)^3

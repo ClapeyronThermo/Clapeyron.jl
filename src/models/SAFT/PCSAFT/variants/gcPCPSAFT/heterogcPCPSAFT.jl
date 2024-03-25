@@ -240,7 +240,7 @@ function d(model::gcPCPSAFTModel, V, T, z)
     return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
 end
 
-function ζ0123(model::gcPCPSAFTModel, V, T, z,_d)
+function ζ0123(model::gcPCPSAFTModel, V, T, z,_d = @f(d))
     m = model.params.segment.values
     n = model.groups.n_flattenedgroups
     ζ0 = zero(V+T+first(z))
