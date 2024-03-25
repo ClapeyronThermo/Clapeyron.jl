@@ -23,12 +23,13 @@ const L_NIGHTLY = IS_OTHER && (Base.Sys.islinux())
 const A_STABLE = IS_STABLE && (Base.Sys.isapple())
 const A_LATEST = IS_LATEST && (Base.Sys.isapple())
 const A_NIGHTLY = IS_OTHER && (Base.Sys.isapple())
-
+const COVERAGE = !IS_LOCAL && L_NIGHTLY
 #ordered by priority
 const DISTRIBUTED_WORKER_1 = L_LATEST || W_NIGHTLY
 const DISTRIBUTED_WORKER_2 = L_NIGHTLY || A_LATEST
 const DISTRIBUTED_WORKER_3 = W_LATEST || A_STABLE
 const DISTRIBUTED_WORKER_4 = W_STABLE || A_NIGHTLY
+const OTHER_WORKER = !DISTRIBUTED_WORKER_1 && !DISTRIBUTED_WORKER_2 && !DISTRIBUTED_WORKER_3 && !DISTRIBUTED_WORKER_4 && !COVERAGE
 
 DISTRIBUTED_NUMBER = if DISTRIBUTED_WORKER_1
     1
@@ -38,18 +39,22 @@ elseif DISTRIBUTED_WORKER_3
     3
 elseif DISTRIBUTED_WORKER_4
     4
+elseif COVERAGE
+    -1
 else
     0
 end
-local_str = "Running in " * ifelse(IS_LOCAL,"local","CI") * " mode." * ifelse(iszero(DISTRIBUTED_NUMBER),"","Distributed worker number: $DISTRIBUTED_NUMBER")
+local_str = "Running in " * ifelse(IS_LOCAL,"local","CI") * " mode. " * ifelse(iszero(DISTRIBUTED_NUMBER),"","Distributed worker number: $DISTRIBUTED_NUMBER") * ifelse(DISTRIBUTED_NUMBER == 5," (Coverage)","")
 
 println("""
-_______________
+___________________
+
 Clapeyron.jl tests
 
 $local_str
 
------------------
+____________________
+
 """)
 #we run coverage in this one:
 
@@ -82,34 +87,35 @@ function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
     @test G ≈ ∑μᵢzᵢ rtol = rtol
 end
 
-if DISTRIBUTED_WORKER_4 || IS_LOCAL
+if DISTRIBUTED_WORKER_4 || IS_LOCAL || COVERAGE || OTHER_WORKER
     include("test_database.jl")
     include("test_solvers.jl")
     include("test_differentials.jl")
     include("test_misc.jl")
+    include("test_models_saft_pc.jl")
 end
 
-if DISTRIBUTED_WORKER_3 || IS_LOCAL
+if DISTRIBUTED_WORKER_3 || IS_LOCAL || COVERAGE || OTHER_WORKER
     include("test_models_cubic.jl")
+    include("test_models_saft_others.jl")
 end
 
-if DISTRIBUTED_WORKER_2 || IS_LOCAL
-    include("test_models_saft_others.jl")
+if DISTRIBUTED_WORKER_2 || IS_LOCAL || COVERAGE || OTHER_WORKER
     include("test_models_others.jl")
 end
-if DISTRIBUTED_WORKER_1 || IS_LOCAL
-    include("test_models_saft_pc_vr.jl")
+if DISTRIBUTED_WORKER_1 || IS_LOCAL || COVERAGE || OTHER_WORKER
+    include("test_models_saft_vr.jl")
 end
-if DISTRIBUTED_WORKER_4 || IS_LOCAL
+if DISTRIBUTED_WORKER_4 || IS_LOCAL || COVERAGE || OTHER_WORKER
     include("test_methods_eos.jl")
 end
-if DISTRIBUTED_WORKER_3 || IS_LOCAL
+if DISTRIBUTED_WORKER_3 || IS_LOCAL || COVERAGE
     include("test_methods_api.jl")
 end
-if DISTRIBUTED_WORKER_2 || IS_LOCAL
+if DISTRIBUTED_WORKER_2 || IS_LOCAL || COVERAGE
     include("test_estimation.jl")
 end
 
-if DISTRIBUTED_WORKER_2 || IS_LOCAL
+if DISTRIBUTED_WORKER_2 || IS_LOCAL || COVERAGE
     include("test_issues.jl")
 end
