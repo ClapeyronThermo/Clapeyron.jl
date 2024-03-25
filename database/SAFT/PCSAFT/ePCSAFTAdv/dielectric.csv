@@ -1,0 +1,9 @@
+Clapeyron Database File,,,,,,,,
+PCSAFT Like Parameters,,,,,,,,
+species,DIPPR Number,dielectric,source
+sodium,,8.,
+chloride,,8.,
+lithium,,8.,
+potassium,,8.,
+bromide,,8.,
+ethanol,,24.88,

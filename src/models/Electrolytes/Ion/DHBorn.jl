@@ -60,13 +60,17 @@ function DHBorn(solvents,ions; RSPmodel=ConstRSP, userlocations=String[], RSP_us
 end
 
 function a_res(model::DHBornModel, V, T, z, _data=@f(data))
-    return a_ion(model, V, T, z, _data)+a_born(model, V, T, z, _data)
+    _data_DH = (_data[1], _data[2])
+    return a_ion(model, V, T, z, _data_DH)+a_born(model, V, T, z, _data)
+end
+
+function data(model::DHBornModel, V, T, z)
+    return dielectric_constant(model.RSPmodel, V, T, z), model.params.sigma.values, model.params.sigma_born.values
 end
 
 function a_born(model::DHBornModel, V, T, z,_data=@f(data))
-    σ_born = model.params.sigma_born.values
     Z = model.params.charge.values
-    ϵ_r, σ = _data
+    ϵ_r, σ, σ_born = _data
     iions = model.icomponents[Z.!=0]
 
     if length(iions) == 0
