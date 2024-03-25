@@ -160,21 +160,7 @@ function a_disp(model::BACKSAFTModel, V, T, z,_data = @f(data))
     return m*(A1+A2+A3+A4)
 end
 
-function d(model::BACKSAFT, V, T, z::SingleComp)
-    ϵ = only(model.params.epsilon.values)
-    σ = only(model.params.sigma.values)
-    return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
-end
-
-function d(model::BACKSAFTModel, V, T, z)
-    ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values
-    di = zeros(eltype(T+one(eltype(model))),length(model))
-    for i in 1:length(model)
-        di[i] = σ[i,i]*(1 - 0.12*exp(-3ϵ[i,i]/ T))
-    end
-    return di
-end
+d(model::BACKSAFTModel, V, T, z) = ck_diameter(model, T, z)
 
 function ζ(model::BACKSAFTModel, V, T, z, n)
     m = model.params.segment.values

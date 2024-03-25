@@ -212,14 +212,6 @@ function _ppcsaft_corr_poly(corr,m̄)
     return NTuple{5}(dot(m̄i,ci) for ci in corr)
 end
 
-#Optimizations for Single Component PPCSAFT
-
-function d(model::PCPSAFT, V, T, z::SingleComp)
-    ϵ = only(model.params.epsilon.values)
-    σ = only(model.params.sigma.values)
-    return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
-end
-
 const PCPSAFTconsts = (
     corr_a =
     ((0.3043504,0.9534641,-1.161008),

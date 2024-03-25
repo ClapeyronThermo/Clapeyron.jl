@@ -5,6 +5,33 @@ function lb_volume(model::SAFTModel, z = SA[1.0])
     return val
 end
 
+"""
+    ck_diameter(model, z)
+
+Chen and Kregleswski efective diameter.
+```
+dᵢ = σᵢ*(1 - 0.12*exp(-3ᵢ/ T))
+```
+"""
+function ck_diameter(model, V, z)
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    di = zeros(eltype(T+one(eltype(model))),length(model))
+    for i in 1:length(model)
+        di[i] = σ[i,i]*(1 - 0.12*exp(-3ϵ[i,i]/ T))
+    end
+    return di
+end
+
+function ck_diameter(model, T, z::SingleComp)
+    ϵ = only(model.params.epsilon.values)
+    σ = only(model.params.sigma.values)
+    return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
+end
+
+
+
+
 function x0_crit_pure(model::SAFTModel)
     lb_v = lb_volume(model)
     (2.0, log10(lb_v/0.3))

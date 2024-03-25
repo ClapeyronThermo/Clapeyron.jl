@@ -133,15 +133,7 @@ function a_disp(model::PCSAFTModel, V, T, z,_data=@f(data))
     return -2*πNAρ*@f(I,1,_data)*m2ϵσ3₁ - m̄*πNAρ*@f(C1,_data)*@f(I,2,_data)*m2ϵσ3₂
 end
 
-function d(model::PCSAFTModel, V, T, z)
-    ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values
-    di = zeros(eltype(T+one(eltype(model))),length(model))
-    for i in 1:length(model)
-        di[i] = σ[i,i]*(1 - 0.12*exp(-3ϵ[i,i]/ T))
-    end
-    return di
-end
+d(model::PCSAFTModel, V, T, z) = ck_diameter(model, T, z)
 
 function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     m = model.params.segment.values
@@ -292,12 +284,4 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
         Δout[idx] = gij*σ[i,j]^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κ[i,j][a,b]
     end
     return Δout
-end
-
-#Optimizations for Single Component PCSAFT
-
-function d(model::PCSAFT, V, T, z::SingleComp)
-    ϵ = only(model.params.epsilon.values)
-    σ = only(model.params.sigma.values)
-    return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
 end
