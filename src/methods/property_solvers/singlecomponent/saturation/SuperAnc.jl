@@ -65,7 +65,7 @@ end
 
 function chebyshev_pressure(model::ABCubicModel,T̃,a,b)
     cheb_psat = _cheb_psat(model)
-    p̃ = cheb_eval(cheb_psat,T̃)
+    p̃ = Solvers.cheb_eval(cheb_psat,T̃)
     return p̃*a/(b*b)
 end
 
