@@ -3,70 +3,22 @@ t1 = @elapsed using Clapeyron
 using CoolProp #CoolProp ext
 using Unitful #Unitful ext
 using MultiComponentFlash: MultiComponentFlash
-
-
 using Clapeyron.LinearAlgebra
 using Clapeyron.StaticArrays
 using Clapeyron: has_sites,has_groups
 
-IS_GH = get(ENV,"GITHUB_ACTIONS",false) in ("true", "1", "yes",true,"TRUE")
-IS_LOCAL = !IS_GH
-IS_STABLE = v"1.6" <= Base.VERSION < v"1.7"
-IS_LATEST = v"1.10" <= Base.VERSION < v"1.11"
-IS_OTHER = !IS_STABLE && !IS_LATEST
-const W_STABLE = IS_STABLE && (Base.Sys.iswindows())
-const W_LATEST = IS_LATEST && (Base.Sys.iswindows())
-const W_NIGHTLY = IS_OTHER && (Base.Sys.iswindows())
-const L_STABLE = IS_STABLE && (Base.Sys.islinux())
-const L_LATEST = IS_LATEST && (Base.Sys.islinux())
-const L_NIGHTLY = IS_OTHER && (Base.Sys.islinux())
-const A_STABLE = IS_STABLE && (Base.Sys.isapple())
-const A_LATEST = IS_LATEST && (Base.Sys.isapple())
-const A_NIGHTLY = IS_OTHER && (Base.Sys.isapple())
-#ordered by priority
-const DISTRIBUTED_WORKER_1 = L_LATEST || W_NIGHTLY
-const DISTRIBUTED_WORKER_2 = L_STABLE || A_LATEST
-const DISTRIBUTED_WORKER_3 = W_LATEST || A_STABLE
-const DISTRIBUTED_WORKER_4 = W_STABLE || A_NIGHTLY
-const COVERAGE = !IS_LOCAL && L_NIGHTLY
-const OTHER_WORKER = !DISTRIBUTED_WORKER_1 && !DISTRIBUTED_WORKER_2 && !DISTRIBUTED_WORKER_3 && !DISTRIBUTED_WORKER_4 && !COVERAGE
+#=
 
-DISTRIBUTED_NUMBER = if DISTRIBUTED_WORKER_1
-    1
-elseif DISTRIBUTED_WORKER_2
-    2
-elseif DISTRIBUTED_WORKER_3
-    3
-elseif DISTRIBUTED_WORKER_4
-    4
-elseif COVERAGE
-    -1
-else
-    0
-end
-local_str = "Running in " * ifelse(IS_LOCAL,"local","CI") * " mode. " * ifelse(iszero(DISTRIBUTED_NUMBER),"","Distributed worker number: $DISTRIBUTED_NUMBER") * ifelse(DISTRIBUTED_NUMBER == 5," (Coverage)","")
+Modify this constant to true to run all tests in all workers
 
-println("""
-___________________
+=#
 
-Clapeyron.jl tests
-
-$local_str
-
-____________________
-
-""")
-#we run coverage in this one:
+ALL_TESTS = false
 
 @info "Loading Clapeyron took $(round(t1,digits = 2)) seconds"
 @info "Coolprop: $(Clapeyron.is_coolprop_loaded())"
 #Disable showing citations
 ENV["CLAPEYRON_SHOW_REFERENCES"] = "FALSE"
-
-macro printline()  # useful in hunting for where tests get stuck
-    file = split(string(__source__.file), Base.Filesystem.path_separator)[end]
-    printstyled(">>", file, ":", __source__.line, "\n", color=:light_black)
-end
 
 #fix to current tests
 function GERG2008(components;verbose = false,reference_state = nothing)
@@ -86,36 +38,20 @@ function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
     _,G,∑μᵢzᵢ = Clapeyron.gibbs_duhem(model,V,T,z)
     @test G ≈ ∑μᵢzᵢ rtol = rtol
 end
+#=
+include_distributed distributes the test load among all workers
+=#
+include_distributed("test_database.jl",4)
+include_distributed("test_solvers.jl",4)
+include_distributed("test_differentials.jl",4)
+include_distributed("test_misc.jl",4)
+include_distributed("test_models_saft_pc.jl",4)
+include_distributed("test_models_cubic.jl",3)
+include_distributed("test_models_saft_others.jl",3)
+include_distributed("test_models_others.jl",2)
+include_distributed("test_models_saft_vr.jl",1)
+include_distributed("test_methods_eos.jl",4)
+include_distributed("test_methods_api.jl",3)
+include_distributed("test_estimation.jl",2)
+include_distributed("test_issues.jl",1)
 
-if DISTRIBUTED_WORKER_4 || IS_LOCAL || COVERAGE || OTHER_WORKER
-    include("test_database.jl")
-    include("test_solvers.jl")
-    include("test_differentials.jl")
-    include("test_misc.jl")
-    include("test_models_saft_pc.jl")
-end
-
-if DISTRIBUTED_WORKER_3 || IS_LOCAL || COVERAGE || OTHER_WORKER
-    include("test_models_cubic.jl")
-    include("test_models_saft_others.jl")
-end
-
-if DISTRIBUTED_WORKER_2 || IS_LOCAL || COVERAGE || OTHER_WORKER
-    include("test_models_others.jl")
-end
-if DISTRIBUTED_WORKER_1 || IS_LOCAL || COVERAGE || OTHER_WORKER
-    include("test_models_saft_vr.jl")
-end
-if DISTRIBUTED_WORKER_4 || IS_LOCAL || COVERAGE || OTHER_WORKER
-    include("test_methods_eos.jl")
-end
-if DISTRIBUTED_WORKER_3 || IS_LOCAL || COVERAGE || OTHER_WORKER
-    include("test_methods_api.jl")
-end
-if DISTRIBUTED_WORKER_2 || IS_LOCAL || COVERAGE || OTHER_WORKER
-    include("test_estimation.jl")
-end
-
-if DISTRIBUTED_WORKER_1 || IS_LOCAL || COVERAGE || OTHER_WORKER
-    include("test_issues.jl")
-end
