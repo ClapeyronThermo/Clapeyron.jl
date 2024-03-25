@@ -17,7 +17,7 @@ function ePCSAFT(solvents,ions;
     RSPmodel = ConstRSP,
     userlocations=String[], 
     ideal_userlocations=String[],
-    assoc_options = nothing,
+    assoc_options = AssocOptions(),
      verbose=false)
     components = deepcopy(ions)
     prepend!(components,solvents)
@@ -28,10 +28,10 @@ function ePCSAFT(solvents,ions;
 
     icomponents = 1:length(components)
 
-    neutral_path = DB_PATH.*["/SAFT/PCSAFT","/SAFT/PCSAFT/pharmaPCSAFT"]
+    neutral_path = DB_PATH.*["/SAFT/PCSAFT","/SAFT/PCSAFT/ePCSAFT","/SAFT/PCSAFT/pharmaPCSAFT"]
 
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
-    init_neutralmodel = neutralmodel(components;userlocations=userlocations,verbose=verbose,assoc_options=assoc_options)
+    init_neutralmodel = neutralmodel(components;userlocations=append!(userlocations,neutral_path),verbose=verbose,assoc_options=assoc_options)
     init_ionmodel = ionmodel(solvents,ions;RSPmodel=RSPmodel,userlocations=append!(userlocations,neutral_path),verbose=verbose)
 
 
