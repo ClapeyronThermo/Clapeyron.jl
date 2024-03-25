@@ -14,3 +14,5 @@
 
 ## bug fixes
 - Incorrect value for CPA with water (#256)
+- Bug in SAFT-VR-SW (#165)
+- Bug in CP-PC-SAFT
