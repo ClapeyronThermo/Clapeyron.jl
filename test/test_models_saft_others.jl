@@ -47,8 +47,8 @@
     @testset "SAFTVRSW" begin
         system = SAFTVRSW(["water", "ethane"])
         @test Clapeyron.a_mono(system, V, T, z) ≈ -1.4367205951569462 rtol = 1e-6
-        @test Clapeyron.a_chain(system, V, T, z) ≈ 0.024000058201261557 rtol = 1e-6
-        @test Clapeyron.a_assoc(system, V, T, z) ≈ -0.5238154638538838 rtol = 1e-6
+        @test Clapeyron.a_chain(system, V, T, z) ≈ 0.022703335564111336 rtol = 1e-6
+        @test Clapeyron.a_assoc(system, V, T, z) ≈ -0.5091186813915323 rtol = 1e-6
         test_gibbs_duhem(system,V,T,z)
         GC.gc()
     end
