@@ -167,7 +167,7 @@ function a_disp(model::SAFTVRSWModel, V, T, z,_data = @f(data))
             a₂ += KHS*ϵij*ϵij*x_Si*x_Sj*@f(∂a_1╱∂ρ_S╱ϵ,i,j,ζₓ)
         end
     end
-    return -m̄/T*_ρ_S*a₁ + m̄/T^2*a₂
+    return (-m̄/T*_ρ_S*a₁ + m̄/T^2*a₂)/Σz
 end
 
 function a_1(model::SAFTVRSWModel, V, T, z, i, j,ζₓ = @f(ζ_X))

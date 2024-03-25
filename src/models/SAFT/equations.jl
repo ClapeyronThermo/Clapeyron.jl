@@ -29,9 +29,8 @@ function ck_diameter(model, T, z::SingleComp,k1 = 0.12, k2 = 3.0)
     return SA[σ*(1 - k1*exp(-k2*ϵ/T))]
 end
 
-function ζ0123(model, V, T, z, _d=@f(d))
+function ζ0123(model, V, T, z, _d=@f(d),m = model.params.segment.values)
     #N_A*π/6/V * sum(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
-    m = model.params.segment
     _0 = zero(V+T+first(z)+one(eltype(model)))
     ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
     for i ∈ 1:length(z)
