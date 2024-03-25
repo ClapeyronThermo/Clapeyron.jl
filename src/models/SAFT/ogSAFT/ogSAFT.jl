@@ -110,7 +110,8 @@ end
 
 function f_d(model::ogSAFTModel, V, T, z,ϵ = model.params.epsilon.values[i,i])
     fm = 0.0010477#+0.025337*(m[i]-1)/m[i]
-    f = (1+0.2977T/ϵ)/(1+0.33163T/ϵ+fm*(T/ϵ)^2)
+    τ = T/ϵ
+    f = (1+0.2977τ)/(1+0.33163τ+fm*τ^2)
     return f
 end
 
@@ -173,7 +174,7 @@ function a_disp(model::ogSAFTModel, V, T, z,_data = @f(data))
     mσ3 = zero(first(z)+one(eltype(model)))
     for i in @comps
         zi,ϵi,σi,mi = z[i],ϵ[i,i],σ[i,i],m[i]
-        mσ3ii = zi*zi*mi*σi*σi*σi
+        mσ3ii = zi*zi*mi*mi*σi*σi*σi
         mσ3 += mσ3ii
         mσϵ3 += mσ3ii*ϵi
         for j in 1:(i-1)
@@ -183,7 +184,6 @@ function a_disp(model::ogSAFTModel, V, T, z,_data = @f(data))
             mσϵ3 += 2*mσ3ij*ϵij
         end
     end
-
     ϵx = mσϵ3/mσ3
     ρR = (6/sqrt(2)/π)*ζ3
     TR = T/ϵx
