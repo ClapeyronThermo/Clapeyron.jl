@@ -92,6 +92,32 @@ include("SolidModel/SolidHfus.jl")
 include("bubble_point.jl")
 include("dew_point.jl")
 
+function init_model_act(model,components,userlocations,verbose)
+    init_model(model,components,userlocations,verbose)
+end
+
+function init_model_act(model::Union{Type{<:ActivityModel},Base.Function},components,userlocations,verbose)
+    if verbose
+        @info "Building an instance of $(info_color(string(model))) with components $components, without its inner puremodel"
+    end
+    try
+    model(components;userlocations,verbose,puremodel = BasicIdeal())
+    catch e
+        if e isa MethodError
+            #check for invalid keyword :puremodel. that means that the model does not support puremodel
+            #start as usual
+            if e.args isa NamedTuple && haskey(e.args,:puremodel) && length(e.args) == 1
+                init_model(model,components,userlocations,verbose)
+            else
+                rethrow(e)
+            end
+        else
+            rethrow(e)
+        end
+    end
+end
+
+
 function CompositeModel(components;
     liquid = nothing,
     gas = nothing,
@@ -134,9 +160,9 @@ function CompositeModel(components;
         init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
         init_sat = init_model(saturation,components,saturation_userlocations,verbose)
         init_fluid = FluidCorrelation(_components,init_gas,init_liquid,init_sat)
-    elseif _fluid !== nothing && !isnothing(liquid) && (gas == saturation == nothing)
+    elseif !isnothing(_fluid) && !isnothing(liquid) && (gas == saturation == nothing)
         #case 3: liquid activity and a model for the fluid.
-        init_liquid = init_model(liquid,components,liquid_userlocations,verbose)
+        init_liquid = init_model_act(liquid,components,liquid_userlocations,verbose)
         if init_liquid isa ActivityModel
             #case 3.a, the fluid itself is a composite model. unwrap the fluid field.
             if _fluid isa CompositeModel

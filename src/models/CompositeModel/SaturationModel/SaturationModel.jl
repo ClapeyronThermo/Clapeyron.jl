@@ -37,6 +37,14 @@ end
 
 eos(model,V,T,z=SA[1.0]) = not_eos_error(model)
 
+#this method allows to use a Saturation Model as a whole fluid model. it supposes ideal gas and no info about the liquid phase (NaNLiquid)
+function init_puremodel(model::SaturationModel,components,userlocations,verbose)
+    _components = format_components(components)
+    fluid = CompositeModel(_components,gas=BasicIdeal(),liquid=NaNLiquid(),saturation = model)
+    pure = split_model(fluid,1:length(_components))
+    return EoSVectorParam(_components,fluid,pure)
+end 
+
 include("LeeKeslerSat/LeeKeslerSat.jl")
 include("DIPPR101Sat/DIPPR101Sat.jl")
 include("PolExpSat/PolExpSat.jl")
