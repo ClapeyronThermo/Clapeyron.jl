@@ -17,12 +17,13 @@ function fixpoint end
 
 struct SSFixPoint{T<:Real} <: AbstractFixPoint 
     dampingfactor::T
+    lognorm::Bool
 end
 
-SSFixPoint(;dampingfactor=1.0) = SSFixPoint(dampingfactor)
-
+SSFixPoint(;dampingfactor=1.0,lognorm = false) = SSFixPoint(dampingfactor,lognorm)
+SSFixPoint(dampingfactor) = SSFixPoint(dampingfactor,false)
 function promote_method(method::SSFixPoint,T)
-    return SSFixPoint(T(method.dampingfactor))
+    return SSFixPoint(T(method.dampingfactor),method.lognorm)
 end
 
 struct AitkenFixPoint <: AbstractFixPoint end
@@ -31,7 +32,7 @@ function promote_method(method::AitkenFixPoint,T)
     return method
 end
 
-function convergence(xold,xi,atol,rtol)
+function convergence(xold,xi,atol,rtol,damping = 1.0,lognorm = false)
     not_finite = false
     for xii in xi
         if !isfinite(xii)
@@ -42,11 +43,19 @@ function convergence(xold,xi,atol,rtol)
     not_finite && return (true,false) #terminate, with nan
     xi == xold && return (true,true) #terminate, with current number
     if xi isa Number
-        Δx = abs(xi-xold)
+        if lognorm
+            Δx = abs(xi-xold)#/damping
+        else
+            Δx = abs(xi-xold)#/damping
+        end
     else
-        Δx = norm((xi[i] - xold[i] for i in eachindex(xold,xi)))
+        if lognorm
+            Δx = norm(((xi[i]/xold[i] - 1) for i in eachindex(xold,xi)),Inf)#/damping
+        else
+            Δx = norm((xi[i] - xold[i] for i in eachindex(xold,xi)),Inf)#/damping
+        end
     end
-    normxi = norm(xi)
+    normxi = norm(xi,Inf)
     if abs(Δx) < max(atol,normxi*rtol)
         return (true,true) #terminate, with current number
     end
@@ -74,14 +83,15 @@ function _fixpoint(f::F,
     
     nan = (0*atol)/(0*atol)
     xi = f(x0)
-    converged,finite = convergence(x0,xi,atol,rtol)
+    α = method.dampingfactor
+    lognorm = method.lognorm
+    converged,finite = convergence(x0,xi,atol,rtol,α,lognorm)
     converged && return ifelse(finite,xi,nan)
     itercount = 1
     xold = x0
-    α = method.dampingfactor
     while itercount < max_iters
         xi = α*f(xi) + (1-α)*xi  
-        converged,finite = convergence(xold,xi,atol,rtol)
+        converged,finite = convergence(xold,xi,atol,rtol,α,lognorm)
         converged && return ifelse(finite,xi,nan)    
         itercount +=1
         xold = xi
@@ -139,7 +149,9 @@ function _fixpoint(f!::F,
     nan = (0*atol)/(0*atol)
     xi = copy(x0)
     xi = f!(xi,x0)
-    converged,finite = convergence(x0,xi,atol,rtol)
+    α = method.dampingfactor
+    lognorm = method.lognorm
+    converged,finite = convergence(x0,xi,atol,rtol,α,lognorm)
     if converged
         if finite
             return xi
@@ -149,13 +161,12 @@ function _fixpoint(f!::F,
         end
     end
     itercount = 1
-    α = method.dampingfactor
     xold = copy(x0)
     while itercount < max_iters
         xi = f!(xi,xold)
         xi .*= α
         xi .+= (1 .- α) .* xold
-        converged,finite = convergence(xold,xi,atol,rtol)
+        converged,finite = convergence(xold,xi,atol,rtol,α,lognorm)
         if converged
             if finite
                 return xi
