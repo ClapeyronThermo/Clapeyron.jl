@@ -375,19 +375,29 @@ end
 
 @testset "Activity methods, multi-components" begin
     com = CompositeModel(["water","methanol"],liquid = DIPPR105Liquid,saturation = DIPPR101Sat,gas = PR)
+    
     system = Wilson(["methanol","benzene"])
+    
     if hasfield(Wilson,:puremodel)
         system2 = Wilson(["water","methanol"],puremodel = com)
     else
         system2 = CompositeModel(["water","methanol"],liquid = Wilson, fluid = com)
     end
+
+    if hasfield(UNIFAC,:puremodel)
+        system3 = UNIFAC(["octane","heptane"],puremodel = LeeKeslerSat)
+    else
+        system3 = CompositeModel(["octane","heptane"],liquid = UNIFAC,fluid = LeeKeslerSat)
+    end
+
     com1 = split_model(com)[1]
     p = 1e5
     T = 298.15
     T2 = 320.15
     z = [0.5,0.5]
     z_bulk = [0.2,0.8]
-
+    T3 = 300.15
+    z3 = [0.9.0.1]
     @testset "Bulk properties" begin
         @test crit_pure(com1)[1] ≈ 647.13
         @test Clapeyron.volume(system, p, T, z_bulk) ≈ 8.602344040626639e-5 rtol = 1e-6
@@ -400,8 +410,8 @@ end
         @test Clapeyron.bubble_pressure(system, T, z)[1] ≈ 23758.58099358788 rtol = 1E-6
         @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = true))[1] ≈ 23839.554959977086
         @test Clapeyron.bubble_pressure(system, T, z,ActivityBubblePressure(gas_fug = true,poynting = false))[1] ≈ 23833.324475723246
-
-        @test Clapeyron.bubble_temperature(system,23758.58099358788, z)[1] ≈ T  rtol = 1E-6
+        @test Clapeyron.bubble_pressure(system3,T3,z3)[1] ≈ 2460.897944633704 rtol = 1E-6
+        @test Clapeyron.bubble_temperature(system,23758.58099358788, z)[1] ≈ T rtol = 1E-6
 
         @test Clapeyron.dew_pressure(system2, T2, z)[1] ≈ 19386.939256733036 rtol = 1E-6
         @test Clapeyron.dew_pressure(system2, T2, z,ActivityDewPressure(gas_fug = true,poynting = true))[1] ≈ 19393.924550078184 rtol = 1e-6
