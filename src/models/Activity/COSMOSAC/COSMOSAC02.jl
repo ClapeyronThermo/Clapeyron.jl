@@ -129,36 +129,38 @@ function lnγ_res(model::COSMOSAC02Model,V,T,z)
 end
 
 function lnΓ(model::COSMOSAC02Model,V,T,z,P)
-    Γold =lnΓ_fixpoint(P,T,z)
+    PW = @f(PΔW,P)
+    Γ0 = ones(eltype(PW),length(P))
     atol = model.absolutetolerance
-    lnΓ_f0(x,y) = lnΓ_fixpoint(x,y,P,T)
-    Γ = Solvers.fixpoint(lnΓ_f0,Γold,Solvers.SSFixPoint(0.5),atol =atol ,max_iters=1000)
+    lnΓ_f0(x,y) = lnΓ_fixpoint(x,y,PW,T)
+    Γ = Solvers.fixpoint(lnΓ_f0,Γ0,Solvers.SSFixPoint(0.5),atol =atol ,max_iters=1000)
     Γ .= log.(Γ)
     return Γ
 end
 
-function lnΓ_fixpoint(Γnew,Γold,P,T)
-    Γnew .= zero(eltype(Γnew))
-    σ  = -0.025:0.001:0.025
-    Tinv = one(T)/T
-    @inbounds for i = 1:length(Γnew)
-        for j = 1:length(Γnew)
-            Γnew[j] += P[i]*Γold[i]*exp(-ΔW(σ[j],σ[i])*Tinv) 
-        end
-    end
-    Γnew .= one(eltype(Γnew))./Γnew
+function lnΓ_fixpoint(Γnew,Γold,PW,T)
+    Γnew .= 0
+    mul!(Γnew,PW,Γold)
+    #@inbounds for i = 1:length(Γnew)
+    #    for j = 1:length(Γnew)
+    #        Γnew[j] += Γold[i]*PW[i,j]
+    #    end
+    #end
+    Γnew .= 1 ./ Γnew
 end
 
-function lnΓ_fixpoint(P,T,z)
-    Γnew = zeros(promote_type(eltype(T),eltype(P),eltype(z)),length(P))
+function PΔW(model::COSMOSAC02Model,V,T,z,P)
     σ  = -0.025:0.001:0.025
-    Tinv = one(T)/T
-    @inbounds for i = 1:length(Γnew)
-        for j = 1:length(Γnew)
-            Γnew[j] += P[i]*exp(-ΔW(σ[j],σ[i])*Tinv) 
+    Tinv = 1/T
+    TYPE = @f(Base.promote_eltype,P,Tinv)
+    l = length(P)
+    PW = zeros(TYPE,(l,l))
+    @inbounds for i in 1:51
+        for j in 1:51
+            PW[i,j] = P[j]*exp(-ΔW(σ[j],σ[i])*Tinv) 
         end
     end
-    Γnew .= one(eltype(Γnew))./Γnew
+    return PW
 end
 
 function ΔW(σm,σn)
@@ -169,8 +171,6 @@ function ΔW(σm,σn)
     R    = 0.001987
     return (α/2*(σm+σn)^2+chb*max(0,σacc-σhb)*min(0,σdon+σhb))/R
 end
-
-
 #=
 function lnγ_comb(model::COSMOSAC02Model,V,T,z)
     r0 = 66.69
