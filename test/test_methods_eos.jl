@@ -397,7 +397,7 @@ end
     z = [0.5,0.5]
     z_bulk = [0.2,0.8]
     T3 = 300.15
-    z3 = [0.9.0.1]
+    z3 = [0.9,0.1]
     @testset "Bulk properties" begin
         @test crit_pure(com1)[1] ≈ 647.13
         @test Clapeyron.volume(system, p, T, z_bulk) ≈ 8.602344040626639e-5 rtol = 1e-6
