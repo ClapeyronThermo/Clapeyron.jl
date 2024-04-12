@@ -25,7 +25,7 @@ Finds approx singularity location in range `a`,`b` for function `f`. There shoul
 """
 function FindEdge(f::Function,a,b)
   @assert b>= a
-  if isapprox(a,b,atol=sqrt(eps(float(a))))
+  if isapprox(a,b,atol=1e-10)
     return a;
   end
     c = (a+b)/2;
