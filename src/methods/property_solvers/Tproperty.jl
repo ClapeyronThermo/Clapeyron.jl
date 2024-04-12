@@ -171,6 +171,7 @@ function Tproperty_pure(model::EoSModel,p,prop,property::Function;rootsolver = F
       Tinv0 = 1/T
       Tinv = Tinv0 + dTinvdlnp*Δlnp
       Tsat = 1/Tinv
+    end
   end
   Tmin = Tsat - 1
   Tmax = min(Tsat + 1,Tc)
