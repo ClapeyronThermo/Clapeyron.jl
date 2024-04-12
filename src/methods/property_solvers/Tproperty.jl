@@ -2,17 +2,19 @@
     `x0_Tproperty(model::EoSModel,p,z::AbstractVector)`
 Peforms some initial checks to see if a possible solution exists in `Clapeyron.jl`.
 """
-function x0_Tproperty(model::EoSModel,p,z::AbstractVector)
+function x0_Tproperty(model::EoSModel,p,z::AbstractVector,verbose = false)
     @assert isapprox(sum(z),1,atol = 1e-8)
     bubble_prop = Clapeyron.bubble_temperature(model,p,z)
     dew_prop = Clapeyron.dew_temperature(model,p,z)
     bubble_temp = bubble_prop[1]
     dew_temp = dew_prop[1]
     if isnan(bubble_temp)
-      return @error "bubble_temp is NaN"
+      verbose && @error "bubble_temp is NaN"
+      return bubble_temp
     end
     if isnan(dew_temp)
-      return @error "dew_temp is NaN"
+      verbose && @error "dew_temp is NaN"
+      return dew_temp
     end
     return bubble_temp,dew_temp
 end
@@ -47,10 +49,13 @@ function Tproperty(model::EoSModel,p,prop,z = SA[1.0],property::TT = enthalpy;ro
   if length(model) == 1 && length(z) == 1
     return Tproperty_pure(model::EoSModel,p,prop,property;rootsolver,phase,abstol,verbose)
   end
-  bubble_temp,dew_temp = x0_Tproperty(model,p,z)
+  bubble_temp,dew_temp = x0_Tproperty(model,p,z,verbose)
+  if isnan(bubble_temp) || isnan(dew_temp)
+    #TODO handle this case
+    return bubble_temp
+  end
   prop_bubble = property(model,p,bubble_temp,z,phase=phase)
   prop_dew = property(model,p,dew_temp,z,phase=phase)
-
   f(t,prop) = property(model,p,t,z,phase = phase) - prop
   F(T) = property(model,p,T,z,phase = phase)
   #case 1: Monotonically increasing
@@ -152,6 +157,21 @@ function Tproperty_pure(model::EoSModel,p,prop,property::Function;rootsolver = F
   crit = crit_pure(model)
   Tc,Pc,Vc = crit
   Tsat,vlsat,vvpat = Clapeyron.x0_saturation_temperature(model,p,crit = crit)
+  if isnan(Tsat)
+    if p < Pc
+      verbose && @error "Saturation temperature not found"
+      return Tsat
+    else
+      #use saturation extrapolation. we extrapolate the saturation curve based on the slope at the critical point and calculate a "pseudo" temperature.
+      _p(_T) = pressure(pure,Vc,_T)
+      dpdT = Solvers.derivative(_p,Tc)
+      dlnPdTinvsat = -dpdT*Tc*Tc/Pc
+      Δlnp = log(p/pii)
+      #dT = clamp(dTdp*Δp,-0.5*T,0.5*T)
+      Tinv0 = 1/T
+      Tinv = Tinv0 + dTinvdlnp*Δlnp
+      Tsat = 1/Tinv
+  end
   Tmin = Tsat - 1
   Tmax = min(Tsat + 1,Tc)
   prop_edge1 = property(model,p,Tmin,phase = phase)
