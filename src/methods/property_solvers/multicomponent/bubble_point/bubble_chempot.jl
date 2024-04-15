@@ -84,7 +84,7 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     
     Ts = isnothing(model_y) ? T_scales(model) : T_scales(model_y)
 
-    if false #T > 0.9minimum(Ts)
+    if T > 0.9minimum(Ts)
         converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,(vl,vv),true,true,volatiles)
         p,T,x,y,vol,lnK = res
         volx,voly = vol
@@ -95,7 +95,6 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
         else
             y0 = y
             vl,vv = vol
-            vl,vv
         end
     end
 
@@ -205,6 +204,23 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     else
         model_y = nothing
     end
+
+    Ts = isnothing(model_y) ? T_scales(model) : T_scales(model_y)
+
+    if T > 0.9minimum(Ts)
+        converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,(vl,vv),true,false,volatiles)
+        p,T,x,y,vol,lnK = res
+        volx,voly = vol
+        if converged
+            return T,volx,voly,index_expansion(y,volatiles)
+        elseif isnan(volx) || isnan(voly)
+            return T,volx,voly,index_expansion(y,volatiles)
+        else
+            y0 = y
+            vl,vv = vol
+        end
+    end
+
     v0 = vcat(T0,log10(vl),log10(vv),y0[1:end-1])
     pmix = p_scale(model,x)
     f!(F,z) = Obj_bubble_temperature(model,model_y, F, p, z[1], exp10(z[2]), exp10(z[3]), x, z[4:end],pmix,volatiles)
