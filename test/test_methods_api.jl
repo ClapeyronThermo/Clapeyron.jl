@@ -389,6 +389,7 @@ end
 end
 
 @testset "Tproperty" begin
+    model = PCSAFT(["propane","dodecane"])
     p = 101325.0; T = 300.0;z = [0.5,0.5]
     h_ = enthalpy(model,p,T,z)
     s_ = entropy(model,p,T,z)
