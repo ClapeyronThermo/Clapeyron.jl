@@ -606,7 +606,7 @@ GC.gc()
         T = 202.694
         v0 = [-4.136285855713797, -4.131888756537859, 0.9673991775701574, 0.014192499147585259, 0.014746430039492817, 0.003661893242764558]
         model = PCSAFT(["methane","butane","isobutane","pentane"])
-        # @test_broken bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
+        @test bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
         # FIXME: The test does not yield the same value depending on the OS and the julia version
     end
     GC.gc()
