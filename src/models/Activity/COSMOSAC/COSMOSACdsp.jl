@@ -176,3 +176,4 @@ function lnγ_dsp(model::COSMOSACdspModel,V,T,z)
     A = w*(0.5*(ϵ[1]+ϵ[2])-√(ϵ[1]*ϵ[2]))
     return A*(1 .-x).^2
 end
+#fcosmo(system::COSMOSACdsp) = Clapeyron.activity_coefficient(system,1e5, 333.15,[0.5,0.5])[1] - 1.4398951117248127

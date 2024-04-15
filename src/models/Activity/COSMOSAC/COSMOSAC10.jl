@@ -171,67 +171,29 @@ function lnγ_res(model::COSMOSAC10Model,V,T,z)
 end
 
 function lnΓ(model::COSMOSAC10Model,V,T,z,P)
-    _TYPE = @f(Base.promote_eltype)
-    l1 = length(P)
-    Γ0 = ones(_TYPE,l1)
-    PW = @f(PΔW,P)
-    ΓP = similar(Γ0)
-    function f!(Γnew,Γold)
-        #mul!(Γnew,PW,Γold)
-        #Γnew .= 1 ./ Γnew
-        #=
-        σ  = -0.025:0.001:0.025
-        Tinv = 1/T
-        Γnhb_new, ΓOH_new, ΓOT_new = Γ_as_view(Γnew,51)
-        Γnhb_old, ΓOH_old, ΓOT_old = Γ_as_view(Γold,51)
-        Pnhb, POH, POT = Γ_as_view(P,51)
-        ΓP .= P .* Γold
-        ΓP_nhb, ΓP_OH, ΓP_OT = Γ_as_view(ΓP,51)
-        Tinv = 1/T
-        for i in 1:51
-            Γnhb_new[i] = zero(eltype(Γnew))
-            ΓOH_new[i] = zero(eltype(Γnew))
-            ΓOT_new[i] = zero(eltype(Γnew))
-            _res_nhb = zero(eltype(Γnew))
-            _res_OH = zero(eltype(Γnew))
-            _res_OT = zero(eltype(Γnew))
-            @inbounds @simd for v in 1:51
-                PΓ_knhb = ΓP_nhb[v]
-                PΓ_OH = ΓP_OH[v]
-                PΓ_OT = ΓP_OT[v]
-                _res_nhb += PΓ_knhb*exp(-ΔW(σ[i],σ[v],1,1,T)*Tinv)
-                _res_nhb += PΓ_OH*exp(-ΔW(σ[i],σ[v],2,1,T)*Tinv)
-                _res_nhb += PΓ_OT*exp(-ΔW(σ[i],σ[v],3,1,T)*Tinv)
-                _res_OH += PΓ_knhb*exp(-ΔW(σ[i],σ[v],1,2,T)*Tinv)
-                _res_OH += PΓ_OH*exp(-ΔW(σ[i],σ[v],2,2,T)*Tinv)
-                _res_OH += PΓ_OT*exp(-ΔW(σ[i],σ[v],3,2,T)*Tinv)
-                _res_OT += PΓ_knhb*exp(-ΔW(σ[i],σ[v],1,3,T)*Tinv)
-                _res_OT += PΓ_OH*exp(-ΔW(σ[i],σ[v],2,3,T)*Tinv)
-                _res_OT += PΓ_OT*exp(-ΔW(σ[i],σ[v],3,3,T)*Tinv)
-            end
-            Γnhb_new[i] = 1/_res_nhb
-            ΓOH_new[i] = 1/_res_OH
-            ΓOT_new[i] = 1/_res_OT
-        end =#
-
-        return Γnew
-    end
-    Γ = Solvers.fixpoint(f!,Γ0,Solvers.SSFixPoint(dampingfactor = 0.5,lognorm = true,normorder = 1),max_iters = 500*length(model),atol = 3*sqrt(model.absolutetolerance),rtol = 0.0)
-    Γ .= log.(Γ)
+    Γ = _lnΓ(model,V,T,z,P)
     return Γ_as_view(Γ,51)
 end
 
-function PΔW(model::COSMOSAC10Model,V,T,z,P)
-    _σ  = -0.025:0.001:0.025
+function PΔW(model::COSMOSAC10Model,V,T,z,P,nonzeros = 1:length(P))
+    σ  = -0.025:0.001:0.025
     Tinv = 1/T
     TYPE = @f(Base.promote_eltype,P,Tinv)
-    PW = zeros(TYPE,length(P),length(P))
+    PW = zeros(TYPE,length(nonzeros),length(nonzeros))
     idx(i) = div(i-1,51) + 1
-    σ(i) = _σ[rem(i + 50,51) + 1]
-    _ΔW(i,j) = ΔW(σ(i),σ(j),idx(i),idx(j),T)
-    @inbounds for i in 1:153
-        for j in 1:153
-            PW[i,j] = P[j]*exp(-_ΔW(i,j)*Tinv)
+    #σ(i) = _σ[rem(i + 50,51) + 1]
+    idxx(i) = rem(i + 50,51) + 1
+    i_nonzero = 0
+    @inbounds for ii in 1:153
+        i = idxx(ii)
+        iszero(P[ii]) && continue
+        i_nonzero +=1
+        v_nonzero = 0
+        for vv in 1:153
+            iszero(P[vv]) && continue
+            v_nonzero +=1
+            v = idxx(vv)
+            PW[i_nonzero,v_nonzero] = P[vv]*exp(-ΔW(σ[i],σ[v],idx(vv),idx(ii),T)*Tinv)
         end
     end
     return PW
@@ -245,3 +207,5 @@ function ΔW(σm,σn,t,s,T)
 end
 
 const COSMOSAC10_ΔW_data =@SMatrix [0.0 0.0 0.0;0.0 4013.78 0.0;0.0 3016.43 932.31]
+
+#fcosmo(system::COSMOSAC10) = Clapeyron.activity_coefficient(system,1e5, 333.15,[0.5,0.5])[1] - 1.4015660588643404
