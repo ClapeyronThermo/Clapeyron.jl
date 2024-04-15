@@ -23,8 +23,8 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
     end
 
     for j in 1:itmax_newton
-        lnϕx, volx = lnϕ(model, p, T, _x, phase=:liquid, vol0=volx)
-        lnϕy, voly = lnϕ(model, p, T, _y, phase=:vapor, vol0=voly)
+        lnϕx, volx = lnϕ!(lnϕx,model, p, T, _x, phase=:liquid, vol0=volx)
+        lnϕy, voly = lnϕ!(lnϕy, model, p, T, _y, phase=:vapor, vol0=voly)
         if isnan(volx) || isnan(voly)
             break
         end
@@ -48,8 +48,8 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
                 break
             end
 
-            lnϕx, volx = lnϕ(model, p, T, _x, phase=:liquid, vol0=volx)
-            lnϕy, voly = lnϕ(model, p, T, _y, phase=:vapor, vol0=voly)
+            lnϕx, volx = lnϕ!(lnϕx, model, p, T, _x, phase=:liquid, vol0=volx)
+            lnϕy, voly = lnϕ!(lnϕy, model, p, T, _y, phase=:vapor, vol0=voly)
             
             if isnan(volx) || isnan(voly)
                 break
@@ -59,11 +59,11 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
         if _pressure
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(model, p, T, _x, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(model, p, T, _y, phase=:vapor, vol0=voly)
-            ∂OF = sum(w.*(∂lnϕ∂Px .- ∂lnϕ∂Py))
+            ∂OF = @sum(w[i]*(∂lnϕ∂Px[i] - ∂lnϕ∂Py[i]))
         else
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(model, p, T, _x, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(model, p, T, _y, phase=:vapor, vol0=voly)
-            ∂OF = sum(w.*(∂lnϕ∂Tx .- ∂lnϕ∂Ty))
+            ∂OF = @sum(w[i]*(∂lnϕ∂Tx[i] - ∂lnϕ∂Ty[i]))
         end
         if isnan(volx) || isnan(voly)
             break
@@ -139,26 +139,30 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
         _x,_y = w,y
     end
     for j in 1:itmax_newton
-        lnϕx, volx = lnϕ(modelx, p, T, _x, phase=:liquid, vol0=volx)
-        lnϕy, voly = lnϕ(modely, p, T, _y, phase=:vapor, vol0=voly)
+        lnϕx, volx = lnϕ!(lnϕx, modelx, p, T, _x, phase=:liquid, vol0=volx)
+        lnϕy, voly = lnϕ!(lnϕy, modely, p, T, _y, phase=:vapor, vol0=voly)
         if isnan(volx) || isnan(voly)
             break
         end
         for i in 1:itmax_ss
             if _bubble
-                lnK .= lnϕx[_view] .- lnϕy
+                _lnϕx = view(lnϕx,_view)
+                lnK .=_lnϕx .- lnϕy
             else
-                lnK .= lnϕx .- lnϕy[_view]
+                _lnϕy = view(lnϕy,_view)
+                lnK .= lnϕx .- _lnϕy
             end
             
             K .= exp.(lnK)
             w_old .=  w
 
             if _bubble
-                w .= _x[_view] .* K
+                __x = view(_x,_view)
+                w .= __x .* K
                 w_calc .= w
             else
-                w .= _y[_view] ./ K
+                __y = view(_y,_view)
+                w .= __y ./ K
                 w_calc .= w
             end
             w ./= sum(w)
@@ -166,8 +170,8 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
             if error < tol_xy
                 break
             end
-            lnϕx, volx = lnϕ(modelx, p, T, _x, phase=:liquid, vol0=volx)
-            lnϕy, voly = lnϕ(modely, p, T, _y, phase=:vapor, vol0=voly)
+            lnϕx, volx = lnϕ!(lnϕx, modelx, p, T, _x, phase=:liquid, vol0=volx)
+            lnϕy, voly = lnϕ!(lnϕy, modely, p, T, _y, phase=:vapor, vol0=voly)
 
         end
        
@@ -175,17 +179,21 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, volx = ∂lnϕ∂n∂P(modelx, p, T, _x, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, voly = ∂lnϕ∂n∂P(modely, p, T, _y, phase=:vapor, vol0=voly)
             if _bubble
-                ∂OF = sum(w.*(∂lnϕ∂Px[_view] .- ∂lnϕ∂Py))
+                _∂lnϕ∂Px = view(∂lnϕ∂Px, _view)
+                ∂OF = @sum(w[i]*(_∂lnϕ∂Px[i] - ∂lnϕ∂Py[i]))
             else
-                ∂OF = sum(w.*(∂lnϕ∂Px .- ∂lnϕ∂Py[_view]))
+                _∂lnϕ∂Py = view(∂lnϕ∂Py,_view)
+                ∂OF = @sum(w[i]*(∂lnϕ∂Px[i] - _∂lnϕ∂Py[i]))
             end
         else
             lnϕx, ∂lnϕ∂nx, ∂lnϕ∂Px, ∂lnϕ∂Tx, volx = ∂lnϕ∂n∂P∂T(modelx, p, T, _x, phase=:liquid, vol0=volx)
             lnϕy, ∂lnϕ∂ny, ∂lnϕ∂Py, ∂lnϕ∂Ty, voly = ∂lnϕ∂n∂P∂T(modely, p, T, _y, phase=:vapor, vol0=voly)
             if _bubble
-                ∂OF = sum(w.*(∂lnϕ∂Tx[_view] .- ∂lnϕ∂Ty))
+                _∂lnϕ∂Tx = view(∂lnϕ∂Tx,_view)
+                ∂OF = @sum(w[i]*(_∂lnϕ∂Tx[i] - ∂lnϕ∂Ty[i]))
             else
-                ∂OF = sum(w.*(∂lnϕ∂Tx .- ∂lnϕ∂Ty[_view]))
+                _∂lnϕ∂Ty = view(∂lnϕ∂Ty,_view)
+                ∂OF = @sum(w[i]*(∂lnϕ∂Tx[i] - _∂lnϕ∂Ty[i]))
             end
         end
         if isnan(volx) || isnan(voly)
@@ -197,9 +205,11 @@ function _fug_OF_ss(modelx::EoSModel,modely::EoSModel,p,T,x,y,vol0,_bubble,_pres
         end
 
         if _bubble
-            lnK .= lnϕx[_view] .- lnϕy
+            _lnϕx = view(lnϕx,_view)
+            lnK .=_lnϕx .- lnϕy
         else
-            lnK .= lnϕx .- lnϕy[_view]
+            _lnϕy = view(lnϕy,_view)
+            lnK .= lnϕx .- _lnϕy
         end
         K .= exp.(lnK)
 
@@ -448,9 +458,5 @@ function _fug_OF_neqsystem(modelx::EoSModel,modely::EoSModel,_x, _y, _p, _T, vol
         return J
     end
 
-    function jv!(inc)
-        return nothing
-    end
-
-    return Solvers.NLSolvers.VectorObjective(f!,j!,fj!,jv!) |> Solvers.NLSolvers.NEqProblem
+    return Solvers.NLSolvers.VectorObjective(f!,j!,fj!,nothing) |> Solvers.NLSolvers.NEqProblem
 end

@@ -62,7 +62,7 @@ module ClapeyronMultiComponentFlashExt
         return f
     end
 
-    function M.component_fugacity(model::C.EoSModel, cond, i, Z = C.compressibility_factor(model,cond.p,cond.T,cond.z), forces = nothing, s_v = nothing)
+    function M.component_fugacity_coefficient(model::C.EoSModel, cond, i, Z = C.compressibility_factor(model,cond.p,cond.T,cond.z), forces = nothing, s_v = nothing)
         p,T,z = cond.p,cond.T,cond.z
         R = C.Rgas(model)
         RT = R*T
@@ -72,8 +72,13 @@ module ClapeyronMultiComponentFlashExt
         end
         TT = eltype(p+T+first(z) + Z + one(eltype(model)))
         μᵢ = C.Solvers.grad_at_i(fun,z,i,TT)
-        ϕᵢ = exp(μᵢ/RT)/Z
-        return ϕᵢ*p*z[i]
+        lnϕᵢ = μᵢ/RT - log(Z)
+        return lnϕᵢ
+    end
+
+    function M.component_fugacity(model::C.EoSModel, cond, i, Z = C.compressibility_factor(model,cond.p,cond.T,cond.z), forces = nothing, s_v = nothing)
+        lnϕᵢ = component_fugacity_coefficient(eos, cond, i, Z, forces, scalars)
+        return exp(lnϕᵢ)*p*z[i]
     end
 
     if isdefined(M,:eostype)

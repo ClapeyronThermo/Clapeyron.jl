@@ -388,6 +388,15 @@ end
     @test Clapeyron.saturation_temperature(model,p0,ClapeyronSaturation())[1] ≈ 374.2401401001685 rtol = 1e-6
 end
 
+@testset "Tproperty" begin
+    model = PCSAFT(["propane","dodecane"])
+    p = 101325.0; T = 300.0;z = [0.5,0.5]
+    h_ = enthalpy(model,p,T,z)
+    s_ = entropy(model,p,T,z)
+    @test Tproperty(model,p,h_,z,enthalpy) ≈ T
+    @test Tproperty(model,p,s_,z,entropy) ≈ T
+end
+
 @testset "bubble/dew point algorithms" begin
     system1 = PCSAFT(["methanol","cyclohexane"])
     p = 1e5
@@ -598,7 +607,7 @@ GC.gc()
         T = 202.694
         v0 = [-4.136285855713797, -4.131888756537859, 0.9673991775701574, 0.014192499147585259, 0.014746430039492817, 0.003661893242764558]
         model = PCSAFT(["methane","butane","isobutane","pentane"])
-        # @test_broken bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
+        @test bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
         # FIXME: The test does not yield the same value depending on the OS and the julia version
     end
     GC.gc()

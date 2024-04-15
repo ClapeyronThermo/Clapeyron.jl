@@ -1,4 +1,4 @@
-function M.flash_storage_internal!(out, eos::C.EoSModel, cond, method; inc_jac = isa(method, M.AbstractNewtonFlash), static_size = false, kwarg...)
+function M.flash_storage_internal!(out, eos::C.EoSModel, cond, method; inc_jac = isa(method, M.AbstractNewtonFlash), static_size = false,inc_bypass = false, kwarg...)
     n = M.number_of_components(eos)
     TT = typeof(one(eltype(eos)))
     splt = C.split_model(eos)
@@ -17,6 +17,11 @@ function M.flash_storage_internal!(out, eos::C.EoSModel, cond, method; inc_jac =
     if inc_jac
         M.flash_storage_internal_newton!(out, eos, cond, method, static_size = static_size; kwarg...)
     end
+
+    if inc_bypass
+        out[:bypass] = michelsen_critical_point_measure_storage(eos, static_size = static_size)
+    end
+
     return out
 end
 

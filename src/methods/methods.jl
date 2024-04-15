@@ -276,3 +276,5 @@ include("property_solvers/property_solvers.jl")
 include("tpd.jl")
 include("stability.jl")
 include("pT.jl")
+include("property_solvers/Tproperty.jl")
+

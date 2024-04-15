@@ -166,9 +166,9 @@ function CompositeModel(components;
         if init_liquid isa ActivityModel
             #case 3.a, the fluid itself is a composite model. unwrap the fluid field.
             if _fluid isa CompositeModel
-                _fluid = EoSVectorParam(_fluid.fluid,_components)
+                _fluid = init_puremodel(_fluid.fluid,_components,nothing,verbose)
             else
-                _fluid = EoSVectorParam(_fluid,_components)
+                _fluid = init_puremodel(_fluid,_components,nothing,verbose)
             end
             init_fluid = GammaPhi(_components,init_liquid,_fluid)
         else

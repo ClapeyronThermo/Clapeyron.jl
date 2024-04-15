@@ -27,10 +27,11 @@ function dew_pressure_impl(model::RestrictedEquilibriaModel,T,y,method::Activity
     vl = volume(pmodel,p,T,x,phase = :l)
     γ = activity_coefficient(model,1e-4,T,x)
     ϕ = copy(x)
+    logϕ = copy(x)
     ϕ .= 1.0
     RT = R̄*T
     if method.gas_fug
-        logϕ, vv = lnϕ(__gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
+        logϕ, vv = lnϕ!(logϕ,__gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
         ϕ .= exp.(logϕ)
     else
         vv = volume(pmodel,p,T,y,phase = :vapor, vol0 = vv)
@@ -61,7 +62,7 @@ function dew_pressure_impl(model::RestrictedEquilibriaModel,T,y,method::Activity
         p = 1/sum(x)
         x .*= p
         if method.gas_fug
-            logϕ, vv = lnϕ(__gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
+            logϕ, vv = lnϕ!(logϕ,__gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
             ϕ .= exp.(logϕ)
         else
             vv = volume(pmodel,p,T,y,phase = :vapor, vol0 = vv)
