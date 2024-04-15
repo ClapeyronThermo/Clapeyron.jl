@@ -196,8 +196,8 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
     else
         model_x = nothing
     end
-
-    if T > 0.9minimum(Ts)
+    Ps = isnothing(model_x) ? p_scales(model) : p_scales(model_x)
+    if log(p) > 0.9log(Ps)
         converged,res = _fug_OF_ss(model_x,model,p,T0,x0,y,(vl,vv),false,false,condensables)
         p,T,x,y,vol,lnK = res
         volx,voly = vol

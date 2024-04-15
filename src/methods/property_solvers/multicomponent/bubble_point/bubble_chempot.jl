@@ -204,10 +204,8 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     else
         model_y = nothing
     end
-
-    Ts = isnothing(model_y) ? T_scales(model) : T_scales(model_y)
-
-    if T > 0.9minimum(Ts)
+    Ps = isnothing(model_y) ? p_scales(model) : p_scales(model_y)
+    if log(p) > 0.9log(Ps)
         converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,(vl,vv),true,false,volatiles)
         p,T,x,y,vol,lnK = res
         volx,voly = vol
