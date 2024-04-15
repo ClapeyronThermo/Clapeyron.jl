@@ -189,7 +189,7 @@ T_scale(model::MultiFluid,z = SA[1.0],∑z = sum(z)) = T_scale(model,z,model.mix
 
 p_scale(model::MultiFluid,z=SA[1.]) = dot(z,model.params.Pc.values)/sum(z)
 
-T_scales(model::MultiFluid,z=SA[1.]) = model.properties.Tc.values
+T_scales(model::MultiFluid,z=SA[1.]) = model.params.Tc.values
 
 #single functions, dispatch to pure
 function x0_sat_pure(model::MultiFluid,T)
