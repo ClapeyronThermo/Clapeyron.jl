@@ -31,10 +31,11 @@ function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::Activ
     end
 
     ϕ = copy(y)
+    logϕ = copy(y)
     ϕ .= 1.0
     RT = R̄*T
     if method.gas_fug
-        logϕ, vv = lnϕ(__gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
+        logϕ, vv = lnϕ!(logϕ,__gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
         ϕ .= exp.(logϕ)
     else
         vv = volume(pmodel,p,T,y,phase = :vapor, vol0 = vv)
@@ -64,7 +65,7 @@ function bubble_pressure_impl(model::RestrictedEquilibriaModel,T,x,method::Activ
         p = sum(y)
         y ./= p
         if method.gas_fug
-            logϕ, vv = lnϕ(__gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
+            logϕ, vv = lnϕ!(logϕ,__gas_model(pmodel),p,T,y,phase = :vapor, vol0 = vv)
             ϕ .= exp.(logϕ)
         else
             vv = volume(pmodel,p,T,y,phase = :vapor, vol0 = vv)
