@@ -192,6 +192,26 @@ function x0_crit_pure(model::CPAModel)
     lb_v = lb_volume(model)
     return (1.0, log10(lb_v/0.3))
 end
+#=
+if we don't have association, reduce to the inner cubic model.
+=#
+function volume_impl(model::CPAModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0=nothing)
+    n == assoc_pair_length(model)
+    if n == 0
+        return volume_impl(model.cubicmodel,p,T,z,phase,threaded,vol0)
+    else
+        return _volume_impl(model.cubicmodel,p,T,z,phase,threaded,vol0)
+    end
+end
+
+function x0_volume(model::CPAModel,p,T,z)
+    n == assoc_pair_length(model)
+    if n == 0
+        return x0_volume(model.cubicmodel,T,z)
+    else
+        return _x0_volume(model.cubicmodel,T,z)
+    end
+end
 
 data(model::CPAModel, V, T, z) = data(model.cubicmodel,V,T,z)
 

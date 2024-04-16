@@ -81,7 +81,7 @@ function fix_vi!(pure,vli,p,T,in_media,phase)
         if !in_media[i]
             # vli[i] = volume(pure[i],p,T,phase = phase)
             # if isnan(vli[i])
-            vli[i] = x0_volume_liquid(pure[i],T,[1.])
+            vli[i] = x0_volume(pure[i],p,T,SA[1.0],phase = :liquid)
             # end
         end
     end
