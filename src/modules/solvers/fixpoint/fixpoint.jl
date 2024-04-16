@@ -57,9 +57,10 @@ function convergence(xold,xi,atol,rtol,damping = 1.0,lognorm = false,normorder =
         end
     end
     if lognorm
-        normxi = norm(xi,normorder)
-    else
+        #ignore rtol in lognorm
         normxi = zero(eltype(xi))/one(eltype(xi))
+    else
+        normxi = norm(xi,normorder)
     end
 
     if abs(Δx) < max(atol,normxi*rtol)
