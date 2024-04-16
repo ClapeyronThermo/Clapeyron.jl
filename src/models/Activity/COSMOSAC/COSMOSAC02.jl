@@ -128,37 +128,67 @@ function lnγ_res(model::COSMOSAC02Model,V,T,z)
     return lnγ_res_
 end
 
-function lnΓ(model::COSMOSAC02Model,V,T,z,P)
-    Γold =lnΓ_fixpoint(P,T,z)
-    atol = model.absolutetolerance
-    lnΓ_f0(x,y) = lnΓ_fixpoint(x,y,P,T)
-    Γ = Solvers.fixpoint(lnΓ_f0,Γold,Solvers.SSFixPoint(0.5),atol =atol ,max_iters=1000)
-    Γ .= log.(Γ)
-    return Γ
+lnΓ(model::COSMOSAC02Model,V,T,z,P) = @f(_lnΓ,P)
+
+function _lnΓ(model::COSMOSAC02Model,V,T,z,P)
+    #=
+    we perform three strategies to solve the system
+    1. we preallocate P(sigma)*W(sigma)
+    2. we remove P(sigma) = 0 entries and iterate on the reduce matrix.
+    3. we use the last calculated  Γ[i] in the fixpoint iteration.
+    =#
+    _TYPE = @f(Base.promote_eltype)
+    #strategy 2
+    nonzeros = findall(!iszero,P)
+    l1 = length(nonzeros)
+    Γ0 = ones(_TYPE,l1)
+    #strategy 1
+    PW = @f(PΔW,P,nonzeros)
+    
+    function f!(Γnew,Γold)
+        i_solved = 0
+        for ii in 1:length(Γold)
+            _res = zero(eltype(Γnew))
+            #strategy 3
+            @inbounds for vv in 1:i_solved
+                _res += Γnew[vv]*PW[ii,vv]
+            end
+            @inbounds for vv in (i_solved+1):length(Γold)
+                _res += Γold[vv]*PW[ii,vv]
+            end
+            Γnew[ii] = 1/_res
+            i_solved += 1
+        end
+        #this would be the code without strategy 3
+        #mul!(Γnew,PW,Γold)
+        #Γnew .= 1 ./ Γnew
+        return Γnew
+    end
+    Γres = Solvers.fixpoint(f!,Γ0,Solvers.SSFixPoint(dampingfactor = 0.5,lognorm = true,normorder = 1),max_iters = 500*length(model),atol = model.absolutetolerance,rtol = 0.0)
+    Γres .= log.(Γres)
+    #restore original array size.
+    resize!(Γ0,length(P))
+    Γ0 .= 0.0
+    for (k,i) in pairs(nonzeros)
+        Γ0[i] = Γres[k]
+    end
+    return Γ0
 end
 
-function lnΓ_fixpoint(Γnew,Γold,P,T)
-    Γnew .= zero(eltype(Γnew))
-    σ  = -0.025:0.001:0.025
-    Tinv = one(T)/T
-    @inbounds for i = 1:length(Γnew)
-        for j = 1:length(Γnew)
-            Γnew[j] += P[i]*Γold[i]*exp(-ΔW(σ[j],σ[i])*Tinv) 
+function PΔW(model::COSMOSAC02Model,V,T,z,P,nonzeros = 1:length(P))
+    _σ = -0.025:0.001:0.025
+    σ  = @view _σ[nonzeros]
+    Tinv = 1/T
+    TYPE = @f(Base.promote_eltype,P,Tinv)
+    l = length(nonzeros)
+    _P = @view P[nonzeros]    
+    PW = zeros(TYPE,(l,l))
+    @inbounds for i in 1:l
+        for j in 1:l
+            PW[i,j] = _P[j]*exp(-ΔW(σ[j],σ[i])*Tinv) 
         end
     end
-    Γnew .= one(eltype(Γnew))./Γnew
-end
-
-function lnΓ_fixpoint(P,T,z)
-    Γnew = zeros(promote_type(eltype(T),eltype(P),eltype(z)),length(P))
-    σ  = -0.025:0.001:0.025
-    Tinv = one(T)/T
-    @inbounds for i = 1:length(Γnew)
-        for j = 1:length(Γnew)
-            Γnew[j] += P[i]*exp(-ΔW(σ[j],σ[i])*Tinv) 
-        end
-    end
-    Γnew .= one(eltype(Γnew))./Γnew
+    return PW
 end
 
 function ΔW(σm,σn)
@@ -170,7 +200,7 @@ function ΔW(σm,σn)
     return (α/2*(σm+σn)^2+chb*max(0,σacc-σhb)*min(0,σdon+σhb))/R
 end
 
-
+#fcosmo(system::COSMOSAC02Model) = Clapeyron.activity_coefficient(system,1e5, 333.15,[0.5,0.5])[1] - 1.3871817962565904
 #=
 function lnγ_comb(model::COSMOSAC02Model,V,T,z)
     r0 = 66.69
