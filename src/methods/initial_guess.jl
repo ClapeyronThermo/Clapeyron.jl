@@ -1,5 +1,7 @@
 """
     x0_volume_liquid(model,T,z)
+    x0_volume_liquid(model,p,T,z)
+
 Returns an initial guess to the liquid volume, dependent on temperature and composition. by default is 1.25 times [`lb_volume`](@ref).
 """
 function x0_volume_liquid(model,T,z)
@@ -7,8 +9,11 @@ function x0_volume_liquid(model,T,z)
     return v_lb*1.25
 end
 
+x0_volume_liquid(model,p,T,z) = x0_volume_liquid(model,T,z)
+
 """
     x0_volume_gas(model,p,T,z)
+
 Returns an initial guess to the gas volume, depending of pressure, temperature and composition. by default uses [`volume_virial`](@ref)
 """
 function x0_volume_gas(model,p,T,z)
@@ -17,6 +22,8 @@ end
 
 """
     x0_volume_solid(model,T,z)
+    x0_volume_solid(model,p,T,z)
+
 Returns an initial guess to the solid volume, dependent on temperature and composition. needs to be defined for EoS that support solid phase. by default returns NaN. can be overrided if the EoS defines `is_solid(::EoSModel) = true`
 """
 function x0_volume_solid(model,T,z)
@@ -29,6 +36,8 @@ function x0_volume_solid(model,T,z)
     end
 end
 
+x0_volume_solid(model,p,T,z) = x0_volume_solid(model,T,z)
+
 """
     x0_volume(model,p,T,z; phase = :unknown)
 Returns an initial guess of the volume at a pressure, temperature, composition and suggested phase.
@@ -38,15 +47,19 @@ If the suggested phase is `solid`, calls [`x0_volume_solid`](@ref).
 Returns `NaN` otherwise
 """
 function x0_volume(model, p, T, z = SA[1.0]; phase = :unknown)
+    return x0_volume_impl(model,p,T,z,phase)
+end
+
+function x0_volume_impl(model, p, T, z = SA[1.0], phase = :unknown)
     phase = Symbol(phase)
     if phase === :unknown || is_liquid(phase)
-        return x0_volume_liquid(model,T,z)
+        return x0_volume_liquid(model,p,T,z)
     elseif is_vapour(phase)
         return x0_volume_gas(model,p,T,z)
     elseif is_supercritical(phase)
         return x0_volume_gas(model,p,T,z)
     elseif is_solid(phase)
-        x0_volume_solid(model,T,z)
+        x0_volume_solid(model,p,T,z)
     else
         _0 = zero(p+T+first(z))
         return _0/_0
