@@ -142,7 +142,7 @@ function CPA(components;
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     cubicparams = ABCubicParam(a, b, params["Tc"],Pc,Mw) #PR, RK, vdW
     init_cubicmodel = cubicmodel(_components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
-
+    
     references = ["10.1021/ie051305v"]
 
     model = CPA(_components, radial_dist, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
