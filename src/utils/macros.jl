@@ -130,6 +130,8 @@ function __sum_add_variables(cache,expr::Symbol)
     push!(vars,expr)
 end
 
+__sum_add_variables(cache,expr::Number) = nothing
+
 function __sum_add_variables(cache,expr::Expr)
     vars,idx,len = cache
     if expr.head == :ref #vector or array
