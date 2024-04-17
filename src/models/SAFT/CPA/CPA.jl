@@ -195,8 +195,7 @@ function x0_crit_pure(model::CPAModel)
 end
 
 function crit_pure(model::CPAModel)
-    n = assoc_pair_length(model)
-    if n == 0
+    if assoc_pair_length(model) == 0 && !model.cubicmodel.params.Pc.ismissingvalues[1]
         return crit_pure(model.cubicmodel)
     else
         return crit_pure(model,x0_crit_pure(model))
