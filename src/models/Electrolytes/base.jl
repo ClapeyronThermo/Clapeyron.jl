@@ -51,14 +51,14 @@ function x0_volume_liquid(model::ESElectrolyteModel, T,z=SA[1.])
     return x0_volume_liquid(model.neutralmodel, T,z)*1.15
 end
 
-function mw(model::ESElectrolyte)
+function mw(model::ElectrolyteModel)
     return mw(model.neutralmodel)
 end
 
-function p_scale(model::ESElectrolyteModel,z=SA[1.])
+function p_scale(model::ElectrolyteModel,z=SA[1.])
     return p_scale(model.neutralmodel,z)
 end
 
-function T_scale(model::ESElectrolyteModel,z=SA[1.])
+function T_scale(model::ElectrolyteModel,z=SA[1.])
     return T_scale(model.neutralmodel,z)
 end
