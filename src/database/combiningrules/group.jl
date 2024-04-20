@@ -116,7 +116,7 @@ end
 """
     group_pairmean(groups::GroupParam,param::PairParam)
     group_pairmean(f,groups::GroupParam,param::SingleParam)
-Given a `GroupParam`and a parameter `P` it will return a single parameter `p` of component data, where:
+Given a `GroupParam` and a parameter `P` it will return a single parameter `p` of component data, where:
 
 pᵢ = ∑νᵢₖ(∑(νᵢₗ*P(i,j))) / ∑νᵢₖ(∑νᵢₗ)
 
@@ -211,4 +211,31 @@ function mix_segment!(groups::GroupParameter,s = ones(length(groups.flattenedgro
         end
     end
     #SingleParam("mixed segment",groups.flattenedgroups,mixsegment,[false for i ∈ gc],String[],String[])
+end
+
+function group_pairmean2(groups::GroupParameter,param::PairParam)
+    newvals = group_pairmean2!(groups,copy(param.values))
+    return PairParam(param.name,groups.components,newvals,fill(false,size(newvals)),param.sources,param.sourcecsvs)
+end
+
+function group_pairmean2!(groups,mat)
+    l_gc = length(groups.flattenedgroups)
+    l_c = length(groups.components)
+    _0 = zero(eltype(mat))
+    newmat = fill(_0,(l_c,l_c))
+    n = groups.n_flattenedgroups
+    for i ∈ 1:l_c
+        for j ∈ 1:l_c
+            res = _0
+            sumn = _0
+            for k in 1:l_gc
+                for l in 1:l_gc
+                    res += n[i][k]*n[j][l]*mat[k,l]
+                    sumn += n[i][k]*n[j][l]
+                end
+            end
+            newmat[i,j] = res/sumn
+        end
+    end
+    return newmat
 end

@@ -136,30 +136,6 @@ function d(model::GEPCSAFTModel, V, T, z)
     return σᵢᵢ .* (1 .- 0.12 .* exp.(-3ϵᵢᵢ ./ T))
 end
 
-function ζ0123(model::GEPCSAFTModel, V, T, z,_d)
-    m = model.params.segment.values
-    ζ0 = zero(V+T+first(z))
-    ζ1 = ζ0
-    ζ2 = ζ0
-    ζ3 = ζ0
-    for i ∈ @comps
-        dᵢ = _d[i]
-        zᵢmᵢ = z[i]*m[i]
-        d1 = dᵢ
-        d2 = d1*d1
-        d3 = d2*d1
-        ζ0 += zᵢmᵢ
-        ζ1 += zᵢmᵢ*d1
-        ζ2 += zᵢmᵢ*d2
-        ζ3 += zᵢmᵢ*d3
-    end
-    NV = N_A*π/6/V
-    ζ0 *= NV
-    ζ1 *= NV
-    ζ2 *= NV
-    ζ3 *= NV
-    return ζ0,ζ1,ζ2,ζ3
-end
 
 function C1(model::GEPCSAFTModel, V, T, z,_data=@f(data))
     _,_,_,_,η,m̄ = _data

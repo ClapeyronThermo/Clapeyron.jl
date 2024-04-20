@@ -140,8 +140,8 @@ function second_virial_coefficient_impl(model::EoSModel,T , z = SA[1.0])
     TT = one(promote_type(eltype(z),typeof(1.0*T)))
     V = 1/sqrt(eps(TT))
     fAᵣ(x) = eos_res(model,x,T,z)
-    Aᵣ,∂Aᵣ∂V,∂²Aᵣ∂V² = Solvers.f∂f∂2f(fAᵣ,V)
-    return V^2/(Rgas(model)*T)*(∂Aᵣ∂V+V*∂²Aᵣ∂V²) #V*V/J * (J/V )
+    _,∂Aᵣ∂V,∂²Aᵣ∂V² = Solvers.f∂f∂2f(fAᵣ,V)
+    return V^2/(sum(z)*Rgas(model)*T)*(∂Aᵣ∂V+V*∂²Aᵣ∂V²) #V*V/J * (J/V )
 end
 
 

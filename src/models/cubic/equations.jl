@@ -189,7 +189,7 @@ function lb_volume(model::CubicModel, z=SA[1.0])
     b = model.params.b.values
     c = @f(translation, model.translation)
     b̄ = dot(z, Symmetric(b), z) * invn #b has m3/mol units, result should have m3 units
-    c̄ = dot(z, c) * invn
+    c̄ = dot(z, c) #result here should also be in m3
     return b̄ - c̄
 end
 #dont use αa, just a, to avoid temperature dependence

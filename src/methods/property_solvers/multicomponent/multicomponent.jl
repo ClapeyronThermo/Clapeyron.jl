@@ -119,7 +119,7 @@ end
 function bubbledew_check(vl,vv,zin,zout)
     (isapprox(vl,vv) && isapprox(zin,zout)) && return false
     !all(isfinite,zout) && return false
-    !all(isfinite,(vl,vv)) && return false
+    !isfinite(vv) && return false
     return true
 end
 

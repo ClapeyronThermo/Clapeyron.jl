@@ -3,16 +3,22 @@ t1 = @elapsed using Clapeyron
 using CoolProp #CoolProp ext
 using Unitful #Unitful ext
 using MultiComponentFlash: MultiComponentFlash
+using Clapeyron.LinearAlgebra
+using Clapeyron.StaticArrays
+using Clapeyron: has_sites,has_groups
 
+#=
+
+Modify this constant to true to run all tests in all workers
+
+=#
+
+ALL_TESTS = false
+include("utils.jl")
 @info "Loading Clapeyron took $(round(t1,digits = 2)) seconds"
 @info "Coolprop: $(Clapeyron.is_coolprop_loaded())"
 #Disable showing citations
 ENV["CLAPEYRON_SHOW_REFERENCES"] = "FALSE"
-
-macro printline()  # useful in hunting for where tests get stuck
-    file = split(string(__source__.file), "/")[end]
-    printstyled(">>", file, ":", __source__.line, "\n", color=:light_black)
-end
 
 #fix to current tests
 function GERG2008(components;verbose = false,reference_state = nothing)
@@ -32,15 +38,20 @@ function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
     _,G,∑μᵢzᵢ = Clapeyron.gibbs_duhem(model,V,T,z)
     @test G ≈ ∑μᵢzᵢ rtol = rtol
 end
+#=
+include_distributed distributes the test load among all workers
+=#
+include_distributed("test_database.jl",4)
+include_distributed("test_solvers.jl",4)
+include_distributed("test_differentials.jl",4)
+include_distributed("test_misc.jl",4)
+include_distributed("test_models_saft_pc.jl",4)
+include_distributed("test_models_cubic.jl",3)
+include_distributed("test_models_saft_others.jl",3)
+include_distributed("test_models_others.jl",2)
+include_distributed("test_models_saft_vr.jl",1)
+include_distributed("test_methods_eos.jl",4)
+include_distributed("test_methods_api.jl",3)
+include_distributed("test_estimation.jl",2)
+include_distributed("test_issues.jl",1)
 
-@testset "All tests" begin
-    include("test_database.jl")
-    include("test_solvers.jl")
-    include("test_differentials.jl")
-    include("test_misc.jl")
-    include("test_models.jl")
-    include("test_methods_eos.jl")
-    include("test_methods_api.jl")
-    include("test_estimation.jl")
-    include("test_issues.jl")
-end

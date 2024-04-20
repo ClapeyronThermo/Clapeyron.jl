@@ -1,5 +1,5 @@
 Clapeyron Database File
-PPCSAFT Like Parameters; Esper et al. (2023) [csvtype = like]
+PCPSAFT Like Parameters; Esper et al. (2023) [csvtype = like]
 species,Mw,segment,sigma,epsilon,dipole,n_a,n_b,source,type,bounds_violation
 ethanal~|~acetaldehyde,44.026,2.14028,3.22662,227.62099,2.69,1,0,10.1021/acs.iecr.3c02255,DIPOLAR,OK
 acetamide~|~ethanamide,59.037,2.82648,3.12045,377.67175,0.0,1,2,,ASSOCIATIVE,OK

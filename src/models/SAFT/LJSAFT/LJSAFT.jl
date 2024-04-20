@@ -116,11 +116,11 @@ function a_seg(model::LJSAFTModel, V, T, z)
     η = ρst*π/6*(∑(D[i+3]*Tst^(i/2) for i ∈ -2:1)+D[end]*log(Tst))^3
 
     A_HS = Tst*(5/3*log(1-η)+(η*(34-33η+4η^2))/(6*(1-η)^2))
-    ΔB2 = ∑(C[j+8]*Tst^(j/2) for j ∈ -7:0)
-    A0 = ∑(C0[j-1]*ρst^j for j ∈ 2:5)
-    A1 = ∑(C1[j-1]*Tst^(-1/2)*ρst^j for j ∈ 2:6)
-    A2 = ∑(C2[j-1]*Tst^(-1)*ρst^j for j ∈ 2:6)
-    A4 = ∑(C4[j-1]*Tst^(-2)*ρst^j for j ∈ 2:6)
+    ΔB2 = sum(C[j+8]*Tst^(j/2) for j ∈ -7:0)
+    A0 = sum(C0[j-1]*ρst^j for j ∈ 2:5)
+    A1 = sum(C1[j-1]*Tst^(-1/2)*ρst^j for j ∈ 2:6)
+    A2 = sum(C2[j-1]*Tst^(-1)*ρst^j for j ∈ 2:6)
+    A4 = sum(C4[j-1]*Tst^(-2)*ρst^j for j ∈ 2:6)
 
     γ = 1.92907278
     return m̄*(A_HS+exp(-γ*ρst^2)*ρst*Tst*ΔB2+A0+A1+A2+A4)/Tst
@@ -145,7 +145,12 @@ end
 function a_chain(model::LJSAFTModel, V, T, z)
     m = model.params.segment.values
 
-    return -sum(z[i]*(m[i]-1)*log(@f(g_LJ,i)) for i ∈ @comps)/∑(z)
+    res = zero(V+T+first(z)+one(eltype(model)))
+    for i in @comps
+        g_LJi = @f(g_LJ,i)
+        res -= z[i]*(m[i]-1)*log(@f(g_LJ,i))
+    end
+    return res/sum(z)
 end
 
 function g_LJ(model::LJSAFTModel, V, T, z, i)

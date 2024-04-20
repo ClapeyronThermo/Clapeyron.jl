@@ -208,13 +208,13 @@ struct StructGroupParam <: GroupParameter
     sourcecsvs::Vector{String}
 end
 
-function StructGroupParam(group::GroupParam,gccomponents_parsed,filepaths::Vector{String})
+function StructGroupParam(group::GroupParam,gc_intragroups,filepaths::Vector{String})
     groupnames = group.flattenedgroups
     n_gc = length(groupnames)
     n_comps = length(group.components)
     n_intergroups = [zeros(n_gc,n_gc) for i in 1:n_comps]
-    for i in 1:length(gccomponents_parsed)
-        gc_pair_i = last(gccomponents_parsed[i])
+    for i in 1:length(gc_intragroups)
+        gc_pair_i = gc_intragroups[i]
         n_mat = n_intergroups[i]
         for pair_ik in gc_pair_i
             k = first(pair_ik)

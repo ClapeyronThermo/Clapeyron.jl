@@ -1,4 +1,4 @@
-struct QPPCSAFTParam <: EoSParam
+struct QPCPSAFTParam <: EoSParam
     Mw::SingleParam{Float64}
     segment::SingleParam{Float64}
     sigma::PairParam{Float64}
@@ -11,24 +11,30 @@ struct QPPCSAFTParam <: EoSParam
     bondvol::AssocParam{Float64}
 end
 
-abstract type QPPCSAFTModel <: PPCSAFTModel end
-@newmodel QPPCSAFT QPPCSAFTModel QPPCSAFTParam
-default_references(::Type{QPPCSAFT}) = ["10.1002/aic.10502","10.1021/jp072619u"]
-default_locations(::Type{QPPCSAFT}) = ["SAFT/PCSAFT/QPPCSAFT/","properties/molarmass.csv"] # Needs to add data for QPPCSAFT
-function transform_params(::Type{QPPCSAFT},params,components)
+abstract type QPCPSAFTModel <: PCPSAFTModel end
+@newmodel QPCPSAFT QPCPSAFTModel QPCPSAFTParam
+default_references(::Type{QPCPSAFT}) = ["10.1002/aic.10502","10.1021/jp072619u"]
+default_locations(::Type{QPCPSAFT}) = ["SAFT/PCSAFT/QPCPSAFT/","properties/molarmass.csv"] # Needs to add data for QPCPSAFT
+function transform_params(::Type{QPCPSAFT},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
+    μ = get!(params,"dipole") do
+        SingleParam("dipole",components)
+    end
+    m = params["segment"]
+    Q = get!(params,"quadrupole") do
+        SingleParam("quadrupole",components)
+    end
     params = saft_lorentz_berthelot(params)
-    μ,m,Q = params["dipole"],params["segment"],params["quadrupole"]
     params["dipole2"] = SingleParam("Dipole squared",components, μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3))
     params["quadrupole2"] = SingleParam("Quadrupole squared",components, Q.^2 ./ m ./ k_B*1e-56*(1e-10*1e-3))
     return params
 end
 
 """
-    QPPCSAFTModel <: PPCSAFTModel
+    QPCPSAFTModel <: PCPSAFTModel
 
-    QPPCSAFT(components;
+    QPCPSAFT(components;
     idealmodel = BasicIdeal,
     userlocations = String[],
     ideal_userlocations = String[],
@@ -56,33 +62,37 @@ end
 - `quadrupole`: Single Parameter (`Float64`) - Quadrupole moment `[DA°]`
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
+
 ## Input models
 - `idealmodel`: Ideal Model
 
 ## Description
-Polar Perturbed-Chain SAFT, including Quadrupolar interaction contributions (QPPC-SAFT)
+Polar Perturbed-Chain SAFT, including Quadrupolar interaction contributions (Q-PCP-SAFT)
 
 ## References
 1. Gross, J. (2005). An equation-of-state contribution for polar components: Quadrupolar molecules. AIChE Journal, 51(9), 2556-2568. [doi:10.1002/aic.10502](https://doi.org/10.1002/aic.10502)
 2. Gross, J., & Vrabec, J. (2008). Vapor−Liquid Equilibria Simulation and an Equation of State Contribution for Dipole−Quadrupole Interactions. J. Phys. Chem. B, 112(1), 51-60. [doi:10.1021/jp072619u](https://doi.org/10.1021/jp072619u)
 """
-QPPCSAFT
+QPCPSAFT
 
-export QPPCSAFT
+export QPCPSAFT
+Base.@deprecate_binding QPPCSAFT QPCPSAFT
+Base.@deprecate_binding QPPCSAFTModel QPCPSAFTModel
+Base.@deprecate_binding QPPCSAFTParam QPCPSAFTParam
 
-function recombine_impl!(model ::QPPCSAFTModel)
+function recombine_impl!(model ::QPCPSAFTModel)
     μ,Q,m = model.params.dipole,model.params.quadrupole,model.params.segment
     model.params.dipole2 .= μ.^2 ./ m ./ k_B * 1e-36*(1e-10*1e-3)
     model.params.quadrupole2 .= Q.^2 ./ m ./ k_B * 1e-56*(1e-10*1e-3)
     recombine_saft!(model)
 end
 
-function a_res(model ::QPPCSAFTModel, V, T, z)
+function a_res(model ::QPCPSAFTModel, V, T, z)
     _data = @f(data)
     return @f(a_hc,_data) + @f(a_disp,_data) + @f(a_assoc,_data) + @f(a_mp,_data)
 end
 
-function a_mp(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
+function a_mp(model ::QPCPSAFTModel, V, T, z, _data=@f(data))
     μ̄² = model.params.dipole2.values
     Q̄² = model.params.quadrupole2.values
     has_dp = !all(iszero, μ̄²)
@@ -96,17 +106,17 @@ function a_mp(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
     return a_mp_total
 end
 
-function a_dd(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
+function a_dd(model ::QPCPSAFTModel, V, T, z, _data=@f(data))
     return @f(a_polar,_data)
 end
 
-function a_qq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
+function a_qq(model ::QPCPSAFTModel, V, T, z, _data=@f(data))
     a₂ = @f(a_2_qq,_data)
     iszero(a₂) && return zero(a₂)
     a₃ = @f(a_3_qq,_data)
     return a₂^2/(a₂-a₃)
 end
-function a_dq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
+function a_dq(model ::QPCPSAFTModel, V, T, z, _data=@f(data))
     a₂ = @f(a_2_dq,_data)
     iszero(a₂) && return zero(a₂)
     a₃ = @f(a_3_dq,_data)
@@ -114,7 +124,7 @@ function a_dq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
 end
 
 # Deals only with DD & QQ
-function a_2_qq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
+function a_2_qq(model ::QPCPSAFTModel, V, T, z, _data=@f(data))
     Q̄² = model.params.quadrupole2.values
     _,_,_,_,η,_ = _data
     ∑z = sum(z)
@@ -140,7 +150,7 @@ function a_2_qq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
     return _a_2
 end
 
-function a_2_dq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
+function a_2_dq(model ::QPCPSAFTModel, V, T, z, _data=@f(data))
     
     Q̄² = model.params.quadrupole2.values
     μ̄² = model.params.dipole2.values
@@ -187,7 +197,7 @@ function a_2_dq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
     return _a_2
 end
 
-function a_3_qq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
+function a_3_qq(model ::QPCPSAFTModel, V, T, z, _data=@f(data))
     _0 = zero(T+V+first(z))
     Q̄² = model.params.quadrupole2.values
     ∑z = sum(z)
@@ -225,7 +235,7 @@ function a_3_qq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
     return _a_3
 end
 
-function a_3_dq(model ::QPPCSAFTModel, V, T, z, _data=@f(data))
+function a_3_dq(model ::QPCPSAFTModel, V, T, z, _data=@f(data))
     μ̄² = model.params.dipole2.values
     Q̄² = model.params.quadrupole2.values
     _,_,_,_,η,_ = _data
@@ -271,7 +281,7 @@ function polar_comps(model, V, T, z)
 end
 
 
-function J2(model::QPPCSAFTModel, V, T, z, type::Symbol, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵT⁻¹ = model.params.epsilon.values[i,j]/T)
+function J2(model::QPCPSAFTModel, V, T, z, type::Symbol, i, j, η = @f(ζ,3),m = model.params.segment.values,ϵT⁻¹ = model.params.epsilon.values[i,j]/T)
     m̄ = sqrt(m[i]*m[j])
     m̄1 = one(m̄)
     m̄2 = (m̄-1)/m̄
@@ -292,7 +302,7 @@ function J2(model::QPPCSAFTModel, V, T, z, type::Symbol, i, j, η = @f(ζ,3),m =
     end
 end
 
-function J3(model::QPPCSAFTModel, V, T, z, type::Symbol, i, j, k, η = @f(ζ,3),m = model.params.segment.values)
+function J3(model::QPCPSAFTModel, V, T, z, type::Symbol, i, j, k, η = @f(ζ,3),m = model.params.segment.values)
     m̄ = cbrt(m[i]*m[j]*m[k])
     m̄1 = one(m̄)
     m̄2 = (m̄-1)/m̄

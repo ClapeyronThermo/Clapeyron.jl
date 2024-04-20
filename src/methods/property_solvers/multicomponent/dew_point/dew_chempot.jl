@@ -81,6 +81,23 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
     else
         model_x = nothing
     end
+
+    Ts = isnothing(model_x) ? T_scales(model) : T_scales(model_x)
+
+    if T > 0.9minimum(Ts)
+        converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,(vl,vv),false,true,condensables)
+        p,T,x,y,vol,lnK = res
+        volx,voly = vol
+        if converged
+            return p,volx,voly,index_expansion(x,condensables)
+        elseif isnan(volx) || isnan(voly)
+            return p,volx,voly,index_expansion(x,condensables)
+        else
+            x0 = x
+            vl,vv = vol
+        end
+    end
+
     v0 = vcat(log10(vl),log10(vv),x0[1:end-1])
     pmix = p_scale(model,y)
     f!(F,z) = Obj_dew_pressure(model,model_x, F, T, exp10(z[1]), exp10(z[2]), z[3:end],y,pmix,condensables)
@@ -178,6 +195,20 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
         x0 = x0[condensables]
     else
         model_x = nothing
+    end
+    Ps = isnothing(model_x) ? p_scale(model,x0) : p_scale(model_x,x0)
+    if log(p) > 0.9log(Ps)
+        converged,res = _fug_OF_ss(model_x,model,p,T0,x0,y,(vl,vv),false,false,condensables)
+        p,T,x,y,vol,lnK = res
+        volx,voly = vol
+        if converged
+            return T,volx,voly,index_expansion(x,condensables)
+        elseif isnan(volx) || isnan(voly)
+            return T,volx,voly,index_expansion(x,condensables)
+        else
+            x0 = x
+            vl,vv = vol
+        end
     end
 
     v0 = vcat(T0,log10(vl),log10(vv),x0[1:end-1])

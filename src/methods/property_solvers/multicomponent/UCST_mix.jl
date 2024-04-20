@@ -33,7 +33,8 @@ Returns a tuple, containing:
 """
 function x0_UCST_mix(model::EoSModel,T)
     x0 = Fractions.zeros(length(model))
-    V  = x0_volume_liquid(model,T,x0)
+    p = p_scale(model,x0)
+    V  = x0_volume(model,p,T,x0,phase = :l)
     return (log10(V),x0)
 end
 

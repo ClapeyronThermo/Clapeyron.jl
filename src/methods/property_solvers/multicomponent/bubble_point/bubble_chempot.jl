@@ -74,7 +74,7 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     end
     _vol0,_p0,_y0 = method.vol0,method.p0,method.y0
     p0,vl,vv,y0 = bubble_pressure_init(model,T,x,_vol0,_p0,_y0,volatiles)
-    
+
     if !isnothing(method.nonvolatiles)
         model_y,volatiles = index_reduction(model,volatiles)
         y0 = y0[volatiles]
@@ -82,6 +82,22 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
         model_y = nothing
     end
     
+    Ts = isnothing(model_y) ? T_scales(model) : T_scales(model_y)
+
+    if T > 0.9minimum(Ts)
+        converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,(vl,vv),true,true,volatiles)
+        p,T,x,y,vol,lnK = res
+        volx,voly = vol
+        if converged
+            return p,volx,voly,index_expansion(y,volatiles)
+        elseif isnan(volx) || isnan(voly)
+            return p,volx,voly,index_expansion(y,volatiles)
+        else
+            y0 = y
+            vl,vv = vol
+        end
+    end
+
     v0 = vcat(log10(vl),log10(vv),y0[1:end-1])
     pmix = p_scale(model,x)
     f!(F,z) = Obj_bubble_pressure(model,model_y, F, T, exp10(z[1]),exp10(z[2]),x,z[3:end],pmix,volatiles)
@@ -188,6 +204,21 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     else
         model_y = nothing
     end
+    Ps = isnothing(model_y) ? p_scale(model,y0) : p_scale(model_y,y0)
+    if log(p) > 0.9log(Ps)
+        converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,(vl,vv),true,false,volatiles)
+        p,T,x,y,vol,lnK = res
+        volx,voly = vol
+        if converged
+            return T,volx,voly,index_expansion(y,volatiles)
+        elseif isnan(volx) || isnan(voly)
+            return T,volx,voly,index_expansion(y,volatiles)
+        else
+            y0 = y
+            vl,vv = vol
+        end
+    end
+
     v0 = vcat(T0,log10(vl),log10(vv),y0[1:end-1])
     pmix = p_scale(model,x)
     f!(F,z) = Obj_bubble_temperature(model,model_y, F, p, z[1], exp10(z[2]), exp10(z[3]), x, z[4:end],pmix,volatiles)

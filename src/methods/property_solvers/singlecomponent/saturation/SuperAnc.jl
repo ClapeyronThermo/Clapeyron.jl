@@ -1,5 +1,5 @@
 
-struct SuperAncSaturation <: SaturationMethod 
+struct SuperAncSaturation <: SaturationMethod
     p_tol::Float64
 end
 
@@ -7,7 +7,7 @@ const SUPERANC_ENABLED = Ref(false)
 
 """
     use_superancillaries!(val::Bool = true)
-    
+
 Enable the use of cubic and PC-SAFT superancillaries as initial points for `saturation_pressure`. for `PCSAFT` it also enables the use of superancillaries for critical point calculations.
 This function requires `EoSSuperancillaries.jl` to be loaded in the current session (`using EoSSuperancillaries`).
 """
@@ -54,62 +54,20 @@ function saturation_pressure_impl(model::ABCubicModel,T,method::SuperAncSaturati
 end
 
 function chebyshev_vapour_volume(model::ABCubicModel,T̃,b)
-    Cₙ = chebyshev_coef_v(model)
-    T_range = chebyshev_Trange_v(model)
-    Tmin_i = T_range[1]
-    Tmax_i = Tmin_i
-    @inbounds for i ∈ 1:length(Cₙ)
-        Tmin_i = Tmax_i
-        Tmax_i = T_range[i+1]
-        if Tmin_i <= T̃ <= Tmax_i
-            Cₙi::Vector{Float64} = Cₙ[i]
-            T̄ = (2*T̃ - (Tmax_i + Tmin_i)) / (Tmax_i - Tmin_i)
-            ρ̃ᵥ = Solvers.evalpoly_cheb(T̄,Cₙi)            
-            Vᵥ = b/ρ̃ᵥ
-            return Vᵥ
-        end
-    end
-    return zero(T̃)/zero(T̃)
+    cheb_vvsat = _cheb_vvsat(model)
+    return b/Solvers.cheb_eval(cheb_vvsat,T̃)
 end
 
 function chebyshev_liquid_volume(model::ABCubicModel,T̃,b)
-    Cₙ = chebyshev_coef_l(model)
-    T_range = chebyshev_Trange_l(model)
-    Tmin_i = T_range[1]
-    Tmax_i = Tmin_i
-    @inbounds for i ∈ 1:length(Cₙ)
-        Tmin_i = Tmax_i
-        Tmax_i = T_range[i+1]
-        if Tmin_i <= T̃ <= Tmax_i
-            Cₙi::Vector{Float64} = Cₙ[i]
-            T̄ = (2*T̃ - (Tmax_i + Tmin_i)) / (Tmax_i - Tmin_i)
-            ρ̃ₗ = Solvers.evalpoly_cheb(T̄,Cₙi)            
-            Vₗ = b/ρ̃ₗ
-            return Vₗ
-        end
-    end
-    return zero(T̃)/zero(T̃)
+    cheb_vlsat = _cheb_vlsat(model)
+    return b/Solvers.cheb_eval(cheb_vlsat,T̃)
 end
 
 function chebyshev_pressure(model::ABCubicModel,T̃,a,b)
-    Cₙ = chebyshev_coef_p(model)
-    T_range = chebyshev_Trange_p(model)
-    Tmin_i = T_range[1]
-    Tmax_i = Tmin_i
-    @inbounds for i ∈ 1:length(Cₙ)
-        Tmin_i = Tmax_i
-        Tmax_i = T_range[i+1]
-        if Tmin_i <= T̃ <= Tmax_i
-            Cₙi::Vector{Float64} = Cₙ[i]
-            T̄ = (2*T̃ - (Tmax_i + Tmin_i)) / (Tmax_i - Tmin_i)
-            p̃ = Solvers.evalpoly_cheb(T̄,Cₙi)            
-            p = p̃*a/b^2     
-            return p
-        end
-    end
-    return zero(T̃)/zero(T̃)
+    cheb_psat = _cheb_psat(model)
+    p̃ = Solvers.cheb_eval(cheb_psat,T̃)
+    return p̃*a/(b*b)
 end
-
 
 function saturation_temperature_impl(model::ABCubicModel,p,method::SuperAncSaturation)
     Tc = model.params.Tc.values[1]
@@ -124,7 +82,7 @@ function saturation_temperature_impl(model::ABCubicModel,p,method::SuperAncSatur
     Vv = chebyshev_vapour_volume(model,T̃,b) - c
     Vl = chebyshev_liquid_volume(model,T̃,b) - c
     return (T,Vl,Vv)
-    #p_sat = chebyshev_pressure(model,T̃,a,b) 
+    #p_sat = chebyshev_pressure(model,T̃,a,b)
 end
 
 function chebyshev_temperature(model::ABCubicModel,p,method::SuperAncSaturation)

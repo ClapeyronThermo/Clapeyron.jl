@@ -1,15 +1,16 @@
 
-function ADScalarObjective(f,x0::AbstractArray,chunk = autochunk(x0))
+function ADScalarObjective(f,x0::AbstractArray,chunk = autochunk(x0),val::Val{N} = Val{2}()) where N
     Hres = DiffResults.HessianResult(x0)
-    function _g(df,x,Hresult)
-        ForwardDiff.gradient!(Hresult,f,x)
-        df .= DiffResults.gradient(Hresult)
+    function _g(df,x,Gresult)
+        ForwardDiff.gradient!(Gresult,f,x)
+        df .= DiffResults.gradient(Gresult)
         df
     end
-    function _fg(df,x,Hresult)
-        ForwardDiff.gradient!(Hresult,f,x)
-        df .= DiffResults.gradient(Hresult)
-        fx = DiffResults.value(Hresult)
+    
+    function _fg(df,x,Gresult)
+        ForwardDiff.gradient!(Gresult,f,x)
+        df .= DiffResults.gradient(Gresult)
+        fx = DiffResults.value(Gresult)
         return fx,df
     end
 
@@ -81,6 +82,12 @@ function optimize(optprob::OptimizationProblem,method=LineSearch(Newton()),optio
 end
 #build scalar objective -> Optimization Problem
 function optimize(scalarobj::ScalarObjective,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
+    optprob = OptimizationProblem(obj = scalarobj,inplace = (x0 isa Number),bounds = bounds)
+    return NLSolvers.solve(optprob,x0,method,options)
+end
+
+function optimize(f,x0,method::NLSolvers.NelderMead,options=OptimizationOptions();bounds = nothing)
+    scalarobj = ScalarObjective(f = f)
     optprob = OptimizationProblem(obj = scalarobj,inplace = (x0 isa Number),bounds = bounds)
     return NLSolvers.solve(optprob,x0,method,options)
 end

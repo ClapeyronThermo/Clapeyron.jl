@@ -110,7 +110,7 @@ end
 @testset "reference states" begin
     
     @test !has_reference_state(PCSAFT("water"))
-    @test has_reference_state(PCSAFT("water",idealmodel = ShomateIdeal))
+    @test has_reference_state(PCSAFT("water",idealmodel = ReidIdeal))
 
     ref1 = ReferenceState(:nbp)
     ref2 = ReferenceState(:ashrae)
@@ -119,7 +119,7 @@ end
     ref5 = ReferenceState(:volume,T0 = 298.15,P0 = 1.0e5,phase = :gas,z0 = [0.4,0.6],H0 = 123,S0 = 456)
 
     @testset "nbp reference state" begin
-        model1 = PCSAFT(["water","pentane"],idealmodel = ShomateIdeal,reference_state = ref1)
+        model1 = PCSAFT(["water","pentane"],idealmodel = ReidIdeal,reference_state = ref1)
         pure1 = split_model(model1)
         T11,v11,_ = saturation_temperature(pure1[1],101325.0)
         @test Clapeyron.VT_enthalpy(pure1[1],v11,T11) ≈ 0.0 atol = 1e-6
@@ -136,7 +136,7 @@ end
     end
 
     @testset "ashrae reference state" begin
-        model2 = PCSAFT(["water","pentane"],idealmodel = ShomateIdeal,reference_state = ref2)
+        model2 = PCSAFT(["water","pentane"],idealmodel = ReidIdeal,reference_state = ref2)
         pure2 = split_model(model2)
         T_ashrae = 233.15
         _,v21,_ = saturation_pressure(pure2[1],T_ashrae)
@@ -148,7 +148,7 @@ end
     end
 
     @testset "iir reference state" begin
-        model3 = PCSAFT(["water","pentane"],idealmodel = ShomateIdeal,reference_state = ref3)
+        model3 = PCSAFT(["water","pentane"],idealmodel = ReidIdeal,reference_state = ref3)
         pure3 = split_model(model3)
         Tiir = 273.15
         H31,H32 = 200*model3.params.Mw[1],200*model3.params.Mw[2]
@@ -165,7 +165,7 @@ end
     end
 
     @testset "custom reference state - pure volume" begin
-        model4 = PCSAFT(["water","pentane"],idealmodel = ShomateIdeal,reference_state = ref4)
+        model4 = PCSAFT(["water","pentane"],idealmodel = ReidIdeal,reference_state = ref4)
         pure4 = split_model(model4)
         T4,P4 = 298.15,1.0e5
         v41 = volume(pure4[1],P4,T4,phase = :liquid)
@@ -177,7 +177,7 @@ end
     end
 
     @testset "custom reference state - volume at composition" begin
-        model5 = PCSAFT(["water","pentane"],idealmodel = ShomateIdeal,reference_state = ref5)
+        model5 = PCSAFT(["water","pentane"],idealmodel = ReidIdeal,reference_state = ref5)
         T5,P5 = 298.15,1.0e5
         z5 = [0.4,0.6]
         v5 = volume(model5,P5,T5,z5,phase = :gas)
@@ -386,6 +386,15 @@ end
 
     #ClapeyronSat
     @test Clapeyron.saturation_temperature(model,p0,ClapeyronSaturation())[1] ≈ 374.2401401001685 rtol = 1e-6
+end
+
+@testset "Tproperty" begin
+    model = PCSAFT(["propane","dodecane"])
+    p = 101325.0; T = 300.0;z = [0.5,0.5]
+    h_ = enthalpy(model,p,T,z)
+    s_ = entropy(model,p,T,z)
+    @test Tproperty(model,p,h_,z,enthalpy) ≈ T
+    @test Tproperty(model,p,s_,z,entropy) ≈ T
 end
 
 @testset "bubble/dew point algorithms" begin
@@ -598,7 +607,7 @@ GC.gc()
         T = 202.694
         v0 = [-4.136285855713797, -4.131888756537859, 0.9673991775701574, 0.014192499147585259, 0.014746430039492817, 0.003661893242764558]
         model = PCSAFT(["methane","butane","isobutane","pentane"])
-        # @test_broken bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
+        @test bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
         # FIXME: The test does not yield the same value depending on the OS and the julia version
     end
     GC.gc()

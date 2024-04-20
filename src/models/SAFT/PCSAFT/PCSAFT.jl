@@ -43,6 +43,17 @@ function get_l(model::PCSAFTModel)
     return get_k_mean(model.params.sigma)
 end
 
+function set_k!(model::PCSAFTModel,k)
+    has_groups(model) && return nothing
+    return recombine_saft!(model,k,nothing)
+end
+
+function set_l!(model::PCSAFTModel,l)
+    has_groups(model) && return nothing
+    return recombine_saft!(model,nothing,l)
+end
+
+
 """
     PCSAFTModel <: SAFTModel
 
@@ -122,15 +133,7 @@ function a_disp(model::PCSAFTModel, V, T, z,_data=@f(data))
     return -2*πNAρ*@f(I,1,_data)*m2ϵσ3₁ - m̄*πNAρ*@f(C1,_data)*@f(I,2,_data)*m2ϵσ3₂
 end
 
-function d(model::PCSAFTModel, V, T, z)
-    ϵ = model.params.epsilon.values
-    σ = model.params.sigma.values
-    di = zeros(eltype(T+one(eltype(model))),length(model))
-    for i in 1:length(model)
-        di[i] = σ[i,i]*(1 - 0.12*exp(-3ϵ[i,i]/ T))
-    end
-    return di
-end
+d(model::PCSAFTModel, V, T, z) = ck_diameter(model, T, z)
 
 function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     m = model.params.segment.values
@@ -141,31 +144,6 @@ function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     end
     res *= N_A*π/6/V
     return res
-end
-
-function ζ0123(model::PCSAFTModel, V, T, z, _d = @f(d))
-    m = model.params.segment.values
-    ζ0 = zero(V+T+first(z)+one(eltype(model)))
-    ζ1 = ζ0
-    ζ2 = ζ0
-    ζ3 = ζ0
-    for i ∈ @comps
-        dᵢ = _d[i]
-        zᵢmᵢ = z[i]*m[i]
-        d1 = dᵢ
-        d2 = d1*d1
-        d3 = d2*d1
-        ζ0 += zᵢmᵢ
-        ζ1 += zᵢmᵢ*d1
-        ζ2 += zᵢmᵢ*d2
-        ζ3 += zᵢmᵢ*d3
-    end
-    NV = N_A*π/6/V
-    ζ0 *= NV
-    ζ1 *= NV
-    ζ2 *= NV
-    ζ3 *= NV
-    return ζ0,ζ1,ζ2,ζ3
 end
 
 function g_hs(model::PCSAFTModel, V, T, z, i, j, _data=@f(data))
@@ -282,12 +260,3 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
     end
     return Δout
 end
-
-#Optimizations for Single Component PCSAFT
-
-function d(model::PCSAFT, V, T, z::SingleComp)
-    ϵ = only(model.params.epsilon.values)
-    σ = only(model.params.sigma.values)
-    return SA[σ*(1 - 0.12*exp(-3ϵ/T))]
-end
-

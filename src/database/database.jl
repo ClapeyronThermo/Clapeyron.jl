@@ -492,7 +492,7 @@ function read_csv(filepath,options::ParamOptions,sep = :auto)::CSV.File
         _delim = sep
     end
     if is_inline_csv(filepath)
-        df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String, delim = _delim, ntasks  = 1)
+        df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String, delim = _delim, ntasks  = 1,buffer_in_memory = true)
     else
         df = CSV.File(filepath; header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String,delim = _delim, ntasks  = 1)
     end

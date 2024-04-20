@@ -70,29 +70,49 @@ export ogSAFT
 
 recombine_impl!(model::ogSAFTModel) = recombine_saft!(model)
 
-function a_res(model::ogSAFTModel, V, T, z)
-    return @f(a_seg) + @f(a_chain) + @f(a_assoc)
+function data(model::ogSAFTModel, V, T, z)
+    _d = d(model,V,T,z)
+    m̄ = dot(z,model.params.segment.values)
+    ζi = ζ0123(model,V,T,z,_d)
+    return _d, m̄, ζi
 end
 
-function a_seg(model::ogSAFTModel, V, T, z)
-    m = model.params.segment.values
-    m̄ = dot(z,m)/sum(z)
-    return m̄*(@f(a_hs)+@f(a_disp))
+function a_res(model::ogSAFTModel, V, T, z, _data = @f(data))
+    return @f(a_seg,_data) + @f(a_chain,_data) + @f(a_assoc,_data)
 end
 
-function a_chain(model::ogSAFTModel, V, T, z)
+function a_seg(model::ogSAFTModel, V, T, z,_data = @f(data))
+    _d, m̄, ζi = _data
+    return m̄*(@f(a_hs,_data)+@f(a_disp,_data))/sum(z)
+end
+
+function a_chain(model::ogSAFTModel, V, T, z,_data = @f(data))
     #x = z/∑(z)
     m = model.params.segment.values
-    return sum(z[i]*(1-m[i])*log(@f(g_hsij, i, i)) for i ∈ @comps)/sum(z)
+    return sum(z[i]*(1-m[i])*log(@f(g_hsij, i, i,_data)) for i ∈ @comps)/sum(z)
 end
 
-function d(model::ogSAFTModel, V, T, z, i)
-    ϵ = model.params.epsilon.values[i,i]
-    σ = model.params.sigma.values[i,i]
-    m = model.params.segment.values
+function d(model::ogSAFTModel, V, T, z)
+    ϵ = model.params.epsilon.values
+    σ = model.params.sigma.values
+    di = zeros(eltype(T+one(eltype(model))),length(model))
+    for i in 1:length(model)
+        di[i] = σ[i,i]*@f(f_d,ϵ[i,i])
+    end
+    return di
+end
+
+function d(model::ogSAFT, V, T, z::SingleComp)
+    ϵ = only(model.params.epsilon.values)
+    σ = only(model.params.sigma.values)
+    return SA[σ*@f(f_d,ϵ)]
+end
+
+function f_d(model::ogSAFTModel, V, T, z,ϵ = model.params.epsilon.values[i,i])
     fm = 0.0010477#+0.025337*(m[i]-1)/m[i]
-    f = (1+0.2977T/ϵ)/(1+0.33163T/ϵ+fm*(T/ϵ)^2)
-    return σ * f
+    τ = T/ϵ
+    f = (1+0.2977τ)/(1+0.33163τ+fm*τ^2)
+    return f
 end
 
 # function dx(model::ogSAFTModel, V, T, z)
@@ -125,11 +145,10 @@ end
 #     return N_A*∑z*π/6/V*@f(dx)^3*m̄
 # end
 
-function g_hsij(model::ogSAFTModel, V, T, z, i, j)
-    di = @f(d,i)
-    dj = @f(d,j)
-    ζ2 = @f(ζn,2)
-    ζ3 = @f(ζn,3)
+function g_hsij(model::ogSAFTModel, V, T, z, i, j,_data = @f(data))
+    _d, m̄, ζi = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
+    di,dj = _d[i],_d[j]
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 end
 
@@ -138,22 +157,34 @@ end
 #     return (4ηx-3ηx^2)/(1-ηx)^2
 # end
 
-function a_hs(model::ogSAFTModel, V, T, z)
-    ζ0 = @f(ζn,0)
-    ζ1 = @f(ζn,1)
-    ζ2 = @f(ζn,2)
-    ζ3 = @f(ζn,3)
-    return 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
+function a_hs(model::ogSAFTModel, V, T, z,_data = @f(data))
+    _d, m̄, ζi = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
+    return bmcs_hs(ζ0,ζ1,ζ2,ζ3)
 end
 
-function a_disp(model::ogSAFTModel, V, T, z)
+function a_disp(model::ogSAFTModel, V, T, z,_data = @f(data))
+    _d, m̄, ζi = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
+
     m = model.params.segment.values
     σ = model.params.sigma.values
     ϵ = model.params.epsilon.values
-    #x = z/∑(z)
-    comps = @comps
-    ϵx = ∑(z[i]*z[j]*m[i]*m[j]*σ[i,j]^3*ϵ[i,j] for i ∈ comps for j ∈ comps)/∑(z[i]*z[j]*m[i]*m[j]*σ[i,j]^3 for i ∈ comps for j ∈ comps)
-    ζ3 = @f(ζn,3)
+    mσϵ3 = zero(first(z)+one(eltype(model)))
+    mσ3 = zero(first(z)+one(eltype(model)))
+    for i in @comps
+        zi,ϵi,σi,mi = z[i],ϵ[i,i],σ[i,i],m[i]
+        mσ3ii = zi*zi*mi*mi*σi*σi*σi
+        mσ3 += mσ3ii
+        mσϵ3 += mσ3ii*ϵi
+        for j in 1:(i-1)
+            zj,ϵij,σij,mj = z[j],ϵ[i,j],σ[i,j],m[j]
+            mσ3ij = zi*zj*mi*mj*σij*σij*σij
+            mσ3 += 2*mσ3ij
+            mσϵ3 += 2*mσ3ij*ϵij
+        end
+    end
+    ϵx = mσϵ3/mσ3
     ρR = (6/sqrt(2)/π)*ζ3
     TR = T/ϵx
     a_seg1 = ρR*evalpoly(ρR,(-8.5959,-4.5424,-2.1268,10.285))
@@ -195,11 +226,13 @@ end
 #     return mx*(a_res)
 # end
 
-function Δ(model::ogSAFTModel, V, T, z, i, j, a, b)
+function Δ(model::ogSAFTModel, V, T, z, i, j, a, b,_data = @f(data))
+    _d, m̄, ζi = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
     κ = model.params.bondvol.values
     kijab =κ[i,j][a,b]
     ϵ_assoc = model.params.epsilon_assoc.values
     g = @f(g_hsij,i,j)
-    return (@f(d,i)+@f(d,j))^3/2^3*g*(exp(ϵ_assoc[i,j][a,b]/T)-1)*kijab
+    return (_d[i]+_d[j])^3/2^3*g*(expm1(ϵ_assoc[i,j][a,b]/T))*kijab
 end
 

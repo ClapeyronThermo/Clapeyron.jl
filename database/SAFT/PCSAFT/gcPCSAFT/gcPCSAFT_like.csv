@@ -1,8 +1,0 @@
-Clapeyron Database File,,,,,,,
-heretosegmented GC-PCSAFT Like Parameters,,,,,,,
-species,Mw,segment,sigma,epsilon,n_H,n_e,source
-CH3,15.,0.77247,3.6937,181.49,0,0,
-CH2,14.,0.79120,3.0207,157.23,0,0,
-CH,13.,0.52235,0.99912,269.84,0,0,
-C,12.,-0.70131,0.54350,0.000,0,0,
-OH,17.,1.0231,2.7702,334.29,1,1,

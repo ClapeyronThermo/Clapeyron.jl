@@ -65,6 +65,7 @@ include("fixpoint/fixpoint.jl")
 include("fixpoint/ADNewton.jl")
 include("optimize.jl")
 include("integral.jl")
+include("chebyshev.jl")
 
 
 end # module

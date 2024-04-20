@@ -76,15 +76,16 @@ function x0_melting_pressure(model::CompositeModel,T)
     solid = solid_model(model)
     liquid = fluid_model(model)
     z = SA[1.0]
-    vs00 = x0_volume_solid(solid,T,z)
-    vl00 = x0_volume_liquid(liquid,T,z)
+    p = p_scale(liquid,z)
+    vs00 = x0_volume(solid,p,T,z,phase = :s)
+    vl00 = x0_volume(liquid,p,T,z,phase = :l)
     #=
     strategy:
     quadratic taylor expansion for helmholtz energy
     isothermal compressibility aproximation for pressure
    =#
-    p_scale,μ_scale = scale_sat_pure(liquid)
-    return solve_2ph_taylor(solid,liquid,T,vs00,vl00,p_scale,μ_scale)
+    ps,μs = scale_sat_pure(liquid)
+    return solve_2ph_taylor(solid,liquid,T,vs00,vl00,ps,μs)
 end
 
 

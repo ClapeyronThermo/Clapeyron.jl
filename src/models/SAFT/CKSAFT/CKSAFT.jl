@@ -78,106 +78,133 @@ CKSAFT
 
 recombine_impl!(model::CKSAFTModel) = recombine_saft!(model)
 
-function a_res(model::CKSAFTModel, V, T, z)
-    return @f(a_seg) + @f(a_chain) + @f(a_assoc)
-end
-
-function a_seg(model::CKSAFTModel, V, T, z)
-    Σz = ∑(z)
-    comps = @comps 
+function data(model::CKSAFTModel, V, T, z)
+    _d = @f(d)
+    Σz = sum(z)
     m = model.params.segment.values
-    m̄ = sum(0.5*(m[i]+m[j])*z[i]*z[j] for i ∈ comps for j ∈ comps)/(Σz*Σz)
-    return m̄*(@f(a_hs) + @f(a_disp))
+    m̄ = zero(Σz + one(eltype(model)))
+    for i in @comps
+        mi,zi = m[i],z[i]
+        m̄ += mi*zi*zi
+        for j in 1:(i-1)
+            mj,zj = m[j],z[j]
+            mij = 0.5*(mi + mj)
+            m̄ += 2*mij*zi*zj
+        end
+    end
+    m̄ = m̄/Σz/Σz
+    ζi = @f(ζ0123,_d)
+    return _d, m̄, ζi, Σz
 end
 
-function a_hs(model::CKSAFTModel, V, T, z)
-    ζ0 = @f(ζ,0)
-    ζ1 = @f(ζ,1)
-    ζ2 = @f(ζ,2)
-    ζ3 = @f(ζ,3)
+function a_res(model::CKSAFTModel, V, T, z, _data = @f(data))
+    return @f(a_seg,_data) + @f(a_chain,_data) + @f(a_assoc,_data)
+end
+
+d(model::CKSAFTModel, V, T, z) = ck_diameter(model, T, z)
+
+function a_seg(model::CKSAFTModel, V, T, z,_data = @f(data))
+    _d, m̄, ζi, Σz = _data
+    return m̄*(@f(a_hs,_data) + @f(a_disp,_data))
+end
+
+function a_hs(model::CKSAFTModel, V, T, z,_data = @f(data))
+    _d, m̄, ζi, Σz = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
     return bmcs_hs(ζ0,ζ1,ζ2,ζ3)
 end
 
-function a_disp(model::CKSAFTModel, V, T, z)
+function a_disp(model::CKSAFTModel, V, T, z,_data = @f(data))
+    _d, m̄, ζi, Σz = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
     ϵ̄ = @f(ū)
-    η = @f(ζ,3)
+    η = ζ3
     τ = 0.74048
     D1 = CKSAFT_consts.D1
     D2 = CKSAFT_consts.D2
     D3 = CKSAFT_consts.D3
     D4 = CKSAFT_consts.D4
-    eT = (ϵ̄/T)
-    A1 = ∑(D1[j]*eT*(η/τ)^j for j ∈ 1:6)
-    A2 = ∑(D2[j]*eT^2*(η/τ)^j for j ∈ 1:9)
-    A3 = ∑(D3[j]*eT^3*(η/τ)^j for j ∈ 1:5)
-    A4 = ∑(D4[j]*eT^4*(η/τ)^j for j ∈ 1:4)
-    return A1+A2+A3+A4
+    ϵT = (ϵ̄/T)
+    ητ = η/τ
+    A1 = evalpoly(ητ,CKSAFT_consts.D1)
+    A0 = zero(A1)
+    A2 = evalpoly(ητ,CKSAFT_consts.D2)
+    A3 = evalpoly(ητ,CKSAFT_consts.D3)
+    A4 = evalpoly(ητ,CKSAFT_consts.D4)
+    return evalpoly(ϵT,(A0,A1,A2,A3,A4))
 end
 
-function d(model::CKSAFTModel, V, T,z, i)
-    ϵ = model.params.epsilon.values[i,i]
-    σ = model.params.sigma.values[i,i]
-    return σ * (1 - 0.12exp(-3ϵ/T))
-end
-
-function d(model::CKSAFTModel, V, T, z, i,j)
-    #return (d(model::CKSAFTModel, z, v, T, i)+d(model::CKSAFTModel, z, v, T, j))/2
-    return (@f(d,i) + @f(d,j))*0.5
-end
-
-function u(model::CKSAFTModel, V, T, z, i,j)
+function u(model::CKSAFTModel, V, T, z, i, j)
     ϵ0 = model.params.epsilon.values[i,j]
-    c1 = model.params.c.values[i]
-    c2 = model.params.c.values[j]
-    return ϵ0*sqrt((1+c1/T)*(1+c2/T))
+    c = ck_c(model)
+    ci,cj,Tinv = c[i],c[j],1/T
+    cTi,cTj = 1 + ci*Tinv,1 + cj*Tinv
+    if i == j
+        return ϵ0*cTi
+    else
+        return ϵ0*sqrt(cTi*cTj)
+    end
 end
 
-function ū(model::CKSAFTModel, V, T, z)
+ck_c(model::CKSAFTModel) = model.params.c.values
+
+function ū(model::CKSAFTModel, V, T, z,_data = @f(data))
+    _d, m̄, ζi, Σz = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
     Σz = ∑(z)
-    x = z.*(1/Σz)
-    it = @comps #only to stop vscode from recognizing this as an error
     m = model.params.segment.values
-    num = ∑(
-            x[i]*x[j]*m[i]*m[j]*@f(u,i,j)*@f(d,i,i)^3*@f(d,j,j)^3
-            for i ∈ it for j ∈ it)
-
-    denom = ∑(
-            x[i]*m[i]*@f(d,i,i)^3
-            for i ∈ it)
-    return num/denom^2
+    ϵ = model.params.epsilon.values
+    c = ck_c(model)
+    T⁻¹ = 1/T
+    num = zero(V+T+first(z)+one(eltype(model)))
+    denom = zero(V+T+first(z)+one(eltype(model)))
+    for i in @comps
+        ci,ϵii,mi,zi,di = c[i],ϵ[i,i],m[i],z[i],_d[i]
+        cTi = 1 + ci*T⁻¹
+        uii = ϵii*cTi
+        di3 = di*di*di
+        num += zi*zi*mi*mi*uii*di3*di3
+        denom += zi*mi*di3
+        for j in 1:(i-1)
+            cj,ϵij,mj,zj,dj = c[j],ϵ[i,j],m[j],z[j],_d[j]
+            cTj = 1 + cj*T⁻¹
+            cTij = sqrt(cTi*cTj)
+            uij = ϵij*cTij
+            dj3 = dj*dj*dj
+            num += 2*zi*zj*mi*mj*uij*di3*dj3
+        end
+    end
+    return num/denom/denom
 end
 
-function ζ(model::CKSAFTModel, V, T, z, n)
+function a_chain(model::CKSAFTModel, V, T, z, _data = @f(data))
+    _d, m̄, ζi, Σz = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
     m = model.params.segment.values
-    return N_A*π/6/V * ∑(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
+    return ∑(z[i]*(1-m[i])*log(@f(g_hsij,i,i,_data)) for i ∈ @comps)/Σz
 end
 
-function a_chain(model::CKSAFTModel, V, T, z)
-    m = model.params.segment.values
-    return ∑(z[i]*(1-m[i])*log(@f(g_hsij,i,i)) for i ∈ @comps)/∑(z)
-end
-
-function g_hsij(model::CKSAFTModel, V, T, z, i, j)
-    di = @f(d,i)
-    dj = @f(d,j)
-    ζ2 = @f(ζ,2)
-    ζ3 = @f(ζ,3)
+function g_hsij(model::CKSAFTModel, V, T, z, i, j,_data = @f(data))
+    _d, m̄, ζi, Σz = _data
+    ζ0,ζ1,ζ2,ζ3 = ζi
+    di = _d[i]
+    dj = _d[j]
     return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
 end
 
-function Δ(model::CKSAFTModel, V, T, z, i, j, a, b)
+function Δ(model::CKSAFTModel, V, T, z, i, j, a, b,_data = @f(data))
     ϵ_associjab = model.params.epsilon_assoc.values[i,j][a,b]
     κijab = model.params.bondvol.values[i,j][a,b]
     σij = model.params.sigma.values[i,j]
-    gij = @f(g_hsij,i,j)
-    return gij*σij^3*(exp(ϵ_associjab/T)-1)*κijab
+    gij = @f(g_hsij,i,j,_data)
+    return gij*σij^3*expm1(ϵ_associjab/T)*κijab
 end
 
 const CKSAFT_consts =(
-    D1 = [-8.8043,4.164627,-48.203555,140.4362,-195.23339,113.515],
-    D2 = [2.9396,-6.0865383,40.137956,-76.230797,-133.70055,860.25349,-1535.3224,1221.4261,-409.10539],
-    D3 = [-2.8225,4.7600148,11.257177,-66.382743,69.248785],
-    D4 = [0.34,-3.1875014,12.231796,-12.110681],
+    D1 = [0.0,-8.8043,4.164627,-48.203555,140.4362,-195.23339,113.515],
+    D2 = [0.0,2.9396,-6.0865383,40.137956,-76.230797,-133.70055,860.25349,-1535.3224,1221.4261,-409.10539],
+    D3 = [0.0,-2.8225,4.7600148,11.257177,-66.382743,69.248785],
+    D4 = [0.0,0.34,-3.1875014,12.231796,-12.110681],
     D =
     [0.9105631445 -0.3084016918 -0.0906148351;
     0.6361281449 0.1860531159 0.4527842806;

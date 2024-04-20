@@ -118,9 +118,16 @@ end
         @test Clapeyron.@f(f_eos,pi) == 2+pi
         @test Clapeyron.@nan(Base.log(-1),3) == 3
         @test_throws MethodError Clapeyron.@nan(Base.log("s"),3)
+
+        #problems with registermodel
+        Clapeyron.@registermodel PCSAFT161
+        @test hasmethod(Base.length,Tuple{PCSAFT161})
+        @test hasmethod(Base.show,Tuple{IO,PCSAFT161})
+        @test hasmethod(Base.show,Tuple{IO,MIME"text/plain",PCSAFT161})
+        @test hasmethod(Clapeyron.molecular_weight,Tuple{PCSAFT161,Array{Float64}})
     end
 
-    using Clapeyron: has_sites,has_groups
+    
     @testset "has_sites-has_groups" begin
         @test has_sites(typeof(gc3)) == false
         @test has_sites(typeof(model2)) == has_sites(typeof(model4)) == has_sites(typeof(gc2)) == true

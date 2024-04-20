@@ -3,8 +3,8 @@ import EoSSuperancillaries
 import Clapeyron
 const C = Clapeyron
 const ES = EoSSuperancillaries
-#(:PCSAFT,:PPCSAFT,:QPPCSAFT),
-const SuperancPCSAFT = Union{C.PCSAFT,C.PPCSAFT,C.QPPCSAFT,C.pharmaPCSAFT}
+#(:PCSAFT,:PCPSAFT,:QPCPSAFT),
+const SuperancPCSAFT = Union{C.PCSAFT,C.PCPSAFT,C.QPCPSAFT,C.pharmaPCSAFT}
 
 function can_superanc(model::SuperancPCSAFT)
     val = true
@@ -78,7 +78,7 @@ function C.crit_pure(model::SuperancPCSAFT)
         pc = C.pressure(model,vc,Tc)
         return Tc,pc,vc
     else
-        return ES.crit_pure(model,C.x0_crit_pure_default(model))
+        return C.crit_pure(model,x0_crit_pure_default(model))
     end
 end
 

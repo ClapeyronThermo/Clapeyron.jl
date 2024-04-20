@@ -132,7 +132,7 @@ function CPA(components;
         AssocParam("bondvol",_components)
     end
 
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options)
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options,sites)
     packagedparams = CPAParam(Mw, Tc, a, b, c1, epsilon_assoc, bondvol)
     
     #init cubic model
@@ -142,7 +142,7 @@ function CPA(components;
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     cubicparams = ABCubicParam(a, b, params["Tc"],Pc,Mw) #PR, RK, vdW
     init_cubicmodel = cubicmodel(_components,init_alpha,init_mixing,init_translation,cubicparams,init_idealmodel,String[])
-
+    
     references = ["10.1021/ie051305v"]
 
     model = CPA(_components, radial_dist, init_cubicmodel, packagedparams, sites, init_idealmodel, assoc_options, references)
@@ -159,7 +159,7 @@ function recombine_impl!(model::CPAModel)
 
     epsilon_assoc = model.params.epsilon_assoc
     bondvol = model.params.bondvol
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options) #combining rules for association
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,cbrt.(b),assoc_options,model.sites) #combining rules for association
 
     model.params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
     model.params.bondvol.values.values[:] = bondvol.values.values
@@ -168,6 +168,7 @@ end
 
 lb_volume(model::CPAModel,z = SA[1.0]) = lb_volume(model.cubicmodel,z)
 T_scale(model::CPAModel,z=SA[1.0]) = T_scale(model.cubicmodel,z)
+
 function p_scale(model::CPAModel,z=SA[1.0])
     #does not depend on Pc, so it can be made optional on CPA input
     b = model.cubicmodel.params.b.values
@@ -191,6 +192,44 @@ end
 function x0_crit_pure(model::CPAModel)
     lb_v = lb_volume(model)
     return (1.0, log10(lb_v/0.3))
+end
+
+function crit_pure(model::CPAModel)
+    if assoc_pair_length(model) == 0 && !model.cubicmodel.params.Pc.ismissingvalues[1]
+        return crit_pure(model.cubicmodel)
+    else
+        return crit_pure(model,x0_crit_pure(model))
+    end
+end
+
+function x0_sat_pure(model::CPAModel,T)
+    #use the cubic initial guess if we don't have association.
+    n = assoc_pair_length(model)
+    n == 0 && return x0_sat_pure(model.cubicmodel,T)
+    return x0_sat_pure_virial(model,T)
+end
+
+#=
+if we don't have association, reduce to the inner cubic model.
+=#
+function volume_impl(model::CPAModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0=nothing)
+    n = assoc_pair_length(model)
+    if n == 0
+        return volume_impl(model.cubicmodel,p,T,z,phase,threaded,vol0)
+    else
+        return _volume_impl(model,p,T,z,phase,threaded,vol0)
+    end
+end
+
+#approximating the gas phase as the pure cubic.
+function x0_volume_gas(model::CPAModel, p, T, z = SA[1.0])
+    return volume(model.cubicmodel,p,T,z,phase = :v)
+end
+
+function x0_volume_liquid(model::CPAModel,p, T, z = SA[1.0])
+    n = assoc_pair_length(model)
+    n == 0 && return volume(model.cubicmodel,p,T,z,phase = :l)
+    return 1.1*lb_volume(model,z)
 end
 
 data(model::CPAModel, V, T, z) = data(model.cubicmodel,V,T,z)

@@ -77,7 +77,7 @@ function softSAFT2016(components;
     epsilon = epsilon_LorentzBerthelot(params["epsilon"], k)
     epsilon_assoc = params["epsilon_assoc"]
     bondvol = params["bondvol"]
-    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options) #combining rules for association
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options,sites) #combining rules for association
     init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     packagedparams = softSAFT2016Param(params["Mw"],segment, sigma, epsilon, epsilon_assoc, bondvol)
     references = ["10.1080/002689797170707","10.1063/1.4945000"]

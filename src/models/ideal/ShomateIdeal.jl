@@ -56,7 +56,7 @@ idealmodel = ShomateIdeal(["water","butane"];
 ShomateIdeal
 export ShomateIdeal
 
-default_locations(::Type{ShomateIdeal}) = ["ideal/ReidIdeal.csv","ideal/ShomateIdeal.csv"]
+default_locations(::Type{ShomateIdeal}) = ["ideal/ShomateIdeal.csv"]
 default_ignore_missing_singleparams(::Type{ShomateIdeal}) = ["e"]
 function transform_params(::Type{ShomateIdeal},params,components)
     a,b,c,d = params["a"],params["b"],params["c"],params["d"]

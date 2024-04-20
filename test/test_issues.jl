@@ -92,14 +92,6 @@
         @test PCSAFT_testgc <: EoSModel #@newmodelgc
     end
 
-    @testset "#161" begin
-        #problems with registermodel
-        Clapeyron.@registermodel PCSAFT161
-        @test hasmethod(Base.length,Tuple{PCSAFT161})
-        @test hasmethod(Base.show,Tuple{IO,PCSAFT161})
-        @test hasmethod(Base.show,Tuple{IO,MIME"text/plain",PCSAFT161})
-        @test hasmethod(Clapeyron.molecular_weight,Tuple{PCSAFT161,Array{Float64}})
-    end
 
     @testset "#162" begin
         #a longstanding problem, init_model didn't worked with functions.
@@ -170,7 +162,7 @@
         Polar PCSAFT
         it uses `a` and `b` as site names
         =#
-        model = PPCSAFT("water")
+        model = PCPSAFT("water")
         @test model isa EoSModel
         @test "a" in model.sites.flattenedsites
         @test "b" in model.sites.flattenedsites

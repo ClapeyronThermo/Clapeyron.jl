@@ -66,7 +66,7 @@ function make_header(_database,name = nothing,grouptype = :unknown)
     print(io,"[csvtype = $csvtype")
     if grouptype == :unknown
         opts = (;csvtype)
-        print(io,"; grouptype = $grouptype")
+        print(io,", grouptype = $grouptype")
     else
         opts = (;csvtype,grouptype)
     end
