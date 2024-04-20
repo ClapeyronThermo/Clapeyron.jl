@@ -2058,3 +2058,7 @@ r1123~|~trifluoroethene~|~trifluoroethylene,359-11-5,331.73,4.5488e6,6.147e-6,0.
 r1216~|~perfluoropropene~|~hexafluoropropene~|~perfluoropropylene~|~hexafluoropropylene,116-15-4,358.9,3.1495e6,0.00025714872278,0.333
 1-pentylamine~|~1-pentanamine,110-58-7 ,557.1,3.887113811e6,,0.3983
 1-chlorohexane,544-10-5,599.0,3.289359893e6,,0.3746
+sodium,,3300.0,1.1e7,,-0.204
+chloride,,3000.0,1.1e7,,-0.204
+potassium,,2223.0,1.6e7,,-0.2028
+calcium,,3267.0,1.53e7,,0.1167
