@@ -3,7 +3,7 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew, vcache;
                   F=nothing, G=nothing, H=nothing)
     # Function that computes the TPD function, its gradient and its hessian
     nc = length(model)
-    w = α.^2 /4.
+    w = α.^2 /4.0
     #sqrt(w) = 0.5*α
     volw0 = vcache[]
     if H !== nothing
@@ -20,12 +20,12 @@ function tpd_obj!(model::EoSModel, p, T, di, α, phasew, vcache;
                 We see that ln Wi + lnφ(W) − di will be zero at the solution of the tangent plane minimisation.
                 It can therefore be removed from the second derivative, without affecting the convergence properties.
                 =#
-                
+
                 H[i,j] += δij + 0.25*αi*αj*∂lnϕ∂nw[i,j] #+ 0.5*αi*dtpd[i]
             end
         end
     else
-        lnϕw, volw = lnϕ(model, p, T, w; phase=phasew, vol0=volw0)    
+        lnϕw, volw = lnϕ(model, p, T, w; phase=phasew, vol0=volw0)
     end
     dtpd = log.(w) + lnϕw - di
     vcache[] = volw
@@ -96,7 +96,7 @@ function all_tpd(model::EoSModel, p, T, z,phasepairs = ((:liquid,:vapour),(:liqu
     model, z_notzero = index_reduction(model_full,z_full)
     z = z_full[z_notzero]
     nc = length(model_full)
-    
+
     _1 = one(p+T+first(z))
     nc = length(model)
     Id = fill(zero(eltype(z)),nc,nc)
@@ -168,7 +168,7 @@ function all_tpd(model::EoSModel, p, T, z,phasepairs = ((:liquid,:vapour),(:liqu
     w_array = w_array[index]
     tpd_array = tpd_array[index]
     phasez_array = phasez_array[index]
-    phasew_array = phasew_array[index]    
+    phasew_array = phasew_array[index]
     return w_array, tpd_array, phasez_array, phasew_array
 end
 
@@ -189,7 +189,7 @@ If the vectors are empty, then the procedure couldn't find a negative `tpd`. Tha
 """
 tpd(model,p,T,z;verbose = false) = all_tpd(model,p,T,z;verbose = verbose)
 
-function lle_init(model::EoSModel, p, T, z;verbose = false) 
+function lle_init(model::EoSModel, p, T, z;verbose = false)
     w_array, tpd_array, _, _ = all_tpd(model,p,T,z,((:liquid,:liquid),);verbose = verbose)
     return w_array, tpd_array
 end
@@ -245,7 +245,7 @@ function K0_lle_init(model::EoSModel, p, T, z)
     (val, idx) = findmin(err)
 
     K0 = γ[idx[1],:]./γ[idx[2],:]
-    
+
     #=
     #extra step, reduce magnitudes if we aren't in a single phase
     g0 = dot(z, K0) - 1.
@@ -259,7 +259,7 @@ function K0_lle_init(model::EoSModel, p, T, z)
         g1i = z ./ K0
 
     else #bail out here?
-    
+
     end =#
     return K0
 end
@@ -274,7 +274,7 @@ function K0_lle_init(model::EoSModel, p, T, z)
     elseif length(w) == 1
         x1 = w[1]
         x2 = Fractions.neg(x1)
-        return x1 ./ x2   
+        return x1 ./ x2
     else
         _0 = zero(eltype(w))
         return fill(_0/_0,length(w))

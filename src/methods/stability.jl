@@ -11,15 +11,15 @@ Checks:
 function isstable(model,V,T,z)
     stable = true
     if !VT_mechanical_stability(model,V,T,z)
-        @warn "StabilityWarning: Phase is mechanically unstable"
+        #@warn "StabilityWarning: Phase is mechanically unstable"
         stable = false
     end
     if !VT_diffusive_stability(model,V,T,z)
-        @warn "StabilityWarning: Phase is diffusively unstable"
+        #@warn "StabilityWarning: Phase is diffusively unstable"
         stable = false
     end
-    if !VT_chemical_stability(model,V,T,z)
-        @warn "StabilityWarning: Phase is chemically unstable"
+    if !chemical_stability(model,V,T,z)
+        #@warn "StabilityWarning: Phase is chemically unstable"
         stable = false
     end
     return stable
@@ -45,8 +45,7 @@ function VT_diffusive_stability(model,V,T,z)
     isone(length(model)) && return true
     A(x) = eos(model,V,T,x)
     Hf = ForwardDiff.hessian(A,z)
-    (Λ,U)=eigen(Hf)
-    λ = minimum(Λ)
+    λ = eigmin(Hf) # calculating just minimum eigenvalue more efficient than calculating all & finding min
     return λ > 0
 end
 
@@ -122,12 +121,73 @@ function VT_chemical_stability(model::EoSModel,V,T,z)
     end
 end
 
+"""
+    chemical_stability_check(model,p,T,z)::Bool
+
+Performs a chemical stability check using the tangent plane distance criterion, starting with the wilson correlation for K-values.
+"""
+function chemical_stability(model, V, T, z)
+    # in case of only pure components.
+    if isone(length(z))
+        return pure_chemical_instability(model, V / sum(z), T)
+    end
+
+    # For mixtures
+    p = pressure(model, V, T, z)
+    _, tm_min_vec = chemical_stability_analysis(model, p, T, z; converge_min=false)
+
+    if minimum(tm_min_vec) .< 0.0
+        stable = false
+    else
+        stable = true
+    end
+
+    return stable
+end
+
+function chemical_stability_analysis(model, p, T, z; converge_min=true, abstol=1e-3)
+    Kʷ = Clapeyron.wilson_k_values(model, p, T)
+    z = z ./ sum(z)
+    # Generate initial guesses
+    w_vap = normalize(z ./ Kʷ, 1) # vapour-like root
+    w_liq = normalize(Kʷ .* z, 1) # liquid-like root
+    w0_vec = [w_liq, w_vap]
+
+    # Objective function - Unconstrained formulation in mole numbers
+    _φ(x) = fugacity_coefficient(model, p, T, x)
+    _d(x) = log.(x) .+ log.(_φ(x))
+    d_z = _d(z)
+
+    function f(logW)
+        W = exp.(logW)
+        φ = fugacity_coefficient(model, p, T, W)
+        φ .= log.(W) .+ log.(φ)
+        d_W = φ
+        tm = 1.0 + @sum(W[i]*(d_W[i] - d_z[i] - 1.0))
+        return tm
+    end
+    #=
+    if converge_min
+        f_callback = (_) -> false
+    else
+        f_callback = (x) -> f(x) < -eps()
+    end =#
+
+    #options = Optim.Options(callback=f_callback, g_tol=abstol)
+    sol(w0) = Solvers.optimize(f, log.(w0))#, options)
+
+    sol_vec = sol.(w0_vec)
+    tm_min_vec = [s.minimum for s in sol_vec]
+    tm_xmin_vec = normalize.([exp.(s.minimizer) for s in sol_vec], 1)
+    return tm_xmin_vec, tm_min_vec
+end
+
 function pure_chemical_instability(model,V,T)
-    Tc,Pc,Vc = crit_pure(model)
+    Tc,_,_ = crit_pure(model)
     T >= Tc && return true
     psat,vl,vv = saturation_pressure(model,T)
     if isnan(psat)
-        @error "could not determine chemical instability. saturation solver failed."
+        #@error "could not determine chemical instability. saturation solver failed."
         return false
     end
     if (vl < V < vv)
