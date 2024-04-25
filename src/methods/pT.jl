@@ -412,13 +412,7 @@ end
 
 function fugacity_coefficient!(φ,model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
     V = volume(model, p, T, z; phase, threaded, vol0)
-    φ = VT_chemical_potential_res!(φ,model,V,T,z)
-    R̄ = Rgas(model)
-    Z = p*V/R̄/T/sum(z)
-    φ ./= (R̄*T)
-    φ .= exp.(φ)
-    φ ./= Z
-    return φ
+    VT_fugacity_coefficient!(φ,model,V,T,z,p)
 end
 
 function activity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)

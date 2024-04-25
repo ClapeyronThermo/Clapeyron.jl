@@ -268,6 +268,10 @@ function VT_partial_property(model::EoSModel,V,T,z,property::ℜ) where {ℜ}
 end
 
 function VT_partial_property!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F,ℜ}
+    if isnan(V) || isnan(T) || any(isnan,z)
+        fx .= NaN
+        return fx
+    end
     fun(x) = property(model,V,T,x)
     return Solvers.gradient!(fx,fun,z)::F
 end
@@ -301,6 +305,20 @@ function _VT_fugacity_coefficient(model::EoSModel,V,T,z::SingleComp)
     Z = p*V/R̄/T/sum(z)
     ϕ = exp(μ_res/R̄/T)/Z
     return SVector(ϕ)
+end
+
+function VT_fugacity_coefficient!(φ,model::EoSModel,V,T,z=SA[1.],p = pressure(model,V,T,z))
+    if isnan(V)
+        φ .= NaN
+        return φ
+    end
+    φ = VT_chemical_potential_res!(φ,model,V,T,z)
+    R̄ = Rgas(model)
+    Z = p*V/R̄/T/sum(z)
+    φ ./= (R̄*T)
+    φ .= exp.(φ)
+    φ ./= Z
+    return φ
 end
 
 export second_virial_coefficient,pressure,cross_second_virial,equivol_cross_second_virial
