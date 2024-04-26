@@ -8,6 +8,14 @@ struct AndersonFixPoint{T<:Real} <: AbstractFixPoint
     normorder::Float64
 end
 
+"""
+    AndersonFixPoint(;picard_damping=1e-2,damping=1e-2,memory=50,delay=100,drop_tol=Inf,lognorm = true,normorder = Inf)
+
+Anderson Fixed point method with picard initialization.
+
+
+
+"""
 AndersonFixPoint(;picard_damping=1e-2,damping=1e-2,memory=50,delay=100,drop_tol=Inf,lognorm = true,normorder = Inf) = AndersonFixPoint(delay,memory,damping,picard_damping,drop_tol,lognorm,normorder)
 
 function promote_method(method::AndersonFixPoint,T)
@@ -45,7 +53,7 @@ function _fixpoint(f::F,
     Fx[:, 1] = f(x0)
     for i in 1:picard_iter
         X1 = @view(X[:, 1])
-        x .= X1 .+ picard_damping .* (f(X1)) .- @view(X1)
+        x .= X1 .+ picard_damping .* (f(X1)) .-  X1
         fval = f(x)
         X[:,2:min(i+1, m)] = @view X[:,1:min(i, m-1)]
         Fx[:,2:min(i+1, m)] = @view Fx[:,1:min(i, m-1)]
@@ -130,6 +138,6 @@ function _fixpoint(f::F,
         end
         
     end
-    x .= NaN
+    return_last || (x .= NaN)
     return x
 end
