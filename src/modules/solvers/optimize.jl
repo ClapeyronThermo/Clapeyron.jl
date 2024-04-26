@@ -77,7 +77,7 @@ function optimize(f,x0,method=LineSearch(Newton()),options=OptimizationOptions()
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
-function optimize(optprob::OptimizationProblem,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
+function optimize(optprob::OptimizationProblem,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 #build scalar objective -> Optimization Problem
