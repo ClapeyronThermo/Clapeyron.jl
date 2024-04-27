@@ -128,12 +128,6 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0
     return volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
-function _v_stable(model,V,T,z,phase)
-    if phase != :stable
-        return true
-    end
-    return isstable(model,V,T,z)
-end
 
 fluid_model(model) = model
 solid_model(model) = model
@@ -165,14 +159,13 @@ function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=tru
         end
     end
 
-    if phase != :unknown
+    if phase != :unknown && phase != :stable
         V0 = x0_volume(model,p,T,z,phase=phase)
         if is_solid(phase)
             V = _volume_compress(solid,p,T,z,V0)
         else
             V = _volume_compress(fluid,p,T,z,V0)
         end
-        #isstable(model,V,T,z,phase) the user just wants that phase
         return V
     end
     Vg0 = x0_volume(fluid,p,T,z,phase=:v)
@@ -209,39 +202,36 @@ function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=tru
         volumes = (Vg,Vl,Vs)
     end
     
-    function gibbs(m,fV)
-        isnan(fV) && return one(fV)/zero(fV)
-        _df,_f = ∂f(m,fV,T,z)
-        dV,_ = _df
-        return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
+    idx,v,g = volume_label((fluid,fluid,solid),p,T,z,volumes)
+    if phase == :stable
+        !VT_isstable(model,v,T,z,false) && return nan
     end
-    
-    valid = 3 - sum(isnan.(volumes))
+    return v
+end
 
-    if valid == 0 #no possible volumes
-        return nan
-    elseif valid == 1 #only one possible volume
-        idx = findfirst(!isnan,volumes)::Int
-        v = volumes[idx]
-        if idx == 3
-            _v_stable(solid,v,T,z,phase)
-        else
-            _v_stable(fluid,v,T,z,phase)
-        end
-        return v        
-    else
-        v1,v2,v3 = volumes
-        g1,g2,g3 = gibbs(fluid,v1),gibbs(fluid,v2),gibbs(solid,v3)
-        g = (g1,g2,g3)
-        _,idx = findmin(g)
-        v = volumes[idx]
-        if idx == 3
-            _v_stable(solid,v,T,z,phase)
-        else
-            _v_stable(fluid,v,T,z,phase)
-        end
-        return v
+function volume_label(models::F,p,T,z,vols) where F
+    function gibbs(model,fV)
+        isnan(fV) && return one(fV)/zero(fV)
+        f(V) = eos(model,V,T,z)
+        _f,_dV = Solvers.f∂f(f,fV)
+        return ifelse(abs((p+_dV)/p) > 0.03,one(fV)/zero(fV),_f + p*fV)
     end
+
+    idx = 0
+    V = p
+    model = models[1]
+    _0 = zero(@f(Base.promote_eltype))
+    g = one(_0)/_0
+    v = _0/_0
+    for (i,vi) in pairs(vols)
+        gi = gibbs(models[i],vi)
+        if gi < g
+            g = gi
+            idx = i
+            v = vi
+        end
+    end
+    return idx,v,g
 end
 
 #=
