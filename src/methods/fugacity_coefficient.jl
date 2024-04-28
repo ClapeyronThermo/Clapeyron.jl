@@ -1,20 +1,20 @@
 # Function to compute fugacity coefficient
-function lnϕ(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing)
+function lnϕ(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing,threaded = true)
     RT = R̄*T
     # vol0 === nothing && (vol0 = x0_volume(model, p, T, z, phase = phase))
     # vol = _volume_compress(model,p,T,z,vol0)
-    vol = volume(model, p, T, z, phase=phase, vol0=vol0)
+    vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
     μ_res = VT_chemical_potential_res(model, vol, T, z)
     Z = p*vol/RT/sum(z)
     lnϕ = μ_res/RT .- log(Z)
     return lnϕ, vol
 end
 
-function lnϕ!(lnϕ, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing)
+function lnϕ!(lnϕ, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothing, threaded = true)
     RT = R̄*T
     # vol0 === nothing && (vol0 = x0_volume(model, p, T, z, phase = phase))
     # vol = _volume_compress(model,p,T,z,vol0)
-    vol = volume(model, p, T, z, phase=phase, vol0=vol0)
+    vol = volume(model, p, T, z, phase=phase, vol0=vol0, threaded=threaded)
     μ_res = VT_chemical_potential_res!(lnϕ,model, vol, T, z)
     Z = p*vol/RT/sum(z)
     lnϕ .= μ_res ./ RT .- log(Z)
