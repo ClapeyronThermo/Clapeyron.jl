@@ -89,7 +89,7 @@ function tpd_obj(model, p, T, di, isliquid, cache = tpd_neq_cache(model,p,T,di,d
             for j in 1:nc
                 xj = sqrt(w[j])
                 δij = Int(i == j)
-                d2f[i,j] = δij + xi*xj*∂lnϕ∂nw[i,j]# + 0.5*αi*dtpd[i]
+                d2f[i,j] = δij + xi*xj*∂lnϕ∂nw[i,j]
             end
         end
         dtpd .= log.(w) .+ lnϕw .- di
@@ -141,7 +141,7 @@ it tries both liquid and vapour phase. returns the resulting compositions `wl` a
 """
 function tpd_solver(model,p,T,z,K0,
     fz = mixture_fugacity(model,p,T,z),
-    cache = tpd_cache(model,p,T,z,K0),
+    cache = tpd_cache(model,p,T,z),
     ss_solver = TPDKSolver(),
     isliquidz = true;
     break_first = false,
@@ -156,16 +156,17 @@ function tpd_solver(model,p,T,z,K0,
         wl,wv = ss_cache[4],ss_cache[5]
         _0 = zero(eltype(fz))
         nan = _0/_0
-        return wl,wv,nan,nan
+        return wl,wv,nan,nan,nan,nan
     end
-    
+
     #do initial sucessive substitutions
     stable_l, trivial_l, wl, vl = tpd_ss!(model,p,T,z,K0,true,ss_solver,ss_cache;tol_trivial)
 
     if isliquidz && vle #we suppose that vapour-vapour equilibria dont exist.
         stable_v, trivial_v, wv, vv = tpd_ss!(model,p,T,z,K0,false,ss_solver,ss_cache;tol_trivial)
     else
-        stable_v, trivial_v, wv, vv = true,true,ss_cache[5], zero(wv)/zero(wv)
+        stable_v, trivial_v, wv = true,true,ss_cache[5]
+        vv = zero(eltype(wv))/zero(eltype(wv))
     end
 
     tpd_l = one(eltype(wl))*Inf
@@ -194,59 +195,69 @@ function tpd_solver(model,p,T,z,K0,
     if !stable_l
         lnϕwl,vl = lnϕ!(fxy,model,p,T,wl,phase = :l)
         tpd_l = @sum(wl[i]*(lnϕwl[i] + log(wl[i]) - di[i])) - sum(wl) + 1
-        tpd_l < 0 && break_first && return wl,wv,tpd_l,tpd_v
+        tpd_l < 0 && break_first && return wl,wv,tpd_l,tpd_v,vl,vv
     end
 
     if !stable_v
         lnϕwv,vv = lnϕ!(fxy,model,p,T,wv,phase = :v)
         tpd_v = @sum(wv[i]*(lnϕwv[i] + log(wv[i]) - di[i])) - sum(wv) + 1
-        tpd_v < 0 && break_first && return wl,wv,tpd_l,tpd_v
+        tpd_v < 0 && break_first && return wl,wv,tpd_l,tpd_v,vl,vv
     end
 
+    opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-8)
+
+    newton_cache[2][] = vl
     if keep_going_l
         α0l = 2 .* sqrt.(wl)
-        newton_cache[2][] = vl
         prob_l = tpd_obj(model, p, T, di, true, newton_cache, break_first)
-        res_l = Solvers.optimize(prob_l, α0l, LineSearch(Newton()))
+        res_l = Solvers.optimize(prob_l, α0l, TrustRegion(Newton(),Dogleg()), opt_options)
         αl = Solvers.x_sol(res_l)
         wl .= αl .* αl .* 0.25
         wl ./= sum(wl)
         tpd_l = Solvers.x_minimum(res_l)
-        tpd_l < 0 && break_first && return wl,wv,tpd_l,tpd_v
-        #newton iterations here
+        vl = newton_cache[2][]
+        tpd_l < 0 && break_first && return wl,wv,tpd_l,tpd_v,vl,vv
     end
+    
+   
+    #success,tpd_l_proposed = assert_correct_volume(fxy,model,p,T,wl,vl,:l,di)
+    #!success && (tpd_l = tpd_l_proposed)
 
+    newton_cache[2][] = vv
     if keep_going_v
         α0v = 2 .* sqrt.(wv)
         newton_cache[2][] = vv
         prob_v = tpd_obj(model, p, T, di, false, newton_cache, break_first)
-        res_v = Solvers.optimize(prob_v, α0v, LineSearch(Newton()))
+        res_v = Solvers.optimize(prob_v, α0v, TrustRegion(Newton(),Dogleg()), opt_options)
         αv = Solvers.x_sol(res_v)
         wv .= αv .* αv .* 0.25
         wv ./= sum(wv)
+        vv = newton_cache[2][]
         tpd_v = Solvers.x_minimum(res_v)
     end
-
-    return wl,wv,tpd_l,tpd_v
+    
+    #success,tpd_v_proposed = assert_correct_volume(fxy,model,p,T,wv,vv,:v,di)
+    #!success && (tpd_v = tpd_v_proposed)
+    return wl,wv,tpd_l,tpd_v,vl,vv
 end
 
-function tpd_cache(model,p,T,z,K0)
-    ss_cache = tpd_ss_cache(model,p,T,z,K0)
-    newton_cache = tpd_neq_cache(model,p,T,z,K0)
+function tpd_cache(model,p,T,z)
+    ss_cache = tpd_ss_cache(model,p,T,z)
+    newton_cache = tpd_neq_cache(model,p,T,z)
     return ss_cache,newton_cache
 end
 
-function tpd_ss_cache(model,p,T,z,K0)
+function tpd_ss_cache(model,p,T,z)
     V = p
-    K0 = similar(K0,@f(Base.promote_eltype))
+    K0 = similar(z,@f(Base.promote_eltype))
     fz,fxy = similar(K0),similar(K0)
     wl,wv = similar(K0),similar(K0)
     ss_cache = (K0,fz,fxy,wl,wv)
 end
 
-function tpd_neq_cache(model,p,T,z,K0)
+function tpd_neq_cache(model,p,T,z)
     V = p
-    w = similar(K0,@f(Base.promote_eltype))
+    w = similar(z,@f(Base.promote_eltype))
     w,dtpd,lnϕw = similar(w),similar(w),similar(w)
     vcache = Base.RefValue{eltype(w)}(NaN)
     Hϕ = ∂lnϕ_cache(model, p, T, z, Val{false}())
@@ -261,7 +272,7 @@ end
 #tpd K-value solver
 #a port from MultiComponentFlash.jl
 function _tpd_ss!(model,p,T,z,K0,solver::TPDKSolver,is_liquid,cache,tol_equil, tol_trivial,maxiter)
-    
+
     #phase of the trial composition
     phase = is_liquid ? :l : :v
 
@@ -328,10 +339,11 @@ function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,is_liquid,cache,tol_equil
     w .= w0
     di .= log.(fz ./ p)
     v = zero(eltype(w))/zero(eltype(w))
+    S = zero(eltype(w))
     while !done
         iter += 1
         lnϕw, v = lnϕ!(lnϕw,model, p, T, w; phase=phase, vol0=v)
-        S = zero(eltype(z))
+        S = zero(eltype(w))
         for i in eachindex(w)
             wi = exp(di[i]-lnϕw[i])
             w[i] = wi
@@ -347,14 +359,14 @@ function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,is_liquid,cache,tol_equil
             R = is_liquid ? sfw/fz[i] : fz[i]/sfw
             R_norm += (R-1)^2
             K_norm += log(wi/z[i])^2
-            tpd += wi*(log(wi) + lnϕwi - di[i] - 1) 
+            tpd += wi*(log(wi) + lnϕwi - di[i] - 1)
         end
         # Two convergence criteria:
         # - Approaching trivial solution (K-values are all 1)
         # - Equilibrium for a small amount of the "other" phase,
         #   the single-phase conditions are not stable.
         trivial = K_norm < tol_trivial || !isfinite(R_norm)
-        converged = R_norm < tol_equil || tpd < 0
+        converged = R_norm < tol_equil #|| tpd < 0
 
         # Termination of loop
         ok = trivial || converged
@@ -381,9 +393,10 @@ It iterates over each two-phase combination, starting from pure trial compositio
 If the vectors are empty, then the procedure couldn't find a negative `tpd`. That is an indication that the phase is (almost) surely stable.
 
 """
-function tpd(model,p,T,z;break_first = false,lle = false,tol_trivial = 1e-5)
+function tpd(model,p,T,z,cache = tpd_cache(model,p,T,z);break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default)
+    check_arraysize(model,z)
     model_reduced,idx_reduced = index_reduction(model,z)
-    result = _tpd(model,p,T,z,break_first,lle,tol_trivial)
+    result = _tpd(model,p,T,z,cache,break_first,lle,tol_trivial,strategy)
     values,comps,phase_z,phase_w = result
     idx_by_tpd = sortperm(values)
     for i in idx_by_tpd
@@ -393,12 +406,17 @@ function tpd(model,p,T,z;break_first = false,lle = false,tol_trivial = 1e-5)
     #do index expansion and sorting here
 end
 
-function _tpd(model,p,T,z,break_first = false,lle = false,tol_trivial = 1e-5)
+function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default)
     #step 0: initialize values
-    K = tpd_K0(model,p,T) #normally wilson
-    cache = tpd_cache(model,p,T,z,K)
+    
+    if strategy == :default || strategy == :wilson
+        K = tpd_K0(model,p,T) #normally wilson
+    else
+        K = zeros(Base.promote_eltype(model,p,T,z),length(z))
+    end
     vl = volume(model,p,T,z,phase = :l)
     vv = volume(model,p,T,z,phase = :v)
+    cond = (model,p,T,z)
     if lle
         v = vl
         if vl ≈ vv
@@ -416,13 +434,13 @@ function _tpd(model,p,T,z,break_first = false,lle = false,tol_trivial = 1e-5)
             isliquidz = true
         elseif idx == 2 #v = vv
             isliquidz = false
-        else 
+        else
             # this should not be reachable. the only case is when v = NaN, in that case
             #we catch that later.
             isliquidz = false
         end
     end
-
+    
     fz = VT_mixture_fugacity(model,v,T,z,p)
     vle = !lle
     values = zeros(eltype(fz),0)
@@ -431,50 +449,45 @@ function _tpd(model,p,T,z,break_first = false,lle = false,tol_trivial = 1e-5)
     phase_w = Symbol[]
     result = values,comps,phase_z,phase_w
     isnan(v) && return result
-    #no lle possible,as the model cannot be in liquid phase
+
+    #we asked for lle, but the input phase itself is a vapour.
     lle && !isliquidz && return result
-
-    #step 1: wilson initial values  (and the inverse)
-    w_l,w_v,tpd_l,tpd_v = tpd_solver(model,p,T,z,K,fz,cache,TPDKSolver(),isliquidz;break_first,lle,tol_trivial)
-    add_to_tpd!(result,z,w_l,w_v,tpd_l,tpd_v,isliquidz,tol_trivial)
-    length(values) >= 1 && break_first && return result
-    
-    K .= 1 ./ K
-    w_l,w_v,tpd_l,tpd_v = tpd_solver(model,p,T,z,K,fz,cache,TPDKSolver(),isliquidz;break_first,lle,tol_trivial)
-    add_to_tpd!(result,z,w_l,w_v,tpd_l,tpd_v,isliquidz,tol_trivial)
-    length(values) >= 1 && break_first && return result
-
-    #step 2: cube root of wilson values (and the inverse)
-    K .= cbrt.(K)
-    w_l,w_v,tpd_l,tpd_v = tpd_solver(model,p,T,z,K,fz,cache,TPDKSolver(),isliquidz;break_first,lle,tol_trivial)
-    add_to_tpd!(result,z,w_l,w_v,tpd_l,tpd_v,isliquidz,tol_trivial)
-    length(values) >= 1 && break_first && return result
-
-    K .= 1 ./ K
-    w_l,w_v,tpd_l,tpd_v = tpd_solver(model,p,T,z,K,fz,cache,TPDKSolver(),isliquidz;break_first,lle,tol_trivial)
-    add_to_tpd!(result,z,w_l,w_v,tpd_l,tpd_v,isliquidz,tol_trivial)
-    length(values) >= 1 && break_first && return result
-
-    
-
-    #step 4: trying Kij with 1 heavy and 1 light component
-    Ki = __K_test(z)
-    for i in 1:length(Ki)
-        K .= Ki[i]
-        w_l,w_v,tpd_l,tpd_v = tpd_solver(model,p,T,z,K,fz,cache,TPDKSolver(),isliquidz;break_first,lle,tol_trivial)
-        add_to_tpd!(result,z,w_l,w_v,tpd_l,tpd_v,isliquidz,tol_trivial)
+    lle = lle || !isliquidz #if we have a vapour phase, dont calculate additional ones.
+    if strategy == :default || strategy == :wilson
+        #step 1: wilson initial values  (and the inverse)
+        proposed = tpd_solver(model,p,T,z,K,fz,cache,TPDKSolver(),isliquidz;break_first,lle,tol_trivial)
+        add_to_tpd!(result,cond,proposed,isliquidz,tol_trivial)
         length(values) >= 1 && break_first && return result
-        
+
         K .= 1 ./ K
-        w_l,w_v,tpd_l,tpd_v = tpd_solver(model,p,T,z,K,fz,cache,TPDKSolver(),isliquidz;break_first,lle,tol_trivial)
-        add_to_tpd!(result,z,w_l,w_v,tpd_l,tpd_v,isliquidz,tol_trivial)
+        lle = lle | any(is_vapour,phase_w)
+        proposed = tpd_solver(model,p,T,z,K,fz,cache,TPDKSolver(),isliquidz;break_first,lle,tol_trivial)
+        add_to_tpd!(result,cond,proposed,isliquidz,tol_trivial)
         length(values) >= 1 && break_first && return result
+    end
+
+    #step 3: trying pure components
+
+    if strategy == :pure || strategy == :default
+        for i in 1:length(model)
+            z_pure!(K,i)
+            lle = lle | any(is_vapour,phase_w)
+            proposed = tpd_solver(model,p,T,z,K,fz,cache,TPDPureSolver(),isliquidz;break_first,lle,tol_trivial)
+            add_to_tpd!(result,cond,proposed,isliquidz,tol_trivial)
+            length(values) >= 1 && break_first && return result
+        end
     end
 
     return result
 end
 
-function z_norm(z,w,tol_trivial = 1e-5)
+function z_pure!(K,i)
+    K .= 0
+    K[i] = 1
+    K
+end
+
+function z_norm(z,w)
     z_norm = zero(Base.promote_eltype(z,w))
     for i in 1:length(z)
         z_norm += log(w[i]/z[i])^2
@@ -482,26 +495,27 @@ function z_norm(z,w,tol_trivial = 1e-5)
     return z_norm
 end
 
-function add_to_tpd!(result,z,w_l,w_v,tpd_l,tpd_v,is_liquid,tol_trivial = 1e-5)
+function add_to_tpd!(result,cond,proposed,is_liquid,tol_trivial = 1e-5)
     phase_zk = is_liquid ? :liquid : :vapour
     values,comps,phase_z,phase_w = result
+    wl,wv,tpd_l,tpd_v,vl,vv = proposed
+    proposed_l = (wl,tpd_l,vl,:liquid)
+    proposed_v = (wv,tpd_v,vv,:vapour)
     #=if !isnan(tpd_l)
         @show (phase_zk,:liquid)
     end=#
-    added_l = _add_to_tpd!(result,z,w_l,tpd_l,tol_trivial)
+    added_l = _add_to_tpd!(result,cond,proposed_l,tol_trivial)
     if added_l
         values,comps,phase_z,phase_w = result
         push!(phase_z,phase_zk)
-        push!(phase_w,:liquid)
     end
     if is_liquid
         #=if !isnan(tpd_v)
             @show (phase_zk,:vapour)
         end =#
-        added_v = _add_to_tpd!(result,z,w_v,tpd_v,tol_trivial)
+        added_v = _add_to_tpd!(result,cond,proposed_v,tol_trivial)
         if added_v
             push!(phase_z,phase_zk)
-            push!(phase_w,:vapour)
         end
     else
         added_v = false
@@ -509,24 +523,26 @@ function add_to_tpd!(result,z,w_l,w_v,tpd_l,tpd_v,is_liquid,tol_trivial = 1e-5)
     return added_l || added_v
 end
 
-function _add_to_tpd!(result,z,w,tpd,tol_trivial = 1e-5)
-    #=if !isnan(tpd)
-        @show w,tpd
-    end=#
+function _add_to_tpd!(result,cond,proposed,phase,tol_trivial = 1e-5)
+    w,tpd,v,phase = proposed
     values,comps,phase_z,phase_w = result
+    model,T,p,z = cond
     isnan(tpd) && return false
     any(isnan,w) && return false
     tpd >= 0 && return false
     maximum(w) < 0 && return false
     z_norm(z,w) < tol_trivial && return false
+    min_tpd = minimum(values,init = Inf*one(eltype(values))) |> abs
     for i in 1:length(comps)
-        z_norm(comps[i],w) < tol_trivial && return false
-        abs(tpd - values[i]) < sqrt(eps(tpd)) && return false
+        dz = z_norm(comps[i],w)
+        dz < tol_trivial && return false
+        abs(tpd - values[i]) < min_tpd*tol_trivial && return false
     end
     push!(values,tpd)
     push!(comps,deepcopy(w))
+    push!(phase_w,phase)
     return true
-    
+
 end #with those checks, we can be sure that the new tpd is a different composition.
 
 function __z_test(z)
@@ -547,24 +563,30 @@ function __z_test(z)
     z_test = z_test ./ sum(z_test;dims=2)
 end
 
-function __K_test(z)
-    length(z) == 2 && [1. 1e-6; 1e-6 1.]
-
-    res = fill(ones(eltype(z),length(z)),0)
-    nc = length(z)
-    #for i in 1:nc
+function suggest_K(model,p,T,z,pure = split_model(model))
+    lnϕz,v = lnϕ(model,p,T,z,threaded = false)
+    K = similar(lnϕz)
+    di = similar(lnϕz)
+    di .= lnϕz .+ log.(z)
+    for i in 1:length(z)
+        lnϕv,vv = lnϕ(pure[i],p,T,phase = :v)
+        lnϕl,vl = lnϕ(pure[i],p,T,phase = :l)
+        tpd_v = lnϕv[1] - di[i]
+        tpd_l = lnϕl[1] - di[i]
         
-        for j in 1:nc
-            ki = ones(eltype(z),length(z))
-            for k in 1:nc
-                j == k && continue
-                ki[j] = 1e-5
-                ki[k] = 1e5
-                push!(res,ki)
-            end
+        if tpd_l < 0 && tpd_v < 0
+            K[i] = exp(lnϕl[1])/exp(lnϕv[1])
+        elseif tpd_l < 0 && tpd_v >= 0
+            K[i] = exp(lnϕl[1])/exp(lnϕz[i])
+        elseif tpd_l >= 0 && tpd_v < 0
+            K[i] = exp(lnϕz[i])/exp(lnϕv[1])
+        else
+            sat_x = initial_points_bd_T(pure[i],T)
+            psat = first(sat_x)
+            K[i] = psat / p
         end
-    #end
-    return res
+    end
+    return K
 end
 
 function K0_lle_init_cache(model::EoSModel,p,T)
@@ -610,7 +632,7 @@ function K0_lle_init(model::EoSModel, p, T, z)
         for j in i+1:ntest
             z_test_j = @view(z_test[j,:])
             γj = γ[i]
-            ϕ = _0 
+            ϕ = _0
             ϕi_finite = 0
             for k in 1:length(model)
                 ϕik = (z_test_i[k] - z[k])/(z_test_i[k] - z_test_j[k])
@@ -621,7 +643,7 @@ function K0_lle_init(model::EoSModel, p, T, z)
                 end
             end
             ϕ = ϕ/ϕi_finite
-            
+
             err_ij = _0
             for k in 1:length(model)
                 zi,zj = z_test_i[k],z_test_j[k]
@@ -638,7 +660,7 @@ function K0_lle_init(model::EoSModel, p, T, z)
             end
         end
     end
-    
+
     K0 = γ[i_min]./ γ[j_min]
 
     #=
