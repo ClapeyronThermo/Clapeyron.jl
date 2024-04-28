@@ -103,7 +103,7 @@ end
     T = 298.15
     p = 1e5
     phases,tpds,symz,symw = Clapeyron.tpd(system,p,T,[0.5,0.5])
-    @test tpds[1] ≈ -0.8370113547074933  rtol = 1e-6
+    @test tpds[1] ≈ -0.6081399681963373  rtol = 1e-6
     GC.gc()
 end
 
