@@ -210,7 +210,7 @@ function tpd_solver(model,p,T,z,K0,
     if keep_going_l
         α0l = 2 .* sqrt.(wl)
         prob_l = tpd_obj(model, p, T, di, true, newton_cache, break_first)
-        res_l = Solvers.optimize(prob_l, α0l, TrustRegion(Newton(),Dogleg()), opt_options)
+        res_l = Solvers.optimize(prob_l, α0l, TrustRegion(Newton(linsolve = static_linsolve),Dogleg()), opt_options)
         αl = Solvers.x_sol(res_l)
         wl .= αl .* αl .* 0.25
         wl ./= sum(wl)
@@ -228,7 +228,7 @@ function tpd_solver(model,p,T,z,K0,
         α0v = 2 .* sqrt.(wv)
         newton_cache[2][] = vv
         prob_v = tpd_obj(model, p, T, di, false, newton_cache, break_first)
-        res_v = Solvers.optimize(prob_v, α0v, TrustRegion(Newton(),Dogleg()), opt_options)
+        res_v = Solvers.optimize(prob_v, α0v, TrustRegion(Newton(linsolve = static_linsolve),Dogleg()), opt_options)
         αv = Solvers.x_sol(res_v)
         wv .= αv .* αv .* 0.25
         wv ./= sum(wv)
