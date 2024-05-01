@@ -11,19 +11,26 @@ function tp_flash_michelsen_multi_cache(model,p,T,z)
     F3,F4,F5,ΔF1,ΔF2,xdem,Fdem = similar(F_cache),similar(F_cache),similar(F_cache),similar(F_cache),similar(F_cache),similar(F_cache),similar(F_cache)
     dem_cache = (F3,F4,F5,ΔF1,ΔF2,xdem,Fdem)
     comps_cache = fill(similar(f1),1)
-    ss_cache = comps_cache,F_cache,F_cache2,F_cache3,f1,f2,f3
+    v_cache = similar(f1)
+    bi_cache = similar(f1)
+    result_cache = comps_cache,bi_cache,v_cache
+    ss_cache = result_cache,F_cache,F_cache2,F_cache3,f1,f2,f3,dem_cache
     return phase_cache,ss_cache,nothing
 end
 
 function resize_cache!(cache,np)
     phase_cache,ss_cache,newton_cache = cache
     nc = length(phase_cache[1])
-    comps_cache,F_cache,F_cache2,F_cache3,f1,f2,f3,dem_cache = ss_cache
-    np_old = length(comps_cache)
-    resize!(comps_cache,np)
+    result_cache,F_cache,F_cache2,F_cache3,f1,f2,f3,dem_cache = ss_cache
+    comps2,bi2,volumes2 = result_cache
+    np_old = length(comps2)
+    resize!(comps2,np)
+    resize!(bi2,np)
+    resize!(volumes2,np)
     for i in (np_old+1):np
-        comps_cache[i] = similar(f1)
+        comps2[i] = similar(f1)
     end
+    
     for fi in (F_cache,F_cache2,F_cache3)
         resize!(fi,nc*np)
     end
@@ -78,8 +85,8 @@ function tp_flash_michelsen_multi(model,p,T,z,options = nothing)
 
             #sucessive substitution iteration
             cache = resize_cache!(cache,n_phases)
-            comps, βi, volumes = tp_flash_michelsen_n_ss!(model,p,T,z,result,ss_cache,options)
-            return result
+            result,ss_converged = tp_flash_michelsen_n_ss!(model,p,T,z,result,ss_cache,options)
+            #return result
             #δn_remove = _remove_phases!(model,p,T,z,result,phase_cache,options)
             δn_add = _add_phases!(model,p,T,z,result,phase_cache,options)
             if δn_add == 1
@@ -88,6 +95,10 @@ function tp_flash_michelsen_multi(model,p,T,z,options = nothing)
                 δn_remove = _remove_phases!(model,p,T,z,result,cache,options)
             end
             @show δn_remove,δn_add
+            if δn_add == δn_remove == 0 && ss_converged
+                @show "refinement reached! with RR"
+                return result
+            end
         else #step 2.1: δn == 0. we refine our existing values.
             @info "refinement reached!"
             converged = true
@@ -112,7 +123,7 @@ function tp_flash_michelsen_multi(model,p,T,z,options = nothing)
 end
 
 function tp_flash_michelsen_n_ss!(model,p,T,z,result,ss_cache,options)
-    comps_cache,x0,x,xx,f1,f2,f3,dem_cache = ss_cache
+    result_cache,x0,x,xx,f1,f2,f3,dem_cache = ss_cache
     comps, βi, volumes = result
     nc = length(z)
     np = length(βi)
@@ -120,9 +131,7 @@ function tp_flash_michelsen_n_ss!(model,p,T,z,result,ss_cache,options)
     x0 .= 0
     x .= 0
     xx .= 0
-    βi_cache = view(f1,1:np)
-    volumes_cache = view(f2,1:np)
-    result_cache = comps_cache,βi_cache,volumes_cache
+    comps_cache,βi_cache,volumes_cache = result_cache
     #fill F with data
     xnp = comps[np]
     β = viewn(x0,np,np)
@@ -133,13 +142,13 @@ function tp_flash_michelsen_n_ss!(model,p,T,z,result,ss_cache,options)
         xi = comps[i]
         lnKi .= log.(xi ./ xnp)
     end
-    
+
     #options
-    max_iters = 10*n_phases
+    max_iters = 10*np
     itacc = 0
     nacc = 5
     ss_tol = 1e-8
-    
+    converged = false
     F3,F4,F5,ΔF1,ΔF2,xdem,Fdem = dem_cache
     for i in 1:max_iters
         itacc += 1
@@ -154,15 +163,16 @@ function tp_flash_michelsen_n_ss!(model,p,T,z,result,ss_cache,options)
         
         #acceleration
         if itacc == (nacc - 2)
-            F3 .= F
+            F3 .= x
         elseif itacc == (nacc - 1)
-            F4 .= F
+            F4 .= x
         elseif itacc == nacc
             itacc = 0
-            F5 .= F
+            F5 .= x
             # acceleration using DEM (1 eigenvalues)
             xdem = dem!(xdem, F5, F4, F3,(ΔF1,ΔF2)) 
             fixpoint_multiphase!(Fdem, xdem, model, p, T, z, result_cache, ss_cache)
+            
             gibbs = _multiphase_gibbs(model,p,T,result)
             gibbs_dem = _multiphase_gibbs(model,p,T,result_cache)
             if gibbs_dem < gibbs
@@ -175,17 +185,18 @@ function tp_flash_michelsen_n_ss!(model,p,T,z,result,ss_cache,options)
                 x .= Fdem
             end
         end
-
-        dnorm(x0,x,1) < K_tol && break
+        converged = dnorm(x0,x,1) < ss_tol
+        if converged
+            @show i
+            break
+        end
         x0 .= x
     end
 
-    return result
+    return result,converged
 end
 
 function fixpoint_multiphase!(F, x, model, p, T, z, result, ss_cache)
-    comps_cache,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
-    comps, βi, volumes = result
     #given constant K, calculate β
     multiphase_RR_β!(F, x, z, result, ss_cache)
     #given constant β, calculate K
@@ -209,7 +220,7 @@ end
 
 #constant K, calculate β
 function multiphase_RR_β!(F, x, z, result, ss_cache)
-    comps_cache,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+    _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
     comps, βi, volumes = result
     nc = length(z)
     np = length(βi)
@@ -217,7 +228,7 @@ function multiphase_RR_β!(F, x, z, result, ss_cache)
     
     #transforms lnK to K
     multiphase_lnK_K!(F_cache,x,np)
-    if np == 2 && false
+    if np == 2# && false
         K = viewn(F_cache,np,1)
         βsol = rachfordrice(K,z)
         βF[1] = βsol #two-phase solution does not require solving a neq problem
@@ -246,7 +257,7 @@ function multiphase_RR_β!(F, x, z, result, ss_cache)
         βF[i] = βsol[i]
         βi[i] = βsol[i]
     end
-    @show βsol
+    #@show βsol
     #update last phase fraction
     βF[np] = 1 - ∑β
     βi[np] = 1 - ∑β
@@ -272,7 +283,7 @@ function multiphase_K_lnK!(F,x,np)
 end
 
 function multiphase_RR_lnK!(F, x, model, p, T, z, result, ss_cache)
-    comps_cache,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+    _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
     comps, βi, volumes = result
     nc = length(z)
     np = length(βi)
@@ -303,11 +314,16 @@ function multiphase_RR_lnK!(F, x, model, p, T, z, result, ss_cache)
         lnKi = viewn(F,np,i)
         xi = comps[i]
         lnϕi,vi = lnϕ!(f3, model, p, T, xi, vol0 = volumes[i])
-        isnan(vi) && (lnϕi,vi = lnϕ!(f3, model, p, T, xi)) #restart
+        if isnan(vi) #restart
+            lnϕi,vi = lnϕ!(f1, model, p, T, xi)
+        end
         volumes[i] = vi
         lnKi .=  lnϕnp .- lnϕi
     end
-    @show viewn(F,np,1)
+    if any(isnan,viewn(F,np,1))
+        @show comps[1],volumes[1]
+    end
+    #@show viewn(F,np,1)
     return F
 end
 #perform tpd on each phase, if not stable, generate a new one
@@ -389,7 +405,7 @@ end
 
 function _multiphase_gibbs(model,p,T,result)
     comps, β, volumes = result
-    res = zero(Base,promote_eltype(model,p,T,comps[1]))
+    res = zero(Base.promote_eltype(model,p,T,comps[1]))
     np = length(comps)
     for i in 1:np
         res += β[i] * VT_gibbs_free_energy(model,volumes[i],T,comps[i])
