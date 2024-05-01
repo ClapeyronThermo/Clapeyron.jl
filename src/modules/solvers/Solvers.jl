@@ -16,7 +16,7 @@ function dnorm(x,y,p = 2)
 end
 
 function st_solve(B,∇f,::Val{1})
-    ∇f̄ = SVector(f[1])
+    ∇f̄ = SVector(∇f[1])
     B̄ = SMatrix{1,1}((B[1,1],))
     return B̄\∇f
 end
