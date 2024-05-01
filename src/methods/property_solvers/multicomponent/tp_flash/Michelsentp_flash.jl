@@ -227,10 +227,12 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         itacc += 1
         lnK_old = lnK .* _1
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
+        @show β
         singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β,inx,iny)
+        @show lnK
         vcache[] = (volx,voly)
         # acceleration step
         if itacc == (nacc - 2)

@@ -101,6 +101,14 @@ function multiphase_flash_impl(model, p, T, z, x, β, abstol, outerSSiters, oute
     end
 
     f!(F, x) = fixpoint_multiphase!(F, x, β, φmat, model, p, T, z)
+    method = AndersonFixPoint(;picard_damping=0.5,damping=0.5,memory=5,delay=5,drop_tol=Inf)
+
+    res = Solvers.fixpoint(f!,x, AndersonFixPoint(),maxiters = outerSSiters,atol = abstol,return_last = true)
+    
+    f!(x,res)
+
+    
+
     #neq_opts = NEqOptions(f_abstol = abstol,maxiter = outerSSiters)
     #res1 = Solvers.nlsolve(f!, x, NLSolvers.Anderson(0,5,1.0,1e-10),neq_opts)
     #res = NLsolve.nlsolve(f!, x, method=:anderson, m=5, ftol=abstol, iterations=outerSSiters)
@@ -111,14 +119,16 @@ function multiphase_flash_impl(model, p, T, z, x, β, abstol, outerSSiters, oute
     #@show res.f_converged
     #@show res1
     #if !Solvers.converged(res)
-    if ~(res.x_converged || res.f_converged) # second order scheme
+    if Solvers.rtol_anderson(x,res) >= abstol # second order scheme
         # @info "SS did not converged in $outerSSiters successive substitution iterations, moving on to second order minimisation"
+        newton_res = Solvers.nlsolve(f!, x, TrustRegion(Newton(), Dogleg()), NEqOptions(f_abstol = abstol,maxiter = outerNewtoniters))
+        
         #res1 = Solvers.nlsolve(f!,vec(res.zero),TrustRegion(Newton(), Dogleg()),NEqOptions(f_abstol = abstol,maxiter = outerNewtoniters))
         #res = NLsolve.nlsolve(f!, res.zero, method=:trust_region, autodiff=:forward, ftol=abstol, iterations=outerNewtoniters)
         #@show Solvers.x_sol(res1) - vec(res.zero)
         #@show res
     end
-    ~(res.x_converged || res.f_converged) && @warn "Flash calculation failed to converge in $outerSSiters successive substitution iterations and $outerNewtoniters Newton iterations"
+    #~(res.x_converged || res.f_converged) && @warn "Flash calculation failed to converge in $outerSSiters successive substitution iterations and $outerNewtoniters Newton iterations"
     #!Solvers.converged(res) && @warn "Flash calculation failed to converge in $outerSSiters successive substitution iterations and $outerNewtoniters Newton iterations"
 
     return res.zero, β

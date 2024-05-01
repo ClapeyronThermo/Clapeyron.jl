@@ -87,6 +87,7 @@ include("tp_flash/michelsen_base.jl")
 include("tp_flash/Michelsentp_flash.jl")
 include("tp_flash/RachfordRicetp_flash.jl")
 include("tp_flash/MCFlashJL.jl")
+include("tp_flash/michelsen2.jl")
 
 function init_preferred_method(method::typeof(tp_flash),model::EoSModel,kwargs)
     if haskey(kwargs,:equilibrium) || haskey(kwargs,:K0) || haskey(kwargs,:y0) || haskey(kwargs,:x0)

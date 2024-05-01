@@ -26,7 +26,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::GuptaMultiphaseFlash)
     # T = eltype(promote(method.β0, method.K0))
 
     # Initialise arrays
-    if method.β0 isa Nothing
+    if method.β0 === nothing
         β = normalize(ones(Float64, 2), 1)
         np = 2
     else
