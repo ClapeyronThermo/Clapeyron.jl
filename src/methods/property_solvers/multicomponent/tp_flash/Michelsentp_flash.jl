@@ -109,11 +109,11 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
             non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
             reduced = true)
 
-    ΔG = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
+    g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
     comps = [x,y]
     volumes = [v[1],v[2]]
     βi = [1-β ,β]
-    return comps,βi,volumes,ΔG
+    return comps,βi,volumes,g
 end
 
 function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothing,

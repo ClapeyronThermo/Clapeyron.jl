@@ -2,14 +2,15 @@ function _multiphase_gibbs(model,p,T,result)
     comps, β, volumes = result
     if model isa PTFlashWrapper && length(β) == 2 #TODO: in the future, PTFlashWrappers could be multiphase
         if model.model isa RestrictedEquilibriaModel
-            return nothing
+            return zero(eltype(β))
         end
     end
 
     res = zero(Base.promote_eltype(model,p,T,comps[1]))
     np = length(comps)
     for i in 1:np
-        res += β[i] * VT_gibbs_free_energy(model,volumes[i],T,comps[i])
+        vi = volumes[i]
+        res += β[i] * (eos(model,vi,T,comps[i]) + p*vi)
     end
     return res
 end
@@ -111,7 +112,7 @@ function tp_flash2(model::EoSModel, p, T, n,method::TPFlashMethod)
         return [z], β, vols,zero(vols)
     end
     
-    comps,β,vols,ΔG = tp_flash_impl(model_r,p,T,n_r,method_r)
+    comps,β,vols,g = tp_flash_impl(model_r,p,T,n_r,method_r)
     β ./= sum(β)
     β .*= sum(n)
     if supports_reduction(method)
@@ -122,11 +123,11 @@ function tp_flash2(model::EoSModel, p, T, n,method::TPFlashMethod)
         end
     end
     idx_sort = sortperm(vols)
-    return comps[idx_sort],β[idx_sort],vols[idx_sort],ΔG
+    return comps[idx_sort],β[idx_sort],vols[idx_sort],g
 end
 
 function tp_flash2_to_tpflash(model,p,T,z,result)
-    comps, β, volumes, ΔG = result
+    comps, β, volumes, g = result
     nc = length(z)
     np = length(comps)
 
@@ -140,6 +141,6 @@ function tp_flash2_to_tpflash(model,p,T,z,result)
             n[i,j] = xi[j]*βi
         end
     end
-    return x,n,ΔG
+    return x,n,g
 end
 

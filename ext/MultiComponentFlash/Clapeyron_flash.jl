@@ -29,9 +29,9 @@ function C.tp_flash_impl(model,p,T,z,method::C.MCFlashJL)
     β = M.flash_2ph!(S,K,model,conditions;method = method.method,method.kwarg...)
     x = M.liquid_mole_fraction!(S.x, z, K, V)
     y = M.vapor_mole_fraction!(S.y, x, K)
-    ΔG = C.__tpflash_gibbs_reduced(model,p,T,x,y,V,:vle)
+    g = C.__tpflash_gibbs_reduced(model,p,T,x,y,V,:vle)
     comps = [x,y]
     βi = [1-β,β]
     volumes = [volume(model,p,T,x,phase = :l),volume(model,p,T,y,phase = :v)]
-    return comps,βi,volumes,ΔG
+    return comps,βi,volumes,g
 end

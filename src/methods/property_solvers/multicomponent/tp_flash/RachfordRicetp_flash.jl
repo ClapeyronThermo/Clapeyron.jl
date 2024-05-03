@@ -70,11 +70,11 @@ function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
     non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
     reduced = true, use_opt_solver = false)
 
-    ΔG = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
+    g = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
     comps = [x,y]
     volumes = [v[1],v[2]]
     βi = [1-β ,β]
-    return comps,βi,volumes,ΔG
+    return comps,βi,volumes,g
 end
 
 export RRTPFlash

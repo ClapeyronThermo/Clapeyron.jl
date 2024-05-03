@@ -92,7 +92,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
 
     dividers = reshape(BlackBoxOptim.best_candidate(result),
             (numphases - 1, numspecies))
-    ΔG = BlackBoxOptim.best_fitness(result)
+    g = BlackBoxOptim.best_fitness(result)
     #Initialize arrays xij and nvalsij,
     #where i in 1..numphases, j in 1..numspecies
     #xij is mole fraction of j in phase i.
@@ -104,7 +104,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
 
     comps = [vec(x[i,:]) for i in 1:numphases]
     βi = [sum(@view(nvals[i,:])) for i in 1:numphases]
-    return comps, βi, volumes, ΔG
+    return comps, βi, volumes, g
 end
 """
     Obj_de_tp_flash(model,p,T,z,dividers,numphases,vcache,logspace = false)
