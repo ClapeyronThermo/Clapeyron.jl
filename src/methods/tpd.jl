@@ -572,8 +572,7 @@ function suggest_K(model,p,T,z,pure = split_model(model))
         lnϕv,vv = lnϕ(pure[i],p,T,phase = :v)
         lnϕl,vl = lnϕ(pure[i],p,T,phase = :l)
         tpd_v = lnϕv[1] - di[i]
-        tpd_l = lnϕl[1] - di[i]
-        
+        tpd_l = lnϕl[1] - di[i]        
         if tpd_l < 0 && tpd_v < 0
             K[i] = exp(lnϕl[1])/exp(lnϕv[1])
         elseif tpd_l < 0 && tpd_v >= 0
