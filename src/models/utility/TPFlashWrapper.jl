@@ -5,6 +5,7 @@ struct PTFlashWrapper{T,S} <: EoSModel
     sat::Vector{S}
     fug::Vector{S}
     μ::Vector{S}
+    equilibrium::Symbol
 end
 
 Base.length(model::PTFlashWrapper) = length(model.model)
@@ -26,5 +27,5 @@ function PTFlashWrapper(model::EoSModel,p,T::Number,equilibrium::Symbol)
     μpure = only.(VT_chemical_potential_res.(__gas_model.(pures),vv_pure,T))
     ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
     g_pure = [VT_gibbs_free_energy(__gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
-    return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure)
+    return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
 end

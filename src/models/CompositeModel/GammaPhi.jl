@@ -71,7 +71,7 @@ function PTFlashWrapper(model::GammaPhi,p,T::Number,equilibrium::Symbol)
         sats = fill((nan,nan,vv),length(model))
         ϕpure = fill(one(vv),length(model))
         g_pure = [VT_gibbs_free_energy(__gas_model(pures[i]),vv,T) for i in 1:length(model)]
-        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure)
+        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
     else
         sats = saturation_pressure.(pures,T)
         vv_pure = last.(sats)
@@ -79,7 +79,7 @@ function PTFlashWrapper(model::GammaPhi,p,T::Number,equilibrium::Symbol)
         μpure = only.(VT_chemical_potential_res.(__gas_model.(pures),vv_pure,T))
         ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
         g_pure = [VT_gibbs_free_energy(__gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
-        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure)
+        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
     end
 
 end
