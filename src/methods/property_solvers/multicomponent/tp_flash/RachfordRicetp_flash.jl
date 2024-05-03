@@ -64,18 +64,17 @@ function tp_flash_impl(model::EoSModel, p, T, z, method::RRTPFlash)
 
     model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
 
-    x,y,β = tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium,
+    x,y,β,v = tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium,
     K0 = method.K0, x0 = method.x0, y0 = method.y0, vol0 = method.v0,
     K_tol = method.K_tol,itss = method.max_iters, nacc=method.nacc,
     non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
     reduced = true, use_opt_solver = false)
 
-    G = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
-
-    X = hcat(x,y)'
-    nvals = X.*[1-β
-            β] .* sum(z)
-    return (X, nvals, G)
+    ΔG = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
+    comps = [x,y]
+    volumes = [v[1],v[2]]
+    βi = [1-β ,β]
+    return comps,βi,volumes,ΔG
 end
 
 export RRTPFlash

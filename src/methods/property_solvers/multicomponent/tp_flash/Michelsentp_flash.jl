@@ -102,20 +102,19 @@ function tp_flash_impl(model::EoSModel,p,T,z,method::MichelsenTPFlash)
 
     model_cached = __tpflash_cache_model(model,p,T,z,method.equilibrium)
 
-    x,y,β = tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
+    x,y,β,v = tp_flash_michelsen(model_cached,p,T,z;equilibrium = method.equilibrium, K0 = method.K0,
             x0 = method.x0, y0 = method.y0, vol0 = method.v0,
             K_tol = method.K_tol,itss = method.ss_iters, nacc=method.nacc,
             second_order = method.second_order,
             non_inx_list=method.noncondensables, non_iny_list=method.nonvolatiles,
             reduced = true)
 
-    G = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
-    X = hcat(x,y)'
-    nvals = X.*[1-β
-                β] .* sum(z)
-    return (X, nvals, G)
+    ΔG = __tpflash_gibbs_reduced(model_cached,p,T,x,y,β,method.equilibrium)
+    comps = [x,y]
+    volumes = [v[1],v[2]]
+    βi = [1-β ,β]
+    return comps,βi,volumes,ΔG
 end
-
 
 function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothing,
                                      x0=nothing, y0=nothing, vol0=(nothing, nothing),
@@ -227,12 +226,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         itacc += 1
         lnK_old = lnK .* _1
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
-        @show β
         singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β,inx,iny)
-        @show lnK
         vcache[] = (volx,voly)
         # acceleration step
         if itacc == (nacc - 2)
@@ -319,11 +316,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         y = index_expansion(y,z_nonzero)
     end
 
-    if vx < vy #sort by increasing volume
-        return x, y, β
-    else
-        return y, x, 1 - β
-    end
+    return x, y, β, (vx,vy)
 end
 
 export MichelsenTPFlash

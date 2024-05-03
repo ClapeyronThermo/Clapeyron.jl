@@ -1,3 +1,19 @@
+function _multiphase_gibbs(model,p,T,result)
+    comps, β, volumes = result
+    if model isa PTFlashWrapper && length(β) == 2 #TODO: in the future, PTFlashWrappers could be multiphase
+        if model.model isa RestrictedEquilibriaModel
+            return nothing
+        end
+    end
+
+    res = zero(Base.promote_eltype(model,p,T,comps[1]))
+    np = length(comps)
+    for i in 1:np
+        res += β[i] * VT_gibbs_free_energy(model,volumes[i],T,comps[i])
+    end
+    return res
+end
+
 """
     TPFlashMethod <: ThermodynamicMethod
 
@@ -23,46 +39,14 @@ Outputs - Tuple containing:
  - nᵢⱼ, Array of mole numbers of species j in phase i, [mol]
  - G, Gibbs Free Energy of Equilibrium Mixture [J]
 """
-function tp_flash(model::EoSModel, p, T, n;kwargs...)
+function tp_flash(model::EoSModel, p, T, n; kwargs...)
     method = init_preferred_method(tp_flash,model,kwargs)
-    return tp_flash(model, p, T, n,method)
+    return tp_flash(model, p, T, n, method)
 end
 
 function tp_flash(model::EoSModel, p, T, n,method::TPFlashMethod)
-    numspecies = length(model)
-    if numspecies != length(n)
-        error("There are ", numspecies,
-            " species in the model, but the number of mole numbers specified is ",
-            length(n))
-    end
-    if supports_reduction(method)
-        model_r,idx_r = index_reduction(model,n)
-        n_r = n[idx_r]
-        method_r = index_reduction(method,idx_r)
-    else
-        model_r,idx_r = model,1:length(model)
-        method_r,n_r = method,n
-    end
-    
-    if length(model_r) == 1
-        V = volume(model_r,p,T,n_r)
-        return (n, n / sum(n), VT_gibbs_free_energy(model_r, V, T, n_r))
-    end
-    if numphases(method) == 1
-        V = volume(model_r,p,T,n_r,phase =:stable)
-        return (n, n / sum(n), VT_gibbs_free_energy(model_r, V, T, n_r))
-    end
-    
-    xij_r,nij_r,g = tp_flash_impl(model_r,p,T,n_r,method_r)
-    #TODO: perform stability check ritht here:
-    #expand reduced model:
-    if supports_reduction(method)
-        nij = index_expansion(nij_r,idx_r)
-        xij = index_expansion(xij_r,idx_r)
-        return xij,nij,g
-    else
-        return xij_r,nij_r,g
-    end
+    result = tp_flash2(model, p, T, n,method)
+    return tp_flash2_to_tpflash(model,p,T,n,result)
 end
 
 """
@@ -100,3 +84,62 @@ function init_preferred_method(method::typeof(tp_flash),model::EoSModel,kwargs)
 end
 
 export tp_flash
+
+#we use tp_flash2 and transform to tp_flash
+function tp_flash2(model::EoSModel, p, T, n;kwargs...)
+    method = init_preferred_method(tp_flash,model,kwargs)
+    return tp_flash2(model,p,T,n,method)
+end
+
+function tp_flash2(model::EoSModel, p, T, n,method::TPFlashMethod)
+    check_arraysize(model,n)
+    if supports_reduction(method)
+        model_r,idx_r = index_reduction(model,n)
+        n_r = n[idx_r]
+        method_r = index_reduction(method,idx_r)
+    else
+        model_r,idx_r = model,1:length(model)
+        method_r,n_r = method,n
+    end
+    
+    if length(model_r) == 1 || numphases(method) == 1
+        vols = [volume(model_r,p,T,n_r)]
+        β = [sum(z)*one(vols[1])]
+        z = zeros(eltype(β),length(n))
+        z .= n
+        z ./= sum(z)
+        return [z], β, vols,zero(vols)
+    end
+    
+    comps,β,vols,ΔG = tp_flash_impl(model_r,p,T,n_r,method_r)
+    β ./= sum(β)
+    β .*= sum(n)
+    if supports_reduction(method)
+        for i in 1:length(comps)
+            xi_r = comps[i]
+            xi = index_expansion(xi_r,idx_r)
+            comps[i] = xi
+        end
+    end
+    idx_sort = sortperm(vols)
+    return comps[idx_sort],β[idx_sort],vols[idx_sort],ΔG
+end
+
+function tp_flash2_to_tpflash(model,p,T,z,result)
+    comps, β, volumes, ΔG = result
+    nc = length(z)
+    np = length(comps)
+
+    x = similar(comps[1],(np,nc))
+    n = similar(x)
+    for i in 1:np
+        xi = comps[i]
+        βi = β[i]
+        for j in 1:nc
+            x[i,j] = xi[j]
+            n[i,j] = xi[j]*βi
+        end
+    end
+    return x,n,ΔG
+end
+
