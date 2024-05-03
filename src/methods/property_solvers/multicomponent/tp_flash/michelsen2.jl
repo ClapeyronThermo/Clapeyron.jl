@@ -1,17 +1,50 @@
-struct MultiTPFlash{T} <: TPFlashMethod
-    equilibrium::Symbol
+struct MultiPhaseTPFlash{T} <: TPFlashMethod
     K0::Union{Vector{T},Nothing}
-    x0::Union{Vector{T},Nothing}
-    y0::Union{Vector{T},Nothing}
-    v0::Union{Tuple{T,T},Nothing}
     ss_tol::Float64
     ss_iters::Int
     nacc::Int
     second_order::Bool
     max_phases::Int
     phase_iters::Int
-    #noncondensables::Union{Nothing,Vector{String}} TODO: we can check each phase if is the vapour one to apply this
-    #nonvolatiles::Union{Nothing,Vector{String}} TODO: we can check each phase if its a liquid phase to apply this
+end
+
+
+function MultiPhaseTPFlash(;equilibrium = :vle,
+    K0 = nothing,
+    x0 = nothing,
+    y0 = nothing,
+    ss_tol = sqrt(eps(Float64)),
+    ss_iters = 4,
+    nacc = 5,
+    second_order = false,
+    max_phases = typemax(Int),
+    phase_iters = 20) #TODO: find a better value for this)
+    if K0 == x0 == y0 == nothing #nothing specified
+    #is_lle(equilibrium)
+        T = Nothing
+    else
+        if !isnothing(K0) & isnothing(x0) & isnothing(y0) #K0 specified
+            T = eltype(K0)
+        elseif isnothing(K0) & !isnothing(x0) & !isnothing(y0)  #x0, y0 specified
+            K0 = x0 ./ y0
+            T = eltype(K0)
+        else
+            throw(error("invalid specification of initial points"))
+        end
+    end
+    #check for nacc
+    if nacc in (1,2,3) || nacc < 0
+        throw(error("incorrect specification for nacc"))
+    end
+
+    return MultiPhaseTPFlash{T}(K0,ss_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
+end
+
+function index_reduction(m::MultiPhaseTPFlash,idx::AbstractVector)
+    K0,ss_tol,ss_iters,nacc,second_order,max_phases,phase_iters = m.K0,m.ss_tol,m.ss_iters,m.nacc,m.second_order,m.max_phases,m.phase_iters
+    K0 !== nothing && (K0 = K0[idx])
+    T = eltype(K0)
+    return MultiPhaseTPFlash{T}(K0,ss_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
 end
 
 function tpd_cache end
@@ -57,16 +90,21 @@ function resize_cache!(cache,np)
     return cache
 end
 
-function tp_flash_multi(model,p,T,z,options = nothing)
+function tp_flash_impl(model,p,T,z,method::MultiPhaseTPFlash)
+    return tp_flash_multi(model,p,T,z,method)
+end
+
+function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
     n_phases = 1
-    max_iter = 20
+    max_iter = options.phase_iters
     V = p
     z̄ = zeros(@f(Base.promote_eltype),length(z))
     z̄ .= z
     z̄ ./= sum(z)
     comps = [z̄]
     βi = [one(eltype(z))]
-    volumes = [volume(model,p,T,z)]
+    vz = volume(model,p,T,z)
+    volumes = [vz]
     
     idx_vapour = Ref(0)
     _result = (comps, βi, volumes, idx_vapour)
@@ -75,7 +113,6 @@ function tp_flash_multi(model,p,T,z,options = nothing)
 
     cache = tp_flash_multi_cache(model,p,T,z)
     phase_cache,ss_cache,newton_cache = cache
-    options = nothing
     done = false
     converged = false
     iter = 0
@@ -85,6 +122,7 @@ function tp_flash_multi(model,p,T,z,options = nothing)
     if δn_add == 0
         return result
     end
+    g0 = eos(model,volumes[1],T,z) + p*vz
     #step 2: main loop,iterate flashes until all phases are stable
     while !done
         iter += 1
@@ -102,11 +140,12 @@ function tp_flash_multi(model,p,T,z,options = nothing)
             end
             if δn_add == δn_remove == 0 && ss_converged
                 @info "refinement reached! with RR"
-                return result
+                break
             end
         else #step 2.1: δn == 0. we refine our existing values.
             @info "refinement reached!"
             converged = true
+            break
             #=
             comps, βi, volumes = tp_flash_multi_neq!(model,p,T,z,result,cache,options)
             #final stability check
@@ -115,13 +154,12 @@ function tp_flash_multi(model,p,T,z,options = nothing)
             δn = δn_add - δn_remove
             δn == 0 && return result
             =#
-            return result
         end
         done = iter > max_iter
         done = done || converged
     end
-
-    return result
+    gmix = _multiphase_gibbs(model,p,T,result)/(Rgas(model)*T)
+    return comps, βi, volumes, gmix
 end
 
 function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
@@ -148,9 +186,9 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
     end
 
     #options
-    ss_iters = 4
-    ss_tol = 1e-8
-    nacc = 5
+    ss_iters = options.ss_iters
+    ss_tol = options.ss_tol
+    nacc = options.nacc
 
     max_iters = ss_iters*np*nc
     itacc = 0
@@ -335,21 +373,21 @@ function _add_phases!(model,p,T,z,result,cache,options)
     comps, β, volumes,_idx_vapour = result
     idx_vapour = _idx_vapour[]
     pures,tpd_cache = cache
-    n = length(comps)
-    np = n
+    np = length(comps)
     nc = length(z)
     δn_add = 0
-    if np == nc #we cannot add new phases here
-        return 0
-    end
-    for i in 1:n
+    max_phases = min(options.max_phases,nc)
+    max_phases,np
+    np + δn_add == max_phases && return 0 #we cannot add new phases here
+    for i in 1:np
+        #np + δn_add == max_phases && break
         w = comps[i]
         vw = volumes[i]
         diff_test = VT_diffusive_stability(model,vw,T,w)
         if !diff_test# && idx_vapour == 0
             δn_add += 1
             np += 1
-            β1,x1,v1,β2,x2,v2 = split_phase_k(model,p,T,w,vw,pures,nothing)
+            β1,x1,v1,β2,x2,v2 = split_phase_k(model,p,T,w,vw,pures,options.K0)
             β0 = β[i]
             β[i] = β0*β1
             comps[i] = x1
@@ -412,8 +450,8 @@ function _remove_phases!(model,p,T,z,result,cache,options)
         wmix .= wmix ./ βsum
         vmix0 = (βi*vi + βmin * vmin)/βsum
         vmix = volume(model,p,T,wmix,vol0 = vmix0)
-        gi = VT_gibbs_free_energy(model,vi,T,wi)
-        gmix = VT_gibbs_free_energy(model,vmix,T,wmix)
+        gi = eos(model,vi,T,wi) + vi*p
+        gmix = eos(model,vmix,T,wmix) + vmix*p
         Δg = βsum*gmix - βi*gi - βmin*gmin
         if Δg < 0 #the mixed phase has a lower gibbs energy than the sum of its parts. remove minimum fraction phase.
             δn_remove += 1
