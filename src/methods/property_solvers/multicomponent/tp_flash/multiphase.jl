@@ -1,6 +1,6 @@
 struct MultiPhaseTPFlash{T} <: TPFlashMethod
     K0::Union{Vector{T},Nothing}
-    ss_tol::Float64
+    K_tol::Float64
     ss_iters::Int
     nacc::Int
     second_order::Bool
@@ -42,7 +42,7 @@ function MultiPhaseTPFlash(;
     K0 = nothing,
     x0 = nothing,
     y0 = nothing,
-    ss_tol = sqrt(eps(Float64)),
+    K_tol = sqrt(eps(Float64)),
     ss_iters = 2,
     nacc = 5,
     second_order = false,
@@ -69,16 +69,16 @@ function MultiPhaseTPFlash(;
     ss_iters < 1 && throw(error("incorrect specification for ss_iters"))
     phase_iters < 1 && throw(error("incorrect specification for phase_iters"))  
 
-    return MultiPhaseTPFlash{T}(K0,ss_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
+    return MultiPhaseTPFlash{T}(K0,K_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
 end
 
 export MultiPhaseTPFlash
 
 function index_reduction(m::MultiPhaseTPFlash,idx::AbstractVector)
-    K0,ss_tol,ss_iters,nacc,second_order,max_phases,phase_iters = m.K0,m.ss_tol,m.ss_iters,m.nacc,m.second_order,m.max_phases,m.phase_iters
+    K0,K_tol,ss_iters,nacc,second_order,max_phases,phase_iters = m.K0,m.K_tol,m.ss_iters,m.nacc,m.second_order,m.max_phases,m.phase_iters
     K0 !== nothing && (K0 = K0[idx])
     T = eltype(K0)
-    return MultiPhaseTPFlash{T}(K0,ss_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
+    return MultiPhaseTPFlash{T}(K0,K_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
 end
 
 function tpd_cache end
@@ -158,7 +158,7 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
     if δn_add == 0
         return comps, βi, volumes,g0
     end
-
+    gmix = NaN*g0
     #step 2: main loop,iterate flashes until all phases are stable
     while !done
         iter += 1
@@ -171,8 +171,8 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
             _result,ss_converged = tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
 
 
-            if !ss_converged && options.second_order
-                _result,neq_converged = tp_flash_multi_neq!(model,p,T,z,_result,ss_cache,options)
+            if !ss_converged
+                _result,neq_converged,gmix = tp_flash_multi_neq!(model,p,T,z,_result,ss_cache,options)
             end
 
             δn_add = _add_phases!(model,p,T,z,_result,phase_cache,options)
@@ -183,17 +183,21 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
             converged = neq_converged || ss_converged
             no_new_phases = δn_add == δn_remove == 0
             converged = converged && no_new_phases
+
+            converged && ss_converged && (gmix = _multiphase_gibbs(model,p,T,result)/(Rgas(model)*T))
         end
         done = iter > max_iter
         done = done || converged
     end
-    gmix = _multiphase_gibbs(model,p,T,result)/(Rgas(model)*T)
+    
     return comps, βi, volumes, gmix
 end
 
 function neq_converged(model,p,T,z,result)
+    #TODO: add convergence criteria
     return true
 end
+
 function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
     result_cache,x0,x,xx,f1,f2,f3,dem_cache = ss_cache
     comps, βi, volumes, idx_vapour = _result
@@ -219,7 +223,7 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
 
     #options
     ss_iters = options.ss_iters
-    ss_tol = options.ss_tol
+    K_tol = options.K_tol
     nacc = options.nacc
 
     max_iters = ss_iters*np*nc
@@ -261,7 +265,7 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
                 x .= Fdem
             end
         end
-        converged = dnorm(x0,x,1) < ss_tol
+        converged = dnorm(x0,x,1) < K_tol
         converged && break
         x0 .= x
     end
@@ -693,9 +697,16 @@ function tp_flash_multi_neq!(model,p,T,z,result,ss_cache,options)
         vx[i] = volumes[i]
     end
     f = multi_g_obj(model,p,T,z,result,ss_cache)
-
-    sol = Solvers.optimize(f,x,LineSearch(Newton()))
-    F = Solvers.x_sol(sol)
+    if second_order
+        sol = Solvers.optimize(f,x,LineSearch(Newton()))
+        gmix = Solvers.x_minimum(sol)
+        F = Solvers.x_sol(sol) 
+    else
+        sol = Solvers.optimize(f,x,LineSearch(LBFGS()))
+        gmix = Solvers.x_minimum(sol)
+        F = Solvers.x_sol(sol)
+    end
+    
     idx_β_begin = (np-1)*nc + 1
     idx_β_end = idx_β_begin + np - 2
     β = view(F,idx_β_begin:idx_β_end)
@@ -716,7 +727,7 @@ function tp_flash_multi_neq!(model,p,T,z,result,ss_cache,options)
         volumes[i] = v[i]
     end
     converged = neq_converged(model,p,T,z,result)
-    return result,converged
+    return result,converged,gmix
 end
 
 function multi_g_obj(model,p,T,z,_result,ss_cache)
