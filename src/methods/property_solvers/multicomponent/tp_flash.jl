@@ -84,10 +84,6 @@ function init_preferred_method(method::typeof(tp_flash),model::EoSModel,kwargs)
     end
 end
 
-    time_limit::Float64 = Inf
-    verbose::Bool = false
-    logspace::Bool = false
-
 export tp_flash
 
 #we use tp_flash2 and transform to tp_flash
