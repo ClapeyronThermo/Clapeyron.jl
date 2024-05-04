@@ -161,7 +161,7 @@ function only_fgh!(fgh!::T) where T
         return fx,df,d2f
     end
 
-    function h(df,d2f,x)
+    function h(d2f,x)
         fgh!(nothing,nothing,d2f,x)
         return d2f
     end
@@ -170,5 +170,5 @@ function only_fgh!(fgh!::T) where T
     g=g,
     fg=fg,
     fgh=fgh,
-    h=nothing)
+    h=h)
 end
