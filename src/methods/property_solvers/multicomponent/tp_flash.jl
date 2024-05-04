@@ -75,14 +75,18 @@ include("tp_flash/MCFlashJL.jl")
 include("tp_flash/multiphase.jl")
 
 function init_preferred_method(method::typeof(tp_flash),model::EoSModel,kwargs)
-    if haskey(kwargs,:equilibrium) || haskey(kwargs,:K0) || haskey(kwargs,:y0) || haskey(kwargs,:x0)
+    if length(model) == 2 && any(x->haskey(kwargs,x),(:v0,:noncondensables,:nonvolatiles))
         return MichelsenTPFlash(;kwargs...)
-    elseif haskey(kwargs,:numphases)
+    elseif any(x->haskey(kwargs,x),(:numphases,:max_steps,:population_size,:time_limit,:verbose,:logspace))
         return DETPFlash(;kwargs...)
     else
-        return DETPFlash(;kwargs...)
+        return MultiPhaseTPFlash(;kwargs...)
     end
 end
+
+    time_limit::Float64 = Inf
+    verbose::Bool = false
+    logspace::Bool = false
 
 export tp_flash
 
