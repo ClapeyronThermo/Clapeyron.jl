@@ -13,11 +13,11 @@ end
 
 Method to solve non-reactive multiphase (`np` phases), multicomponent (`nc` components) flash problem.
 
-The flash algorithm uses successive stability tests to find new phases [1], and then tries to solve the system via rachford-rice and succesive substitution for `nc * np * ss_iters` iterations. 
+The flash algorithm uses successive stability tests to find new phases [1], and then tries to solve the system via rachford-rice and succesive substitution for `nc * np * ss_iters` iterations.
 
-If the Rachford-Rice SS fails to converge, it proceeds to solve the system via gibbs minimization in VT-space using lnK-β-ρ as variables [3]. 
+If the Rachford-Rice SS fails to converge, it proceeds to solve the system via gibbs minimization in VT-space using lnK-β-ρ as variables [3].
 
-The algorithm finishes when SS or the gibbs minimization converges and all resulting phases are stable. 
+The algorithm finishes when SS or the gibbs minimization converges and all resulting phases are stable.
 
 If the result of the phase equilibria is not stable, then it proceeds to add/remove phases again, for a maximum of `phase_iters` iterations.
 
@@ -26,11 +26,11 @@ If the result of the phase equilibria is not stable, then it proceeds to add/rem
 - `K0` (optional), initial guess for the constants K
 - `x0` (optional), initial guess for the composition of phase x
 - `y0` (optional), initial guess for the composition of phase y
-- `K_tol = sqrt(eps(Float64))`, tolerance to stop the calculation (`norm(lnK,1) < K_tol`) 
+- `K_tol = sqrt(eps(Float64))`, tolerance to stop the calculation (`norm(lnK,1) < K_tol`)
 - `ss_iters = 4`, number of Successive Substitution iterations to perform
 - `nacc = 3`, accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
 - `second_order = true`, whether to solve the gibbs energy minimization. setting this to `false` is equivalent to try to solve the flash problem using only Rachford-Rice.
-- `max_phases = typemax(Int)`, the algorithm stops if there are more than `min(max_phases,nc)` phases 
+- `max_phases = typemax(Int)`, the algorithm stops if there are more than `min(max_phases,nc)` phases
 - `phase_iters = 20`, the maximum number of solve-add/remove-phase iterations
 
 ## References
@@ -136,7 +136,7 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
     βi = [one(eltype(z))]
     vz = volume(model,p,T,z)
     volumes = [vz]
-    
+
     idx_vapour = Ref(0)
     _result = (comps, βi, volumes, idx_vapour)
     result = (comps, βi, volumes)
@@ -155,7 +155,7 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
     if δn_add == 0
         return comps, βi, volumes,g0
     end
-    
+
     #step 2: main loop,iterate flashes until all phases are stable
     while !done
         iter += 1
@@ -166,17 +166,17 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
             #sucessive substitution iteration
             cache = resize_cache!(cache,n_phases)
             _result,ss_converged = tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
-            
-            
+
+
             if !ss_converged
                 _result,neq_converged = tp_flash_multi_neq!(model,p,T,z,_result,ss_cache,options)
             end
-            
+
             δn_add = _add_phases!(model,p,T,z,_result,phase_cache,options)
             if δn_add != 1
                 δn_remove = _remove_phases!(model,p,T,z,_result,cache,options)
             end
-            
+
             converged = neq_converged || ss_converged
             no_new_phases = δn_add == δn_remove == 0
             converged = converged && no_new_phases
@@ -262,7 +262,7 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
         converged && break
         x0 .= x
     end
-    
+
     return _result,converged
 end
 
@@ -520,7 +520,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
         vw = volumes[i]
         is_lle = idx_vapour != i && idx_vapour != 0 #if we have a vapour phase, we only search for liquid-liquid splits
         tpd_i = tpd(model,p,T,w,tpd_cache,break_first = true, strategy = :pure,lle = is_lle)
-        
+
         if length(tpd_i[1]) > 0
             δn_add += 1
             np += 1
@@ -727,7 +727,7 @@ function multi_g_obj(model,p,T,z,_result,ss_cache)
         idx_β_begin = (np-1)*nc + 1
         idx_β_end = idx_β_begin + np - 2
         β = view(𝕏,idx_β_begin:idx_β_end)
-        vols = view(𝕏,(idx_β_end+1):length(𝕏)) 
+        vols = view(𝕏,(idx_β_end+1):length(𝕏))
         t = RR_t!(xi,𝕏,β,np,nc)
         βnp = 1 - sum(β)
         xnp .= z ./ t
