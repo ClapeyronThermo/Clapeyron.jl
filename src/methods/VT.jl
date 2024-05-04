@@ -48,8 +48,8 @@ function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_gibbs_free_energy(model::EoSModel, V, T, z=SA[1.])
-    dA, A = ∂f(model,V,T,z)
-    ∂A∂V, ∂A∂T = dA
+    f(x) = eos(model,x,T,z)
+    A,∂A∂V = Solvers.f∂f(f,V)
     return A - V*∂A∂V
 end
 
