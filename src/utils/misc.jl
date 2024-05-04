@@ -137,9 +137,8 @@ format_gccomponents(str::String) = [str]
 format_gccomponents(str::AbstractString) = format_components(String(str))
 format_gccomponents(str::Vector{String}) = str
 
-function viewn(x,max,i)
-    n = length(x)
-    l,r = divrem(n,max)
-    r != 0 && throw(BoundsError(x,max*(l+1)))
-    return @view x[((i - 1)*l+1):(i*l)]
+function viewn(x,chunk,i)
+    l = length(x)
+    l < chunk*i && throw(BoundsError(x,chunk*i))
+    @view x[((i - 1)*chunk+1):(i*chunk)]
 end
