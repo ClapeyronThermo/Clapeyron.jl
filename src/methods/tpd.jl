@@ -393,10 +393,17 @@ It iterates over each two-phase combination, starting from pure trial compositio
 If the vectors are empty, then the procedure couldn't find a negative `tpd`. That is an indication that the phase is (almost) surely stable.
 
 """
-function tpd(model,p,T,z,cache = tpd_cache(model,p,T,z);break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default)
+function tpd(model,p,T,z,cache = tpd_cache(model,p,T,z);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default)
     check_arraysize(model,z)
-    model_reduced,idx_reduced = index_reduction(model,z)
-    result = _tpd(model,p,T,z,cache,break_first,lle,tol_trivial,strategy)
+    if !reduced
+        model_reduced,idx_reduced = index_reduction(model,z)
+        zr = z[idx_reduced]
+    else
+        model_reduced = model
+        idx_reduced = z .== z
+        zr = z
+    end
+    result = _tpd(model_reduced,p,T,zr,cache,break_first,lle,tol_trivial,strategy)
     values,comps,phase_z,phase_w = result
     idx_by_tpd = sortperm(values)
     for i in idx_by_tpd
