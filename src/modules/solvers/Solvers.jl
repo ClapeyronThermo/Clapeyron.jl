@@ -24,19 +24,19 @@ end
 function st_solve(B,∇f,::Val{2})
     ∇f̄ = SVector(∇f[1],∇f[2])
     B̄ = SMatrix{2,2}((B[1,1],B[2,1],B[1,2],B[2,2]))
-    return B̄\∇f
+    return inv(B̄)*∇f
 end
 
 function st_solve(B,∇f,::Val{3})
     ∇f̄ = SVector(∇f[1],∇f[2],∇f[3])
     B̄ = SMatrix{3,3}((B[1,1],B[2,1],B[3,1],B[1,2],B[2,2],B[3,2],B[1,3],B[2,3],B[3,3]))
-    return B̄\∇f
+    return inv(B̄)*∇f
 end
 
 function st_solve(B,∇f,::Val{4})
     ∇f̄ = SVector(∇f[1],∇f[2],∇f[3],∇f[4])
     B̄ =  SMatrix{4,4}((B[1,1],B[2,1],B[3,1],B[4,1],B[1,2],B[2,2],B[3,2],B[4,2],B[1,3],B[2,3],B[3,3],B[4,3],B[1,4],B[2,4],B[3,4],B[4,4]))
-    return B̄\∇f
+    return inv(B̄)*∇f
 end
 
 
@@ -74,15 +74,15 @@ CholeskyNewton() = NLSolvers.Newton(linsolve=cholesky_linsolve)
 function static_linsolve(d,B,∇f)
     d,success = try_st_linsolve(d,B,∇f)
     success && return d
-    d .=  B\∇f
+    lup_linsolve(d,B,∇f)
 end
 
 function static_linsolve(B,∇f)
     if length(∇f) <= 3
-    d,_ = try_st_linsolve(B,∇f)
+        d,_ = try_st_linsolve(B,∇f)
         return d
     else
-        return B\∇f
+        return lup_linsolve(B,∇f)
     end
 end
 
