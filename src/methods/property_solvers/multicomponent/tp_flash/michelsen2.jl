@@ -8,13 +8,42 @@ struct MultiPhaseTPFlash{T} <: TPFlashMethod
     phase_iters::Int
 end
 
+"""
+    MultiPhaseTPFlash(;kwargs...)
 
-function MultiPhaseTPFlash(;equilibrium = :vle,
+Method to solve non-reactive multiphase (`np` phases), multicomponent (`nc` components) flash problem.
+
+The flash algorithm uses successive stability tests to find new phases [1], and then tries to solve the system via rachford-rice and succesive substitution for `nc * np * ss_iters` iterations. 
+
+If the Rachford-Rice SS fails to converge, it proceeds to solve the system via gibbs minimization in VT-space using lnK-β-ρ as variables [3]. 
+
+The algorithm finishes when SS or the gibbs minimization converges and all resulting phases are stable. 
+
+If the result of the phase equilibria is not stable, then it proceeds to add/remove phases again, for a maximum of `phase_iters` iterations.
+
+### Keyword Arguments:
+
+- `K0` (optional), initial guess for the constants K
+- `x0` (optional), initial guess for the composition of phase x
+- `y0` (optional), initial guess for the composition of phase y
+- `K_tol = sqrt(eps(Float64))`, tolerance to stop the calculation (`norm(lnK,1) < K_tol`) 
+- `ss_iters = 4`, number of Successive Substitution iterations to perform
+- `nacc = 3`, accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
+- `second_order = true`, whether to solve the gibbs energy minimization. setting this to `false` is equivalent to try to solve the flash problem using only Rachford-Rice.
+- `max_phases = typemax(Int)`, the algorithm stops if there are more than `min(max_phases,nc)` phases 
+- `phase_iters = 20`, the maximum number of solve-add/remove-phase iterations
+
+## References
+1. Thermopack - Thermodynamic equilibrium algorithms reimplemented in a new framework. (2020, September 08). https://github.com/thermotools/thermopack. Retrieved May 4, 2024, from https://github.com/thermotools/thermopack/blob/main/docs/memo/flash/flash.pdf
+2.  Okuno, R., Johns, R. T. T., & Sepehrnoori, K. (2010). A new algorithm for Rachford-Rice for multiphase compositional simulation. SPE Journal, 15(02), 313–325. [doi:10.2118/117752-pa](https://doi.org/10.2118/117752-pa)
+3.  Adhithya, T. B., & Venkatarathnam, G. (2021). New pressure and density based methods for isothermal-isobaric flash calculations. Fluid Phase Equilibria, 537(112980), 112980. [doi:10.1016/j.fluid.2021.112980](https://doi.org/10.1016/j.fluid.2021.112980)
+"""
+function MultiPhaseTPFlash(;
     K0 = nothing,
     x0 = nothing,
     y0 = nothing,
     ss_tol = sqrt(eps(Float64)),
-    ss_iters = 4,
+    ss_iters = 2,
     nacc = 5,
     second_order = false,
     max_phases = typemax(Int),
@@ -39,6 +68,8 @@ function MultiPhaseTPFlash(;equilibrium = :vle,
 
     return MultiPhaseTPFlash{T}(K0,ss_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
 end
+
+export MultiPhaseTPFlash
 
 function index_reduction(m::MultiPhaseTPFlash,idx::AbstractVector)
     K0,ss_tol,ss_iters,nacc,second_order,max_phases,phase_iters = m.K0,m.ss_tol,m.ss_iters,m.nacc,m.second_order,m.max_phases,m.phase_iters
@@ -116,13 +147,15 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
     done = false
     converged = false
     iter = 0
-
+    ss_converged = false
+    neq_converged = false
     #step 1: tpd: we check if there is any unstable phase.
+    g0 = (eos(model,volumes[1],T,z) + p*vz)/(Rgas(model)*T)
     δn_add = _add_phases!(model,p,T,z,_result,phase_cache,options)
     if δn_add == 0
-        return result
+        return comps, βi, volumes,g0
     end
-    g0 = eos(model,volumes[1],T,z) + p*vz
+    
     #step 2: main loop,iterate flashes until all phases are stable
     while !done
         iter += 1
@@ -132,28 +165,21 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
             n_phases += δn
             #sucessive substitution iteration
             cache = resize_cache!(cache,n_phases)
-            result,ss_converged = tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
+            _result,ss_converged = tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
+            
+            
+            if !ss_converged
+                _result,neq_converged = tp_flash_multi_neq!(model,p,T,z,_result,ss_cache,options)
+            end
+            
             δn_add = _add_phases!(model,p,T,z,_result,phase_cache,options)
-            #@show δn_add
             if δn_add != 1
                 δn_remove = _remove_phases!(model,p,T,z,_result,cache,options)
             end
-            if δn_add == δn_remove == 0 && ss_converged
-                @info "refinement reached! with RR"
-                break
-            end
-        else #step 2.1: δn == 0. we refine our existing values.
-            @info "refinement reached!"
-            converged = true
-            break
-            #=
-            comps, βi, volumes = tp_flash_multi_neq!(model,p,T,z,result,cache,options)
-            #final stability check
-            δn_remove = _remove_phases!(model,p,T,z,result,cache,options)
-            δn_add = _add_phases!(model,p,T,z,result,cache,options)
-            δn = δn_add - δn_remove
-            δn == 0 && return result
-            =#
+            
+            converged = neq_converged || ss_converged
+            no_new_phases = δn_add == δn_remove == 0
+            converged = converged && no_new_phases
         end
         done = iter > max_iter
         done = done || converged
@@ -162,6 +188,9 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
     return comps, βi, volumes, gmix
 end
 
+function neq_converged(model,p,T,z,result)
+    return true
+end
 function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
     result_cache,x0,x,xx,f1,f2,f3,dem_cache = ss_cache
     comps, βi, volumes, idx_vapour = _result
@@ -176,11 +205,11 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
     comps_cache,βi_cache,volumes_cache = result_cache
     #fill F with data
     xnp = comps[np]
-    β = viewn(x0,np,np)
+    β = viewn(x0,nc,np)
     β = view(β,1:np)
     β .= βi
     for i in 1:(np-1)
-        lnKi = viewn(x0,np,i)
+        lnKi = viewn(x0,nc,i)
         xi = comps[i]
         lnKi .= log.(xi ./ xnp)
     end
@@ -233,8 +262,8 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
         converged && break
         x0 .= x
     end
-
-    return result,converged
+    
+    return _result,converged
 end
 
 function fixpoint_multiphase!(F, x, model, p, T, z, result, ss_cache)
@@ -248,7 +277,7 @@ end
 function RR_t!(t,x,β,np,nc)
     t .= 1
     for l in 1:(np - 1)
-        Kl = viewn(x,np,l)
+        Kl = viewn(x,nc,l)
         βl = β[l]
         fi = zero(βl)
         for i in 1:nc
@@ -266,12 +295,12 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache)
     result = comps, βi, volumes
     nc = length(z)
     np = length(βi)
-    βF = viewn(F,np,np)
+    βF = viewn(F,nc,np)
 
     #transforms lnK to K
-    multiphase_lnK_K!(F_cache,x,np)
+    multiphase_lnK_K!(F_cache,x,np,nc)
     if np == 2# && false
-        K = viewn(F_cache,np,1)
+        K = viewn(F_cache,nc,1)
         βsol = rachfordrice(K,z)
         βF[1] = βsol #two-phase solution does not require solving a neq problem
         βF[2] = 1 - βsol
@@ -280,20 +309,11 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache)
         return F
     end
 
-    function f(β)
-        #okuno et al. (2010): objetive function
-        t = similar(β,nc)
-        t = RR_t!(t,x,β,np,nc) #we use lnK here.
-        res = zero(eltype(β))
-        for i in 1:nc
-            res -= z[i]*log(abs(t[i]))
-        end
-        return res
-    end
-    β0 = viewn(x,np,np)
+    f = RR_obj(x, z, _result, ss_cache)
+    β0 = viewn(x,nc,np)
     β0 = copy(view(β0,1:np-1))
-    result = Solvers.optimize(f,β0,LineSearch(Newton(linsolve = static_linsolve)))
-    βsol = Solvers.x_sol(result)
+    βresult = Solvers.optimize(f,β0,LineSearch(Newton(linsolve = static_linsolve)))
+    βsol = Solvers.x_sol(βresult)
     ∑β = sum(βsol)
     for i in 1:(np-1)
         βF[i] = βsol[i]
@@ -306,19 +326,132 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache)
     return F
 end
 
-function multiphase_lnK_K!(F,x,np)
+function RR_obj(x, z, _result, ss_cache)
+    #okuno et al. (2010): objetive function, gradient, hessian
+    function f(β)
+        _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+        comps, βi, volumes, idx_vapour = _result
+        nc,np = length(z),length(comps)
+        t = RR_t!(f3,x,β,np,nc) #we use lnK here.
+        fx = zero(eltype(β))
+        for i in 1:nc
+            fx -= z[i]*log(abs(t[i]))
+        end
+        return fx
+    end
+
+    function g(df,β)
+        _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+        comps, βi, volumes, idx_vapour = _result
+        nc,np = length(z),length(comps)
+        t = RR_t!(f3,x,β,np,nc) #we use lnK here.
+        t_inv = t
+        t_inv .= 1 ./ t
+        df .= 0
+        for j in 1:(np-1)
+            Kj = viewn(x,nc,j)
+            for i in 1:nc
+                df[j] += -expm1(Kj[i])*z[i]*t_inv[i]
+            end
+        end
+        return df
+    end
+
+    function fg(df,β)
+        _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+        comps, βi, volumes, idx_vapour = _result
+        nc,np = length(z),length(comps)
+        t = RR_t!(f3,x,β,np,nc) #we use lnK here.
+        fx = zero(eltype(β))
+        for i in 1:nc
+            fx -= z[i]*log(abs(t[i]))
+        end
+        df .= 0
+        t_inv = t
+        t_inv .= 1 ./ t
+        for j in 1:(np-1)
+            Kj = viewn(x,nc,j)
+            for i in 1:nc
+                df[j] += -expm1(Kj[i])*z[i]*t_inv[i]
+            end
+        end
+        return fx,df
+    end
+
+    function fgh(df,d2f,β)
+        _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+        comps, βi, volumes, idx_vapour = _result
+        nc,np = length(z),length(comps)
+        t = RR_t!(f3,x,β,np,nc) #we use lnK here.
+        fx = zero(eltype(β))
+        for i in 1:nc
+            fx -= z[i]*log(abs(t[i]))
+        end
+        t_inv = t
+        t_inv .= 1 ./ t
+        d2f .= 0
+        df .= 0
+        for j in 1:(np-1)
+            Kj = viewn(x,nc,j)
+            for i in 1:nc
+                ΔKij = expm1(Kj[i])
+                ti_inv = t_inv[i]
+                zi = z[i]
+                df[j] += -ΔKij*zi*ti_inv
+                for k in 1:(np-1)
+                    Kk = viewn(x,nc,k)
+                    ΔKik = expm1(Kk[i])
+                    d2f[j,k] += ΔKik*ΔKij*zi*ti_inv*ti_inv
+                end
+            end
+        end
+        return fx,df,d2f
+    end
+
+    function h(d2f,β)
+        _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
+        comps, βi, volumes, idx_vapour = _result
+        nc,np = length(z),length(comps)
+        t = RR_t!(f3,x,β,np,nc)
+        d2f .= 0
+        t_inv = t
+        t_inv .= 1 ./ t
+        for j in 1:(np-1)
+            Kj = viewn(x,nc,j)
+            for i in 1:nc
+                ΔKij = expm1(Kj[i])
+                ti_inv = t_inv[i]
+                zi = z[i]
+                for k in 1:(np-1)
+                    Kk = viewn(x,nc,k)
+                    ΔKik = expm1(Kk[i])
+                    d2f[j,k] += ΔKik*ΔKij*zi*ti_inv*ti_inv
+                end
+            end
+        end
+        return d2f
+    end
+
+    return ScalarObjective(f=f,
+    g=g,
+    fg=fg,
+    fgh=fgh,
+    h=h)
+end
+
+function multiphase_lnK_K!(F,x,np,nc)
     for l in 1:(np - 1)
-        lnK = viewn(x,np,l)
-        K = viewn(F,np,l)
+        lnK = viewn(x,nc,l)
+        K = viewn(F,nc,l)
         K .= exp.(lnK)
     end
     return F
 end
 
-function multiphase_K_lnK!(F,x,np)
+function multiphase_K_lnK!(F,x,np,nc)
     for l in 1:(np - 1)
-        K = viewn(x,np,l)
-        lnK = viewn(F,np,l)
+        K = viewn(x,nc,l)
+        lnK = viewn(F,nc,l)
         lnK .= log.(K)
     end
     return F
@@ -330,8 +463,8 @@ function multiphase_RR_lnK!(F, x, model, p, T, z, _result, ss_cache)
     result = comps, βi, volumes
     nc = length(z)
     np = length(βi)
-    multiphase_lnK_K!(F_cache,x,np) #F_cache now contains Kij
-    β = viewn(F,np,np)
+    multiphase_lnK_K!(F_cache,x,np,nc) #F_cache now contains Kij
+    β = viewn(F,nc,np)
 
     ##okuno et al. (2010) : calculate t
     t = RR_t!(f1,x,β,np,nc)
@@ -346,7 +479,7 @@ function multiphase_RR_lnK!(F, x, model, p, T, z, _result, ss_cache)
 
     #calculate new compositions for the rest of phases
     for i in 1:(np - 1)
-        Ki = viewn(F_cache,np,i)
+        Ki = viewn(F_cache,nc,i)
         xi = comps[i]
         xi .= Ki .* z ./ t
         xi ./= sum(xi)
@@ -354,7 +487,7 @@ function multiphase_RR_lnK!(F, x, model, p, T, z, _result, ss_cache)
 
     #update lnK
     for i in 1:np - 1
-        lnKi = viewn(F,np,i)
+        lnKi = viewn(F,nc,i)
         xi = comps[i]
         lnϕi,vi = lnϕ!(f3, model, p, T, xi, vol0 = volumes[i])
         if isnan(vi) #restart
@@ -379,30 +512,16 @@ function _add_phases!(model,p,T,z,result,cache,options)
     max_phases = min(options.max_phases,nc)
     max_phases,np
     np + δn_add == max_phases && return 0 #we cannot add new phases here
-    for i in 1:np
+    iter = np
+
+    for i in 1:iter
         #np + δn_add == max_phases && break
         w = comps[i]
         vw = volumes[i]
-        diff_test = VT_diffusive_stability(model,vw,T,w)
-        if !diff_test# && idx_vapour == 0
-            δn_add += 1
-            np += 1
-            β1,x1,v1,β2,x2,v2 = split_phase_k(model,p,T,w,vw,pures,options.K0)
-            β0 = β[i]
-            β[i] = β0*β1
-            comps[i] = x1
-            volumes[i] = v1
-            if pip(model,v2,T,x2) <= 1 && idx_vapour == 0
-                _idx_vapour[] = np + 1
-            end
-            push!(comps,x2)
-            push!(volumes,v2)
-            push!(β,β0*β2)
-        end
         is_lle = idx_vapour != i && idx_vapour != 0 #if we have a vapour phase, we only search for liquid-liquid splits
         tpd_i = tpd(model,p,T,w,tpd_cache,break_first = true, strategy = :pure,lle = is_lle)
-        tpd_test = length(tpd_i) == 0
-        if !tpd_test
+        
+        if length(tpd_i[1]) > 0
             δn_add += 1
             np += 1
             tpd_comps,_,phases_z,phases_w = tpd_i
@@ -419,12 +538,18 @@ function _add_phases!(model,p,T,z,result,cache,options)
                 _idx_vapour[] = i
             end
             β0 = β[i]
-            β[i] = β0*β1
-            comps[i] = x1
-            volumes[i] = v1
-            push!(comps,x2)
-            push!(volumes,v2)
-            push!(β,β0*β2)
+            β[i] = β0*β2
+            comps[i] = x2
+            volumes[i] = v2
+            push!(comps,x1)
+            push!(volumes,v1)
+            push!(β,β0*β1)
+            stable_new = VT_diffusive_stability(model,v1,T,x1)
+            if !stable_new
+                #the new generated phase is not stable
+                #we want to split that
+                iter += 1
+            end
         end
         δn_add == 1 && break
     end
@@ -552,4 +677,70 @@ function split_phase_k(model,p,T,z,vz,pures = split_model(model),K = nothing)
     vx = volume(model,p,T,wx)
     vy = volume(model,p,T,wy)
     return 1-βi,wx,vx,βi,wy,vy
+end
+
+function tp_flash_multi_neq!(model,p,T,z,result,ss_cache,options)
+    result_cache,x0,x,xx,f1,f2,f3,dem_cache = ss_cache
+    comps, βi, volumes, idx_vapour = result
+    np = length(comps)
+    nc = length(z)
+    resize!(x,(np-1)*nc + (np - 1) + np)
+    vx = @view x[(end - np + 1):end]
+    for i in 1:np
+        vx[i] = volumes[i]
+    end
+    f = multi_g_obj(model,p,T,z,result,ss_cache)
+
+    sol = Solvers.optimize(f,x,LineSearch(Newton()))
+    F = Solvers.x_sol(sol)
+    idx_β_begin = (np-1)*nc + 1
+    idx_β_end = idx_β_begin + np - 2
+    β = view(F,idx_β_begin:idx_β_end)
+    v = @view F[(end - np + 1):end]
+    xi = f1
+    xnp = f2
+    t = RR_t!(f1,F,β,np,nc)
+    βnp = 1 - sum(β)
+    xnp .= z ./ t
+    xx_np = comps[np]
+    xx_np .= xnp
+    volumes[np] = v[np]
+    for i in 1:np-1
+        xxi = comps[i]
+        Ki = viewn(F,nc,i)
+        xxi .= xnp .* exp.(Ki)
+        βi[i] = β[i]
+        volumes[i] = v[i]
+    end
+    converged = neq_converged(model,p,T,z,result)
+    return result,converged
+end
+
+function multi_g_obj(model,p,T,z,_result,ss_cache)
+    result_cache,x0,x,xx,f1,f2,f3,dem_cache = ss_cache
+    comps, βi, volumes, idx_vapour = _result
+    nc = length(z)
+    np = length(comps)
+    function f(𝕏)
+        xnp = similar(𝕏,nc)
+        xi = similar(𝕏,nc)
+        idx_β_begin = (np-1)*nc + 1
+        idx_β_end = idx_β_begin + np - 2
+        β = view(𝕏,idx_β_begin:idx_β_end)
+        vols = view(𝕏,(idx_β_end+1):length(𝕏)) 
+        t = RR_t!(xi,𝕏,β,np,nc)
+        βnp = 1 - sum(β)
+        xnp .= z ./ t
+        vnp = vols[np]
+        g = βnp*(eos(model,vnp,T,xnp) + p*vnp)
+        for i in 1:np-1
+            Ki = viewn(𝕏,nc,i)
+            xi .= xnp .* exp.(Ki)
+            vi = vols[i]
+            g += β[i]*(eos(model,vi,T,xi) + p*vi)
+        end
+        return g/(Rgas(model)*T)
+    end
+
+    return f
 end
