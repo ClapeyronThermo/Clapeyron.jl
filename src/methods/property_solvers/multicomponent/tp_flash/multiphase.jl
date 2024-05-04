@@ -29,7 +29,7 @@ If the result of the phase equilibria is not stable, then it proceeds to add/rem
 - `K_tol = sqrt(eps(Float64))`, tolerance to stop the calculation (`norm(lnK,1) < K_tol`)
 - `ss_iters = 4`, number of Successive Substitution iterations to perform
 - `nacc = 3`, accelerate successive substitution method every nacc steps. Should be a integer bigger than 3. Set to 0 for no acceleration.
-- `second_order = true`, whether to solve the gibbs energy minimization. setting this to `false` is equivalent to try to solve the flash problem using only Rachford-Rice.
+- `second_order = true`, whether to solve the gibbs energy minimization using the analytical hessian or not. If set to `false`, the gibbs minimization will be done using L-BFGS.
 - `max_phases = typemax(Int)`, the algorithm stops if there are more than `min(max_phases,nc)` phases
 - `phase_iters = 20`, the maximum number of solve-add/remove-phase iterations
 

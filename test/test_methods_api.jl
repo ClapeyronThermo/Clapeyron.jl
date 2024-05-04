@@ -216,6 +216,11 @@ end
         act_y0 = activity_coefficient(act_system, p, T, flash0[1][2,:]) .* flash0[1][2,:]
         @test Clapeyron.dnorm(act_x0,act_y0) < 0.01 #not the most accurate, but it is global
     end
+
+    @testset "Multiphase algorithm" begin
+        @test Clapeyron.tp_flash(system, p, T, z, MultiPhaseTPFlash())[3] ≈ -6.761402474478878 rtol = 1e-6
+    end
+
     GC.gc()
 
     @testset "Michelsen Algorithm" begin

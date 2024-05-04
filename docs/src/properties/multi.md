@@ -72,6 +72,7 @@ Clapeyron.tp_flash
 Clapeyron.DETPFlash
 Clapeyron.RRTPFlash
 Clapeyron.MichelsenTPFlash
+Clapeyron.MultiPhaseTPFlash
 Clapeyron.MCFlashJL
 Clapeyron.numphases
 Clapeyron.supports_reduction
