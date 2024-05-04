@@ -1,8 +1,8 @@
 #wrapper used to cache results in case of activity models and CompositeModel
-struct PTFlashWrapper{T,S} <: EoSModel
+struct PTFlashWrapper{T,R,S} <: EoSModel
     components::Vector{String}
     model::T
-    sat::Vector{S}
+    sat::Vector{R}
     fug::Vector{S}
     μ::Vector{S}
     equilibrium::Symbol
