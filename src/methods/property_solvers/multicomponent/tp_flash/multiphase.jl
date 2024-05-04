@@ -66,6 +66,9 @@ function MultiPhaseTPFlash(;
         throw(error("incorrect specification for nacc"))
     end
 
+    ss_iters < 1 && throw(error("incorrect specification for ss_iters"))
+    phase_iters < 1 && throw(error("incorrect specification for phase_iters"))  
+
     return MultiPhaseTPFlash{T}(K0,ss_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
 end
 
@@ -168,7 +171,7 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
             _result,ss_converged = tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
 
 
-            if !ss_converged
+            if !ss_converged && options.second_order
                 _result,neq_converged = tp_flash_multi_neq!(model,p,T,z,_result,ss_cache,options)
             end
 
