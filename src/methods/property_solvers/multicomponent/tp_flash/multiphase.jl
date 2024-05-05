@@ -45,7 +45,7 @@ function MultiPhaseTPFlash(;
     K_tol = sqrt(eps(Float64)),
     ss_iters = 2,
     nacc = 5,
-    second_order = false,
+    second_order = true,
     max_phases = typemax(Int),
     phase_iters = 20) #TODO: find a better value for this)
     if K0 == x0 == y0 == nothing #nothing specified
@@ -66,7 +66,7 @@ function MultiPhaseTPFlash(;
         throw(error("incorrect specification for nacc"))
     end
 
-    ss_iters < 1 && throw(error("incorrect specification for ss_iters"))
+    ss_iters < 0 && throw(error("incorrect specification for ss_iters"))
     phase_iters < 1 && throw(error("incorrect specification for phase_iters"))  
 
     return MultiPhaseTPFlash{T}(K0,K_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
@@ -165,12 +165,10 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
         δn = δn_add - δn_remove
         if δn_add != 0 || δn_remove != 0#step 2.1: δn != 0. we add or remove phases and find new candidate ones.
             δn_add,δn_remove = 0,0
-            n_phases += δn
+            n_phases = length(comps)
             #sucessive substitution iteration
             cache = resize_cache!(cache,n_phases)
             _result,ss_converged = tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
-
-
             if !ss_converged
                 _result,neq_converged,gmix = tp_flash_multi_neq!(model,p,T,z,_result,ss_cache,options)
             end
@@ -295,6 +293,14 @@ function RR_t!(t,x,β,np,nc)
     return t
 end
 
+function RR_β_ai!(a,F,i,nc,np)
+    for j in 1:(np - 1)
+        Kj = viewn(F,nc,j)
+        a[j] = 1 - Kj[i]
+    end
+    return a
+end
+
 #constant K, calculate β
 function multiphase_RR_β!(F, x, z, _result, ss_cache)
     _,_,_,F_cache,f1,f2,f3,dem_cache = ss_cache
@@ -306,7 +312,7 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache)
 
     #transforms lnK to K
     multiphase_lnK_K!(F_cache,x,np,nc)
-    if np == 2# && false
+    if np == 2
         K = viewn(F_cache,nc,1)
         βsol = rachfordrice(K,z)
         βF[1] = βsol #two-phase solution does not require solving a neq problem
@@ -319,6 +325,34 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache)
     f = RR_obj(x, z, _result, ss_cache)
     β0 = viewn(x,nc,np)
     β0 = copy(view(β0,1:np-1))
+    #=
+    b = f2
+    b .= 1 .- z
+    for j in 1:(np-1)
+        Kj = viewn(F_cache,nc,j)
+        for i in 1:nc
+            b[i] = min(b[i],1 - Kj[i]*z[i])
+        end
+    end
+    a = view(f1,1:np-1)
+    #a = similar(b,np-1)
+
+    function ls_restricted(φ::P,λ) where P
+        d = φ.d
+        x = φ.z
+        λmax = λ
+        for i in 1:nc
+            ai = RR_β_ai!(a,F_cache,i,nc,np)
+            ai_d = dot(ai,d)
+            if ai_d > 0
+                λx = one(λ)*(b[i] - dot(ai,x))/ai_d
+                λmax = min(λx,λmax)
+            end
+        end
+        return min(λmax,one(λmax))
+    end =#
+    ls_restricted(x1,x2) = x2
+    #ls = RestrictedLineSearch(ls_restricted,Static(1.0))
     βresult = Solvers.optimize(f,β0,LineSearch(Newton(linsolve = static_linsolve)))
     βsol = Solvers.x_sol(βresult)
     ∑β = sum(βsol)
@@ -518,7 +552,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
     δn_add = 0
     max_phases = min(options.max_phases,nc)
     max_phases,np
-    np + δn_add == max_phases && return 0 #we cannot add new phases here
+    np >= max_phases && return 0 #we cannot add new phases here
     iter = np
 
     for i in 1:iter
@@ -526,7 +560,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
         w = comps[i]
         vw = volumes[i]
         is_lle = idx_vapour != i && idx_vapour != 0 #if we have a vapour phase, we only search for liquid-liquid splits
-        tpd_i = tpd(model,p,T,w,tpd_cache,break_first = true, strategy = :pure,lle = is_lle)
+        tpd_i = tpd(model,p,T,w,tpd_cache,reduced = true,break_first = true, strategy = :pure,lle = is_lle)
 
         if length(tpd_i[1]) > 0
             δn_add += 1
@@ -537,10 +571,8 @@ function _add_phases!(model,p,T,z,result,cache,options)
             phase_w = phases_z[1]
             phase_y = phases_w[1]
             vy = volume(model,p,T,y,phase = phase_y)
-            β0 = β[i]
             #phase not stable: generate a new one from tpd result
             β1,x1,v1,β2,x2,v2 = split_phase_tpd(model,p,T,w,y,phase_w,phase_y,vw)
-
             if is_vapour(phase_w) && idx_vapour == 0 #we identified the vapour phase
                 _idx_vapour[] = i
             end
@@ -599,7 +631,7 @@ function _remove_phases!(model,p,T,z,result,cache,options)
     return δn_remove
 end
 
-function split_phase_tpd(model,p,T,z,w,phase_z,phase_w,vz = volume(model,p,T,z,phase = phase_z),vw = volume(model,p,T,w,phase = phase_w))
+function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz = volume(model,p,T,z,phase = phase_z),vw = volume(model,p,T,w,phase = phase_w))
     #w is a phase found via tpd.
     #=if w has a negative tpd, then it exists phases x1,x2 such as
     β*g(x1) + (1 - β)*g(x2) < g(w)
@@ -663,18 +695,18 @@ function split_phase_tpd(model,p,T,z,w,phase_z,phase_w,vz = volume(model,p,T,z,p
         βi = β1 <= βi_intrp <= β2 ? βi_intrp : βi_bisec
         abs(βi0 - βi) < 1e-5 && break
     end
-
-    return βi,x3,v3,(1-βi),w,vw
+    #@assert βi*w + (1-βi)*x3 ≈ z
+    return (1-βi),x3,v3,βi,w,vw
 end
 
-function split_phase_k(model,p,T,z,vz,pures = split_model(model),K = nothing)
+function split_phase_k(model,p,T,z,K = nothing,vz = volume(model,p,T,z),pures = split_model(model))
     #split phase via K values.
     if isnothing(K)
         Ki = suggest_K(model,p,T,z,pures)
     else
         Ki = K
     end
-    βi,singlephase,_ = rachfordrice_β0(Ki,z)
+    βi = rachfordrice(Ki,z)
     wx = similar(z)
     wy = similar(z)
     rr_flash_liquid!(wx,Ki,z,βi)
@@ -683,6 +715,7 @@ function split_phase_k(model,p,T,z,vz,pures = split_model(model),K = nothing)
     wy ./= sum(wy)
     vx = volume(model,p,T,wx)
     vy = volume(model,p,T,wy)
+    #@assert βi*wy + (1-βi)*wx ≈ z
     return 1-βi,wx,vx,βi,wy,vy
 end
 
@@ -697,8 +730,8 @@ function tp_flash_multi_neq!(model,p,T,z,result,ss_cache,options)
         vx[i] = volumes[i]
     end
     f = multi_g_obj(model,p,T,z,result,ss_cache)
-    if second_order
-        sol = Solvers.optimize(f,x,LineSearch(Newton()))
+    if options.second_order
+        sol = Solvers.optimize(f,x,LineSearch(Newton(linsolve = static_linsolve),Backtracking()))
         gmix = Solvers.x_minimum(sol)
         F = Solvers.x_sol(sol) 
     else

@@ -111,7 +111,6 @@ end
 Base.summary(::NLSolvers.Newton{<:Direct, typeof(lup_linsolve)}) = "Newton's method with pivoted LU linsolve"
 LUPNewton() = NLSolvers.Newton(linsolve=lup_linsolve)
 
-export CholeskyNewton,LUPNewton,static_linsolve
 
 """
     x_sol(res::NLSolvers.ConvergenceInfo)
@@ -122,6 +121,21 @@ x_sol(res) = NLSolvers.solution(res)
 function x_sol(res::NLSolvers.ConvergenceInfo{NLSolvers.BrentMin{Float64}})
     return res.info.x
 end
+
+struct RestrictedLineSearch{F,LS} <: NLSolvers.LineSearcher
+    f::F #function that restricts the line search
+    ls::LS #actual line search
+end
+
+export CholeskyNewton,LUPNewton,static_linsolve
+export RestrictedLineSearch
+
+#=
+function NLSolvers.find_steplength(mstyle::NLSolvers.MethodStyle, ls::RestrictedLineSearch{F,LS}, φ::T, λ) where {F,LS,T}
+    α = ls.f(φ,λ)
+    return NLSolvers.find_steplength(mstyle,ls.ls,φ,α)
+end =#
+
 include("poly.jl")
 include("nanmath.jl")
 include("ad.jl")
