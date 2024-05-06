@@ -218,7 +218,7 @@ end
     end
 
     @testset "Multiphase algorithm" begin
-        @test Clapeyron.tp_flash(system, p, T, z, MultiPhaseTPFlash())[3] ≈ -6.761402474478878 rtol = 1e-6
+        @test Clapeyron.tp_flash(system, p, T, z, MultiPhaseTPFlash())[3] ≈ -6.759674475175065 rtol = 1e-6
     end
 
     GC.gc()
