@@ -20,13 +20,8 @@ end
 
 function ∂lnϕ_cache(model::EoSModel, p, T, z, dt::Val{B}) where B 
     V = p
-    if B
-        aux = vcat(V,T,z)
-    else
-        aux = vcat(V,z)
-    end
     lnϕ = zeros(@f(Base.promote_eltype),length(model))
-    aux = zeros(@f(Base.promote_eltype),length(model) + 1)
+    aux = zeros(@f(Base.promote_eltype),length(model) + 1+ B)
     ∂lnϕ∂n = lnϕ * transpose(lnϕ)
     result = DiffResults.HessianResult(aux)
     ∂lnϕ∂n = lnϕ * transpose(lnϕ)
@@ -94,11 +89,9 @@ function ∂lnϕ∂n∂P∂T(model::EoSModel, p, T, z=SA[1.],cache = ∂lnϕ_cac
     ncomponents = length(z)
     aux[1] = V
     aux[2] = T
-    aux[2:end] = z
+    aux[3:end] .= z
     F_res(model, V, T, z) = eos_res(model, V, T, z) / R̄ / T
     fun(aux) = F_res(model, aux[1], aux[2], @view(aux[3:(ncomponents+2)]))
-
-    result = DiffResults.HessianResult(aux)
     result = ForwardDiff.hessian!(result, fun, aux)
 
     F = DiffResults.value(result)

@@ -32,6 +32,6 @@ function C.tp_flash_impl(model,p,T,z,method::C.MCFlashJL)
     g = C.__tpflash_gibbs_reduced(model,p,T,x,y,β,:vle)
     comps = [x,y]
     βi = [1-β,β]
-    volumes = [volume(model,p,T,x,phase = :l),volume(model,p,T,y,phase = :v)]
+    volumes = [C.volume(model,p,T,x,phase = :l),C.volume(model,p,T,y,phase = :v)]
     return comps,βi,volumes,g
 end
