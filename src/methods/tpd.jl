@@ -187,7 +187,7 @@ function tpd_solver(model,p,T,z,K0,
 
     #fz = ϕ*p*z
     #log(fz) = log(p) + log(ϕi) + log(z)
-    _fz .= log.(_fz) .- log(p)
+    _fz .= log.(fz ./ p)
     #_fz .-= log.(z)
     di = _fz
     fxy = ss_cache[3]
@@ -218,8 +218,8 @@ function tpd_solver(model,p,T,z,K0,
         vl = newton_cache[2][]
         tpd_l < 0 && break_first && return wl,wv,tpd_l,tpd_v,vl,vv
     end
-    
-   
+
+
     #success,tpd_l_proposed = assert_correct_volume(fxy,model,p,T,wl,vl,:l,di)
     #!success && (tpd_l = tpd_l_proposed)
 
@@ -235,7 +235,7 @@ function tpd_solver(model,p,T,z,K0,
         vv = newton_cache[2][]
         tpd_v = Solvers.x_minimum(res_v)
     end
-    
+
     #success,tpd_v_proposed = assert_correct_volume(fxy,model,p,T,wv,vv,:v,di)
     #!success && (tpd_v = tpd_v_proposed)
     return wl,wv,tpd_l,tpd_v,vl,vv
@@ -379,7 +379,7 @@ function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,is_liquid,cache,tol_equil
     return (stable, trivial, w, v)
 end
 """
-    tpd(model,p,T,z;break_first = false,lle = false,tol_trivial = 1e-5)
+    tpd(model,p,T,z;break_first = false,lle = false,tol_trivial = 1e-5, di = nothing)
 
 Calculates the Tangent plane distance function (`tpd`). It returns:
 
@@ -393,7 +393,7 @@ It iterates over each two-phase combination, starting from pure trial compositio
 If the vectors are empty, then the procedure couldn't find a negative `tpd`. That is an indication that the phase is (almost) surely stable.
 
 """
-function tpd(model,p,T,z,cache = tpd_cache(model,p,T,z);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default)
+function tpd(model,p,T,z,cache = tpd_cache(model,p,T,z);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing)
     check_arraysize(model,z)
     if !reduced
         model_reduced,idx_reduced = index_reduction(model,z)
@@ -403,7 +403,7 @@ function tpd(model,p,T,z,cache = tpd_cache(model,p,T,z);reduced = false,break_fi
         idx_reduced = z .== z
         zr = z
     end
-    result = _tpd(model_reduced,p,T,zr,cache,break_first,lle,tol_trivial,strategy)
+    result = _tpd(model_reduced,p,T,zr,cache,break_first,lle,tol_trivial,strategy,di)
     values,comps,phase_z,phase_w = result
     idx_by_tpd = sortperm(values)
     for i in idx_by_tpd
@@ -413,42 +413,17 @@ function tpd(model,p,T,z,cache = tpd_cache(model,p,T,z);reduced = false,break_fi
     #do index expansion and sorting here
 end
 
-function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default)
+function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing)
     #step 0: initialize values
-    
+
     if strategy == :default || strategy == :wilson
         K = tpd_K0(model,p,T) #normally wilson
     else
         K = zeros(Base.promote_eltype(model,p,T,z),length(z))
     end
-    vl = volume(model,p,T,z,phase = :l)
-    vv = volume(model,p,T,z,phase = :v)
     cond = (model,p,T,z)
-    if lle
-        v = vl
-        if vl ≈ vv
-            Π = pip(model,v,T,z) #identify phase with pip
-            isliquidz = Π <= 1.0
-        else
-            isliquidz = true
-        end
-    else
-        idx,v,_ = volume_label((model,model),p,T,z,(vl,vv))
-        if vl ≈ vv
-            Π = pip(model,v,T,z) #identify phase with pip
-            isliquidz = Π <= 1.0
-        elseif idx == 1 #v = vl
-            isliquidz = true
-        elseif idx == 2 #v = vv
-            isliquidz = false
-        else
-            # this should not be reachable. the only case is when v = NaN, in that case
-            #we catch that later.
-            isliquidz = false
-        end
-    end
-    
-    fz = VT_mixture_fugacity(model,v,T,z,p)
+    fz,phasez,v = tpd_input_composition(model,p,T,z,di,lle)
+    isliquidz = is_liquid(phasez)
     vle = !lle
     values = zeros(eltype(fz),0)
     comps = fill(fz,0)
@@ -486,6 +461,46 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     end
 
     return result
+end
+
+function tpd_input_composition(model,p,T,z,di,lle)
+    if di == nothing
+        vl = volume(model,p,T,z,phase = :l)
+        vv = volume(model,p,T,z,phase = :v)
+        
+        if lle
+            v = vl
+            if vl ≈ vv
+                Π = pip(model,v,T,z) #identify phase with pip
+                isliquidz = Π <= 1.0
+            else
+                isliquidz = true
+                phasez = :liquid
+            end
+        else
+            idx,v,_ = volume_label((model,model),p,T,z,(vl,vv))
+            if vl ≈ vv
+                Π = pip(model,v,T,z) #identify phase with pip
+                isliquidz = Π <= 1.0
+            elseif idx == 1 #v = vl
+                isliquidz = true
+            elseif idx == 2 #v = vv
+                isliquidz = false
+            else
+                # this should not be reachable. the only case is when v = NaN, in that case
+                #we catch that later.
+                isliquidz = false
+            end
+        end
+        phasez = isliquidz ? :liquid : :vapour
+        fz = VT_mixture_fugacity(model,v,T,z,p)
+        return fz,phasez,v
+    else
+        fz = p .* exp.(di)
+        phasez = :unknown
+        v = zero(eltype(fz))
+        return fz,phasez,v
+    end
 end
 
 function z_pure!(K,i)
@@ -576,10 +591,12 @@ function suggest_K(model,p,T,z,pure = split_model(model))
     di = similar(lnϕz)
     di .= lnϕz .+ log.(z)
     for i in 1:length(z)
-        lnϕv,vv = lnϕ(pure[i],p,T,phase = :v)
-        lnϕl,vl = lnϕ(pure[i],p,T,phase = :l)
-        tpd_v = lnϕv[1] - di[i]
-        tpd_l = lnϕl[1] - di[i]        
+        vl = volume(pure[i],p,T,phase = :l)
+        vv = volume(pure[i],p,T,phase = :v)
+        lnϕv = VT_lnϕ_pure(pure[i],vv,T,p)
+        lnϕl = VT_lnϕ_pure(pure[i],vl,T,p)
+        tpd_v = lnϕv - di[i]
+        tpd_l = lnϕl - di[i]
         if tpd_l < 0 && tpd_v < 0
             K[i] = exp(lnϕl[1])/exp(lnϕv[1])
         elseif tpd_l < 0 && tpd_v >= 0
