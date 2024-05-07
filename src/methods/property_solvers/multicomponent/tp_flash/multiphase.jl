@@ -67,7 +67,7 @@ function MultiPhaseTPFlash(;
     end
 
     ss_iters < 0 && throw(error("incorrect specification for ss_iters"))
-    phase_iters < 1 && throw(error("incorrect specification for phase_iters"))  
+    phase_iters < 1 && throw(error("incorrect specification for phase_iters"))
 
     return MultiPhaseTPFlash{T}(K0,K_tol,ss_iters,nacc,second_order,max_phases,phase_iters)
 end
@@ -86,7 +86,7 @@ function tpd_cache end
 function tp_flash_multi_cache(model,p,T,z)
     pure = split_model(model)
     _tpd_cache = tpd_cache(model,p,T,z)
-    phase_cache = (pure,_tpd_cache)
+
     F_cache = zeros(Base.promote_eltype(model,p,T,z),length(z))
     F_cache2 = similar(F_cache)
     F_cache3 = similar(F_cache)
@@ -97,6 +97,14 @@ function tp_flash_multi_cache(model,p,T,z)
     v_cache = similar(f1)
     bi_cache = similar(f1)
     result_cache = comps_cache,bi_cache,v_cache
+    lnφv,lnφl = similar(f1),similar(f1)
+    for i in 1:length(z)
+        vl = volume(pure[i],p,T,phase = :l)
+        vv = volume(pure[i],p,T,phase = :v)
+        lnφv[i] = VT_lnϕ_pure(pure[i],vv,T,p)
+        lnφl[i] = VT_lnϕ_pure(pure[i],vl,T,p)
+    end
+    phase_cache = (pure,_tpd_cache,lnφv,lnφl)
     ss_cache = result_cache,F_cache,F_cache2,F_cache3,f1,f2,f3,dem_cache
     return phase_cache,ss_cache,nothing
 end
@@ -154,7 +162,7 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
     neq_converged = false
     #step 1: tpd: we check if there is any unstable phase.
     g0 = (eos(model,volumes[1],T,z) + p*vz)/(Rgas(model)*T)
-    δn_add = _add_phases!(model,p,T,z,_result,phase_cache,options)
+    δn_add = _add_phases!(model,p,T,z,_result,cache,options)
     if δn_add == 0
         return comps, βi, volumes,g0
     end
@@ -173,7 +181,7 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
                 _result,neq_converged,gmix = tp_flash_multi_neq!(model,p,T,z,_result,ss_cache,options)
             end
 
-            δn_add = _add_phases!(model,p,T,z,_result,phase_cache,options)
+            δn_add = _add_phases!(model,p,T,z,_result,cache,options)
             if δn_add != 1
                 δn_remove = _remove_phases!(model,p,T,z,_result,cache,options)
             end
@@ -187,7 +195,7 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
         done = iter > max_iter
         done = done || converged
     end
-    
+
     return comps, βi, volumes, gmix
 end
 
@@ -546,7 +554,8 @@ end
 function _add_phases!(model,p,T,z,result,cache,options)
     comps, β, volumes,_idx_vapour = result
     idx_vapour = _idx_vapour[]
-    pures,tpd_cache = cache
+    phase_cache,ss_cache,newton_cache = cache
+    pures,tpd_cache,lnφv,lnφl = phase_cache
     np = length(comps)
     nc = length(z)
     δn_add = 0
@@ -601,7 +610,8 @@ function _remove_phases!(model,p,T,z,result,cache,options)
     comps, β, volumes, idx_vapour = result
     n = length(comps)
     δn_remove = 0
-    pures,tpd_cache = cache
+    phase_cache,ss_cache,newton_cache = cache
+    pures,tpd_cache,lnφv,lnφl = phase_cache
     βmin,imin = findmin(β)
     wmin,vmin = comps[imin],volumes[imin]
     gmin = VT_gibbs_free_energy(model,vmin,T,wmin)
@@ -733,13 +743,13 @@ function tp_flash_multi_neq!(model,p,T,z,result,ss_cache,options)
     if options.second_order
         sol = Solvers.optimize(f,x,LineSearch(Newton(linsolve = static_linsolve),Backtracking()))
         gmix = Solvers.x_minimum(sol)
-        F = Solvers.x_sol(sol) 
+        F = Solvers.x_sol(sol)
     else
         sol = Solvers.optimize(f,x,LineSearch(LBFGS()))
         gmix = Solvers.x_minimum(sol)
         F = Solvers.x_sol(sol)
     end
-    
+
     idx_β_begin = (np-1)*nc + 1
     idx_β_end = idx_β_begin + np - 2
     β = view(F,idx_β_begin:idx_β_end)
@@ -790,4 +800,50 @@ function multi_g_obj(model,p,T,z,_result,ss_cache)
     end
 
     return f
+end
+
+
+function split_phase_tpd2(model,p,T,z,result,cache)
+    comps, βi, volumes, idx_vapour = result
+    phase_cache,ss_cache,newton_cache = cache
+    pures,tpd_cache,lnϕv,lnϕl = phase_cache
+    __cache,_,_,_,f1,f2,f3,_ = ss_cache
+    di_cache,_,_ = __cache
+    np = length(comps)
+    nc = length(f1)
+    lle = idx_vapour[] != 0
+    zi,di,K = f1,f2,f3
+    #calculate di,zi
+    f1 .= 0
+    f2 .= 0
+    f3 .= 1
+    for i in 1:np
+        wi,βwi = comps[i],βi[i]
+        f1 .+= βwi*wi
+        dij = di_cache[i]
+        lnϕwi,_ = lnϕ!(dij,model,p,T,wi,threaded = false,vol0 = volumes[i])
+        dij .= lnϕwi .+ log.(wi)
+        di .+= βwi*dij
+    end
+    lnϕ!(f3,model,p,T,z,threaded = false)
+    dz = f3 .+ log.(z)
+    dw = f3
+    @show dz
+    @show di
+    for i in 1:np
+        tpd_test = tpd(model,p,T,z,tpd_cache,break_first = false,lle = lle,di = di,strategy = :pure)
+        @show tpd_test[1]
+        @show tpd_test[2]
+    end
+    return K
+end
+
+function mm_di(model,p,T,result)
+    comps, βi, volumes, idx_vapour = result
+    di = similar(comps[1])
+    for i in 1:1
+        lnϕwi,_ = lnϕ!(di,model,p,T,comps[i],threaded = false,vol0 = volumes[i])
+        di .= lnϕwi .+ log.(comps[i])
+    end
+    return di
 end
