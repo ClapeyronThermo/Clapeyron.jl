@@ -17,7 +17,7 @@ function lnϕ!(lnϕ, model::EoSModel, p, T, z=SA[1.]; phase=:unknown, vol0=nothi
     return lnϕ, vol
 end
 
-function lnϕ_pure(model,V,T,p = pressure(model,V,T))
+function VT_lnϕ_pure(model,V,T,p = pressure(model,V,T))
     RT = Rgas(model)*T
     μ_res = a_res(model,V,T,SA[1.0])
     Z = p*V/RT
