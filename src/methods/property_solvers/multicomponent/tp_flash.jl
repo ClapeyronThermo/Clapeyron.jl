@@ -1,5 +1,7 @@
 function _multiphase_gibbs(model,p,T,result)
-    comps, β, volumes = result
+    comps = result[1]
+    β = result[2]
+    volumes = result[3]
     if model isa PTFlashWrapper && length(β) == 2 #TODO: in the future, PTFlashWrappers could be multiphase
         if model.model isa RestrictedEquilibriaModel
             return zero(eltype(β))
