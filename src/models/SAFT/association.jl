@@ -186,14 +186,14 @@ function dense_assoc_site_matrix(model,V,T,∂z,data=nothing,delta = @f(__delta_
     sitesparam = getsites(model)
     _sites = sitesparam.n_sites
     p = _sites.p
-    ρ = Solvers.primalval(N_A/V)
+    ρ = primalval(N_A/V)
     #ρ = N_A/V
-    z = Solvers.primalval(∂z)
+    z = primalval(∂z)
     #z = ∂z
     _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
     _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
     _idx = 1:length(_ii)
-    _Δ = Solvers.primalval(delta.values)
+    _Δ = primalval(delta.values)
     #_Δ = delta.values
     TT = eltype(_Δ)
     _n = sitesparam.n_sites.v
@@ -364,7 +364,7 @@ function _X_exact1(model,V,T,z,data=nothing)
     xia = -2*_c/denom
     xk_ia = kia*xia
     xjb = (1- xk_ia)/(1 - xk_ia*xk_ia)
-    return xia,xjb,i,j,a,b,n,idxs 
+    return xia,xjb,i,j,a,b,n,idxs
 end
 
 function pack_X_exact1(xia,xjb,i,j,a,b,n,idxs)
@@ -380,36 +380,32 @@ end
 
 getsites(model) = model.sites
 
-function a_assoc_impl(model::EoSModel, V, T, z, X_, Δ_)
-    _0 = zero(first(X_.v))
+function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
     sites = getsites(model)
     n = sites.n_sites
-    ∑z = sum(z)
-
-
-    Q1 = zero(eltype(Δ_.values))
-    for (idx,(i,j),(a,b)) in indices(Δ_)
-        Xia,nia = Solvers.primalval(X_[i][a]),n[i][a]
-        Xjb,njb = Solvers.primalval(X_[j][b]),n[j][b]
-        Q1 -= z[i]*z[j]*nia*njb*Xia*Xjb*(Δ_.values[idx]*N_A)
-        #Q -= nia*njb*Xia*Xjb*Δ_.values[idx]
+    Q1 = zero(eltype(Δ.values))
+    for (idx,(i,j),(a,b)) in indices(Δ)
+        Xia,nia = primalval(X[i][a]),n[i][a]
+        Xjb,njb = primalval(X[j][b]),n[j][b]
+        dQ1 = z[i]*z[j]*nia*njb*Xia*Xjb*(Δ.values[idx]*N_A)
+        Q1 -= dQ1
     end
     Q1 = Q1/V
-    Q2 = zero(first(X_.v)) |> Solvers.primalval
+    Q2 = zero(first(X.v)) |> primalval
     for i ∈ @comps
         ni = n[i]
         iszero(length(ni)) && continue
-        Xᵢ = X_[i]
+        Xᵢ = X[i]
         resᵢₐ = zero(Q2)
         for (a,nᵢₐ) ∈ pairs(ni)
-            Xᵢₐ = Solvers.primalval(Xᵢ[a])
+            Xᵢₐ = primalval(Xᵢ[a])
             nᵢₐ = ni[a]
-            resᵢₐ += nᵢₐ * (log1p(Xᵢₐ) - Xᵢₐ)
+            resᵢₐ += nᵢₐ * (log(Xᵢₐ) + 1 - Xᵢₐ)
         end
         Q2 += resᵢₐ*z[i]
     end
     Q = Q1 + Q2
-    return Q/∑z
+    return Q/sum(z)
 end
 
 #exact calculation of a_assoc when there is only one site pair
