@@ -174,6 +174,15 @@ function ∑(fn,iterator)
     return sum(fn,iterator)
 end
 
+function is_ad_input(model,V,T,z)
+    #model_primal = Solvers.primal_eltype(model)
+    #TODO: do something if the model parameters themselves use ForwardDiff 
+    V_primal,T_primal,z_primal = Solvers.primalval(V),Solvers.primalval(T),Solvers.primalval(z)
+    type = Base.promote_eltype(V,T,z)
+    primal_type = Base.promote_eltype(V_primal,T_primal,z_primal)
+    return primal_type != type
+end
+
 @inline function nan_num(V,T,z)
     _0 = zero(V+T+first(z))
     _0/_0
