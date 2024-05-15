@@ -258,6 +258,7 @@ function dense_assoc_site_matrix(model,V,T,∂z,data=nothing,delta = @f(__delta_
                 if iszero(K[ia,jb])
                     j,b = inverse_index(p,jb)
                     njb = _n[jb]
+                    #elliott mixing rule for Δ
                     Δijab = primalval(sqrt(delta[i,i][a,b] * delta[j,j][a,b])) 
                     if !iszero(Δijab)
                         K[ia,jb]  = ρ*njb*z[j]*Δijab

@@ -451,7 +451,8 @@ function _tpd(model,p,T,z,cache = tpd_cache(model,p,T,z),break_first = false,lle
     #step 3: trying pure components
 
     if strategy == :pure || strategy == :default
-        for i in 1:length(model)
+        ids = sortperm(z) #we start with the compounds in the lowest amount first.
+        for i in ids
             z_pure!(K,i)
             lle = lle | any(is_vapour,phase_w)
             proposed = tpd_solver(model,p,T,z,K,fz,cache,TPDPureSolver(),isliquidz;break_first,lle,tol_trivial)
