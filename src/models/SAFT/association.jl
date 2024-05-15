@@ -3,8 +3,16 @@ function a_assoc(model::EoSModel, V, T, z,data=nothing)
     nn = assoc_pair_length(model)
     iszero(nn) && return _0
     isone(nn) && return a_assoc_exact_1(model,V,T,z,data)
-    X_ = @f(X,data)
-    return @f(a_assoc_impl,X_)
+    X_,Δ_ = @f(X_and_Δ,data)
+    return @f(a_assoc_impl,X_,Δ_)
+end
+
+function __delta_assoc(model,V,T,z,data::M) where M
+    if data === nothing
+        return Δ(model,V,T,z)
+    else
+        return Δ(model,V,T,z,data)
+    end
 end
 
 """
@@ -166,33 +174,29 @@ function nonzero_extrema(K)
     return _min,_max
 end
 
-function assoc_site_matrix(model,V,T,z,data = nothing)
+function assoc_site_matrix(model,V,T,z,data = nothing,delta = @f(__delta_assoc,data))
     options = assoc_options(model)
     if !options.dense
         @warn "using sparse matrices for association is deprecated."
     end
-    return dense_assoc_site_matrix(model,V,T,z,data)
+    return dense_assoc_site_matrix(model,V,T,z,data,delta)
 end
 
-function dense_assoc_site_matrix(model,V,T,z,data=nothing)
-    if data === nothing
-        delta = @f(Δ)
-    else
-        delta = @f(Δ,data)
-    end
+function dense_assoc_site_matrix(model,V,T,∂z,data=nothing,delta = @f(__delta_assoc,data))
     sitesparam = getsites(model)
     _sites = sitesparam.n_sites
     p = _sites.p
-    ρ = N_A/V
-
+    ρ = Solvers.primalval(N_A/V)
+    #ρ = N_A/V
+    z = Solvers.primalval(∂z)
+    #z = ∂z
     _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
     _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
     _idx = 1:length(_ii)
-    _Δ= delta.values
+    _Δ = Solvers.primalval(delta.values)
+    #_Δ = delta.values
     TT = eltype(_Δ)
-
     _n = sitesparam.n_sites.v
-
     nn = length(_n)
     K  = zeros(TT,nn,nn)
     count = 0
@@ -266,14 +270,19 @@ julia> x = Clapeyron.assoc_fractions(model,2.6e-5,300.15,[0.3,0.3,0.4]) #you can
 ```
 """
 function X(model::EoSModel, V, T, z,data = nothing)
+    _X,_Δ = X_and_Δ(model,V,T,z,data)
+    return _X
+end
+function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
     nn = assoc_pair_length(model)
     isone(nn) && return X_exact1(model,V,T,z,data)
     options = assoc_options(model)
-    K = assoc_site_matrix(model,V,T,z,data)
+    _Δ = __delta_assoc(model,V,T,z,data)
+    K = assoc_site_matrix(model,V,T,z,data,_Δ)
     sitesparam = getsites(model)
     idxs = sitesparam.n_sites.p
     Xsol = assoc_matrix_solve(K,options)
-    return PackedVofV(idxs,Xsol)
+    return PackedVofV(idxs,Xsol),_Δ
 end
 
 function assoc_matrix_solve(K,options::AssocOptions)
@@ -371,25 +380,36 @@ end
 
 getsites(model) = model.sites
 
-function a_assoc_impl(model::EoSModel, V, T, z,X_)
+function a_assoc_impl(model::EoSModel, V, T, z, X_, Δ_)
     _0 = zero(first(X_.v))
     sites = getsites(model)
     n = sites.n_sites
-    res = _0
-    resᵢₐ = _0
+    ∑z = sum(z)
+
+
+    Q1 = zero(eltype(Δ_.values))
+    for (idx,(i,j),(a,b)) in indices(Δ_)
+        Xia,nia = Solvers.primalval(X_[i][a]),n[i][a]
+        Xjb,njb = Solvers.primalval(X_[j][b]),n[j][b]
+        Q1 -= z[i]*z[j]*nia*njb*Xia*Xjb*(Δ_.values[idx]*N_A)
+        #Q -= nia*njb*Xia*Xjb*Δ_.values[idx]
+    end
+    Q1 = Q1/V
+    Q2 = zero(first(X_.v)) |> Solvers.primalval
     for i ∈ @comps
         ni = n[i]
         iszero(length(ni)) && continue
         Xᵢ = X_[i]
-        resᵢₐ = _0
+        resᵢₐ = zero(Q2)
         for (a,nᵢₐ) ∈ pairs(ni)
-            Xᵢₐ = Xᵢ[a]
+            Xᵢₐ = Solvers.primalval(Xᵢ[a])
             nᵢₐ = ni[a]
-            resᵢₐ +=  nᵢₐ* (log(Xᵢₐ) - Xᵢₐ*0.5 + 0.5)
+            resᵢₐ += nᵢₐ * (log1p(Xᵢₐ) - Xᵢₐ)
         end
-        res += resᵢₐ*z[i]
+        Q2 += resᵢₐ*z[i]
     end
-    return res/sum(z)
+    Q = Q1 + Q2
+    return Q/∑z
 end
 
 #exact calculation of a_assoc when there is only one site pair
