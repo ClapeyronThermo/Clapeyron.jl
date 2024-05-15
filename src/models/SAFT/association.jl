@@ -193,9 +193,9 @@ function dense_assoc_site_matrix(model,V,T,∂z,data=nothing,delta = @f(__delta_
     _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
     _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
     _idx = 1:length(_ii)
-    _Δ = primalval(delta.values)
+    Δ = primalval(delta.values)
     #_Δ = delta.values
-    TT = eltype(_Δ)
+    TT = eltype(Δ)
     _n = sitesparam.n_sites.v
     nn = length(_n)
     K  = zeros(TT,nn,nn)
@@ -217,11 +217,38 @@ function dense_assoc_site_matrix(model,V,T,∂z,data=nothing,delta = @f(__delta_
                     jb = compute_index(p,j,b)
                     njb = _n[jb]
                     count += 1
-                    K[ia,jb]  = ρ*njb*z[j]*_Δ[idx]
+                    K[ia,jb]  = ρ*njb*z[j]*Δ[idx]
                 end
             end
         end
     end
+
+    if runtime_combining
+        for (idx1,(i1,i2),(a1,a2)) in indices(delta)
+            if i1 == i2
+                i = i1
+                a = a1
+                ia = compute_index(p,i,a)
+                nia = _n[ia]
+                #nia = n[i][a]
+                for (idx2,(j1,j2),(b1,b2)) in indices(delta)
+                    if j1 == j2
+                        j = j1
+                        b = b2
+                        jb = compute_index(p,j,b)
+                        njb = _n[jb]
+                        #njb = n[j,b]
+                        if validindex(delta[i,j],a,b) == 0 #check that our new mixing pair does not exist.
+                            #elliott mixing rule for Δ
+                            Δijab = sqrt(Δ[idx1]*Δ[idx2]) |> primalval
+                            K[ia,jb]  = ρ*njb*z[j]*Δijab
+                            K[jb,ia]  = ρ*nia*z[i]*Δijab
+                        end
+                    end
+                end
+            end
+        end
+    end 
 
     if runtime_combining
         @inbounds for ia ∈ 1:nn
@@ -231,7 +258,7 @@ function dense_assoc_site_matrix(model,V,T,∂z,data=nothing,delta = @f(__delta_
                 if iszero(K[ia,jb])
                     j,b = inverse_index(p,jb)
                     njb = _n[jb]
-                    Δijab = sqrt(delta[i,i][a,b] * delta[j,j][a,b]) #elliott rule
+                    Δijab = primalval(sqrt(delta[i,i][a,b] * delta[j,j][a,b])) 
                     if !iszero(Δijab)
                         K[ia,jb]  = ρ*njb*z[j]*Δijab
                         K[jb,ia]  = ρ*nia*z[i]*Δijab
@@ -381,6 +408,18 @@ end
 getsites(model) = model.sites
 
 function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
+    #=
+    Implementation notes
+
+    We solve X in primal space so X does not carry derivative information.
+    to reobtain the derivatives, we evaluate michelsen's Q function instead.
+
+    there are two parts of this function: Q1 (carries derivative information via Δ) and
+    Q2 (only affects the primal value of a_assoc, not the derivatives)
+
+    this is not necessary to do in the exact solver, as we calculate X via elementary operations that
+    propagate the derivatives.
+    =#
     sites = getsites(model)
     n = sites.n_sites
     Q1 = zero(eltype(Δ.values))
@@ -390,6 +429,34 @@ function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
         dQ1 = z[i]*z[j]*nia*njb*Xia*Xjb*(Δ.values[idx]*N_A)
         Q1 -= dQ1
     end
+
+    options = assoc_options(model)
+    combining = options.combining
+    runtime_combining = combining ∈ (:elliott_runtime,:esd_runtime)
+
+    if runtime_combining
+        for (idx1,(i1,i2),(a1,a2)) in indices(Δ)
+            if i1 == i2
+                i = i1
+                a = a1
+                Xia,nia = primalval(X[i][a]),n[i][a]
+                for (idx2,(j1,j2),(b1,b2)) in indices(Δ)
+                    if j1 == j2
+                        j = j1
+                        b = b2
+                        #validindex(Δ[i,j],i,j)
+                        if validindex(Δ[i,j],a,b) == 0 #check that our new mixing pair does not exist.
+                            Xjb,njb = primalval(X[j][b]),n[j][b]
+                            Δijab = sqrt(Δ.values[idx1]*Δ.values[idx2])
+                            dQ2 = z[i]*z[j]*nia*njb*Xia*Xjb*(Δijab*N_A)
+                            Q1 -= dQ2
+                        end
+                    end
+                end
+            end
+        end
+    end
+
     Q1 = Q1/V
     Q2 = zero(first(X.v)) |> primalval
     for i ∈ @comps
