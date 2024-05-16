@@ -17,19 +17,24 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
     return _volume_compress(model,p,T,z,V0,max_iters)
 end
 
-function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+function _volume_compress(model,p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
     _0 = zero(p+T+first(z)+oneunit(eltype(model)))
     _1 = one(_0)
     isnan(V0) && return _0/_0
-    pset = _1*p
+    pset = primalval(1.0*p)
+    T = primalval(_T)
     _nan = _0/_0
-    logV0 = log(V0)*_1
-    lb_v = lb_volume(model,z)
-    function logstep(_V)
+    nan = primalval(_nan)
+    logV0 = primalval(log(V0)*_1)
+    z = primalval(_z)
+    lb_v = primalval(lb_volume(model,z))
+    function logstep(__V)
         _V < log(lb_v) && return zero(_V)/zero(_V)
         _V = exp(_V)
-        _p,dpdV = p∂p∂V(model,_V,T,z)
-        dpdV > 0 && return _nan #inline mechanical stability.
+        __p,_dpdV = p∂p∂V(model,_V,T,z)
+        dpdV = primalval(_dpdV)
+        _p = primalval(__p)
+        dpdV > 0 && return nan #inline mechanical stability.
         abs(_p-pset) < 3eps(pset) && return zero(_V)
         _Δ = (pset-_p)/(_V*dpdV) #(_p - pset)*κ
         return _Δ
@@ -39,8 +44,15 @@ function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:li
         vv = _V + Δ
         return vv
     end
-    res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
-    return exp(res)
+    logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),nan)
+    #netwon step to recover derivative information:
+    #V = V - (p(V) - p)/(dpdV(V))
+    #dVdP = -1/dpdV
+    #dVdT = dpdT/dpdV
+    #dVdn = dpdn/dpdV
+    V = exp(logV)
+    psol,dpdVsol = p∂p∂V(model,V,_T,_z)
+    return V - (psol - p)/dpdVsol
 end
 
 """
