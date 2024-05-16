@@ -8,3 +8,5 @@
 - `VT_diffusive_stability` now uses `eigmin` instead of the full eigen calculation.
 - `isstable` now works on (P,T,z) space, for the (V,T,z) space, use `VT_isstable`. there are now (P,T,z) versions of each stability function.
 - calculation of volumes,saturation pressures and critical points of CPA models now defaults to the inner cubic model when there is no association present.
+- The default association implementation now uses implicit AD to support derivatives (via michelsen's Q function), instead of propagating derivative information through the iterative procedure. 
+- the default `volume` implementation now uses implicit AD to support derivatives. instead of propagating derivative information through the iterative procedure. This allows workloads of the type: `ForwardDiff.derivative(_p -> volume(model,_p,T,z),p0)` to be efficient.

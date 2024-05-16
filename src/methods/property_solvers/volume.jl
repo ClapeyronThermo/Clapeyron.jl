@@ -17,42 +17,42 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
     return _volume_compress(model,p,T,z,V0,max_iters)
 end
 
-function _volume_compress(model,p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    _0 = zero(p+T+first(z)+oneunit(eltype(model)))
+function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+    _0 = zero(_p+_T+first(_z)+oneunit(eltype(model)))
     _1 = one(_0)
     isnan(V0) && return _0/_0
-    pset = primalval(1.0*p)
+    p₀ = primalval(1.0*_p)
     T = primalval(_T)
     _nan = _0/_0
     nan = primalval(_nan)
     logV0 = primalval(log(V0)*_1)
     z = primalval(_z)
-    lb_v = primalval(lb_volume(model,z))
-    function logstep(__V)
-        _V < log(lb_v) && return zero(_V)/zero(_V)
-        _V = exp(_V)
-        __p,_dpdV = p∂p∂V(model,_V,T,z)
-        dpdV = primalval(_dpdV)
-        _p = primalval(__p)
-        dpdV > 0 && return nan #inline mechanical stability.
-        abs(_p-pset) < 3eps(pset) && return zero(_V)
-        _Δ = (pset-_p)/(_V*dpdV) #(_p - pset)*κ
-        return _Δ
+    log_lb_v = log(primalval(lb_volume(model,z)))
+    function logstep(logVᵢ)
+        logVᵢ < log_lb_v && return zero(logVᵢ)/zero(logVᵢ)
+        Vᵢ = exp(logVᵢ)
+        _pᵢ,_dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
+        pᵢ,dpdVᵢ = primalval(_pᵢ),primalval(_dpdVᵢ) #ther could be rare cases where the model itself has derivative information.
+        dpdVᵢ > 0 && return zero(logVᵢ)/zero(logVᵢ) #inline mechanical stability.
+        abs(pᵢ-p₀) < 3eps(p₀) && return zero(Vᵢ) #this helps convergence near critical points.
+        Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
+        return Δᵢ
     end
-    function f_fixpoint(_V)
-        Δ = logstep(_V)
-        vv = _V + Δ
-        return vv
+    function f_fixpoint(logVᵢ)
+        Δᵢ = logstep(logVᵢ)
+        logV = logVᵢ + Δᵢ
+        return logV
     end
+
     logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),nan)
     #netwon step to recover derivative information:
     #V = V - (p(V) - p)/(dpdV(V))
     #dVdP = -1/dpdV
     #dVdT = dpdT/dpdV
     #dVdn = dpdn/dpdV
-    V = exp(logV)
-    psol,dpdVsol = p∂p∂V(model,V,_T,_z)
-    return V - (psol - p)/dpdVsol
+    Vsol = exp(logV)
+    psol,dpdVsol = p∂p∂V(model,Vsol,_T,_z)
+    return Vsol - (psol - _p)/dpdVsol
 end
 
 """

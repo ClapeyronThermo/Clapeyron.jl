@@ -209,21 +209,15 @@ primalval(x) = x
 #scalar
 primalval(x::ForwardDiff.Dual) = primalval(ForwardDiff.value(x))
 
-#primaltype(::Type{T}) where T = T
-#primaltype(::Type{<:ForwardDiff.Dual{T,R}}) where {T,R} = primaltype(R)
 
 primal_eltype(x) = primal_eltype(eltype(x))
 primal_eltype(::Type{W}) where W <: ForwardDiff.Dual{T,V} where {T,V} = primal_eltype(V)
 primal_eltype(::Type{T}) where T = T
 
 
-function remake_dual(x::ForwardDiff.Dual{V,T},x0::X) where {V,T,X}
-    return ForwardDiff.Dual{V}(ForwardDiff.value(x0),ForwardDiff.partials(x))
-end 
 #this struct is used to wrap a vector of ForwardDiff.Dual's and just return the primal values, without allocations
 struct PrimalValVector{T,V} <: AbstractVector{T}
     vec::V
-    
 end
 
 function PrimalValVector(v::V) where V
