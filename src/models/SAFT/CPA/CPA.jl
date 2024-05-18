@@ -261,7 +261,6 @@ end
 #optimized Δ function for CPA, we only calculate g once.
 function  Δ(model::CPA, V, T, z,_data=@f(data))
     n,ā,b̄,c̄ = _data
-    ϵ_assoc = [i,j][a,b]
     β = model.params.bondvol.values
     b = model.params.b.values
     η = n*b̄/(4*V)
