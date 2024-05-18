@@ -275,7 +275,7 @@ function  Δ(model::CPA, V, T, z,_data=@f(data))
     Δout = assoc_similar(κ,typeof(V+T+first(z)+one(eltype(model))))
     Δout.values .= false  #fill with zeros, maybe it is not necessary?
     for (idx,(i,j),(a,b)) in indices(Δout)
-        βijab = κ[idx]
+        βijab = β[idx]
         if βijab != 0
             Δout[idx] = g*expm1(ϵ_assoc[i,j][a,b]/T)*βijab*b[i,j]/N_A
         end
