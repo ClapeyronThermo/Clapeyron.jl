@@ -3,16 +3,8 @@ function a_assoc(model::EoSModel, V, T, z,data=nothing)
     nn = assoc_pair_length(model)
     iszero(nn) && return _0
     isone(nn) && return a_assoc_exact_1(model,V,T,z,data)
-    X_,Δ_ = @f(X_and_Δ,data)
-    return @f(a_assoc_impl,X_,Δ_)
-end
-
-function __delta_assoc(model,V,T,z,data::M) where M
-    if data === nothing
-        return Δ(model,V,T,z)
-    else
-        return Δ(model,V,T,z,data)
-    end
+    X,Δ = @f(X_and_Δ,data)
+    return @f(a_assoc_impl,X,Δ)
 end
 
 """
@@ -111,6 +103,20 @@ function Δ(model::EoSModel, V, T, z)
     return Δout
 end
 
+function __delta_assoc(model,V,T,z,data::M) where M
+    if data === nothing
+        delta = Δ(model,V,T,z)
+    else
+        delta = Δ(model,V,T,z,data)
+    end
+    options = assoc_options(model)
+    combining = options.combining
+    if combining in (:elliott_runtime,:esd_runtime)
+        elliott_runtime_mix!(delta)
+    end
+    return delta
+end
+
 """
     assoc_options(model::EoSModel)
 
@@ -174,26 +180,60 @@ function nonzero_extrema(K)
     return _min,_max
 end
 
-function assoc_site_matrix(model,V,T,z,data = nothing,delta = @f(__delta_assoc,data))
+function assoc_site_matrix(model,V,T,z,ad::VV = Val{false}(),data = nothing,delta = @f(__delta_assoc,data)) where VV
     options = assoc_options(model)
     if !options.dense
         @warn "using sparse matrices for association is deprecated."
     end
-    return dense_assoc_site_matrix(model,V,T,z,data,delta)
+    return dense_assoc_site_matrix(model,V,T,z,ad,data,delta)
 end
 
-function dense_assoc_site_matrix(model,V,T,∂z,data=nothing,delta = @f(__delta_assoc,data))
+#this fills the zeros of the Δ vector with the corresponding mixing values
+function elliott_runtime_mix!(Δ)
+    _Δ = Δ.values
+    for (idx1,(i1,i2),(a1,a2)) in indices(Δ)
+        if i1 == i2
+            i = i1
+            Δi = _Δ[idx1]
+            for (idx2,(j1,j2),(b1,b2)) in indices(Δ)
+                if j1 == j2
+                    j = j1
+                    Δj = _Δ[idx2]
+                    Δijab = sqrt(Δi*Δj)
+                    if !iszero(Δijab)
+                        Δij = Δ[i,j]
+                        v_idx1 = validindex(Δij,a1,b2)
+                        v_idx2 = validindex(Δij,a2,b1)
+                        v_idx1 != 0 && iszero(_Δ[v_idx1]) && (_Δ[v_idx1] = Δijab)
+                        v_idx2 != 0 && iszero(_Δ[v_idx2]) && (_Δ[v_idx2] = Δijab)
+                    end
+                end
+            end
+        end
+    end
+    return Δ
+end
+
+function maybe_ad(x::X,::Val{true}) where X
+    return x
+end
+
+function maybe_ad(x::X,::Val{false}) where X
+    return primalval(x)
+end
+
+function dense_assoc_site_matrix(model,V,T,∂z,ad::VV = Val{false}(),data=nothing,delta = @f(__delta_assoc,data)) where VV
     sitesparam = getsites(model)
     _sites = sitesparam.n_sites
     p = _sites.p
-    ρ = primalval(N_A/V)
+    ρ = maybe_ad(N_A/V,ad)
     #ρ = N_A/V
-    z = primalval(∂z)
+    z = maybe_ad(∂z,ad)
     #z = ∂z
     _ii::Vector{Tuple{Int,Int}} = delta.outer_indices
     _aa::Vector{Tuple{Int,Int}} = delta.inner_indices
     _idx = 1:length(_ii)
-    Δ = primalval(delta.values)
+    Δ = maybe_ad(delta.values,ad)
     #_Δ = delta.values
     TT = eltype(Δ)
     _n = sitesparam.n_sites.v
@@ -218,52 +258,6 @@ function dense_assoc_site_matrix(model,V,T,∂z,data=nothing,delta = @f(__delta_
                     njb = _n[jb]
                     count += 1
                     K[ia,jb]  = ρ*njb*z[j]*Δ[idx]
-                end
-            end
-        end
-    end
-
-    if runtime_combining
-        for (idx1,(i1,i2),(a1,a2)) in indices(delta)
-            if i1 == i2
-                i = i1
-                a = a1
-                ia = compute_index(p,i,a)
-                nia = _n[ia]
-                #nia = n[i][a]
-                for (idx2,(j1,j2),(b1,b2)) in indices(delta)
-                    if j1 == j2
-                        j = j1
-                        b = b2
-                        jb = compute_index(p,j,b)
-                        njb = _n[jb]
-                        #njb = n[j,b]
-                        if validindex(delta[i,j],a,b) == 0 #check that our new mixing pair does not exist.
-                            #elliott mixing rule for Δ
-                            Δijab = sqrt(Δ[idx1]*Δ[idx2]) |> primalval
-                            K[ia,jb]  = ρ*njb*z[j]*Δijab
-                            K[jb,ia]  = ρ*nia*z[i]*Δijab
-                        end
-                    end
-                end
-            end
-        end
-    end 
-
-    if runtime_combining
-        @inbounds for ia ∈ 1:nn
-            i,a = inverse_index(p,ia)
-            nia = _n[ia]
-            for jb ∈ 1:ia
-                if iszero(K[ia,jb])
-                    j,b = inverse_index(p,jb)
-                    njb = _n[jb]
-                    #elliott mixing rule for Δ
-                    Δijab = primalval(sqrt(delta[i,i][a,b] * delta[j,j][a,b])) 
-                    if !iszero(Δijab)
-                        K[ia,jb]  = ρ*njb*z[j]*Δijab
-                        K[jb,ia]  = ρ*nia*z[i]*Δijab
-                    end
                 end
             end
         end
@@ -298,15 +292,17 @@ julia> x = Clapeyron.assoc_fractions(model,2.6e-5,300.15,[0.3,0.3,0.4]) #you can
 ```
 """
 function X(model::EoSModel, V, T, z,data = nothing)
-    _X,_Δ = X_and_Δ(model,V,T,z,data)
-    return _X
+    #we return X with derivative information
+    X,Δ = X_and_Δ(model,V,T,z,data,Val{true}())
+    return X
 end
-function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
+
+function X_and_Δ(model::EoSModel, V, T, z,data = nothing,ad::VV = Val{false}()) where VV
     nn = assoc_pair_length(model)
-    isone(nn) && return X_exact1(model,V,T,z,data)
+    #isone(nn) && return X_exact1(model,V,T,z,data)
     options = assoc_options(model)
     _Δ = __delta_assoc(model,V,T,z,data)
-    K = assoc_site_matrix(model,V,T,z,data,_Δ)
+    K = assoc_site_matrix(model,V,T,z,ad,data,_Δ)
     sitesparam = getsites(model)
     idxs = sitesparam.n_sites.p
     Xsol = assoc_matrix_solve(K,options)
@@ -332,22 +328,42 @@ function assoc_matrix_solve(K, α, atol ,rtol, max_iters)
         f = true-Kmin
     end
     X0 = fill(f,n) #initial point
-
-    #
-    #
     #=
     function to solve
     find vector x that satisfies:
     (A*x .* x) + x - 1 = 0
+    Jacobian: Diagonal(Ax + 1) + Diagonal(x)*A|
+
     solved by reformulating in succesive substitution:
     x .= 1 ./ (1 .+ A*x)
+    #we perform a "partial multiplication". that is, we use the already calculated
+    #values of the next Xi to calculate the current Xi. this seems to accelerate the convergence
+    #by around 50%
     =#
     function fX(out,in)
+        
+        i_solved = 0
+        len = length(in)
+        for ii in 1:len
+            Kxi = zero(eltype(out))
+            @inbounds for vv in 1:i_solved
+                Kxi += out[vv]*K[ii,vv]
+            end
+            @inbounds for vv in (i_solved+1):len
+                Kxi += in[vv]*K[ii,vv]
+            end
+            out[ii] = 1/(1+Kxi)
+            i_solved += 1
+        end
+        #=
         mul!(out,K,in)
         for i in 1:length(out)
-            Kx = out[i]
-            out[i] = true/(true+Kx)
-        end
+            #
+            Xi = in[i]
+            Kxi = out[i]
+            out[i] = 1/(1+Kxi)
+        end 
+        =#
         return out
     end
 
@@ -431,33 +447,6 @@ function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
         Q1 -= dQ1
     end
 
-    options = assoc_options(model)
-    combining = options.combining
-    runtime_combining = combining ∈ (:elliott_runtime,:esd_runtime)
-
-    if runtime_combining
-        for (idx1,(i1,i2),(a1,a2)) in indices(Δ)
-            if i1 == i2
-                i = i1
-                a = a1
-                Xia,nia = primalval(X[i][a]),n[i][a]
-                for (idx2,(j1,j2),(b1,b2)) in indices(Δ)
-                    if j1 == j2
-                        j = j1
-                        b = b2
-                        #validindex(Δ[i,j],i,j)
-                        if validindex(Δ[i,j],a,b) == 0 #check that our new mixing pair does not exist.
-                            Xjb,njb = primalval(X[j][b]),n[j][b]
-                            Δijab = sqrt(Δ.values[idx1]*Δ.values[idx2])
-                            dQ2 = z[i]*z[j]*nia*njb*Xia*Xjb*(Δijab*N_A)
-                            Q1 -= dQ2
-                        end
-                    end
-                end
-            end
-        end
-    end
-
     Q1 = Q1/V
     Q2 = zero(first(X.v)) |> primalval
     for i ∈ @comps
@@ -467,13 +456,41 @@ function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
         resᵢₐ = zero(Q2)
         for (a,nᵢₐ) ∈ pairs(ni)
             Xᵢₐ = primalval(Xᵢ[a])
-            nᵢₐ = ni[a]
             resᵢₐ += nᵢₐ * (log(Xᵢₐ) + 1 - Xᵢₐ)
         end
         Q2 += resᵢₐ*z[i]
     end
     Q = Q1 + Q2
     return Q/sum(z)
+end
+
+#=
+this method is used when X does propagate derivative information.
+
+electrolyte EoS normally use this as:
+_X = @f(X)
+a_assoc = @f(a_assoc_impl,X)
+#do something else with _X
+
+this was the default before.
+=#
+function a_assoc_impl(model::EoSModel, V, T, z, X)
+    _0 = zero(first(X.v))
+    sites = getsites(model)
+    n = sites.n_sites
+    res = _0
+    for i ∈ @comps
+        ni = n[i]
+        iszero(length(ni)) && continue
+        Xᵢ = X[i]
+        resᵢₐ = _0
+        for (a,nᵢₐ) ∈ pairs(ni)
+            Xᵢₐ = Xᵢ[a]
+            resᵢₐ +=  nᵢₐ* (log(Xᵢₐ) - Xᵢₐ*0.5 + 0.5)
+        end
+        res += resᵢₐ*z[i]
+    end
+    return res/sum(z)
 end
 
 #exact calculation of a_assoc when there is only one site pair

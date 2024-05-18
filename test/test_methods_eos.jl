@@ -542,7 +542,7 @@ GC.gc()
 @testset "Helmholtz + Activity" begin
     model = HelmAct(["water","ethanol"])
     p = 12666.0
-    x1 = Clapeyron.FractionVector( 0.00350)
+    x1 = Clapeyron.FractionVector(0.00350)
     @test bubble_temperature(model,p,x1)[4][1] ≈ 0.00198 rtol = 1e-2
 end
 
