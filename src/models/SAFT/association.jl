@@ -341,27 +341,6 @@ function assoc_matrix_solve(K, α, atol ,rtol, max_iters)
     #by around 50%
     =#
     function fX(out,in)
-        xnorm = zero(eltype(out))
-        @inbounds for i in 1:length(out)
-            xnorm = min(xnorm,abs(in[i]-out[i]))
-        end
-        i_solved = 0
-        len = length(in)
-        for ii in 1:len
-            Kxi = zero(eltype(out))
-            @inbounds for vv in 1:i_solved
-                xin = in[vv]
-                xout = out[vv]
-                xi = ifelse(abs(xin - xout) < xnorm, xout, xin)
-                Kxi += xi*K[ii,vv]
-            end
-            @inbounds for vv in (i_solved+1):len
-                Kxi += in[vv]*K[ii,vv]
-            end
-            out[ii] = 1/(1+Kxi)
-            i_solved += 1
-        end
-        #=
         mul!(out,K,in)
         for i in 1:length(out)
             #
@@ -369,7 +348,6 @@ function assoc_matrix_solve(K, α, atol ,rtol, max_iters)
             Kxi = out[i]
             out[i] = 1/(1+Kxi)
         end 
-        =#
         return out
     end
 
