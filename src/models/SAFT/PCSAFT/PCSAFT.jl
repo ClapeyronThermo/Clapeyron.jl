@@ -255,8 +255,11 @@ function  Δ(model::PCSAFT, V, T, z,_data=@f(data))
     Δout = assoc_similar(κ,typeof(V+T+first(z)+one(eltype(model))))
     Δout.values .= false  #fill with zeros, maybe it is not necessary?
     for (idx,(i,j),(a,b)) in indices(Δout)
-        gij = @f(g_hs,i,j,_data)
-        Δout[idx] = gij*σ[i,j]^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κ[i,j][a,b]
+        κijab = κ[idx]
+        if κijab != 0
+            gij = @f(g_hs,i,j,_data)
+            Δout[idx] = gij*σ[i,j]^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κ[idx]
+        end
     end
     return Δout
 end
