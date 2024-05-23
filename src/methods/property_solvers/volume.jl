@@ -18,33 +18,32 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
 end
 
 function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    _0 = zero(_p+_T+first(_z)+oneunit(eltype(model)))
+    _0 = zero(Base.promote_eltype(model,_p,_T,_z))
     _1 = one(_0)
     isnan(V0) && return _0/_0
-    p₀ = primalval(1.0*_p)
+    p₀ = primalval(_1*_p)
+    XX = typeof(p₀)
     T = primalval(_T)
-    _nan = _0/_0
+    _nan = primalval(_0/_0)
     nan = primalval(_nan)
     logV0 = primalval(log(V0)*_1)
     z = primalval(_z)
     log_lb_v = log(primalval(lb_volume(model,z)))
-    function logstep(logVᵢ)
-        logVᵢ < log_lb_v && return zero(logVᵢ)/zero(logVᵢ)
+    function logstep(logVᵢ::TT) where TT
+        logVᵢ < log_lb_v && return TT(zero(logVᵢ)/zero(logVᵢ))
         Vᵢ = exp(logVᵢ)
         _pᵢ,_dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
         pᵢ,dpdVᵢ = primalval(_pᵢ),primalval(_dpdVᵢ) #ther could be rare cases where the model itself has derivative information.
-        dpdVᵢ > 0 && return zero(logVᵢ)/zero(logVᵢ) #inline mechanical stability.
-        abs(pᵢ-p₀) < 3eps(p₀) && return zero(Vᵢ) #this helps convergence near critical points.
+        dpdVᵢ > 0 && return TT(zero(logVᵢ)/zero(logVᵢ)) #inline mechanical stability.
+        abs(pᵢ-p₀) < 3eps(p₀) && return TT(zero(Vᵢ)) #this helps convergence near critical points.
         Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
-        return Δᵢ
+        return TT(Δᵢ)
     end
-    function f_fixpoint(logVᵢ)
-        Δᵢ = logstep(logVᵢ)
-        logV = logVᵢ + Δᵢ
-        return logV
+    function f_fixpoint(logVᵢ::TT) where TT
+        return TT(logVᵢ + logstep(logVᵢ))
     end
 
-    logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),nan)
+    logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters)::XX,nan)
     #netwon step to recover derivative information:
     #V = V - (p(V) - p)/(dpdV(V))
     #dVdP = -1/dpdV
