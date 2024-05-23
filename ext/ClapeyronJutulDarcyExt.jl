@@ -6,6 +6,7 @@ module ClapeyronJutulDarcyExt
     const J = JutulDarcy
     function J.MultiPhaseCompositionalSystemLV(equation_of_state::C.EoSModel, phases = (J.LiquidPhase(), J.VaporPhase()); reference_densities = ones(length(phases)), other_name = "Water")
         c = copy(equation_of_state.components)
+        N = length(c)
         phases = tuple(phases...)
         T = typeof(phases)
         nph = length(phases)
@@ -21,7 +22,7 @@ module ClapeyronJutulDarcyExt
         end
         only(findall(isequal(J.LiquidPhase()), phases))
         only(findall(isequal(J.VaporPhase()), phases))
-        J.MultiPhaseCompositionalSystemLV{typeof(equation_of_state), T, O, typeof(reference_densities)}(phases, c, equation_of_state, reference_densities)
+        J.MultiPhaseCompositionalSystemLV{typeof(equation_of_state), T, O, typeof(reference_densities),N}(phases, c, equation_of_state, reference_densities)
     end
 
     function Base.show(io::IO, sys::J.MultiPhaseCompositionalSystemLV{<:C.EoSModel})
