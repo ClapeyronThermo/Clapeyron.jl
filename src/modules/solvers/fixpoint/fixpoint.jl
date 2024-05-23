@@ -34,36 +34,27 @@ function promote_method(method::AitkenFixPoint,T)
 end
 
 function convergence(xold,xi,atol,rtol,lognorm = false,normorder = Inf)
-    not_finite = false
-    for xii in xi
-        if !isfinite(xii)
-            not_finite = true
-            break
-        end
-    end
+    not_finite = any(!isfinite,xi)::Bool
     not_finite && return (true,false) #terminate, with nan
     xi == xold && return (true,true) #terminate, with current number
     if xi isa Number
         if lognorm
-            Δx = abs(xi-xold)
+            norm_x = abs(xi-xold)
         else
-            Δx = abs(xi/xold - 1)
+            norm_x = abs(xi/xold - 1)
         end
     else
-        if lognorm
-            Δx = norm(((xi[i]/xold[i] - 1) for i in eachindex(xold,xi)),normorder)
-        else
-            Δx = norm((xi[i] - xold[i] for i in eachindex(xold,xi)),normorder)
-        end
+        Δx = ΔVector(xold,xi,lognorm)
+        norm_x = norm(Δx,normorder)
     end
     if lognorm
         #ignore rtol in lognorm
-        normxi = zero(eltype(xi))/one(eltype(xi))
+        normxi = zero(norm_x)/one(norm_x)
     else
         normxi = norm(xi,normorder)
     end
 
-    if abs(Δx) < max(atol,normxi*rtol)
+    if abs(norm_x) < max(atol,normxi*rtol)
         return (true,true) #terminate, with current number
     end
     return (false,false) #keep iterating

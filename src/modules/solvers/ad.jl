@@ -227,7 +227,7 @@ end
 
 Base.size(x::PrimalValVector) = Base.size(x.vec)
 Base.length(x::PrimalValVector) = Base.length(x.vec)
-function Base.getindex(x::PrimalValVector{T},i) where T
+Base.@propagate_inbounds function Base.getindex(x::PrimalValVector{T},i) where T
     return primalval(x.vec[i])::T
 end
 
@@ -246,7 +246,7 @@ struct GradᵢVector{T,V} <: AbstractVector{T}
     vector::V
 end
 
-function Base.getindex(x::GradᵢVector{T,V},i) where {T,V}
+Base.@propagate_inbounds function Base.getindex(x::GradᵢVector{T,V},i) where {T,V}
     idx = x.i
     if idx == i
         return x.val

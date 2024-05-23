@@ -150,7 +150,7 @@ function tpd_solver(model,p,T,z,K0,
 
     vle = !lle
     ss_cache,newton_cache = cache
-    _fz = ss_cache[2]
+    _fz = ss_cache[2]::Vector
     _fz .= fz
     if any(isnan,fz)
         wl,wv = ss_cache[4],ss_cache[5]

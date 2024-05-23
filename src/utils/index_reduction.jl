@@ -72,7 +72,12 @@ function index_expansion(x::AbstractVector,idr::AbstractVector)
     numspecies = length(idr)
     res = similar(x, numspecies)
     res .= false
-    res[idr] .= x
+    k = 0
+    for i in 1:length(idr)
+        j = idr[i]
+        k += 1
+        res[j] = x[k]
+    end
     return res
 end
 

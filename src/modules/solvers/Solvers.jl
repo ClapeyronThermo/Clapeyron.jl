@@ -1,10 +1,33 @@
 module Solvers
 
 using LinearAlgebra
+using LinearAlgebra: BlasInt
 using NLSolvers,Roots
 using PositiveFactorizations
 using DiffResults, ForwardDiff
 using StaticArrays
+
+struct ΔVector{T,V1,V2} <: AbstractVector{T}
+    v1::V1
+    v2::V2
+    log::Bool
+end
+
+function ΔVector(v1::AbstractVector{T},v2::AbstractVector{T},log = false) where T
+    V1,V2 = typeof(v1),typeof(v2)
+    return ΔVector{T,V1,V2}(v1,v2,log)
+end
+
+Base.size(v::ΔVector) = size(v.v1)
+
+Base.@propagate_inbounds function Base.getindex(v::ΔVector{T},i::Int) where T
+    v1,v2 = v.v1[i],v.v2[i]
+    if v.log
+        return T(v1/v2 - 1)
+    else
+        return T(v1 - v2)
+    end
+end
 
 """
     dnorm(x,y,p)
@@ -12,7 +35,8 @@ using StaticArrays
 Equivalent to `norm((xi-yi for (xi, yi) in zip(x, y)), p)`
 """
 function dnorm(x,y,p = 2)
-    return norm((xi-yi for (xi, yi) in zip(x, y)), p)
+    Δ = ΔVector(x,y)
+    return norm(Δ, p)
 end
 
 function st_solve(B,∇f,::Val{1})
@@ -125,6 +149,68 @@ end
 struct RestrictedLineSearch{F,LS} <: NLSolvers.LineSearcher
     f::F #function that restricts the line search
     ls::LS #actual line search
+end
+
+#=
+unsafe LU
+it does not check, it does not allow to select a pivot strategy
+it allows to pass a buffer ipiv.
+=#
+function unsafe_LU!(A::AbstractMatrix{T}, ipiv = Vector{BlasInt}(undef, min(size(A)...))) where {T}
+    #check && LAPACK.chkfinite(A)
+    # Extract values
+    m, n = size(A)
+    minmn = min(m,n)
+
+    # Initialize variables
+    info = 0
+    #ipiv = Vector{BlasInt}(undef, minmn)
+    @inbounds begin
+        for k = 1:minmn
+            # find index max
+            kp = k
+            if k < m
+                amax = abs(A[k, k])
+                for i = k+1:m
+                    absi = abs(A[i,k])
+                    if absi > amax
+                        kp = i
+                        amax = absi
+                    end
+                end
+            end
+            ipiv[k] = kp
+            if !iszero(A[kp,k])
+                if k != kp
+                    # Interchange
+                    for i = 1:n
+                        tmp = A[k,i]
+                        A[k,i] = A[kp,i]
+                        A[kp,i] = tmp
+                    end
+                end
+                # Scale first column
+                Akkinv = inv(A[k,k])
+                for i = k+1:m
+                    A[i,k] *= Akkinv
+                end
+            elseif info == 0
+                info = k
+            end
+            # Update the rest
+            for j = k+1:n
+                for i = k+1:m
+                    A[i,j] -= A[i,k]*A[k,j]
+                end
+            end
+        end
+    end
+    #check && checknonsingular(info, pivot)
+    return LU{T,typeof(A),typeof(ipiv)}(A, ipiv, convert(BlasInt, info))
+end
+
+function unsafe_LU!(F::LU)
+    return unsafe_LU!(F.factors,F.ipiv)
 end
 
 export CholeskyNewton,LUPNewton,static_linsolve
