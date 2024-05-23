@@ -55,7 +55,7 @@ function M.pseudo_critical_properties(model::C.CubicModel, z::V) where V<:Abstra
     if hasfield(typeof(model.params),:Vc)
         Vc = C.dot(model.params.Vc.values,z)
     else
-        Vc = volume(model,Pc,Tc,z)
+        Vc = C.volume(model,Pc,Tc,z)
     end
     return mw,Pc,Tc,Vc
 end
