@@ -281,6 +281,5 @@ function  Δ(model::CPA, V, T, z,_data=@f(data))
             Δout[idx] = g*expm1(ϵ_assoc[i,j][a,b]/T)*βijab*b_cubic[i,j]/N_A
         end
     end
-    Δout.values ./= N_A
     return Δout
 end
