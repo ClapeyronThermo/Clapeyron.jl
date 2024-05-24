@@ -206,7 +206,7 @@ function unsafe_LU!(A::AbstractMatrix{T}, ipiv = Vector{BlasInt}(undef, min(size
         end
     end
     #check && checknonsingular(info, pivot)
-    return LU{T,typeof(A),typeof(ipiv)}(A, ipiv, convert(BlasInt, info))
+    return LU(A, ipiv, convert(BlasInt, info))
 end
 
 function unsafe_LU!(F::LU)
