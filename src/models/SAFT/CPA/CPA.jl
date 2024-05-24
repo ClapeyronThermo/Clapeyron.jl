@@ -262,7 +262,7 @@ end
 function  Δ(model::CPA, V, T, z,_data=@f(data))
     n,ā,b̄,c̄ = _data
     β = model.params.bondvol.values
-    b = model.params.b.values
+    b_cubic = model.params.b.values
     η = n*b̄/(4*V)
     rdf = model.radial_dist
     g = if rdf == :CS #CPA original
@@ -278,7 +278,7 @@ function  Δ(model::CPA, V, T, z,_data=@f(data))
     for (idx,(i,j),(a,b)) in indices(Δout)
         βijab = β[idx]
         if βijab != 0
-            Δout[idx] = g*expm1(ϵ_assoc[i,j][a,b]/T)*βijab*b[i,j]/N_A
+            Δout[idx] = g*expm1(ϵ_assoc[i,j][a,b]/T)*βijab*b_cubic[i,j]/N_A
         end
     end
     Δout.values ./= N_A
