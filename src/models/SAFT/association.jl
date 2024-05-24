@@ -243,7 +243,10 @@ function dense_assoc_site_matrix(model,V,T,z,data=nothing,delta = @f(__delta_ass
                     b = complement_index(a,ab)
                     jb = compute_index(p,j,b)
                     njb = _n[jb]
-                    K[ia,jb]  = ρ*njb*z[j]*Δ[idx]
+                    zj = z[j]
+                    if !iszero(zj)
+                        K[ia,jb]  = ρ*njb*z[j]*Δ[idx]
+                    end
                 end
             end
         end
@@ -395,10 +398,8 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
     if !converged #proceed to newton minimization
         dX = copy(Xsol)
         KX = copy(Xsol)
-        dX_cache = copy(Xsol)
         for i in (it_ss + 1):max_iters
             #@show Xsol
-            
             KX = mul!(KX,K,Xsol)
             H .= -K
             for k in 1:size(H,1)
@@ -503,15 +504,7 @@ function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
     =#
     sites = getsites(model)
     n = sites.n_sites
-    Q1 = zero(eltype(Δ.values))
-    for (idx,(i,j),(a,b)) in indices(Δ)
-        Xia,nia = primalval(X[i][a]),n[i][a]
-        Xjb,njb = primalval(X[j][b]),n[j][b]
-        dQ1 = z[i]*z[j]*nia*njb*Xia*Xjb*(Δ.values[idx]*N_A)
-        Q1 -= dQ1
-    end
 
-    Q1 = Q1/V
     Q2 = zero(first(X.v)) |> primalval
     for i ∈ @comps
         ni = n[i]
@@ -523,6 +516,16 @@ function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
             resᵢₐ += nᵢₐ * (log(Xᵢₐ) + 1 - Xᵢₐ)
         end
         Q2 += resᵢₐ*z[i]
+    end
+    Q1 = zero(eltype(Δ.values))
+    Vinv = 1/V
+    if !iszero(Vinv)
+        for (idx,(i,j),(a,b)) in indices(Δ)
+            Xia,nia = primalval(X[i][a]),n[i][a]
+            Xjb,njb = primalval(X[j][b]),n[j][b]
+            Q1 -= z[i]*z[j]*nia*njb*Xia*Xjb*(Δ.values[idx]*N_A)
+        end
+        Q1 = Q1*Vinv
     end
     Q = Q1 + Q2
     return Q/sum(z)
