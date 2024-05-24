@@ -273,6 +273,7 @@ function  Δ(model::CPA, V, T, z,_data=@f(data))
         zero(η)/zero(η)
     end
     Δout = assoc_similar(β,typeof(V+T+first(z)+one(eltype(model))))
+    ϵ_assoc = model.params.epsilon_assoc
     Δout.values .= false  #fill with zeros, maybe it is not necessary?
     for (idx,(i,j),(a,b)) in indices(Δout)
         βijab = β[idx]
