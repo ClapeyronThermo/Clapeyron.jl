@@ -637,7 +637,7 @@ end
 function K0_lle_init(model::EoSModel, p, T, z)
     nc = length(model)
     z_test = __z_test(z)
-    ntest = length(z_test[:,1])
+    ntest = length(@view(z_test[1,:]))
     μ_pure = K0_lle_init_cache(model::EoSModel,p,T)
     γ1 = K0_lle_act_coefficient(model,p,T,@view(z_test[1,:]),μ_pure)
     γ = fill(γ1,1)

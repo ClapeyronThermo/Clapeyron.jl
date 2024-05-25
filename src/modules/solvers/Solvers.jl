@@ -39,6 +39,10 @@ function dnorm(x,y,p = 2)
     return norm(Δ, p)
 end
 
+function dnorm(x::Number,y::Number,p = 2)
+    return norm(x - y, p)
+end
+
 function st_solve(B,∇f,::Val{1})
     ∇f̄ = SVector(∇f[1])
     B̄ = SMatrix{1,1}((B[1,1],))
