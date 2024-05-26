@@ -250,6 +250,25 @@ function pip(model::EoSModel, V, T, z=SA[1.0])
     Π = V*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1])
 end
 
+"""
+    VT_identify_phase(model::EoSModel, V, T, z=SA[1.0])::Symbol
+
+Returns the phase of a fluid at the conditions specified by `V`, `T` and `z`.
+Uses the phase identification parameter criteria from `Clapeyron.pip`
+
+returns `liquid` if the phase is liquid (or liquid-like), `vapour` if the phase is vapour (or vapour-like), and `:unknown` if the calculation of the phase identification parameter failed.
+"""
+function VT_identify_phase(model::EoSModel, V, T, z=SA[1.0])
+    Π = pip(model, V, T, z)
+    if Π > 1
+        return :vapour
+    elseif Π <= 1
+        return :liquid
+    else #the calculation failed
+        return :unknown
+    end
+end
+
 function VT_mass_density(model::EoSModel,V,T,z=SA[1.0])
     molar_weight = molecular_weight(model,z)
     return molar_weight/V

@@ -155,6 +155,12 @@ struct RestrictedLineSearch{F,LS} <: NLSolvers.LineSearcher
     ls::LS #actual line search
 end
 
+
+function NLSolvers.find_steplength(mstyle::NLSolvers.MutateStyle, ls::RestrictedLineSearch{F,LS}, φ::T, λ) where {F,LS,T}
+    λr = ls.f(φ,λ)
+    NLSolvers.find_steplength(mstyle, ls.ls, φ, λ)
+end
+
 #=
 unsafe LU
 it does not check, it does not allow to select a pivot strategy

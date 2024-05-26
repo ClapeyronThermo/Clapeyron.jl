@@ -47,9 +47,9 @@ function tpd_obj(model, p, T, di, isliquid, cache = tpd_neq_cache(model,p,T,di,d
         df .= dtpd .*  sqrt.(w)
         vcache[] = volw
         fx = dot(w,dtpd) - sum(w) + 1
-        if fx < -1e-10 && break_first
-            df .= 0
-        end
+        #if fx < -1e-10 && break_first
+        #    df .= 0
+        #end
         df
     end
 
@@ -65,9 +65,9 @@ function tpd_obj(model, p, T, di, isliquid, cache = tpd_neq_cache(model,p,T,di,d
         df .= dtpd .*  sqrt.(w)
         vcache[] = volw
         fx = dot(w,dtpd) - sum(w) + 1
-        if fx < -1e-10 && break_first
-            df .= 0
-        end
+        #if fx < -1e-10 && break_first
+        #    df .= 0
+        #end
         return fx,df
     end
 
@@ -95,9 +95,9 @@ function tpd_obj(model, p, T, di, isliquid, cache = tpd_neq_cache(model,p,T,di,d
         dtpd .= log.(w) .+ lnϕw .- di
         df .= dtpd .*  sqrt.(w)
         fx = dot(w,dtpd) - sum(w) + 1
-        if fx < -1e-10 && break_first
-            df .= 0
-        end
+        #if fx < -1e-10 && break_first
+        #    df .= 0
+        #end
         vcache[] = volw
         return fx,df,d2f
     end
@@ -334,6 +334,7 @@ function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,is_liquid,cache,tol_equil
     stable = true
     iter = 0
     done = false
+    liquid_overpressure = false
     di,fz,lnϕw,wl,wv = cache
     w = is_liquid ? wl : wv
     w .= w0
@@ -343,6 +344,12 @@ function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,is_liquid,cache,tol_equil
     while !done
         iter += 1
         lnϕw, v = lnϕ!(lnϕw,model, p, T, w; phase=phase, vol0=v)
+        if isnan(v) && is_liquid(phase) && !liquid_overpressure
+            #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the 
+            #specified conditions. try elevating the pressure at the first iter.
+            liquid_overpressure = true
+            lnϕw, v = lnϕ!(lnϕw,model, 1.2p, T, w; phase=phase, vol0=v)
+        end
         S = zero(eltype(w))
         for i in eachindex(w)
             wi = exp(di[i]-lnϕw[i])
@@ -472,8 +479,7 @@ function tpd_input_composition(model,p,T,z,di,lle)
         if lle
             v = vl
             if vl ≈ vv
-                Π = pip(model,v,T,z) #identify phase with pip
-                isliquidz = Π <= 1.0
+                isliquidz = is_liquid(VT_identify_phase(model,v,T,z))
             else
                 isliquidz = true
                 phasez = :liquid
@@ -481,8 +487,7 @@ function tpd_input_composition(model,p,T,z,di,lle)
         else
             idx,v,_ = volume_label((model,model),p,T,z,(vl,vv))
             if vl ≈ vv
-                Π = pip(model,v,T,z) #identify phase with pip
-                isliquidz = Π <= 1.0
+                isliquidz = is_liquid(VT_identify_phase(model,v,T,z))
             elseif idx == 1 #v = vl
                 isliquidz = true
             elseif idx == 2 #v = vv
