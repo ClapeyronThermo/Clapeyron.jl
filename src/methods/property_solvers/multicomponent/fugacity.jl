@@ -12,9 +12,15 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
         Hϕy = ∂lnϕ_cache(model, p, T, y,Val{true}())
     end
 
-    lnϕx, volx = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
+    
+    lnϕx, volx0 = lnϕ(model, p, T, x, phase=:liquid, vol0=volx)
     lnϕy, voly = lnϕ(model, p, T, y, phase=:vapor, vol0=voly)
-
+    if isnan(volx0)
+        lnϕx, volx = lnϕ(model, p, T, x)
+    else
+        volx = volx0
+    end
+    
     n = length(model)
     lnK = similar(lnϕx,n)
     K = similar(lnK)
@@ -56,9 +62,19 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
                 break
             end
 
-            lnϕx, volx = lnϕ!(lnϕx, model, p, T, _x, phase=:liquid, vol0=volx)
-            lnϕy, voly = lnϕ!(lnϕy, model, p, T, _y, phase=:vapor, vol0=voly)
-            
+            lnϕx, volx = lnϕ!(lnϕx, model, p, T, _x, vol0=volx)
+            lnϕy, voly = lnϕ!(lnϕy, model, p, T, _y, vol0=voly)
+            @show p
+            if isnan(volx)
+                lnϕx, volx = lnϕ!(lnϕx, model, p, T, _x, phase = :liquid)
+                @show VT_identify_phase(model,volx,T,_x)
+            end
+
+            if isnan(voly)
+                lnϕy, voly = lnϕ!(lnϕy, model, 1.1p, T, _y, phase = :vapor)
+                @show VT_identify_phase(model,voly,T,_y)
+
+            end
             if isnan(volx) || isnan(voly)
                 break
             end
