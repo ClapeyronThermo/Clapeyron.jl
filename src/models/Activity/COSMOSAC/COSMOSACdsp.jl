@@ -66,9 +66,15 @@ function COSMOSACdsp(components;
         CAS, INCHIKEY = get_cosmo_comps()
         A = zeros(length(components))
         V = zeros(length(components))
+        epsilon = zeros(length(components))
+        COOH = zeros(length(components))
+        hb_acc = zeros(length(components))
+        hb_don = zeros(length(components))
+        water = zeros(length(components))
         Pnhb = [zeros(51) for i in 1:length(components)]
         POH = [zeros(51) for i in 1:length(components)]
         POT = [zeros(51) for i in 1:length(components)]
+        
         for i in 1:length(components)
             id = cas(formatted_components[i])
             ids = CAS.==uppercase(id[1])
