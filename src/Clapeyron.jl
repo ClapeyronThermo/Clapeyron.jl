@@ -7,7 +7,7 @@ const PackedVofV = PackedVectorsOfVectors.PackedVectorOfVectors
 
 #for non allocating vectors of zeros and ones
 using Roots: Roots
-# SS: Just checking how this works.
+
 using Scratch 
 import LogExpFunctions
 using FillArrays: FillArrays
@@ -178,6 +178,7 @@ include("models/SAFT/softSAFT/variants/solidsoftSAFT.jl")
 include("models/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRSMie.jl")
+include("models/SAFT/SAFTVRMie/variants/SAFTVRMieGV.jl")
 include("models/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
 include("models/SAFT/SAFTgammaMie/variants/structSAFTgammaMie.jl")
 include("models/SAFT/CKSAFT/CKSAFT.jl")
