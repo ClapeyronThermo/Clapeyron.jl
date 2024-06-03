@@ -11,3 +11,6 @@
 - The default association implementation now uses a combination of accelerated successive substitution and newton optimization. While increasing allocations, the method is faster.
 - The default association implementation now uses implicit AD to support derivatives (via michelsen's Q function), instead of propagating derivative information through the iterative procedure. `Clapeyron.X` will still propagate derivative information as usual, but a new function (`Clapeyron.X_and_Δ`) just returns the primal value of the nonbonded fractions, along with the calculated association interaction energies.
 - the default `volume` implementation now uses implicit AD to support derivatives. instead of propagating derivative information through the iterative procedure. This allows workloads of the type: `ForwardDiff.derivative(_p -> property(model,_p,T,z,phase = :l,vol0 = v0),p)` to be efficiently calculated.
+
+## Bug fixes
+- PCPSAFT: typo in unlike asssociation parameters
