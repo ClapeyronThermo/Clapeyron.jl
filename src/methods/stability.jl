@@ -6,34 +6,35 @@ Performs stability tests for a (V,T,z) pair, and warn if any tests fail. returns
 Checks:
  - mechanical stability: isothermal compressibility is not negative.
  - diffusive stability: all eigenvalues of `∂²A/∂n²` are positive.
- 
+ - chemical stability: there isn't any other combinations of compositions at p(V,T),T that are more stable than the input composition.
 """
-function isstable(model,V,T,z)
+function isstable(model,p,T,z = SA[1.0])
+    V = volume(model,p,T,z)
+    return VT_isstable(model,V,T,z,false)
+end
+
+function VT_isstable(model,V,T,z = SA[1.0],check_v = true)
     stable = true
-    if !VT_mechanical_stability(model,V,T,z)
-        @warn "StabilityWarning: Phase is mechanically unstable"
-        stable = false
-    end
-    if !VT_diffusive_stability(model,V,T,z)
-        @warn "StabilityWarning: Phase is diffusively unstable"
-        stable = false
-    end
-    if !VT_chemical_stability(model,V,T,z)
-        @warn "StabilityWarning: Phase is chemically unstable"
-        stable = false
-    end
-    return stable
+    VT_mechanical_stability(model,V,T,z) || return false
+    VT_diffusive_stability(model,V,T,z) || return false
+    VT_chemical_stability(model,V,T,z,check_v) || return false
+    return true
 end
 
 """
-    VT_mechanical_stability(model,V,T,z)::Bool
+    VT_mechanical_stability(model,V,T,z = SA[1.0])::Bool
 
 Performs a mechanical stability for a (V,T,z) pair, returns `true/false`.
-Checks if isothermal compressibility is not negative. 
+Checks if isothermal compressibility is not negative.
+
+
+!!! note
+    This function does not have a `p`,`T` counterpart, because if we calculate the volume via `volume(model,p,T,z)`, it will be, by definition, a mechanically stable phase.
 """
-function VT_mechanical_stability(model,V,T,z)
+function VT_mechanical_stability(model,V,T,z = SA[1.0])
     return VT_isothermal_compressibility(model,V,T,z) >= 0
 end
+
 
 """
     VT_diffusive_stability(model,V,T,z)::Bool
@@ -41,13 +42,27 @@ end
 Performs a diffusive stability for a (V,T,z) pair, returns `true/false`.
 Checks if all eigenvalues of `∂²A/∂n²` are positive.
 """
-function VT_diffusive_stability(model,V,T,z)
+function VT_diffusive_stability(model,V,T,z = SA[1.0])
     isone(length(model)) && return true
     A(x) = eos(model,V,T,x)
     Hf = ForwardDiff.hessian(A,z)
-    (Λ,U)=eigen(Hf)
-    λ = minimum(Λ)
+    λ = eigmin(Hermitian(Hf)) # calculating just minimum eigenvalue more efficient than calculating all & finding min
     return λ > 0
+    
+end
+"""
+    diffusive_stability(model,p,T,z = SA[1.0],phase = :unknown,threaded = true,vol0 = nothing)
+
+Performs a diffusive stability for a (V,T,z) pair, returns `true/false`.
+
+    Checks if all eigenvalues of `∂²A/∂n²` are positive.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+
+"""
+function diffusive_stability(model,p,T,z = SA[1.0],phase = :unknown,threaded = true,vol0 = nothing)
+    V = volume(model,p,T,z;phase,threaded,vol0)
+    return VT_diffusive_stability(model,V,T,z)
 end
 
 """
@@ -97,37 +112,36 @@ end
 """
     VT_chemical_stability(model,V,T,z)::Bool
 
-Performs a chemical stability check using the tangent plane distance criterion, starting with the wilson correlation for K-values.
+Performs a chemical stability check using the tangent plane distance criterion, using the [tpd](@ref) function
 """
-function VT_chemical_stability(model::EoSModel,V,T,z)
-    # Generate vapourlike and liquidlike initial guesses
-    # Currently using Wilson correlation
-
-    #in case of only pure components.
+function VT_chemical_stability(model::EoSModel,V,T,z,check_vol = true)
     if isone(length(z))
         return pure_chemical_instability(model,V/sum(z),T) 
     end
-    p = pressure(model,V,T,z)
-    Kʷ = tp_flash_K0(model,p,T)
-    z = z./sum(z)
-    w_vap = Kʷ.*z
-    w_liq = z./Kʷ
-   
-    tdp_func(w,phase) = Solvers.optimize(w -> tangent_plane_distance(model,p,T,z,phase,w), w) |> Solvers.x_minimum
-    tdp = (tdp_func(w_vap,:v), tdp_func(w_liq,:l))
-    if minimum(tdp) >= 0
-        return true
-    else
-        return false
+    
+    if check_vol
+        p = pressure(model,V,T,z)
+        Vx = volume(model,p,T,z)
+        #we check first if the phase itself is stable, maybe there is another phase
+        #with the same composition, but with a different volume, that is more stable.
+        V ≈ Vx || return false
     end
+    #the input volume corresponds to the most stable phase at that compsition.
+    #proceed to tpd
+    return chemical_stability(model,p,T,z)
+end
+
+function chemical_stability(model,p,T,z)
+    length(model) == 1 && return true #there aren't other combinations of composition.
+    comps,wi,_,_ = tpd(model,p,T,z,break_first = true)
+    return iszero(length(comps))
 end
 
 function pure_chemical_instability(model,V,T)
-    Tc,Pc,Vc = crit_pure(model)
+    Tc,_,_ = crit_pure(model)
     T >= Tc && return true
     psat,vl,vv = saturation_pressure(model,T)
     if isnan(psat)
-        @error "could not determine chemical instability. saturation solver failed."
         return false
     end
     if (vl < V < vv)
@@ -144,10 +158,11 @@ Calculates the tangent plane distance for a tangent plane stability test
 function tangent_plane_distance(model,p,T,z,phase,w)
     w = w./sum(w)
     V = volume(model, p, T, w;phase=phase)
-    μ(w) = Clapeyron.VT_chemical_potential(model,V,T,w)
+    μ(w) = VT_chemical_potential(model,V,T,w)
     tdp = sum(w.*(μ(w) .- μ(z)))#./(8.314*T)
 end
 
 export isstable
 export VT_mechanical_stability, VT_diffusive_stability,VT_chemical_stability
+export mechanical_stability, diffusive_stability, chemical_stability
 export gibbs_duhem

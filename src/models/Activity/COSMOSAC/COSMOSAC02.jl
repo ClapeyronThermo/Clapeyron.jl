@@ -199,24 +199,3 @@ function ΔW(σm,σn)
     R    = 0.001987
     return (α/2*(σm+σn)^2+chb*max(0,σacc-σhb)*min(0,σdon+σhb))/R
 end
-
-#fcosmo(system::COSMOSAC02Model) = Clapeyron.activity_coefficient(system,1e5, 333.15,[0.5,0.5])[1] - 1.3871817962565904
-#=
-function lnγ_comb(model::COSMOSAC02Model,V,T,z)
-    r0 = 66.69
-    q0 = 79.53
-
-    V = model.params.V.values
-    A = model.params.A.values
-
-    x = z ./ sum(z)
-
-    r = V ./ r0
-    q = A ./ q0
-
-    Φ = r/sum(x[i]*r[i] for i ∈ @comps)
-    θ = q/sum(x[i]*q[i] for i ∈ @comps)
-    lnγ_comb = @. log(Φ)+(1-Φ)-5*q*(log(Φ/θ)+(1-Φ/θ))
-    return lnγ_comb
-end
-=#

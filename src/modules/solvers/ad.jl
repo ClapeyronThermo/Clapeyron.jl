@@ -209,14 +209,32 @@ primalval(x) = x
 #scalar
 primalval(x::ForwardDiff.Dual) = primalval(ForwardDiff.value(x))
 
-#primaltype(::Type{T}) where T = T
-#primaltype(::Type{<:ForwardDiff.Dual{T,R}}) where {T,R} = primaltype(R)
 
-#arrays overload
-function primalval(x::AbstractArray{T}) where T <: ForwardDiff.Dual
-    return primalval.(x)
+primal_eltype(x) = primal_eltype(eltype(x))
+primal_eltype(::Type{W}) where W <: ForwardDiff.Dual{T,V} where {T,V} = primal_eltype(V)
+primal_eltype(::Type{T}) where T = T
+
+
+#this struct is used to wrap a vector of ForwardDiff.Dual's and just return the primal values, without allocations
+struct PrimalValVector{T,V} <: AbstractVector{T}
+    vec::V
 end
 
+function PrimalValVector(v::V) where V
+    T = primal_eltype(v)
+    PrimalValVector{T,V}(v)
+end
+
+Base.size(x::PrimalValVector) = Base.size(x.vec)
+Base.length(x::PrimalValVector) = Base.length(x.vec)
+Base.@propagate_inbounds function Base.getindex(x::PrimalValVector{T},i) where T
+    return primalval(x.vec[i])::T
+end
+
+#array overload for primalval
+function primalval(x::AbstractArray{T}) where T <: ForwardDiff.Dual
+    return PrimalValVector(x)
+end
 #=
 gradient at index i
 
@@ -228,7 +246,7 @@ struct GradᵢVector{T,V} <: AbstractVector{T}
     vector::V
 end
 
-function Base.getindex(x::GradᵢVector{T,V},i) where {T,V}
+Base.@propagate_inbounds function Base.getindex(x::GradᵢVector{T,V},i) where {T,V}
     idx = x.i
     if idx == i
         return x.val

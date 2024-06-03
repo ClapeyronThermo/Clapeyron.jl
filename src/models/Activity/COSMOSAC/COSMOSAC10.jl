@@ -95,9 +95,9 @@ function COSMOSAC10(components;
 end
 
 function Γ_as_view(Γ,l1 = length(Γ) ÷ 3)
-    Γnhb = @view Γ[1:l1]
-    ΓOH = @view Γ[(l1+1):(2*l1)]
-    ΓOT = @view Γ[(2*l1+1):(3*l1)]
+    Γnhb = viewn(Γ, 51, 1)
+    ΓOH = viewn(Γ, 51, 2)
+    ΓOT = viewn(Γ, 51, 3)
     return Γnhb, ΓOH, ΓOT
 end
 

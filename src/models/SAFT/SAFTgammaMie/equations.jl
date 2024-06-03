@@ -7,7 +7,17 @@ function lb_volume(model::SAFTgammaMieModel, z = SA[1.0])
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
     σ = model.params.sigma.values
-    val = π/6*N_A*sum(z[i]*sum(vk[i][k]*seg[k]*S[k]*σ[k,k]^3 for k in @groups(i)) for i in @comps)
+    lb_v = zero(Base.promote_eltype(model,z))
+    for i in @comps
+        vki = vk[i]
+        lb_vi = zero(lb_v)
+        for k in @groups(i)
+            lb_vi += vki[k]*seg[k]*S[k]*σ[k,k]^3
+        end
+        lb_v += z[i]*lb_vi
+    end
+
+    return π/6*N_A*lb_v
     return val
 end
 
@@ -59,9 +69,11 @@ function data(model::SAFTgammaMieModel, V, T, z)
 end
 
 function X_gc(model::SAFTgammaMieModel,V,T,z)
-    mi  = group_matrix(model.groups)
+    mi  = group_matrix(model.groups)::Matrix{Float64}
     mm = model.params.segment.values
-    X = mi*z
+    TT = Base.promote_eltype(mm,1.0,z)
+    X = Vector{TT}(undef,length(model.groups.flattenedgroups))
+    mul!(X,mi,z)
     X ./= mm
     return X
 end

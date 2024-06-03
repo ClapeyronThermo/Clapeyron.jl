@@ -123,7 +123,7 @@ function PTFlashWrapper(model::FluidCorrelation,p,T::Number,equilibrium::Symbol)
     μpure = only.(VT_chemical_potential_res.(gases,vv_pure,T))
     ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
     g_pure = [VT_gibbs_free_energy(gases[i],sats[i][2],T) for i in 1:length(model)]
-    return PTFlashWrapper(model.components,model,sats,ϕpure,μpure)
+    return PTFlashWrapper(model.components,model,sats,ϕpure,μpure,equilibrium)
 end
 
 function update_K!(lnK,wrapper::PTFlashWrapper{<:FluidCorrelation},p,T,x,y,volx,voly,phasex,phasey,β = nothing,inx = FillArrays.Fill(true,length(x)),iny = inx)

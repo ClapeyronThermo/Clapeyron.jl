@@ -157,7 +157,8 @@ function SingleParam(
         sources = String[]
     )
     values = fill(0.0, length(components))
-    return SingleParam(name, components, values, String[], sources)
+    missingvalues = fill(true,length(components))
+    return SingleParam(name, components, values,missingvalues, String[], sources)
 end
 
 function SingleParam(oldparam::SingleParameter, v::Vector)
