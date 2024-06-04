@@ -70,12 +70,13 @@ end
 
 function a_born(model::DHBornModel, V, T, z,_data=@f(data))
     Z = model.params.charge.values
-    ϵ_r, σ, σ_born = _data
     iions = model.icomponents[Z.!=0]
 
     if length(iions) == 0
         return zero(T+first(z))
     end
     
+    ϵ_r, σ, σ_born = _data
+
     return -e_c^2/(4π*ϵ_0*k_B*T*sum(z))*(1-1/ϵ_r)*sum(z[i]*Z[i]^2/σ_born[i] for i ∈ iions)
 end

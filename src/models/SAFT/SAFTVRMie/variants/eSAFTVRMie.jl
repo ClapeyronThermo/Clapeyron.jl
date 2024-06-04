@@ -43,7 +43,6 @@ end
 function a_res(model::eSAFTVRMieModel, V, T, z)
     data_saft = data(model.neutralmodel,V,T,z)
     data_ion = data(model.ionmodel,V,T,z)
-    data_ion = (data_ion[1],data_saft[1])
 
     return a_res(model.neutralmodel,V,T,z,data_saft)+a_res(model.ionmodel,V,T,z,data_ion)
 end
