@@ -104,24 +104,24 @@ macro sum(expr)
         for i in 2:length(args)
             __sum_add_variables(cache,args[i])
         end
+    elseif expr.head == :ref
+        __sum_add_variables(cache,expr)
     else
 
     end
     iterator = unique!(iterator)
     length(iterator) != 1 && error("@sum: only one iterator index is allowed")
     length(length_indicator) == 0 && error("@sum: no length indicator found")
-    res = gensym(:res)
     idx = iterator[1]
     len = length_indicator[1]
     res_expr = Expr(:call,:(Base.promote_eltype))
     append!(res_expr.args,variable_names.args)
     return quote
-        let $res = zero($res_expr)
-            @inbounds @simd for $idx in 1:first(size($len))
-                $res += $expr
+        local __sum_result__ = zero($res_expr)
+            @inbounds for $idx in 1:first(size($len))
+                __sum_result__ += $expr
             end
-        $res
-        end
+            __sum_result__
     end  |> esc
 end
 

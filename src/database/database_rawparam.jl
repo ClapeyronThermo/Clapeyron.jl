@@ -64,7 +64,7 @@ function joindata!(old::RawParam,new::RawParam)
             error_different_grouptype(old,new,old.name)
         end
     end
-    
+
     if !type_sucess
         error_clashing_headers(old,new)
     end
@@ -92,8 +92,6 @@ error_different_grouptype(old::RawParam,new::RawParam) = error_different_groupty
     incoming group type: $(new)
     """))
 end
-
-
 
 @noinline function error_clashing_headers(old::RawParam,new::RawParam)
     told = Symbol(old.type)
@@ -144,7 +142,7 @@ function compile_param(components,name,raw::CSVType,site_strings,options)
 end
 
 function compile_single(name,components,raw::RawParam,options)
-    
+
     if isnothing(raw.component_info) #build from named tuple
         return SingleParam(raw.name,components,raw.data)
     end
@@ -183,12 +181,12 @@ function compile_single(name,components,type::CSVType,options)
 end
 
 function compile_pair(name,components,raw::RawParam,options)
-    
+
     if isnothing(raw.component_info) #build from named tuple
         l = length(components)
         return PairParam(raw.name,components,reshape(raw.data,(l,l)))
     end
-    
+
     EMPTY_STR = ""
     symmetric = name ∉ options.asymmetricparams
     l = length(components)
@@ -245,7 +243,7 @@ function compile_assoc(name,components,raw::RawParam,site_strings,options)
         sources[i] = raw.sources[j]
         sources_csv[i] = raw.csv[j]
     end
-    
+
     idxs = sortperm(ijab) #CompressedAssoc4DMatrix requires lexicographically sorted component-site idxs
     ijab = ijab[idxs]
     inner_values = inner_values[idxs]

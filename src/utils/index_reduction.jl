@@ -25,7 +25,6 @@ function index_reduction(model::EoSModel,z::Number,zmin = sum(z)*4*eps(eltype(z)
     idx = z > zmin
     return index_reduction(model,BitVector((idx,)))
 end
-
 #to address arbitrary reduction techniques
 function index_reduction(model::EoSModel,bools::T) where T<:AbstractVector{Bool}
     idx = BitVector(bools)
@@ -33,23 +32,11 @@ function index_reduction(model::EoSModel,bools::T) where T<:AbstractVector{Bool}
     if all(idx) && length(model) === 1
         return model,BitVector((true,))
     elseif all(idx)
-        model_r = model   
+        model_r = model
     else
         model_r = split_model(model,[findall(idx)]) |> only
     end
     return model_r,idx
-end
-
-
-function index_expansion(x::Matrix,idr::AbstractVector)
-    numspecies = length(idr)
-    l1,_ = size(x)
-    res = zeros(eltype(x),l1, numspecies)
-    res .= 0
-    for i in 1:l1
-        res[i,idr] .= x[i,:]
-    end
-    return res
 end
 
 function index_expansion(x::AbstractMatrix,idr::AbstractVector)
@@ -58,7 +45,7 @@ function index_expansion(x::AbstractMatrix,idr::AbstractVector)
     res = similar(x,(l1, numspecies))
     res .= 0
     for i in 1:l1
-        res[i,idr] .= x[i,:]
+        res[i,idr] .= @view(x[i,:])
     end
     return res
 end
@@ -76,4 +63,4 @@ function index_expansion(x::AbstractVector,idr::AbstractVector)
     return res
 end
 
-export index_reduction 
+export index_reduction

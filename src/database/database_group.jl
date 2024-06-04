@@ -82,13 +82,17 @@ gc_get_intragroup(x::Tuple{Any,Any}) = nothing
 gc_get_intragroup(x::Tuple{Any,Any,Any}) = x[3]
 gc_get_intragroup(x::Pair) = nothing
 
-function GroupParam(gccomponents::Vector,
+function GroupParam(gccomponents::Union{Vector,Tuple{String,Vector},Pair{String,Vector}},
     group_locations=String[];
     group_userlocations = String[],
     verbose::Bool = false,
     grouptype = :unknown)
     options = ParamOptions(;group_userlocations,verbose)
-    return GroupParam(gccomponents,group_locations,options,grouptype)
+    if isa(gccomponents,Vector)
+        return GroupParam(gccomponents,group_locations,options,grouptype)
+    else
+        return GroupParam([gccomponents],group_locations,options,grouptype)
+    end
 end
 
 function GroupParam(gccomponents,

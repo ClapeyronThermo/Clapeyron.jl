@@ -48,8 +48,8 @@ function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_gibbs_free_energy(model::EoSModel, V, T, z=SA[1.])
-    dA, A = ∂f(model,V,T,z)
-    ∂A∂V, ∂A∂T = dA
+    f(x) = eos(model,x,T,z)
+    A,∂A∂V = Solvers.f∂f(f,V)
     return A - V*∂A∂V
 end
 
@@ -250,6 +250,25 @@ function pip(model::EoSModel, V, T, z=SA[1.0])
     Π = V*(hess_p[1,2]/grad_p[2]  - hess_p[1,1]/grad_p[1])
 end
 
+"""
+    VT_identify_phase(model::EoSModel, V, T, z=SA[1.0])::Symbol
+
+Returns the phase of a fluid at the conditions specified by `V`, `T` and `z`.
+Uses the phase identification parameter criteria from `Clapeyron.pip`
+
+returns `liquid` if the phase is liquid (or liquid-like), `vapour` if the phase is vapour (or vapour-like), and `:unknown` if the calculation of the phase identification parameter failed.
+"""
+function VT_identify_phase(model::EoSModel, V, T, z=SA[1.0])
+    Π = pip(model, V, T, z)
+    if Π > 1
+        return :vapour
+    elseif Π <= 1
+        return :liquid
+    else #the calculation failed
+        return :unknown
+    end
+end
+
 function VT_mass_density(model::EoSModel,V,T,z=SA[1.0])
     molar_weight = molecular_weight(model,z)
     return molar_weight/V
@@ -268,6 +287,10 @@ function VT_partial_property(model::EoSModel,V,T,z,property::ℜ) where {ℜ}
 end
 
 function VT_partial_property!(fx::F,model::EoSModel,V,T,z,property::ℜ) where {F,ℜ}
+    if isnan(V) || isnan(T) || any(isnan,z)
+        fx .= NaN
+        return fx
+    end
     fun(x) = property(model,V,T,x)
     return Solvers.gradient!(fx,fun,z)::F
 end
@@ -301,6 +324,20 @@ function _VT_fugacity_coefficient(model::EoSModel,V,T,z::SingleComp)
     Z = p*V/R̄/T/sum(z)
     ϕ = exp(μ_res/R̄/T)/Z
     return SVector(ϕ)
+end
+
+function VT_fugacity_coefficient!(φ,model::EoSModel,V,T,z=SA[1.],p = pressure(model,V,T,z))
+    if isnan(V)
+        φ .= NaN
+        return φ
+    end
+    φ = VT_chemical_potential_res!(φ,model,V,T,z)
+    R̄ = Rgas(model)
+    Z = p*V/R̄/T/sum(z)
+    φ ./= (R̄*T)
+    φ .= exp.(φ)
+    φ ./= Z
+    return φ
 end
 
 export second_virial_coefficient,pressure,cross_second_virial,equivol_cross_second_virial

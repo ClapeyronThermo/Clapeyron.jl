@@ -177,9 +177,11 @@ function  Δ(model::pharmaPCSAFTModel, V, T, z,_data=@f(data))
     Δout = assoc_similar(κ,typeof(V+T+first(z)))
     Δout.values .= false #fill with zeros, maybe it is not necessary?
     for (idx,(i,j),(a,b)) in indices(Δout)
+        κijab = κ[idx]
+        iszero(κijab) && continue
         gij = @f(g_hs,i,j,_data)
         σij = σ[i,j] + (0.5*(k==i)  +  0.5*(k==j))*Δσ
-        Δout[idx] = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κ[i,j][a,b]
+        Δout[idx] = gij*σij^3*(exp(ϵ_assoc[i,j][a,b]/T)-1)*κijab
     end
     return Δout
 end

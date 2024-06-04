@@ -33,37 +33,28 @@ function promote_method(method::AitkenFixPoint,T)
     return method
 end
 
-function convergence(xold,xi,atol,rtol,damping = 1.0,lognorm = false,normorder = Inf)
-    not_finite = false
-    for xii in xi
-        if !isfinite(xii)
-            not_finite = true
-            break
-        end
-    end
+function convergence(xold,xi,atol,rtol,lognorm = false,normorder = Inf)
+    not_finite = any(!isfinite,xi)::Bool
     not_finite && return (true,false) #terminate, with nan
     xi == xold && return (true,true) #terminate, with current number
     if xi isa Number
         if lognorm
-            Δx = abs(xi-xold)
+            norm_x = abs(xi-xold)
         else
-            Δx = abs(xi/xold - 1)
+            norm_x = abs(xi/xold - 1)
         end
     else
-        if lognorm
-            Δx = norm(((xi[i]/xold[i] - 1) for i in eachindex(xold,xi)),normorder)
-        else
-            Δx = norm((xi[i] - xold[i] for i in eachindex(xold,xi)),normorder)
-        end
+        Δx = ΔVector(xold,xi,lognorm)
+        norm_x = norm(Δx,normorder)
     end
     if lognorm
         #ignore rtol in lognorm
-        normxi = zero(eltype(xi))/one(eltype(xi))
+        normxi = zero(norm_x)/one(norm_x)
     else
         normxi = norm(xi,normorder)
     end
 
-    if abs(Δx) < max(atol,normxi*rtol)
+    if abs(norm_x) < max(atol,normxi*rtol)
         return (true,true) #terminate, with current number
     end
     return (false,false) #keep iterating
@@ -93,13 +84,13 @@ function _fixpoint(f::F,
     α = method.dampingfactor
     ℕ = method.normorder
     lognorm = method.lognorm
-    converged,finite = convergence(x0,xi,atol,rtol,α,lognorm,ℕ)
+    converged,finite = convergence(x0,xi,atol,rtol,lognorm,ℕ)
     converged && return ifelse(finite,xi,nan)
     itercount = 1
     xold = x0
     while itercount < max_iters
         xi = α*f(xi) + (1-α)*xi  
-        converged,finite = convergence(xold,xi,atol,rtol,α,lognorm,ℕ)
+        converged,finite = convergence(xold,xi,atol,rtol,lognorm,ℕ)
         converged && return ifelse(finite,xi,nan)    
         itercount +=1
         xold = xi
@@ -160,7 +151,7 @@ function _fixpoint(f!::F,
     α = method.dampingfactor
     ℕ = method.normorder
     lognorm = method.lognorm
-    converged,finite = convergence(x0,xi,atol,rtol,α,lognorm,ℕ)
+    converged,finite = convergence(x0,xi,atol,rtol,lognorm,ℕ)
     if converged
         if finite
             return xi
@@ -175,7 +166,7 @@ function _fixpoint(f!::F,
         xi = f!(xi,xold)
         xi .*= α
         xi .+= (1 .- α) .* xold
-        converged,finite = convergence(xold,xi,atol,rtol,α,lognorm,ℕ)
+        converged,finite = convergence(xold,xi,atol,rtol,lognorm,ℕ)
         if converged
             if finite
                 return xi

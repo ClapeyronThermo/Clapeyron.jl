@@ -146,3 +146,9 @@ end
 format_gccomponents(str::String) = [str]
 format_gccomponents(str::AbstractString) = format_components(String(str))
 format_gccomponents(str::Vector{String}) = str
+
+function viewn(x,chunk,i)
+    l = length(x)
+    l < chunk*i && throw(BoundsError(x,chunk*i))
+    @view x[((i - 1)*chunk+1):(i*chunk)]
+end

@@ -117,7 +117,7 @@ function x0_volume_liquid(model::SAFTVRMieModel,T,z)
 end
 
 function data(model::SAFTVRMieModel, V, T, z)
-    m̄ = dot(z,model.params.segment)
+    m̄ = dot(z,model.params.segment.values)
     _d = @f(d)
     ζi = @f(ζ0123,_d)
     _ζ_X,σ3x = @f(ζ_X_σ3,_d,m̄)
@@ -231,10 +231,10 @@ function d_vrmie_cut(θ,λa,λr)
 end
 
 function d(model::SAFTVRMieModel, V, T, z)
-    ϵ = diagvalues(model.params.epsilon)
-    σ = diagvalues(model.params.sigma)
-    λa = diagvalues(model.params.lambda_a)
-    λr = diagvalues(model.params.lambda_r)
+    ϵ = diagvalues(model.params.epsilon.values)
+    σ = diagvalues(model.params.sigma.values)
+    λa = diagvalues(model.params.lambda_a.values)
+    λr = diagvalues(model.params.lambda_r.values)
     n = length(z)
     _d = fill(zero(V+T+first(z)+one(eltype(model))),n)
     for k ∈ 1:n
@@ -263,7 +263,7 @@ function ζ_X_σ3(model::SAFTVRMieModel, V, T, z,_d = @f(d),m̄ = dot(z,model.pa
     m = model.params.segment.values
     m̄ = dot(z, m)
     m̄inv = 1/m̄
-    σ = model.params.sigma
+    σ = model.params.sigma.values
     ρS = N_A/V*m̄
     comps = 1:length(z)
     _ζ_X = zero(V+T+first(z)+one(eltype(model)))
@@ -333,7 +333,7 @@ function f123456(model::SAFTVRMieModel, V, T, z, α)
     #return sum(ϕ[i+1][m]*α^i for i ∈ 0:3)/(1+∑(ϕ[i+1][m]*α^(i-3) for i ∈ 4:6))
 end
 
-function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma)
+function ζst(model::SAFTVRMieModel, V, T, z,_σ = model.params.sigma.values)
     m = model.params.segment.values
     m̄ = dot(z, m)
     m̄inv = 1/m̄
@@ -413,8 +413,8 @@ function KHS_fdf(model::SAFTVRMieModel, V, T, z,ζ_X_,ρ_S_ = @f(ρ_S))
 end
 
 function ∂a_2╱∂ρ_S(model::SAFTVRMieModel,V, T, z, i)
-    λr = diagvalues(model.params.lambda_r)
-    λa = diagvalues(model.params.lambda_a)
+    λr = diagvalues(model.params.lambda_r.values)
+    λa = diagvalues(model.params.lambda_a.values)
     x_0ij = @f(x_0,i,i)
     ζ_X_ = @f(ζ_X)
     ρ_S_ = @f(ρ_S)
@@ -447,7 +447,7 @@ function I(model::SAFTVRMieModel, V, T, z,Tr,_data = @f(data))
 end
 
 function Δ(model::SAFTVRMieModel, V, T, z, i, j, a, b,_data = @f(data))
-    ϵ = model.params.epsilon
+    ϵ = model.params.epsilon.values
     Tr = T/ϵ[i,j]
     _I = @f(I,Tr,_data)
     ϵ_assoc = model.params.epsilon_assoc.values
@@ -461,11 +461,11 @@ function a_dispchain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     _d,ρS,ζi,ζₓ,_ζst,_,m̄ = _data
     comps = @comps
     ∑z = ∑(z)
-    m = model.params.segment
-    _ϵ = model.params.epsilon
-    _λr = model.params.lambda_r
-    _λa = model.params.lambda_a
-    _σ = model.params.sigma
+    m = model.params.segment.values
+    _ϵ = model.params.epsilon.values
+    _λr = model.params.lambda_r.values
+    _λa = model.params.lambda_a.values
+    _σ = model.params.sigma.values
     m̄inv = 1/m̄
     a₁ = zero(V+T+first(z)+one(eltype(model)))
     a₂ = a₁
@@ -601,11 +601,11 @@ function a_disp(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     #but on GC models, @comps != @groups
     #if we pass Xgc instead of z, the equation is exactly the same.
     #we need to add the divide the result by sum(z) later.
-    m = model.params.segment
-    _ϵ = model.params.epsilon
-    _λr = model.params.lambda_r
-    _λa = model.params.lambda_a
-    _σ = model.params.sigma
+    m = model.params.segment.values
+    _ϵ = model.params.epsilon.values
+    _λr = model.params.lambda_r.values
+    _λa = model.params.lambda_a.values
+    _σ = model.params.sigma.values
     m̄inv = 1/m̄
     a₁ = zero(V+T+first(z)+one(eltype(model)))
     a₂ = a₁
@@ -699,11 +699,11 @@ function a_chain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     l = length(z)
     comps = 1:l
     ∑z = ∑(z)
-    m = model.params.segment
-    _ϵ = model.params.epsilon
-    _λr = model.params.lambda_r
-    _λa = model.params.lambda_a
-    _σ = model.params.sigma
+    m = model.params.segment.values
+    _ϵ = model.params.epsilon.values
+    _λr = model.params.lambda_r.values
+    _λa = model.params.lambda_a.values
+    _σ = model.params.sigma.values
     m̄inv = 1/m̄
     a₁ = zero(V+T+first(z)+one(eltype(model)))
     a₂ = a₁

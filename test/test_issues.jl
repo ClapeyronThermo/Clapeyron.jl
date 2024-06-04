@@ -189,7 +189,8 @@
         (("water08","e"),("water08","H")) => 0.04509)
         )
         model = pharmaPCSAFT(["griseofulvin","water08"];userlocations = userlocations)
-
+        #found while testing, test that we don't mutate the input
+        @test userlocations.sigma == [3.372,2.7927]
         T = 310.15
         p = 1.01325e5
         z=[7.54e-7, 1-7.54e-7]
