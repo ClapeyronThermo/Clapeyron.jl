@@ -699,7 +699,6 @@ function _add_phases!(model,p,T,z,result,cache,options)
     end
     #@show found_tpd
     #step 3: find the tpd with the lowest tpd value
-    @show minimum(tpds)
     minimum(tpds) > 0 && return false
     #check our current phases and the trial ones        
     for ii in 1:length(found_tpd)
@@ -719,7 +718,6 @@ function _add_phases!(model,p,T,z,result,cache,options)
             end
 
             y,vy = found_tpd[ii],found_tpd_volumes[ii]
-            @show length(phases_tpd)
             if phases_tpd[ii] == :unknown
                 phases_tpd[ii] = VT_identify_phase(model,vy,T,y)
             end
@@ -727,7 +725,6 @@ function _add_phases!(model,p,T,z,result,cache,options)
             #vy = volume(model,p,T,y,phase = phase_y)
             #phase not stable: generate a new one from tpd result
             β1,x1,v1,β2,x2,v2,dgi = split_phase_tpd(model,p,T,w,y,phase_w,phase_y,vw,vy)
-            @show dgi,ii,jj,phase_y
             if !isnan(dgi) && dgi < 0
                 β0 = β[jj]
                 β[jj] = β0*β2
