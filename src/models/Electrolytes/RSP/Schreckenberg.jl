@@ -39,7 +39,14 @@ function dielectric_constant(model::SchreckenbergModel,V,T,z,_data=nothing)
         Z = model.params.charge.values
         ineutral = model.icomponents[Z.==0]
 
-        n_solv = sum(z[ineutral])
+        if isempty(ineutral)
+            return 1.0
+        end
+        
+        n_solv = zero(first(z))
+        for i in ineutral
+            n_solv += z[i]
+        end
         ρ_solv = n_solv / V
         d̄ = zero(T+first(z))
 
