@@ -69,24 +69,31 @@ model = LKPmod(["neon","hydrogen"];
 1. Plöcker, U., Knapp, H., & Prausnitz, J. (1978). Calculation of high-pressure vapor-liquid equilibria from a corresponding-states correlation with emphasis on asymmetric mixtures. Industrial & Engineering Chemistry Process Design and Development, 17(3), 324–332. [doi:10.1021/i260067a020](https://doi.org/10.1021/i260067a020)
 2. Sabozin, F., Jäger, A., & Thol, M. (2024). Enhancement of the Lee–Kesler–Plöcker equation of state for calculating thermodynamic properties of long-chain alkanes. International Journal of Thermophysics, 45(5). [doi:10.1007/s10765-024-03360-0](https://doi.org/10.1007/s10765-024-03360-0)
 """
+LKPmod
 
+export LKPmod
 
 default_references(::Type{LKPmod}) = ["10.1021/i260067a020","10.1007/s10765-024-03360-0"]
 default_locations(::Type{LKPmod}) = ["properties/critical.csv","properties/molarmass.csv"]
+default_ignore_missing_singleparams(::Type{LKPmod}) = ["Vc"]
+
 function transform_params(::Type{LKPmod},params,components)
     k = get(params,"k",nothing)
     if k === nothing
         nc = length(components)
         params["k"] = PairParam("k",components)
     end
-    Vc = get(params,"Vc",nothing)
-    if Vc === nothing
-        params["Vc"] = SingleParam("Vc",components)
+    _Vc = get(params,"Vc",nothing)
+    if _Vc === nothing
+        Vc = SingleParam("Vc",components)
+        params["Vc"] = Vc
+    else
+        Vc = _Vc
     end
     Tc,Pc,ω = params["Tc"],params["Pc"],params["acentricfactor"]
-    for i in 1:length(Vc)
+    for i in 1:length(Vc.values)
         if Vc.ismissingvalues[i]
-            Vc[i] = (0.2905 - 0.085*ω[i])*Rgas()*Tc[i]/Pc[i]
+            Vc.values[i] = (0.2905 - 0.085*ω[i])*Rgas()*Tc[i]/Pc[i]
         end
     end
     return params

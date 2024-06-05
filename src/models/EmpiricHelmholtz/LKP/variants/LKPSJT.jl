@@ -1,6 +1,6 @@
 abstract type LKPSJTModel <: LKPModel end
 
-struct SKPSJT{I} <: LKPSJTModel 
+struct LKPSJT{I} <: LKPSJTModel 
     components::Vector{String}
     params::LKPParam
     methane::SingleFluidResidualParam
@@ -9,18 +9,21 @@ struct SKPSJT{I} <: LKPSJTModel
     references::Vector{String}
 end
 
-default_references(::Type{SKPSJT}) = ["10.1021/i260067a020","10.1007/s10765-024-03360-0"]
-default_locations(::Type{SKPSJT}) = ["properties/critical.csv","properties/molarmass.csv"]
+default_references(::Type{LKPSJT}) = ["10.1021/i260067a020","10.1007/s10765-024-03360-0"]
+default_locations(::Type{LKPSJT}) = ["properties/critical.csv","properties/molarmass.csv"]
 
-function transform_params(::Type{SKPSJT},params,components)
+function transform_params(::Type{LKPSJT},params,components)
     k = get(params,"k",nothing)
     if k === nothing
         nc = length(components)
         params["k"] = PairParam("k",components)
     end
-    Vc = get(params,"Vc",nothing)
-    if Vc === nothing
-        params["Vc"] = SingleParam("Vc",components)
+    _Vc = get(params,"Vc",nothing)
+    if _Vc === nothing
+        Vc = SingleParam("Vc",components)
+        params["Vc"] = Vc
+    else
+        Vc = _Vc
     end
     Tc,Pc,ω = params["Tc"],params["Pc"],params["acentricfactor"]
     for i in 1:length(Vc)
@@ -32,10 +35,14 @@ function transform_params(::Type{SKPSJT},params,components)
 end
 
 """
-    SKPSJT <: LKPModel
-    SKPSJT(components;
+    LKPSJT <: LKPModel
+    LKPSJT(components;
         idealmodel=BasicIdeal,
         verbose=false)
+    
+    enhancedLKP(components;
+    idealmodel=BasicIdeal,
+    verbose=false)
 
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -49,7 +56,7 @@ end
 - `idealmodel`: Ideal Model
 
 ## Description
-Lee-Kesler-Plöker-equation of state, Sabozin-Jäger-Thol improvement. Corresponding states using interpolation between a simple, spherical fluid (methane, `∅`)  and a reference fluid (n-octane, `ref`):
+Lee-Kesler-Plöker-equation of state, Sabozin-Jäger-Thol enhancement. Corresponding states using interpolation between a simple, spherical fluid (methane, `∅`)  and a reference fluid (n-octane, `ref`):
 
 Instead of using the original BWR formulation, the reference equations of state of methane and octane are used.
 ```
@@ -68,21 +75,22 @@ Vcᵢⱼ = 0.125*(∛Vcᵢ + ∛Vcⱼ)^3
 ## Model Construction Examples
 ```julia
 # Using the default database
-model = SKPSJT("water") #single input
-model = SKPSJT(["water","ethanol"]) #multiple components
-model = SKPSJT(["water","ethanol"], idealmodel = ReidIdeal) #modifying ideal model
+model = LKPSJT("water") #single input
+model = LKPSJT(["water","ethanol"]) #multiple components
+model = LKPSJT(["water","ethanol"], idealmodel = ReidIdeal) #modifying ideal model
+model = enhancedLKP(["water","ethanol"], idealmodel = ReidIdeal) #enhancedLKP is just an alias to LKPSJT
 
 # Passing a prebuilt model
 
 my_idealmodel = MonomerIdeal(["neon","hydrogen"];userlocations = (;Mw = [20.17, 2.]))
-model =  SKPSJT(["neon","hydrogen"],idealmodel = my_idealmodel)
+model =  LKPSJT(["neon","hydrogen"],idealmodel = my_idealmodel)
 
 # User-provided parameters, passing files or folders
-model = SKPSJT(["neon","hydrogen"]; userlocations = ["path/to/my/db","lkp/my_k_values.csv"])
+model = LKPSJT(["neon","hydrogen"]; userlocations = ["path/to/my/db","lkp/my_k_values.csv"])
 
 # User-provided parameters, passing parameters directly
 
-model = SKPSJT(["neon","hydrogen"];
+model = LKPSJT(["neon","hydrogen"];
         userlocations = (;Tc = [44.492,33.19],
                         Pc = [2679000, 1296400],
                         Vc = [4.25e-5, 6.43e-5],
@@ -96,9 +104,10 @@ model = SKPSJT(["neon","hydrogen"];
 1. Plöcker, U., Knapp, H., & Prausnitz, J. (1978). Calculation of high-pressure vapor-liquid equilibria from a corresponding-states correlation with emphasis on asymmetric mixtures. Industrial & Engineering Chemistry Process Design and Development, 17(3), 324–332. [doi:10.1021/i260067a020](https://doi.org/10.1021/i260067a020)
 2. Sabozin, F., Jäger, A., & Thol, M. (2024). Enhancement of the Lee–Kesler–Plöcker equation of state for calculating thermodynamic properties of long-chain alkanes. International Journal of Thermophysics, 45(5). [doi:10.1007/s10765-024-03360-0](https://doi.org/10.1007/s10765-024-03360-0)
 """
-SKPSJT
+LKPSJT
+const enhancedLKP = LKPSJT
 
-function SKPSJT(components;
+function LKPSJT(components;
     idealmodel = BasicIdeal,
     userlocations = String[], 
     pure_userlocations = String[],
@@ -106,24 +115,24 @@ function SKPSJT(components;
     verbose = false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, default_locations(SKPSJT); userlocations = userlocations, verbose = verbose)
-    params = transform_params(SKPSJT,params,formatted_components)
+    params = getparams(formatted_components, default_locations(LKPSJT); userlocations = userlocations, verbose = verbose,ignore_missing_singleparams = ["Vc"])
+    params = transform_params(LKPSJT,params,formatted_components)
     packagedparams = build_eosparam(LKPParam,params)
-    references = default_references(SKPSJT)
+    references = default_references(LKPSJT)
     methane = SingleFluid("methane",verbose = verbose).residual
     octane = SingleFluid("octane",verbose = verbose).residual
     init_idealmodel = init_model(idealmodel,formatted_components,references,verbose,reference_state)
-    model = SKPSJT(formatted_components,packagedparams,methane,octane,init_idealmodel,references)
+    model = LKPSJT(formatted_components,packagedparams,methane,octane,init_idealmodel,references)
     return model
 end
 
-export SKPSJT
+export LKPSJT, enhancedLKP
 
 lkp_params_simple(model::LKPSJTModel) = (false, 0.01142)
 lkp_params_reference(model::LKPSJTModel) = (true, 0.3978)
 
 function reduced_a_res_lkp(model::LKPSJTModel,δ,τ,δr,params)
-    is_ref = first(params_reference)
+    is_ref = first(params)
     if is_ref
         #use the reference equations of state.
         return reduced_a_res(model.octane,δ,τ)

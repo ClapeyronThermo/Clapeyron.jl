@@ -78,15 +78,20 @@ LKP
 
 default_references(::Type{LKP}) = ["10.1021/i260067a020"]
 default_locations(::Type{LKP}) = ["properties/critical.csv","properties/molarmass.csv","Empiric/LKP/LKP_unlike.csv"]
+default_ignore_missing_singleparams(::Type{LKP}) = ["Vc"]
+
 function transform_params(::Type{LKP},params,components)
     k = get(params,"k",nothing)
     if k === nothing
         nc = length(components)
         params["k"] = PairParam("k",components)
     end
-    Vc = get(params,"Vc",nothing)
-    if Vc === nothing
-        params["Vc"] = SingleParam("Vc",components)
+    _Vc = get(params,"Vc",nothing)
+    if _Vc === nothing
+        Vc = SingleParam("Vc",components)
+        params["Vc"] = Vc
+    else
+        Vc = _Vc
     end
     Tc,Pc,ω = params["Tc"],params["Pc"],params["acentricfactor"]
     for i in 1:length(Vc)
@@ -112,6 +117,7 @@ function a_res(model::LKPModel,V,T,z = SA[1.0])
     δ = sum(z)*Vr/V
     τ = Tr/T
     δr = δ/Zr
+    @show δ,τ
     params_simple = lkp_params_simple(model)
     params_reference = lkp_params_reference(model)
     ω0,ωref = last(params_simple),last(params_reference)
