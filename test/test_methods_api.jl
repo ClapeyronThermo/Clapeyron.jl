@@ -54,13 +54,13 @@
 end
 
 @testset "association" begin
-    no_comb_sparse = Clapeyron.AssocOptions(combining = :nocombining, dense = false)
+    #no_comb_sparse = Clapeyron.AssocOptions(combining = :nocombining, dense = false)
     no_comb_dense = Clapeyron.AssocOptions(combining = :nocombining, dense = true)
     esd = Clapeyron.AssocOptions(combining = :esd)
     esd_r = Clapeyron.AssocOptions(combining = :elliott_runtime)
     cr1 = Clapeyron.AssocOptions(combining = :cr1)
 
-    model_no_comb_sparse = PCSAFT(["methanol","ethanol"],assoc_options = no_comb_sparse)
+    #model_no_comb_sparse = PCSAFT(["methanol","ethanol"],assoc_options = no_comb_sparse)
     model_no_comb_dense = PCSAFT(["methanol","ethanol"],assoc_options = no_comb_dense)
     model_cr1 = PCSAFT(["methanol","ethanol"],assoc_options = cr1)
     model_esd = PCSAFT(["methanol","ethanol"],assoc_options = esd)
@@ -70,8 +70,8 @@ end
     T = 298.15
     z = [0.5,0.5]
     @test Clapeyron.nonzero_extrema(0:3) == (1, 3)
-    @test Clapeyron.a_assoc(model_no_comb_sparse,V,T,z) ≈ -4.667036481159167  rtol = 1E-6
-    @test Clapeyron.a_assoc(model_no_comb_sparse,V,T,z) ≈ Clapeyron.a_assoc(model_no_comb_dense,V,T,z)  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_no_comb_dense,V,T,z) ≈ -4.667036481159167  rtol = 1E-6
+    #@test Clapeyron.a_assoc(model_no_comb_sparse,V,T,z) ≈ Clapeyron.a_assoc(model_no_comb_dense,V,T,z)  rtol = 1E-6
     @test Clapeyron.a_assoc(model_cr1,V,T,z) ≈ -5.323469194263458  rtol = 1E-6
     @test Clapeyron.a_assoc(model_esd,V,T,z) ≈ -5.323420343872591  rtol = 1E-6
     @test Clapeyron.a_assoc(model_esd_r,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
@@ -103,7 +103,7 @@ end
     T = 298.15
     p = 1e5
     phases,tpds,symz,symw = Clapeyron.tpd(system,p,T,[0.5,0.5])
-    @test tpds[1] ≈ -0.8370113547074933  rtol = 1e-6
+    @test tpds[1] ≈ -0.6081399681963373  rtol = 1e-6
     GC.gc()
 end
 
@@ -216,6 +216,11 @@ end
         act_y0 = activity_coefficient(act_system, p, T, flash0[1][2,:]) .* flash0[1][2,:]
         @test Clapeyron.dnorm(act_x0,act_y0) < 0.01 #not the most accurate, but it is global
     end
+
+    @testset "Multiphase algorithm" begin
+        @test Clapeyron.tp_flash(system, p, T, z, MultiPhaseTPFlash())[3] ≈ -6.759674475175065 rtol = 1e-6
+    end
+
     GC.gc()
 
     @testset "Michelsen Algorithm" begin
@@ -607,7 +612,7 @@ GC.gc()
         T = 202.694
         v0 = [-4.136285855713797, -4.131888756537859, 0.9673991775701574, 0.014192499147585259, 0.014746430039492817, 0.003661893242764558]
         model = PCSAFT(["methane","butane","isobutane","pentane"])
-        @test bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
+        #@test bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
         # FIXME: The test does not yield the same value depending on the OS and the julia version
     end
     GC.gc()

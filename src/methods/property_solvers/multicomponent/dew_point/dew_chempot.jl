@@ -22,6 +22,7 @@ struct ChemPotDewPressure{T} <: DewPointMethod
     atol::Float64
     rtol::Float64
     max_iters::Int
+    ss::Bool
 end
 
 function ChemPotDewPressure(;vol0 = nothing,
@@ -31,34 +32,35 @@ function ChemPotDewPressure(;vol0 = nothing,
                                 f_limit = 0.0,
                                 atol = 1e-8,
                                 rtol = 1e-12,
-                                max_iters = 10^4)
+                                max_iters = 10^4,
+                                ss = false)
 
     if p0 == x0 == vol0 == nothing
-        return ChemPotDewPressure{Nothing}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewPressure{Nothing}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     elseif (p0 == x0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return ChemPotDewPressure{typeof(vl)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewPressure{typeof(vl)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     elseif (vol0 == x0 == nothing) && !isnothing(p0)
         p0 = float(p0)
-        return ChemPotDewPressure{typeof(p0)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewPressure{typeof(p0)}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     elseif (p0 == vol0 == nothing) && !isnothing(x0)
         T = eltype(x0)
-        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(x0)
         vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(x0))
         T = eltype(vl)
         x0 = convert(Vector{T},x0)
-        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     elseif !isnothing(vol0) && !isnothing(x0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(x0))
         T = eltype(vl)
         x0 = convert(Vector{T},x0)
-        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     elseif  !isnothing(p0) && !isnothing(x0)
         p0,_ = promote(p0,first(x0))
         T = eltype(p0)
         x0 = convert(Vector{T},x0)
-        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewPressure{T}(vol0,p0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     else
         throw(error("invalid specification for dew pressure"))
     end
@@ -84,7 +86,7 @@ function dew_pressure_impl(model::EoSModel, T, y,method::ChemPotDewPressure)
 
     Ts = isnothing(model_x) ? T_scales(model) : T_scales(model_x)
 
-    if T > 0.9minimum(Ts)
+    if T > 0.9minimum(Ts) && method.ss
         converged,res = _fug_OF_ss(model_x,model,p0,T,x0,y,(vl,vv),false,true,condensables)
         p,T,x,y,vol,lnK = res
         volx,voly = vol
@@ -139,6 +141,7 @@ struct ChemPotDewTemperature{T} <: DewPointMethod
     atol::Float64
     rtol::Float64
     max_iters::Int
+    ss::Bool
 end
 
 function ChemPotDewTemperature(;vol0 = nothing,
@@ -148,34 +151,35 @@ function ChemPotDewTemperature(;vol0 = nothing,
     f_limit = 0.0,
     atol = 1e-8,
     rtol = 1e-12,
-    max_iters = 10^4)
+    max_iters = 10^4,
+    ss = false)
 
     if T0 == x0 == vol0 == nothing
-        return ChemPotDewTemperature{Nothing}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewTemperature{Nothing}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     elseif (T0 == x0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return ChemPotDewTemperature{typeof(vl)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewTemperature{typeof(vl)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     elseif (vol0 == x0 == nothing) && !isnothing(T0)
         T0 = float(T0)
-        return ChemPotDewTemperature{typeof(T0)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewTemperature{typeof(T0)}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     elseif (T0 == vol0 == nothing) && !isnothing(x0)
         T = eltype(x0)
-        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(x0)
         vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(x0))
         T = eltype(vl)
         x0 = convert(Vector{T},x0)
-        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     elseif !isnothing(vol0) && !isnothing(x0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(x0))
         T = eltype(vl)
         x0 = convert(Vector{T},x0)
-        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     elseif  !isnothing(T0) && !isnothing(x0)
         T0,_ = promote(T0,first(x0))
         T = eltype(T0)
         x0 = convert(Vector{T},x0)
-        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters)
+        return ChemPotDewTemperature{T}(vol0,T0,x0,noncondensables,f_limit,atol,rtol,max_iters,ss)
     else
         throw(error("invalid specification for bubble temperature"))
     end
@@ -197,7 +201,7 @@ function dew_temperature_impl(model::EoSModel,p,y,method::ChemPotDewTemperature)
         model_x = nothing
     end
     Ps = isnothing(model_x) ? p_scale(model,x0) : p_scale(model_x,x0)
-    if log(p) > 0.9log(Ps)
+    if log(p) > 0.9log(Ps) && method.ss
         converged,res = _fug_OF_ss(model_x,model,p,T0,x0,y,(vl,vv),false,false,condensables)
         p,T,x,y,vol,lnK = res
         volx,voly = vol

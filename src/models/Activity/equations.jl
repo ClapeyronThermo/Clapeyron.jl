@@ -14,7 +14,13 @@ function test_excess_gibbs_free_energy(model::ActivityModel,p,T,z)
     return sum(z[i]*R̄*T*log(γ[i]) for i ∈ @comps)
 end
 
-
+function volume_impl(model::ActivityModel, p, T, z, phase=:unknown, threaded=false, vol0=nothing)
+    if hasfield(typeof(model),:puremodel)
+        return volume(model.puremodel.model, p, T, z, phase=phase, threaded=threaded, vol0=vol0)
+    else
+        return volume(BasicIdeal(), p, T, z, phase=phase, threaded=threaded, vol0=vol0)
+    end
+end
 #for use in models that have gibbs free energy defined.
 function activity_coefficient(model::ActivityModel,p,T,z)
     X = gradient_type(p,T,z)
@@ -44,25 +50,23 @@ function init_preferred_method(method::typeof(saturation_temperature),model::Act
     return init_preferred_method(method,__act_to_gammaphi(model,method),kwargs)
 end
 
-function eos(model::ActivityModel,V,T,z)
-    Σz = sum(z)
-    lnΣz = log(Σz)
-    pures = model.puremodel
-    p = sum(z[i]*pressure(pures[i],V/Σz,T) for i ∈ @comps)/Σz
-    g_E = excess_gibbs_free_energy(model,p,T,z)
-    g_ideal = sum(z[i]*R̄*T*(log(z[i])-lnΣz) for i ∈ @comps)
-    g_pure = sum(z[i]*VT_gibbs_free_energy(pures[i],V/Σz,T) for i ∈ @comps)
-    return g_E+g_ideal+g_pure-p*V
+function idealmodel(model::T) where T <: ActivityModel
+    if hasfield(T,:puremodel)
+        puremodel = model.puremodel.model
+        return idealmodel(model.puremodel.model)
+    else
+        return BasicIdeal()
+    end
 end
 
-function eos_res(model::ActivityModel,V,T,z)
+function a_res(model::ActivityModel,V,T,z)
     Σz = sum(z)
     pures = model.puremodel
     g_pure_res = sum(z[i]*VT_gibbs_free_energy_res(pures[i],V/Σz,T) for i ∈ @comps)
     p = sum(z[i]*pressure(pures[i],V,T) for i ∈ @comps)/Σz
     g_E = excess_gibbs_free_energy(model,p,T,z)
     p_res = p - Σz*R̄*T/V
-    return g_E+g_pure_res-p_res*V
+    return (g_E+g_pure_res-p_res*V)/(Σz*Rgas(model)*T)
 end
 
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))

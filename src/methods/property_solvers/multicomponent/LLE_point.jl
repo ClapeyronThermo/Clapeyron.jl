@@ -15,8 +15,10 @@ function x0_lle_init(model::EoSModel, p, T, z, z0 = nothing)
     γz0 = activity_coefficient(model,p,T,z)  .* z
     err = ones(ntest)*Inf
     for i in 1:ntest
+        dnorm1 = dnorm(γz0,@view(γz[i,:]))
+        dnorm2 = dnorm(z_test[i],z)
         #divided by norm to penalize points too close of the initial point
-        err[i] = dnorm(γz0,γz[i])/dnorm(z_test[i],z)
+        err[i] = dnorm1/dnorm2
     end
     (val, idx) = findmin(err)
     return z_test[idx]

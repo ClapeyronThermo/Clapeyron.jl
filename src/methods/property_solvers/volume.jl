@@ -17,30 +17,41 @@ function volume_compress(model,p,T,z=SA[1.0];V0=x0_volume(model,p,T,z,phase=:liq
     return _volume_compress(model,p,T,z,V0,max_iters)
 end
 
-function _volume_compress(model,p,T,z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
-    _0 = zero(p+T+first(z)+oneunit(eltype(model)))
+function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=:liquid),max_iters=100)
+    _0 = zero(Base.promote_eltype(model,_p,_T,_z))
     _1 = one(_0)
     isnan(V0) && return _0/_0
-    pset = _1*p
-    _nan = _0/_0
-    logV0 = log(V0)*_1
-    lb_v = lb_volume(model,z)
-    function logstep(_V)
-        _V < log(lb_v) && return zero(_V)/zero(_V)
-        _V = exp(_V)
-        _p,dpdV = p∂p∂V(model,_V,T,z)
-        dpdV > 0 && return _nan #inline mechanical stability.
-        abs(_p-pset) < 3eps(pset) && return zero(_V)
-        _Δ = (pset-_p)/(_V*dpdV) #(_p - pset)*κ
-        return _Δ
+    p₀ = primalval(_1*_p)
+    XX = typeof(p₀)
+    T = primalval(_T)
+    _nan = primalval(_0/_0)
+    nan = primalval(_nan)
+    logV0 = primalval(log(V0)*_1)
+    z = primalval(_z)
+    log_lb_v = log(primalval(lb_volume(model,z)))
+    function logstep(logVᵢ::TT) where TT
+        logVᵢ < log_lb_v && return TT(zero(logVᵢ)/zero(logVᵢ))
+        Vᵢ = exp(logVᵢ)
+        _pᵢ,_dpdVᵢ = p∂p∂V(model,Vᵢ,T,z)
+        pᵢ,dpdVᵢ = primalval(_pᵢ),primalval(_dpdVᵢ) #ther could be rare cases where the model itself has derivative information.
+        dpdVᵢ > 0 && return TT(zero(logVᵢ)/zero(logVᵢ)) #inline mechanical stability.
+        abs(pᵢ-p₀) < 3eps(p₀) && return TT(zero(Vᵢ)) #this helps convergence near critical points.
+        Δᵢ = (p₀-pᵢ)/(Vᵢ*dpdVᵢ) #(_p - pset)*κ
+        return TT(Δᵢ)
     end
-    function f_fixpoint(_V)
-        Δ = logstep(_V)
-        vv = _V + Δ
-        return vv
+    function f_fixpoint(logVᵢ::TT) where TT
+        return TT(logVᵢ + logstep(logVᵢ))
     end
-    res = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters),_nan)
-    return exp(res)
+
+    logV = @nan(Solvers.fixpoint(f_fixpoint,logV0,Solvers.SSFixPoint(),rtol = 1e-12,max_iters=max_iters)::XX,nan)
+    #netwon step to recover derivative information:
+    #V = V - (p(V) - p)/(dpdV(V))
+    #dVdP = -1/dpdV
+    #dVdT = dpdT/dpdV
+    #dVdn = dpdn/dpdV
+    Vsol = exp(logV)
+    psol,dpdVsol = p∂p∂V(model,Vsol,_T,_z)
+    return Vsol - (psol - _p)/dpdVsol
 end
 
 """
@@ -128,12 +139,6 @@ function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0
     return volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
-function _v_stable(model,V,T,z,phase)
-    if phase != :stable
-        return true
-    end
-    return isstable(model,V,T,z)
-end
 
 fluid_model(model) = model
 solid_model(model) = model
@@ -165,14 +170,13 @@ function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=tru
         end
     end
 
-    if phase != :unknown
+    if phase != :unknown && phase != :stable
         V0 = x0_volume(model,p,T,z,phase=phase)
         if is_solid(phase)
             V = _volume_compress(solid,p,T,z,V0)
         else
             V = _volume_compress(fluid,p,T,z,V0)
         end
-        #isstable(model,V,T,z,phase) the user just wants that phase
         return V
     end
     Vg0 = x0_volume(fluid,p,T,z,phase=:v)
@@ -209,39 +213,36 @@ function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=tru
         volumes = (Vg,Vl,Vs)
     end
     
-    function gibbs(m,fV)
-        isnan(fV) && return one(fV)/zero(fV)
-        _df,_f = ∂f(m,fV,T,z)
-        dV,_ = _df
-        return ifelse(abs((p+dV)/p) > 0.03,zero(dV)/one(dV),_f + p*fV)
+    idx,v,g = volume_label((fluid,fluid,solid),p,T,z,volumes)
+    if phase == :stable
+        !VT_isstable(model,v,T,z,false) && return nan
     end
-    
-    valid = 3 - sum(isnan.(volumes))
+    return v
+end
 
-    if valid == 0 #no possible volumes
-        return nan
-    elseif valid == 1 #only one possible volume
-        idx = findfirst(!isnan,volumes)::Int
-        v = volumes[idx]
-        if idx == 3
-            _v_stable(solid,v,T,z,phase)
-        else
-            _v_stable(fluid,v,T,z,phase)
-        end
-        return v        
-    else
-        v1,v2,v3 = volumes
-        g1,g2,g3 = gibbs(fluid,v1),gibbs(fluid,v2),gibbs(solid,v3)
-        g = (g1,g2,g3)
-        _,idx = findmin(g)
-        v = volumes[idx]
-        if idx == 3
-            _v_stable(solid,v,T,z,phase)
-        else
-            _v_stable(fluid,v,T,z,phase)
-        end
-        return v
+function volume_label(models::F,p,T,z,vols) where F
+    function gibbs(model,fV)
+        isnan(fV) && return one(fV)/zero(fV)
+        f(V) = eos(model,V,T,z)
+        _f,_dV = Solvers.f∂f(f,fV)
+        return ifelse(abs((p+_dV)/p) > 0.03,one(fV)/zero(fV),_f + p*fV)
     end
+
+    idx = 0
+    V = p
+    model = models[1]
+    _0 = zero(@f(Base.promote_eltype))
+    g = one(_0)/_0
+    v = _0/_0
+    for (i,vi) in pairs(vols)
+        gi = gibbs(models[i],vi)
+        if gi < g
+            g = gi
+            idx = i
+            v = vi
+        end
+    end
+    return idx,v,g
 end
 
 #=

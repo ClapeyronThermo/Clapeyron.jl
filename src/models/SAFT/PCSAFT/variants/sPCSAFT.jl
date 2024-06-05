@@ -68,3 +68,20 @@ function Δ(model::sPCSAFTModel, V, T, z, i, j, a, b,_data = @f(data))
     g_hs_ = @f(g_hs,_data)
     return g_hs_*σij^3*(exp(ϵ_associjab/T)-1)*κijab
 end
+
+#custom method for sPCSAFT, we only calculate g_hs once
+function  Δ(model::sPCSAFT, V, T, z,_data=@f(data))
+    ϵ_assoc = model.params.epsilon_assoc.values
+    κ = model.params.bondvol.values
+    σ = model.params.sigma.values
+    Δout = assoc_similar(κ,typeof(V+T+first(z)+one(eltype(model))))
+    g_hs_ = @f(g_hs,_data)
+    Δout.values .= false
+    for (idx,(i,j),(a,b)) in indices(Δout)
+        κijab = κ[idx]
+        if κijab != 0
+            Δout[idx] = g_hs_*σ[i,j]^3*(expm1(ϵ_assoc[i,j][a,b]/T))*κ[idx]
+        end
+    end
+    return Δout
+end

@@ -258,3 +258,28 @@ function Δ(model::CPAModel, V, T, z, i, j, a, b, _data = @f(data))
 
     return g*expm1(ϵ_associjab/T)*βijab*b[i,j]/N_A
 end
+#optimized Δ function for CPA, we only calculate g once.
+function  Δ(model::CPA, V, T, z,_data=@f(data))
+    n,ā,b̄,c̄ = _data
+    β = model.params.bondvol.values
+    b_cubic = model.params.b.values
+    η = n*b̄/(4*V)
+    rdf = model.radial_dist
+    g = if rdf == :CS #CPA original
+        (1-0.5*η)/(1-η)^3
+    elseif rdf == :KG #sCPA
+        1/(1-1.9η)
+    else
+        zero(η)/zero(η)
+    end
+    Δout = assoc_similar(β,typeof(V+T+first(z)+one(eltype(model))))
+    ϵ_assoc = model.params.epsilon_assoc
+    Δout.values .= false  #fill with zeros, maybe it is not necessary?
+    for (idx,(i,j),(a,b)) in indices(Δout)
+        βijab = β[idx]
+        if βijab != 0
+            Δout[idx] = g*expm1(ϵ_assoc[i,j][a,b]/T)*βijab*b_cubic[i,j]/N_A
+        end
+    end
+    return Δout
+end

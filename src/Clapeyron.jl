@@ -24,7 +24,7 @@ include("utils/core_utils.jl")
 
 include("modules/solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log, sqrt, log1p, ^, dnorm
+using .Solvers: log, sqrt, log1p, ^, dnorm, primalval
 
 #misc functions, useful for EoS, don't depend on models
 include("modules/eosfunctions/EoSFunctions.jl")
