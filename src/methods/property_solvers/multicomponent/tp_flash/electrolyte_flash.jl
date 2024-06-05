@@ -207,9 +207,9 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     end
 
     if vx < vy #sort by increasing volume
-        return x, y, β
+        return x, y, β, (vx, vy)    
     else
-        return y, x, 1 - β
+        return y, x, 1 - β, (vx, vy)
     end
 end
 

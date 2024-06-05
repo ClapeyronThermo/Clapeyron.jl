@@ -10,14 +10,9 @@ function mean_ionic_activity_coefficient_sat(model::ESElectrolyteModel,salts,T,m
     z0 = molality_to_composition(model,salts,ones(length(m)).*1e-20,zsolvent)
     z = molality_to_composition(model,salts,m,zsolvent)
 
-    (p0,vl0,vv0,y0) = bubble_pressure(model,T,z0,method)
-    φ0 = fugacity_coefficient(model,vl0,T,z0;phase=:l)[iions]
-
     (p,vl,vv,y) = bubble_pressure(model,T,z,method)
-    φ = fugacity_coefficient(model,vl,T,z;phase=:l)[iions]
-
-    println(φ0)
-    println(φ)
+    φ = fugacity_coefficient(model,p,T,z;phase=:l)[iions]
+    φ0 = fugacity_coefficient(model,p,T,z0;phase=:l)[iions]
 
     γim = φ./φ0.*sum(z[isolvent])/sum(z)
     γsm = (prod(γim'.^ν,dims=2)).^(1 ./sum(ν,dims=2))
