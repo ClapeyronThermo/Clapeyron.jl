@@ -64,7 +64,6 @@ function _fug_OF_ss(model::EoSModel,p,T,x,y,vol0,_bubble,_pressure;itmax_ss = 5,
 
             lnϕx, volx = lnϕ!(lnϕx, model, p, T, _x, vol0=volx)
             lnϕy, voly = lnϕ!(lnϕy, model, p, T, _y, vol0=voly)
-            @show p
             if isnan(volx)
                 lnϕx, volx = lnϕ!(lnϕx, model, p, T, _x, phase = :liquid)
                 @show VT_identify_phase(model,volx,T,_x)
