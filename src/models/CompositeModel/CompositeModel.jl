@@ -89,6 +89,7 @@ include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
 include("PolExpVapour.jl")
 include("SolidModel/SolidHfus.jl")
+include("SolidModel/SolidKs.jl")
 include("bubble_point.jl")
 include("dew_point.jl")
 
