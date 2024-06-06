@@ -272,6 +272,8 @@
         water = split_model(pcpsaft)[1]
         z = [1.0,0.0,0.0,0.0]
         v = volume(pcpsaft, 101325.0, 298.15, z, phase = :liquid)
+        cp_pure = Clapeyron.VT_isobaric_heat_capacity(water, v, 298.15, 1.0, phase = :liquid)
+        cp_mix = Clapeyron.VT_isobaric_heat_capacity(pcpsaft, v, 298.15, z, phase = :liquid)
         @test cp_mix ≈ cp_pure
         @test cp_mix ≈ 69.21259493306137
     end
