@@ -3,8 +3,10 @@ function a_assoc(model::EoSModel, V, T, z,data=nothing)
     nn = assoc_pair_length(model)
     iszero(nn) && return _0
     isone(nn) && return a_assoc_exact_1(model,V,T,z,data)
-    _X,_Δ = @f(X_and_Δ,data)
-    return @f(a_assoc_impl,_X,_Δ)
+    #_X,_Δ = @f(X_and_Δ,data)
+    #return @f(a_assoc_impl,_X,_Δ)
+    _X = @f(X,data)
+    return @f(a_assoc_impl,_X)
 end
 
 """
@@ -284,7 +286,9 @@ function X(model::EoSModel, V, T, z,data = nothing)
     nn = assoc_pair_length(model)
     isone(nn) && return X_exact1(model,V,T,z,data)
     X,Δ = X_and_Δ(model,V,T,z,data)
-    #bail out if there is no AD
+    return X
+    #for some reason, this fails on infinite dilution derivatives
+    #=
     if eltype(X.v) === eltype(Δ.values)
         return X
     end
@@ -311,7 +315,7 @@ function X(model::EoSModel, V, T, z,data = nothing)
     F = Solvers.unsafe_LU!(K)
     ldiv!(F,X̃)
     X̃ .+= X̄
-    return PackedVofV(X.p,X̃)
+    return PackedVofV(X.p,X̃) =#
 end
 
 function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
@@ -319,10 +323,11 @@ function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
     isone(nn) && return X_and_Δ_exact1(model,V,T,z,data)
     options = assoc_options(model)::AssocOptions
     _Δ = __delta_assoc(model,V,T,z,data)
-    K = assoc_site_matrix(model,primalval(V),T,primalval(z),data,primalval(_Δ))
+    #K = assoc_site_matrix(model,primalval(V),T,primalval(z),data,primalval(_Δ))
+    K = assoc_site_matrix(model,V,T,z,data,_Δ)
     sitesparam = getsites(model)
     idxs = sitesparam.n_sites.p
-    Xsol = assoc_matrix_solve(K,options)
+    Xsol = assoc_matrix_solve(K,options)        
     return PackedVofV(idxs,Xsol),_Δ
 end
 
@@ -491,6 +496,9 @@ getsites(model) = model.sites
 
 function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
     #=
+    todo: fix mixed derivatives at infinite dilution
+    =#
+    #=
     Implementation notes
 
     We solve X in primal space so X does not carry derivative information.
@@ -508,13 +516,16 @@ function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
     Q2 = zero(first(X.v)) |> primalval
     for i ∈ @comps
         ni = n[i]
+        zi = z[i]
         iszero(length(ni)) && continue
+        iszero(zi) && continue
         Xᵢ = X[i]
         resᵢₐ = zero(Q2)
         for (a,nᵢₐ) ∈ pairs(ni)
             Xᵢₐ = primalval(Xᵢ[a])
             resᵢₐ += nᵢₐ * (log(Xᵢₐ) + 1 - Xᵢₐ)
         end
+        
         Q2 += resᵢₐ*z[i]
     end
     Q1 = zero(eltype(Δ.values))
@@ -523,7 +534,10 @@ function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
         for (idx,(i,j),(a,b)) in indices(Δ)
             Xia,nia = primalval(X[i][a]),n[i][a]
             Xjb,njb = primalval(X[j][b]),n[j][b]
-            Q1 -= z[i]*z[j]*nia*njb*Xia*Xjb*(Δ.values[idx]*N_A)
+            zi,zj = z[i],z[j]
+            if !iszero(zi) && !iszero(zj)
+                Q1 -= z[i]*z[j]*nia*njb*Xia*Xjb*(Δ.values[idx]*N_A)
+            end
         end
         Q1 = Q1*Vinv
     end
@@ -548,14 +562,17 @@ function a_assoc_impl(model::EoSModel, V, T, z, X)
     res = _0
     for i ∈ @comps
         ni = n[i]
+        zi = z[i]
+        iszero(zi) && continue
         iszero(length(ni)) && continue
+
         Xᵢ = X[i]
         resᵢₐ = _0
         for (a,nᵢₐ) ∈ pairs(ni)
             Xᵢₐ = Xᵢ[a]
             resᵢₐ +=  nᵢₐ* (log(Xᵢₐ) - Xᵢₐ*0.5 + 0.5)
         end
-        res += resᵢₐ*z[i]
+        res += resᵢₐ*zi
     end
     return res/sum(z)
 end
