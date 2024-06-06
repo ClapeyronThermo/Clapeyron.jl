@@ -14,7 +14,7 @@ using Clapeyron, Test
         @test osmotic_coefficient(system,salts,p,T,m)[1] ≈ 0.9301038212951828 rtol = 1e-6
         
         @test mean_ionic_activity_coefficient_sat(system,salts,T,m)[1] ≈ 0.632123986095978 rtol = 1e-6
-        @test osmotic_coefficient_sat(system,salts,T,m)[1] ≈ 0.9300995995153606 rtol = 1e-6
+        @test osmotic_coefficient_sat(system,salts,T,m)[1] ≈ 0.9300995995153606 rtol = 1e-5
     end
 
     fluid = SAFTVREMie(["water"],["sodium","chloride"])

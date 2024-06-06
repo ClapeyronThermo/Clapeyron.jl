@@ -23,9 +23,9 @@ end
 
 ## Description
 
-Approximation of the excess chemical potential in the solid phase (`CpSL` is not necessary by default):
+Approximation of the excess chemical potential in the solid phase, using enthalpies and gibbs energies of formation:
 ```
-ln(x_iγ_i) = Hfus*T*(1/Tm-1/T)-CpSL/R̄*(Tm/T-1-log(Tm/T))
+ln(xᵢγᵢ) = -Gformᵢ*T/Trefᵢ - Hformᵢ*(1 - T/Trefᵢ)
 ```
 """
 SolidKs
