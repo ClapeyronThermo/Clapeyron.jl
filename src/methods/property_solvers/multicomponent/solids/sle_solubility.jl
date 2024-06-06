@@ -40,7 +40,7 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
             idx_solv[.!(idx_sol_l)] .= true
         end
 
-        if T>model.solid.params.Tm.values[idx_sol_s][1]
+        if T > model.solid.params.Tm.values[idx_sol_s][1]
             error("Temperature above melting point of $(solute[i])")
         end
 
@@ -79,10 +79,8 @@ function obj_sle_solubility(F,model,p,T,zsolv,solu,idx_sol_l,idx_sol_s,idx_solv,
     z[idx_solv] .= zsolv
     γliq = activity_coefficient(model.fluid,p,T,z)
     μliq = Rgas()*T*log.(γliq[idx_sol_l].*z[idx_sol_l])
-
     solid_r,idx_sol_r = index_reduction(model.solid,idx_sol_s)
-    μsol = chemical_potential(solid_r,p,T,[1.])
-
+    μsol = chemical_potential(solid_r,p,T,1.0)
     zref = Float64.(deepcopy(ν_l))
     zref ./= sum(zref)
     Tm = model.solid.params.Tm.values[idx_sol_s][1] 

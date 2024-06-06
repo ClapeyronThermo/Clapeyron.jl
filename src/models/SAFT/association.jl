@@ -415,7 +415,17 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
             F = Solvers.unsafe_LU!(F)
             dX .= 1 ./ Xsol .- 1 .- KX #gradient
             ldiv!(F,dX) #we solve H/g, overwriting g
-            Xsol .-= dX
+            for k in 1:length(dX)
+                Xk = Xsol[k]
+                dXk = dX[k]
+                if dXk > Xk
+                    Xsol[k] = 1/(1 + KX[k]) #successive substitution ste 
+                else
+                    Xsol[k] = Xk - dXk
+                end
+            end
+           # Xsol .-= dX
+            
             converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
             #@show converged,finite
             if converged
