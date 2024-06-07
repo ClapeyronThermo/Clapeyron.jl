@@ -89,7 +89,7 @@ returns `p` and `∂p/∂V` at constant temperature, where p is the pressure = `
 function p∂p∂V(model,V,T,z=SA[1.0])
     f(∂V) = pressure(model,∂V,T,z)
     p,∂p∂V = Solvers.f∂f(f,V)
-    return p,∂p∂V
+    return SVector(p,∂p∂V)
 end
 
 """

@@ -24,7 +24,7 @@ function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_internal_energy(model::EoSModel, V, T, z=SA[1.])
-    A, ∂A∂V, ∂A∂T = ∂f_vec(model,V,T,z)
+    A, ∂A∂T = f∂fdT(model,V,T,z)
     return A - T*∂A∂T
 end
 
