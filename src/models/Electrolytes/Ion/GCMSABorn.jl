@@ -20,6 +20,26 @@ struct GCMSABorn{ϵ} <: GCMSABornModel
 end
 
 export GCMSABorn
+
+"""
+    GCMSABorn(solvents::Array{String,1}, 
+         ions::Array{String,1}; 
+         RSPmodel=ConstW, 
+         SAFTlocations=String[], 
+         userlocations=String[], 
+         verbose=false)
+
+## Input parameters
+- `sigma`: Single Parameter (`Float64`) - Hard-sphere diameter `[m]`
+- `sigma_born`: Single Parameter (`Float64`) - Born Diameter `[m]`
+- `charge`: Single Parameter (`Float64`) - Charge `[-]`
+
+## Input models
+- `RSPmodel`: Relative Static Permittivity Model
+
+## Description
+This function is used to create a group-contribution Mean Spherical Approximation-Born model used in SAFT-gamma E Mie
+"""
 function GCMSABorn(solvents,ions; RSPmodel=ConstW, userlocations=String[], verbose=false)
     groups = GroupParam(cat(solvents,ions,dims=1), ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv"]; verbose=verbose)
     params = getparams(groups, ["SAFT/SAFTgammaMie/SAFTgammaMie_like.csv","SAFT/SAFTgammaMie/SAFTgammaMieE/","properties/molarmass_groups.csv"]; userlocations=userlocations,return_sites=false,ignore_missing_singleparams=["sigma_born","charge"], verbose=verbose)
