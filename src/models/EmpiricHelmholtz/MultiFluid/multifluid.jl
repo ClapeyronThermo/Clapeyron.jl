@@ -167,7 +167,7 @@ function a_res(model::MultiFluid,V,T,z)
     return multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
 end
 
-function eos(model::MultiFluid,V,T,z = SA[1.0])
+function eos_impl(model::MultiFluid,V,T,z)
     ∑z = sum(z)
     a₀ = a_ideal(model,V,T,z,∑z)
     δ = reduced_delta(model,V,T,z,∑z)

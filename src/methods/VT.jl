@@ -24,8 +24,7 @@ function VT_entropy_res(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_internal_energy(model::EoSModel, V, T, z=SA[1.])
-    dA, A = ∂f(model,V,T,z)
-    ∂A∂V, ∂A∂T = dA
+    A, ∂A∂V, ∂A∂T = ∂f_vec(model,V,T,z)
     return A - T*∂A∂T
 end
 
@@ -36,8 +35,7 @@ function VT_internal_energy_res(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_enthalpy(model::EoSModel, V, T, z=SA[1.])
-    dA, A = ∂f(model,V,T,z)
-    ∂A∂V, ∂A∂T = dA
+    A, ∂A∂V, ∂A∂T = ∂f_vec(model,V,T,z)
     return A - V*∂A∂V - T*∂A∂T
 end
 
@@ -48,8 +46,7 @@ function VT_enthalpy_res(model::EoSModel, V, T, z=SA[1.])
 end
 
 function VT_gibbs_free_energy(model::EoSModel, V, T, z=SA[1.])
-    f(x) = eos(model,x,T,z)
-    A,∂A∂V = Solvers.f∂f(f,V)
+    A,∂A∂V = f∂fdV(model,V,T,z)
     return A - V*∂A∂V
 end
 
