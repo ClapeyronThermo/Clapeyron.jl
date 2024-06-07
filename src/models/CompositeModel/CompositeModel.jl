@@ -260,7 +260,7 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
         #this requires checking evaluating all volumes and checking
         #what value is the correct one via gibbs energies.
         if !(model.fluid isa GammaPhi) && !(model.fluid isa FluidCorrelation) && !(model.solid isa SolidCorrelation)
-            return _volume_impl(model,p,T,z,phase,threaded,vol0)
+            return default_volume_impl(model,p,T,z,phase,threaded,vol0)
         else
             #TODO: implement these when we have an actual sublimation-melting empiric model.
             throw(error("automatic phase detection not implemented for $(typeof(model))"))
