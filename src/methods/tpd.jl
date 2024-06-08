@@ -327,8 +327,8 @@ end
 #used in thermopack
 #because we use K values, TPDKSolver is used instead
 #but this is the legacy tpd ss solver.
-function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,is_liquid,cache,tol_equil, tol_trivial,maxiter)
-    phase = is_liquid ? :l : :v
+function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,_is_liquid,cache,tol_equil, tol_trivial,maxiter)
+    phase = _is_liquid ? :l : :v
     #is this a trivial solution?
     trivial = false
     stable = true
@@ -336,7 +336,7 @@ function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,is_liquid,cache,tol_equil
     done = false
     liquid_overpressure = false
     di,fz,lnϕw,wl,wv = cache
-    w = is_liquid ? wl : wv
+    w = _is_liquid ? wl : wv
     w .= w0
     di .= log.(fz ./ p)
     v = zero(eltype(w))/zero(eltype(w))
@@ -344,11 +344,13 @@ function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,is_liquid,cache,tol_equil
     while !done
         iter += 1
         lnϕw, v = lnϕ!(lnϕw,model, p, T, w; phase=phase, vol0=v)
-        if isnan(v) && is_liquid(phase) && !liquid_overpressure
-            #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the 
-            #specified conditions. try elevating the pressure at the first iter.
-            liquid_overpressure = true
-            lnϕw, v = lnϕ!(lnϕw,model, 1.2p, T, w; phase=phase, vol0=v)
+        if isnan(v) && is_liquid(phase)
+            if !liquid_overpressure
+                #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the 
+                #specified conditions. try elevating the pressure at the first iter.
+                liquid_overpressure = true
+                lnϕw, v = lnϕ!(lnϕw,model, 1.2p, T, w; phase=phase, vol0=v)
+            end
         end
         S = zero(eltype(w))
         for i in eachindex(w)
@@ -363,7 +365,7 @@ function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,is_liquid,cache,tol_equil
         for i in eachindex(w)
             wi,lnϕwi = w[i],lnϕw[i]
             sfw = S*exp(lnϕwi)*p*wi
-            R = is_liquid ? sfw/fz[i] : fz[i]/sfw
+            R = _is_liquid ? sfw/fz[i] : fz[i]/sfw
             R_norm += (R-1)^2
             K_norm += log(wi/z[i])^2
             tpd += wi*(log(wi) + lnϕwi - di[i] - 1)
