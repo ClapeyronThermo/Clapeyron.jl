@@ -1,6 +1,6 @@
 abstract type structSAFTgammaMieModel <: SAFTgammaMieModel end
 
-struct structSAFTgammaMie{I,VR} <: structSAFTgammaMieModel
+struct structSAFTgammaMie{I} <: structSAFTgammaMieModel
     components::Vector{String}
     groups::StructGroupParam
     sites::SiteParam

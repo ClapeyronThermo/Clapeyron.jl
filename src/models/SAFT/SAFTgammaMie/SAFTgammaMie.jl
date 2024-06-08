@@ -14,7 +14,7 @@ struct SAFTgammaMieParam <: EoSParam
 end
 
 
-struct SAFTgammaMie{I,VR} <: SAFTgammaMieModel
+struct SAFTgammaMie{I} <: SAFTgammaMieModel
     components::Vector{String}
     groups::GroupParam
     sites::SiteParam
