@@ -22,7 +22,7 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
         idx_sol_s[model.solid.components .==solute[i]] .= true
 
         #TODO: express this in terms of melting_temperature
-        Tm = model.solid.params.Tm.values[idx_sol_s][1] 
+        Tm = model.solid.params.Tm.values[idx_sol_s][1]
 
         idx_sol_l = zeros(Bool,length(model.fluid.components))
         solute_l = mapping[idx_sol_s][1]
@@ -58,7 +58,6 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
         if isnothing(x0)
             x0 = x0_sle_solubility(model,p,T,z,idx_solv,idx_sol_l,ν_l,μsol)
         end
-
         # println(x0)
         f!(F,x) = obj_sle_solubility(F,model,p,T,z[idx_solv],exp10(x[1]),idx_sol_l,idx_sol_s,idx_solv,ν_l)
         results = Solvers.nlsolve(f!,x0,LineSearch(Newton()),NEqOptions(),ForwardDiff.Chunk{1}())
@@ -83,7 +82,7 @@ function obj_sle_solubility(F,model,p,T,zsolv,solu,idx_sol_l,idx_sol_s,idx_solv,
     μsol = chemical_potential(solid_r,p,T,1.0)
     zref = Float64.(deepcopy(ν_l))
     zref ./= sum(zref)
-    Tm = model.solid.params.Tm.values[idx_sol_s][1] 
+    Tm = model.solid.params.Tm.values[idx_sol_s][1]
 
     fluid_r,idx_liq_r = index_reduction(model.fluid,idx_sol_l)
     γref = activity_coefficient(fluid_r,p,Tm,zref)
