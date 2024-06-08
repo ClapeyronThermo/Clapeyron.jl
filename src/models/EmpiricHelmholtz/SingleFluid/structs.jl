@@ -32,6 +32,8 @@ struct SingleFluidIdealParam <:MultiParameterParam
     end
 end
 
+is_splittable(::SingleFluidIdealParam) = false
+
 struct GaoBTerm
     active::Bool
     n::Vector{Float64}
@@ -115,6 +117,8 @@ struct SingleFluidResidualParam <: MultiParameterParam
         return param
     end
 end
+
+is_splittable(::SingleFluidResidualParam) = false
 
 __has_extra_params(x::MultiParameterParam) = __has_extra_params(typeof(x))
 __has_extra_params(x) = false
@@ -251,6 +255,8 @@ struct SingleFluidProperties <: EoSParam
         return new(Mw,Tr,rhor,lb_volume,Tc,Pc,rhoc,Ttp,ptp,rhov_tp,rhol_tp,acentric_factor,Rgas)
     end
 end
+
+is_splittable(::SingleFluidProperties) = false
 
 const ESFProperties = SingleFluidProperties
 const ESFIdealParam = SingleFluidIdealParam
