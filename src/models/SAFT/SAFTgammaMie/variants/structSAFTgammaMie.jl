@@ -6,7 +6,7 @@ struct structSAFTgammaMie{I,VR} <: structSAFTgammaMieModel
     sites::SiteParam
     params::SAFTgammaMieParam
     idealmodel::I
-    vrmodel::SAFTVRMie{Float64,I}
+    vrmodel::SAFTVRMie{I,Float64}
     epsilon_mixing::Symbol
     assoc_options::AssocOptions
     references::Array{String,1}
