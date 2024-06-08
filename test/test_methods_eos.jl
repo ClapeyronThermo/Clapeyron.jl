@@ -553,12 +553,15 @@ end
 
 @testset "LKP methods" begin
     system = LKP("propane", idealmodel = AlyLeeIdeal)
+    system_mod = LKPmod("squalane",userlocations = (Tc = 810,Pc = 0.728e6,acentricfactor = 1.075,Mw = 1.0))
+
     p = 1e5
     T = 230.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T, phase = :l) ≈ 7.865195401331961e-5 rtol = 1e-6
         @test Clapeyron.volume(system, p, T, phase = :v) ≈ 0.018388861273788176 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T, phase = :l) ≈ 1167.2461897307874 rtol = 1e-6
+        @test Clapeyron.molar_density(system_mod,0.0,298.15,phase =:l) ≈ 1721.2987626107251 rtol = 1e-6 #0.1007/s10765-024-03360-0, Figure 4
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 105419.26772976149 rtol = 1E-6
