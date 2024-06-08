@@ -28,14 +28,15 @@ abstract type LKPModel <: EmpiricHelmholtzModel end
 - `idealmodel`: Ideal Model
 
 ## Description
-Lee-Kesler-Plöker equation of state. corresponding states using interpolation between a simple, spherical fluid (`∅`)  and a reference fluid (n-octane, `ref`):
+Lee-Kesler-Plöker equation of state. corresponding states using interpolation between a simple, spherical fluid (methane, `∅`)  and a reference fluid (n-octane, `ref`):
 ```
-αᵣ = (1 - ωr/ω(ref))*αᵣ(δr,τ,params(∅)) + ωr/ω(ref)*αᵣ(δr,τ,params(ref))
+αᵣ = (1 - ωᵣ)*αᵣ(δr,τ,params(∅)) + ωᵣ*αᵣ(δr,τ,params(ref))
 τ = Tr/T
 δr = Vr/V/Zr
 Zr = Pr*Vr/(R*Tr)
-Pr = (0.2905 - 0.085*ωr)*R*Tr/Vr
-ωr = ∑xᵢωᵢ
+Pr = (0.2905 - 0.085*ω̄)*R*Tr/Vr
+ωᵣ = (ω̄ - ω(∅))/(ω(ref) - ω(∅))
+ω̄ = ∑xᵢωᵢ
 Tr = ∑xᵢ*xⱼ*Tcᵢⱼ*Vcᵢⱼ^η * (1-kᵢⱼ)
 Vr = ∑xᵢ*xⱼ*Tcᵢⱼ*Vcᵢⱼ
 Tcᵢⱼ = √Tcᵢ*Tcⱼ
@@ -77,15 +78,20 @@ LKP
 
 default_references(::Type{LKP}) = ["10.1021/i260067a020"]
 default_locations(::Type{LKP}) = ["properties/critical.csv","properties/molarmass.csv","Empiric/LKP/LKP_unlike.csv"]
+default_ignore_missing_singleparams(::Type{LKP}) = ["Vc"]
+
 function transform_params(::Type{LKP},params,components)
     k = get(params,"k",nothing)
     if k === nothing
         nc = length(components)
         params["k"] = PairParam("k",components)
     end
-    Vc = get(params,"Vc",nothing)
-    if Vc === nothing
-        params["Vc"] = SingleParam("Vc",components)
+    _Vc = get(params,"Vc",nothing)
+    if _Vc === nothing
+        Vc = SingleParam("Vc",components)
+        params["Vc"] = Vc
+    else
+        Vc = _Vc
     end
     Tc,Pc,ω = params["Tc"],params["Pc"],params["acentricfactor"]
     for i in 1:length(Vc)
@@ -106,18 +112,23 @@ function set_k!(model::LKPModel,k)
 end
 
 function a_res(model::LKPModel,V,T,z = SA[1.0])
-    Tc,Pc,Vc,ω̄ = @f(data)
-    Zc = Pc*Vc/(Rgas(model)*Tc)
-    δ = sum(z)*Vc/V
-    τ = Tc/T
-    δr = δ/Zc
-    params0 = (0.1181193, 0.265728, 0.15479, 0.030323, 0.0236744, 0.0186984, 0.0, 0.042724, 1.55428e-5, 6.23689e-5, 0.65392, 0.060167, 0.0)
-    params_ref = (0.2026579, 0.331511, 0.027655, 0.203488, 0.0313385, 0.0503618, 0.016901, 0.041577, 4.8736e-5, 7.40336e-6, 1.226, 0.03754, 0.3978)
-    αr_0 = reduced_a_res_lkp(model,δr,τ,params0)
-    αr_ref = reduced_a_res_lkp(model,δr,τ,params_ref)
-    ωr = ω̄/0.3978
-    return (1 - ωr)*αr_0 + ωr*αr_ref
+    Tr,Pr,Vr,ω̄ = @f(data)
+    Zr = Pr*Vr/(Rgas(model)*Tr)
+    δ = sum(z)*Vr/V
+    τ = Tr/T
+    δr = δ/Zr
+    @show δ,τ
+    params_simple = lkp_params_simple(model)
+    params_reference = lkp_params_reference(model)
+    ω0,ωref = last(params_simple),last(params_reference)
+    αr_0 = reduced_a_res_lkp(model,δ,τ,δr,params_simple)
+    αr_ref = reduced_a_res_lkp(model,δ,τ,δr,params_reference)
+    ωᵣ = (ω̄ - ω0)/(ωref - ω0)
+    return (1 - ωᵣ)*αr_0 + ωᵣ*αr_ref
 end
+                                     #"b1", "b2", "b3", "b4", "c1", "c2", "c4", "c3", "d1", "d2", "𝛽", "𝛾", "ω"
+lkp_params_simple(model::LKPModel) = (0.1181193, 0.265728, 0.15479, 0.030323, 0.0236744, 0.0186984, 0.0, 0.042724, 1.55428e-5, 6.23689e-5, 0.65392, 0.060167, 0.0)
+lkp_params_reference(model::LKPModel) = (0.2026579, 0.331511, 0.027655, 0.203488, 0.0313385, 0.0503618, 0.016901, 0.041577, 4.8736e-5, 7.40336e-6, 1.226, 0.03754, 0.3978)
 
 function data(model::LKPModel,V,T,z)
     ω = model.params.acentricfactor.values
@@ -152,7 +163,7 @@ function data(model::LKPModel,V,T,z)
     return T̄,Pc,V̄,ω̄
 end
 
-function reduced_a_res_lkp(model,δr,τ,params)
+function reduced_a_res_lkp(model::LKPModel,δ,τ,δr,params)
     b1,b2,b3,b4,c1,c2,c3,c4,d1,d2,β,γ,ω = params
     B = evalpoly(τ,(b1,-b2,-b3,-b4))
     C = evalpoly(τ,(c1,-c2,0.,c3))

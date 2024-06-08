@@ -142,6 +142,8 @@ include("models/EmpiricHelmholtz/MultiFluid/variants/TillnerRothFriend.jl")
 include("models/EmpiricHelmholtz/MultiFluid/variants/HelmAct.jl")
 include("models/EmpiricHelmholtz/MultiFluid/variants/EmpiricIdeal.jl")
 include("models/EmpiricHelmholtz/LKP/LKP.jl")
+include("models/EmpiricHelmholtz/LKP/variants/LKPmod.jl")
+include("models/EmpiricHelmholtz/LKP/variants/LKPSJT.jl")
 
 #cubic models
 include("models/cubic/equations.jl")

@@ -14,13 +14,13 @@ struct SAFTgammaMieParam <: EoSParam
 end
 
 
-struct SAFTgammaMie{I,VR} <: SAFTgammaMieModel
+struct SAFTgammaMie{I} <: SAFTgammaMieModel
     components::Vector{String}
     groups::GroupParam
     sites::SiteParam
     params::SAFTgammaMieParam
     idealmodel::I
-    vrmodel::VR
+    vrmodel::SAFTVRMie{I,Float64}
     epsilon_mixing::Symbol
     assoc_options::AssocOptions
     references::Array{String,1}

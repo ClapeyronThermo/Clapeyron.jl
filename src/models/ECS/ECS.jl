@@ -45,7 +45,7 @@ const ECS = ExtendedCorrespondingStates
 
 Base.length(model::ECS) = length(model.shape_model)
 
-function eos(model::ECS,V,T,z=SA[1.0])
+function eos_impl(model::ECS,V,T,z)
     f,h = shape_factors(model,V,T,z)
     n = sum(z)
     T0 = T/f

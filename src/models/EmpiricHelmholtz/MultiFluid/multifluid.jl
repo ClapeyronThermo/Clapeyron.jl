@@ -125,14 +125,17 @@ function MultiFluid(components;
     return model
 end
 
-function reduced_delta(model,V,T,z,Σz = sum(z))
-    Vᵣ = v_scale(model,z,Σz)
-    Σz * Vᵣ/V
+vT_scale(model::MultiFluid,V,T,z,Σz = sum(z)) = vT_scale(model,V,T,z,model.mixing,Σz)
+
+function vT_scale(model,V,T,z,mixing,Σz)
+    Vᵣ = v_scale(model,z,mixing,Σz)
+    Tᵣ = T_scale(model,z,mixing,Σz)
+    Vᵣ,Tᵣ
 end
 
-function reduced_tau(model,V,T,z,Σz = sum(z))
-    Tᵣ = T_scale(model,z,Σz)
-    Tᵣ / T
+function reduced_delta_tau(model,V,T,z,Σz = sum(z))
+    Vᵣ,Tᵣ = vT_scale(model,V,T,z,Σz)
+    return Σz*Vᵣ/V, Tᵣ/T
 end
 
 function a_ideal(model::MultiFluid,V,T,z,∑z = sum(z))
@@ -162,24 +165,21 @@ end
 
 function a_res(model::MultiFluid,V,T,z)
     ∑z = sum(z)
-    δ = reduced_delta(model,V,T,z,∑z)
-    τ = reduced_tau(model,V,T,z,∑z)
+    δ,τ = reduced_delta_tau(model,V,T,z,∑z)
     return multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
 end
 
-function eos(model::MultiFluid,V,T,z = SA[1.0])
+function eos_impl(model::MultiFluid,V,T,z)
     ∑z = sum(z)
     a₀ = a_ideal(model,V,T,z,∑z)
-    δ = reduced_delta(model,V,T,z,∑z)
-    τ = reduced_tau(model,V,T,z,∑z)
+    δ,τ = reduced_delta_tau(model,V,T,z,∑z)
     aᵣ = multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
     return ∑z*@R̄()*T*(a₀+aᵣ) + reference_state_eval(model,V,T,z)
 end
 
 function eos_res(model::MultiFluid,V,T,z = SA[1.0])
     ∑z = sum(z)
-    δ = reduced_delta(model,V,T,z,∑z)
-    τ = reduced_tau(model,V,T,z,∑z)
+    δ,τ = reduced_delta_tau(model,V,T,z,∑z)
     aᵣ = multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
     return ∑z*@R̄()*T*aᵣ
 end
