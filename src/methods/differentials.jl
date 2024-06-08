@@ -55,7 +55,7 @@ function ∂f(model,V,T,z)
 end
 
 function ∂f_vec(model,V,T,z)
-    _f,_df = Solvers.fgradf2(f,V,T)
+    _f,_df = ∂f(model,V,T,z)
     return SVector(_f,_df[1],_df[2])
 end
 
