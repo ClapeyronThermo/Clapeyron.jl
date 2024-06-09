@@ -7,7 +7,7 @@
   - `eSAFTVRMie`
   - `SAFTgammaEMie`
 - New method: Two new methods specific to electrolytes have been added: `mean_ionic_activity_coefficient` and `osmotic_coefficient`, along with their saturated variants.
-- New method: `MultiPhaseTPFlash`, that solves multiphase,multicomponent TP-flash with automatic phase detection. this method is now the default when calling `tp_flash`
+- New method: `MultiPhaseTPFlash`, that solves multiphase,multicomponent TP-flash with automatic phase detection. this method is now the default when calling `tp_flash` with more than two components and helmholtz-based models.
 - New method: `Tproperty(model,p,prob,z,property)` to calculate temperatures, given pressure and another property.
 - New model: To model solubility of salts, `SolidKs` has been added in order to obtain the solubility of salts using the infinite-dilution approach as opposed to the pure-fluid approach using `SolidHfus`.
 - additional method: `x0_volume_liquid(model,p,T,z)` and `x0_volume_solid(model,p,T,z)` can be overloaded to calculate liquid an solid volumes, using the pressure as information. They are defined as `x0_volume_liquid(model,p,T,z) = x0_volume_liquid(model,T,z)` and `x0_volume_solid(model,p,T,z) = x0_volume_solid(model,T,z)`
