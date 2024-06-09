@@ -103,7 +103,11 @@ end
     T = 298.15
     p = 1e5
     phases,tpds,symz,symw = Clapeyron.tpd(system,p,T,[0.5,0.5])
-    @test tpds[1] ≈ -0.6081399681963373  rtol = 1e-6
+    @test tpds[1] ≈ -0.6081399681963373 rtol = 1e-6
+
+    act_system = UNIFAC(["water","cyclohexane"])
+    phases2,tpds2,symz2,symw2 = Clapeyron.tpd(act_system,p,T,[0.5,0.5],lle = true)
+    @test tpds2[1] ≈ -0.9412151812640561 rtol = 1e-6
     GC.gc()
 end
 
