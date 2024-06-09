@@ -121,7 +121,7 @@ function tpd_obj(model, p, T, di, isliquid, cache = tpd_neq_cache(model,p,T,di,d
         d2f
     end
 
-    obj = Solvers.ADScalarObjective(f=f,g=g,fg=fg,fgh=fgh,h=h)
+    obj = NLSolvers.ScalarObjective(f=f,g=g,fg=fg,fgh=fgh,h=h)
     optprob = OptimizationProblem(obj = obj,inplace = true)
 end
 
