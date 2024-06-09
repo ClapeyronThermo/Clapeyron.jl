@@ -47,19 +47,28 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
         solid_r,idx_sol_r = index_reduction(model.solid,idx_sol_s)
         μsol = chemical_potential(solid_r,p,T,[1.])
 
-        zref = Float64.(deepcopy(ν_l))
+        zref = 1.0 .* ν_l
         zref ./= sum(zref)
         fluid_r,idx_liq_r = index_reduction(model.fluid,idx_sol_l)
         γref = activity_coefficient(fluid_r,p,Tm,zref)
-        lnKref = log(prod((γref.*zref).^ν_l))
+        Kref = one(eltype(γref))
+        for i in 1:length(Kref)
+            Kref *= (zref[i]*γref[i])^ν_l[i]
+        end
+        lnKref = log(Kref)
         μsol[1] += lnKref*Rgas()*T
         # println(idx_solv)
         # println(idx_sol_l)
+
+
+        
         if isnothing(x0)
             x0 = x0_sle_solubility(model,p,T,z,idx_solv,idx_sol_l,ν_l,μsol)
         end
+
+        data = (fluid_r,idx_liq_r,solid_r,idx_sol_r,idx_sol_l,idx_sol_s,idx_solv,μsol[1])
         # println(x0)
-        f!(F,x) = obj_sle_solubility(F,model,p,T,z[idx_solv],exp10(x[1]),idx_sol_l,idx_sol_s,idx_solv,ν_l)
+        f!(F,x) = obj_sle_solubility(F,model,p,T,z[idx_solv],exp10(x[1]),data,ν_l)
         results = Solvers.nlsolve(f!,x0,LineSearch(Newton()),NEqOptions(),ForwardDiff.Chunk{1}())
         sol[i,.!(idx_solv)] .= exp10(Solvers.x_sol(results)[1])
         sol[i,idx_solv] = z[idx_solv]
@@ -72,28 +81,28 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
     end
 end
 
-function obj_sle_solubility(F,model,p,T,zsolv,solu,idx_sol_l,idx_sol_s,idx_solv,ν_l)
+function obj_sle_solubility(F,model,p,T,zsolv,solu,data,ν_l)
+    fluid_r,idx_liq_r,solid_r,idx_sol_r,idx_sol_l,idx_sol_s,idx_solv,μsol = data
     z = zeros(typeof(solu),length(model.fluid))
     z[.!(idx_solv)] .= solu
     z[idx_solv] .= zsolv
+    R = Rgas(model.fluid)
+    ∑z = sum(z)
     γliq = activity_coefficient(model.fluid,p,T,z)
-    μliq = Rgas()*T*log.(γliq[idx_sol_l].*z[idx_sol_l])
-    solid_r,idx_sol_r = index_reduction(model.solid,idx_sol_s)
-    μsol = chemical_potential(solid_r,p,T,1.0)
-    zref = Float64.(deepcopy(ν_l))
-    zref ./= sum(zref)
-    Tm = model.solid.params.Tm.values[idx_sol_s][1]
-
-    fluid_r,idx_liq_r = index_reduction(model.fluid,idx_sol_l)
-    γref = activity_coefficient(fluid_r,p,Tm,zref)
-    lnKref = log(prod((γref.*zref).^ν_l))
-    μsol[1] += lnKref*Rgas()*T
-
-    μliq = sum(μliq.*ν_l)
-    F[1] = μliq - μsol[1]
+    γl = @view(γliq[idx_sol_l])
+    zl = @view(z[idx_sol_l])
+    μliq = zero(eltype(γliq))
+    for i in 1:length(γl)
+        xli = zl[i]/∑z
+        μliq_i = R*T*log(γl[i]*xli)
+        μliq += μliq_i*ν_l[i]
+    end
+    #μliq = R*T*log.(@view(γliq[idx_sol_l]).*@view(z[idx_sol_l]) ./ ∑z)
+    #solid_r,idx_sol_r = index_reduction(model.solid,idx_sol_s)
+    #μliq = dot(μliq,ν_l)
+    F[1] = μliq - μsol
     return F
 end
-
 function x0_sle_solubility(model,p,T,z,idx_solv,idx_sol_l,ν_l,μsol)
     z∞ = zeros(length(z))
     z∞[idx_solv] .= z[idx_solv]
