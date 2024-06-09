@@ -117,7 +117,6 @@ function a_res(model::LKPModel,V,T,z = SA[1.0])
     δ = sum(z)*Vr/V
     τ = Tr/T
     δr = δ/Zr
-    @show δ,τ
     params_simple = lkp_params_simple(model)
     params_reference = lkp_params_reference(model)
     ω0,ωref = last(params_simple),last(params_reference)
