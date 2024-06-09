@@ -205,7 +205,7 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
         δn_add = true
         _result = (comps, βi, volumes, idx_vapour)
     elseif options.full_tpd #calculate full tpd.
-        comps,tpds,_,phase_w = tpd(model,p,T,z)
+        comps,tpds,_,phase_w = tpd(model,p,T,z,strategy = :pure)
         βi = initial_beta!(comps,z)
         volumes = similar(βi)
         n_phases = length(comps)

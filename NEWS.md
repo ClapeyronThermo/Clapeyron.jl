@@ -17,6 +17,8 @@
 - calculation of volumes,saturation pressures and critical points of CPA models now defaults to the inner cubic model when there is no association present.
 - The default association implementation now uses a combination of accelerated successive substitution and newton optimization. While increasing allocations, the method is faster.
 - the default `volume` implementation now uses implicit AD to support derivatives. instead of propagating derivative information through the iterative procedure. This allows workloads of the type: `ForwardDiff.derivative(_p -> property(model,_p,T,z,phase = :l,vol0 = v0),p)` to be efficiently calculated.
+- `Clapeyron.tpd` code has been optimized. `tpd` has new keywords: `break_first`, that tries to return a negative tpd as early as possible, `lle` for only calculating TPD in liquid phases, `strategy`, that changes the search strategy between a K-value search (`:wilson`), a pure component search (`:pure`) or both strategies (`default`).
+- `Clapeyron.tpd` now supports activity models (if the keyword `lle` is set to `true`)
 - New EoS: modified Lee-Kesler-Plöcker with consistent parameters (`LKPmod`)
 - New EoS: Lee-Kesler-Plöker-equation of state, Sabozin-Jäger-Thol enhancement (`LKPSJT`, `enhancedLKP`)
 ## Bug fixes
