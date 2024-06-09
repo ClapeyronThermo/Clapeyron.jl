@@ -224,3 +224,60 @@ function Obj_LLE(model::ActivityModel, F, T, x, xx)
 end
 
 export LLE
+
+function tpd(model::ActivityModel,p,T,z,cache = tpd_cache(model,p,T,z);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :pure, di = nothing)
+    #TODO: support tpd with vle and activities?
+    if !lle
+        throw(ArgumentError("tpd only supports lle search with Activity Models. try using `tpd(model,p,T,z,lle = true)`"))
+    end
+    γϕmodel = __act_to_gammaphi(model,tpd,true)
+    return tpd(γϕmodel,p,T,z,cache;reduced,break_first,lle,tol_trivial,strategy,di)
+end
+
+function tpd_input_composition(model::GammaPhi,p,T,z,di,lle)
+    γ = activity_coefficient(model.activity,p,T,z)
+    #v = volume(model.fluid.model,p,T,z,phase = :l)
+    v = one(eltype(γ))
+    fz = γ .* p .* z
+    fz,:liquid,v
+end
+
+function _tpd_fz_and_v!(solver::TPDKSolver,fxy,model::GammaPhi,p,T,w,v0,liquid_overpressure = false,phase = :l)
+    #v = volume(model.fluid.model,p,T,w,phase = phase,vol0 = v0)
+    v = one(eltype(fxy))
+    fxy .= activity_coefficient(model.activity,p,T,w)
+    fxy .= fxy .* p .* w
+    return fxy,v,true
+end
+
+function _tpd_fz_and_v!(solver::TPDPureSolver,fxy,model::GammaPhi,p,T,w,v0,liquid_overpressure = false,phase = :l)
+    #v = volume(model.fluid.model,p,T,w,phase = phase,vol0 = v0)
+    fxy .= activity_coefficient(model.activity,p,T,w)
+    v = one(eltype(fxy))
+    fxy .= log.(fxy)
+    return fxy,v,true
+end
+
+function _tpd_and_v!(fxy,model::GammaPhi,p,T,w,di,phase = :l)
+    #v = volume(model.fluid.model,p,T,w,phase = phase)
+    v = one(eltype(fxy))
+    fxy .= activity_coefficient(model.activity,p,T,w)
+    fxy .= log.(fxy)
+    tpd = @sum(w[i]*(fxy[i] + log(w[i]) - di[i])) - sum(w) + 1
+    return tpd,v
+end
+
+function tpd_obj(model, p, T, di, isliquid, cache = tpd_neq_cache(model,p,T,di,di), break_first = false)
+    vcache[] = one(eltype(di))
+    function f(α)
+        w = α .* α .* 0.25
+        w ./= sum(w)
+        γ = activity_coefficient(model.activity,p,T,w)
+        γ .= log(γ)
+        lnγw = γ
+        fx = @sum(w[i]*(lnγw[i] + log(w[i]) - di[i])) - sum(w) + 1
+    end
+    
+    obj = Solvers.ADScalarObjective(f,di,ForwardDiff.Chunk{2}())
+    optprob = OptimizationProblem(obj = obj,inplace = true)
+end

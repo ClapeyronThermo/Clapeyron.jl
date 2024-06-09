@@ -4,7 +4,6 @@ function mixture_fugacity(model,p,T,z;phase = :unknown, threaded = true, vol0 = 
     return mixture_fugacity!(f,model,p,T,z;phase,threaded,vol0)
 end
 
-
 function mixture_fugacity!(f,model,p,T,z;phase = :unknown, threaded = true, vol0 = nothing)
     fugacity_coefficient!(f,model,p,T,z;phase,threaded,vol0)
     f .= f .* p .* z
@@ -122,7 +121,7 @@ function tpd_obj(model, p, T, di, isliquid, cache = tpd_neq_cache(model,p,T,di,d
         d2f
     end
 
-    obj = NLSolvers.ScalarObjective(f=f,g=g,fg=fg,fgh=fgh,h=h)
+    obj = Solvers.ADScalarObjective(f=f,g=g,fg=fg,fgh=fgh,h=h)
     optprob = OptimizationProblem(obj = obj,inplace = true)
 end
 
@@ -132,6 +131,13 @@ end
 
 struct TPDKSolver end
 struct TPDPureSolver end
+
+function _tpd_and_v!(fxy,model,p,T,w,di,phase = :l)
+    lnϕw,v = lnϕ!(fxy,model,p,T,w,phase = phase)
+    tpd = @sum(w[i]*(lnϕw[i] + log(w[i]) - di[i])) - sum(w) + 1
+    return tpd,v
+end
+
 
 """
     wl,wv = tpd_solver(model,p,T,z,K0)
@@ -193,13 +199,12 @@ function tpd_solver(model,p,T,z,K0,
     fxy = ss_cache[3]
 
     if !stable_l
-        lnϕwl,vl = lnϕ!(fxy,model,p,T,wl,phase = :l)
-        tpd_l = @sum(wl[i]*(lnϕwl[i] + log(wl[i]) - di[i])) - sum(wl) + 1
+        tpd_l,vl = _tpd_and_v!(fxy,model,p,T,wl,di,:l)
         tpd_l < 0 && break_first && return wl,wv,tpd_l,tpd_v,vl,vv
     end
 
     if !stable_v
-        lnϕwv,vv = lnϕ!(fxy,model,p,T,wv,phase = :v)
+        tpd_v,vv = _tpd_and_v!(fxy,model,p,T,wv,di,:v)
         tpd_v = @sum(wv[i]*(lnϕwv[i] + log(wv[i]) - di[i])) - sum(wv) + 1
         tpd_v < 0 && break_first && return wl,wv,tpd_l,tpd_v,vl,vv
     end
@@ -269,18 +274,37 @@ function tpd_ss!(model,p,T,z,K0,is_liquid,solver = TPDKSolver(),cache = tpd_ss_c
     _tpd_ss!(model,p,T,z,K0,solver,is_liquid,cache,tol_equil,tol_trivial,maxiter)
 end
 
+function _tpd_fz_and_v!(solver::TPDKSolver,fxy,model,p,T,w,v0,liquid_overpressure = false,phase = :l)
+    v = volume(model,p,T,w,phase = phase,vol0 = v0)
+    if isnan(v) && liquid_overpressure && is_liquid(phase)
+        #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the 
+        #specified conditions. try elevating the pressure at the first iter.
+        v = volume(model,1.2p,T,w,phase = phase)
+    end
+    VT_mixture_fugacity!(fxy,model,v,T,w)
+    return fxy,v,true
+end
+
+function _tpd_fz_and_v!(solver::TPDPureSolver,fxy,model,p,T,w,v0,liquid_overpressure = false,phase = :l)
+    lnϕw,v = lnϕ!(fxy,model,p,T,w,phase = phase,vol0 = v0)
+    if isnan(v) && liquid_overpressure && is_liquid(phase)
+        #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the 
+        #specified conditions. try elevating the pressure at the first iter.
+        lnϕw,v = lnϕ!(fxy,model,1.2p,T,w,phase = phase)
+    end
+    return fxy,v,true
+end
 #tpd K-value solver
 #a port from MultiComponentFlash.jl
 function _tpd_ss!(model,p,T,z,K0,solver::TPDKSolver,is_liquid,cache,tol_equil, tol_trivial,maxiter)
-
     #phase of the trial composition
     phase = is_liquid ? :l : :v
-
     #is this a trivial solution?
     trivial = false
     S = 1.0
     iter = 0
     done = false
+    liquid_overpressure = false #if the liquid overpressure strategy was used
     K,fz,fw,wl,wv = cache
     w = is_liquid ? wl : wv
     K .= K0
@@ -294,8 +318,7 @@ function _tpd_ss!(model,p,T,z,K0,solver::TPDKSolver,is_liquid,cache,tol_equil, t
             S += w_i
         end
         @. w /= S
-        v = volume(model,p,T,w,phase = phase,vol0 = v)
-        VT_mixture_fugacity!(fw,model,v,T,w)
+        _,v,liquid_overpressure = _tpd_fz_and_v!(solver,fw,model,p,T,w,v,liquid_overpressure,phase)
         R_norm = zero(eltype(K))
         K_norm = zero(eltype(K))
         @inbounds for c in eachindex(K)
@@ -343,15 +366,7 @@ function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,_is_liquid,cache,tol_equi
     S = zero(eltype(w))
     while !done
         iter += 1
-        lnϕw, v = lnϕ!(lnϕw,model, p, T, w; phase=phase, vol0=v)
-        if isnan(v) && is_liquid(phase)
-            if !liquid_overpressure
-                #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the 
-                #specified conditions. try elevating the pressure at the first iter.
-                liquid_overpressure = true
-                lnϕw, v = lnϕ!(lnϕw,model, 1.2p, T, w; phase=phase, vol0=v)
-            end
-        end
+        _,v,liquid_overpressure = _tpd_fz_and_v!(solver,lnϕw,model,p,T,w,v,liquid_overpressure,phase)
         S = zero(eltype(w))
         for i in eachindex(w)
             wi = exp(di[i]-lnϕw[i])
