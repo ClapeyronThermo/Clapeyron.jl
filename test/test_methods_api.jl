@@ -80,7 +80,7 @@ end
     fluid = PCSAFT(["water","methanol"]; assoc_options=AssocOptions(combining=:elliott))
     fluid.params.epsilon["water","methanol"] *= (1+0.18)
     v = volume(fluid, 1e5, 160.0, [0.5, 0.5],phase = :l)
-    @test Clapeyron.X(fluid,v,160.0[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
+    @test Clapeyron.X(fluid,v,160.0,[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
 end
 
 using EoSSuperancillaries
