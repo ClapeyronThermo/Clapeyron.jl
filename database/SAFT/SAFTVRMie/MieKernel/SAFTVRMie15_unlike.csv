@@ -1,0 +1,6 @@
+Clapeyron Database File,,,,,,
+SAFTVRMie Unlike Parameters,,,,,,
+species1,SMILES1,species2,SMILES2,epsilon,lambda_r,source
+water,,sodium,,187.62,,
+water,,chloride,,594.05,,
+sodium,,chloride,,28.894813540000000,,

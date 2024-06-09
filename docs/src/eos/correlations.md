@@ -65,4 +65,5 @@ Solid models provide simple approximations to the excess chemical potential in t
 
 ```@docs
 SolidHfus
+SolidKs
 ```

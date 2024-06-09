@@ -224,6 +224,22 @@ function C.chemical_potential(model::(C.SolidHfusModel), p::Unitful.Pressure, T:
     return uconvert.(output, res)
 end
 
+function C.chemical_potential(model::(C.SolidKsModel), v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=u"J/mol")
+    st = standardize(model,v,T,z)
+    _v,_T,_z = state_to_vt(model,st)
+    #SolidHfus does not depend on volume or pressure
+    res = C.chemical_potential(model, _v, _T, _z)*u"J/mol"
+    return uconvert.(output, res)
+end
+
+function C.chemical_potential(model::(C.SolidKsModel), p::Unitful.Pressure, T::Unitful.Temperature, z; output=u"J/mol")
+    st = standardize(model,p,T,z)
+    _p,_T,_z = state_to_pt(model,st)
+    #SolidHfus does not depend on volume or pressure
+    res = C.chemical_potential(model, _p, _T, _z)*u"J/mol"
+    return uconvert.(output, res)
+end
+
 #=
 # x0_psat fallback method
 function C.x0_psat(model::EoSModel, T::Unitful.Temperature, Tc::Unitful.Temperature, Vc::__VolumeKind; output=u"Pa")

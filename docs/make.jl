@@ -25,6 +25,7 @@ warnonly = Documenter.except(),
         "Cubic Models" => "eos/cubic.md"
         "Activity Models" => "eos/activity.md"
         "SAFT and CPA Models"  => "eos/saft.md"
+        "Electrolyte Models" => "eos/electrolytes.md"
         "Empiric Helmholtz Models" => "eos/empiric.md"
         "Property Correlations" =>  "eos/correlations.md"
         "Other Models" => "eos/misc.md"
@@ -35,6 +36,7 @@ warnonly = Documenter.except(),
             "Bulk Properties" => "properties/bulk.md",
             "Single phase Properties" => "properties/single.md",
             "Multiphase Properties"  => "properties/multi.md",
+            "Electrolyte Properties" => "properties/electrolytes.md",
             ],
 
         "API" => Any[
