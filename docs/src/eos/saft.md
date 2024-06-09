@@ -32,6 +32,7 @@ Clapeyron.softSAFT2016
 Clapeyron.solidsoftSAFT
 Clapeyron.SAFTVRSW
 Clapeyron.SAFTVRMie
+Clapeyron.SAFTVRMie15
 Clapeyron.SAFTVRQMie
 Clapeyron.SAFTVRSMie
 Clapeyron.SAFTgammaMie

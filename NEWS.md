@@ -1,8 +1,15 @@
-# v0.5.12
+# v0.6.0
 
 ## New Features
+- New models: Electrolyte models are now supported! We have introduced the `ESElectrolyte` framework which will let users combine any electrostatic model (`DH`, `MSA` and `Born`) and relative static permittivity model with any of our supported equations of state. Due to this flexibility, we now support four existing SAFT-type electrolyte equations (with planned support for more):
+  - `ePCSAFT`
+  - `SAFTVREMie`
+  - `eSAFTVRMie`
+  - `SAFTgammaEMie`
+- New method: Two new methods specific to electrolytes have been added: `mean_ionic_activity_coefficient` and `osmotic_coefficient`, along with their saturated variants.
 - New method: `MultiPhaseTPFlash`, that solves multiphase,multicomponent TP-flash with automatic phase detection. this method is now the default when calling `tp_flash`
 - New method: `Tproperty(model,p,prob,z,property)` to calculate temperatures, given pressure and another property.
+- New model: To model solubility of salts, `SolidKs` has been added in order to obtain the solubility of salts using the infinite-dilution approach as opposed to the pure-fluid approach using `SolidHfus`.
 - additional method: `x0_volume_liquid(model,p,T,z)` and `x0_volume_solid(model,p,T,z)` can be overloaded to calculate liquid an solid volumes, using the pressure as information. They are defined as `x0_volume_liquid(model,p,T,z) = x0_volume_liquid(model,T,z)` and `x0_volume_solid(model,p,T,z) = x0_volume_solid(model,T,z)`
 - tangent plane distance (`tpd`) calculations are now faster.
 - `VT_diffusive_stability` now uses `eigmin` instead of the full eigen calculation.

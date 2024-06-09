@@ -164,5 +164,5 @@ end
 
 export isstable
 export VT_mechanical_stability, VT_diffusive_stability,VT_chemical_stability
-export mechanical_stability, diffusive_stability, chemical_stability
+export diffusive_stability, chemical_stability
 export gibbs_duhem

@@ -126,14 +126,12 @@ function data(model::SAFTVRMieModel, V, T, z)
     return (_d,_ρ_S,ζi,_ζ_X,_ζst,σ3x,m̄)
 end
 
-function a_res(model::SAFTVRMieModel, V, T, z)
-    _data = @f(data)
-    return @f(a_hs,_data)+@f(a_disp,_data) + @f(a_chain,_data) + @f(a_assoc,_data)
-end
+# function a_res(model::SAFTVRMieModel, V, T, z, _data = @f(data))
+#     return @f(a_hs,_data)+@f(a_disp,_data) + @f(a_chain,_data) + @f(a_assoc,_data)
+# end
 
 #fused chain and disp calculation
-function a_res(model::SAFTVRMie, V, T, z)
-    _data = @f(data)
+function a_res(model::SAFTVRMieModel, V, T, z, _data = @f(data))
     return @f(a_hs,_data)+@f(a_dispchain,_data) + @f(a_assoc,_data)
 end
 
@@ -459,7 +457,7 @@ function Δ(model::SAFTVRMieModel, V, T, z, i, j, a, b,_data = @f(data))
 end
 
 #optimized functions for maximum speed on default SAFTVRMie
-function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
+function a_dispchain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     _d,ρS,ζi,ζₓ,_ζst,_,m̄ = _data
     comps = @comps
     ∑z = ∑(z)

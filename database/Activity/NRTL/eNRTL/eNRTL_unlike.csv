@@ -1,0 +1,7 @@
+﻿Clapeyron Database File,,,,,,,
+NRTL Unlike Parameters,,,,,,,
+species1,SMILES1,species2,SMILES2,a,b,c,source
+water,,sodium,,8.885,0,0.2,
+sodium,,water,,-4.549,0,0.2,
+water,,chloride,,8.885,0,0.2,
+chloride,,water,,-4.549,0,0.2,

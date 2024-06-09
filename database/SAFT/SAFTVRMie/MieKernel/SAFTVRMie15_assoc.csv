@@ -1,0 +1,4 @@
+Clapeyron Database File,,,,,,,,
+SaftVRMie Assoc Parameters,,,,,,,,
+species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
+water,O,H,water,O,e,1600.0,496.66e-30,10.1080/00268976.2015.1029027

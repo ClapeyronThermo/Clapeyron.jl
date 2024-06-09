@@ -519,6 +519,39 @@ function init_model(f::Function,components,userlocations = String[],verbose = fa
     return f(components;userlocations,verbose,reference_state)
 end
 """
+    init_electrolyte_model(model::EoSModel,components,userlocations=String[],verbose = false)
+    init_electrolyte_model(::Type{𝕄},components,userlocations=String[],verbose = false) where 𝕄 <: EoSModel
+
+Utility for building simple models. if a model instance is passed, it will return that instance.
+otherwise, it will build the model from the input components and user locations.
+
+It is normally used for models that don't have additional submodels (like ideal models)
+or when such submodels are not used at all (like the pure model part of an Activity model when used in an Advanced mixing rule Cubic model)
+
+
+"""
+function init_electrolyte_model(model::EoSModel,solvents,ions,userlocations=String[],verbose = false)
+    return model
+end
+
+function init_electrolyte_model(::Nothing,solvents,ions,userlocations=String[],verbose = false)
+    return nothing
+end
+
+function init_electrolyte_model(::Type{𝕄},solvents,ions,userlocations=String[],verbose = false) where  𝕄 <: EoSModel
+    if verbose
+        @info "Building an instance of $(info_color(string(𝕄))) with components $components"
+    end
+    return 𝕄(solvents, ions;userlocations,verbose)
+end
+
+function init_electrolyte_model(f::Function,solvents,ions,userlocations=String[],verbose = false)
+    if verbose
+        @info "building an EoS model, using function $(info_color(string(f))) with components $components"
+    end
+    return f(solvents,ions;userlocations,verbose)
+end
+"""
     @registermodel(model)
 
 given an existing model, composed of Clapeyron EoS models, ClapeyronParams or EoSParams, it will generate
