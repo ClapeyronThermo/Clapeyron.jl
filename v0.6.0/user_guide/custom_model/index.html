@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Custom Models · Clapeyron.jl</title><meta name="title" content="Custom Models · Clapeyron.jl"/><meta property="og:title" content="Custom Models · Clapeyron.jl"/><meta property="twitter:title" content="Custom Models · Clapeyron.jl"/><meta name="description" content="Documentation for Clapeyron.jl."/><meta property="og:description" content="Documentation for Clapeyron.jl."/><meta property="twitter:description" content="Documentation for Clapeyron.jl."/><meta property="og:url" content="https://ClapeyronThermo.github.io/Clapeyron.jl/user_guide/custom_model/"/><meta property="twitter:url" content="https://ClapeyronThermo.github.io/Clapeyron.jl/user_guide/custom_model/"/><link rel="canonical" href="https://ClapeyronThermo.github.io/Clapeyron.jl/user_guide/custom_model/"/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script><link href="../../assets/logo.ico" rel="icon" type="image/x-icon"/></head><body><div id="documenter"><nav class="docs-sidebar"><a class="docs-logo" href="../../"><img src="../../assets/logo.svg" alt="Clapeyron.jl logo"/></a><div class="docs-package-name"><span class="docs-autofit"><a href="../../">Clapeyron.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../theory/background/">Background</a></li><li><a class="tocitem" href="../basic_usage/">Basic Usage</a></li><li><span class="tocitem">Customization</span><ul><li><a class="tocitem" href="../custom_dtb/">Custom Databases</a></li><li><a class="tocitem" href="../custom_methods/">Custom Methods</a></li><li class="is-active"><a class="tocitem" href>Custom Models</a><ul class="internal"><li><a class="tocitem" href="#Definitions"><span>Definitions</span></a></li><li><a class="tocitem" href="#PC-SAFT-Example"><span>PC-SAFT Example</span></a></li><li><a class="tocitem" href="#sPC-SAFT-Example"><span>sPC-SAFT Example</span></a></li></ul></li></ul></li><li><a class="tocitem" href="../../notebook_examples/">Notebook Examples</a></li><li><a class="tocitem" href="../../to-do_list/">To-do list</a></li><li><span class="tocitem">Available EoS</span><ul><li><a class="tocitem" href="../../eos/ideal/">Ideal Models</a></li><li><a class="tocitem" href="../../eos/cubic/">Cubic Models</a></li><li><a class="tocitem" href="../../eos/activity/">Activity Models</a></li><li><a class="tocitem" href="../../eos/saft/">SAFT and CPA Models</a></li><li><a class="tocitem" href="../../eos/electrolytes/">Electrolyte Models</a></li><li><a class="tocitem" href="../../eos/empiric/">Empiric Helmholtz Models</a></li><li><a class="tocitem" href="../../eos/correlations/">Property Correlations</a></li><li><a class="tocitem" href="../../eos/misc/">Other Models</a></li></ul></li><li><span class="tocitem">Available Properties</span><ul><li><a class="tocitem" href="../../properties/basic/">Basic Properties</a></li><li><a class="tocitem" href="../../properties/bulk/">Bulk Properties</a></li><li><a class="tocitem" href="../../properties/single/">Single phase Properties</a></li><li><a class="tocitem" href="../../properties/multi/">Multiphase Properties</a></li><li><a class="tocitem" href="../../properties/electrolytes/">Electrolyte Properties</a></li></ul></li><li><span class="tocitem">API</span><ul><li><a class="tocitem" href="../../api/parameters/">Parameters</a></li><li><a class="tocitem" href="../../api/macros/">Macros</a></li><li><a class="tocitem" href="../../api/association/">Association</a></li><li><a class="tocitem" href="../../api/estimation/">Parameter Estimation</a></li></ul></li><li><a class="tocitem" href="../../dev/">Developer Guide</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Customization</a></li><li class="is-active"><a href>Custom Models</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Custom Models</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/ClapeyronThermo/Clapeyron.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/ClapeyronThermo/Clapeyron.jl/blob/master/docs/src/user_guide/custom_model.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h2 id="Definitions"><a class="docs-heading-anchor" href="#Definitions">Definitions</a><a id="Definitions-1"></a><a class="docs-heading-anchor-permalink" href="#Definitions" title="Permalink"></a></h2><p>Within <code>Clapeyron</code>, it is possible to create your own model/equation of state whilst still using all of the property estimation tools we provide. In order to do this, you must create the model. We provide a macro to make it easy to set it up. If you wish to create a new model called CustomEoS, you just need call the <code>@newmodel</code> macro with three parameters:</p><pre><code class="language-julia hljs">@newmodel CustomEoS CustomEosModel CustomEosParam</code></pre><ol><li>Model struct name</li><li>Model abstract type</li><li>Model parameters struct</li></ol><p>We will now give a brief overview of each of these aspects.</p><h3 id="Model-struct-name"><a class="docs-heading-anchor" href="#Model-struct-name">Model struct name</a><a id="Model-struct-name-1"></a><a class="docs-heading-anchor-permalink" href="#Model-struct-name" title="Permalink"></a></h3><p>This is the concrete type, which is simply the name of the equation of state which will be used to generate the model. Within <code>Clapeyron</code>, we&#39;ve tried to keep these names as obvious as possible (<em>e.g.</em> <code>vdW</code>, <code>PR</code>, <code>PCSAFT</code>, <code>SAFTVRMie</code>, <code>GERG2008</code>, <em>etc.</em>). For your own model, this can be whatever you want as long is the identification makes sense to you.</p><h3 id="Model-abstract-type"><a class="docs-heading-anchor" href="#Model-abstract-type">Model abstract type</a><a id="Model-abstract-type-1"></a><a class="docs-heading-anchor-permalink" href="#Model-abstract-type" title="Permalink"></a></h3><p>In Julia, objects can only be sub-types of abstract types (and not concrete types), which will allow you to inherit the behaviour of the parent(s). In order to maintain a hierarchy of models, we highly encourage you to create an abstract type for your model that is a subtype one of these families of EoS, and dispatch on this newly created abstract type instead of on your model&#39;s concrete type. This is not enforced, but we suffix all abstract types in this category with <code>Model</code> as a convention. The abstract type that is at the top of the hierarchy is <code>EoSModel</code>. From this parent, we branch into more-specific EoS sub-types:</p><ul><li><code>SAFTModel</code>: These are the models which have three parameters in common: segment size, <span>$\sigma$</span>, potential depth, <span>$\epsilon$</span>, and number of segments, <span>$m$</span>. All other SAFT-type models branch from this parent (<code>PCSAFTModel</code>, <code>SAFTVRMieModel</code>, <code>softSAFTModel</code>, <em>etc.</em>).</li><li><code>CubicModel</code>: These are the models whose parameters can be obtained from the critical temperature and pressure. With the exception of <code>CPAModel</code>, all cubics have a common structure where one can re-arrange the equation for the pressure as a third-order polynomial. As such, we define a subtype of <code>CubicModel</code>, <code>ABCubicModel</code> (<em>e.g.</em> <code>vdWModel</code>, <code>RKModel</code>, <code>SRKModel</code>, <code>PRModel</code>).</li><li><code>EmpiricHelmholtzModel</code>: These are the high-accuracy, multi-parameter models for specific species or systems (<em>e.g.</em> <code>GERG2008Model</code>, <code>IAPWS95Model</code>). There is no general structure to the models and they are treated as self-contained.</li><li><code>IdealModel</code>: Often overlooked, these models supplement the <code>SAFTModel</code> and <code>CubicModel</code> by providing the ideal contribution. Whilst the parameters and structure aren&#39;t usually the same between ideal models, this is unnecessary as the equation for the pressure is always <span>$pV=Nk_\mathrm{B}T$</span> .</li></ul><p>For example, if we wish to create a new EoS model called <code>CustomEoS</code>, we will create an abstract type <code>CustomEoSModel</code>, that is a sub-type of another abstract type, say <code>CubicModel</code> (but it could also inherit from something further down the hierarchy, like <code>vdWModel</code>):</p><pre><code class="nohighlight hljs">abstract type CustomEoSModel &lt;: CubicModel end</code></pre><p>For models that are sub-types of <code>SAFTModel</code> or <code>CubicModel</code>, most methods will be instantly compatible because methods will be able to make use of a set of the EoS parameters for finding the initial guesses. If your model is not of either of these types, it will be necessary to define a few additional functions:</p><ul><li><code>lb_volume(model::CustomEoSModel,T,z)</code>: This must output the smallest possible value of the volume for your particular model using the model parameters. In SAFT equations, this is equivalent to a packing fraction of one (<span>$\eta=1$</span>) whilst in cubics, it is equivalent to the <code>b</code> parameter.</li><li><code>T_scale(model::CustomEoSModel,z)</code>: This must output the temperature scaling for your model using the model parameters. In SAFT equations, this is usually the potential depth whilst in cubics it is the critical temperature.</li><li><code>p_scale(model::CustomEoSModel,z)</code>: This must output the pressure scaling for your model using the model parameters. In cubics, this is the critical pressure whilst in SAFT we use a more complicated definition using the segment sizes and potential depths.</li></ul><h3 id="Model-parameters-struct"><a class="docs-heading-anchor" href="#Model-parameters-struct">Model parameters struct</a><a id="Model-parameters-struct-1"></a><a class="docs-heading-anchor-permalink" href="#Model-parameters-struct" title="Permalink"></a></h3><p>The parameters for a particular system are all stored within a struct that is a subtype of <code>EoSParam</code>. By convention, we suffix these with <code>Param</code>. These structs should contain the model parameters, which comprise objects of types <code>SingleParam{T}</code>, <code>PairParam{T}</code>, and <code>AssocParam{T}</code>, where <code>T</code> is usually a base type (<code>Float64</code>, <code>Integer</code>, <code>String</code>, etc). Below is an example of a generic param struct for a SAFT and cubic model.</p><pre><code class="language-julia hljs">struct GenericSAFTParam &lt;: EoSParam
+    Mw::SingleParam{Float64}
+    segment::SingleParam{Float64}
+    sigma::PairParam{Float64}
+    epsilon::PairParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
+end</code></pre><pre><code class="language-julia hljs">struct GenericCubicParam &lt;: EoSParam
+    Tc::SingleParam{Float64}
+    pc::SingleParam{Float64}
+    Mw::SingleParam{Float64}
+    a::PairParam{Float64}
+    b::PairParam{Float64}
+end</code></pre><p>The parameters are wrapped in one of the following structs:</p><ul><li><code>SingleParam{T}</code>: These are the parameters associated with a pure species or indexed by a single index (<span>$i$</span>). For example, the molecular weight, number of segments, critical temperature and pressure.</li><li><code>PairParam{T}</code>: These are the parameters associated with a pair of species or indexed by two indices (<span>$i$</span> and <span>$j$</span>). If the two indices are the same (<span>$i=j$</span>), they refer to the like species, otherwise (<span>$i\neq j$</span>), they refer to the unlike species. For example, the cubic <code>a</code> and <code>b</code> parameters, the SAFT segment size (<code>sigma</code>) and potential depth (<code>epsilon</code>) parameters.</li><li><code>AssocParam{T}</code>: There are the parameters associated with both a pair of species and association sites (see background documentation for what these are). They are indexed by four indices (the species <span>$i$</span> and <span>$j$</span>, and the sites <span>$a$</span> and <span>$b$</span>). For example, potential depth of the association interaction (<code>epsilon_assoc</code>) and the bonding volume (<code>bondvol</code>).</li></ul><p>If there exists a model parameter struct that contains exactly the same parameters as the one that you are about to create, you can also directly use that existing struct.</p><h2 id="PC-SAFT-Example"><a class="docs-heading-anchor" href="#PC-SAFT-Example">PC-SAFT Example</a><a id="PC-SAFT-Example-1"></a><a class="docs-heading-anchor-permalink" href="#PC-SAFT-Example" title="Permalink"></a></h2><p>Once all the above has been defined, we are ready to build our own model. Let us imagine we are trying to implement <code>PCSAFT</code>.</p><ol><li>We first define the Model name, type and parameters:</li></ol><pre><code class="language-julia hljs"># Defining an abstract type for this model type
+abstract type PCSAFTModel &lt;: SAFTModel end
+
+# Defining the parameters used by the model
+struct PCSAFTParam &lt;: EoSParam
+    Mw::SingleParam{Float64}
+    segment::SingleParam{Float64}
+    sigma::PairParam{Float64}
+    epsilon::PairParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
+end
+
+# Creating a model struct called PCSAFT, which is a sub-type of PCSAFTModel, and uses parameters defined in PCSAFTParam
+@newmodel PCSAFT PCSAFTModel PCSAFTParam</code></pre><ol><li>We define some functions to inform how the model obtains their parameters, what are their references, and if we need to perform any reescaling, combining or renaming of input parameters:</li></ol><pre><code class="language-julia hljs"># Use this function if you want to provide default parameters for your new model.
+# Those locations are relative to the default database location.
+Clapeyron.default_locations(::Type{PCSAFT}) = [&quot;PCSAFT_parameters/PCSAFT_like.csv&quot;,&quot;PCSAFT_parameters/PCSAFT_unlike.csv&quot;,&quot;PCSAFT_parameters/PCSAFT_assoc.csv&quot;]
+
+# Although optional, it&#39;s generally good practise to cite your models!
+# We use DOI references in general.
+Clapeyron.default_references(::Type{PCSAFT}) = [&quot;10.1021/ie0003887&quot;, &quot;10.1021/ie010954d&quot;]
+
+# Use this function if you need to perform any transformations, from the input parameters, to the final ones:
+function Clapeyron.transform_params(::Type{PCSAFT},params)
+    # params is a Dict{String,ClapeyronParam}
+    sigma = params[&quot;sigma&quot;]
+    # We reescale the sigma values
+    sigma.values .*= 1e-10
+
+    # If k is not provided, it will be not be considered
+    k = get(params,&quot;k&quot;,nothing)
+
+    # In some cases, we may not have the unlike parameters and will need to use combining rules. You can also define your own combining rules for this.
+    sigma = sigma_LorentzBerthelot(sigma)
+    epsilon = epsilon_LorentzBerthelot(params[&quot;epsilon&quot;], k)
+
+    # Now, we put the parameters in the params dict
+    params[&quot;sigma&quot;] = sigma
+    params[&quot;epsilon&quot;] = epsilon
+
+    # And, finally, we return the dictionary with the final values
+    return params
+end</code></pre><p>The <code>@newmodel</code> macro, in conjunction with the functions defined above, gets lowered to the following julia code:</p><pre><code class="language-Julia hljs">struct PCSAFT{T&lt;:IdealModel} &lt;: PCSAFTModel
+    components::Array{String,1}             # Components vector. the model gets it&#39;s length from here
+    sites::SiteParam                        # Parameter struct containing the sites and their amounts
+    params::PCSAFTParam                     # Struct specified in the macro
+    idealmodel::T                           # Model for the ideal part
+    assoc_options::Clapeyron.AssocOptions   # Options for the calculation of the association helmholtz contribution
+    references::Array{String,1}             # DOI references
+end
+
+# Constructor generated by the macro:
+
+function PCSAFT(components;                     # Vector{String} containing a list of components
+                idealmodel=BasicIdeal,          # Default ideal model
+                userlocations=String[],         # User locations for the main model
+                ideal_userlocations=String[],   # User locations for the ideal model
+                verbose=false,                  # Verbosity
+                assoc_options = AssocOptions()) # Options for the calculation of the association contribution
+
+  	# Obtain a Dict of parameters. We pass in custom locations through the optional parameter userlocations.
+    params = getparams(components,default_locations(model); userlocations=userlocations, verbose=verbose)
+
+    # We perform the specified transformation of parameters.
+    transform_params(PCSAFT,params)
+
+    # We perform mixing of the association parameters
+    # depending on the options contained in assoc_options
+    sigma = params[&quot;sigma&quot;]
+    epsilon_assoc = params[&quot;epsilon_assoc&quot;]
+    bondvol = params[&quot;bondvol&quot;]
+
+    # Combining rules for association. if you want to perform cross-association mixing, check the AssocOptions docs
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
+
+    # Now we can create the parameter struct that we have defined.
+    packagedparams = PCSAFTParam(params[&quot;Mw&quot;], params[&quot;segment&quot;], sigma, params[&quot;epsilon&quot;], epsilon_assoc, bondvol)
+
+    references = default_references(PCSAFT)
+
+    #we initialize the ideal model provided.
+    init_idealmodel = Clapeyron.init_model(idealmodel,components,ideal_userlocations,verbose)
+
+    # Build the model.
+    model = PCSAFT(components,sites,packagedparams,init_idealmodel,assoc_options,references)
+
+    # Return the PCSAFT object that you have just created.
+    return model
+end</code></pre><p>You can, of course, not use the macro, if your model depends itself on other models (like <code>CPA</code> depending on a cubic model),or requires more arguments than the ones generated by the macro (like mixing rules for cubics that require an activity model)</p><ol><li><p>Define all of the model equations. We encourage you to use the full range of Unicode characters where it makes your code clearer to read!</p><p>As convention, the first four arguments should be <code>model</code>, <code>V</code>, <code>T</code> and <code>z</code>; any other variables should come after.</p><p>If we obey that convention, we may use the <code>@f</code> macro, which automatically substitutes the first four parameters for compactness. For example, <code>@f(func,i,j)</code> is equivalent to calling <code>func(model,V,T,z,i,j)</code>.</p><p>Clapeyron obtains all the properties of a model by differenciating the total helmoltz energy (<a href="../../properties/basic/#Clapeyron.eos"><code>eos</code></a>) or the residual helmoltz energy (<a href="@ref"><code>eos_res</code></a>).  <code>eos</code> and <code>eos_res</code> themselves are defined in terms of the reduced ideal helmholtz energy (<a href="@ref"><code>a_res</code></a>). In this case, we are going to define <code>a_res</code> for our own model:</p><pre><code class="language-julia hljs">function Clapeyron.a_res(model::PCSAFTModel, V, T, z)
+    return @f(a_hc) + @f(a_disp) + @f(a_assoc)
+end
+
+function a_hc(model::PCSAFTModel, V, T, z)
+    x = z/∑(z)
+    m = model.params.segment.values
+    m̄ = ∑(x .* m)
+    return m̄*@f(a_hs) - ∑(x[i]*(m[i]-1)*log(@f(g_hs,i,i)) for i ∈ @comps)
+end
+
+function d(model::PCSAFTModel, V, T, z, i)
+    ϵii = model.params.epsilon.values[i,i]
+    σii = model.params.sigma.values[i,i]
+    return σii * (1 - 0.12exp(-3ϵii/T))
+end
+
+function ζ(model::PCSAFTModel, V, T, z, n)
+    ∑z = ∑(z)
+    x = z * (one(∑z)/∑z)
+    m = model.params.segment.values
+    res = N_A*∑z*π/6/V * ∑((x[i]*m[i]*@f(d,i)^n for i ∈ @comps))
+end
+
+function g_hs(model::PCSAFTModel, V, T, z, i, j)
+    di = @f(d,i)
+    dj = @f(d,j)
+    ζ2 = @f(ζ,2)
+    ζ3 = @f(ζ,3)
+    return 1/(1-ζ3) + di*dj/(di+dj)*3ζ2/(1-ζ3)^2 + (di*dj/(di+dj))^2*2ζ2^2/(1-ζ3)^3
+end
+
+function a_hs(model::PCSAFTModel, V, T, z)
+    ζ0 = @f(ζ,0)
+    ζ1 = @f(ζ,1)
+    ζ2 = @f(ζ,2)
+    ζ3 = @f(ζ,3)
+    return 1/ζ0 * (3ζ1*ζ2/(1-ζ3) + ζ2^3/(ζ3*(1-ζ3)^2) + (ζ2^3/ζ3^2-ζ0)*log(1-ζ3))
+end
+
+# INSERT REST OF CODE</code></pre></li><li><p>With all the above defined in a single script, we can save the file as <code>PCSAFT.jl</code> and then include it in our jupyter notebooks (for example) and use the model with all of our existing method:</p><pre><code class="language-julia hljs">include(&quot;PCSAFT.jl&quot;)
+
+model = PCSAFT([&quot;carbon dioxide&quot;])
+
+p = 20e6
+T = range(290,460,length=200)
+
+Cp = isobaric_heat_capacity.(model, p, T)
+
+(T_c, p_c, V_c) = crit_pure(model)
+
+T_sat = range(220,T_c,length=200)
+
+(p_sat, V_l_sat, V_v_sat) = saturation_pressure(model,T_sat)</code></pre></li></ol><h2 id="sPC-SAFT-Example"><a class="docs-heading-anchor" href="#sPC-SAFT-Example">sPC-SAFT Example</a><a id="sPC-SAFT-Example-1"></a><a class="docs-heading-anchor-permalink" href="#sPC-SAFT-Example" title="Permalink"></a></h2><p>Instead of developing an entirely new model, some of us may want to modify or extend an existing one. <code>sPCSAFT</code> is an example where we want to modify parts of regular <code>PCSAFT</code> but keep the rest the same. We can do this in a very succinct way making this new model a sub-type of the abstract type associated with another model.</p><ul><li><p>When we define the model type, <code>sPCSAFT</code> is a sub-type of <code>PCSAFT</code>:</p><pre><code class="language-julia hljs">abstract type sPCSAFTModel &lt;: PCSAFTModel end</code></pre></li><li><p>Since the parameters are the same, we can just use the same model params when creating the model:</p><pre><code class="language-julia hljs">@newmodel sPCSAFT sPCSAFTModel PCSAFTParam</code></pre><p>This may not be the case if we&#39;re extending a model (<em>e.g.</em> if we&#39;re adding polar or ionic terms, we may need to define a new parameter struct to include the new parameters).</p></li><li><p>When defining the model equations, we only need to write those that have been changed in <code>sPCSAFT</code>:</p><pre><code class="language-julia hljs">function a_hc(model::sPCSAFTModel, V, T, z)
+    x = z/sum(z)
+    m = model.params.segment.values
+    m̄ = ∑(x .* m)
+    return m̄*@f(a_hs) - (m̄-1)*log(@f(g_hs))
+end
+
+function g_hs(model::sPCSAFTModel, V, T, z)
+    η = @f(ζ,3)
+    return (1-η/2)/(1-η)^3
+end
+
+function a_hs(model::sPCSAFTModel, V, T, z)
+    η = @f(ζ,3)
+    return (4η-3η^2)/(1-η)^2
+end</code></pre></li></ul><p>The rest works exactly as it would with the <code>PCSAFT</code> example.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../custom_methods/">« Custom Methods</a><a class="docs-footer-nextpage" href="../../notebook_examples/">Notebook Examples »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.4.1 on <span class="colophon-date" title="Monday 10 June 2024 07:20">Monday 10 June 2024</span>. Using Julia version 1.10.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
