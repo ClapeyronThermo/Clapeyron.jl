@@ -33,10 +33,7 @@ function autoVectorObjective(f!,x0,chunk)
         ForwardDiff.jacobian!(J,f!,F,x,jconfig)
         F,J
     end
-    function jv!(x)
-        return nothing
-    end
-    return NLSolvers.VectorObjective(f!,j!,fj!,jv!)
+    return NLSolvers.VectorObjective(f!,j!,fj!,nothing)
 end
 
 _inplace(x0) = true

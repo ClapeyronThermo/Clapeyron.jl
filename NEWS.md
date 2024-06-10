@@ -19,6 +19,7 @@
 - the default `volume` implementation now uses implicit AD to support derivatives. instead of propagating derivative information through the iterative procedure. This allows workloads of the type: `ForwardDiff.derivative(_p -> property(model,_p,T,z,phase = :l,vol0 = v0),p)` to be efficiently calculated.
 - `Clapeyron.tpd` code has been optimized. `tpd` has new keywords: `break_first`, that tries to return a negative tpd as early as possible, `lle` for only calculating TPD in liquid phases, `strategy`, that changes the search strategy between a K-value search (`:wilson`), a pure component search (`:pure`) or both strategies (`default`).
 - `Clapeyron.tpd` now supports activity models (if the keyword `lle` is set to `true`)
+- `MichelsenTPFlash` will now try LLE if the initial equilibrium type is not set and VLE fails.
 - New EoS: modified Lee-Kesler-Plöcker with consistent parameters (`LKPmod`)
 - New EoS: Lee-Kesler-Plöker-equation of state, Sabozin-Jäger-Thol enhancement (`LKPSJT`, `enhancedLKP`)
 ## Bug fixes

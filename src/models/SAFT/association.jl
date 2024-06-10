@@ -303,15 +303,15 @@ function X(model::EoSModel, V, T, z,data = nothing)
     using Implicit AD, we can update X with a "perfect newton upgrade", with the derivative information added in the last update.
     it is equivalent to the method of Tan (2004), in the sense that we still need to solve a linear system of equations containing X.
     but this only requires to solve one linear system, as the derivatives are carried by the number type, instead of separated.
-    
+
     =#
     mul!(X̃,K,X̄)
     K .*= -1
     for k in 1:size(K,1)
-        K[k,k] -= (1 + X̃[k])/X̄[k] 
+        K[k,k] -= (1 + X̃[k])/X̄[k]
     end
     X̃ .+= -1 ./ X̄ .+ 1
-    
+
     F = Solvers.unsafe_LU!(K)
     ldiv!(F,X̃)
     X̃ .+= X̄
@@ -327,7 +327,7 @@ function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
     K = assoc_site_matrix(model,V,T,z,data,_Δ)
     sitesparam = getsites(model)
     idxs = sitesparam.n_sites.p
-    Xsol = assoc_matrix_solve(K,options)        
+    Xsol = assoc_matrix_solve(K,options)
     return PackedVofV(idxs,Xsol),_Δ
 end
 
@@ -359,20 +359,20 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
     (A*x .* x) + x - 1 = 0
     solved by reformulating in succesive substitution:
     x .= 1 ./ (1 .+ A*x)
-   
+
     #we perform a "partial multiplication". that is, we use the already calculated
     #values of the next Xi to calculate the current Xi. this seems to accelerate the convergence
     #by around 50% (check what the ass_matmul! function does)
 
     note that the damping is done inside the partial multiplication. if is done outside, it causes convergence problems.
-    
+
     after a number of ss iterations are done, we use newton minimization.
     the code for the newton optimization is based on sgtpy: https://github.com/gustavochm/sgtpy/blob/336cb2a7581b22492914233e29062f5a364b47da/sgtpy/vrmie_pure/association_aux.py#L33-L57
-    
+
     some notes:
     - the linear system is solved via LU decomposition, for that, we need to allocate one (1) Matrix{T} and one (1) Vector{Int}
     - gauss-seidel does not require an additional matrix allocation, but it is slow. (slower than SS)
-    - julia 1.10 does not have a way to make LU non-allocating, but the code is simple, so it was added as the function unsafe_LU! in the Solvers module. 
+    - julia 1.10 does not have a way to make LU non-allocating, but the code is simple, so it was added as the function unsafe_LU! in the Solvers module.
     =#
     fx(kx,x) =  α/(1+kx) + (1-α)*x
     function f_ss!(out,in)
@@ -391,7 +391,7 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
                 return Xsol
             else
                 Xsol .= NaN
-                return Xsol 
+                return Xsol
             end
         end
         X0 .= Xsol
@@ -408,7 +408,7 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
             KX = mul!(KX,K,Xsol)
             H .= -K
             for k in 1:size(H,1)
-                H[k,k] -= (1 + KX[k])/Xsol[k] 
+                H[k,k] -= (1 + KX[k])/Xsol[k]
             end
             #F already contains H and the pivots, because we refreshed H, we need to refresh
             #the factorization too.
@@ -418,14 +418,15 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
             for k in 1:length(dX)
                 Xk = Xsol[k]
                 dXk = dX[k]
-                if dXk > Xk
-                    Xsol[k] = 1/(1 + KX[k]) #successive substitution ste 
+                X_newton = Xk - dXk
+                if !(0 <= X_newton <= 1)
+                    Xsol[k] = 1/(1 + KX[k]) #successive substitution step
                 else
-                    Xsol[k] = Xk - dXk
+                    Xsol[k] = Xknew_newton #newton step
                 end
             end
            # Xsol .-= dX
-            
+
             converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
             #@show converged,finite
             if converged
@@ -535,7 +536,7 @@ function a_assoc_impl(model::EoSModel, V, T, z, X, Δ)
             Xᵢₐ = primalval(Xᵢ[a])
             resᵢₐ += nᵢₐ * (log(Xᵢₐ) + 1 - Xᵢₐ)
         end
-        
+
         Q2 += resᵢₐ*z[i]
     end
     Q1 = zero(eltype(Δ.values))
