@@ -657,74 +657,21 @@ function K0_lle_act_coefficient(model::ActivityModel,p,T,z,μ_pure)
 end
 
 function K0_lle_init(model::EoSModel, p, T, z)
-    nc = length(model)
-    z_test = __z_test(z)
-    ntest = length(@view(z_test[1,:]))
-    μ_pure = K0_lle_init_cache(model::EoSModel,p,T)
-    γ1 = K0_lle_act_coefficient(model,p,T,@view(z_test[1,:]),μ_pure)
-    γ = fill(γ1,1)
-    for i in 2:ntest
-        push!(γ,K0_lle_act_coefficient(model,p,T,@view(z_test[i,:]),μ_pure))
-    end
-    γ2 = γ
-    _0 = zero(eltype(γ1))
-    err = Inf*one(_0)
-    i_min = 0
-    j_min = 0
-    ϕi = similar(γ1)
-    for i in 1:ntest
-        z_test_i = @view(z_test[i,:])
-        γi = γ[i]
-        for j in i+1:ntest
-            z_test_j = @view(z_test[j,:])
-            γj = γ[i]
-            ϕ = _0
-            ϕi_finite = 0
-            for k in 1:length(model)
-                ϕik = (z_test_i[k] - z[k])/(z_test_i[k] - z_test_j[k])
-                ϕi[k] = ϕik
-                if isfinite(ϕik)
-                    ϕi_finite += 1
-                    ϕ += ϕik
-                end
-            end
-            ϕ = ϕ/ϕi_finite
-
-            err_ij = _0
-            for k in 1:length(model)
-                zi,zj = z_test_i[k],z_test_j[k]
-                logγᵢzᵢ = log(γi[k] * zi)
-                logγⱼzⱼ = log(γj[k] * zj)
-                err_ij += logγᵢzᵢ
-                err_ij -= logγⱼzⱼ
-                err_ij += logγᵢzᵢ*(ϕ*zi + (1 - ϕ)*zj - z[k])
-            end
-            #err_ij = sum(log.(γ[i].*z_test[i,:]) .-log.(γ[j].*z_test[j,:])+log.(γ[i].*z_test[i,:]).*(ϕ*z_test[i,:]+(1-ϕ)*z_test[j,:].-z))
-            if err_ij < err
-                err = err_ij
-                i_min,j_min = i,j
-            end
+    comps,tpds,_,_ = tpd(model,p,T,z,lle = true, strategy = :pure, break_first = true)
+    if length(comps) == 1
+        w = comps[1]
+        β = one(eltype(w))
+        for i in 1:length(z)
+            β = min(β,z[i]/w[i])
         end
+        β = 0.5*β
+        w2 = (z .- β .*w)/(1 .- β)
+        w2 ./= sum(w2)
+        K = w ./ w2
+    else
+        K = ones(eltype(eltype(comps)),length(z)) 
     end
-
-    K0 = γ[i_min]./ γ[j_min]
-
-    #=
-    #extra step, reduce magnitudes if we aren't in a single phase
-    g0 = dot(z, K0) - 1.
-    g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K0))
-
-    if g0 < 0 && g1 <= 0 #we need to correct the value of g0
-        g0i = z .* K0
-        kz,idx = findmax(g0i)
-        #the maximum K value is too great
-    elseif g1 > 0 && g0 >= 0 #we need to correct the value of g1
-        g1i = z ./ K0
-
-    else #bail out here?
-
-    end =#
-    return K0
+    return K
 end
 
 export tpd

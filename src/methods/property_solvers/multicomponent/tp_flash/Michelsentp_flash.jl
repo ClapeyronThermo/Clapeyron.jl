@@ -45,7 +45,7 @@ end
 
 numphases(::MichelsenTPFlash) = 2
 
-function MichelsenTPFlash(;equilibrium = :vle,
+function MichelsenTPFlash(;equilibrium = :unknown,
                         K0 = nothing,
                         x0 = nothing,
                         y0 = nothing,
@@ -56,7 +56,7 @@ function MichelsenTPFlash(;equilibrium = :vle,
                         second_order = false,
                         noncondensables = nothing,
                         nonvolatiles = nothing)
-    !(is_vle(equilibrium) | is_lle(equilibrium)) && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
+    !(is_vle(equilibrium) | is_lle(equilibrium) | (equilibrium == :unknown))  && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
     if K0 == x0 == y0 === v0 == nothing #nothing specified
         #is_lle(equilibrium)
         T = Nothing
@@ -128,7 +128,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         z = z_full[z_nonzero]
     end
 
-    if is_vle(equilibrium)
+    if is_vle(equilibrium) || (equilibrium == :unknown)
         phasex = :liquid
         phasey = :vapor
     elseif is_lle(equilibrium)
@@ -180,6 +180,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     # Computing the initial guess for the K vector
     x = similar(z)
     y = similar(z)
+    x .= z
+    y .= z
     if !isnothing(K0)
         K = 1. * K0
         lnK = log.(K)
@@ -189,9 +191,17 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         lnK = log.(x ./ y)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,nothing,inx,iny)
         K = exp.(lnK)
-    elseif is_vle(equilibrium)
+    elseif is_vle(equilibrium) || (equilibrium == :unknown)
         # Wilson Correlation for K
         K = tp_flash_K0(model,p,T)
+        #if we can't predict K, we use lle
+        if equilibrium == :unknown
+            Kmin,Kmax = extrema(K)
+            
+            if Kmin >= 1 || Kmax <= 1 
+                K = K0_lle_init(model,p,T,z)
+            end
+        end
         lnK = log.(K)
        # volx,voly = NaN*_1,NaN*_1
     else
@@ -315,7 +325,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         x = index_expansion(x,z_nonzero)
         y = index_expansion(y,z_nonzero)
     end
-
     return x, y, β, (vx,vy)
 end
 
