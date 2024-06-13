@@ -422,7 +422,7 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
                 if !(0 <= X_newton <= 1)
                     Xsol[k] = 1/(1 + KX[k]) #successive substitution step
                 else
-                    Xsol[k] = Xknew_newton #newton step
+                    Xsol[k] = X_newton #newton step
                 end
             end
            # Xsol .-= dX

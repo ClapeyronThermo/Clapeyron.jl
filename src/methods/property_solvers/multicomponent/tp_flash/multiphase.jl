@@ -69,7 +69,7 @@ function MultiPhaseTPFlash(;
             push!(n00,convert(Vector{T},y0))
         elseif isnothing(K0) & isnothing(x0) & isnothing(y0) & !isnothing(n0)
             if n0 isa Matrix
-                T = Base.promote_eltype(n0, 1.0)   
+                T = Base.promote_eltype(n0, 1.0)
                 n00 = Vector{T}[]
                 for i in 1:size(n0,1)
                     push!(n00,convert(Vector{T},@view(n0[1,:])))
@@ -164,7 +164,8 @@ function tp_flash_impl(model,p,T,z,method::MultiPhaseTPFlash)
     return tp_flash_multi(model,p,T,z,method)
 end
 
-function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
+function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
+    z = nn ./ sum(nn)
     max_iter = options.phase_iters
     V = p
     TT = @f(Base.promote_eltype)
@@ -241,7 +242,7 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
     ss_converged = false
     neq_converged = false
     #step 1: tpd: we check if there is any unstable phase.
-    
+
     #δn_add = _add_phases!(model,p,T,z,_result,cache,options)
     if !δn_add && length(comps) == 1
         v0 = volumes[1]
@@ -252,6 +253,7 @@ function tp_flash_multi(model,p,T,z,options = MultiPhaseTPFlash())
     #step 2: main loop,iterate flashes until all phases are stable
     while !done
         iter += 1
+
         if δn_add  || δn_remove#step 2.1: δn != 0. we add or remove phases and find new candidate ones.
             n_phases = length(comps)
             #sucessive substitution iteration
@@ -434,7 +436,7 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache)
     end
     deactivated_phase = Ref(0)
     f = RR_obj(x, z, _result, ss_cache,deactivated_phase)
-    β0 = copy(βi)  
+    β0 = copy(βi)
     resize!(β0,np - 1)
 
     function ls_restricted(φ::P,λ) where P
@@ -443,7 +445,7 @@ function multiphase_RR_β!(F, x, z, _result, ss_cache)
         λmax = λ
         #=
         x -  λ*d = 0
-        λ = x/d 
+        λ = x/d
         λmax = minimum(xi/di for i in eachindex(x))
         =#
         for i in 1:length(_x)
@@ -476,7 +478,7 @@ end
 function RR_deactivated_phase!(deactivated_phase,β)
     i0 = deactivated_phase[]
     i0 != 0 && return i0
-    
+
     ix = something(findfirst(<(8.881784197001252e-16),β),0)
     if ix != 0
         deactivated_phase[] = ix
@@ -735,7 +737,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
                 already_found = true #this tpd result was already found.
             end
         end
-        
+
         already_found && continue
         phases_comps[i] = phases_z[1]
         push!(phases_tpd,phases_w[1])
@@ -765,13 +767,13 @@ function _add_phases!(model,p,T,z,result,cache,options)
     #@show found_tpd
     #step 3: find the tpd with the lowest tpd value
     minimum(tpds) > 0 && return false
-    #check our current phases and the trial ones        
+    #check our current phases and the trial ones
     for ii in 1:length(found_tpd)
         for jj in 1:length(comps)
             tpds[ii,jj] > 0 && continue
-            
+
             w,vw = comps[jj],volumes[jj]
-            
+
             #identify phase if not done
             if phases_comps[jj] == :unknown && idx_vapour == 0
                 phases_comps[jj] = VT_identify_phase(model,vw,T,w)
@@ -796,7 +798,7 @@ function _add_phases!(model,p,T,z,result,cache,options)
                 comps[jj] = x2
                 volumes[jj] = v2
 
- 
+
                 push!(comps,x1)
                 push!(volumes,v1)
                 push!(β,β0*β1)
@@ -819,35 +821,86 @@ function _remove_phases!(model,p,T,z,result,cache,options)
     δn_remove = false
     phase_cache,ss_cache,newton_cache = cache
     pures,tpd_cache,found_tpd,found_tpd_lnphi,found_tpd_volumes = phase_cache
+
+    #strategy 0: remove all "equal" phases.
+    #if phases are equal (equal volume and comps), fuse them
     
-    #step 1: remove all phases with βi < βmin = 4eps(eltype(βi))
-    β_remove = findall(<(4eps(eltype(β))),β)    
+    n = length(comps)
+
+    for i in 1:n
+        equal_phases = (0,0)
+        found_equal = false
+        for i in 1:length(comps)
+            xi,vi = comps[i],volumes[i]
+            for j in (i+1):length(comps)
+                xj,vj = comps[j],volumes[j]
+                #equality criteria used in the HELD algorithm
+                if dnorm(xi,xj,Inf) <= 1e-5 && abs(1/vi - 1/vj) <= 1e-5
+                    equal_phases = minmax(i,j)
+                    found_equal = true
+                end
+                found_equal && break
+            end
+            found_equal && break
+        end
+        equal_phases == (0,0) && break
+        if equal_phases != (0,0)
+            ii,jj = equal_phases
+            wi,wj = comps[ii],comps[jj]
+            vi,vj = volumes[ii],volumes[jj]
+            βi,βj = β[ii],β[jj]
+            volumes[ii] = (βi*vi + βj*vj)/(βi + βj)
+            β[ii] = (βi + βj)
+            wi .= (βi .* wi .+ βj .* wj) ./ (βi .+ βj)
+            deleteat!(comps,jj)
+            deleteat!(β,jj)
+            deleteat!(volumes,jj)
+            if idx_vapour[] == jj
+                idx_vapour[] = ii
+            end
+        end
+    end
+
+
+    #strategy A: remove all phases with βi < βmin = 4eps(eltype(βi))
+    β_remove = findall(<(4eps(eltype(β))),β)
     if idx_vapour[] in β_remove
         idx_vapour[] = 0
     end
 
-    if length(β_remove) == 1
-        #try reconstituting the phases first.
-        reconstitute_x!(comps,z,β,β_remove[1])
-        return true
+    #when removing phases, adjust the index of the vapour phase
+    if length(β_remove) > 0 && idx_vapour[] > 0
+        ix = idx_vapour[]
+        idx_vapour[] = ix - length(β_remove)
     end
 
     if length(β_remove) > 0
+        #remove all phases with negative values
         deleteat!(comps,β_remove)
         deleteat!(β,β_remove)
         deleteat!(volumes,β_remove)
-        n = length(comps)
-        δn_remove = true
-    end
-    
-    δn_remove && return δn_remove
 
-    #step 2: remove one phase that does not help in equilibria
+        #add a new phase and reconstitute it
+        push!(comps,similar(comps[1]))
+        push!(β,0.0)
+
+        reconstitute_x!(comps,z,β,length(β))
+        push!(volumes,volume(model,p,T,comps[end]))
+        if idx_vapour[] == 0
+            if is_vapour(VT_identify_phase(model,volumes[end],T,comps[end]))
+                idx_vapour[] == length(comps)
+            end
+        end
+        return true
+    end
+
+
+    #strategy B: remove one phase that does not help in equilibria
     βmin,imin = findmin(β)
     wmin,vmin = comps[imin],volumes[imin]
     gmin = VT_gibbs_free_energy(model,vmin,T,wmin)
     wmix = similar(comps[1])
-    
+
     for i in 1:n
         i == imin && continue
         wi,βi,vi = comps[i],β[i],volumes[i]
@@ -873,7 +926,7 @@ function _remove_phases!(model,p,T,z,result,cache,options)
             break
         end
     end
-    return δn_remove
+    return false
 end
 
 function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz = volume(model,p,T,z,phase = phase_z),vw = volume(model,p,T,w,phase = phase_w))
@@ -1020,7 +1073,7 @@ function tp_flash_multi_neq!(model,p,T,z,result,ss_cache,options)
         Ki = viewn(F,nc,i)
         xxi .= xnp .* exp.(Ki)
         βi[i] = β[i]
-        volumes[i] = v[i]
+        volumes[i] = exp(v[i])
     end
     βi[np] = βnp
     converged = neq_converged(model,p,T,z,result)

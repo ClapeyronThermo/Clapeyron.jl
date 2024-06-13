@@ -205,11 +205,10 @@ function tpd_solver(model,p,T,z,K0,
 
     if !stable_v
         tpd_v,vv = _tpd_and_v!(fxy,model,p,T,wv,di,:v)
-        tpd_v = @sum(wv[i]*(lnϕwv[i] + log(wv[i]) - di[i])) - sum(wv) + 1
         tpd_v < 0 && break_first && return wl,wv,tpd_l,tpd_v,vl,vv
     end
 
-    opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-8)
+    opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-8,maxiter = 100)
 
     newton_cache[2][] = vl
     if keep_going_l
@@ -417,7 +416,8 @@ It iterates over each two-phase combination, starting from pure trial compositio
 If the vectors are empty, then the procedure couldn't find a negative `tpd`. That is an indication that the phase is (almost) surely stable.
 
 """
-function tpd(model,p,T,z,cache = tpd_cache(model,p,T,z);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing)
+function tpd(model,p,T,n,cache = tpd_cache(model,p,T,n);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing)
+    z = n ./ sum(n)
     check_arraysize(model,z)
     if !reduced
         model_reduced,idx_reduced = index_reduction(model,z)
