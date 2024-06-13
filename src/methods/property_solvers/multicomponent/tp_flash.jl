@@ -122,8 +122,8 @@ function tp_flash2(model::EoSModel, p, T, n,method::TPFlashMethod)
         z ./= sum(z)
         return [z], β, vols,zero(vols)
     end
-    
-    comps,β,vols,g = tp_flash_impl(model_r,p,T,n_r,method_r)
+    z_r = n_r ./ sum(n_r)
+    comps,β,vols,g = tp_flash_impl(model_r,p,T,z_r,method_r)
     β ./= sum(β)
     β .*= sum(n)
     if supports_reduction(method)
