@@ -224,3 +224,12 @@ function Obj_LLE(model::ActivityModel, F, T, x, xx)
 end
 
 export LLE
+
+function tpd(model::ActivityModel,p,T,z,cache = tpd_cache(model,p,T,z);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :pure, di = nothing)
+    #TODO: support tpd with vle and activities?
+    if !lle
+        throw(ArgumentError("tpd only supports lle search with Activity Models. try using `tpd(model,p,T,z,lle = true)`"))
+    end
+    γϕmodel = __act_to_gammaphi(model,tpd,true)
+    return tpd(γϕmodel,p,T,z,cache;reduced,break_first,lle,tol_trivial,strategy,di)
+end

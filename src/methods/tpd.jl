@@ -4,7 +4,6 @@ function mixture_fugacity(model,p,T,z;phase = :unknown, threaded = true, vol0 = 
     return mixture_fugacity!(f,model,p,T,z;phase,threaded,vol0)
 end
 
-
 function mixture_fugacity!(f,model,p,T,z;phase = :unknown, threaded = true, vol0 = nothing)
     fugacity_coefficient!(f,model,p,T,z;phase,threaded,vol0)
     f .= f .* p .* z
@@ -133,6 +132,13 @@ end
 struct TPDKSolver end
 struct TPDPureSolver end
 
+function _tpd_and_v!(fxy,model,p,T,w,di,phase = :l)
+    lnϕw,v = lnϕ!(fxy,model,p,T,w,phase = phase)
+    tpd = @sum(w[i]*(lnϕw[i] + log(w[i]) - di[i])) - sum(w) + 1
+    return tpd,v
+end
+
+
 """
     wl,wv = tpd_solver(model,p,T,z,K0)
 
@@ -193,18 +199,16 @@ function tpd_solver(model,p,T,z,K0,
     fxy = ss_cache[3]
 
     if !stable_l
-        lnϕwl,vl = lnϕ!(fxy,model,p,T,wl,phase = :l)
-        tpd_l = @sum(wl[i]*(lnϕwl[i] + log(wl[i]) - di[i])) - sum(wl) + 1
+        tpd_l,vl = _tpd_and_v!(fxy,model,p,T,wl,di,:l)
         tpd_l < 0 && break_first && return wl,wv,tpd_l,tpd_v,vl,vv
     end
 
     if !stable_v
-        lnϕwv,vv = lnϕ!(fxy,model,p,T,wv,phase = :v)
-        tpd_v = @sum(wv[i]*(lnϕwv[i] + log(wv[i]) - di[i])) - sum(wv) + 1
+        tpd_v,vv = _tpd_and_v!(fxy,model,p,T,wv,di,:v)
         tpd_v < 0 && break_first && return wl,wv,tpd_l,tpd_v,vl,vv
     end
 
-    opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-8)
+    opt_options = OptimizationOptions(f_abstol = 1e-12,f_reltol = 1e-8,maxiter = 100)
 
     newton_cache[2][] = vl
     if keep_going_l
@@ -269,18 +273,37 @@ function tpd_ss!(model,p,T,z,K0,is_liquid,solver = TPDKSolver(),cache = tpd_ss_c
     _tpd_ss!(model,p,T,z,K0,solver,is_liquid,cache,tol_equil,tol_trivial,maxiter)
 end
 
+function _tpd_fz_and_v!(solver::TPDKSolver,fxy,model,p,T,w,v0,liquid_overpressure = false,phase = :l)
+    v = volume(model,p,T,w,phase = phase,vol0 = v0)
+    if isnan(v) && liquid_overpressure && is_liquid(phase)
+        #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the 
+        #specified conditions. try elevating the pressure at the first iter.
+        v = volume(model,1.2p,T,w,phase = phase)
+    end
+    VT_mixture_fugacity!(fxy,model,v,T,w)
+    return fxy,v,true
+end
+
+function _tpd_fz_and_v!(solver::TPDPureSolver,fxy,model,p,T,w,v0,liquid_overpressure = false,phase = :l)
+    lnϕw,v = lnϕ!(fxy,model,p,T,w,phase = phase,vol0 = v0)
+    if isnan(v) && liquid_overpressure && is_liquid(phase)
+        #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the 
+        #specified conditions. try elevating the pressure at the first iter.
+        lnϕw,v = lnϕ!(fxy,model,1.2p,T,w,phase = phase)
+    end
+    return fxy,v,true
+end
 #tpd K-value solver
 #a port from MultiComponentFlash.jl
 function _tpd_ss!(model,p,T,z,K0,solver::TPDKSolver,is_liquid,cache,tol_equil, tol_trivial,maxiter)
-
     #phase of the trial composition
     phase = is_liquid ? :l : :v
-
     #is this a trivial solution?
     trivial = false
     S = 1.0
     iter = 0
     done = false
+    liquid_overpressure = false #if the liquid overpressure strategy was used
     K,fz,fw,wl,wv = cache
     w = is_liquid ? wl : wv
     K .= K0
@@ -294,8 +317,7 @@ function _tpd_ss!(model,p,T,z,K0,solver::TPDKSolver,is_liquid,cache,tol_equil, t
             S += w_i
         end
         @. w /= S
-        v = volume(model,p,T,w,phase = phase,vol0 = v)
-        VT_mixture_fugacity!(fw,model,v,T,w)
+        _,v,liquid_overpressure = _tpd_fz_and_v!(solver,fw,model,p,T,w,v,liquid_overpressure,phase)
         R_norm = zero(eltype(K))
         K_norm = zero(eltype(K))
         @inbounds for c in eachindex(K)
@@ -327,8 +349,8 @@ end
 #used in thermopack
 #because we use K values, TPDKSolver is used instead
 #but this is the legacy tpd ss solver.
-function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,is_liquid,cache,tol_equil, tol_trivial,maxiter)
-    phase = is_liquid ? :l : :v
+function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,_is_liquid,cache,tol_equil, tol_trivial,maxiter)
+    phase = _is_liquid ? :l : :v
     #is this a trivial solution?
     trivial = false
     stable = true
@@ -336,20 +358,14 @@ function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,is_liquid,cache,tol_equil
     done = false
     liquid_overpressure = false
     di,fz,lnϕw,wl,wv = cache
-    w = is_liquid ? wl : wv
+    w = _is_liquid ? wl : wv
     w .= w0
     di .= log.(fz ./ p)
     v = zero(eltype(w))/zero(eltype(w))
     S = zero(eltype(w))
     while !done
         iter += 1
-        lnϕw, v = lnϕ!(lnϕw,model, p, T, w; phase=phase, vol0=v)
-        if isnan(v) && is_liquid(phase) && !liquid_overpressure
-            #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the 
-            #specified conditions. try elevating the pressure at the first iter.
-            liquid_overpressure = true
-            lnϕw, v = lnϕ!(lnϕw,model, 1.2p, T, w; phase=phase, vol0=v)
-        end
+        _,v,liquid_overpressure = _tpd_fz_and_v!(solver,lnϕw,model,p,T,w,v,liquid_overpressure,phase)
         S = zero(eltype(w))
         for i in eachindex(w)
             wi = exp(di[i]-lnϕw[i])
@@ -363,7 +379,7 @@ function _tpd_ss!(model,p,T,z,w0,solver::TPDPureSolver,is_liquid,cache,tol_equil
         for i in eachindex(w)
             wi,lnϕwi = w[i],lnϕw[i]
             sfw = S*exp(lnϕwi)*p*wi
-            R = is_liquid ? sfw/fz[i] : fz[i]/sfw
+            R = _is_liquid ? sfw/fz[i] : fz[i]/sfw
             R_norm += (R-1)^2
             K_norm += log(wi/z[i])^2
             tpd += wi*(log(wi) + lnϕwi - di[i] - 1)
@@ -400,7 +416,8 @@ It iterates over each two-phase combination, starting from pure trial compositio
 If the vectors are empty, then the procedure couldn't find a negative `tpd`. That is an indication that the phase is (almost) surely stable.
 
 """
-function tpd(model,p,T,z,cache = tpd_cache(model,p,T,z);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing)
+function tpd(model,p,T,n,cache = tpd_cache(model,p,T,n);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :default, di = nothing)
+    z = n ./ sum(n)
     check_arraysize(model,z)
     if !reduced
         model_reduced,idx_reduced = index_reduction(model,z)
@@ -640,74 +657,21 @@ function K0_lle_act_coefficient(model::ActivityModel,p,T,z,μ_pure)
 end
 
 function K0_lle_init(model::EoSModel, p, T, z)
-    nc = length(model)
-    z_test = __z_test(z)
-    ntest = length(@view(z_test[1,:]))
-    μ_pure = K0_lle_init_cache(model::EoSModel,p,T)
-    γ1 = K0_lle_act_coefficient(model,p,T,@view(z_test[1,:]),μ_pure)
-    γ = fill(γ1,1)
-    for i in 2:ntest
-        push!(γ,K0_lle_act_coefficient(model,p,T,@view(z_test[i,:]),μ_pure))
-    end
-    γ2 = γ
-    _0 = zero(eltype(γ1))
-    err = Inf*one(_0)
-    i_min = 0
-    j_min = 0
-    ϕi = similar(γ1)
-    for i in 1:ntest
-        z_test_i = @view(z_test[i,:])
-        γi = γ[i]
-        for j in i+1:ntest
-            z_test_j = @view(z_test[j,:])
-            γj = γ[i]
-            ϕ = _0
-            ϕi_finite = 0
-            for k in 1:length(model)
-                ϕik = (z_test_i[k] - z[k])/(z_test_i[k] - z_test_j[k])
-                ϕi[k] = ϕik
-                if isfinite(ϕik)
-                    ϕi_finite += 1
-                    ϕ += ϕik
-                end
-            end
-            ϕ = ϕ/ϕi_finite
-
-            err_ij = _0
-            for k in 1:length(model)
-                zi,zj = z_test_i[k],z_test_j[k]
-                logγᵢzᵢ = log(γi[k] * zi)
-                logγⱼzⱼ = log(γj[k] * zj)
-                err_ij += logγᵢzᵢ
-                err_ij -= logγⱼzⱼ
-                err_ij += logγᵢzᵢ*(ϕ*zi + (1 - ϕ)*zj - z[k])
-            end
-            #err_ij = sum(log.(γ[i].*z_test[i,:]) .-log.(γ[j].*z_test[j,:])+log.(γ[i].*z_test[i,:]).*(ϕ*z_test[i,:]+(1-ϕ)*z_test[j,:].-z))
-            if err_ij < err
-                err = err_ij
-                i_min,j_min = i,j
-            end
+    comps,tpds,_,_ = tpd(model,p,T,z,lle = true, strategy = :pure, break_first = true)
+    if length(comps) == 1
+        w = comps[1]
+        β = one(eltype(w))
+        for i in 1:length(z)
+            β = min(β,z[i]/w[i])
         end
+        β = 0.5*β
+        w2 = (z .- β .*w)/(1 .- β)
+        w2 ./= sum(w2)
+        K = w ./ w2
+    else
+        K = ones(eltype(eltype(comps)),length(z)) 
     end
-
-    K0 = γ[i_min]./ γ[j_min]
-
-    #=
-    #extra step, reduce magnitudes if we aren't in a single phase
-    g0 = dot(z, K0) - 1.
-    g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K0))
-
-    if g0 < 0 && g1 <= 0 #we need to correct the value of g0
-        g0i = z .* K0
-        kz,idx = findmax(g0i)
-        #the maximum K value is too great
-    elseif g1 > 0 && g0 >= 0 #we need to correct the value of g1
-        g1i = z ./ K0
-
-    else #bail out here?
-
-    end =#
-    return K0
+    return K
 end
 
 export tpd

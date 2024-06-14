@@ -263,4 +263,18 @@
         m3 = PCSAFT("water",userlocations =(segment = 1,Mw = 1,epsilon = 1,sigma = 1.0))
         @test length(m3.params.bondvol.values.values) == 0
     end
+
+    @testset "infinite dilution derivatives - association" begin
+        #reported by viviviena in slack
+        cp_params = (a = [36.54206320678348, 39.19437678197436, 25.7415, 34.91747774761048], b = [-0.03480434051958945, -0.05808483585041852, 0.2355, -0.014935581577635826], c = [0.000116818199785053, 0.0003501220208504329, 0.0001578, 0.000756101594841365], d = [-1.3003819534791665e-7, -3.6941157412454843e-7, -4.0939e-7, -1.0894144551347726e-6], e = [5.2547403746728466e-11, 1.276270011886522e-10, 2.1166e-10, 4.896983427747592e-10])
+        idealmodel = ReidIdeal(["water", "methanol", "propyleneglycol","methyloxirane"]; userlocations = cp_params)
+        pcpsaft = PCPSAFT(["water", "methanol", "propyleneglycol","methyloxirane"], idealmodel = idealmodel)
+        water = split_model(pcpsaft)[1]
+        z = [1.0,0.0,0.0,0.0]
+        v = volume(pcpsaft, 101325.0, 298.15, z, phase = :liquid)
+        cp_pure = Clapeyron.VT_isobaric_heat_capacity(water, v, 298.15, 1.0)
+        cp_mix = Clapeyron.VT_isobaric_heat_capacity(pcpsaft, v, 298.15, z)
+        @test cp_mix ≈ cp_pure
+        @test cp_mix ≈ 69.21259493306137
+    end
 end

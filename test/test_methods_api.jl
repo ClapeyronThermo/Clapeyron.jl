@@ -75,6 +75,12 @@ end
     @test Clapeyron.a_assoc(model_cr1,V,T,z) ≈ -5.323469194263458  rtol = 1E-6
     @test Clapeyron.a_assoc(model_esd,V,T,z) ≈ -5.323420343872591  rtol = 1E-6
     @test Clapeyron.a_assoc(model_esd_r,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
+
+    #system with strong association:
+    fluid = PCSAFT(["water","methanol"]; assoc_options=AssocOptions(combining=:elliott))
+    fluid.params.epsilon["water","methanol"] *= (1+0.18)
+    v = volume(fluid, 1e5, 160.0, [0.5, 0.5],phase = :l)
+    @test Clapeyron.X(fluid,v,160.0,[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
 end
 
 using EoSSuperancillaries
@@ -103,7 +109,11 @@ end
     T = 298.15
     p = 1e5
     phases,tpds,symz,symw = Clapeyron.tpd(system,p,T,[0.5,0.5])
-    @test tpds[1] ≈ -0.6081399681963373  rtol = 1e-6
+    @test tpds[1] ≈ -0.6081399681963373 rtol = 1e-6
+
+    act_system = UNIFAC(["water","cyclohexane"])
+    phases2,tpds2,symz2,symw2 = Clapeyron.tpd(act_system,p,T,[0.5,0.5],lle = true)
+    @test tpds2[1] ≈ -0.9412151812640561 rtol = 1e-6
     GC.gc()
 end
 

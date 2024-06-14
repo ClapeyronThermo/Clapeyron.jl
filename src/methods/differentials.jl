@@ -54,6 +54,23 @@ function ∂f(model,V,T,z)
     return _df,_f
 end
 
+function ∂f_vec(model,V,T,z)
+    _df,_f = ∂f(model,V,T,z)
+    return SVector(_f,_df[1],_df[2])
+end
+
+function f∂fdV(model,V,T,z)
+    f(x) = eos(model,x,T,z)
+    A,∂A∂V = Solvers.f∂f(f,V)
+    return SVector(A,∂A∂V)
+end
+
+function f∂fdT(model,V,T,z)
+    f(x) = eos(model,V,x,z)
+    A,∂A∂T = Solvers.f∂f(f,T)
+    return SVector(A,∂A∂T)
+end
+
 function ∂f_res(model,V,T,z)
     f(∂V,∂T) = eos_res(model,∂V,∂T,z)
     _f,_df = Solvers.fgradf2(f,V,T)
@@ -72,7 +89,7 @@ returns `p` and `∂p/∂V` at constant temperature, where p is the pressure = `
 function p∂p∂V(model,V,T,z=SA[1.0])
     f(∂V) = pressure(model,∂V,T,z)
     p,∂p∂V = Solvers.f∂f(f,V)
-    return p,∂p∂V
+    return SVector(p,∂p∂V)
 end
 
 """

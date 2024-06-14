@@ -207,7 +207,7 @@ function a_res(model::SingleFluid,V,T,z=SA[1.])
     return reduced_a_res(model,δ,τ)
 end
 
-function eos(model::SingleFluid, V, T, z=SA[1.0])
+function eos_impl(model::SingleFluid, V, T, z)
     R = R_gas(model)
     Tc = model.properties.Tc
     rhoc = model.properties.rhoc

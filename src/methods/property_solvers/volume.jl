@@ -136,18 +136,22 @@ An initial estimate of the volume `vol0` can be optionally be provided.
     ```
 """
 function volume(model::EoSModel,p,T,z=SA[1.0];phase=:unknown, threaded=true,vol0=nothing)
-    return volume_impl(model,p,T,z,phase,threaded,vol0)
+    #this is used for dispatch on symbolic variables
+    return _volume(model,p,T,z,phase,threaded,vol0)
 end
 
+function _volume(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
+    return volume_impl(model,p,T,z,phase,threaded,vol0)
+end
 
 fluid_model(model) = model
 solid_model(model) = model
 
 function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
-    return _volume_impl(model,p,T,z,phase,threaded,vol0)
+    return default_volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 
-function _volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
+function default_volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
 #Threaded version
     check_arraysize(model,z)
     TYPE = typeof(p+T+first(z)+oneunit(eltype(model)))

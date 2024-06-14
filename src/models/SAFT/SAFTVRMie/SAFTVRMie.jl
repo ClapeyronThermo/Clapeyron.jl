@@ -126,14 +126,12 @@ function data(model::SAFTVRMieModel, V, T, z)
     return (_d,_ρ_S,ζi,_ζ_X,_ζst,σ3x,m̄)
 end
 
-function a_res(model::SAFTVRMieModel, V, T, z)
-    _data = @f(data)
-    return @f(a_hs,_data)+@f(a_disp,_data) + @f(a_chain,_data) + @f(a_assoc,_data)
-end
+# function a_res(model::SAFTVRMieModel, V, T, z, _data = @f(data))
+#     return @f(a_hs,_data)+@f(a_disp,_data) + @f(a_chain,_data) + @f(a_assoc,_data)
+# end
 
 #fused chain and disp calculation
-function a_res(model::SAFTVRMie, V, T, z)
-    _data = @f(data)
+function a_res(model::SAFTVRMieModel, V, T, z, _data = @f(data))
     return @f(a_hs,_data)+@f(a_dispchain,_data) + @f(a_assoc,_data)
 end
 
@@ -459,7 +457,7 @@ function Δ(model::SAFTVRMieModel, V, T, z, i, j, a, b,_data = @f(data))
 end
 
 #optimized functions for maximum speed on default SAFTVRMie
-function a_dispchain(model::SAFTVRMie, V, T, z,_data = @f(data))
+function a_dispchain(model::SAFTVRMieModel, V, T, z,_data = @f(data))
     _d,ρS,ζi,ζₓ,_ζst,_,m̄ = _data
     comps = @comps
     ∑z = ∑(z)
@@ -826,4 +824,34 @@ function d(model::SAFTVRMie, V, T, z::SingleComp)
     λa = model.params.lambda_a.values[1,1]
     λr = model.params.lambda_r.values[1,1]
     return SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1])]
+end
+
+
+struct SAFTVRMieNN <: Clapeyron.SAFTVRMieModel
+    components::Array{String,1}
+    sites::Clapeyron.SiteParam
+    params::Clapeyron.SAFTVRMieParam
+    idealmodel::BasicIdeal
+    assoc_options::Clapeyron.AssocOptions
+    references::Array{String,1}
+
+    SAFTVRMieNN(component, params) = begin
+        m1 = SAFTVRMie(component)
+        m1.sites
+        new(component, m1.sites, params, m1.idealmodel, m1.assoc_options, m1.references)
+    end
+
+    SAFTVRMieNN(component, mw, segment, sigma, lambda_a, lambda_r, epsilon) = begin
+        mw = SingleParam("mw", ["methane"], [mw])
+        segment = SingleParam("segment", ["methane"], [segment])
+        sigma = PairParam("sigma", ["methane"], [sigma])
+        lambda_a = PairParam("lambda_a", ["methane"], [lambda_a])
+        lambda_r = PairParam("lambda_r", ["methane"], [lambda_r])
+        epsilon = PairParam("epsilon", ["methane"], [epsilon])
+        assoc = AssocParam("methane", ["methane"])
+        p = SAFTVRMieParam(mw, segment, sigma, lambda_a, lambda_r, epsilon, assoc, assoc)
+
+        m2 = SAFTVRMieNN(["methane"], p)
+        return m2
+    end
 end

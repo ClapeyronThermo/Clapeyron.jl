@@ -44,7 +44,7 @@ function index_reduction(m::RRTPFlash,idx::AbstractVector)
     return RRTPFlash{eltype(m)}(equilibrium,K0,x0,y0,v0,K_tol,max_iters,nacc,noncondensables,nonvolatiles)
 end
 
-function RRTPFlash(;equilibrium = :vle,
+function RRTPFlash(;equilibrium = :unknown,
     K0 = nothing,
     x0 = nothing,
     y0 = nothing,

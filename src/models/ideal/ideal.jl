@@ -1,5 +1,5 @@
 
-function eos(model::IdealModel, V, T, z=SA[1.0])
+function eos_impl(model::IdealModel, V, T, z)
     return Rgas(model)*sum(z)*T *(a_ideal(model,V,T,z) + reference_state_eval(model,V,T,z))
 end
 
@@ -10,7 +10,6 @@ for f in (:eos_res,:a_res,:VT_entropy_res,:VT_gibbs_free_energy_res,:VT_helmholt
         end
     end
 end
-
 
 function volume_impl(model::IdealModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0 = nothing)
     return sum(z)*R̄*T/p
@@ -25,14 +24,12 @@ function VT_entropy(model::IdealModel, V, T, z=SA[1.])
 end
 
 function VT_internal_energy(model::IdealModel, V, T, z=SA[1.])
-    dA, A = ∂f(model,V,T,z)
-    ∂A∂V, ∂A∂T = dA
+    A, ∂A∂V, ∂A∂T = ∂f_vec(model,V,T,z)
     return A - T*∂A∂T
 end
 
 function VT_enthalpy(model::IdealModel, V, T, z=SA[1.])
-    dA, A = ∂f(model,V,T,z)
-    ∂A∂V, ∂A∂T = dA
+    A, ∂A∂V, ∂A∂T = ∂f_vec(model,V,T,z)
     return A - V*∂A∂V - T*∂A∂T
 end
 

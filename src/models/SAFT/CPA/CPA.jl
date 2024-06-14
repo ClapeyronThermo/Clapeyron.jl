@@ -217,7 +217,7 @@ function volume_impl(model::CPAModel,p,T,z=SA[1.0],phase=:unknown,threaded=false
     if n == 0
         return volume_impl(model.cubicmodel,p,T,z,phase,threaded,vol0)
     else
-        return _volume_impl(model,p,T,z,phase,threaded,vol0)
+        return default_volume_impl(model,p,T,z,phase,threaded,vol0)
     end
 end
 

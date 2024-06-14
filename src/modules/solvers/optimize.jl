@@ -1,5 +1,5 @@
 
-function ADScalarObjective(f,x0::AbstractArray,chunk = autochunk(x0),val::Val{N} = Val{2}()) where N
+function ADScalarObjective(f,x0::AbstractArray,chunk = autochunk(x0))
     Hres = DiffResults.HessianResult(x0)
     function _g(df,x,Gresult)
         ForwardDiff.gradient!(Gresult,f,x)

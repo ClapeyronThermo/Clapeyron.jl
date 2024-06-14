@@ -604,4 +604,5 @@ export isobaric_expansivity, joule_thomson_coefficient, inversion_temperature
 export mass_density,molar_density, compressibility_factor
 #molar gradient properties
 export chemical_potential, activity_coefficient, fugacity_coefficient
+export chemical_potential_res
 export mixing, excess, gibbs_solvation
