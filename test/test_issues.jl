@@ -204,6 +204,16 @@
         
     end
 
+    @testset "#262" begin
+        #=
+        SAFT-gamma Mie
+        Ensure ij,ab == ji,ba, and that the group-comp is correct for assoc
+        =#
+        model = SAFTgammaMie(["water","ethanol"])
+        @test model.params.epsilon_assoc.values[1,2][1,2] == model.params.epsilon_assoc.values[2,1][2,1]
+        @test model.params.epsilon_assoc.values[1,2][1,2] == model.vrmodel.params.epsilon_assoc.values[1,2][1,2]
+    end
+
     @testset "SorptionModels.jl - init kij with user" begin
         #=
         on SL, passing k in userlocations did not work.
