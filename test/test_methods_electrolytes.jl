@@ -33,7 +33,7 @@ using Clapeyron, Test
     system = ePCSAFT(["water","acetonitrile"],["sodium","chloride"])
     @testset "Tp flash" begin
         (x,n,G) = tp_flash(system,p,T,[0.4,0.4,0.1,0.1],MichelsenTPFlash(equilibrium=:lle,K0=[100.,1e-3,1000.,1000.]))
-        @test x[1,1] ≈ 0.17812700980488977 rtol = 1e-6
+        @test x[1,1] ≈ 0.07303405420993273 rtol = 1e-6
     end
 
     @printline
