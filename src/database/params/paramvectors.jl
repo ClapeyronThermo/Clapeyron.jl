@@ -261,6 +261,9 @@ Base.eltype(m::AssocView{T}) where T = T
 
 #returns the absolute index. that is. it is directly indexable by the parent array
 function validindex(m::AssocView{T},i::Int,j::Int) where T
+    if m.at[1] > m.at[2]
+        i,j = j,i
+    end
     indices = view(m.values.inner_indices,m.indices)
     @inbounds begin
         idxs = searchsorted(indices,(i,j))
@@ -273,9 +276,6 @@ function validindex(m::AssocView{T},i::Int,j::Int) where T
 end
 
 function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
-    if m.at[1] > m.at[2]
-        i,j = j,i
-    end
     idx = validindex(m,i,j)
     iszero(idx) && return _zero(T)
     return m.values.values[idx]
