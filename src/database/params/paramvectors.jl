@@ -221,7 +221,7 @@ function SparseArrays.dropzeros!(mat::Compressed4DMatrix)
 end
 
 function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
-    j,i = minmax(i,j)
+    # i,j = minmax(i,j)
     @inbounds begin
     idx = searchsorted(m.outer_indices,(i,j))
     if iszero(idx)
@@ -273,6 +273,9 @@ function validindex(m::AssocView{T},i::Int,j::Int) where T
 end
 
 function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
+    if m.at[1] > m.at[2]
+        i,j = j,i
+    end
     idx = validindex(m,i,j)
     iszero(idx) && return _zero(T)
     return m.values.values[idx]
