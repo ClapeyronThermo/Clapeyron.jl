@@ -300,6 +300,7 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
             end
         end
     end
+
     new_sites = SiteParam(comps,comp_sites,comp_n_sites,sites.sourcecsvs,site_translator)
 
     return new_sites

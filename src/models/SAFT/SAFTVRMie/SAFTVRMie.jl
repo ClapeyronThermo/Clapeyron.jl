@@ -448,12 +448,16 @@ end
 
 function Δ(model::SAFTVRMieModel, V, T, z, i, j, a, b,_data = @f(data))
     ϵ = model.params.epsilon.values
+    K = model.params.bondvol.values
+    Kijab = K[i,j][a,b]
+    if iszero(Kijab)
+        return zero(@f(Base.promote_eltype))
+    end
     Tr = T/ϵ[i,j]
     _I = @f(I,Tr,_data)
     ϵ_assoc = model.params.epsilon_assoc.values
-    K = model.params.bondvol.values
     F = expm1(ϵ_assoc[i,j][a,b]/T)
-    return F*K[i,j][a,b]*_I
+    return F*Kijab*_I
 end
 
 #optimized functions for maximum speed on default SAFTVRMie
@@ -826,32 +830,3 @@ function d(model::SAFTVRMie, V, T, z::SingleComp)
     return SA[d_vrmie(T,λa[1],λr[1],σ[1],ϵ[1])]
 end
 
-
-struct SAFTVRMieNN <: Clapeyron.SAFTVRMieModel
-    components::Array{String,1}
-    sites::Clapeyron.SiteParam
-    params::Clapeyron.SAFTVRMieParam
-    idealmodel::BasicIdeal
-    assoc_options::Clapeyron.AssocOptions
-    references::Array{String,1}
-
-    SAFTVRMieNN(component, params) = begin
-        m1 = SAFTVRMie(component)
-        m1.sites
-        new(component, m1.sites, params, m1.idealmodel, m1.assoc_options, m1.references)
-    end
-
-    SAFTVRMieNN(component, mw, segment, sigma, lambda_a, lambda_r, epsilon) = begin
-        mw = SingleParam("mw", ["methane"], [mw])
-        segment = SingleParam("segment", ["methane"], [segment])
-        sigma = PairParam("sigma", ["methane"], [sigma])
-        lambda_a = PairParam("lambda_a", ["methane"], [lambda_a])
-        lambda_r = PairParam("lambda_r", ["methane"], [lambda_r])
-        epsilon = PairParam("epsilon", ["methane"], [epsilon])
-        assoc = AssocParam("methane", ["methane"])
-        p = SAFTVRMieParam(mw, segment, sigma, lambda_a, lambda_r, epsilon, assoc, assoc)
-
-        m2 = SAFTVRMieNN(["methane"], p)
-        return m2
-    end
-end

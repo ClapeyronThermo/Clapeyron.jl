@@ -398,6 +398,7 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
        # @show Xsol
     end
     H = Matrix{T}(undef,n,n)
+    H .= 0
     piv = zeros(Int,n)
     F = Solvers.unsafe_LU!(H,piv)
     if !converged #proceed to newton minimization
@@ -581,7 +582,7 @@ function a_assoc_impl(model::EoSModel, V, T, z, X)
         resᵢₐ = _0
         for (a,nᵢₐ) ∈ pairs(ni)
             Xᵢₐ = Xᵢ[a]
-            resᵢₐ +=  nᵢₐ* (log(Xᵢₐ) - Xᵢₐ*0.5 + 0.5)
+            resᵢₐ +=  nᵢₐ * (log(Xᵢₐ) - Xᵢₐ*0.5 + 0.5)
         end
         res += resᵢₐ*zi
     end
@@ -637,7 +638,7 @@ end
 """
 macro assoc_loop(Xold,Xnew,expr)
     return quote
-        __sites = model.sites
+        __sites = getsites(model)
         idxs = __sites.n_sites.p
         X0 = fill(one(V+T+first(z)),length(__sites.n_sites.v))
 

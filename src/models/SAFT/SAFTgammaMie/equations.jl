@@ -131,9 +131,15 @@ function a_chain(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     return a_chain(model.vrmodel,V,T,z,vrdata)
 end
 
+#=
 function a_assoc(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     _,_,vrdata = _data
     return a_assoc(model.vrmodel,V,T,z,vrdata)
+end =#
+
+function Δ(model::SAFTgammaMieModel, V, T, z, i, j, a, b,_data = @f(data))
+    vrdata = _data[3]
+    return Δ(model.vrmodel,V,T,z,i,j,a,b,vrdata)
 end
 
 
@@ -191,3 +197,26 @@ function d_gc_av(model::SAFTgammaMieModel,V,T,z::SingleComp,_d_gc = d(model,V,T,
     end
     return SA[cbrt(di*∑zinv2)]
 end
+
+#=
+function X_homotopy(model,V,T,z,_data = Clapeyron.data(model,V,T,z))
+    _Δ = Clapeyron.__delta_assoc(model,V,T,z,_data)
+    n = Clapeyron.assoc_pair_length(model)
+    K = Clapeyron.assoc_site_matrix(model,V,T,z,_data,_Δ)
+    sitesparam = Clapeyron.getsites(model)
+    idxs = sitesparam.n_sites.p
+    nn = length(sitesparam.n_sites.v)
+    @var xi[1:nn]
+    system = System(K*xi .* xi + xi - ones(Int,nn))
+    result = solve(system) 
+    real_result = real_solutions(result)
+    function f(xx)
+        all(xk -> 0 <= xk <= 1, xx)
+    end
+    display(real_result)
+    idx = findfirst(f,real_result)
+    xsol = real_result[idx]
+    
+    return Clapeyron.PackedVofV(idxs,xsol)
+end
+=#

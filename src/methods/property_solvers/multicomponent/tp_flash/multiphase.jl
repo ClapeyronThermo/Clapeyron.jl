@@ -824,7 +824,7 @@ function _remove_phases!(model,p,T,z,result,cache,options)
 
     #strategy 0: remove all "equal" phases.
     #if phases are equal (equal volume and comps), fuse them
-    
+
     n = length(comps)
 
     for i in 1:n
@@ -868,10 +868,17 @@ function _remove_phases!(model,p,T,z,result,cache,options)
         idx_vapour[] = 0
     end
 
+    idx_vapour_new = idx_vapour[]
+    idx_vapour_current = idx_vapour[]
+
     #when removing phases, adjust the index of the vapour phase
-    if length(β_remove) > 0 && idx_vapour[] > 0
-        ix = idx_vapour[]
-        idx_vapour[] = ix - length(β_remove)
+    if idx_vapour_current != 0
+        for β_idx in β_remove
+            if idx_vapour_current <= β_idx
+                idx_vapour_new = idx_vapour_new - 1
+            end
+        end
+        idx_vapour[] = idx_vapour_new
     end
 
     if length(β_remove) > 0
