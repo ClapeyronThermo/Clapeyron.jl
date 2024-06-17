@@ -136,7 +136,7 @@ function a_res(model::structSAFTgammaMieModel, V, T, z)
     dgc,X,vrdata = _data
     _,ρS,ζi,_ζ_X,_ζst,σ3x,m̄ = vrdata
     vrdata_disp = (dgc,ρS,ζi,_ζ_X,_ζst,σ3x,m̄)
-    return @f(a_hs,_data) + a_disp(model,V,T,X,vrdata_disp)/sum(z) + @f(a_chain,_data) + @f(a_assoc,_data)
+    return @f(a_hs,_data) + a_disp(model,V,T,X,vrdata_disp)/sum(z) + @f(a_chain,_data) + a_assoc(model.vrmodel,V,T,z,vrdata)
 end
 
 function a_chain(model::structSAFTgammaMieModel, V, T, z,_data = @f(data))
