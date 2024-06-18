@@ -265,11 +265,14 @@ function tp_flash_multi(model,p,T,nn,options = MultiPhaseTPFlash())
                 #@info "newton: sum(βi) = $(sum(βi))"
             end
 
-            δn_add = _add_phases!(model,p,T,z,_result,cache,options)
-            if !δn_add || length(comps) >= length(z)
-                δn_remove = _remove_phases!(model,p,T,z,_result,cache,options)
+            δn_remove = _remove_phases!(model,p,T,z,_result,cache,options)
+            if !δn_remove
+                δn_add = _add_phases!(model,p,T,z,_result,cache,options)
+            else
+                δn_add = false
             end
-
+            #@show δn_remove, δn_add
+            #@show length(volumes)
             converged = neq_converged || ss_converged
             no_new_phases = !δn_add && !δn_remove
             converged = converged && no_new_phases
@@ -335,6 +338,26 @@ function tp_flash_multi_ss!(model,p,T,z,_result,ss_cache,options)
     for i in 1:max_iters
         itacc += 1
         fixpoint_multiphase!(x, x0, model, p, T, z, _result, ss_cache)
+
+        found_equal = false
+        for i in 1:length(comps)
+            xi,vi,β_i = comps[i],volumes[i],βi[i]
+            iszero(β_i) && continue
+            for j in (i+1):length(comps)
+                xj,vj,βj = comps[j],volumes[j],βi[j]
+                iszero(βj) && continue
+                #equality criteria used in the HELD algorithm
+                if dnorm(xi,xj,Inf) <= 1e-5 && abs(1/vi - 1/vj) <= 1e-5
+                    found_equal = true
+                end
+                found_equal && break
+            end
+            found_equal && break
+        end
+
+        #a phase needs to be removed.
+        found_equal && break
+        
         #store values in cache
         βi_cache .= βi
         if minimum(βi) < 0 || any(!isfinite,βi)
@@ -821,19 +844,18 @@ function _remove_phases!(model,p,T,z,result,cache,options)
     δn_remove = false
     phase_cache,ss_cache,newton_cache = cache
     pures,tpd_cache,found_tpd,found_tpd_lnphi,found_tpd_volumes = phase_cache
-
     #strategy 0: remove all "equal" phases.
     #if phases are equal (equal volume and comps), fuse them
-
     n = length(comps)
-
     for i in 1:n
         equal_phases = (0,0)
         found_equal = false
         for i in 1:length(comps)
-            xi,vi = comps[i],volumes[i]
+            xi,vi,βi = comps[i],volumes[i],β[i]
+            iszero(βi) && continue
             for j in (i+1):length(comps)
-                xj,vj = comps[j],volumes[j]
+                xj,vj,βj = comps[j],volumes[j],β[j]
+                iszero(βj) && continue
                 #equality criteria used in the HELD algorithm
                 if dnorm(xi,xj,Inf) <= 1e-5 && abs(1/vi - 1/vj) <= 1e-5
                     equal_phases = minmax(i,j)
@@ -852,34 +874,14 @@ function _remove_phases!(model,p,T,z,result,cache,options)
             volumes[ii] = (βi*vi + βj*vj)/(βi + βj)
             β[ii] = (βi + βj)
             wi .= (βi .* wi .+ βj .* wj) ./ (βi .+ βj)
-            deleteat!(comps,jj)
-            deleteat!(β,jj)
-            deleteat!(volumes,jj)
-            if idx_vapour[] == jj
-                idx_vapour[] = ii
-            end
+            β[jj] = 0
         end
     end
 
 
     #strategy A: remove all phases with βi < βmin = 4eps(eltype(βi))
     β_remove = findall(<(4eps(eltype(β))),β)
-    if idx_vapour[] in β_remove
-        idx_vapour[] = 0
-    end
-
-    idx_vapour_new = idx_vapour[]
-    idx_vapour_current = idx_vapour[]
-
-    #when removing phases, adjust the index of the vapour phase
-    if idx_vapour_current != 0
-        for β_idx in β_remove
-            if idx_vapour_current <= β_idx
-                idx_vapour_new = idx_vapour_new - 1
-            end
-        end
-        idx_vapour[] = idx_vapour_new
-    end
+    adjust_idx_vapour!(idx_vapour,β_remove)
 
     if length(β_remove) > 0
         #remove all phases with negative values
@@ -934,6 +936,26 @@ function _remove_phases!(model,p,T,z,result,cache,options)
         end
     end
     return false
+end
+
+#given a list of β_remove, remove the corresponding phase
+function adjust_idx_vapour!(idx_vapour,β_remove)
+    if idx_vapour[] in β_remove
+        idx_vapour[] = 0
+    end
+
+    idx_vapour_new = idx_vapour[]
+    idx_vapour_current = idx_vapour[]
+    #when removing phases, adjust the index of the vapour phase
+    if idx_vapour_current != 0
+        for β_idx in β_remove
+            if idx_vapour_current >= β_idx
+                idx_vapour_new = idx_vapour_new - 1
+            end
+        end
+        idx_vapour[] = idx_vapour_new
+    end
+    return idx_vapour[]
 end
 
 function split_phase_tpd(model,p,T,z,w,phase_z = :unknown,phase_w = :unknown,vz = volume(model,p,T,z,phase = phase_z),vw = volume(model,p,T,w,phase = phase_w))
