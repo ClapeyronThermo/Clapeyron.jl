@@ -200,7 +200,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             
             if Kmin >= 1 || Kmax <= 1 
                 K = K0_lle_init(model,p,T,z)
-            end
+            end 
         end
         lnK = log.(K)
        # volx,voly = NaN*_1,NaN*_1
@@ -211,10 +211,26 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     _1 = one(p+T+first(z))
     # Initial guess for phase split
     β,singlephase,_ = rachfordrice_β0(K,z)
-    #=TODO:
-    there is a method used in TREND that tries to obtain adequate values of K
-    in the case of incorrect initialization.
-    =#
+    
+    #if singlephase == true, maybe initial K values overshoot the actual phase split.
+    if singlephase
+        Kmin,Kmax = extrema(K)
+        if !(Kmin >= 1 || Kmax <= 1)
+            #valid K, still single phase.
+            g0 = dot(z, K) - 1. #rachford rice, supposing β = 0
+            g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K)) #rachford rice, supposing β = 1
+            if g0 <= 0 && g1 < 0 #bubble point.
+                β = eps(typeof(β))
+                singlephase = false
+            elseif g0 > 0 && g1 >= 0 #dew point
+                β = one(β) - eps(typeof(β))
+                singlephase = false
+            end
+        end 
+    else
+        β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
+    end
+
     # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
@@ -235,8 +251,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         it += 1
         itacc += 1
         lnK_old = lnK .* _1
-        β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
-        singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β,inx,iny)
@@ -265,7 +279,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             end
         end
         K .= exp.(lnK)
-
+        β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
+        singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(lnK,lnK_old,1)
