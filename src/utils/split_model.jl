@@ -483,23 +483,40 @@ function simple_split_model(Base.@nospecialize(model::EoSModel),subset = nothing
     return pure
 end
 
-export split_model
+"""
+    split_model_binaries(model::EoSModel)::Vector{EoSModel}
 
-#=
-function _split_model(groups::GroupParam)
-    len = length(groups.components)
-    function generator(i)
-        return GroupParam(
-        [groups.components[i]],
-        [groups.groups[i]],
-        [groups.n_groups[i]],
-        [collect(1:length(groups.n_groups[i]))],
-        groups.flattenedgroups[groups.i_groups[i]],
-        [groups.n_groups[i]],
-        each_split_model(groups.n_groups_cache,groups.i_groups[i]),
-        1:length(groups.n_groups[i]),
-        groups.sourcecsvs)
+Given a multicomponent `EoSModel`, returns a list with the combination of all binary models.
+
+## Example
+```julia-repl
+julia> model = PCPSAFT(["water", "methanol", "propyleneglycol","methyloxirane"])
+PCPSAFT{BasicIdeal} with 4 components:
+ "water"
+ "methanol"
+ "propyleneglycol"
+ "methyloxirane"
+Contains parameters: Mw, segment, sigma, epsilon, dipole, dipole2, epsilon_assoc, bondvol
+
+julia> split_model_binaries(model)
+6-element Vector{PCPSAFT{BasicIdeal}}:
+ PCPSAFT{BasicIdeal}("water", "methanol")
+ PCPSAFT{BasicIdeal}("water", "propyleneglycol")
+ PCPSAFT{BasicIdeal}("water", "methyloxirane")
+ PCPSAFT{BasicIdeal}("methanol", "propyleneglycol")
+ PCPSAFT{BasicIdeal}("methanol", "methyloxirane")
+ PCPSAFT{BasicIdeal}("propyleneglycol", "methyloxirane")
+```
+"""
+function split_model_binaries(model)
+    idx = Vector{Int}[]
+    n = length(model)
+    for i in 1:n
+        for j in i+1:n
+            push!(idx,[i,j])
+        end
     end
-    [generator(i) for i ∈ 1:len]
+    split_model(model,idx)
 end
-=#
+
+export split_model, split_model_binaries
