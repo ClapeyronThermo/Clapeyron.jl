@@ -93,9 +93,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         lnK = log.(K)
     end
     _1 = one(p+T+first(z))
-    # Initial guess for phase split
-    
-    K̃ = K.*exp.(Z.*ψ)
+    K̃ = K.*exp.(Z) # K̃ = K.*exp.(Z.*ψ), ψ = 1
     β,singlephase,_ = rachfordrice_β0(K̃,z)
     #if singlephase == true, maybe initial K values overshoot the actual phase split.
     if singlephase
