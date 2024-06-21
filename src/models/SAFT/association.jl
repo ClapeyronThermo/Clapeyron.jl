@@ -381,9 +381,17 @@ function assoc_matrix_x0!(K,X)
         success = true
         init = true
     elseif check_antidiagonal22(K)
+    #nb-nb association with cross-association
+    if iszero(@view(K[1:2,3:4])) & iszero(@view(K[3:4,1:2]))
+        #solve each association separately
+        assoc_matrix_x0!(@view(K[1:2,1:2]),@view(X[1:2]))
+        assoc_matrix_x0!(@view(K[3:4,3:4]),@view(X[3:4]))
+    else
+        #general
         X1_exact4!(K,X)
-        success = true
-        init = true
+    end
+    success = true
+    init = true
     else
         #TODO: add more exact expressions.
     end
@@ -715,7 +723,15 @@ macro assoc_loop(Xold,Xnew,expr)
 end
 
 function X1_exact4!(K,X)
-   #==#
+    #=
+    strategy is the following:
+    given K (4x4 assoc matrix) and X
+
+    1. we solve for x1 (7th order polynomial)
+    2. we solve for x3 (2nd order polynomial)
+    3. x2 and x4 only depend on x1 and x3.
+
+    =#
     _0 = zero(eltype(K))
     k3 = K[2]
     k7 = K[4]
