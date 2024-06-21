@@ -331,7 +331,7 @@ function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
     return PackedVofV(idxs,Xsol),_Δ
 end
 
-function assoc_matrix_solve(K::AbstractMatrix{T},options::AssocOptions) where T
+function assoc_matrix_solve(K::AbstractMatrix{T},options::AssocOptions = AssocOptions()) where T
     atol = T(options.atol)
     rtol = T(options.rtol)
     max_iters = options.max_iters
@@ -339,20 +339,74 @@ function assoc_matrix_solve(K::AbstractMatrix{T},options::AssocOptions) where T
     return assoc_matrix_solve(K, α, atol ,rtol, max_iters)
 end
 
+function check_antidiagonal2(x::AbstractMatrix)
+    size(x) == (2,2) || return false
+    x11,x22 = x[1,1],x[2,2]
+    x21,x12 = x[2,1],x[1,2]
+    return iszero(x11) & iszero(x22) & (x12 >= 0) & (x21 >= 0)
+end
+
+function check_antidiagonal22(x::AbstractMatrix)
+    size(x) == (4,4) || return false
+    return check_antidiagonal2(@view(x[1:2,1:2])) & check_antidiagonal2(@view(x[1:2,3:4])) &
+    check_antidiagonal2(@view(x[3:4,1:2])) & check_antidiagonal2(@view(x[3:4,3:4]))
+end
+
+function assoc_matrix_x0!(K,X)
+    #(A*x .* x) + x - 1 = 0
+    success = false
+    init = false
+    if size(K) == (1,1)
+        #1-site association
+        k = K[1,1]
+        #axx + x - 1 = 0
+        #-1 +- sqrt(1 + 4a)/2 = 0
+        X[1] = 0.5*(-1 + sqrt(1 + 4k))
+        success = true
+        init = true
+    elseif check_antidiagonal2(K)
+        #2-site association without self association
+        k1 = K[1,2]
+        k2 = K[2,1]
+        #this computation is equivalent to the one done in X_exact1
+        _a = k2
+        _b = 1 - k2 + k1
+        _c = -1
+        denom = _b + sqrt(_b*_b - 4*_a*_c)
+        x1 = -2*_c/denom
+        x1k = k2*x1
+        x2 = (1- x1k)/(1 - x1k*x1k)
+        X[1] = x1
+        X[2] = x2
+        success = true
+        init = true
+    elseif check_antidiagonal22(K)
+        X1_exact4!(K,X)
+        success = true
+        init = true
+    else
+        #TODO: add more exact expressions.
+    end
+    if !init
+        Kmin,Kmax = nonzero_extrema(K) #look for 0 < Amin < Amax
+        if Kmax > 1
+            f = true/Kmin
+        else
+            f = true-Kmin
+        end
+        fill!(X,min(f,one(f)))
+    end
+    return X,success
+end
+
 function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) where T
     n = LinearAlgebra.checksquare(K) #size
     #initialization procedure:
-    Kmin,Kmax = nonzero_extrema(K) #look for 0 < Amin < Amax
-    if Kmax > 1
-        f = true/Kmin
-    else
-        f = true-Kmin
-    end
-    f = min(f,one(f))
     X0 = Vector{T}(undef,n)
+    X0,success = assoc_matrix_x0!(K,X0)
+    success && return X0
     Xsol = Vector{T}(undef,n)
-    X0 .= f
-    Xsol .= f
+    Xsol .= X0
     #=
     function to solve
     find vector x that satisfies:
@@ -659,6 +713,151 @@ macro assoc_loop(Xold,Xnew,expr)
         Xsol
     end |> esc
 end
+
+function X1_exact4!(K,X)
+   #==#
+    _0 = zero(eltype(K))
+    k3 = K[2]
+    k7 = K[4]
+    k1 = K[5]
+    k5 = K[7]
+    k4 = K[10]
+    k8 = K[12]
+    k2 = K[13]
+    k6 = K[15]
+
+    k11 = k1
+    k22 = k3
+    #this computation is equivalent to the one done in X_exact1
+    _a = k22
+    _b = 1 - k22 + k11
+    _c = -1
+    denom = _b + sqrt(_b*_b - 4*_a*_c)
+    x10 = -2*_c/denom
+    pol_x1 = __assoc_x1_poly(K)
+    f0(x) = evalpoly(x,pol_x1)
+    prob_x1 = Roots.ZeroProblem(f0,x10)
+    x1 = Roots.solve(prob_x1)
+    x3 = __assoc_x3(K,x1)
+    x2 = 1 / (1 + k3*x1 + k4*x3)
+    x4 =  1 / (1 + k7*x1 + k8*x3)
+    X[1] = x1
+    X[2] = x2
+    X[3] = x3
+    X[4] = x4
+    return X
+end
+
+function __assoc_x1_poly(K)
+    k3 = K[2]
+    k7 = K[4]
+    k1 = K[5]
+    k5 = K[7]
+    k4 = K[10]
+    k8 = K[12]
+    k2 = K[13]
+    k6 = K[15]
+    var1 = k8*k8
+    var2 = k1*k2*k4*k5*k8
+    var3 = k1*k1
+    var4 = var3*k4*k6*k8
+    var5 = k4*k4
+    var6 = var3*var5*k6*k8
+    var7 = -(var3*k4*k5*k6*k8)
+    var8 = -(2*k1*k2*k4*k5*k6*k8)
+    var9 = k6*k6
+    var10 = var3*k4*var9*k8
+    var11 = -(k1*k2*k5*var1)
+    var12 = k1*k2*k4*k5*var1
+    var13 = k5*k5
+    var14 = -(k1*k2*var13*var1)
+    var15 = -(var3*k6*var1)
+    var16 = -(var3*k4*k6*var1)
+    var17 = 2*var3*k5*k6*var1
+    var18 = k1*k2*k5*k6*var1
+    var19 = var1*k8
+    var20 = -(k1*k2*k5*var19)
+    var21 = k2*k2
+    var22 = k1*k2*k3*k4*k5*k8
+    var23 = var3*k1
+    var24 = var3*k3*k4*k6*k8
+    var25 = -(2*k1*k2*k3*k4*k5*k6*k8)
+    var26 = var3*k3*k4*var9*k8
+    var27 = 2*k1*k2*k4*k5*k7*k8
+    var28 = 2*var3*k4*k6*k7*k8
+    var29 = 2*var3*var5*k6*k7*k8
+    var30 = -(2*var3*k4*k5*k6*k7*k8)
+    var31 = -(2*k1*k2*k4*k5*k6*k7*k8)
+    var32 = var3*k4*var9*k7*k8
+    var33 = k7*k7
+    var34 = -(2*k1*k2*k3*k5*var1)
+    var35 = k1*k2*k3*k4*k5*var1
+    var36 = -(k1*k2*k3*var13*var1)
+    var37 = -(2*var3*k3*k6*var1)
+    var38 = -(var3*k3*k4*k6*var1)
+    var39 = 2*var3*k3*k5*k6*var1
+    var40 = 2*k1*k2*k3*k5*k6*var1
+    var41 = k3*k3
+    var42 = -(k1*k2*k5*k7*var1)
+    var43 = k1*k2*k4*k5*k7*var1
+    var44 = -(k1*k2*var13*k7*var1)
+    var45 = -(var3*k6*k7*var1)
+    var46 = -(var3*k4*k6*k7*var1)
+    var47 = 2*var3*k5*k6*k7*var1
+    var48 = -(2*k1*k2*k3*k5*var19)
+    var49 = k2*var21
+    var50 = 2*k1*k2*k3*k4*k5*k7*k8
+    var51 = 2*var3*k3*k4*k6*k7*k8
+    var52 = -(2*k1*k2*k3*k4*k5*k6*k7*k8)
+    var53 = var3*k3*k4*var9*k7*k8
+    var54 = k1*k2*k4*k5*var33*k8
+    var55 = var3*k4*k6*var33*k8
+    var56 = var3*var5*k6*var33*k8
+    var57 = -(var3*k4*k5*k6*var33*k8)
+    var58 = -(k1*k2*var41*k5*var1)
+    var59 = var3*var3
+    var60 = -(var3*var41*k6*var1)
+    var61 = k1*k2*var41*k5*k6*var1
+    var62 = -(2*k1*k2*k3*k5*k7*var1)
+    var63 = k1*k2*k3*k4*k5*k7*var1
+    var64 = -(k1*k2*k3*var13*k7*var1)
+    var65 = -(2*var3*k3*k6*k7*var1)
+    var66 = -(var3*k3*k4*k6*k7*var1)
+    var67 = 2*var3*k3*k5*k6*k7*var1
+    var68 = -(k1*k2*var41*k5*var19)
+    var69 = k1*k2*k3*k4*k5*var33*k8
+    var70 = var3*k3*k4*k6*var33*k8
+    var71 = -(k1*k2*var41*k5*k7*var1)
+    var72 = -(var3*var41*k6*k7*var1)
+    p0 = zero(eltype(K))
+    p1 = k1*k4*k5*k6*k8-k1*k5*k6*var1
+    p2 =var20-k1*k5*k6*k7*var1-2*k1*k3*k5*k6*var1+var18+var17+3*k1*k5*k6*var1+var16+var15+var14+var12+var11+2*k1*k4*k5*k6*k7*k8+var10+k1*k3*k4*k5*k6*k8+var8+var7-3*k1*k4*k5*k6*k8+var6+var4+var2
+    p3 = var48+var3*k2*k5*var19+2*k1*k2*k5*var19-var3*k2*k4*var19-var3*k2*var19-2*k1*k3*k5*k6*k7*var1+var47+3*k1*k5*k6*k7*var1+var46+var45+var44+var43+var42-k1*var41*k5*k6*var1+var40+var39+6*k1*k3*k5*k6*var1-var3*k2*k5*k6*var1-2*k1*k2*k5*k6*var1-var23*k5*k6*var1-4*var3*k5*k6*var1-3*k1*k5*k6*var1+var38+2*var3*k2*k4*k6*var1+var23*k4*k6*var1+2*var3*k4*k6*var1+var37+var3*k2*k6*var1+2*var23*k6*var1+2*var3*k6*var1+var36+k1*var21*var13*var1+var3*k2*var13*var1+2*k1*k2*var13*var1+var35-k1*var21*k4*k5*var1-2*var3*k2*k4*k5*var1-2*k1*k2*k4*k5*var1+var34+k1*var21*k5*var1+2*k1*k2*k5*var1+var3*k2*var5*var1-var3*k2*var1+k1*k4*k5*k6*var33*k8+var32+2*k1*k3*k4*k5*k6*k7*k8+var31+var30-6*k1*k4*k5*k6*k7*k8+var29+var28+var27+var26-var3*k2*k4*var9*k8-var23*k4*var9*k8-2*var3*k4*var9*k8+var25-3*k1*k3*k4*k5*k6*k8+k1*var21*k4*k5*k6*k8+var3*k2*k4*k5*k6*k8+4*k1*k2*k4*k5*k6*k8+2*var3*k4*k5*k6*k8+3*k1*k4*k5*k6*k8-var3*k2*var5*k6*k8-2*var3*var5*k6*k8+var24-var23*k4*k6*k8-2*var3*k4*k6*k8+var22-2*k1*var21*k4*k5*k8-var3*k2*k4*k5*k8-2*k1*k2*k4*k5*k8+var3*k2*var5*k8+var3*k2*k4*k8
+    p4 = var68+var3*k2*k3*k5*var19+4*k1*k2*k3*k5*var19-var3*k2*k5*var19+var20-var3*k2*k3*k4*var19+var3*k2*k4*var19-2*var3*k2*k3*var19+var23*k2*var19+var3*k2*var19-k1*var41*k5*k6*k7*var1+var67+6*k1*k3*k5*k6*k7*var1-var23*k5*k6*k7*var1-4*var3*k5*k6*k7*var1-3*k1*k5*k6*k7*var1+var66+var23*k4*k6*k7*var1+2*var3*k4*k6*k7*var1+var65+2*var23*k6*k7*var1+2*var3*k6*k7*var1+var64+var3*k2*var13*k7*var1+2*k1*k2*var13*k7*var1+var63-2*var3*k2*k4*k5*k7*var1-2*k1*k2*k4*k5*k7*var1+var62+2*k1*k2*k5*k7*var1+var3*k2*var5*k7*var1-var3*k2*k7*var1+var61+3*k1*var41*k5*k6*var1-var3*k2*k3*k5*k6*var1-4*k1*k2*k3*k5*k6*var1-4*var3*k3*k5*k6*var1-6*k1*k3*k5*k6*var1+var3*k2*k5*k6*var1+var18+var23*k5*k6*var1+var17+k1*k5*k6*var1+2*var3*k2*k3*k4*k6*var1+2*var3*k3*k4*k6*var1-2*var3*k2*k4*k6*var1-var23*k4*k6*var1+var16+var60+2*var3*k2*k3*k6*var1+2*var23*k3*k6*var1+4*var3*k3*k6*var1-var23*k2*k6*var1-var3*k2*k6*var1-var59*k6*var1-2*var23*k6*var1+var15+k1*var21*k3*var13*var1+2*k1*k2*k3*var13*var1-k1*var21*var13*var1-var3*k2*var13*var1+var14-k1*var21*k3*k4*k5*var1-2*k1*k2*k3*k4*k5*var1+k1*var21*k4*k5*var1+2*var3*k2*k4*k5*var1+var12+var58+2*k1*var21*k3*k5*var1+4*k1*k2*k3*k5*var1+var3*var21*k5*var1-k1*var21*k5*var1+var23*k2*k5*var1+var11-var3*k2*var5*var1+var3*var21*k4*var1-var23*k2*k4*var1-2*var3*k2*k3*var1+var3*var21*var1+var23*k2*var1+var3*k2*var1+k1*k3*k4*k5*k6*var33*k8+var57-3*k1*k4*k5*k6*var33*k8+var56+var55+var54+var53-var23*k4*var9*k7*k8-2*var3*k4*var9*k7*k8+var52-6*k1*k3*k4*k5*k6*k7*k8+var3*k2*k4*k5*k6*k7*k8+4*k1*k2*k4*k5*k6*k7*k8+4*var3*k4*k5*k6*k7*k8+6*k1*k4*k5*k6*k7*k8-var3*k2*var5*k6*k7*k8-4*var3*var5*k6*k7*k8+var51-2*var23*k4*k6*k7*k8-4*var3*k4*k6*k7*k8+var50-2*k1*var21*k4*k5*k7*k8-2*var3*k2*k4*k5*k7*k8-4*k1*k2*k4*k5*k7*k8+2*var3*k2*var5*k7*k8+2*var3*k2*k4*k7*k8-var3*k2*k3*k4*var9*k8-2*var3*k3*k4*var9*k8+var3*k2*k4*var9*k8+var23*k4*var9*k8+var10+k1*var21*k3*k4*k5*k6*k8+4*k1*k2*k3*k4*k5*k6*k8+3*k1*k3*k4*k5*k6*k8-k1*var21*k4*k5*k6*k8-var3*k2*k4*k5*k6*k8+var8+var7-k1*k4*k5*k6*k8+var3*k2*var5*k6*k8+var6-2*var3*k3*k4*k6*k8-var3*var21*k4*k6*k8-var23*k2*k4*k6*k8+var23*k4*k6*k8+var4-2*k1*var21*k3*k4*k5*k8-2*k1*k2*k3*k4*k5*k8+k1*var49*k4*k5*k8+var3*var21*k4*k5*k8+2*k1*var21*k4*k5*k8+var3*k2*k4*k5*k8+var2-var3*var21*var5*k8-var3*k2*var5*k8+var3*k2*k3*k4*k8-var3*var21*k4*k8-var23*k2*k4*k8-var3*k2*k4*k8
+    p5 = 2*k1*k2*var41*k5*var19-var3*k2*k3*k5*var19+var48+var3*k2*k3*k4*var19-var3*k2*var41*var19+var23*k2*k3*var19+2*var3*k2*k3*var19+3*k1*var41*k5*k6*k7*var1-4*var3*k3*k5*k6*k7*var1-6*k1*k3*k5*k6*k7*var1+var23*k5*k6*k7*var1+var47+k1*k5*k6*k7*var1+2*var3*k3*k4*k6*k7*var1-var23*k4*k6*k7*var1+var46+var72+2*var23*k3*k6*k7*var1+4*var3*k3*k6*k7*var1-var59*k6*k7*var1-2*var23*k6*k7*var1+var45+2*k1*k2*k3*var13*k7*var1-var3*k2*var13*k7*var1+var44-2*k1*k2*k3*k4*k5*k7*var1+2*var3*k2*k4*k5*k7*var1+var43+var71+4*k1*k2*k3*k5*k7*var1+var23*k2*k5*k7*var1+var42-var3*k2*var5*k7*var1-var23*k2*k4*k7*var1-2*var3*k2*k3*k7*var1+var23*k2*k7*var1+var3*k2*k7*var1-2*k1*k2*var41*k5*k6*var1-3*k1*var41*k5*k6*var1+var3*k2*k3*k5*k6*var1+var40+var39+2*k1*k3*k5*k6*var1-2*var3*k2*k3*k4*k6*var1+var38+var3*k2*var41*k6*var1+2*var3*var41*k6*var1-var23*k2*k3*k6*var1-2*var3*k2*k3*k6*var1-2*var23*k3*k6*var1+var37-k1*var21*k3*var13*var1+var36+k1*var21*k3*k4*k5*var1+var35+k1*var21*var41*k5*var1+2*k1*k2*var41*k5*var1+var3*var21*k3*k5*var1-2*k1*var21*k3*k5*var1+var34+var3*var21*k3*k4*var1-var3*k2*var41*var1+2*var3*var21*k3*var1+var23*k2*k3*var1+2*var3*k2*k3*var1-3*k1*k3*k4*k5*k6*var33*k8+2*var3*k4*k5*k6*var33*k8+3*k1*k4*k5*k6*var33*k8-2*var3*var5*k6*var33*k8+var70-var23*k4*k6*var33*k8-2*var3*k4*k6*var33*k8+var69-var3*k2*k4*k5*var33*k8-2*k1*k2*k4*k5*var33*k8+var3*k2*var5*var33*k8+var3*k2*k4*var33*k8-2*var3*k3*k4*var9*k7*k8+var23*k4*var9*k7*k8+var32+4*k1*k2*k3*k4*k5*k6*k7*k8+6*k1*k3*k4*k5*k6*k7*k8-var3*k2*k4*k5*k6*k7*k8+var31+var30-2*k1*k4*k5*k6*k7*k8+var3*k2*var5*k6*k7*k8+var29-4*var3*k3*k4*k6*k7*k8-var23*k2*k4*k6*k7*k8+2*var23*k4*k6*k7*k8+var28-2*k1*var21*k3*k4*k5*k7*k8-4*k1*k2*k3*k4*k5*k7*k8+var3*var21*k4*k5*k7*k8+2*k1*var21*k4*k5*k7*k8+2*var3*k2*k4*k5*k7*k8+var27-var3*var21*var5*k7*k8-2*var3*k2*var5*k7*k8+2*var3*k2*k3*k4*k7*k8-var3*var21*k4*k7*k8-2*var23*k2*k4*k7*k8-2*var3*k2*k4*k7*k8+var3*k2*k3*k4*var9*k8+var26-k1*var21*k3*k4*k5*k6*k8+var25-k1*k3*k4*k5*k6*k8-var3*var21*k3*k4*k6*k8+var24+k1*var49*k3*k4*k5*k8+2*k1*var21*k3*k4*k5*k8+var22-var3*var21*k3*k4*k8-var3*k2*k3*k4*k8
+    p6 = var68+var3*k2*var41*var19-3*k1*var41*k5*k6*k7*var1+var67+2*k1*k3*k5*k6*k7*var1+var66+2*var3*var41*k6*k7*var1-2*var23*k3*k6*k7*var1+var65+var64+var63+2*k1*k2*var41*k5*k7*var1+var62-var3*k2*var41*k7*var1+var23*k2*k3*k7*var1+2*var3*k2*k3*k7*var1+var61+k1*var41*k5*k6*var1-var3*k2*var41*k6*var1+var60-k1*var21*var41*k5*var1+var58+var3*var21*var41*var1+var3*k2*var41*var1+3*k1*k3*k4*k5*k6*var33*k8+var57-k1*k4*k5*k6*var33*k8+var56-2*var3*k3*k4*k6*var33*k8+var23*k4*k6*var33*k8+var55-2*k1*k2*k3*k4*k5*var33*k8+var3*k2*k4*k5*var33*k8+var54-var3*k2*var5*var33*k8+var3*k2*k3*k4*var33*k8-var23*k2*k4*var33*k8-var3*k2*k4*var33*k8+var53+var52-2*k1*k3*k4*k5*k6*k7*k8+var51+2*k1*var21*k3*k4*k5*k7*k8+var50-var3*var21*k3*k4*k7*k8-2*var3*k2*k3*k4*k7*k8
+    p7 = k1*var41*k5*k6*k7*var1+var72+var71+var3*k2*var41*k7*var1-k1*k3*k4*k5*k6*var33*k8+var70+var69-var3*k2*k3*k4*var33*k8
+    return (p1/p7,p2/p7,p3/p7,p4/p7,p5/p7,p6/p7,one(eltype(K)))
+end
+
+function __assoc_x3(K,x1)
+    _0 = zero(eltype(K))
+    k3 = K[2]
+    k7 = K[4]
+    k1 = K[5]
+    k5 = K[7]
+    k4 = K[10]
+    k8 = K[12]
+    k2 = K[13]
+    k6 = K[15]
+    x1² = x1^2
+    c = -(k3*k7*x1²*x1)+k3*k7*x1²-k1*k7*x1²-k7*x1²-k2*k3*x1²-k3*x1²+k7*x1+k3*x1-k2*x1-k1*x1-x1+1
+    b = -(k3*k8*x1²)-k4*k7*x1²+k3*k8*x1-k1*k8*x1-k8*x1+k4*k7*x1-k2*k4*x1-k4*x1+k8+k4
+    a = k4*k8-k4*k8*x1
+    Δ = b*b - 4*a*c
+    return (-b + sqrt(Δ))/(2*a)
+end
+
 #=
 function AX!(output,input,pack_indices,delta::Compressed4DMatrix{TT,VV} ,modelsites,ρ,z) where {TT,VV}
     _0 = zero(TT)
