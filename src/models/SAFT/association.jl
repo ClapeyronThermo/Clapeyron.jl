@@ -737,10 +737,12 @@ function X_exact4!(K,X)
     strategy is the following:
     given K (4x4 assoc matrix) and X
 
-    1. we solve for x1 (7th order polynomial)
-    2. we solve for x3 (2nd order polynomial)
+    1. we solve for x1 (7th order polynomial, bracketed newton)
+    2. we solve for x3 (2nd order polynomial, analytic)
     3. x2 and x4 only depend on x1 and x3.
 
+    this supposes non-zero values of the diagonal submatrices.
+    we catch the zero case earlier.
     =#
     _0 = zero(eltype(K))
     k3 = K[2]
