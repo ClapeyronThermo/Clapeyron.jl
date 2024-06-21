@@ -164,6 +164,9 @@ function a_res(model::HomogcPCPSAFTModel,V,T,z)
     return a_res(model.ppcmodel,V,T,z)
 end
 
+assoc_shape(model::HomogcPCPSAFTModel) = assoc_shape(model.ppcmodel)
+getsites(model::HomogcPCPSAFTModel) = getsites(model.ppcmodel)
+
 function lb_volume(model::HomogcPCPSAFTModel, z = SA[1.0])
     return lb_volume(model.ppcmodel, z)
 end
