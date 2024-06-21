@@ -87,6 +87,9 @@ end
 ## Association overloads required to support association
 
 @inline function assoc_similar(model::EoSModel,::Type{𝕋}) where 𝕋
+    outer_indices,inner_indices = assoc_shape(model)
+    values = zeros(𝕋,length(outer_indices))
+    
     assoc_similar(model.params.bondvol.values,𝕋)
 end
 

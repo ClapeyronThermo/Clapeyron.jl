@@ -49,7 +49,7 @@ GC.gc()
         system = structSAFTgammaMie(species)
         V_γMie = exp10(-3.5)
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.11160851237651681 rtol = 1e-6
-        test_gibbs_duhem(system,V,T,z,rtol = 1e-12)
+        test_gibbs_duhem(system,V_γMie,T,z,rtol = 1e-12)
         GC.gc()
     end
     end

@@ -31,8 +31,34 @@ julia> Clapeyron.assoc_pair_length(model)
 ```
 """
 @inline function assoc_pair_length(model::EoSModel)
-    return length(model.params.bondvol.values.values)
+    val = assoc_shape(model)
+    return length(val.values)
 end
+
+"""
+    assoc_shape(model::EoSModel)::NTuple{2,Vector{Tuple{Int,Int},Tuple{Int,Int}}
+
+Returns the shape (component and site indices) of the input model.
+## Example:
+
+```julia-repl
+julia> model = PCSAFT(["water"])
+PCSAFT{BasicIdeal} with 1 component:
+ "water"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> Clapeyron.assoc_shape(model)
+Clapeyron.Compressed4DMatrix{Int64, UnitRange{Int64}} with 1 entry:
+ (1, 1) >=< (1, 2): 1
+```
+"""
+assoc_shape(model::EoSModel) = assoc_shape(model.params.bondvol)
+assoc_shape(param::AssocParam) = assoc_shape(param.values)
+@inline function assoc_shape(mat::Compressed4DMatrix)
+    l = length(mat.values)
+    Compressed4DMatrix{Int64,UnitRange{Int64}}(1:l,mat.outer_indices,mat.inner_indices,mat.outer_size,mat.inner_size)
+end
+
 
 """
     assoc_strength(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
@@ -517,7 +543,7 @@ function X_and_Δ_exact1(model,V,T,z,data = nothing)
 end
 
 function _X_exact1(model,V,T,z,data=nothing)
-    κ = model.params.bondvol.values
+    κ = assoc_shape(model)
     i,j = κ.outer_indices[1]
     a,b = κ.inner_indices[1]
     if data === nothing

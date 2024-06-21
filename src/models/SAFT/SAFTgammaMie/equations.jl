@@ -39,7 +39,7 @@ function p_scale(model::SAFTgammaMieModel,z=SA[1.0])
 end
 
 getsites(model::SAFTgammaMieModel) = model.vrmodel.sites
-
+assoc_shape(model::SAFTgammaMieModel) = assoc_shape(model.vrmodel)
 function a_res(model::SAFTgammaMieModel, V, T, z)
     _data = @f(data)
     dgc,X,vrdata = _data
