@@ -791,7 +791,7 @@ function X_exact4!(K,X)
         dfx = evalpoly(x,dpol_x1)
         return fx,fx/dfx
     end
-    prob_x1 = Roots.ZeroProblem(f0,(zero(x0),one(x0),x10))
+    prob_x1 = Roots.ZeroProblem(f0,(zero(x10),one(x10),x10))
     x1 = Roots.solve(prob_x1,Roots.LithBoonkkampIJzermanBracket()) #bracketed newton
     x3 = __assoc_x3(K,x1)
     x2 = 1 / (1 + k3*x1 + k4*x3)
