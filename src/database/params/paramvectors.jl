@@ -300,7 +300,7 @@ end
 returns a `Clapeyron.Compressed4DMatrix` of the same shape as the input, with the same element type as `𝕋`
 """
 function assoc_similar(m::Compressed4DMatrix,::Type{𝕋}) where 𝕋 <:Number
-    newvalues = similar(m.values,𝕋)
+    newvalues = zeros(m.values,𝕋)
     return Compressed4DMatrix(newvalues,m.outer_indices,m.inner_indices,m.outer_size,m.inner_size)
 end
 

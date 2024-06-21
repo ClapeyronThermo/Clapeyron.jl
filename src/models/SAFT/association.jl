@@ -13,6 +13,7 @@ end
     assoc_pair_length(model::EoSModel)
 
 Indicates the number of pair combinations between the different sites in an association model.
+By default uses `length(assoc_shape(model).values)`
 
 ## Example:
 
@@ -36,9 +37,10 @@ julia> Clapeyron.assoc_pair_length(model)
 end
 
 """
-    assoc_shape(model::EoSModel)::NTuple{2,Vector{Tuple{Int,Int},Tuple{Int,Int}}
+    assoc_shape(model::EoSModel)::Compressed4DMatrix{Int64,UnitRange{Int64}}
 
-Returns the shape (component and site indices) of the input model.
+Returns a `Clapeyron.Compressed4DMatrix` that has the same shape as the association sites used by the model.
+By default, it has the same shape as `model.params.bondvol`
 ## Example:
 
 ```julia-repl
@@ -49,7 +51,7 @@ Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
 
 julia> Clapeyron.assoc_shape(model)
 Clapeyron.Compressed4DMatrix{Int64, UnitRange{Int64}} with 1 entry:
- (1, 1) >=< (1, 2): 1
+ (1, 1) >=< (1, 2): 1 #component 1 at site 1 has association interaction with component 1 at site 2.
 ```
 """
 assoc_shape(model::EoSModel) = assoc_shape(model.params.bondvol)

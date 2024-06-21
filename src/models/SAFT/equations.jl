@@ -87,11 +87,10 @@ end
 ## Association overloads required to support association
 
 @inline function assoc_similar(model::EoSModel,::Type{𝕋}) where 𝕋
-    outer_indices,inner_indices = assoc_shape(model)
-    values = zeros(𝕋,length(outer_indices))
-    
-    assoc_similar(model.params.bondvol.values,𝕋)
+    assoc_similar(assoc_shape(model),𝕋)
 end
+
+assoc_similar(model::EoSModel) = assoc_similar(model,eltype(model))
 
 #recombine! utilities
 function recombine_saft!(model::SAFTModel,k = nothing,l = nothing)
