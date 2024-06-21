@@ -365,19 +365,8 @@ function assoc_matrix_x0!(K,X)
         success = true
         init = true
     elseif check_antidiagonal2(K)
-        #2-site association without self association
-        k1 = K[1,2]
-        k2 = K[2,1]
-        #this computation is equivalent to the one done in X_exact1
-        _a = k2
-        _b = 1 - k2 + k1
-        _c = -1
-        denom = _b + sqrt(_b*_b - 4*_a*_c)
-        x1 = -2*_c/denom
-        x1k = k2*x1
-        x2 = (1- x1k)/(1 - x1k*x1k)
-        X[1] = x1
-        X[2] = x2
+        X_exact2!(K,X)
+        init = true
         success = true
         init = true
     elseif check_antidiagonal22(K)
@@ -387,11 +376,12 @@ function assoc_matrix_x0!(K,X)
     K21 = @view(K[3:4,1:2])
     K22 = @view(K[3:4,3:4])
     if (iszero(K12) & iszero(K21)) | iszero(K11) | iszero(K22)
-        #solve each association separately
-        assoc_matrix_x0!(@view(K[1:2,1:2]),@view(X[1:2]))
-        assoc_matrix_x0!(@view(K[3:4,3:4]),@view(X[3:4]))
+        #solve each association separately, if one of the diagonal association
+        #submatrices is zero, then cross-association does not have any sense.
+        X_exact2!(K11,@view(X[1:2]))
+        X_exact2!(K22,@view(X[3:4]))
     else
-        #general
+        #general solution.
         X_exact4!(K,X)
     end
     success = true
@@ -726,6 +716,22 @@ macro assoc_loop(Xold,Xnew,expr)
     end |> esc
 end
 
+function X_exact2!(K,X)
+    k1 = K[1,2]
+    k2 = K[2,1]
+    #this computation is equivalent to the one done in X_exact1
+    _a = k2
+    _b = 1 - k2 + k1
+    _c = -1
+    denom = _b + sqrt(_b*_b - 4*_a*_c)
+    x1 = -2*_c/denom
+    x1k = k2*x1
+    x2 = (1- x1k)/(1 - x1k*x1k)
+    X[1] = x1
+    X[2] = x2
+    return X
+end
+
 function X_exact4!(K,X)
     #=
     strategy is the following:
@@ -746,18 +752,17 @@ function X_exact4!(K,X)
     k2 = K[13]
     k6 = K[15]
 
-    k11 = k1
-    k22 = k3
-    #this computation is equivalent to the one done in X_exact1
-    _a = k22
-    _b = 1 - k22 + k11
-    _c = -1
-    denom = _b + sqrt(_b*_b - 4*_a*_c)
-    x10 = -2*_c/denom
+    X_exact2!(@view(K[1:2,1:2]),@view(X[1:2]))
+    x10 = X[1]
     pol_x1 = __assoc_x1_poly(K)
-    f0(x) = evalpoly(x,pol_x1)
-    prob_x1 = Roots.ZeroProblem(f0,x10)
-    x1 = Roots.solve(prob_x1)
+    dpol_x1 = Solvers.polyder(pol_x1)
+    function f0(x)
+        fx = evalpoly(x,pol_x1)
+        dfx = evalpoly(x,dpol_x1)
+        return fx,fx/dfx
+    end
+    prob_x1 = Roots.ZeroProblem(f0,(zero(x0),one(x0),x10))
+    x1 = Roots.solve(prob_x1,Roots.LithBoonkkampIJzermanBracket()) #bracketed newton
     x3 = __assoc_x3(K,x1)
     x2 = 1 / (1 + k3*x1 + k4*x3)
     x4 =  1 / (1 + k7*x1 + k8*x3)
