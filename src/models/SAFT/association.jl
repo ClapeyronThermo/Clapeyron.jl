@@ -382,13 +382,17 @@ function assoc_matrix_x0!(K,X)
         init = true
     elseif check_antidiagonal22(K)
     #nb-nb association with cross-association
-    if iszero(@view(K[1:2,3:4])) & iszero(@view(K[3:4,1:2]))
+    K11 = @view(K[1:2,1:2])
+    K12 = @view(K[1:2,3:4])
+    K21 = @view(K[3:4,1:2])
+    K22 = @view(K[3:4,3:4])
+    if (iszero(K12) & iszero(K21)) | iszero(K11) | iszero(K22)
         #solve each association separately
         assoc_matrix_x0!(@view(K[1:2,1:2]),@view(X[1:2]))
         assoc_matrix_x0!(@view(K[3:4,3:4]),@view(X[3:4]))
     else
         #general
-        X1_exact4!(K,X)
+        X_exact4!(K,X)
     end
     success = true
     init = true
@@ -722,7 +726,7 @@ macro assoc_loop(Xold,Xnew,expr)
     end |> esc
 end
 
-function X1_exact4!(K,X)
+function X_exact4!(K,X)
     #=
     strategy is the following:
     given K (4x4 assoc matrix) and X
@@ -853,7 +857,11 @@ function __assoc_x1_poly(K)
     p5 = 2*k1*k2*var41*k5*var19-var3*k2*k3*k5*var19+var48+var3*k2*k3*k4*var19-var3*k2*var41*var19+var23*k2*k3*var19+2*var3*k2*k3*var19+3*k1*var41*k5*k6*k7*var1-4*var3*k3*k5*k6*k7*var1-6*k1*k3*k5*k6*k7*var1+var23*k5*k6*k7*var1+var47+k1*k5*k6*k7*var1+2*var3*k3*k4*k6*k7*var1-var23*k4*k6*k7*var1+var46+var72+2*var23*k3*k6*k7*var1+4*var3*k3*k6*k7*var1-var59*k6*k7*var1-2*var23*k6*k7*var1+var45+2*k1*k2*k3*var13*k7*var1-var3*k2*var13*k7*var1+var44-2*k1*k2*k3*k4*k5*k7*var1+2*var3*k2*k4*k5*k7*var1+var43+var71+4*k1*k2*k3*k5*k7*var1+var23*k2*k5*k7*var1+var42-var3*k2*var5*k7*var1-var23*k2*k4*k7*var1-2*var3*k2*k3*k7*var1+var23*k2*k7*var1+var3*k2*k7*var1-2*k1*k2*var41*k5*k6*var1-3*k1*var41*k5*k6*var1+var3*k2*k3*k5*k6*var1+var40+var39+2*k1*k3*k5*k6*var1-2*var3*k2*k3*k4*k6*var1+var38+var3*k2*var41*k6*var1+2*var3*var41*k6*var1-var23*k2*k3*k6*var1-2*var3*k2*k3*k6*var1-2*var23*k3*k6*var1+var37-k1*var21*k3*var13*var1+var36+k1*var21*k3*k4*k5*var1+var35+k1*var21*var41*k5*var1+2*k1*k2*var41*k5*var1+var3*var21*k3*k5*var1-2*k1*var21*k3*k5*var1+var34+var3*var21*k3*k4*var1-var3*k2*var41*var1+2*var3*var21*k3*var1+var23*k2*k3*var1+2*var3*k2*k3*var1-3*k1*k3*k4*k5*k6*var33*k8+2*var3*k4*k5*k6*var33*k8+3*k1*k4*k5*k6*var33*k8-2*var3*var5*k6*var33*k8+var70-var23*k4*k6*var33*k8-2*var3*k4*k6*var33*k8+var69-var3*k2*k4*k5*var33*k8-2*k1*k2*k4*k5*var33*k8+var3*k2*var5*var33*k8+var3*k2*k4*var33*k8-2*var3*k3*k4*var9*k7*k8+var23*k4*var9*k7*k8+var32+4*k1*k2*k3*k4*k5*k6*k7*k8+6*k1*k3*k4*k5*k6*k7*k8-var3*k2*k4*k5*k6*k7*k8+var31+var30-2*k1*k4*k5*k6*k7*k8+var3*k2*var5*k6*k7*k8+var29-4*var3*k3*k4*k6*k7*k8-var23*k2*k4*k6*k7*k8+2*var23*k4*k6*k7*k8+var28-2*k1*var21*k3*k4*k5*k7*k8-4*k1*k2*k3*k4*k5*k7*k8+var3*var21*k4*k5*k7*k8+2*k1*var21*k4*k5*k7*k8+2*var3*k2*k4*k5*k7*k8+var27-var3*var21*var5*k7*k8-2*var3*k2*var5*k7*k8+2*var3*k2*k3*k4*k7*k8-var3*var21*k4*k7*k8-2*var23*k2*k4*k7*k8-2*var3*k2*k4*k7*k8+var3*k2*k3*k4*var9*k8+var26-k1*var21*k3*k4*k5*k6*k8+var25-k1*k3*k4*k5*k6*k8-var3*var21*k3*k4*k6*k8+var24+k1*var49*k3*k4*k5*k8+2*k1*var21*k3*k4*k5*k8+var22-var3*var21*k3*k4*k8-var3*k2*k3*k4*k8
     p6 = var68+var3*k2*var41*var19-3*k1*var41*k5*k6*k7*var1+var67+2*k1*k3*k5*k6*k7*var1+var66+2*var3*var41*k6*k7*var1-2*var23*k3*k6*k7*var1+var65+var64+var63+2*k1*k2*var41*k5*k7*var1+var62-var3*k2*var41*k7*var1+var23*k2*k3*k7*var1+2*var3*k2*k3*k7*var1+var61+k1*var41*k5*k6*var1-var3*k2*var41*k6*var1+var60-k1*var21*var41*k5*var1+var58+var3*var21*var41*var1+var3*k2*var41*var1+3*k1*k3*k4*k5*k6*var33*k8+var57-k1*k4*k5*k6*var33*k8+var56-2*var3*k3*k4*k6*var33*k8+var23*k4*k6*var33*k8+var55-2*k1*k2*k3*k4*k5*var33*k8+var3*k2*k4*k5*var33*k8+var54-var3*k2*var5*var33*k8+var3*k2*k3*k4*var33*k8-var23*k2*k4*var33*k8-var3*k2*k4*var33*k8+var53+var52-2*k1*k3*k4*k5*k6*k7*k8+var51+2*k1*var21*k3*k4*k5*k7*k8+var50-var3*var21*k3*k4*k7*k8-2*var3*k2*k3*k4*k7*k8
     p7 = k1*var41*k5*k6*k7*var1+var72+var71+var3*k2*var41*k7*var1-k1*k3*k4*k5*k6*var33*k8+var70+var69-var3*k2*k3*k4*var33*k8
-    return (p1/p7,p2/p7,p3/p7,p4/p7,p5/p7,p6/p7,one(eltype(K)))
+    if iszero(p7)
+        return (p1,p2,p3,p4,p5,p6,p7)
+    else
+        return (p1/p7,p2/p7,p3/p7,p4/p7,p5/p7,p6/p7,one(eltype(K)))
+    end
 end
 
 function __assoc_x3(K,x1)
@@ -866,10 +874,15 @@ function __assoc_x3(K,x1)
     k8 = K[12]
     k2 = K[13]
     k6 = K[15]
-    x1² = x1^2
-    c = -(k3*k7*x1²*x1)+k3*k7*x1²-k1*k7*x1²-k7*x1²-k2*k3*x1²-k3*x1²+k7*x1+k3*x1-k2*x1-k1*x1-x1+1
-    b = -(k3*k8*x1²)-k4*k7*x1²+k3*k8*x1-k1*k8*x1-k8*x1+k4*k7*x1-k2*k4*x1-k4*x1+k8+k4
-    a = k4*k8-k4*k8*x1
+    c3 = -k3*k7
+    c2 = k7*(k3 - k1 - 1) - k3*(k2 + 1)
+    c1 = k7 + k3 - k2 - k1 - 1
+    c = evalpoly(x1,(one(c1),c1,c2,c3))
+    b2 = -k3*k8-k4*k7
+    b1 = k8*(k3 - k1 - 1) + k4*(k7 -k2 - 1)
+    b0 = k8+k4
+    b = evalpoly(x1,(b0,b1,b2))
+    a = k4*k8*(1 - x1)
     Δ = b*b - 4*a*c
     return (-b + sqrt(Δ))/(2*a)
 end
