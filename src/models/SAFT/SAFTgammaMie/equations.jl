@@ -131,11 +131,11 @@ function a_chain(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     return a_chain(model.vrmodel,V,T,z,vrdata)
 end
 
-#=
+
 function a_assoc(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     _,_,vrdata = _data
     return a_assoc(model.vrmodel,V,T,z,vrdata)
-end =#
+end
 
 function Δ(model::SAFTgammaMieModel, V, T, z, i, j, a, b,_data = @f(data))
     vrdata = _data[3]
