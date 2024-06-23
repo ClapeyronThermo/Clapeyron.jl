@@ -13,9 +13,8 @@ the combining option controls the type of combining rule applied to the associat
     ε[i,j][a,b] = (ε[i,i][a,b] + ε[j,j][a,b])/2
     β[i,j][a,b] = √(β[i,i][a,b] * β[j,j][a,b]) * (σ[i]*σ[j]/σ[i,j])^3
     ```
-- `:esd_runtime`,`:elliott_runtime`: combining rule, performed at runtime. Dense matrix only. slowest, but it is the only way to handle temperature-dependent σ:
+- `:esd_runtime`,`:elliott_runtime`: combining rule, performed at runtime:
     ```
-    Δ[i,j][a,b] = (ε[i,i][a,b] + ε[j,j][a,b])/2
     Δ[i,j][a,b] = √(Δ[i,i][a,b] * Δ[j,j][a,b]) 
     ```
 !!! info "Association Scheme matters"
