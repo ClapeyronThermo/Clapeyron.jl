@@ -408,9 +408,10 @@ function assoc_matrix_x0!(K,X)
         #submatrices is zero, then cross-association does not have any sense.
         X_exact2!(K11,@view(X[1:2]))
         X_exact2!(K22,@view(X[3:4]))
+        success = true
     else
         #general solution.
-        X_exact4!(K,X)
+        _,success = X_exact4!(K,X)
     end
     success = true
     init = true
@@ -791,8 +792,15 @@ function X_exact4!(K,X)
         dfx = evalpoly(x,dpol_x1)
         return fx,fx/dfx
     end
-    prob_x1 = Roots.ZeroProblem(f0,(zero(x10),one(x10),x10))
-    x1 = Roots.solve(prob_x1,Roots.LithBoonkkampIJzermanBracket()) #bracketed newton
+    prob_x1 = Roots.ZeroProblem(f0,x10)
+    x1res = Roots.solve(prob_x1,Roots.Newton()) #bracketed newton
+    if 0 <= x1res <= 1
+        x1 = x1res
+        success = true
+    else
+        x1 = x10
+        success = false
+    end
     x3 = __assoc_x3(K,x1)
     x2 = 1 / (1 + k3*x1 + k4*x3)
     x4 =  1 / (1 + k7*x1 + k8*x3)
@@ -800,7 +808,7 @@ function X_exact4!(K,X)
     X[2] = x2
     X[3] = x3
     X[4] = x4
-    return X
+    return X,success
 end
 
 function __assoc_x1_poly(K)
