@@ -19,7 +19,15 @@ function transform_params(::Type{pharmaPCSAFT},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
     params["kT"] = get(params,"kT",PairParam("kT",components,zeros(length(components))))
-    params["water"] = SpecialComp(components,["water08"])
+    water = SpecialComp(components,["water08"])
+    params["water"] = water
+    
+    if water[] != 0
+        assoc = params["assoc_options"]
+        if assoc.combining ∈ (:esd,:elliott)
+            throw(ArgumentError("pharmaPCSAFT does not support $(assoc.combining) rule with a temperature-dependent sigma. try using :esd_runtime instead"))
+        end
+    end
     #k needs to be fully instantiated here, because it is stored as a parameter
     params["k"] = get(params,"k",PairParam("k",components,zeros(length(components))))
     sigma,epsilon = params["sigma"],params["epsilon"]
@@ -152,7 +160,7 @@ function m2ϵσ3(model::pharmaPCSAFTModel, V, T, z)
     #return ∑(z[i]*z[j]*m[i]*m[j] * (ϵ[i,j]*(1)/T)^n * σ[i,j]^3 for i ∈ @comps, j ∈ @comps)/(sum(z)^2)
 end
 
-function Δ(model::pharmaPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
+function Δ(model::pharmaPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))    
     _0 = zero(V+T+first(z))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
