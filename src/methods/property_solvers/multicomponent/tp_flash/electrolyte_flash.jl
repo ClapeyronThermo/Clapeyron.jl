@@ -113,7 +113,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
             end
         end 
     else
-        β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=zero(ψ), non_inx=non_inx, non_iny=non_iny)
+        β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=zero(β), non_inx=non_inx, non_iny=non_iny)
     end
     # Stage 1: Successive Substitution
     error_lnK = _1
