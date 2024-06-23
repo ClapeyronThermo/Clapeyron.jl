@@ -37,7 +37,7 @@ GC.gc()
         T15 = 290.0
         vr15 = SAFTVRMie15("water")
         #Dufal, table 4, 290K, f_OH(free) = 0.089
-        @test Clapeyron.X(vr15,V,T,z1)[1][1] ≈ 0.08922902098124778 rtol = 1e-6
+        @test Clapeyron.X(vr15,v15,T15,z1)[1][1] ≈ 0.08922902098124778 rtol = 1e-6
     end
 
     @testset "SAFTgammaMie" begin
