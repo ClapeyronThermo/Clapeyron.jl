@@ -32,6 +32,14 @@ GC.gc()
         GC.gc()
     end
 
+    @testset "SAFTVRMie15" begin
+        v15 = 1/(1000*1000*1.011/18.015)
+        T15 = 290.0
+        vr15 = SAFTVRMie15("water")
+        #Dufal, table 4, 290K, f_OH(free) = 0.089
+        Clapeyron.X(vr15,V,T,z1)[1][1] ≈ 0.08922902098124778 rtol = 1e-6
+    end
+
     @testset "SAFTgammaMie" begin
         system = SAFTgammaMie(["methanol","butane"])
         V_γMie = exp10(-3.5)
