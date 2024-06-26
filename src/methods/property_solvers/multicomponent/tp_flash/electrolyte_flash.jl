@@ -97,6 +97,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     β,singlephase,_ = rachfordrice_β0(K̃,z)
     #if singlephase == true, maybe initial K values overshoot the actual phase split.
     if singlephase
+        @show "s"
         Kmin,Kmax = extrema(K̃)
         if !(Kmin >= 1 || Kmax <= 1)
             #valid K, still single phase.
@@ -113,8 +114,9 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
             end
         end 
     else
-        β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=zero(β), non_inx=non_inx, non_iny=non_iny)
+        β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=one(β), non_inx=non_inx, non_iny=non_iny)
     end
+    
     # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
@@ -165,6 +167,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         end
         K .= exp.(lnK)
         β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
+        K̃ .= K.*exp.(Z.*ψ)
         singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
