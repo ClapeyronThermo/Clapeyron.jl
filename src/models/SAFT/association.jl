@@ -403,6 +403,7 @@ function assoc_matrix_x0!(K,X)
     K12 = @view(K[1:2,3:4])
     K21 = @view(K[3:4,1:2])
     K22 = @view(K[3:4,3:4])
+    
     if (iszero(K12) & iszero(K21)) | iszero(K11) | iszero(K22)
         #solve each association separately, if one of the diagonal association
         #submatrices is zero, then cross-association does not have any sense.
@@ -412,8 +413,8 @@ function assoc_matrix_x0!(K,X)
     else
         #general solution.
         _,success = X_exact4!(K,X)
+        success || X_exact2!(K22,@view(X[3:4]))
     end
-    success = true
     init = true
     else
         #TODO: add more exact expressions.
@@ -787,20 +788,20 @@ function X_exact4!(K,X)
     x10 = X[1]
     pol_x1 = __assoc_x1_poly(K)
     dpol_x1 = Solvers.polyder(pol_x1)
+    d2pol_x1 = Solvers.polyder(dpol_x1)
     function f0(x)
         fx = evalpoly(x,pol_x1)
         dfx = evalpoly(x,dpol_x1)
         return fx,fx/dfx
     end
+
     prob_x1 = Roots.ZeroProblem(f0,x10)
     x1res = Roots.solve(prob_x1,Roots.Newton()) #bracketed newton
-    if 0 <= x1res <= 1
-        x1 = x1res
-        success = true
-    else
-        x1 = x10
-        success = false
+    d2fdx1 = evalpoly(x1res, d2pol_x1)
+    if d2fdx1 < 0 || !(0 <= x1res <= 1)
+        return X,false
     end
+    x1 = x1res    
     x3 = __assoc_x3(K,x1)
     x2 = 1 / (1 + k3*x1 + k4*x3)
     x4 =  1 / (1 + k7*x1 + k8*x3)
@@ -808,7 +809,7 @@ function X_exact4!(K,X)
     X[2] = x2
     X[3] = x3
     X[4] = x4
-    return X,success
+    return X,true
 end
 
 function __assoc_x1_poly(K)
@@ -900,10 +901,12 @@ function __assoc_x1_poly(K)
     p5 = 2*k1*k2*var41*k5*var19-var3*k2*k3*k5*var19+var48+var3*k2*k3*k4*var19-var3*k2*var41*var19+var23*k2*k3*var19+2*var3*k2*k3*var19+3*k1*var41*k5*k6*k7*var1-4*var3*k3*k5*k6*k7*var1-6*k1*k3*k5*k6*k7*var1+var23*k5*k6*k7*var1+var47+k1*k5*k6*k7*var1+2*var3*k3*k4*k6*k7*var1-var23*k4*k6*k7*var1+var46+var72+2*var23*k3*k6*k7*var1+4*var3*k3*k6*k7*var1-var59*k6*k7*var1-2*var23*k6*k7*var1+var45+2*k1*k2*k3*var13*k7*var1-var3*k2*var13*k7*var1+var44-2*k1*k2*k3*k4*k5*k7*var1+2*var3*k2*k4*k5*k7*var1+var43+var71+4*k1*k2*k3*k5*k7*var1+var23*k2*k5*k7*var1+var42-var3*k2*var5*k7*var1-var23*k2*k4*k7*var1-2*var3*k2*k3*k7*var1+var23*k2*k7*var1+var3*k2*k7*var1-2*k1*k2*var41*k5*k6*var1-3*k1*var41*k5*k6*var1+var3*k2*k3*k5*k6*var1+var40+var39+2*k1*k3*k5*k6*var1-2*var3*k2*k3*k4*k6*var1+var38+var3*k2*var41*k6*var1+2*var3*var41*k6*var1-var23*k2*k3*k6*var1-2*var3*k2*k3*k6*var1-2*var23*k3*k6*var1+var37-k1*var21*k3*var13*var1+var36+k1*var21*k3*k4*k5*var1+var35+k1*var21*var41*k5*var1+2*k1*k2*var41*k5*var1+var3*var21*k3*k5*var1-2*k1*var21*k3*k5*var1+var34+var3*var21*k3*k4*var1-var3*k2*var41*var1+2*var3*var21*k3*var1+var23*k2*k3*var1+2*var3*k2*k3*var1-3*k1*k3*k4*k5*k6*var33*k8+2*var3*k4*k5*k6*var33*k8+3*k1*k4*k5*k6*var33*k8-2*var3*var5*k6*var33*k8+var70-var23*k4*k6*var33*k8-2*var3*k4*k6*var33*k8+var69-var3*k2*k4*k5*var33*k8-2*k1*k2*k4*k5*var33*k8+var3*k2*var5*var33*k8+var3*k2*k4*var33*k8-2*var3*k3*k4*var9*k7*k8+var23*k4*var9*k7*k8+var32+4*k1*k2*k3*k4*k5*k6*k7*k8+6*k1*k3*k4*k5*k6*k7*k8-var3*k2*k4*k5*k6*k7*k8+var31+var30-2*k1*k4*k5*k6*k7*k8+var3*k2*var5*k6*k7*k8+var29-4*var3*k3*k4*k6*k7*k8-var23*k2*k4*k6*k7*k8+2*var23*k4*k6*k7*k8+var28-2*k1*var21*k3*k4*k5*k7*k8-4*k1*k2*k3*k4*k5*k7*k8+var3*var21*k4*k5*k7*k8+2*k1*var21*k4*k5*k7*k8+2*var3*k2*k4*k5*k7*k8+var27-var3*var21*var5*k7*k8-2*var3*k2*var5*k7*k8+2*var3*k2*k3*k4*k7*k8-var3*var21*k4*k7*k8-2*var23*k2*k4*k7*k8-2*var3*k2*k4*k7*k8+var3*k2*k3*k4*var9*k8+var26-k1*var21*k3*k4*k5*k6*k8+var25-k1*k3*k4*k5*k6*k8-var3*var21*k3*k4*k6*k8+var24+k1*var49*k3*k4*k5*k8+2*k1*var21*k3*k4*k5*k8+var22-var3*var21*k3*k4*k8-var3*k2*k3*k4*k8
     p6 = var68+var3*k2*var41*var19-3*k1*var41*k5*k6*k7*var1+var67+2*k1*k3*k5*k6*k7*var1+var66+2*var3*var41*k6*k7*var1-2*var23*k3*k6*k7*var1+var65+var64+var63+2*k1*k2*var41*k5*k7*var1+var62-var3*k2*var41*k7*var1+var23*k2*k3*k7*var1+2*var3*k2*k3*k7*var1+var61+k1*var41*k5*k6*var1-var3*k2*var41*k6*var1+var60-k1*var21*var41*k5*var1+var58+var3*var21*var41*var1+var3*k2*var41*var1+3*k1*k3*k4*k5*k6*var33*k8+var57-k1*k4*k5*k6*var33*k8+var56-2*var3*k3*k4*k6*var33*k8+var23*k4*k6*var33*k8+var55-2*k1*k2*k3*k4*k5*var33*k8+var3*k2*k4*k5*var33*k8+var54-var3*k2*var5*var33*k8+var3*k2*k3*k4*var33*k8-var23*k2*k4*var33*k8-var3*k2*k4*var33*k8+var53+var52-2*k1*k3*k4*k5*k6*k7*k8+var51+2*k1*var21*k3*k4*k5*k7*k8+var50-var3*var21*k3*k4*k7*k8-2*var3*k2*k3*k4*k7*k8
     p7 = k1*var41*k5*k6*k7*var1+var72+var71+var3*k2*var41*k7*var1-k1*k3*k4*k5*k6*var33*k8+var70+var69-var3*k2*k3*k4*var33*k8
-    if iszero(p7)
-        return (p1,p2,p3,p4,p5,p6,p7)
-    else
+    if p7 > 0
         return (p1/p7,p2/p7,p3/p7,p4/p7,p5/p7,p6/p7,one(eltype(K)))
+    elseif p7 < 0
+        return (-p1/p7,-p2/p7,-p3/p7,-p4/p7,-p5/p7,-p6/p7,-one(eltype(K)))
+    else
+        return (p1,p2,p3,p4,p5,p6,p7)
     end
 end
 
