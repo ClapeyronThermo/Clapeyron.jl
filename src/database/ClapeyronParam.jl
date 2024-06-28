@@ -1,20 +1,38 @@
 """
     ClapeyronParam
 Abstract type corresponding to a Clapeyron parameter.
-it has to be splittable (via [`split_model`](@ref)) and have a `components` field
+It requires to define `Base.eltype`, and specify how it is splitted (via defining the adecuate `each_split_model`  method or by defining `Clapeyron.is_splittable(param) = false` to mark as non-splittable)
 """
 abstract type ClapeyronParam end
+
+"""
+    EoSParam
+Abstract type corresponding to a container of `ClapeyronParam`s.
+it supposes that all fields are `ClapeyronParam`s.
+"""
 abstract type EoSParam end
 abstract type ParametricEoSParam{T} <: EoSParam end
+
+
+"""
+    OptionsParam <: ClapeyronParam
+Abstract type corresponding to a Clapeyron parameter that only contains options.
+It is assumed that this parameter is equal to all components.
+"""
+abstract type OptionsParam <: ClapeyronParam end
+Base.eltype(param::OptionsParam) = Bool
+is_splittable(::OptionsParam) = false
 
 export EoSParam, ParametricEoSParam
 
 custom_show(param::EoSParam) = _custom_show_param(typeof(param))
 
-function build_parametric_param(param::T, args...) where T <: ParametricEoSParam
-    TT = Base.promote_eltype(args...)
+function build_parametric_param(param::Type{T}, args...) where T <: ParametricEoSParam
+    TT = mapreduce(eltype, promote_type, args)
     paramtype = parameterless_type(param)
+    
     converted_params = map(x -> _convert_param(TT,x), args)
+    
     paramtype{TT}(converted_params...)
 end
 
@@ -35,7 +53,7 @@ function Base.show(io::IO, mime::MIME"text/plain", params::EoSParam)
         param = getfield(params, name)
         print(io, "\n ", name, "::", typeof(param))
     end
-end
+end 
 
 function Base.show(io::IO, params::EoSParam)
     print(io, typeof(params))
@@ -112,18 +130,17 @@ function _convert_param(T::V,val::ReferenceState) where V
     return val
 end
 
-function _convert_param(T::V,::Type{SingleParam},val) where V
+function _convert_param(T::V,::Type{SingleParameter},val) where V
     return convert(SingleParam{T},val)
 end
 
-function _convert_param(T::V,::Type{PairParam},val) where V
+function _convert_param(T::V,::Type{PairParameter},val) where V
     return convert(PairParam{T},val)
 end
 
 function _convert_param(T::V,::Type{AssocParam},val) where V
     return convert(AssocParam{T},val)
 end
-
 
 const SingleOrPair = Union{<:SingleParameter,<:PairParameter}
 function Base.show(io::IO,param::SingleOrPair)

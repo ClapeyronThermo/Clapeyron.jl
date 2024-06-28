@@ -182,7 +182,7 @@ function gc_each_split_model(param::StructGroupParam,I)
         pii = param.n_intergroups[i]
         n_intergroups[k] = pii[_idx,_idx]
     end
-    n_groups_cache  = PackedVectorsOfVectors.packed_fill(0.0,(length(ni) for ni in n_flattenedgroups))
+    n_groups_cache = PackedVectorsOfVectors.packed_fill(0.0,(length(ni) for ni in n_flattenedgroups))
 
     for (k,i) in pairs(I)
         pii = param.n_groups_cache[i]
@@ -207,6 +207,24 @@ function each_split_model(group::GroupParameter,I)
     _,gi = gc_each_split_model(group,I)
     return gi
 end
+
+function each_split_model(param::SiteParam,I)
+    return SiteParam(
+        param.components[I],
+        param.sites[I],
+        each_split_model(param.n_sites,I),
+        param.i_sites[I],
+        param.flattenedsites,
+        param.n_flattenedsites[I],
+        param.i_flattenedsites[I],
+        param.sourcecsvs,
+        __split_site_translator(param.site_translator,I))
+end
+
+__split_site_translator(::Nothing,I) = nothing
+__split_site_translator(s::Vector{Vector{NTuple{2,Int}}},I) = s[I]
+
+
 """
     split_model(model::EoSModel)
 Takes in a model for a multi-component system and returns a vector of model for each pure system.
@@ -237,63 +255,39 @@ is_splittable(::AbstractString) = false
 is_splittable(::Symbol) = false
 is_splittable(::Tuple) = false
 
-function split_model(param::SingleParameter,
-    splitter =split_model(1:length(param.components)))
-    return [each_split_model(param,i) for i ∈ splitter]
-end
 
-#this conversion is lossy, as interaction between two or more components are lost.
-
-function split_model(param::PairParameter,
-    splitter = split_model(1:length(param.components)))
-    return [each_split_model(param,i) for i ∈ splitter]
-end
-
-function split_model(param::ReferenceState,splitter)
-    return [each_split_model(param,i) for i ∈ splitter]
-end
-
-function split_model(param::AbstractVector,splitter = ([i] for i ∈ 1:length(param)))
-    return [each_split_model(param,i) for i ∈ splitter]
-end
-
-function split_model(param::UnitRange{Int},splitter = ([i] for i ∈ 1:length(param)))
-    return [1:length(i) for i ∈ splitter]
-end
-
-#this conversion is lossy, as interaction between two or more components are lost.
-#also, this conversion stores the site values for other components. (those are not used)
-function split_model(param::AssocParam{T},
-    splitter = split_model(1:length(param.components))) where T
-    return [each_split_model(param,i) for i ∈ splitter]
-end
-
-#this param has a defined split form
-function split_model(groups::GroupParameter,
-    splitter = split_model(collect(1:length(groups.components))))
-    return [each_split_model(groups,i) for i in splitter]
-end
-
-__split_site_translator(::Nothing,I) = nothing
-__split_site_translator(s::Vector{Vector{NTuple{2,Int}}},I) = s[I] 
-
-function split_model(param::SiteParam,
-    splitter = split_model(1:length(param.components)))
-    function generator(I)
-        return SiteParam(
-            param.components[I],
-            param.sites[I],
-            each_split_model(param.n_sites,I),
-            param.i_sites[I],
-            param.flattenedsites,
-            param.n_flattenedsites[I],
-            param.i_flattenedsites[I],
-            param.sourcecsvs,
-            __split_site_translator(param.site_translator,I))
+function split_model(param::ClapeyronParam)
+    if is_splittable(param)
+        splitter = default_splitter(param)
+        return split_model(param,splitter)
+    else
+        throw(ArgumentError("$param is not splittable, try passing an explicit splitter argument to `split_model`"))
     end
-    return [generator(i) for i ∈ splitter]
 end
 
+function split_model(param::AbstractArray)
+    splitter = default_splitter(param)
+    return split_model(param,splitter)
+end
+
+function split_model(param::ClapeyronParam,splitter)
+    if is_splittable(param)
+        return [each_split_model(param,i) for i ∈ splitter]
+    else
+        return [fill(param,length(splitter)) for i ∈ splitter]
+    end
+end
+
+function split_model(param::AbstractArray,splitter)
+    @assert reduce(isequal,size(param),init = true)
+    return [each_split_model(param,i) for i ∈ splitter]
+end
+
+default_splitter(param::ClapeyronParam) = split_model(1:length(param.components))
+
+function default_splitter(param::AbstractArray) 
+    ([i] for i ∈ 1:size(param,1))
+end
 
 function split_model(Base.@nospecialize(params::EoSParam),splitter)
     T = typeof(params)
@@ -345,7 +339,7 @@ function recalculate_site_translator!(sites::Vector{SiteParam},idx_splitter)
         #the tuple is (ki,site_kia) where ki is the position of the group, and site_ki is the site number in GC based sites
         #DO NOT use the second number. if you really need it, store the original SiteParam instead.
         #the first number is used to reference the gc pair at an specific component, via get_group_idx
-        
+
         idxi = idx_splitter[i]
         resize!(bool_to_int,length(idxi))
         bool_to_int .= 0
@@ -367,7 +361,7 @@ function recalculate_site_translator!(sites::Vector{SiteParam},idx_splitter)
             end
             site_translator_i[l] = filter!(x -> !iszero(first(x)),si)
         end
-        
+
     end
 end
 #=
@@ -391,7 +385,7 @@ function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
         end
 
         allfields = Dict{Symbol,Any}()
-        
+
         M = typeof(model)
         allfieldnames = fieldnames(M)
 
