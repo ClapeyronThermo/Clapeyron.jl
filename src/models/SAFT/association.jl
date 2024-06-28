@@ -409,7 +409,7 @@ function assoc_matrix_x0!(K,X)
     if (iszero(K12) & iszero(K21)) | iszero(K11) | iszero(K22)
         #solve each association separately, if one of the diagonal association
         #submatrices is zero, then cross-association does not have any sense.
-        
+
         success = true
     else
         #general solution, takes longer to compile.
@@ -456,7 +456,7 @@ function assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::Abstract
         end
         X0 = Xsol
     end
-    
+
     if converged
         XX0 .= Xsol
         return XX0
@@ -496,10 +496,10 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
     X0,success = assoc_matrix_x0!(K,X0)
     success && return X0
     #static versions to improve speed
-    length(X0) == 3 && return assoc_matrix_solve_static(Val{3}(),K,X0, α, atol ,rtol, max_iters)
-    length(X0) == 4 && return assoc_matrix_solve_static(Val{4}(),K,X0, α, atol ,rtol, max_iters)
-    length(X0) == 5 && return assoc_matrix_solve_static(Val{5}(),K,X0, α, atol ,rtol, max_iters)
-    
+    length(X0) == 3 && return assoc_matrix_solve_static(Val{3}(), K, X0, α, atol ,rtol, max_iters)
+    length(X0) == 4 && return assoc_matrix_solve_static(Val{4}(), K, X0, α, atol ,rtol, max_iters)
+    length(X0) == 5 && return assoc_matrix_solve_static(Val{5}(), K, X0, α, atol ,rtol, max_iters)
+
     Xsol = Vector{T}(undef,n)
     Xsol .= X0
     #=
@@ -584,7 +584,7 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
             return Xsol
         end
     end
-    
+
     converged || (Xsol .= NaN)
     return Xsol
 end
