@@ -212,7 +212,7 @@ end
         #test for initialization when K suggests single phase but it could be solved supposing bubble or dew conditions.
         substances = ["water", "methanol", "propyleneglycol","methyloxirane"]
         pcp_system = PCPSAFT(substances)
-        Clapeyron.tp_flash2(pcp_system, 25_000.0, 300.15, [1.0, 1.0, 1.0, 1.0], RRTPFlash())[end] ≈ -8.900576759774916 rtol = 1e-6
+        @test Clapeyron.tp_flash2(pcp_system, 25_000.0, 300.15, [1.0, 1.0, 1.0, 1.0], RRTPFlash())[end] ≈ -8.900576759774916 rtol = 1e-6
     end
 
     if isdefined(Base,:get_extension)
