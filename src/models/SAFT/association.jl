@@ -456,30 +456,30 @@ function assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::Abstract
         end
         X0 = Xsol
     end
-
+    
     if converged
         XX0 .= Xsol
         return XX0
     end
-
     for i in (it_ss + 1):max_iters
         #@show Xsol
         KX = K*Xsol
-        H = -K - Diagonal(1 .+ KX ./ Xsol) #hessian
+        H = -K - Diagonal((1 .+ KX) ./ Xsol) #hessian
         g = 1 ./ Xsol .- 1 .- KX #gradient
         ΔX = H\g
         Xnewton = Xsol - ΔX
         Xss = 1 ./ (1 .+ KX)
-        XSol = ifelse.(0 .<= Xnewton .<= 1, Xnewton, Xss)
+        X0 = Xsol
+        Xsol = ifelse.(0 .<= Xnewton .<= 1, Xnewton, Xss)
         converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
         #@show converged,finite
         if converged
             if !finite
                 Xsol = NaN .* Xsol
             end
+            XX0 .= Xsol
             break
         end
-        X0 = Xsol
     end
 
     if !converged
@@ -536,61 +536,56 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
         f_ss!(Xsol,X0)
         converged,finite = Solvers.convergence(Xsol,X0,atol,rtol)
         if converged
-            if finite
-                return Xsol
-            else
-                Xsol .= NaN
-                return Xsol
-            end
+            finite || (Xsol .= NaN)
+            return Xsol
         end
         X0 .= Xsol
        # @show Xsol
+    end
+    if converged
+        !finite && (Xsol .= NaN)
+        return Xsol
     end
     H = Matrix{T}(undef,n,n)
     H .= 0
     piv = zeros(Int,n)
     F = Solvers.unsafe_LU!(H,piv)
-    if !converged #proceed to newton minimization
-        dX = copy(Xsol)
-        KX = copy(Xsol)
-        for i in (it_ss + 1):max_iters
-            #@show Xsol
-            KX = mul!(KX,K,Xsol)
-            H .= -K
-            for k in 1:size(H,1)
-                H[k,k] -= (1 + KX[k])/Xsol[k]
+    dX = copy(Xsol)
+    KX = copy(Xsol)
+    for i in (it_ss + 1):max_iters
+        #@show Xsol
+        KX = mul!(KX,K,Xsol)
+        H .= -K
+        for k in 1:size(H,1)
+            H[k,k] -= (1 + KX[k])/Xsol[k]
+        end
+        #F already contains H and the pivots, because we refreshed H, we need to refresh
+        #the factorization too.
+        F = Solvers.unsafe_LU!(F)
+        dX .= 1 ./ Xsol .- 1 .- KX #gradient
+        ldiv!(F,dX) #we solve H/g, overwriting g
+        X0 .= Xsol
+        for k in 1:length(dX)
+            Xk = Xsol[k]
+            dXk = dX[k]
+            X_newton = Xk - dXk
+            if !(0 <= X_newton <= 1)
+                Xsol[k] = 1/(1 + KX[k]) #successive substitution step
+            else
+                Xsol[k] = X_newton #newton step
             end
-            #F already contains H and the pivots, because we refreshed H, we need to refresh
-            #the factorization too.
-            F = Solvers.unsafe_LU!(F)
-            dX .= 1 ./ Xsol .- 1 .- KX #gradient
-            ldiv!(F,dX) #we solve H/g, overwriting g
-            for k in 1:length(dX)
-                Xk = Xsol[k]
-                dXk = dX[k]
-                X_newton = Xk - dXk
-                if !(0 <= X_newton <= 1)
-                    Xsol[k] = 1/(1 + KX[k]) #successive substitution step
-                else
-                    Xsol[k] = X_newton #newton step
-                end
-            end
-           # Xsol .-= dX
-
-            converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
-            #@show converged,finite
-            if converged
-                if !finite
-                    fill!(Xsol,NaN)
-                end
-                return Xsol
-            end
-            X0 .= Xsol
+        end
+        # Xsol .-= dX
+        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
+        #@show converged,finite
+        if converged
+            @show i
+            finite || (Xsol .= NaN)
+            return Xsol
         end
     end
-    if !converged
-        Xsol .= NaN
-    end
+    
+    converged || (Xsol .= NaN)
     return Xsol
 end
 
