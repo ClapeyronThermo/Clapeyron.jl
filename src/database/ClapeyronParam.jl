@@ -5,9 +5,18 @@ it has to be splittable (via [`split_model`](@ref)) and have a `components` fiel
 """
 abstract type ClapeyronParam end
 abstract type EoSParam end
-export EoSParam
+abstract type ParametricEoSParam{T} <: EoSParam end
+
+export EoSParam, ParametricEoSParam
 
 custom_show(param::EoSParam) = _custom_show_param(typeof(param))
+
+function build_parametric_param(param::T, args...) where T <: ParametricEoSParam
+    TT = Base.promote_eltype(args...)
+    paramtype = parameterless_type(param)
+    converted_params = map(x -> _convert_param(TT,x), args)
+    paramtype{TT}(converted_params...)
+end
 
 function _custom_show_param(::Type{T}) where T <: EoSParam
     types = fieldtypes(T)
@@ -35,6 +44,11 @@ end
 function build_eosparam(::Type{T},data) where T <: EoSParam
     names = fieldnames(T)
     return T((data[string(name)] for name in names)...)
+end
+
+function build_eosparam(::Type{T},data) where T <: ParametricEoSParam
+    names = fieldnames(T)
+    build_parametric_param(T, (data[string(name)] for name in names)...)
 end
 
 Base.eltype(p::EoSParam) = Float64
@@ -84,6 +98,31 @@ include("params/SiteParam.jl")
 include("params/AssocOptions.jl")
 include("params/SpecialComp.jl")
 include("params/ReferenceState.jl")
+
+
+function _convert_param(T::V,val) where V
+    return _convert_param(T,parameterless_type(val),val)
+end
+
+function _convert_param(T::V,val::SpecialComp) where V
+    return val
+end
+
+function _convert_param(T::V,val::ReferenceState) where V
+    return val
+end
+
+function _convert_param(T::V,::Type{SingleParam},val) where V
+    return convert(SingleParam{T},val)
+end
+
+function _convert_param(T::V,::Type{PairParam},val) where V
+    return convert(PairParam{T},val)
+end
+
+function _convert_param(T::V,::Type{AssocParam},val) where V
+    return convert(AssocParam{T},val)
+end
 
 
 const SingleOrPair = Union{<:SingleParameter,<:PairParameter}

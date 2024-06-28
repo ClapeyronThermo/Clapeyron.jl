@@ -8,16 +8,7 @@ struct PCSAFTParam{T} <: EoSParam
 end
 
 function PCSAFTParam(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
-    el(x) = eltype(x.values)
-    el(x::AssocParam) = eltype(x.values.values)
-    T = mapreduce(el,promote_type,(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol))
-    Mw = convert(SingleParam{T},Mw)
-    segment = convert(SingleParam{T},segment)
-    sigma = convert(PairParam{T},sigma)
-    epsilon = convert(PairParam{T},epsilon)
-    epsilon_assoc = convert(AssocParam{T},epsilon_assoc)
-    bondvol = convert(AssocParam{T},bondvol)
-    return PCSAFTParam{T}(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol) 
+    return build_parametric_param(PCSAFTParam,Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
 end
 
 Base.eltype(p::PCSAFTParam{T}) where T = T

@@ -1,4 +1,4 @@
-struct SAFTVRMieParam{T} <: EoSParam
+struct SAFTVRMieParam{T} <: ParametricEoSParam{T}
     Mw::SingleParam{T}
     segment::SingleParam{T}
     sigma::PairParam{T}
@@ -10,18 +10,7 @@ struct SAFTVRMieParam{T} <: EoSParam
 end
 
 function SAFTVRMieParam(Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol)
-    el(x) = eltype(x.values)
-    el(x::AssocParam) = eltype(x.values.values)
-    T = mapreduce(el,promote_type,(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol))
-    Mw = convert(SingleParam{T},Mw)
-    segment = convert(SingleParam{T},segment)
-    sigma = convert(PairParam{T},sigma)
-    epsilon = convert(PairParam{T},epsilon)
-    lambda_a = convert(PairParam{T},lambda_a)
-    lambda_r = convert(PairParam{T},lambda_r)
-    epsilon_assoc = convert(AssocParam{T},epsilon_assoc)
-    bondvol = convert(AssocParam{T},bondvol)
-    return SAFTVRMieParam{T}(Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol) 
+    return build_parametric_param(SAFTVRMieParam,Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol) 
 end
 
 Base.eltype(p::SAFTVRMieParam{T}) where T = T
