@@ -329,7 +329,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
         singlephase = false
-    elseif any(isnan,K)
+    elseif any(isnan,view(K,in_equilibria))
         singlephase = true
     end
     if singlephase
