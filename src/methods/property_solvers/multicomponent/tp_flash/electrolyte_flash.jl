@@ -93,30 +93,13 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         lnK = log.(K)
     end
     _1 = one(p+T+first(z))
-    K̃ = K.*exp.(Z) # K̃ = K.*exp.(Z.*ψ), ψ = 1
-    β,singlephase,_ = rachfordrice_β0(K̃,z)
-    #if singlephase == true, maybe initial K values overshoot the actual phase split.
-    if singlephase
-        @show "s"
-        Kmin,Kmax = extrema(K̃)
-        if !(Kmin >= 1 || Kmax <= 1)
-            #valid K, still single phase.
-            g0 = dot(z, K̃) - 1. #rachford rice, supposing β = 0
-            g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K̃)) #rachford rice, supposing β = 1
-            if g0 <= 0 && g1 < 0 #bubble point.
-                β = eps(typeof(β))
-                singlephase = false
-                ψ = rachfordrice_ψ0(K,z,Z,β,singlephase)
-            elseif g0 > 0 && g1 >= 0 #dew point
-                β = one(β) - eps(typeof(β))
-                singlephase = false
-                ψ = rachfordrice_ψ0(K,z,Z,β,singlephase)
-            end
-        end 
-    else
-        β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=one(β), non_inx=non_inx, non_iny=non_iny)
-    end
-    
+    # Initial guess for phase split
+    ψ = 0.
+    β,singlephase,_ = rachfordrice_β0(K.*exp.(Z.*ψ),z)
+    #=TODO:
+    there is a method used in TREND that tries to obtain adequate values of K
+    in the case of incorrect initialization.
+    =#
     # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
@@ -137,7 +120,9 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         it += 1
         itacc += 1
         lnK_old = lnK .* _1
-        x,y = update_rr!(K̃,β,z,x,y,non_inx,non_iny)
+        β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
+        singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
+        x,y = update_rr!(K.*exp.(Z.*ψ),β,z,x,y,non_inx,non_iny)
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β,inx,iny)
         vcache[] = (volx,voly)
@@ -166,9 +151,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
             end
         end
         K .= exp.(lnK)
-        β,ψ = rachfordrice(K, z, Z; β0=β, ψ0=ψ, non_inx=non_inx, non_iny=non_iny)
-        K̃ .= K.*exp.(Z.*ψ)
-        singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
+
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(lnK,lnK_old,1)
@@ -219,6 +202,8 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
         singlephase = false
+    elseif any(isnan,K) || isnan(ψ)
+        singlephase = true
     end
     if singlephase
         β = zero(β)/zero(β)
@@ -230,12 +215,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         x = index_expansion(x,z_nonzero)
         y = index_expansion(y,z_nonzero)
     end
-
-    if vx < vy #sort by increasing volume
-        return x, y, β, (vx, vy)    
-    else
-        return y, x, 1 - β, (vx, vy)
-    end
+    return x, y, β, (vx,vy)
 end
 
 function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx)
@@ -245,39 +225,17 @@ function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill
         function rachford_rice_donnan(F,x,K,z,Z)
             β = x[1]
             ψ = x[2]
-            F1 = @sum((z[i]*(1 -K[i]*exp(Z[i]*ψ)))/(1 + β*(K[i]*exp(Z[i]*ψ)-1)))
-            F2 = @sum((z[i]*Z[i]/(1 + β*(K[i]*exp(Z[i]*ψ) - 1))))
-            return SVector(F1,F2)
+            F[1] = sum((z.*(1 .-K.*exp.(Z*ψ)))./(1 .+β*(K.*exp.(Z*ψ).-1)))
+            F[2] = sum((z.*Z./(1 .+β*(K.*exp.(Z*ψ).-1))))
         end
         f!(F,x) = rachford_rice_donnan(F,x,K,z,Z)
-        results = Solvers.nlsolve(f!,SVector(β0,ψ0),TrustRegion(Newton(), Dogleg()))
+        results = Solvers.nlsolve(f!,[β0,ψ0],TrustRegion(Newton(), Dogleg()))
         sol = Clapeyron.Solvers.x_sol(results)
         β = sol[1]
         ψ = sol[2]
         return β, ψ
     else
         return β, ψ0
-    end
-end
-
-function rachfordrice_ψ0(K,z,Z,β,singlephase)
-    _0 = return zero(Base.promote_eltype(K,z,Z,β))
-    if singlephase
-        return zero(Base.promote_eltype(K,z,Z,β))
-    else
-        function f0(ψ)
-            if β < 0.5
-                return @sum((z[i]*(1 -K[i]*exp(Z[i]*ψ)))/(1 + β*(K[i]*exp(Z[i]*ψ)-1)))
-            else
-                @sum((z[i]*Z[i]/(1 + β*(K[i]*exp(Z[i]*ψ) - 1))))
-            end
-        end
-        try
-            prob = Roots.ZeroProblem(f0,(_0,one(_0)))
-            return Solvers.solve(prob, Roots.Bisection())
-        catch
-            return zero(Base.promote_eltype(K,z,Z,β))
-        end
     end
 end
 

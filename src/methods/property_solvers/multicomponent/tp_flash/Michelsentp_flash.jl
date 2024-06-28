@@ -329,6 +329,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
         singlephase = false
+    elseif any(isnan,K)
+        singlephase = true
     end
     if singlephase
         β = zero(β)/zero(β)
@@ -344,3 +346,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
 end
 
 export MichelsenTPFlash
+
+function test_assoc(model,V,T,z,x = @f(X).v)
+    K = @f(assoc_site_matrix)
+    return K*x .* x + x .- 1
+end
