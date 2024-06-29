@@ -197,10 +197,10 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         #if we can't predict K, we use lle
         if equilibrium == :unknown
             Kmin,Kmax = extrema(K)
-            
-            if Kmin >= 1 || Kmax <= 1 
+
+            if Kmin >= 1 || Kmax <= 1
                 K = K0_lle_init(model,p,T,z)
-            end 
+            end
         end
         lnK = log.(K)
        # volx,voly = NaN*_1,NaN*_1
@@ -211,7 +211,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     _1 = one(p+T+first(z))
     # Initial guess for phase split
     β,singlephase,_ = rachfordrice_β0(K,z)
-    
+
     #if singlephase == true, maybe initial K values overshoot the actual phase split.
     if singlephase
         Kmin,Kmax = extrema(K)
@@ -226,7 +226,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
                 β = one(β) - eps(typeof(β))
                 singlephase = false
             end
-        end 
+        end
     else
         β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
     end

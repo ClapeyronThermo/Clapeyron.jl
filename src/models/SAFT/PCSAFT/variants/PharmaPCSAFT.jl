@@ -21,7 +21,7 @@ function transform_params(::Type{pharmaPCSAFT},params,components)
     params["kT"] = get(params,"kT",PairParam("kT",components,zeros(length(components))))
     water = SpecialComp(components,["water08"])
     params["water"] = water
-    
+
     if water[] != 0
         assoc = params["assoc_options"]
         if assoc.combining ∈ (:esd,:elliott)
@@ -93,7 +93,7 @@ function lb_volume(model::pharmaPCSAFTModel, z = SA[1.0])
     seg = model.params.segment.values
     σ = deepcopy(model.params.sigma.values)
     k = water08_k(model)
-    if k > 0 
+    if k > 0
         σ[k,k] += Δσh20(298.15)
     end
     val = π/6*N_A*sum(z[i]*seg[i]*σ[i,i]^3 for i in 1:length(z))
@@ -160,7 +160,7 @@ function m2ϵσ3(model::pharmaPCSAFTModel, V, T, z)
     #return ∑(z[i]*z[j]*m[i]*m[j] * (ϵ[i,j]*(1)/T)^n * σ[i,j]^3 for i ∈ @comps, j ∈ @comps)/(sum(z)^2)
 end
 
-function Δ(model::pharmaPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))    
+function Δ(model::pharmaPCSAFTModel, V, T, z, i, j, a, b,_data=@f(data))
     _0 = zero(V+T+first(z))
     ϵ_assoc = model.params.epsilon_assoc.values
     κ = model.params.bondvol.values
