@@ -579,7 +579,6 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
         converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
         #@show converged,finite
         if converged
-            @show i
             finite || (Xsol .= NaN)
             return Xsol
         end
