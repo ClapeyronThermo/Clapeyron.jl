@@ -4,6 +4,10 @@ function each_split_model(param::AbstractVector,I)
     return val
 end
 
+function each_split_model(param::UnitRange{Int},I)
+    return 1:length(I)
+end
+
 function each_split_model(param::ReferenceState,I)
     sym = param.std_type
     if length(param.a1) == 0
