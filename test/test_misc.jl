@@ -49,7 +49,7 @@ end
 
         #splitting parameters
         @test split_model(model2.params.segment)[1][1] == model2.params.segment[1]
-        @test split_model(model2.params.sigma)[1][1,1] == model2.params.segment[1,1]
+        @test split_model(model2.params.sigma)[1][1,1] == model2.params.sigma[1,1]
 
         #from notebooks, #173
         nb_test = SAFTgammaMie(["methane","nitrogen","carbon dioxide","ethane","propane","butane","isobutane",
