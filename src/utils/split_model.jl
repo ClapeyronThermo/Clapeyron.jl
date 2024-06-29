@@ -279,7 +279,8 @@ function split_model(param::ClapeyronParam,splitter)
 end
 
 function split_model(param::AbstractArray,splitter)
-    @assert reduce(isequal,size(param),init = true)
+    s = size(param)
+    length(s) > 1 && (@assert reduce(isequal,s))  
     return [each_split_model(param,i) for i ∈ splitter]
 end
 
