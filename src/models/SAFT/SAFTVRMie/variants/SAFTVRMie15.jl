@@ -67,41 +67,30 @@ function x0_volume_liquid(model::SAFTVRMie15Model,T,z)
     return v_lb*1.7
 end
 
-function IMie(model::SAFTVRMie15Model, V, T, z,Tr,λr,_data = @f(data))
+function I(model::SAFTVRMie15Model, V, T, z,i, j,_data = @f(data))
     _d,ρS,ζi,_ζ_X,_ζst,σ3_x = _data
+    ϵ = model.params.epsilon.values[i,j]
+    Tr = T/ϵ
+    λr = model.params.lambda_r.values[i,j]
     res = zero(_ζst)
     ρr = ρS*σ3_x
+    b = SAFTVRMie15consts.b
     @inbounds for n ∈ 0:10
         ρrn = ρr^n
         res_m = zero(res)
         for m ∈ 0:(10-n)
-            res_m += aMie(λr,n,m)*Tr^m
+            Trm = Tr^m
+            λrk = one(res_m)
+            a_mie = zero(res_m)
+            for k in 0:6
+                a_mie += b[k+1][n+1,m+1]*λrk
+                λrk *= λr
+            end
+            res_m += a_mie*Tr^m
         end
         res += res_m*ρrn
     end
     return res
-end
-
-function aMie(λr,n,m)
-    b = SAFTVRMie15consts.b
-    a = 0
-    λrk = 1
-    for k in 0:6
-        a += b[k+1][n+1,m+1]*λrk
-        λrk *= λr
-    end
-    return a
-end
-
-function Δ(model::SAFTVRMie15Model, V, T, z, i, j, a, b,_data = @f(data))
-    ϵ = model.params.epsilon
-    λr = model.params.lambda_r
-    Tr = T/ϵ[i,j]
-    _I = @f(IMie,Tr,λr[i,j],_data)
-    ϵ_assoc = model.params.epsilon_assoc.values
-    K = model.params.bondvol.values
-    F = expm1(ϵ_assoc[i,j][a,b]/T)
-    return F*K[i,j][a,b]*_I
 end
 
 const SAFTVRMie15consts = (

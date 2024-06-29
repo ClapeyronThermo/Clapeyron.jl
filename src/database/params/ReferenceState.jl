@@ -77,6 +77,8 @@ __init_reference_state_kw(::Nothing) = ReferenceState()
 __init_reference_state_kw(s::Symbol) = ReferenceState(s)
 __init_reference_state_kw(ref::ReferenceState) = deepcopy(ref)
 
+#for compatibility in parametric params.
+Base.eltype(ref::ReferenceState) = Float64
 #by default, the reference state is stored in the idealmodel params. unwrap until
 #reaching that
 """

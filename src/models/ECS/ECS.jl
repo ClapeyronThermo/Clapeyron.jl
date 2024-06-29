@@ -176,8 +176,8 @@ function x0_sat_pure(model::ECS,T)
     return (v0l*h,v0v*h) 
 end
 
-function split_model(model::ECS,subset=nothing)
-    shape_model_vec = split_model(model.shape_model,subset)
+function split_model(model::ECS,splitter)
+    shape_model_vec = split_model(model.shape_model,splitter)
     shape_ref,model_ref = model.shape_ref, model.model_ref
     return [ECS(shape_modeli,shape_ref,model_ref) for shape_modeli in shape_model_vec]
 end

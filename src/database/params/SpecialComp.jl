@@ -17,11 +17,6 @@ function SpecialComp(components::Vector{String},defaults=["water08"])
     return SpecialComp(components,idx,defaults)
 end
 
-function split_model(param::SpecialComp,
-    splitter = split_model(1:length(param.components)))
-    return [each_split_model(param,i) for i ∈ splitter]
-end
-
 function each_split_model(param::SpecialComp,I)
     components = param.components[I]
     defaults = param.defaults
@@ -31,4 +26,5 @@ function each_split_model(param::SpecialComp,I)
 end
 
 Base.getindex(model::SpecialComp) = model.idx
-
+#for compatibility with parametric eos param:
+Base.eltype(model::SpecialComp) = Bool

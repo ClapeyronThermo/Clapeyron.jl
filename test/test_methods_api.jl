@@ -208,6 +208,11 @@ end
     @testset "RR Algorithm" begin
         method = RRTPFlash()
         @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.539976318817461 rtol = 1e-6
+    
+        #test for initialization when K suggests single phase but it could be solved supposing bubble or dew conditions.
+        substances = ["water", "methanol", "propyleneglycol","methyloxirane"]
+        pcp_system = PCPSAFT(substances)
+        @test Clapeyron.tp_flash2(pcp_system, 25_000.0, 300.15, [1.0, 1.0, 1.0, 1.0], RRTPFlash())[end] ≈ -8.900576759774916 rtol = 1e-6
     end
 
     if isdefined(Base,:get_extension)
@@ -241,10 +246,10 @@ end
         method = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium= :lle)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method)[3] ≈ -7.577270350886795 rtol = 1e-6
 
-        method2 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 1, second_order = false)
+        method2 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 4, second_order = false)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method2)[3] ≈ -7.577270350886795 rtol = 1e-6
 
-        method3 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 1,second_order = true)
+        method3 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 4,second_order = true)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method3)[3] ≈ -7.577270350886795 rtol = 1e-6
     end
     GC.gc()

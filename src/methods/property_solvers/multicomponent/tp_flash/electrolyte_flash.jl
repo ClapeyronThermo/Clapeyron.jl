@@ -202,6 +202,8 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
         singlephase = false
+    elseif any(isnan,view(K,in_equilibria)) || isnan(ψ)
+        singlephase = true
     end
     if singlephase
         β = zero(β)/zero(β)
@@ -213,12 +215,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         x = index_expansion(x,z_nonzero)
         y = index_expansion(y,z_nonzero)
     end
-
-    if vx < vy #sort by increasing volume
-        return x, y, β, (vx, vy)    
-    else
-        return y, x, 1 - β, (vx, vy)
-    end
+    return x, y, β, (vx,vy)
 end
 
 function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx)

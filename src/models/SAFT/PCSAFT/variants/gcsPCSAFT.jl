@@ -154,6 +154,9 @@ function a_res(model::gcsPCSAFTModel,V,T,z)
     return a_res(model.pcsaftmodel,V,T,z)
 end
 
+assoc_shape(model::gcsPCSAFTModel) = assoc_shape(model.pcsaftmodel)
+getsites(model::gcsPCSAFTModel) = getsites(model.pcsaftmodel)
+
 function lb_volume(model::gcsPCSAFTModel, z = SA[1.0])
     return lb_volume(model.pcsaftmodel, z)
 end

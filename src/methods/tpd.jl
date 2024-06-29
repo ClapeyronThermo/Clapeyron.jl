@@ -276,7 +276,7 @@ end
 function _tpd_fz_and_v!(solver::TPDKSolver,fxy,model,p,T,w,v0,liquid_overpressure = false,phase = :l)
     v = volume(model,p,T,w,phase = phase,vol0 = v0)
     if isnan(v) && liquid_overpressure && is_liquid(phase)
-        #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the 
+        #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the
         #specified conditions. try elevating the pressure at the first iter.
         v = volume(model,1.2p,T,w,phase = phase)
     end
@@ -287,7 +287,7 @@ end
 function _tpd_fz_and_v!(solver::TPDPureSolver,fxy,model,p,T,w,v0,liquid_overpressure = false,phase = :l)
     lnϕw,v = lnϕ!(fxy,model,p,T,w,phase = phase,vol0 = v0)
     if isnan(v) && liquid_overpressure && is_liquid(phase)
-        #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the 
+        #michelsen recomendation: when doing tpd, sometimes, the liquid cannot be created at the
         #specified conditions. try elevating the pressure at the first iter.
         lnϕw,v = lnϕ!(fxy,model,1.2p,T,w,phase = phase)
     end
@@ -492,7 +492,7 @@ function tpd_input_composition(model,p,T,z,di,lle)
     if di == nothing
         vl = volume(model,p,T,z,phase = :l)
         vv = volume(model,p,T,z,phase = :v)
-        
+
         if lle
             v = vl
             if vl ≈ vv
@@ -635,27 +635,6 @@ function suggest_K(model,p,T,z,pure = split_model(model))
     return K
 end
 
-function K0_lle_init_cache(model::EoSModel,p,T)
-    pure = split_model(model)
-    μ_pure = gibbs_free_energy.(pure, p, T)
-    return μ_pure
-end
-
-function K0_lle_init_cache(model::ActivityModel,p,T)
-    return zeros(length(model))
-end
-
-function K0_lle_act_coefficient(model::EoSModel,p,T,z,μ_pure)
-    μ_pure = K0_lle_init_cache(model::EoSModel,p,T)
-    μ_mixt = chemical_potential(model, p, T, z)
-    R̄ = Rgas(model)
-    return exp.((μ_mixt .- μ_pure) ./ R̄ ./ T) ./z
-end
-
-function K0_lle_act_coefficient(model::ActivityModel,p,T,z,μ_pure)
-    return activity_coefficient(model,p,T,z)
-end
-
 function K0_lle_init(model::EoSModel, p, T, z)
     comps,tpds,_,_ = tpd(model,p,T,z,lle = true, strategy = :pure, break_first = true)
     if length(comps) == 1
@@ -669,9 +648,52 @@ function K0_lle_init(model::EoSModel, p, T, z)
         w2 ./= sum(w2)
         K = w ./ w2
     else
-        K = ones(eltype(eltype(comps)),length(z)) 
+        K = ones(eltype(eltype(comps)),length(z))
     end
     return K
+end
+
+
+"""
+
+
+"""
+function double_tangency_points(model,p,T,z)
+    idx = Vector{Int}[]
+    n = length(model)
+    for i in 1:n
+        for j in i+1:n
+            push!(idx,[i,j])
+        end
+    end
+    binaries =  split_model(model,idx)
+    V = p
+    F = @f(Base.promote_eltype)
+    comps = Vector{F}[]
+    ijpairs = Tuple{Int,Int}[]
+    cache = tpd_cache(binaries[1],p,T,[0.5,0.5])
+    zij = zeros(F,2)
+    phasez = Symbol[]
+    phasew = Symbol[]
+    for (ij,modelij) in pairs(binaries)
+        ij_pair = idx[ij]
+        ijt = (ij_pair[1],ij_pair[2])
+        ij1,ij2 = ijt
+        zij[1] = z[ij1]
+        zij[2] = z[ij2]
+        zij ./= sum(zij)
+        
+        compsij,_,phasezij,phasewij = tpd(modelij,p,T,zij,cache,strategy = :pure,break_first = true)
+        if length(compsij) != 0
+            append!(comps,compsij)
+            for i in 1:length(compsij)
+                push!(phasez,phasezij[1])
+                push!(phasew,phasewij[1])
+                push!(ijpairs,ijt)
+            end
+        end
+    end
+    return comps,ijpairs,phasez,phasew
 end
 
 export tpd
