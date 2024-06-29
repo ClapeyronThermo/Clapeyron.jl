@@ -260,39 +260,45 @@ is_splittable(::Symbol) = false
 is_splittable(::Tuple) = false
 
 
-function split_model(param::ClapeyronParam)
+function split_model(param)
     if is_splittable(param)
         splitter = default_splitter(param)
         return split_model(param,splitter)
     else
-        throw(ArgumentError("$param is not splittable, try passing an explicit splitter argument to `split_model`"))
+        throw(ArgumentError("$param is not splittable, try passing an explicit splitter argument (`split_model(value,splitter)`)"))
     end
 end
 
-function split_model(param::AbstractArray)
-    splitter = default_splitter(param)
-    return split_model(param,splitter)
-end
 
 function split_model(param::ClapeyronParam,splitter)
     if is_splittable(param)
         return [each_split_model(param,i) for i ∈ splitter]
     else
-        return [fill(param,length(splitter)) for i ∈ splitter]
+        return [fill(param,length(i)) for i ∈ splitter]
     end
 end
 
 function split_model(param::AbstractArray,splitter)
     s = size(param)
-    length(s) > 1 && (@assert reduce(isequal,s))  
+    length(s) > 1 && (@assert reduce(isequal,s))
     return [each_split_model(param,i) for i ∈ splitter]
 end
 
-default_splitter(param::ClapeyronParam) = split_model(1:length(param.components))
-
-function default_splitter(param::AbstractArray) 
-    ([i] for i ∈ 1:size(param,1))
+for T in (:Symbol,:Tuple,:AbstractString,:Number,:Missing,:Nothing)
+    @eval split_model(param::$T,splitter) = [fill(param,length(i)) for i ∈ splitter]
 end
+
+function _n_splitter(n)
+    r = Vector{UnitRange{Int64}}(undef,n)
+    for i in 1:n
+        r[i] = i:i
+    end
+    return r
+end
+
+default_splitter(param::ClapeyronParam) = _n_splitter(length(param.components))
+default_splitter(param::EoSModel) = _n_splitter(length(param.components))
+default_splitter(param::AbstractArray) = _n_splitter(size(param,1))
 
 function split_model(Base.@nospecialize(params::EoSParam),splitter)
     T = typeof(params)
@@ -366,38 +372,24 @@ function recalculate_site_translator!(sites::Vector{SiteParam},idx_splitter)
             end
             site_translator_i[l] = filter!(x -> !iszero(first(x)),si)
         end
-
     end
 end
 #=
 Start of EoSModel split_model functions
 =#
-split_model(model::EoSModel,subset=nothing) = auto_split_model(model,subset)
+split_model(model::EoSModel,splitter) = auto_split_model(model,splitter)
 
-function auto_split_model(Base.@nospecialize(model::EoSModel),subset=nothing)
-
+function auto_split_model(Base.@nospecialize(model::EoSModel),subset)
     try
-
-        model_splittable = is_splittable(model)
-
-        if !model_splittable
-            if subset !== nothing
-                len = length(subset)
-                return fill(model,len)
-            else
-                throw(ArgumentError("Invalid type of subset. a non-splittable model needs to specify the splitter (split_model(model,splitter))"))
-            end
-        end
-
         allfields = Dict{Symbol,Any}()
 
         M = typeof(model)
         allfieldnames = fieldnames(M)
 
         if subset === nothing
-            splitter = [[i] for i in 1:length(model.components)]
+            splitter = _n_splitter(length(model.components))
         elseif eltype(subset) <: Integer
-            splitter = [[Int(i)] for i in subset]
+            splitter = [Int(i):Int(i) for i in subset]
         elseif eltype(subset) <: AbstractVector
             splitter = subset
         else
