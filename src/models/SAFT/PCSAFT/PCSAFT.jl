@@ -231,7 +231,7 @@ const PCSAFTconsts = (
 )
 
 #= 
-Especific PCSAFT optimizations
+Specific PCSAFT optimizations
 This code is not generic, in the sense that is only used by PCSAFT and not any model <:PCSAFTModel
 but, because it is one of the more commonly used EoS,
 It can have some specific optimizations to make it faster.

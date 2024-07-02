@@ -778,17 +778,17 @@ function _add_phases!(model,p,T,z,result,cache,options)
             w,vw = comps[jj],volumes[jj]
 
             #identify phase if not done
-            if phases_comps[jj] == :unknown && idx_vapour == 0
+            if is_unknown(phases_comps[jj]) && idx_vapour == 0
                 phases_comps[jj] = VT_identify_phase(model,vw,T,w)
             end
-
+            
             phase_w = phases_comps[jj]
             if is_vapour(phase_w) && idx_vapour[] == 0 #we identified the vapour phase
                 _idx_vapour[] = ii
             end
 
             y,vy = found_tpd[ii],found_tpd_volumes[ii]
-            if phases_tpd[ii] == :unknown
+            if is_unknown(phases_tpd[ii])
                 phases_tpd[ii] = VT_identify_phase(model,vy,T,y)
             end
             phase_y = phases_tpd[ii]

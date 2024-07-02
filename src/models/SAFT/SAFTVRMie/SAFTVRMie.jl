@@ -178,7 +178,7 @@ function vr_mie_d_integral(θ,λa,λr)
             lnx = log(x)
             return exp(-θ*(exp(-λr*lnx)-exp(-λa*lnx)))
         end
-        return  Solvers.integral10(f_legendre,j,one(j))
+        return Solvers.integral10(f_legendre,j,one(j))
     end
 end
 
