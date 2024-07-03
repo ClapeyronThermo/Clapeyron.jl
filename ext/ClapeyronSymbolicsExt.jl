@@ -142,9 +142,9 @@ const SymZ = Union{AbstractVector{Num},Symbolics.SymArray,Num,SymbolicUtils.Symb
 const RealZ = Union{AbstractVector{<:Real},Real}
 
 @register_symbolic Clapeyron._volume(model::EoSModel,p,T,arr::AbstractVector,
-                                     sym::Symbol,bool::Bool,x::Union{Real,Nothing})
+                                     sym::Union{String,Symbol},bool::Bool,x::Union{Real,Nothing})
 @register_symbolic Clapeyron._volume(model::EoSModel,p,T,arr::Symbolics.Arr{Num,1},
-                                     sym::Symbol,bool::Bool,x::Union{Real,Nothing})
+                                     sym::Union{String,Symbol},bool::Bool,x::Union{Real,Nothing})
 #@register_symbolic Clapeyron._volume(model::EoSModel,p,T,z::Symbolics.Arr{Num,1},phase::Symbol,threaded::Bool,vol0::Union{Real,Nothing}) false
 #@register_symbolic Clapeyron._volume(model::EoSModel,p,T,z::AbstractVector,phase::Symbol,threaded::Bool,vol0::Union{Real,Nothing}) false
 @register_symbolic Clapeyron.eos(model::EoSModel,p,T,z::AbstractVector) false
