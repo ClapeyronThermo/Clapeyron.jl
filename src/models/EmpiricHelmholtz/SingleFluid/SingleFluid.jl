@@ -235,11 +235,11 @@ mw(model::SingleFluid) = SA[model.properties.Mw]
 
 molecular_weight(model::SingleFluid,z = @SVector [1.]) = model.properties.Mw*0.001
 
-T_scale(model::SingleFluid,z=SA[1.0]) = model.properties.Tc
+T_scale(model::SingleFluid,z) = model.properties.Tc
 
-p_scale(model::SingleFluid,z=SA[1.0]) = model.properties.Pc
+p_scale(model::SingleFluid,z) = model.properties.Pc
 
-lb_volume(model::SingleFluid,z=SA[1.0]) = model.properties.lb_volume #finally, an eos model that mentions it max density.
+lb_volume(model::SingleFluid,z) = model.properties.lb_volume #finally, an eos model that mentions it max density.
 
 Base.length(::SingleFluid) = 1
 

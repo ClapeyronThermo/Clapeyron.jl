@@ -28,7 +28,7 @@ function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=
     nan = primalval(_nan)
     logV0 = primalval(log(V0)*_1)
     z = primalval(_z)
-    log_lb_v = log(primalval(lb_volume(model,z)))
+    log_lb_v = log(primalval(lb_volume(model,T,z)))
     function logstep(logVᵢ::TT) where TT
         logVᵢ < log_lb_v && return TT(zero(logVᵢ)/zero(logVᵢ))
         Vᵢ = exp(logVᵢ)

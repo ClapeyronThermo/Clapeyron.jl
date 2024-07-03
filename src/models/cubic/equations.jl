@@ -181,7 +181,7 @@ function second_virial_coefficient_impl(model::ABCubicModel,T,z = SA[1.0])
     return b-a/(R̄*T)
 end
 
-function lb_volume(model::CubicModel, z=SA[1.0])
+function lb_volume(model::CubicModel, z)
     V = 1e-5
     T = 0.0
     n = sum(z)
@@ -193,7 +193,7 @@ function lb_volume(model::CubicModel, z=SA[1.0])
     return b̄ - c̄
 end
 #dont use αa, just a, to avoid temperature dependence
-function T_scale(model::CubicModel, z=SA[1.0])
+function T_scale(model::CubicModel, z)
     n = sum(z)
     invn2 = one(n) / (n * n)
     _Tc = model.params.Tc.values
@@ -201,7 +201,7 @@ function T_scale(model::CubicModel, z=SA[1.0])
     return Tc
 end
 
-function p_scale(model::CubicModel, z=SA[1.0])
+function p_scale(model::CubicModel, z)
     n = sum(z)
     invn2 = one(n) / (n * n)
     _pc = model.params.Pc.values
@@ -232,7 +232,7 @@ function crit_pure_tp(model::ABCCubicModel)
 end
 
 function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0=nothing)
-    lb_v = lb_volume(model,z)
+    lb_v = lb_volume(model,T,z)
     if iszero(p)
         vl,_ = zero_pressure_impl(model,T,z)
         return vl

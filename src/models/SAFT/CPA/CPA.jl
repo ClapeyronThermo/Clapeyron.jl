@@ -166,10 +166,10 @@ function recombine_impl!(model::CPAModel)
     return model
 end
 
-lb_volume(model::CPAModel,z = SA[1.0]) = lb_volume(model.cubicmodel,z)
-T_scale(model::CPAModel,z=SA[1.0]) = T_scale(model.cubicmodel,z)
+lb_volume(model::CPAModel,z) = lb_volume(model.cubicmodel,z)
+T_scale(model::CPAModel,z) = T_scale(model.cubicmodel,z)
 
-function p_scale(model::CPAModel,z=SA[1.0])
+function p_scale(model::CPAModel,z)
     #does not depend on Pc, so it can be made optional on CPA input
     b = model.cubicmodel.params.b.values
     a = model.cubicmodel.params.a.values

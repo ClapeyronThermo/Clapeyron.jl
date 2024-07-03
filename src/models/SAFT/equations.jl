@@ -60,7 +60,7 @@ function saft_lorentz_berthelot(params)
     return params
 end
 
-function T_scale(model::SAFTModel,z=SA[1.0])
+function T_scale(model::SAFTModel,z)
     ϵ = model.params.epsilon.values
     return prod(ϵ[i,i]^z[i] for i in 1:length(z))^(1/sum(z))
 end
@@ -69,7 +69,7 @@ function T_scales(model::SAFTModel)
     ϵ =diagvalues(model.params.epsilon)
 end
 
-function p_scale(model::SAFTModel,z=SA[1.0])
+function p_scale(model::SAFTModel,z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
     val = sum(z[i]*σ[i,i]^3/ϵ[i,i] for i in 1:length(z))*N_A/R̄

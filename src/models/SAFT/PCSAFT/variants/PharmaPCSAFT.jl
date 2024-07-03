@@ -89,14 +89,24 @@ function x0_volume_liquid(model::pharmaPCSAFTModel, T,z=SA[1.])
     return lb_volume(model,z)*1.7
 end
 
-function lb_volume(model::pharmaPCSAFTModel, z = SA[1.0])
+lb_volume(model::pharmaPCSAFTModel, z) = lb_volume(model,298.15,z)
+
+
+function lb_volume(model::pharmaPCSAFTModel,T, z)
     seg = model.params.segment.values
-    σ = deepcopy(model.params.sigma.values)
+    σ = model.params.sigma.values
     k = water08_k(model)
     if k > 0
-        σ[k,k] += Δσh20(298.15)
+        Δσ = Δσh20(T)
+    else
+        Δσ = zero(T)
     end
-    val = π/6*N_A*sum(z[i]*seg[i]*σ[i,i]^3 for i in 1:length(z))
+    val = zero(Base.promote_eltype(model,T,z))
+    for i in @comps
+        σi = σ[i,i] + (k==i)*Δσ
+        val += z[i]*seg[i]*σi*σi*σi
+    end
+    lb_v =  π/6*N_A*val
     return val
 end
 

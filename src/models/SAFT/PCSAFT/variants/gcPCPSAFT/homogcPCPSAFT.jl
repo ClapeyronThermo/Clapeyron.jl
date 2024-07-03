@@ -167,11 +167,11 @@ end
 assoc_shape(model::HomogcPCPSAFTModel) = assoc_shape(model.ppcmodel)
 getsites(model::HomogcPCPSAFTModel) = getsites(model.ppcmodel)
 
-function lb_volume(model::HomogcPCPSAFTModel, z = SA[1.0])
+function lb_volume(model::HomogcPCPSAFTModel, z)
     return lb_volume(model.ppcmodel, z)
 end
 
-function T_scale(model::HomogcPCPSAFTModel,z=SA[1.0])
+function T_scale(model::HomogcPCPSAFTModel,z)
     return T_scale(model.ppcmodel,z)
 end
 
@@ -179,7 +179,7 @@ function T_scales(model::HomogcPCPSAFTModel)
     return T_scales(model.ppcmodel)
 end
 
-function p_scale(model::HomogcPCPSAFTModel,z=SA[1.0])
+function p_scale(model::HomogcPCPSAFTModel,z)
     return p_scale(model.ppcmodel,z)
 end
 

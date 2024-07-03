@@ -134,7 +134,7 @@ function PTV(components;
     a = PairParam("a",formatted_components,zeros(length(Tc)))
     b = PairParam("b",formatted_components,zeros(length(Tc)))
     c = PairParam("c",formatted_components,zeros(length(Tc)))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = PTVParam(a,b,c,Tc,pc,Vc,Mw)

@@ -139,10 +139,16 @@ function Base.show(io::IO,model::ECS)
     print(io,string(typeof(model)),model.shape_model.components)
 end
 
-function lb_volume(model::ECS,z=SA[1.0])
+function lb_volume(model::ECS,z)
     lb_v0 = lb_volume(model.model_ref,z)
     T0 = T_scale(model.model_ref)
     f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
+    return lb_v0*h
+end
+
+function x0_volume(model::ECS,T,z)
+    lb_v0 = lb_volume(model.model_ref,T,z)
+    f,h = shape_factors(model,lb_v0,T,z)
     return lb_v0*h
 end
 
@@ -153,14 +159,14 @@ function x0_volume_liquid(model::ECS,T,z=SA[1.0])
     return v0l*h
 end
 
-function T_scale(model::ECS,z=SA[1.0])
+function T_scale(model::ECS,z)
     lb_v0 = lb_volume(model.model_ref)
     T0 = T_scale(model.model_ref)
     f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
     return T0*f
 end
 
-function p_scale(model::ECS,z=SA[1.0])
+function p_scale(model::ECS,z)
      lb_v0 = lb_volume(model.model_ref)
      T0 = T_scale(model.model_ref)
      p0 = p_scale(model.model_ref)
@@ -195,8 +201,8 @@ function shape_factors(model::ECS,shape_ref::EoSModel,V,T,z=SA[1.0])
     n = sum(z)
     shape_ref = model.shape_ref
     RT = R̄*T
-    b = lb_volume(model.shape_model,z)
-    b0 = lb_volume(shape_ref)
+    b = lb_volume(model.shape_model,T,z)
+    b0 = lb_volume(shape_ref,T,SA[1.0])
     n = sum(z)
     v = V/n
     B = second_virial_coefficient(model.shape_model,T,z)

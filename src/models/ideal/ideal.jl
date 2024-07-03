@@ -39,6 +39,6 @@ function VT_gibbs_free_energy(model::IdealModel, V, T, z=SA[1.])
     return A - V*∂A∂V
 end
 
-lb_volume(model::IdealModel,z=SA[1.0]) = zero(eltype(z))
+lb_volume(model::IdealModel,z) = zero(eltype(z))
 
 idealmodel(model::IdealModel) = nothing

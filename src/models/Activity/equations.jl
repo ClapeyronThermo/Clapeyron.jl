@@ -91,17 +91,23 @@ function gibbs_solvation(model::ActivityModel,T)
     return gibbs_solvation(__act_to_gammaphi(model,gibbs_solvation),T)
 end
 
-function lb_volume(model::ActivityModel,z = SA[1.0])
+function lb_volume(model::ActivityModel,z)
     b = sum(lb_volume(model.puremodel[i])*z[i] for i in @comps)
     return b
 end
 
-function T_scale(model::ActivityModel,z=SA[1.0])
+function lb_volume(model::ActivityModel,T,z)
+    b = sum(lb_volume(model.puremodel[i],T,SA[1.0])*z[i] for i in @comps)
+    return b
+end
+
+function T_scale(model::ActivityModel,z)
     prod(T_scale(model.puremodel[i])^1/z[i] for i in @comps)^(sum(z))
 end
 
-function p_scale(model::ActivityModel,z=SA[1.0])
-    0.33*R̄*T_scale(model,z)/lb_volume(model,z)
+function p_scale(model::ActivityModel,z)
+    T = T_scale(model,z)
+    0.33*R̄*T/lb_volume(model,T,z)
 end
 
 function x0_volume_liquid(model::ActivityModel,T,z)
