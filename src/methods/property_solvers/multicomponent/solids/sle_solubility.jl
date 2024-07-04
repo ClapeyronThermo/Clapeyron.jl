@@ -59,6 +59,7 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
         μsol[1] += lnKref*Rgas()*T
         # println(idx_solv)
         # println(idx_sol_l)
+        println(μsol)
 
 
         
@@ -88,7 +89,7 @@ function obj_sle_solubility(F,model,p,T,zsolv,solu,data,ν_l)
     z[idx_solv] .= zsolv
     R = Rgas(model.fluid)
     ∑z = sum(z)
-    γliq = activity_coefficient(model.fluid,p,T,z)
+    γliq = activity_coefficient(model.fluid,p,T,z/∑z)
     γl = @view(γliq[idx_sol_l])
     zl = @view(z[idx_sol_l])
     μliq = zero(eltype(γliq))
