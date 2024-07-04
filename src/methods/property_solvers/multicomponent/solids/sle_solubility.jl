@@ -59,7 +59,6 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
         μsol[1] += lnKref*Rgas()*T
         # println(idx_solv)
         # println(idx_sol_l)
-        println(μsol)
 
 
         
