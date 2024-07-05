@@ -51,8 +51,7 @@ function x0_volume(model, p, T, z = SA[1.0]; phase = :unknown)
 end
 
 function x0_volume_impl(model, p, T, z = SA[1.0], phase = :unknown)
-    phase = Symbol(phase)
-    if is_unknown(equilibrium) || is_liquid(phase)
+    if is_unknown(phase) || is_liquid(phase)
         return x0_volume_liquid(model,p,T,z)
     elseif is_vapour(phase)
         return x0_volume_gas(model,p,T,z)
