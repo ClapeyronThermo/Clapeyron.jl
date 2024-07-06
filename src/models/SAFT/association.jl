@@ -404,17 +404,22 @@ function assoc_matrix_x0!(K,X)
     K21 = @view(K[3:4,1:2])
     K22 = @view(K[3:4,3:4])
 
-    X_exact2!(K11,@view(X[1:2]))
-    X_exact2!(K22,@view(X[3:4]))
+    
     if (iszero(K12) & iszero(K21)) | iszero(K11) | iszero(K22)
         #solve each association separately, if one of the diagonal association
         #submatrices is zero, then cross-association does not have any sense.
-
+        X_exact2!(K11,@view(X[1:2]))
+        X_exact2!(K22,@view(X[3:4]))
         success = true
-    else
+    elseif (K11[1,2] == K11[2,1]) & (K22[1,2] == K22[2,1])
+        
+        success = false
+    else 
         #general solution, takes longer to compile.
         #_,success = X_exact4!(K,X)
         #success || X_exact2!(K22,@view(X[3:4]))
+        X_exact2!(K11,@view(X[1:2]))
+        X_exact2!(K22,@view(X[3:4]))
         success = false
     end
     init = true
