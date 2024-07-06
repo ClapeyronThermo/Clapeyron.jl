@@ -66,7 +66,7 @@ function x0_volume_liquid(model::SAFTVRMie15Model,T,z)
     v_lb = lb_volume(model,z)
     return v_lb*1.7
 end
-
+#=
 function I(model::SAFTVRMie15Model, V, T, z,i, j,_data = @f(data))
     _d,ρS,ζi,_ζ_X,_ζst,σ3_x = _data
     ϵ = model.params.epsilon.values[i,j]
@@ -89,6 +89,34 @@ function I(model::SAFTVRMie15Model, V, T, z,i, j,_data = @f(data))
             res_m += a_mie*Tr^m
         end
         res += res_m*ρrn
+    end
+    return res
+end
+=#
+#from teqp
+function I(model::SAFTVRMie15Model, V, T, z,i, j,_data = @f(data))
+    _d,ρS,ζi,_ζ_X,_ζst,σ3_x = _data
+    ϵ = model.params.epsilon.values[i,j]
+    Tr = T/ϵ
+    λr = model.params.lambda_r.values[i,j]
+    res = zero(_ζst)
+    ρr = ρS*σ3_x
+    b = SAFTVRMie15consts.b
+    rhostar_to_i = one(res)
+    @inbounds for i = 0:10
+        Tstar_to_j = one(res)
+        for j = 0:(10-i)                                                     
+            aij = zero(res)
+            lambdar_to_k = one(res)
+            for k = 0:6
+                bijk = b[k+1][i+1,j+1]
+                aij = aij + bijk*lambdar_to_k
+                lambdar_to_k = lambdar_to_k * λr
+            end
+            res = res + aij*rhostar_to_i*Tstar_to_j
+            Tstar_to_j = Tstar_to_j * Tr
+        end
+        rhostar_to_i = rhostar_to_i * ρr
     end
     return res
 end

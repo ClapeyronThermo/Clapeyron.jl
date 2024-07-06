@@ -426,13 +426,16 @@ function I(model::SAFTVRMieModel, V, T, z, i, j, _data = @f(data))
     c  = SAFTVRMieconsts.c
     res = zero(_ζst)
     ρr = ρS*σ3_x
+    ρrn = one(ρr)
     @inbounds for n ∈ 0:10
-        ρrn = ρr^n
         res_m = zero(res)
+        Trm = one(Tr)
         for m ∈ 0:(10-n)
-            res_m += c[n+1,m+1]*Tr^m
+            res_m += c[n+1,m+1]*Trm
+            Trm = Trm*Tr
         end
         res += res_m*ρrn
+        ρrn = ρrn*ρr
     end
     return res
 end
