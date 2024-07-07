@@ -10,7 +10,7 @@ function x0_volume_liquid(model,T,z)
 end
 
 x0_volume_liquid(model,p,T,z) = x0_volume_liquid(model,T,z)
-
+x0_volume_liquid(model,T) = x0_volume_liquid(model,T,SA[1.0])
 """
     x0_volume_gas(model,p,T,z)
 
@@ -20,6 +20,7 @@ function x0_volume_gas(model,p,T,z)
     return volume_virial(model,p,T,z)
 end
 
+x0_volume_gas(model,p,T) = x0_volume_gas(model,p,T,SA[1.0])
 """
     x0_volume_solid(model,T,z)
     x0_volume_solid(model,p,T,z)

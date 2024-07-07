@@ -222,11 +222,11 @@ function volume_impl(model::CPAModel,p,T,z=SA[1.0],phase=:unknown,threaded=false
 end
 
 #approximating the gas phase as the pure cubic.
-function x0_volume_gas(model::CPAModel, p, T, z = SA[1.0])
+function x0_volume_gas(model::CPAModel, p, T, z)
     return volume(model.cubicmodel,p,T,z,phase = :v)
 end
 
-function x0_volume_liquid(model::CPAModel,p, T, z = SA[1.0])
+function x0_volume_liquid(model::CPAModel,p, T, z)
     n = assoc_pair_length(model)
     n == 0 && return volume(model.cubicmodel,p,T,z,phase = :l)
     return 1.1*lb_volume(model,z)

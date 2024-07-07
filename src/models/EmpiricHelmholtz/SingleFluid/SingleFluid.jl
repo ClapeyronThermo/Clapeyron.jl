@@ -261,7 +261,7 @@ function x0_sat_pure(model::SingleFluid,T)
     return (vl,vv)
 end
 
-function x0_volume_liquid(model::SingleFluid,T,z = SA[1.0])
+function x0_volume_liquid(model::SingleFluid,T,z)
     lb_v = lb_volume(model)
     vl_tp = 1/model.properties.rhol_tp
     liquid_ancillary = model.ancillaries.fluid.liquid
