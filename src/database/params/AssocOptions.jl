@@ -17,6 +17,12 @@ the combining option controls the type of combining rule applied to the associat
     ```
     Δ[i,j][a,b] = √(Δ[i,i][a,b] * Δ[j,j][a,b]) 
     ```
+- `:dufal`,`mie15`: combining rule used for `SAFTVRMie15`
+    ```
+    ε[i,j][a,b] = (ε[i,i][a,b] + ε[j,j][a,b])/2
+    β[i,j][a,b] = (∛β[i,i][a,b] + ∛β[j,j][a,b])^3 / 8
+    ```
+
 !!! info "Association Scheme matters"
     all combining rules implicitly requires that both `Δ(i,i,a,b)` and  `Δ(j,j,a,b)` are non-zero, that means that components that don't self associate will not be combined.
 """
