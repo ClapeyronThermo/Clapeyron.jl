@@ -85,7 +85,7 @@ pharmaPCSAFT
 @inline water08_k(model::PCSAFTModel) = 0
 @inline water08_k(model::pharmaPCSAFTModel) = model.params.water[]
 
-function x0_volume_liquid(model::pharmaPCSAFTModel, T,z=SA[1.])
+function x0_volume_liquid(model::pharmaPCSAFTModel, T, z)
     return lb_volume(model,z)*1.7
 end
 
@@ -106,8 +106,8 @@ function lb_volume(model::pharmaPCSAFTModel,T, z)
         σi = σ[i,i] + (k==i)*Δσ
         val += z[i]*seg[i]*σi*σi*σi
     end
-    lb_v =  π/6*N_A*val
-    return val
+    lb_v = π/6*N_A*val
+    return lb_v
 end
 
 function d(model::pharmaPCSAFTModel, V, T, z)
