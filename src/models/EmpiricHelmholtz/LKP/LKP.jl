@@ -195,7 +195,7 @@ function x0_sat_pure(model::LKPModel,T)
 end
 
 function lb_volume(model::LKPModel,z)
-    return lb_volume(model,T,z)
+    return lb_volume(model,0.0,z)
 end
 
 function lb_volume(model::LKPModel,T,z)
