@@ -404,22 +404,16 @@ function assoc_matrix_x0!(K,X)
     K21 = @view(K[3:4,1:2])
     K22 = @view(K[3:4,3:4])
 
-    
+    X_exact2!(K11,@view(X[1:2]))
+    X_exact2!(K22,@view(X[3:4]))
     if (iszero(K12) & iszero(K21)) | iszero(K11) | iszero(K22)
         #solve each association separately, if one of the diagonal association
         #submatrices is zero, then cross-association does not have any sense.
-        X_exact2!(K11,@view(X[1:2]))
-        X_exact2!(K22,@view(X[3:4]))
         success = true
-    elseif (K11[1,2] == K11[2,1]) & (K22[1,2] == K22[2,1])
-        
-        success = false
     else 
         #general solution, takes longer to compile.
         #_,success = X_exact4!(K,X)
         #success || X_exact2!(K22,@view(X[3:4]))
-        X_exact2!(K11,@view(X[1:2]))
-        X_exact2!(K22,@view(X[3:4]))
         success = false
     end
     init = true
@@ -442,8 +436,9 @@ function to_static(::Val{N},K::AbstractMatrix{T}) where {N,T}
 
 end
 
-function assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::AbstractVector{T2}, α::T1, atol ,rtol, max_iters) where {N,T1,T2}
-    X0 = SVector{N}(XX0)
+#this function destroys KK and XX0
+function __assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::AbstractVector{T2}, α::T1, atol ,rtol, max_iters) where {N,T1,T2}
+    X0 = SVector{N,T2}(XX0)
     K = SMatrix{N,N,T1,N*N}(KK)
     Xsol = X0
     it_ss = (5*length(Xsol))
@@ -466,12 +461,23 @@ function assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::Abstract
         XX0 .= Xsol
         return XX0
     end
+
+    H = KK
+    g = XX0
+    piv = @MVector zeros(Int,N)
+    
     for i in (it_ss + 1):max_iters
         #@show Xsol
         KX = K*Xsol
-        H = -K - Diagonal((1 .+ KX) ./ Xsol) #hessian
-        g = 1 ./ Xsol .- 1 .- KX #gradient
-        ΔX = H\g
+        H .= 0
+        H .= -K
+        for k in 1:size(H,1)
+            H[k,k] -= (1 + KX[k])/Xsol[k]
+        end
+        F = Solvers.unsafe_LU!(H,piv)
+        g .= 1 ./ Xsol .- 1 .- KX #gradient
+        ldiv!(F,g)
+        ΔX = SVector{N,T2}(XX0)
         Xnewton = Xsol - ΔX
         Xss = 1 ./ (1 .+ KX)
         X0 = Xsol
@@ -501,10 +507,9 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
     X0,success = assoc_matrix_x0!(K,X0)
     success && return X0
     #static versions to improve speed
-    length(X0) == 3 && return assoc_matrix_solve_static(Val{3}(), K, X0, α, atol ,rtol, max_iters)
-    length(X0) == 4 && return assoc_matrix_solve_static(Val{4}(), K, X0, α, atol ,rtol, max_iters)
-    length(X0) == 5 && return assoc_matrix_solve_static(Val{5}(), K, X0, α, atol ,rtol, max_iters)
-
+    length(X0) == 3 && return __assoc_matrix_solve_static(Val{3}(), K, X0, α, atol ,rtol, max_iters)
+    length(X0) == 4 && return __assoc_matrix_solve_static(Val{4}(), K, X0, α, atol ,rtol, max_iters)
+    length(X0) == 5 && return __assoc_matrix_solve_static(Val{5}(), K, X0, α, atol ,rtol, max_iters)
     Xsol = Vector{T}(undef,n)
     Xsol .= X0
     #=
@@ -554,7 +559,6 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
     H = Matrix{T}(undef,n,n)
     H .= 0
     piv = zeros(Int,n)
-    F = Solvers.unsafe_LU!(H,piv)
     dX = copy(Xsol)
     KX = copy(Xsol)
     for i in (it_ss + 1):max_iters
@@ -566,19 +570,21 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
         end
         #F already contains H and the pivots, because we refreshed H, we need to refresh
         #the factorization too.
-        F = Solvers.unsafe_LU!(F)
+        F = Solvers.unsafe_LU!(H,piv)
         dX .= 1 ./ Xsol .- 1 .- KX #gradient
         ldiv!(F,dX) #we solve H/g, overwriting g
         X0 .= Xsol
         for k in 1:length(dX)
             Xk = Xsol[k]
+            X0k = X0[k]
             dXk = dX[k]
+            X0[k] = Xk
             X_newton = Xk - dXk
             if !(0 <= X_newton <= 1)
-                Xsol[k] = 1/(1 + KX[k]) #successive substitution step
+                Xsol[k] = 0.5*(Xk + X0k) #successive substitution step
             else
                 Xsol[k] = X_newton #newton step
-            end
+            end   
         end
         # Xsol .-= dX
         converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
