@@ -464,8 +464,8 @@ function __assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::Abstra
 
     H = KK
     g = XX0
-    piv = @MVector zeros(Int,N)
-    
+    #TODO: for the next stable release, use MVector
+    piv = zeros(Int,N)
     for i in (it_ss + 1):max_iters
         #@show Xsol
         KX = K*Xsol
