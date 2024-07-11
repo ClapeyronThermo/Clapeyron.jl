@@ -1,4 +1,4 @@
-struct PCSAFTParam{T} <: EoSParam
+struct PCSAFTParam{T} <: ParametricEoSParam{T}
     Mw::SingleParam{T}
     segment::SingleParam{T}
     sigma::PairParam{T}
