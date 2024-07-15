@@ -173,11 +173,11 @@ A common function to retrieve the main diagonal values that work on both SingleP
 function diagvalues end
 
 function diagvalues(x::AbstractMatrix)
-    return view(x, diagind(x))
+    return view(x, linearidx(x))
 end
 
 function diagvalues(x::AbstractVector)
-    return x
+    return view(x, linearidx(x))
 end
 
 function diagvalues(x::SingleOrPair)
