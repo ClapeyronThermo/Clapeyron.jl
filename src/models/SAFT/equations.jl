@@ -32,7 +32,7 @@ end
 function ζ0123(model, V, T, z, _d=@f(d),m = model.params.segment.values)
     #N_A*π/6/V * sum(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
     _0 = zero(V+T+first(z)+one(eltype(model)))
-    d_idx = linearidx(d)
+    d_idx = linearidx(_d)
     m_idx = linearidx(m)
     ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
     @inbounds for i ∈ 1:length(z)
@@ -51,7 +51,7 @@ end
 function ζ(model, V, T, z, n, _d = @f(d),m = model.params.segment.values)
     #N_A*π/6/V * sum(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
     _0 = zero(V+T+first(z)+one(eltype(model)))
-    d_idx = linearidx(d)
+    d_idx = linearidx(_d)
     m_idx = linearidx(m)
     ζn = _0
     @inbounds for i ∈ 1:length(z)
