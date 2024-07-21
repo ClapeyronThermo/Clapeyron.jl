@@ -549,6 +549,36 @@ end
 @testset "SingleFluid - CoolProp" begin
     #methanol, uses assoc term
     @test saturation_pressure(SingleFluid("methanol"),300.15)[1] ≈ PropsSI("P","T",300.15,"Q",1.,"methanol") rtol = 1e-6
+    
+    #tests send via email, 
+
+    fluid1 = SingleFluid("n-Undecane")
+    test_volume(fluid1,1e-2*fluid1.properties.Pc,0.38*fluid1.properties.Tc)
+    test_volume(fluid1,3e2*fluid1.properties.Pc,0.38*fluid1.properties.Tc)
+    test_volume(fluid1,3e2*fluid1.properties.Pc,1.1*fluid1.properties.Tc)
+
+    fluid2 = SingleFluid("n-Butane")
+    test_volume(fluid2,1e-2*fluid2.properties.Pc,0.3*fluid2.properties.Tc)
+    test_volume(fluid2,30*fluid2.properties.Pc,0.3*fluid2.properties.Tc)
+
+    fluid3 = SingleFluid("water")
+    test_volume(fluid3,1e-2*fluid3.properties.Pc,0.4*fluid3.properties.Tc)
+    test_volume(fluid3,40*fluid3.properties.Pc,3.2*fluid3.properties.Tc)
+
+    fluid4 = SingleFluid("MethylOleate")
+    test_volume(fluid4,1e-2*fluid4.properties.Pc,0.3*fluid4.properties.Tc)
+    test_volume(fluid4,4e1*fluid4.properties.Pc,0.3*fluid4.properties.Tc)
+    test_volume(fluid4,4e1*fluid4.properties.Pc,1.3*fluid4.properties.Tc)
+
+    fluid5 = SingleFluid("MD3M")
+    test_volume(fluid5,1e-2*fluid5.properties.Pc,0.3*fluid5.properties.Tc)
+    test_volume(fluid5,2e2*fluid5.properties.Pc,0.3*fluid5.properties.Tc)
+    test_volume(fluid5,2e2*fluid5.properties.Pc,1.1*fluid5.properties.Tc)
+
+    fluid6 = SingleFluid("Toluene")
+    test_volume(fluid6,1e-2*fluid6.properties.Pc,0.25*fluid6.properties.Tc)
+    test_volume(fluid6,2e2*fluid6.properties.Pc,0.25*fluid6.properties.Tc)
+    test_volume(fluid6,2e2*fluid6.properties.Pc,1.2*fluid6.properties.Tc)
 end
 
 @testset "LKP methods" begin

@@ -261,14 +261,84 @@ function x0_sat_pure(model::SingleFluid,T)
     return (vl,vv)
 end
 
-function x0_volume_liquid(model::SingleFluid,T,z)
-    lb_v = lb_volume(model)
-    vl_tp = 1/model.properties.rhol_tp
+function x0_volume_liquid(model::SingleFluid,p,T,z)
+    lb_v = lb_volume(model,T,z)*one(Base.promote_eltype(model,p,T,z))
+    vl_lbv = 1.01*lb_v
     liquid_ancillary = model.ancillaries.fluid.liquid
+    sat_ancillary = model.ancillaries.fluid.saturation
+    Tc = model.properties.Tc
+    Pc = model.properties.Pc
+    Ttp = model.properties.Ttp
+    ptp = model.properties.ptp
+    (!isfinite(Ttp) | (Ttp < 0)) && (Ttp = zero(Ttp))
+    (!isfinite(ptp) | (ptp < 0)) && (ptp = zero(ptp))
+    
+    if T >= Tc
+        if p > Pc
+            #supercritical conditions, liquid
+            #https://doi.org/10.1016/j.ces.2018.08.043 gives an aproximation of the pv curve at T = Tc
+            #=
+            abs(1 - P/Pc) = abs(1-Vc/V)^(1/Zc)
+            abs(1 - P/Pc)^Zc = abs(1-Vc/V)
+            if T > Tc then V > V(T = Tc) ≈ V_crit(P)
+            =#
+            vc = 1/model.properties.rhoc
+            pc = model.properties.Pc
+            Zc = pc*vc/(Rgas(model)*Tc)
+            ΔVrm1 = (abs(1 - p/pc))^Zc
+            v_crit_aprox = vc/(ΔVrm1 + 1)
+            #we suppose that V < Vc (liquid state)
+            return max(vl_lbv,v_crit_aprox)
+        end
+    elseif T < Tc
+        #use information about the triple point, if available
+        if !iszero(ptp)
+            psat = saturation_pressure(sat_ancillary,T,SaturationCorrelation())[1]
+            if max(ptp,psat) <= p <= Pc #solidly in liquid volume territory
+                return volume(liquid_ancillary,p,T,z)
+            end
+        end
+    end
+
+    #ancillary calculation
     vl_anc = volume(liquid_ancillary,0.0,min(T,model.properties.Tc*one(T)),z)
+    vl_tp = 1/model.properties.rhol_tp
+
     isnan(vl_tp) && (vl_tp = 0.0)
     isnan(vl_anc) && (vl_anc = 0.0)
-    return max(vl_tp,vl_anc,1.01*lb_v)
+    vl_lbv = 1.01*lb_v
+    #strategy: evaluate which volume is closer to the actual measured pressure.
+    if vl_tp != 0.0
+        p_tp = pressure(model,vl_tp,T,z)
+        if !isfinite(p_tp) | (p_tp < 0)
+            p_tp = Inf*oneunit(vl_tp)
+        end
+    else
+        p_tp = Inf*oneunit(vl_tp)
+    end
+
+    if vl_anc != 0.0
+        p_anc = pressure(model,vl_anc,T,z)
+        if !isfinite(p_anc) | (p_anc < 0)
+            p_anc = Inf*oneunit(vl_anc)
+        end
+    else
+        p_anc = Inf*oneunit(vl_anc)
+    end
+
+    if vl_lbv != 0.0
+        p_lbv = pressure(model,vl_lbv,T,z)
+        if !isfinite(p_lbv) | (p_tp < 0)
+            p_lbv = Inf*oneunit(vl_lbv)
+        end
+    else
+        p_lbv = Inf*oneunit(vl_lbv)
+    end
+
+    vols = (vl_tp,vl_anc,vl_lbv)
+    Δlogp = (abs(log(p_tp/p)),abs(log(p_anc/p)),abs(log(p_lbv/p)))
+    _,i = findmin(Δlogp)
+    return vols[i]
 end
 
 x0_psat(model::SingleFluid,T,crit=nothing) = saturation_pressure(model.ancillaries.fluid.saturation,T,SaturationCorrelation())[1]

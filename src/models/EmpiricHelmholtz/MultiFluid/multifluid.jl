@@ -226,10 +226,10 @@ function x0_volume_gas(model::MultiFluid,p,T,z)
 end
 
 #use each available pure x0_volume_liquid
-function x0_volume_liquid(model::MultiFluid,T,z)
-    v0 = zero(T+first(z))
+function x0_volume_liquid(model::MultiFluid,p,T,z)
+    v0 = zero(Base.promote_eltype(model,p,T,z))
     for (i,pure) in pairs(model.pures)
-        v0 += z[i]*x0_volume_liquid(pure,T,SA[1.0])
+        v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
     end
     return v0
 end
