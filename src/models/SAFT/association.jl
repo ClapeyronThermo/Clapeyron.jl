@@ -10,6 +10,37 @@ function a_assoc(model::EoSModel, V, T, z,data=nothing)
 end
 
 """
+    assoc_shape(model::EoSModel)::Compressed4DMatrix{Int64,UnitRange{Int64}}
+
+Returns a `Clapeyron.Compressed4DMatrix` that has the same shape as the association sites used by the model.
+By default, it has the same shape as `model.params.bondvol`
+## Example:
+
+```julia-repl
+julia> model = PCSAFT(["water"])
+PCSAFT{BasicIdeal} with 1 component:
+ "water"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> Clapeyron.assoc_shape(model)
+Clapeyron.Compressed4DMatrix{Int64, UnitRange{Int64}} with 1 entry:
+ (1, 1) >=< (1, 2): 1 #component 1 at site 1 has association interaction with component 1 at site 2.
+```
+"""
+assoc_shape(model::EoSModel) = assoc_shape(model.params.bondvol)
+assoc_shape(param::AssocParam) = assoc_shape(param.values)
+@inline function assoc_shape(mat::Compressed4DMatrix)
+    l = length(mat.values)
+    Compressed4DMatrix{Int64,UnitRange{Int64}}(1:l,mat.outer_indices,mat.inner_indices,mat.outer_size,mat.inner_size)
+end
+
+@inline function assoc_similar(model::EoSModel,::Type{𝕋}) where 𝕋
+    assoc_similar(assoc_shape(model),𝕋)
+end
+
+assoc_similar(model::EoSModel) = assoc_similar(model,eltype(model))
+
+"""
     assoc_pair_length(model::EoSModel)
 
 Indicates the number of pair combinations between the different sites in an association model.
@@ -35,32 +66,6 @@ julia> Clapeyron.assoc_pair_length(model)
     val = assoc_shape(model)
     return length(val.values)
 end
-
-"""
-    assoc_shape(model::EoSModel)::Compressed4DMatrix{Int64,UnitRange{Int64}}
-
-Returns a `Clapeyron.Compressed4DMatrix` that has the same shape as the association sites used by the model.
-By default, it has the same shape as `model.params.bondvol`
-## Example:
-
-```julia-repl
-julia> model = PCSAFT(["water"])
-PCSAFT{BasicIdeal} with 1 component:
- "water"
-Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
-
-julia> Clapeyron.assoc_shape(model)
-Clapeyron.Compressed4DMatrix{Int64, UnitRange{Int64}} with 1 entry:
- (1, 1) >=< (1, 2): 1 #component 1 at site 1 has association interaction with component 1 at site 2.
-```
-"""
-assoc_shape(model::EoSModel) = assoc_shape(model.params.bondvol)
-assoc_shape(param::AssocParam) = assoc_shape(param.values)
-@inline function assoc_shape(mat::Compressed4DMatrix)
-    l = length(mat.values)
-    Compressed4DMatrix{Int64,UnitRange{Int64}}(1:l,mat.outer_indices,mat.inner_indices,mat.outer_size,mat.inner_size)
-end
-
 
 """
     assoc_strength(model::EoSModel,V,T,z,i,j,a,b,data = Clapeyron.data(Model,V,T,z))
@@ -432,9 +437,6 @@ function assoc_matrix_x0!(K,X)
     return X,success
 end
 
-function to_static(::Val{N},K::AbstractMatrix{T}) where {N,T}
-
-end
 
 #this function destroys KK and XX0
 function __assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::AbstractVector{T2}, α::T1, atol ,rtol, max_iters) where {N,T1,T2}

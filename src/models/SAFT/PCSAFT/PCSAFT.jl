@@ -126,6 +126,8 @@ end
 
 d(model::PCSAFTModel, V, T, z) = ck_diameter(model, T, z)
 
+#defined in SAFT/equations.jl
+#=
 function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     m = model.params.segment.values
     res = zero(V+T+first(z)+one(eltype(model)))
@@ -135,7 +137,7 @@ function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     end
     res *= N_A*π/6/V
     return res
-end
+end =# 
 
 function g_hs(model::PCSAFTModel, V, T, z, i, j, _data=@f(data))
     _d,ζ0,ζ1,ζ2,ζ3,_ = _data

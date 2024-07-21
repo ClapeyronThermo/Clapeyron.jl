@@ -271,12 +271,8 @@ end
 function polar_comps(model, V, T, z)
     μ̄² = model.params.dipole2.values
     Q̄² = model.params.quadrupole2.values
-    dipole_comps = Int[]
-    quadrupole_comps = Int[]
-    for i ∈ @comps
-        if !iszero(μ̄²[i]) push!(dipole_comps,i) end
-        if !iszero(Q̄²[i]) push!(quadrupole_comps,i) end
-    end
+    dipole_comps = findall(!iszero,μ̄²)
+    quadrupole_comps = findall(!iszero,Q̄²)
     return dipole_comps, quadrupole_comps
 end
 
