@@ -265,8 +265,8 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
     _1 = one(Base.promote_eltype(model,p,T,z))
     lb_v = lb_volume(model,T,z)*_1
     vl_lbv = 1.01*lb_v
-    #liquid_ancillary = model.ancillaries.fluid.liquid
-    #sat_ancillary = model.ancillaries.fluid.saturation
+    liquid_ancillary = model.ancillaries.fluid.liquid
+    sat_ancillary = model.ancillaries.fluid.saturation
     Tc = model.properties.Tc
     Pc = model.properties.Pc
     Ttp = model.properties.Ttp
