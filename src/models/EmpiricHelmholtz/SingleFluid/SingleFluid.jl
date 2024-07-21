@@ -262,43 +262,70 @@ function x0_sat_pure(model::SingleFluid,T)
 end
 
 function x0_volume_liquid(model::SingleFluid,p,T,z)
-    lb_v = lb_volume(model,T,z)*one(Base.promote_eltype(model,p,T,z))
+    _1 = one(Base.promote_eltype(model,p,T,z))
+    lb_v = lb_volume(model,T,z)*_1
     vl_lbv = 1.01*lb_v
-    liquid_ancillary = model.ancillaries.fluid.liquid
-    sat_ancillary = model.ancillaries.fluid.saturation
+    #liquid_ancillary = model.ancillaries.fluid.liquid
+    #sat_ancillary = model.ancillaries.fluid.saturation
     Tc = model.properties.Tc
     Pc = model.properties.Pc
     Ttp = model.properties.Ttp
     ptp = model.properties.ptp
     (!isfinite(Ttp) | (Ttp < 0)) && (Ttp = zero(Ttp))
     (!isfinite(ptp) | (ptp < 0)) && (ptp = zero(ptp))
-    
-    if T >= Tc
-        if p > Pc
-            #supercritical conditions, liquid
-            #https://doi.org/10.1016/j.ces.2018.08.043 gives an aproximation of the pv curve at T = Tc
-            #=
-            abs(1 - P/Pc) = abs(1-Vc/V)^(1/Zc)
-            abs(1 - P/Pc)^Zc = abs(1-Vc/V)
-            if T > Tc then V > V(T = Tc) ≈ V_crit(P)
-            =#
-            vc = 1/model.properties.rhoc
-            pc = model.properties.Pc
-            Zc = pc*vc/(Rgas(model)*Tc)
-            ΔVrm1 = (abs(1 - p/pc))^Zc
-            v_crit_aprox = vc/(ΔVrm1 + 1)
-            #we suppose that V < Vc (liquid state)
+
+    if p > Pc
+        #supercritical conditions, liquid
+        #https://doi.org/10.1016/j.ces.2018.08.043 gives an aproximation of the pv curve at T = Tc
+        #=
+        abs(1 - P/Pc) = abs(1-Vc/V)^(1/Zc)
+        abs(1 - P/Pc)^Zc = abs(1-Vc/V)
+        if T > Tc then V > V(T = Tc) ≈ V_crit(P)
+        =#
+        vc = 1/model.properties.rhoc
+        pc = model.properties.Pc
+        Zc = pc*vc/(Rgas(model)*Tc)
+        ΔVrm1 = _1*(abs(1 - p/pc))^Zc
+        v_crit_aprox = vc/(ΔVrm1 + 1)
+        #we suppose that V < Vc (liquid state), then the volume solver converges really well with this initial guess
+        if T >= Tc
             return max(vl_lbv,v_crit_aprox)
-        end
-    elseif T < Tc
-        #use information about the triple point, if available
-        if !iszero(ptp)
-            psat = saturation_pressure(sat_ancillary,T,SaturationCorrelation())[1]
-            if max(ptp,psat) <= p <= Pc #solidly in liquid volume territory
-                return volume(liquid_ancillary,p,T,z)
+        else
+            #we can't be sure that v_crit_approx converges, we do some P-T iterations to go from (P,Tc) to (P,T)
+            vᵢ = v_crit_aprox
+            Tᵢ = _1*Tc
+            for i in 1:20
+                d²A,dA,_ = ∂2f(model,vᵢ,Tᵢ,z)
+                ∂²A∂V∂T = d²A[1,2]
+                ∂²A∂V² = d²A[1,1]
+                ∂²A∂T² = d²A[2,2]
+                pᵢ = -dA[1]
+                dvdt = -∂²A∂V∂T/∂²A∂V²
+                dvdp = -1/∂²A∂V²
+                dtdp = -1/∂²A∂V∂T
+                ΔT = dtdp*(p - pᵢ)
+                Tnew = Tᵢ + dtdp*(p - pᵢ)
+                if Tnew < T
+                    Tᵢ = (Tᵢ + T)/2
+                    vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+                else
+                    vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+                    Tᵢ = Tᵢ + dtdp*(p - pᵢ)
+                end
+                abs(ΔT) < 0.01*T && break
             end
+            return vᵢ
         end
     end
+
+    #use information about the triple point, if available
+    if !iszero(ptp)
+        psat = saturation_pressure(sat_ancillary,T,SaturationCorrelation())[1]
+        if max(ptp,psat) <= p <= Pc #solidly in liquid volume territory
+            return volume(liquid_ancillary,p,T,z)
+        end
+    end
+
 
     #ancillary calculation
     vl_anc = volume(liquid_ancillary,0.0,min(T,model.properties.Tc*one(T)),z)
