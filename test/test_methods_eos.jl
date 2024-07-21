@@ -550,7 +550,7 @@ end
     #methanol, uses assoc term
     @test saturation_pressure(SingleFluid("methanol"),300.15)[1] ≈ PropsSI("P","T",300.15,"Q",1.,"methanol") rtol = 1e-6
     
-    #tests send via email, 
+    #tests send via email
 
     fluid1 = SingleFluid("n-Undecane")
     test_volume(fluid1,1e-2*fluid1.properties.Pc,0.38*fluid1.properties.Tc)
@@ -579,6 +579,14 @@ end
     test_volume(fluid6,1e-2*fluid6.properties.Pc,0.25*fluid6.properties.Tc)
     test_volume(fluid6,2e2*fluid6.properties.Pc,0.25*fluid6.properties.Tc)
     test_volume(fluid6,2e2*fluid6.properties.Pc,1.2*fluid6.properties.Tc)
+
+    #CoolProp fluid predicting negative fundamental derivative of gas dynamics
+    #10.1021/acs.iecr.9b00608, figure 17
+    model = SingleFluid("MD4M")
+    TΓmin = 647.72
+    _,_,vv = saturation_pressure(model,TΓmin)
+    Γmin = Clapeyron.VT_fundamental_derivative_of_gas_dynamics.(model,vv,TΓmin)
+    @test Γmin ≈ -0.2825376983518102 rtol = 1e-6
 end
 
 @testset "LKP methods" begin
