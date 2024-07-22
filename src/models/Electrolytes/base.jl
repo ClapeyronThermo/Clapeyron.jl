@@ -74,8 +74,8 @@ function lb_volume(model::ESElectrolyteModel,T,z)
     return lb_volume(model.neutralmodel,T,z)
 end
 
-function x0_volume_liquid(model::ESElectrolyteModel,T,z)
-    return x0_volume_liquid(model.neutralmodel, T, z)*1.15
+function x0_volume_liquid(model::ESElectrolyteModel,p,T,z)
+    return x0_volume_liquid(model.neutralmodel,p,T,z)*1.15
 end
 
 function mw(model::ElectrolyteModel)

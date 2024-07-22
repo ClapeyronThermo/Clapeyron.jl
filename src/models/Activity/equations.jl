@@ -110,9 +110,9 @@ function p_scale(model::ActivityModel,z)
     0.33*R̄*T/lb_volume(model,T,z)
 end
 
-function x0_volume_liquid(model::ActivityModel,T,z)
+function x0_volume_liquid(model::ActivityModel,p,T,z)
     pures = model.puremodel
-    return sum(z[i]*x0_volume_liquid(pures[i],T,SA[1.0]) for i ∈ @comps)
+    return sum(z[i]*x0_volume_liquid(pures[i],p,T,SA[1.0]) for i ∈ @comps)
 end
 
 function γdγdn(model::ActivityModel,p,T,z)
