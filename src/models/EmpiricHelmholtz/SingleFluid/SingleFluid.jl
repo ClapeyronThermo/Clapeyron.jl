@@ -255,10 +255,34 @@ end
 
 function x0_sat_pure(model::SingleFluid,T)
     z=SA[1.0]
+    Ttp0 = model.properties.Ttp*one(T)
     gas_ancillary = model.ancillaries.fluid.gas
-    vv = volume(gas_ancillary,0.0,T,z)
-    vl = x0_volume_liquid(model,T,)
-    return (vl,vv)
+    liquid_ancillary = model.ancillaries.fluid.liquid
+    if isfinite(Ttp0) & (Ttp0 > 0) #we have triple point information:
+        Ttp = Ttp0
+    else #we suppose triple point = 0.4 Tc
+        Ttp = 0.4*model.properties.Tc*one(T)
+    end
+    if T > model.properties.Tc
+        _0 = zero(Base.promote_eltype(model,T))
+        _nan = _0/_0
+        return _nan,_nan
+    elseif T >= Ttp 
+        vv = volume(gas_ancillary,0.0,T,z)
+        vl = volume(liquid_ancillary,0.0,Ttp,z)
+        return vl,vv
+    else #we know that T < Ttp
+        vvtp = volume(gas_ancillary,0.0,Ttp,z)
+        vltp = volume(liquid_ancillary,0.0,Ttp,z)
+        ptp = pressure(model,vvtp,Ttp)
+        dpdT = (VT_entropy(model,vvtp,Ttp) - VT_entropy(model,vltp,Ttp))/(vvtp - vltp)
+        dTinvdlnp = -ptp/(dpdT*T*T)
+        ΔTinv = 1/T - 1/Ttp
+        psat = exp(ΔTinv/dTinvdlnp)*ptp
+        vv = Rgas(model)*T/psat
+        vl = x0_volume_liquid(model,psat,T)
+        return vl,vv
+    end
 end
 
 function x0_volume_liquid(model::SingleFluid,p,T,z)
@@ -271,7 +295,7 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
     Pc = model.properties.Pc
     Ttp = model.properties.Ttp
     ptp = model.properties.ptp
-    (!isfinite(Ttp) | (Ttp < 0)) && (Ttp = zero(Ttp))
+    (!isfinite(Ttp) | (Ttp < 0)) && (Ttp = 0.4*Tc)
     (!isfinite(ptp) | (ptp < 0)) && (ptp = zero(ptp))
 
     if p > Pc
@@ -294,78 +318,36 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
             #we can't be sure that v_crit_approx converges, we do some P-T iterations to go from (P,Tc) to (P,T)
             vᵢ = v_crit_aprox
             Tᵢ = _1*Tc
-            for i in 1:20
-                d²A,dA,_ = ∂2f(model,vᵢ,Tᵢ,z)
-                ∂²A∂V∂T = d²A[1,2]
-                ∂²A∂V² = d²A[1,1]
-                ∂²A∂T² = d²A[2,2]
-                pᵢ = -dA[1]
-                dvdt = -∂²A∂V∂T/∂²A∂V²
-                dvdp = -1/∂²A∂V²
-                dtdp = -1/∂²A∂V∂T
-                ΔT = dtdp*(p - pᵢ)
-                Tnew = Tᵢ + dtdp*(p - pᵢ)
-                if Tnew < T
-                    Tᵢ = (Tᵢ + T)/2
-                    vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
-                else
-                    vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
-                    Tᵢ = Tᵢ + dtdp*(p - pᵢ)
-                end
-                abs(ΔT) < 0.01*T && break
-            end
-            return vᵢ
+            return volume_chill(model,p,T,z,vᵢ,Tᵢ)
         end
     end
 
-    #use information about the triple point, if available
-    if !iszero(ptp)
-        psat = saturation_pressure(sat_ancillary,T,SaturationCorrelation())[1]
-        if max(ptp,psat) <= p <= Pc #solidly in liquid volume territory
-            return volume(liquid_ancillary,p,T,z)
-        end
+    #use information about the triple point (or made up triple point)
+    #move from (Ttp,ptp) to (T,p)
+    if Ttp < T < Tc
+        #move from (pc,Tc) to (pc,T)
+        vᵢ = volume(liquid_ancillary,0.0,T,z)
+        pvi = pressure(model,vᵢ,T)
+        pp = max(_1*p,pvi)
+        Tᵢ = _1*Tc
+        return volume_chill(model,pp,T,z,vᵢ,Tᵢ)
+    elseif Ttp < Tc
+        vᵢ = volume(liquid_ancillary,0.0,Ttp,z)
+        pvi = pressure(model,vᵢ,T)
+        pp = max(_1*p,pvi)
+        Tᵢ = _1*Ttp
+        return volume_chill(model,pp,T,z,vᵢ,Tᵢ)
+    else #T > Tc and p < pc, this is supercritical fluid
+        #we suppose T = Tc and p < pc, and use critical correlation:
+        vc = 1/model.properties.rhoc
+        pc = model.properties.Pc
+        Zc = pc*vc/(Rgas(model)*Tc)
+        ΔVrm1 = _1*(abs(1 - p/pc))^Zc # 1 - Vc/V
+        v_crit_aprox = vc/(1 - ΔVrm1)
+        return v_crit_aprox
     end
-
-
-    #ancillary calculation
-    vl_anc = volume(liquid_ancillary,0.0,min(T,model.properties.Tc*one(T)),z)
-    vl_tp = 1/model.properties.rhol_tp
-
-    isnan(vl_tp) && (vl_tp = 0.0)
-    isnan(vl_anc) && (vl_anc = 0.0)
-    vl_lbv = 1.01*lb_v
-    #strategy: evaluate which volume is closer to the actual measured pressure.
-    if vl_tp != 0.0
-        p_tp = pressure(model,vl_tp,T,z)
-        if !isfinite(p_tp) | (p_tp < 0)
-            p_tp = Inf*oneunit(vl_tp)
-        end
-    else
-        p_tp = Inf*oneunit(vl_tp)
-    end
-
-    if vl_anc != 0.0
-        p_anc = pressure(model,vl_anc,T,z)
-        if !isfinite(p_anc) | (p_anc < 0)
-            p_anc = Inf*oneunit(vl_anc)
-        end
-    else
-        p_anc = Inf*oneunit(vl_anc)
-    end
-
-    if vl_lbv != 0.0
-        p_lbv = pressure(model,vl_lbv,T,z)
-        if !isfinite(p_lbv) | (p_tp < 0)
-            p_lbv = Inf*oneunit(vl_lbv)
-        end
-    else
-        p_lbv = Inf*oneunit(vl_lbv)
-    end
-
-    vols = (vl_tp,vl_anc,vl_lbv)
-    Δlogp = (abs(log(p_tp/p)),abs(log(p_anc/p)),abs(log(p_lbv/p)))
-    _,i = findmin(Δlogp)
-    return vols[i]
+    #this should never hit, but nvm
+    return zero(_1)/zero(_1)
 end
 
 x0_psat(model::SingleFluid,T,crit=nothing) = saturation_pressure(model.ancillaries.fluid.saturation,T,SaturationCorrelation())[1]

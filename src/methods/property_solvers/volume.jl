@@ -54,6 +54,35 @@ function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=
     return Vsol - (psol - _p)/dpdVsol
 end
 
+#"chills" a state from T0,p to T,p, starting at v = v0
+function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
+    _1 = one(Base.promote_eltype(model,p,T,z))
+    vᵢ = _1*v0
+    Tᵢ = _1*T0
+    for i in 1:100
+        d²A,dA,_ = ∂2f(model,vᵢ,Tᵢ,z)
+        ∂²A∂V∂T = d²A[1,2]
+        ∂²A∂V² = d²A[1,1]
+        ∂²A∂T² = d²A[2,2]
+        pᵢ = -dA[1]
+        dvdt = -∂²A∂V∂T/∂²A∂V²
+        dvdp = -1/∂²A∂V²
+        dtdp = -1/∂²A∂V∂T
+        ΔT = dtdp*(p - pᵢ)
+        Tnew = Tᵢ + dtdp*(p - pᵢ)
+        if Tnew < T
+            Tᵢ = (Tᵢ + T)/2
+            vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+        else
+            vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+            Tᵢ = Tᵢ + dtdp*(p - pᵢ)
+        end
+        abs(ΔT) < Ttol*T && break
+        !isfinite(vᵢ) && break
+    end
+    return vᵢ
+end
+
 """
     volume_virial(model::EoSModel,p,T,z=SA[1.0])
     volume_virial(B::Real,p,T,z=SA[1.0])
