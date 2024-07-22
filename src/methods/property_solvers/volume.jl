@@ -74,10 +74,14 @@ function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
             Tᵢ = (Tᵢ + T)/2
             vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
         else
-            vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
             Tᵢ = Tᵢ + dtdp*(p - pᵢ)
         end
-        abs(ΔT) < Ttol*T && break
+        Δv = dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+        vnew = vᵢ + Δv
+        if vnew > 0
+            vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+        end
+        abs(ΔT) < Ttol*T && vnew > 0 && break
         !isfinite(vᵢ) && break
     end
     return vᵢ
