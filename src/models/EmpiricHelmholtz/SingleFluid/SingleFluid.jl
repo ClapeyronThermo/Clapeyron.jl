@@ -326,7 +326,7 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
     if Ttp < T < Tc
         vᵢ = volume(ancillary,0.0,T,z,phase = :l)
         return vᵢ
-    elseif Ttp < Tc
+    elseif Ttp < T
         vᵢ = volume(liquid_ancillary,0.0,Ttp,z)
         pvi = pressure(model,vᵢ,T)
         pp = max(_1*p,pvi)
