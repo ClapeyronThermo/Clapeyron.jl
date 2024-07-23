@@ -333,14 +333,9 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
         Tᵢ = _1*Ttp
         #chill from p,Ttp to p,T
         return volume_chill(model,pp,T,z,vᵢ,Tᵢ)
-    else #T > Tc and p < pc, this is supercritical fluid
-        #we suppose T = Tc and p < pc, and use critical correlation:
-        vc = 1/model.properties.rhoc
-        pc = model.properties.Pc
-        Zc = pc*vc/(Rgas(model)*Tc)
-        ΔVrm1 = _1*(abs(1 - p/pc))^Zc # 1 - Vc/V
-        v_crit_aprox = vc/(1 - ΔVrm1)
-        return v_crit_aprox
+    else #T > Tc and p < pc, this is gas-like supercritical fluid
+        #this is always a gas volume, so starting from the lowest volume does not hurt
+        return vl_lbv
     end
     #this should never hit, but nvm
     return zero(_1)/zero(_1)
