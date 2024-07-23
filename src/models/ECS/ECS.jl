@@ -139,18 +139,12 @@ function Base.show(io::IO,model::ECS)
     print(io,string(typeof(model)),model.shape_model.components)
 end
 
-function lb_volume(model::ECS,z)
-    lb_v0 = lb_volume(model.model_ref,z)
-    T0 = T_scale(model.model_ref)
-    f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
+function lb_volume(model::ECS,T,z)
+    lb_v0 = lb_volume(model.model_ref,T,z)
+    f,h = shape_factors(model,lb_v0,T,z) #h normaly should be independent of temperature
     return lb_v0*h
 end
 
-function x0_volume(model::ECS,T,z)
-    lb_v0 = lb_volume(model.model_ref,T,z)
-    f,h = shape_factors(model,lb_v0,T,z)
-    return lb_v0*h
-end
 
 function x0_volume_liquid(model::ECS,p,T,z)
     lb_v0 = lb_volume(model.model_ref,T,z)
@@ -158,6 +152,14 @@ function x0_volume_liquid(model::ECS,p,T,z)
     T0 = T/f
     v0l = x0_volume_liquid(model.model_ref,p,T0,z)
     return v0l*h
+end
+
+function x0_volume_gas(model::ECS,p,T,z)
+    lb_v0 = lb_volume(model.model_ref,T,z)
+    f,h = shape_factors(model,lb_v0,T,z)
+    T0 = T/f
+    v0v = x0_volume_gas(model.model_ref,p,T0,z)
+    return v0v*v
 end
 
 function T_scale(model::ECS,z)
