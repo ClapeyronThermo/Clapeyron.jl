@@ -153,7 +153,8 @@ function x0_volume(model::ECS,T,z)
 end
 
 function x0_volume_liquid(model::ECS,p,T,z)
-    f,h = shape_factors(model,zero(T),p,T,z)
+    lb_v0 = lb_volume(model.model_ref,T,z)
+    f,h = shape_factors(model,lb_v0,T,z)
     T0 = T/f
     v0l = x0_volume_liquid(model.model_ref,p,T0,z)
     return v0l*h
