@@ -13,7 +13,7 @@ end
 __gas_model(model::FluidCorrelation) = model.gas
 activity_coefficient(model::FluidCorrelation, p, T,z=SA[1.]; phase = :unknown, threaded=true) = FillArrays.Ones(length(model)) 
 
-function volume_impl(model::FluidCorrelation, p, T, z, phase=:unknown, threaded=false, vol0=nothing)
+function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
     _0 = zero(p+T+first(z))
     nan = _0/_0
     if is_liquid(phase)

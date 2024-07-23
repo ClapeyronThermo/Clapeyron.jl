@@ -212,7 +212,7 @@ end
 #=
 if we don't have association, reduce to the inner cubic model.
 =#
-function volume_impl(model::CPAModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0=nothing)
+function volume_impl(model::CPAModel,p,T,z,phase,threaded,vol0)
     n = assoc_pair_length(model)
     if n == 0
         return volume_impl(model.cubicmodel,p,T,z,phase,threaded,vol0)

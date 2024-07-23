@@ -180,7 +180,12 @@ end
 fluid_model(model) = model
 solid_model(model) = model
 
-function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
+volume_impl(model,p,T) = volume_impl(model,p,T,SA[1.0],:unknown,true,nothing)
+volume_impl(model,p,T,z) = volume_impl(model,p,T,z,:unknown,true,nothing)
+volume_impl(model,p,T,z,phase) = volume_impl(model,p,T,z,phase,true,nothing)
+volume_impl(model,p,T,z,phase,threaded) = volume_impl(model,p,T,z,phase,threaded,nothing)
+
+function volume_impl(model::EoSModel,p,T,z,phase,threaded,vol0)
     return default_volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 

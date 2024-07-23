@@ -289,8 +289,7 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
     _1 = one(Base.promote_eltype(model,p,T,z))
     lb_v = lb_volume(model,T,z)*_1
     vl_lbv = 1.01*lb_v
-    liquid_ancillary = model.ancillaries.fluid.liquid
-    sat_ancillary = model.ancillaries.fluid.saturation
+    ancillary = model.ancillaries
     Tc = model.properties.Tc
     Pc = model.properties.Pc
     Ttp = model.properties.Ttp
@@ -325,17 +324,14 @@ function x0_volume_liquid(model::SingleFluid,p,T,z)
     #use information about the triple point (or made up triple point)
     #move from (Ttp,ptp) to (T,p)
     if Ttp < T < Tc
-        #move from (pc,Tc) to (pc,T)
-        vᵢ = volume(liquid_ancillary,0.0,T,z)
-        pvi = pressure(model,vᵢ,T)
-        pp = max(_1*p,pvi)
-        Tᵢ = _1*Tc
-        return volume_chill(model,pp,T,z,vᵢ,Tᵢ)
+        vᵢ = volume(ancillary,0.0,T,z,phase = :l)
+        return vᵢ
     elseif Ttp < Tc
         vᵢ = volume(liquid_ancillary,0.0,Ttp,z)
         pvi = pressure(model,vᵢ,T)
         pp = max(_1*p,pvi)
         Tᵢ = _1*Ttp
+        #chill from p,Ttp to p,T
         return volume_chill(model,pp,T,z,vᵢ,Tᵢ)
     else #T > Tc and p < pc, this is supercritical fluid
         #we suppose T = Tc and p < pc, and use critical correlation:

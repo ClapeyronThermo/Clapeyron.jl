@@ -33,7 +33,7 @@ default_locations(::Type{SolidHfus}) = ["solids/fusion.csv"]
 default_references(::Type{SolidHfus}) = String[]
 default_ignore_missing_singleparams(::Type{SolidHfus}) = ["CpSL"]
 
-function volume_impl(model::SolidHfusModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0 = nothing)
+function volume_impl(model::SolidHfusModel,p,T,z,phase,threaded,vol0)
     _0 = zero(T + first(z))
     return _0/_0
 end

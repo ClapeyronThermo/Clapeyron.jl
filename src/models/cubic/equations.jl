@@ -231,7 +231,7 @@ function crit_pure_tp(model::ABCCubicModel)
     return (Tc,Pc,Vc)
 end
 
-function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0=nothing)
+function volume_impl(model::ABCubicModel,p,T,z,phase,threaded,vol0)
     lb_v = lb_volume(model,T,z)
     if iszero(p)
         vl,_ = zero_pressure_impl(model,T,z)

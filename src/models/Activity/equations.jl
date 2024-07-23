@@ -14,7 +14,7 @@ function test_excess_gibbs_free_energy(model::ActivityModel,p,T,z)
     return sum(z[i]*R̄*T*log(γ[i]) for i ∈ @comps)
 end
 
-function volume_impl(model::ActivityModel, p, T, z, phase=:unknown, threaded=false, vol0=nothing)
+function volume_impl(model::ActivityModel, p, T, z, phase, threaded, vol0)
     if hasfield(typeof(model),:puremodel)
         return volume(model.puremodel.model, p, T, z, phase=phase, threaded=threaded, vol0=vol0)
     else

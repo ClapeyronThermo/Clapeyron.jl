@@ -47,7 +47,7 @@ COSTALD
 default_locations(::Type{COSTALD}) = critical_data()
 default_references(::Type{COSTALD}) = ["10.1002/aic.690250412"]
 
-function volume_impl(model::COSTALDModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0 = nothing)
+function volume_impl(model::COSTALDModel,p,T,z,phase,threaded,vol0)
     Tci = model.params.Tc.values
     Vci = model.params.Vc.values
     ωi  = model.params.acentricfactor.values
@@ -86,7 +86,7 @@ function volume_impl(model::COSTALDModel,p,T,z=SA[1.0],phase=:unknown,threaded=f
     return Vc*V0*(1.0 - ω*Vδ)
 end
 
-function volume_impl(model::COSTALDModel,p,T,z::SingleComp,phase=:unknown,threaded=false,vol0 = nothing)
+function volume_impl(model::COSTALDModel,p,T,z::SingleComp,phase,threaded,vol0)
     Tc = model.params.Tc.values |> only
     Vc = model.params.Vc.values |> only
     ω  = model.params.acentricfactor.values |> only

@@ -11,7 +11,7 @@ for f in (:eos_res,:a_res,:VT_entropy_res,:VT_gibbs_free_energy_res,:VT_helmholt
     end
 end
 
-function volume_impl(model::IdealModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0 = nothing)
+function volume_impl(model::IdealModel,p,T,z,phase,threaded,vol0)
     return sum(z)*R̄*T/p
 end
 
