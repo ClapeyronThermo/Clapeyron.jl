@@ -159,7 +159,7 @@ function x0_volume_gas(model::ECS,p,T,z)
     f,h = shape_factors(model,lb_v0,T,z)
     T0 = T/f
     v0v = x0_volume_gas(model.model_ref,p,T0,z)
-    return v0v*v
+    return v0v*h
 end
 
 function T_scale(model::ECS,z)
