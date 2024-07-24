@@ -286,4 +286,4 @@ include("tpd.jl")
 include("stability.jl")
 include("pT.jl")
 include("property_solvers/Tproperty.jl")
-
+include("property_solvers/spinodal.jl")
