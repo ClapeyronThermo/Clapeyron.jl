@@ -154,11 +154,14 @@ function a_res(model::gcsPCSAFTModel,V,T,z)
     return a_res(model.pcsaftmodel,V,T,z)
 end
 
-function lb_volume(model::gcsPCSAFTModel, z = SA[1.0])
+assoc_shape(model::gcsPCSAFTModel) = assoc_shape(model.pcsaftmodel)
+getsites(model::gcsPCSAFTModel) = getsites(model.pcsaftmodel)
+
+function lb_volume(model::gcsPCSAFTModel, z)
     return lb_volume(model.pcsaftmodel, z)
 end
 
-function T_scale(model::gcsPCSAFTModel,z=SA[1.0])
+function T_scale(model::gcsPCSAFTModel, z)
     return T_scale(model.pcsaftmodel,z)
 end
 
@@ -166,6 +169,6 @@ function T_scales(model::gcsPCSAFTModel)
     return T_scales(model.pcsaftmodel)
 end
 
-function p_scale(model::gcsPCSAFTModel,z=SA[1.0])
+function p_scale(model::gcsPCSAFTModel,z)
     return p_scale(model.pcsaftmodel,z)
 end

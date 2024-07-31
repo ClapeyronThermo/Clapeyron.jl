@@ -184,10 +184,13 @@ function eos_res(model::MultiFluid,V,T,z = SA[1.0])
     return ∑z*@R̄()*T*aᵣ
 end
 
-v_scale(model::MultiFluid,z = SA[1.0],∑z = sum(z)) = v_scale(model,z,model.mixing,∑z)
-T_scale(model::MultiFluid,z = SA[1.0],∑z = sum(z)) = T_scale(model,z,model.mixing,∑z)
 
-p_scale(model::MultiFluid,z=SA[1.]) = dot(z,model.params.Pc.values)/sum(z)
+v_scale(model::MultiFluid,z) = v_scale(model,z,sum(z))
+T_scale(model::MultiFluid,z) = T_scale(model,z,sum(z))
+v_scale(model::MultiFluid,z,∑z) = v_scale(model,z,model.mixing,∑z)
+T_scale(model::MultiFluid,z,∑z) = T_scale(model,z,model.mixing,∑z)
+
+p_scale(model::MultiFluid,z) = dot(z,model.params.Pc.values)/sum(z)
 
 T_scales(model::MultiFluid,z=SA[1.]) = model.params.Tc.values
 
@@ -212,21 +215,21 @@ function crit_pure(model::MultiFluid)
     crit_pure(only(model.pures))
 end
 
-function lb_volume(model::MultiFluid,z=SA[1.])
+function lb_volume(model::MultiFluid,z)
     return dot(z,model.params.lb_volume.values)
 end
 
 #use ideal gas
-function x0_volume_gas(model::MultiFluid,p,T,z=SA[1.])
+function x0_volume_gas(model::MultiFluid,p,T,z)
     V = sum(z)*R̄*T/p
     return V
 end
 
 #use each available pure x0_volume_liquid
-function x0_volume_liquid(model::MultiFluid,T,z)
-    v0 = zero(T+first(z))
+function x0_volume_liquid(model::MultiFluid,p,T,z)
+    v0 = zero(Base.promote_eltype(model,p,T,z))
     for (i,pure) in pairs(model.pures)
-        v0 += z[i]*x0_volume_liquid(pure,T,SA[1.0])
+        v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
     end
     return v0
 end

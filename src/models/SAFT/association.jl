@@ -10,9 +10,41 @@ function a_assoc(model::EoSModel, V, T, z,data=nothing)
 end
 
 """
+    assoc_shape(model::EoSModel)::Compressed4DMatrix{Int64,UnitRange{Int64}}
+
+Returns a `Clapeyron.Compressed4DMatrix` that has the same shape as the association sites used by the model.
+By default, it has the same shape as `model.params.bondvol`
+## Example:
+
+```julia-repl
+julia> model = PCSAFT(["water"])
+PCSAFT{BasicIdeal} with 1 component:
+ "water"
+Contains parameters: Mw, segment, sigma, epsilon, epsilon_assoc, bondvol
+
+julia> Clapeyron.assoc_shape(model)
+Clapeyron.Compressed4DMatrix{Int64, UnitRange{Int64}} with 1 entry:
+ (1, 1) >=< (1, 2): 1 #component 1 at site 1 has association interaction with component 1 at site 2.
+```
+"""
+assoc_shape(model::EoSModel) = assoc_shape(model.params.bondvol)
+assoc_shape(param::AssocParam) = assoc_shape(param.values)
+@inline function assoc_shape(mat::Compressed4DMatrix)
+    l = length(mat.values)
+    Compressed4DMatrix{Int64,UnitRange{Int64}}(1:l,mat.outer_indices,mat.inner_indices,mat.outer_size,mat.inner_size)
+end
+
+@inline function assoc_similar(model::EoSModel,::Type{𝕋}) where 𝕋
+    assoc_similar(assoc_shape(model),𝕋)
+end
+
+assoc_similar(model::EoSModel) = assoc_similar(model,eltype(model))
+
+"""
     assoc_pair_length(model::EoSModel)
 
 Indicates the number of pair combinations between the different sites in an association model.
+By default uses `length(assoc_shape(model).values)`
 
 ## Example:
 
@@ -31,7 +63,8 @@ julia> Clapeyron.assoc_pair_length(model)
 ```
 """
 @inline function assoc_pair_length(model::EoSModel)
-    return length(model.params.bondvol.values.values)
+    val = assoc_shape(model)
+    return length(val.values)
 end
 
 """
@@ -331,7 +364,7 @@ function X_and_Δ(model::EoSModel, V, T, z,data = nothing)
     return PackedVofV(idxs,Xsol),_Δ
 end
 
-function assoc_matrix_solve(K::AbstractMatrix{T},options::AssocOptions) where T
+function assoc_matrix_solve(K::AbstractMatrix{T},options::AssocOptions = AssocOptions()) where T
     atol = T(options.atol)
     rtol = T(options.rtol)
     max_iters = options.max_iters
@@ -339,20 +372,148 @@ function assoc_matrix_solve(K::AbstractMatrix{T},options::AssocOptions) where T
     return assoc_matrix_solve(K, α, atol ,rtol, max_iters)
 end
 
+function check_antidiagonal2(x::AbstractMatrix)
+    size(x) == (2,2) || return false
+    x11,x22 = x[1,1],x[2,2]
+    x21,x12 = x[2,1],x[1,2]
+    return iszero(x11) & iszero(x22) & (x12 >= 0) & (x21 >= 0)
+end
+
+function check_antidiagonal22(x::AbstractMatrix)
+    size(x) == (4,4) || return false
+    return check_antidiagonal2(@view(x[1:2,1:2])) & check_antidiagonal2(@view(x[1:2,3:4])) &
+    check_antidiagonal2(@view(x[3:4,1:2])) & check_antidiagonal2(@view(x[3:4,3:4]))
+end
+
+function assoc_matrix_x0!(K,X)
+    #(A*x .* x) + x - 1 = 0
+    success = false
+    init = false
+    if size(K) == (1,1)
+        #1-site association
+        k = K[1,1]
+        #axx + x - 1 = 0
+        #-1 +- sqrt(1 + 4a)/2 = 0
+        X[1] = 0.5*(-1 + sqrt(1 + 4k))
+        success = true
+        init = true
+    elseif check_antidiagonal2(K)
+        X_exact2!(K,X)
+        init = true
+        success = true
+        init = true
+    elseif check_antidiagonal22(K)
+    #nb-nb association with cross-association
+    K11 = @view(K[1:2,1:2])
+    K12 = @view(K[1:2,3:4])
+    K21 = @view(K[3:4,1:2])
+    K22 = @view(K[3:4,3:4])
+
+    X_exact2!(K11,@view(X[1:2]))
+    X_exact2!(K22,@view(X[3:4]))
+    if (iszero(K12) & iszero(K21)) | iszero(K11) | iszero(K22)
+        #solve each association separately, if one of the diagonal association
+        #submatrices is zero, then cross-association does not have any sense.
+        success = true
+    else 
+        #general solution, takes longer to compile.
+        #_,success = X_exact4!(K,X)
+        #success || X_exact2!(K22,@view(X[3:4]))
+        success = false
+    end
+    init = true
+    else
+        #TODO: add more exact expressions.
+    end
+    if !init
+        Kmin,Kmax = nonzero_extrema(K) #look for 0 < Amin < Amax
+        if Kmax > 1
+            f = true/Kmin
+        else
+            f = true-Kmin
+        end
+        fill!(X,min(f,one(f)))
+    end
+    return X,success
+end
+
+
+#this function destroys KK and XX0
+function __assoc_matrix_solve_static(::Val{N},KK::AbstractMatrix{T1},XX0::AbstractVector{T2}, α::T1, atol ,rtol, max_iters) where {N,T1,T2}
+    X0 = SVector{N,T2}(XX0)
+    K = SMatrix{N,N,T1,N*N}(KK)
+    Xsol = X0
+    it_ss = (5*length(Xsol))
+    converged = false
+    for i in 1:it_ss
+        kx = K*X0
+        Xsol = α ./ (1 .+ kx) .+ (1 .- α) .* X0
+        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol)
+        if converged
+            if !finite
+                Xsol = NaN .* Xsol
+            end
+
+            break
+        end
+        X0 = Xsol
+    end
+
+    if converged
+        XX0 .= Xsol
+        return XX0
+    end
+
+    H = KK
+    g = XX0
+    #TODO: for the next stable release, use MVector
+    piv = zeros(Int,N)
+    for i in (it_ss + 1):max_iters
+        #@show Xsol
+        KX = K*Xsol
+        H .= 0
+        H .= -K
+        for k in 1:size(H,1)
+            H[k,k] -= (1 + KX[k])/Xsol[k]
+        end
+        F = Solvers.unsafe_LU!(H,piv)
+        g .= 1 ./ Xsol .- 1 .- KX #gradient
+        ldiv!(F,g)
+        ΔX = SVector{N,T2}(XX0)
+        Xnewton = Xsol - ΔX
+        Xss = 1 ./ (1 .+ KX)
+        X0 = Xsol
+        Xsol = ifelse.(0 .<= Xnewton .<= 1, Xnewton, Xss)
+        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
+        #@show converged,finite
+        if converged
+            if !finite
+                Xsol = NaN .* Xsol
+            end
+            XX0 .= Xsol
+            break
+        end
+    end
+
+    if !converged
+        Xsol = NaN .* Xsol
+    end
+    XX0 .= Xsol
+    return XX0
+end
+
 function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) where T
     n = LinearAlgebra.checksquare(K) #size
     #initialization procedure:
-    Kmin,Kmax = nonzero_extrema(K) #look for 0 < Amin < Amax
-    if Kmax > 1
-        f = true/Kmin
-    else
-        f = true-Kmin
-    end
-    f = min(f,one(f))
     X0 = Vector{T}(undef,n)
+    X0,success = assoc_matrix_x0!(K,X0)
+    success && return X0
+    #static versions to improve speed
+    length(X0) == 3 && return __assoc_matrix_solve_static(Val{3}(), K, X0, α, atol ,rtol, max_iters)
+    length(X0) == 4 && return __assoc_matrix_solve_static(Val{4}(), K, X0, α, atol ,rtol, max_iters)
+    length(X0) == 5 && return __assoc_matrix_solve_static(Val{5}(), K, X0, α, atol ,rtol, max_iters)
     Xsol = Vector{T}(undef,n)
-    X0 .= f
-    Xsol .= f
+    Xsol .= X0
     #=
     function to solve
     find vector x that satisfies:
@@ -387,61 +548,56 @@ function assoc_matrix_solve(K::AbstractMatrix{T}, α::T, atol ,rtol, max_iters) 
         f_ss!(Xsol,X0)
         converged,finite = Solvers.convergence(Xsol,X0,atol,rtol)
         if converged
-            if finite
-                return Xsol
-            else
-                Xsol .= NaN
-                return Xsol
-            end
+            finite || (Xsol .= NaN)
+            return Xsol
         end
         X0 .= Xsol
        # @show Xsol
     end
+    if converged
+        !finite && (Xsol .= NaN)
+        return Xsol
+    end
     H = Matrix{T}(undef,n,n)
     H .= 0
     piv = zeros(Int,n)
-    F = Solvers.unsafe_LU!(H,piv)
-    if !converged #proceed to newton minimization
-        dX = copy(Xsol)
-        KX = copy(Xsol)
-        for i in (it_ss + 1):max_iters
-            #@show Xsol
-            KX = mul!(KX,K,Xsol)
-            H .= -K
-            for k in 1:size(H,1)
-                H[k,k] -= (1 + KX[k])/Xsol[k]
-            end
-            #F already contains H and the pivots, because we refreshed H, we need to refresh
-            #the factorization too.
-            F = Solvers.unsafe_LU!(F)
-            dX .= 1 ./ Xsol .- 1 .- KX #gradient
-            ldiv!(F,dX) #we solve H/g, overwriting g
-            for k in 1:length(dX)
-                Xk = Xsol[k]
-                dXk = dX[k]
-                X_newton = Xk - dXk
-                if !(0 <= X_newton <= 1)
-                    Xsol[k] = 1/(1 + KX[k]) #successive substitution step
-                else
-                    Xsol[k] = X_newton #newton step
-                end
-            end
-           # Xsol .-= dX
-
-            converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
-            #@show converged,finite
-            if converged
-                if !finite
-                    fill!(Xsol,NaN)
-                end
-                return Xsol
-            end
-            X0 .= Xsol
+    dX = copy(Xsol)
+    KX = copy(Xsol)
+    for i in (it_ss + 1):max_iters
+        #@show Xsol
+        KX = mul!(KX,K,Xsol)
+        H .= -K
+        for k in 1:size(H,1)
+            H[k,k] -= (1 + KX[k])/Xsol[k]
+        end
+        #F already contains H and the pivots, because we refreshed H, we need to refresh
+        #the factorization too.
+        F = Solvers.unsafe_LU!(H,piv)
+        dX .= 1 ./ Xsol .- 1 .- KX #gradient
+        ldiv!(F,dX) #we solve H/g, overwriting g
+        X0 .= Xsol
+        for k in 1:length(dX)
+            Xk = Xsol[k]
+            X0k = X0[k]
+            dXk = dX[k]
+            X0[k] = Xk
+            X_newton = Xk - dXk
+            if !(0 <= X_newton <= 1)
+                Xsol[k] = 0.5*(Xk + X0k) #successive substitution step
+            else
+                Xsol[k] = X_newton #newton step
+            end   
+        end
+        # Xsol .-= dX
+        converged,finite = Solvers.convergence(Xsol,X0,atol,rtol,false,Inf)
+        #@show converged,finite
+        if converged
+            finite || (Xsol .= NaN)
+            return Xsol
         end
     end
-    if !converged
-        Xsol .= NaN
-    end
+
+    converged || (Xsol .= NaN)
     return Xsol
 end
 
@@ -461,7 +617,7 @@ function X_and_Δ_exact1(model,V,T,z,data = nothing)
 end
 
 function _X_exact1(model,V,T,z,data=nothing)
-    κ = model.params.bondvol.values
+    κ = assoc_shape(model)
     i,j = κ.outer_indices[1]
     a,b = κ.inner_indices[1]
     if data === nothing
@@ -659,6 +815,26 @@ macro assoc_loop(Xold,Xnew,expr)
         Xsol
     end |> esc
 end
+
+function X_exact2!(K,X)
+    k1 = K[1,2]
+    k2 = K[2,1]
+    #this computation is equivalent to the one done in X_exact1
+    _a = k2
+    _b = 1 - k2 + k1
+    _c = -1
+    denom = _b + sqrt(_b*_b - 4*_a*_c)
+    x1 = -2*_c/denom
+    x1k = k2*x1
+    x2 = (1- x1k)/(1 - x1k*x1k)
+    X[1] = x1
+    X[2] = x2
+    return X
+end
+
+#=
+
+=#
 #=
 function AX!(output,input,pack_indices,delta::Compressed4DMatrix{TT,VV} ,modelsites,ρ,z) where {TT,VV}
     _0 = zero(TT)

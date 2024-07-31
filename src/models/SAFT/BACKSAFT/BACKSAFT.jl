@@ -144,12 +144,6 @@ end
 
 d(model::BACKSAFTModel, V, T, z) = ck_diameter(model, T, z)
 
-function ζ(model::BACKSAFTModel, V, T, z, n)
-    m = model.params.segment.values
-    _d = @f(d)
-    return N_A*π/6/V * sum(z[i]*m[i]*_d[i]^n for i ∈ @comps)
-end
-
 function a_chain(model::BACKSAFTModel, V, T, z,_data = @f(data))
     _d, m̄, ζi = _data
     _,_,_,η = ζi

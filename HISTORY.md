@@ -1,3 +1,15 @@
+# v0.6.2
+
+## Bug fixes
+- `SAFTgammaMie` fixes.
+
+# v0.6.1
+
+## Bug fixes
+- `tpd` fixes.
+- `MultiPhaseTPFlash` fixes.
+- Association: all temporary storage is now initialized
+
 # v0.6.0
 
 ## New Features

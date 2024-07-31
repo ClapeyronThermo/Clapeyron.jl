@@ -11,7 +11,7 @@ for f in (:eos_res,:a_res,:VT_entropy_res,:VT_gibbs_free_energy_res,:VT_helmholt
     end
 end
 
-function volume_impl(model::IdealModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0 = nothing)
+function volume_impl(model::IdealModel,p,T,z,phase,threaded,vol0)
     return sum(z)*R̄*T/p
 end
 
@@ -39,6 +39,6 @@ function VT_gibbs_free_energy(model::IdealModel, V, T, z=SA[1.])
     return A - V*∂A∂V
 end
 
-lb_volume(model::IdealModel,z=SA[1.0]) = zero(eltype(z))
+lb_volume(model::IdealModel,z) = zero(eltype(z))
 
 idealmodel(model::IdealModel) = nothing

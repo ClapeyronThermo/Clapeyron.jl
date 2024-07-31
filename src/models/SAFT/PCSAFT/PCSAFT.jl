@@ -1,4 +1,4 @@
-struct PCSAFTParam{T} <: EoSParam
+struct PCSAFTParam{T} <: ParametricEoSParam{T}
     Mw::SingleParam{T}
     segment::SingleParam{T}
     sigma::PairParam{T}
@@ -8,16 +8,7 @@ struct PCSAFTParam{T} <: EoSParam
 end
 
 function PCSAFTParam(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
-    el(x) = eltype(x.values)
-    el(x::AssocParam) = eltype(x.values.values)
-    T = mapreduce(el,promote_type,(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol))
-    Mw = convert(SingleParam{T},Mw)
-    segment = convert(SingleParam{T},segment)
-    sigma = convert(PairParam{T},sigma)
-    epsilon = convert(PairParam{T},epsilon)
-    epsilon_assoc = convert(AssocParam{T},epsilon_assoc)
-    bondvol = convert(AssocParam{T},bondvol)
-    return PCSAFTParam{T}(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol) 
+    return build_parametric_param(PCSAFTParam,Mw,segment,sigma,epsilon,epsilon_assoc,bondvol)
 end
 
 Base.eltype(p::PCSAFTParam{T}) where T = T
@@ -135,6 +126,8 @@ end
 
 d(model::PCSAFTModel, V, T, z) = ck_diameter(model, T, z)
 
+#defined in SAFT/equations.jl
+#=
 function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     m = model.params.segment.values
     res = zero(V+T+first(z)+one(eltype(model)))
@@ -144,7 +137,7 @@ function ζ(model::PCSAFTModel, V, T, z, n, _d = @f(d))
     end
     res *= N_A*π/6/V
     return res
-end
+end =# 
 
 function g_hs(model::PCSAFTModel, V, T, z, i, j, _data=@f(data))
     _d,ζ0,ζ1,ζ2,ζ3,_ = _data
@@ -240,7 +233,7 @@ const PCSAFTconsts = (
 )
 
 #= 
-Especific PCSAFT optimizations
+Specific PCSAFT optimizations
 This code is not generic, in the sense that is only used by PCSAFT and not any model <:PCSAFTModel
 but, because it is one of the more commonly used EoS,
 It can have some specific optimizations to make it faster.

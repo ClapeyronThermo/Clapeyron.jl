@@ -166,10 +166,10 @@ function recombine_impl!(model::CPAModel)
     return model
 end
 
-lb_volume(model::CPAModel,z = SA[1.0]) = lb_volume(model.cubicmodel,z)
-T_scale(model::CPAModel,z=SA[1.0]) = T_scale(model.cubicmodel,z)
+lb_volume(model::CPAModel,z) = lb_volume(model.cubicmodel,z)
+T_scale(model::CPAModel,z) = T_scale(model.cubicmodel,z)
 
-function p_scale(model::CPAModel,z=SA[1.0])
+function p_scale(model::CPAModel,z)
     #does not depend on Pc, so it can be made optional on CPA input
     b = model.cubicmodel.params.b.values
     a = model.cubicmodel.params.a.values
@@ -212,7 +212,7 @@ end
 #=
 if we don't have association, reduce to the inner cubic model.
 =#
-function volume_impl(model::CPAModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0=nothing)
+function volume_impl(model::CPAModel,p,T,z,phase,threaded,vol0)
     n = assoc_pair_length(model)
     if n == 0
         return volume_impl(model.cubicmodel,p,T,z,phase,threaded,vol0)
@@ -222,11 +222,11 @@ function volume_impl(model::CPAModel,p,T,z=SA[1.0],phase=:unknown,threaded=false
 end
 
 #approximating the gas phase as the pure cubic.
-function x0_volume_gas(model::CPAModel, p, T, z = SA[1.0])
+function x0_volume_gas(model::CPAModel, p, T, z)
     return volume(model.cubicmodel,p,T,z,phase = :v)
 end
 
-function x0_volume_liquid(model::CPAModel,p, T, z = SA[1.0])
+function x0_volume_liquid(model::CPAModel,p, T, z)
     n = assoc_pair_length(model)
     n == 0 && return volume(model.cubicmodel,p,T,z,phase = :l)
     return 1.1*lb_volume(model,z)

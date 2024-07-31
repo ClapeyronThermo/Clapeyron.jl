@@ -28,7 +28,7 @@ function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=
     nan = primalval(_nan)
     logV0 = primalval(log(V0)*_1)
     z = primalval(_z)
-    log_lb_v = log(primalval(lb_volume(model,z)))
+    log_lb_v = log(primalval(lb_volume(model,T,z)))
     function logstep(logVᵢ::TT) where TT
         logVᵢ < log_lb_v && return TT(zero(logVᵢ)/zero(logVᵢ))
         Vᵢ = exp(logVᵢ)
@@ -52,6 +52,39 @@ function _volume_compress(model,_p,_T,_z=SA[1.0],V0=x0_volume(model,p,T,z,phase=
     Vsol = exp(logV)
     psol,dpdVsol = p∂p∂V(model,Vsol,_T,_z)
     return Vsol - (psol - _p)/dpdVsol
+end
+
+#"chills" a state from T0,p to T,p, starting at v = v0
+function volume_chill(model::EoSModel,p,T,z,v0,T0,Ttol = 0.01,max_iters=100)
+    _1 = one(Base.promote_eltype(model,p,T,z))
+    vᵢ = _1*v0
+    Tᵢ = _1*T0
+    for i in 1:100
+        d²A,dA,_ = ∂2f(model,vᵢ,Tᵢ,z)
+        ∂²A∂V∂T = d²A[1,2]
+        ∂²A∂V² = d²A[1,1]
+        ∂²A∂T² = d²A[2,2]
+        pᵢ = -dA[1]
+        dvdt = -∂²A∂V∂T/∂²A∂V²
+        dvdp = -1/∂²A∂V²
+        dtdp = -1/∂²A∂V∂T
+        ΔT = dtdp*(p - pᵢ)
+        Tnew = Tᵢ + dtdp*(p - pᵢ)
+        if Tnew < T
+            Tᵢ = (Tᵢ + T)/2
+            vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+        else
+            Tᵢ = Tᵢ + dtdp*(p - pᵢ)
+        end
+        Δv = dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+        vnew = vᵢ + Δv
+        if vnew > 0
+            vᵢ = vᵢ + dvdp*(p - pᵢ) + dvdt*(T - Tᵢ)
+        end
+        abs(ΔT) < Ttol*T && vnew > 0 && break
+        !isfinite(vᵢ) && break
+    end
+    return vᵢ
 end
 
 """
@@ -147,7 +180,12 @@ end
 fluid_model(model) = model
 solid_model(model) = model
 
-function volume_impl(model::EoSModel,p,T,z=SA[1.0],phase=:unknown, threaded=true,vol0=nothing)
+volume_impl(model,p,T) = volume_impl(model,p,T,SA[1.0],:unknown,true,nothing)
+volume_impl(model,p,T,z) = volume_impl(model,p,T,z,:unknown,true,nothing)
+volume_impl(model,p,T,z,phase) = volume_impl(model,p,T,z,phase,true,nothing)
+volume_impl(model,p,T,z,phase,threaded) = volume_impl(model,p,T,z,phase,threaded,nothing)
+
+function volume_impl(model::EoSModel,p,T,z,phase,threaded,vol0)
     return default_volume_impl(model,p,T,z,phase,threaded,vol0)
 end
 

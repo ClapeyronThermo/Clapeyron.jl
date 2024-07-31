@@ -70,7 +70,7 @@ export softSAFT
 
 recombine_impl!(model::softSAFTModel) = recombine_saft!(model)
 
-function lb_volume(model::softSAFTModel,z=SA[1.0])
+function lb_volume(model::softSAFTModel,z)
     σ3,ϵ̄,m̄ = σϵ_m_vdw1f(model,1.0,1.0,z)
     return m̄*N_A*σ3*π/6
 end

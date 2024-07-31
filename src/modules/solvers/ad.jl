@@ -266,5 +266,3 @@ function grad_at_i(f::F,x::X,i,TT = eltype(x)) where {F,X <: AbstractVector{R}} 
     fx = f(∂x)
     return ForwardDiff.extract_derivative(T, fx)
 end
-
-

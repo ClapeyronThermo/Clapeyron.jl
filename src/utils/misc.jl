@@ -152,3 +152,6 @@ function viewn(x,chunk,i)
     l < chunk*i && throw(BoundsError(x,chunk*i))
     @view x[((i - 1)*chunk+1):(i*chunk)]
 end
+
+linearidx(x::AbstractVector) = 1:length(x)
+linearidx(x::AbstractMatrix) = diagind(x)
