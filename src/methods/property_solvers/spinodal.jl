@@ -2,8 +2,7 @@
 """
     spinodal_pressure(model::EoSModel, T, x; v0, phase)
 
-Calculates the spinodal pressure and volume for a given temperature and composition. 
-Returns a tuple, containing:
+Calculates the spinodal pressure and volume for a given temperature and composition. Returns a tuple, containing:
 - spinodal pressure [`Pa`]
 - spinodal volume [`m³`]    
     
@@ -40,12 +39,11 @@ end
 """
     spinodal_temperature(model::EoSModel, p, x; T0, v0, phase)
 
-Calculates the spinodal pressure and volume for a given pressure and composition. 
-Returns a tuple, containing:
+Calculates the spinodal pressure and volume for a given pressure and composition. Returns a tuple, containing:
 - spinodal temperataure [`K`]
 - spinodal volume [`m³`]    
 
-Calculates either the liquid or the vapor spinodal point depending on the given starting temperature `t0` and volume `v0` or the `phase`. The keyword `phase` is ignored if `v0` is given.
+Calculates either the liquid or the vapor spinodal point depending on the given starting temperature `T0` and volume `v0` or the `phase`. The keyword `phase` is ignored if `T0` or `v0` is given.
 """
 function spinodal_temperature(model::EoSModel,p,x=SA[1.];T0=nothing,v0=nothing,phase=:unknown)
     x = x/sum(x)
@@ -59,7 +57,7 @@ function spinodal_temperature(model::EoSModel,p,x=SA[1.];T0=nothing,v0=nothing,p
         elseif is_vapour(phase)
             Tv0 = dew_temperature(model,p,x)[[1,3]]
         else
-            error("Either `v0` or `phase` has to be specified!")
+            error("Either `T0` and `v0` or `phase` have to be specified!")
         end
         T0 = isnothing(T0) ? Tv0[1] : T0
         v0 = isnothing(v0) ? Tv0[2] : v0

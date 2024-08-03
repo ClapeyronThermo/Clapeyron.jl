@@ -63,6 +63,8 @@ Clapeyron.VT_mechanical_stability
 Clapeyron.VT_diffusive_stability
 Clapeyron.VT_chemical_stability
 Clapeyron.tpd
+Clapeyron.spinodal_pressure
+Clapeyron.spinodal_temperature
 ```
 
 ## TP Flash
