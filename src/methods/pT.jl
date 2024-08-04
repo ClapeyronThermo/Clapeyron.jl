@@ -407,6 +407,19 @@ function identify_phase(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threade
     return VT_identify_phase(model,V,T,z)
 end
 
+"""
+    fundamental_derivative_of_gas_dynamics(model::EoSModel, p, T, z=SA[1.]; phase=:gas, threaded=true, vol0=nothing)::Symbol
+
+Calculates the fundamental derivative of gas dynamics.
+    
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and calculates the property via `VT_enthalpy(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
+function fundamental_derivative_of_gas_dynamics(model::EoSModel, p, T, z=SA[1.]; phase=:gas, threaded=true, vol0=nothing)
+    V = volume(model, p, T, z; phase, threaded, vol0)
+    return VT_fundamental_derivative_of_gas_dynamics(model,V,T,z)
+end
 
 """
     fugacity_coefficient(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
@@ -600,6 +613,8 @@ export entropy_res, internal_energy_res, enthalpy_res, gibbs_free_energy_res, he
 export isochoric_heat_capacity, isobaric_heat_capacity
 export isothermal_compressibility, isentropic_compressibility, speed_of_sound
 export isobaric_expansivity, joule_thomson_coefficient, inversion_temperature
+#higher derivative order properties
+export fundamental_derivative_of_gas_dynamics
 #volume properties
 export mass_density,molar_density, compressibility_factor
 #molar gradient properties

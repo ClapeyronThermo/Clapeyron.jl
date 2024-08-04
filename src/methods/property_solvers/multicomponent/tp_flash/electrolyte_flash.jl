@@ -13,7 +13,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         z = z_full[z_nonzero]
     end
 
-    if is_vle(equilibrium) || (equilibrium == :unknown)
+    if is_vle(equilibrium) || is_unknown(equilibrium)
         phasex = :liquid
         phasey = :vapor
         append!(non_iny_list,ions)
@@ -75,11 +75,11 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         lnK = log.(x ./ y)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,nothing,inx,iny)
         K = exp.(lnK)
-    elseif is_vle(equilibrium) || (equilibrium == :unknown)
+    elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # Wilson Correlation for K
         K = tp_flash_K0(model,p,T)
         #if we can't predict K, we use lle
-        if equilibrium == :unknown
+        if is_unknown(equilibrium)
             Kmin,Kmax = extrema(K)
             
             if Kmin > 1 || Kmax < 1 
@@ -202,6 +202,8 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
         singlephase = false
+    elseif any(isnan,view(K,in_equilibria)) || isnan(ψ)
+        singlephase = true
     end
     if singlephase
         β = zero(β)/zero(β)
@@ -213,12 +215,7 @@ function tp_flash_michelsen(model::ElectrolyteModel, p, T, z; equilibrium=:vle, 
         x = index_expansion(x,z_nonzero)
         y = index_expansion(y,z_nonzero)
     end
-
-    if vx < vy #sort by increasing volume
-        return x, y, β, (vx, vy)    
-    else
-        return y, x, 1 - β, (vx, vy)
-    end
+    return x, y, β, (vx,vy)
 end
 
 function rachfordrice(K, z, Z; β0=nothing, ψ0=nothing, non_inx=FillArrays.Fill(false,length(z)), non_iny=non_inx)

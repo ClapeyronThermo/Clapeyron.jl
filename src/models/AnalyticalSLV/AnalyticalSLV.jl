@@ -106,7 +106,7 @@ function x0_volume_solid(model::AnalyticalSLVModel,T,z = SA[1.0])
     return 1.01*b̄
 end
 
-function lb_volume(model::AnalyticalSLVModel,z=SA[1.0])
+function lb_volume(model::AnalyticalSLVModel,z)
     return x0_volume_solid(model,0,z)/1.01
 end
 
@@ -118,7 +118,7 @@ function x0_volume_liquid(model::AnalyticalSLVModel,T,z = SA[1.0])
     return 1.01*dot(model.params.c.values,z)
 end
 
-function T_scale(model::AnalyticalSLVModel, z=SA[1.0])
+function T_scale(model::AnalyticalSLVModel, z)
     n = sum(z)
     invn2 = one(n) / (n * n)
     _Tc = model.params.Tc.values

@@ -19,7 +19,15 @@ function transform_params(::Type{pharmaPCSAFT},params,components)
     sigma = params["sigma"]
     sigma.values .*= 1E-10
     params["kT"] = get(params,"kT",PairParam("kT",components,zeros(length(components))))
-    params["water"] = SpecialComp(components,["water08"])
+    water = SpecialComp(components,["water08"])
+    params["water"] = water
+
+    if water[] != 0
+        assoc = params["assoc_options"]
+        if assoc.combining ∈ (:esd,:elliott)
+            throw(ArgumentError("pharmaPCSAFT does not support $(assoc.combining) rule with a temperature-dependent sigma. try using :esd_runtime instead"))
+        end
+    end
     #k needs to be fully instantiated here, because it is stored as a parameter
     params["k"] = get(params,"k",PairParam("k",components,zeros(length(components))))
     sigma,epsilon = params["sigma"],params["epsilon"]
@@ -77,19 +85,29 @@ pharmaPCSAFT
 @inline water08_k(model::PCSAFTModel) = 0
 @inline water08_k(model::pharmaPCSAFTModel) = model.params.water[]
 
-function x0_volume_liquid(model::pharmaPCSAFTModel, T,z=SA[1.])
+function x0_volume_liquid(model::pharmaPCSAFTModel, T, z)
     return lb_volume(model,z)*1.7
 end
 
-function lb_volume(model::pharmaPCSAFTModel, z = SA[1.0])
+lb_volume(model::pharmaPCSAFTModel, z) = lb_volume(model,298.15,z)
+
+
+function lb_volume(model::pharmaPCSAFTModel,T, z)
     seg = model.params.segment.values
-    σ = deepcopy(model.params.sigma.values)
+    σ = model.params.sigma.values
     k = water08_k(model)
-    if k > 0 
-        σ[k,k] += Δσh20(298.15)
+    if k > 0
+        Δσ = Δσh20(T)
+    else
+        Δσ = zero(T)
     end
-    val = π/6*N_A*sum(z[i]*seg[i]*σ[i,i]^3 for i in 1:length(z))
-    return val
+    val = zero(Base.promote_eltype(model,T,z))
+    for i in @comps
+        σi = σ[i,i] + (k==i)*Δσ
+        val += z[i]*seg[i]*σi*σi*σi
+    end
+    lb_v = π/6*N_A*val
+    return lb_v
 end
 
 function d(model::pharmaPCSAFTModel, V, T, z)

@@ -90,7 +90,19 @@ Returns `true` if the symbol is in `(:sc,:SC,:supercritical,:SUPERCRITICAL)`.
 If a string is passed, it is converted to symbol.
 """
 is_supercritical(sym::Symbol) = sym in SUPERCRITICAL_STR
-is_supercritical(str::String) = is_vapour(Symbol(str))
+is_supercritical(str::String) = is_supercritical(Symbol(str))
+
+const UNKOWN_STR = (:unknown,:UNKNOWN)
+
+"""
+    is_unknown(x::Union{Symbol,String})
+
+Returns `true` if the symbol is in `(:unknown,:UNKNOWN)`.
+
+If a string is passed, it is converted to symbol.
+"""
+is_unknown(sym::Symbol) = sym in UNKOWN_STR
+is_unknown(str::String) = is_unknown(Symbol(str))
 
 const SOLID_STR = (:solid,:SOLID,:s)
 """
@@ -104,6 +116,7 @@ If a string is passed, it is converted to symbol.
 is_solid(sym::Symbol) = sym in SOLID_STR
 is_solid(str::String) = is_vapour(Symbol(str))
 is_solid(model::EoSModel) = false
+
 
 const VLE_STR = (:vle,:lve,:vl,:lv)
 """

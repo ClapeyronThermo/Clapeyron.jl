@@ -26,7 +26,7 @@ NaNLiquid
 
 export NaNLiquid
 
-function volume_impl(model::NaNLiquidModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0 = 0.0)
+function volume_impl(model::NaNLiquidModel,p,T,z,phase,threaded,vol0)
     _0 = zero(first(z))
     return _0/_0
 end

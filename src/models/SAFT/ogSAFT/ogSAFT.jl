@@ -130,13 +130,6 @@ end
 #     return σx * f
 # end
 
-function ζn(model::ogSAFTModel, V, T, z, n)
-    #∑z = ∑(z)
-    #x = z/∑z
-    m = model.params.segment.values
-    return N_A*π/6/V * ∑(z[i]*m[i]*@f(d, i)^n for i ∈ @comps)
-end
-
 # function η(model::ogSAFTModel, V, T, z)
 #     ∑z = ∑(z)
 #     x = z/∑z

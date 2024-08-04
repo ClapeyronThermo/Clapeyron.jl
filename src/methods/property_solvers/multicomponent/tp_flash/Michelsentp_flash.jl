@@ -56,7 +56,7 @@ function MichelsenTPFlash(;equilibrium = :unknown,
                         second_order = false,
                         noncondensables = nothing,
                         nonvolatiles = nothing)
-    !(is_vle(equilibrium) | is_lle(equilibrium) | (equilibrium == :unknown))  && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
+    !(is_vle(equilibrium) | is_lle(equilibrium) | is_unknown(equilibrium))  && throw(error("invalid equilibrium specification for MichelsenTPFlash"))
     if K0 == x0 == y0 === v0 == nothing #nothing specified
         #is_lle(equilibrium)
         T = Nothing
@@ -128,7 +128,7 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         z = z_full[z_nonzero]
     end
 
-    if is_vle(equilibrium) || (equilibrium == :unknown)
+    if is_vle(equilibrium) || is_unknown(equilibrium)
         phasex = :liquid
         phasey = :vapor
     elseif is_lle(equilibrium)
@@ -191,14 +191,14 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         lnK = log.(x ./ y)
         lnK,volx,voly,_ = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,nothing,inx,iny)
         K = exp.(lnK)
-    elseif is_vle(equilibrium) || (equilibrium == :unknown)
+    elseif is_vle(equilibrium) || is_unknown(equilibrium)
         # Wilson Correlation for K
         K = tp_flash_K0(model,p,T)
         #if we can't predict K, we use lle
-        if equilibrium == :unknown
+        if is_unknown(equilibrium)
             Kmin,Kmax = extrema(K)
-            
-            if Kmin >= 1 || Kmax <= 1 
+
+            if Kmin >= 1 || Kmax <= 1
                 K = K0_lle_init(model,p,T,z)
             end
         end
@@ -211,10 +211,26 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     _1 = one(p+T+first(z))
     # Initial guess for phase split
     β,singlephase,_ = rachfordrice_β0(K,z)
-    #=TODO:
-    there is a method used in TREND that tries to obtain adequate values of K
-    in the case of incorrect initialization.
-    =#
+
+    #if singlephase == true, maybe initial K values overshoot the actual phase split.
+    if singlephase
+        Kmin,Kmax = extrema(K)
+        if !(Kmin >= 1 || Kmax <= 1)
+            #valid K, still single phase.
+            g0 = dot(z, K) - 1. #rachford rice, supposing β = 0
+            g1 = 1. - sum(zi/Ki for (zi,Ki) in zip(z,K)) #rachford rice, supposing β = 1
+            if g0 <= 0 && g1 < 0 #bubble point.
+                β = eps(typeof(β))
+                singlephase = false
+            elseif g0 > 0 && g1 >= 0 #dew point
+                β = one(β) - eps(typeof(β))
+                singlephase = false
+            end
+        end
+    else
+        β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
+    end
+
     # Stage 1: Successive Substitution
     error_lnK = _1
     it = 0
@@ -235,8 +251,6 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
         it += 1
         itacc += 1
         lnK_old = lnK .* _1
-        β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
-        singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         x,y = update_rr!(K,β,z,x,y,non_inx,non_iny)
         # Updating K's
         lnK,volx,voly,gibbs = update_K!(lnK,model,p,T,x,y,volx,voly,phasex,phasey,β,inx,iny)
@@ -265,7 +279,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
             end
         end
         K .= exp.(lnK)
-
+        β = rachfordrice(K, z; β0=β, non_inx=non_inx, non_iny=non_iny)
+        singlephase = !(0 < β < 1) #rachford rice returns 0 or 1 if it is single phase.
         # Computing error
         # error_lnK = sum((lnK .- lnK_old).^2)
         error_lnK = dnorm(lnK,lnK_old,1)
@@ -314,6 +329,8 @@ function tp_flash_michelsen(model::EoSModel, p, T, z; equilibrium=:vle, K0=nothi
     #maybe azeotrope, do nothing in this case
     if abs(vx - vy) > sqrt(max(abs(vx),abs(vy))) && singlephase
         singlephase = false
+    elseif any(isnan,view(K,in_equilibria))
+        singlephase = true
     end
     if singlephase
         β = zero(β)/zero(β)

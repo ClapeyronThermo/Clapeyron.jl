@@ -10,7 +10,7 @@ function x0_volume_liquid(model,T,z)
 end
 
 x0_volume_liquid(model,p,T,z) = x0_volume_liquid(model,T,z)
-
+x0_volume_liquid(model,T) = x0_volume_liquid(model,T,SA[1.0])
 """
     x0_volume_gas(model,p,T,z)
 
@@ -20,6 +20,7 @@ function x0_volume_gas(model,p,T,z)
     return volume_virial(model,p,T,z)
 end
 
+x0_volume_gas(model,p,T) = x0_volume_gas(model,p,T,SA[1.0])
 """
     x0_volume_solid(model,T,z)
     x0_volume_solid(model,p,T,z)
@@ -51,8 +52,7 @@ function x0_volume(model, p, T, z = SA[1.0]; phase = :unknown)
 end
 
 function x0_volume_impl(model, p, T, z = SA[1.0], phase = :unknown)
-    phase = Symbol(phase)
-    if phase === :unknown || is_liquid(phase)
+    if is_unknown(phase) || is_liquid(phase)
         return x0_volume_liquid(model,p,T,z)
     elseif is_vapour(phase)
         return x0_volume_gas(model,p,T,z)
@@ -67,7 +67,9 @@ function x0_volume_impl(model, p, T, z = SA[1.0], phase = :unknown)
 end
 
 """
-    lb_volume(model::EoSModel,z=SA[1.0])
+    lb_volume(model::EoSModel)
+    lb_volume(model::EoSModel,z)
+    lb_volume(model::EoSModel,T,z)
 Returns the lower bound volume.
 It has different meanings depending on the Equation of State, but symbolizes the minimum allowable volume at a certain composition:
 - SAFT EoS: the packing volume
@@ -76,20 +78,24 @@ On empiric equations of state, the value is chosen to match the volume of the co
 , but the equation itself normally can be evaluated at lower volumes.
 On SAFT and Cubic EoS, volumes lower than `lb_volume` will likely error.
 The lower bound volume is used for guesses of liquid volumes at a certain pressure, saturated liquid volumes and critical volumes.
+
+In most cases, the lower bound volume is independent of temperature. Some notable exceptions are the Quantum-Corrected Peng-Robinson cubic (`QCPR`) and Cubic-plus-Chain (CPC) models. For those,
+it is better to define the three-argument variant `lb_volume(model,T,z)`
 """
 function lb_volume end
-
+lb_volume(model,T,z) = lb_volume(model,z)
+lb_volume(model) = lb_volume(model,SA[1.0])
 """
-    T_scale(model::EoS,z=SA[1.0])
+    T_scale(model::EoS,z)
 Represents a temperature scaling factor.
 On any EoS based on Critical parameters (Cubic or Empiric EoS), the temperature scaling factor is chosen to be the critical temperature.
 On SAFT or other molecular EoS, the temperature scaling factor is chosen to be a function of the potential depth ϵ.
 Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
 """
 function T_scale end
-
+T_scale(model) = T_scale(model,SA[1.0])
 """
-    p_scale(model::SAFTModel,z=SA[1.0])
+    p_scale(model::SAFTModel,z)
 Represents a pressure scaling factor
 On any EoS based on Critical parameters (Cubic or
 Empiric EoS), the pressure scaling factor is
@@ -99,7 +105,7 @@ scaling factor is chosen to a function of ∑(zᵢ*ϵᵢ*(σᵢᵢ)³)
 Used as scaling factors in [`saturation_pressure`](@ref) and as input for solving [`crit_pure`](@ref)
 """
 function p_scale end
-
+p_scale(model) = p_scale(model,SA[1.0])
 """
     antoine_coef(model)
 should return a 3-Tuple containing reduced Antoine Coefficients. The Coefficients follow the correlation:
@@ -140,7 +146,7 @@ function x0_sat_pure_virial(model,T)
     RT= R̄*T
     B = second_virial_coefficient(model,T,z)
     _0,_1 = zero(B),oneunit(B)
-    lb_v = lb_volume(model,z)*_1
+    lb_v = lb_volume(model,T,z)*_1
     #=
     some very complicated models, like DAPT, fail on the calculation of the second virial coefficient.
     while this is a numerical problem in the model itself, it is better to catch this early.
@@ -522,7 +528,7 @@ function x0_psat(model::EoSModel, T, Tc, Vc)
         fmax(V) = -pressure(model, V, T)
         sol_max = Solvers.optimize(fmax, (low_v, up_v))
         P_max = -Solvers.x_minimum(sol_max)
-        low_v = lb_volume(model)
+        low_v = lb_volume(model,T,SA[1.0])
         up_v = Vc
         #note: P_min is the pressure at the minimum volume, not the minimum pressure
         fmin(V) = pressure(model, V, T)
@@ -645,7 +651,9 @@ Returns a 2-tuple corresponding to
 function x0_crit_pure end
 
 function x0_crit_pure(model::EoSModel)
-    lb_v = lb_volume(model)
+    z = SA[1.0]
+    Ts = T_scale(model,z)
+    lb_v = lb_volume(model,Ts,z)
     (1.5, log10(lb_v/0.3))
 end
 

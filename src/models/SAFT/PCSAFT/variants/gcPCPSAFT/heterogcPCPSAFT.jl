@@ -139,7 +139,7 @@ HeterogcPCPSAFT
 
 export HeterogcPCPSAFT
 
-function lb_volume(model::gcPCPSAFTModel, z = SA[1.0])
+function lb_volume(model::gcPCPSAFTModel, z)
     vk  = model.groups.n_flattenedgroups
     seg = model.params.segment.values
     σ = model.params.sigma.values
