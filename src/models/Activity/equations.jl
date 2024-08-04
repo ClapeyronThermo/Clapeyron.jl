@@ -27,6 +27,12 @@ function activity_coefficient(model::ActivityModel,p,T,z)
     return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X
 end
 
+function activity(model::ActivityModel,p,T,z=SA[1.])
+    γ = activity_coefficient(model, p, T, z)
+    x = z ./ sum(z)
+    return γ .* x
+end
+
 function test_activity_coefficient(model::ActivityModel,p,T,z)
     X = gradient_type(p,T,z)
     return exp.(Solvers.gradient(x->excess_gibbs_free_energy(model,p,T,x),z)/(R̄*T))::X

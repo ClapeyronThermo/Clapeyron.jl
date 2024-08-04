@@ -455,6 +455,29 @@ function activity_coefficient(model::EoSModel,p,T,z=SA[1.]; phase=:unknown, thre
     return exp.((μ_mixt .- μ_pure) ./ R̄ ./ T) ./z
 end
 
+
+""" 
+    activity(model::EoSModel,p,T,z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
+
+Calculates the activity, defined as:
+```julia
+log(a) = (μ_mixt - μ_pure) / R̄ / T
+```
+where `μ_mixt` is the chemical potential of the mixture and `μ_pure` is the chemical potential of the pure components.
+
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
+calculates the property via `VT_fugacity_coefficient(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
+function activity(model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    pure   = split_model(model)
+    μ_mixt = chemical_potential(model, p, T, z; phase, threaded, vol0)
+    μ_pure = gibbs_free_energy.(pure, p, T; phase, threaded, vol0)
+    R̄ = Rgas(model)
+    return exp.((μ_mixt .- μ_pure) ./ R̄ ./ T)
+end
+
 """
     compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
@@ -618,6 +641,6 @@ export fundamental_derivative_of_gas_dynamics
 #volume properties
 export mass_density,molar_density, compressibility_factor
 #molar gradient properties
-export chemical_potential, activity_coefficient, fugacity_coefficient
+export chemical_potential, activity_coefficient, activity, fugacity_coefficient
 export chemical_potential_res
 export mixing, excess, gibbs_solvation
