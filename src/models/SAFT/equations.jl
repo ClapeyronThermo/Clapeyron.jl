@@ -32,10 +32,12 @@ end
 function ζ0123(model, V, T, z, _d=@f(d),m = model.params.segment.values)
     #N_A*π/6/V * sum(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
     _0 = zero(V+T+first(z)+one(eltype(model)))
+    d_idx = linearidx(_d)
+    m_idx = linearidx(m)
     ζ0,ζ1,ζ2,ζ3 = _0,_0,_0,_0
-    for i ∈ 1:length(z)
-        di =_d[i]
-        xS = z[i]*m[i]
+    @inbounds for i ∈ 1:length(z)
+        di =_d[d_idx[i]]
+        xS = z[i]*m[m_idx[i]]
         ζ0 += xS
         ζ1 += xS*di
         ζ2 += xS*di*di
@@ -44,6 +46,22 @@ function ζ0123(model, V, T, z, _d=@f(d),m = model.params.segment.values)
     c = π/6*N_A/V
     ζ0,ζ1,ζ2,ζ3 = c*ζ0,c*ζ1,c*ζ2,c*ζ3
     return ζ0,ζ1,ζ2,ζ3
+end
+
+function ζ(model, V, T, z, n, _d = @f(d),m = model.params.segment.values)
+    #N_A*π/6/V * sum(z[i]*m[i]*@f(d,i)^n for i ∈ @comps)
+    _0 = zero(V+T+first(z)+one(eltype(model)))
+    d_idx = linearidx(_d)
+    m_idx = linearidx(m)
+    ζn = _0
+    @inbounds for i ∈ 1:length(z)
+        di =_d[d_idx[i]]
+        xS = z[i]*m[m_idx[i]]
+        ζn += xS*di^n
+    end
+    c = π/6*N_A/V
+    ζn = c*ζn
+    return ζn
 end
 
 function x0_crit_pure(model::SAFTModel)
@@ -60,7 +78,7 @@ function saft_lorentz_berthelot(params)
     return params
 end
 
-function T_scale(model::SAFTModel,z=SA[1.0])
+function T_scale(model::SAFTModel,z)
     ϵ = model.params.epsilon.values
     return prod(ϵ[i,i]^z[i] for i in 1:length(z))^(1/sum(z))
 end
@@ -69,7 +87,7 @@ function T_scales(model::SAFTModel)
     ϵ =diagvalues(model.params.epsilon)
 end
 
-function p_scale(model::SAFTModel,z=SA[1.0])
+function p_scale(model::SAFTModel,z)
     ϵ = model.params.epsilon.values
     σ = model.params.sigma.values
     val = sum(z[i]*σ[i,i]^3/ϵ[i,i] for i in 1:length(z))*N_A/R̄
@@ -82,12 +100,6 @@ function antoine_coef(model::SAFTModel)
     B = exp(1.7330494260220226 + 0.6185684341246401*log(m))
     C = 0.018524160155803788 - 0.19222021003570597*log(m)
     return A,B,C
-end
-
-## Association overloads required to support association
-
-@inline function assoc_similar(model::EoSModel,::Type{𝕋}) where 𝕋
-    assoc_similar(model.params.bondvol.values,𝕋)
 end
 
 #recombine! utilities

@@ -38,6 +38,11 @@ function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
     _,G,∑μᵢzᵢ = Clapeyron.gibbs_duhem(model,V,T,z)
     @test G ≈ ∑μᵢzᵢ rtol = rtol
 end
+
+function test_volume(model,p,T,z = Clapeyron.SA[1.0],rtol = 1e-8)
+    v = volume(model,p,T,z)
+    @test p ≈ Clapeyron.pressure(model,v,T,z) rtol = rtol
+end
 #=
 include_distributed distributes the test load among all workers
 =#

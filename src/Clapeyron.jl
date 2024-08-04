@@ -22,6 +22,9 @@ using StableTasks #for multithreaded volume
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
 
+#misc functions
+include("utils/misc.jl")
+
 include("modules/solvers/Solvers.jl")
 using .Solvers
 using .Solvers: log, sqrt, log1p, ^, dnorm, primalval
@@ -91,6 +94,7 @@ include("utils/acceleration_ss.jl")
 
 #Clapeyron methods (AD, property solvers, etc)
 include("methods/methods.jl")
+
 
 #=
 the dependency chain is the following:
@@ -264,8 +268,6 @@ include("models/AnalyticalSLV/AnalyticalSLV.jl")
 if !isdefined(Base,:get_extension)
     include("../ext/ClapeyronUnitfulExt.jl")
 end
-
-include("utils/misc.jl")
 
 include("estimation/estimation.jl")
 

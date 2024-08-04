@@ -262,7 +262,7 @@ __gas_model(model::CompositeModel) = model.fluid
 fluid_model(model::CompositeModel) = model.fluid
 solid_model(model::CompositeModel) = model.solid
 
-function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,vol0 = nothing)
+function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
     if is_liquid(phase) || is_vapour(phase)
         return volume_impl(model.fluid,p,T,z,phase,threaded,vol0)
     elseif is_solid(phase)

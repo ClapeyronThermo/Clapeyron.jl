@@ -644,8 +644,7 @@ function build_eosmodel(::Type{M},components,idealmodel,userlocations,group_user
 
     #add references, if needed
     if hasfield(M,:references)
-        references = default_references(M)
-        result[:references] = references
+        result[:references] = default_references(M)
     end
 
     #build idealmodel, if needed

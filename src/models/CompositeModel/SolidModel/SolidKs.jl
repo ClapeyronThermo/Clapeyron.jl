@@ -33,7 +33,7 @@ default_locations(::Type{SolidKs}) = ["solids/formation.csv"]
 default_references(::Type{SolidKs}) = String[]
 default_ignore_missing_singleparams(::Type{SolidKs}) = ["CpSL"]
 
-function volume_impl(model::SolidKsModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0 = nothing)
+function volume_impl(model::SolidKsModel,p,T,z,phase,threaded,vol0)
     _0 = zero(T + first(z))
     return _0/_0
 end

@@ -1,4 +1,4 @@
-struct SAFTVRMieParam{T} <: EoSParam
+struct SAFTVRMieParam{T} <: ParametricEoSParam{T}
     Mw::SingleParam{T}
     segment::SingleParam{T}
     sigma::PairParam{T}
@@ -10,18 +10,7 @@ struct SAFTVRMieParam{T} <: EoSParam
 end
 
 function SAFTVRMieParam(Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol)
-    el(x) = eltype(x.values)
-    el(x::AssocParam) = eltype(x.values.values)
-    T = mapreduce(el,promote_type,(Mw,segment,sigma,epsilon,epsilon_assoc,bondvol))
-    Mw = convert(SingleParam{T},Mw)
-    segment = convert(SingleParam{T},segment)
-    sigma = convert(PairParam{T},sigma)
-    epsilon = convert(PairParam{T},epsilon)
-    lambda_a = convert(PairParam{T},lambda_a)
-    lambda_r = convert(PairParam{T},lambda_r)
-    epsilon_assoc = convert(AssocParam{T},epsilon_assoc)
-    bondvol = convert(AssocParam{T},bondvol)
-    return SAFTVRMieParam{T}(Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol) 
+    return build_parametric_param(SAFTVRMieParam,Mw,segment,sigma,lambda_a,lambda_r,epsilon,epsilon_assoc,bondvol) 
 end
 
 Base.eltype(p::SAFTVRMieParam{T}) where T = T
@@ -189,7 +178,7 @@ function vr_mie_d_integral(θ,λa,λr)
             lnx = log(x)
             return exp(-θ*(exp(-λr*lnx)-exp(-λa*lnx)))
         end
-        return  Solvers.integral10(f_legendre,j,one(j))
+        return Solvers.integral10(f_legendre,j,one(j))
     end
 end
 
@@ -430,18 +419,23 @@ function ∂a_2╱∂ρ_S(model::SAFTVRMieModel,V, T, z, i)
               + x_0ij^(2*λr[i])*(@f(∂aS_1╱∂ρ_S,2*λr[i])+@f(∂B╱∂ρ_S,2*λr[i],x_0ij))))
 end
 
-function I(model::SAFTVRMieModel, V, T, z,Tr,_data = @f(data))
+function I(model::SAFTVRMieModel, V, T, z, i, j, _data = @f(data))
+    ϵ = model.params.epsilon.values[i,j]
+    Tr = T/ϵ
     _d,ρS,ζi,_ζ_X,_ζst,σ3_x = _data
     c  = SAFTVRMieconsts.c
     res = zero(_ζst)
     ρr = ρS*σ3_x
+    ρrn = one(ρr)
     @inbounds for n ∈ 0:10
-        ρrn = ρr^n
         res_m = zero(res)
+        Trm = one(Tr)
         for m ∈ 0:(10-n)
-            res_m += c[n+1,m+1]*Tr^m
+            res_m += c[n+1,m+1]*Trm
+            Trm = Trm*Tr
         end
         res += res_m*ρrn
+        ρrn = ρrn*ρr
     end
     return res
 end
@@ -454,7 +448,7 @@ function Δ(model::SAFTVRMieModel, V, T, z, i, j, a, b,_data = @f(data))
         return zero(@f(Base.promote_eltype))
     end
     Tr = T/ϵ[i,j]
-    _I = @f(I,Tr,_data)
+    _I = @f(I,i,j,_data)
     ϵ_assoc = model.params.epsilon_assoc.values
     F = expm1(ϵ_assoc[i,j][a,b]/T)
     return F*Kijab*_I

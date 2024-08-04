@@ -29,6 +29,6 @@ include("LB.jl")
 include("linear.jl")
 include("TL.jl")
 
-v_scale(model::MultiFluid,z,mixing::Nothing,∑z = sum(z)) = v_scale(model,z,LinearMixing(),∑z)
-T_scale(model::MultiFluid,z,mixing::Nothing,∑z = sum(z)) = T_scale(model,z,LinearMixing(),∑z)
+v_scale(model::MultiFluid,z,mixing::Nothing,∑z) = v_scale(model,z,LinearMixing(),∑z)
+T_scale(model::MultiFluid,z,mixing::Nothing,∑z) = T_scale(model,z,LinearMixing(),∑z)
 

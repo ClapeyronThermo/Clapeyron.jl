@@ -67,6 +67,25 @@ function bondvol_mix(bondvol::AssocParam,::Nothing,sites = nothing)
     return param
 end
 
+function dufal_mix(bondvol::AssocParam,::Nothing,sites = nothing)
+    length(bondvol.values.values) == 0 && return deepcopy(bondvol)
+    param = assoc_extend(bondvol)
+    mat = param.values
+    if sites isa SiteParam
+        n = sites.n_sites
+    else
+        n = nothing
+    end
+    for (idx,(i,j),(a,b)) in indices(mat)
+        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
+            mat.values[idx] = mix_mean3(mat[i,i][a,b],mat[j,j][a,b])
+        end
+    end
+    dropzeros!(mat)
+    return param
+end
+
+
 function epsilon_assoc_mix(epsilon_assoc::AssocParam,sites)
     length(epsilon_assoc.values.values) == 0 && return deepcopy(epsilon_assoc)
     param = assoc_extend(epsilon_assoc)
@@ -145,6 +164,8 @@ function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions,sites
         return bondvol_mix(bondvol,sigma,sites),epsilon_assoc_mix(epsilon_assoc,sites)
     elseif combining == :cr1
         return bondvol_mix(bondvol,nothing,sites),epsilon_assoc_mix(epsilon_assoc,sites)
+    elseif combining in (:dufal,:mie15)
+        return dufal_mix(bondvol,nothing,sites),epsilon_assoc_mix(epsilon_assoc,sites)
     else
         throw(error("incorrect combining argument ",error_color(string(combining))," passed to AssocOptions."))
     end

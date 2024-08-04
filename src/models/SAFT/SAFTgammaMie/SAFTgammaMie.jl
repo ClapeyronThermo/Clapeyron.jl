@@ -219,10 +219,11 @@ function recombine_impl!(model::SAFTgammaMieModel)
     gc_epsilon = epsilon_HudsenMcCoubrey!(gc_epsilon, gc_sigma)
     if model.epsilon_mixing == :default
         gc_epsilon = epsilon_HudsenMcCoubreysqrt!(gc_epsilon, gc_sigma)
+        comp_epsilon = epsilon_HudsenMcCoubreysqrt(group_pairmean(groups,gc_epsilon),model.vrmodel.params.sigma)
     else
         gc_epsilon = epsilon_HudsenMcCoubrey!(gc_epsilon, gc_sigma)
+        comp_epsilon = epsilon_HudsenMcCoubrey(group_pairmean(groups,gc_epsilon),model.vrmodel.params.sigma)
     end
-    comp_epsilon = epsilon_HudsenMcCoubrey(group_pairmean(groups,gc_epsilon),model.vrmodel.params.sigma)
     model.vrmodel.params.epsilon.values[:] = comp_epsilon.values
 
     gc_lambda_a = lambda_LorentzBerthelot!(gc_lambda_a)

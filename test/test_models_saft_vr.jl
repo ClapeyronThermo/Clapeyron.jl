@@ -32,6 +32,14 @@ GC.gc()
         GC.gc()
     end
 
+    @testset "SAFTVRMie15" begin
+        v15 = 1/(1000*1000*1.011/18.015)
+        T15 = 290.0
+        vr15 = SAFTVRMie15("water")
+        #Dufal, table 4, 290K, f_OH(free) = 0.089
+        @test Clapeyron.X(vr15,v15,T15,z1)[1][1] ≈ 0.08922902098124778 rtol = 1e-6
+    end
+
     @testset "SAFTgammaMie" begin
         system = SAFTgammaMie(["methanol","butane"])
         V_γMie = exp10(-3.5)
@@ -49,7 +57,7 @@ GC.gc()
         system = structSAFTgammaMie(species)
         V_γMie = exp10(-3.5)
         @test Clapeyron.a_chain(system, V_γMie, T, z) ≈ -0.11160851237651681 rtol = 1e-6
-        test_gibbs_duhem(system,V,T,z,rtol = 1e-12)
+        test_gibbs_duhem(system,V_γMie,T,z,rtol = 1e-12)
         GC.gc()
     end
     end

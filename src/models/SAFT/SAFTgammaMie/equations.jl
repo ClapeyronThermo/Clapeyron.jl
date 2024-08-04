@@ -2,7 +2,7 @@ function x0_volume_liquid(model::SAFTgammaMieModel,T,z)
     v_lb = lb_volume(model,z)
     return v_lb*2.0
 end
-function lb_volume(model::SAFTgammaMieModel, z = SA[1.0])
+function lb_volume(model::SAFTgammaMieModel, z)
     vk  = model.groups.n_flattenedgroups
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
@@ -21,7 +21,7 @@ function lb_volume(model::SAFTgammaMieModel, z = SA[1.0])
     return val
 end
 
-function T_scale(model::SAFTgammaMieModel,z=SA[1.0])
+function T_scale(model::SAFTgammaMieModel,z)
     return T_scale(model.vrmodel,z)
 end
 
@@ -29,7 +29,7 @@ function T_scales(model::SAFTgammaMieModel)
     return T_scales(model.vrmodel)
 end
 
-function p_scale(model::SAFTgammaMieModel,z=SA[1.0])
+function p_scale(model::SAFTgammaMieModel,z)
     V = zero(first(z))
     T = zero(first(z))
     σ̄3 = @f(σ3x)
@@ -39,7 +39,7 @@ function p_scale(model::SAFTgammaMieModel,z=SA[1.0])
 end
 
 getsites(model::SAFTgammaMieModel) = model.vrmodel.sites
-
+assoc_shape(model::SAFTgammaMieModel) = assoc_shape(model.vrmodel)
 function a_res(model::SAFTgammaMieModel, V, T, z)
     _data = @f(data)
     dgc,X,vrdata = _data
@@ -131,11 +131,11 @@ function a_chain(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     return a_chain(model.vrmodel,V,T,z,vrdata)
 end
 
-#=
+
 function a_assoc(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     _,_,vrdata = _data
     return a_assoc(model.vrmodel,V,T,z,vrdata)
-end =#
+end
 
 function Δ(model::SAFTgammaMieModel, V, T, z, i, j, a, b,_data = @f(data))
     vrdata = _data[3]

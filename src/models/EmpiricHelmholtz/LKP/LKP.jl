@@ -194,19 +194,23 @@ function x0_sat_pure(model::LKPModel,T)
     return vl,vv
 end
 
-function lb_volume(model::LKPModel,z = SA[1.0])
-    V,T = 0.0,0.0
+function lb_volume(model::LKPModel,z)
+    return lb_volume(model,0.0,z)
+end
+
+function lb_volume(model::LKPModel,T,z)
+    V = 0.0
     Tc,Pc,Vc,ω̄ = @f(data)
     return Vc/4 #?
 end
 
-function T_scale(model::LKPModel,z = SA[1.0])
+function T_scale(model::LKPModel,z)
     V,T = 0.0,0.0
     Tc,Pc,Vc,ω̄ = @f(data)
     return Tc
 end
 
-function p_scale(model::LKPModel,z = SA[1.0])
+function p_scale(model::LKPModel,z)
     V,T = 0.0,0.0
     Tc,Pc,Vc,ω̄ = @f(data)
     return Pc
