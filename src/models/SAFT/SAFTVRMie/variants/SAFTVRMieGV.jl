@@ -1,21 +1,23 @@
 """
 SAFT-VR Mie multipolar approach using GV polar terms.
 
-Polar terms copied verbatim from PPCSAFT and QPPCSAFT since they are the same ones used here.
+Polar terms copied verbatim from PCPSAFT and QPCPSAFT since they are the same ones used here.
 """
 struct SAFTVRMieGVParam <: EoSParam
-    Mw::SingleParam{T}
-    segment::SingleParam{T}
-    sigma::PairParam{T}
-    lambda_a::PairParam{T}
-    lambda_r::PairParam{T}
-    epsilon::PairParam{T}
-    epsilon_assoc::AssocParam{T}
-    bondvol::AssocParam{T}
+    Mw::SingleParam{Float64}
+    segment::SingleParam{Float64}
+    sigma::PairParam{Float64}
+    lambda_a::PairParam{Float64}
+    lambda_r::PairParam{Float64}
+    epsilon::PairParam{Float64}
+    epsilon_assoc::AssocParam{Float64}
+    bondvol::AssocParam{Float64}
     dipole::SingleParam{Float64}
     dipole2::SingleParam{Float64}
+    np::SingleParam{Float64}
     quadrupole::SingleParam{Float64}
     quadrupole2::SingleParam{Float64}
+	nQ::SingleParam{Float64}   
 end
 
 abstract type SAFTVRMieGVModel <: SAFTVRMieModel end
@@ -30,13 +32,13 @@ function transform_params(::Type{SAFTVRMieGV},params,components)
     epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
-    μ,m,Q = params["dipole"],params["segment"],params["quadrupole"]
+    μ,m,Q,np,nQ = params["dipole"],params["segment"],params["quadrupole"],params["np"],params["nQ"]
     params["sigma"] = sigma
     params["epsilon"] = epsilon
     params["lambda_a"] = lambda_a
     params["lambda_r"] = lambda_r
-    params["dipole2"] = SingleParam("Dipole squared",components, μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3))
-    params["quadrupole2"] = SingleParam("Quadrupole squared",components, Q.^2 ./ m ./ k_B*1e-56*(1e-10*1e-3))
+    params["dipole2"] = SingleParam("Dipole squared",components, np .* μ.^2 ./ m ./ k_B*1e-36*(1e-10*1e-3))
+    params["quadrupole2"] = SingleParam("Quadrupole squared",components, nQ .* Q.^2 ./ m ./ k_B*1e-56*(1e-10*1e-3))
     return params
 end
 
@@ -58,7 +60,9 @@ end
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
 - `k`: Pair Parameter (`Float64`) (optional) - Binary Interaction Paramater (no units)
 - `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
+- `np` : Single Parameter (`Float64`) - number of dipolar segments (no units)
 - `quadrupole`: Single Parameter (`Float64`) - Quadrupole moment `[DA°]`
+- `nQ` : Single Parameter (`Float64`) - number of quadrupolar segments (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume `[m^3]`
 
@@ -70,7 +74,9 @@ end
 - `lambda_a`: Pair Parameter (`Float64`) - Attractive range parameter (no units)
 - `lambda_r`: Pair Parameter (`Float64`) - Repulsive range parameter (no units)
 - `dipole`: Single Parameter (`Float64`) - Dipole moment `[D]`
+- `np` : Single Parameter (`Float64`) - number of dipolar segments (no units)
 - `quadrupole`: Single Parameter (`Float64`) - Quadrupole moment `[DA°]`
+- `nQ` : Single Parameter (`Float64`) - number of quadrupolar segments (no units)
 - `epsilon_assoc`: Association Parameter (`Float64`) - Reduced association energy `[K]`
 - `bondvol`: Association Parameter (`Float64`) - Association Volume
 
@@ -97,9 +103,9 @@ export SAFTVRMieGV
 # SS: used to recalculate mix params if one param has changed. Copied verbatim from QPPCSAFT. Not sure if assoc params are recalculated this way?
 # SS: If problematic, could I just copy-past recombine_impl! from SAFTVRMie.jl?
 function recombine_impl!(model ::SAFTVRMieGVModel)
-    μ,Q,m = model.params.dipole,model.params.quadrupole,model.params.segment
-    model.params.dipole2 .= μ.^2 ./ m ./ k_B * 1e-36*(1e-10*1e-3)
-    model.params.quadrupole2 .= Q.^2 ./ m ./ k_B * 1e-56*(1e-10*1e-3)
+    μ,Q,m,np,nQ = model.params.dipole,model.params.quadrupole,model.params.segment,model.params.np,model.params.nQ
+    model.params.dipole2 .= np .* μ.^2 ./ m ./ k_B * 1e-36*(1e-10*1e-3)  # 1e-49
+    model.params.quadrupole2 .= nQ .* Q.^2 ./ m ./ k_B * 1e-56*(1e-10*1e-3)  # 1e-69
     recombine_saft!(model)
 end
 
@@ -385,11 +391,18 @@ function J2(model::SAFTVRMieGVModel, V, T, z, type::Symbol, i, j, η = @f(ζ0123
     m̄3 = m̄2*(m̄-2)/m̄
     m̄i = (m̄1,m̄2,m̄3)
     if type == :QQ
-        aij_qq = ntuple(i -> dot(m̄i,QQ_consts.corr_a[i]),Val(5))
-        bij_qq = ntuple(i -> dot(m̄i,QQ_consts.corr_b[i]),Val(5))
+        aij_qq = ntuple(i -> dot(m̄i,QQconsts.corr_a[i]),Val(5))
+        bij_qq = ntuple(i -> dot(m̄i,QQconsts.corr_b[i]),Val(5))
         cij_qq = aij_qq .+ bij_qq .* ϵT⁻¹
         return evalpoly(η,cij_qq)
     elseif type == :DD
+        # For DD, there is a restriction on the value of m̄
+        m̄ = min(sqrt(m[i]*m[j]),2*one(m[i]))
+        m̄1 = one(m̄)
+        m̄2 = (m̄-1)/m̄
+        m̄3 = m̄2*(m̄-2)/m̄
+        m̄i = (m̄1,m̄2,m̄3)
+
         aij_dd = ntuple(i -> dot(m̄i,DD_consts.corr_a[i]),Val(5))
         bij_dd = ntuple(i -> dot(m̄i,DD_consts.corr_b[i]),Val(5))
         cij_dd = aij_dd .+ bij_dd .* ϵT⁻¹
@@ -409,13 +422,24 @@ function J3(model::SAFTVRMieGVModel, V, T, z, type::Symbol, i, j, k, η = @f(ζ0
     if type == :DQ
         m̄i_dq = (m̄1,m̄2)
         cijk_dq = ntuple(i -> dot(m̄i_dq,DQ_consts.corr_c[i]),Val(4))
-        #cijk = NTuple{4}(dot(m̄i,ci) for ci in DQ_consts.corr_c)
         return evalpoly(η,cijk_dq)
+    elseif type == :QQ
+        m̄3 = m̄2*(m̄-2)/m̄
+        m̄i = (m̄1,m̄2,m̄3)
+        cijk_qq = ntuple(i -> dot(m̄i,QQ_consts.corr_c[i]),Val(4))
+        return evalpoly(η,cijk_qq)
+    else
+        # For DD, there is a restriction on the value of m̄
+        m̄ = min(cbrt(m[i]*m[j]*m[k]),2*one(m[i]))
+        m̄1 = one(m̄)
+        m̄2 = (m̄-1)/m̄
+        m̄3 = m̄2*(m̄-2)/m̄
+        m̄i = (m̄1,m̄2,m̄3)
+        
+        cijk_dd = ntuple(i -> dot(m̄i,DD_consts.corr_c[i]),Val(4))
+        return evalpoly(η,cijk_dd)
     end
-    m̄3 = m̄2*(m̄-2)/m̄
-    m̄i = (m̄1,m̄2,m̄3)
-    cijk_qq = ntuple(i -> dot(m̄i,QQ_consts.corr_c[i]),Val(4))
-    return evalpoly(η,cijk_qq)
+
 end
 
 
@@ -442,7 +466,7 @@ const DD_consts = (
     (0.,0.,0.))
 )
 
-const QQ_consts = (
+const QQconsts = (
     corr_a =
     ((1.2378308, 1.2854109,	1.7942954),
     (2.4355031,	-11.465615,	0.7695103),

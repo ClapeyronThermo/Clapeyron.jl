@@ -1,0 +1,7 @@
+Clapeyron Database File
+PCSAFT Parameters [csvtype = assoc, grouptype = unknown]
+species1,species2,site1,site2,epsilon_assoc,bondvol
+water,water,e,H,2500.7,0.034868
+water,ethanol,e,H,2577.05,0.03356196748232913
+water,ethanol,H,e,2577.05,0.03356196748232913
+ethanol,ethanol,e,H,2653.4,0.032384

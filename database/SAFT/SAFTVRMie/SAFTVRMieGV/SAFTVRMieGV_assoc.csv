@@ -1,5 +1,5 @@
 Clapeyron Database File,,,,,,,,
-SAFTVRMieGV Assoc Parameters,,,,,,,,
+SaftVRMieGV Assoc Parameters,,,,,,,,
 species1,SMILES1,site1,species2,SMILES2,site2,epsilon_assoc,bondvol,source
 ethanol,CCO,H,ethanol,CCO,e,2833.7,0.34558,10.1063/1.4819786
 propanol~|~1-propanol~|~propan-1-ol,CCCO,H,propanol~|~1-propanol~|~propan-1-ol,CCCO,e,2097.9,6.2309e-29,10.1016/j.fluid.2015.12.041
