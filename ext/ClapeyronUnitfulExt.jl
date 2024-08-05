@@ -207,6 +207,23 @@ function C.volume_virial(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temper
     return uconvert(output, res)
 end
 
+function C.spinodal_pressure(model::EoSModel, T::Unitful.Temperature, x=SA[1.]; v0=nothing, phase=:unknown, output=(u"Pa",u"m^3"))
+    st = standardize(model,-1,T,x)
+    _,_T,_x = state_to_pt(model,st)
+    _v0 = v0===nothing ? nothing : total_volume(model, v0, x)
+    res = spinodal_pressure(model, _T, _x; v0=_v0, phase=phase).*(u"Pa",u"m^3")
+    return uconvert.(output, res)
+end
+
+function C.spinodal_temperature(model::EoSModel, p::Unitful.Pressure, x=SA[1.]; T0=nothing, v0=nothing, phase=:unknown, output=(u"K",u"m^3"))
+    st = standardize(model,p,-1,x)
+    _p,_,_x = state_to_pt(model,st)
+    _T0 = T0===nothing ? nothing : standardize(T0,1u"K")
+    _v0 = v0===nothing ? nothing : total_volume(model, v0, x)
+    res = spinodal_temperature(model, _p, _x; T0=_T0, v0=_v0, phase=phase).*(u"K",u"m^3")
+    return uconvert.(output, res)
+end
+
 # resolve ambiguity
 function C.chemical_potential(model::(C.SolidHfusModel), v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=u"J/mol")
     st = standardize(model,v,T,z)
