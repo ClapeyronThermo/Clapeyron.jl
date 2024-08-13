@@ -1,0 +1,9 @@
+Clapeyron Database File,,
+Enthalpies and Gibbs free energy of formation in aqueous system Single Params,,
+species,Hf,Gf
+hydroxide,-229.994e3,-157.244e3
+hydronium,-157.244e3,-237.129e3
+water,-157.244e3,-237.129e3
+acetate,-486.01e3,-369.31e3
+acetic acid,-485.76e3,-396.46e3
+sodium,-240.12e3,-261.905e3
