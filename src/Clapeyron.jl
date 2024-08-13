@@ -264,7 +264,9 @@ include("models/AnalyticalSLV/AnalyticalSLV.jl")
 
 # Export reactive systems
 include("models/Reactive/reactive.jl")
+include("models/Reactive/reactive_aq.jl")
 include("methods/property_solvers/reactive/reactive.jl")
+include("methods/property_solvers/reactive/reactive_aq.jl")
 
 #Unitful support, transition from dependency to ext
 if !isdefined(Base,:get_extension)

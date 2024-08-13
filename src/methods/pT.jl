@@ -478,6 +478,43 @@ function activity(model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, v
     return exp.((μ_mixt .- μ_pure) ./ R̄ ./ T)
 end
 
+function find_hydronium_index(model)
+    idx = findfirst(model.components.=="hydronium")
+    return idx
+end
+
+function find_water_indx(model)
+    idx = findfirst(model.components.=="water")
+    return idx
+end
+
+""" 
+    aqueous_activity(model::EoSModel,p,T,z=SA[1.0]; phase=:unknown, threaded=true, vol0=nothing)
+
+Calculates the activity with the reference being infinite dilution in water, defined as:
+```julia
+log(a) = (μ_mixt - μ_inf) / R̄ / T
+```
+where `μ_mixt` is the chemical potential of the mixture and `μ_inf` is the chemical potential of the components at infinite dilution in water.
+
+Internally, it calls [`Clapeyron.volume`](@ref) to obtain `V` and
+calculates the property via `VT_fugacity_coefficient(model,V,T,z)`.
+
+The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
+"""
+function aqueous_activity(model::EoSModel,p,T,z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    μ_mixt = chemical_potential(model, p, T, z; phase, threaded, vol0)
+
+    idx_w = find_water_indx(model)
+    zref = ones(length(model))
+    zref[1:length(model) .!= idx_w] .*= 0.01801528
+    zref ./= sum(zref)
+
+    μ_ref  = chemical_potential(model, p, T, zref; phase, threaded, vol0)
+    R̄ = Rgas(model)
+    return exp.((μ_mixt .- μ_ref) ./ R̄ ./ T)
+end
+
 """
     compressibility_factor(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
 
@@ -641,6 +678,6 @@ export fundamental_derivative_of_gas_dynamics
 #volume properties
 export mass_density,molar_density, compressibility_factor
 #molar gradient properties
-export chemical_potential, activity_coefficient, activity, fugacity_coefficient
+export chemical_potential, activity_coefficient, activity, aqueous_activity, fugacity_coefficient
 export chemical_potential_res
 export mixing, excess, gibbs_solvation
