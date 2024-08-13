@@ -51,7 +51,7 @@ function equilibrium_conditions(model::ReactiveModel,F,p,T,n0,ξ,ν,Keq)
 
     a = activity(model.eosmodel,p,T,n)
 
-    F[1:end] = sum(log.(a).*ν,dims=1) + log.(Keq)
+    F[1:end] = sum(log.(a).*ν,dims=1) - log.(Keq)
     return F
 end
 
