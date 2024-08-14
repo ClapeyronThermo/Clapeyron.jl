@@ -19,9 +19,17 @@ function init_preferred_method(method::typeof(saturation_temperature),model::Gam
     return init_preferred_method(saturation_temperature,model.fluid,kwargs)
 end
 
-function activity_coefficient(model::GammaPhi,p,T,z=SA[1.]; phase = :unknown, threaded=true)
-    return activity_coefficient(model.activity,p,T,z)
+function activity_coefficient(model::GammaPhi,p,T,z=SA[1.];
+                            μ_ref = nothing,
+                            reference = :pure,
+                            phase=:unknown,
+                            threaded=true,
+                            vol0=nothing)
+
+    return activity_coefficient(model.activity,p,T,z;μ_ref,reference,phase,threaded,vol0)
 end
+
+reference_chemical_potential_type(model::GammaPhi) = reference_chemical_potential_type(model.activity)
 
 function saturation_pressure(model::GammaPhi,T,method::SaturationMethod)
     return saturation_pressure(model.fluid,T,method)
@@ -198,7 +206,7 @@ function __eval_G_DETPFlash(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,equilibriu
         return gl,vl
     else
         throw(error("γ-ϕ Composite Model does not support VLE calculation with `DETPFlash`. if you want to calculate LLE equilibria, try using `DETPFlash(equilibrium = :lle)`"))
-        #=  
+        #=
         vv = volume(model.fluid.model,p,T,x,phase = :v)
         gv = VT_gibbs_free_energy(model.fluid.model, vv, T, x)
         if gv > gl
@@ -259,7 +267,7 @@ function tpd_obj(model::GammaPhi, p, T, di, isliquid, cache = tpd_neq_cache(mode
         lnγw = γ
         fx = @sum(w[i]*(lnγw[i] + log(w[i]) - di[i])) - sum(w) + 1
     end
-    
+
     obj = Solvers.ADScalarObjective(f,di,ForwardDiff.Chunk{2}())
     optprob = OptimizationProblem(obj = obj,inplace = true)
 end

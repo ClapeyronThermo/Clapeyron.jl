@@ -65,8 +65,8 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
         if isnothing(x0)
             x0 = x0_sle_solubility(model,p,T,z,idx_solv,idx_sol_l,ν_l,μsol)
         end
-
-        data = (fluid_r,idx_liq_r,solid_r,idx_sol_r,idx_sol_l,idx_sol_s,idx_solv,μsol[1])
+        μ_ref = reference_chemical_potential(model.fluid,p,T,reference_chemical_potential_type(model.fluid))
+        data = (μ_ref,idx_sol_l,idx_solv,μsol[1])
         # println(x0)
         f!(F,x) = obj_sle_solubility(F,model,p,T,z[idx_solv],exp10(x[1]),data,ν_l)
         results = Solvers.nlsolve(f!,x0,LineSearch(Newton()),NEqOptions(),ForwardDiff.Chunk{1}())
@@ -82,13 +82,13 @@ function sle_solubility(model::CompositeModel,p,T,z;solute=nothing,x0=nothing)
 end
 
 function obj_sle_solubility(F,model,p,T,zsolv,solu,data,ν_l)
-    fluid_r,idx_liq_r,solid_r,idx_sol_r,idx_sol_l,idx_sol_s,idx_solv,μsol = data
+    μ_ref,idx_sol_l,idx_solv,μsol = data
     z = zeros(typeof(solu),length(model.fluid))
     z[.!(idx_solv)] .= solu
     z[idx_solv] .= zsolv
     R = Rgas(model.fluid)
     ∑z = sum(z)
-    γliq = activity_coefficient(model.fluid,p,T,z/∑z)
+    γliq = activity_coefficient(model.fluid,p,T,z/∑z,μ_ref = μ_ref)
     γl = @view(γliq[idx_sol_l])
     zl = @view(z[idx_sol_l])
     μliq = zero(eltype(γliq))
@@ -97,9 +97,6 @@ function obj_sle_solubility(F,model,p,T,zsolv,solu,data,ν_l)
         μliq_i = R*T*log(γl[i]*xli)
         μliq += μliq_i*ν_l[i]
     end
-    #μliq = R*T*log.(@view(γliq[idx_sol_l]).*@view(z[idx_sol_l]) ./ ∑z)
-    #solid_r,idx_sol_r = index_reduction(model.solid,idx_sol_s)
-    #μliq = dot(μliq,ν_l)
     F[1] = μliq - μsol
     return F
 end

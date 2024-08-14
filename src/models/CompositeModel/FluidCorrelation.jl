@@ -11,7 +11,17 @@ struct FluidCorrelation{V,L,Sat} <: RestrictedEquilibriaModel
 end
 
 __gas_model(model::FluidCorrelation) = model.gas
-activity_coefficient(model::FluidCorrelation, p, T,z=SA[1.]; phase = :unknown, threaded=true) = FillArrays.Ones(length(model)) 
+
+function activity_coefficient(model::FluidCorrelation,p,T,z=SA[1.];
+    μ_ref = nothing,
+    reference = :pure,
+    phase=:unknown,
+    threaded=true,
+    vol0=nothing)
+    return FillArrays.Ones(length(model))
+end
+
+reference_chemical_potential_type(model::FluidCorrelation) = :zero
 
 function volume_impl(model::FluidCorrelation, p, T, z, phase, threaded, vol0)
     _0 = zero(p+T+first(z))
