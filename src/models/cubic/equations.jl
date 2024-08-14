@@ -66,7 +66,6 @@ end
 
 ab_premixing(model::CubicModel,mixing::MixingRule,Tc,pc,vc,kij,lij) = ab_premixing(model,mixing,Tc,pc,kij,lij) #ignores the Vc unless dispatch
 
-
 function recombine_cubic!(model::CubicModel,k = nothing,l = nothing)
     recombine_mixing!(model,model.mixing,k,l)
     recombine_translation!(model,model.translation)
@@ -320,6 +319,8 @@ function x0_sat_pure_cubic_ab(model::ABCubicModel, T)
     data = (1.0, a, b, c)
     pc = model.params.Pc.values[1]
     zc = pure_cubic_zc(model)
+    vc = zc*Rgas(model)*Tc/pc - c
+    crit = (Tc, pc, vc)
     Δ1,Δ2 = cubic_Δ(model,SA[1.0])
     vl_p0,vl_max = zero_pressure_impl(T,a,b,c,Δ1,Δ2,z) #exact solution to zero-pressure cubic
     B = b-a/(R̄*T)
@@ -333,6 +334,11 @@ function x0_sat_pure_cubic_ab(model::ABCubicModel, T)
         vl = vl_p0*exp(_Δ)
         vv = volume_virial(B,pl0,T) - c
         return (vl, vv)
+    elseif T > 0.99*Tc
+        psat = critical_psat_extrapolation(model,T,crit)
+        vl = volume(model,psat,T,phase = :l)
+        vv = volume(model,psat,T,phase = :v)
+        return (vl, vv)
     else
         vc = zc*R̄*Tc/pc - c
         pv0 = -0.25*R̄*T/B
@@ -344,9 +350,10 @@ function x0_sat_pure_cubic_ab(model::ABCubicModel, T)
         p0 = 0.5 * (pl0 + pv0)
         vv = volume_virial(B, p0, T) - c
         if p_vl > pc #improves predictions around critical point
-            vlc, vvc = vdw_x0_sat_pure(T, Tc, pc, vc)
-            vl = 0.5 * (vl + vlc)
-            vv = 0.5 * (vv + vvc)
+            psat = critical_psat_extrapolation(model,T,crit)
+            vl = volume(model,psat,T,phase = :l)
+            vv = volume(model,psat,T,phase = :v)
+            return (vl, vv)
         end
         return (vl, vv)
     end

@@ -116,6 +116,7 @@ include("ChemPotV.jl")
 include("IsoFugacity.jl")
 include("ChemPotDensity.jl")
 include("SuperAnc.jl")
+include("CritExtrapolation.jl")
 include("ClapeyronSat.jl")
 include("AntoineSat.jl")
 
