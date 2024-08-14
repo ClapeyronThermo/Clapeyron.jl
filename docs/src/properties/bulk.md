@@ -76,12 +76,23 @@ Clapeyron.chemical_potential_res
 Clapeyron.fugacity_coefficient
 ```
 
+### Activity Coefficient
+```@docs
+Clapeyron.reference_chemical_potential
+Clapeyron.reference_chemical_potential_type
+Clapeyron.activity_coefficient
+Clapeyron.activity
+Clapeyron.aqueous_activity
+```
+
 ### Mixing
 ```@docs
 Clapeyron.mixing
 ```
 
 ## Initial guess functions
+
+These methods are considered internal, they don't support `Symbolics.jl` or `Unitful.jl` overloads.
 
 ```@docs
 Clapeyron.lb_volume
