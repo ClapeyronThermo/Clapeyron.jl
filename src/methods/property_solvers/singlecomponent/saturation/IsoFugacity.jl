@@ -41,14 +41,19 @@ function saturation_pressure_impl(model::EoSModel,T,method::IsoFugacitySaturatio
     vol0 = (method.vl,method.vv,T)
     p0 = method.p0
     if isnan(p0)
-        p0 = x0_psat(model, T, method.crit)
+        if method.vl !== nothing
+            p0 = pressure(model, method.vl, T)
+        elseif method.vv !== nothing 
+            p0 = pressure(model, method.vv, T)
+        else
+            p0 = x0_psat(model, T, method.crit)
+        end
     end
 
     if isnan(p0) #over critical point, or something else.
         nan = p0/p0
         return (nan,nan,nan)
     end
-
     return psat_fugacity(model,T,p0,vol0,method.max_iters,method.p_tol)
 end
 
@@ -65,7 +70,9 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters
     #we use volume here, because cubics can opt in to their root solver.
     vol_liq0 === nothing && (vol_liq0 = volume(model,P,T,z,phase =:liquid))
     vol_vap0 === nothing && (vol_vap0 = volume(model,P,T,z,phase =:gas))
-    
+    if isnan(vol_liq0) | isnan(vol_vap0)       
+        vol_liq0, vol_vap0 = x0_sat_pure(model, T)
+    end
     vol_liq = vol_liq0 
     vol_vap = vol_vap0
     #@show vol_liq, vol_vap
@@ -80,10 +87,14 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters
         μ_vap = muladd(-vol_vap,Av_v,A_v)
         #μ_liq = VT_chemical_potential_res(model, vol_liq, T)[1]
         #μ_vap = VT_chemical_potential_res(model, vol_vap, T)[1]
-
+        pl = RT/vol_liq -Av_l
+        pv = RT/vol_vap -Av_v
         Z_liq = P*vol_liq/RT
         Z_vap = P*vol_vap/RT
-        
+        if (isnan(vol_liq) | isnan(vol_vap))
+            nan = zero(P)/zero(P)
+            return (nan,nan,nan)
+        end
         lnϕ_liq = μ_liq/RT - log(Z_liq)
         lnϕ_vap = μ_vap/RT - log(Z_vap)
         # Updating the saturation pressure
@@ -97,8 +108,8 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters
         
         if abs(dP) < p_tol; break; end
         # Updating the phase volumes
-        vol_liq = _volume_compress(model, P, T, z,vol_liq)
-        vol_vap = _volume_compress(model, P, T, z,vol_vap)
+        vol_liq = volume(model, P, T, z,vol0 = 0.99*vol_liq)
+        vol_vap = volume(model, P, T, z,vol0 = 1.01*vol_vap)
     end
     return P, vol_liq, vol_vap
 end
