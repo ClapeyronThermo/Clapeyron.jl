@@ -505,7 +505,9 @@ function activity(model::EoSModel,p,T,z=SA[1.];
                 phase=:unknown,
                 threaded=true,
                 vol0=nothing)
-
+    if model isa ActivityModel
+        return activity(model,p,T,z)
+    end
     if μ_ref == nothing
         return activity_impl(model,p,T,z,reference_chemical_potential(model,p,T,reference,phase;threaded),reference,phase,threaded,vol0)
     else
