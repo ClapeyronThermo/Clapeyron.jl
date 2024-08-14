@@ -460,12 +460,16 @@ function x0_sat_pure_crit(model,T,crit::Tuple)
 end
 
 function x0_sat_pure_crit(model,T,Tc,Pc,Vc)
-    h = Vc*5000
-    T0 = 369.89*T/Tc
-    Vl0 = (1.0/_propaneref_rholsat(T0))*h
-    Vv0 = (1.0/_propaneref_rhovsat(T0))*h
-    _1 = SA[1.0]
-    return Vl0,Vv0
+    _p(_T) = pressure(model,Vc,_T)
+    dpdT = Solvers.derivative(_p,Tc)
+    dTinvdlnp = -Pc/(dpdT*Tc*Tc)
+    Δlnp = (1/T - 1/Tc)/dTinvdlnp
+    p = exp(Δlnp)*Pc
+    f(v) = pressure(model,v,T) - p
+    vl = volume(model,p,T,phase = :l)
+    vv = volume(model,p,T,phase = :v)
+    #@show VT_identify_phase(model,vl,T,1),VT_identify_phase(model,vv,T,1)
+    return vl,vv
 end
 
 function x0_sat_pure_crit(model,T)
