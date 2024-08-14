@@ -105,7 +105,7 @@ function fix_sat_ti!(sat,pure,crit,p,in_media)
             pure_i = pure[i]
             sat_i = saturation_temperature(pure_i,p,crit = crit_i)
             if isnan(sat_i[1])
-                throw(error("saturation temperataure for $pure_i not found at p = $p"))
+                throw(error("saturation temperature for $pure_i not found at p = $p"))
             end
             sat[i] = sat_i
         end  
