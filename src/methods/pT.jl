@@ -509,7 +509,7 @@ function activity(model::EoSModel,p,T,z=SA[1.];
         return activity(model,p,T,z)
     end
     if μ_ref == nothing
-        return activity_impl(model,p,T,z,reference_chemical_potential(model,p,T,reference,phase;threaded),reference,phase,threaded,vol0)
+        return activity_impl(model,p,T,z,reference_chemical_potential(model,p,T,reference;phase,threaded),reference,phase,threaded,vol0)
     else
         return activity_impl(model,p,T,z,μ_ref,reference,phase,threaded,vol0)
     end
@@ -575,7 +575,7 @@ Returns a reference chemical potential. used in calculation of `activity` and ac
 - `:zero`: the reference potential is equal to zero for all components (used for `ActivityModel`)
 The keywords `phase`, `threaded` and `vol0` are passed to the [`Clapeyron.volume`](@ref) solver.
 """
-function reference_chemical_potential(model::EoSModel,p,T,reference = reference_chemical_potential_type(model), phase=:unknown, threaded=true, vol0=nothing)
+function reference_chemical_potential(model::EoSModel,p,T,reference = reference_chemical_potential_type(model); phase=:unknown, threaded=true, vol0=nothing)
     if reference == :pure
         pure = split_model.(model)
         return gibbs_free_energy.(pure, p, T; phase, threaded)
