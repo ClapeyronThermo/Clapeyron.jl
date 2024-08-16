@@ -181,6 +181,7 @@ Module containing group contribution calculations using the joback method. the a
 - `JobackGC.H_fusion(model::JobackModel)`: enthalpy of fusion (in J/mol, at 1 atm)
 - `JobackGC.H_vap(model::JobackModel)`: molar enthalpy of vaporization (in J/mol, at normal boiling point)
 - `JobackGC.C_p(model::JobackModel, T)`: ideal gas isobaric heat capacity (in J/mol/K)
+- `JobackGC.Visc(model::JobackModel, T)`: liquid dynamic viscocity (in Pa*s)
 """
 module JobackGC
     using Clapeyron: JobackIdeal
@@ -365,7 +366,7 @@ end
 """
     Visc(model::JobackIdeal,T)::Vector
 
-Given a `JobackIdeal` model, returns a vector containing enthalpies of vaporization (J/mol, at normal boiling point), for each component.
+Given a `JobackIdeal` model, returns a vector containing liquid dynamic viscocities (Pa*s), for each component.
 """
 function Visc(model::JobackIdeal,T)
     n = model.groups.n_flattenedgroups
