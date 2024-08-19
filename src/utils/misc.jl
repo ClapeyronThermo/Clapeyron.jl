@@ -155,3 +155,5 @@ end
 
 linearidx(x::AbstractVector) = 1:length(x)
 linearidx(x::AbstractMatrix) = diagind(x)
+
+mid(a,b,c) =  max(min(a,b),min(max(a,b),c))
