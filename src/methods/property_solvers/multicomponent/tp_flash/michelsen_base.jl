@@ -144,7 +144,7 @@ function tp_flash_K0(model,p,T)
         K = zeros(typeof(p+T+one(eltype(model))),length(model))
         return tp_flash_K0!(K,model,p,T)
     else
-        sat_x = initial_points_bd_T.(split_model(model),T)
+        sat_x = extended_saturation_pressure.(split_model(model),T)
         psat = first.(sat_x)
         return psat ./ p
     end

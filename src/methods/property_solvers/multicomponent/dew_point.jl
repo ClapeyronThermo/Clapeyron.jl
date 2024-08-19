@@ -24,7 +24,7 @@ function index_reduction(method::DewPointMethod,idx_r)
 end
 
 function __x0_dew_pressure(model::EoSModel,T,y,x0=nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model), crit = nothing)
-    pure_vals = initial_points_bd_T.(pure,T,crit,condensables,false) #saturation, or aproximation via critical point.
+    pure_vals = extended_saturation_pressure.(pure,T,crit,condensables,false) #saturation, or aproximation via critical point.
     p0 = first.(pure_vals)
     vli = getindex.(pure_vals,2)
     vvi = getindex.(pure_vals,3)
@@ -133,7 +133,7 @@ end
 
 
 function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
-    sat = initial_points_bd_p.(pure,p,condensables)
+    sat = extended_saturation_temperature.(pure,p,condensables)
     if crit === nothing
         _crit = __crit_pure.(sat,pure,condensables)
     else

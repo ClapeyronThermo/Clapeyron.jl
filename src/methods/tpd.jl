@@ -627,7 +627,7 @@ function suggest_K(model,p,T,z,pure = split_model(model))
         elseif tpd_l >= 0 && tpd_v < 0
             K[i] = exp(lnϕz[i])/exp(lnϕv[1])
         else
-            sat_x = initial_points_bd_T(pure[i],T)
+            sat_x = extended_saturation_pressure(pure[i],T)
             psat = first(sat_x)
             K[i] = psat / p
         end

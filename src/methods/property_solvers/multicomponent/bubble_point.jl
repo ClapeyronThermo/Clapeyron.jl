@@ -23,29 +23,39 @@ function index_reduction(method::BubblePointMethod,idx_r)
     return method
 end
 
-function initial_points_bd_T(pure,T,_crit = nothing,volatile = true, bubble = true)
+function extended_saturation_pressure(pure, T, _crit = nothing, volatile = true, bubble = true; crit_retry = true)
     #try without critical point information
+    _0 = Base.promote_eltype(pure,T)
     if !volatile
         #the component is not volatile/condensable. set volumes to 0.
         #one does not matter, the other one is recalculated later
-        vv = zero(one(eltype(pure))+T)
-        vl = zero(vv)
+        vv = _0
+        vl = _0
         if bubble
-            p = zero(vv)
+            p = _0
         else
-            p = one(vv)/zero(vv) #inf
+            p = one(_0)/_0 #inf
         end
         return p,vl,vv
     end
     if _crit === nothing #no crit point available, try calculating sat_p without it
         sat = saturation_pressure(pure,T,crit_retry = false)
-        !isnan(first(sat)) && return sat
+        if isnan(first(sat))
+            if !crit_retry
+                return sat #failed
+            end
+        else
+            return sat #sucess
+        end
     end
     #calculate critical point, try again
     if _crit !== nothing
         crit = _crit
-    else
+    elseif crit_retry
         crit = crit_pure(pure)
+    else
+        nan = _0/_0
+        crit = (nan,nan,nan)
     end
     Tc,Pc,Vc = crit
     if T < Tc
@@ -63,16 +73,52 @@ function initial_points_bd_T(pure,T,_crit = nothing,volatile = true, bubble = tr
 end
 
 #this function does not do the crit calculation.
-function initial_points_bd_p(pure,p,volatile = true)
+function extended_saturation_temperature(pure, p, _crit = nothing, volatile = true, dew = true; crit_retry = true)
+    _0 = Base.promote_eltype(pure,T)
     if !volatile
         #the component is not volatile/condensable. set volumes to 0.
         #one does not matter, the other one is recalculated later
-        vv = zero(one(eltype(pure))+p)
-        vl = zero(vv)
-        T = zero(vv) #TODO
+        vv = _0
+        vl = _0
         return T,vl,vv
     end
-    return saturation_temperature(pure,p,crit_retry = false)
+
+    if _crit === nothing #no crit point available, try calculating sat_p without it
+        sat = saturation_temperature(pure,p,crit_retry = false)
+        if isnan(first(sat))
+            if !crit_retry
+                return sat #failed
+            end
+        else
+            return sat #sucess
+        end
+    end
+
+    #calculate critical point, try again
+    if _crit !== nothing
+        crit = _crit
+    elseif crit_retry
+        crit = crit_pure(pure)
+    else
+        nan = _0/_0
+        crit = (nan,nan,nan)
+    end
+
+    Tc,Pc,Vc = crit
+    if p < Pc
+        sat = saturation_temperature(pure,p,crit = crit) #calculate sat_p with crit info
+        !isnan(first(sat)) && return sat
+    end
+
+    #create initial point from critical values
+    #we use a pseudo-saturation pressure extension,based on the slope at the critical point.
+    dlnpdTinv,logp0,Tcinv = __dlnPdTinvsat(pure,sat,crit,T,volatile,false)
+    lnp = logp0 + dlnpdTinv*(1/T - Tcinv)
+    p0 = exp(lnp)
+    vl0 = x0_volume(pure,p0,T,phase = :l)
+    vv0 = max(1.2*Vc,3*Rgas(pure)*T/Pc)
+    return p0,vl0,vv0
+
 end
 
 
@@ -87,7 +133,7 @@ function fix_vi!(pure,vli,p,T,in_media,phase)
     end
 end
 
-function __crit_pure(sat0,pure,in_media)
+function __crit_pure(sat0,pure,in_media = true)
     if isnan(first(sat0)) && in_media
         return crit_pure(pure)
     else
@@ -97,7 +143,7 @@ function __crit_pure(sat0,pure,in_media)
     end
 end
 
-function fix_sat_ti!(sat,pure,crit,p,in_media)
+function fix_sat_ti!(sat,pure,crit,p,in_media = FillArrays.Fill(true,length(pure)))
     for i in eachindex(pure)
         crit_i = crit[i]
         pc_i = crit_i[2]
@@ -128,7 +174,7 @@ function __dlnPdTinvsat(pure,sat,crit,xx,in_media = true,is_sat_temperature = tr
         dpdT = (Sv - Sl)/(vv - vl)
         return -dpdT*T*T/p,log(p),1/T
     elseif !in_media
-        return zero(vl)
+        return zero(vl),zero(vl),zero(vl)
     elseif !isnan(crit[1]) && (crit[1] <= T || crit[2] < p)
         Tc,Pc,Vc = crit
         _p(_T) = pressure(pure,Vc,_T)
@@ -141,7 +187,7 @@ end
 
 function __x0_bubble_pressure(model::EoSModel,T,x,y0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
     #check each T with T_scale, if treshold is over, replace Pi with inf
-    pure_vals = initial_points_bd_T.(pure,T,crit,volatiles,true) #saturation, or aproximation via critical point.
+    pure_vals = extended_saturation_pressure.(pure,T,crit,volatiles,true) #saturation, or aproximation via critical point.
     p0 = first.(pure_vals)
     vli = getindex.(pure_vals,2)
     vvi = getindex.(pure_vals,3)
@@ -250,7 +296,7 @@ end
 ###Bubble Temperature
 
 function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
-    sat = initial_points_bd_p.(pure,p,volatiles)
+    sat = extended_saturation_temperature.(pure,p,volatiles,crit_retry = false)
     if crit === nothing
         _crit = __crit_pure.(sat,pure,volatiles)
     else
