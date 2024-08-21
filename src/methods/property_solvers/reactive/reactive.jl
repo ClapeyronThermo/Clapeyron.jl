@@ -1,6 +1,6 @@
 function equilibrate(model::ReactiveEoSModel,p,T,n0;z0=nothing)
     ν = stoichiometric_coefficient(model) # Exists
-    Keq = ideal_Keq(model,T,z,ν)
+    Keq = ideal_Keq(model,T,n0,ν)
     if isnothing(z0)
         z0 = x0_equilibrium_conditions(model,p,T,n0)
     end
@@ -15,7 +15,7 @@ end
 
 function equilibrium_conditions(model::ReactiveModel,F,p,T,n0,ξ,ν,Keq,μ_ref)
     n = n0+ν*ξ
-    a = activity_impl(model,p,T,n,μ_ref,:unknown,:unknown,true,nothing)
+    a = activity_impl(model.eosmodel,p,T,n,μ_ref,:unknown,:unknown,true,nothing)
     F[1:end] = sum(log.(a).*ν,dims=1) - log.(Keq)
     return F
 end

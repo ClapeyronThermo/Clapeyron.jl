@@ -522,13 +522,19 @@ function activity_impl(model,p,T,z,μ_ref,reference,phase,threaded,vol0)
 end
 
 function find_hydronium_index(model)
-    idx = findfirst(isequal("hydronium"),components)
+    idx = findfirst(isequal("hydronium"),model.components)
+    idx == nothing && return 0
+    return idx
+end
+
+function find_hydroxide_index(model)
+    idx = findfirst(isequal("hydroxide"),model.components)
     idx == nothing && return 0
     return idx
 end
 
 function find_water_indx(model)
-    idx = findfirst(isequal("water"),components)
+    idx = findfirst(isequal("water"),model.components)
     idx == nothing && return 0
     return idx
 end
