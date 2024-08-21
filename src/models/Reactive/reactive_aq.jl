@@ -3,10 +3,10 @@ struct ReactiveAqParams{T} <: ParametricEoSParam{T}
     ΔHf::SingleParam{T}
 end
 
-struct ReactiveAqModel{T} <: ReactiveEoSModel
+struct ReactiveAqModel{T} <: ReactiveEoSModel where T <: EoSModel
     components::Vector{String}
     reactions::Vector
-    params::ReactiveParams{Float64}
+    params::ReactiveAqParams{Float64}
     eosmodel::T
 end
 
@@ -26,9 +26,9 @@ end
 
 function ideal_Keq(model::ReactiveAqModel,T,z,ν)
     T0 = 298.15
-    ΔGf0 = model.params.ΔHf.values
+    ΔGf0 = model.params.ΔGf.values
     ΔHf = model.params.ΔHf.values
-    ΔGf = ΔGf0/T0+ΔHf*(1/T-1/T0)
+    ΔGf = ΔGf0/T0-ΔHf*(1/T-1/T0)
     ΔrG = sum(ΔGf.*ν,dims=1)
     Keq = exp.(-ΔrG/Rgas(model.eosmodel))
 end
