@@ -108,8 +108,8 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters
         
         if abs(dP) < p_tol; break; end
         # Updating the phase volumes
-        vol_liq = volume(model, P, T, z,vol0 = 0.99*vol_liq)
-        vol_vap = volume(model, P, T, z,vol0 = 1.01*vol_vap)
+        vol_liq = volume(model, P, T, z,vol0 = 0.99*vol_liq,phase = :l)
+        vol_vap = volume(model, P, T, z,vol0 = 1.01*vol_vap,phase = :v)
     end
     return P, vol_liq, vol_vap
 end
