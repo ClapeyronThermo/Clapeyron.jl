@@ -67,6 +67,8 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters
     RT = Rgas(model)*T
     P = 1. * p0
     vol_liq0, vol_vap0 = vol0
+    lb_v = lb_volume(model,T,z)
+
     #we use volume here, because cubics can opt in to their root solver.
     vol_liq0 === nothing && (vol_liq0 = volume(model,P,T,z,phase =:liquid))
     vol_vap0 === nothing && (vol_vap0 = volume(model,P,T,z,phase =:gas))
@@ -108,7 +110,7 @@ function psat_fugacity(model::EoSModel, T, p0, vol0=(nothing, nothing),max_iters
         
         if abs(dP) < p_tol; break; end
         # Updating the phase volumes
-        vol_liq = volume(model, P, T, z,vol0 = 0.99*vol_liq,phase = :l)
+        vol_liq = volume(model, P, T, z,vol0 = 0.99*vol_liq + 0.01*lb_v,phase = :l)
         vol_vap = volume(model, P, T, z,vol0 = 1.01*vol_vap,phase = :v)
     end
     return P, vol_liq, vol_vap
