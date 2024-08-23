@@ -25,7 +25,7 @@ end
 
 function extended_saturation_pressure(pure, T, _crit = nothing, volatile = true, bubble = true; crit_retry = true)
     #try without critical point information
-    _0 = Base.promote_eltype(pure,T)
+    _0 = zero(Base.promote_eltype(pure,T))
     if !volatile
         #the component is not volatile/condensable. set volumes to 0.
         #one does not matter, the other one is recalculated later
@@ -74,13 +74,11 @@ end
 
 #this function does not do the crit calculation.
 function extended_saturation_temperature(pure, p, _crit = nothing, volatile = true, dew = true; crit_retry = true)
-    _0 = Base.promote_eltype(pure,T)
+    _0 = zero(Base.promote_eltype(pure,p))
     if !volatile
         #the component is not volatile/condensable. set volumes to 0.
         #one does not matter, the other one is recalculated later
-        vv = _0
-        vl = _0
-        return T,vl,vv
+        return _0,_0,_0
     end
 
     if _crit === nothing #no crit point available, try calculating sat_p without it
