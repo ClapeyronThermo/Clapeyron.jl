@@ -133,7 +133,7 @@ end
 
 
 function __x0_dew_temperature(model::EoSModel,p,y,Tx0 = nothing,condensables = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
-    sat = extended_saturation_temperature.(pure,p,condensables)
+    sat = extended_saturation_temperature.(pure,p,crit,condensables)
     if crit === nothing
         _crit = __crit_pure.(sat,pure,condensables)
     else

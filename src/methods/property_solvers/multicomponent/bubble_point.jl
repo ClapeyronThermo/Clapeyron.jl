@@ -294,7 +294,7 @@ end
 ###Bubble Temperature
 
 function __x0_bubble_temperature(model::EoSModel,p,x,Tx0 = nothing,volatiles = FillArrays.Fill(true,length(model)),pure = split_model(model),crit = nothing)
-    sat = extended_saturation_temperature.(pure,p,volatiles,crit_retry = false)
+    sat = extended_saturation_temperature.(pure,p,crit,volatiles,crit_retry = false)
     if crit === nothing
         _crit = __crit_pure.(sat,pure,volatiles)
     else
