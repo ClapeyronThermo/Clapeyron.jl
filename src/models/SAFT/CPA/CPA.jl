@@ -179,6 +179,10 @@ function p_scale(model::CPAModel,z)
     return ār/(b̄r*b̄r)
 end
 
+function cpa_is_pure_cubic(model::CPAModel)
+    assoc_pair_length(model) == 0
+end
+
 function show_info(io,model::CPAModel) 
     rdf = model.radial_dist
     println(io)
@@ -195,7 +199,7 @@ function x0_crit_pure(model::CPAModel)
 end
 
 function crit_pure(model::CPAModel)
-    if assoc_pair_length(model) == 0 && !model.cubicmodel.params.Pc.ismissingvalues[1]
+    if cpa_is_pure_cubic(model) && !model.cubicmodel.params.Pc.ismissingvalues[1]
         return crit_pure(model.cubicmodel)
     else
         return crit_pure(model,x0_crit_pure(model))
@@ -204,8 +208,7 @@ end
 
 function x0_sat_pure(model::CPAModel,T)
     #use the cubic initial guess if we don't have association.
-    n = assoc_pair_length(model)
-    n == 0 && return x0_sat_pure(model.cubicmodel,T)
+    cpa_is_pure_cubic(model) && x0_sat_pure(model.cubicmodel,T)
     return x0_sat_pure_virial(model,T)
 end
 
@@ -213,8 +216,7 @@ end
 if we don't have association, reduce to the inner cubic model.
 =#
 function volume_impl(model::CPAModel,p,T,z,phase,threaded,vol0)
-    n = assoc_pair_length(model)
-    if n == 0
+    if cpa_is_pure_cubic(model)
         return volume_impl(model.cubicmodel,p,T,z,phase,threaded,vol0)
     else
         return default_volume_impl(model,p,T,z,phase,threaded,vol0)
@@ -227,9 +229,8 @@ function x0_volume_gas(model::CPAModel, p, T, z)
 end
 
 function x0_volume_liquid(model::CPAModel,p, T, z)
-    n = assoc_pair_length(model)
-    n == 0 && return volume(model.cubicmodel,p,T,z,phase = :l)
-    return 1.1*lb_volume(model,z)
+    cpa_is_pure_cubic(model) && return volume(model.cubicmodel,p,T,z,phase = :l)
+    return 1.1*lb_volume(model,T,z)
 end
 
 data(model::CPAModel, V, T, z) = data(model.cubicmodel,V,T,z)
