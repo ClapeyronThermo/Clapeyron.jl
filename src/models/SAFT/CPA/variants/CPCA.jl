@@ -76,6 +76,11 @@ function cubic_ab(model::CPCACubic,V,T,z=SA[1.0],n=sum(z))
 end
 
 function lb_volume(model::CPCACubic,T,z)
+    m̄b̄,m̄ = cpca_lb_volume(model,T,z)
+    return m̄b̄/m̄
+end
+
+function cpca_lb_volume(model::CPCACubic,T,z)
     Tc = model.params.Tc.values
     mix = model.mixing.params
     m = mix.segment.values
@@ -90,7 +95,7 @@ function lb_volume(model::CPCACubic,T,z)
         m̄b̄ += b[i,i]*zi*mi*βi
         m̄ += zi*mi
     end
-    return m̄b̄/m̄
+    return m̄b̄,m̄
 end
 
 abstract type CPCAModel <: CPAModel end
@@ -172,7 +177,7 @@ function CPCA(components;
     translation_userlocations=String[],
     verbose=false,
     assoc_options = AssocOptions())
-    locs = ["SAFT/CPA/CPCA", "properties/molarmass.csv"]
+    locs = ["SAFT/CPA/CPCA", "properties/molarmass.csv","properties/critical.csv"]
     params = getparams(components, locs; userlocations=userlocations, verbose=verbose)
     _components = format_components(components)
     
@@ -184,17 +189,20 @@ function CPCA(components;
     end
 
     Pc = get!(params,"Pc") do
-        SingleParam("Pc",_components,zeros(length(_components)))
+        SingleParam("Pc",_components)
     end
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     #Tc is created from a,b
     ai = params["a"]
     bi = params["b"]
-    Ωa,Ωb =  ab_consts(RK)
-    ar = ai ./ Ωa
-    br = bi ./ Ωb
-    Tc = SingleParam("Tc",_components,@. ar/br/R̄)
+
+    Tc = get!(params,"Tc") do
+        Ωa,Ωb =  ab_consts(RK)
+        ar = ai ./ Ωa
+        br = bi ./ Ωb
+        SingleParam("Tc",_components,@. ar/br/R̄,fill(true,length(ai)))
+    end
     a  = epsilon_LorentzBerthelot(ai, k)
     b  = sigma_LorentzBerthelot(bi, l)
 
@@ -259,24 +267,49 @@ end
 
 function cpa_is_pure_cubic(model::CPCAModel)
     assoc_pair_length(model) != 0 && return false
-    m = model.cubicmodel.mixing.params.m.values
+    m = model.params.segment.values
     return all(isone,m)
 end
 
+function lb_volume(model::CPCAModel,T,z)
+    m̄b̄,m̄ = cpca_lb_volume(model.cubicmodel,T,z)
+    return m̄b̄
+end
+
 function data(model::CPCAModel, V, T, z)
-    nabc = data(model.cubicmodel,V,T,z)
-    n,ā,b̄,c̄ = nabc
+    _nabc = data(model.cubicmodel,V,T,z)
+    n,ā,b̄,c̄ = _nabc
+    nabc = n,ā,b̄,c̄
     m = model.params.segment.values
     m̄n = dot(z,m)
-    β = m̄n*b̄/V
+    β = m̄n*b̄/(V + c̄*n)
     m̄ = m̄n/n
+    nabc = n,ā,m̄*b̄,c̄
     return nabc,β,m̄
 end
 
 function a_res(model::CPCAModel, V, T, z, _data = @f(data))
     nabc,β,m̄ = _data
     n,ā,b̄,c̄ = nabc
-    return m̄*a_res(model.cubicmodel,V,T,z,nabc) + a_chain(model,V+c̄*n,T,z,_data) + a_assoc(model,V+c̄*n,T,z,_data)
+    Vt = V + c̄*n
+    return m̄*a_monomer(model,Vt,T,z,_data) + a_chain(model,Vt,T,z,_data) + a_assoc(model,Vt,T,z,_data)
+end
+
+function a_monomer(model::CPCAModel, V, T, z, _data = @f(data))
+    nabc,β,m̄ = _data
+    n,ā,b̄,c̄ = nabc
+    a_rep = -log1p(-β)
+    Δ1,Δ2 = cubic_Δ(model.cubicmodel,z)
+    ΔΔ = Δ2 - Δ1
+    R = Rgas(model)
+    if Δ1 == Δ2
+        a_att = -n*ā/((b̄*R*T)*(1-Δ1*β)*V)
+    else
+        l1 = log1p(-Δ1*β)
+        l2 = log1p(-Δ2*β)
+        a_att = -(l1-l2)*ā/(R*T*ΔΔ*b̄)
+    end
+    return a_rep + a_att
 end
 
 function a_chain(model::CPCAModel,V,T,z,_data = @f(data))
@@ -286,9 +319,16 @@ function a_chain(model::CPCAModel,V,T,z,_data = @f(data))
     m = model.params.segment.values
     ln_ghs = -log1p(-0.475*β) #log(1/(1-0.475β))
     for i in @comps
-        res = z[i]*(m[i] - 1)
+        res += z[i]*(m[i] - 1)
     end
     return -res*ln_ghs/n
+end
+
+function x0_crit_pure(model::CPCAModel)
+    z = SA[1.0]
+    T = T_scale(model,z)
+    lb_v = lb_volume(model,T,z)
+    return (1.0, log10(1.25*lb_v))
 end
 
 function Δ(model::CPCAModel, V, T, z, i, j, a, b, _data = @f(data))
@@ -307,7 +347,6 @@ function Δ(model::CPCAModel, V, T, z, i, j, a, b, _data = @f(data))
     βj = kb1[j]*exp(-kb2[j]*T/Tc[j])
     bi = bi0 * βi
     bj = bj0 * βj
-    #@show βi,βj
     bij = (bi + bj)*_1_m_l*0.5
     g = 1/(1-0.475β)
     return g*expm1(ϵ_associjab/T)*βijab*bij/N_A
