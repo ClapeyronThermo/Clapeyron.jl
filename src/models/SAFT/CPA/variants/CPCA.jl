@@ -27,13 +27,13 @@ function mixing_rule(model::ABCubicModel,V,T,z,mixing_model::CPCAMixing,α,a,b,c
     m = mixing_model.params.segment.values
     
     Tc = model.params.Tc.values
-    m̄ = zero(first(z))
+    m̄ = Base.promote_eltype(model,z) |> zero
     n = sum(z)
     invn = (one(n)/n)
     invn2 = invn^2
     #b̄ = dot(z,Symmetric(b),z) * invn2
-    m̄²ā = zero(T+first(z))
-    m̄b̄ = zero(first(z))
+    m̄²ā = Base.promote_eltype(model,T,z) |> zero
+    m̄b̄ = Base.promote_eltype(model,z) |> zero
     for i in 1:length(z)
         zi,mi,αi = z[i],m[i],α[i]
         αi = α[i]
@@ -75,40 +75,22 @@ function cubic_ab(model::CPCACubic,V,T,z=SA[1.0],n=sum(z))
     return ā ,b̄, c̄
 end
 
-function lb_volume(model::CPCACubic,z=SA[1.0])
+function lb_volume(model::CPCACubic,T,z)
+    Tc = model.params.Tc.values
     mix = model.mixing.params
     m = mix.segment.values
     kb1 = mix.kb1.values
     kb2 = mix.kb2.values
     b = model.params.b.values
-    res = zero(first(z) + 1.0)
+    m̄b̄ = zero(Base.promote_eltype(model,T,z))
+    m̄ = Base.promote_eltype(model,z) |> zero
     for i in @comps
-        kb1i,kb2i = kb1[i],kb2[i]
-        #=
-        this is an exponential, so it diverges at high T
-        βi = kb1*exp(-kb2*T/Tc)
-        kb1 is > 1, and increasing with Mw
-        kb2 < 1, increases with Mw until crossing to > 1
-        as a result, βi
-        if we do:
-        ```  
-        f1(x) = 0.7112*x^0.1502
-        f2(x) = 0.1549*log(x) - 0.3224
-        ff(Mw,Tr) = f1(Mw)*exp(-f2(Mw)*Tr)
-        ```
-        f1(x,1) ≈ 0.96, slighly decreasing but mostly stable
-        f1(x,2) ≈ decreases a lot with temperature, tends to 0
-        this function does not work with infinite T!!!
-        we fix βi = 0.5, anything lower should fail the volume check.
-        =#
-        if kb1i > 1.0 && 0 < kb2i
-            res += 0.5*b[i,i]*z[i]
-        else
-            #TODO: handle this case. useful in case of hydrogen (not covered in the correlations.)
-            res += b[i,i]*z[i]
-        end
+        kb1i,kb2i,zi,mi = kb1[i],kb2[i],z[i],m[i]
+        βi = kb1[i]*exp(-kb2[i]*T/Tc[i])
+        m̄b̄ += b[i,i]*zi*mi*βi
+        m̄ += zi*mi
     end
-    return res
+    return m̄b̄/m̄
 end
 
 abstract type CPCAModel <: CPAModel end
@@ -275,6 +257,12 @@ function recombine_impl!(model::CPCAModel)
     return model
 end
 
+function cpa_is_pure_cubic(model::CPCAModel)
+    assoc_pair_length(model) != 0 && return false
+    m = model.cubicmodel.mixing.params.m.values
+    return all(isone,m)
+end
+
 function data(model::CPCAModel, V, T, z)
     nabc = data(model.cubicmodel,V,T,z)
     n,ā,b̄,c̄ = nabc
@@ -283,12 +271,6 @@ function data(model::CPCAModel, V, T, z)
     β = m̄n*b̄/V
     m̄ = m̄n/n
     return nabc,β,m̄
-end
-
-function x0_volume_liquid(model::CPCAModel,T,z)
-    nabc = data(model.cubicmodel,0.0,T,z)
-    n,ā,b̄,c̄ = nabc
-    return (1.25b̄ + c̄)*n
 end
 
 function a_res(model::CPCAModel, V, T, z, _data = @f(data))
