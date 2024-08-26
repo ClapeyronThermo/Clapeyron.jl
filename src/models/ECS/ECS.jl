@@ -45,7 +45,7 @@ const ECS = ExtendedCorrespondingStates
 
 Base.length(model::ECS) = length(model.shape_model)
 
-function eos(model::ECS,V,T,z=SA[1.0])
+function eos_impl(model::ECS,V,T,z)
     f,h = shape_factors(model,V,T,z)
     n = sum(z)
     T0 = T/f
@@ -139,28 +139,37 @@ function Base.show(io::IO,model::ECS)
     print(io,string(typeof(model)),model.shape_model.components)
 end
 
-function lb_volume(model::ECS,z=SA[1.0])
-    lb_v0 = lb_volume(model.model_ref,z)
-    T0 = T_scale(model.model_ref)
-    f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
+function lb_volume(model::ECS,T,z)
+    lb_v0 = lb_volume(model.model_ref,T,z)
+    f,h = shape_factors(model,lb_v0,T,z) #h normaly should be independent of temperature
     return lb_v0*h
 end
 
-function x0_volume_liquid(model::ECS,T,z=SA[1.0])
-    f,h = shape_factors(model,zero(T),T,z)
+
+function x0_volume_liquid(model::ECS,p,T,z)
+    lb_v0 = lb_volume(model.model_ref,T,z)
+    f,h = shape_factors(model,lb_v0,T,z)
     T0 = T/f
-    v0l = x0_volume_liquid(model.model_ref,T0,z)
+    v0l = x0_volume_liquid(model.model_ref,p,T0,z)
     return v0l*h
 end
 
-function T_scale(model::ECS,z=SA[1.0])
+function x0_volume_gas(model::ECS,p,T,z)
+    lb_v0 = lb_volume(model.model_ref,T,z)
+    f,h = shape_factors(model,lb_v0,T,z)
+    T0 = T/f
+    v0v = x0_volume_gas(model.model_ref,p,T0,z)
+    return v0v*h
+end
+
+function T_scale(model::ECS,z)
     lb_v0 = lb_volume(model.model_ref)
     T0 = T_scale(model.model_ref)
     f,h = shape_factors(model,lb_v0,T0,z) #h normaly should be independent of temperature
     return T0*f
 end
 
-function p_scale(model::ECS,z=SA[1.0])
+function p_scale(model::ECS,z)
      lb_v0 = lb_volume(model.model_ref)
      T0 = T_scale(model.model_ref)
      p0 = p_scale(model.model_ref)
@@ -176,8 +185,8 @@ function x0_sat_pure(model::ECS,T)
     return (v0l*h,v0v*h) 
 end
 
-function split_model(model::ECS,subset=nothing)
-    shape_model_vec = split_model(model.shape_model,subset)
+function split_model(model::ECS,splitter)
+    shape_model_vec = split_model(model.shape_model,splitter)
     shape_ref,model_ref = model.shape_ref, model.model_ref
     return [ECS(shape_modeli,shape_ref,model_ref) for shape_modeli in shape_model_vec]
 end
@@ -195,8 +204,8 @@ function shape_factors(model::ECS,shape_ref::EoSModel,V,T,z=SA[1.0])
     n = sum(z)
     shape_ref = model.shape_ref
     RT = R̄*T
-    b = lb_volume(model.shape_model,z)
-    b0 = lb_volume(shape_ref)
+    b = lb_volume(model.shape_model,T,z)
+    b0 = lb_volume(shape_ref,T,SA[1.0])
     n = sum(z)
     v = V/n
     B = second_virial_coefficient(model.shape_model,T,z)

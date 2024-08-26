@@ -157,7 +157,8 @@ function SingleParam(
         sources = String[]
     )
     values = fill(0.0, length(components))
-    return SingleParam(name, components, values, String[], sources)
+    missingvalues = fill(true,length(components))
+    return SingleParam(name, components, values,missingvalues, String[], sources)
 end
 
 function SingleParam(oldparam::SingleParameter, v::Vector)
@@ -172,7 +173,7 @@ function Base.convert(::Type{SingleParam{T1}},param::SingleParam{T2}) where {T1<
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)
 end
 
-function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{<:Union{Int,Float64}})
+function Base.convert(::Type{SingleParam{Bool}},param::SingleParam{<:Union{Int,Float64,Bool}})
     #@assert all(z->(isone(z) | iszero(z)),param.values)
     values = Array(Bool.(param.values))
     return SingleParam(param.name,param.components,values,param.ismissingvalues,param.sourcecsvs,param.sources)

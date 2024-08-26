@@ -79,7 +79,7 @@ function XiangDeiters(component;
     verbose = false)
 
     components = [get_only_comp(component)]
-    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(components, ["properties/critical.csv", "properties/molarmass.csv"]; userlocations = userlocations, verbose = verbose)
     Pc = params["Pc"][1]
     Vc = params["Vc"][1]
     Mw = params["Mw"][1]

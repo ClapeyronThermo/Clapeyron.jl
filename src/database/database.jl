@@ -178,10 +178,10 @@ Note, that the parser will not fail if you pass different parameters with differ
 """
 function getparams(components,
                     locations::Array{String,1}=String[];
-                    userlocations=String[],
+                    userlocations = String[],
                     asymmetricparams::Vector{String}=String[],
                     ignore_missing_singleparams::Vector{String}=String[],
-                    ignore_headers::Vector{String} =  IGNORE_HEADERS,
+                    ignore_headers::Vector{String} = IGNORE_HEADERS,
                     verbose::Bool=false,
                     species_columnreference::String="species",
                     source_columnreference::String="source",
@@ -492,7 +492,7 @@ function read_csv(filepath,options::ParamOptions,sep = :auto)::CSV.File
         _delim = sep
     end
     if is_inline_csv(filepath)
-        df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String, delim = _delim, ntasks  = 1)
+        df = CSV.File(IOBuffer(filepath); header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String, delim = _delim, ntasks  = 1,buffer_in_memory = true)
     else
         df = CSV.File(filepath; header=3, pool=0,silencewarnings=true,drop = _drop, stringtype = String,delim = _delim, ntasks  = 1)
     end
@@ -655,17 +655,17 @@ function findparamsinnt(components,
     for (k,v) in pairs(nt)
         ks = string(k)
         if k == :groups && parsegroups == :groups
-            param = RawParam(ks,nothing,v,nothing,nothing,groupdata,:unknown)
+            param = RawParam(ks,nothing,copy(v),nothing,nothing,groupdata,:unknown)
             push!(foundvalues,param)
         elseif k == :intragroups && parsegroups == :structgroups
-            param = RawParam(ks,nothing,v,nothing,nothing,structgroupdata,:unknown)
+            param = RawParam(ks,nothing,copy(v),nothing,nothing,structgroupdata,:unknown)
         elseif (k == :epsilon_assoc || k == :bondvol) && parsegroups == :off && v === nothing
             notfoundvalues[ks] = assocdata
         elseif v isa Vector && parsegroups == :off
-            param = RawParam(ks,nothing,v,nothing,nothing,singledata,:unknown)
+            param = RawParam(ks,nothing,copy(v),nothing,nothing,singledata,:unknown)
             push!(foundvalues,param)
         elseif v isa Matrix && parsegroups == :off
-            param = RawParam(ks,nothing,vec(v),nothing,nothing,pairdata,:unknown)
+            param = RawParam(ks,nothing,vec(copy(v)),nothing,nothing,pairdata,:unknown)
             push!(foundvalues,param)
         elseif v isa Number && parsegroups == :off && length(components) == 1
             param = RawParam(ks,nothing,[v],nothing,nothing,singledata,:unknown)

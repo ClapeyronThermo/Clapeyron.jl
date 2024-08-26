@@ -14,18 +14,20 @@ end
 export RKPR
 
 """
-    RKPR(components; idealmodel=BasicIdeal,
+    RKPR(components;
+    idealmodel = BasicIdeal,
     alpha = RKPRAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -69,7 +71,7 @@ yᵢ = 1 + (2(1 + cᵢ))^(1/3) + (4/(1 + cᵢ))^(1/3)
 `cᵢ` is fitted to match:
 ```
 if Zcᵢ[exp] > 0.29
-    cᵢ =  √2 - 1
+    cᵢ = √2 - 1
 else
     Zcᵢ = 1.168Zcᵢ[exp]
     f(cᵢ) == 0
@@ -90,7 +92,7 @@ model = RKPR(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanc
 # Passing a prebuilt model
 
 my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  RKPR(["ethane","butane"],alpha = my_alpha)
+model = RKPR(["ethane","butane"],alpha = my_alpha)
 
 # User-provided parameters, passing files or folders
 model = RKPR(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])
@@ -113,21 +115,23 @@ model = RKPR(["neon","hydrogen"];
 """
 RKPR
 
-function RKPR(components; idealmodel=BasicIdeal,
+function RKPR(components;
+    idealmodel = BasicIdeal,
     alpha = RKPRAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
     
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     pc = params["Pc"]
@@ -140,7 +144,7 @@ function RKPR(components; idealmodel=BasicIdeal,
     a = PairParam("a",formatted_components,zeros(n))
     b = PairParam("b",formatted_components,zeros(n))
     c = PairParam("c",formatted_components,zeros(n))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = ABCCubicParam(a,b,c,Tc,pc,Vc,Mw)
@@ -198,7 +202,7 @@ function cubic_Δ(model::RKPRModel,z)
     Δ1 = zero(eltype(z))
     Δ2 = zero(Δ1)
     for i in @comps
-        δi =  c[i]
+        δi = c[i]
         zi = z[i]
         Δ2 += zi*δi
         Δ1 += z[i]*((1 - δi)/(1 + δi))

@@ -26,11 +26,11 @@ default_locations(::Type{COSMOSAC10}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv"
     userlocations = String[],
     pure_userlocations = String[],
     verbose = false)
-    
+
 ## Input parameters:
-- `Pnhb` :Single Parameter{String} 
-- `POH` :Single Parameter{String} 
-- `POT` :Single Parameter{String} 
+- `Pnhb` :Single Parameter{String}
+- `POH` :Single Parameter{String}
+- `POT` :Single Parameter{String}
 - `V`: Single Parameter{Float64}
 - `A`: Single Parameter{Float64}
 
@@ -38,7 +38,9 @@ default_locations(::Type{COSMOSAC10}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv"
 An activity coefficient model using molecular solvation based on the COSMO-RS method. Sigma profiles are now split by non-hydrogen bonding, hydrogen acceptor and hydrogen donor.
 
 ## References
-1. Hsieh, C-H., Sandler, S.I., & Lin, S-T. (2010). Improvements of COSMO-SAC for vapor–liquid and liquid–liquid equilibrium predictions. Fluid Phase Equilibria, 297(1), 90-97. [doi:10.1016/j.fluid.2010.06.011](https://doi.org/10.1016/j.fluid.2010.06.011)
+1. Klamt, A. (1995). Conductor-like screening model for real solvents: A new approach to the quantitative calculation of solvation phenomena. Journal of Physical Chemistry, 99(7), 2224–2235. [doi:10.1021/j100007a062](https://doi.org/10.1021/j100007a062)
+2. Lin, S-T. & Sandler, S.I. (2002). A priori phase equilibrium prediction from a segment contribution solvation model. Industrial & Engineering Chemistry Research, 41(5), 899–913. [doi:10.1021/ie001047w](https://doi.org/10.1021/ie001047w)
+3. Hsieh, C-H., Sandler, S.I., & Lin, S-T. (2010). Improvements of COSMO-SAC for vapor–liquid and liquid–liquid equilibrium predictions. Fluid Phase Equilibria, 297(1), 90-97. [doi:10.1016/j.fluid.2010.06.011](https://doi.org/10.1016/j.fluid.2010.06.011)
 """
 COSMOSAC10
 
@@ -47,7 +49,7 @@ function COSMOSAC10(components;
     userlocations = String[],
     pure_userlocations = String[],
     use_nist_database = false,
-    verbose=false)
+    verbose = false)
 
     formatted_components = format_components(components)
 
@@ -79,19 +81,26 @@ function COSMOSAC10(components;
         POH = SingleParam("POH",formatted_components,POH)
         POT = SingleParam("POT",formatted_components,POT)
     else
-        params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations=userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V"], verbose=verbose)
+        params = getparams(formatted_components, default_locations(COSMOSAC10); userlocations = userlocations, ignore_missing_singleparams=["Pnhb","POH","POT","A","V"], verbose = verbose)
         Pnhb  = COSMO_parse_Pi(params["Pnhb"])
         POH  = COSMO_parse_Pi(params["POH"])
         POT  = COSMO_parse_Pi(params["POT"])
         A  = params["A"]
         V  = params["V"]
     end
-    
-    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)    
+
+    _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSAC10Param(Pnhb,POH,POT,V,A)
-    references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360"]
+    references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360","10.1021/j100007a062"]
     model = COSMOSAC10(formatted_components,packagedparams,_puremodel,1e-12,references)
     return model
+end
+
+function Γ_as_view(Γ,l1 = length(Γ) ÷ 3)
+    Γnhb = viewn(Γ, 51, 1)
+    ΓOH = viewn(Γ, 51, 2)
+    ΓOT = viewn(Γ, 51, 3)
+    return Γnhb, ΓOH, ΓOT
 end
 
 function excess_g_res(model::COSMOSAC10Model,V,T,z)
@@ -99,92 +108,106 @@ function excess_g_res(model::COSMOSAC10Model,V,T,z)
     sum(z[i]*R̄*T*lnγ[i] for i ∈ @comps)
 end
 
-function lnγ_res(model::COSMOSAC10Model,V,T,z)
-    x = z ./ sum(z)
-
-    aeff = 7.5
+function lnγ_res(model::COSMOSAC10Model,V,T,z)   
     A = model.params.A.values
-    n = A ./ aeff
-
+    Ā = dot(z,A)
+    PS = zeros(typeof(Ā),51*3)
+    PSᵢ = PS
+    PSnhb, PSOH, PSOT = Γ_as_view(PS,51)
     Pnhb  = model.params.Pnhb.values
-    PSnhb = sum(x[i]*Pnhb[i] for i ∈ @comps) ./ sum(x[i]*A[i] for i ∈ @comps)
-
     POH = model.params.POH.values
-    PSOH = sum(x[i]*POH[i] for i ∈ @comps) ./ sum(x[i]*A[i] for i ∈ @comps)
-
     POT = model.params.POT.values
-    PSOT = sum(x[i]*POT[i] for i ∈ @comps) ./ sum(x[i]*A[i] for i ∈ @comps)
-
-    (lnΓSnhb, lnΓSOH, lnΓSOT)= @f(lnΓ,PSnhb,PSOH,PSOT)
-    lnΓi = [@f(lnΓ,Pnhb[i]./A[i],POH[i]./A[i],POT[i]./A[i]) for i ∈ @comps]
+    @inbounds @simd for v in 1:51
+        PS_nhbᵢᵥ = zero(eltype(PS))
+        PS_OHᵢᵥ = zero(eltype(PS))
+        PS_OTᵢᵥ = zero(eltype(PS))
+        for i in @comps
+            zᵢ = z[i]
+            PS_nhbᵢᵥ += Pnhb[i][v]*zᵢ
+            PS_OHᵢᵥ += POH[i][v]*zᵢ
+            PS_OTᵢᵥ += POT[i][v]*zᵢ
+        end
+        PSnhb[v] = PS_nhbᵢᵥ
+        PSOH[v] = PS_OHᵢᵥ
+        PSOT[v] = PS_OTᵢᵥ
+    end
+    PS ./= Ā
+    #n = A ./ aeff
+    lnΓS = @f(lnΓ,PS)
+    (lnΓSnhb, lnΓSOH, lnΓSOT)= lnΓS
+    lnΓi = Vector{typeof(lnΓS)}(undef,length(model))
     
-    lnγ_res_ =  [n[i]*(sum(Pnhb[i][v]/A[i]*(lnΓSnhb[v]-lnΓi[i][1][v]) for v ∈ 1:51)
+    PSnhbᵢ, PSOHᵢ, PSOTᵢ = Γ_as_view(PSᵢ,51)
+    #lnΓi = [@f(lnΓ,Pnhb[i]./A[i],POH[i]./A[i],POT[i]./A[i]) for i ∈ @comps]
+    for i in @comps
+        Aᵢ = A[i]
+        PSnhbᵢ .= Pnhb[i] ./ Aᵢ
+        PSOHᵢ .= POH[i] ./ Aᵢ
+        PSOTᵢ .= POT[i] ./ Aᵢ
+        lnΓi[i] = @f(lnΓ,PSᵢ)
+    end
+    aeff = 7.5
+    aeff⁻¹ = 1/7.5
+    lnγ_res = zeros(eltype(lnΓSnhb),length(model))
+    for i in @comps
+        #nᵢ = A[i]/aeff
+        #Aᵢ⁻¹ = 1/A[i]
+        lnγ_resᵢ = zero(eltype(lnγ_res))
+        lnΓSnhbᵢ, lnΓSOHᵢ, lnΓSOTᵢ = lnΓi[i]
+        Pnhbᵢ, POHᵢ, POTᵢ = Pnhb[i], POH[i], POT[i]
+        for v in 1:51
+            lnγ_resᵢ += aeff⁻¹*Pnhbᵢ[v]*(lnΓSnhb[v] - lnΓSnhbᵢ[v])
+            lnγ_resᵢ += aeff⁻¹*POHᵢ[v]*(lnΓSOH[v] - lnΓSOHᵢ[v])
+            lnγ_resᵢ += aeff⁻¹*POTᵢ[v]*(lnΓSOT[v] - lnΓSOTᵢ[v])
+        end
+        lnγ_res[i] = lnγ_resᵢ
+    end
+    return lnγ_res
+    #=
+    
+    lnγ_res = [A[i]/aeff*(sum(Pnhb[i][v]/A[i]*(lnΓSnhb[v]-lnΓi[i][1][v]) for v ∈ 1:51)
                       +sum(POH[i][v]/A[i]*(lnΓSOH[v]-lnΓi[i][2][v]) for v ∈ 1:51)
-                      +sum(POT[i][v]/A[i]*(lnΓSOT[v]-lnΓi[i][3][v]) for v ∈ 1:51)) for i ∈ @comps]               
-    return lnγ_res_
+                      +sum(POT[i][v]/A[i]*(lnΓSOT[v]-lnΓi[i][3][v]) for v ∈ 1:51)) for i ∈ @comps]
+    
+    return lnγ_res =#
 end
 
-function lnΓ(model::COSMOSAC10Model,V,T,z,Pnhb,POH,POT)
-    _TYPE = typeof(V+T+first(z))
-    Γ0nhb = ones(_TYPE,length(Pnhb))
-    Γ0OH = ones(_TYPE,length(POH))
-    Γ0OT = ones(_TYPE,length(POT))
+function lnΓ(model::COSMOSAC10Model,V,T,z,P)
+    Γ = _lnΓ(model,V,T,z,P)
+    return Γ_as_view(Γ,51)
+end
 
-    σ   = -0.025:0.001:0.025
-    Γnhb_old = exp.(-log.(sum(Pnhb[i]*Γ0nhb[i]*exp.(-ΔW.(σ,σ[i],1,1,T)./T) for i ∈ 1:51)
-                         +sum(POH[i]*Γ0OH[i]*exp.(-ΔW.(σ,σ[i],2,1,T)./T) for i ∈ 1:51)
-                         +sum(POT[i]*Γ0OT[i]*exp.(-ΔW.(σ,σ[i],3,1,T)./T) for i ∈ 1:51)))
-    ΓOH_old = exp.(-log.(sum(Pnhb[i]*Γ0nhb[i]*exp.(-ΔW.(σ,σ[i],1,2,T)./T) for i ∈ 1:51)
-                         +sum(POH[i]*Γ0OH[i]*exp.(-ΔW.(σ,σ[i],2,2,T)./T) for i ∈ 1:51)
-                         +sum(POT[i]*Γ0OT[i]*exp.(-ΔW.(σ,σ[i],3,2,T)./T) for i ∈ 1:51)))
-    ΓOT_old = exp.(-log.(sum(Pnhb[i]*Γ0nhb[i]*exp.(-ΔW.(σ,σ[i],1,3,T)./T) for i ∈ 1:51)
-                         +sum(POH[i]*Γ0OH[i]*exp.(-ΔW.(σ,σ[i],2,3,T)./T) for i ∈ 1:51)
-                         +sum(POT[i]*Γ0OT[i]*exp.(-ΔW.(σ,σ[i],3,3,T)./T) for i ∈ 1:51)))
-    Γnhb_new = deepcopy(Γnhb_old)
-    ΓOH_new = deepcopy(ΓOH_old)
-    ΓOT_new = deepcopy(ΓOT_old)
-    tol = 1
-    i = 1
-
-    while tol>sqrt(model.absolutetolerance)
-        Γnhb_new .= exp.(-log.(sum(Pnhb[i]*Γnhb_old[i]*exp.(-ΔW.(σ,σ[i],1,1,T)./T) for i ∈ 1:51)
-                         +sum(POH[i]*ΓOH_old[i]*exp.(-ΔW.(σ,σ[i],2,1,T)./T) for i ∈ 1:51)
-                         +sum(POT[i]*ΓOT_old[i]*exp.(-ΔW.(σ,σ[i],3,1,T)./T) for i ∈ 1:51)))
-        ΓOH_new .= exp.(-log.(sum(Pnhb[i]*Γnhb_old[i]*exp.(-ΔW.(σ,σ[i],1,2,T)./T) for i ∈ 1:51)
-                         +sum(POH[i]*ΓOH_old[i]*exp.(-ΔW.(σ,σ[i],2,2,T)./T) for i ∈ 1:51)
-                         +sum(POT[i]*ΓOT_old[i]*exp.(-ΔW.(σ,σ[i],3,2,T)./T) for i ∈ 1:51)))
-        ΓOT_new .= exp.(-log.(sum(Pnhb[i]*Γnhb_old[i]*exp.(-ΔW.(σ,σ[i],1,3,T)./T) for i ∈ 1:51)
-                         +sum(POH[i]*ΓOH_old[i]*exp.(-ΔW.(σ,σ[i],2,3,T)./T) for i ∈ 1:51)
-                         +sum(POT[i]*ΓOT_old[i]*exp.(-ΔW.(σ,σ[i],3,3,T)./T) for i ∈ 1:51)))
-
-        Γnhb_new .= (Γnhb_new .+ Γnhb_old) ./2
-        ΓOH_new .= (ΓOH_new .+ ΓOH_old) ./2
-        ΓOT_new .= (ΓOT_new .+ ΓOT_old) ./2
-
-        tol = (cosmo_tol(Γnhb_new,Γnhb_old) + cosmo_tol(ΓOH_new,ΓOH_old) + cosmo_tol(ΓOT_new,ΓOT_old))/3
-        Γnhb_old .= Γnhb_new
-        ΓOH_old .= ΓOH_new
-        ΓOT_old .= ΓOT_new
-        i+=1
+function PΔW(model::COSMOSAC10Model,V,T,z,P,nonzeros = 1:length(P))
+    σ  = -0.025:0.001:0.025
+    Tinv = 1/T
+    TYPE = @f(Base.promote_eltype,P,Tinv)
+    PW = zeros(TYPE,length(nonzeros),length(nonzeros))
+    idx(i) = div(i-1,51) + 1
+    #σ(i) = _σ[rem(i + 50,51) + 1]
+    idxx(i) = rem(i + 50,51) + 1
+    i_nonzero = 0
+    @inbounds for ii in 1:153
+        i = idxx(ii)
+        iszero(P[ii]) && continue
+        i_nonzero +=1
+        v_nonzero = 0
+        for vv in 1:153
+            iszero(P[vv]) && continue
+            v_nonzero +=1
+            v = idxx(vv)
+            PW[i_nonzero,v_nonzero] = P[vv]*exp(-ΔW(σ[i],σ[v],idx(vv),idx(ii),T)*Tinv)
+        end
     end
-    lnΓnhb = log.(Γnhb_old)
-    lnΓOH = log.(ΓOH_old)
-    lnΓOT = log.(ΓOT_old)
-
-    return (lnΓnhb,lnΓOH,lnΓOT)
+    return PW
 end
 
 function ΔW(σm,σn,t,s,T)
     ces  = 6525.69+1.4859e8/T^2
-    if t==2 && s==2 && σm*σn<0
-        chb = 4013.78
-    elseif t==3 && s==3 && σm*σn<0
-        chb = 932.31
-    elseif t==3 && s==2 && σm*σn<0
-        chb = 3016.43
-    else
-        chb = 0.
-    end
-    R    = 0.001987
+    chb = COSMOSAC10_ΔW_data[t,s] * (σm*σn<0)
+    R  = 0.001987
     return (ces*(σm+σn)^2-chb*(σm-σn)^2)/R
 end
+
+const COSMOSAC10_ΔW_data =@SMatrix [0.0 0.0 0.0;0.0 4013.78 0.0;0.0 3016.43 932.31]
+
+#fcosmo(system::COSMOSAC10) = Clapeyron.activity_coefficient(system,1e5, 333.15,[0.5,0.5])[1] - 1.4015660588643404

@@ -7,6 +7,11 @@ struct GenericAncEvaluator
     output_r::Float64 #reducer over output
     type::Symbol #type of evaluator
     using_input_r::Bool #on certain types,a input/input_r is used.
+    superanc::Solvers.ChebyshevRangeV64 #used if EoSSuperancillaries.jl is loaded
+end
+
+function GenericAncEvaluator(n,T,input_r,output_r,type,using_input_r)
+    return GenericAncEvaluator(n,T,input_r,output_r,type,using_input_r,Solvers.ChebyshevRange(Float64[],Vector{Float64}[]))
 end
 
 function _eval_generic_anc(data::GenericAncEvaluator,input)
@@ -18,7 +23,7 @@ function _eval_generic_anc(data::GenericAncEvaluator,input)
     xr > 1 && return zero(xr)/zero(xr)
     n = data.n
     v = data.t
-    θ = 1.0-xr
+    θ = (input_r-input)/input_r
     if type == :exp
         ∑nθt = evalexppoly(θ,n,v)
         if use_xr
@@ -32,6 +37,8 @@ function _eval_generic_anc(data::GenericAncEvaluator,input)
         ∑a = evalpoly(input,n)
         ∑b = evalpoly(input,v)
         return ∑a/∑b
+    elseif type == :superanc
+        return Solvers.cheb_eval(data.superanc,xr)
     else
         throw(error("unrecognized type: " * string(type)))
     end

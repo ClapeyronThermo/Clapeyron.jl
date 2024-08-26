@@ -10,13 +10,24 @@ function vec2(x1,x2,opt = true)
         return SizedVector{2,typeof(V01)}((V01,V02))
     end
 end
-"""
-    dnorm(x,y,p)
 
-Equivalent to `norm((xi-yi for (xi, yi) in zip(x, y)), p)`
-"""
-function dnorm(x,y,p = 2)
-    return norm((xi-yi for (xi, yi) in zip(x, y)), p)
+function vec3(x1,x2,x3,opt = true)
+    V01,V02,V03,_ = promote(x1,x2,x3,opt)
+    if V01 isa Base.IEEEFloat # MVector does not work on non bits types, like BigFloat
+        return MVector(V01,V02,V03)
+    else
+        return SizedVector{2,typeof(V01)}((V01,V02,V03))
+    end
+end
+
+function svec2(x1,x2,opt = true)
+    V01,V02,_ = promote(x1,x2,opt)
+    return SVector{2}(V01,V02)
+end
+
+function svec3(x1,x2,x3,opt = true)
+    V01,V02,V03,_ = promote(x1,x2,x3,opt)
+    return SVector{3}(V01,V02,V03)
 end
 
 """
@@ -71,7 +82,7 @@ function doi2bib(doi::String)
         if r.status == 200
             res = strip(String(take!(out)))
         else
-            res =  ""
+            res = ""
         end
         DOI2BIB_CACHE[doi] = res
         return res
@@ -111,7 +122,7 @@ end
 format_components(str::String) = [str]
 format_components(str::Tuple) = format_components(first(str))
 format_components(str::Pair) = format_components(first(str))
-format_components(str::AbstractString) = String(str)
+format_components(str::AbstractString) = format_components(String(str))
 format_components(str::Vector{String}) = str
 format_components(str) = map(format_component_i,str)
 format_component_i(str::AbstractString) = String(str)
@@ -123,4 +134,26 @@ format_gccomponents(str::Tuple) = [str]
 format_gccomponents(str::Pair) = [str]
 format_gccomponents(str) = str
 
-#used by MultiComponentFlash extension
+function mole_to_mass(model, x)
+    w = x .* mw(model)
+    return w ./ sum(w)
+end
+
+function mass_to_mole(model, w)
+    x = w ./ mw(model)
+    return x ./ sum(x)
+end
+format_gccomponents(str::String) = [str]
+format_gccomponents(str::AbstractString) = format_components(String(str))
+format_gccomponents(str::Vector{String}) = str
+
+function viewn(x,chunk,i)
+    l = length(x)
+    l < chunk*i && throw(BoundsError(x,chunk*i))
+    @view x[((i - 1)*chunk+1):(i*chunk)]
+end
+
+linearidx(x::AbstractVector) = 1:length(x)
+linearidx(x::AbstractMatrix) = diagind(x)
+
+mid(a,b,c) =  max(min(a,b),min(max(a,b),c))

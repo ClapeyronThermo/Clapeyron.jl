@@ -16,15 +16,15 @@ Clapeyron.CKSAFT
 Clapeyron.sCKSAFT
 Clapeyron.BACKSAFT
 Clapeyron.PCSAFT
-Clapeyron.PPCSAFT
-Clapeyron.QPPCSAFT
-Clapeyron.gcPPCSAFT
+Clapeyron.PCPSAFT
+Clapeyron.QPCPSAFT
+Clapeyron.HomogcPCPSAFT
+Clapeyron.HeterogcPCPSAFT
 Clapeyron.sPCSAFT
 Clapeyron.gcsPCSAFT
 Clapeyron.pharmaPCSAFT
 Clapeyron.CPPCSAFT
 Clapeyron.GEPCSAFT
-Clapeyron.gcPCSAFT
 Clapeyron.ADPCSAFT
 Clapeyron.LJSAFT
 Clapeyron.softSAFT
@@ -32,6 +32,7 @@ Clapeyron.softSAFT2016
 Clapeyron.solidsoftSAFT
 Clapeyron.SAFTVRSW
 Clapeyron.SAFTVRMie
+Clapeyron.SAFTVRMie15
 Clapeyron.SAFTVRQMie
 Clapeyron.SAFTVRSMie
 Clapeyron.SAFTgammaMie

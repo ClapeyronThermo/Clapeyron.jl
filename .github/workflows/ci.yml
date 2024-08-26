@@ -2,68 +2,65 @@ name: CI
 on:
   - push
   - pull_request
+# needed to allow julia-actions/cache to delete old caches that it has created
+permissions:
+  actions: write
+  contents: read
+concurrency:
+  # Skip intermediate builds: always.
+  # Cancel intermediate builds: always.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
     runs-on: ${{ matrix.os }}
     if: "!contains(github.event.head_commit.message, 'Clapeyron skip ci')"
-    timeout-minutes: 60
+    timeout-minutes: 100
     strategy:
       fail-fast: false
       matrix:
         version:
-          - '1.6'
+          - 'lts'
           - '1'
+          - 'pre'
         os:
           - ubuntu-latest
-          - macOS-latest
           - windows-latest
         arch:
           - x64
+        include:
+          - os: macOS-latest
+            arch: x64
+            version : 'lts'
+          - os: macOS-latest
+            arch: x64
+            version : '1'
+          - os: macOS-14
+            arch: aarch64
+            version: '1'
+            experimental: true
+          - os: macOS-14
+            arch: aarch64
+            version: 'pre'
+          - experimental: true
+            version: 'pre'
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@latest
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@latest
       - uses: julia-actions/julia-runtest@latest
-        with:
-          coverage: false
-  nighly-test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
-    runs-on: ${{ matrix.os }}
-    if: "!contains(github.event.head_commit.message, 'Clapeyron skip ci')"
-    timeout-minutes: 120
-    continue-on-error: ${{ matrix.experimental }}
-    strategy:
-      fail-fast: false
-      matrix:
-        version:
-          - 'nightly'
-        os:
-          - ubuntu-latest
-          - macOS-latest
-          - windows-latest
-        arch:
-          - x64
-        experimental: [true]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@latest
-        with:
-          version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v1
-      - uses: julia-actions/julia-buildpkg@latest
-      - uses: julia-actions/julia-runtest@latest
-        with:
-          coverage: true
-      - uses: julia-actions/julia-processcoverage@latest
-      - uses: codecov/codecov-action@v3
+      - uses: julia-actions/julia-processcoverage@v1
+        if: matrix.version == 'pre' && matrix.os == 'ubuntu-latest'
+      - uses: codecov/codecov-action@v4
+        if: matrix.version == 'pre' && matrix.os == 'ubuntu-latest'
         with:
           file: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
   docs:
     name: Documentation
     runs-on: ubuntu-latest

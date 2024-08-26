@@ -103,11 +103,16 @@ for (fn,unit) in [
     (:chemical_potential_res, u"J/mol"),
     (:compressibility_factor, NoUnits),
     (:enthalpy, u"J"),
+    (:enthalpy_res, u"J"),
     (:entropy, u"J/K"),
     (:entropy_res, u"J/K"),
+    (:fugacity_coefficient, NoUnits),
     (:gibbs_free_energy, u"J"),
+    (:gibbs_free_energy_res, u"J"),
     (:helmholtz_free_energy, u"J"),
+    (:helmholtz_free_energy_res, u"J"),
     (:internal_energy, u"J"),
+    (:internal_energy_res, u"J"),
     (:isentropic_compressibility, u"Pa^-1"),
     (:isobaric_expansivity, u"K^-1"),
     (:isobaric_heat_capacity, u"J/K"),
@@ -127,19 +132,21 @@ for (fn,unit) in [
             return uconvert.(output, res)
         end
 
-        function C.$fn(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=$unit, threaded=true)
+        function C.$fn(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=$unit)
             st = standardize(model,p,T,z)
             _p,_T,_z = state_to_pt(model,st)
-            res = C.$fn(model, _p, _T, _z; phase, threaded)*($unit)
+            _vol0 = vol0===nothing ? nothing : total_volume(model, vol0, z)
+            res = C.$fn(model, _p, _T, _z; phase, threaded, vol0=_vol0)*($unit)
             return uconvert.(output, res)
         end
     end
 end
 
-function C.volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, output=u"m^3", threaded=true, vol0=nothing)
+function C.volume(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing, output=u"m^3")
     st = standardize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
-    res = volume(model, _p, _T, _z; phase, threaded, vol0)*u"m^3"
+    _vol0 = vol0===nothing ? nothing : total_volume(model, vol0, z)
+    res = volume(model, _p, _T, _z; phase, threaded, vol0=_vol0)*u"m^3"
     return uconvert(output, res)
 end
 
@@ -193,18 +200,28 @@ function C.saturation_temperature(model::EoSModel, p::Unitful.Pressure; output=(
     return (_T_sat,_v_l,_v_v)
 end
 
-function C.fugacity_coefficient(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; phase=:unknown, threaded=true)
-    st = standardize(model,p,T,z)
-    _p,_T,_z = state_to_pt(model,st)
-    res = C.fugacity_coefficient(model, _p, _T, _z; phase, threaded)
-    return res
-end
-
 function C.volume_virial(model::EoSModel, p::Unitful.Pressure, T::Unitful.Temperature, z=SA[1.]; output=u"m^3")
     st = standardize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     res = C.volume_virial(model, _p, _T, _z)*u"m^3"
     return uconvert(output, res)
+end
+
+function C.spinodal_pressure(model::EoSModel, T::Unitful.Temperature, x=SA[1.]; v0=nothing, phase=:unknown, output=(u"Pa",u"m^3"))
+    st = standardize(model,-1,T,x)
+    _,_T,_x = state_to_pt(model,st)
+    _v0 = v0===nothing ? nothing : total_volume(model, v0, x)
+    res = spinodal_pressure(model, _T, _x; v0=_v0, phase=phase).*(u"Pa",u"m^3")
+    return uconvert.(output, res)
+end
+
+function C.spinodal_temperature(model::EoSModel, p::Unitful.Pressure, x=SA[1.]; T0=nothing, v0=nothing, phase=:unknown, output=(u"K",u"m^3"))
+    st = standardize(model,p,-1,x)
+    _p,_,_x = state_to_pt(model,st)
+    _T0 = T0===nothing ? nothing : standardize(T0,1u"K")
+    _v0 = v0===nothing ? nothing : total_volume(model, v0, x)
+    res = spinodal_temperature(model, _p, _x; T0=_T0, v0=_v0, phase=phase).*(u"K",u"m^3")
+    return uconvert.(output, res)
 end
 
 # resolve ambiguity
@@ -217,6 +234,22 @@ function C.chemical_potential(model::(C.SolidHfusModel), v::__VolumeKind, T::Uni
 end
 
 function C.chemical_potential(model::(C.SolidHfusModel), p::Unitful.Pressure, T::Unitful.Temperature, z; output=u"J/mol")
+    st = standardize(model,p,T,z)
+    _p,_T,_z = state_to_pt(model,st)
+    #SolidHfus does not depend on volume or pressure
+    res = C.chemical_potential(model, _p, _T, _z)*u"J/mol"
+    return uconvert.(output, res)
+end
+
+function C.chemical_potential(model::(C.SolidKsModel), v::__VolumeKind, T::Unitful.Temperature, z=SA[1.]; output=u"J/mol")
+    st = standardize(model,v,T,z)
+    _v,_T,_z = state_to_vt(model,st)
+    #SolidHfus does not depend on volume or pressure
+    res = C.chemical_potential(model, _v, _T, _z)*u"J/mol"
+    return uconvert.(output, res)
+end
+
+function C.chemical_potential(model::(C.SolidKsModel), p::Unitful.Pressure, T::Unitful.Temperature, z; output=u"J/mol")
     st = standardize(model,p,T,z)
     _p,_T,_z = state_to_pt(model,st)
     #SolidHfus does not depend on volume or pressure

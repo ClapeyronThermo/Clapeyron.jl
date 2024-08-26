@@ -1,0 +1,202 @@
+
+#=
+function tpd_obj!(model::EoSModel, p, T, di, α, phasew, vcache;
+                  F=nothing, G=nothing, H=nothing)
+    # Function that computes the TPD function, its gradient and its hessian
+    nc = length(model)
+    w = α.^2 /4.0
+    #sqrt(w) = 0.5*α
+    volw0 = vcache[]
+    if H !== nothing
+        # computing the hessian
+        lnϕw, ∂lnϕ∂nw, ∂lnϕ∂Pw, volw = ∂lnϕ∂n∂P(model, p, T, w; phase=phasew, vol0=volw0)
+        for i in 1:nc
+            αi = α[i]
+            for j in 1:nc
+                αj = α[j]
+                δij = Int(i == j)
+
+                #=
+                from thermopack:
+                We see that ln Wi + lnφ(W) − di will be zero at the solution of the tangent plane minimisation.
+                It can therefore be removed from the second derivative, without affecting the convergence properties.
+                =#
+
+                H[i,j] += δij + 0.25*αi*αj*∂lnϕ∂nw[i,j] #+ 0.5*αi*dtpd[i]
+            end
+        end
+    else
+        lnϕw, volw = lnϕ(model, p, T, w; phase=phasew, vol0=volw0)
+    end
+    dtpd = log.(w) + lnϕw - di
+    vcache[] = volw
+    if G !== nothing
+        # computing the gradient
+         G .= dtpd.* ( α./ 2)
+    end
+    if F !== nothing
+        # computing the TPD value
+        #tpdi = w_notzero.*(dtpd .- 1.)
+        #tpd = sum(tpdi) + 1
+        tpd = dot(w,dtpd) - sum(w) + 1
+        return tpd
+    end
+end
+
+function tpd_ss(model::EoSModel, p, T, di, w0, phasew; volw0=nothing,max_iters = 10)
+    # Function that minimizes the tpd function by Successive Substitution
+    volw0 === nothing && (volw0 = volume(model, p, T, w0, phase = phasew))
+    volw = volw0
+    w = copy(w0)
+    lnw = copy(w0)
+    tpd = zero(T+p+first(w0))
+    lnϕw = zeros(typeof(tpd),length(w))
+    for _ in 1:max_iters
+        lnϕw, volw = lnϕ!(lnϕw,model, p, T, w; phase=phasew, vol0=volw)
+        lnw .= di .- lnϕw
+        w .= exp.(lnw)
+        w ./= sum(w)
+        !isfinite(first(w)) && break
+    end
+    return w, volw
+end
+
+function tpd_min(model::EoSModel, p, T, di, z, w0, phasez, phasew; volz0=nothing, volw0=nothing)
+    # Function that minimizes the tpd function first by Successive Substitution
+    # and then by a Newton's method
+    # out = minimized trial phase composition (w) and its tpd value
+    nc = length(model)
+    volw = volw0
+    # improving initial guess by Successive Substitution
+    w, volw = tpd_ss(model, p, T, di, w0, phasew; volw0=nothing)
+
+    if !isfinite(volw) || !isfinite(first(w)) #iteration returned non finite values
+        return w, zero(eltype(w))/zero(eltype(w))
+    end
+
+    if isapprox(z, w, atol=1e-3) #ss iteration converged to z
+        return w, zero(eltype(w))/zero(eltype(w))
+    end
+
+    # change of variable to "number of moles"
+    #α0 = max.(2 .* sqrt.(w),one(eltype(w))*1e-8)
+    α0 = 2 .* sqrt.(w)
+    vcache = Ref(volw)
+    # minimizing the TPD by Newton's method
+    dftpd!(F, G, H, α) = tpd_obj!(model, p, T, di, α, phasew, vcache, F=F, G=G, H=H)
+    #obj = tpd_k_obj(model, p, T, di, is_liquid(phasez))
+    sol = Solvers.optimize(Solvers.only_fgh!(dftpd!), α0,LineSearch(Newton())) #, method=LineSearch(Newton()))#  , Optim.Newton())
+    # computing phase composition
+    w = sol.info.solution.^2 / 4
+    w ./= sum(w)
+    α0 .= 2 .* sqrt.(w)
+    #the minimum on tpd is on a reescaled variable.
+    tpd = dftpd!(2, nothing, nothing, α0)
+    return w, tpd
+end
+
+function all_tpd(model::EoSModel, p, T, z,phasepairs = ((:liquid,:vapour),(:liquid,:liquid),(:vapour,:liquid));verbose = false)
+    # Function that minimizes the tpd function first by Successive Substitution
+    model_full,z_full = model,z
+    model, z_notzero = index_reduction(model_full,z_full)
+    z = z_full[z_notzero]
+    nc = length(model_full)
+
+    _1 = one(p+T+first(z))
+    nc = length(model)
+    Id = fill(zero(eltype(z)),nc,nc)
+    for i in diagind(Id)
+        Id[i] = 1.0
+    end
+    w_array = Vector{Vector{eltype(_1)}}(undef,0)
+    tpd_array = fill(_1,0)
+    phasez_array = fill(:x,0)
+    phasew_array = fill(:x,0)
+
+    #cache di
+    di_dict = Dict{Symbol,Vector{Float64}}()
+    #g_dict = Dict{Symbol,Float64}()
+    for (phasez,_) in phasepairs
+        if !haskey(di_dict,phasez)
+            lnϕz, volz = lnϕ(model, p, T, z; phase=phasez)
+            #g_dict[phasez] = VT_gibbs_free_energy(model,volz,T,z)
+            isnan(volz) && continue
+            di = log.(z) + lnϕz
+            add_to = true
+            for (phaseij,dij) in pairs(di_dict)
+                if isapprox(di,dij,rtol = 1e-5) #new similar phases
+                    add_to = false
+                end
+            end
+            if add_to
+                di_dict[phasez] = di
+            end
+        end
+    end
+
+    #TODO for the future:
+    #this operation is a "embarrasingly parallel" problem, multithreading will surely speed this up
+    #but Base.@threads on julia 1.6 behaves on a static manner, on 1.8 onwards, there is Base.@threads :dynamic,
+    #that allows nesting. Ideally, all Clapeyron operations should be multithread-friendly.
+    for (phasez,phasew) in phasepairs
+        !haskey(di_dict,phasez) && continue
+        di = di_dict[phasez]
+        for i in 1:length(model)
+            w0 = Id[i, :] #vector of single component
+            w, tpd = tpd_min(model,p,T,di,z,w0,phasez,phasew)
+            isnan(tpd) && continue
+            if tpd < 0. && !isapprox(z, w, atol=1e-3)
+                if length(w_array) == 0
+                    push!(w_array, w)
+                    push!(tpd_array, tpd)
+                    push!(phasez_array, phasez)
+                    push!(phasew_array, phasew)
+                    continue
+                end
+                already_computed = false
+                for ws in w_array
+                    # check if the minimum is already stored
+                    already_computed = already_computed || isapprox(ws, w, atol=1e-3)
+                end
+                if !already_computed
+                    push!(w_array, index_expansion(w,z_notzero))
+                    push!(tpd_array, tpd)
+                    push!(phasez_array, phasez)
+                    push!(phasew_array, phasew)
+                    # println(i, ' ', phasez, ' ', phasew, ' ', w, ' ', tpd)
+                end
+            end
+        end
+    end
+    # sort the obtained tpd minimas
+    index = sortperm(tpd_array)
+    w_array = w_array[index]
+    tpd_array = tpd_array[index]
+    phasez_array = phasez_array[index]
+    phasew_array = phasew_array[index]
+    return w_array, tpd_array, phasez_array, phasew_array
+end
+
+"""
+    tpd(model,p,T,z;verbose = false)
+
+Calculates the Tangent plane distance function (`tpd`). It returns:
+
+- a vector with trial phase compositions where `tpd < 0`
+- a vector with the `tpd` values
+- a vector with symbols indicating the phase of the input composition
+- a vector with symbols indicating the phase of the trial composition
+
+It iterates over each two-phase combination, starting from pure trial compositions, it does succesive substitution, then Gibbs optimization.
+
+If the vectors are empty, then the procedure couldn't find a negative `tpd`. That is an indication that the phase is (almost) surely stable.
+
+"""
+tpd_old(model,p,T,z;verbose = false) = all_tpd(model,p,T,z;verbose = verbose)
+
+function lle_init(model::EoSModel, p, T, z;verbose = false)
+    w_array, tpd_array, _, _ = all_tpd(model,p,T,z,((:liquid,:liquid),);verbose = verbose)
+    return w_array, tpd_array
+end
+
+=#

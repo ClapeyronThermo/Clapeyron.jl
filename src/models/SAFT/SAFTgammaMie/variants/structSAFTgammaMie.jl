@@ -1,12 +1,12 @@
 abstract type structSAFTgammaMieModel <: SAFTgammaMieModel end
 
-struct structSAFTgammaMie{I,VR} <: structSAFTgammaMieModel
+struct structSAFTgammaMie{I} <: structSAFTgammaMieModel
     components::Vector{String}
     groups::StructGroupParam
     sites::SiteParam
     params::SAFTgammaMieParam
     idealmodel::I
-    vrmodel::VR
+    vrmodel::SAFTVRMie{I,Float64}
     epsilon_mixing::Symbol
     assoc_options::AssocOptions
     references::Array{String,1}
@@ -16,11 +16,12 @@ end
     structSAFTgammaMie <: SAFTgammaMieModel
 
     structSAFTgammaMie(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
-    group_userlocations=String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    idealmodel = BasicIdeal,
+    userlocations = String[],
+    group_userlocations = String[],
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     epsilon_mixing = :default,
     assoc_options = AssocOptions())
 
@@ -59,16 +60,17 @@ s-SAFT-γ-Mie EoS
 structSAFTgammaMie
 
 function structSAFTgammaMie(components; 
-    idealmodel=BasicIdeal,
-    userlocations=String[],
+    idealmodel = BasicIdeal,
+    userlocations = String[],
     group_userlocations = String[],
-    ideal_userlocations=String[],
-    verbose=false,
+    ideal_userlocations = String[],
+    reference_state = nothing,
+    verbose = false,
     epsilon_mixing = :default,
     assoc_options = AssocOptions())
 
     groups = StructGroupParam(components, ["SAFT/SAFTgammaMie/SAFTgammaMie_groups.csv","SAFT/SAFTgammaMie/structSAFTgammaMie/structSAFTgammaMie_intragroups.csv"])
-    params = getparams(groups, ["SAFT/SAFTgammaMie/structSAFTgammaMie","properties/molarmass_groups.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(groups, ["SAFT/SAFTgammaMie/structSAFTgammaMie","properties/molarmass_groups.csv"]; userlocations = userlocations, verbose = verbose)
     sites = params["sites"]
     components = groups.components
     
@@ -107,7 +109,7 @@ function structSAFTgammaMie(components;
     #GC to component model in association
     gc_epsilon_assoc = params["epsilon_assoc"]
     gc_bondvol = params["bondvol"]
-    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options) #combining rules for association
+    gc_bondvol,gc_epsilon_assoc = assoc_mix(gc_bondvol,gc_epsilon_assoc,gc_sigma,assoc_options,sites) #combining rules for association
 
     comp_sites = gc_to_comp_sites(sites,groups)
     comp_bondvol = gc_to_comp_sites(gc_bondvol,comp_sites)
@@ -116,7 +118,7 @@ function structSAFTgammaMie(components;
     gcparams = SAFTgammaMieParam(gc_segment, shapefactor,gc_lambda_a,gc_lambda_r,gc_sigma,gc_epsilon,gc_epsilon_assoc,gc_bondvol)
     vrparams = SAFTVRMieParam(mw,segment,sigma,lambda_a,lambda_r,epsilon,comp_epsilon_assoc,comp_bondvol)
     
-    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    idmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     
     vr = SAFTVRMie(components,comp_sites,vrparams,idmodel,assoc_options,default_references(SAFTVRMie))
     γmierefs = ["10.1063/1.4851455", "10.1021/je500248h"]
@@ -185,7 +187,7 @@ function a_chain(model::structSAFTgammaMieModel, V, T, z,_data = @f(data))
         g_1_ = 3*∂a_1∂ρ_S-_C*(λa*x_0ij^λa*(aS_1_a+B_a)-λr*x_0ij^λr*(aS_1_r+B_r))
         #@show (g_1_,i)
         θ = exp(ϵ/T)-1
-        γc =  10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
+        γc = 10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
         ∂a_2∂ρ_S = 0.5*_C^2 *
             (ρS*_∂KHS*(x_0ij^(2*λa)*(aS_1_2a+B_2a)
             - 2*x_0ij^(λa+λr)*(aS_1_ar+B_ar)
@@ -233,7 +235,7 @@ function a_chain(model::structSAFTgammaMieModel, V, T, z,_data = @f(data))
             g_1_ = 3*∂a_1∂ρ_S-_C*(λa*x_0^λa*(aS_1_a+B_a)-λr*x_0^λr*(aS_1_r+B_r))
             #@show (g_1_,i)
             θ = exp(ϵ/T)-1
-            γc =  10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
+            γc = 10 * (-tanh(10*(0.57-α))+1) * _ζst*θ*exp(-6.7*_ζst-8*_ζst^2)
             ∂a_2∂ρ_S = 0.5*_C^2 *
                 (ρS*_∂KHS*(x_0^(2*λa)*(aS_1_2a+B_2a)
                 - 2*x_0^(λa+λr)*(aS_1_ar+B_ar)
@@ -249,7 +251,7 @@ function a_chain(model::structSAFTgammaMieModel, V, T, z,_data = @f(data))
             g_2_ = (1+γc)*gMCA2
             #@show (g_2_,i)
             g_Mie[k,l] = g_HSi*exp(ϵ/T*g_1_/g_HSi+(ϵ/T)^2*g_2_/g_HSi)
-            g_Mie[l,k] =  g_Mie[k,l]
+            g_Mie[l,k] = g_Mie[k,l]
         end
     end
 

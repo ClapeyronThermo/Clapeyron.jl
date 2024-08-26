@@ -1,4 +1,4 @@
-function M.flash_storage_internal!(out, eos::C.EoSModel, cond, method; inc_jac = isa(method, M.AbstractNewtonFlash), static_size = false, kwarg...)
+function M.flash_storage_internal!(out, eos::C.EoSModel, cond, method; inc_jac = isa(method, M.AbstractNewtonFlash), static_size = false,inc_bypass = false, kwarg...)
     n = M.number_of_components(eos)
     TT = typeof(one(eltype(eos)))
     splt = C.split_model(eos)
@@ -17,73 +17,12 @@ function M.flash_storage_internal!(out, eos::C.EoSModel, cond, method; inc_jac =
     if inc_jac
         M.flash_storage_internal_newton!(out, eos, cond, method, static_size = static_size; kwarg...)
     end
+
+    if inc_bypass
+        out[:bypass] = michelsen_critical_point_measure_storage(eos, static_size = static_size)
+    end
+
     return out
-end
-
-#TODO: this function can be removed when a new version with https://github.com/moyner/MultiComponentFlash.jl/pull/17 is released
-function M.flash_storage_internal_newton!(out, eos::C.EoSModel, cond, method; static_size = false, diff_externals = false, kwarg...)
-    n = M.number_of_components(eos)
-    np = 2*n + 1
-    TT = typeof(C.ForwardDiff.Tag(Val(:Flash),Nothing))
-    primary_ad(ix) = M.get_ad(0.0, np, TT, ix)
-    V_ad = primary_ad(np)
-    T = typeof(V_ad)
-    if static_size
-        x_ad = C.StaticArrays.@MVector zeros(T, n)
-        y_ad = C.StaticArrays.@MVector zeros(T, n)
-        r = C.StaticArrays.@MVector zeros(np)
-        J = C.StaticArrays.@MMatrix zeros(np, np)
-    else
-        x_ad = zeros(T, n)
-        y_ad = zeros(T, n)
-        r = zeros(np)
-        J = zeros(np, np)
-    end
-    out[:r] = r
-    out[:J] = J
-
-    for i = 1:n
-        x_ad[i] = primary_ad(i)
-        y_ad[i] = primary_ad(i+n)
-    end
-    out[:AD] = (x = x_ad, y = y_ad, V = V_ad)
-    if diff_externals
-        M.flash_storage_internal_inverse!(out, eos, cond, method, static_size = static_size; kwarg...)
-    end
-    return out
-end
-
-#TODO: this function can be removed when a new version with https://github.com/moyner/MultiComponentFlash.jl/pull/17 is released
-function M.flash_storage_internal_inverse!(out, eos::C.EoSModel, cond, method; static_size = false, npartials = nothing)
-    n = M.number_of_components(eos)
-    np = length(out[:r])
-    external_partials = n + 2 # p, T, z_1, ... z_n
-    secondary_ad(ix) = M.get_ad(0.0, external_partials, typeof(ForwardDiff.Tag(Val(:InverseFlash),Nothing)), ix)
-    p_ad = secondary_ad(1)
-    T_ad = secondary_ad(2)
-    T_cond = typeof(p_ad)
-    if static_size
-        z_ad = C.StaticArrays.@MVector zeros(T_cond, n)
-        J_inv = C.StaticArrays.@MMatrix zeros(np, external_partials)
-    else
-        z_ad = zeros(T_cond, n)
-        J_inv = zeros(np, external_partials)
-    end
-    out[:J_inv] = J_inv
-    for i = 1:n
-        z_ad[i] = secondary_ad(i+2)
-    end
-    cond_ad = (p = p_ad, T = T_ad, z = z_ad)
-    if !isnothing(npartials)
-        if static_size
-            buf = C.StaticArrays.@MVector zeros(npartials)
-        else
-            buf = zeros(npartials)
-        end
-        out[:buf_inv] = buf
-    end
-    out[:AD_cond] = cond_ad
-    out[:forces_secondary] = M.force_coefficients(eos, cond_ad, static_size = static_size)
 end
 
 function M.flash_update!(K, storage, type::M.SSIFlash, eos::C.EoSModel, cond, forces, V::F, iteration) where F

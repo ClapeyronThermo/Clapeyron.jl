@@ -66,7 +66,6 @@ end
 
 ab_premixing(model::CubicModel,mixing::MixingRule,Tc,pc,vc,kij,lij) = ab_premixing(model,mixing,Tc,pc,kij,lij) #ignores the Vc unless dispatch
 
-
 function recombine_cubic!(model::CubicModel,k = nothing,l = nothing)
     recombine_mixing!(model,model.mixing,k,l)
     recombine_translation!(model,model.translation)
@@ -181,7 +180,7 @@ function second_virial_coefficient_impl(model::ABCubicModel,T,z = SA[1.0])
     return b-a/(R̄*T)
 end
 
-function lb_volume(model::CubicModel, z=SA[1.0])
+function lb_volume(model::CubicModel, z)
     V = 1e-5
     T = 0.0
     n = sum(z)
@@ -189,11 +188,11 @@ function lb_volume(model::CubicModel, z=SA[1.0])
     b = model.params.b.values
     c = @f(translation, model.translation)
     b̄ = dot(z, Symmetric(b), z) * invn #b has m3/mol units, result should have m3 units
-    c̄ = dot(z, c) * invn
+    c̄ = dot(z, c) #result here should also be in m3
     return b̄ - c̄
 end
 #dont use αa, just a, to avoid temperature dependence
-function T_scale(model::CubicModel, z=SA[1.0])
+function T_scale(model::CubicModel, z)
     n = sum(z)
     invn2 = one(n) / (n * n)
     _Tc = model.params.Tc.values
@@ -201,7 +200,7 @@ function T_scale(model::CubicModel, z=SA[1.0])
     return Tc
 end
 
-function p_scale(model::CubicModel, z=SA[1.0])
+function p_scale(model::CubicModel, z)
     n = sum(z)
     invn2 = one(n) / (n * n)
     _pc = model.params.Pc.values
@@ -231,8 +230,8 @@ function crit_pure_tp(model::ABCCubicModel)
     return (Tc,Pc,Vc)
 end
 
-function volume_impl(model::ABCubicModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0=nothing)
-    lb_v = lb_volume(model,z)
+function volume_impl(model::ABCubicModel,p,T,z,phase,threaded,vol0)
+    lb_v = lb_volume(model,T,z)
     if iszero(p)
         vl,_ = zero_pressure_impl(model,T,z)
         return vl
@@ -307,22 +306,24 @@ end
 function ab_consts(model::CubicModel)
     return ab_consts(typeof(model))
 end
+x0_sat_pure(model::ABCubicModel,T) = x0_sat_pure_cubic_ab(model,T)
 
-function x0_sat_pure(model::ABCubicModel, T)
+function x0_sat_pure_cubic_ab(model::ABCubicModel, T)
     z = SA[1.0]
     Tc = model.params.Tc.values[1]
     if Tc < T
         nan = zero(T) / zero(T)
         return (nan, nan)
     end
-
     a, b, c = cubic_ab(model, 1 / sqrt(eps(float(T))), T)
     data = (1.0, a, b, c)
     pc = model.params.Pc.values[1]
     zc = pure_cubic_zc(model)
+    vc = zc*Rgas(model)*Tc/pc - c
+    crit = (Tc, pc, vc)
     Δ1,Δ2 = cubic_Δ(model,SA[1.0])
     vl_p0,vl_max = zero_pressure_impl(T,a,b,c,Δ1,Δ2,z) #exact solution to zero-pressure cubic
-    B =  b-a/(R̄*T)
+    B = b-a/(R̄*T)
     if !isnan(vl_p0)
         ares = a_res(model, vl_p0, T, z,data)
         lnϕ_liq0 = ares - 1. + log(R̄*T/vl_p0)
@@ -332,6 +333,11 @@ function x0_sat_pure(model::ABCubicModel, T)
         _Δ = (pl0)/(vl_p0*dpdV)
         vl = vl_p0*exp(_Δ)
         vv = volume_virial(B,pl0,T) - c
+        return (vl, vv)
+    elseif T > 0.99*Tc
+        psat = critical_psat_extrapolation(model,T,crit)
+        vl = volume(model,psat,T,phase = :l)
+        vv = volume(model,psat,T,phase = :v)
         return (vl, vv)
     else
         vc = zc*R̄*Tc/pc - c
@@ -344,13 +350,19 @@ function x0_sat_pure(model::ABCubicModel, T)
         p0 = 0.5 * (pl0 + pv0)
         vv = volume_virial(B, p0, T) - c
         if p_vl > pc #improves predictions around critical point
-            vlc, vvc = vdw_x0_xat_pure(T, Tc, pc, vc)
-            vl = 0.5 * (vl + vlc)
-            vv = 0.5 * (vv + vvc)
+            psat = critical_psat_extrapolation(model,T,crit)
+            vl = volume(model,psat,T,phase = :l)
+            vv = volume(model,psat,T,phase = :v)
+            return (vl, vv)
         end
         return (vl, vv)
     end
     return (vl, vv)
+end
+
+function x0_saturation_temperature(model::ABCubicModel,p,::Nothing)
+    crit = crit_pure(model)
+    return x0_saturation_temperature_crit(model, p, crit)
 end
 
 #=
@@ -364,8 +376,8 @@ pr: pol = v2 + 2bv - b2 -> pol(b) = 2b2, dpol(b) = 2v + 2b = 4b
 rk: pol = v*(v+b) -> pol(b) = 2b2, dpol(b) = 2v + b = 3b
 
 vdw:k = 2b/(b2)^2 = 2/b3 , k^-1 = 0.5b3
-pr:k =  4b/(2b^2) = 1/b3, k^-1 = b3
-rk:k =  3b/(2b^2) = 0.75/b3 lower  1.33b3
+pr:k = 4b/(2b^2) = 1/b3, k^-1 = b3
+rk:k = 3b/(2b^2) = 0.75/b3 lower  1.33b3
 
 we want the lowest possible volume, to be sure on being on the liquid side.
 

@@ -1,16 +1,7 @@
-function obj_melting_pressure(model::CompositeModel,F,T,vs,vl,p̄,T̄)
-    z = SA[1.0]
-    eos_solid(V) = eos(model.solid,V,T,z)
-    eos_fluid(V) = eos(model.fluid,V,T,z)
-    A_l,Av_l = Solvers.f∂f(eos_fluid,vl)
-    A_s,Av_s =Solvers.f∂f(eos_solid,vs)
-    μl = muladd(-vl,Av_l,A_l)
-    μs = muladd(-vs,Av_s,A_s)
-    ps = - Av_s
-    pl = - Av_l
-    F[1] = (μs - μl)/R̄/T̄
-    F[2] = (ps - pl)/p̄
-    return F
+function obj_melting_pressure(model::CompositeModel,T,vs,vl,ps,μs)
+    solid = solid_model(model)
+    fluid = fluid_model(model)
+    return μp_equality1_p(solid,fluid,vs,vl,T,ps,μs)
 end
 
 struct ChemPotMeltingPressure{V} <: ThermodynamicMethod
@@ -57,27 +48,27 @@ function melting_pressure(model::CompositeModel,T,method::ThermodynamicMethod)
 end
 
 function melting_pressure_impl(model::CompositeModel,T,method::ChemPotMeltingPressure)
-    T̄ = T_scale(model.fluid)
-    p̄ = p_scale(model.fluid)
     if method.v0 == nothing
         v0 = x0_melting_pressure(model,T)
     else
         v0 = method.v0
     end
-    V0 = vec2(log(v0[1]),log(v0[2]),T)
-    f!(F,x) = obj_melting_pressure(model,F,T,exp(x[1]),exp(x[2]),p̄,T̄)
-    results = Solvers.nlsolve(f!,V0,LineSearch(Newton()))
-    x = Solvers.x_sol(results)
-    vs = exp(x[1])
-    vl = exp(x[2])
-    pfus = pressure(model.fluid, vl, T)
-    
-    converged = check_valid_eq2(solid_model(model),fluid_model(model),pfus,vs,vl,T)
+    vs0,vl0 = v0
+    _0 = zero(vs0*vl0*T*oneunit(eltype(model)))
+    nan = _0/_0
+    fail = (nan,nan,nan)
+    valid_input = check_valid_2ph_input(vs0,vl0,true,T)
+    if !valid_input
+        return fail
+    end
+    fluid = fluid_model(model)
+    solid = solid_model(model)
+    ps,μs = scale_sat_pure(fluid)
+    result,converged = try_2ph_pure_pressure(solid,fluid,T,vs0,vl0,ps,μs,method)
     if converged
-    return pfus, vs, vl
+        return result
     else
-        nan = zero(pfus)/zero(pfus)
-        return nan,nan,nan
+        return fail
     end
 end
 
@@ -85,15 +76,16 @@ function x0_melting_pressure(model::CompositeModel,T)
     solid = solid_model(model)
     liquid = fluid_model(model)
     z = SA[1.0]
-    vs00 = x0_volume_solid(solid,T,z)
-    vl00 = x0_volume_liquid(liquid,T,z)
+    p = p_scale(liquid,z)
+    vs00 = x0_volume(solid,p,T,z,phase = :s)
+    vl00 = x0_volume(liquid,p,T,z,phase = :l)
     #=
     strategy:
     quadratic taylor expansion for helmholtz energy
     isothermal compressibility aproximation for pressure
    =#
-    p_scale,μ_scale =  scale_sat_pure(liquid)
-    return solve_2ph_taylor(solid,liquid,T,vs00,vl00,p_scale,μ_scale)
+    ps,μs = scale_sat_pure(liquid)
+    return solve_2ph_taylor(solid,liquid,T,vs00,vl00,ps,μs)
 end
 
 
@@ -105,11 +97,10 @@ function Obj_Mel_Temp(model::EoSModel, F, T, V_s, V_l,p,p̄,T̄)
     A_s,Av_s =Solvers.f∂f(eos_solid,V_s)
     g_l = muladd(-V_l,Av_l,A_l)
     g_s = muladd(-V_s,Av_s,A_s)
-    
-    F[1] = -(Av_l+p)/p̄
-    F[2] = -(Av_s+p)/p̄
-    F[3] = (g_l-g_s)/(R̄*T̄)
-    return F
+    F1 = -(Av_l+p)/p̄
+    F2 = -(Av_s+p)/p̄
+    F3 = (g_l-g_s)/(R̄*T̄)
+    return SVector(F1,F2,F3)
 end
 
 struct ChemPotMeltingTemperature{V} <: ThermodynamicMethod
@@ -158,21 +149,23 @@ function melting_temperature(model::CompositeModel,p,method::ThermodynamicMethod
 end
 
 function melting_temperature_impl(model::CompositeModel,p,method::ChemPotMeltingTemperature)
-    T̄ = T_scale(model.fluid)
-    p̄ = p_scale(model.fluid)
+    solid = solid_model(model)
+    fluid = fluid_model(model)
+    T̄ = T_scale(fluid)
+    p̄ = p_scale(fluid)
     if method.v0 == nothing
         v0 = x0_melting_temperature(model,p)
     else
         v0 = method.v0
     end
-    V0 = [v0[1],log(v0[2]),log(v0[3])]
+    _1 = 
+    V0 = SVector(v0[1],log(v0[2]),log(v0[3]))
     f!(F,x) = Obj_Mel_Temp(model,F,x[1],exp(x[2]),exp(x[3]),p,p̄,T̄)
-    results = Solvers.nlsolve(f!,V0,TrustRegion(Newton(),Dogleg()))
+    results = Solvers.nlsolve(f!,V0,TrustRegion(Newton(),Dogleg()),NEqOptions(method))
     x = Solvers.x_sol(results)
     vs = exp(x[2])
     vl = exp(x[3])
     Tfus = x[1]
-    
     converged = check_valid_eq2(solid_model(model),fluid_model(model),p,vs,vl,Tfus)
     if converged
     return Tfus, vs, vl

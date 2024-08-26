@@ -79,6 +79,7 @@ Clapeyron.Ammonia2023
 Clapeyron.LJRef
 Clapeyron.GERG2008
 Clapeyron.EOS_LNG
+Clapeyron.EOS_CG
 Clapeyron.HelmAct
 ```
 

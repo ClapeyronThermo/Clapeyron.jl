@@ -71,7 +71,7 @@ function tcPRWilsonRes(components;
     verbose = false)
 
     formatted_components = format_components(components)
-    params = getparams(components, default_locations(tcPRWilsonRes); userlocations=userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g","V"], verbose=verbose)
+    params = getparams(components, default_locations(tcPRWilsonRes); userlocations = userlocations, asymmetricparams=["g"], ignore_missing_singleparams=["g","V"], verbose = verbose)
     g = params["g"]
     V = get(params,"v",nothing)
     if isnothing(V)

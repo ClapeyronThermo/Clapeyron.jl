@@ -93,6 +93,7 @@ function dew_pressure_impl(model,T,y,method::ActivityDewPressure)
 
     μmix = zeros(typeof(pmix),length(pure))
     ϕ = copy(μmix)
+    logϕ = copy(μmix)
     x = copy(μmix)
     ϕpure = copy(μmix)
     ϕpure .= 1
@@ -136,7 +137,7 @@ function dew_pressure_impl(model,T,y,method::ActivityDewPressure)
             pᵢ = p_pure[i]
             vpureᵢ = vl_pure[i]
             μᵢ = μpure[i]
-            ϕ̂ᵢ =  ϕpure[i]
+            ϕ̂ᵢ = ϕpure[i]
             γ[i] = exp(log(vpureᵢ/vl) + (μmix[i] - μᵢ)/RT -  vpureᵢ*(pmix -pᵢ)/RT)
             if use_𝒫
                 ln𝒫 = vpureᵢ*expm1(κ[i]*(pmix-pᵢ))/(κ[i]*RT) #see end of file
@@ -155,7 +156,7 @@ function dew_pressure_impl(model,T,y,method::ActivityDewPressure)
         x ./= sum(x)
         vl = volume(model,pmix,T,x,vol0 = vl)
         if method.gas_fug
-            logϕ, vv = lnϕ(model,pmix,T,y,phase = :vapor, vol0 = vv)
+            logϕ, vv = lnϕ!(logϕ,model,pmix,T,y,phase = :vapor, vol0 = vv)
             ϕ .= exp.(logϕ)
         else
             vv = volume(model,pmix,T,y,phase =:vapor,vol0 = vv)

@@ -2,16 +2,26 @@ function x0_volume_liquid(model::SAFTgammaMieModel,T,z)
     v_lb = lb_volume(model,z)
     return v_lb*2.0
 end
-function lb_volume(model::SAFTgammaMieModel, z = SA[1.0])
+function lb_volume(model::SAFTgammaMieModel, z)
     vk  = model.groups.n_flattenedgroups
     seg = model.params.segment.values
     S   = model.params.shapefactor.values
     σ = model.params.sigma.values
-    val = π/6*N_A*sum(z[i]*sum(vk[i][k]*seg[k]*S[k]*σ[k,k]^3 for k in @groups(i)) for i in @comps)
+    lb_v = zero(Base.promote_eltype(model,z))
+    for i in @comps
+        vki = vk[i]
+        lb_vi = zero(lb_v)
+        for k in @groups(i)
+            lb_vi += vki[k]*seg[k]*S[k]*σ[k,k]^3
+        end
+        lb_v += z[i]*lb_vi
+    end
+
+    return π/6*N_A*lb_v
     return val
 end
 
-function T_scale(model::SAFTgammaMieModel,z=SA[1.0])
+function T_scale(model::SAFTgammaMieModel,z)
     return T_scale(model.vrmodel,z)
 end
 
@@ -19,7 +29,7 @@ function T_scales(model::SAFTgammaMieModel)
     return T_scales(model.vrmodel)
 end
 
-function p_scale(model::SAFTgammaMieModel,z=SA[1.0])
+function p_scale(model::SAFTgammaMieModel,z)
     V = zero(first(z))
     T = zero(first(z))
     σ̄3 = @f(σ3x)
@@ -29,7 +39,7 @@ function p_scale(model::SAFTgammaMieModel,z=SA[1.0])
 end
 
 getsites(model::SAFTgammaMieModel) = model.vrmodel.sites
-
+assoc_shape(model::SAFTgammaMieModel) = assoc_shape(model.vrmodel)
 function a_res(model::SAFTgammaMieModel, V, T, z)
     _data = @f(data)
     dgc,X,vrdata = _data
@@ -50,7 +60,7 @@ function data(model::SAFTgammaMieModel, V, T, z)
     X = @f(X_gc)
     _d_gc = d(model,V,T,X)
     _d_gc_av = @f(d_gc_av,_d_gc)
-    ζi = ζ0123(model,V,T,X,_d_gc,m̄)
+    ζi = ζ0123(model,V,T,X,_d_gc)
     _ζ_X,σ3x = ζ_X_σ3(model,V,T,X,_d_gc,m̄)
     _ρ_S = N_A/V*m̄
     _ζst = _ζst = σ3x*_ρ_S*π/6
@@ -59,9 +69,11 @@ function data(model::SAFTgammaMieModel, V, T, z)
 end
 
 function X_gc(model::SAFTgammaMieModel,V,T,z)
-    mi  = group_matrix(model.groups)
+    mi  = group_matrix(model.groups)::Matrix{Float64}
     mm = model.params.segment.values
-    X = mi*z
+    TT = Base.promote_eltype(mm,1.0,z)
+    X = Vector{TT}(undef,length(model.groups.flattenedgroups))
+    mul!(X,mi,z)
     X ./= mm
     return X
 end
@@ -97,7 +109,7 @@ function σ3x(model::SAFTgammaMieModel, V, T, z)
     m̄ = dot(z, model.vrmodel.params.segment.values)
     m̄inv = 1/m̄
     σ = model.params.sigma.values
-    σ3_x =  zero(first(z))
+    σ3_x = zero(first(z))
     for i ∈ @groups
         x_Si = X[i]*m[i]*m̄inv
         σ3_x += x_Si*x_Si*(σ[i,i]^3)
@@ -119,9 +131,15 @@ function a_chain(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     return a_chain(model.vrmodel,V,T,z,vrdata)
 end
 
+
 function a_assoc(model::SAFTgammaMieModel, V, T, z,_data = @f(data))
     _,_,vrdata = _data
     return a_assoc(model.vrmodel,V,T,z,vrdata)
+end
+
+function Δ(model::SAFTgammaMieModel, V, T, z, i, j, a, b,_data = @f(data))
+    vrdata = _data[3]
+    return Δ(model.vrmodel,V,T,z,i,j,a,b,vrdata)
 end
 
 
@@ -179,3 +197,26 @@ function d_gc_av(model::SAFTgammaMieModel,V,T,z::SingleComp,_d_gc = d(model,V,T,
     end
     return SA[cbrt(di*∑zinv2)]
 end
+
+#=
+function X_homotopy(model,V,T,z,_data = Clapeyron.data(model,V,T,z))
+    _Δ = Clapeyron.__delta_assoc(model,V,T,z,_data)
+    n = Clapeyron.assoc_pair_length(model)
+    K = Clapeyron.assoc_site_matrix(model,V,T,z,_data,_Δ)
+    sitesparam = Clapeyron.getsites(model)
+    idxs = sitesparam.n_sites.p
+    nn = length(sitesparam.n_sites.v)
+    @var xi[1:nn]
+    system = System(K*xi .* xi + xi - ones(Int,nn))
+    result = solve(system) 
+    real_result = real_solutions(result)
+    function f(xx)
+        all(xk -> 0 <= xk <= 1, xx)
+    end
+    display(real_result)
+    idx = findfirst(f,real_result)
+    xsol = real_result[idx]
+    
+    return Clapeyron.PackedVofV(idxs,xsol)
+end
+=#

@@ -92,14 +92,6 @@
         @test PCSAFT_testgc <: EoSModel #@newmodelgc
     end
 
-    @testset "#161" begin
-        #problems with registermodel
-        Clapeyron.@registermodel PCSAFT161
-        @test hasmethod(Base.length,Tuple{PCSAFT161})
-        @test hasmethod(Base.show,Tuple{IO,PCSAFT161})
-        @test hasmethod(Base.show,Tuple{IO,MIME"text/plain",PCSAFT161})
-        @test hasmethod(Clapeyron.molecular_weight,Tuple{PCSAFT161,Array{Float64}})
-    end
 
     @testset "#162" begin
         #a longstanding problem, init_model didn't worked with functions.
@@ -108,7 +100,7 @@
         @test model1 isa Clapeyron.EoSModel
 
         #this case is just for compatibility with the notebooks that were originally released.
-        model2 = VTPR(["carbon monoxide","carbon dioxide"];alpha=BMAlpha)
+        model2 = VTPR(["carbon monoxide","carbon dioxide"];alpha = BMAlpha)
         @test model2 isa Clapeyron.EoSModel
     end
 
@@ -170,7 +162,7 @@
         Polar PCSAFT
         it uses `a` and `b` as site names
         =#
-        model = PPCSAFT("water")
+        model = PCPSAFT("water")
         @test model isa EoSModel
         @test "a" in model.sites.flattenedsites
         @test "b" in model.sites.flattenedsites
@@ -197,7 +189,8 @@
         (("water08","e"),("water08","H")) => 0.04509)
         )
         model = pharmaPCSAFT(["griseofulvin","water08"];userlocations = userlocations)
-
+        #found while testing, test that we don't mutate the input
+        @test userlocations.sigma == [3.372,2.7927]
         T = 310.15
         p = 1.01325e5
         z=[7.54e-7, 1-7.54e-7]
@@ -209,6 +202,16 @@
 
         @test γ1[1] ≈ 51930.06908022231 rtol = 1e-4
         
+    end
+
+    @testset "#262" begin
+        #=
+        SAFT-gamma Mie
+        Ensure ij,ab == ji,ba, and that the group-comp is correct for assoc
+        =#
+        model = SAFTgammaMie(["water","ethanol"])
+        @test model.params.epsilon_assoc.values[1,2][1,2] == model.params.epsilon_assoc.values[2,1][2,1]
+        @test model.params.epsilon_assoc.values[1,2][1,2] == model.vrmodel.params.epsilon_assoc.values[1,2][1,2]
     end
 
     @testset "SorptionModels.jl - init kij with user" begin
@@ -269,5 +272,19 @@
 
         m3 = PCSAFT("water",userlocations =(segment = 1,Mw = 1,epsilon = 1,sigma = 1.0))
         @test length(m3.params.bondvol.values.values) == 0
+    end
+
+    @testset "infinite dilution derivatives - association" begin
+        #reported by viviviena in slack
+        cp_params = (a = [36.54206320678348, 39.19437678197436, 25.7415, 34.91747774761048], b = [-0.03480434051958945, -0.05808483585041852, 0.2355, -0.014935581577635826], c = [0.000116818199785053, 0.0003501220208504329, 0.0001578, 0.000756101594841365], d = [-1.3003819534791665e-7, -3.6941157412454843e-7, -4.0939e-7, -1.0894144551347726e-6], e = [5.2547403746728466e-11, 1.276270011886522e-10, 2.1166e-10, 4.896983427747592e-10])
+        idealmodel = ReidIdeal(["water", "methanol", "propyleneglycol","methyloxirane"]; userlocations = cp_params)
+        pcpsaft = PCPSAFT(["water", "methanol", "propyleneglycol","methyloxirane"], idealmodel = idealmodel)
+        water = split_model(pcpsaft)[1]
+        z = [1.0,0.0,0.0,0.0]
+        v = volume(pcpsaft, 101325.0, 298.15, z, phase = :liquid)
+        cp_pure = Clapeyron.VT_isobaric_heat_capacity(water, v, 298.15, 1.0)
+        cp_mix = Clapeyron.VT_isobaric_heat_capacity(pcpsaft, v, 298.15, z)
+        @test cp_mix ≈ cp_pure
+        @test cp_mix ≈ 69.21259493306137
     end
 end

@@ -5,16 +5,18 @@ struct MultiFluidParam <: EoSParam
     Vc::SingleParam{Float64}
     acentricfactor::SingleParam{Float64}
     lb_volume::SingleParam{Float64}
+    reference_state::ReferenceState
 end
 
-function MultiFluidParam(components,pures)
+function MultiFluidParam(components,pures,reference_state = nothing)
     Mw = SingleParam("Mw",components,[pure.properties.Mw for pure in pures])
     Tc = SingleParam("Tc",components,[pure.properties.Tc for pure in pures])
     Pc = SingleParam("Pc",components,[pure.properties.Pc for pure in pures])
     Vc = SingleParam("Vc",components,1 ./ [pure.properties.rhoc for pure in pures])
     acentricfactor = SingleParam("acentric factor",components,[pure.properties.acentricfactor for pure in pures])
     lb_volume = SingleParam("lower bound volume",components,[pure.properties.lb_volume for pure in pures])
-    return MultiFluidParam(Mw,Tc,Pc,Vc,acentricfactor,lb_volume)
+    ref = __init_reference_state_kw(reference_state)
+    return MultiFluidParam(Mw,Tc,Pc,Vc,acentricfactor,lb_volume,ref)
 end
 
 struct MultiFluid{𝔸,𝕄,ℙ} <: EmpiricHelmholtzModel
@@ -41,9 +43,10 @@ Rgas(model::MultiFluid) = model.Rgas
         estimate_pure = false,
         estimate_mixing = :off,
         coolprop_userlocations = true,
-        Rgas = R̄,
-        verbose = false,
-        )
+        Rgas = nothing,
+        reference_state = nothing,
+         verbose = false)
+
 ## Input parameters
 - JSON data (CoolProp and teqp format)
 
@@ -65,8 +68,10 @@ If `estimate_pure` is true, then, if a JSON is not found, the pure model will be
  -  `estimate_mixing = :lb` will perform Lorentz-Berthelot estimation of missing mixing parameters. (γT = βT = γv = βv = 1.0). additionally, you can pass `LorentzBerthelotMixing` to use `k` and `l` BIP instead.
  -  `estimate_mixing = :linear` will perform averaging of γT and γv so that `T(x) = ∑xᵢTᵢ` and `V(x) = ∑xᵢVᵢ` on missing mixing parameters. Additionally, you can use `LinearMixing` to perform this directly.
 
-`Rgas` sets the value of the gas constant to be used by the multifluid. defaults to `Clapeyron.R̄ = Rgas() = 8.31446261815324` (2019 defined constant value)
- """
+`Rgas` sets the value of the gas constant to be used by the multifluid. The default is the following:
+- If `Rgas` is not specified and the input is a single component model, then the value of `Rgas` will be taken from the fluid json file.
+- If `Rgas` is not specified and the input is a multi-component model, then the value of `Rgas` will be set to `Clapeyron.R̄ = Rgas() = 8.31446261815324` (2019 defined constant value)
+"""
 MultiFluid
 
 function MultiFluid(components;
@@ -80,15 +85,15 @@ function MultiFluid(components;
     estimate_pure = false,
     estimate_mixing = :off,
     coolprop_userlocations = true,
-    Rgas = R̄,
-    verbose = false,
-    )
+    Rgas = nothing,
+    reference_state = nothing,
+    verbose = false)
 
     _components = format_components(components)
     if idealmodel === nothing
         idealmodels = FillArrays.Fill(nothing,length(_components))
     else
-        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+        init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
         idealmodels = split_model(init_idealmodel,1:length(_components))
     end
 
@@ -99,26 +104,38 @@ function MultiFluid(components;
         verbose = verbose,
         estimate_pure = estimate_pure,
         coolprop_userlocations = coolprop_userlocations,
+        Rgas = Rgas
         )
         for (i,comp) in pairs(_components)]
     mixing = init_model(mixing,components,mixing_userlocations,verbose)
     departure = init_model(departure,components,departure_userlocations,verbose)
-    params = MultiFluidParam(_components,pures)
+    params = MultiFluidParam(_components,pures,reference_state)
     references = unique!(reduce(vcat,pure.references for pure in pures))
+    if Rgas == nothing
+        if length(pures) != 1
+            Rgas = Clapeyron.Rgas()
+        else
+            Rgas = Clapeyron.Rgas(pures[1])
+        end
+    end
     model = MultiFluid(_components,params,pures,mixing,departure,Rgas,references)
     recombine_mixing!(model,model.mixing,estimate_mixing)
     recombine_departure!(model,model.departure)
+    set_reference_state!(model,verbose = verbose)
     return model
 end
 
-function reduced_delta(model,V,T,z,Σz = sum(z))
-    Vᵣ = v_scale(model,z,Σz)
-    Σz * Vᵣ/V
+vT_scale(model::MultiFluid,V,T,z,Σz = sum(z)) = vT_scale(model,V,T,z,model.mixing,Σz)
+
+function vT_scale(model,V,T,z,mixing,Σz)
+    Vᵣ = v_scale(model,z,mixing,Σz)
+    Tᵣ = T_scale(model,z,mixing,Σz)
+    Vᵣ,Tᵣ
 end
 
-function reduced_tau(model,V,T,z,Σz = sum(z))
-    Tᵣ = T_scale(model,z,Σz)
-    Tᵣ / T
+function reduced_delta_tau(model,V,T,z,Σz = sum(z))
+    Vᵣ,Tᵣ = vT_scale(model,V,T,z,Σz)
+    return Σz*Vᵣ/V, Tᵣ/T
 end
 
 function a_ideal(model::MultiFluid,V,T,z,∑z = sum(z))
@@ -148,34 +165,34 @@ end
 
 function a_res(model::MultiFluid,V,T,z)
     ∑z = sum(z)
-    δ = reduced_delta(model,V,T,z,∑z)
-    τ = reduced_tau(model,V,T,z,∑z)
+    δ,τ = reduced_delta_tau(model,V,T,z,∑z)
     return multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
 end
 
-function eos(model::MultiFluid,V,T,z = SA[1.0])
+function eos_impl(model::MultiFluid,V,T,z)
     ∑z = sum(z)
     a₀ = a_ideal(model,V,T,z,∑z)
-    δ = reduced_delta(model,V,T,z,∑z)
-    τ = reduced_tau(model,V,T,z,∑z)
+    δ,τ = reduced_delta_tau(model,V,T,z,∑z)
     aᵣ = multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
-    return ∑z*@R̄()*T*(a₀+aᵣ)
+    return ∑z*@R̄()*T*(a₀+aᵣ) + reference_state_eval(model,V,T,z)
 end
 
 function eos_res(model::MultiFluid,V,T,z = SA[1.0])
     ∑z = sum(z)
-    δ = reduced_delta(model,V,T,z,∑z)
-    τ = reduced_tau(model,V,T,z,∑z)
+    δ,τ = reduced_delta_tau(model,V,T,z,∑z)
     aᵣ = multiparameter_a_res(model,V,T,z,model.departure,δ,τ,∑z)
     return ∑z*@R̄()*T*aᵣ
 end
 
-v_scale(model::MultiFluid,z = SA[1.0],∑z = sum(z)) = v_scale(model,z,model.mixing,∑z)
-T_scale(model::MultiFluid,z = SA[1.0],∑z = sum(z)) = T_scale(model,z,model.mixing,∑z)
 
-p_scale(model::MultiFluid,z=SA[1.]) = dot(z,model.params.Pc.values)/sum(z)
+v_scale(model::MultiFluid,z) = v_scale(model,z,sum(z))
+T_scale(model::MultiFluid,z) = T_scale(model,z,sum(z))
+v_scale(model::MultiFluid,z,∑z) = v_scale(model,z,model.mixing,∑z)
+T_scale(model::MultiFluid,z,∑z) = T_scale(model,z,model.mixing,∑z)
 
-T_scales(model::MultiFluid,z=SA[1.]) = model.properties.Tc.values
+p_scale(model::MultiFluid,z) = dot(z,model.params.Pc.values)/sum(z)
+
+T_scales(model::MultiFluid,z=SA[1.]) = model.params.Tc.values
 
 #single functions, dispatch to pure
 function x0_sat_pure(model::MultiFluid,T)
@@ -198,21 +215,21 @@ function crit_pure(model::MultiFluid)
     crit_pure(only(model.pures))
 end
 
-function lb_volume(model::MultiFluid,z=SA[1.])
+function lb_volume(model::MultiFluid,z)
     return dot(z,model.params.lb_volume.values)
 end
 
 #use ideal gas
-function x0_volume_gas(model::MultiFluid,p,T,z=SA[1.])
+function x0_volume_gas(model::MultiFluid,p,T,z)
     V = sum(z)*R̄*T/p
     return V
 end
 
 #use each available pure x0_volume_liquid
-function x0_volume_liquid(model::MultiFluid,T,z)
-    v0 = zero(T+first(z))
+function x0_volume_liquid(model::MultiFluid,p,T,z)
+    v0 = zero(Base.promote_eltype(model,p,T,z))
     for (i,pure) in pairs(model.pures)
-        v0 += z[i]*x0_volume_liquid(pure,T,SA[1.0])
+        v0 += z[i]*x0_volume_liquid(pure,p,T,SA[1.0])
     end
     return v0
 end
@@ -230,6 +247,39 @@ function wilson_k_values!(K,model::MultiFluid,p,T,crit = nothing)
         K[i] = exp(log(pc/p)+5.373*(1+ω)*(1-Tc/T))
     end
     return K
+end
+
+#set reference states:
+reference_state(model::MultiFluid) = model.params.reference_state
+set_reference_state!(model::MultiFluid;verbose = false) = set_reference_state_empiric!(model;verbose)
+
+function set_reference_state_empiric!(model;verbose = false)
+    #handle cases where we don't need to do anything
+    ref = reference_state(model)
+    ref === nothing && return nothing
+    ref.std_type == :no_set && return nothing
+    if verbose
+        @info "Calculating reference states for $model..."
+        @info "Reference state type: $(info_color(ref.std_type))"
+    end
+
+    #allocate the appropiate caches.
+    initialize_reference_state!(model,ref)
+    pures = model.pures
+    if all(iszero,ref.z0) #pure case
+        pure_refs = split_model(ref,(SA[i] for i ∈ 1:length(model)))
+        _set_reference_state!.(pures,SA[1.0],pure_refs)
+        ref.a0 .= only.(getfield.(pure_refs,:a0))
+        ref.a1 .= only.(getfield.(pure_refs,:a1))  
+    else
+        _set_reference_state!(model,ref.z0)
+    end
+    for (i,pure) in pairs(pures)
+        ref_a = pure.ideal.ref_a
+        ref_a[1] = pure_refs[i].a0[1]
+        ref_a[2] = pure_refs[i].a1[1] 
+    end
+    return model
 end
 
 export MultiFluid

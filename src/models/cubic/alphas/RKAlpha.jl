@@ -6,7 +6,7 @@ abstract type RKAlphaModel <: AlphaModel end
     RKAlpha <: RKAlphaModel
     
     RKAlpha(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 
 ## Input Parameters

@@ -12,6 +12,10 @@ abstract type ActivityModel <: EoSModel end
 abstract type IdealModel <: EoSModel end
 abstract type EmpiricHelmholtzModel <: EoSModel end
 abstract type SatPureAproximation <: EoSModel end
+abstract type AlphaModel <:EoSModel end
+abstract type ElectrolyteModel <: EoSModel end
+abstract type IonModel <: ElectrolyteModel end
+abstract type RSPModel <: ElectrolyteModel end
 
 export SAFTModel,CubicModel,EmpiricHelmholtzModel
 export IdealModel
@@ -22,4 +26,5 @@ struct CompositeModel{𝔽,𝕊} <: EoSModel
     components::Vector{String}
     fluid::𝔽
     solid::𝕊
+    mapping::Union{Vector{Pair{Vector{Tuple{String,Int64}},Tuple{String,Int64}}},Nothing}
 end

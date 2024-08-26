@@ -8,7 +8,7 @@ const SHORT_PATHS = Dict{String,String}(
 
 const SPECIAL_IDENTIFIERS = ["@REPLACE"]
 
-const SKIP_GETPATHS =   ("Clapeyron Database File", #a raw CSV file
+const SKIP_GETPATHS =  ("Clapeyron Database File", #a raw CSV file
                         "Clapeyron Estimator")
 
 """
@@ -46,7 +46,7 @@ function getpaths(location::AbstractString; relativetodatabase::Bool=false)::Vec
     if startswith(location,"@REPLACE")
         filepath = chop(location,head = 9, tail = 0)
         result = getpaths(filepath)
-        rr =  ["@REPLACE" * Base.Filesystem.path_separator * res for res in result]
+        rr = ["@REPLACE" * Base.Filesystem.path_separator * res for res in result]
         return rr
     end
     if relativetodatabase
@@ -119,7 +119,7 @@ Base.@specialize
 
 function getline(filepath::AbstractString, selectedline::Int)
     is_inline_csv(filepath) && return getline(IOBuffer(filepath),selectedline)
-    open(filepath) do file
+    open(filepath,"r";lock = true) do file
        _getline(file,selectedline)
     end
 end
@@ -137,6 +137,7 @@ function _getline(file, selectedline::Int)
 end
 
 function normalisestring(str, isactivated::Bool=true; tofilter = ' ')
+    ismissing(str) && return ""
     if !isactivated
         str isa String && return str::String
         return string(str)::String
@@ -322,12 +323,17 @@ function error_color(text)
     return red * text * reset
 end
 
+error_color(symbol::Symbol) = error_color(":" * string(symbol))
+
 function info_color(text)
     colors = Base.text_colors
     red = colors[:bold] * colors[:cyan]
     reset = colors[:normal]
     return red * text * reset
 end
+
+info_color(symbol::Symbol) = info_color(":" * string(symbol))
+
 
 function userlocation_merge(loc1,loc2)
     if isempty(loc2)
@@ -358,7 +364,7 @@ mw_data() = ["properties/molarmass.csv"]
 
 function by_cas(caslist)
     cas = format_components(caslist)
-    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[])
+    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[],ignore_missing_singleparams = String["SMILES","inchikey","species"])
     species = params["species"].values
     for (i,sp) in pairs(species)
         if occursin("~|~",sp)
@@ -379,4 +385,49 @@ function SMILES(components)
     components = format_components(components)
     params = getparams(components,["properties/identifiers.csv"],ignore_headers = String["CAS"])
     return params["SMILES"].values
+end
+
+function by_cas2(caslist)
+    cas = format_components(caslist)
+    params = getparams(cas,["properties/identifiers.csv"],species_columnreference = "CAS",ignore_headers = String[], ignore_missing_singleparams = ["CAS","species","SMILES","inchikey"])
+    species = params["species"]
+    d = Dict(k => v for (k,v) in zip(species.components,species.values))
+    return d,species.values
+end
+
+function to_groups(x)
+    s = unique(x)
+    vals = [count(isequal(si),x) for si in s]
+    return [si => vali for (si,vali) in zip(s,vals)]
+end
+
+function bond_to_pair(segments,bonds)
+    res = Vector{Tuple{String,String}}[]
+    resize!(res,length(segments))
+    function sort2(s1,s2)
+        if s1 < s2
+            return String(s1),String(s2)
+        else
+            return String(s2),String(s1)
+        end
+    end
+    for i in 1:length(segments)
+        bi = bonds[i]
+        si = segments[i]
+        res_i = Tuple{String,String}[]
+        if ismissing(bi)
+            #assume linear
+            for j in 2:length(si)
+                push!(res_i,sort2(si[j-1],si[j]))
+            end
+        else
+            for j in 1:length(bi)
+                id1,id2 = bi[j][1],bi[j][2]
+                id1,id2 = id1+1,id2+1
+                push!(res_i,sort2(si[id1],si[id2]))
+            end
+        end
+        res[i] = res_i
+    end
+    return res
 end

@@ -147,7 +147,7 @@ end
 
 function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs::Vector{String})
     components = [first(i) for i ∈ input]
-    raw_groups =  [last(i) for i ∈ input]
+    raw_groups = [last(i) for i ∈ input]
     groups = [first.(grouppairs) for grouppairs ∈ raw_groups]
     n_groups = [last.(grouppairs) for grouppairs ∈ raw_groups]
     flattenedgroups = String[]
@@ -155,7 +155,7 @@ function GroupParam(input::PARSED_GROUP_VECTOR_TYPE,grouptype::Symbol,sourcecsvs
     n_flattenedgroups = Vector{Vector{Int}}(undef,0)
     n_groups_cache = PackedVofV(Int[],Float64[])
 
-    param =  GroupParam(components,
+    param = GroupParam(components,
     groups,
     grouptype,
     n_groups,
@@ -208,13 +208,13 @@ struct StructGroupParam <: GroupParameter
     sourcecsvs::Vector{String}
 end
 
-function StructGroupParam(group::GroupParam,gccomponents_parsed,filepaths::Vector{String})
+function StructGroupParam(group::GroupParam,gc_intragroups,filepaths::Vector{String})
     groupnames = group.flattenedgroups
     n_gc = length(groupnames)
     n_comps = length(group.components)
     n_intergroups = [zeros(n_gc,n_gc) for i in 1:n_comps]
-    for i in 1:length(gccomponents_parsed)
-        gc_pair_i = last(gccomponents_parsed[i])
+    for i in 1:length(gc_intragroups)
+        gc_pair_i = gc_intragroups[i]
         n_mat = n_intergroups[i]
         for pair_ik in gc_pair_i
             k = first(pair_ik)

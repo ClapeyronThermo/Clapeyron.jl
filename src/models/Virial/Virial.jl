@@ -5,7 +5,7 @@ function a_res(model::SecondVirialModel,V,T,z)
     return B/V #/a
 end
 
-lb_volume(model::SecondVirialModel,z = SA[1.0]) = zero(eltype(z))
+lb_volume(model::SecondVirialModel,z) = zero(eltype(z))
 
 function volume_impl(model::SecondVirialModel,p,T,z,phase,threaded,vol0)
     B = second_virial_coefficient(model,T,z)

@@ -1,7 +1,6 @@
 function fast_parse_grouptype(filepaths::Vector{String})
     #only parses grouptype, if present in any CSV, is used. if not, return unknown
     grouptype = :not_set
-   
     for filepath ∈ filepaths
         _replace = startswith(filepath,"@REPLACE")
         if _replace
@@ -21,7 +20,6 @@ function fast_parse_grouptype(filepaths::Vector{String})
     end
     grouptype == :not_set && (grouptype = :unknown)
     return grouptype
-
 end
 
 #used to parse """["CH => 2, "OH" = 2, "CH3" => 2]"""
@@ -68,42 +66,65 @@ function _parse_group_string_key(k,::Type{NTuple{2,String}})
      return (string(_parse_group_string_key(k1,String)),string(_parse_group_string_key(k2,String)))
 end
 
+#getting the component name part
 gc_get_comp(x::AbstractString) = x
 gc_get_comp(x) = first(x)
+
+#getting the group part
 gc_get_group(x::AbstractString) = nothing
-gc_get_group(x) = last(x)
+gc_get_group(x::Tuple{Any,Any}) = x[2] #first index is the component, second is the group, third is the bond info.
+gc_get_group(x::Tuple{Any,Any,Any}) = x[2]
+gc_get_group(x::Pair) = last(x)
 
+#getting the intragroup part
+gc_get_intragroup(x::AbstractString) = nothing
+gc_get_intragroup(x::Tuple{Any,Any}) = nothing
+gc_get_intragroup(x::Tuple{Any,Any,Any}) = x[3]
+gc_get_intragroup(x::Pair) = nothing
 
-function GroupParam(gccomponents::Vector,
+function GroupParam(gccomponents::Union{Vector,Tuple{String,Vector},Pair{String,Vector}},
     group_locations=String[];
-    group_userlocations=String[],
+    group_userlocations = String[],
     verbose::Bool = false,
     grouptype = :unknown)
     options = ParamOptions(;group_userlocations,verbose)
-    return GroupParam(gccomponents,group_locations,options,grouptype)
+    if isa(gccomponents,Vector)
+        return GroupParam(gccomponents,group_locations,options,grouptype)
+    else
+        return GroupParam([gccomponents],group_locations,options,grouptype)
+    end
 end
 
 function GroupParam(gccomponents,
     grouplocations=String[],
     options::ParamOptions = DefaultOptions,
     grouptype = :unknown)
-
     # The format for gccomponents is an arary of either the species name (if it
     # available ∈ the Clapeyron database, or a tuple consisting of the species
     # name, followed by a list of group => multiplicity pairs.  For example:
     # gccomponents = ["ethane",
     #                ("hexane", ["CH3" => 2, "CH2" => 4]),
     #                ("octane", ["CH3" => 2, "CH2" => 6])]
-    components = Vector{String}(undef,length(gccomponents))
+    components = map(gc_get_comp,gccomponents)
+    found_gcpairs = map(gc_get_group,gccomponents)
+    return __GroupParam(components,found_gcpairs,grouplocations,options,grouptype)
+end
 
-    to_lookup = fill(false,length(components))
-    found_gcpairs = Vector{Vector{Pair{String,Int64}}}(undef,length(gccomponents))
-    components = gc_get_comp.(gccomponents)
-    found_gcpairs = gc_get_group.(gccomponents)
+function __GroupParam(components,found_gcpairs,grouplocations,options,grouptype)
+
     to_lookup = isnothing.(found_gcpairs)
     usergrouplocations = options.group_userlocations
     componentstolookup = components[to_lookup]
     filepaths = flattenfilepaths(grouplocations,usergrouplocations)
+
+    gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(components))
+    
+    #fill gccomponents_parsed
+    for i in 1:length(components)
+        if !to_lookup[i]
+            gccomponents_parsed[i] = (components[i],found_gcpairs[i])
+        end
+    end
 
     #using parsing machinery
     if any(to_lookup)
@@ -112,112 +133,116 @@ function GroupParam(gccomponents,
         raw_groups = raw_result["groups"] #SingleParam{String}
         is_valid_param(raw_groups,options) #this will check if we actually found all params, via single missing detection.
         groupsourcecsvs = raw_groups.sourcecsvs
-        
+
         if haskey(allparams,"groups")
             _grouptype = allparams["groups"].grouptype
         else
             _grouptype = grouptype
         end
+
+        j = 0
+        for (i,needs_to_parse_group_i) ∈ pairs(to_lookup)
+            if needs_to_parse_group_i #we looked up this component, and if we are here, it exists.
+                j += 1
+                gcdata = _parse_group_string(raw_groups.values[j])
+                gccomponents_parsed[i] = (components[i],gcdata)
+            end
+        end
     else
-        
         _grouptype = fast_parse_grouptype(filepaths)
-        if _grouptype != grouptype && grouptype != :unknown 
+        if _grouptype != grouptype && grouptype != :unknown
             _grouptype = grouptype
         end
         groupsourcecsvs = filepaths
-    end
-    gccomponents_parsed = PARSED_GROUP_VECTOR_TYPE(undef,length(gccomponents))
-    j = 0
-    for (i,needs_to_parse_group_i) ∈ pairs(to_lookup)
-        if needs_to_parse_group_i #we looked up this component, and if we are here, it exists.
-            j += 1
-            gcdata = _parse_group_string(raw_groups.values[j])
-            gccomponents_parsed[i] = (components[i],gcdata)
-        else
-            gccomponents_parsed[i] = (components[i],found_gcpairs[i])
-        end
     end
     return GroupParam(gccomponents_parsed,_grouptype,groupsourcecsvs)
 end
 
 function StructGroupParam(gccomponents,
     group_locations=String[];
-    group_userlocations=String[],
+    group_userlocations = String[],
     verbose::Bool = false,
     grouptype = :unknown)
     options = ParamOptions(;group_userlocations,verbose)
     return StructGroupParam(gccomponents,group_locations,options,grouptype)
 end
 
-function StructGroupParam(components::Vector,
+function build_trivial_intragroup(groups::GroupParam,i,lookup)
+    lookup || return nothing
+    groupnames = groups.groups[i]
+    n = groups.n_groups[i]
+    len = length(groupnames)
+    len > 2 && return nothing
+    if len == 1
+        ni = only(n)
+        if ni == 1 || ni == 2
+            nij = ni - 1
+            return [(groupnames[1],groupnames[1]) => nij]
+        else
+            return nothing
+        end
+    else #len == 2
+        if n[1] == n[2] == 1
+            return [(groupnames[1],groupnames[2]) => 1]
+        else
+            return nothing
+        end
+    end
+end
+
+function StructGroupParam(gccomponents::Vector,
     grouplocations::Array{String,1},
     options::ParamOptions,
     grouptype::Symbol)
 
     #gccomponents = Vector{Tuple{String,Vector{Pair{String,Int64}}}}(undef,length(components))
-    intragccomponents = Vector{Tuple{String,Vector{Pair{Tuple{String, String}, Int64}}}}(undef,length(components))
+    intragccomponents = Vector{Tuple{String,Vector{Pair{Tuple{String, String}, Int64}}}}(undef,length(gccomponents))
     intragccomponents_count = 0
-    __gccomponents = Vector{Any}(undef,length(components))
-    for i in 1:length(components)
-        if components[i] isa Tuple && length(components[i]) == 3
-            intragccomponents_count +=1
-            __gccomponents[i] = (components[i][1],components[i][2])
-            intragccomponents[i] = (components[i][1],components[i][3])
-        else
-            __gccomponents[i] = components[i]
-        end
-    end 
-    
     #@show components
+    components = map(gc_get_comp,gccomponents)
+    found_gcpairs = map(gc_get_group,gccomponents)
+    group1 = __GroupParam(components,found_gcpairs,grouplocations,options,grouptype)
 
-    group1 = GroupParam(__gccomponents,grouplocations,options,grouptype)
-    found_gcpairs = Vector{Union{Vector{Pair{Tuple{String, String}, Int64}},Nothing}}(undef,length(components))
-    
-    if intragccomponents_count == 0 && length(components) != 0
-        components = group1.components
-        found_gcpairs = fill!(found_gcpairs,nothing)
-        to_lookup = fill(true,length(components))
-    elseif length(intragccomponents) == intragccomponents_count
-        components = gc_get_comp.(intragccomponents)
-        found_gcpairs .= gc_get_group.(intragccomponents)
-        to_lookup = isnothing.(intragccomponents)
-    else
-        throw(error("GC components and intra-GC components should have the same length when provided."))
-    end
+    found_intragcpairs = map(gc_get_intragroup,gccomponents)
+    to_lookup = map(isnothing,found_intragcpairs)
+    gccomponents_parsed = Vector{Vector{Pair{NTuple{2,String},Int}}}(undef,length(components))
 
-    #we dont need intragroups if there is onlñy one group that appears one time. ej: water = ["H2O" => 1]
-    for i in eachindex(group1.components)
-        if length(group1.groups[i]) == 1
-            if only(group1.n_groups[i]) == 1 && to_lookup[i]
-                to_lookup[i] = false
-                found_gcpairs[i] = [(group1.groups[i][1],group1.groups[i][1]) => 0]
-            elseif only(group1.n_groups[i]) == 2 && to_lookup[i]
-                to_lookup[i] = false
-                found_gcpairs[i] = [(group1.groups[i][1],group1.groups[i][1]) => 1]
-            end
-        #we also don't need to look up for intragroups if there is only 2 groups with n_groupsi[k] == 1 
-        elseif length(group1.groups[i]) == 2
-            if group1.n_groups[i][1] == group1.n_groups[i][2] == 1 && to_lookup[i]
-                to_lookup[i] = false
-                found_gcpairs[i] = [(group1.groups[i][1],group1.groups[i][2]) => 1]
-            end
+    #fill gccomponents_parsed with input intragroups.
+    for i in 1:length(components)
+        if !to_lookup[i]
+            gccomponents_parsed[i] = found_intragcpairs[i]
         end
     end
+    #we dont need intragroups if there is onlñy one group that appears one time. ej: water = ["H2O" => 1]
+    for i in 1:length(components)
+        trivial_intragroup = build_trivial_intragroup(group1,i,to_lookup[i])
+        if !isnothing(trivial_intragroup)
+            gccomponents_parsed[i] = trivial_intragroup
+            to_lookup[i] = false
+        end
+    end
+
     usergrouplocations = options.group_userlocations
     componentstolookup = components[to_lookup]
     filepaths = flattenfilepaths(grouplocations,usergrouplocations)
-
     if any(to_lookup)
-
         allparams,allnotfoundparams = createparams(componentstolookup, filepaths, options, :intragroup)
         raw_result, _ = compile_params(componentstolookup,allparams,allnotfoundparams,options) #generate ClapeyronParams
         raw_groups = raw_result["intragroups"] #SingleParam{String}
-        is_valid_param(raw_groups,options) #this will check if we actually found all params, via single missing detection.        
+        is_valid_param(raw_groups,options) #this will check if we actually found all params, via single missing detection.
         groupsourcecsvs = raw_groups.sourcecsvs
         if haskey(allparams,"intragroups")
             _grouptype = allparams["intragroups"].grouptype
         else
             _grouptype = grouptype
+        end
+        j = 0
+        for (i,needs_to_parse_group_i) ∈ pairs(to_lookup)
+            if needs_to_parse_group_i #we looked up this component, and if we are here, it exists.
+                j += 1
+                gcdata = _parse_group_string(raw_groups.values[j],NTuple{2,String})
+                gccomponents_parsed[i] = gcdata
+            end
         end
     else
         _grouptype = fast_parse_grouptype(filepaths)
@@ -225,20 +250,9 @@ function StructGroupParam(components::Vector,
             _grouptype = grouptype
         end
     end
+
     if _grouptype != group1.grouptype && _grouptype != :unknown
         error_different_grouptype(_grouptype,group1.grouptype)
-    end
-    
-    gccomponents_parsed = Vector{Tuple{String,Vector{Pair{NTuple{2,String},Int}}}}(undef,length(components))
-    j = 0
-    for (i,needs_to_parse_group_i) ∈ pairs(to_lookup)
-        if needs_to_parse_group_i #we looked up this component, and if we are here, it exists.
-            j += 1
-            gcdata = _parse_group_string(raw_groups.values[j],NTuple{2,String})
-            gccomponents_parsed[i] = (components[i],gcdata)
-        else
-            gccomponents_parsed[i] = (components[i],found_gcpairs[i])
-        end
     end
     return StructGroupParam(group1,gccomponents_parsed,filepaths)
 end

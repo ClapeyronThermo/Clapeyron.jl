@@ -140,8 +140,14 @@ function update_rr!(K,β,z,x,y,
 end
 
 function tp_flash_K0(model,p,T)
-    K = zeros(typeof(p+T+one(eltype(model))),length(model))
-    return tp_flash_K0!(K,model,p,T)
+    if getparam(model,:Tc) !== nothing
+        K = zeros(typeof(p+T+one(eltype(model))),length(model))
+        return tp_flash_K0!(K,model,p,T)
+    else
+        sat_x = extended_saturation_pressure.(split_model(model),T)
+        psat = first.(sat_x)
+        return psat ./ p
+    end
 end
 
 tp_flash_K0!(K,model,p,T) = wilson_k_values!(K,model,p,T)

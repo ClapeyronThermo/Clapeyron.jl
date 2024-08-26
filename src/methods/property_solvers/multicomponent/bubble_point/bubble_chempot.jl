@@ -23,6 +23,7 @@ struct ChemPotBubblePressure{T} <: BubblePointMethod
     atol::Float64
     rtol::Float64
     max_iters::Int
+    ss::Bool
 end
 
 function ChemPotBubblePressure(;vol0 = nothing,
@@ -32,34 +33,35 @@ function ChemPotBubblePressure(;vol0 = nothing,
                                 f_limit = 0.0,
                                 atol = 1e-8,
                                 rtol = 1e-12,
-                                max_iters = 10^4)
+                                max_iters = 10^4,
+                                ss = false)
 
     if p0 == y0 == vol0 == nothing
-        return ChemPotBubblePressure{Nothing}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubblePressure{Nothing}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     elseif (p0 == y0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return ChemPotBubblePressure{typeof(vl)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubblePressure{typeof(vl)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     elseif (vol0 == y0 == nothing) && !isnothing(p0)
         p0 = float(p0)
-        return ChemPotBubblePressure{typeof(p0)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubblePressure{typeof(p0)}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     elseif (p0 == vol0 == nothing) && !isnothing(y0)
         T = eltype(y0)
-        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     elseif !isnothing(vol0) && !isnothing(p0) && !isnothing(y0)
         vl,vv,p0,_ = promote(vol0[1],vol0[2],p0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     elseif !isnothing(vol0) && !isnothing(y0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     elseif  !isnothing(p0) && !isnothing(y0)
         p0,_ = promote(p0,first(y0))
         T = eltype(p0)
         y0 = convert(Vector{T},y0)
-        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubblePressure{T}(vol0,p0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     else
         throw(error("invalid specification for bubble pressure"))
     end
@@ -74,7 +76,7 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
     end
     _vol0,_p0,_y0 = method.vol0,method.p0,method.y0
     p0,vl,vv,y0 = bubble_pressure_init(model,T,x,_vol0,_p0,_y0,volatiles)
-    
+
     if !isnothing(method.nonvolatiles)
         model_y,volatiles = index_reduction(model,volatiles)
         y0 = y0[volatiles]
@@ -82,6 +84,22 @@ function bubble_pressure_impl(model::EoSModel, T, x,method::ChemPotBubblePressur
         model_y = nothing
     end
     
+    Ts = isnothing(model_y) ? T_scales(model) : T_scales(model_y)
+
+    if T > 0.9minimum(Ts) && method.ss
+        converged,res = _fug_OF_ss(model,model_y,p0,T,x,y0,(vl,vv),true,true,volatiles)
+        p,T,x,y,vol,lnK = res
+        volx,voly = vol
+        if converged
+            return p,volx,voly,index_expansion(y,volatiles)
+        elseif isnan(volx) || isnan(voly)
+            return p,volx,voly,index_expansion(y,volatiles)
+        else
+            y0 = y
+            vl,vv = vol
+        end
+    end
+
     v0 = vcat(log10(vl),log10(vv),y0[1:end-1])
     pmix = p_scale(model,x)
     f!(F,z) = Obj_bubble_pressure(model,model_y, F, T, exp10(z[1]),exp10(z[2]),x,z[3:end],pmix,volatiles)
@@ -115,6 +133,7 @@ struct ChemPotBubbleTemperature{T} <: BubblePointMethod
     atol::Float64
     rtol::Float64
     max_iters::Int
+    ss::Bool
 end
 
 """
@@ -139,34 +158,35 @@ function ChemPotBubbleTemperature(;vol0 = nothing,
     f_limit = 0.0,
     atol = 1e-8,
     rtol = 1e-12,
-    max_iters = 10^4)
+    max_iters = 10^4,
+    ss = false)
 
     if T0 == y0 == vol0 == nothing
-        return ChemPotBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubbleTemperature{Nothing}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     elseif (T0 == y0 == nothing) && !isnothing(vol0)
         vl,vv = promote(vol0[1],vol0[2])
-        return ChemPotBubbleTemperature{typeof(vl)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubbleTemperature{typeof(vl)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     elseif (vol0 == y0 == nothing) && !isnothing(T0)
         T0 = float(T0)
-        return ChemPotBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubbleTemperature{typeof(T0)}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     elseif (T0 == vol0 == nothing) && !isnothing(y0)
         T = eltype(y0)
-        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     elseif !isnothing(vol0) && !isnothing(T0) && !isnothing(y0)
         vl,vv,T0,_ = promote(vol0[1],vol0[2],T0,first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     elseif !isnothing(vol0) && !isnothing(y0)
         vl,vv,_ = promote(vol0[1],vol0[2],first(y0))
         T = eltype(vl)
         y0 = convert(Vector{T},y0)
-        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     elseif  !isnothing(T0) && !isnothing(y0)
         T0,_ = promote(T0,first(y0))
         T = eltype(T0)
         y0 = convert(Vector{T},y0)
-        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters)
+        return ChemPotBubbleTemperature{T}(vol0,T0,y0,nonvolatiles,f_limit,atol,rtol,max_iters,ss)
     else
         throw(error("invalid specification for bubble temperature"))
     end
@@ -188,6 +208,21 @@ function bubble_temperature_impl(model::EoSModel,p,x,method::ChemPotBubbleTemper
     else
         model_y = nothing
     end
+    Ps = isnothing(model_y) ? p_scale(model,y0) : p_scale(model_y,y0)
+    if log(p) > 0.9log(Ps) && method.ss
+        converged,res = _fug_OF_ss(model,model_y,p,T0,x,y0,(vl,vv),true,false,volatiles)
+        p,T,x,y,vol,lnK = res
+        volx,voly = vol
+        if converged
+            return T,volx,voly,index_expansion(y,volatiles)
+        elseif isnan(volx) || isnan(voly)
+            return T,volx,voly,index_expansion(y,volatiles)
+        else
+            y0 = y
+            vl,vv = vol
+        end
+    end
+
     v0 = vcat(T0,log10(vl),log10(vv),y0[1:end-1])
     pmix = p_scale(model,x)
     f!(F,z) = Obj_bubble_temperature(model,model_y, F, p, z[1], exp10(z[2]), exp10(z[3]), x, z[4:end],pmix,volatiles)

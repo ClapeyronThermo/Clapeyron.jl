@@ -27,7 +27,7 @@ function saturation_pressure(model::GammaPhi,T,method::SaturationMethod)
     return saturation_pressure(model.fluid,T,method)
 end
 
-function volume_impl(model::GammaPhi,p,T,z,phase=:unknown,threaded=false,vol0 = nothing)
+function volume_impl(model::GammaPhi,p,T,z,phase,threaded,vol0)
     return volume_impl(model.fluid.model,p,T,z,phase,threaded,vol0)
 end
 
@@ -71,7 +71,7 @@ function PTFlashWrapper(model::GammaPhi,p,T::Number,equilibrium::Symbol)
         sats = fill((nan,nan,vv),length(model))
         ϕpure = fill(one(vv),length(model))
         g_pure = [VT_gibbs_free_energy(__gas_model(pures[i]),vv,T) for i in 1:length(model)]
-        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure)
+        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
     else
         sats = saturation_pressure.(pures,T)
         vv_pure = last.(sats)
@@ -79,7 +79,7 @@ function PTFlashWrapper(model::GammaPhi,p,T::Number,equilibrium::Symbol)
         μpure = only.(VT_chemical_potential_res.(__gas_model.(pures),vv_pure,T))
         ϕpure = exp.(μpure ./ RT .- log.(p_pure .* vv_pure ./ RT))
         g_pure = [VT_gibbs_free_energy(__gas_model(pures[i]),vv_pure[i],T) for i in 1:length(model)]
-        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure)
+        return PTFlashWrapper(model.components,model,sats,ϕpure,g_pure,equilibrium)
     end
 
 end
@@ -208,6 +208,60 @@ function __eval_G_DETPFlash(wrapper::PTFlashWrapper{<:GammaPhi},p,T,x,equilibriu
         end
         =#
     end
+end
+
+#=
+TPD support.
+
+TODO: support vle in TPD.
+=#
+
+function tpd_input_composition(model::GammaPhi,p,T,z,di,lle)
+    γ = activity_coefficient(model.activity,p,T,z)
+    #v = volume(model.fluid.model,p,T,z,phase = :l)
+    v = one(eltype(γ))
+    fz = γ .* p .* z
+    fz,:liquid,v
+end
+
+function _tpd_fz_and_v!(solver::TPDKSolver,fxy,model::GammaPhi,p,T,w,v0,liquid_overpressure = false,phase = :l)
+    #v = volume(model.fluid.model,p,T,w,phase = phase,vol0 = v0)
+    v = one(eltype(fxy))
+    fxy .= activity_coefficient(model.activity,p,T,w)
+    fxy .= fxy .* p .* w
+    return fxy,v,true
+end
+
+function _tpd_fz_and_v!(solver::TPDPureSolver,fxy,model::GammaPhi,p,T,w,v0,liquid_overpressure = false,phase = :l)
+    #v = volume(model.fluid.model,p,T,w,phase = phase,vol0 = v0)
+    fxy .= activity_coefficient(model.activity,p,T,w)
+    v = one(eltype(fxy))
+    fxy .= log.(fxy)
+    return fxy,v,true
+end
+
+function _tpd_and_v!(fxy,model::GammaPhi,p,T,w,di,phase = :l)
+    #v = volume(model.fluid.model,p,T,w,phase = phase)
+    v = one(eltype(fxy))
+    fxy .= activity_coefficient(model.activity,p,T,w)
+    fxy .= log.(fxy)
+    tpd = @sum(w[i]*(fxy[i] + log(w[i]) - di[i])) - sum(w) + 1
+    return tpd,v
+end
+
+function tpd_obj(model::GammaPhi, p, T, di, isliquid, cache = tpd_neq_cache(model,p,T,di,di), break_first = false)
+    vcache[] = one(eltype(di))
+    function f(α)
+        w = α .* α .* 0.25
+        w ./= sum(w)
+        γ = activity_coefficient(model.activity,p,T,w)
+        γ .= log(γ)
+        lnγw = γ
+        fx = @sum(w[i]*(lnγw[i] + log(w[i]) - di[i])) - sum(w) + 1
+    end
+    
+    obj = Solvers.ADScalarObjective(f,di,ForwardDiff.Chunk{2}())
+    optprob = OptimizationProblem(obj = obj,inplace = true)
 end
 
 export GammaPhi

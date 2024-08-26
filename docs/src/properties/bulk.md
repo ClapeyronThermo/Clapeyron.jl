@@ -26,8 +26,8 @@ Clapeyron.pip
 
 In general almost all bulk properties follow the pattern:
 ```julia
-function property(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true)
-    V = volume(model, p, T, z; phase, threaded)
+function property(model::EoSModel, p, T, z=SA[1.]; phase=:unknown, threaded=true, vol0=nothing)
+    V = volume(model, p, T, z; phase, threaded, vol0)
     return VT_property(model,V,T,z)
 end
 ```
@@ -45,14 +45,17 @@ Where `r` could be any molar or mass density, molar or mass volume, total volume
 ```@docs
 Clapeyron.volume
 Clapeyron.helmholtz_free_energy
+Clapeyron.helmholtz_free_energy_res
 Clapeyron.molar_density
 Clapeyron.mass_density
 Clapeyron.compressibility_factor
 Clapeyron.gibbs_free_energy
+Clapeyron.gibbs_free_energy_res
 Clapeyron.entropy
 Clapeyron.entropy_res
 Clapeyron.enthalpy
 Clapeyron.internal_energy
+Clapeyron.internal_energy_res
 ```
 
 ### Methods that require second order VT derivatives

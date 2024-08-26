@@ -68,7 +68,7 @@ function transform_params(::Type{RackettLiquid},params,components)
     return params
 end
 
-function volume_impl(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0 = 0.0)
+function volume_impl(model::RackettLiquidModel,p,T,z,phase,threaded,vol0)
     tci = model.params.Tc.values
     pci = model.params.Pc.values
     zci = model.params.Zc.values
@@ -107,7 +107,7 @@ function volume_impl(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,thre
     return ∑z*R̄*Tcm*Pcm_inv*Zcm^(1+(1-Tr)^(2/7))
 end
 
-function volume_impl(model::RackettLiquidModel,p,T,z::SingleComp,phase=:unknown,threaded=false,vol0 = 0.0)
+function volume_impl(model::RackettLiquidModel,p,T,z::SingleComp,phase,threaded,vol0)
     Tc = only(model.params.Tc.values)
     Pc = only(model.params.Pc.values)
     Pc_inv = 1/Pc
@@ -167,9 +167,9 @@ model = YamadaGunnLiquid(["neon","hydrogen"];
 - Rackett, H. G. (1970). Equation of state for saturated liquids. Journal of Chemical and Engineering Data, 15(4), 514–517. [doi:10.1021/je60047a012](https://doi.org/10.1021/je60047a012)
 - Gunn, R. D., & Yamada, T. (1971). A corresponding states correlation of saturated liquid volumes. AIChE Journal. American Institute of Chemical Engineers, 17(6), 1341–1345. [doi:10.1002/aic.690170613](https://doi.org/10.1002/aic.690170613)
 """
-function YamadaGunnLiquid(components; userlocations=String[], verbose::Bool=false)
+function YamadaGunnLiquid(components; userlocations = String[], verbose::Bool=false)
     _components = format_components(components)
-    params = getparams(_components, ["properties/critical.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(_components, ["properties/critical.csv"]; userlocations = userlocations, verbose = verbose)
     acentricfactor = params["acentricfactor"]
     Tc = params["Tc"]
     Pc = params["Pc"]

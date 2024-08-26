@@ -14,7 +14,13 @@ function test_excess_gibbs_free_energy(model::ActivityModel,p,T,z)
     return sum(z[i]*R̄*T*log(γ[i]) for i ∈ @comps)
 end
 
-
+function volume_impl(model::ActivityModel, p, T, z, phase, threaded, vol0)
+    if hasfield(typeof(model),:puremodel)
+        return volume(model.puremodel.model, p, T, z, phase=phase, threaded=threaded, vol0=vol0)
+    else
+        return volume(BasicIdeal(), p, T, z, phase=phase, threaded=threaded, vol0=vol0)
+    end
+end
 #for use in models that have gibbs free energy defined.
 function activity_coefficient(model::ActivityModel,p,T,z)
     X = gradient_type(p,T,z)
@@ -44,25 +50,23 @@ function init_preferred_method(method::typeof(saturation_temperature),model::Act
     return init_preferred_method(method,__act_to_gammaphi(model,method),kwargs)
 end
 
-function eos(model::ActivityModel,V,T,z)
-    Σz = sum(z)
-    lnΣz = log(Σz)
-    pures = model.puremodel
-    p = sum(z[i]*pressure(pures[i],V/Σz,T) for i ∈ @comps)/Σz
-    g_E = excess_gibbs_free_energy(model,p,T,z)
-    g_ideal = sum(z[i]*R̄*T*(log(z[i])-lnΣz) for i ∈ @comps)
-    g_pure = sum(z[i]*VT_gibbs_free_energy(pures[i],V/Σz,T) for i ∈ @comps)
-    return g_E+g_ideal+g_pure-p*V
+function idealmodel(model::T) where T <: ActivityModel
+    if hasfield(T,:puremodel)
+        puremodel = model.puremodel.model
+        return idealmodel(model.puremodel.model)
+    else
+        return BasicIdeal()
+    end
 end
 
-function eos_res(model::ActivityModel,V,T,z)
+function a_res(model::ActivityModel,V,T,z)
     Σz = sum(z)
     pures = model.puremodel
     g_pure_res = sum(z[i]*VT_gibbs_free_energy_res(pures[i],V/Σz,T) for i ∈ @comps)
     p = sum(z[i]*pressure(pures[i],V,T) for i ∈ @comps)/Σz
     g_E = excess_gibbs_free_energy(model,p,T,z)
     p_res = p - Σz*R̄*T/V
-    return g_E+g_pure_res-p_res*V
+    return (g_E+g_pure_res-p_res*V)/(Σz*Rgas(model)*T)
 end
 
 function mixing(model::ActivityModel,p,T,z,::typeof(enthalpy))
@@ -87,22 +91,28 @@ function gibbs_solvation(model::ActivityModel,T)
     return gibbs_solvation(__act_to_gammaphi(model,gibbs_solvation),T)
 end
 
-function lb_volume(model::ActivityModel,z = SA[1.0])
+function lb_volume(model::ActivityModel,z)
     b = sum(lb_volume(model.puremodel[i])*z[i] for i in @comps)
     return b
 end
 
-function T_scale(model::ActivityModel,z=SA[1.0])
+function lb_volume(model::ActivityModel,T,z)
+    b = sum(lb_volume(model.puremodel[i],T,SA[1.0])*z[i] for i in @comps)
+    return b
+end
+
+function T_scale(model::ActivityModel,z)
     prod(T_scale(model.puremodel[i])^1/z[i] for i in @comps)^(sum(z))
 end
 
-function p_scale(model::ActivityModel,z=SA[1.0])
-    0.33*R̄*T_scale(model,z)/lb_volume(model,z)
+function p_scale(model::ActivityModel,z)
+    T = T_scale(model,z)
+    0.33*R̄*T/lb_volume(model,T,z)
 end
 
-function x0_volume_liquid(model::ActivityModel,T,z = SA[1.0])
+function x0_volume_liquid(model::ActivityModel,p,T,z)
     pures = model.puremodel
-    return sum(z[i]*x0_volume_liquid(pures[i],T,SA[1.0]) for i ∈ @comps)
+    return sum(z[i]*x0_volume_liquid(pures[i],p,T,SA[1.0]) for i ∈ @comps)
 end
 
 function γdγdn(model::ActivityModel,p,T,z)
@@ -220,3 +230,12 @@ function Obj_LLE(model::ActivityModel, F, T, x, xx)
 end
 
 export LLE
+
+function tpd(model::ActivityModel,p,T,z,cache = tpd_cache(model,p,T,z);reduced = false,break_first = false,lle = false,tol_trivial = 1e-5,strategy = :pure, di = nothing)
+    #TODO: support tpd with vle and activities?
+    if !lle
+        throw(ArgumentError("tpd only supports lle search with Activity Models. try using `tpd(model,p,T,z,lle = true)`"))
+    end
+    γϕmodel = __act_to_gammaphi(model,tpd,true)
+    return tpd(γϕmodel,p,T,z,cache;reduced,break_first,lle,tol_trivial,strategy,di)
+end

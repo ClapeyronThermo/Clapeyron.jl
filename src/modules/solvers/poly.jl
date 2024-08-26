@@ -1,17 +1,3 @@
-function evalpoly_cheb(x::S, ch::AbstractVector{T}) where {T,S}
-    R = promote_type(T, S)
-    l = length(ch)
-    l == 0 && return zero(R)
-    l == 1 && return R(ch[1])
-    c0 = ch[l - 1]
-    c1 = ch[l]
-    for i in (l-2):-1:1
-        c0, c1 = ch[i] - c1, c0 + c1 * 2x
-    end
-    return R(c0 + c1 * x)
-end
-
-
 """
 det_22(a,b,c,d)
 
@@ -37,16 +23,16 @@ function solve_cubic_eq(poly::NTuple{4,T}) where {T<:Real}
 
 _1 = one(T)
 third = _1/3
-a1  =  complex(one(T) / poly[4])
+a1  = complex(one(T) / poly[4])
 E1  = -poly[3]*a1
-E2  =  poly[2]*a1
+E2  = poly[2]*a1
 E3  = -poly[1]*a1
-s0  =  E1
-E12 =  E1*E1
-A   =  det_22(2*E1,E12,9*E1,E2) + 27*E3
-#A   =  2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
+s0  = E1
+E12 = E1*E1
+A   = det_22(2*E1,E12,9*E1,E2) + 27*E3
+#A   = 2*E1*E12 - 9*E1*E2 + 27*E3 # = s1^3 + s2^3
 B = det_22(E1,E1,3,E2)
-#B   =  E12 - 3*E2                 # = s1 s2
+#B   = E12 - 3*E2                 # = s1 s2
 # quadratic equation: z^2 - Az + B^3=0  where roots are equal to s1^3 and s2^3
 Δ2 = det_22(A,A,4*B*B,B)
 Δ = Base.sqrt(Δ2)
@@ -70,11 +56,11 @@ end
 roots3(pol)
 solves a cubic equation of the form pol[1] + pol[2]*x + pol[3]*x^2 + pol[4]*x^3
 """
-function roots3(pol) 
+function roots3(pol)
 return SVector(solve_cubic_eq(pol))
 end
 
-function roots3(a,b,c,d) 
+function roots3(a,b,c,d)
 x = (a,b,c,d)
 return roots3(x)
 end
@@ -118,3 +104,60 @@ function real_roots3(pol::NTuple{4,T}) where {T<:Real}
     end
 end
 real_roots3(a,b,c,d) = real_roots3((a,b,c,d))
+
+#we suppose that there is a translation: xx = x + x0
+function hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
+    #Δx0 = x - x0
+    #Δx1 = x - x1
+    Δx10 = (x1 - x0)
+   # Δx03 = Δx0^3
+
+    Δx102 = Δx10^2
+    divx = 1/Δx10
+    p0 = f0
+    p1 = df0
+
+    p2 = (1//2)*d2f0
+    p3 = (f1 - f0 - df0*Δx10 - (1//2)*d2f0*Δx102)*divx^3
+
+    z4 = (3*f0 - 3*f1 + 2*(df0 + (1//2)*df1)*Δx10 - (1//2)*d2f0*Δx102)*divx^4 # * Δx03 * Δx1
+    #x^3 * (x -Δx10) = x^4 - -Δx10*x^3
+    p3 += -Δx10*z4
+    p4 = z4
+
+    z5 = (6*f1 - 6*f0 - 3*(df0 + df1)*Δx10 + (1//2)*(d2f1 - d2f0)*Δx102)*divx^5# * Δx03 * Δx1
+    #x^3 * (x -Δx10)^2 = x^5 -2*Δx10*x^4 +Δx10*Δx10*x^3
+    p3 += Δx10^2*z5
+    p4 += -2*Δx10*z5
+    p5 = z5
+    return p0,p1,p2,p3,p4,p5
+end
+
+"""
+    hermite5_poly(f,x0,x1)
+
+Returns a quintic hermite polynomial, that interpolates `f` between `x0` and `x1`, using first and second derivative information.
+the polynomial is translated, so that the zero is at `x0`.
+
+## Example
+```
+poly = hermite5_poly(f,x0,x1)
+evalpoly(0.0,poly) == f(x0)
+evalpoly(x1 - x0,poly) == f(x1)
+```
+"""
+function hermite5_poly(f,x0,x1)
+    f0,df0,d2f0 = f∂f∂2f(f,x0)
+    f1,df1,d2f1 = f∂f∂2f(f,x1)
+    return hermite5_poly(x0,x1,f0,f1,df0,df1,d2f0,d2f1)
+end
+
+"""
+    polyder(poly)
+
+returns the coefficients of the derivative of the polynomial.
+
+"""
+function polyder(x::NTuple{N,T}) where {N,T}
+    return ntuple(i->x[i+1]*i,Val{N-1}())
+end

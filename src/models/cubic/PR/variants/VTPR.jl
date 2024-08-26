@@ -1,13 +1,15 @@
 """
-    VTPR(components; idealmodel=BasicIdeal,
-    userlocations=String[],
+    VTPR(components;
+    idealmodel = BasicIdeal,
+    userlocations = String[],
     group_userlocations = String[]
-    ideal_userlocations=String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
 Volume-translated Peng Robinson equation of state. it uses the following models:
 - Translation Model: [`RackettTranslation`](@ref)
@@ -17,16 +19,17 @@ Volume-translated Peng Robinson equation of state. it uses the following models:
 1. Ahlers, J., & Gmehling, J. (2001). Development of an universal group contribution equation of state. Fluid Phase Equilibria, 191(1–2), 177–188. [doi:10.1016/s0378-3812(01)00626-4](https://doi.org/10.1016/s0378-3812(01)00626-4)
 """
 function VTPR(components;
-    idealmodel=BasicIdeal,
+    idealmodel = BasicIdeal,
     alpha = TwuAlpha, #here just for compatibility with the notebooks.
-    userlocations=String[], 
+    userlocations = String[], 
     group_userlocations = String[],
-    ideal_userlocations=String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
     activity = VTPRUNIFAC(components,
             userlocations = activity_userlocations,
@@ -41,14 +44,15 @@ function VTPR(components;
     return PR(_components;
     idealmodel = idealmodel,
     alpha = alpha,
-    mixing=mixing,
+    mixing = mixing,
     activity = activity,
-    translation=translation,
+    translation = translation,
     userlocations = userlocations,
     ideal_userlocations = ideal_userlocations,
     alpha_userlocations = alpha_userlocations,
     mixing_userlocations = mixing_userlocations,
     translation_userlocations = translation_userlocations,
+    reference_state = reference_state,
     verbose = verbose)
 end
 export VTPR

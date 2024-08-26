@@ -57,7 +57,7 @@ where `νᵢₖ` is the number of groups `k` at component `i`.
 """
 function group_sum(groups::GroupParameter,param::SingleParameter)
     gc = length(groups.components)
-    out =  SingleParam(param.name,
+    out = SingleParam(param.name,
                         groups.components,
                         zeros(float(eltype(param.values)),gc),
                         fill(false,gc),
@@ -116,7 +116,7 @@ end
 """
     group_pairmean(groups::GroupParam,param::PairParam)
     group_pairmean(f,groups::GroupParam,param::SingleParam)
-Given a `GroupParam`and a parameter `P` it will return a single parameter `p` of component data, where:
+Given a `GroupParam` and a parameter `P` it will return a single parameter `p` of component data, where:
 
 pᵢ = ∑νᵢₖ(∑(νᵢₗ*P(i,j))) / ∑νᵢₖ(∑νᵢₗ)
 
@@ -196,7 +196,7 @@ end
 
 modifies implace the field `n_groups_cache` (`μᵢₖ`) in the `GroupParam`:
 ```
-μᵢₖ =  νᵢₖ*Sₖ*vstₖ
+μᵢₖ = νᵢₖ*Sₖ*vstₖ
 ```
 Where `S` is a shape factor parameter for each group and `vst` is the segment size for each group.
 used mainly for GC models (like `SAFTgammaMie`) in which the group fraction depends on segment size and shape factors.
@@ -211,4 +211,31 @@ function mix_segment!(groups::GroupParameter,s = ones(length(groups.flattenedgro
         end
     end
     #SingleParam("mixed segment",groups.flattenedgroups,mixsegment,[false for i ∈ gc],String[],String[])
+end
+
+function group_pairmean2(groups::GroupParameter,param::PairParam)
+    newvals = group_pairmean2!(groups,copy(param.values))
+    return PairParam(param.name,groups.components,newvals,fill(false,size(newvals)),param.sources,param.sourcecsvs)
+end
+
+function group_pairmean2!(groups,mat)
+    l_gc = length(groups.flattenedgroups)
+    l_c = length(groups.components)
+    _0 = zero(eltype(mat))
+    newmat = fill(_0,(l_c,l_c))
+    n = groups.n_flattenedgroups
+    for i ∈ 1:l_c
+        for j ∈ 1:l_c
+            res = _0
+            sumn = _0
+            for k in 1:l_gc
+                for l in 1:l_gc
+                    res += n[i][k]*n[j][l]*mat[k,l]
+                    sumn += n[i][k]*n[j][l]
+                end
+            end
+            newmat[i,j] = res/sumn
+        end
+    end
+    return newmat
 end

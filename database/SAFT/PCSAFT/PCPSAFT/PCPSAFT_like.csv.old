@@ -1,0 +1,28 @@
+Clapeyron Database File,,,,,,,,
+PCPSAFT Like Parameters,,,,,,,,
+species,Mw,segment,sigma,epsilon,dipole,n_H,n_e,source
+acetone~|~propanone,58.08,2.7447,3.2742,232.99,2.88,0,0,10.1002/aic.10683
+butanone~|~2-butanone~|~methyl ethyl ketone,72.107,2.9835,3.4239,244.99,2.78,0,0,10.1002/aic.10683
+2-pentanone~|~pentan-2-one~|~methyln-propylketone,86.134,3.3537,3.4942,246.66,2.7,0,0,10.1002/aic.10683
+3-pentanone~|~pentan-3-one~|~diethylketone,86.134,3.2786,3.5159,248.69,2.82,0,0,10.1002/aic.10683
+propanal~|~1-propanal~|~propionaldehyde,58.08,2.6001,3.2872,235.21,2.72,0,0,10.1002/aic.10683
+butanal~|~1-butanal~|~butyraldehyde,72.107,2.8825,3.4698,247.09,2.72,0,0,10.1002/aic.10683
+methylformate~|~methyl methanoate,60.053,2.6225,3.1095,239.05,1.77,0,0,10.1002/aic.10683
+ethylformate~|~ethyl methanoate,74.079,2.8338,3.3316,244.5,1.93,0,0,10.1002/aic.10683
+propylformate~|~n-propylformate~|~propyl methanoate~|~n-propylmethanoate,88.106,3.1723,3.4296,245.64,1.89,0,0,10.1002/aic.10683
+ethylacetate~|~ethyl ethanoate,88.106,3.506,3.3177,230.24,1.78,0,0,10.1002/aic.10683
+propylacetate~|~n-propylacetate~|~propyl ethanoate~|~n-propylethanoate,102.13,3.7658,3.4289,235.42,1.78,0,0,10.1002/aic.10683
+butylacetate~|~n-butylacetate~|~butyl ethanoate~|~n-butylethanoate,116.16,3.9629,3.5482,242.27,1.87,0,0,10.1002/aic.10683
+methylpropionate~|~methyl propanoate,88.106,3.4442,3.3255,234.26,1.85,0,0,10.1002/aic.10683
+ethylpropionate~|~ethyl propanoate,102.133,3.7954,3.4169,233.09,1.74,0,0,10.1002/aic.10683
+propylpropionate~|~propyl propanoate~|~n-propyl propanoate~|~n-propyl propionate,116.16,4.0993,3.4921,235.38,1.8,0,0,10.1002/aic.10683
+methylbutyrate~|~methyl butanoate~|~methyl n-butyrate,102.133,3.642,3.4535,240.02,2.03,0,0,10.1002/aic.10683
+dimethyl ether,46.069,2.2634,3.2723,210.29,1.3,0,0,10.1002/aic.10683
+methylethylether~|~ethyl methyl ether,60.096,2.6425,3.3794,215.79,1.17,0,0,10.1002/aic.10683
+1-methoxypropane~|~methylpropyl ether~|~methyl-n-propylether~|~methyl n-propyl ether,74.123,3.0004,3.4602,222.67,1.107,0,0,10.1002/aic.10683
+diethyl ether,74.123,2.9726,3.5127,219.53,1.15,0,0,10.1002/aic.10683
+dmso~|~dimethyl sulfoxide,78.13,3.0243,3.2427,309.36,3.96,0,0,10.1002/aic.10683
+hcl~|~hydrogen chloride~|~hydrochloric acid,36.461,1.5194,2.9794,203.32,1.109,0,0,10.1002/aic.10683
+r40~|~chloromethane~|~methyl chloride,50.488,1.807,3.3034,229.97,1.896,0,0,10.1002/aic.10683
+chloroethane~|~ethyl chloride,64.514,2.2207,3.4335,237.03,2.05,0,0,10.1002/aic.10683
+butane~|~n-butane,58.12,2.3316,3.7086,222.88,0.0,0,0,10.1021/ie0003887

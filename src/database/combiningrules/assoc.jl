@@ -1,3 +1,13 @@
+__valid_site_comb(::Nothing,i,j,a,b) = false
+function __valid_site_comb(n,i,j,a,b)
+    ni,nj = n[i],n[j]
+    if length(ni)*length(nj) == 0
+        return false
+    else
+        return !iszero(ni[a]*nj[b])
+    end
+end
+
 function assoc_extend(param::AssocParam)
     length(param.values.values) == 0 && return param
     _4dmatrix = assoc_extend(param.values,param.sites)
@@ -37,14 +47,19 @@ function assoc_extend(mat::Compressed4DMatrix,sites)
     return Compressed4DMatrix(extended_vals,extended_outer_indices,extended_inner_indices,true)
 end
 
-bondvol_mix(bondvol::AssocParam) = bondvol_mix(bondvol,nothing)
+bondvol_mix(bondvol::AssocParam) = bondvol_mix(bondvol,nothing,nothing)
 
-function bondvol_mix(bondvol::AssocParam,::Nothing)
+function bondvol_mix(bondvol::AssocParam,::Nothing,sites = nothing)
     length(bondvol.values.values) == 0 && return deepcopy(bondvol)
     param = assoc_extend(bondvol)
     mat = param.values
+    if sites isa SiteParam
+        n = sites.n_sites
+    else
+        n = nothing
+    end
     for (idx,(i,j),(a,b)) in indices(mat)
-        if iszero(mat.values[idx])
+        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
             mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])
         end
     end
@@ -52,12 +67,37 @@ function bondvol_mix(bondvol::AssocParam,::Nothing)
     return param
 end
 
-function epsilon_assoc_mix(epsilon_assoc::AssocParam)
+function dufal_mix(bondvol::AssocParam,::Nothing,sites = nothing)
+    length(bondvol.values.values) == 0 && return deepcopy(bondvol)
+    param = assoc_extend(bondvol)
+    mat = param.values
+    if sites isa SiteParam
+        n = sites.n_sites
+    else
+        n = nothing
+    end
+    for (idx,(i,j),(a,b)) in indices(mat)
+        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
+            mat.values[idx] = mix_mean3(mat[i,i][a,b],mat[j,j][a,b])
+        end
+    end
+    dropzeros!(mat)
+    return param
+end
+
+
+function epsilon_assoc_mix(epsilon_assoc::AssocParam,sites)
     length(epsilon_assoc.values.values) == 0 && return deepcopy(epsilon_assoc)
     param = assoc_extend(epsilon_assoc)
     mat = param.values
+    if sites isa SiteParam
+        n = sites.n_sites
+    else
+        n = nothing
+    end
     for (idx,(i,j),(a,b)) in indices(mat)
-        if iszero(mat.values[idx])
+        #check that nia != 0 && njb != 0
+        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
             mat.values[idx] = (mat[i,i][a,b] + mat[j,j][a,b])/2
         end
     end
@@ -65,12 +105,18 @@ function epsilon_assoc_mix(epsilon_assoc::AssocParam)
     return param
 end
 
-function bondvol_mix(bondvol::AssocParam,σ)
+function bondvol_mix(bondvol::AssocParam,σ,sites = nothing)
     length(bondvol.values.values) == 0 && return deepcopy(bondvol)
     param = assoc_extend(bondvol)
     mat = param.values
+    if sites isa SiteParam
+        n = sites.n_sites
+    else
+        n = nothing
+    end
     for (idx,(i,j),(a,b)) in indices(mat)
-        if iszero(mat.values[idx])
+        #check that nia != 0 && njb != 0
+        if iszero(mat.values[idx]) && __valid_site_comb(n,i,j,a,b)
             mat.values[idx] = sqrt(mat[i,i][a,b]*mat[j,j][a,b])*(sqrt(σ[i,i]*σ[j,j])/σ[i,j])^3
         end
     end
@@ -78,38 +124,68 @@ function bondvol_mix(bondvol::AssocParam,σ)
     return param
 end
 
-function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions)
+function zero_mix(assocparam::AssocParam,sites = nothing)
+    length(assocparam.values.values) == 0 && return deepcopy(assocparam)
+    param = assoc_extend(assocparam)
+    mat = param.values
+    if sites isa SiteParam
+        n = sites.n_sites
+    else
+        n = nothing
+    end
+    #fill with sentinel values
+    SENTINEL = -124
+    for (idx,(i,j),(a,b)) in indices(mat)
+        if iszero(mat.values[idx]) & __valid_site_comb(n,i,j,a,b)
+            dij = sqrt(mat[i,i][a,b]*mat[j,j][a,b])
+            if !iszero(dij)
+                mat.values[idx] = SENTINEL
+            end
+        end
+    end
+    dropzeros!(mat)
+    #refill with zeros.
+    for i in eachindex(mat.values)
+        if mat[i] == SENTINEL
+            mat[i] = 0
+        end
+    end
+    return param
+end
+
+function assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options::AssocOptions,sites = nothing)
     combining = assoc_options.combining
     if combining == :nocombining
         return bondvol,epsilon_assoc
     elseif combining in (:elliott_runtime,:esd_runtime)
-        if assoc_options.dense
-            return bondvol,epsilon_assoc
-        else
-            throw(error("cannot use sparse solver with :elliot_runtime combining rule"))
-        end
+        #return bondvol,epsilon_assoc
+        return zero_mix(bondvol,sites),zero_mix(epsilon_assoc,sites)
     elseif combining in (:elliott,:esd)
-        return bondvol_mix(bondvol,sigma),epsilon_assoc_mix(epsilon_assoc)
+        return bondvol_mix(bondvol,sigma,sites),epsilon_assoc_mix(epsilon_assoc,sites)
     elseif combining == :cr1
-        return bondvol_mix(bondvol),epsilon_assoc_mix(epsilon_assoc)
+        return bondvol_mix(bondvol,nothing,sites),epsilon_assoc_mix(epsilon_assoc,sites)
+    elseif combining in (:dufal,:mie15)
+        return dufal_mix(bondvol,nothing,sites),epsilon_assoc_mix(epsilon_assoc,sites)
     else
         throw(error("incorrect combining argument ",error_color(string(combining))," passed to AssocOptions."))
     end
 end
 
-function assoc_mix!(data,components,assoc_options = AssocOptions())
-    if haskey(data,"bondvol") && haskey(data,"epsilon_assoc")  
+function assoc_mix!(data,components)
+    assoc_options = data["assoc_options"]
+    if haskey(data,"bondvol") && haskey(data,"epsilon_assoc")
         bondvol = data["bondvol"]
         epsilon_assoc = data["epsilon_assoc"]
         sigma = get(data,"sigma",nothing)
-        bondvol, epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options)
+        sites = data["sites"]
+        bondvol, epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options,sites)
         data["bondvol"] = bondvol
         data["epsilon_assoc"] = epsilon_assoc
     else
-        x1 = get!(data,"bondvol") do 
-            AssocParam("bondvol",components) 
+        x1 = get!(data,"bondvol") do
+            AssocParam("bondvol",components)
         end
-        x2 = get!(data,"epsilon_assoc") do 
+        x2 = get!(data,"epsilon_assoc") do
             AssocParam("epsilon_assoc",components)
         end
     end

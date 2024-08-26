@@ -4,7 +4,7 @@ Original code by Thomas Moore
 included in https://github.com/ClapeyronThermo/Clapeyron.jl/pull/56
 =#
 """
-    DETPFlash(;numphases = 2;
+    DETPFlash(; numphases = 2,
     max_steps = 1e4*(numphases-1),
     population_size =20,
     time_limit = Inf,
@@ -46,7 +46,7 @@ function partition!(dividers,n,x,nvals)
     end
 #Calculate mole fractions xij
 for i = 1:numphases
-    ni =  @view(nvals[i, :])
+    ni = @view(nvals[i, :])
     invn = 1/sum(ni)
     xi = @view(x[i, :])
     xi  .= ni
@@ -62,8 +62,8 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
     x = zeros(TYPE,numphases, numspecies)
     nvals = zeros(TYPE,numphases, numspecies)
     logspace = method.logspace
-    vcache = zeros(TYPE,numphases)
-    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,vcache,logspace,method.equilibrium)
+    volumes = zeros(TYPE,numphases)
+    GibbsFreeEnergy(dividers) = Obj_de_tp_flash(model,p,T,n,dividers,numphases,x,nvals,volumes,logspace,method.equilibrium)
     #Minimize Gibbs Free Energy
 
     #=
@@ -92,7 +92,7 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
 
     dividers = reshape(BlackBoxOptim.best_candidate(result),
             (numphases - 1, numspecies))
-    best_f = BlackBoxOptim.best_fitness(result)
+    g = BlackBoxOptim.best_fitness(result)
     #Initialize arrays xij and nvalsij,
     #where i in 1..numphases, j in 1..numspecies
     #xij is mole fraction of j in phase i.
@@ -101,8 +101,10 @@ function tp_flash_impl(model::EoSModel, p, T, n, method::DETPFlash)
         dividers .= exp.(dividers)
     end
     partition!(dividers,n,x,nvals)
-    idxs = sortperm(vcache)
-    return (x[idxs,:],nvals[idxs,:], best_f)
+
+    comps = [vec(x[i,:]) for i in 1:numphases]
+    βi = [sum(@view(nvals[i,:])) for i in 1:numphases]
+    return comps, βi, volumes, g
 end
 """
     Obj_de_tp_flash(model,p,T,z,dividers,numphases,vcache,logspace = false)

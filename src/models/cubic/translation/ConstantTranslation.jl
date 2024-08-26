@@ -9,7 +9,7 @@ end
 """
     ConstantTranslation <: ConstantTranslationModel
     ConstantTranslation(components;
-    userlocations=String[],
+    userlocations = String[],
     verbose::Bool=false)
 ## Input Parameters
 

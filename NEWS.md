@@ -1,20 +1,13 @@
-# v0.5.9
+# v0.6.3
 
 ## New Features
-- New EoS: Solid SAFT-VR Mie (`SAFTVRSMie`)
-- New EoS: Solid soft-SAFT (`solidsoftSAFT`)
-- New property: sublimation pressure. `sublimation_pressure(model::CompositeModel,T)`
-- New property: melting pressure. `melting_pressure(model::CompositeModel,T)`
-- New property: sublimation temperature. `sublimation_temperature(model::CompositeModel,p)`
-- New property: melting temperature. `melting_temperature(model::CompositeModel,p)`
-- New property: triple point. `triple_point(model::CompositeModel)`
-- `CompositeModel` was revamped to support more general equilibria. in particular it will be used to represent equilibria with Activity Models along with with Real Gases. As a result of these enhancements, `CompositeModel` now supports `bubble_pressure`,`bubble_temperature`,`dew_pressure`, and `dew_temperature`.
-- `DETPFlash` supports LLE equilibria with activity models
+
+- Association solver is now faster for small association matrices.
+- Michelsen TP-Flash: in case of valid K values but single phase rachford-rice, the procedure will assume bubble or dew point as a first iteration.
+- `split_model` now works for `ClapeyronParam`,`Symbol`,`Number`,`AbstractString`,`Tuple`,`Missing` and `Nothing`. before those could only be splitted if inside an `EoSModel`.
+- New function: `split_model_binaries`, that returns a list of all binary combinations of an n-component model.
+- `lb_volume` now has a three-arg version: `lb_volume(model,T,z)`.
 
 ## Bug fixes
-- `SAFTVRMie` was allocating excesively because of unbound type parameter. 
-- typos in `pharmaPCSAFT`
-- `SanchezLacombe` didn't set `k` correctly when passed as `userlocations`
-- `CPA`, SAFT equation of state and other EoS that implement association,don't need to specify `bondvol` and `epsilon_assoc`, when using non-associating species.
-- correct implementation of `lb_volume` for `CPPCSAFT`
-- better implementation of `lb_volume` for `pharmaPCSAFT`
+- `SAFTgammaMie` fixes.
+- `SingleFluid` has improved initial points for liquid volume evaluation.

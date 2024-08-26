@@ -52,6 +52,8 @@ function check_arraysize(model,k::AbstractVector)
     return nothing
 end
 
+check_arraysize(model,k::Number) = check_arraysize(model,SVector(k))
+
 function incorrect_squarematrix_error(model,n)
     l = length(model)
     msg = string(model," has $l components, while input matrix is of size $(n)×$(n)")
@@ -64,3 +66,9 @@ function incorrect_vector_error(model,n)
     throw(DimensionMismatch(msg))
 end
 
+reference_state_checkempty(model,::Nothing) = nothing
+function reference_state_checkempty(model,ref)
+    if !has_reference_state(model)
+        throw(ArgumentError("$model does not accept setting custom reference states."))
+    end
+end

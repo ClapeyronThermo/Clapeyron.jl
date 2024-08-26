@@ -27,27 +27,6 @@ function _propaneref_tsat(p)
     return Roots.solve(prob,Roots.Order0())
 end
 
-function _propaneref_rholsat(T)
-    T_c = 369.89
-    ρ_c = 5000.0
-    T>T_c && return zero(T)/zero(T)
-    Tr = T/T_c
-    θ = 1.0-Tr
-    ρ_l = (1.0 + 1.82205*θ^0.345 + 0.65802*θ^0.74 + 0.21109*θ^2.6 + 0.083973*θ^7.2)*ρ_c
-    return ρ_l
-end
-
-function _propaneref_rhovsat(T)
-    T_c = 369.89
-    ρ_c = 5000.0
-    T>T_c && return zero(T)/zero(T)
-    Tr = T/T_c
-    θ = 1.0 - Tr
-    log_ρ_v_ρ_c = (-2.4887*θ^0.3785 -5.1069*θ^1.07 -12.174*θ^2.7 -30.495*θ^5.5 -52.192*θ^10 -134.89*θ^20)
-    ρ_v = exp(log_ρ_v_ρ_c)*ρ_c
-    return ρ_v
-end
-
 """
     PropaneRef <: EmpiricHelmholtzModel
     PropaneRef()
@@ -63,9 +42,9 @@ Propane Reference Equation of State
 τ = T/Tc
 a⁰(δ,τ) = log(δ) + n⁰₁ + n⁰₂τ + n⁰₃log(τ) + ∑n⁰ᵢ(1-exp(-γ⁰ᵢτ)), i ∈ 4:7
 aʳ(δ,τ)  = aʳ₁+ aʳ₂ + aʳ₃
-aʳ₁(δ,τ)  =  ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:5
-aʳ₂(δ,τ)  =  ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 6:11
-aʳ₃(δ,τ)  =  ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 12:18
+aʳ₁(δ,τ)  = ∑nᵢδ^(dᵢ)τ^(tᵢ), i ∈ 1:5
+aʳ₂(δ,τ)  = ∑nᵢexp(-δ^cᵢ)δ^(dᵢ)τ^(tᵢ), i ∈ 6:11
+aʳ₃(δ,τ)  = ∑nᵢexp(-ηᵢ(δ - εᵢ)^2 - βᵢ(τ - γᵢ)^2)δ^(dᵢ)τ^(tᵢ), i ∈ 12:18
 
 ```
 parameters  `n⁰`,`γ⁰`,`n`,`t`,`d`,`c`,`η`,`β`,`γ`,`ε` where obtained via fitting.
@@ -82,7 +61,7 @@ function PropaneRef()
     rho_c= 5000.0 # mol·m-3
     lb_volume = 1/53130
     Ttp = 85.525 #K
-    ptp =  0.00017
+    ptp = 0.00017
     rhov_tp  = 2.4e-07
     rhol_tp = 16626.0
     Rgas = 8.314472

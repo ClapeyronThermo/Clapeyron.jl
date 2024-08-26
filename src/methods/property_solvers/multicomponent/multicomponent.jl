@@ -95,44 +95,6 @@ function VT_chemical_potential_res!(result,model,V,T,z)
     return ForwardDiff.gradient!(result,fun,z)
 end
 
-function PV_critical_temperature(model,p)
-    Tc,_,vc = crit_pure(model)
-    g(T) = p - pressure(model,vc,T)
-    gi = Roots.ZeroProblem(g,Tc)
-    T = Roots.solve(gi)
-    return T
-end
-
-#returns saturation temperature if below crit_pure, if not, it returns
-function _sat_Ti(model,p)
-    pure = split_model(model)
-    n = length(pure)
-    Tsat = first.(saturation_temperature.(pure,p))
-    for i ∈ 1:n
-        if isnan(Tsat[i])
-            T = PV_critical_temperature(pure[i],p)
-            Tsat[i] = T
-        end
-    end
-    return Tsat
-end
-
-function aprox_psat(pure,T,crit)
-    coeff  = antoine_coef(pure)
-    if coeff !== nothing
-        A,B,C = coeff
-    else
-        A,B,C = (6.668322465137264,6.098791871032391,-0.08318016317721941)
-    end
-    Tc,Pc,Vc = crit
-    T̄ = T/Tc
-    if T > Tc
-        return pressure(pure,Vc,Tc)
-    else
-        return exp(A-B/(T̄+C))*Pc
-    end
-end
-
 function wilson_k_values(model::EoSModel,p,T,crit = nothing)
     K = zeros(typeof(p+T+one(eltype(model))),length(model))
     return wilson_k_values!(K,model,p,T,crit)
@@ -157,7 +119,7 @@ end
 function bubbledew_check(vl,vv,zin,zout)
     (isapprox(vl,vv) && isapprox(zin,zout)) && return false
     !all(isfinite,zout) && return false
-    !all(isfinite,(vl,vv)) && return false
+    !isfinite(vv) && return false
     return true
 end
 
@@ -221,10 +183,3 @@ export bubble_temperature, dew_temperature, LLE_temperature, azeotrope_temperatu
 export crit_mix, UCEP_mix, UCST_mix
 export krichevskii_parameter
 export sle_solubility, eutectic_point, slle_solubility
-#UpperTriangular
-#UnitUpperTriangular
-#LowerTriangular
-#UnitLowerTriangular
-#Tridiagonal
-#SymTridiagonal
-#Bidiagonal

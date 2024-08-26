@@ -30,16 +30,8 @@ function init_model(model::Type{<:MixingRule},components,activity,userlocations,
     return model(components;activity,userlocations,activity_userlocations,verbose)
 end
 
-function init_mixing_act(model,components,userlocations,verbose)
-    init_model(model,components,userlocations,verbose)
-end
-
-function init_mixing_act(model::Union{Type{<:ActivityModel},Base.Function},components,userlocations,verbose)
-    if verbose
-        @info "Building an instance of $(info_color(string(model))) with components $components, in EoS-gᴱ mixing mode."
-    end
-    model(components;userlocations,verbose,puremodel = BasicIdeal())
-end
+#used in CompositeModel.jl
+init_mixing_act = init_model_act
 
 function infinite_pressure_gibbs_correction(model::CubicModel,z)
     Δ1,Δ2 = cubic_Δ(model,z)

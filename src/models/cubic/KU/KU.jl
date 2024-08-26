@@ -22,18 +22,20 @@ struct KU{T <: IdealModel,α,c,γ} <:KUModel
 end
 
 """
-    KU(components; idealmodel=BasicIdeal,
+    KU(components;
+    idealmodel = BasicIdeal,
     alpha = KUAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
 ## Input parameters
 - `Tc`: Single Parameter (`Float64`) - Critical Temperature `[K]`
@@ -87,7 +89,7 @@ model = KU(["water","ethanol"],mixing = WSRule, activity = NRTL) #using advanced
 # Passing a prebuilt model
 
 my_alpha = PR78Alpha(["ethane","butane"],userlocations = Dict(:acentricfactor => [0.1,0.2]))
-model =  KU(["ethane","butane"],alpha = my_alpha)
+model = KU(["ethane","butane"],alpha = my_alpha)
 
 # User-provided parameters, passing files or folders
 model = KU(["neon","hydrogen"]; userlocations = ["path/to/my/db","cubic/my_k_values.csv"])
@@ -113,21 +115,23 @@ export KU
 
 #another alternative would be to store the Ωa, Ωb in the mixing struct.
 
-function KU(components; idealmodel=BasicIdeal,
+function KU(components;
+    idealmodel = BasicIdeal,
     alpha = KUAlpha,
     mixing = vdW1fRule,
-    activity=nothing,
-    translation=NoTranslation,
-    userlocations=String[],
-    ideal_userlocations=String[],
+    activity = nothing,
+    translation = NoTranslation,
+    userlocations = String[],
+    ideal_userlocations = String[],
     alpha_userlocations = String[],
     mixing_userlocations = String[],
     activity_userlocations = String[],
     translation_userlocations = String[],
-    verbose=false)
+    reference_state = nothing,
+    verbose = false)
 
     formatted_components = format_components(components)
-    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations=userlocations, verbose=verbose)
+    params = getparams(formatted_components, ["properties/critical.csv", "properties/molarmass.csv","SAFT/PCSAFT/PCSAFT_unlike.csv"]; userlocations = userlocations, verbose = verbose)
     k = get(params,"k",nothing)
     l = get(params,"l",nothing)
     pc = params["Pc"]
@@ -141,7 +145,7 @@ function KU(components; idealmodel=BasicIdeal,
     b = PairParam("b",formatted_components,zeros(n))
     omega_a = SingleParam("Ωa",formatted_components,zeros(n))
     omega_b = SingleParam("Ωb",formatted_components,zeros(n))
-    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose)
+    init_idealmodel = init_model(idealmodel,components,ideal_userlocations,verbose,reference_state)
     init_alpha = init_alphamodel(alpha,components,acentricfactor,alpha_userlocations,verbose)
     init_translation = init_model(translation,components,translation_userlocations,verbose)
     packagedparams = KUParam(a,b,omega_a,omega_b,Tc,pc,Vc,Mw)
@@ -177,12 +181,12 @@ ab_consts(model::KUModel) = model.params.omega_a.values,model.params.omega_b.val
 #only used in premixing
 cubic_Δ(model::KUModel,z) = (0.4,-2.0)
 
-function T_scale(model::KUModel,z=SA[1.0])
+function T_scale(model::KUModel,z)
     Tc,_ = vdw_tv_mix(model.params.Tc.values,model.params.Vc.values,z)
     return Tc
 end
 
-function p_scale(model::KUModel,z=SA[1.0])
+function p_scale(model::KUModel,z)
     return dot(model.params.Pc.values,z)/sum(z)
 end
 

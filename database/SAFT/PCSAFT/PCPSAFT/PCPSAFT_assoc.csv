@@ -1,0 +1,390 @@
+Clapeyron Database File
+PCPSAFT Assoc Parameters; Esper et al. (2023) [csvtype = assoc]
+species1,site1,species2,site2,bondvol,epsilon_assoc,source
+acetamide~|~ethanamide,a,acetamide~|~ethanamide,b,0.01458,1624.88542,10.1021/acs.iecr.3c02255
+"ethylenediamine~|~1,2-diaminoethane~|~ethane-1,2-diamine",a,"ethylenediamine~|~1,2-diaminoethane~|~ethane-1,2-diamine",b,0.00021,1044.99964,10.1021/acs.iecr.3c02255
+"glycol~|~1,2-ethanediol~|~ethylene glycol",a,"glycol~|~1,2-ethanediol~|~ethylene glycol",b,0.01627,2120.07538,10.1021/acs.iecr.3c02255
+ethanol,a,ethanol,b,0.05533,2462.30577,10.1021/acs.iecr.3c02255
+2-propenol~|~2-propen-1-ol~|~allyl alcohol,a,2-propenol~|~2-propen-1-ol~|~allyl alcohol,b,0.04087,2121.43119,10.1021/acs.iecr.3c02255
+formic acid~|~methanoic acid,a,formic acid~|~methanoic acid,b,0.60493,2287.69614,10.1021/acs.iecr.3c02255
+aniline,a,aniline,b,0.02373,1288.02766,10.1021/acs.iecr.3c02255
+2-butanol~|~butan-2-ol,a,2-butanol~|~butan-2-ol,b,0.00622,2290.34273,10.1021/acs.iecr.3c02255
+"2,3-butanediol",a,"2,3-butanediol",b,0.03413,2912.47798,10.1021/acs.iecr.3c02255
+benzylalcohol~|~benzenemethanol,a,benzylalcohol~|~benzenemethanol,b,0.00222,3018.90586,10.1021/acs.iecr.3c02255
+"acetoin~|~2,3-butanolone~|~3-hydroxy-2-butanone",a,"acetoin~|~2,3-butanolone~|~3-hydroxy-2-butanone",b,0.0001,2989.63941,10.1021/acs.iecr.3c02255
+2-butoxyethanol~|~2-butoxyethan-1-ol,a,2-butoxyethanol~|~2-butoxyethan-1-ol,b,0.0001,2099.19184,10.1021/acs.iecr.3c02255
+butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,a,butanol~|~n-butanol~|~1-butanol~|~butan-1-ol,b,0.01435,2163.47788,10.1021/acs.iecr.3c02255
+2-chloroethanol~|~1-chloro-2-hydroxyethane,a,2-chloroethanol~|~1-chloro-2-hydroxyethane,b,0.0001,2105.29294,10.1021/acs.iecr.3c02255
+2-butoxime~|~2-butanone oxime~|~methyl ethyl ketoxime,a,2-butoxime~|~2-butanone oxime~|~methyl ethyl ketoxime,b,0.01161,3121.70164,10.1021/acs.iecr.3c02255
+m-cresol~|~in-cresol~|~3-methylphenol~|~3-hydroxytoluene,a,m-cresol~|~in-cresol~|~3-methylphenol~|~3-hydroxytoluene,b,0.00017,2918.11841,10.1021/acs.iecr.3c02255
+"diethylamine~|~n,n-diethylamine",a,"diethylamine~|~n,n-diethylamine",b,0.01197,875.08525,10.1021/acs.iecr.3c02255
+acetic acid,a,acetic acid,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+dipropylamine~|~1-propanamine~|~di-n-propylamine,a,dipropylamine~|~1-propanamine~|~di-n-propylamine,b,0.9,1770.79743,10.1021/acs.iecr.3c02255
+hydrazine,a,hydrazine,b,0.46362,1429.71353,10.1021/acs.iecr.3c02255
+2-propanol~|~propan-2-ol~|~isopropanol,a,2-propanol~|~propan-2-ol~|~isopropanol,b,0.03508,1898.4667,10.1021/acs.iecr.3c02255
+diisopropylamine~|~di-isopropyl amine,a,diisopropylamine~|~di-isopropyl amine,b,0.36957,428.58459,10.1021/acs.iecr.3c02255
+hexylamine~|~n-hexylamine~|~1-hexanamine,a,hexylamine~|~n-hexylamine~|~1-hexanamine,b,0.38457,2222.44907,10.1021/acs.iecr.3c02255
+methanol,a,methanol,b,0.08716,2465.13545,10.1021/acs.iecr.3c02255
+2-methoxyethanol~|~2-methoxyethan-1-ol,a,2-methoxyethanol~|~2-methoxyethan-1-ol,b,0.22091,1151.53518,10.1021/acs.iecr.3c02255
+"morpholine~|~tetrahydro-1,4-oxazine",a,"morpholine~|~tetrahydro-1,4-oxazine",b,0.0001,1849.45327,10.1021/acs.iecr.3c02255
+diacetone alcohol~|~4-oh-4-me-2-pentanone~|~4-hydroxy-4-methylpentan-2-one,a,diacetone alcohol~|~4-oh-4-me-2-pentanone~|~4-hydroxy-4-methylpentan-2-one,b,0.04729,2501.08734,10.1021/acs.iecr.3c02255
+isobutanol~|~2-methyl-1-propanol,a,isobutanol~|~2-methyl-1-propanol,b,0.00677,2370.71658,10.1021/acs.iecr.3c02255
+1-nonanol~|~nonan-1-ol,a,1-nonanol~|~nonan-1-ol,b,0.00254,2917.47097,10.1021/acs.iecr.3c02255
+o-cresol~|~2-methylphenol,a,o-cresol~|~2-methylphenol,b,0.00958,1593.76577,10.1021/acs.iecr.3c02255
+p-cresol~|~4-methylphenol,a,p-cresol~|~4-methylphenol,b,0.00052,2624.74648,10.1021/acs.iecr.3c02255
+1-pentanol~|~pentan-1-ol,a,1-pentanol~|~pentan-1-ol,b,0.01039,2356.43743,10.1021/acs.iecr.3c02255
+phenol,a,phenol,b,0.00076,2497.4878,10.1021/acs.iecr.3c02255
+propanol~|~1-propanol~|~propan-1-ol,a,propanol~|~1-propanol~|~propan-1-ol,b,0.03853,1980.96875,10.1021/acs.iecr.3c02255
+propionic acid~|~propanoic acid~|~n-propanoic acid,a,propionic acid~|~propanoic acid~|~n-propanoic acid,b,0.0001,200.00605,10.1021/acs.iecr.3c02255
+1-propanethiol~|~propyl mercaptan~|~n-propyl mercaptan,a,1-propanethiol~|~propyl mercaptan~|~n-propyl mercaptan,b,0.03038,644.97504,10.1021/acs.iecr.3c02255
+nitric acid,a,nitric acid,b,0.0001,1932.6196,10.1021/acs.iecr.3c02255
+methyl 2-hydroxybenzoate~|~salicylic acid methyl ester~|~2-hydroxy-benzoicacidmethylester,a,methyl 2-hydroxybenzoate~|~salicylic acid methyl ester~|~2-hydroxy-benzoicacidmethylester,b,0.01157,1311.30975,10.1021/acs.iecr.3c02255
+tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,a,tert-butanol~|~2-methyl-2-propanol~|~2-methylpropan-2-ol,b,0.00548,2150.4402,10.1021/acs.iecr.3c02255
+tetrahydrofurfurylalcohol~|~2-tetrahydrofurylmethanol,a,tetrahydrofurfurylalcohol~|~2-tetrahydrofurylmethanol,b,0.00034,2622.56993,10.1021/acs.iecr.3c02255
+water,a,water,b,0.35319,2195.10176,10.1021/acs.iecr.3c02255
+methylamine~|~methanamine,a,methylamine~|~methanamine,b,0.10474,610.87229,10.1021/acs.iecr.3c02255
+dimethylamine,a,dimethylamine,b,0.02657,988.83672,10.1021/acs.iecr.3c02255
+2-propanethiol~|~2-propyl mercaptan~|~isopropyl mercaptan,a,2-propanethiol~|~2-propyl mercaptan~|~isopropyl mercaptan,b,0.02156,586.54149,10.1021/acs.iecr.3c02255
+cyclopentanol,a,cyclopentanol,b,0.00178,2887.06558,10.1021/acs.iecr.3c02255
+ammonia,a,ammonia,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+"n,n-dimethylhydrazine~|~1,1-dimethylhydrazine",a,"n,n-dimethylhydrazine~|~1,1-dimethylhydrazine",b,0.72037,1426.54326,10.1021/acs.iecr.3c02255
+hydrogen peroxide,a,hydrogen peroxide,b,0.34561,1852.17704,10.1021/acs.iecr.3c02255
+azacycloheptane~|~hexamethyleneimine~|~hexahydro-1h-azepine,a,azacycloheptane~|~hexamethyleneimine~|~hexahydro-1h-azepine,b,0.9,1997.12363,10.1021/acs.iecr.3c02255
+methylformamide~|~n-methylformamide,a,methylformamide~|~n-methylformamide,b,0.9,2611.99891,10.1021/acs.iecr.3c02255
+glycerol,a,glycerol,b,0.01123,2063.85002,10.1021/acs.iecr.3c02255
+methacrylic acid~|~2-methyl-2-propenoic acid,a,methacrylic acid~|~2-methyl-2-propenoic acid,b,0.00047,2643.83687,10.1021/acs.iecr.3c02255
+2-methyl-3-buten-2-ol,a,2-methyl-3-buten-2-ol,b,0.00398,2398.3937,10.1021/acs.iecr.3c02255
+butyric acid~|~butanoic acid~|~n-butyric acid~|~n-butanoic acid,a,butyric acid~|~butanoic acid~|~n-butyric acid~|~n-butanoic acid,b,0.30395,1819.92307,10.1021/acs.iecr.3c02255
+palmitic acid~|~hexadecanoic acid,a,palmitic acid~|~hexadecanoic acid,b,0.00241,3983.98057,10.1021/acs.iecr.3c02255
+butylamine~|~1-butylamine~|~n-butylamine~|~1-butanamine,a,butylamine~|~1-butylamine~|~n-butylamine~|~1-butanamine,b,0.81717,494.86264,10.1021/acs.iecr.3c02255
+oleic acid~|~cis-9-octadecenoic acid~|~(z)-9-octadecenoic acid,a,oleic acid~|~cis-9-octadecenoic acid~|~(z)-9-octadecenoic acid,b,0.0001,3285.41235,10.1021/acs.iecr.3c02255
+piperidine,a,piperidine,b,0.01234,1043.08819,10.1021/acs.iecr.3c02255
+phenylhydrazine,a,phenylhydrazine,b,0.9,416.68408,10.1021/acs.iecr.3c02255
+caprolactam~|~epsilon-caprolactam~|~1-aza-2-cycloheptanone,a,caprolactam~|~epsilon-caprolactam~|~1-aza-2-cycloheptanone,b,0.01229,1425.78023,10.1021/acs.iecr.3c02255
+cyclohexanol,a,cyclohexanol,b,0.00171,2781.12609,10.1021/acs.iecr.3c02255
+stearic acid~|~octadecanoic acid,a,stearic acid~|~octadecanoic acid,b,0.00238,4030.38606,10.1021/acs.iecr.3c02255
+isopentanol~|~3-methylbutan-1-ol~|~3-methyl-1-butanol,a,isopentanol~|~3-methylbutan-1-ol~|~3-methyl-1-butanol,b,0.00381,2593.30289,10.1021/acs.iecr.3c02255
+hexanoic acid~|~n-hexanoic acid~|~n-pentyl formate,a,hexanoic acid~|~n-hexanoic acid~|~n-pentyl formate,b,0.00335,2688.84534,10.1021/acs.iecr.3c02255
+caprylic acid~|~octanoic acid~|~n-octanoic acid,a,caprylic acid~|~octanoic acid~|~n-octanoic acid,b,0.01011,2924.31072,10.1021/acs.iecr.3c02255
+ethoxyethanol~|~2-ethoxyethanol~|~2-ethoxyethan-1-ol,a,ethoxyethanol~|~2-ethoxyethanol~|~2-ethoxyethan-1-ol,b,0.53446,836.72417,10.1021/acs.iecr.3c02255
+isobutylamine~|~2-methylpropylamine~|~2-methyl-1-propanamine,a,isobutylamine~|~2-methylpropylamine~|~2-methyl-1-propanamine,b,0.0001,1914.5902,10.1021/acs.iecr.3c02255
+furfuryl alcohol~|~2-hydroxymethylfuran,a,furfuryl alcohol~|~2-hydroxymethylfuran,b,0.19141,2042.36559,10.1021/acs.iecr.3c02255
+"2,4-xylenol~|~2,4-dimethylphenol",a,"2,4-xylenol~|~2,4-dimethylphenol",b,0.00463,2419.64414,10.1021/acs.iecr.3c02255
+"3,5-xylenol~|~3,5-dimethylphenol",a,"3,5-xylenol~|~3,5-dimethylphenol",b,0.00253,2751.43048,10.1021/acs.iecr.3c02255
+"propyleneglycol~|~1,2-propanediol~|~1,2-propylene glycol",a,"propyleneglycol~|~1,2-propanediol~|~1,2-propylene glycol",b,0.103,1467.04116,10.1021/acs.iecr.3c02255
+methylacetamide~|~n-methylacetamide,a,methylacetamide~|~n-methylacetamide,b,0.01943,2395.46176,10.1021/acs.iecr.3c02255
+chloroacetic acid~|~chloroethanoic acid,a,chloroacetic acid~|~chloroethanoic acid,b,0.0189,1875.45062,10.1021/acs.iecr.3c02255
+1-hexanol~|~hexan-1-ol,a,1-hexanol~|~hexan-1-ol,b,0.00722,2509.5721,10.1021/acs.iecr.3c02255
+acrylic acid~|~propenoic acid,a,acrylic acid~|~propenoic acid,b,0.01854,2881.10662,10.1021/acs.iecr.3c02255
+cyclohexylamine,a,cyclohexylamine,b,0.01058,1567.84017,10.1021/acs.iecr.3c02255
+isobutyric acid~|~2-methylpropanoic acid,a,isobutyric acid~|~2-methylpropanoic acid,b,0.00307,2043.58731,10.1021/acs.iecr.3c02255
+"2-methyl-2,4-pentanediol",a,"2-methyl-2,4-pentanediol",b,0.01088,2328.21468,10.1021/acs.iecr.3c02255
+ethylamine~|~ethanamine,a,ethylamine~|~ethanamine,b,0.04498,622.42578,10.1021/acs.iecr.3c02255
+bucooh~|~n-bucooh~|~pentanoic acid~|~n-pentanoic acid,a,bucooh~|~n-bucooh~|~pentanoic acid~|~n-pentanoic acid,b,0.0001,3111.01504,10.1021/acs.iecr.3c02255
+methylaniline~|~n-methylaniline,a,methylaniline~|~n-methylaniline,b,0.09951,1972.15484,10.1021/acs.iecr.3c02255
+1-phenylethanol~|~sec-phenethylalcohol~|~alpha.-phenylethanol~|~alpha-methylbenzyl alcohol,a,1-phenylethanol~|~sec-phenethylalcohol~|~alpha.-phenylethanol~|~alpha-methylbenzyl alcohol,b,0.0001,3081.76465,10.1021/acs.iecr.3c02255
+dibutylamine~|~di-n-butylamine,a,dibutylamine~|~di-n-butylamine,b,0.0001,2686.96987,10.1021/acs.iecr.3c02255
+2-methylcyclohexanol,a,2-methylcyclohexanol,b,0.00073,2857.96046,10.1021/acs.iecr.3c02255
+1-heptanol~|~heptan-1-ol,a,1-heptanol~|~heptan-1-ol,b,0.00298,2944.42231,10.1021/acs.iecr.3c02255
+1-octanol~|~octan-1-ol,a,1-octanol~|~octan-1-ol,b,0.00239,2998.54369,10.1021/acs.iecr.3c02255
+1-decanol~|~decan-1-ol,a,1-decanol~|~decan-1-ol,b,0.00194,3081.68397,10.1021/acs.iecr.3c02255
+lauric acid~|~dodecanoic acid~|~n-dodecanoic acid,a,lauric acid~|~dodecanoic acid~|~n-dodecanoic acid,b,0.00271,3654.9118,10.1021/acs.iecr.3c02255
+myristic acid~|~tetradecanoic acid,a,myristic acid~|~tetradecanoic acid,b,0.00229,4019.06681,10.1021/acs.iecr.3c02255
+2-naphthol~|~2-hydroxynaphthalene,a,2-naphthol~|~2-hydroxynaphthalene,b,0.02699,2629.51966,10.1021/acs.iecr.3c02255
+2-methyl-3-pentanol,a,2-methyl-3-pentanol,b,0.00225,2287.79309,10.1021/acs.iecr.3c02255
+2-methyl-1-hexanol,a,2-methyl-1-hexanol,b,0.04465,4558.99446,10.1021/acs.iecr.3c02255
+2-propylamine~|~2-propanamine~|~isopropylamine,a,2-propylamine~|~2-propanamine~|~isopropylamine,b,0.02607,850.97908,10.1021/acs.iecr.3c02255
+propylamine~|~n-propylamine~|~1-propylamine~|~propan-1-amine,a,propylamine~|~n-propylamine~|~1-propylamine~|~propan-1-amine,b,0.0001,1610.12005,10.1021/acs.iecr.3c02255
+2-ethyl-1-hexanol,a,2-ethyl-1-hexanol,b,0.00207,2761.61241,10.1021/acs.iecr.3c02255
+cycloheptanol,a,cycloheptanol,b,0.0001,2450.38688,10.1021/acs.iecr.3c02255
+"1,2-propanediamine",a,"1,2-propanediamine",b,0.27378,406.14917,10.1021/acs.iecr.3c02255
+"dmmea~|~dimethylethanolamine~|~n,n-dimethylethanolamine~|~2-(dimethylamino)-ethanol~|~2-(n,n-dimethylamino)ethanol",a,"dmmea~|~dimethylethanolamine~|~n,n-dimethylethanolamine~|~2-(dimethylamino)-ethanol~|~2-(n,n-dimethylamino)ethanol",b,0.00422,2042.55721,10.1021/acs.iecr.3c02255
+"3,6-dioxa-1-decanol~|~diethyleneglycolmonobutylether",a,"3,6-dioxa-1-decanol~|~diethyleneglycolmonobutylether",b,0.01116,2028.1552,10.1021/acs.iecr.3c02255
+1-naphthol,a,1-naphthol,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+"1,6-hexanediamine~|~hexamethylenediamine",a,"1,6-hexanediamine~|~hexamethylenediamine",b,0.00942,1099.27912,10.1021/acs.iecr.3c02255
+benzoic acid,a,benzoic acid,b,0.03123,2137.21733,10.1021/acs.iecr.3c02255
+propynol~|~2-propyn-1-ol~|~propargyl alcohol,a,propynol~|~2-propyn-1-ol~|~propargyl alcohol,b,0.0001,2544.80628,10.1021/acs.iecr.3c02255
+"2,4-dichlorophenol",a,"2,4-dichlorophenol",b,0.00815,1784.02856,10.1021/acs.iecr.3c02255
+teg~|~triethylene glycol,a,teg~|~triethylene glycol,b,0.00889,2011.71578,10.1021/acs.iecr.3c02255
+2-(2-methoxyethoxy)ethanol~|~diethylene glycol monomethyl ether,a,2-(2-methoxyethoxy)ethanol~|~diethylene glycol monomethyl ether,b,0.00671,2291.89925,10.1021/acs.iecr.3c02255
+2-isopropoxyethanol,a,2-isopropoxyethanol,b,0.00651,1946.49128,10.1021/acs.iecr.3c02255
+"3,6-dioxa-1-octanol~|~2-(2-ethoxyethoxy)ethanol~|~diethylene glycol ethyl ether~|~diethyleneglycolmonoethylether",a,"3,6-dioxa-1-octanol~|~2-(2-ethoxyethoxy)ethanol~|~diethylene glycol ethyl ether~|~diethyleneglycolmonoethylether",b,0.005,3215.09581,10.1021/acs.iecr.3c02255
+tert-butylamine~|~2-methyl-2-propanamine,a,tert-butylamine~|~2-methyl-2-propanamine,b,0.05886,962.21594,10.1021/acs.iecr.3c02255
+deg~|~diethylene glycol,a,deg~|~diethylene glycol,b,0.06873,2525.13962,10.1021/acs.iecr.3c02255
+4-methyl-2-pentanol,a,4-methyl-2-pentanol,b,0.00837,2125.5966,10.1021/acs.iecr.3c02255
+capric acid~|~decanoic acid~|~n-decanoic acid,a,capric acid~|~decanoic acid~|~n-decanoic acid,b,0.00217,4227.84719,10.1021/acs.iecr.3c02255
+1-undecanol,a,1-undecanol,b,0.00233,2834.87537,10.1021/acs.iecr.3c02255
+2-(2-propoxyethoxy)ethanol~|~diethylene glycol monopropyl ether,a,2-(2-propoxyethoxy)ethanol~|~diethylene glycol monopropyl ether,b,0.06588,948.33873,10.1021/acs.iecr.3c02255
+dipropyleneglycoln-butylether~|~dipropylene glycol butyl ether,a,dipropyleneglycoln-butylether~|~dipropylene glycol butyl ether,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+o-deuteromethanol,a,o-deuteromethanol,b,0.14673,2138.1465,10.1021/acs.iecr.3c02255
+dodecanol~|~1-dodecanol~|~dodecan-1-ol,a,dodecanol~|~1-dodecanol~|~dodecan-1-ol,b,0.00161,2967.99239,10.1021/acs.iecr.3c02255
+mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,a,mea~|~ethanolamine~|~monoethanolamine~|~2-aminoethan-1-ol,b,0.00536,2132.32983,10.1021/acs.iecr.3c02255
+t-butyl hydroperoxide~|~tert-butylhydroperoxide~|~tert.butyl hydroperoxide,a,t-butyl hydroperoxide~|~tert-butylhydroperoxide~|~tert.butyl hydroperoxide,b,0.0001,2190.20514,10.1021/acs.iecr.3c02255
+"2,2,3,3-tetrafluoro-1-propanol",a,"2,2,3,3-tetrafluoro-1-propanol",b,0.0001,2339.47789,10.1021/acs.iecr.3c02255
+methanethiol~|~methyl mercaptan,a,methanethiol~|~methyl mercaptan,b,0.00079,1216.66528,10.1021/acs.iecr.3c02255
+"1,1,1,3,3,3-hexafluoro-2-propanol",a,"1,1,1,3,3,3-hexafluoro-2-propanol",b,0.00131,2219.88588,10.1021/acs.iecr.3c02255
+pyrrolidine,a,pyrrolidine,b,0.07367,1054.21541,10.1021/acs.iecr.3c02255
+trifluoroacetic acid~|~trifluoroethanoic acid,a,trifluoroacetic acid~|~trifluoroethanoic acid,b,0.9,1517.81774,10.1021/acs.iecr.3c02255
+"1,4-butadiol~|~1,4-butanediol",a,"1,4-butadiol~|~1,4-butanediol",b,0.00963,2414.81877,10.1021/acs.iecr.3c02255
+p-nitrophenol,a,p-nitrophenol,b,0.00976,4999.99705,10.1021/acs.iecr.3c02255
+o-toluidine~|~2-methylaniline~|~o-methylaniline~|~2-methyl-benzeneamine,a,o-toluidine~|~2-methylaniline~|~o-methylaniline~|~2-methyl-benzeneamine,b,0.00175,2145.79575,10.1021/acs.iecr.3c02255
+2-methyl-1-butanol,a,2-methyl-1-butanol,b,0.00539,2649.13909,10.1021/acs.iecr.3c02255
+2-pentanol~|~pentan-2-ol,a,2-pentanol~|~pentan-2-ol,b,0.00314,2683.67172,10.1021/acs.iecr.3c02255
+3-pentanol,a,3-pentanol,b,0.02702,2323.45962,10.1021/acs.iecr.3c02255
+tert-pentanol~|~2-methyl-2-butanol~|~2-methylbutan-2-ol,a,tert-pentanol~|~2-methyl-2-butanol~|~2-methylbutan-2-ol,b,0.00144,2636.1177,10.1021/acs.iecr.3c02255
+"2,3,3-trimethyl-2-butanol",a,"2,3,3-trimethyl-2-butanol",b,0.01392,1774.62555,10.1021/acs.iecr.3c02255
+3-ethyl-3-pentanol,a,3-ethyl-3-pentanol,b,0.0004,2448.88819,10.1021/acs.iecr.3c02255
+3-methyl-3-pentanol,a,3-methyl-3-pentanol,b,0.00022,2821.43953,10.1021/acs.iecr.3c02255
+"2,3-dimethyl-2-butanol",a,"2,3-dimethyl-2-butanol",b,0.00074,2662.17543,10.1021/acs.iecr.3c02255
+2-methyl-2-pentanol,a,2-methyl-2-pentanol,b,0.00201,2806.99352,10.1021/acs.iecr.3c02255
+3-hexanol,a,3-hexanol,b,0.00241,2651.25773,10.1021/acs.iecr.3c02255
+2-hexanol,a,2-hexanol,b,0.00421,2559.58388,10.1021/acs.iecr.3c02255
+"2,2-dimethyl-1-butanol",a,"2,2-dimethyl-1-butanol",b,0.00622,2731.2426,10.1021/acs.iecr.3c02255
+formamide,a,formamide,b,0.00647,2132.37665,10.1021/acs.iecr.3c02255
+diphenylamine,a,diphenylamine,b,0.03372,2471.88495,10.1021/acs.iecr.3c02255
+1-propoxy-2-propanol~|~propylene glycol n-propyl ether,a,1-propoxy-2-propanol~|~propylene glycol n-propyl ether,b,0.01399,1321.38124,10.1021/acs.iecr.3c02255
+isovaleric acid~|~3-methylbutanoic acid,a,isovaleric acid~|~3-methylbutanoic acid,b,0.03478,2218.45336,10.1021/acs.iecr.3c02255
+"1,5-pentanediol",a,"1,5-pentanediol",b,0.01576,3816.80105,10.1021/acs.iecr.3c02255
+1-hexadecanol,a,1-hexadecanol,b,0.00116,3285.90929,10.1021/acs.iecr.3c02255
+octadecanol~|~1-octadecanol,a,octadecanol~|~1-octadecanol,b,0.00165,3153.70404,10.1021/acs.iecr.3c02255
+"1,3-propanediol~|~propan-1,3-diol~|~1 3-propylene glycol~|~1,3-propylene glycol",a,"1,3-propanediol~|~propan-1,3-diol~|~1 3-propylene glycol~|~1,3-propylene glycol",b,0.0043,2591.96455,10.1021/acs.iecr.3c02255
+"1,6-hexanediol",a,"1,6-hexanediol",b,0.00608,2549.80916,10.1021/acs.iecr.3c02255
+"dichloroacetic acid~|~2,2-dichloroacetic acid",a,"dichloroacetic acid~|~2,2-dichloroacetic acid",b,0.00829,4876.97257,10.1021/acs.iecr.3c02255
+2-ethylhexanoic acid~|~2-ethyl-hexanoic acid,a,2-ethylhexanoic acid~|~2-ethyl-hexanoic acid,b,0.00982,3471.59121,10.1021/acs.iecr.3c02255
+heptanoic acid~|~n-heptanoic acid,a,heptanoic acid~|~n-heptanoic acid,b,0.0001,3860.065,10.1021/acs.iecr.3c02255
+"pyrocatechol~|~1,2-benzenediol~|~1,2-dihydroxybenzene",a,"pyrocatechol~|~1,2-benzenediol~|~1,2-dihydroxybenzene",b,0.002,1472.68371,10.1021/acs.iecr.3c02255
+"2-mercaptoethanol~|~ethanol, 2-mercapto-",a,"2-mercaptoethanol~|~ethanol, 2-mercapto-",b,0.0001,2430.15659,10.1021/acs.iecr.3c02255
+trichloroacetic acid~|~trichlorethanoic acid,a,trichloroacetic acid~|~trichlorethanoic acid,b,0.03241,1591.58225,10.1021/acs.iecr.3c02255
+2-nitrophenol~|~o-nitrophenol,a,2-nitrophenol~|~o-nitrophenol,b,0.9,211.12794,10.1021/acs.iecr.3c02255
+nonanoic acid~|~n-nonanoic acid,a,nonanoic acid~|~n-nonanoic acid,b,0.0001,4330.29863,10.1021/acs.iecr.3c02255
+m-toluidine~|~3-methylaniline~|~m-methylaniline,a,m-toluidine~|~3-methylaniline~|~m-methylaniline,b,0.00015,2883.45347,10.1021/acs.iecr.3c02255
+salicylaldehyde~|~salicylicaldehyde~|~2-hydroxybenzaldehyde,a,salicylaldehyde~|~salicylicaldehyde~|~2-hydroxybenzaldehyde,b,0.9,346.23775,10.1021/acs.iecr.3c02255
+guaiacol~|~2-methoxyphenol,a,guaiacol~|~2-methoxyphenol,b,0.9,229.79318,10.1021/acs.iecr.3c02255
+2-chlorophenol~|~o-chlorophenol,a,2-chlorophenol~|~o-chlorophenol,b,0.0001,1924.66697,10.1021/acs.iecr.3c02255
+3-chlorophenol~|~m-chlorophenol,a,3-chlorophenol~|~m-chlorophenol,b,0.0001,2595.28048,10.1021/acs.iecr.3c02255
+4-chlorophenol~|~p-chlorophenol,a,4-chlorophenol~|~p-chlorophenol,b,0.00131,1954.29949,10.1021/acs.iecr.3c02255
+"resorcinol~|~1,3-benzenediol~|~1,3-dihydroxybenzene",a,"resorcinol~|~1,3-benzenediol~|~1,3-dihydroxybenzene",b,0.02401,2003.18796,10.1021/acs.iecr.3c02255
+1-tetradecanol,a,1-tetradecanol,b,0.00328,2742.58776,10.1021/acs.iecr.3c02255
+2-methylpiperidine,a,2-methylpiperidine,b,0.05202,956.24133,10.1021/acs.iecr.3c02255
+2-chloroaniline~|~o-chloroaniline~|~2-chlorobenzeneamine,a,2-chloroaniline~|~o-chloroaniline~|~2-chlorobenzeneamine,b,0.9,200.0,10.1021/acs.iecr.3c02255
+m-chloroaniline~|~3-chlorobenzenamine~|~3-chlorobenzeneamine,a,m-chloroaniline~|~3-chlorobenzenamine~|~3-chlorobenzeneamine,b,0.40413,2019.85235,10.1021/acs.iecr.3c02255
+4-chloroaniline~|~p-chloroaniline~|~4-chlorobenzenamine,a,4-chloroaniline~|~p-chloroaniline~|~4-chlorobenzenamine,b,0.10401,2380.88581,10.1021/acs.iecr.3c02255
+2-nitroaniline~|~o-nitroaniline~|~2-nitrobenzeneamine,a,2-nitroaniline~|~o-nitroaniline~|~2-nitrobenzeneamine,b,0.00412,4098.0265,10.1021/acs.iecr.3c02255
+m-nitroaniline~|~3-nitrobenzenamine~|~3-aminonitrobenzene,a,m-nitroaniline~|~3-nitrobenzenamine~|~3-aminonitrobenzene,b,0.03854,3313.70612,10.1021/acs.iecr.3c02255
+p-nitroaniline~|~4-aminonitrobenzene,a,p-nitroaniline~|~4-aminonitrobenzene,b,0.42541,4530.69897,10.1021/acs.iecr.3c02255
+"dea~|~diethanolamine~|~2,2'-diethanolamine",a,"dea~|~diethanolamine~|~2,2'-diethanolamine",b,0.47928,1948.16098,10.1021/acs.iecr.3c02255
+ethanethiol~|~ethyl mercaptan,a,ethanethiol~|~ethyl mercaptan,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+2-butanamine~|~sec-butylamine,a,2-butanamine~|~sec-butylamine,b,0.00022,1896.39111,10.1021/acs.iecr.3c02255
+2-(2-dimethylaminoethoxu)ethanol~|~2-(2-dimethylaminoethoxy) ethanol,a,2-(2-dimethylaminoethoxu)ethanol~|~2-(2-dimethylaminoethoxy) ethanol,b,0.01691,2065.41029,10.1021/acs.iecr.3c02255
+3-octanol,a,3-octanol,b,0.00275,2484.90408,10.1021/acs.iecr.3c02255
+2-octanol,a,2-octanol,b,0.00198,2823.06834,10.1021/acs.iecr.3c02255
+"2,4-dimethylaniline~|~1-amino-2,4-dimethylbenzene",a,"2,4-dimethylaniline~|~1-amino-2,4-dimethylbenzene",b,0.9,1710.41134,10.1021/acs.iecr.3c02255
+aziridine~|~ethylenimine~|~ethyleneimine~|~azacyclopropane,a,aziridine~|~ethylenimine~|~ethyleneimine~|~azacyclopropane,b,0.11094,1038.16463,10.1021/acs.iecr.3c02255
+methylcyclohexanamine~|~n-methylcyclohexanamine~|~n-methylcyclohexylamine,a,methylcyclohexanamine~|~n-methylcyclohexanamine~|~n-methylcyclohexylamine,b,0.03507,1477.42568,10.1021/acs.iecr.3c02255
+2-methyl-1-pentanol,a,2-methyl-1-pentanol,b,0.03599,1942.15829,10.1021/acs.iecr.3c02255
+triethanolamine,a,triethanolamine,b,0.27436,1719.88938,10.1021/acs.iecr.3c02255
+hydracrylonitrile~|~ethylenecyanohydrin~|~3-hydroxypropanenitrile,a,hydracrylonitrile~|~ethylenecyanohydrin~|~3-hydroxypropanenitrile,b,0.00275,2642.77281,10.1021/acs.iecr.3c02255
+o-anisidine,a,o-anisidine,b,0.0001,2988.56172,10.1021/acs.iecr.3c02255
+p-phenetidine~|~4-ethoxybenzeneamine,a,p-phenetidine~|~4-ethoxybenzeneamine,b,0.00285,2506.43577,10.1021/acs.iecr.3c02255
+eugenol,a,eugenol,b,0.01615,2327.01906,10.1021/acs.iecr.3c02255
+cl2~|~chlorine,a,cl2~|~chlorine,b,0.00029,968.73217,10.1021/acs.iecr.3c02255
+"2,2,2-trifluoroethanol",a,"2,2,2-trifluoroethanol",b,0.06634,1595.77038,10.1021/acs.iecr.3c02255
+n-methylpropanamide,a,n-methylpropanamide,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+n-ethylacetamide,a,n-ethylacetamide,b,0.00116,3078.16009,10.1021/acs.iecr.3c02255
+"1,3-butanediol",a,"1,3-butanediol",b,0.02784,1965.5371,10.1021/acs.iecr.3c02255
+1-octanamine~|~n-octylamine,a,1-octanamine~|~n-octylamine,b,0.00559,1712.01041,10.1021/acs.iecr.3c02255
+1-decanamine~|~n-decylamine,a,1-decanamine~|~n-decylamine,b,0.01438,1828.8274,10.1021/acs.iecr.3c02255
+1-tridecanol~|~n-tridecanol,a,1-tridecanol~|~n-tridecanol,b,0.00192,2999.62581,10.1021/acs.iecr.3c02255
+2-pyrrolidon~|~2-pyrrolidone~|~2-pyrrolidinone,a,2-pyrrolidon~|~2-pyrrolidone~|~2-pyrrolidinone,b,0.9,1037.8027,10.1021/acs.iecr.3c02255
+p-toluidine~|~4-methylaniline~|~p-methylaniline,a,p-toluidine~|~4-methylaniline~|~p-methylaniline,b,0.0001,2913.62634,10.1021/acs.iecr.3c02255
+"2,3-dichloro-1-propanol",a,"2,3-dichloro-1-propanol",b,0.00207,2724.29424,10.1021/acs.iecr.3c02255
+dicyclohexylamine~|~cyclohexylcyclohexaneamine~|~n-cyclohexylcyclohexanamine~|~n-cyclohexylcyclohexaneamine,a,dicyclohexylamine~|~cyclohexylcyclohexaneamine~|~n-cyclohexylcyclohexanamine~|~n-cyclohexylcyclohexaneamine,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+"2,5-xylenol~|~2,5-dimethylphenol",a,"2,5-xylenol~|~2,5-dimethylphenol",b,0.05809,3815.9284,10.1021/acs.iecr.3c02255
+"3,4-xylenol~|~3,4-dimethylphenol",a,"3,4-xylenol~|~3,4-dimethylphenol",b,0.01661,3308.57958,10.1021/acs.iecr.3c02255
+o-tert-butylphenol~|~2-tert-butylphenol~|~2-tert-butyl-1-hydroxybenzene,a,o-tert-butylphenol~|~2-tert-butylphenol~|~2-tert-butyl-1-hydroxybenzene,b,0.00452,1424.40389,10.1021/acs.iecr.3c02255
+acetol~|~1-hydroxy-2-propanone,a,acetol~|~1-hydroxy-2-propanone,b,0.00653,4215.04913,10.1021/acs.iecr.3c02255
+pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane,a,pentylamine~|~n-pentylamine~|~1-pentanamine~|~1-aminopentane,b,0.15168,1005.52848,10.1021/acs.iecr.3c02255
+perdeuteroacetic acid,a,perdeuteroacetic acid,b,0.9,1365.80862,10.1021/acs.iecr.3c02255
+ethylaniline~|~n-ethylaniline~|~n-ethylaminobenzene,a,ethylaniline~|~n-ethylaniline~|~n-ethylaminobenzene,b,0.0001,2703.6272,10.1021/acs.iecr.3c02255
+benzylamine~|~alpha-aminotoluene,a,benzylamine~|~alpha-aminotoluene,b,0.00625,2088.27465,10.1021/acs.iecr.3c02255
+2-phenylethylamine~|~1-amino-2-phenyl-ethane,a,2-phenylethylamine~|~1-amino-2-phenyl-ethane,b,0.9,334.27483,10.1021/acs.iecr.3c02255
+"tetraethylene glycol~|~3,6,9-trioxa-1,11-undecanediol~|~2,2'-oxybis(2,1-ethanediyloxy)bisethanol",a,"tetraethylene glycol~|~3,6,9-trioxa-1,11-undecanediol~|~2,2'-oxybis(2,1-ethanediyloxy)bisethanol",b,0.13605,3339.48959,10.1021/acs.iecr.3c02255
+"pivalic acid~|~2,2-dimethylpropanoic acid~|~2,2-dimethyl-propanoic acid",a,"pivalic acid~|~2,2-dimethylpropanoic acid~|~2,2-dimethyl-propanoic acid",b,0.0001,3165.41239,10.1021/acs.iecr.3c02255
+3-amino-1-propanol,a,3-amino-1-propanol,b,0.03196,3323.78041,10.1021/acs.iecr.3c02255
+2-ethyl-1-butanol,a,2-ethyl-1-butanol,b,0.00014,3442.68364,10.1021/acs.iecr.3c02255
+1-phenyl-2-propanol~|~a-methylbenzeneethanol,a,1-phenyl-2-propanol~|~a-methylbenzeneethanol,b,0.0001,2957.40741,10.1021/acs.iecr.3c02255
+benzenepropanol~|~3-phenyl-1-propanol,a,benzenepropanol~|~3-phenyl-1-propanol,b,0.0001,3704.69064,10.1021/acs.iecr.3c02255
+1-chloro-2-propanol,a,1-chloro-2-propanol,b,0.0011,2333.1914,10.1021/acs.iecr.3c02255
+methylethanolamine~|~n-methylethanolamine~|~2-(methylamino)ethanol~|~2-(methylamino)-ethanol,a,methylethanolamine~|~n-methylethanolamine~|~2-(methylamino)ethanol~|~2-(methylamino)-ethanol,b,0.09324,1204.45109,10.1021/acs.iecr.3c02255
+undecanoic acid~|~n-undecanoic acid,a,undecanoic acid~|~n-undecanoic acid,b,0.01926,2931.36764,10.1021/acs.iecr.3c02255
+dodecylamine~|~1-dodecanamine~|~n-dodecylamine,a,dodecylamine~|~1-dodecanamine~|~n-dodecylamine,b,0.55636,2347.72321,10.1021/acs.iecr.3c02255
+methylhydrazine,a,methylhydrazine,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+2-ethylphenol~|~o-ethylphenol,a,2-ethylphenol~|~o-ethylphenol,b,0.0001,3377.96343,10.1021/acs.iecr.3c02255
+benzenethiol~|~phenyl mercaptan,a,benzenethiol~|~phenyl mercaptan,b,0.02456,1214.9047,10.1021/acs.iecr.3c02255
+cyclohexanethiol~|~cyclohexyl mercaptan,a,cyclohexanethiol~|~cyclohexyl mercaptan,b,0.00225,1108.49129,10.1021/acs.iecr.3c02255
+o-ethylaniline~|~2-ethylaniline~|~2-ethylbenzeneamine,a,o-ethylaniline~|~2-ethylaniline~|~2-ethylbenzeneamine,b,0.9,1128.19806,10.1021/acs.iecr.3c02255
+m-ethylphenol~|~3-ethylphenol,a,m-ethylphenol~|~3-ethylphenol,b,0.03197,1678.33653,10.1021/acs.iecr.3c02255
+2-phenylethanol,a,2-phenylethanol,b,0.00852,2561.71885,10.1021/acs.iecr.3c02255
+"3-chloro-1,2-propanediol",a,"3-chloro-1,2-propanediol",b,0.0807,2819.56437,10.1021/acs.iecr.3c02255
+"1,3-dichloro-2-propanol",a,"1,3-dichloro-2-propanol",b,0.00274,2458.75846,10.1021/acs.iecr.3c02255
+"triethylenetetramine~|~n,n'-bis(2-aminoethyl)-1,2-ethanediamine~|~1,2-ethanediamine, n,n'-bis(2-aminoethyl)-",a,"triethylenetetramine~|~n,n'-bis(2-aminoethyl)-1,2-ethanediamine~|~1,2-ethanediamine, n,n'-bis(2-aminoethyl)-",b,0.00441,1443.05933,10.1021/acs.iecr.3c02255
+dga~|~diglycolamine~|~2-aminoethoxyethanol~|~2-(2-aminoethoxy)ethanol,a,dga~|~diglycolamine~|~2-aminoethoxyethanol~|~2-(2-aminoethoxy)ethanol,b,0.03137,1052.47173,10.1021/acs.iecr.3c02255
+"1,3-propanediamine~|~1,3-diaminopropane",a,"1,3-propanediamine~|~1,3-diaminopropane",b,0.01469,1317.29182,10.1021/acs.iecr.3c02255
+dibenzylamine,a,dibenzylamine,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+3-heptanol,a,3-heptanol,b,0.00366,2424.04864,10.1021/acs.iecr.3c02255
+2-heptanol,a,2-heptanol,b,0.00231,2938.00111,10.1021/acs.iecr.3c02255
+butanethiol~|~1-butanethiol~|~butyl mercaptan~|~n-butyl mercaptan,a,butanethiol~|~1-butanethiol~|~butyl mercaptan~|~n-butyl mercaptan,b,0.01109,659.55224,10.1021/acs.iecr.3c02255
+isobutyl mercaptan~|~iso-butylmercaptan~|~2-methyl-1-propanethiol,a,isobutyl mercaptan~|~iso-butylmercaptan~|~2-methyl-1-propanethiol,b,0.00164,1061.79222,10.1021/acs.iecr.3c02255
+2-butanethiol~|~sec-butyl mercaptan,a,2-butanethiol~|~sec-butyl mercaptan,b,0.0001,1502.574,10.1021/acs.iecr.3c02255
+"2,2,3,3,3-pentafluoropropanol",a,"2,2,3,3,3-pentafluoropropanol",b,0.00052,2938.58172,10.1021/acs.iecr.3c02255
+1-hexanethiol~|~hexyl mercaptan~|~n-hexyl mercaptan,a,1-hexanethiol~|~hexyl mercaptan~|~n-hexyl mercaptan,b,0.32757,694.52847,10.1021/acs.iecr.3c02255
+1-nonanethiol~|~nonyl mercaptan~|~n-nonyl mercaptan,a,1-nonanethiol~|~nonyl mercaptan~|~n-nonyl mercaptan,b,0.11315,2004.38786,10.1021/acs.iecr.3c02255
+1-octanethiol~|~octyl mercaptan~|~n-octyl mercaptan,a,1-octanethiol~|~octyl mercaptan~|~n-octyl mercaptan,b,0.00605,1405.88447,10.1021/acs.iecr.3c02255
+fluorine,a,fluorine,b,0.0001,304.45243,10.1021/acs.iecr.3c02255
+"2,2,3,3,4,4,5,5,5-nonafluoropentan-1-ol~|~2,2,3,3,4,4,5,5,5-nonafluoro-1-pentanol",a,"2,2,3,3,4,4,5,5,5-nonafluoropentan-1-ol~|~2,2,3,3,4,4,5,5,5-nonafluoro-1-pentanol",b,0.00441,2515.8383,10.1021/acs.iecr.3c02255
+heptylamine~|~1-heptanamine~|~n-heptylamine,a,heptylamine~|~1-heptanamine~|~n-heptylamine,b,0.02114,2365.06838,10.1021/acs.iecr.3c02255
+"linalool~|~3,7-dimethyl-1,6-octadien-3-ol",a,"linalool~|~3,7-dimethyl-1,6-octadien-3-ol",b,0.00615,1928.38283,10.1021/acs.iecr.3c02255
+"(e)-3,7-dimethyl-2,6-octadien-1-ol~|~trans-3,7-dimethyl-2,6-octadien-1-ol",a,"(e)-3,7-dimethyl-2,6-octadien-1-ol~|~trans-3,7-dimethyl-2,6-octadien-1-ol",b,0.00116,3326.92695,10.1021/acs.iecr.3c02255
+"1,1-dihydroperfluoroheptanol~|~2,2,3,3,4,4,5,5,6,6,7,7,7-tridecafluoro-1-heptanol",a,"1,1-dihydroperfluoroheptanol~|~2,2,3,3,4,4,5,5,6,6,7,7,7-tridecafluoro-1-heptanol",b,0.00415,2605.40567,10.1021/acs.iecr.3c02255
+"2-phenyl-2-propanol~|~aa-dimethyl-benzenemethanol~|~.alpha.,.alpha.-dimethylbenzyl alcohol",a,"2-phenyl-2-propanol~|~aa-dimethyl-benzenemethanol~|~.alpha.,.alpha.-dimethylbenzyl alcohol",b,0.00131,2991.18529,10.1021/acs.iecr.3c02255
+"dipa~|~diisopropanolamine~|~1,1'-iminobis-2-propanol~|~n-(2-hydroxypropyl)-2-hydroxy-1-propanamine",a,"dipa~|~diisopropanolamine~|~1,1'-iminobis-2-propanol~|~n-(2-hydroxypropyl)-2-hydroxy-1-propanamine",b,0.0001,3117.26339,10.1021/acs.iecr.3c02255
+"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",a,"mdea~|~methyl diethanolamine~|~n-methyldiethanolamine~|~2,2'-(methylimino)bis-ethanol",b,0.01103,2001.90542,10.1021/acs.iecr.3c02255
+2-amino-2-methyl-1-propanol~|~2-amino-2-methylpropan-1-ol,a,2-amino-2-methyl-1-propanol~|~2-amino-2-methylpropan-1-ol,b,0.02336,1782.26459,10.1021/acs.iecr.3c02255
+1-methoxy2-propanol~|~1-methoxy-2-propanol~|~propylene glycol monomethyl ether,a,1-methoxy2-propanol~|~1-methoxy-2-propanol~|~propylene glycol monomethyl ether,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+trimethylsilanol,a,trimethylsilanol,b,0.00126,2713.12926,10.1021/acs.iecr.3c02255
+hexamethyl disilazane,a,hexamethyl disilazane,b,0.0001,200.0052,10.1021/acs.iecr.3c02255
+tridecanoic acid~|~n-tridecanoic acid,a,tridecanoic acid~|~n-tridecanoic acid,b,0.00124,4246.25441,10.1021/acs.iecr.3c02255
+pyruvic acid~|~2-oxo-propionic acid,a,pyruvic acid~|~2-oxo-propionic acid,b,0.09101,3105.16621,10.1021/acs.iecr.3c02255
+2-methoxy1-propanol~|~2-methoxy propanol-1~|~2-methoxy-1-propanol,a,2-methoxy1-propanol~|~2-methoxy propanol-1~|~2-methoxy-1-propanol,b,0.00064,2213.11166,10.1021/acs.iecr.3c02255
+methyl lactate~|~methyl 2-hydroxypropanoate~|~2-hydroxy-propanoicacid-methylester,a,methyl lactate~|~methyl 2-hydroxypropanoate~|~2-hydroxy-propanoicacid-methylester,b,0.00191,1741.34134,10.1021/acs.iecr.3c02255
+ethyl lactate~|~dl-ethyl lactate~|~2-hydroxypropanoicacidethylester,a,ethyl lactate~|~dl-ethyl lactate~|~2-hydroxypropanoicacidethylester,b,0.00057,2232.62748,10.1021/acs.iecr.3c02255
+alpha-terpineol~|~p-menth-1-en-8-ol,a,alpha-terpineol~|~p-menth-1-en-8-ol,b,0.0001,3469.2903,10.1021/acs.iecr.3c02255
+propanamide~|~propionamide,a,propanamide~|~propionamide,b,0.00095,2913.43965,10.1021/acs.iecr.3c02255
+thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,a,thymol~|~3-methyl-6-isopropylphenol~|~1-methyl-3-hydroxy-5-isopropyl benzene,b,0.0001,3840.06338,10.1021/acs.iecr.3c02255
+3-methyl-1-butanethiol,a,3-methyl-1-butanethiol,b,0.03988,868.45706,10.1021/acs.iecr.3c02255
+2-propoxyethanol~|~ethylene glycol monopropyl ether,a,2-propoxyethanol~|~ethylene glycol monopropyl ether,b,0.03898,2045.07106,10.1021/acs.iecr.3c02255
+glycol monoacetate~|~2-hydroxyethyl acetate,a,glycol monoacetate~|~2-hydroxyethyl acetate,b,0.0001,1761.6974,10.1021/acs.iecr.3c02255
+acetone cyanohydrin~|~2-hydroxy-2-methylpropionitrile,a,acetone cyanohydrin~|~2-hydroxy-2-methylpropionitrile,b,0.0001,2503.36442,10.1021/acs.iecr.3c02255
+hydroxyacetonitrile,a,hydroxyacetonitrile,b,0.00288,4833.4376,10.1021/acs.iecr.3c02255
+"2,6-dimethylpiperidine",a,"2,6-dimethylpiperidine",b,0.05258,1235.41767,10.1021/acs.iecr.3c02255
+isoamyl lactate,a,isoamyl lactate,b,0.01101,1163.29163,10.1021/acs.iecr.3c02255
+allylamine~|~2-propen-1-amine~|~3-amino-1-propene,a,allylamine~|~2-propen-1-amine~|~3-amino-1-propene,b,0.0001,2274.27781,10.1021/acs.iecr.3c02255
+levulinic acid~|~4-oxopentanoic acid~|~4-oxo-pentanoic acid,a,levulinic acid~|~4-oxopentanoic acid~|~4-oxo-pentanoic acid,b,0.00044,5000.0,10.1021/acs.iecr.3c02255
+3-methyl-1-pentanol,a,3-methyl-1-pentanol,b,0.00113,2982.945,10.1021/acs.iecr.3c02255
+4-methyl-1-pentanol,a,4-methyl-1-pentanol,b,0.00036,3198.82263,10.1021/acs.iecr.3c02255
+"demea~|~(diethylamino)ethanol~|~n,n-diethylethanolamine~|~2-(diethylamino)-ethanol",a,"demea~|~(diethylamino)ethanol~|~n,n-diethylethanolamine~|~2-(diethylamino)-ethanol",b,0.00317,1954.28866,10.1021/acs.iecr.3c02255
+diisobutylamine~|~2-methyl-n-(2-methylpropyl)-1-propanamine,a,diisobutylamine~|~2-methyl-n-(2-methylpropyl)-1-propanamine,b,0.09955,2578.37722,10.1021/acs.iecr.3c02255
+"pentafluorophenol~|~2,3,4,5,6-pentafluorophenol",a,"pentafluorophenol~|~2,3,4,5,6-pentafluorophenol",b,0.0001,2445.77688,10.1021/acs.iecr.3c02255
+m-tolualcohol~|~m-methylbenzylalcohol~|~3-methylbenzyl alcohol,a,m-tolualcohol~|~m-methylbenzylalcohol~|~3-methylbenzyl alcohol,b,0.0001,3158.02548,10.1021/acs.iecr.3c02255
+cinnamic acid~|~trans-cinnamic acid,a,cinnamic acid~|~trans-cinnamic acid,b,0.01328,5000.0,10.1021/acs.iecr.3c02255
+"linolenic acid~|~9,12,15-octadecatrienoic acid",a,"linolenic acid~|~9,12,15-octadecatrienoic acid",b,0.00206,3789.84501,10.1021/acs.iecr.3c02255
+linoleic acid,a,linoleic acid,b,0.00109,4063.6129,10.1021/acs.iecr.3c02255
+arachidic acid~|~eicosanoic acid,a,arachidic acid~|~eicosanoic acid,b,0.00463,3405.5317,10.1021/acs.iecr.3c02255
+methyl 2-hydroxy-2-methylpropanoate~|~alpha-hydroxy-isobutyric acid methyl ester,a,methyl 2-hydroxy-2-methylpropanoate~|~alpha-hydroxy-isobutyric acid methyl ester,b,0.02819,2156.91415,10.1021/acs.iecr.3c02255
+"2,6-dimethyl-4-heptanol",a,"2,6-dimethyl-4-heptanol",b,0.00178,3475.76808,10.1021/acs.iecr.3c02255
+2-sec-butylphenol~|~2-(1-methylpropyl)phenol,a,2-sec-butylphenol~|~2-(1-methylpropyl)phenol,b,0.00026,2646.39987,10.1021/acs.iecr.3c02255
+"diethylenetriamine~|~di(2-aminoethyl)amine~|~(2-aminoethyl)-1,2-ethanediamine~|~n-(2-aminoethyl)-1,2-ethanediamine",a,"diethylenetriamine~|~di(2-aminoethyl)amine~|~(2-aminoethyl)-1,2-ethanediamine~|~n-(2-aminoethyl)-1,2-ethanediamine",b,0.02545,767.85184,10.1021/acs.iecr.3c02255
+3-chloro-1-propanol,a,3-chloro-1-propanol,b,0.0001,3248.51627,10.1021/acs.iecr.3c02255
+tert-butyl mercaptan~|~2-methyl-2-propanethiol,a,tert-butyl mercaptan~|~2-methyl-2-propanethiol,b,0.00653,873.43796,10.1021/acs.iecr.3c02255
+4-methoxyphenol~|~p-methoxyphenol,a,4-methoxyphenol~|~p-methoxyphenol,b,0.00212,3046.93194,10.1021/acs.iecr.3c02255
+2-(2-hexoxyethoxy)ethanol~|~2-2-(hexyloxy)ethoxyethanol~|~2-(2-hexyloxyethoxy)ethanol~|~diethylene glycol n-hexyl ether,a,2-(2-hexoxyethoxy)ethanol~|~2-2-(hexyloxy)ethoxyethanol~|~2-(2-hexyloxyethoxy)ethanol~|~diethylene glycol n-hexyl ether,b,0.00288,5000.0,10.1021/acs.iecr.3c02255
+pentadecanoic acid~|~n-pentadecanoic acid,a,pentadecanoic acid~|~n-pentadecanoic acid,b,0.00635,3328.43576,10.1021/acs.iecr.3c02255
+margarinic acid~|~heptadecanoic acid~|~n-heptadecanoic acid,a,margarinic acid~|~heptadecanoic acid~|~n-heptadecanoic acid,b,0.00669,3372.71486,10.1021/acs.iecr.3c02255
+isopropanolamine~|~1-amino-2-propanol,a,isopropanolamine~|~1-amino-2-propanol,b,0.00551,2032.33118,10.1021/acs.iecr.3c02255
+tripropylene glycol~|~2-[2-(2-hydroxypropoxy)propoxy]-1-propanol,a,tripropylene glycol~|~2-[2-(2-hydroxypropoxy)propoxy]-1-propanol,b,0.32271,1827.19417,10.1021/acs.iecr.3c02255
+"2,6-di-tert-butyl-p-cresol~|~2,6-di-tert.butyl-4-methylphenol~|~2,6-bis(1,1-dimethylethyl)-4-methylphenol",a,"2,6-di-tert-butyl-p-cresol~|~2,6-di-tert.butyl-4-methylphenol~|~2,6-bis(1,1-dimethylethyl)-4-methylphenol",b,0.00864,2360.55561,10.1021/acs.iecr.3c02255
+2-tert-butyl-4-methylphenol,a,2-tert-butyl-4-methylphenol,b,0.05893,3149.81981,10.1021/acs.iecr.3c02255
+fluorosulfonic acid,a,fluorosulfonic acid,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+n-butyl lactate~|~butyl 2-hydroxypropanoate,a,n-butyl lactate~|~butyl 2-hydroxypropanoate,b,0.00154,1506.24418,10.1021/acs.iecr.3c02255
+imidazole~|~1h-imidazole,a,imidazole~|~1h-imidazole,b,0.9,2864.98261,10.1021/acs.iecr.3c02255
+cyclooctanol,a,cyclooctanol,b,0.0001,3998.12506,10.1021/acs.iecr.3c02255
+"1,2-ethanedithiol",a,"1,2-ethanedithiol",b,0.0014,1553.71284,10.1021/acs.iecr.3c02255
+dihexylamine,a,dihexylamine,b,0.10559,2340.8518,10.1021/acs.iecr.3c02255
+"1-tert-butoxy-2-propanol~|~1-(1,1-dimethylethoxy)-2-propanol~|~propylene glycol 1-tert-butyl ether",a,"1-tert-butoxy-2-propanol~|~1-(1,1-dimethylethoxy)-2-propanol~|~propylene glycol 1-tert-butyl ether",b,0.00277,1753.34913,10.1021/acs.iecr.3c02255
+"1-butoxy-2-propanol~|~propylene glycol n-butyl ether~|~1,2-propylene glycol 1-monobutylether",a,"1-butoxy-2-propanol~|~propylene glycol n-butyl ether~|~1,2-propylene glycol 1-monobutylether",b,0.00044,2775.91852,10.1021/acs.iecr.3c02255
+"3,7-dimethyl-6-octen-1-yn-3-ol",a,"3,7-dimethyl-6-octen-1-yn-3-ol",b,0.00134,2384.37607,10.1021/acs.iecr.3c02255
+"1,2-pentanediol",a,"1,2-pentanediol",b,0.0032,2318.50611,10.1021/acs.iecr.3c02255
+tetradecylamine~|~1-tetradecanamine~|~n-tetradecylamine,a,tetradecylamine~|~1-tetradecanamine~|~n-tetradecylamine,b,0.0001,3188.34288,10.1021/acs.iecr.3c02255
+dioctylamine~|~di-n-octylamine~|~octyl-1-octanamine~|~n-octyl-1-octanamine,a,dioctylamine~|~di-n-octylamine~|~octyl-1-octanamine~|~n-octyl-1-octanamine,b,0.2617,2062.82318,10.1021/acs.iecr.3c02255
+2-methyl-3-heptanol~|~2-methyl-heptanol-3,a,2-methyl-3-heptanol~|~2-methyl-heptanol-3,b,0.0001,3920.01087,10.1021/acs.iecr.3c02255
+diamylamine~|~dipentylamine~|~pentyl-1-pentanamine~|~n-pentyl-1-pentanamine,a,diamylamine~|~dipentylamine~|~pentyl-1-pentanamine~|~n-pentyl-1-pentanamine,b,0.05686,4342.09561,10.1021/acs.iecr.3c02255
+2-methyl-2-butanethiol~|~2-methyl-2-butyl mercaptan,a,2-methyl-2-butanethiol~|~2-methyl-2-butyl mercaptan,b,0.01772,967.97722,10.1021/acs.iecr.3c02255
+"1,2-butanediol",a,"1,2-butanediol",b,0.04893,1568.382,10.1021/acs.iecr.3c02255
+"1,2-hexanediol",a,"1,2-hexanediol",b,0.0186,2347.36976,10.1021/acs.iecr.3c02255
+"n-hydroxydiethylamine~|~n,n-diethylhydroxylamine",a,"n-hydroxydiethylamine~|~n,n-diethylhydroxylamine",b,0.00597,1812.50102,10.1021/acs.iecr.3c02255
+nonadecanoic acid,a,nonadecanoic acid,b,0.00749,3264.01125,10.1021/acs.iecr.3c02255
+2-nonanol,a,2-nonanol,b,0.00297,2649.9291,10.1021/acs.iecr.3c02255
+cyclopentanamine~|~cyclopentylamine,a,cyclopentanamine~|~cyclopentylamine,b,0.02788,1661.37696,10.1021/acs.iecr.3c02255
+1-methylcyclopentanol,a,1-methylcyclopentanol,b,0.0001,3251.41079,10.1021/acs.iecr.3c02255
+1-methylcyclohexanol,a,1-methylcyclohexanol,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+ammonia-d3,a,ammonia-d3,b,0.9,1233.55723,10.1021/acs.iecr.3c02255
+8-quinolinol~|~8-hydroxyquinoline,a,8-quinolinol~|~8-hydroxyquinoline,b,0.00015,3015.34258,10.1021/acs.iecr.3c02255
+"3-dimethylaminopropylamine~|~3-n,n-dimethylaminopropylamine~|~n,n-dimethyl-1,3-propanediamine",a,"3-dimethylaminopropylamine~|~3-n,n-dimethylaminopropylamine~|~n,n-dimethyl-1,3-propanediamine",b,0.00722,1662.47489,10.1021/acs.iecr.3c02255
+n-aminoethyl ethanolamine~|~n-(2-aminoethyl)ethanolamine~|~2-(2-aminoethyl)aminoethanol,a,n-aminoethyl ethanolamine~|~n-(2-aminoethyl)ethanolamine~|~2-(2-aminoethyl)aminoethanol,b,0.00583,1962.86684,10.1021/acs.iecr.3c02255
+5-nonanol,a,5-nonanol,b,0.0001,3031.99443,10.1021/acs.iecr.3c02255
+2-hexyl mercaptan,a,2-hexyl mercaptan,b,0.01942,1147.58996,10.1021/acs.iecr.3c02255
+1-heptanethiol~|~heptyl mercaptan~|~n-heptyl mercaptan,a,1-heptanethiol~|~heptyl mercaptan~|~n-heptyl mercaptan,b,0.07962,1609.12075,10.1021/acs.iecr.3c02255
+1-pentanethiol~|~pentyl mercaptan~|~n-pentyl mercaptan,a,1-pentanethiol~|~pentyl mercaptan~|~n-pentyl mercaptan,b,0.02376,845.14226,10.1021/acs.iecr.3c02255
+n-methylpiperazine~|~1-methylpiperazine,a,n-methylpiperazine~|~1-methylpiperazine,b,0.00641,1651.20884,10.1021/acs.iecr.3c02255
+2-methyl-1-heptanol,a,2-methyl-1-heptanol,b,0.0001,3402.33868,10.1021/acs.iecr.3c02255
+6-methyl-3-heptanol,a,6-methyl-3-heptanol,b,0.0001,2713.91691,10.1021/acs.iecr.3c02255
+"2,4,6-trichlorophenol",a,"2,4,6-trichlorophenol",b,0.9,2887.21693,10.1021/acs.iecr.3c02255
+2'-hydroxyacetophenone~|~1-(2-hydroxyphenyl)ethanone,a,2'-hydroxyacetophenone~|~1-(2-hydroxyphenyl)ethanone,b,0.0322,1154.32373,10.1021/acs.iecr.3c02255
+benzyl mercaptan~|~benzenemethanethiol~|~(mercaptomethyl)benzene,a,benzyl mercaptan~|~benzenemethanethiol~|~(mercaptomethyl)benzene,b,0.65233,2046.30878,10.1021/acs.iecr.3c02255
+2-(hydroxymethyl)-thiophene,a,2-(hydroxymethyl)-thiophene,b,0.0001,2842.48293,10.1021/acs.iecr.3c02255
+cyclopropanecarboxylic acid,a,cyclopropanecarboxylic acid,b,0.00172,2132.13444,10.1021/acs.iecr.3c02255
+acetaldoxime,a,acetaldoxime,b,0.20148,1338.21076,10.1021/acs.iecr.3c02255
+bis(3-aminopropyl)amine,a,bis(3-aminopropyl)amine,b,0.05812,2392.33892,10.1021/acs.iecr.3c02255
+cyclopropanamine~|~cyclopropylamine,a,cyclopropanamine~|~cyclopropylamine,b,0.9,2038.01323,10.1021/acs.iecr.3c02255
+"n-methylpropane-1,3-diamine~|~1,3-propanediamine, n-methyl-",a,"n-methylpropane-1,3-diamine~|~1,3-propanediamine, n-methyl-",b,0.00066,1907.1663,10.1021/acs.iecr.3c02255
+1-decanethiol~|~decyl mercaptan~|~n-decyl mercaptan,a,1-decanethiol~|~decyl mercaptan~|~n-decyl mercaptan,b,0.0067,1959.97515,10.1021/acs.iecr.3c02255
+fluoroacetic acid,a,fluoroacetic acid,b,0.01093,4854.6917,10.1021/acs.iecr.3c02255
+p-cumylphenol~|~4-(1-methyl-1-phenylethyl)phenol~|~4-(1-methyl-1-phenylethyl)-phenol,a,p-cumylphenol~|~4-(1-methyl-1-phenylethyl)phenol~|~4-(1-methyl-1-phenylethyl)-phenol,b,0.02678,3004.10076,10.1021/acs.iecr.3c02255
+chlorosulfuric acid,a,chlorosulfuric acid,b,0.00218,4452.94999,10.1021/acs.iecr.3c02255
+trans-crotonic-acid~|~trans-crotonic acid~|~trans-2-butenoic acid,a,trans-crotonic-acid~|~trans-crotonic acid~|~trans-2-butenoic acid,b,0.0001,3225.73362,10.1021/acs.iecr.3c02255
+cyclobutanecarboxylic acid,a,cyclobutanecarboxylic acid,b,0.0001,3742.27779,10.1021/acs.iecr.3c02255
+1-phenyl-1-propanol~|~a-ethylbenzylalcohol,a,1-phenyl-1-propanol~|~a-ethylbenzylalcohol,b,0.01842,2229.55281,10.1021/acs.iecr.3c02255
+borazine,a,borazine,b,0.00365,686.97525,10.1021/acs.iecr.3c02255
+cyclohexylmethanol,a,cyclohexylmethanol,b,0.0019,3230.87905,10.1021/acs.iecr.3c02255
+"perfluorobutanoic acid~|~heptafluorobutanoic acid~|~butanoic acid, heptafluoro-",a,"perfluorobutanoic acid~|~heptafluorobutanoic acid~|~butanoic acid, heptafluoro-",b,0.9,1646.6201,10.1021/acs.iecr.3c02255
+perfluoroheptanoic acid~|~tridecafluoroheptanoic acid,a,perfluoroheptanoic acid~|~tridecafluoroheptanoic acid,b,0.00484,3376.16162,10.1021/acs.iecr.3c02255
+"1,5-pentanediamine~|~1,5-diaminopentane",a,"1,5-pentanediamine~|~1,5-diaminopentane",b,0.13041,2493.83639,10.1021/acs.iecr.3c02255
+lactonitrile~|~2-hydroxy propionitrile,a,lactonitrile~|~2-hydroxy propionitrile,b,0.00126,4999.99998,10.1021/acs.iecr.3c02255
+1-piperazineethanamine~|~n-(2-aminoethyl)piperazine~|~n-(.beta.-aminoethyl)piperazine),a,1-piperazineethanamine~|~n-(2-aminoethyl)piperazine~|~n-(.beta.-aminoethyl)piperazine),b,0.00157,1767.6496,10.1021/acs.iecr.3c02255
+"1h,1h,11h-eicosafluoro-1-undecanol~|~1,1,11-trihydroperfluoro-1-undecanol",a,"1h,1h,11h-eicosafluoro-1-undecanol~|~1,1,11-trihydroperfluoro-1-undecanol",b,0.0001,3847.71083,10.1021/acs.iecr.3c02255
+acetic acid 3-acetoxy-2-hydroxypropyl ester,a,acetic acid 3-acetoxy-2-hydroxypropyl ester,b,0.00042,5000.0,10.1021/acs.iecr.3c02255
+"2,4-pentanediol~|~(+-)-2,4-pentanediol",a,"2,4-pentanediol~|~(+-)-2,4-pentanediol",b,0.00357,2504.70328,10.1021/acs.iecr.3c02255
+2-(ethylamino)ethanol~|~mono-ethyl-ethanolamine,a,2-(ethylamino)ethanol~|~mono-ethyl-ethanolamine,b,0.0064,1805.53448,10.1021/acs.iecr.3c02255
+cis-3-methylcyclohexanol,a,cis-3-methylcyclohexanol,b,0.02251,3482.05012,10.1021/acs.iecr.3c02255
+trans-3-methylcyclohexanol,a,trans-3-methylcyclohexanol,b,0.0001,3697.22317,10.1021/acs.iecr.3c02255
+cis-4-methylcyclohexanol,a,cis-4-methylcyclohexanol,b,0.0001,3553.29359,10.1021/acs.iecr.3c02255
+"n,n'-bis(2-hydroxyethyl)ethylenediamine",a,"n,n'-bis(2-hydroxyethyl)ethylenediamine",b,0.01974,1422.0951,10.1021/acs.iecr.3c02255
+"1,2,4-benzenetricarboxylic anhydride",a,"1,2,4-benzenetricarboxylic anhydride",b,0.00328,5000.0,10.1021/acs.iecr.3c02255
+"l-menthol~|~dl-menthol~|~(1r,2s,5r)-(-)-2-isopropyl-5-methyl-cyclohexanol",a,"l-menthol~|~dl-menthol~|~(1r,2s,5r)-(-)-2-isopropyl-5-methyl-cyclohexanol",b,0.00178,2640.49485,10.1021/acs.iecr.3c02255
+"2-methyl-1,3-propanediol",a,"2-methyl-1,3-propanediol",b,0.00428,2597.23233,10.1021/acs.iecr.3c02255
+"2,2,4-trimethyl-1,3-pentanediol",a,"2,2,4-trimethyl-1,3-pentanediol",b,0.00042,2879.82766,10.1021/acs.iecr.3c02255
+"cis-2-butene-1,4-diol",a,"cis-2-butene-1,4-diol",b,0.4871,3298.97865,10.1021/acs.iecr.3c02255
+1-dodecanethiol~|~n-dodecyl mercaptan,a,1-dodecanethiol~|~n-dodecyl mercaptan,b,0.00031,3221.30897,10.1021/acs.iecr.3c02255
+"1,4-cyclohexanedimethanol~|~1,4-cyclohexanedimethanol, cis/trans mixture",a,"1,4-cyclohexanedimethanol~|~1,4-cyclohexanedimethanol, cis/trans mixture",b,0.01898,2133.57131,10.1021/acs.iecr.3c02255
+methanesulfonic acid,a,methanesulfonic acid,b,0.00359,2465.9137,10.1021/acs.iecr.3c02255
+1-piperazineethanol~|~n-(2-hydroxyethyl)piperazine,a,1-piperazineethanol~|~n-(2-hydroxyethyl)piperazine,b,0.00881,1532.90456,10.1021/acs.iecr.3c02255
+3-ethyloxy-propylamine,a,3-ethyloxy-propylamine,b,0.01182,3321.34888,10.1021/acs.iecr.3c02255
+4-(2-hydroxyethyl)morpholine~|~4-(2-hxdroxyethyl)morpholine,a,4-(2-hydroxyethyl)morpholine~|~4-(2-hxdroxyethyl)morpholine,b,0.0001,3059.49288,10.1021/acs.iecr.3c02255
+"neohexanoic acid~|~2,2-dimethylbutyric acid~|~2,2-dimethylbutanoic acid",a,"neohexanoic acid~|~2,2-dimethylbutyric acid~|~2,2-dimethylbutanoic acid",b,0.04893,1983.61924,10.1021/acs.iecr.3c02255
+"1,4-pentanediol",a,"1,4-pentanediol",b,0.0001,3564.96523,10.1021/acs.iecr.3c02255
+3-methyl-4-heptanol,a,3-methyl-4-heptanol,b,0.9,847.64403,10.1021/acs.iecr.3c02255
+"menthol~|~dl-(1r,2s,5r)-rel-5-methyl-2-(1-methylethyl)cyclohexanol",a,"menthol~|~dl-(1r,2s,5r)-rel-5-methyl-2-(1-methylethyl)cyclohexanol",b,0.0001,3100.2174,10.1021/acs.iecr.3c02255
+"2-butyl-2-ethyl-1,3-propanediol",a,"2-butyl-2-ethyl-1,3-propanediol",b,0.09207,2913.72696,10.1021/acs.iecr.3c02255
+"n,n-diethylpropane-1,3-diamine~|~n,n-diethyl-1,3-diaminopropane",a,"n,n-diethylpropane-1,3-diamine~|~n,n-diethyl-1,3-diaminopropane",b,0.00058,2179.57906,10.1021/acs.iecr.3c02255
+1-dimethylamino-2-propanol,a,1-dimethylamino-2-propanol,b,0.0001,2013.97126,10.1021/acs.iecr.3c02255
+3-methyl-1-heptanol,a,3-methyl-1-heptanol,b,0.9,863.90503,10.1021/acs.iecr.3c02255
+2-methylhexanoic acid,a,2-methylhexanoic acid,b,0.53373,4687.23659,10.1021/acs.iecr.3c02255
+"syringol~|~2,6-dimethoxyphenol",a,"syringol~|~2,6-dimethoxyphenol",b,0.00055,3481.43628,10.1021/acs.iecr.3c02255
+5-hydroxymethylfurfural~|~5-(hydroxymethyl) furfural~|~5-(hydroxymethyl)furan-2-carbaldehyde,a,5-hydroxymethylfurfural~|~5-(hydroxymethyl) furfural~|~5-(hydroxymethyl)furan-2-carbaldehyde,b,0.00013,5000.0,10.1021/acs.iecr.3c02255
+3-n-butoxypropylamine,a,3-n-butoxypropylamine,b,0.00408,1780.63533,10.1021/acs.iecr.3c02255
+"3,3,4,4,5,5,6,6,7,7,8,8,8-tridecafluoro-1-octanol",a,"3,3,4,4,5,5,6,6,7,7,8,8,8-tridecafluoro-1-octanol",b,0.00264,3089.3345,10.1021/acs.iecr.3c02255
+tetrapropylene glycol~|~2-[2-[2-(2-hydroxypropoxy)propoxy]propoxy]-1-propanol,a,tetrapropylene glycol~|~2-[2-[2-(2-hydroxypropoxy)propoxy]propoxy]-1-propanol,b,0.0001,3431.41122,10.1021/acs.iecr.3c02255
+"propyleneglycolmonoallylether~|~1,2-propylene glycol 1-allyl ether",a,"propyleneglycolmonoallylether~|~1,2-propylene glycol 1-allyl ether",b,0.00313,2114.14462,10.1021/acs.iecr.3c02255
+trans-isoeugenol,a,trans-isoeugenol,b,0.00803,2599.72402,10.1021/acs.iecr.3c02255
+nonylphenols,a,nonylphenols,b,0.0001,200.0,10.1021/acs.iecr.3c02255
+"4-oxa-1,7-heptanediol~|~1,3-dipropylene glycol",a,"4-oxa-1,7-heptanediol~|~1,3-dipropylene glycol",b,0.03104,2026.75029,10.1021/acs.iecr.3c02255
