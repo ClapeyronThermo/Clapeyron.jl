@@ -52,6 +52,11 @@ function GCMSABorn(solvents,ions; RSPmodel=ConstW, userlocations=String[], verbo
     mix_segment!(groups,shapefactor.values,segment.values)
 
     sigma = params["sigma"]
+
+    if typeof(sigma) <: PairParam
+        sigma = SingleParam("sigma",components,diagvalues(sigma.values)[:])
+    end
+    
     sigma.values .*= 1E-10
     gc_sigma = deepcopy(sigma)
     gc_sigma.values .^= 3
