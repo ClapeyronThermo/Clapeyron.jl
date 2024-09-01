@@ -184,4 +184,4 @@ function X(model::DAPTModel, V, T, z,Irc = @f(I))
     return Xsol
 end
 
-x0_volume_gas(model::DAPTModel,p,T,z=SA[1.0]) = Rgas(model)*T/p
+x0_volume_gas(model::DAPTModel,p,T,z) = Rgas(model)*T/p

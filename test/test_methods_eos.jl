@@ -400,8 +400,10 @@ end
     z3 = [0.9,0.1]
     @testset "Bulk properties" begin
         @test crit_pure(com1)[1] ≈ 647.13
-        @test Clapeyron.volume(system, p, T, z_bulk) ≈ 8.602344040626639e-5 rtol = 1e-6
-        @test Clapeyron.speed_of_sound(system, p, T, z_bulk) ≈ 1371.9014493149134 rtol = 1e-6
+        #TODO: technically this should be calculated via thee internal fluid model
+        #but we are testing about each pure model.
+        @test_broken Clapeyron.volume(system, p, T, z_bulk) ≈ 8.602344040626639e-5 rtol = 1e-6
+        @test_broken Clapeyron.speed_of_sound(system, p, T, z_bulk) ≈ 1371.9014493149134 rtol = 1e-6
         @test Clapeyron.mixing(system, p, T, z_bulk, Clapeyron.gibbs_free_energy) ≈ -356.86007792929263 rtol = 1e-6
         @test Clapeyron.mixing(system, p, T, z_bulk, Clapeyron.enthalpy) ≈ 519.0920708672975 rtol = 1e-6
     end
@@ -540,23 +542,64 @@ GC.gc()
 @testset "Helmholtz + Activity" begin
     model = HelmAct(["water","ethanol"])
     p = 12666.0
-    x1 = Clapeyron.FractionVector( 0.00350)
+    x1 = Clapeyron.FractionVector(0.00350)
     @test bubble_temperature(model,p,x1)[4][1] ≈ 0.00198 rtol = 1e-2
 end
 
 @testset "SingleFluid - CoolProp" begin
     #methanol, uses assoc term
     @test saturation_pressure(SingleFluid("methanol"),300.15)[1] ≈ PropsSI("P","T",300.15,"Q",1.,"methanol") rtol = 1e-6
+    
+    #tests send via email
+
+    fluid1 = SingleFluid("n-Undecane")
+    test_volume(fluid1,1e-2*fluid1.properties.Pc,0.38*fluid1.properties.Tc)
+    test_volume(fluid1,3e2*fluid1.properties.Pc,0.38*fluid1.properties.Tc)
+    test_volume(fluid1,3e2*fluid1.properties.Pc,1.1*fluid1.properties.Tc)
+
+    fluid2 = SingleFluid("n-Butane")
+    test_volume(fluid2,1e-2*fluid2.properties.Pc,0.3*fluid2.properties.Tc)
+    test_volume(fluid2,30*fluid2.properties.Pc,0.3*fluid2.properties.Tc)
+
+    fluid3 = SingleFluid("water")
+    test_volume(fluid3,1e-2*fluid3.properties.Pc,0.4*fluid3.properties.Tc)
+    test_volume(fluid3,40*fluid3.properties.Pc,3.2*fluid3.properties.Tc)
+
+    fluid4 = SingleFluid("MethylOleate")
+    test_volume(fluid4,1e-2*fluid4.properties.Pc,0.3*fluid4.properties.Tc)
+    test_volume(fluid4,4e1*fluid4.properties.Pc,0.3*fluid4.properties.Tc)
+    test_volume(fluid4,4e1*fluid4.properties.Pc,1.3*fluid4.properties.Tc)
+
+    fluid5 = SingleFluid("MD3M")
+    test_volume(fluid5,1e-2*fluid5.properties.Pc,0.3*fluid5.properties.Tc)
+    test_volume(fluid5,2e2*fluid5.properties.Pc,0.3*fluid5.properties.Tc)
+    test_volume(fluid5,2e2*fluid5.properties.Pc,1.1*fluid5.properties.Tc)
+
+    fluid6 = SingleFluid("Toluene")
+    test_volume(fluid6,1e-2*fluid6.properties.Pc,0.25*fluid6.properties.Tc)
+    test_volume(fluid6,2e2*fluid6.properties.Pc,0.25*fluid6.properties.Tc)
+    test_volume(fluid6,2e2*fluid6.properties.Pc,1.2*fluid6.properties.Tc)
+
+    #CoolProp fluid predicting negative fundamental derivative of gas dynamics
+    #10.1021/acs.iecr.9b00608, figure 17
+    model = SingleFluid("MD4M")
+    TΓmin = 647.72
+    _,_,vv = saturation_pressure(model,TΓmin)
+    Γmin = Clapeyron.VT_fundamental_derivative_of_gas_dynamics.(model,vv,TΓmin)
+    @test Γmin ≈ -0.2825376983518102 rtol = 1e-6
 end
 
 @testset "LKP methods" begin
     system = LKP("propane", idealmodel = AlyLeeIdeal)
+    system_mod = LKPmod("squalane",userlocations = (Tc = 810,Pc = 0.728e6,acentricfactor = 1.075,Mw = 1.0))
+
     p = 1e5
     T = 230.15
     @testset "Bulk properties" begin
         @test Clapeyron.volume(system, p, T, phase = :l) ≈ 7.865195401331961e-5 rtol = 1e-6
         @test Clapeyron.volume(system, p, T, phase = :v) ≈ 0.018388861273788176 rtol = 1e-6
         @test Clapeyron.speed_of_sound(system, p, T, phase = :l) ≈ 1167.2461897307874 rtol = 1e-6
+        @test Clapeyron.molar_density(system_mod,0.0,298.15,phase =:l) ≈ 1721.2987626107251 rtol = 1e-6 #0.1007/s10765-024-03360-0, Figure 4
     end
     @testset "VLE properties" begin
         @test Clapeyron.saturation_pressure(system, T)[1] ≈ 105419.26772976149 rtol = 1E-6

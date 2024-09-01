@@ -221,7 +221,7 @@ function SparseArrays.dropzeros!(mat::Compressed4DMatrix)
 end
 
 function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
-    j,i = minmax(i,j)
+    # i,j = minmax(i,j)
     @inbounds begin
     idx = searchsorted(m.outer_indices,(i,j))
     if iszero(idx)
@@ -232,25 +232,26 @@ function Base.getindex(m::Compressed4DMatrix,i::Int,j::Int)
     end
 end
 
+function Base.getindex(m::Compressed4DMatrix,idx::Int)
+    return m.values[idx]
+end
+
 #Base.eltype(m::Compressed4DMatrix{T}) where T = T
 
 Base.setindex!(m::Compressed4DMatrix,val,i::Int) = Base.setindex!(m.values,val,i)
 
 struct AssocView{T,V<:Compressed4DMatrix{T},I} <: AbstractMatrix{T}
-    vec::V
+    values::V
     indices::I
     at::Tuple{Int,Int}
-    function AssocView(vec::Compressed4DMatrix{T},idx::I,at) where {T,I}
-        return new{T,typeof(vec),I}(vec,idx,at)
+    function AssocView(values::Compressed4DMatrix{T},idx::I,at) where {T,I}
+        return new{T,typeof(values),I}(values,idx,at)
     end
 end
 
-
-
-
 function Base.size(m::AssocView)
     a,b = 0,0
-    for ab in view(m.vec.inner_indices,m.indices)
+    for ab in view(m.values.inner_indices,m.indices)
         _a,_b = ab
         a,b = max(a,_a),max(b,_b)
     end
@@ -260,7 +261,10 @@ Base.eltype(m::AssocView{T}) where T = T
 
 #returns the absolute index. that is. it is directly indexable by the parent array
 function validindex(m::AssocView{T},i::Int,j::Int) where T
-    indices = view(m.vec.inner_indices,m.indices)
+    if m.at[1] > m.at[2]
+        i,j = j,i
+    end
+    indices = view(m.values.inner_indices,m.indices)
     @inbounds begin
         idxs = searchsorted(indices,(i,j))
         if iszero(length(idxs))
@@ -274,13 +278,13 @@ end
 function Base.getindex(m::AssocView{T},i::Int,j::Int) where T
     idx = validindex(m,i,j)
     iszero(idx) && return _zero(T)
-    return m.vec.values[idx]
+    return m.values.values[idx]
 end
 
 function Base.setindex!(m::AssocView{T},value,a::Int,b::Int,symmetric = true) where T
     idx = validindex(m,a,b)
     iszero(idx) && throw(BoundsError())
-    vals = m.vec.values
+    vals = m.values.values
     vals[idx] = value
     if symmetric
         i,j = m.at
@@ -296,7 +300,7 @@ end
 returns a `Clapeyron.Compressed4DMatrix` of the same shape as the input, with the same element type as `𝕋`
 """
 function assoc_similar(m::Compressed4DMatrix,::Type{𝕋}) where 𝕋 <:Number
-    newvalues = similar(m.values,𝕋)
+    newvalues = zeros(𝕋,length(m.values))
     return Compressed4DMatrix(newvalues,m.outer_indices,m.inner_indices,m.outer_size,m.inner_size)
 end
 
@@ -351,6 +355,7 @@ function Base.getindex(x::SparsePackedMofV,i::Int,j::Int)
 
     return x.storage[_idx]
 end
+
 @inline Base.size(x::SparsePackedMofV) = size(x.idx)
 @inline SparseArrays.nnz(x::SparsePackedMofV) = length(x.storage.p)
 @inline function SparseArrays.findnz(x::SparsePackedMofV)
@@ -377,7 +382,7 @@ function Base.show(io::IO,::MIME"text/plain",A::SparsePackedMofV)
     end
 end
 
-function Solvers.primalval(x::Compressed4DMatrix{T}) where T <: ForwardDiff.Dual
+function Solvers.primalval(x::Compressed4DMatrix{T}) where T
     vals = x.values
     vals₀ = Solvers.primalval(vals)
     return Compressed4DMatrix(vals₀,x.outer_indices,x.inner_indices,x.outer_size,x.inner_size)

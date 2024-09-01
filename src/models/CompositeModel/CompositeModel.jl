@@ -89,6 +89,7 @@ include("SaturationModel/SaturationModel.jl")
 include("LiquidVolumeModel/LiquidVolumeModel.jl")
 include("PolExpVapour.jl")
 include("SolidModel/SolidHfus.jl")
+include("SolidModel/SolidKs.jl")
 include("bubble_point.jl")
 include("dew_point.jl")
 
@@ -118,7 +119,8 @@ function init_model_act(model::Union{Type{<:ActivityModel},Base.Function},compon
 end
 
 
-function CompositeModel(components;
+function CompositeModel(components ;
+    mapping = nothing,
     liquid = nothing,
     gas = nothing,
     fluid = nothing,
@@ -193,7 +195,23 @@ function CompositeModel(components;
     else
         throw(ArgumentError("Invalid specification for CompositeModel"))
     end
-    return CompositeModel(_components,init_fluid,init_solid)
+
+    if isnothing(init_fluid) || isnothing(init_solid) && isnothing(mapping)
+        _mapping = nothing
+    else
+        if isnothing(mapping) && init_fluid.components!=init_solid.components
+            throw(ArgumentError("Invalid specification for CompositeModel. Please specify mapping between species in solid and liquid phase"))
+        elseif isnothing(mapping) && init_fluid.components==init_solid.components
+            _mapping = [[(i,1)]=>(i,1) for i in _components]
+        elseif !isnothing(mapping)
+            _mapping = Pair{Vector{Tuple{String,Int}},Tuple{String,Int}}[]
+            for mi in mapping
+                k,v = mi
+                push!(_mapping,collect(k)=>v)
+            end
+        end
+    end
+    return CompositeModel(_components,init_fluid,init_solid,_mapping)
 end
 
 function Base.show(io::IO,mime::MIME"text/plain",model::CompositeModel)
@@ -244,7 +262,7 @@ __gas_model(model::CompositeModel) = model.fluid
 fluid_model(model::CompositeModel) = model.fluid
 solid_model(model::CompositeModel) = model.solid
 
-function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,vol0 = nothing)
+function volume_impl(model::CompositeModel,p,T,z,phase,threaded,vol0)
     if is_liquid(phase) || is_vapour(phase)
         return volume_impl(model.fluid,p,T,z,phase,threaded,vol0)
     elseif is_solid(phase)
@@ -260,7 +278,7 @@ function volume_impl(model::CompositeModel,p,T,z,phase=:unknown,threaded=false,v
         #this requires checking evaluating all volumes and checking
         #what value is the correct one via gibbs energies.
         if !(model.fluid isa GammaPhi) && !(model.fluid isa FluidCorrelation) && !(model.solid isa SolidCorrelation)
-            return _volume_impl(model,p,T,z,phase,threaded,vol0)
+            return default_volume_impl(model,p,T,z,phase,threaded,vol0)
         else
             #TODO: implement these when we have an actual sublimation-melting empiric model.
             throw(error("automatic phase detection not implemented for $(typeof(model))"))

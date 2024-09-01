@@ -22,9 +22,12 @@ using StableTasks #for multithreaded volume
 #compatibility and raw julia utilities
 include("utils/core_utils.jl")
 
+#misc functions
+include("utils/misc.jl")
+
 include("modules/solvers/Solvers.jl")
 using .Solvers
-using .Solvers: log, sqrt, log1p, ^, dnorm
+using .Solvers: log, sqrt, log1p, ^, dnorm, primalval
 
 #misc functions, useful for EoS, don't depend on models
 include("modules/eosfunctions/EoSFunctions.jl")
@@ -92,6 +95,7 @@ include("utils/acceleration_ss.jl")
 #Clapeyron methods (AD, property solvers, etc)
 include("methods/methods.jl")
 
+
 #=
 the dependency chain is the following:
 base --> database(params)  -|-> split_model --> methods -|-> models
@@ -142,6 +146,8 @@ include("models/EmpiricHelmholtz/MultiFluid/variants/TillnerRothFriend.jl")
 include("models/EmpiricHelmholtz/MultiFluid/variants/HelmAct.jl")
 include("models/EmpiricHelmholtz/MultiFluid/variants/EmpiricIdeal.jl")
 include("models/EmpiricHelmholtz/LKP/LKP.jl")
+include("models/EmpiricHelmholtz/LKP/variants/LKPmod.jl")
+include("models/EmpiricHelmholtz/LKP/variants/LKPSJT.jl")
 
 #cubic models
 include("models/cubic/equations.jl")
@@ -165,7 +171,6 @@ include("models/SAFT/PCSAFT/variants/QPCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCPSAFT/homogcPCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCPSAFT/heterogcPCPSAFT.jl")
 include("models/SAFT/PCSAFT/variants/gcPCPSAFT/gcPCSAFT.jl")
-
 include("models/SAFT/PCSAFT/variants/CPPCSAFT.jl")
 include("models/SAFT/ogSAFT/ogSAFT.jl")
 include("models/SAFT/CPA/CPA.jl")
@@ -177,6 +182,7 @@ include("models/SAFT/softSAFT/variants/softSAFT2016.jl")
 include("models/SAFT/softSAFT/variants/solidsoftSAFT.jl")
 include("models/SAFT/SAFTVRMie/SAFTVRMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRQMie.jl")
+include("models/SAFT/SAFTVRMie/variants/SAFTVRMie15.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRSMie.jl")
 include("models/SAFT/SAFTVRMie/variants/SAFTVRMieGV.jl")
 include("models/SAFT/SAFTgammaMie/SAFTgammaMie.jl")
@@ -199,6 +205,7 @@ include("models/Activity/UNIFAC/variants/UNIFACFVPoly.jl")
 include("models/Activity/UNIFAC/variants/PSRK.jl")
 include("models/Activity/UNIFAC/variants/VTPR.jl")
 include("models/Activity/equations.jl")
+# include("models/Activity/NRTL/eCPANRTL.jl")
 
 include("models/Activity/COSMOSAC/utils.jl")
 include("models/Activity/COSMOSAC/COSMOSAC02.jl")
@@ -234,14 +241,34 @@ include("models/Virial/Virial.jl")
 include("models/ECS/ECS.jl")
 include("models/ECS/variants/SPUNG.jl")
 include("models/PeTS/PeTS.jl")
+
+include("models/Electrolytes/equations.jl")
+include("models/Electrolytes/base.jl")
+include("models/Electrolytes/RSP/ConstRSP.jl")
+include("models/Electrolytes/RSP/ZuoFurst.jl")
+include("models/Electrolytes/RSP/Schreckenberg.jl")
+include("models/Electrolytes/RSP/LinMixRSP.jl")
+include("models/Electrolytes/Ion/Born.jl")
+include("models/Electrolytes/Ion/DH.jl")
+include("models/Electrolytes/Ion/DHBorn.jl")
+include("models/Electrolytes/Ion/MSA.jl")
+include("models/Electrolytes/Ion/MSABorn.jl")
+include("models/Electrolytes/Ion/GCMSABorn.jl")
+include("models/SAFT/SAFTgammaMie/variants/SAFTgammaEMie.jl")
+include("models/SAFT/SAFTVRMie/variants/SAFTVREMie.jl")
+include("models/SAFT/SAFTVRMie/variants/eSAFTVRMie.jl")
+include("models/SAFT/PCSAFT/variants/ePCSAFT.jl")
+# include("models/Electrolytes/ElectrolyteSAFT/eCPA.jl")
+
+
+include("methods/property_solvers/electrolytes/electrolytes.jl")
+include("methods/property_solvers/multicomponent/tp_flash/electrolyte_flash.jl")
 include("models/AnalyticalSLV/AnalyticalSLV.jl")
 
 #Unitful support, transition from dependency to ext
 if !isdefined(Base,:get_extension)
     include("../ext/ClapeyronUnitfulExt.jl")
 end
-
-include("utils/misc.jl")
 
 include("estimation/estimation.jl")
 

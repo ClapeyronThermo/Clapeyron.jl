@@ -2,34 +2,36 @@ COOLPROP_IDENTIFIER_CACHE = Dict{String,String}()
 
 function coolprop_crit_data end
 
+function unsafe_coolprop_handler()
+    #for some reason, this does not work on linux/mac
+    lib_handler1 = Base.Libc.Libdl.dlopen(:libcoolprop;throw_error = false)
+    #return lib_handler1
+    lib_handler1 !== nothing && return lib_handler1
+    if !Sys.iswindows()
+        #search on all dynamic libs, filter libCoolProp. TODO: find something faster.
+        dllist = Base.Libc.Libdl.dllist()
+        x =findall(z->occursin("libCoolProp",z),dllist)
+        length(x) == 0 && return nothing
+        t = dllist[x[1]]
+        lib_handler2 = Base.Libc.Libdl.dlopen(t;throw_error = false)
+        return lib_handler2
+    else
+        return lib_handler1
+    end
+end
+
 @static if !isdefined(Base,:get_extension)
-    function coolprop_handler()
-        #for some reason, this does not work on linux/mac
-        lib_handler1 = Base.Libc.Libdl.dlopen(:libcoolprop;throw_error = false)
-        #return lib_handler1
-        lib_handler1 !== nothing && return lib_handler1
-        if !Sys.iswindows()
-            #search on all dynamic libs, filter libCoolProp. TODO: find something faster.
-            dllist = Base.Libc.Libdl.dllist()
-            x =findall(z->occursin("libCoolProp",z),dllist)
-            length(x) == 0 && return nothing
-            t = dllist[x[1]]
-            lib_handler2 = Base.Libc.Libdl.dlopen(t;throw_error = false)
-            return lib_handler2
-        else
-            return lib_handler1
-        end
+    coolprop_handler() = unsafe_coolprop_handler()
+    function is_coolprop_loaded()
+        handler = coolprop_handler()
+        res = handler !== nothing
+        Base.Libc.Libdl.dlclose(handler)
+        return res
     end
 else
     #defined in ClapeyronCoolPropExt
     function coolprop_handler end
-end
-
-function is_coolprop_loaded()
-    handler = coolprop_handler()
-    res = handler !== nothing
-    Base.Libc.Libdl.dlclose(handler)
-    return res
+    is_coolprop_loaded() = !isnothing(Base.get_extension(Clapeyron,:ClapeyronCoolPropExt))
 end
 
 function coolprop_csv(component::String,comp = "")
@@ -109,6 +111,11 @@ function get_json_data(components;
             !coolprop_userlocations && throw(error("cannot found component file $(component)."))
             alternative_comp = get!(COOLPROP_IDENTIFIER_CACHE,norm_comp1) do
                 cas(norm_comp1)[1]
+            end
+
+            #check if CoolProp is loaded. if it is not, error and suggest loading CoolProp.
+            if !is_coolprop_loaded()
+                throw(error("cannot found component file $(component). Try loading the CoolProp library (`using CoolProp`)."))
             end
             success,json_string = coolprop_csv(alternative_comp,component)
             if success

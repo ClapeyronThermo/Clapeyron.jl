@@ -1,5 +1,5 @@
 
-function ADScalarObjective(f,x0::AbstractArray,chunk = autochunk(x0),val::Val{N} = Val{2}()) where N
+function ADScalarObjective(f,x0::AbstractArray,chunk = autochunk(x0))
     Hres = DiffResults.HessianResult(x0)
     function _g(df,x,Gresult)
         ForwardDiff.gradient!(Gresult,f,x)
@@ -77,7 +77,7 @@ function optimize(f,x0,method=LineSearch(Newton()),options=OptimizationOptions()
     return NLSolvers.solve(optprob,x0,method,options)
 end
 
-function optimize(optprob::OptimizationProblem,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
+function optimize(optprob::OptimizationProblem,x0,method=LineSearch(Newton()),options=OptimizationOptions();bounds = nothing)
     return NLSolvers.solve(optprob,x0,method,options)
 end
 #build scalar objective -> Optimization Problem
@@ -161,7 +161,7 @@ function only_fgh!(fgh!::T) where T
         return fx,df,d2f
     end
 
-    function h(df,d2f,x)
+    function h(d2f,x)
         fgh!(nothing,nothing,d2f,x)
         return d2f
     end
@@ -170,5 +170,5 @@ function only_fgh!(fgh!::T) where T
     g=g,
     fg=fg,
     fgh=fgh,
-    h=nothing)
+    h=h)
 end

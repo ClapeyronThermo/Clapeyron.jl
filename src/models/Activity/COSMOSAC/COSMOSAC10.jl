@@ -38,7 +38,9 @@ default_locations(::Type{COSMOSAC10}) = ["Activity/COSMOSAC/COSMOSAC10_like.csv"
 An activity coefficient model using molecular solvation based on the COSMO-RS method. Sigma profiles are now split by non-hydrogen bonding, hydrogen acceptor and hydrogen donor.
 
 ## References
-1. Hsieh, C-H., Sandler, S.I., & Lin, S-T. (2010). Improvements of COSMO-SAC for vapor–liquid and liquid–liquid equilibrium predictions. Fluid Phase Equilibria, 297(1), 90-97. [doi:10.1016/j.fluid.2010.06.011](https://doi.org/10.1016/j.fluid.2010.06.011)
+1. Klamt, A. (1995). Conductor-like screening model for real solvents: A new approach to the quantitative calculation of solvation phenomena. Journal of Physical Chemistry, 99(7), 2224–2235. [doi:10.1021/j100007a062](https://doi.org/10.1021/j100007a062)
+2. Lin, S-T. & Sandler, S.I. (2002). A priori phase equilibrium prediction from a segment contribution solvation model. Industrial & Engineering Chemistry Research, 41(5), 899–913. [doi:10.1021/ie001047w](https://doi.org/10.1021/ie001047w)
+3. Hsieh, C-H., Sandler, S.I., & Lin, S-T. (2010). Improvements of COSMO-SAC for vapor–liquid and liquid–liquid equilibrium predictions. Fluid Phase Equilibria, 297(1), 90-97. [doi:10.1016/j.fluid.2010.06.011](https://doi.org/10.1016/j.fluid.2010.06.011)
 """
 COSMOSAC10
 
@@ -89,15 +91,15 @@ function COSMOSAC10(components;
 
     _puremodel = init_puremodel(puremodel,components,pure_userlocations,verbose)
     packagedparams = COSMOSAC10Param(Pnhb,POH,POT,V,A)
-    references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360"]
+    references = ["10.1021/acs.jctc.9b01016","10.1021/acs.iecr.7b01360","10.1021/j100007a062"]
     model = COSMOSAC10(formatted_components,packagedparams,_puremodel,1e-12,references)
     return model
 end
 
 function Γ_as_view(Γ,l1 = length(Γ) ÷ 3)
-    Γnhb = @view Γ[1:l1]
-    ΓOH = @view Γ[(l1+1):(2*l1)]
-    ΓOT = @view Γ[(2*l1+1):(3*l1)]
+    Γnhb = viewn(Γ, 51, 1)
+    ΓOH = viewn(Γ, 51, 2)
+    ΓOT = viewn(Γ, 51, 3)
     return Γnhb, ΓOH, ΓOT
 end
 

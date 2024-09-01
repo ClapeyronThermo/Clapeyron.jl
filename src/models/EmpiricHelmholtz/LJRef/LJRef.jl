@@ -132,17 +132,17 @@ function VT_scale(model,z = SA[1.0])
     return m̄*N_A*σ3, ϵ, m̄
 end
 
-function T_scale(model::LJRef,z=SA[1.0])
+function T_scale(model::LJRef,z)
     σ, ϵ , m̄ = VT_scale(model,z)
     return ϵ
 end
 
-function lb_volume(model::LJRef, z = SA[1.0])
+function lb_volume(model::LJRef, z)
     val = π/6*_v_scale(model,z)
     return val
 end
 
-function eos(model::LJRef,V,T,z = SA[1.0])
+function eos_impl(model::LJRef,V,T,z)
     Σz = sum(z)
     α0 = a_ideal(model,V,T,z)
     V0,T0,m̄ = VT_scale(model,z)
@@ -184,7 +184,7 @@ function x0_sat_pure(model::LJRef,T)
     return vl,vv
 end
 
-function p_scale(model::LJRef,z = SA[1.0])
+function p_scale(model::LJRef,z)
     rhoc = 1/(_v_scale(model,z))
     Tc = T_scale(model,z)
     return R̄*Tc*rhoc

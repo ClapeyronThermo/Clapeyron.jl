@@ -133,6 +133,25 @@ format_component_i(x::Pair) = first(x)
 format_gccomponents(str::Tuple) = [str]
 format_gccomponents(str::Pair) = [str]
 format_gccomponents(str) = str
+
+function mole_to_mass(model, x)
+    w = x .* mw(model)
+    return w ./ sum(w)
+end
+
+function mass_to_mole(model, w)
+    x = w ./ mw(model)
+    return x ./ sum(x)
+end
 format_gccomponents(str::String) = [str]
 format_gccomponents(str::AbstractString) = format_components(String(str))
 format_gccomponents(str::Vector{String}) = str
+
+function viewn(x,chunk,i)
+    l = length(x)
+    l < chunk*i && throw(BoundsError(x,chunk*i))
+    @view x[((i - 1)*chunk+1):(i*chunk)]
+end
+
+linearidx(x::AbstractVector) = 1:length(x)
+linearidx(x::AbstractMatrix) = diagind(x)

@@ -300,6 +300,7 @@ function gc_to_comp_sites(sites::SiteParam,groups::GroupParameter)
             end
         end
     end
+
     new_sites = SiteParam(comps,comp_sites,comp_n_sites,sites.sourcecsvs,site_translator)
 
     return new_sites
@@ -335,7 +336,7 @@ function gc_to_comp_sites(param::AssocParam,sites::SiteParam)
                     if idx != 0 #if the index is valid
                         ijab_val = param[i_gc,j_gc][a_gc,b_gc]
                         if !_iszero(ijab_val) #if the value is not zero
-                            ij_pair.vec.values[idx] =ijab_val
+                            ij_pair.values.values[idx] =ijab_val
                         end
                     end
                 end

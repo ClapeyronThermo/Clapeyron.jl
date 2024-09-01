@@ -68,7 +68,7 @@ function transform_params(::Type{RackettLiquid},params,components)
     return params
 end
 
-function volume_impl(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,threaded=false,vol0 = 0.0)
+function volume_impl(model::RackettLiquidModel,p,T,z,phase,threaded,vol0)
     tci = model.params.Tc.values
     pci = model.params.Pc.values
     zci = model.params.Zc.values
@@ -107,7 +107,7 @@ function volume_impl(model::RackettLiquidModel,p,T,z=SA[1.0],phase=:unknown,thre
     return ∑z*R̄*Tcm*Pcm_inv*Zcm^(1+(1-Tr)^(2/7))
 end
 
-function volume_impl(model::RackettLiquidModel,p,T,z::SingleComp,phase=:unknown,threaded=false,vol0 = 0.0)
+function volume_impl(model::RackettLiquidModel,p,T,z::SingleComp,phase,threaded,vol0)
     Tc = only(model.params.Tc.values)
     Pc = only(model.params.Pc.values)
     Pc_inv = 1/Pc

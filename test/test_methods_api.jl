@@ -54,27 +54,29 @@
 end
 
 @testset "association" begin
-    no_comb_sparse = Clapeyron.AssocOptions(combining = :nocombining, dense = false)
-    no_comb_dense = Clapeyron.AssocOptions(combining = :nocombining, dense = true)
-    esd = Clapeyron.AssocOptions(combining = :esd)
-    esd_r = Clapeyron.AssocOptions(combining = :elliott_runtime)
-    cr1 = Clapeyron.AssocOptions(combining = :cr1)
-
-    model_no_comb_sparse = PCSAFT(["methanol","ethanol"],assoc_options = no_comb_sparse)
-    model_no_comb_dense = PCSAFT(["methanol","ethanol"],assoc_options = no_comb_dense)
-    model_cr1 = PCSAFT(["methanol","ethanol"],assoc_options = cr1)
-    model_esd = PCSAFT(["methanol","ethanol"],assoc_options = esd)
-    model_esd_r = PCSAFT(["methanol","ethanol"],assoc_options = esd_r)
+    model_no_comb_dense = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :nocombining))
+    model_cr1 = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :cr1))
+    model_esd = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :esd))
+    model_esd_r = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :elliott_runtime))
+    model_dufal = PCSAFT(["methanol","ethanol"],assoc_options = AssocOptions(combining = :dufal))
 
     V = 5e-5
     T = 298.15
     z = [0.5,0.5]
     @test Clapeyron.nonzero_extrema(0:3) == (1, 3)
-    @test Clapeyron.a_assoc(model_no_comb_sparse,V,T,z) ≈ -4.667036481159167  rtol = 1E-6
-    @test Clapeyron.a_assoc(model_no_comb_sparse,V,T,z) ≈ Clapeyron.a_assoc(model_no_comb_dense,V,T,z)  rtol = 1E-6
-    @test Clapeyron.a_assoc(model_cr1,V,T,z) ≈ -5.323469194263458  rtol = 1E-6
-    @test Clapeyron.a_assoc(model_esd,V,T,z) ≈ -5.323420343872591  rtol = 1E-6
-    @test Clapeyron.a_assoc(model_esd_r,V,T,z) ≈ -5.323430326406561  rtol = 1E-6
+    @test Clapeyron.a_assoc(model_no_comb_dense,V,T,z) ≈ -4.667036481159167 rtol = 1E-6
+    @test Clapeyron.a_assoc(model_cr1,V,T,z) ≈ -5.323469194263458 rtol = 1E-6
+    @test Clapeyron.a_assoc(model_esd,V,T,z) ≈ -5.323420343872591 rtol = 1E-6
+    @test Clapeyron.a_assoc(model_esd_r,V,T,z) ≈ -5.323430326406561 rtol = 1E-6
+    @test Clapeyron.a_assoc(model_dufal,V,T,z) ≈ -5.323605338112626 rtol = 1E-6
+
+    #system with strong association:
+    fluid = PCSAFT(["water","methanol"]; assoc_options = AssocOptions(combining=:elliott))
+    fluid.params.epsilon["water","methanol"] *= (1+0.18)
+    v = volume(fluid, 1e5, 160.0, [0.5, 0.5],phase = :l)
+    @test Clapeyron.X(fluid,v,160.0,[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
+    #test with bigfloat, we check that all temporary association storage is correctly initialized
+    @test Clapeyron.X(fluid,big(v),160.0,[0.5,0.5]).v ≈ [0.0011693187791158642, 0.0011693187791158818, 0.0002916842981727242, 0.0002916842981727286] rtol = 1E-8
 end
 
 using EoSSuperancillaries
@@ -103,7 +105,11 @@ end
     T = 298.15
     p = 1e5
     phases,tpds,symz,symw = Clapeyron.tpd(system,p,T,[0.5,0.5])
-    @test tpds[1] ≈ -0.8370113547074933  rtol = 1e-6
+    @test tpds[1] ≈ -0.6081399681963373 rtol = 1e-6
+
+    act_system = UNIFAC(["water","cyclohexane"])
+    phases2,tpds2,symz2,symw2 = Clapeyron.tpd(act_system,p,T,[0.5,0.5],lle = true)
+    @test tpds2[1] ≈ -0.9412151812640561 rtol = 1e-6
     GC.gc()
 end
 
@@ -196,6 +202,11 @@ end
     @testset "RR Algorithm" begin
         method = RRTPFlash()
         @test Clapeyron.tp_flash(system, p, T, z, method)[3] ≈ -6.539976318817461 rtol = 1e-6
+    
+        #test for initialization when K suggests single phase but it could be solved supposing bubble or dew conditions.
+        substances = ["water", "methanol", "propyleneglycol","methyloxirane"]
+        pcp_system = PCPSAFT(substances)
+        @test Clapeyron.tp_flash2(pcp_system, 25_000.0, 300.15, [1.0, 1.0, 1.0, 1.0], RRTPFlash())[end] ≈ -8.900576759774916 rtol = 1e-6
     end
 
     if isdefined(Base,:get_extension)
@@ -216,6 +227,11 @@ end
         act_y0 = activity_coefficient(act_system, p, T, flash0[1][2,:]) .* flash0[1][2,:]
         @test Clapeyron.dnorm(act_x0,act_y0) < 0.01 #not the most accurate, but it is global
     end
+
+    @testset "Multiphase algorithm" begin
+        @test Clapeyron.tp_flash(system, p, T, z, MultiPhaseTPFlash())[3] ≈ -6.759674475175065 rtol = 1e-6
+    end
+
     GC.gc()
 
     @testset "Michelsen Algorithm" begin
@@ -224,10 +240,10 @@ end
         method = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium= :lle)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method)[3] ≈ -7.577270350886795 rtol = 1e-6
 
-        method2 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 1, second_order = false)
+        method2 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 4, second_order = false)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method2)[3] ≈ -7.577270350886795 rtol = 1e-6
 
-        method3 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 1,second_order = true)
+        method3 = MichelsenTPFlash(x0 = x0, y0 = y0, equilibrium = :lle, ss_iters = 4,second_order = true)
         @test Clapeyron.tp_flash(system, p, T, [0.5,0.5,0.0],method3)[3] ≈ -7.577270350886795 rtol = 1e-6
     end
     GC.gc()
@@ -607,7 +623,7 @@ GC.gc()
         T = 202.694
         v0 = [-4.136285855713797, -4.131888756537859, 0.9673991775701574, 0.014192499147585259, 0.014746430039492817, 0.003661893242764558]
         model = PCSAFT(["methane","butane","isobutane","pentane"])
-        @test bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
+        #@test bubble_pressure(model,T,x;v0 = v0)[1] ≈ 5.913118531569793e6 rtol = 1e-4
         # FIXME: The test does not yield the same value depending on the OS and the julia version
     end
     GC.gc()

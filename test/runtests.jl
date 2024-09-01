@@ -38,6 +38,11 @@ function test_gibbs_duhem(model,V,T,z;rtol = 1e-14)
     _,G,∑μᵢzᵢ = Clapeyron.gibbs_duhem(model,V,T,z)
     @test G ≈ ∑μᵢzᵢ rtol = rtol
 end
+
+function test_volume(model,p,T,z = Clapeyron.SA[1.0],rtol = 1e-8)
+    v = volume(model,p,T,z)
+    @test p ≈ Clapeyron.pressure(model,v,T,z) rtol = rtol
+end
 #=
 include_distributed distributes the test load among all workers
 =#
@@ -49,9 +54,20 @@ include_distributed distributes the test load among all workers
 # include_distributed("test_models_cubic.jl",3)
 # include_distributed("test_models_saft_others.jl",3)
 # include_distributed("test_models_others.jl",2)
+display(Test.detect_ambiguities(Clapeyron))
+include_distributed("test_database.jl",4)
+include_distributed("test_solvers.jl",4)
+include_distributed("test_differentials.jl",4)
+include_distributed("test_misc.jl",4)
+include_distributed("test_models_saft_pc.jl",4)
+include_distributed("test_models_cubic.jl",3)
+include_distributed("test_models_saft_others.jl",3)
+include_distributed("test_models_others.jl",2)
 include_distributed("test_models_saft_vr.jl",1)
-# include_distributed("test_methods_eos.jl",4)
-# include_distributed("test_methods_api.jl",3)
-# include_distributed("test_estimation.jl",2)
-# include_distributed("test_issues.jl",1)
+include_distributed("test_models_electrolytes.jl",1)
+include_distributed("test_methods_eos.jl",4)
+include_distributed("test_methods_api.jl",3)
+include_distributed("test_methods_electrolytes.jl",2)
+include_distributed("test_estimation.jl",1)
+include_distributed("test_issues.jl",4)
 
