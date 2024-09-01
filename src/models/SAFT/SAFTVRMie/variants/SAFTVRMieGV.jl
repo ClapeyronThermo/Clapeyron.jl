@@ -32,7 +32,21 @@ function transform_params(::Type{SAFTVRMieGV},params,components)
     epsilon = epsilon_HudsenMcCoubrey(params["epsilon"], sigma)
     lambda_a = lambda_LorentzBerthelot(params["lambda_a"])
     lambda_r = lambda_LorentzBerthelot(params["lambda_r"])
-    μ,m,Q,np,nQ = params["dipole"],params["segment"],params["quadrupole"],params["np"],params["nQ"]
+    m = params["segment"]
+
+    μ = get!(params,"dipole") do
+        SingleParam("dipole",components)
+    end
+    np = get!(params,"np") do
+        SingleParam("np",components)
+    end
+    Q = get!(params,"quadrupole") do
+        SingleParam("quadrupole",components)
+    end
+    nQ = get!(params,"nQ") do
+        SingleParam("nQ",components)
+    end
+    # μ,Q,np,nQ = params["dipole"],params["quadrupole"],params["np"],params["nQ"]
     params["sigma"] = sigma
     params["epsilon"] = epsilon
     params["lambda_a"] = lambda_a
@@ -100,13 +114,30 @@ SAFTVRMieGV
 
 export SAFTVRMieGV
 
-# SS: used to recalculate mix params if one param has changed. Copied verbatim from QPPCSAFT. Not sure if assoc params are recalculated this way?
-# SS: If problematic, could I just copy-past recombine_impl! from SAFTVRMie.jl?
+# SS: used to recalculate mix params if one param has changed. Copied verbatim from SAFTVRMie.jl. 
 function recombine_impl!(model ::SAFTVRMieGVModel)
     μ,Q,m,np,nQ = model.params.dipole,model.params.quadrupole,model.params.segment,model.params.np,model.params.nQ
     model.params.dipole2 .= np .* μ.^2 ./ m ./ k_B * 1e-36*(1e-10*1e-3)  # 1e-49
     model.params.quadrupole2 .= nQ .* Q.^2 ./ m ./ k_B * 1e-56*(1e-10*1e-3)  # 1e-69
-    recombine_saft!(model)
+
+    assoc_options = model.assoc_options
+    sigma = model.params.sigma
+    epsilon = model.params.epsilon
+    lambda_a = model.params.lambda_a
+    lambda_r = model.params.lambda_r
+
+    epsilon_assoc = model.params.epsilon_assoc
+    bondvol = model.params.bondvol
+    bondvol,epsilon_assoc = assoc_mix(bondvol,epsilon_assoc,sigma,assoc_options,model.sites) #combining rules for association
+
+    model.params.epsilon_assoc.values.values[:] = epsilon_assoc.values.values
+    model.params.bondvol.values.values[:] = bondvol.values.values
+
+    sigma = sigma_LorentzBerthelot!(sigma)
+    epsilon = epsilon_HudsenMcCoubrey!(epsilon,sigma)
+    lambda_a = lambda_LorentzBerthelot!(lambda_a)
+    lambda_r = lambda_LorentzBerthelot!(lambda_r)
+    return model
 end
 
 function a_res(model ::SAFTVRMieGVModel, V, T, z)
@@ -315,7 +346,7 @@ function a_2_dq(model ::SAFTVRMieGVModel, V, T, z, _data=@f(data))
     end
     _a_2 *= -π*9/4*ρ/(T*T)/(∑z*∑z)
     return _a_2
-    dp_comps, qp_comps = @f(polar_comps)
+    dp_comps, qp_comps = @f(polar_comp)
     Q̄² = model.params.quadrupole2.values
     μ̄² = model.params.dipole2.values
     _,_,_,_,η,_ = _data
@@ -371,7 +402,7 @@ function a_3_dq(model ::SAFTVRMieGVModel, V, T, z, _data=@f(data))
     return _a_3
 end
 
-function polar_comps(model, V, T, z)
+function polar_comp(model, V, T, z)
     μ̄² = model.params.dipole2.values
     Q̄² = model.params.quadrupole2.values
     dipole_comps = Int[]
